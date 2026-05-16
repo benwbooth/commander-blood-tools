@@ -45,9 +45,10 @@ path. Zeros inside character update rectangles clear back to transparency, which
 prevents stale frame-0/update pixels from sticking on the background while
 leaving standalone HNM decoding unchanged.
 
-Subtitle SFX is mixed during the animated text reveal using `sn/tb.snd` clip 0,
-rather than playing only one click at cue start. The renderer uses the custom
-dialogue bitmap font embedded in `BLOODPRG.EXE`: ASCII map at file offset
+Subtitle SFX is mixed during the animated text reveal using the short
+`sn/tb.snd` UI bleep clips, rather than playing only one click at cue start.
+The renderer uses the custom dialogue bitmap font embedded in `BLOODPRG.EXE`:
+ASCII map at file offset
 `0x14c22`, glyph advances at `0x14cd2..0x14d27`, and 8-byte glyph bitmaps at
 `0x14d28`. This matches the square-stroke subtitle font visible in game
 screenshots.

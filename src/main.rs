@@ -1,4 +1,4 @@
-mod legacy;
+mod extract;
 
 fn main() {
     if let Err(err) = run() {
@@ -60,6 +60,6 @@ fn run() -> anyhow::Result<()> {
             }
             Ok(())
         }
-        _ => legacy::run().map_err(|err| anyhow::anyhow!("{err}")),
+        _ => extract::run().map_err(|err| anyhow::anyhow!("{err}")),
     }
 }
