@@ -59,15 +59,35 @@ pub(super) struct ScriptSpeechLine {
     pub(super) background_music: Option<String>,
     pub(super) source: String,
     pub(super) text: String,
+    pub(super) call_target: u16,
+    pub(super) params_hex: String,
+    pub(super) text_end: usize,
+    pub(super) actor_ref: Option<u16>,
+    pub(super) actor_proof: String,
+    pub(super) word_count: usize,
 }
 
 #[derive(Clone, Debug)]
 pub(super) struct ScriptActorRef {
+    pub(super) talk_ref: u16,
     pub(super) record_name: String,
     pub(super) background_record: Option<String>,
     pub(super) background_hnm: Option<String>,
     pub(super) background_music: Option<String>,
     pub(super) talk_count: usize,
+}
+
+#[derive(Clone, Debug)]
+pub(super) struct ScriptDisassemblyLine {
+    pub(super) script: String,
+    pub(super) function_name: String,
+    pub(super) offset: usize,
+    pub(super) len: usize,
+    pub(super) opcode: String,
+    pub(super) mnemonic: String,
+    pub(super) operands: String,
+    pub(super) actor_record: Option<String>,
+    pub(super) text: Option<String>,
 }
 
 #[derive(Clone, Debug)]

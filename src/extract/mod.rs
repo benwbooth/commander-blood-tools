@@ -13,6 +13,9 @@ const ISO_URL: &str =
 
 const VIEWPORT_W: usize = 320;
 const VIEWPORT_H: usize = 200;
+const OUTPUT_SCALE: usize = 3;
+const OUTPUT_W: usize = VIEWPORT_W * OUTPUT_SCALE;
+const OUTPUT_H: usize = VIEWPORT_H * OUTPUT_SCALE;
 const HNM_FPS: u32 = 15;
 const SUBTITLE_CHARS_PER_SEC: f64 = 36.0;
 const SCRIPT_OBJECT_TALK_FIELD: u16 = 0x3a;
@@ -212,10 +215,16 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     let script_speech = parse_script_speech(&tmp_iso, descript_db.as_ref(), &hnm_music)?;
     write_script_speech_manifest(&script_speech, &out_dir.join("script-speech.tsv"))?;
     write_script_dialogue_manifest(&script_speech, &out_dir.join("script-dialogue-videos.tsv"))?;
+    let script_disassembly = parse_script_disassembly(&tmp_iso, descript_db.as_ref(), &hnm_music)?;
+    write_script_disassembly_manifest(
+        &script_disassembly,
+        &out_dir.join("script-disassembly.tsv"),
+    )?;
     if !script_speech.is_empty() {
         eprintln!(
-            "Recovered {} script dialogue/subtitle lines",
-            script_speech.len()
+            "Recovered {} script text calls ({} disassembly rows)",
+            script_speech.len(),
+            script_disassembly.len()
         );
     }
 

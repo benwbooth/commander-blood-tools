@@ -6,6 +6,7 @@ use super::*;
 
 pub(super) fn write_html_index(out_dir: &Path) -> Result<(), Box<dyn Error>> {
     let dialogue_rows = read_tsv_rows(&out_dir.join("script-dialogue-videos.tsv"));
+    let speech_rows = read_tsv_rows(&out_dir.join("script-speech.tsv"));
     let scene_rows = read_tsv_rows(&out_dir.join("verified-video-scenes.tsv"));
     let mp4_files = output_files(out_dir, "mp4", "mp4");
     let m4a_files = output_files(out_dir, "m4a", "m4a");
@@ -25,9 +26,10 @@ h1, h2, h3 {{ margin: 1.2em 0 0.45em; }}
 table {{ width: 100%; border-collapse: collapse; margin: 0.5em 0 1.5em; }}
 th, td {{ border-bottom: 1px solid #333; padding: 6px 8px; vertical-align: top; text-align: left; }}
 th {{ color: #bbb; font-weight: 600; }}
-video {{ width: 320px; height: 200px; image-rendering: pixelated; background: #000; }}
+video {{ width: 960px; max-width: 100%; height: auto; image-rendering: pixelated; background: #000; }}
 audio {{ width: 260px; }}
-.grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; }}
+.grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(980px, 1fr)); gap: 16px; }}
+@media (max-width: 1040px) {{ .grid {{ grid-template-columns: 1fr; }} }}
 .card {{ border: 1px solid #333; border-radius: 6px; padding: 10px; background: #181818; }}
 .meta {{ color: #aaa; font-size: 12px; }}
 details {{ margin: 0.5em 0; border: 1px solid #333; border-radius: 6px; padding: 8px 10px; background: #181818; }}
@@ -43,7 +45,7 @@ summary {{ cursor: pointer; font-weight: 600; }}
         flac_files.len()
     )?;
 
-    write_dialogue_section(&mut html, &dialogue_rows, out_dir)?;
+    write_dialogue_section(&mut html, &dialogue_rows, &speech_rows, out_dir)?;
     write_scene_section(&mut html, &scene_rows, out_dir)?;
     write_music_section(&mut html, &m4a_files, out_dir)?;
     write_snd_section(&mut html, &m4a_files, out_dir)?;
@@ -57,9 +59,23 @@ summary {{ cursor: pointer; font-weight: 600; }}
 pub(super) fn write_dialogue_section(
     html: &mut String,
     rows: &[Vec<String>],
+    speech_rows: &[Vec<String>],
     out_dir: &Path,
 ) -> Result<(), Box<dyn Error>> {
     writeln!(html, "<h2>Character Dialogue Composites</h2>")?;
+    let mapped_speech_rows = speech_rows
+        .iter()
+        .filter(|row| row.get(6).is_some_and(|clip| !clip.is_empty()))
+        .count();
+    if !speech_rows.is_empty() {
+        writeln!(
+            html,
+            "<p class=\"meta\">{} script speech/subtitle rows; {} rows have mapped character voice clips and are grouped into {} exported dialogue composite(s). Rows without clip indices are subtitle-only or non-character subtitle channels.</p>",
+            speech_rows.len(),
+            mapped_speech_rows,
+            rows.len()
+        )?;
+    }
     let mut by_actor: BTreeMap<String, Vec<&[String]>> = BTreeMap::new();
     for row in rows {
         if row.len() < 9 {
@@ -251,6 +267,7 @@ pub(super) fn write_manifest_section(
         "verified-video-scenes.tsv",
         "character-combinations.tsv",
         "script-speech.tsv",
+        "script-disassembly.tsv",
         "script-dialogue-videos.tsv",
         "DESCRIPT.DES",
     ];

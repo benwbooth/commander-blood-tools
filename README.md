@@ -29,11 +29,11 @@ as the constant two-byte value `0x0023`; it is preserved as metadata and does
 not affect media selection.
 
 The script parser recovers character contexts from `SCRIPT*.DEB` object symbols
-plus the object location field in `SCRIPT*.VAR`. It also recovers subtitle and
-dialogue events from `SCRIPT*.COD` by tracking actor references and dictionary
-word offsets. Against the local CD data it finds 146 character context rows and
-65 script speech/subtitle rows, including 32 rows with mapped character voice
-clip indices.
+plus the object location field in `SCRIPT*.VAR`. It also emits a
+function-bounded `script-disassembly.tsv` and decodes every valid
+`0xa6 ... 0x80 ... 00 00` text call in `SCRIPT*.COD` by following dictionary
+word offsets from `SCRIPT*.DIC`. Actor context is tracked from `0xc4 <u16>`
+object references where those references match DESCRIPT character talk slots.
 
 The normal full exporter no longer emits guessed all-clips character composites
 when script speech data is available. It exports script-derived dialogue groups;
@@ -44,6 +44,10 @@ Character foreground HNM compositing uses a character-specific zero-clear decode
 path. Zeros inside character update rectangles clear back to transparency, which
 prevents stale frame-0/update pixels from sticking on the background while
 leaving standalone HNM decoding unchanged.
+
+MP4 output is encoded at 3x the original 320x200 game viewport using nearest
+neighbor scaling, so generated videos are 960x600 while preserving hard pixel
+edges.
 
 Subtitle SFX is mixed during the animated text reveal using the short
 `sn/tb.snd` UI bleep clips, rather than playing only one click at cue start.

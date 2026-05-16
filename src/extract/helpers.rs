@@ -14,6 +14,14 @@ pub(super) fn run_ffmpeg(input: &Path, output: &Path, extra: &[&str]) -> bool {
     cmd.status().map(|s| s.success()).unwrap_or(false)
 }
 
+pub(super) fn scaled_video_filter(audio_filter: Option<&str>) -> String {
+    let video = format!("[0:v]scale={OUTPUT_W}:{OUTPUT_H}:flags=neighbor[vout]");
+    match audio_filter {
+        Some(audio) if !audio.is_empty() => format!("{video};{audio}"),
+        _ => video,
+    }
+}
+
 pub(super) fn find_file_recursive(dir: &Path, target: &str) -> Option<PathBuf> {
     let target_lower = target.to_lowercase();
     for entry in fs::read_dir(dir).ok()?.flatten() {

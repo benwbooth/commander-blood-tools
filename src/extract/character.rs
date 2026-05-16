@@ -317,7 +317,7 @@ pub(super) fn create_character_video_from_scene(
         }
     }
 
-    // Build ffmpeg command — full 320x200 output
+    // Build ffmpeg command. Frames are authored at 320x200, then encoded 3x.
     let music_path = context
         .background_hnm
         .and_then(|bg_name| hnm_music.get(&media_stem(bg_name)))
@@ -351,13 +351,15 @@ pub(super) fn create_character_video_from_scene(
     if music_path.as_ref().is_some_and(|p| p.exists()) {
         cmd.args(["-stream_loop", "-1", "-i"]);
         cmd.arg(music_path.as_ref().unwrap());
-        cmd.args([
-            "-filter_complex",
-            "[1:a]volume=1.0[voice];[2:a]volume=0.25[music];[voice][music]amix=inputs=2:duration=first[aout]",
-            "-map", "0:v", "-map", "[aout]",
-        ]);
+        cmd.arg("-filter_complex")
+            .arg(scaled_video_filter(Some(
+                "[1:a]volume=1.0[voice];[2:a]volume=0.25[music];[voice][music]amix=inputs=2:duration=first[aout]",
+            )))
+            .args(["-map", "[vout]", "-map", "[aout]"]);
     } else {
-        cmd.args(["-map", "0:v", "-map", "1:a"]);
+        cmd.arg("-filter_complex")
+            .arg(scaled_video_filter(None))
+            .args(["-map", "[vout]", "-map", "1:a"]);
     }
 
     cmd.args([
@@ -669,40 +671,25 @@ pub(super) fn create_character_dialogue_video(
             cmd.arg(&tmp_sfx);
         }
 
-        match (has_music, subtitle_sfx_rate.is_some()) {
-            (true, true) => {
-                cmd.args([
-                    "-filter_complex",
-                    "[1:a]volume=1.0[voice];[2:a]volume=0.25[music];[3:a]volume=0.75[sfx];[voice][music][sfx]amix=inputs=3:duration=first[aout]",
-                    "-map",
-                    "0:v",
-                    "-map",
-                    "[aout]",
-                ]);
-            }
-            (true, false) => {
-                cmd.args([
-                    "-filter_complex",
-                    "[1:a]volume=1.0[voice];[2:a]volume=0.25[music];[voice][music]amix=inputs=2:duration=first[aout]",
-                    "-map",
-                    "0:v",
-                    "-map",
-                    "[aout]",
-                ]);
-            }
-            (false, true) => {
-                cmd.args([
-                    "-filter_complex",
-                    "[1:a]volume=1.0[voice];[2:a]volume=0.75[sfx];[voice][sfx]amix=inputs=2:duration=first[aout]",
-                    "-map",
-                    "0:v",
-                    "-map",
-                    "[aout]",
-                ]);
-            }
-            (false, false) => {
-                cmd.args(["-map", "0:v", "-map", "1:a"]);
-            }
+        let audio_filter = match (has_music, subtitle_sfx_rate.is_some()) {
+            (true, true) => Some(
+                "[1:a]volume=1.0[voice];[2:a]volume=0.25[music];[3:a]volume=0.75[sfx];[voice][music][sfx]amix=inputs=3:duration=first[aout]",
+            ),
+            (true, false) => Some(
+                "[1:a]volume=1.0[voice];[2:a]volume=0.25[music];[voice][music]amix=inputs=2:duration=first[aout]",
+            ),
+            (false, true) => Some(
+                "[1:a]volume=1.0[voice];[2:a]volume=0.75[sfx];[voice][sfx]amix=inputs=2:duration=first[aout]",
+            ),
+            (false, false) => None,
+        };
+        cmd.arg("-filter_complex")
+            .arg(scaled_video_filter(audio_filter))
+            .args(["-map", "[vout]"]);
+        if audio_filter.is_some() {
+            cmd.args(["-map", "[aout]"]);
+        } else {
+            cmd.args(["-map", "1:a"]);
         }
 
         cmd.args([

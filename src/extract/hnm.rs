@@ -350,40 +350,19 @@ pub(super) fn decode_hnm_scene_to_mp4(
             cmd.arg(&tmp_sfx);
         }
 
-        match (has_music, subtitle_sfx_rate.is_some()) {
-            (true, true) => {
-                cmd.args([
-                    "-filter_complex",
-                    "[1:a]volume=0.5[music];[2:a]volume=0.75[sfx];[music][sfx]amix=inputs=2:duration=shortest[aout]",
-                    "-map",
-                    "0:v",
-                    "-map",
-                    "[aout]",
-                ]);
-            }
-            (true, false) => {
-                cmd.args([
-                    "-filter_complex",
-                    "[1:a]volume=0.5[aout]",
-                    "-map",
-                    "0:v",
-                    "-map",
-                    "[aout]",
-                ]);
-            }
-            (false, true) => {
-                cmd.args([
-                    "-filter_complex",
-                    "[1:a]volume=0.75[aout]",
-                    "-map",
-                    "0:v",
-                    "-map",
-                    "[aout]",
-                ]);
-            }
-            (false, false) => {
-                cmd.args(["-map", "0:v"]);
-            }
+        let audio_filter = match (has_music, subtitle_sfx_rate.is_some()) {
+            (true, true) => Some(
+                "[1:a]volume=0.5[music];[2:a]volume=0.75[sfx];[music][sfx]amix=inputs=2:duration=shortest[aout]",
+            ),
+            (true, false) => Some("[1:a]volume=0.5[aout]"),
+            (false, true) => Some("[1:a]volume=0.75[aout]"),
+            (false, false) => None,
+        };
+        cmd.arg("-filter_complex")
+            .arg(scaled_video_filter(audio_filter))
+            .args(["-map", "[vout]"]);
+        if audio_filter.is_some() {
+            cmd.args(["-map", "[aout]"]);
         }
 
         cmd.args([
