@@ -302,6 +302,27 @@ pub(super) fn composite_character_frame(
     }
 }
 
+/// Composite a scene frame with NO character — just the background, with the
+/// same letterbox treatment as `composite_character_frame`. Used for
+/// subtitle-only (voiceless) dialogue lines, which show the scene background and
+/// the subtitle with no talking-head HNM.
+pub(super) fn composite_scene_background(rgb: &mut [u8], bg_rgb: &[u8], letterbox: bool) {
+    for y in 0..VIEWPORT_H {
+        for x in 0..VIEWPORT_W {
+            let oi = (y * VIEWPORT_W + x) * 3;
+            if letterbox && (y < SCENE_TOP || y >= SCENE_BOTTOM) {
+                rgb[oi] = 0;
+                rgb[oi + 1] = 0;
+                rgb[oi + 2] = 0;
+            } else {
+                rgb[oi] = bg_rgb[oi];
+                rgb[oi + 1] = bg_rgb[oi + 1];
+                rgb[oi + 2] = bg_rgb[oi + 2];
+            }
+        }
+    }
+}
+
 // ===========================================================================
 // Standalone HNM to MP4 decoder (for all HNM files)
 // ===========================================================================

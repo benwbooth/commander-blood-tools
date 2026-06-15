@@ -443,10 +443,14 @@ pub(super) fn create_character_dialogue_videos_from_scene(
         {
             continue;
         }
-        let Some(clip_index) = line.clip_index else {
-            continue;
-        };
-        if clip_index >= scene.talk_hnms.len() {
+        // Keep the line if it has a resolvable voice clip (voiced, talking-head)
+        // OR non-empty subtitle text (voiceless: b3==0xFF radio/narrator text the
+        // player still saw, rendered subtitle-only). Drop only lines with neither.
+        let has_voice = line
+            .clip_index
+            .is_some_and(|clip_index| clip_index < scene.talk_hnms.len());
+        let has_text = !line.text.trim().is_empty();
+        if !has_voice && !has_text {
             continue;
         }
         let location = line
@@ -515,12 +519,20 @@ pub(super) fn create_character_dialogue_video(
         ]) as usize);
     }
 
-    struct DialogueClip {
-        hnm_path: PathBuf,
+    struct VoiceData {
         pcm_start: usize,
         pcm_len: usize,
         sample_rate: u32,
+    }
+    // One renderable dialogue segment in execution order. A voiced segment plays
+    // its son.snd clip over the paired talking-head HNM; a subtitle-only segment
+    // (a voiceless b3==0xFF line — radio/narrator text) shows the scene
+    // background with no voice and no talking head.
+    struct DialogueSegment {
         text: String,
+        hnm_path: Option<PathBuf>, // talking-head HNM; None => static background
+        voice: Option<VoiceData>,  // None => silent (subtitle-only)
+        duration: f64,             // seconds this segment occupies the timeline
     }
 
     // Render from the VM presentation-event stream rather than scanning the
@@ -545,7 +557,7 @@ pub(super) fn create_character_dialogue_video(
         .collect();
     let events = vm::emit_scene_events(&inputs);
 
-    let resolve_clip = |clip_index: usize, text: &str| -> Option<DialogueClip> {
+    let resolve_voiced = |clip_index: usize, text: &str| -> Option<DialogueSegment> {
         if clip_index >= num_clips || clip_index >= scene.talk_hnms.len() {
             return None;
         }
@@ -568,16 +580,31 @@ pub(super) fn create_character_dialogue_video(
         } else {
             11111
         };
-        Some(DialogueClip {
-            hnm_path,
-            pcm_start: cs + 6,
-            pcm_len: ce - (cs + 6),
-            sample_rate,
+        let pcm_len = ce - (cs + 6);
+        Some(DialogueSegment {
             text: text.to_string(),
+            hnm_path: Some(hnm_path),
+            voice: Some(VoiceData { pcm_start: cs + 6, pcm_len, sample_rate }),
+            duration: pcm_len as f64 / sample_rate as f64,
         })
     };
 
-    let mut clips = Vec::new();
+    // A voiceless line (no resolvable clip): subtitle-only. Duration = reveal
+    // time at the game's char rate + a readable hold (see the SILENT_SUBTITLE_*
+    // consts). No talking head, no voice.
+    let silent_segment = |text: &str| -> DialogueSegment {
+        let chars = text.chars().filter(|c| !c.is_control()).count();
+        let reveal = chars as f64 / SUBTITLE_CHARS_PER_SEC;
+        let duration = (reveal + SILENT_SUBTITLE_HOLD_SEC).max(SILENT_SUBTITLE_MIN_SEC);
+        DialogueSegment {
+            text: text.to_string(),
+            hnm_path: None,
+            voice: None,
+            duration,
+        }
+    };
+
+    let mut segments: Vec<DialogueSegment> = Vec::new();
     let mut ev_background: Option<String> = None;
     let mut ev_background_record: Option<String> = None;
     let mut ev_music: Option<String> = None;
@@ -599,22 +626,39 @@ pub(super) fn create_character_dialogue_video(
             }
             vm::SceneEvent::PlayVoice { clip_index } => pending_clip = Some(*clip_index),
             vm::SceneEvent::DrawSubtitle { text, .. } => {
+                // Voiced line: play its clip + talking head. If the clip can't be
+                // resolved (e.g. missing asset) but the line has text, fall back
+                // to a subtitle-only segment instead of dropping the dialogue.
                 if let Some(ci) = pending_clip.take() {
-                    if let Some(clip) = resolve_clip(ci, text) {
-                        clips.push(clip);
+                    if let Some(seg) = resolve_voiced(ci, text) {
+                        segments.push(seg);
+                        continue;
                     }
+                }
+                if !text.trim().is_empty() {
+                    segments.push(silent_segment(text));
                 }
             }
             _ => {}
         }
     }
 
-    if clips.is_empty() {
+    if segments.is_empty() {
         return Ok(false);
     }
 
-    let sr = clips[0].sample_rate;
-    if clips.iter().any(|clip| clip.sample_rate != sr) {
+    // The whole timeline's audio is one concatenated u8 PCM track at a single
+    // rate: voiced segments share their son.snd rate; silent segments emit
+    // silence at that rate (or SILENT_SUBTITLE_SR when the scene is entirely
+    // subtitle-only with no voiced segment to inherit a rate from).
+    let sr = segments
+        .iter()
+        .find_map(|seg| seg.voice.as_ref().map(|v| v.sample_rate))
+        .unwrap_or(SILENT_SUBTITLE_SR);
+    if segments
+        .iter()
+        .any(|seg| seg.voice.as_ref().is_some_and(|v| v.sample_rate != sr))
+    {
         return Err(format!("{} {} uses mixed SND sample rates", script, function_name).into());
     }
 
@@ -658,19 +702,27 @@ pub(super) fn create_character_dialogue_video(
     let tmp_voice = mp4_dir.join(format!("_tmp_{}_voice.raw", safe_file_stem(&output_stem)));
     {
         let mut vf = File::create(&tmp_voice)?;
-        for clip in &clips {
-            vf.write_all(&snd_data[clip.pcm_start..clip.pcm_start + clip.pcm_len])?;
+        for seg in &segments {
+            match &seg.voice {
+                Some(v) => vf.write_all(&snd_data[v.pcm_start..v.pcm_start + v.pcm_len])?,
+                None => {
+                    // Subtitle-only segment: unsigned-8-bit PCM silence (0x80) for
+                    // the segment's duration, keeping audio aligned with video.
+                    let samples = (seg.duration * sr as f64).round() as usize;
+                    vf.write_all(&vec![0x80u8; samples])?;
+                }
+            }
         }
     }
 
     let mut cues = Vec::new();
     let mut duration = 0.0f64;
-    for clip in &clips {
+    for seg in &segments {
         cues.push(SubtitleCue {
             tick: (duration * 10.0).round() as u16,
-            text: clip.text.clone(),
+            text: seg.text.clone(),
         });
-        duration += clip.pcm_len as f64 / clip.sample_rate as f64;
+        duration += seg.duration;
     }
 
     let tmp_sfx = mp4_out.with_extension("subtitle_sfx.raw");
@@ -772,18 +824,23 @@ pub(super) fn create_character_dialogue_video(
         let mut rgb = vec![0u8; VIEWPORT_W * VIEWPORT_H * 3];
         let mut global_frame = 0usize;
 
-        for clip in &clips {
-            let audio_dur = clip.pcm_len as f64 / clip.sample_rate as f64;
-            let total_frames = (audio_dur * HNM_FPS as f64).ceil() as usize;
-            let hnm = HnmFile::open(&clip.hnm_path)?;
-            let frames = decode_character_animation(&hnm);
-            if frames.is_empty() {
-                continue;
-            }
+        for seg in &segments {
+            let total_frames = (seg.duration * HNM_FPS as f64).ceil() as usize;
+            // Voiced segment: the paired talking-head HNM, looped. Subtitle-only
+            // segment (no hnm_path, or an HNM that fails to decode): the static
+            // scene background with the subtitle over it.
+            let frames = match &seg.hnm_path {
+                Some(path) => decode_character_animation(&HnmFile::open(path)?),
+                None => Vec::new(),
+            };
 
             for out_f in 0..total_frames {
-                let frame = &frames[out_f % frames.len()];
-                composite_character_frame(&mut rgb, &bg_rgb, frame, letterbox);
+                if frames.is_empty() {
+                    composite_scene_background(&mut rgb, &bg_rgb, letterbox);
+                } else {
+                    let frame = &frames[out_f % frames.len()];
+                    composite_character_frame(&mut rgb, &bg_rgb, frame, letterbox);
+                }
 
                 let time = global_frame as f64 / HNM_FPS as f64;
                 render_subtitles(&mut rgb, &cues, time);

@@ -22,6 +22,20 @@ const HNM_FPS: u32 = 15;
 // rate = 4 * frame_rate / gs:0xACA chars/sec; ~12/s at ~15fps and a mid text
 // speed (gs:0xACA≈5). See re/REVERSE.md "Subtitle REVEAL TIMING".
 const SUBTITLE_CHARS_PER_SEC: f64 = 12.0;
+// A voiceless dialogue line (0xA6 b3==0xFF: radio-receiver / narrator / menu text
+// the player still saw on-screen, with no son.snd voice clip — see re/REVERSE.md
+// "voice clip-index") is rendered subtitle-only: its text over the scene
+// background, with no talking-head HNM and no voice. Its on-screen duration =
+// reveal time (SUBTITLE_CHARS_PER_SEC, the RE-derived rate) + a fixed readable
+// hold. The game holds such a line until player input, which is not statically
+// knowable, so the hold/min below are a presentation choice (documented), not a
+// recovered constant.
+const SILENT_SUBTITLE_HOLD_SEC: f64 = 1.5;
+const SILENT_SUBTITLE_MIN_SEC: f64 = 2.0;
+// Sample rate used to generate silence for a subtitle-only scene that has no
+// voiced clip to inherit a rate from (any rate works for silence; this just
+// keeps the concatenated u8 PCM track well-formed).
+const SILENT_SUBTITLE_SR: u32 = 11025;
 const SCRIPT_OBJECT_TALK_FIELD: u16 = 0x3a;
 const SCRIPT_OBJECT_LOCATION_FIELD: usize = 24;
 
