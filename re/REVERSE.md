@@ -203,7 +203,29 @@ the captured layout. (A green "1" overlay = a scene/debug index in direct-boot.)
   instead of the HUD. Reproducing it faithfully needs either (a) RE'ing the
   procedural pyramid grid + orb HNM animation, or (b) compositing the HUD region
   from a real capture as a static overlay (real pixels, but frozen orb; arguably a
-  heuristic). DECISION DEFERRED TO USER — full-HNM path is already correct.
+  heuristic). full-HNM path is already correct.
+
+**ON-SHIP vs PLANET classification — RESOLVED (sess 002): NOT statically derivable.**
+The HUD is the *player's-ship* pyramid-nav interface; it appears for on-ship
+dialogue, not planet/surface dialogue. Gating flag = `gs:0x2793 & 8` (bit 3 =
+"ship pyramid-nav UI / HUD active"). All 10 writers of bit 3 (setters @0xB0B7,
+0xB505, 0x86B6, 0x7DE1; clearers @0xAFC6, 0x79B4, 0x0FC8, 0x1A5E, 0x187C; toggle
+@0x9671) live in the engine's interaction/scene FSM (driven by `gs:0x24F3`,
+`gs:0x2535`, the 6-entry nav table `gs:0x2A1B`) — **NONE in the COD VM handler
+region**, so no script/DESCRIPT byte maps to it. on-ship/planet is therefore pure
+runtime navigation state, not a stored per-scene field. DESCRIPT shape does NOT
+encode it either: enemy *spaceships* (Kukaracha/Kraner/Shark) use the SAME 4-LBM
+"surface" Location shape as planets, and the player's own ship interior is NOT a
+Location record at all (on-ship close-up lines have empty `background_record`).
+**Best static proxy = the one the exporter already uses**: a line resolving to a
+`kind==1` Location LBM → planet/surface (letterbox scene-band, NO HUD, the
+majority — 75/83 dialogue videos); no location → on-ship/narrator close-up
+(full-screen — 8/83). That proxy is CONFIRMED correct for scene-band vs
+full-screen. But it does NOT cleanly isolate "show HUD": "no-location" conflates
+on-ship-crew (HUD) with narrator/intro close-ups (no HUD), so the HUD cannot be
+reliably placed from static data. CONCLUSION: the procedural-3D HUD is a minority
+case (≤8/83 videos) that can't be statically gated; not built. The validated
+letterbox logic (`letterbox = landscape_lbm.is_some()`) stands as correct.
 
 ### Subtitle REVEAL TIMING (DECODED) — dialogue updater file 0x93F8–0x94B8
 
