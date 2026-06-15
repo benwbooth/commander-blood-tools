@@ -86,7 +86,27 @@ Lifecycle: **Active** → **RESOLVED (date)** → delete after 20+ sessions.
   resolve well even where interactive branches don't.
 - **Session**: 001
 
-## voice-clip selection from 0xA6 b3 (Active)
+## RESOLVED (2026-06-14) — voice-clip selection from 0xA6 b3
+- **Resolution (sess 002)**: the production heuristic `(b3==0xFF) → clip = b4` was
+  WRONG — it read the b4 *control-flag word* as a clip index, spuriously voicing
+  **513 / 1942 voiced lines (26%)** (every b3==0xFF narrator/menu/tutorial line;
+  every b4==0x08 → fake clip 8, b4==0x00 → fake clip 0). Correct formula
+  (confirmed): `b3 == 0xFF` or `0x00` → NO voice; `b3 ∈ 1..=N` → `clip = b3 - 1`
+  (1-based index into the actor's son.snd talk clips). Evidence: (1) the +9 reader
+  @0x11F2 (`mov ax,[0x1fab]; add ax,9; mov [0x6788],ax`); (2) the SND player
+  @0xb8cd takes `AX`=clip, `shl ax,2` (clip*4 table @DS:0x0BBF), sign-bit selects
+  streamed vs in-mem; (3) the shipped export-data distribution: every b3∈1..N row
+  is monotonic genuine character dialogue, every b3==0xFF row is non-character
+  text. **Residual wall (documented, not blocking)**: the final AX is supplied via
+  `lcall [0xcdf]` (@0xbba8), a registered SND-driver callback fn-ptr the
+  disassembler can't statically resolve — so the *exact* arithmetic isn't
+  byte-proven, but the formula is confirmed by the +9 reader + player + data and
+  the b4-as-flag bug is unambiguous. **Fixed in `src/extract/script.rs`** (removed
+  the `(0xFF,b4)` branch). The audio loop counter `gs:0x24F5` writing `gs:0x6788`
+  @0xB00F is the talk-animation FSM, not clip selection (separate concern).
+- **Session**: 001/002
+
+## SUPERSEDED — voice-clip selection from 0xA6 b3 (original stalled trace)
 - **Tried**: trace `gs:0x1FAB`(b3) → `gs:0x6788`(=b3+9) → expected a single reader
   that indexes a son.snd clip.
 - **Failed because**: `gs:0x6788` has 41 accessors across 3 segments (0x008B

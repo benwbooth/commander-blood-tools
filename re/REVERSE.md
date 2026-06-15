@@ -176,6 +176,35 @@ letterbox/HUD → the placement/clipping the user reports. Fix = render the scen
 in rows `gs:0x5239..0x523B` (character HNM at y≈35 over the landscape), matching
 the captured layout. (A green "1" overlay = a scene/debug index in direct-boot.)
 
+**TWO render modes (sess 002, confirmed by disasm + `accuracy/captures/`):**
+- **Dialogue/location view** (talking head over landscape): letterboxed AND the
+  bottom shows the **HUD panel** (perspective pyramid grid + animated central
+  "eye" navigation orb). Native-320×200 layout from captures: black top rows
+  0..~40; scene band (landscape+character) ~41..145; 1px divider @145; **HUD panel
+  rows ~146..193**; black 194..199. So the lower "band" is NOT a black bar — it's
+  the HUD. Gated by `gs:0x2793 & 8` (tested @file 0x1018/0x965D/0x9733/0xB193).
+  The band top `gs:0x1fa7=0x23` (@0xB3FA), band height 0x82=130 (`gs:0x523B = top
+  + 0x82` @0x9DC6). The `gs:0x5239=0x23/0x523B=0xA5` window set when line id==5
+  (@0x9EC0) is a TRANSIENT clip window around blits, then restored to 0/0xC8 —
+  not a persistent letterbox.
+- **Full-HNM cutscene** (e.g. Mindscape logo, astronaut `frame_04`): single
+  centered full-frame HNM, **NO HUD** (capture bottom-region mean ≈6.5 = black).
+  This is the exporter's `letterbox==false` path and is already correct.
+- **HUD asset**: engine-rendered, NOT a single static LBM. Orb = `pe/eye01..10.hnm`
+  / `pe/eyeer.hnm` (+ `pe/borb_*`/`bor_*` orb-rotation frames) in BLOOD.DAT's `pe/`
+  bank (same bank as the talk-head HNMs); the pyramid grid is drawn procedurally
+  by the UI/compass routine @file 0x9656 (angle math 0xB4=180°/0x5A=90°). There is
+  no single "pyramids panel" bitmap to blit.
+- **Character compositing**: fixed band-relative origin (band top y=35); talk-HNM
+  update frames are authored 320×130 to fill the band. NO per-HNM x/y offset
+  found in the blit path (uses band clip + buffers `gs:0x5221/0x5229/0x5219`). The
+  current fixed-at-band-top compositing is correct.
+- **Renderer gap**: in dialogue mode the exporter fills rows ~146..193 with BLACK
+  instead of the HUD. Reproducing it faithfully needs either (a) RE'ing the
+  procedural pyramid grid + orb HNM animation, or (b) compositing the HUD region
+  from a real capture as a static overlay (real pixels, but frozen orb; arguably a
+  heuristic). DECISION DEFERRED TO USER — full-HNM path is already correct.
+
 ### Subtitle REVEAL TIMING (DECODED) — dialogue updater file 0x93F8–0x94B8
 
 The subtitle reveals one character at a time from the buffer at `gs:0x0E18`,
@@ -506,9 +535,13 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       (actor location → location HNM → HNM music). Coverage from real data:
       ~68% location, ~58% background HNM, ~56% voice clip; the rest have no
       derivable value yet (not faked).
-- [ ] **Accurate voice clip selection** still open: `script.rs` still maps
-      `b3==0xFF → clip=b4` (a guess). Computing it accurately needs the son.snd
-      clip-index formula (dynamic analysis; static trace stalled — dead_ends.md).
+- [x] **Accurate voice clip selection** RESOLVED (sess 002): formula is
+      `b3==0xFF|0x00 → no voice`, `b3∈1..=N → clip=b3-1`. The old `b3==0xFF →
+      clip=b4` guess read the b4 flag word as an index and spuriously voiced
+      513/1942 (26%) of lines; removed in `script.rs`. See dead_ends.md
+      "RESOLVED — voice-clip selection". (Final AX arithmetic sits behind a SND
+      callback `lcall [0xcdf]`, but the formula is confirmed by the +9 reader +
+      player + export-data distribution.)
 - [ ] Remaining for *full* faithfulness: replace the `(script,function)` grouping
       itself with execution-order walking — needs the control-flow-interpreting
       VM (linear length-stepping desyncs at branches; see `vm.rs` notes). The

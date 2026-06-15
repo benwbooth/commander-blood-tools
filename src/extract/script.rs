@@ -255,23 +255,25 @@ pub(super) fn parse_function_text_calls(
         let param1 = call.params.get(1).copied(); // = 0xA6 token b4 (control flags)
         let rt = runtime_bg.get(&call.offset); // runtime scene for this line, if resolved
         let actor = current_actor.clone();
-        // NOTE (RE, re/REVERSE.md): `param1` is the b4 *control-flag word*
-        // (bit3=skip, bit4=loop), not a "speaking style". The `< 0x10` test below
-        // is the legacy heuristic for "this line is shown/spoken" (no loop bit);
-        // and the `(0xFF, idx) => idx` branch treats b4 as a clip index, which
-        // contradicts the recovered semantics (b3 is the selector, not b4).
-        // Both are HEURISTICS to be replaced once the audio subsystem maps the
-        // active-line id `gs:0x6788` (= b3 + 9) to a son.snd clip — tracked as
-        // task: "Map the audio subsystem top-down". Behavior left unchanged here
-        // until that mapping is confirmed, to avoid swapping one guess for another.
-        let actor_speaks = actor.is_some() && param1.is_some_and(|style| style < 0x10);
+        // Voice clip-index (RE, re/REVERSE.md "voice clip-index", confirmed by
+        // tracing gs:0x6788 = b3 + 9 into the son.snd player + the export-data
+        // distribution): `param0` (b3) is the per-line voice selector —
+        //   * b3 == 0xFF or 0x00 => NO voice (narrator/menu/tutorial subtitle;
+        //     b3+9 = 0x108 is the out-of-range "none" line id), and
+        //   * b3 in 1..=N => 1-based index into the actor's son.snd talk clips,
+        //     so clip = b3 - 1.
+        // `param1` (b4) is the control-flag word (bit3=skip, bit4=loop) — NOT a
+        // clip index. The earlier `(0xFF, b4) => clip = b4` branch misread the
+        // flag word as an index, spuriously voicing ~26% of lines (every
+        // b3==0xFF narrator line); removed. `param1 < 0x10` (no loop/skip bits)
+        // still gates whether the line is shown/spoken.
+        let actor_speaks = actor.is_some() && param1.is_some_and(|flags| flags < 0x10);
         let clip_index = actor.as_ref().and_then(|actor| {
             if !actor_speaks {
                 return None;
             }
-            match (param0, param1) {
-                (Some(0xff), Some(idx)) if (idx as usize) < actor.talk_count => Some(idx as usize),
-                (Some(idx), _) if idx > 0 && (idx as usize) <= actor.talk_count => {
+            match param0 {
+                Some(idx) if idx > 0 && idx != 0xff && (idx as usize) <= actor.talk_count => {
                     Some(idx as usize - 1)
                 }
                 _ => None,
@@ -958,28 +960,28 @@ mod tests {
     fn tracks_actor_ref_into_text_call_clip_mapping() {
         let mut words = HashMap::new();
         words.insert(0x0001, "hello".to_string());
-        let cod = [
-            0xc4, 0x3a, 0x00, 0xa6, 0x34, 0x12, 0xff, 0x02, 0x80, 0x01, 0x00, 0x00, 0x00,
-        ];
+        let actor = ScriptActorRef {
+            talk_ref: 0x003a,
+            record_name: "Test_Actor".to_string(),
+            background_record: Some("Test_Room".to_string()),
+            background_hnm: Some("room.hnm".to_string()),
+            background_music: Some("music".to_string()),
+            talk_count: 4,
+        };
         let mut actors = HashMap::new();
-        actors.insert(
-            0x003a,
-            ScriptActorRef {
-                talk_ref: 0x003a,
-                record_name: "Test_Actor".to_string(),
-                background_record: Some("Test_Room".to_string()),
-                background_hnm: Some("room.hnm".to_string()),
-                background_music: Some("music".to_string()),
-                talk_count: 4,
-            },
-        );
+        actors.insert(0x003a, actor);
 
+        // b3 = 0x03 (1-based voice selector) => clip = b3 - 1 = 2; b4 = 0x02 is
+        // the control-flag word, NOT the clip index.
+        let voiced = [
+            0xc4, 0x3a, 0x00, 0xa6, 0x34, 0x12, 0x03, 0x02, 0x80, 0x01, 0x00, 0x00, 0x00,
+        ];
         let rows = parse_function_text_calls(
             "SCRIPTX",
             "func",
-            &cod,
+            &voiced,
             0,
-            cod.len(),
+            voiced.len(),
             &words,
             &actors,
             &HashMap::new(),
@@ -989,6 +991,18 @@ mod tests {
         assert_eq!(rows[0].clip_index, Some(2));
         assert_eq!(rows[0].background_record.as_deref(), Some("Test_Room"));
         assert_eq!(rows[0].actor_ref, Some(0x003a));
+
+        // b3 = 0xFF => narrator/menu subtitle, NO voice clip (b4 must not be
+        // misread as an index). Regression guard for the removed `(0xFF,b4)` branch.
+        let narrator = [
+            0xc4, 0x3a, 0x00, 0xa6, 0x34, 0x12, 0xff, 0x02, 0x80, 0x01, 0x00, 0x00, 0x00,
+        ];
+        let rows = parse_function_text_calls(
+            "SCRIPTX", "func", &narrator, 0, narrator.len(), &words, &actors, &HashMap::new(),
+        );
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].actor_record.as_deref(), Some("Test_Actor"));
+        assert_eq!(rows[0].clip_index, None);
     }
 
     #[test]
