@@ -26,10 +26,13 @@
               cargo
               clippy
               curl
+              dosbox-x
               ffmpeg
               jq
+              nasm
               p7zip
               pkg-config
+              (python3.withPackages (ps: with ps; [ capstone pillow numpy ]))
               ripgrep
               rust-analyzer
               rustc

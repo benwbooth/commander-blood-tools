@@ -194,7 +194,7 @@ pub(super) fn create_character_videos(
             &scene,
             dat_dir,
             mp4_dir,
-            hnm_music,
+            db,
             script_speech,
             subtitle_sfx_path,
         )?;
@@ -401,7 +401,7 @@ pub(super) fn create_character_video_from_scene(
 
         for out_f in 0..total_frames {
             let frame = &frames[out_f % frames.len()];
-            composite_character_frame(&mut rgb, &bg_rgb, frame);
+            composite_character_frame(&mut rgb, &bg_rgb, frame, false);
 
             if stdin.write_all(&rgb).is_err() {
                 break;
@@ -426,10 +426,14 @@ pub(super) fn create_character_dialogue_videos_from_scene(
     scene: &CharacterScene,
     dat_dir: &Path,
     mp4_dir: &Path,
-    hnm_music: &HashMap<String, String>,
+    descript_db: &DescriptDb,
     script_speech: &[ScriptSpeechLine],
     subtitle_sfx_path: Option<&Path>,
 ) -> Result<u32, Box<dyn Error>> {
+    // Combine the per-function exchanges into one longer video per
+    // (script, location): all of this character's dialogue at a given location,
+    // in execution order. (Keeping it per-location preserves a single correct
+    // background per video; a character at several locations gets one video each.)
     let mut groups: BTreeMap<(String, String), Vec<&ScriptSpeechLine>> = BTreeMap::new();
     for line in script_speech {
         if !line
@@ -445,24 +449,28 @@ pub(super) fn create_character_dialogue_videos_from_scene(
         if clip_index >= scene.talk_hnms.len() {
             continue;
         }
+        let location = line
+            .background_record
+            .clone()
+            .unwrap_or_else(|| "nolocation".to_string());
         groups
-            .entry((line.script.clone(), line.function_name.clone()))
+            .entry((line.script.clone(), location))
             .or_default()
             .push(line);
     }
 
     let mut created = 0u32;
-    for ((script, function_name), mut lines) in groups {
+    for ((script, location), mut lines) in groups {
         lines.sort_by_key(|line| line.offset);
         if create_character_dialogue_video(
             snd_path,
             scene,
             dat_dir,
             mp4_dir,
-            hnm_music,
+            descript_db,
             subtitle_sfx_path,
             &script,
-            &function_name,
+            &location,
             &lines,
         )? {
             created += 1;
@@ -477,15 +485,12 @@ pub(super) fn create_character_dialogue_video(
     scene: &CharacterScene,
     dat_dir: &Path,
     mp4_dir: &Path,
-    hnm_music: &HashMap<String, String>,
+    descript_db: &DescriptDb,
     subtitle_sfx_path: Option<&Path>,
     script: &str,
     function_name: &str,
     lines: &[&ScriptSpeechLine],
 ) -> Result<bool, Box<dyn Error>> {
-    let Some(context) = lookup_character_context(&scene.record_name) else {
-        return Ok(false);
-    };
     if lines.is_empty() {
         return Ok(false);
     }
@@ -518,43 +523,90 @@ pub(super) fn create_character_dialogue_video(
         text: String,
     }
 
-    let mut clips = Vec::new();
-    for line in lines {
-        let Some(clip_index) = line.clip_index else {
-            continue;
-        };
-        if clip_index >= num_clips || clip_index >= scene.talk_hnms.len() {
-            continue;
-        }
+    // Render from the VM presentation-event stream rather than scanning the
+    // grouped lines directly. `emit_scene_events` turns the decoded per-line
+    // fields into the ordered event stream the game's presentation layer
+    // effectively produces (SetBackground / PlayMusic / PlayVoice /
+    // DrawSubtitle / ...); this is the VM-event-driven render path. Behaviour is
+    // preserved: a line contributes a clip+subtitle only when its voice clip
+    // resolves, and background/music take the first set value (else context).
+    let inputs: Vec<vm::LineInput> = lines
+        .iter()
+        .map(|line| vm::LineInput {
+            actor: line.actor_record.clone(),
+            background_hnm: line.background_hnm.clone(),
+            background_record: line.background_record.clone(),
+            background_music: line.background_music.clone(),
+            voice_selector: line.param0.unwrap_or(0xff),
+            flags_b4: line.param1.unwrap_or(0),
+            clip_index: line.clip_index,
+            text: line.text.clone(),
+        })
+        .collect();
+    let events = vm::emit_scene_events(&inputs);
 
+    let resolve_clip = |clip_index: usize, text: &str| -> Option<DialogueClip> {
+        if clip_index >= num_clips || clip_index >= scene.talk_hnms.len() {
+            return None;
+        }
         let hnm_name = &scene.talk_hnms[clip_index].1;
         let hnm_path = dat_dir.join("pe").join(hnm_name.to_ascii_lowercase());
         if !hnm_path.exists() {
-            continue;
+            return None;
         }
-
         let cs = header_end + clip_offsets[clip_index];
         let ce = header_end + clip_offsets[clip_index + 1];
         if cs + 6 > snd_data.len() || ce > snd_data.len() || ce <= cs {
-            continue;
+            return None;
         }
         if snd_data[cs] != 1 {
-            continue;
+            return None;
         }
-
         let sr_code = snd_data[cs + 4];
         let sample_rate = if sr_code < 255 {
             1_000_000 / (256 - sr_code as u32)
         } else {
             11111
         };
-        clips.push(DialogueClip {
+        Some(DialogueClip {
             hnm_path,
             pcm_start: cs + 6,
             pcm_len: ce - (cs + 6),
             sample_rate,
-            text: line.text.clone(),
-        });
+            text: text.to_string(),
+        })
+    };
+
+    let mut clips = Vec::new();
+    let mut ev_background: Option<String> = None;
+    let mut ev_background_record: Option<String> = None;
+    let mut ev_music: Option<String> = None;
+    let mut pending_clip: Option<usize> = None;
+    for event in &events {
+        match event {
+            vm::SceneEvent::SetBackground { hnm, record } => {
+                if ev_background.is_none() {
+                    ev_background = hnm.clone();
+                }
+                if ev_background_record.is_none() {
+                    ev_background_record = record.clone();
+                }
+            }
+            vm::SceneEvent::PlayMusic { music } => {
+                if ev_music.is_none() {
+                    ev_music = music.clone();
+                }
+            }
+            vm::SceneEvent::PlayVoice { clip_index } => pending_clip = Some(*clip_index),
+            vm::SceneEvent::DrawSubtitle { text, .. } => {
+                if let Some(ci) = pending_clip.take() {
+                    if let Some(clip) = resolve_clip(ci, text) {
+                        clips.push(clip);
+                    }
+                }
+            }
+            _ => {}
+        }
     }
 
     if clips.is_empty() {
@@ -566,32 +618,33 @@ pub(super) fn create_character_dialogue_video(
         return Err(format!("{} {} uses mixed SND sample rates", script, function_name).into());
     }
 
-    let background_hnm = lines
-        .iter()
-        .find_map(|line| line.background_hnm.as_deref())
-        .or(context.background_hnm);
-    let music_name = lines
-        .iter()
-        .find_map(|line| line.background_music.as_deref().map(str::to_string))
-        .or_else(|| background_hnm.and_then(|hnm| hnm_music.get(&media_stem(hnm)).cloned()));
+    // Background / music are the values computed for this scene from the script
+    // VM + DESCRIPT (the actor's location → that location's HNM → its music),
+    // surfaced via the event stream's first SetBackground / PlayMusic. No static
+    // char-context fallback and no re-guessing: if the data doesn't specify one,
+    // there isn't one.
+    let background_hnm = ev_background.as_deref();
+    let music_name = ev_music.clone();
 
-    let (bg_fb, bg_pal) = if let Some(bg_name) = background_hnm {
-        let bg_path = character_background_path(dat_dir, bg_name);
-        if bg_path.exists() {
-            if let Ok(bg_hnm) = HnmFile::open(&bg_path) {
-                let mut fb = vec![0u8; VIEWPORT_W * VIEWPORT_H];
-                let mut pal = bg_hnm.palette;
-                bg_hnm.decode_frame(0, &mut fb, &mut pal);
-                (fb, pal)
-            } else {
-                (vec![0u8; VIEWPORT_W * VIEWPORT_H], [[0u8; 3]; 256])
-            }
-        } else {
-            (vec![0u8; VIEWPORT_W * VIEWPORT_H], [[0u8; 3]; 256])
-        }
-    } else {
-        (vec![0u8; VIEWPORT_W * VIEWPORT_H], [[0u8; 3]; 256])
-    };
+    // The dialogue plays over the location's LANDSCAPE (a static LBM from the
+    // DESCRIPT Location `Background` commands), NOT the planet `FullHnm`. Resolve
+    // the landscape LBM from the location record; fall back to the planet HNM
+    // only if the location has no landscape (see re/REVERSE.md).
+    let landscape_lbm = ev_background_record
+        .as_deref()
+        .and_then(|loc| descript_db.record(loc))
+        .filter(|r| r.kind == 1)
+        .and_then(|r| r.backgrounds.first().map(|(_, lbm)| lbm.clone()));
+
+    // Letterbox (scene-band) layout when this is a located/planet dialogue with a
+    // landscape; full-screen for no-location close-ups (the ship/intro view).
+    let letterbox = landscape_lbm.is_some();
+    let bg = landscape_lbm
+        .as_deref()
+        .and_then(|lbm| load_landscape_lbm(dat_dir, lbm))
+        .or_else(|| background_hnm.and_then(|hnm| load_planet_hnm(dat_dir, hnm)))
+        .unwrap_or_else(|| (vec![0u8; VIEWPORT_W * VIEWPORT_H], [[0u8; 3]; 256]));
+    let (bg_fb, bg_pal) = bg;
     let mut bg_rgb = vec![0u8; VIEWPORT_W * VIEWPORT_H * 3];
     fb_to_rgb(&bg_fb, &bg_pal, &mut bg_rgb);
 
@@ -730,7 +783,7 @@ pub(super) fn create_character_dialogue_video(
 
             for out_f in 0..total_frames {
                 let frame = &frames[out_f % frames.len()];
-                composite_character_frame(&mut rgb, &bg_rgb, frame);
+                composite_character_frame(&mut rgb, &bg_rgb, frame, letterbox);
 
                 let time = global_frame as f64 / HNM_FPS as f64;
                 render_subtitles(&mut rgb, &cues, time);
@@ -753,6 +806,35 @@ pub(super) fn create_character_dialogue_video(
         let _ = fs::remove_file(&mp4_out);
     }
     result
+}
+
+/// Load a location landscape background from its LBM (`dat_dir/fd/<lbm>`),
+/// decoded to a VIEWPORT-sized indexed framebuffer + palette.
+fn load_landscape_lbm(dat_dir: &Path, lbm: &str) -> Option<(Vec<u8>, [[u8; 3]; 256])> {
+    let path = dat_dir.join("fd").join(lbm.to_ascii_lowercase());
+    let data = fs::read(&path).ok()?;
+    let img = lbm::decode_lbm(&data)?;
+    let mut fb = vec![0u8; VIEWPORT_W * VIEWPORT_H];
+    for y in 0..VIEWPORT_H.min(img.height) {
+        for x in 0..VIEWPORT_W.min(img.width) {
+            fb[y * VIEWPORT_W + x] = img.pixels[y * img.width + x];
+        }
+    }
+    Some((fb, img.palette))
+}
+
+/// Load frame 0 of a planet/orbital `FullHnm` (the fallback when a location has
+/// no landscape LBM).
+fn load_planet_hnm(dat_dir: &Path, hnm: &str) -> Option<(Vec<u8>, [[u8; 3]; 256])> {
+    let bg_path = character_background_path(dat_dir, hnm);
+    if !bg_path.exists() {
+        return None;
+    }
+    let bg_hnm = HnmFile::open(&bg_path).ok()?;
+    let mut fb = vec![0u8; VIEWPORT_W * VIEWPORT_H];
+    let mut pal = bg_hnm.palette;
+    bg_hnm.decode_frame(0, &mut fb, &mut pal);
+    Some((fb, pal))
 }
 
 pub(super) fn character_background_path(dat_dir: &Path, hnm_name: &str) -> PathBuf {

@@ -66,10 +66,14 @@ pub(super) fn render_subtitles(rgb: &mut [u8], cues: &[SubtitleCue], time: f64) 
         return;
     }
 
-    let lines = wrap_subtitle_text_pixels(
-        full_text,
-        VIEWPORT_W.saturating_sub(SUBTITLE_X + SUBTITLE_RIGHT_MARGIN),
-    );
+    // The line breaks are already game-exact: assemble_dialogue inserts them at
+    // the 35-char boundary like the game's 0xA6 handler (see re/REVERSE.md). Use
+    // those breaks directly rather than re-wrapping by pixel width.
+    let lines: Vec<String> = full_text
+        .replace('\r', "\n")
+        .lines()
+        .map(|l| l.to_string())
+        .collect();
     let visible_lines = visible_subtitle_lines(&lines, visible_chars);
 
     for (line_idx, line) in visible_lines.iter().enumerate() {
@@ -99,56 +103,6 @@ pub(super) fn visible_subtitle_lines(lines: &[String], visible_chars: usize) -> 
         remaining = remaining.saturating_sub(line_len);
     }
     out
-}
-
-pub(super) fn wrap_subtitle_text_pixels(text: &str, max_width: usize) -> Vec<String> {
-    let mut lines = Vec::new();
-    for raw_line in text.replace('\r', "\n").lines() {
-        let mut current = String::new();
-        for word in raw_line.split_whitespace() {
-            let word_width = game_text_width(word);
-            let cur_width = game_text_width(&current);
-            let sep_width = if current.is_empty() {
-                0
-            } else {
-                game_font_advance(' ')
-            };
-            if cur_width > 0 && cur_width + sep_width + word_width > max_width {
-                lines.push(current);
-                current = String::new();
-            }
-
-            if word_width > max_width {
-                let mut part = String::new();
-                for ch in word.chars() {
-                    if !part.is_empty()
-                        && game_text_width(&part) + game_font_advance(ch) > max_width
-                    {
-                        lines.push(part);
-                        part = String::new();
-                    }
-                    part.push(ch);
-                }
-                current = part;
-            } else {
-                if !current.is_empty() {
-                    current.push(' ');
-                }
-                current.push_str(word);
-            }
-        }
-        if !current.is_empty() {
-            lines.push(current);
-        }
-    }
-    if lines.is_empty() {
-        lines.push(String::new());
-    }
-    lines
-}
-
-pub(super) fn game_text_width(text: &str) -> usize {
-    text.chars().map(game_font_advance).sum()
 }
 
 pub(super) fn draw_game_text(rgb: &mut [u8], text: &str, x: usize, y: usize, color: [u8; 3]) {
@@ -217,13 +171,22 @@ pub(super) fn game_font_advance(ch: char) -> usize {
         .unwrap_or(GAME_FONT_SPACE_ADVANCE)
 }
 
+// Dialogue scene layout, RE'd from BLOODPRG.EXE. The scene is composited in the
+// framebuffer band `gs:0x5239..0x523B` with black bars / HUD outside. The
+// letterbox mode (gs:0x2793 & 8) uses rows 0x23..0xA5 (35..165), a 130px band
+// that the 320x130 talk-HNM frames fill exactly. See re/REVERSE.md.
+pub(super) const SCENE_TOP: usize = 0x23; // 35
+pub(super) const SCENE_BOTTOM: usize = 0xA5; // 165
+
 pub(super) const SUBTITLE_X: usize = 9;
-pub(super) const SUBTITLE_Y: usize = 7;
-pub(super) const SUBTITLE_RIGHT_MARGIN: usize = 8;
+// Subtitle baseline near the bottom of the scene band (within SCENE_TOP..BOTTOM).
+pub(super) const SUBTITLE_Y: usize = SCENE_BOTTOM - 3 * GAME_FONT_LINE_HEIGHT;
 pub(super) const GAME_FONT_WIDTH: usize = 8;
 pub(super) const GAME_FONT_HEIGHT: usize = 8;
 pub(super) const GAME_FONT_LINE_HEIGHT: usize = 8;
-pub(super) const GAME_FONT_SPACE_ADVANCE: usize = 12;
+// Space advance: the game's glyph blitter (BLOODPRG.EXE render_string @0x31D7)
+// advances a 0x20 space by 6 pixels (`add di, 6`), not a full glyph cell.
+pub(super) const GAME_FONT_SPACE_ADVANCE: usize = 6;
 
 // Extracted from BLOODPRG.EXE:
 // - ASCII to glyph index map: file offset 0x14c22
@@ -356,26 +319,4 @@ mod tests {
         assert_eq!(e.rows, [0x00, 0x00, 0xfc, 0x84, 0xfc, 0x80, 0xfc, 0x00]);
     }
 
-    #[test]
-    pub(super) fn wraps_reference_subtitle_by_game_font_pixels() {
-        let lines = wrap_subtitle_text_pixels(
-            "Me see keyboard... And oh! CDROM double speed. Nice hard dish... you be lucky, friend...",
-            VIEWPORT_W - SUBTITLE_X - SUBTITLE_RIGHT_MARGIN,
-        );
-
-        assert_eq!(
-            lines,
-            [
-                "Me see keyboard... And oh! CDROM",
-                "double speed. Nice hard dish... you be",
-                "lucky, friend..."
-            ]
-        );
-    }
-
-    #[test]
-    pub(super) fn subtitle_word_spacing_is_wider_than_one_glyph_column() {
-        assert_eq!(game_font_advance(' '), 12);
-        assert_eq!(game_text_width("ME YOU"), game_text_width("MEYOU") + 12);
-    }
 }

@@ -17,7 +17,11 @@ const OUTPUT_SCALE: usize = 3;
 const OUTPUT_W: usize = VIEWPORT_W * OUTPUT_SCALE;
 const OUTPUT_H: usize = VIEWPORT_H * OUTPUT_SCALE;
 const HNM_FPS: u32 = 15;
-const SUBTITLE_CHARS_PER_SEC: f64 = 36.0;
+// Subtitle reveal rate. The game reveals one char per `gs:0xACA/4` frames
+// (BLOODPRG.EXE dialogue updater @0x94B4), where `gs:0xACA = (textspeed/2)+1`.
+// rate = 4 * frame_rate / gs:0xACA chars/sec; ~12/s at ~15fps and a mid text
+// speed (gs:0xACA≈5). See re/REVERSE.md "Subtitle REVEAL TIMING".
+const SUBTITLE_CHARS_PER_SEC: f64 = 12.0;
 const SCRIPT_OBJECT_TALK_FIELD: u16 = 0x3a;
 const SCRIPT_OBJECT_LOCATION_FIELD: usize = 24;
 
@@ -489,9 +493,11 @@ mod descript;
 mod helpers;
 mod hnm;
 mod html;
+mod lbm;
 mod render;
 mod script;
 mod subtitle_sfx;
+mod vm;
 
 use audio::*;
 use character::*;

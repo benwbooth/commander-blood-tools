@@ -1,3 +1,16 @@
 /target
 .direnv
 /output
+
+# Copyrighted game binaries / assets extracted from the CD (not redistributable)
+/re/bin
+/re/gfx
+
+# RE workspace transient files
+__pycache__/
+/re/re_loop_sessions
+/accuracy/captures
+/accuracy/.dosbox.runtime.conf
+/accuracy/cdrive
+/export_new
+/export_check

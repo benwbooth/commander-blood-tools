@@ -183,7 +183,12 @@ pub(super) fn character_foreground_bounds(hnm: &HnmFile) -> (usize, usize) {
         if w == 0 || h == 0 {
             continue;
         }
-        if w < VIEWPORT_W || h < VIEWPORT_H {
+        // Frame 0 is the full character KEYFRAME (e.g. boba.hnm: 320x200);
+        // later frames are smaller talk UPDATES (e.g. 320x130) that only animate
+        // the top. The keyframe defines the character's full vertical extent, so
+        // include it — otherwise the bounds come from the 320x130 updates and the
+        // keyframe's lower portion gets wrongly cleared (character "half cut off").
+        if idx == 0 || w < VIEWPORT_W || h < VIEWPORT_H {
             max_w = max_w.max(w.min(VIEWPORT_W));
             max_h = max_h.max(h.min(VIEWPORT_H));
         }
@@ -228,18 +233,11 @@ pub(super) fn decode_character_animation(hnm: &HnmFile) -> Vec<DecodedCharacterF
             pal = hnm.palette;
         }
 
-        let (frame_w, frame_h, _) = hnm.decode_character_frame(idx, &mut fb, &mut pal);
-        let clear_w = if frame_w >= VIEWPORT_W && frame_h >= VIEWPORT_H {
-            clip_w
-        } else {
-            frame_w.min(clip_w)
-        };
-        let clear_h = if frame_w >= VIEWPORT_W && frame_h >= VIEWPORT_H {
-            clip_h
-        } else {
-            frame_h.min(clip_h)
-        };
-        clear_outside_character_bounds(&mut fb, clear_w, clear_h);
+        let (_frame_w, _frame_h, _) = hnm.decode_character_frame(idx, &mut fb, &mut pal);
+        // Clear outside the character's FULL extent (from the keyframe), not the
+        // per-frame update size — otherwise a 320x130 talk update would wipe the
+        // keyframe's lower 70px every frame (character "half cut off").
+        clear_outside_character_bounds(&mut fb, clip_w, clip_h);
 
         frames.push(DecodedCharacterFrame {
             fb: fb.clone(),
@@ -254,18 +252,52 @@ pub(super) fn composite_character_frame(
     rgb: &mut [u8],
     bg_rgb: &[u8],
     frame: &DecodedCharacterFrame,
+    letterbox: bool,
 ) {
-    for i in 0..(VIEWPORT_W * VIEWPORT_H) {
-        let ci = i * 3;
-        if frame.fb[i] != 0 {
-            let c = frame.palette[frame.fb[i] as usize];
-            rgb[ci] = c[0];
-            rgb[ci + 1] = c[1];
-            rgb[ci + 2] = c[2];
-        } else {
-            rgb[ci] = bg_rgb[ci];
-            rgb[ci + 1] = bg_rgb[ci + 1];
-            rgb[ci + 2] = bg_rgb[ci + 2];
+    if !letterbox {
+        // Full-screen layout (e.g. a character close-up with no location, like
+        // the ship/intro view): character over background, no scene band.
+        for i in 0..(VIEWPORT_W * VIEWPORT_H) {
+            let ci = i * 3;
+            if frame.fb[i] != 0 {
+                let c = frame.palette[frame.fb[i] as usize];
+                rgb[ci] = c[0];
+                rgb[ci + 1] = c[1];
+                rgb[ci + 2] = c[2];
+            } else {
+                rgb[ci] = bg_rgb[ci];
+                rgb[ci + 1] = bg_rgb[ci + 1];
+                rgb[ci + 2] = bg_rgb[ci + 2];
+            }
+        }
+        return;
+    }
+    // Letterbox layout (planet dialogue): the scene is composited in the band
+    // SCENE_TOP..SCENE_BOTTOM (gs:0x5239..0x523B), with black bars / HUD outside.
+    // The character talk HNM is drawn starting at the band top, over the location
+    // background.
+    for y in 0..VIEWPORT_H {
+        for x in 0..VIEWPORT_W {
+            let oi = (y * VIEWPORT_W + x) * 3;
+            if y < SCENE_TOP || y >= SCENE_BOTTOM {
+                rgb[oi] = 0;
+                rgb[oi + 1] = 0;
+                rgb[oi + 2] = 0;
+                continue;
+            }
+            let cy = y - SCENE_TOP;
+            let ci = cy * VIEWPORT_W + x;
+            let char_px = frame.fb.get(ci).copied().unwrap_or(0);
+            if char_px != 0 {
+                let c = frame.palette[char_px as usize];
+                rgb[oi] = c[0];
+                rgb[oi + 1] = c[1];
+                rgb[oi + 2] = c[2];
+            } else {
+                rgb[oi] = bg_rgb[oi];
+                rgb[oi + 1] = bg_rgb[oi + 1];
+                rgb[oi + 2] = bg_rgb[oi + 2];
+            }
         }
     }
 }

@@ -16,6 +16,10 @@ pub(super) struct DescriptRecord {
     pub(super) kind: u8,
     pub(super) music: Vec<String>,
     pub(super) full_hnms: Vec<String>,
+    /// Location landscape backgrounds (slot, LBM): the static surface images the
+    /// dialogue plays over (the `0x03` Background commands), distinct from the
+    /// `full_hnms` planet/orbital view. See re/REVERSE.md.
+    pub(super) backgrounds: Vec<(u8, String)>,
     pub(super) sequence_hnms: Vec<String>,
     pub(super) idle_hnms: Vec<(u8, String)>,
     pub(super) talk_hnms: Vec<(u8, String)>,
@@ -239,6 +243,7 @@ pub(super) fn parse_descript(path: &Path) -> Result<DescriptDb, Box<dyn Error>> 
             kind,
             music: Vec::new(),
             full_hnms: Vec::new(),
+            backgrounds: Vec::new(),
             sequence_hnms: Vec::new(),
             idle_hnms: Vec::new(),
             talk_hnms: Vec::new(),
@@ -253,8 +258,10 @@ pub(super) fn parse_descript(path: &Path) -> Result<DescriptDb, Box<dyn Error>> 
             pos += 1;
             match op {
                 0x03 => {
+                    let slot = data.get(pos).copied().unwrap_or(0);
                     pos += 1;
-                    let _ = read_des_media(&data, &mut pos, end, ".lbm");
+                    let lbm = read_des_media(&data, &mut pos, end, ".lbm");
+                    record.backgrounds.push((slot, lbm));
                 }
                 0x05 => record.labels.push(read_des_cstr(&data, &mut pos, end)),
                 0x06 => record

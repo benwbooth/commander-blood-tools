@@ -1,12 +1,92 @@
 use super::*;
 
+/// A decoded `0xA6` TEXT token from a `SCRIPT*.COD` stream.
+///
+/// Token layout recovered by reverse-engineering the VM TEXT handler at
+/// `BLOODPRG.EXE` file 0x660C (see `re/REVERSE.md` "0xA6 TEXT handler"):
+///
+/// ```text
+///   A6  b1 b2  b3  b4  b5   w0 w1 ... wN  0x0000
+/// ```
+///
+/// * `b1:b2` (u16, little-endian) — index into the per-line record table
+///   (`gs:0x6724`); kept here as [`call_target`].
+/// * `b3` — per-line *selector* the handler stores to `gs:0x1FAB`
+///   (→ `gs:0x6788 = b3 + 9`, the active-dialogue-line id). `0xFF` = none.
+///   Strongest candidate for the voice/speaker clip selector. Held as
+///   `params[0]`.
+/// * `b4` — *control-flag word* (NOT a clip index): bit3 `0x08` = conditional
+///   skip-count follows, bit4 `0x10` = loop with target word, bits 0/2 tweak
+///   parsing. Held as `params[1]`.
+/// * `b5` — flags; bit7 `0x80` = the "active / display" flag (always set in real
+///   data); this is the marker the decoder anchors on.
+/// * `w*` — u16 dictionary-word offsets into `SCRIPT*.DIC`, `0x0000`-terminated.
 #[derive(Clone, Debug)]
 pub(super) struct ScriptTextCall {
     pub(super) offset: usize,
     pub(super) text_end: usize,
+    /// `b1:b2` — per-line record index (`gs:0x6724` table).
     pub(super) call_target: u16,
+    /// `[b3, b4]` — voice selector and control-flag word (see type docs).
     pub(super) params: Vec<u8>,
     pub(super) words: Vec<String>,
+}
+
+/// A dialogue line's background resolved from the *runtime* scene state computed
+/// by the bounded interpreter (`vm::interpret_line_states`), keyed by the line's
+/// COD offset. Only lines whose runtime location resolves to a real DESCRIPT
+/// Location record are included — no fabricated/fallback values.
+#[derive(Clone, Default)]
+pub(super) struct RuntimeBackground {
+    pub(super) record: Option<String>,
+    pub(super) hnm: Option<String>,
+    pub(super) music: Option<String>,
+}
+
+/// Execute the script (bounded interpreter) and resolve each `0xA6` line's
+/// runtime location (`state[actor+24]`) to a DESCRIPT background. Returns a map
+/// from line COD offset to the resolved background for lines that resolve.
+fn resolve_runtime_backgrounds(
+    cod: &[u8],
+    var: &[u8],
+    deb: &[u8],
+    descript_db: &DescriptDb,
+    hnm_music: &HashMap<String, String>,
+) -> HashMap<usize, RuntimeBackground> {
+    // object_names: offset -> name for DEB objects (kind 1).
+    let mut object_names: HashMap<u16, String> = HashMap::new();
+    for record in deb.chunks_exact(20) {
+        let name_len = record[..16].iter().position(|&b| b == 0).unwrap_or(16);
+        let name = String::from_utf8_lossy(&record[..name_len]).to_string();
+        let offset = u16::from_le_bytes([record[16], record[17]]);
+        let kind = u16::from_le_bytes([record[18], record[19]]);
+        if kind == 1 {
+            object_names.insert(offset, name);
+        }
+    }
+
+    let mut out = HashMap::new();
+    for line in vm::interpret_line_states(cod, var) {
+        let Some(loc_off) = line.location_offset.filter(|&l| l != 0) else {
+            continue;
+        };
+        let Some(name) = object_names.get(&loc_off) else {
+            continue;
+        };
+        let Some(record) = descript_db.record(name).filter(|r| r.kind == 1) else {
+            continue; // not a DESCRIPT Location — don't invent a background
+        };
+        let hnm = record.full_hnms.first().cloned();
+        let music = hnm
+            .as_ref()
+            .and_then(|h| hnm_music.get(&media_stem(h)).cloned())
+            .or_else(|| record.music.first().map(|m| media_stem(m)));
+        out.insert(
+            line.offset,
+            RuntimeBackground { record: Some(name.clone()), hnm, music },
+        );
+    }
+    out
 }
 
 pub(super) fn parse_script_speech(
@@ -28,9 +108,20 @@ pub(super) fn parse_script_speech(
             continue;
         };
 
-        let cod = fs::read(cod_path)?;
+        let cod = fs::read(&cod_path)?;
         let words = parse_script_dictionary(&dic_path)?;
         let script = format!("SCRIPT{script_idx}");
+        // Execute the script's state logic to resolve each line's *runtime*
+        // location → background, keyed by COD offset (no fallback values).
+        let runtime_bg = match (&deb_path, &var_path, descript_db) {
+            (Some(d), Some(v), Some(db)) => match (fs::read(d), fs::read(v)) {
+                (Ok(deb), Ok(var)) => {
+                    resolve_runtime_backgrounds(&cod, &var, &deb, db, hnm_music)
+                }
+                _ => HashMap::new(),
+            },
+            _ => HashMap::new(),
+        };
         let (mut functions, actor_refs, _) =
             if let (Some(deb_path), Some(var_path), Some(db)) = (deb_path, var_path, descript_db) {
                 parse_script_symbols(
@@ -62,6 +153,7 @@ pub(super) fn parse_script_speech(
                 function_end,
                 &words,
                 &actor_refs,
+                &runtime_bg,
             ));
         }
     }
@@ -137,6 +229,7 @@ pub(super) fn parse_function_text_calls(
     function_end: usize,
     words: &HashMap<u16, String>,
     actor_refs: &HashMap<u16, ScriptActorRef>,
+    runtime_bg: &HashMap<usize, RuntimeBackground>,
 ) -> Vec<ScriptSpeechLine> {
     let mut rows = Vec::new();
     if function_start >= function_end || function_start >= cod.len() {
@@ -158,9 +251,19 @@ pub(super) fn parse_function_text_calls(
             continue;
         };
 
-        let param0 = call.params.first().copied();
-        let param1 = call.params.get(1).copied();
+        let param0 = call.params.first().copied(); // = 0xA6 token b3 (voice selector)
+        let param1 = call.params.get(1).copied(); // = 0xA6 token b4 (control flags)
+        let rt = runtime_bg.get(&call.offset); // runtime scene for this line, if resolved
         let actor = current_actor.clone();
+        // NOTE (RE, re/REVERSE.md): `param1` is the b4 *control-flag word*
+        // (bit3=skip, bit4=loop), not a "speaking style". The `< 0x10` test below
+        // is the legacy heuristic for "this line is shown/spoken" (no loop bit);
+        // and the `(0xFF, idx) => idx` branch treats b4 as a clip index, which
+        // contradicts the recovered semantics (b3 is the selector, not b4).
+        // Both are HEURISTICS to be replaced once the audio subsystem maps the
+        // active-line id `gs:0x6788` (= b3 + 9) to a son.snd clip — tracked as
+        // task: "Map the audio subsystem top-down". Behavior left unchanged here
+        // until that mapping is confirmed, to avoid swapping one guess for another.
         let actor_speaks = actor.is_some() && param1.is_some_and(|style| style < 0x10);
         let clip_index = actor.as_ref().and_then(|actor| {
             if !actor_speaks {
@@ -195,17 +298,21 @@ pub(super) fn parse_function_text_calls(
             param0,
             param1,
             clip_index,
-            background_record: actor
-                .as_ref()
-                .and_then(|actor| actor.background_record.clone()),
-            background_hnm: actor
-                .as_ref()
-                .and_then(|actor| actor.background_hnm.clone()),
-            background_music: actor
-                .as_ref()
-                .and_then(|actor| actor.background_music.clone()),
+            // Prefer the runtime location computed by executing the script; fall
+            // back to the actor's initial location only when the interpreter did
+            // not resolve a real DESCRIPT location for this line. Both are
+            // computed from data (no hardcoded character table).
+            background_record: rt
+                .and_then(|b| b.record.clone())
+                .or_else(|| actor.as_ref().and_then(|a| a.background_record.clone())),
+            background_hnm: rt
+                .and_then(|b| b.hnm.clone())
+                .or_else(|| actor.as_ref().and_then(|a| a.background_hnm.clone())),
+            background_music: rt
+                .and_then(|b| b.music.clone())
+                .or_else(|| actor.as_ref().and_then(|a| a.background_music.clone())),
             source,
-            text: call.words.join(" "),
+            text: assemble_dialogue(&call.words),
             call_target: call.call_target,
             params_hex: hex_bytes(&call.params),
             text_end: call.text_end,
@@ -280,7 +387,7 @@ pub(super) fn disassemble_function(
                 actor_record: current_actor
                     .as_ref()
                     .map(|actor| actor.record_name.clone()),
-                text: Some(call.words.join(" ")),
+                text: Some(assemble_dialogue(&call.words)),
             });
             pos = call.text_end;
             continue;
@@ -334,6 +441,36 @@ pub(super) fn push_raw_disassembly(
     });
 }
 
+/// Assemble a dialogue line's words into the on-screen string exactly as the
+/// game's 0xA6 handler does (BLOODPRG.EXE 0x66CD–0x6739, see re/REVERSE.md):
+/// a space between words, except no space before a word that starts with
+/// `, . ? ! :`; and a line break once the current line reaches 0x23 (35) chars
+/// (wrap only happens on the space path; long single words are not split).
+pub(super) fn assemble_dialogue(words: &[String]) -> String {
+    let parts: Vec<&String> = words.iter().filter(|w| !w.is_empty()).collect();
+    let mut out = String::new();
+    let mut line_len: usize = 0;
+    for (i, w) in parts.iter().enumerate() {
+        out.push_str(w);
+        line_len += w.chars().count();
+        if i + 1 < parts.len() {
+            let attaches = matches!(
+                parts[i + 1].chars().next(),
+                Some(',' | '.' | '?' | '!' | ':')
+            );
+            if !attaches {
+                out.push(' ');
+                line_len += 1;
+                if line_len >= 0x23 {
+                    out.push('\n');
+                    line_len = 0;
+                }
+            }
+        }
+    }
+    out
+}
+
 pub(super) fn decode_text_call_at(
     cod: &[u8],
     function_end: usize,
@@ -344,19 +481,30 @@ pub(super) fn decode_text_call_at(
         return None;
     }
 
+    // Fixed token layout recovered from the VM TEXT handler (BLOODPRG.EXE
+    // 0x660C): `A6 b1 b2 b3 b4 b5 [loop:u16?] w0 w1 ... 0x0000`.
+    // * b1:b2 = line-record index (call_target)
+    // * b3 = params[0] (voice selector), b4 = params[1] (control flags)
+    // * b5 (pos+5) bit7 = active/display flag (may be 0x80/0x90/0xA0/...)
+    // * if b4 & 0x10 (loop), a u16 loop target precedes the word list.
+    if pos + 6 > function_end {
+        return None;
+    }
     let call_target = u16::from_le_bytes([cod[pos + 1], cod[pos + 2]]);
-    let marker_search_end = (pos + 16).min(function_end);
-    let marker_rel = cod[pos + 3..marker_search_end]
-        .iter()
-        .position(|&byte| byte == 0x80)?;
-    let marker = pos + 3 + marker_rel;
-    if marker != pos + 5 {
+    let b4 = cod[pos + 4];
+    let b5 = cod[pos + 5];
+    // Require the active/display flag (bit7). Previously this matched only the
+    // exact byte 0x80, which dropped lines whose b5 carried extra flag bits.
+    if b5 & 0x80 == 0 {
         return None;
     }
-    if cod[pos + 3..marker].contains(&0xa6) {
-        return None;
-    }
+    let marker = pos + 5;
+    // Skip the loop-target word when the loop bit is set, so it is not mistaken
+    // for a dictionary-word offset (which dropped looped lines entirely before).
     let mut text_pos = marker + 1;
+    if b4 & 0x10 != 0 {
+        text_pos += 2;
+    }
     let mut decoded_words = Vec::new();
     let mut found_end = false;
 
@@ -385,6 +533,87 @@ pub(super) fn decode_text_call_at(
         params: cod[pos + 3..marker].to_vec(),
         words: decoded_words,
     })
+}
+
+#[cfg(test)]
+mod assemble_tests {
+    use super::*;
+
+    fn w(s: &[&str]) -> Vec<String> {
+        s.iter().map(|x| x.to_string()).collect()
+    }
+
+    #[test]
+    fn no_space_before_punctuation() {
+        // game rule: no space before , . ? ! :
+        assert_eq!(assemble_dialogue(&w(&["Oh", "no", "!"])), "Oh no!");
+        assert_eq!(assemble_dialogue(&w(&["Commander", ",", "I"])), "Commander, I");
+        assert_eq!(assemble_dialogue(&w(&["you", ":"])), "you:");
+        // ';' is NOT in the game's set -> keeps a space
+        assert_eq!(assemble_dialogue(&w(&["a", ";", "b"])), "a ; b");
+    }
+
+    #[test]
+    fn wraps_at_35_chars() {
+        // 8x "wordword" (8 chars) + spaces: line breaks once length reaches 0x23.
+        let out = assemble_dialogue(&w(&["abcdefgh"; 8]));
+        assert!(out.contains('\n'), "should wrap long lines: {out:?}");
+        for line in out.split('\n') {
+            assert!(line.chars().count() <= 40, "line not over-long: {line:?}");
+        }
+    }
+}
+
+#[cfg(test)]
+mod decode_text_tests {
+    use super::*;
+
+    fn words_fixture() -> HashMap<u16, String> {
+        let mut w = HashMap::new();
+        w.insert(0x000C, "hello".to_string());
+        w.insert(0x0010, "world".to_string());
+        w.insert(0x0020, "loop".to_string());
+        w
+    }
+
+    /// Plain TEXT token with b5 == 0x80.
+    #[test]
+    fn decodes_plain_token() {
+        let words = words_fixture();
+        // A6 b1 b2 b3 b4 b5  w0   w1   term
+        let cod = [
+            0xA6, 0x02, 0x01, 0x05, 0x00, 0x80, 0x0C, 0x00, 0x10, 0x00, 0x00, 0x00,
+        ];
+        let call = decode_text_call_at(&cod, cod.len(), &words, 0).expect("should decode");
+        assert_eq!(call.call_target, 0x0102);
+        assert_eq!(call.params, vec![0x05, 0x00]); // b3, b4
+        assert_eq!(call.words, vec!["hello", "world"]);
+    }
+
+    /// b5 carries extra flag bits (0xA0): bit7 still set → must decode. The old
+    /// `== 0x80` check dropped this line.
+    #[test]
+    fn decodes_token_with_extra_b5_flags() {
+        let words = words_fixture();
+        let cod = [0xA6, 0x00, 0x00, 0xFF, 0x08, 0xA0, 0x0C, 0x00, 0x00, 0x00];
+        let call = decode_text_call_at(&cod, cod.len(), &words, 0).expect("0xA0 b5 should decode");
+        assert_eq!(call.words, vec!["hello"]);
+    }
+
+    /// Loop token (b4 & 0x10): a u16 loop target precedes the word list and must
+    /// be skipped. The old decoder read it as a (bogus) dict offset and dropped
+    /// the whole line.
+    #[test]
+    fn decodes_loop_token_skipping_loop_target() {
+        let words = words_fixture();
+        // loop target 0x1234 is NOT a valid dict offset; old code returned None.
+        let cod = [
+            0xA6, 0x00, 0x00, 0xFF, 0x10, 0x80, 0x34, 0x12, 0x20, 0x00, 0x00, 0x00,
+        ];
+        let call = decode_text_call_at(&cod, cod.len(), &words, 0).expect("loop token should decode");
+        assert_eq!(call.params, vec![0xFF, 0x10]); // b3=0xFF (no voice), b4=0x10 (loop)
+        assert_eq!(call.words, vec!["loop"]);
+    }
 }
 
 pub(super) fn parse_script_character_contexts(
@@ -609,19 +838,40 @@ pub(super) fn write_script_dialogue_manifest(
         if row.clip_index.is_none() {
             continue;
         }
+        // Group by (script, location, actor) to match the combined per-location
+        // videos produced by create_character_dialogue_videos_from_scene.
+        let location = row
+            .background_record
+            .clone()
+            .unwrap_or_else(|| "nolocation".to_string());
         groups
-            .entry((row.script.clone(), row.function_name.clone(), actor.clone()))
+            .entry((row.script.clone(), location, actor.clone()))
             .or_default()
             .push(row);
     }
+
+    // Order the dialogue composites by their position in the dialog tree, i.e.
+    // the script's execution order (script index, then the group's first COD
+    // offset), rather than alphabetically by function name.
+    let mut ordered: Vec<((String, String, String), Vec<&ScriptSpeechLine>)> =
+        groups.into_iter().collect();
+    for (_, lines) in ordered.iter_mut() {
+        lines.sort_by_key(|line| line.offset);
+    }
+    // Dialog trees are per-character, so keep each character's nodes together
+    // (script, then actor), ordered within by execution position (COD offset).
+    ordered.sort_by(|a, b| {
+        let oa = a.1.first().map(|l| l.offset).unwrap_or(usize::MAX);
+        let ob = b.1.first().map(|l| l.offset).unwrap_or(usize::MAX);
+        (a.0 .0.as_str(), a.0 .2.as_str(), oa).cmp(&(b.0 .0.as_str(), b.0 .2.as_str(), ob))
+    });
 
     let mut file = File::create(out_path)?;
     writeln!(
         file,
         "mp4\tscript\tfunction\tactor\tbackground_record\tbackground_hnm\tbackground_music\tline_count\tclip_indices"
     )?;
-    for ((script, function_name, actor), mut lines) in groups {
-        lines.sort_by_key(|line| line.offset);
+    for ((script, function_name, actor), lines) in ordered {
         let output_stem = format!(
             "dialogue - {} - {} - {}",
             safe_file_stem(&script),
@@ -724,8 +974,16 @@ mod tests {
             },
         );
 
-        let rows =
-            parse_function_text_calls("SCRIPTX", "func", &cod, 0, cod.len(), &words, &actors);
+        let rows = parse_function_text_calls(
+            "SCRIPTX",
+            "func",
+            &cod,
+            0,
+            cod.len(),
+            &words,
+            &actors,
+            &HashMap::new(),
+        );
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].actor_record.as_deref(), Some("Test_Actor"));
         assert_eq!(rows[0].clip_index, Some(2));
