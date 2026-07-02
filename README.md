@@ -26,7 +26,8 @@ nix develop --command cargo run -- inspect-character-combinations /path/to/extra
 
 `inspect-bloodprg` emits a Rust-validated map of the actual DOS MZ binary:
 header math, known reverse-engineered symbols, the script VM opcode descriptor
-table, and the embedded dialogue font tables.
+table, the opcode handler table, a named opcode-family map, and the embedded
+dialogue font tables.
 `inspect-vm` emits the reverse-engineered compiled-BASIC token stream, plus
 bounded interpreter line-state snapshots when a matching `SCRIPT*.VAR` is
 provided.

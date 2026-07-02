@@ -89,6 +89,21 @@ pub struct OpcodeHandler {
     pub handler_file_offset: usize,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+pub struct VmOpcodeSpec {
+    pub opcode: u8,
+    pub mnemonic: &'static str,
+    pub family: &'static str,
+    pub handler_offset: u16,
+    pub handler_file_offset: usize,
+    pub len_mode0: u8,
+    pub len_mode1_or_sentinel: u8,
+    pub mode_control: bool,
+    pub variable_length: bool,
+    pub rust_status: &'static str,
+    pub notes: &'static str,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct DialogueFontTables {
     pub ascii_map_file_offset: usize,
@@ -106,6 +121,7 @@ pub struct BloodPrgInspection {
     pub known_symbols: Vec<BinarySymbol>,
     pub opcode_handlers: Vec<OpcodeHandler>,
     pub opcode_descriptors: Vec<OpcodeDescriptor>,
+    pub vm_opcode_specs: Vec<VmOpcodeSpec>,
     pub dialogue_font: DialogueFontTables,
 }
 
@@ -209,6 +225,39 @@ impl BloodPrg {
             .collect())
     }
 
+    pub fn vm_opcode_specs(&self) -> Result<Vec<VmOpcodeSpec>> {
+        let handlers = self.opcode_handlers()?;
+        let descriptors = self.opcode_descriptors()?;
+        handlers
+            .iter()
+            .zip(descriptors.iter())
+            .map(|(handler, descriptor)| {
+                if handler.opcode != descriptor.opcode {
+                    bail!(
+                        "opcode handler/descriptor mismatch: handler={:#04x} descriptor={:#04x}",
+                        handler.opcode,
+                        descriptor.opcode
+                    );
+                }
+                let meta = opcode_metadata(handler.opcode, handler.handler_file_offset);
+                Ok(VmOpcodeSpec {
+                    opcode: handler.opcode,
+                    mnemonic: meta.mnemonic,
+                    family: meta.family,
+                    handler_offset: handler.handler_offset,
+                    handler_file_offset: handler.handler_file_offset,
+                    len_mode0: descriptor.len_mode0,
+                    len_mode1_or_sentinel: descriptor.len_mode1_or_sentinel,
+                    mode_control: descriptor.len_mode1_or_sentinel & 0x80 != 0,
+                    variable_length: descriptor.len_mode0 == 0
+                        && descriptor.len_mode1_or_sentinel == 0,
+                    rust_status: meta.rust_status,
+                    notes: meta.notes,
+                })
+            })
+            .collect()
+    }
+
     pub fn dialogue_font_tables(&self) -> Result<DialogueFontTables> {
         let ascii_map = self
             .slice(
@@ -254,6 +303,7 @@ impl BloodPrg {
             known_symbols: KNOWN_SYMBOLS.to_vec(),
             opcode_handlers: self.opcode_handlers()?,
             opcode_descriptors: self.opcode_descriptors()?,
+            vm_opcode_specs: self.vm_opcode_specs()?,
             dialogue_font: self.dialogue_font_tables()?,
         })
     }
@@ -273,6 +323,87 @@ fn u16_at(data: &[u8], offset: usize) -> Result<u16> {
         .get(offset..offset + 2)
         .ok_or_else(|| anyhow::anyhow!("missing u16 at file offset 0x{offset:05x}"))?;
     Ok(u16::from_le_bytes([bytes[0], bytes[1]]))
+}
+
+#[derive(Clone, Copy)]
+struct OpcodeMetadata {
+    mnemonic: &'static str,
+    family: &'static str,
+    rust_status: &'static str,
+    notes: &'static str,
+}
+
+fn opcode_metadata(opcode: u8, handler_file_offset: usize) -> OpcodeMetadata {
+    match opcode {
+        0xa0 => OpcodeMetadata {
+            mnemonic: "control_a0",
+            family: "control-flow",
+            rust_status: "not-ported",
+            notes: "block/control token; exact A0/A1 runtime control semantics remain unresolved",
+        },
+        0xa1 => OpcodeMetadata {
+            mnemonic: "control_a1",
+            family: "control-flow",
+            rust_status: "token-walk-only",
+            notes: "mode-control token; token walker models length/mode effect",
+        },
+        vm::OP_TEXT => OpcodeMetadata {
+            mnemonic: "text",
+            family: "dialogue-text",
+            rust_status: "partially-ported",
+            notes: "TEXT token shape, dictionary words, line state, and subtitle assembly rules are represented in Rust",
+        },
+        vm::OP_ACTOR => OpcodeMetadata {
+            mnemonic: "actor_object_ref",
+            family: "object-reference",
+            rust_status: "partially-ported",
+            notes: "binary handler consumes two u16 operands; current Rust line-state model tracks the talk/object reference needed for dialogue",
+        },
+        _ => match handler_file_offset {
+            0x006863 => OpcodeMetadata {
+                mnemonic: "state_assign_or_signed_compare",
+                family: "state-assign-compare",
+                rust_status: "linear-assign-ported",
+                notes: "B1/B4/B5/B6/BE/BF/C0 family; Rust linear interpreter applies F5=set, F6=add, F7=sub and does not yet execute branch-mode comparisons",
+            },
+            0x006902 => OpcodeMetadata {
+                mnemonic: "bitmask_set_or_test",
+                family: "bitmask-set-test",
+                rust_status: "not-ported",
+                notes: "AE/B0 family; branch-mode bit tests and mode0 bit mutations still need a Rust model",
+            },
+            0x006946 => OpcodeMetadata {
+                mnemonic: "equality_assign_or_test",
+                family: "equality-assign",
+                rust_status: "partially-identified",
+                notes: "AD/AF/B2/B3/BA/BB/BC family; equality tests and mode0 assignment behavior are identified but not fully executed in Rust",
+            },
+            0x006aa7 => OpcodeMetadata {
+                mnemonic: "bit_set_or_test",
+                family: "bit-set-test",
+                rust_status: "not-ported",
+                notes: "B7 bit set/test family",
+            },
+            0x006b06 => OpcodeMetadata {
+                mnemonic: "pair_record_assign_or_compare",
+                family: "pair-record",
+                rust_status: "not-ported",
+                notes: "B8/B9/BD pair-record assignment and comparison family",
+            },
+            0x0053a0 => OpcodeMetadata {
+                mnemonic: "segment_entry_or_noop",
+                family: "control-flow",
+                rust_status: "not-ported",
+                notes: "D3 handler points at the VM segment base; variable token skip is modeled by token_advance",
+            },
+            _ => OpcodeMetadata {
+                mnemonic: "unclassified_handler",
+                family: "unclassified",
+                rust_status: "not-ported",
+                notes: "handler entry is mapped from BLOODPRG.EXE, but semantics are not yet named",
+            },
+        },
+    }
 }
 
 pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
@@ -649,6 +780,45 @@ mod tests {
             .expect("C4 handler");
         assert_eq!(actor.handler_offset, 0x18de);
         assert_eq!(actor.handler_file_offset, 0x006c7e);
+    }
+
+    #[test]
+    fn opcode_specs_name_known_handler_families() {
+        let Some(binary) = fixture() else {
+            eprintln!("skipping: BLOODPRG.EXE not available");
+            return;
+        };
+        let specs = binary.vm_opcode_specs().expect("opcode specs");
+        assert_eq!(specs.len(), vm::OPCODE_DESC.len());
+
+        let text = specs
+            .iter()
+            .find(|spec| spec.opcode == vm::OP_TEXT)
+            .unwrap();
+        assert_eq!(text.mnemonic, "text");
+        assert_eq!(text.family, "dialogue-text");
+        assert_eq!(text.handler_file_offset, 0x00660c);
+        assert!(text.variable_length);
+
+        let actor = specs
+            .iter()
+            .find(|spec| spec.opcode == vm::OP_ACTOR)
+            .unwrap();
+        assert_eq!(actor.mnemonic, "actor_object_ref");
+        assert_eq!(actor.family, "object-reference");
+        assert_eq!(actor.handler_file_offset, 0x006c7e);
+        assert!(actor.mode_control);
+
+        let assign = specs.iter().find(|spec| spec.opcode == 0xb1).unwrap();
+        assert_eq!(assign.family, "state-assign-compare");
+        assert_eq!(assign.handler_file_offset, 0x006863);
+        assert_eq!(assign.len_mode0, 7);
+        assert!(!assign.mode_control);
+
+        let equality = specs.iter().find(|spec| spec.opcode == 0xaf).unwrap();
+        assert_eq!(equality.family, "equality-assign");
+        assert_eq!(equality.handler_file_offset, 0x006946);
+        assert!(equality.mode_control);
     }
 
     #[test]
