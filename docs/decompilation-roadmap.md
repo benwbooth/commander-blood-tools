@@ -210,9 +210,12 @@ Exit criteria:
 1. Update the project docs to make the Rust reimplementation the explicit target.
 2. Turn `src/extract/vm.rs` into the canonical script-walking path for dialogue
    manifests.
-3. Add a VM event trace command for `SCRIPT*.COD/VAR/DIC/DEB`.
-4. Pick one oracle dialogue target and capture it reproducibly.
-5. Replace the current dialogue grouping/compositing path with trace-driven
+3. Add a Rust `BLOODPRG.EXE` inspection layer so decompiled constants and data
+   tables are validated against the actual DOS binary before being used by the
+   renderer.
+4. Add a VM event trace command for `SCRIPT*.COD/VAR/DIC/DEB`.
+5. Pick one oracle dialogue target and capture it reproducibly.
+6. Replace the current dialogue grouping/compositing path with trace-driven
    rendering for that target scene.
 
 ## Open Questions

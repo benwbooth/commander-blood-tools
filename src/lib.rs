@@ -1,3 +1,4 @@
+pub mod bloodprg;
 pub mod descript;
 pub mod script;
 pub mod util;

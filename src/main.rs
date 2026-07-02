@@ -10,6 +10,14 @@ fn main() {
 fn run() -> anyhow::Result<()> {
     let mut args = std::env::args().skip(1);
     match args.next().as_deref() {
+        Some("inspect-bloodprg") => {
+            let path = args
+                .next()
+                .unwrap_or_else(|| "re/bin/BLOODPRG.EXE".to_string());
+            let binary = commander_blood_tools::bloodprg::BloodPrg::parse_file(&path)?;
+            println!("{}", serde_json::to_string_pretty(&binary.inspect()?)?);
+            Ok(())
+        }
         Some("inspect-vm") => {
             #[derive(serde::Serialize)]
             struct VmInspection {

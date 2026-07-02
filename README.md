@@ -17,12 +17,16 @@ Run through the flake so `ffmpeg`, `7z`, `curl`, and Rust are all on `PATH`:
 
 ```sh
 nix develop --command cargo run -- <output-dir>
+nix develop --command cargo run -- inspect-bloodprg [re/bin/BLOODPRG.EXE]
 nix develop --command cargo run -- inspect-vm /path/to/SCRIPT1.COD [/path/to/SCRIPT1.VAR]
 nix develop --command cargo run -- inspect-descript /path/to/DESCRIPT.DES
 nix develop --command cargo run -- inspect-scripts /path/to/extracted-iso
 nix develop --command cargo run -- inspect-character-combinations /path/to/extracted-iso
 ```
 
+`inspect-bloodprg` emits a Rust-validated map of the actual DOS MZ binary:
+header math, known reverse-engineered symbols, the script VM opcode descriptor
+table, and the embedded dialogue font tables.
 `inspect-vm` emits the reverse-engineered compiled-BASIC token stream, plus
 bounded interpreter line-state snapshots when a matching `SCRIPT*.VAR` is
 provided.
