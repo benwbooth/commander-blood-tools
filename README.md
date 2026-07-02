@@ -48,9 +48,10 @@ not affect media selection.
 The script parser recovers character contexts from `SCRIPT*.DEB` object symbols
 plus the object location field in `SCRIPT*.VAR`. It also emits a
 function-bounded `script-disassembly.tsv` and decodes every valid
-`0xa6 ... 0x80 ... 00 00` text call in `SCRIPT*.COD` by following dictionary
-word offsets from `SCRIPT*.DIC`. Actor context is tracked from `0xc4 <u16>`
-object references where those references match DESCRIPT character talk slots.
+`0xa6` TEXT token in `SCRIPT*.COD` with the VM token walker by following
+dictionary word offsets from `SCRIPT*.DIC`. Actor context is tracked from the
+binary-sized `0xc4` actor/object tokens where those references match DESCRIPT
+character talk slots.
 
 The normal full exporter no longer emits guessed all-clips character composites
 when script speech data is available. It exports script-derived dialogue groups;

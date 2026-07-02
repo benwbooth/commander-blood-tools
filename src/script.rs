@@ -7,6 +7,7 @@ use serde::Serialize;
 
 use crate::descript::{DescriptDb, RecordKind};
 use crate::util::media_stem;
+use crate::vm::{self, VmToken};
 
 pub const OBJECT_LOCATION_FIELD: usize = 24;
 pub const OBJECT_TALK_FIELD: u16 = 0x3a;
@@ -211,117 +212,120 @@ pub fn parse_speech_events(
     functions.sort_by_key(|function| function.offset);
 
     let mut events = Vec::new();
-    for idx in 0..functions.len() {
-        let function_start = functions[idx].offset;
-        let function_end = functions
-            .get(idx + 1)
-            .map(|next| next.offset)
-            .unwrap_or(cod.len())
-            .min(cod.len());
-        if function_start >= function_end {
-            continue;
-        }
-
-        let mut current_actor: Option<&CharacterContext> = None;
-        let mut rel = 0usize;
-        while function_start + rel < function_end {
-            let pos = function_start + rel;
-            if pos + 2 < function_end && cod[pos] == 0xc4 {
-                let addr = u16::from_le_bytes([cod[pos + 1], cod[pos + 2]]);
-                if let Some(actor) = actor_refs.get(&addr) {
+    let mut current_actor: Option<&CharacterContext> = None;
+    for token in vm::walk(cod, 0, cod.len()) {
+        match token {
+            VmToken::Actor { operand, .. } => {
+                if let Some(actor) = actor_refs.get(&operand) {
                     current_actor = Some(*actor);
                 }
             }
-
-            if !cod[pos..function_end].starts_with(b"\xa6\x0a\x07") {
-                rel += 1;
-                continue;
-            }
-
-            let Some(marker_rel) = cod[pos + 3..function_end.min(pos + 12)]
-                .iter()
-                .position(|&b| b == 0x80)
-            else {
-                rel += 1;
-                continue;
-            };
-            let marker = pos + 3 + marker_rel;
-            if marker < pos + 5 {
-                rel += 1;
-                continue;
-            }
-
-            let mut text_pos = marker + 1;
-            let mut words = Vec::new();
-            while text_pos + 1 < function_end {
-                let word_off = u16::from_le_bytes([cod[text_pos], cod[text_pos + 1]]);
-                text_pos += 2;
-                if word_off == 0 {
-                    break;
-                }
-                let Some(word) = dictionary.get(&word_off) else {
-                    words.clear();
-                    break;
+            VmToken::Text {
+                offset,
+                voice_selector,
+                flags_b4,
+                word_offsets,
+                ..
+            } => {
+                let Some(function) = function_for_offset(&functions, offset) else {
+                    continue;
                 };
-                words.push(word.as_str());
-            }
-
-            if words.is_empty() {
-                rel += 1;
-                continue;
-            }
-
-            let params = &cod[pos + 3..marker];
-            let param0 = params.first().copied();
-            let param1 = params.get(1).copied();
-            let actor_speaks = current_actor.is_some() && param1.is_some_and(|style| style < 0x10);
-            let clip_index = current_actor.and_then(|actor| {
-                if !actor_speaks {
-                    return None;
-                }
-                match (param0, param1) {
-                    (Some(0xff), Some(idx)) if (idx as usize) < actor.talk_count => {
-                        Some(idx as usize)
+                let Some(text) = assemble_dialogue_from_offsets(dictionary, &word_offsets) else {
+                    continue;
+                };
+                let param0 = Some(voice_selector);
+                let param1 = Some(flags_b4);
+                let actor_speaks = current_actor.is_some() && flags_b4 < 0x10;
+                let clip_index = current_actor.and_then(|actor| {
+                    if !actor_speaks {
+                        return None;
                     }
-                    (Some(idx), _) if idx > 0 && (idx as usize) <= actor.talk_count => {
-                        Some(idx as usize - 1)
+                    match voice_selector {
+                        idx if idx > 0 && idx != 0xff && (idx as usize) <= actor.talk_count => {
+                            Some(idx as usize - 1)
+                        }
+                        _ => None,
                     }
-                    _ => None,
-                }
-            });
-            let source = match (current_actor, actor_speaks, clip_index) {
-                (Some(_), true, Some(_)) => {
-                    "SCRIPT bytecode actor ref + DESCRIPT talk clip".to_string()
-                }
-                (Some(_), true, None) => {
-                    "SCRIPT bytecode actor ref; subtitle has no mapped talk clip".to_string()
-                }
-                (Some(_), false, _) => {
-                    "SCRIPT bytecode actor ref; non-character subtitle channel".to_string()
-                }
-                (None, _, _) => "SCRIPT subtitle text only".to_string(),
-            };
+                });
+                let source = match (current_actor, actor_speaks, clip_index) {
+                    (Some(_), true, Some(_)) => {
+                        "SCRIPT bytecode actor ref + DESCRIPT talk clip".to_string()
+                    }
+                    (Some(_), true, None) => {
+                        "SCRIPT bytecode actor ref; subtitle has no mapped talk clip".to_string()
+                    }
+                    (Some(_), false, _) => {
+                        "SCRIPT bytecode actor ref; non-character subtitle channel".to_string()
+                    }
+                    (None, _, _) => "SCRIPT subtitle text only".to_string(),
+                };
 
-            events.push(SpeechEvent {
-                script: script.to_string(),
-                function_name: functions[idx].name.clone(),
-                offset: pos,
-                actor_record: current_actor.map(|actor| actor.actor_record.clone()),
-                param0,
-                param1,
-                clip_index,
-                background_record: current_actor.and_then(|actor| actor.location_record.clone()),
-                background_hnm: current_actor.and_then(|actor| actor.background_hnm.clone()),
-                background_music: current_actor.and_then(|actor| actor.background_music.clone()),
-                source,
-                text: words.join(" "),
-            });
-
-            rel += 1;
+                events.push(SpeechEvent {
+                    script: script.to_string(),
+                    function_name: function.name.clone(),
+                    offset,
+                    actor_record: current_actor.map(|actor| actor.actor_record.clone()),
+                    param0,
+                    param1,
+                    clip_index,
+                    background_record: current_actor
+                        .and_then(|actor| actor.location_record.clone()),
+                    background_hnm: current_actor.and_then(|actor| actor.background_hnm.clone()),
+                    background_music: current_actor
+                        .and_then(|actor| actor.background_music.clone()),
+                    source,
+                    text,
+                });
+            }
+            VmToken::Invalid { .. } => break,
+            _ => {}
         }
     }
 
     events
+}
+
+fn function_for_offset(functions: &[ScriptFunction], offset: usize) -> Option<&ScriptFunction> {
+    functions
+        .iter()
+        .rev()
+        .find(|function| function.offset <= offset)
+}
+
+fn assemble_dialogue_from_offsets(
+    dictionary: &HashMap<u16, String>,
+    word_offsets: &[u16],
+) -> Option<String> {
+    let words: Vec<&str> = word_offsets
+        .iter()
+        .map(|offset| dictionary.get(offset).map(String::as_str))
+        .collect::<Option<_>>()?;
+    if words.is_empty() {
+        return None;
+    }
+
+    let mut out = String::new();
+    let mut line_len = 0usize;
+    for (idx, word) in words.iter().enumerate() {
+        out.push_str(word);
+        line_len += word.chars().count();
+        if idx + 1 >= words.len() {
+            continue;
+        }
+        let attaches = matches!(
+            words[idx + 1].chars().next(),
+            Some(',' | '.' | '?' | '!' | ':')
+        );
+        if !attaches {
+            out.push(' ');
+            line_len += 1;
+            if line_len >= 0x23 {
+                out.push('\n');
+                line_len = 0;
+            }
+        }
+    }
+    Some(out)
 }
 
 pub fn parse_script_bundle(
@@ -454,6 +458,13 @@ mod tests {
     }
 
     #[test]
+    fn assembles_dialogue_like_text_handler() {
+        let dict = parse_dictionary(b"\0Commander\0,\0report\0!\0");
+        let text = assemble_dialogue_from_offsets(&dict, &[1, 11, 13, 20]).expect("dialogue text");
+        assert_eq!(text, "Commander, report!");
+    }
+
+    #[test]
     fn decodes_speech_events_with_actor_clip_mapping() {
         let dictionary = parse_dictionary(b"\0HELLO\0WORLD\0");
         let functions = vec![ScriptFunction {
@@ -473,8 +484,14 @@ mod tests {
             source: "test".to_string(),
         }];
         let cod = [
-            0xc4, 0x3a, 0x01, // current actor = Bob_Morlock + talk field
-            0xa6, 0x0a, 0x07, 0x02, 0x01, 0x80, 0x01, 0x00, 0x07, 0x00, 0x00, 0x00,
+            // Binary C4 is a 5-byte actor/object token. The public parser must
+            // skip the second u16 operand via vm::walk instead of scanning
+            // byte-by-byte.
+            0xc4, 0x3a, 0x01, 0x00, 0x00, // current actor = Bob_Morlock + talk field
+            // A6 line index is intentionally not 0x070a; the old public parser
+            // only accepted `a6 0a 07`, while the VM token decoder accepts the
+            // actual handler layout.
+            0xa6, 0x34, 0x12, 0x02, 0x01, 0x80, 0x01, 0x00, 0x07, 0x00, 0x00, 0x00,
         ];
 
         let events = parse_speech_events("SCRIPTX", &cod, &dictionary, &functions, &contexts);
