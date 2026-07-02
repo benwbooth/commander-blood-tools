@@ -3,6 +3,14 @@
 Rust tools for extracting and reverse-engineering Commander Blood media
 combinations.
 
+Longer term, this project is becoming a Rust reimplementation of Commander
+Blood's DOS engine that runs the original English CD data files. The current
+media exporter is the first vertical slice for that work: it exercises data-file
+parsing, script recovery, rendering, audio, and real-game oracle comparison.
+
+See [docs/decompilation-roadmap.md](docs/decompilation-roadmap.md) for the full
+reverse-engineering and Rust reimplementation plan.
+
 ## Commands
 
 Run through the flake so `ffmpeg`, `7z`, `curl`, and Rust are all on `PATH`:

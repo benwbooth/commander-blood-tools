@@ -1,10 +1,15 @@
 # Commander Blood (DOS) — Reverse Engineering Notes
 
-End goal (reframed from the generic `re` skill's "web port"): **recover the
-script-VM + presentation semantics needed to generate game-accurate cutscene
-videos**, then drive an event-based renderer in the existing Rust exporter
-(`src/extract/`). Data files remain the source of truth for *assets*; the binary
-provides the *semantics* (opcode meanings, channel routing, timing, layout).
+End goal (reframed from the generic `re` skill's "web port"): **recover the DOS
+engine semantics needed to build a Rust reimplementation that runs the original
+Commander Blood CD data files**. The current cutscene/video exporter remains the
+first vertical slice: recover the script VM + presentation semantics, then drive
+an event-based renderer in Rust. Data files remain the source of truth for
+*assets*; the binary provides the *semantics* (opcode meanings, channel routing,
+timing, layout, input, navigation, and game-state behavior).
+
+See [`../docs/decompilation-roadmap.md`](../docs/decompilation-roadmap.md) for
+the phase plan and definition of done.
 
 See [CLAUDE.md](CLAUDE.md) for tool prefix, addressing model, and conventions.
 

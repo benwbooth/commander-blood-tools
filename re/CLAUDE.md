@@ -40,9 +40,11 @@ Convert with `seg_offset.py`. labels.csv accepts `0xNNNNN`, `SEG:OFF`,
   deterministic library (not an interactive RE framework like radare2/Ghidra,
   which the skill rightly forbids). dis.py still auto-loads labels.csv so the
   knowledge base accumulates the same way.
-- **End goal = event-driven renderer in the Rust crate**, not a standalone web
-  port. Ph4/Ph7's `web/catalog.html` may still be used as a visual asset
-  validator if useful, but the deliverable is accurate video output.
+- **End goal = Rust reimplementation of the DOS engine**, not a standalone web
+  port. The event-driven renderer remains the first vertical slice because it
+  validates the VM, renderer, and audio semantics. Ph4/Ph7's `web/catalog.html`
+  may still be used as a visual asset validator if useful, but the deliverable
+  is a Rust runtime that can run the original data files.
 - **Oracle deferred**: user chose RE-first; reference captures (dosbox-x) come
   after the renderer can emit output. Target scenes: Bob_Morlock, Izwalito,
   a multi-character scene, a subtitle-only screen, a full HNM cutscene.
