@@ -23,7 +23,6 @@ use super::*;
 /// * `w*` — u16 dictionary-word offsets into `SCRIPT*.DIC`, `0x0000`-terminated.
 #[derive(Clone, Debug)]
 pub(super) struct ScriptTextCall {
-    pub(super) offset: usize,
     pub(super) text_end: usize,
     /// `b1:b2` — per-line record index (`gs:0x6724` table).
     pub(super) call_target: u16,
@@ -83,7 +82,11 @@ fn resolve_runtime_backgrounds(
             .or_else(|| record.music.first().map(|m| media_stem(m)));
         out.insert(
             line.offset,
-            RuntimeBackground { record: Some(name.clone()), hnm, music },
+            RuntimeBackground {
+                record: Some(name.clone()),
+                hnm,
+                music,
+            },
         );
     }
     out
@@ -115,9 +118,7 @@ pub(super) fn parse_script_speech(
         // location → background, keyed by COD offset (no fallback values).
         let runtime_bg = match (&deb_path, &var_path, descript_db) {
             (Some(d), Some(v), Some(db)) => match (fs::read(d), fs::read(v)) {
-                (Ok(deb), Ok(var)) => {
-                    resolve_runtime_backgrounds(&cod, &var, &deb, db, hnm_music)
-                }
+                (Ok(deb), Ok(var)) => resolve_runtime_backgrounds(&cod, &var, &deb, db, hnm_music),
                 _ => HashMap::new(),
             },
             _ => HashMap::new(),
@@ -141,21 +142,14 @@ pub(super) fn parse_script_speech(
         functions.sort_by_key(|(offset, _)| *offset);
         functions.push((cod.len(), "END".to_string()));
 
-        for pair in functions.windows(2) {
-            let function_start = pair[0].0;
-            let function_name = &pair[0].1;
-            let function_end = pair[1].0.min(cod.len());
-            rows.extend(parse_function_text_calls(
-                &script,
-                function_name,
-                &cod,
-                function_start,
-                function_end,
-                &words,
-                &actor_refs,
-                &runtime_bg,
-            ));
-        }
+        rows.extend(parse_script_text_calls(
+            &script,
+            &cod,
+            &words,
+            &functions,
+            &actor_refs,
+            &runtime_bg,
+        ));
     }
 
     Ok(rows)
@@ -221,115 +215,154 @@ pub(super) fn parse_script_disassembly(
     Ok(rows)
 }
 
-pub(super) fn parse_function_text_calls(
+pub(super) fn parse_script_text_calls(
     script: &str,
-    function_name: &str,
     cod: &[u8],
-    function_start: usize,
-    function_end: usize,
     words: &HashMap<u16, String>,
+    functions: &[(usize, String)],
     actor_refs: &HashMap<u16, ScriptActorRef>,
     runtime_bg: &HashMap<usize, RuntimeBackground>,
 ) -> Vec<ScriptSpeechLine> {
     let mut rows = Vec::new();
-    if function_start >= function_end || function_start >= cod.len() {
-        return rows;
-    }
-
     let mut current_actor: Option<ScriptActorRef> = None;
-    let mut pos = function_start;
-    while pos < function_end {
-        if pos + 2 < function_end && cod[pos] == 0xc4 {
-            let addr = u16::from_le_bytes([cod[pos + 1], cod[pos + 2]]);
-            current_actor = actor_refs.get(&addr).cloned();
-            pos += 3;
-            continue;
+
+    for token in vm::walk(cod, 0, cod.len()) {
+        match token {
+            vm::VmToken::Actor { operand, .. } => {
+                current_actor = actor_refs.get(&operand).cloned();
+            }
+            vm::VmToken::Text {
+                offset,
+                line_index,
+                voice_selector,
+                flags_b4,
+                loop_target,
+                word_offsets,
+                ..
+            } => {
+                let Some(decoded_words) = decode_vm_words(words, &word_offsets) else {
+                    continue;
+                };
+                let function_name = function_name_for_offset(functions, offset);
+
+                let param0 = Some(voice_selector); // = 0xA6 token b3 (voice selector)
+                let param1 = Some(flags_b4); // = 0xA6 token b4 (control flags)
+                let rt = runtime_bg.get(&offset); // runtime scene for this line, if resolved
+                let actor = current_actor.clone();
+                // Voice clip-index (RE, re/REVERSE.md "voice clip-index", confirmed by
+                // tracing gs:0x6788 = b3 + 9 into the son.snd player + the export-data
+                // distribution): `param0` (b3) is the per-line voice selector —
+                //   * b3 == 0xFF or 0x00 => NO voice (narrator/menu/tutorial subtitle;
+                //     b3+9 = 0x108 is the out-of-range "none" line id), and
+                //   * b3 in 1..=N => 1-based index into the actor's son.snd talk clips,
+                //     so clip = b3 - 1.
+                // `param1` (b4) is the control-flag word (bit3=skip, bit4=loop) — NOT a
+                // clip index. The earlier `(0xFF, b4) => clip = b4` branch misread the
+                // flag word as an index, spuriously voicing ~26% of lines (every
+                // b3==0xFF narrator line); removed. `param1 < 0x10` (no loop/skip bits)
+                // still gates whether the line is shown/spoken.
+                let actor_speaks = actor.is_some() && flags_b4 < 0x10;
+                let clip_index = actor.as_ref().and_then(|actor| {
+                    if !actor_speaks {
+                        return None;
+                    }
+                    match voice_selector {
+                        idx if idx > 0 && idx != 0xff && (idx as usize) <= actor.talk_count => {
+                            Some(idx as usize - 1)
+                        }
+                        _ => None,
+                    }
+                });
+                let source = match (&actor, actor_speaks, clip_index) {
+                    (Some(_), true, Some(_)) => {
+                        "SCRIPT VM token + tracked actor ref + DESCRIPT talk clip".to_string()
+                    }
+                    (Some(_), true, None) => {
+                        "SCRIPT VM token + tracked actor ref; no mapped talk clip".to_string()
+                    }
+                    (Some(_), false, _) => {
+                        "SCRIPT VM token + tracked actor ref; non-character subtitle channel"
+                            .to_string()
+                    }
+                    (None, _, _) => "SCRIPT VM token; no tracked actor ref".to_string(),
+                };
+                let params = [voice_selector, flags_b4];
+
+                rows.push(ScriptSpeechLine {
+                    script: script.to_string(),
+                    function_name: function_name.to_string(),
+                    offset,
+                    actor_record: actor.as_ref().map(|actor| actor.record_name.clone()),
+                    param0,
+                    param1,
+                    clip_index,
+                    // Prefer the runtime location computed by executing the script; fall
+                    // back to the actor's initial location only when the interpreter did
+                    // not resolve a real DESCRIPT location for this line. Both are
+                    // computed from data (no hardcoded character table).
+                    background_record: rt
+                        .and_then(|b| b.record.clone())
+                        .or_else(|| actor.as_ref().and_then(|a| a.background_record.clone())),
+                    background_hnm: rt
+                        .and_then(|b| b.hnm.clone())
+                        .or_else(|| actor.as_ref().and_then(|a| a.background_hnm.clone())),
+                    background_music: rt
+                        .and_then(|b| b.music.clone())
+                        .or_else(|| actor.as_ref().and_then(|a| a.background_music.clone())),
+                    source,
+                    text: assemble_dialogue(&decoded_words),
+                    call_target: line_index,
+                    params_hex: hex_bytes(&params),
+                    text_end: text_token_end(offset, flags_b4, loop_target, word_offsets.len()),
+                    actor_ref: actor.as_ref().map(|actor| actor.talk_ref),
+                    actor_proof: actor
+                        .as_ref()
+                        .map(|actor| format!("tracked 0xc4 actor ref 0x{:04x}", actor.talk_ref))
+                        .unwrap_or_default(),
+                    word_count: decoded_words.len(),
+                });
+            }
+            vm::VmToken::Invalid { .. } => break,
+            _ => {}
         }
-
-        let Some(call) = decode_text_call_at(cod, function_end, words, pos) else {
-            pos += 1;
-            continue;
-        };
-
-        let param0 = call.params.first().copied(); // = 0xA6 token b3 (voice selector)
-        let param1 = call.params.get(1).copied(); // = 0xA6 token b4 (control flags)
-        let rt = runtime_bg.get(&call.offset); // runtime scene for this line, if resolved
-        let actor = current_actor.clone();
-        // Voice clip-index (RE, re/REVERSE.md "voice clip-index", confirmed by
-        // tracing gs:0x6788 = b3 + 9 into the son.snd player + the export-data
-        // distribution): `param0` (b3) is the per-line voice selector —
-        //   * b3 == 0xFF or 0x00 => NO voice (narrator/menu/tutorial subtitle;
-        //     b3+9 = 0x108 is the out-of-range "none" line id), and
-        //   * b3 in 1..=N => 1-based index into the actor's son.snd talk clips,
-        //     so clip = b3 - 1.
-        // `param1` (b4) is the control-flag word (bit3=skip, bit4=loop) — NOT a
-        // clip index. The earlier `(0xFF, b4) => clip = b4` branch misread the
-        // flag word as an index, spuriously voicing ~26% of lines (every
-        // b3==0xFF narrator line); removed. `param1 < 0x10` (no loop/skip bits)
-        // still gates whether the line is shown/spoken.
-        let actor_speaks = actor.is_some() && param1.is_some_and(|flags| flags < 0x10);
-        let clip_index = actor.as_ref().and_then(|actor| {
-            if !actor_speaks {
-                return None;
-            }
-            match param0 {
-                Some(idx) if idx > 0 && idx != 0xff && (idx as usize) <= actor.talk_count => {
-                    Some(idx as usize - 1)
-                }
-                _ => None,
-            }
-        });
-        let source = match (&actor, actor_speaks, clip_index) {
-            (Some(_), true, Some(_)) => {
-                "SCRIPT text call + tracked actor ref + DESCRIPT talk clip".to_string()
-            }
-            (Some(_), true, None) => {
-                "SCRIPT text call + tracked actor ref; no mapped talk clip".to_string()
-            }
-            (Some(_), false, _) => {
-                "SCRIPT text call + tracked actor ref; non-character subtitle channel".to_string()
-            }
-            (None, _, _) => "SCRIPT text call; no tracked actor ref".to_string(),
-        };
-
-        rows.push(ScriptSpeechLine {
-            script: script.to_string(),
-            function_name: function_name.to_string(),
-            offset: call.offset,
-            actor_record: actor.as_ref().map(|actor| actor.record_name.clone()),
-            param0,
-            param1,
-            clip_index,
-            // Prefer the runtime location computed by executing the script; fall
-            // back to the actor's initial location only when the interpreter did
-            // not resolve a real DESCRIPT location for this line. Both are
-            // computed from data (no hardcoded character table).
-            background_record: rt
-                .and_then(|b| b.record.clone())
-                .or_else(|| actor.as_ref().and_then(|a| a.background_record.clone())),
-            background_hnm: rt
-                .and_then(|b| b.hnm.clone())
-                .or_else(|| actor.as_ref().and_then(|a| a.background_hnm.clone())),
-            background_music: rt
-                .and_then(|b| b.music.clone())
-                .or_else(|| actor.as_ref().and_then(|a| a.background_music.clone())),
-            source,
-            text: assemble_dialogue(&call.words),
-            call_target: call.call_target,
-            params_hex: hex_bytes(&call.params),
-            text_end: call.text_end,
-            actor_ref: actor.as_ref().map(|actor| actor.talk_ref),
-            actor_proof: actor
-                .as_ref()
-                .map(|actor| format!("tracked 0xc4 actor ref 0x{:04x}", actor.talk_ref))
-                .unwrap_or_default(),
-            word_count: call.words.len(),
-        });
-
-        pos = call.text_end;
     }
 
     rows
+}
+
+fn function_name_for_offset(functions: &[(usize, String)], offset: usize) -> &str {
+    functions
+        .iter()
+        .rev()
+        .find(|(function_offset, _)| *function_offset <= offset)
+        .map(|(_, name)| name.as_str())
+        .unwrap_or("")
+}
+
+fn decode_vm_words(words: &HashMap<u16, String>, word_offsets: &[u16]) -> Option<Vec<String>> {
+    let decoded: Vec<String> = word_offsets
+        .iter()
+        .map(|offset| words.get(offset).cloned())
+        .collect::<Option<_>>()?;
+    if decoded.is_empty() {
+        None
+    } else {
+        Some(decoded)
+    }
+}
+
+fn text_token_end(
+    offset: usize,
+    flags_b4: u8,
+    loop_target: Option<u16>,
+    word_count: usize,
+) -> usize {
+    let loop_len = if flags_b4 & 0x10 != 0 || loop_target.is_some() {
+        2
+    } else {
+        0
+    };
+    offset + 6 + loop_len + word_count * 2 + 2
 }
 
 pub(super) fn disassemble_function(
@@ -350,24 +383,25 @@ pub(super) fn disassemble_function(
     let mut raw_start: Option<usize> = None;
     let mut pos = function_start;
     while pos < function_end {
-        if pos + 2 < function_end && cod[pos] == 0xc4 {
+        if pos + 4 < function_end && cod[pos] == 0xc4 {
             push_raw_disassembly(script, function_name, cod, &mut rows, raw_start.take(), pos);
             let addr = u16::from_le_bytes([cod[pos + 1], cod[pos + 2]]);
+            let extra = u16::from_le_bytes([cod[pos + 3], cod[pos + 4]]);
             current_actor = actor_refs.get(&addr).cloned();
             rows.push(ScriptDisassemblyLine {
                 script: script.to_string(),
                 function_name: function_name.to_string(),
                 offset: pos,
-                len: 3,
+                len: 5,
                 opcode: "c4".to_string(),
                 mnemonic: "actor_ref".to_string(),
-                operands: format!("ref=0x{addr:04x}"),
+                operands: format!("ref=0x{addr:04x} extra=0x{extra:04x}"),
                 actor_record: current_actor
                     .as_ref()
                     .map(|actor| actor.record_name.clone()),
                 text: None,
             });
-            pos += 3;
+            pos += 5;
             continue;
         }
 
@@ -529,7 +563,6 @@ pub(super) fn decode_text_call_at(
     }
 
     Some(ScriptTextCall {
-        offset: pos,
         text_end: text_pos,
         call_target,
         params: cod[pos + 3..marker].to_vec(),
@@ -549,7 +582,10 @@ mod assemble_tests {
     fn no_space_before_punctuation() {
         // game rule: no space before , . ? ! :
         assert_eq!(assemble_dialogue(&w(&["Oh", "no", "!"])), "Oh no!");
-        assert_eq!(assemble_dialogue(&w(&["Commander", ",", "I"])), "Commander, I");
+        assert_eq!(
+            assemble_dialogue(&w(&["Commander", ",", "I"])),
+            "Commander, I"
+        );
         assert_eq!(assemble_dialogue(&w(&["you", ":"])), "you:");
         // ';' is NOT in the game's set -> keeps a space
         assert_eq!(assemble_dialogue(&w(&["a", ";", "b"])), "a ; b");
@@ -612,7 +648,8 @@ mod decode_text_tests {
         let cod = [
             0xA6, 0x00, 0x00, 0xFF, 0x10, 0x80, 0x34, 0x12, 0x20, 0x00, 0x00, 0x00,
         ];
-        let call = decode_text_call_at(&cod, cod.len(), &words, 0).expect("loop token should decode");
+        let call =
+            decode_text_call_at(&cod, cod.len(), &words, 0).expect("loop token should decode");
         assert_eq!(call.params, vec![0xFF, 0x10]); // b3=0xFF (no voice), b4=0x10 (loop)
         assert_eq!(call.words, vec!["loop"]);
     }
@@ -974,15 +1011,15 @@ mod tests {
         // b3 = 0x03 (1-based voice selector) => clip = b3 - 1 = 2; b4 = 0x02 is
         // the control-flag word, NOT the clip index.
         let voiced = [
-            0xc4, 0x3a, 0x00, 0xa6, 0x34, 0x12, 0x03, 0x02, 0x80, 0x01, 0x00, 0x00, 0x00,
+            0xc4, 0x3a, 0x00, 0x00, 0x00, 0xa6, 0x34, 0x12, 0x03, 0x02, 0x80, 0x01, 0x00, 0x00,
+            0x00,
         ];
-        let rows = parse_function_text_calls(
+        let functions = vec![(0, "func".to_string()), (voiced.len(), "END".to_string())];
+        let rows = parse_script_text_calls(
             "SCRIPTX",
-            "func",
             &voiced,
-            0,
-            voiced.len(),
             &words,
+            &functions,
             &actors,
             &HashMap::new(),
         );
@@ -995,10 +1032,17 @@ mod tests {
         // b3 = 0xFF => narrator/menu subtitle, NO voice clip (b4 must not be
         // misread as an index). Regression guard for the removed `(0xFF,b4)` branch.
         let narrator = [
-            0xc4, 0x3a, 0x00, 0xa6, 0x34, 0x12, 0xff, 0x02, 0x80, 0x01, 0x00, 0x00, 0x00,
+            0xc4, 0x3a, 0x00, 0x00, 0x00, 0xa6, 0x34, 0x12, 0xff, 0x02, 0x80, 0x01, 0x00, 0x00,
+            0x00,
         ];
-        let rows = parse_function_text_calls(
-            "SCRIPTX", "func", &narrator, 0, narrator.len(), &words, &actors, &HashMap::new(),
+        let functions = vec![(0, "func".to_string()), (narrator.len(), "END".to_string())];
+        let rows = parse_script_text_calls(
+            "SCRIPTX",
+            &narrator,
+            &words,
+            &functions,
+            &actors,
+            &HashMap::new(),
         );
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].actor_record.as_deref(), Some("Test_Actor"));
@@ -1006,12 +1050,47 @@ mod tests {
     }
 
     #[test]
+    fn parses_real_script_speech_with_vm_tokens_if_present() {
+        for prefix in ["output", "../output"] {
+            let root = Path::new(prefix);
+            let descript_path = root.join("DESCRIPT.DES");
+            if !descript_path.exists() {
+                continue;
+            }
+
+            let db = crate::extract::descript::parse_descript(&descript_path)
+                .expect("parse DESCRIPT.DES");
+            let hnm_music = db.hnm_music_map();
+            let rows =
+                parse_script_speech(root, Some(&db), &hnm_music).expect("parse script speech");
+            assert!(
+                rows.len() > 3000,
+                "expected full VM-token speech coverage, got {} rows",
+                rows.len()
+            );
+            assert!(
+                rows.iter()
+                    .any(|row| row.script == "SCRIPT2" && row.clip_index.is_some()),
+                "SCRIPT2 should include voiced dialogue"
+            );
+            assert!(
+                rows.iter()
+                    .any(|row| row.source.starts_with("SCRIPT VM token")),
+                "speech rows should come from the VM-token parser"
+            );
+            return;
+        }
+
+        eprintln!("skipping: extracted output scripts not available");
+    }
+
+    #[test]
     fn disassembly_uses_function_bounds_and_decodes_known_ops() {
         let mut words = HashMap::new();
         words.insert(0x0001, "hello".to_string());
         let cod = [
-            0x01, 0x02, 0xc4, 0x3a, 0x00, 0xa6, 0x34, 0x12, 0x01, 0x00, 0x80, 0x01, 0x00, 0x00,
-            0x00, 0x03,
+            0x01, 0x02, 0xc4, 0x3a, 0x00, 0x00, 0x00, 0xa6, 0x34, 0x12, 0x01, 0x00, 0x80, 0x01,
+            0x00, 0x00, 0x00, 0x03,
         ];
         let mut actors = HashMap::new();
         actors.insert(
@@ -1027,11 +1106,12 @@ mod tests {
         );
 
         let rows = disassemble_function("SCRIPTX", "func", &cod, 0, cod.len(), &words, &actors);
-        assert!(rows.iter().any(|row| row.mnemonic == "actor_ref"));
-        assert!(
-            rows.iter()
-                .any(|row| row.mnemonic == "text_call" && row.text.as_deref() == Some("hello"))
-        );
+        assert!(rows
+            .iter()
+            .any(|row| row.mnemonic == "actor_ref" && row.len == 5));
+        assert!(rows
+            .iter()
+            .any(|row| row.mnemonic == "text_call" && row.text.as_deref() == Some("hello")));
         assert_eq!(rows[0].function_name, "func");
     }
 }
