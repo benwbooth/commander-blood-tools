@@ -511,10 +511,10 @@ mod lbm;
 mod render;
 mod script;
 mod subtitle_sfx;
-mod vm;
 
 use audio::*;
 use character::*;
+use commander_blood_tools::vm;
 use dat::*;
 use descript::*;
 use helpers::*;

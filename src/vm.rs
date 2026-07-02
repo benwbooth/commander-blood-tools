@@ -26,29 +26,65 @@
 //! additionally needs control-flow interpretation — see `walks_real_scripts`.
 #![allow(dead_code)]
 
+use serde::Serialize;
+
 /// Per-opcode descriptor bytes for opcodes `0xA0..=0xD3`, transcribed from
 /// `BLOODPRG.EXE` file offset 0x14338 (`DS:0x6F18`). `(len_mode0, byte1)` where
 /// `byte1` is either `len_mode1` or a mode-control sentinel (bit7 set).
 /// Verified against the binary by `tests::table_matches_binary` when
 /// `re/bin/BLOODPRG.EXE` is available.
 pub const OPCODE_DESC: [(u8, u8); 0x34] = [
-    /* A0 */ (0x03, 0xff), /* A1 */ (0x01, 0xfe), /* A2 */ (0x03, 0x03),
-    /* A3 */ (0x03, 0xfb), /* A4 */ (0x03, 0x03), /* A5 */ (0x04, 0x02),
-    /* A6 */ (0x00, 0x00), /* A7 */ (0x03, 0x03), /* A8 */ (0x00, 0x00),
-    /* A9 */ (0x04, 0xff), /* AA */ (0x01, 0x01), /* AB */ (0x04, 0x04),
-    /* AC */ (0x00, 0x00), /* AD */ (0x05, 0x05), /* AE */ (0x05, 0xfd),
-    /* AF */ (0x05, 0xfd), /* B0 */ (0x05, 0xfd), /* B1 */ (0x07, 0x07),
-    /* B2 */ (0x05, 0xfd), /* B3 */ (0x05, 0xfd), /* B4 */ (0x07, 0x07),
-    /* B5 */ (0x07, 0x07), /* B6 */ (0x07, 0x07), /* B7 */ (0x04, 0xfd),
-    /* B8 */ (0x07, 0x07), /* B9 */ (0x07, 0x07), /* BA */ (0x05, 0xfd),
-    /* BB */ (0x05, 0xfd), /* BC */ (0x05, 0xfd), /* BD */ (0x07, 0x07),
-    /* BE */ (0x07, 0x07), /* BF */ (0x07, 0x07), /* C0 */ (0x07, 0x07),
-    /* C1 */ (0x05, 0xfd), /* C2 */ (0x05, 0xfd), /* C3 */ (0x05, 0xfd),
-    /* C4 */ (0x05, 0xfd), /* C5 */ (0x05, 0xfd), /* C6 */ (0x05, 0xfd),
-    /* C7 */ (0x05, 0xfd), /* C8 */ (0x05, 0xfd), /* C9 */ (0x03, 0xfd),
-    /* CA */ (0x05, 0x05), /* CB */ (0x06, 0x06), /* CC */ (0x00, 0x00),
-    /* CD */ (0x07, 0xfd), /* CE */ (0x01, 0x01), /* CF */ (0x01, 0x01),
-    /* D0 */ (0x01, 0x01), /* D1 */ (0x01, 0x01), /* D2 */ (0x02, 0x02),
+    /* A0 */ (0x03, 0xff),
+    /* A1 */ (0x01, 0xfe),
+    /* A2 */ (0x03, 0x03),
+    /* A3 */ (0x03, 0xfb),
+    /* A4 */ (0x03, 0x03),
+    /* A5 */ (0x04, 0x02),
+    /* A6 */ (0x00, 0x00),
+    /* A7 */ (0x03, 0x03),
+    /* A8 */ (0x00, 0x00),
+    /* A9 */ (0x04, 0xff),
+    /* AA */ (0x01, 0x01),
+    /* AB */ (0x04, 0x04),
+    /* AC */ (0x00, 0x00),
+    /* AD */ (0x05, 0x05),
+    /* AE */ (0x05, 0xfd),
+    /* AF */ (0x05, 0xfd),
+    /* B0 */ (0x05, 0xfd),
+    /* B1 */ (0x07, 0x07),
+    /* B2 */ (0x05, 0xfd),
+    /* B3 */ (0x05, 0xfd),
+    /* B4 */ (0x07, 0x07),
+    /* B5 */ (0x07, 0x07),
+    /* B6 */ (0x07, 0x07),
+    /* B7 */ (0x04, 0xfd),
+    /* B8 */ (0x07, 0x07),
+    /* B9 */ (0x07, 0x07),
+    /* BA */ (0x05, 0xfd),
+    /* BB */ (0x05, 0xfd),
+    /* BC */ (0x05, 0xfd),
+    /* BD */ (0x07, 0x07),
+    /* BE */ (0x07, 0x07),
+    /* BF */ (0x07, 0x07),
+    /* C0 */ (0x07, 0x07),
+    /* C1 */ (0x05, 0xfd),
+    /* C2 */ (0x05, 0xfd),
+    /* C3 */ (0x05, 0xfd),
+    /* C4 */ (0x05, 0xfd),
+    /* C5 */ (0x05, 0xfd),
+    /* C6 */ (0x05, 0xfd),
+    /* C7 */ (0x05, 0xfd),
+    /* C8 */ (0x05, 0xfd),
+    /* C9 */ (0x03, 0xfd),
+    /* CA */ (0x05, 0x05),
+    /* CB */ (0x06, 0x06),
+    /* CC */ (0x00, 0x00),
+    /* CD */ (0x07, 0xfd),
+    /* CE */ (0x01, 0x01),
+    /* CF */ (0x01, 0x01),
+    /* D0 */ (0x01, 0x01),
+    /* D1 */ (0x01, 0x01),
+    /* D2 */ (0x02, 0x02),
     /* D3 */ (0x00, 0x00),
 ];
 
@@ -79,7 +115,7 @@ fn scan_zero_word(cod: &[u8], start: usize, end: usize) -> usize {
 }
 
 /// A single decoded token from a COD stream, in execution order.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub enum VmToken {
     /// `0xA6` TEXT token.
     Text {
@@ -98,9 +134,17 @@ pub enum VmToken {
         word_offsets: Vec<u16>,
     },
     /// `0xC4` actor/object reference (operand is the first u16 after the opcode).
-    Actor { offset: usize, operand: u16, len: usize },
+    Actor {
+        offset: usize,
+        operand: u16,
+        len: usize,
+    },
     /// Any other opcode; raw length recorded.
-    Op { offset: usize, opcode: u8, len: usize },
+    Op {
+        offset: usize,
+        opcode: u8,
+        len: usize,
+    },
     /// Decoder fell off the rails (byte outside `0xA0..=0xD3` where a token was
     /// expected). Walking stops; the offset is where it happened.
     Invalid { offset: usize, byte: u8 },
@@ -120,7 +164,10 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
             break; // end-of-program marker (executor: `cmp al,0xFF; je end`)
         }
         if !(OP_MIN..=OP_MAX).contains(&op) {
-            out.push(VmToken::Invalid { offset: pos, byte: op });
+            out.push(VmToken::Invalid {
+                offset: pos,
+                byte: op,
+            });
             break;
         }
         let (b0, b1) = OPCODE_DESC[(op - OP_MIN) as usize];
@@ -132,7 +179,10 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
                     pos = next;
                 }
                 None => {
-                    out.push(VmToken::Invalid { offset: pos, byte: op });
+                    out.push(VmToken::Invalid {
+                        offset: pos,
+                        byte: op,
+                    });
                     break;
                 }
             }
@@ -141,7 +191,11 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
 
         if VAR_TERMINATED.contains(&op) {
             let next = scan_zero_word(cod, pos + 1, end);
-            out.push(VmToken::Op { offset: pos, opcode: op, len: next - pos });
+            out.push(VmToken::Op {
+                offset: pos,
+                opcode: op,
+                len: next - pos,
+            });
             pos = next;
             continue;
         }
@@ -168,9 +222,17 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
 
         if op == OP_ACTOR {
             let operand = read_u16(cod, pos + 1).unwrap_or(0);
-            out.push(VmToken::Actor { offset: pos, operand, len });
+            out.push(VmToken::Actor {
+                offset: pos,
+                operand,
+                len,
+            });
         } else {
-            out.push(VmToken::Op { offset: pos, opcode: op, len });
+            out.push(VmToken::Op {
+                offset: pos,
+                opcode: op,
+                len,
+            });
         }
         pos += len;
     }
@@ -253,7 +315,7 @@ const TALK_FIELD: u16 = 0x3A;
 const LOCATION_FIELD: u16 = 24;
 
 /// A `0xA6` line's resolved runtime scene state.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
 pub struct LineState {
     pub offset: usize,
     /// Object offset of the current speaker (from the last `0xC4`), if any.
@@ -327,7 +389,11 @@ pub fn interpret_line_states(cod: &[u8], var: &[u8]) -> Vec<LineState> {
 
         if op == OP_TEXT {
             let location_offset = actor.map(|a| state_u16(&state, a.wrapping_add(LOCATION_FIELD)));
-            out.push(LineState { offset: pos, actor_offset: actor, location_offset });
+            out.push(LineState {
+                offset: pos,
+                actor_offset: actor,
+                location_offset,
+            });
             // advance past the text token
             match decode_text(cod, pos, end) {
                 Some((_, next)) => pos = next,
@@ -376,14 +442,29 @@ pub fn interpret_line_states(cod: &[u8], var: &[u8]) -> Vec<LineState> {
 // ---------------------------------------------------------------------------
 
 /// One presentation event in execution order.
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub enum SceneEvent {
-    SetBackground { hnm: Option<String>, record: Option<String> },
-    PlayMusic { music: Option<String> },
-    ShowSpeaker { actor: String },
-    PlayVoice { clip_index: usize },
-    PlayTalkHnm { clip_index: usize },
-    DrawSubtitle { text: String, voice_selector: u8, flags: u8 },
+    SetBackground {
+        hnm: Option<String>,
+        record: Option<String>,
+    },
+    PlayMusic {
+        music: Option<String>,
+    },
+    ShowSpeaker {
+        actor: String,
+    },
+    PlayVoice {
+        clip_index: usize,
+    },
+    PlayTalkHnm {
+        clip_index: usize,
+    },
+    DrawSubtitle {
+        text: String,
+        voice_selector: u8,
+        flags: u8,
+    },
     /// Per-character UI "chatter" bleeps during the animated text reveal (tb.snd).
     PlayChatter,
     Clear,
@@ -392,7 +473,7 @@ pub enum SceneEvent {
 /// Minimal per-line input for the emitter — the fields a decoded `0xA6` line
 /// plus its resolved scene context provide. Decoupled from `ScriptSpeechLine`
 /// so the emitter stays unit-testable.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Serialize)]
 pub struct LineInput {
     pub actor: Option<String>,
     pub background_hnm: Option<String>,
@@ -416,16 +497,23 @@ pub fn emit_scene_events(lines: &[LineInput]) -> Vec<SceneEvent> {
     for line in lines {
         let bg = (line.background_hnm.clone(), line.background_record.clone());
         if cur_bg.as_ref() != Some(&bg) {
-            events.push(SceneEvent::SetBackground { hnm: bg.0.clone(), record: bg.1.clone() });
+            events.push(SceneEvent::SetBackground {
+                hnm: bg.0.clone(),
+                record: bg.1.clone(),
+            });
             cur_bg = Some(bg);
         }
         if cur_music.as_ref() != Some(&line.background_music) {
-            events.push(SceneEvent::PlayMusic { music: line.background_music.clone() });
+            events.push(SceneEvent::PlayMusic {
+                music: line.background_music.clone(),
+            });
             cur_music = Some(line.background_music.clone());
         }
         if let Some(actor) = &line.actor {
             if cur_actor.as_ref() != Some(actor) {
-                events.push(SceneEvent::ShowSpeaker { actor: actor.clone() });
+                events.push(SceneEvent::ShowSpeaker {
+                    actor: actor.clone(),
+                });
                 cur_actor = Some(actor.clone());
             }
         }
@@ -464,7 +552,14 @@ mod tests {
 
         let toks = walk(&cod, 0, cod.len());
         assert_eq!(toks.len(), 3);
-        assert_eq!(toks[0], VmToken::Op { offset: 0, opcode: 0xCE, len: 1 });
+        assert_eq!(
+            toks[0],
+            VmToken::Op {
+                offset: 0,
+                opcode: 0xCE,
+                len: 1
+            }
+        );
         match &toks[1] {
             VmToken::Text {
                 line_index,
@@ -485,7 +580,12 @@ mod tests {
             other => panic!("expected Text, got {other:?}"),
         }
         match &toks[2] {
-            VmToken::Text { voice_selector, loop_target, word_offsets, .. } => {
+            VmToken::Text {
+                voice_selector,
+                loop_target,
+                word_offsets,
+                ..
+            } => {
                 assert_eq!(*voice_selector, 0xFF); // no voice
                 assert_eq!(*loop_target, Some(0x1234));
                 assert_eq!(word_offsets, &vec![0x0020]);
@@ -521,12 +621,37 @@ mod tests {
         ];
         let ev = emit_scene_events(&lines);
         // exactly one SetBackground / PlayMusic / ShowSpeaker across both lines
-        assert_eq!(ev.iter().filter(|e| matches!(e, SceneEvent::SetBackground { .. })).count(), 1);
-        assert_eq!(ev.iter().filter(|e| matches!(e, SceneEvent::PlayMusic { .. })).count(), 1);
-        assert_eq!(ev.iter().filter(|e| matches!(e, SceneEvent::ShowSpeaker { .. })).count(), 1);
+        assert_eq!(
+            ev.iter()
+                .filter(|e| matches!(e, SceneEvent::SetBackground { .. }))
+                .count(),
+            1
+        );
+        assert_eq!(
+            ev.iter()
+                .filter(|e| matches!(e, SceneEvent::PlayMusic { .. }))
+                .count(),
+            1
+        );
+        assert_eq!(
+            ev.iter()
+                .filter(|e| matches!(e, SceneEvent::ShowSpeaker { .. }))
+                .count(),
+            1
+        );
         // two subtitles + two voices, trailing Clear
-        assert_eq!(ev.iter().filter(|e| matches!(e, SceneEvent::DrawSubtitle { .. })).count(), 2);
-        assert_eq!(ev.iter().filter(|e| matches!(e, SceneEvent::PlayVoice { .. })).count(), 2);
+        assert_eq!(
+            ev.iter()
+                .filter(|e| matches!(e, SceneEvent::DrawSubtitle { .. }))
+                .count(),
+            2
+        );
+        assert_eq!(
+            ev.iter()
+                .filter(|e| matches!(e, SceneEvent::PlayVoice { .. }))
+                .count(),
+            2
+        );
         assert_eq!(ev.last(), Some(&SceneEvent::Clear));
     }
 
@@ -554,7 +679,10 @@ mod tests {
                     .iter()
                     .filter(|s| s.location_offset.is_some_and(|l| l != 0))
                     .count();
-                eprintln!("SCRIPT{idx}: {} lines, {with_loc} with a runtime location", states.len());
+                eprintln!(
+                    "SCRIPT{idx}: {} lines, {with_loc} with a runtime location",
+                    states.len()
+                );
             }
         }
     }
@@ -565,17 +693,19 @@ mod tests {
     fn table_matches_binary() {
         const TABLE_OFF: usize = 0x14338;
         let candidates = ["re/bin/BLOODPRG.EXE", "../re/bin/BLOODPRG.EXE"];
-        let Some(data) = candidates
-            .iter()
-            .find_map(|p| std::fs::read(p).ok())
-        else {
+        let Some(data) = candidates.iter().find_map(|p| std::fs::read(p).ok()) else {
             eprintln!("skipping: BLOODPRG.EXE not available");
             return;
         };
         for (i, &(b0, b1)) in OPCODE_DESC.iter().enumerate() {
             let off = TABLE_OFF + i * 2;
             assert_eq!(data[off], b0, "byte0 mismatch at opcode {:#04x}", 0xA0 + i);
-            assert_eq!(data[off + 1], b1, "byte1 mismatch at opcode {:#04x}", 0xA0 + i);
+            assert_eq!(
+                data[off + 1],
+                b1,
+                "byte1 mismatch at opcode {:#04x}",
+                0xA0 + i
+            );
         }
     }
 
@@ -588,12 +718,22 @@ mod tests {
         for idx in 1..=5 {
             for prefix in ["output/scripts", "../output/scripts"] {
                 let path = format!("{prefix}/SCRIPT{idx}.COD");
-                let Ok(cod) = std::fs::read(&path) else { continue };
+                let Ok(cod) = std::fs::read(&path) else {
+                    continue;
+                };
                 let toks = walk(&cod, 0, cod.len());
-                let invalid =
-                    toks.iter().filter(|t| matches!(t, VmToken::Invalid { .. })).count();
-                let texts = toks.iter().filter(|t| matches!(t, VmToken::Text { .. })).count();
-                eprintln!("{path}: {} tokens, {texts} text, {invalid} invalid", toks.len());
+                let invalid = toks
+                    .iter()
+                    .filter(|t| matches!(t, VmToken::Invalid { .. }))
+                    .count();
+                let texts = toks
+                    .iter()
+                    .filter(|t| matches!(t, VmToken::Text { .. }))
+                    .count();
+                eprintln!(
+                    "{path}: {} tokens, {texts} text, {invalid} invalid",
+                    toks.len()
+                );
                 assert_eq!(invalid, 0, "{path} should walk cleanly");
             }
         }

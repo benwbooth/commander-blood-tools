@@ -10,6 +10,32 @@ fn main() {
 fn run() -> anyhow::Result<()> {
     let mut args = std::env::args().skip(1);
     match args.next().as_deref() {
+        Some("inspect-vm") => {
+            #[derive(serde::Serialize)]
+            struct VmInspection {
+                tokens: Vec<commander_blood_tools::vm::VmToken>,
+                line_states: Option<Vec<commander_blood_tools::vm::LineState>>,
+            }
+
+            let cod_path = args
+                .next()
+                .ok_or_else(|| anyhow::anyhow!("usage: inspect-vm <SCRIPT.COD> [SCRIPT.VAR]"))?;
+            let cod = std::fs::read(&cod_path)?;
+            let tokens = commander_blood_tools::vm::walk(&cod, 0, cod.len());
+            let line_states = args
+                .next()
+                .map(std::fs::read)
+                .transpose()?
+                .map(|var| commander_blood_tools::vm::interpret_line_states(&cod, &var));
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&VmInspection {
+                    tokens,
+                    line_states,
+                })?
+            );
+            Ok(())
+        }
         Some("inspect-descript") => {
             let path = args
                 .next()
