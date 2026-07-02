@@ -51,7 +51,7 @@ character/background/music guessing.
 - `src/extract/` parses and exports many media formats already:
   `BLOOD.DAT`, HNM, SND/VOC, DESCRIPT, SCRIPT dictionaries, dialogue manifests,
   and video/audio composites.
-- `src/extract/vm.rs` contains the first Rust implementation of the recovered
+- `src/vm.rs` contains the first Rust implementation of the recovered
   token decoder and a bounded state interpreter.
 - `re/REVERSE.md` contains the active binary map, VM notes, renderer notes,
   subtitle timing, and known dead ends.
@@ -208,7 +208,7 @@ Exit criteria:
 ## Immediate Milestones
 
 1. Update the project docs to make the Rust reimplementation the explicit target.
-2. Turn `src/extract/vm.rs` into the canonical script-walking path for dialogue
+2. Turn `src/vm.rs` into the canonical script-walking path for dialogue
    manifests.
 3. Add a Rust `BLOODPRG.EXE` inspection layer so decompiled constants and data
    tables are validated against the actual DOS binary before being used by the

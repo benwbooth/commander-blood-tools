@@ -521,11 +521,17 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
   walkable (no jump-table chasing), so this is a state-machine interpreter, not a
   full CPU emulator. This is the genuine "replay the game's logic" the goal asks
   for, and the route to ~100% location/speaker coverage.
-- [x] Assignment opcodes fully decoded. 0x6863 family (b1/b4-b6/be-c0), 7-byte:
+- [x] Assignment opcodes decoded and ported. 0x6863 family (b1/b4-b6/be-c0), 7-byte:
       `op [op1:u16] [operator:u8] [op2mode:u8] [op2:u16]`; operators `0xF5`=set,
       `0xF6`=add, `0xF7`=sub (+ comparisons `0xF0`=ne `0xF3`=le… for conditionals);
-      writes `state[op1]` (`mov es:[bx+di],cx` @0x68FD). op2mode `0xC0/0xC2` =
-      indirect (`op2 = state[op2]`). 0x6946 family also writes state (@0x69C2).
+      writes `state[op1]` in mode 0 (`mov es:[bx+di],cx` @0x68FD). op2mode
+      `0xC0/0xC2` = indirect (`op2 = state[op2]`). The Rust interpreter now
+      treats mode-1 comparisons as non-mutating until PC control flow is modeled.
+- [x] Ported the other mode-0 mutation handlers to Rust: 0x6902 family (AE/B0)
+      bitmask set/clear (`or es:[bx+di],ax` / `and es:[bx+di],~ax`) and 0x6946
+      family (AD/AF/B2/B3/BA/BB/BC) direct assignment (`mov es:[bx+di],ax`
+      @0x69C2). The DOS handler's side bookkeeping for sentinel object values is
+      documented but not needed for line-location recovery.
 - [x] **Interpreter prototype VALIDATED** (Python): init state from `SCRIPT*.VAR`,
       walk + execute 0x6863-family assigns, track `state[actor+24]` per 0xA6 line.
       Location coverage **58% → 63%** (SCRIPT2 61%, SCRIPT3 68%, SCRIPT4 65%,
@@ -533,22 +539,22 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 - Decision-relevant: the gain is **modest** because the dominant gap is the **22%
       of lines with no tracked speaker** (no `0xC4` even with cross-function
       persistence) — many are likely **narrator/system lines that legitimately
-      have no character/location** (so the "gap" is partly correct-as-is). Adding
-      the 0x6946-family assigns + conditional/branch evaluation would lift it
-      further but the speaker-attribution cap bounds the realistic ceiling.
+      have no character/location** (so the "gap" is partly correct-as-is).
+      Conditional/branch evaluation would lift it further, but the
+      speaker-attribution cap bounds the realistic ceiling.
 - [x] Ported the interpreter to Rust (`vm::interpret_line_states`, tested) and
       INTEGRATED it: `parse_script_speech` runs `resolve_runtime_backgrounds` per
       script and each `0xA6` line prefers the executed **runtime** location
       (`state[actor+24]` → DESCRIPT) over the static initial one, with no
       hardcoded fallback. **Shipped result: background coverage 56% → 61%** in the
       exported `script-speech.tsv` / videos.
-- [ ] Further gains (optional): add the 0x6946-family assignments and 0xAF-family
-      conditional/branch *evaluation* (currently a linear pass — applies assigns
-      the game might skip). Bounded by the ~22% no-speaker lines (many are
-      legitimately narrator/locationless). Voice clip-index still open.
+- [ ] Further gains (optional): add 0xAF-family conditional/branch *evaluation*
+      by modeling the PC/branch helper at 0x6462. The current linear pass applies
+      mode-0 mutations but does not choose branch targets. Bounded by the ~22%
+      no-speaker lines (many are legitimately narrator/locationless).
 - [x] Define the VM-event schema (`SceneEvent`: SetBackground, PlayMusic,
       ShowSpeaker, PlayVoice, PlayTalkHnm, DrawSubtitle, PlayChatter, Clear) +
-      `emit_scene_events()` emitter in `src/extract/vm.rs`, emitting state-change
+      `emit_scene_events()` emitter in `src/vm.rs`, emitting state-change
       events on transition only. Unit-tested (`emits_state_changes_on_transition_only`).
 - [x] Wire `emit_scene_events` into `character.rs`: the dialogue renderer
       (`create_character_dialogue_video`) now builds the `SceneEvent` IR and

@@ -363,20 +363,20 @@ fn opcode_metadata(opcode: u8, handler_file_offset: usize) -> OpcodeMetadata {
             0x006863 => OpcodeMetadata {
                 mnemonic: "state_assign_or_signed_compare",
                 family: "state-assign-compare",
-                rust_status: "linear-assign-ported",
-                notes: "B1/B4/B5/B6/BE/BF/C0 family; Rust linear interpreter applies F5=set, F6=add, F7=sub and does not yet execute branch-mode comparisons",
+                rust_status: "mode0-mutation-ported",
+                notes: "B1/B4/B5/B6/BE/BF/C0 family; Rust linear interpreter applies mode0 F5=set, F6=add, F7=sub and treats branch-mode comparisons as non-mutating until PC control flow is modeled",
             },
             0x006902 => OpcodeMetadata {
                 mnemonic: "bitmask_set_or_test",
                 family: "bitmask-set-test",
-                rust_status: "not-ported",
-                notes: "AE/B0 family; branch-mode bit tests and mode0 bit mutations still need a Rust model",
+                rust_status: "mode0-mutation-ported",
+                notes: "AE/B0 family; Rust linear interpreter applies mode0 bit set/clear mutations and leaves branch-mode bit tests for the future PC control-flow model",
             },
             0x006946 => OpcodeMetadata {
                 mnemonic: "equality_assign_or_test",
                 family: "equality-assign",
-                rust_status: "partially-identified",
-                notes: "AD/AF/B2/B3/BA/BB/BC family; equality tests and mode0 assignment behavior are identified but not fully executed in Rust",
+                rust_status: "mode0-mutation-ported",
+                notes: "AD/AF/B2/B3/BA/BB/BC family; Rust linear interpreter applies mode0 state assignments and leaves equality branch tests for the future PC control-flow model",
             },
             0x006aa7 => OpcodeMetadata {
                 mnemonic: "bit_set_or_test",

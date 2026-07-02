@@ -304,13 +304,22 @@ fn read_u16(cod: &[u8], at: usize) -> Option<u16> {
 //   * 0x6863 family (B1/B4/B5/B6/BE/BF/C0), 7 bytes:
 //       op [op1:u16] [operator:u8] [op2mode:u8] [op2:u16]
 //       operator 0xF5=set, 0xF6=add, 0xF7=sub; op2mode 0xC0/0xC2 => op2 indirect
-//       (`state[op2]`). Writes `state[op1]`.
+//       (`state[op2]`). Writes `state[op1]` in mode 0 only.
+//   * 0x6902 family (AE/B0), 5 bytes plus optional A1 prefix:
+//       set/clear a bit mask in `state[op1]` in mode 0.
+//   * 0x6946 family (AD/AF/B2/B3/BA/BB/BC), 5 bytes:
+//       direct `state[op1] = op2` in mode 0. The DOS handler also updates
+//       table-side bookkeeping for sentinel object values; that side effect is
+//       not needed for line-location recovery and is not modeled here.
 //   * 0xC4: actor reference; operand = object_offset + 0x3A (talk field).
 // NOTE: this is a LINEAR pass — it does not yet evaluate the 0xAF-family
-// conditionals/branches, so a value the game would skip can still be applied.
+// conditionals/branches; branch-mode comparison handlers are intentionally
+// treated as non-mutating until the PC/branch helper at 0x6462 is modeled.
 // Adequate for deterministic cutscene runs; see REVERSE.md for the caveat.
 
 const ASSIGN_7: [u8; 7] = [0xB1, 0xB4, 0xB5, 0xB6, 0xBE, 0xBF, 0xC0];
+const BITMASK_5: [u8; 2] = [0xAE, 0xB0];
+const ASSIGN_5: [u8; 7] = [0xAD, 0xAF, 0xB2, 0xB3, 0xBA, 0xBB, 0xBC];
 const TALK_FIELD: u16 = 0x3A;
 const LOCATION_FIELD: u16 = 24;
 
@@ -365,7 +374,7 @@ pub fn interpret_line_states(cod: &[u8], var: &[u8]) -> Vec<LineState> {
                 actor = Some(operand.wrapping_sub(TALK_FIELD));
             }
         }
-        if ASSIGN_7.contains(&op) && pos + 7 <= end {
+        if !mode1 && ASSIGN_7.contains(&op) && pos + 7 <= end {
             let op1 = read_u16(cod, pos + 1).unwrap_or(0);
             let operator = cod[pos + 3];
             let op2mode = cod[pos + 4];
@@ -385,6 +394,25 @@ pub fn interpret_line_states(cod: &[u8], var: &[u8]) -> Vec<LineState> {
             if let Some(v) = next {
                 state_set_u16(&mut state, op1, v);
             }
+        }
+        if !mode1 && BITMASK_5.contains(&op) {
+            let mut p = pos + 1;
+            let clear = cod.get(p) == Some(&0xA1);
+            if clear {
+                p += 1;
+            }
+            if p + 4 <= end {
+                let op1 = read_u16(cod, p).unwrap_or(0);
+                let mask = read_u16(cod, p + 2).unwrap_or(0);
+                let cur = state_u16(&state, op1);
+                let next = if clear { cur & !mask } else { cur | mask };
+                state_set_u16(&mut state, op1, next);
+            }
+        }
+        if !mode1 && ASSIGN_5.contains(&op) && pos + 5 <= end {
+            let op1 = read_u16(cod, pos + 1).unwrap_or(0);
+            let value = read_u16(cod, pos + 3).unwrap_or(0);
+            state_set_u16(&mut state, op1, value);
         }
 
         if op == OP_TEXT {
@@ -536,12 +564,25 @@ pub fn emit_scene_events(lines: &[LineInput]) -> Vec<SceneEvent> {
 mod tests {
     use super::*;
 
+    fn push_actor_ref(cod: &mut Vec<u8>, actor_offset: u16) {
+        let operand = actor_offset.wrapping_add(TALK_FIELD);
+        cod.push(OP_ACTOR);
+        cod.extend_from_slice(&operand.to_le_bytes());
+        cod.extend_from_slice(&0u16.to_le_bytes());
+    }
+
+    fn push_empty_text(cod: &mut Vec<u8>) {
+        cod.extend_from_slice(&[OP_TEXT, 0x00, 0x00, 0xff, 0x00, 0x80]);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+    }
+
     /// Build a tiny synthetic COD: a 1-byte op, an A6 text token (no loop), an
     /// A6 text token (with loop bit), then the 0xFF end marker.
     #[test]
     fn walks_synthetic_cod() {
         let mut cod = Vec::new();
-        cod.push(0xCE); // 1-byte op (CE descriptor len 1)
+        // 1-byte op (CE descriptor len 1).
+        cod.push(0xCE);
         // A6 line=0x0102 b3=0x05 b4=0x00 b5=0x80  words: 0x000C, 0x0010, term
         cod.extend_from_slice(&[0xA6, 0x02, 0x01, 0x05, 0x00, 0x80]);
         cod.extend_from_slice(&[0x0C, 0x00, 0x10, 0x00, 0x00, 0x00]);
@@ -592,6 +633,68 @@ mod tests {
             }
             other => panic!("expected looped Text, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn interpreter_applies_mode0_state_mutation_families() {
+        let actor = 0x0100u16;
+        let location_field = actor + LOCATION_FIELD;
+        let var = vec![0; 0x0200];
+        let mut cod = Vec::new();
+
+        push_actor_ref(&mut cod, actor);
+        // 0x6946 family: AF direct assignment.
+        cod.push(0xAF);
+        cod.extend_from_slice(&location_field.to_le_bytes());
+        cod.extend_from_slice(&0x1000u16.to_le_bytes());
+        push_empty_text(&mut cod);
+
+        // 0x6902 family: AE sets mask bits, B0+A1 clears mask bits.
+        cod.push(0xAE);
+        cod.extend_from_slice(&location_field.to_le_bytes());
+        cod.extend_from_slice(&0x0003u16.to_le_bytes());
+        cod.push(0xB0);
+        cod.push(0xA1);
+        cod.extend_from_slice(&location_field.to_le_bytes());
+        cod.extend_from_slice(&0x0001u16.to_le_bytes());
+        push_empty_text(&mut cod);
+
+        // 0x6946 family again: BC has the same mode-0 state write.
+        cod.push(0xBC);
+        cod.extend_from_slice(&location_field.to_le_bytes());
+        cod.extend_from_slice(&0x2222u16.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xFF);
+
+        let states = interpret_line_states(&cod, &var);
+        assert_eq!(states.len(), 3);
+        assert_eq!(states[0].location_offset, Some(0x1000));
+        assert_eq!(states[1].location_offset, Some(0x1002));
+        assert_eq!(states[2].location_offset, Some(0x2222));
+    }
+
+    #[test]
+    fn interpreter_does_not_apply_mode1_comparison_as_assignment() {
+        let actor = 0x0100u16;
+        let location_field = actor + LOCATION_FIELD;
+        let mut var = vec![0; 0x0200];
+        state_set_u16(&mut var, location_field, 0x1111);
+
+        let mut cod = Vec::new();
+        cod.extend_from_slice(&[0xA0, 0x00, 0x00]); // enter decoder mode 1
+        cod.push(0xC0); // 0x6863 family, but mode 1 is compare/branch, not write
+        cod.extend_from_slice(&location_field.to_le_bytes());
+        cod.push(0xF5);
+        cod.push(0xC1);
+        cod.extend_from_slice(&0x2222u16.to_le_bytes());
+        cod.push(0xA1); // leave decoder mode 1
+        push_actor_ref(&mut cod, actor);
+        push_empty_text(&mut cod);
+        cod.push(0xFF);
+
+        let states = interpret_line_states(&cod, &var);
+        assert_eq!(states.len(), 1);
+        assert_eq!(states[0].location_offset, Some(0x1111));
     }
 
     #[test]
