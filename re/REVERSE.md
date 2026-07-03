@@ -858,8 +858,13 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       static resource IDs map through `FS:0x0C04` to five profiles for
       `script1`..`script5`; opcode `D2` stores operand-1 in `DS:0x6780` for the
       main-loop profile handoff.
-- [ ] Model `D2` cross-script profile scheduling in Rust execution traces and
-      the event renderer, instead of stopping at the current COD stream.
+- [x] Model `D2` cross-script profile scheduling in Rust execution traces:
+      `ExecutionTrace` records D2 profile requests and
+      `execute_script_profile_sequence` follows the last non-sentinel pending
+      profile through the decoded script profiles.
+- [ ] Wire cross-script profile sequences into the extractor/event renderer, so
+      generated cutscene manifests can span the same SCRIPT1->SCRIPT2->... handoff
+      as the DOS main loop.
 - [ ] Decode the `gs:0x6724` per-line record layout (es:[di], es:[di+2] flags).
 - [ ] Verify audible `tb.snd` chatter trigger path, if any. `gs:0x67BB` itself is
       now decoded as post-reveal hold state rather than a direct SND caller.
@@ -1115,6 +1120,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       script profiles to COD/BAS/VAR/DIC/DEB resource IDs, and opcode `D2`
       writes the pending profile index to `DS:0x6780` for the main loop at
       `0x108E/0x10C5`.
+- [x] Port D2 profile-request scheduling:
+      `src/vm.rs` now records `ScriptProfileRequestEvent`s in execution traces
+      and exposes `execute_script_profile_sequence` to follow the DOS-style
+      pending-profile handoff across decoded script profiles.
 - [x] Port the `gs:0x67BB` line-complete hold timers:
       `src/vm.rs` models `0x94D4..0x94DD` (`b35=aca*4`) and `0x7378..0x738C`
       (`b35=0x27cf*(aca/2)+6`) as checked helper functions. Labels and known
