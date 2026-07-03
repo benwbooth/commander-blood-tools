@@ -126,14 +126,15 @@ pub fn text_selector_active_line_id(selector: u8) -> u16 {
 /// removed heuristic that treated `b4` control flags as a fallback clip index.
 pub fn text_selector_voice_clip_index(selector: u8, talk_clip_count: usize) -> Option<usize> {
     let one_based = selector as usize;
-    if selector != TEXT_SELECTOR_NONE
-        && selector != TEXT_SELECTOR_SILENT
-        && one_based <= talk_clip_count
-    {
+    if text_selector_requests_voice(selector) && one_based <= talk_clip_count {
         Some(one_based - 1)
     } else {
         None
     }
+}
+
+pub fn text_selector_requests_voice(selector: u8) -> bool {
+    selector != TEXT_SELECTOR_NONE && selector != TEXT_SELECTOR_SILENT
 }
 
 pub fn text_flags_are_active(flags_b5: u8) -> bool {
@@ -2613,6 +2614,16 @@ pub enum SceneEvent {
     PlayChatter {
         active_line_id: u16,
     },
+    UnresolvedBackground {
+        active_line_id: u16,
+    },
+    UnresolvedActor {
+        active_line_id: u16,
+    },
+    UnresolvedVoice {
+        voice_selector: u8,
+        active_line_id: u16,
+    },
     Clear,
 }
 
@@ -2642,6 +2653,11 @@ pub fn emit_scene_events(lines: &[LineInput]) -> Vec<SceneEvent> {
     let mut cur_actor: Option<String> = None;
 
     for line in lines {
+        if line.background_record.is_none() && line.background_hnm.is_none() {
+            events.push(SceneEvent::UnresolvedBackground {
+                active_line_id: line.active_line_id,
+            });
+        }
         let bg = (line.background_hnm.clone(), line.background_record.clone());
         if cur_bg.as_ref() != Some(&bg) {
             events.push(SceneEvent::SetBackground {
@@ -2663,10 +2679,22 @@ pub fn emit_scene_events(lines: &[LineInput]) -> Vec<SceneEvent> {
                 });
                 cur_actor = Some(actor.clone());
             }
+        } else if !line.text.trim().is_empty() {
+            events.push(SceneEvent::UnresolvedActor {
+                active_line_id: line.active_line_id,
+            });
         }
         if let Some(clip) = line.clip_index {
             events.push(SceneEvent::PlayTalkHnm { clip_index: clip });
             events.push(SceneEvent::PlayVoice { clip_index: clip });
+        } else if line.actor.is_some()
+            && line.flags_b4 < 0x10
+            && text_selector_requests_voice(line.voice_selector)
+        {
+            events.push(SceneEvent::UnresolvedVoice {
+                voice_selector: line.voice_selector,
+                active_line_id: line.active_line_id,
+            });
         }
         events.push(SceneEvent::DrawSubtitle {
             text: line.text.clone(),
@@ -3832,6 +3860,9 @@ mod tests {
 
     #[test]
     fn text_selector_voice_clip_index_uses_one_based_talk_clips() {
+        assert!(!text_selector_requests_voice(0x00));
+        assert!(!text_selector_requests_voice(0xFF));
+        assert!(text_selector_requests_voice(0x01));
         assert_eq!(text_selector_voice_clip_index(0x00, 4), None);
         assert_eq!(text_selector_voice_clip_index(0xFF, 4), None);
         assert_eq!(text_selector_voice_clip_index(0x01, 4), Some(0));
@@ -5407,6 +5438,70 @@ mod tests {
             2
         );
         assert_eq!(ev.last(), Some(&SceneEvent::Clear));
+    }
+
+    #[test]
+    fn emit_scene_events_reports_unresolved_presentation_inputs() {
+        let lines = vec![
+            LineInput {
+                actor: None,
+                background_hnm: None,
+                background_record: None,
+                voice_selector: 0x01,
+                active_line_id: text_selector_active_line_id(0x01),
+                flags_b4: 0x00,
+                clip_index: None,
+                text: "missing context".into(),
+                ..Default::default()
+            },
+            LineInput {
+                actor: Some("Bob_Morlock".into()),
+                background_hnm: Some("petrol10".into()),
+                background_music: Some("mus1".into()),
+                voice_selector: 0x05,
+                active_line_id: text_selector_active_line_id(0x05),
+                flags_b4: 0x00,
+                clip_index: None,
+                text: "missing voice".into(),
+                ..Default::default()
+            },
+            LineInput {
+                actor: Some("Bob_Morlock".into()),
+                background_hnm: Some("petrol10".into()),
+                background_music: Some("mus1".into()),
+                voice_selector: 0xFF,
+                active_line_id: text_selector_active_line_id(0xFF),
+                flags_b4: 0x00,
+                clip_index: None,
+                text: "silent".into(),
+                ..Default::default()
+            },
+        ];
+
+        let ev = emit_scene_events(&lines);
+        assert!(ev.iter().any(|event| matches!(
+            event,
+            SceneEvent::UnresolvedBackground { active_line_id }
+                if *active_line_id == text_selector_active_line_id(0x01)
+        )));
+        assert!(ev.iter().any(|event| matches!(
+            event,
+            SceneEvent::UnresolvedActor { active_line_id }
+                if *active_line_id == text_selector_active_line_id(0x01)
+        )));
+        assert_eq!(
+            ev.iter()
+                .filter(|event| matches!(event, SceneEvent::UnresolvedVoice { .. }))
+                .count(),
+            1
+        );
+        assert!(ev.iter().any(|event| matches!(
+            event,
+            SceneEvent::UnresolvedVoice {
+                voice_selector: 0x05,
+                active_line_id,
+            } if *active_line_id == text_selector_active_line_id(0x05)
+        )));
     }
 
     /// Interpreter probe: when extracted scripts are present, run the state

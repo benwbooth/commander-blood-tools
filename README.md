@@ -64,6 +64,10 @@ DESCRIPT character talk slots.
 The run-level dialogue manifests append unresolved actor, background, and voice
 counts so remaining presentation gaps are visible instead of hidden by fallback
 combinations.
+The scene-event manifests also emit explicit `unresolved_background`,
+`unresolved_actor`, and `unresolved_voice` rows at the VM line where context is
+missing; `0x00`/`0xff` voice selectors are treated as deliberate silent channels,
+not unresolved clips.
 
 The normal full exporter no longer emits per-character composites from the SND
 pass. It exports branch-aware initial-state executed dialogue groups in VM

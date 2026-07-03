@@ -3068,6 +3068,7 @@ fn speech_run_coverage<'a>(lines: impl IntoIterator<Item = &'a ScriptSpeechLine>
         }
         if line.actor_record.is_some()
             && line.clip_index.is_none()
+            && line.param0.is_some_and(vm::text_selector_requests_voice)
             && line.param1.is_some_and(|flags| flags < 0x10)
         {
             coverage.unresolved_voice_count += 1;
@@ -3087,7 +3088,11 @@ fn executed_run_coverage<'a>(
         if line.background_record.is_none() && line.background_hnm.is_none() {
             coverage.unresolved_background_count += 1;
         }
-        if line.actor_record.is_some() && line.clip_index.is_none() && line.param1 < 0x10 {
+        if line.actor_record.is_some()
+            && line.clip_index.is_none()
+            && vm::text_selector_requests_voice(line.param0)
+            && line.param1 < 0x10
+        {
             coverage.unresolved_voice_count += 1;
         }
     }
@@ -3154,6 +3159,9 @@ fn scene_event_kind(event: &vm::SceneEvent) -> &'static str {
         vm::SceneEvent::PlayVoice { .. } => "play_voice",
         vm::SceneEvent::DrawSubtitle { .. } => "draw_subtitle",
         vm::SceneEvent::PlayChatter { .. } => "play_chatter",
+        vm::SceneEvent::UnresolvedBackground { .. } => "unresolved_background",
+        vm::SceneEvent::UnresolvedActor { .. } => "unresolved_actor",
+        vm::SceneEvent::UnresolvedVoice { .. } => "unresolved_voice",
         vm::SceneEvent::Clear => "clear",
     }
 }
@@ -3227,6 +3235,21 @@ fn format_scene_event_fields(
         vm::SceneEvent::PlayChatter {
             active_line_id: event_active_line_id,
         } => {
+            active_line_id = format!("0x{event_active_line_id:04x}");
+        }
+        vm::SceneEvent::UnresolvedBackground {
+            active_line_id: event_active_line_id,
+        }
+        | vm::SceneEvent::UnresolvedActor {
+            active_line_id: event_active_line_id,
+        } => {
+            active_line_id = format!("0x{event_active_line_id:04x}");
+        }
+        vm::SceneEvent::UnresolvedVoice {
+            voice_selector: event_voice_selector,
+            active_line_id: event_active_line_id,
+        } => {
+            voice_selector = format!("{event_voice_selector:02x}");
             active_line_id = format!("0x{event_active_line_id:04x}");
         }
         vm::SceneEvent::Clear => {}
@@ -4607,11 +4630,23 @@ mod tests {
         let mut missing_voice =
             executed_speech_line("SCRIPT2", 3, 0x40, Some("Actor_A"), Some("Room2"), "silent");
         missing_voice.clip_index = None;
+        let mut deliberate_silent = executed_speech_line(
+            "SCRIPT2",
+            4,
+            0x45,
+            Some("Actor_A"),
+            Some("Room2"),
+            "selector none",
+        );
+        deliberate_silent.param0 = vm::TEXT_SELECTOR_NONE;
+        deliberate_silent.active_line_id = vm::text_selector_active_line_id(vm::TEXT_SELECTOR_NONE);
+        deliberate_silent.clip_index = None;
         let rows = vec![
             executed_speech_line("SCRIPT2", 0, 0x50, Some("Actor_A"), Some("Room1"), "a"),
             executed_speech_line("SCRIPT2", 1, 0x10, Some("Actor_B"), Some("Room1"), "b"),
             executed_speech_line("SCRIPT2", 2, 0x30, Some("Actor_A"), Some("Room2"), "c"),
             missing_voice,
+            deliberate_silent,
             executed_speech_line("SCRIPT3", 0, 0x10, Some("Actor_A"), Some("Room1"), "d"),
         ];
 
@@ -4704,6 +4739,83 @@ mod tests {
         assert_eq!(columns[7], "");
         assert_eq!(columns[8], "");
         assert_eq!(columns[18], "");
+    }
+
+    #[test]
+    fn scene_events_manifest_reports_unresolved_presentation_inputs() {
+        let mut missing_voice = executed_speech_line(
+            "SCRIPT2",
+            1,
+            0x60,
+            Some("Actor_A"),
+            Some("Room1"),
+            "missing voice",
+        );
+        missing_voice.param0 = 0x05;
+        missing_voice.active_line_id = vm::text_selector_active_line_id(0x05);
+        missing_voice.clip_index = None;
+
+        let mut deliberate_silent = executed_speech_line(
+            "SCRIPT2",
+            2,
+            0x70,
+            Some("Actor_A"),
+            Some("Room1"),
+            "silent by selector",
+        );
+        deliberate_silent.param0 = vm::TEXT_SELECTOR_NONE;
+        deliberate_silent.active_line_id = vm::text_selector_active_line_id(vm::TEXT_SELECTOR_NONE);
+        deliberate_silent.clip_index = None;
+
+        let rows = vec![
+            executed_speech_line("SCRIPT2", 0, 0x50, None, None, "missing context"),
+            missing_voice,
+            deliberate_silent,
+        ];
+
+        let path = std::env::temp_dir().join(format!(
+            "commander-blood-unresolved-scene-events-{}.tsv",
+            std::process::id()
+        ));
+        write_script_scene_events_manifest(&rows, &path).expect("write scene events");
+        let manifest = fs::read_to_string(&path).expect("read scene events");
+        let _ = fs::remove_file(&path);
+
+        let unresolved_background = manifest
+            .lines()
+            .find(|line| line.contains("\tunresolved_background\t"))
+            .expect("unresolved background event");
+        let columns = unresolved_background.split('\t').collect::<Vec<_>>();
+        assert_eq!(columns[7], "0");
+        assert_eq!(columns[8], "0x00050");
+        assert_eq!(columns[15], "0x000a");
+        assert_eq!(columns[18], "test");
+
+        let unresolved_actor = manifest
+            .lines()
+            .find(|line| line.contains("\tunresolved_actor\t"))
+            .expect("unresolved actor event");
+        let columns = unresolved_actor.split('\t').collect::<Vec<_>>();
+        assert_eq!(columns[7], "0");
+        assert_eq!(columns[8], "0x00050");
+        assert_eq!(columns[15], "0x000a");
+        assert_eq!(columns[18], "test");
+
+        let unresolved_voice = manifest
+            .lines()
+            .find(|line| line.contains("\tunresolved_voice\t"))
+            .expect("unresolved voice event");
+        let columns = unresolved_voice.split('\t').collect::<Vec<_>>();
+        assert_eq!(columns[7], "1");
+        assert_eq!(columns[8], "0x00060");
+        assert_eq!(columns[9], "Actor_A");
+        assert_eq!(columns[10], "Room1");
+        assert_eq!(columns[11], "Room1.hnm");
+        assert_eq!(columns[12], "Room1_music");
+        assert_eq!(columns[14], "05");
+        assert_eq!(columns[15], "0x000e");
+        assert_eq!(columns[18], "test");
+        assert_eq!(manifest.matches("\tunresolved_voice\t").count(), 1);
     }
 
     #[test]

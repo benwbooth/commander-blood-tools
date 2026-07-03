@@ -1307,9 +1307,16 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       scenario-tagged run slices as `branch-scenario-dialogue-run - ...mp4`
       outputs through the same event renderer as default executed runs.
 - [x] Define the VM-event schema (`SceneEvent`: SetBackground, PlayMusic,
-      ShowSpeaker, PlayVoice, PlayTalkHnm, DrawSubtitle, PlayChatter, Clear) +
-      `emit_scene_events()` emitter in `src/vm.rs`, emitting state-change
-      events on transition only. Unit-tested (`emits_state_changes_on_transition_only`).
+      ShowSpeaker, PlayVoice, PlayTalkHnm, DrawSubtitle, PlayChatter,
+      UnresolvedBackground/Actor/Voice, Clear) + `emit_scene_events()` emitter
+      in `src/vm.rs`, emitting state-change events on transition only.
+      Unit-tested (`emits_state_changes_on_transition_only`).
+- [x] Make unresolved presentation inputs first-class scene events:
+      `UnresolvedBackground`, `UnresolvedActor`, and `UnresolvedVoice` now appear
+      in the `script-*-scene-events.tsv` streams at the exact source line where
+      the current Rust trace lacks context. `UnresolvedVoice` only fires for
+      voice-requesting selectors (`b3` not `0x00`/`0xff`), so intentional silent
+      subtitle channels are not reported as missing clips.
 - [x] Wire `emit_scene_events` into `character.rs`: the dialogue renderer
       (`create_character_dialogue_video`) now builds the `SceneEvent` IR and
       renders by consuming it (SetBackground/PlayMusic/PlayVoice/DrawSubtitle),
