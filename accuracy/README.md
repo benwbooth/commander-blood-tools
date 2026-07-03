@@ -48,6 +48,20 @@ targets. Blank `max_mean_abs` values record metrics as `unchecked` without makin
 the batch fail; fill in a threshold only after the generated frame is known to be
 frame-aligned with the DOS capture.
 
+Scenarios may set `scan_start`, `scan_end`, and `scan_step` to search a generated
+MP4 window and save the best matching frame as the scenario comparison. The scan
+writes `scan.json` next to `comparison.json`; this is useful for proving whether
+a mismatch is just timestamp alignment or the wrong scene/presentation state.
+
+Single comparisons can use the same scanner:
+
+```sh
+nix develop --command python accuracy/compare_oracle.py \
+  --reference accuracy/captures/frame_12.png \
+  --generated "output/mp4/executed-dialogue-run - script2 - 0001 - pterra.mp4" \
+  --scan-generated 0:12:1
+```
+
 ## What works (verified 2026-06-14)
 
 - `accuracy/dosbox.conf` mounts the CD image (`output/CMDR_BLOOD.iso`) as `D:`,

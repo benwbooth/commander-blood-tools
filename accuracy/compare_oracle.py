@@ -37,6 +37,9 @@ class Scenario:
     generated_time: float = 0.0
     ref_crop: str = "auto"
     max_mean_abs: float | None = None
+    scan_start: float | None = None
+    scan_end: float | None = None
+    scan_step: float | None = None
     out_dir: Path | None = None
     notes: str = ""
 
@@ -69,14 +72,48 @@ def load_scenarios(path: Path) -> list[Scenario]:
                 scenario_id=scenario_id,
                 reference=Path(reference),
                 generated=Path(generated),
-                generated_time=float((row.get("generated_time") or "0").strip() or "0"),
+                generated_time=float(
+                    (row.get("generated_time") or "0").strip() or "0"
+                ),
                 ref_crop=(row.get("ref_crop") or "auto").strip() or "auto",
                 max_mean_abs=parse_optional_float(row.get("max_mean_abs")),
+                scan_start=parse_optional_float(row.get("scan_start")),
+                scan_end=parse_optional_float(row.get("scan_end")),
+                scan_step=parse_optional_float(row.get("scan_step")),
                 out_dir=Path(row["out_dir"]) if (row.get("out_dir") or "").strip() else None,
                 notes=(row.get("notes") or "").strip(),
             )
         )
     return scenarios
+
+
+def parse_scan_range(value: str) -> tuple[float, float, float]:
+    parts = value.split(":")
+    if len(parts) != 3:
+        raise ValueError("--scan-generated must be START:END:STEP")
+    start, end, step = (float(part) for part in parts)
+    validate_scan_range(start, end, step)
+    return start, end, step
+
+
+def validate_scan_range(start: float, end: float, step: float) -> None:
+    if start < 0 or end < 0:
+        raise ValueError("scan range cannot contain negative timestamps")
+    if end < start:
+        raise ValueError("scan end must be greater than or equal to start")
+    if step <= 0:
+        raise ValueError("scan step must be positive")
+
+
+def scan_times(start: float, end: float, step: float) -> list[float]:
+    validate_scan_range(start, end, step)
+    times: list[float] = []
+    time_sec = start
+    epsilon = step / 1000.0
+    while time_sec <= end + epsilon:
+        times.append(round(time_sec, 6))
+        time_sec += step
+    return times
 
 
 def parse_crop(value: str | None, image_size: tuple[int, int]) -> tuple[int, int, int, int]:
@@ -104,12 +141,11 @@ def load_native_image(path: Path, *, crop: tuple[int, int, int, int] | None = No
     return image.resize(NATIVE_SIZE, Image.Resampling.NEAREST)
 
 
-def extract_generated_frame(generated: Path, time_sec: float, out_dir: Path) -> Path:
+def extract_generated_frame(generated: Path, time_sec: float, out_path: Path) -> Path:
     suffix = generated.suffix.lower()
     if suffix in {".png", ".jpg", ".jpeg", ".bmp"}:
         return generated
 
-    frame_path = out_dir / "generated-source-frame.png"
     ffmpeg = os.environ.get("FFMPEG", "ffmpeg")
     subprocess.run(
         [
@@ -123,11 +159,11 @@ def extract_generated_frame(generated: Path, time_sec: float, out_dir: Path) -> 
             str(generated),
             "-frames:v",
             "1",
-            str(frame_path),
+            str(out_path),
         ],
         check=True,
     )
-    return frame_path
+    return out_path
 
 
 def diff_metrics(reference: Image.Image, generated: Image.Image) -> dict[str, object]:
@@ -183,6 +219,7 @@ def compare_paths(
     max_mean_abs: float | None = None,
     scenario_id: str | None = None,
     notes: str = "",
+    extra_metrics: dict[str, object] | None = None,
 ) -> dict[str, object]:
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -193,7 +230,7 @@ def compare_paths(
 
     with tempfile.TemporaryDirectory(prefix="commander-blood-compare-") as tmp:
         generated_source = extract_generated_frame(
-            generated_path, generated_time, Path(tmp)
+            generated_path, generated_time, Path(tmp) / "generated-source-frame.png"
         )
         generated_native = load_native_image(generated_source)
 
@@ -211,6 +248,8 @@ def compare_paths(
             "notes": notes,
         }
     )
+    if extra_metrics is not None:
+        metrics.update(extra_metrics)
 
     reference_native.save(out_dir / "reference-native.png")
     generated_native.save(out_dir / "generated-native.png")
@@ -218,6 +257,76 @@ def compare_paths(
     (out_dir / "comparison.json").write_text(json.dumps(metrics, indent=2) + "\n")
 
     return metrics
+
+
+def scan_generated_times(
+    reference_path: Path,
+    generated_path: Path,
+    *,
+    start: float,
+    end: float,
+    step: float,
+    ref_crop: str,
+    out_dir: Path,
+    max_mean_abs: float | None = None,
+    scenario_id: str | None = None,
+    notes: str = "",
+) -> dict[str, object]:
+    times = scan_times(start, end, step)
+    if not times:
+        raise ValueError("scan range produced no timestamps")
+
+    reference_source = Image.open(reference_path)
+    crop = parse_crop(ref_crop, reference_source.size)
+    reference_source.close()
+    reference_native = load_native_image(reference_path, crop=crop)
+
+    scan_results: list[dict[str, object]] = []
+    with tempfile.TemporaryDirectory(prefix="commander-blood-scan-") as tmp:
+        tmp_dir = Path(tmp)
+        for index, time_sec in enumerate(times):
+            frame_path = tmp_dir / f"generated-source-frame-{index:05}.png"
+            generated_source = extract_generated_frame(
+                generated_path, time_sec, frame_path
+            )
+            generated_native = load_native_image(generated_source)
+            metrics = diff_metrics(reference_native, generated_native)
+            scan_results.append(
+                {
+                    "generated_time": time_sec,
+                    "mean_abs": metrics["mean_abs"],
+                    "rmse": metrics["rmse"],
+                    "max_abs": metrics["max_abs"],
+                    "exact_pixel_percent": metrics["exact_pixel_percent"],
+                    "mean_abs_rgb": metrics["mean_abs_rgb"],
+                }
+            )
+
+    best = min(scan_results, key=lambda result: float(result["mean_abs"]))
+    scan_summary = {
+        "scan_start": start,
+        "scan_end": end,
+        "scan_step": step,
+        "scan_count": len(scan_results),
+        "best_generated_time": best["generated_time"],
+        "best_mean_abs": best["mean_abs"],
+    }
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "scan.json").write_text(
+        json.dumps({"summary": scan_summary, "results": scan_results}, indent=2) + "\n"
+    )
+
+    return compare_paths(
+        reference_path,
+        generated_path,
+        generated_time=float(best["generated_time"]),
+        ref_crop=ref_crop,
+        out_dir=out_dir,
+        max_mean_abs=max_mean_abs,
+        scenario_id=scenario_id,
+        notes=notes,
+        extra_metrics=scan_summary,
+    )
 
 
 def run_scenarios(
@@ -242,16 +351,45 @@ def run_scenarios(
     exit_code = 0
     for scenario in selected:
         out_dir = scenario.out_dir or out_root / scenario.scenario_id
-        metrics = compare_paths(
-            scenario.reference,
-            scenario.generated,
-            generated_time=scenario.generated_time,
-            ref_crop=scenario.ref_crop,
-            out_dir=out_dir,
-            max_mean_abs=scenario.max_mean_abs,
-            scenario_id=scenario.scenario_id,
-            notes=scenario.notes,
-        )
+        if (
+            scenario.scan_start is not None
+            or scenario.scan_end is not None
+            or scenario.scan_step is not None
+        ):
+            scan_start = (
+                scenario.scan_start
+                if scenario.scan_start is not None
+                else scenario.generated_time
+            )
+            scan_end = (
+                scenario.scan_end if scenario.scan_end is not None else scan_start
+            )
+            scan_step = (
+                scenario.scan_step if scenario.scan_step is not None else 1.0
+            )
+            metrics = scan_generated_times(
+                scenario.reference,
+                scenario.generated,
+                start=scan_start,
+                end=scan_end,
+                step=scan_step,
+                ref_crop=scenario.ref_crop,
+                out_dir=out_dir,
+                max_mean_abs=scenario.max_mean_abs,
+                scenario_id=scenario.scenario_id,
+                notes=scenario.notes,
+            )
+        else:
+            metrics = compare_paths(
+                scenario.reference,
+                scenario.generated,
+                generated_time=scenario.generated_time,
+                ref_crop=scenario.ref_crop,
+                out_dir=out_dir,
+                max_mean_abs=scenario.max_mean_abs,
+                scenario_id=scenario.scenario_id,
+                notes=scenario.notes,
+            )
         results.append(metrics)
         print(json.dumps(metrics, indent=2))
         if metrics["status"] == "fail":
@@ -306,6 +444,10 @@ def main() -> int:
         type=Path,
         help="Batch summary JSON path; defaults to <out-dir>/summary.json",
     )
+    parser.add_argument(
+        "--scan-generated",
+        help="Scan generated MP4 timestamps as START:END:STEP and compare the best frame",
+    )
     args = parser.parse_args()
 
     if args.scenario_file:
@@ -323,14 +465,27 @@ def main() -> int:
         parser.error("--reference and --generated are required unless --scenario-file is used")
 
     out_dir = args.out_dir or default_out_dir(args.reference, args.generated, args.generated_time)
-    metrics = compare_paths(
-        args.reference,
-        args.generated,
-        generated_time=args.generated_time,
-        ref_crop=args.ref_crop,
-        out_dir=out_dir,
-        max_mean_abs=args.max_mean_abs,
-    )
+    if args.scan_generated:
+        start, end, step = parse_scan_range(args.scan_generated)
+        metrics = scan_generated_times(
+            args.reference,
+            args.generated,
+            start=start,
+            end=end,
+            step=step,
+            ref_crop=args.ref_crop,
+            out_dir=out_dir,
+            max_mean_abs=args.max_mean_abs,
+        )
+    else:
+        metrics = compare_paths(
+            args.reference,
+            args.generated,
+            generated_time=args.generated_time,
+            ref_crop=args.ref_crop,
+            out_dir=out_dir,
+            max_mean_abs=args.max_mean_abs,
+        )
     print(json.dumps(metrics, indent=2))
     if metrics["status"] == "fail":
         return 2

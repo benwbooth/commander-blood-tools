@@ -12,6 +12,14 @@ import compare_oracle
 
 
 class CompareOracleTests(unittest.TestCase):
+    def test_scan_range_includes_end_timestamp(self) -> None:
+        self.assertEqual(compare_oracle.parse_scan_range("0:1:0.5"), (0.0, 1.0, 0.5))
+        self.assertEqual(compare_oracle.scan_times(0.0, 1.0, 0.5), [0.0, 0.5, 1.0])
+        with self.assertRaises(ValueError):
+            compare_oracle.parse_scan_range("1:0:0.5")
+        with self.assertRaises(ValueError):
+            compare_oracle.parse_scan_range("0:1:0")
+
     def test_batch_scenarios_report_pass_fail_and_unchecked(self) -> None:
         with tempfile.TemporaryDirectory(prefix="commander-blood-oracle-test-") as tmp:
             root = Path(tmp)
@@ -26,16 +34,17 @@ class CompareOracleTests(unittest.TestCase):
             scenario_file.write_text(
                 "\n".join(
                     [
-                        "scenario_id\treference\tgenerated\tgenerated_time\tref_crop\tmax_mean_abs\tout_dir\tnotes",
-                        f"same\t{reference}\t{same}\t0\tauto\t0\t\tpixel-identical",
-                        f"different\t{reference}\t{different}\t0\tauto\t1\t\tintentional failure",
-                        f"unchecked\t{reference}\t{different}\t0\tauto\t\t\tno threshold yet",
+                        "scenario_id\treference\tgenerated\tgenerated_time\tref_crop\tmax_mean_abs\tscan_start\tscan_end\tscan_step\tout_dir\tnotes",
+                        f"same\t{reference}\t{same}\t0\tauto\t0\t\t\t\t\tpixel-identical",
+                        f"different\t{reference}\t{different}\t0\tauto\t1\t\t\t\t\tintentional failure",
+                        f"unchecked\t{reference}\t{different}\t0\tauto\t\t\t\t\t\tno threshold yet",
                     ]
                 )
                 + "\n"
             )
 
             scenarios = compare_oracle.load_scenarios(scenario_file)
+            self.assertIsNone(scenarios[0].scan_start)
             results, exit_code = compare_oracle.run_scenarios(
                 scenarios,
                 out_root=root / "comparisons",
