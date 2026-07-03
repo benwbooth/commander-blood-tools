@@ -327,7 +327,7 @@ struct looks larger than 0x18, may be a different/extended table).
 | A4 | 0x65DB | | B7 | 0x6AA7 | | C6 | 0x6D80 |
 | A5 | 0x65EB | | B8/B9/BD | 0x6B06 | | C7 | 0x6DCF |
 | **A6** | **0x660C** (TEXT) | | C1 | 0x6B4C | | C8 | 0x6F62 |
-| A7 | 0x67BA | | CA | 0x64E5 | | C9 | 0x6FB9 |
+| A7 | 0x67BA | | CA | 0x64E5 | | **C9** | **0x6FB9** (record clear) |
 | A8 | 0x67C8 | | CB | 0x6510 | | CD | 0x69C7 |
 | A9 | 0x6830 | | CC | 0x64CE | | CE–D2 | 0x6494–0x64B8 (1–2 byte ops) |
 | AA | 0x6855 | | | | | D3 | 0x53A0 (seg base = no-op/default) |
@@ -391,6 +391,27 @@ related_record_offset, len: 5 }`. Speaker tracking still keys on
 `record_offset == object_offset + 0x3A`, which is the data-backed mapping used by
 the current dialogue manifests; the second operand is retained so later line
 record modeling does not have to re-parse raw bytes.
+
+### 0xC9 record-clear handler @ file 0x6FB9 — speaker lifetime (DECODED)
+
+`0xC9` consumes one u16 record operand (`C9 <record:u16>`, 3 bytes total). The
+handler loads the line/record table via `les di, gs:[0x6724]`, reads the existing
+record type at `es:[record]`, then zeros the three-word record:
+
+    es:[record + 0] = 0
+    es:[record + 2] = 0
+    es:[record + 4] = 0
+
+If the previous record type was `0xC4`, it treats the old `es:[record+2]` value
+as a related actor subrecord, computes a type-dependent stride, zeros that
+related 6-byte subrecord too, and resets presentation gate bytes
+`gs:[0x252A]=0`, `gs:[0x2531]=6`.
+
+This matters for video accuracy: real scripts frequently emit text after a
+matching `C9` and before the next `C4`, so carrying the previous actor through
+that clear bleeds the wrong speaker/background into narrator or system lines.
+Rust now exposes `VmToken::RecordClear` and clears the current speaker context
+when `record_offset == actor_offset + 0x3A`.
 
 ### Dialogue display state machine (seg 0x0971, file ~0x9E81)
 
@@ -529,6 +550,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 - [x] Reconcile 0xC4 length and operands. The handler consumes two u16 operands,
       writes a 6-byte record entry on success, and `src/vm.rs` now exposes both
       words instead of reducing the token to a single actor id.
+- [x] Port 0xC9 record-clear speaker lifetime semantics. `src/vm.rs` exposes
+      `VmToken::RecordClear`, the bounded interpreter clears the active actor
+      when its talk-field record is cleared, and the script parsers stop carrying
+      actor/background context past matching `C9` tokens.
 - [ ] Map presentation constants: subtitle position, reveal rate, colors, timing,
       HNM actor reset/loop policy, audio mix levels.
 

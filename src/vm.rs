@@ -92,6 +92,7 @@ pub const OP_MIN: u8 = 0xA0;
 pub const OP_MAX: u8 = 0xD3;
 pub const OP_TEXT: u8 = 0xA6;
 pub const OP_ACTOR: u8 = 0xC4;
+pub const OP_RECORD_CLEAR: u8 = 0xC9;
 pub const TEXT_SELECTOR_NONE: u8 = 0xFF;
 pub const TEXT_SELECTOR_SILENT: u8 = 0x00;
 pub const ACTIVE_LINE_ID_BIAS: u16 = 9;
@@ -185,6 +186,16 @@ pub enum VmToken {
         related_record_offset: u16,
         len: usize,
     },
+    /// `0xC9` record clear.
+    ///
+    /// The DOS handler zeros the 6-byte record at this offset. If the cleared
+    /// record currently holds a `0xC4` actor entry, it also clears that related
+    /// actor subrecord and resets presentation gate bytes.
+    RecordClear {
+        offset: usize,
+        record_offset: u16,
+        len: usize,
+    },
     /// Any other opcode; raw length recorded.
     Op {
         offset: usize,
@@ -275,6 +286,13 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
                 related_record_offset,
                 len,
             });
+        } else if op == OP_RECORD_CLEAR {
+            let record_offset = read_u16(cod, pos + 1).unwrap_or(0);
+            out.push(VmToken::RecordClear {
+                offset: pos,
+                record_offset,
+                len,
+            });
         } else {
             out.push(VmToken::Op {
                 offset: pos,
@@ -363,6 +381,8 @@ fn read_u16(cod: &[u8], at: usize) -> Option<u16> {
 //       offset and doubles as object_offset + 0x3A (talk field) for speaker
 //       tracking; the second operand is a related record offset consumed by the
 //       DOS handler.
+//   * 0xC9: record clear. The handler zeroes a 6-byte record and, when the
+//       previous entry was 0xC4, clears the related actor subrecord too.
 // NOTE: this is a LINEAR pass — it does not yet evaluate the 0xAF-family
 // conditionals/branches; branch-mode comparison handlers are intentionally
 // treated as non-mutating until the PC/branch helper at 0x6462 is modeled.
@@ -478,6 +498,13 @@ pub fn interpret_line_states(cod: &[u8], var: &[u8]) -> Vec<LineState> {
         if op == OP_ACTOR {
             if let Some(record_offset) = read_u16(cod, pos + 1) {
                 actor = Some(record_offset.wrapping_sub(TALK_FIELD));
+            }
+        }
+        if op == OP_RECORD_CLEAR {
+            if let Some(record_offset) = read_u16(cod, pos + 1) {
+                if actor.map(|a| a.wrapping_add(TALK_FIELD)) == Some(record_offset) {
+                    actor = None;
+                }
             }
         }
         if !mode1 && ASSIGN_7.contains(&op) && pos + 7 <= end {
@@ -798,6 +825,13 @@ pub fn execute_trace_with_overrides(
                 actor = Some(record_offset.wrapping_sub(TALK_FIELD));
             }
         }
+        if op == OP_RECORD_CLEAR {
+            if let Some(record_offset) = read_u16(cod, token_start + 1) {
+                if actor.map(|a| a.wrapping_add(TALK_FIELD)) == Some(record_offset) {
+                    actor = None;
+                }
+            }
+        }
         if !mode1 && ASSIGN_7.contains(&op) && token_start + 7 <= end {
             let op1 = read_u16(cod, token_start + 1).unwrap_or(0);
             let operator = cod[token_start + 3];
@@ -1015,6 +1049,12 @@ mod tests {
         cod.extend_from_slice(&0u16.to_le_bytes());
     }
 
+    fn push_record_clear(cod: &mut Vec<u8>, actor_offset: u16) {
+        let record_offset = actor_offset.wrapping_add(TALK_FIELD);
+        cod.push(OP_RECORD_CLEAR);
+        cod.extend_from_slice(&record_offset.to_le_bytes());
+    }
+
     /// Build a tiny synthetic COD: a 1-byte op, an A6 text token (no loop), an
     /// A6 text token (with loop bit), then the 0xFF end marker.
     #[test]
@@ -1091,6 +1131,21 @@ mod tests {
     }
 
     #[test]
+    fn record_clear_token_exposes_cleared_record() {
+        let cod = [OP_RECORD_CLEAR, 0x84, 0x00, 0xFF];
+
+        let toks = walk(&cod, 0, cod.len());
+        assert_eq!(
+            toks[0],
+            VmToken::RecordClear {
+                offset: 0,
+                record_offset: 0x0084,
+                len: 3
+            }
+        );
+    }
+
+    #[test]
     fn text_selector_active_line_id_matches_signed_binary_bridge() {
         assert_eq!(text_selector_active_line_id(0x00), 9);
         assert_eq!(text_selector_active_line_id(0x01), 10);
@@ -1154,6 +1209,28 @@ mod tests {
         assert_eq!(states[0].location_offset, Some(0x1000));
         assert_eq!(states[1].location_offset, Some(0x1002));
         assert_eq!(states[2].location_offset, Some(0x2222));
+    }
+
+    #[test]
+    fn interpreter_record_clear_stops_actor_location_bleed() {
+        let actor = 0x0100u16;
+        let location_field = actor + LOCATION_FIELD;
+        let mut var = vec![0; 0x0200];
+        state_set_u16(&mut var, location_field, 0x1111);
+
+        let mut cod = Vec::new();
+        push_actor_ref(&mut cod, actor);
+        push_empty_text(&mut cod);
+        push_record_clear(&mut cod, actor);
+        push_empty_text(&mut cod);
+        cod.push(0xFF);
+
+        let states = interpret_line_states(&cod, &var);
+        assert_eq!(states.len(), 2);
+        assert_eq!(states[0].actor_offset, Some(actor));
+        assert_eq!(states[0].location_offset, Some(0x1111));
+        assert_eq!(states[1].actor_offset, None);
+        assert_eq!(states[1].location_offset, None);
     }
 
     #[test]

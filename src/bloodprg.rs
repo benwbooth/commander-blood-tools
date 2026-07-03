@@ -678,6 +678,15 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         comment: "actor/record handler; consumes record+related u16 operands and writes a 6-byte record entry",
     },
     BinarySymbol {
+        name: "vm_op_c9_record_clear",
+        file_offset: 0x006fb9,
+        segment: Some(0x04da),
+        offset: Some(0x1c19),
+        ds_offset: None,
+        kind: "script-vm",
+        comment: "record-clear handler; zeros a 6-byte record and clears related 0xc4 actor subrecord",
+    },
+    BinarySymbol {
         name: "render_string_entry",
         file_offset: 0x003192,
         segment: Some(0x0299),

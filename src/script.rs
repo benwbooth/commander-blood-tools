@@ -220,6 +220,11 @@ pub fn parse_speech_events(
                     current_actor = Some(*actor);
                 }
             }
+            VmToken::RecordClear { record_offset, .. } => {
+                if matches!(current_actor, Some(actor) if actor.actor_talk_ref == record_offset) {
+                    current_actor = None;
+                }
+            }
             VmToken::Text {
                 offset,
                 voice_selector,
@@ -490,10 +495,13 @@ mod tests {
             // 0xFF is a no-voice subtitle channel. The following b4 control byte
             // must not be misread as a fallback clip index.
             0xa6, 0x36, 0x12, 0xff, 0x02, 0x80, 0x01, 0x00, 0x00, 0x00,
+            // C9 clears the same talk-field record, so later lines must not
+            // inherit Bob's actor/background context.
+            0xc9, 0x3a, 0x01, 0xa6, 0x38, 0x12, 0xff, 0x00, 0x80, 0x07, 0x00, 0x00, 0x00,
         ];
 
         let events = parse_speech_events("SCRIPTX", &cod, &dictionary, &functions, &contexts);
-        assert_eq!(events.len(), 2);
+        assert_eq!(events.len(), 3);
         assert_eq!(events[0].actor_record.as_deref(), Some("Bob_Morlock"));
         assert_eq!(events[0].clip_index, Some(1));
         assert_eq!(events[0].background_hnm.as_deref(), Some("gobar1.hnm"));
@@ -501,5 +509,9 @@ mod tests {
         assert_eq!(events[1].actor_record.as_deref(), Some("Bob_Morlock"));
         assert_eq!(events[1].clip_index, None);
         assert_eq!(events[1].text, "HELLO");
+        assert_eq!(events[2].actor_record, None);
+        assert_eq!(events[2].background_hnm, None);
+        assert_eq!(events[2].clip_index, None);
+        assert_eq!(events[2].text, "WORLD");
     }
 }

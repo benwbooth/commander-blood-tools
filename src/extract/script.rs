@@ -777,6 +777,12 @@ pub(super) fn parse_script_text_calls(
             vm::VmToken::Actor { record_offset, .. } => {
                 current_actor = actor_refs.get(&record_offset).cloned();
             }
+            vm::VmToken::RecordClear { record_offset, .. } => {
+                if matches!(current_actor.as_ref(), Some(actor) if actor.talk_ref == record_offset)
+                {
+                    current_actor = None;
+                }
+            }
             vm::VmToken::Text {
                 offset,
                 line_index,
@@ -943,6 +949,27 @@ pub(super) fn disassemble_function(
                 text: None,
             });
             pos += 5;
+            continue;
+        }
+
+        if pos + 2 < function_end && cod[pos] == 0xc9 {
+            push_raw_disassembly(script, function_name, cod, &mut rows, raw_start.take(), pos);
+            let addr = u16::from_le_bytes([cod[pos + 1], cod[pos + 2]]);
+            if matches!(current_actor.as_ref(), Some(actor) if actor.talk_ref == addr) {
+                current_actor = None;
+            }
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: pos,
+                len: 3,
+                opcode: "c9".to_string(),
+                mnemonic: "record_clear".to_string(),
+                operands: format!("ref=0x{addr:04x}"),
+                actor_record: None,
+                text: None,
+            });
+            pos += 3;
             continue;
         }
 
@@ -2383,6 +2410,24 @@ mod tests {
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].actor_record.as_deref(), Some("Test_Actor"));
         assert_eq!(rows[0].clip_index, None);
+
+        let cleared = [
+            0xc4, 0x3a, 0x00, 0x28, 0x00, 0xc9, 0x3a, 0x00, 0xa6, 0x34, 0x12, 0xff, 0x00, 0x80,
+            0x01, 0x00, 0x00, 0x00,
+        ];
+        let functions = vec![(0, "func".to_string()), (cleared.len(), "END".to_string())];
+        let rows = parse_script_text_calls(
+            "SCRIPTX",
+            &cleared,
+            &words,
+            &functions,
+            &actors,
+            &HashMap::new(),
+        );
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].actor_record, None);
+        assert_eq!(rows[0].background_record, None);
+        assert_eq!(rows[0].clip_index, None);
     }
 
     #[test]
@@ -2853,7 +2898,7 @@ mod tests {
         words.insert(0x0001, "hello".to_string());
         let cod = [
             0x01, 0x02, 0xc4, 0x3a, 0x00, 0x00, 0x00, 0xa6, 0x34, 0x12, 0x01, 0x00, 0x80, 0x01,
-            0x00, 0x00, 0x00, 0x03,
+            0x00, 0x00, 0x00, 0xc9, 0x3a, 0x00, 0x03,
         ];
         let mut actors = HashMap::new();
         actors.insert(
@@ -2875,6 +2920,9 @@ mod tests {
         assert!(rows
             .iter()
             .any(|row| row.mnemonic == "text_call" && row.text.as_deref() == Some("hello")));
+        assert!(rows
+            .iter()
+            .any(|row| row.mnemonic == "record_clear" && row.len == 3));
         assert_eq!(rows[0].function_name, "func");
     }
 }
