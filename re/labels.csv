@@ -16,12 +16,13 @@ DS:0x7908,font_glyphs_ds,8-byte glyph bitmaps (DS offset)
 DS:0x67AD,vm_mode,"current decode mode (0/1); set by FF/FE sentinels"
 DS:0x67AA,vm_c2_presentation_flags,"C2 kind-0x0400 sets bit 1 after descript.des helper success"
 DS:0x67B2,vm_flag_b2,"gates 0xFB sentinel handling in token_advance"
-DS:0x6712,vm_resource_offsets,"five u16 runtime resource offsets resolved at 0x55d9 into far pointers DS:0x671c..0x672f"
+DS:0x6712,vm_resource_offsets,"five u16 resource offsets populated at 0x53c8 from FS:0x11f4+profile*10; resolved at 0x55d9 into DS:0x671c..0x672f"
 DS:0x671C,vm_cod_ptr_exec,COD far pointer used by main exec loop (lds si at 0x5601)
 DS:0x6720,vm_cod_ptr_aux,COD far pointer used by token walkers/helpers
 DS:0x6724,vm_state_ptr,far ptr to runtime object/line-record state table; serialized by save/load and read by VM record handlers
 DS:0x6728,vm_dic_ptr,DIC far pointer used by 0xA6 text assembly
 DS:0x672C,vm_deb_object_table_ptr,DEB/object table far pointer scanned in 20-byte records
+DS:0x677E,vm_resource_profile_index,current selected script/resource profile index; 0x53A0 avoids reload when AX matches
 DS:0x6772,vm_pc,script program counter (offset into COD)
 DS:0x6776,vm_pc_saved,saved/next PC used in branch handling
 DS:0x6782,vm_branch_a,VM control-flow state word
@@ -30,6 +31,9 @@ DS:0x67F8,vm_word_buf,word buffer filled by 0xA3 handler (collect word list)
 DS:0x6770,vm_pending_word,pending word appended by 0xA3 handler
 0x005AFD,vm_op_a3_collect,"opcode 0xA3 handler: copy 0-term word list from COD into gs:0x67f8"
 0x0056FE,vm_control_flow,"VM branch/gosub control: updates PC gs:0x6772 via calls 0x577a/0x56a6/0x5afd"
+0x0053A0,vm_resource_profile_select,"select script/resource profile AX; free old DS:0x6712 resources, copy five FS:0x11f4+AX*10 offsets into DS:0x6712, clear VM globals"
+0x0053C8,vm_resource_offsets_populate,"copy selected five-resource profile from FS:0x11f4+AX*10 into DS:0x6712"
+0x0053DA,vm_resource_offset_copy_loop,"copy and validate five selected resource offsets into DS:0x6712"
 0x0055A4,vm_run_wrapper,"prepares script resource far pointers, calls BIOS RTC writers, then enters vm_exec_loop"
 0x0055D9,vm_resource_ptr_resolve_loop,"resolves five DS:0x6712 resource offsets through 0x04b9:0190 into far pointers at DS:0x671c"
 0x0055F5,vm_exec_loop,"main script interpreter loop; di=0x6eb0 handler table; dispatch at 0x5627"

@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::Path;
 
-use anyhow::{Context, Result, bail};
+use anyhow::{bail, Context, Result};
 use serde::Serialize;
 
 use crate::vm;
@@ -812,6 +812,51 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         comment: "helper converting one packed BCD byte to a decimal byte for BIOS RTC fields",
     },
     BinarySymbol {
+        name: "vm_resource_profile_select",
+        file_offset: 0x0053a0,
+        segment: Some(VM_CODE_SEGMENT),
+        offset: Some(0x0000),
+        ds_offset: None,
+        kind: "script-vm",
+        comment: "select script/resource profile AX; frees old offsets, loads five new offsets, and clears VM globals",
+    },
+    BinarySymbol {
+        name: "vm_resource_offsets_populate",
+        file_offset: 0x0053c8,
+        segment: Some(VM_CODE_SEGMENT),
+        offset: Some(0x0028),
+        ds_offset: None,
+        kind: "script-vm",
+        comment: "copy selected five-resource profile from FS:0x11f4 + AX*10 into DS:0x6712",
+    },
+    BinarySymbol {
+        name: "vm_resource_offset_copy_loop",
+        file_offset: 0x0053da,
+        segment: Some(VM_CODE_SEGMENT),
+        offset: Some(0x003a),
+        ds_offset: None,
+        kind: "script-vm",
+        comment: "copy and validate each selected resource offset before VM pointer resolution",
+    },
+    BinarySymbol {
+        name: "vm_run_wrapper",
+        file_offset: 0x0055a4,
+        segment: Some(VM_CODE_SEGMENT),
+        offset: Some(0x0204),
+        ds_offset: None,
+        kind: "script-vm",
+        comment: "refreshes runtime globals, resolves selected resource offsets, then enters the VM executor",
+    },
+    BinarySymbol {
+        name: "vm_resource_ptr_resolve_loop",
+        file_offset: 0x0055d9,
+        segment: Some(VM_CODE_SEGMENT),
+        offset: Some(0x0239),
+        ds_offset: None,
+        kind: "script-vm",
+        comment: "resolves five DS:0x6712 resource offsets into far pointers at DS:0x671c",
+    },
+    BinarySymbol {
         name: "vm_exec_loop",
         file_offset: 0x0055f5,
         segment: Some(0x04da),
@@ -828,6 +873,60 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         ds_offset: None,
         kind: "script-vm",
         comment: "call gs:[0x6eb0 + (opcode - 0xa0) * 2]",
+    },
+    BinarySymbol {
+        name: "vm_resource_offsets",
+        file_offset: 0x013b32,
+        segment: None,
+        offset: None,
+        ds_offset: Some(0x6712),
+        kind: "script-vm-data",
+        comment: "five u16 resource offsets populated from the selected FS:0x11f4 profile",
+    },
+    BinarySymbol {
+        name: "vm_resource_pointer_block",
+        file_offset: 0x013b3c,
+        segment: None,
+        offset: None,
+        ds_offset: Some(0x671c),
+        kind: "script-vm-data",
+        comment: "five far pointers resolved from DS:0x6712: exec COD, aux COD, state, DIC, DEB/object table",
+    },
+    BinarySymbol {
+        name: "vm_state_ptr",
+        file_offset: 0x013b44,
+        segment: None,
+        offset: None,
+        ds_offset: Some(0x6724),
+        kind: "script-vm-data",
+        comment: "far pointer to runtime object/line-record state table",
+    },
+    BinarySymbol {
+        name: "vm_dic_ptr",
+        file_offset: 0x013b48,
+        segment: None,
+        offset: None,
+        ds_offset: Some(0x6728),
+        kind: "script-vm-data",
+        comment: "DIC far pointer used by TEXT subtitle assembly",
+    },
+    BinarySymbol {
+        name: "vm_deb_object_table_ptr",
+        file_offset: 0x013b4c,
+        segment: None,
+        offset: None,
+        ds_offset: Some(0x672c),
+        kind: "script-vm-data",
+        comment: "DEB/object table far pointer scanned as 20-byte records",
+    },
+    BinarySymbol {
+        name: "vm_resource_profile_index",
+        file_offset: 0x013b9e,
+        segment: None,
+        offset: None,
+        ds_offset: Some(0x677e),
+        kind: "script-vm-data",
+        comment: "current selected resource profile index; avoids reload in 0x53a0 when AX matches",
     },
     BinarySymbol {
         name: "vm_handler_table",
@@ -1035,6 +1134,15 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         ds_offset: None,
         kind: "script-vm",
         comment: "CD record-triple handler; consumes record/first/second words with optional A1 inverted compare prefix",
+    },
+    BinarySymbol {
+        name: "vm_post_exec_record_update",
+        file_offset: 0x005816,
+        segment: Some(VM_CODE_SEGMENT),
+        offset: Some(0x0476),
+        ds_offset: None,
+        kind: "script-vm",
+        comment: "post-exec scan over DEB/object table and runtime state records",
     },
     BinarySymbol {
         name: "render_string_entry",

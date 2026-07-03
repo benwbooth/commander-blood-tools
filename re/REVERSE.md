@@ -730,9 +730,18 @@ flags), rather than expecting dedicated bg/music/voice opcodes.
 
 ### VM resource pointers and runtime state boundary
 
+The resource profile selector at file `0x53A0` takes the desired profile index in
+`AX`. If it differs from `DS:0x677E`, the routine releases the old five resource
+offsets currently stored at `DS:0x6712` via far call `0x04B9:0x00F8`, stores the
+new profile index in `DS:0x677E`, then copies five u16 offsets from
+`FS:0x11F4 + AX*10` into `DS:0x6712`. Each copied offset is validated/loaded
+through `0x01CE:0x059B`; failure jumps to the existing abort path at `0x5550`.
+The same routine then clears the VM globals/lists and scans the selected DEB
+object table to cache built-in object offsets.
+
 The VM run wrapper at file `0x55A4` gates execution on `gs:0x67A8`, refreshes
-BIOS RTC globals, then resolves **five runtime resource offsets** from
-`DS:0x6712` into far pointers at `DS:0x671C..0x672F` via far call
+BIOS RTC globals, then resolves the selected **five runtime resource offsets**
+from `DS:0x6712` into far pointers at `DS:0x671C..0x672F` via far call
 `0x04B9:0x0190`:
 
 | pointer | observed use |
@@ -743,12 +752,16 @@ BIOS RTC globals, then resolves **five runtime resource offsets** from
 | `DS:0x6728` | DIC pointer used by 0xA6 subtitle assembly (`gs:0x672A` segment) |
 | `DS:0x672C` | DEB/object table pointer scanned as 20-byte records |
 
-The `DS:0x6712` words are zero in the EXE image; they are populated at runtime
-before this wrapper. Save/load code at `0x1C3F`/`0x1CBD` serializes the
-`DS:0x6724` state block separately using a runtime size derived from
-`DS:0x6716`. This is the boundary that blocks using raw `SCRIPT*.VAR` line flag
-words as initialized display state: `SCRIPT*.VAR` is an input image, while the
-game builds/serializes a live state block through this pointer setup.
+The `DS:0x6712` words are zero in the EXE image because they are populated from
+the `FS:0x11F4` profile table at runtime. Save/load code at `0x1C3F`/`0x1CBD`
+serializes the `DS:0x6724` state block separately using a runtime size derived
+from `DS:0x6716`. This is the boundary that blocks using raw `SCRIPT*.VAR` line
+flag words as initialized display state: `SCRIPT*.VAR` is an input image, while
+the game builds/serializes a live state block through this pointer setup.
+
+Remaining unknown: the owner/provenance of the `FS:0x11F4` 10-byte profile table
+and the mapping from profile index to `SCRIPTn` basename still need to be
+decoded.
 
 ## Location backgrounds: planet (HNM) vs landscape (LBM) — root cause of wrong bg
 
@@ -820,10 +833,13 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       traces remain ungated until the runtime initialization of `gs:0x6724` is
       recovered; raw `SCRIPT*.VAR` has incompatible pre-set flag words.
 - [x] Map the VM resource pointer setup boundary:
-      `0x55A4/0x55D9` resolves five runtime offsets from `DS:0x6712` into COD,
-      state, DIC, and DEB/object far pointers at `DS:0x671C..0x672F`, while
-      save/load code serializes the `DS:0x6724` runtime state block separately.
-      Remaining work is the contents/layout of that live state block.
+      `0x53A0/0x53C8` selects a five-offset resource profile from
+      `FS:0x11F4 + AX*10` into `DS:0x6712`; `0x55A4/0x55D9` resolves those
+      runtime offsets into COD, state, DIC, and DEB/object far pointers at
+      `DS:0x671C..0x672F`, while save/load code serializes the `DS:0x6724`
+      runtime state block separately.
+- [ ] Decode the `FS:0x11F4` resource-profile table owner and profile-index to
+      `SCRIPTn` mapping.
 - [ ] Decode the `gs:0x6724` per-line record layout (es:[di], es:[di+2] flags).
 - [ ] Verify audible `tb.snd` chatter trigger path, if any. `gs:0x67BB` itself is
       now decoded as post-reveal hold state rather than a direct SND caller.
@@ -1070,6 +1086,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       far pointers at `DS:0x671C..0x672F`, the wrapper/resolve loop at
       `0x55A4/0x55D9`, the post-exec record updater at `0x5816`, and the
       save/load state serialization sites at `0x1C3F/0x1CBD`.
+- [x] Map VM resource profile selection:
+      `0x53A0` now names the selector taking profile index `AX`, the
+      `0x53C8/0x53DA` copy/validate loop from `FS:0x11F4 + AX*10` into
+      `DS:0x6712`, and `DS:0x677E` as the cached current profile index.
 - [x] Port the `gs:0x67BB` line-complete hold timers:
       `src/vm.rs` models `0x94D4..0x94DD` (`b35=aca*4`) and `0x7378..0x738C`
       (`b35=0x27cf*(aca/2)+6`) as checked helper functions. Labels and known
