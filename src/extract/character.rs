@@ -1141,6 +1141,7 @@ mod tests {
         clip_index: Option<usize>,
         text: &str,
     ) -> ScriptExecutedSpeechLine {
+        let param0 = clip_index.map(|idx| idx as u8 + 1).unwrap_or(0xff);
         ScriptExecutedSpeechLine {
             scenario_id: None,
             script: script.to_string(),
@@ -1153,8 +1154,9 @@ mod tests {
             background_record: location.map(str::to_string),
             background_hnm: location.map(|loc| format!("{loc}.hnm")),
             background_music: location.map(|loc| format!("{loc}_music")),
-            param0: clip_index.map(|idx| idx as u8 + 1).unwrap_or(0xff),
+            param0,
             param1: 0,
+            active_line_id: vm::text_selector_active_line_id(param0),
             clip_index,
             text: text.to_string(),
             call_target: 0x1234,

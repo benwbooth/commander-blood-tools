@@ -207,6 +207,7 @@ pub(super) fn parse_script_text_flags(
                 offset: call.offset,
                 line_index: call.line_index,
                 voice_selector: call.voice_selector,
+                active_line_id: vm::text_selector_active_line_id(call.voice_selector),
                 flags_b4: call.flags_b4,
                 flags_b5: call.flags_b5,
                 loop_target: call.loop_target,
@@ -1193,6 +1194,7 @@ fn executed_speech_rows_from_trace(
                 .and_then(|background| background.music.clone()),
             param0: call.voice_selector,
             param1: call.flags_b4,
+            active_line_id: vm::text_selector_active_line_id(call.voice_selector),
             clip_index,
             text: call.text.clone(),
             call_target: call.line_index,
@@ -1386,6 +1388,7 @@ pub(super) fn parse_script_text_calls(
                     (None, _, _) => "SCRIPT VM token; no tracked actor ref".to_string(),
                 };
                 let params = [voice_selector, flags_b4];
+                let active_line_id = vm::text_selector_active_line_id(voice_selector);
 
                 rows.push(ScriptSpeechLine {
                     script: script.to_string(),
@@ -1394,6 +1397,7 @@ pub(super) fn parse_script_text_calls(
                     actor_record: actor.as_ref().map(|actor| actor.record_name.clone()),
                     param0,
                     param1,
+                    active_line_id: Some(active_line_id),
                     clip_index,
                     // Prefer the runtime location computed by executing the script; fall
                     // back to the actor's initial location only when the interpreter did
@@ -2269,12 +2273,12 @@ pub(super) fn write_script_speech_manifest(
     let mut file = File::create(out_path)?;
     writeln!(
         file,
-        "script\tfunction\toffset\tactor\tparam0\tparam1\tclip_index\tbackground_record\tbackground_hnm\tbackground_music\tsource\ttext\tcall_target\tparams_hex\ttext_end\tactor_ref\tactor_proof\tword_count"
+        "script\tfunction\toffset\tactor\tparam0\tparam1\tactive_line_id\tclip_index\tbackground_record\tbackground_hnm\tbackground_music\tsource\ttext\tcall_target\tparams_hex\ttext_end\tactor_ref\tactor_proof\tword_count"
     )?;
     for row in rows {
         writeln!(
             file,
-            "{}\t{}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t0x{:04x}\t{}\t0x{:05x}\t{}\t{}\t{}",
+            "{}\t{}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t0x{:04x}\t{}\t0x{:05x}\t{}\t{}\t{}",
             row.script,
             row.function_name,
             row.offset,
@@ -2284,6 +2288,9 @@ pub(super) fn write_script_speech_manifest(
                 .unwrap_or_default(),
             row.param1
                 .map(|param| format!("{param:02x}"))
+                .unwrap_or_default(),
+            row.active_line_id
+                .map(|active_line_id| format!("0x{active_line_id:04x}"))
                 .unwrap_or_default(),
             row.clip_index
                 .map(|idx| idx.to_string())
@@ -2313,17 +2320,18 @@ pub(super) fn write_script_text_flags_manifest(
     let mut file = File::create(out_path)?;
     writeln!(
         file,
-        "script\tfunction\toffset\tline_index\tvoice_selector\tflags_b4\tflags_b5\tactive\tskip_count\tloop_target\tsummary\ttext"
+        "script\tfunction\toffset\tline_index\tvoice_selector\tactive_line_id\tflags_b4\tflags_b5\tactive\tskip_count\tloop_target\tsummary\ttext"
     )?;
     for row in rows {
         writeln!(
             file,
-            "{}\t{}\t0x{:05x}\t0x{:04x}\t{:02x}\t{:02x}\t{:02x}\t{}\t{}\t{}\t{}\t{}",
+            "{}\t{}\t0x{:05x}\t0x{:04x}\t{:02x}\t0x{:04x}\t{:02x}\t{:02x}\t{}\t{}\t{}\t{}\t{}",
             row.script,
             row.function_name,
             row.offset,
             row.line_index,
             row.voice_selector,
+            row.active_line_id,
             row.flags_b4,
             row.flags_b5,
             row.active,
@@ -2347,12 +2355,12 @@ pub(super) fn write_script_executed_speech_manifest(
     let mut file = File::create(out_path)?;
     writeln!(
         file,
-        "script\tsequence_index\tfunction\toffset\tactor\tactor_ref\tlocation_offset\tbackground_record\tbackground_hnm\tbackground_music\tparam0\tparam1\tclip_index\tcall_target\ttext_end\tsource\ttext"
+        "script\tsequence_index\tfunction\toffset\tactor\tactor_ref\tlocation_offset\tbackground_record\tbackground_hnm\tbackground_music\tparam0\tparam1\tactive_line_id\tclip_index\tcall_target\ttext_end\tsource\ttext"
     )?;
     for row in rows {
         writeln!(
             file,
-            "{}\t{}\t{}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}\t{:02x}\t{:02x}\t{}\t0x{:04x}\t0x{:05x}\t{}\t{}",
+            "{}\t{}\t{}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}\t{:02x}\t{:02x}\t0x{:04x}\t{}\t0x{:04x}\t0x{:05x}\t{}\t{}",
             row.script,
             row.sequence_index,
             row.function_name,
@@ -2369,6 +2377,7 @@ pub(super) fn write_script_executed_speech_manifest(
             row.background_music.as_deref().unwrap_or(""),
             row.param0,
             row.param1,
+            row.active_line_id,
             row.clip_index
                 .map(|idx| idx.to_string())
                 .unwrap_or_default(),
@@ -2388,12 +2397,12 @@ pub(super) fn write_script_branch_scenario_speech_manifest(
     let mut file = File::create(out_path)?;
     writeln!(
         file,
-        "scenario_id\tscript\tsequence_index\tfunction\toffset\tactor\tactor_ref\tlocation_offset\tbackground_record\tbackground_hnm\tbackground_music\tparam0\tparam1\tclip_index\tcall_target\ttext_end\tsource\ttext"
+        "scenario_id\tscript\tsequence_index\tfunction\toffset\tactor\tactor_ref\tlocation_offset\tbackground_record\tbackground_hnm\tbackground_music\tparam0\tparam1\tactive_line_id\tclip_index\tcall_target\ttext_end\tsource\ttext"
     )?;
     for row in rows {
         writeln!(
             file,
-            "{}\t{}\t{}\t{}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}\t{:02x}\t{:02x}\t{}\t0x{:04x}\t0x{:05x}\t{}\t{}",
+            "{}\t{}\t{}\t{}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}\t{:02x}\t{:02x}\t0x{:04x}\t{}\t0x{:04x}\t0x{:05x}\t{}\t{}",
             row.scenario_id.as_deref().unwrap_or(""),
             row.script,
             row.sequence_index,
@@ -2411,6 +2420,7 @@ pub(super) fn write_script_branch_scenario_speech_manifest(
             row.background_music.as_deref().unwrap_or(""),
             row.param0,
             row.param1,
+            row.active_line_id,
             row.clip_index
                 .map(|idx| idx.to_string())
                 .unwrap_or_default(),
@@ -2464,12 +2474,12 @@ pub(super) fn write_script_profile_executed_speech_manifest(
     let mut file = File::create(out_path)?;
     writeln!(
         file,
-        "sequence_id\tglobal_sequence_index\trun_index\tprofile_index\td2_operand\tscript\tscript_sequence_index\tfunction\toffset\tactor\tactor_ref\tlocation_offset\tbackground_record\tbackground_hnm\tbackground_music\tparam0\tparam1\tclip_index\tcall_target\ttext_end\tsource\ttext"
+        "sequence_id\tglobal_sequence_index\trun_index\tprofile_index\td2_operand\tscript\tscript_sequence_index\tfunction\toffset\tactor\tactor_ref\tlocation_offset\tbackground_record\tbackground_hnm\tbackground_music\tparam0\tparam1\tactive_line_id\tclip_index\tcall_target\ttext_end\tsource\ttext"
     )?;
     for row in rows {
         writeln!(
             file,
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}\t{:02x}\t{:02x}\t{}\t0x{:04x}\t0x{:05x}\t{}\t{}",
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}\t{:02x}\t{:02x}\t0x{:04x}\t{}\t0x{:04x}\t0x{:05x}\t{}\t{}",
             row.sequence_id,
             row.global_sequence_index,
             row.run_index,
@@ -2493,6 +2503,7 @@ pub(super) fn write_script_profile_executed_speech_manifest(
             row.row.background_music.as_deref().unwrap_or(""),
             row.row.param0,
             row.row.param1,
+            row.row.active_line_id,
             row.row
                 .clip_index
                 .map(|idx| idx.to_string())
@@ -3410,6 +3421,7 @@ mod tests {
             actor_record: actor.map(str::to_string),
             param0: Some(1),
             param1: Some(0),
+            active_line_id: Some(vm::text_selector_active_line_id(1)),
             clip_index: actor.map(|_| 0),
             background_record: location.map(str::to_string),
             background_hnm: location.map(|loc| format!("{loc}.hnm")),
@@ -3447,6 +3459,7 @@ mod tests {
             background_music: location.map(|loc| format!("{loc}_music")),
             param0: 1,
             param1: 0,
+            active_line_id: vm::text_selector_active_line_id(1),
             clip_index: actor.map(|_| 0),
             text: text.to_string(),
             call_target: 0x1234,
@@ -4402,6 +4415,7 @@ mod tests {
             offset: 0x20,
             line_index: 0x0102,
             voice_selector: 0x03,
+            active_line_id: vm::text_selector_active_line_id(0x03),
             flags_b4: 0x39,
             flags_b5: 0xa0,
             loop_target: Some(0x1234),
@@ -4419,7 +4433,10 @@ mod tests {
         let manifest = fs::read_to_string(&path).expect("read text flags");
         let _ = fs::remove_file(&path);
         assert!(manifest.starts_with("script\tfunction\toffset\tline_index"));
-        assert!(manifest.contains("SCRIPT2\tfunc\t0x00020\t0x0102\t03\t39\ta0\ttrue\t3\t0x1234"));
+        assert!(
+            manifest
+                .contains("SCRIPT2\tfunc\t0x00020\t0x0102\t03\t0x000c\t39\ta0\ttrue\t3\t0x1234")
+        );
         assert!(manifest.contains("conditional-skip:3"));
     }
 
