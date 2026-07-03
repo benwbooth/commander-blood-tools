@@ -470,8 +470,8 @@ fn opcode_metadata(opcode: u8, handler_file_offset: usize) -> OpcodeMetadata {
         op if vm::is_record_state_opcode(op) => OpcodeMetadata {
             mnemonic: "record_state",
             family: "line-record",
-            rust_status: "token-ported",
-            notes: "C1/C2 line-record state operations; Rust exposes raw record and operand words while deeper table side effects remain under RE",
+            rust_status: "partially-executed",
+            notes: "C1/C2 line-record state operations; Rust decodes A1 inversion and evaluates direct mode1 compares while resolved mode0 side effects remain under RE",
         },
         vm::OP_RECORD_LINK => OpcodeMetadata {
             mnemonic: "record_link",

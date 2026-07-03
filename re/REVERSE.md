@@ -415,9 +415,9 @@ raw token as `VmToken::PairRecord`.
 ### 0xC1/0xC2 line-record state handlers — token shape (PARTIALLY DECODED)
 
 `0xC1` and `0xC2` are both fixed 5-byte line-record state operations with the
-same raw token shape:
+same raw token shape and an optional mode-1 `A1` inverted-compare prefix:
 
-    <C1|C2> <record:u16> <operand:u16>
+    <C1|C2> [A1?] <record:u16> <operand:u16>
 
 They load the line-record/state table through `les di, gs:[0x6724]`, then use the
 raw record and operand words to resolve additional table slots before either
@@ -428,10 +428,13 @@ mode 0 for special record kinds: it can clear `gs:0x1FB2` and set active dialogu
 line ids `gs:0x6788 = 0x27` or `0x2B`.
 
 Current shipped-script VM walks contain repeated true `C1` tokens and no true
-`C2` tokens. Rust now exposes both as `VmToken::RecordState` and the script
-disassembly emits `record_state` rows. The deeper resolved-table side effects are
-not yet applied by `execute_trace`; that awaits the `gs:0x6724` line-record layout
-model.
+`C2` tokens. Rust now exposes both as `VmToken::RecordState { ..., inverted }`
+and the script disassembly emits `record_state` rows. `execute_trace` evaluates
+direct mode-1 compares when host state already contains a concrete
+`{opcode, operand, ...}` record entry; `C2` compare evaluation also requires the
+DEB-derived `ExecutionContext` because the binary checks the owner object active
+via helper `0x6034`. The deeper resolved-table mode-0 side effects are not yet
+applied; that awaits the remaining `gs:0x6724` line-record layout model.
 
 ### 0xCA/0xCB global condition handlers — token shape (PARTIALLY DECODED)
 
@@ -714,10 +717,11 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       mode-1 pair compares through the branch stack. The handler's secondary
       `gs:0x6752+0x16` bookkeeping clear remains outside the current model.
 - [x] Expose 0xC1/0xC2 line-record state tokens. `src/vm.rs` keeps their raw
-      record/operand words as `VmToken::RecordState`, and
-      `script-disassembly.tsv` can now show true `record_state` rows instead of
-      raw byte spans. Full side-effect execution still depends on the line-record
-      table layout.
+      record/operand words and optional mode-1 inversion as
+      `VmToken::RecordState`, and `script-disassembly.tsv` can now show true
+      `record_state` rows instead of raw byte spans. Direct mode-1 compares are
+      now executed when concrete host-state records are available; resolved
+      mode-0 side effects remain pending.
 - [x] Expose 0xCA/0xCB global condition tokens. `src/vm.rs` preserves the
       consumed compare operands as `VmToken::GlobalWordCompare` and
       `VmToken::GlobalPairCompare`; branch evaluation is pending a runtime
