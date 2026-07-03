@@ -774,8 +774,8 @@ pub(super) fn parse_script_text_calls(
 
     for token in vm::walk(cod, 0, cod.len()) {
         match token {
-            vm::VmToken::Actor { operand, .. } => {
-                current_actor = actor_refs.get(&operand).cloned();
+            vm::VmToken::Actor { record_offset, .. } => {
+                current_actor = actor_refs.get(&record_offset).cloned();
             }
             vm::VmToken::Text {
                 offset,

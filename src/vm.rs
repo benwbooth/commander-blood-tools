@@ -174,10 +174,15 @@ pub enum VmToken {
         /// `0x0000`-terminated list of `SCRIPT*.DIC` word offsets.
         word_offsets: Vec<u16>,
     },
-    /// `0xC4` actor/object reference (operand is the first u16 after the opcode).
+    /// `0xC4` actor/object record operation.
+    ///
+    /// The DOS handler consumes two u16 operands. The first one is the record
+    /// offset the extractor uses as `object_offset + 0x3A` to track the current
+    /// speaker; the second is the related record offset stored by the handler.
     Actor {
         offset: usize,
-        operand: u16,
+        record_offset: u16,
+        related_record_offset: u16,
         len: usize,
     },
     /// Any other opcode; raw length recorded.
@@ -262,10 +267,12 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
         }
 
         if op == OP_ACTOR {
-            let operand = read_u16(cod, pos + 1).unwrap_or(0);
+            let record_offset = read_u16(cod, pos + 1).unwrap_or(0);
+            let related_record_offset = read_u16(cod, pos + 3).unwrap_or(0);
             out.push(VmToken::Actor {
                 offset: pos,
-                operand,
+                record_offset,
+                related_record_offset,
                 len,
             });
         } else {
@@ -352,7 +359,10 @@ fn read_u16(cod: &[u8], at: usize) -> Option<u16> {
 //       direct `state[op1] = op2` in mode 0. The DOS handler also updates
 //       table-side bookkeeping for sentinel object values; that side effect is
 //       not needed for line-location recovery and is not modeled here.
-//   * 0xC4: actor reference; operand = object_offset + 0x3A (talk field).
+//   * 0xC4: actor/record reference. The first operand is the destination record
+//       offset and doubles as object_offset + 0x3A (talk field) for speaker
+//       tracking; the second operand is a related record offset consumed by the
+//       DOS handler.
 // NOTE: this is a LINEAR pass — it does not yet evaluate the 0xAF-family
 // conditionals/branches; branch-mode comparison handlers are intentionally
 // treated as non-mutating until the PC/branch helper at 0x6462 is modeled.
@@ -466,8 +476,8 @@ pub fn interpret_line_states(cod: &[u8], var: &[u8]) -> Vec<LineState> {
         let (b0, b1) = OPCODE_DESC[(op - OP_MIN) as usize];
 
         if op == OP_ACTOR {
-            if let Some(operand) = read_u16(cod, pos + 1) {
-                actor = Some(operand.wrapping_sub(TALK_FIELD));
+            if let Some(record_offset) = read_u16(cod, pos + 1) {
+                actor = Some(record_offset.wrapping_sub(TALK_FIELD));
             }
         }
         if !mode1 && ASSIGN_7.contains(&op) && pos + 7 <= end {
@@ -784,8 +794,8 @@ pub fn execute_trace_with_overrides(
         }
 
         if op == OP_ACTOR {
-            if let Some(operand) = read_u16(cod, token_start + 1) {
-                actor = Some(operand.wrapping_sub(TALK_FIELD));
+            if let Some(record_offset) = read_u16(cod, token_start + 1) {
+                actor = Some(record_offset.wrapping_sub(TALK_FIELD));
             }
         }
         if !mode1 && ASSIGN_7.contains(&op) && token_start + 7 <= end {
@@ -994,10 +1004,10 @@ mod tests {
     use super::*;
 
     fn push_actor_ref(cod: &mut Vec<u8>, actor_offset: u16) {
-        let operand = actor_offset.wrapping_add(TALK_FIELD);
+        let record_offset = actor_offset.wrapping_add(TALK_FIELD);
         cod.push(OP_ACTOR);
-        cod.extend_from_slice(&operand.to_le_bytes());
-        cod.extend_from_slice(&0u16.to_le_bytes());
+        cod.extend_from_slice(&record_offset.to_le_bytes());
+        cod.extend_from_slice(&0x0028u16.to_le_bytes());
     }
 
     fn push_empty_text(cod: &mut Vec<u8>) {
@@ -1062,6 +1072,22 @@ mod tests {
             }
             other => panic!("expected looped Text, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn actor_token_exposes_both_binary_operands() {
+        let cod = [OP_ACTOR, 0x84, 0x00, 0x28, 0x00, 0xFF];
+
+        let toks = walk(&cod, 0, cod.len());
+        assert_eq!(
+            toks[0],
+            VmToken::Actor {
+                offset: 0,
+                record_offset: 0x0084,
+                related_record_offset: 0x0028,
+                len: 5
+            }
+        );
     }
 
     #[test]

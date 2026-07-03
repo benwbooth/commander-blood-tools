@@ -215,8 +215,8 @@ pub fn parse_speech_events(
     let mut current_actor: Option<&CharacterContext> = None;
     for token in vm::walk(cod, 0, cod.len()) {
         match token {
-            VmToken::Actor { operand, .. } => {
-                if let Some(actor) = actor_refs.get(&operand) {
+            VmToken::Actor { record_offset, .. } => {
+                if let Some(actor) = actor_refs.get(&record_offset) {
                     current_actor = Some(*actor);
                 }
             }

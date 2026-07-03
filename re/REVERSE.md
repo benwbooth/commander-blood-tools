@@ -131,9 +131,10 @@ The scripts are **compiled BASIC**: every `scriptN.cod` has a matching
 | AB | 4 | 4 | | AC | var | | | | | |
 | AD | 5 | 5 | | | | | | | | |
 
-Note: README's `src/extract/script.rs` treats `0xC4` as `0xC4 <u16>` (3 bytes),
-but the table says `0xC4` is length **5** in mode 0 — the data-side scanner is
-likely mis-sizing it. Reconcile when handlers are mapped.
+`0xC4` is a confirmed 5-byte token: `C4 <record:u16> <related:u16>`. The first
+word is the record offset the Rust extractor uses as `object_offset + 0x3A` for
+speaker tracking; the second word is a related record offset consumed by the DOS
+handler. The core VM token exposes both operands.
 
 `token_walker` at file `0x73AF` uses this decoder to scan a script for `0xA6`
 text tokens matching an index `bx`, via far pointers `lds si,[gs:0x6720]` /
@@ -321,7 +322,7 @@ struct looks larger than 0x18, may be a different/extended table).
 |----|---------|-|----|---------|-|----|---------|
 | A0 | 0x6559 | | AC | 0x685C | | C2 | 0x6E34 |
 | A1 | 0x6572 | | AD/AF/B2/B3/BA-BC | 0x6946 | | C3 | 0x6EEE |
-| A2 | 0x6588 | | AE/B0 | 0x6902 | | **C4** | **0x6C7E** (actor ref) |
+| A2 | 0x6588 | | AE/B0 | 0x6902 | | **C4** | **0x6C7E** (actor/record op) |
 | A3 | 0x6596 (collect words) | | B1/B4-B6/BE-C0 | 0x6863 | | C5 | 0x6D18 |
 | A4 | 0x65DB | | B7 | 0x6AA7 | | C6 | 0x6D80 |
 | A5 | 0x65EB | | B8/B9/BD | 0x6B06 | | C7 | 0x6DCF |
@@ -372,6 +373,24 @@ triggered by a dynamic callback rather than the now-decoded `gs:0x67BB` hold
 flag; (2) decode any remaining line-record display flags that affect
 subtitle/talk-HNM routing; (3) map background/music/HNM opcodes among
 0xB7/0xC1–0xC9 handlers; (4) `gs:0x6724` line-record layout.
+
+### 0xC4 actor/record handler @ file 0x6C7E — operands (DECODED)
+
+`0xC4` is not a 3-byte actor marker. The binary consumes two u16 operands:
+`C4 <record:u16> <related:u16>` (5 bytes total, matching the opcode length
+table). The handler loads the per-line/record table through `les di, gs:[0x6724]`,
+reads the first word into `bp`, reads the second word into `ax`, and on the
+mode-0 success path writes:
+
+    es:[bp + 0] = 0x00C4
+    es:[bp + 2] = related
+    es:[bp + 4] = 0x0000
+
+The Rust VM now exposes this as `VmToken::Actor { record_offset,
+related_record_offset, len: 5 }`. Speaker tracking still keys on
+`record_offset == object_offset + 0x3A`, which is the data-backed mapping used by
+the current dialogue manifests; the second operand is retained so later line
+record modeling does not have to re-parse raw bytes.
 
 ### Dialogue display state machine (seg 0x0971, file ~0x9E81)
 
@@ -507,8 +526,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       0xB7/0xC1–0xC9 handlers (distinct, non-family) and 0xC4 actor @0x6C7E.
 - [ ] Decode the cs:0x0F29 and cs:0x06D4 sub-dispatch tables; document the
       24-byte actor/object struct iterated at 0x7E09.
-- [ ] Reconcile 0xC4 length: table says 5 (mode0) but `src/extract/script.rs`
-      assumes 3 (`0xC4 <u16>`) — check via the 0xC4 handler @0x6C7E.
+- [x] Reconcile 0xC4 length and operands. The handler consumes two u16 operands,
+      writes a 6-byte record entry on success, and `src/vm.rs` now exposes both
+      words instead of reducing the token to a single actor id.
 - [ ] Map presentation constants: subtitle position, reveal rate, colors, timing,
       HNM actor reset/loop policy, audio mix levels.
 
@@ -532,10 +552,11 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       With that fixed, `vm::walk` decodes all 5 scripts cleanly to the `0xFF`
       end marker, 0 invalid (SCRIPT2 = 3271 tokens / 1157 text). This is the
       foundation for execution-order scene-state tracking.
-- [x] Object-ref opcodes decode correctly now: `0xC4` = actor reference
-      (operand = `object_offset + 0x3A` talk field; 71/95 resolve to Characters),
-      `0xC9` also character-heavy, `0xC3` some. Location is NOT set by referencing
-      a location object.
+- [x] Object-ref opcodes decode correctly now: `0xC4` = 5-byte actor/record
+      operation (`record_offset = object_offset + 0x3A` talk field for speaker
+      tracking, plus a second related-record word; 71/95 first operands resolve
+      to Characters), `0xC9` also character-heavy, `0xC3` some. Location is NOT
+      set by referencing a location object.
 ### Runtime object-state model (CONFIRMED) — path to accurate location
 
 - The VM keeps a **runtime object-state area** addressed `es:[bx+di]` with

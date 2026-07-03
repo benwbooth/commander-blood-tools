@@ -675,7 +675,7 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         offset: Some(0x18de),
         ds_offset: None,
         kind: "script-vm",
-        comment: "actor/object reference handler",
+        comment: "actor/record handler; consumes record+related u16 operands and writes a 6-byte record entry",
     },
     BinarySymbol {
         name: "render_string_entry",
