@@ -480,6 +480,9 @@ Current true script tokens use these as:
 Rust now exposes `ExecutionContext::with_bios_rtc(hour_24, month, day)` for
 deterministic host-side replay of those branches; default traces still leave the
 globals absent rather than silently using the developer machine's current date.
+The extractor's branch-scenario pass now derives representative RTC replay
+contexts from true `CA`/`CB` tokens, including ordinary Jan 2 baselines plus
+observed seasonal dates (Christmas/New Year) and hour-boundary candidates.
 
 ### 0xCD record-triple handler @ file 0x69C7 — token shape (PARTIALLY DECODED)
 
@@ -742,7 +745,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       consumed compare operands as `VmToken::GlobalWordCompare` and
       `VmToken::GlobalPairCompare`; `execute_trace` evaluates their branches
       when `ExecutionContext` supplies `gs:0x0AA6/0x0AA8/0x0AAA`. The binary RTC
-      writers are recovered; host replay chooses values via `with_bios_rtc`.
+      writers are recovered; host replay chooses values via `with_bios_rtc`, and
+      the extractor now emits RTC branch-scenario replays from real `CA`/`CB`
+      operands.
 - [x] Expose 0xCD record-triple tokens. `src/vm.rs` preserves the consumed
       record/first/second words and optional `A1` inverted-compare prefix as
       `VmToken::RecordTriple`, and `execute_trace` evaluates the direct mode-1
