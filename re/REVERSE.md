@@ -462,8 +462,24 @@ used by the observed compare path, so Rust keeps it as `reserved`.
 Rust now exposes these as `VmToken::GlobalWordCompare` and
 `VmToken::GlobalPairCompare`, and `script-disassembly.tsv` emits
 `global_word_compare` / `global_pair_compare` rows. `execute_trace` branches on
-them when `ExecutionContext` supplies `gs:0x0AA6/0x0AA8/0x0AAA`; recovering and
-feeding the correct runtime writers for those globals remains pending.
+them when `ExecutionContext` supplies `gs:0x0AA6/0x0AA8/0x0AAA`; host-side replay
+must choose the BIOS RTC hour/month/day values for deterministic output.
+
+**Runtime source recovered:** the VM wrapper at file `0x55B6..0x55BB` calls two
+far routines immediately before `vm_exec_loop`: file `0x093B` reads BIOS RTC time
+(`int 1Ah AH=02h`), BCD-decodes `CH`, and stores the current hour in
+`gs:0x0AA6`; file `0x0950` reads BIOS RTC date (`int 1Ah AH=04h`),
+BCD-decodes `DL`/`DH`, and stores day/month in `gs:0x0AA8`/`gs:0x0AAA`.
+`CL` is also converted into a year at `gs:0x0AAC`, adjusted by `CH` century.
+Current true script tokens use these as:
+
+- `SCRIPT2`/`SCRIPT3` `CB == 12/25` and `CB == 1/1` date checks.
+- Repeated `CA` hour-window checks (`>8`, `<2`, `>12`, `<8`, etc.) for time-of-day
+  branch variants.
+
+Rust now exposes `ExecutionContext::with_bios_rtc(hour_24, month, day)` for
+deterministic host-side replay of those branches; default traces still leave the
+globals absent rather than silently using the developer machine's current date.
 
 ### 0xCD record-triple handler @ file 0x69C7 — token shape (PARTIALLY DECODED)
 
@@ -725,8 +741,8 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 - [x] Expose 0xCA/0xCB global condition tokens. `src/vm.rs` preserves the
       consumed compare operands as `VmToken::GlobalWordCompare` and
       `VmToken::GlobalPairCompare`; `execute_trace` evaluates their branches
-      when `ExecutionContext` supplies `gs:0x0AA6/0x0AA8/0x0AAA`. Recovering the
-      runtime writers for those globals remains pending.
+      when `ExecutionContext` supplies `gs:0x0AA6/0x0AA8/0x0AAA`. The binary RTC
+      writers are recovered; host replay chooses values via `with_bios_rtc`.
 - [x] Expose 0xCD record-triple tokens. `src/vm.rs` preserves the consumed
       record/first/second words and optional `A1` inverted-compare prefix as
       `VmToken::RecordTriple`, and `execute_trace` evaluates the direct mode-1

@@ -630,7 +630,9 @@ fn read_u16(cod: &[u8], at: usize) -> Option<u16> {
 //       when the previous entry was 0xC4, clears the related actor subrecord too.
 //   * 0xCA/0xCB: global conditions. They compare token operands against
 //       runtime globals `gs:0x0AA6` and `gs:0x0AAA:0x0AA8`; branch evaluation
-//       is available when `ExecutionContext` supplies those globals.
+//       is available when `ExecutionContext` supplies those globals. The DOS VM
+//       refreshes them from BIOS RTC calls immediately before entering the
+//       interpreter: hour -> 0x0AA6, day -> 0x0AA8, month -> 0x0AAA.
 // NOTE: `interpret_line_states` is a LINEAR pass: it applies mode-0 state
 // mutations and uses guarded mode-1 actor records as context, but does not take
 // branches. `execute_trace` models the recovered branch helper for conditionals
@@ -714,6 +716,12 @@ impl ExecutionContext {
 
     pub fn with_global_pair_0aaa_0aa8(mut self, high: u8, low: u8) -> Self {
         self.global_pair_0aaa_0aa8 = Some((high, low));
+        self
+    }
+
+    pub fn with_bios_rtc(mut self, hour_24: u8, month: u8, day: u8) -> Self {
+        self.global_word_0aa6 = Some(hour_24 as u16);
+        self.global_pair_0aaa_0aa8 = Some((month, day));
         self
     }
 
@@ -3037,7 +3045,7 @@ mod tests {
             })
         );
 
-        let passing_context = ExecutionContext::default().with_global_word_0aa6(0x0008);
+        let passing_context = ExecutionContext::default().with_bios_rtc(8, 1, 1);
         let trace = execute_trace_with_context(&cod, &var, &passing_context);
         assert_eq!(trace.halted, ExecutionHalt::EndMarker);
         assert_eq!(trace.line_states.len(), 2);
@@ -3089,7 +3097,7 @@ mod tests {
         push_empty_text(&mut cod);
         cod.push(0xFF);
 
-        let passing_context = ExecutionContext::default().with_global_pair_0aaa_0aa8(0x0C, 0x18);
+        let passing_context = ExecutionContext::default().with_bios_rtc(0, 12, 24);
         let trace = execute_trace_with_context(&cod, &var, &passing_context);
         assert_eq!(trace.halted, ExecutionHalt::EndMarker);
         assert_eq!(trace.line_states.len(), 2);
