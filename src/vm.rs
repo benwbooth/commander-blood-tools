@@ -109,6 +109,8 @@ pub const TEXT_SELECTOR_NONE: u8 = 0xFF;
 pub const TEXT_SELECTOR_SILENT: u8 = 0x00;
 pub const ACTIVE_LINE_ID_BIAS: u16 = 9;
 pub const CHATTER_HOLD_EXTRA_TICKS: u16 = 6;
+pub const TEXT_ACTIVE_DISPLAY_FLAG: u8 = 0x80;
+pub const TEXT_LINE_ALREADY_SHOWN_FLAG: u16 = 0x8000;
 
 /// Port the TEXT handler's `b3` selector bridge:
 /// `cbw; mov gs:[0x1FAB],ax`, then `mov ax,[0x1FAB]; add ax,9; mov [0x6788],ax`.
@@ -131,6 +133,18 @@ pub fn text_selector_voice_clip_index(selector: u8, talk_clip_count: usize) -> O
     } else {
         None
     }
+}
+
+pub fn text_flags_are_active(flags_b5: u8) -> bool {
+    flags_b5 & TEXT_ACTIVE_DISPLAY_FLAG != 0
+}
+
+pub fn text_line_flags_offset(line_index: u16) -> u16 {
+    line_index.wrapping_add(2)
+}
+
+pub fn text_line_already_shown(flag_word: u16) -> bool {
+    flag_word & TEXT_LINE_ALREADY_SHOWN_FLAG != 0
 }
 
 pub fn is_record_entry_opcode(opcode: u8) -> bool {
@@ -760,6 +774,7 @@ pub struct ExecutionContext {
     global_word_0aa6: Option<u16>,
     global_pair_0aaa_0aa8: Option<(u8, u8)>,
     descript_entry_names: Vec<Vec<u8>>,
+    text_line_display_gating: bool,
 }
 
 impl ExecutionContext {
@@ -808,6 +823,11 @@ impl ExecutionContext {
     pub fn with_bios_rtc(mut self, hour_24: u8, month: u8, day: u8) -> Self {
         self.global_word_0aa6 = Some(hour_24 as u16);
         self.global_pair_0aaa_0aa8 = Some((month, day));
+        self
+    }
+
+    pub fn with_text_line_display_gating(mut self) -> Self {
+        self.text_line_display_gating = true;
         self
     }
 
@@ -887,6 +907,20 @@ fn state_c_string_equals(state: &[u8], addr: u16, expected: &[u8]) -> bool {
         return false;
     }
     &state[start..end] == expected && state[end] == 0
+}
+
+fn text_line_should_display(state: &[u8], line_index: u16, flags_b5: u8) -> bool {
+    text_flags_are_active(flags_b5)
+        && !text_line_already_shown(state_u16(state, text_line_flags_offset(line_index)))
+}
+
+fn mark_text_line_shown(state: &mut [u8], line_index: u16) {
+    let flags_offset = text_line_flags_offset(line_index);
+    state_set_u16(
+        state,
+        flags_offset,
+        state_u16(state, flags_offset) | TEXT_LINE_ALREADY_SHOWN_FLAG,
+    );
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -1368,16 +1402,33 @@ pub fn interpret_line_states_with_context(
         }
 
         if op == OP_TEXT {
-            let location_offset = actor.map(|a| state_u16(&state, a.wrapping_add(LOCATION_FIELD)));
-            out.push(LineState {
-                offset: pos,
-                actor_offset: actor,
-                location_offset,
-            });
-            // advance past the text token
             match decode_text(cod, pos, end) {
-                Some((_, next)) => pos = next,
+                Some((
+                    VmToken::Text {
+                        line_index,
+                        flags_b5,
+                        ..
+                    },
+                    next,
+                )) => {
+                    if !context.text_line_display_gating
+                        || text_line_should_display(&state, line_index, flags_b5)
+                    {
+                        if context.text_line_display_gating {
+                            mark_text_line_shown(&mut state, line_index);
+                        }
+                        let location_offset =
+                            actor.map(|a| state_u16(&state, a.wrapping_add(LOCATION_FIELD)));
+                        out.push(LineState {
+                            offset: pos,
+                            actor_offset: actor,
+                            location_offset,
+                        });
+                    }
+                    pos = next;
+                }
                 None => break,
+                _ => unreachable!("decode_text only returns TEXT tokens"),
             }
             continue;
         }
@@ -1851,14 +1902,29 @@ pub fn execute_trace_with_overrides_and_context(
         }
 
         if op == OP_TEXT {
-            let location_offset = actor.map(|a| state_u16(&state, a.wrapping_add(LOCATION_FIELD)));
-            line_states.push(LineState {
-                offset: token_start,
-                actor_offset: actor,
-                location_offset,
-            });
             match decode_text(cod, token_start, end) {
-                Some((_, next)) => {
+                Some((
+                    VmToken::Text {
+                        line_index,
+                        flags_b5,
+                        ..
+                    },
+                    next,
+                )) => {
+                    if !context.text_line_display_gating
+                        || text_line_should_display(&state, line_index, flags_b5)
+                    {
+                        if context.text_line_display_gating {
+                            mark_text_line_shown(&mut state, line_index);
+                        }
+                        let location_offset =
+                            actor.map(|a| state_u16(&state, a.wrapping_add(LOCATION_FIELD)));
+                        line_states.push(LineState {
+                            offset: token_start,
+                            actor_offset: actor,
+                            location_offset,
+                        });
+                    }
                     pos = next;
                     continue;
                 }
@@ -1869,6 +1935,7 @@ pub fn execute_trace_with_overrides_and_context(
                     };
                     break;
                 }
+                _ => unreachable!("decode_text only returns TEXT tokens"),
             }
         }
         if VAR_TERMINATED.contains(&op) {
@@ -2021,9 +2088,18 @@ mod tests {
         cod.extend_from_slice(&0x0028u16.to_le_bytes());
     }
 
-    fn push_empty_text(cod: &mut Vec<u8>) {
-        cod.extend_from_slice(&[OP_TEXT, 0x00, 0x00, 0xff, 0x00, 0x80]);
+    fn push_text_with_flags(cod: &mut Vec<u8>, line_index: u16, voice_selector: u8, flags_b5: u8) {
+        cod.push(OP_TEXT);
+        cod.extend_from_slice(&line_index.to_le_bytes());
+        cod.push(voice_selector);
+        cod.push(0x00);
+        cod.push(flags_b5);
         cod.extend_from_slice(&0u16.to_le_bytes());
+    }
+
+    fn push_empty_text(cod: &mut Vec<u8>) {
+        let dummy_line_index = 0x7000u16.wrapping_add(cod.len() as u16);
+        push_text_with_flags(cod, dummy_line_index, 0xff, TEXT_ACTIVE_DISPLAY_FLAG);
     }
 
     fn push_record_clear(cod: &mut Vec<u8>, actor_offset: u16) {
@@ -2504,6 +2580,51 @@ mod tests {
         assert_eq!(text_selector_voice_clip_index(0x01, 4), Some(0));
         assert_eq!(text_selector_voice_clip_index(0x04, 4), Some(3));
         assert_eq!(text_selector_voice_clip_index(0x05, 4), None);
+    }
+
+    #[test]
+    fn text_display_gate_skips_inactive_and_already_shown_lines() {
+        assert!(!text_flags_are_active(0x00));
+        assert!(text_flags_are_active(0x80));
+        assert!(text_flags_are_active(0xA0));
+        assert_eq!(text_line_flags_offset(0x0020), 0x0022);
+        assert!(text_line_already_shown(TEXT_LINE_ALREADY_SHOWN_FLAG));
+
+        let inactive_line = 0x0010u16;
+        let pre_shown_line = 0x0020u16;
+        let duplicate_line = 0x0030u16;
+        let mut var = vec![0; 0x0080];
+        state_set_u16(
+            &mut var,
+            text_line_flags_offset(pre_shown_line),
+            TEXT_LINE_ALREADY_SHOWN_FLAG,
+        );
+
+        let mut cod = Vec::new();
+        let inactive_offset = cod.len();
+        push_text_with_flags(&mut cod, inactive_line, 0xFF, 0x00);
+        let pre_shown_offset = cod.len();
+        push_text_with_flags(&mut cod, pre_shown_line, 0xFF, TEXT_ACTIVE_DISPLAY_FLAG);
+        let first_duplicate_offset = cod.len();
+        push_text_with_flags(&mut cod, duplicate_line, 0xFF, TEXT_ACTIVE_DISPLAY_FLAG);
+        let second_duplicate_offset = cod.len();
+        push_text_with_flags(&mut cod, duplicate_line, 0xFF, TEXT_ACTIVE_DISPLAY_FLAG);
+        cod.push(0xFF);
+
+        assert_eq!(interpret_line_states(&cod, &var).len(), 4);
+
+        let context = ExecutionContext::default().with_text_line_display_gating();
+        let states = interpret_line_states_with_context(&cod, &var, &context);
+        assert_eq!(states.len(), 1);
+        assert_eq!(states[0].offset, first_duplicate_offset);
+
+        let trace = execute_trace_with_overrides_and_context(&cod, &var, &[], &context);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 1);
+        assert_eq!(trace.line_states[0].offset, first_duplicate_offset);
+        assert_ne!(trace.line_states[0].offset, inactive_offset);
+        assert_ne!(trace.line_states[0].offset, pre_shown_offset);
+        assert_ne!(trace.line_states[0].offset, second_duplicate_offset);
     }
 
     #[test]

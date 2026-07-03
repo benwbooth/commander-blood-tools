@@ -380,6 +380,12 @@ On entry `si` points at the token's `b1`. The handler:
 - `les di, gs:[0x6724]`; `ax = [b1,b2] (u16)`; `di += ax` ⇒ **`b1:b2` is a u16
   index into the per-line offset/record table** (`gs:0x6724`). `es:[di]` is that
   line's record; `es:[di+2]` holds a flag word (bit15 = already shown/skip).
+  The handler sets this `0x8000` bit after accepting a line. Rust exposes this
+  as `TEXT_LINE_ALREADY_SHOWN_FLAG` and an opt-in
+  `ExecutionContext::with_text_line_display_gating()`. It is intentionally not
+  enabled by default yet: raw `SCRIPT*.VAR` line flag words are not the same as
+  the initialized runtime line-record table, and applying them directly drops
+  valid text from real-script traces.
 - saves `si@b3` to `gs:0x677C`; reads **`cx = [b4,b5] (u16)` = the control word**:
   - `b4 & 0x08` ⇒ set skip-count `gs:0x67AB = ((b5>>4)&7)+1` (conditional IF skip).
   - `b4 & 0x10` ⇒ loop: `gs:0x67B1|=1`, next word → `gs:0x6778` (loop target).
@@ -786,6 +792,11 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `son.snd` talk-clip selector (`0x00`/`0xFF` = no voice, `1..=N` =
       clip `N-1`). This centralizes the rule that previously lived as duplicated
       parser logic.
+- [x] Port the TEXT active/already-shown display gate as an opt-in VM context:
+      `b5 & 0x80` is the active/display bit, and `es:[line_index+2] & 0x8000`
+      is the already-shown skip bit set by the 0xA6 handler. Default real-script
+      traces remain ungated until the runtime initialization of `gs:0x6724` is
+      recovered; raw `SCRIPT*.VAR` has incompatible pre-set flag words.
 - [ ] Decode the `gs:0x6724` per-line record layout (es:[di], es:[di+2] flags).
 - [ ] Verify audible `tb.snd` chatter trigger path, if any. `gs:0x67BB` itself is
       now decoded as post-reveal hold state rather than a direct SND caller.
@@ -1020,6 +1031,13 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `text_selector_voice_clip_index`; both public and extractor script parsers
       call that recovered VM/presentation rule instead of hand-rolling the old
       `b3` tests.
+- [x] Port TEXT active/already-shown line gating as an opt-in trace mode:
+      `src/vm.rs` exposes `TEXT_ACTIVE_DISPLAY_FLAG`,
+      `TEXT_LINE_ALREADY_SHOWN_FLAG`, and
+      `ExecutionContext::with_text_line_display_gating()`. The gated mode skips
+      inactive `b5` lines, skips `line_index+2` words with bit `0x8000` set, and
+      marks accepted lines as shown; the default path stays ungated because raw
+      `SCRIPT*.VAR` is not the initialized runtime line-record table.
 - [x] Port the `gs:0x67BB` line-complete hold timers:
       `src/vm.rs` models `0x94D4..0x94DD` (`b35=aca*4`) and `0x7378..0x738C`
       (`b35=0x27cf*(aca/2)+6`) as checked helper functions. Labels and known
