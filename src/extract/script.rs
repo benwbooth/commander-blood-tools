@@ -3568,7 +3568,8 @@ fn unique_join<'a>(values: impl Iterator<Item = &'a str>) -> String {
     out.join(",")
 }
 
-pub(super) fn write_script_dialogue_manifest(
+#[cfg(test)]
+fn write_legacy_script_dialogue_manifest(
     rows: &[ScriptExecutedSpeechLine],
     out_path: &Path,
 ) -> Result<(), Box<dyn Error>> {
@@ -4657,7 +4658,7 @@ mod tests {
     }
 
     #[test]
-    fn dialogue_video_manifest_uses_executed_sequence_order() {
+    fn legacy_dialogue_video_manifest_uses_executed_sequence_order() {
         let mut early =
             executed_speech_line("SCRIPT2", 0, 0x50, Some("Actor_A"), Some("Room1"), "first");
         early.clip_index = Some(1);
@@ -4673,7 +4674,7 @@ mod tests {
             "commander-blood-dialogue-videos-{}.tsv",
             std::process::id()
         ));
-        write_script_dialogue_manifest(&rows, &path).expect("write dialogue videos");
+        write_legacy_script_dialogue_manifest(&rows, &path).expect("write dialogue videos");
         let manifest = fs::read_to_string(&path).expect("read dialogue videos");
         let _ = fs::remove_file(&path);
         assert!(manifest.contains("dialogue - script2 - room1 - actor_a.mp4"));

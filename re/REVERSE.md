@@ -1200,7 +1200,8 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `ScriptExecutedSpeechLine`, groups each character by script/location, and
       orders lines by `execute_trace` sequence index instead of raw COD offset.
       That generator is now legacy/direct-`--snd` inspection only; the default
-      full export uses the run-level renderer below.
+      full export uses the run-level renderer below and no longer writes
+      `script-dialogue-videos.tsv`.
 - [x] Add branch-aware run-level dialogue composites: the full exporter now
       renders `script-executed-dialogue-runs.tsv` groups as
       `executed-dialogue-run - ...` MP4s, tracking `ShowSpeaker` events so a

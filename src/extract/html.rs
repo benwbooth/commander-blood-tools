@@ -5,9 +5,7 @@ use super::*;
 // ===========================================================================
 
 pub(super) fn write_html_index(out_dir: &Path) -> Result<(), Box<dyn Error>> {
-    let dialogue_rows = read_tsv_rows(&out_dir.join("script-dialogue-videos.tsv"));
     let executed_run_rows = read_tsv_rows(&out_dir.join("script-executed-dialogue-runs.tsv"));
-    let executed_rows = read_tsv_rows(&out_dir.join("script-executed-dialogue.tsv"));
     let scene_rows = read_tsv_rows(&out_dir.join("verified-video-scenes.tsv"));
     let mp4_files = output_files(out_dir, "mp4", "mp4");
     let m4a_files = output_files(out_dir, "m4a", "m4a");
@@ -47,7 +45,6 @@ summary {{ cursor: pointer; font-weight: 600; }}
     )?;
 
     write_executed_dialogue_run_section(&mut html, &executed_run_rows, out_dir)?;
-    write_dialogue_section(&mut html, &dialogue_rows, &executed_rows, out_dir)?;
     write_scene_section(&mut html, &scene_rows, out_dir)?;
     write_music_section(&mut html, &m4a_files, out_dir)?;
     write_snd_section(&mut html, &m4a_files, out_dir)?;
@@ -109,74 +106,6 @@ pub(super) fn write_executed_dialogue_run_section(
         writeln!(html, "</div>")?;
     }
     writeln!(html, "</div>")?;
-    Ok(())
-}
-
-pub(super) fn write_dialogue_section(
-    html: &mut String,
-    rows: &[Vec<String>],
-    executed_rows: &[Vec<String>],
-    out_dir: &Path,
-) -> Result<(), Box<dyn Error>> {
-    writeln!(html, "<h2>Character Dialogue Composites</h2>")?;
-    let mapped_speech_rows = executed_rows
-        .iter()
-        .filter(|row| row.get(12).is_some_and(|clip| !clip.is_empty()))
-        .count();
-    if !executed_rows.is_empty() {
-        writeln!(
-            html,
-            "<p class=\"meta\">{} branch-aware executed script speech/subtitle rows; {} rows have mapped character voice clips and are grouped into {} exported dialogue composite(s). Rows without clip indices are subtitle-only or non-character subtitle channels.</p>",
-            executed_rows.len(),
-            mapped_speech_rows,
-            rows.len()
-        )?;
-    }
-    let mut by_actor: BTreeMap<String, Vec<&[String]>> = BTreeMap::new();
-    for row in rows {
-        if row.len() < 9 {
-            continue;
-        }
-        let rel = format!("mp4/{}", row[0]);
-        if out_dir.join(&rel).exists() {
-            by_actor.entry(row[3].clone()).or_default().push(row);
-        }
-    }
-
-    if by_actor.is_empty() {
-        writeln!(
-            html,
-            "<p class=\"meta\">No dialogue composites exported.</p>"
-        )?;
-        return Ok(());
-    }
-
-    for (actor, actor_rows) in by_actor {
-        writeln!(html, "<h3>{}</h3><div class=\"grid\">", html_escape(&actor))?;
-        for row in actor_rows {
-            let rel = format!("mp4/{}", row[0]);
-            writeln!(html, "<div class=\"card\">")?;
-            write_video(html, &rel)?;
-            writeln!(
-                html,
-                "<div><a href=\"{}\">{}</a></div>",
-                url_escape(&rel),
-                html_escape(&row[0])
-            )?;
-            writeln!(
-                html,
-                "<div class=\"meta\">{} / {}<br>background: {} ({})<br>music: {}<br>clips: {}</div>",
-                html_escape(&row[1]),
-                html_escape(&row[2]),
-                html_escape(&row[4]),
-                html_escape(&row[5]),
-                html_escape(&row[6]),
-                html_escape(&row[8])
-            )?;
-            writeln!(html, "</div>")?;
-        }
-        writeln!(html, "</div>")?;
-    }
     Ok(())
 }
 
@@ -332,7 +261,6 @@ pub(super) fn write_manifest_section(
         "script-profile-dialogue-runs.tsv",
         "script-profile-scene-events.tsv",
         "script-disassembly.tsv",
-        "script-dialogue-videos.tsv",
         "script-dialogue-runs.tsv",
         "script-branch-trace.tsv",
         "script-post-update.tsv",
