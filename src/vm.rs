@@ -92,6 +92,8 @@ pub const OP_MIN: u8 = 0xA0;
 pub const OP_MAX: u8 = 0xD3;
 pub const OP_TEXT: u8 = 0xA6;
 pub const OP_BIT_FLAG: u8 = 0xB7;
+pub const OP_RECORD_STATE_MIN: u8 = 0xC1;
+pub const OP_RECORD_STATE_MAX: u8 = 0xC2;
 pub const OP_RECORD_LINK: u8 = 0xC3;
 pub const OP_ACTOR: u8 = 0xC4;
 pub const OP_RECORD_ENTRY_MIN: u8 = 0xC5;
@@ -127,6 +129,10 @@ pub fn text_selector_voice_clip_index(selector: u8, talk_clip_count: usize) -> O
 
 pub fn is_record_entry_opcode(opcode: u8) -> bool {
     (OP_RECORD_ENTRY_MIN..=OP_RECORD_ENTRY_MAX).contains(&opcode)
+}
+
+pub fn is_record_state_opcode(opcode: u8) -> bool {
+    (OP_RECORD_STATE_MIN..=OP_RECORD_STATE_MAX).contains(&opcode)
 }
 
 pub fn record_entry_stored_related_offset(opcode: u8, operand: u16) -> u16 {
@@ -257,6 +263,19 @@ pub enum VmToken {
         clear: bool,
         len: usize,
     },
+    /// `0xC1..=0xC2` line-record state operations.
+    ///
+    /// Both consume the same raw token shape, `<opcode> <record:u16>
+    /// <operand:u16>`. Their handlers resolve additional table state before
+    /// mutating or branching, so the Rust token deliberately preserves the raw
+    /// operands instead of reducing them to a guessed presentation action.
+    RecordState {
+        offset: usize,
+        opcode: u8,
+        record_offset: u16,
+        operand: u16,
+        len: usize,
+    },
     /// Any other opcode; raw length recorded.
     Op {
         offset: usize,
@@ -350,6 +369,16 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
                 byte_offset: bit_flag_byte_offset(flag_offset, bit_index),
                 mask: bit_flag_mask(bit_index),
                 clear,
+                len,
+            });
+        } else if is_record_state_opcode(op) {
+            let record_offset = read_u16(cod, pos + 1).unwrap_or(0);
+            let operand = read_u16(cod, pos + 3).unwrap_or(0);
+            out.push(VmToken::RecordState {
+                offset: pos,
+                opcode: op,
+                record_offset,
+                operand,
                 len,
             });
         } else if op == OP_RECORD_LINK {
@@ -1364,6 +1393,35 @@ mod tests {
                 byte_offset: 0x0011,
                 mask: 0x40,
                 clear: true,
+                len: 5
+            }
+        );
+    }
+
+    #[test]
+    fn record_state_token_exposes_c1_c2_operands() {
+        let cod = [
+            0xC1, 0x4E, 0x12, 0x52, 0x0D, 0xC2, 0x30, 0x00, 0x04, 0x10, 0xFF,
+        ];
+
+        let toks = walk(&cod, 0, cod.len());
+        assert_eq!(
+            toks[0],
+            VmToken::RecordState {
+                offset: 0,
+                opcode: 0xC1,
+                record_offset: 0x124E,
+                operand: 0x0D52,
+                len: 5
+            }
+        );
+        assert_eq!(
+            toks[1],
+            VmToken::RecordState {
+                offset: 5,
+                opcode: 0xC2,
+                record_offset: 0x0030,
+                operand: 0x1004,
                 len: 5
             }
         );

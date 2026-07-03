@@ -394,6 +394,27 @@ Shipped scripts use true `B7` tokens in SCRIPT2 and SCRIPT3. Rust now exposes
 them as `VmToken::BitFlag` and `execute_trace` applies/evaluates the same
 high-bit-first bit semantics.
 
+### 0xC1/0xC2 line-record state handlers — token shape (PARTIALLY DECODED)
+
+`0xC1` and `0xC2` are both fixed 5-byte line-record state operations with the
+same raw token shape:
+
+    <C1|C2> <record:u16> <operand:u16>
+
+They load the line-record/state table through `les di, gs:[0x6724]`, then use the
+raw record and operand words to resolve additional table slots before either
+mutating state (mode 0) or calling branch helper `0x6462` on a failed test (mode
+1). `0xC1` has a confirmed success write of `{0x00C1, operand, 0x0002}` after it
+finds an empty resolved destination slot. `0xC2` has presentation side effects in
+mode 0 for special record kinds: it can clear `gs:0x1FB2` and set active dialogue
+line ids `gs:0x6788 = 0x27` or `0x2B`.
+
+Current shipped-script VM walks contain repeated true `C1` tokens and no true
+`C2` tokens. Rust now exposes both as `VmToken::RecordState` and the script
+disassembly emits `record_state` rows. The deeper resolved-table side effects are
+not yet applied by `execute_trace`; that awaits the `gs:0x6724` line-record layout
+model.
+
 ### 0xC3 record-link handler @ file 0x6EEE — relation state (DECODED)
 
 `0xC3` consumes two u16 operands: `C3 <record:u16> <related:u16>` (5 bytes).
@@ -606,6 +627,11 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 - [x] Port 0xB7 bit-flag semantics. `src/vm.rs` exposes
       `VmToken::BitFlag`, applies high-bit-first set/clear writes in mode 0, and
       `execute_trace` evaluates mode-1 bit tests with optional `A1` inversion.
+- [x] Expose 0xC1/0xC2 line-record state tokens. `src/vm.rs` keeps their raw
+      record/operand words as `VmToken::RecordState`, and
+      `script-disassembly.tsv` can now show true `record_state` rows instead of
+      raw byte spans. Full side-effect execution still depends on the line-record
+      table layout.
 - [ ] Decode the cs:0x0F29 and cs:0x06D4 sub-dispatch tables; document the
       24-byte actor/object struct iterated at 0x7E09.
 - [x] Reconcile 0xC4 length and operands. The handler consumes two u16 operands,

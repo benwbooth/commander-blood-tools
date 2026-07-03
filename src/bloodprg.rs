@@ -467,6 +467,12 @@ fn opcode_metadata(opcode: u8, handler_file_offset: usize) -> OpcodeMetadata {
             rust_status: "partially-ported",
             notes: "binary handler consumes two u16 operands; current Rust line-state model tracks the talk/object reference needed for dialogue",
         },
+        op if vm::is_record_state_opcode(op) => OpcodeMetadata {
+            mnemonic: "record_state",
+            family: "line-record",
+            rust_status: "token-ported",
+            notes: "C1/C2 line-record state operations; Rust exposes raw record and operand words while deeper table side effects remain under RE",
+        },
         vm::OP_RECORD_LINK => OpcodeMetadata {
             mnemonic: "record_link",
             family: "line-record",
@@ -687,6 +693,15 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         comment: "B8/B9/BD pair-record assignment and comparison family",
     },
     BinarySymbol {
+        name: "vm_op_c1_record_state",
+        file_offset: 0x006b4c,
+        segment: Some(0x04da),
+        offset: Some(0x17ac),
+        ds_offset: None,
+        kind: "script-vm",
+        comment: "C1 line-record state handler; consumes record+operand words and may write/test {0xc1, operand, 2}",
+    },
+    BinarySymbol {
         name: "vm_op_c4_actor",
         file_offset: 0x006c7e,
         segment: Some(0x04da),
@@ -694,6 +709,15 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         ds_offset: None,
         kind: "script-vm",
         comment: "actor/record handler; consumes record+related u16 operands and writes a 6-byte record entry",
+    },
+    BinarySymbol {
+        name: "vm_op_c2_record_state",
+        file_offset: 0x006e34,
+        segment: Some(0x04da),
+        offset: Some(0x1a94),
+        ds_offset: None,
+        kind: "script-vm",
+        comment: "C2 line-record state handler; consumes record+operand words and can drive special active-line ids",
     },
     BinarySymbol {
         name: "vm_op_c3_record_link",

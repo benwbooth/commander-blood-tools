@@ -30,6 +30,8 @@ DS:0x6770,vm_pending_word,pending word appended by 0xA3 handler
 0x0142D0,vm_handler_table,"opcode handler jump table DS:0x6eb0, 52 near offsets into seg 0x04da, opcodes A0..D3"
 0x00660C,vm_op_a6_text,"0xA6 TEXT handler: b1b2=line index into gs:0x6724; b3->gs:0x1fab; b4/b5=control(skip/loop/active 0x80)"
 0x006AA7,vm_bit_set_test_6aa7,"0xB7 high-bit-first byte flag set/clear/test handler"
+0x006B4C,vm_op_c1_record_state,"0xC1 line-record state handler; raw token C1 record operand"
+0x006E34,vm_op_c2_record_state,"0xC2 line-record state handler; raw token C2 record operand"
 0x006EEE,vm_op_c3_record_link,"0xC3 record-link handler; writes es:[record]={0xc3,related,1} on mode-0 success"
 0x006C7E,vm_op_c4_actor,"0xC4 actor/record handler; consumes record+related u16 operands and writes es:[record]={0xc4,related,0}"
 0x006D18,vm_op_c5_record_entry,"0xC5 record-entry handler; writes es:[record]={0xc5,related,0} when related type is 0x0200"

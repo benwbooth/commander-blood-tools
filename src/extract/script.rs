@@ -1029,6 +1029,28 @@ pub(super) fn disassemble_function(
             }
         }
 
+        if pos + 4 < function_end && vm::is_record_state_opcode(cod[pos]) {
+            push_raw_disassembly(script, function_name, cod, &mut rows, raw_start.take(), pos);
+            let opcode = cod[pos];
+            let addr = u16::from_le_bytes([cod[pos + 1], cod[pos + 2]]);
+            let operand = u16::from_le_bytes([cod[pos + 3], cod[pos + 4]]);
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: pos,
+                len: 5,
+                opcode: format!("{opcode:02x}"),
+                mnemonic: "record_state".to_string(),
+                operands: format!("kind=0x{opcode:02x} ref=0x{addr:04x} operand=0x{operand:04x}"),
+                actor_record: current_actor
+                    .as_ref()
+                    .map(|actor| actor.record_name.clone()),
+                text: None,
+            });
+            pos += 5;
+            continue;
+        }
+
         if pos + 2 < function_end && cod[pos] == 0xc9 {
             push_raw_disassembly(script, function_name, cod, &mut rows, raw_start.take(), pos);
             let addr = u16::from_le_bytes([cod[pos + 1], cod[pos + 2]]);
@@ -2980,7 +3002,7 @@ mod tests {
         let cod = [
             0x01, 0x02, 0xc4, 0x3a, 0x00, 0x00, 0x00, 0xa6, 0x34, 0x12, 0x01, 0x00, 0x80, 0x01,
             0x00, 0x00, 0x00, 0xc3, 0x3a, 0x00, 0x28, 0x00, 0xc6, 0x8e, 0x10, 0x52, 0x10, 0xc9,
-            0x3a, 0x00, 0xb7, 0x10, 0x00, 0x09, 0x03,
+            0x3a, 0x00, 0xb7, 0x10, 0x00, 0x09, 0xc1, 0x4e, 0x12, 0x52, 0x0d, 0x03,
         ];
         let mut actors = HashMap::new();
         actors.insert(
@@ -3021,6 +3043,12 @@ mod tests {
                 && row.len == 4
                 && row.operands.contains("byte=0x0011")
                 && row.operands.contains("mask=0x40")
+        }));
+        assert!(rows.iter().any(|row| {
+            row.mnemonic == "record_state"
+                && row.opcode == "c1"
+                && row.operands.contains("ref=0x124e")
+                && row.operands.contains("operand=0x0d52")
         }));
         assert_eq!(rows[0].function_name, "func");
     }
