@@ -440,6 +440,7 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 | `re/bin/BLOODPRG.EXE` | unpacked target (MZ image == whole file, no decompression needed) |
 | `script-branch-trace.tsv` | extraction artifact listing `execute_trace` branch/control events per script |
 | `script-executed-dialogue.tsv` | extraction artifact joining `execute_trace` line order to decoded text/actor/background |
+| `script-executed-dialogue-runs.tsv` | extraction artifact grouping executed dialogue by script/background run |
 | `script-dialogue-runs.tsv` | extraction artifact grouping VM-order dialogue lines by script/background run |
 
 ## Verification Checklist

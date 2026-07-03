@@ -238,6 +238,10 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         &script_executed_speech,
         &out_dir.join("script-executed-dialogue.tsv"),
     )?;
+    write_script_executed_dialogue_runs_manifest(
+        &script_executed_speech,
+        &out_dir.join("script-executed-dialogue-runs.tsv"),
+    )?;
     write_script_dialogue_manifest(&script_speech, &out_dir.join("script-dialogue-videos.tsv"))?;
     write_script_dialogue_runs_manifest(&script_speech, &out_dir.join("script-dialogue-runs.tsv"))?;
     let script_disassembly = parse_script_disassembly(&tmp_iso, descript_db.as_ref(), &hnm_music)?;

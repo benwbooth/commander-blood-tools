@@ -49,8 +49,9 @@ The script parser recovers character contexts from `SCRIPT*.DEB` object symbols
 plus the object location field in `SCRIPT*.VAR`. It also emits a
 function-bounded `script-disassembly.tsv`, a branch-aware
 `script-branch-trace.tsv`, an initial-state executed dialogue trace
-`script-executed-dialogue.tsv`, VM-order `script-dialogue-runs.tsv`, and every
-valid `0xa6` TEXT token in `SCRIPT*.COD` with the VM token walker by following
+`script-executed-dialogue.tsv`, initial-state executed dialogue runs
+`script-executed-dialogue-runs.tsv`, VM-order `script-dialogue-runs.tsv`, and
+every valid `0xa6` TEXT token in `SCRIPT*.COD` with the VM token walker by following
 dictionary word offsets from `SCRIPT*.DIC`. Actor context is tracked from the
 binary-sized `0xc4` actor/object tokens where those references match DESCRIPT
 character talk slots.

@@ -1188,6 +1188,20 @@ struct ScriptDialogueRun<'a> {
     lines: Vec<&'a ScriptSpeechLine>,
 }
 
+#[derive(Debug)]
+struct ScriptExecutedDialogueRun<'a> {
+    script: String,
+    run_index: usize,
+    first_sequence: usize,
+    last_sequence: usize,
+    first_offset: usize,
+    last_offset: usize,
+    background_record: Option<String>,
+    background_hnm: Option<String>,
+    background_music: Option<String>,
+    lines: Vec<&'a ScriptExecutedSpeechLine>,
+}
+
 fn script_dialogue_runs(rows: &[ScriptSpeechLine]) -> Vec<ScriptDialogueRun<'_>> {
     let mut ordered: Vec<&ScriptSpeechLine> = rows
         .iter()
@@ -1223,6 +1237,124 @@ fn script_dialogue_runs(rows: &[ScriptSpeechLine]) -> Vec<ScriptDialogueRun<'_>>
         });
     }
     runs
+}
+
+fn script_executed_dialogue_runs(
+    rows: &[ScriptExecutedSpeechLine],
+) -> Vec<ScriptExecutedDialogueRun<'_>> {
+    let mut ordered: Vec<&ScriptExecutedSpeechLine> = rows
+        .iter()
+        .filter(|row| row.clip_index.is_some() || !row.text.trim().is_empty())
+        .collect();
+    ordered.sort_by(|a, b| {
+        (a.script.as_str(), a.sequence_index).cmp(&(b.script.as_str(), b.sequence_index))
+    });
+
+    let mut runs: Vec<ScriptExecutedDialogueRun<'_>> = Vec::new();
+    for row in ordered {
+        let same_run = runs.last().is_some_and(|run| {
+            run.script == row.script
+                && run.background_record == row.background_record
+                && run.background_hnm == row.background_hnm
+                && run.background_music == row.background_music
+        });
+        if same_run {
+            let run = runs.last_mut().expect("run exists");
+            run.last_sequence = row.sequence_index;
+            run.last_offset = row.offset;
+            run.lines.push(row);
+            continue;
+        }
+
+        let run_index = runs.iter().filter(|run| run.script == row.script).count() + 1;
+        runs.push(ScriptExecutedDialogueRun {
+            script: row.script.clone(),
+            run_index,
+            first_sequence: row.sequence_index,
+            last_sequence: row.sequence_index,
+            first_offset: row.offset,
+            last_offset: row.offset,
+            background_record: row.background_record.clone(),
+            background_hnm: row.background_hnm.clone(),
+            background_music: row.background_music.clone(),
+            lines: vec![row],
+        });
+    }
+    runs
+}
+
+pub(super) fn write_script_executed_dialogue_runs_manifest(
+    rows: &[ScriptExecutedSpeechLine],
+    out_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let runs = script_executed_dialogue_runs(rows);
+    let mut file = File::create(out_path)?;
+    writeln!(
+        file,
+        "run_id\tmp4\tscript\tfirst_sequence\tlast_sequence\tfirst_offset\tlast_offset\tbackground_record\tbackground_hnm\tbackground_music\tline_count\tvoiced_count\tactors\tclip_refs\tfirst_text"
+    )?;
+    for run in runs {
+        let run_id = format!("{}-{:04}", run.script, run.run_index);
+        let location = run
+            .background_record
+            .as_deref()
+            .or(run.background_hnm.as_deref())
+            .unwrap_or("nolocation");
+        let output_stem = format!(
+            "executed-dialogue-run - {} - {:04} - {}",
+            safe_file_stem(&run.script),
+            run.run_index,
+            safe_file_stem(location)
+        );
+        let actors = unique_join(
+            run.lines
+                .iter()
+                .filter_map(|line| line.actor_record.as_deref()),
+        );
+        let clip_refs = run
+            .lines
+            .iter()
+            .filter_map(|line| {
+                line.clip_index.map(|clip| {
+                    format!(
+                        "{}:{clip}",
+                        line.actor_record.as_deref().unwrap_or("noactor")
+                    )
+                })
+            })
+            .collect::<Vec<_>>()
+            .join(",");
+        let voiced_count = run
+            .lines
+            .iter()
+            .filter(|line| line.clip_index.is_some())
+            .count();
+        let first_text = run
+            .lines
+            .first()
+            .map(|line| clean_tsv(&line.text))
+            .unwrap_or_default();
+        writeln!(
+            file,
+            "{}\t{}.mp4\t{}\t{}\t{}\t0x{:05x}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            run_id,
+            output_stem,
+            run.script,
+            run.first_sequence,
+            run.last_sequence,
+            run.first_offset,
+            run.last_offset,
+            run.background_record.as_deref().unwrap_or(""),
+            run.background_hnm.as_deref().unwrap_or(""),
+            run.background_music.as_deref().unwrap_or(""),
+            run.lines.len(),
+            voiced_count,
+            actors,
+            clip_refs,
+            first_text
+        )?;
+    }
+    Ok(())
 }
 
 pub(super) fn write_script_dialogue_runs_manifest(
@@ -1445,6 +1577,35 @@ mod tests {
             actor_ref: Some(0x003a),
             actor_proof: "test".to_string(),
             word_count: 1,
+        }
+    }
+
+    fn executed_speech_line(
+        script: &str,
+        sequence_index: usize,
+        offset: usize,
+        actor: Option<&str>,
+        location: Option<&str>,
+        text: &str,
+    ) -> ScriptExecutedSpeechLine {
+        ScriptExecutedSpeechLine {
+            script: script.to_string(),
+            sequence_index,
+            function_name: "func".to_string(),
+            offset,
+            actor_record: actor.map(str::to_string),
+            actor_ref: actor.map(|_| 0x003a),
+            location_offset: location.map(|_| 0x1000),
+            background_record: location.map(str::to_string),
+            background_hnm: location.map(|loc| format!("{loc}.hnm")),
+            background_music: location.map(|loc| format!("{loc}_music")),
+            param0: 1,
+            param1: 0,
+            clip_index: actor.map(|_| 0),
+            text: text.to_string(),
+            call_target: 0x1234,
+            text_end: offset + 12,
+            source: "test".to_string(),
         }
     }
 
@@ -1674,6 +1835,45 @@ mod tests {
         let _ = fs::remove_file(&path);
         assert!(manifest.contains("SCRIPT2-0001"));
         assert!(manifest.contains("Actor_A,Actor_B"));
+    }
+
+    #[test]
+    fn executed_dialogue_runs_follow_sequence_order_and_split_locations() {
+        let rows = vec![
+            executed_speech_line("SCRIPT2", 0, 0x50, Some("Actor_A"), Some("Room1"), "a"),
+            executed_speech_line("SCRIPT2", 1, 0x10, Some("Actor_B"), Some("Room1"), "b"),
+            executed_speech_line("SCRIPT2", 2, 0x30, Some("Actor_A"), Some("Room2"), "c"),
+            executed_speech_line("SCRIPT3", 0, 0x10, Some("Actor_A"), Some("Room1"), "d"),
+        ];
+
+        let runs = script_executed_dialogue_runs(&rows);
+        assert_eq!(runs.len(), 3);
+        assert_eq!(runs[0].script, "SCRIPT2");
+        assert_eq!(runs[0].run_index, 1);
+        assert_eq!(runs[0].first_sequence, 0);
+        assert_eq!(runs[0].last_sequence, 1);
+        // Sequence order is authoritative even when COD offsets are not sorted.
+        assert_eq!(runs[0].first_offset, 0x50);
+        assert_eq!(runs[0].last_offset, 0x10);
+        assert_eq!(runs[0].lines[0].actor_record.as_deref(), Some("Actor_A"));
+        assert_eq!(runs[0].lines[1].actor_record.as_deref(), Some("Actor_B"));
+
+        assert_eq!(runs[1].run_index, 2);
+        assert_eq!(runs[1].background_record.as_deref(), Some("Room2"));
+        assert_eq!(runs[2].script, "SCRIPT3");
+        assert_eq!(runs[2].run_index, 1);
+
+        let path = std::env::temp_dir().join(format!(
+            "commander-blood-executed-dialogue-runs-{}.tsv",
+            std::process::id()
+        ));
+        write_script_executed_dialogue_runs_manifest(&rows, &path)
+            .expect("write executed dialogue runs");
+        let manifest = fs::read_to_string(&path).expect("read executed dialogue runs");
+        let _ = fs::remove_file(&path);
+        assert!(manifest.contains("SCRIPT2-0001"));
+        assert!(manifest.contains("Actor_A,Actor_B"));
+        assert!(manifest.contains("0x00050\t0x00010"));
     }
 
     #[test]
