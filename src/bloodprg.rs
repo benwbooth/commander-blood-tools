@@ -39,8 +39,13 @@ pub const RENDER_FIXED_8X8_TEXT_OFFSET: u16 = 0x00d6;
 pub const RENDER_FONT_STRING_WIDTH_OFFSET: u16 = 0x013d;
 pub const RENDER_UI_TEXT_OFFSET: u16 = 0x0176;
 pub const RENDER_STRING_OFFSET: u16 = 0x0202;
+pub const RENDER_PLANAR_UI_TEXT_OFFSET: u16 = 0x0498;
+pub const RENDER_PLANAR_DIALOGUE_TEXT_OFFSET: u16 = 0x05de;
 pub const RENDER_SUBTITLE_REVEAL_OFFSET: u16 = 0x06a0;
 pub const RENDER_SMALL_TEXT_OFFSET: u16 = 0x075a;
+pub const RENDER_PLANAR_HORIZONTAL_LINE_OFFSET: u16 = 0x0a2b;
+pub const RENDER_PLANAR_VERTICAL_LINE_OFFSET: u16 = 0x0b23;
+pub const RENDER_RECT_OUTLINE_OFFSET: u16 = 0x0bb5;
 pub const RENDER_RECT_FILL_OFFSET: u16 = 0x0cdc;
 pub const RENDER_SCENE_BAND_FILL_OFFSET: u16 = 0x0deb;
 pub const RENDER_SECONDARY_BAND_FILL_OFFSET: u16 = 0x0e2f;
@@ -924,8 +929,13 @@ fn render_target_name(target_offset: u16) -> &'static str {
         RENDER_FONT_STRING_WIDTH_OFFSET => "font_string_width_measure",
         RENDER_UI_TEXT_OFFSET => "ui_text_render_10row",
         RENDER_STRING_OFFSET => "render_string_entry",
+        RENDER_PLANAR_UI_TEXT_OFFSET => "planar_ui_text_render_10row",
+        RENDER_PLANAR_DIALOGUE_TEXT_OFFSET => "planar_dialogue_text_render",
         RENDER_SUBTITLE_REVEAL_OFFSET => "subtitle_reveal_draw_wrapper",
         RENDER_SMALL_TEXT_OFFSET => "small_text_render",
+        RENDER_PLANAR_HORIZONTAL_LINE_OFFSET => "planar_horizontal_line_draw",
+        RENDER_PLANAR_VERTICAL_LINE_OFFSET => "planar_vertical_line_draw",
+        RENDER_RECT_OUTLINE_OFFSET => "framebuffer_rect_outline",
         RENDER_RECT_FILL_OFFSET => "framebuffer_rect_fill_clipped",
         RENDER_SCENE_BAND_FILL_OFFSET => "scene_band_fill",
         RENDER_SECONDARY_BAND_FILL_OFFSET => "secondary_framebuffer_band_fill",
@@ -977,8 +987,20 @@ fn render_call_site_note(file_offset: usize, target_offset: u16) -> &'static str
         (0x008597 | 0x0085ce, RENDER_UI_TEXT_OFFSET) => {
             "dialogue/menu list path renders 10-row UI text with active-line color switching"
         }
+        (0x001ac6, RENDER_PLANAR_UI_TEXT_OFFSET) => {
+            "startup/presentation path renders 10-row UI text through VGA plane masks into GS:0x521D"
+        }
+        (0x0072f6, RENDER_PLANAR_DIALOGUE_TEXT_OFFSET) => {
+            "dialogue line-layout path renders dialogue-font text through VGA plane masks into GS:0x5219"
+        }
         (0x0094ee, RENDER_SUBTITLE_REVEAL_OFFSET) => {
             "subtitle reveal path draws current text using DS:0x5E5C/0x5E5E origin"
+        }
+        (0x00946d, RENDER_PLANAR_HORIZONTAL_LINE_OFFSET) => {
+            "dialogue updater draws a clipped horizontal line from the line command table"
+        }
+        (0x009474, RENDER_PLANAR_VERTICAL_LINE_OFFSET) => {
+            "dialogue updater draws a clipped vertical line from the line command table"
         }
         (0x005990 | 0x0070dd | 0x007e7d | 0x0090d4, RENDER_SPRITE_SLOT_LOAD_OFFSET) => {
             "loads one sprite/frame table entry into a presentation slot"
@@ -1017,6 +1039,21 @@ fn render_call_site_note(file_offset: usize, target_offset: u16) -> &'static str
         }
         (_, RENDER_UI_TEXT_OFFSET) => {
             "renders NUL-terminated text with the 10-row UI font tables at GS:0x7362/0x7412/0x7442"
+        }
+        (_, RENDER_PLANAR_UI_TEXT_OFFSET) => {
+            "renders 10-row UI text through VGA plane masks into the GS:0x521D framebuffer"
+        }
+        (_, RENDER_PLANAR_DIALOGUE_TEXT_OFFSET) => {
+            "renders dialogue-font text through VGA plane masks into the GS:0x5219 framebuffer"
+        }
+        (_, RENDER_PLANAR_HORIZONTAL_LINE_OFFSET) => {
+            "draws a clipped horizontal line into the GS:0x5219 planar framebuffer"
+        }
+        (_, RENDER_PLANAR_VERTICAL_LINE_OFFSET) => {
+            "draws a clipped vertical line into the GS:0x5219 planar framebuffer"
+        }
+        (_, RENDER_RECT_OUTLINE_OFFSET) => {
+            "draws a clipped rectangle outline using primary-framebuffer line helpers"
         }
         _ => "unclassified render-segment call",
     }
@@ -1492,6 +1529,24 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         comment: "dialogue string renderer entry; BX=x, DX=y, SI=ASCIIZ string, DL=color",
     },
     BinarySymbol {
+        name: "planar_ui_text_render_10row",
+        file_offset: 0x003428,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_PLANAR_UI_TEXT_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "renders 10-row UI text through VGA plane masks into framebuffer pointer GS:0x521D",
+    },
+    BinarySymbol {
+        name: "planar_dialogue_text_render",
+        file_offset: 0x00356e,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_PLANAR_DIALOGUE_TEXT_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "renders dialogue-font text through VGA plane masks into framebuffer pointer GS:0x5219",
+    },
+    BinarySymbol {
         name: "render_string_glyph_loop",
         file_offset: 0x0031c8,
         segment: Some(0x0299),
@@ -1517,6 +1572,33 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         ds_offset: None,
         kind: "presentation",
         comment: "renders a NUL-terminated string with the 5-row small font tables at 0x6fa8/0x7028",
+    },
+    BinarySymbol {
+        name: "planar_horizontal_line_draw",
+        file_offset: 0x0039bb,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_PLANAR_HORIZONTAL_LINE_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "draws a clipped horizontal line into framebuffer pointer GS:0x5219, honoring the render clip bounds",
+    },
+    BinarySymbol {
+        name: "planar_vertical_line_draw",
+        file_offset: 0x003ab3,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_PLANAR_VERTICAL_LINE_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "draws a clipped vertical line into framebuffer pointer GS:0x5219, honoring the render clip bounds",
+    },
+    BinarySymbol {
+        name: "framebuffer_rect_outline",
+        file_offset: 0x003b45,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_RECT_OUTLINE_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "draws a clipped rectangle outline in the primary framebuffer by calling the horizontal/vertical line helpers",
     },
     BinarySymbol {
         name: "framebuffer_rect_fill_clipped",
@@ -2276,9 +2358,23 @@ mod tests {
             Some(&3)
         );
         assert_eq!(target_counts.get(&RENDER_UI_TEXT_OFFSET), Some(&6));
+        assert_eq!(target_counts.get(&RENDER_PLANAR_UI_TEXT_OFFSET), Some(&1));
+        assert_eq!(
+            target_counts.get(&RENDER_PLANAR_DIALOGUE_TEXT_OFFSET),
+            Some(&1)
+        );
         assert_eq!(target_counts.get(&RENDER_STRING_OFFSET), Some(&5));
         assert_eq!(target_counts.get(&RENDER_SUBTITLE_REVEAL_OFFSET), Some(&1));
         assert_eq!(target_counts.get(&RENDER_SMALL_TEXT_OFFSET), Some(&8));
+        assert_eq!(
+            target_counts.get(&RENDER_PLANAR_HORIZONTAL_LINE_OFFSET),
+            Some(&1)
+        );
+        assert_eq!(
+            target_counts.get(&RENDER_PLANAR_VERTICAL_LINE_OFFSET),
+            Some(&1)
+        );
+        assert_eq!(target_counts.get(&RENDER_RECT_OUTLINE_OFFSET), Some(&4));
         assert_eq!(target_counts.get(&RENDER_RECT_FILL_OFFSET), Some(&7));
         assert_eq!(target_counts.get(&RENDER_SCENE_BAND_FILL_OFFSET), Some(&10));
         assert_eq!(
@@ -2316,7 +2412,27 @@ mod tests {
             "font_string_width_measure"
         );
         assert_eq!(target_name(RENDER_UI_TEXT_OFFSET), "ui_text_render_10row");
+        assert_eq!(
+            target_name(RENDER_PLANAR_UI_TEXT_OFFSET),
+            "planar_ui_text_render_10row"
+        );
+        assert_eq!(
+            target_name(RENDER_PLANAR_DIALOGUE_TEXT_OFFSET),
+            "planar_dialogue_text_render"
+        );
         assert_eq!(target_name(RENDER_SMALL_TEXT_OFFSET), "small_text_render");
+        assert_eq!(
+            target_name(RENDER_PLANAR_HORIZONTAL_LINE_OFFSET),
+            "planar_horizontal_line_draw"
+        );
+        assert_eq!(
+            target_name(RENDER_PLANAR_VERTICAL_LINE_OFFSET),
+            "planar_vertical_line_draw"
+        );
+        assert_eq!(
+            target_name(RENDER_RECT_OUTLINE_OFFSET),
+            "framebuffer_rect_outline"
+        );
         assert_eq!(
             target_name(RENDER_RECT_FILL_OFFSET),
             "framebuffer_rect_fill_clipped"
@@ -2383,6 +2499,34 @@ mod tests {
         assert_eq!(ui_text.target_offset, RENDER_UI_TEXT_OFFSET);
         assert_eq!(ui_text.target_name, "ui_text_render_10row");
         assert!(ui_text.note.contains("10-row UI text"));
+
+        let planar_dialogue_text = sites
+            .iter()
+            .find(|site| site.file_offset == 0x0072f6)
+            .expect("dialogue planar text render call");
+        assert_eq!(
+            planar_dialogue_text.target_offset,
+            RENDER_PLANAR_DIALOGUE_TEXT_OFFSET
+        );
+        assert!(planar_dialogue_text.note.contains("GS:0x5219"));
+
+        let horizontal_line = sites
+            .iter()
+            .find(|site| site.file_offset == 0x00946d)
+            .expect("dialogue horizontal line draw call");
+        assert_eq!(
+            horizontal_line.target_offset,
+            RENDER_PLANAR_HORIZONTAL_LINE_OFFSET
+        );
+        assert!(horizontal_line.note.contains("horizontal line"));
+
+        let rect_outline = sites
+            .iter()
+            .find(|site| site.file_offset == 0x007a62)
+            .expect("navigation rectangle outline call");
+        assert_eq!(rect_outline.target_offset, RENDER_RECT_OUTLINE_OFFSET);
+        assert_eq!(rect_outline.ax_value, Some(0xef));
+        assert_eq!(rect_outline.target_name, "framebuffer_rect_outline");
 
         let subtitle_reveal = sites
             .iter()

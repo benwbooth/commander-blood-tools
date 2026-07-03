@@ -837,10 +837,20 @@ Named targets that are already tied to code behavior:
   tables `GS:0x7362/0x7412/0x7442`.
 - `0x0299:0x0202` (`render_string_entry`): dialogue/UI string renderer using the
   embedded font tables.
+- `0x0299:0x0498` (`planar_ui_text_render_10row`): renders 10-row UI text
+  through VGA plane masks into framebuffer pointer `GS:0x521D`.
+- `0x0299:0x05DE` (`planar_dialogue_text_render`): renders dialogue-font text
+  through VGA plane masks into framebuffer pointer `GS:0x5219`; reached by the
+  line-layout dialogue path at file `0x72F6`.
 - `0x0299:0x06A0` (`subtitle_reveal_draw_wrapper`): the subtitle reveal renderer
   reached from file `0x94EE` after loading the `DS:0x5E5C/0x5E5E` text origin.
 - `0x0299:0x075A` (`small_text_render`): NUL-terminated string renderer using the
   5-row small-font tables at `0x6FA8/0x7028`.
+- `0x0299:0x0A2B` / `0x0B23` (`planar_horizontal_line_draw` /
+  `planar_vertical_line_draw`): clipped line primitives into `GS:0x5219`, used by
+  the dialogue updater's line-command table just before the subtitle reveal draw.
+- `0x0299:0x0BB5` (`framebuffer_rect_outline`): clipped rectangle-outline wrapper
+  using the primary-framebuffer horizontal/vertical line helpers.
 - `0x0299:0x0CDC` (`framebuffer_rect_fill_clipped`): clips and fills a rectangle
   in primary framebuffer `DS:0x5221`.
 - `0x0299:0x0DEB` (`scene_band_fill`): fills the current clipped framebuffer band.
@@ -859,8 +869,9 @@ Named targets that are already tied to code behavior:
 
 This is still a caller map, not a full renderer decompilation. It removes the
 guesswork about which external render hooks the VM/presentation state machine
-uses, and leaves the next RE step as naming the remaining 16 render targets and
-porting the sprite-slot state model.
+uses, and leaves the next RE step as naming the remaining 11 behavior gaps: 8
+still-unclassified target offsets plus 3 provisionally named sprite/object
+targets whose semantics need deeper porting.
 
 Rust now ports the safe framebuffer side of the recovered primitives in
 `src/extract/render.rs`: clipped rectangle fill (`0x0CDC`), current scene-band
@@ -1313,10 +1324,11 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `bloodprg-render-call-sites.tsv` and `inspect-bloodprg.render_call_sites`
       scan all direct far calls into segment `0x0299`, recovering 143 call sites
       across 32 target offsets. Named targets include the text renderers,
-      fixed 8x8/UI font helpers, VGA DAC palette load/clear callbacks,
-      framebuffer fill/copy helpers, subtitle reveal wrapper, sprite-slot frame
-      load, and sprite-slot state update; the remaining target semantics stay
-      open RE work instead of being guessed by the exporter.
+      fixed 8x8/UI font helpers, planar text/line primitives, VGA DAC palette
+      load/clear callbacks, framebuffer fill/copy helpers, subtitle reveal
+      wrapper, sprite-slot frame load, and sprite-slot state update; the
+      remaining target semantics stay open RE work instead of being guessed by
+      the exporter.
 - [x] Port recovered framebuffer fill/copy primitives:
       `src/extract/render.rs` now has tested Rust helpers for the clipped
       rectangle fill, scene-band fill, and full 320x200 framebuffer copy shapes
