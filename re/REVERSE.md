@@ -435,9 +435,12 @@ direct mode-1 compares when host state already contains a concrete
 mode-0 success write when `ExecutionContext` proves the owner object is active
 and the destination record is empty. `C2` compare evaluation also requires the
 DEB-derived `ExecutionContext` because the binary checks the owner object active
-via helper `0x6034`. The deeper resolved-table mode-0 paths and `C2`
-presentation side effects are not yet applied; those await the remaining
-`gs:0x6724` line-record layout model.
+via helper `0x6034`. Rust also ports the direct C2 mode-0 operand-record write:
+if the owner is active, `operand+2` has bit `0x20`, and the runtime sentinel
+list accepts the operand, helper table `gs:0x6D60` selects a kind-specific field
+and Rust writes `0xFFFF` there. Kind `2` records also clear `gs:0x1FB2` and set
+active dialogue line `gs:0x6788 = 0x27`. The deeper resolved-table C1 paths and
+the C2 `kind == 0x0400`/helper-`0x7409` presentation branch remain pending.
 
 ### 0xCA/0xCB global condition handlers — token shape (DECODED; runtime source pending)
 
@@ -746,8 +749,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `record_state` rows instead of raw byte spans. Direct mode-1 compares are
       now executed when concrete host-state records are available. The direct
       C1 mode-0 success write `{0x00C1, operand, 0x0002}` is also applied when
-      the DEB-derived context proves the owner active; resolved-table mode-0
-      paths and C2 presentation side effects remain pending.
+      the DEB-derived context proves the owner active. C2 mode-0 now applies
+      the `gs:0x6D60` kind-field write and kind-2 active-line side effect
+      (`gs:0x6788 = 0x27`); resolved-table C1 paths and the C2
+      `kind == 0x0400`/helper-`0x7409` branch remain pending.
 - [x] Expose 0xCA/0xCB global condition tokens. `src/vm.rs` preserves the
       consumed compare operands as `VmToken::GlobalWordCompare` and
       `VmToken::GlobalPairCompare`; `execute_trace` evaluates their branches

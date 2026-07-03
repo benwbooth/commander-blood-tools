@@ -166,6 +166,15 @@ pub fn bit_flag_mask(bit_index: u8) -> u8 {
     0x80u8 >> (bit_index & 7)
 }
 
+pub fn vm_field_offset(selector: u8, kind: u16) -> Option<u16> {
+    if kind == 0 {
+        return None;
+    }
+    let bit = kind.trailing_zeros() as usize;
+    let index = selector as usize * 16 + bit;
+    VM_FIELD_OFFSET_TABLE.get(index).copied().map(u16::from)
+}
+
 /// Port the reveal-complete hold timer at `BLOODPRG.EXE` `0x94D4..0x94DD`:
 /// `b35 = gs:[0x0ACA] << 2; gs:[0x67BB] = 1`.
 pub fn reveal_complete_hold_ticks(text_speed_step: u16) -> u16 {
@@ -615,6 +624,10 @@ fn read_u16(cod: &[u8], at: usize) -> Option<u16> {
 //       writes {0x00C1, operand, 2} to an active owner's empty direct record in
 //       mode 0; mode-1 direct compares are evaluated when host state has that
 //       concrete record entry. Resolved-table fallback paths remain pending.
+//   * 0xC2, 5 bytes plus optional A1 prefix:
+//       in mode 0, active owners can mark the operand record's kind-specific
+//       field as 0xffff via helper table 0x6D60 and kind-2 records set active
+//       dialogue line 0x27. Mode-1 direct compares are evaluated with context.
 //   * 0xCD, 7 bytes plus optional A1 prefix:
 //       compare a direct three-word record in mode 1; mode-0 resolved-table
 //       side effects are still pending the line-record table model.
@@ -648,6 +661,35 @@ const ASSIGN_5: [u8; 7] = [0xAD, 0xAF, 0xB2, 0xB3, 0xBA, 0xBB, 0xBC];
 const TALK_FIELD: u16 = 0x3A;
 const LOCATION_FIELD: u16 = 24;
 const SPECIAL_OBJECT_SLOT_COUNT: usize = 16;
+const VM_FIELD_OFFSET_SELECTOR_C2: u8 = 0x11;
+const C2_ACTIVE_LINE_KIND2: u16 = 0x27;
+
+/// Field-offset lookup table used by helper `0x6023`:
+/// `gs:[0x6D60 + selector * 16 + bsf(kind)]`.
+/// Transcribed from `BLOODPRG.EXE` file `0x14180..0x142CF`.
+const VM_FIELD_OFFSET_TABLE: [u8; 0x150] = [
+    0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x04, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x32, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x34, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x1e, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x38, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x36, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x1c, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x18, 0x18, 0x00, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x20, 0x44, 0x1c, 0x1c, 0x22, 0x00, 0x00, 0x16, 0x00, 0x10, 0x16, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x46, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x14, 0x14, 0x14, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x06, 0x18, 0x16, 0x16, 0x16, 0x00, 0x00, 0x14, 0x00, 0x04, 0x14, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x1a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x08, 0x3a, 0x00, 0x00, 0x1c, 0x00, 0x00, 0x00, 0x00, 0x0a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x10, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+];
 
 /// A `0xA6` line's resolved runtime scene state.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
@@ -967,6 +1009,40 @@ fn write_c1_record_state_direct(
     true
 }
 
+fn write_c2_record_state_direct(
+    state: &mut [u8],
+    context: &ExecutionContext,
+    special_slots: &mut SpecialObjectSlots,
+    record_offset: u16,
+    target_record_offset: u16,
+) -> bool {
+    if record_owner_is_active(state, context, record_offset) != Some(true) {
+        return false;
+    }
+    if state_u8(state, target_record_offset.wrapping_add(2)) & 0x20 == 0 {
+        return false;
+    }
+    if !special_slots.insert(target_record_offset) {
+        return false;
+    }
+
+    let kind = state_u16(state, target_record_offset);
+    if let Some(field_offset) = vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C2, kind) {
+        state_set_u16(
+            state,
+            target_record_offset.wrapping_add(field_offset),
+            0xffff,
+        );
+    }
+
+    if state_u8(state, 0x2793) & 1 == 0 && state_u8(state, 0x67aa) & 2 == 0 && kind == 2 {
+        state_set_u8(state, 0x1fb2, 0);
+        state_set_u16(state, 0x6788, C2_ACTIVE_LINE_KIND2);
+    }
+
+    true
+}
+
 fn clear_record(state: &mut [u8], record_offset: u16) -> Option<u16> {
     let old_type = state_u16(state, record_offset);
     let old_related = state_u16(state, record_offset.wrapping_add(2));
@@ -1160,6 +1236,17 @@ pub fn interpret_line_states_with_context(
             let record_offset = read_u16(cod, pos + 1).unwrap_or(0);
             let operand = read_u16(cod, pos + 3).unwrap_or(0);
             write_c1_record_state_direct(&mut state, context, record_offset, operand);
+        }
+        if !mode1 && op == OP_RECORD_STATE_MAX && pos + 5 <= end {
+            let record_offset = read_u16(cod, pos + 1).unwrap_or(0);
+            let operand = read_u16(cod, pos + 3).unwrap_or(0);
+            write_c2_record_state_direct(
+                &mut state,
+                context,
+                &mut special_slots,
+                record_offset,
+                operand,
+            );
         }
 
         if op == OP_TEXT {
@@ -1632,6 +1719,17 @@ pub fn execute_trace_with_overrides_and_context(
             let record_offset = read_u16(cod, token_start + 1).unwrap_or(0);
             let operand = read_u16(cod, token_start + 3).unwrap_or(0);
             write_c1_record_state_direct(&mut state, context, record_offset, operand);
+        }
+        if !mode1 && op == OP_RECORD_STATE_MAX && token_start + 5 <= end {
+            let record_offset = read_u16(cod, token_start + 1).unwrap_or(0);
+            let operand = read_u16(cod, token_start + 3).unwrap_or(0);
+            write_c2_record_state_direct(
+                &mut state,
+                context,
+                &mut special_slots,
+                record_offset,
+                operand,
+            );
         }
 
         if op == OP_TEXT {
@@ -3156,6 +3254,79 @@ mod tests {
         assert!(trace.branch_events.iter().any(|event| {
             event.offset == condition_offset
                 && event.opcode == OP_RECORD_STATE_MIN
+                && !event.branch_taken
+                && event.condition_passed == Some(true)
+        }));
+    }
+
+    #[test]
+    fn execution_trace_applies_c2_record_state_direct_write_with_context() {
+        fn push_word_equals(cod: &mut Vec<u8>, addr: u16, value: u16) {
+            cod.push(0xB1);
+            cod.extend_from_slice(&addr.to_le_bytes());
+            cod.push(0xF5);
+            cod.push(0x00);
+            cod.extend_from_slice(&value.to_le_bytes());
+        }
+
+        let owner = 0x0100u16;
+        let record = owner + TALK_FIELD;
+        let target_record = 0x0200u16;
+        assert_eq!(vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C2, 2), Some(0x18));
+        assert_eq!(
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C2, 0x0400),
+            Some(0x14)
+        );
+        let target_field = target_record
+            .wrapping_add(vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C2, 2).expect("kind 2 field"));
+        let mut var = vec![0; 0x7000];
+        state_set_u8(&mut var, owner + 2, 1);
+        state_set_u16(&mut var, target_record, 2);
+        state_set_u8(&mut var, target_record.wrapping_add(2), 0x20);
+        state_set_u8(&mut var, 0x1fb2, 0xff);
+        let context = ExecutionContext::from_object_offsets([owner, 0x0300]);
+
+        let mut cod = Vec::new();
+        cod.push(OP_RECORD_STATE_MAX);
+        cod.extend_from_slice(&record.to_le_bytes());
+        cod.extend_from_slice(&target_record.to_le_bytes());
+
+        let a0_offset = cod.len();
+        cod.push(0xA0);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        let field_condition_offset = cod.len();
+        push_word_equals(&mut cod, target_field, 0xffff);
+        let active_line_condition_offset = cod.len();
+        push_word_equals(&mut cod, 0x6788, C2_ACTIVE_LINE_KIND2);
+        let first_text = cod.len();
+        push_empty_text(&mut cod);
+        cod.push(0xA1);
+        let target = cod.len() as u16;
+        cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xFF);
+
+        let trace = execute_trace(&cod, &var);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 1);
+        assert_eq!(trace.line_states[0].offset, target as usize);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == field_condition_offset
+                && event.branch_taken
+                && event.condition_passed == Some(false)
+        }));
+
+        let trace = execute_trace_with_context(&cod, &var, &context);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 2);
+        assert_eq!(trace.line_states[0].offset, first_text);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == field_condition_offset
+                && !event.branch_taken
+                && event.condition_passed == Some(true)
+        }));
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == active_line_condition_offset
                 && !event.branch_taken
                 && event.condition_passed == Some(true)
         }));
