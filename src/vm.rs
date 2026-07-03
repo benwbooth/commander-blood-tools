@@ -638,9 +638,10 @@ fn read_u16(cod: &[u8], at: usize) -> Option<u16> {
 //       tracking; mode 1 compares the record entry and may branch.
 //   * 0xC3: record link. The handler writes {0x00C3, related, 1}; this is
 //       presentation record state, not a speaker change.
-//   * 0xC5..=0xC8: record entries. C6 unconditionally writes {0xC6, operand, 0}
-//       in mode 0; mode-1 direct compares are evaluated when host state has a
-//       concrete record entry. Guarded C5/C7/C8 mode-0 failure branches need the
+//   * 0xC5..=0xC8: record entries. Successful mode-0 writes are guarded per
+//       handler (C6 is unconditional; C8 stores zero despite consuming an
+//       operand), and mode-1 direct compares are evaluated when host state has a
+//       concrete record entry. Guarded mode-0 failure branches still need the
 //       fuller line-record table model before execution can be exact.
 //   * 0xC9: record clear. The handler zeroes a 6-byte record in both modes and,
 //       when the previous entry was 0xC4, clears the related actor subrecord too.
@@ -1058,6 +1059,48 @@ fn write_record_entry(state: &mut [u8], opcode: u8, record_offset: u16, stored_r
     state_set_u16(state, record_offset.wrapping_add(4), 0);
 }
 
+fn write_record_entry_mode0(
+    state: &mut [u8],
+    opcode: u8,
+    record_offset: u16,
+    operand: u16,
+) -> bool {
+    match opcode {
+        0xC5 => {
+            if state_u8(state, operand.wrapping_add(2)) & 1 == 0
+                || state_u16(state, operand) != 0x0200
+                || state_u16(state, record_offset) != 0
+            {
+                return false;
+            }
+            write_record_entry(state, opcode, record_offset, operand);
+            true
+        }
+        0xC6 => {
+            write_record_entry(state, opcode, record_offset, operand);
+            true
+        }
+        0xC7 => {
+            let record_type = state_u16(state, record_offset);
+            if state_u8(state, operand.wrapping_add(2)) & 1 == 0
+                || (record_type != 0 && record_type != OP_ACTOR as u16)
+            {
+                return false;
+            }
+            write_record_entry(state, opcode, record_offset, operand);
+            true
+        }
+        0xC8 => {
+            if state_u16(state, record_offset) != 0 {
+                return false;
+            }
+            write_record_entry(state, opcode, record_offset, 0);
+            true
+        }
+        _ => false,
+    }
+}
+
 fn record_entry_condition(
     state: &[u8],
     opcode: u8,
@@ -1167,10 +1210,10 @@ pub fn interpret_line_states_with_context(
                 }
             }
         }
-        if !mode1 && op == 0xC6 {
+        if !mode1 && is_record_entry_opcode(op) {
             let record_offset = read_u16(cod, pos + 1).unwrap_or(0);
             let operand = read_u16(cod, pos + 3).unwrap_or(0);
-            write_record_entry(&mut state, op, record_offset, operand);
+            write_record_entry_mode0(&mut state, op, record_offset, operand);
         }
         if !mode1 && ASSIGN_7.contains(&op) && pos + 7 <= end {
             let op1 = read_u16(cod, pos + 1).unwrap_or(0);
@@ -1650,10 +1693,10 @@ pub fn execute_trace_with_overrides_and_context(
                 write_record_link(&mut state, record_offset, related_record_offset);
             }
         }
-        if !mode1 && op == 0xC6 {
+        if !mode1 && is_record_entry_opcode(op) {
             let record_offset = read_u16(cod, token_start + 1).unwrap_or(0);
             let operand = read_u16(cod, token_start + 3).unwrap_or(0);
-            write_record_entry(&mut state, op, record_offset, operand);
+            write_record_entry_mode0(&mut state, op, record_offset, operand);
         }
         if !mode1 && ASSIGN_7.contains(&op) && token_start + 7 <= end {
             let op1 = read_u16(cod, token_start + 1).unwrap_or(0);
@@ -3103,6 +3146,71 @@ mod tests {
                 && event.condition_passed == Some(false)
                 && event.target == Some(target)
         }));
+    }
+
+    #[test]
+    fn execution_trace_applies_guarded_record_entry_writes() {
+        let c5_record = 0x0020u16;
+        let c7_record = 0x0040u16;
+        let c8_record = 0x0060u16;
+        let c5_operand = 0x0100u16;
+        let c7_operand = 0x0120u16;
+        let mut var = vec![0; 0x0200];
+        state_set_u16(&mut var, c5_operand, 0x0200);
+        state_set_u8(&mut var, c5_operand.wrapping_add(2), 1);
+        state_set_u8(&mut var, c7_operand.wrapping_add(2), 1);
+        state_set_u16(&mut var, c7_record, OP_ACTOR as u16);
+
+        let mut cod = Vec::new();
+        cod.push(0xC5);
+        cod.extend_from_slice(&c5_record.to_le_bytes());
+        cod.extend_from_slice(&c5_operand.to_le_bytes());
+        cod.push(0xC7);
+        cod.extend_from_slice(&c7_record.to_le_bytes());
+        cod.extend_from_slice(&c7_operand.to_le_bytes());
+        cod.push(0xC8);
+        cod.extend_from_slice(&c8_record.to_le_bytes());
+        cod.extend_from_slice(&0x1234u16.to_le_bytes());
+
+        let a0_offset = cod.len();
+        cod.push(0xA0);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        let c5_condition_offset = cod.len();
+        cod.push(0xC5);
+        cod.extend_from_slice(&c5_record.to_le_bytes());
+        cod.extend_from_slice(&c5_operand.to_le_bytes());
+        let c7_condition_offset = cod.len();
+        cod.push(0xC7);
+        cod.extend_from_slice(&c7_record.to_le_bytes());
+        cod.extend_from_slice(&c7_operand.to_le_bytes());
+        let c8_condition_offset = cod.len();
+        cod.push(0xC8);
+        cod.extend_from_slice(&c8_record.to_le_bytes());
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        let first_text = cod.len();
+        push_empty_text(&mut cod);
+        cod.push(0xA1);
+        let target = cod.len() as u16;
+        cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xFF);
+
+        let trace = execute_trace(&cod, &var);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 2);
+        assert_eq!(trace.line_states[0].offset, first_text);
+        for (offset, opcode) in [
+            (c5_condition_offset, 0xC5),
+            (c7_condition_offset, 0xC7),
+            (c8_condition_offset, 0xC8),
+        ] {
+            assert!(trace.branch_events.iter().any(|event| {
+                event.offset == offset
+                    && event.opcode == opcode
+                    && !event.branch_taken
+                    && event.condition_passed == Some(true)
+            }));
+        }
     }
 
     #[test]

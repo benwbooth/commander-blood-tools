@@ -549,9 +549,12 @@ inside operands and text data. Rust exposes this family as
 `VmToken::RecordEntry { entry_opcode, record_offset, operand,
 stored_related_offset, aux_word, inverted }`, and `script-disassembly.tsv` emits
 `record_entry` rows for future line-record modeling. Rust now executes the
-unconditional C6 mode-0 write and evaluates direct mode-1 record-entry compares
-when host state has a concrete record entry. Guarded C5/C7/C8 mode-0 failure
-branches still need the fuller line-record table model.
+successful mode-0 writes for the whole family, including C5's active/type-0x0200
+operand guard, C7's active-operand plus empty-or-C4 destination guard, and C8's
+empty-destination write of `{0x00C8, 0, 0}` despite consuming a second token
+word. Direct mode-1 record-entry compares are evaluated when host state has a
+concrete record entry. Guarded mode-0 failure branches still need the fuller
+line-record table model.
 
 ### 0xC4 actor/record handler @ file 0x6C7E — operands (DECODED)
 
@@ -779,9 +782,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       context after a `C9` clear.
 - [x] Port 0xC5..0xC8 record-entry token semantics. `src/vm.rs` exposes the
       family as `VmToken::RecordEntry` including raw operand and recovered
-      stored-related slot; disassembly now emits `record_entry` rows. C6's
-      unconditional mode-0 write and direct mode-1 compares are now executed;
-      guarded C5/C7/C8 mode-0 failure branches remain pending.
+      stored-related slot; disassembly now emits `record_entry` rows.
+      Successful mode-0 writes for C5/C6/C7/C8 and direct mode-1 compares are
+      now executed; guarded mode-0 failure branches remain pending.
 - [x] Port 0xC9 record-clear speaker lifetime semantics. `src/vm.rs` exposes
       `VmToken::RecordClear`, the bounded interpreter clears the active actor
       when its talk-field record is cleared in either VM mode, and the script
