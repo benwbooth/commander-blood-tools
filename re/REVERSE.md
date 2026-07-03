@@ -441,6 +441,7 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 | `script-branch-trace.tsv` | extraction artifact listing `execute_trace` branch/control events per script |
 | `script-branch-decisions.tsv` | extraction artifact listing default observed conditional path and alternate target/path |
 | `script-branch-coverage.tsv` | extraction artifact summarizing all text calls vs default executed trace coverage per script |
+| `script-branch-scenarios.tsv` | extraction artifact forcing each branch decision's opposite condition once and measuring newly exposed text calls |
 | `script-executed-dialogue.tsv` | extraction artifact joining `execute_trace` line order to decoded text/actor/background |
 | `script-executed-dialogue-runs.tsv` | extraction artifact grouping executed dialogue by script/background run; MP4 names correspond to run-level composites |
 | `script-dialogue-runs.tsv` | extraction artifact grouping VM-order dialogue lines by script/background run |
@@ -597,6 +598,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `script-branch-coverage.tsv` summarizes static `0xA6` text calls vs the
       default executed trace per script. These are the manifest inputs for
       scenario-selected or branch-enumerated rendering.
+- [x] Add branch override execution: `vm::execute_trace_with_overrides` can force
+      a specific condition result, and `script-branch-scenarios.tsv` applies the
+      opposite path to every concrete branch decision once, measuring text-call
+      deltas. This turns the branch coverage gap into executable scenario data.
 - [x] Define the VM-event schema (`SceneEvent`: SetBackground, PlayMusic,
       ShowSpeaker, PlayVoice, PlayTalkHnm, DrawSubtitle, PlayChatter, Clear) +
       `emit_scene_events()` emitter in `src/vm.rs`, emitting state-change

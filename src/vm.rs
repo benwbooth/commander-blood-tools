@@ -361,6 +361,16 @@ pub struct ExecutionTrace {
     pub halted: ExecutionHalt,
 }
 
+/// Force one condition result while executing a concrete scenario. This is a
+/// branch-enumeration aid: the offset is the conditional opcode offset reported
+/// in `BranchEvent`, and `condition_passed` is the result to use instead of the
+/// current VAR-state comparison.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct BranchOverride {
+    pub offset: usize,
+    pub condition_passed: bool,
+}
+
 /// Read a u16 from `state` (the mutable VAR image) at byte address `addr`.
 fn state_u16(state: &[u8], addr: u16) -> u16 {
     let a = addr as usize;
@@ -503,6 +513,17 @@ pub fn interpret_line_states(cod: &[u8], var: &[u8]) -> Vec<LineState> {
 /// code. This follows A0/A1 condition blocks and direct A4/A9 jumps, while still
 /// using the same bounded state model as `interpret_line_states`.
 pub fn execute_trace(cod: &[u8], var: &[u8]) -> ExecutionTrace {
+    execute_trace_with_overrides(cod, var, &[])
+}
+
+/// Execute a concrete VM path, optionally forcing selected condition outcomes.
+/// Overrides are keyed by conditional opcode offset and are applied only after a
+/// real condition has been decoded at that offset.
+pub fn execute_trace_with_overrides(
+    cod: &[u8],
+    var: &[u8],
+    overrides: &[BranchOverride],
+) -> ExecutionTrace {
     const STEP_LIMIT_MULTIPLIER: usize = 64;
 
     let mut state = var.to_vec();
@@ -626,7 +647,6 @@ pub fn execute_trace(cod: &[u8], var: &[u8]) -> ExecutionTrace {
 
         let mut branch_target: Option<u16> = None;
         let mut condition_passed: Option<bool> = None;
-        let mut branch_detail = "condition failed";
 
         if mode1 && ASSIGN_7.contains(&op) && token_start + 7 <= end {
             let op1 = read_u16(cod, token_start + 1).unwrap_or(0);
@@ -639,9 +659,6 @@ pub fn execute_trace(cod: &[u8], var: &[u8]) -> ExecutionTrace {
                 op2
             };
             condition_passed = compare_vm_words(operator, state_u16(&state, op1), right);
-            if condition_passed == Some(false) {
-                branch_target = branch_fail(&mut branch_stack);
-            }
         } else if mode1 && BITMASK_5.contains(&op) {
             let mut p = token_start + 1;
             let inverted = cod.get(p) == Some(&0xA1);
@@ -654,9 +671,6 @@ pub fn execute_trace(cod: &[u8], var: &[u8]) -> ExecutionTrace {
                 let bit_set = state_u16(&state, op1) & mask != 0;
                 let passed = if inverted { !bit_set } else { bit_set };
                 condition_passed = Some(passed);
-                if !passed {
-                    branch_target = branch_fail(&mut branch_stack);
-                }
             }
         } else if mode1 && ASSIGN_5.contains(&op) {
             let mut p = token_start + 1;
@@ -674,11 +688,27 @@ pub fn execute_trace(cod: &[u8], var: &[u8]) -> ExecutionTrace {
                 let equal = state_u16(&state, op1) == value;
                 let passed = if inverted { !equal } else { equal };
                 condition_passed = Some(passed);
-                if !passed {
-                    branch_target = branch_fail(&mut branch_stack);
-                }
             }
         }
+
+        let forced = overrides
+            .iter()
+            .find(|override_| override_.offset == token_start)
+            .copied();
+        if condition_passed.is_some() {
+            if let Some(override_) = forced {
+                condition_passed = Some(override_.condition_passed);
+            }
+            if condition_passed == Some(false) {
+                branch_target = branch_fail(&mut branch_stack);
+            }
+        }
+        let branch_detail = match (forced, condition_passed) {
+            (Some(_), Some(true)) => "condition forced passed",
+            (Some(_), Some(false)) => "condition forced failed",
+            (None, Some(true)) => "condition passed",
+            _ => "condition failed",
+        };
 
         if let Some(target) = branch_target {
             mode1 = false;
@@ -701,7 +731,6 @@ pub fn execute_trace(cod: &[u8], var: &[u8]) -> ExecutionTrace {
             pos = target as usize;
             continue;
         } else if condition_passed.is_some() {
-            branch_detail = "condition passed";
             branch_events.push(BranchEvent {
                 offset: token_start,
                 opcode: op,
@@ -1094,6 +1123,52 @@ mod tests {
     }
 
     #[test]
+    fn execution_trace_override_keeps_failed_condition_fallthrough() {
+        let actor = 0x0100u16;
+        let location_field = actor + LOCATION_FIELD;
+        let mut var = vec![0; 0x0200];
+        state_set_u16(&mut var, location_field, 0x1111);
+
+        let mut cod = Vec::new();
+        push_actor_ref(&mut cod, actor);
+        let a0_offset = cod.len();
+        cod.push(0xA0);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        let condition_offset = cod.len();
+        cod.push(0xC0);
+        cod.extend_from_slice(&location_field.to_le_bytes());
+        cod.push(0xF5);
+        cod.push(0xC1);
+        cod.extend_from_slice(&0x2222u16.to_le_bytes());
+        let first_text = cod.len();
+        push_empty_text(&mut cod);
+        cod.push(0xA1);
+        let target = cod.len() as u16;
+        cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xFF);
+
+        let trace = execute_trace_with_overrides(
+            &cod,
+            &var,
+            &[BranchOverride {
+                offset: condition_offset,
+                condition_passed: true,
+            }],
+        );
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 2);
+        assert_eq!(trace.line_states[0].offset, first_text);
+        assert_eq!(trace.line_states[1].offset, target as usize);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && !event.branch_taken
+                && event.condition_passed == Some(true)
+                && event.detail == "condition forced passed"
+        }));
+    }
+
+    #[test]
     fn execution_trace_keeps_successful_condition_block_lines() {
         let actor = 0x0100u16;
         let location_field = actor + LOCATION_FIELD;
@@ -1128,6 +1203,50 @@ mod tests {
                 && event.opcode == 0xC0
                 && !event.branch_taken
                 && event.condition_passed == Some(true)
+        }));
+    }
+
+    #[test]
+    fn execution_trace_override_branches_successful_condition() {
+        let actor = 0x0100u16;
+        let location_field = actor + LOCATION_FIELD;
+        let mut var = vec![0; 0x0200];
+        state_set_u16(&mut var, location_field, 0x1111);
+
+        let mut cod = Vec::new();
+        push_actor_ref(&mut cod, actor);
+        let a0_offset = cod.len();
+        cod.push(0xA0);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        let condition_offset = cod.len();
+        cod.push(0xC0);
+        cod.extend_from_slice(&location_field.to_le_bytes());
+        cod.push(0xF5);
+        cod.push(0xC1);
+        cod.extend_from_slice(&0x1111u16.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xA1);
+        let target = cod.len() as u16;
+        cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xFF);
+
+        let trace = execute_trace_with_overrides(
+            &cod,
+            &var,
+            &[BranchOverride {
+                offset: condition_offset,
+                condition_passed: false,
+            }],
+        );
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 1);
+        assert_eq!(trace.line_states[0].offset, target as usize);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.branch_taken
+                && event.condition_passed == Some(false)
+                && event.detail == "condition forced failed"
         }));
     }
 

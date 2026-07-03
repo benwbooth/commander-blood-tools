@@ -331,6 +331,7 @@ pub(super) fn write_manifest_section(
         "script-branch-trace.tsv",
         "script-branch-decisions.tsv",
         "script-branch-coverage.tsv",
+        "script-branch-scenarios.tsv",
         "DESCRIPT.DES",
     ];
     writeln!(html, "<h2>Manifests</h2><ul>")?;

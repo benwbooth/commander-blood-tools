@@ -251,6 +251,90 @@ pub(super) fn parse_script_branch_trace(
     Ok(rows)
 }
 
+pub(super) fn parse_script_branch_scenarios(
+    iso_dir: &Path,
+    branch_rows: &[ScriptBranchTraceLine],
+) -> Result<Vec<ScriptBranchScenarioLine>, Box<dyn Error>> {
+    let mut rows = Vec::new();
+    for script_idx in 1..=5 {
+        let cod_path = find_file_recursive(iso_dir, &format!("SCRIPT{script_idx}.COD"));
+        let dic_path = find_file_recursive(iso_dir, &format!("SCRIPT{script_idx}.DIC"));
+        let var_path = find_file_recursive(iso_dir, &format!("SCRIPT{script_idx}.VAR"));
+        let (Some(cod_path), Some(dic_path), Some(var_path)) = (cod_path, dic_path, var_path)
+        else {
+            continue;
+        };
+
+        let cod = fs::read(&cod_path)?;
+        let var = fs::read(&var_path)?;
+        let words = parse_script_dictionary(&dic_path)?;
+        let text_calls = text_calls_by_offset(&cod, &words);
+        let script = format!("SCRIPT{script_idx}");
+        let default_trace = vm::execute_trace(&cod, &var);
+        let default_offsets = executed_text_offsets(&default_trace, &text_calls);
+
+        let mut decision_index = 0usize;
+        for decision in branch_rows
+            .iter()
+            .filter(|row| row.script == script && row.condition_passed.is_some())
+        {
+            decision_index += 1;
+            let default_condition_passed = decision.condition_passed.unwrap();
+            let forced_condition_passed = !default_condition_passed;
+            let scenario_trace = vm::execute_trace_with_overrides(
+                &cod,
+                &var,
+                &[vm::BranchOverride {
+                    offset: decision.offset,
+                    condition_passed: forced_condition_passed,
+                }],
+            );
+            let scenario_offsets = executed_text_offsets(&scenario_trace, &text_calls);
+            let default_set: BTreeSet<usize> = default_offsets.iter().copied().collect();
+            let scenario_set: BTreeSet<usize> = scenario_offsets.iter().copied().collect();
+            let new_offsets: Vec<usize> = scenario_set.difference(&default_set).copied().collect();
+            let lost_offsets: Vec<usize> = default_set.difference(&scenario_set).copied().collect();
+            rows.push(ScriptBranchScenarioLine {
+                script: script.clone(),
+                scenario_id: format!("{}-branch-{:04}", script, decision_index),
+                decision_index,
+                forced_offset: decision.offset,
+                opcode: decision.opcode,
+                default_condition_passed,
+                forced_condition_passed,
+                default_text_calls: default_offsets.len(),
+                scenario_text_calls: scenario_offsets.len(),
+                new_text_calls: new_offsets.len(),
+                lost_text_calls: lost_offsets.len(),
+                first_new_offsets: new_offsets
+                    .iter()
+                    .take(12)
+                    .map(|offset| format!("0x{offset:05x}"))
+                    .collect::<Vec<_>>()
+                    .join(","),
+                halted: format!("{:?}", scenario_trace.halted),
+                steps: scenario_trace.steps,
+            });
+        }
+    }
+    Ok(rows)
+}
+
+fn executed_text_offsets(
+    trace: &vm::ExecutionTrace,
+    text_calls: &HashMap<usize, TextCallInfo>,
+) -> Vec<usize> {
+    trace
+        .line_states
+        .iter()
+        .filter_map(|state| {
+            text_calls
+                .contains_key(&state.offset)
+                .then_some(state.offset)
+        })
+        .collect()
+}
+
 #[derive(Clone, Debug)]
 struct TextCallInfo {
     offset: usize,
@@ -1304,6 +1388,38 @@ pub(super) fn write_script_branch_coverage_manifest(
     Ok(())
 }
 
+pub(super) fn write_script_branch_scenarios_manifest(
+    rows: &[ScriptBranchScenarioLine],
+    out_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let mut file = File::create(out_path)?;
+    writeln!(
+        file,
+        "script\tscenario_id\tdecision_index\tforced_offset\topcode\tdefault_condition_passed\tforced_condition_passed\tdefault_text_calls\tscenario_text_calls\tnew_text_calls\tlost_text_calls\tfirst_new_offsets\thalted\tsteps"
+    )?;
+    for row in rows {
+        writeln!(
+            file,
+            "{}\t{}\t{}\t0x{:05x}\t{:02x}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            row.script,
+            row.scenario_id,
+            row.decision_index,
+            row.forced_offset,
+            row.opcode,
+            row.default_condition_passed,
+            row.forced_condition_passed,
+            row.default_text_calls,
+            row.scenario_text_calls,
+            row.new_text_calls,
+            row.lost_text_calls,
+            row.first_new_offsets,
+            clean_tsv(&row.halted),
+            row.steps,
+        )?;
+    }
+    Ok(())
+}
+
 #[derive(Debug)]
 struct ScriptDialogueRun<'a> {
     script: String,
@@ -1761,6 +1877,41 @@ mod tests {
         }
     }
 
+    fn synthetic_branch_script_dir() -> (PathBuf, usize) {
+        let root = std::env::temp_dir().join(format!(
+            "commander-blood-branch-scenarios-{}",
+            std::process::id()
+        ));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).expect("create scenario script dir");
+
+        let mut cod = Vec::new();
+        cod.push(0xA0);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        let condition_offset = cod.len();
+        cod.push(0xC0);
+        cod.extend_from_slice(&0x0010u16.to_le_bytes());
+        cod.push(0xF5);
+        cod.push(0xC1);
+        cod.extend_from_slice(&0x2222u16.to_le_bytes());
+        cod.extend_from_slice(&[0xA6, 0x01, 0x00, 0xff, 0x00, 0x80]);
+        cod.extend_from_slice(&[0x01, 0x00, 0x00, 0x00]);
+        cod.push(0xA1);
+        let target = cod.len() as u16;
+        cod[1..3].copy_from_slice(&target.to_le_bytes());
+        cod.extend_from_slice(&[0xA6, 0x02, 0x00, 0xff, 0x00, 0x80]);
+        cod.extend_from_slice(&[0x01, 0x00, 0x00, 0x00]);
+        cod.push(0xff);
+
+        fs::write(root.join("SCRIPT1.COD"), cod).expect("write cod");
+        let mut var = vec![0; 0x20];
+        var[0x10] = 0x11;
+        var[0x11] = 0x11;
+        fs::write(root.join("SCRIPT1.VAR"), var).expect("write var");
+        fs::write(root.join("SCRIPT1.DIC"), b"\0hello\0").expect("write dic");
+        (root, condition_offset)
+    }
+
     #[test]
     fn decodes_general_a6_text_call_shape() {
         let mut words = HashMap::new();
@@ -2147,6 +2298,43 @@ mod tests {
         let manifest = fs::read_to_string(&path).expect("read branch coverage");
         let _ = fs::remove_file(&path);
         assert!(manifest.contains("SCRIPT2\t3\t1\t2\t33.33\t2\t2\t1\t1\t1\t1"));
+    }
+
+    #[test]
+    fn branch_scenarios_force_alternate_condition_once() {
+        let (root, condition_offset) = synthetic_branch_script_dir();
+        let branch_rows = vec![branch_trace_line(
+            "SCRIPT1",
+            0,
+            condition_offset,
+            0xc0,
+            Some(0x0010),
+            true,
+            Some(false),
+            "condition failed",
+        )];
+
+        let rows =
+            parse_script_branch_scenarios(&root, &branch_rows).expect("parse branch scenarios");
+        let _ = fs::remove_dir_all(&root);
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].scenario_id, "SCRIPT1-branch-0001");
+        assert_eq!(rows[0].default_condition_passed, false);
+        assert_eq!(rows[0].forced_condition_passed, true);
+        assert_eq!(rows[0].default_text_calls, 1);
+        assert_eq!(rows[0].scenario_text_calls, 2);
+        assert_eq!(rows[0].new_text_calls, 1);
+        assert_eq!(rows[0].lost_text_calls, 0);
+
+        let path = std::env::temp_dir().join(format!(
+            "commander-blood-branch-scenarios-{}.tsv",
+            std::process::id()
+        ));
+        write_script_branch_scenarios_manifest(&rows, &path).expect("write branch scenarios");
+        let manifest = fs::read_to_string(&path).expect("read branch scenarios");
+        let _ = fs::remove_file(&path);
+        assert!(manifest.contains("SCRIPT1\tSCRIPT1-branch-0001\t1"));
+        assert!(manifest.contains("\tfalse\ttrue\t1\t2\t1\t0\t"));
     }
 
     #[test]

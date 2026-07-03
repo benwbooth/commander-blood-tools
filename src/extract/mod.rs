@@ -267,13 +267,19 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         &script_branch_trace,
         &out_dir.join("script-branch-coverage.tsv"),
     )?;
+    let script_branch_scenarios = parse_script_branch_scenarios(&tmp_iso, &script_branch_trace)?;
+    write_script_branch_scenarios_manifest(
+        &script_branch_scenarios,
+        &out_dir.join("script-branch-scenarios.tsv"),
+    )?;
     if !script_speech.is_empty() {
         eprintln!(
-            "Recovered {} script text calls ({} executed lines, {} disassembly rows, {} branch events)",
+            "Recovered {} script text calls ({} executed lines, {} disassembly rows, {} branch events, {} branch scenarios)",
             script_speech.len(),
             script_executed_speech.len(),
             script_disassembly.len(),
-            script_branch_trace.len()
+            script_branch_trace.len(),
+            script_branch_scenarios.len()
         );
     }
 

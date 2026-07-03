@@ -50,12 +50,13 @@ plus the object location field in `SCRIPT*.VAR`. It also emits a
 function-bounded `script-disassembly.tsv`, a branch-aware
 `script-branch-trace.tsv`, an initial-state executed dialogue trace
 `script-executed-dialogue.tsv`, branch-decision/coverage summaries
-`script-branch-decisions.tsv` and `script-branch-coverage.tsv`, initial-state
-executed dialogue runs `script-executed-dialogue-runs.tsv`, VM-order
-`script-dialogue-runs.tsv`, and every valid `0xa6` TEXT token in `SCRIPT*.COD`
-with the VM token walker by following dictionary word offsets from
-`SCRIPT*.DIC`. Actor context is tracked from the binary-sized `0xc4`
-actor/object tokens where those references match DESCRIPT character talk slots.
+`script-branch-decisions.tsv`, `script-branch-coverage.tsv`, and
+`script-branch-scenarios.tsv`, initial-state executed dialogue runs
+`script-executed-dialogue-runs.tsv`, VM-order `script-dialogue-runs.tsv`, and
+every valid `0xa6` TEXT token in `SCRIPT*.COD` with the VM token walker by
+following dictionary word offsets from `SCRIPT*.DIC`. Actor context is tracked
+from the binary-sized `0xc4` actor/object tokens where those references match
+DESCRIPT character talk slots.
 
 The normal full exporter no longer emits guessed all-clips character composites
 when script speech data is available. It exports branch-aware initial-state

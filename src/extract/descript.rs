@@ -129,6 +129,24 @@ pub(super) struct ScriptBranchTraceLine {
 }
 
 #[derive(Clone, Debug)]
+pub(super) struct ScriptBranchScenarioLine {
+    pub(super) script: String,
+    pub(super) scenario_id: String,
+    pub(super) decision_index: usize,
+    pub(super) forced_offset: usize,
+    pub(super) opcode: u8,
+    pub(super) default_condition_passed: bool,
+    pub(super) forced_condition_passed: bool,
+    pub(super) default_text_calls: usize,
+    pub(super) scenario_text_calls: usize,
+    pub(super) new_text_calls: usize,
+    pub(super) lost_text_calls: usize,
+    pub(super) first_new_offsets: String,
+    pub(super) halted: String,
+    pub(super) steps: usize,
+}
+
+#[derive(Clone, Debug)]
 pub(super) struct ScriptCharacterContextLine {
     pub(super) script: String,
     pub(super) actor_record: String,
