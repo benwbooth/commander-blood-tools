@@ -146,6 +146,18 @@ pub(super) struct ScriptBranchTraceLine {
 }
 
 #[derive(Clone, Debug)]
+pub(super) struct ScriptPostUpdateLine {
+    pub(super) script: String,
+    pub(super) event_index: usize,
+    pub(super) event_kind: String,
+    pub(super) record_offset: Option<u16>,
+    pub(super) related_record_offset: Option<u16>,
+    pub(super) owner_offset: Option<u16>,
+    pub(super) target: Option<u16>,
+    pub(super) ready: Option<bool>,
+}
+
+#[derive(Clone, Debug)]
 pub(super) struct ScriptBranchScenarioLine {
     pub(super) scenario_kind: String,
     pub(super) script: String,

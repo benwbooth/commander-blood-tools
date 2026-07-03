@@ -333,6 +333,7 @@ pub(super) fn write_manifest_section(
         "script-dialogue-videos.tsv",
         "script-dialogue-runs.tsv",
         "script-branch-trace.tsv",
+        "script-post-update.tsv",
         "script-branch-decisions.tsv",
         "script-branch-coverage.tsv",
         "script-branch-scenarios.tsv",

@@ -295,6 +295,11 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         &script_branch_trace,
         &out_dir.join("script-branch-trace.tsv"),
     )?;
+    let script_post_update = parse_script_post_update(&tmp_iso, descript_db.as_ref())?;
+    write_script_post_update_manifest(
+        &script_post_update,
+        &out_dir.join("script-post-update.tsv"),
+    )?;
     write_script_branch_decisions_manifest(
         &script_branch_trace,
         &out_dir.join("script-branch-decisions.tsv"),
@@ -327,13 +332,14 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     )?;
     if !script_speech.is_empty() {
         eprintln!(
-            "Recovered {} script text calls ({} text-flag rows, {} executed lines, {} profile-sequence lines, {} disassembly rows, {} branch events, {} branch scenarios, {} scenario dialogue lines)",
+            "Recovered {} script text calls ({} text-flag rows, {} executed lines, {} profile-sequence lines, {} disassembly rows, {} branch events, {} post-update events, {} branch scenarios, {} scenario dialogue lines)",
             script_speech.len(),
             script_text_flags.len(),
             script_executed_speech.len(),
             script_profile_sequence.dialogue.len(),
             script_disassembly.len(),
             script_branch_trace.len(),
+            script_post_update.len(),
             script_branch_scenarios.len(),
             script_branch_scenario_speech.len()
         );

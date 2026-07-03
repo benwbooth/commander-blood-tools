@@ -360,6 +360,73 @@ pub(super) fn parse_script_branch_trace(
     Ok(rows)
 }
 
+pub(super) fn parse_script_post_update(
+    iso_dir: &Path,
+    descript_db: Option<&DescriptDb>,
+) -> Result<Vec<ScriptPostUpdateLine>, Box<dyn Error>> {
+    let mut rows = Vec::new();
+    for script_idx in 1..=5 {
+        let cod_path = find_file_recursive(iso_dir, &format!("SCRIPT{script_idx}.COD"));
+        let var_path = find_file_recursive(iso_dir, &format!("SCRIPT{script_idx}.VAR"));
+        let deb_path = find_file_recursive(iso_dir, &format!("SCRIPT{script_idx}.DEB"));
+        let (Some(cod_path), Some(var_path)) = (cod_path, var_path) else {
+            continue;
+        };
+
+        let cod = fs::read(cod_path)?;
+        let var = fs::read(var_path)?;
+        let context = match deb_path {
+            Some(path) => vm_execution_context_from_deb(&fs::read(path)?, descript_db),
+            None => vm::ExecutionContext::default(),
+        };
+        let script = format!("SCRIPT{script_idx}");
+        let trace = vm::execute_trace_with_context(&cod, &var, &context);
+        let mut event_index = 0usize;
+
+        for event in &trace.post_update.actor_record_pairs {
+            rows.push(ScriptPostUpdateLine {
+                script: script.clone(),
+                event_index,
+                event_kind: "c4_pair".to_string(),
+                record_offset: Some(event.record_offset),
+                related_record_offset: Some(event.related_record_offset),
+                owner_offset: None,
+                target: None,
+                ready: None,
+            });
+            event_index += 1;
+        }
+
+        for event in &trace.post_update.presentation_handoffs {
+            rows.push(ScriptPostUpdateLine {
+                script: script.clone(),
+                event_index,
+                event_kind: "presentation_handoff".to_string(),
+                record_offset: Some(event.record_offset),
+                related_record_offset: None,
+                owner_offset: Some(event.owner_offset),
+                target: Some(event.target),
+                ready: None,
+            });
+            event_index += 1;
+        }
+
+        if trace.pending_script_profile().is_some() {
+            rows.push(ScriptPostUpdateLine {
+                script,
+                event_index,
+                event_kind: "pending_profile_dispatch".to_string(),
+                record_offset: None,
+                related_record_offset: None,
+                owner_offset: None,
+                target: None,
+                ready: Some(trace.post_update.pending_script_profile_dispatch_ready),
+            });
+        }
+    }
+    Ok(rows)
+}
+
 pub(super) fn parse_script_branch_scenarios(
     iso_dir: &Path,
     branch_rows: &[ScriptBranchTraceLine],
@@ -758,29 +825,28 @@ pub(super) fn parse_script_executed_speech(
         let var = fs::read(&var_path)?;
         let words = parse_script_dictionary(&dic_path)?;
         let script = format!("SCRIPT{script_idx}");
-        let (mut functions, actor_refs, object_names, context) = if let (Some(deb_path), Some(db)) =
-            (&deb_path, descript_db)
-        {
-            let (functions, actor_refs, _) = parse_script_symbols(
-                &script,
-                deb_path,
-                &var_path,
-                db,
-                hnm_music,
-                &character_names,
-            )?;
-            let deb = fs::read(deb_path)?;
-            let object_names = parse_deb_object_names(&deb);
-            let context = vm_execution_context_from_deb(&deb, descript_db);
-            (functions, actor_refs, object_names, context)
-        } else {
-            (
-                Vec::new(),
-                HashMap::new(),
-                HashMap::new(),
-                vm::ExecutionContext::default(),
-            )
-        };
+        let (mut functions, actor_refs, object_names, context) =
+            if let (Some(deb_path), Some(db)) = (&deb_path, descript_db) {
+                let (functions, actor_refs, _) = parse_script_symbols(
+                    &script,
+                    deb_path,
+                    &var_path,
+                    db,
+                    hnm_music,
+                    &character_names,
+                )?;
+                let deb = fs::read(deb_path)?;
+                let object_names = parse_deb_object_names(&deb);
+                let context = vm_execution_context_from_deb(&deb, descript_db);
+                (functions, actor_refs, object_names, context)
+            } else {
+                (
+                    Vec::new(),
+                    HashMap::new(),
+                    HashMap::new(),
+                    vm::ExecutionContext::default(),
+                )
+            };
         if functions.is_empty() {
             functions.push((0, script.as_str().to_string()));
         }
@@ -945,29 +1011,28 @@ pub(super) fn parse_script_branch_scenario_speech(
         let cod = fs::read(&cod_path)?;
         let var = fs::read(&var_path)?;
         let words = parse_script_dictionary(&dic_path)?;
-        let (mut functions, actor_refs, object_names, context) = if let (Some(deb_path), Some(db)) =
-            (&deb_path, descript_db)
-        {
-            let (functions, actor_refs, _) = parse_script_symbols(
-                &script,
-                deb_path,
-                &var_path,
-                db,
-                hnm_music,
-                &character_names,
-            )?;
-            let deb = fs::read(deb_path)?;
-            let object_names = parse_deb_object_names(&deb);
-            let context = vm_execution_context_from_deb(&deb, descript_db);
-            (functions, actor_refs, object_names, context)
-        } else {
-            (
-                Vec::new(),
-                HashMap::new(),
-                HashMap::new(),
-                vm::ExecutionContext::default(),
-            )
-        };
+        let (mut functions, actor_refs, object_names, context) =
+            if let (Some(deb_path), Some(db)) = (&deb_path, descript_db) {
+                let (functions, actor_refs, _) = parse_script_symbols(
+                    &script,
+                    deb_path,
+                    &var_path,
+                    db,
+                    hnm_music,
+                    &character_names,
+                )?;
+                let deb = fs::read(deb_path)?;
+                let object_names = parse_deb_object_names(&deb);
+                let context = vm_execution_context_from_deb(&deb, descript_db);
+                (functions, actor_refs, object_names, context)
+            } else {
+                (
+                    Vec::new(),
+                    HashMap::new(),
+                    HashMap::new(),
+                    vm::ExecutionContext::default(),
+                )
+            };
         if functions.is_empty() {
             functions.push((0, script.as_str().to_string()));
         }
@@ -2526,6 +2591,40 @@ pub(super) fn write_script_branch_trace_manifest(
     Ok(())
 }
 
+pub(super) fn write_script_post_update_manifest(
+    rows: &[ScriptPostUpdateLine],
+    out_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let mut file = File::create(out_path)?;
+    writeln!(
+        file,
+        "script\tevent_index\tevent_kind\trecord_offset\trelated_record_offset\towner_offset\ttarget\tready"
+    )?;
+    for row in rows {
+        writeln!(
+            file,
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            row.script,
+            row.event_index,
+            clean_tsv(&row.event_kind),
+            row.record_offset
+                .map(|offset| format!("0x{offset:04x}"))
+                .unwrap_or_default(),
+            row.related_record_offset
+                .map(|offset| format!("0x{offset:04x}"))
+                .unwrap_or_default(),
+            row.owner_offset
+                .map(|offset| format!("0x{offset:04x}"))
+                .unwrap_or_default(),
+            row.target
+                .map(|target| format!("0x{target:04x}"))
+                .unwrap_or_default(),
+            row.ready.map(|ready| ready.to_string()).unwrap_or_default(),
+        )?;
+    }
+    Ok(())
+}
+
 pub(super) fn write_script_branch_decisions_manifest(
     rows: &[ScriptBranchTraceLine],
     out_path: &Path,
@@ -3746,6 +3845,44 @@ mod tests {
         }
 
         eprintln!("skipping: extracted output scripts not available");
+    }
+
+    #[test]
+    fn script_post_update_manifest_records_pending_profile_gate() {
+        let nonce = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("system time before unix epoch")
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!(
+            "commander-blood-post-update-{}-{nonce}",
+            std::process::id(),
+        ));
+        fs::create_dir_all(&root).expect("create temp script root");
+        fs::write(
+            root.join("script1.cod"),
+            [vm::OP_SCRIPT_PROFILE_REQUEST, 0x02, 0xff],
+        )
+        .expect("write script1.cod");
+        fs::write(root.join("script1.var"), vec![0; 0x8000]).expect("write script1.var");
+
+        let rows = parse_script_post_update(&root, None).expect("parse post update");
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].script, "SCRIPT1");
+        assert_eq!(rows[0].event_index, 0);
+        assert_eq!(rows[0].event_kind, "pending_profile_dispatch");
+        assert_eq!(rows[0].ready, Some(true));
+
+        let path = root.join("script-post-update.tsv");
+        write_script_post_update_manifest(&rows, &path).expect("write post update");
+        let manifest = fs::read_to_string(&path).expect("read post update");
+        assert!(
+            manifest.starts_with(
+                "script\tevent_index\tevent_kind\trecord_offset\trelated_record_offset"
+            )
+        );
+        assert!(manifest.contains("SCRIPT1\t0\tpending_profile_dispatch\t\t\t\t\ttrue"));
+
+        let _ = fs::remove_dir_all(&root);
     }
 
     #[test]
