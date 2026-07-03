@@ -11,6 +11,20 @@ nix develop --command bash accuracy/run_oracle.sh [seconds]
 ```
 
 Captures land in `accuracy/captures/frame_NN.png` (gitignored — game content).
+Each run also writes `accuracy/captures/capture-manifest.tsv` with elapsed
+seconds, host epoch, display, capture kind, and the crop used to normalize the
+800x600 host capture back to native 320x200.
+
+Useful environment controls:
+
+- `ORACLE_CAPTURE_INTERVAL=1`: capture cadence in integer seconds.
+- `ORACLE_CAPTURE_DIR=/tmp/cb-captures`: write captures somewhere other than
+  `accuracy/captures`.
+- `ORACLE_DISPLAY=:98`: Xvfb display to use.
+- `ORACLE_INPUT_SCRIPT=./accuracy/input/foo.sh`: executable script launched
+  inside the isolated display after `ORACLE_INPUT_DELAY` seconds. It can use
+  `xdotool` plus `ORACLE_DISPLAY`, `ORACLE_DOSBOX_PID`, and
+  `ORACLE_CAPTURE_DIR` to drive the real game toward a target scene.
 
 ## Compare One Generated Frame
 
@@ -38,8 +52,9 @@ background/foreground/subtitle failures from missing ship-HUD failures.
 Current `run_oracle.sh` screenshots are 800x600 host-window grabs. The compare
 script therefore defaults to the measured DOSBox viewport crop
 `80,100,640,480`; override with `--ref-crop x,y,w,h` if the capture setup
-changes. Use `--max-mean-abs` only for a scenario known to be frame-aligned with
-the generated output.
+changes. The same crop is written to `capture-manifest.tsv`. Use
+`--max-mean-abs` only for a scenario known to be frame-aligned with the generated
+output.
 
 ## Run Named Scenarios
 
@@ -103,8 +118,8 @@ presentation state, not merely a frame-offset problem.
 
 ## Next steps toward scene-by-scene validation
 
-1. Drive input (menu/scene navigation) — add `xdotool` to the flake for scripted
-   key/mouse events on the Xvfb display, or use DOSBox-X `autotype` for keyboard.
+1. Drive input (menu/scene navigation) using `ORACLE_INPUT_SCRIPT` and `xdotool`
+   on the isolated Xvfb display, or use DOSBox-X `autotype` for keyboard.
 2. Reach the 5 target scenes (Bob_Morlock, Izwalito, a multi-character scene, a
    subtitle-only screen, a full HNM cutscene); capture frame + audio per scene.
 3. Extend the comparison harness from frame metrics to scene checks: subtitle

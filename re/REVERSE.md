@@ -1343,6 +1343,12 @@ The DOSBox-X oracle harness works (boots the real game on isolated Xvfb;
 without scripted input to drive it to specific scenes it is still not sufficient
 for per-scene pass/fail comparison.
 
+`accuracy/run_oracle.sh` now writes `capture-manifest.tsv` with elapsed seconds,
+host epoch, display, capture kind, and native-crop metadata for every host-root
+frame. It also accepts `ORACLE_INPUT_SCRIPT`/`ORACLE_INPUT_DELAY`, exporting the
+isolated Xvfb display and DOSBox PID so target-scene navigation scripts can be
+added without touching the user's desktop.
+
 Current workflow: improve VM accuracy → export videos (`./target/release/
 commander-blood-tools <dir>`) → compare frame candidates with
 `accuracy/compare_oracle.py --scenario-file accuracy/oracle-scenarios.tsv` →
@@ -1352,8 +1358,8 @@ generated MP4 window and prove whether a mismatch is timestamp alignment or the
 wrong scene/presentation state. Candidate search (`--candidate-glob`) ranks
 generated videos before a capture is promoted to a checked-in scenario. Promoted
 oracle checks should fill in `max_mean_abs`. Next oracle step is scripted input
-or a debug scene selector so one generated dialogue run can be compared against a
-matched real-game capture with a threshold.
+via `ORACLE_INPUT_SCRIPT` or a debug scene selector so one generated dialogue run
+can be compared against a matched real-game capture with a threshold.
 
 Current `frame_12` evidence: searching all 43 executed-dialogue composites over
 `0:12:2` ranked `executed-dialogue-run - script3 - 0011 - tumul.mp4` at `6.0s`

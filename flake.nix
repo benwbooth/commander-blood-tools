@@ -28,6 +28,7 @@
               curl
               dosbox-x
               ffmpeg
+              imagemagick
               jq
               nasm
               p7zip
@@ -37,6 +38,8 @@
               rust-analyzer
               rustc
               rustfmt
+              xdotool
+              xorg-server
             ];
 
             RUST_BACKTRACE = "1";
