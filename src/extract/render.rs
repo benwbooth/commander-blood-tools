@@ -76,9 +76,27 @@ pub(super) fn render_subtitles(rgb: &mut [u8], cues: &[SubtitleCue], time: f64) 
         .collect();
     let visible_lines = visible_subtitle_lines(&lines, visible_chars);
 
+    let (clip_top, clip_bottom) = subtitle_clip_bounds(cue.active_line_id);
     for (line_idx, line) in visible_lines.iter().enumerate() {
         let y = SUBTITLE_Y + line_idx * GAME_FONT_LINE_HEIGHT;
-        draw_game_text(rgb, line, SUBTITLE_X, y, [245, 245, 245]);
+        draw_game_text_clipped(
+            rgb,
+            line,
+            SUBTITLE_X,
+            y,
+            [245, 245, 245],
+            clip_top,
+            clip_bottom,
+        );
+    }
+}
+
+pub(super) fn subtitle_clip_bounds(active_line_id: Option<u16>) -> (usize, usize) {
+    match active_line_id {
+        // BLOODPRG.EXE's per-frame dialogue updater sets render_string clipping
+        // to gs:0x5239..0x523B for these active line ids, then restores it.
+        Some(5 | 0x27) => (SCENE_TOP, SCENE_BOTTOM),
+        _ => (0, VIEWPORT_H),
     }
 }
 
@@ -105,11 +123,19 @@ pub(super) fn visible_subtitle_lines(lines: &[String], visible_chars: usize) -> 
     out
 }
 
-pub(super) fn draw_game_text(rgb: &mut [u8], text: &str, x: usize, y: usize, color: [u8; 3]) {
+fn draw_game_text_clipped(
+    rgb: &mut [u8],
+    text: &str,
+    x: usize,
+    y: usize,
+    color: [u8; 3],
+    clip_top: usize,
+    clip_bottom: usize,
+) {
     let mut cx = x;
     for ch in text.chars() {
         if let Some(glyph) = game_font_glyph(ch).or_else(|| game_font_glyph('?')) {
-            draw_game_glyph(rgb, glyph.rows, cx, y, color);
+            draw_game_glyph_clipped(rgb, glyph.rows, cx, y, color, clip_top, clip_bottom);
         }
         cx += game_font_advance(ch);
         if cx >= VIEWPORT_W {
@@ -118,12 +144,14 @@ pub(super) fn draw_game_text(rgb: &mut [u8], text: &str, x: usize, y: usize, col
     }
 }
 
-pub(super) fn draw_game_glyph(
+fn draw_game_glyph_clipped(
     rgb: &mut [u8],
     rows: [u8; GAME_FONT_HEIGHT],
     x: usize,
     y: usize,
     color: [u8; 3],
+    clip_top: usize,
+    clip_bottom: usize,
 ) {
     for (gy, row) in rows.iter().copied().enumerate() {
         for gx in 0..GAME_FONT_WIDTH {
@@ -132,7 +160,7 @@ pub(super) fn draw_game_glyph(
             }
             let px = x + gx;
             let py = y + gy;
-            if px < VIEWPORT_W && py < VIEWPORT_H {
+            if px < VIEWPORT_W && py >= clip_top && py < clip_bottom && py < VIEWPORT_H {
                 let idx = (py * VIEWPORT_W + px) * 3;
                 rgb[idx] = color[0];
                 rgb[idx + 1] = color[1];
@@ -319,4 +347,37 @@ mod tests {
         assert_eq!(e.rows, [0x00, 0x00, 0xfc, 0x84, 0xfc, 0x80, 0xfc, 0x00]);
     }
 
+    #[test]
+    fn active_line_clip_bounds_match_dialogue_updater_special_cases() {
+        assert_eq!(subtitle_clip_bounds(Some(5)), (SCENE_TOP, SCENE_BOTTOM));
+        assert_eq!(subtitle_clip_bounds(Some(0x27)), (SCENE_TOP, SCENE_BOTTOM));
+        assert_eq!(subtitle_clip_bounds(Some(0x2b)), (0, VIEWPORT_H));
+        assert_eq!(subtitle_clip_bounds(None), (0, VIEWPORT_H));
+    }
+
+    #[test]
+    fn clipped_text_does_not_draw_outside_active_line_window() {
+        let mut rgb = vec![0u8; VIEWPORT_W * VIEWPORT_H * 3];
+        draw_game_text_clipped(
+            &mut rgb,
+            "M",
+            SUBTITLE_X,
+            0,
+            [245, 245, 245],
+            SCENE_TOP,
+            SCENE_BOTTOM,
+        );
+        assert!(rgb.iter().all(|sample| *sample == 0));
+
+        draw_game_text_clipped(
+            &mut rgb,
+            "M",
+            SUBTITLE_X,
+            SCENE_TOP,
+            [245, 245, 245],
+            SCENE_TOP,
+            SCENE_BOTTOM,
+        );
+        assert!(rgb.iter().any(|sample| *sample != 0));
+    }
 }
