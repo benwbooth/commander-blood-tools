@@ -21,6 +21,11 @@ pub const DIALOGUE_FONT_GLYPH_COUNT: usize = 86;
 pub const DIALOGUE_FONT_GLYPH_HEIGHT: usize = 8;
 pub const SND_ENTRY_SEGMENT: u16 = 0x0b1b;
 pub const SND_ENTRY_OFFSET: u16 = 0x011d;
+pub const NAV_CODE_SEGMENT: u16 = 0x071e;
+pub const NAV_ACTOR_SUBDISPATCH_TABLE_FILE_OFFSET: usize = 0x007eb4;
+pub const NAV_ACTOR_SUBDISPATCH_ENTRY_COUNT: usize = 6;
+pub const NAV_CHOICE_SUBDISPATCH_TABLE_FILE_OFFSET: usize = 0x008709;
+pub const NAV_CHOICE_SUBDISPATCH_ENTRY_COUNT: usize = 5;
 
 const SND_ENTRY_FAR_CALL: [u8; 5] = [
     0x9a,
@@ -126,6 +131,13 @@ pub struct DialogueFontTables {
     pub glyph_rows: Vec<[u8; DIALOGUE_FONT_GLYPH_HEIGHT]>,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+pub struct SubdispatchEntry {
+    pub index: usize,
+    pub handler_offset: u16,
+    pub handler_file_offset: usize,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct BloodPrgInspection {
     pub summary: MzSummary,
@@ -134,6 +146,8 @@ pub struct BloodPrgInspection {
     pub opcode_handlers: Vec<OpcodeHandler>,
     pub opcode_descriptors: Vec<OpcodeDescriptor>,
     pub vm_opcode_specs: Vec<VmOpcodeSpec>,
+    pub nav_actor_subdispatch_handlers: Vec<SubdispatchEntry>,
+    pub nav_choice_subdispatch_handlers: Vec<SubdispatchEntry>,
     pub snd_entry_call_sites: Vec<SndEntryCallSite>,
     pub dialogue_font: DialogueFontTables,
 }
@@ -323,6 +337,22 @@ impl BloodPrg {
         })
     }
 
+    pub fn nav_actor_subdispatch_handlers(&self) -> Result<Vec<SubdispatchEntry>> {
+        self.subdispatch_entries(
+            NAV_ACTOR_SUBDISPATCH_TABLE_FILE_OFFSET,
+            NAV_ACTOR_SUBDISPATCH_ENTRY_COUNT,
+            "nav actor subdispatch table",
+        )
+    }
+
+    pub fn nav_choice_subdispatch_handlers(&self) -> Result<Vec<SubdispatchEntry>> {
+        self.subdispatch_entries(
+            NAV_CHOICE_SUBDISPATCH_TABLE_FILE_OFFSET,
+            NAV_CHOICE_SUBDISPATCH_ENTRY_COUNT,
+            "nav choice subdispatch table",
+        )
+    }
+
     pub fn snd_entry_call_sites(&self) -> Vec<SndEntryCallSite> {
         self.data
             .windows(SND_ENTRY_FAR_CALL.len())
@@ -357,9 +387,32 @@ impl BloodPrg {
             opcode_handlers: self.opcode_handlers()?,
             opcode_descriptors: self.opcode_descriptors()?,
             vm_opcode_specs: self.vm_opcode_specs()?,
+            nav_actor_subdispatch_handlers: self.nav_actor_subdispatch_handlers()?,
+            nav_choice_subdispatch_handlers: self.nav_choice_subdispatch_handlers()?,
             snd_entry_call_sites: self.snd_entry_call_sites(),
             dialogue_font: self.dialogue_font_tables()?,
         })
+    }
+
+    fn subdispatch_entries(
+        &self,
+        file_offset: usize,
+        count: usize,
+        label: &str,
+    ) -> Result<Vec<SubdispatchEntry>> {
+        let bytes = self.slice(file_offset, count * 2, label)?;
+        Ok(bytes
+            .chunks_exact(2)
+            .enumerate()
+            .map(|(index, pair)| {
+                let handler_offset = u16::from_le_bytes([pair[0], pair[1]]);
+                SubdispatchEntry {
+                    index,
+                    handler_offset,
+                    handler_file_offset: self.segoff_to_file(NAV_CODE_SEGMENT, handler_offset),
+                }
+            })
+            .collect())
     }
 
     fn slice(&self, file_offset: usize, len: usize, label: &str) -> Result<&[u8]> {
@@ -924,6 +977,60 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         comment: "when reveal reaches NUL, sets DS:0x0b35=DS:0x0aca*4 and DS:0x67bb=1",
     },
     BinarySymbol {
+        name: "nav_actor_slot_update_loop",
+        file_offset: 0x007d7b,
+        segment: Some(NAV_CODE_SEGMENT),
+        offset: Some(0x059b),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "walks six 0x18-byte navigation actor/object slots and dispatches via cs:0x06d4",
+    },
+    BinarySymbol {
+        name: "nav_actor_subdispatch_call",
+        file_offset: 0x007e09,
+        segment: Some(NAV_CODE_SEGMENT),
+        offset: Some(0x0629),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "indirect call through cs:0x06d4 actor slot table",
+    },
+    BinarySymbol {
+        name: "nav_actor_subdispatch_table",
+        file_offset: NAV_ACTOR_SUBDISPATCH_TABLE_FILE_OFFSET,
+        segment: Some(NAV_CODE_SEGMENT),
+        offset: Some(0x06d4),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "six u16 near offsets for navigation actor slot handlers",
+    },
+    BinarySymbol {
+        name: "nav_choice_dispatch",
+        file_offset: 0x0085e2,
+        segment: Some(NAV_CODE_SEGMENT),
+        offset: Some(0x0e02),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "navigation choice dispatch routine; rejects AL >= 5 before cs:0x0f29 table call",
+    },
+    BinarySymbol {
+        name: "nav_choice_subdispatch_call",
+        file_offset: 0x008700,
+        segment: Some(NAV_CODE_SEGMENT),
+        offset: Some(0x0f20),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "indirect call through cs:0x0f29 navigation choice table",
+    },
+    BinarySymbol {
+        name: "nav_choice_subdispatch_table",
+        file_offset: NAV_CHOICE_SUBDISPATCH_TABLE_FILE_OFFSET,
+        segment: Some(NAV_CODE_SEGMENT),
+        offset: Some(0x0f29),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "five u16 near offsets for navigation choice handlers",
+    },
+    BinarySymbol {
         name: "dlg_frame_update",
         file_offset: 0x009e81,
         segment: Some(0x0971),
@@ -1116,6 +1223,45 @@ mod tests {
             .expect("C4 handler");
         assert_eq!(actor.handler_offset, 0x18de);
         assert_eq!(actor.handler_file_offset, 0x006c7e);
+    }
+
+    #[test]
+    fn nav_subdispatch_tables_resolve_known_entry_points() {
+        let Some(binary) = fixture() else {
+            eprintln!("skipping: BLOODPRG.EXE not available");
+            return;
+        };
+
+        assert_eq!(
+            binary.segoff_to_file(NAV_CODE_SEGMENT, 0x06d4),
+            NAV_ACTOR_SUBDISPATCH_TABLE_FILE_OFFSET
+        );
+        assert_eq!(
+            binary.segoff_to_file(NAV_CODE_SEGMENT, 0x0f29),
+            NAV_CHOICE_SUBDISPATCH_TABLE_FILE_OFFSET
+        );
+
+        let actor = binary
+            .nav_actor_subdispatch_handlers()
+            .expect("actor subdispatch table");
+        let actor_offsets: Vec<u16> = actor.iter().map(|entry| entry.handler_offset).collect();
+        assert_eq!(
+            actor_offsets,
+            vec![0x07bc, 0x06e0, 0x095a, 0x099e, 0x0a1b, 0x08a2]
+        );
+        assert_eq!(actor[0].handler_file_offset, 0x007f9c);
+        assert_eq!(actor[5].handler_file_offset, 0x008082);
+
+        let choice = binary
+            .nav_choice_subdispatch_handlers()
+            .expect("choice subdispatch table");
+        let choice_offsets: Vec<u16> = choice.iter().map(|entry| entry.handler_offset).collect();
+        assert_eq!(
+            choice_offsets,
+            vec![0x0f33, 0x0f4c, 0x0fdd, 0x1068, 0x108c]
+        );
+        assert_eq!(choice[0].handler_file_offset, 0x008713);
+        assert_eq!(choice[4].handler_file_offset, 0x00886c);
     }
 
     #[test]

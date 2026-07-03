@@ -297,9 +297,8 @@ status panel; roster loop over object list at `[0x6886]`). Not the cutscene path
 
 **Object/actor struct fields** (seen in the roster loop, es:di base):
 `+0x00` u16 flags (bit1 tested), `+0x02` u16 flags (bit0 tested), `+0x04` name
-string (ASCIIZ, passed to render_string), `+0x36` u16 (nonzero gate). Stride seen
-elsewhere = 0x18 (24 bytes) at the actor-update loop 0x7E09 — reconcile (this
-struct looks larger than 0x18, may be a different/extended table).
+string (ASCIIZ, passed to render_string), `+0x36` u16 (nonzero gate). This is not
+the same table as the six 0x18-byte navigation slots iterated at file `0x7E09`.
 
 ### Script VM — execution dispatch (FOUND)
 
@@ -333,9 +332,47 @@ struct looks larger than 0x18, may be a different/extended table).
 | AA | 0x6855 | | | | | D3 | 0x53A0 (seg base = no-op/default) |
 | AB | 0x684C | | | | | | |
 
-Secondary jump tables (sub-dispatch within handlers): file `0x8700`→`cs:0x0F29`
-(gated by `[0x2793]&8`,`[0x2565]&1`); file `0x7E09`→`cs:0x06D4` in a loop
-striding `bp+=0x18` over 24-byte actor/object state structs.
+Secondary jump tables (sub-dispatch within handlers):
+
+- `cs:0x06D4` table at file `0x7EB4`, called indirectly at file `0x7E09`
+  from loop routine `0x7D7B`. The loop walks six 24-byte records at
+  `DS:0x2A1B`, `0x2A33`, `0x2A4B`, `0x2A63`, `0x2A7B`, `0x2A93`; because `CX`
+  counts down while `BP` increments, slot 0 uses table index 5 and slot 5 uses
+  table index 0.
+
+      idx  cs:off  file
+      0    0x07BC  0x7F9C
+      1    0x06E0  0x7EC0
+      2    0x095A  0x813A
+      3    0x099E  0x817E
+      4    0x0A1B  0x81FB
+      5    0x08A2  0x8082
+
+- `cs:0x0F29` table at file `0x8709`, called indirectly at file `0x8700` from
+  routine `0x85E2`. The caller rejects `AL >= 5`; the preceding
+  `test [0x2565],1` does not branch at the call site and is state consumed by
+  the handlers, not a dispatch gate.
+
+      idx  cs:off  file
+      0    0x0F33  0x8713
+      1    0x0F4C  0x872C
+      2    0x0FDD  0x87BD
+      3    0x1068  0x8848
+      4    0x108C  0x886C
+
+Recovered candidate layout for the 24-byte records iterated by `0x7D7B`:
+
+    +00 flags/state byte/word; bit0 active, bit2 initialized/rendered, bit3 hit
+    +02 action/object id used by helper 0x7E1C; handlers write 0x12..0x15
+    +06 max frame/count loaded by helper
+    +08 current frame/counter
+    +0A selection/angle compare against 2*gs:0x2795
+    +0C hit rect x
+    +0E hit rect y
+    +10 hit rect w
+    +12 hit rect h
+    +14 render/blit x passed as BX
+    +16 render/blit y passed as CX
 
 ### 0xA6 TEXT handler @ file 0x660C — field semantics (DECODED)
 
@@ -779,8 +816,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `VmToken::RecordTriple`, and `execute_trace` evaluates the direct mode-1
       record-triple compare. Resolved-table mode-0 side-effect execution remains
       pending.
-- [ ] Decode the cs:0x0F29 and cs:0x06D4 sub-dispatch tables; document the
-      24-byte actor/object struct iterated at 0x7E09.
+- [x] Decode the cs:0x0F29 and cs:0x06D4 sub-dispatch tables. Table starts,
+      indirect call sites, raw handler-offset arrays, target file offsets, and
+      the 24-byte actor/object struct iterated at 0x7E09 are documented; handler
+      semantics still need permanent names beyond temporary table-entry labels.
 - [x] Reconcile 0xC4 length and operands. The handler consumes two u16 operands,
       writes a 6-byte record entry on success, and `src/vm.rs` now exposes both
       words plus optional mode-1 `A1` inversion instead of reducing the token to a
