@@ -951,6 +951,7 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 - [ ] Ph6: generated cutscene compared against real-game capture with a
       frame-aligned pass threshold. `accuracy/compare_oracle.py` now normalizes
       host-window captures and generated MP4 frames to 320x200 and emits metrics,
+      and `accuracy/oracle-scenarios.tsv` defines named repeatable comparisons,
       but no matched scene has passed yet.
 
 ## Reference Resources
@@ -1342,7 +1343,8 @@ for per-scene pass/fail comparison.
 
 Current workflow: improve VM accuracy → export videos (`./target/release/
 commander-blood-tools <dir>`) → compare frame candidates with
-`accuracy/compare_oracle.py` → manually inspect mismatches → iterate. Next
-oracle step is scripted input or a debug scene selector so one generated
-dialogue run can be compared against a matched real-game capture with a
-threshold.
+`accuracy/compare_oracle.py --scenario-file accuracy/oracle-scenarios.tsv` →
+manually inspect mismatches → iterate. Blank scenario thresholds record metrics
+as unchecked; promoted oracle checks should fill in `max_mean_abs`. Next oracle
+step is scripted input or a debug scene selector so one generated dialogue run
+can be compared against a matched real-game capture with a threshold.

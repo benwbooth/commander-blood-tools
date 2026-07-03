@@ -1,0 +1,2 @@
+scenario_id	reference	generated	generated_time	ref_crop	max_mean_abs	out_dir	notes
+smoke-frame12-pterra	accuracy/captures/frame_12.png	output/mp4/executed-dialogue-run - script2 - 0001 - pterra.mp4	0	auto		accuracy/comparisons/smoke-frame12-pterra	Current smoke comparison; no pass threshold yet.

@@ -10,11 +10,13 @@ and writing repeatable image-difference metrics.
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import math
 import os
 import subprocess
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -25,6 +27,56 @@ NATIVE_SIZE = (320, 200)
 # Current accuracy/run_oracle.sh host captures are 800x600 Xvfb grabs with the
 # DOSBox 320x200 game viewport aspect-corrected to 640x480 at this offset.
 DEFAULT_XVFB_CROP = (80, 100, 640, 480)
+
+
+@dataclass(frozen=True)
+class Scenario:
+    scenario_id: str
+    reference: Path
+    generated: Path
+    generated_time: float = 0.0
+    ref_crop: str = "auto"
+    max_mean_abs: float | None = None
+    out_dir: Path | None = None
+    notes: str = ""
+
+
+def parse_optional_float(value: str | None) -> float | None:
+    if value is None or value.strip() == "":
+        return None
+    return float(value)
+
+
+def load_scenarios(path: Path) -> list[Scenario]:
+    text = "\n".join(
+        line for line in path.read_text().splitlines() if line.strip() and not line.startswith("#")
+    )
+    if not text.strip():
+        return []
+
+    rows = csv.DictReader(text.splitlines(), delimiter="\t")
+    scenarios: list[Scenario] = []
+    for line_no, row in enumerate(rows, start=2):
+        scenario_id = (row.get("scenario_id") or "").strip()
+        reference = (row.get("reference") or "").strip()
+        generated = (row.get("generated") or "").strip()
+        if not scenario_id or not reference or not generated:
+            raise ValueError(
+                f"{path}:{line_no}: scenario_id, reference, and generated are required"
+            )
+        scenarios.append(
+            Scenario(
+                scenario_id=scenario_id,
+                reference=Path(reference),
+                generated=Path(generated),
+                generated_time=float((row.get("generated_time") or "0").strip() or "0"),
+                ref_crop=(row.get("ref_crop") or "auto").strip() or "auto",
+                max_mean_abs=parse_optional_float(row.get("max_mean_abs")),
+                out_dir=Path(row["out_dir"]) if (row.get("out_dir") or "").strip() else None,
+                notes=(row.get("notes") or "").strip(),
+            )
+        )
+    return scenarios
 
 
 def parse_crop(value: str | None, image_size: tuple[int, int]) -> tuple[int, int, int, int]:
@@ -115,10 +167,113 @@ def default_out_dir(reference: Path, generated: Path, time_sec: float) -> Path:
     return Path("accuracy/comparisons") / f"{safe_reference}__{safe_generated}__t{time_sec:.2f}"
 
 
+def comparison_status(metrics: dict[str, object], max_mean_abs: float | None) -> str:
+    if max_mean_abs is None:
+        return "unchecked"
+    return "pass" if float(metrics["mean_abs"]) <= max_mean_abs else "fail"
+
+
+def compare_paths(
+    reference_path: Path,
+    generated_path: Path,
+    *,
+    generated_time: float,
+    ref_crop: str,
+    out_dir: Path,
+    max_mean_abs: float | None = None,
+    scenario_id: str | None = None,
+    notes: str = "",
+) -> dict[str, object]:
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    reference_source = Image.open(reference_path)
+    crop = parse_crop(ref_crop, reference_source.size)
+    reference_source.close()
+    reference_native = load_native_image(reference_path, crop=crop)
+
+    with tempfile.TemporaryDirectory(prefix="commander-blood-compare-") as tmp:
+        generated_source = extract_generated_frame(
+            generated_path, generated_time, Path(tmp)
+        )
+        generated_native = load_native_image(generated_source)
+
+    metrics = diff_metrics(reference_native, generated_native)
+    status = comparison_status(metrics, max_mean_abs)
+    metrics.update(
+        {
+            "scenario_id": scenario_id,
+            "status": status,
+            "max_mean_abs": max_mean_abs,
+            "reference": str(reference_path),
+            "generated": str(generated_path),
+            "generated_time": generated_time,
+            "reference_crop": list(crop),
+            "notes": notes,
+        }
+    )
+
+    reference_native.save(out_dir / "reference-native.png")
+    generated_native.save(out_dir / "generated-native.png")
+    save_diff(reference_native, generated_native, out_dir / "diff-x4.png")
+    (out_dir / "comparison.json").write_text(json.dumps(metrics, indent=2) + "\n")
+
+    return metrics
+
+
+def run_scenarios(
+    scenarios: list[Scenario],
+    *,
+    out_root: Path,
+    scenario_ids: set[str] | None = None,
+    summary_out: Path | None = None,
+) -> tuple[list[dict[str, object]], int]:
+    selected = [
+        scenario
+        for scenario in scenarios
+        if scenario_ids is None or scenario.scenario_id in scenario_ids
+    ]
+    if scenario_ids is not None:
+        found = {scenario.scenario_id for scenario in selected}
+        missing = sorted(scenario_ids - found)
+        if missing:
+            raise ValueError(f"scenario id(s) not found: {', '.join(missing)}")
+
+    results: list[dict[str, object]] = []
+    exit_code = 0
+    for scenario in selected:
+        out_dir = scenario.out_dir or out_root / scenario.scenario_id
+        metrics = compare_paths(
+            scenario.reference,
+            scenario.generated,
+            generated_time=scenario.generated_time,
+            ref_crop=scenario.ref_crop,
+            out_dir=out_dir,
+            max_mean_abs=scenario.max_mean_abs,
+            scenario_id=scenario.scenario_id,
+            notes=scenario.notes,
+        )
+        results.append(metrics)
+        print(json.dumps(metrics, indent=2))
+        if metrics["status"] == "fail":
+            exit_code = 2
+
+    summary = {
+        "scenario_count": len(results),
+        "pass_count": sum(1 for result in results if result["status"] == "pass"),
+        "fail_count": sum(1 for result in results if result["status"] == "fail"),
+        "unchecked_count": sum(1 for result in results if result["status"] == "unchecked"),
+        "results": results,
+    }
+    summary_path = summary_out or out_root / "summary.json"
+    summary_path.parent.mkdir(parents=True, exist_ok=True)
+    summary_path.write_text(json.dumps(summary, indent=2) + "\n")
+    return results, exit_code
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--reference", required=True, type=Path, help="DOSBox capture PNG")
-    parser.add_argument("--generated", required=True, type=Path, help="Generated MP4 or image")
+    parser.add_argument("--reference", type=Path, help="DOSBox capture PNG")
+    parser.add_argument("--generated", type=Path, help="Generated MP4 or image")
     parser.add_argument(
         "--generated-time",
         type=float,
@@ -136,41 +291,48 @@ def main() -> int:
         type=float,
         help="Optional failure threshold for mean absolute RGB error",
     )
+    parser.add_argument(
+        "--scenario-file",
+        type=Path,
+        help="TSV file of named comparison scenarios to run in batch mode",
+    )
+    parser.add_argument(
+        "--scenario-id",
+        action="append",
+        help="Only run this scenario id from --scenario-file; may be repeated",
+    )
+    parser.add_argument(
+        "--summary-out",
+        type=Path,
+        help="Batch summary JSON path; defaults to <out-dir>/summary.json",
+    )
     args = parser.parse_args()
 
-    reference_path = args.reference
-    generated_path = args.generated
-    out_dir = args.out_dir or default_out_dir(reference_path, generated_path, args.generated_time)
-    out_dir.mkdir(parents=True, exist_ok=True)
-
-    reference_source = Image.open(reference_path)
-    crop = parse_crop(args.ref_crop, reference_source.size)
-    reference_source.close()
-    reference_native = load_native_image(reference_path, crop=crop)
-
-    with tempfile.TemporaryDirectory(prefix="commander-blood-compare-") as tmp:
-        generated_source = extract_generated_frame(
-            generated_path, args.generated_time, Path(tmp)
+    if args.scenario_file:
+        out_root = args.out_dir or Path("accuracy/comparisons")
+        scenarios = load_scenarios(args.scenario_file)
+        _, exit_code = run_scenarios(
+            scenarios,
+            out_root=out_root,
+            scenario_ids=set(args.scenario_id) if args.scenario_id else None,
+            summary_out=args.summary_out,
         )
-        generated_native = load_native_image(generated_source)
+        return exit_code
 
-    metrics = diff_metrics(reference_native, generated_native)
-    metrics.update(
-        {
-            "reference": str(reference_path),
-            "generated": str(generated_path),
-            "generated_time": args.generated_time,
-            "reference_crop": list(crop),
-        }
+    if args.reference is None or args.generated is None:
+        parser.error("--reference and --generated are required unless --scenario-file is used")
+
+    out_dir = args.out_dir or default_out_dir(args.reference, args.generated, args.generated_time)
+    metrics = compare_paths(
+        args.reference,
+        args.generated,
+        generated_time=args.generated_time,
+        ref_crop=args.ref_crop,
+        out_dir=out_dir,
+        max_mean_abs=args.max_mean_abs,
     )
-
-    reference_native.save(out_dir / "reference-native.png")
-    generated_native.save(out_dir / "generated-native.png")
-    save_diff(reference_native, generated_native, out_dir / "diff-x4.png")
-    (out_dir / "comparison.json").write_text(json.dumps(metrics, indent=2) + "\n")
-
     print(json.dumps(metrics, indent=2))
-    if args.max_mean_abs is not None and metrics["mean_abs"] > args.max_mean_abs:
+    if metrics["status"] == "fail":
         return 2
     return 0
 

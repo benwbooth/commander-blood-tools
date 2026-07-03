@@ -36,6 +36,18 @@ script therefore defaults to the measured DOSBox viewport crop
 changes. Use `--max-mean-abs` only for a scenario known to be frame-aligned with
 the generated output.
 
+## Run Named Scenarios
+
+```sh
+nix develop --command python accuracy/compare_oracle.py \
+  --scenario-file accuracy/oracle-scenarios.tsv
+```
+
+`accuracy/oracle-scenarios.tsv` is the checked-in list of repeatable comparison
+targets. Blank `max_mean_abs` values record metrics as `unchecked` without making
+the batch fail; fill in a threshold only after the generated frame is known to be
+frame-aligned with the DOS capture.
+
 ## What works (verified 2026-06-14)
 
 - `accuracy/dosbox.conf` mounts the CD image (`output/CMDR_BLOOD.iso`) as `D:`,
