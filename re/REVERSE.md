@@ -571,12 +571,18 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       Caveat: the DOS 0x6946 mode-1 handler remaps RHS `gs:0x674E` to `0xFFFF`
       before equality comparison; `execute_trace` does not yet receive that
       runtime special-object value, so that remap remains to wire in.
-- [ ] Further gains: wire branch-aware execution into comprehensive dialogue
-      generation without dropping alternate branches. The current exporter still
-      uses the linear all-lines path because complete video coverage needs branch
-      enumeration or scenario selection, not a single initial-state execution.
-      Bounded by the ~22% no-speaker lines (many are legitimately
-      narrator/locationless).
+- [x] Wire branch-aware initial-state execution into the current per-character
+      dialogue video generator: `create_character_videos` now consumes
+      `ScriptExecutedSpeechLine`, groups each character by script/location, and
+      orders lines by `execute_trace` sequence index instead of raw COD offset.
+      `script-dialogue-videos.tsv` is generated from the same executed rows.
+- [ ] Further gains: make comprehensive dialogue generation cover alternate
+      branches and render whole dialogue runs across actors. The current exporter
+      is no longer the linear all-lines path, but it still represents only the
+      default initial-state execution and still renders per character/SND bank.
+      Full coverage needs branch enumeration or scenario selection plus a
+      run-level renderer. Bounded by the ~22% no-speaker lines (many are
+      legitimately narrator/locationless).
 - [x] Define the VM-event schema (`SceneEvent`: SetBackground, PlayMusic,
       ShowSpeaker, PlayVoice, PlayTalkHnm, DrawSubtitle, PlayChatter, Clear) +
       `emit_scene_events()` emitter in `src/vm.rs`, emitting state-change

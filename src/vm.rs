@@ -822,9 +822,10 @@ pub fn execute_trace(cod: &[u8], var: &[u8]) -> ExecutionTrace {
 // (now correct after the `decode_text_call_at` fix) into that stream, emitting
 // state-change events (background/music/speaker) only on transitions.
 //
-// Not yet wired into the mp4 pipeline — that integration is where the DOSBox-X
-// oracle is needed to validate timing/voice/animation. Unit-tested here so the
-// schema and ordering are pinned down first.
+// The current mp4 pipeline consumes these events from branch-aware executed
+// dialogue rows. The remaining accuracy work is to enumerate or select
+// non-initial branches and move from per-character composites to whole dialogue
+// runs.
 // ---------------------------------------------------------------------------
 
 /// One presentation event in execution order.

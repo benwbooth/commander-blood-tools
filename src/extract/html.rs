@@ -6,7 +6,7 @@ use super::*;
 
 pub(super) fn write_html_index(out_dir: &Path) -> Result<(), Box<dyn Error>> {
     let dialogue_rows = read_tsv_rows(&out_dir.join("script-dialogue-videos.tsv"));
-    let speech_rows = read_tsv_rows(&out_dir.join("script-speech.tsv"));
+    let executed_rows = read_tsv_rows(&out_dir.join("script-executed-dialogue.tsv"));
     let scene_rows = read_tsv_rows(&out_dir.join("verified-video-scenes.tsv"));
     let mp4_files = output_files(out_dir, "mp4", "mp4");
     let m4a_files = output_files(out_dir, "m4a", "m4a");
@@ -45,7 +45,7 @@ summary {{ cursor: pointer; font-weight: 600; }}
         flac_files.len()
     )?;
 
-    write_dialogue_section(&mut html, &dialogue_rows, &speech_rows, out_dir)?;
+    write_dialogue_section(&mut html, &dialogue_rows, &executed_rows, out_dir)?;
     write_scene_section(&mut html, &scene_rows, out_dir)?;
     write_music_section(&mut html, &m4a_files, out_dir)?;
     write_snd_section(&mut html, &m4a_files, out_dir)?;
@@ -59,19 +59,19 @@ summary {{ cursor: pointer; font-weight: 600; }}
 pub(super) fn write_dialogue_section(
     html: &mut String,
     rows: &[Vec<String>],
-    speech_rows: &[Vec<String>],
+    executed_rows: &[Vec<String>],
     out_dir: &Path,
 ) -> Result<(), Box<dyn Error>> {
     writeln!(html, "<h2>Character Dialogue Composites</h2>")?;
-    let mapped_speech_rows = speech_rows
+    let mapped_speech_rows = executed_rows
         .iter()
-        .filter(|row| row.get(6).is_some_and(|clip| !clip.is_empty()))
+        .filter(|row| row.get(12).is_some_and(|clip| !clip.is_empty()))
         .count();
-    if !speech_rows.is_empty() {
+    if !executed_rows.is_empty() {
         writeln!(
             html,
-            "<p class=\"meta\">{} script speech/subtitle rows; {} rows have mapped character voice clips and are grouped into {} exported dialogue composite(s). Rows without clip indices are subtitle-only or non-character subtitle channels.</p>",
-            speech_rows.len(),
+            "<p class=\"meta\">{} branch-aware executed script speech/subtitle rows; {} rows have mapped character voice clips and are grouped into {} exported dialogue composite(s). Rows without clip indices are subtitle-only or non-character subtitle channels.</p>",
+            executed_rows.len(),
             mapped_speech_rows,
             rows.len()
         )?;

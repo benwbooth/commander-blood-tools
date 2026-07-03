@@ -1440,15 +1440,16 @@ fn unique_join<'a>(values: impl Iterator<Item = &'a str>) -> String {
 }
 
 pub(super) fn write_script_dialogue_manifest(
-    rows: &[ScriptSpeechLine],
+    rows: &[ScriptExecutedSpeechLine],
     out_path: &Path,
 ) -> Result<(), Box<dyn Error>> {
-    let mut groups: BTreeMap<(String, String, String), Vec<&ScriptSpeechLine>> = BTreeMap::new();
+    let mut groups: BTreeMap<(String, String, String), Vec<&ScriptExecutedSpeechLine>> =
+        BTreeMap::new();
     for row in rows {
         let Some(actor) = row.actor_record.as_ref() else {
             continue;
         };
-        if row.clip_index.is_none() {
+        if row.clip_index.is_none() && row.text.trim().is_empty() {
             continue;
         }
         // Group by (script, location, actor) to match the combined per-location
@@ -1464,18 +1465,18 @@ pub(super) fn write_script_dialogue_manifest(
     }
 
     // Order the dialogue composites by their position in the dialog tree, i.e.
-    // the script's execution order (script index, then the group's first COD
-    // offset), rather than alphabetically by function name.
-    let mut ordered: Vec<((String, String, String), Vec<&ScriptSpeechLine>)> =
+    // the branch-aware script execution order, rather than alphabetically by
+    // location/function name or by raw COD offset.
+    let mut ordered: Vec<((String, String, String), Vec<&ScriptExecutedSpeechLine>)> =
         groups.into_iter().collect();
     for (_, lines) in ordered.iter_mut() {
-        lines.sort_by_key(|line| line.offset);
+        lines.sort_by_key(|line| line.sequence_index);
     }
     // Dialog trees are per-character, so keep each character's nodes together
-    // (script, then actor), ordered within by execution position (COD offset).
+    // (script, then actor), ordered within by executed sequence position.
     ordered.sort_by(|a, b| {
-        let oa = a.1.first().map(|l| l.offset).unwrap_or(usize::MAX);
-        let ob = b.1.first().map(|l| l.offset).unwrap_or(usize::MAX);
+        let oa = a.1.first().map(|l| l.sequence_index).unwrap_or(usize::MAX);
+        let ob = b.1.first().map(|l| l.sequence_index).unwrap_or(usize::MAX);
         (a.0 .0.as_str(), a.0 .2.as_str(), oa).cmp(&(b.0 .0.as_str(), b.0 .2.as_str(), ob))
     });
 
@@ -1874,6 +1875,31 @@ mod tests {
         assert!(manifest.contains("SCRIPT2-0001"));
         assert!(manifest.contains("Actor_A,Actor_B"));
         assert!(manifest.contains("0x00050\t0x00010"));
+    }
+
+    #[test]
+    fn dialogue_video_manifest_uses_executed_sequence_order() {
+        let mut early =
+            executed_speech_line("SCRIPT2", 0, 0x50, Some("Actor_A"), Some("Room1"), "first");
+        early.clip_index = Some(1);
+        let mut late =
+            executed_speech_line("SCRIPT2", 1, 0x10, Some("Actor_A"), Some("Room1"), "second");
+        late.clip_index = Some(2);
+        let mut silent =
+            executed_speech_line("SCRIPT2", 2, 0x20, Some("Actor_A"), Some("Room1"), "silent");
+        silent.clip_index = None;
+        let rows = vec![late, silent, early];
+
+        let path = std::env::temp_dir().join(format!(
+            "commander-blood-dialogue-videos-{}.tsv",
+            std::process::id()
+        ));
+        write_script_dialogue_manifest(&rows, &path).expect("write dialogue videos");
+        let manifest = fs::read_to_string(&path).expect("read dialogue videos");
+        let _ = fs::remove_file(&path);
+        assert!(manifest.contains("dialogue - script2 - room1 - actor_a.mp4"));
+        assert!(manifest.contains("\t3\t1,2"));
+        assert!(!manifest.contains("\t3\t2,1"));
     }
 
     #[test]

@@ -174,7 +174,7 @@ pub(super) fn create_character_videos(
     mp4_dir: &Path,
     descript_db: Option<&DescriptDb>,
     hnm_music: &HashMap<String, String>,
-    script_speech: &[ScriptSpeechLine],
+    script_speech: &[ScriptExecutedSpeechLine],
     subtitle_sfx_path: Option<&Path>,
 ) -> Result<u32, Box<dyn Error>> {
     let Some(db) = descript_db else {
@@ -427,14 +427,41 @@ pub(super) fn create_character_dialogue_videos_from_scene(
     dat_dir: &Path,
     mp4_dir: &Path,
     descript_db: &DescriptDb,
-    script_speech: &[ScriptSpeechLine],
+    script_speech: &[ScriptExecutedSpeechLine],
     subtitle_sfx_path: Option<&Path>,
 ) -> Result<u32, Box<dyn Error>> {
-    // Combine the per-function exchanges into one longer video per
+    // Combine the branch-aware executed lines into one longer video per
     // (script, location): all of this character's dialogue at a given location,
-    // in execution order. (Keeping it per-location preserves a single correct
-    // background per video; a character at several locations gets one video each.)
-    let mut groups: BTreeMap<(String, String), Vec<&ScriptSpeechLine>> = BTreeMap::new();
+    // in game execution order. (Keeping it per-location preserves a single
+    // correct background per video; a character at several locations gets one
+    // video each.)
+    let groups = executed_dialogue_groups_for_scene(scene, script_speech);
+
+    let mut created = 0u32;
+    for ((script, location), lines) in groups {
+        if create_character_dialogue_video(
+            snd_path,
+            scene,
+            dat_dir,
+            mp4_dir,
+            descript_db,
+            subtitle_sfx_path,
+            &script,
+            &location,
+            &lines,
+        )? {
+            created += 1;
+        }
+    }
+
+    Ok(created)
+}
+
+fn executed_dialogue_groups_for_scene<'a>(
+    scene: &CharacterScene,
+    script_speech: &'a [ScriptExecutedSpeechLine],
+) -> Vec<((String, String), Vec<&'a ScriptExecutedSpeechLine>)> {
+    let mut groups: BTreeMap<(String, String), Vec<&ScriptExecutedSpeechLine>> = BTreeMap::new();
     for line in script_speech {
         if !line
             .actor_record
@@ -463,25 +490,11 @@ pub(super) fn create_character_dialogue_videos_from_scene(
             .push(line);
     }
 
-    let mut created = 0u32;
-    for ((script, location), mut lines) in groups {
-        lines.sort_by_key(|line| line.offset);
-        if create_character_dialogue_video(
-            snd_path,
-            scene,
-            dat_dir,
-            mp4_dir,
-            descript_db,
-            subtitle_sfx_path,
-            &script,
-            &location,
-            &lines,
-        )? {
-            created += 1;
-        }
+    let mut ordered: Vec<_> = groups.into_iter().collect();
+    for (_, lines) in ordered.iter_mut() {
+        lines.sort_by_key(|line| line.sequence_index);
     }
-
-    Ok(created)
+    ordered
 }
 
 pub(super) fn create_character_dialogue_video(
@@ -493,7 +506,7 @@ pub(super) fn create_character_dialogue_video(
     subtitle_sfx_path: Option<&Path>,
     script: &str,
     function_name: &str,
-    lines: &[&ScriptSpeechLine],
+    lines: &[&ScriptExecutedSpeechLine],
 ) -> Result<bool, Box<dyn Error>> {
     if lines.is_empty() {
         return Ok(false);
@@ -549,8 +562,8 @@ pub(super) fn create_character_dialogue_video(
             background_hnm: line.background_hnm.clone(),
             background_record: line.background_record.clone(),
             background_music: line.background_music.clone(),
-            voice_selector: line.param0.unwrap_or(0xff),
-            flags_b4: line.param1.unwrap_or(0),
+            voice_selector: line.param0,
+            flags_b4: line.param1,
             clip_index: line.clip_index,
             text: line.text.clone(),
         })
@@ -584,7 +597,11 @@ pub(super) fn create_character_dialogue_video(
         Some(DialogueSegment {
             text: text.to_string(),
             hnm_path: Some(hnm_path),
-            voice: Some(VoiceData { pcm_start: cs + 6, pcm_len, sample_rate }),
+            voice: Some(VoiceData {
+                pcm_start: cs + 6,
+                pcm_len,
+                sample_rate,
+            }),
             duration: pcm_len as f64 / sample_rate as f64,
         })
     };
@@ -900,5 +917,97 @@ pub(super) fn character_background_path(dat_dir: &Path, hnm_name: &str) -> PathB
         dat_dir.join(descript_hnm_path(&lower, 1))
     } else {
         dat_dir.join("pl").join(format!("{lower}.hnm"))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn executed_line(
+        script: &str,
+        sequence_index: usize,
+        offset: usize,
+        actor: Option<&str>,
+        location: Option<&str>,
+        clip_index: Option<usize>,
+        text: &str,
+    ) -> ScriptExecutedSpeechLine {
+        ScriptExecutedSpeechLine {
+            script: script.to_string(),
+            sequence_index,
+            function_name: "func".to_string(),
+            offset,
+            actor_record: actor.map(str::to_string),
+            actor_ref: actor.map(|_| 0x003a),
+            location_offset: location.map(|_| 0x1000),
+            background_record: location.map(str::to_string),
+            background_hnm: location.map(|loc| format!("{loc}.hnm")),
+            background_music: location.map(|loc| format!("{loc}_music")),
+            param0: clip_index.map(|idx| idx as u8 + 1).unwrap_or(0xff),
+            param1: 0,
+            clip_index,
+            text: text.to_string(),
+            call_target: 0x1234,
+            text_end: offset + 12,
+            source: "test".to_string(),
+        }
+    }
+
+    #[test]
+    fn executed_dialogue_groups_filter_actor_and_sort_by_sequence() {
+        let scene = CharacterScene {
+            record_name: "Actor_A".to_string(),
+            talk_hnms: vec![(0, "a.hnm".to_string()), (1, "b.hnm".to_string())],
+        };
+        let rows = vec![
+            executed_line(
+                "SCRIPT2",
+                1,
+                0x10,
+                Some("Actor_A"),
+                Some("Room1"),
+                Some(2),
+                "late",
+            ),
+            executed_line(
+                "SCRIPT2",
+                0,
+                0x50,
+                Some("Actor_A"),
+                Some("Room1"),
+                Some(1),
+                "early",
+            ),
+            executed_line(
+                "SCRIPT2",
+                2,
+                0x30,
+                Some("Actor_B"),
+                Some("Room1"),
+                Some(0),
+                "other",
+            ),
+            executed_line(
+                "SCRIPT2",
+                3,
+                0x40,
+                Some("Actor_A"),
+                Some("Room2"),
+                None,
+                "silent",
+            ),
+        ];
+
+        let groups = executed_dialogue_groups_for_scene(&scene, &rows);
+        assert_eq!(groups.len(), 2);
+        assert_eq!(groups[0].0, ("SCRIPT2".to_string(), "Room1".to_string()));
+        assert_eq!(groups[0].1.len(), 2);
+        assert_eq!(groups[0].1[0].sequence_index, 0);
+        assert_eq!(groups[0].1[0].clip_index, Some(1));
+        assert_eq!(groups[0].1[1].sequence_index, 1);
+        assert_eq!(groups[0].1[1].clip_index, Some(2));
+        assert_eq!(groups[1].0, ("SCRIPT2".to_string(), "Room2".to_string()));
+        assert_eq!(groups[1].1[0].text, "silent");
     }
 }

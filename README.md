@@ -57,9 +57,9 @@ binary-sized `0xc4` actor/object tokens where those references match DESCRIPT
 character talk slots.
 
 The normal full exporter no longer emits guessed all-clips character composites
-when script speech data is available. It exports script-derived dialogue groups;
-the old static `char_contents` table remains only as a direct `--snd` fallback
-for manual inspection.
+when script speech data is available. It exports branch-aware initial-state
+executed dialogue groups in VM sequence order; the old static `char_contents`
+table remains only as a direct `--snd` fallback for manual inspection.
 
 Character foreground HNM compositing uses a character-specific zero-clear decode
 path. Zeros inside character update rectangles clear back to transparency, which
