@@ -61,6 +61,9 @@ and every valid `0xa6` TEXT token in `SCRIPT*.COD` with the VM token walker by
 following dictionary word offsets from `SCRIPT*.DIC`. Actor context is tracked
 from the binary-sized `0xc4` actor/object tokens where those references match
 DESCRIPT character talk slots.
+The run-level dialogue manifests append unresolved actor, background, and voice
+counts so remaining presentation gaps are visible instead of hidden by fallback
+combinations.
 
 The normal full exporter no longer emits per-character composites from the SND
 pass. It exports branch-aware initial-state executed dialogue groups in VM

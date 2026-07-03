@@ -2525,11 +2525,12 @@ pub(super) fn write_script_profile_dialogue_runs_manifest(
     let mut file = File::create(out_path)?;
     writeln!(
         file,
-        "sequence_id\trun_id\tmp4\tfirst_global_sequence\tlast_global_sequence\tfirst_profile_index\tlast_profile_index\tfirst_script\tlast_script\tbackground_record\tbackground_hnm\tbackground_music\tline_count\tvoiced_count\tactors\tclip_refs\tfirst_text"
+        "sequence_id\trun_id\tmp4\tfirst_global_sequence\tlast_global_sequence\tfirst_profile_index\tlast_profile_index\tfirst_script\tlast_script\tbackground_record\tbackground_hnm\tbackground_music\tline_count\tvoiced_count\tactors\tclip_refs\tfirst_text\tunresolved_actor_count\tunresolved_background_count\tunresolved_voice_count"
     )?;
     for run in runs {
         let run_id = profile_dialogue_run_id(&run);
         let output_stem = profile_dialogue_run_output_stem(&run);
+        let coverage = executed_run_coverage(run.lines.iter().map(|line| &line.row));
         let actors = unique_join(
             run.lines
                 .iter()
@@ -2560,7 +2561,7 @@ pub(super) fn write_script_profile_dialogue_runs_manifest(
             .unwrap_or_default();
         writeln!(
             file,
-            "{}\t{}\t{}.mp4\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            "{}\t{}\t{}.mp4\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
             run.sequence_id,
             run_id,
             output_stem,
@@ -2577,7 +2578,10 @@ pub(super) fn write_script_profile_dialogue_runs_manifest(
             voiced_count,
             actors,
             clip_refs,
-            first_text
+            first_text,
+            coverage.unresolved_actor_count,
+            coverage.unresolved_background_count,
+            coverage.unresolved_voice_count
         )?;
     }
     Ok(())
@@ -3046,6 +3050,50 @@ pub(super) fn profile_dialogue_run_id(run: &ScriptProfileDialogueRun<'_>) -> Str
     format!("{}-profile-run-{:04}", run.sequence_id, run.run_index)
 }
 
+#[derive(Clone, Copy, Debug, Default)]
+struct RunCoverage {
+    unresolved_actor_count: usize,
+    unresolved_background_count: usize,
+    unresolved_voice_count: usize,
+}
+
+fn speech_run_coverage<'a>(lines: impl IntoIterator<Item = &'a ScriptSpeechLine>) -> RunCoverage {
+    let mut coverage = RunCoverage::default();
+    for line in lines {
+        if line.actor_record.is_none() {
+            coverage.unresolved_actor_count += 1;
+        }
+        if line.background_record.is_none() && line.background_hnm.is_none() {
+            coverage.unresolved_background_count += 1;
+        }
+        if line.actor_record.is_some()
+            && line.clip_index.is_none()
+            && line.param1.is_some_and(|flags| flags < 0x10)
+        {
+            coverage.unresolved_voice_count += 1;
+        }
+    }
+    coverage
+}
+
+fn executed_run_coverage<'a>(
+    lines: impl IntoIterator<Item = &'a ScriptExecutedSpeechLine>,
+) -> RunCoverage {
+    let mut coverage = RunCoverage::default();
+    for line in lines {
+        if line.actor_record.is_none() {
+            coverage.unresolved_actor_count += 1;
+        }
+        if line.background_record.is_none() && line.background_hnm.is_none() {
+            coverage.unresolved_background_count += 1;
+        }
+        if line.actor_record.is_some() && line.clip_index.is_none() && line.param1 < 0x10 {
+            coverage.unresolved_voice_count += 1;
+        }
+    }
+    coverage
+}
+
 pub(super) fn executed_dialogue_run_output_stem(run: &ScriptExecutedDialogueRun<'_>) -> String {
     let location = run
         .background_record
@@ -3365,11 +3413,12 @@ pub(super) fn write_script_executed_dialogue_runs_manifest(
     let mut file = File::create(out_path)?;
     writeln!(
         file,
-        "run_id\tmp4\tscript\tfirst_sequence\tlast_sequence\tfirst_offset\tlast_offset\tbackground_record\tbackground_hnm\tbackground_music\tline_count\tvoiced_count\tactors\tclip_refs\tfirst_text"
+        "run_id\tmp4\tscript\tfirst_sequence\tlast_sequence\tfirst_offset\tlast_offset\tbackground_record\tbackground_hnm\tbackground_music\tline_count\tvoiced_count\tactors\tclip_refs\tfirst_text\tunresolved_actor_count\tunresolved_background_count\tunresolved_voice_count"
     )?;
     for run in runs {
         let run_id = executed_dialogue_run_id(&run);
         let output_stem = executed_dialogue_run_output_stem(&run);
+        let coverage = executed_run_coverage(run.lines.iter().copied());
         let actors = unique_join(
             run.lines
                 .iter()
@@ -3400,7 +3449,7 @@ pub(super) fn write_script_executed_dialogue_runs_manifest(
             .unwrap_or_default();
         writeln!(
             file,
-            "{}\t{}.mp4\t{}\t{}\t{}\t0x{:05x}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            "{}\t{}.mp4\t{}\t{}\t{}\t0x{:05x}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
             run_id,
             output_stem,
             run.script,
@@ -3415,7 +3464,10 @@ pub(super) fn write_script_executed_dialogue_runs_manifest(
             voiced_count,
             actors,
             clip_refs,
-            first_text
+            first_text,
+            coverage.unresolved_actor_count,
+            coverage.unresolved_background_count,
+            coverage.unresolved_voice_count
         )?;
     }
     Ok(())
@@ -3429,11 +3481,12 @@ pub(super) fn write_script_branch_scenario_dialogue_runs_manifest(
     let mut file = File::create(out_path)?;
     writeln!(
         file,
-        "scenario_id\trun_id\tmp4\tscript\tfirst_sequence\tlast_sequence\tfirst_offset\tlast_offset\tbackground_record\tbackground_hnm\tbackground_music\tline_count\tvoiced_count\tactors\tclip_refs\tfirst_text"
+        "scenario_id\trun_id\tmp4\tscript\tfirst_sequence\tlast_sequence\tfirst_offset\tlast_offset\tbackground_record\tbackground_hnm\tbackground_music\tline_count\tvoiced_count\tactors\tclip_refs\tfirst_text\tunresolved_actor_count\tunresolved_background_count\tunresolved_voice_count"
     )?;
     for run in runs {
         let run_id = executed_dialogue_run_id(&run);
         let output_stem = executed_dialogue_run_output_stem(&run);
+        let coverage = executed_run_coverage(run.lines.iter().copied());
         let actors = unique_join(
             run.lines
                 .iter()
@@ -3464,7 +3517,7 @@ pub(super) fn write_script_branch_scenario_dialogue_runs_manifest(
             .unwrap_or_default();
         writeln!(
             file,
-            "{}\t{}\t{}.mp4\t{}\t{}\t{}\t0x{:05x}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            "{}\t{}\t{}.mp4\t{}\t{}\t{}\t0x{:05x}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
             run.scenario_id.as_deref().unwrap_or(""),
             run_id,
             output_stem,
@@ -3480,7 +3533,10 @@ pub(super) fn write_script_branch_scenario_dialogue_runs_manifest(
             voiced_count,
             actors,
             clip_refs,
-            first_text
+            first_text,
+            coverage.unresolved_actor_count,
+            coverage.unresolved_background_count,
+            coverage.unresolved_voice_count
         )?;
     }
     Ok(())
@@ -3494,7 +3550,7 @@ pub(super) fn write_script_dialogue_runs_manifest(
     let mut file = File::create(out_path)?;
     writeln!(
         file,
-        "run_id\tmp4\tscript\tfirst_offset\tlast_offset\tbackground_record\tbackground_hnm\tbackground_music\tline_count\tvoiced_count\tactors\tclip_refs\tfirst_text"
+        "run_id\tmp4\tscript\tfirst_offset\tlast_offset\tbackground_record\tbackground_hnm\tbackground_music\tline_count\tvoiced_count\tactors\tclip_refs\tfirst_text\tunresolved_actor_count\tunresolved_background_count\tunresolved_voice_count"
     )?;
     for run in runs {
         let run_id = format!("{}-{:04}", run.script, run.run_index);
@@ -3509,6 +3565,7 @@ pub(super) fn write_script_dialogue_runs_manifest(
             run.run_index,
             safe_file_stem(location)
         );
+        let coverage = speech_run_coverage(run.lines.iter().copied());
         let actors = unique_join(
             run.lines
                 .iter()
@@ -3539,7 +3596,7 @@ pub(super) fn write_script_dialogue_runs_manifest(
             .unwrap_or_default();
         writeln!(
             file,
-            "{}\t{}.mp4\t{}\t0x{:05x}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            "{}\t{}.mp4\t{}\t0x{:05x}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
             run_id,
             output_stem,
             run.script,
@@ -3552,7 +3609,10 @@ pub(super) fn write_script_dialogue_runs_manifest(
             voiced_count,
             actors,
             clip_refs,
-            first_text
+            first_text,
+            coverage.unresolved_actor_count,
+            coverage.unresolved_background_count,
+            coverage.unresolved_voice_count
         )?;
     }
     Ok(())
@@ -3780,6 +3840,15 @@ mod tests {
             script_sequence_index,
             row: executed_speech_line(script, script_sequence_index, offset, actor, location, text),
         }
+    }
+
+    fn manifest_row<'a>(manifest: &'a str, prefix: &str) -> Vec<&'a str> {
+        manifest
+            .lines()
+            .find(|line| line.starts_with(prefix))
+            .unwrap_or_else(|| panic!("manifest row with prefix {prefix:?}"))
+            .split('\t')
+            .collect()
     }
 
     fn branch_trace_line(
@@ -4419,16 +4488,7 @@ mod tests {
     #[test]
     fn profile_dialogue_runs_follow_global_sequence_order() {
         let rows = vec![
-            profile_speech_line(
-                1,
-                1,
-                "SCRIPT2",
-                0,
-                0x50,
-                Some("Actor_B"),
-                Some("Room1"),
-                "b",
-            ),
+            profile_speech_line(1, 1, "SCRIPT2", 0, 0x50, None, Some("Room1"), "b"),
             profile_speech_line(
                 0,
                 0,
@@ -4473,8 +4533,18 @@ mod tests {
         let manifest = fs::read_to_string(&path).expect("read profile dialogue runs");
         let _ = fs::remove_file(&path);
         assert!(manifest.starts_with("sequence_id\trun_id\tmp4"));
+        assert!(
+            manifest
+                .lines()
+                .next()
+                .is_some_and(|header| header.ends_with(
+                    "\tunresolved_actor_count\tunresolved_background_count\tunresolved_voice_count"
+                ))
+        );
         assert!(manifest.contains("default-profile-run-0001"));
         assert!(manifest.contains("SCRIPT1\tSCRIPT2"));
+        let run_row = manifest_row(&manifest, "default\tdefault-profile-run-0001\t");
+        assert_eq!(&run_row[17..20], &["1", "0", "0"]);
     }
 
     #[test]
@@ -4484,11 +4554,12 @@ mod tests {
             speech_line("SCRIPT2", 0x20, Some("Actor_B"), Some("Room1"), "b"),
             speech_line("SCRIPT2", 0x30, Some("Actor_A"), Some("Room2"), "c"),
             speech_line("SCRIPT2", 0x40, None, Some("Room2"), "narrator"),
+            speech_line("SCRIPT2", 0x50, None, None, "unknown"),
             speech_line("SCRIPT3", 0x10, Some("Actor_A"), Some("Room1"), "d"),
         ];
 
         let runs = script_dialogue_runs(&rows);
-        assert_eq!(runs.len(), 3);
+        assert_eq!(runs.len(), 4);
         assert_eq!(runs[0].script, "SCRIPT2");
         assert_eq!(runs[0].run_index, 1);
         assert_eq!(runs[0].first_offset, 0x10);
@@ -4502,8 +4573,11 @@ mod tests {
         assert_eq!(runs[1].lines.len(), 2);
         assert_eq!(runs[1].lines[1].actor_record, None);
 
-        assert_eq!(runs[2].script, "SCRIPT3");
-        assert_eq!(runs[2].run_index, 1);
+        assert_eq!(runs[2].script, "SCRIPT2");
+        assert_eq!(runs[2].run_index, 3);
+        assert_eq!(runs[2].background_record, None);
+        assert_eq!(runs[3].script, "SCRIPT3");
+        assert_eq!(runs[3].run_index, 1);
 
         let path = std::env::temp_dir().join(format!(
             "commander-blood-dialogue-runs-{}.tsv",
@@ -4513,15 +4587,31 @@ mod tests {
         let manifest = fs::read_to_string(&path).expect("read dialogue runs");
         let _ = fs::remove_file(&path);
         assert!(manifest.contains("SCRIPT2-0001"));
+        assert!(
+            manifest
+                .lines()
+                .next()
+                .is_some_and(|header| header.ends_with(
+                    "\tunresolved_actor_count\tunresolved_background_count\tunresolved_voice_count"
+                ))
+        );
         assert!(manifest.contains("Actor_A,Actor_B"));
+        let room2_row = manifest_row(&manifest, "SCRIPT2-0002\t");
+        assert_eq!(&room2_row[13..16], &["1", "0", "0"]);
+        let nolocation_row = manifest_row(&manifest, "SCRIPT2-0003\t");
+        assert_eq!(&nolocation_row[13..16], &["1", "1", "0"]);
     }
 
     #[test]
     fn executed_dialogue_runs_follow_sequence_order_and_split_locations() {
+        let mut missing_voice =
+            executed_speech_line("SCRIPT2", 3, 0x40, Some("Actor_A"), Some("Room2"), "silent");
+        missing_voice.clip_index = None;
         let rows = vec![
             executed_speech_line("SCRIPT2", 0, 0x50, Some("Actor_A"), Some("Room1"), "a"),
             executed_speech_line("SCRIPT2", 1, 0x10, Some("Actor_B"), Some("Room1"), "b"),
             executed_speech_line("SCRIPT2", 2, 0x30, Some("Actor_A"), Some("Room2"), "c"),
+            missing_voice,
             executed_speech_line("SCRIPT3", 0, 0x10, Some("Actor_A"), Some("Room1"), "d"),
         ];
 
@@ -4551,8 +4641,18 @@ mod tests {
         let manifest = fs::read_to_string(&path).expect("read executed dialogue runs");
         let _ = fs::remove_file(&path);
         assert!(manifest.contains("SCRIPT2-0001"));
+        assert!(
+            manifest
+                .lines()
+                .next()
+                .is_some_and(|header| header.ends_with(
+                    "\tunresolved_actor_count\tunresolved_background_count\tunresolved_voice_count"
+                ))
+        );
         assert!(manifest.contains("Actor_A,Actor_B"));
         assert!(manifest.contains("0x00050\t0x00010"));
+        let room2_row = manifest_row(&manifest, "SCRIPT2-0002\t");
+        assert_eq!(&room2_row[15..18], &["0", "0", "1"]);
     }
 
     #[test]
@@ -4972,11 +5072,24 @@ mod tests {
             .expect("write branch scenario runs");
         let manifest = fs::read_to_string(&path).expect("read branch scenario runs");
         let _ = fs::remove_file(&path);
+        assert!(
+            manifest
+                .lines()
+                .next()
+                .is_some_and(|header| header.ends_with(
+                    "\tunresolved_actor_count\tunresolved_background_count\tunresolved_voice_count"
+                ))
+        );
         assert!(manifest.contains("SCRIPT2-branch-0001\tSCRIPT2-branch-0001-run-0001"));
         assert!(
             manifest
                 .contains("branch-scenario-dialogue-run - script2-branch-0001 - 0001 - room1.mp4")
         );
+        let scenario_row = manifest_row(
+            &manifest,
+            "SCRIPT2-branch-0001\tSCRIPT2-branch-0001-run-0001\t",
+        );
+        assert_eq!(&scenario_row[16..19], &["0", "0", "0"]);
     }
 
     #[test]
