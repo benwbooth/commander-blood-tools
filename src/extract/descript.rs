@@ -72,6 +72,27 @@ pub(super) struct ScriptSpeechLine {
 }
 
 #[derive(Clone, Debug)]
+pub(super) struct ScriptExecutedSpeechLine {
+    pub(super) script: String,
+    pub(super) sequence_index: usize,
+    pub(super) function_name: String,
+    pub(super) offset: usize,
+    pub(super) actor_record: Option<String>,
+    pub(super) actor_ref: Option<u16>,
+    pub(super) location_offset: Option<u16>,
+    pub(super) background_record: Option<String>,
+    pub(super) background_hnm: Option<String>,
+    pub(super) background_music: Option<String>,
+    pub(super) param0: u8,
+    pub(super) param1: u8,
+    pub(super) clip_index: Option<usize>,
+    pub(super) text: String,
+    pub(super) call_target: u16,
+    pub(super) text_end: usize,
+    pub(super) source: String,
+}
+
+#[derive(Clone, Debug)]
 pub(super) struct ScriptActorRef {
     pub(super) talk_ref: u16,
     pub(super) record_name: String,

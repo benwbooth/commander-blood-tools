@@ -251,6 +251,209 @@ pub(super) fn parse_script_branch_trace(
     Ok(rows)
 }
 
+#[derive(Clone, Debug)]
+struct TextCallInfo {
+    offset: usize,
+    line_index: u16,
+    voice_selector: u8,
+    flags_b4: u8,
+    text: String,
+    text_end: usize,
+}
+
+pub(super) fn parse_script_executed_speech(
+    iso_dir: &Path,
+    descript_db: Option<&DescriptDb>,
+    hnm_music: &HashMap<String, String>,
+) -> Result<Vec<ScriptExecutedSpeechLine>, Box<dyn Error>> {
+    let mut rows = Vec::new();
+    let character_names = descript_db
+        .map(|db| db.character_names())
+        .unwrap_or_default();
+
+    for script_idx in 1..=5 {
+        let cod_path = find_file_recursive(iso_dir, &format!("SCRIPT{script_idx}.COD"));
+        let dic_path = find_file_recursive(iso_dir, &format!("SCRIPT{script_idx}.DIC"));
+        let deb_path = find_file_recursive(iso_dir, &format!("SCRIPT{script_idx}.DEB"));
+        let var_path = find_file_recursive(iso_dir, &format!("SCRIPT{script_idx}.VAR"));
+        let (Some(cod_path), Some(dic_path), Some(var_path)) = (cod_path, dic_path, var_path)
+        else {
+            continue;
+        };
+
+        let cod = fs::read(&cod_path)?;
+        let var = fs::read(&var_path)?;
+        let words = parse_script_dictionary(&dic_path)?;
+        let script = format!("SCRIPT{script_idx}");
+        let (mut functions, actor_refs, object_names) =
+            if let (Some(deb_path), Some(db)) = (&deb_path, descript_db) {
+                let (functions, actor_refs, _) = parse_script_symbols(
+                    &script,
+                    deb_path,
+                    &var_path,
+                    db,
+                    hnm_music,
+                    &character_names,
+                )?;
+                let deb = fs::read(deb_path)?;
+                (functions, actor_refs, parse_deb_object_names(&deb))
+            } else {
+                (Vec::new(), HashMap::new(), HashMap::new())
+            };
+        if functions.is_empty() {
+            functions.push((0, script.as_str().to_string()));
+        }
+        functions.sort_by_key(|(offset, _)| *offset);
+        functions.push((cod.len(), "END".to_string()));
+
+        let actor_by_offset: HashMap<u16, ScriptActorRef> = actor_refs
+            .values()
+            .cloned()
+            .map(|actor| {
+                (
+                    actor.talk_ref.saturating_sub(SCRIPT_OBJECT_TALK_FIELD),
+                    actor,
+                )
+            })
+            .collect();
+        let text_calls = text_calls_by_offset(&cod, &words);
+        let trace = vm::execute_trace(&cod, &var);
+
+        for (sequence_index, state) in trace.line_states.iter().enumerate() {
+            let Some(call) = text_calls.get(&state.offset) else {
+                continue;
+            };
+            let actor = state
+                .actor_offset
+                .and_then(|offset| actor_by_offset.get(&offset).cloned());
+            let background = state.location_offset.and_then(|loc| {
+                resolve_background_from_location(loc, &object_names, descript_db, hnm_music)
+            });
+            let actor_speaks = actor.is_some() && call.flags_b4 < 0x10;
+            let clip_index = actor.as_ref().and_then(|actor| {
+                if !actor_speaks {
+                    return None;
+                }
+                match call.voice_selector {
+                    idx if idx > 0 && idx != 0xff && (idx as usize) <= actor.talk_count => {
+                        Some(idx as usize - 1)
+                    }
+                    _ => None,
+                }
+            });
+            let source = match (&actor, actor_speaks, clip_index) {
+                (Some(_), true, Some(_)) => {
+                    "SCRIPT VM execute_trace + actor state + DESCRIPT talk clip"
+                }
+                (Some(_), true, None) => {
+                    "SCRIPT VM execute_trace + actor state; no mapped talk clip"
+                }
+                (Some(_), false, _) => {
+                    "SCRIPT VM execute_trace + actor state; non-character subtitle channel"
+                }
+                (None, _, _) => "SCRIPT VM execute_trace; no tracked actor state",
+            };
+
+            rows.push(ScriptExecutedSpeechLine {
+                script: script.clone(),
+                sequence_index,
+                function_name: function_name_for_offset(&functions, call.offset).to_string(),
+                offset: call.offset,
+                actor_record: actor.as_ref().map(|actor| actor.record_name.clone()),
+                actor_ref: actor.as_ref().map(|actor| actor.talk_ref),
+                location_offset: state.location_offset.filter(|offset| *offset != 0),
+                background_record: background
+                    .as_ref()
+                    .and_then(|background| background.record.clone()),
+                background_hnm: background
+                    .as_ref()
+                    .and_then(|background| background.hnm.clone()),
+                background_music: background
+                    .as_ref()
+                    .and_then(|background| background.music.clone()),
+                param0: call.voice_selector,
+                param1: call.flags_b4,
+                clip_index,
+                text: call.text.clone(),
+                call_target: call.line_index,
+                text_end: call.text_end,
+                source: source.to_string(),
+            });
+        }
+    }
+
+    Ok(rows)
+}
+
+fn text_calls_by_offset(cod: &[u8], words: &HashMap<u16, String>) -> HashMap<usize, TextCallInfo> {
+    let mut calls = HashMap::new();
+    for token in vm::walk(cod, 0, cod.len()) {
+        let vm::VmToken::Text {
+            offset,
+            line_index,
+            voice_selector,
+            flags_b4,
+            loop_target,
+            word_offsets,
+            ..
+        } = token
+        else {
+            continue;
+        };
+        let Some(decoded_words) = decode_vm_words(words, &word_offsets) else {
+            continue;
+        };
+        let text_end = text_token_end(offset, flags_b4, loop_target, word_offsets.len());
+        calls.insert(
+            offset,
+            TextCallInfo {
+                offset,
+                line_index,
+                voice_selector,
+                flags_b4,
+                text: assemble_dialogue(&decoded_words),
+                text_end,
+            },
+        );
+    }
+    calls
+}
+
+fn parse_deb_object_names(deb: &[u8]) -> HashMap<u16, String> {
+    let mut object_names = HashMap::new();
+    for record in deb.chunks_exact(20) {
+        let name_len = record[..16].iter().position(|&b| b == 0).unwrap_or(16);
+        let name = String::from_utf8_lossy(&record[..name_len]).to_string();
+        let offset = u16::from_le_bytes([record[16], record[17]]);
+        let kind = u16::from_le_bytes([record[18], record[19]]);
+        if kind == 1 {
+            object_names.insert(offset, name);
+        }
+    }
+    object_names
+}
+
+fn resolve_background_from_location(
+    location_offset: u16,
+    object_names: &HashMap<u16, String>,
+    descript_db: Option<&DescriptDb>,
+    hnm_music: &HashMap<String, String>,
+) -> Option<RuntimeBackground> {
+    let db = descript_db?;
+    let name = object_names.get(&location_offset)?;
+    let record = db.record(name).filter(|record| record.kind == 1)?;
+    let hnm = record.full_hnms.first().cloned();
+    let music = hnm
+        .as_ref()
+        .and_then(|hnm| hnm_music.get(&media_stem(hnm)).cloned())
+        .or_else(|| record.music.first().map(|music| media_stem(music)));
+    Some(RuntimeBackground {
+        record: Some(name.clone()),
+        hnm,
+        music,
+    })
+}
+
 pub(super) fn parse_script_text_calls(
     script: &str,
     cod: &[u8],
@@ -874,6 +1077,47 @@ pub(super) fn write_script_speech_manifest(
     Ok(())
 }
 
+pub(super) fn write_script_executed_speech_manifest(
+    rows: &[ScriptExecutedSpeechLine],
+    out_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let mut file = File::create(out_path)?;
+    writeln!(
+        file,
+        "script\tsequence_index\tfunction\toffset\tactor\tactor_ref\tlocation_offset\tbackground_record\tbackground_hnm\tbackground_music\tparam0\tparam1\tclip_index\tcall_target\ttext_end\tsource\ttext"
+    )?;
+    for row in rows {
+        writeln!(
+            file,
+            "{}\t{}\t{}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}\t{:02x}\t{:02x}\t{}\t0x{:04x}\t0x{:05x}\t{}\t{}",
+            row.script,
+            row.sequence_index,
+            row.function_name,
+            row.offset,
+            row.actor_record.as_deref().unwrap_or(""),
+            row.actor_ref
+                .map(|actor_ref| format!("0x{actor_ref:04x}"))
+                .unwrap_or_default(),
+            row.location_offset
+                .map(|location_offset| format!("0x{location_offset:04x}"))
+                .unwrap_or_default(),
+            row.background_record.as_deref().unwrap_or(""),
+            row.background_hnm.as_deref().unwrap_or(""),
+            row.background_music.as_deref().unwrap_or(""),
+            row.param0,
+            row.param1,
+            row.clip_index
+                .map(|idx| idx.to_string())
+                .unwrap_or_default(),
+            row.call_target,
+            row.text_end,
+            clean_tsv(&row.source),
+            clean_tsv(&row.text),
+        )?;
+    }
+    Ok(())
+}
+
 pub(super) fn write_script_disassembly_manifest(
     rows: &[ScriptDisassemblyLine],
     out_path: &Path,
@@ -1341,6 +1585,52 @@ mod tests {
                 manifest.starts_with("script\tevent_index\toffset\topcode\ttarget\tbranch_taken")
             );
             assert!(manifest.contains("condition"));
+            return;
+        }
+
+        eprintln!("skipping: extracted output scripts not available");
+    }
+
+    #[test]
+    fn parses_real_script_executed_speech_if_present() {
+        for prefix in ["output", "../output"] {
+            let root = Path::new(prefix);
+            let descript_path = root.join("DESCRIPT.DES");
+            if !descript_path.exists() {
+                continue;
+            }
+
+            let db = crate::extract::descript::parse_descript(&descript_path)
+                .expect("parse DESCRIPT.DES");
+            let hnm_music = db.hnm_music_map();
+            let rows = parse_script_executed_speech(root, Some(&db), &hnm_music)
+                .expect("parse executed speech");
+            assert!(
+                rows.len() > 900,
+                "expected branch-aware executed dialogue, got {} rows",
+                rows.len()
+            );
+            assert!(
+                rows.iter()
+                    .any(|row| row.script == "SCRIPT2" && row.clip_index.is_some()),
+                "SCRIPT2 should include executed voiced dialogue"
+            );
+            assert!(
+                rows.windows(2).all(|pair| {
+                    pair[0].script != pair[1].script
+                        || pair[0].sequence_index <= pair[1].sequence_index
+                }),
+                "executed dialogue rows should preserve per-script sequence order"
+            );
+            let path = std::env::temp_dir().join(format!(
+                "commander-blood-executed-speech-{}.tsv",
+                std::process::id()
+            ));
+            write_script_executed_speech_manifest(&rows, &path).expect("write executed speech");
+            let manifest = fs::read_to_string(&path).expect("read executed speech");
+            let _ = fs::remove_file(&path);
+            assert!(manifest.starts_with("script\tsequence_index\tfunction\toffset"));
+            assert!(manifest.contains("SCRIPT VM execute_trace"));
             return;
         }
 
