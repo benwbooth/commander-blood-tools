@@ -76,8 +76,8 @@ MP4 output is encoded at 3x the original 320x200 game viewport using nearest
 neighbor scaling, so generated videos are 960x600 while preserving hard pixel
 edges.
 
-Subtitle SFX is mixed during the animated text reveal using the short
-`sn/tb.snd` UI bleep clips, rather than playing only one click at cue start.
+Subtitle SFX follows the recovered line-complete dialogue state: after each
+subtitle finishes revealing, the renderer mixes `sn/tb.snd` clip 0 once.
 The renderer uses the custom dialogue bitmap font embedded in `BLOODPRG.EXE`:
 ASCII map at file offset
 `0x14c22`, glyph advances at `0x14cd2..0x14d27`, and 8-byte glyph bitmaps at

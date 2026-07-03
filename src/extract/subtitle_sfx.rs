@@ -15,14 +15,16 @@ pub(super) fn build_subtitle_sfx_track(
     let samples = ((duration + 0.5) * sample_rate as f64).ceil() as usize;
     let mut track = vec![128u8; samples.max(1)];
     let mut used = false;
-    for (sfx_idx, event) in subtitle_chatter_events(cues).into_iter().enumerate() {
+    // The text/presentation SND entry caller at BLOODPRG.EXE file 0x8534 enters
+    // the player with AX=0; the shipped scene manifest also identifies tb.snd#0.
+    let chatter_clip = &clips[0];
+    for event in subtitle_chatter_events(cues) {
         let start = (event.start_time * sample_rate as f64).round() as usize;
         if start >= track.len() {
             continue;
         }
         used = true;
-        let clip = &clips[sfx_idx % clips.len()];
-        for (idx, &sample) in clip.pcm.iter().enumerate() {
+        for (idx, &sample) in chatter_clip.pcm.iter().enumerate() {
             let pos = start + idx;
             if pos >= track.len() {
                 break;
@@ -78,21 +80,6 @@ pub(super) fn subtitle_sfx_clips(snd_path: &Path) -> Result<Vec<SndClip>, Box<dy
     clips.retain(|clip| !clip.pcm.is_empty());
     if clips.is_empty() {
         return Ok(Vec::new());
-    }
-
-    if snd_path
-        .file_name()
-        .is_some_and(|name| name.to_string_lossy().eq_ignore_ascii_case("tb.snd"))
-        && clips.len() >= 17
-    {
-        let sample_rate = clips[7].sample_rate;
-        return Ok(clips
-            .into_iter()
-            .enumerate()
-            .filter_map(|(idx, clip)| {
-                (idx >= 7 && idx <= 16 && clip.sample_rate == sample_rate).then_some(clip)
-            })
-            .collect());
     }
 
     let sample_rate = clips[0].sample_rate;
@@ -155,13 +142,16 @@ mod tests {
         }
     }
 
-    fn write_test_snd(path: &Path) {
+    fn write_test_snd(path: &Path, clips: &[[u8; 2]]) {
         let mut data = Vec::new();
-        data.extend_from_slice(&1u16.to_le_bytes());
+        data.extend_from_slice(&(clips.len() as u16).to_le_bytes());
         data.extend_from_slice(&0u16.to_le_bytes());
-        data.extend_from_slice(&0u32.to_le_bytes());
-        data.extend_from_slice(&8u32.to_le_bytes());
-        data.extend_from_slice(&[1, 0, 0, 0, 156, 0, 200, 180]);
+        for idx in 0..=clips.len() {
+            data.extend_from_slice(&((idx * 8) as u32).to_le_bytes());
+        }
+        for samples in clips {
+            data.extend_from_slice(&[1, 0, 0, 0, 156, 0, samples[0], samples[1]]);
+        }
         fs::write(path, data).expect("write test snd");
     }
 
@@ -182,7 +172,7 @@ mod tests {
         let _ = fs::create_dir_all(&root);
         let snd = root.join("tb.snd");
         let out = root.join("out.raw");
-        write_test_snd(&snd);
+        write_test_snd(&snd, &[[200, 180]]);
 
         let rate = build_subtitle_sfx_track(&[cue(0, "abcd")], 1.0, &snd, &out)
             .expect("build sfx")
@@ -198,5 +188,28 @@ mod tests {
             .collect();
         let start = (4.0 / SUBTITLE_CHARS_PER_SEC * rate as f64).round() as usize;
         assert_eq!(non_silence, vec![start, start + 1]);
+    }
+
+    #[test]
+    fn sfx_track_reuses_tb_clip_zero_for_each_subtitle() {
+        let root = std::env::temp_dir().join(format!(
+            "commander-blood-subtitle-sfx-clip-zero-{}",
+            std::process::id()
+        ));
+        let _ = fs::create_dir_all(&root);
+        let snd = root.join("tb.snd");
+        let out = root.join("out.raw");
+        write_test_snd(&snd, &[[200, 180], [210, 190]]);
+
+        let rate = build_subtitle_sfx_track(&[cue(0, "a"), cue(10, "a")], 2.0, &snd, &out)
+            .expect("build sfx")
+            .expect("sfx rate");
+        let track = fs::read(&out).expect("read sfx");
+        let _ = fs::remove_dir_all(&root);
+
+        let first = (1.0 / SUBTITLE_CHARS_PER_SEC * rate as f64).round() as usize;
+        let second = ((1.0 + 1.0 / SUBTITLE_CHARS_PER_SEC) * rate as f64).round() as usize;
+        assert_eq!(&track[first..first + 2], &[200, 180]);
+        assert_eq!(&track[second..second + 2], &[200, 180]);
     }
 }

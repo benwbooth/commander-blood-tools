@@ -245,7 +245,9 @@ expires and then clears it. A second line-layout path at `0x7350..0x738C` also
 sets `gs:0x67BB=1` with duration `gs:0x27CF * gs:0xACA/2 + 6`. So the old
 exporter behavior of mixing one `tb.snd` clip per visible character was wrong;
 the Rust SFX track now schedules one chatter event per fully revealed subtitle
-line. Exact `tb.snd` clip-index selection still needs the audio callback trace.
+line and uses `tb.snd` clip 0, matching the direct text/presentation SND call
+(`0x8534`, `AX=0`) and `verified-video-scenes.tsv`. The exact `0x67BB` → SND
+caller bridge still needs the audio callback trace.
 `gs:0xACA = (textspeed/2)+1` (init @0x1B3A; `textspeed` from a config getter,
 special-cased so index 4 → 7). So reveal rate = `4 * frame_rate / gs:0xACA`
 chars/sec; at ~15 fps and a mid text speed (`gs:0xACA≈5`) ≈ **12 chars/sec**
@@ -407,10 +409,9 @@ mapping the voice-clip selection is a subsystem trace (see dead_ends.md).
   text/presentation render-path call with `AX=0`. One call (`0x7BF8`) carries
   `AX=1` across a setup far call and is flagged in the TSV.
 - **Remaining link:** tie the `gs:0x67BB` line-complete chatter event to the
-  exact direct SND caller/runtime state. The direct-call constants show that
-  chatter is unlikely to be an arbitrary cycle through all `tb.snd` clips, but
-  the `0x67BB`→caller bridge still needs a focused trace before changing clip
-  selection again.
+  exact direct SND caller/runtime state. The direct-call constants and shipped
+  video-scene manifest support `tb.snd#0`, so Rust no longer cycles through
+  `tb.snd` clips, but the `0x67BB`→caller bridge still needs a focused trace.
 - Player internals: function entry ~0xB95x; `gs:0x0A5A` = current clip slot
   (`-1` = none → skips play). Buffer/stream state at `0x0BAB`/`0x0BAD`/`0x0BAF`.
   Character voice selection is resolved in `script.rs`: `b3==0xFF` or `0x00`
@@ -489,9 +490,8 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 - [ ] **Trace `gs:0x1FAB` (0xA6 b3) consumers** → confirm it selects the
       `son.snd` voice/chatter clip. Highest remaining value for accuracy.
 - [ ] Decode the `gs:0x6724` per-line record layout (es:[di], es:[di+2] flags).
-- [ ] Decode remaining animated subtitle/audio details, especially exact
-      `tb.snd` clip-index selection for the `gs:0x67BB` line-complete chatter
-      event.
+- [ ] Decode remaining animated subtitle/audio details, especially the exact
+      `gs:0x67BB` line-complete chatter bridge into the SND caller/runtime state.
 - [ ] Map the presentation opcodes among the handler table: which set background,
       music (mus.snd), HNM actor, voice (son.snd), wait, clear. Start with the
       0xB7/0xC1–0xC9 handlers (distinct, non-family) and 0xC4 actor @0x6C7E.
@@ -630,6 +630,11 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       the one call where `AX` is carried across a setup far call. This gives the
       chatter/voice SFX audit a test-backed caller map instead of handwritten
       disassembly notes.
+- [x] Use `tb.snd` clip 0 for subtitle chatter:
+      `src/extract/subtitle_sfx.rs` now reuses the first decoded `tb.snd` clip
+      for every line-complete chatter event instead of cycling through a filtered
+      `7..16` subrange. This matches `verified-video-scenes.tsv` (`sn/tb.snd#0`)
+      and the direct text/presentation SND call at `0x8534` (`AX=0`).
 - [x] Emit branch-scenario dialogue rows/runs:
       `script-branch-scenario-dialogue.tsv` reuses the same executed-dialogue
       resolver against each forced branch trace, and
