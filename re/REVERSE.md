@@ -840,6 +840,13 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       family (AD/AF/B2/B3/BA/BB/BC) direct assignment (`mov es:[bx+di],ax`
       @0x69C2). The DOS handler's side bookkeeping for sentinel object values is
       documented but not needed for line-location recovery.
+- [x] Ported the 0x6946 mode-1 special-object compare. Script metadata init at
+      file `0x549a..0x54a1` matches the DEB object name `blood` (built-in string
+      `DS:0x67BE`) and stores its object offset in `gs:0x674E`. The 0x6946 mode-1
+      handler then remaps a RHS operand equal to `gs:0x674E` to `0xFFFF` before
+      equality/inversion testing (`0x6963..0x696e`). `ExecutionContext` now
+      carries that DEB-derived sentinel, and branch traces/scenario speech use it
+      for game-accurate `AD/AF/B2/B3/BA/BB/BC` compares.
 - [x] **Interpreter prototype VALIDATED** (Python): init state from `SCRIPT*.VAR`,
       walk + execute 0x6863-family assigns, track `state[actor+24]` per 0xA6 line.
       Location coverage **58% → 63%** (SCRIPT2 61%, SCRIPT3 68%, SCRIPT4 65%,
@@ -872,9 +879,6 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       manifests. Real-script smoke via `inspect-vm <COD> <VAR>` reaches
       `EndMarker` for all scripts: SCRIPT1 102 executed lines / 38 branch events;
       SCRIPT2 169 / 327; SCRIPT3 327 / 553; SCRIPT4 145 / 229; SCRIPT5 258 / 387.
-      Caveat: the DOS 0x6946 mode-1 handler remaps RHS `gs:0x674E` to `0xFFFF`
-      before equality comparison; `execute_trace` does not yet receive that
-      runtime special-object value, so that remap remains to wire in.
 - [x] Wire branch-aware initial-state execution into the current per-character
       dialogue video generator: `create_character_videos` now consumes
       `ScriptExecutedSpeechLine`, groups each character by script/location, and

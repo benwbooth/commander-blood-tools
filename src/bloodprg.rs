@@ -532,7 +532,7 @@ fn opcode_metadata(opcode: u8, handler_file_offset: usize) -> OpcodeMetadata {
                 mnemonic: "equality_assign_or_test",
                 family: "equality-assign",
                 rust_status: "execution-trace-ported",
-                notes: "AD/AF/B2/B3/BA/BB/BC family; Rust applies mode0 assignments and execute_trace evaluates mode1 equality/inversion except the gs:0x674e-to-0xffff RHS remap is still pending",
+                notes: "AD/AF/B2/B3/BA/BB/BC family; Rust applies mode0 assignments and execute_trace evaluates mode1 equality/inversion, including the gs:0x674e blood-object RHS remap to 0xffff",
             },
             0x006aa7 => OpcodeMetadata {
                 mnemonic: "bit_set_or_test",

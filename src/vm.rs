@@ -688,9 +688,14 @@ pub struct ExecutionTrace {
 /// `object_offsets` mirrors the 20-byte object table scanned by helper `0x6034`:
 /// it maps a record/field offset to the owning object by taking the previous
 /// object offset from the sorted kind-1 object records.
+///
+/// `special_object_offset` is DOS `gs:0x674e`, initialized from the DEB object
+/// named `blood`. Handler `0x6946` maps that RHS value to `0xffff` before
+/// mode-1 equality/inversion tests.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ExecutionContext {
     object_offsets: Vec<u16>,
+    special_object_offset: Option<u16>,
     global_word_0aa6: Option<u16>,
     global_pair_0aaa_0aa8: Option<(u8, u8)>,
 }
@@ -719,6 +724,11 @@ impl ExecutionContext {
         self
     }
 
+    pub fn with_special_object_offset(mut self, value: u16) -> Self {
+        self.special_object_offset = Some(value);
+        self
+    }
+
     pub fn with_bios_rtc(mut self, hour_24: u8, month: u8, day: u8) -> Self {
         self.global_word_0aa6 = Some(hour_24 as u16);
         self.global_pair_0aaa_0aa8 = Some((month, day));
@@ -731,6 +741,14 @@ impl ExecutionContext {
             .rev()
             .copied()
             .find(|offset| *offset < record_offset)
+    }
+
+    fn remap_special_rhs(&self, value: u16) -> u16 {
+        if self.special_object_offset == Some(value) {
+            0xffff
+        } else {
+            value
+        }
     }
 }
 
@@ -1276,11 +1294,7 @@ pub fn execute_trace_with_overrides_and_context(
             }
             if p + 4 <= end {
                 let op1 = read_u16(cod, p).unwrap_or(0);
-                let value = read_u16(cod, p + 2).unwrap_or(0);
-                // The DOS handler maps RHS == gs:0x674e to 0xffff before this
-                // compare. `execute_trace` does not yet receive that runtime
-                // special-object value, so inspected traces report the direct
-                // equality result until the object-table model is wired in.
+                let value = context.remap_special_rhs(read_u16(cod, p + 2).unwrap_or(0));
                 let equal = state_u16(&state, op1) == value;
                 let passed = if inverted { !equal } else { equal };
                 condition_passed = Some(passed);
@@ -2538,6 +2552,81 @@ mod tests {
                 && event.opcode == 0xC0
                 && !event.branch_taken
                 && event.condition_passed == Some(true)
+        }));
+    }
+
+    #[test]
+    fn execution_trace_remaps_special_object_rhs_for_equality_family() {
+        let field = 0x0020u16;
+        let special_object = 0x0100u16;
+        let mut var = vec![0; 0x0200];
+        state_set_u16(&mut var, field, 0xffff);
+
+        let mut cod = Vec::new();
+        let a0_offset = cod.len();
+        cod.push(0xA0);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        let condition_offset = cod.len();
+        cod.push(0xAF);
+        cod.extend_from_slice(&field.to_le_bytes());
+        cod.extend_from_slice(&special_object.to_le_bytes());
+        let first_text = cod.len();
+        push_empty_text(&mut cod);
+        cod.push(0xA1);
+        let target = cod.len() as u16;
+        cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xFF);
+
+        let trace = execute_trace(&cod, &var);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 1);
+        assert_eq!(trace.line_states[0].offset, target as usize);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == 0xAF
+                && event.branch_taken
+                && event.condition_passed == Some(false)
+                && event.target == Some(target)
+        }));
+
+        let context = ExecutionContext::default().with_special_object_offset(special_object);
+        let trace = execute_trace_with_context(&cod, &var, &context);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 2);
+        assert_eq!(trace.line_states[0].offset, first_text);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == 0xAF
+                && !event.branch_taken
+                && event.condition_passed == Some(true)
+        }));
+
+        let mut inverted_cod = Vec::new();
+        let a0_offset = inverted_cod.len();
+        inverted_cod.push(0xA0);
+        inverted_cod.extend_from_slice(&0u16.to_le_bytes());
+        let condition_offset = inverted_cod.len();
+        inverted_cod.push(0xAF);
+        inverted_cod.push(0xA1);
+        inverted_cod.extend_from_slice(&field.to_le_bytes());
+        inverted_cod.extend_from_slice(&special_object.to_le_bytes());
+        push_empty_text(&mut inverted_cod);
+        let target = inverted_cod.len() as u16;
+        inverted_cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut inverted_cod);
+        inverted_cod.push(0xFF);
+
+        let trace = execute_trace_with_context(&inverted_cod, &var, &context);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 1);
+        assert_eq!(trace.line_states[0].offset, target as usize);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == 0xAF
+                && event.branch_taken
+                && event.condition_passed == Some(false)
+                && event.target == Some(target)
         }));
     }
 

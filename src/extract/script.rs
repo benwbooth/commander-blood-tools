@@ -603,7 +603,7 @@ pub(super) fn parse_script_executed_speech(
             )?;
             let deb = fs::read(deb_path)?;
             let object_names = parse_deb_object_names(&deb);
-            let context = vm::ExecutionContext::from_object_offsets(object_names.keys().copied());
+            let context = vm_execution_context_from_object_names(&object_names);
             (functions, actor_refs, object_names, context)
         } else {
             (
@@ -694,7 +694,7 @@ pub(super) fn parse_script_branch_scenario_speech(
             )?;
             let deb = fs::read(deb_path)?;
             let object_names = parse_deb_object_names(&deb);
-            let context = vm::ExecutionContext::from_object_offsets(object_names.keys().copied());
+            let context = vm_execution_context_from_object_names(&object_names);
             (functions, actor_refs, object_names, context)
         } else {
             (
@@ -890,7 +890,21 @@ fn parse_deb_object_names(deb: &[u8]) -> HashMap<u16, String> {
 }
 
 fn vm_execution_context_from_deb(deb: &[u8]) -> vm::ExecutionContext {
-    vm::ExecutionContext::from_object_offsets(parse_deb_object_names(deb).keys().copied())
+    let object_names = parse_deb_object_names(deb);
+    vm_execution_context_from_object_names(&object_names)
+}
+
+fn vm_execution_context_from_object_names(
+    object_names: &HashMap<u16, String>,
+) -> vm::ExecutionContext {
+    let mut context = vm::ExecutionContext::from_object_offsets(object_names.keys().copied());
+    if let Some((&offset, _)) = object_names
+        .iter()
+        .find(|(_, name)| name.eq_ignore_ascii_case("blood"))
+    {
+        context = context.with_special_object_offset(offset);
+    }
+    context
 }
 
 fn resolve_background_from_location(
@@ -2837,6 +2851,49 @@ mod tests {
         fs::write(root.join("SCRIPT1.VAR"), vec![0; 0x20]).expect("write var");
         fs::write(root.join("SCRIPT1.DIC"), b"\0hello\0").expect("write dic");
         root
+    }
+
+    #[test]
+    fn deb_context_marks_blood_as_special_object() {
+        let field = 0x0010u16;
+        let blood = 0x0100u16;
+        let mut deb = vec![0; 20];
+        deb[0..5].copy_from_slice(b"blood");
+        deb[16..18].copy_from_slice(&blood.to_le_bytes());
+        deb[18..20].copy_from_slice(&1u16.to_le_bytes());
+
+        let context = vm_execution_context_from_deb(&deb);
+        let mut var = vec![0; 0x0200];
+        var[field as usize..field as usize + 2].copy_from_slice(&0xffffu16.to_le_bytes());
+
+        let mut cod = Vec::new();
+        let a0_offset = cod.len();
+        cod.push(0xA0);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        let condition_offset = cod.len();
+        cod.push(0xAF);
+        cod.extend_from_slice(&field.to_le_bytes());
+        cod.extend_from_slice(&blood.to_le_bytes());
+        let first_text = cod.len();
+        cod.extend_from_slice(&[0xA6, 0x01, 0x00, 0xff, 0x00, 0x80]);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        cod.push(0xA1);
+        let target = cod.len() as u16;
+        cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        cod.extend_from_slice(&[0xA6, 0x02, 0x00, 0xff, 0x00, 0x80]);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        cod.push(0xff);
+
+        let trace = vm::execute_trace_with_context(&cod, &var, &context);
+        assert_eq!(trace.halted, vm::ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 2);
+        assert_eq!(trace.line_states[0].offset, first_text);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == 0xAF
+                && !event.branch_taken
+                && event.condition_passed == Some(true)
+        }));
     }
 
     #[test]

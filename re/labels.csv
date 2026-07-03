@@ -49,6 +49,7 @@ DS:0x67AB,vm_skip_count,skip-N-tokens counter (IF/branch); set by 0xA6 b4&0x08
 DS:0x67B1,vm_loop_flag,bit0=loop active bit1=loop range
 DS:0x6778,vm_loop_target,loop target address set by 0xA6 b4&0x10
 DS:0x677C,vm_a6_b3_ptr,saved pointer to 0xA6 b3 byte
+DS:0x674E,vm_special_blood_object,"DEB object offset for built-in name blood; 0x6946 remaps RHS to 0xffff"
 DS:0x67B4,vm_ctrl_signal,handler->loop control signal (nonzero = special)
 DS:0x6788,vm_active_line,"active dialogue-line id = sign_extend(0xA6 b3)+9; reset 0xffff on clear"
 0x0011E8,dlg_line_activate,reads signed gs:0x1fab(b3)+9 -> gs:0x6788 active line id
