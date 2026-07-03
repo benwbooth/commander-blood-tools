@@ -439,6 +439,8 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 | `re/labels.csv` | accumulated address labels (file-offset / SEG:OFF / DS: forms) |
 | `re/bin/BLOODPRG.EXE` | unpacked target (MZ image == whole file, no decompression needed) |
 | `script-branch-trace.tsv` | extraction artifact listing `execute_trace` branch/control events per script |
+| `script-branch-decisions.tsv` | extraction artifact listing default observed conditional path and alternate target/path |
+| `script-branch-coverage.tsv` | extraction artifact summarizing all text calls vs default executed trace coverage per script |
 | `script-executed-dialogue.tsv` | extraction artifact joining `execute_trace` line order to decoded text/actor/background |
 | `script-executed-dialogue-runs.tsv` | extraction artifact grouping executed dialogue by script/background run; MP4 names correspond to run-level composites |
 | `script-dialogue-runs.tsv` | extraction artifact grouping VM-order dialogue lines by script/background run |
@@ -590,6 +592,11 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       only the default initial-state execution. Full coverage needs branch
       enumeration or scenario selection. Bounded by the ~22% no-speaker lines
       (many are legitimately narrator/locationless).
+- [x] Add branch planning artifacts: `script-branch-decisions.tsv` records each
+      concrete conditional's observed path and alternate path/target, while
+      `script-branch-coverage.tsv` summarizes static `0xA6` text calls vs the
+      default executed trace per script. These are the manifest inputs for
+      scenario-selected or branch-enumerated rendering.
 - [x] Define the VM-event schema (`SceneEvent`: SetBackground, PlayMusic,
       ShowSpeaker, PlayVoice, PlayTalkHnm, DrawSubtitle, PlayChatter, Clear) +
       `emit_scene_events()` emitter in `src/vm.rs`, emitting state-change

@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::convert::TryInto;
 use std::env;
 use std::error::Error;
@@ -256,6 +256,16 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     write_script_branch_trace_manifest(
         &script_branch_trace,
         &out_dir.join("script-branch-trace.tsv"),
+    )?;
+    write_script_branch_decisions_manifest(
+        &script_branch_trace,
+        &out_dir.join("script-branch-decisions.tsv"),
+    )?;
+    write_script_branch_coverage_manifest(
+        &script_speech,
+        &script_executed_speech,
+        &script_branch_trace,
+        &out_dir.join("script-branch-coverage.tsv"),
     )?;
     if !script_speech.is_empty() {
         eprintln!(

@@ -1176,6 +1176,134 @@ pub(super) fn write_script_branch_trace_manifest(
     Ok(())
 }
 
+pub(super) fn write_script_branch_decisions_manifest(
+    rows: &[ScriptBranchTraceLine],
+    out_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let mut file = File::create(out_path)?;
+    writeln!(
+        file,
+        "script\tdecision_index\toffset\topcode\tcondition_passed\tobserved_path\tobserved_target\talternate_path\talternate_target\tstack_depth\tdetail"
+    )?;
+
+    let mut decision_index_by_script: BTreeMap<&str, usize> = BTreeMap::new();
+    for row in rows.iter().filter(|row| row.condition_passed.is_some()) {
+        let decision_index = decision_index_by_script
+            .entry(row.script.as_str())
+            .and_modify(|idx| *idx += 1)
+            .or_insert(1);
+        let (observed_path, observed_target, alternate_path, alternate_target) = if row.branch_taken
+        {
+            (
+                "jump",
+                row.target
+                    .map(|target| format!("0x{target:04x}"))
+                    .unwrap_or_default(),
+                "fallthrough",
+                String::new(),
+            )
+        } else {
+            (
+                "fallthrough",
+                String::new(),
+                "jump",
+                row.target
+                    .map(|target| format!("0x{target:04x}"))
+                    .unwrap_or_default(),
+            )
+        };
+        writeln!(
+            file,
+            "{}\t{}\t0x{:05x}\t{:02x}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            row.script,
+            decision_index,
+            row.offset,
+            row.opcode,
+            row.condition_passed.unwrap(),
+            observed_path,
+            observed_target,
+            alternate_path,
+            alternate_target,
+            row.stack_depth,
+            clean_tsv(&row.detail),
+        )?;
+    }
+    Ok(())
+}
+
+pub(super) fn write_script_branch_coverage_manifest(
+    speech_rows: &[ScriptSpeechLine],
+    executed_rows: &[ScriptExecutedSpeechLine],
+    branch_rows: &[ScriptBranchTraceLine],
+    out_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let mut scripts: BTreeSet<&str> = BTreeSet::new();
+    scripts.extend(speech_rows.iter().map(|row| row.script.as_str()));
+    scripts.extend(executed_rows.iter().map(|row| row.script.as_str()));
+    scripts.extend(branch_rows.iter().map(|row| row.script.as_str()));
+
+    let runs = script_executed_dialogue_runs(executed_rows);
+    let mut file = File::create(out_path)?;
+    writeln!(
+        file,
+        "script\tstatic_text_calls\texecuted_text_calls\tunexecuted_text_calls\texecuted_percent\tbranch_events\tdecisions\tpassed_decisions\tfailed_decisions\tbranches_taken\texecuted_dialogue_runs"
+    )?;
+
+    for script in scripts {
+        let static_text_calls = speech_rows
+            .iter()
+            .filter(|row| row.script == script)
+            .count();
+        let executed_text_calls = executed_rows
+            .iter()
+            .filter(|row| row.script == script)
+            .count();
+        let unexecuted_text_calls = static_text_calls.saturating_sub(executed_text_calls);
+        let executed_percent = if static_text_calls == 0 {
+            0.0
+        } else {
+            executed_text_calls as f64 * 100.0 / static_text_calls as f64
+        };
+        let script_branches: Vec<&ScriptBranchTraceLine> = branch_rows
+            .iter()
+            .filter(|row| row.script == script)
+            .collect();
+        let decisions = script_branches
+            .iter()
+            .filter(|row| row.condition_passed.is_some())
+            .count();
+        let passed_decisions = script_branches
+            .iter()
+            .filter(|row| row.condition_passed == Some(true))
+            .count();
+        let failed_decisions = script_branches
+            .iter()
+            .filter(|row| row.condition_passed == Some(false))
+            .count();
+        let branches_taken = script_branches
+            .iter()
+            .filter(|row| row.branch_taken)
+            .count();
+        let executed_dialogue_runs = runs.iter().filter(|run| run.script == script).count();
+        writeln!(
+            file,
+            "{}\t{}\t{}\t{}\t{:.2}\t{}\t{}\t{}\t{}\t{}\t{}",
+            script,
+            static_text_calls,
+            executed_text_calls,
+            unexecuted_text_calls,
+            executed_percent,
+            script_branches.len(),
+            decisions,
+            passed_decisions,
+            failed_decisions,
+            branches_taken,
+            executed_dialogue_runs
+        )?;
+    }
+    Ok(())
+}
+
 #[derive(Debug)]
 struct ScriptDialogueRun<'a> {
     script: String,
@@ -1610,6 +1738,29 @@ mod tests {
         }
     }
 
+    fn branch_trace_line(
+        script: &str,
+        event_index: usize,
+        offset: usize,
+        opcode: u8,
+        target: Option<u16>,
+        branch_taken: bool,
+        condition_passed: Option<bool>,
+        detail: &str,
+    ) -> ScriptBranchTraceLine {
+        ScriptBranchTraceLine {
+            script: script.to_string(),
+            event_index,
+            offset,
+            opcode,
+            target,
+            branch_taken,
+            condition_passed,
+            stack_depth: 1,
+            detail: detail.to_string(),
+        }
+    }
+
     #[test]
     fn decodes_general_a6_text_call_shape() {
         let mut words = HashMap::new();
@@ -1900,6 +2051,102 @@ mod tests {
         assert!(manifest.contains("dialogue - script2 - room1 - actor_a.mp4"));
         assert!(manifest.contains("\t3\t1,2"));
         assert!(!manifest.contains("\t3\t2,1"));
+    }
+
+    #[test]
+    fn branch_decisions_manifest_records_alternate_path() {
+        let rows = vec![
+            branch_trace_line(
+                "SCRIPT2",
+                0,
+                0x10,
+                0xaf,
+                Some(0x40),
+                false,
+                Some(true),
+                "condition passed",
+            ),
+            branch_trace_line(
+                "SCRIPT2",
+                1,
+                0x20,
+                0xaf,
+                Some(0x80),
+                true,
+                Some(false),
+                "condition failed",
+            ),
+            branch_trace_line(
+                "SCRIPT2",
+                2,
+                0x30,
+                0xa1,
+                Some(0x90),
+                false,
+                None,
+                "condition block end",
+            ),
+        ];
+
+        let path = std::env::temp_dir().join(format!(
+            "commander-blood-branch-decisions-{}.tsv",
+            std::process::id()
+        ));
+        write_script_branch_decisions_manifest(&rows, &path).expect("write branch decisions");
+        let manifest = fs::read_to_string(&path).expect("read branch decisions");
+        let _ = fs::remove_file(&path);
+        assert!(manifest.contains("SCRIPT2\t1\t0x00010\taf\ttrue\tfallthrough\t\tjump\t0x0040"));
+        assert!(manifest.contains("SCRIPT2\t2\t0x00020\taf\tfalse\tjump\t0x0080\tfallthrough\t"));
+        assert!(!manifest.contains("condition block end"));
+    }
+
+    #[test]
+    fn branch_coverage_manifest_reports_default_execution_gap() {
+        let speech_rows = vec![
+            speech_line("SCRIPT2", 0x10, Some("Actor_A"), Some("Room1"), "a"),
+            speech_line("SCRIPT2", 0x20, Some("Actor_A"), Some("Room1"), "b"),
+            speech_line("SCRIPT2", 0x30, Some("Actor_A"), Some("Room1"), "c"),
+        ];
+        let executed_rows = vec![executed_speech_line(
+            "SCRIPT2",
+            0,
+            0x10,
+            Some("Actor_A"),
+            Some("Room1"),
+            "a",
+        )];
+        let branch_rows = vec![
+            branch_trace_line(
+                "SCRIPT2",
+                0,
+                0x10,
+                0xaf,
+                Some(0x40),
+                false,
+                Some(true),
+                "condition passed",
+            ),
+            branch_trace_line(
+                "SCRIPT2",
+                1,
+                0x20,
+                0xaf,
+                Some(0x80),
+                true,
+                Some(false),
+                "condition failed",
+            ),
+        ];
+
+        let path = std::env::temp_dir().join(format!(
+            "commander-blood-branch-coverage-{}.tsv",
+            std::process::id()
+        ));
+        write_script_branch_coverage_manifest(&speech_rows, &executed_rows, &branch_rows, &path)
+            .expect("write branch coverage");
+        let manifest = fs::read_to_string(&path).expect("read branch coverage");
+        let _ = fs::remove_file(&path);
+        assert!(manifest.contains("SCRIPT2\t3\t1\t2\t33.33\t2\t2\t1\t1\t1\t1"));
     }
 
     #[test]
