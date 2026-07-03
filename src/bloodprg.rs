@@ -464,8 +464,8 @@ fn opcode_metadata(opcode: u8, handler_file_offset: usize) -> OpcodeMetadata {
         vm::OP_ACTOR => OpcodeMetadata {
             mnemonic: "actor_object_ref",
             family: "object-reference",
-            rust_status: "partially-ported",
-            notes: "binary handler consumes two u16 operands; current Rust line-state model tracks the talk/object reference needed for dialogue",
+            rust_status: "execution-trace-ported",
+            notes: "C4 consumes record/related words with optional mode1 A1 inversion; Rust writes direct mode0 records and evaluates mode1 compares only with concrete host-state evidence",
         },
         op if vm::is_record_state_opcode(op) => OpcodeMetadata {
             mnemonic: "record_state",

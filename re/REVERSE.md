@@ -529,11 +529,20 @@ mode-0 success path writes:
     es:[bp + 2] = related
     es:[bp + 4] = 0x0000
 
+Mode 1 first accepts an optional `A1` inverted-compare prefix, then tests that the
+owning object is active, `es:[record] == 0x00C4`, and `es:[record+2] == related`;
+the failed test calls branch helper `0x6462` unless inverted. The owning object
+comes from helper `0x6034`, which maps a record offset back to the previous DEB
+object offset (`record == object + 0x3A` for talk records).
+
 The Rust VM now exposes this as `VmToken::Actor { record_offset,
-related_record_offset, len: 5 }`. Speaker tracking still keys on
-`record_offset == object_offset + 0x3A`, which is the data-backed mapping used by
-the current dialogue manifests; the second operand is retained so later line
-record modeling does not have to re-parse raw bytes.
+related_record_offset, inverted, len }`. Mode 0 writes the direct
+`{0x00C4, related, 0}` record entry and updates speaker context. Mode 1 does not
+write that state; `execute_trace` only evaluates the branch when the host-side
+state already has a concrete record entry. If the static `SCRIPT*.VAR` slot is
+still zero, the line-record table truth is unresolved, so Rust preserves the
+guarded actor context without taking the branch until the full runtime table
+model is ported.
 
 ### 0xC9 record-clear handler @ file 0x6FB9 — speaker lifetime (DECODED)
 
@@ -554,7 +563,8 @@ This matters for video accuracy: real scripts frequently emit text after a
 matching `C9` and before the next `C4`, so carrying the previous actor through
 that clear bleeds the wrong speaker/background into narrator or system lines.
 Rust now exposes `VmToken::RecordClear` and clears the current speaker context
-when `record_offset == actor_offset + 0x3A`.
+when `record_offset == actor_offset + 0x3A`, again only in mode 0. Mode-1 record
+clear bytes are comparison/control flow, not a lifetime mutation.
 
 ### Dialogue display state machine (seg 0x0971, file ~0x9E81)
 
@@ -714,7 +724,8 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       24-byte actor/object struct iterated at 0x7E09.
 - [x] Reconcile 0xC4 length and operands. The handler consumes two u16 operands,
       writes a 6-byte record entry on success, and `src/vm.rs` now exposes both
-      words instead of reducing the token to a single actor id.
+      words plus optional mode-1 `A1` inversion instead of reducing the token to a
+      single actor id.
 - [x] Port 0xC3 record-link semantics. `src/vm.rs` exposes
       `VmToken::RecordLink`, the disassembly manifest emits `record_link`, and
       parser tests lock in that `C3` does not restore speaker context after a
@@ -776,8 +787,15 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `op [op1:u16] [operator:u8] [op2mode:u8] [op2:u16]`; operators `0xF5`=set,
       `0xF6`=add, `0xF7`=sub (+ comparisons `0xF0`=ne `0xF3`=le… for conditionals);
       writes `state[op1]` in mode 0 (`mov es:[bx+di],cx` @0x68FD). op2mode
-      `0xC0/0xC2` = indirect (`op2 = state[op2]`). The Rust interpreter now
-      treats mode-1 comparisons as non-mutating until PC control flow is modeled.
+      `0xC0/0xC2` = indirect (`op2 = state[op2]`). The Rust interpreter evaluates
+      the recovered mode-1 branch comparisons without applying their mode-0
+      state writes.
+- [x] Ported the direct 0xC4 record write and evidence-based mode-1 compare.
+      Rust now writes `{0x00C4, related, 0}` in mode 0, decodes optional `A1`
+      inversion in mode 1, and branches only when a concrete record entry is
+      available in host VM state. Zeroed static `SCRIPT*.VAR` line-record slots
+      remain unresolved guarded actor contexts until the full `gs:0x6724` runtime
+      table model is wired in.
 - [x] Ported the other mode-0 mutation handlers to Rust: 0x6902 family (AE/B0)
       bitmask set/clear (`or es:[bx+di],ax` / `and es:[bx+di],~ax`) and 0x6946
       family (AD/AF/B2/B3/BA/BB/BC) direct assignment (`mov es:[bx+di],ax`

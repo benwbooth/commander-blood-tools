@@ -229,6 +229,7 @@ pub enum VmToken {
         offset: usize,
         record_offset: u16,
         related_record_offset: u16,
+        inverted: bool,
         len: usize,
     },
     /// `0xC3` record link.
@@ -493,12 +494,15 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
                 len,
             });
         } else if op == OP_ACTOR {
-            let record_offset = read_u16(cod, pos + 1).unwrap_or(0);
-            let related_record_offset = read_u16(cod, pos + 3).unwrap_or(0);
+            let inverted = mode1 && cod.get(pos + 1) == Some(&0xA1);
+            let operand_pos = pos + 1 + usize::from(inverted);
+            let record_offset = read_u16(cod, operand_pos).unwrap_or(0);
+            let related_record_offset = read_u16(cod, operand_pos + 2).unwrap_or(0);
             out.push(VmToken::Actor {
                 offset: pos,
                 record_offset,
                 related_record_offset,
+                inverted,
                 len,
             });
         } else if op == OP_RECORD_CLEAR {
@@ -601,18 +605,20 @@ fn read_u16(cod: &[u8], at: usize) -> Option<u16> {
 //       side effects are still pending the line-record table model.
 //   * 0xC4: actor/record reference. The first operand is the destination record
 //       offset and doubles as object_offset + 0x3A (talk field) for speaker
-//       tracking; the second operand is a related record offset consumed by the
-//       DOS handler.
+//       tracking; the second operand is the related record offset stored by the
+//       DOS handler. Mode 0 writes the direct record entry and updates speaker
+//       tracking; mode 1 compares the record entry and may branch.
 //   * 0xC3: record link. The handler writes {0x00C3, related, 1}; this is
 //       presentation record state, not a speaker change.
 //   * 0xC5..=0xC8: record entries. The handlers write {opcode, related, 0};
 //       C8 is the special empty-record marker and stores related=0.
-//   * 0xC9: record clear. The handler zeroes a 6-byte record and, when the
-//       previous entry was 0xC4, clears the related actor subrecord too.
-// NOTE: this is a LINEAR pass — it does not yet evaluate the 0xAF-family
-// conditionals/branches; branch-mode comparison handlers are intentionally
-// treated as non-mutating until the PC/branch helper at 0x6462 is modeled.
-// Adequate for deterministic cutscene runs; see REVERSE.md for the caveat.
+//   * 0xC9: record clear. In mode 0 the handler zeroes a 6-byte record and, when
+//       the previous entry was 0xC4, clears the related actor subrecord too.
+// NOTE: `interpret_line_states` is a LINEAR pass: it applies mode-0 state
+// mutations and uses guarded mode-1 actor records as context, but does not take
+// branches. `execute_trace` models the recovered branch helper for conditionals
+// whose runtime state inputs are available; see REVERSE.md for unresolved table
+// inputs that still require deeper runtime modeling.
 
 const ASSIGN_7: [u8; 7] = [0xB1, 0xB4, 0xB5, 0xB6, 0xBE, 0xBF, 0xC0];
 const BITMASK_5: [u8; 2] = [0xAE, 0xB0];
@@ -696,6 +702,42 @@ fn state_set_u8(state: &mut [u8], addr: u16, val: u8) {
     }
 }
 
+fn actor_object_offset_from_record(record_offset: u16) -> Option<u16> {
+    record_offset.checked_sub(TALK_FIELD)
+}
+
+fn actor_record_is_active(state: &[u8], record_offset: u16) -> bool {
+    actor_object_offset_from_record(record_offset)
+        .map(|actor| state_u8(state, actor.wrapping_add(2)) & 1 != 0)
+        .unwrap_or(false)
+}
+
+fn actor_record_condition(
+    state: &[u8],
+    record_offset: u16,
+    related_record_offset: u16,
+    inverted: bool,
+) -> Option<bool> {
+    let record_type = state_u16(state, record_offset);
+    let stored_related = state_u16(state, record_offset.wrapping_add(2));
+    // Zeroed static VAR slots can represent runtime line-record state we have
+    // not reconstructed yet. Leave those C4 branches unresolved instead of
+    // proving the wrong path from incomplete host state.
+    if record_type == 0 && stored_related == 0 {
+        return None;
+    }
+    let matched = actor_record_is_active(state, record_offset)
+        && record_type == OP_ACTOR as u16
+        && stored_related == related_record_offset;
+    Some(if inverted { !matched } else { matched })
+}
+
+fn write_actor_record(state: &mut [u8], record_offset: u16, related_record_offset: u16) {
+    state_set_u16(state, record_offset, OP_ACTOR as u16);
+    state_set_u16(state, record_offset.wrapping_add(2), related_record_offset);
+    state_set_u16(state, record_offset.wrapping_add(4), 0);
+}
+
 fn branch_fail(branch_stack: &mut Vec<u16>) -> Option<u16> {
     branch_stack.pop()
 }
@@ -732,11 +774,19 @@ pub fn interpret_line_states(cod: &[u8], var: &[u8]) -> Vec<LineState> {
         let (b0, b1) = OPCODE_DESC[(op - OP_MIN) as usize];
 
         if op == OP_ACTOR {
-            if let Some(record_offset) = read_u16(cod, pos + 1) {
-                actor = Some(record_offset.wrapping_sub(TALK_FIELD));
+            let inverted = mode1 && cod.get(pos + 1) == Some(&0xA1);
+            let operand_pos = pos + 1 + usize::from(inverted);
+            if let Some(record_offset) = read_u16(cod, operand_pos) {
+                if let Some(actor_offset) = actor_object_offset_from_record(record_offset) {
+                    actor = Some(actor_offset);
+                }
+                if !mode1 {
+                    let related_record_offset = read_u16(cod, operand_pos + 2).unwrap_or(0);
+                    write_actor_record(&mut state, record_offset, related_record_offset);
+                }
             }
         }
-        if op == OP_RECORD_CLEAR {
+        if !mode1 && op == OP_RECORD_CLEAR {
             if let Some(record_offset) = read_u16(cod, pos + 1) {
                 if actor.map(|a| a.wrapping_add(TALK_FIELD)) == Some(record_offset) {
                     actor = None;
@@ -1041,6 +1091,15 @@ pub fn execute_trace_with_overrides(
                 state_u16(&state, record_offset) == first_word
                     && state_u16(&state, record_offset.wrapping_add(2)) == second_word,
             );
+        } else if mode1 && op == OP_ACTOR {
+            let inverted = cod.get(token_start + 1) == Some(&0xA1);
+            let p = token_start + 1 + usize::from(inverted);
+            if p + 4 <= end {
+                let record_offset = read_u16(cod, p).unwrap_or(0);
+                let related_record_offset = read_u16(cod, p + 2).unwrap_or(0);
+                condition_passed =
+                    actor_record_condition(&state, record_offset, related_record_offset, inverted);
+            }
         } else if mode1 && op == OP_RECORD_TRIPLE {
             let inverted = cod.get(token_start + 1) == Some(&0xA1);
             let p = token_start + 1 + usize::from(inverted);
@@ -1106,12 +1165,25 @@ pub fn execute_trace_with_overrides(
             });
         }
 
-        if op == OP_ACTOR {
+        if !mode1 && op == OP_ACTOR {
             if let Some(record_offset) = read_u16(cod, token_start + 1) {
-                actor = Some(record_offset.wrapping_sub(TALK_FIELD));
+                if let Some(actor_offset) = actor_object_offset_from_record(record_offset) {
+                    actor = Some(actor_offset);
+                }
+                let related_record_offset = read_u16(cod, token_start + 3).unwrap_or(0);
+                write_actor_record(&mut state, record_offset, related_record_offset);
             }
         }
-        if op == OP_RECORD_CLEAR {
+        if mode1 && op == OP_ACTOR {
+            let inverted = cod.get(token_start + 1) == Some(&0xA1);
+            let p = token_start + 1 + usize::from(inverted);
+            if let Some(record_offset) = read_u16(cod, p) {
+                if let Some(actor_offset) = actor_object_offset_from_record(record_offset) {
+                    actor = Some(actor_offset);
+                }
+            }
+        }
+        if !mode1 && op == OP_RECORD_CLEAR {
             if let Some(record_offset) = read_u16(cod, token_start + 1) {
                 if actor.map(|a| a.wrapping_add(TALK_FIELD)) == Some(record_offset) {
                     actor = None;
@@ -1431,7 +1503,27 @@ mod tests {
                 offset: 0,
                 record_offset: 0x0084,
                 related_record_offset: 0x0028,
+                inverted: false,
                 len: 5
+            }
+        );
+    }
+
+    #[test]
+    fn actor_token_exposes_mode1_inversion_prefix() {
+        let cod = [
+            0xA0, 0x00, 0x00, OP_ACTOR, 0xA1, 0x84, 0x00, 0x28, 0x00, 0xFF,
+        ];
+
+        let toks = walk(&cod, 0, cod.len());
+        assert_eq!(
+            toks[1],
+            VmToken::Actor {
+                offset: 3,
+                record_offset: 0x0084,
+                related_record_offset: 0x0028,
+                inverted: true,
+                len: 6
             }
         );
     }
@@ -1826,6 +1918,25 @@ mod tests {
     }
 
     #[test]
+    fn interpreter_uses_mode1_actor_record_as_guarded_context() {
+        let actor = 0x0100u16;
+        let mut var = vec![0; 0x0200];
+        state_set_u16(&mut var, actor + LOCATION_FIELD, 0x1111);
+
+        let mut cod = Vec::new();
+        cod.extend_from_slice(&[0xA0, 0x00, 0x00]); // enter decoder mode 1
+        push_actor_ref(&mut cod, actor);
+        cod.push(0xA1); // leave decoder mode 1
+        push_empty_text(&mut cod);
+        cod.push(0xFF);
+
+        let states = interpret_line_states(&cod, &var);
+        assert_eq!(states.len(), 1);
+        assert_eq!(states[0].actor_offset, Some(actor));
+        assert_eq!(states[0].location_offset, Some(0x1111));
+    }
+
+    #[test]
     fn execution_trace_branches_on_failed_mode1_comparison() {
         let actor = 0x0100u16;
         let location_field = actor + LOCATION_FIELD;
@@ -1856,6 +1967,107 @@ mod tests {
         assert!(trace.branch_events.iter().any(|event| {
             event.offset == a0_offset + 3
                 && event.opcode == 0xC0
+                && event.branch_taken
+                && event.condition_passed == Some(false)
+                && event.target == Some(target)
+        }));
+    }
+
+    #[test]
+    fn execution_trace_keeps_unresolved_mode1_actor_record_as_context() {
+        let actor = 0x0100u16;
+        let mut var = vec![0; 0x0200];
+        state_set_u16(&mut var, actor + LOCATION_FIELD, 0x1111);
+
+        let mut cod = Vec::new();
+        let a0_offset = cod.len();
+        cod.push(0xA0);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        let condition_offset = cod.len();
+        push_actor_ref(&mut cod, actor);
+        push_empty_text(&mut cod);
+        cod.push(0xA1);
+        let target = cod.len() as u16;
+        cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xFF);
+
+        let trace = execute_trace(&cod, &var);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 2);
+        assert_eq!(trace.line_states[0].actor_offset, Some(actor));
+        assert_eq!(trace.line_states[0].location_offset, Some(0x1111));
+        assert_eq!(trace.line_states[1].offset, target as usize);
+        assert_eq!(trace.line_states[1].actor_offset, Some(actor));
+        assert!(
+            trace.branch_events.iter().all(|event| {
+                event.offset != condition_offset || event.condition_passed.is_none()
+            })
+        );
+    }
+
+    #[test]
+    fn execution_trace_evaluates_mode1_actor_record_compare() {
+        let actor = 0x0100u16;
+        let record = actor + TALK_FIELD;
+        let related = 0x0028u16;
+        let mut var = vec![0; 0x0200];
+        state_set_u8(&mut var, actor + 2, 1);
+        state_set_u16(&mut var, actor + LOCATION_FIELD, 0x1111);
+        state_set_u16(&mut var, record, OP_ACTOR as u16);
+        state_set_u16(&mut var, record.wrapping_add(2), related);
+
+        let mut cod = Vec::new();
+        let a0_offset = cod.len();
+        cod.push(0xA0);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        let condition_offset = cod.len();
+        cod.push(OP_ACTOR);
+        cod.extend_from_slice(&record.to_le_bytes());
+        cod.extend_from_slice(&related.to_le_bytes());
+        let first_text = cod.len();
+        push_empty_text(&mut cod);
+        cod.push(0xA1);
+        let target = cod.len() as u16;
+        cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xFF);
+
+        let trace = execute_trace(&cod, &var);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 2);
+        assert_eq!(trace.line_states[0].offset, first_text);
+        assert_eq!(trace.line_states[0].actor_offset, Some(actor));
+        assert_eq!(trace.line_states[0].location_offset, Some(0x1111));
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == OP_ACTOR
+                && !event.branch_taken
+                && event.condition_passed == Some(true)
+        }));
+
+        let mut inverted_cod = Vec::new();
+        let a0_offset = inverted_cod.len();
+        inverted_cod.push(0xA0);
+        inverted_cod.extend_from_slice(&0u16.to_le_bytes());
+        let condition_offset = inverted_cod.len();
+        inverted_cod.push(OP_ACTOR);
+        inverted_cod.push(0xA1);
+        inverted_cod.extend_from_slice(&record.to_le_bytes());
+        inverted_cod.extend_from_slice(&related.to_le_bytes());
+        push_empty_text(&mut inverted_cod);
+        let target = inverted_cod.len() as u16;
+        inverted_cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut inverted_cod);
+        inverted_cod.push(0xFF);
+
+        let trace = execute_trace(&inverted_cod, &var);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 1);
+        assert_eq!(trace.line_states[0].offset, target as usize);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == OP_ACTOR
                 && event.branch_taken
                 && event.condition_passed == Some(false)
                 && event.target == Some(target)
