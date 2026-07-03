@@ -482,8 +482,8 @@ fn opcode_metadata(opcode: u8, handler_file_offset: usize) -> OpcodeMetadata {
         op if vm::is_record_entry_opcode(op) => OpcodeMetadata {
             mnemonic: "record_entry",
             family: "line-record",
-            rust_status: "token-ported",
-            notes: "C5-C8 line-record entries; Rust exposes the raw operand and recovered stored related-record slot",
+            rust_status: "partially-executed",
+            notes: "C5-C8 line-record entries; Rust decodes A1 inversion, executes C6 mode0 writes, and evaluates direct mode1 compares with concrete host-state evidence",
         },
         vm::OP_RECORD_CLEAR => OpcodeMetadata {
             mnemonic: "record_clear",

@@ -514,8 +514,11 @@ Current shipped-script VM walks find two real `C6` tokens (SCRIPT3/SCRIPT4) and
 no true `C5`/`C7`/`C8` opcode positions; raw byte scans see many false positives
 inside operands and text data. Rust exposes this family as
 `VmToken::RecordEntry { entry_opcode, record_offset, operand,
-stored_related_offset, aux_word }`, and `script-disassembly.tsv` emits
-`record_entry` rows for future line-record modeling.
+stored_related_offset, aux_word, inverted }`, and `script-disassembly.tsv` emits
+`record_entry` rows for future line-record modeling. Rust now executes the
+unconditional C6 mode-0 write and evaluates direct mode-1 record-entry compares
+when host state has a concrete record entry. Guarded C5/C7/C8 mode-0 failure
+branches still need the fuller line-record table model.
 
 ### 0xC4 actor/record handler @ file 0x6C7E — operands (DECODED)
 
@@ -733,7 +736,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `C9` clear.
 - [x] Port 0xC5..0xC8 record-entry token semantics. `src/vm.rs` exposes the
       family as `VmToken::RecordEntry` including raw operand and recovered
-      stored-related slot; disassembly now emits `record_entry` rows.
+      stored-related slot; disassembly now emits `record_entry` rows. C6's
+      unconditional mode-0 write and direct mode-1 compares are now executed;
+      guarded C5/C7/C8 mode-0 failure branches remain pending.
 - [x] Port 0xC9 record-clear speaker lifetime semantics. `src/vm.rs` exposes
       `VmToken::RecordClear`, the bounded interpreter clears the active actor
       when its talk-field record is cleared in either VM mode, and the script

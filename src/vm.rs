@@ -256,6 +256,7 @@ pub enum VmToken {
         operand: u16,
         stored_related_offset: u16,
         aux_word: u16,
+        inverted: bool,
         len: usize,
     },
     /// `0xC9` record clear.
@@ -482,8 +483,10 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
                 len,
             });
         } else if is_record_entry_opcode(op) {
-            let record_offset = read_u16(cod, pos + 1).unwrap_or(0);
-            let operand = read_u16(cod, pos + 3).unwrap_or(0);
+            let inverted = mode1 && cod.get(pos + 1) == Some(&0xA1);
+            let operand_pos = pos + 1 + usize::from(inverted);
+            let record_offset = read_u16(cod, operand_pos).unwrap_or(0);
+            let operand = read_u16(cod, operand_pos + 2).unwrap_or(0);
             out.push(VmToken::RecordEntry {
                 offset: pos,
                 entry_opcode: op,
@@ -491,6 +494,7 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
                 operand,
                 stored_related_offset: record_entry_stored_related_offset(op, operand),
                 aux_word: 0,
+                inverted,
                 len,
             });
         } else if op == OP_ACTOR {
@@ -610,8 +614,10 @@ fn read_u16(cod: &[u8], at: usize) -> Option<u16> {
 //       tracking; mode 1 compares the record entry and may branch.
 //   * 0xC3: record link. The handler writes {0x00C3, related, 1}; this is
 //       presentation record state, not a speaker change.
-//   * 0xC5..=0xC8: record entries. The handlers write {opcode, related, 0};
-//       C8 is the special empty-record marker and stores related=0.
+//   * 0xC5..=0xC8: record entries. C6 unconditionally writes {0xC6, operand, 0}
+//       in mode 0; mode-1 direct compares are evaluated when host state has a
+//       concrete record entry. Guarded C5/C7/C8 mode-0 failure branches need the
+//       fuller line-record table model before execution can be exact.
 //   * 0xC9: record clear. The handler zeroes a 6-byte record in both modes and,
 //       when the previous entry was 0xC4, clears the related actor subrecord too.
 // NOTE: `interpret_line_states` is a LINEAR pass: it applies mode-0 state
@@ -747,6 +753,28 @@ fn clear_record(state: &mut [u8], record_offset: u16) -> Option<u16> {
     (old_type == OP_ACTOR as u16).then_some(old_related)
 }
 
+fn write_record_entry(state: &mut [u8], opcode: u8, record_offset: u16, stored_related: u16) {
+    state_set_u16(state, record_offset, opcode as u16);
+    state_set_u16(state, record_offset.wrapping_add(2), stored_related);
+    state_set_u16(state, record_offset.wrapping_add(4), 0);
+}
+
+fn record_entry_condition(
+    state: &[u8],
+    opcode: u8,
+    record_offset: u16,
+    operand: u16,
+    inverted: bool,
+) -> Option<bool> {
+    let record_type = state_u16(state, record_offset);
+    let stored_related = state_u16(state, record_offset.wrapping_add(2));
+    if record_type == 0 && stored_related == 0 {
+        return None;
+    }
+    let matched = record_type == opcode as u16 && stored_related == operand;
+    Some(if inverted { !matched } else { matched })
+}
+
 fn branch_fail(branch_stack: &mut Vec<u16>) -> Option<u16> {
     branch_stack.pop()
 }
@@ -802,6 +830,11 @@ pub fn interpret_line_states(cod: &[u8], var: &[u8]) -> Vec<LineState> {
                     actor = None;
                 }
             }
+        }
+        if !mode1 && op == 0xC6 {
+            let record_offset = read_u16(cod, pos + 1).unwrap_or(0);
+            let operand = read_u16(cod, pos + 3).unwrap_or(0);
+            write_record_entry(&mut state, op, record_offset, operand);
         }
         if !mode1 && ASSIGN_7.contains(&op) && pos + 7 <= end {
             let op1 = read_u16(cod, pos + 1).unwrap_or(0);
@@ -1101,6 +1134,15 @@ pub fn execute_trace_with_overrides(
                 state_u16(&state, record_offset) == first_word
                     && state_u16(&state, record_offset.wrapping_add(2)) == second_word,
             );
+        } else if mode1 && is_record_entry_opcode(op) {
+            let inverted = cod.get(token_start + 1) == Some(&0xA1);
+            let p = token_start + 1 + usize::from(inverted);
+            if p + 4 <= end {
+                let record_offset = read_u16(cod, p).unwrap_or(0);
+                let operand = read_u16(cod, p + 2).unwrap_or(0);
+                condition_passed =
+                    record_entry_condition(&state, op, record_offset, operand, inverted);
+            }
         } else if mode1 && op == OP_ACTOR {
             let inverted = cod.get(token_start + 1) == Some(&0xA1);
             let p = token_start + 1 + usize::from(inverted);
@@ -1200,6 +1242,11 @@ pub fn execute_trace_with_overrides(
                     actor = None;
                 }
             }
+        }
+        if !mode1 && op == 0xC6 {
+            let record_offset = read_u16(cod, token_start + 1).unwrap_or(0);
+            let operand = read_u16(cod, token_start + 3).unwrap_or(0);
+            write_record_entry(&mut state, op, record_offset, operand);
         }
         if !mode1 && ASSIGN_7.contains(&op) && token_start + 7 <= end {
             let op1 = read_u16(cod, token_start + 1).unwrap_or(0);
@@ -1571,6 +1618,7 @@ mod tests {
                 operand: 0x1052,
                 stored_related_offset: 0x1052,
                 aux_word: 0,
+                inverted: false,
                 len: 5
             }
         );
@@ -1583,7 +1631,28 @@ mod tests {
                 operand: 0x5678,
                 stored_related_offset: 0,
                 aux_word: 0,
+                inverted: false,
                 len: 5
+            }
+        );
+    }
+
+    #[test]
+    fn record_entry_token_exposes_mode1_inversion_prefix() {
+        let cod = [0xA0, 0x00, 0x00, 0xC6, 0xA1, 0x8E, 0x10, 0x52, 0x10, 0xFF];
+
+        let toks = walk(&cod, 0, cod.len());
+        assert_eq!(
+            toks[1],
+            VmToken::RecordEntry {
+                offset: 3,
+                entry_opcode: 0xC6,
+                record_offset: 0x108E,
+                operand: 0x1052,
+                stored_related_offset: 0x1052,
+                aux_word: 0,
+                inverted: true,
+                len: 6
             }
         );
     }
@@ -2340,6 +2409,99 @@ mod tests {
         assert!(trace.branch_events.iter().any(|event| {
             event.offset == condition_offset
                 && event.opcode == OP_PAIR_RECORD_C
+                && event.branch_taken
+                && event.condition_passed == Some(false)
+                && event.target == Some(target)
+        }));
+    }
+
+    #[test]
+    fn execution_trace_applies_and_compares_c6_record_entries() {
+        let record = 0x0020u16;
+        let operand = 0x1052u16;
+        let mut var = vec![0; 0x80];
+
+        let mut cod = Vec::new();
+        cod.push(0xC6);
+        cod.extend_from_slice(&record.to_le_bytes());
+        cod.extend_from_slice(&operand.to_le_bytes());
+        let a0_offset = cod.len();
+        cod.push(0xA0);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        let condition_offset = cod.len();
+        cod.push(0xC6);
+        cod.extend_from_slice(&record.to_le_bytes());
+        cod.extend_from_slice(&operand.to_le_bytes());
+        let first_text = cod.len();
+        push_empty_text(&mut cod);
+        cod.push(0xA1);
+        let target = cod.len() as u16;
+        cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xFF);
+
+        let trace = execute_trace(&cod, &var);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 2);
+        assert_eq!(trace.line_states[0].offset, first_text);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == 0xC6
+                && !event.branch_taken
+                && event.condition_passed == Some(true)
+        }));
+
+        state_set_u16(&mut var, record, 0xC6);
+        state_set_u16(&mut var, record.wrapping_add(2), 0x9999);
+        let mut compare_cod = Vec::new();
+        let a0_offset = compare_cod.len();
+        compare_cod.push(0xA0);
+        compare_cod.extend_from_slice(&0u16.to_le_bytes());
+        let condition_offset = compare_cod.len();
+        compare_cod.push(0xC6);
+        compare_cod.extend_from_slice(&record.to_le_bytes());
+        compare_cod.extend_from_slice(&operand.to_le_bytes());
+        push_empty_text(&mut compare_cod);
+        let target = compare_cod.len() as u16;
+        compare_cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut compare_cod);
+        compare_cod.push(0xFF);
+
+        let trace = execute_trace(&compare_cod, &var);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 1);
+        assert_eq!(trace.line_states[0].offset, target as usize);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == 0xC6
+                && event.branch_taken
+                && event.condition_passed == Some(false)
+                && event.target == Some(target)
+        }));
+
+        state_set_u16(&mut var, record.wrapping_add(2), operand);
+        let mut inverted_cod = Vec::new();
+        let a0_offset = inverted_cod.len();
+        inverted_cod.push(0xA0);
+        inverted_cod.extend_from_slice(&0u16.to_le_bytes());
+        let condition_offset = inverted_cod.len();
+        inverted_cod.push(0xC6);
+        inverted_cod.push(0xA1);
+        inverted_cod.extend_from_slice(&record.to_le_bytes());
+        inverted_cod.extend_from_slice(&operand.to_le_bytes());
+        push_empty_text(&mut inverted_cod);
+        let target = inverted_cod.len() as u16;
+        inverted_cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut inverted_cod);
+        inverted_cod.push(0xFF);
+
+        let trace = execute_trace(&inverted_cod, &var);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 1);
+        assert_eq!(trace.line_states[0].offset, target as usize);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == 0xC6
                 && event.branch_taken
                 && event.condition_passed == Some(false)
                 && event.target == Some(target)
