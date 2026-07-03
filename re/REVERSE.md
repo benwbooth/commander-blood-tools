@@ -475,9 +475,10 @@ Mode 0 resolves additional table state through helpers `0x6034`, `0x5FD8`, and
 `0x5FF6`, writes a word into a computed destination, and can trigger the same
 special active-line side effect as `0xC2` (`gs:0x6788 = 0x2B`).
 
-Rust now exposes the consumed token as `VmToken::RecordTriple` and emits
-`record_triple` disassembly rows, but does not execute the mode-0 side effects
-or mode-1 branch test until the resolved line-record table model exists.
+Rust exposes the consumed token as `VmToken::RecordTriple`, emits `record_triple`
+disassembly rows, and `execute_trace` now evaluates the direct mode-1 compare
+including `A1` inversion. Mode-0 side effects still depend on the resolved
+line-record table model and remain unexecuted.
 
 ### 0xC3 record-link handler @ file 0x6EEE — relation state (DECODED)
 
@@ -706,7 +707,8 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       globals context for `gs:0x0AA6/0x0AA8/0x0AAA`.
 - [x] Expose 0xCD record-triple tokens. `src/vm.rs` preserves the consumed
       record/first/second words and optional `A1` inverted-compare prefix as
-      `VmToken::RecordTriple`; resolved-table side-effect execution remains
+      `VmToken::RecordTriple`, and `execute_trace` evaluates the direct mode-1
+      record-triple compare. Resolved-table mode-0 side-effect execution remains
       pending.
 - [ ] Decode the cs:0x0F29 and cs:0x06D4 sub-dispatch tables; document the
       24-byte actor/object struct iterated at 0x7E09.
