@@ -165,6 +165,63 @@ pub(super) fn lookup_character_context(record_name: &str) -> Option<&'static Cha
         .find(|ctx| ctx.record_name.eq_ignore_ascii_case(record_name))
 }
 
+struct DialogueSegment {
+    text: String,
+    hnm_path: Option<PathBuf>, // talking-head HNM; None => static background
+    voice: Option<SndClip>,    // None => silent (subtitle-only)
+    duration: f64,             // seconds this segment occupies the timeline
+}
+
+fn read_snd_clip_from_data(data: &[u8], clip_index: usize) -> Option<SndClip> {
+    if data.len() < 6 {
+        return None;
+    }
+    let num_clips = u16::from_le_bytes([data[0], data[1]]) as usize;
+    if clip_index >= num_clips {
+        return None;
+    }
+    let header_end = 4 + (num_clips + 1) * 4;
+    if header_end > data.len() {
+        return None;
+    }
+
+    let off_pos = 4 + clip_index * 4;
+    let next_off_pos = off_pos + 4;
+    let clip_start =
+        header_end + u32::from_le_bytes(data[off_pos..off_pos + 4].try_into().ok()?) as usize;
+    let clip_end = header_end
+        + u32::from_le_bytes(data[next_off_pos..next_off_pos + 4].try_into().ok()?) as usize;
+    if clip_start + 6 >= data.len() || clip_end > data.len() || clip_end <= clip_start + 6 {
+        return None;
+    }
+    if data[clip_start] != 1 {
+        return None;
+    }
+
+    let sr_code = data[clip_start + 4];
+    let sample_rate = if sr_code < 255 {
+        1_000_000 / (256 - sr_code as u32)
+    } else {
+        11111
+    };
+    Some(SndClip {
+        pcm: data[clip_start + 6..clip_end].to_vec(),
+        sample_rate,
+    })
+}
+
+fn silent_dialogue_segment(text: &str) -> DialogueSegment {
+    let chars = text.chars().filter(|c| !c.is_control()).count();
+    let reveal = chars as f64 / SUBTITLE_CHARS_PER_SEC;
+    let duration = (reveal + SILENT_SUBTITLE_HOLD_SEC).max(SILENT_SUBTITLE_MIN_SEC);
+    DialogueSegment {
+        text: text.to_string(),
+        hnm_path: None,
+        voice: None,
+        duration,
+    }
+}
+
 /// Create combined character videos for each DESCRIPT.DES character record that
 /// uses this SND bank.
 pub(super) fn create_character_videos(
@@ -497,6 +554,165 @@ fn executed_dialogue_groups_for_scene<'a>(
     ordered
 }
 
+pub(super) fn create_executed_dialogue_run_videos(
+    dat_dir: &Path,
+    mp4_dir: &Path,
+    descript_db: &DescriptDb,
+    script_speech: &[ScriptExecutedSpeechLine],
+    subtitle_sfx_path: Option<&Path>,
+) -> Result<u32, Box<dyn Error>> {
+    let runs = script_executed_dialogue_runs(script_speech);
+    let mut snd_cache: HashMap<PathBuf, Vec<u8>> = HashMap::new();
+    let mut created = 0u32;
+
+    for run in runs {
+        if create_executed_dialogue_run_video(
+            dat_dir,
+            mp4_dir,
+            descript_db,
+            &run,
+            subtitle_sfx_path,
+            &mut snd_cache,
+        )? {
+            created += 1;
+        }
+    }
+
+    Ok(created)
+}
+
+fn create_executed_dialogue_run_video(
+    dat_dir: &Path,
+    mp4_dir: &Path,
+    descript_db: &DescriptDb,
+    run: &ScriptExecutedDialogueRun<'_>,
+    subtitle_sfx_path: Option<&Path>,
+    snd_cache: &mut HashMap<PathBuf, Vec<u8>>,
+) -> Result<bool, Box<dyn Error>> {
+    let inputs: Vec<vm::LineInput> = run
+        .lines
+        .iter()
+        .map(|line| vm::LineInput {
+            actor: line.actor_record.clone(),
+            background_hnm: line.background_hnm.clone(),
+            background_record: line.background_record.clone(),
+            background_music: line.background_music.clone(),
+            voice_selector: line.param0,
+            flags_b4: line.param1,
+            clip_index: line.clip_index,
+            text: line.text.clone(),
+        })
+        .collect();
+    let events = vm::emit_scene_events(&inputs);
+
+    let mut segments: Vec<DialogueSegment> = Vec::new();
+    let mut ev_background: Option<String> = None;
+    let mut ev_background_record: Option<String> = None;
+    let mut ev_music: Option<String> = None;
+    let mut current_actor: Option<String> = None;
+    let mut pending_clip: Option<(Option<String>, usize)> = None;
+
+    for event in &events {
+        match event {
+            vm::SceneEvent::SetBackground { hnm, record } => {
+                if ev_background.is_none() {
+                    ev_background = hnm.clone();
+                }
+                if ev_background_record.is_none() {
+                    ev_background_record = record.clone();
+                }
+            }
+            vm::SceneEvent::PlayMusic { music } => {
+                if ev_music.is_none() {
+                    ev_music = music.clone();
+                }
+            }
+            vm::SceneEvent::ShowSpeaker { actor } => current_actor = Some(actor.clone()),
+            vm::SceneEvent::PlayVoice { clip_index } => {
+                pending_clip = Some((current_actor.clone(), *clip_index));
+            }
+            vm::SceneEvent::DrawSubtitle { text, .. } => {
+                if let Some((Some(actor), clip_index)) = pending_clip.take() {
+                    if let Some(seg) = resolve_actor_voiced_segment(
+                        dat_dir,
+                        descript_db,
+                        snd_cache,
+                        &actor,
+                        clip_index,
+                        text,
+                    ) {
+                        segments.push(seg);
+                        continue;
+                    }
+                }
+                if !text.trim().is_empty() {
+                    segments.push(silent_dialogue_segment(text));
+                }
+            }
+            _ => {}
+        }
+    }
+
+    let location = run
+        .background_record
+        .as_deref()
+        .or(run.background_hnm.as_deref())
+        .unwrap_or("nolocation");
+    let output_stem = format!(
+        "executed-dialogue-run - {} - {:04} - {}",
+        safe_file_stem(&run.script),
+        run.run_index,
+        safe_file_stem(location)
+    );
+    let mp4_out = mp4_dir.join(format!("{output_stem}.mp4"));
+    let label = format!("{} run {}", run.script, run.run_index);
+    render_dialogue_segments(
+        &mp4_out,
+        &output_stem,
+        &label,
+        dat_dir,
+        descript_db,
+        &segments,
+        ev_background_record.as_deref(),
+        ev_background.as_deref(),
+        ev_music,
+        subtitle_sfx_path,
+    )
+}
+
+fn resolve_actor_voiced_segment(
+    dat_dir: &Path,
+    descript_db: &DescriptDb,
+    snd_cache: &mut HashMap<PathBuf, Vec<u8>>,
+    actor: &str,
+    clip_index: usize,
+    text: &str,
+) -> Option<DialogueSegment> {
+    let record = descript_db.record(actor)?;
+    if clip_index >= record.talk_hnms.len() {
+        return None;
+    }
+    let hnm_name = &record.talk_hnms[clip_index].1;
+    let hnm_path = dat_dir.join("pe").join(hnm_name.to_ascii_lowercase());
+    if !hnm_path.exists() {
+        return None;
+    }
+    let snd_name = record.snd.as_ref()?;
+    let snd_path = dat_dir.join("sn").join(snd_name.to_ascii_lowercase());
+    if !snd_cache.contains_key(&snd_path) {
+        let data = fs::read(&snd_path).ok()?;
+        snd_cache.insert(snd_path.clone(), data);
+    }
+    let voice = read_snd_clip_from_data(snd_cache.get(&snd_path)?, clip_index)?;
+    let duration = voice.pcm.len() as f64 / voice.sample_rate as f64;
+    Some(DialogueSegment {
+        text: text.to_string(),
+        hnm_path: Some(hnm_path),
+        voice: Some(voice),
+        duration,
+    })
+}
+
 pub(super) fn create_character_dialogue_video(
     snd_path: &Path,
     scene: &CharacterScene,
@@ -520,32 +736,6 @@ pub(super) fn create_character_dialogue_video(
     let header_end = 4 + (num_clips + 1) * 4;
     if header_end > snd_data.len() {
         return Ok(false);
-    }
-    let mut clip_offsets = Vec::with_capacity(num_clips + 1);
-    for i in 0..=num_clips {
-        let pos = 4 + i * 4;
-        clip_offsets.push(u32::from_le_bytes([
-            snd_data[pos],
-            snd_data[pos + 1],
-            snd_data[pos + 2],
-            snd_data[pos + 3],
-        ]) as usize);
-    }
-
-    struct VoiceData {
-        pcm_start: usize,
-        pcm_len: usize,
-        sample_rate: u32,
-    }
-    // One renderable dialogue segment in execution order. A voiced segment plays
-    // its son.snd clip over the paired talking-head HNM; a subtitle-only segment
-    // (a voiceless b3==0xFF line — radio/narrator text) shows the scene
-    // background with no voice and no talking head.
-    struct DialogueSegment {
-        text: String,
-        hnm_path: Option<PathBuf>, // talking-head HNM; None => static background
-        voice: Option<VoiceData>,  // None => silent (subtitle-only)
-        duration: f64,             // seconds this segment occupies the timeline
     }
 
     // Render from the VM presentation-event stream rather than scanning the
@@ -579,46 +769,14 @@ pub(super) fn create_character_dialogue_video(
         if !hnm_path.exists() {
             return None;
         }
-        let cs = header_end + clip_offsets[clip_index];
-        let ce = header_end + clip_offsets[clip_index + 1];
-        if cs + 6 > snd_data.len() || ce > snd_data.len() || ce <= cs {
-            return None;
-        }
-        if snd_data[cs] != 1 {
-            return None;
-        }
-        let sr_code = snd_data[cs + 4];
-        let sample_rate = if sr_code < 255 {
-            1_000_000 / (256 - sr_code as u32)
-        } else {
-            11111
-        };
-        let pcm_len = ce - (cs + 6);
+        let voice = read_snd_clip_from_data(&snd_data, clip_index)?;
+        let duration = voice.pcm.len() as f64 / voice.sample_rate as f64;
         Some(DialogueSegment {
             text: text.to_string(),
             hnm_path: Some(hnm_path),
-            voice: Some(VoiceData {
-                pcm_start: cs + 6,
-                pcm_len,
-                sample_rate,
-            }),
-            duration: pcm_len as f64 / sample_rate as f64,
-        })
-    };
-
-    // A voiceless line (no resolvable clip): subtitle-only. Duration = reveal
-    // time at the game's char rate + a readable hold (see the SILENT_SUBTITLE_*
-    // consts). No talking head, no voice.
-    let silent_segment = |text: &str| -> DialogueSegment {
-        let chars = text.chars().filter(|c| !c.is_control()).count();
-        let reveal = chars as f64 / SUBTITLE_CHARS_PER_SEC;
-        let duration = (reveal + SILENT_SUBTITLE_HOLD_SEC).max(SILENT_SUBTITLE_MIN_SEC);
-        DialogueSegment {
-            text: text.to_string(),
-            hnm_path: None,
-            voice: None,
+            voice: Some(voice),
             duration,
-        }
+        })
     };
 
     let mut segments: Vec<DialogueSegment> = Vec::new();
@@ -653,13 +811,47 @@ pub(super) fn create_character_dialogue_video(
                     }
                 }
                 if !text.trim().is_empty() {
-                    segments.push(silent_segment(text));
+                    segments.push(silent_dialogue_segment(text));
                 }
             }
             _ => {}
         }
     }
 
+    let output_stem = format!(
+        "dialogue - {} - {} - {}",
+        safe_file_stem(script),
+        safe_file_stem(function_name),
+        safe_file_stem(&scene.record_name)
+    );
+    let mp4_out = mp4_dir.join(format!("{output_stem}.mp4"));
+    let label = format!("{script} {function_name}");
+    render_dialogue_segments(
+        &mp4_out,
+        &output_stem,
+        &label,
+        dat_dir,
+        descript_db,
+        &segments,
+        ev_background_record.as_deref(),
+        ev_background.as_deref(),
+        ev_music,
+        subtitle_sfx_path,
+    )
+}
+
+fn render_dialogue_segments(
+    mp4_out: &Path,
+    output_stem: &str,
+    label: &str,
+    dat_dir: &Path,
+    descript_db: &DescriptDb,
+    segments: &[DialogueSegment],
+    background_record: Option<&str>,
+    background_hnm: Option<&str>,
+    music_name: Option<String>,
+    subtitle_sfx_path: Option<&Path>,
+) -> Result<bool, Box<dyn Error>> {
     if segments.is_empty() {
         return Ok(false);
     }
@@ -676,23 +868,14 @@ pub(super) fn create_character_dialogue_video(
         .iter()
         .any(|seg| seg.voice.as_ref().is_some_and(|v| v.sample_rate != sr))
     {
-        return Err(format!("{} {} uses mixed SND sample rates", script, function_name).into());
+        return Err(format!("{label} uses mixed SND sample rates").into());
     }
-
-    // Background / music are the values computed for this scene from the script
-    // VM + DESCRIPT (the actor's location → that location's HNM → its music),
-    // surfaced via the event stream's first SetBackground / PlayMusic. No static
-    // char-context fallback and no re-guessing: if the data doesn't specify one,
-    // there isn't one.
-    let background_hnm = ev_background.as_deref();
-    let music_name = ev_music.clone();
 
     // The dialogue plays over the location's LANDSCAPE (a static LBM from the
     // DESCRIPT Location `Background` commands), NOT the planet `FullHnm`. Resolve
     // the landscape LBM from the location record; fall back to the planet HNM
     // only if the location has no landscape (see re/REVERSE.md).
-    let landscape_lbm = ev_background_record
-        .as_deref()
+    let landscape_lbm = background_record
         .and_then(|loc| descript_db.record(loc))
         .filter(|r| r.kind == 1)
         .and_then(|r| r.backgrounds.first().map(|(_, lbm)| lbm.clone()));
@@ -709,19 +892,13 @@ pub(super) fn create_character_dialogue_video(
     let mut bg_rgb = vec![0u8; VIEWPORT_W * VIEWPORT_H * 3];
     fb_to_rgb(&bg_fb, &bg_pal, &mut bg_rgb);
 
-    let output_stem = format!(
-        "dialogue - {} - {} - {}",
-        safe_file_stem(script),
-        safe_file_stem(function_name),
-        safe_file_stem(&scene.record_name)
-    );
-    let mp4_out = mp4_dir.join(format!("{output_stem}.mp4"));
-    let tmp_voice = mp4_dir.join(format!("_tmp_{}_voice.raw", safe_file_stem(&output_stem)));
+    let tmp_voice =
+        mp4_out.with_file_name(format!("_tmp_{}_voice.raw", safe_file_stem(output_stem)));
     {
         let mut vf = File::create(&tmp_voice)?;
-        for seg in &segments {
+        for seg in segments {
             match &seg.voice {
-                Some(v) => vf.write_all(&snd_data[v.pcm_start..v.pcm_start + v.pcm_len])?,
+                Some(v) => vf.write_all(&v.pcm)?,
                 None => {
                     // Subtitle-only segment: unsigned-8-bit PCM silence (0x80) for
                     // the segment's duration, keeping audio aligned with video.
@@ -734,7 +911,7 @@ pub(super) fn create_character_dialogue_video(
 
     let mut cues = Vec::new();
     let mut duration = 0.0f64;
-    for seg in &segments {
+    for seg in segments {
         cues.push(SubtitleCue {
             tick: (duration * 10.0).round() as u16,
             text: seg.text.clone(),
@@ -815,21 +992,8 @@ pub(super) fn create_character_dialogue_video(
         }
 
         cmd.args([
-            "-c:v",
-            "libx264",
-            "-crf",
-            "18",
-            "-preset",
-            "medium",
-            "-pix_fmt",
-            "yuv420p",
-            "-c:a",
-            "aac",
-            "-b:a",
-            "128k",
-            "-shortest",
-            "-v",
-            "warning",
+            "-c:v", "libx264", "-crf", "18", "-preset", "medium", "-pix_fmt", "yuv420p", "-c:a",
+            "aac", "-b:a", "128k", "-v", "warning",
         ]);
         cmd.arg(&mp4_out);
         cmd.stdin(Stdio::piped())
@@ -841,7 +1005,7 @@ pub(super) fn create_character_dialogue_video(
         let mut rgb = vec![0u8; VIEWPORT_W * VIEWPORT_H * 3];
         let mut global_frame = 0usize;
 
-        for seg in &segments {
+        for seg in segments {
             let total_frames = (seg.duration * HNM_FPS as f64).ceil() as usize;
             // Voiced segment: the paired talking-head HNM, looped. Subtitle-only
             // segment (no hnm_path, or an HNM that fails to decode): the static
@@ -861,7 +1025,15 @@ pub(super) fn create_character_dialogue_video(
 
                 let time = global_frame as f64 / HNM_FPS as f64;
                 render_subtitles(&mut rgb, &cues, time);
-                stdin.write_all(&rgb)?;
+                if let Err(err) = stdin.write_all(&rgb) {
+                    drop(stdin);
+                    let output = ffmpeg.wait_with_output()?;
+                    return Err(format!(
+                        "{label}: ffmpeg pipe write failed: {err}; {}",
+                        String::from_utf8_lossy(&output.stderr)
+                    )
+                    .into());
+                }
                 global_frame += 1;
             }
         }
@@ -869,7 +1041,11 @@ pub(super) fn create_character_dialogue_video(
         drop(stdin);
         let output = ffmpeg.wait_with_output()?;
         if !output.status.success() {
-            return Err(format!("ffmpeg: {}", String::from_utf8_lossy(&output.stderr)).into());
+            return Err(format!(
+                "{label}: ffmpeg exited unsuccessfully: {}",
+                String::from_utf8_lossy(&output.stderr)
+            )
+            .into());
         }
         Ok(true)
     })();
@@ -952,6 +1128,26 @@ mod tests {
             text_end: offset + 12,
             source: "test".to_string(),
         }
+    }
+
+    #[test]
+    fn reads_snd_clip_by_original_index() {
+        let clip0 = [1, 0, 0, 0, 156, 0, 10, 11];
+        let clip1 = [1, 0, 0, 0, 156, 0, 20, 21, 22];
+        let mut data = Vec::new();
+        data.extend_from_slice(&2u16.to_le_bytes());
+        data.extend_from_slice(&0u16.to_le_bytes());
+        data.extend_from_slice(&0u32.to_le_bytes());
+        data.extend_from_slice(&(clip0.len() as u32).to_le_bytes());
+        data.extend_from_slice(&((clip0.len() + clip1.len()) as u32).to_le_bytes());
+        data.extend_from_slice(&clip0);
+        data.extend_from_slice(&clip1);
+
+        let first = read_snd_clip_from_data(&data, 0).expect("first clip");
+        let second = read_snd_clip_from_data(&data, 1).expect("second clip");
+        assert_eq!(first.pcm, vec![10, 11]);
+        assert_eq!(second.pcm, vec![20, 21, 22]);
+        assert!(read_snd_clip_from_data(&data, 2).is_none());
     }
 
     #[test]

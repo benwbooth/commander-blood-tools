@@ -440,7 +440,7 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 | `re/bin/BLOODPRG.EXE` | unpacked target (MZ image == whole file, no decompression needed) |
 | `script-branch-trace.tsv` | extraction artifact listing `execute_trace` branch/control events per script |
 | `script-executed-dialogue.tsv` | extraction artifact joining `execute_trace` line order to decoded text/actor/background |
-| `script-executed-dialogue-runs.tsv` | extraction artifact grouping executed dialogue by script/background run |
+| `script-executed-dialogue-runs.tsv` | extraction artifact grouping executed dialogue by script/background run; MP4 names correspond to run-level composites |
 | `script-dialogue-runs.tsv` | extraction artifact grouping VM-order dialogue lines by script/background run |
 
 ## Verification Checklist
@@ -576,13 +576,17 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `ScriptExecutedSpeechLine`, groups each character by script/location, and
       orders lines by `execute_trace` sequence index instead of raw COD offset.
       `script-dialogue-videos.tsv` is generated from the same executed rows.
+- [x] Add branch-aware run-level dialogue composites: the full exporter now
+      renders `script-executed-dialogue-runs.tsv` groups as
+      `executed-dialogue-run - ...` MP4s, tracking `ShowSpeaker` events so a
+      single scene can switch actor SND banks/talk HNMs without splitting by
+      character.
 - [ ] Further gains: make comprehensive dialogue generation cover alternate
-      branches and render whole dialogue runs across actors. The current exporter
-      is no longer the linear all-lines path, but it still represents only the
-      default initial-state execution and still renders per character/SND bank.
-      Full coverage needs branch enumeration or scenario selection plus a
-      run-level renderer. Bounded by the ~22% no-speaker lines (many are
-      legitimately narrator/locationless).
+      branches. The current exporter is no longer the linear all-lines path and
+      no longer has to split one executed run by actor, but it still represents
+      only the default initial-state execution. Full coverage needs branch
+      enumeration or scenario selection. Bounded by the ~22% no-speaker lines
+      (many are legitimately narrator/locationless).
 - [x] Define the VM-event schema (`SceneEvent`: SetBackground, PlayMusic,
       ShowSpeaker, PlayVoice, PlayTalkHnm, DrawSubtitle, PlayChatter, Clear) +
       `emit_scene_events()` emitter in `src/vm.rs`, emitting state-change

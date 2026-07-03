@@ -6,6 +6,7 @@ use super::*;
 
 pub(super) fn write_html_index(out_dir: &Path) -> Result<(), Box<dyn Error>> {
     let dialogue_rows = read_tsv_rows(&out_dir.join("script-dialogue-videos.tsv"));
+    let executed_run_rows = read_tsv_rows(&out_dir.join("script-executed-dialogue-runs.tsv"));
     let executed_rows = read_tsv_rows(&out_dir.join("script-executed-dialogue.tsv"));
     let scene_rows = read_tsv_rows(&out_dir.join("verified-video-scenes.tsv"));
     let mp4_files = output_files(out_dir, "mp4", "mp4");
@@ -45,6 +46,7 @@ summary {{ cursor: pointer; font-weight: 600; }}
         flac_files.len()
     )?;
 
+    write_executed_dialogue_run_section(&mut html, &executed_run_rows, out_dir)?;
     write_dialogue_section(&mut html, &dialogue_rows, &executed_rows, out_dir)?;
     write_scene_section(&mut html, &scene_rows, out_dir)?;
     write_music_section(&mut html, &m4a_files, out_dir)?;
@@ -53,6 +55,60 @@ summary {{ cursor: pointer; font-weight: 600; }}
 
     writeln!(html, "</body></html>")?;
     fs::write(out_dir.join("index.html"), html)?;
+    Ok(())
+}
+
+pub(super) fn write_executed_dialogue_run_section(
+    html: &mut String,
+    rows: &[Vec<String>],
+    out_dir: &Path,
+) -> Result<(), Box<dyn Error>> {
+    writeln!(html, "<h2>Executed Dialogue Runs</h2>")?;
+    let mut present = Vec::new();
+    for row in rows {
+        if row.len() < 15 {
+            continue;
+        }
+        let rel = format!("mp4/{}", row[1]);
+        if out_dir.join(&rel).exists() {
+            present.push((row, rel));
+        }
+    }
+
+    if present.is_empty() {
+        writeln!(
+            html,
+            "<p class=\"meta\">No executed dialogue run videos exported.</p>"
+        )?;
+        return Ok(());
+    }
+
+    writeln!(html, "<div class=\"grid\">")?;
+    for (row, rel) in present {
+        writeln!(html, "<div class=\"card\">")?;
+        write_video(html, &rel)?;
+        writeln!(
+            html,
+            "<div><a href=\"{}\">{}</a></div>",
+            url_escape(&rel),
+            html_escape(&row[1])
+        )?;
+        writeln!(
+            html,
+            "<div class=\"meta\">{} / {}<br>sequence: {}..{}<br>background: {} ({})<br>music: {}<br>actors: {}<br>clips: {}</div>",
+            html_escape(&row[0]),
+            html_escape(&row[2]),
+            html_escape(&row[3]),
+            html_escape(&row[4]),
+            html_escape(&row[7]),
+            html_escape(&row[8]),
+            html_escape(&row[9]),
+            html_escape(&row[12]),
+            html_escape(&row[13])
+        )?;
+        writeln!(html, "</div>")?;
+    }
+    writeln!(html, "</div>")?;
     Ok(())
 }
 

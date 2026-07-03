@@ -58,8 +58,10 @@ character talk slots.
 
 The normal full exporter no longer emits guessed all-clips character composites
 when script speech data is available. It exports branch-aware initial-state
-executed dialogue groups in VM sequence order; the old static `char_contents`
-table remains only as a direct `--snd` fallback for manual inspection.
+executed dialogue groups in VM sequence order, including run-level composites
+that can switch actor voice banks inside one scene. The old static
+`char_contents` table remains only as a direct `--snd` fallback for manual
+inspection.
 
 Character foreground HNM compositing uses a character-specific zero-clear decode
 path. Zeros inside character update rectangles clear back to transparency, which

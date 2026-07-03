@@ -1189,17 +1189,17 @@ struct ScriptDialogueRun<'a> {
 }
 
 #[derive(Debug)]
-struct ScriptExecutedDialogueRun<'a> {
-    script: String,
-    run_index: usize,
-    first_sequence: usize,
-    last_sequence: usize,
-    first_offset: usize,
-    last_offset: usize,
-    background_record: Option<String>,
-    background_hnm: Option<String>,
-    background_music: Option<String>,
-    lines: Vec<&'a ScriptExecutedSpeechLine>,
+pub(super) struct ScriptExecutedDialogueRun<'a> {
+    pub(super) script: String,
+    pub(super) run_index: usize,
+    pub(super) first_sequence: usize,
+    pub(super) last_sequence: usize,
+    pub(super) first_offset: usize,
+    pub(super) last_offset: usize,
+    pub(super) background_record: Option<String>,
+    pub(super) background_hnm: Option<String>,
+    pub(super) background_music: Option<String>,
+    pub(super) lines: Vec<&'a ScriptExecutedSpeechLine>,
 }
 
 fn script_dialogue_runs(rows: &[ScriptSpeechLine]) -> Vec<ScriptDialogueRun<'_>> {
@@ -1239,7 +1239,7 @@ fn script_dialogue_runs(rows: &[ScriptSpeechLine]) -> Vec<ScriptDialogueRun<'_>>
     runs
 }
 
-fn script_executed_dialogue_runs(
+pub(super) fn script_executed_dialogue_runs(
     rows: &[ScriptExecutedSpeechLine],
 ) -> Vec<ScriptExecutedDialogueRun<'_>> {
     let mut ordered: Vec<&ScriptExecutedSpeechLine> = rows

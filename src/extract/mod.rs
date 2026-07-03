@@ -427,6 +427,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
 
     let mut snd_clips = 0u32;
     let mut char_videos = 0u32;
+    let mut dialogue_run_videos = 0u32;
     for path in &snd_files {
         let rel = path.strip_prefix(&tmp_dat)?;
         let flat_name = rel
@@ -474,6 +475,25 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         }
     }
 
+    if let Some(db) = descript_db.as_ref() {
+        let subtitle_sfx = tmp_dat.join("sn").join("tb.snd");
+        match create_executed_dialogue_run_videos(
+            &tmp_dat,
+            &mp4_dir,
+            db,
+            &script_executed_speech,
+            subtitle_sfx.exists().then_some(subtitle_sfx.as_path()),
+        ) {
+            Ok(n) => {
+                dialogue_run_videos = n;
+                if n > 0 {
+                    eprintln!("[dialogue runs] {n} run-level video(s) created");
+                }
+            }
+            Err(e) => eprintln!("[dialogue runs ERROR] {e}"),
+        }
+    }
+
     // Cleanup temp extraction
     let _ = fs::remove_dir_all(&tmp_dat);
 
@@ -482,7 +502,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     }
 
     eprintln!();
-    if video_converted > 0 || audio_converted > 0 || snd_clips > 0 {
+    if video_converted > 0 || audio_converted > 0 || snd_clips > 0 || dialogue_run_videos > 0 {
         eprintln!("Done!");
         if video_converted > 0 {
             eprintln!(
@@ -507,6 +527,12 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         if char_videos > 0 {
             eprintln!(
                 "  {char_videos} character videos (voice+anim+bg+music) -> {}",
+                mp4_dir.display()
+            );
+        }
+        if dialogue_run_videos > 0 {
+            eprintln!(
+                "  {dialogue_run_videos} executed dialogue run videos -> {}",
                 mp4_dir.display()
             );
         }
