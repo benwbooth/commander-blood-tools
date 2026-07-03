@@ -174,17 +174,62 @@ struct DialogueSegment {
     duration: f64,             // seconds this segment occupies the timeline
 }
 
-fn silent_dialogue_segment(text: &str, active_line_id: u16) -> DialogueSegment {
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct PendingMediaEvent {
+    actor: Option<String>,
+    clip_index: usize,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+struct PendingLineMedia {
+    talk_hnm: Option<PendingMediaEvent>,
+    voice: Option<PendingMediaEvent>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+struct PendingDialogueMedia {
+    current_actor: Option<String>,
+    line: PendingLineMedia,
+}
+
+impl PendingDialogueMedia {
+    fn show_speaker(&mut self, actor: &str) {
+        self.current_actor = Some(actor.to_string());
+    }
+
+    fn play_talk_hnm(&mut self, clip_index: usize) {
+        self.line.talk_hnm = Some(PendingMediaEvent {
+            actor: self.current_actor.clone(),
+            clip_index,
+        });
+    }
+
+    fn play_voice(&mut self, clip_index: usize) {
+        self.line.voice = Some(PendingMediaEvent {
+            actor: self.current_actor.clone(),
+            clip_index,
+        });
+    }
+
+    fn take_line(&mut self) -> PendingLineMedia {
+        std::mem::take(&mut self.line)
+    }
+}
+
+fn silent_subtitle_duration(text: &str) -> f64 {
     let chars = text.chars().filter(|c| !c.is_control()).count();
     let reveal = chars as f64 / SUBTITLE_CHARS_PER_SEC;
-    let duration = (reveal + SILENT_SUBTITLE_HOLD_SEC).max(SILENT_SUBTITLE_MIN_SEC);
+    (reveal + SILENT_SUBTITLE_HOLD_SEC).max(SILENT_SUBTITLE_MIN_SEC)
+}
+
+fn silent_dialogue_segment(text: &str, active_line_id: u16) -> DialogueSegment {
     DialogueSegment {
         text: text.to_string(),
         active_line_id,
         play_chatter: false,
         hnm_path: None,
         voice: None,
-        duration,
+        duration: silent_subtitle_duration(text),
     }
 }
 
@@ -605,8 +650,7 @@ fn create_executed_dialogue_run_video(
     let mut ev_background: Option<String> = None;
     let mut ev_background_record: Option<String> = None;
     let mut ev_music: Option<String> = None;
-    let mut current_actor: Option<String> = None;
-    let mut pending_clip: Option<(Option<String>, usize)> = None;
+    let mut pending_media = PendingDialogueMedia::default();
 
     for event in &events {
         match event {
@@ -623,22 +667,25 @@ fn create_executed_dialogue_run_video(
                     ev_music = music.clone();
                 }
             }
-            vm::SceneEvent::ShowSpeaker { actor } => current_actor = Some(actor.clone()),
+            vm::SceneEvent::ShowSpeaker { actor } => pending_media.show_speaker(actor),
+            vm::SceneEvent::PlayTalkHnm { clip_index } => {
+                pending_media.play_talk_hnm(*clip_index);
+            }
             vm::SceneEvent::PlayVoice { clip_index } => {
-                pending_clip = Some((current_actor.clone(), *clip_index));
+                pending_media.play_voice(*clip_index);
             }
             vm::SceneEvent::DrawSubtitle {
                 text,
                 active_line_id,
                 ..
             } => {
-                if let Some((Some(actor), clip_index)) = pending_clip.take() {
-                    if let Some(seg) = resolve_actor_voiced_segment(
+                let media = pending_media.take_line();
+                if media.talk_hnm.is_some() || media.voice.is_some() {
+                    if let Some(seg) = resolve_actor_event_segment(
                         dat_dir,
                         descript_db,
                         snd_cache,
-                        &actor,
-                        clip_index,
+                        media,
                         text,
                         *active_line_id,
                     ) {
@@ -707,8 +754,7 @@ fn create_profile_dialogue_run_video(
     let mut ev_background: Option<String> = None;
     let mut ev_background_record: Option<String> = None;
     let mut ev_music: Option<String> = None;
-    let mut current_actor: Option<String> = None;
-    let mut pending_clip: Option<(Option<String>, usize)> = None;
+    let mut pending_media = PendingDialogueMedia::default();
 
     for event in &events {
         match event {
@@ -725,22 +771,25 @@ fn create_profile_dialogue_run_video(
                     ev_music = music.clone();
                 }
             }
-            vm::SceneEvent::ShowSpeaker { actor } => current_actor = Some(actor.clone()),
+            vm::SceneEvent::ShowSpeaker { actor } => pending_media.show_speaker(actor),
+            vm::SceneEvent::PlayTalkHnm { clip_index } => {
+                pending_media.play_talk_hnm(*clip_index);
+            }
             vm::SceneEvent::PlayVoice { clip_index } => {
-                pending_clip = Some((current_actor.clone(), *clip_index));
+                pending_media.play_voice(*clip_index);
             }
             vm::SceneEvent::DrawSubtitle {
                 text,
                 active_line_id,
                 ..
             } => {
-                if let Some((Some(actor), clip_index)) = pending_clip.take() {
-                    if let Some(seg) = resolve_actor_voiced_segment(
+                let media = pending_media.take_line();
+                if media.talk_hnm.is_some() || media.voice.is_some() {
+                    if let Some(seg) = resolve_actor_event_segment(
                         dat_dir,
                         descript_db,
                         snd_cache,
-                        &actor,
-                        clip_index,
+                        media,
                         text,
                         *active_line_id,
                     ) {
@@ -776,41 +825,82 @@ fn create_profile_dialogue_run_video(
     )
 }
 
-fn resolve_actor_voiced_segment(
+fn resolve_actor_talk_hnm_path(
     dat_dir: &Path,
     descript_db: &DescriptDb,
-    snd_cache: &mut HashMap<PathBuf, SndBank>,
-    actor: &str,
+    actor: Option<&str>,
     clip_index: usize,
-    text: &str,
-    active_line_id: u16,
-) -> Option<DialogueSegment> {
+) -> Option<PathBuf> {
+    let actor = actor?;
     let record = descript_db.record(actor)?;
     if clip_index >= record.talk_hnms.len() {
         return None;
     }
     let hnm_name = &record.talk_hnms[clip_index].1;
     let hnm_path = dat_dir.join("pe").join(hnm_name.to_ascii_lowercase());
-    if !hnm_path.exists() {
-        return None;
-    }
+    hnm_path.exists().then_some(hnm_path)
+}
+
+fn resolve_actor_voice_clip(
+    dat_dir: &Path,
+    descript_db: &DescriptDb,
+    snd_cache: &mut HashMap<PathBuf, SndBank>,
+    actor: Option<&str>,
+    clip_index: usize,
+) -> Option<SndClip> {
+    let actor = actor?;
+    let record = descript_db.record(actor)?;
     let snd_name = record.snd.as_ref()?;
     let snd_path = dat_dir.join("sn").join(snd_name.to_ascii_lowercase());
     if !snd_cache.contains_key(&snd_path) {
         snd_cache.insert(snd_path.clone(), SndBank::read(&snd_path).ok()?);
     }
-    let voice = snd_cache
+    snd_cache
         .get(&snd_path)?
         .clip(clip_index)
-        .filter(|clip| !clip.pcm.is_empty())?
-        .clone();
-    let duration = voice.pcm.len() as f64 / voice.sample_rate as f64;
+        .filter(|clip| !clip.pcm.is_empty())
+        .cloned()
+}
+
+fn resolve_actor_event_segment(
+    dat_dir: &Path,
+    descript_db: &DescriptDb,
+    snd_cache: &mut HashMap<PathBuf, SndBank>,
+    media: PendingLineMedia,
+    text: &str,
+    active_line_id: u16,
+) -> Option<DialogueSegment> {
+    let hnm_path = media.talk_hnm.as_ref().and_then(|event| {
+        resolve_actor_talk_hnm_path(
+            dat_dir,
+            descript_db,
+            event.actor.as_deref(),
+            event.clip_index,
+        )
+    });
+    let voice = media.voice.as_ref().and_then(|event| {
+        resolve_actor_voice_clip(
+            dat_dir,
+            descript_db,
+            snd_cache,
+            event.actor.as_deref(),
+            event.clip_index,
+        )
+    });
+
+    if hnm_path.is_none() && voice.is_none() {
+        return None;
+    }
+    let duration = voice
+        .as_ref()
+        .map(|voice| voice.pcm.len() as f64 / voice.sample_rate as f64)
+        .unwrap_or_else(|| silent_subtitle_duration(text));
     Some(DialogueSegment {
         text: text.to_string(),
         active_line_id,
         play_chatter: false,
-        hnm_path: Some(hnm_path),
-        voice: Some(voice),
+        hnm_path,
+        voice,
         duration,
     })
 }
@@ -836,9 +926,9 @@ pub(super) fn create_character_dialogue_video(
     // grouped lines directly. `emit_scene_events` turns the decoded per-line
     // fields into the ordered event stream the game's presentation layer
     // effectively produces (SetBackground / PlayMusic / PlayVoice /
-    // DrawSubtitle / ...); this is the VM-event-driven render path. Behaviour is
-    // preserved: a line contributes a clip+subtitle only when its voice clip
-    // resolves, and background/music take the first set value (else context).
+    // DrawSubtitle / ...); this is the VM-event-driven render path. Talk HNM and
+    // voice events are consumed separately so animation/audio routing can diverge
+    // as more binary semantics are recovered.
     let inputs: Vec<vm::LineInput> = lines
         .iter()
         .map(|line| vm::LineInput {
@@ -855,36 +945,49 @@ pub(super) fn create_character_dialogue_video(
         .collect();
     let events = vm::emit_scene_events(&inputs);
 
-    let resolve_voiced =
-        |clip_index: usize, text: &str, active_line_id: u16| -> Option<DialogueSegment> {
+    let resolve_scene_event_segment = |talk_clip: Option<usize>,
+                                       voice_clip: Option<usize>,
+                                       text: &str,
+                                       active_line_id: u16|
+     -> Option<DialogueSegment> {
+        let hnm_path = talk_clip.and_then(|clip_index| {
             if clip_index >= scene.talk_hnms.len() {
                 return None;
             }
             let hnm_name = &scene.talk_hnms[clip_index].1;
             let hnm_path = dat_dir.join("pe").join(hnm_name.to_ascii_lowercase());
-            if !hnm_path.exists() {
-                return None;
-            }
-            let voice = snd_bank
+            hnm_path.exists().then_some(hnm_path)
+        });
+        let voice = voice_clip.and_then(|clip_index| {
+            snd_bank
                 .clip(clip_index)
-                .filter(|clip| !clip.pcm.is_empty())?
-                .clone();
-            let duration = voice.pcm.len() as f64 / voice.sample_rate as f64;
-            Some(DialogueSegment {
-                text: text.to_string(),
-                active_line_id,
-                play_chatter: false,
-                hnm_path: Some(hnm_path),
-                voice: Some(voice),
-                duration,
-            })
-        };
+                .filter(|clip| !clip.pcm.is_empty())
+                .cloned()
+        });
+
+        if hnm_path.is_none() && voice.is_none() {
+            return None;
+        }
+        let duration = voice
+            .as_ref()
+            .map(|voice| voice.pcm.len() as f64 / voice.sample_rate as f64)
+            .unwrap_or_else(|| silent_subtitle_duration(text));
+        Some(DialogueSegment {
+            text: text.to_string(),
+            active_line_id,
+            play_chatter: false,
+            hnm_path,
+            voice,
+            duration,
+        })
+    };
 
     let mut segments: Vec<DialogueSegment> = Vec::new();
     let mut ev_background: Option<String> = None;
     let mut ev_background_record: Option<String> = None;
     let mut ev_music: Option<String> = None;
-    let mut pending_clip: Option<usize> = None;
+    let mut pending_talk_clip: Option<usize> = None;
+    let mut pending_voice_clip: Option<usize> = None;
     for event in &events {
         match event {
             vm::SceneEvent::SetBackground { hnm, record } => {
@@ -900,17 +1003,19 @@ pub(super) fn create_character_dialogue_video(
                     ev_music = music.clone();
                 }
             }
-            vm::SceneEvent::PlayVoice { clip_index } => pending_clip = Some(*clip_index),
+            vm::SceneEvent::PlayTalkHnm { clip_index } => pending_talk_clip = Some(*clip_index),
+            vm::SceneEvent::PlayVoice { clip_index } => pending_voice_clip = Some(*clip_index),
             vm::SceneEvent::DrawSubtitle {
                 text,
                 active_line_id,
                 ..
             } => {
-                // Voiced line: play its clip + talking head. If the clip can't be
-                // resolved (e.g. missing asset) but the line has text, fall back
-                // to a subtitle-only segment instead of dropping the dialogue.
-                if let Some(ci) = pending_clip.take() {
-                    if let Some(seg) = resolve_voiced(ci, text, *active_line_id) {
+                let talk_clip = pending_talk_clip.take();
+                let voice_clip = pending_voice_clip.take();
+                if talk_clip.is_some() || voice_clip.is_some() {
+                    if let Some(seg) =
+                        resolve_scene_event_segment(talk_clip, voice_clip, text, *active_line_id)
+                    {
                         segments.push(seg);
                         continue;
                     }
@@ -1300,6 +1405,32 @@ mod tests {
             Some(vm::text_selector_active_line_id(0xff))
         );
         assert!((events[0].start_time - (1.2 + 6.0 / SUBTITLE_CHARS_PER_SEC)).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn pending_dialogue_media_keeps_talk_hnm_and_voice_events_separate() {
+        let mut pending = PendingDialogueMedia::default();
+
+        pending.show_speaker("Actor_A");
+        pending.play_talk_hnm(2);
+        pending.play_voice(3);
+        let line = pending.take_line();
+
+        assert_eq!(
+            line.talk_hnm,
+            Some(PendingMediaEvent {
+                actor: Some("Actor_A".to_string()),
+                clip_index: 2,
+            })
+        );
+        assert_eq!(
+            line.voice,
+            Some(PendingMediaEvent {
+                actor: Some("Actor_A".to_string()),
+                clip_index: 3,
+            })
+        );
+        assert_eq!(pending.take_line(), PendingLineMedia::default());
     }
 
     #[test]

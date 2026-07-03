@@ -1290,9 +1290,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `script-branch-scenario-dialogue.tsv` reuses the same executed-dialogue
       resolver against each forced branch trace, and
       `script-branch-scenario-dialogue-runs.tsv` keeps scenario-tagged run slices
-      separate from the default execution. Default full export still renders only
-      the initial-state run videos; bulk alternate rendering needs an explicit
-      selection policy to avoid exploding output volume.
+      separate from the default execution. Full export now renders those
+      scenario-tagged run slices as `branch-scenario-dialogue-run - ...mp4`
+      outputs through the same event renderer as default executed runs.
 - [x] Define the VM-event schema (`SceneEvent`: SetBackground, PlayMusic,
       ShowSpeaker, PlayVoice, PlayTalkHnm, DrawSubtitle, PlayChatter, Clear) +
       `emit_scene_events()` emitter in `src/vm.rs`, emitting state-change
@@ -1304,6 +1304,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       VM-event-driven. Dialogue subtitle sidecar audio now follows explicit
       `PlayChatter` events from that stream; HNM subtitle exports keep their
       cue-derived chatter path because they do not have VM presentation events.
+      `PlayTalkHnm` and `PlayVoice` are consumed as separate pending media events
+      so animation and audio routing can diverge when later binary semantics
+      require it.
 - [x] Removed all heuristic fallbacks (per user "no fallbacks just compute it
       accurately"): dropped the static `CHAR_CONTEXTS` background fallback, the
       `lookup_character_context` gate, and the redundant `hnm_music` re-lookup.
