@@ -3123,6 +3123,7 @@ fn format_scene_event_fields(
     String,
     String,
     String,
+    String,
 ) {
     let mut actor = source
         .and_then(|line| line.actor_record.clone())
@@ -3141,6 +3142,9 @@ fn format_scene_event_fields(
     let mut active_line_id = String::new();
     let mut flags_b4 = String::new();
     let mut text = String::new();
+    let source_detail = source
+        .map(|line| clean_tsv(&line.source))
+        .unwrap_or_default();
 
     match event {
         vm::SceneEvent::SetBackground { hnm, record } => {
@@ -3190,6 +3194,7 @@ fn format_scene_event_fields(
         active_line_id,
         flags_b4,
         text,
+        source_detail,
     )
 }
 
@@ -3201,7 +3206,7 @@ pub(super) fn write_script_scene_events_manifest(
     let mut file = File::create(out_path)?;
     writeln!(
         file,
-        "scenario_id\trun_id\tmp4\tscript\trun_index\tevent_index\tevent_kind\tsequence_index\toffset\tactor\tbackground_record\tbackground_hnm\tbackground_music\tclip_index\tvoice_selector\tactive_line_id\tflags_b4\ttext"
+        "scenario_id\trun_id\tmp4\tscript\trun_index\tevent_index\tevent_kind\tsequence_index\toffset\tactor\tbackground_record\tbackground_hnm\tbackground_music\tclip_index\tvoice_selector\tactive_line_id\tflags_b4\ttext\tsource"
     )?;
     for run in runs {
         let run_id = executed_dialogue_run_id(&run);
@@ -3230,10 +3235,11 @@ pub(super) fn write_script_scene_events_manifest(
                 active_line_id,
                 flags_b4,
                 text,
+                source_detail,
             ) = format_scene_event_fields(event, source);
             writeln!(
                 file,
-                "{}\t{}\t{}.mp4\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                "{}\t{}\t{}.mp4\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
                 run.scenario_id.as_deref().unwrap_or(""),
                 run_id,
                 output_stem,
@@ -3256,6 +3262,7 @@ pub(super) fn write_script_scene_events_manifest(
                 active_line_id,
                 flags_b4,
                 text,
+                source_detail,
             )?;
             if matches!(event, vm::SceneEvent::PlayChatter { .. }) {
                 line_index += 1;
@@ -3273,7 +3280,7 @@ pub(super) fn write_script_profile_scene_events_manifest(
     let mut file = File::create(out_path)?;
     writeln!(
         file,
-        "sequence_id\trun_id\tmp4\trun_index\tfirst_profile_index\tlast_profile_index\tevent_index\tevent_kind\tglobal_sequence_index\tprofile_index\td2_operand\tscript\tscript_sequence_index\toffset\tactor\tbackground_record\tbackground_hnm\tbackground_music\tclip_index\tvoice_selector\tactive_line_id\tflags_b4\ttext"
+        "sequence_id\trun_id\tmp4\trun_index\tfirst_profile_index\tlast_profile_index\tevent_index\tevent_kind\tglobal_sequence_index\tprofile_index\td2_operand\tscript\tscript_sequence_index\toffset\tactor\tbackground_record\tbackground_hnm\tbackground_music\tclip_index\tvoice_selector\tactive_line_id\tflags_b4\ttext\tsource"
     )?;
     for run in runs {
         let run_id = profile_dialogue_run_id(&run);
@@ -3302,10 +3309,11 @@ pub(super) fn write_script_profile_scene_events_manifest(
                 active_line_id,
                 flags_b4,
                 text,
+                source_detail,
             ) = format_scene_event_fields(event, source.map(|line| &line.row));
             writeln!(
                 file,
-                "{}\t{}\t{}.mp4\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                "{}\t{}\t{}.mp4\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
                 run.sequence_id,
                 run_id,
                 output_stem,
@@ -3339,6 +3347,7 @@ pub(super) fn write_script_profile_scene_events_manifest(
                 active_line_id,
                 flags_b4,
                 text,
+                source_detail,
             )?;
             if matches!(event, vm::SceneEvent::PlayChatter { .. }) {
                 line_index += 1;
@@ -4561,6 +4570,12 @@ mod tests {
         let _ = fs::remove_file(&path);
 
         assert!(manifest.starts_with("scenario_id\trun_id\tmp4\tscript"));
+        assert!(
+            manifest
+                .lines()
+                .next()
+                .is_some_and(|header| header.ends_with("\tsource"))
+        );
         assert!(manifest.contains("executed-dialogue-run - script2 - 0001 - room1.mp4"));
         assert!(manifest.contains("\tset_background\t0\t0x00050\tActor_A\tRoom1"));
         assert!(manifest.contains("\tshow_speaker\t0\t0x00050\tActor_A"));
@@ -4576,11 +4591,18 @@ mod tests {
         assert!(manifest.contains(
             "\tplay_chatter\t0\t0x00050\tActor_A\tRoom1\tRoom1.hnm\tRoom1_music\t\t\t0x000a"
         ));
+        let draw = manifest
+            .lines()
+            .find(|line| line.contains("\tdraw_subtitle\t"))
+            .expect("draw subtitle row");
+        assert!(draw.ends_with("\tfirst\ttest"));
         let last = manifest.lines().last().expect("last scene-event row");
         let columns = last.split('\t').collect::<Vec<_>>();
+        assert_eq!(columns.len(), 19);
         assert_eq!(columns[6], "clear");
         assert_eq!(columns[7], "");
         assert_eq!(columns[8], "");
+        assert_eq!(columns[18], "");
     }
 
     #[test]
@@ -4618,9 +4640,20 @@ mod tests {
         let _ = fs::remove_file(&path);
 
         assert!(manifest.starts_with("sequence_id\trun_id\tmp4"));
+        assert!(
+            manifest
+                .lines()
+                .next()
+                .is_some_and(|header| header.ends_with("\tsource"))
+        );
         assert!(manifest.contains("default\tdefault-profile-run-0001"));
         assert!(manifest.contains("profile-dialogue-run - default - 0001 - room1.mp4"));
         assert!(manifest.contains("\tdraw_subtitle\t1\t1\t2\tSCRIPT2\t0\t0x00020"));
+        let draw = manifest
+            .lines()
+            .find(|line| line.contains("\tdraw_subtitle\t") && line.contains("\tSCRIPT2\t"))
+            .expect("profile draw subtitle row");
+        assert!(draw.ends_with("\tb\ttest"));
     }
 
     #[test]
