@@ -19,6 +19,18 @@ pub const DIALOGUE_FONT_GLYPHS_FILE_OFFSET: usize = 0x14d28;
 pub const DIALOGUE_FONT_ASCII_MAP_LEN: usize = 128;
 pub const DIALOGUE_FONT_GLYPH_COUNT: usize = 86;
 pub const DIALOGUE_FONT_GLYPH_HEIGHT: usize = 8;
+pub const SND_ENTRY_SEGMENT: u16 = 0x0b1b;
+pub const SND_ENTRY_OFFSET: u16 = 0x011d;
+
+const SND_ENTRY_FAR_CALL: [u8; 5] = [
+    0x9a,
+    SND_ENTRY_OFFSET as u8,
+    (SND_ENTRY_OFFSET >> 8) as u8,
+    SND_ENTRY_SEGMENT as u8,
+    (SND_ENTRY_SEGMENT >> 8) as u8,
+];
+const FAR_CALL_OPCODE: u8 = 0x9a;
+const AX_SOURCE_SCAN_BACK: usize = 32;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
 pub struct MzHeader {
@@ -122,7 +134,22 @@ pub struct BloodPrgInspection {
     pub opcode_handlers: Vec<OpcodeHandler>,
     pub opcode_descriptors: Vec<OpcodeDescriptor>,
     pub vm_opcode_specs: Vec<VmOpcodeSpec>,
+    pub snd_entry_call_sites: Vec<SndEntryCallSite>,
     pub dialogue_font: DialogueFontTables,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct SndEntryCallSite {
+    pub file_offset: usize,
+    pub segment: u16,
+    pub offset: u16,
+    pub target_segment: u16,
+    pub target_offset: u16,
+    pub ax_value: Option<u16>,
+    pub ax_source_file_offset: Option<usize>,
+    pub ax_source: &'static str,
+    pub intervening_far_calls: u8,
+    pub note: &'static str,
 }
 
 pub struct BloodPrg {
@@ -296,6 +323,32 @@ impl BloodPrg {
         })
     }
 
+    pub fn snd_entry_call_sites(&self) -> Vec<SndEntryCallSite> {
+        self.data
+            .windows(SND_ENTRY_FAR_CALL.len())
+            .enumerate()
+            .filter_map(|(file_offset, bytes)| {
+                (bytes == SND_ENTRY_FAR_CALL).then(|| {
+                    let (segment, offset) = self.file_to_known_segoff(file_offset);
+                    let (ax_value, ax_source_file_offset, ax_source, intervening_far_calls) =
+                        self.find_ax_source_before(file_offset);
+                    SndEntryCallSite {
+                        file_offset,
+                        segment,
+                        offset,
+                        target_segment: SND_ENTRY_SEGMENT,
+                        target_offset: SND_ENTRY_OFFSET,
+                        ax_value,
+                        ax_source_file_offset,
+                        ax_source,
+                        intervening_far_calls,
+                        note: snd_entry_call_note(file_offset),
+                    }
+                })
+            })
+            .collect()
+    }
+
     pub fn inspect(&self) -> Result<BloodPrgInspection> {
         Ok(BloodPrgInspection {
             summary: self.summary(),
@@ -304,6 +357,7 @@ impl BloodPrg {
             opcode_handlers: self.opcode_handlers()?,
             opcode_descriptors: self.opcode_descriptors()?,
             vm_opcode_specs: self.vm_opcode_specs()?,
+            snd_entry_call_sites: self.snd_entry_call_sites(),
             dialogue_font: self.dialogue_font_tables()?,
         })
     }
@@ -315,6 +369,48 @@ impl BloodPrg {
         self.data
             .get(file_offset..end)
             .ok_or_else(|| anyhow::anyhow!("{label} extends past BLOODPRG.EXE"))
+    }
+
+    fn find_ax_source_before(
+        &self,
+        call_file_offset: usize,
+    ) -> (Option<u16>, Option<usize>, &'static str, u8) {
+        let window_start = call_file_offset.saturating_sub(AX_SOURCE_SCAN_BACK);
+        let mut source = (None, None, "unresolved", 0usize);
+        for pos in window_start..call_file_offset {
+            if pos + 3 <= call_file_offset && self.data.get(pos) == Some(&0xb8) {
+                let lo = self.data[pos + 1];
+                let hi = self.data[pos + 2];
+                source = (
+                    Some(u16::from_le_bytes([lo, hi])),
+                    Some(pos),
+                    "mov ax, imm16",
+                    pos + 3,
+                );
+            } else if pos + 2 <= call_file_offset
+                && self.data.get(pos..pos + 2) == Some(&[0x33, 0xc0])
+            {
+                source = (Some(0), Some(pos), "xor ax, ax", pos + 2);
+            }
+        }
+
+        let intervening_far_calls = self.data[source.3..call_file_offset]
+            .iter()
+            .filter(|byte| **byte == FAR_CALL_OPCODE)
+            .count()
+            .min(u8::MAX as usize) as u8;
+
+        (source.0, source.1, source.2, intervening_far_calls)
+    }
+
+    fn file_to_known_segoff(&self, file_offset: usize) -> (u16, u16) {
+        let (segment, base) = KNOWN_CODE_SEGMENTS
+            .iter()
+            .copied()
+            .take_while(|(_, base)| *base <= file_offset)
+            .last()
+            .unwrap_or((0, self.header.header_size()));
+        (segment, (file_offset - base) as u16)
     }
 }
 
@@ -415,6 +511,33 @@ fn opcode_metadata(opcode: u8, handler_file_offset: usize) -> OpcodeMetadata {
                 notes: "handler entry is mapped from BLOODPRG.EXE, but semantics are not yet named",
             },
         },
+    }
+}
+
+const KNOWN_CODE_SEGMENTS: &[(u16, usize)] = &[
+    (0x0000, 0x000600),
+    (0x008b, 0x000eb0),
+    (0x0299, 0x002f90),
+    (0x04da, 0x0053a0),
+    (0x071e, 0x0077e0),
+    (0x0971, 0x009d10),
+    (0x0a9a, 0x00afa0),
+    (0x0b1b, 0x00b7b0),
+];
+
+fn snd_entry_call_note(file_offset: usize) -> &'static str {
+    match file_offset {
+        0x005d71 => "VM/presentation C4 handoff sound; constant clip 6",
+        0x007a2a => "presentation state start sound; constant clip 1",
+        0x007bf8 => "presentation state step sound; AX=1 carried across setup call",
+        0x007f67 => "presentation/UI state sound; constant clip 5",
+        0x00804e => "presentation/UI state sound; constant clip 5",
+        0x0080e5 => "presentation/UI state sound; constant clip 3",
+        0x00815b => "presentation/UI state sound; constant clip 5",
+        0x008235 => "C4 actor/object transition sound; constant clip 2",
+        0x008534 => "text/presentation render path sound; constant clip 0",
+        0x0086ec => "presentation transition sound; constant clip 4",
+        _ => "unclassified SND entry call",
     }
 }
 
@@ -857,6 +980,49 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn snd_entry_call_sites_recover_constant_ax_indices() {
+        let Some(binary) = fixture() else {
+            eprintln!("skipping: BLOODPRG.EXE not available");
+            return;
+        };
+        let sites = binary.snd_entry_call_sites();
+        let got: Vec<_> = sites
+            .iter()
+            .map(|site| {
+                (
+                    site.file_offset,
+                    site.segment,
+                    site.offset,
+                    site.ax_value,
+                    site.intervening_far_calls,
+                )
+            })
+            .collect();
+        assert_eq!(
+            got,
+            vec![
+                (0x005d71, 0x04da, 0x09d1, Some(6), 0),
+                (0x007a2a, 0x071e, 0x024a, Some(1), 0),
+                (0x007bf8, 0x071e, 0x0418, Some(1), 1),
+                (0x007f67, 0x071e, 0x0787, Some(5), 0),
+                (0x00804e, 0x071e, 0x086e, Some(5), 0),
+                (0x0080e5, 0x071e, 0x0905, Some(3), 0),
+                (0x00815b, 0x071e, 0x097b, Some(5), 0),
+                (0x008235, 0x071e, 0x0a55, Some(2), 0),
+                (0x008534, 0x071e, 0x0d54, Some(0), 0),
+                (0x0086ec, 0x071e, 0x0f0c, Some(4), 0),
+            ]
+        );
+
+        let text_sound = sites
+            .iter()
+            .find(|site| site.file_offset == 0x008534)
+            .expect("text/presentation SND call");
+        assert_eq!(text_sound.ax_source, "xor ax, ax");
+        assert!(text_sound.note.contains("constant clip 0"));
     }
 
     #[test]

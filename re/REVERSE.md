@@ -400,20 +400,22 @@ mapping the voice-clip selection is a subsystem trace (see dead_ends.md).
     `+ 6` (skip clip header) → PCM; `cx = [bp+2]` = length. Matches `audio.rs`.
   - Streamed path: lseek `AX=0x4200` to `[bp]:[bp+2]` (u32), read `AH=0x3F`
     length `[bp+4]-[bp]`, via son.snd handle `gs:[0x0C47]` into buffer `gs:[0xBB7]`.
-- **Remaining link (task #8):** find the caller that sets `AX` (clip index) from
-  the active dialogue line (`gs:0x6788 = b3 + 9`). That single mapping confirms/
-  corrects the `script.rs:161` voice heuristic. The player + format are now known;
-  only the line→index computation is left.
+- **Direct SND entry callers:** `output/bloodprg-snd-call-sites.tsv` is now
+  generated from `BLOODPRG.EXE` and lists all direct far calls to `0x0B1B:0x011D`
+  plus the constant `AX` clip index recovered immediately upstream. The current
+  set is ten calls: clips `0,1,1,2,3,4,5,5,5,6`; file `0x8534` is the
+  text/presentation render-path call with `AX=0`. One call (`0x7BF8`) carries
+  `AX=1` across a setup far call and is flagged in the TSV.
+- **Remaining link:** tie the `gs:0x67BB` line-complete chatter event to the
+  exact direct SND caller/runtime state. The direct-call constants show that
+  chatter is unlikely to be an arbitrary cycle through all `tb.snd` clips, but
+  the `0x67BB`→caller bridge still needs a focused trace before changing clip
+  selection again.
 - Player internals: function entry ~0xB95x; `gs:0x0A5A` = current clip slot
   (`-1` = none → skips play). Buffer/stream state at `0x0BAB`/`0x0BAD`/`0x0BAF`.
-  The clip index `AX` is computed upstream from the active line id; tracing it is
-  a multi-hop mixer trace. **Best driven by user inspection**: if exported voices
-  are wrong, that confirms the `b3==0xFF → clip=b4` heuristic is the culprit and
-  justifies finishing this trace; if voices sound right, the heuristic is
-  accidentally adequate and this drops in priority.
-- Suspected-correct logic (unconfirmed): `b3==0xFF` ⇒ no/auto voice (note
-  `0xFF+9 = 0x108`, an out-of-range "none" line id), `b3` in `1..=N` ⇒ clip
-  `b3-1`. Do NOT change `script.rs` until inspection or the trace confirms it.
+  Character voice selection is resolved in `script.rs`: `b3==0xFF` or `0x00`
+  means no voice, and `b3 in 1..=N` maps to clip `b3-1`. Do not revive the old
+  `b3==0xFF -> b4` branch; `b4` is the TEXT control-flag byte, not a clip index.
 
 ### BASIC VM nature (important for the renderer)
 
@@ -622,6 +624,12 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       the recovered `0x94BA..0x94DD`/`0x115D..0x1188` state machine by scheduling
       one `tb.snd` chatter event after a subtitle finishes revealing, instead of
       the previous one-SFX-per-character approximation.
+- [x] Emit binary-derived SND entry call sites:
+      `bloodprg-snd-call-sites.tsv` scans `BLOODPRG.EXE` for direct far calls to
+      `0x0B1B:0x011D`, recovers the upstream constant `AX` clip index, and flags
+      the one call where `AX` is carried across a setup far call. This gives the
+      chatter/voice SFX audit a test-backed caller map instead of handwritten
+      disassembly notes.
 - [x] Emit branch-scenario dialogue rows/runs:
       `script-branch-scenario-dialogue.tsv` reuses the same executed-dialogue
       resolver against each forced branch trace, and

@@ -197,6 +197,20 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         find_file_recursive(&tmp_iso, "blood.dat").ok_or("blood.dat not found in ISO")?;
     eprintln!("Found: {}", blood_dat.display());
 
+    if let Some(bloodprg_path) = find_file_recursive(&tmp_iso, "BLOODPRG.EXE") {
+        eprintln!("Parsing: {}", bloodprg_path.display());
+        let bloodprg = BloodPrg::parse_file(&bloodprg_path)?;
+        let snd_call_sites = bloodprg.snd_entry_call_sites();
+        write_bloodprg_snd_call_sites_manifest(
+            &snd_call_sites,
+            &out_dir.join("bloodprg-snd-call-sites.tsv"),
+        )?;
+        eprintln!(
+            "Recovered {} BLOODPRG.EXE SND entry call sites",
+            snd_call_sites.len()
+        );
+    }
+
     let descript_db = if let Some(descript_path) = find_file_recursive(&tmp_iso, "DESCRIPT.DES") {
         eprintln!("Parsing: {}", descript_path.display());
         let db = parse_descript(&descript_path)?;
@@ -580,6 +594,38 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn write_bloodprg_snd_call_sites_manifest(
+    rows: &[SndEntryCallSite],
+    out_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let mut file = File::create(out_path)?;
+    writeln!(
+        file,
+        "file_offset\tsegment\toffset\ttarget_segment\ttarget_offset\tax_value\tax_source_file_offset\tax_source\tintervening_far_calls\tnote"
+    )?;
+    for row in rows {
+        writeln!(
+            file,
+            "0x{:05x}\t{:04x}\t{:04x}\t{:04x}\t{:04x}\t{}\t{}\t{}\t{}\t{}",
+            row.file_offset,
+            row.segment,
+            row.offset,
+            row.target_segment,
+            row.target_offset,
+            row.ax_value
+                .map(|value| format!("{value}"))
+                .unwrap_or_default(),
+            row.ax_source_file_offset
+                .map(|file_offset| format!("0x{file_offset:05x}"))
+                .unwrap_or_default(),
+            row.ax_source,
+            row.intervening_far_calls,
+            clean_tsv(row.note),
+        )?;
+    }
+    Ok(())
+}
+
 mod audio;
 mod character;
 mod dat;
@@ -595,6 +641,7 @@ mod subtitle_sfx;
 
 use audio::*;
 use character::*;
+use commander_blood_tools::bloodprg::{BloodPrg, SndEntryCallSite};
 use commander_blood_tools::vm;
 use dat::*;
 use descript::*;
