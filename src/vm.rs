@@ -91,6 +91,7 @@ pub const OPCODE_DESC: [(u8, u8); 0x34] = [
 pub const OP_MIN: u8 = 0xA0;
 pub const OP_MAX: u8 = 0xD3;
 pub const OP_TEXT: u8 = 0xA6;
+pub const OP_RECORD_LINK: u8 = 0xC3;
 pub const OP_ACTOR: u8 = 0xC4;
 pub const OP_RECORD_CLEAR: u8 = 0xC9;
 pub const TEXT_SELECTOR_NONE: u8 = 0xFF;
@@ -181,6 +182,17 @@ pub enum VmToken {
     /// offset the extractor uses as `object_offset + 0x3A` to track the current
     /// speaker; the second is the related record offset stored by the handler.
     Actor {
+        offset: usize,
+        record_offset: u16,
+        related_record_offset: u16,
+        len: usize,
+    },
+    /// `0xC3` record link.
+    ///
+    /// The DOS handler consumes two u16 operands and writes a 6-byte record
+    /// entry `{0x00C3, related_record_offset, 1}` on the mode-0 success path.
+    /// This is a line-record relation, not a speaker marker.
+    RecordLink {
         offset: usize,
         record_offset: u16,
         related_record_offset: u16,
@@ -277,7 +289,16 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
             len = (if mode1 { b1 } else { b0 } as usize).max(1);
         }
 
-        if op == OP_ACTOR {
+        if op == OP_RECORD_LINK {
+            let record_offset = read_u16(cod, pos + 1).unwrap_or(0);
+            let related_record_offset = read_u16(cod, pos + 3).unwrap_or(0);
+            out.push(VmToken::RecordLink {
+                offset: pos,
+                record_offset,
+                related_record_offset,
+                len,
+            });
+        } else if op == OP_ACTOR {
             let record_offset = read_u16(cod, pos + 1).unwrap_or(0);
             let related_record_offset = read_u16(cod, pos + 3).unwrap_or(0);
             out.push(VmToken::Actor {
@@ -381,6 +402,8 @@ fn read_u16(cod: &[u8], at: usize) -> Option<u16> {
 //       offset and doubles as object_offset + 0x3A (talk field) for speaker
 //       tracking; the second operand is a related record offset consumed by the
 //       DOS handler.
+//   * 0xC3: record link. The handler writes {0x00C3, related, 1}; this is
+//       presentation record state, not a speaker change.
 //   * 0xC9: record clear. The handler zeroes a 6-byte record and, when the
 //       previous entry was 0xC4, clears the related actor subrecord too.
 // NOTE: this is a LINEAR pass — it does not yet evaluate the 0xAF-family
@@ -1131,6 +1154,22 @@ mod tests {
     }
 
     #[test]
+    fn record_link_token_exposes_both_binary_operands() {
+        let cod = [OP_RECORD_LINK, 0x94, 0x05, 0x28, 0x00, 0xFF];
+
+        let toks = walk(&cod, 0, cod.len());
+        assert_eq!(
+            toks[0],
+            VmToken::RecordLink {
+                offset: 0,
+                record_offset: 0x0594,
+                related_record_offset: 0x0028,
+                len: 5
+            }
+        );
+    }
+
+    #[test]
     fn record_clear_token_exposes_cleared_record() {
         let cod = [OP_RECORD_CLEAR, 0x84, 0x00, 0xFF];
 
@@ -1231,6 +1270,28 @@ mod tests {
         assert_eq!(states[0].location_offset, Some(0x1111));
         assert_eq!(states[1].actor_offset, None);
         assert_eq!(states[1].location_offset, None);
+    }
+
+    #[test]
+    fn interpreter_record_link_does_not_restore_cleared_actor() {
+        let actor = 0x0100u16;
+        let location_field = actor + LOCATION_FIELD;
+        let mut var = vec![0; 0x0200];
+        state_set_u16(&mut var, location_field, 0x1111);
+
+        let mut cod = Vec::new();
+        push_actor_ref(&mut cod, actor);
+        push_record_clear(&mut cod, actor);
+        cod.push(OP_RECORD_LINK);
+        cod.extend_from_slice(&actor.wrapping_add(TALK_FIELD).to_le_bytes());
+        cod.extend_from_slice(&0x0028u16.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xFF);
+
+        let states = interpret_line_states(&cod, &var);
+        assert_eq!(states.len(), 1);
+        assert_eq!(states[0].actor_offset, None);
+        assert_eq!(states[0].location_offset, None);
     }
 
     #[test]

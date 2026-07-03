@@ -29,6 +29,7 @@ DS:0x6770,vm_pending_word,pending word appended by 0xA3 handler
 0x005627,vm_dispatch,"call gs:[bx+0x6eb0], bx=(opcode-0xa0)*2 -> per-opcode near handler"
 0x0142D0,vm_handler_table,"opcode handler jump table DS:0x6eb0, 52 near offsets into seg 0x04da, opcodes A0..D3"
 0x00660C,vm_op_a6_text,"0xA6 TEXT handler: b1b2=line index into gs:0x6724; b3->gs:0x1fab; b4/b5=control(skip/loop/active 0x80)"
+0x006EEE,vm_op_c3_record_link,"0xC3 record-link handler; writes es:[record]={0xc3,related,1} on mode-0 success"
 0x006C7E,vm_op_c4_actor,"0xC4 actor/record handler; consumes record+related u16 operands and writes es:[record]={0xc4,related,0}"
 0x006FB9,vm_op_c9_record_clear,"0xC9 record-clear handler; zeros es:[record..record+4] and clears related 0xc4 actor subrecord"
 DS:0x1FAB,vm_text_selector,"signed per-line selector set from 0xA6 b3 (0xff/0x00=no voice; 1..N=talk clip)"

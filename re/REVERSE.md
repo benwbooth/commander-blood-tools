@@ -321,7 +321,7 @@ struct looks larger than 0x18, may be a different/extended table).
 | op | handler | | op | handler | | op | handler |
 |----|---------|-|----|---------|-|----|---------|
 | A0 | 0x6559 | | AC | 0x685C | | C2 | 0x6E34 |
-| A1 | 0x6572 | | AD/AF/B2/B3/BA-BC | 0x6946 | | C3 | 0x6EEE |
+| A1 | 0x6572 | | AD/AF/B2/B3/BA-BC | 0x6946 | | **C3** | **0x6EEE** (record link) |
 | A2 | 0x6588 | | AE/B0 | 0x6902 | | **C4** | **0x6C7E** (actor/record op) |
 | A3 | 0x6596 (collect words) | | B1/B4-B6/BE-C0 | 0x6863 | | C5 | 0x6D18 |
 | A4 | 0x65DB | | B7 | 0x6AA7 | | C6 | 0x6D80 |
@@ -373,6 +373,23 @@ triggered by a dynamic callback rather than the now-decoded `gs:0x67BB` hold
 flag; (2) decode any remaining line-record display flags that affect
 subtitle/talk-HNM routing; (3) map background/music/HNM opcodes among
 0xB7/0xC1–0xC9 handlers; (4) `gs:0x6724` line-record layout.
+
+### 0xC3 record-link handler @ file 0x6EEE — relation state (DECODED)
+
+`0xC3` consumes two u16 operands: `C3 <record:u16> <related:u16>` (5 bytes).
+In mode 0 the handler checks that both involved records are active and that the
+destination record is not already a `0xC4` actor entry. On success it writes:
+
+    es:[record + 0] = 0x00C3
+    es:[record + 2] = related
+    es:[record + 4] = 0x0001
+
+This is relation/presentation line-record state, not a speaker marker. Several
+real scripts emit narrator/system text after `C9` then `C3`; treating `C3` as a
+speaker would reintroduce wrong actor/background attribution. Rust exposes it as
+`VmToken::RecordLink` and the parsers deliberately do not update current speaker
+state from it. `script-disassembly.tsv` now emits it as `record_link` instead of
+leaving those bytes in raw rows.
 
 ### 0xC4 actor/record handler @ file 0x6C7E — operands (DECODED)
 
@@ -550,6 +567,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 - [x] Reconcile 0xC4 length and operands. The handler consumes two u16 operands,
       writes a 6-byte record entry on success, and `src/vm.rs` now exposes both
       words instead of reducing the token to a single actor id.
+- [x] Port 0xC3 record-link semantics. `src/vm.rs` exposes
+      `VmToken::RecordLink`, the disassembly manifest emits `record_link`, and
+      parser tests lock in that `C3` does not restore speaker context after a
+      `C9` clear.
 - [x] Port 0xC9 record-clear speaker lifetime semantics. `src/vm.rs` exposes
       `VmToken::RecordClear`, the bounded interpreter clears the active actor
       when its talk-field record is cleared, and the script parsers stop carrying
@@ -580,8 +601,8 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 - [x] Object-ref opcodes decode correctly now: `0xC4` = 5-byte actor/record
       operation (`record_offset = object_offset + 0x3A` talk field for speaker
       tracking, plus a second related-record word; 71/95 first operands resolve
-      to Characters), `0xC9` also character-heavy, `0xC3` some. Location is NOT
-      set by referencing a location object.
+      to Characters), `0xC3` = non-speaker record link, and `0xC9` = record
+      clear. Location is NOT set by referencing a location object.
 ### Runtime object-state model (CONFIRMED) — path to accurate location
 
 - The VM keeps a **runtime object-state area** addressed `es:[bx+di]` with
