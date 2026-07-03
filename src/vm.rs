@@ -99,6 +99,8 @@ pub const OP_ACTOR: u8 = 0xC4;
 pub const OP_RECORD_ENTRY_MIN: u8 = 0xC5;
 pub const OP_RECORD_ENTRY_MAX: u8 = 0xC8;
 pub const OP_RECORD_CLEAR: u8 = 0xC9;
+pub const OP_GLOBAL_WORD_COMPARE: u8 = 0xCA;
+pub const OP_GLOBAL_PAIR_COMPARE: u8 = 0xCB;
 pub const TEXT_SELECTOR_NONE: u8 = 0xFF;
 pub const TEXT_SELECTOR_SILENT: u8 = 0x00;
 pub const ACTIVE_LINE_ID_BIAS: u16 = 9;
@@ -133,6 +135,10 @@ pub fn is_record_entry_opcode(opcode: u8) -> bool {
 
 pub fn is_record_state_opcode(opcode: u8) -> bool {
     (OP_RECORD_STATE_MIN..=OP_RECORD_STATE_MAX).contains(&opcode)
+}
+
+pub fn is_global_compare_opcode(opcode: u8) -> bool {
+    opcode == OP_GLOBAL_WORD_COMPARE || opcode == OP_GLOBAL_PAIR_COMPARE
 }
 
 pub fn record_entry_stored_related_offset(opcode: u8, operand: u16) -> u16 {
@@ -276,6 +282,23 @@ pub enum VmToken {
         operand: u16,
         len: usize,
     },
+    /// `0xCA` compares a u16 token value against global `gs:0x0AA6`.
+    GlobalWordCompare {
+        offset: usize,
+        operator: u8,
+        tag: u8,
+        value: u16,
+        len: usize,
+    },
+    /// `0xCB` compares a packed two-byte token value against globals
+    /// `gs:0x0AAA:0x0AA8`, preserving the final consumed word as `reserved`.
+    GlobalPairCompare {
+        offset: usize,
+        operator: u8,
+        packed_value: u16,
+        reserved: u16,
+        len: usize,
+    },
     /// Any other opcode; raw length recorded.
     Op {
         offset: usize,
@@ -379,6 +402,22 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
                 opcode: op,
                 record_offset,
                 operand,
+                len,
+            });
+        } else if op == OP_GLOBAL_WORD_COMPARE {
+            out.push(VmToken::GlobalWordCompare {
+                offset: pos,
+                operator: cod.get(pos + 1).copied().unwrap_or(0),
+                tag: cod.get(pos + 2).copied().unwrap_or(0),
+                value: read_u16(cod, pos + 3).unwrap_or(0),
+                len,
+            });
+        } else if op == OP_GLOBAL_PAIR_COMPARE {
+            out.push(VmToken::GlobalPairCompare {
+                offset: pos,
+                operator: cod.get(pos + 1).copied().unwrap_or(0),
+                packed_value: read_u16(cod, pos + 2).unwrap_or(0),
+                reserved: read_u16(cod, pos + 4).unwrap_or(0),
                 len,
             });
         } else if op == OP_RECORD_LINK {
@@ -1423,6 +1462,35 @@ mod tests {
                 record_offset: 0x0030,
                 operand: 0x1004,
                 len: 5
+            }
+        );
+    }
+
+    #[test]
+    fn global_compare_tokens_expose_consumed_operands() {
+        let cod = [
+            0xCA, 0xF1, 0xC1, 0x08, 0x00, 0xCB, 0xF5, 0x19, 0x0C, 0xCA, 0x07, 0xFF,
+        ];
+
+        let toks = walk(&cod, 0, cod.len());
+        assert_eq!(
+            toks[0],
+            VmToken::GlobalWordCompare {
+                offset: 0,
+                operator: 0xF1,
+                tag: 0xC1,
+                value: 0x0008,
+                len: 5
+            }
+        );
+        assert_eq!(
+            toks[1],
+            VmToken::GlobalPairCompare {
+                offset: 5,
+                operator: 0xF5,
+                packed_value: 0x0C19,
+                reserved: 0x07CA,
+                len: 6
             }
         );
     }

@@ -1051,6 +1051,54 @@ pub(super) fn disassemble_function(
             continue;
         }
 
+        if pos + 4 < function_end && cod[pos] == vm::OP_GLOBAL_WORD_COMPARE {
+            push_raw_disassembly(script, function_name, cod, &mut rows, raw_start.take(), pos);
+            let operator = cod[pos + 1];
+            let tag = cod[pos + 2];
+            let value = u16::from_le_bytes([cod[pos + 3], cod[pos + 4]]);
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: pos,
+                len: 5,
+                opcode: "ca".to_string(),
+                mnemonic: "global_word_compare".to_string(),
+                operands: format!(
+                    "global=gs:0x0aa6 op=0x{operator:02x} tag=0x{tag:02x} value=0x{value:04x}"
+                ),
+                actor_record: current_actor
+                    .as_ref()
+                    .map(|actor| actor.record_name.clone()),
+                text: None,
+            });
+            pos += 5;
+            continue;
+        }
+
+        if pos + 5 < function_end && cod[pos] == vm::OP_GLOBAL_PAIR_COMPARE {
+            push_raw_disassembly(script, function_name, cod, &mut rows, raw_start.take(), pos);
+            let operator = cod[pos + 1];
+            let packed = u16::from_le_bytes([cod[pos + 2], cod[pos + 3]]);
+            let reserved = u16::from_le_bytes([cod[pos + 4], cod[pos + 5]]);
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: pos,
+                len: 6,
+                opcode: "cb".to_string(),
+                mnemonic: "global_pair_compare".to_string(),
+                operands: format!(
+                    "global=gs:0x0aaa:0x0aa8 op=0x{operator:02x} packed=0x{packed:04x} reserved=0x{reserved:04x}"
+                ),
+                actor_record: current_actor
+                    .as_ref()
+                    .map(|actor| actor.record_name.clone()),
+                text: None,
+            });
+            pos += 6;
+            continue;
+        }
+
         if pos + 2 < function_end && cod[pos] == 0xc9 {
             push_raw_disassembly(script, function_name, cod, &mut rows, raw_start.take(), pos);
             let addr = u16::from_le_bytes([cod[pos + 1], cod[pos + 2]]);
@@ -3002,7 +3050,8 @@ mod tests {
         let cod = [
             0x01, 0x02, 0xc4, 0x3a, 0x00, 0x00, 0x00, 0xa6, 0x34, 0x12, 0x01, 0x00, 0x80, 0x01,
             0x00, 0x00, 0x00, 0xc3, 0x3a, 0x00, 0x28, 0x00, 0xc6, 0x8e, 0x10, 0x52, 0x10, 0xc9,
-            0x3a, 0x00, 0xb7, 0x10, 0x00, 0x09, 0xc1, 0x4e, 0x12, 0x52, 0x0d, 0x03,
+            0x3a, 0x00, 0xb7, 0x10, 0x00, 0x09, 0xc1, 0x4e, 0x12, 0x52, 0x0d, 0xca, 0xf1, 0xc1,
+            0x08, 0x00, 0xcb, 0xf5, 0x19, 0x0c, 0xca, 0x07, 0x03,
         ];
         let mut actors = HashMap::new();
         actors.insert(
@@ -3049,6 +3098,16 @@ mod tests {
                 && row.opcode == "c1"
                 && row.operands.contains("ref=0x124e")
                 && row.operands.contains("operand=0x0d52")
+        }));
+        assert!(rows.iter().any(|row| {
+            row.mnemonic == "global_word_compare"
+                && row.operands.contains("global=gs:0x0aa6")
+                && row.operands.contains("value=0x0008")
+        }));
+        assert!(rows.iter().any(|row| {
+            row.mnemonic == "global_pair_compare"
+                && row.operands.contains("global=gs:0x0aaa:0x0aa8")
+                && row.operands.contains("packed=0x0c19")
         }));
         assert_eq!(rows[0].function_name, "func");
     }

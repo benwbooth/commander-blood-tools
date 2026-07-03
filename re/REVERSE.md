@@ -415,6 +415,35 @@ disassembly emits `record_state` rows. The deeper resolved-table side effects ar
 not yet applied by `execute_trace`; that awaits the `gs:0x6724` line-record layout
 model.
 
+### 0xCA/0xCB global condition handlers — token shape (PARTIALLY DECODED)
+
+`0xCA` and `0xCB` are condition handlers, not media commands. They call branch
+helper `0x6462` when their comparison fails.
+
+`0xCA` shape:
+
+    CA <op:u8> <tag:u8> <value:u16>
+
+The handler stores the first byte in `dl`, ignores the high byte of the first
+`lodsw` (kept by Rust as `tag`), then compares `value` against `gs:0x0AA6`.
+`op=0xF1` passes when `value > gs:0x0AA6`; `op=0xF2` passes when
+`value < gs:0x0AA6`; other operators use equality.
+
+`0xCB` shape:
+
+    CB <op:u8> <packed:u16> <reserved:u16>
+
+The handler compares `packed` high/low bytes against `gs:0x0AAA` and
+`gs:0x0AA8` as a two-byte pair. `op=0xF1` is greater-than, `op=0xF2` is
+less-than, otherwise equality. The final word is consumed but not used by the
+observed compare path, so Rust keeps it as `reserved`.
+
+Rust now exposes these as `VmToken::GlobalWordCompare` and
+`VmToken::GlobalPairCompare`, and `script-disassembly.tsv` emits
+`global_word_compare` / `global_pair_compare` rows. `execute_trace` does not yet
+branch on them because the correct runtime source of `gs:0x0AA6/0x0AA8/0x0AAA`
+has not been wired into the host-side VM context.
+
 ### 0xC3 record-link handler @ file 0x6EEE — relation state (DECODED)
 
 `0xC3` consumes two u16 operands: `C3 <record:u16> <related:u16>` (5 bytes).
@@ -632,6 +661,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `script-disassembly.tsv` can now show true `record_state` rows instead of
       raw byte spans. Full side-effect execution still depends on the line-record
       table layout.
+- [x] Expose 0xCA/0xCB global condition tokens. `src/vm.rs` preserves the
+      consumed compare operands as `VmToken::GlobalWordCompare` and
+      `VmToken::GlobalPairCompare`; branch evaluation is pending a runtime
+      globals context for `gs:0x0AA6/0x0AA8/0x0AAA`.
 - [ ] Decode the cs:0x0F29 and cs:0x06D4 sub-dispatch tables; document the
       24-byte actor/object struct iterated at 0x7E09.
 - [x] Reconcile 0xC4 length and operands. The handler consumes two u16 operands,

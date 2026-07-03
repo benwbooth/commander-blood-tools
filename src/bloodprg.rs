@@ -491,6 +491,18 @@ fn opcode_metadata(opcode: u8, handler_file_offset: usize) -> OpcodeMetadata {
             rust_status: "token-ported",
             notes: "C9 clears a 6-byte line record; Rust uses matching clears to stop actor/background context bleed",
         },
+        vm::OP_GLOBAL_WORD_COMPARE => OpcodeMetadata {
+            mnemonic: "global_word_compare",
+            family: "global-condition",
+            rust_status: "token-ported",
+            notes: "CA compares a token u16 against gs:0x0aa6; Rust exposes the operands, runtime globals are not yet wired into execute_trace",
+        },
+        vm::OP_GLOBAL_PAIR_COMPARE => OpcodeMetadata {
+            mnemonic: "global_pair_compare",
+            family: "global-condition",
+            rust_status: "token-ported",
+            notes: "CB compares a packed token pair against gs:0x0aaa/0x0aa8; Rust exposes operands while runtime globals remain pending",
+        },
         _ => match handler_file_offset {
             0x006863 => OpcodeMetadata {
                 mnemonic: "state_assign_or_signed_compare",
@@ -772,6 +784,24 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         ds_offset: None,
         kind: "script-vm",
         comment: "record-clear handler; zeros a 6-byte record and clears related 0xc4 actor subrecord",
+    },
+    BinarySymbol {
+        name: "vm_op_ca_global_word_compare",
+        file_offset: 0x0064e5,
+        segment: Some(0x04da),
+        offset: Some(0x1145),
+        ds_offset: None,
+        kind: "script-vm",
+        comment: "CA global condition handler; compares token value to gs:0x0aa6",
+    },
+    BinarySymbol {
+        name: "vm_op_cb_global_pair_compare",
+        file_offset: 0x006510,
+        segment: Some(0x04da),
+        offset: Some(0x1170),
+        ds_offset: None,
+        kind: "script-vm",
+        comment: "CB global pair condition handler; compares packed token value to gs:0x0aaa/0x0aa8",
     },
     BinarySymbol {
         name: "render_string_entry",
