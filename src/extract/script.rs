@@ -3083,6 +3083,271 @@ pub(super) fn profile_dialogue_run_output_stem(run: &ScriptProfileDialogueRun<'_
     )
 }
 
+fn executed_line_input(row: &ScriptExecutedSpeechLine) -> vm::LineInput {
+    vm::LineInput {
+        actor: row.actor_record.clone(),
+        background_hnm: row.background_hnm.clone(),
+        background_record: row.background_record.clone(),
+        background_music: row.background_music.clone(),
+        voice_selector: row.param0,
+        active_line_id: row.active_line_id,
+        flags_b4: row.param1,
+        clip_index: row.clip_index,
+        text: row.text.clone(),
+    }
+}
+
+fn scene_event_kind(event: &vm::SceneEvent) -> &'static str {
+    match event {
+        vm::SceneEvent::SetBackground { .. } => "set_background",
+        vm::SceneEvent::PlayMusic { .. } => "play_music",
+        vm::SceneEvent::ShowSpeaker { .. } => "show_speaker",
+        vm::SceneEvent::PlayTalkHnm { .. } => "play_talk_hnm",
+        vm::SceneEvent::PlayVoice { .. } => "play_voice",
+        vm::SceneEvent::DrawSubtitle { .. } => "draw_subtitle",
+        vm::SceneEvent::PlayChatter { .. } => "play_chatter",
+        vm::SceneEvent::Clear => "clear",
+    }
+}
+
+fn format_scene_event_fields(
+    event: &vm::SceneEvent,
+    source: Option<&ScriptExecutedSpeechLine>,
+) -> (
+    String,
+    String,
+    String,
+    String,
+    String,
+    String,
+    String,
+    String,
+    String,
+) {
+    let mut actor = source
+        .and_then(|line| line.actor_record.clone())
+        .unwrap_or_default();
+    let mut background_record = source
+        .and_then(|line| line.background_record.clone())
+        .unwrap_or_default();
+    let mut background_hnm = source
+        .and_then(|line| line.background_hnm.clone())
+        .unwrap_or_default();
+    let mut background_music = source
+        .and_then(|line| line.background_music.clone())
+        .unwrap_or_default();
+    let mut clip_index = String::new();
+    let mut voice_selector = String::new();
+    let mut active_line_id = String::new();
+    let mut flags_b4 = String::new();
+    let mut text = String::new();
+
+    match event {
+        vm::SceneEvent::SetBackground { hnm, record } => {
+            background_record = record.clone().unwrap_or_default();
+            background_hnm = hnm.clone().unwrap_or_default();
+        }
+        vm::SceneEvent::PlayMusic { music } => {
+            background_music = music.clone().unwrap_or_default();
+        }
+        vm::SceneEvent::ShowSpeaker { actor: event_actor } => {
+            actor = event_actor.clone();
+        }
+        vm::SceneEvent::PlayTalkHnm {
+            clip_index: event_clip,
+        }
+        | vm::SceneEvent::PlayVoice {
+            clip_index: event_clip,
+        } => {
+            clip_index = event_clip.to_string();
+        }
+        vm::SceneEvent::DrawSubtitle {
+            text: event_text,
+            voice_selector: event_voice_selector,
+            active_line_id: event_active_line_id,
+            flags,
+        } => {
+            voice_selector = format!("{event_voice_selector:02x}");
+            active_line_id = format!("0x{event_active_line_id:04x}");
+            flags_b4 = format!("{flags:02x}");
+            text = clean_tsv(event_text);
+        }
+        vm::SceneEvent::PlayChatter {
+            active_line_id: event_active_line_id,
+        } => {
+            active_line_id = format!("0x{event_active_line_id:04x}");
+        }
+        vm::SceneEvent::Clear => {}
+    }
+
+    (
+        actor,
+        background_record,
+        background_hnm,
+        background_music,
+        clip_index,
+        voice_selector,
+        active_line_id,
+        flags_b4,
+        text,
+    )
+}
+
+pub(super) fn write_script_scene_events_manifest(
+    rows: &[ScriptExecutedSpeechLine],
+    out_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let runs = script_executed_dialogue_runs(rows);
+    let mut file = File::create(out_path)?;
+    writeln!(
+        file,
+        "scenario_id\trun_id\tmp4\tscript\trun_index\tevent_index\tevent_kind\tsequence_index\toffset\tactor\tbackground_record\tbackground_hnm\tbackground_music\tclip_index\tvoice_selector\tactive_line_id\tflags_b4\ttext"
+    )?;
+    for run in runs {
+        let run_id = executed_dialogue_run_id(&run);
+        let output_stem = executed_dialogue_run_output_stem(&run);
+        let inputs = run
+            .lines
+            .iter()
+            .map(|line| executed_line_input(line))
+            .collect::<Vec<_>>();
+        let events = vm::emit_scene_events(&inputs);
+        let mut line_index = 0usize;
+
+        for (event_index, event) in events.iter().enumerate() {
+            let source = if matches!(event, vm::SceneEvent::Clear) {
+                None
+            } else {
+                run.lines.get(line_index).copied()
+            };
+            let (
+                actor,
+                background_record,
+                background_hnm,
+                background_music,
+                clip_index,
+                voice_selector,
+                active_line_id,
+                flags_b4,
+                text,
+            ) = format_scene_event_fields(event, source);
+            writeln!(
+                file,
+                "{}\t{}\t{}.mp4\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                run.scenario_id.as_deref().unwrap_or(""),
+                run_id,
+                output_stem,
+                run.script,
+                run.run_index,
+                event_index,
+                scene_event_kind(event),
+                source
+                    .map(|line| line.sequence_index.to_string())
+                    .unwrap_or_default(),
+                source
+                    .map(|line| format!("0x{:05x}", line.offset))
+                    .unwrap_or_default(),
+                actor,
+                background_record,
+                background_hnm,
+                background_music,
+                clip_index,
+                voice_selector,
+                active_line_id,
+                flags_b4,
+                text,
+            )?;
+            if matches!(event, vm::SceneEvent::PlayChatter { .. }) {
+                line_index += 1;
+            }
+        }
+    }
+    Ok(())
+}
+
+pub(super) fn write_script_profile_scene_events_manifest(
+    rows: &[ScriptProfileExecutedSpeechLine],
+    out_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let runs = script_profile_dialogue_runs(rows);
+    let mut file = File::create(out_path)?;
+    writeln!(
+        file,
+        "sequence_id\trun_id\tmp4\trun_index\tfirst_profile_index\tlast_profile_index\tevent_index\tevent_kind\tglobal_sequence_index\tprofile_index\td2_operand\tscript\tscript_sequence_index\toffset\tactor\tbackground_record\tbackground_hnm\tbackground_music\tclip_index\tvoice_selector\tactive_line_id\tflags_b4\ttext"
+    )?;
+    for run in runs {
+        let run_id = profile_dialogue_run_id(&run);
+        let output_stem = profile_dialogue_run_output_stem(&run);
+        let inputs = run
+            .lines
+            .iter()
+            .map(|line| executed_line_input(&line.row))
+            .collect::<Vec<_>>();
+        let events = vm::emit_scene_events(&inputs);
+        let mut line_index = 0usize;
+
+        for (event_index, event) in events.iter().enumerate() {
+            let source = if matches!(event, vm::SceneEvent::Clear) {
+                None
+            } else {
+                run.lines.get(line_index).copied()
+            };
+            let (
+                actor,
+                background_record,
+                background_hnm,
+                background_music,
+                clip_index,
+                voice_selector,
+                active_line_id,
+                flags_b4,
+                text,
+            ) = format_scene_event_fields(event, source.map(|line| &line.row));
+            writeln!(
+                file,
+                "{}\t{}\t{}.mp4\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                run.sequence_id,
+                run_id,
+                output_stem,
+                run.run_index,
+                run.first_profile_index,
+                run.last_profile_index,
+                event_index,
+                scene_event_kind(event),
+                source
+                    .map(|line| line.global_sequence_index.to_string())
+                    .unwrap_or_default(),
+                source
+                    .map(|line| line.profile_index.to_string())
+                    .unwrap_or_default(),
+                source
+                    .map(|line| line.d2_operand.to_string())
+                    .unwrap_or_default(),
+                source.map(|line| line.row.script.as_str()).unwrap_or(""),
+                source
+                    .map(|line| line.script_sequence_index.to_string())
+                    .unwrap_or_default(),
+                source
+                    .map(|line| format!("0x{:05x}", line.row.offset))
+                    .unwrap_or_default(),
+                actor,
+                background_record,
+                background_hnm,
+                background_music,
+                clip_index,
+                voice_selector,
+                active_line_id,
+                flags_b4,
+                text,
+            )?;
+            if matches!(event, vm::SceneEvent::PlayChatter { .. }) {
+                line_index += 1;
+            }
+        }
+    }
+    Ok(())
+}
+
 pub(super) fn write_script_executed_dialogue_runs_manifest(
     rows: &[ScriptExecutedSpeechLine],
     out_path: &Path,
@@ -4278,6 +4543,84 @@ mod tests {
         assert!(manifest.contains("SCRIPT2-0001"));
         assert!(manifest.contains("Actor_A,Actor_B"));
         assert!(manifest.contains("0x00050\t0x00010"));
+    }
+
+    #[test]
+    fn scene_events_manifest_exports_renderer_event_stream() {
+        let rows = vec![
+            executed_speech_line("SCRIPT2", 0, 0x50, Some("Actor_A"), Some("Room1"), "first"),
+            executed_speech_line("SCRIPT2", 1, 0x60, Some("Actor_A"), Some("Room1"), "second"),
+        ];
+
+        let path = std::env::temp_dir().join(format!(
+            "commander-blood-scene-events-{}.tsv",
+            std::process::id()
+        ));
+        write_script_scene_events_manifest(&rows, &path).expect("write scene events");
+        let manifest = fs::read_to_string(&path).expect("read scene events");
+        let _ = fs::remove_file(&path);
+
+        assert!(manifest.starts_with("scenario_id\trun_id\tmp4\tscript"));
+        assert!(manifest.contains("executed-dialogue-run - script2 - 0001 - room1.mp4"));
+        assert!(manifest.contains("\tset_background\t0\t0x00050\tActor_A\tRoom1"));
+        assert!(manifest.contains("\tshow_speaker\t0\t0x00050\tActor_A"));
+        assert!(
+            manifest
+                .contains("\tplay_talk_hnm\t0\t0x00050\tActor_A\tRoom1\tRoom1.hnm\tRoom1_music\t0")
+        );
+        assert!(
+            manifest
+                .contains("\tplay_voice\t0\t0x00050\tActor_A\tRoom1\tRoom1.hnm\tRoom1_music\t0")
+        );
+        assert!(manifest.contains("\tdraw_subtitle\t0\t0x00050\tActor_A\tRoom1\tRoom1.hnm\tRoom1_music\t\t01\t0x000a\t00\tfirst"));
+        assert!(manifest.contains(
+            "\tplay_chatter\t0\t0x00050\tActor_A\tRoom1\tRoom1.hnm\tRoom1_music\t\t\t0x000a"
+        ));
+        let last = manifest.lines().last().expect("last scene-event row");
+        let columns = last.split('\t').collect::<Vec<_>>();
+        assert_eq!(columns[6], "clear");
+        assert_eq!(columns[7], "");
+        assert_eq!(columns[8], "");
+    }
+
+    #[test]
+    fn profile_scene_events_manifest_exports_global_context() {
+        let rows = vec![
+            profile_speech_line(
+                0,
+                0,
+                "SCRIPT1",
+                0,
+                0x10,
+                Some("Actor_A"),
+                Some("Room1"),
+                "a",
+            ),
+            profile_speech_line(
+                1,
+                1,
+                "SCRIPT2",
+                0,
+                0x20,
+                Some("Actor_A"),
+                Some("Room1"),
+                "b",
+            ),
+        ];
+
+        let path = std::env::temp_dir().join(format!(
+            "commander-blood-profile-scene-events-{}.tsv",
+            std::process::id()
+        ));
+        write_script_profile_scene_events_manifest(&rows, &path)
+            .expect("write profile scene events");
+        let manifest = fs::read_to_string(&path).expect("read profile scene events");
+        let _ = fs::remove_file(&path);
+
+        assert!(manifest.starts_with("sequence_id\trun_id\tmp4"));
+        assert!(manifest.contains("default\tdefault-profile-run-0001"));
+        assert!(manifest.contains("profile-dialogue-run - default - 0001 - room1.mp4"));
+        assert!(manifest.contains("\tdraw_subtitle\t1\t1\t2\tSCRIPT2\t0\t0x00020"));
     }
 
     #[test]

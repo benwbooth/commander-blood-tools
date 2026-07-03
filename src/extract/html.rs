@@ -326,9 +326,11 @@ pub(super) fn write_manifest_section(
         "script-text-flags.tsv",
         "script-executed-dialogue.tsv",
         "script-executed-dialogue-runs.tsv",
+        "script-scene-events.tsv",
         "script-profile-runs.tsv",
         "script-profile-executed-dialogue.tsv",
         "script-profile-dialogue-runs.tsv",
+        "script-profile-scene-events.tsv",
         "script-disassembly.tsv",
         "script-dialogue-videos.tsv",
         "script-dialogue-runs.tsv",
@@ -339,6 +341,7 @@ pub(super) fn write_manifest_section(
         "script-branch-scenarios.tsv",
         "script-branch-scenario-dialogue.tsv",
         "script-branch-scenario-dialogue-runs.tsv",
+        "script-branch-scenario-scene-events.tsv",
         "DESCRIPT.DES",
     ];
     writeln!(html, "<h2>Manifests</h2><ul>")?;

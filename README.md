@@ -54,8 +54,10 @@ function-bounded `script-disassembly.tsv`, a branch-aware
 `script-branch-coverage.tsv`, `script-branch-scenarios.tsv`,
 branch-scenario executed dialogue manifests `script-branch-scenario-dialogue.tsv` and
 `script-branch-scenario-dialogue-runs.tsv`, initial-state executed dialogue runs
-`script-executed-dialogue-runs.tsv`, VM-order `script-dialogue-runs.tsv`, and
-every valid `0xa6` TEXT token in `SCRIPT*.COD` with the VM token walker by
+`script-executed-dialogue-runs.tsv`, renderer scene-event streams
+`script-scene-events.tsv`, `script-profile-scene-events.tsv`, and
+`script-branch-scenario-scene-events.tsv`, VM-order `script-dialogue-runs.tsv`,
+and every valid `0xa6` TEXT token in `SCRIPT*.COD` with the VM token walker by
 following dictionary word offsets from `SCRIPT*.DIC`. Actor context is tracked
 from the binary-sized `0xc4` actor/object tokens where those references match
 DESCRIPT character talk slots.

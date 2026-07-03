@@ -934,6 +934,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 | `script-branch-scenarios.tsv` | extraction artifact forcing each branch decision's opposite condition once and measuring newly exposed text calls |
 | `script-branch-scenario-dialogue.tsv` | extraction artifact joining each forced branch scenario trace to decoded text/actor/background rows |
 | `script-branch-scenario-dialogue-runs.tsv` | extraction artifact grouping branch scenario dialogue rows into renderer-ready run slices; full export also emits matching `branch-scenario-dialogue-run - ...mp4` files |
+| `script-scene-events.tsv` | extraction artifact listing the exact `SceneEvent` stream consumed by default executed dialogue-run MP4s |
+| `script-profile-scene-events.tsv` | extraction artifact listing the exact `SceneEvent` stream consumed by profile-sequence dialogue-run MP4s |
+| `script-branch-scenario-scene-events.tsv` | extraction artifact listing the exact `SceneEvent` stream consumed by branch-scenario dialogue-run MP4s |
 | `script-executed-dialogue.tsv` | extraction artifact joining `execute_trace` line order to decoded text/actor/background |
 | `script-executed-dialogue-runs.tsv` | extraction artifact grouping executed dialogue by script/background run; MP4 names correspond to run-level composites |
 | `script-dialogue-runs.tsv` | extraction artifact grouping VM-order dialogue lines by script/background run |
@@ -1306,7 +1309,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       cue-derived chatter path because they do not have VM presentation events.
       `PlayTalkHnm` and `PlayVoice` are consumed as separate pending media events
       so animation and audio routing can diverge when later binary semantics
-      require it.
+      require it. Full export now emits `script-scene-events.tsv`,
+      `script-profile-scene-events.tsv`, and
+      `script-branch-scenario-scene-events.tsv` so the renderer event stream is
+      inspectable without decoding generated MP4s.
 - [x] Removed all heuristic fallbacks (per user "no fallbacks just compute it
       accurately"): dropped the static `CHAR_CONTEXTS` background fallback, the
       `lookup_character_context` gate, and the redundant `hnm_music` re-lookup.

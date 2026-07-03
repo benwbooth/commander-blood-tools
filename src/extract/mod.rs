@@ -262,6 +262,10 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         &script_executed_speech,
         &out_dir.join("script-executed-dialogue-runs.tsv"),
     )?;
+    write_script_scene_events_manifest(
+        &script_executed_speech,
+        &out_dir.join("script-scene-events.tsv"),
+    )?;
     let script_profile_sequence = parse_script_profile_sequence(
         &tmp_iso,
         &script_resource_profiles,
@@ -279,6 +283,10 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     write_script_profile_dialogue_runs_manifest(
         &script_profile_sequence.dialogue,
         &out_dir.join("script-profile-dialogue-runs.tsv"),
+    )?;
+    write_script_profile_scene_events_manifest(
+        &script_profile_sequence.dialogue,
+        &out_dir.join("script-profile-scene-events.tsv"),
     )?;
     write_script_dialogue_manifest(
         &script_executed_speech,
@@ -329,6 +337,10 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     write_script_branch_scenario_dialogue_runs_manifest(
         &script_branch_scenario_speech,
         &out_dir.join("script-branch-scenario-dialogue-runs.tsv"),
+    )?;
+    write_script_scene_events_manifest(
+        &script_branch_scenario_speech,
+        &out_dir.join("script-branch-scenario-scene-events.tsv"),
     )?;
     if !script_speech.is_empty() {
         eprintln!(
