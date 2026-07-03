@@ -728,6 +728,28 @@ So the renderer should **walk the COD in execution order** (using the length
 table + control flow) and read each 0xA6's (b1:b2 line index, b3 selector, b4/b5
 flags), rather than expecting dedicated bg/music/voice opcodes.
 
+### VM resource pointers and runtime state boundary
+
+The VM run wrapper at file `0x55A4` gates execution on `gs:0x67A8`, refreshes
+BIOS RTC globals, then resolves **five runtime resource offsets** from
+`DS:0x6712` into far pointers at `DS:0x671C..0x672F` via far call
+`0x04B9:0x0190`:
+
+| pointer | observed use |
+|---|---|
+| `DS:0x671C` | COD pointer used by the main exec loop (`lds si, gs:[0x671C]`) |
+| `DS:0x6720` | auxiliary COD pointer used by token walkers/helpers |
+| `DS:0x6724` | runtime object/line-record state block used by record handlers |
+| `DS:0x6728` | DIC pointer used by 0xA6 subtitle assembly (`gs:0x672A` segment) |
+| `DS:0x672C` | DEB/object table pointer scanned as 20-byte records |
+
+The `DS:0x6712` words are zero in the EXE image; they are populated at runtime
+before this wrapper. Save/load code at `0x1C3F`/`0x1CBD` serializes the
+`DS:0x6724` state block separately using a runtime size derived from
+`DS:0x6716`. This is the boundary that blocks using raw `SCRIPT*.VAR` line flag
+words as initialized display state: `SCRIPT*.VAR` is an input image, while the
+game builds/serializes a live state block through this pointer setup.
+
 ## Location backgrounds: planet (HNM) vs landscape (LBM) — root cause of wrong bg
 
 Each DESCRIPT **Location** record carries TWO kinds of background:
@@ -797,6 +819,11 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       is the already-shown skip bit set by the 0xA6 handler. Default real-script
       traces remain ungated until the runtime initialization of `gs:0x6724` is
       recovered; raw `SCRIPT*.VAR` has incompatible pre-set flag words.
+- [x] Map the VM resource pointer setup boundary:
+      `0x55A4/0x55D9` resolves five runtime offsets from `DS:0x6712` into COD,
+      state, DIC, and DEB/object far pointers at `DS:0x671C..0x672F`, while
+      save/load code serializes the `DS:0x6724` runtime state block separately.
+      Remaining work is the contents/layout of that live state block.
 - [ ] Decode the `gs:0x6724` per-line record layout (es:[di], es:[di+2] flags).
 - [ ] Verify audible `tb.snd` chatter trigger path, if any. `gs:0x67BB` itself is
       now decoded as post-reveal hold state rather than a direct SND caller.
@@ -1038,6 +1065,11 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       inactive `b5` lines, skips `line_index+2` words with bit `0x8000` set, and
       marks accepted lines as shown; the default path stays ungated because raw
       `SCRIPT*.VAR` is not the initialized runtime line-record table.
+- [x] Map VM resource pointer setup:
+      `re/labels.csv` now names the `DS:0x6712` source-offset table, the five
+      far pointers at `DS:0x671C..0x672F`, the wrapper/resolve loop at
+      `0x55A4/0x55D9`, the post-exec record updater at `0x5816`, and the
+      save/load state serialization sites at `0x1C3F/0x1CBD`.
 - [x] Port the `gs:0x67BB` line-complete hold timers:
       `src/vm.rs` models `0x94D4..0x94DD` (`b35=aca*4`) and `0x7378..0x738C`
       (`b35=0x27cf*(aca/2)+6`) as checked helper functions. Labels and known

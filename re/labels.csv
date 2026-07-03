@@ -16,8 +16,12 @@ DS:0x7908,font_glyphs_ds,8-byte glyph bitmaps (DS offset)
 DS:0x67AD,vm_mode,"current decode mode (0/1); set by FF/FE sentinels"
 DS:0x67AA,vm_c2_presentation_flags,"C2 kind-0x0400 sets bit 1 after descript.des helper success"
 DS:0x67B2,vm_flag_b2,"gates 0xFB sentinel handling in token_advance"
-DS:0x6720,vm_cod_ptr,far ptr lds si -> current script COD bytecode
-DS:0x6724,vm_off_ptr,far ptr les di -> per-text offset table (read by 25 opcode handlers)
+DS:0x6712,vm_resource_offsets,"five u16 runtime resource offsets resolved at 0x55d9 into far pointers DS:0x671c..0x672f"
+DS:0x671C,vm_cod_ptr_exec,COD far pointer used by main exec loop (lds si at 0x5601)
+DS:0x6720,vm_cod_ptr_aux,COD far pointer used by token walkers/helpers
+DS:0x6724,vm_state_ptr,far ptr to runtime object/line-record state table; serialized by save/load and read by VM record handlers
+DS:0x6728,vm_dic_ptr,DIC far pointer used by 0xA6 text assembly
+DS:0x672C,vm_deb_object_table_ptr,DEB/object table far pointer scanned in 20-byte records
 DS:0x6772,vm_pc,script program counter (offset into COD)
 DS:0x6776,vm_pc_saved,saved/next PC used in branch handling
 DS:0x6782,vm_branch_a,VM control-flow state word
@@ -26,8 +30,11 @@ DS:0x67F8,vm_word_buf,word buffer filled by 0xA3 handler (collect word list)
 DS:0x6770,vm_pending_word,pending word appended by 0xA3 handler
 0x005AFD,vm_op_a3_collect,"opcode 0xA3 handler: copy 0-term word list from COD into gs:0x67f8"
 0x0056FE,vm_control_flow,"VM branch/gosub control: updates PC gs:0x6772 via calls 0x577a/0x56a6/0x5afd"
+0x0055A4,vm_run_wrapper,"prepares script resource far pointers, calls BIOS RTC writers, then enters vm_exec_loop"
+0x0055D9,vm_resource_ptr_resolve_loop,"resolves five DS:0x6712 resource offsets through 0x04b9:0190 into far pointers at DS:0x671c"
 0x0055F5,vm_exec_loop,"main script interpreter loop; di=0x6eb0 handler table; dispatch at 0x5627"
 0x005627,vm_dispatch,"call gs:[bx+0x6eb0], bx=(opcode-0xa0)*2 -> per-opcode near handler"
+0x005816,vm_post_exec_record_update,"post-VM scan of DEB/object table via DS:0x672c and runtime state via DS:0x6724; updates display/control flags"
 0x005FD8,vm_special_slot_remove,"remove AX from 16-word sentinel list DS:0x6d3e; CF set on hit"
 0x005FF6,vm_special_slot_insert,"insert AX into 16-word sentinel list DS:0x6d3e; CF clear only when full"
 DS:0x6D3E,vm_special_slots,"16-word runtime list for fields set to the blood/0xffff sentinel"
@@ -48,7 +55,6 @@ DS:0x6D3E,vm_special_slots,"16-word runtime list for fields set to the blood/0xf
 0x006F62,vm_op_c8_record_entry,"0xC8 record-entry handler; consumes operand but writes es:[record]={0xc8,0,0} when record is empty"
 0x006FB9,vm_op_c9_record_clear,"0xC9 record-clear handler; zeros es:[record..record+4] and clears related 0xc4 actor subrecord"
 DS:0x1FAB,vm_text_selector,"signed per-line selector set from 0xA6 b3 (0xff/0x00=no voice; 1..N=talk clip)"
-DS:0x671C,vm_cod_ptr2,COD far-ptr used by main exec loop (lds si)
 DS:0x67AB,vm_skip_count,skip-N-tokens counter (IF/branch); set by 0xA6 b4&0x08
 DS:0x67B1,vm_loop_flag,bit0=loop active bit1=loop range
 DS:0x6778,vm_loop_target,loop target address set by 0xA6 b4&0x10
@@ -63,6 +69,8 @@ DS:0x6788,vm_active_line,"active dialogue-line id = sign_extend(0xA6 b3)+9; rese
 0x00B521,dlg_clear_b,"clear dialogue/scene state variant; resets voice/subtitle gates"
 0x071E:0x14B6,dlg_stop_common,common stop/clear routine called by dialogue clear paths
 0x0012E8,snd_scene_cleanup,"close+delete temp son.snd/mus.snd on scene change (int21 3E/41)"
+0x001C3F,vm_state_save,"save-game path writes runtime state block DS:0x6724 after header/globals"
+0x001CBD,vm_state_load,"load-game path reads runtime state block DS:0x6724 before rebuilding derived VM pointers/state"
 0x00B9DE,snd_clip_player,"SND clip player: AX=clip index; table DS:0x0bbf (off+len), bank DS:0x0bb3, +6 hdr; in-mem or lseek/read"
 0x00C005,snd_bank_loader,"SND bank loader/extractor at 0x0B1B:0x0855; AX=0 builds in-memory table, AX!=0 preserves table and can write son.snd"
 DS:0x0BBF,snd_clip_table,"per-clip table: u16 offset + u16 len, indexed by clip*4"
