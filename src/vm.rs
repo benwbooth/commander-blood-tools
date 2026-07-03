@@ -104,6 +104,7 @@ pub const OP_RECORD_ENTRY_MAX: u8 = 0xC8;
 pub const OP_RECORD_CLEAR: u8 = 0xC9;
 pub const OP_GLOBAL_WORD_COMPARE: u8 = 0xCA;
 pub const OP_GLOBAL_PAIR_COMPARE: u8 = 0xCB;
+pub const OP_RECORD_TRIPLE: u8 = 0xCD;
 pub const TEXT_SELECTOR_NONE: u8 = 0xFF;
 pub const TEXT_SELECTOR_SILENT: u8 = 0x00;
 pub const ACTIVE_LINE_ID_BIAS: u16 = 9;
@@ -318,6 +319,17 @@ pub enum VmToken {
         second_word: u16,
         len: usize,
     },
+    /// `0xCD` record-triple operation. Optional `0xA1` after the opcode inverts
+    /// the mode-1 comparison path; mode-0 side effects require the resolved
+    /// line-record table model and are not executed yet.
+    RecordTriple {
+        offset: usize,
+        record_offset: u16,
+        first_word: u16,
+        second_word: u16,
+        inverted: bool,
+        len: usize,
+    },
     /// Any other opcode; raw length recorded.
     Op {
         offset: usize,
@@ -446,6 +458,17 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
                 record_offset: read_u16(cod, pos + 1).unwrap_or(0),
                 first_word: read_u16(cod, pos + 3).unwrap_or(0),
                 second_word: read_u16(cod, pos + 5).unwrap_or(0),
+                len,
+            });
+        } else if op == OP_RECORD_TRIPLE {
+            let inverted = cod.get(pos + 1) == Some(&0xA1);
+            let operand_pos = pos + 1 + usize::from(inverted);
+            out.push(VmToken::RecordTriple {
+                offset: pos,
+                record_offset: read_u16(cod, operand_pos).unwrap_or(0),
+                first_word: read_u16(cod, operand_pos + 2).unwrap_or(0),
+                second_word: read_u16(cod, operand_pos + 4).unwrap_or(0),
+                inverted,
                 len,
             });
         } else if op == OP_RECORD_LINK {
@@ -1588,6 +1611,52 @@ mod tests {
                 first_word: 0xABCD,
                 second_word: 0x0001,
                 len: 7
+            }
+        );
+    }
+
+    #[test]
+    fn record_triple_token_exposes_optional_inversion_prefix() {
+        let cod = [
+            OP_RECORD_TRIPLE,
+            0x94,
+            0x05,
+            0x04,
+            0x10,
+            0x28,
+            0x00,
+            OP_RECORD_TRIPLE,
+            0xA1,
+            0x30,
+            0x00,
+            0x64,
+            0x10,
+            0x5A,
+            0x05,
+            0xFF,
+        ];
+
+        let toks = walk(&cod, 0, cod.len());
+        assert_eq!(
+            toks[0],
+            VmToken::RecordTriple {
+                offset: 0,
+                record_offset: 0x0594,
+                first_word: 0x1004,
+                second_word: 0x0028,
+                inverted: false,
+                len: 7
+            }
+        );
+        assert_eq!(
+            toks[1],
+            VmToken::RecordTriple {
+                offset: 7,
+                record_offset: 0x0030,
+                first_word: 0x1064,
+                second_word: 0x055A,
+                inverted: true,
+                len: 8
             }
         );
     }

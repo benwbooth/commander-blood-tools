@@ -31,6 +31,7 @@ DS:0x6770,vm_pending_word,pending word appended by 0xA3 handler
 0x0064E5,vm_op_ca_global_word_compare,"0xCA global condition handler; compares token value to gs:0x0aa6"
 0x006510,vm_op_cb_global_pair_compare,"0xCB global pair condition handler; compares packed token value to gs:0x0aaa/0x0aa8"
 0x00660C,vm_op_a6_text,"0xA6 TEXT handler: b1b2=line index into gs:0x6724; b3->gs:0x1fab; b4/b5=control(skip/loop/active 0x80)"
+0x0069C7,vm_op_cd_record_triple,"0xCD record-triple handler; consumes record/first/second words, optional A1 inverted compare"
 0x006AA7,vm_bit_set_test_6aa7,"0xB7 high-bit-first byte flag set/clear/test handler"
 0x006B06,vm_pair_record_6b06,"B8/B9/BD pair-record assignment/compare handler"
 0x006B4C,vm_op_c1_record_state,"0xC1 line-record state handler; raw token C1 record operand"

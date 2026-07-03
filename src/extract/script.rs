@@ -1124,6 +1124,35 @@ pub(super) fn disassemble_function(
             continue;
         }
 
+        if pos + 6 < function_end && cod[pos] == vm::OP_RECORD_TRIPLE {
+            push_raw_disassembly(script, function_name, cod, &mut rows, raw_start.take(), pos);
+            let inverted = cod.get(pos + 1) == Some(&0xA1);
+            let operand_pos = pos + 1 + usize::from(inverted);
+            if operand_pos + 5 < function_end {
+                let record_offset = u16::from_le_bytes([cod[operand_pos], cod[operand_pos + 1]]);
+                let first_word = u16::from_le_bytes([cod[operand_pos + 2], cod[operand_pos + 3]]);
+                let second_word = u16::from_le_bytes([cod[operand_pos + 4], cod[operand_pos + 5]]);
+                let len = 7 + usize::from(inverted);
+                rows.push(ScriptDisassemblyLine {
+                    script: script.to_string(),
+                    function_name: function_name.to_string(),
+                    offset: pos,
+                    len,
+                    opcode: "cd".to_string(),
+                    mnemonic: "record_triple".to_string(),
+                    operands: format!(
+                        "ref=0x{record_offset:04x} first=0x{first_word:04x} second=0x{second_word:04x} inverted={inverted}"
+                    ),
+                    actor_record: current_actor
+                        .as_ref()
+                        .map(|actor| actor.record_name.clone()),
+                    text: None,
+                });
+                pos += len;
+                continue;
+            }
+        }
+
         if pos + 2 < function_end && cod[pos] == 0xc9 {
             push_raw_disassembly(script, function_name, cod, &mut rows, raw_start.take(), pos);
             let addr = u16::from_le_bytes([cod[pos + 1], cod[pos + 2]]);
@@ -3077,7 +3106,7 @@ mod tests {
             0x00, 0x00, 0x00, 0xc3, 0x3a, 0x00, 0x28, 0x00, 0xc6, 0x8e, 0x10, 0x52, 0x10, 0xc9,
             0x3a, 0x00, 0xb7, 0x10, 0x00, 0x09, 0xc1, 0x4e, 0x12, 0x52, 0x0d, 0xca, 0xf1, 0xc1,
             0x08, 0x00, 0xcb, 0xf5, 0x19, 0x0c, 0xca, 0x07, 0xb8, 0x20, 0x00, 0x34, 0x12, 0x78,
-            0x56, 0x03,
+            0x56, 0xcd, 0x94, 0x05, 0x04, 0x10, 0x28, 0x00, 0x03,
         ];
         let mut actors = HashMap::new();
         actors.insert(
@@ -3141,6 +3170,14 @@ mod tests {
                 && row.operands.contains("ref=0x0020")
                 && row.operands.contains("first=0x1234")
                 && row.operands.contains("second=0x5678")
+        }));
+        assert!(rows.iter().any(|row| {
+            row.mnemonic == "record_triple"
+                && row.opcode == "cd"
+                && row.operands.contains("ref=0x0594")
+                && row.operands.contains("first=0x1004")
+                && row.operands.contains("second=0x0028")
+                && row.operands.contains("inverted=false")
         }));
         assert_eq!(rows[0].function_name, "func");
     }

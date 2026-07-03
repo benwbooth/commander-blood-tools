@@ -509,6 +509,12 @@ fn opcode_metadata(opcode: u8, handler_file_offset: usize) -> OpcodeMetadata {
             rust_status: "execution-trace-ported",
             notes: "B8/B9/BD pair-record assignment and comparison family; Rust applies mode0 pair writes and execute_trace evaluates mode1 pair compares",
         },
+        vm::OP_RECORD_TRIPLE => OpcodeMetadata {
+            mnemonic: "record_triple",
+            family: "line-record",
+            rust_status: "token-ported",
+            notes: "CD consumes record/first/second words with optional A1 inversion in mode1; Rust exposes the token while resolved-table side effects remain pending",
+        },
         _ => match handler_file_offset {
             0x006863 => OpcodeMetadata {
                 mnemonic: "state_assign_or_signed_compare",
@@ -808,6 +814,15 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         ds_offset: None,
         kind: "script-vm",
         comment: "CB global pair condition handler; compares packed token value to gs:0x0aaa/0x0aa8",
+    },
+    BinarySymbol {
+        name: "vm_op_cd_record_triple",
+        file_offset: 0x0069c7,
+        segment: Some(0x04da),
+        offset: Some(0x1627),
+        ds_offset: None,
+        kind: "script-vm",
+        comment: "CD record-triple handler; consumes record/first/second words with optional A1 inverted compare prefix",
     },
     BinarySymbol {
         name: "render_string_entry",
