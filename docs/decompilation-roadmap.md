@@ -217,6 +217,9 @@ Exit criteria:
 5. Pick one oracle dialogue target and capture it reproducibly.
 6. Replace the current dialogue grouping/compositing path with trace-driven
    rendering for that target scene.
+7. Use `accuracy/compare_oracle.py` to normalize DOSBox captures and generated
+   MP4 frames to native 320x200, then promote one frame-aligned target to a
+   thresholded oracle check.
 
 ## Open Questions
 

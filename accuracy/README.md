@@ -12,6 +12,30 @@ nix develop --command bash accuracy/run_oracle.sh [seconds]
 
 Captures land in `accuracy/captures/frame_NN.png` (gitignored — game content).
 
+## Compare One Generated Frame
+
+```sh
+nix develop --command python accuracy/compare_oracle.py \
+  --reference accuracy/captures/frame_12.png \
+  --generated "output/mp4/executed-dialogue-run - script2 - 0001 - pterra.mp4" \
+  --generated-time 0
+```
+
+The comparison output lands under `accuracy/comparisons/` (gitignored):
+
+- `reference-native.png`: DOSBox capture cropped to the game viewport and scaled
+  back to native 320x200.
+- `generated-native.png`: generated MP4 frame scaled to native 320x200.
+- `diff-x4.png`: amplified visual difference image.
+- `comparison.json`: repeatable metrics (`mean_abs`, `rmse`, `max_abs`,
+  `exact_pixel_percent`, crop, and input paths).
+
+Current `run_oracle.sh` screenshots are 800x600 host-window grabs. The compare
+script therefore defaults to the measured DOSBox viewport crop
+`80,100,640,480`; override with `--ref-crop x,y,w,h` if the capture setup
+changes. Use `--max-mean-abs` only for a scenario known to be frame-aligned with
+the generated output.
+
 ## What works (verified 2026-06-14)
 
 - `accuracy/dosbox.conf` mounts the CD image (`output/CMDR_BLOOD.iso`) as `D:`,
@@ -34,8 +58,8 @@ Captures land in `accuracy/captures/frame_NN.png` (gitignored — game content).
    key/mouse events on the Xvfb display, or use DOSBox-X `autotype` for keyboard.
 2. Reach the 5 target scenes (Bob_Morlock, Izwalito, a multi-character scene, a
    subtitle-only screen, a full HNM cutscene); capture frame + audio per scene.
-3. Build a comparison harness: our exporter's mp4 vs the captured reference —
-   subtitle text/timing, voice/chatter, animation, background, music.
+3. Extend the comparison harness from frame metrics to scene checks: subtitle
+   text/timing, voice/chatter, animation, background, and music.
 
 A green "1" overlay appears top-left during the intro (likely a scene/debug
 index) — worth checking whether `BLOODPRG.EXE` has a script/scene-select debug

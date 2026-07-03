@@ -10,6 +10,7 @@
 __pycache__/
 /re/re_loop_sessions
 /accuracy/captures
+/accuracy/comparisons
 /accuracy/.dosbox.runtime.conf
 /accuracy/cdrive
 /export_new

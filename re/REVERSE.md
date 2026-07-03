@@ -450,7 +450,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 - [ ] Ph3: 3+ functions traced (dispatch loop + 2 handlers) and cross-checked
 - [ ] Ph4: presentation constants (font/layout/timing/palette) extracted & validated
 - [ ] Ph5: script-VM opcode table + scene/actor structs decoded
-- [ ] Ph6: generated cutscene compared against real-game capture (oracle, deferred)
+- [ ] Ph6: generated cutscene compared against real-game capture with a
+      frame-aligned pass threshold. `accuracy/compare_oracle.py` now normalizes
+      host-window captures and generated MP4 frames to 320x200 and emits metrics,
+      but no matched scene has passed yet.
 
 ## Reference Resources
 
@@ -616,13 +619,16 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       or scenario-selected execution so comprehensive videos do not collapse to
       only the default initial-state path.
 
-### Oracle (PARKED — user chose to skip automated capture)
+### Oracle
 
 The DOSBox-X oracle harness works (boots the real game on isolated Xvfb;
 `BLOODPRG.EXE` runs directly into the intro cutscene — see `accuracy/`). But
-without scripted input to drive it to specific scenes it's not useful for
-per-scene comparison, so the user opted to **skip the oracle** and instead
-manually inspect exported videos. Harness is left in `accuracy/` for later.
+without scripted input to drive it to specific scenes it is still not sufficient
+for per-scene pass/fail comparison.
 
 Current workflow: improve VM accuracy → export videos (`./target/release/
-commander-blood-tools <dir>`) → user inspects a sample → iterate.
+commander-blood-tools <dir>`) → compare frame candidates with
+`accuracy/compare_oracle.py` → manually inspect mismatches → iterate. Next
+oracle step is scripted input or a debug scene selector so one generated
+dialogue run can be compared against a matched real-game capture with a
+threshold.
