@@ -841,6 +841,26 @@ pub struct ScriptProfileRequestEvent {
     pub profile_index: u16,
 }
 
+#[derive(Clone, Debug, Default, PartialEq, Eq, Serialize)]
+pub struct PostUpdateTrace {
+    pub actor_record_pairs: Vec<PostUpdateActorRecordPair>,
+    pub presentation_handoffs: Vec<PresentationHandoffEvent>,
+    pub pending_script_profile_dispatch_ready: bool,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+pub struct PostUpdateActorRecordPair {
+    pub record_offset: u16,
+    pub related_record_offset: u16,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+pub struct PresentationHandoffEvent {
+    pub owner_offset: u16,
+    pub record_offset: u16,
+    pub target: u16,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub enum ExecutionHalt {
     EndMarker,
@@ -854,6 +874,7 @@ pub struct ExecutionTrace {
     pub line_states: Vec<LineState>,
     pub branch_events: Vec<BranchEvent>,
     pub script_profile_requests: Vec<ScriptProfileRequestEvent>,
+    pub post_update: PostUpdateTrace,
     pub steps: usize,
     pub halted: ExecutionHalt,
 }
@@ -1099,6 +1120,12 @@ fn state_u16(state: &[u8], addr: u16) -> u16 {
     }
 }
 
+fn state_has_u16(state: &[u8], addr: u16) -> bool {
+    (addr as usize)
+        .checked_add(1)
+        .is_some_and(|end| end < state.len())
+}
+
 fn state_set_u16(state: &mut [u8], addr: u16, val: u16) {
     let a = addr as usize;
     if a + 1 < state.len() {
@@ -1133,7 +1160,8 @@ fn state_and_u16(state: &mut [u8], addr: u16, mask: u16) {
 }
 
 fn pending_script_profile_dispatch_ready(state: &[u8]) -> bool {
-    state_u16(state, VM_PENDING_RESOURCE_PROFILE) != 0xffff
+    state_has_u16(state, VM_PENDING_RESOURCE_PROFILE)
+        && state_u16(state, VM_PENDING_RESOURCE_PROFILE) != 0xffff
         && state_u8(state, VM_UI_FLAGS) & 0x0e == 0
         && MAIN_PENDING_PROFILE_IDLE_GATES
             .iter()
@@ -1461,7 +1489,15 @@ fn post_update_actor_records_for_active_objects(
     state: &mut [u8],
     context: &ExecutionContext,
 ) -> Vec<(u16, u16)> {
-    let mut updated = Vec::new();
+    post_update_execution_state(state, context)
+        .actor_record_pairs
+        .into_iter()
+        .map(|event| (event.record_offset, event.related_record_offset))
+        .collect()
+}
+
+fn post_update_execution_state(state: &mut [u8], context: &ExecutionContext) -> PostUpdateTrace {
+    let mut post_update = PostUpdateTrace::default();
     state_set_u8(state, VM_PRESENTATION_PAIR_WRITE_DISABLED, 0);
     for owner_offset in context.object_offsets.iter().copied() {
         if state_u8(state, owner_offset.wrapping_add(2)) & 1 == 0 {
@@ -1473,6 +1509,22 @@ fn post_update_actor_records_for_active_objects(
             continue;
         };
         let record_offset = owner_offset.wrapping_add(field_offset);
+        if owner_kind == 2 {
+            if let Some(target) = post_update_kind2_presentation_handoff_target(
+                state,
+                context,
+                owner_offset,
+                record_offset,
+            ) {
+                post_update
+                    .presentation_handoffs
+                    .push(PresentationHandoffEvent {
+                        owner_offset,
+                        record_offset,
+                        target,
+                    });
+            }
+        }
         if owner_kind == 1 {
             post_update_kind1_presentation_state(state, record_offset);
             post_update_deferred_record_write(state, context, record_offset);
@@ -1480,10 +1532,17 @@ fn post_update_actor_records_for_active_objects(
         if let Some(related_record_offset) =
             post_update_actor_record_pair(state, owner_offset, record_offset)
         {
-            updated.push((record_offset, related_record_offset));
+            post_update
+                .actor_record_pairs
+                .push(PostUpdateActorRecordPair {
+                    record_offset,
+                    related_record_offset,
+                });
         }
     }
-    updated
+    post_update.pending_script_profile_dispatch_ready =
+        pending_script_profile_dispatch_ready(state);
+    post_update
 }
 
 fn record_link_condition(
@@ -2071,10 +2130,12 @@ pub fn execute_trace_with_overrides_and_context(
 
         if op == OP_SCRIPT_PROFILE_REQUEST {
             let operand = cod.get(token_start + 1).copied().unwrap_or(0);
+            let profile_index = script_profile_index_from_request_operand(operand);
+            state_set_u16(&mut state, VM_PENDING_RESOURCE_PROFILE, profile_index);
             script_profile_requests.push(ScriptProfileRequestEvent {
                 offset: token_start,
                 operand,
-                profile_index: script_profile_index_from_request_operand(operand),
+                profile_index,
             });
         }
 
@@ -2432,10 +2493,17 @@ pub fn execute_trace_with_overrides_and_context(
         pos = (token_start + len).min(end);
     }
 
+    let post_update = if matches!(halted, ExecutionHalt::EndMarker) {
+        post_update_execution_state(&mut state, context)
+    } else {
+        PostUpdateTrace::default()
+    };
+
     ExecutionTrace {
         line_states,
         branch_events,
         script_profile_requests,
+        post_update,
         steps,
         halted,
     }
@@ -3445,7 +3513,11 @@ mod tests {
         let mut var = vec![0; 0x6800];
         state_set_u16(&mut var, owner, 1);
         state_set_u8(&mut var, owner.wrapping_add(2), 1);
-        state_set_u16(&mut var, VM_PRESENTATION_DEFERRED_RECORD_TYPE, OP_RECORD_LINK as u16);
+        state_set_u16(
+            &mut var,
+            VM_PRESENTATION_DEFERRED_RECORD_TYPE,
+            OP_RECORD_LINK as u16,
+        );
         state_set_u16(&mut var, VM_PRESENTATION_DEFERRED_RECORD_RELATED, 0x0222);
         state_set_u16(&mut var, VM_PRESENTATION_DEFERRED_RECORD_AUX, 0x0333);
 
@@ -3470,15 +3542,18 @@ mod tests {
             vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, 1).expect("kind 1 C4 field"),
         );
         let arche_record = arche.wrapping_add(
-            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, 0x10)
-                .expect("kind 0x10 C4 field"),
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, 0x10).expect("kind 0x10 C4 field"),
         );
 
         let mut var = vec![0; 0x6800];
         state_set_u16(&mut var, owner, 1);
         state_set_u8(&mut var, owner.wrapping_add(2), 1);
         state_set_u16(&mut var, arche, 0x10);
-        state_set_u16(&mut var, VM_PRESENTATION_DEFERRED_RECORD_TYPE, OP_RECORD_STATE_MIN as u16);
+        state_set_u16(
+            &mut var,
+            VM_PRESENTATION_DEFERRED_RECORD_TYPE,
+            OP_RECORD_STATE_MIN as u16,
+        );
         state_set_u16(&mut var, VM_PRESENTATION_DEFERRED_RECORD_RELATED, 0x0444);
         state_set_u16(&mut var, VM_PRESENTATION_DEFERRED_RECORD_AUX, 0x0555);
 
@@ -3520,8 +3595,8 @@ mod tests {
         state_set_u16(&mut var, record.wrapping_add(2), blood);
         state_set_u16(&mut var, target_field, 0x1234);
 
-        let context = ExecutionContext::from_object_offsets([owner, blood])
-            .with_special_object_offset(blood);
+        let context =
+            ExecutionContext::from_object_offsets([owner, blood]).with_special_object_offset(blood);
         assert_eq!(
             post_update_kind2_presentation_handoff_target(&var, &context, owner, record),
             Some(0x1234)
@@ -3568,8 +3643,8 @@ mod tests {
         state_set_u16(&mut var, record.wrapping_add(2), blood);
         state_set_u16(&mut var, target_field, 0x1234);
 
-        let context = ExecutionContext::from_object_offsets([owner, blood])
-            .with_special_object_offset(blood);
+        let context =
+            ExecutionContext::from_object_offsets([owner, blood]).with_special_object_offset(blood);
         assert_eq!(
             post_update_kind2_presentation_handoff_target(&var, &context, owner, record),
             None
@@ -3581,6 +3656,89 @@ mod tests {
             post_update_kind2_presentation_handoff_target(&var, &context, owner, record),
             None
         );
+    }
+
+    #[test]
+    fn execution_trace_reports_post_update_c4_pair_scan() {
+        let owner = 0x0100u16;
+        let related = 0x0200u16;
+        let record = owner.wrapping_add(TALK_FIELD);
+        let related_field = related.wrapping_add(
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, 2).expect("kind 2 C4 field"),
+        );
+
+        let mut var = vec![0; 0x6800];
+        state_set_u16(&mut var, owner, 2);
+        state_set_u8(&mut var, owner.wrapping_add(2), 1);
+        state_set_u16(&mut var, related, 2);
+        write_actor_record(&mut var, record, related);
+
+        let context = ExecutionContext::from_object_offsets([owner, related]);
+        let trace = execute_trace_with_context(&[0xff], &var, &context);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(
+            trace.post_update.actor_record_pairs,
+            vec![PostUpdateActorRecordPair {
+                record_offset: record,
+                related_record_offset: related_field,
+            }]
+        );
+    }
+
+    #[test]
+    fn execution_trace_reports_post_update_handoff_target() {
+        let owner = 0x0100u16;
+        let primary_record = 0x0200u16;
+        let blood = 0x0300u16;
+        let record = owner.wrapping_add(
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, 2).expect("kind 2 C4 field"),
+        );
+        let target_field = owner.wrapping_add(
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_PRESENTATION_HANDOFF, 2)
+                .expect("kind 2 handoff field"),
+        );
+
+        let mut var = vec![0; 0x6800];
+        state_set_u16(&mut var, owner, 2);
+        state_set_u8(&mut var, owner.wrapping_add(2), 1);
+        state_set_u8(&mut var, VM_PRESENTATION_ACTIVE, 1);
+        state_set_u16(&mut var, VM_PRESENTATION_PRIMARY_C4_RECORD, primary_record);
+        state_set_u16(&mut var, primary_record, OP_ACTOR as u16);
+        state_set_u16(&mut var, record, OP_ACTOR as u16);
+        state_set_u16(&mut var, record.wrapping_add(2), blood);
+        state_set_u16(&mut var, target_field, 0x1234);
+
+        let context =
+            ExecutionContext::from_object_offsets([owner, blood]).with_special_object_offset(blood);
+        let trace = execute_trace_with_context(&[0xff], &var, &context);
+        assert_eq!(
+            trace.post_update.presentation_handoffs,
+            vec![PresentationHandoffEvent {
+                owner_offset: owner,
+                record_offset: record,
+                target: 0x1234,
+            }]
+        );
+    }
+
+    #[test]
+    fn execution_trace_reports_pending_profile_dispatch_idle_gate() {
+        let cod = [OP_SCRIPT_PROFILE_REQUEST, 0x02, 0xff];
+        let mut var = vec![0; 0x6800];
+
+        let trace = execute_trace(&cod, &var);
+        assert_eq!(trace.pending_script_profile(), Some(1));
+        assert!(trace.post_update.pending_script_profile_dispatch_ready);
+
+        state_set_u8(&mut var, VM_PRESENTATION_ACTIVE, 1);
+        let trace = execute_trace(&cod, &var);
+        assert_eq!(trace.pending_script_profile(), Some(1));
+        assert!(!trace.post_update.pending_script_profile_dispatch_ready);
+
+        let no_pending = [OP_SCRIPT_PROFILE_REQUEST, 0x00, 0xff];
+        let trace = execute_trace(&no_pending, &vec![0; 0x6800]);
+        assert_eq!(trace.pending_script_profile(), None);
+        assert!(!trace.post_update.pending_script_profile_dispatch_ready);
     }
 
     #[test]
@@ -4234,9 +4392,8 @@ mod tests {
         assert_eq!(trace.line_states.len(), 1);
         assert_eq!(trace.line_states[0].offset, target as usize);
 
-        let context =
-            ExecutionContext::from_object_offsets([special_object, owner, 0x0300])
-                .with_special_object_offset(special_object);
+        let context = ExecutionContext::from_object_offsets([special_object, owner, 0x0300])
+            .with_special_object_offset(special_object);
         let trace = execute_trace_with_context(&cod, &var, &context);
         assert_eq!(trace.halted, ExecutionHalt::EndMarker);
         assert_eq!(trace.line_states.len(), 2);
@@ -4682,9 +4839,11 @@ mod tests {
 
         let trace = execute_trace(&cod, &var);
         assert_eq!(trace.halted, ExecutionHalt::EndMarker);
-        assert!(trace.branch_events.iter().all(|event| {
-            event.offset != condition_offset || event.condition_passed.is_none()
-        }));
+        assert!(
+            trace.branch_events.iter().all(|event| {
+                event.offset != condition_offset || event.condition_passed.is_none()
+            })
+        );
 
         let trace = execute_trace_with_context(&cod, &var, &context);
         assert_eq!(trace.halted, ExecutionHalt::EndMarker);

@@ -718,7 +718,10 @@ tears the state down by clearing `0x67B1`, `0x67AC`, `0x6762`, bit `0x04` in
 Rust now ports those start/stop memory effects in
 `post_update_kind1_presentation_state()` and calls it from the active-object
 subset of the `0x5816` scan. The external render/audio calls and the far-pointer
-clear through `DS:0x6746` remain pending.
+clear through `DS:0x6746` remain pending. `execute_trace` now runs the recovered
+post-update scan at the same end-of-pass boundary as the binary call at
+`0x568D` and exposes the result as structured `ExecutionTrace::post_update`
+data.
 
 After kind-1 presentation handling, `0x59F9` drains a deferred record write if
 both `DS:0x6768` (record type) and `DS:0x676A` (related pointer) are nonzero.
@@ -752,10 +755,10 @@ the presentation state is idle. The exact gate is:
        0x2565, 0x2736, 0x2737, 0x27DA, 0x2792) == 0
 
 Rust captures this as `pending_script_profile_dispatch_ready()`. The high-level
-profile sequencer still follows D2 requests immediately because the execution
-trace does not yet return the post-VM global state; this predicate is the
-binary-accurate gate to wire once the presentation updater is part of trace
-state.
+profile sequencer still follows D2 requests immediately, but `execute_trace`
+now writes the D2 operand-derived profile index into `DS:0x6780` before running
+the post-update scan, so `ExecutionTrace::post_update` reports whether the
+binary's idle gate would allow the main loop to dispatch it.
 
 ### 0xC9 record-clear handler @ file 0x6FB9 — speaker lifetime (DECODED)
 
@@ -990,9 +993,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `script1`..`script5`; opcode `D2` stores operand-1 in `DS:0x6780` for the
       main-loop profile handoff.
 - [x] Model `D2` cross-script profile scheduling in Rust execution traces:
-      `ExecutionTrace` records D2 profile requests and
-      `execute_script_profile_sequence` follows the last non-sentinel pending
-      profile through the decoded script profiles.
+      `ExecutionTrace` records D2 profile requests and writes the pending
+      profile word into VM state; `execute_script_profile_sequence` follows the
+      last non-sentinel pending profile through the decoded script profiles.
 - [x] Export cross-script profile sequences from the extractor:
       `script-profile-runs.tsv` and `script-profile-executed-dialogue.tsv`
       preserve the DOS main-loop SCRIPT1->SCRIPT2->... handoff order using the
@@ -1006,8 +1009,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `0x5D8F..0x5E1F` C4 reciprocal post-update write, the `0x67B6` pair-write
       guard, the active-object scan subset, the kind-1 presentation start/stop
       globals, the deferred record drain, and the kind-2 handoff predicate are
-      ported; applying the kind-2 `vm_control_flow` target, external
-      render/audio calls, and trace-state wiring remain pending.
+      ported and surfaced through `ExecutionTrace::post_update`; applying the
+      kind-2 `vm_control_flow` target, external render/audio calls, and
+      cross-profile state carryover remain pending.
 - [x] Map the VM named-object startup globals from `0x5486`: Rust
       `ExecutionContext` now carries the built-in DEB offsets for `blood`, `orxx`,
       `arche`, `Honk`, `menu`, `Ark`, `Scruter_Jo`, and kind-5 `vbio`.
