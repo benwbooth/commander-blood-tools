@@ -46,11 +46,13 @@ pub const RENDER_SMALL_TEXT_OFFSET: u16 = 0x075a;
 pub const RENDER_PLANAR_HORIZONTAL_LINE_OFFSET: u16 = 0x0a2b;
 pub const RENDER_PLANAR_VERTICAL_LINE_OFFSET: u16 = 0x0b23;
 pub const RENDER_RECT_OUTLINE_OFFSET: u16 = 0x0bb5;
+pub const RENDER_DITHER_RECT_FILL_OFFSET: u16 = 0x0bf5;
 pub const RENDER_RECT_FILL_OFFSET: u16 = 0x0cdc;
 pub const RENDER_SCENE_BAND_FILL_OFFSET: u16 = 0x0deb;
 pub const RENDER_SECONDARY_BAND_FILL_OFFSET: u16 = 0x0e2f;
 pub const RENDER_FRAMEBUFFER_COPY_OFFSET: u16 = 0x0eb6;
 pub const RENDER_SECONDARY_FRAMEBUFFER_COPY_OFFSET: u16 = 0x0ecb;
+pub const RENDER_VGA_PLANAR_TO_LINEAR_COPY_OFFSET: u16 = 0x0ee0;
 pub const RENDER_PLANAR_COPY_OFFSET: u16 = 0x0f3e;
 pub const RENDER_SPRITE_SLOT_LOAD_OFFSET: u16 = 0x11be;
 pub const RENDER_SPRITE_SLOT_STATE_OFFSET: u16 = 0x1241;
@@ -942,11 +944,13 @@ fn render_target_name(target_offset: u16) -> &'static str {
         RENDER_PLANAR_HORIZONTAL_LINE_OFFSET => "planar_horizontal_line_draw",
         RENDER_PLANAR_VERTICAL_LINE_OFFSET => "planar_vertical_line_draw",
         RENDER_RECT_OUTLINE_OFFSET => "framebuffer_rect_outline",
+        RENDER_DITHER_RECT_FILL_OFFSET => "framebuffer_dither_rect_fill",
         RENDER_RECT_FILL_OFFSET => "framebuffer_rect_fill_clipped",
         RENDER_SCENE_BAND_FILL_OFFSET => "scene_band_fill",
         RENDER_SECONDARY_BAND_FILL_OFFSET => "secondary_framebuffer_band_fill",
         RENDER_FRAMEBUFFER_COPY_OFFSET => "framebuffer_copy_full",
         RENDER_SECONDARY_FRAMEBUFFER_COPY_OFFSET => "secondary_framebuffer_copy_full",
+        RENDER_VGA_PLANAR_TO_LINEAR_COPY_OFFSET => "vga_planar_to_linear_framebuffer_copy",
         RENDER_PLANAR_COPY_OFFSET => "planar_framebuffer_copy",
         RENDER_SPRITE_SLOT_RESOURCE_LOAD_OFFSET => "sprite_slot_resource_frame_load",
         RENDER_SPRITE_SLOT_LOAD_OFFSET => "sprite_slot_frame_load",
@@ -1013,6 +1017,12 @@ fn render_call_site_note(file_offset: usize, target_offset: u16) -> &'static str
         }
         (0x009474, RENDER_PLANAR_VERTICAL_LINE_OFFSET) => {
             "dialogue updater draws a clipped vertical line from the line command table"
+        }
+        (0x007a94 | 0x007b18, RENDER_DITHER_RECT_FILL_OFFSET) => {
+            "navigation/dialogue path fills a clipped strip with the binary pseudo-random black/0xEF dither pattern"
+        }
+        (0x008d14, RENDER_VGA_PLANAR_TO_LINEAR_COPY_OFFSET) => {
+            "captures VGA A000:0xC000 planar page bytes into a linear RAM framebuffer before sprite/object composition"
         }
         (0x008d76 | 0x008d96 | 0x008df5 | 0x0095e7, RENDER_SPRITE_SLOT_RESOURCE_LOAD_OFFSET) => {
             "loads a resolver-backed resource frame into a 32-byte sprite slot at GS:0x6212"
@@ -1102,6 +1112,12 @@ fn render_call_site_note(file_offset: usize, target_offset: u16) -> &'static str
         }
         (_, RENDER_RECT_OUTLINE_OFFSET) => {
             "draws a clipped rectangle outline using primary-framebuffer line helpers"
+        }
+        (_, RENDER_DITHER_RECT_FILL_OFFSET) => {
+            "fills a clipped primary-framebuffer rectangle with the binary pseudo-random dither pattern"
+        }
+        (_, RENDER_VGA_PLANAR_TO_LINEAR_COPY_OFFSET) => {
+            "copies four VGA read-map planes into one linear 320x200 framebuffer"
         }
         _ => "unclassified render-segment call",
     }
@@ -1649,6 +1665,15 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         comment: "draws a clipped rectangle outline in the primary framebuffer by calling the horizontal/vertical line helpers",
     },
     BinarySymbol {
+        name: "framebuffer_dither_rect_fill",
+        file_offset: 0x003b85,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_DITHER_RECT_FILL_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "clips a primary-framebuffer rectangle and fills it with the binary pseudo-random black/0xEF dither pattern",
+    },
+    BinarySymbol {
         name: "framebuffer_rect_fill_clipped",
         file_offset: 0x003c6c,
         segment: Some(RENDER_SEGMENT),
@@ -1692,6 +1717,15 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         ds_offset: None,
         kind: "presentation",
         comment: "copies 0x3e80 dwords from DS:SI into secondary framebuffer DS:0x5229",
+    },
+    BinarySymbol {
+        name: "vga_planar_to_linear_framebuffer_copy",
+        file_offset: 0x003e70,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_VGA_PLANAR_TO_LINEAR_COPY_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "uses VGA Graphics Controller read-map select to copy four 0x3E80-byte planes from DS:SI into interleaved linear ES:DI bytes",
     },
     BinarySymbol {
         name: "planar_framebuffer_copy",
@@ -2498,6 +2532,7 @@ mod tests {
             Some(&1)
         );
         assert_eq!(target_counts.get(&RENDER_RECT_OUTLINE_OFFSET), Some(&4));
+        assert_eq!(target_counts.get(&RENDER_DITHER_RECT_FILL_OFFSET), Some(&2));
         assert_eq!(target_counts.get(&RENDER_RECT_FILL_OFFSET), Some(&7));
         assert_eq!(target_counts.get(&RENDER_SCENE_BAND_FILL_OFFSET), Some(&10));
         assert_eq!(
@@ -2507,6 +2542,10 @@ mod tests {
         assert_eq!(target_counts.get(&RENDER_FRAMEBUFFER_COPY_OFFSET), Some(&4));
         assert_eq!(
             target_counts.get(&RENDER_SECONDARY_FRAMEBUFFER_COPY_OFFSET),
+            Some(&1)
+        );
+        assert_eq!(
+            target_counts.get(&RENDER_VGA_PLANAR_TO_LINEAR_COPY_OFFSET),
             Some(&1)
         );
         assert_eq!(target_counts.get(&RENDER_PLANAR_COPY_OFFSET), Some(&6));
@@ -2557,6 +2596,10 @@ mod tests {
             "framebuffer_rect_outline"
         );
         assert_eq!(
+            target_name(RENDER_DITHER_RECT_FILL_OFFSET),
+            "framebuffer_dither_rect_fill"
+        );
+        assert_eq!(
             target_name(RENDER_RECT_FILL_OFFSET),
             "framebuffer_rect_fill_clipped"
         );
@@ -2571,6 +2614,10 @@ mod tests {
         assert_eq!(
             target_name(RENDER_SECONDARY_FRAMEBUFFER_COPY_OFFSET),
             "secondary_framebuffer_copy_full"
+        );
+        assert_eq!(
+            target_name(RENDER_VGA_PLANAR_TO_LINEAR_COPY_OFFSET),
+            "vga_planar_to_linear_framebuffer_copy"
         );
         assert_eq!(
             target_name(RENDER_PLANAR_COPY_OFFSET),
@@ -2674,6 +2721,25 @@ mod tests {
         assert_eq!(rect_outline.target_offset, RENDER_RECT_OUTLINE_OFFSET);
         assert_eq!(rect_outline.ax_value, Some(0xef));
         assert_eq!(rect_outline.target_name, "framebuffer_rect_outline");
+
+        let dither_fill = sites
+            .iter()
+            .find(|site| site.file_offset == 0x007b18)
+            .expect("navigation dither rectangle fill call");
+        assert_eq!(dither_fill.target_offset, RENDER_DITHER_RECT_FILL_OFFSET);
+        assert_eq!(dither_fill.ax_value, Some(3));
+        assert!(dither_fill.note.contains("black/0xEF"));
+
+        let planar_capture = sites
+            .iter()
+            .find(|site| site.file_offset == 0x008d14)
+            .expect("VGA planar-to-linear capture call");
+        assert_eq!(
+            planar_capture.target_offset,
+            RENDER_VGA_PLANAR_TO_LINEAR_COPY_OFFSET
+        );
+        assert_eq!(planar_capture.ax_value, Some(0xa000));
+        assert!(planar_capture.note.contains("A000:0xC000"));
 
         let resource_load = sites
             .iter()

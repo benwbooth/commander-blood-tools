@@ -103,6 +103,21 @@ pub(super) fn copy_framebuffer_full_indexed(dst: &mut [u8], src: &[u8]) {
     dst[..len].copy_from_slice(&src[..len]);
 }
 
+pub(super) fn copy_vga_planar_to_linear_indexed(dst: &mut [u8], planes: &[u8]) {
+    let len = VIEWPORT_W * VIEWPORT_H;
+    let plane_len = len / 4;
+    if dst.len() < len || planes.len() < len {
+        return;
+    }
+
+    for plane in 0..4 {
+        let src = &planes[plane * plane_len..(plane + 1) * plane_len];
+        for (idx, value) in src.iter().copied().enumerate() {
+            dst[idx * 4 + plane] = value;
+        }
+    }
+}
+
 pub(super) fn render_subtitles_indexed(fb: &mut [u8], cues: &[SubtitleCue], time: f64) {
     let Some((cue, visible_lines)) = active_subtitle_lines(cues, time) else {
         return;
@@ -577,6 +592,30 @@ mod tests {
         assert_eq!(dst[0], 11);
         assert_eq!(dst[len - 1], 22);
         assert_eq!(dst[len], 3);
+    }
+
+    #[test]
+    fn recovered_vga_planar_capture_interleaves_four_read_map_planes() {
+        let len = VIEWPORT_W * VIEWPORT_H;
+        let plane_len = len / 4;
+        let mut planes = vec![0u8; len + 1];
+        let mut dst = vec![0u8; len + 1];
+
+        planes[0] = 10;
+        planes[plane_len] = 20;
+        planes[plane_len * 2] = 30;
+        planes[plane_len * 3] = 40;
+        planes[1] = 11;
+        planes[plane_len + 1] = 21;
+        planes[plane_len * 2 + 1] = 31;
+        planes[plane_len * 3 + 1] = 41;
+        planes[len] = 99;
+        dst[len] = 7;
+
+        copy_vga_planar_to_linear_indexed(&mut dst, &planes);
+
+        assert_eq!(&dst[..8], &[10, 20, 30, 40, 11, 21, 31, 41]);
+        assert_eq!(dst[len], 7);
     }
 
     #[test]

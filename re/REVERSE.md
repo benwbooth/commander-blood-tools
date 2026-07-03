@@ -851,6 +851,10 @@ Named targets that are already tied to code behavior:
   the dialogue updater's line-command table just before the subtitle reveal draw.
 - `0x0299:0x0BB5` (`framebuffer_rect_outline`): clipped rectangle-outline wrapper
   using the primary-framebuffer horizontal/vertical line helpers.
+- `0x0299:0x0BF5` (`framebuffer_dither_rect_fill`): clips a primary-framebuffer
+  rectangle, seeds from the binary random helper `0x01CE:0x0B02`, then draws the
+  binary pseudo-random black/`0xEF` dither pattern; the two direct callers pass
+  `AX=3` for navigation/dialogue strip backgrounds.
 - `0x0299:0x0CDC` (`framebuffer_rect_fill_clipped`): clips and fills a rectangle
   in primary framebuffer `DS:0x5221`.
 - `0x0299:0x0DEB` (`scene_band_fill`): fills the current clipped framebuffer band.
@@ -859,6 +863,11 @@ Named targets that are already tied to code behavior:
 - `0x0299:0x0EB6` / `0x0ECB` (`framebuffer_copy_full` /
   `secondary_framebuffer_copy_full`): copy `0x3E80` dwords from `DS:SI` into the
   primary/secondary framebuffers.
+- `0x0299:0x0EE0` (`vga_planar_to_linear_framebuffer_copy`): uses VGA Graphics
+  Controller read-map select (`0x3CE`, index 4) to read four `0x3E80`-byte VGA
+  planes from `DS:SI` and interleave them into one linear 320x200 RAM framebuffer
+  at `ES:DI`; the direct caller captures `A000:0xC000` before sprite/object
+  composition.
 - `0x0299:0x0F3E` (`planar_framebuffer_copy`): copies planar/interleaved image
   data into primary framebuffer `DS:0x5219`.
 - `0x0299:0x1140` (`sprite_slot_resource_frame_load`): resolves a resource frame
@@ -884,15 +893,16 @@ Named targets that are already tied to code behavior:
 
 This is still a caller map, not a full renderer decompilation. It removes the
 guesswork about which external render hooks the VM/presentation state machine
-uses, and leaves the next RE step as naming the remaining 5 behavior gaps: 2
-still-unclassified target offsets plus 3 provisionally named sprite/object
-targets whose semantics need deeper porting.
+uses. All 32 direct render-segment target offsets are now named; the remaining
+render RE gap is deeper porting of the 3 provisionally named sprite/object
+targets whose semantics still need instruction-by-instruction recovery.
 
 Rust now ports the safe framebuffer side of the recovered primitives in
 `src/extract/render.rs`: clipped rectangle fill (`0x0CDC`), current scene-band
-fill (`0x0DEB`/`0x0E2F` shape), and full-viewport framebuffer copy
-(`0x0EB6`/`0x0ECB`). The character-HNM clear path uses the clipped fill helper
-instead of open-coded per-pixel bounds checks.
+fill (`0x0DEB`/`0x0E2F` shape), full-viewport framebuffer copy
+(`0x0EB6`/`0x0ECB`), and VGA planar-to-linear capture (`0x0EE0`). The
+character-HNM clear path uses the clipped fill helper instead of open-coded
+per-pixel bounds checks.
 
 ### Audio subsystem (segment 0x0B1B) — located
 
@@ -1341,9 +1351,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       across 32 target offsets. Named targets include the text renderers,
       fixed 8x8/UI font helpers, planar text/line primitives, VGA DAC palette
       load/clear callbacks, framebuffer fill/copy helpers, subtitle reveal
-      wrapper, sprite-slot frame/position/extent/dirty-range callbacks, and
-      dirty-rectangle copyback; the remaining target semantics stay open RE work
-      instead of being guessed by the exporter.
+      wrapper, dither-rectangle fill, VGA planar capture, sprite-slot
+      frame/position/extent/dirty-range callbacks, and dirty-rectangle copyback;
+      the remaining target semantics stay open RE work instead of being guessed
+      by the exporter.
 - [x] Port recovered framebuffer fill/copy primitives:
       `src/extract/render.rs` now has tested Rust helpers for the clipped
       rectangle fill, scene-band fill, and full 320x200 framebuffer copy shapes
