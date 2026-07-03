@@ -431,10 +431,13 @@ Current shipped-script VM walks contain repeated true `C1` tokens and no true
 `C2` tokens. Rust now exposes both as `VmToken::RecordState { ..., inverted }`
 and the script disassembly emits `record_state` rows. `execute_trace` evaluates
 direct mode-1 compares when host state already contains a concrete
-`{opcode, operand, ...}` record entry; `C2` compare evaluation also requires the
+`{opcode, operand, ...}` record entry, and Rust now applies the direct `C1`
+mode-0 success write when `ExecutionContext` proves the owner object is active
+and the destination record is empty. `C2` compare evaluation also requires the
 DEB-derived `ExecutionContext` because the binary checks the owner object active
-via helper `0x6034`. The deeper resolved-table mode-0 side effects are not yet
-applied; that awaits the remaining `gs:0x6724` line-record layout model.
+via helper `0x6034`. The deeper resolved-table mode-0 paths and `C2`
+presentation side effects are not yet applied; those await the remaining
+`gs:0x6724` line-record layout model.
 
 ### 0xCA/0xCB global condition handlers — token shape (DECODED; runtime source pending)
 
@@ -741,8 +744,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       record/operand words and optional mode-1 inversion as
       `VmToken::RecordState`, and `script-disassembly.tsv` can now show true
       `record_state` rows instead of raw byte spans. Direct mode-1 compares are
-      now executed when concrete host-state records are available; resolved
-      mode-0 side effects remain pending.
+      now executed when concrete host-state records are available. The direct
+      C1 mode-0 success write `{0x00C1, operand, 0x0002}` is also applied when
+      the DEB-derived context proves the owner active; resolved-table mode-0
+      paths and C2 presentation side effects remain pending.
 - [x] Expose 0xCA/0xCB global condition tokens. `src/vm.rs` preserves the
       consumed compare operands as `VmToken::GlobalWordCompare` and
       `VmToken::GlobalPairCompare`; `execute_trace` evaluates their branches

@@ -611,6 +611,10 @@ fn read_u16(cod: &[u8], at: usize) -> Option<u16> {
 //       set/clear/test one high-bit-first byte flag in the state area.
 //   * 0xB8/0xB9/0xBD, 7 bytes:
 //       store/compare a two-word pair at a direct record offset.
+//   * 0xC1, 5 bytes plus optional A1 prefix:
+//       writes {0x00C1, operand, 2} to an active owner's empty direct record in
+//       mode 0; mode-1 direct compares are evaluated when host state has that
+//       concrete record entry. Resolved-table fallback paths remain pending.
 //   * 0xCD, 7 bytes plus optional A1 prefix:
 //       compare a direct three-word record in mode 1; mode-0 resolved-table
 //       side effects are still pending the line-record table model.
@@ -945,6 +949,24 @@ fn record_state_condition(
     Some(if inverted { !matched } else { matched })
 }
 
+fn write_c1_record_state_direct(
+    state: &mut [u8],
+    context: &ExecutionContext,
+    record_offset: u16,
+    operand: u16,
+) -> bool {
+    if record_owner_is_active(state, context, record_offset) != Some(true) {
+        return false;
+    }
+    if state_u16(state, record_offset) != 0 {
+        return false;
+    }
+    state_set_u16(state, record_offset, OP_RECORD_STATE_MIN as u16);
+    state_set_u16(state, record_offset.wrapping_add(2), operand);
+    state_set_u16(state, record_offset.wrapping_add(4), 2);
+    true
+}
+
 fn clear_record(state: &mut [u8], record_offset: u16) -> Option<u16> {
     let old_type = state_u16(state, record_offset);
     let old_related = state_u16(state, record_offset.wrapping_add(2));
@@ -1133,6 +1155,11 @@ pub fn interpret_line_states_with_context(
             let second_word = read_u16(cod, pos + 5).unwrap_or(0);
             state_set_u16(&mut state, record_offset, first_word);
             state_set_u16(&mut state, record_offset.wrapping_add(2), second_word);
+        }
+        if !mode1 && op == OP_RECORD_STATE_MIN && pos + 5 <= end {
+            let record_offset = read_u16(cod, pos + 1).unwrap_or(0);
+            let operand = read_u16(cod, pos + 3).unwrap_or(0);
+            write_c1_record_state_direct(&mut state, context, record_offset, operand);
         }
 
         if op == OP_TEXT {
@@ -1600,6 +1627,11 @@ pub fn execute_trace_with_overrides_and_context(
             let second_word = read_u16(cod, token_start + 5).unwrap_or(0);
             state_set_u16(&mut state, record_offset, first_word);
             state_set_u16(&mut state, record_offset.wrapping_add(2), second_word);
+        }
+        if !mode1 && op == OP_RECORD_STATE_MIN && token_start + 5 <= end {
+            let record_offset = read_u16(cod, token_start + 1).unwrap_or(0);
+            let operand = read_u16(cod, token_start + 3).unwrap_or(0);
+            write_c1_record_state_direct(&mut state, context, record_offset, operand);
         }
 
         if op == OP_TEXT {
@@ -3079,6 +3111,53 @@ mod tests {
                 && event.branch_taken
                 && event.condition_passed == Some(false)
                 && event.target == Some(target)
+        }));
+    }
+
+    #[test]
+    fn execution_trace_applies_c1_record_state_direct_write_with_context() {
+        let owner = 0x0100u16;
+        let record = owner + TALK_FIELD;
+        let operand = 0x1052u16;
+        let mut var = vec![0; 0x0200];
+        state_set_u8(&mut var, owner + 2, 1);
+        let context = ExecutionContext::from_object_offsets([owner, 0x0200]);
+
+        let mut cod = Vec::new();
+        cod.push(OP_RECORD_STATE_MIN);
+        cod.extend_from_slice(&record.to_le_bytes());
+        cod.extend_from_slice(&operand.to_le_bytes());
+
+        let a0_offset = cod.len();
+        cod.push(0xA0);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        let condition_offset = cod.len();
+        cod.push(OP_RECORD_STATE_MIN);
+        cod.extend_from_slice(&record.to_le_bytes());
+        cod.extend_from_slice(&operand.to_le_bytes());
+        let first_text = cod.len();
+        push_empty_text(&mut cod);
+        cod.push(0xA1);
+        let target = cod.len() as u16;
+        cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xFF);
+
+        let trace = execute_trace(&cod, &var);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert!(trace.branch_events.iter().all(|event| {
+            event.offset != condition_offset || event.condition_passed.is_none()
+        }));
+
+        let trace = execute_trace_with_context(&cod, &var, &context);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 2);
+        assert_eq!(trace.line_states[0].offset, first_text);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == OP_RECORD_STATE_MIN
+                && !event.branch_taken
+                && event.condition_passed == Some(true)
         }));
     }
 
