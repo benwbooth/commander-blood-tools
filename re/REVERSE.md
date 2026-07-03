@@ -826,6 +826,15 @@ Named targets that are already tied to code behavior:
   into the VGA DAC via ports `0x3C8/0x3C9` (256 RGB entries, 6-bit channels).
 - `0x0299:0x0016` (`vga_dac_palette_clear`): zeros the same VGA DAC palette
   range; called during video setup and presentation-loop rebuild.
+- `0x0299:0x00D6` (`fixed_8x8_text_render`): renders a NUL-terminated or
+  `DH`-bounded string from `DS:SI` through the fixed 8x8 glyph table at
+  `GS:0x5225` into the primary framebuffer; used by startup and navigation UI.
+- `0x0299:0x013D` (`font_string_width_measure`): sums font advance tables for
+  NUL-terminated text; `AX=0` selects the 10-row UI font
+  (`0x7362/0x7412`), while `AX!=0` selects the dialogue font
+  (`0x7802/0x78B2`).
+- `0x0299:0x0176` (`ui_text_render_10row`): renders 10-row UI/menu text using
+  tables `GS:0x7362/0x7412/0x7442`.
 - `0x0299:0x0202` (`render_string_entry`): dialogue/UI string renderer using the
   embedded font tables.
 - `0x0299:0x06A0` (`subtitle_reveal_draw_wrapper`): the subtitle reveal renderer
@@ -850,7 +859,7 @@ Named targets that are already tied to code behavior:
 
 This is still a caller map, not a full renderer decompilation. It removes the
 guesswork about which external render hooks the VM/presentation state machine
-uses, and leaves the next RE step as naming the remaining 19 render targets and
+uses, and leaves the next RE step as naming the remaining 16 render targets and
 porting the sprite-slot state model.
 
 Rust now ports the safe framebuffer side of the recovered primitives in
@@ -1304,10 +1313,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `bloodprg-render-call-sites.tsv` and `inspect-bloodprg.render_call_sites`
       scan all direct far calls into segment `0x0299`, recovering 143 call sites
       across 32 target offsets. Named targets include the text renderers,
-      VGA DAC palette load/clear callbacks, framebuffer fill/copy helpers,
-      subtitle reveal wrapper, sprite-slot frame load, and sprite-slot state
-      update; the remaining target semantics stay open RE work instead of being
-      guessed by the exporter.
+      fixed 8x8/UI font helpers, VGA DAC palette load/clear callbacks,
+      framebuffer fill/copy helpers, subtitle reveal wrapper, sprite-slot frame
+      load, and sprite-slot state update; the remaining target semantics stay
+      open RE work instead of being guessed by the exporter.
 - [x] Port recovered framebuffer fill/copy primitives:
       `src/extract/render.rs` now has tested Rust helpers for the clipped
       rectangle fill, scene-band fill, and full 320x200 framebuffer copy shapes

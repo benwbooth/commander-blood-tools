@@ -35,6 +35,9 @@ pub const SND_BANK_LOAD_OFFSET: u16 = 0x0855;
 pub const RENDER_SEGMENT: u16 = 0x0299;
 pub const RENDER_VGA_DAC_PALETTE_LOAD_OFFSET: u16 = 0x0000;
 pub const RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET: u16 = 0x0016;
+pub const RENDER_FIXED_8X8_TEXT_OFFSET: u16 = 0x00d6;
+pub const RENDER_FONT_STRING_WIDTH_OFFSET: u16 = 0x013d;
+pub const RENDER_UI_TEXT_OFFSET: u16 = 0x0176;
 pub const RENDER_STRING_OFFSET: u16 = 0x0202;
 pub const RENDER_SUBTITLE_REVEAL_OFFSET: u16 = 0x06a0;
 pub const RENDER_SMALL_TEXT_OFFSET: u16 = 0x075a;
@@ -917,6 +920,9 @@ fn render_target_name(target_offset: u16) -> &'static str {
     match target_offset {
         RENDER_VGA_DAC_PALETTE_LOAD_OFFSET => "vga_dac_palette_load",
         RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET => "vga_dac_palette_clear",
+        RENDER_FIXED_8X8_TEXT_OFFSET => "fixed_8x8_text_render",
+        RENDER_FONT_STRING_WIDTH_OFFSET => "font_string_width_measure",
+        RENDER_UI_TEXT_OFFSET => "ui_text_render_10row",
         RENDER_STRING_OFFSET => "render_string_entry",
         RENDER_SUBTITLE_REVEAL_OFFSET => "subtitle_reveal_draw_wrapper",
         RENDER_SMALL_TEXT_OFFSET => "small_text_render",
@@ -949,6 +955,28 @@ fn render_call_site_note(file_offset: usize, target_offset: u16) -> &'static str
         (0x001f34, RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET) => {
             "presentation loop clears the VGA DAC palette before rebuilding framebuffer bands"
         }
+        (0x0016c9, RENDER_FIXED_8X8_TEXT_OFFSET) => {
+            "startup path renders DS:0x0159 fixed 8x8 text at AX/BX with color DL"
+        }
+        (0x007d53, RENDER_FIXED_8X8_TEXT_OFFSET) => {
+            "navigation actor/object UI loop renders fixed 8x8 labels from a slot table"
+        }
+        (0x007329, RENDER_FONT_STRING_WIDTH_OFFSET) => {
+            "dialogue line-layout path measures remaining text width using the dialogue font selector AX=1"
+        }
+        (0x00846c, RENDER_FONT_STRING_WIDTH_OFFSET) => {
+            "menu/list layout path measures string widths using the 10-row UI font selector AX=0"
+        }
+        (0x008fcd, RENDER_FONT_STRING_WIDTH_OFFSET) => {
+            "dialogue display path measures dialogue-font string width before right-aligning render_string"
+        }
+        (0x001507 | 0x001515 | 0x001520, RENDER_UI_TEXT_OFFSET) => {
+            "startup/menu path renders 10-row UI text labels"
+        }
+        (0x001e4f, RENDER_UI_TEXT_OFFSET) => "menu prompt path renders one 10-row UI text label",
+        (0x008597 | 0x0085ce, RENDER_UI_TEXT_OFFSET) => {
+            "dialogue/menu list path renders 10-row UI text with active-line color switching"
+        }
         (0x0094ee, RENDER_SUBTITLE_REVEAL_OFFSET) => {
             "subtitle reveal path draws current text using DS:0x5E5C/0x5E5E origin"
         }
@@ -980,6 +1008,15 @@ fn render_call_site_note(file_offset: usize, target_offset: u16) -> &'static str
         }
         (_, RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET) => {
             "zeros all VGA DAC palette entries through ports 0x3C8/0x3C9"
+        }
+        (_, RENDER_FIXED_8X8_TEXT_OFFSET) => {
+            "renders DS:SI through the fixed 8x8 glyph table at GS:0x5225 into the primary framebuffer"
+        }
+        (_, RENDER_FONT_STRING_WIDTH_OFFSET) => {
+            "measures NUL-terminated text width using the UI or dialogue font advance tables"
+        }
+        (_, RENDER_UI_TEXT_OFFSET) => {
+            "renders NUL-terminated text with the 10-row UI font tables at GS:0x7362/0x7412/0x7442"
         }
         _ => "unclassified render-segment call",
     }
@@ -1417,6 +1454,33 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         ds_offset: None,
         kind: "presentation",
         comment: "zeros all 256 VGA DAC palette entries through VGA ports 0x3C8/0x3C9",
+    },
+    BinarySymbol {
+        name: "fixed_8x8_text_render",
+        file_offset: 0x003066,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_FIXED_8X8_TEXT_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "renders DS:SI through the fixed 8x8 glyph table at GS:0x5225 into the primary framebuffer; AX=x, BX=y, DL=color, DH=max chars",
+    },
+    BinarySymbol {
+        name: "font_string_width_measure",
+        file_offset: 0x0030cd,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_FONT_STRING_WIDTH_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "measures NUL-terminated string width from UI font tables when AX=0 or dialogue font tables when AX!=0",
+    },
+    BinarySymbol {
+        name: "ui_text_render_10row",
+        file_offset: 0x003106,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_UI_TEXT_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "renders NUL-terminated strings with the 10-row UI font tables at GS:0x7362/0x7412/0x7442",
     },
     BinarySymbol {
         name: "render_string_entry",
@@ -2206,6 +2270,12 @@ mod tests {
             target_counts.get(&RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET),
             Some(&2)
         );
+        assert_eq!(target_counts.get(&RENDER_FIXED_8X8_TEXT_OFFSET), Some(&2));
+        assert_eq!(
+            target_counts.get(&RENDER_FONT_STRING_WIDTH_OFFSET),
+            Some(&3)
+        );
+        assert_eq!(target_counts.get(&RENDER_UI_TEXT_OFFSET), Some(&6));
         assert_eq!(target_counts.get(&RENDER_STRING_OFFSET), Some(&5));
         assert_eq!(target_counts.get(&RENDER_SUBTITLE_REVEAL_OFFSET), Some(&1));
         assert_eq!(target_counts.get(&RENDER_SMALL_TEXT_OFFSET), Some(&8));
@@ -2237,6 +2307,15 @@ mod tests {
             target_name(RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET),
             "vga_dac_palette_clear"
         );
+        assert_eq!(
+            target_name(RENDER_FIXED_8X8_TEXT_OFFSET),
+            "fixed_8x8_text_render"
+        );
+        assert_eq!(
+            target_name(RENDER_FONT_STRING_WIDTH_OFFSET),
+            "font_string_width_measure"
+        );
+        assert_eq!(target_name(RENDER_UI_TEXT_OFFSET), "ui_text_render_10row");
         assert_eq!(target_name(RENDER_SMALL_TEXT_OFFSET), "small_text_render");
         assert_eq!(
             target_name(RENDER_RECT_FILL_OFFSET),
@@ -2280,6 +2359,30 @@ mod tests {
         );
         assert_eq!(palette_clear.target_file_offset, 0x002fa6);
         assert!(palette_clear.note.contains("VGA DAC"));
+
+        let fixed_text = sites
+            .iter()
+            .find(|site| site.file_offset == 0x0016c9)
+            .expect("startup fixed text render call");
+        assert_eq!(fixed_text.target_offset, RENDER_FIXED_8X8_TEXT_OFFSET);
+        assert_eq!(fixed_text.ax_value, Some(0x82));
+        assert!(fixed_text.note.contains("fixed 8x8 text"));
+
+        let width_measure = sites
+            .iter()
+            .find(|site| site.file_offset == 0x007329)
+            .expect("dialogue width measure call");
+        assert_eq!(width_measure.target_offset, RENDER_FONT_STRING_WIDTH_OFFSET);
+        assert_eq!(width_measure.ax_value, Some(1));
+        assert!(width_measure.note.contains("dialogue font"));
+
+        let ui_text = sites
+            .iter()
+            .find(|site| site.file_offset == 0x008597)
+            .expect("dialogue/menu UI text render call");
+        assert_eq!(ui_text.target_offset, RENDER_UI_TEXT_OFFSET);
+        assert_eq!(ui_text.target_name, "ui_text_render_10row");
+        assert!(ui_text.note.contains("10-row UI text"));
 
         let subtitle_reveal = sites
             .iter()
