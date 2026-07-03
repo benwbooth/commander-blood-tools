@@ -863,6 +863,10 @@ pub struct ScriptProfileExecution {
 /// `text_presentation_record_gating` models the A6 handler's `object+0x3A`
 /// `0x00C4` check. It stays opt-in until the C4 presentation setup path is
 /// complete enough for real-script exports to satisfy that gate.
+///
+/// `strict_actor_record_branching` models the mode-1 C4 handler's branch-fail
+/// path for empty records. It stays opt-in because the mode-0 presentation setup
+/// path that should populate those records is still incomplete.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ExecutionContext {
     object_offsets: Vec<u16>,
@@ -872,6 +876,7 @@ pub struct ExecutionContext {
     descript_entry_names: Vec<Vec<u8>>,
     text_presentation_record_gating: bool,
     text_line_display_gating: bool,
+    strict_actor_record_branching: bool,
 }
 
 impl ExecutionContext {
@@ -930,6 +935,11 @@ impl ExecutionContext {
 
     pub fn with_text_presentation_record_gating(mut self) -> Self {
         self.text_presentation_record_gating = true;
+        self
+    }
+
+    pub fn with_strict_actor_record_branching(mut self) -> Self {
+        self.strict_actor_record_branching = true;
         self
     }
 
@@ -1124,13 +1134,11 @@ fn actor_record_condition(
     record_offset: u16,
     related_record_offset: u16,
     inverted: bool,
+    strict: bool,
 ) -> Option<bool> {
     let record_type = state_u16(state, record_offset);
     let stored_related = state_u16(state, record_offset.wrapping_add(2));
-    // Zeroed static VAR slots can represent runtime line-record state we have
-    // not reconstructed yet. Leave those C4 branches unresolved instead of
-    // proving the wrong path from incomplete host state.
-    if record_type == 0 && stored_related == 0 {
+    if !strict && record_type == 0 && stored_related == 0 {
         return None;
     }
     let matched = actor_record_is_active(state, record_offset)
@@ -1833,8 +1841,13 @@ pub fn execute_trace_with_overrides_and_context(
             if p + 4 <= end {
                 let record_offset = read_u16(cod, p).unwrap_or(0);
                 let related_record_offset = read_u16(cod, p + 2).unwrap_or(0);
-                condition_passed =
-                    actor_record_condition(&state, record_offset, related_record_offset, inverted);
+                condition_passed = actor_record_condition(
+                    &state,
+                    record_offset,
+                    related_record_offset,
+                    inverted,
+                    context.strict_actor_record_branching,
+                );
             }
         } else if mode1 && op == OP_RECORD_TRIPLE {
             let inverted = cod.get(token_start + 1) == Some(&0xA1);
@@ -3121,7 +3134,7 @@ mod tests {
     }
 
     #[test]
-    fn execution_trace_keeps_unresolved_mode1_actor_record_as_context() {
+    fn execution_trace_preserves_unresolved_mode1_actor_record_by_default() {
         let actor = 0x0100u16;
         let mut var = vec![0; 0x0200];
         state_set_u16(&mut var, actor + LOCATION_FIELD, 0x1111);
@@ -3151,6 +3164,40 @@ mod tests {
                 event.offset != condition_offset || event.condition_passed.is_none()
             })
         );
+    }
+
+    #[test]
+    fn execution_trace_strict_mode_branches_on_empty_actor_record() {
+        let actor = 0x0100u16;
+        let mut var = vec![0; 0x0200];
+        state_set_u16(&mut var, actor + LOCATION_FIELD, 0x1111);
+
+        let mut cod = Vec::new();
+        let a0_offset = cod.len();
+        cod.push(0xA0);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        let condition_offset = cod.len();
+        push_actor_ref(&mut cod, actor);
+        push_empty_text(&mut cod);
+        cod.push(0xA1);
+        let target = cod.len() as u16;
+        cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xFF);
+
+        let context = ExecutionContext::default().with_strict_actor_record_branching();
+        let trace = execute_trace_with_context(&cod, &var, &context);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 1);
+        assert_eq!(trace.line_states[0].offset, target as usize);
+        assert_eq!(trace.line_states[0].actor_offset, None);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == OP_ACTOR
+                && event.branch_taken
+                && event.condition_passed == Some(false)
+                && event.target == Some(target)
+        }));
     }
 
     #[test]
@@ -4437,6 +4484,35 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn strict_c4_branching_reveals_script2_needs_presentation_setup_if_present() {
+        for prefix in ["output/scripts", "../output/scripts"] {
+            let cp = format!("{prefix}/SCRIPT2.COD");
+            let vp = format!("{prefix}/SCRIPT2.VAR");
+            let (Ok(cod), Ok(var)) = (std::fs::read(&cp), std::fs::read(&vp)) else {
+                continue;
+            };
+
+            let context = ExecutionContext::default().with_strict_actor_record_branching();
+            let trace = execute_trace_with_context(&cod, &var, &context);
+            assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+            assert!(trace.line_states.is_empty());
+            assert!(
+                trace.branch_events.iter().any(|event| {
+                    event.offset == 5
+                        && event.opcode == OP_ACTOR
+                        && event.branch_taken
+                        && event.condition_passed == Some(false)
+                        && event.target == Some(722)
+                }),
+                "strict C4 mode should follow the binary branch-fail path at SCRIPT2 offset 5"
+            );
+            return;
+        }
+
+        eprintln!("skipping: extracted SCRIPT2 files not available");
     }
 
     /// If the real binary is present, confirm the embedded descriptor table

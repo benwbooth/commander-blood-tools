@@ -634,11 +634,18 @@ object offset (`record == object + 0x3A` for talk records).
 The Rust VM now exposes this as `VmToken::Actor { record_offset,
 related_record_offset, inverted, len }`. Mode 0 writes the direct
 `{0x00C4, related, 0}` record entry and updates speaker context. Mode 1 does not
-write that state; `execute_trace` only evaluates the branch when the host-side
-state already has a concrete record entry. If the static `SCRIPT*.VAR` slot is
-still zero, the line-record table truth is unresolved, so Rust preserves the
-guarded actor context without taking the branch until the full runtime table
-model is ported.
+write that state. `ExecutionContext::with_strict_actor_record_branching()`
+models the binary compare exactly: an empty `{0,0}` record fails the mode-1 C4
+test and calls branch helper `0x6462` unless the token has the `A1` inversion
+prefix. In current extracted `SCRIPT2`, strict C4 branching reaches `EndMarker`
+with zero text lines because the top-level blocks at offsets 5, 727, 902, ...
+all test empty presentation records. That confirms the next missing runtime
+piece is the mode-0 setup path that populates these records before the A6
+handler's presentation gate is enabled globally.
+
+The default `execute_trace` path still preserves empty mode-1 C4 records as
+unresolved compatibility state so existing exports do not collapse to zero
+dialogue while that setup path is incomplete.
 
 ### 0xC9 record-clear handler @ file 0x6FB9 — speaker lifetime (DECODED)
 

@@ -696,7 +696,7 @@ fn opcode_metadata(opcode: u8, handler_file_offset: usize) -> OpcodeMetadata {
             mnemonic: "actor_object_ref",
             family: "object-reference",
             rust_status: "execution-trace-ported",
-            notes: "C4 consumes record/related words with optional mode1 A1 inversion; Rust writes direct mode0 records and evaluates mode1 compares only with concrete host-state evidence",
+            notes: "C4 consumes record/related words with optional mode1 A1 inversion; Rust writes direct mode0 records and exposes strict mode1 branch-fail behavior through ExecutionContext",
         },
         op if vm::is_record_state_opcode(op) => OpcodeMetadata {
             mnemonic: "record_state",
