@@ -749,7 +749,8 @@ flags word does not have bit `0x8000`, and selector `0x02` on the owner yields a
 nonzero target. Rust now captures that as
 `post_update_kind2_presentation_handoff_target()`. It returns the handoff target
 but does not yet apply the `vm_control_flow` PC mutation inside execution
-traces.
+traces. The `0x27D7` gate is distinct from the main-loop idle gate at `0x27DA`;
+Rust tests cover that split so the adjacent addresses do not get collapsed.
 
 The main loop at `0x108E` does not consume a pending `D2` profile request until
 the presentation state is idle. The exact gate is:

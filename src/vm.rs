@@ -767,6 +767,7 @@ const VM_PRESENTATION_INPUT_GATE_C: u16 = 0x5E64;
 const VM_PRESENTATION_INPUT_GATE_D: u16 = 0x2565;
 const VM_PRESENTATION_INPUT_GATE_E: u16 = 0x2736;
 const VM_PRESENTATION_INPUT_GATE_F: u16 = 0x2737;
+const VM_PRESENTATION_HANDOFF_GATE: u16 = 0x27D7;
 const VM_PRESENTATION_INPUT_GATE_G: u16 = 0x27DA;
 const VM_PRESENTATION_INPUT_GATE_H: u16 = 0x2792;
 const VM_PRESENTATION_INPUT_GATE_I: u16 = 0x2A19;
@@ -1355,7 +1356,7 @@ fn post_update_kind1_presentation_state(
         state_set_u16(state, VM_PRESENTATION_WORD_BUFFER, 0);
         state_set_u16(state, VM_PRESENTATION_INPUT_GATE_I, 0);
         state_set_u8(state, VM_PRESENTATION_TEXT_WAIT, 0);
-        state_set_u8(state, VM_PRESENTATION_INPUT_GATE_G, 0);
+        state_set_u8(state, VM_PRESENTATION_HANDOFF_GATE, 0);
         state_set_u8(state, VM_PRESENTATION_HOLD_READY, 0);
         state_set_u8(state, VM_PRESENTATION_HOLD_COMPLETE, 0);
         state_set_u16(state, VM_PRESENTATION_SIGNAL_SLOT, 0);
@@ -1392,7 +1393,7 @@ fn post_update_kind2_presentation_handoff_target(
 ) -> Option<u16> {
     if state_u8(state, VM_PRESENTATION_ACTIVE) & 1 == 0
         || state_u8(state, C2_PRESENTATION_GATE) & 1 != 0
-        || state_u8(state, VM_PRESENTATION_INPUT_GATE_G) & 1 != 0
+        || state_u8(state, VM_PRESENTATION_HANDOFF_GATE) & 1 != 0
         || state_u8(state, VM_PRESENTATION_START_LOCK) & 1 != 0
     {
         return None;
@@ -3604,6 +3605,7 @@ mod tests {
         state_set_u16(&mut var, VM_PRESENTATION_WORD_BUFFER, 0x4444);
         state_set_u16(&mut var, VM_PRESENTATION_INPUT_GATE_I, 0x5555);
         state_set_u8(&mut var, VM_PRESENTATION_TEXT_WAIT, 0xff);
+        state_set_u8(&mut var, VM_PRESENTATION_HANDOFF_GATE, 0xff);
         state_set_u8(&mut var, VM_PRESENTATION_INPUT_GATE_G, 0xff);
         state_set_u8(&mut var, VM_PRESENTATION_HOLD_READY, 0xff);
         state_set_u8(&mut var, VM_PRESENTATION_HOLD_COMPLETE, 0xff);
@@ -3625,7 +3627,8 @@ mod tests {
         assert_eq!(state_u16(&var, VM_PRESENTATION_WORD_BUFFER), 0);
         assert_eq!(state_u16(&var, VM_PRESENTATION_INPUT_GATE_I), 0);
         assert_eq!(state_u8(&var, VM_PRESENTATION_TEXT_WAIT), 0);
-        assert_eq!(state_u8(&var, VM_PRESENTATION_INPUT_GATE_G), 0);
+        assert_eq!(state_u8(&var, VM_PRESENTATION_HANDOFF_GATE), 0);
+        assert_eq!(state_u8(&var, VM_PRESENTATION_INPUT_GATE_G), 0xff);
         assert_eq!(state_u8(&var, VM_PRESENTATION_HOLD_READY), 0);
         assert_eq!(state_u8(&var, VM_PRESENTATION_HOLD_COMPLETE), 0);
         assert_eq!(state_u16(&var, VM_PRESENTATION_SIGNAL_SLOT), 0);
@@ -3786,6 +3789,18 @@ mod tests {
             None
         );
         state_set_u8(&mut var, VM_PRESENTATION_START_LOCK, 0);
+        state_set_u8(&mut var, VM_PRESENTATION_HANDOFF_GATE, 1);
+        assert_eq!(
+            post_update_kind2_presentation_handoff_target(&var, &context, owner, record),
+            None
+        );
+        state_set_u8(&mut var, VM_PRESENTATION_HANDOFF_GATE, 0);
+        state_set_u8(&mut var, VM_PRESENTATION_INPUT_GATE_G, 1);
+        assert_eq!(
+            post_update_kind2_presentation_handoff_target(&var, &context, owner, record),
+            Some(0x1234)
+        );
+        state_set_u8(&mut var, VM_PRESENTATION_INPUT_GATE_G, 0);
         state_set_u16(
             &mut var,
             owner.wrapping_add(2),
