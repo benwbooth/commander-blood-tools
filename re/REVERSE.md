@@ -563,8 +563,9 @@ This matters for video accuracy: real scripts frequently emit text after a
 matching `C9` and before the next `C4`, so carrying the previous actor through
 that clear bleeds the wrong speaker/background into narrator or system lines.
 Rust now exposes `VmToken::RecordClear` and clears the current speaker context
-when `record_offset == actor_offset + 0x3A`, again only in mode 0. Mode-1 record
-clear bytes are comparison/control flow, not a lifetime mutation.
+when `record_offset == actor_offset + 0x3A`. Unlike the comparison handlers, this
+handler has no `gs:0x67AD` mode check: Rust now applies the direct clear in mode
+0 and mode 1.
 
 ### Dialogue display state machine (seg 0x0971, file ~0x9E81)
 
@@ -735,8 +736,8 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       stored-related slot; disassembly now emits `record_entry` rows.
 - [x] Port 0xC9 record-clear speaker lifetime semantics. `src/vm.rs` exposes
       `VmToken::RecordClear`, the bounded interpreter clears the active actor
-      when its talk-field record is cleared, and the script parsers stop carrying
-      actor/background context past matching `C9` tokens.
+      when its talk-field record is cleared in either VM mode, and the script
+      parsers stop carrying actor/background context past matching `C9` tokens.
 - [ ] Map presentation constants: subtitle position, reveal rate, colors, timing,
       HNM actor reset/loop policy, audio mix levels.
 

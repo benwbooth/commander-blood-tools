@@ -488,8 +488,8 @@ fn opcode_metadata(opcode: u8, handler_file_offset: usize) -> OpcodeMetadata {
         vm::OP_RECORD_CLEAR => OpcodeMetadata {
             mnemonic: "record_clear",
             family: "line-record",
-            rust_status: "token-ported",
-            notes: "C9 clears a 6-byte line record; Rust uses matching clears to stop actor/background context bleed",
+            rust_status: "execution-trace-ported",
+            notes: "C9 unconditionally clears a 6-byte line record in both VM modes; Rust applies the clear and stops matching actor/background context bleed",
         },
         vm::OP_GLOBAL_WORD_COMPARE => OpcodeMetadata {
             mnemonic: "global_word_compare",

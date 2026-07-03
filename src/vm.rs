@@ -612,8 +612,8 @@ fn read_u16(cod: &[u8], at: usize) -> Option<u16> {
 //       presentation record state, not a speaker change.
 //   * 0xC5..=0xC8: record entries. The handlers write {opcode, related, 0};
 //       C8 is the special empty-record marker and stores related=0.
-//   * 0xC9: record clear. In mode 0 the handler zeroes a 6-byte record and, when
-//       the previous entry was 0xC4, clears the related actor subrecord too.
+//   * 0xC9: record clear. The handler zeroes a 6-byte record in both modes and,
+//       when the previous entry was 0xC4, clears the related actor subrecord too.
 // NOTE: `interpret_line_states` is a LINEAR pass: it applies mode-0 state
 // mutations and uses guarded mode-1 actor records as context, but does not take
 // branches. `execute_trace` models the recovered branch helper for conditionals
@@ -738,6 +738,15 @@ fn write_actor_record(state: &mut [u8], record_offset: u16, related_record_offse
     state_set_u16(state, record_offset.wrapping_add(4), 0);
 }
 
+fn clear_record(state: &mut [u8], record_offset: u16) -> Option<u16> {
+    let old_type = state_u16(state, record_offset);
+    let old_related = state_u16(state, record_offset.wrapping_add(2));
+    state_set_u16(state, record_offset, 0);
+    state_set_u16(state, record_offset.wrapping_add(2), 0);
+    state_set_u16(state, record_offset.wrapping_add(4), 0);
+    (old_type == OP_ACTOR as u16).then_some(old_related)
+}
+
 fn branch_fail(branch_stack: &mut Vec<u16>) -> Option<u16> {
     branch_stack.pop()
 }
@@ -786,8 +795,9 @@ pub fn interpret_line_states(cod: &[u8], var: &[u8]) -> Vec<LineState> {
                 }
             }
         }
-        if !mode1 && op == OP_RECORD_CLEAR {
+        if op == OP_RECORD_CLEAR {
             if let Some(record_offset) = read_u16(cod, pos + 1) {
+                clear_record(&mut state, record_offset);
                 if actor.map(|a| a.wrapping_add(TALK_FIELD)) == Some(record_offset) {
                     actor = None;
                 }
@@ -1183,8 +1193,9 @@ pub fn execute_trace_with_overrides(
                 }
             }
         }
-        if !mode1 && op == OP_RECORD_CLEAR {
+        if op == OP_RECORD_CLEAR {
             if let Some(record_offset) = read_u16(cod, token_start + 1) {
+                clear_record(&mut state, record_offset);
                 if actor.map(|a| a.wrapping_add(TALK_FIELD)) == Some(record_offset) {
                     actor = None;
                 }
@@ -1872,6 +1883,27 @@ mod tests {
     }
 
     #[test]
+    fn interpreter_applies_mode1_record_clear() {
+        let actor = 0x0100u16;
+        let location_field = actor + LOCATION_FIELD;
+        let mut var = vec![0; 0x0200];
+        state_set_u16(&mut var, location_field, 0x1111);
+
+        let mut cod = Vec::new();
+        push_actor_ref(&mut cod, actor);
+        cod.extend_from_slice(&[0xA0, 0x00, 0x00]);
+        push_record_clear(&mut cod, actor);
+        cod.push(0xA1);
+        push_empty_text(&mut cod);
+        cod.push(0xFF);
+
+        let states = interpret_line_states(&cod, &var);
+        assert_eq!(states.len(), 1);
+        assert_eq!(states[0].actor_offset, None);
+        assert_eq!(states[0].location_offset, None);
+    }
+
+    #[test]
     fn interpreter_record_link_does_not_restore_cleared_actor() {
         let actor = 0x0100u16;
         let location_field = actor + LOCATION_FIELD;
@@ -2004,6 +2036,29 @@ mod tests {
                 event.offset != condition_offset || event.condition_passed.is_none()
             })
         );
+    }
+
+    #[test]
+    fn execution_trace_applies_mode1_record_clear() {
+        let actor = 0x0100u16;
+        let mut var = vec![0; 0x0200];
+        state_set_u16(&mut var, actor + LOCATION_FIELD, 0x1111);
+
+        let mut cod = Vec::new();
+        push_actor_ref(&mut cod, actor);
+        cod.extend_from_slice(&[0xA0, 0x00, 0x00]);
+        push_record_clear(&mut cod, actor);
+        cod.push(0xA1);
+        let text = cod.len();
+        push_empty_text(&mut cod);
+        cod.push(0xFF);
+
+        let trace = execute_trace(&cod, &var);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 1);
+        assert_eq!(trace.line_states[0].offset, text);
+        assert_eq!(trace.line_states[0].actor_offset, None);
+        assert_eq!(trace.line_states[0].location_offset, None);
     }
 
     #[test]
