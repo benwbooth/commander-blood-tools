@@ -12,8 +12,8 @@ use super::*;
 /// * `b1:b2` (u16, little-endian) — index into the per-line record table
 ///   (`gs:0x6724`); kept here as [`call_target`].
 /// * `b3` — per-line *selector* the handler stores to `gs:0x1FAB`
-///   (→ `gs:0x6788 = b3 + 9`, the active-dialogue-line id). `0xFF` = none.
-///   Strongest candidate for the voice/speaker clip selector. Held as
+///   (→ `gs:0x6788 = sign_extend(b3) + 9`, the active-dialogue-line id).
+///   `0xFF` = no voice; `1..=N` is a one-based talk-clip selector. Held as
 ///   `params[0]`.
 /// * `b4` — *control-flag word* (NOT a clip index): bit3 `0x08` = conditional
 ///   skip-count follows, bit4 `0x10` = loop with target word, bits 0/2 tweak
@@ -644,12 +644,7 @@ fn executed_speech_rows_from_trace(
             if !actor_speaks {
                 return None;
             }
-            match call.voice_selector {
-                idx if idx > 0 && idx != 0xff && (idx as usize) <= actor.talk_count => {
-                    Some(idx as usize - 1)
-                }
-                _ => None,
-            }
+            vm::text_selector_voice_clip_index(call.voice_selector, actor.talk_count)
         });
         let source = match (&actor, actor_speaks, clip_index) {
             (Some(_), true, Some(_)) => {
@@ -801,10 +796,10 @@ pub(super) fn parse_script_text_calls(
                 let rt = runtime_bg.get(&offset); // runtime scene for this line, if resolved
                 let actor = current_actor.clone();
                 // Voice clip-index (RE, re/REVERSE.md "voice clip-index", confirmed by
-                // tracing gs:0x6788 = b3 + 9 into the son.snd player + the export-data
+                // tracing gs:0x6788 = sign_extend(b3) + 9 into the son.snd player + the export-data
                 // distribution): `param0` (b3) is the per-line voice selector —
                 //   * b3 == 0xFF or 0x00 => NO voice (narrator/menu/tutorial subtitle;
-                //     b3+9 = 0x108 is the out-of-range "none" line id), and
+                //     sign-extended b3 + 9 wraps to active line id 8), and
                 //   * b3 in 1..=N => 1-based index into the actor's son.snd talk clips,
                 //     so clip = b3 - 1.
                 // `param1` (b4) is the control-flag word (bit3=skip, bit4=loop) — NOT a
@@ -817,12 +812,7 @@ pub(super) fn parse_script_text_calls(
                     if !actor_speaks {
                         return None;
                     }
-                    match voice_selector {
-                        idx if idx > 0 && idx != 0xff && (idx as usize) <= actor.talk_count => {
-                            Some(idx as usize - 1)
-                        }
-                        _ => None,
-                    }
+                    vm::text_selector_voice_clip_index(voice_selector, actor.talk_count)
                 });
                 let source = match (&actor, actor_speaks, clip_index) {
                     (Some(_), true, Some(_)) => {

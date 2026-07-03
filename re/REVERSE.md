@@ -350,31 +350,32 @@ On entry `si` points at the token's `b1`. The handler:
     clear the line is not shown (explains why real data always has 0x80).
   - global mutes `gs:0x5E64`, `gs:0x67B0` also gate display.
 - later: `si=gs:0x677C; al=[b3]; gs:0x1FAB = (s8)b3` ⇒ **`b3` is the per-line
-  selector stored to global `gs:0x1FAB`** (the value that was `0xFF`=none or an
-  incrementing voice index in script2 → strongest candidate for the voice/speaker
-  selector). Trace consumers of `gs:0x1FAB` to confirm it drives `son.snd`.
+  selector stored to global `gs:0x1FAB`**. `0xFF` and `0x00` are no-voice
+  channels; `1..=N` selects the actor's one-based `son.snd` talk clip.
 - dict-word resolution + on-screen display continue past 0x675E (uses `render_*`
   text routines in seg 0x0299).
 
-**b3 selector flow (traced):** `b3` → `gs:0x1FAB` → (reader @0x11F2)
-`gs:0x6788 = b3 + 9`, tracked as the **active dialogue-line id** (compared vs `bx`
-at 0x120F; reset to `0xFFFF` on clear). To fully confirm "b3 picks a son.snd
-voice clip", follow `gs:0x6788` into audio playback (next hop).
+**b3 selector flow (traced):** `b3` → signed word `gs:0x1FAB` → (reader @0x11F2)
+`gs:0x6788 = sign_extend(b3) + 9`, tracked as the **active dialogue-line id**
+(compared vs `bx` at 0x120F; reset to `0xFFFF` on clear). Voice clip selection is
+resolved in Rust as `b3 == 0xFF || b3 == 0x00` → no voice, `b3 in 1..=N` → actor
+`son.snd` clip `b3 - 1`. `src/vm.rs` now owns this as
+`text_selector_active_line_id` and `text_selector_voice_clip_index`.
 
 **Clear / scene-reset routines** (the renderer's *clear* event): file `0x1A64`
 and `0xB529` both reset `gs:0x1FAB`,`gs:0x6788` (→0xFFFF) plus the display gates
 `gs:0x5E64`,`gs:0x67B0`,`gs:0x67BC`,`gs:0x67BA` and call the common stop routine
 `0x071E:0x14B6`. Useful as the authoritative subtitle/scene-clear semantics.
 
-**Remaining for full accuracy:** (1) follow `gs:0x6788` (=b3+9) into son.snd
-playback to confirm voice/chatter clip-index selection; (2) decode any remaining
+**Remaining for full accuracy:** (1) trace the exact `gs:0x67BB` line-complete
+chatter bridge into the SND caller/runtime state; (2) decode any remaining
 line-record display flags that affect subtitle/talk-HNM routing; (3) map
 background/music/HNM opcodes among 0xB7/0xC1–0xC9 handlers; (4) `gs:0x6724`
 line-record layout.
 
 ### Dialogue display state machine (seg 0x0971, file ~0x9E81)
 
-Per-frame dialogue updater. `gs:0x6788` = active line id (set by 0xA6 b3+9);
+Per-frame dialogue updater. `gs:0x6788` = active line id (set by signed 0xA6 b3+9);
 `gs:0x678A` = currently-displayed line id. On `0x6788 != 0x678A` it latches the
 new id and redraws (lcall render seg 0x299). Special line ids switch the
 **viewport clip region**: id `5` and `0x27` set `gs:0x5239=0x23,gs:0x523B=0xA5`
@@ -490,8 +491,11 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       (vm_exec_loop @0x55F5, handler table DS:0x6EB0, 52 handlers resolved).
 - [x] Find the 0xA6 TEXT handler @0x660C; decode b1..b5 fields (b1b2=line index,
       b3→gs:0x1FAB selector, b4/b5=control/active flags). See Key Findings.
-- [ ] **Trace `gs:0x1FAB` (0xA6 b3) consumers** → confirm it selects the
-      `son.snd` voice/chatter clip. Highest remaining value for accuracy.
+- [x] Port `gs:0x1FAB` / `gs:0x6788` TEXT selector semantics:
+      `src/vm.rs` models signed `b3 + 9` active-line ids and the one-based
+      `son.snd` talk-clip selector (`0x00`/`0xFF` = no voice, `1..=N` =
+      clip `N-1`). This centralizes the rule that previously lived as duplicated
+      parser logic.
 - [ ] Decode the `gs:0x6724` per-line record layout (es:[di], es:[di+2] flags).
 - [ ] Decode remaining animated subtitle/audio details, especially the exact
       `gs:0x67BB` line-complete chatter bridge into the SND caller/runtime state.
@@ -648,6 +652,11 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `src/snd.rs` implements the `0xBB6D..0xBB74` `add`+`rcr` unsigned PCM
       mixer as `snd_mix_average` and verifies it exhaustively for all u8 sample
       pairs against the 8086 carry/rotate behavior.
+- [x] Centralize TEXT selector voice mapping:
+      `src/vm.rs` exposes `text_selector_active_line_id` and
+      `text_selector_voice_clip_index`; both public and extractor script parsers
+      call that recovered VM/presentation rule instead of hand-rolling the old
+      `b3` tests.
 - [x] Emit branch-scenario dialogue rows/runs:
       `script-branch-scenario-dialogue.tsv` reuses the same executed-dialogue
       resolver against each forced branch trace, and

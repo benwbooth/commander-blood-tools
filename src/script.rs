@@ -240,12 +240,7 @@ pub fn parse_speech_events(
                     if !actor_speaks {
                         return None;
                     }
-                    match voice_selector {
-                        idx if idx > 0 && idx != 0xff && (idx as usize) <= actor.talk_count => {
-                            Some(idx as usize - 1)
-                        }
-                        _ => None,
-                    }
+                    vm::text_selector_voice_clip_index(voice_selector, actor.talk_count)
                 });
                 let source = match (current_actor, actor_speaks, clip_index) {
                     (Some(_), true, Some(_)) => {
@@ -492,13 +487,19 @@ mod tests {
             // only accepted `a6 0a 07`, while the VM token decoder accepts the
             // actual handler layout.
             0xa6, 0x34, 0x12, 0x02, 0x01, 0x80, 0x01, 0x00, 0x07, 0x00, 0x00, 0x00,
+            // 0xFF is a no-voice subtitle channel. The following b4 control byte
+            // must not be misread as a fallback clip index.
+            0xa6, 0x36, 0x12, 0xff, 0x02, 0x80, 0x01, 0x00, 0x00, 0x00,
         ];
 
         let events = parse_speech_events("SCRIPTX", &cod, &dictionary, &functions, &contexts);
-        assert_eq!(events.len(), 1);
+        assert_eq!(events.len(), 2);
         assert_eq!(events[0].actor_record.as_deref(), Some("Bob_Morlock"));
         assert_eq!(events[0].clip_index, Some(1));
         assert_eq!(events[0].background_hnm.as_deref(), Some("gobar1.hnm"));
         assert_eq!(events[0].text, "HELLO WORLD");
+        assert_eq!(events[1].actor_record.as_deref(), Some("Bob_Morlock"));
+        assert_eq!(events[1].clip_index, None);
+        assert_eq!(events[1].text, "HELLO");
     }
 }

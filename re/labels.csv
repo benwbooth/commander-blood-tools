@@ -29,15 +29,15 @@ DS:0x6770,vm_pending_word,pending word appended by 0xA3 handler
 0x0142D0,vm_handler_table,"opcode handler jump table DS:0x6eb0, 52 near offsets into seg 0x04da, opcodes A0..D3"
 0x00660C,vm_op_a6_text,"0xA6 TEXT handler: b1b2=line index into gs:0x6724; b3->gs:0x1fab; b4/b5=control(skip/loop/active 0x80)"
 0x006C7E,vm_op_c4_actor,0xC4 actor/object reference handler
-DS:0x1FAB,vm_text_selector,"per-line selector set from 0xA6 b3 (0xff=none / voice index?)"
+DS:0x1FAB,vm_text_selector,"signed per-line selector set from 0xA6 b3 (0xff/0x00=no voice; 1..N=talk clip)"
 DS:0x671C,vm_cod_ptr2,COD far-ptr used by main exec loop (lds si)
 DS:0x67AB,vm_skip_count,skip-N-tokens counter (IF/branch); set by 0xA6 b4&0x08
 DS:0x67B1,vm_loop_flag,bit0=loop active bit1=loop range
 DS:0x6778,vm_loop_target,loop target address set by 0xA6 b4&0x10
 DS:0x677C,vm_a6_b3_ptr,saved pointer to 0xA6 b3 byte
 DS:0x67B4,vm_ctrl_signal,handler->loop control signal (nonzero = special)
-DS:0x6788,vm_active_line,"active dialogue-line id = (0xA6 b3)+9; reset 0xffff on clear"
-0x0011E8,dlg_line_activate,reads gs:0x1fab(b3)+9 -> gs:0x6788 active line id
+DS:0x6788,vm_active_line,"active dialogue-line id = sign_extend(0xA6 b3)+9; reset 0xffff on clear"
+0x0011E8,dlg_line_activate,reads signed gs:0x1fab(b3)+9 -> gs:0x6788 active line id
 0x001A5E,dlg_clear_a,"clear dialogue/scene state: reset 0x1fab/0x6788/display gates; calls 0x71e:0x14b6"
 0x00B521,dlg_clear_b,"clear dialogue/scene state variant; resets voice/subtitle gates"
 0x071E:0x14B6,dlg_stop_common,common stop/clear routine called by dialogue clear paths

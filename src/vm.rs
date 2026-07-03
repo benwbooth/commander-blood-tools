@@ -92,6 +92,32 @@ pub const OP_MIN: u8 = 0xA0;
 pub const OP_MAX: u8 = 0xD3;
 pub const OP_TEXT: u8 = 0xA6;
 pub const OP_ACTOR: u8 = 0xC4;
+pub const TEXT_SELECTOR_NONE: u8 = 0xFF;
+pub const TEXT_SELECTOR_SILENT: u8 = 0x00;
+pub const ACTIVE_LINE_ID_BIAS: u16 = 9;
+
+/// Port the TEXT handler's `b3` selector bridge:
+/// `cbw; mov gs:[0x1FAB],ax`, then `mov ax,[0x1FAB]; add ax,9; mov [0x6788],ax`.
+pub fn text_selector_active_line_id(selector: u8) -> u16 {
+    (selector as i8 as i16 as u16).wrapping_add(ACTIVE_LINE_ID_BIAS)
+}
+
+/// Resolve a TEXT `b3` selector to the actor's zero-based `son.snd` talk clip.
+///
+/// Current evidence: `0x00` and `0xFF` are subtitle/no-voice channels, while
+/// `1..=talk_clip_count` are one-based talk clip selectors. This replaces the
+/// removed heuristic that treated `b4` control flags as a fallback clip index.
+pub fn text_selector_voice_clip_index(selector: u8, talk_clip_count: usize) -> Option<usize> {
+    let one_based = selector as usize;
+    if selector != TEXT_SELECTOR_NONE
+        && selector != TEXT_SELECTOR_SILENT
+        && one_based <= talk_clip_count
+    {
+        Some(one_based - 1)
+    } else {
+        None
+    }
+}
 
 /// Opcodes whose descriptor length is 0 (other than `0xA6`): the VM advances
 /// past them with helper `0x6293`, which scans byte-by-byte for a `0x0000` word
@@ -1021,6 +1047,25 @@ mod tests {
             }
             other => panic!("expected looped Text, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn text_selector_active_line_id_matches_signed_binary_bridge() {
+        assert_eq!(text_selector_active_line_id(0x00), 9);
+        assert_eq!(text_selector_active_line_id(0x01), 10);
+        assert_eq!(text_selector_active_line_id(0x05), 14);
+        // A6 stores b3 through CBW/sign extension, so 0xFF becomes -1 before +9.
+        assert_eq!(text_selector_active_line_id(TEXT_SELECTOR_NONE), 8);
+        assert_eq!(text_selector_active_line_id(0xFE), 7);
+    }
+
+    #[test]
+    fn text_selector_voice_clip_index_uses_one_based_talk_clips() {
+        assert_eq!(text_selector_voice_clip_index(0x00, 4), None);
+        assert_eq!(text_selector_voice_clip_index(0xFF, 4), None);
+        assert_eq!(text_selector_voice_clip_index(0x01, 4), Some(0));
+        assert_eq!(text_selector_voice_clip_index(0x04, 4), Some(3));
+        assert_eq!(text_selector_voice_clip_index(0x05, 4), None);
     }
 
     #[test]

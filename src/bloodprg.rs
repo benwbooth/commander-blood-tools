@@ -711,7 +711,7 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         offset: Some(0x0338),
         ds_offset: None,
         kind: "presentation",
-        comment: "stores active dialogue line DS:0x6788 = DS:0x1fab + 9",
+        comment: "stores active dialogue line DS:0x6788 = signed DS:0x1fab + 9",
     },
     BinarySymbol {
         name: "dlg_clear_a",
