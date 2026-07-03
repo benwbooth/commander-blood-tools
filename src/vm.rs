@@ -92,6 +92,9 @@ pub const OP_MIN: u8 = 0xA0;
 pub const OP_MAX: u8 = 0xD3;
 pub const OP_TEXT: u8 = 0xA6;
 pub const OP_BIT_FLAG: u8 = 0xB7;
+pub const OP_PAIR_RECORD_A: u8 = 0xB8;
+pub const OP_PAIR_RECORD_B: u8 = 0xB9;
+pub const OP_PAIR_RECORD_C: u8 = 0xBD;
 pub const OP_RECORD_STATE_MIN: u8 = 0xC1;
 pub const OP_RECORD_STATE_MAX: u8 = 0xC2;
 pub const OP_RECORD_LINK: u8 = 0xC3;
@@ -139,6 +142,13 @@ pub fn is_record_state_opcode(opcode: u8) -> bool {
 
 pub fn is_global_compare_opcode(opcode: u8) -> bool {
     opcode == OP_GLOBAL_WORD_COMPARE || opcode == OP_GLOBAL_PAIR_COMPARE
+}
+
+pub fn is_pair_record_opcode(opcode: u8) -> bool {
+    matches!(
+        opcode,
+        OP_PAIR_RECORD_A | OP_PAIR_RECORD_B | OP_PAIR_RECORD_C
+    )
 }
 
 pub fn record_entry_stored_related_offset(opcode: u8, operand: u16) -> u16 {
@@ -299,6 +309,15 @@ pub enum VmToken {
         reserved: u16,
         len: usize,
     },
+    /// `0xB8`/`0xB9`/`0xBD` pair-record assignment/compare.
+    PairRecord {
+        offset: usize,
+        opcode: u8,
+        record_offset: u16,
+        first_word: u16,
+        second_word: u16,
+        len: usize,
+    },
     /// Any other opcode; raw length recorded.
     Op {
         offset: usize,
@@ -418,6 +437,15 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
                 operator: cod.get(pos + 1).copied().unwrap_or(0),
                 packed_value: read_u16(cod, pos + 2).unwrap_or(0),
                 reserved: read_u16(cod, pos + 4).unwrap_or(0),
+                len,
+            });
+        } else if is_pair_record_opcode(op) {
+            out.push(VmToken::PairRecord {
+                offset: pos,
+                opcode: op,
+                record_offset: read_u16(cod, pos + 1).unwrap_or(0),
+                first_word: read_u16(cod, pos + 3).unwrap_or(0),
+                second_word: read_u16(cod, pos + 5).unwrap_or(0),
                 len,
             });
         } else if op == OP_RECORD_LINK {
@@ -543,6 +571,8 @@ fn read_u16(cod: &[u8], at: usize) -> Option<u16> {
 //       not needed for line-location recovery and is not modeled here.
 //   * 0xB7, 4 bytes plus optional A1 prefix:
 //       set/clear/test one high-bit-first byte flag in the state area.
+//   * 0xB8/0xB9/0xBD, 7 bytes:
+//       store/compare a two-word pair at a direct record offset.
 //   * 0xC4: actor/record reference. The first operand is the destination record
 //       offset and doubles as object_offset + 0x3A (talk field) for speaker
 //       tracking; the second operand is a related record offset consumed by the
@@ -739,6 +769,13 @@ pub fn interpret_line_states(cod: &[u8], var: &[u8]) -> Vec<LineState> {
                 let next = if clear { cur & !mask } else { cur | mask };
                 state_set_u8(&mut state, byte_offset, next);
             }
+        }
+        if !mode1 && is_pair_record_opcode(op) && pos + 7 <= end {
+            let record_offset = read_u16(cod, pos + 1).unwrap_or(0);
+            let first_word = read_u16(cod, pos + 3).unwrap_or(0);
+            let second_word = read_u16(cod, pos + 5).unwrap_or(0);
+            state_set_u16(&mut state, record_offset, first_word);
+            state_set_u16(&mut state, record_offset.wrapping_add(2), second_word);
         }
 
         if op == OP_TEXT {
@@ -970,6 +1007,14 @@ pub fn execute_trace_with_overrides(
                 let bit_set = state_u8(&state, byte_offset) & bit_flag_mask(bit_index) != 0;
                 condition_passed = Some(if inverted { !bit_set } else { bit_set });
             }
+        } else if mode1 && is_pair_record_opcode(op) && token_start + 7 <= end {
+            let record_offset = read_u16(cod, token_start + 1).unwrap_or(0);
+            let first_word = read_u16(cod, token_start + 3).unwrap_or(0);
+            let second_word = read_u16(cod, token_start + 5).unwrap_or(0);
+            condition_passed = Some(
+                state_u16(&state, record_offset) == first_word
+                    && state_u16(&state, record_offset.wrapping_add(2)) == second_word,
+            );
         }
 
         let forced = overrides
@@ -1087,6 +1132,13 @@ pub fn execute_trace_with_overrides(
                 let next = if clear { cur & !mask } else { cur | mask };
                 state_set_u8(&mut state, byte_offset, next);
             }
+        }
+        if !mode1 && is_pair_record_opcode(op) && token_start + 7 <= end {
+            let record_offset = read_u16(cod, token_start + 1).unwrap_or(0);
+            let first_word = read_u16(cod, token_start + 3).unwrap_or(0);
+            let second_word = read_u16(cod, token_start + 5).unwrap_or(0);
+            state_set_u16(&mut state, record_offset, first_word);
+            state_set_u16(&mut state, record_offset.wrapping_add(2), second_word);
         }
 
         if op == OP_TEXT {
@@ -1496,6 +1548,51 @@ mod tests {
     }
 
     #[test]
+    fn pair_record_token_exposes_all_three_operands() {
+        let cod = [
+            OP_PAIR_RECORD_A,
+            0x20,
+            0x00,
+            0x34,
+            0x12,
+            0x78,
+            0x56,
+            OP_PAIR_RECORD_C,
+            0x24,
+            0x00,
+            0xCD,
+            0xAB,
+            0x01,
+            0x00,
+            0xFF,
+        ];
+
+        let toks = walk(&cod, 0, cod.len());
+        assert_eq!(
+            toks[0],
+            VmToken::PairRecord {
+                offset: 0,
+                opcode: OP_PAIR_RECORD_A,
+                record_offset: 0x0020,
+                first_word: 0x1234,
+                second_word: 0x5678,
+                len: 7
+            }
+        );
+        assert_eq!(
+            toks[1],
+            VmToken::PairRecord {
+                offset: 7,
+                opcode: OP_PAIR_RECORD_C,
+                record_offset: 0x0024,
+                first_word: 0xABCD,
+                second_word: 0x0001,
+                len: 7
+            }
+        );
+    }
+
+    #[test]
     fn record_clear_token_exposes_cleared_record() {
         let cod = [OP_RECORD_CLEAR, 0x84, 0x00, 0xFF];
 
@@ -1825,6 +1922,73 @@ mod tests {
         assert!(trace.branch_events.iter().any(|event| {
             event.offset == condition_offset
                 && event.opcode == OP_BIT_FLAG
+                && event.branch_taken
+                && event.condition_passed == Some(false)
+                && event.target == Some(target)
+        }));
+    }
+
+    #[test]
+    fn execution_trace_applies_and_compares_pair_records() {
+        let record = 0x0020u16;
+        let mut var = vec![0; 0x80];
+
+        let mut cod = Vec::new();
+        cod.push(OP_PAIR_RECORD_A);
+        cod.extend_from_slice(&record.to_le_bytes());
+        cod.extend_from_slice(&0x1234u16.to_le_bytes());
+        cod.extend_from_slice(&0x5678u16.to_le_bytes());
+        let a0_offset = cod.len();
+        cod.push(0xA0);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        let condition_offset = cod.len();
+        cod.push(OP_PAIR_RECORD_B);
+        cod.extend_from_slice(&record.to_le_bytes());
+        cod.extend_from_slice(&0x1234u16.to_le_bytes());
+        cod.extend_from_slice(&0x5678u16.to_le_bytes());
+        let first_text = cod.len();
+        push_empty_text(&mut cod);
+        cod.push(0xA1);
+        let target = cod.len() as u16;
+        cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xFF);
+
+        let trace = execute_trace(&cod, &var);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 2);
+        assert_eq!(trace.line_states[0].offset, first_text);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == OP_PAIR_RECORD_B
+                && !event.branch_taken
+                && event.condition_passed == Some(true)
+        }));
+
+        state_set_u16(&mut var, record, 0x1234);
+        state_set_u16(&mut var, record.wrapping_add(2), 0x9999);
+        let mut compare_cod = Vec::new();
+        let a0_offset = compare_cod.len();
+        compare_cod.push(0xA0);
+        compare_cod.extend_from_slice(&0u16.to_le_bytes());
+        let condition_offset = compare_cod.len();
+        compare_cod.push(OP_PAIR_RECORD_C);
+        compare_cod.extend_from_slice(&record.to_le_bytes());
+        compare_cod.extend_from_slice(&0x1234u16.to_le_bytes());
+        compare_cod.extend_from_slice(&0x5678u16.to_le_bytes());
+        push_empty_text(&mut compare_cod);
+        let target = compare_cod.len() as u16;
+        compare_cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut compare_cod);
+        compare_cod.push(0xFF);
+
+        let trace = execute_trace(&compare_cod, &var);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 1);
+        assert_eq!(trace.line_states[0].offset, target as usize);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == OP_PAIR_RECORD_C
                 && event.branch_taken
                 && event.condition_passed == Some(false)
                 && event.target == Some(target)

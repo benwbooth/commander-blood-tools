@@ -394,6 +394,24 @@ Shipped scripts use true `B7` tokens in SCRIPT2 and SCRIPT3. Rust now exposes
 them as `VmToken::BitFlag` and `execute_trace` applies/evaluates the same
 high-bit-first bit semantics.
 
+### 0xB8/0xB9/0xBD pair-record handler @ file 0x6B06 — pair state (DECODED)
+
+`0xB8`, `0xB9`, and `0xBD` share a 7-byte pair-record handler:
+
+    <B8|B9|BD> <record:u16> <first:u16> <second:u16>
+
+The handler loads `les di, gs:[0x6724]`, adds the record offset to `di`, then:
+
+- Mode 0: writes `es:[record]=first` and `es:[record+2]=second`.
+- Mode 1: compares both words and calls branch helper `0x6462` if either word
+  differs.
+
+After a mode-0 write it also calls helper `0x6034` and, if the result matches
+`es:[gs:0x6752 + 0x16]`, clears that `+0x16` field. Rust does not model that
+secondary bookkeeping field yet, but it now ports the direct pair write and
+branch comparison in `interpret_line_states` / `execute_trace` and exposes the
+raw token as `VmToken::PairRecord`.
+
 ### 0xC1/0xC2 line-record state handlers — token shape (PARTIALLY DECODED)
 
 `0xC1` and `0xC2` are both fixed 5-byte line-record state operations with the
@@ -656,6 +674,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 - [x] Port 0xB7 bit-flag semantics. `src/vm.rs` exposes
       `VmToken::BitFlag`, applies high-bit-first set/clear writes in mode 0, and
       `execute_trace` evaluates mode-1 bit tests with optional `A1` inversion.
+- [x] Port 0xB8/0xB9/0xBD pair-record semantics. `src/vm.rs` exposes
+      `VmToken::PairRecord`, applies mode-0 two-word writes, and evaluates
+      mode-1 pair compares through the branch stack. The handler's secondary
+      `gs:0x6752+0x16` bookkeeping clear remains outside the current model.
 - [x] Expose 0xC1/0xC2 line-record state tokens. `src/vm.rs` keeps their raw
       record/operand words as `VmToken::RecordState`, and
       `script-disassembly.tsv` can now show true `record_state` rows instead of

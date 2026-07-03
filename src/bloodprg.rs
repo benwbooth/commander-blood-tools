@@ -503,6 +503,12 @@ fn opcode_metadata(opcode: u8, handler_file_offset: usize) -> OpcodeMetadata {
             rust_status: "token-ported",
             notes: "CB compares a packed token pair against gs:0x0aaa/0x0aa8; Rust exposes operands while runtime globals remain pending",
         },
+        op if vm::is_pair_record_opcode(op) => OpcodeMetadata {
+            mnemonic: "pair_record",
+            family: "pair-record",
+            rust_status: "execution-trace-ported",
+            notes: "B8/B9/BD pair-record assignment and comparison family; Rust applies mode0 pair writes and execute_trace evaluates mode1 pair compares",
+        },
         _ => match handler_file_offset {
             0x006863 => OpcodeMetadata {
                 mnemonic: "state_assign_or_signed_compare",
@@ -531,8 +537,8 @@ fn opcode_metadata(opcode: u8, handler_file_offset: usize) -> OpcodeMetadata {
             0x006b06 => OpcodeMetadata {
                 mnemonic: "pair_record_assign_or_compare",
                 family: "pair-record",
-                rust_status: "not-ported",
-                notes: "B8/B9/BD pair-record assignment and comparison family",
+                rust_status: "execution-trace-ported",
+                notes: "B8/B9/BD pair-record assignment and comparison family; Rust applies mode0 pair writes and mode1 compares",
             },
             0x0053a0 => OpcodeMetadata {
                 mnemonic: "segment_entry_or_noop",
@@ -702,7 +708,7 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         offset: Some(0x1766),
         ds_offset: None,
         kind: "script-vm",
-        comment: "B8/B9/BD pair-record assignment and comparison family",
+        comment: "B8/B9/BD pair-record assignment/compare family; stores or tests two words at a direct record offset",
     },
     BinarySymbol {
         name: "vm_op_c1_record_state",

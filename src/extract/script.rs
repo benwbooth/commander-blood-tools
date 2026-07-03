@@ -1099,6 +1099,31 @@ pub(super) fn disassemble_function(
             continue;
         }
 
+        if pos + 6 < function_end && vm::is_pair_record_opcode(cod[pos]) {
+            push_raw_disassembly(script, function_name, cod, &mut rows, raw_start.take(), pos);
+            let opcode = cod[pos];
+            let record_offset = u16::from_le_bytes([cod[pos + 1], cod[pos + 2]]);
+            let first_word = u16::from_le_bytes([cod[pos + 3], cod[pos + 4]]);
+            let second_word = u16::from_le_bytes([cod[pos + 5], cod[pos + 6]]);
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: pos,
+                len: 7,
+                opcode: format!("{opcode:02x}"),
+                mnemonic: "pair_record".to_string(),
+                operands: format!(
+                    "ref=0x{record_offset:04x} first=0x{first_word:04x} second=0x{second_word:04x}"
+                ),
+                actor_record: current_actor
+                    .as_ref()
+                    .map(|actor| actor.record_name.clone()),
+                text: None,
+            });
+            pos += 7;
+            continue;
+        }
+
         if pos + 2 < function_end && cod[pos] == 0xc9 {
             push_raw_disassembly(script, function_name, cod, &mut rows, raw_start.take(), pos);
             let addr = u16::from_le_bytes([cod[pos + 1], cod[pos + 2]]);
@@ -3051,7 +3076,8 @@ mod tests {
             0x01, 0x02, 0xc4, 0x3a, 0x00, 0x00, 0x00, 0xa6, 0x34, 0x12, 0x01, 0x00, 0x80, 0x01,
             0x00, 0x00, 0x00, 0xc3, 0x3a, 0x00, 0x28, 0x00, 0xc6, 0x8e, 0x10, 0x52, 0x10, 0xc9,
             0x3a, 0x00, 0xb7, 0x10, 0x00, 0x09, 0xc1, 0x4e, 0x12, 0x52, 0x0d, 0xca, 0xf1, 0xc1,
-            0x08, 0x00, 0xcb, 0xf5, 0x19, 0x0c, 0xca, 0x07, 0x03,
+            0x08, 0x00, 0xcb, 0xf5, 0x19, 0x0c, 0xca, 0x07, 0xb8, 0x20, 0x00, 0x34, 0x12, 0x78,
+            0x56, 0x03,
         ];
         let mut actors = HashMap::new();
         actors.insert(
@@ -3108,6 +3134,13 @@ mod tests {
             row.mnemonic == "global_pair_compare"
                 && row.operands.contains("global=gs:0x0aaa:0x0aa8")
                 && row.operands.contains("packed=0x0c19")
+        }));
+        assert!(rows.iter().any(|row| {
+            row.mnemonic == "pair_record"
+                && row.opcode == "b8"
+                && row.operands.contains("ref=0x0020")
+                && row.operands.contains("first=0x1234")
+                && row.operands.contains("second=0x5678")
         }));
         assert_eq!(rows[0].function_name, "func");
     }
