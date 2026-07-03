@@ -711,7 +711,9 @@ fn read_u16(cod: &[u8], at: usize) -> Option<u16> {
 //       token but do not recursively execute the next script yet.
 // The post-VM object scan at 0x5816 is only partially represented: the recovered
 // C4 pair update marks a direct C4 record consumed and writes the reciprocal
-// selector-0x13 C4 record on the related object.
+// selector-0x13 C4 record on the related object. The kind-1 presentation
+// start/stop flag updates are represented, but the render/audio calls and
+// control-flow handoff remain pending.
 // NOTE: `interpret_line_states` is a LINEAR pass: it applies mode-0 state
 // mutations and uses guarded mode-1 actor records as context, but does not take
 // branches. `execute_trace` models the recovered branch helper for conditionals
@@ -728,6 +730,7 @@ const VM_FIELD_OFFSET_SELECTOR_C2: u8 = 0x11;
 const VM_FIELD_OFFSET_SELECTOR_C9_RELATED: u8 = 0x13;
 const C2_ACTIVE_LINE_KIND2: u16 = 0x27;
 const C2_ACTIVE_LINE_KIND400: u16 = 0x2B;
+const VM_UI_FLAGS: u16 = 0x2793;
 const C2_PRESENTATION_GATE: u16 = 0x1FB2;
 const C2_PRESENTATION_FLAGS: u16 = 0x67AA;
 const C2_PRESENTATION_BUSY_FLAG: u8 = 0x02;
@@ -735,6 +738,50 @@ const VM_ACTIVE_LINE: u16 = 0x6788;
 const C9_PRESENTATION_GATE_A: u16 = 0x252A;
 const C9_PRESENTATION_GATE_B: u16 = 0x2531;
 const C4_POST_UPDATE_SENTINEL: u16 = 0xFFFF;
+const VM_PENDING_RESOURCE_PROFILE: u16 = 0x6780;
+const VM_PRESENTATION_ACTIVE: u16 = 0x67AC;
+const VM_PRESENTATION_RELATED_FLAG20: u16 = 0x67AF;
+const VM_PRESENTATION_DEFER_A: u16 = 0x67B0;
+const VM_PRESENTATION_LOOP_FLAG: u16 = 0x67B1;
+const VM_PRESENTATION_PAIR_WRITE_DISABLED: u16 = 0x67B6;
+const VM_PRESENTATION_START_LOCK: u16 = 0x67B7;
+const VM_PRESENTATION_TEXT_WAIT: u16 = 0x67BA;
+const VM_PRESENTATION_HOLD_COMPLETE: u16 = 0x67BB;
+const VM_PRESENTATION_HOLD_READY: u16 = 0x67BC;
+const VM_PRESENTATION_WORD_BUFFER: u16 = 0x67F8;
+const VM_PRESENTATION_STATUS_WORD: u16 = 0x0A32;
+const VM_PRESENTATION_ACTIVE_RECORD: u16 = 0x6762;
+const VM_PRESENTATION_DEFERRED_RECORD_TYPE: u16 = 0x6768;
+const VM_PRESENTATION_DEFERRED_RECORD_RELATED: u16 = 0x676A;
+const VM_PRESENTATION_DEFERRED_RECORD_AUX: u16 = 0x676C;
+const VM_PRESENTATION_SIGNAL_SLOT: u16 = 0x679A;
+const VM_PRESENTATION_SCENE_DIRTY: u16 = 0x5B55;
+const VM_PRESENTATION_INPUT_GATE_A: u16 = 0x24F3;
+const VM_PRESENTATION_INPUT_GATE_B: u16 = 0x2751;
+const VM_PRESENTATION_INPUT_GATE_C: u16 = 0x5E64;
+const VM_PRESENTATION_INPUT_GATE_D: u16 = 0x2565;
+const VM_PRESENTATION_INPUT_GATE_E: u16 = 0x2736;
+const VM_PRESENTATION_INPUT_GATE_F: u16 = 0x2737;
+const VM_PRESENTATION_INPUT_GATE_G: u16 = 0x27DA;
+const VM_PRESENTATION_INPUT_GATE_H: u16 = 0x2792;
+const VM_PRESENTATION_INPUT_GATE_I: u16 = 0x2A19;
+const VM_PRESENTATION_DESCRIPTOR_PENDING: u16 = 0x27E8;
+const VM_BRANCH_A: u16 = 0x6782;
+const VM_BRANCH_B: u16 = 0x6784;
+const VM_PC_SAVED: u16 = 0x6776;
+
+const MAIN_PENDING_PROFILE_IDLE_GATES: [u16; 10] = [
+    VM_PRESENTATION_ACTIVE,
+    VM_PRESENTATION_INPUT_GATE_A,
+    VM_PRESENTATION_INPUT_GATE_B,
+    VM_PRESENTATION_DEFER_A,
+    VM_PRESENTATION_INPUT_GATE_C,
+    VM_PRESENTATION_INPUT_GATE_D,
+    VM_PRESENTATION_INPUT_GATE_E,
+    VM_PRESENTATION_INPUT_GATE_F,
+    VM_PRESENTATION_INPUT_GATE_G,
+    VM_PRESENTATION_INPUT_GATE_H,
+];
 
 /// Field-offset lookup table used by helper `0x6023`:
 /// `gs:[0x6D60 + selector * 16 + bsf(kind)]`.
@@ -1068,6 +1115,29 @@ fn state_set_u8(state: &mut [u8], addr: u16, val: u8) {
     }
 }
 
+fn state_or_u8(state: &mut [u8], addr: u16, mask: u8) {
+    let value = state_u8(state, addr) | mask;
+    state_set_u8(state, addr, value);
+}
+
+fn state_and_u8(state: &mut [u8], addr: u16, mask: u8) {
+    let value = state_u8(state, addr) & mask;
+    state_set_u8(state, addr, value);
+}
+
+fn state_and_u16(state: &mut [u8], addr: u16, mask: u16) {
+    let value = state_u16(state, addr) & mask;
+    state_set_u16(state, addr, value);
+}
+
+fn pending_script_profile_dispatch_ready(state: &[u8]) -> bool {
+    state_u16(state, VM_PENDING_RESOURCE_PROFILE) != 0xffff
+        && state_u8(state, VM_UI_FLAGS) & 0x0e == 0
+        && MAIN_PENDING_PROFILE_IDLE_GATES
+            .iter()
+            .all(|addr| state_u8(state, *addr) == 0)
+}
+
 fn state_c_string_equals(state: &[u8], addr: u16, expected: &[u8]) -> bool {
     let start = addr as usize;
     let end = match start.checked_add(expected.len()) {
@@ -1212,6 +1282,67 @@ fn write_actor_record(state: &mut [u8], record_offset: u16, related_record_offse
     state_set_u16(state, record_offset.wrapping_add(4), 0);
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum PresentationKind1Update {
+    Unchanged,
+    Started,
+    AlreadyActive,
+    Stopped,
+}
+
+fn post_update_kind1_presentation_state(
+    state: &mut [u8],
+    record_offset: u16,
+) -> PresentationKind1Update {
+    if state_u16(state, record_offset) == OP_ACTOR as u16 {
+        let related_offset = state_u16(state, record_offset.wrapping_add(2));
+        state_set_u8(
+            state,
+            VM_PRESENTATION_RELATED_FLAG20,
+            u8::from(state_u8(state, related_offset.wrapping_add(2)) & 0x20 != 0),
+        );
+        if state_u8(state, VM_PRESENTATION_ACTIVE) & 1 != 0 {
+            return PresentationKind1Update::AlreadyActive;
+        }
+
+        state_set_u8(state, VM_PRESENTATION_SCENE_DIRTY, 1);
+        state_set_u16(state, VM_PRESENTATION_STATUS_WORD, 1);
+        state_set_u8(state, VM_PRESENTATION_ACTIVE, 1);
+        state_set_u16(state, VM_BRANCH_A, 0);
+        state_set_u16(state, VM_BRANCH_B, 0);
+        state_set_u16(state, VM_PC_SAVED, 0);
+        state_set_u16(state, VM_PRESENTATION_WORD_BUFFER, 0);
+        state_set_u16(state, VM_PRESENTATION_INPUT_GATE_I, 0);
+        state_set_u8(state, VM_PRESENTATION_TEXT_WAIT, 0);
+        state_set_u8(state, VM_PRESENTATION_INPUT_GATE_G, 0);
+        state_set_u8(state, VM_PRESENTATION_HOLD_READY, 0);
+        state_set_u8(state, VM_PRESENTATION_HOLD_COMPLETE, 0);
+        state_set_u16(state, VM_PRESENTATION_SIGNAL_SLOT, 0);
+        state_set_u8(state, VM_PRESENTATION_START_LOCK, 1);
+        state_or_u8(state, VM_UI_FLAGS, 0x04);
+        state_or_u8(state, related_offset.wrapping_add(3), 0x80);
+        state_and_u8(state, VM_PRESENTATION_INPUT_GATE_B, 0x7f);
+        return PresentationKind1Update::Started;
+    }
+
+    if state_u8(state, VM_PRESENTATION_ACTIVE) & 1 == 0 {
+        return PresentationKind1Update::Unchanged;
+    }
+
+    state_set_u16(state, VM_PRESENTATION_STATUS_WORD, 1);
+    state_set_u16(state, VM_BRANCH_A, 0);
+    state_set_u16(state, VM_BRANCH_B, 0);
+    state_set_u8(state, VM_PRESENTATION_LOOP_FLAG, 0);
+    state_set_u8(state, VM_PRESENTATION_ACTIVE, 0);
+    state_set_u16(state, VM_PRESENTATION_ACTIVE_RECORD, 0);
+    state_and_u16(state, VM_UI_FLAGS, 0xfffb);
+    state_and_u8(state, C2_PRESENTATION_FLAGS, 0xfc);
+    state_set_u16(state, VM_PRESENTATION_WORD_BUFFER, 0);
+    state_set_u8(state, VM_PRESENTATION_START_LOCK, 0);
+    state_set_u8(state, VM_PRESENTATION_DESCRIPTOR_PENDING, 0);
+    PresentationKind1Update::Stopped
+}
+
 fn post_update_actor_record_pair(
     state: &mut [u8],
     owner_offset: u16,
@@ -1219,6 +1350,7 @@ fn post_update_actor_record_pair(
 ) -> Option<u16> {
     if state_u16(state, record_offset) != OP_ACTOR as u16
         || state_u16(state, record_offset.wrapping_add(4)) != 0
+        || state_u8(state, VM_PRESENTATION_PAIR_WRITE_DISABLED) & 1 != 0
     {
         return None;
     }
@@ -1250,6 +1382,7 @@ fn post_update_actor_records_for_active_objects(
     context: &ExecutionContext,
 ) -> Vec<(u16, u16)> {
     let mut updated = Vec::new();
+    state_set_u8(state, VM_PRESENTATION_PAIR_WRITE_DISABLED, 0);
     for owner_offset in context.object_offsets.iter().copied() {
         if state_u8(state, owner_offset.wrapping_add(2)) & 1 == 0 {
             continue;
@@ -1260,6 +1393,9 @@ fn post_update_actor_records_for_active_objects(
             continue;
         };
         let record_offset = owner_offset.wrapping_add(field_offset);
+        if owner_kind == 1 {
+            post_update_kind1_presentation_state(state, record_offset);
+        }
         if let Some(related_record_offset) =
             post_update_actor_record_pair(state, owner_offset, record_offset)
         {
@@ -3030,6 +3166,55 @@ mod tests {
     }
 
     #[test]
+    fn post_update_actor_record_pair_honors_disabled_global() {
+        let owner = 0x0100u16;
+        let record = owner.wrapping_add(TALK_FIELD);
+        let related = 0x0200u16;
+        let related_field = related.wrapping_add(
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, 2).expect("kind 2 C4 field"),
+        );
+
+        let mut var = vec![0; 0x6800];
+        state_set_u16(&mut var, owner, 2);
+        state_set_u16(&mut var, related, 2);
+        state_set_u8(&mut var, VM_PRESENTATION_PAIR_WRITE_DISABLED, 1);
+        write_actor_record(&mut var, record, related);
+
+        assert_eq!(post_update_actor_record_pair(&mut var, owner, record), None);
+        assert_eq!(state_u16(&var, record.wrapping_add(4)), 0);
+        assert_eq!(state_u16(&var, related_field), 0);
+    }
+
+    #[test]
+    fn post_update_actor_records_scan_resets_disabled_global_at_entry() {
+        let owner = 0x0100u16;
+        let related = 0x0200u16;
+        let record = owner.wrapping_add(TALK_FIELD);
+        let related_field = related.wrapping_add(
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, 2).expect("kind 2 C4 field"),
+        );
+
+        let mut var = vec![0; 0x6800];
+        state_set_u16(&mut var, owner, 2);
+        state_set_u8(&mut var, owner.wrapping_add(2), 1);
+        state_set_u16(&mut var, related, 2);
+        state_set_u8(&mut var, VM_PRESENTATION_PAIR_WRITE_DISABLED, 1);
+        write_actor_record(&mut var, record, related);
+
+        let context = ExecutionContext::from_object_offsets([owner, related]);
+        assert_eq!(
+            post_update_actor_records_for_active_objects(&mut var, &context),
+            vec![(record, related_field)]
+        );
+        assert_eq!(state_u8(&var, VM_PRESENTATION_PAIR_WRITE_DISABLED), 0);
+        assert_eq!(
+            state_u16(&var, record.wrapping_add(4)),
+            C4_POST_UPDATE_SENTINEL
+        );
+        assert_eq!(state_u16(&var, related_field), OP_ACTOR as u16);
+    }
+
+    #[test]
     fn post_update_actor_records_scan_only_active_context_objects() {
         let inactive_owner = 0x0100u16;
         let owner = 0x0200u16;
@@ -3065,6 +3250,133 @@ mod tests {
             state_u16(&var, related_field.wrapping_add(4)),
             C4_POST_UPDATE_SENTINEL
         );
+    }
+
+    #[test]
+    fn post_update_kind1_c4_record_starts_presentation_state() {
+        let owner = 0x0100u16;
+        let related = 0x0200u16;
+        let record = owner.wrapping_add(
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, 1).expect("kind 1 C4 field"),
+        );
+        let related_field = related.wrapping_add(
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, 2).expect("kind 2 C4 field"),
+        );
+
+        let mut var = vec![0; 0x6800];
+        state_set_u16(&mut var, owner, 1);
+        state_set_u8(&mut var, owner.wrapping_add(2), 1);
+        state_set_u16(&mut var, related, 2);
+        state_set_u8(&mut var, related.wrapping_add(2), 0x20);
+        state_set_u8(&mut var, related.wrapping_add(3), 0x01);
+        state_set_u8(&mut var, VM_UI_FLAGS, 0x01);
+        state_set_u8(&mut var, VM_PRESENTATION_INPUT_GATE_B, 0xff);
+        state_set_u16(&mut var, VM_BRANCH_A, 0x1111);
+        state_set_u16(&mut var, VM_BRANCH_B, 0x2222);
+        state_set_u16(&mut var, VM_PC_SAVED, 0x3333);
+        state_set_u16(&mut var, VM_PRESENTATION_WORD_BUFFER, 0x4444);
+        state_set_u16(&mut var, VM_PRESENTATION_INPUT_GATE_I, 0x5555);
+        state_set_u8(&mut var, VM_PRESENTATION_TEXT_WAIT, 0xff);
+        state_set_u8(&mut var, VM_PRESENTATION_INPUT_GATE_G, 0xff);
+        state_set_u8(&mut var, VM_PRESENTATION_HOLD_READY, 0xff);
+        state_set_u8(&mut var, VM_PRESENTATION_HOLD_COMPLETE, 0xff);
+        state_set_u16(&mut var, VM_PRESENTATION_SIGNAL_SLOT, 0x6666);
+        write_actor_record(&mut var, record, related);
+
+        let context = ExecutionContext::from_object_offsets([owner, related]);
+        assert_eq!(
+            post_update_actor_records_for_active_objects(&mut var, &context),
+            vec![(record, related_field)]
+        );
+        assert_eq!(state_u8(&var, VM_PRESENTATION_RELATED_FLAG20), 1);
+        assert_eq!(state_u8(&var, VM_PRESENTATION_ACTIVE), 1);
+        assert_eq!(state_u8(&var, VM_PRESENTATION_SCENE_DIRTY), 1);
+        assert_eq!(state_u16(&var, VM_PRESENTATION_STATUS_WORD), 1);
+        assert_eq!(state_u16(&var, VM_BRANCH_A), 0);
+        assert_eq!(state_u16(&var, VM_BRANCH_B), 0);
+        assert_eq!(state_u16(&var, VM_PC_SAVED), 0);
+        assert_eq!(state_u16(&var, VM_PRESENTATION_WORD_BUFFER), 0);
+        assert_eq!(state_u16(&var, VM_PRESENTATION_INPUT_GATE_I), 0);
+        assert_eq!(state_u8(&var, VM_PRESENTATION_TEXT_WAIT), 0);
+        assert_eq!(state_u8(&var, VM_PRESENTATION_INPUT_GATE_G), 0);
+        assert_eq!(state_u8(&var, VM_PRESENTATION_HOLD_READY), 0);
+        assert_eq!(state_u8(&var, VM_PRESENTATION_HOLD_COMPLETE), 0);
+        assert_eq!(state_u16(&var, VM_PRESENTATION_SIGNAL_SLOT), 0);
+        assert_eq!(state_u8(&var, VM_PRESENTATION_START_LOCK), 1);
+        assert_eq!(state_u8(&var, VM_UI_FLAGS), 0x05);
+        assert_eq!(state_u8(&var, related.wrapping_add(3)), 0x81);
+        assert_eq!(state_u8(&var, VM_PRESENTATION_INPUT_GATE_B), 0x7f);
+        assert_eq!(
+            state_u16(&var, record.wrapping_add(4)),
+            C4_POST_UPDATE_SENTINEL
+        );
+        assert_eq!(state_u16(&var, related_field), OP_ACTOR as u16);
+        assert_eq!(state_u16(&var, related_field.wrapping_add(2)), owner);
+    }
+
+    #[test]
+    fn post_update_kind1_empty_record_stops_active_presentation_state() {
+        let owner = 0x0100u16;
+        let record = owner.wrapping_add(
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, 1).expect("kind 1 C4 field"),
+        );
+
+        let mut var = vec![0; 0x6800];
+        state_set_u16(&mut var, owner, 1);
+        state_set_u8(&mut var, owner.wrapping_add(2), 1);
+        state_set_u8(&mut var, VM_PRESENTATION_ACTIVE, 1);
+        state_set_u8(&mut var, VM_PRESENTATION_LOOP_FLAG, 0xff);
+        state_set_u16(&mut var, VM_PRESENTATION_ACTIVE_RECORD, 0x7777);
+        state_set_u8(&mut var, VM_UI_FLAGS, 0xff);
+        state_set_u8(&mut var, C2_PRESENTATION_FLAGS, 0xff);
+        state_set_u16(&mut var, VM_PRESENTATION_WORD_BUFFER, 0x7777);
+        state_set_u8(&mut var, VM_PRESENTATION_START_LOCK, 1);
+        state_set_u8(&mut var, VM_PRESENTATION_DESCRIPTOR_PENDING, 1);
+        state_set_u16(&mut var, VM_BRANCH_A, 0x1111);
+        state_set_u16(&mut var, VM_BRANCH_B, 0x2222);
+
+        let context = ExecutionContext::from_object_offsets([owner]);
+        assert_eq!(
+            post_update_actor_records_for_active_objects(&mut var, &context),
+            vec![]
+        );
+        assert_eq!(state_u16(&var, VM_PRESENTATION_STATUS_WORD), 1);
+        assert_eq!(state_u16(&var, VM_BRANCH_A), 0);
+        assert_eq!(state_u16(&var, VM_BRANCH_B), 0);
+        assert_eq!(state_u8(&var, VM_PRESENTATION_LOOP_FLAG), 0);
+        assert_eq!(state_u8(&var, VM_PRESENTATION_ACTIVE), 0);
+        assert_eq!(state_u16(&var, VM_PRESENTATION_ACTIVE_RECORD), 0);
+        assert_eq!(state_u8(&var, VM_UI_FLAGS), 0xfb);
+        assert_eq!(state_u8(&var, C2_PRESENTATION_FLAGS), 0xfc);
+        assert_eq!(state_u16(&var, VM_PRESENTATION_WORD_BUFFER), 0);
+        assert_eq!(state_u8(&var, VM_PRESENTATION_START_LOCK), 0);
+        assert_eq!(state_u8(&var, VM_PRESENTATION_DESCRIPTOR_PENDING), 0);
+        assert_eq!(state_u16(&var, record), 0);
+    }
+
+    #[test]
+    fn pending_script_profile_dispatch_waits_for_presentation_idle() {
+        let mut var = vec![0; 0x6800];
+        state_set_u16(&mut var, VM_PENDING_RESOURCE_PROFILE, 1);
+        assert!(pending_script_profile_dispatch_ready(&var));
+
+        state_set_u8(&mut var, VM_UI_FLAGS, 0x01);
+        assert!(pending_script_profile_dispatch_ready(&var));
+        state_set_u8(&mut var, VM_UI_FLAGS, 0x02);
+        assert!(!pending_script_profile_dispatch_ready(&var));
+        state_set_u8(&mut var, VM_UI_FLAGS, 0);
+
+        for gate in MAIN_PENDING_PROFILE_IDLE_GATES {
+            state_set_u8(&mut var, gate, 1);
+            assert!(
+                !pending_script_profile_dispatch_ready(&var),
+                "gate {gate:#06x}"
+            );
+            state_set_u8(&mut var, gate, 0);
+        }
+
+        state_set_u16(&mut var, VM_PENDING_RESOURCE_PROFILE, 0xffff);
+        assert!(!pending_script_profile_dispatch_ready(&var));
     }
 
     #[test]

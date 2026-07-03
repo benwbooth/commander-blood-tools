@@ -691,6 +691,49 @@ by this scan. A second kind-5 scan at `0x552A` stores `vbio` in `DS:0x679C`.
 Rust now mirrors the named offsets in `ExecutionContext::vm_named_object_offsets`
 while keeping the existing `blood` special-object remap behavior.
 
+### VM presentation-active globals @ file 0x5816 / 0x108E — operands (PARTIAL)
+
+The `0x5816` post-exec scan begins by clearing `DS:0x67B6`, the guard tested by
+the lower `0x5D8F` reciprocal C4 pair writer. It also owns the
+presentation-active flag state that gates script-profile handoff. At `0x58D4`,
+an active kind-1 object whose selector-`0x13` record is `0x00C4` starts
+presentation state when `DS:0x67AC` is clear:
+
+    DS:0x5B55 = 1
+    DS:0x0A32 = 1
+    DS:0x67AC = 1
+    DS:0x6782/0x6784/0x6776/0x67F8/0x2A19 = 0
+    DS:0x67BA/0x27D7/0x67BC/0x67BB = 0
+    DS:0x679A = 0
+    DS:0x67B7 = 1
+    DS:0x2793 |= 0x04
+    related[+3] |= 0x80
+    DS:0x2751 &= 0x7F
+
+The same path mirrors `related[+2] & 0x20` into `DS:0x67AF`. If the kind-1
+selector-`0x13` record is no longer C4 while `DS:0x67AC` is set, `0x599A`
+tears the state down by clearing `0x67B1`, `0x67AC`, `0x6762`, bit `0x04` in
+`0x2793`, low two bits in `0x67AA`, `0x67F8`, `0x67B7`, and `0x27E8`.
+
+Rust now ports those start/stop memory effects in
+`post_update_kind1_presentation_state()` and calls it from the active-object
+subset of the `0x5816` scan. The external render/audio calls and the far-pointer
+clear through `DS:0x6746` remain pending.
+
+The main loop at `0x108E` does not consume a pending `D2` profile request until
+the presentation state is idle. The exact gate is:
+
+    DS:0x6780 != 0xFFFF
+    (DS:0x2793 & 0x0E) == 0
+    OR(DS:0x67AC, 0x24F3, 0x2751, 0x67B0, 0x5E64,
+       0x2565, 0x2736, 0x2737, 0x27DA, 0x2792) == 0
+
+Rust captures this as `pending_script_profile_dispatch_ready()`. The high-level
+profile sequencer still follows D2 requests immediately because the execution
+trace does not yet return the post-VM global state; this predicate is the
+binary-accurate gate to wire once the presentation updater is part of trace
+state.
+
 ### 0xC9 record-clear handler @ file 0x6FB9 — speaker lifetime (DECODED)
 
 `0xC9` consumes one u16 record operand (`C9 <record:u16>`, 3 bytes total). The
@@ -937,9 +980,11 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 - [ ] Complete the `gs:0x6724` runtime object/state layout: `es:[di]` kind,
       `es:[di+2]` flags, `+0x3A` A6/C4 presentation subrecord, and remaining
       C4 setup paths needed before enabling the A6 gate in exports. The
-      `0x5D8F..0x5E1F` C4 reciprocal post-update write and active-object scan
-      subset are ported; the remaining `0x5816` presentation-global inputs are
-      still pending.
+      `0x5D8F..0x5E1F` C4 reciprocal post-update write, the `0x67B6` pair-write
+      guard, the active-object scan subset, and the kind-1 presentation
+      start/stop globals are ported; the kind-2 control-flow handoff, deferred
+      record drain, external render/audio calls, and trace-state wiring remain
+      pending.
 - [x] Map the VM named-object startup globals from `0x5486`: Rust
       `ExecutionContext` now carries the built-in DEB offsets for `blood`, `orxx`,
       `arche`, `Honk`, `menu`, `Ark`, `Scruter_Jo`, and kind-5 `vbio`.

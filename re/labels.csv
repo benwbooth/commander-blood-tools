@@ -76,11 +76,23 @@ DS:0x6752,vm_named_arche_object,DEB object offset for built-in name arche
 DS:0x6754,vm_named_honk_object,DEB object offset for built-in name Honk
 DS:0x6756,vm_named_menu_object,DEB object offset for built-in name menu
 DS:0x6758,vm_named_ark_object,DEB object offset for built-in name Ark
+DS:0x675E,vm_presentation_primary_c4_record,"current/previous presentation C4 record pointer; tested in 0x5816 kind-2 handoff and cleared at 0x5c26"
 DS:0x6760,vm_named_scruter_jo_object,DEB object offset for built-in name Scruter_Jo
+DS:0x6768,vm_deferred_record_type,"deferred record type drained by 0x5816 after presentation state handling"
+DS:0x676A,vm_deferred_record_related,"deferred record related pointer drained by 0x5816 after presentation state handling"
+DS:0x676C,vm_deferred_record_aux,"deferred record aux word drained by 0x5816 after presentation state handling"
 DS:0x679C,vm_named_vbio_object,kind-5 DEB offset for built-in name vbio
 DS:0x67BE,vm_named_object_string_table,"built-in DEB names: blood/orxx/Honk/menu/arche/cryobox(unreferenced)/Ark/Scruter_Jo/vbio"
 DS:0x1FB2,vm_c2_presentation_gate,"C2 special-kind branch clears this byte before setting active line"
 DS:0x67B4,vm_ctrl_signal,handler->loop control signal (nonzero = special)
+DS:0x67AC,vm_presentation_active,"kind-1 C4 path sets while presentation is active; D2 pending-profile dispatch waits for it to clear"
+DS:0x67AF,vm_presentation_related_flag20,"0x5816 kind-1 C4 path mirrors related object +2 bit 0x20"
+DS:0x67B0,vm_presentation_defer_a,"main loop presentation gate byte included in D2 idle wait"
+DS:0x67B6,vm_presentation_pair_write_disabled,"zeroed at 0x5816 entry; when set skips 0x5D8F reciprocal C4 pair write"
+DS:0x67B7,vm_presentation_start_lock,"set by 0x5816 kind-1 C4 start path; kind-2 handoff waits while set"
+DS:0x67BA,vm_presentation_text_wait,"cleared by 0x5816 kind-1 C4 start path"
+DS:0x67BB,vm_dialogue_hold_complete,"set by reveal/record hold completion and consumed by main loop"
+DS:0x67BC,vm_presentation_hold_ready,"main loop sets while active after hold completion; start path clears it"
 DS:0x6788,vm_active_line,"active dialogue-line id = sign_extend(0xA6 b3)+9; reset 0xffff on clear"
 0x0011E8,dlg_line_activate,reads signed gs:0x1fab(b3)+9 -> gs:0x6788 active line id
 0x00115D,dlg_chatter_hold_consume,tests and clears gs:0x67bb line-complete hold flag
