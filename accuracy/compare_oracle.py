@@ -45,6 +45,7 @@ class Scenario:
     scenario_id: str
     reference: Path
     generated: Path
+    reference_manifest: Path | None = None
     generated_time: float = 0.0
     ref_crop: str = "auto"
     max_mean_abs: float | None = None
@@ -85,6 +86,11 @@ def load_scenarios(path: Path) -> list[Scenario]:
                 scenario_id=scenario_id,
                 reference=Path(reference),
                 generated=Path(generated),
+                reference_manifest=(
+                    Path(row["reference_manifest"])
+                    if (row.get("reference_manifest") or "").strip()
+                    else None
+                ),
                 generated_time=float(
                     (row.get("generated_time") or "0").strip() or "0"
                 ),
@@ -102,6 +108,86 @@ def load_scenarios(path: Path) -> list[Scenario]:
             )
         )
     return scenarios
+
+
+@dataclass(frozen=True)
+class ReferenceSource:
+    path: Path
+    ref_crop: str
+    metadata: dict[str, object] | None = None
+
+
+def load_capture_manifest(path: Path) -> dict[str, dict[str, str]]:
+    rows: dict[str, dict[str, str]] = {}
+    with path.open(newline="") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        for line_no, row in enumerate(reader, start=2):
+            frame = (row.get("frame") or "").strip()
+            if not frame:
+                raise ValueError(f"{path}:{line_no}: frame is required")
+            if frame in rows:
+                raise ValueError(f"{path}:{line_no}: duplicate frame {frame}")
+            rows[frame] = row
+    return rows
+
+
+def manifest_crop(row: dict[str, str]) -> str:
+    required = ["crop_x", "crop_y", "crop_w", "crop_h"]
+    missing = [field for field in required if not (row.get(field) or "").strip()]
+    if missing:
+        raise ValueError(
+            f"capture manifest row is missing crop field(s): {', '.join(missing)}"
+        )
+    return ",".join(str(int(row[field])) for field in required)
+
+
+def manifest_frame_path(
+    row: dict[str, str], reference_manifest: Path, frame: str
+) -> Path:
+    raw_path = (row.get("path") or "").strip()
+    if raw_path:
+        path = Path(raw_path)
+        return path if path.is_absolute() else reference_manifest.parent / path
+    return reference_manifest.parent / frame
+
+
+def resolve_reference_source(
+    reference_path: Path,
+    ref_crop: str,
+    reference_manifest: Path | None = None,
+) -> ReferenceSource:
+    if reference_manifest is None:
+        return ReferenceSource(reference_path, ref_crop)
+
+    rows = load_capture_manifest(reference_manifest)
+    frame = reference_path.name
+    row = rows.get(frame)
+    if row is None:
+        raise ValueError(f"{reference_manifest}: frame {frame} not found")
+
+    manifest_path = manifest_frame_path(row, reference_manifest, frame)
+    resolved_path = (
+        manifest_path if (row.get("path") or "").strip() else reference_path
+    )
+    if not resolved_path.exists():
+        resolved_path = manifest_path
+    crop_value = manifest_crop(row)
+    resolved_crop = crop_value if ref_crop == "auto" else ref_crop
+    metadata: dict[str, object] = {
+        "manifest": str(reference_manifest),
+        "frame": frame,
+        "path": str(manifest_path),
+        "elapsed_s": parse_optional_float(row.get("elapsed_s")),
+        "epoch_s": parse_optional_float(row.get("epoch_s")),
+        "display": (row.get("display") or "").strip(),
+        "capture_kind": (row.get("capture_kind") or "").strip(),
+        "crop": [int(part) for part in crop_value.split(",")],
+        "native_size": [
+            int(row.get("native_w") or NATIVE_SIZE[0]),
+            int(row.get("native_h") or NATIVE_SIZE[1]),
+        ],
+    }
+    return ReferenceSource(resolved_path, resolved_crop, metadata)
 
 
 def parse_scan_range(value: str) -> tuple[float, float, float]:
@@ -265,6 +351,7 @@ def compare_paths(
     generated_time: float,
     ref_crop: str,
     out_dir: Path,
+    reference_manifest: Path | None = None,
     max_mean_abs: float | None = None,
     scenario_id: str | None = None,
     notes: str = "",
@@ -272,7 +359,12 @@ def compare_paths(
 ) -> dict[str, object]:
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    reference_native, crop = load_reference_native(reference_path, ref_crop)
+    reference_source = resolve_reference_source(
+        reference_path, ref_crop, reference_manifest
+    )
+    reference_native, crop = load_reference_native(
+        reference_source.path, reference_source.ref_crop
+    )
 
     with tempfile.TemporaryDirectory(prefix="commander-blood-compare-") as tmp:
         generated_source = extract_generated_frame(
@@ -288,13 +380,15 @@ def compare_paths(
             "scenario_id": scenario_id,
             "status": status,
             "max_mean_abs": max_mean_abs,
-            "reference": str(reference_path),
+            "reference": str(reference_source.path),
             "generated": str(generated_path),
             "generated_time": generated_time,
             "reference_crop": list(crop),
             "notes": notes,
         }
     )
+    if reference_source.metadata is not None:
+        metrics["reference_manifest"] = reference_source.metadata
     if extra_metrics is not None:
         metrics.update(extra_metrics)
 
@@ -315,6 +409,7 @@ def scan_generated_times(
     step: float,
     ref_crop: str,
     out_dir: Path,
+    reference_manifest: Path | None = None,
     max_mean_abs: float | None = None,
     scenario_id: str | None = None,
     notes: str = "",
@@ -323,7 +418,12 @@ def scan_generated_times(
     if not times:
         raise ValueError("scan range produced no timestamps")
 
-    reference_native, crop = load_reference_native(reference_path, ref_crop)
+    reference_source = resolve_reference_source(
+        reference_path, ref_crop, reference_manifest
+    )
+    reference_native, crop = load_reference_native(
+        reference_source.path, reference_source.ref_crop
+    )
 
     scan_results = scan_generated_against_reference(
         reference_native, generated_path, times
@@ -344,11 +444,12 @@ def scan_generated_times(
     )
 
     return compare_paths(
-        reference_path,
+        reference_source.path,
         generated_path,
         generated_time=float(best["generated_time"]),
-        ref_crop=ref_crop,
+        ref_crop=reference_source.ref_crop,
         out_dir=out_dir,
+        reference_manifest=reference_manifest,
         max_mean_abs=max_mean_abs,
         scenario_id=scenario_id,
         notes=notes,
@@ -406,6 +507,7 @@ def search_candidate_videos(
     step: float,
     ref_crop: str,
     out_dir: Path,
+    reference_manifest: Path | None = None,
     top_n: int = 20,
 ) -> dict[str, object]:
     if not candidates:
@@ -414,7 +516,12 @@ def search_candidate_videos(
         raise ValueError("candidate top count must be positive")
 
     times = scan_times(start, end, step)
-    reference_native, crop = load_reference_native(reference_path, ref_crop)
+    reference_source = resolve_reference_source(
+        reference_path, ref_crop, reference_manifest
+    )
+    reference_native, crop = load_reference_native(
+        reference_source.path, reference_source.ref_crop
+    )
     rows: list[dict[str, object]] = []
     errors: list[dict[str, object]] = []
     for candidate in candidates:
@@ -447,7 +554,7 @@ def search_candidate_videos(
         row["rank"] = rank
 
     summary = {
-        "reference": str(reference_path),
+        "reference": str(reference_source.path),
         "reference_crop": list(crop),
         "candidate_count": len(candidates),
         "candidate_error_count": len(errors),
@@ -459,16 +566,19 @@ def search_candidate_videos(
         "top": ranked[:top_n],
         "errors": errors,
     }
+    if reference_source.metadata is not None:
+        summary["reference_manifest"] = reference_source.metadata
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "candidate-search.json").write_text(
         json.dumps(summary, indent=2) + "\n"
     )
     compare_paths(
-        reference_path,
+        reference_source.path,
         Path(str(ranked[0]["generated"])),
         generated_time=float(ranked[0]["best_generated_time"]),
-        ref_crop=ref_crop,
+        ref_crop=reference_source.ref_crop,
         out_dir=out_dir / "best",
+        reference_manifest=reference_manifest,
         extra_metrics={
             "candidate_rank": ranked[0]["rank"],
             "candidate_count": len(candidates),
@@ -524,6 +634,7 @@ def run_scenarios(
                 step=scan_step,
                 ref_crop=scenario.ref_crop,
                 out_dir=out_dir,
+                reference_manifest=scenario.reference_manifest,
                 max_mean_abs=scenario.max_mean_abs,
                 scenario_id=scenario.scenario_id,
                 notes=scenario.notes,
@@ -535,6 +646,7 @@ def run_scenarios(
                 generated_time=scenario.generated_time,
                 ref_crop=scenario.ref_crop,
                 out_dir=out_dir,
+                reference_manifest=scenario.reference_manifest,
                 max_mean_abs=scenario.max_mean_abs,
                 scenario_id=scenario.scenario_id,
                 notes=scenario.notes,
@@ -560,6 +672,11 @@ def run_scenarios(
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--reference", type=Path, help="DOSBox capture PNG")
+    parser.add_argument(
+        "--reference-manifest",
+        type=Path,
+        help="Capture manifest TSV; resolves --reference frame names and crop metadata",
+    )
     parser.add_argument("--generated", type=Path, help="Generated MP4 or image")
     parser.add_argument(
         "--generated-time",
@@ -637,6 +754,7 @@ def main() -> int:
                 step=step,
                 ref_crop=args.ref_crop,
                 out_dir=out_dir,
+                reference_manifest=args.reference_manifest,
                 top_n=args.candidate_top,
             )
             print(json.dumps(summary, indent=2))
@@ -657,6 +775,7 @@ def main() -> int:
             step=step,
             ref_crop=args.ref_crop,
             out_dir=out_dir,
+            reference_manifest=args.reference_manifest,
             max_mean_abs=args.max_mean_abs,
         )
     else:
@@ -666,6 +785,7 @@ def main() -> int:
             generated_time=args.generated_time,
             ref_crop=args.ref_crop,
             out_dir=out_dir,
+            reference_manifest=args.reference_manifest,
             max_mean_abs=args.max_mean_abs,
         )
     print(json.dumps(metrics, indent=2))

@@ -103,6 +103,85 @@ class CompareOracleTests(unittest.TestCase):
         self.assertEqual(regions["bottom_bar"]["mean_abs"], 0.0)
         self.assertEqual(regions["hud_panel"]["mean_abs"], 10.0)
 
+    def test_compare_uses_capture_manifest_crop_and_frame_path(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="commander-blood-manifest-test-") as tmp:
+            root = Path(tmp)
+            capture_dir = root / "captures"
+            capture_dir.mkdir()
+            reference = capture_dir / "frame_01.png"
+            generated = root / "generated.png"
+
+            reference_image = Image.new("RGB", (800, 600), (0, 0, 0))
+            crop_image = Image.new("RGB", compare_oracle.NATIVE_SIZE, (40, 50, 60))
+            reference_image.paste(crop_image, (10, 20))
+            reference_image.save(reference)
+            crop_image.save(generated)
+
+            manifest = capture_dir / "capture-manifest.tsv"
+            manifest.write_text(
+                "\n".join(
+                    [
+                        "frame\telapsed_s\tepoch_s\tdisplay\tcapture_kind\tcrop_x\tcrop_y\tcrop_w\tcrop_h\tnative_w\tnative_h",
+                        "frame_01.png\t4\t123456\t:98\thost-root\t10\t20\t320\t200\t320\t200",
+                    ]
+                )
+                + "\n"
+            )
+
+            metrics = compare_oracle.compare_paths(
+                Path("frame_01.png"),
+                generated,
+                generated_time=0.0,
+                ref_crop="auto",
+                out_dir=root / "comparison",
+                reference_manifest=manifest,
+                max_mean_abs=0.0,
+            )
+
+            self.assertEqual(metrics["status"], "pass")
+            self.assertEqual(metrics["mean_abs"], 0.0)
+            self.assertEqual(metrics["reference"], str(reference))
+            self.assertEqual(metrics["reference_crop"], [10, 20, 320, 200])
+            self.assertEqual(metrics["reference_manifest"]["elapsed_s"], 4.0)
+
+    def test_compare_uses_capture_manifest_path_column(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="commander-blood-manifest-test-") as tmp:
+            root = Path(tmp)
+            capture_dir = root / "captures"
+            manifest_dir = root / "meta"
+            capture_dir.mkdir()
+            manifest_dir.mkdir()
+            reference = capture_dir / "frame_02.png"
+            generated = root / "generated.png"
+
+            Image.new("RGB", compare_oracle.NATIVE_SIZE, (70, 80, 90)).save(reference)
+            Image.new("RGB", compare_oracle.NATIVE_SIZE, (70, 80, 90)).save(generated)
+
+            manifest = manifest_dir / "capture-manifest.tsv"
+            manifest.write_text(
+                "\n".join(
+                    [
+                        "frame\tpath\telapsed_s\tepoch_s\tdisplay\tcapture_kind\tcrop_x\tcrop_y\tcrop_w\tcrop_h\tnative_w\tnative_h",
+                        f"frame_02.png\t{reference}\t8\t123457\t:98\thost-root\t0\t0\t320\t200\t320\t200",
+                    ]
+                )
+                + "\n"
+            )
+
+            metrics = compare_oracle.compare_paths(
+                Path("frame_02.png"),
+                generated,
+                generated_time=0.0,
+                ref_crop="auto",
+                out_dir=root / "comparison",
+                reference_manifest=manifest,
+                max_mean_abs=0.0,
+            )
+
+            self.assertEqual(metrics["status"], "pass")
+            self.assertEqual(metrics["reference"], str(reference))
+            self.assertEqual(metrics["reference_manifest"]["path"], str(reference))
+
 
 if __name__ == "__main__":
     unittest.main()

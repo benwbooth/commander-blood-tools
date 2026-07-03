@@ -11,6 +11,11 @@ timing, layout, input, navigation, and game-state behavior).
 See [`../docs/decompilation-roadmap.md`](../docs/decompilation-roadmap.md) for
 the phase plan and definition of done.
 
+The oracle comparison harness can now consume `accuracy/captures/capture-manifest.tsv`
+via `accuracy/compare_oracle.py --reference-manifest ...`, resolving captured
+frame paths and crop metadata instead of relying on hard-coded PNG paths or
+default crop guesses.
+
 See [CLAUDE.md](CLAUDE.md) for tool prefix, addressing model, and conventions.
 
 ## Binary Identification

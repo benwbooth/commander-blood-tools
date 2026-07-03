@@ -90,7 +90,7 @@ if [ -n "$INPUT_SCRIPT" ]; then
   INPUT_PID=$!
 fi
 
-printf "frame\telapsed_s\tepoch_s\tdisplay\tcapture_kind\tcrop_x\tcrop_y\tcrop_w\tcrop_h\tnative_w\tnative_h\n" > "$MANIFEST"
+printf "frame\tpath\telapsed_s\tepoch_s\tdisplay\tcapture_kind\tcrop_x\tcrop_y\tcrop_w\tcrop_h\tnative_w\tnative_h\n" > "$MANIFEST"
 
 # Grab the framebuffer every few seconds while the game runs.
 n=0
@@ -102,8 +102,9 @@ while [ "$elapsed" -lt "$DUR" ]; do
   frame="frame_$(printf '%02d' $n).png"
   if DISPLAY="$DISP" import -window root "$CAP/$frame" 2>/dev/null; then
     epoch="$(date +%s)"
-    printf "%s\t%s\t%s\t%s\thost-root\t%s\t%s\t%s\t%s\t%s\t%s\n" \
-      "$frame" "$elapsed" "$epoch" "$DISP" \
+    frame_path="$(readlink -f "$CAP/$frame")"
+    printf "%s\t%s\t%s\t%s\t%s\thost-root\t%s\t%s\t%s\t%s\t%s\t%s\n" \
+      "$frame" "$frame_path" "$elapsed" "$epoch" "$DISP" \
       "$NATIVE_CROP_X" "$NATIVE_CROP_Y" "$NATIVE_CROP_W" "$NATIVE_CROP_H" \
       "$NATIVE_W" "$NATIVE_H" >> "$MANIFEST"
     echo "captured $frame at ${elapsed}s"

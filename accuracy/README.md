@@ -12,14 +12,17 @@ nix develop --command bash accuracy/run_oracle.sh [seconds]
 
 Captures land in `accuracy/captures/frame_NN.png` (gitignored — game content).
 Each run also writes `accuracy/captures/capture-manifest.tsv` with elapsed
-seconds, host epoch, display, capture kind, and the crop used to normalize the
-800x600 host capture back to native 320x200.
+seconds, host epoch, display, capture kind, captured frame path, and the crop
+used to normalize the 800x600 host capture back to native 320x200.
 
 Useful environment controls:
 
 - `ORACLE_CAPTURE_INTERVAL=1`: capture cadence in integer seconds.
 - `ORACLE_CAPTURE_DIR=/tmp/cb-captures`: write captures somewhere other than
   `accuracy/captures`.
+- `ORACLE_CAPTURE_MANIFEST=/tmp/cb-captures.tsv`: write capture metadata to a
+  separate TSV. The manifest includes each frame path, so comparisons can still
+  resolve frame names.
 - `ORACLE_DISPLAY=:98`: Xvfb display to use.
 - `ORACLE_INPUT_SCRIPT=./accuracy/input/foo.sh`: executable script launched
   inside the isolated display after `ORACLE_INPUT_DELAY` seconds. It can use
@@ -30,7 +33,8 @@ Useful environment controls:
 
 ```sh
 nix develop --command python accuracy/compare_oracle.py \
-  --reference accuracy/captures/frame_12.png \
+  --reference frame_12.png \
+  --reference-manifest accuracy/captures/capture-manifest.tsv \
   --generated "output/mp4/executed-dialogue-run - script2 - 0001 - pterra.mp4" \
   --generated-time 0
 ```
@@ -53,6 +57,8 @@ Current `run_oracle.sh` screenshots are 800x600 host-window grabs. The compare
 script therefore defaults to the measured DOSBox viewport crop
 `80,100,640,480`; override with `--ref-crop x,y,w,h` if the capture setup
 changes. The same crop is written to `capture-manifest.tsv`. Use
+`--reference-manifest accuracy/captures/capture-manifest.tsv` to resolve
+`--reference frame_NN.png` from capture metadata and apply the recorded crop. Use
 `--max-mean-abs` only for a scenario known to be frame-aligned with the generated
 output.
 
@@ -67,6 +73,10 @@ nix develop --command python accuracy/compare_oracle.py \
 targets. Blank `max_mean_abs` values record metrics as `unchecked` without making
 the batch fail; fill in a threshold only after the generated frame is known to be
 frame-aligned with the DOS capture.
+
+Scenarios may include a `reference_manifest` column. When present, the scenario
+can set `reference` to a frame name such as `frame_12.png`; the comparator uses
+the manifest's `path` and crop fields for the real DOSBox reference frame.
 
 Scenarios may set `scan_start`, `scan_end`, and `scan_step` to search a generated
 MP4 window and save the best matching frame as the scenario comparison. The scan
