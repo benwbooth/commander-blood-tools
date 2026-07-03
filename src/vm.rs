@@ -663,7 +663,10 @@ const TALK_FIELD: u16 = 0x3A;
 const LOCATION_FIELD: u16 = 24;
 const SPECIAL_OBJECT_SLOT_COUNT: usize = 16;
 const VM_FIELD_OFFSET_SELECTOR_C2: u8 = 0x11;
+const VM_FIELD_OFFSET_SELECTOR_C9_RELATED: u8 = 0x13;
 const C2_ACTIVE_LINE_KIND2: u16 = 0x27;
+const C9_PRESENTATION_GATE_A: u16 = 0x252A;
+const C9_PRESENTATION_GATE_B: u16 = 0x2531;
 
 /// Field-offset lookup table used by helper `0x6023`:
 /// `gs:[0x6D60 + selector * 16 + bsf(kind)]`.
@@ -1044,13 +1047,27 @@ fn write_c2_record_state_direct(
     true
 }
 
-fn clear_record(state: &mut [u8], record_offset: u16) -> Option<u16> {
-    let old_type = state_u16(state, record_offset);
-    let old_related = state_u16(state, record_offset.wrapping_add(2));
+fn clear_record_words(state: &mut [u8], record_offset: u16) {
     state_set_u16(state, record_offset, 0);
     state_set_u16(state, record_offset.wrapping_add(2), 0);
     state_set_u16(state, record_offset.wrapping_add(4), 0);
-    (old_type == OP_ACTOR as u16).then_some(old_related)
+}
+
+fn clear_record(state: &mut [u8], record_offset: u16) -> Option<u16> {
+    let old_type = state_u16(state, record_offset);
+    let old_related = state_u16(state, record_offset.wrapping_add(2));
+    clear_record_words(state, record_offset);
+    if old_type != OP_ACTOR as u16 {
+        return None;
+    }
+
+    let related_kind = state_u16(state, old_related);
+    if let Some(field_offset) = vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, related_kind) {
+        clear_record_words(state, old_related.wrapping_add(field_offset));
+    }
+    state_set_u8(state, C9_PRESENTATION_GATE_A, 0);
+    state_set_u8(state, C9_PRESENTATION_GATE_B, 6);
+    Some(old_related)
 }
 
 fn write_record_entry(state: &mut [u8], opcode: u8, record_offset: u16, stored_related: u16) {
@@ -2376,6 +2393,40 @@ mod tests {
                 len: 3
             }
         );
+    }
+
+    #[test]
+    fn record_clear_clears_related_actor_subrecord_and_gates() {
+        let record = 0x0020u16;
+        let related = 0x0100u16;
+        let related_kind = 0x0002u16;
+        let related_field = related.wrapping_add(
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, related_kind)
+                .expect("kind 2 C9 field"),
+        );
+        assert_eq!(related_field, 0x013A);
+
+        let mut var = vec![0; 0x2600];
+        state_set_u16(&mut var, record, OP_ACTOR as u16);
+        state_set_u16(&mut var, record.wrapping_add(2), related);
+        state_set_u16(&mut var, record.wrapping_add(4), 0x7777);
+        state_set_u16(&mut var, related, related_kind);
+        state_set_u16(&mut var, related_field, 0xAAAA);
+        state_set_u16(&mut var, related_field.wrapping_add(2), 0xBBBB);
+        state_set_u16(&mut var, related_field.wrapping_add(4), 0xCCCC);
+        state_set_u8(&mut var, C9_PRESENTATION_GATE_A, 0xFF);
+        state_set_u8(&mut var, C9_PRESENTATION_GATE_B, 0x00);
+
+        assert_eq!(clear_record(&mut var, record), Some(related));
+        assert_eq!(state_u16(&var, record), 0);
+        assert_eq!(state_u16(&var, record.wrapping_add(2)), 0);
+        assert_eq!(state_u16(&var, record.wrapping_add(4)), 0);
+        assert_eq!(state_u16(&var, related), related_kind);
+        assert_eq!(state_u16(&var, related_field), 0);
+        assert_eq!(state_u16(&var, related_field.wrapping_add(2)), 0);
+        assert_eq!(state_u16(&var, related_field.wrapping_add(4)), 0);
+        assert_eq!(state_u8(&var, C9_PRESENTATION_GATE_A), 0);
+        assert_eq!(state_u8(&var, C9_PRESENTATION_GATE_B), 6);
     }
 
     #[test]

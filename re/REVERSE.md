@@ -594,15 +594,16 @@ record type at `es:[record]`, then zeros the three-word record:
     es:[record + 4] = 0
 
 If the previous record type was `0xC4`, it treats the old `es:[record+2]` value
-as a related actor subrecord, computes a type-dependent stride, zeros that
-related 6-byte subrecord too, and resets presentation gate bytes
-`gs:[0x252A]=0`, `gs:[0x2531]=6`.
+as a related actor subrecord, computes the type-dependent stride through helper
+`0x6023` with selector `0x13`, zeros that related 6-byte subrecord too, and
+resets presentation gate bytes `gs:[0x252A]=0`, `gs:[0x2531]=6`.
 
 This matters for video accuracy: real scripts frequently emit text after a
 matching `C9` and before the next `C4`, so carrying the previous actor through
 that clear bleeds the wrong speaker/background into narrator or system lines.
-Rust now exposes `VmToken::RecordClear` and clears the current speaker context
-when `record_offset == actor_offset + 0x3A`. Unlike the comparison handlers, this
+Rust now exposes `VmToken::RecordClear`, clears the current speaker context when
+`record_offset == actor_offset + 0x3A`, clears the recovered related C4 subrecord,
+and resets the two presentation gate bytes. Unlike the comparison handlers, this
 handler has no `gs:0x67AD` mode check: Rust now applies the direct clear in mode
 0 and mode 1.
 
@@ -789,6 +790,8 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `VmToken::RecordClear`, the bounded interpreter clears the active actor
       when its talk-field record is cleared in either VM mode, and the script
       parsers stop carrying actor/background context past matching `C9` tokens.
+      The port also applies the selector-0x13 related C4 subrecord clear and the
+      `gs:0x252A/0x2531` presentation gate reset.
 - [ ] Map presentation constants: subtitle position, reveal rate, colors, timing,
       HNM actor reset/loop policy, audio mix levels.
 
