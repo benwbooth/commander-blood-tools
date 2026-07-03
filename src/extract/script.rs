@@ -64,7 +64,7 @@ fn resolve_runtime_backgrounds(
         }
     }
 
-    let context = vm_execution_context_from_object_names(&object_names);
+    let context = vm_execution_context_from_object_names(&object_names, Some(descript_db));
     let mut out = HashMap::new();
     for line in vm::interpret_line_states_with_context(cod, var, &context) {
         let Some(loc_off) = line.location_offset.filter(|&l| l != 0) else {
@@ -320,6 +320,7 @@ pub(super) fn parse_script_disassembly(
 
 pub(super) fn parse_script_branch_trace(
     iso_dir: &Path,
+    descript_db: Option<&DescriptDb>,
 ) -> Result<Vec<ScriptBranchTraceLine>, Box<dyn Error>> {
     let mut rows = Vec::new();
     for script_idx in 1..=5 {
@@ -333,7 +334,7 @@ pub(super) fn parse_script_branch_trace(
         let cod = fs::read(cod_path)?;
         let var = fs::read(var_path)?;
         let context = match deb_path {
-            Some(path) => vm_execution_context_from_deb(&fs::read(path)?),
+            Some(path) => vm_execution_context_from_deb(&fs::read(path)?, descript_db),
             None => vm::ExecutionContext::default(),
         };
         let script = format!("SCRIPT{script_idx}");
@@ -362,6 +363,7 @@ pub(super) fn parse_script_branch_trace(
 pub(super) fn parse_script_branch_scenarios(
     iso_dir: &Path,
     branch_rows: &[ScriptBranchTraceLine],
+    descript_db: Option<&DescriptDb>,
 ) -> Result<Vec<ScriptBranchScenarioLine>, Box<dyn Error>> {
     let mut rows = Vec::new();
     for script_idx in 1..=5 {
@@ -377,7 +379,7 @@ pub(super) fn parse_script_branch_scenarios(
         let cod = fs::read(&cod_path)?;
         let var = fs::read(&var_path)?;
         let context = match deb_path {
-            Some(path) => vm_execution_context_from_deb(&fs::read(path)?),
+            Some(path) => vm_execution_context_from_deb(&fs::read(path)?, descript_db),
             None => vm::ExecutionContext::default(),
         };
         let words = parse_script_dictionary(&dic_path)?;
@@ -604,7 +606,7 @@ pub(super) fn parse_script_executed_speech(
             )?;
             let deb = fs::read(deb_path)?;
             let object_names = parse_deb_object_names(&deb);
-            let context = vm_execution_context_from_object_names(&object_names);
+            let context = vm_execution_context_from_object_names(&object_names, descript_db);
             (functions, actor_refs, object_names, context)
         } else {
             (
@@ -695,7 +697,7 @@ pub(super) fn parse_script_branch_scenario_speech(
             )?;
             let deb = fs::read(deb_path)?;
             let object_names = parse_deb_object_names(&deb);
-            let context = vm_execution_context_from_object_names(&object_names);
+            let context = vm_execution_context_from_object_names(&object_names, descript_db);
             (functions, actor_refs, object_names, context)
         } else {
             (
@@ -890,13 +892,17 @@ fn parse_deb_object_names(deb: &[u8]) -> HashMap<u16, String> {
     object_names
 }
 
-fn vm_execution_context_from_deb(deb: &[u8]) -> vm::ExecutionContext {
+fn vm_execution_context_from_deb(
+    deb: &[u8],
+    descript_db: Option<&DescriptDb>,
+) -> vm::ExecutionContext {
     let object_names = parse_deb_object_names(deb);
-    vm_execution_context_from_object_names(&object_names)
+    vm_execution_context_from_object_names(&object_names, descript_db)
 }
 
 fn vm_execution_context_from_object_names(
     object_names: &HashMap<u16, String>,
+    descript_db: Option<&DescriptDb>,
 ) -> vm::ExecutionContext {
     let mut context = vm::ExecutionContext::from_object_offsets(object_names.keys().copied());
     if let Some((&offset, _)) = object_names
@@ -904,6 +910,11 @@ fn vm_execution_context_from_object_names(
         .find(|(_, name)| name.eq_ignore_ascii_case("blood"))
     {
         context = context.with_special_object_offset(offset);
+    }
+    if let Some(db) = descript_db {
+        for name in db.record_names() {
+            context = context.with_descript_entry_name(name);
+        }
     }
     context
 }
@@ -2863,7 +2874,7 @@ mod tests {
         deb[16..18].copy_from_slice(&blood.to_le_bytes());
         deb[18..20].copy_from_slice(&1u16.to_le_bytes());
 
-        let context = vm_execution_context_from_deb(&deb);
+        let context = vm_execution_context_from_deb(&deb, None);
         let mut var = vec![0; 0x0200];
         var[field as usize..field as usize + 2].copy_from_slice(&0xffffu16.to_le_bytes());
 
@@ -2892,6 +2903,79 @@ mod tests {
         assert!(trace.branch_events.iter().any(|event| {
             event.offset == condition_offset
                 && event.opcode == 0xAF
+                && !event.branch_taken
+                && event.condition_passed == Some(true)
+        }));
+    }
+
+    #[test]
+    fn descript_context_enables_c2_kind400_descriptor_branch() {
+        fn push_word_equals(cod: &mut Vec<u8>, addr: u16, value: u16) {
+            cod.push(0xB1);
+            cod.extend_from_slice(&addr.to_le_bytes());
+            cod.push(0xF5);
+            cod.push(0x00);
+            cod.extend_from_slice(&value.to_le_bytes());
+        }
+
+        let db = DescriptDb {
+            records: vec![DescriptRecord {
+                name: "PRESENTE".to_string(),
+                kind: 1,
+                music: Vec::new(),
+                full_hnms: Vec::new(),
+                backgrounds: Vec::new(),
+                sequence_hnms: Vec::new(),
+                idle_hnms: Vec::new(),
+                talk_hnms: Vec::new(),
+                snd: None,
+                sprite: None,
+                labels: Vec::new(),
+                subtitles: Vec::new(),
+            }],
+        };
+        let owner = 0x0100u16;
+        let record = owner + SCRIPT_OBJECT_TALK_FIELD;
+        let target_record = 0x0200u16;
+        let mut object_names = HashMap::new();
+        object_names.insert(owner, "actor".to_string());
+        let context = vm_execution_context_from_object_names(&object_names, Some(&db));
+
+        let mut var = vec![0; 0x7000];
+        var[owner as usize + 2] = 1;
+        var[target_record as usize..target_record as usize + 2]
+            .copy_from_slice(&0x0400u16.to_le_bytes());
+        var[target_record as usize + 2] = 0x20;
+        let name = b"PRESENTE";
+        let name_start = target_record as usize + 4;
+        var[name_start..name_start + name.len()].copy_from_slice(name);
+
+        let mut cod = Vec::new();
+        cod.push(vm::OP_RECORD_STATE_MAX);
+        cod.extend_from_slice(&record.to_le_bytes());
+        cod.extend_from_slice(&target_record.to_le_bytes());
+        let a0_offset = cod.len();
+        cod.push(0xA0);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        let condition_offset = cod.len();
+        push_word_equals(&mut cod, 0x6788, 0x002B);
+        let first_text = cod.len();
+        cod.extend_from_slice(&[0xA6, 0x01, 0x00, 0xff, 0x00, 0x80]);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        cod.push(0xA1);
+        let target = cod.len() as u16;
+        cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        cod.extend_from_slice(&[0xA6, 0x02, 0x00, 0xff, 0x00, 0x80]);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        cod.push(0xff);
+
+        let trace = vm::execute_trace_with_context(&cod, &var, &context);
+        assert_eq!(trace.halted, vm::ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 2);
+        assert_eq!(trace.line_states[0].offset, first_text);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == 0xB1
                 && !event.branch_taken
                 && event.condition_passed == Some(true)
         }));
@@ -3030,7 +3114,7 @@ mod tests {
                 continue;
             }
 
-            let rows = parse_script_branch_trace(root).expect("parse branch trace");
+            let rows = parse_script_branch_trace(root, None).expect("parse branch trace");
             assert!(
                 rows.len() > 1000,
                 "expected real branch/control events, got {} rows",
@@ -3101,9 +3185,9 @@ mod tests {
                 continue;
             }
 
-            let branch_rows = parse_script_branch_trace(root).expect("parse branch trace");
-            let scenarios =
-                parse_script_branch_scenarios(root, &branch_rows).expect("parse branch scenarios");
+            let branch_rows = parse_script_branch_trace(root, None).expect("parse branch trace");
+            let scenarios = parse_script_branch_scenarios(root, &branch_rows, None)
+                .expect("parse branch scenarios");
             let rtc_rows: Vec<&ScriptBranchScenarioLine> = scenarios
                 .iter()
                 .filter(|row| row.scenario_kind == "rtc")
@@ -3425,8 +3509,8 @@ mod tests {
             "condition failed",
         )];
 
-        let rows =
-            parse_script_branch_scenarios(&root, &branch_rows).expect("parse branch scenarios");
+        let rows = parse_script_branch_scenarios(&root, &branch_rows, None)
+            .expect("parse branch scenarios");
         let _ = fs::remove_dir_all(&root);
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].scenario_id, "SCRIPT1-branch-0001");
@@ -3453,7 +3537,7 @@ mod tests {
         let root = synthetic_rtc_script_dir();
 
         let scenarios =
-            parse_script_branch_scenarios(&root, &[]).expect("parse rtc branch scenarios");
+            parse_script_branch_scenarios(&root, &[], None).expect("parse rtc branch scenarios");
         assert_eq!(scenarios.len(), 3);
         assert!(scenarios.iter().all(|row| row.scenario_kind == "rtc"));
         assert!(scenarios.iter().any(|row| {
@@ -3509,8 +3593,8 @@ mod tests {
             "condition failed",
         )];
 
-        let scenarios =
-            parse_script_branch_scenarios(&root, &branch_rows).expect("parse branch scenarios");
+        let scenarios = parse_script_branch_scenarios(&root, &branch_rows, None)
+            .expect("parse branch scenarios");
         let rows = parse_script_branch_scenario_speech(&root, None, &HashMap::new(), &scenarios)
             .expect("parse branch scenario speech");
         let _ = fs::remove_dir_all(&root);

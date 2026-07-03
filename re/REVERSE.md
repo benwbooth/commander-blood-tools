@@ -445,8 +445,8 @@ active dialogue line `gs:0x6788 = 0x27`. Kind `0x0400` records call helper
 returns nonzero after dispatching the matched descriptor script. Rust models that
 nonzero helper result through `ExecutionContext::with_descript_entry_name`, then
 clears `gs:0x1FB2`, ORs bit `0x02` into `gs:0x67AA`, and sets
-`gs:0x6788 = 0x2B`. The deeper resolved-table C1 paths remain pending, as does
-automatic extraction of `descript.des` names into the execution context.
+`gs:0x6788 = 0x2B`. Extractor VM traces now seed that context from parsed
+`DESCRIPT.DES` record names. The deeper resolved-table C1 paths remain pending.
 
 ### 0xCA/0xCB global condition handlers — token shape (DECODED; runtime source pending)
 
@@ -763,8 +763,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       the `gs:0x6D60` kind-field write, the kind-2 active-line side effect
       (`gs:0x6788 = 0x27`), and the kind-0x0400/helper-0x7409 active-line side
       effect (`gs:0x67AA|=2`, `gs:0x6788 = 0x2B`) when `ExecutionContext`
-      supplies the matching `descript.des` directory name. Resolved-table C1
-      paths and automatic descriptor-context extraction remain pending.
+      supplies the matching `descript.des` directory name. Extractor trace paths
+      seed those names from parsed `DESCRIPT.DES`; resolved-table C1 paths
+      remain pending.
 - [x] Expose 0xCA/0xCB global condition tokens. `src/vm.rs` preserves the
       consumed compare operands as `VmToken::GlobalWordCompare` and
       `VmToken::GlobalPairCompare`; `execute_trace` evaluates their branches

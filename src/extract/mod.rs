@@ -267,7 +267,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         &script_disassembly,
         &out_dir.join("script-disassembly.tsv"),
     )?;
-    let script_branch_trace = parse_script_branch_trace(&tmp_iso)?;
+    let script_branch_trace = parse_script_branch_trace(&tmp_iso, descript_db.as_ref())?;
     write_script_branch_trace_manifest(
         &script_branch_trace,
         &out_dir.join("script-branch-trace.tsv"),
@@ -282,7 +282,8 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         &script_branch_trace,
         &out_dir.join("script-branch-coverage.tsv"),
     )?;
-    let script_branch_scenarios = parse_script_branch_scenarios(&tmp_iso, &script_branch_trace)?;
+    let script_branch_scenarios =
+        parse_script_branch_scenarios(&tmp_iso, &script_branch_trace, descript_db.as_ref())?;
     write_script_branch_scenarios_manifest(
         &script_branch_scenarios,
         &out_dir.join("script-branch-scenarios.tsv"),

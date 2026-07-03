@@ -194,6 +194,10 @@ impl DescriptDb {
             .collect()
     }
 
+    pub(super) fn record_names(&self) -> impl Iterator<Item = &str> {
+        self.records.iter().map(|record| record.name.as_str())
+    }
+
     pub(super) fn hnm_music_map(&self) -> HashMap<String, String> {
         let mut map = HashMap::new();
         let mut inherited_location_music: Option<String> = None;
