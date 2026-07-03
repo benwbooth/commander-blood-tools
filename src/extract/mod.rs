@@ -49,11 +49,11 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         eprintln!("decodes HNM(1) video files and converts audio to modern formats.");
         eprintln!("  Video (.hnm) -> MP4 (H.264 CRF 18) via built-in HNM(1) decoder");
         eprintln!("  Audio (.voc/.snd) -> FLAC (lossless) and M4A (AAC 128k)");
-        eprintln!("  Character videos: voice + animation + background + music -> MP4");
+        eprintln!("  Direct --snd mode can also build legacy character-inspection MP4s");
         eprintln!();
         eprintln!("With --hnm, decode specific HNM files directly.");
-        eprintln!("With --snd, decode SND voice banks; character muxing uses DESCRIPT.DES");
-        eprintln!("when it is present beside the extracted data root.");
+        eprintln!("With --snd, decode SND voice banks; legacy character muxing uses");
+        eprintln!("DESCRIPT.DES when it is present beside the extracted data root.");
         eprintln!();
         eprintln!("Requires: curl, 7z/7zz, ffmpeg (--hnm/--snd only need ffmpeg)");
         eprintln!("Default output dir: commander-blood-audio/");
@@ -501,7 +501,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         }
     }
 
-    // --- Decode SND voice banks and create character videos ---
+    // --- Decode SND voice banks ---
     let snd_files: Vec<_> = walk_files(&tmp_dat)
         .into_iter()
         .filter(|p| {
@@ -511,12 +511,11 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         })
         .collect();
     eprintln!(
-        "Found {} SND voice banks, extracting and creating character videos...",
+        "Found {} SND voice banks, extracting clips...",
         snd_files.len()
     );
 
     let mut snd_clips = 0u32;
-    let mut char_videos = 0u32;
     let mut dialogue_run_videos = 0u32;
     let mut profile_dialogue_run_videos = 0u32;
     let mut scenario_dialogue_run_videos = 0u32;
@@ -530,11 +529,6 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             .file_name()
             .ok_or("missing filename")?
             .to_string_lossy();
-        let char_name = path
-            .file_stem()
-            .ok_or("no stem")?
-            .to_string_lossy()
-            .to_string();
 
         match decode_snd_clips(path, &flat_name, &flac_dir, &m4a_dir) {
             Ok(n) => {
@@ -544,26 +538,6 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             Err(e) => {
                 eprintln!("[voice ERROR] {fname}: {e}");
             }
-        }
-
-        let subtitle_sfx = tmp_dat.join("sn").join("tb.snd");
-        match create_character_videos(
-            path,
-            &char_name,
-            &tmp_dat,
-            &mp4_dir,
-            descript_db.as_ref(),
-            &hnm_music,
-            &script_executed_speech,
-            subtitle_sfx.exists().then_some(subtitle_sfx.as_path()),
-        ) {
-            Ok(n) => {
-                char_videos += n;
-                if n > 0 {
-                    eprintln!("[character {char_name}] {n} video(s) created");
-                }
-            }
-            Err(e) => eprintln!("[character ERROR] {char_name}: {e}"),
         }
     }
 
@@ -650,12 +624,6 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                 "  {snd_clips} voice clips -> FLAC: {}, M4A: {}",
                 flac_dir.display(),
                 m4a_dir.display()
-            );
-        }
-        if char_videos > 0 {
-            eprintln!(
-                "  {char_videos} character videos (voice+anim+bg+music) -> {}",
-                mp4_dir.display()
             );
         }
         if dialogue_run_videos > 0 {

@@ -1195,11 +1195,12 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       manifests. Real-script smoke via `inspect-vm <COD> <VAR>` reaches
       `EndMarker` for all scripts: SCRIPT1 102 executed lines / 38 branch events;
       SCRIPT2 169 / 327; SCRIPT3 327 / 553; SCRIPT4 145 / 229; SCRIPT5 258 / 387.
-- [x] Wire branch-aware initial-state execution into the current per-character
-      dialogue video generator: `create_character_videos` now consumes
+- [x] Wire branch-aware initial-state execution into the old per-character
+      dialogue video generator: `create_character_videos` consumes
       `ScriptExecutedSpeechLine`, groups each character by script/location, and
       orders lines by `execute_trace` sequence index instead of raw COD offset.
-      `script-dialogue-videos.tsv` is generated from the same executed rows.
+      That generator is now legacy/direct-`--snd` inspection only; the default
+      full export uses the run-level renderer below.
 - [x] Add branch-aware run-level dialogue composites: the full exporter now
       renders `script-executed-dialogue-runs.tsv` groups as
       `executed-dialogue-run - ...` MP4s, tracking `ShowSpeaker` events so a
@@ -1321,13 +1322,15 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `script-profile-scene-events.tsv`, and
       `script-branch-scenario-scene-events.tsv` so the renderer event stream is
       inspectable without decoding generated MP4s.
-- [x] Removed all heuristic fallbacks (per user "no fallbacks just compute it
-      accurately"): dropped the static `CHAR_CONTEXTS` background fallback, the
-      `lookup_character_context` gate, and the redundant `hnm_music` re-lookup.
-      Background/music now come purely from the DESCRIPT-derived per-line data
-      (actor location → location HNM → HNM music). Coverage from real data:
-      ~68% location, ~58% background HNM, ~56% voice clip; the rest have no
-      derivable value yet (not faked).
+- [x] Removed all heuristic fallbacks from the normal full-export dialogue-video
+      path (per user "no fallbacks just compute it accurately"): the default MP4
+      set now comes from execution-order dialogue runs/profile runs/branch
+      scenarios, not from SND-pass per-character composites. The static
+      `CHAR_CONTEXTS` / `lookup_character_context` path remains only for explicit
+      `--snd` direct-mode inspection. Background/music in the run-level renderer
+      come from DESCRIPT-derived per-line data (actor location → location HNM →
+      HNM music). Coverage from real data: ~68% location, ~58% background HNM,
+      ~56% voice clip; the rest have no derivable value yet (not faked).
 - [x] **Accurate voice clip selection** RESOLVED (sess 002): formula is
       `b3==0xFF|0x00 → no voice`, `b3∈1..=N → clip=b3-1`. The old `b3==0xFF →
       clip=b4` guess read the b4 flag word as an index and spuriously voiced
