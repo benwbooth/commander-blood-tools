@@ -436,7 +436,7 @@ DEB-derived `ExecutionContext` because the binary checks the owner object active
 via helper `0x6034`. The deeper resolved-table mode-0 side effects are not yet
 applied; that awaits the remaining `gs:0x6724` line-record layout model.
 
-### 0xCA/0xCB global condition handlers — token shape (PARTIALLY DECODED)
+### 0xCA/0xCB global condition handlers — token shape (DECODED; runtime source pending)
 
 `0xCA` and `0xCB` are condition handlers, not media commands. They call branch
 helper `0x6462` when their comparison fails.
@@ -447,23 +447,23 @@ helper `0x6462` when their comparison fails.
 
 The handler stores the first byte in `dl`, ignores the high byte of the first
 `lodsw` (kept by Rust as `tag`), then compares `value` against `gs:0x0AA6`.
-`op=0xF1` passes when `value > gs:0x0AA6`; `op=0xF2` passes when
-`value < gs:0x0AA6`; other operators use equality.
+`op=0xF1` passes when signed `value > gs:0x0AA6`; `op=0xF2` passes when
+signed `value < gs:0x0AA6`; other operators use equality.
 
 `0xCB` shape:
 
     CB <op:u8> <packed:u16> <reserved:u16>
 
 The handler compares `packed` high/low bytes against `gs:0x0AAA` and
-`gs:0x0AA8` as a two-byte pair. `op=0xF1` is greater-than, `op=0xF2` is
-less-than, otherwise equality. The final word is consumed but not used by the
-observed compare path, so Rust keeps it as `reserved`.
+`gs:0x0AA8` as a signed two-byte lexicographic pair. `op=0xF1` is greater-than,
+`op=0xF2` is less-than, otherwise equality. The final word is consumed but not
+used by the observed compare path, so Rust keeps it as `reserved`.
 
 Rust now exposes these as `VmToken::GlobalWordCompare` and
 `VmToken::GlobalPairCompare`, and `script-disassembly.tsv` emits
-`global_word_compare` / `global_pair_compare` rows. `execute_trace` does not yet
-branch on them because the correct runtime source of `gs:0x0AA6/0x0AA8/0x0AAA`
-has not been wired into the host-side VM context.
+`global_word_compare` / `global_pair_compare` rows. `execute_trace` branches on
+them when `ExecutionContext` supplies `gs:0x0AA6/0x0AA8/0x0AAA`; recovering and
+feeding the correct runtime writers for those globals remains pending.
 
 ### 0xCD record-triple handler @ file 0x69C7 — token shape (PARTIALLY DECODED)
 
@@ -724,8 +724,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       mode-0 side effects remain pending.
 - [x] Expose 0xCA/0xCB global condition tokens. `src/vm.rs` preserves the
       consumed compare operands as `VmToken::GlobalWordCompare` and
-      `VmToken::GlobalPairCompare`; branch evaluation is pending a runtime
-      globals context for `gs:0x0AA6/0x0AA8/0x0AAA`.
+      `VmToken::GlobalPairCompare`; `execute_trace` evaluates their branches
+      when `ExecutionContext` supplies `gs:0x0AA6/0x0AA8/0x0AAA`. Recovering the
+      runtime writers for those globals remains pending.
 - [x] Expose 0xCD record-triple tokens. `src/vm.rs` preserves the consumed
       record/first/second words and optional `A1` inverted-compare prefix as
       `VmToken::RecordTriple`, and `execute_trace` evaluates the direct mode-1

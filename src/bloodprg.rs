@@ -494,14 +494,14 @@ fn opcode_metadata(opcode: u8, handler_file_offset: usize) -> OpcodeMetadata {
         vm::OP_GLOBAL_WORD_COMPARE => OpcodeMetadata {
             mnemonic: "global_word_compare",
             family: "global-condition",
-            rust_status: "token-ported",
-            notes: "CA compares a token u16 against gs:0x0aa6; Rust exposes the operands, runtime globals are not yet wired into execute_trace",
+            rust_status: "execution-trace-ported",
+            notes: "CA compares a token u16 against gs:0x0aa6; Rust evaluates branches when ExecutionContext supplies the runtime global",
         },
         vm::OP_GLOBAL_PAIR_COMPARE => OpcodeMetadata {
             mnemonic: "global_pair_compare",
             family: "global-condition",
-            rust_status: "token-ported",
-            notes: "CB compares a packed token pair against gs:0x0aaa/0x0aa8; Rust exposes operands while runtime globals remain pending",
+            rust_status: "execution-trace-ported",
+            notes: "CB compares a packed token pair against gs:0x0aaa/0x0aa8; Rust evaluates branches when ExecutionContext supplies the runtime globals",
         },
         op if vm::is_pair_record_opcode(op) => OpcodeMetadata {
             mnemonic: "pair_record",

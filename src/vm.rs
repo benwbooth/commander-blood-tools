@@ -628,6 +628,9 @@ fn read_u16(cod: &[u8], at: usize) -> Option<u16> {
 //       fuller line-record table model before execution can be exact.
 //   * 0xC9: record clear. The handler zeroes a 6-byte record in both modes and,
 //       when the previous entry was 0xC4, clears the related actor subrecord too.
+//   * 0xCA/0xCB: global conditions. They compare token operands against
+//       runtime globals `gs:0x0AA6` and `gs:0x0AAA:0x0AA8`; branch evaluation
+//       is available when `ExecutionContext` supplies those globals.
 // NOTE: `interpret_line_states` is a LINEAR pass: it applies mode-0 state
 // mutations and uses guarded mode-1 actor records as context, but does not take
 // branches. `execute_trace` models the recovered branch helper for conditionals
@@ -686,6 +689,8 @@ pub struct ExecutionTrace {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ExecutionContext {
     object_offsets: Vec<u16>,
+    global_word_0aa6: Option<u16>,
+    global_pair_0aaa_0aa8: Option<(u8, u8)>,
 }
 
 impl ExecutionContext {
@@ -696,7 +701,20 @@ impl ExecutionContext {
         let mut object_offsets: Vec<u16> = offsets.into_iter().collect();
         object_offsets.sort_unstable();
         object_offsets.dedup();
-        Self { object_offsets }
+        Self {
+            object_offsets,
+            ..Self::default()
+        }
+    }
+
+    pub fn with_global_word_0aa6(mut self, value: u16) -> Self {
+        self.global_word_0aa6 = Some(value);
+        self
+    }
+
+    pub fn with_global_pair_0aaa_0aa8(mut self, high: u8, low: u8) -> Self {
+        self.global_pair_0aaa_0aa8 = Some((high, low));
+        self
     }
 
     fn owner_object_offset(&self, record_offset: u16) -> Option<u16> {
@@ -889,6 +907,34 @@ fn compare_vm_words(operator: u8, left: u16, right: u16) -> Option<bool> {
         0xF5 => Some(left == right),
         _ => None,
     }
+}
+
+fn global_word_condition(context: &ExecutionContext, operator: u8, value: u16) -> Option<bool> {
+    let global = context.global_word_0aa6?;
+    let passed = match operator {
+        0xF1 => (value as i16) > (global as i16),
+        0xF2 => (value as i16) < (global as i16),
+        _ => value == global,
+    };
+    Some(passed)
+}
+
+fn global_pair_condition(
+    context: &ExecutionContext,
+    operator: u8,
+    packed_value: u16,
+) -> Option<bool> {
+    let (global_high, global_low) = context.global_pair_0aaa_0aa8?;
+    let token_high = (packed_value >> 8) as u8;
+    let token_low = packed_value as u8;
+    let token_pair = (token_high as i8, token_low as i8);
+    let global_pair = (global_high as i8, global_low as i8);
+    let passed = match operator {
+        0xF1 => token_pair > global_pair,
+        0xF2 => token_pair < global_pair,
+        _ => token_high == global_high && token_low == global_low,
+    };
+    Some(passed)
 }
 
 /// Walk `cod`, executing assignment opcodes against a copy of `var` (the initial
@@ -1302,6 +1348,14 @@ pub fn execute_trace_with_overrides_and_context(
                     && state_u16(&state, record_offset.wrapping_add(4)) == second_word;
                 condition_passed = Some(if inverted { !matched } else { matched });
             }
+        } else if mode1 && op == OP_GLOBAL_WORD_COMPARE && token_start + 5 <= end {
+            let operator = cod[token_start + 1];
+            let value = read_u16(cod, token_start + 3).unwrap_or(0);
+            condition_passed = global_word_condition(context, operator, value);
+        } else if mode1 && op == OP_GLOBAL_PAIR_COMPARE && token_start + 6 <= end {
+            let operator = cod[token_start + 1];
+            let packed_value = read_u16(cod, token_start + 2).unwrap_or(0);
+            condition_passed = global_pair_condition(context, operator, packed_value);
         }
 
         let forced = overrides
@@ -2953,6 +3007,118 @@ mod tests {
                 && event.condition_passed == Some(false)
                 && event.target == Some(target)
         }));
+    }
+
+    #[test]
+    fn execution_trace_evaluates_global_word_conditions_with_context() {
+        let var = vec![0; 0x20];
+        let mut cod = Vec::new();
+        let a0_offset = cod.len();
+        cod.push(0xA0);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        let condition_offset = cod.len();
+        cod.push(OP_GLOBAL_WORD_COMPARE);
+        cod.push(0xF1);
+        cod.push(0xC1);
+        cod.extend_from_slice(&0x0009u16.to_le_bytes());
+        let first_text = cod.len();
+        push_empty_text(&mut cod);
+        cod.push(0xA1);
+        let target = cod.len() as u16;
+        cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xFF);
+
+        let trace = execute_trace(&cod, &var);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert!(
+            trace.branch_events.iter().all(|event| {
+                event.offset != condition_offset || event.condition_passed.is_none()
+            })
+        );
+
+        let passing_context = ExecutionContext::default().with_global_word_0aa6(0x0008);
+        let trace = execute_trace_with_context(&cod, &var, &passing_context);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 2);
+        assert_eq!(trace.line_states[0].offset, first_text);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == OP_GLOBAL_WORD_COMPARE
+                && !event.branch_taken
+                && event.condition_passed == Some(true)
+        }));
+
+        let failing_context = ExecutionContext::default().with_global_word_0aa6(0x0009);
+        let trace = execute_trace_with_context(&cod, &var, &failing_context);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 1);
+        assert_eq!(trace.line_states[0].offset, target as usize);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == OP_GLOBAL_WORD_COMPARE
+                && event.branch_taken
+                && event.condition_passed == Some(false)
+                && event.target == Some(target)
+        }));
+
+        let signed_context = ExecutionContext::default().with_global_word_0aa6(0xFFFF);
+        assert_eq!(
+            global_word_condition(&signed_context, 0xF1, 0x0000),
+            Some(true)
+        );
+    }
+
+    #[test]
+    fn execution_trace_evaluates_global_pair_conditions_with_context() {
+        let var = vec![0; 0x20];
+        let mut cod = Vec::new();
+        let a0_offset = cod.len();
+        cod.push(0xA0);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        let condition_offset = cod.len();
+        cod.push(OP_GLOBAL_PAIR_COMPARE);
+        cod.push(0xF1);
+        cod.extend_from_slice(&0x0C19u16.to_le_bytes());
+        cod.extend_from_slice(&0xBEEFu16.to_le_bytes());
+        let first_text = cod.len();
+        push_empty_text(&mut cod);
+        cod.push(0xA1);
+        let target = cod.len() as u16;
+        cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xFF);
+
+        let passing_context = ExecutionContext::default().with_global_pair_0aaa_0aa8(0x0C, 0x18);
+        let trace = execute_trace_with_context(&cod, &var, &passing_context);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 2);
+        assert_eq!(trace.line_states[0].offset, first_text);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == OP_GLOBAL_PAIR_COMPARE
+                && !event.branch_taken
+                && event.condition_passed == Some(true)
+        }));
+
+        let failing_context = ExecutionContext::default().with_global_pair_0aaa_0aa8(0x0C, 0x19);
+        let trace = execute_trace_with_context(&cod, &var, &failing_context);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 1);
+        assert_eq!(trace.line_states[0].offset, target as usize);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == OP_GLOBAL_PAIR_COMPARE
+                && event.branch_taken
+                && event.condition_passed == Some(false)
+                && event.target == Some(target)
+        }));
+
+        let signed_context = ExecutionContext::default().with_global_pair_0aaa_0aa8(0x7F, 0xFF);
+        assert_eq!(
+            global_pair_condition(&signed_context, 0xF1, 0x8000),
+            Some(false)
+        );
     }
 
     #[test]
