@@ -666,6 +666,9 @@ pub(super) struct ScriptProfileRunLine {
     pub(super) text_calls: usize,
     pub(super) pending_profile_index: Option<u16>,
     pub(super) pending_script: Option<String>,
+    pub(super) pending_dispatch_ready: bool,
+    pub(super) post_update_pairs: String,
+    pub(super) presentation_handoffs: String,
     pub(super) request_summary: String,
     pub(super) halted_after_run: String,
 }
@@ -795,6 +798,36 @@ fn script_profile_request_summary(trace: &vm::ExecutionTrace) -> String {
             format!(
                 "0x{:05x}:{}->{}",
                 event.offset, event.operand, event.profile_index
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
+fn post_update_pair_summary(trace: &vm::ExecutionTrace) -> String {
+    trace
+        .post_update
+        .actor_record_pairs
+        .iter()
+        .map(|event| {
+            format!(
+                "0x{:04x}->0x{:04x}",
+                event.record_offset, event.related_record_offset
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
+fn presentation_handoff_summary(trace: &vm::ExecutionTrace) -> String {
+    trace
+        .post_update
+        .presentation_handoffs
+        .iter()
+        .map(|event| {
+            format!(
+                "owner=0x{:04x}:record=0x{:04x}->0x{:04x}",
+                event.owner_offset, event.record_offset, event.target
             )
         })
         .collect::<Vec<_>>()
@@ -967,6 +1000,9 @@ pub(super) fn parse_script_profile_sequence(
             text_calls,
             pending_profile_index,
             pending_script,
+            pending_dispatch_ready: run.trace.post_update.pending_script_profile_dispatch_ready,
+            post_update_pairs: post_update_pair_summary(&run.trace),
+            presentation_handoffs: presentation_handoff_summary(&run.trace),
             request_summary: script_profile_request_summary(&run.trace),
             halted_after_run,
         });
@@ -2394,12 +2430,12 @@ pub(super) fn write_script_profile_runs_manifest(
     let mut file = File::create(out_path)?;
     writeln!(
         file,
-        "sequence_id\trun_index\tprofile_index\td2_operand\tscript\tsteps\ttext_calls\tpending_profile_index\tpending_script\trequests\thalted_after_run"
+        "sequence_id\trun_index\tprofile_index\td2_operand\tscript\tsteps\ttext_calls\tpending_profile_index\tpending_script\tpending_dispatch_ready\tpost_update_pairs\tpresentation_handoffs\trequests\thalted_after_run"
     )?;
     for row in rows {
         writeln!(
             file,
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
             row.sequence_id,
             row.run_index,
             row.profile_index,
@@ -2411,6 +2447,9 @@ pub(super) fn write_script_profile_runs_manifest(
                 .map(|idx| idx.to_string())
                 .unwrap_or_default(),
             row.pending_script.as_deref().unwrap_or(""),
+            row.pending_dispatch_ready,
+            clean_tsv(&row.post_update_pairs),
+            clean_tsv(&row.presentation_handoffs),
             clean_tsv(&row.request_summary),
             clean_tsv(&row.halted_after_run),
         )?;
@@ -4046,6 +4085,9 @@ mod tests {
         assert_eq!(export.runs[0].script, "SCRIPT1");
         assert_eq!(export.runs[0].pending_profile_index, Some(1));
         assert_eq!(export.runs[0].pending_script.as_deref(), Some("SCRIPT2"));
+        assert!(export.runs[0].pending_dispatch_ready);
+        assert_eq!(export.runs[0].post_update_pairs, "");
+        assert_eq!(export.runs[0].presentation_handoffs, "");
         assert_eq!(export.runs[0].request_summary, "0x00000:2->1");
         assert_eq!(export.runs[1].script, "SCRIPT2");
         assert_eq!(export.runs[1].halted_after_run, "NoPendingProfile");
@@ -4066,8 +4108,12 @@ mod tests {
         let runs_path = root.join("script-profile-runs.tsv");
         write_script_profile_runs_manifest(&export.runs, &runs_path).expect("write profile runs");
         let runs_manifest = fs::read_to_string(&runs_path).expect("read profile runs");
-        assert!(runs_manifest.starts_with("sequence_id\trun_index\tprofile_index"));
-        assert!(runs_manifest.contains("default\t0\t0\t1\tSCRIPT1"));
+        assert!(runs_manifest.starts_with(
+            "sequence_id\trun_index\tprofile_index\td2_operand\tscript\tsteps\ttext_calls\tpending_profile_index\tpending_script\tpending_dispatch_ready"
+        ));
+        assert!(runs_manifest.contains(
+            "default\t0\t0\t1\tSCRIPT1\t2\t0\t1\tSCRIPT2\ttrue\t\t\t0x00000:2->1\thandoff"
+        ));
 
         let dialogue_path = root.join("script-profile-executed-dialogue.tsv");
         write_script_profile_executed_speech_manifest(&export.dialogue, &dialogue_path)
