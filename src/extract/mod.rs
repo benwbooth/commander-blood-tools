@@ -475,6 +475,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     let mut snd_clips = 0u32;
     let mut char_videos = 0u32;
     let mut dialogue_run_videos = 0u32;
+    let mut scenario_dialogue_run_videos = 0u32;
     for path in &snd_files {
         let rel = path.strip_prefix(&tmp_dat)?;
         let flat_name = rel
@@ -539,6 +540,21 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             }
             Err(e) => eprintln!("[dialogue runs ERROR] {e}"),
         }
+        match create_executed_dialogue_run_videos(
+            &tmp_dat,
+            &mp4_dir,
+            db,
+            &script_branch_scenario_speech,
+            subtitle_sfx.exists().then_some(subtitle_sfx.as_path()),
+        ) {
+            Ok(n) => {
+                scenario_dialogue_run_videos = n;
+                if n > 0 {
+                    eprintln!("[branch scenario dialogue runs] {n} run-level video(s) created");
+                }
+            }
+            Err(e) => eprintln!("[branch scenario dialogue runs ERROR] {e}"),
+        }
     }
 
     // Cleanup temp extraction
@@ -549,7 +565,12 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     }
 
     eprintln!();
-    if video_converted > 0 || audio_converted > 0 || snd_clips > 0 || dialogue_run_videos > 0 {
+    if video_converted > 0
+        || audio_converted > 0
+        || snd_clips > 0
+        || dialogue_run_videos > 0
+        || scenario_dialogue_run_videos > 0
+    {
         eprintln!("Done!");
         if video_converted > 0 {
             eprintln!(
@@ -580,6 +601,12 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         if dialogue_run_videos > 0 {
             eprintln!(
                 "  {dialogue_run_videos} executed dialogue run videos -> {}",
+                mp4_dir.display()
+            );
+        }
+        if scenario_dialogue_run_videos > 0 {
+            eprintln!(
+                "  {scenario_dialogue_run_videos} branch scenario dialogue run videos -> {}",
                 mp4_dir.display()
             );
         }

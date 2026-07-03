@@ -685,7 +685,7 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 | `script-branch-coverage.tsv` | extraction artifact summarizing all text calls vs default executed trace coverage per script |
 | `script-branch-scenarios.tsv` | extraction artifact forcing each branch decision's opposite condition once and measuring newly exposed text calls |
 | `script-branch-scenario-dialogue.tsv` | extraction artifact joining each forced branch scenario trace to decoded text/actor/background rows |
-| `script-branch-scenario-dialogue-runs.tsv` | extraction artifact grouping branch scenario dialogue rows into renderer-ready run slices |
+| `script-branch-scenario-dialogue-runs.tsv` | extraction artifact grouping branch scenario dialogue rows into renderer-ready run slices; full export also emits matching `branch-scenario-dialogue-run - ...mp4` files |
 | `script-executed-dialogue.tsv` | extraction artifact joining `execute_trace` line order to decoded text/actor/background |
 | `script-executed-dialogue-runs.tsv` | extraction artifact grouping executed dialogue by script/background run; MP4 names correspond to run-level composites |
 | `script-dialogue-runs.tsv` | extraction artifact grouping VM-order dialogue lines by script/background run |
