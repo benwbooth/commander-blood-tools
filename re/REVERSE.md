@@ -389,7 +389,8 @@ On entry `si` points at the token's `b1`. The handler:
 - saves `si@b3` to `gs:0x677C`; reads **`cx = [b4,b5] (u16)` = the control word**:
   - `b4 & 0x08` ⇒ set skip-count `gs:0x67AB = ((b5>>4)&7)+1` (conditional IF skip).
   - `b4 & 0x10` ⇒ loop: `gs:0x67B1|=1`, next word → `gs:0x6778` (loop target).
-  - `b4 & 0x01`, `b4 & 0x04` ⇒ parsing tweaks (`and [si+1],0x7f`; skip extra word).
+  - `b4 & 0x01` ⇒ after accepting a line, clear bit7 of `b5` in the COD stream.
+  - `b4 & 0x04` ⇒ skip one extra u16 control word before the dictionary-word loop.
   - **`b5 & 0x80` (bit7) = ACTIVE/DISPLAY flag**: `or cx,cx; jns →skip` — if bit7
     clear the line is not shown (explains why real data always has 0x80).
   - global mutes `gs:0x5E64`, `gs:0x67B0` also gate display.
@@ -848,6 +849,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       is the already-shown skip bit set by the 0xA6 handler. Default real-script
       traces remain ungated until the runtime initialization of `gs:0x6724` is
       recovered; raw `SCRIPT*.VAR` has incompatible pre-set flag words.
+- [x] Port TEXT `b4 & 0x04` control-word parsing:
+      both the VM walker and extractor skip the extra u16 before reading DIC word
+      offsets, matching the `add si, 2` path in the handler.
 - [x] Map the VM resource pointer setup boundary:
       `0x53A0/0x53C8` selects a five-offset resource profile from
       `FS:0x11F4 + AX*10` into `DS:0x6712`; `0x55A4/0x55D9` resolves those

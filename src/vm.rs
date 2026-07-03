@@ -16,7 +16,7 @@
 //! * Otherwise the token length is `len_mode0` in mode 0 or `len_mode1` in mode 1.
 //!
 //! Length-0 entries are special: `0xA6` is the TEXT token (`A6 b1 b2 b3 b4 b5`
-//! then, if `b4 & 0x10`, a u16 loop target, then a `0x0000`-terminated list of
+//! then optional control words, then a `0x0000`-terminated list of
 //! dictionary-word offsets). `0xA8/0xAC/0xCC/0xD3` are bare 1-byte opcodes.
 //!
 //! Status: token decoding is verified byte-exact against the binary (see tests).
@@ -247,6 +247,8 @@ pub enum VmToken {
         flags_b5: u8,
         /// Loop target word present when `b4 & 0x10`.
         loop_target: Option<u16>,
+        /// Extra control word present when `b4 & 0x04`; not a DIC word offset.
+        control_word: Option<u16>,
         /// `0x0000`-terminated list of `SCRIPT*.DIC` word offsets.
         word_offsets: Vec<u16>,
     },
@@ -587,7 +589,7 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
 /// Decode an `0xA6` TEXT token starting at `pos`. Returns the token and the
 /// offset just past it, or `None` if malformed.
 fn decode_text(cod: &[u8], pos: usize, end: usize) -> Option<(VmToken, usize)> {
-    // A6 b1 b2 b3 b4 b5  [loop_target?]  w0 w1 ... 0x0000
+    // A6 b1 b2 b3 b4 b5  [loop_target?] [control_word?]  w0 w1 ... 0x0000
     if pos + 6 > end {
         return None;
     }
@@ -602,6 +604,13 @@ fn decode_text(cod: &[u8], pos: usize, end: usize) -> Option<(VmToken, usize)> {
         let lt = read_u16(cod, p)?;
         p += 2;
         Some(lt)
+    } else {
+        None
+    };
+    let control_word = if b4 & 0x04 != 0 {
+        let word = read_u16(cod, p)?;
+        p += 2;
+        Some(word)
     } else {
         None
     };
@@ -625,6 +634,7 @@ fn decode_text(cod: &[u8], pos: usize, end: usize) -> Option<(VmToken, usize)> {
             flags_b4: b4,
             flags_b5: b5,
             loop_target,
+            control_word,
             word_offsets,
         },
         p,
@@ -2247,7 +2257,8 @@ mod tests {
     }
 
     /// Build a tiny synthetic COD: a 1-byte op, an A6 text token (no loop), an
-    /// A6 text token (with loop bit), then the 0xFF end marker.
+    /// A6 text token (with loop bit), a TEXT control-word token, then the 0xFF
+    /// end marker.
     #[test]
     fn walks_synthetic_cod() {
         let mut cod = Vec::new();
@@ -2259,10 +2270,13 @@ mod tests {
         // A6 with loop bit (b4=0x10): loop target 0x1234, word 0x0020, term
         cod.extend_from_slice(&[0xA6, 0x00, 0x00, 0xFF, 0x10, 0x80]);
         cod.extend_from_slice(&[0x34, 0x12, 0x20, 0x00, 0x00, 0x00]);
+        // A6 with control-word bit (b4=0x04): skip 0x7777, read word 0x0030.
+        cod.extend_from_slice(&[0xA6, 0x00, 0x00, 0xFF, 0x04, 0x80]);
+        cod.extend_from_slice(&[0x77, 0x77, 0x30, 0x00, 0x00, 0x00]);
         cod.push(0xFF); // end
 
         let toks = walk(&cod, 0, cod.len());
-        assert_eq!(toks.len(), 3);
+        assert_eq!(toks.len(), 4);
         assert_eq!(
             toks[0],
             VmToken::Op {
@@ -2278,6 +2292,7 @@ mod tests {
                 flags_b4,
                 flags_b5,
                 loop_target,
+                control_word,
                 word_offsets,
                 ..
             } => {
@@ -2286,6 +2301,7 @@ mod tests {
                 assert_eq!(*flags_b4, 0x00);
                 assert_eq!(*flags_b5, 0x80);
                 assert_eq!(*loop_target, None);
+                assert_eq!(*control_word, None);
                 assert_eq!(word_offsets, &vec![0x000C, 0x0010]);
             }
             other => panic!("expected Text, got {other:?}"),
@@ -2294,14 +2310,31 @@ mod tests {
             VmToken::Text {
                 voice_selector,
                 loop_target,
+                control_word,
                 word_offsets,
                 ..
             } => {
                 assert_eq!(*voice_selector, 0xFF); // no voice
                 assert_eq!(*loop_target, Some(0x1234));
+                assert_eq!(*control_word, None);
                 assert_eq!(word_offsets, &vec![0x0020]);
             }
             other => panic!("expected looped Text, got {other:?}"),
+        }
+        match &toks[3] {
+            VmToken::Text {
+                voice_selector,
+                loop_target,
+                control_word,
+                word_offsets,
+                ..
+            } => {
+                assert_eq!(*voice_selector, 0xFF); // no voice
+                assert_eq!(*loop_target, None);
+                assert_eq!(*control_word, Some(0x7777));
+                assert_eq!(word_offsets, &vec![0x0030]);
+            }
+            other => panic!("expected control-word Text, got {other:?}"),
         }
     }
 

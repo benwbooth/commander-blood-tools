@@ -6,7 +6,7 @@ use super::*;
 /// `BLOODPRG.EXE` file 0x660C (see `re/REVERSE.md` "0xA6 TEXT handler"):
 ///
 /// ```text
-///   A6  b1 b2  b3  b4  b5   w0 w1 ... wN  0x0000
+///   A6  b1 b2  b3  b4  b5   [loop:u16?] [control:u16?] w0 ... wN  0x0000
 /// ```
 ///
 /// * `b1:b2` (u16, little-endian) — index into the per-line record table
@@ -16,8 +16,8 @@ use super::*;
 ///   `0xFF` = no voice; `1..=N` is a one-based talk-clip selector. Held as
 ///   `params[0]`.
 /// * `b4` — *control-flag word* (NOT a clip index): bit3 `0x08` = conditional
-///   skip-count follows, bit4 `0x10` = loop with target word, bits 0/2 tweak
-///   parsing. Held as `params[1]`.
+///   skip-count follows, bit4 `0x10` = loop with target word, bit2 `0x04` =
+///   extra control word before the dictionary words. Held as `params[1]`.
 /// * `b5` — flags; bit7 `0x80` = the "active / display" flag (always set in real
 ///   data); this is the marker the decoder anchors on.
 /// * `w*` — u16 dictionary-word offsets into `SCRIPT*.DIC`, `0x0000`-terminated.
@@ -1349,7 +1349,8 @@ fn text_token_end(
     } else {
         0
     };
-    offset + 6 + loop_len + word_count * 2 + 2
+    let control_len = if flags_b4 & 0x04 != 0 { 2 } else { 0 };
+    offset + 6 + loop_len + control_len + word_count * 2 + 2
 }
 
 pub(super) fn disassemble_function(
@@ -1852,11 +1853,12 @@ pub(super) fn decode_text_call_at(
     }
 
     // Fixed token layout recovered from the VM TEXT handler (BLOODPRG.EXE
-    // 0x660C): `A6 b1 b2 b3 b4 b5 [loop:u16?] w0 w1 ... 0x0000`.
+    // 0x660C): `A6 b1 b2 b3 b4 b5 [loop:u16?] [control:u16?] w0 ... 0x0000`.
     // * b1:b2 = line-record index (call_target)
     // * b3 = params[0] (voice selector), b4 = params[1] (control flags)
     // * b5 (pos+5) bit7 = active/display flag (may be 0x80/0x90/0xA0/...)
     // * if b4 & 0x10 (loop), a u16 loop target precedes the word list.
+    // * if b4 & 0x04, one extra u16 control word precedes the word list.
     if pos + 6 > function_end {
         return None;
     }
@@ -1873,6 +1875,9 @@ pub(super) fn decode_text_call_at(
     // for a dictionary-word offset (which dropped looped lines entirely before).
     let mut text_pos = marker + 1;
     if b4 & 0x10 != 0 {
+        text_pos += 2;
+    }
+    if b4 & 0x04 != 0 {
         text_pos += 2;
     }
     let mut decoded_words = Vec::new();
@@ -1945,6 +1950,7 @@ mod decode_text_tests {
         w.insert(0x000C, "hello".to_string());
         w.insert(0x0010, "world".to_string());
         w.insert(0x0020, "loop".to_string());
+        w.insert(0x0030, "extra".to_string());
         w
     }
 
@@ -1986,6 +1992,22 @@ mod decode_text_tests {
             decode_text_call_at(&cod, cod.len(), &words, 0).expect("loop token should decode");
         assert_eq!(call.params, vec![0xFF, 0x10]); // b3=0xFF (no voice), b4=0x10 (loop)
         assert_eq!(call.words, vec!["loop"]);
+    }
+
+    /// Control-word token (b4 & 0x04): a u16 control word precedes the word list
+    /// and must not be read as a dictionary offset.
+    #[test]
+    fn decodes_control_word_token_skipping_extra_word() {
+        let words = words_fixture();
+        // control word 0x7777 is NOT a valid dict offset; old code returned None.
+        let cod = [
+            0xA6, 0x00, 0x00, 0xFF, 0x04, 0x80, 0x77, 0x77, 0x30, 0x00, 0x00, 0x00,
+        ];
+        let call = decode_text_call_at(&cod, cod.len(), &words, 0)
+            .expect("control-word token should decode");
+        assert_eq!(call.params, vec![0xFF, 0x04]); // b3=0xFF (no voice), b4=0x04
+        assert_eq!(call.words, vec!["extra"]);
+        assert_eq!(call.text_end, cod.len());
     }
 }
 
