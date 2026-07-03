@@ -29,6 +29,16 @@ NATIVE_SIZE = (320, 200)
 # DOSBox 320x200 game viewport aspect-corrected to 640x480 at this offset.
 DEFAULT_XVFB_CROP = (80, 100, 640, 480)
 
+# Native-screen regions recovered from BLOODPRG.EXE's dialogue presentation
+# state. These keep oracle failures actionable: wrong scene band, missing HUD
+# panel, and subtitle/foreground errors should not collapse into one mean.
+SCREEN_REGIONS: dict[str, tuple[int, int, int, int]] = {
+    "top_bar": (0, 0, 320, 35),
+    "scene_band": (0, 35, 320, 130),
+    "hud_panel": (0, 165, 320, 29),
+    "bottom_bar": (0, 194, 320, 6),
+}
+
 
 @dataclass(frozen=True)
 class Scenario:
@@ -203,6 +213,20 @@ def diff_metrics(reference: Image.Image, generated: Image.Image) -> dict[str, ob
     }
 
 
+def region_metrics(reference: Image.Image, generated: Image.Image) -> dict[str, object]:
+    regions: dict[str, object] = {}
+    for name, (x, y, w, h) in SCREEN_REGIONS.items():
+        ref_region = reference.crop((x, y, x + w, y + h))
+        gen_region = generated.crop((x, y, x + w, y + h))
+        metrics = diff_metrics(ref_region, gen_region)
+        metrics["x"] = x
+        metrics["y"] = y
+        metrics["width"] = w
+        metrics["height"] = h
+        regions[name] = metrics
+    return regions
+
+
 def save_diff(reference: Image.Image, generated: Image.Image, out_path: Path) -> None:
     diff = ImageChops.difference(reference, generated)
     # Amplify subtle channel differences without saturating large differences too
@@ -257,6 +281,7 @@ def compare_paths(
         generated_native = load_native_image(generated_source)
 
     metrics = diff_metrics(reference_native, generated_native)
+    metrics["regions"] = region_metrics(reference_native, generated_native)
     status = comparison_status(metrics, max_mean_abs)
     metrics.update(
         {

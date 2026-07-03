@@ -88,6 +88,21 @@ class CompareOracleTests(unittest.TestCase):
             self.assertTrue((root / "candidate-search" / "candidate-search.json").exists())
             self.assertTrue((root / "candidate-search" / "best" / "comparison.json").exists())
 
+    def test_region_metrics_isolate_hud_panel_difference(self) -> None:
+        reference = Image.new("RGB", compare_oracle.NATIVE_SIZE, (0, 0, 0))
+        generated = Image.new("RGB", compare_oracle.NATIVE_SIZE, (0, 0, 0))
+        x, y, w, h = compare_oracle.SCREEN_REGIONS["hud_panel"]
+        for py in range(y, y + h):
+            for px in range(x, x + w):
+                generated.putpixel((px, py), (30, 0, 0))
+
+        regions = compare_oracle.region_metrics(reference, generated)
+
+        self.assertEqual(regions["top_bar"]["mean_abs"], 0.0)
+        self.assertEqual(regions["scene_band"]["mean_abs"], 0.0)
+        self.assertEqual(regions["bottom_bar"]["mean_abs"], 0.0)
+        self.assertEqual(regions["hud_panel"]["mean_abs"], 10.0)
+
 
 if __name__ == "__main__":
     unittest.main()

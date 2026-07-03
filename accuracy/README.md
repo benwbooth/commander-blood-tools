@@ -28,7 +28,12 @@ The comparison output lands under `accuracy/comparisons/` (gitignored):
 - `generated-native.png`: generated MP4 frame scaled to native 320x200.
 - `diff-x4.png`: amplified visual difference image.
 - `comparison.json`: repeatable metrics (`mean_abs`, `rmse`, `max_abs`,
-  `exact_pixel_percent`, crop, and input paths).
+  `exact_pixel_percent`, crop, input paths, and `regions`).
+
+`regions` splits the native 320x200 frame by recovered presentation bands:
+`top_bar` (`y=0..34`), `scene_band` (`y=35..164`), `hud_panel`
+(`y=165..193`), and `bottom_bar` (`y=194..199`). This separates wrong
+background/foreground/subtitle failures from missing ship-HUD failures.
 
 Current `run_oracle.sh` screenshots are 800x600 host-window grabs. The compare
 script therefore defaults to the measured DOSBox viewport crop

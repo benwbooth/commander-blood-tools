@@ -951,9 +951,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 - [ ] Ph6: generated cutscene compared against real-game capture with a
       frame-aligned pass threshold. `accuracy/compare_oracle.py` now normalizes
       host-window captures and generated MP4 frames to 320x200 and emits metrics,
-      scans generated-video timestamp windows, can rank candidate generated
-      videos against a reference frame, and `accuracy/oracle-scenarios.tsv`
-      defines named repeatable comparisons, but no matched scene has passed yet.
+      reports recovered screen-band region errors, scans generated-video
+      timestamp windows, can rank candidate generated videos against a reference
+      frame, and `accuracy/oracle-scenarios.tsv` defines named repeatable
+      comparisons, but no matched scene has passed yet.
 
 ## Reference Resources
 
@@ -1359,4 +1360,7 @@ Current `frame_12` evidence: searching all 43 executed-dialogue composites over
 best (`mean_abs ~= 32.13`), and a broader all-MP4 `t=0` sweep ranked
 `dialogue - script3 - ed1 - amigo.mp4` best (`mean_abs ~= 30.25`). Visual
 inspection still shows different scenes, so this capture is not yet a valid
-pass/fail threshold candidate for the dialogue renderer.
+pass/fail threshold candidate for the dialogue renderer. Region metrics for that
+best all-MP4 candidate show `scene_band ~= 25.82`, `hud_panel ~= 63.56`, and
+`bottom_bar ~= 59.79`, which keeps the missing/incorrect HUD problem separate
+from scene-band content mismatch.
