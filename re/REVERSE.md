@@ -720,6 +720,19 @@ Rust now ports those start/stop memory effects in
 subset of the `0x5816` scan. The external render/audio calls and the far-pointer
 clear through `DS:0x6746` remain pending.
 
+After kind-1 presentation handling, `0x59F9` drains a deferred record write if
+both `DS:0x6768` (record type) and `DS:0x676A` (related pointer) are nonzero.
+For most record types it writes the current selector-`0x13` record:
+
+    record[+0] = DS:0x6768
+    record[+2] = DS:0x676A
+    record[+4] = DS:0x676C
+
+For deferred `0x00C1` or `0x00C6`, it instead computes the selector-`0x13`
+field for kind `0x10`, adds that to named object `arche` (`DS:0x6752`), and
+writes `{type, related, 0}` there. It then clears `DS:0x6768`, `0x676A`, and
+`0x676C`. Rust ports this as `post_update_deferred_record_write()`.
+
 The main loop at `0x108E` does not consume a pending `D2` profile request until
 the presentation state is idle. The exact gate is:
 
@@ -981,10 +994,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `es:[di+2]` flags, `+0x3A` A6/C4 presentation subrecord, and remaining
       C4 setup paths needed before enabling the A6 gate in exports. The
       `0x5D8F..0x5E1F` C4 reciprocal post-update write, the `0x67B6` pair-write
-      guard, the active-object scan subset, and the kind-1 presentation
-      start/stop globals are ported; the kind-2 control-flow handoff, deferred
-      record drain, external render/audio calls, and trace-state wiring remain
-      pending.
+      guard, the active-object scan subset, the kind-1 presentation start/stop
+      globals, and the deferred record drain are ported; the kind-2
+      control-flow handoff, external render/audio calls, and trace-state wiring
+      remain pending.
 - [x] Map the VM named-object startup globals from `0x5486`: Rust
       `ExecutionContext` now carries the built-in DEB offsets for `blood`, `orxx`,
       `arche`, `Honk`, `menu`, `Ark`, `Scruter_Jo`, and kind-5 `vbio`.

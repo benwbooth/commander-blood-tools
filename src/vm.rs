@@ -1343,6 +1343,47 @@ fn post_update_kind1_presentation_state(
     PresentationKind1Update::Stopped
 }
 
+fn post_update_deferred_record_write(
+    state: &mut [u8],
+    context: &ExecutionContext,
+    record_offset: u16,
+) -> Option<u16> {
+    let related = state_u16(state, VM_PRESENTATION_DEFERRED_RECORD_RELATED);
+    if related == 0 {
+        return None;
+    }
+    let record_type = state_u16(state, VM_PRESENTATION_DEFERRED_RECORD_TYPE);
+    if record_type == 0 {
+        return None;
+    }
+
+    let write_offset = if record_type == OP_RECORD_STATE_MIN as u16
+        || record_type == OP_RECORD_ENTRY_MIN as u16 + 1
+    {
+        let arche_offset = context.named_object_offsets.arche?;
+        let field_offset = vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, 0x10)?;
+        let write_offset = arche_offset.wrapping_add(field_offset);
+        state_set_u16(state, write_offset, record_type);
+        state_set_u16(state, write_offset.wrapping_add(2), related);
+        state_set_u16(state, write_offset.wrapping_add(4), 0);
+        write_offset
+    } else {
+        state_set_u16(state, record_offset, record_type);
+        state_set_u16(state, record_offset.wrapping_add(2), related);
+        state_set_u16(
+            state,
+            record_offset.wrapping_add(4),
+            state_u16(state, VM_PRESENTATION_DEFERRED_RECORD_AUX),
+        );
+        record_offset
+    };
+
+    state_set_u16(state, VM_PRESENTATION_DEFERRED_RECORD_TYPE, 0);
+    state_set_u16(state, VM_PRESENTATION_DEFERRED_RECORD_RELATED, 0);
+    state_set_u16(state, VM_PRESENTATION_DEFERRED_RECORD_AUX, 0);
+    Some(write_offset)
+}
+
 fn post_update_actor_record_pair(
     state: &mut [u8],
     owner_offset: u16,
@@ -1395,6 +1436,7 @@ fn post_update_actor_records_for_active_objects(
         let record_offset = owner_offset.wrapping_add(field_offset);
         if owner_kind == 1 {
             post_update_kind1_presentation_state(state, record_offset);
+            post_update_deferred_record_write(state, context, record_offset);
         }
         if let Some(related_record_offset) =
             post_update_actor_record_pair(state, owner_offset, record_offset)
@@ -3352,6 +3394,68 @@ mod tests {
         assert_eq!(state_u8(&var, VM_PRESENTATION_START_LOCK), 0);
         assert_eq!(state_u8(&var, VM_PRESENTATION_DESCRIPTOR_PENDING), 0);
         assert_eq!(state_u16(&var, record), 0);
+    }
+
+    #[test]
+    fn post_update_kind1_scan_drains_deferred_record_to_current_record() {
+        let owner = 0x0100u16;
+        let record = owner.wrapping_add(
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, 1).expect("kind 1 C4 field"),
+        );
+
+        let mut var = vec![0; 0x6800];
+        state_set_u16(&mut var, owner, 1);
+        state_set_u8(&mut var, owner.wrapping_add(2), 1);
+        state_set_u16(&mut var, VM_PRESENTATION_DEFERRED_RECORD_TYPE, OP_RECORD_LINK as u16);
+        state_set_u16(&mut var, VM_PRESENTATION_DEFERRED_RECORD_RELATED, 0x0222);
+        state_set_u16(&mut var, VM_PRESENTATION_DEFERRED_RECORD_AUX, 0x0333);
+
+        let context = ExecutionContext::from_object_offsets([owner]);
+        assert_eq!(
+            post_update_actor_records_for_active_objects(&mut var, &context),
+            vec![]
+        );
+        assert_eq!(state_u16(&var, record), OP_RECORD_LINK as u16);
+        assert_eq!(state_u16(&var, record.wrapping_add(2)), 0x0222);
+        assert_eq!(state_u16(&var, record.wrapping_add(4)), 0x0333);
+        assert_eq!(state_u16(&var, VM_PRESENTATION_DEFERRED_RECORD_TYPE), 0);
+        assert_eq!(state_u16(&var, VM_PRESENTATION_DEFERRED_RECORD_RELATED), 0);
+        assert_eq!(state_u16(&var, VM_PRESENTATION_DEFERRED_RECORD_AUX), 0);
+    }
+
+    #[test]
+    fn post_update_kind1_scan_drains_c1_c6_deferred_record_to_arche() {
+        let owner = 0x0100u16;
+        let arche = 0x0300u16;
+        let owner_record = owner.wrapping_add(
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, 1).expect("kind 1 C4 field"),
+        );
+        let arche_record = arche.wrapping_add(
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, 0x10)
+                .expect("kind 0x10 C4 field"),
+        );
+
+        let mut var = vec![0; 0x6800];
+        state_set_u16(&mut var, owner, 1);
+        state_set_u8(&mut var, owner.wrapping_add(2), 1);
+        state_set_u16(&mut var, arche, 0x10);
+        state_set_u16(&mut var, VM_PRESENTATION_DEFERRED_RECORD_TYPE, OP_RECORD_STATE_MIN as u16);
+        state_set_u16(&mut var, VM_PRESENTATION_DEFERRED_RECORD_RELATED, 0x0444);
+        state_set_u16(&mut var, VM_PRESENTATION_DEFERRED_RECORD_AUX, 0x0555);
+
+        let context = ExecutionContext::from_object_offsets([owner, arche])
+            .with_vm_named_object("arche", arche);
+        assert_eq!(
+            post_update_actor_records_for_active_objects(&mut var, &context),
+            vec![]
+        );
+        assert_eq!(state_u16(&var, owner_record), 0);
+        assert_eq!(state_u16(&var, arche_record), OP_RECORD_STATE_MIN as u16);
+        assert_eq!(state_u16(&var, arche_record.wrapping_add(2)), 0x0444);
+        assert_eq!(state_u16(&var, arche_record.wrapping_add(4)), 0);
+        assert_eq!(state_u16(&var, VM_PRESENTATION_DEFERRED_RECORD_TYPE), 0);
+        assert_eq!(state_u16(&var, VM_PRESENTATION_DEFERRED_RECORD_RELATED), 0);
+        assert_eq!(state_u16(&var, VM_PRESENTATION_DEFERRED_RECORD_AUX), 0);
     }
 
     #[test]
