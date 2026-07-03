@@ -35,7 +35,13 @@ pub const SND_BANK_LOAD_OFFSET: u16 = 0x0855;
 pub const RENDER_SEGMENT: u16 = 0x0299;
 pub const RENDER_STRING_OFFSET: u16 = 0x0202;
 pub const RENDER_SUBTITLE_REVEAL_OFFSET: u16 = 0x06a0;
+pub const RENDER_SMALL_TEXT_OFFSET: u16 = 0x075a;
+pub const RENDER_RECT_FILL_OFFSET: u16 = 0x0cdc;
 pub const RENDER_SCENE_BAND_FILL_OFFSET: u16 = 0x0deb;
+pub const RENDER_SECONDARY_BAND_FILL_OFFSET: u16 = 0x0e2f;
+pub const RENDER_FRAMEBUFFER_COPY_OFFSET: u16 = 0x0eb6;
+pub const RENDER_SECONDARY_FRAMEBUFFER_COPY_OFFSET: u16 = 0x0ecb;
+pub const RENDER_PLANAR_COPY_OFFSET: u16 = 0x0f3e;
 pub const RENDER_SPRITE_SLOT_LOAD_OFFSET: u16 = 0x11be;
 pub const RENDER_SPRITE_SLOT_STATE_OFFSET: u16 = 0x1241;
 pub const NAV_CODE_SEGMENT: u16 = 0x071e;
@@ -909,7 +915,13 @@ fn render_target_name(target_offset: u16) -> &'static str {
     match target_offset {
         RENDER_STRING_OFFSET => "render_string_entry",
         RENDER_SUBTITLE_REVEAL_OFFSET => "subtitle_reveal_draw_wrapper",
+        RENDER_SMALL_TEXT_OFFSET => "small_text_render",
+        RENDER_RECT_FILL_OFFSET => "framebuffer_rect_fill_clipped",
         RENDER_SCENE_BAND_FILL_OFFSET => "scene_band_fill",
+        RENDER_SECONDARY_BAND_FILL_OFFSET => "secondary_framebuffer_band_fill",
+        RENDER_FRAMEBUFFER_COPY_OFFSET => "framebuffer_copy_full",
+        RENDER_SECONDARY_FRAMEBUFFER_COPY_OFFSET => "secondary_framebuffer_copy_full",
+        RENDER_PLANAR_COPY_OFFSET => "planar_framebuffer_copy",
         RENDER_SPRITE_SLOT_LOAD_OFFSET => "sprite_slot_frame_load",
         RENDER_SPRITE_SLOT_STATE_OFFSET => "sprite_slot_state_update",
         0x1037 => "framebuffer_object_init",
@@ -931,7 +943,21 @@ fn render_call_site_note(file_offset: usize, target_offset: u16) -> &'static str
             "VM post-update presentation clear resets sprite slot state"
         }
         (_, RENDER_STRING_OFFSET) => "dialogue/UI text render call",
+        (_, RENDER_SMALL_TEXT_OFFSET) => "small 5-row text render call",
+        (_, RENDER_RECT_FILL_OFFSET) => "clipped fill rectangle in primary framebuffer",
         (_, RENDER_SCENE_BAND_FILL_OFFSET) => "fills the current clipped framebuffer band",
+        (_, RENDER_SECONDARY_BAND_FILL_OFFSET) => {
+            "fills the current clipped band in the secondary framebuffer"
+        }
+        (_, RENDER_FRAMEBUFFER_COPY_OFFSET) => {
+            "copies a full 320x200 buffer into the primary framebuffer"
+        }
+        (_, RENDER_SECONDARY_FRAMEBUFFER_COPY_OFFSET) => {
+            "copies a full 320x200 buffer into the secondary framebuffer"
+        }
+        (_, RENDER_PLANAR_COPY_OFFSET) => {
+            "copies planar/interleaved image data into the primary framebuffer"
+        }
         (_, RENDER_SPRITE_SLOT_STATE_OFFSET) => "updates one presentation sprite slot state",
         _ => "unclassified render-segment call",
     }
@@ -1380,6 +1406,24 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         comment: "subtitle reveal renderer called from 0x94ee with DS:0x5e5c/0x5e5e origin",
     },
     BinarySymbol {
+        name: "small_text_render",
+        file_offset: 0x0036ea,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_SMALL_TEXT_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "renders a NUL-terminated string with the 5-row small font tables at 0x6fa8/0x7028",
+    },
+    BinarySymbol {
+        name: "framebuffer_rect_fill_clipped",
+        file_offset: 0x003c6c,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_RECT_FILL_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "clips and fills a rectangle in the primary framebuffer DS:0x5221",
+    },
+    BinarySymbol {
         name: "scene_band_fill",
         file_offset: 0x003d7b,
         segment: Some(0x0299),
@@ -1387,6 +1431,42 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         ds_offset: None,
         kind: "presentation",
         comment: "fills framebuffer band using y-clip bounds DS:0x5239..0x523b and base DS:0x5221",
+    },
+    BinarySymbol {
+        name: "secondary_framebuffer_band_fill",
+        file_offset: 0x003dbf,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_SECONDARY_BAND_FILL_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "fills framebuffer band using y-clip bounds DS:0x5239..0x523b and base DS:0x5229",
+    },
+    BinarySymbol {
+        name: "framebuffer_copy_full",
+        file_offset: 0x003e46,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_FRAMEBUFFER_COPY_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "copies 0x3e80 dwords from DS:SI into primary framebuffer DS:0x5221",
+    },
+    BinarySymbol {
+        name: "secondary_framebuffer_copy_full",
+        file_offset: 0x003e5b,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_SECONDARY_FRAMEBUFFER_COPY_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "copies 0x3e80 dwords from DS:SI into secondary framebuffer DS:0x5229",
+    },
+    BinarySymbol {
+        name: "planar_framebuffer_copy",
+        file_offset: 0x003ece,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_PLANAR_COPY_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "copies planar/interleaved source data into primary framebuffer DS:0x5219",
     },
     BinarySymbol {
         name: "sprite_slot_frame_load",
@@ -2080,7 +2160,48 @@ mod tests {
         assert_eq!(target_counts.get(&RENDER_SPRITE_SLOT_LOAD_OFFSET), Some(&4));
         assert_eq!(target_counts.get(&RENDER_STRING_OFFSET), Some(&5));
         assert_eq!(target_counts.get(&RENDER_SUBTITLE_REVEAL_OFFSET), Some(&1));
+        assert_eq!(target_counts.get(&RENDER_SMALL_TEXT_OFFSET), Some(&8));
+        assert_eq!(target_counts.get(&RENDER_RECT_FILL_OFFSET), Some(&7));
         assert_eq!(target_counts.get(&RENDER_SCENE_BAND_FILL_OFFSET), Some(&10));
+        assert_eq!(
+            target_counts.get(&RENDER_SECONDARY_BAND_FILL_OFFSET),
+            Some(&5)
+        );
+        assert_eq!(target_counts.get(&RENDER_FRAMEBUFFER_COPY_OFFSET), Some(&4));
+        assert_eq!(
+            target_counts.get(&RENDER_SECONDARY_FRAMEBUFFER_COPY_OFFSET),
+            Some(&1)
+        );
+        assert_eq!(target_counts.get(&RENDER_PLANAR_COPY_OFFSET), Some(&6));
+
+        let target_name = |target_offset| {
+            sites
+                .iter()
+                .find(|site| site.target_offset == target_offset)
+                .map(|site| site.target_name)
+                .expect("render target")
+        };
+        assert_eq!(target_name(RENDER_SMALL_TEXT_OFFSET), "small_text_render");
+        assert_eq!(
+            target_name(RENDER_RECT_FILL_OFFSET),
+            "framebuffer_rect_fill_clipped"
+        );
+        assert_eq!(
+            target_name(RENDER_SECONDARY_BAND_FILL_OFFSET),
+            "secondary_framebuffer_band_fill"
+        );
+        assert_eq!(
+            target_name(RENDER_FRAMEBUFFER_COPY_OFFSET),
+            "framebuffer_copy_full"
+        );
+        assert_eq!(
+            target_name(RENDER_SECONDARY_FRAMEBUFFER_COPY_OFFSET),
+            "secondary_framebuffer_copy_full"
+        );
+        assert_eq!(
+            target_name(RENDER_PLANAR_COPY_OFFSET),
+            "planar_framebuffer_copy"
+        );
 
         let subtitle_reveal = sites
             .iter()

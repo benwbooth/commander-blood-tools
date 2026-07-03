@@ -826,7 +826,18 @@ Named targets that are already tied to code behavior:
   embedded font tables.
 - `0x0299:0x06A0` (`subtitle_reveal_draw_wrapper`): the subtitle reveal renderer
   reached from file `0x94EE` after loading the `DS:0x5E5C/0x5E5E` text origin.
+- `0x0299:0x075A` (`small_text_render`): NUL-terminated string renderer using the
+  5-row small-font tables at `0x6FA8/0x7028`.
+- `0x0299:0x0CDC` (`framebuffer_rect_fill_clipped`): clips and fills a rectangle
+  in primary framebuffer `DS:0x5221`.
 - `0x0299:0x0DEB` (`scene_band_fill`): fills the current clipped framebuffer band.
+- `0x0299:0x0E2F` (`secondary_framebuffer_band_fill`): fills the clipped band in
+  secondary framebuffer `DS:0x5229`.
+- `0x0299:0x0EB6` / `0x0ECB` (`framebuffer_copy_full` /
+  `secondary_framebuffer_copy_full`): copy `0x3E80` dwords from `DS:SI` into the
+  primary/secondary framebuffers.
+- `0x0299:0x0F3E` (`planar_framebuffer_copy`): copies planar/interleaved image
+  data into primary framebuffer `DS:0x5219`.
 - `0x0299:0x11BE` (`sprite_slot_frame_load`): loads one frame-table entry into
   the 32-byte presentation sprite slot selected by `AX`; four direct callers.
 - `0x0299:0x1241` (`sprite_slot_state_update`): updates one presentation sprite
@@ -835,7 +846,7 @@ Named targets that are already tied to code behavior:
 
 This is still a caller map, not a full renderer decompilation. It removes the
 guesswork about which external render hooks the VM/presentation state machine
-uses, and leaves the next RE step as naming the remaining 27 render targets and
+uses, and leaves the next RE step as naming the remaining 21 render targets and
 porting the sprite-slot state model.
 
 ### Audio subsystem (segment 0x0B1B) — located
@@ -1282,10 +1293,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 - [x] Emit binary-derived render/presentation call sites:
       `bloodprg-render-call-sites.tsv` and `inspect-bloodprg.render_call_sites`
       scan all direct far calls into segment `0x0299`, recovering 143 call sites
-      across 32 target offsets. The first named targets include the string
-      renderer, subtitle reveal wrapper, scene-band fill, sprite-slot frame load,
-      and sprite-slot state update; the remaining target semantics stay open RE
-      work instead of being guessed by the exporter.
+      across 32 target offsets. Named targets include the text renderers,
+      framebuffer fill/copy helpers, subtitle reveal wrapper, sprite-slot frame
+      load, and sprite-slot state update; the remaining target semantics stay
+      open RE work instead of being guessed by the exporter.
 - [x] Emit binary-derived SND bank-loader call sites:
       `src/bloodprg.rs` scans direct far calls to `0x0B1B:0x0855`, recovers the
       upstream `AX` bank mode plus `SI` static SND path, and test-locks the seven
