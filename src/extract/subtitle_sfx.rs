@@ -96,6 +96,7 @@ mod tests {
     fn cue(tick: u16, text: &str) -> SubtitleCue {
         SubtitleCue {
             tick,
+            active_line_id: None,
             text: text.to_string(),
         }
     }

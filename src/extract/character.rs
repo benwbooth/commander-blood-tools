@@ -167,21 +167,37 @@ pub(super) fn lookup_character_context(record_name: &str) -> Option<&'static Cha
 
 struct DialogueSegment {
     text: String,
+    active_line_id: u16,
     hnm_path: Option<PathBuf>, // talking-head HNM; None => static background
     voice: Option<SndClip>,    // None => silent (subtitle-only)
     duration: f64,             // seconds this segment occupies the timeline
 }
 
-fn silent_dialogue_segment(text: &str) -> DialogueSegment {
+fn silent_dialogue_segment(text: &str, active_line_id: u16) -> DialogueSegment {
     let chars = text.chars().filter(|c| !c.is_control()).count();
     let reveal = chars as f64 / SUBTITLE_CHARS_PER_SEC;
     let duration = (reveal + SILENT_SUBTITLE_HOLD_SEC).max(SILENT_SUBTITLE_MIN_SEC);
     DialogueSegment {
         text: text.to_string(),
+        active_line_id,
         hnm_path: None,
         voice: None,
         duration,
     }
+}
+
+fn dialogue_subtitle_cues(segments: &[DialogueSegment]) -> (Vec<SubtitleCue>, f64) {
+    let mut cues = Vec::new();
+    let mut duration = 0.0f64;
+    for seg in segments {
+        cues.push(SubtitleCue {
+            tick: (duration * 10.0).round() as u16,
+            active_line_id: Some(seg.active_line_id),
+            text: seg.text.clone(),
+        });
+        duration += seg.duration;
+    }
+    (cues, duration)
 }
 
 /// Create combined character videos for each DESCRIPT.DES character record that
@@ -583,7 +599,11 @@ fn create_executed_dialogue_run_video(
             vm::SceneEvent::PlayVoice { clip_index } => {
                 pending_clip = Some((current_actor.clone(), *clip_index));
             }
-            vm::SceneEvent::DrawSubtitle { text, .. } => {
+            vm::SceneEvent::DrawSubtitle {
+                text,
+                active_line_id,
+                ..
+            } => {
                 if let Some((Some(actor), clip_index)) = pending_clip.take() {
                     if let Some(seg) = resolve_actor_voiced_segment(
                         dat_dir,
@@ -592,13 +612,14 @@ fn create_executed_dialogue_run_video(
                         &actor,
                         clip_index,
                         text,
+                        *active_line_id,
                     ) {
                         segments.push(seg);
                         continue;
                     }
                 }
                 if !text.trim().is_empty() {
-                    segments.push(silent_dialogue_segment(text));
+                    segments.push(silent_dialogue_segment(text, *active_line_id));
                 }
             }
             _ => {}
@@ -677,7 +698,11 @@ fn create_profile_dialogue_run_video(
             vm::SceneEvent::PlayVoice { clip_index } => {
                 pending_clip = Some((current_actor.clone(), *clip_index));
             }
-            vm::SceneEvent::DrawSubtitle { text, .. } => {
+            vm::SceneEvent::DrawSubtitle {
+                text,
+                active_line_id,
+                ..
+            } => {
                 if let Some((Some(actor), clip_index)) = pending_clip.take() {
                     if let Some(seg) = resolve_actor_voiced_segment(
                         dat_dir,
@@ -686,13 +711,14 @@ fn create_profile_dialogue_run_video(
                         &actor,
                         clip_index,
                         text,
+                        *active_line_id,
                     ) {
                         segments.push(seg);
                         continue;
                     }
                 }
                 if !text.trim().is_empty() {
-                    segments.push(silent_dialogue_segment(text));
+                    segments.push(silent_dialogue_segment(text, *active_line_id));
                 }
             }
             _ => {}
@@ -723,6 +749,7 @@ fn resolve_actor_voiced_segment(
     actor: &str,
     clip_index: usize,
     text: &str,
+    active_line_id: u16,
 ) -> Option<DialogueSegment> {
     let record = descript_db.record(actor)?;
     if clip_index >= record.talk_hnms.len() {
@@ -746,6 +773,7 @@ fn resolve_actor_voiced_segment(
     let duration = voice.pcm.len() as f64 / voice.sample_rate as f64;
     Some(DialogueSegment {
         text: text.to_string(),
+        active_line_id,
         hnm_path: Some(hnm_path),
         voice: Some(voice),
         duration,
@@ -792,27 +820,29 @@ pub(super) fn create_character_dialogue_video(
         .collect();
     let events = vm::emit_scene_events(&inputs);
 
-    let resolve_voiced = |clip_index: usize, text: &str| -> Option<DialogueSegment> {
-        if clip_index >= scene.talk_hnms.len() {
-            return None;
-        }
-        let hnm_name = &scene.talk_hnms[clip_index].1;
-        let hnm_path = dat_dir.join("pe").join(hnm_name.to_ascii_lowercase());
-        if !hnm_path.exists() {
-            return None;
-        }
-        let voice = snd_bank
-            .clip(clip_index)
-            .filter(|clip| !clip.pcm.is_empty())?
-            .clone();
-        let duration = voice.pcm.len() as f64 / voice.sample_rate as f64;
-        Some(DialogueSegment {
-            text: text.to_string(),
-            hnm_path: Some(hnm_path),
-            voice: Some(voice),
-            duration,
-        })
-    };
+    let resolve_voiced =
+        |clip_index: usize, text: &str, active_line_id: u16| -> Option<DialogueSegment> {
+            if clip_index >= scene.talk_hnms.len() {
+                return None;
+            }
+            let hnm_name = &scene.talk_hnms[clip_index].1;
+            let hnm_path = dat_dir.join("pe").join(hnm_name.to_ascii_lowercase());
+            if !hnm_path.exists() {
+                return None;
+            }
+            let voice = snd_bank
+                .clip(clip_index)
+                .filter(|clip| !clip.pcm.is_empty())?
+                .clone();
+            let duration = voice.pcm.len() as f64 / voice.sample_rate as f64;
+            Some(DialogueSegment {
+                text: text.to_string(),
+                active_line_id,
+                hnm_path: Some(hnm_path),
+                voice: Some(voice),
+                duration,
+            })
+        };
 
     let mut segments: Vec<DialogueSegment> = Vec::new();
     let mut ev_background: Option<String> = None;
@@ -835,18 +865,22 @@ pub(super) fn create_character_dialogue_video(
                 }
             }
             vm::SceneEvent::PlayVoice { clip_index } => pending_clip = Some(*clip_index),
-            vm::SceneEvent::DrawSubtitle { text, .. } => {
+            vm::SceneEvent::DrawSubtitle {
+                text,
+                active_line_id,
+                ..
+            } => {
                 // Voiced line: play its clip + talking head. If the clip can't be
                 // resolved (e.g. missing asset) but the line has text, fall back
                 // to a subtitle-only segment instead of dropping the dialogue.
                 if let Some(ci) = pending_clip.take() {
-                    if let Some(seg) = resolve_voiced(ci, text) {
+                    if let Some(seg) = resolve_voiced(ci, text, *active_line_id) {
                         segments.push(seg);
                         continue;
                     }
                 }
                 if !text.trim().is_empty() {
-                    segments.push(silent_dialogue_segment(text));
+                    segments.push(silent_dialogue_segment(text, *active_line_id));
                 }
             }
             _ => {}
@@ -944,15 +978,7 @@ fn render_dialogue_segments(
         }
     }
 
-    let mut cues = Vec::new();
-    let mut duration = 0.0f64;
-    for seg in segments {
-        cues.push(SubtitleCue {
-            tick: (duration * 10.0).round() as u16,
-            text: seg.text.clone(),
-        });
-        duration += seg.duration;
-    }
+    let (cues, duration) = dialogue_subtitle_cues(segments);
 
     let tmp_sfx = mp4_out.with_extension("subtitle_sfx.raw");
     let subtitle_sfx_rate = if let Some(path) = subtitle_sfx_path {
@@ -1166,6 +1192,39 @@ mod tests {
             text_end: offset + 12,
             source: "test".to_string(),
         }
+    }
+
+    #[test]
+    fn dialogue_subtitle_cues_keep_active_line_ids() {
+        let segments = vec![
+            DialogueSegment {
+                text: "first".to_string(),
+                active_line_id: vm::text_selector_active_line_id(0x01),
+                hnm_path: None,
+                voice: None,
+                duration: 1.2,
+            },
+            DialogueSegment {
+                text: "second".to_string(),
+                active_line_id: vm::text_selector_active_line_id(0xff),
+                hnm_path: None,
+                voice: None,
+                duration: 0.8,
+            },
+        ];
+
+        let (cues, duration) = dialogue_subtitle_cues(&segments);
+        assert_eq!(duration, 2.0);
+        assert_eq!(cues[0].tick, 0);
+        assert_eq!(
+            cues[0].active_line_id,
+            Some(vm::text_selector_active_line_id(0x01))
+        );
+        assert_eq!(cues[1].tick, 12);
+        assert_eq!(
+            cues[1].active_line_id,
+            Some(vm::text_selector_active_line_id(0xff))
+        );
     }
 
     #[test]

@@ -7,6 +7,7 @@ use super::*;
 #[derive(Clone, Debug)]
 pub(super) struct SubtitleCue {
     pub(super) tick: u16,
+    pub(super) active_line_id: Option<u16>,
     pub(super) text: String,
 }
 
@@ -393,7 +394,11 @@ pub(super) fn parse_descript(path: &Path) -> Result<DescriptDb, Box<dyn Error>> 
                         let tick = u16::from_le_bytes([data[pos], data[pos + 1]]);
                         pos += 2;
                         let text = read_des_cstr(&data, &mut pos, end);
-                        record.subtitles.push(SubtitleCue { tick, text });
+                        record.subtitles.push(SubtitleCue {
+                            tick,
+                            active_line_id: None,
+                            text,
+                        });
                     } else {
                         break;
                     }
