@@ -239,11 +239,17 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         &script_disassembly,
         &out_dir.join("script-disassembly.tsv"),
     )?;
+    let script_branch_trace = parse_script_branch_trace(&tmp_iso)?;
+    write_script_branch_trace_manifest(
+        &script_branch_trace,
+        &out_dir.join("script-branch-trace.tsv"),
+    )?;
     if !script_speech.is_empty() {
         eprintln!(
-            "Recovered {} script text calls ({} disassembly rows)",
+            "Recovered {} script text calls ({} disassembly rows, {} branch events)",
             script_speech.len(),
-            script_disassembly.len()
+            script_disassembly.len(),
+            script_branch_trace.len()
         );
     }
 

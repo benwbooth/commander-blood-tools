@@ -438,6 +438,8 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 |------|----------|
 | `re/labels.csv` | accumulated address labels (file-offset / SEG:OFF / DS: forms) |
 | `re/bin/BLOODPRG.EXE` | unpacked target (MZ image == whole file, no decompression needed) |
+| `script-branch-trace.tsv` | extraction artifact listing `execute_trace` branch/control events per script |
+| `script-dialogue-runs.tsv` | extraction artifact grouping VM-order dialogue lines by script/background run |
 
 ## Verification Checklist
 

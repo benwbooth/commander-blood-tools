@@ -95,6 +95,19 @@ pub(super) struct ScriptDisassemblyLine {
 }
 
 #[derive(Clone, Debug)]
+pub(super) struct ScriptBranchTraceLine {
+    pub(super) script: String,
+    pub(super) event_index: usize,
+    pub(super) offset: usize,
+    pub(super) opcode: u8,
+    pub(super) target: Option<u16>,
+    pub(super) branch_taken: bool,
+    pub(super) condition_passed: Option<bool>,
+    pub(super) stack_depth: usize,
+    pub(super) detail: String,
+}
+
+#[derive(Clone, Debug)]
 pub(super) struct ScriptCharacterContextLine {
     pub(super) script: String,
     pub(super) actor_record: String,

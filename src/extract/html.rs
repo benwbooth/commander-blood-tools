@@ -269,6 +269,8 @@ pub(super) fn write_manifest_section(
         "script-speech.tsv",
         "script-disassembly.tsv",
         "script-dialogue-videos.tsv",
+        "script-dialogue-runs.tsv",
+        "script-branch-trace.tsv",
         "DESCRIPT.DES",
     ];
     writeln!(html, "<h2>Manifests</h2><ul>")?;

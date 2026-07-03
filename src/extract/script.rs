@@ -215,6 +215,42 @@ pub(super) fn parse_script_disassembly(
     Ok(rows)
 }
 
+pub(super) fn parse_script_branch_trace(
+    iso_dir: &Path,
+) -> Result<Vec<ScriptBranchTraceLine>, Box<dyn Error>> {
+    let mut rows = Vec::new();
+    for script_idx in 1..=5 {
+        let cod_path = find_file_recursive(iso_dir, &format!("SCRIPT{script_idx}.COD"));
+        let var_path = find_file_recursive(iso_dir, &format!("SCRIPT{script_idx}.VAR"));
+        let (Some(cod_path), Some(var_path)) = (cod_path, var_path) else {
+            continue;
+        };
+
+        let cod = fs::read(cod_path)?;
+        let var = fs::read(var_path)?;
+        let script = format!("SCRIPT{script_idx}");
+        let trace = vm::execute_trace(&cod, &var);
+        rows.extend(
+            trace
+                .branch_events
+                .into_iter()
+                .enumerate()
+                .map(|(event_index, event)| ScriptBranchTraceLine {
+                    script: script.clone(),
+                    event_index,
+                    offset: event.offset,
+                    opcode: event.opcode,
+                    target: event.target,
+                    branch_taken: event.branch_taken,
+                    condition_passed: event.condition_passed,
+                    stack_depth: event.stack_depth,
+                    detail: event.detail.to_string(),
+                }),
+        );
+    }
+    Ok(rows)
+}
+
 pub(super) fn parse_script_text_calls(
     script: &str,
     cod: &[u8],
@@ -865,6 +901,37 @@ pub(super) fn write_script_disassembly_manifest(
     Ok(())
 }
 
+pub(super) fn write_script_branch_trace_manifest(
+    rows: &[ScriptBranchTraceLine],
+    out_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let mut file = File::create(out_path)?;
+    writeln!(
+        file,
+        "script\tevent_index\toffset\topcode\ttarget\tbranch_taken\tcondition_passed\tstack_depth\tdetail"
+    )?;
+    for row in rows {
+        writeln!(
+            file,
+            "{}\t{}\t0x{:05x}\t{:02x}\t{}\t{}\t{}\t{}\t{}",
+            row.script,
+            row.event_index,
+            row.offset,
+            row.opcode,
+            row.target
+                .map(|target| format!("0x{target:04x}"))
+                .unwrap_or_default(),
+            row.branch_taken,
+            row.condition_passed
+                .map(|passed| passed.to_string())
+                .unwrap_or_default(),
+            row.stack_depth,
+            clean_tsv(&row.detail),
+        )?;
+    }
+    Ok(())
+}
+
 #[derive(Debug)]
 struct ScriptDialogueRun<'a> {
     script: String,
@@ -1238,6 +1305,42 @@ mod tests {
                     .any(|row| row.source.starts_with("SCRIPT VM token")),
                 "speech rows should come from the VM-token parser"
             );
+            return;
+        }
+
+        eprintln!("skipping: extracted output scripts not available");
+    }
+
+    #[test]
+    fn parses_real_script_branch_trace_if_present() {
+        for prefix in ["output", "../output"] {
+            let root = Path::new(prefix);
+            if !root.join("scripts").exists() {
+                continue;
+            }
+
+            let rows = parse_script_branch_trace(root).expect("parse branch trace");
+            assert!(
+                rows.len() > 1000,
+                "expected real branch/control events, got {} rows",
+                rows.len()
+            );
+            assert!(
+                rows.iter()
+                    .any(|row| row.script == "SCRIPT2" && row.branch_taken),
+                "SCRIPT2 should include taken branch events"
+            );
+            let path = std::env::temp_dir().join(format!(
+                "commander-blood-branch-trace-{}.tsv",
+                std::process::id()
+            ));
+            write_script_branch_trace_manifest(&rows, &path).expect("write branch trace");
+            let manifest = fs::read_to_string(&path).expect("read branch trace");
+            let _ = fs::remove_file(&path);
+            assert!(
+                manifest.starts_with("script\tevent_index\toffset\topcode\ttarget\tbranch_taken")
+            );
+            assert!(manifest.contains("condition"));
             return;
         }
 
