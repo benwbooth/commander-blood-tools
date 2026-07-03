@@ -46,6 +46,63 @@ pub(super) fn fb_to_rgb(fb: &[u8], palette: &[[u8; 3]; 256], rgb: &mut [u8]) {
     }
 }
 
+pub(super) fn fill_rect_indexed_clipped(
+    fb: &mut [u8],
+    color: u8,
+    x: isize,
+    y: isize,
+    width: isize,
+    height: isize,
+    clip: (usize, usize, usize, usize),
+) {
+    if width <= 0 || height <= 0 || fb.len() < VIEWPORT_W * VIEWPORT_H {
+        return;
+    }
+
+    let (clip_left, clip_right, clip_top, clip_bottom) = clip;
+    let x0 = x.max(clip_left as isize).max(0) as usize;
+    let y0 = y.max(clip_top as isize).max(0) as usize;
+    let x1 = (x + width)
+        .min(clip_right as isize)
+        .min(VIEWPORT_W as isize)
+        .max(x0 as isize) as usize;
+    let y1 = (y + height)
+        .min(clip_bottom as isize)
+        .min(VIEWPORT_H as isize)
+        .max(y0 as isize) as usize;
+
+    for row in y0..y1 {
+        fb[row * VIEWPORT_W + x0..row * VIEWPORT_W + x1].fill(color);
+    }
+}
+
+pub(super) fn fill_band_indexed(fb: &mut [u8], color: u8, clip_top: usize, clip_bottom: usize) {
+    if clip_bottom <= clip_top {
+        return;
+    }
+    fill_rect_indexed_clipped(
+        fb,
+        color,
+        0,
+        clip_top as isize,
+        VIEWPORT_W as isize,
+        (clip_bottom - clip_top) as isize,
+        (0, VIEWPORT_W, clip_top, clip_bottom),
+    );
+}
+
+pub(super) fn fill_scene_band_indexed(fb: &mut [u8], color: u8) {
+    fill_band_indexed(fb, color, SCENE_TOP, SCENE_BOTTOM);
+}
+
+pub(super) fn copy_framebuffer_full_indexed(dst: &mut [u8], src: &[u8]) {
+    let len = VIEWPORT_W * VIEWPORT_H;
+    if dst.len() < len || src.len() < len {
+        return;
+    }
+    dst[..len].copy_from_slice(&src[..len]);
+}
+
 pub(super) fn render_subtitles_indexed(fb: &mut [u8], cues: &[SubtitleCue], time: f64) {
     let Some((cue, visible_lines)) = active_subtitle_lines(cues, time) else {
         return;
@@ -459,6 +516,67 @@ mod tests {
             SCENE_BOTTOM,
         );
         assert!(fb.iter().any(|sample| *sample != 0));
+    }
+
+    #[test]
+    fn recovered_rect_fill_clips_to_viewport_and_active_band() {
+        let mut fb = vec![0u8; VIEWPORT_W * VIEWPORT_H];
+
+        fill_rect_indexed_clipped(
+            &mut fb,
+            7,
+            318,
+            (SCENE_TOP as isize) - 5,
+            8,
+            8,
+            (0, VIEWPORT_W, SCENE_TOP, SCENE_TOP + 3),
+        );
+
+        let filled = fb.iter().filter(|sample| **sample == 7).count();
+        assert_eq!(filled, 2 * 3);
+        assert_eq!(fb[SCENE_TOP * VIEWPORT_W + 317], 0);
+        assert_eq!(fb[SCENE_TOP * VIEWPORT_W + 318], 7);
+        assert_eq!(fb[SCENE_TOP * VIEWPORT_W + 319], 7);
+        assert_eq!(fb[(SCENE_TOP + 3) * VIEWPORT_W + 318], 0);
+    }
+
+    #[test]
+    fn recovered_scene_band_fill_only_touches_scene_rows() {
+        let mut fb = vec![1u8; VIEWPORT_W * VIEWPORT_H];
+
+        fill_scene_band_indexed(&mut fb, 9);
+
+        assert!(
+            fb[..SCENE_TOP * VIEWPORT_W]
+                .iter()
+                .all(|sample| *sample == 1)
+        );
+        assert!(
+            fb[SCENE_TOP * VIEWPORT_W..SCENE_BOTTOM * VIEWPORT_W]
+                .iter()
+                .all(|sample| *sample == 9)
+        );
+        assert!(
+            fb[SCENE_BOTTOM * VIEWPORT_W..]
+                .iter()
+                .all(|sample| *sample == 1)
+        );
+    }
+
+    #[test]
+    fn recovered_framebuffer_copy_uses_one_full_viewport() {
+        let len = VIEWPORT_W * VIEWPORT_H;
+        let mut src = vec![0u8; len + 1];
+        let mut dst = vec![3u8; len + 1];
+        src[0] = 11;
+        src[len - 1] = 22;
+        src[len] = 33;
+
+        copy_framebuffer_full_indexed(&mut dst, &src);
+
+        assert_eq!(dst[0], 11);
+        assert_eq!(dst[len - 1], 22);
+        assert_eq!(dst[len], 3);
     }
 
     #[test]

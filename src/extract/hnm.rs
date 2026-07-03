@@ -206,12 +206,29 @@ pub(super) fn clear_outside_character_bounds(fb: &mut [u8], clip_w: usize, clip_
         return;
     }
 
-    for y in 0..VIEWPORT_H {
-        for x in 0..VIEWPORT_W {
-            if x >= clip_w || y >= clip_h {
-                fb[y * VIEWPORT_W + x] = 0;
-            }
-        }
+    let clear_w = clip_w.min(VIEWPORT_W);
+    if clear_w < VIEWPORT_W {
+        fill_rect_indexed_clipped(
+            fb,
+            0,
+            clear_w as isize,
+            0,
+            (VIEWPORT_W - clear_w) as isize,
+            VIEWPORT_H as isize,
+            (0, VIEWPORT_W, 0, VIEWPORT_H),
+        );
+    }
+    let clear_h = clip_h.min(VIEWPORT_H);
+    if clear_h < VIEWPORT_H {
+        fill_rect_indexed_clipped(
+            fb,
+            0,
+            0,
+            clear_h as isize,
+            clear_w as isize,
+            (VIEWPORT_H - clear_h) as isize,
+            (0, VIEWPORT_W, 0, VIEWPORT_H),
+        );
     }
 }
 

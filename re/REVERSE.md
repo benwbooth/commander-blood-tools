@@ -849,6 +849,12 @@ guesswork about which external render hooks the VM/presentation state machine
 uses, and leaves the next RE step as naming the remaining 21 render targets and
 porting the sprite-slot state model.
 
+Rust now ports the safe framebuffer side of the recovered primitives in
+`src/extract/render.rs`: clipped rectangle fill (`0x0CDC`), current scene-band
+fill (`0x0DEB`/`0x0E2F` shape), and full-viewport framebuffer copy
+(`0x0EB6`/`0x0ECB`). The character-HNM clear path uses the clipped fill helper
+instead of open-coded per-pixel bounds checks.
+
 ### Audio subsystem (segment 0x0B1B) — located
 
 - `son.snd` (voices/SFX) and `mus.snd` (music) are **per-scene temp files**
@@ -1297,6 +1303,11 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       framebuffer fill/copy helpers, subtitle reveal wrapper, sprite-slot frame
       load, and sprite-slot state update; the remaining target semantics stay
       open RE work instead of being guessed by the exporter.
+- [x] Port recovered framebuffer fill/copy primitives:
+      `src/extract/render.rs` now has tested Rust helpers for the clipped
+      rectangle fill, scene-band fill, and full 320x200 framebuffer copy shapes
+      recovered from render segment `0x0299`; the character-HNM clear path uses
+      the clipped rectangle helper.
 - [x] Emit binary-derived SND bank-loader call sites:
       `src/bloodprg.rs` scans direct far calls to `0x0B1B:0x0855`, recovers the
       upstream `AX` bank mode plus `SI` static SND path, and test-locks the seven
