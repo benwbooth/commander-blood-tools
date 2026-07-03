@@ -238,16 +238,16 @@ The subtitle reveals one character at a time from the buffer at `gs:0x0E18`,
 tracked by reveal pointer `gs:0x5E58` (starts at the buffer start). The advance is
 rate-limited by timer `gs:0xB31`: when it hits 0, `inc gs:0x5E58` (reveal one more
 char) and reset `gs:0xB31 = gs:0xACA >> 2` (i.e. `gs:0xACA/4` frames per char).
-A line-complete chatter (`sn/tb.snd`) is triggered after the reveal pointer
-reaches the terminating NUL: `0x94BA..0x94DD` sets `gs:0xB35 = gs:0xACA*4` and
+After the reveal pointer reaches the terminating NUL, the dialogue state enters
+a line-complete hold: `0x94BA..0x94DD` sets `gs:0xB35 = gs:0xACA*4` and
 `gs:0x67BB=1`, while `0x115D..0x1188` keeps that flag alive until the timer
 expires and then clears it. A second line-layout path at `0x7350..0x738C` also
-sets `gs:0x67BB=1` with duration `gs:0x27CF * gs:0xACA/2 + 6`. So the old
-exporter behavior of mixing one `tb.snd` clip per visible character was wrong;
-the Rust SFX track now schedules one chatter event per fully revealed subtitle
-line and uses `tb.snd` clip 0, matching the direct text/presentation SND call
-(`0x8534`, `AX=0`) and `verified-video-scenes.tsv`. The exact `0x67BB` → SND
-caller bridge still needs the audio callback trace.
+sets `gs:0x67BB=1` with duration `gs:0x27CF * (gs:0xACA/2) + 6`. So the old
+exporter behavior of mixing one `tb.snd` clip per visible character was wrong.
+The Rust SFX track schedules one sidecar chatter event per fully revealed
+subtitle line and uses `tb.snd` clip 0, matching `verified-video-scenes.tsv`.
+Static RE has not found a direct `0x67BB` → `0x0B1B:0x011D` SND call; the direct
+`AX=0` caller at `0x8534` is a separate presentation interaction path.
 `gs:0xACA = (textspeed/2)+1` (init @0x1B3A; `textspeed` from a config getter,
 special-cased so index 4 → 7). So reveal rate = `4 * frame_rate / gs:0xACA`
 chars/sec; at ~15 fps and a mid text speed (`gs:0xACA≈5`) ≈ **12 chars/sec**
@@ -367,11 +367,11 @@ and `0xB529` both reset `gs:0x1FAB`,`gs:0x6788` (→0xFFFF) plus the display gat
 `gs:0x5E64`,`gs:0x67B0`,`gs:0x67BC`,`gs:0x67BA` and call the common stop routine
 `0x071E:0x14B6`. Useful as the authoritative subtitle/scene-clear semantics.
 
-**Remaining for full accuracy:** (1) trace the exact `gs:0x67BB` line-complete
-chatter bridge into the SND caller/runtime state; (2) decode any remaining
-line-record display flags that affect subtitle/talk-HNM routing; (3) map
-background/music/HNM opcodes among 0xB7/0xC1–0xC9 handlers; (4) `gs:0x6724`
-line-record layout.
+**Remaining for full accuracy:** (1) verify whether audible `tb.snd` chatter is
+triggered by a dynamic callback rather than the now-decoded `gs:0x67BB` hold
+flag; (2) decode any remaining line-record display flags that affect
+subtitle/talk-HNM routing; (3) map background/music/HNM opcodes among
+0xB7/0xC1–0xC9 handlers; (4) `gs:0x6724` line-record layout.
 
 ### Dialogue display state machine (seg 0x0971, file ~0x9E81)
 
@@ -381,10 +381,11 @@ new id and redraws (lcall render seg 0x299). Special line ids switch the
 **viewport clip region**: id `5` and `0x27` set `gs:0x5239=0x23,gs:0x523B=0xA5`
 (letterbox window ~rows 0x23..0xC8) then restore — i.e. cutscene vs normal-screen
 subtitle framing. `gs:0x5239/0x523B` are the render_string y-clip bounds.
-The son.snd **voice trigger** is one more hop, via `0xA1B4`/`0xA40B` called here
-(seg 0x0971) — these reach the audio playback. 41 sites touch `gs:0x6788`
-across segs 0x008B (display), 0x0971 (this updater), 0x0B1B (audio/clear);
-mapping the voice-clip selection is a subsystem trace (see dead_ends.md).
+The son.snd/talk-animation trigger is one more hop, via `0xA1B4`/`0xA40B` called
+here (seg 0x0971) — these reach the audio playback subsystem. 41 sites touch
+`gs:0x6788` across segs 0x008B (display), 0x0971 (this updater), 0x0B1B
+(audio/clear), so remaining work here is callback/FSM mapping rather than
+another direct `b3` selector formula.
 
 ### Audio subsystem (segment 0x0B1B) — located
 
@@ -409,10 +410,12 @@ mapping the voice-clip selection is a subsystem trace (see dead_ends.md).
   set is ten calls: clips `0,1,1,2,3,4,5,5,5,6`; file `0x8534` is the
   text/presentation render-path call with `AX=0`. One call (`0x7BF8`) carries
   `AX=1` across a setup far call and is flagged in the TSV.
-- **Remaining link:** tie the `gs:0x67BB` line-complete chatter event to the
-  exact direct SND caller/runtime state. The direct-call constants and shipped
-  video-scene manifest support `tb.snd#0`, so Rust no longer cycles through
-  `tb.snd` clips, but the `0x67BB`→caller bridge still needs a focused trace.
+- **Line-complete hold flag:** `gs:0x67BB` is now decoded as a post-reveal hold
+  state, not a direct SND call. `0x94BA..0x94DD` sets `b35=aca*4`; `0x7378..0x738C`
+  sets `b35=0x27cf*(aca/2)+6`; `0x115D..0x1188` consumes and clears the flag.
+  Rust ports the arithmetic in `vm::reveal_complete_hold_ticks` and
+  `vm::record_end_hold_ticks`. The shipped scene manifest supports `tb.snd#0`
+  for subtitle sidecars, so Rust no longer cycles through `tb.snd` clips.
 - Player internals: function entry ~0xB95x; `gs:0x0A5A` = current clip slot
   (`-1` = none → skips play). Buffer/stream state at `0x0BAB`/`0x0BAD`/`0x0BAF`.
   Mixer loop `0xBB6D..0xBB74` performs `lodsb; add al,es:[di]; rcr al,1; stosb`,
@@ -497,8 +500,8 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       clip `N-1`). This centralizes the rule that previously lived as duplicated
       parser logic.
 - [ ] Decode the `gs:0x6724` per-line record layout (es:[di], es:[di+2] flags).
-- [ ] Decode remaining animated subtitle/audio details, especially the exact
-      `gs:0x67BB` line-complete chatter bridge into the SND caller/runtime state.
+- [ ] Verify audible `tb.snd` chatter trigger path, if any. `gs:0x67BB` itself is
+      now decoded as post-reveal hold state rather than a direct SND caller.
 - [ ] Map the presentation opcodes among the handler table: which set background,
       music (mus.snd), HNM actor, voice (son.snd), wait, clear. Start with the
       0xB7/0xC1–0xC9 handlers (distinct, non-family) and 0xC4 actor @0x6C7E.
@@ -657,6 +660,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `text_selector_voice_clip_index`; both public and extractor script parsers
       call that recovered VM/presentation rule instead of hand-rolling the old
       `b3` tests.
+- [x] Port the `gs:0x67BB` line-complete hold timers:
+      `src/vm.rs` models `0x94D4..0x94DD` (`b35=aca*4`) and `0x7378..0x738C`
+      (`b35=0x27cf*(aca/2)+6`) as checked helper functions. Labels and known
+      symbols now name the set/consume sites.
 - [x] Emit branch-scenario dialogue rows/runs:
       `script-branch-scenario-dialogue.tsv` reuses the same executed-dialogue
       resolver against each forced branch trace, and

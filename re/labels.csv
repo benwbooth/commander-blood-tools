@@ -7,6 +7,7 @@
 0x0062B6,vm_token_advance,"decode+skip one script token; biases op by 0xa0, uses length table DS:0x6f18"
 0x006293,vm_token_special,called for length-0 opcodes (A8 AC CC D3) from token_advance
 0x0073AF,vm_token_walker,scan script for 0xA6 text token matching index bx
+0x0072A8,dlg_record_end_hold,"sets gs:0x0b35=gs:0x27cf*(gs:0x0aca/2)+6 and gs:0x67bb=1"
 0x014338,vm_opcode_lengths,"per-opcode length/sentinel table DS:0x6f18, opcodes A0..D3 x2 bytes"
 0x0031C8,render_string,"subtitle glyph blitter: SI=ascii str, DI=screen off, DL=color, ES=screen, stride 320; font tables gs:0x7802/0x78b2/0x7908"
 DS:0x7802,font_ascii_map,ASCII->glyph index (xlatb base)
@@ -38,6 +39,7 @@ DS:0x677C,vm_a6_b3_ptr,saved pointer to 0xA6 b3 byte
 DS:0x67B4,vm_ctrl_signal,handler->loop control signal (nonzero = special)
 DS:0x6788,vm_active_line,"active dialogue-line id = sign_extend(0xA6 b3)+9; reset 0xffff on clear"
 0x0011E8,dlg_line_activate,reads signed gs:0x1fab(b3)+9 -> gs:0x6788 active line id
+0x00115D,dlg_chatter_hold_consume,tests and clears gs:0x67bb line-complete hold flag
 0x001A5E,dlg_clear_a,"clear dialogue/scene state: reset 0x1fab/0x6788/display gates; calls 0x71e:0x14b6"
 0x00B521,dlg_clear_b,"clear dialogue/scene state variant; resets voice/subtitle gates"
 0x071E:0x14B6,dlg_stop_common,common stop/clear routine called by dialogue clear paths
@@ -49,6 +51,7 @@ DS:0x0BB7,snd_read_buf,son.snd streamed-read destination buffer (far ptr)
 DS:0x0C47,h_son_snd,DOS file handle for temp son.snd (voices/SFX)
 DS:0x0C49,h_mus_snd,DOS file handle for temp mus.snd (music)
 0x009E81,dlg_frame_update,"per-frame dialogue updater: active line gs:0x6788 vs displayed gs:0x678a; viewport letterbox for ids 5/0x27"
+0x0094BA,dlg_reveal_complete_hold,"when reveal reaches NUL, sets gs:0x0b35=gs:0x0aca*4 and gs:0x67bb=1"
 DS:0x678A,vm_displayed_line,currently-displayed dialogue-line id (vs active gs:0x6788)
 DS:0x5239,render_yclip_lo,render_string y-clip low bound (set 0x23 for letterbox)
 DS:0x523B,render_yclip_hi,render_string y-clip high bound (0xa5 letterbox / 0xc8 full)

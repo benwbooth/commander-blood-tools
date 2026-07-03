@@ -15,8 +15,9 @@ pub(super) fn build_subtitle_sfx_track(
     let samples = ((duration + 0.5) * sample_rate as f64).ceil() as usize;
     let mut track = vec![128u8; samples.max(1)];
     let mut used = false;
-    // The text/presentation SND entry caller at BLOODPRG.EXE file 0x8534 enters
-    // the player with AX=0; the shipped scene manifest also identifies tb.snd#0.
+    // The shipped scene manifest identifies tb.snd#0 for subtitle sidecars.
+    // BLOODPRG.EXE's 0x67BB path gates one line-complete hold event; no
+    // recovered path supports cycling through tb.snd clips.
     let chatter_clip = &clips[0];
     for event in subtitle_chatter_events(cues) {
         let start = (event.start_time * sample_rate as f64).round() as usize;

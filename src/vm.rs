@@ -95,6 +95,7 @@ pub const OP_ACTOR: u8 = 0xC4;
 pub const TEXT_SELECTOR_NONE: u8 = 0xFF;
 pub const TEXT_SELECTOR_SILENT: u8 = 0x00;
 pub const ACTIVE_LINE_ID_BIAS: u16 = 9;
+pub const CHATTER_HOLD_EXTRA_TICKS: u16 = 6;
 
 /// Port the TEXT handler's `b3` selector bridge:
 /// `cbw; mov gs:[0x1FAB],ax`, then `mov ax,[0x1FAB]; add ax,9; mov [0x6788],ax`.
@@ -117,6 +118,20 @@ pub fn text_selector_voice_clip_index(selector: u8, talk_clip_count: usize) -> O
     } else {
         None
     }
+}
+
+/// Port the reveal-complete hold timer at `BLOODPRG.EXE` `0x94D4..0x94DD`:
+/// `b35 = gs:[0x0ACA] << 2; gs:[0x67BB] = 1`.
+pub fn reveal_complete_hold_ticks(text_speed_step: u16) -> u16 {
+    text_speed_step.wrapping_shl(2)
+}
+
+/// Port the record-end hold timer at `BLOODPRG.EXE` `0x7378..0x738C`:
+/// `b35 = gs:[0x27CF] * (gs:[0x0ACA] >> 1) + 6; gs:[0x67BB] = 1`.
+pub fn record_end_hold_ticks(record_units: u16, text_speed_step: u16) -> u16 {
+    record_units
+        .wrapping_mul(text_speed_step >> 1)
+        .wrapping_add(CHATTER_HOLD_EXTRA_TICKS)
 }
 
 /// Opcodes whose descriptor length is 0 (other than `0xA6`): the VM advances
@@ -1066,6 +1081,15 @@ mod tests {
         assert_eq!(text_selector_voice_clip_index(0x01, 4), Some(0));
         assert_eq!(text_selector_voice_clip_index(0x04, 4), Some(3));
         assert_eq!(text_selector_voice_clip_index(0x05, 4), None);
+    }
+
+    #[test]
+    fn chatter_hold_timers_match_binary_arithmetic() {
+        assert_eq!(reveal_complete_hold_ticks(5), 20);
+        assert_eq!(record_end_hold_ticks(3, 5), 12);
+        assert_eq!(record_end_hold_ticks(3, 6), 15);
+        assert_eq!(reveal_complete_hold_ticks(0x8000), 0);
+        assert_eq!(record_end_hold_ticks(0xffff, 0xffff), 0x8007);
     }
 
     #[test]

@@ -714,6 +714,15 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         comment: "stores active dialogue line DS:0x6788 = signed DS:0x1fab + 9",
     },
     BinarySymbol {
+        name: "dlg_chatter_hold_consume",
+        file_offset: 0x00115d,
+        segment: Some(0x008b),
+        offset: Some(0x02ad),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "tests and clears DS:0x67bb line-complete hold flag",
+    },
+    BinarySymbol {
         name: "dlg_clear_a",
         file_offset: 0x001a5e,
         segment: Some(0x008b),
@@ -730,6 +739,15 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         ds_offset: None,
         kind: "presentation",
         comment: "animated subtitle reveal updater; advances visible-text pointer and countdown",
+    },
+    BinarySymbol {
+        name: "dlg_reveal_complete_hold",
+        file_offset: 0x0094ba,
+        segment: Some(0x071e),
+        offset: Some(0x1cda),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "when reveal reaches NUL, sets DS:0x0b35=DS:0x0aca*4 and DS:0x67bb=1",
     },
     BinarySymbol {
         name: "dlg_frame_update",
@@ -757,6 +775,15 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         ds_offset: None,
         kind: "audio",
         comment: "close/delete per-scene son.snd and mus.snd temp files",
+    },
+    BinarySymbol {
+        name: "dlg_record_end_hold",
+        file_offset: 0x0072a8,
+        segment: Some(0x04da),
+        offset: Some(0x1f08),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "record iteration end sets DS:0x0b35=DS:0x27cf*(DS:0x0aca/2)+6 and DS:0x67bb=1",
     },
     BinarySymbol {
         name: "snd_entry",
