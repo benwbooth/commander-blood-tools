@@ -21,9 +21,9 @@
 //!
 //! Status: token decoding is verified byte-exact against the binary (see tests).
 //! The pieces here are the foundation for the VM-event renderer that will
-//! replace the heuristic in `character.rs`; they are not wired into the live
-//! export path yet (hence `#[allow(dead_code)]`). A faithful whole-script walk
-//! additionally needs control-flow interpretation — see `walks_real_scripts`.
+//! replace the heuristic in `character.rs`. `walk()` preserves the linear
+//! all-lines view used by comprehensive manifests; `execute_trace()` follows the
+//! recovered A0/A1 branch stack for a concrete initial `SCRIPT*.VAR` state.
 #![allow(dead_code)]
 
 use serde::Serialize;
@@ -334,6 +334,33 @@ pub struct LineState {
     pub location_offset: Option<u16>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct BranchEvent {
+    pub offset: usize,
+    pub opcode: u8,
+    pub target: Option<u16>,
+    pub branch_taken: bool,
+    pub condition_passed: Option<bool>,
+    pub stack_depth: usize,
+    pub detail: &'static str,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub enum ExecutionHalt {
+    EndMarker,
+    InvalidOpcode { offset: usize, byte: u8 },
+    InvalidTarget { offset: usize, target: u16 },
+    StepLimit { limit: usize },
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct ExecutionTrace {
+    pub line_states: Vec<LineState>,
+    pub branch_events: Vec<BranchEvent>,
+    pub steps: usize,
+    pub halted: ExecutionHalt,
+}
+
 /// Read a u16 from `state` (the mutable VAR image) at byte address `addr`.
 fn state_u16(state: &[u8], addr: u16) -> u16 {
     let a = addr as usize;
@@ -349,6 +376,24 @@ fn state_set_u16(state: &mut [u8], addr: u16, val: u16) {
     if a + 1 < state.len() {
         state[a] = (val & 0xFF) as u8;
         state[a + 1] = (val >> 8) as u8;
+    }
+}
+
+fn branch_fail(branch_stack: &mut Vec<u16>) -> Option<u16> {
+    branch_stack.pop()
+}
+
+fn compare_vm_words(operator: u8, left: u16, right: u16) -> Option<bool> {
+    let signed_left = left as i16;
+    let signed_right = right as i16;
+    match operator {
+        0xF0 => Some(left != right),
+        0xF1 => Some(signed_left < signed_right),
+        0xF2 => Some(signed_left > signed_right),
+        0xF3 => Some(signed_left <= signed_right),
+        0xF4 => Some(signed_left >= signed_right),
+        0xF5 => Some(left == right),
+        _ => None,
     }
 }
 
@@ -452,6 +497,319 @@ pub fn interpret_line_states(cod: &[u8], var: &[u8]) -> Vec<LineState> {
         pos += len;
     }
     out
+}
+
+/// Execute the subset of VM control flow that has been tied to concrete handler
+/// code. This follows A0/A1 condition blocks and direct A4/A9 jumps, while still
+/// using the same bounded state model as `interpret_line_states`.
+pub fn execute_trace(cod: &[u8], var: &[u8]) -> ExecutionTrace {
+    const STEP_LIMIT_MULTIPLIER: usize = 64;
+
+    let mut state = var.to_vec();
+    let mut actor: Option<u16> = None;
+    let mut line_states = Vec::new();
+    let mut branch_events = Vec::new();
+    let mut branch_stack: Vec<u16> = Vec::new();
+    let mut pos = 0usize;
+    let mut mode1 = false;
+    let end = cod.len();
+    let step_limit = end.saturating_mul(STEP_LIMIT_MULTIPLIER).max(1024);
+    let mut steps = 0usize;
+    let mut halted = ExecutionHalt::EndMarker;
+
+    while pos < end {
+        if steps >= step_limit {
+            halted = ExecutionHalt::StepLimit { limit: step_limit };
+            break;
+        }
+        steps += 1;
+
+        let token_start = pos;
+        let op = cod[token_start];
+        if op == 0xFF {
+            halted = ExecutionHalt::EndMarker;
+            break;
+        }
+        if !(OP_MIN..=OP_MAX).contains(&op) {
+            halted = ExecutionHalt::InvalidOpcode {
+                offset: token_start,
+                byte: op,
+            };
+            break;
+        }
+        let (b0, b1) = OPCODE_DESC[(op - OP_MIN) as usize];
+
+        if op == 0xA0 {
+            if let Some(target) = read_u16(cod, token_start + 1) {
+                branch_stack.push(target);
+                branch_events.push(BranchEvent {
+                    offset: token_start,
+                    opcode: op,
+                    target: Some(target),
+                    branch_taken: false,
+                    condition_passed: None,
+                    stack_depth: branch_stack.len(),
+                    detail: "condition block start",
+                });
+            }
+        } else if op == 0xA1 {
+            if branch_stack.len() > 1 {
+                branch_stack.pop();
+            }
+            branch_events.push(BranchEvent {
+                offset: token_start,
+                opcode: op,
+                target: branch_stack.last().copied(),
+                branch_taken: false,
+                condition_passed: None,
+                stack_depth: branch_stack.len(),
+                detail: "condition block end",
+            });
+        } else if op == 0xA4 {
+            let target = read_u16(cod, token_start + 1).unwrap_or(0);
+            branch_events.push(BranchEvent {
+                offset: token_start,
+                opcode: op,
+                target: Some(target),
+                branch_taken: true,
+                condition_passed: None,
+                stack_depth: branch_stack.len(),
+                detail: "direct jump",
+            });
+            if target as usize >= end {
+                halted = ExecutionHalt::InvalidTarget {
+                    offset: token_start,
+                    target,
+                };
+                break;
+            }
+            pos = target as usize;
+            continue;
+        } else if op == 0xA9 {
+            let flag = cod.get(token_start + 1).copied().unwrap_or(0);
+            let target = read_u16(cod, token_start + 2).unwrap_or(0);
+            if flag & 1 == 0 {
+                branch_events.push(BranchEvent {
+                    offset: token_start,
+                    opcode: op,
+                    target: Some(target),
+                    branch_taken: true,
+                    condition_passed: None,
+                    stack_depth: branch_stack.len(),
+                    detail: "indexed direct jump",
+                });
+                if target as usize >= end {
+                    halted = ExecutionHalt::InvalidTarget {
+                        offset: token_start,
+                        target,
+                    };
+                    break;
+                }
+                pos = target as usize;
+                continue;
+            }
+            mode1 = true;
+            branch_stack.clear();
+            branch_stack.push(target);
+            branch_events.push(BranchEvent {
+                offset: token_start,
+                opcode: op,
+                target: Some(target),
+                branch_taken: false,
+                condition_passed: None,
+                stack_depth: branch_stack.len(),
+                detail: "condition block reset",
+            });
+            pos = (token_start + 4).min(end);
+            continue;
+        }
+
+        let mut branch_target: Option<u16> = None;
+        let mut condition_passed: Option<bool> = None;
+        let mut branch_detail = "condition failed";
+
+        if mode1 && ASSIGN_7.contains(&op) && token_start + 7 <= end {
+            let op1 = read_u16(cod, token_start + 1).unwrap_or(0);
+            let operator = cod[token_start + 3];
+            let op2mode = cod[token_start + 4];
+            let op2 = read_u16(cod, token_start + 5).unwrap_or(0);
+            let right = if op2mode == 0xC0 || op2mode == 0xC2 {
+                state_u16(&state, op2)
+            } else {
+                op2
+            };
+            condition_passed = compare_vm_words(operator, state_u16(&state, op1), right);
+            if condition_passed == Some(false) {
+                branch_target = branch_fail(&mut branch_stack);
+            }
+        } else if mode1 && BITMASK_5.contains(&op) {
+            let mut p = token_start + 1;
+            let inverted = cod.get(p) == Some(&0xA1);
+            if inverted {
+                p += 1;
+            }
+            if p + 4 <= end {
+                let op1 = read_u16(cod, p).unwrap_or(0);
+                let mask = read_u16(cod, p + 2).unwrap_or(0);
+                let bit_set = state_u16(&state, op1) & mask != 0;
+                let passed = if inverted { !bit_set } else { bit_set };
+                condition_passed = Some(passed);
+                if !passed {
+                    branch_target = branch_fail(&mut branch_stack);
+                }
+            }
+        } else if mode1 && ASSIGN_5.contains(&op) {
+            let mut p = token_start + 1;
+            let inverted = cod.get(p) == Some(&0xA1);
+            if inverted {
+                p += 1;
+            }
+            if p + 4 <= end {
+                let op1 = read_u16(cod, p).unwrap_or(0);
+                let value = read_u16(cod, p + 2).unwrap_or(0);
+                // The DOS handler maps RHS == gs:0x674e to 0xffff before this
+                // compare. `execute_trace` does not yet receive that runtime
+                // special-object value, so inspected traces report the direct
+                // equality result until the object-table model is wired in.
+                let equal = state_u16(&state, op1) == value;
+                let passed = if inverted { !equal } else { equal };
+                condition_passed = Some(passed);
+                if !passed {
+                    branch_target = branch_fail(&mut branch_stack);
+                }
+            }
+        }
+
+        if let Some(target) = branch_target {
+            mode1 = false;
+            branch_events.push(BranchEvent {
+                offset: token_start,
+                opcode: op,
+                target: Some(target),
+                branch_taken: true,
+                condition_passed,
+                stack_depth: branch_stack.len(),
+                detail: branch_detail,
+            });
+            if target as usize >= end {
+                halted = ExecutionHalt::InvalidTarget {
+                    offset: token_start,
+                    target,
+                };
+                break;
+            }
+            pos = target as usize;
+            continue;
+        } else if condition_passed.is_some() {
+            branch_detail = "condition passed";
+            branch_events.push(BranchEvent {
+                offset: token_start,
+                opcode: op,
+                target: branch_stack.last().copied(),
+                branch_taken: false,
+                condition_passed,
+                stack_depth: branch_stack.len(),
+                detail: branch_detail,
+            });
+        }
+
+        if op == OP_ACTOR {
+            if let Some(operand) = read_u16(cod, token_start + 1) {
+                actor = Some(operand.wrapping_sub(TALK_FIELD));
+            }
+        }
+        if !mode1 && ASSIGN_7.contains(&op) && token_start + 7 <= end {
+            let op1 = read_u16(cod, token_start + 1).unwrap_or(0);
+            let operator = cod[token_start + 3];
+            let op2mode = cod[token_start + 4];
+            let op2 = read_u16(cod, token_start + 5).unwrap_or(0);
+            let value = if op2mode == 0xC0 || op2mode == 0xC2 {
+                state_u16(&state, op2)
+            } else {
+                op2
+            };
+            let cur = state_u16(&state, op1);
+            let next = match operator {
+                0xF5 => Some(value),
+                0xF6 => Some(cur.wrapping_add(value)),
+                0xF7 => Some(cur.wrapping_sub(value)),
+                _ => None,
+            };
+            if let Some(v) = next {
+                state_set_u16(&mut state, op1, v);
+            }
+        }
+        if !mode1 && BITMASK_5.contains(&op) {
+            let mut p = token_start + 1;
+            let clear = cod.get(p) == Some(&0xA1);
+            if clear {
+                p += 1;
+            }
+            if p + 4 <= end {
+                let op1 = read_u16(cod, p).unwrap_or(0);
+                let mask = read_u16(cod, p + 2).unwrap_or(0);
+                let cur = state_u16(&state, op1);
+                let next = if clear { cur & !mask } else { cur | mask };
+                state_set_u16(&mut state, op1, next);
+            }
+        }
+        if !mode1 && ASSIGN_5.contains(&op) && token_start + 5 <= end {
+            let op1 = read_u16(cod, token_start + 1).unwrap_or(0);
+            let value = read_u16(cod, token_start + 3).unwrap_or(0);
+            state_set_u16(&mut state, op1, value);
+        }
+
+        if op == OP_TEXT {
+            let location_offset = actor.map(|a| state_u16(&state, a.wrapping_add(LOCATION_FIELD)));
+            line_states.push(LineState {
+                offset: token_start,
+                actor_offset: actor,
+                location_offset,
+            });
+            match decode_text(cod, token_start, end) {
+                Some((_, next)) => {
+                    pos = next;
+                    continue;
+                }
+                None => {
+                    halted = ExecutionHalt::InvalidOpcode {
+                        offset: token_start,
+                        byte: op,
+                    };
+                    break;
+                }
+            }
+        }
+        if VAR_TERMINATED.contains(&op) {
+            pos = scan_zero_word(cod, token_start + 1, end);
+            continue;
+        }
+
+        let len = if b1 & 0x80 != 0 {
+            let mut l = b0 as usize;
+            match b1 {
+                0xFF => mode1 = true,
+                0xFE => mode1 = false,
+                0xFD | 0xFB => {
+                    if cod.get(token_start + 1) == Some(&0xA1) {
+                        l += 1;
+                    }
+                }
+                _ => {}
+            }
+            l.max(1)
+        } else {
+            (if mode1 { b1 } else { b0 } as usize).max(1)
+        };
+        pos = (token_start + len).min(end);
+    }
+
+    ExecutionTrace {
+        line_states,
+        branch_events,
+        steps,
+        halted,
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -698,6 +1056,81 @@ mod tests {
     }
 
     #[test]
+    fn execution_trace_branches_on_failed_mode1_comparison() {
+        let actor = 0x0100u16;
+        let location_field = actor + LOCATION_FIELD;
+        let mut var = vec![0; 0x0200];
+        state_set_u16(&mut var, location_field, 0x1111);
+
+        let mut cod = Vec::new();
+        push_actor_ref(&mut cod, actor);
+        let a0_offset = cod.len();
+        cod.push(0xA0);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        cod.push(0xC0);
+        cod.extend_from_slice(&location_field.to_le_bytes());
+        cod.push(0xF5);
+        cod.push(0xC1);
+        cod.extend_from_slice(&0x2222u16.to_le_bytes());
+        push_empty_text(&mut cod);
+        let target = cod.len() as u16;
+        cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xFF);
+
+        let trace = execute_trace(&cod, &var);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 1);
+        assert_eq!(trace.line_states[0].offset, target as usize);
+        assert_eq!(trace.line_states[0].location_offset, Some(0x1111));
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == a0_offset + 3
+                && event.opcode == 0xC0
+                && event.branch_taken
+                && event.condition_passed == Some(false)
+                && event.target == Some(target)
+        }));
+    }
+
+    #[test]
+    fn execution_trace_keeps_successful_condition_block_lines() {
+        let actor = 0x0100u16;
+        let location_field = actor + LOCATION_FIELD;
+        let mut var = vec![0; 0x0200];
+        state_set_u16(&mut var, location_field, 0x1111);
+
+        let mut cod = Vec::new();
+        push_actor_ref(&mut cod, actor);
+        let a0_offset = cod.len();
+        cod.push(0xA0);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        cod.push(0xC0);
+        cod.extend_from_slice(&location_field.to_le_bytes());
+        cod.push(0xF5);
+        cod.push(0xC1);
+        cod.extend_from_slice(&0x1111u16.to_le_bytes());
+        let first_text = cod.len();
+        push_empty_text(&mut cod);
+        cod.push(0xA1);
+        let target = cod.len() as u16;
+        cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xFF);
+
+        let trace = execute_trace(&cod, &var);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 2);
+        assert_eq!(trace.line_states[0].offset, first_text);
+        assert_eq!(trace.line_states[1].offset, target as usize);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == a0_offset + 3
+                && event.opcode == 0xC0
+                && !event.branch_taken
+                && event.condition_passed == Some(true)
+        }));
+    }
+
+    #[test]
     fn emits_state_changes_on_transition_only() {
         let lines = vec![
             LineInput {
@@ -785,6 +1218,32 @@ mod tests {
                 eprintln!(
                     "SCRIPT{idx}: {} lines, {with_loc} with a runtime location",
                     states.len()
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn execution_trace_reaches_end_marker_for_real_scripts_if_present() {
+        for idx in 1..=5 {
+            for prefix in ["output/scripts", "../output/scripts"] {
+                let cp = format!("{prefix}/SCRIPT{idx}.COD");
+                let vp = format!("{prefix}/SCRIPT{idx}.VAR");
+                let (Ok(cod), Ok(var)) = (std::fs::read(&cp), std::fs::read(&vp)) else {
+                    continue;
+                };
+                let trace = execute_trace(&cod, &var);
+                eprintln!(
+                    "SCRIPT{idx}: {} executed lines, {} branch events, {} steps, {:?}",
+                    trace.line_states.len(),
+                    trace.branch_events.len(),
+                    trace.steps,
+                    trace.halted
+                );
+                assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+                assert!(
+                    !trace.branch_events.is_empty(),
+                    "{cp} should exercise branch/control events"
                 );
             }
         }

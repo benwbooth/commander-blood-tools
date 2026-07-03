@@ -338,14 +338,26 @@ fn opcode_metadata(opcode: u8, handler_file_offset: usize) -> OpcodeMetadata {
         0xa0 => OpcodeMetadata {
             mnemonic: "control_a0",
             family: "control-flow",
-            rust_status: "not-ported",
-            notes: "block/control token; exact A0/A1 runtime control semantics remain unresolved",
+            rust_status: "execution-trace-ported",
+            notes: "condition block start; Rust execute_trace models the A0 target stack used by branch helper 0x6462",
         },
         0xa1 => OpcodeMetadata {
             mnemonic: "control_a1",
             family: "control-flow",
-            rust_status: "token-walk-only",
-            notes: "mode-control token; token walker models length/mode effect",
+            rust_status: "execution-trace-ported",
+            notes: "condition block end; Rust execute_trace models the DOS stack-pop behavior while the token walker models length/mode effect",
+        },
+        0xa4 => OpcodeMetadata {
+            mnemonic: "jump",
+            family: "control-flow",
+            rust_status: "execution-trace-ported",
+            notes: "direct SI jump to the u16 operand; modeled by execute_trace",
+        },
+        0xa9 => OpcodeMetadata {
+            mnemonic: "jump_or_condition_reset",
+            family: "control-flow",
+            rust_status: "execution-trace-ported",
+            notes: "flagged direct jump / condition-stack reset; modeled by execute_trace for inspected script paths",
         },
         vm::OP_TEXT => OpcodeMetadata {
             mnemonic: "text",
@@ -363,20 +375,20 @@ fn opcode_metadata(opcode: u8, handler_file_offset: usize) -> OpcodeMetadata {
             0x006863 => OpcodeMetadata {
                 mnemonic: "state_assign_or_signed_compare",
                 family: "state-assign-compare",
-                rust_status: "mode0-mutation-ported",
-                notes: "B1/B4/B5/B6/BE/BF/C0 family; Rust linear interpreter applies mode0 F5=set, F6=add, F7=sub and treats branch-mode comparisons as non-mutating until PC control flow is modeled",
+                rust_status: "execution-trace-ported",
+                notes: "B1/B4/B5/B6/BE/BF/C0 family; Rust applies mode0 mutations and execute_trace evaluates mode1 signed comparisons through the A0/A1 branch stack",
             },
             0x006902 => OpcodeMetadata {
                 mnemonic: "bitmask_set_or_test",
                 family: "bitmask-set-test",
-                rust_status: "mode0-mutation-ported",
-                notes: "AE/B0 family; Rust linear interpreter applies mode0 bit set/clear mutations and leaves branch-mode bit tests for the future PC control-flow model",
+                rust_status: "execution-trace-ported",
+                notes: "AE/B0 family; Rust applies mode0 bit set/clear mutations and execute_trace evaluates mode1 bit tests with optional A1 inversion",
             },
             0x006946 => OpcodeMetadata {
                 mnemonic: "equality_assign_or_test",
                 family: "equality-assign",
-                rust_status: "mode0-mutation-ported",
-                notes: "AD/AF/B2/B3/BA/BB/BC family; Rust linear interpreter applies mode0 state assignments and leaves equality branch tests for the future PC control-flow model",
+                rust_status: "execution-trace-ported",
+                notes: "AD/AF/B2/B3/BA/BB/BC family; Rust applies mode0 assignments and execute_trace evaluates mode1 equality/inversion except the gs:0x674e-to-0xffff RHS remap is still pending",
             },
             0x006aa7 => OpcodeMetadata {
                 mnemonic: "bit_set_or_test",

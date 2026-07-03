@@ -23,6 +23,7 @@ fn run() -> anyhow::Result<()> {
             struct VmInspection {
                 tokens: Vec<commander_blood_tools::vm::VmToken>,
                 line_states: Option<Vec<commander_blood_tools::vm::LineState>>,
+                execution_trace: Option<commander_blood_tools::vm::ExecutionTrace>,
             }
 
             let cod_path = args
@@ -30,16 +31,19 @@ fn run() -> anyhow::Result<()> {
                 .ok_or_else(|| anyhow::anyhow!("usage: inspect-vm <SCRIPT.COD> [SCRIPT.VAR]"))?;
             let cod = std::fs::read(&cod_path)?;
             let tokens = commander_blood_tools::vm::walk(&cod, 0, cod.len());
-            let line_states = args
-                .next()
-                .map(std::fs::read)
-                .transpose()?
-                .map(|var| commander_blood_tools::vm::interpret_line_states(&cod, &var));
+            let var = args.next().map(std::fs::read).transpose()?;
+            let line_states = var
+                .as_ref()
+                .map(|var| commander_blood_tools::vm::interpret_line_states(&cod, var));
+            let execution_trace = var
+                .as_ref()
+                .map(|var| commander_blood_tools::vm::execute_trace(&cod, var));
             println!(
                 "{}",
                 serde_json::to_string_pretty(&VmInspection {
                     tokens,
                     line_states,
+                    execution_trace,
                 })?
             );
             Ok(())

@@ -51,8 +51,8 @@ character/background/music guessing.
 - `src/extract/` parses and exports many media formats already:
   `BLOOD.DAT`, HNM, SND/VOC, DESCRIPT, SCRIPT dictionaries, dialogue manifests,
   and video/audio composites.
-- `src/vm.rs` contains the first Rust implementation of the recovered
-  token decoder and a bounded state interpreter.
+- `src/vm.rs` contains the Rust implementation of the recovered token decoder,
+  bounded state interpreter, and first branch-aware execution trace.
 - `re/REVERSE.md` contains the active binary map, VM notes, renderer notes,
   subtitle timing, and known dead ends.
 - `re/tools/` contains repeatable binary inspection helpers.

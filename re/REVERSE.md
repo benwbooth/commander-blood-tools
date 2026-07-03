@@ -548,10 +548,31 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       (`state[actor+24]` → DESCRIPT) over the static initial one, with no
       hardcoded fallback. **Shipped result: background coverage 56% → 61%** in the
       exported `script-speech.tsv` / videos.
-- [ ] Further gains (optional): add 0xAF-family conditional/branch *evaluation*
-      by modeling the PC/branch helper at 0x6462. The current linear pass applies
-      mode-0 mutations but does not choose branch targets. Bounded by the ~22%
-      no-speaker lines (many are legitimately narrator/locationless).
+- [x] Ported the first branch-aware execution trace to Rust (`vm::execute_trace`),
+      grounded in the A0/A1/0x6462 control stack:
+      - A0 @0x6559: `gs:0x67AD=1`, push the u16 target operand into the stack at
+        `gs:0x6820 + gs:0x6884`, then `gs:0x6884 += 2`.
+      - A1 @0x6572: `gs:0x67AD=0`, pop one stack slot only when
+        `gs:0x6884 != 2` (the first slot remains as the current block target).
+      - branch-fail helper @0x6462: `gs:0x6884 -= 2`; `si = [0x6820+gs:0x6884]`;
+        `gs:0x67AD=0`.
+      - A4 @0x65DB and A9 @0x6830 direct jump/reset behavior is modeled for
+        inspected script paths.
+      `execute_trace` now evaluates mode-1 conditionals for the 0x6863 signed
+      compare family, 0x6902 bitmask family, and 0x6946 equality family, while
+      retaining the linear `interpret_line_states` path for all-possible-line
+      manifests. Real-script smoke via `inspect-vm <COD> <VAR>` reaches
+      `EndMarker` for all scripts: SCRIPT1 102 executed lines / 38 branch events;
+      SCRIPT2 169 / 327; SCRIPT3 327 / 553; SCRIPT4 145 / 229; SCRIPT5 258 / 387.
+      Caveat: the DOS 0x6946 mode-1 handler remaps RHS `gs:0x674E` to `0xFFFF`
+      before equality comparison; `execute_trace` does not yet receive that
+      runtime special-object value, so that remap remains to wire in.
+- [ ] Further gains: wire branch-aware execution into comprehensive dialogue
+      generation without dropping alternate branches. The current exporter still
+      uses the linear all-lines path because complete video coverage needs branch
+      enumeration or scenario selection, not a single initial-state execution.
+      Bounded by the ~22% no-speaker lines (many are legitimately
+      narrator/locationless).
 - [x] Define the VM-event schema (`SceneEvent`: SetBackground, PlayMusic,
       ShowSpeaker, PlayVoice, PlayTalkHnm, DrawSubtitle, PlayChatter, Clear) +
       `emit_scene_events()` emitter in `src/vm.rs`, emitting state-change
@@ -576,9 +597,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       callback `lcall [0xcdf]`, but the formula is confirmed by the +9 reader +
       player + export-data distribution.)
 - [ ] Remaining for *full* faithfulness: replace the `(script,function)` grouping
-      itself with execution-order walking — needs the control-flow-interpreting
-      VM (linear length-stepping desyncs at branches; see `vm.rs` notes). The
-      event IR is in place for when that lands.
+      itself with branch-aware execution-order dialogue runs. The event IR and
+      `execute_trace` are in place; the next renderer step is branch enumeration
+      or scenario-selected execution so comprehensive videos do not collapse to
+      only the default initial-state path.
 
 ### Oracle (PARKED — user chose to skip automated capture)
 
