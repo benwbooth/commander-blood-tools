@@ -998,6 +998,37 @@ pub(super) fn disassemble_function(
             continue;
         }
 
+        if pos + 3 < function_end && cod[pos] == vm::OP_BIT_FLAG {
+            push_raw_disassembly(script, function_name, cod, &mut rows, raw_start.take(), pos);
+            let clear = cod.get(pos + 1) == Some(&0xA1);
+            let operand_pos = pos + 1 + usize::from(clear);
+            if operand_pos + 2 < function_end {
+                let flag_offset = u16::from_le_bytes([cod[operand_pos], cod[operand_pos + 1]]);
+                let bit_index = cod[operand_pos + 2];
+                let byte_offset = vm::bit_flag_byte_offset(flag_offset, bit_index);
+                let mask = vm::bit_flag_mask(bit_index);
+                let len = 4 + usize::from(clear);
+                rows.push(ScriptDisassemblyLine {
+                    script: script.to_string(),
+                    function_name: function_name.to_string(),
+                    offset: pos,
+                    len,
+                    opcode: "b7".to_string(),
+                    mnemonic: "bit_flag".to_string(),
+                    operands: format!(
+                        "ref=0x{flag_offset:04x} bit={bit_index} byte=0x{byte_offset:04x} mask=0x{mask:02x} action={}",
+                        if clear { "clear_or_invert_test" } else { "set_or_test" }
+                    ),
+                    actor_record: current_actor
+                        .as_ref()
+                        .map(|actor| actor.record_name.clone()),
+                    text: None,
+                });
+                pos += len;
+                continue;
+            }
+        }
+
         if pos + 2 < function_end && cod[pos] == 0xc9 {
             push_raw_disassembly(script, function_name, cod, &mut rows, raw_start.take(), pos);
             let addr = u16::from_le_bytes([cod[pos + 1], cod[pos + 2]]);
@@ -2190,7 +2221,7 @@ pub(super) fn write_script_dialogue_manifest(
     ordered.sort_by(|a, b| {
         let oa = a.1.first().map(|l| l.sequence_index).unwrap_or(usize::MAX);
         let ob = b.1.first().map(|l| l.sequence_index).unwrap_or(usize::MAX);
-        (a.0 .0.as_str(), a.0 .2.as_str(), oa).cmp(&(b.0 .0.as_str(), b.0 .2.as_str(), ob))
+        (a.0.0.as_str(), a.0.2.as_str(), oa).cmp(&(b.0.0.as_str(), b.0.2.as_str(), ob))
     });
 
     let mut file = File::create(out_path)?;
@@ -2885,14 +2916,16 @@ mod tests {
         let _ = fs::remove_dir_all(&root);
 
         assert_eq!(rows.len(), 2);
-        assert!(rows
-            .iter()
-            .all(|row| row.scenario_id.as_deref() == Some("SCRIPT1-branch-0001")));
+        assert!(
+            rows.iter()
+                .all(|row| row.scenario_id.as_deref() == Some("SCRIPT1-branch-0001"))
+        );
         assert_eq!(rows[0].sequence_index, 0);
         assert_eq!(rows[1].sequence_index, 1);
-        assert!(rows
-            .iter()
-            .all(|row| row.source.contains("execute_trace_with_overrides")));
+        assert!(
+            rows.iter()
+                .all(|row| row.source.contains("execute_trace_with_overrides"))
+        );
 
         let path = std::env::temp_dir().join(format!(
             "commander-blood-branch-scenario-dialogue-{}.tsv",
@@ -2934,8 +2967,10 @@ mod tests {
         let manifest = fs::read_to_string(&path).expect("read branch scenario runs");
         let _ = fs::remove_file(&path);
         assert!(manifest.contains("SCRIPT2-branch-0001\tSCRIPT2-branch-0001-run-0001"));
-        assert!(manifest
-            .contains("branch-scenario-dialogue-run - script2-branch-0001 - 0001 - room1.mp4"));
+        assert!(
+            manifest
+                .contains("branch-scenario-dialogue-run - script2-branch-0001 - 0001 - room1.mp4")
+        );
     }
 
     #[test]
@@ -2945,7 +2980,7 @@ mod tests {
         let cod = [
             0x01, 0x02, 0xc4, 0x3a, 0x00, 0x00, 0x00, 0xa6, 0x34, 0x12, 0x01, 0x00, 0x80, 0x01,
             0x00, 0x00, 0x00, 0xc3, 0x3a, 0x00, 0x28, 0x00, 0xc6, 0x8e, 0x10, 0x52, 0x10, 0xc9,
-            0x3a, 0x00, 0x03,
+            0x3a, 0x00, 0xb7, 0x10, 0x00, 0x09, 0x03,
         ];
         let mut actors = HashMap::new();
         actors.insert(
@@ -2961,21 +2996,32 @@ mod tests {
         );
 
         let rows = disassemble_function("SCRIPTX", "func", &cod, 0, cod.len(), &words, &actors);
-        assert!(rows
-            .iter()
-            .any(|row| row.mnemonic == "actor_ref" && row.len == 5));
-        assert!(rows
-            .iter()
-            .any(|row| row.mnemonic == "text_call" && row.text.as_deref() == Some("hello")));
-        assert!(rows
-            .iter()
-            .any(|row| row.mnemonic == "record_link" && row.len == 5));
-        assert!(rows
-            .iter()
-            .any(|row| row.mnemonic == "record_entry" && row.opcode == "c6" && row.len == 5));
-        assert!(rows
-            .iter()
-            .any(|row| row.mnemonic == "record_clear" && row.len == 3));
+        assert!(
+            rows.iter()
+                .any(|row| row.mnemonic == "actor_ref" && row.len == 5)
+        );
+        assert!(
+            rows.iter()
+                .any(|row| row.mnemonic == "text_call" && row.text.as_deref() == Some("hello"))
+        );
+        assert!(
+            rows.iter()
+                .any(|row| row.mnemonic == "record_link" && row.len == 5)
+        );
+        assert!(
+            rows.iter()
+                .any(|row| row.mnemonic == "record_entry" && row.opcode == "c6" && row.len == 5)
+        );
+        assert!(
+            rows.iter()
+                .any(|row| row.mnemonic == "record_clear" && row.len == 3)
+        );
+        assert!(rows.iter().any(|row| {
+            row.mnemonic == "bit_flag"
+                && row.len == 4
+                && row.operands.contains("byte=0x0011")
+                && row.operands.contains("mask=0x40")
+        }));
         assert_eq!(rows[0].function_name, "func");
     }
 }

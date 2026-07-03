@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::Path;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use serde::Serialize;
 
 use crate::vm;
@@ -507,8 +507,8 @@ fn opcode_metadata(opcode: u8, handler_file_offset: usize) -> OpcodeMetadata {
             0x006aa7 => OpcodeMetadata {
                 mnemonic: "bit_set_or_test",
                 family: "bit-set-test",
-                rust_status: "not-ported",
-                notes: "B7 bit set/test family",
+                rust_status: "execution-trace-ported",
+                notes: "B7 high-bit-first byte flag set/clear/test family; Rust applies mode0 mutations and execute_trace evaluates mode1 tests with optional A1 inversion",
             },
             0x006b06 => OpcodeMetadata {
                 mnemonic: "pair_record_assign_or_compare",
@@ -675,7 +675,7 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         offset: Some(0x1707),
         ds_offset: None,
         kind: "script-vm",
-        comment: "B7 bit set/test family",
+        comment: "B7 high-bit-first byte flag set/clear/test family",
     },
     BinarySymbol {
         name: "vm_pair_record_6b06",

@@ -371,8 +371,28 @@ and `0xB529` both reset `gs:0x1FAB`,`gs:0x6788` (→0xFFFF) plus the display gat
 **Remaining for full accuracy:** (1) verify whether audible `tb.snd` chatter is
 triggered by a dynamic callback rather than the now-decoded `gs:0x67BB` hold
 flag; (2) decode any remaining line-record display flags that affect
-subtitle/talk-HNM routing; (3) map background/music/HNM opcodes among
-0xB7/0xC1–0xC9 handlers; (4) `gs:0x6724` line-record layout.
+subtitle/talk-HNM routing; (3) map the remaining C1/C2/CA/CB/CD line-state and
+global-condition handlers; (4) `gs:0x6724` line-record layout.
+
+### 0xB7 bit-flag handler @ file 0x6AA7 — state flag set/test (DECODED)
+
+`0xB7` is a 4-byte state/line-record bit flag operation, with an optional `0xA1`
+prefix after the opcode. Shape:
+
+    B7 [A1?] <base:u16> <bit:u8>
+
+The handler computes `byte = base + (bit >> 3)` and uses **high-bit-first**
+numbering inside each byte: bit 0 = mask `0x80`, bit 1 = `0x40`, ..., bit 7 =
+`0x01`.
+
+- Mode 0 (`gs:0x67AD == 0`): no prefix sets the bit (`or es:[byte],mask`); `A1`
+  clears it (`and es:[byte],~mask`).
+- Mode 1: no prefix tests that the bit is set; `A1` tests that it is clear. A
+  failed test calls branch helper `0x6462`.
+
+Shipped scripts use true `B7` tokens in SCRIPT2 and SCRIPT3. Rust now exposes
+them as `VmToken::BitFlag` and `execute_trace` applies/evaluates the same
+high-bit-first bit semantics.
 
 ### 0xC3 record-link handler @ file 0x6EEE — relation state (DECODED)
 
@@ -581,7 +601,11 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       now decoded as post-reveal hold state rather than a direct SND caller.
 - [ ] Map the presentation opcodes among the handler table: which set background,
       music (mus.snd), HNM actor, voice (son.snd), wait, clear. Start with the
-      0xB7/0xC1–0xC9 handlers (distinct, non-family) and 0xC4 actor @0x6C7E.
+      remaining C1/C2/CA/CB/CD handlers and presentation callbacks rather than
+      expecting direct media-play opcodes.
+- [x] Port 0xB7 bit-flag semantics. `src/vm.rs` exposes
+      `VmToken::BitFlag`, applies high-bit-first set/clear writes in mode 0, and
+      `execute_trace` evaluates mode-1 bit tests with optional `A1` inversion.
 - [ ] Decode the cs:0x0F29 and cs:0x06D4 sub-dispatch tables; document the
       24-byte actor/object struct iterated at 0x7E09.
 - [x] Reconcile 0xC4 length and operands. The handler consumes two u16 operands,

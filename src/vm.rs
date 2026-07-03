@@ -91,6 +91,7 @@ pub const OPCODE_DESC: [(u8, u8); 0x34] = [
 pub const OP_MIN: u8 = 0xA0;
 pub const OP_MAX: u8 = 0xD3;
 pub const OP_TEXT: u8 = 0xA6;
+pub const OP_BIT_FLAG: u8 = 0xB7;
 pub const OP_RECORD_LINK: u8 = 0xC3;
 pub const OP_ACTOR: u8 = 0xC4;
 pub const OP_RECORD_ENTRY_MIN: u8 = 0xC5;
@@ -129,11 +130,17 @@ pub fn is_record_entry_opcode(opcode: u8) -> bool {
 }
 
 pub fn record_entry_stored_related_offset(opcode: u8, operand: u16) -> u16 {
-    if opcode == 0xC8 {
-        0
-    } else {
-        operand
-    }
+    if opcode == 0xC8 { 0 } else { operand }
+}
+
+/// `0xB7` addresses bits high-bit-first inside each byte: bit 0 is mask 0x80,
+/// bit 7 is mask 0x01, then bit 8 starts the next byte at mask 0x80.
+pub fn bit_flag_byte_offset(base_offset: u16, bit_index: u8) -> u16 {
+    base_offset.wrapping_add((bit_index >> 3) as u16)
+}
+
+pub fn bit_flag_mask(bit_index: u8) -> u8 {
+    0x80u8 >> (bit_index & 7)
 }
 
 /// Port the reveal-complete hold timer at `BLOODPRG.EXE` `0x94D4..0x94DD`:
@@ -237,6 +244,19 @@ pub enum VmToken {
         record_offset: u16,
         len: usize,
     },
+    /// `0xB7` bit flag set/clear/test over the line-record/state area.
+    ///
+    /// Optional `0xA1` after the opcode inverts mode-1 tests and turns mode-0
+    /// writes into clears. Bits are numbered high-bit-first inside a byte.
+    BitFlag {
+        offset: usize,
+        flag_offset: u16,
+        bit_index: u8,
+        byte_offset: u16,
+        mask: u8,
+        clear: bool,
+        len: usize,
+    },
     /// Any other opcode; raw length recorded.
     Op {
         offset: usize,
@@ -318,7 +338,21 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
             len = (if mode1 { b1 } else { b0 } as usize).max(1);
         }
 
-        if op == OP_RECORD_LINK {
+        if op == OP_BIT_FLAG {
+            let clear = cod.get(pos + 1) == Some(&0xA1);
+            let operand_pos = pos + 1 + usize::from(clear);
+            let flag_offset = read_u16(cod, operand_pos).unwrap_or(0);
+            let bit_index = cod.get(operand_pos + 2).copied().unwrap_or(0);
+            out.push(VmToken::BitFlag {
+                offset: pos,
+                flag_offset,
+                bit_index,
+                byte_offset: bit_flag_byte_offset(flag_offset, bit_index),
+                mask: bit_flag_mask(bit_index),
+                clear,
+                len,
+            });
+        } else if op == OP_RECORD_LINK {
             let record_offset = read_u16(cod, pos + 1).unwrap_or(0);
             let related_record_offset = read_u16(cod, pos + 3).unwrap_or(0);
             out.push(VmToken::RecordLink {
@@ -439,6 +473,8 @@ fn read_u16(cod: &[u8], at: usize) -> Option<u16> {
 //       direct `state[op1] = op2` in mode 0. The DOS handler also updates
 //       table-side bookkeeping for sentinel object values; that side effect is
 //       not needed for line-location recovery and is not modeled here.
+//   * 0xB7, 4 bytes plus optional A1 prefix:
+//       set/clear/test one high-bit-first byte flag in the state area.
 //   * 0xC4: actor/record reference. The first operand is the destination record
 //       offset and doubles as object_offset + 0x3A (talk field) for speaker
 //       tracking; the second operand is a related record offset consumed by the
@@ -523,6 +559,16 @@ fn state_set_u16(state: &mut [u8], addr: u16, val: u16) {
     if a + 1 < state.len() {
         state[a] = (val & 0xFF) as u8;
         state[a + 1] = (val >> 8) as u8;
+    }
+}
+
+fn state_u8(state: &[u8], addr: u16) -> u8 {
+    state.get(addr as usize).copied().unwrap_or(0)
+}
+
+fn state_set_u8(state: &mut [u8], addr: u16, val: u8) {
+    if let Some(slot) = state.get_mut(addr as usize) {
+        *slot = val;
     }
 }
 
@@ -612,6 +658,19 @@ pub fn interpret_line_states(cod: &[u8], var: &[u8]) -> Vec<LineState> {
             let op1 = read_u16(cod, pos + 1).unwrap_or(0);
             let value = read_u16(cod, pos + 3).unwrap_or(0);
             state_set_u16(&mut state, op1, value);
+        }
+        if !mode1 && op == OP_BIT_FLAG {
+            let clear = cod.get(pos + 1) == Some(&0xA1);
+            let p = pos + 1 + usize::from(clear);
+            if p + 3 <= end {
+                let flag_offset = read_u16(cod, p).unwrap_or(0);
+                let bit_index = cod[p + 2];
+                let byte_offset = bit_flag_byte_offset(flag_offset, bit_index);
+                let mask = bit_flag_mask(bit_index);
+                let cur = state_u8(&state, byte_offset);
+                let next = if clear { cur & !mask } else { cur | mask };
+                state_set_u8(&mut state, byte_offset, next);
+            }
         }
 
         if op == OP_TEXT {
@@ -833,6 +892,16 @@ pub fn execute_trace_with_overrides(
                 let passed = if inverted { !equal } else { equal };
                 condition_passed = Some(passed);
             }
+        } else if mode1 && op == OP_BIT_FLAG {
+            let inverted = cod.get(token_start + 1) == Some(&0xA1);
+            let p = token_start + 1 + usize::from(inverted);
+            if p + 3 <= end {
+                let flag_offset = read_u16(cod, p).unwrap_or(0);
+                let bit_index = cod[p + 2];
+                let byte_offset = bit_flag_byte_offset(flag_offset, bit_index);
+                let bit_set = state_u8(&state, byte_offset) & bit_flag_mask(bit_index) != 0;
+                condition_passed = Some(if inverted { !bit_set } else { bit_set });
+            }
         }
 
         let forced = overrides
@@ -937,6 +1006,19 @@ pub fn execute_trace_with_overrides(
             let op1 = read_u16(cod, token_start + 1).unwrap_or(0);
             let value = read_u16(cod, token_start + 3).unwrap_or(0);
             state_set_u16(&mut state, op1, value);
+        }
+        if !mode1 && op == OP_BIT_FLAG {
+            let clear = cod.get(token_start + 1) == Some(&0xA1);
+            let p = token_start + 1 + usize::from(clear);
+            if p + 3 <= end {
+                let flag_offset = read_u16(cod, p).unwrap_or(0);
+                let bit_index = cod[p + 2];
+                let byte_offset = bit_flag_byte_offset(flag_offset, bit_index);
+                let mask = bit_flag_mask(bit_index);
+                let cur = state_u8(&state, byte_offset);
+                let next = if clear { cur & !mask } else { cur | mask };
+                state_set_u8(&mut state, byte_offset, next);
+            }
         }
 
         if op == OP_TEXT {
@@ -1246,6 +1328,48 @@ mod tests {
     }
 
     #[test]
+    fn bit_flag_token_exposes_high_bit_first_mask() {
+        let cod = [
+            OP_BIT_FLAG,
+            0x10,
+            0x00,
+            0x00,
+            OP_BIT_FLAG,
+            0xA1,
+            0x10,
+            0x00,
+            0x09,
+            0xFF,
+        ];
+
+        let toks = walk(&cod, 0, cod.len());
+        assert_eq!(
+            toks[0],
+            VmToken::BitFlag {
+                offset: 0,
+                flag_offset: 0x0010,
+                bit_index: 0,
+                byte_offset: 0x0010,
+                mask: 0x80,
+                clear: false,
+                len: 4
+            }
+        );
+        assert_eq!(
+            toks[1],
+            VmToken::BitFlag {
+                offset: 4,
+                flag_offset: 0x0010,
+                bit_index: 9,
+                byte_offset: 0x0011,
+                mask: 0x40,
+                clear: true,
+                len: 5
+            }
+        );
+    }
+
+    #[test]
     fn record_clear_token_exposes_cleared_record() {
         let cod = [OP_RECORD_CLEAR, 0x84, 0x00, 0xFF];
 
@@ -1512,6 +1636,72 @@ mod tests {
                 && event.opcode == 0xC0
                 && !event.branch_taken
                 && event.condition_passed == Some(true)
+        }));
+    }
+
+    #[test]
+    fn execution_trace_evaluates_b7_bit_flag_conditions() {
+        let mut var = vec![0; 0x40];
+
+        let mut cod = Vec::new();
+        cod.push(OP_BIT_FLAG); // mode 0: set bit 1 => mask 0x40 at state[0x10]
+        cod.extend_from_slice(&0x0010u16.to_le_bytes());
+        cod.push(1);
+        let a0_offset = cod.len();
+        cod.push(0xA0);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        let condition_offset = cod.len();
+        cod.push(OP_BIT_FLAG); // mode 1: test the bit set above
+        cod.extend_from_slice(&0x0010u16.to_le_bytes());
+        cod.push(1);
+        let first_text = cod.len();
+        push_empty_text(&mut cod);
+        cod.push(0xA1);
+        let target = cod.len() as u16;
+        cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xFF);
+
+        let trace = execute_trace(&cod, &var);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 2);
+        assert_eq!(trace.line_states[0].offset, first_text);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == OP_BIT_FLAG
+                && !event.branch_taken
+                && event.condition_passed == Some(true)
+        }));
+
+        var[0x10] = 0x40;
+        let mut clear_cod = Vec::new();
+        clear_cod.push(OP_BIT_FLAG); // mode 0: clear the same bit via A1 prefix
+        clear_cod.push(0xA1);
+        clear_cod.extend_from_slice(&0x0010u16.to_le_bytes());
+        clear_cod.push(1);
+        let a0_offset = clear_cod.len();
+        clear_cod.push(0xA0);
+        clear_cod.extend_from_slice(&0u16.to_le_bytes());
+        let condition_offset = clear_cod.len();
+        clear_cod.push(OP_BIT_FLAG);
+        clear_cod.extend_from_slice(&0x0010u16.to_le_bytes());
+        clear_cod.push(1);
+        push_empty_text(&mut clear_cod);
+        let target = clear_cod.len() as u16;
+        clear_cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut clear_cod);
+        clear_cod.push(0xFF);
+
+        let trace = execute_trace(&clear_cod, &var);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 1);
+        assert_eq!(trace.line_states[0].offset, target as usize);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == OP_BIT_FLAG
+                && event.branch_taken
+                && event.condition_passed == Some(false)
+                && event.target == Some(target)
         }));
     }
 
