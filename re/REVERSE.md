@@ -866,8 +866,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `script-profile-runs.tsv` and `script-profile-executed-dialogue.tsv`
       preserve the DOS main-loop SCRIPT1->SCRIPT2->... handoff order using the
       binary-derived resource profile table.
-- [ ] Consume profile-sequence dialogue rows in the event renderer/video grouping,
-      replacing per-script grouping when generating game-ordered cutscenes.
+- [x] Consume profile-sequence dialogue rows in the event renderer/video grouping:
+      `profile-dialogue-run` MP4s group by global execution order instead of
+      per-script order, while the old per-script videos remain for comparison.
 - [ ] Decode the `gs:0x6724` per-line record layout (es:[di], es:[di+2] flags).
 - [ ] Verify audible `tb.snd` chatter trigger path, if any. `gs:0x67BB` itself is
       now decoded as post-reveal hold state rather than a direct SND caller.
@@ -1131,6 +1132,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `src/extract/script.rs` loads COD/VAR/DIC/DEB resources from the
       BLOODPRG.EXE profile table and emits run-level plus global-order dialogue
       TSVs for the default profile chain.
+- [x] Route profile-sequence rows into run-level videos:
+      `src/extract/character.rs` now renders `ScriptProfileDialogueRun`s through
+      the same VM event emitter as the existing dialogue videos, preserving
+      cross-profile global sequence order.
 - [x] Port the `gs:0x67BB` line-complete hold timers:
       `src/vm.rs` models `0x94D4..0x94DD` (`b35=aca*4`) and `0x7378..0x738C`
       (`b35=0x27cf*(aca/2)+6`) as checked helper functions. Labels and known

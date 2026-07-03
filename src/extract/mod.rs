@@ -276,6 +276,10 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         &script_profile_sequence.dialogue,
         &out_dir.join("script-profile-executed-dialogue.tsv"),
     )?;
+    write_script_profile_dialogue_runs_manifest(
+        &script_profile_sequence.dialogue,
+        &out_dir.join("script-profile-dialogue-runs.tsv"),
+    )?;
     write_script_dialogue_manifest(
         &script_executed_speech,
         &out_dir.join("script-dialogue-videos.tsv"),
@@ -496,6 +500,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     let mut snd_clips = 0u32;
     let mut char_videos = 0u32;
     let mut dialogue_run_videos = 0u32;
+    let mut profile_dialogue_run_videos = 0u32;
     let mut scenario_dialogue_run_videos = 0u32;
     for path in &snd_files {
         let rel = path.strip_prefix(&tmp_dat)?;
@@ -561,6 +566,21 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             }
             Err(e) => eprintln!("[dialogue runs ERROR] {e}"),
         }
+        match create_profile_dialogue_run_videos(
+            &tmp_dat,
+            &mp4_dir,
+            db,
+            &script_profile_sequence.dialogue,
+            subtitle_sfx.exists().then_some(subtitle_sfx.as_path()),
+        ) {
+            Ok(n) => {
+                profile_dialogue_run_videos = n;
+                if n > 0 {
+                    eprintln!("[profile dialogue runs] {n} profile-sequence video(s) created");
+                }
+            }
+            Err(e) => eprintln!("[profile dialogue runs ERROR] {e}"),
+        }
         match create_executed_dialogue_run_videos(
             &tmp_dat,
             &mp4_dir,
@@ -590,6 +610,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         || audio_converted > 0
         || snd_clips > 0
         || dialogue_run_videos > 0
+        || profile_dialogue_run_videos > 0
         || scenario_dialogue_run_videos > 0
     {
         eprintln!("Done!");
@@ -622,6 +643,12 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         if dialogue_run_videos > 0 {
             eprintln!(
                 "  {dialogue_run_videos} executed dialogue run videos -> {}",
+                mp4_dir.display()
+            );
+        }
+        if profile_dialogue_run_videos > 0 {
+            eprintln!(
+                "  {profile_dialogue_run_videos} profile-sequence dialogue run videos -> {}",
                 mp4_dir.display()
             );
         }
@@ -688,9 +715,9 @@ mod subtitle_sfx;
 
 use audio::*;
 use character::*;
-use commander_blood_tools::bloodprg::{BloodPrg, ScriptResourceProfile, SndEntryCallSite};
 #[cfg(test)]
 use commander_blood_tools::bloodprg::ScriptResourceProfileSlot;
+use commander_blood_tools::bloodprg::{BloodPrg, ScriptResourceProfile, SndEntryCallSite};
 use commander_blood_tools::snd::{SndBank, SndClip};
 use commander_blood_tools::vm;
 use dat::*;

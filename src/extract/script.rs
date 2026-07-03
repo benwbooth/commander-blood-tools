@@ -2369,6 +2369,72 @@ pub(super) fn write_script_profile_executed_speech_manifest(
     Ok(())
 }
 
+pub(super) fn write_script_profile_dialogue_runs_manifest(
+    rows: &[ScriptProfileExecutedSpeechLine],
+    out_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let runs = script_profile_dialogue_runs(rows);
+    let mut file = File::create(out_path)?;
+    writeln!(
+        file,
+        "sequence_id\trun_id\tmp4\tfirst_global_sequence\tlast_global_sequence\tfirst_profile_index\tlast_profile_index\tfirst_script\tlast_script\tbackground_record\tbackground_hnm\tbackground_music\tline_count\tvoiced_count\tactors\tclip_refs\tfirst_text"
+    )?;
+    for run in runs {
+        let run_id = profile_dialogue_run_id(&run);
+        let output_stem = profile_dialogue_run_output_stem(&run);
+        let actors = unique_join(
+            run.lines
+                .iter()
+                .filter_map(|line| line.row.actor_record.as_deref()),
+        );
+        let clip_refs = run
+            .lines
+            .iter()
+            .filter_map(|line| {
+                line.row.clip_index.map(|clip| {
+                    format!(
+                        "{}:{clip}",
+                        line.row.actor_record.as_deref().unwrap_or("noactor")
+                    )
+                })
+            })
+            .collect::<Vec<_>>()
+            .join(",");
+        let voiced_count = run
+            .lines
+            .iter()
+            .filter(|line| line.row.clip_index.is_some())
+            .count();
+        let first_text = run
+            .lines
+            .first()
+            .map(|line| clean_tsv(&line.row.text))
+            .unwrap_or_default();
+        writeln!(
+            file,
+            "{}\t{}\t{}.mp4\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            run.sequence_id,
+            run_id,
+            output_stem,
+            run.first_global_sequence,
+            run.last_global_sequence,
+            run.first_profile_index,
+            run.last_profile_index,
+            run.first_script,
+            run.last_script,
+            run.background_record.as_deref().unwrap_or(""),
+            run.background_hnm.as_deref().unwrap_or(""),
+            run.background_music.as_deref().unwrap_or(""),
+            run.lines.len(),
+            voiced_count,
+            actors,
+            clip_refs,
+            first_text
+        )?;
+    }
+    Ok(())
+}
+
 pub(super) fn write_script_disassembly_manifest(
     rows: &[ScriptDisassemblyLine],
     out_path: &Path,
@@ -2622,6 +2688,22 @@ pub(super) struct ScriptExecutedDialogueRun<'a> {
     pub(super) lines: Vec<&'a ScriptExecutedSpeechLine>,
 }
 
+#[derive(Debug)]
+pub(super) struct ScriptProfileDialogueRun<'a> {
+    pub(super) sequence_id: String,
+    pub(super) run_index: usize,
+    pub(super) first_global_sequence: usize,
+    pub(super) last_global_sequence: usize,
+    pub(super) first_profile_index: u16,
+    pub(super) last_profile_index: u16,
+    pub(super) first_script: String,
+    pub(super) last_script: String,
+    pub(super) background_record: Option<String>,
+    pub(super) background_hnm: Option<String>,
+    pub(super) background_music: Option<String>,
+    pub(super) lines: Vec<&'a ScriptProfileExecutedSpeechLine>,
+}
+
 fn script_dialogue_runs(rows: &[ScriptSpeechLine]) -> Vec<ScriptDialogueRun<'_>> {
     let mut ordered: Vec<&ScriptSpeechLine> = rows
         .iter()
@@ -2718,12 +2800,68 @@ pub(super) fn script_executed_dialogue_runs(
     runs
 }
 
+pub(super) fn script_profile_dialogue_runs(
+    rows: &[ScriptProfileExecutedSpeechLine],
+) -> Vec<ScriptProfileDialogueRun<'_>> {
+    let mut ordered: Vec<&ScriptProfileExecutedSpeechLine> = rows
+        .iter()
+        .filter(|row| row.row.clip_index.is_some() || !row.row.text.trim().is_empty())
+        .collect();
+    ordered.sort_by(|a, b| {
+        (a.sequence_id.as_str(), a.global_sequence_index)
+            .cmp(&(b.sequence_id.as_str(), b.global_sequence_index))
+    });
+
+    let mut runs: Vec<ScriptProfileDialogueRun<'_>> = Vec::new();
+    for row in ordered {
+        let same_run = runs.last().is_some_and(|run| {
+            run.sequence_id == row.sequence_id
+                && run.background_record == row.row.background_record
+                && run.background_hnm == row.row.background_hnm
+                && run.background_music == row.row.background_music
+        });
+        if same_run {
+            let run = runs.last_mut().expect("run exists");
+            run.last_global_sequence = row.global_sequence_index;
+            run.last_profile_index = row.profile_index;
+            run.last_script = row.row.script.clone();
+            run.lines.push(row);
+            continue;
+        }
+
+        let run_index = runs
+            .iter()
+            .filter(|run| run.sequence_id == row.sequence_id)
+            .count()
+            + 1;
+        runs.push(ScriptProfileDialogueRun {
+            sequence_id: row.sequence_id.clone(),
+            run_index,
+            first_global_sequence: row.global_sequence_index,
+            last_global_sequence: row.global_sequence_index,
+            first_profile_index: row.profile_index,
+            last_profile_index: row.profile_index,
+            first_script: row.row.script.clone(),
+            last_script: row.row.script.clone(),
+            background_record: row.row.background_record.clone(),
+            background_hnm: row.row.background_hnm.clone(),
+            background_music: row.row.background_music.clone(),
+            lines: vec![row],
+        });
+    }
+    runs
+}
+
 fn executed_dialogue_run_id(run: &ScriptExecutedDialogueRun<'_>) -> String {
     if let Some(scenario_id) = &run.scenario_id {
         format!("{scenario_id}-run-{:04}", run.run_index)
     } else {
         format!("{}-{:04}", run.script, run.run_index)
     }
+}
+
+pub(super) fn profile_dialogue_run_id(run: &ScriptProfileDialogueRun<'_>) -> String {
+    format!("{}-profile-run-{:04}", run.sequence_id, run.run_index)
 }
 
 pub(super) fn executed_dialogue_run_output_stem(run: &ScriptExecutedDialogueRun<'_>) -> String {
@@ -2747,6 +2885,20 @@ pub(super) fn executed_dialogue_run_output_stem(run: &ScriptExecutedDialogueRun<
             safe_file_stem(location)
         )
     }
+}
+
+pub(super) fn profile_dialogue_run_output_stem(run: &ScriptProfileDialogueRun<'_>) -> String {
+    let location = run
+        .background_record
+        .as_deref()
+        .or(run.background_hnm.as_deref())
+        .unwrap_or("nolocation");
+    format!(
+        "profile-dialogue-run - {} - {:04} - {}",
+        safe_file_stem(&run.sequence_id),
+        run.run_index,
+        safe_file_stem(location)
+    )
 }
 
 pub(super) fn write_script_executed_dialogue_runs_manifest(
@@ -3147,6 +3299,27 @@ mod tests {
                     name: format!("script{script_number}.{extension}"),
                 })
                 .collect(),
+        }
+    }
+
+    fn profile_speech_line(
+        global_sequence_index: usize,
+        profile_index: u16,
+        script: &str,
+        script_sequence_index: usize,
+        offset: usize,
+        actor: Option<&str>,
+        location: Option<&str>,
+        text: &str,
+    ) -> ScriptProfileExecutedSpeechLine {
+        ScriptProfileExecutedSpeechLine {
+            sequence_id: "default".to_string(),
+            global_sequence_index,
+            run_index: profile_index as usize,
+            profile_index,
+            d2_operand: profile_index as u8 + 1,
+            script_sequence_index,
+            row: executed_speech_line(script, script_sequence_index, offset, actor, location, text),
         }
     }
 
@@ -3718,6 +3891,67 @@ mod tests {
         assert!(dialogue_manifest.contains("default\t0\t1\t1\t2\tSCRIPT2"));
 
         let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn profile_dialogue_runs_follow_global_sequence_order() {
+        let rows = vec![
+            profile_speech_line(
+                1,
+                1,
+                "SCRIPT2",
+                0,
+                0x50,
+                Some("Actor_B"),
+                Some("Room1"),
+                "b",
+            ),
+            profile_speech_line(
+                0,
+                0,
+                "SCRIPT1",
+                0,
+                0x10,
+                Some("Actor_A"),
+                Some("Room1"),
+                "a",
+            ),
+            profile_speech_line(
+                2,
+                2,
+                "SCRIPT3",
+                0,
+                0x30,
+                Some("Actor_A"),
+                Some("Room2"),
+                "c",
+            ),
+        ];
+
+        let runs = script_profile_dialogue_runs(&rows);
+        assert_eq!(runs.len(), 2);
+        assert_eq!(runs[0].sequence_id, "default");
+        assert_eq!(runs[0].run_index, 1);
+        assert_eq!(runs[0].first_global_sequence, 0);
+        assert_eq!(runs[0].last_global_sequence, 1);
+        assert_eq!(runs[0].first_script, "SCRIPT1");
+        assert_eq!(runs[0].last_script, "SCRIPT2");
+        assert_eq!(runs[0].lines[0].row.script, "SCRIPT1");
+        assert_eq!(runs[0].lines[1].row.script, "SCRIPT2");
+        assert_eq!(runs[1].run_index, 2);
+        assert_eq!(runs[1].background_record.as_deref(), Some("Room2"));
+
+        let path = std::env::temp_dir().join(format!(
+            "commander-blood-profile-dialogue-runs-{}.tsv",
+            std::process::id()
+        ));
+        write_script_profile_dialogue_runs_manifest(&rows, &path)
+            .expect("write profile dialogue runs");
+        let manifest = fs::read_to_string(&path).expect("read profile dialogue runs");
+        let _ = fs::remove_file(&path);
+        assert!(manifest.starts_with("sequence_id\trun_id\tmp4"));
+        assert!(manifest.contains("default-profile-run-0001"));
+        assert!(manifest.contains("SCRIPT1\tSCRIPT2"));
     }
 
     #[test]

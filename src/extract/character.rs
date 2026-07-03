@@ -505,6 +505,33 @@ pub(super) fn create_executed_dialogue_run_videos(
     Ok(created)
 }
 
+pub(super) fn create_profile_dialogue_run_videos(
+    dat_dir: &Path,
+    mp4_dir: &Path,
+    descript_db: &DescriptDb,
+    script_speech: &[ScriptProfileExecutedSpeechLine],
+    subtitle_sfx_path: Option<&Path>,
+) -> Result<u32, Box<dyn Error>> {
+    let runs = script_profile_dialogue_runs(script_speech);
+    let mut snd_cache: HashMap<PathBuf, SndBank> = HashMap::new();
+    let mut created = 0u32;
+
+    for run in runs {
+        if create_profile_dialogue_run_video(
+            dat_dir,
+            mp4_dir,
+            descript_db,
+            &run,
+            subtitle_sfx_path,
+            &mut snd_cache,
+        )? {
+            created += 1;
+        }
+    }
+
+    Ok(created)
+}
+
 fn create_executed_dialogue_run_video(
     dat_dir: &Path,
     mp4_dir: &Path,
@@ -584,6 +611,95 @@ fn create_executed_dialogue_run_video(
     } else {
         format!("{} run {}", run.script, run.run_index)
     };
+    render_dialogue_segments(
+        &mp4_out,
+        &output_stem,
+        &label,
+        dat_dir,
+        descript_db,
+        &segments,
+        ev_background_record.as_deref(),
+        ev_background.as_deref(),
+        ev_music,
+        subtitle_sfx_path,
+    )
+}
+
+fn create_profile_dialogue_run_video(
+    dat_dir: &Path,
+    mp4_dir: &Path,
+    descript_db: &DescriptDb,
+    run: &ScriptProfileDialogueRun<'_>,
+    subtitle_sfx_path: Option<&Path>,
+    snd_cache: &mut HashMap<PathBuf, SndBank>,
+) -> Result<bool, Box<dyn Error>> {
+    let inputs: Vec<vm::LineInput> = run
+        .lines
+        .iter()
+        .map(|line| vm::LineInput {
+            actor: line.row.actor_record.clone(),
+            background_hnm: line.row.background_hnm.clone(),
+            background_record: line.row.background_record.clone(),
+            background_music: line.row.background_music.clone(),
+            voice_selector: line.row.param0,
+            flags_b4: line.row.param1,
+            clip_index: line.row.clip_index,
+            text: line.row.text.clone(),
+        })
+        .collect();
+    let events = vm::emit_scene_events(&inputs);
+
+    let mut segments: Vec<DialogueSegment> = Vec::new();
+    let mut ev_background: Option<String> = None;
+    let mut ev_background_record: Option<String> = None;
+    let mut ev_music: Option<String> = None;
+    let mut current_actor: Option<String> = None;
+    let mut pending_clip: Option<(Option<String>, usize)> = None;
+
+    for event in &events {
+        match event {
+            vm::SceneEvent::SetBackground { hnm, record } => {
+                if ev_background.is_none() {
+                    ev_background = hnm.clone();
+                }
+                if ev_background_record.is_none() {
+                    ev_background_record = record.clone();
+                }
+            }
+            vm::SceneEvent::PlayMusic { music } => {
+                if ev_music.is_none() {
+                    ev_music = music.clone();
+                }
+            }
+            vm::SceneEvent::ShowSpeaker { actor } => current_actor = Some(actor.clone()),
+            vm::SceneEvent::PlayVoice { clip_index } => {
+                pending_clip = Some((current_actor.clone(), *clip_index));
+            }
+            vm::SceneEvent::DrawSubtitle { text, .. } => {
+                if let Some((Some(actor), clip_index)) = pending_clip.take() {
+                    if let Some(seg) = resolve_actor_voiced_segment(
+                        dat_dir,
+                        descript_db,
+                        snd_cache,
+                        &actor,
+                        clip_index,
+                        text,
+                    ) {
+                        segments.push(seg);
+                        continue;
+                    }
+                }
+                if !text.trim().is_empty() {
+                    segments.push(silent_dialogue_segment(text));
+                }
+            }
+            _ => {}
+        }
+    }
+
+    let output_stem = profile_dialogue_run_output_stem(run);
+    let mp4_out = mp4_dir.join(format!("{output_stem}.mp4"));
+    let label = format!("{} profile run {}", run.sequence_id, run.run_index);
     render_dialogue_segments(
         &mp4_out,
         &output_stem,
