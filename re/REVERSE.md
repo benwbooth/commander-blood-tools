@@ -244,6 +244,11 @@ The subtitle reveals one character at a time from the buffer at `gs:0x0E18`,
 tracked by reveal pointer `gs:0x5E58` (starts at the buffer start). The advance is
 rate-limited by timer `gs:0xB31`: when it hits 0, `inc gs:0x5E58` (reveal one more
 char) and reset `gs:0xB31 = gs:0xACA >> 2` (i.e. `gs:0xACA/4` frames per char).
+The visible reveal draw call at `0x94E6..0x94EE` loads `BX=DS:0x5E5C` and
+`DX=DS:0x5E5E`, then calls `0x0299:0x06A0`; those initialized words are
+`0x000A` and `0x0008`, so Rust uses `(10,8)` as the subtitle origin and advances
+subsequent CR-delimited lines by the glyph height (8 px), matching the wrapper at
+`0x36F9..0x3701`.
 After the reveal pointer reaches the terminating NUL, the dialogue state enters
 a line-complete hold: `0x94BA..0x94DD` sets `gs:0xB35 = gs:0xACA*4` and
 `gs:0x67BB=1`, while `0x115D..0x1188` keeps that flag alive until the timer
@@ -1094,8 +1099,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       parsers stop carrying actor/background context past matching `C9` tokens.
       The port also applies the selector-0x13 related C4 subrecord clear and the
       `gs:0x252A/0x2531` presentation gate reset.
-- [ ] Map presentation constants: subtitle position, reveal rate, colors, timing,
-      HNM actor reset/loop policy, audio mix levels.
+- [ ] Map presentation constants: subtitle position and reveal rate are now
+      tied to `0x5E5C/0x5E5E` plus `0xB31/0xACA`; colors, remaining timing,
+      HNM actor reset/loop policy, and audio mix levels remain pending.
 
 ### Renderer Integration (replaces skill's "Web Port")
 

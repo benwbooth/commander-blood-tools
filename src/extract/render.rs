@@ -206,9 +206,11 @@ pub(super) fn game_font_advance(ch: char) -> usize {
 pub(super) const SCENE_TOP: usize = 0x23; // 35
 pub(super) const SCENE_BOTTOM: usize = 0xA5; // 165
 
-pub(super) const SUBTITLE_X: usize = 9;
-// Subtitle baseline near the bottom of the scene band (within SCENE_TOP..BOTTOM).
-pub(super) const SUBTITLE_Y: usize = SCENE_BOTTOM - 3 * GAME_FONT_LINE_HEIGHT;
+// BLOODPRG.EXE's reveal renderer is called from 0x94EE with BX=[0x5E5C] and
+// DX=[0x5E5E]. The initialized words at those DS offsets are 10 and 8; each
+// CR-delimited subtitle line advances DX by 8.
+pub(super) const SUBTITLE_X: usize = 10;
+pub(super) const SUBTITLE_Y: usize = 8;
 pub(super) const GAME_FONT_WIDTH: usize = 8;
 pub(super) const GAME_FONT_HEIGHT: usize = 8;
 pub(super) const GAME_FONT_LINE_HEIGHT: usize = 8;

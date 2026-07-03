@@ -715,8 +715,8 @@ fn read_u16(cod: &[u8], at: usize) -> Option<u16> {
 // The post-VM object scan at 0x5816 is only partially represented: the recovered
 // C4 pair update marks a direct C4 record consumed and writes the reciprocal
 // selector-0x13 C4 record on the related object. The kind-1 presentation
-// start/stop flag updates are represented, but the render/audio calls and
-// control-flow handoff remain pending.
+// start/stop flag updates and kind-2 control-flow handoff are represented, but
+// the direct render/audio calls remain pending.
 // NOTE: `interpret_line_states` is a LINEAR pass: it applies mode-0 state
 // mutations and uses guarded mode-1 actor records as context, but does not take
 // branches. `execute_trace` models the recovered branch helper for conditionals
