@@ -2606,6 +2606,7 @@ pub enum SceneEvent {
     DrawSubtitle {
         text: String,
         voice_selector: u8,
+        active_line_id: u16,
         flags: u8,
     },
     /// Subtitle chatter event from the dialogue display state machine (tb.snd).
@@ -2623,6 +2624,7 @@ pub struct LineInput {
     pub background_record: Option<String>,
     pub background_music: Option<String>,
     pub voice_selector: u8,
+    pub active_line_id: u16,
     pub flags_b4: u8,
     pub clip_index: Option<usize>,
     pub text: String,
@@ -2667,6 +2669,7 @@ pub fn emit_scene_events(lines: &[LineInput]) -> Vec<SceneEvent> {
         events.push(SceneEvent::DrawSubtitle {
             text: line.text.clone(),
             voice_selector: line.voice_selector,
+            active_line_id: line.active_line_id,
             flags: line.flags_b4,
         });
         events.push(SceneEvent::PlayChatter);
@@ -5335,6 +5338,7 @@ mod tests {
                 background_music: Some("mus1".into()),
                 clip_index: Some(0),
                 voice_selector: 0x01,
+                active_line_id: text_selector_active_line_id(0x01),
                 flags_b4: 0x00,
                 text: "hi".into(),
                 ..Default::default()
@@ -5346,6 +5350,7 @@ mod tests {
                 background_music: Some("mus1".into()),
                 clip_index: Some(1),
                 voice_selector: 0xFF,
+                active_line_id: text_selector_active_line_id(0xFF),
                 flags_b4: 0x10,
                 text: "there".into(),
                 ..Default::default()
@@ -5378,6 +5383,14 @@ mod tests {
                 .count(),
             2
         );
+        assert!(ev.iter().any(|e| matches!(
+            e,
+            SceneEvent::DrawSubtitle {
+                text,
+                active_line_id,
+                ..
+            } if text == "there" && *active_line_id == text_selector_active_line_id(0xFF)
+        )));
         assert_eq!(
             ev.iter()
                 .filter(|e| matches!(e, SceneEvent::PlayVoice { .. }))
