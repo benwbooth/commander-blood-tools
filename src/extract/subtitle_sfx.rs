@@ -70,14 +70,12 @@ fn subtitle_reveal_char_count(text: &str) -> usize {
     text.chars().filter(|ch| *ch != '\n' && *ch != '\r').count()
 }
 
-pub(super) struct SndClip {
-    pub(super) pcm: Vec<u8>,
-    pub(super) sample_rate: u32,
-}
-
 pub(super) fn subtitle_sfx_clips(snd_path: &Path) -> Result<Vec<SndClip>, Box<dyn Error>> {
-    let mut clips = read_snd_clips(snd_path)?;
-    clips.retain(|clip| !clip.pcm.is_empty());
+    let clips: Vec<SndClip> = SndBank::read(snd_path)?
+        .clips()
+        .filter(|clip| !clip.pcm.is_empty())
+        .cloned()
+        .collect();
     if clips.is_empty() {
         return Ok(Vec::new());
     }
@@ -88,47 +86,6 @@ pub(super) fn subtitle_sfx_clips(snd_path: &Path) -> Result<Vec<SndClip>, Box<dy
         .filter(|clip| clip.sample_rate == sample_rate)
         .take(1)
         .collect())
-}
-
-pub(super) fn read_snd_clips(snd_path: &Path) -> Result<Vec<SndClip>, Box<dyn Error>> {
-    let data = fs::read(snd_path)?;
-    if data.len() < 6 {
-        return Ok(Vec::new());
-    }
-    let num_clips = u16::from_le_bytes([data[0], data[1]]) as usize;
-    let header_end = 4 + (num_clips + 1) * 4;
-    if header_end > data.len() {
-        return Ok(Vec::new());
-    }
-
-    let mut clips = Vec::new();
-    for clip_idx in 0..num_clips {
-        let off_pos = 4 + clip_idx * 4;
-        let next_off_pos = off_pos + 4;
-        let clip_start =
-            header_end + u32::from_le_bytes(data[off_pos..off_pos + 4].try_into()?) as usize;
-        let clip_end = header_end
-            + u32::from_le_bytes(data[next_off_pos..next_off_pos + 4].try_into()?) as usize;
-        if clip_start + 6 > data.len() || clip_end > data.len() || clip_end <= clip_start {
-            continue;
-        }
-        if data[clip_start] != 1 {
-            continue;
-        }
-
-        let sr_code = data[clip_start + 4];
-        let sample_rate = if sr_code < 255 {
-            1_000_000 / (256 - sr_code as u32)
-        } else {
-            11111
-        };
-        clips.push(SndClip {
-            pcm: data[clip_start + 6..clip_end].to_vec(),
-            sample_rate,
-        });
-    }
-
-    Ok(clips)
 }
 
 #[cfg(test)]

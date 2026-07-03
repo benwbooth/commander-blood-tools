@@ -172,44 +172,6 @@ struct DialogueSegment {
     duration: f64,             // seconds this segment occupies the timeline
 }
 
-fn read_snd_clip_from_data(data: &[u8], clip_index: usize) -> Option<SndClip> {
-    if data.len() < 6 {
-        return None;
-    }
-    let num_clips = u16::from_le_bytes([data[0], data[1]]) as usize;
-    if clip_index >= num_clips {
-        return None;
-    }
-    let header_end = 4 + (num_clips + 1) * 4;
-    if header_end > data.len() {
-        return None;
-    }
-
-    let off_pos = 4 + clip_index * 4;
-    let next_off_pos = off_pos + 4;
-    let clip_start =
-        header_end + u32::from_le_bytes(data[off_pos..off_pos + 4].try_into().ok()?) as usize;
-    let clip_end = header_end
-        + u32::from_le_bytes(data[next_off_pos..next_off_pos + 4].try_into().ok()?) as usize;
-    if clip_start + 6 >= data.len() || clip_end > data.len() || clip_end <= clip_start + 6 {
-        return None;
-    }
-    if data[clip_start] != 1 {
-        return None;
-    }
-
-    let sr_code = data[clip_start + 4];
-    let sample_rate = if sr_code < 255 {
-        1_000_000 / (256 - sr_code as u32)
-    } else {
-        11111
-    };
-    Some(SndClip {
-        pcm: data[clip_start + 6..clip_end].to_vec(),
-        sample_rate,
-    })
-}
-
 fn silent_dialogue_segment(text: &str) -> DialogueSegment {
     let chars = text.chars().filter(|c| !c.is_control()).count();
     let reveal = chars as f64 / SUBTITLE_CHARS_PER_SEC;
@@ -272,66 +234,28 @@ pub(super) fn create_character_video_from_scene(
         return Ok(false);
     };
 
-    // Parse SND file
-    let snd_data = fs::read(snd_path)?;
-    if snd_data.len() < 6 {
-        return Ok(false);
-    }
-    let num_clips = u16::from_le_bytes([snd_data[0], snd_data[1]]) as usize;
-    let header_end = 4 + (num_clips + 1) * 4;
-    if header_end > snd_data.len() {
-        return Ok(false);
-    }
-    let mut clip_offsets = Vec::with_capacity(num_clips + 1);
-    for i in 0..=num_clips {
-        let pos = 4 + i * 4;
-        clip_offsets.push(u32::from_le_bytes([
-            snd_data[pos],
-            snd_data[pos + 1],
-            snd_data[pos + 2],
-            snd_data[pos + 3],
-        ]) as usize);
-    }
+    let snd_bank = SndBank::read(snd_path)?;
 
     // Collect valid clip+animation pairs
     struct ClipInfo {
         hnm_path: PathBuf,
-        pcm_start: usize,
-        pcm_len: usize,
-        sample_rate: u32,
+        voice: SndClip,
     }
     let mut clips: Vec<ClipInfo> = Vec::new();
 
-    for i in 0..num_clips.min(scene.talk_hnms.len()) {
+    for i in 0..snd_bank.clip_count().min(scene.talk_hnms.len()) {
         let hnm_name = &scene.talk_hnms[i].1;
         let hnm_path = dat_dir.join("pe").join(hnm_name.to_ascii_lowercase());
         if !hnm_path.exists() {
             continue;
         }
-
-        let cs = header_end + clip_offsets[i];
-        let ce = header_end + clip_offsets[i + 1];
-        if cs + 6 > snd_data.len() || ce > snd_data.len() || ce <= cs {
+        let Some(voice) = snd_bank.clip(i).filter(|clip| !clip.pcm.is_empty()) else {
             continue;
-        }
-        if snd_data[cs] != 1 {
-            continue;
-        }
-
-        let sr_code = snd_data[cs + 4];
-        let sample_rate = if sr_code < 255 {
-            1_000_000 / (256 - sr_code as u32)
-        } else {
-            11111
         };
-        let pcm_start = cs + 6;
-        let pcm_len = ce - pcm_start;
 
         clips.push(ClipInfo {
             hnm_path,
-            pcm_start,
-            pcm_len,
-            sample_rate,
+            voice: voice.clone(),
         });
     }
 
@@ -370,7 +294,7 @@ pub(super) fn create_character_video_from_scene(
     {
         let mut vf = File::create(&tmp_voice)?;
         for clip in &clips {
-            vf.write_all(&snd_data[clip.pcm_start..clip.pcm_start + clip.pcm_len])?;
+            vf.write_all(&clip.voice.pcm)?;
         }
     }
 
@@ -380,7 +304,7 @@ pub(super) fn create_character_video_from_scene(
         .and_then(|bg_name| hnm_music.get(&media_stem(bg_name)))
         .map(|music| dat_dir.join("mu").join(format!("{music}.voc")));
     let mp4_out = mp4_dir.join(format!("{output_stem}.mp4"));
-    let sr = clips[0].sample_rate;
+    let sr = clips[0].voice.sample_rate;
 
     let mut cmd = Command::new("ffmpeg");
     cmd.args([
@@ -447,7 +371,7 @@ pub(super) fn create_character_video_from_scene(
     let mut rgb = vec![0u8; VIEWPORT_W * VIEWPORT_H * 3];
 
     for clip in &clips {
-        let audio_dur = clip.pcm_len as f64 / clip.sample_rate as f64;
+        let audio_dur = clip.voice.pcm.len() as f64 / clip.voice.sample_rate as f64;
         let total_frames = (audio_dur * HNM_FPS as f64).ceil() as usize;
 
         let hnm = HnmFile::open(&clip.hnm_path)?;
@@ -562,7 +486,7 @@ pub(super) fn create_executed_dialogue_run_videos(
     subtitle_sfx_path: Option<&Path>,
 ) -> Result<u32, Box<dyn Error>> {
     let runs = script_executed_dialogue_runs(script_speech);
-    let mut snd_cache: HashMap<PathBuf, Vec<u8>> = HashMap::new();
+    let mut snd_cache: HashMap<PathBuf, SndBank> = HashMap::new();
     let mut created = 0u32;
 
     for run in runs {
@@ -587,7 +511,7 @@ fn create_executed_dialogue_run_video(
     descript_db: &DescriptDb,
     run: &ScriptExecutedDialogueRun<'_>,
     subtitle_sfx_path: Option<&Path>,
-    snd_cache: &mut HashMap<PathBuf, Vec<u8>>,
+    snd_cache: &mut HashMap<PathBuf, SndBank>,
 ) -> Result<bool, Box<dyn Error>> {
     let inputs: Vec<vm::LineInput> = run
         .lines
@@ -677,7 +601,7 @@ fn create_executed_dialogue_run_video(
 fn resolve_actor_voiced_segment(
     dat_dir: &Path,
     descript_db: &DescriptDb,
-    snd_cache: &mut HashMap<PathBuf, Vec<u8>>,
+    snd_cache: &mut HashMap<PathBuf, SndBank>,
     actor: &str,
     clip_index: usize,
     text: &str,
@@ -694,10 +618,13 @@ fn resolve_actor_voiced_segment(
     let snd_name = record.snd.as_ref()?;
     let snd_path = dat_dir.join("sn").join(snd_name.to_ascii_lowercase());
     if !snd_cache.contains_key(&snd_path) {
-        let data = fs::read(&snd_path).ok()?;
-        snd_cache.insert(snd_path.clone(), data);
+        snd_cache.insert(snd_path.clone(), SndBank::read(&snd_path).ok()?);
     }
-    let voice = read_snd_clip_from_data(snd_cache.get(&snd_path)?, clip_index)?;
+    let voice = snd_cache
+        .get(&snd_path)?
+        .clip(clip_index)
+        .filter(|clip| !clip.pcm.is_empty())?
+        .clone();
     let duration = voice.pcm.len() as f64 / voice.sample_rate as f64;
     Some(DialogueSegment {
         text: text.to_string(),
@@ -722,15 +649,7 @@ pub(super) fn create_character_dialogue_video(
         return Ok(false);
     }
 
-    let snd_data = fs::read(snd_path)?;
-    if snd_data.len() < 6 {
-        return Ok(false);
-    }
-    let num_clips = u16::from_le_bytes([snd_data[0], snd_data[1]]) as usize;
-    let header_end = 4 + (num_clips + 1) * 4;
-    if header_end > snd_data.len() {
-        return Ok(false);
-    }
+    let snd_bank = SndBank::read(snd_path)?;
 
     // Render from the VM presentation-event stream rather than scanning the
     // grouped lines directly. `emit_scene_events` turns the decoded per-line
@@ -755,7 +674,7 @@ pub(super) fn create_character_dialogue_video(
     let events = vm::emit_scene_events(&inputs);
 
     let resolve_voiced = |clip_index: usize, text: &str| -> Option<DialogueSegment> {
-        if clip_index >= num_clips || clip_index >= scene.talk_hnms.len() {
+        if clip_index >= scene.talk_hnms.len() {
             return None;
         }
         let hnm_name = &scene.talk_hnms[clip_index].1;
@@ -763,7 +682,10 @@ pub(super) fn create_character_dialogue_video(
         if !hnm_path.exists() {
             return None;
         }
-        let voice = read_snd_clip_from_data(&snd_data, clip_index)?;
+        let voice = snd_bank
+            .clip(clip_index)
+            .filter(|clip| !clip.pcm.is_empty())?
+            .clone();
         let duration = voice.pcm.len() as f64 / voice.sample_rate as f64;
         Some(DialogueSegment {
             text: text.to_string(),
@@ -1123,26 +1045,6 @@ mod tests {
             text_end: offset + 12,
             source: "test".to_string(),
         }
-    }
-
-    #[test]
-    fn reads_snd_clip_by_original_index() {
-        let clip0 = [1, 0, 0, 0, 156, 0, 10, 11];
-        let clip1 = [1, 0, 0, 0, 156, 0, 20, 21, 22];
-        let mut data = Vec::new();
-        data.extend_from_slice(&2u16.to_le_bytes());
-        data.extend_from_slice(&0u16.to_le_bytes());
-        data.extend_from_slice(&0u32.to_le_bytes());
-        data.extend_from_slice(&(clip0.len() as u32).to_le_bytes());
-        data.extend_from_slice(&((clip0.len() + clip1.len()) as u32).to_le_bytes());
-        data.extend_from_slice(&clip0);
-        data.extend_from_slice(&clip1);
-
-        let first = read_snd_clip_from_data(&data, 0).expect("first clip");
-        let second = read_snd_clip_from_data(&data, 1).expect("second clip");
-        assert_eq!(first.pcm, vec![10, 11]);
-        assert_eq!(second.pcm, vec![20, 21, 22]);
-        assert!(read_snd_clip_from_data(&data, 2).is_none());
     }
 
     #[test]

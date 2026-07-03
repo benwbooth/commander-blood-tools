@@ -393,7 +393,7 @@ mapping the voice-clip selection is a subsystem trace (see dead_ends.md).
   (AH=41, dx=0xA6 son.snd / 0xAE mus.snd / 0xCB) them before re-extracting.
 - Voice playback + file reads (int21 AH=3F) are all in **segment 0x0B1B**
   (file 0xBA00–0xC0FF). No `lseek` (AH=42) → the SND bank is read **into memory**
-  and clips are indexed via the in-bank offset table (same layout `audio.rs`
+  and clips are indexed via the in-bank offset table (same layout `src/snd.rs`
   decodes: u16 num_clips, (num_clips+1) u32 offsets, clip hdr `01 .. sr_code ..`,
   PCM from +6). Temp-file extraction near son.snd name ref at file 0xC19D.
 - **SND clip player** (file ~0xB9DE): entered with **`AX` = clip index**.
@@ -635,6 +635,12 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       for every line-complete chatter event instead of cycling through a filtered
       `7..16` subrange. This matches `verified-video-scenes.tsv` (`sn/tb.snd#0`)
       and the direct text/presentation SND call at `0x8534` (`AX=0`).
+- [x] Port recovered SND bank semantics into Rust:
+      `src/snd.rs` now owns the `BLOODPRG.EXE` clip-player bank layout: original
+      AX clip index, offset table, 6-byte clip header skip, sample-rate byte, and
+      unsigned 8-bit PCM payload. Audio export, subtitle chatter, and character
+      dialogue rendering now share this recovered model instead of duplicating
+      local parsers.
 - [x] Emit branch-scenario dialogue rows/runs:
       `script-branch-scenario-dialogue.tsv` reuses the same executed-dialogue
       resolver against each forced branch trace, and

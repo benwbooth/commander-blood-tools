@@ -78,6 +78,10 @@ edges.
 
 Subtitle SFX follows the recovered line-complete dialogue state: after each
 subtitle finishes revealing, the renderer mixes `sn/tb.snd` clip 0 once.
+SND banks are parsed through the recovered `BLOODPRG.EXE` clip-player model in
+`src/snd.rs`: AX selects the original clip index, the bank table resolves the
+clip body, the 6-byte clip header is skipped, and the sample-rate byte controls
+unsigned 8-bit PCM playback.
 The renderer uses the custom dialogue bitmap font embedded in `BLOODPRG.EXE`:
 ASCII map at file offset
 `0x14c22`, glyph advances at `0x14cd2..0x14d27`, and 8-byte glyph bitmaps at

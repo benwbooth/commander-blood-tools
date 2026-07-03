@@ -1,5 +1,4 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap};
-use std::convert::TryInto;
 use std::env;
 use std::error::Error;
 use std::fmt::Write as _;
@@ -642,6 +641,7 @@ mod subtitle_sfx;
 use audio::*;
 use character::*;
 use commander_blood_tools::bloodprg::{BloodPrg, SndEntryCallSite};
+use commander_blood_tools::snd::{SndBank, SndClip};
 use commander_blood_tools::vm;
 use dat::*;
 use descript::*;
