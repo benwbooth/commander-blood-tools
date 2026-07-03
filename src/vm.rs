@@ -905,6 +905,9 @@ pub struct ScriptProfileRun {
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub enum ScriptProfileExecutionHalt {
     NoPendingProfile,
+    PendingProfileNotReady {
+        profile_index: u16,
+    },
     MissingProfile {
         profile_index: u16,
     },
@@ -2532,6 +2535,7 @@ pub fn execute_script_profile_sequence(
 
         let trace = execute_trace_with_context(program.cod, program.var, &program.context);
         let pending = trace.pending_script_profile();
+        let pending_dispatch_ready = trace.post_update.pending_script_profile_dispatch_ready;
         runs.push(ScriptProfileRun {
             run_index,
             profile_index: program.profile_index,
@@ -2539,7 +2543,13 @@ pub fn execute_script_profile_sequence(
         });
 
         match pending {
-            Some(profile_index) => next_profile_index = profile_index,
+            Some(profile_index) if pending_dispatch_ready => next_profile_index = profile_index,
+            Some(profile_index) => {
+                return ScriptProfileExecution {
+                    runs,
+                    halted: ScriptProfileExecutionHalt::PendingProfileNotReady { profile_index },
+                };
+            }
             None => {
                 return ScriptProfileExecution {
                     runs,
@@ -2832,7 +2842,7 @@ mod tests {
         let mut cod1 = Vec::new();
         push_empty_text(&mut cod1);
         cod1.push(0xff);
-        let var0 = vec![0; 0x20];
+        let var0 = vec![0; 0x8000];
         let var1 = vec![0; 0x8000];
         let programs = vec![
             ScriptProfileProgram {
@@ -2858,6 +2868,43 @@ mod tests {
         assert_eq!(execution.runs[0].profile_index, 0);
         assert_eq!(execution.runs[1].profile_index, 1);
         assert_eq!(execution.runs[1].trace.line_states.len(), 1);
+    }
+
+    #[test]
+    fn script_profile_sequence_waits_until_presentation_idle() {
+        let cod0 = [OP_SCRIPT_PROFILE_REQUEST, 0x02, 0xff];
+        let cod1 = [0xff];
+        let mut var0 = vec![0; 0x8000];
+        state_set_u8(&mut var0, VM_PRESENTATION_ACTIVE, 1);
+        let var1 = vec![0; 0x8000];
+        let programs = vec![
+            ScriptProfileProgram {
+                profile_index: 0,
+                cod: &cod0,
+                var: &var0,
+                context: ExecutionContext::default(),
+            },
+            ScriptProfileProgram {
+                profile_index: 1,
+                cod: &cod1,
+                var: &var1,
+                context: ExecutionContext::default(),
+            },
+        ];
+
+        let execution = execute_script_profile_sequence(&programs, 0, 4);
+        assert_eq!(
+            execution.halted,
+            ScriptProfileExecutionHalt::PendingProfileNotReady { profile_index: 1 }
+        );
+        assert_eq!(execution.runs.len(), 1);
+        assert_eq!(execution.runs[0].profile_index, 0);
+        assert!(
+            !execution.runs[0]
+                .trace
+                .post_update
+                .pending_script_profile_dispatch_ready
+        );
     }
 
     #[test]

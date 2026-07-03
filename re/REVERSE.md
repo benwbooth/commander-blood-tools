@@ -754,11 +754,11 @@ the presentation state is idle. The exact gate is:
     OR(DS:0x67AC, 0x24F3, 0x2751, 0x67B0, 0x5E64,
        0x2565, 0x2736, 0x2737, 0x27DA, 0x2792) == 0
 
-Rust captures this as `pending_script_profile_dispatch_ready()`. The high-level
-profile sequencer still follows D2 requests immediately, but `execute_trace`
+Rust captures this as `pending_script_profile_dispatch_ready()`. `execute_trace`
 now writes the D2 operand-derived profile index into `DS:0x6780` before running
-the post-update scan, so `ExecutionTrace::post_update` reports whether the
-binary's idle gate would allow the main loop to dispatch it.
+the post-update scan, and `execute_script_profile_sequence` only follows the
+request when `ExecutionTrace::post_update` says the binary's idle gate would
+allow the main loop to dispatch it.
 
 ### 0xC9 record-clear handler @ file 0x6FB9 — speaker lifetime (DECODED)
 
@@ -995,7 +995,8 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 - [x] Model `D2` cross-script profile scheduling in Rust execution traces:
       `ExecutionTrace` records D2 profile requests and writes the pending
       profile word into VM state; `execute_script_profile_sequence` follows the
-      last non-sentinel pending profile through the decoded script profiles.
+      last non-sentinel pending profile through the decoded script profiles only
+      when the recovered main-loop idle gate allows dispatch.
 - [x] Export cross-script profile sequences from the extractor:
       `script-profile-runs.tsv` and `script-profile-executed-dialogue.tsv`
       preserve the DOS main-loop SCRIPT1->SCRIPT2->... handoff order using the
