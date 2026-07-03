@@ -442,6 +442,8 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 | `script-branch-decisions.tsv` | extraction artifact listing default observed conditional path and alternate target/path |
 | `script-branch-coverage.tsv` | extraction artifact summarizing all text calls vs default executed trace coverage per script |
 | `script-branch-scenarios.tsv` | extraction artifact forcing each branch decision's opposite condition once and measuring newly exposed text calls |
+| `script-branch-scenario-dialogue.tsv` | extraction artifact joining each forced branch scenario trace to decoded text/actor/background rows |
+| `script-branch-scenario-dialogue-runs.tsv` | extraction artifact grouping branch scenario dialogue rows into renderer-ready run slices |
 | `script-executed-dialogue.tsv` | extraction artifact joining `execute_trace` line order to decoded text/actor/background |
 | `script-executed-dialogue-runs.tsv` | extraction artifact grouping executed dialogue by script/background run; MP4 names correspond to run-level composites |
 | `script-dialogue-runs.tsv` | extraction artifact grouping VM-order dialogue lines by script/background run |
@@ -602,6 +604,13 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       a specific condition result, and `script-branch-scenarios.tsv` applies the
       opposite path to every concrete branch decision once, measuring text-call
       deltas. This turns the branch coverage gap into executable scenario data.
+- [x] Emit branch-scenario dialogue rows/runs:
+      `script-branch-scenario-dialogue.tsv` reuses the same executed-dialogue
+      resolver against each forced branch trace, and
+      `script-branch-scenario-dialogue-runs.tsv` keeps scenario-tagged run slices
+      separate from the default execution. Default full export still renders only
+      the initial-state run videos; bulk alternate rendering needs an explicit
+      selection policy to avoid exploding output volume.
 - [x] Define the VM-event schema (`SceneEvent`: SetBackground, PlayMusic,
       ShowSpeaker, PlayVoice, PlayTalkHnm, DrawSubtitle, PlayChatter, Clear) +
       `emit_scene_events()` emitter in `src/vm.rs`, emitting state-change

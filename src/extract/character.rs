@@ -653,19 +653,13 @@ fn create_executed_dialogue_run_video(
         }
     }
 
-    let location = run
-        .background_record
-        .as_deref()
-        .or(run.background_hnm.as_deref())
-        .unwrap_or("nolocation");
-    let output_stem = format!(
-        "executed-dialogue-run - {} - {:04} - {}",
-        safe_file_stem(&run.script),
-        run.run_index,
-        safe_file_stem(location)
-    );
+    let output_stem = executed_dialogue_run_output_stem(run);
     let mp4_out = mp4_dir.join(format!("{output_stem}.mp4"));
-    let label = format!("{} run {}", run.script, run.run_index);
+    let label = if let Some(scenario_id) = &run.scenario_id {
+        format!("{scenario_id} run {}", run.run_index)
+    } else {
+        format!("{} run {}", run.script, run.run_index)
+    };
     render_dialogue_segments(
         &mp4_out,
         &output_stem,
@@ -1110,6 +1104,7 @@ mod tests {
         text: &str,
     ) -> ScriptExecutedSpeechLine {
         ScriptExecutedSpeechLine {
+            scenario_id: None,
             script: script.to_string(),
             sequence_index,
             function_name: "func".to_string(),

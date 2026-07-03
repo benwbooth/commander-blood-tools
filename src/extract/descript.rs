@@ -73,6 +73,7 @@ pub(super) struct ScriptSpeechLine {
 
 #[derive(Clone, Debug)]
 pub(super) struct ScriptExecutedSpeechLine {
+    pub(super) scenario_id: Option<String>,
     pub(super) script: String,
     pub(super) sequence_index: usize,
     pub(super) function_name: String,

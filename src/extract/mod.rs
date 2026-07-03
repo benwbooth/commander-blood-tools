@@ -272,14 +272,29 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         &script_branch_scenarios,
         &out_dir.join("script-branch-scenarios.tsv"),
     )?;
+    let script_branch_scenario_speech = parse_script_branch_scenario_speech(
+        &tmp_iso,
+        descript_db.as_ref(),
+        &hnm_music,
+        &script_branch_scenarios,
+    )?;
+    write_script_branch_scenario_speech_manifest(
+        &script_branch_scenario_speech,
+        &out_dir.join("script-branch-scenario-dialogue.tsv"),
+    )?;
+    write_script_branch_scenario_dialogue_runs_manifest(
+        &script_branch_scenario_speech,
+        &out_dir.join("script-branch-scenario-dialogue-runs.tsv"),
+    )?;
     if !script_speech.is_empty() {
         eprintln!(
-            "Recovered {} script text calls ({} executed lines, {} disassembly rows, {} branch events, {} branch scenarios)",
+            "Recovered {} script text calls ({} executed lines, {} disassembly rows, {} branch events, {} branch scenarios, {} scenario dialogue lines)",
             script_speech.len(),
             script_executed_speech.len(),
             script_disassembly.len(),
             script_branch_trace.len(),
-            script_branch_scenarios.len()
+            script_branch_scenarios.len(),
+            script_branch_scenario_speech.len()
         );
     }
 

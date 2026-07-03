@@ -402,71 +402,192 @@ pub(super) fn parse_script_executed_speech(
             .collect();
         let text_calls = text_calls_by_offset(&cod, &words);
         let trace = vm::execute_trace(&cod, &var);
+        rows.extend(executed_speech_rows_from_trace(
+            &script,
+            None,
+            "SCRIPT VM execute_trace",
+            &trace,
+            &text_calls,
+            &functions,
+            &actor_by_offset,
+            &object_names,
+            descript_db,
+            hnm_music,
+        ));
+    }
 
-        for (sequence_index, state) in trace.line_states.iter().enumerate() {
-            let Some(call) = text_calls.get(&state.offset) else {
-                continue;
-            };
-            let actor = state
-                .actor_offset
-                .and_then(|offset| actor_by_offset.get(&offset).cloned());
-            let background = state.location_offset.and_then(|loc| {
-                resolve_background_from_location(loc, &object_names, descript_db, hnm_music)
-            });
-            let actor_speaks = actor.is_some() && call.flags_b4 < 0x10;
-            let clip_index = actor.as_ref().and_then(|actor| {
-                if !actor_speaks {
-                    return None;
-                }
-                match call.voice_selector {
-                    idx if idx > 0 && idx != 0xff && (idx as usize) <= actor.talk_count => {
-                        Some(idx as usize - 1)
-                    }
-                    _ => None,
-                }
-            });
-            let source = match (&actor, actor_speaks, clip_index) {
-                (Some(_), true, Some(_)) => {
-                    "SCRIPT VM execute_trace + actor state + DESCRIPT talk clip"
-                }
-                (Some(_), true, None) => {
-                    "SCRIPT VM execute_trace + actor state; no mapped talk clip"
-                }
-                (Some(_), false, _) => {
-                    "SCRIPT VM execute_trace + actor state; non-character subtitle channel"
-                }
-                (None, _, _) => "SCRIPT VM execute_trace; no tracked actor state",
-            };
+    Ok(rows)
+}
 
-            rows.push(ScriptExecutedSpeechLine {
-                script: script.clone(),
-                sequence_index,
-                function_name: function_name_for_offset(&functions, call.offset).to_string(),
-                offset: call.offset,
-                actor_record: actor.as_ref().map(|actor| actor.record_name.clone()),
-                actor_ref: actor.as_ref().map(|actor| actor.talk_ref),
-                location_offset: state.location_offset.filter(|offset| *offset != 0),
-                background_record: background
-                    .as_ref()
-                    .and_then(|background| background.record.clone()),
-                background_hnm: background
-                    .as_ref()
-                    .and_then(|background| background.hnm.clone()),
-                background_music: background
-                    .as_ref()
-                    .and_then(|background| background.music.clone()),
-                param0: call.voice_selector,
-                param1: call.flags_b4,
-                clip_index,
-                text: call.text.clone(),
-                call_target: call.line_index,
-                text_end: call.text_end,
-                source: source.to_string(),
-            });
+pub(super) fn parse_script_branch_scenario_speech(
+    iso_dir: &Path,
+    descript_db: Option<&DescriptDb>,
+    hnm_music: &HashMap<String, String>,
+    scenarios: &[ScriptBranchScenarioLine],
+) -> Result<Vec<ScriptExecutedSpeechLine>, Box<dyn Error>> {
+    let mut rows = Vec::new();
+    let character_names = descript_db
+        .map(|db| db.character_names())
+        .unwrap_or_default();
+
+    for script_idx in 1..=5 {
+        let script = format!("SCRIPT{script_idx}");
+        let script_scenarios: Vec<&ScriptBranchScenarioLine> = scenarios
+            .iter()
+            .filter(|scenario| scenario.script == script)
+            .collect();
+        if script_scenarios.is_empty() {
+            continue;
+        }
+
+        let cod_path = find_file_recursive(iso_dir, &format!("{script}.COD"));
+        let dic_path = find_file_recursive(iso_dir, &format!("{script}.DIC"));
+        let deb_path = find_file_recursive(iso_dir, &format!("{script}.DEB"));
+        let var_path = find_file_recursive(iso_dir, &format!("{script}.VAR"));
+        let (Some(cod_path), Some(dic_path), Some(var_path)) = (cod_path, dic_path, var_path)
+        else {
+            continue;
+        };
+
+        let cod = fs::read(&cod_path)?;
+        let var = fs::read(&var_path)?;
+        let words = parse_script_dictionary(&dic_path)?;
+        let (mut functions, actor_refs, object_names) =
+            if let (Some(deb_path), Some(db)) = (&deb_path, descript_db) {
+                let (functions, actor_refs, _) = parse_script_symbols(
+                    &script,
+                    deb_path,
+                    &var_path,
+                    db,
+                    hnm_music,
+                    &character_names,
+                )?;
+                let deb = fs::read(deb_path)?;
+                (functions, actor_refs, parse_deb_object_names(&deb))
+            } else {
+                (Vec::new(), HashMap::new(), HashMap::new())
+            };
+        if functions.is_empty() {
+            functions.push((0, script.as_str().to_string()));
+        }
+        functions.sort_by_key(|(offset, _)| *offset);
+        functions.push((cod.len(), "END".to_string()));
+
+        let actor_by_offset: HashMap<u16, ScriptActorRef> = actor_refs
+            .values()
+            .cloned()
+            .map(|actor| {
+                (
+                    actor.talk_ref.saturating_sub(SCRIPT_OBJECT_TALK_FIELD),
+                    actor,
+                )
+            })
+            .collect();
+        let text_calls = text_calls_by_offset(&cod, &words);
+
+        for scenario in script_scenarios {
+            let trace = vm::execute_trace_with_overrides(
+                &cod,
+                &var,
+                &[vm::BranchOverride {
+                    offset: scenario.forced_offset,
+                    condition_passed: scenario.forced_condition_passed,
+                }],
+            );
+            rows.extend(executed_speech_rows_from_trace(
+                &script,
+                Some(scenario.scenario_id.as_str()),
+                "SCRIPT VM execute_trace_with_overrides",
+                &trace,
+                &text_calls,
+                &functions,
+                &actor_by_offset,
+                &object_names,
+                descript_db,
+                hnm_music,
+            ));
         }
     }
 
     Ok(rows)
+}
+
+fn executed_speech_rows_from_trace(
+    script: &str,
+    scenario_id: Option<&str>,
+    source_base: &str,
+    trace: &vm::ExecutionTrace,
+    text_calls: &HashMap<usize, TextCallInfo>,
+    functions: &[(usize, String)],
+    actor_by_offset: &HashMap<u16, ScriptActorRef>,
+    object_names: &HashMap<u16, String>,
+    descript_db: Option<&DescriptDb>,
+    hnm_music: &HashMap<String, String>,
+) -> Vec<ScriptExecutedSpeechLine> {
+    let mut rows = Vec::new();
+    for (sequence_index, state) in trace.line_states.iter().enumerate() {
+        let Some(call) = text_calls.get(&state.offset) else {
+            continue;
+        };
+        let actor = state
+            .actor_offset
+            .and_then(|offset| actor_by_offset.get(&offset).cloned());
+        let background = state.location_offset.and_then(|loc| {
+            resolve_background_from_location(loc, object_names, descript_db, hnm_music)
+        });
+        let actor_speaks = actor.is_some() && call.flags_b4 < 0x10;
+        let clip_index = actor.as_ref().and_then(|actor| {
+            if !actor_speaks {
+                return None;
+            }
+            match call.voice_selector {
+                idx if idx > 0 && idx != 0xff && (idx as usize) <= actor.talk_count => {
+                    Some(idx as usize - 1)
+                }
+                _ => None,
+            }
+        });
+        let source = match (&actor, actor_speaks, clip_index) {
+            (Some(_), true, Some(_)) => {
+                format!("{source_base} + actor state + DESCRIPT talk clip")
+            }
+            (Some(_), true, None) => {
+                format!("{source_base} + actor state; no mapped talk clip")
+            }
+            (Some(_), false, _) => {
+                format!("{source_base} + actor state; non-character subtitle channel")
+            }
+            (None, _, _) => format!("{source_base}; no tracked actor state"),
+        };
+
+        rows.push(ScriptExecutedSpeechLine {
+            scenario_id: scenario_id.map(str::to_string),
+            script: script.to_string(),
+            sequence_index,
+            function_name: function_name_for_offset(functions, call.offset).to_string(),
+            offset: call.offset,
+            actor_record: actor.as_ref().map(|actor| actor.record_name.clone()),
+            actor_ref: actor.as_ref().map(|actor| actor.talk_ref),
+            location_offset: state.location_offset.filter(|offset| *offset != 0),
+            background_record: background
+                .as_ref()
+                .and_then(|background| background.record.clone()),
+            background_hnm: background
+                .as_ref()
+                .and_then(|background| background.hnm.clone()),
+            background_music: background
+                .as_ref()
+                .and_then(|background| background.music.clone()),
+            param0: call.voice_selector,
+            param1: call.flags_b4,
+            clip_index,
+            text: call.text.clone(),
+            call_target: call.line_index,
+            text_end: call.text_end,
+            source,
+        });
+    }
+    rows
 }
 
 fn text_calls_by_offset(cod: &[u8], words: &HashMap<u16, String>) -> HashMap<usize, TextCallInfo> {
@@ -1202,6 +1323,48 @@ pub(super) fn write_script_executed_speech_manifest(
     Ok(())
 }
 
+pub(super) fn write_script_branch_scenario_speech_manifest(
+    rows: &[ScriptExecutedSpeechLine],
+    out_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let mut file = File::create(out_path)?;
+    writeln!(
+        file,
+        "scenario_id\tscript\tsequence_index\tfunction\toffset\tactor\tactor_ref\tlocation_offset\tbackground_record\tbackground_hnm\tbackground_music\tparam0\tparam1\tclip_index\tcall_target\ttext_end\tsource\ttext"
+    )?;
+    for row in rows {
+        writeln!(
+            file,
+            "{}\t{}\t{}\t{}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}\t{:02x}\t{:02x}\t{}\t0x{:04x}\t0x{:05x}\t{}\t{}",
+            row.scenario_id.as_deref().unwrap_or(""),
+            row.script,
+            row.sequence_index,
+            row.function_name,
+            row.offset,
+            row.actor_record.as_deref().unwrap_or(""),
+            row.actor_ref
+                .map(|actor_ref| format!("0x{actor_ref:04x}"))
+                .unwrap_or_default(),
+            row.location_offset
+                .map(|location_offset| format!("0x{location_offset:04x}"))
+                .unwrap_or_default(),
+            row.background_record.as_deref().unwrap_or(""),
+            row.background_hnm.as_deref().unwrap_or(""),
+            row.background_music.as_deref().unwrap_or(""),
+            row.param0,
+            row.param1,
+            row.clip_index
+                .map(|idx| idx.to_string())
+                .unwrap_or_default(),
+            row.call_target,
+            row.text_end,
+            clean_tsv(&row.source),
+            clean_tsv(&row.text),
+        )?;
+    }
+    Ok(())
+}
+
 pub(super) fn write_script_disassembly_manifest(
     rows: &[ScriptDisassemblyLine],
     out_path: &Path,
@@ -1434,6 +1597,7 @@ struct ScriptDialogueRun<'a> {
 
 #[derive(Debug)]
 pub(super) struct ScriptExecutedDialogueRun<'a> {
+    pub(super) scenario_id: Option<String>,
     pub(super) script: String,
     pub(super) run_index: usize,
     pub(super) first_sequence: usize,
@@ -1491,13 +1655,23 @@ pub(super) fn script_executed_dialogue_runs(
         .filter(|row| row.clip_index.is_some() || !row.text.trim().is_empty())
         .collect();
     ordered.sort_by(|a, b| {
-        (a.script.as_str(), a.sequence_index).cmp(&(b.script.as_str(), b.sequence_index))
+        (
+            a.scenario_id.as_deref().unwrap_or(""),
+            a.script.as_str(),
+            a.sequence_index,
+        )
+            .cmp(&(
+                b.scenario_id.as_deref().unwrap_or(""),
+                b.script.as_str(),
+                b.sequence_index,
+            ))
     });
 
     let mut runs: Vec<ScriptExecutedDialogueRun<'_>> = Vec::new();
     for row in ordered {
         let same_run = runs.last().is_some_and(|run| {
-            run.script == row.script
+            run.scenario_id == row.scenario_id
+                && run.script == row.script
                 && run.background_record == row.background_record
                 && run.background_hnm == row.background_hnm
                 && run.background_music == row.background_music
@@ -1510,8 +1684,13 @@ pub(super) fn script_executed_dialogue_runs(
             continue;
         }
 
-        let run_index = runs.iter().filter(|run| run.script == row.script).count() + 1;
+        let run_index = runs
+            .iter()
+            .filter(|run| run.scenario_id == row.scenario_id && run.script == row.script)
+            .count()
+            + 1;
         runs.push(ScriptExecutedDialogueRun {
+            scenario_id: row.scenario_id.clone(),
             script: row.script.clone(),
             run_index,
             first_sequence: row.sequence_index,
@@ -1527,6 +1706,37 @@ pub(super) fn script_executed_dialogue_runs(
     runs
 }
 
+fn executed_dialogue_run_id(run: &ScriptExecutedDialogueRun<'_>) -> String {
+    if let Some(scenario_id) = &run.scenario_id {
+        format!("{scenario_id}-run-{:04}", run.run_index)
+    } else {
+        format!("{}-{:04}", run.script, run.run_index)
+    }
+}
+
+pub(super) fn executed_dialogue_run_output_stem(run: &ScriptExecutedDialogueRun<'_>) -> String {
+    let location = run
+        .background_record
+        .as_deref()
+        .or(run.background_hnm.as_deref())
+        .unwrap_or("nolocation");
+    if let Some(scenario_id) = &run.scenario_id {
+        format!(
+            "branch-scenario-dialogue-run - {} - {:04} - {}",
+            safe_file_stem(scenario_id),
+            run.run_index,
+            safe_file_stem(location)
+        )
+    } else {
+        format!(
+            "executed-dialogue-run - {} - {:04} - {}",
+            safe_file_stem(&run.script),
+            run.run_index,
+            safe_file_stem(location)
+        )
+    }
+}
+
 pub(super) fn write_script_executed_dialogue_runs_manifest(
     rows: &[ScriptExecutedSpeechLine],
     out_path: &Path,
@@ -1538,18 +1748,8 @@ pub(super) fn write_script_executed_dialogue_runs_manifest(
         "run_id\tmp4\tscript\tfirst_sequence\tlast_sequence\tfirst_offset\tlast_offset\tbackground_record\tbackground_hnm\tbackground_music\tline_count\tvoiced_count\tactors\tclip_refs\tfirst_text"
     )?;
     for run in runs {
-        let run_id = format!("{}-{:04}", run.script, run.run_index);
-        let location = run
-            .background_record
-            .as_deref()
-            .or(run.background_hnm.as_deref())
-            .unwrap_or("nolocation");
-        let output_stem = format!(
-            "executed-dialogue-run - {} - {:04} - {}",
-            safe_file_stem(&run.script),
-            run.run_index,
-            safe_file_stem(location)
-        );
+        let run_id = executed_dialogue_run_id(&run);
+        let output_stem = executed_dialogue_run_output_stem(&run);
         let actors = unique_join(
             run.lines
                 .iter()
@@ -1581,6 +1781,71 @@ pub(super) fn write_script_executed_dialogue_runs_manifest(
         writeln!(
             file,
             "{}\t{}.mp4\t{}\t{}\t{}\t0x{:05x}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            run_id,
+            output_stem,
+            run.script,
+            run.first_sequence,
+            run.last_sequence,
+            run.first_offset,
+            run.last_offset,
+            run.background_record.as_deref().unwrap_or(""),
+            run.background_hnm.as_deref().unwrap_or(""),
+            run.background_music.as_deref().unwrap_or(""),
+            run.lines.len(),
+            voiced_count,
+            actors,
+            clip_refs,
+            first_text
+        )?;
+    }
+    Ok(())
+}
+
+pub(super) fn write_script_branch_scenario_dialogue_runs_manifest(
+    rows: &[ScriptExecutedSpeechLine],
+    out_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let runs = script_executed_dialogue_runs(rows);
+    let mut file = File::create(out_path)?;
+    writeln!(
+        file,
+        "scenario_id\trun_id\tmp4\tscript\tfirst_sequence\tlast_sequence\tfirst_offset\tlast_offset\tbackground_record\tbackground_hnm\tbackground_music\tline_count\tvoiced_count\tactors\tclip_refs\tfirst_text"
+    )?;
+    for run in runs {
+        let run_id = executed_dialogue_run_id(&run);
+        let output_stem = executed_dialogue_run_output_stem(&run);
+        let actors = unique_join(
+            run.lines
+                .iter()
+                .filter_map(|line| line.actor_record.as_deref()),
+        );
+        let clip_refs = run
+            .lines
+            .iter()
+            .filter_map(|line| {
+                line.clip_index.map(|clip| {
+                    format!(
+                        "{}:{clip}",
+                        line.actor_record.as_deref().unwrap_or("noactor")
+                    )
+                })
+            })
+            .collect::<Vec<_>>()
+            .join(",");
+        let voiced_count = run
+            .lines
+            .iter()
+            .filter(|line| line.clip_index.is_some())
+            .count();
+        let first_text = run
+            .lines
+            .first()
+            .map(|line| clean_tsv(&line.text))
+            .unwrap_or_default();
+        writeln!(
+            file,
+            "{}\t{}\t{}.mp4\t{}\t{}\t{}\t0x{:05x}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            run.scenario_id.as_deref().unwrap_or(""),
             run_id,
             output_stem,
             run.script,
@@ -1834,6 +2099,7 @@ mod tests {
         text: &str,
     ) -> ScriptExecutedSpeechLine {
         ScriptExecutedSpeechLine {
+            scenario_id: None,
             script: script.to_string(),
             sequence_index,
             function_name: "func".to_string(),
@@ -1878,9 +2144,13 @@ mod tests {
     }
 
     fn synthetic_branch_script_dir() -> (PathBuf, usize) {
+        let nonce = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("system time before unix epoch")
+            .as_nanos();
         let root = std::env::temp_dir().join(format!(
-            "commander-blood-branch-scenarios-{}",
-            std::process::id()
+            "commander-blood-branch-scenarios-{}-{nonce}",
+            std::process::id(),
         ));
         let _ = fs::remove_dir_all(&root);
         fs::create_dir_all(&root).expect("create scenario script dir");
@@ -2335,6 +2605,80 @@ mod tests {
         let _ = fs::remove_file(&path);
         assert!(manifest.contains("SCRIPT1\tSCRIPT1-branch-0001\t1"));
         assert!(manifest.contains("\tfalse\ttrue\t1\t2\t1\t0\t"));
+    }
+
+    #[test]
+    fn branch_scenario_speech_uses_forced_trace() {
+        let (root, condition_offset) = synthetic_branch_script_dir();
+        let branch_rows = vec![branch_trace_line(
+            "SCRIPT1",
+            0,
+            condition_offset,
+            0xc0,
+            Some(0x0010),
+            true,
+            Some(false),
+            "condition failed",
+        )];
+
+        let scenarios =
+            parse_script_branch_scenarios(&root, &branch_rows).expect("parse branch scenarios");
+        let rows = parse_script_branch_scenario_speech(&root, None, &HashMap::new(), &scenarios)
+            .expect("parse branch scenario speech");
+        let _ = fs::remove_dir_all(&root);
+
+        assert_eq!(rows.len(), 2);
+        assert!(rows
+            .iter()
+            .all(|row| row.scenario_id.as_deref() == Some("SCRIPT1-branch-0001")));
+        assert_eq!(rows[0].sequence_index, 0);
+        assert_eq!(rows[1].sequence_index, 1);
+        assert!(rows
+            .iter()
+            .all(|row| row.source.contains("execute_trace_with_overrides")));
+
+        let path = std::env::temp_dir().join(format!(
+            "commander-blood-branch-scenario-dialogue-{}.tsv",
+            std::process::id()
+        ));
+        write_script_branch_scenario_speech_manifest(&rows, &path)
+            .expect("write branch scenario speech");
+        let manifest = fs::read_to_string(&path).expect("read branch scenario speech");
+        let _ = fs::remove_file(&path);
+        assert!(manifest.starts_with("scenario_id\tscript\tsequence_index"));
+        assert!(manifest.contains("SCRIPT1-branch-0001\tSCRIPT1\t0"));
+    }
+
+    #[test]
+    fn scenario_dialogue_runs_do_not_merge_with_default_execution() {
+        let default = executed_speech_line("SCRIPT2", 0, 0x10, Some("Actor_A"), Some("Room1"), "a");
+        let mut scenario =
+            executed_speech_line("SCRIPT2", 0, 0x20, Some("Actor_A"), Some("Room1"), "b");
+        scenario.scenario_id = Some("SCRIPT2-branch-0001".to_string());
+
+        let rows = vec![scenario, default];
+        let runs = script_executed_dialogue_runs(&rows);
+        assert_eq!(runs.len(), 2);
+        assert_eq!(runs[0].scenario_id, None);
+        assert_eq!(runs[0].run_index, 1);
+        assert_eq!(runs[1].scenario_id.as_deref(), Some("SCRIPT2-branch-0001"));
+        assert_eq!(runs[1].run_index, 1);
+        assert_eq!(
+            executed_dialogue_run_output_stem(&runs[1]),
+            "branch-scenario-dialogue-run - script2-branch-0001 - 0001 - room1"
+        );
+
+        let path = std::env::temp_dir().join(format!(
+            "commander-blood-branch-scenario-dialogue-runs-{}.tsv",
+            std::process::id()
+        ));
+        write_script_branch_scenario_dialogue_runs_manifest(&rows, &path)
+            .expect("write branch scenario runs");
+        let manifest = fs::read_to_string(&path).expect("read branch scenario runs");
+        let _ = fs::remove_file(&path);
+        assert!(manifest.contains("SCRIPT2-branch-0001\tSCRIPT2-branch-0001-run-0001"));
+        assert!(manifest
+            .contains("branch-scenario-dialogue-run - script2-branch-0001 - 0001 - room1.mp4"));
     }
 
     #[test]
