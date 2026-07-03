@@ -439,8 +439,14 @@ via helper `0x6034`. Rust also ports the direct C2 mode-0 operand-record write:
 if the owner is active, `operand+2` has bit `0x20`, and the runtime sentinel
 list accepts the operand, helper table `gs:0x6D60` selects a kind-specific field
 and Rust writes `0xFFFF` there. Kind `2` records also clear `gs:0x1FB2` and set
-active dialogue line `gs:0x6788 = 0x27`. The deeper resolved-table C1 paths and
-the C2 `kind == 0x0400`/helper-`0x7409` presentation branch remain pending.
+active dialogue line `gs:0x6788 = 0x27`. Kind `0x0400` records call helper
+`0x7409` with `DI = operand + 4`; that helper opens `descript.des`, scans its
+18-byte directory entries for a NUL-terminated name matching `es:[DI]`, and
+returns nonzero after dispatching the matched descriptor script. Rust models that
+nonzero helper result through `ExecutionContext::with_descript_entry_name`, then
+clears `gs:0x1FB2`, ORs bit `0x02` into `gs:0x67AA`, and sets
+`gs:0x6788 = 0x2B`. The deeper resolved-table C1 paths remain pending, as does
+automatic extraction of `descript.des` names into the execution context.
 
 ### 0xCA/0xCB global condition handlers — token shape (DECODED; runtime source pending)
 
@@ -754,9 +760,11 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       now executed when concrete host-state records are available. The direct
       C1 mode-0 success write `{0x00C1, operand, 0x0002}` is also applied when
       the DEB-derived context proves the owner active. C2 mode-0 now applies
-      the `gs:0x6D60` kind-field write and kind-2 active-line side effect
-      (`gs:0x6788 = 0x27`); resolved-table C1 paths and the C2
-      `kind == 0x0400`/helper-`0x7409` branch remain pending.
+      the `gs:0x6D60` kind-field write, the kind-2 active-line side effect
+      (`gs:0x6788 = 0x27`), and the kind-0x0400/helper-0x7409 active-line side
+      effect (`gs:0x67AA|=2`, `gs:0x6788 = 0x2B`) when `ExecutionContext`
+      supplies the matching `descript.des` directory name. Resolved-table C1
+      paths and automatic descriptor-context extraction remain pending.
 - [x] Expose 0xCA/0xCB global condition tokens. `src/vm.rs` preserves the
       consumed compare operands as `VmToken::GlobalWordCompare` and
       `VmToken::GlobalPairCompare`; `execute_trace` evaluates their branches

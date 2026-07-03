@@ -627,7 +627,9 @@ fn read_u16(cod: &[u8], at: usize) -> Option<u16> {
 //   * 0xC2, 5 bytes plus optional A1 prefix:
 //       in mode 0, active owners can mark the operand record's kind-specific
 //       field as 0xffff via helper table 0x6D60 and kind-2 records set active
-//       dialogue line 0x27. Mode-1 direct compares are evaluated with context.
+//       dialogue line 0x27. Kind-0x0400 records can set active line 0x2B when
+//       helper 0x7409 finds a matching `descript.des` entry. Mode-1 direct
+//       compares are evaluated with context.
 //   * 0xCD, 7 bytes plus optional A1 prefix:
 //       compare a direct three-word record in mode 1; mode-0 resolved-table
 //       side effects are still pending the line-record table model.
@@ -665,6 +667,11 @@ const SPECIAL_OBJECT_SLOT_COUNT: usize = 16;
 const VM_FIELD_OFFSET_SELECTOR_C2: u8 = 0x11;
 const VM_FIELD_OFFSET_SELECTOR_C9_RELATED: u8 = 0x13;
 const C2_ACTIVE_LINE_KIND2: u16 = 0x27;
+const C2_ACTIVE_LINE_KIND400: u16 = 0x2B;
+const C2_PRESENTATION_GATE: u16 = 0x1FB2;
+const C2_PRESENTATION_FLAGS: u16 = 0x67AA;
+const C2_PRESENTATION_BUSY_FLAG: u8 = 0x02;
+const VM_ACTIVE_LINE: u16 = 0x6788;
 const C9_PRESENTATION_GATE_A: u16 = 0x252A;
 const C9_PRESENTATION_GATE_B: u16 = 0x2531;
 
@@ -742,12 +749,17 @@ pub struct ExecutionTrace {
 /// `special_object_offset` is DOS `gs:0x674e`, initialized from the DEB object
 /// named `blood`. Handler `0x6946` maps that RHS value to `0xffff` before
 /// mode-1 equality/inversion tests.
+///
+/// `descript_entry_names` mirrors the `descript.des` directory scanned by
+/// helper `0x7409`. The C2 kind-0x0400 path passes `operand + 4` as a
+/// NUL-terminated name and treats a matching directory entry as helper success.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ExecutionContext {
     object_offsets: Vec<u16>,
     special_object_offset: Option<u16>,
     global_word_0aa6: Option<u16>,
     global_pair_0aaa_0aa8: Option<(u8, u8)>,
+    descript_entry_names: Vec<Vec<u8>>,
 }
 
 impl ExecutionContext {
@@ -779,6 +791,20 @@ impl ExecutionContext {
         self
     }
 
+    pub fn with_descript_entry_name(mut self, name: impl AsRef<str>) -> Self {
+        let bytes = name.as_ref().as_bytes();
+        if !bytes.is_empty()
+            && !bytes.contains(&0)
+            && !self
+                .descript_entry_names
+                .iter()
+                .any(|known| known.as_slice() == bytes)
+        {
+            self.descript_entry_names.push(bytes.to_vec());
+        }
+        self
+    }
+
     pub fn with_bios_rtc(mut self, hour_24: u8, month: u8, day: u8) -> Self {
         self.global_word_0aa6 = Some(hour_24 as u16);
         self.global_pair_0aaa_0aa8 = Some((month, day));
@@ -803,6 +829,13 @@ impl ExecutionContext {
 
     fn is_special_rhs(&self, value: u16) -> bool {
         self.special_object_offset == Some(value)
+    }
+
+    fn c2_descript_lookup_succeeds(&self, state: &[u8], record_offset: u16) -> bool {
+        let name_offset = record_offset.wrapping_add(4);
+        self.descript_entry_names
+            .iter()
+            .any(|name| state_c_string_equals(state, name_offset, name))
     }
 }
 
@@ -842,6 +875,18 @@ fn state_set_u8(state: &mut [u8], addr: u16, val: u8) {
     if let Some(slot) = state.get_mut(addr as usize) {
         *slot = val;
     }
+}
+
+fn state_c_string_equals(state: &[u8], addr: u16, expected: &[u8]) -> bool {
+    let start = addr as usize;
+    let end = match start.checked_add(expected.len()) {
+        Some(end) => end,
+        None => return false,
+    };
+    if end >= state.len() {
+        return false;
+    }
+    &state[start..end] == expected && state[end] == 0
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -1039,9 +1084,22 @@ fn write_c2_record_state_direct(
         );
     }
 
-    if state_u8(state, 0x2793) & 1 == 0 && state_u8(state, 0x67aa) & 2 == 0 && kind == 2 {
-        state_set_u8(state, 0x1fb2, 0);
-        state_set_u16(state, 0x6788, C2_ACTIVE_LINE_KIND2);
+    if state_u8(state, 0x2793) & 1 == 0
+        && state_u8(state, C2_PRESENTATION_FLAGS) & C2_PRESENTATION_BUSY_FLAG == 0
+    {
+        if kind == 2 {
+            state_set_u8(state, C2_PRESENTATION_GATE, 0);
+            state_set_u16(state, VM_ACTIVE_LINE, C2_ACTIVE_LINE_KIND2);
+        } else if kind == 0x0400 && context.c2_descript_lookup_succeeds(state, target_record_offset)
+        {
+            state_set_u8(state, C2_PRESENTATION_GATE, 0);
+            state_set_u8(
+                state,
+                C2_PRESENTATION_FLAGS,
+                state_u8(state, C2_PRESENTATION_FLAGS) | C2_PRESENTATION_BUSY_FLAG,
+            );
+            state_set_u16(state, VM_ACTIVE_LINE, C2_ACTIVE_LINE_KIND400);
+        }
     }
 
     true
@@ -3442,7 +3500,7 @@ mod tests {
         state_set_u8(&mut var, owner + 2, 1);
         state_set_u16(&mut var, target_record, 2);
         state_set_u8(&mut var, target_record.wrapping_add(2), 0x20);
-        state_set_u8(&mut var, 0x1fb2, 0xff);
+        state_set_u8(&mut var, C2_PRESENTATION_GATE, 0xff);
         let context = ExecutionContext::from_object_offsets([owner, 0x0300]);
 
         let mut cod = Vec::new();
@@ -3456,7 +3514,7 @@ mod tests {
         let field_condition_offset = cod.len();
         push_word_equals(&mut cod, target_field, 0xffff);
         let active_line_condition_offset = cod.len();
-        push_word_equals(&mut cod, 0x6788, C2_ACTIVE_LINE_KIND2);
+        push_word_equals(&mut cod, VM_ACTIVE_LINE, C2_ACTIVE_LINE_KIND2);
         let first_text = cod.len();
         push_empty_text(&mut cod);
         cod.push(0xA1);
@@ -3489,6 +3547,56 @@ mod tests {
                 && !event.branch_taken
                 && event.condition_passed == Some(true)
         }));
+    }
+
+    #[test]
+    fn c2_kind400_descript_lookup_success_sets_presentation_state() {
+        let owner = 0x0100u16;
+        let record = owner + TALK_FIELD;
+        let target_record = 0x0200u16;
+        let target_field = target_record.wrapping_add(
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C2, 0x0400).expect("kind 0x400 field"),
+        );
+
+        let mut var = vec![0; 0x7000];
+        state_set_u8(&mut var, owner + 2, 1);
+        state_set_u16(&mut var, target_record, 0x0400);
+        state_set_u8(&mut var, target_record.wrapping_add(2), 0x20);
+        let name = b"PRESENTE";
+        let name_start = target_record.wrapping_add(4) as usize;
+        var[name_start..name_start + name.len()].copy_from_slice(name);
+        var[name_start + name.len()] = 0;
+        state_set_u8(&mut var, C2_PRESENTATION_GATE, 0xff);
+
+        let context = ExecutionContext::from_object_offsets([owner, 0x0300]);
+        let mut no_match = var.clone();
+        assert!(write_c2_record_state_direct(
+            &mut no_match,
+            &context,
+            &mut SpecialObjectSlots::default(),
+            record,
+            target_record,
+        ));
+        assert_eq!(state_u16(&no_match, target_field), 0xffff);
+        assert_eq!(state_u8(&no_match, C2_PRESENTATION_GATE), 0xff);
+        assert_eq!(state_u8(&no_match, C2_PRESENTATION_FLAGS), 0);
+        assert_eq!(state_u16(&no_match, VM_ACTIVE_LINE), 0);
+
+        let context = context.with_descript_entry_name("PRESENTE");
+        assert!(write_c2_record_state_direct(
+            &mut var,
+            &context,
+            &mut SpecialObjectSlots::default(),
+            record,
+            target_record,
+        ));
+        assert_eq!(state_u16(&var, target_field), 0xffff);
+        assert_eq!(state_u8(&var, C2_PRESENTATION_GATE), 0);
+        assert_eq!(
+            state_u8(&var, C2_PRESENTATION_FLAGS) & C2_PRESENTATION_BUSY_FLAG,
+            C2_PRESENTATION_BUSY_FLAG
+        );
+        assert_eq!(state_u16(&var, VM_ACTIVE_LINE), C2_ACTIVE_LINE_KIND400);
     }
 
     #[test]

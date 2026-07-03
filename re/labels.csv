@@ -14,6 +14,7 @@ DS:0x7802,font_ascii_map,ASCII->glyph index (xlatb base)
 DS:0x78B2,font_advances_ds,per-glyph advance widths (DS offset)
 DS:0x7908,font_glyphs_ds,8-byte glyph bitmaps (DS offset)
 DS:0x67AD,vm_mode,"current decode mode (0/1); set by FF/FE sentinels"
+DS:0x67AA,vm_c2_presentation_flags,"C2 kind-0x0400 sets bit 1 after descript.des helper success"
 DS:0x67B2,vm_flag_b2,"gates 0xFB sentinel handling in token_advance"
 DS:0x6720,vm_cod_ptr,far ptr lds si -> current script COD bytecode
 DS:0x6724,vm_off_ptr,far ptr les di -> per-text offset table (read by 25 opcode handlers)
@@ -53,6 +54,7 @@ DS:0x67B1,vm_loop_flag,bit0=loop active bit1=loop range
 DS:0x6778,vm_loop_target,loop target address set by 0xA6 b4&0x10
 DS:0x677C,vm_a6_b3_ptr,saved pointer to 0xA6 b3 byte
 DS:0x674E,vm_special_blood_object,"DEB object offset for built-in name blood; 0x6946 remaps RHS to 0xffff"
+DS:0x1FB2,vm_c2_presentation_gate,"C2 special-kind branch clears this byte before setting active line"
 DS:0x67B4,vm_ctrl_signal,handler->loop control signal (nonzero = special)
 DS:0x6788,vm_active_line,"active dialogue-line id = sign_extend(0xA6 b3)+9; reset 0xffff on clear"
 0x0011E8,dlg_line_activate,reads signed gs:0x1fab(b3)+9 -> gs:0x6788 active line id
@@ -73,10 +75,12 @@ DS:0x678A,vm_displayed_line,currently-displayed dialogue-line id (vs active gs:0
 DS:0x5239,render_yclip_lo,render_string y-clip low bound (set 0x23 for letterbox)
 DS:0x523B,render_yclip_hi,render_string y-clip high bound (0xa5 letterbox / 0xc8 full)
 0x006023,vm_scale_index,helper: scales AX (called with 2 and 0xf) for table indexing
+0x007409,vm_c2_descript_lookup,"C2 kind-0x0400 helper: opens descript.des and dispatches matching descriptor script"
 0x008700,vm_subdispatch_f29,call cs:[bx*2+0xf29]; gated by [0x2793]&8 and [0x2565]&1
 0x007E09,vm_actor_update_loop,"call cs:[bx*2+0x6d4] per 0x18-byte actor/object struct (bp+=0x18)"
 DS:0x00A6,snd_son_name,"son.snd voice/SFX bank filename"
 DS:0x00AE,snd_mus_name,"mus.snd music bank filename"
+DS:0x0106,descript_des_name,"descript.des filename opened by C2 helper 0x7409"
 0x00CE14,script_basenames,"table of scriptN.cod/.bas/.var/.dic/.deb names (16-byte stride)"
 0x014C22,font_ascii_map,dialogue font ASCII map (DS:0x7802)
 0x014CD2,font_advances,dialogue font glyph advance widths
