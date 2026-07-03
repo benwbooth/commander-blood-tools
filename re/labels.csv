@@ -44,6 +44,7 @@ DS:0x6770,vm_pending_word,pending word appended by 0xA3 handler
 0x0055F5,vm_exec_loop,"main script interpreter loop; di=0x6eb0 handler table; dispatch at 0x5627"
 0x005627,vm_dispatch,"call gs:[bx+0x6eb0], bx=(opcode-0xa0)*2 -> per-opcode near handler"
 0x005816,vm_post_exec_record_update,"post-VM scan of DEB/object table via DS:0x672c and runtime state via DS:0x6724; updates display/control flags"
+0x005D8F,vm_post_update_c4_pair,"post-update C4 pair path: marks primary aux 0xffff and writes reciprocal selector-0x13 C4 record"
 0x005FD8,vm_special_slot_remove,"remove AX from 16-word sentinel list DS:0x6d3e; CF set on hit"
 0x005FF6,vm_special_slot_insert,"insert AX into 16-word sentinel list DS:0x6d3e; CF clear only when full"
 DS:0x6D3E,vm_special_slots,"16-word runtime list for fields set to the blood/0xffff sentinel"

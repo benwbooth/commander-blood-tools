@@ -709,6 +709,9 @@ fn read_u16(cod: &[u8], at: usize) -> Option<u16> {
 //       sign_extend(operand)-1 in `gs:0x6780`. The main loop handles the actual
 //       cross-profile handoff after the current VM pass, so traces decode the
 //       token but do not recursively execute the next script yet.
+// The post-VM object scan at 0x5816 is only partially represented: the recovered
+// C4 pair update marks a direct C4 record consumed and writes the reciprocal
+// selector-0x13 C4 record on the related object.
 // NOTE: `interpret_line_states` is a LINEAR pass: it applies mode-0 state
 // mutations and uses guarded mode-1 actor records as context, but does not take
 // branches. `execute_trace` models the recovered branch helper for conditionals
@@ -731,6 +734,7 @@ const C2_PRESENTATION_BUSY_FLAG: u8 = 0x02;
 const VM_ACTIVE_LINE: u16 = 0x6788;
 const C9_PRESENTATION_GATE_A: u16 = 0x252A;
 const C9_PRESENTATION_GATE_B: u16 = 0x2531;
+const C4_POST_UPDATE_SENTINEL: u16 = 0xFFFF;
 
 /// Field-offset lookup table used by helper `0x6023`:
 /// `gs:[0x6D60 + selector * 16 + bsf(kind)]`.
@@ -1151,6 +1155,39 @@ fn write_actor_record(state: &mut [u8], record_offset: u16, related_record_offse
     state_set_u16(state, record_offset, OP_ACTOR as u16);
     state_set_u16(state, record_offset.wrapping_add(2), related_record_offset);
     state_set_u16(state, record_offset.wrapping_add(4), 0);
+}
+
+fn post_update_actor_record_pair(
+    state: &mut [u8],
+    owner_offset: u16,
+    record_offset: u16,
+) -> Option<u16> {
+    if state_u16(state, record_offset) != OP_ACTOR as u16
+        || state_u16(state, record_offset.wrapping_add(4)) != 0
+    {
+        return None;
+    }
+
+    state_set_u16(
+        state,
+        record_offset.wrapping_add(4),
+        C4_POST_UPDATE_SENTINEL,
+    );
+
+    let related_offset = state_u16(state, record_offset.wrapping_add(2));
+    let related_kind = state_u16(state, related_offset);
+    let related_field = related_offset.wrapping_add(vm_field_offset(
+        VM_FIELD_OFFSET_SELECTOR_C9_RELATED,
+        related_kind,
+    )?);
+    state_set_u16(state, related_field, OP_ACTOR as u16);
+    state_set_u16(state, related_field.wrapping_add(2), owner_offset);
+    state_set_u16(
+        state,
+        related_field.wrapping_add(4),
+        C4_POST_UPDATE_SENTINEL,
+    );
+    Some(related_field)
 }
 
 fn record_link_condition(
@@ -2853,6 +2890,64 @@ mod tests {
         assert_eq!(state_u16(&var, related_field.wrapping_add(4)), 0);
         assert_eq!(state_u8(&var, C9_PRESENTATION_GATE_A), 0);
         assert_eq!(state_u8(&var, C9_PRESENTATION_GATE_B), 6);
+    }
+
+    #[test]
+    fn post_update_actor_record_pair_marks_primary_and_writes_reciprocal() {
+        let owner = 0x0100u16;
+        let record = owner.wrapping_add(TALK_FIELD);
+        let related = 0x0200u16;
+        let related_field = related.wrapping_add(
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, 2).expect("kind 2 C4 field"),
+        );
+        assert_eq!(related_field, 0x023A);
+
+        let mut var = vec![0; 0x0300];
+        state_set_u16(&mut var, owner, 2);
+        state_set_u16(&mut var, related, 2);
+        write_actor_record(&mut var, record, related);
+
+        assert_eq!(
+            post_update_actor_record_pair(&mut var, owner, record),
+            Some(related_field)
+        );
+        assert_eq!(
+            state_u16(&var, record.wrapping_add(4)),
+            C4_POST_UPDATE_SENTINEL
+        );
+        assert_eq!(state_u16(&var, related_field), OP_ACTOR as u16);
+        assert_eq!(state_u16(&var, related_field.wrapping_add(2)), owner);
+        assert_eq!(
+            state_u16(&var, related_field.wrapping_add(4)),
+            C4_POST_UPDATE_SENTINEL
+        );
+    }
+
+    #[test]
+    fn post_update_actor_record_pair_ignores_consumed_or_untyped_records() {
+        let owner = 0x0100u16;
+        let record = owner.wrapping_add(TALK_FIELD);
+        let related = 0x0200u16;
+        let related_field = related.wrapping_add(
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, 2).expect("kind 2 C4 field"),
+        );
+
+        let mut var = vec![0; 0x0300];
+        state_set_u16(&mut var, related, 2);
+        write_actor_record(&mut var, record, related);
+        state_set_u16(&mut var, record.wrapping_add(4), C4_POST_UPDATE_SENTINEL);
+
+        assert_eq!(post_update_actor_record_pair(&mut var, owner, record), None);
+        assert_eq!(state_u16(&var, related_field), 0);
+
+        state_set_u16(&mut var, record.wrapping_add(4), 0);
+        state_set_u16(&mut var, related, 0);
+        assert_eq!(post_update_actor_record_pair(&mut var, owner, record), None);
+        assert_eq!(
+            state_u16(&var, record.wrapping_add(4)),
+            C4_POST_UPDATE_SENTINEL
+        );
+        assert_eq!(state_u16(&var, related_field), 0);
     }
 
     #[test]

@@ -647,6 +647,27 @@ The default `execute_trace` path still preserves empty mode-1 C4 records as
 unresolved compatibility state so existing exports do not collapse to zero
 dialogue while that setup path is incomplete.
 
+### VM post-update C4 pair path @ file 0x5816 / 0x5D8F — operands (PARTIAL)
+
+After selected VM passes, routine `0x5816` scans the DEB object table
+(`DS:0x672C`) and runtime state (`DS:0x6724`). For each active object it computes
+the selector-`0x13` record field (`helper 0x6023`; kind `2` -> `+0x3A`). When
+that record is a C4 entry with aux word `0`, the `0x5D8F..0x5E1F` path:
+
+    ds:[record + 4] = 0xFFFF
+    related = ds:[record + 2]
+    related_record = related + field_offset(selector=0x13, kind=ds:[related])
+    ds:[related_record + 0] = 0x00C4
+    ds:[related_record + 2] = owner
+    ds:[related_record + 4] = 0xFFFF
+
+This is the reciprocal presentation-pair write that bridges a direct mode-0 C4
+record into the related object's A6/C4 presentation gate. Rust now ports this
+single transformation as `post_update_actor_record_pair()`, but it is not wired
+into `execute_trace` yet because the surrounding `0x5816` object scan also
+depends on presentation globals (`0x675E`, `0x674E`, `0x6752`, `0x67AC`,
+`0x67B6`, etc.) and UI/event handlers that choose which object pair is active.
+
 ### 0xC9 record-clear handler @ file 0x6FB9 — speaker lifetime (DECODED)
 
 `0xC9` consumes one u16 record operand (`C9 <record:u16>`, 3 bytes total). The
@@ -892,7 +913,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       per-script order, while the old per-script videos remain for comparison.
 - [ ] Complete the `gs:0x6724` runtime object/state layout: `es:[di]` kind,
       `es:[di+2]` flags, `+0x3A` A6/C4 presentation subrecord, and remaining
-      C4 setup paths needed before enabling the A6 gate in exports.
+      C4 setup paths needed before enabling the A6 gate in exports. The
+      `0x5D8F..0x5E1F` C4 reciprocal post-update write is ported; the surrounding
+      `0x5816` object scan and presentation-global inputs are still pending.
 - [ ] Verify audible `tb.snd` chatter trigger path, if any. `gs:0x67BB` itself is
       now decoded as post-reveal hold state rather than a direct SND caller.
 - [ ] Map the presentation opcodes among the handler table: which set background,

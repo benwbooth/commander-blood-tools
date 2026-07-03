@@ -1255,6 +1255,15 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         comment: "post-exec scan over DEB/object table and runtime state records",
     },
     BinarySymbol {
+        name: "vm_post_update_c4_pair",
+        file_offset: 0x005d8f,
+        segment: Some(VM_CODE_SEGMENT),
+        offset: Some(0x09ef),
+        ds_offset: None,
+        kind: "script-vm",
+        comment: "post-update C4 pair path marks primary aux 0xffff and writes reciprocal selector-0x13 C4 record",
+    },
+    BinarySymbol {
         name: "render_string_entry",
         file_offset: 0x003192,
         segment: Some(0x0299),
