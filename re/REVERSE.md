@@ -1301,7 +1301,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       (`create_character_dialogue_video`) now builds the `SceneEvent` IR and
       renders by consuming it (SetBackground/PlayMusic/PlayVoice/DrawSubtitle),
       instead of scanning grouped lines directly. The render path is now
-      VM-event-driven.
+      VM-event-driven. Dialogue subtitle sidecar audio now follows explicit
+      `PlayChatter` events from that stream; HNM subtitle exports keep their
+      cue-derived chatter path because they do not have VM presentation events.
 - [x] Removed all heuristic fallbacks (per user "no fallbacks just compute it
       accurately"): dropped the static `CHAR_CONTEXTS` background fallback, the
       `lookup_character_context` gate, and the redundant `hnm_music` re-lookup.

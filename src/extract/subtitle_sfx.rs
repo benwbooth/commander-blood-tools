@@ -6,6 +6,16 @@ pub(super) fn build_subtitle_sfx_track(
     snd_path: &Path,
     out_path: &Path,
 ) -> Result<Option<u32>, Box<dyn Error>> {
+    let events = subtitle_chatter_events(cues);
+    build_subtitle_sfx_track_from_events(&events, duration, snd_path, out_path)
+}
+
+pub(super) fn build_subtitle_sfx_track_from_events(
+    events: &[SubtitleChatterEvent],
+    duration: f64,
+    snd_path: &Path,
+    out_path: &Path,
+) -> Result<Option<u32>, Box<dyn Error>> {
     let clips = subtitle_sfx_clips(snd_path)?;
     if clips.is_empty() {
         return Ok(None);
@@ -19,7 +29,7 @@ pub(super) fn build_subtitle_sfx_track(
     // BLOODPRG.EXE's 0x67BB path gates one line-complete hold event; no
     // recovered path supports cycling through tb.snd clips.
     let chatter_clip = &clips[0];
-    for event in subtitle_chatter_events(cues) {
+    for event in events {
         let start = (event.start_time * sample_rate as f64).round() as usize;
         if start >= track.len() {
             continue;
@@ -43,9 +53,9 @@ pub(super) fn build_subtitle_sfx_track(
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
-struct SubtitleChatterEvent {
-    start_time: f64,
-    active_line_id: Option<u16>,
+pub(super) struct SubtitleChatterEvent {
+    pub(super) start_time: f64,
+    pub(super) active_line_id: Option<u16>,
 }
 
 fn subtitle_chatter_events(cues: &[SubtitleCue]) -> Vec<SubtitleChatterEvent> {
@@ -69,7 +79,7 @@ fn subtitle_chatter_events(cues: &[SubtitleCue]) -> Vec<SubtitleChatterEvent> {
         .collect()
 }
 
-fn subtitle_reveal_char_count(text: &str) -> usize {
+pub(super) fn subtitle_reveal_char_count(text: &str) -> usize {
     text.chars().filter(|ch| *ch != '\n' && *ch != '\r').count()
 }
 
@@ -195,5 +205,34 @@ mod tests {
         let second = ((1.0 + 1.0 / SUBTITLE_CHARS_PER_SEC) * rate as f64).round() as usize;
         assert_eq!(&track[first..first + 2], &[200, 180]);
         assert_eq!(&track[second..second + 2], &[200, 180]);
+    }
+
+    #[test]
+    fn sfx_track_can_be_driven_by_explicit_chatter_events() {
+        let root = std::env::temp_dir().join(format!(
+            "commander-blood-subtitle-sfx-events-{}",
+            std::process::id()
+        ));
+        let _ = fs::create_dir_all(&root);
+        let snd = root.join("tb.snd");
+        let out = root.join("out.raw");
+        write_test_snd(&snd, &[[200, 180]]);
+
+        let rate = build_subtitle_sfx_track_from_events(
+            &[SubtitleChatterEvent {
+                start_time: 0.25,
+                active_line_id: Some(vm::text_selector_active_line_id(0x01)),
+            }],
+            1.0,
+            &snd,
+            &out,
+        )
+        .expect("build sfx")
+        .expect("sfx rate");
+        let track = fs::read(&out).expect("read sfx");
+        let _ = fs::remove_dir_all(&root);
+
+        let start = (0.25 * rate as f64).round() as usize;
+        assert_eq!(&track[start..start + 2], &[200, 180]);
     }
 }

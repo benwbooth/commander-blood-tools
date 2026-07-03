@@ -168,6 +168,7 @@ pub(super) fn lookup_character_context(record_name: &str) -> Option<&'static Cha
 struct DialogueSegment {
     text: String,
     active_line_id: u16,
+    play_chatter: bool,
     hnm_path: Option<PathBuf>, // talking-head HNM; None => static background
     voice: Option<SndClip>,    // None => silent (subtitle-only)
     duration: f64,             // seconds this segment occupies the timeline
@@ -180,6 +181,7 @@ fn silent_dialogue_segment(text: &str, active_line_id: u16) -> DialogueSegment {
     DialogueSegment {
         text: text.to_string(),
         active_line_id,
+        play_chatter: false,
         hnm_path: None,
         voice: None,
         duration,
@@ -198,6 +200,32 @@ fn dialogue_subtitle_cues(segments: &[DialogueSegment]) -> (Vec<SubtitleCue>, f6
         duration += seg.duration;
     }
     (cues, duration)
+}
+
+fn mark_last_segment_chatter(segments: &mut [DialogueSegment], active_line_id: u16) {
+    if let Some(seg) = segments.last_mut() {
+        if seg.active_line_id == active_line_id {
+            seg.play_chatter = true;
+        }
+    }
+}
+
+fn dialogue_chatter_events(segments: &[DialogueSegment]) -> Vec<SubtitleChatterEvent> {
+    let mut events = Vec::new();
+    let mut segment_start = 0.0f64;
+    for seg in segments {
+        if seg.play_chatter {
+            let reveal_chars = subtitle_reveal_char_count(&seg.text);
+            if reveal_chars > 0 {
+                events.push(SubtitleChatterEvent {
+                    start_time: segment_start + reveal_chars as f64 / SUBTITLE_CHARS_PER_SEC,
+                    active_line_id: Some(seg.active_line_id),
+                });
+            }
+        }
+        segment_start += seg.duration;
+    }
+    events
 }
 
 /// Create combined character videos for each DESCRIPT.DES character record that
@@ -622,6 +650,9 @@ fn create_executed_dialogue_run_video(
                     segments.push(silent_dialogue_segment(text, *active_line_id));
                 }
             }
+            vm::SceneEvent::PlayChatter { active_line_id } => {
+                mark_last_segment_chatter(&mut segments, *active_line_id);
+            }
             _ => {}
         }
     }
@@ -721,6 +752,9 @@ fn create_profile_dialogue_run_video(
                     segments.push(silent_dialogue_segment(text, *active_line_id));
                 }
             }
+            vm::SceneEvent::PlayChatter { active_line_id } => {
+                mark_last_segment_chatter(&mut segments, *active_line_id);
+            }
             _ => {}
         }
     }
@@ -774,6 +808,7 @@ fn resolve_actor_voiced_segment(
     Some(DialogueSegment {
         text: text.to_string(),
         active_line_id,
+        play_chatter: false,
         hnm_path: Some(hnm_path),
         voice: Some(voice),
         duration,
@@ -838,6 +873,7 @@ pub(super) fn create_character_dialogue_video(
             Some(DialogueSegment {
                 text: text.to_string(),
                 active_line_id,
+                play_chatter: false,
                 hnm_path: Some(hnm_path),
                 voice: Some(voice),
                 duration,
@@ -882,6 +918,9 @@ pub(super) fn create_character_dialogue_video(
                 if !text.trim().is_empty() {
                     segments.push(silent_dialogue_segment(text, *active_line_id));
                 }
+            }
+            vm::SceneEvent::PlayChatter { active_line_id } => {
+                mark_last_segment_chatter(&mut segments, *active_line_id);
             }
             _ => {}
         }
@@ -979,10 +1018,13 @@ fn render_dialogue_segments(
     }
 
     let (cues, duration) = dialogue_subtitle_cues(segments);
+    let chatter_events = dialogue_chatter_events(segments);
 
     let tmp_sfx = mp4_out.with_extension("subtitle_sfx.raw");
-    let subtitle_sfx_rate = if let Some(path) = subtitle_sfx_path {
-        build_subtitle_sfx_track(&cues, duration, path, &tmp_sfx)?
+    let subtitle_sfx_rate = if chatter_events.is_empty() {
+        None
+    } else if let Some(path) = subtitle_sfx_path {
+        build_subtitle_sfx_track_from_events(&chatter_events, duration, path, &tmp_sfx)?
     } else {
         None
     };
@@ -1200,6 +1242,7 @@ mod tests {
             DialogueSegment {
                 text: "first".to_string(),
                 active_line_id: vm::text_selector_active_line_id(0x01),
+                play_chatter: true,
                 hnm_path: None,
                 voice: None,
                 duration: 1.2,
@@ -1207,6 +1250,7 @@ mod tests {
             DialogueSegment {
                 text: "second".to_string(),
                 active_line_id: vm::text_selector_active_line_id(0xff),
+                play_chatter: true,
                 hnm_path: None,
                 voice: None,
                 duration: 0.8,
@@ -1225,6 +1269,37 @@ mod tests {
             cues[1].active_line_id,
             Some(vm::text_selector_active_line_id(0xff))
         );
+    }
+
+    #[test]
+    fn dialogue_chatter_events_follow_vm_play_chatter_flags() {
+        let segments = vec![
+            DialogueSegment {
+                text: "first".to_string(),
+                active_line_id: vm::text_selector_active_line_id(0x01),
+                play_chatter: false,
+                hnm_path: None,
+                voice: None,
+                duration: 1.2,
+            },
+            DialogueSegment {
+                text: "second".to_string(),
+                active_line_id: vm::text_selector_active_line_id(0xff),
+                play_chatter: true,
+                hnm_path: None,
+                voice: None,
+                duration: 0.8,
+            },
+        ];
+
+        let events = dialogue_chatter_events(&segments);
+
+        assert_eq!(events.len(), 1);
+        assert_eq!(
+            events[0].active_line_id,
+            Some(vm::text_selector_active_line_id(0xff))
+        );
+        assert!((events[0].start_time - (1.2 + 6.0 / SUBTITLE_CHARS_PER_SEC)).abs() < f64::EPSILON);
     }
 
     #[test]
