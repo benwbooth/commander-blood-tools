@@ -64,7 +64,7 @@ fn resolve_runtime_backgrounds(
         }
     }
 
-    let context = vm_execution_context_from_object_names(&object_names, Some(descript_db));
+    let context = vm_execution_context_from_deb(deb, Some(descript_db));
     let mut out = HashMap::new();
     for line in vm::interpret_line_states_with_context(cod, var, &context) {
         let Some(loc_off) = line.location_offset.filter(|&l| l != 0) else {
@@ -665,7 +665,7 @@ fn load_script_profile(
     let words = parse_script_dictionary(&dic_path)?;
     let script = format!("SCRIPT{}", profile.script_number);
     let object_names = parse_deb_object_names(&deb);
-    let context = vm_execution_context_from_object_names(&object_names, descript_db);
+    let context = vm_execution_context_from_deb(&deb, descript_db);
     let (mut functions, actor_refs) = if let Some(db) = descript_db {
         let (functions, actor_refs, _) = parse_script_symbols(
             &script,
@@ -771,7 +771,7 @@ pub(super) fn parse_script_executed_speech(
             )?;
             let deb = fs::read(deb_path)?;
             let object_names = parse_deb_object_names(&deb);
-            let context = vm_execution_context_from_object_names(&object_names, descript_db);
+            let context = vm_execution_context_from_deb(&deb, descript_db);
             (functions, actor_refs, object_names, context)
         } else {
             (
@@ -958,7 +958,7 @@ pub(super) fn parse_script_branch_scenario_speech(
             )?;
             let deb = fs::read(deb_path)?;
             let object_names = parse_deb_object_names(&deb);
-            let context = vm_execution_context_from_object_names(&object_names, descript_db);
+            let context = vm_execution_context_from_deb(&deb, descript_db);
             (functions, actor_refs, object_names, context)
         } else {
             (
@@ -1158,7 +1158,21 @@ fn vm_execution_context_from_deb(
     descript_db: Option<&DescriptDb>,
 ) -> vm::ExecutionContext {
     let object_names = parse_deb_object_names(deb);
-    vm_execution_context_from_object_names(&object_names, descript_db)
+    let mut context = vm_execution_context_from_object_names(&object_names, descript_db);
+    for record in deb.chunks_exact(20) {
+        let kind = u16::from_le_bytes([record[18], record[19]]);
+        if kind != 1 && kind != 5 {
+            continue;
+        }
+        let name_len = record[..16].iter().position(|&b| b == 0).unwrap_or(16);
+        if name_len == 0 {
+            continue;
+        }
+        let name = String::from_utf8_lossy(&record[..name_len]);
+        let offset = u16::from_le_bytes([record[16], record[17]]);
+        context = context.with_vm_named_object(name.as_ref(), offset);
+    }
+    context
 }
 
 fn vm_execution_context_from_object_names(
@@ -1166,11 +1180,8 @@ fn vm_execution_context_from_object_names(
     descript_db: Option<&DescriptDb>,
 ) -> vm::ExecutionContext {
     let mut context = vm::ExecutionContext::from_object_offsets(object_names.keys().copied());
-    if let Some((&offset, _)) = object_names
-        .iter()
-        .find(|(_, name)| name.eq_ignore_ascii_case("blood"))
-    {
-        context = context.with_special_object_offset(offset);
+    for (&offset, name) in object_names {
+        context = context.with_vm_named_object(name, offset);
     }
     if let Some(db) = descript_db {
         for name in db.record_names() {
@@ -3443,14 +3454,33 @@ mod tests {
 
     #[test]
     fn deb_context_marks_blood_as_special_object() {
+        fn push_deb_record(deb: &mut Vec<u8>, name: &[u8], offset: u16, kind: u16) {
+            let mut record = [0u8; 20];
+            record[..name.len()].copy_from_slice(name);
+            record[16..18].copy_from_slice(&offset.to_le_bytes());
+            record[18..20].copy_from_slice(&kind.to_le_bytes());
+            deb.extend_from_slice(&record);
+        }
+
         let field = 0x0010u16;
         let blood = 0x0100u16;
-        let mut deb = vec![0; 20];
-        deb[0..5].copy_from_slice(b"blood");
-        deb[16..18].copy_from_slice(&blood.to_le_bytes());
-        deb[18..20].copy_from_slice(&1u16.to_le_bytes());
+        let arche = 0x0200u16;
+        let scruter_jo = 0x0300u16;
+        let vbio = 0x0400u16;
+        let mut deb = Vec::new();
+        push_deb_record(&mut deb, b"blood", blood, 1);
+        push_deb_record(&mut deb, b"arche", arche, 1);
+        push_deb_record(&mut deb, b"Scruter_Jo", scruter_jo, 1);
+        push_deb_record(&mut deb, b"vbio", vbio, 5);
 
         let context = vm_execution_context_from_deb(&deb, None);
+        assert_eq!(context.vm_named_object_offsets().blood, Some(blood));
+        assert_eq!(context.vm_named_object_offsets().arche, Some(arche));
+        assert_eq!(
+            context.vm_named_object_offsets().scruter_jo,
+            Some(scruter_jo)
+        );
+        assert_eq!(context.vm_named_object_offsets().vbio, Some(vbio));
         let mut var = vec![0; 0x0200];
         var[field as usize..field as usize + 2].copy_from_slice(&0xffffu16.to_le_bytes());
 

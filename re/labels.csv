@@ -71,6 +71,14 @@ DS:0x67B1,vm_loop_flag,bit0=loop active bit1=loop range
 DS:0x6778,vm_loop_target,loop target address set by 0xA6 b4&0x10
 DS:0x677C,vm_a6_b3_ptr,saved pointer to 0xA6 b3 byte
 DS:0x674E,vm_special_blood_object,"DEB object offset for built-in name blood; 0x6946 remaps RHS to 0xffff"
+DS:0x6750,vm_named_orxx_object,DEB object offset for built-in name orxx
+DS:0x6752,vm_named_arche_object,DEB object offset for built-in name arche
+DS:0x6754,vm_named_honk_object,DEB object offset for built-in name Honk
+DS:0x6756,vm_named_menu_object,DEB object offset for built-in name menu
+DS:0x6758,vm_named_ark_object,DEB object offset for built-in name Ark
+DS:0x6760,vm_named_scruter_jo_object,DEB object offset for built-in name Scruter_Jo
+DS:0x679C,vm_named_vbio_object,kind-5 DEB offset for built-in name vbio
+DS:0x67BE,vm_named_object_string_table,"built-in DEB names: blood/orxx/Honk/menu/arche/cryobox(unreferenced)/Ark/Scruter_Jo/vbio"
 DS:0x1FB2,vm_c2_presentation_gate,"C2 special-kind branch clears this byte before setting active line"
 DS:0x67B4,vm_ctrl_signal,handler->loop control signal (nonzero = special)
 DS:0x6788,vm_active_line,"active dialogue-line id = sign_extend(0xA6 b3)+9; reset 0xffff on clear"

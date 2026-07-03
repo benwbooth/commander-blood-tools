@@ -671,6 +671,26 @@ wired into `execute_trace` yet because the rest of `0x5816` also depends on
 presentation globals (`0x675E`, `0x674E`, `0x6752`, `0x67AC`, `0x67B6`, etc.)
 and UI/event handlers that choose which object pair is active.
 
+### VM named-object startup scan @ file 0x5486 — globals (PARTIAL)
+
+The startup scan walks 20-byte DEB records and compares kind-1 object names
+against built-in strings at `DS:0x67BE`:
+
+| Name | Stored global |
+| --- | --- |
+| `blood` | `DS:0x674E` |
+| `orxx` | `DS:0x6750` |
+| `arche` | `DS:0x6752` |
+| `Honk` | `DS:0x6754` |
+| `menu` | `DS:0x6756` |
+| `Ark` | `DS:0x6758` |
+| `Scruter_Jo` | `DS:0x6760` |
+
+The nearby `cryobox` bytes are present in the string block but are not referenced
+by this scan. A second kind-5 scan at `0x552A` stores `vbio` in `DS:0x679C`.
+Rust now mirrors the named offsets in `ExecutionContext::vm_named_object_offsets`
+while keeping the existing `blood` special-object remap behavior.
+
 ### 0xC9 record-clear handler @ file 0x6FB9 — speaker lifetime (DECODED)
 
 `0xC9` consumes one u16 record operand (`C9 <record:u16>`, 3 bytes total). The
@@ -920,6 +940,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `0x5D8F..0x5E1F` C4 reciprocal post-update write and active-object scan
       subset are ported; the remaining `0x5816` presentation-global inputs are
       still pending.
+- [x] Map the VM named-object startup globals from `0x5486`: Rust
+      `ExecutionContext` now carries the built-in DEB offsets for `blood`, `orxx`,
+      `arche`, `Honk`, `menu`, `Ark`, `Scruter_Jo`, and kind-5 `vbio`.
 - [ ] Verify audible `tb.snd` chatter trigger path, if any. `gs:0x67BB` itself is
       now decoded as post-reveal hold state rather than a direct SND caller.
 - [ ] Map the presentation opcodes among the handler table: which set background,

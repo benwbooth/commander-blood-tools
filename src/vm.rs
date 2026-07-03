@@ -850,6 +850,43 @@ pub struct ScriptProfileExecution {
     pub halted: ScriptProfileExecutionHalt,
 }
 
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct VmNamedObjectOffsets {
+    pub blood: Option<u16>,
+    pub orxx: Option<u16>,
+    pub honk: Option<u16>,
+    pub menu: Option<u16>,
+    pub arche: Option<u16>,
+    pub ark: Option<u16>,
+    pub scruter_jo: Option<u16>,
+    pub vbio: Option<u16>,
+}
+
+impl VmNamedObjectOffsets {
+    fn set(&mut self, name: &str, offset: u16) -> bool {
+        if name.eq_ignore_ascii_case("blood") {
+            self.blood = Some(offset);
+        } else if name.eq_ignore_ascii_case("orxx") {
+            self.orxx = Some(offset);
+        } else if name.eq_ignore_ascii_case("Honk") {
+            self.honk = Some(offset);
+        } else if name.eq_ignore_ascii_case("menu") {
+            self.menu = Some(offset);
+        } else if name.eq_ignore_ascii_case("arche") {
+            self.arche = Some(offset);
+        } else if name.eq_ignore_ascii_case("Ark") {
+            self.ark = Some(offset);
+        } else if name.eq_ignore_ascii_case("Scruter_Jo") {
+            self.scruter_jo = Some(offset);
+        } else if name.eq_ignore_ascii_case("vbio") {
+            self.vbio = Some(offset);
+        } else {
+            return false;
+        }
+        true
+    }
+}
+
 /// Runtime tables the DOS VM receives through globals outside `SCRIPT*.VAR`.
 ///
 /// `object_offsets` mirrors the 20-byte object table scanned by helper `0x6034`:
@@ -871,10 +908,15 @@ pub struct ScriptProfileExecution {
 /// `strict_actor_record_branching` models the mode-1 C4 handler's branch-fail
 /// path for empty records. It stays opt-in because the mode-0 presentation setup
 /// path that should populate those records is still incomplete.
+///
+/// `named_object_offsets` mirrors the startup scan at `0x5486`, which compares
+/// DEB object names against built-in strings and stores matching offsets in VM
+/// globals (`blood` -> `0x674E`, `orxx` -> `0x6750`, `arche` -> `0x6752`, ...).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ExecutionContext {
     object_offsets: Vec<u16>,
     special_object_offset: Option<u16>,
+    named_object_offsets: VmNamedObjectOffsets,
     global_word_0aa6: Option<u16>,
     global_pair_0aaa_0aa8: Option<(u8, u8)>,
     descript_entry_names: Vec<Vec<u8>>,
@@ -909,6 +951,15 @@ impl ExecutionContext {
 
     pub fn with_special_object_offset(mut self, value: u16) -> Self {
         self.special_object_offset = Some(value);
+        self.named_object_offsets.blood = Some(value);
+        self
+    }
+
+    pub fn with_vm_named_object(mut self, name: impl AsRef<str>, offset: u16) -> Self {
+        let name = name.as_ref();
+        if self.named_object_offsets.set(name, offset) && name.eq_ignore_ascii_case("blood") {
+            self.special_object_offset = Some(offset);
+        }
         self
     }
 
@@ -945,6 +996,10 @@ impl ExecutionContext {
     pub fn with_strict_actor_record_branching(mut self) -> Self {
         self.strict_actor_record_branching = true;
         self
+    }
+
+    pub fn vm_named_object_offsets(&self) -> &VmNamedObjectOffsets {
+        &self.named_object_offsets
     }
 
     fn owner_object_offset(&self, record_offset: u16) -> Option<u16> {
