@@ -1232,7 +1232,7 @@ fn render_dialogue_segments(
                 }
 
                 let time = global_frame as f64 / HNM_FPS as f64;
-                render_subtitles(&mut rgb, &cues, time);
+                render_subtitles_rgb(&mut rgb, &bg_pal, &cues, time);
                 if let Err(err) = stdin.write_all(&rgb) {
                     drop(stdin);
                     let output = ffmpeg.wait_with_output()?;

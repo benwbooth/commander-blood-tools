@@ -46,24 +46,53 @@ pub(super) fn fb_to_rgb(fb: &[u8], palette: &[[u8; 3]; 256], rgb: &mut [u8]) {
     }
 }
 
-pub(super) fn render_subtitles(rgb: &mut [u8], cues: &[SubtitleCue], time: f64) {
+pub(super) fn render_subtitles_indexed(fb: &mut [u8], cues: &[SubtitleCue], time: f64) {
+    let Some((cue, visible_lines)) = active_subtitle_lines(cues, time) else {
+        return;
+    };
+
+    let (clip_top, clip_bottom) = subtitle_clip_bounds(cue.active_line_id);
+    for (line_idx, line) in visible_lines.iter().enumerate() {
+        let y = SUBTITLE_Y + line_idx * GAME_FONT_LINE_HEIGHT;
+        draw_game_text_indexed_clipped(fb, line, SUBTITLE_X, y, clip_top, clip_bottom);
+    }
+}
+
+pub(super) fn render_subtitles_rgb(
+    rgb: &mut [u8],
+    palette: &[[u8; 3]; 256],
+    cues: &[SubtitleCue],
+    time: f64,
+) {
+    let Some((cue, visible_lines)) = active_subtitle_lines(cues, time) else {
+        return;
+    };
+
+    let (clip_top, clip_bottom) = subtitle_clip_bounds(cue.active_line_id);
+    for (line_idx, line) in visible_lines.iter().enumerate() {
+        let y = SUBTITLE_Y + line_idx * GAME_FONT_LINE_HEIGHT;
+        draw_game_text_rgb_clipped(rgb, palette, line, SUBTITLE_X, y, clip_top, clip_bottom);
+    }
+}
+
+fn active_subtitle_lines(cues: &[SubtitleCue], time: f64) -> Option<(&SubtitleCue, Vec<String>)> {
     let Some((_, cue)) = cues.iter().enumerate().find(|(idx, cue)| {
         let start = cue.tick as f64 / 10.0;
         let end = cue_end_time(cues, *idx);
         time >= start && time < end
     }) else {
-        return;
+        return None;
     };
 
     let full_text = cue.text.trim();
     if full_text.is_empty() {
-        return;
+        return None;
     }
 
     let start = cue.tick as f64 / 10.0;
     let visible_chars = ((time - start).max(0.0) * SUBTITLE_CHARS_PER_SEC).ceil() as usize;
     if visible_chars == 0 {
-        return;
+        return None;
     }
 
     // The line breaks are already game-exact: assemble_dialogue inserts them at
@@ -75,20 +104,7 @@ pub(super) fn render_subtitles(rgb: &mut [u8], cues: &[SubtitleCue], time: f64) 
         .map(|l| l.to_string())
         .collect();
     let visible_lines = visible_subtitle_lines(&lines, visible_chars);
-
-    let (clip_top, clip_bottom) = subtitle_clip_bounds(cue.active_line_id);
-    for (line_idx, line) in visible_lines.iter().enumerate() {
-        let y = SUBTITLE_Y + line_idx * GAME_FONT_LINE_HEIGHT;
-        draw_game_text_clipped(
-            rgb,
-            line,
-            SUBTITLE_X,
-            y,
-            [245, 245, 245],
-            clip_top,
-            clip_bottom,
-        );
-    }
+    Some((cue, visible_lines))
 }
 
 pub(super) fn subtitle_clip_bounds(active_line_id: Option<u16>) -> (usize, usize) {
@@ -123,19 +139,27 @@ pub(super) fn visible_subtitle_lines(lines: &[String], visible_chars: usize) -> 
     out
 }
 
-fn draw_game_text_clipped(
-    rgb: &mut [u8],
+fn draw_game_text_indexed_clipped(
+    fb: &mut [u8],
     text: &str,
     x: usize,
     y: usize,
-    color: [u8; 3],
     clip_top: usize,
     clip_bottom: usize,
 ) {
+    let visible_chars = text.chars().count();
     let mut cx = x;
-    for ch in text.chars() {
+    for (char_index, ch) in text.chars().enumerate() {
         if let Some(glyph) = game_font_glyph(ch).or_else(|| game_font_glyph('?')) {
-            draw_game_glyph_clipped(rgb, glyph.rows, cx, y, color, clip_top, clip_bottom);
+            draw_game_glyph_indexed_clipped(
+                fb,
+                glyph.rows,
+                cx,
+                y,
+                subtitle_glyph_color_index(char_index, visible_chars),
+                clip_top,
+                clip_bottom,
+            );
         }
         cx += game_font_advance(ch);
         if cx >= VIEWPORT_W {
@@ -144,7 +168,68 @@ fn draw_game_text_clipped(
     }
 }
 
-fn draw_game_glyph_clipped(
+fn draw_game_text_rgb_clipped(
+    rgb: &mut [u8],
+    palette: &[[u8; 3]; 256],
+    text: &str,
+    x: usize,
+    y: usize,
+    clip_top: usize,
+    clip_bottom: usize,
+) {
+    let visible_chars = text.chars().count();
+    let mut cx = x;
+    for (char_index, ch) in text.chars().enumerate() {
+        if let Some(glyph) = game_font_glyph(ch).or_else(|| game_font_glyph('?')) {
+            draw_game_glyph_rgb_clipped(
+                rgb,
+                glyph.rows,
+                cx,
+                y,
+                palette[subtitle_glyph_color_index(char_index, visible_chars) as usize],
+                clip_top,
+                clip_bottom,
+            );
+        }
+        cx += game_font_advance(ch);
+        if cx >= VIEWPORT_W {
+            break;
+        }
+    }
+}
+
+fn subtitle_glyph_color_index(char_index: usize, visible_chars: usize) -> u8 {
+    if char_index + 1 == visible_chars {
+        SUBTITLE_COLOR_REVEAL_EDGE
+    } else {
+        SUBTITLE_COLOR_REVEALED
+    }
+}
+
+fn draw_game_glyph_indexed_clipped(
+    fb: &mut [u8],
+    rows: [u8; GAME_FONT_HEIGHT],
+    x: usize,
+    y: usize,
+    color_index: u8,
+    clip_top: usize,
+    clip_bottom: usize,
+) {
+    for (gy, row) in rows.iter().copied().enumerate() {
+        for gx in 0..GAME_FONT_WIDTH {
+            if (row & (0x80 >> gx)) == 0 {
+                continue;
+            }
+            let px = x + gx;
+            let py = y + gy;
+            if px < VIEWPORT_W && py >= clip_top && py < clip_bottom && py < VIEWPORT_H {
+                fb[py * VIEWPORT_W + px] = color_index;
+            }
+        }
+    }
+}
+
+fn draw_game_glyph_rgb_clipped(
     rgb: &mut [u8],
     rows: [u8; GAME_FONT_HEIGHT],
     x: usize,
@@ -214,6 +299,8 @@ pub(super) const SUBTITLE_Y: usize = 8;
 pub(super) const GAME_FONT_WIDTH: usize = 8;
 pub(super) const GAME_FONT_HEIGHT: usize = 8;
 pub(super) const GAME_FONT_LINE_HEIGHT: usize = 8;
+pub(super) const SUBTITLE_COLOR_REVEALED: u8 = 0xFD;
+pub(super) const SUBTITLE_COLOR_REVEAL_EDGE: u8 = 0xFE;
 // Space advance: the game's glyph blitter (BLOODPRG.EXE render_string @0x31D7)
 // advances a 0x20 space by 6 pixels (`add di, 6`), not a full glyph cell.
 pub(super) const GAME_FONT_SPACE_ADVANCE: usize = 6;
@@ -359,27 +446,54 @@ mod tests {
 
     #[test]
     fn clipped_text_does_not_draw_outside_active_line_window() {
-        let mut rgb = vec![0u8; VIEWPORT_W * VIEWPORT_H * 3];
-        draw_game_text_clipped(
-            &mut rgb,
-            "M",
-            SUBTITLE_X,
-            0,
-            [245, 245, 245],
-            SCENE_TOP,
-            SCENE_BOTTOM,
-        );
-        assert!(rgb.iter().all(|sample| *sample == 0));
+        let mut fb = vec![0u8; VIEWPORT_W * VIEWPORT_H];
+        draw_game_text_indexed_clipped(&mut fb, "M", SUBTITLE_X, 0, SCENE_TOP, SCENE_BOTTOM);
+        assert!(fb.iter().all(|sample| *sample == 0));
 
-        draw_game_text_clipped(
-            &mut rgb,
+        draw_game_text_indexed_clipped(
+            &mut fb,
             "M",
             SUBTITLE_X,
             SCENE_TOP,
-            [245, 245, 245],
             SCENE_TOP,
             SCENE_BOTTOM,
         );
-        assert!(rgb.iter().any(|sample| *sample != 0));
+        assert!(fb.iter().any(|sample| *sample != 0));
+    }
+
+    #[test]
+    fn subtitles_use_binary_reveal_palette_indices() {
+        let cues = [SubtitleCue {
+            tick: 0,
+            text: "ME".to_string(),
+            active_line_id: None,
+        }];
+        let mut fb = vec![0u8; VIEWPORT_W * VIEWPORT_H];
+
+        render_subtitles_indexed(&mut fb, &cues, 2.0 / SUBTITLE_CHARS_PER_SEC);
+
+        assert!(fb.iter().any(|sample| *sample == SUBTITLE_COLOR_REVEALED));
+        assert!(
+            fb.iter()
+                .any(|sample| *sample == SUBTITLE_COLOR_REVEAL_EDGE)
+        );
+    }
+
+    #[test]
+    fn rgb_subtitles_map_binary_indices_through_palette() {
+        let cues = [SubtitleCue {
+            tick: 0,
+            text: "ME".to_string(),
+            active_line_id: None,
+        }];
+        let mut palette = [[0u8; 3]; 256];
+        palette[SUBTITLE_COLOR_REVEALED as usize] = [1, 2, 3];
+        palette[SUBTITLE_COLOR_REVEAL_EDGE as usize] = [4, 5, 6];
+        let mut rgb = vec![0u8; VIEWPORT_W * VIEWPORT_H * 3];
+
+        render_subtitles_rgb(&mut rgb, &palette, &cues, 2.0 / SUBTITLE_CHARS_PER_SEC);
+
+        assert!(rgb.chunks_exact(3).any(|pixel| pixel == [1, 2, 3]));
+        assert!(rgb.chunks_exact(3).any(|pixel| pixel == [4, 5, 6]));
     }
 }

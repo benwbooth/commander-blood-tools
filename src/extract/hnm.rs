@@ -442,9 +442,14 @@ pub(super) fn decode_hnm_scene_to_mp4(
             let mut pal = hnm.palette;
             for frame_idx in 0..hnm.frame_count() {
                 hnm.decode_frame(frame_idx, &mut fb, &mut pal);
-                fb_to_rgb(&fb, &pal, &mut rgb);
                 let time = global_frame as f64 / HNM_FPS as f64;
-                render_subtitles(&mut rgb, subtitles, time);
+                if subtitles.is_empty() {
+                    fb_to_rgb(&fb, &pal, &mut rgb);
+                } else {
+                    let mut subtitle_fb = fb.clone();
+                    render_subtitles_indexed(&mut subtitle_fb, subtitles, time);
+                    fb_to_rgb(&subtitle_fb, &pal, &mut rgb);
+                }
                 stdin.write_all(&rgb)?;
                 global_frame += 1;
             }

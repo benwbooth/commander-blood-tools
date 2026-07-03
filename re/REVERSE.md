@@ -248,7 +248,11 @@ The visible reveal draw call at `0x94E6..0x94EE` loads `BX=DS:0x5E5C` and
 `DX=DS:0x5E5E`, then calls `0x0299:0x06A0`; those initialized words are
 `0x000A` and `0x0008`, so Rust uses `(10,8)` as the subtitle origin and advances
 subsequent CR-delimited lines by the glyph height (8 px), matching the wrapper at
-`0x36F9..0x3701`.
+`0x36F9..0x3701`. The same wrapper writes glyph pixels directly into the VGA
+framebuffer with palette indices `0xFD` for already-revealed glyphs and `0xFE`
+for the newest visible glyph, so Rust now draws subtitles into indexed HNM
+frames before palette conversion and maps those indices through the scene palette
+for RGB-composited dialogue videos.
 After the reveal pointer reaches the terminating NUL, the dialogue state enters
 a line-complete hold: `0x94BA..0x94DD` sets `gs:0xB35 = gs:0xACA*4` and
 `gs:0x67BB=1`, while `0x115D..0x1188` keeps that flag alive until the timer
@@ -1099,9 +1103,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       parsers stop carrying actor/background context past matching `C9` tokens.
       The port also applies the selector-0x13 related C4 subrecord clear and the
       `gs:0x252A/0x2531` presentation gate reset.
-- [ ] Map presentation constants: subtitle position and reveal rate are now
-      tied to `0x5E5C/0x5E5E` plus `0xB31/0xACA`; colors, remaining timing,
-      HNM actor reset/loop policy, and audio mix levels remain pending.
+- [ ] Map presentation constants: subtitle position, reveal rate, and reveal
+      palette indices are now tied to `0x5E5C/0x5E5E`, `0xB31/0xACA`, and the
+      `0x36A0` wrapper; remaining timing, HNM actor reset/loop policy, and audio
+      mix levels remain pending.
 
 ### Renderer Integration (replaces skill's "Web Port")
 
