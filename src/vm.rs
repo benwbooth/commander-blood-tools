@@ -105,6 +105,7 @@ pub const OP_RECORD_CLEAR: u8 = 0xC9;
 pub const OP_GLOBAL_WORD_COMPARE: u8 = 0xCA;
 pub const OP_GLOBAL_PAIR_COMPARE: u8 = 0xCB;
 pub const OP_RECORD_TRIPLE: u8 = 0xCD;
+pub const OP_SCRIPT_PROFILE_REQUEST: u8 = 0xD2;
 pub const TEXT_SELECTOR_NONE: u8 = 0xFF;
 pub const TEXT_SELECTOR_SILENT: u8 = 0x00;
 pub const ACTIVE_LINE_ID_BIAS: u16 = 9;
@@ -168,6 +169,12 @@ pub fn is_pair_record_opcode(opcode: u8) -> bool {
 
 pub fn record_entry_stored_related_offset(opcode: u8, operand: u16) -> u16 {
     if opcode == 0xC8 { 0 } else { operand }
+}
+
+/// Port the `0xD2` handler at `BLOODPRG.EXE` file `0x64B8`:
+/// `lodsb; cbw; dec ax; mov gs:[0x6780], ax`.
+pub fn script_profile_index_from_request_operand(operand: u8) -> u16 {
+    ((operand as i8 as i16) - 1) as u16
 }
 
 /// `0xB7` addresses bits high-bit-first inside each byte: bit 0 is mask 0x80,
@@ -355,6 +362,16 @@ pub enum VmToken {
         first_word: u16,
         second_word: u16,
         inverted: bool,
+        len: usize,
+    },
+    /// `0xD2 <operand>` requests a script/resource profile switch after the
+    /// current VM pass. The handler stores `sign_extend(operand) - 1` in
+    /// `gs:0x6780`; the main loop later calls the profile selector at
+    /// `0x53A0` when presentation state is idle.
+    ScriptProfileRequest {
+        offset: usize,
+        operand: u8,
+        profile_index: u16,
         len: usize,
     },
     /// Any other opcode; raw length recorded.
@@ -547,6 +564,14 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
                 record_offset,
                 len,
             });
+        } else if op == OP_SCRIPT_PROFILE_REQUEST {
+            let operand = cod.get(pos + 1).copied().unwrap_or(0);
+            out.push(VmToken::ScriptProfileRequest {
+                offset: pos,
+                operand,
+                profile_index: script_profile_index_from_request_operand(operand),
+                len,
+            });
         } else {
             out.push(VmToken::Op {
                 offset: pos,
@@ -666,6 +691,10 @@ fn read_u16(cod: &[u8], at: usize) -> Option<u16> {
 //       is available when `ExecutionContext` supplies those globals. The DOS VM
 //       refreshes them from BIOS RTC calls immediately before entering the
 //       interpreter: hour -> 0x0AA6, day -> 0x0AA8, month -> 0x0AAA.
+//   * 0xD2: request a script/resource profile switch by storing
+//       sign_extend(operand)-1 in `gs:0x6780`. The main loop handles the actual
+//       cross-profile handoff after the current VM pass, so traces decode the
+//       token but do not recursively execute the next script yet.
 // NOTE: `interpret_line_states` is a LINEAR pass: it applies mode-0 state
 // mutations and uses guarded mode-1 actor records as context, but does not take
 // branches. `execute_trace` models the recovered branch helper for conditionals
@@ -2165,6 +2194,23 @@ mod tests {
             }
             other => panic!("expected looped Text, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn decodes_script_profile_request_token() {
+        let cod = [OP_SCRIPT_PROFILE_REQUEST, 0x03, 0xff];
+
+        let toks = walk(&cod, 0, cod.len());
+        assert_eq!(
+            toks,
+            vec![VmToken::ScriptProfileRequest {
+                offset: 0,
+                operand: 3,
+                profile_index: 2,
+                len: 2,
+            }]
+        );
+        assert_eq!(script_profile_index_from_request_operand(0), 0xffff);
     }
 
     #[test]

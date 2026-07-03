@@ -753,15 +753,31 @@ from `DS:0x6712` into far pointers at `DS:0x671C..0x672F` via far call
 | `DS:0x672C` | DEB/object table pointer scanned as 20-byte records |
 
 The `DS:0x6712` words are zero in the EXE image because they are populated from
-the `FS:0x11F4` profile table at runtime. Save/load code at `0x1C3F`/`0x1CBD`
-serializes the `DS:0x6724` state block separately using a runtime size derived
-from `DS:0x6716`. This is the boundary that blocks using raw `SCRIPT*.VAR` line
-flag words as initialized display state: `SCRIPT*.VAR` is an input image, while
-the game builds/serializes a live state block through this pointer setup.
+the static `FS:0x11F4` profile table at runtime. The profile table entries are
+resource IDs; each ID indexes the 16-byte resource-name table at `FS:0x0C04`.
+Active profiles are:
 
-Remaining unknown: the owner/provenance of the `FS:0x11F4` 10-byte profile table
-and the mapping from profile index to `SCRIPTn` basename still need to be
-decoded.
+| profile index | `D2` operand | resources loaded into `DS:0x6712` |
+|---:|---:|---|
+| 0 | 1 | `script1.cod`, `script1.bas`, `script1.var`, `script1.dic`, `script1.deb` |
+| 1 | 2 | `script2.cod`, `script2.bas`, `script2.var`, `script2.dic`, `script2.deb` |
+| 2 | 3 | `script3.cod`, `script3.bas`, `script3.var`, `script3.dic`, `script3.deb` |
+| 3 | 4 | `script4.cod`, `script4.bas`, `script4.var`, `script4.dic`, `script4.deb` |
+| 4 | 5 | `script5.cod`, `script5.bas`, `script5.var`, `script5.dic`, `script5.deb` |
+
+Opcode `0xD2` at file `0x64B8` requests a profile switch by storing
+`sign_extend(operand)-1` in `DS:0x6780`; operand 0 therefore stores `0xFFFF`,
+the no-pending-script sentinel. The main loop checks `DS:0x6780` at file
+`0x108E`, waits until presentation state is idle, then at `0x10C5` calls
+`0x04DA:0000`, clears `DS:0x6780` back to `0xFFFF`, sets `DS:0x67A8=1`, and
+runs the VM wrapper at `0x55A4`.
+
+Save/load code at `0x1C3F`/`0x1CBD` serializes the current selected profile
+index (`DS:0x677E`) and the `DS:0x6724` state block separately using a runtime
+size derived from `DS:0x6716`. This is the boundary that blocks using raw
+`SCRIPT*.VAR` line flag words as initialized display state: `SCRIPT*.VAR` is an
+input image, while the game builds/serializes a live state block through this
+pointer setup.
 
 ## Location backgrounds: planet (HNM) vs landscape (LBM) — root cause of wrong bg
 
@@ -838,8 +854,12 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       runtime offsets into COD, state, DIC, and DEB/object far pointers at
       `DS:0x671C..0x672F`, while save/load code serializes the `DS:0x6724`
       runtime state block separately.
-- [ ] Decode the `FS:0x11F4` resource-profile table owner and profile-index to
-      `SCRIPTn` mapping.
+- [x] Decode the `FS:0x11F4` resource-profile table:
+      static resource IDs map through `FS:0x0C04` to five profiles for
+      `script1`..`script5`; opcode `D2` stores operand-1 in `DS:0x6780` for the
+      main-loop profile handoff.
+- [ ] Model `D2` cross-script profile scheduling in Rust execution traces and
+      the event renderer, instead of stopping at the current COD stream.
 - [ ] Decode the `gs:0x6724` per-line record layout (es:[di], es:[di+2] flags).
 - [ ] Verify audible `tb.snd` chatter trigger path, if any. `gs:0x67BB` itself is
       now decoded as post-reveal hold state rather than a direct SND caller.
@@ -1090,6 +1110,11 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `0x53A0` now names the selector taking profile index `AX`, the
       `0x53C8/0x53DA` copy/validate loop from `FS:0x11F4 + AX*10` into
       `DS:0x6712`, and `DS:0x677E` as the cached current profile index.
+- [x] Decode script profile resources and `D2` handoff:
+      `FS:0x0C04` is the 16-byte resource-name table, `FS:0x11F4` maps five
+      script profiles to COD/BAS/VAR/DIC/DEB resource IDs, and opcode `D2`
+      writes the pending profile index to `DS:0x6780` for the main loop at
+      `0x108E/0x10C5`.
 - [x] Port the `gs:0x67BB` line-complete hold timers:
       `src/vm.rs` models `0x94D4..0x94DD` (`b35=aca*4`) and `0x7378..0x738C`
       (`b35=0x27cf*(aca/2)+6`) as checked helper functions. Labels and known

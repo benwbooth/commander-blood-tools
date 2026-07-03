@@ -1176,6 +1176,7 @@ pub(super) fn disassemble_function(
 fn vm_token_has_disassembly(token: &vm::VmToken, words: &HashMap<u16, String>) -> bool {
     match token {
         vm::VmToken::Text { word_offsets, .. } => decode_vm_words(words, word_offsets).is_some(),
+        vm::VmToken::ScriptProfileRequest { .. } => true,
         vm::VmToken::Op { .. } | vm::VmToken::Invalid { .. } => false,
         _ => true,
     }
@@ -1424,6 +1425,25 @@ fn push_vm_token_disassembly(
             });
             true
         }
+        vm::VmToken::ScriptProfileRequest {
+            offset,
+            operand,
+            profile_index,
+            len,
+        } => {
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: *offset,
+                len: *len,
+                opcode: "d2".to_string(),
+                mnemonic: "script_profile_request".to_string(),
+                operands: format!("operand={operand} profile_index=0x{profile_index:04x}"),
+                actor_record: current_actor_record(current_actor),
+                text: None,
+            });
+            true
+        }
         vm::VmToken::Text {
             offset,
             line_index,
@@ -1471,6 +1491,7 @@ fn vm_token_offset(token: &vm::VmToken) -> usize {
         | vm::VmToken::GlobalPairCompare { offset, .. }
         | vm::VmToken::PairRecord { offset, .. }
         | vm::VmToken::RecordTriple { offset, .. }
+        | vm::VmToken::ScriptProfileRequest { offset, .. }
         | vm::VmToken::Op { offset, .. }
         | vm::VmToken::Invalid { offset, .. } => *offset,
     }
@@ -1495,6 +1516,7 @@ fn vm_token_len(token: &vm::VmToken) -> usize {
         | vm::VmToken::GlobalPairCompare { len, .. }
         | vm::VmToken::PairRecord { len, .. }
         | vm::VmToken::RecordTriple { len, .. }
+        | vm::VmToken::ScriptProfileRequest { len, .. }
         | vm::VmToken::Op { len, .. } => *len,
         vm::VmToken::Invalid { .. } => 1,
     }

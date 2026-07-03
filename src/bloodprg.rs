@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::Path;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use serde::Serialize;
 
 use crate::vm;
@@ -10,9 +10,18 @@ pub const BLOODPRG_FILE_SIZE: usize = 86_680;
 pub const BLOODPRG_SHA256: &str =
     "7e756c597190d20e71a0210da3898b9746c39e04db922455b07f74ec26166823";
 pub const VM_CODE_SEGMENT: u16 = 0x04da;
+pub const FS_SEGMENT: u16 = 0x0bbf;
 pub const DATA_SEGMENT: u16 = 0x0ce2;
 pub const OPCODE_HANDLER_TABLE_FILE_OFFSET: usize = 0x142d0;
 pub const OPCODE_LENGTH_TABLE_FILE_OFFSET: usize = 0x14338;
+pub const RESOURCE_NAME_TABLE_FS_OFFSET: u16 = 0x0c04;
+pub const RESOURCE_NAME_TABLE_FILE_OFFSET: usize = 0x0cdf4;
+pub const RESOURCE_NAME_ENTRY_LEN: usize = 16;
+pub const SCRIPT_RESOURCE_PROFILE_TABLE_FS_OFFSET: u16 = 0x11f4;
+pub const SCRIPT_RESOURCE_PROFILE_TABLE_FILE_OFFSET: usize = 0x0d3e4;
+pub const SCRIPT_RESOURCE_PROFILE_COUNT: usize = 5;
+pub const SCRIPT_RESOURCE_PROFILE_SLOT_COUNT: usize = 5;
+pub const SCRIPT_RESOURCE_PROFILE_STRIDE: usize = SCRIPT_RESOURCE_PROFILE_SLOT_COUNT * 2;
 pub const DIALOGUE_FONT_ASCII_MAP_FILE_OFFSET: usize = 0x14c22;
 pub const DIALOGUE_FONT_ADVANCES_FILE_OFFSET: usize = 0x14cd2;
 pub const DIALOGUE_FONT_GLYPHS_FILE_OFFSET: usize = 0x14d28;
@@ -149,6 +158,21 @@ pub struct SubdispatchEntry {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct ScriptResourceProfileSlot {
+    pub slot: usize,
+    pub resource_id: u16,
+    pub name: String,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct ScriptResourceProfile {
+    pub profile_index: u8,
+    pub d2_operand: u8,
+    pub script_number: u8,
+    pub slots: Vec<ScriptResourceProfileSlot>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct BloodPrgInspection {
     pub summary: MzSummary,
     pub target_sha256: &'static str,
@@ -160,6 +184,7 @@ pub struct BloodPrgInspection {
     pub nav_choice_subdispatch_handlers: Vec<SubdispatchEntry>,
     pub snd_entry_call_sites: Vec<SndEntryCallSite>,
     pub snd_bank_load_call_sites: Vec<SndBankLoadCallSite>,
+    pub script_resource_profiles: Vec<ScriptResourceProfile>,
     pub dialogue_font: DialogueFontTables,
 }
 
@@ -261,6 +286,10 @@ impl BloodPrg {
         self.segoff_to_file(DATA_SEGMENT, ds_offset)
     }
 
+    pub fn fs_to_file(&self, fs_offset: u16) -> usize {
+        self.segoff_to_file(FS_SEGMENT, fs_offset)
+    }
+
     pub fn opcode_handlers(&self) -> Result<Vec<OpcodeHandler>> {
         let bytes = self.slice(
             OPCODE_HANDLER_TABLE_FILE_OFFSET,
@@ -326,6 +355,31 @@ impl BloodPrg {
                         && descriptor.len_mode1_or_sentinel == 0,
                     rust_status: meta.rust_status,
                     notes: meta.notes,
+                })
+            })
+            .collect()
+    }
+
+    pub fn script_resource_profiles(&self) -> Result<Vec<ScriptResourceProfile>> {
+        let table_file_offset = self.fs_to_file(SCRIPT_RESOURCE_PROFILE_TABLE_FS_OFFSET);
+        (0..SCRIPT_RESOURCE_PROFILE_COUNT)
+            .map(|profile_index| {
+                let row_offset = table_file_offset + profile_index * SCRIPT_RESOURCE_PROFILE_STRIDE;
+                let mut slots = Vec::with_capacity(SCRIPT_RESOURCE_PROFILE_SLOT_COUNT);
+                for slot in 0..SCRIPT_RESOURCE_PROFILE_SLOT_COUNT {
+                    let resource_id = u16_at(&self.data, row_offset + slot * 2)?;
+                    slots.push(ScriptResourceProfileSlot {
+                        slot,
+                        resource_id,
+                        name: self.resource_name(resource_id)?,
+                    });
+                }
+                let script_number = profile_index as u8 + 1;
+                Ok(ScriptResourceProfile {
+                    profile_index: profile_index as u8,
+                    d2_operand: script_number,
+                    script_number,
+                    slots,
                 })
             })
             .collect()
@@ -462,6 +516,7 @@ impl BloodPrg {
             nav_choice_subdispatch_handlers: self.nav_choice_subdispatch_handlers()?,
             snd_entry_call_sites: self.snd_entry_call_sites(),
             snd_bank_load_call_sites: self.snd_bank_load_call_sites(),
+            script_resource_profiles: self.script_resource_profiles()?,
             dialogue_font: self.dialogue_font_tables()?,
         })
     }
@@ -564,6 +619,19 @@ impl BloodPrg {
             .take(DS_STRING_SCAN_MAX)
             .position(|byte| *byte == 0)?;
         std::str::from_utf8(&bytes[..nul]).ok().map(str::to_owned)
+    }
+
+    fn resource_name(&self, resource_id: u16) -> Result<String> {
+        let start = self.fs_to_file(RESOURCE_NAME_TABLE_FS_OFFSET)
+            + resource_id as usize * RESOURCE_NAME_ENTRY_LEN;
+        let bytes = self.slice(start, RESOURCE_NAME_ENTRY_LEN, "resource name entry")?;
+        let nul = bytes
+            .iter()
+            .position(|byte| *byte == 0)
+            .unwrap_or(RESOURCE_NAME_ENTRY_LEN);
+        let name = std::str::from_utf8(&bytes[..nul])
+            .with_context(|| format!("resource name {resource_id} is not utf-8"))?;
+        Ok(name.to_owned())
     }
 
     fn file_to_known_segoff(&self, file_offset: usize) -> (u16, u16) {
@@ -677,6 +745,12 @@ fn opcode_metadata(opcode: u8, handler_file_offset: usize) -> OpcodeMetadata {
             family: "line-record",
             rust_status: "execution-trace-ported",
             notes: "CD consumes record/first/second words with optional A1 inversion; Rust evaluates the direct mode1 compare while resolved-table mode0 side effects remain pending",
+        },
+        vm::OP_SCRIPT_PROFILE_REQUEST => OpcodeMetadata {
+            mnemonic: "script_profile_request",
+            family: "script-switch",
+            rust_status: "decoded-token",
+            notes: "D2 stores sign_extend(operand)-1 in gs:0x6780; the main loop later selects that script resource profile when idle",
         },
         _ => match handler_file_offset {
             0x006863 => OpcodeMetadata {
@@ -875,6 +949,24 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         comment: "call gs:[0x6eb0 + (opcode - 0xa0) * 2]",
     },
     BinarySymbol {
+        name: "resource_name_table",
+        file_offset: RESOURCE_NAME_TABLE_FILE_OFFSET,
+        segment: Some(FS_SEGMENT),
+        offset: Some(RESOURCE_NAME_TABLE_FS_OFFSET),
+        ds_offset: None,
+        kind: "resource-data",
+        comment: "16-byte resource filename entries indexed by resource ID",
+    },
+    BinarySymbol {
+        name: "script_resource_profile_table",
+        file_offset: SCRIPT_RESOURCE_PROFILE_TABLE_FILE_OFFSET,
+        segment: Some(FS_SEGMENT),
+        offset: Some(SCRIPT_RESOURCE_PROFILE_TABLE_FS_OFFSET),
+        ds_offset: None,
+        kind: "resource-data",
+        comment: "five static script profiles of COD/BAS/VAR/DIC/DEB resource IDs",
+    },
+    BinarySymbol {
         name: "vm_resource_offsets",
         file_offset: 0x013b32,
         segment: None,
@@ -927,6 +1019,15 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         ds_offset: Some(0x677e),
         kind: "script-vm-data",
         comment: "current selected resource profile index; avoids reload in 0x53a0 when AX matches",
+    },
+    BinarySymbol {
+        name: "vm_pending_resource_profile",
+        file_offset: 0x013ba0,
+        segment: None,
+        offset: None,
+        ds_offset: Some(0x6780),
+        kind: "script-vm-data",
+        comment: "pending D2-requested resource profile index consumed by the main loop",
     },
     BinarySymbol {
         name: "vm_handler_table",
@@ -1125,6 +1226,15 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         ds_offset: None,
         kind: "script-vm",
         comment: "CB global pair condition handler; compares packed token value to gs:0x0aaa/0x0aa8",
+    },
+    BinarySymbol {
+        name: "vm_op_d2_script_profile_request",
+        file_offset: 0x0064b8,
+        segment: Some(VM_CODE_SEGMENT),
+        offset: Some(0x1118),
+        ds_offset: None,
+        kind: "script-vm",
+        comment: "D2 handler stores sign-extended operand minus one into DS:0x6780",
     },
     BinarySymbol {
         name: "vm_op_cd_record_triple",
@@ -1450,6 +1560,14 @@ mod tests {
         assert_eq!(summary.load_size, 0x14c98);
         assert_eq!(summary.entry_file_offset, 0x600);
         assert_eq!(summary.trailing_bytes, 0);
+        assert_eq!(
+            binary.fs_to_file(RESOURCE_NAME_TABLE_FS_OFFSET),
+            RESOURCE_NAME_TABLE_FILE_OFFSET
+        );
+        assert_eq!(
+            binary.fs_to_file(SCRIPT_RESOURCE_PROFILE_TABLE_FS_OFFSET),
+            SCRIPT_RESOURCE_PROFILE_TABLE_FILE_OFFSET
+        );
         assert_eq!(binary.ds_to_file(0x6f18), OPCODE_LENGTH_TABLE_FILE_OFFSET);
         assert_eq!(
             binary.ds_to_file(0x7802),
@@ -1460,6 +1578,46 @@ mod tests {
             DIALOGUE_FONT_ADVANCES_FILE_OFFSET
         );
         assert_eq!(binary.ds_to_file(0x7908), DIALOGUE_FONT_GLYPHS_FILE_OFFSET);
+    }
+
+    #[test]
+    fn script_resource_profiles_map_d2_operands_to_script_files() {
+        let Some(binary) = fixture() else {
+            eprintln!("skipping: BLOODPRG.EXE not available");
+            return;
+        };
+        let profiles = binary
+            .script_resource_profiles()
+            .expect("script resource profiles");
+
+        assert_eq!(profiles.len(), SCRIPT_RESOURCE_PROFILE_COUNT);
+        for (idx, profile) in profiles.iter().enumerate() {
+            let script_number = idx + 1;
+            assert_eq!(profile.profile_index, idx as u8);
+            assert_eq!(profile.d2_operand, script_number as u8);
+            assert_eq!(profile.script_number, script_number as u8);
+            let names: Vec<_> = profile
+                .slots
+                .iter()
+                .map(|slot| slot.name.as_str())
+                .collect();
+            assert_eq!(
+                names,
+                vec![
+                    format!("script{script_number}.cod"),
+                    format!("script{script_number}.bas"),
+                    format!("script{script_number}.var"),
+                    format!("script{script_number}.dic"),
+                    format!("script{script_number}.deb"),
+                ]
+            );
+        }
+        let ids: Vec<u16> = profiles[1]
+            .slots
+            .iter()
+            .map(|slot| slot.resource_id)
+            .collect();
+        assert_eq!(ids, vec![0x25, 0x26, 0x27, 0x28, 0x29]);
     }
 
     #[test]
@@ -1583,6 +1741,15 @@ mod tests {
         assert_eq!(equality.family, "equality-assign");
         assert_eq!(equality.handler_file_offset, 0x006946);
         assert!(equality.mode_control);
+
+        let profile_request = specs
+            .iter()
+            .find(|spec| spec.opcode == vm::OP_SCRIPT_PROFILE_REQUEST)
+            .unwrap();
+        assert_eq!(profile_request.mnemonic, "script_profile_request");
+        assert_eq!(profile_request.family, "script-switch");
+        assert_eq!(profile_request.handler_file_offset, 0x0064b8);
+        assert_eq!(profile_request.len_mode0, 2);
     }
 
     #[test]

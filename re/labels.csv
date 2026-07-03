@@ -23,6 +23,7 @@ DS:0x6724,vm_state_ptr,far ptr to runtime object/line-record state table; serial
 DS:0x6728,vm_dic_ptr,DIC far pointer used by 0xA6 text assembly
 DS:0x672C,vm_deb_object_table_ptr,DEB/object table far pointer scanned in 20-byte records
 DS:0x677E,vm_resource_profile_index,current selected script/resource profile index; 0x53A0 avoids reload when AX matches
+DS:0x6780,vm_pending_resource_profile,"pending D2-requested resource profile index; main loop consumes it at 0x10c5"
 DS:0x6772,vm_pc,script program counter (offset into COD)
 DS:0x6776,vm_pc_saved,saved/next PC used in branch handling
 DS:0x6782,vm_branch_a,VM control-flow state word
@@ -34,6 +35,10 @@ DS:0x6770,vm_pending_word,pending word appended by 0xA3 handler
 0x0053A0,vm_resource_profile_select,"select script/resource profile AX; free old DS:0x6712 resources, copy five FS:0x11f4+AX*10 offsets into DS:0x6712, clear VM globals"
 0x0053C8,vm_resource_offsets_populate,"copy selected five-resource profile from FS:0x11f4+AX*10 into DS:0x6712"
 0x0053DA,vm_resource_offset_copy_loop,"copy and validate five selected resource offsets into DS:0x6712"
+0x00CDF4,resource_name_table,FS:0x0c04 16-byte resource filename entries indexed by resource ID
+0x00D3E4,script_resource_profile_table,FS:0x11f4 five 10-byte script profiles: COD/BAS/VAR/DIC/DEB resource IDs
+0x00108E,main_pending_profile_check,"if DS:0x6780 != 0xffff and presentation is idle, dispatch pending script profile"
+0x0010C5,main_pending_profile_dispatch,"loads AX=DS:0x6780, calls vm_resource_profile_select, clears pending profile, and runs VM"
 0x0055A4,vm_run_wrapper,"prepares script resource far pointers, calls BIOS RTC writers, then enters vm_exec_loop"
 0x0055D9,vm_resource_ptr_resolve_loop,"resolves five DS:0x6712 resource offsets through 0x04b9:0190 into far pointers at DS:0x671c"
 0x0055F5,vm_exec_loop,"main script interpreter loop; di=0x6eb0 handler table; dispatch at 0x5627"
@@ -45,6 +50,7 @@ DS:0x6D3E,vm_special_slots,"16-word runtime list for fields set to the blood/0xf
 0x0142D0,vm_handler_table,"opcode handler jump table DS:0x6eb0, 52 near offsets into seg 0x04da, opcodes A0..D3"
 0x0064E5,vm_op_ca_global_word_compare,"0xCA global condition handler; compares token value to gs:0x0aa6"
 0x006510,vm_op_cb_global_pair_compare,"0xCB global pair condition handler; compares packed token value to gs:0x0aaa/0x0aa8"
+0x0064B8,vm_op_d2_script_profile_request,"0xD2 handler: DS:0x6780 = sign_extend(operand byte) - 1"
 0x00660C,vm_op_a6_text,"0xA6 TEXT handler: b1b2=line index into gs:0x6724; b3->gs:0x1fab; b4/b5=control(skip/loop/active 0x80)"
 0x0069C7,vm_op_cd_record_triple,"0xCD record-triple handler; consumes record/first/second words, optional A1 inverted compare"
 0x006AA7,vm_bit_set_test_6aa7,"0xB7 high-bit-first byte flag set/clear/test handler"
