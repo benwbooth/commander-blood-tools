@@ -33,6 +33,8 @@ pub const SND_ENTRY_OFFSET: u16 = 0x011d;
 pub const SND_BANK_LOAD_SEGMENT: u16 = 0x0b1b;
 pub const SND_BANK_LOAD_OFFSET: u16 = 0x0855;
 pub const RENDER_SEGMENT: u16 = 0x0299;
+pub const RENDER_VGA_DAC_PALETTE_LOAD_OFFSET: u16 = 0x0000;
+pub const RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET: u16 = 0x0016;
 pub const RENDER_STRING_OFFSET: u16 = 0x0202;
 pub const RENDER_SUBTITLE_REVEAL_OFFSET: u16 = 0x06a0;
 pub const RENDER_SMALL_TEXT_OFFSET: u16 = 0x075a;
@@ -913,6 +915,8 @@ fn snd_bank_load_call_note(file_offset: usize) -> &'static str {
 
 fn render_target_name(target_offset: u16) -> &'static str {
     match target_offset {
+        RENDER_VGA_DAC_PALETTE_LOAD_OFFSET => "vga_dac_palette_load",
+        RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET => "vga_dac_palette_clear",
         RENDER_STRING_OFFSET => "render_string_entry",
         RENDER_SUBTITLE_REVEAL_OFFSET => "subtitle_reveal_draw_wrapper",
         RENDER_SMALL_TEXT_OFFSET => "small_text_render",
@@ -933,6 +937,18 @@ fn render_target_name(target_offset: u16) -> &'static str {
 
 fn render_call_site_note(file_offset: usize, target_offset: u16) -> &'static str {
     match (file_offset, target_offset) {
+        (0x0016b0, RENDER_VGA_DAC_PALETTE_LOAD_OFFSET) => {
+            "startup/presentation path loads 0x300 palette bytes from DS:0x5B58 into VGA DAC ports 0x3C8/0x3C9"
+        }
+        (0x00179a, RENDER_VGA_DAC_PALETTE_LOAD_OFFSET) => {
+            "palette restore path loads 0x300 palette bytes from DS:0x5251 into VGA DAC ports 0x3C8/0x3C9"
+        }
+        (0x000c5a, RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET) => {
+            "video setup clears all VGA DAC entries before register/mode setup"
+        }
+        (0x001f34, RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET) => {
+            "presentation loop clears the VGA DAC palette before rebuilding framebuffer bands"
+        }
         (0x0094ee, RENDER_SUBTITLE_REVEAL_OFFSET) => {
             "subtitle reveal path draws current text using DS:0x5E5C/0x5E5E origin"
         }
@@ -959,6 +975,12 @@ fn render_call_site_note(file_offset: usize, target_offset: u16) -> &'static str
             "copies planar/interleaved image data into the primary framebuffer"
         }
         (_, RENDER_SPRITE_SLOT_STATE_OFFSET) => "updates one presentation sprite slot state",
+        (_, RENDER_VGA_DAC_PALETTE_LOAD_OFFSET) => {
+            "loads 0x300 palette bytes from DS:SI into VGA DAC ports 0x3C8/0x3C9"
+        }
+        (_, RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET) => {
+            "zeros all VGA DAC palette entries through ports 0x3C8/0x3C9"
+        }
         _ => "unclassified render-segment call",
     }
 }
@@ -1377,6 +1399,24 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         ds_offset: None,
         kind: "script-vm",
         comment: "post-update C4 pair path marks primary aux 0xffff and writes reciprocal selector-0x13 C4 record",
+    },
+    BinarySymbol {
+        name: "vga_dac_palette_load",
+        file_offset: 0x002f90,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_VGA_DAC_PALETTE_LOAD_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "loads 256 6-bit RGB DAC entries from DS:SI through VGA ports 0x3C8/0x3C9",
+    },
+    BinarySymbol {
+        name: "vga_dac_palette_clear",
+        file_offset: 0x002fa6,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "zeros all 256 VGA DAC palette entries through VGA ports 0x3C8/0x3C9",
     },
     BinarySymbol {
         name: "render_string_entry",
@@ -2158,6 +2198,14 @@ mod tests {
             Some(&33)
         );
         assert_eq!(target_counts.get(&RENDER_SPRITE_SLOT_LOAD_OFFSET), Some(&4));
+        assert_eq!(
+            target_counts.get(&RENDER_VGA_DAC_PALETTE_LOAD_OFFSET),
+            Some(&2)
+        );
+        assert_eq!(
+            target_counts.get(&RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET),
+            Some(&2)
+        );
         assert_eq!(target_counts.get(&RENDER_STRING_OFFSET), Some(&5));
         assert_eq!(target_counts.get(&RENDER_SUBTITLE_REVEAL_OFFSET), Some(&1));
         assert_eq!(target_counts.get(&RENDER_SMALL_TEXT_OFFSET), Some(&8));
@@ -2181,6 +2229,14 @@ mod tests {
                 .map(|site| site.target_name)
                 .expect("render target")
         };
+        assert_eq!(
+            target_name(RENDER_VGA_DAC_PALETTE_LOAD_OFFSET),
+            "vga_dac_palette_load"
+        );
+        assert_eq!(
+            target_name(RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET),
+            "vga_dac_palette_clear"
+        );
         assert_eq!(target_name(RENDER_SMALL_TEXT_OFFSET), "small_text_render");
         assert_eq!(
             target_name(RENDER_RECT_FILL_OFFSET),
@@ -2202,6 +2258,28 @@ mod tests {
             target_name(RENDER_PLANAR_COPY_OFFSET),
             "planar_framebuffer_copy"
         );
+
+        let palette_load = sites
+            .iter()
+            .find(|site| site.file_offset == 0x0016b0)
+            .expect("startup palette load call");
+        assert_eq!(
+            palette_load.target_offset,
+            RENDER_VGA_DAC_PALETTE_LOAD_OFFSET
+        );
+        assert_eq!(palette_load.target_file_offset, 0x002f90);
+        assert!(palette_load.note.contains("DS:0x5B58"));
+
+        let palette_clear = sites
+            .iter()
+            .find(|site| site.file_offset == 0x000c5a)
+            .expect("video setup palette clear call");
+        assert_eq!(
+            palette_clear.target_offset,
+            RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET
+        );
+        assert_eq!(palette_clear.target_file_offset, 0x002fa6);
+        assert!(palette_clear.note.contains("VGA DAC"));
 
         let subtitle_reveal = sites
             .iter()
