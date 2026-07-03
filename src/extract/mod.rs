@@ -242,7 +242,6 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     if let Some(db) = &descript_db {
         write_character_manifest(
             db,
-            &hnm_music,
             &script_character_contexts,
             &out_dir.join("character-combinations.tsv"),
         )?;

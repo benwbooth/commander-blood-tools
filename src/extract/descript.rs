@@ -553,7 +553,7 @@ pub(super) fn write_descript_manifest(
     let mut file = File::create(out_path)?;
     writeln!(
         file,
-        "record\tkind\tmusic\tfull_hnm\tsequence_hnm\tsnd\tidle_hnm\tchar_background_hnm\ttalk_hnm_count\tsubtitle_count"
+        "record\tkind\tmusic\tfull_hnm\tsequence_hnm\tsnd\tidle_hnm\ttalk_hnm_count\tsubtitle_count"
     )?;
     for record in &db.records {
         let idle = record
@@ -562,12 +562,9 @@ pub(super) fn write_descript_manifest(
             .map(|(_, name)| name.as_str())
             .collect::<Vec<_>>()
             .join(",");
-        let char_background = lookup_character_context(&record.name)
-            .and_then(|ctx| ctx.background_hnm)
-            .unwrap_or("");
         writeln!(
             file,
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
             record.name,
             record.kind,
             record.music.join(","),
@@ -575,7 +572,6 @@ pub(super) fn write_descript_manifest(
             record.sequence_hnms.join(","),
             record.snd.as_deref().unwrap_or(""),
             idle,
-            char_background,
             record.talk_hnms.len(),
             record.subtitles.len()
         )?;
@@ -631,7 +627,6 @@ pub(super) fn write_verified_video_manifest(
 
 pub(super) fn write_character_manifest(
     db: &DescriptDb,
-    hnm_music: &HashMap<String, String>,
     script_contexts: &[ScriptCharacterContextLine],
     out_path: &Path,
 ) -> Result<(), Box<dyn Error>> {
@@ -680,33 +675,21 @@ pub(super) fn write_character_manifest(
             continue;
         }
 
-        let context = lookup_character_context(&record.name);
-        let background_hnm = context.and_then(|ctx| ctx.background_hnm).unwrap_or("");
-        let background_music = context
-            .and_then(|ctx| ctx.background_hnm)
-            .and_then(|hnm| hnm_music.get(&media_stem(hnm)))
-            .map(|music| music.as_str())
-            .unwrap_or("");
-        let source = match context {
-            Some(ctx) if ctx.background_hnm.is_some() => {
-                "legacy static fallback background; no SCRIPT object context recovered"
-            }
-            Some(_) => "legacy static fallback standalone; no SCRIPT object context recovered",
-            None => "DESCRIPT foreground+voice only; no SCRIPT object context recovered",
-        };
-
-        writeln!(
-            file,
-            "{}\t{}\t{}\t\t\t\t\t{}\t{}\t{}\t{}\t{}",
-            record.name,
-            record.snd.as_deref().unwrap_or(""),
+        let fields = vec![
+            record.name.clone(),
+            record.snd.as_deref().unwrap_or("").to_string(),
             idle,
-            background_hnm,
-            background_music,
-            source,
-            record.talk_hnms.len(),
-            talk
-        )?;
+            String::new(),
+            String::new(),
+            String::new(),
+            String::new(),
+            String::new(),
+            String::new(),
+            "DESCRIPT foreground+voice only; no SCRIPT object context recovered".to_string(),
+            record.talk_hnms.len().to_string(),
+            talk,
+        ];
+        writeln!(file, "{}", fields.join("\t"))?;
     }
     Ok(())
 }
@@ -718,6 +701,77 @@ pub(super) fn format_srt_time(seconds: f64) -> String {
     let s = (millis / 1_000) % 60;
     let ms = millis % 1_000;
     format!("{h:02}:{m:02}:{s:02},{ms:03}")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn character_record(name: &str) -> DescriptRecord {
+        DescriptRecord {
+            name: name.to_string(),
+            kind: 2,
+            music: Vec::new(),
+            full_hnms: Vec::new(),
+            backgrounds: Vec::new(),
+            sequence_hnms: Vec::new(),
+            idle_hnms: vec![(0, format!("{name}.hnm"))],
+            talk_hnms: vec![(0, format!("{name}Talk.hnm"))],
+            snd: Some(format!("{name}.snd")),
+            sprite: None,
+            labels: Vec::new(),
+            subtitles: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn character_manifest_does_not_use_legacy_static_context_without_script_context() {
+        let db = DescriptDb {
+            records: vec![character_record("Hom")],
+        };
+        let path = std::env::temp_dir().join(format!(
+            "commander-blood-character-manifest-{}.tsv",
+            std::process::id()
+        ));
+
+        write_character_manifest(&db, &[], &path).expect("write character manifest");
+        let manifest = fs::read_to_string(&path).expect("read character manifest");
+        let _ = fs::remove_file(&path);
+
+        assert!(!manifest.contains("satell10"));
+        assert!(!manifest.contains("legacy static fallback"));
+        let row = manifest.lines().nth(1).expect("manifest row");
+        let columns = row.split('\t').collect::<Vec<_>>();
+        assert_eq!(columns.len(), 12);
+        assert_eq!(columns[6], "");
+        assert_eq!(columns[7], "");
+        assert_eq!(columns[8], "");
+        assert_eq!(
+            columns[9],
+            "DESCRIPT foreground+voice only; no SCRIPT object context recovered"
+        );
+    }
+
+    #[test]
+    fn descript_manifest_does_not_emit_legacy_character_background_column() {
+        let db = DescriptDb {
+            records: vec![character_record("Hom")],
+        };
+        let path = std::env::temp_dir().join(format!(
+            "commander-blood-descript-manifest-{}.tsv",
+            std::process::id()
+        ));
+
+        write_descript_manifest(&db, &path).expect("write descript manifest");
+        let manifest = fs::read_to_string(&path).expect("read descript manifest");
+        let _ = fs::remove_file(&path);
+
+        let header = manifest.lines().next().expect("manifest header");
+        assert!(!header.contains("char_background_hnm"));
+        assert!(!manifest.contains("satell10"));
+        let row = manifest.lines().nth(1).expect("manifest row");
+        assert_eq!(row.split('\t').count(), 9);
+    }
 }
 
 pub(super) fn descript_hnm_path(hnm_name: &str, kind: u8) -> PathBuf {

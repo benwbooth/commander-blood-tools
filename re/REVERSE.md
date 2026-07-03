@@ -1330,8 +1330,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `CHAR_CONTEXTS` / `lookup_character_context` path remains only for explicit
       `--snd` direct-mode inspection. Background/music in the run-level renderer
       come from DESCRIPT-derived per-line data (actor location → location HNM →
-      HNM music). Coverage from real data: ~68% location, ~58% background HNM,
-      ~56% voice clip; the rest have no derivable value yet (not faked).
+      HNM music). The default `character-combinations.tsv` manifest leaves
+      unresolved backgrounds blank instead of filling them from `CHAR_CONTEXTS`.
+      Coverage from real data: ~68% location, ~58% background HNM, ~56% voice
+      clip; the rest have no derivable value yet (not faked).
 - [x] **Accurate voice clip selection** RESOLVED (sess 002): formula is
       `b3==0xFF|0x00 → no voice`, `b3∈1..=N → clip=b3-1`. The old `b3==0xFF →
       clip=b4` guess read the b4 flag word as an index and spuriously voiced
