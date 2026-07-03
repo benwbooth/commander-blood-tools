@@ -61,6 +61,10 @@ and every valid `0xa6` TEXT token in `SCRIPT*.COD` with the VM token walker by
 following dictionary word offsets from `SCRIPT*.DIC`. Actor context is tracked
 from the binary-sized `0xc4` actor/object tokens where those references match
 DESCRIPT character talk slots.
+The full export also emits `bloodprg-snd-call-sites.tsv` and
+`bloodprg-render-call-sites.tsv`, binary-derived maps of direct audio and
+render/presentation far calls that are still being converted into named engine
+semantics.
 The run-level dialogue manifests append unresolved actor, background, and voice
 counts so remaining presentation gaps are visible instead of hidden by fallback
 combinations.

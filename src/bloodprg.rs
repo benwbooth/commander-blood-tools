@@ -32,6 +32,12 @@ pub const SND_ENTRY_SEGMENT: u16 = 0x0b1b;
 pub const SND_ENTRY_OFFSET: u16 = 0x011d;
 pub const SND_BANK_LOAD_SEGMENT: u16 = 0x0b1b;
 pub const SND_BANK_LOAD_OFFSET: u16 = 0x0855;
+pub const RENDER_SEGMENT: u16 = 0x0299;
+pub const RENDER_STRING_OFFSET: u16 = 0x0202;
+pub const RENDER_SUBTITLE_REVEAL_OFFSET: u16 = 0x06a0;
+pub const RENDER_SCENE_BAND_FILL_OFFSET: u16 = 0x0deb;
+pub const RENDER_SPRITE_SLOT_LOAD_OFFSET: u16 = 0x11be;
+pub const RENDER_SPRITE_SLOT_STATE_OFFSET: u16 = 0x1241;
 pub const NAV_CODE_SEGMENT: u16 = 0x071e;
 pub const NAV_ACTOR_SUBDISPATCH_TABLE_FILE_OFFSET: usize = 0x007eb4;
 pub const NAV_ACTOR_SUBDISPATCH_ENTRY_COUNT: usize = 6;
@@ -55,6 +61,8 @@ const SND_BANK_LOAD_FAR_CALL: [u8; 5] = [
 const FAR_CALL_OPCODE: u8 = 0x9a;
 const REGISTER_SOURCE_SCAN_BACK: usize = 32;
 const DS_STRING_SCAN_MAX: usize = 64;
+const RENDER_FAR_CALL_SEGMENT_BYTES: [u8; 2] =
+    [(RENDER_SEGMENT & 0x00ff) as u8, (RENDER_SEGMENT >> 8) as u8];
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
 pub struct MzHeader {
@@ -184,6 +192,7 @@ pub struct BloodPrgInspection {
     pub nav_choice_subdispatch_handlers: Vec<SubdispatchEntry>,
     pub snd_entry_call_sites: Vec<SndEntryCallSite>,
     pub snd_bank_load_call_sites: Vec<SndBankLoadCallSite>,
+    pub render_call_sites: Vec<RenderCallSite>,
     pub script_resource_profiles: Vec<ScriptResourceProfile>,
     pub dialogue_font: DialogueFontTables,
 }
@@ -220,6 +229,22 @@ pub struct SndBankLoadCallSite {
     pub path_file_offset: Option<usize>,
     pub path: Option<String>,
     pub mode: &'static str,
+    pub note: &'static str,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct RenderCallSite {
+    pub file_offset: usize,
+    pub segment: u16,
+    pub offset: u16,
+    pub target_segment: u16,
+    pub target_offset: u16,
+    pub target_file_offset: usize,
+    pub target_name: &'static str,
+    pub ax_value: Option<u16>,
+    pub ax_source_file_offset: Option<usize>,
+    pub ax_source: &'static str,
+    pub intervening_far_calls: u8,
     pub note: &'static str,
 }
 
@@ -504,6 +529,37 @@ impl BloodPrg {
             .collect()
     }
 
+    pub fn render_call_sites(&self) -> Vec<RenderCallSite> {
+        self.data
+            .windows(5)
+            .enumerate()
+            .filter_map(|(file_offset, bytes)| {
+                (bytes[0] == FAR_CALL_OPCODE && bytes[3..5] == RENDER_FAR_CALL_SEGMENT_BYTES).then(
+                    || {
+                        let target_offset = u16::from_le_bytes([bytes[1], bytes[2]]);
+                        let (segment, offset) = self.file_to_known_segoff(file_offset);
+                        let (ax_value, ax_source_file_offset, ax_source, intervening_far_calls) =
+                            self.find_ax_source_before(file_offset);
+                        RenderCallSite {
+                            file_offset,
+                            segment,
+                            offset,
+                            target_segment: RENDER_SEGMENT,
+                            target_offset,
+                            target_file_offset: self.segoff_to_file(RENDER_SEGMENT, target_offset),
+                            target_name: render_target_name(target_offset),
+                            ax_value,
+                            ax_source_file_offset,
+                            ax_source,
+                            intervening_far_calls,
+                            note: render_call_site_note(file_offset, target_offset),
+                        }
+                    },
+                )
+            })
+            .collect()
+    }
+
     pub fn inspect(&self) -> Result<BloodPrgInspection> {
         Ok(BloodPrgInspection {
             summary: self.summary(),
@@ -516,6 +572,7 @@ impl BloodPrg {
             nav_choice_subdispatch_handlers: self.nav_choice_subdispatch_handlers()?,
             snd_entry_call_sites: self.snd_entry_call_sites(),
             snd_bank_load_call_sites: self.snd_bank_load_call_sites(),
+            render_call_sites: self.render_call_sites(),
             script_resource_profiles: self.script_resource_profiles()?,
             dialogue_font: self.dialogue_font_tables()?,
         })
@@ -556,7 +613,7 @@ impl BloodPrg {
         call_file_offset: usize,
     ) -> (Option<u16>, Option<usize>, &'static str, u8) {
         let window_start = call_file_offset.saturating_sub(REGISTER_SOURCE_SCAN_BACK);
-        let mut source = (None, None, "unresolved", 0usize);
+        let mut source = (None, None, "unresolved", window_start);
         for pos in window_start..call_file_offset {
             if pos + 3 <= call_file_offset && self.data.get(pos) == Some(&0xb8) {
                 let lo = self.data[pos + 1];
@@ -588,7 +645,7 @@ impl BloodPrg {
         call_file_offset: usize,
     ) -> (Option<u16>, Option<usize>, &'static str, u8) {
         let window_start = call_file_offset.saturating_sub(REGISTER_SOURCE_SCAN_BACK);
-        let mut source = (None, None, "unresolved", 0usize);
+        let mut source = (None, None, "unresolved", window_start);
         for pos in window_start..call_file_offset {
             if pos + 3 <= call_file_offset && self.data.get(pos) == Some(&0xbe) {
                 let lo = self.data[pos + 1];
@@ -845,6 +902,38 @@ fn snd_bank_load_call_note(file_offset: usize) -> &'static str {
         0x00b5dc => "presentation setup loads 3D.snd into the in-memory clip table",
         0x00b610 => "presentation setup restores tb.snd after temporary 3D.snd load",
         _ => "unclassified SND bank-loader call",
+    }
+}
+
+fn render_target_name(target_offset: u16) -> &'static str {
+    match target_offset {
+        RENDER_STRING_OFFSET => "render_string_entry",
+        RENDER_SUBTITLE_REVEAL_OFFSET => "subtitle_reveal_draw_wrapper",
+        RENDER_SCENE_BAND_FILL_OFFSET => "scene_band_fill",
+        RENDER_SPRITE_SLOT_LOAD_OFFSET => "sprite_slot_frame_load",
+        RENDER_SPRITE_SLOT_STATE_OFFSET => "sprite_slot_state_update",
+        0x1037 => "framebuffer_object_init",
+        0x14e1 => "sprite_range_render",
+        0x040e => "sprite_blit_or_copy",
+        _ => "unclassified_render_entry",
+    }
+}
+
+fn render_call_site_note(file_offset: usize, target_offset: u16) -> &'static str {
+    match (file_offset, target_offset) {
+        (0x0094ee, RENDER_SUBTITLE_REVEAL_OFFSET) => {
+            "subtitle reveal path draws current text using DS:0x5E5C/0x5E5E origin"
+        }
+        (0x005990 | 0x0070dd | 0x007e7d | 0x0090d4, RENDER_SPRITE_SLOT_LOAD_OFFSET) => {
+            "loads one sprite/frame table entry into a presentation slot"
+        }
+        (0x0059dc | 0x0059e4, RENDER_SPRITE_SLOT_STATE_OFFSET) => {
+            "VM post-update presentation clear resets sprite slot state"
+        }
+        (_, RENDER_STRING_OFFSET) => "dialogue/UI text render call",
+        (_, RENDER_SCENE_BAND_FILL_OFFSET) => "fills the current clipped framebuffer band",
+        (_, RENDER_SPRITE_SLOT_STATE_OFFSET) => "updates one presentation sprite slot state",
+        _ => "unclassified render-segment call",
     }
 }
 
@@ -1282,6 +1371,15 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         comment: "dialogue glyph blitter using the embedded ASCII map, advances, and 8-byte glyph rows",
     },
     BinarySymbol {
+        name: "subtitle_reveal_draw_wrapper",
+        file_offset: 0x003630,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_SUBTITLE_REVEAL_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "subtitle reveal renderer called from 0x94ee with DS:0x5e5c/0x5e5e origin",
+    },
+    BinarySymbol {
         name: "scene_band_fill",
         file_offset: 0x003d7b,
         segment: Some(0x0299),
@@ -1289,6 +1387,24 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         ds_offset: None,
         kind: "presentation",
         comment: "fills framebuffer band using y-clip bounds DS:0x5239..0x523b and base DS:0x5221",
+    },
+    BinarySymbol {
+        name: "sprite_slot_frame_load",
+        file_offset: 0x00414e,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_SPRITE_SLOT_LOAD_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "loads one frame-table entry into the 32-byte presentation sprite slot selected by AX",
+    },
+    BinarySymbol {
+        name: "sprite_slot_state_update",
+        file_offset: 0x0041d1,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_SPRITE_SLOT_STATE_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "updates the state word for the 32-byte presentation sprite slot selected by AX",
     },
     BinarySymbol {
         name: "dlg_line_activate",
@@ -1935,6 +2051,62 @@ mod tests {
         assert_eq!(template_bank.ax_source, "mov ax, imm16");
         assert_eq!(template_bank.si_source, "mov si, imm16");
         assert!(template_bank.note.contains("templated SND bank"));
+    }
+
+    #[test]
+    fn render_call_sites_recover_presentation_targets() {
+        let Some(binary) = fixture() else {
+            eprintln!("skipping: BLOODPRG.EXE not available");
+            return;
+        };
+
+        let sites = binary.render_call_sites();
+        assert_eq!(sites.len(), 143);
+
+        let mut target_counts = std::collections::BTreeMap::new();
+        for site in &sites {
+            *target_counts.entry(site.target_offset).or_insert(0usize) += 1;
+            assert_eq!(site.target_segment, RENDER_SEGMENT);
+            assert_eq!(
+                site.target_file_offset,
+                binary.segoff_to_file(RENDER_SEGMENT, site.target_offset)
+            );
+        }
+        assert_eq!(target_counts.len(), 32);
+        assert_eq!(
+            target_counts.get(&RENDER_SPRITE_SLOT_STATE_OFFSET),
+            Some(&33)
+        );
+        assert_eq!(target_counts.get(&RENDER_SPRITE_SLOT_LOAD_OFFSET), Some(&4));
+        assert_eq!(target_counts.get(&RENDER_STRING_OFFSET), Some(&5));
+        assert_eq!(target_counts.get(&RENDER_SUBTITLE_REVEAL_OFFSET), Some(&1));
+        assert_eq!(target_counts.get(&RENDER_SCENE_BAND_FILL_OFFSET), Some(&10));
+
+        let subtitle_reveal = sites
+            .iter()
+            .find(|site| site.file_offset == 0x0094ee)
+            .expect("subtitle reveal render call");
+        assert_eq!(subtitle_reveal.target_offset, RENDER_SUBTITLE_REVEAL_OFFSET);
+        assert_eq!(subtitle_reveal.target_name, "subtitle_reveal_draw_wrapper");
+        assert_eq!(subtitle_reveal.ax_source, "unresolved");
+        assert_eq!(subtitle_reveal.intervening_far_calls, 0);
+        assert!(subtitle_reveal.note.contains("DS:0x5E5C/0x5E5E"));
+
+        let sprite_load = sites
+            .iter()
+            .find(|site| site.file_offset == 0x007e7d)
+            .expect("actor subdispatch sprite load call");
+        assert_eq!(sprite_load.target_offset, RENDER_SPRITE_SLOT_LOAD_OFFSET);
+        assert_eq!(sprite_load.ax_value, Some(4));
+        assert_eq!(sprite_load.target_name, "sprite_slot_frame_load");
+
+        let sprite_state = sites
+            .iter()
+            .find(|site| site.file_offset == 0x0059dc)
+            .expect("VM presentation clear sprite-state call");
+        assert_eq!(sprite_state.target_offset, RENDER_SPRITE_SLOT_STATE_OFFSET);
+        assert_eq!(sprite_state.ax_value, Some(4));
+        assert!(sprite_state.note.contains("presentation clear"));
     }
 
     #[test]

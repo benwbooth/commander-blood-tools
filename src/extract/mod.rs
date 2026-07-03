@@ -201,14 +201,23 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             eprintln!("Parsing: {}", bloodprg_path.display());
             let bloodprg = BloodPrg::parse_file(&bloodprg_path)?;
             let snd_call_sites = bloodprg.snd_entry_call_sites();
+            let render_call_sites = bloodprg.render_call_sites();
             let script_resource_profiles = bloodprg.script_resource_profiles()?;
             write_bloodprg_snd_call_sites_manifest(
                 &snd_call_sites,
                 &out_dir.join("bloodprg-snd-call-sites.tsv"),
             )?;
+            write_bloodprg_render_call_sites_manifest(
+                &render_call_sites,
+                &out_dir.join("bloodprg-render-call-sites.tsv"),
+            )?;
             eprintln!(
                 "Recovered {} BLOODPRG.EXE SND entry call sites",
                 snd_call_sites.len()
+            );
+            eprintln!(
+                "Recovered {} BLOODPRG.EXE render call sites",
+                render_call_sites.len()
             );
             script_resource_profiles
         } else {
@@ -681,6 +690,40 @@ fn write_bloodprg_snd_call_sites_manifest(
     Ok(())
 }
 
+fn write_bloodprg_render_call_sites_manifest(
+    rows: &[RenderCallSite],
+    out_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let mut file = File::create(out_path)?;
+    writeln!(
+        file,
+        "file_offset\tsegment\toffset\ttarget_segment\ttarget_offset\ttarget_file_offset\ttarget_name\tax_value\tax_source_file_offset\tax_source\tintervening_far_calls\tnote"
+    )?;
+    for row in rows {
+        writeln!(
+            file,
+            "0x{:05x}\t{:04x}\t{:04x}\t{:04x}\t{:04x}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}",
+            row.file_offset,
+            row.segment,
+            row.offset,
+            row.target_segment,
+            row.target_offset,
+            row.target_file_offset,
+            row.target_name,
+            row.ax_value
+                .map(|value| format!("{value}"))
+                .unwrap_or_default(),
+            row.ax_source_file_offset
+                .map(|file_offset| format!("0x{file_offset:05x}"))
+                .unwrap_or_default(),
+            row.ax_source,
+            row.intervening_far_calls,
+            clean_tsv(row.note),
+        )?;
+    }
+    Ok(())
+}
+
 mod audio;
 mod character;
 mod dat;
@@ -698,7 +741,9 @@ use audio::*;
 use character::*;
 #[cfg(test)]
 use commander_blood_tools::bloodprg::ScriptResourceProfileSlot;
-use commander_blood_tools::bloodprg::{BloodPrg, ScriptResourceProfile, SndEntryCallSite};
+use commander_blood_tools::bloodprg::{
+    BloodPrg, RenderCallSite, ScriptResourceProfile, SndEntryCallSite,
+};
 use commander_blood_tools::snd::{SndBank, SndClip};
 use commander_blood_tools::vm;
 use dat::*;

@@ -813,6 +813,31 @@ here (seg 0x0971) — these reach the audio playback subsystem. 41 sites touch
 (audio/clear), so remaining work here is callback/FSM mapping rather than
 another direct `b3` selector formula.
 
+### Render/presentation callbacks (segment 0x0299) — located
+
+`src/bloodprg.rs` now scans every direct far call into render/presentation segment
+`0x0299`. The full export writes `bloodprg-render-call-sites.tsv`, and
+`inspect-bloodprg` exposes the same `render_call_sites` array. Current binary
+coverage is **143 direct calls across 32 target offsets**.
+
+Named targets that are already tied to code behavior:
+
+- `0x0299:0x0202` (`render_string_entry`): dialogue/UI string renderer using the
+  embedded font tables.
+- `0x0299:0x06A0` (`subtitle_reveal_draw_wrapper`): the subtitle reveal renderer
+  reached from file `0x94EE` after loading the `DS:0x5E5C/0x5E5E` text origin.
+- `0x0299:0x0DEB` (`scene_band_fill`): fills the current clipped framebuffer band.
+- `0x0299:0x11BE` (`sprite_slot_frame_load`): loads one frame-table entry into
+  the 32-byte presentation sprite slot selected by `AX`; four direct callers.
+- `0x0299:0x1241` (`sprite_slot_state_update`): updates one presentation sprite
+  slot state; 33 direct callers, including the VM post-update presentation clear
+  path at `0x59DC/0x59E4`.
+
+This is still a caller map, not a full renderer decompilation. It removes the
+guesswork about which external render hooks the VM/presentation state machine
+uses, and leaves the next RE step as naming the remaining 27 render targets and
+porting the sprite-slot state model.
+
 ### Audio subsystem (segment 0x0B1B) — located
 
 - `son.snd` (voices/SFX) and `mus.snd` (music) are **per-scene temp files**
@@ -955,6 +980,7 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 | `script-executed-dialogue.tsv` | extraction artifact joining `execute_trace` line order to decoded text/actor/background |
 | `script-executed-dialogue-runs.tsv` | extraction artifact grouping executed dialogue by script/background run; MP4 names correspond to run-level composites |
 | `script-dialogue-runs.tsv` | extraction artifact grouping VM-order dialogue lines by script/background run |
+| `bloodprg-render-call-sites.tsv` | extraction artifact generated from `BLOODPRG.EXE`; lists direct far calls into render/presentation segment `0x0299`, recovered target offsets, local `AX` setup, and current target names |
 
 ## Verification Checklist
 
@@ -1033,8 +1059,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       globals, the deferred record drain, and the kind-2 handoff predicate are
       ported and surfaced through `ExecutionTrace::post_update`; the kind-2
       `vm_control_flow` target is now applied as a COD PC handoff inside
-      `execute_trace`. External render/audio calls and shared engine globals
-      remain pending. `execute_script_profile_sequence()` now carries each
+      `execute_trace`. Direct SND and render caller maps exist; detailed
+      callback semantics and shared engine globals remain pending.
+      `execute_script_profile_sequence()` now carries each
       profile's mutated VAR state across D2 handoffs/re-entry, so repeated
       profile runs no longer restart from pristine `SCRIPT*.VAR`.
 - [x] Map the VM named-object startup globals from `0x5486`: Rust
@@ -1252,6 +1279,13 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       the one call where `AX` is carried across a setup far call. This gives the
       chatter/voice SFX audit a test-backed caller map instead of handwritten
       disassembly notes.
+- [x] Emit binary-derived render/presentation call sites:
+      `bloodprg-render-call-sites.tsv` and `inspect-bloodprg.render_call_sites`
+      scan all direct far calls into segment `0x0299`, recovering 143 call sites
+      across 32 target offsets. The first named targets include the string
+      renderer, subtitle reveal wrapper, scene-band fill, sprite-slot frame load,
+      and sprite-slot state update; the remaining target semantics stay open RE
+      work instead of being guessed by the exporter.
 - [x] Emit binary-derived SND bank-loader call sites:
       `src/bloodprg.rs` scans direct far calls to `0x0B1B:0x0855`, recovers the
       upstream `AX` bank mode plus `SI` static SND path, and test-locks the seven
