@@ -438,6 +438,7 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 |------|----------|
 | `re/labels.csv` | accumulated address labels (file-offset / SEG:OFF / DS: forms) |
 | `re/bin/BLOODPRG.EXE` | unpacked target (MZ image == whole file, no decompression needed) |
+| `script-text-flags.tsv` | extraction artifact listing every `0xA6` TEXT token's b3/b4/b5 control fields and decoded flag summary |
 | `script-branch-trace.tsv` | extraction artifact listing `execute_trace` branch/control events per script |
 | `script-branch-decisions.tsv` | extraction artifact listing default observed conditional path and alternate target/path |
 | `script-branch-coverage.tsv` | extraction artifact summarizing all text calls vs default executed trace coverage per script |
@@ -604,6 +605,11 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       a specific condition result, and `script-branch-scenarios.tsv` applies the
       opposite path to every concrete branch decision once, measuring text-call
       deltas. This turns the branch coverage gap into executable scenario data.
+- [x] Expose TEXT control flags: `script-text-flags.tsv` lists every `0xA6`
+      token's `b3`, `b4`, `b5`, active bit, conditional skip count, loop target,
+      known parse-control bits, and still-unknown `b4` payload bits. This gives
+      the subtitle sound/animation audit a concrete Rust artifact instead of
+      burying those fields in raw token params.
 - [x] Emit branch-scenario dialogue rows/runs:
       `script-branch-scenario-dialogue.tsv` reuses the same executed-dialogue
       resolver against each forced branch trace, and

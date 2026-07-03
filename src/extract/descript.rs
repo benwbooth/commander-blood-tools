@@ -72,6 +72,22 @@ pub(super) struct ScriptSpeechLine {
 }
 
 #[derive(Clone, Debug)]
+pub(super) struct ScriptTextFlagLine {
+    pub(super) script: String,
+    pub(super) function_name: String,
+    pub(super) offset: usize,
+    pub(super) line_index: u16,
+    pub(super) voice_selector: u8,
+    pub(super) flags_b4: u8,
+    pub(super) flags_b5: u8,
+    pub(super) loop_target: Option<u16>,
+    pub(super) active: bool,
+    pub(super) skip_count: Option<u8>,
+    pub(super) summary: String,
+    pub(super) text: String,
+}
+
+#[derive(Clone, Debug)]
 pub(super) struct ScriptExecutedSpeechLine {
     pub(super) scenario_id: Option<String>,
     pub(super) script: String,

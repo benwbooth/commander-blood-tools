@@ -155,6 +155,108 @@ pub(super) fn parse_script_speech(
     Ok(rows)
 }
 
+pub(super) fn parse_script_text_flags(
+    iso_dir: &Path,
+    descript_db: Option<&DescriptDb>,
+    hnm_music: &HashMap<String, String>,
+) -> Result<Vec<ScriptTextFlagLine>, Box<dyn Error>> {
+    let mut rows = Vec::new();
+    let character_names = descript_db
+        .map(|db| db.character_names())
+        .unwrap_or_default();
+
+    for script_idx in 1..=5 {
+        let cod_path = find_file_recursive(iso_dir, &format!("SCRIPT{script_idx}.COD"));
+        let dic_path = find_file_recursive(iso_dir, &format!("SCRIPT{script_idx}.DIC"));
+        let deb_path = find_file_recursive(iso_dir, &format!("SCRIPT{script_idx}.DEB"));
+        let var_path = find_file_recursive(iso_dir, &format!("SCRIPT{script_idx}.VAR"));
+        let (Some(cod_path), Some(dic_path)) = (cod_path, dic_path) else {
+            continue;
+        };
+
+        let cod = fs::read(&cod_path)?;
+        let words = parse_script_dictionary(&dic_path)?;
+        let script = format!("SCRIPT{script_idx}");
+        let (mut functions, _, _) =
+            if let (Some(deb_path), Some(var_path), Some(db)) = (deb_path, var_path, descript_db) {
+                parse_script_symbols(
+                    &script,
+                    &deb_path,
+                    &var_path,
+                    db,
+                    hnm_music,
+                    &character_names,
+                )?
+            } else {
+                (Vec::new(), HashMap::new(), Vec::new())
+            };
+        if functions.is_empty() {
+            functions.push((0, script.as_str().to_string()));
+        }
+        functions.sort_by_key(|(offset, _)| *offset);
+        functions.push((cod.len(), "END".to_string()));
+
+        let mut text_calls: Vec<TextCallInfo> =
+            text_calls_by_offset(&cod, &words).into_values().collect();
+        text_calls.sort_by_key(|call| call.offset);
+        for call in text_calls {
+            rows.push(ScriptTextFlagLine {
+                script: script.clone(),
+                function_name: function_name_for_offset(&functions, call.offset).to_string(),
+                offset: call.offset,
+                line_index: call.line_index,
+                voice_selector: call.voice_selector,
+                flags_b4: call.flags_b4,
+                flags_b5: call.flags_b5,
+                loop_target: call.loop_target,
+                active: call.flags_b5 & 0x80 != 0,
+                skip_count: text_skip_count(call.flags_b4, call.flags_b5),
+                summary: text_control_summary(call.flags_b4, call.flags_b5, call.loop_target),
+                text: call.text,
+            });
+        }
+    }
+
+    Ok(rows)
+}
+
+fn text_skip_count(flags_b4: u8, flags_b5: u8) -> Option<u8> {
+    (flags_b4 & 0x08 != 0).then_some(((flags_b5 >> 4) & 0x07) + 1)
+}
+
+fn text_control_summary(flags_b4: u8, flags_b5: u8, loop_target: Option<u16>) -> String {
+    let mut parts = Vec::new();
+    if flags_b5 & 0x80 != 0 {
+        parts.push("active".to_string());
+    } else {
+        parts.push("inactive".to_string());
+    }
+    if let Some(skip_count) = text_skip_count(flags_b4, flags_b5) {
+        parts.push(format!("conditional-skip:{skip_count}"));
+    }
+    if flags_b4 & 0x10 != 0 {
+        parts.push(match loop_target {
+            Some(target) => format!("loop:0x{target:04x}"),
+            None => "loop".to_string(),
+        });
+    }
+    if flags_b4 & 0x01 != 0 {
+        parts.push("clear-next-high-bit".to_string());
+    }
+    if flags_b4 & 0x04 != 0 {
+        parts.push("skip-extra-word".to_string());
+    }
+    let unknown_b4 = flags_b4 & !(0x01 | 0x04 | 0x08 | 0x10);
+    if unknown_b4 != 0 {
+        parts.push(format!("b4-unknown:0x{unknown_b4:02x}"));
+    }
+    let b5_payload = flags_b5 & 0x7f;
+    if b5_payload != 0 {
+        parts.push(format!("b5-payload:0x{b5_payload:02x}"));
+    }
+    parts.join(",")
+}
+
 pub(super) fn parse_script_disassembly(
     iso_dir: &Path,
     descript_db: Option<&DescriptDb>,
@@ -341,6 +443,8 @@ struct TextCallInfo {
     line_index: u16,
     voice_selector: u8,
     flags_b4: u8,
+    flags_b5: u8,
+    loop_target: Option<u16>,
     text: String,
     text_end: usize,
 }
@@ -598,6 +702,7 @@ fn text_calls_by_offset(cod: &[u8], words: &HashMap<u16, String>) -> HashMap<usi
             line_index,
             voice_selector,
             flags_b4,
+            flags_b5,
             loop_target,
             word_offsets,
             ..
@@ -616,6 +721,8 @@ fn text_calls_by_offset(cod: &[u8], words: &HashMap<u16, String>) -> HashMap<usi
                 line_index,
                 voice_selector,
                 flags_b4,
+                flags_b5,
+                loop_target,
                 text: assemble_dialogue(&decoded_words),
                 text_end,
             },
@@ -1277,6 +1384,40 @@ pub(super) fn write_script_speech_manifest(
                 .unwrap_or_default(),
             row.actor_proof,
             row.word_count
+        )?;
+    }
+    Ok(())
+}
+
+pub(super) fn write_script_text_flags_manifest(
+    rows: &[ScriptTextFlagLine],
+    out_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let mut file = File::create(out_path)?;
+    writeln!(
+        file,
+        "script\tfunction\toffset\tline_index\tvoice_selector\tflags_b4\tflags_b5\tactive\tskip_count\tloop_target\tsummary\ttext"
+    )?;
+    for row in rows {
+        writeln!(
+            file,
+            "{}\t{}\t0x{:05x}\t0x{:04x}\t{:02x}\t{:02x}\t{:02x}\t{}\t{}\t{}\t{}\t{}",
+            row.script,
+            row.function_name,
+            row.offset,
+            row.line_index,
+            row.voice_selector,
+            row.flags_b4,
+            row.flags_b5,
+            row.active,
+            row.skip_count
+                .map(|count| count.to_string())
+                .unwrap_or_default(),
+            row.loop_target
+                .map(|target| format!("0x{target:04x}"))
+                .unwrap_or_default(),
+            clean_tsv(&row.summary),
+            clean_tsv(&row.text),
         )?;
     }
     Ok(())
@@ -2568,6 +2709,41 @@ mod tests {
         let manifest = fs::read_to_string(&path).expect("read branch coverage");
         let _ = fs::remove_file(&path);
         assert!(manifest.contains("SCRIPT2\t3\t1\t2\t33.33\t2\t2\t1\t1\t1\t1"));
+    }
+
+    #[test]
+    fn text_flags_manifest_decodes_b4_b5_controls() {
+        assert_eq!(text_skip_count(0x08, 0xa0), Some(3));
+        assert_eq!(
+            text_control_summary(0x39, 0xa0, Some(0x1234)),
+            "active,conditional-skip:3,loop:0x1234,clear-next-high-bit,b4-unknown:0x20,b5-payload:0x20"
+        );
+
+        let rows = vec![ScriptTextFlagLine {
+            script: "SCRIPT2".to_string(),
+            function_name: "func".to_string(),
+            offset: 0x20,
+            line_index: 0x0102,
+            voice_selector: 0x03,
+            flags_b4: 0x39,
+            flags_b5: 0xa0,
+            loop_target: Some(0x1234),
+            active: true,
+            skip_count: Some(3),
+            summary: text_control_summary(0x39, 0xa0, Some(0x1234)),
+            text: "hello".to_string(),
+        }];
+
+        let path = std::env::temp_dir().join(format!(
+            "commander-blood-text-flags-{}.tsv",
+            std::process::id()
+        ));
+        write_script_text_flags_manifest(&rows, &path).expect("write text flags");
+        let manifest = fs::read_to_string(&path).expect("read text flags");
+        let _ = fs::remove_file(&path);
+        assert!(manifest.starts_with("script\tfunction\toffset\tline_index"));
+        assert!(manifest.contains("SCRIPT2\tfunc\t0x00020\t0x0102\t03\t39\ta0\ttrue\t3\t0x1234"));
+        assert!(manifest.contains("conditional-skip:3"));
     }
 
     #[test]

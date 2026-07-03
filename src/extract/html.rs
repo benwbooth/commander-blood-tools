@@ -323,6 +323,7 @@ pub(super) fn write_manifest_section(
         "verified-video-scenes.tsv",
         "character-combinations.tsv",
         "script-speech.tsv",
+        "script-text-flags.tsv",
         "script-executed-dialogue.tsv",
         "script-executed-dialogue-runs.tsv",
         "script-disassembly.tsv",

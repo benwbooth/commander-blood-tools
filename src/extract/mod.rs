@@ -232,6 +232,8 @@ pub fn run() -> Result<(), Box<dyn Error>> {
 
     let script_speech = parse_script_speech(&tmp_iso, descript_db.as_ref(), &hnm_music)?;
     write_script_speech_manifest(&script_speech, &out_dir.join("script-speech.tsv"))?;
+    let script_text_flags = parse_script_text_flags(&tmp_iso, descript_db.as_ref(), &hnm_music)?;
+    write_script_text_flags_manifest(&script_text_flags, &out_dir.join("script-text-flags.tsv"))?;
     let script_executed_speech =
         parse_script_executed_speech(&tmp_iso, descript_db.as_ref(), &hnm_music)?;
     write_script_executed_speech_manifest(
@@ -288,8 +290,9 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     )?;
     if !script_speech.is_empty() {
         eprintln!(
-            "Recovered {} script text calls ({} executed lines, {} disassembly rows, {} branch events, {} branch scenarios, {} scenario dialogue lines)",
+            "Recovered {} script text calls ({} text-flag rows, {} executed lines, {} disassembly rows, {} branch events, {} branch scenarios, {} scenario dialogue lines)",
             script_speech.len(),
+            script_text_flags.len(),
             script_executed_speech.len(),
             script_disassembly.len(),
             script_branch_trace.len(),
