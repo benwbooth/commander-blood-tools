@@ -569,6 +569,171 @@ struct TextCallInfo {
     text_end: usize,
 }
 
+struct LoadedScriptProfile {
+    profile_index: u16,
+    d2_operand: u8,
+    script: String,
+    cod: Vec<u8>,
+    var: Vec<u8>,
+    functions: Vec<(usize, String)>,
+    actor_by_offset: HashMap<u16, ScriptActorRef>,
+    object_names: HashMap<u16, String>,
+    context: vm::ExecutionContext,
+    text_calls: HashMap<usize, TextCallInfo>,
+}
+
+#[derive(Clone, Debug, Default)]
+pub(super) struct ScriptProfileSequenceExport {
+    pub(super) runs: Vec<ScriptProfileRunLine>,
+    pub(super) dialogue: Vec<ScriptProfileExecutedSpeechLine>,
+}
+
+#[derive(Clone, Debug)]
+pub(super) struct ScriptProfileRunLine {
+    pub(super) sequence_id: String,
+    pub(super) run_index: usize,
+    pub(super) profile_index: u16,
+    pub(super) d2_operand: u8,
+    pub(super) script: String,
+    pub(super) steps: usize,
+    pub(super) text_calls: usize,
+    pub(super) pending_profile_index: Option<u16>,
+    pub(super) pending_script: Option<String>,
+    pub(super) request_summary: String,
+    pub(super) halted_after_run: String,
+}
+
+#[derive(Clone, Debug)]
+pub(super) struct ScriptProfileExecutedSpeechLine {
+    pub(super) sequence_id: String,
+    pub(super) global_sequence_index: usize,
+    pub(super) run_index: usize,
+    pub(super) profile_index: u16,
+    pub(super) d2_operand: u8,
+    pub(super) script_sequence_index: usize,
+    pub(super) row: ScriptExecutedSpeechLine,
+}
+
+fn required_profile_slot_name(
+    profile: &ScriptResourceProfile,
+    slot_index: usize,
+) -> Result<&str, Box<dyn Error>> {
+    profile
+        .slots
+        .iter()
+        .find(|slot| slot.slot == slot_index)
+        .map(|slot| slot.name.as_str())
+        .ok_or_else(|| {
+            format!(
+                "script resource profile {} is missing slot {slot_index}",
+                profile.profile_index
+            )
+            .into()
+        })
+}
+
+fn required_profile_slot_path(
+    iso_dir: &Path,
+    profile: &ScriptResourceProfile,
+    slot_index: usize,
+) -> Result<PathBuf, Box<dyn Error>> {
+    let name = required_profile_slot_name(profile, slot_index)?;
+    find_file_recursive(iso_dir, name).ok_or_else(|| {
+        format!(
+            "script resource profile {} references {name}, but it was not found",
+            profile.profile_index
+        )
+        .into()
+    })
+}
+
+fn load_script_profile(
+    iso_dir: &Path,
+    profile: &ScriptResourceProfile,
+    descript_db: Option<&DescriptDb>,
+    hnm_music: &HashMap<String, String>,
+    character_names: &[String],
+) -> Result<LoadedScriptProfile, Box<dyn Error>> {
+    let cod_path = required_profile_slot_path(iso_dir, profile, 0)?;
+    let var_path = required_profile_slot_path(iso_dir, profile, 2)?;
+    let dic_path = required_profile_slot_path(iso_dir, profile, 3)?;
+    let deb_path = required_profile_slot_path(iso_dir, profile, 4)?;
+
+    let cod = fs::read(&cod_path)?;
+    let var = fs::read(&var_path)?;
+    let deb = fs::read(&deb_path)?;
+    let words = parse_script_dictionary(&dic_path)?;
+    let script = format!("SCRIPT{}", profile.script_number);
+    let object_names = parse_deb_object_names(&deb);
+    let context = vm_execution_context_from_object_names(&object_names, descript_db);
+    let (mut functions, actor_refs) = if let Some(db) = descript_db {
+        let (functions, actor_refs, _) = parse_script_symbols(
+            &script,
+            &deb_path,
+            &var_path,
+            db,
+            hnm_music,
+            character_names,
+        )?;
+        (functions, actor_refs)
+    } else {
+        (Vec::new(), HashMap::new())
+    };
+    if functions.is_empty() {
+        functions.push((0, script.as_str().to_string()));
+    }
+    functions.sort_by_key(|(offset, _)| *offset);
+    functions.push((cod.len(), "END".to_string()));
+
+    let actor_by_offset = actor_refs
+        .values()
+        .cloned()
+        .map(|actor| {
+            (
+                actor.talk_ref.saturating_sub(SCRIPT_OBJECT_TALK_FIELD),
+                actor,
+            )
+        })
+        .collect();
+    let text_calls = text_calls_by_offset(&cod, &words);
+
+    Ok(LoadedScriptProfile {
+        profile_index: profile.profile_index as u16,
+        d2_operand: profile.d2_operand,
+        script,
+        cod,
+        var,
+        functions,
+        actor_by_offset,
+        object_names,
+        context,
+        text_calls,
+    })
+}
+
+fn loaded_profile_by_index(
+    profiles: &[LoadedScriptProfile],
+    profile_index: u16,
+) -> Option<&LoadedScriptProfile> {
+    profiles
+        .iter()
+        .find(|profile| profile.profile_index == profile_index)
+}
+
+fn script_profile_request_summary(trace: &vm::ExecutionTrace) -> String {
+    trace
+        .script_profile_requests
+        .iter()
+        .map(|event| {
+            format!(
+                "0x{:05x}:{}->{}",
+                event.offset, event.operand, event.profile_index
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",")
+}
+
 pub(super) fn parse_script_executed_speech(
     iso_dir: &Path,
     descript_db: Option<&DescriptDb>,
@@ -649,6 +814,102 @@ pub(super) fn parse_script_executed_speech(
     }
 
     Ok(rows)
+}
+
+pub(super) fn parse_script_profile_sequence(
+    iso_dir: &Path,
+    profiles: &[ScriptResourceProfile],
+    descript_db: Option<&DescriptDb>,
+    hnm_music: &HashMap<String, String>,
+) -> Result<ScriptProfileSequenceExport, Box<dyn Error>> {
+    if profiles.is_empty() {
+        return Ok(ScriptProfileSequenceExport::default());
+    }
+
+    let character_names = descript_db
+        .map(|db| db.character_names())
+        .unwrap_or_default();
+    let mut loaded_profiles = Vec::with_capacity(profiles.len());
+    for profile in profiles {
+        loaded_profiles.push(load_script_profile(
+            iso_dir,
+            profile,
+            descript_db,
+            hnm_music,
+            &character_names,
+        )?);
+    }
+
+    let programs: Vec<_> = loaded_profiles
+        .iter()
+        .map(|profile| vm::ScriptProfileProgram {
+            profile_index: profile.profile_index,
+            cod: &profile.cod,
+            var: &profile.var,
+            context: profile.context.clone(),
+        })
+        .collect();
+    let execution = vm::execute_script_profile_sequence(&programs, 0, 32);
+    let mut run_rows = Vec::new();
+    let mut dialogue_rows = Vec::new();
+
+    for (run_ordinal, run) in execution.runs.iter().enumerate() {
+        let Some(profile) = loaded_profile_by_index(&loaded_profiles, run.profile_index) else {
+            continue;
+        };
+        let mut rows = executed_speech_rows_from_trace(
+            &profile.script,
+            None,
+            "SCRIPT VM execute_script_profile_sequence",
+            &run.trace,
+            &profile.text_calls,
+            &profile.functions,
+            &profile.actor_by_offset,
+            &profile.object_names,
+            descript_db,
+            hnm_music,
+        );
+        let text_calls = rows.len();
+        for row in rows.drain(..) {
+            dialogue_rows.push(ScriptProfileExecutedSpeechLine {
+                sequence_id: "default".to_string(),
+                global_sequence_index: dialogue_rows.len(),
+                run_index: run.run_index,
+                profile_index: run.profile_index,
+                d2_operand: profile.d2_operand,
+                script_sequence_index: row.sequence_index,
+                row,
+            });
+        }
+
+        let pending_profile_index = run.trace.pending_script_profile();
+        let pending_script = pending_profile_index
+            .and_then(|idx| loaded_profile_by_index(&loaded_profiles, idx))
+            .map(|profile| profile.script.clone());
+        let halted_after_run = if run_ordinal + 1 == execution.runs.len() {
+            format!("{:?}", execution.halted)
+        } else {
+            "handoff".to_string()
+        };
+        run_rows.push(ScriptProfileRunLine {
+            sequence_id: "default".to_string(),
+            run_index: run.run_index,
+            profile_index: run.profile_index,
+            d2_operand: profile.d2_operand,
+            script: profile.script.clone(),
+            steps: run.trace.steps,
+            text_calls,
+            pending_profile_index,
+            pending_script,
+            request_summary: script_profile_request_summary(&run.trace),
+            halted_after_run,
+        });
+    }
+
+    Ok(ScriptProfileSequenceExport {
+        runs: run_rows,
+        dialogue: dialogue_rows,
+    })
 }
 
 pub(super) fn parse_script_branch_scenario_speech(
@@ -2028,6 +2289,86 @@ pub(super) fn write_script_branch_scenario_speech_manifest(
     Ok(())
 }
 
+pub(super) fn write_script_profile_runs_manifest(
+    rows: &[ScriptProfileRunLine],
+    out_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let mut file = File::create(out_path)?;
+    writeln!(
+        file,
+        "sequence_id\trun_index\tprofile_index\td2_operand\tscript\tsteps\ttext_calls\tpending_profile_index\tpending_script\trequests\thalted_after_run"
+    )?;
+    for row in rows {
+        writeln!(
+            file,
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            row.sequence_id,
+            row.run_index,
+            row.profile_index,
+            row.d2_operand,
+            row.script,
+            row.steps,
+            row.text_calls,
+            row.pending_profile_index
+                .map(|idx| idx.to_string())
+                .unwrap_or_default(),
+            row.pending_script.as_deref().unwrap_or(""),
+            clean_tsv(&row.request_summary),
+            clean_tsv(&row.halted_after_run),
+        )?;
+    }
+    Ok(())
+}
+
+pub(super) fn write_script_profile_executed_speech_manifest(
+    rows: &[ScriptProfileExecutedSpeechLine],
+    out_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let mut file = File::create(out_path)?;
+    writeln!(
+        file,
+        "sequence_id\tglobal_sequence_index\trun_index\tprofile_index\td2_operand\tscript\tscript_sequence_index\tfunction\toffset\tactor\tactor_ref\tlocation_offset\tbackground_record\tbackground_hnm\tbackground_music\tparam0\tparam1\tclip_index\tcall_target\ttext_end\tsource\ttext"
+    )?;
+    for row in rows {
+        writeln!(
+            file,
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}\t{:02x}\t{:02x}\t{}\t0x{:04x}\t0x{:05x}\t{}\t{}",
+            row.sequence_id,
+            row.global_sequence_index,
+            row.run_index,
+            row.profile_index,
+            row.d2_operand,
+            row.row.script,
+            row.script_sequence_index,
+            row.row.function_name,
+            row.row.offset,
+            row.row.actor_record.as_deref().unwrap_or(""),
+            row.row
+                .actor_ref
+                .map(|actor_ref| format!("0x{actor_ref:04x}"))
+                .unwrap_or_default(),
+            row.row
+                .location_offset
+                .map(|location_offset| format!("0x{location_offset:04x}"))
+                .unwrap_or_default(),
+            row.row.background_record.as_deref().unwrap_or(""),
+            row.row.background_hnm.as_deref().unwrap_or(""),
+            row.row.background_music.as_deref().unwrap_or(""),
+            row.row.param0,
+            row.row.param1,
+            row.row
+                .clip_index
+                .map(|idx| idx.to_string())
+                .unwrap_or_default(),
+            row.row.call_target,
+            row.row.text_end,
+            clean_tsv(&row.row.source),
+            clean_tsv(&row.row.text),
+        )?;
+    }
+    Ok(())
+}
+
 pub(super) fn write_script_disassembly_manifest(
     rows: &[ScriptDisassemblyLine],
     out_path: &Path,
@@ -2791,6 +3132,24 @@ mod tests {
         }
     }
 
+    fn script_resource_profile(profile_index: u8, script_number: u8) -> ScriptResourceProfile {
+        let extensions = ["cod", "bas", "var", "dic", "deb"];
+        ScriptResourceProfile {
+            profile_index,
+            d2_operand: script_number,
+            script_number,
+            slots: extensions
+                .iter()
+                .enumerate()
+                .map(|(slot, extension)| ScriptResourceProfileSlot {
+                    slot,
+                    resource_id: slot as u16,
+                    name: format!("script{script_number}.{extension}"),
+                })
+                .collect(),
+        }
+    }
+
     fn branch_trace_line(
         script: &str,
         event_index: usize,
@@ -3281,6 +3640,84 @@ mod tests {
         }
 
         eprintln!("skipping: extracted output scripts not available");
+    }
+
+    #[test]
+    fn script_profile_sequence_follows_binary_profile_handoff() {
+        let nonce = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .expect("system time before unix epoch")
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!(
+            "commander-blood-profile-sequence-{}-{nonce}",
+            std::process::id(),
+        ));
+        fs::create_dir_all(&root).expect("create temp script root");
+
+        fs::write(
+            root.join("script1.cod"),
+            [vm::OP_SCRIPT_PROFILE_REQUEST, 0x02, 0xff],
+        )
+        .expect("write script1.cod");
+        fs::write(root.join("script1.var"), vec![0; 0x8000]).expect("write script1.var");
+        fs::write(root.join("script1.dic"), []).expect("write script1.dic");
+        fs::write(root.join("script1.deb"), []).expect("write script1.deb");
+        fs::write(root.join("script1.bas"), []).expect("write script1.bas");
+
+        let mut script2_cod = vec![vm::OP_TEXT];
+        script2_cod.extend_from_slice(&0x1234u16.to_le_bytes());
+        script2_cod.extend_from_slice(&[0xff, 0x00, vm::TEXT_ACTIVE_DISPLAY_FLAG]);
+        script2_cod.extend_from_slice(&1u16.to_le_bytes());
+        script2_cod.extend_from_slice(&0u16.to_le_bytes());
+        script2_cod.push(0xff);
+        fs::write(root.join("script2.cod"), script2_cod).expect("write script2.cod");
+        fs::write(root.join("script2.var"), vec![0; 0x8000]).expect("write script2.var");
+        fs::write(root.join("script2.dic"), b"\0hello\0").expect("write script2.dic");
+        fs::write(root.join("script2.deb"), []).expect("write script2.deb");
+        fs::write(root.join("script2.bas"), []).expect("write script2.bas");
+
+        let profiles = vec![script_resource_profile(0, 1), script_resource_profile(1, 2)];
+        let export = parse_script_profile_sequence(&root, &profiles, None, &HashMap::new())
+            .expect("parse profile sequence");
+
+        assert_eq!(export.runs.len(), 2);
+        assert_eq!(export.runs[0].script, "SCRIPT1");
+        assert_eq!(export.runs[0].pending_profile_index, Some(1));
+        assert_eq!(export.runs[0].pending_script.as_deref(), Some("SCRIPT2"));
+        assert_eq!(export.runs[0].request_summary, "0x00000:2->1");
+        assert_eq!(export.runs[1].script, "SCRIPT2");
+        assert_eq!(export.runs[1].halted_after_run, "NoPendingProfile");
+
+        assert_eq!(export.dialogue.len(), 1);
+        let line = &export.dialogue[0];
+        assert_eq!(line.global_sequence_index, 0);
+        assert_eq!(line.run_index, 1);
+        assert_eq!(line.profile_index, 1);
+        assert_eq!(line.row.script, "SCRIPT2");
+        assert_eq!(line.row.offset, 0);
+        assert!(
+            line.row
+                .source
+                .starts_with("SCRIPT VM execute_script_profile_sequence")
+        );
+
+        let runs_path = root.join("script-profile-runs.tsv");
+        write_script_profile_runs_manifest(&export.runs, &runs_path).expect("write profile runs");
+        let runs_manifest = fs::read_to_string(&runs_path).expect("read profile runs");
+        assert!(runs_manifest.starts_with("sequence_id\trun_index\tprofile_index"));
+        assert!(runs_manifest.contains("default\t0\t0\t1\tSCRIPT1"));
+
+        let dialogue_path = root.join("script-profile-executed-dialogue.tsv");
+        write_script_profile_executed_speech_manifest(&export.dialogue, &dialogue_path)
+            .expect("write profile dialogue");
+        let dialogue_manifest = fs::read_to_string(&dialogue_path).expect("read profile dialogue");
+        assert!(
+            dialogue_manifest
+                .starts_with("sequence_id\tglobal_sequence_index\trun_index\tprofile_index")
+        );
+        assert!(dialogue_manifest.contains("default\t0\t1\t1\t2\tSCRIPT2"));
+
+        let _ = fs::remove_dir_all(&root);
     }
 
     #[test]

@@ -326,6 +326,8 @@ pub(super) fn write_manifest_section(
         "script-text-flags.tsv",
         "script-executed-dialogue.tsv",
         "script-executed-dialogue-runs.tsv",
+        "script-profile-runs.tsv",
+        "script-profile-executed-dialogue.tsv",
         "script-disassembly.tsv",
         "script-dialogue-videos.tsv",
         "script-dialogue-runs.tsv",

@@ -862,9 +862,12 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `ExecutionTrace` records D2 profile requests and
       `execute_script_profile_sequence` follows the last non-sentinel pending
       profile through the decoded script profiles.
-- [ ] Wire cross-script profile sequences into the extractor/event renderer, so
-      generated cutscene manifests can span the same SCRIPT1->SCRIPT2->... handoff
-      as the DOS main loop.
+- [x] Export cross-script profile sequences from the extractor:
+      `script-profile-runs.tsv` and `script-profile-executed-dialogue.tsv`
+      preserve the DOS main-loop SCRIPT1->SCRIPT2->... handoff order using the
+      binary-derived resource profile table.
+- [ ] Consume profile-sequence dialogue rows in the event renderer/video grouping,
+      replacing per-script grouping when generating game-ordered cutscenes.
 - [ ] Decode the `gs:0x6724` per-line record layout (es:[di], es:[di+2] flags).
 - [ ] Verify audible `tb.snd` chatter trigger path, if any. `gs:0x67BB` itself is
       now decoded as post-reveal hold state rather than a direct SND caller.
@@ -1124,6 +1127,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `src/vm.rs` now records `ScriptProfileRequestEvent`s in execution traces
       and exposes `execute_script_profile_sequence` to follow the DOS-style
       pending-profile handoff across decoded script profiles.
+- [x] Wire binary profile sequences into exporter manifests:
+      `src/extract/script.rs` loads COD/VAR/DIC/DEB resources from the
+      BLOODPRG.EXE profile table and emits run-level plus global-order dialogue
+      TSVs for the default profile chain.
 - [x] Port the `gs:0x67BB` line-complete hold timers:
       `src/vm.rs` models `0x94D4..0x94DD` (`b35=aca*4`) and `0x7378..0x738C`
       (`b35=0x27cf*(aca/2)+6`) as checked helper functions. Labels and known

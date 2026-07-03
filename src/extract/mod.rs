@@ -196,19 +196,24 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         find_file_recursive(&tmp_iso, "blood.dat").ok_or("blood.dat not found in ISO")?;
     eprintln!("Found: {}", blood_dat.display());
 
-    if let Some(bloodprg_path) = find_file_recursive(&tmp_iso, "BLOODPRG.EXE") {
-        eprintln!("Parsing: {}", bloodprg_path.display());
-        let bloodprg = BloodPrg::parse_file(&bloodprg_path)?;
-        let snd_call_sites = bloodprg.snd_entry_call_sites();
-        write_bloodprg_snd_call_sites_manifest(
-            &snd_call_sites,
-            &out_dir.join("bloodprg-snd-call-sites.tsv"),
-        )?;
-        eprintln!(
-            "Recovered {} BLOODPRG.EXE SND entry call sites",
-            snd_call_sites.len()
-        );
-    }
+    let script_resource_profiles =
+        if let Some(bloodprg_path) = find_file_recursive(&tmp_iso, "BLOODPRG.EXE") {
+            eprintln!("Parsing: {}", bloodprg_path.display());
+            let bloodprg = BloodPrg::parse_file(&bloodprg_path)?;
+            let snd_call_sites = bloodprg.snd_entry_call_sites();
+            let script_resource_profiles = bloodprg.script_resource_profiles()?;
+            write_bloodprg_snd_call_sites_manifest(
+                &snd_call_sites,
+                &out_dir.join("bloodprg-snd-call-sites.tsv"),
+            )?;
+            eprintln!(
+                "Recovered {} BLOODPRG.EXE SND entry call sites",
+                snd_call_sites.len()
+            );
+            script_resource_profiles
+        } else {
+            Vec::new()
+        };
 
     let descript_db = if let Some(descript_path) = find_file_recursive(&tmp_iso, "DESCRIPT.DES") {
         eprintln!("Parsing: {}", descript_path.display());
@@ -257,6 +262,20 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         &script_executed_speech,
         &out_dir.join("script-executed-dialogue-runs.tsv"),
     )?;
+    let script_profile_sequence = parse_script_profile_sequence(
+        &tmp_iso,
+        &script_resource_profiles,
+        descript_db.as_ref(),
+        &hnm_music,
+    )?;
+    write_script_profile_runs_manifest(
+        &script_profile_sequence.runs,
+        &out_dir.join("script-profile-runs.tsv"),
+    )?;
+    write_script_profile_executed_speech_manifest(
+        &script_profile_sequence.dialogue,
+        &out_dir.join("script-profile-executed-dialogue.tsv"),
+    )?;
     write_script_dialogue_manifest(
         &script_executed_speech,
         &out_dir.join("script-dialogue-videos.tsv"),
@@ -304,10 +323,11 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     )?;
     if !script_speech.is_empty() {
         eprintln!(
-            "Recovered {} script text calls ({} text-flag rows, {} executed lines, {} disassembly rows, {} branch events, {} branch scenarios, {} scenario dialogue lines)",
+            "Recovered {} script text calls ({} text-flag rows, {} executed lines, {} profile-sequence lines, {} disassembly rows, {} branch events, {} branch scenarios, {} scenario dialogue lines)",
             script_speech.len(),
             script_text_flags.len(),
             script_executed_speech.len(),
+            script_profile_sequence.dialogue.len(),
             script_disassembly.len(),
             script_branch_trace.len(),
             script_branch_scenarios.len(),
@@ -668,7 +688,9 @@ mod subtitle_sfx;
 
 use audio::*;
 use character::*;
-use commander_blood_tools::bloodprg::{BloodPrg, SndEntryCallSite};
+use commander_blood_tools::bloodprg::{BloodPrg, ScriptResourceProfile, SndEntryCallSite};
+#[cfg(test)]
+use commander_blood_tools::bloodprg::ScriptResourceProfileSlot;
 use commander_blood_tools::snd::{SndBank, SndClip};
 use commander_blood_tools::vm;
 use dat::*;
