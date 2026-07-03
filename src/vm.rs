@@ -26,6 +26,8 @@
 //! recovered A0/A1 branch stack for a concrete initial `SCRIPT*.VAR` state.
 #![allow(dead_code)]
 
+use std::collections::BTreeMap;
+
 use serde::Serialize;
 
 /// Per-opcode descriptor bytes for opcodes `0xA0..=0xD3`, transcribed from
@@ -922,6 +924,11 @@ pub enum ScriptProfileExecutionHalt {
 pub struct ScriptProfileExecution {
     pub runs: Vec<ScriptProfileRun>,
     pub halted: ScriptProfileExecutionHalt,
+}
+
+struct ExecutedTrace {
+    trace: ExecutionTrace,
+    final_state: Vec<u8>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
@@ -2009,6 +2016,15 @@ pub fn execute_trace_with_overrides_and_context(
     overrides: &[BranchOverride],
     context: &ExecutionContext,
 ) -> ExecutionTrace {
+    execute_trace_state_with_overrides_and_context(cod, var, overrides, context).trace
+}
+
+fn execute_trace_state_with_overrides_and_context(
+    cod: &[u8],
+    var: &[u8],
+    overrides: &[BranchOverride],
+    context: &ExecutionContext,
+) -> ExecutedTrace {
     const STEP_LIMIT_MULTIPLIER: usize = 64;
 
     let mut state = var.to_vec();
@@ -2503,13 +2519,18 @@ pub fn execute_trace_with_overrides_and_context(
         PostUpdateTrace::default()
     };
 
-    ExecutionTrace {
+    let trace = ExecutionTrace {
         line_states,
         branch_events,
         script_profile_requests,
         post_update,
         steps,
         halted,
+    };
+
+    ExecutedTrace {
+        trace,
+        final_state: state,
     }
 }
 
@@ -2520,6 +2541,10 @@ pub fn execute_script_profile_sequence(
 ) -> ScriptProfileExecution {
     let mut runs = Vec::new();
     let mut next_profile_index = initial_profile_index;
+    let mut runtime_states: BTreeMap<u16, Vec<u8>> = programs
+        .iter()
+        .map(|program| (program.profile_index, program.var.to_vec()))
+        .collect();
 
     for run_index in 0..run_limit {
         let Some(program) = programs
@@ -2534,7 +2559,18 @@ pub fn execute_script_profile_sequence(
             };
         };
 
-        let trace = execute_trace_with_context(program.cod, program.var, &program.context);
+        let initial_state = runtime_states
+            .get(&program.profile_index)
+            .map(Vec::as_slice)
+            .unwrap_or(program.var);
+        let executed = execute_trace_state_with_overrides_and_context(
+            program.cod,
+            initial_state,
+            &[],
+            &program.context,
+        );
+        runtime_states.insert(program.profile_index, executed.final_state);
+        let trace = executed.trace;
         let pending = trace.pending_script_profile();
         let pending_dispatch_ready = trace.post_update.pending_script_profile_dispatch_ready;
         runs.push(ScriptProfileRun {
@@ -2903,6 +2939,66 @@ mod tests {
         assert_eq!(execution.runs[0].profile_index, 0);
         assert_eq!(execution.runs[1].profile_index, 1);
         assert_eq!(execution.runs[1].trace.line_states.len(), 1);
+    }
+
+    #[test]
+    fn script_profile_sequence_preserves_profile_runtime_state_on_reentry() {
+        let flag = 0x0010u16;
+
+        let mut cod0 = Vec::new();
+        let a0_offset = cod0.len();
+        cod0.push(0xA0);
+        cod0.extend_from_slice(&0u16.to_le_bytes());
+        cod0.push(0xC0);
+        cod0.extend_from_slice(&flag.to_le_bytes());
+        cod0.push(0xF5);
+        cod0.push(0xC1);
+        cod0.extend_from_slice(&1u16.to_le_bytes());
+        let reentry_text = cod0.len();
+        push_empty_text(&mut cod0);
+        cod0.push(0xA1);
+        let target = cod0.len() as u16;
+        cod0[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        cod0.push(0xC0);
+        cod0.extend_from_slice(&flag.to_le_bytes());
+        cod0.push(0xF5);
+        cod0.push(0xC1);
+        cod0.extend_from_slice(&1u16.to_le_bytes());
+        cod0.extend_from_slice(&[OP_SCRIPT_PROFILE_REQUEST, 0x02, 0xff]);
+
+        let cod1 = [OP_SCRIPT_PROFILE_REQUEST, 0x01, 0xff];
+        let var0 = vec![0; 0x8000];
+        let var1 = vec![0; 0x8000];
+        let programs = vec![
+            ScriptProfileProgram {
+                profile_index: 0,
+                cod: &cod0,
+                var: &var0,
+                context: ExecutionContext::default(),
+            },
+            ScriptProfileProgram {
+                profile_index: 1,
+                cod: &cod1,
+                var: &var1,
+                context: ExecutionContext::default(),
+            },
+        ];
+
+        let execution = execute_script_profile_sequence(&programs, 0, 3);
+        assert_eq!(
+            execution.halted,
+            ScriptProfileExecutionHalt::RunLimit {
+                limit: 3,
+                next_profile_index: 1,
+            }
+        );
+        assert_eq!(execution.runs.len(), 3);
+        assert_eq!(execution.runs[0].profile_index, 0);
+        assert!(execution.runs[0].trace.line_states.is_empty());
+        assert_eq!(execution.runs[1].profile_index, 1);
+        assert_eq!(execution.runs[2].profile_index, 0);
+        assert_eq!(execution.runs[2].trace.line_states.len(), 1);
+        assert_eq!(execution.runs[2].trace.line_states[0].offset, reentry_text);
     }
 
     #[test]

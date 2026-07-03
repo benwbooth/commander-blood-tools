@@ -1022,8 +1022,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       guard, the active-object scan subset, the kind-1 presentation start/stop
       globals, the deferred record drain, and the kind-2 handoff predicate are
       ported and surfaced through `ExecutionTrace::post_update`; applying the
-      kind-2 `vm_control_flow` target, external render/audio calls, and
-      cross-profile state carryover remain pending.
+      kind-2 `vm_control_flow` target, external render/audio calls, and shared
+      engine globals remain pending. `execute_script_profile_sequence()` now
+      carries each profile's mutated VAR state across D2 handoffs/re-entry, so
+      repeated profile runs no longer restart from pristine `SCRIPT*.VAR`.
 - [x] Map the VM named-object startup globals from `0x5486`: Rust
       `ExecutionContext` now carries the built-in DEB offsets for `blood`, `orxx`,
       `arche`, `Honk`, `menu`, `Ark`, `Scruter_Jo`, and kind-5 `vbio`.
@@ -1287,6 +1289,12 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `src/vm.rs` now records `ScriptProfileRequestEvent`s in execution traces
       and exposes `execute_script_profile_sequence` to follow the DOS-style
       pending-profile handoff across decoded script profiles.
+- [x] Preserve per-profile runtime VAR state during D2 profile sequencing:
+      profile re-entry now runs against the state produced by that profile's
+      previous run, matching the persistent state-block model instead of
+      reloading pristine `SCRIPT*.VAR` bytes for each handoff. This is covered by
+      a synthetic profile-loop test where a second profile-0 entry emits a line
+      gated by a flag set during the first profile-0 run.
 - [x] Wire binary profile sequences into exporter manifests:
       `src/extract/script.rs` loads COD/VAR/DIC/DEB resources from the
       BLOODPRG.EXE profile table and emits run-level plus global-order dialogue
