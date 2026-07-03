@@ -144,6 +144,10 @@ pub fn text_line_flags_offset(line_index: u16) -> u16 {
     line_index.wrapping_add(2)
 }
 
+pub fn text_presentation_record_offset(line_index: u16) -> u16 {
+    line_index.wrapping_add(TALK_FIELD)
+}
+
 pub fn text_line_already_shown(flag_word: u16) -> bool {
     flag_word & TEXT_LINE_ALREADY_SHOWN_FLAG != 0
 }
@@ -855,6 +859,10 @@ pub struct ScriptProfileExecution {
 /// `descript_entry_names` mirrors the `descript.des` directory scanned by
 /// helper `0x7409`. The C2 kind-0x0400 path passes `operand + 4` as a
 /// NUL-terminated name and treats a matching directory entry as helper success.
+///
+/// `text_presentation_record_gating` models the A6 handler's `object+0x3A`
+/// `0x00C4` check. It stays opt-in until the C4 presentation setup path is
+/// complete enough for real-script exports to satisfy that gate.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ExecutionContext {
     object_offsets: Vec<u16>,
@@ -862,6 +870,7 @@ pub struct ExecutionContext {
     global_word_0aa6: Option<u16>,
     global_pair_0aaa_0aa8: Option<(u8, u8)>,
     descript_entry_names: Vec<Vec<u8>>,
+    text_presentation_record_gating: bool,
     text_line_display_gating: bool,
 }
 
@@ -916,6 +925,11 @@ impl ExecutionContext {
 
     pub fn with_text_line_display_gating(mut self) -> Self {
         self.text_line_display_gating = true;
+        self
+    }
+
+    pub fn with_text_presentation_record_gating(mut self) -> Self {
+        self.text_presentation_record_gating = true;
         self
     }
 
@@ -1000,6 +1014,22 @@ fn state_c_string_equals(state: &[u8], addr: u16, expected: &[u8]) -> bool {
 fn text_line_should_display(state: &[u8], line_index: u16, flags_b5: u8) -> bool {
     text_flags_are_active(flags_b5)
         && !text_line_already_shown(state_u16(state, text_line_flags_offset(line_index)))
+}
+
+fn text_presentation_record_is_active(state: &[u8], line_index: u16) -> bool {
+    state_u16(state, text_presentation_record_offset(line_index)) == OP_ACTOR as u16
+}
+
+fn text_runtime_gates_allow(
+    state: &[u8],
+    context: &ExecutionContext,
+    line_index: u16,
+    flags_b5: u8,
+) -> bool {
+    (!context.text_presentation_record_gating
+        || text_presentation_record_is_active(state, line_index))
+        && (!context.text_line_display_gating
+            || text_line_should_display(state, line_index, flags_b5))
 }
 
 fn mark_text_line_shown(state: &mut [u8], line_index: u16) {
@@ -1499,9 +1529,7 @@ pub fn interpret_line_states_with_context(
                     },
                     next,
                 )) => {
-                    if !context.text_line_display_gating
-                        || text_line_should_display(&state, line_index, flags_b5)
-                    {
+                    if text_runtime_gates_allow(&state, context, line_index, flags_b5) {
                         if context.text_line_display_gating {
                             mark_text_line_shown(&mut state, line_index);
                         }
@@ -2009,9 +2037,7 @@ pub fn execute_trace_with_overrides_and_context(
                     },
                     next,
                 )) => {
-                    if !context.text_line_display_gating
-                        || text_line_should_display(&state, line_index, flags_b5)
-                    {
+                    if text_runtime_gates_allow(&state, context, line_index, flags_b5) {
                         if context.text_line_display_gating {
                             mark_text_line_shown(&mut state, line_index);
                         }
@@ -2878,6 +2904,28 @@ mod tests {
         assert_ne!(trace.line_states[0].offset, inactive_offset);
         assert_ne!(trace.line_states[0].offset, pre_shown_offset);
         assert_ne!(trace.line_states[0].offset, second_duplicate_offset);
+    }
+
+    #[test]
+    fn text_presentation_record_gate_requires_active_c4_talk_slot() {
+        let line_index = 0x0020u16;
+        let talk_record = text_presentation_record_offset(line_index);
+        assert_eq!(talk_record, line_index + TALK_FIELD);
+
+        let mut cod = Vec::new();
+        push_text_with_flags(&mut cod, line_index, 0xFF, TEXT_ACTIVE_DISPLAY_FLAG);
+        cod.push(0xFF);
+
+        let mut var = vec![0; 0x0080];
+        let context = ExecutionContext::default().with_text_presentation_record_gating();
+        assert_eq!(interpret_line_states(&cod, &var).len(), 1);
+        assert!(interpret_line_states_with_context(&cod, &var, &context).is_empty());
+
+        state_set_u16(&mut var, talk_record, OP_ACTOR as u16);
+        assert_eq!(
+            interpret_line_states_with_context(&cod, &var, &context).len(),
+            1
+        );
     }
 
     #[test]

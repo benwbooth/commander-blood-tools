@@ -378,8 +378,9 @@ Recovered candidate layout for the 24-byte records iterated by `0x7D7B`:
 
 On entry `si` points at the token's `b1`. The handler:
 - `les di, gs:[0x6724]`; `ax = [b1,b2] (u16)`; `di += ax` ⇒ **`b1:b2` is a u16
-  index into the per-line offset/record table** (`gs:0x6724`). `es:[di]` is that
-  line's record; `es:[di+2]` holds a flag word (bit15 = already shown/skip).
+  index into the runtime object/state table** (`gs:0x6724`). `es:[di]` is that
+  object's/state record kind (`2` in observed VAR-backed A6 rows); `es:[di+2]`
+  holds a flag word (bit15 = already shown/skip).
   The handler sets this `0x8000` bit after accepting a line. Rust exposes this
   as `TEXT_LINE_ALREADY_SHOWN_FLAG` and an opt-in
   `ExecutionContext::with_text_line_display_gating()`. It is intentionally not
@@ -394,6 +395,12 @@ On entry `si` points at the token's `b1`. The handler:
   - **`b5 & 0x80` (bit7) = ACTIVE/DISPLAY flag**: `or cx,cx; jns →skip` — if bit7
     clear the line is not shown (explains why real data always has 0x80).
   - global mutes `gs:0x5E64`, `gs:0x67B0` also gate display.
+- display then requires the selector-`0x13` table entry at index `+1`
+  (`gs:0x6D60 + 0x131` = `0x3A`) to contain `0x00C4`: in Rust this is the
+  opt-in `ExecutionContext::with_text_presentation_record_gating()` check
+  `state[b1b2 + 0x3A] == 0x00C4`. Enabling it globally currently drops
+  real-script rows because the upstream C4 presentation setup path is not fully
+  reconstructed yet.
 - later: `si=gs:0x677C; al=[b3]; gs:0x1FAB = (s8)b3` ⇒ **`b3` is the per-line
   selector stored to global `gs:0x1FAB`**. `0xFF` and `0x00` are no-voice
   channels; `1..=N` selects the actor's one-based `son.snd` talk clip.
@@ -852,6 +859,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 - [x] Port TEXT `b4 & 0x04` control-word parsing:
       both the VM walker and extractor skip the extra u16 before reading DIC word
       offsets, matching the `add si, 2` path in the handler.
+- [x] Port the A6 `object+0x3A == 0x00C4` presentation-record gate as an opt-in
+      `ExecutionContext` mode. It is deliberately not wired into real-script
+      exports until the preceding C4 presentation setup semantics are complete.
 - [x] Map the VM resource pointer setup boundary:
       `0x53A0/0x53C8` selects a five-offset resource profile from
       `FS:0x11F4 + AX*10` into `DS:0x6712`; `0x55A4/0x55D9` resolves those
@@ -873,7 +883,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 - [x] Consume profile-sequence dialogue rows in the event renderer/video grouping:
       `profile-dialogue-run` MP4s group by global execution order instead of
       per-script order, while the old per-script videos remain for comparison.
-- [ ] Decode the `gs:0x6724` per-line record layout (es:[di], es:[di+2] flags).
+- [ ] Complete the `gs:0x6724` runtime object/state layout: `es:[di]` kind,
+      `es:[di+2]` flags, `+0x3A` A6/C4 presentation subrecord, and remaining
+      C4 setup paths needed before enabling the A6 gate in exports.
 - [ ] Verify audible `tb.snd` chatter trigger path, if any. `gs:0x67BB` itself is
       now decoded as post-reveal hold state rather than a direct SND caller.
 - [ ] Map the presentation opcodes among the handler table: which set background,
