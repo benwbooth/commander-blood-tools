@@ -1082,281 +1082,57 @@ pub(super) fn disassemble_function(
     let mut current_actor: Option<ScriptActorRef> = None;
     let mut raw_start: Option<usize> = None;
     let mut pos = function_start;
+
     while pos < function_end {
-        if pos + 4 < function_end && cod[pos] == 0xc4 {
-            push_raw_disassembly(script, function_name, cod, &mut rows, raw_start.take(), pos);
-            let addr = u16::from_le_bytes([cod[pos + 1], cod[pos + 2]]);
-            let extra = u16::from_le_bytes([cod[pos + 3], cod[pos + 4]]);
-            current_actor = actor_refs.get(&addr).cloned();
-            rows.push(ScriptDisassemblyLine {
-                script: script.to_string(),
-                function_name: function_name.to_string(),
-                offset: pos,
-                len: 5,
-                opcode: "c4".to_string(),
-                mnemonic: "actor_ref".to_string(),
-                operands: format!("ref=0x{addr:04x} extra=0x{extra:04x}"),
-                actor_record: current_actor
-                    .as_ref()
-                    .map(|actor| actor.record_name.clone()),
-                text: None,
-            });
-            pos += 5;
+        let tokens = vm::walk(cod, pos, function_end);
+        if tokens.is_empty() {
+            raw_start.get_or_insert(pos);
+            pos += 1;
             continue;
         }
 
-        if pos + 4 < function_end && cod[pos] == 0xc3 {
-            push_raw_disassembly(script, function_name, cod, &mut rows, raw_start.take(), pos);
-            let addr = u16::from_le_bytes([cod[pos + 1], cod[pos + 2]]);
-            let related = u16::from_le_bytes([cod[pos + 3], cod[pos + 4]]);
-            rows.push(ScriptDisassemblyLine {
-                script: script.to_string(),
-                function_name: function_name.to_string(),
-                offset: pos,
-                len: 5,
-                opcode: "c3".to_string(),
-                mnemonic: "record_link".to_string(),
-                operands: format!("ref=0x{addr:04x} related=0x{related:04x} aux=0x0001"),
-                actor_record: current_actor
-                    .as_ref()
-                    .map(|actor| actor.record_name.clone()),
-                text: None,
-            });
-            pos += 5;
-            continue;
-        }
-
-        if pos + 4 < function_end && vm::is_record_entry_opcode(cod[pos]) {
-            push_raw_disassembly(script, function_name, cod, &mut rows, raw_start.take(), pos);
-            let opcode = cod[pos];
-            let addr = u16::from_le_bytes([cod[pos + 1], cod[pos + 2]]);
-            let operand = u16::from_le_bytes([cod[pos + 3], cod[pos + 4]]);
-            let stored_related = vm::record_entry_stored_related_offset(opcode, operand);
-            rows.push(ScriptDisassemblyLine {
-                script: script.to_string(),
-                function_name: function_name.to_string(),
-                offset: pos,
-                len: 5,
-                opcode: format!("{opcode:02x}"),
-                mnemonic: "record_entry".to_string(),
-                operands: format!(
-                    "kind=0x{opcode:02x} ref=0x{addr:04x} operand=0x{operand:04x} stored_related=0x{stored_related:04x} aux=0x0000"
-                ),
-                actor_record: current_actor
-                    .as_ref()
-                    .map(|actor| actor.record_name.clone()),
-                text: None,
-            });
-            pos += 5;
-            continue;
-        }
-
-        if pos + 3 < function_end && cod[pos] == vm::OP_BIT_FLAG {
-            push_raw_disassembly(script, function_name, cod, &mut rows, raw_start.take(), pos);
-            let clear = cod.get(pos + 1) == Some(&0xA1);
-            let operand_pos = pos + 1 + usize::from(clear);
-            if operand_pos + 2 < function_end {
-                let flag_offset = u16::from_le_bytes([cod[operand_pos], cod[operand_pos + 1]]);
-                let bit_index = cod[operand_pos + 2];
-                let byte_offset = vm::bit_flag_byte_offset(flag_offset, bit_index);
-                let mask = vm::bit_flag_mask(bit_index);
-                let len = 4 + usize::from(clear);
-                rows.push(ScriptDisassemblyLine {
-                    script: script.to_string(),
-                    function_name: function_name.to_string(),
-                    offset: pos,
-                    len,
-                    opcode: "b7".to_string(),
-                    mnemonic: "bit_flag".to_string(),
-                    operands: format!(
-                        "ref=0x{flag_offset:04x} bit={bit_index} byte=0x{byte_offset:04x} mask=0x{mask:02x} action={}",
-                        if clear { "clear_or_invert_test" } else { "set_or_test" }
-                    ),
-                    actor_record: current_actor
-                        .as_ref()
-                        .map(|actor| actor.record_name.clone()),
-                    text: None,
-                });
-                pos += len;
-                continue;
+        for token in tokens {
+            match token {
+                vm::VmToken::Invalid { offset, .. } => {
+                    raw_start.get_or_insert(offset);
+                    pos = (offset + 1).min(function_end);
+                    break;
+                }
+                token => {
+                    let offset = vm_token_offset(&token);
+                    let len = vm_token_len(&token);
+                    if vm_token_has_disassembly(&token, words) {
+                        push_raw_disassembly(
+                            script,
+                            function_name,
+                            cod,
+                            &mut rows,
+                            raw_start.take(),
+                            offset,
+                        );
+                    }
+                    let emitted = push_vm_token_disassembly(
+                        script,
+                        function_name,
+                        words,
+                        actor_refs,
+                        &mut current_actor,
+                        &mut rows,
+                        &token,
+                    );
+                    if !emitted {
+                        raw_start.get_or_insert(offset);
+                    }
+                    pos = (offset + len).min(function_end);
+                }
             }
-        }
 
-        if pos + 4 < function_end && vm::is_record_state_opcode(cod[pos]) {
-            push_raw_disassembly(script, function_name, cod, &mut rows, raw_start.take(), pos);
-            let opcode = cod[pos];
-            let addr = u16::from_le_bytes([cod[pos + 1], cod[pos + 2]]);
-            let operand = u16::from_le_bytes([cod[pos + 3], cod[pos + 4]]);
-            rows.push(ScriptDisassemblyLine {
-                script: script.to_string(),
-                function_name: function_name.to_string(),
-                offset: pos,
-                len: 5,
-                opcode: format!("{opcode:02x}"),
-                mnemonic: "record_state".to_string(),
-                operands: format!("kind=0x{opcode:02x} ref=0x{addr:04x} operand=0x{operand:04x}"),
-                actor_record: current_actor
-                    .as_ref()
-                    .map(|actor| actor.record_name.clone()),
-                text: None,
-            });
-            pos += 5;
-            continue;
-        }
-
-        if pos + 4 < function_end && cod[pos] == vm::OP_GLOBAL_WORD_COMPARE {
-            push_raw_disassembly(script, function_name, cod, &mut rows, raw_start.take(), pos);
-            let operator = cod[pos + 1];
-            let tag = cod[pos + 2];
-            let value = u16::from_le_bytes([cod[pos + 3], cod[pos + 4]]);
-            rows.push(ScriptDisassemblyLine {
-                script: script.to_string(),
-                function_name: function_name.to_string(),
-                offset: pos,
-                len: 5,
-                opcode: "ca".to_string(),
-                mnemonic: "global_word_compare".to_string(),
-                operands: format!(
-                    "global=gs:0x0aa6 op=0x{operator:02x} tag=0x{tag:02x} value=0x{value:04x}"
-                ),
-                actor_record: current_actor
-                    .as_ref()
-                    .map(|actor| actor.record_name.clone()),
-                text: None,
-            });
-            pos += 5;
-            continue;
-        }
-
-        if pos + 5 < function_end && cod[pos] == vm::OP_GLOBAL_PAIR_COMPARE {
-            push_raw_disassembly(script, function_name, cod, &mut rows, raw_start.take(), pos);
-            let operator = cod[pos + 1];
-            let packed = u16::from_le_bytes([cod[pos + 2], cod[pos + 3]]);
-            let reserved = u16::from_le_bytes([cod[pos + 4], cod[pos + 5]]);
-            rows.push(ScriptDisassemblyLine {
-                script: script.to_string(),
-                function_name: function_name.to_string(),
-                offset: pos,
-                len: 6,
-                opcode: "cb".to_string(),
-                mnemonic: "global_pair_compare".to_string(),
-                operands: format!(
-                    "global=gs:0x0aaa:0x0aa8 op=0x{operator:02x} packed=0x{packed:04x} reserved=0x{reserved:04x}"
-                ),
-                actor_record: current_actor
-                    .as_ref()
-                    .map(|actor| actor.record_name.clone()),
-                text: None,
-            });
-            pos += 6;
-            continue;
-        }
-
-        if pos + 6 < function_end && vm::is_pair_record_opcode(cod[pos]) {
-            push_raw_disassembly(script, function_name, cod, &mut rows, raw_start.take(), pos);
-            let opcode = cod[pos];
-            let record_offset = u16::from_le_bytes([cod[pos + 1], cod[pos + 2]]);
-            let first_word = u16::from_le_bytes([cod[pos + 3], cod[pos + 4]]);
-            let second_word = u16::from_le_bytes([cod[pos + 5], cod[pos + 6]]);
-            rows.push(ScriptDisassemblyLine {
-                script: script.to_string(),
-                function_name: function_name.to_string(),
-                offset: pos,
-                len: 7,
-                opcode: format!("{opcode:02x}"),
-                mnemonic: "pair_record".to_string(),
-                operands: format!(
-                    "ref=0x{record_offset:04x} first=0x{first_word:04x} second=0x{second_word:04x}"
-                ),
-                actor_record: current_actor
-                    .as_ref()
-                    .map(|actor| actor.record_name.clone()),
-                text: None,
-            });
-            pos += 7;
-            continue;
-        }
-
-        if pos + 6 < function_end && cod[pos] == vm::OP_RECORD_TRIPLE {
-            push_raw_disassembly(script, function_name, cod, &mut rows, raw_start.take(), pos);
-            let inverted = cod.get(pos + 1) == Some(&0xA1);
-            let operand_pos = pos + 1 + usize::from(inverted);
-            if operand_pos + 5 < function_end {
-                let record_offset = u16::from_le_bytes([cod[operand_pos], cod[operand_pos + 1]]);
-                let first_word = u16::from_le_bytes([cod[operand_pos + 2], cod[operand_pos + 3]]);
-                let second_word = u16::from_le_bytes([cod[operand_pos + 4], cod[operand_pos + 5]]);
-                let len = 7 + usize::from(inverted);
-                rows.push(ScriptDisassemblyLine {
-                    script: script.to_string(),
-                    function_name: function_name.to_string(),
-                    offset: pos,
-                    len,
-                    opcode: "cd".to_string(),
-                    mnemonic: "record_triple".to_string(),
-                    operands: format!(
-                        "ref=0x{record_offset:04x} first=0x{first_word:04x} second=0x{second_word:04x} inverted={inverted}"
-                    ),
-                    actor_record: current_actor
-                        .as_ref()
-                        .map(|actor| actor.record_name.clone()),
-                    text: None,
-                });
-                pos += len;
-                continue;
+            if raw_start.is_some_and(|start| pos - start >= 32) {
+                push_raw_disassembly(script, function_name, cod, &mut rows, raw_start.take(), pos);
             }
-        }
-
-        if pos + 2 < function_end && cod[pos] == 0xc9 {
-            push_raw_disassembly(script, function_name, cod, &mut rows, raw_start.take(), pos);
-            let addr = u16::from_le_bytes([cod[pos + 1], cod[pos + 2]]);
-            if matches!(current_actor.as_ref(), Some(actor) if actor.talk_ref == addr) {
-                current_actor = None;
+            if pos >= function_end {
+                break;
             }
-            rows.push(ScriptDisassemblyLine {
-                script: script.to_string(),
-                function_name: function_name.to_string(),
-                offset: pos,
-                len: 3,
-                opcode: "c9".to_string(),
-                mnemonic: "record_clear".to_string(),
-                operands: format!("ref=0x{addr:04x}"),
-                actor_record: None,
-                text: None,
-            });
-            pos += 3;
-            continue;
-        }
-
-        if let Some(call) = decode_text_call_at(cod, function_end, words, pos) {
-            push_raw_disassembly(script, function_name, cod, &mut rows, raw_start.take(), pos);
-            rows.push(ScriptDisassemblyLine {
-                script: script.to_string(),
-                function_name: function_name.to_string(),
-                offset: pos,
-                len: call.text_end - pos,
-                opcode: "a6".to_string(),
-                mnemonic: "text_call".to_string(),
-                operands: format!(
-                    "target=0x{:04x} params={} words={}",
-                    call.call_target,
-                    hex_bytes(&call.params),
-                    call.words.len()
-                ),
-                actor_record: current_actor
-                    .as_ref()
-                    .map(|actor| actor.record_name.clone()),
-                text: Some(assemble_dialogue(&call.words)),
-            });
-            pos = call.text_end;
-            continue;
-        }
-
-        if raw_start.is_none() {
-            raw_start = Some(pos);
-        }
-        pos += 1;
-        if raw_start.is_some_and(|start| pos - start >= 32) {
-            push_raw_disassembly(script, function_name, cod, &mut rows, raw_start.take(), pos);
         }
     }
     push_raw_disassembly(
@@ -1369,6 +1145,333 @@ pub(super) fn disassemble_function(
     );
 
     rows
+}
+
+fn vm_token_has_disassembly(token: &vm::VmToken, words: &HashMap<u16, String>) -> bool {
+    match token {
+        vm::VmToken::Text { word_offsets, .. } => decode_vm_words(words, word_offsets).is_some(),
+        vm::VmToken::Op { .. } | vm::VmToken::Invalid { .. } => false,
+        _ => true,
+    }
+}
+
+fn current_actor_record(current_actor: &Option<ScriptActorRef>) -> Option<String> {
+    current_actor
+        .as_ref()
+        .map(|actor| actor.record_name.clone())
+}
+
+fn push_vm_token_disassembly(
+    script: &str,
+    function_name: &str,
+    words: &HashMap<u16, String>,
+    actor_refs: &HashMap<u16, ScriptActorRef>,
+    current_actor: &mut Option<ScriptActorRef>,
+    rows: &mut Vec<ScriptDisassemblyLine>,
+    token: &vm::VmToken,
+) -> bool {
+    match token {
+        vm::VmToken::Actor {
+            offset,
+            record_offset,
+            related_record_offset,
+            len,
+            ..
+        } => {
+            *current_actor = actor_refs.get(record_offset).cloned();
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: *offset,
+                len: *len,
+                opcode: "c4".to_string(),
+                mnemonic: "actor_ref".to_string(),
+                operands: format!("ref=0x{record_offset:04x} extra=0x{related_record_offset:04x}"),
+                actor_record: current_actor_record(current_actor),
+                text: None,
+            });
+            true
+        }
+        vm::VmToken::RecordLink {
+            offset,
+            record_offset,
+            related_record_offset,
+            len,
+            ..
+        } => {
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: *offset,
+                len: *len,
+                opcode: "c3".to_string(),
+                mnemonic: "record_link".to_string(),
+                operands: format!(
+                    "ref=0x{record_offset:04x} related=0x{related_record_offset:04x} aux=0x0001"
+                ),
+                actor_record: current_actor_record(current_actor),
+                text: None,
+            });
+            true
+        }
+        vm::VmToken::RecordEntry {
+            offset,
+            entry_opcode,
+            record_offset,
+            operand,
+            stored_related_offset,
+            aux_word,
+            len,
+            ..
+        } => {
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: *offset,
+                len: *len,
+                opcode: format!("{entry_opcode:02x}"),
+                mnemonic: "record_entry".to_string(),
+                operands: format!(
+                    "kind=0x{entry_opcode:02x} ref=0x{record_offset:04x} operand=0x{operand:04x} stored_related=0x{stored_related_offset:04x} aux=0x{aux_word:04x}"
+                ),
+                actor_record: current_actor_record(current_actor),
+                text: None,
+            });
+            true
+        }
+        vm::VmToken::BitFlag {
+            offset,
+            flag_offset,
+            bit_index,
+            byte_offset,
+            mask,
+            clear,
+            len,
+        } => {
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: *offset,
+                len: *len,
+                opcode: "b7".to_string(),
+                mnemonic: "bit_flag".to_string(),
+                operands: format!(
+                    "ref=0x{flag_offset:04x} bit={bit_index} byte=0x{byte_offset:04x} mask=0x{mask:02x} action={}",
+                    if *clear { "clear_or_invert_test" } else { "set_or_test" }
+                ),
+                actor_record: current_actor_record(current_actor),
+                text: None,
+            });
+            true
+        }
+        vm::VmToken::RecordState {
+            offset,
+            opcode,
+            record_offset,
+            operand,
+            inverted,
+            len,
+        } => {
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: *offset,
+                len: *len,
+                opcode: format!("{opcode:02x}"),
+                mnemonic: "record_state".to_string(),
+                operands: format!(
+                    "kind=0x{opcode:02x} ref=0x{record_offset:04x} operand=0x{operand:04x} inverted={inverted}"
+                ),
+                actor_record: current_actor_record(current_actor),
+                text: None,
+            });
+            true
+        }
+        vm::VmToken::GlobalWordCompare {
+            offset,
+            operator,
+            tag,
+            value,
+            len,
+        } => {
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: *offset,
+                len: *len,
+                opcode: "ca".to_string(),
+                mnemonic: "global_word_compare".to_string(),
+                operands: format!(
+                    "global=gs:0x0aa6 op=0x{operator:02x} tag=0x{tag:02x} value=0x{value:04x}"
+                ),
+                actor_record: current_actor_record(current_actor),
+                text: None,
+            });
+            true
+        }
+        vm::VmToken::GlobalPairCompare {
+            offset,
+            operator,
+            packed_value,
+            reserved,
+            len,
+        } => {
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: *offset,
+                len: *len,
+                opcode: "cb".to_string(),
+                mnemonic: "global_pair_compare".to_string(),
+                operands: format!(
+                    "global=gs:0x0aaa:0x0aa8 op=0x{operator:02x} packed=0x{packed_value:04x} reserved=0x{reserved:04x}"
+                ),
+                actor_record: current_actor_record(current_actor),
+                text: None,
+            });
+            true
+        }
+        vm::VmToken::PairRecord {
+            offset,
+            opcode,
+            record_offset,
+            first_word,
+            second_word,
+            len,
+        } => {
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: *offset,
+                len: *len,
+                opcode: format!("{opcode:02x}"),
+                mnemonic: "pair_record".to_string(),
+                operands: format!(
+                    "ref=0x{record_offset:04x} first=0x{first_word:04x} second=0x{second_word:04x}"
+                ),
+                actor_record: current_actor_record(current_actor),
+                text: None,
+            });
+            true
+        }
+        vm::VmToken::RecordTriple {
+            offset,
+            record_offset,
+            first_word,
+            second_word,
+            inverted,
+            len,
+        } => {
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: *offset,
+                len: *len,
+                opcode: "cd".to_string(),
+                mnemonic: "record_triple".to_string(),
+                operands: format!(
+                    "ref=0x{record_offset:04x} first=0x{first_word:04x} second=0x{second_word:04x} inverted={inverted}"
+                ),
+                actor_record: current_actor_record(current_actor),
+                text: None,
+            });
+            true
+        }
+        vm::VmToken::RecordClear {
+            offset,
+            record_offset,
+            len,
+        } => {
+            if matches!(current_actor.as_ref(), Some(actor) if actor.talk_ref == *record_offset) {
+                *current_actor = None;
+            }
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: *offset,
+                len: *len,
+                opcode: "c9".to_string(),
+                mnemonic: "record_clear".to_string(),
+                operands: format!("ref=0x{record_offset:04x}"),
+                actor_record: None,
+                text: None,
+            });
+            true
+        }
+        vm::VmToken::Text {
+            offset,
+            line_index,
+            voice_selector,
+            flags_b4,
+            loop_target,
+            word_offsets,
+            ..
+        } => {
+            let Some(decoded_words) = decode_vm_words(words, word_offsets) else {
+                return false;
+            };
+            let params = [*voice_selector, *flags_b4];
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: *offset,
+                len: text_token_end(*offset, *flags_b4, *loop_target, word_offsets.len()) - offset,
+                opcode: "a6".to_string(),
+                mnemonic: "text_call".to_string(),
+                operands: format!(
+                    "target=0x{line_index:04x} params={} words={}",
+                    hex_bytes(&params),
+                    decoded_words.len()
+                ),
+                actor_record: current_actor_record(current_actor),
+                text: Some(assemble_dialogue(&decoded_words)),
+            });
+            true
+        }
+        vm::VmToken::Op { .. } | vm::VmToken::Invalid { .. } => false,
+    }
+}
+
+fn vm_token_offset(token: &vm::VmToken) -> usize {
+    match token {
+        vm::VmToken::Text { offset, .. }
+        | vm::VmToken::Actor { offset, .. }
+        | vm::VmToken::RecordLink { offset, .. }
+        | vm::VmToken::RecordEntry { offset, .. }
+        | vm::VmToken::RecordClear { offset, .. }
+        | vm::VmToken::BitFlag { offset, .. }
+        | vm::VmToken::RecordState { offset, .. }
+        | vm::VmToken::GlobalWordCompare { offset, .. }
+        | vm::VmToken::GlobalPairCompare { offset, .. }
+        | vm::VmToken::PairRecord { offset, .. }
+        | vm::VmToken::RecordTriple { offset, .. }
+        | vm::VmToken::Op { offset, .. }
+        | vm::VmToken::Invalid { offset, .. } => *offset,
+    }
+}
+
+fn vm_token_len(token: &vm::VmToken) -> usize {
+    match token {
+        vm::VmToken::Text {
+            offset,
+            flags_b4,
+            loop_target,
+            word_offsets,
+            ..
+        } => text_token_end(*offset, *flags_b4, *loop_target, word_offsets.len()) - offset,
+        vm::VmToken::Actor { len, .. }
+        | vm::VmToken::RecordLink { len, .. }
+        | vm::VmToken::RecordEntry { len, .. }
+        | vm::VmToken::RecordClear { len, .. }
+        | vm::VmToken::BitFlag { len, .. }
+        | vm::VmToken::RecordState { len, .. }
+        | vm::VmToken::GlobalWordCompare { len, .. }
+        | vm::VmToken::GlobalPairCompare { len, .. }
+        | vm::VmToken::PairRecord { len, .. }
+        | vm::VmToken::RecordTriple { len, .. }
+        | vm::VmToken::Op { len, .. } => *len,
+        vm::VmToken::Invalid { .. } => 1,
+    }
 }
 
 pub(super) fn push_raw_disassembly(
@@ -2891,6 +2994,41 @@ mod tests {
                 manifest.starts_with("script\tevent_index\toffset\topcode\ttarget\tbranch_taken")
             );
             assert!(manifest.contains("condition"));
+            return;
+        }
+
+        eprintln!("skipping: extracted output scripts not available");
+    }
+
+    #[test]
+    fn parses_real_script_disassembly_global_conditions_if_present() {
+        for prefix in ["output", "../output"] {
+            let root = Path::new(prefix);
+            if !root.join("scripts").exists() {
+                continue;
+            }
+
+            let rows = parse_script_disassembly(root, None, &HashMap::new())
+                .expect("parse script disassembly");
+            assert!(rows.iter().any(|row| {
+                row.script == "SCRIPT2"
+                    && row.offset == 0x033a0
+                    && row.mnemonic == "global_pair_compare"
+                    && row.operands.contains("packed=0x0c19")
+            }));
+            assert!(rows.iter().any(|row| {
+                row.script == "SCRIPT2"
+                    && row.offset == 0x034eb
+                    && row.mnemonic == "global_word_compare"
+                    && row.operands.contains("value=0x0008")
+            }));
+            assert!(
+                rows.iter()
+                    .filter(|row| row.mnemonic == "global_word_compare")
+                    .count()
+                    > 40,
+                "expected mode-aware CA rows from real scripts"
+            );
             return;
         }
 

@@ -461,9 +461,11 @@ used by the observed compare path, so Rust keeps it as `reserved`.
 
 Rust now exposes these as `VmToken::GlobalWordCompare` and
 `VmToken::GlobalPairCompare`, and `script-disassembly.tsv` emits
-`global_word_compare` / `global_pair_compare` rows. `execute_trace` branches on
-them when `ExecutionContext` supplies `gs:0x0AA6/0x0AA8/0x0AAA`; host-side replay
-must choose the BIOS RTC hour/month/day values for deterministic output.
+`global_word_compare` / `global_pair_compare` rows through the same mode-aware
+VM walker, so mode-1 `CA`/`CB` tokens are no longer buried inside raw spans.
+`execute_trace` branches on them when `ExecutionContext` supplies
+`gs:0x0AA6/0x0AA8/0x0AAA`; host-side replay must choose the BIOS RTC
+hour/month/day values for deterministic output.
 
 **Runtime source recovered:** the VM wrapper at file `0x55B6..0x55BB` calls two
 far routines immediately before `vm_exec_loop`: file `0x093B` reads BIOS RTC time
@@ -747,7 +749,8 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       when `ExecutionContext` supplies `gs:0x0AA6/0x0AA8/0x0AAA`. The binary RTC
       writers are recovered; host replay chooses values via `with_bios_rtc`, and
       the extractor now emits RTC branch-scenario replays from real `CA`/`CB`
-      operands.
+      operands. `script-disassembly.tsv` now uses the mode-aware VM walker for
+      these tokens instead of ad hoc raw-byte spans.
 - [x] Expose 0xCD record-triple tokens. `src/vm.rs` preserves the consumed
       record/first/second words and optional `A1` inverted-compare prefix as
       `VmToken::RecordTriple`, and `execute_trace` evaluates the direct mode-1
