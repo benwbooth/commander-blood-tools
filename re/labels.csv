@@ -64,11 +64,16 @@ DS:0x6788,vm_active_line,"active dialogue-line id = sign_extend(0xA6 b3)+9; rese
 0x071E:0x14B6,dlg_stop_common,common stop/clear routine called by dialogue clear paths
 0x0012E8,snd_scene_cleanup,"close+delete temp son.snd/mus.snd on scene change (int21 3E/41)"
 0x00B9DE,snd_clip_player,"SND clip player: AX=clip index; table DS:0x0bbf (off+len), bank DS:0x0bb3, +6 hdr; in-mem or lseek/read"
+0x00C005,snd_bank_loader,"SND bank loader/extractor at 0x0B1B:0x0855; AX=0 builds in-memory table, AX!=0 preserves table and can write son.snd"
 DS:0x0BBF,snd_clip_table,"per-clip table: u16 offset + u16 len, indexed by clip*4"
 DS:0x0BB3,snd_bank_base,"loaded SND bank base (far ptr) for in-memory clip play"
 DS:0x0BB7,snd_read_buf,son.snd streamed-read destination buffer (far ptr)
 DS:0x0C47,h_son_snd,DOS file handle for temp son.snd (voices/SFX)
 DS:0x0C49,h_mus_snd,DOS file handle for temp mus.snd (music)
+DS:0x0CFC,snd_path_tb,"static SND path string: sn\tb.snd"
+DS:0x0D06,snd_path_template,"static SND path template: sn\xxxxxxxxxxxx"
+DS:0x0D16,snd_path_radio,"static SND path string: sn\radio.snd"
+DS:0x0D23,snd_path_3d,"static SND path string: sn\3D.snd"
 0x009E81,dlg_frame_update,"per-frame dialogue updater: active line gs:0x6788 vs displayed gs:0x678a; viewport letterbox for ids 5/0x27"
 0x0094BA,dlg_reveal_complete_hold,"when reveal reaches NUL, sets gs:0x0b35=gs:0x0aca*4 and gs:0x67bb=1"
 DS:0x678A,vm_displayed_line,currently-displayed dialogue-line id (vs active gs:0x6788)

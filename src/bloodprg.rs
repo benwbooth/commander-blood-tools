@@ -21,6 +21,8 @@ pub const DIALOGUE_FONT_GLYPH_COUNT: usize = 86;
 pub const DIALOGUE_FONT_GLYPH_HEIGHT: usize = 8;
 pub const SND_ENTRY_SEGMENT: u16 = 0x0b1b;
 pub const SND_ENTRY_OFFSET: u16 = 0x011d;
+pub const SND_BANK_LOAD_SEGMENT: u16 = 0x0b1b;
+pub const SND_BANK_LOAD_OFFSET: u16 = 0x0855;
 pub const NAV_CODE_SEGMENT: u16 = 0x071e;
 pub const NAV_ACTOR_SUBDISPATCH_TABLE_FILE_OFFSET: usize = 0x007eb4;
 pub const NAV_ACTOR_SUBDISPATCH_ENTRY_COUNT: usize = 6;
@@ -34,8 +36,16 @@ const SND_ENTRY_FAR_CALL: [u8; 5] = [
     SND_ENTRY_SEGMENT as u8,
     (SND_ENTRY_SEGMENT >> 8) as u8,
 ];
+const SND_BANK_LOAD_FAR_CALL: [u8; 5] = [
+    0x9a,
+    SND_BANK_LOAD_OFFSET as u8,
+    (SND_BANK_LOAD_OFFSET >> 8) as u8,
+    SND_BANK_LOAD_SEGMENT as u8,
+    (SND_BANK_LOAD_SEGMENT >> 8) as u8,
+];
 const FAR_CALL_OPCODE: u8 = 0x9a;
-const AX_SOURCE_SCAN_BACK: usize = 32;
+const REGISTER_SOURCE_SCAN_BACK: usize = 32;
+const DS_STRING_SCAN_MAX: usize = 64;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
 pub struct MzHeader {
@@ -149,6 +159,7 @@ pub struct BloodPrgInspection {
     pub nav_actor_subdispatch_handlers: Vec<SubdispatchEntry>,
     pub nav_choice_subdispatch_handlers: Vec<SubdispatchEntry>,
     pub snd_entry_call_sites: Vec<SndEntryCallSite>,
+    pub snd_bank_load_call_sites: Vec<SndBankLoadCallSite>,
     pub dialogue_font: DialogueFontTables,
 }
 
@@ -163,6 +174,27 @@ pub struct SndEntryCallSite {
     pub ax_source_file_offset: Option<usize>,
     pub ax_source: &'static str,
     pub intervening_far_calls: u8,
+    pub note: &'static str,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+pub struct SndBankLoadCallSite {
+    pub file_offset: usize,
+    pub segment: u16,
+    pub offset: u16,
+    pub target_segment: u16,
+    pub target_offset: u16,
+    pub ax_value: Option<u16>,
+    pub ax_source_file_offset: Option<usize>,
+    pub ax_source: &'static str,
+    pub ax_intervening_far_calls: u8,
+    pub si_value: Option<u16>,
+    pub si_source_file_offset: Option<usize>,
+    pub si_source: &'static str,
+    pub si_intervening_far_calls: u8,
+    pub path_file_offset: Option<usize>,
+    pub path: Option<String>,
+    pub mode: &'static str,
     pub note: &'static str,
 }
 
@@ -379,6 +411,45 @@ impl BloodPrg {
             .collect()
     }
 
+    pub fn snd_bank_load_call_sites(&self) -> Vec<SndBankLoadCallSite> {
+        self.data
+            .windows(SND_BANK_LOAD_FAR_CALL.len())
+            .enumerate()
+            .filter_map(|(file_offset, bytes)| {
+                (bytes == SND_BANK_LOAD_FAR_CALL).then(|| {
+                    let (segment, offset) = self.file_to_known_segoff(file_offset);
+                    let (ax_value, ax_source_file_offset, ax_source, ax_intervening_far_calls) =
+                        self.find_ax_source_before(file_offset);
+                    let (si_value, si_source_file_offset, si_source, si_intervening_far_calls) =
+                        self.find_si_source_before(file_offset);
+                    let path = si_value.and_then(|value| self.ds_c_string(value));
+                    let path_file_offset = si_value
+                        .filter(|_| path.is_some())
+                        .map(|value| self.ds_to_file(value));
+                    SndBankLoadCallSite {
+                        file_offset,
+                        segment,
+                        offset,
+                        target_segment: SND_BANK_LOAD_SEGMENT,
+                        target_offset: SND_BANK_LOAD_OFFSET,
+                        ax_value,
+                        ax_source_file_offset,
+                        ax_source,
+                        ax_intervening_far_calls,
+                        si_value,
+                        si_source_file_offset,
+                        si_source,
+                        si_intervening_far_calls,
+                        path_file_offset,
+                        path,
+                        mode: snd_bank_load_mode(ax_value),
+                        note: snd_bank_load_call_note(file_offset),
+                    }
+                })
+            })
+            .collect()
+    }
+
     pub fn inspect(&self) -> Result<BloodPrgInspection> {
         Ok(BloodPrgInspection {
             summary: self.summary(),
@@ -390,6 +461,7 @@ impl BloodPrg {
             nav_actor_subdispatch_handlers: self.nav_actor_subdispatch_handlers()?,
             nav_choice_subdispatch_handlers: self.nav_choice_subdispatch_handlers()?,
             snd_entry_call_sites: self.snd_entry_call_sites(),
+            snd_bank_load_call_sites: self.snd_bank_load_call_sites(),
             dialogue_font: self.dialogue_font_tables()?,
         })
     }
@@ -428,7 +500,7 @@ impl BloodPrg {
         &self,
         call_file_offset: usize,
     ) -> (Option<u16>, Option<usize>, &'static str, u8) {
-        let window_start = call_file_offset.saturating_sub(AX_SOURCE_SCAN_BACK);
+        let window_start = call_file_offset.saturating_sub(REGISTER_SOURCE_SCAN_BACK);
         let mut source = (None, None, "unresolved", 0usize);
         for pos in window_start..call_file_offset {
             if pos + 3 <= call_file_offset && self.data.get(pos) == Some(&0xb8) {
@@ -454,6 +526,44 @@ impl BloodPrg {
             .min(u8::MAX as usize) as u8;
 
         (source.0, source.1, source.2, intervening_far_calls)
+    }
+
+    fn find_si_source_before(
+        &self,
+        call_file_offset: usize,
+    ) -> (Option<u16>, Option<usize>, &'static str, u8) {
+        let window_start = call_file_offset.saturating_sub(REGISTER_SOURCE_SCAN_BACK);
+        let mut source = (None, None, "unresolved", 0usize);
+        for pos in window_start..call_file_offset {
+            if pos + 3 <= call_file_offset && self.data.get(pos) == Some(&0xbe) {
+                let lo = self.data[pos + 1];
+                let hi = self.data[pos + 2];
+                source = (
+                    Some(u16::from_le_bytes([lo, hi])),
+                    Some(pos),
+                    "mov si, imm16",
+                    pos + 3,
+                );
+            }
+        }
+
+        let intervening_far_calls = self.data[source.3..call_file_offset]
+            .iter()
+            .filter(|byte| **byte == FAR_CALL_OPCODE)
+            .count()
+            .min(u8::MAX as usize) as u8;
+
+        (source.0, source.1, source.2, intervening_far_calls)
+    }
+
+    fn ds_c_string(&self, ds_offset: u16) -> Option<String> {
+        let start = self.ds_to_file(ds_offset);
+        let bytes = self.data.get(start..)?;
+        let nul = bytes
+            .iter()
+            .take(DS_STRING_SCAN_MAX)
+            .position(|byte| *byte == 0)?;
+        std::str::from_utf8(&bytes[..nul]).ok().map(str::to_owned)
     }
 
     fn file_to_known_segoff(&self, file_offset: usize) -> (u16, u16) {
@@ -639,6 +749,28 @@ fn snd_entry_call_note(file_offset: usize) -> &'static str {
         0x008534 => "text/presentation render path sound; constant clip 0",
         0x0086ec => "presentation transition sound; constant clip 4",
         _ => "unclassified SND entry call",
+    }
+}
+
+fn snd_bank_load_mode(ax_value: Option<u16>) -> &'static str {
+    match ax_value {
+        Some(0) => "load_bank_into_memory",
+        Some(1) => "extract_or_stream_bank",
+        Some(_) => "unknown_nonzero_bank_mode",
+        None => "unresolved_bank_mode",
+    }
+}
+
+fn snd_bank_load_call_note(file_offset: usize) -> &'static str {
+    match file_offset {
+        0x000fe7 => "main startup/UI loop loads tb.snd into the in-memory clip table",
+        0x007667 => "descriptor/presentation path extracts the current templated SND bank",
+        0x008263 => "actor/object transition switches to radio.snd through the bank loader",
+        0x0087ab => "navigation choice transition switches to radio.snd through the bank loader",
+        0x008866 => "navigation choice handler reloads radio.snd through the bank loader",
+        0x00b5dc => "presentation setup loads 3D.snd into the in-memory clip table",
+        0x00b610 => "presentation setup restores tb.snd after temporary 3D.snd load",
+        _ => "unclassified SND bank-loader call",
     }
 }
 
@@ -1085,6 +1217,15 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         comment: "SND clip player; AX is the clip index into the in-memory clip table",
     },
     BinarySymbol {
+        name: "snd_bank_loader",
+        file_offset: 0x00c005,
+        segment: Some(SND_BANK_LOAD_SEGMENT),
+        offset: Some(SND_BANK_LOAD_OFFSET),
+        ds_offset: None,
+        kind: "audio",
+        comment: "SND bank loader/extractor; AX=0 builds in-memory clip table, AX!=0 preserves table and can write son.snd",
+    },
+    BinarySymbol {
         name: "son_snd_name",
         file_offset: 0x00d4c6,
         segment: None,
@@ -1101,6 +1242,42 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         ds_offset: Some(0x00ae),
         kind: "data",
         comment: "mus.snd temp music bank filename",
+    },
+    BinarySymbol {
+        name: "snd_path_tb",
+        file_offset: 0x00e11c,
+        segment: None,
+        offset: None,
+        ds_offset: Some(0x0cfc),
+        kind: "audio-data",
+        comment: "static SND path string: sn\\tb.snd",
+    },
+    BinarySymbol {
+        name: "snd_path_template",
+        file_offset: 0x00e126,
+        segment: None,
+        offset: None,
+        ds_offset: Some(0x0d06),
+        kind: "audio-data",
+        comment: "static SND path template: sn\\xxxxxxxxxxxx",
+    },
+    BinarySymbol {
+        name: "snd_path_radio",
+        file_offset: 0x00e136,
+        segment: None,
+        offset: None,
+        ds_offset: Some(0x0d16),
+        kind: "audio-data",
+        comment: "static SND path string: sn\\radio.snd",
+    },
+    BinarySymbol {
+        name: "snd_path_3d",
+        file_offset: 0x00e143,
+        segment: None,
+        offset: None,
+        ds_offset: Some(0x0d23),
+        kind: "audio-data",
+        comment: "static SND path string: sn\\3D.snd",
     },
     BinarySymbol {
         name: "vm_opcode_lengths",
@@ -1256,10 +1433,7 @@ mod tests {
             .nav_choice_subdispatch_handlers()
             .expect("choice subdispatch table");
         let choice_offsets: Vec<u16> = choice.iter().map(|entry| entry.handler_offset).collect();
-        assert_eq!(
-            choice_offsets,
-            vec![0x0f33, 0x0f4c, 0x0fdd, 0x1068, 0x108c]
-        );
+        assert_eq!(choice_offsets, vec![0x0f33, 0x0f4c, 0x0fdd, 0x1068, 0x108c]);
         assert_eq!(choice[0].handler_file_offset, 0x008713);
         assert_eq!(choice[4].handler_file_offset, 0x00886c);
     }
@@ -1370,6 +1544,113 @@ mod tests {
             .expect("text/presentation SND call");
         assert_eq!(text_sound.ax_source, "xor ax, ax");
         assert!(text_sound.note.contains("constant clip 0"));
+    }
+
+    #[test]
+    fn snd_bank_load_call_sites_recover_modes_and_paths() {
+        let Some(binary) = fixture() else {
+            eprintln!("skipping: BLOODPRG.EXE not available");
+            return;
+        };
+        let sites = binary.snd_bank_load_call_sites();
+        let got: Vec<_> = sites
+            .iter()
+            .map(|site| {
+                (
+                    site.file_offset,
+                    site.segment,
+                    site.offset,
+                    site.ax_value,
+                    site.si_value,
+                    site.path_file_offset,
+                    site.path.as_deref(),
+                    site.mode,
+                )
+            })
+            .collect();
+        assert_eq!(
+            got,
+            vec![
+                (
+                    0x000fe7,
+                    0x008b,
+                    0x0137,
+                    Some(0),
+                    Some(0x0cfc),
+                    Some(0x00e11c),
+                    Some("sn\\tb.snd"),
+                    "load_bank_into_memory",
+                ),
+                (
+                    0x007667,
+                    0x04da,
+                    0x22c7,
+                    Some(1),
+                    Some(0x0d06),
+                    Some(0x00e126),
+                    Some("sn\\xxxxxxxxxxxx"),
+                    "extract_or_stream_bank",
+                ),
+                (
+                    0x008263,
+                    0x071e,
+                    0x0a83,
+                    Some(1),
+                    Some(0x0d16),
+                    Some(0x00e136),
+                    Some("sn\\radio.snd"),
+                    "extract_or_stream_bank",
+                ),
+                (
+                    0x0087ab,
+                    0x071e,
+                    0x0fcb,
+                    Some(1),
+                    Some(0x0d16),
+                    Some(0x00e136),
+                    Some("sn\\radio.snd"),
+                    "extract_or_stream_bank",
+                ),
+                (
+                    0x008866,
+                    0x071e,
+                    0x1086,
+                    Some(1),
+                    Some(0x0d16),
+                    Some(0x00e136),
+                    Some("sn\\radio.snd"),
+                    "extract_or_stream_bank",
+                ),
+                (
+                    0x00b5dc,
+                    0x0a9a,
+                    0x063c,
+                    Some(0),
+                    Some(0x0d23),
+                    Some(0x00e143),
+                    Some("sn\\3D.snd"),
+                    "load_bank_into_memory",
+                ),
+                (
+                    0x00b610,
+                    0x0a9a,
+                    0x0670,
+                    Some(0),
+                    Some(0x0cfc),
+                    Some(0x00e11c),
+                    Some("sn\\tb.snd"),
+                    "load_bank_into_memory",
+                ),
+            ]
+        );
+
+        let template_bank = sites
+            .iter()
+            .find(|site| site.file_offset == 0x007667)
+            .expect("templated descriptor SND bank call");
+        assert_eq!(template_bank.ax_source, "mov ax, imm16");
+        assert_eq!(template_bank.si_source, "mov si, imm16");
+        assert!(template_bank.note.contains("templated SND bank"));
     }
 
     #[test]

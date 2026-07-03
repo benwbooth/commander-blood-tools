@@ -687,6 +687,16 @@ another direct `b3` selector formula.
   set is ten calls: clips `0,1,1,2,3,4,5,5,5,6`; file `0x8534` is the
   text/presentation render-path call with `AX=0`. One call (`0x7BF8`) carries
   `AX=1` across a setup far call and is flagged in the TSV.
+- **Direct SND bank-loader callers:** `src/bloodprg.rs` now separately scans
+  direct far calls to `0x0B1B:0x0855` (file `0xC005`). This is a bank
+  loader/extractor, not a clip player: `AX=0` builds the in-memory clip table at
+  `DS:0x0BBF` and reads the full bank into `DS:0x0BB3`; `AX!=0` preserves the
+  existing table and may materialize temp `son.snd` through the int21
+  create/write path at `0xC191..0xC1C7`. The seven direct callers recover these
+  `SI` path arguments from static DS strings: `0x0CFC` = `sn\tb.snd`, `0x0D06`
+  = `sn\xxxxxxxxxxxx`, `0x0D16` = `sn\radio.snd`, and `0x0D23` =
+  `sn\3D.snd`. This keeps bank selection separate from `0x011D` clip playback in
+  the Rust decompilation path.
 - **Line-complete hold flag:** `gs:0x67BB` is now decoded as a post-reveal hold
   state, not a direct SND call. `0x94BA..0x94DD` sets `b35=aca*4`; `0x7378..0x738C`
   sets `b35=0x27cf*(aca/2)+6`; `0x115D..0x1188` consumes and clears the flag.
@@ -985,6 +995,11 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       the one call where `AX` is carried across a setup far call. This gives the
       chatter/voice SFX audit a test-backed caller map instead of handwritten
       disassembly notes.
+- [x] Emit binary-derived SND bank-loader call sites:
+      `src/bloodprg.rs` scans direct far calls to `0x0B1B:0x0855`, recovers the
+      upstream `AX` bank mode plus `SI` static SND path, and test-locks the seven
+      direct loader calls. This prevents the Rust decompilation work from
+      treating bank selection/extraction as clip playback.
 - [x] Use `tb.snd` clip 0 for subtitle chatter:
       `src/extract/subtitle_sfx.rs` now reuses the first decoded `tb.snd` clip
       for every line-complete chatter event instead of cycling through a filtered
