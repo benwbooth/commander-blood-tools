@@ -58,6 +58,36 @@ class CompareOracleTests(unittest.TestCase):
             self.assertEqual(exit_code, 2)
             self.assertTrue((root / "summary.json").exists())
 
+    def test_candidate_search_ranks_best_generated_frame(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="commander-blood-candidate-test-") as tmp:
+            root = Path(tmp)
+            reference = root / "reference.png"
+            close = root / "candidate-close.png"
+            far = root / "candidate-far.png"
+            Image.new("RGB", compare_oracle.NATIVE_SIZE, (10, 20, 30)).save(reference)
+            Image.new("RGB", compare_oracle.NATIVE_SIZE, (11, 20, 30)).save(close)
+            Image.new("RGB", compare_oracle.NATIVE_SIZE, (100, 20, 30)).save(far)
+
+            candidates = compare_oracle.candidate_paths_from_globs(
+                [str(root / "candidate-*.png")]
+            )
+            summary = compare_oracle.search_candidate_videos(
+                reference,
+                candidates,
+                start=0.0,
+                end=0.0,
+                step=1.0,
+                ref_crop="auto",
+                out_dir=root / "candidate-search",
+                top_n=2,
+            )
+
+            self.assertEqual(summary["best"]["generated"], str(close))
+            self.assertAlmostEqual(summary["best"]["best_mean_abs"], 1.0 / 3.0)
+            self.assertEqual(summary["top_count"], 2)
+            self.assertTrue((root / "candidate-search" / "candidate-search.json").exists())
+            self.assertTrue((root / "candidate-search" / "best" / "comparison.json").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

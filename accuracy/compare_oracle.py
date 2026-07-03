@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import glob
 import json
 import math
 import os
@@ -52,7 +53,9 @@ def parse_optional_float(value: str | None) -> float | None:
 
 def load_scenarios(path: Path) -> list[Scenario]:
     text = "\n".join(
-        line for line in path.read_text().splitlines() if line.strip() and not line.startswith("#")
+        line
+        for line in path.read_text().splitlines()
+        if line.strip() and not line.startswith("#")
     )
     if not text.strip():
         return []
@@ -80,7 +83,11 @@ def load_scenarios(path: Path) -> list[Scenario]:
                 scan_start=parse_optional_float(row.get("scan_start")),
                 scan_end=parse_optional_float(row.get("scan_end")),
                 scan_step=parse_optional_float(row.get("scan_step")),
-                out_dir=Path(row["out_dir"]) if (row.get("out_dir") or "").strip() else None,
+                out_dir=(
+                    Path(row["out_dir"])
+                    if (row.get("out_dir") or "").strip()
+                    else None
+                ),
                 notes=(row.get("notes") or "").strip(),
             )
         )
@@ -141,6 +148,15 @@ def load_native_image(path: Path, *, crop: tuple[int, int, int, int] | None = No
     return image.resize(NATIVE_SIZE, Image.Resampling.NEAREST)
 
 
+def load_reference_native(
+    reference_path: Path, ref_crop: str
+) -> tuple[Image.Image, tuple[int, int, int, int]]:
+    reference_source = Image.open(reference_path)
+    crop = parse_crop(ref_crop, reference_source.size)
+    reference_source.close()
+    return load_native_image(reference_path, crop=crop), crop
+
+
 def extract_generated_frame(generated: Path, time_sec: float, out_path: Path) -> Path:
     suffix = generated.suffix.lower()
     if suffix in {".png", ".jpg", ".jpeg", ".bmp"}:
@@ -163,6 +179,8 @@ def extract_generated_frame(generated: Path, time_sec: float, out_path: Path) ->
         ],
         check=True,
     )
+    if not out_path.exists():
+        raise ValueError(f"ffmpeg did not produce a frame at {time_sec:.6f}s")
     return out_path
 
 
@@ -203,6 +221,13 @@ def default_out_dir(reference: Path, generated: Path, time_sec: float) -> Path:
     return Path("accuracy/comparisons") / f"{safe_reference}__{safe_generated}__t{time_sec:.2f}"
 
 
+def default_candidate_search_out_dir(reference: Path) -> Path:
+    safe_reference = "".join(
+        ch.lower() if ch.isalnum() else "_" for ch in reference.stem
+    ).strip("_")
+    return Path("accuracy/comparisons") / f"{safe_reference}__candidate_search"
+
+
 def comparison_status(metrics: dict[str, object], max_mean_abs: float | None) -> str:
     if max_mean_abs is None:
         return "unchecked"
@@ -223,10 +248,7 @@ def compare_paths(
 ) -> dict[str, object]:
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    reference_source = Image.open(reference_path)
-    crop = parse_crop(ref_crop, reference_source.size)
-    reference_source.close()
-    reference_native = load_native_image(reference_path, crop=crop)
+    reference_native, crop = load_reference_native(reference_path, ref_crop)
 
     with tempfile.TemporaryDirectory(prefix="commander-blood-compare-") as tmp:
         generated_source = extract_generated_frame(
@@ -276,31 +298,11 @@ def scan_generated_times(
     if not times:
         raise ValueError("scan range produced no timestamps")
 
-    reference_source = Image.open(reference_path)
-    crop = parse_crop(ref_crop, reference_source.size)
-    reference_source.close()
-    reference_native = load_native_image(reference_path, crop=crop)
+    reference_native, crop = load_reference_native(reference_path, ref_crop)
 
-    scan_results: list[dict[str, object]] = []
-    with tempfile.TemporaryDirectory(prefix="commander-blood-scan-") as tmp:
-        tmp_dir = Path(tmp)
-        for index, time_sec in enumerate(times):
-            frame_path = tmp_dir / f"generated-source-frame-{index:05}.png"
-            generated_source = extract_generated_frame(
-                generated_path, time_sec, frame_path
-            )
-            generated_native = load_native_image(generated_source)
-            metrics = diff_metrics(reference_native, generated_native)
-            scan_results.append(
-                {
-                    "generated_time": time_sec,
-                    "mean_abs": metrics["mean_abs"],
-                    "rmse": metrics["rmse"],
-                    "max_abs": metrics["max_abs"],
-                    "exact_pixel_percent": metrics["exact_pixel_percent"],
-                    "mean_abs_rgb": metrics["mean_abs_rgb"],
-                }
-            )
+    scan_results = scan_generated_against_reference(
+        reference_native, generated_path, times
+    )
 
     best = min(scan_results, key=lambda result: float(result["mean_abs"]))
     scan_summary = {
@@ -327,6 +329,128 @@ def scan_generated_times(
         notes=notes,
         extra_metrics=scan_summary,
     )
+
+
+def scan_generated_against_reference(
+    reference_native: Image.Image, generated_path: Path, times: list[float]
+) -> list[dict[str, object]]:
+    scan_results: list[dict[str, object]] = []
+    with tempfile.TemporaryDirectory(prefix="commander-blood-scan-") as tmp:
+        tmp_dir = Path(tmp)
+        for index, time_sec in enumerate(times):
+            frame_path = tmp_dir / f"generated-source-frame-{index:05}.png"
+            try:
+                generated_source = extract_generated_frame(
+                    generated_path, time_sec, frame_path
+                )
+            except (subprocess.CalledProcessError, ValueError):
+                continue
+            generated_native = load_native_image(generated_source)
+            metrics = diff_metrics(reference_native, generated_native)
+            scan_results.append(
+                {
+                    "generated_time": time_sec,
+                    "mean_abs": metrics["mean_abs"],
+                    "rmse": metrics["rmse"],
+                    "max_abs": metrics["max_abs"],
+                    "exact_pixel_percent": metrics["exact_pixel_percent"],
+                    "mean_abs_rgb": metrics["mean_abs_rgb"],
+                }
+            )
+    if not scan_results:
+        raise ValueError(f"no frames extracted from {generated_path}")
+    return scan_results
+
+
+def candidate_paths_from_globs(patterns: list[str]) -> list[Path]:
+    candidates: set[Path] = set()
+    for pattern in patterns:
+        for match in glob.glob(pattern):
+            path = Path(match)
+            if path.is_file():
+                candidates.add(path)
+    return sorted(candidates, key=lambda path: str(path))
+
+
+def search_candidate_videos(
+    reference_path: Path,
+    candidates: list[Path],
+    *,
+    start: float,
+    end: float,
+    step: float,
+    ref_crop: str,
+    out_dir: Path,
+    top_n: int = 20,
+) -> dict[str, object]:
+    if not candidates:
+        raise ValueError("candidate search found no files")
+    if top_n <= 0:
+        raise ValueError("candidate top count must be positive")
+
+    times = scan_times(start, end, step)
+    reference_native, crop = load_reference_native(reference_path, ref_crop)
+    rows: list[dict[str, object]] = []
+    errors: list[dict[str, object]] = []
+    for candidate in candidates:
+        try:
+            scan_results = scan_generated_against_reference(
+                reference_native, candidate, times
+            )
+        except (subprocess.CalledProcessError, OSError, ValueError) as exc:
+            errors.append({"generated": str(candidate), "error": str(exc)})
+            continue
+        best = min(scan_results, key=lambda result: float(result["mean_abs"]))
+        rows.append(
+            {
+                "generated": str(candidate),
+                "best_generated_time": best["generated_time"],
+                "best_mean_abs": best["mean_abs"],
+                "best_rmse": best["rmse"],
+                "best_max_abs": best["max_abs"],
+                "best_exact_pixel_percent": best["exact_pixel_percent"],
+                "best_mean_abs_rgb": best["mean_abs_rgb"],
+                "scan_count": len(scan_results),
+            }
+        )
+
+    if not rows:
+        raise ValueError("candidate search produced no comparable frames")
+
+    ranked = sorted(rows, key=lambda row: float(row["best_mean_abs"]))
+    for rank, row in enumerate(ranked, start=1):
+        row["rank"] = rank
+
+    summary = {
+        "reference": str(reference_path),
+        "reference_crop": list(crop),
+        "candidate_count": len(candidates),
+        "candidate_error_count": len(errors),
+        "scan_start": start,
+        "scan_end": end,
+        "scan_step": step,
+        "top_count": min(top_n, len(ranked)),
+        "best": ranked[0],
+        "top": ranked[:top_n],
+        "errors": errors,
+    }
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / "candidate-search.json").write_text(
+        json.dumps(summary, indent=2) + "\n"
+    )
+    compare_paths(
+        reference_path,
+        Path(str(ranked[0]["generated"])),
+        generated_time=float(ranked[0]["best_generated_time"]),
+        ref_crop=ref_crop,
+        out_dir=out_dir / "best",
+        extra_metrics={
+            "candidate_rank": ranked[0]["rank"],
+            "candidate_count": len(candidates),
+            "candidate_search_out": str(out_dir / "candidate-search.json"),
+        },
+    )
+    return summary
 
 
 def run_scenarios(
@@ -448,6 +572,17 @@ def main() -> int:
         "--scan-generated",
         help="Scan generated MP4 timestamps as START:END:STEP and compare the best frame",
     )
+    parser.add_argument(
+        "--candidate-glob",
+        action="append",
+        help="Glob of generated MP4/image candidates to rank against --reference",
+    )
+    parser.add_argument(
+        "--candidate-top",
+        type=int,
+        default=20,
+        help="Number of ranked candidate matches to write; default 20",
+    )
     args = parser.parse_args()
 
     if args.scenario_file:
@@ -462,7 +597,29 @@ def main() -> int:
         return exit_code
 
     if args.reference is None or args.generated is None:
-        parser.error("--reference and --generated are required unless --scenario-file is used")
+        if args.reference is not None and args.candidate_glob:
+            start, end, step = (
+                parse_scan_range(args.scan_generated)
+                if args.scan_generated
+                else (args.generated_time, args.generated_time, 1.0)
+            )
+            out_dir = args.out_dir or default_candidate_search_out_dir(args.reference)
+            summary = search_candidate_videos(
+                args.reference,
+                candidate_paths_from_globs(args.candidate_glob),
+                start=start,
+                end=end,
+                step=step,
+                ref_crop=args.ref_crop,
+                out_dir=out_dir,
+                top_n=args.candidate_top,
+            )
+            print(json.dumps(summary, indent=2))
+            return 0
+        parser.error(
+            "--reference and --generated are required unless --scenario-file or "
+            "--candidate-glob is used"
+        )
 
     out_dir = args.out_dir or default_out_dir(args.reference, args.generated, args.generated_time)
     if args.scan_generated:

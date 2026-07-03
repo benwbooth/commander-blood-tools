@@ -951,9 +951,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 - [ ] Ph6: generated cutscene compared against real-game capture with a
       frame-aligned pass threshold. `accuracy/compare_oracle.py` now normalizes
       host-window captures and generated MP4 frames to 320x200 and emits metrics,
-      scans generated-video timestamp windows for best-frame candidates, and
-      `accuracy/oracle-scenarios.tsv` defines named repeatable comparisons, but
-      no matched scene has passed yet.
+      scans generated-video timestamp windows, can rank candidate generated
+      videos against a reference frame, and `accuracy/oracle-scenarios.tsv`
+      defines named repeatable comparisons, but no matched scene has passed yet.
 
 ## Reference Resources
 
@@ -1348,7 +1348,15 @@ commander-blood-tools <dir>`) → compare frame candidates with
 manually inspect mismatches → iterate. Blank scenario thresholds record metrics
 as unchecked; scenarios can set `scan_start`/`scan_end`/`scan_step` to search a
 generated MP4 window and prove whether a mismatch is timestamp alignment or the
-wrong scene/presentation state. Promoted oracle checks should fill in
-`max_mean_abs`. Next oracle step is scripted input or a debug scene selector so
-one generated dialogue run can be compared against a matched real-game capture
-with a threshold.
+wrong scene/presentation state. Candidate search (`--candidate-glob`) ranks
+generated videos before a capture is promoted to a checked-in scenario. Promoted
+oracle checks should fill in `max_mean_abs`. Next oracle step is scripted input
+or a debug scene selector so one generated dialogue run can be compared against a
+matched real-game capture with a threshold.
+
+Current `frame_12` evidence: searching all 43 executed-dialogue composites over
+`0:12:2` ranked `executed-dialogue-run - script3 - 0011 - tumul.mp4` at `6.0s`
+best (`mean_abs ~= 32.13`), and a broader all-MP4 `t=0` sweep ranked
+`dialogue - script3 - ed1 - amigo.mp4` best (`mean_abs ~= 30.25`). Visual
+inspection still shows different scenes, so this capture is not yet a valid
+pass/fail threshold candidate for the dialogue renderer.

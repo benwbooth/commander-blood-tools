@@ -62,6 +62,24 @@ nix develop --command python accuracy/compare_oracle.py \
   --scan-generated 0:12:1
 ```
 
+## Search Candidate Videos
+
+Before a DOS capture is promoted to a thresholded scenario, find the generated
+video that is closest to the reference frame:
+
+```sh
+nix develop --command python accuracy/compare_oracle.py \
+  --reference accuracy/captures/frame_12.png \
+  --candidate-glob "output/mp4/executed-dialogue-run*.mp4" \
+  --scan-generated 0:12:2 \
+  --out-dir accuracy/comparisons/frame12-candidate-search
+```
+
+Candidate search writes `candidate-search.json` with ranked matches and saves a
+normal comparison for the best match under `<out-dir>/best/`. A high best
+`mean_abs` after scanning means the DOS capture is probably a different scene or
+presentation state, not merely a frame-offset problem.
+
 ## What works (verified 2026-06-14)
 
 - `accuracy/dosbox.conf` mounts the CD image (`output/CMDR_BLOOD.iso`) as `D:`,
