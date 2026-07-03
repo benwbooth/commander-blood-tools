@@ -476,8 +476,8 @@ fn opcode_metadata(opcode: u8, handler_file_offset: usize) -> OpcodeMetadata {
         vm::OP_RECORD_LINK => OpcodeMetadata {
             mnemonic: "record_link",
             family: "line-record",
-            rust_status: "token-ported",
-            notes: "C3 line-record relation; Rust exposes both operands and deliberately does not treat it as a speaker marker",
+            rust_status: "partially-executed",
+            notes: "C3 line-record relation; Rust decodes A1 inversion, executes guarded mode0 writes and mode1 compares with DEB object context, and deliberately does not treat it as a speaker marker",
         },
         op if vm::is_record_entry_opcode(op) => OpcodeMetadata {
             mnemonic: "record_entry",

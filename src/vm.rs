@@ -241,6 +241,7 @@ pub enum VmToken {
         offset: usize,
         record_offset: u16,
         related_record_offset: u16,
+        inverted: bool,
         len: usize,
     },
     /// `0xC5..=0xC8` record entry.
@@ -474,12 +475,15 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
                 len,
             });
         } else if op == OP_RECORD_LINK {
-            let record_offset = read_u16(cod, pos + 1).unwrap_or(0);
-            let related_record_offset = read_u16(cod, pos + 3).unwrap_or(0);
+            let inverted = mode1 && cod.get(pos + 1) == Some(&0xA1);
+            let operand_pos = pos + 1 + usize::from(inverted);
+            let record_offset = read_u16(cod, operand_pos).unwrap_or(0);
+            let related_record_offset = read_u16(cod, operand_pos + 2).unwrap_or(0);
             out.push(VmToken::RecordLink {
                 offset: pos,
                 record_offset,
                 related_record_offset,
+                inverted,
                 len,
             });
         } else if is_record_entry_opcode(op) {
@@ -670,6 +674,36 @@ pub struct ExecutionTrace {
     pub halted: ExecutionHalt,
 }
 
+/// Runtime tables the DOS VM receives through globals outside `SCRIPT*.VAR`.
+///
+/// `object_offsets` mirrors the 20-byte object table scanned by helper `0x6034`:
+/// it maps a record/field offset to the owning object by taking the previous
+/// object offset from the sorted kind-1 object records.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ExecutionContext {
+    object_offsets: Vec<u16>,
+}
+
+impl ExecutionContext {
+    pub fn from_object_offsets<I>(offsets: I) -> Self
+    where
+        I: IntoIterator<Item = u16>,
+    {
+        let mut object_offsets: Vec<u16> = offsets.into_iter().collect();
+        object_offsets.sort_unstable();
+        object_offsets.dedup();
+        Self { object_offsets }
+    }
+
+    fn owner_object_offset(&self, record_offset: u16) -> Option<u16> {
+        self.object_offsets
+            .iter()
+            .rev()
+            .copied()
+            .find(|offset| *offset < record_offset)
+    }
+}
+
 /// Force one condition result while executing a concrete scenario. This is a
 /// branch-enumeration aid: the offset is the conditional opcode offset reported
 /// in `BranchEvent`, and `condition_passed` is the result to use instead of the
@@ -712,6 +746,19 @@ fn actor_object_offset_from_record(record_offset: u16) -> Option<u16> {
     record_offset.checked_sub(TALK_FIELD)
 }
 
+fn record_owner_object_offset(context: &ExecutionContext, record_offset: u16) -> Option<u16> {
+    context.owner_object_offset(record_offset)
+}
+
+fn record_owner_is_active(
+    state: &[u8],
+    context: &ExecutionContext,
+    record_offset: u16,
+) -> Option<bool> {
+    record_owner_object_offset(context, record_offset)
+        .map(|owner| state_u8(state, owner.wrapping_add(2)) & 1 != 0)
+}
+
 fn actor_record_is_active(state: &[u8], record_offset: u16) -> bool {
     actor_object_offset_from_record(record_offset)
         .map(|actor| state_u8(state, actor.wrapping_add(2)) & 1 != 0)
@@ -742,6 +789,31 @@ fn write_actor_record(state: &mut [u8], record_offset: u16, related_record_offse
     state_set_u16(state, record_offset, OP_ACTOR as u16);
     state_set_u16(state, record_offset.wrapping_add(2), related_record_offset);
     state_set_u16(state, record_offset.wrapping_add(4), 0);
+}
+
+fn record_link_condition(
+    state: &[u8],
+    context: &ExecutionContext,
+    record_offset: u16,
+    related_record_offset: u16,
+    inverted: bool,
+) -> Option<bool> {
+    let record_type = state_u16(state, record_offset);
+    let stored_related = state_u16(state, record_offset.wrapping_add(2));
+    if record_type == 0 && stored_related == 0 {
+        return None;
+    }
+    let owner_active = record_owner_is_active(state, context, record_offset)?;
+    let matched = owner_active
+        && record_type == OP_RECORD_LINK as u16
+        && stored_related == related_record_offset;
+    Some(if inverted { !matched } else { matched })
+}
+
+fn write_record_link(state: &mut [u8], record_offset: u16, related_record_offset: u16) {
+    state_set_u16(state, record_offset, OP_RECORD_LINK as u16);
+    state_set_u16(state, record_offset.wrapping_add(2), related_record_offset);
+    state_set_u16(state, record_offset.wrapping_add(4), 1);
 }
 
 fn clear_record(state: &mut [u8], record_offset: u16) -> Option<u16> {
@@ -943,6 +1015,14 @@ pub fn execute_trace(cod: &[u8], var: &[u8]) -> ExecutionTrace {
     execute_trace_with_overrides(cod, var, &[])
 }
 
+pub fn execute_trace_with_context(
+    cod: &[u8],
+    var: &[u8],
+    context: &ExecutionContext,
+) -> ExecutionTrace {
+    execute_trace_with_overrides_and_context(cod, var, &[], context)
+}
+
 /// Execute a concrete VM path, optionally forcing selected condition outcomes.
 /// Overrides are keyed by conditional opcode offset and are applied only after a
 /// real condition has been decoded at that offset.
@@ -950,6 +1030,15 @@ pub fn execute_trace_with_overrides(
     cod: &[u8],
     var: &[u8],
     overrides: &[BranchOverride],
+) -> ExecutionTrace {
+    execute_trace_with_overrides_and_context(cod, var, overrides, &ExecutionContext::default())
+}
+
+pub fn execute_trace_with_overrides_and_context(
+    cod: &[u8],
+    var: &[u8],
+    overrides: &[BranchOverride],
+    context: &ExecutionContext,
 ) -> ExecutionTrace {
     const STEP_LIMIT_MULTIPLIER: usize = 64;
 
@@ -1143,6 +1232,20 @@ pub fn execute_trace_with_overrides(
                 condition_passed =
                     record_entry_condition(&state, op, record_offset, operand, inverted);
             }
+        } else if mode1 && op == OP_RECORD_LINK {
+            let inverted = cod.get(token_start + 1) == Some(&0xA1);
+            let p = token_start + 1 + usize::from(inverted);
+            if p + 4 <= end {
+                let record_offset = read_u16(cod, p).unwrap_or(0);
+                let related_record_offset = read_u16(cod, p + 2).unwrap_or(0);
+                condition_passed = record_link_condition(
+                    &state,
+                    context,
+                    record_offset,
+                    related_record_offset,
+                    inverted,
+                );
+            }
         } else if mode1 && op == OP_ACTOR {
             let inverted = cod.get(token_start + 1) == Some(&0xA1);
             let p = token_start + 1 + usize::from(inverted);
@@ -1241,6 +1344,16 @@ pub fn execute_trace_with_overrides(
                 if actor.map(|a| a.wrapping_add(TALK_FIELD)) == Some(record_offset) {
                     actor = None;
                 }
+            }
+        }
+        if !mode1 && op == OP_RECORD_LINK {
+            let record_offset = read_u16(cod, token_start + 1).unwrap_or(0);
+            let related_record_offset = read_u16(cod, token_start + 3).unwrap_or(0);
+            if record_owner_is_active(&state, context, record_offset) == Some(true)
+                && state_u8(&state, related_record_offset.wrapping_add(2)) & 1 != 0
+                && state_u16(&state, record_offset) != OP_ACTOR as u16
+            {
+                write_record_link(&mut state, record_offset, related_record_offset);
             }
         }
         if !mode1 && op == 0xC6 {
@@ -1597,7 +1710,36 @@ mod tests {
                 offset: 0,
                 record_offset: 0x0594,
                 related_record_offset: 0x0028,
+                inverted: false,
                 len: 5
+            }
+        );
+    }
+
+    #[test]
+    fn record_link_token_exposes_mode1_inversion_prefix() {
+        let cod = [
+            0xA0,
+            0x00,
+            0x00,
+            OP_RECORD_LINK,
+            0xA1,
+            0x94,
+            0x05,
+            0x28,
+            0x00,
+            0xFF,
+        ];
+
+        let toks = walk(&cod, 0, cod.len());
+        assert_eq!(
+            toks[1],
+            VmToken::RecordLink {
+                offset: 3,
+                record_offset: 0x0594,
+                related_record_offset: 0x0028,
+                inverted: true,
+                len: 6
             }
         );
     }
@@ -2502,6 +2644,84 @@ mod tests {
         assert!(trace.branch_events.iter().any(|event| {
             event.offset == condition_offset
                 && event.opcode == 0xC6
+                && event.branch_taken
+                && event.condition_passed == Some(false)
+                && event.target == Some(target)
+        }));
+    }
+
+    #[test]
+    fn execution_trace_applies_and_compares_record_links_with_context() {
+        let owner = 0x0100u16;
+        let record = owner + TALK_FIELD;
+        let related = 0x0180u16;
+        let mut var = vec![0; 0x0200];
+        state_set_u8(&mut var, owner + 2, 1);
+        state_set_u8(&mut var, related + 2, 1);
+        let context = ExecutionContext::from_object_offsets([owner, 0x0200]);
+
+        let mut cod = Vec::new();
+        cod.push(OP_RECORD_LINK);
+        cod.extend_from_slice(&record.to_le_bytes());
+        cod.extend_from_slice(&related.to_le_bytes());
+        let a0_offset = cod.len();
+        cod.push(0xA0);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        let condition_offset = cod.len();
+        cod.push(OP_RECORD_LINK);
+        cod.extend_from_slice(&record.to_le_bytes());
+        cod.extend_from_slice(&related.to_le_bytes());
+        let first_text = cod.len();
+        push_empty_text(&mut cod);
+        cod.push(0xA1);
+        let target = cod.len() as u16;
+        cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xFF);
+
+        let trace = execute_trace_with_context(&cod, &var, &context);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 2);
+        assert_eq!(trace.line_states[0].offset, first_text);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == OP_RECORD_LINK
+                && !event.branch_taken
+                && event.condition_passed == Some(true)
+        }));
+
+        let trace = execute_trace(&cod, &var);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert!(
+            trace.branch_events.iter().all(|event| {
+                event.offset != condition_offset || event.condition_passed.is_none()
+            })
+        );
+
+        state_set_u16(&mut var, record, OP_RECORD_LINK as u16);
+        state_set_u16(&mut var, record.wrapping_add(2), related);
+        let mut inverted_cod = Vec::new();
+        let a0_offset = inverted_cod.len();
+        inverted_cod.push(0xA0);
+        inverted_cod.extend_from_slice(&0u16.to_le_bytes());
+        let condition_offset = inverted_cod.len();
+        inverted_cod.push(OP_RECORD_LINK);
+        inverted_cod.push(0xA1);
+        inverted_cod.extend_from_slice(&record.to_le_bytes());
+        inverted_cod.extend_from_slice(&related.to_le_bytes());
+        push_empty_text(&mut inverted_cod);
+        let target = inverted_cod.len() as u16;
+        inverted_cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut inverted_cod);
+        inverted_cod.push(0xFF);
+
+        let trace = execute_trace_with_context(&inverted_cod, &var, &context);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 1);
+        assert_eq!(trace.line_states[0].offset, target as usize);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == OP_RECORD_LINK
                 && event.branch_taken
                 && event.condition_passed == Some(false)
                 && event.target == Some(target)

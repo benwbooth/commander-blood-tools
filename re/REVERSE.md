@@ -482,9 +482,10 @@ line-record table model and remain unexecuted.
 
 ### 0xC3 record-link handler @ file 0x6EEE — relation state (DECODED)
 
-`0xC3` consumes two u16 operands: `C3 <record:u16> <related:u16>` (5 bytes).
-In mode 0 the handler checks that both involved records are active and that the
-destination record is not already a `0xC4` actor entry. On success it writes:
+`0xC3` consumes two u16 operands with an optional mode-1 `A1` inverted-compare
+prefix: `C3 [A1?] <record:u16> <related:u16>` (5/6 bytes). In mode 0 the handler
+checks that both involved records are active and that the destination record is
+not already a `0xC4` actor entry. On success it writes:
 
     es:[record + 0] = 0x00C3
     es:[record + 2] = related
@@ -493,9 +494,11 @@ destination record is not already a `0xC4` actor entry. On success it writes:
 This is relation/presentation line-record state, not a speaker marker. Several
 real scripts emit narrator/system text after `C9` then `C3`; treating `C3` as a
 speaker would reintroduce wrong actor/background attribution. Rust exposes it as
-`VmToken::RecordLink` and the parsers deliberately do not update current speaker
-state from it. `script-disassembly.tsv` now emits it as `record_link` instead of
-leaving those bytes in raw rows.
+`VmToken::RecordLink { ..., inverted }`, applies the guarded mode-0 write when a
+DEB-derived `ExecutionContext` can resolve the owner object, and evaluates direct
+mode-1 compares with the same context. The parsers deliberately do not update
+current speaker state from it. `script-disassembly.tsv` now emits it as
+`record_link` instead of leaving those bytes in raw rows.
 
 ### 0xC5..0xC8 record-entry handlers — relation state (DECODED)
 
@@ -731,9 +734,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       words plus optional mode-1 `A1` inversion instead of reducing the token to a
       single actor id.
 - [x] Port 0xC3 record-link semantics. `src/vm.rs` exposes
-      `VmToken::RecordLink`, the disassembly manifest emits `record_link`, and
-      parser tests lock in that `C3` does not restore speaker context after a
-      `C9` clear.
+      `VmToken::RecordLink` with optional mode-1 inversion, the context-aware VM
+      applies guarded mode-0 writes and direct mode-1 compares using DEB object
+      offsets, and parser tests lock in that `C3` does not restore speaker
+      context after a `C9` clear.
 - [x] Port 0xC5..0xC8 record-entry token semantics. `src/vm.rs` exposes the
       family as `VmToken::RecordEntry` including raw operand and recovered
       stored-related slot; disassembly now emits `record_entry` rows. C6's

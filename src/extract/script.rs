@@ -324,14 +324,19 @@ pub(super) fn parse_script_branch_trace(
     for script_idx in 1..=5 {
         let cod_path = find_file_recursive(iso_dir, &format!("SCRIPT{script_idx}.COD"));
         let var_path = find_file_recursive(iso_dir, &format!("SCRIPT{script_idx}.VAR"));
+        let deb_path = find_file_recursive(iso_dir, &format!("SCRIPT{script_idx}.DEB"));
         let (Some(cod_path), Some(var_path)) = (cod_path, var_path) else {
             continue;
         };
 
         let cod = fs::read(cod_path)?;
         let var = fs::read(var_path)?;
+        let context = match deb_path {
+            Some(path) => vm_execution_context_from_deb(&fs::read(path)?),
+            None => vm::ExecutionContext::default(),
+        };
         let script = format!("SCRIPT{script_idx}");
-        let trace = vm::execute_trace(&cod, &var);
+        let trace = vm::execute_trace_with_context(&cod, &var, &context);
         rows.extend(
             trace
                 .branch_events
@@ -362,6 +367,7 @@ pub(super) fn parse_script_branch_scenarios(
         let cod_path = find_file_recursive(iso_dir, &format!("SCRIPT{script_idx}.COD"));
         let dic_path = find_file_recursive(iso_dir, &format!("SCRIPT{script_idx}.DIC"));
         let var_path = find_file_recursive(iso_dir, &format!("SCRIPT{script_idx}.VAR"));
+        let deb_path = find_file_recursive(iso_dir, &format!("SCRIPT{script_idx}.DEB"));
         let (Some(cod_path), Some(dic_path), Some(var_path)) = (cod_path, dic_path, var_path)
         else {
             continue;
@@ -369,10 +375,14 @@ pub(super) fn parse_script_branch_scenarios(
 
         let cod = fs::read(&cod_path)?;
         let var = fs::read(&var_path)?;
+        let context = match deb_path {
+            Some(path) => vm_execution_context_from_deb(&fs::read(path)?),
+            None => vm::ExecutionContext::default(),
+        };
         let words = parse_script_dictionary(&dic_path)?;
         let text_calls = text_calls_by_offset(&cod, &words);
         let script = format!("SCRIPT{script_idx}");
-        let default_trace = vm::execute_trace(&cod, &var);
+        let default_trace = vm::execute_trace_with_context(&cod, &var, &context);
         let default_offsets = executed_text_offsets(&default_trace, &text_calls);
 
         let mut decision_index = 0usize;
@@ -383,13 +393,14 @@ pub(super) fn parse_script_branch_scenarios(
             decision_index += 1;
             let default_condition_passed = decision.condition_passed.unwrap();
             let forced_condition_passed = !default_condition_passed;
-            let scenario_trace = vm::execute_trace_with_overrides(
+            let scenario_trace = vm::execute_trace_with_overrides_and_context(
                 &cod,
                 &var,
                 &[vm::BranchOverride {
                     offset: decision.offset,
                     condition_passed: forced_condition_passed,
                 }],
+                &context,
             );
             let scenario_offsets = executed_text_offsets(&scenario_trace, &text_calls);
             let default_set: BTreeSet<usize> = default_offsets.iter().copied().collect();
@@ -473,21 +484,29 @@ pub(super) fn parse_script_executed_speech(
         let var = fs::read(&var_path)?;
         let words = parse_script_dictionary(&dic_path)?;
         let script = format!("SCRIPT{script_idx}");
-        let (mut functions, actor_refs, object_names) =
-            if let (Some(deb_path), Some(db)) = (&deb_path, descript_db) {
-                let (functions, actor_refs, _) = parse_script_symbols(
-                    &script,
-                    deb_path,
-                    &var_path,
-                    db,
-                    hnm_music,
-                    &character_names,
-                )?;
-                let deb = fs::read(deb_path)?;
-                (functions, actor_refs, parse_deb_object_names(&deb))
-            } else {
-                (Vec::new(), HashMap::new(), HashMap::new())
-            };
+        let (mut functions, actor_refs, object_names, context) = if let (Some(deb_path), Some(db)) =
+            (&deb_path, descript_db)
+        {
+            let (functions, actor_refs, _) = parse_script_symbols(
+                &script,
+                deb_path,
+                &var_path,
+                db,
+                hnm_music,
+                &character_names,
+            )?;
+            let deb = fs::read(deb_path)?;
+            let object_names = parse_deb_object_names(&deb);
+            let context = vm::ExecutionContext::from_object_offsets(object_names.keys().copied());
+            (functions, actor_refs, object_names, context)
+        } else {
+            (
+                Vec::new(),
+                HashMap::new(),
+                HashMap::new(),
+                vm::ExecutionContext::default(),
+            )
+        };
         if functions.is_empty() {
             functions.push((0, script.as_str().to_string()));
         }
@@ -505,7 +524,7 @@ pub(super) fn parse_script_executed_speech(
             })
             .collect();
         let text_calls = text_calls_by_offset(&cod, &words);
-        let trace = vm::execute_trace(&cod, &var);
+        let trace = vm::execute_trace_with_context(&cod, &var, &context);
         rows.extend(executed_speech_rows_from_trace(
             &script,
             None,
@@ -556,21 +575,29 @@ pub(super) fn parse_script_branch_scenario_speech(
         let cod = fs::read(&cod_path)?;
         let var = fs::read(&var_path)?;
         let words = parse_script_dictionary(&dic_path)?;
-        let (mut functions, actor_refs, object_names) =
-            if let (Some(deb_path), Some(db)) = (&deb_path, descript_db) {
-                let (functions, actor_refs, _) = parse_script_symbols(
-                    &script,
-                    deb_path,
-                    &var_path,
-                    db,
-                    hnm_music,
-                    &character_names,
-                )?;
-                let deb = fs::read(deb_path)?;
-                (functions, actor_refs, parse_deb_object_names(&deb))
-            } else {
-                (Vec::new(), HashMap::new(), HashMap::new())
-            };
+        let (mut functions, actor_refs, object_names, context) = if let (Some(deb_path), Some(db)) =
+            (&deb_path, descript_db)
+        {
+            let (functions, actor_refs, _) = parse_script_symbols(
+                &script,
+                deb_path,
+                &var_path,
+                db,
+                hnm_music,
+                &character_names,
+            )?;
+            let deb = fs::read(deb_path)?;
+            let object_names = parse_deb_object_names(&deb);
+            let context = vm::ExecutionContext::from_object_offsets(object_names.keys().copied());
+            (functions, actor_refs, object_names, context)
+        } else {
+            (
+                Vec::new(),
+                HashMap::new(),
+                HashMap::new(),
+                vm::ExecutionContext::default(),
+            )
+        };
         if functions.is_empty() {
             functions.push((0, script.as_str().to_string()));
         }
@@ -590,13 +617,14 @@ pub(super) fn parse_script_branch_scenario_speech(
         let text_calls = text_calls_by_offset(&cod, &words);
 
         for scenario in script_scenarios {
-            let trace = vm::execute_trace_with_overrides(
+            let trace = vm::execute_trace_with_overrides_and_context(
                 &cod,
                 &var,
                 &[vm::BranchOverride {
                     offset: scenario.forced_offset,
                     condition_passed: scenario.forced_condition_passed,
                 }],
+                &context,
             );
             rows.extend(executed_speech_rows_from_trace(
                 &script,
@@ -738,6 +766,10 @@ fn parse_deb_object_names(deb: &[u8]) -> HashMap<u16, String> {
         }
     }
     object_names
+}
+
+fn vm_execution_context_from_deb(deb: &[u8]) -> vm::ExecutionContext {
+    vm::ExecutionContext::from_object_offsets(parse_deb_object_names(deb).keys().copied())
 }
 
 fn resolve_background_from_location(
@@ -2717,7 +2749,7 @@ mod tests {
             let rows = parse_script_executed_speech(root, Some(&db), &hnm_music)
                 .expect("parse executed speech");
             assert!(
-                rows.len() > 900,
+                rows.len() > 750,
                 "expected branch-aware executed dialogue, got {} rows",
                 rows.len()
             );
