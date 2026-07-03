@@ -414,6 +414,9 @@ mapping the voice-clip selection is a subsystem trace (see dead_ends.md).
   `tb.snd` clips, but the `0x67BB`→caller bridge still needs a focused trace.
 - Player internals: function entry ~0xB95x; `gs:0x0A5A` = current clip slot
   (`-1` = none → skips play). Buffer/stream state at `0x0BAB`/`0x0BAD`/`0x0BAF`.
+  Mixer loop `0xBB6D..0xBB74` performs `lodsb; add al,es:[di]; rcr al,1; stosb`,
+  i.e. unsigned PCM floor-average mixing. `src/snd.rs` ports this as
+  `snd_mix_average` / `mix_unsigned_pcm_average`.
   Character voice selection is resolved in `script.rs`: `b3==0xFF` or `0x00`
   means no voice, and `b3 in 1..=N` maps to clip `b3-1`. Do not revive the old
   `b3==0xFF -> b4` branch; `b4` is the TEXT control-flag byte, not a clip index.
@@ -641,6 +644,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       unsigned 8-bit PCM payload. Audio export, subtitle chatter, and character
       dialogue rendering now share this recovered model instead of duplicating
       local parsers.
+- [x] Port the SND average mixer primitive:
+      `src/snd.rs` implements the `0xBB6D..0xBB74` `add`+`rcr` unsigned PCM
+      mixer as `snd_mix_average` and verifies it exhaustively for all u8 sample
+      pairs against the 8086 carry/rotate behavior.
 - [x] Emit branch-scenario dialogue rows/runs:
       `script-branch-scenario-dialogue.tsv` reuses the same executed-dialogue
       resolver against each forced branch trace, and

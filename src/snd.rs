@@ -121,6 +121,23 @@ pub fn snd_sample_rate(sample_rate_code: u8) -> u32 {
     }
 }
 
+/// Mix one unsigned 8-bit SND sample into another.
+///
+/// This ports BLOODPRG.EXE `0xBB6D..0xBB74`: `lodsb; add al,es:[di];
+/// rcr al,1; stosb`. The add carry becomes bit 7 during the rotate, which is
+/// exactly `floor((source + destination) / 2)` for two u8 samples.
+pub fn snd_mix_average(source: u8, destination: u8) -> u8 {
+    ((source as u16 + destination as u16) / 2) as u8
+}
+
+pub fn mix_unsigned_pcm_average(destination: &mut [u8], source: &[u8]) -> usize {
+    let len = destination.len().min(source.len());
+    for idx in 0..len {
+        destination[idx] = snd_mix_average(source[idx], destination[idx]);
+    }
+    len
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -174,5 +191,27 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec![1]
         );
+    }
+
+    #[test]
+    fn mix_average_matches_add_then_rcr_for_every_u8_pair() {
+        for source in 0..=u8::MAX {
+            for destination in 0..=u8::MAX {
+                let sum = source as u16 + destination as u16;
+                let al_after_add = sum as u8;
+                let carry = sum > u8::MAX as u16;
+                let add_rcr = (al_after_add >> 1) | if carry { 0x80 } else { 0 };
+                assert_eq!(snd_mix_average(source, destination), add_rcr);
+            }
+        }
+    }
+
+    #[test]
+    fn mixes_pcm_prefix_and_reports_sample_count() {
+        let mut destination = [10, 200, 128, 99];
+        let mixed = mix_unsigned_pcm_average(&mut destination, &[30, 100, 255]);
+
+        assert_eq!(mixed, 3);
+        assert_eq!(destination, [20, 150, 191, 99]);
     }
 }
