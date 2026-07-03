@@ -64,8 +64,9 @@ fn resolve_runtime_backgrounds(
         }
     }
 
+    let context = vm_execution_context_from_object_names(&object_names);
     let mut out = HashMap::new();
-    for line in vm::interpret_line_states(cod, var) {
+    for line in vm::interpret_line_states_with_context(cod, var, &context) {
         let Some(loc_off) = line.location_offset.filter(|&l| l != 0) else {
             continue;
         };

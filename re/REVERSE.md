@@ -838,8 +838,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 - [x] Ported the other mode-0 mutation handlers to Rust: 0x6902 family (AE/B0)
       bitmask set/clear (`or es:[bx+di],ax` / `and es:[bx+di],~ax`) and 0x6946
       family (AD/AF/B2/B3/BA/BB/BC) direct assignment (`mov es:[bx+di],ax`
-      @0x69C2). The DOS handler's side bookkeeping for sentinel object values is
-      documented but not needed for line-location recovery.
+      @0x69C2). Rust now also mirrors the 0x6946 write-side sentinel bookkeeping
+      for fields assigned to `blood`/`0xFFFF`: helper `0x5FD8` removes an owner
+      object from the 16-word list at `DS:0x6D3E`, and helper `0x5FF6` inserts it
+      before storing `0xFFFF`.
 - [x] Ported the 0x6946 mode-1 special-object compare. Script metadata init at
       file `0x549a..0x54a1` matches the DEB object name `blood` (built-in string
       `DS:0x67BE`) and stores its object offset in `gs:0x674E`. The 0x6946 mode-1

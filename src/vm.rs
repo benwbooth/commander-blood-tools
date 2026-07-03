@@ -605,9 +605,8 @@ fn read_u16(cod: &[u8], at: usize) -> Option<u16> {
 //   * 0x6902 family (AE/B0), 5 bytes plus optional A1 prefix:
 //       set/clear a bit mask in `state[op1]` in mode 0.
 //   * 0x6946 family (AD/AF/B2/B3/BA/BB/BC), 5 bytes:
-//       direct `state[op1] = op2` in mode 0. The DOS handler also updates
-//       table-side bookkeeping for sentinel object values; that side effect is
-//       not needed for line-location recovery and is not modeled here.
+//       direct `state[op1] = op2` in mode 0, including the 16-entry sentinel
+//       list used when op2 is the `blood` object or `0xffff`.
 //   * 0xB7, 4 bytes plus optional A1 prefix:
 //       set/clear/test one high-bit-first byte flag in the state area.
 //   * 0xB8/0xB9/0xBD, 7 bytes:
@@ -644,6 +643,7 @@ const BITMASK_5: [u8; 2] = [0xAE, 0xB0];
 const ASSIGN_5: [u8; 7] = [0xAD, 0xAF, 0xB2, 0xB3, 0xBA, 0xBB, 0xBC];
 const TALK_FIELD: u16 = 0x3A;
 const LOCATION_FIELD: u16 = 24;
+const SPECIAL_OBJECT_SLOT_COUNT: usize = 16;
 
 /// A `0xA6` line's resolved runtime scene state.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
@@ -750,6 +750,10 @@ impl ExecutionContext {
             value
         }
     }
+
+    fn is_special_rhs(&self, value: u16) -> bool {
+        self.special_object_offset == Some(value)
+    }
 }
 
 /// Force one condition result while executing a concrete scenario. This is a
@@ -790,12 +794,67 @@ fn state_set_u8(state: &mut [u8], addr: u16, val: u8) {
     }
 }
 
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+struct SpecialObjectSlots {
+    slots: [u16; SPECIAL_OBJECT_SLOT_COUNT],
+}
+
+impl SpecialObjectSlots {
+    fn remove(&mut self, value: u16) -> bool {
+        if let Some(slot) = self.slots.iter_mut().find(|slot| **slot == value) {
+            *slot = 0;
+            true
+        } else {
+            false
+        }
+    }
+
+    fn insert(&mut self, value: u16) -> bool {
+        if self.slots.contains(&value) {
+            return true;
+        }
+        if let Some(slot) = self.slots.iter_mut().find(|slot| **slot == 0) {
+            *slot = value;
+            true
+        } else {
+            false
+        }
+    }
+}
+
 fn actor_object_offset_from_record(record_offset: u16) -> Option<u16> {
     record_offset.checked_sub(TALK_FIELD)
 }
 
 fn record_owner_object_offset(context: &ExecutionContext, record_offset: u16) -> Option<u16> {
     context.owner_object_offset(record_offset)
+}
+
+fn apply_assign5_mode0(
+    state: &mut [u8],
+    context: &ExecutionContext,
+    special_slots: &mut SpecialObjectSlots,
+    field_offset: u16,
+    value: u16,
+) {
+    let owner = record_owner_object_offset(context, field_offset);
+    if state_u16(state, field_offset) == 0xffff {
+        if let Some(owner) = owner {
+            special_slots.remove(owner);
+        }
+    }
+
+    let mut stored = value;
+    if value == 0xffff || context.is_special_rhs(value) {
+        if let Some(owner) = owner {
+            if !special_slots.insert(owner) {
+                return;
+            }
+            stored = 0xffff;
+        }
+    }
+
+    state_set_u16(state, field_offset, stored);
 }
 
 fn record_owner_is_active(
@@ -966,9 +1025,18 @@ fn global_pair_condition(
 /// Walk `cod`, executing assignment opcodes against a copy of `var` (the initial
 /// state image), and return the resolved scene state at every `0xA6` line.
 pub fn interpret_line_states(cod: &[u8], var: &[u8]) -> Vec<LineState> {
+    interpret_line_states_with_context(cod, var, &ExecutionContext::default())
+}
+
+pub fn interpret_line_states_with_context(
+    cod: &[u8],
+    var: &[u8],
+    context: &ExecutionContext,
+) -> Vec<LineState> {
     let mut state = var.to_vec();
     let mut actor: Option<u16> = None;
     let mut out = Vec::new();
+    let mut special_slots = SpecialObjectSlots::default();
     let mut pos = 0usize;
     let mut mode1 = false;
     let end = cod.len();
@@ -1044,7 +1112,7 @@ pub fn interpret_line_states(cod: &[u8], var: &[u8]) -> Vec<LineState> {
         if !mode1 && ASSIGN_5.contains(&op) && pos + 5 <= end {
             let op1 = read_u16(cod, pos + 1).unwrap_or(0);
             let value = read_u16(cod, pos + 3).unwrap_or(0);
-            state_set_u16(&mut state, op1, value);
+            apply_assign5_mode0(&mut state, context, &mut special_slots, op1, value);
         }
         if !mode1 && op == OP_BIT_FLAG {
             let clear = cod.get(pos + 1) == Some(&0xA1);
@@ -1145,6 +1213,7 @@ pub fn execute_trace_with_overrides_and_context(
     let mut line_states = Vec::new();
     let mut branch_events = Vec::new();
     let mut branch_stack: Vec<u16> = Vec::new();
+    let mut special_slots = SpecialObjectSlots::default();
     let mut pos = 0usize;
     let mut mode1 = false;
     let end = cod.len();
@@ -1510,7 +1579,7 @@ pub fn execute_trace_with_overrides_and_context(
         if !mode1 && ASSIGN_5.contains(&op) && token_start + 5 <= end {
             let op1 = read_u16(cod, token_start + 1).unwrap_or(0);
             let value = read_u16(cod, token_start + 3).unwrap_or(0);
-            state_set_u16(&mut state, op1, value);
+            apply_assign5_mode0(&mut state, context, &mut special_slots, op1, value);
         }
         if !mode1 && op == OP_BIT_FLAG {
             let clear = cod.get(token_start + 1) == Some(&0xA1);
@@ -2628,6 +2697,56 @@ mod tests {
                 && event.condition_passed == Some(false)
                 && event.target == Some(target)
         }));
+    }
+
+    #[test]
+    fn execution_trace_applies_special_object_mode0_assignment() {
+        let special_object = 0x0100u16;
+        let owner = 0x0200u16;
+        let field = owner + LOCATION_FIELD;
+        let var = vec![0; 0x0300];
+
+        let mut cod = Vec::new();
+        cod.push(0xAF);
+        cod.extend_from_slice(&field.to_le_bytes());
+        cod.extend_from_slice(&special_object.to_le_bytes());
+        let a0_offset = cod.len();
+        cod.push(0xA0);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        let condition_offset = cod.len();
+        cod.push(0xAF);
+        cod.extend_from_slice(&field.to_le_bytes());
+        cod.extend_from_slice(&0xffffu16.to_le_bytes());
+        let first_text = cod.len();
+        push_empty_text(&mut cod);
+        cod.push(0xA1);
+        let target = cod.len() as u16;
+        cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xFF);
+
+        let trace = execute_trace(&cod, &var);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 1);
+        assert_eq!(trace.line_states[0].offset, target as usize);
+
+        let context =
+            ExecutionContext::from_object_offsets([special_object, owner, 0x0300])
+                .with_special_object_offset(special_object);
+        let trace = execute_trace_with_context(&cod, &var, &context);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 2);
+        assert_eq!(trace.line_states[0].offset, first_text);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == 0xAF
+                && !event.branch_taken
+                && event.condition_passed == Some(true)
+        }));
+
+        let states = interpret_line_states_with_context(&cod, &var, &context);
+        assert_eq!(states.len(), 2);
+        assert_eq!(states[0].offset, first_text);
     }
 
     #[test]
