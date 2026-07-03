@@ -45,6 +45,7 @@ pub(super) fn build_subtitle_sfx_track(
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct SubtitleChatterEvent {
     start_time: f64,
+    active_line_id: Option<u16>,
 }
 
 fn subtitle_chatter_events(cues: &[SubtitleCue]) -> Vec<SubtitleChatterEvent> {
@@ -62,6 +63,7 @@ fn subtitle_chatter_events(cues: &[SubtitleCue]) -> Vec<SubtitleChatterEvent> {
             let cue_start = cue.tick as f64 / 10.0;
             Some(SubtitleChatterEvent {
                 start_time: cue_start + reveal_chars as f64 / SUBTITLE_CHARS_PER_SEC,
+                active_line_id: cue.active_line_id,
             })
         })
         .collect()
@@ -94,9 +96,13 @@ mod tests {
     use super::*;
 
     fn cue(tick: u16, text: &str) -> SubtitleCue {
+        cue_with_active_line(tick, None, text)
+    }
+
+    fn cue_with_active_line(tick: u16, active_line_id: Option<u16>, text: &str) -> SubtitleCue {
         SubtitleCue {
             tick,
-            active_line_id: None,
+            active_line_id,
             text: text.to_string(),
         }
     }
@@ -120,6 +126,25 @@ mod tests {
         assert_eq!(events.len(), 2);
         assert!((events[0].start_time - 1.25).abs() < f64::EPSILON);
         assert!((events[1].start_time - (2.0 + 2.0 / SUBTITLE_CHARS_PER_SEC)).abs() < f64::EPSILON);
+    }
+
+    #[test]
+    fn chatter_events_keep_active_line_ids() {
+        let events = subtitle_chatter_events(&[
+            cue_with_active_line(0, Some(vm::text_selector_active_line_id(0x01)), "a"),
+            cue_with_active_line(10, Some(vm::text_selector_active_line_id(0xff)), "b"),
+        ]);
+
+        assert_eq!(
+            events
+                .iter()
+                .map(|event| event.active_line_id)
+                .collect::<Vec<_>>(),
+            vec![
+                Some(vm::text_selector_active_line_id(0x01)),
+                Some(vm::text_selector_active_line_id(0xff)),
+            ]
+        );
     }
 
     #[test]

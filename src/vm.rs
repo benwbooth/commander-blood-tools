@@ -2610,7 +2610,9 @@ pub enum SceneEvent {
         flags: u8,
     },
     /// Subtitle chatter event from the dialogue display state machine (tb.snd).
-    PlayChatter,
+    PlayChatter {
+        active_line_id: u16,
+    },
     Clear,
 }
 
@@ -2672,7 +2674,9 @@ pub fn emit_scene_events(lines: &[LineInput]) -> Vec<SceneEvent> {
             active_line_id: line.active_line_id,
             flags: line.flags_b4,
         });
-        events.push(SceneEvent::PlayChatter);
+        events.push(SceneEvent::PlayChatter {
+            active_line_id: line.active_line_id,
+        });
     }
     events.push(SceneEvent::Clear);
     events
@@ -5390,6 +5394,11 @@ mod tests {
                 active_line_id,
                 ..
             } if text == "there" && *active_line_id == text_selector_active_line_id(0xFF)
+        )));
+        assert!(ev.iter().any(|e| matches!(
+            e,
+            SceneEvent::PlayChatter { active_line_id }
+                if *active_line_id == text_selector_active_line_id(0xFF)
         )));
         assert_eq!(
             ev.iter()
