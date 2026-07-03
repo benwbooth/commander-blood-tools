@@ -733,6 +733,16 @@ field for kind `0x10`, adds that to named object `arche` (`DS:0x6752`), and
 writes `{type, related, 0}` there. It then clears `DS:0x6768`, `0x676A`, and
 `0x676C`. Rust ports this as `post_update_deferred_record_write()`.
 
+The kind-2 branch at `0x584C` is a presentation control-flow handoff. It only
+calls `vm_control_flow` when presentation is active, `DS:0x1FB2`, `0x27D7`, and
+`0x67B7` are clear, `DS:0x675E` points at a C4 record, the current
+selector-`0x13` record is C4 and points at `blood` (`DS:0x674E`), the owner
+flags word does not have bit `0x8000`, and selector `0x02` on the owner yields a
+nonzero target. Rust now captures that as
+`post_update_kind2_presentation_handoff_target()`. It returns the handoff target
+but does not yet apply the `vm_control_flow` PC mutation inside execution
+traces.
+
 The main loop at `0x108E` does not consume a pending `D2` profile request until
 the presentation state is idle. The exact gate is:
 
@@ -995,9 +1005,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       C4 setup paths needed before enabling the A6 gate in exports. The
       `0x5D8F..0x5E1F` C4 reciprocal post-update write, the `0x67B6` pair-write
       guard, the active-object scan subset, the kind-1 presentation start/stop
-      globals, and the deferred record drain are ported; the kind-2
-      control-flow handoff, external render/audio calls, and trace-state wiring
-      remain pending.
+      globals, the deferred record drain, and the kind-2 handoff predicate are
+      ported; applying the kind-2 `vm_control_flow` target, external
+      render/audio calls, and trace-state wiring remain pending.
 - [x] Map the VM named-object startup globals from `0x5486`: Rust
       `ExecutionContext` now carries the built-in DEB offsets for `blood`, `orxx`,
       `arche`, `Honk`, `menu`, `Ark`, `Scruter_Jo`, and kind-5 `vbio`.

@@ -726,6 +726,7 @@ const ASSIGN_5: [u8; 7] = [0xAD, 0xAF, 0xB2, 0xB3, 0xBA, 0xBB, 0xBC];
 const TALK_FIELD: u16 = 0x3A;
 const LOCATION_FIELD: u16 = 24;
 const SPECIAL_OBJECT_SLOT_COUNT: usize = 16;
+const VM_FIELD_OFFSET_SELECTOR_PRESENTATION_HANDOFF: u8 = 0x02;
 const VM_FIELD_OFFSET_SELECTOR_C2: u8 = 0x11;
 const VM_FIELD_OFFSET_SELECTOR_C9_RELATED: u8 = 0x13;
 const C2_ACTIVE_LINE_KIND2: u16 = 0x27;
@@ -739,6 +740,7 @@ const C9_PRESENTATION_GATE_A: u16 = 0x252A;
 const C9_PRESENTATION_GATE_B: u16 = 0x2531;
 const C4_POST_UPDATE_SENTINEL: u16 = 0xFFFF;
 const VM_PENDING_RESOURCE_PROFILE: u16 = 0x6780;
+const VM_PRESENTATION_PRIMARY_C4_RECORD: u16 = 0x675E;
 const VM_PRESENTATION_ACTIVE: u16 = 0x67AC;
 const VM_PRESENTATION_RELATED_FLAG20: u16 = 0x67AF;
 const VM_PRESENTATION_DEFER_A: u16 = 0x67B0;
@@ -1341,6 +1343,43 @@ fn post_update_kind1_presentation_state(
     state_set_u8(state, VM_PRESENTATION_START_LOCK, 0);
     state_set_u8(state, VM_PRESENTATION_DESCRIPTOR_PENDING, 0);
     PresentationKind1Update::Stopped
+}
+
+fn post_update_kind2_presentation_handoff_target(
+    state: &[u8],
+    context: &ExecutionContext,
+    owner_offset: u16,
+    record_offset: u16,
+) -> Option<u16> {
+    if state_u8(state, VM_PRESENTATION_ACTIVE) & 1 == 0
+        || state_u8(state, C2_PRESENTATION_GATE) & 1 != 0
+        || state_u8(state, VM_PRESENTATION_INPUT_GATE_G) & 1 != 0
+        || state_u8(state, VM_PRESENTATION_START_LOCK) & 1 != 0
+    {
+        return None;
+    }
+
+    let primary_record = state_u16(state, VM_PRESENTATION_PRIMARY_C4_RECORD);
+    if state_u16(state, primary_record) != OP_ACTOR as u16 {
+        return None;
+    }
+    if state_u16(state, record_offset) != OP_ACTOR as u16 {
+        return None;
+    }
+    if Some(state_u16(state, record_offset.wrapping_add(2))) != context.special_object_offset {
+        return None;
+    }
+    if state_u16(state, owner_offset.wrapping_add(2)) & TEXT_LINE_ALREADY_SHOWN_FLAG != 0 {
+        return None;
+    }
+
+    let owner_kind = state_u16(state, owner_offset);
+    let target_offset = owner_offset.wrapping_add(vm_field_offset(
+        VM_FIELD_OFFSET_SELECTOR_PRESENTATION_HANDOFF,
+        owner_kind,
+    )?);
+    let target = state_u16(state, target_offset);
+    (target != 0).then_some(target)
 }
 
 fn post_update_deferred_record_write(
@@ -3456,6 +3495,92 @@ mod tests {
         assert_eq!(state_u16(&var, VM_PRESENTATION_DEFERRED_RECORD_TYPE), 0);
         assert_eq!(state_u16(&var, VM_PRESENTATION_DEFERRED_RECORD_RELATED), 0);
         assert_eq!(state_u16(&var, VM_PRESENTATION_DEFERRED_RECORD_AUX), 0);
+    }
+
+    #[test]
+    fn post_update_kind2_handoff_target_matches_binary_gate() {
+        let owner = 0x0100u16;
+        let primary_record = 0x0200u16;
+        let blood = 0x0300u16;
+        let record = owner.wrapping_add(
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, 2).expect("kind 2 C4 field"),
+        );
+        let target_field = owner.wrapping_add(
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_PRESENTATION_HANDOFF, 2)
+                .expect("kind 2 handoff field"),
+        );
+
+        let mut var = vec![0; 0x6800];
+        state_set_u16(&mut var, owner, 2);
+        state_set_u8(&mut var, owner.wrapping_add(2), 1);
+        state_set_u8(&mut var, VM_PRESENTATION_ACTIVE, 1);
+        state_set_u16(&mut var, VM_PRESENTATION_PRIMARY_C4_RECORD, primary_record);
+        state_set_u16(&mut var, primary_record, OP_ACTOR as u16);
+        state_set_u16(&mut var, record, OP_ACTOR as u16);
+        state_set_u16(&mut var, record.wrapping_add(2), blood);
+        state_set_u16(&mut var, target_field, 0x1234);
+
+        let context = ExecutionContext::from_object_offsets([owner, blood])
+            .with_special_object_offset(blood);
+        assert_eq!(
+            post_update_kind2_presentation_handoff_target(&var, &context, owner, record),
+            Some(0x1234)
+        );
+
+        state_set_u8(&mut var, VM_PRESENTATION_START_LOCK, 1);
+        assert_eq!(
+            post_update_kind2_presentation_handoff_target(&var, &context, owner, record),
+            None
+        );
+        state_set_u8(&mut var, VM_PRESENTATION_START_LOCK, 0);
+        state_set_u16(
+            &mut var,
+            owner.wrapping_add(2),
+            TEXT_LINE_ALREADY_SHOWN_FLAG | 1,
+        );
+        assert_eq!(
+            post_update_kind2_presentation_handoff_target(&var, &context, owner, record),
+            None
+        );
+    }
+
+    #[test]
+    fn post_update_kind2_handoff_rejects_wrong_c4_pair() {
+        let owner = 0x0100u16;
+        let primary_record = 0x0200u16;
+        let blood = 0x0300u16;
+        let other = 0x0400u16;
+        let record = owner.wrapping_add(
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, 2).expect("kind 2 C4 field"),
+        );
+        let target_field = owner.wrapping_add(
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_PRESENTATION_HANDOFF, 2)
+                .expect("kind 2 handoff field"),
+        );
+
+        let mut var = vec![0; 0x6800];
+        state_set_u16(&mut var, owner, 2);
+        state_set_u8(&mut var, owner.wrapping_add(2), 1);
+        state_set_u8(&mut var, VM_PRESENTATION_ACTIVE, 1);
+        state_set_u16(&mut var, VM_PRESENTATION_PRIMARY_C4_RECORD, primary_record);
+        state_set_u16(&mut var, primary_record, OP_RECORD_LINK as u16);
+        state_set_u16(&mut var, record, OP_ACTOR as u16);
+        state_set_u16(&mut var, record.wrapping_add(2), blood);
+        state_set_u16(&mut var, target_field, 0x1234);
+
+        let context = ExecutionContext::from_object_offsets([owner, blood])
+            .with_special_object_offset(blood);
+        assert_eq!(
+            post_update_kind2_presentation_handoff_target(&var, &context, owner, record),
+            None
+        );
+
+        state_set_u16(&mut var, primary_record, OP_ACTOR as u16);
+        state_set_u16(&mut var, record.wrapping_add(2), other);
+        assert_eq!(
+            post_update_kind2_presentation_handoff_target(&var, &context, owner, record),
+            None
+        );
     }
 
     #[test]
