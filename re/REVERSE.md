@@ -861,15 +861,30 @@ Named targets that are already tied to code behavior:
   primary/secondary framebuffers.
 - `0x0299:0x0F3E` (`planar_framebuffer_copy`): copies planar/interleaved image
   data into primary framebuffer `DS:0x5219`.
+- `0x0299:0x1140` (`sprite_slot_resource_frame_load`): resolves a resource frame
+  through `0x04B9:0x0190` and loads it into the 32-byte sprite slot selected by
+  `AX` in the `GS:0x6212` table.
 - `0x0299:0x11BE` (`sprite_slot_frame_load`): loads one frame-table entry into
   the 32-byte presentation sprite slot selected by `AX`; four direct callers.
 - `0x0299:0x1241` (`sprite_slot_state_update`): updates one presentation sprite
   slot state; 33 direct callers, including the VM post-update presentation clear
   path at `0x59DC/0x59E4`.
+- `0x0299:0x127D` (`sprite_slot_position_update`): updates sprite slot
+  screen-position words `+0x08/+0x0A` and sets the dirty bit when either changes.
+- `0x0299:0x12B0` (`sprite_slot_range_mark_dirty`): marks an inclusive `AX..BX`
+  sprite-slot range dirty.
+- `0x0299:0x133D` (`sprite_slot_extent_update`): updates slot extent/source words
+  `+0x0C/+0x0E` and marks the slot dirty/source-changed when needed.
+- `0x0299:0x1467` (`sprite_slot_commit_dirty_range`): commits dirty slot current
+  geometry into previous-geometry fields across an `AX..BX` range; also handles
+  the `GS:0x5249` global clip snapshot into the dirty-rect list at `GS:0x6612`.
+- `0x0299:0x210D` (`dirty_rects_copy_secondary_to_primary`): copies dirty
+  rectangles described at `ES:DI` from secondary framebuffer `GS:0x5229` back
+  into primary framebuffer `GS:0x5221`.
 
 This is still a caller map, not a full renderer decompilation. It removes the
 guesswork about which external render hooks the VM/presentation state machine
-uses, and leaves the next RE step as naming the remaining 11 behavior gaps: 8
+uses, and leaves the next RE step as naming the remaining 5 behavior gaps: 2
 still-unclassified target offsets plus 3 provisionally named sprite/object
 targets whose semantics need deeper porting.
 
@@ -1326,9 +1341,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       across 32 target offsets. Named targets include the text renderers,
       fixed 8x8/UI font helpers, planar text/line primitives, VGA DAC palette
       load/clear callbacks, framebuffer fill/copy helpers, subtitle reveal
-      wrapper, sprite-slot frame load, and sprite-slot state update; the
-      remaining target semantics stay open RE work instead of being guessed by
-      the exporter.
+      wrapper, sprite-slot frame/position/extent/dirty-range callbacks, and
+      dirty-rectangle copyback; the remaining target semantics stay open RE work
+      instead of being guessed by the exporter.
 - [x] Port recovered framebuffer fill/copy primitives:
       `src/extract/render.rs` now has tested Rust helpers for the clipped
       rectangle fill, scene-band fill, and full 320x200 framebuffer copy shapes

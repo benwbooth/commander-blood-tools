@@ -54,6 +54,12 @@ pub const RENDER_SECONDARY_FRAMEBUFFER_COPY_OFFSET: u16 = 0x0ecb;
 pub const RENDER_PLANAR_COPY_OFFSET: u16 = 0x0f3e;
 pub const RENDER_SPRITE_SLOT_LOAD_OFFSET: u16 = 0x11be;
 pub const RENDER_SPRITE_SLOT_STATE_OFFSET: u16 = 0x1241;
+pub const RENDER_SPRITE_SLOT_RESOURCE_LOAD_OFFSET: u16 = 0x1140;
+pub const RENDER_SPRITE_SLOT_POSITION_OFFSET: u16 = 0x127d;
+pub const RENDER_SPRITE_SLOT_RANGE_DIRTY_OFFSET: u16 = 0x12b0;
+pub const RENDER_SPRITE_SLOT_EXTENT_OFFSET: u16 = 0x133d;
+pub const RENDER_SPRITE_SLOT_COMMIT_RANGE_OFFSET: u16 = 0x1467;
+pub const RENDER_DIRTY_RECTS_COPY_OFFSET: u16 = 0x210d;
 pub const NAV_CODE_SEGMENT: u16 = 0x071e;
 pub const NAV_ACTOR_SUBDISPATCH_TABLE_FILE_OFFSET: usize = 0x007eb4;
 pub const NAV_ACTOR_SUBDISPATCH_ENTRY_COUNT: usize = 6;
@@ -942,8 +948,14 @@ fn render_target_name(target_offset: u16) -> &'static str {
         RENDER_FRAMEBUFFER_COPY_OFFSET => "framebuffer_copy_full",
         RENDER_SECONDARY_FRAMEBUFFER_COPY_OFFSET => "secondary_framebuffer_copy_full",
         RENDER_PLANAR_COPY_OFFSET => "planar_framebuffer_copy",
+        RENDER_SPRITE_SLOT_RESOURCE_LOAD_OFFSET => "sprite_slot_resource_frame_load",
         RENDER_SPRITE_SLOT_LOAD_OFFSET => "sprite_slot_frame_load",
         RENDER_SPRITE_SLOT_STATE_OFFSET => "sprite_slot_state_update",
+        RENDER_SPRITE_SLOT_POSITION_OFFSET => "sprite_slot_position_update",
+        RENDER_SPRITE_SLOT_RANGE_DIRTY_OFFSET => "sprite_slot_range_mark_dirty",
+        RENDER_SPRITE_SLOT_EXTENT_OFFSET => "sprite_slot_extent_update",
+        RENDER_SPRITE_SLOT_COMMIT_RANGE_OFFSET => "sprite_slot_commit_dirty_range",
+        RENDER_DIRTY_RECTS_COPY_OFFSET => "dirty_rects_copy_secondary_to_primary",
         0x1037 => "framebuffer_object_init",
         0x14e1 => "sprite_range_render",
         0x040e => "sprite_blit_or_copy",
@@ -1002,11 +1014,29 @@ fn render_call_site_note(file_offset: usize, target_offset: u16) -> &'static str
         (0x009474, RENDER_PLANAR_VERTICAL_LINE_OFFSET) => {
             "dialogue updater draws a clipped vertical line from the line command table"
         }
+        (0x008d76 | 0x008d96 | 0x008df5 | 0x0095e7, RENDER_SPRITE_SLOT_RESOURCE_LOAD_OFFSET) => {
+            "loads a resolver-backed resource frame into a 32-byte sprite slot at GS:0x6212"
+        }
         (0x005990 | 0x0070dd | 0x007e7d | 0x0090d4, RENDER_SPRITE_SLOT_LOAD_OFFSET) => {
             "loads one sprite/frame table entry into a presentation slot"
         }
         (0x0059dc | 0x0059e4, RENDER_SPRITE_SLOT_STATE_OFFSET) => {
             "VM post-update presentation clear resets sprite slot state"
+        }
+        (0x00929c | 0x009cef, RENDER_SPRITE_SLOT_POSITION_OFFSET) => {
+            "updates sprite slot screen position words +0x08/+0x0A and marks the slot dirty on change"
+        }
+        (0x008ad4, RENDER_SPRITE_SLOT_RANGE_DIRTY_OFFSET) => {
+            "marks a contiguous sprite-slot range dirty by clearing active bits and setting the dirty bit"
+        }
+        (0x00926d | 0x009cd6, RENDER_SPRITE_SLOT_EXTENT_OFFSET) => {
+            "updates sprite slot source extent words +0x0C/+0x0E and marks the slot dirty on change"
+        }
+        (0x007849 | 0x009575 | 0x00b1d0, RENDER_SPRITE_SLOT_COMMIT_RANGE_OFFSET) => {
+            "commits dirty sprite-slot geometry into the previous-geometry fields before range rendering/copyback"
+        }
+        (0x00787f | 0x008ea0 | 0x00b1d8, RENDER_DIRTY_RECTS_COPY_OFFSET) => {
+            "copies dirty rectangles from secondary framebuffer GS:0x5229 back into primary framebuffer GS:0x5221"
         }
         (_, RENDER_STRING_OFFSET) => "dialogue/UI text render call",
         (_, RENDER_SMALL_TEXT_OFFSET) => "small 5-row text render call",
@@ -1024,7 +1054,25 @@ fn render_call_site_note(file_offset: usize, target_offset: u16) -> &'static str
         (_, RENDER_PLANAR_COPY_OFFSET) => {
             "copies planar/interleaved image data into the primary framebuffer"
         }
+        (_, RENDER_SPRITE_SLOT_RESOURCE_LOAD_OFFSET) => {
+            "loads a resource-resolved frame into one 32-byte presentation sprite slot"
+        }
         (_, RENDER_SPRITE_SLOT_STATE_OFFSET) => "updates one presentation sprite slot state",
+        (_, RENDER_SPRITE_SLOT_POSITION_OFFSET) => {
+            "updates one presentation sprite slot position and marks it dirty on change"
+        }
+        (_, RENDER_SPRITE_SLOT_RANGE_DIRTY_OFFSET) => {
+            "marks a contiguous presentation sprite-slot range dirty"
+        }
+        (_, RENDER_SPRITE_SLOT_EXTENT_OFFSET) => {
+            "updates one presentation sprite slot extent and marks it dirty on change"
+        }
+        (_, RENDER_SPRITE_SLOT_COMMIT_RANGE_OFFSET) => {
+            "commits dirty presentation sprite-slot geometry for a slot range"
+        }
+        (_, RENDER_DIRTY_RECTS_COPY_OFFSET) => {
+            "copies dirty rectangles from the secondary framebuffer into the primary framebuffer"
+        }
         (_, RENDER_VGA_DAC_PALETTE_LOAD_OFFSET) => {
             "loads 0x300 palette bytes from DS:SI into VGA DAC ports 0x3C8/0x3C9"
         }
@@ -1655,6 +1703,15 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         comment: "copies planar/interleaved source data into primary framebuffer DS:0x5219",
     },
     BinarySymbol {
+        name: "sprite_slot_resource_frame_load",
+        file_offset: 0x0040d0,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_SPRITE_SLOT_RESOURCE_LOAD_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "resolves a resource frame through 0x04B9:0x0190 and loads it into the 32-byte sprite slot selected by AX",
+    },
+    BinarySymbol {
         name: "sprite_slot_frame_load",
         file_offset: 0x00414e,
         segment: Some(RENDER_SEGMENT),
@@ -1671,6 +1728,51 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         ds_offset: None,
         kind: "presentation",
         comment: "updates the state word for the 32-byte presentation sprite slot selected by AX",
+    },
+    BinarySymbol {
+        name: "sprite_slot_position_update",
+        file_offset: 0x00420d,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_SPRITE_SLOT_POSITION_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "updates sprite slot +0x08/+0x0A screen position words and sets the dirty bit when they change",
+    },
+    BinarySymbol {
+        name: "sprite_slot_range_mark_dirty",
+        file_offset: 0x004240,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_SPRITE_SLOT_RANGE_DIRTY_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "marks a contiguous range of 32-byte sprite slots dirty in the GS:0x6212 slot table",
+    },
+    BinarySymbol {
+        name: "sprite_slot_extent_update",
+        file_offset: 0x0042cd,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_SPRITE_SLOT_EXTENT_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "updates sprite slot +0x0C/+0x0E extent words and sets dirty/source-change bits when they change",
+    },
+    BinarySymbol {
+        name: "sprite_slot_commit_dirty_range",
+        file_offset: 0x0043f7,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_SPRITE_SLOT_COMMIT_RANGE_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "commits dirty sprite slot current geometry into previous-geometry fields across an AX..BX range",
+    },
+    BinarySymbol {
+        name: "dirty_rects_copy_secondary_to_primary",
+        file_offset: 0x00509d,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_DIRTY_RECTS_COPY_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "copies dirty rectangles described at ES:DI from secondary framebuffer GS:0x5229 to primary framebuffer GS:0x5221",
     },
     BinarySymbol {
         name: "dlg_line_activate",
@@ -2343,7 +2445,28 @@ mod tests {
             target_counts.get(&RENDER_SPRITE_SLOT_STATE_OFFSET),
             Some(&33)
         );
+        assert_eq!(
+            target_counts.get(&RENDER_SPRITE_SLOT_RESOURCE_LOAD_OFFSET),
+            Some(&4)
+        );
         assert_eq!(target_counts.get(&RENDER_SPRITE_SLOT_LOAD_OFFSET), Some(&4));
+        assert_eq!(
+            target_counts.get(&RENDER_SPRITE_SLOT_POSITION_OFFSET),
+            Some(&2)
+        );
+        assert_eq!(
+            target_counts.get(&RENDER_SPRITE_SLOT_RANGE_DIRTY_OFFSET),
+            Some(&1)
+        );
+        assert_eq!(
+            target_counts.get(&RENDER_SPRITE_SLOT_EXTENT_OFFSET),
+            Some(&2)
+        );
+        assert_eq!(
+            target_counts.get(&RENDER_SPRITE_SLOT_COMMIT_RANGE_OFFSET),
+            Some(&3)
+        );
+        assert_eq!(target_counts.get(&RENDER_DIRTY_RECTS_COPY_OFFSET), Some(&3));
         assert_eq!(
             target_counts.get(&RENDER_VGA_DAC_PALETTE_LOAD_OFFSET),
             Some(&2)
@@ -2453,6 +2576,30 @@ mod tests {
             target_name(RENDER_PLANAR_COPY_OFFSET),
             "planar_framebuffer_copy"
         );
+        assert_eq!(
+            target_name(RENDER_SPRITE_SLOT_RESOURCE_LOAD_OFFSET),
+            "sprite_slot_resource_frame_load"
+        );
+        assert_eq!(
+            target_name(RENDER_SPRITE_SLOT_POSITION_OFFSET),
+            "sprite_slot_position_update"
+        );
+        assert_eq!(
+            target_name(RENDER_SPRITE_SLOT_RANGE_DIRTY_OFFSET),
+            "sprite_slot_range_mark_dirty"
+        );
+        assert_eq!(
+            target_name(RENDER_SPRITE_SLOT_EXTENT_OFFSET),
+            "sprite_slot_extent_update"
+        );
+        assert_eq!(
+            target_name(RENDER_SPRITE_SLOT_COMMIT_RANGE_OFFSET),
+            "sprite_slot_commit_dirty_range"
+        );
+        assert_eq!(
+            target_name(RENDER_DIRTY_RECTS_COPY_OFFSET),
+            "dirty_rects_copy_secondary_to_primary"
+        );
 
         let palette_load = sites
             .iter()
@@ -2527,6 +2674,62 @@ mod tests {
         assert_eq!(rect_outline.target_offset, RENDER_RECT_OUTLINE_OFFSET);
         assert_eq!(rect_outline.ax_value, Some(0xef));
         assert_eq!(rect_outline.target_name, "framebuffer_rect_outline");
+
+        let resource_load = sites
+            .iter()
+            .find(|site| site.file_offset == 0x008d96)
+            .expect("resource-backed sprite slot load call");
+        assert_eq!(
+            resource_load.target_offset,
+            RENDER_SPRITE_SLOT_RESOURCE_LOAD_OFFSET
+        );
+        assert_eq!(resource_load.ax_value, Some(5));
+        assert!(resource_load.note.contains("GS:0x6212"));
+
+        let slot_position = sites
+            .iter()
+            .find(|site| site.file_offset == 0x009cef)
+            .expect("sprite slot position update call");
+        assert_eq!(
+            slot_position.target_offset,
+            RENDER_SPRITE_SLOT_POSITION_OFFSET
+        );
+        assert!(slot_position.note.contains("+0x08/+0x0A"));
+
+        let slot_range_dirty = sites
+            .iter()
+            .find(|site| site.file_offset == 0x008ad4)
+            .expect("sprite slot range dirty call");
+        assert_eq!(
+            slot_range_dirty.target_offset,
+            RENDER_SPRITE_SLOT_RANGE_DIRTY_OFFSET
+        );
+        assert_eq!(slot_range_dirty.ax_value, Some(21));
+
+        let slot_extent = sites
+            .iter()
+            .find(|site| site.file_offset == 0x00926d)
+            .expect("sprite slot extent update call");
+        assert_eq!(slot_extent.target_offset, RENDER_SPRITE_SLOT_EXTENT_OFFSET);
+        assert_eq!(slot_extent.ax_value, Some(0));
+        assert!(slot_extent.note.contains("+0x0C/+0x0E"));
+
+        let slot_commit = sites
+            .iter()
+            .find(|site| site.file_offset == 0x009575)
+            .expect("sprite slot commit range call");
+        assert_eq!(
+            slot_commit.target_offset,
+            RENDER_SPRITE_SLOT_COMMIT_RANGE_OFFSET
+        );
+        assert_eq!(slot_commit.ax_value, Some(21));
+
+        let dirty_copy = sites
+            .iter()
+            .find(|site| site.file_offset == 0x00b1d8)
+            .expect("dirty rect copyback call");
+        assert_eq!(dirty_copy.target_offset, RENDER_DIRTY_RECTS_COPY_OFFSET);
+        assert!(dirty_copy.note.contains("GS:0x5229"));
 
         let subtitle_reveal = sites
             .iter()
