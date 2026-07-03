@@ -323,10 +323,10 @@ struct looks larger than 0x18, may be a different/extended table).
 | A0 | 0x6559 | | AC | 0x685C | | C2 | 0x6E34 |
 | A1 | 0x6572 | | AD/AF/B2/B3/BA-BC | 0x6946 | | **C3** | **0x6EEE** (record link) |
 | A2 | 0x6588 | | AE/B0 | 0x6902 | | **C4** | **0x6C7E** (actor/record op) |
-| A3 | 0x6596 (collect words) | | B1/B4-B6/BE-C0 | 0x6863 | | C5 | 0x6D18 |
-| A4 | 0x65DB | | B7 | 0x6AA7 | | C6 | 0x6D80 |
-| A5 | 0x65EB | | B8/B9/BD | 0x6B06 | | C7 | 0x6DCF |
-| **A6** | **0x660C** (TEXT) | | C1 | 0x6B4C | | C8 | 0x6F62 |
+| A3 | 0x6596 (collect words) | | B1/B4-B6/BE-C0 | 0x6863 | | **C5** | **0x6D18** (record entry) |
+| A4 | 0x65DB | | B7 | 0x6AA7 | | **C6** | **0x6D80** (record entry) |
+| A5 | 0x65EB | | B8/B9/BD | 0x6B06 | | **C7** | **0x6DCF** (record entry) |
+| **A6** | **0x660C** (TEXT) | | C1 | 0x6B4C | | **C8** | **0x6F62** (record entry) |
 | A7 | 0x67BA | | CA | 0x64E5 | | **C9** | **0x6FB9** (record clear) |
 | A8 | 0x67C8 | | CB | 0x6510 | | CD | 0x69C7 |
 | A9 | 0x6830 | | CC | 0x64CE | | CE–D2 | 0x6494–0x64B8 (1–2 byte ops) |
@@ -390,6 +390,26 @@ speaker would reintroduce wrong actor/background attribution. Rust exposes it as
 `VmToken::RecordLink` and the parsers deliberately do not update current speaker
 state from it. `script-disassembly.tsv` now emits it as `record_link` instead of
 leaving those bytes in raw rows.
+
+### 0xC5..0xC8 record-entry handlers — relation state (DECODED)
+
+`0xC5`, `0xC6`, `0xC7`, and `0xC8` are 5-byte line-record operations with the
+same token shape: `<opcode> <record:u16> <operand:u16>`. Their mode-0 success
+paths write a 6-byte record entry:
+
+| op | handler | stored entry | guard summary |
+|----|---------|--------------|---------------|
+| C5 | 0x6D18 | `{0x00C5, operand, 0}` | operand record active and type `0x0200`; destination empty |
+| C6 | 0x6D80 | `{0x00C6, operand, 0}` | unconditional destination write in mode 0 |
+| C7 | 0x6DCF | `{0x00C7, operand, 0}` | operand record active; destination empty or currently `0xC4` |
+| C8 | 0x6F62 | `{0x00C8, 0, 0}` | destination empty; second token word is consumed but not stored |
+
+Current shipped-script VM walks find two real `C6` tokens (SCRIPT3/SCRIPT4) and
+no true `C5`/`C7`/`C8` opcode positions; raw byte scans see many false positives
+inside operands and text data. Rust exposes this family as
+`VmToken::RecordEntry { entry_opcode, record_offset, operand,
+stored_related_offset, aux_word }`, and `script-disassembly.tsv` emits
+`record_entry` rows for future line-record modeling.
 
 ### 0xC4 actor/record handler @ file 0x6C7E — operands (DECODED)
 
@@ -571,6 +591,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `VmToken::RecordLink`, the disassembly manifest emits `record_link`, and
       parser tests lock in that `C3` does not restore speaker context after a
       `C9` clear.
+- [x] Port 0xC5..0xC8 record-entry token semantics. `src/vm.rs` exposes the
+      family as `VmToken::RecordEntry` including raw operand and recovered
+      stored-related slot; disassembly now emits `record_entry` rows.
 - [x] Port 0xC9 record-clear speaker lifetime semantics. `src/vm.rs` exposes
       `VmToken::RecordClear`, the bounded interpreter clears the active actor
       when its talk-field record is cleared, and the script parsers stop carrying

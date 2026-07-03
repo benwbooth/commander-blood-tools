@@ -973,6 +973,31 @@ pub(super) fn disassemble_function(
             continue;
         }
 
+        if pos + 4 < function_end && vm::is_record_entry_opcode(cod[pos]) {
+            push_raw_disassembly(script, function_name, cod, &mut rows, raw_start.take(), pos);
+            let opcode = cod[pos];
+            let addr = u16::from_le_bytes([cod[pos + 1], cod[pos + 2]]);
+            let operand = u16::from_le_bytes([cod[pos + 3], cod[pos + 4]]);
+            let stored_related = vm::record_entry_stored_related_offset(opcode, operand);
+            rows.push(ScriptDisassemblyLine {
+                script: script.to_string(),
+                function_name: function_name.to_string(),
+                offset: pos,
+                len: 5,
+                opcode: format!("{opcode:02x}"),
+                mnemonic: "record_entry".to_string(),
+                operands: format!(
+                    "kind=0x{opcode:02x} ref=0x{addr:04x} operand=0x{operand:04x} stored_related=0x{stored_related:04x} aux=0x0000"
+                ),
+                actor_record: current_actor
+                    .as_ref()
+                    .map(|actor| actor.record_name.clone()),
+                text: None,
+            });
+            pos += 5;
+            continue;
+        }
+
         if pos + 2 < function_end && cod[pos] == 0xc9 {
             push_raw_disassembly(script, function_name, cod, &mut rows, raw_start.take(), pos);
             let addr = u16::from_le_bytes([cod[pos + 1], cod[pos + 2]]);
@@ -2919,7 +2944,8 @@ mod tests {
         words.insert(0x0001, "hello".to_string());
         let cod = [
             0x01, 0x02, 0xc4, 0x3a, 0x00, 0x00, 0x00, 0xa6, 0x34, 0x12, 0x01, 0x00, 0x80, 0x01,
-            0x00, 0x00, 0x00, 0xc3, 0x3a, 0x00, 0x28, 0x00, 0xc9, 0x3a, 0x00, 0x03,
+            0x00, 0x00, 0x00, 0xc3, 0x3a, 0x00, 0x28, 0x00, 0xc6, 0x8e, 0x10, 0x52, 0x10, 0xc9,
+            0x3a, 0x00, 0x03,
         ];
         let mut actors = HashMap::new();
         actors.insert(
@@ -2944,6 +2970,9 @@ mod tests {
         assert!(rows
             .iter()
             .any(|row| row.mnemonic == "record_link" && row.len == 5));
+        assert!(rows
+            .iter()
+            .any(|row| row.mnemonic == "record_entry" && row.opcode == "c6" && row.len == 5));
         assert!(rows
             .iter()
             .any(|row| row.mnemonic == "record_clear" && row.len == 3));

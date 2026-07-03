@@ -93,6 +93,8 @@ pub const OP_MAX: u8 = 0xD3;
 pub const OP_TEXT: u8 = 0xA6;
 pub const OP_RECORD_LINK: u8 = 0xC3;
 pub const OP_ACTOR: u8 = 0xC4;
+pub const OP_RECORD_ENTRY_MIN: u8 = 0xC5;
+pub const OP_RECORD_ENTRY_MAX: u8 = 0xC8;
 pub const OP_RECORD_CLEAR: u8 = 0xC9;
 pub const TEXT_SELECTOR_NONE: u8 = 0xFF;
 pub const TEXT_SELECTOR_SILENT: u8 = 0x00;
@@ -119,6 +121,18 @@ pub fn text_selector_voice_clip_index(selector: u8, talk_clip_count: usize) -> O
         Some(one_based - 1)
     } else {
         None
+    }
+}
+
+pub fn is_record_entry_opcode(opcode: u8) -> bool {
+    (OP_RECORD_ENTRY_MIN..=OP_RECORD_ENTRY_MAX).contains(&opcode)
+}
+
+pub fn record_entry_stored_related_offset(opcode: u8, operand: u16) -> u16 {
+    if opcode == 0xC8 {
+        0
+    } else {
+        operand
     }
 }
 
@@ -196,6 +210,21 @@ pub enum VmToken {
         offset: usize,
         record_offset: u16,
         related_record_offset: u16,
+        len: usize,
+    },
+    /// `0xC5..=0xC8` record entry.
+    ///
+    /// These handlers consume two u16 operands and write a 6-byte line-record
+    /// entry on their mode-0 success path. For `0xC5..=0xC7`, the second token
+    /// word is the stored related record; for `0xC8`, the handler stores zero
+    /// there after confirming the destination record is empty.
+    RecordEntry {
+        offset: usize,
+        entry_opcode: u8,
+        record_offset: u16,
+        operand: u16,
+        stored_related_offset: u16,
+        aux_word: u16,
         len: usize,
     },
     /// `0xC9` record clear.
@@ -296,6 +325,18 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
                 offset: pos,
                 record_offset,
                 related_record_offset,
+                len,
+            });
+        } else if is_record_entry_opcode(op) {
+            let record_offset = read_u16(cod, pos + 1).unwrap_or(0);
+            let operand = read_u16(cod, pos + 3).unwrap_or(0);
+            out.push(VmToken::RecordEntry {
+                offset: pos,
+                entry_opcode: op,
+                record_offset,
+                operand,
+                stored_related_offset: record_entry_stored_related_offset(op, operand),
+                aux_word: 0,
                 len,
             });
         } else if op == OP_ACTOR {
@@ -404,6 +445,8 @@ fn read_u16(cod: &[u8], at: usize) -> Option<u16> {
 //       DOS handler.
 //   * 0xC3: record link. The handler writes {0x00C3, related, 1}; this is
 //       presentation record state, not a speaker change.
+//   * 0xC5..=0xC8: record entries. The handlers write {opcode, related, 0};
+//       C8 is the special empty-record marker and stores related=0.
 //   * 0xC9: record clear. The handler zeroes a 6-byte record and, when the
 //       previous entry was 0xC4, clears the related actor subrecord too.
 // NOTE: this is a LINEAR pass — it does not yet evaluate the 0xAF-family
@@ -1164,6 +1207,39 @@ mod tests {
                 offset: 0,
                 record_offset: 0x0594,
                 related_record_offset: 0x0028,
+                len: 5
+            }
+        );
+    }
+
+    #[test]
+    fn record_entry_token_exposes_raw_and_stored_operands() {
+        let cod = [
+            0xC6, 0x8E, 0x10, 0x52, 0x10, 0xC8, 0x34, 0x12, 0x78, 0x56, 0xFF,
+        ];
+
+        let toks = walk(&cod, 0, cod.len());
+        assert_eq!(
+            toks[0],
+            VmToken::RecordEntry {
+                offset: 0,
+                entry_opcode: 0xC6,
+                record_offset: 0x108E,
+                operand: 0x1052,
+                stored_related_offset: 0x1052,
+                aux_word: 0,
+                len: 5
+            }
+        );
+        assert_eq!(
+            toks[1],
+            VmToken::RecordEntry {
+                offset: 5,
+                entry_opcode: 0xC8,
+                record_offset: 0x1234,
+                operand: 0x5678,
+                stored_related_offset: 0,
+                aux_word: 0,
                 len: 5
             }
         );

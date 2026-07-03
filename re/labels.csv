@@ -31,6 +31,10 @@ DS:0x6770,vm_pending_word,pending word appended by 0xA3 handler
 0x00660C,vm_op_a6_text,"0xA6 TEXT handler: b1b2=line index into gs:0x6724; b3->gs:0x1fab; b4/b5=control(skip/loop/active 0x80)"
 0x006EEE,vm_op_c3_record_link,"0xC3 record-link handler; writes es:[record]={0xc3,related,1} on mode-0 success"
 0x006C7E,vm_op_c4_actor,"0xC4 actor/record handler; consumes record+related u16 operands and writes es:[record]={0xc4,related,0}"
+0x006D18,vm_op_c5_record_entry,"0xC5 record-entry handler; writes es:[record]={0xc5,related,0} when related type is 0x0200"
+0x006D80,vm_op_c6_record_entry,"0xC6 record-entry handler; writes es:[record]={0xc6,operand,0}"
+0x006DCF,vm_op_c7_record_entry,"0xC7 record-entry handler; writes es:[record]={0xc7,related,0} when related record is active"
+0x006F62,vm_op_c8_record_entry,"0xC8 record-entry handler; consumes operand but writes es:[record]={0xc8,0,0} when record is empty"
 0x006FB9,vm_op_c9_record_clear,"0xC9 record-clear handler; zeros es:[record..record+4] and clears related 0xc4 actor subrecord"
 DS:0x1FAB,vm_text_selector,"signed per-line selector set from 0xA6 b3 (0xff/0x00=no voice; 1..N=talk clip)"
 DS:0x671C,vm_cod_ptr2,COD far-ptr used by main exec loop (lds si)
