@@ -238,8 +238,14 @@ The subtitle reveals one character at a time from the buffer at `gs:0x0E18`,
 tracked by reveal pointer `gs:0x5E58` (starts at the buffer start). The advance is
 rate-limited by timer `gs:0xB31`: when it hits 0, `inc gs:0x5E58` (reveal one more
 char) and reset `gs:0xB31 = gs:0xACA >> 2` (i.e. `gs:0xACA/4` frames per char).
-A per-char chatter (`sn/tb.snd`) is triggered (`gs:0x67BB=1`) with duration
-`gs:0xACA*4` (or `gs:0x27CF * gs:0xACA/2 + 6`).
+A line-complete chatter (`sn/tb.snd`) is triggered after the reveal pointer
+reaches the terminating NUL: `0x94BA..0x94DD` sets `gs:0xB35 = gs:0xACA*4` and
+`gs:0x67BB=1`, while `0x115D..0x1188` keeps that flag alive until the timer
+expires and then clears it. A second line-layout path at `0x7350..0x738C` also
+sets `gs:0x67BB=1` with duration `gs:0x27CF * gs:0xACA/2 + 6`. So the old
+exporter behavior of mixing one `tb.snd` clip per visible character was wrong;
+the Rust SFX track now schedules one chatter event per fully revealed subtitle
+line. Exact `tb.snd` clip-index selection still needs the audio callback trace.
 `gs:0xACA = (textspeed/2)+1` (init @0x1B3A; `textspeed` from a config getter,
 special-cased so index 4 → 7). So reveal rate = `4 * frame_rate / gs:0xACA`
 chars/sec; at ~15 fps and a mid text speed (`gs:0xACA≈5`) ≈ **12 chars/sec**
@@ -359,9 +365,10 @@ and `0xB529` both reset `gs:0x1FAB`,`gs:0x6788` (→0xFFFF) plus the display gat
 `0x071E:0x14B6`. Useful as the authoritative subtitle/scene-clear semantics.
 
 **Remaining for full accuracy:** (1) follow `gs:0x6788` (=b3+9) into son.snd
-playback to confirm voice/chatter selection; (2) decode dict-word→ASCII +
-animated reveal (per-char chatter from `sn/tb.snd`); (3) map background/music/HNM
-opcodes among 0xB7/0xC1–0xC9 handlers; (4) `gs:0x6724` line-record layout.
+playback to confirm voice/chatter clip-index selection; (2) decode any remaining
+line-record display flags that affect subtitle/talk-HNM routing; (3) map
+background/music/HNM opcodes among 0xB7/0xC1–0xC9 handlers; (4) `gs:0x6724`
+line-record layout.
 
 ### Dialogue display state machine (seg 0x0971, file ~0x9E81)
 
@@ -480,8 +487,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 - [ ] **Trace `gs:0x1FAB` (0xA6 b3) consumers** → confirm it selects the
       `son.snd` voice/chatter clip. Highest remaining value for accuracy.
 - [ ] Decode the `gs:0x6724` per-line record layout (es:[di], es:[di+2] flags).
-- [ ] Decode dict-word→ASCII resolution + the animated subtitle reveal (per-char
-      chatter SFX from `sn/tb.snd`) — the other text routines in seg 0x0299.
+- [ ] Decode remaining animated subtitle/audio details, especially exact
+      `tb.snd` clip-index selection for the `gs:0x67BB` line-complete chatter
+      event.
 - [ ] Map the presentation opcodes among the handler table: which set background,
       music (mus.snd), HNM actor, voice (son.snd), wait, clear. Start with the
       0xB7/0xC1–0xC9 handlers (distinct, non-family) and 0xC4 actor @0x6C7E.
@@ -610,6 +618,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       known parse-control bits, and still-unknown `b4` payload bits. This gives
       the subtitle sound/animation audit a concrete Rust artifact instead of
       burying those fields in raw token params.
+- [x] Correct subtitle chatter timing: `src/extract/subtitle_sfx.rs` now follows
+      the recovered `0x94BA..0x94DD`/`0x115D..0x1188` state machine by scheduling
+      one `tb.snd` chatter event after a subtitle finishes revealing, instead of
+      the previous one-SFX-per-character approximation.
 - [x] Emit branch-scenario dialogue rows/runs:
       `script-branch-scenario-dialogue.tsv` reuses the same executed-dialogue
       resolver against each forced branch trace, and

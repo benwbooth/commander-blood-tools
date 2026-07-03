@@ -881,7 +881,7 @@ pub enum SceneEvent {
         voice_selector: u8,
         flags: u8,
     },
-    /// Per-character UI "chatter" bleeps during the animated text reveal (tb.snd).
+    /// Subtitle chatter event from the dialogue display state machine (tb.snd).
     PlayChatter,
     Clear,
 }
