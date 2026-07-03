@@ -662,11 +662,14 @@ that record is a C4 entry with aux word `0`, the `0x5D8F..0x5E1F` path:
     ds:[related_record + 4] = 0xFFFF
 
 This is the reciprocal presentation-pair write that bridges a direct mode-0 C4
-record into the related object's A6/C4 presentation gate. Rust now ports this
-single transformation as `post_update_actor_record_pair()`, but it is not wired
-into `execute_trace` yet because the surrounding `0x5816` object scan also
-depends on presentation globals (`0x675E`, `0x674E`, `0x6752`, `0x67AC`,
-`0x67B6`, etc.) and UI/event handlers that choose which object pair is active.
+record into the related object's A6/C4 presentation gate. Rust now ports this as
+`post_update_actor_record_pair()` and ports the active-object subset of the
+`0x5816` scan as `post_update_actor_records_for_active_objects()`: it walks the
+DEB object offsets in `ExecutionContext`, skips inactive objects (`state[+2]&1 ==
+0`), computes selector-`0x13`, and applies the reciprocal C4 write. It is not
+wired into `execute_trace` yet because the rest of `0x5816` also depends on
+presentation globals (`0x675E`, `0x674E`, `0x6752`, `0x67AC`, `0x67B6`, etc.)
+and UI/event handlers that choose which object pair is active.
 
 ### 0xC9 record-clear handler @ file 0x6FB9 — speaker lifetime (DECODED)
 
@@ -914,8 +917,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 - [ ] Complete the `gs:0x6724` runtime object/state layout: `es:[di]` kind,
       `es:[di+2]` flags, `+0x3A` A6/C4 presentation subrecord, and remaining
       C4 setup paths needed before enabling the A6 gate in exports. The
-      `0x5D8F..0x5E1F` C4 reciprocal post-update write is ported; the surrounding
-      `0x5816` object scan and presentation-global inputs are still pending.
+      `0x5D8F..0x5E1F` C4 reciprocal post-update write and active-object scan
+      subset are ported; the remaining `0x5816` presentation-global inputs are
+      still pending.
 - [ ] Verify audible `tb.snd` chatter trigger path, if any. `gs:0x67BB` itself is
       now decoded as post-reveal hold state rather than a direct SND caller.
 - [ ] Map the presentation opcodes among the handler table: which set background,

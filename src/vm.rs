@@ -1190,6 +1190,30 @@ fn post_update_actor_record_pair(
     Some(related_field)
 }
 
+fn post_update_actor_records_for_active_objects(
+    state: &mut [u8],
+    context: &ExecutionContext,
+) -> Vec<(u16, u16)> {
+    let mut updated = Vec::new();
+    for owner_offset in context.object_offsets.iter().copied() {
+        if state_u8(state, owner_offset.wrapping_add(2)) & 1 == 0 {
+            continue;
+        }
+        let owner_kind = state_u16(state, owner_offset);
+        let Some(field_offset) = vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, owner_kind)
+        else {
+            continue;
+        };
+        let record_offset = owner_offset.wrapping_add(field_offset);
+        if let Some(related_record_offset) =
+            post_update_actor_record_pair(state, owner_offset, record_offset)
+        {
+            updated.push((record_offset, related_record_offset));
+        }
+    }
+    updated
+}
+
 fn record_link_condition(
     state: &[u8],
     context: &ExecutionContext,
@@ -2948,6 +2972,44 @@ mod tests {
             C4_POST_UPDATE_SENTINEL
         );
         assert_eq!(state_u16(&var, related_field), 0);
+    }
+
+    #[test]
+    fn post_update_actor_records_scan_only_active_context_objects() {
+        let inactive_owner = 0x0100u16;
+        let owner = 0x0200u16;
+        let related = 0x0300u16;
+        let inactive_record = inactive_owner.wrapping_add(TALK_FIELD);
+        let record = owner.wrapping_add(TALK_FIELD);
+        let related_field = related.wrapping_add(
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, 2).expect("kind 2 C4 field"),
+        );
+
+        let mut var = vec![0; 0x0400];
+        state_set_u16(&mut var, inactive_owner, 2);
+        state_set_u16(&mut var, owner, 2);
+        state_set_u8(&mut var, owner.wrapping_add(2), 1);
+        state_set_u16(&mut var, related, 2);
+        write_actor_record(&mut var, inactive_record, related);
+        write_actor_record(&mut var, record, related);
+
+        let context = ExecutionContext::from_object_offsets([inactive_owner, owner, related]);
+        assert_eq!(
+            post_update_actor_records_for_active_objects(&mut var, &context),
+            vec![(record, related_field)]
+        );
+
+        assert_eq!(state_u16(&var, inactive_record.wrapping_add(4)), 0);
+        assert_eq!(
+            state_u16(&var, record.wrapping_add(4)),
+            C4_POST_UPDATE_SENTINEL
+        );
+        assert_eq!(state_u16(&var, related_field), OP_ACTOR as u16);
+        assert_eq!(state_u16(&var, related_field.wrapping_add(2)), owner);
+        assert_eq!(
+            state_u16(&var, related_field.wrapping_add(4)),
+            C4_POST_UPDATE_SENTINEL
+        );
     }
 
     #[test]
