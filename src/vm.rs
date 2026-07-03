@@ -1557,6 +1557,25 @@ fn post_update_execution_state(state: &mut [u8], context: &ExecutionContext) -> 
     post_update
 }
 
+fn append_post_update_trace(
+    post_update: &mut PostUpdateTrace,
+    mut pass_update: PostUpdateTrace,
+) -> Option<u16> {
+    let handoff_target = pass_update
+        .presentation_handoffs
+        .last()
+        .map(|event| event.target);
+    post_update
+        .actor_record_pairs
+        .append(&mut pass_update.actor_record_pairs);
+    post_update
+        .presentation_handoffs
+        .append(&mut pass_update.presentation_handoffs);
+    post_update.pending_script_profile_dispatch_ready =
+        pass_update.pending_script_profile_dispatch_ready;
+    handoff_target
+}
+
 fn record_link_condition(
     state: &[u8],
     context: &ExecutionContext,
@@ -2034,6 +2053,7 @@ fn execute_trace_state_with_overrides_and_context(
     let mut branch_events = Vec::new();
     let mut script_profile_requests = Vec::new();
     let mut branch_stack: Vec<u16> = Vec::new();
+    let mut post_update = PostUpdateTrace::default();
     let mut special_slots = SpecialObjectSlots::default();
     let mut pos = 0usize;
     let mut mode1 = false;
@@ -2042,10 +2062,34 @@ fn execute_trace_state_with_overrides_and_context(
     let mut steps = 0usize;
     let mut halted = ExecutionHalt::EndMarker;
 
-    while pos < end {
+    'execution: loop {
+        if pos >= end {
+            if matches!(halted, ExecutionHalt::EndMarker) {
+                let handoff_target = append_post_update_trace(
+                    &mut post_update,
+                    post_update_execution_state(&mut state, context),
+                );
+                if let Some(target) = handoff_target {
+                    if target as usize >= end {
+                        halted = ExecutionHalt::InvalidTarget {
+                            offset: end,
+                            target,
+                        };
+                        break 'execution;
+                    }
+                    pos = target as usize;
+                    mode1 = false;
+                    branch_stack.clear();
+                    actor = None;
+                    continue 'execution;
+                }
+            }
+            break 'execution;
+        }
+
         if steps >= step_limit {
             halted = ExecutionHalt::StepLimit { limit: step_limit };
-            break;
+            break 'execution;
         }
         steps += 1;
 
@@ -2053,14 +2097,32 @@ fn execute_trace_state_with_overrides_and_context(
         let op = cod[token_start];
         if op == 0xFF {
             halted = ExecutionHalt::EndMarker;
-            break;
+            let handoff_target = append_post_update_trace(
+                &mut post_update,
+                post_update_execution_state(&mut state, context),
+            );
+            if let Some(target) = handoff_target {
+                if target as usize >= end {
+                    halted = ExecutionHalt::InvalidTarget {
+                        offset: token_start,
+                        target,
+                    };
+                    break 'execution;
+                }
+                pos = target as usize;
+                mode1 = false;
+                branch_stack.clear();
+                actor = None;
+                continue 'execution;
+            }
+            break 'execution;
         }
         if !(OP_MIN..=OP_MAX).contains(&op) {
             halted = ExecutionHalt::InvalidOpcode {
                 offset: token_start,
                 byte: op,
             };
-            break;
+            break 'execution;
         }
         let (b0, b1) = OPCODE_DESC[(op - OP_MIN) as usize];
 
@@ -2106,7 +2168,7 @@ fn execute_trace_state_with_overrides_and_context(
                     offset: token_start,
                     target,
                 };
-                break;
+                break 'execution;
             }
             pos = target as usize;
             continue;
@@ -2128,7 +2190,7 @@ fn execute_trace_state_with_overrides_and_context(
                         offset: token_start,
                         target,
                     };
-                    break;
+                    break 'execution;
                 }
                 pos = target as usize;
                 continue;
@@ -2321,7 +2383,7 @@ fn execute_trace_state_with_overrides_and_context(
                     offset: token_start,
                     target,
                 };
-                break;
+                break 'execution;
             }
             pos = target as usize;
             continue;
@@ -2485,7 +2547,7 @@ fn execute_trace_state_with_overrides_and_context(
                         offset: token_start,
                         byte: op,
                     };
-                    break;
+                    break 'execution;
                 }
                 _ => unreachable!("decode_text only returns TEXT tokens"),
             }
@@ -2513,12 +2575,6 @@ fn execute_trace_state_with_overrides_and_context(
         };
         pos = (token_start + len).min(end);
     }
-
-    let post_update = if matches!(halted, ExecutionHalt::EndMarker) {
-        post_update_execution_state(&mut state, context)
-    } else {
-        PostUpdateTrace::default()
-    };
 
     let trace = ExecutionTrace {
         line_states,
@@ -3879,7 +3935,7 @@ mod tests {
     }
 
     #[test]
-    fn execution_trace_reports_post_update_handoff_target() {
+    fn execution_trace_follows_post_update_handoff_target() {
         let owner = 0x0100u16;
         let primary_record = 0x0200u16;
         let blood = 0x0300u16;
@@ -3899,17 +3955,32 @@ mod tests {
         state_set_u16(&mut var, primary_record, OP_ACTOR as u16);
         state_set_u16(&mut var, record, OP_ACTOR as u16);
         state_set_u16(&mut var, record.wrapping_add(2), blood);
-        state_set_u16(&mut var, target_field, 0x1234);
+        state_set_u16(&mut var, target_field, 1);
 
         let context =
             ExecutionContext::from_object_offsets([owner, blood]).with_special_object_offset(blood);
-        let trace = execute_trace_with_context(&[0xff], &var, &context);
+        let mut cod = vec![0xff, OP_RECORD_CLEAR];
+        cod.extend_from_slice(&record.to_le_bytes());
+        let handoff_text_offset = cod.len();
+        push_empty_text(&mut cod);
+        cod.push(0xff);
+
+        let trace = execute_trace_with_context(&cod, &var, &context);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(
+            trace.line_states,
+            vec![LineState {
+                offset: handoff_text_offset,
+                actor_offset: None,
+                location_offset: None,
+            }]
+        );
         assert_eq!(
             trace.post_update.presentation_handoffs,
             vec![PresentationHandoffEvent {
                 owner_offset: owner,
                 record_offset: record,
-                target: 0x1234,
+                target: 1,
             }]
         );
     }

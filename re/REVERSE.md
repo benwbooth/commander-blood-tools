@@ -747,10 +747,10 @@ calls `vm_control_flow` when presentation is active, `DS:0x1FB2`, `0x27D7`, and
 selector-`0x13` record is C4 and points at `blood` (`DS:0x674E`), the owner
 flags word does not have bit `0x8000`, and selector `0x02` on the owner yields a
 nonzero target. Rust now captures that as
-`post_update_kind2_presentation_handoff_target()`. It returns the handoff target
-but does not yet apply the `vm_control_flow` PC mutation inside execution
-traces. The `0x27D7` gate is distinct from the main-loop idle gate at `0x27DA`;
-Rust tests cover that split so the adjacent addresses do not get collapsed.
+`post_update_kind2_presentation_handoff_target()` and applies the recovered target
+as a COD PC handoff after the post-update pass. The `0x27D7` gate is distinct
+from the main-loop idle gate at `0x27DA`; Rust tests cover that split so the
+adjacent addresses do not get collapsed.
 
 The main loop at `0x108E` does not consume a pending `D2` profile request until
 the presentation state is idle. The exact gate is:
@@ -1022,11 +1022,12 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `0x5D8F..0x5E1F` C4 reciprocal post-update write, the `0x67B6` pair-write
       guard, the active-object scan subset, the kind-1 presentation start/stop
       globals, the deferred record drain, and the kind-2 handoff predicate are
-      ported and surfaced through `ExecutionTrace::post_update`; applying the
-      kind-2 `vm_control_flow` target, external render/audio calls, and shared
-      engine globals remain pending. `execute_script_profile_sequence()` now
-      carries each profile's mutated VAR state across D2 handoffs/re-entry, so
-      repeated profile runs no longer restart from pristine `SCRIPT*.VAR`.
+      ported and surfaced through `ExecutionTrace::post_update`; the kind-2
+      `vm_control_flow` target is now applied as a COD PC handoff inside
+      `execute_trace`. External render/audio calls and shared engine globals
+      remain pending. `execute_script_profile_sequence()` now carries each
+      profile's mutated VAR state across D2 handoffs/re-entry, so repeated
+      profile runs no longer restart from pristine `SCRIPT*.VAR`.
 - [x] Map the VM named-object startup globals from `0x5486`: Rust
       `ExecutionContext` now carries the built-in DEB offsets for `blood`, `orxx`,
       `arche`, `Honk`, `menu`, `Ark`, `Scruter_Jo`, and kind-5 `vbio`.
