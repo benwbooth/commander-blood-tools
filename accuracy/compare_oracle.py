@@ -918,11 +918,16 @@ def main() -> int:
         if args.reference is not None and args.candidate_glob:
             if args.candidate_timeline and args.scan_generated:
                 parser.error("--candidate-timeline cannot be combined with --scan-generated")
-            start, end, step = (
-                parse_scan_range(args.scan_generated)
-                if args.scan_generated or not args.candidate_timeline
-                else (args.generated_time, args.generated_time, 1.0)
-            )
+            if args.candidate_timeline:
+                # Timeline mode ranks each candidate at its own sidecar event
+                # boundaries; the scan range is unused (passed as None below).
+                start, end, step = (None, None, None)
+            elif args.scan_generated:
+                start, end, step = parse_scan_range(args.scan_generated)
+            else:
+                # No scan window and no timeline: rank each candidate at the
+                # single fixed --generated-time (default 0.0).
+                start, end, step = (args.generated_time, args.generated_time, 1.0)
             out_dir = args.out_dir or default_candidate_search_out_dir(args.reference)
             summary = search_candidate_videos(
                 args.reference,

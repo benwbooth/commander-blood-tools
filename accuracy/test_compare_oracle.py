@@ -251,6 +251,49 @@ class CompareOracleTests(unittest.TestCase):
             self.assertTrue((root / "candidate-search" / "candidate-search.json").exists())
             self.assertTrue((root / "candidate-search" / "best" / "comparison.json").exists())
 
+    def test_candidate_glob_cli_at_fixed_time_without_scan(self) -> None:
+        # Regression: `--candidate-glob` without `--scan-generated` or
+        # `--candidate-timeline` must rank candidates at the fixed
+        # `--generated-time` instead of crashing in parse_scan_range(None).
+        import io
+        import json as _json
+        import sys as _sys
+        from contextlib import redirect_stdout
+
+        with tempfile.TemporaryDirectory(prefix="commander-blood-candidate-cli-") as tmp:
+            root = Path(tmp)
+            reference = root / "reference.png"
+            close = root / "candidate-close.png"
+            far = root / "candidate-far.png"
+            Image.new("RGB", compare_oracle.NATIVE_SIZE, (10, 20, 30)).save(reference)
+            Image.new("RGB", compare_oracle.NATIVE_SIZE, (11, 20, 30)).save(close)
+            Image.new("RGB", compare_oracle.NATIVE_SIZE, (100, 20, 30)).save(far)
+
+            argv = [
+                "compare_oracle.py",
+                "--reference",
+                str(reference),
+                "--candidate-glob",
+                str(root / "candidate-*.png"),
+                "--candidate-top",
+                "2",
+                "--out-dir",
+                str(root / "candidate-search"),
+            ]
+            saved = _sys.argv
+            buf = io.StringIO()
+            try:
+                _sys.argv = argv
+                with redirect_stdout(buf):
+                    exit_code = compare_oracle.main()
+            finally:
+                _sys.argv = saved
+
+            self.assertEqual(exit_code, 0)
+            summary = _json.loads(buf.getvalue())
+            self.assertEqual(summary["best"]["generated"], str(close))
+            self.assertEqual(summary["scan_start"], 0.0)
+
     def test_candidate_search_can_use_candidate_timelines(self) -> None:
         with tempfile.TemporaryDirectory(prefix="commander-blood-candidate-test-") as tmp:
             root = Path(tmp)
