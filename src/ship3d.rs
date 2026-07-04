@@ -86,6 +86,13 @@ pub const SHIP_3D_PROCEDURAL_TARGET_LIST_THRESHOLD: u16 = 0x0028;
 pub const SHIP_3D_PROCEDURAL_TARGET_LIST_STEP: u16 = 0x0028;
 pub const SHIP_3D_PROCEDURAL_AUTO_ROTATE_STEP: u16 = 0x001e;
 pub const SHIP_3D_PROCEDURAL_ROTATION_OFFSET_BIAS: u16 = 0x00a0;
+pub const SHIP_3D_MATRIX_ANGLE_TABLE_OFFSET: u16 = 0x4f45;
+pub const SHIP_3D_MATRIX_ANGLE_A_OFFSET: u16 = 0x2f71;
+pub const SHIP_3D_MATRIX_PROJECTION_ANGLE_OFFSET: u16 = 0x2f6d;
+pub const SHIP_3D_MATRIX_ANGLE_C_OFFSET: u16 = 0x2f6f;
+pub const SHIP_3D_MATRIX_TEMP_OFFSET: u16 = 0x2f7d;
+pub const SHIP_3D_PROJECTION_MATRIX_OFFSET: u16 = 0x2f95;
+pub const SHIP_3D_MATRIX_FIXED_SHIFT: u8 = 0x0f;
 pub const SHIP_3D_TEMP_SND_CALLBACK_TABLE_OFFSET: u16 = 0x0acc;
 pub const SHIP_3D_TEMP_SND_CALLBACK_OFFSETS: [u16; 3] = [0x0087, 0x0090, 0x009c];
 pub const SHIP_3D_TEMP_SND_PATH_OFFSET: u16 = 0x0d23;
@@ -365,6 +372,24 @@ pub struct Ship3dProceduralUpdateEffect {
     pub updated_projection_angle: bool,
     pub mouse_set_position: Option<(u16, u16)>,
     pub carry_set: bool,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dAngleTableEntry {
+    pub cosine: i16,
+    pub sine: i16,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dMatrixAngles {
+    pub angle_2f71: u16,
+    pub projection_angle_2f6d: u16,
+    pub angle_2f6f: u16,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dProjectionMatrix {
+    pub terms: [i32; 9],
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -1274,6 +1299,44 @@ pub fn run_ship_3d_procedural_update(
     effect
 }
 
+pub fn build_ship_3d_projection_matrix(
+    angle_table: &[Ship3dAngleTableEntry],
+    angles: Ship3dMatrixAngles,
+) -> Option<Ship3dProjectionMatrix> {
+    let (a_cos, a_sin) = matrix_pair_for_angle(angle_table, angles.angle_2f71)?;
+    let (b_cos, b_sin) = matrix_pair_for_angle(angle_table, angles.projection_angle_2f6d)?;
+    let (c_cos, c_sin) = matrix_pair_for_angle(angle_table, angles.angle_2f6f)?;
+
+    let b_sin_c_sin = fixed_mul_shift_15(b_sin, c_sin);
+    let c_sin_b_cos = fixed_mul_shift_15(c_sin, b_cos);
+
+    Some(Ship3dProjectionMatrix {
+        terms: [
+            a_cos
+                .wrapping_mul(b_cos)
+                .wrapping_add(b_sin_c_sin.wrapping_mul(a_sin))
+                >> SHIP_3D_MATRIX_FIXED_SHIFT,
+            fixed_mul_shift_15(c_cos, a_sin).wrapping_neg(),
+            c_sin_b_cos
+                .wrapping_mul(a_sin)
+                .wrapping_sub(a_cos.wrapping_mul(b_sin))
+                >> SHIP_3D_MATRIX_FIXED_SHIFT,
+            b_sin_c_sin
+                .wrapping_mul(a_cos)
+                .wrapping_sub(a_sin.wrapping_mul(b_cos))
+                >> SHIP_3D_MATRIX_FIXED_SHIFT,
+            fixed_mul_shift_15(c_cos, a_cos).wrapping_neg(),
+            b_sin
+                .wrapping_mul(a_sin)
+                .wrapping_add(c_sin_b_cos.wrapping_mul(a_cos))
+                >> SHIP_3D_MATRIX_FIXED_SHIFT,
+            fixed_mul_shift_15(b_sin, c_cos),
+            c_sin,
+            fixed_mul_shift_15(c_cos, b_cos),
+        ],
+    })
+}
+
 pub fn run_ship_3d_temp_snd_setup(state: &mut Ship3dTempSndState) -> Option<Ship3dTempSndEffect> {
     if !state.trigger {
         return Some(Ship3dTempSndEffect::default());
@@ -1884,6 +1947,18 @@ fn wrap_ring_once(value: i32, modulus: u16) -> u16 {
     } else {
         value as u16
     }
+}
+
+fn matrix_pair_for_angle(angle_table: &[Ship3dAngleTableEntry], angle: u16) -> Option<(i32, i32)> {
+    let entry = *angle_table.get(usize::from(angle))?;
+    Some((
+        i32::from(entry.cosine).wrapping_mul(2),
+        i32::from(entry.sine).wrapping_mul(2),
+    ))
+}
+
+fn fixed_mul_shift_15(lhs: i32, rhs: i32) -> i32 {
+    lhs.wrapping_mul(rhs) >> SHIP_3D_MATRIX_FIXED_SHIFT
 }
 
 fn checked_i16_div_i8_to_i8(dividend: i16, divisor: i8) -> Option<i8> {
@@ -3694,6 +3769,90 @@ mod tests {
         assert_eq!(state.rotation_offset, 0x0010);
         assert_eq!(state.mouse_x, 104);
         assert_eq!(state.mouse_sector, 30);
+    }
+
+    #[test]
+    fn projection_matrix_builds_basis_orientation() {
+        let angle_table = [
+            Ship3dAngleTableEntry {
+                cosine: 0x4000,
+                sine: 0,
+            },
+            Ship3dAngleTableEntry {
+                cosine: 0,
+                sine: 0x4000,
+            },
+        ];
+
+        let matrix = build_ship_3d_projection_matrix(
+            &angle_table,
+            Ship3dMatrixAngles {
+                angle_2f71: 0,
+                projection_angle_2f6d: 0,
+                angle_2f6f: 0,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(
+            matrix,
+            Ship3dProjectionMatrix {
+                terms: [0x8000, 0, 0, 0, -0x8000, 0, 0, 0, 0x8000]
+            }
+        );
+    }
+
+    #[test]
+    fn projection_matrix_preserves_binary_fixed_point_operation_order() {
+        let angle_table = [
+            Ship3dAngleTableEntry {
+                cosine: 0x4000,
+                sine: 0,
+            },
+            Ship3dAngleTableEntry {
+                cosine: 0,
+                sine: 0x4000,
+            },
+            Ship3dAngleTableEntry {
+                cosine: 0x2000,
+                sine: 0x2000,
+            },
+        ];
+
+        let matrix = build_ship_3d_projection_matrix(
+            &angle_table,
+            Ship3dMatrixAngles {
+                angle_2f71: 1,
+                projection_angle_2f6d: 2,
+                angle_2f6f: 0,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(
+            matrix.terms,
+            [0, -32768, 0, -16384, 0, 16384, 16384, 0, 16384]
+        );
+    }
+
+    #[test]
+    fn projection_matrix_rejects_missing_angle_table_entry() {
+        let angle_table = [Ship3dAngleTableEntry {
+            cosine: 0x4000,
+            sine: 0,
+        }];
+
+        assert_eq!(
+            build_ship_3d_projection_matrix(
+                &angle_table,
+                Ship3dMatrixAngles {
+                    angle_2f71: 0,
+                    projection_angle_2f6d: 1,
+                    angle_2f6f: 0,
+                },
+            ),
+            None
+        );
     }
 
     #[test]

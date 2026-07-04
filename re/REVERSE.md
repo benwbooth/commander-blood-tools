@@ -288,9 +288,17 @@ heavy projection loop itself. It consumes angle `DS:0x2795`, HUD flags
 `DS:0x27DB`, writes projection angle `DS:0x2F6D`, computes rotation offset
 `DS:0x27A7 = angle * 8 - 0xA0`, and aligns mouse X to an 8-unit boundary before
 subtracting that offset. The target-list bit `DS:0x2793 & 4` switches the
-inactive-HUD branch from angle auto-rotation to cursor repositioning. The matrix
-builder at `0x98B9` and point projection loops at `0x9A10+` are still the next
-geometry targets.
+inactive-HUD branch from angle auto-rotation to cursor repositioning.
+
+The matrix builder at file `0x98B9` is now identified as the 3x3 fixed-point
+projection matrix setup. It reads cosine/sine pairs from table `DS:0x4F45`,
+doubles them from `0x4000` to `0x8000` scale into the scratch vector at
+`DS:0x2F7D`, consumes angle words `DS:0x2F71`, `DS:0x2F6D`, and `DS:0x2F6F`,
+then writes nine signed dwords at `DS:0x2F95`. The multiply order is preserved
+as two-operand `imul` plus arithmetic `sar 0x0F`; the three compound terms reuse
+the intermediate `(b_sin * c_sin) >> 15` and `(c_sin * b_cos) >> 15` products
+before the final shift. The point/object projection loops at `0x9A10+` are now
+the next geometry targets.
 
 The next control-layer markers are now pinned. `0xB2BB` selects the next
 ship/navigation target record from `DS:0x250B`, or from the inline fallback table
@@ -1876,6 +1884,12 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       sector `DS:0x2797`, projection angle `DS:0x2F6D`, and rotation offset
       `DS:0x27A7`. This pins the exact 180/360-degree wrap constants and mouse
       recentering side effects used before the matrix/projection routines.
+- [x] Port ship 3D projection matrix builder:
+      file `0x98B9` now maps to `build_ship_3d_projection_matrix()`. The helper
+      consumes table `DS:0x4F45` plus angle words `DS:0x2F71/0x2F6D/0x2F6F`,
+      doubles the table pairs into the binary's `0x8000` fixed-point scale, and
+      emits the nine dword terms written at `DS:0x2F95` with wrapping `imul` and
+      arithmetic `sar 15` semantics.
 - [x] Port ship 3D temporary `3D.snd` setup branch:
       `src/ship3d.rs` now models file `0xB591`: the `DS:0x0AE4` one-shot gate,
       phase byte `DS:0x0AE5` cycling across the three `DS:0x0ACC` callback
