@@ -495,6 +495,16 @@ an immediate VGA-DAC write — the only `mov dx,0x3c8` sites (`0x862B`/`0x8694`)
 tweak a few UI indices near 0x7B (123), never 0xE0 (224). Also ELIMINATED: (d) the character
 HNMs' **per-frame `pl` chunks** — parsing every frame superchunk of `aajer.hnm`
 (18 frames) and `jerry_10.hnm` (31 frames), none define indices 224-239 either.
+PALETTE UPLOAD MECHANISM (sess 003): the full 256-colour DAC upload is `0x2F90`
+(`mov dx,0x3c8; xor al,al; out; inc dl; mov cx,0x300; rep outsb` — 768 bytes from
+`ds:si`); `0x2FA6` blacks the DAC; `0x2FBB` loads the source via
+`lds si, gs:[0x5221]`, i.e. there is a **master palette buffer behind the far
+pointer `gs:0x5221`**. So the character indices 224-236 ARE uploaded — as part of
+that master buffer — which means the open question is precisely *who writes
+`master_palette[224*3 .. 236*3]`* on the character-display path (the HNM palette
+load only fills the low/mid range). That writer is the remaining trace; it is
+reached through the `gs:0x5221` far pointer so it can't be grepped by a DS offset.
+
 So with `.spr`, all HNM header AND per-frame palettes, and immediate DAC writes
 all ruled out, the `224-255` character palette lives ONLY in an **`.xdb` overlay**
 (SCRUTER is the `croolis`/scrutinizer species → `croolis.xdb`) or is constructed
