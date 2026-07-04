@@ -630,7 +630,14 @@ but dependency helper `0x6210` is now decoded: it maps an object record to its
 index in the 20-byte `GS:[0x672C]` object table, adds the selector-`0x05` /
 kind-`0x0002` field offset (`0x1E`) to the caller's bitset base, and tests the
 object's bit high-bit-first. In the C1 mode-0 branch this is the kind-2 source
-filter before selecting a resolved destination slot.
+filter before selecting a resolved destination slot. Rust also ports the
+`0x006C1C` source-list scan: it walks the `0x00624B`-built `DS:0x6886` list to
+the `0xFFFF` sentinel, accepts kind `2` records when helper `0x6210` reports the
+operand object's bit set from the current post-`lodsw` `SI` cursor into that
+scratch list, accepts kind `1` records when the operand state byte has bit
+`0x02`, and ignores other kinds. The final C1 destination-slot write around
+`0x006C48..0x006C6B` still needs to be wired into the higher-level Rust VM state
+model.
 
 ### 0xCA/0xCB global condition handlers — token shape (DECODED; runtime source pending)
 
@@ -1741,6 +1748,15 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       at caller `SI + 0x1E + object_index/8`. Rust exposes this as
       `ship_3d_object_table_bit_is_set()`, preserving the bit order needed for
       the remaining C1 source-list filter.
+- [x] Port ship 3D C1 source-list selection loop:
+      the branch labeled `0x006C1C` scans the helper-built `DS:0x6886` source
+      list until `0xFFFF`. Kind `0x0002` candidates call `0x006210` with the
+      current operand object and accept only if its object-table bit is set;
+      the helper's bitset base is the post-`lodsw` `SI` cursor for the current
+      source-list entry. Kind `0x0001` candidates accept only when the operand
+      state byte has bit `0x02`; all other kinds are skipped. Rust exposes this as
+      `select_ship_3d_c1_source_record()` so the remaining C1 destination-slot
+      write can be connected without heuristic source matching.
 - [x] Port ship 3D navigation sequence branch:
       the internal branch at `0x0A9A:0x04E1` (file `0xB481`) now has a Rust
       state/effect model as `run_ship_3d_navigation_sequence_update()`. If

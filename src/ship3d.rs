@@ -87,6 +87,9 @@ pub const SHIP_3D_FIELD_SELECTOR_KIND100_RELATION_WORD: u8 = 0x0e;
 pub const SHIP_3D_FIELD_SELECTOR_PARENT_LINK: u8 = 0x11;
 pub const SHIP_3D_SOURCE_BITSET_SELECTOR: u8 = 0x05;
 pub const SHIP_3D_SOURCE_BITSET_KIND: u16 = 0x0002;
+pub const SHIP_3D_C1_SOURCE_KIND_OPERAND_FLAG: u16 = 0x0001;
+pub const SHIP_3D_C1_SOURCE_KIND_BITSET: u16 = 0x0002;
+pub const SHIP_3D_C1_SOURCE_OPERAND_STATE_FLAG: u8 = 0x02;
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dTransitionState {
@@ -1124,6 +1127,47 @@ pub fn ship_3d_object_table_bit_is_set(
     let value = *bitset_base.get(byte_offset)?;
     let mask = vm::bit_flag_mask((object_index & 7) as u8);
     Some(value & mask != 0)
+}
+
+/// `source_list_bytes` starts at the binary's `DS:0x6886` scratch list. Kind-2
+/// tests use the post-`lodsw` cursor for the current source record as the bitset
+/// base before applying helper `0x6210`'s selector-5 offset.
+pub fn select_ship_3d_c1_source_record(
+    source_records: &[u16],
+    records: &[Ship3dNavigationRuntimeRecord],
+    object_table_records: &[u16],
+    source_list_bytes: &[u8],
+    operand_record_offset: u16,
+    operand_state_flags: u8,
+) -> Option<Option<u16>> {
+    for (source_index, record_offset) in source_records.iter().enumerate() {
+        if *record_offset == SHIP_3D_TARGET_EXIT_SENTINEL {
+            return Some(None);
+        }
+
+        let record = find_ship_3d_navigation_record(records, *record_offset)?;
+        match record.kind_flags {
+            SHIP_3D_C1_SOURCE_KIND_BITSET => {
+                let bitset_cursor = source_index.checked_add(1)?.checked_mul(2)?;
+                let bitset_base = source_list_bytes.get(bitset_cursor..)?;
+                if ship_3d_object_table_bit_is_set(
+                    object_table_records,
+                    bitset_base,
+                    operand_record_offset,
+                )? {
+                    return Some(Some(record.offset));
+                }
+            }
+            SHIP_3D_C1_SOURCE_KIND_OPERAND_FLAG => {
+                if operand_state_flags & SHIP_3D_C1_SOURCE_OPERAND_STATE_FLAG != 0 {
+                    return Some(Some(record.offset));
+                }
+            }
+            _ => {}
+        }
+    }
+
+    None
 }
 
 pub fn run_ship_3d_navigation_trigger_prelude(
@@ -3656,6 +3700,133 @@ mod tests {
         );
         assert_eq!(
             ship_3d_object_table_bit_is_set(&object_table, &bitset[..0x1e], 0x1000),
+            None
+        );
+    }
+
+    #[test]
+    fn c1_source_selection_accepts_kind2_when_operand_bit_is_set() {
+        let records = [nav_record(0x3000, SHIP_3D_C1_SOURCE_KIND_BITSET, 0, 0, 0)];
+        let object_table = [0x2000];
+        let mut source_list_bytes = [0u8; 0x21];
+        source_list_bytes[0x20] = 0x80;
+
+        assert_eq!(
+            select_ship_3d_c1_source_record(
+                &[0x3000, SHIP_3D_TARGET_EXIT_SENTINEL],
+                &records,
+                &object_table,
+                &source_list_bytes,
+                0x2000,
+                0,
+            ),
+            Some(Some(0x3000))
+        );
+    }
+
+    #[test]
+    fn c1_source_selection_falls_through_clear_bit_to_kind1_operand_flag() {
+        let records = [
+            nav_record(0x3000, SHIP_3D_C1_SOURCE_KIND_BITSET, 0, 0, 0),
+            nav_record(0x3100, SHIP_3D_C1_SOURCE_KIND_OPERAND_FLAG, 0, 0, 0),
+        ];
+        let object_table = [0x2000];
+        let source_list_bytes = [0u8; 0x21];
+
+        assert_eq!(
+            select_ship_3d_c1_source_record(
+                &[0x3000, 0x3100, SHIP_3D_TARGET_EXIT_SENTINEL],
+                &records,
+                &object_table,
+                &source_list_bytes,
+                0x2000,
+                SHIP_3D_C1_SOURCE_OPERAND_STATE_FLAG,
+            ),
+            Some(Some(0x3100))
+        );
+    }
+
+    #[test]
+    fn c1_source_selection_uses_current_source_cursor_for_kind2_bitset() {
+        let records = [
+            nav_record(0x3000, 0x0003, 0, 0, 0),
+            nav_record(0x3100, SHIP_3D_C1_SOURCE_KIND_BITSET, 0, 0, 0),
+        ];
+        let object_table = [0x2000];
+        let mut source_list_bytes = [0u8; 0x23];
+        source_list_bytes[0x20] = 0x00;
+        source_list_bytes[0x22] = 0x80;
+
+        assert_eq!(
+            select_ship_3d_c1_source_record(
+                &[0x3000, 0x3100, SHIP_3D_TARGET_EXIT_SENTINEL],
+                &records,
+                &object_table,
+                &source_list_bytes,
+                0x2000,
+                0,
+            ),
+            Some(Some(0x3100))
+        );
+    }
+
+    #[test]
+    fn c1_source_selection_reaches_sentinel_without_match() {
+        let records = [nav_record(
+            0x3000,
+            SHIP_3D_C1_SOURCE_KIND_OPERAND_FLAG,
+            0,
+            0,
+            0,
+        )];
+        let object_table = [0x2000];
+        let source_list_bytes = [0xffu8; 0x1f];
+
+        assert_eq!(
+            select_ship_3d_c1_source_record(
+                &[0x3000, SHIP_3D_TARGET_EXIT_SENTINEL, 0x9999],
+                &records,
+                &object_table,
+                &source_list_bytes,
+                0x2000,
+                0,
+            ),
+            Some(None)
+        );
+    }
+
+    #[test]
+    fn c1_source_selection_requires_known_records_and_sentinel() {
+        let records = [nav_record(
+            0x3000,
+            SHIP_3D_C1_SOURCE_KIND_OPERAND_FLAG,
+            0,
+            0,
+            0,
+        )];
+        let object_table = [0x2000];
+        let source_list_bytes = [0xffu8; 0x1f];
+
+        assert_eq!(
+            select_ship_3d_c1_source_record(
+                &[0x9999, SHIP_3D_TARGET_EXIT_SENTINEL],
+                &records,
+                &object_table,
+                &source_list_bytes,
+                0x2000,
+                SHIP_3D_C1_SOURCE_OPERAND_STATE_FLAG,
+            ),
+            None
+        );
+        assert_eq!(
+            select_ship_3d_c1_source_record(
+                &[0x3000],
+                &records,
+                &object_table,
+                &source_list_bytes,
+                0x2000,
+                0,
+            ),
             None
         );
     }
