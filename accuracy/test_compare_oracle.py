@@ -11,6 +11,30 @@ from PIL import Image
 import compare_oracle
 
 
+TIMELINE_HEADER = "\t".join(
+    [
+        "mp4",
+        "label",
+        "segment_index",
+        "start_time",
+        "end_time",
+        "duration",
+        "reveal_complete_time",
+        "subtitle_hold_end_time",
+        "active_line_id",
+        "subtitle_chars",
+        "has_voice",
+        "voice_index",
+        "voice_duration",
+        "voice_sample_rate",
+        "has_talk_hnm",
+        "talk_hnm",
+        "play_chatter",
+        "text",
+    ]
+)
+
+
 class CompareOracleTests(unittest.TestCase):
     def test_scan_range_includes_end_timestamp(self) -> None:
         self.assertEqual(compare_oracle.parse_scan_range("0:1:0.5"), (0.0, 1.0, 0.5))
@@ -119,6 +143,83 @@ class CompareOracleTests(unittest.TestCase):
                     max_mean_abs=0.0,
                     scenario_id="thresholded-scan",
                 )
+
+    def test_timeline_scan_uses_sidecar_event_times(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="commander-blood-oracle-test-") as tmp:
+            root = Path(tmp)
+            reference = root / "reference.png"
+            generated = root / "generated.png"
+            timeline = root / "generated.timeline.tsv"
+            Image.new("RGB", compare_oracle.NATIVE_SIZE, (10, 20, 30)).save(reference)
+            Image.new("RGB", compare_oracle.NATIVE_SIZE, (10, 20, 30)).save(generated)
+            timeline.write_text(
+                "\n".join(
+                    [
+                        TIMELINE_HEADER,
+                        "generated.png\ttest\t0\t0.000000\t1.500000\t1.500000\t0.250000\t1.583333\t0x000a\t3\tfalse\t\t\t\tfalse\t\ttrue\tabc",
+                    ]
+                )
+                + "\n"
+            )
+
+            self.assertEqual(
+                compare_oracle.load_timeline_times(timeline),
+                [0.0, 0.25, 1.5, 1.583333],
+            )
+            metrics = compare_oracle.scan_generated_timeline(
+                reference,
+                generated,
+                generated_timeline=timeline,
+                ref_crop="auto",
+                out_dir=root / "comparison",
+            )
+
+            self.assertEqual(metrics["status"], "unchecked")
+            self.assertEqual(metrics["scan_source"], "timeline")
+            self.assertEqual(metrics["generated_timeline"], str(timeline))
+            self.assertEqual(metrics["scan_count"], 4)
+            self.assertEqual(metrics["best_generated_time"], 0.0)
+            self.assertTrue((root / "comparison" / "scan.json").exists())
+
+    def test_batch_scenarios_parse_generated_timeline_column(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="commander-blood-oracle-test-") as tmp:
+            root = Path(tmp)
+            reference = root / "reference.png"
+            generated = root / "generated.png"
+            timeline = root / "generated.timeline.tsv"
+            Image.new("RGB", compare_oracle.NATIVE_SIZE, (10, 20, 30)).save(reference)
+            Image.new("RGB", compare_oracle.NATIVE_SIZE, (10, 20, 30)).save(generated)
+            timeline.write_text(
+                "\n".join(
+                    [
+                        TIMELINE_HEADER,
+                        "generated.png\ttest\t0\t0.000000\t0.500000\t0.500000\t0.250000\t0.500000\t0x000a\t3\tfalse\t\t\t\tfalse\t\tfalse\tabc",
+                    ]
+                )
+                + "\n"
+            )
+
+            scenario_file = root / "scenarios.tsv"
+            scenario_file.write_text(
+                "\n".join(
+                    [
+                        "scenario_id\treference\treference_manifest\tgenerated\tgenerated_timeline\tgenerated_time\tref_crop\tmax_mean_abs\tscan_start\tscan_end\tscan_step\tout_dir\tnotes",
+                        f"timeline\t{reference}\t\t{generated}\t{timeline}\t0\tauto\t\t\t\t\t\ttimeline scan",
+                    ]
+                )
+                + "\n"
+            )
+
+            scenarios = compare_oracle.load_scenarios(scenario_file)
+            self.assertEqual(scenarios[0].generated_timeline, timeline)
+            results, exit_code = compare_oracle.run_scenarios(
+                scenarios,
+                out_root=root / "comparisons",
+            )
+
+            self.assertEqual(exit_code, 0)
+            self.assertEqual(results[0]["status"], "unchecked")
+            self.assertEqual(results[0]["scan_source"], "timeline")
 
     def test_candidate_search_ranks_best_generated_frame(self) -> None:
         with tempfile.TemporaryDirectory(prefix="commander-blood-candidate-test-") as tmp:

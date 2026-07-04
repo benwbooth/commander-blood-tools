@@ -86,6 +86,12 @@ MP4 window and save the best matching frame as the scenario comparison. The scan
 writes `scan.json` next to `comparison.json`; this is useful for proving whether
 a mismatch is just timestamp alignment or the wrong scene/presentation state.
 
+Scenarios may instead set `generated_timeline` to a dialogue-run
+`mp4/*.timeline.tsv` sidecar, or to `auto` for `<generated>.timeline.tsv`. This
+scans only binary-derived event boundaries: segment start/end, subtitle
+reveal-complete, and subtitle hold end. Like range scans, timeline scans are for
+discovery and are rejected once `max_mean_abs` is set.
+
 Older capture directories may have `frame_NN.png` files but no manifest. Retrofit
 the metadata before running manifest-aware scenarios:
 
@@ -104,6 +110,15 @@ nix develop --command python accuracy/compare_oracle.py \
   --reference accuracy/captures/frame_12.png \
   --generated "output/mp4/executed-dialogue-run - script2 - 0001 - pterra.mp4" \
   --scan-generated 0:12:1
+```
+
+Or scan the generated dialogue timeline sidecar:
+
+```sh
+nix develop --command python accuracy/compare_oracle.py \
+  --reference accuracy/captures/frame_12.png \
+  --generated "output/mp4/executed-dialogue-run - script2 - 0001 - pterra.mp4" \
+  --generated-timeline auto
 ```
 
 ## Search Candidate Videos

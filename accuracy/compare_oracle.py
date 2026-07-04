@@ -46,6 +46,7 @@ class Scenario:
     reference: Path
     generated: Path
     reference_manifest: Path | None = None
+    generated_timeline: Path | None = None
     generated_time: float = 0.0
     ref_crop: str = "auto"
     max_mean_abs: float | None = None
@@ -91,6 +92,9 @@ def load_scenarios(path: Path) -> list[Scenario]:
                     if (row.get("reference_manifest") or "").strip()
                     else None
                 ),
+                generated_timeline=parse_generated_timeline(
+                    row.get("generated_timeline"), Path(generated)
+                ),
                 generated_time=float(
                     (row.get("generated_time") or "0").strip() or "0"
                 ),
@@ -108,6 +112,19 @@ def load_scenarios(path: Path) -> list[Scenario]:
             )
         )
     return scenarios
+
+
+def default_generated_timeline(generated_path: Path) -> Path:
+    return generated_path.with_suffix(".timeline.tsv")
+
+
+def parse_generated_timeline(value: str | None, generated_path: Path) -> Path | None:
+    if value is None or value.strip() == "":
+        return None
+    value = value.strip()
+    if value == "auto":
+        return default_generated_timeline(generated_path)
+    return Path(value)
 
 
 @dataclass(frozen=True)
@@ -217,6 +234,42 @@ def scan_times(start: float, end: float, step: float) -> list[float]:
         times.append(round(time_sec, 6))
         time_sec += step
     return times
+
+
+TIMELINE_TIME_FIELDS = (
+    "start_time",
+    "reveal_complete_time",
+    "subtitle_hold_end_time",
+    "end_time",
+)
+
+
+def load_timeline_times(path: Path) -> list[float]:
+    if not path.exists():
+        raise ValueError(f"generated timeline not found: {path}")
+
+    times: set[float] = set()
+    with path.open(newline="") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        fieldnames = reader.fieldnames or []
+        missing = [field for field in TIMELINE_TIME_FIELDS if field not in fieldnames]
+        if missing:
+            raise ValueError(
+                f"{path}: missing timeline field(s): {', '.join(missing)}"
+            )
+        for line_no, row in enumerate(reader, start=2):
+            for field in TIMELINE_TIME_FIELDS:
+                value = (row.get(field) or "").strip()
+                if not value:
+                    continue
+                time_sec = float(value)
+                if time_sec < 0:
+                    raise ValueError(f"{path}:{line_no}: {field} is negative")
+                times.add(round(time_sec, 6))
+
+    if not times:
+        raise ValueError(f"{path}: timeline produced no timestamps")
+    return sorted(times)
 
 
 def parse_crop(value: str | None, image_size: tuple[int, int]) -> tuple[int, int, int, int]:
@@ -414,16 +467,79 @@ def scan_generated_times(
     scenario_id: str | None = None,
     notes: str = "",
 ) -> dict[str, object]:
+    times = scan_times(start, end, step)
+    return scan_generated_time_list(
+        reference_path,
+        generated_path,
+        times,
+        ref_crop=ref_crop,
+        out_dir=out_dir,
+        reference_manifest=reference_manifest,
+        max_mean_abs=max_mean_abs,
+        scenario_id=scenario_id,
+        notes=notes,
+        scan_summary={
+            "scan_source": "range",
+            "scan_start": start,
+            "scan_end": end,
+            "scan_step": step,
+        },
+    )
+
+
+def scan_generated_timeline(
+    reference_path: Path,
+    generated_path: Path,
+    *,
+    generated_timeline: Path,
+    ref_crop: str,
+    out_dir: Path,
+    reference_manifest: Path | None = None,
+    max_mean_abs: float | None = None,
+    scenario_id: str | None = None,
+    notes: str = "",
+) -> dict[str, object]:
+    times = load_timeline_times(generated_timeline)
+    return scan_generated_time_list(
+        reference_path,
+        generated_path,
+        times,
+        ref_crop=ref_crop,
+        out_dir=out_dir,
+        reference_manifest=reference_manifest,
+        max_mean_abs=max_mean_abs,
+        scenario_id=scenario_id,
+        notes=notes,
+        scan_summary={
+            "scan_source": "timeline",
+            "generated_timeline": str(generated_timeline),
+        },
+    )
+
+
+def scan_generated_time_list(
+    reference_path: Path,
+    generated_path: Path,
+    times: list[float],
+    *,
+    ref_crop: str,
+    out_dir: Path,
+    reference_manifest: Path | None = None,
+    max_mean_abs: float | None = None,
+    scenario_id: str | None = None,
+    notes: str = "",
+    scan_summary: dict[str, object] | None = None,
+) -> dict[str, object]:
     if max_mean_abs is not None:
         label = f" for scenario {scenario_id!r}" if scenario_id else ""
         raise ValueError(
             "thresholded oracle comparisons must use a fixed generated timestamp"
-            f"{label}; clear scan_start/scan_end/scan_step before setting max_mean_abs"
+            f"{label}; clear scan_start/scan_end/scan_step/generated_timeline "
+            "before setting max_mean_abs"
         )
 
-    times = scan_times(start, end, step)
     if not times:
-        raise ValueError("scan range produced no timestamps")
+        raise ValueError("scan produced no timestamps")
 
     reference_source = resolve_reference_source(
         reference_path, ref_crop, reference_manifest
@@ -437,17 +553,16 @@ def scan_generated_times(
     )
 
     best = min(scan_results, key=lambda result: float(result["mean_abs"]))
-    scan_summary = {
-        "scan_start": start,
-        "scan_end": end,
-        "scan_step": step,
+    summary = {
         "scan_count": len(scan_results),
         "best_generated_time": best["generated_time"],
         "best_mean_abs": best["mean_abs"],
     }
+    if scan_summary:
+        summary = {**scan_summary, **summary}
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "scan.json").write_text(
-        json.dumps({"summary": scan_summary, "results": scan_results}, indent=2) + "\n"
+        json.dumps({"summary": summary, "results": scan_results}, indent=2) + "\n"
     )
 
     return compare_paths(
@@ -460,7 +575,7 @@ def scan_generated_times(
         max_mean_abs=max_mean_abs,
         scenario_id=scenario_id,
         notes=notes,
-        extra_metrics=scan_summary,
+        extra_metrics=summary,
     )
 
 
@@ -617,11 +732,29 @@ def run_scenarios(
     exit_code = 0
     for scenario in selected:
         out_dir = scenario.out_dir or out_root / scenario.scenario_id
-        if (
+        has_range_scan = (
             scenario.scan_start is not None
             or scenario.scan_end is not None
             or scenario.scan_step is not None
-        ):
+        )
+        if scenario.generated_timeline is not None and has_range_scan:
+            raise ValueError(
+                f"scenario {scenario.scenario_id!r} cannot combine "
+                "generated_timeline with scan_start/scan_end/scan_step"
+            )
+        if scenario.generated_timeline is not None:
+            metrics = scan_generated_timeline(
+                scenario.reference,
+                scenario.generated,
+                generated_timeline=scenario.generated_timeline,
+                ref_crop=scenario.ref_crop,
+                out_dir=out_dir,
+                reference_manifest=scenario.reference_manifest,
+                max_mean_abs=scenario.max_mean_abs,
+                scenario_id=scenario.scenario_id,
+                notes=scenario.notes,
+            )
+        elif has_range_scan:
             scan_start = (
                 scenario.scan_start
                 if scenario.scan_start is not None
@@ -690,6 +823,14 @@ def main() -> int:
         type=float,
         default=0.0,
         help="Timestamp in seconds to sample from generated MP4",
+    )
+    parser.add_argument(
+        "--generated-timeline",
+        type=str,
+        help=(
+            "Scan generated MP4 timestamps from a timeline TSV sidecar; "
+            "use 'auto' for <generated>.timeline.tsv"
+        ),
     )
     parser.add_argument(
         "--ref-crop",
@@ -771,8 +912,23 @@ def main() -> int:
             "--candidate-glob is used"
         )
 
-    out_dir = args.out_dir or default_out_dir(args.reference, args.generated, args.generated_time)
-    if args.scan_generated:
+    out_dir = args.out_dir or default_out_dir(
+        args.reference, args.generated, args.generated_time
+    )
+    generated_timeline = parse_generated_timeline(args.generated_timeline, args.generated)
+    if generated_timeline is not None and args.scan_generated:
+        parser.error("--generated-timeline cannot be combined with --scan-generated")
+    if generated_timeline is not None:
+        metrics = scan_generated_timeline(
+            args.reference,
+            args.generated,
+            generated_timeline=generated_timeline,
+            ref_crop=args.ref_crop,
+            out_dir=out_dir,
+            reference_manifest=args.reference_manifest,
+            max_mean_abs=args.max_mean_abs,
+        )
+    elif args.scan_generated:
         start, end, step = parse_scan_range(args.scan_generated)
         metrics = scan_generated_times(
             args.reference,

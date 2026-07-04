@@ -2158,6 +2158,12 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       rows are generated from the exact `DialogueSegment` list consumed by the
       renderer, so oracle frame scans can be narrowed to binary-derived event
       boundaries instead of broad timestamp guessing.
+- [x] Teach the oracle comparator to scan dialogue timelines:
+      `accuracy/compare_oracle.py --generated-timeline auto` and the
+      `generated_timeline` scenario column now read dialogue timeline sidecars
+      and compare only event-boundary timestamps. Thresholded comparisons still
+      require a fixed `generated_time`, so timeline scans remain discovery tools
+      until a specific boundary is promoted.
 - [x] Removed all heuristic fallbacks from the normal full-export dialogue-video
       path (per user "no fallbacks just compute it accurately"): the default MP4
       set now comes from execution-order dialogue runs/profile runs/branch
@@ -2204,10 +2210,12 @@ generated MP4 window and prove whether a mismatch is timestamp alignment or the
 wrong scene/presentation state. Generated dialogue MP4s now carry matching
 `.timeline.tsv` sidecars, so promoted oracle scenarios should choose fixed
 `generated_time` values from event boundaries instead of keeping broad scans.
-Candidate search (`--candidate-glob`) ranks generated videos before a capture is
-promoted to a checked-in scenario. Promoted oracle checks must use a fixed
-`generated_time`; `compare_oracle.py` now rejects `max_mean_abs` when a scenario
-still has scan fields, preventing a pass/fail
+`compare_oracle.py --generated-timeline auto` and scenario
+`generated_timeline=auto` consume those sidecars directly. Candidate search
+(`--candidate-glob`) ranks generated videos before a capture is promoted to a
+checked-in scenario. Promoted oracle checks must use a fixed `generated_time`;
+`compare_oracle.py` now rejects `max_mean_abs` when a scenario still has scan
+fields, preventing a pass/fail
 result from being produced by searching for the closest generated frame. The
 checked-in smoke scenario now names `accuracy/captures/capture-manifest.tsv`
 explicitly so reruns use the capture-recorded path/crop metadata.
