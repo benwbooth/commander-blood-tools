@@ -1593,6 +1593,24 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `DS:0x0ADD & 1` is set, the helper draws the extra static `CANCEL` string
       at `DS:0x0174`. This gives the future software oracle and `wgpu` frontend
       an exact event stream for the target-list UI instead of inferred labels.
+- [x] Port ship 3D navigation-choice hit-test state:
+      `src/ship3d.rs` now models the `0x071E:0x0E02` navigation-choice preamble
+      before the five-entry handler table. The routine blocks on
+      `DS:0x1FB2`, `DS:0x2736`, `DS:0x2737`, `DS:0x259B`, `DS:0x0B13`, or
+      `DS:0x67AC`, skips mouse hit-testing when `DS:0x2A19` already holds a
+      committed choice, and only scans new input when `DS:0x2795` is in
+      `0x28..=0x3C`. The hit-test uses the helper-returned dynamic axis biased
+      by `0x2D` to build slanted x bounds, computes the y origin as
+      `0x48 + abs(axis) + abs(axis)/4`, divides by `0x12 - abs(axis)/8`, and
+      rejects rows `>= 5`. Hover resets DAC entries `0x7B..0x7F` and highlights
+      `0x7B + row`; activation writes requested presentation mode `5`, commits
+      `DS:0x2A19 = row + 1`, ORs `DS:0x2793 |= 0x0C`, sets
+      `DS:0x279B = 0x5A`, `DS:0x2565 = 1`,
+      `DS:0x253F = 0x50 + row * 0x12`, configures the target-list layout flags,
+      sets interpolation duration `DS:0x0ADA = 0x0A`, and plays SND clip 4.
+      Once `DS:0x2793 & 8` clears, an existing `DS:0x2A19` dispatches through
+      the `CS:0x0F29` five-entry handler table. The handler bodies remain
+      separate decompilation targets.
 - [x] Port recovered framebuffer fill/copy primitives:
       `src/extract/render.rs` now has tested Rust helpers for the clipped
       rectangle fill, palette-remap rectangle, scene-band fill, full 320x200

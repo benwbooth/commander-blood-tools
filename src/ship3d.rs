@@ -32,6 +32,25 @@ pub const SHIP_3D_TARGET_HOVER_TEXT_COLOR: u8 = 0xef;
 pub const SHIP_3D_TARGET_ACTIVE_TEXT_COLOR: u8 = 0xfe;
 pub const SHIP_3D_TARGET_EXTRA_LABEL_OFFSET: u16 = 0x0174;
 pub const SHIP_3D_TARGET_ALIAS_LABEL_OFFSET: u16 = 0x273b;
+pub const SHIP_3D_NAV_CHOICE_MIN_GATE: u16 = 0x28;
+pub const SHIP_3D_NAV_CHOICE_MAX_GATE: u16 = 0x3c;
+pub const SHIP_3D_NAV_CHOICE_AXIS_BIAS: u16 = 0x2d;
+pub const SHIP_3D_NAV_CHOICE_RIGHT_BASE: u16 = 0x011f;
+pub const SHIP_3D_NAV_CHOICE_X_WIDTH: u16 = 0x006e;
+pub const SHIP_3D_NAV_CHOICE_Y_BASE: u16 = 0x0048;
+pub const SHIP_3D_NAV_CHOICE_ROW_HEIGHT_BASE: u8 = 0x12;
+pub const SHIP_3D_NAV_CHOICE_COUNT: u8 = 5;
+pub const SHIP_3D_NAV_CHOICE_PALETTE_FIRST: u8 = 0x7b;
+pub const SHIP_3D_NAV_CHOICE_PRESENTATION_MODE: u16 = 0x0005;
+pub const SHIP_3D_NAV_CHOICE_HUD_SELECT_FLAGS: u8 = 0x0c;
+pub const SHIP_3D_NAV_CHOICE_DISPATCH_BLOCK_FLAG: u8 = 0x08;
+pub const SHIP_3D_NAV_CHOICE_HOLD_TICKS: u16 = 0x005a;
+pub const SHIP_3D_NAV_CHOICE_HANDLER_PHASE: u8 = 0x01;
+pub const SHIP_3D_NAV_CHOICE_TARGET_Y_BASE: u16 = 0x0050;
+pub const SHIP_3D_NAV_CHOICE_TARGET_Y_STEP: u16 = 0x0012;
+pub const SHIP_3D_NAV_CHOICE_LAYOUT_CENTER_X: u16 = 0x0064;
+pub const SHIP_3D_NAV_CHOICE_INTERPOLATION_DURATION: u8 = 0x0a;
+pub const SHIP_3D_NAV_CHOICE_SELECT_SOUND: u16 = 0x0004;
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dTransitionState {
@@ -143,6 +162,50 @@ pub struct Ship3dTargetDrawCommand {
 pub struct Ship3dTargetDrawResult {
     pub commands: Vec<Ship3dTargetDrawCommand>,
     pub final_hover_counter: u8,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dNavChoiceState {
+    pub selected_choice: u16,
+    pub hud_flags: u8,
+    pub handler_phase: u8,
+    pub requested_presentation_state: u16,
+    pub hold_ticks: u16,
+    pub target_y: u16,
+    pub target_layout_preserve_widths: bool,
+    pub target_layout_center_x: u16,
+    pub target_layout_extra_entry: bool,
+    pub interpolation_duration_ticks: u8,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dNavChoiceGates {
+    pub c2_presentation_gate: bool,
+    pub left_motion_gate: bool,
+    pub right_motion_gate: bool,
+    pub menu_gate: bool,
+    pub sound_gate: bool,
+    pub presentation_active: bool,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Ship3dNavChoiceInput {
+    pub gate_value: u16,
+    pub dynamic_axis: u16,
+    pub mouse_x: u16,
+    pub mouse_y: u16,
+    pub activate: bool,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dNavChoiceResult {
+    pub gated: bool,
+    pub reset_palette_range: bool,
+    pub hovered_choice: Option<u8>,
+    pub highlighted_palette_index: Option<u8>,
+    pub committed_choice: Option<u8>,
+    pub dispatched_choice: Option<u8>,
+    pub play_select_sound: Option<u16>,
 }
 
 pub fn update_ship_3d_transition_state(state: &mut Ship3dTransitionState, random_gate_zero: bool) {
@@ -366,6 +429,63 @@ pub fn hit_test_ship_3d_target_list(
     })
 }
 
+pub fn update_ship_3d_nav_choice_dispatch(
+    state: &mut Ship3dNavChoiceState,
+    gates: Ship3dNavChoiceGates,
+    input: Ship3dNavChoiceInput,
+) -> Option<Ship3dNavChoiceResult> {
+    let mut result = Ship3dNavChoiceResult::default();
+    if gates.blocks_nav_choice() {
+        result.gated = true;
+        return Some(result);
+    }
+
+    if state.selected_choice == 0 {
+        if input.gate_value > SHIP_3D_NAV_CHOICE_MAX_GATE
+            || input.gate_value < SHIP_3D_NAV_CHOICE_MIN_GATE
+        {
+            return Some(result);
+        }
+
+        result.reset_palette_range = true;
+        if let Some(choice_index) =
+            hit_test_ship_3d_nav_choice(input.dynamic_axis, input.mouse_x, input.mouse_y)?
+        {
+            let choice = choice_index.wrapping_add(1);
+            result.hovered_choice = Some(choice);
+            result.highlighted_palette_index =
+                Some(SHIP_3D_NAV_CHOICE_PALETTE_FIRST.wrapping_add(choice_index));
+
+            if input.activate {
+                state.requested_presentation_state = SHIP_3D_NAV_CHOICE_PRESENTATION_MODE;
+                state.selected_choice = choice as u16;
+                state.hud_flags |= SHIP_3D_NAV_CHOICE_HUD_SELECT_FLAGS;
+                state.hold_ticks = SHIP_3D_NAV_CHOICE_HOLD_TICKS;
+                state.handler_phase = SHIP_3D_NAV_CHOICE_HANDLER_PHASE;
+                state.target_y = SHIP_3D_NAV_CHOICE_TARGET_Y_BASE.wrapping_add(
+                    (choice as u16 - 1).wrapping_mul(SHIP_3D_NAV_CHOICE_TARGET_Y_STEP),
+                );
+                state.target_layout_preserve_widths = true;
+                state.target_layout_center_x = SHIP_3D_NAV_CHOICE_LAYOUT_CENTER_X;
+                state.target_layout_extra_entry = true;
+                state.interpolation_duration_ticks = SHIP_3D_NAV_CHOICE_INTERPOLATION_DURATION;
+                result.committed_choice = Some(choice);
+                result.play_select_sound = Some(SHIP_3D_NAV_CHOICE_SELECT_SOUND);
+            }
+        }
+    }
+
+    if state.selected_choice != 0 && state.hud_flags & SHIP_3D_NAV_CHOICE_DISPATCH_BLOCK_FLAG == 0 {
+        let choice = u8::try_from(state.selected_choice).ok()?;
+        if choice == 0 || choice > SHIP_3D_NAV_CHOICE_COUNT {
+            return None;
+        }
+        result.dispatched_choice = Some(choice);
+    }
+
+    Some(result)
+}
+
 pub fn draw_ship_3d_target_list(
     state: &mut Ship3dTargetHitState,
     layout: Ship3dTargetListLayout,
@@ -539,6 +659,55 @@ fn signed_i16(value: u16) -> i16 {
 
 fn target_list_draw_x(x_origin: u16, inner_width: u16, measured_width: u16) -> u16 {
     x_origin.wrapping_add(inner_width.wrapping_sub(measured_width) >> 1)
+}
+
+impl Ship3dNavChoiceGates {
+    fn blocks_nav_choice(self) -> bool {
+        self.c2_presentation_gate
+            || self.left_motion_gate
+            || self.right_motion_gate
+            || self.menu_gate
+            || self.sound_gate
+            || self.presentation_active
+    }
+}
+
+fn hit_test_ship_3d_nav_choice(
+    dynamic_axis: u16,
+    mouse_x: u16,
+    mouse_y: u16,
+) -> Option<Option<u8>> {
+    let relative_axis = dynamic_axis.wrapping_sub(SHIP_3D_NAV_CHOICE_AXIS_BIAS);
+    let right = SHIP_3D_NAV_CHOICE_RIGHT_BASE.wrapping_sub(relative_axis.wrapping_shl(3));
+    if signed_i16(mouse_x) > signed_i16(right) {
+        return Some(None);
+    }
+
+    let left = right.wrapping_sub(SHIP_3D_NAV_CHOICE_X_WIDTH);
+    if signed_i16(left) < 0 || signed_i16(mouse_x) < signed_i16(left) {
+        return Some(None);
+    }
+
+    let abs_axis = if signed_i16(relative_axis) < 0 {
+        0u16.wrapping_sub(relative_axis)
+    } else {
+        relative_axis
+    };
+    let quarter_axis = abs_axis >> 2;
+    let y_origin = SHIP_3D_NAV_CHOICE_Y_BASE
+        .wrapping_add(abs_axis)
+        .wrapping_add(quarter_axis);
+    let row_height = SHIP_3D_NAV_CHOICE_ROW_HEIGHT_BASE.wrapping_sub((quarter_axis as u8) >> 1);
+    let row_offset = mouse_y.wrapping_sub(y_origin);
+    if signed_i16(row_offset) < 0 {
+        return Some(None);
+    }
+
+    let choice = checked_u16_div_u8_to_u8(row_offset, row_height)?;
+    if choice >= SHIP_3D_NAV_CHOICE_COUNT {
+        return Some(None);
+    }
+    Some(Some(choice))
 }
 
 fn next_target_list_draw_color(state: &mut Ship3dTargetHitState, activate: bool) -> u8 {
@@ -1273,5 +1442,199 @@ mod tests {
             draw_ship_3d_target_list(&mut state, layout, &[0x1000, 0x2000], &[20], false, None),
             None
         );
+    }
+
+    #[test]
+    fn nav_choice_hover_maps_mouse_to_palette_highlight() {
+        let mut state = Ship3dNavChoiceState::default();
+
+        let result = update_ship_3d_nav_choice_dispatch(
+            &mut state,
+            Ship3dNavChoiceGates::default(),
+            Ship3dNavChoiceInput {
+                gate_value: SHIP_3D_NAV_CHOICE_MIN_GATE,
+                dynamic_axis: SHIP_3D_NAV_CHOICE_AXIS_BIAS,
+                mouse_x: 0x00c0,
+                mouse_y: SHIP_3D_NAV_CHOICE_Y_BASE + SHIP_3D_NAV_CHOICE_TARGET_Y_STEP * 2,
+                activate: false,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(
+            result,
+            Ship3dNavChoiceResult {
+                gated: false,
+                reset_palette_range: true,
+                hovered_choice: Some(3),
+                highlighted_palette_index: Some(SHIP_3D_NAV_CHOICE_PALETTE_FIRST + 2),
+                committed_choice: None,
+                dispatched_choice: None,
+                play_select_sound: None,
+            }
+        );
+        assert_eq!(state, Ship3dNavChoiceState::default());
+    }
+
+    #[test]
+    fn nav_choice_activation_sets_binary_state_without_dispatching_yet() {
+        let mut state = Ship3dNavChoiceState::default();
+
+        let result = update_ship_3d_nav_choice_dispatch(
+            &mut state,
+            Ship3dNavChoiceGates::default(),
+            Ship3dNavChoiceInput {
+                gate_value: SHIP_3D_NAV_CHOICE_MAX_GATE,
+                dynamic_axis: SHIP_3D_NAV_CHOICE_AXIS_BIAS,
+                mouse_x: 0x00c0,
+                mouse_y: SHIP_3D_NAV_CHOICE_Y_BASE + SHIP_3D_NAV_CHOICE_TARGET_Y_STEP * 3,
+                activate: true,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(result.hovered_choice, Some(4));
+        assert_eq!(result.committed_choice, Some(4));
+        assert_eq!(result.dispatched_choice, None);
+        assert_eq!(
+            result.play_select_sound,
+            Some(SHIP_3D_NAV_CHOICE_SELECT_SOUND)
+        );
+        assert_eq!(state.selected_choice, 4);
+        assert_eq!(
+            state.requested_presentation_state,
+            SHIP_3D_NAV_CHOICE_PRESENTATION_MODE
+        );
+        assert_eq!(state.hud_flags, SHIP_3D_NAV_CHOICE_HUD_SELECT_FLAGS);
+        assert_eq!(state.hold_ticks, SHIP_3D_NAV_CHOICE_HOLD_TICKS);
+        assert_eq!(state.handler_phase, SHIP_3D_NAV_CHOICE_HANDLER_PHASE);
+        assert_eq!(
+            state.target_y,
+            SHIP_3D_NAV_CHOICE_TARGET_Y_BASE + SHIP_3D_NAV_CHOICE_TARGET_Y_STEP * 3
+        );
+        assert!(state.target_layout_preserve_widths);
+        assert_eq!(
+            state.target_layout_center_x,
+            SHIP_3D_NAV_CHOICE_LAYOUT_CENTER_X
+        );
+        assert!(state.target_layout_extra_entry);
+        assert_eq!(
+            state.interpolation_duration_ticks,
+            SHIP_3D_NAV_CHOICE_INTERPOLATION_DURATION
+        );
+    }
+
+    #[test]
+    fn nav_choice_existing_selection_dispatches_after_hud_bit_clears() {
+        let mut state = Ship3dNavChoiceState {
+            selected_choice: 2,
+            hud_flags: 0,
+            ..Ship3dNavChoiceState::default()
+        };
+
+        let result = update_ship_3d_nav_choice_dispatch(
+            &mut state,
+            Ship3dNavChoiceGates::default(),
+            Ship3dNavChoiceInput {
+                gate_value: 0,
+                dynamic_axis: 0,
+                mouse_x: 0,
+                mouse_y: 0,
+                activate: false,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(result.reset_palette_range, false);
+        assert_eq!(result.hovered_choice, None);
+        assert_eq!(result.dispatched_choice, Some(2));
+    }
+
+    #[test]
+    fn nav_choice_gates_block_hit_test_and_dispatch() {
+        let mut state = Ship3dNavChoiceState {
+            selected_choice: 2,
+            ..Ship3dNavChoiceState::default()
+        };
+
+        let result = update_ship_3d_nav_choice_dispatch(
+            &mut state,
+            Ship3dNavChoiceGates {
+                presentation_active: true,
+                ..Ship3dNavChoiceGates::default()
+            },
+            Ship3dNavChoiceInput {
+                gate_value: SHIP_3D_NAV_CHOICE_MIN_GATE,
+                dynamic_axis: SHIP_3D_NAV_CHOICE_AXIS_BIAS,
+                mouse_x: 0x00c0,
+                mouse_y: SHIP_3D_NAV_CHOICE_Y_BASE,
+                activate: true,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(
+            result,
+            Ship3dNavChoiceResult {
+                gated: true,
+                ..Ship3dNavChoiceResult::default()
+            }
+        );
+        assert_eq!(state.selected_choice, 2);
+    }
+
+    #[test]
+    fn nav_choice_rejects_out_of_range_gate_before_palette_reset() {
+        let mut state = Ship3dNavChoiceState::default();
+
+        let result = update_ship_3d_nav_choice_dispatch(
+            &mut state,
+            Ship3dNavChoiceGates::default(),
+            Ship3dNavChoiceInput {
+                gate_value: SHIP_3D_NAV_CHOICE_MIN_GATE - 1,
+                dynamic_axis: SHIP_3D_NAV_CHOICE_AXIS_BIAS,
+                mouse_x: 0x00c0,
+                mouse_y: SHIP_3D_NAV_CHOICE_Y_BASE,
+                activate: true,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(result, Ship3dNavChoiceResult::default());
+        assert_eq!(state.selected_choice, 0);
+    }
+
+    #[test]
+    fn nav_choice_uses_dynamic_axis_for_slanted_bounds() {
+        let mut state = Ship3dNavChoiceState::default();
+
+        let outside = update_ship_3d_nav_choice_dispatch(
+            &mut state,
+            Ship3dNavChoiceGates::default(),
+            Ship3dNavChoiceInput {
+                gate_value: SHIP_3D_NAV_CHOICE_MIN_GATE,
+                dynamic_axis: SHIP_3D_NAV_CHOICE_AXIS_BIAS + 4,
+                mouse_x: 0x0090,
+                mouse_y: 0x004d,
+                activate: false,
+            },
+        )
+        .unwrap();
+        assert_eq!(outside.reset_palette_range, true);
+        assert_eq!(outside.hovered_choice, None);
+
+        let inside = update_ship_3d_nav_choice_dispatch(
+            &mut state,
+            Ship3dNavChoiceGates::default(),
+            Ship3dNavChoiceInput {
+                gate_value: SHIP_3D_NAV_CHOICE_MIN_GATE,
+                dynamic_axis: SHIP_3D_NAV_CHOICE_AXIS_BIAS + 4,
+                mouse_x: 0x0091,
+                mouse_y: 0x004d,
+                activate: false,
+            },
+        )
+        .unwrap();
+        assert_eq!(inside.hovered_choice, Some(1));
     }
 }

@@ -112,6 +112,15 @@ pub const SHIP_3D_EXIT_PENDING_DS_OFFSET: u16 = 0x2532;
 pub const SHIP_3D_TRANSITION_ARMED_DS_OFFSET: u16 = 0x2533;
 pub const SHIP_3D_FALLBACK_TARGET_TABLE_DS_OFFSET: u16 = 0x2537;
 pub const SHIP_3D_NAVIGATION_TRIGGER_DS_OFFSET: u16 = 0x27d8;
+pub const SHIP_3D_NAV_CHOICE_SELECTED_DS_OFFSET: u16 = 0x2a19;
+pub const SHIP_3D_NAV_CHOICE_GATE_DS_OFFSET: u16 = 0x2795;
+pub const SHIP_3D_NAV_CHOICE_HOLD_TIMER_DS_OFFSET: u16 = 0x279b;
+pub const SHIP_3D_NAV_CHOICE_PHASE_DS_OFFSET: u16 = 0x2565;
+pub const SHIP_3D_NAV_CHOICE_TARGET_Y_DS_OFFSET: u16 = 0x253f;
+pub const SHIP_3D_NAV_CHOICE_LEFT_GATE_DS_OFFSET: u16 = 0x2736;
+pub const SHIP_3D_NAV_CHOICE_RIGHT_GATE_DS_OFFSET: u16 = 0x2737;
+pub const SHIP_3D_NAV_CHOICE_MENU_GATE_DS_OFFSET: u16 = 0x259b;
+pub const SHIP_3D_NAV_CHOICE_SOUND_GATE_DS_OFFSET: u16 = 0x0b13;
 pub const SHIP_3D_INTERPOLATION_DURATION_DS_OFFSET: u16 = 0x0ada;
 pub const SHIP_3D_INTERPOLATION_TICK_DS_OFFSET: u16 = 0x0adb;
 pub const SHIP_3D_TARGET_EXTRA_LABEL_DS_OFFSET: u16 = 0x0174;
@@ -2590,6 +2599,87 @@ pub const PRESENTATION_3D_MARKERS: &[BinarySymbol] = &[
         comment: "state byte gating the ship/navigation update branch at file 0xB34E",
     },
     BinarySymbol {
+        name: "ship_3d_nav_choice_selected",
+        file_offset: 0x00fe39,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_NAV_CHOICE_SELECTED_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "1-based navigation choice committed by 0x071E:0x0E02 before handler dispatch",
+    },
+    BinarySymbol {
+        name: "ship_3d_nav_choice_gate",
+        file_offset: 0x00fbb5,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_NAV_CHOICE_GATE_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "word compared with 0x28..0x3C before navigation-choice hit testing",
+    },
+    BinarySymbol {
+        name: "ship_3d_nav_choice_hold_timer",
+        file_offset: 0x00fbbb,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_NAV_CHOICE_HOLD_TIMER_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "set to 0x5A when a navigation choice is activated",
+    },
+    BinarySymbol {
+        name: "ship_3d_nav_choice_phase",
+        file_offset: 0x00f985,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_NAV_CHOICE_PHASE_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "handler phase byte set to 1 when a navigation choice is activated",
+    },
+    BinarySymbol {
+        name: "ship_3d_nav_choice_target_y",
+        file_offset: 0x00f95f,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_NAV_CHOICE_TARGET_Y_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "target y word set to 0x50 + selected_index * 0x12 by navigation-choice activation",
+    },
+    BinarySymbol {
+        name: "ship_3d_nav_choice_left_gate",
+        file_offset: 0x00fb56,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_NAV_CHOICE_LEFT_GATE_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "nonzero byte blocks navigation-choice hit testing and dispatch",
+    },
+    BinarySymbol {
+        name: "ship_3d_nav_choice_right_gate",
+        file_offset: 0x00fb57,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_NAV_CHOICE_RIGHT_GATE_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "nonzero byte blocks navigation-choice hit testing and dispatch",
+    },
+    BinarySymbol {
+        name: "ship_3d_nav_choice_menu_gate",
+        file_offset: 0x00f9bb,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_NAV_CHOICE_MENU_GATE_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "nonzero byte blocks navigation-choice hit testing and dispatch",
+    },
+    BinarySymbol {
+        name: "ship_3d_nav_choice_sound_gate",
+        file_offset: 0x00df33,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_NAV_CHOICE_SOUND_GATE_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "nonzero byte blocks navigation-choice hit testing and dispatch",
+    },
+    BinarySymbol {
         name: "ship_3d_interpolation_duration",
         file_offset: 0x00defa,
         segment: None,
@@ -3125,6 +3215,15 @@ mod tests {
             "ship_3d_target_width_table",
             "ship_3d_current_target",
             "ship_3d_navigation_trigger",
+            "ship_3d_nav_choice_selected",
+            "ship_3d_nav_choice_gate",
+            "ship_3d_nav_choice_hold_timer",
+            "ship_3d_nav_choice_phase",
+            "ship_3d_nav_choice_target_y",
+            "ship_3d_nav_choice_left_gate",
+            "ship_3d_nav_choice_right_gate",
+            "ship_3d_nav_choice_menu_gate",
+            "ship_3d_nav_choice_sound_gate",
             "ship_3d_target_query_mode",
             "ship_3d_target_selection",
             "ship_3d_interpolation_duration",
