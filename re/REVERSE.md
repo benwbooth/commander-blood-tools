@@ -145,30 +145,32 @@ handler. The core VM token exposes both operands.
 text tokens matching an index `bx`, via far pointers `lds si,[gs:0x6720]` /
 `les di,[gs:0x6724]` (a per-script COD/offset table).
 
-### 0xA6 TEXT token — parameter block (DECODED from data; semantics pending)
+### 0xA6 TEXT token — parameter block (DECODED from handler + data)
 
 Layout (confirmed against SCRIPT1/2.COD with `re/tools/dump_text_tokens.py`):
 
     A6  b1 b2 b3 b4 b5   w0 w1 ... wN  0x0000
 
-- `b1,b2`: constant within a script, differ between scripts (`0A 07` in script2,
-  `72 08` in script1). Hypothesis: subtitle position (x,y) or script default
-  actor. (TBD via handler.)
-- `b3`: **voice / dialogue-line selector**. `0xFF` = no voice line; otherwise a
-  small index that increments per spoken line (`01,02,03,04,05…` observed in
-  order). Strong candidate for the `son.snd` voice-clip index. *(This is one of
-  the fields the current heuristic ignores → wrong subtitle/voice pairing.)*
-- `b4`: **display/animation flag bits** — observed `00,08,10,20,28(=20|08),
-  30(=20|10),a0…` i.e. clean bitfield, not a counter.
+- `b1,b2`: u16 offset into the runtime line/object table at `gs:0x6724`.
+- `b3`: **voice / dialogue-line selector**. The handler stores
+  `sign_extend(b3)` to `gs:0x1FAB`; the active line id is `b3 + 9`. `0xFF` and
+  `0x00` are silent/no-voice channels; `1..=N` maps to one-based talk/voice
+  clips when the current actor supplies that many clips.
+- `b4`: **display/animation/control bits**. Decoded bits include `0x01`
+  preserve the active/display flag after accepting the line, `0x04` skip one
+  extra control word before dictionary words, `0x08` conditional skip count
+  from `b5`, and `0x10` loop target word.
 - `b5`: flags; **bit 0x80 = engine "active" flag** (set in-place by
-  `token_walker` via `or [si+4],0x80`); also seen `0x90(=80|10)`, `0xA0(=80|20)`.
+  `token_walker` via `or [si+4],0x80`). After accepting a line, the handler
+  clears this bit in the COD stream unless `b4 & 0x01` is set. Rust models this
+  with `text_flags_after_accept()` and per-token runtime flags in `execute_trace`.
 - `w*`: u16 **dictionary-word offsets** into `SCRIPT*.DIC`, `0x0000`-terminated.
   A `0xFFFF` word appears occasionally — likely an inline marker, not a real
   dict offset (verify in handler).
 
-Next: find the **0xA6 handler** to pin b1..b5 semantics (map b3→son.snd clip,
-b4/b5 bits→animation/subtitle-sound/reveal behavior). That handler is the direct
-fix for the "wrong subtitle sound/animation/font per line" complaint.
+Remaining A6-related work: finish the callback/media routing around accepted
+lines so `b4/b5` presentation bits drive the exact talk animation, subtitle
+sound, and wait behavior instead of only the current event-schema fields.
 
 ### Dialogue scene LAYOUT (from real-game oracle capture + 0x3D7B)
 
@@ -615,7 +617,8 @@ On entry `si` points at the token's `b1`. The handler:
 - saves `si@b3` to `gs:0x677C`; reads **`cx = [b4,b5] (u16)` = the control word**:
   - `b4 & 0x08` ⇒ set skip-count `gs:0x67AB = ((b5>>4)&7)+1` (conditional IF skip).
   - `b4 & 0x10` ⇒ loop: `gs:0x67B1|=1`, next word → `gs:0x6778` (loop target).
-  - `b4 & 0x01` ⇒ after accepting a line, clear bit7 of `b5` in the COD stream.
+  - `b4 & 0x01` ⇒ preserve bit7 of `b5` after accepting the line. If this bit
+    is clear, the handler clears bit7 of `b5` in the COD stream (`and [si+1],0x7f`).
   - `b4 & 0x04` ⇒ skip one extra u16 control word before the dictionary-word loop.
   - **`b5 & 0x80` (bit7) = ACTIVE/DISPLAY flag**: `or cx,cx; jns →skip` — if bit7
     clear the line is not shown (explains why real data always has 0x80).
@@ -2085,6 +2088,11 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `src/extract/script.rs` loads COD/VAR/DIC/DEB resources from the
       BLOODPRG.EXE profile table and emits run-level plus global-order dialogue
       TSVs for the default profile chain.
+- [x] Port A6 accepted-line active-flag mutation:
+      `src/vm.rs` models the handler's self-modifying `b5` update. Normal
+      accepted lines clear `b5 & 0x80` for subsequent visits to the same token;
+      `b4 & 0x01` preserves it for reusable/looping text. The
+      `script-text-flags.tsv` summary now reports this bit as `preserve-active`.
 - [x] Route profile-sequence rows into run-level videos:
       `src/extract/character.rs` now renders `ScriptProfileDialogueRun`s through
       the same VM event emitter as the existing dialogue videos, preserving

@@ -883,7 +883,7 @@ fn opcode_metadata(opcode: u8, handler_file_offset: usize) -> OpcodeMetadata {
             mnemonic: "text",
             family: "dialogue-text",
             rust_status: "partially-ported",
-            notes: "TEXT token shape, dictionary words, line state, and subtitle assembly rules are represented in Rust",
+            notes: "TEXT token shape, dictionary words, line state gates, accepted-line b5 active-flag mutation, and subtitle assembly rules are represented in Rust",
         },
         vm::OP_ACTOR => OpcodeMetadata {
             mnemonic: "actor_object_ref",

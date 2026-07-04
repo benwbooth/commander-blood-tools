@@ -17,7 +17,8 @@ use super::*;
 ///   `params[0]`.
 /// * `b4` — *control-flag word* (NOT a clip index): bit3 `0x08` = conditional
 ///   skip-count follows, bit4 `0x10` = loop with target word, bit2 `0x04` =
-///   extra control word before the dictionary words. Held as `params[1]`.
+///   extra control word before the dictionary words, bit0 `0x01` preserves the
+///   active/display flag after accepting the line. Held as `params[1]`.
 /// * `b5` — flags; bit7 `0x80` = the "active / display" flag (always set in real
 ///   data); this is the marker the decoder anchors on.
 /// * `w*` — u16 dictionary-word offsets into `SCRIPT*.DIC`, `0x0000`-terminated.
@@ -242,8 +243,8 @@ fn text_control_summary(flags_b4: u8, flags_b5: u8, loop_target: Option<u16>) ->
             None => "loop".to_string(),
         });
     }
-    if flags_b4 & 0x01 != 0 {
-        parts.push("clear-next-high-bit".to_string());
+    if flags_b4 & vm::TEXT_PRESERVE_ACTIVE_FLAG != 0 {
+        parts.push("preserve-active".to_string());
     }
     if flags_b4 & 0x04 != 0 {
         parts.push("skip-extra-word".to_string());
@@ -4995,7 +4996,7 @@ mod tests {
         assert_eq!(text_skip_count(0x08, 0xa0), Some(3));
         assert_eq!(
             text_control_summary(0x39, 0xa0, Some(0x1234)),
-            "active,conditional-skip:3,loop:0x1234,clear-next-high-bit,b4-unknown:0x20,b5-payload:0x20"
+            "active,conditional-skip:3,loop:0x1234,preserve-active,b4-unknown:0x20,b5-payload:0x20"
         );
 
         let rows = vec![ScriptTextFlagLine {

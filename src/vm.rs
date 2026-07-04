@@ -114,6 +114,7 @@ pub const TEXT_SELECTOR_NONE: u8 = 0xFF;
 pub const TEXT_SELECTOR_SILENT: u8 = 0x00;
 pub const ACTIVE_LINE_ID_BIAS: u16 = 9;
 pub const CHATTER_HOLD_EXTRA_TICKS: u16 = 6;
+pub const TEXT_PRESERVE_ACTIVE_FLAG: u8 = 0x01;
 pub const TEXT_ACTIVE_DISPLAY_FLAG: u8 = 0x80;
 pub const TEXT_LINE_ALREADY_SHOWN_FLAG: u16 = 0x8000;
 
@@ -143,6 +144,17 @@ pub fn text_selector_requests_voice(selector: u8) -> bool {
 
 pub fn text_flags_are_active(flags_b5: u8) -> bool {
     flags_b5 & TEXT_ACTIVE_DISPLAY_FLAG != 0
+}
+
+/// Port the accepted-line self-modifying write in the A6 handler at file
+/// `0x668D..0x669B`: `b4 & 1` preserves the token's active bit, otherwise the
+/// handler clears bit7 of `b5` in the COD stream after accepting the line.
+pub fn text_flags_after_accept(flags_b4: u8, flags_b5: u8) -> u8 {
+    if flags_b4 & TEXT_PRESERVE_ACTIVE_FLAG != 0 {
+        flags_b5
+    } else {
+        flags_b5 & !TEXT_ACTIVE_DISPLAY_FLAG
+    }
 }
 
 pub fn text_line_flags_offset(line_index: u16) -> u16 {
@@ -1282,6 +1294,27 @@ fn text_runtime_gates_allow(
             || text_line_should_display(state, line_index, flags_b5))
 }
 
+#[derive(Default)]
+struct TextTokenRuntimeFlags {
+    flags_b5_by_offset: BTreeMap<usize, u8>,
+}
+
+impl TextTokenRuntimeFlags {
+    fn flags_b5(&self, offset: usize, original_flags_b5: u8) -> u8 {
+        self.flags_b5_by_offset
+            .get(&offset)
+            .copied()
+            .unwrap_or(original_flags_b5)
+    }
+
+    fn accept_line(&mut self, offset: usize, flags_b4: u8, effective_flags_b5: u8) {
+        let next = text_flags_after_accept(flags_b4, effective_flags_b5);
+        if next != effective_flags_b5 {
+            self.flags_b5_by_offset.insert(offset, next);
+        }
+    }
+}
+
 fn mark_text_line_shown(state: &mut [u8], line_index: u16) {
     let flags_offset = text_line_flags_offset(line_index);
     state_set_u16(
@@ -2126,6 +2159,7 @@ pub fn interpret_line_states_with_context(
     let mut actor: Option<u16> = None;
     let mut out = Vec::new();
     let mut special_slots = SpecialObjectSlots::default();
+    let mut text_token_flags = TextTokenRuntimeFlags::default();
     let mut pos = 0usize;
     let mut mode1 = false;
     let end = cod.len();
@@ -2245,15 +2279,18 @@ pub fn interpret_line_states_with_context(
                 Some((
                     VmToken::Text {
                         line_index,
+                        flags_b4,
                         flags_b5,
                         ..
                     },
                     next,
                 )) => {
-                    if text_runtime_gates_allow(&state, context, line_index, flags_b5) {
+                    let effective_flags_b5 = text_token_flags.flags_b5(pos, flags_b5);
+                    if text_runtime_gates_allow(&state, context, line_index, effective_flags_b5) {
                         if context.text_line_display_gating {
                             mark_text_line_shown(&mut state, line_index);
                         }
+                        text_token_flags.accept_line(pos, flags_b4, effective_flags_b5);
                         let location_offset =
                             actor.map(|a| state_u16(&state, a.wrapping_add(LOCATION_FIELD)));
                         out.push(LineState {
@@ -2345,6 +2382,7 @@ fn execute_trace_state_with_overrides_and_context(
     let mut branch_stack: Vec<u16> = Vec::new();
     let mut post_update = PostUpdateTrace::default();
     let mut special_slots = SpecialObjectSlots::default();
+    let mut text_token_flags = TextTokenRuntimeFlags::default();
     let mut pos = 0usize;
     let mut mode1 = false;
     let end = cod.len();
@@ -2868,15 +2906,18 @@ fn execute_trace_state_with_overrides_and_context(
                 Some((
                     VmToken::Text {
                         line_index,
+                        flags_b4,
                         flags_b5,
                         ..
                     },
                     next,
                 )) => {
-                    if text_runtime_gates_allow(&state, context, line_index, flags_b5) {
+                    let effective_flags_b5 = text_token_flags.flags_b5(token_start, flags_b5);
+                    if text_runtime_gates_allow(&state, context, line_index, effective_flags_b5) {
                         if context.text_line_display_gating {
                             mark_text_line_shown(&mut state, line_index);
                         }
+                        text_token_flags.accept_line(token_start, flags_b4, effective_flags_b5);
                         let location_offset =
                             actor.map(|a| state_u16(&state, a.wrapping_add(LOCATION_FIELD)));
                         line_states.push(LineState {
@@ -4396,6 +4437,24 @@ mod tests {
         assert_eq!(text_selector_voice_clip_index(0x01, 4), Some(0));
         assert_eq!(text_selector_voice_clip_index(0x04, 4), Some(3));
         assert_eq!(text_selector_voice_clip_index(0x05, 4), None);
+    }
+
+    #[test]
+    fn text_acceptance_clears_active_bit_unless_preserved_by_b4_bit0() {
+        assert_eq!(text_flags_after_accept(0x00, 0xa0), 0x20);
+        assert_eq!(
+            text_flags_after_accept(TEXT_PRESERVE_ACTIVE_FLAG, 0xa0),
+            0xa0
+        );
+
+        let mut runtime = TextTokenRuntimeFlags::default();
+        assert_eq!(runtime.flags_b5(0x20, TEXT_ACTIVE_DISPLAY_FLAG), 0x80);
+        runtime.accept_line(0x20, 0x00, TEXT_ACTIVE_DISPLAY_FLAG);
+        assert_eq!(runtime.flags_b5(0x20, TEXT_ACTIVE_DISPLAY_FLAG), 0x00);
+
+        let mut preserved = TextTokenRuntimeFlags::default();
+        preserved.accept_line(0x20, TEXT_PRESERVE_ACTIVE_FLAG, TEXT_ACTIVE_DISPLAY_FLAG);
+        assert_eq!(preserved.flags_b5(0x20, TEXT_ACTIVE_DISPLAY_FLAG), 0x80);
     }
 
     #[test]
