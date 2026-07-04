@@ -386,11 +386,24 @@ through a **far pointer stored in descriptor field `+4`** (the descriptor is at
 `DS:0x6212 + slot*0x20`). The frame header it then reads is `[si+0]=stride`
 (row bytes / mul factor), `[si+4]=x draw offset`, `[si+6]=y draw offset`, pixels
 at `+8` — which matches `render.rs::RawSpriteFrame::parse` (stride@0, x@4, y@6,
-pixels@8) **byte-for-byte**, confirming the frame parsing is faithful. The ONLY
-remaining unknown for the sprite layer is which scene-init routine writes that
-`descriptor+4` far pointer: the 21 refs to `0x6212` cluster in segment `0x0299`
-(files `0x40D8..0x42xx`, the position/extent slot helpers) — the writer that
-stores a resource pointer there is the next trace target.
+pixels@8) **byte-for-byte**, confirming the frame parsing is faithful. The
+scene-setup routine that writes `descriptor+4` is now found at `0x40D0`
+(`ship_3d_sprite_slot_setup(slot=ax, resource_id=dx, frame=bp)`):
+- `di = 0x6212 + slot*0x20`;
+- `lcall 0x04B9:0x0190` with `dx` → returns `ds:si` = the sprite **frame table**
+  blob (this is the resource loader, keyed by resource id);
+- `slot_state = ([si] & 4) | 0x83` written to `gs:[di]` — **identical** to
+  `render.rs::SpriteSlotFrameTable::slot_state_flags()`;
+- `[si+2]` = frame count (bounds-checked against `bp`); the frame **offset
+  table** starts at `si+4` with 4-byte packed entries (`low nibble` + `>>4`
+  segment adjust), exactly matching `SpriteSlotFrameTable::parse`;
+- the resolved frame pointer is stored as `gs:[di+4]=offset`, `gs:[di+6]=segment`
+  and its header word `[si]` (stride) into `gs:[di+0xc]`.
+
+So `render.rs`'s `SpriteSlotFrameTable` layout is **confirmed faithful to the
+binary scene-setup**, not merely inferred from the (absent) `.spr` files. The
+last remaining unknown is the resource bank behind `0x04B9:0x0190` — which file
+/ in-memory bank the sprite frame-table blobs are loaded from by id.
 
 The per-slot dirty geometry commit branch in `sprite_slot_commit_dirty_range`
 (`0x0299:0x1467`) is now modeled as
