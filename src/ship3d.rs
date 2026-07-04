@@ -74,6 +74,18 @@ pub const SHIP_3D_NAVIGATION_SCENE_BAND_TOP: u16 = 0x0023;
 pub const SHIP_3D_NAVIGATION_RENDER_CLIP_BOTTOM: u16 = 0x00a5;
 pub const SHIP_3D_NAVIGATION_RENDER_CLIP_RESTORED_BOTTOM: u16 = 0x00c8;
 pub const SHIP_3D_NAVIGATION_TRIGGER_CLOSE_STEP: u8 = 0x02;
+pub const SHIP_3D_PROCEDURAL_HUD_ACTIVE_FLAG: u16 = 0x0008;
+pub const SHIP_3D_PROCEDURAL_TARGET_LIST_FLAG: u16 = 0x0004;
+pub const SHIP_3D_PROCEDURAL_HALF_TURN: u16 = 0x00b4;
+pub const SHIP_3D_PROCEDURAL_FULL_TURN: u16 = 0x0168;
+pub const SHIP_3D_PROCEDURAL_MOUSE_RING: u16 = 0x05a0;
+pub const SHIP_3D_PROCEDURAL_MOUSE_CENTER_X: u16 = 0x05a0;
+pub const SHIP_3D_PROCEDURAL_MOUSE_ALIGN_MASK: u16 = 0xfff8;
+pub const SHIP_3D_PROCEDURAL_CLOSE_ANGLE_THRESHOLD: u16 = 0x001f;
+pub const SHIP_3D_PROCEDURAL_TARGET_LIST_THRESHOLD: u16 = 0x0028;
+pub const SHIP_3D_PROCEDURAL_TARGET_LIST_STEP: u16 = 0x0028;
+pub const SHIP_3D_PROCEDURAL_AUTO_ROTATE_STEP: u16 = 0x001e;
+pub const SHIP_3D_PROCEDURAL_ROTATION_OFFSET_BIAS: u16 = 0x00a0;
 pub const SHIP_3D_TEMP_SND_CALLBACK_TABLE_OFFSET: u16 = 0x0acc;
 pub const SHIP_3D_TEMP_SND_CALLBACK_OFFSETS: [u16; 3] = [0x0087, 0x0090, 0x009c];
 pub const SHIP_3D_TEMP_SND_PATH_OFFSET: u16 = 0x0d23;
@@ -325,6 +337,34 @@ pub struct Ship3dNavigationSequenceEffect {
     pub armed_exit_pending: bool,
     pub armed_opening_exit: bool,
     pub final_reset_pending: bool,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dProceduralUpdateState {
+    pub hud_flags: u16,
+    pub angle: u16,
+    pub mouse_x: u16,
+    pub mouse_y: u16,
+    pub hold_ticks: u16,
+    pub nav_timer: u16,
+    pub mouse_delta_accumulator: u16,
+    pub mouse_button_state: u16,
+    pub mouse_sector: u16,
+    pub rotation_direction_positive: bool,
+    pub projection_angle: u16,
+    pub rotation_offset: u16,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dProceduralUpdateEffect {
+    pub cleared_hud_active_flag: bool,
+    pub initialized_nav_timer: bool,
+    pub applied_hud_rotation: bool,
+    pub adjusted_target_list_mouse: bool,
+    pub auto_rotated_angle: bool,
+    pub updated_projection_angle: bool,
+    pub mouse_set_position: Option<(u16, u16)>,
+    pub carry_set: bool,
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -1092,6 +1132,148 @@ pub fn run_ship_3d_navigation_sequence_update(
     effect
 }
 
+pub fn run_ship_3d_procedural_update(
+    state: &mut Ship3dProceduralUpdateState,
+) -> Ship3dProceduralUpdateEffect {
+    let mut effect = Ship3dProceduralUpdateEffect::default();
+    let mut angle_double = state.angle.wrapping_mul(2);
+
+    if state.hud_flags & SHIP_3D_PROCEDURAL_HUD_ACTIVE_FLAG != 0 {
+        let target_angle = state.hold_ticks >> 1;
+        if state.angle == target_angle {
+            state.hud_flags ^= SHIP_3D_PROCEDURAL_HUD_ACTIVE_FLAG;
+            state.nav_timer = 0;
+            effect.cleared_hud_active_flag = true;
+        } else {
+            let delta = circular_delta(state.angle, target_angle, SHIP_3D_PROCEDURAL_HALF_TURN);
+            let compare_angle = wrap_ring_once(
+                state.angle as i32 + delta as i32,
+                SHIP_3D_PROCEDURAL_HALF_TURN,
+            )
+            .wrapping_mul(2);
+
+            if state.nav_timer == 0 {
+                state.nav_timer = delta;
+                effect.initialized_nav_timer = true;
+            }
+
+            let mut angle_step = delta >> 1;
+            if angle_step == 0 {
+                angle_step = 1;
+            }
+            let mut mouse_step = delta.wrapping_shl(2);
+            state.rotation_direction_positive = true;
+            if compare_angle != state.hold_ticks {
+                state.rotation_direction_positive = false;
+                angle_step = angle_step.wrapping_neg();
+                mouse_step = mouse_step.wrapping_neg();
+            }
+
+            if signed_i16(state.nav_timer) >= signed_i16(SHIP_3D_PROCEDURAL_TARGET_LIST_THRESHOLD) {
+                state.mouse_x = state.mouse_x.wrapping_add(mouse_step);
+                state.mouse_delta_accumulator =
+                    state.mouse_delta_accumulator.wrapping_add(mouse_step);
+            }
+
+            state.angle = wrap_ring_once(
+                state.angle as i32 + signed_i16(angle_step) as i32,
+                SHIP_3D_PROCEDURAL_HALF_TURN,
+            );
+            state.mouse_button_state = 0;
+            angle_double = state.angle.wrapping_mul(2);
+            effect.applied_hud_rotation = true;
+        }
+    }
+
+    state.mouse_x = wrap_ring_once(
+        state.mouse_x as i32 - SHIP_3D_PROCEDURAL_MOUSE_RING as i32,
+        SHIP_3D_PROCEDURAL_MOUSE_RING,
+    );
+    effect.mouse_set_position = Some((
+        state
+            .mouse_x
+            .wrapping_add(SHIP_3D_PROCEDURAL_MOUSE_CENTER_X),
+        state.mouse_y,
+    ));
+    state.mouse_sector = state.mouse_x >> 2;
+
+    if state.hud_flags & SHIP_3D_PROCEDURAL_HUD_ACTIVE_FLAG == 0 {
+        let delta = circular_delta(
+            angle_double,
+            state.mouse_sector,
+            SHIP_3D_PROCEDURAL_FULL_TURN,
+        );
+        if delta > SHIP_3D_PROCEDURAL_CLOSE_ANGLE_THRESHOLD {
+            if state.hud_flags & SHIP_3D_PROCEDURAL_TARGET_LIST_FLAG != 0 {
+                if delta >= SHIP_3D_PROCEDURAL_TARGET_LIST_THRESHOLD {
+                    let mouse_plus_delta = wrap_ring_once(
+                        state.mouse_sector as i32 + delta as i32,
+                        SHIP_3D_PROCEDURAL_FULL_TURN,
+                    );
+                    let mut target_sector = angle_double;
+                    if mouse_plus_delta == angle_double {
+                        target_sector = wrap_ring_once(
+                            target_sector as i32 - SHIP_3D_PROCEDURAL_TARGET_LIST_STEP as i32,
+                            SHIP_3D_PROCEDURAL_FULL_TURN,
+                        );
+                    } else {
+                        target_sector = wrap_ring_once(
+                            target_sector as i32 + SHIP_3D_PROCEDURAL_TARGET_LIST_STEP as i32,
+                            SHIP_3D_PROCEDURAL_FULL_TURN,
+                        );
+                    }
+                    state.mouse_x = target_sector.wrapping_shl(2);
+                    effect.mouse_set_position = Some((
+                        state
+                            .mouse_x
+                            .wrapping_add(SHIP_3D_PROCEDURAL_MOUSE_CENTER_X),
+                        state.mouse_y,
+                    ));
+                    effect.adjusted_target_list_mouse = true;
+                }
+            } else {
+                let mouse_plus_delta = wrap_ring_once(
+                    state.mouse_sector as i32 + delta as i32,
+                    SHIP_3D_PROCEDURAL_FULL_TURN,
+                );
+                let next_sector = if mouse_plus_delta != angle_double {
+                    state.rotation_direction_positive = true;
+                    wrap_ring_once(
+                        state.mouse_sector as i32 - SHIP_3D_PROCEDURAL_AUTO_ROTATE_STEP as i32,
+                        SHIP_3D_PROCEDURAL_FULL_TURN,
+                    )
+                } else {
+                    state.rotation_direction_positive = false;
+                    wrap_ring_once(
+                        state.mouse_sector as i32 + SHIP_3D_PROCEDURAL_AUTO_ROTATE_STEP as i32,
+                        SHIP_3D_PROCEDURAL_FULL_TURN,
+                    )
+                };
+                state.angle = next_sector >> 1;
+                effect.auto_rotated_angle = true;
+            }
+        }
+    }
+
+    if state.hud_flags & SHIP_3D_PROCEDURAL_HUD_ACTIVE_FLAG != 0 || effect.auto_rotated_angle {
+        state.projection_angle = state.angle;
+        state.rotation_offset = state
+            .angle
+            .wrapping_shl(3)
+            .wrapping_sub(SHIP_3D_PROCEDURAL_ROTATION_OFFSET_BIAS);
+        state.mouse_x &= SHIP_3D_PROCEDURAL_MOUSE_ALIGN_MASK;
+        effect.updated_projection_angle = true;
+        effect.carry_set = true;
+    }
+
+    state.mouse_x = wrap_ring_once(
+        state.mouse_x as i32 - state.rotation_offset as i32,
+        SHIP_3D_PROCEDURAL_MOUSE_RING,
+    );
+
+    effect
+}
+
 pub fn run_ship_3d_temp_snd_setup(state: &mut Ship3dTempSndState) -> Option<Ship3dTempSndEffect> {
     if !state.trigger {
         return Some(Ship3dTempSndEffect::default());
@@ -1678,6 +1860,30 @@ fn start_closing_transition(state: &mut Ship3dTransitionState) {
 
 fn add_to_low_byte(value: u16, addend: u8) -> u16 {
     (value & 0xff00) | value.to_le_bytes()[0].wrapping_add(addend) as u16
+}
+
+fn circular_delta(first: u16, second: u16, modulus: u16) -> u16 {
+    let (max, min) = if signed_i16(first) > signed_i16(second) {
+        (first, second)
+    } else {
+        (second, first)
+    };
+    let delta = max.wrapping_sub(min);
+    if signed_i16(delta) < signed_i16(modulus >> 1) {
+        delta
+    } else {
+        modulus.wrapping_sub(delta)
+    }
+}
+
+fn wrap_ring_once(value: i32, modulus: u16) -> u16 {
+    if value < 0 {
+        value.wrapping_add(modulus as i32) as u16
+    } else if value >= modulus as i32 {
+        value.wrapping_sub(modulus as i32) as u16
+    } else {
+        value as u16
+    }
 }
 
 fn checked_i16_div_i8_to_i8(dividend: i16, divisor: i8) -> Option<i8> {
@@ -3367,6 +3573,127 @@ mod tests {
         );
         assert_eq!(state.selected_choice, 0);
         assert_eq!(state.hud_flags, 0);
+    }
+
+    #[test]
+    fn procedural_update_rotates_active_hud_toward_hold_angle() {
+        let mut state = Ship3dProceduralUpdateState {
+            hud_flags: SHIP_3D_PROCEDURAL_HUD_ACTIVE_FLAG,
+            angle: 10,
+            mouse_x: SHIP_3D_PROCEDURAL_MOUSE_RING,
+            mouse_y: 0x0064,
+            hold_ticks: 100,
+            nav_timer: 0,
+            ..Ship3dProceduralUpdateState::default()
+        };
+
+        let effect = run_ship_3d_procedural_update(&mut state);
+
+        assert_eq!(
+            effect,
+            Ship3dProceduralUpdateEffect {
+                initialized_nav_timer: true,
+                applied_hud_rotation: true,
+                updated_projection_angle: true,
+                mouse_set_position: Some((0x0640, 0x0064)),
+                carry_set: true,
+                ..Ship3dProceduralUpdateEffect::default()
+            }
+        );
+        assert_eq!(state.angle, 30);
+        assert_eq!(state.nav_timer, 40);
+        assert_eq!(state.mouse_delta_accumulator, 160);
+        assert_eq!(state.mouse_button_state, 0);
+        assert!(state.rotation_direction_positive);
+        assert_eq!(state.projection_angle, 30);
+        assert_eq!(state.rotation_offset, 80);
+        assert_eq!(state.mouse_x, 80);
+        assert_eq!(state.mouse_sector, 40);
+    }
+
+    #[test]
+    fn procedural_update_auto_rotates_angle_when_hud_inactive() {
+        let mut state = Ship3dProceduralUpdateState {
+            angle: 10,
+            mouse_x: SHIP_3D_PROCEDURAL_MOUSE_RING + 0x01e0,
+            mouse_y: 0x0070,
+            ..Ship3dProceduralUpdateState::default()
+        };
+
+        let effect = run_ship_3d_procedural_update(&mut state);
+
+        assert_eq!(
+            effect,
+            Ship3dProceduralUpdateEffect {
+                auto_rotated_angle: true,
+                updated_projection_angle: true,
+                mouse_set_position: Some((0x0780, 0x0070)),
+                carry_set: true,
+                ..Ship3dProceduralUpdateEffect::default()
+            }
+        );
+        assert_eq!(state.angle, 45);
+        assert_eq!(state.projection_angle, 45);
+        assert_eq!(state.rotation_offset, 200);
+        assert_eq!(state.mouse_x, 280);
+        assert_eq!(state.mouse_sector, 120);
+        assert!(state.rotation_direction_positive);
+    }
+
+    #[test]
+    fn procedural_update_target_list_flag_adjusts_mouse_without_rotating_angle() {
+        let mut state = Ship3dProceduralUpdateState {
+            hud_flags: SHIP_3D_PROCEDURAL_TARGET_LIST_FLAG,
+            angle: 10,
+            mouse_x: SHIP_3D_PROCEDURAL_MOUSE_RING + 0x01e0,
+            mouse_y: 0x0080,
+            projection_angle: 77,
+            rotation_offset: 0x0020,
+            ..Ship3dProceduralUpdateState::default()
+        };
+
+        let effect = run_ship_3d_procedural_update(&mut state);
+
+        assert_eq!(
+            effect,
+            Ship3dProceduralUpdateEffect {
+                adjusted_target_list_mouse: true,
+                mouse_set_position: Some((0x0690, 0x0080)),
+                ..Ship3dProceduralUpdateEffect::default()
+            }
+        );
+        assert_eq!(state.angle, 10);
+        assert_eq!(state.projection_angle, 77);
+        assert_eq!(state.rotation_offset, 0x0020);
+        assert_eq!(state.mouse_x, 208);
+        assert_eq!(state.mouse_sector, 120);
+    }
+
+    #[test]
+    fn procedural_update_close_angle_only_applies_existing_rotation_offset() {
+        let mut state = Ship3dProceduralUpdateState {
+            angle: 10,
+            mouse_x: SHIP_3D_PROCEDURAL_MOUSE_RING + 0x0078,
+            mouse_y: 0x0090,
+            projection_angle: 66,
+            rotation_offset: 0x0010,
+            ..Ship3dProceduralUpdateState::default()
+        };
+
+        let effect = run_ship_3d_procedural_update(&mut state);
+
+        assert_eq!(
+            effect,
+            Ship3dProceduralUpdateEffect {
+                mouse_set_position: Some((0x0618, 0x0090)),
+                ..Ship3dProceduralUpdateEffect::default()
+            }
+        );
+        assert_eq!(state.angle, 10);
+        assert_eq!(state.projection_angle, 66);
+        assert_eq!(state.rotation_offset, 0x0010);
+        assert_eq!(state.mouse_x, 104);
+        assert_eq!(state.mouse_sector, 30);
     }
 
     #[test]

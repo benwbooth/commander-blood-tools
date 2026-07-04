@@ -279,6 +279,19 @@ sets sentinels `DS:0x1FAB=0xFFFF` and `DS:0x6788=0xFFFF`, restores/clears the
 backbuffer scratch blocks, sets dirty marker `DS:0x5B52=0xFF`, and resets ship
 scroll state to `DS:0x524F=0`, `DS:0x524D=0x000A`.
 
+The ship sequence's procedural update far call (`0x071E:0x1E76`, file
+`0x9656`) is now identified as a HUD angle/mouse-ring state update, not the
+heavy projection loop itself. It consumes angle `DS:0x2795`, HUD flags
+`DS:0x2793`, mouse X/Y `DS:0x0A2A/0x0A2C`, hold target `DS:0x279B`, and timer
+`DS:0x279D`. It wraps the internal mouse ring through the 1440-unit range
+`0x05A0`, updates sector `DS:0x2797 = mouse_x >> 2`, records direction in
+`DS:0x27DB`, writes projection angle `DS:0x2F6D`, computes rotation offset
+`DS:0x27A7 = angle * 8 - 0xA0`, and aligns mouse X to an 8-unit boundary before
+subtracting that offset. The target-list bit `DS:0x2793 & 4` switches the
+inactive-HUD branch from angle auto-rotation to cursor repositioning. The matrix
+builder at `0x98B9` and point projection loops at `0x9A10+` are still the next
+geometry targets.
+
 The next control-layer markers are now pinned. `0xB2BB` selects the next
 ship/navigation target record from `DS:0x250B`, or from the inline fallback table
 at `DS:0x2537` when the list head is `-1`; a selected `-1` entry arms the
@@ -1855,6 +1868,14 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       then applies the HUD/dialogue/presentation teardown, backbuffer scratch
       restore/clear effects, dirty marker `DS:0x5B52=0xFF`, and scroll reset
       `DS:0x524F=0`, `DS:0x524D=0x000A`.
+- [x] Port ship 3D procedural angle/mouse update:
+      file `0x9656` (`0x071E:0x1E76`) is now modeled as
+      `run_ship_3d_procedural_update()`. The Rust state mirrors the recovered
+      angle `DS:0x2795`, HUD/target-list flags, mouse ring `DS:0x0A2A`,
+      target hold/timer words `DS:0x279B/0x279D`, direction byte `DS:0x27DB`,
+      sector `DS:0x2797`, projection angle `DS:0x2F6D`, and rotation offset
+      `DS:0x27A7`. This pins the exact 180/360-degree wrap constants and mouse
+      recentering side effects used before the matrix/projection routines.
 - [x] Port ship 3D temporary `3D.snd` setup branch:
       `src/ship3d.rs` now models file `0xB591`: the `DS:0x0AE4` one-shot gate,
       phase byte `DS:0x0AE5` cycling across the three `DS:0x0ACC` callback
