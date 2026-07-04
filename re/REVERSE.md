@@ -1555,9 +1555,7 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `src/ship3d.rs` now implements the `0xB2BB` target-record selector with
       tests for phase prepass/gating, primary-list target adjustment, fallback
       table behavior, no-selection `AX=0`, and the `-1` sentinel opening
-      transition (`DS:0x252F=1`, `DS:0x2531=6`). The remaining 3D trigger
-      work starts after the now-recovered `0xB34E` prelude, especially the
-      lower-level helper that fills the source list at `DS:0x6886`.
+      transition (`DS:0x252F=1`, `DS:0x2531=6`).
 - [x] Port ship 3D interpolation gate:
       `src/ship3d.rs` implements the `0x008B:0x0FAD` four-word interpolation
       gate used by the target selector. Tests cover carry-set completion,
@@ -1687,6 +1685,18 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `DS:0x252A=1`, configure scene-band state, reset selector
       `DS:0x1FAB=-1`, and request closing with `DS:0x2530=1`,
       `DS:0x2531=2`.
+- [x] Port ship 3D navigation source-list helper:
+      the near helper at linear file `0x00624B`, called by
+      `0x04DA:0x1D4E`, fills source list `DS:0x6886` before candidate filtering.
+      It walks the runtime descriptor table from `GS:[0x672C]`, processing the
+      current entry and then continuing only while the next entry's `+0x12`
+      word is `1`. For each entry, it reads the object record at `entry[+0x10]`,
+      uses kind-dependent selector `0x11` via `0x6023`, and compares that field
+      to the current `DI` target. A match appends the object record to the
+      output, recurses with that record as the new target, and finally terminates
+      the list with `0xFFFF`. Rust exposes this as
+      `build_ship_3d_navigation_source_records()` so the later `DS:0x2B53`
+      filter now has a binary-derived source list instead of an assumed one.
 - [x] Port ship 3D navigation sequence branch:
       the internal branch at `0x0A9A:0x04E1` (file `0xB481`) now has a Rust
       state/effect model as `run_ship_3d_navigation_sequence_update()`. If

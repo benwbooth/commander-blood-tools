@@ -296,6 +296,13 @@ pub struct Ship3dNavigationRuntimeRecord {
     pub state_flags: u8,
     pub counter_link: u16,
     pub related_target: u16,
+    pub source_parent: Option<u16>,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dNavigationSourceEntry {
+    pub record_offset: u16,
+    pub entry_kind: u16,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -907,6 +914,22 @@ pub fn run_ship_3d_navigation_sequence_update(
     effect
 }
 
+pub fn build_ship_3d_navigation_source_records(
+    source_entries: &[Ship3dNavigationSourceEntry],
+    records: &[Ship3dNavigationRuntimeRecord],
+    root_target: u16,
+) -> Option<Vec<u16>> {
+    let mut source_records = Vec::new();
+    append_ship_3d_navigation_source_children(
+        source_entries,
+        records,
+        root_target,
+        &mut source_records,
+    )?;
+    source_records.push(SHIP_3D_TARGET_EXIT_SENTINEL);
+    Some(source_records)
+}
+
 pub fn build_ship_3d_navigation_candidate_records(
     source_records: &[u16],
     records: &[Ship3dNavigationRuntimeRecord],
@@ -1262,6 +1285,39 @@ fn rebuild_nav_choice_special_target_records(
         target_records.push(special_slot.wrapping_add(SHIP_3D_TARGET_RECORD_HEADER_BYTES));
     }
     None
+}
+
+fn append_ship_3d_navigation_source_children(
+    source_entries: &[Ship3dNavigationSourceEntry],
+    records: &[Ship3dNavigationRuntimeRecord],
+    parent_target: u16,
+    source_records: &mut Vec<u16>,
+) -> Option<()> {
+    if source_entries.is_empty() {
+        return None;
+    }
+
+    let mut index = 0;
+    loop {
+        let entry = source_entries.get(index)?;
+        let record = find_ship_3d_navigation_record(records, entry.record_offset)?;
+        if record.source_parent == Some(parent_target) {
+            source_records.push(record.offset);
+            append_ship_3d_navigation_source_children(
+                source_entries,
+                records,
+                record.offset,
+                source_records,
+            )?;
+        }
+
+        index += 1;
+        if source_entries.get(index).map(|entry| entry.entry_kind) != Some(1) {
+            break;
+        }
+    }
+
+    Some(())
 }
 
 fn find_ship_3d_navigation_record(
@@ -2943,7 +2999,125 @@ mod tests {
             state_flags,
             counter_link,
             related_target,
+            source_parent: None,
         }
+    }
+
+    fn nav_record_with_source_parent(
+        offset: u16,
+        kind_flags: u16,
+        state_flags: u8,
+        counter_link: u16,
+        related_target: u16,
+        source_parent: Option<u16>,
+    ) -> Ship3dNavigationRuntimeRecord {
+        Ship3dNavigationRuntimeRecord {
+            offset,
+            kind_flags,
+            state_flags,
+            counter_link,
+            related_target,
+            source_parent,
+        }
+    }
+
+    #[test]
+    fn navigation_source_records_follow_selector_11_tree_depth_first() {
+        let records = [
+            nav_record_with_source_parent(0x3000, 0, 0, 0, 0, Some(0x2000)),
+            nav_record_with_source_parent(0x3100, 0, 0, 0, 0, Some(0x3000)),
+            nav_record_with_source_parent(0x3200, 0, 0, 0, 0, Some(0x2000)),
+            nav_record_with_source_parent(0x3300, 0, 0, 0, 0, Some(0x9999)),
+        ];
+        let source_entries = [
+            Ship3dNavigationSourceEntry {
+                record_offset: 0x3000,
+                entry_kind: 1,
+            },
+            Ship3dNavigationSourceEntry {
+                record_offset: 0x3100,
+                entry_kind: 1,
+            },
+            Ship3dNavigationSourceEntry {
+                record_offset: 0x3200,
+                entry_kind: 1,
+            },
+            Ship3dNavigationSourceEntry {
+                record_offset: 0x3300,
+                entry_kind: 1,
+            },
+            Ship3dNavigationSourceEntry {
+                record_offset: 0x3400,
+                entry_kind: 0,
+            },
+        ];
+
+        let source_records =
+            build_ship_3d_navigation_source_records(&source_entries, &records, 0x2000).unwrap();
+
+        assert_eq!(
+            source_records,
+            vec![0x3000, 0x3100, 0x3200, SHIP_3D_TARGET_EXIT_SENTINEL]
+        );
+    }
+
+    #[test]
+    fn navigation_source_records_stop_before_first_non_kind1_next_entry() {
+        let records = [
+            nav_record_with_source_parent(0x3000, 0, 0, 0, 0, Some(0x2000)),
+            nav_record_with_source_parent(0x3100, 0, 0, 0, 0, Some(0x2000)),
+            nav_record_with_source_parent(0x3200, 0, 0, 0, 0, Some(0x2000)),
+        ];
+        let source_entries = [
+            Ship3dNavigationSourceEntry {
+                record_offset: 0x3000,
+                entry_kind: 1,
+            },
+            Ship3dNavigationSourceEntry {
+                record_offset: 0x3100,
+                entry_kind: 0,
+            },
+            Ship3dNavigationSourceEntry {
+                record_offset: 0x3200,
+                entry_kind: 1,
+            },
+        ];
+
+        let source_records =
+            build_ship_3d_navigation_source_records(&source_entries, &records, 0x2000).unwrap();
+
+        assert_eq!(source_records, vec![0x3000, SHIP_3D_TARGET_EXIT_SENTINEL]);
+    }
+
+    #[test]
+    fn navigation_source_records_skip_kinds_without_selector_11_parent() {
+        let records = [
+            nav_record(0x3000, 0, 0, 0, 0),
+            nav_record_with_source_parent(0x3100, 0, 0, 0, 0, Some(0x2000)),
+        ];
+        let source_entries = [
+            Ship3dNavigationSourceEntry {
+                record_offset: 0x3000,
+                entry_kind: 1,
+            },
+            Ship3dNavigationSourceEntry {
+                record_offset: 0x3100,
+                entry_kind: 1,
+            },
+        ];
+
+        let source_records =
+            build_ship_3d_navigation_source_records(&source_entries, &records, 0x2000).unwrap();
+
+        assert_eq!(source_records, vec![0x3100, SHIP_3D_TARGET_EXIT_SENTINEL]);
+    }
+
+    #[test]
+    fn navigation_source_records_require_at_least_one_source_entry() {
+        assert_eq!(
+            build_ship_3d_navigation_source_records(&[], &[], 0x2000),
+            None
+        );
     }
 
     #[test]
