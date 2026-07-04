@@ -418,13 +418,17 @@ resource-manager subsystem, so this trace also unlocks other handle-based assets
 
 RESOURCE-MANAGER SUBSYSTEM MAP (segment `0x04B9`, sess 003) — the shared handle
 memory manager behind every handle-based asset:
-- `0x04B9:0x0000` (file `0x5190`) = the core loader/allocator: takes a handle id,
-  returns its segment if already resident (`flags & 3`), else aligns the size
-  (`ebp` from `entry+4`) to 16 bytes, compares against the free-memory counter
-  `gs:0x0A46`, and runs an **LRU-style eviction** over handle-id lists at
-  `0x0800`/`0x0A00` (walking with `repne scasw` / `std; lodsw`) to make room
-  before loading. Handle entries are `{+0 segment, +2 flags, +4 size dword}` in
-  the `FS` table.
+- `0x04B9:0x0000` (file `0x5190`) = the core **pool allocator** (NOT a file
+  reader): takes a handle id, returns its segment if already resident
+  (`flags & 3`); else aligns the size (`ebp` from `entry+4`) to 16 bytes, and if
+  it exceeds the free-memory counter `gs:0x0A46` runs an **LRU-style eviction**
+  over handle-id lists at `0x0800`/`0x0A00` (walking with `repne scasw` /
+  `std; lodsw`) to free room. It then bump-allocates from the pointer at
+  `gs:0x0A6A` (`[handle]=gs:0x0A6A; flags|=3; gs:0x0A46-=size; gs:0x0A6A+=size>>4`)
+  and returns the (pool) segment. Handle entries are `{+0 segment, +2 flags,
+  +4 size dword}` in the `FS` table. The **resource bytes are already in the
+  pool** — this routine only manages residency/eviction, so the file→pool
+  population is a HIGHER-LEVEL load (startup / level-load), not here.
 - `0x04B9:0x0190` (`0x5320`) = fast resident lookup; `0x533C` = get size;
   `0x5356` = free (clear in-use bit1); `0x5365` = acquire (bit0 set→mark bit1;
   else evictable→call loader `0x5190`).
@@ -432,10 +436,12 @@ memory manager behind every handle-based asset:
   resource-id/offset words from the profile table at `FS:0x11F4 + ax*0x0A` into
   `DS:0x6712` and (re)acquires them via `lcall 0x04B9:0x00F8`. This is the same
   profile system that drives the SCRIPT1→SCRIPT2 handoff.
-The still-missing piece is the **archive read** itself (where `0x5190` pulls the
-bytes once it has made room — the id→file/offset directory). Reversing that one
-routine unlocks sprites AND the handle-loaded intro assets (Microfolie's,
-astronaut, CRYO card) that were not findable as loose HNM/LBM files.
+The still-missing piece is the **file→pool load** — the higher-level routine that
+reads the archive (blood.dat / a bank) into the memory pool and populates the
+`FS` handle table + the profile table at `FS:0x11F4` (the id→file/offset
+directory). Reversing that unlocks sprites AND the handle-loaded intro assets
+(Microfolie's, astronaut, CRYO card) that were not findable as loose HNM/LBM
+files.
 
 The per-slot dirty geometry commit branch in `sprite_slot_commit_dirty_range`
 (`0x0299:0x1467`) is now modeled as
