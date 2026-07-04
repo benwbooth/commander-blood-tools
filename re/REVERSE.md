@@ -380,6 +380,18 @@ descriptor frame-table pointers from a resource — the background layer
 (`render_ship_3d_starfield`, faithful) and every sprite primitive (parse /
 dispatch / raw+rle+scaled blit / projection) are already done and tested.
 
+PIXEL SOURCE PINNED (sess 003): each blitter (e.g. the raw-transparent one at
+`0x4536`) starts with `lds si, [di+4]` — so the sprite frame pixels are reached
+through a **far pointer stored in descriptor field `+4`** (the descriptor is at
+`DS:0x6212 + slot*0x20`). The frame header it then reads is `[si+0]=stride`
+(row bytes / mul factor), `[si+4]=x draw offset`, `[si+6]=y draw offset`, pixels
+at `+8` — which matches `render.rs::RawSpriteFrame::parse` (stride@0, x@4, y@6,
+pixels@8) **byte-for-byte**, confirming the frame parsing is faithful. The ONLY
+remaining unknown for the sprite layer is which scene-init routine writes that
+`descriptor+4` far pointer: the 21 refs to `0x6212` cluster in segment `0x0299`
+(files `0x40D8..0x42xx`, the position/extent slot helpers) — the writer that
+stores a resource pointer there is the next trace target.
+
 The per-slot dirty geometry commit branch in `sprite_slot_commit_dirty_range`
 (`0x0299:0x1467`) is now modeled as
 `commit_ship_3d_sprite_slot_dirty_geometry()`. It matches the range loop's slot
