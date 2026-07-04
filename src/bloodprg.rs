@@ -81,6 +81,21 @@ pub const NAV_ACTOR_SUBDISPATCH_TABLE_FILE_OFFSET: usize = 0x007eb4;
 pub const NAV_ACTOR_SUBDISPATCH_ENTRY_COUNT: usize = 6;
 pub const NAV_CHOICE_SUBDISPATCH_TABLE_FILE_OFFSET: usize = 0x008709;
 pub const NAV_CHOICE_SUBDISPATCH_ENTRY_COUNT: usize = 5;
+pub const SHIP_PRESENTATION_SEGMENT: u16 = 0x0a9a;
+pub const SHIP_PRESENTATION_ENTRY_OFFSET: u16 = 0x0000;
+pub const SHIP_3D_HUD_INIT_OFFSET: u16 = 0x00d9;
+pub const SHIP_3D_TEMP_SND_SETUP_OFFSET: u16 = 0x05f1;
+pub const SHIP_3D_TEMP_SND_LOAD_CALL_OFFSET: u16 = 0x063c;
+pub const SHIP_3D_TEMP_SND_RESTORE_CALL_OFFSET: u16 = 0x0670;
+pub const SHIP_3D_TRANSITION_STATE_OFFSET: u16 = 0x06f2;
+pub const SHIP_3D_PLANE_BAND_COPY_OFFSET: u16 = 0x073d;
+pub const SHIP_3D_DEPTH_SCROLL_STEP_OFFSET: u16 = 0x07bc;
+pub const SHIP_3D_HUD_FLAG_DS_OFFSET: u16 = 0x2793;
+pub const SHIP_3D_DEPTH_OFFSET_DS_OFFSET: u16 = 0x2527;
+pub const SHIP_3D_PLANE_COPY_ENABLE_DS_OFFSET: u16 = 0x252e;
+pub const SHIP_3D_DEPTH_STEP_DS_OFFSET: u16 = 0x2531;
+pub const SHIP_3D_TEMP_SND_TRIGGER_DS_OFFSET: u16 = 0x0ae4;
+pub const SHIP_3D_TEMP_SND_PHASE_DS_OFFSET: u16 = 0x0ae5;
 
 const SND_ENTRY_FAR_CALL: [u8; 5] = [
     0x9a,
@@ -241,6 +256,7 @@ pub struct BloodPrgInspection {
     pub snd_bank_load_call_sites: Vec<SndBankLoadCallSite>,
     pub render_call_sites: Vec<RenderCallSite>,
     pub sprite_blitter_dispatch: Vec<SpriteBlitterDispatchEntry>,
+    pub presentation_3d_markers: Vec<BinarySymbol>,
     pub script_resource_profiles: Vec<ScriptResourceProfile>,
     pub dialogue_font: DialogueFontTables,
 }
@@ -644,6 +660,7 @@ impl BloodPrg {
             snd_bank_load_call_sites: self.snd_bank_load_call_sites(),
             render_call_sites: self.render_call_sites(),
             sprite_blitter_dispatch: self.sprite_blitter_dispatch_entries()?,
+            presentation_3d_markers: PRESENTATION_3D_MARKERS.to_vec(),
             script_resource_profiles: self.script_resource_profiles()?,
             dialogue_font: self.dialogue_font_tables()?,
         })
@@ -2280,6 +2297,135 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
     },
 ];
 
+pub const PRESENTATION_3D_MARKERS: &[BinarySymbol] = &[
+    BinarySymbol {
+        name: "ship_presentation_fsm",
+        file_offset: 0x00afa0,
+        segment: Some(SHIP_PRESENTATION_SEGMENT),
+        offset: Some(SHIP_PRESENTATION_ENTRY_OFFSET),
+        ds_offset: None,
+        kind: "presentation-3d",
+        comment: "ship/navigation presentation FSM; dispatches ship HUD, procedural 3D, and dialogue update branches",
+    },
+    BinarySymbol {
+        name: "ship_3d_hud_init",
+        file_offset: 0x00b079,
+        segment: Some(SHIP_PRESENTATION_SEGMENT),
+        offset: Some(SHIP_3D_HUD_INIT_OFFSET),
+        ds_offset: None,
+        kind: "presentation-3d",
+        comment: "sets DS:0x2793 bit 3, initializes ship HUD/procedural 3D state, copies framebuffer, and calls the plane-band updater",
+    },
+    BinarySymbol {
+        name: "ship_3d_temp_snd_setup",
+        file_offset: 0x00b591,
+        segment: Some(SHIP_PRESENTATION_SEGMENT),
+        offset: Some(SHIP_3D_TEMP_SND_SETUP_OFFSET),
+        ds_offset: None,
+        kind: "presentation-3d",
+        comment: "when DS:0x0ae4 is set, cycles DS:0x0ae5, temporarily loads sn\\3D.snd, calls the presentation callback, and restores sn\\tb.snd",
+    },
+    BinarySymbol {
+        name: "ship_3d_snd_bank_load_call",
+        file_offset: 0x00b5dc,
+        segment: Some(SHIP_PRESENTATION_SEGMENT),
+        offset: Some(SHIP_3D_TEMP_SND_LOAD_CALL_OFFSET),
+        ds_offset: None,
+        kind: "presentation-3d-audio",
+        comment: "direct SND bank-loader call for sn\\3D.snd; AX=0, SI=DS:0x0d23",
+    },
+    BinarySymbol {
+        name: "ship_3d_snd_bank_restore_call",
+        file_offset: 0x00b610,
+        segment: Some(SHIP_PRESENTATION_SEGMENT),
+        offset: Some(SHIP_3D_TEMP_SND_RESTORE_CALL_OFFSET),
+        ds_offset: None,
+        kind: "presentation-3d-audio",
+        comment: "restores sn\\tb.snd after the temporary 3D.snd presentation path",
+    },
+    BinarySymbol {
+        name: "ship_3d_transition_state_update",
+        file_offset: 0x00b692,
+        segment: Some(SHIP_PRESENTATION_SEGMENT),
+        offset: Some(SHIP_3D_TRANSITION_STATE_OFFSET),
+        ds_offset: None,
+        kind: "presentation-3d",
+        comment: "updates DS:0x2531/0x252f/0x2530 transition state from DS:0x0b3b and the random gate",
+    },
+    BinarySymbol {
+        name: "ship_3d_plane_band_copy",
+        file_offset: 0x00b6dd,
+        segment: Some(SHIP_PRESENTATION_SEGMENT),
+        offset: Some(SHIP_3D_PLANE_BAND_COPY_OFFSET),
+        ds_offset: None,
+        kind: "presentation-3d",
+        comment: "gated by DS:0x252e; copies VGA planar page bands from A000:C000/DF40 into GS:0x5219 and updates DS:0x524f",
+    },
+    BinarySymbol {
+        name: "ship_3d_depth_scroll_step",
+        file_offset: 0x00b75c,
+        segment: Some(SHIP_PRESENTATION_SEGMENT),
+        offset: Some(SHIP_3D_DEPTH_SCROLL_STEP_OFFSET),
+        ds_offset: None,
+        kind: "presentation-3d",
+        comment: "moves DS:0x2527 toward 0x41 or 0 according to DS:0x252f/0x2530 using step DS:0x2531",
+    },
+    BinarySymbol {
+        name: "ship_3d_hud_gate_flag",
+        file_offset: 0x00fbb3,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_HUD_FLAG_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "bit 3 gates the ship pyramid-nav HUD/procedural 3D path",
+    },
+    BinarySymbol {
+        name: "ship_3d_depth_offset",
+        file_offset: 0x00f947,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_DEPTH_OFFSET_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "animated plane-band/depth offset used by the ship 3D transition updater",
+    },
+    BinarySymbol {
+        name: "ship_3d_plane_copy_enable",
+        file_offset: 0x00f94e,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_PLANE_COPY_ENABLE_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "nonzero gate for the ship 3D VGA planar page-band copy routine",
+    },
+    BinarySymbol {
+        name: "ship_3d_depth_step",
+        file_offset: 0x00f951,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_DEPTH_STEP_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "step size used while animating DS:0x2527 toward the active ship 3D target",
+    },
+    BinarySymbol {
+        name: "ship_3d_temp_snd_trigger",
+        file_offset: 0x00df04,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_TEMP_SND_TRIGGER_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "one-shot gate for the temporary sn\\3D.snd presentation-bank path",
+    },
+    BinarySymbol {
+        name: "ship_3d_temp_snd_phase",
+        file_offset: 0x00df05,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_TEMP_SND_PHASE_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "cycles through three temporary sn\\3D.snd presentation phases",
+    },
+];
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2521,6 +2667,74 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn presentation_3d_markers_pin_ship_hud_and_temp_snd_path() {
+        let Some(binary) = fixture() else {
+            eprintln!("skipping: BLOODPRG.EXE not available");
+            return;
+        };
+
+        for symbol in PRESENTATION_3D_MARKERS {
+            if let (Some(segment), Some(offset)) = (symbol.segment, symbol.offset) {
+                assert_eq!(
+                    binary.segoff_to_file(segment, offset),
+                    symbol.file_offset,
+                    "{}",
+                    symbol.name
+                );
+            }
+            if let Some(ds_offset) = symbol.ds_offset {
+                assert_eq!(
+                    binary.ds_to_file(ds_offset),
+                    symbol.file_offset,
+                    "{}",
+                    symbol.name
+                );
+            }
+        }
+
+        assert_eq!(
+            binary.segoff_to_file(SHIP_PRESENTATION_SEGMENT, SHIP_3D_TEMP_SND_LOAD_CALL_OFFSET),
+            0x00b5dc
+        );
+        assert_eq!(
+            binary.segoff_to_file(SHIP_PRESENTATION_SEGMENT, SHIP_3D_PLANE_BAND_COPY_OFFSET),
+            0x00b6dd
+        );
+
+        let marker_names: std::collections::BTreeSet<_> = PRESENTATION_3D_MARKERS
+            .iter()
+            .map(|symbol| symbol.name)
+            .collect();
+        for name in [
+            "ship_presentation_fsm",
+            "ship_3d_hud_init",
+            "ship_3d_temp_snd_setup",
+            "ship_3d_plane_band_copy",
+            "ship_3d_hud_gate_flag",
+        ] {
+            assert!(marker_names.contains(name), "{name}");
+        }
+
+        let inspection = binary.inspect().expect("BLOODPRG inspection");
+        assert_eq!(
+            inspection.presentation_3d_markers,
+            PRESENTATION_3D_MARKERS.to_vec()
+        );
+
+        let bank_load = binary
+            .snd_bank_load_call_sites()
+            .into_iter()
+            .find(|site| site.file_offset == 0x00b5dc)
+            .expect("ship 3D SND bank load call");
+        assert_eq!(bank_load.segment, SHIP_PRESENTATION_SEGMENT);
+        assert_eq!(bank_load.offset, SHIP_3D_TEMP_SND_LOAD_CALL_OFFSET);
+        assert_eq!(bank_load.ax_value, Some(0));
+        assert_eq!(bank_load.si_value, Some(0x0d23));
+        assert_eq!(bank_load.path.as_deref(), Some("sn\\3D.snd"));
+        assert_eq!(bank_load.mode, "load_bank_into_memory");
     }
 
     #[test]

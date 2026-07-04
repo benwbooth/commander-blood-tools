@@ -71,8 +71,11 @@ Core modules:
   dictionaries, events, and deterministic replay controls.
 - `engine`: game state, scene manager, navigation, inventory, interaction, and
   script scheduling.
-- `render`: 320x200 indexed framebuffer, palette updates, HNM decode/blit,
-  dialogue compositing, HUD drawing, text rendering, transitions, and scaling.
+- `render`: software 320x200 indexed framebuffer, palette updates, HNM
+  decode/blit, dialogue compositing, HUD drawing, text rendering, transitions,
+  and scaling; plus a `wgpu` backend for the recovered 3D/minigame subsystem
+  once its original runtime state, projection, geometry, and input semantics are
+  decompiled.
 - `audio`: SND/VOC decoding, music, voice, UI chatter, mixing, looping, and
   timing.
 - `input`: DOS mouse/keyboard semantics mapped to modern frontends.
@@ -156,6 +159,8 @@ Tasks:
   behavior, and scene clearing.
 - Recreate the HUD/navigation panel procedurally or from fully understood asset
   events.
+- Locate and decompile the ship/procedural-3D minigame entrypoints and state
+  variables before implementing the `wgpu` renderer for that path.
 - Replace current background/music fallbacks with VM event state.
 
 Exit criteria:
@@ -220,6 +225,9 @@ Exit criteria:
 7. Use `accuracy/compare_oracle.py` to normalize DOSBox captures and generated
    MP4 frames to native 320x200, then promote one frame-aligned target to a
    thresholded oracle check.
+8. Decompile the ship/procedural-3D path from `0x0A9A:0x0000` and its
+   `inspect-bloodprg.presentation_3d_markers` before adding the `wgpu` runtime
+   backend.
 
 ## Open Questions
 
@@ -231,6 +239,9 @@ Exit criteria:
 - Which script opcodes must be fully executed for deterministic dialogue export,
   and which can remain as unresolved branch metadata until interactive gameplay
   work begins?
+- Is the recovered ship/procedural-3D path a standalone minigame, a navigational
+  presentation mode, or both, and which state variables feed its projection and
+  object list?
 - How closely must the final runtime match original DOS timing on modern systems:
   visual equivalence, frame-exact equivalence, or cycle-sensitive equivalence for
   specific subsystems?

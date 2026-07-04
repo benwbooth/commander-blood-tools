@@ -238,6 +238,29 @@ reliably placed from static data. CONCLUSION: the procedural-3D HUD is a minorit
 case (≤8/83 videos) that can't be statically gated; not built. The validated
 letterbox logic (`letterbox = landscape_lbm.is_some()`) stands as correct.
 
+**Ship/procedural-3D path markers (new RE target):**
+`inspect-bloodprg.presentation_3d_markers` now pins the currently-known binary
+entrypoints and state variables for the ship/HUD 3D path. The engine enters the
+ship/navigation presentation FSM at `0x0A9A:0x0000` (file `0xAFA0`). The branch
+at file `0xB079` sets `DS:0x2793 |= 8`, initializes ship HUD/procedural-3D
+state, copies framebuffer pages, and calls the plane-band updater. The temporary
+`3D.snd` path starts at file `0xB591`: if `DS:0x0AE4` is set, it cycles
+`DS:0x0AE5`, loads `sn\3D.snd` through the SND bank loader at file `0xB5DC`,
+runs the presentation callback, then restores `sn\tb.snd` at file `0xB610`.
+The likely visual-core markers are file `0xB692` (transition state update),
+`0xB6DD` (VGA planar page-band copy gated by `DS:0x252E`), and `0xB75C`
+(moves depth/plane offset `DS:0x2527` toward the active target using
+`DS:0x2531`). This is strong evidence for a runtime ship/procedural-3D
+subsystem, but not yet enough to implement the minigame: the projection,
+geometry/object state, and input loop still need to be decompiled from these
+entrypoints and their xrefs.
+
+Implementation direction: keep the 320x200 indexed cutscene/dialogue path as a
+software renderer until it matches oracle captures. Once the 3D/minigame
+semantics above are recovered, route that subsystem through a `wgpu` frontend
+that renders the original game state and then composites/presents through the
+same palette/timing/oracle pipeline.
+
 ### Subtitle REVEAL TIMING (DECODED) — dialogue updater file 0x93F8–0x94B8
 
 The subtitle reveals one character at a time from the buffer at `gs:0x0E18`,
@@ -986,7 +1009,10 @@ uses the clipped fill helper instead of open-coded per-pixel bounds checks.
   `SI` path arguments from static DS strings: `0x0CFC` = `sn\tb.snd`, `0x0D06`
   = `sn\xxxxxxxxxxxx`, `0x0D16` = `sn\radio.snd`, and `0x0D23` =
   `sn\3D.snd`. This keeps bank selection separate from `0x011D` clip playback in
-  the Rust decompilation path.
+  the Rust decompilation path. The `sn\3D.snd` load/restore pair at files
+  `0xB5DC`/`0xB610` is now also exposed through
+  `inspect-bloodprg.presentation_3d_markers` as part of the ship/procedural-3D
+  RE target.
 - **Line-complete hold flag:** `gs:0x67BB` is now decoded as a post-reveal hold
   state, not a direct SND call. `0x94BA..0x94DD` sets `b35=aca*4`; `0x7378..0x738C`
   sets `b35=0x27cf*(aca/2)+6`; `0x115D..0x1188` consumes and clears the flag.
@@ -1428,6 +1454,12 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       transparent sprites. It follows the recovered 16.16 fixed-point source
       stepping, clipped accumulator advance, floor/nearest sampling, and
       transparent zero skip.
+- [x] Pin ship/procedural-3D presentation markers:
+      `inspect-bloodprg.presentation_3d_markers` exposes the ship/navigation
+      FSM entry, HUD bit-3 initializer, temporary `sn\3D.snd` load/restore path,
+      VGA planar band-copy routine, transition/depth-step helpers, and the key
+      DS state variables. This confirms the 3D/minigame work must continue from
+      binary-derived runtime state, not from data-file heuristics.
 - [x] Port recovered framebuffer fill/copy primitives:
       `src/extract/render.rs` now has tested Rust helpers for the clipped
       rectangle fill, palette-remap rectangle, scene-band fill, full 320x200
