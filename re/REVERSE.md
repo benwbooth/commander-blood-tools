@@ -400,7 +400,15 @@ range in descending order, skips inactive slots for drawing, uses signed-word
 exclusive-edge rectangle tests, selects the internal blitter dispatch as
 `(slot_state >> 1) & 7`, extracts destination-remap selector `slot_state>>8 & 3`,
 extracts horizontal/vertical flip from state bits 5/6, and clears dirty bit
-`0x0002` after each visited slot. `blit_ship_3d_sprite_slot_command_indexed()`
+`0x0002` after each visited slot. The dispatched call is `call cs:[0x15A2]`,
+selected from the 8-entry near-pointer table at `cs:0x1592` (file `0x4522`,
+segment `0x0299`) indexed by `(slot_state>>1)&0x0E`: RECOVERED as
+`[0x15A6, 0x172C, 0x1C18, 0x1D46, 0x1FD2, 0x210A, 0x210B, 0x210C]` — entries 0..4
+are five distinct real blitters (raw/RLE transparent+opaque, scaled) and 5..7 all
+point at consecutive `ret` (`0xC3`) stubs (no-op). This matches
+`ship_3d_sprite_slot_frame_for_dispatch`'s `Some(0..=4)`/`None(5..=7)` boundary
+byte-exact (verified by `tests::sprite_blitter_dispatch_table_matches_binary`).
+`blit_ship_3d_sprite_slot_command_indexed()`
 now connects those recovered commands to the Rust ports of the dispatch table's
 raw/RLE/scaled sprite blitters, and
 `render_ship_3d_dirty_sprite_commands_indexed()` composes command rendering with

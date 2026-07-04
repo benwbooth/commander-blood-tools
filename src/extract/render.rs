@@ -1118,6 +1118,48 @@ mod tests {
     }
 
     #[test]
+    fn sprite_blitter_dispatch_table_matches_binary() {
+        // The ship-3D dirty-sprite renderer (0x0299:0x14E1) dispatches through an
+        // 8-entry near-pointer table at cs:0x1592 (file 0x4522), indexed by
+        // (slot_state >> 1) & 0x0E. Verify our frame-dispatch classification
+        // matches the binary: entries 0..=4 are five distinct real blitters
+        // (raw/rle transparent+opaque, scaled), entries 5..=7 are shared `ret`
+        // (0xC3) stubs -- exactly the Some(0..=4) / None(5..=7) boundary of
+        // `ship_3d_sprite_slot_frame_for_dispatch`.
+        let candidates = ["re/bin/BLOODPRG.EXE", "../re/bin/BLOODPRG.EXE"];
+        let Some(data) = candidates.iter().find_map(|p| std::fs::read(p).ok()) else {
+            eprintln!("skipping: BLOODPRG.EXE not available");
+            return;
+        };
+        let seg_base = 0x600 + 0x299 * 16; // segment 0x0299 load address
+        let table = seg_base + 0x1592;
+        let mut targets = [0u16; 8];
+        for (i, t) in targets.iter_mut().enumerate() {
+            *t = u16::from_le_bytes([data[table + i * 2], data[table + i * 2 + 1]]);
+        }
+
+        // Entries 5,6,7 point at consecutive `ret` bytes -> no-op stubs -> None.
+        for idx in 5u8..=7 {
+            let off = seg_base + targets[idx as usize] as usize;
+            assert_eq!(data[off], 0xC3, "dispatch[{idx}] is not a ret stub");
+            assert!(ship_3d_sprite_slot_frame_for_dispatch(&[0u8; 16], idx).is_none());
+        }
+
+        // Entries 0..=4 are five distinct real blitters -> classifier yields a
+        // frame variant for each.
+        let reals = &targets[0..5];
+        for (i, &t) in reals.iter().enumerate() {
+            assert!(
+                data[seg_base + t as usize] != 0xC3,
+                "dispatch[{i}] is a stub"
+            );
+            assert!(ship_3d_sprite_slot_frame_for_dispatch(&[0u8; 16], i as u8).is_some());
+        }
+        let distinct: std::collections::HashSet<u16> = reals.iter().copied().collect();
+        assert_eq!(distinct.len(), 5, "the five real blitters must be distinct");
+    }
+
+    #[test]
     fn active_line_clip_bounds_match_dialogue_updater_special_cases() {
         assert_eq!(subtitle_clip_bounds(Some(5)), (SCENE_TOP, SCENE_BOTTOM));
         assert_eq!(subtitle_clip_bounds(Some(0x27)), (SCENE_TOP, SCENE_BOTTOM));
