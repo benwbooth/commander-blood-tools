@@ -1198,13 +1198,15 @@ Rust now ports the safe framebuffer side of the recovered primitives in
 `src/extract/render.rs`: clipped rectangle fill (`0x0CDC`), current scene-band
 fill (`0x0DEB`/`0x0E2F` shape), full-viewport framebuffer copy
 (`0x0EB6`/`0x0ECB`), palette-remap rectangle (`0x040E`), and VGA
-planar-to-linear capture (`0x0EE0`). It also ports sprite blitter pixel
-semantics for modes 0..4: raw transparent, RLE transparent, raw opaque, RLE
-opaque, and scaled transparent. The tests cover dirty-rect clipping, source row
-stride, frame-header origin offsets, horizontal/vertical flip mapping,
-transparent zero skip, destination-palette remap masking, RLE literal runs, RLE
-repeated-byte runs, opaque zero writes, 16.16 scaled sampling, scaled clipping
-accumulator advance, and zero destination extents. `src/extract/render.rs` also
+planar-to-linear capture (`0x0EE0`), plus dirty-rectangle secondary-to-primary
+copyback (`0x210D`). It also ports sprite blitter pixel semantics for modes
+0..4: raw transparent, RLE transparent, raw opaque, RLE opaque, and scaled
+transparent. The tests cover dirty-rect clipping, source row stride,
+frame-header origin offsets, horizontal/vertical flip mapping, transparent zero
+skip, destination-palette remap masking, RLE literal runs, RLE repeated-byte
+runs, opaque zero writes, 16.16 scaled sampling, scaled clipping accumulator
+advance, zero destination extents, dirty-rect copyback gating, sentinel stop,
+and viewport clamping. `src/extract/render.rs` also
 bridges `Ship3dSpriteSlotRenderCommand` values into those blitters, including
 dispatch modes 0..4, no-op modes 5..7, dirty-rect clip conversion, and the
 `DS:0x5F11`/`DS:0x6011` destination-remap selector. The character-HNM clear path
@@ -1988,9 +1990,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 - [x] Port recovered framebuffer fill/copy primitives:
       `src/extract/render.rs` now has tested Rust helpers for the clipped
       rectangle fill, palette-remap rectangle, scene-band fill, full 320x200
-      framebuffer copy, and VGA planar-to-linear capture shapes recovered from
-      render segment `0x0299`; the character-HNM clear path uses the clipped
-      rectangle helper.
+      framebuffer copy, VGA planar-to-linear capture, and dirty-rectangle
+      secondary-to-primary copyback shapes recovered from render segment
+      `0x0299`; the character-HNM clear path uses the clipped rectangle helper.
 - [x] Emit binary-derived SND bank-loader call sites:
       `src/bloodprg.rs` scans direct far calls to `0x0B1B:0x0855`, recovers the
       upstream `AX` bank mode plus `SI` static SND path, and test-locks the seven

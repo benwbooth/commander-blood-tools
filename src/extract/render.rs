@@ -104,6 +104,42 @@ pub(super) fn copy_framebuffer_full_indexed(dst: &mut [u8], src: &[u8]) {
     dst[..len].copy_from_slice(&src[..len]);
 }
 
+pub(super) fn copy_dirty_rects_secondary_to_primary_indexed(
+    primary: &mut [u8],
+    secondary: &[u8],
+    dirty_rects: &[Ship3dProjectionViewport],
+    copy_enabled: bool,
+) -> usize {
+    let len = VIEWPORT_W * VIEWPORT_H;
+    if !copy_enabled || primary.len() < len || secondary.len() < len {
+        return 0;
+    }
+
+    let mut copied = 0usize;
+    for rect in dirty_rects {
+        if signed_word_to_isize(rect.left) < 0 {
+            break;
+        }
+
+        let left = clamp_signed_word_to_viewport(rect.left, VIEWPORT_W);
+        let right = clamp_signed_word_to_viewport(rect.right, VIEWPORT_W);
+        let top = clamp_signed_word_to_viewport(rect.top, VIEWPORT_H);
+        let bottom = clamp_signed_word_to_viewport(rect.bottom, VIEWPORT_H);
+        if right <= left || bottom <= top {
+            continue;
+        }
+
+        for y in top..bottom {
+            let start = y * VIEWPORT_W + left;
+            let end = y * VIEWPORT_W + right;
+            primary[start..end].copy_from_slice(&secondary[start..end]);
+            copied += end - start;
+        }
+    }
+
+    copied
+}
+
 pub(super) fn remap_rect_indexed_clipped(
     fb: &mut [u8],
     table: &[u8; 256],
@@ -1038,6 +1074,96 @@ mod tests {
         assert_eq!(dst[0], 11);
         assert_eq!(dst[len - 1], 22);
         assert_eq!(dst[len], 3);
+    }
+
+    #[test]
+    fn recovered_dirty_rect_copyback_copies_secondary_rows_to_primary() {
+        let mut primary = vec![1u8; VIEWPORT_W * VIEWPORT_H];
+        let mut secondary = vec![2u8; VIEWPORT_W * VIEWPORT_H];
+        secondary[2 * VIEWPORT_W + 3] = 33;
+        secondary[3 * VIEWPORT_W + 4] = 44;
+
+        let copied = copy_dirty_rects_secondary_to_primary_indexed(
+            &mut primary,
+            &secondary,
+            &[Ship3dProjectionViewport {
+                left: 3,
+                right: 6,
+                top: 2,
+                bottom: 4,
+            }],
+            true,
+        );
+
+        assert_eq!(copied, 6);
+        assert_eq!(primary[2 * VIEWPORT_W + 2], 1);
+        assert_eq!(primary[2 * VIEWPORT_W + 3], 33);
+        assert_eq!(primary[2 * VIEWPORT_W + 4], 2);
+        assert_eq!(primary[3 * VIEWPORT_W + 4], 44);
+        assert_eq!(primary[4 * VIEWPORT_W + 3], 1);
+    }
+
+    #[test]
+    fn recovered_dirty_rect_copyback_honors_gate_and_negative_left_sentinel() {
+        let mut primary = vec![1u8; VIEWPORT_W * VIEWPORT_H];
+        let mut secondary = vec![9u8; VIEWPORT_W * VIEWPORT_H];
+        secondary[VIEWPORT_W + 1] = 11;
+        secondary[VIEWPORT_W + 4] = 44;
+        let rects = [
+            Ship3dProjectionViewport {
+                left: 1,
+                right: 2,
+                top: 1,
+                bottom: 2,
+            },
+            Ship3dProjectionViewport {
+                left: 0xffff,
+                right: 0,
+                top: 0,
+                bottom: 0,
+            },
+            Ship3dProjectionViewport {
+                left: 4,
+                right: 5,
+                top: 1,
+                bottom: 2,
+            },
+        ];
+
+        assert_eq!(
+            copy_dirty_rects_secondary_to_primary_indexed(&mut primary, &secondary, &rects, false),
+            0
+        );
+        assert!(primary.iter().all(|sample| *sample == 1));
+
+        assert_eq!(
+            copy_dirty_rects_secondary_to_primary_indexed(&mut primary, &secondary, &rects, true),
+            1
+        );
+        assert_eq!(primary[VIEWPORT_W + 1], 11);
+        assert_eq!(primary[VIEWPORT_W + 4], 1);
+    }
+
+    #[test]
+    fn recovered_dirty_rect_copyback_clamps_to_viewport() {
+        let mut primary = vec![0u8; VIEWPORT_W * VIEWPORT_H];
+        let secondary = vec![5u8; VIEWPORT_W * VIEWPORT_H];
+
+        let copied = copy_dirty_rects_secondary_to_primary_indexed(
+            &mut primary,
+            &secondary,
+            &[Ship3dProjectionViewport {
+                left: (VIEWPORT_W - 1) as u16,
+                right: (VIEWPORT_W + 4) as u16,
+                top: (VIEWPORT_H - 1) as u16,
+                bottom: (VIEWPORT_H + 4) as u16,
+            }],
+            true,
+        );
+
+        assert_eq!(copied, 1);
+        assert_eq!(primary[VIEWPORT_W * VIEWPORT_H - 1], 5);
+        assert_eq!(primary[VIEWPORT_W * (VIEWPORT_H - 1) - 1], 0);
     }
 
     #[test]
