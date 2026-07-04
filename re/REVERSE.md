@@ -316,9 +316,15 @@ projection path at `0x9B98` is now partially recovered as
 `DS:0x6212 + ((counter + 0x15) << 5)`, gates on descriptor flag `0x0080`,
 reuses the same matrix rows and screen centers, wraps negative depth by adding
 `0x10000`, computes scale `(0x08000000 >> 7) / depth`, scales source
-width/height by `>> 10`, and subtracts descriptor center extents at
-`+0x0C/+0x0E` before the far draw call. The remaining object-rendering target is
-the pair of far draw helpers reached at `0x0299:0x133D` and `0x0299:0x127D`.
+width/height by `>> 10`, calls `sprite_slot_extent_update` (`0x0299:0x133D`),
+then subtracts the updated descriptor extent words `+0x0C/+0x0E` before calling
+`sprite_slot_position_update` (`0x0299:0x127D`). Those two helpers are now
+modeled as mutable slot-state updates: active slots are gated by flag mask
+`0x0081`; position changes set dirty bit `0x0002`; scaled extents set dirty bit
+`0x0002` plus extent-changed bit `0x0010`; and natural-size extents clear bit
+`0x0010`, marking dirty only if that bit had been set. The remaining
+object-rendering target is the dirty sprite-slot renderer at `0x0299:0x14E1`
+and its internal blitter dispatch.
 
 The next control-layer markers are now pinned. `0xB2BB` selects the next
 ship/navigation target record from `DS:0x250B`, or from the inline fallback table
@@ -1920,9 +1926,11 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 - [x] Port ship 3D object/sprite projection prep:
       file `0x9B98` now maps its visible-descriptor gate, anchor projection,
       negative-depth wrap, depth-scale divide, source-dimension scaling, and
-      top-left draw positioning into `project_ship_3d_object_sprite()`. This
-      leaves the far draw helpers at `0x0299:0x133D` and `0x0299:0x127D` as the
-      next sprite-rendering target.
+      mutable sprite-slot extent/position updates into
+      `project_ship_3d_object_sprite()`, `update_ship_3d_sprite_slot_extent()`,
+      and `update_ship_3d_sprite_slot_position()`. This leaves dirty slot commit
+      and rendering (`0x0299:0x1467` / `0x0299:0x14E1`) as the next
+      sprite-rendering target.
 - [x] Port ship 3D temporary `3D.snd` setup branch:
       `src/ship3d.rs` now models file `0xB591`: the `DS:0x0AE4` one-shot gate,
       phase byte `DS:0x0AE5` cycling across the three `DS:0x0ACC` callback

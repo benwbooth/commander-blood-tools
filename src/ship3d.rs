@@ -119,6 +119,9 @@ pub const SHIP_3D_OBJECT_DESCRIPTOR_BASE_OFFSET: u16 = 0x6212;
 pub const SHIP_3D_OBJECT_DESCRIPTOR_STRIDE: u16 = 0x0020;
 pub const SHIP_3D_OBJECT_DESCRIPTOR_INDEX_BIAS: u16 = 0x0015;
 pub const SHIP_3D_OBJECT_VISIBLE_FLAG: u16 = 0x0080;
+pub const SHIP_3D_SPRITE_SLOT_ACTIVE_MASK: u16 = 0x0081;
+pub const SHIP_3D_SPRITE_SLOT_DIRTY_FLAG: u16 = 0x0002;
+pub const SHIP_3D_SPRITE_SLOT_EXTENT_CHANGED_FLAG: u16 = 0x0010;
 pub const SHIP_3D_OBJECT_DEPTH_WRAP_BIAS: i32 = 0x0001_0000;
 pub const SHIP_3D_OBJECT_SCALE_NUMERATOR: u32 = 0x0010_0000;
 pub const SHIP_3D_OBJECT_SCALE_SHIFT: u8 = 0x0a;
@@ -462,8 +465,10 @@ pub struct Ship3dObjectSpriteDescriptor {
     pub flags: u16,
     pub source_width: u16,
     pub source_height: u16,
-    pub center_width: u16,
-    pub center_height: u16,
+    pub draw_x: u16,
+    pub draw_y: u16,
+    pub extent_width: u16,
+    pub extent_height: u16,
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -474,6 +479,15 @@ pub struct Ship3dObjectSpriteProjection {
     pub scaled_height: u16,
     pub draw_x: u16,
     pub draw_y: u16,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dSpriteSlotUpdateEffect {
+    pub ran: bool,
+    pub marked_dirty: bool,
+    pub updated_position: bool,
+    pub updated_extent: bool,
+    pub cleared_extent_changed_flag: bool,
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -1500,7 +1514,7 @@ pub fn project_ship_3d_object_sprite(
     anchor: Ship3dProjectionPoint,
     origin: Ship3dProjectionOrigin,
     matrix: Ship3dProjectionMatrix,
-    descriptor: Ship3dObjectSpriteDescriptor,
+    descriptor: &mut Ship3dObjectSpriteDescriptor,
 ) -> Option<Ship3dObjectSpriteProjection> {
     if descriptor.flags & SHIP_3D_OBJECT_VISIBLE_FLAG == 0 {
         return None;
@@ -1547,6 +1561,11 @@ pub fn project_ship_3d_object_sprite(
     );
     let scaled_width = scale_ship_3d_object_dimension(descriptor.source_width, depth_scale);
     let scaled_height = scale_ship_3d_object_dimension(descriptor.source_height, depth_scale);
+    update_ship_3d_sprite_slot_extent(descriptor, scaled_width, scaled_height);
+
+    let draw_x = screen_x.wrapping_sub(descriptor.extent_width >> 1);
+    let draw_y = screen_y.wrapping_sub(descriptor.extent_height >> 1);
+    update_ship_3d_sprite_slot_position(descriptor, draw_x, draw_y);
 
     Some(Ship3dObjectSpriteProjection {
         projected: Ship3dProjectedPoint {
@@ -1557,9 +1576,67 @@ pub fn project_ship_3d_object_sprite(
         depth_scale,
         scaled_width,
         scaled_height,
-        draw_x: screen_x.wrapping_sub(descriptor.center_width >> 1),
-        draw_y: screen_y.wrapping_sub(descriptor.center_height >> 1),
+        draw_x,
+        draw_y,
     })
+}
+
+pub fn update_ship_3d_sprite_slot_position(
+    descriptor: &mut Ship3dObjectSpriteDescriptor,
+    x: u16,
+    y: u16,
+) -> Ship3dSpriteSlotUpdateEffect {
+    let mut effect = Ship3dSpriteSlotUpdateEffect::default();
+    if descriptor.flags & SHIP_3D_SPRITE_SLOT_ACTIVE_MASK == 0 {
+        return effect;
+    }
+
+    effect.ran = true;
+    if descriptor.draw_x != x {
+        descriptor.flags |= SHIP_3D_SPRITE_SLOT_DIRTY_FLAG;
+        descriptor.draw_x = x;
+        effect.marked_dirty = true;
+        effect.updated_position = true;
+    }
+    if descriptor.draw_y != y {
+        descriptor.flags |= SHIP_3D_SPRITE_SLOT_DIRTY_FLAG;
+        descriptor.draw_y = y;
+        effect.marked_dirty = true;
+        effect.updated_position = true;
+    }
+    effect
+}
+
+pub fn update_ship_3d_sprite_slot_extent(
+    descriptor: &mut Ship3dObjectSpriteDescriptor,
+    width: u16,
+    height: u16,
+) -> Ship3dSpriteSlotUpdateEffect {
+    let mut effect = Ship3dSpriteSlotUpdateEffect::default();
+    if descriptor.flags & SHIP_3D_SPRITE_SLOT_ACTIVE_MASK == 0 {
+        return effect;
+    }
+
+    effect.ran = true;
+    if width == descriptor.source_width && height == descriptor.source_height {
+        if descriptor.flags & SHIP_3D_SPRITE_SLOT_EXTENT_CHANGED_FLAG != 0 {
+            descriptor.flags &= !SHIP_3D_SPRITE_SLOT_EXTENT_CHANGED_FLAG;
+            descriptor.flags |= SHIP_3D_SPRITE_SLOT_DIRTY_FLAG;
+            effect.marked_dirty = true;
+            effect.cleared_extent_changed_flag = true;
+        }
+        return effect;
+    }
+
+    if descriptor.extent_width != width || descriptor.extent_height != height {
+        descriptor.flags |=
+            SHIP_3D_SPRITE_SLOT_DIRTY_FLAG | SHIP_3D_SPRITE_SLOT_EXTENT_CHANGED_FLAG;
+        descriptor.extent_width = width;
+        descriptor.extent_height = height;
+        effect.marked_dirty = true;
+        effect.updated_extent = true;
+    }
+    effect
 }
 
 pub fn run_ship_3d_temp_snd_setup(state: &mut Ship3dTempSndState) -> Option<Ship3dTempSndEffect> {
@@ -4232,6 +4309,15 @@ mod tests {
         let matrix = Ship3dProjectionMatrix {
             terms: [0x8000, 0, 0, 0, -0x8000, 0, 0, 0, 0x8000],
         };
+        let mut descriptor = Ship3dObjectSpriteDescriptor {
+            flags: SHIP_3D_OBJECT_VISIBLE_FLAG,
+            source_width: 64,
+            source_height: 32,
+            draw_x: 0,
+            draw_y: 0,
+            extent_width: 64,
+            extent_height: 32,
+        };
 
         let projection = project_ship_3d_object_sprite(
             Ship3dProjectionPoint {
@@ -4241,13 +4327,7 @@ mod tests {
             },
             Ship3dProjectionOrigin::default(),
             matrix,
-            Ship3dObjectSpriteDescriptor {
-                flags: SHIP_3D_OBJECT_VISIBLE_FLAG,
-                source_width: 64,
-                source_height: 32,
-                center_width: 40,
-                center_height: 20,
-            },
+            &mut descriptor,
         )
         .unwrap();
 
@@ -4262,8 +4342,22 @@ mod tests {
                 depth_scale: 1048,
                 scaled_width: 65,
                 scaled_height: 32,
-                draw_x: 142,
-                draw_y: 85,
+                draw_x: 130,
+                draw_y: 79,
+            }
+        );
+        assert_eq!(
+            descriptor,
+            Ship3dObjectSpriteDescriptor {
+                flags: SHIP_3D_OBJECT_VISIBLE_FLAG
+                    | SHIP_3D_SPRITE_SLOT_DIRTY_FLAG
+                    | SHIP_3D_SPRITE_SLOT_EXTENT_CHANGED_FLAG,
+                source_width: 64,
+                source_height: 32,
+                draw_x: 130,
+                draw_y: 79,
+                extent_width: 65,
+                extent_height: 32,
             }
         );
     }
@@ -4273,12 +4367,14 @@ mod tests {
         let matrix = Ship3dProjectionMatrix {
             terms: [0x8000, 0, 0, 0, -0x8000, 0, 0, 0, 0x8000],
         };
-        let descriptor = Ship3dObjectSpriteDescriptor {
+        let mut descriptor = Ship3dObjectSpriteDescriptor {
             flags: 0,
             source_width: 64,
             source_height: 32,
-            center_width: 40,
-            center_height: 20,
+            draw_x: 0,
+            draw_y: 0,
+            extent_width: 64,
+            extent_height: 32,
         };
 
         assert_eq!(
@@ -4290,19 +4386,17 @@ mod tests {
                 },
                 Ship3dProjectionOrigin::default(),
                 matrix,
-                descriptor,
+                &mut descriptor,
             ),
             None
         );
+        descriptor.flags = SHIP_3D_OBJECT_VISIBLE_FLAG;
         assert_eq!(
             project_ship_3d_object_sprite(
                 Ship3dProjectionPoint { x: 0, y: 0, z: 0 },
                 Ship3dProjectionOrigin::default(),
                 matrix,
-                Ship3dObjectSpriteDescriptor {
-                    flags: SHIP_3D_OBJECT_VISIBLE_FLAG,
-                    ..descriptor
-                },
+                &mut descriptor,
             ),
             None
         );
@@ -4313,6 +4407,15 @@ mod tests {
         let matrix = Ship3dProjectionMatrix {
             terms: [0x8000, 0, 0, 0, -0x8000, 0, 0, 0, 0x8000],
         };
+        let mut descriptor = Ship3dObjectSpriteDescriptor {
+            flags: SHIP_3D_OBJECT_VISIBLE_FLAG,
+            source_width: 64,
+            source_height: 32,
+            draw_x: 0,
+            draw_y: 0,
+            extent_width: 64,
+            extent_height: 32,
+        };
 
         let projection = project_ship_3d_object_sprite(
             Ship3dProjectionPoint {
@@ -4322,13 +4425,7 @@ mod tests {
             },
             Ship3dProjectionOrigin::default(),
             matrix,
-            Ship3dObjectSpriteDescriptor {
-                flags: SHIP_3D_OBJECT_VISIBLE_FLAG,
-                source_width: 64,
-                source_height: 32,
-                center_width: 0,
-                center_height: 0,
-            },
+            &mut descriptor,
         )
         .unwrap();
 
@@ -4347,6 +4444,98 @@ mod tests {
                 draw_y: 100,
             }
         );
+        assert_eq!(descriptor.extent_width, 1);
+        assert_eq!(descriptor.extent_height, 0);
+        assert_eq!(descriptor.draw_x, 160);
+        assert_eq!(descriptor.draw_y, 100);
+        assert_eq!(
+            descriptor.flags,
+            SHIP_3D_OBJECT_VISIBLE_FLAG
+                | SHIP_3D_SPRITE_SLOT_DIRTY_FLAG
+                | SHIP_3D_SPRITE_SLOT_EXTENT_CHANGED_FLAG
+        );
+    }
+
+    #[test]
+    fn sprite_slot_position_update_marks_dirty_only_when_active_and_changed() {
+        let mut inactive = Ship3dObjectSpriteDescriptor {
+            draw_x: 1,
+            draw_y: 2,
+            ..Ship3dObjectSpriteDescriptor::default()
+        };
+
+        assert_eq!(
+            update_ship_3d_sprite_slot_position(&mut inactive, 3, 4),
+            Ship3dSpriteSlotUpdateEffect::default()
+        );
+        assert_eq!(inactive.draw_x, 1);
+        assert_eq!(inactive.draw_y, 2);
+
+        let mut active = Ship3dObjectSpriteDescriptor {
+            flags: 0x0001,
+            draw_x: 10,
+            draw_y: 20,
+            ..Ship3dObjectSpriteDescriptor::default()
+        };
+
+        assert_eq!(
+            update_ship_3d_sprite_slot_position(&mut active, 10, 21),
+            Ship3dSpriteSlotUpdateEffect {
+                ran: true,
+                marked_dirty: true,
+                updated_position: true,
+                ..Ship3dSpriteSlotUpdateEffect::default()
+            }
+        );
+        assert_eq!(active.draw_x, 10);
+        assert_eq!(active.draw_y, 21);
+        assert_eq!(active.flags, 0x0001 | SHIP_3D_SPRITE_SLOT_DIRTY_FLAG);
+    }
+
+    #[test]
+    fn sprite_slot_extent_update_matches_binary_dirty_and_bit4_rules() {
+        let mut natural = Ship3dObjectSpriteDescriptor {
+            flags: SHIP_3D_OBJECT_VISIBLE_FLAG | SHIP_3D_SPRITE_SLOT_EXTENT_CHANGED_FLAG,
+            source_width: 64,
+            source_height: 32,
+            extent_width: 65,
+            extent_height: 33,
+            ..Ship3dObjectSpriteDescriptor::default()
+        };
+
+        assert_eq!(
+            update_ship_3d_sprite_slot_extent(&mut natural, 64, 32),
+            Ship3dSpriteSlotUpdateEffect {
+                ran: true,
+                marked_dirty: true,
+                cleared_extent_changed_flag: true,
+                ..Ship3dSpriteSlotUpdateEffect::default()
+            }
+        );
+        assert_eq!(
+            natural.flags,
+            SHIP_3D_OBJECT_VISIBLE_FLAG | SHIP_3D_SPRITE_SLOT_DIRTY_FLAG
+        );
+        assert_eq!(natural.extent_width, 65);
+        assert_eq!(natural.extent_height, 33);
+
+        assert_eq!(
+            update_ship_3d_sprite_slot_extent(&mut natural, 80, 40),
+            Ship3dSpriteSlotUpdateEffect {
+                ran: true,
+                marked_dirty: true,
+                updated_extent: true,
+                ..Ship3dSpriteSlotUpdateEffect::default()
+            }
+        );
+        assert_eq!(
+            natural.flags,
+            SHIP_3D_OBJECT_VISIBLE_FLAG
+                | SHIP_3D_SPRITE_SLOT_DIRTY_FLAG
+                | SHIP_3D_SPRITE_SLOT_EXTENT_CHANGED_FLAG
+        );
+        assert_eq!(natural.extent_width, 80);
+        assert_eq!(natural.extent_height, 40);
     }
 
     #[test]
