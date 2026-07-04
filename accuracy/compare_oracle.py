@@ -624,20 +624,27 @@ def search_candidate_videos(
     reference_path: Path,
     candidates: list[Path],
     *,
-    start: float,
-    end: float,
-    step: float,
+    start: float | None,
+    end: float | None,
+    step: float | None,
     ref_crop: str,
     out_dir: Path,
     reference_manifest: Path | None = None,
     top_n: int = 20,
+    candidate_timeline: str | None = None,
 ) -> dict[str, object]:
     if not candidates:
         raise ValueError("candidate search found no files")
     if top_n <= 0:
         raise ValueError("candidate top count must be positive")
+    if candidate_timeline not in {None, "auto"}:
+        raise ValueError("candidate timeline mode must be 'auto' when set")
 
-    times = scan_times(start, end, step)
+    range_times = None
+    if candidate_timeline is None:
+        if start is None or end is None or step is None:
+            raise ValueError("candidate range search requires start, end, and step")
+        range_times = scan_times(start, end, step)
     reference_source = resolve_reference_source(
         reference_path, ref_crop, reference_manifest
     )
@@ -648,6 +655,15 @@ def search_candidate_videos(
     errors: list[dict[str, object]] = []
     for candidate in candidates:
         try:
+            generated_timeline = None
+            if candidate_timeline == "auto":
+                generated_timeline = default_generated_timeline(candidate)
+                times = load_timeline_times(generated_timeline)
+                scan_source = "timeline"
+            else:
+                times = range_times
+                scan_source = "range"
+            assert times is not None
             scan_results = scan_generated_against_reference(
                 reference_native, candidate, times
             )
@@ -665,8 +681,11 @@ def search_candidate_videos(
                 "best_exact_pixel_percent": best["exact_pixel_percent"],
                 "best_mean_abs_rgb": best["mean_abs_rgb"],
                 "scan_count": len(scan_results),
+                "scan_source": scan_source,
             }
         )
+        if generated_timeline is not None:
+            rows[-1]["generated_timeline"] = str(generated_timeline)
 
     if not rows:
         raise ValueError("candidate search produced no comparable frames")
@@ -680,14 +699,18 @@ def search_candidate_videos(
         "reference_crop": list(crop),
         "candidate_count": len(candidates),
         "candidate_error_count": len(errors),
-        "scan_start": start,
-        "scan_end": end,
-        "scan_step": step,
+        "scan_source": "candidate_timeline" if candidate_timeline else "range",
         "top_count": min(top_n, len(ranked)),
         "best": ranked[0],
         "top": ranked[:top_n],
         "errors": errors,
     }
+    if candidate_timeline is None:
+        summary["scan_start"] = start
+        summary["scan_end"] = end
+        summary["scan_step"] = step
+    else:
+        summary["candidate_timeline"] = candidate_timeline
     if reference_source.metadata is not None:
         summary["reference_manifest"] = reference_source.metadata
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -873,6 +896,11 @@ def main() -> int:
         default=20,
         help="Number of ranked candidate matches to write; default 20",
     )
+    parser.add_argument(
+        "--candidate-timeline",
+        choices=["auto"],
+        help="For --candidate-glob, scan each candidate's timeline sidecar; currently supports 'auto'",
+    )
     args = parser.parse_args()
 
     if args.scenario_file:
@@ -888,22 +916,25 @@ def main() -> int:
 
     if args.reference is None or args.generated is None:
         if args.reference is not None and args.candidate_glob:
+            if args.candidate_timeline and args.scan_generated:
+                parser.error("--candidate-timeline cannot be combined with --scan-generated")
             start, end, step = (
                 parse_scan_range(args.scan_generated)
-                if args.scan_generated
+                if args.scan_generated or not args.candidate_timeline
                 else (args.generated_time, args.generated_time, 1.0)
             )
             out_dir = args.out_dir or default_candidate_search_out_dir(args.reference)
             summary = search_candidate_videos(
                 args.reference,
                 candidate_paths_from_globs(args.candidate_glob),
-                start=start,
-                end=end,
-                step=step,
+                start=None if args.candidate_timeline else start,
+                end=None if args.candidate_timeline else end,
+                step=None if args.candidate_timeline else step,
                 ref_crop=args.ref_crop,
                 out_dir=out_dir,
                 reference_manifest=args.reference_manifest,
                 top_n=args.candidate_top,
+                candidate_timeline=args.candidate_timeline,
             )
             print(json.dumps(summary, indent=2))
             return 0

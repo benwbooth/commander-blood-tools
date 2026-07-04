@@ -251,6 +251,51 @@ class CompareOracleTests(unittest.TestCase):
             self.assertTrue((root / "candidate-search" / "candidate-search.json").exists())
             self.assertTrue((root / "candidate-search" / "best" / "comparison.json").exists())
 
+    def test_candidate_search_can_use_candidate_timelines(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="commander-blood-candidate-test-") as tmp:
+            root = Path(tmp)
+            reference = root / "reference.png"
+            close = root / "candidate-close.png"
+            far = root / "candidate-far.png"
+            Image.new("RGB", compare_oracle.NATIVE_SIZE, (10, 20, 30)).save(reference)
+            Image.new("RGB", compare_oracle.NATIVE_SIZE, (11, 20, 30)).save(close)
+            Image.new("RGB", compare_oracle.NATIVE_SIZE, (100, 20, 30)).save(far)
+            for candidate in [close, far]:
+                compare_oracle.default_generated_timeline(candidate).write_text(
+                    "\n".join(
+                        [
+                            TIMELINE_HEADER,
+                            f"{candidate.name}\ttest\t0\t0.000000\t0.500000\t0.500000\t0.250000\t0.500000\t0x000a\t3\tfalse\t\t\t\tfalse\t\tfalse\tabc",
+                        ]
+                    )
+                    + "\n"
+                )
+
+            summary = compare_oracle.search_candidate_videos(
+                reference,
+                [far, close],
+                start=None,
+                end=None,
+                step=None,
+                ref_crop="auto",
+                out_dir=root / "candidate-timeline-search",
+                top_n=2,
+                candidate_timeline="auto",
+            )
+
+            self.assertEqual(summary["scan_source"], "candidate_timeline")
+            self.assertEqual(summary["candidate_timeline"], "auto")
+            self.assertEqual(summary["best"]["generated"], str(close))
+            self.assertEqual(summary["best"]["scan_source"], "timeline")
+            self.assertEqual(
+                summary["best"]["generated_timeline"],
+                str(compare_oracle.default_generated_timeline(close)),
+            )
+            self.assertEqual(summary["best"]["scan_count"], 3)
+            self.assertTrue(
+                (root / "candidate-timeline-search" / "candidate-search.json").exists()
+            )
+
     def test_region_metrics_isolate_hud_panel_difference(self) -> None:
         reference = Image.new("RGB", compare_oracle.NATIVE_SIZE, (0, 0, 0))
         generated = Image.new("RGB", compare_oracle.NATIVE_SIZE, (0, 0, 0))

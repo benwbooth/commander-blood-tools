@@ -139,6 +139,17 @@ normal comparison for the best match under `<out-dir>/best/`. A high best
 `mean_abs` after scanning means the DOS capture is probably a different scene or
 presentation state, not merely a frame-offset problem.
 
+For generated dialogue-run videos with timeline sidecars, rank candidates at
+their own event boundaries instead of a uniform time grid:
+
+```sh
+nix develop --command python accuracy/compare_oracle.py \
+  --reference accuracy/captures/frame_12.png \
+  --candidate-glob "output/mp4/executed-dialogue-run*.mp4" \
+  --candidate-timeline auto \
+  --out-dir accuracy/comparisons/frame12-candidate-timeline-search
+```
+
 ## What works (verified 2026-06-14)
 
 - `accuracy/dosbox.conf` mounts the CD image (`output/CMDR_BLOOD.iso`) as `D:`,
