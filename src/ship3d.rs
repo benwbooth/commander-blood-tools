@@ -1,3 +1,5 @@
+use crate::vm;
+
 pub const SHIP_3D_MAX_DEPTH_OFFSET: u16 = 0x41;
 pub const SHIP_3D_TRANSITION_OPEN_STEP: u8 = 0x04;
 pub const SHIP_3D_TRANSITION_CLOSE_STEP: u8 = 0x08;
@@ -72,6 +74,16 @@ pub const SHIP_3D_NAVIGATION_SCENE_BAND_TOP: u16 = 0x0023;
 pub const SHIP_3D_NAVIGATION_RENDER_CLIP_BOTTOM: u16 = 0x00a5;
 pub const SHIP_3D_NAVIGATION_RENDER_CLIP_RESTORED_BOTTOM: u16 = 0x00c8;
 pub const SHIP_3D_NAVIGATION_TRIGGER_CLOSE_STEP: u8 = 0x02;
+pub const SHIP_3D_OBJECT_KIND_POSITION_DIRECT_8: u16 = 0x0008;
+pub const SHIP_3D_OBJECT_KIND_POSITION_DIRECT_10: u16 = 0x0010;
+pub const SHIP_3D_OBJECT_KIND_POSITION_DIRECT_40: u16 = 0x0040;
+pub const SHIP_3D_OBJECT_KIND_POSITION_KIND100: u16 = 0x0100;
+pub const SHIP_3D_OBJECT_KIND_POSITION_DIRECT_200: u16 = 0x0200;
+pub const SHIP_3D_FIELD_SELECTOR_POSITION: u8 = 0x0b;
+pub const SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MATCH: u8 = 0x09;
+pub const SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MISMATCH: u8 = 0x0a;
+pub const SHIP_3D_FIELD_SELECTOR_KIND100_MATCH_WORD: u8 = 0x0c;
+pub const SHIP_3D_FIELD_SELECTOR_PARENT_LINK: u8 = 0x11;
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dTransitionState {
@@ -303,6 +315,16 @@ pub struct Ship3dNavigationRuntimeRecord {
 pub struct Ship3dNavigationSourceEntry {
     pub record_offset: u16,
     pub entry_kind: u16,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dPositionRecord {
+    pub offset: u16,
+    pub kind_flags: u16,
+    /// Selector-0x11 parent/reference link. `None` represents the binary's
+    /// `0xffff` sentinel, which falls back to the named arche object.
+    pub parent_link: Option<u16>,
+    pub kind100_match_word: Option<u16>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -954,6 +976,47 @@ pub fn build_ship_3d_navigation_candidate_records(
     None
 }
 
+pub fn resolve_ship_3d_position_field(
+    records: &[Ship3dPositionRecord],
+    record_offset: u16,
+    arche_object: u16,
+    kind100_compare_word: u16,
+) -> Option<u16> {
+    let mut current_offset = record_offset;
+    for _ in 0..records.len().saturating_add(1) {
+        let record = find_ship_3d_position_record(records, current_offset)?;
+        match record.kind_flags {
+            SHIP_3D_OBJECT_KIND_POSITION_KIND100 => {
+                let selector = if record.kind100_match_word? == kind100_compare_word {
+                    SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MATCH
+                } else {
+                    SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MISMATCH
+                };
+                return ship_3d_record_field(record.offset, record.kind_flags, selector);
+            }
+            SHIP_3D_OBJECT_KIND_POSITION_DIRECT_8
+            | SHIP_3D_OBJECT_KIND_POSITION_DIRECT_10
+            | SHIP_3D_OBJECT_KIND_POSITION_DIRECT_40
+            | SHIP_3D_OBJECT_KIND_POSITION_DIRECT_200 => {
+                return ship_3d_record_field(
+                    record.offset,
+                    record.kind_flags,
+                    SHIP_3D_FIELD_SELECTOR_POSITION,
+                );
+            }
+            kind_flags => {
+                let parent_field =
+                    vm::vm_field_offset(SHIP_3D_FIELD_SELECTOR_PARENT_LINK, kind_flags)?;
+                if parent_field == 0 {
+                    return None;
+                }
+                current_offset = record.parent_link.unwrap_or(arche_object);
+            }
+        }
+    }
+    None
+}
+
 pub fn run_ship_3d_navigation_trigger_prelude(
     state: &mut Ship3dNavigationTriggerState,
     records: &[Ship3dNavigationRuntimeRecord],
@@ -1328,6 +1391,20 @@ fn find_ship_3d_navigation_record(
         .iter()
         .copied()
         .find(|record| record.offset == offset)
+}
+
+fn find_ship_3d_position_record(
+    records: &[Ship3dPositionRecord],
+    offset: u16,
+) -> Option<Ship3dPositionRecord> {
+    records
+        .iter()
+        .copied()
+        .find(|record| record.offset == offset)
+}
+
+fn ship_3d_record_field(record_offset: u16, kind_flags: u16, selector: u8) -> Option<u16> {
+    vm::vm_field_offset(selector, kind_flags).map(|field| record_offset.wrapping_add(field))
 }
 
 fn next_target_list_draw_color(state: &mut Ship3dTargetHitState, activate: bool) -> u8 {
@@ -3116,6 +3193,110 @@ mod tests {
     fn navigation_source_records_require_at_least_one_source_entry() {
         assert_eq!(
             build_ship_3d_navigation_source_records(&[], &[], 0x2000),
+            None
+        );
+    }
+
+    fn position_record(
+        offset: u16,
+        kind_flags: u16,
+        parent_link: Option<u16>,
+        kind100_match_word: Option<u16>,
+    ) -> Ship3dPositionRecord {
+        Ship3dPositionRecord {
+            offset,
+            kind_flags,
+            parent_link,
+            kind100_match_word,
+        }
+    }
+
+    #[test]
+    fn position_field_resolves_direct_coordinate_kinds() {
+        let records = [
+            position_record(0x1000, SHIP_3D_OBJECT_KIND_POSITION_DIRECT_8, None, None),
+            position_record(0x1100, SHIP_3D_OBJECT_KIND_POSITION_DIRECT_10, None, None),
+            position_record(0x1200, SHIP_3D_OBJECT_KIND_POSITION_DIRECT_40, None, None),
+            position_record(0x1300, SHIP_3D_OBJECT_KIND_POSITION_DIRECT_200, None, None),
+        ];
+
+        assert_eq!(
+            resolve_ship_3d_position_field(&records, 0x1000, 0x2000, 0),
+            Some(0x1018)
+        );
+        assert_eq!(
+            resolve_ship_3d_position_field(&records, 0x1100, 0x2000, 0),
+            Some(0x1118)
+        );
+        assert_eq!(
+            resolve_ship_3d_position_field(&records, 0x1200, 0x2000, 0),
+            Some(0x1200)
+        );
+        assert_eq!(
+            resolve_ship_3d_position_field(&records, 0x1300, 0x2000, 0),
+            Some(0x1306)
+        );
+    }
+
+    #[test]
+    fn position_field_follows_selector_11_parent_chain() {
+        let records = [
+            position_record(0x1000, 0x0002, Some(0x1100), None),
+            position_record(0x1100, 0x0002, Some(0x1200), None),
+            position_record(0x1200, SHIP_3D_OBJECT_KIND_POSITION_DIRECT_8, None, None),
+        ];
+
+        assert_eq!(
+            resolve_ship_3d_position_field(&records, 0x1000, 0x2000, 0),
+            Some(0x1218)
+        );
+    }
+
+    #[test]
+    fn position_field_uses_arche_for_selector_11_sentinel() {
+        let records = [
+            position_record(0x1000, 0x0002, None, None),
+            position_record(0x2000, SHIP_3D_OBJECT_KIND_POSITION_DIRECT_10, None, None),
+        ];
+
+        assert_eq!(
+            resolve_ship_3d_position_field(&records, 0x1000, 0x2000, 0),
+            Some(0x2018)
+        );
+    }
+
+    #[test]
+    fn position_field_kind100_chooses_match_or_mismatch_block() {
+        let records = [position_record(
+            0x1000,
+            SHIP_3D_OBJECT_KIND_POSITION_KIND100,
+            None,
+            Some(0x2222),
+        )];
+
+        assert_eq!(
+            resolve_ship_3d_position_field(&records, 0x1000, 0x2000, 0x2222),
+            Some(0x1018)
+        );
+        assert_eq!(
+            resolve_ship_3d_position_field(&records, 0x1000, 0x2000, 0x3333),
+            Some(0x101c)
+        );
+    }
+
+    #[test]
+    fn position_field_rejects_unresolvable_parent_chain() {
+        let records = [
+            position_record(0x1000, 0x0002, Some(0x1000), None),
+            position_record(0x2000, 0x0020, Some(0x1000), None),
+        ];
+
+        assert_eq!(
+            resolve_ship_3d_position_field(&records, 0x1000, 0x2000, 0),
+            None
+        );
+        assert_eq!(
+            resolve_ship_3d_position_field(&records, 0x2000, 0x1000, 0),
             None
         );
     }

@@ -201,7 +201,9 @@ DS:0x524F,ship_3d_scroll_value,"100 - min(depth_offset * 2, 100) unless scroll m
 DS:0x678A,vm_displayed_line,currently-displayed dialogue-line id (vs active gs:0x6788)
 DS:0x5239,render_yclip_lo,render_string y-clip low bound (set 0x23 for letterbox)
 DS:0x523B,render_yclip_hi,render_string y-clip high bound (0xa5 letterbox / 0xc8 full)
-0x006023,vm_scale_index,helper: scales AX (called with 2 and 0xf) for table indexing
+0x006023,vm_field_offset,"helper: returns GS:0x6D60[selector*16 + bsf(kind)] as a kind-specific record-field offset"
+0x0060DD,ship_3d_position_distance,"computes squared distance between two runtime object coordinate fields resolved through selector helpers"
+0x0061A6,ship_3d_position_field_resolve,"resolves the coordinate field for an object by following selector-0x11 links, with arche fallback and kind-0x0100 match/mismatch blocks"
 0x007409,vm_c2_descript_lookup,"C2 kind-0x0400 helper: opens descript.des and dispatches matching descriptor script"
 0x007D7B,nav_actor_slot_update_loop,"walks six 0x18-byte navigation actor/object slots and dispatches via cs:0x06d4"
 0x007E09,nav_actor_subdispatch_call,"indirect call through cs:0x06d4 actor slot table"

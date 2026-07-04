@@ -324,6 +324,15 @@ binary.
   `DS:0x524D == 0x000A`, it also writes `DS:0x524F = 100 -
   min(DS:0x2527 * 2, 100)`. Callers at `0x5C06` and `0xB24C` temporarily swap
   `DS:0x5219` to another framebuffer pointer before invoking this routine.
+- The object coordinate helpers live in the same VM/object block, before the
+  target-list helpers. `0x006023` is the shared kind-specific field-offset
+  lookup (`GS:0x6D60[selector * 16 + bsf(kind)]`). `0x0061A6` resolves an
+  object's coordinate field by following selector-`0x11` parent/reference links
+  until it reaches a direct coordinate kind (`0x0008`, `0x0010`, `0x0200`), or
+  kind `0x0100`, which chooses selector `0x09`/`0x0A` from a selector-`0x0C`
+  word comparison. A selector-`0x11` value of `0xFFFF` falls back to the named
+  `arche` object (`DS:0x6752`). The distance caller at `0x0060DD` also treats
+  kind `0x0040` as a direct selector-`0x0B` coordinate source.
 
 Implementation direction: keep the 320x200 indexed cutscene/dialogue path as a
 software renderer until it matches oracle captures. Once the 3D/minigame
@@ -1697,6 +1706,15 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       the list with `0xFFFF`. Rust exposes this as
       `build_ship_3d_navigation_source_records()` so the later `DS:0x2B53`
       filter now has a binary-derived source list instead of an assumed one.
+- [x] Port ship 3D object coordinate-field resolver:
+      the helper at linear file `0x0061A6` follows selector-`0x11`
+      parent/reference links, falls back to named `arche` on `0xFFFF`, and
+      resolves the coordinate field used by the distance helper at `0x0060DD`.
+      Direct coordinate kinds use selector `0x0B`; kind `0x0100` chooses
+      selector `0x09` or `0x0A` by comparing the caller-provided word against
+      selector `0x0C`. Rust exposes this as `resolve_ship_3d_position_field()`,
+      giving the future software oracle and `wgpu` frontend a binary-derived
+      coordinate source instead of a guessed object position.
 - [x] Port ship 3D navigation sequence branch:
       the internal branch at `0x0A9A:0x04E1` (file `0xB481`) now has a Rust
       state/effect model as `run_ship_3d_navigation_sequence_update()`. If
