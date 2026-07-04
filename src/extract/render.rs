@@ -150,6 +150,131 @@ pub(super) fn copy_vga_planar_to_linear_indexed(dst: &mut [u8], planes: &[u8]) {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct RawSpriteFrame<'a> {
+    pub(super) stride: usize,
+    pub(super) x_offset: isize,
+    pub(super) y_offset: isize,
+    pub(super) pixels: &'a [u8],
+}
+
+impl<'a> RawSpriteFrame<'a> {
+    pub(super) fn parse(data: &'a [u8]) -> Option<Self> {
+        if data.len() < 8 {
+            return None;
+        }
+
+        let stride = u16::from_le_bytes([data[0], data[1]]) as usize;
+        let x_offset = i16::from_le_bytes([data[4], data[5]]) as isize;
+        let y_offset = i16::from_le_bytes([data[6], data[7]]) as isize;
+        Some(Self {
+            stride,
+            x_offset,
+            y_offset,
+            pixels: &data[8..],
+        })
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct SpriteBlitRequest {
+    pub(super) x: isize,
+    pub(super) y: isize,
+    pub(super) width: usize,
+    pub(super) height: usize,
+    pub(super) flip_x: bool,
+    pub(super) flip_y: bool,
+    pub(super) clip: (usize, usize, usize, usize),
+}
+
+pub(super) fn blit_raw_transparent_sprite_indexed(
+    fb: &mut [u8],
+    frame: RawSpriteFrame<'_>,
+    request: SpriteBlitRequest,
+    remap_table: Option<&[u8; 256]>,
+) {
+    blit_raw_sprite_indexed(fb, frame, request, true, remap_table);
+}
+
+pub(super) fn blit_raw_opaque_sprite_indexed(
+    fb: &mut [u8],
+    frame: RawSpriteFrame<'_>,
+    request: SpriteBlitRequest,
+) {
+    blit_raw_sprite_indexed(fb, frame, request, false, None);
+}
+
+fn blit_raw_sprite_indexed(
+    fb: &mut [u8],
+    frame: RawSpriteFrame<'_>,
+    request: SpriteBlitRequest,
+    transparent_zero: bool,
+    remap_table: Option<&[u8; 256]>,
+) {
+    if fb.len() < VIEWPORT_W * VIEWPORT_H
+        || frame.stride == 0
+        || request.width == 0
+        || request.height == 0
+    {
+        return;
+    }
+
+    let rect_left = request.x + frame.x_offset;
+    let rect_top = request.y + frame.y_offset;
+    let rect_right = rect_left + request.width as isize;
+    let rect_bottom = rect_top + request.height as isize;
+
+    let (clip_left, clip_right, clip_top, clip_bottom) = request.clip;
+    let x0 = rect_left
+        .max(clip_left as isize)
+        .max(0)
+        .min(VIEWPORT_W as isize) as usize;
+    let y0 = rect_top
+        .max(clip_top as isize)
+        .max(0)
+        .min(VIEWPORT_H as isize) as usize;
+    let x1 = rect_right
+        .min(clip_right as isize)
+        .min(VIEWPORT_W as isize)
+        .max(x0 as isize) as usize;
+    let y1 = rect_bottom
+        .min(clip_bottom as isize)
+        .min(VIEWPORT_H as isize)
+        .max(y0 as isize) as usize;
+
+    if x1 <= x0 || y1 <= y0 {
+        return;
+    }
+
+    for dst_y in y0..y1 {
+        let source_y = if request.flip_y {
+            (rect_bottom - 1 - dst_y as isize) as usize
+        } else {
+            (dst_y as isize - rect_top) as usize
+        };
+        let source_row = source_y.saturating_mul(frame.stride);
+        for dst_x in x0..x1 {
+            let source_x = if request.flip_x {
+                (rect_right - 1 - dst_x as isize) as usize
+            } else {
+                (dst_x as isize - rect_left) as usize
+            };
+            let Some(source_pixel) = frame.pixels.get(source_row + source_x).copied() else {
+                continue;
+            };
+            let dst_idx = dst_y * VIEWPORT_W + dst_x;
+            if transparent_zero && source_pixel == 0 {
+                continue;
+            }
+            fb[dst_idx] = if let Some(table) = remap_table {
+                table[fb[dst_idx] as usize]
+            } else {
+                source_pixel
+            };
+        }
+    }
+}
+
 pub(super) fn render_subtitles_indexed(fb: &mut [u8], cues: &[SubtitleCue], time: f64) {
     let Some((cue, visible_lines)) = active_subtitle_lines(cues, time) else {
         return;
@@ -678,6 +803,155 @@ mod tests {
 
         assert_eq!(&dst[..8], &[10, 20, 30, 40, 11, 21, 31, 41]);
         assert_eq!(dst[len], 7);
+    }
+
+    #[test]
+    fn recovered_raw_transparent_sprite_blit_clips_and_skips_zero_pixels() {
+        let mut frame_bytes = vec![0u8; 8];
+        frame_bytes[0..2].copy_from_slice(&4u16.to_le_bytes());
+        frame_bytes.extend_from_slice(&[0, 1, 2, 99, 3, 0, 4, 99]);
+        let frame = RawSpriteFrame::parse(&frame_bytes).expect("raw sprite frame");
+        let mut fb = vec![9u8; VIEWPORT_W * VIEWPORT_H];
+
+        blit_raw_transparent_sprite_indexed(
+            &mut fb,
+            frame,
+            SpriteBlitRequest {
+                x: 318,
+                y: SCENE_TOP as isize - 1,
+                width: 3,
+                height: 2,
+                flip_x: false,
+                flip_y: false,
+                clip: (0, VIEWPORT_W, SCENE_TOP, SCENE_TOP + 1),
+            },
+            None,
+        );
+
+        assert_eq!(fb[SCENE_TOP * VIEWPORT_W + 317], 9);
+        assert_eq!(fb[SCENE_TOP * VIEWPORT_W + 318], 3);
+        assert_eq!(fb[SCENE_TOP * VIEWPORT_W + 319], 9);
+        assert_eq!(fb[(SCENE_TOP + 1) * VIEWPORT_W + 318], 9);
+    }
+
+    #[test]
+    fn recovered_raw_transparent_sprite_blit_uses_source_as_remap_mask() {
+        let mut frame_bytes = vec![0u8; 8];
+        frame_bytes[0..2].copy_from_slice(&3u16.to_le_bytes());
+        frame_bytes.extend_from_slice(&[7, 0, 8]);
+        let frame = RawSpriteFrame::parse(&frame_bytes).expect("raw sprite frame");
+        let mut remap = [0u8; 256];
+        for (idx, value) in remap.iter_mut().enumerate() {
+            *value = 255 - idx as u8;
+        }
+        let y = SCENE_TOP;
+        let mut fb = vec![0u8; VIEWPORT_W * VIEWPORT_H];
+        fb[y * VIEWPORT_W + 10] = 10;
+        fb[y * VIEWPORT_W + 11] = 11;
+        fb[y * VIEWPORT_W + 12] = 12;
+
+        blit_raw_transparent_sprite_indexed(
+            &mut fb,
+            frame,
+            SpriteBlitRequest {
+                x: 10,
+                y: y as isize,
+                width: 3,
+                height: 1,
+                flip_x: false,
+                flip_y: false,
+                clip: (0, VIEWPORT_W, SCENE_TOP, SCENE_BOTTOM),
+            },
+            Some(&remap),
+        );
+
+        assert_eq!(fb[y * VIEWPORT_W + 10], 245);
+        assert_eq!(fb[y * VIEWPORT_W + 11], 11);
+        assert_eq!(fb[y * VIEWPORT_W + 12], 243);
+    }
+
+    #[test]
+    fn recovered_raw_sprite_frame_origin_offsets_adjust_destination_rect() {
+        let mut frame_bytes = vec![0u8; 8];
+        frame_bytes[0..2].copy_from_slice(&1u16.to_le_bytes());
+        frame_bytes[4..6].copy_from_slice(&(-2i16).to_le_bytes());
+        frame_bytes[6..8].copy_from_slice(&1i16.to_le_bytes());
+        frame_bytes.push(5);
+        let frame = RawSpriteFrame::parse(&frame_bytes).expect("raw sprite frame");
+        let mut fb = vec![0u8; VIEWPORT_W * VIEWPORT_H];
+
+        blit_raw_opaque_sprite_indexed(
+            &mut fb,
+            frame,
+            SpriteBlitRequest {
+                x: 12,
+                y: SCENE_TOP as isize,
+                width: 1,
+                height: 1,
+                flip_x: false,
+                flip_y: false,
+                clip: (0, VIEWPORT_W, SCENE_TOP, SCENE_BOTTOM),
+            },
+        );
+
+        assert_eq!(fb[SCENE_TOP * VIEWPORT_W + 12], 0);
+        assert_eq!(fb[(SCENE_TOP + 1) * VIEWPORT_W + 10], 5);
+    }
+
+    #[test]
+    fn recovered_raw_opaque_sprite_blit_writes_zero_and_honors_flip_flags() {
+        let mut frame_bytes = vec![0u8; 8];
+        frame_bytes[0..2].copy_from_slice(&3u16.to_le_bytes());
+        frame_bytes.extend_from_slice(&[1, 2, 3, 4, 0, 6]);
+        let frame = RawSpriteFrame::parse(&frame_bytes).expect("raw sprite frame");
+        let y = SCENE_TOP;
+        let mut fb = vec![9u8; VIEWPORT_W * VIEWPORT_H];
+
+        blit_raw_opaque_sprite_indexed(
+            &mut fb,
+            frame,
+            SpriteBlitRequest {
+                x: 10,
+                y: y as isize,
+                width: 3,
+                height: 2,
+                flip_x: true,
+                flip_y: true,
+                clip: (0, VIEWPORT_W, SCENE_TOP, SCENE_BOTTOM),
+            },
+        );
+
+        assert_eq!(&fb[y * VIEWPORT_W + 10..y * VIEWPORT_W + 13], &[6, 0, 4]);
+        assert_eq!(
+            &fb[(y + 1) * VIEWPORT_W + 10..(y + 1) * VIEWPORT_W + 13],
+            &[3, 2, 1]
+        );
+    }
+
+    #[test]
+    fn recovered_raw_sprite_horizontal_flip_clipping_matches_binary_edge_case() {
+        let mut frame_bytes = vec![0u8; 8];
+        frame_bytes[0..2].copy_from_slice(&4u16.to_le_bytes());
+        frame_bytes.extend_from_slice(&[1, 2, 3, 4]);
+        let frame = RawSpriteFrame::parse(&frame_bytes).expect("raw sprite frame");
+        let mut fb = vec![0u8; VIEWPORT_W * VIEWPORT_H];
+
+        blit_raw_opaque_sprite_indexed(
+            &mut fb,
+            frame,
+            SpriteBlitRequest {
+                x: 318,
+                y: SCENE_TOP as isize,
+                width: 4,
+                height: 1,
+                flip_x: true,
+                flip_y: false,
+                clip: (0, VIEWPORT_W, SCENE_TOP, SCENE_BOTTOM),
+            },
+        );
+
+        assert_eq!(fb[SCENE_TOP * VIEWPORT_W + 318], 4);
+        assert_eq!(fb[SCENE_TOP * VIEWPORT_W + 319], 3);
     }
 
     #[test]
