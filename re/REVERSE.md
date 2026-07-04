@@ -42,6 +42,20 @@ no DOS/4GW / PMODE / Phar Lap / CauseWay / DJGPP / DPMI(int31) signatures; entry
 code is 16-bit real-mode (`int 21h`, far calls, segment setup) with 386 register
 extensions. Disassembled cleanly from 0x600.
 
+CODE OVERLAYS (sess 003): `BLOODPRG.EXE` is not the whole engine. It loads
+runtime code overlays named as data files — `amer.xdb`, `croolis.xdb`,
+`scrut.xdb`, `manu3.xdb` (all referenced by name in the binary). Each `.xdb`
+begins with a full 386 register-save prologue (`push eax/ebx/ecx/edx/esi/edi`,
+`push ds/es/fs/gs/ebp`, `mov ax,cs …`), i.e. they are **loadable code modules**,
+not asset banks (`manu3.xdb` uses a different `push ds; mov cx,cs:[…]` entry).
+By name they are subsystem overlays: `scrut` = the Scruter_Jo scrutinizer,
+`amer`/`croolis` = alien-species logic (dialogue/behaviour), `manu3` = a UI/manual
+module. Sound is likewise a swappable driver: `nosound.drv` / `dnsdb.drv`. This
+matters for *full* decompilation scope — the alien-species dialogue and
+scrutinizer logic live in these overlays, loaded on demand into EMS/XMS, not in
+`BLOODPRG.EXE`'s static image. (They are also why several boot/intro assets and
+some runtime buffers are absent from the static image.)
+
 ## Memory Map (load image, base segment 0)
 
 | Region | File range | Notes |
