@@ -895,7 +895,7 @@ fn opcode_metadata(opcode: u8, handler_file_offset: usize) -> OpcodeMetadata {
             mnemonic: "record_state",
             family: "line-record",
             rust_status: "partially-executed",
-            notes: "C1/C2 line-record state operations; Rust decodes A1 inversion, evaluates direct mode1 compares, applies the context-gated direct C1 mode0 write, wires the ship-3D C1 distance redirect plus kind-0x10 source-list/destination write when runtime tables are supplied, and ports the C2 kind-field plus kind2/kind400 active-line mode0 paths while deeper resolved-table side effects remain under RE",
+            notes: "C1/C2 line-record state operations; Rust decodes A1 inversion, evaluates direct and ship-3D resolved C1 mode1 compares, applies the context-gated direct C1 mode0 write, wires the ship-3D C1 distance redirect plus kind-0x10 source-list/destination write when runtime tables are supplied, and ports the C2 kind-field plus kind2/kind400 active-line mode0 paths while deeper resolved-table side effects remain under RE",
         },
         vm::OP_RECORD_LINK => OpcodeMetadata {
             mnemonic: "record_link",
@@ -1586,6 +1586,15 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         ds_offset: None,
         kind: "script-vm",
         comment: "C1 line-record state handler; consumes record+operand words and may write/test {0xc1, operand, 2}",
+    },
+    BinarySymbol {
+        name: "ship_3d_c1_mode1_resolved_compare",
+        file_offset: 0x006b8b,
+        segment: Some(0x04da),
+        offset: Some(0x17eb),
+        ds_offset: None,
+        kind: "script-vm",
+        comment: "C1 mode-1 raw operand 1/2 compare path resolves selector-0x11 target then selector-0x13 record slot",
     },
     BinarySymbol {
         name: "ship_3d_c1_distance_redirect",

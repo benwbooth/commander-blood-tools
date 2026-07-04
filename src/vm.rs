@@ -680,8 +680,9 @@ fn read_u16(cod: &[u8], at: usize) -> Option<u16> {
 //       store/compare a two-word pair at a direct record offset.
 //   * 0xC1, 5 bytes plus optional A1 prefix:
 //       writes {0x00C1, operand, 2} to an active owner's empty direct record in
-//       mode 0; mode-1 direct compares are evaluated when host state has that
-//       concrete record entry. The kind-0x10 ship-3D source-list path is
+//       mode 0; mode-1 direct compares and the raw-operand 1/2 resolved
+//       selector-0x11/selector-0x13 compares are evaluated when host state has
+//       the concrete record entries. The kind-0x10 ship-3D source-list path is
 //       available when `ExecutionContext` supplies the live DS:0x6886 scratch
 //       bytes and navigation/object tables.
 //   * 0xC2, 5 bytes plus optional A1 prefix:
@@ -1678,6 +1679,18 @@ fn record_state_condition(
 ) -> Option<bool> {
     let record_type = state_u16(state, record_offset);
     let stored_operand = state_u16(state, record_offset.wrapping_add(2));
+    if opcode == OP_RECORD_STATE_MIN {
+        if let Some(passed) = c1_record_state_resolved_mode1_condition(
+            state,
+            context,
+            record_offset,
+            operand,
+            record_type,
+            inverted,
+        ) {
+            return Some(passed);
+        }
+    }
     if record_type == 0 && stored_operand == 0 {
         return None;
     }
@@ -1687,6 +1700,37 @@ fn record_state_condition(
         true
     };
     let matched = owner_active && record_type == opcode as u16 && stored_operand == operand;
+    Some(if inverted { !matched } else { matched })
+}
+
+fn c1_record_state_resolved_mode1_condition(
+    state: &[u8],
+    context: &ExecutionContext,
+    record_offset: u16,
+    operand: u16,
+    direct_record_type: u16,
+    inverted: bool,
+) -> Option<bool> {
+    if direct_record_type == OP_RECORD_STATE_MIN as u16 || (operand != 1 && operand != 2) {
+        return None;
+    }
+
+    let owner_offset = record_owner_object_offset(context, record_offset)?;
+    let parent_field = vm_field_offset(ship3d::SHIP_3D_FIELD_SELECTOR_PARENT_LINK, operand)?;
+    let target_offset = state_u16(state, owner_offset.wrapping_add(parent_field));
+    let target_kind = state_u16(state, target_offset);
+    let Some(destination_field) =
+        vm_field_offset(ship3d::SHIP_3D_C1_DESTINATION_SELECTOR, target_kind)
+    else {
+        return Some(inverted);
+    };
+    if destination_field == 0 {
+        return Some(inverted);
+    }
+
+    let slot_offset = target_offset.wrapping_add(destination_field);
+    let matched = state_u16(state, slot_offset) == OP_RECORD_STATE_MIN as u16
+        && state_u16(state, slot_offset.wrapping_add(2)) == operand;
     Some(if inverted { !matched } else { matched })
 }
 
@@ -5328,6 +5372,157 @@ mod tests {
                 && event.opcode == OP_RECORD_STATE_MIN
                 && !event.branch_taken
                 && event.condition_passed == Some(true)
+        }));
+    }
+
+    #[test]
+    fn execution_trace_c1_mode1_resolves_selector11_selector13_slot() {
+        let owner = 0x0100u16;
+        let record = 0x0140u16;
+        let operand = 0x0001u16;
+        let target_record = 0x0200u16;
+        let parent_field =
+            vm_field_offset(ship3d::SHIP_3D_FIELD_SELECTOR_PARENT_LINK, operand).unwrap();
+        let destination = target_record
+            + vm_field_offset(
+                ship3d::SHIP_3D_C1_DESTINATION_SELECTOR,
+                ship3d::SHIP_3D_C1_KIND10_RECORD_KIND,
+            )
+            .unwrap();
+        let mut var = vec![0; 0x0300];
+        state_set_u16(&mut var, owner + parent_field, target_record);
+        state_set_u16(
+            &mut var,
+            target_record,
+            ship3d::SHIP_3D_C1_KIND10_RECORD_KIND,
+        );
+        state_set_u16(&mut var, destination, OP_RECORD_STATE_MIN as u16);
+        state_set_u16(&mut var, destination + 2, operand);
+        let context = ExecutionContext::from_object_offsets([owner, target_record]);
+
+        let mut cod = Vec::new();
+        let a0_offset = cod.len();
+        cod.push(0xA0);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        let condition_offset = cod.len();
+        cod.push(OP_RECORD_STATE_MIN);
+        cod.extend_from_slice(&record.to_le_bytes());
+        cod.extend_from_slice(&operand.to_le_bytes());
+        let first_text = cod.len();
+        push_empty_text(&mut cod);
+        cod.push(0xA1);
+        let branch_target = cod.len() as u16;
+        cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&branch_target.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xff);
+
+        let trace = execute_trace_with_context(&cod, &var, &context);
+
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 2);
+        assert_eq!(trace.line_states[0].offset, first_text);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == OP_RECORD_STATE_MIN
+                && !event.branch_taken
+                && event.condition_passed == Some(true)
+        }));
+    }
+
+    #[test]
+    fn execution_trace_c1_mode1_inverted_resolved_match_branches() {
+        let owner = 0x0100u16;
+        let record = 0x0140u16;
+        let operand = 0x0002u16;
+        let target_record = 0x0200u16;
+        let parent_field =
+            vm_field_offset(ship3d::SHIP_3D_FIELD_SELECTOR_PARENT_LINK, operand).unwrap();
+        let destination = target_record
+            + vm_field_offset(
+                ship3d::SHIP_3D_C1_DESTINATION_SELECTOR,
+                ship3d::SHIP_3D_C1_KIND10_RECORD_KIND,
+            )
+            .unwrap();
+        let mut var = vec![0; 0x0300];
+        state_set_u16(&mut var, owner + parent_field, target_record);
+        state_set_u16(
+            &mut var,
+            target_record,
+            ship3d::SHIP_3D_C1_KIND10_RECORD_KIND,
+        );
+        state_set_u16(&mut var, destination, OP_RECORD_STATE_MIN as u16);
+        state_set_u16(&mut var, destination + 2, operand);
+        let context = ExecutionContext::from_object_offsets([owner, target_record]);
+
+        let mut cod = Vec::new();
+        let a0_offset = cod.len();
+        cod.push(0xA0);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        let condition_offset = cod.len();
+        cod.push(OP_RECORD_STATE_MIN);
+        cod.push(0xA1);
+        cod.extend_from_slice(&record.to_le_bytes());
+        cod.extend_from_slice(&operand.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xA1);
+        let branch_target = cod.len() as u16;
+        cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&branch_target.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xff);
+
+        let trace = execute_trace_with_context(&cod, &var, &context);
+
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 1);
+        assert_eq!(trace.line_states[0].offset, branch_target as usize);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == OP_RECORD_STATE_MIN
+                && event.branch_taken
+                && event.condition_passed == Some(false)
+                && event.target == Some(branch_target)
+        }));
+    }
+
+    #[test]
+    fn execution_trace_c1_mode1_resolved_target_without_selector13_fails() {
+        let owner = 0x0100u16;
+        let record = 0x0140u16;
+        let operand = 0x0001u16;
+        let target_record = 0x0200u16;
+        let parent_field =
+            vm_field_offset(ship3d::SHIP_3D_FIELD_SELECTOR_PARENT_LINK, operand).unwrap();
+        let mut var = vec![0; 0x0300];
+        state_set_u16(&mut var, owner + parent_field, target_record);
+        state_set_u16(&mut var, target_record, 0);
+        let context = ExecutionContext::from_object_offsets([owner, target_record]);
+
+        let mut cod = Vec::new();
+        let a0_offset = cod.len();
+        cod.push(0xA0);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        let condition_offset = cod.len();
+        cod.push(OP_RECORD_STATE_MIN);
+        cod.extend_from_slice(&record.to_le_bytes());
+        cod.extend_from_slice(&operand.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xA1);
+        let branch_target = cod.len() as u16;
+        cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&branch_target.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xff);
+
+        let trace = execute_trace_with_context(&cod, &var, &context);
+
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 1);
+        assert_eq!(trace.line_states[0].offset, branch_target as usize);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == OP_RECORD_STATE_MIN
+                && event.branch_taken
+                && event.condition_passed == Some(false)
+                && event.target == Some(branch_target)
         }));
     }
 

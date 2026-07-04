@@ -654,8 +654,17 @@ writes `{0x00C1, operand, 0x0002}`. `src/vm.rs` now wires this C1 path through
 `with_ship_3d_c1_positions(...)` data for the distance redirect; tests prove a
 selected source writes the resolved target's `+0x1C` slot, distance zero keeps
 the original kind-`0x10` owner, and a non-kind-`0x10` redirect target does not
-fall back to the direct token record. Remaining C1 resolved-table work includes
-resolved mode-1 comparisons and exact branch-fail side effects.
+fall back to the direct token record.
+
+The C1 mode-1 resolved comparison path at `0x006B85..0x006BCB` is also now
+ported. If the direct record slot is not already `0x00C1` and the raw C1 operand
+is exactly `1` or `2`, the binary resolves a target from the current owner using
+selector `0x11` keyed by the raw operand kind, then resolves that target's
+selector-`0x13` record slot using the target kind. The branch condition passes
+only when that resolved slot contains `{0x00C1, operand, ...}`; `A1` inversion
+flips the result. Rust executes that comparison in `execute_trace` when
+`ExecutionContext` can identify the owner object. Remaining C1 resolved-table
+work includes exact mode-0 branch-fail side effects.
 
 ### 0xCA/0xCB global condition handlers — token shape (DECODED; runtime source pending)
 
@@ -1359,7 +1368,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       C1 mode-0 path is wired when `ExecutionContext` supplies navigation
       records, object-table order, and the live `DS:0x6886` scratch bytes; the
       optional position runtime ports the raw-operand `1/2`
-      distance/selector-`0x11` redirect before the source-list gate.
+      distance/selector-`0x11` redirect before the source-list gate. C1 mode-1
+      now also compares the raw-operand `1/2` selector-`0x11`/selector-`0x13`
+      resolved slot when direct record state is not already `0x00C1`.
 - [x] Expose 0xCA/0xCB global condition tokens. `src/vm.rs` preserves the
       consumed compare operands as `VmToken::GlobalWordCompare` and
       `VmToken::GlobalPairCompare`; `execute_trace` evaluates their branches
