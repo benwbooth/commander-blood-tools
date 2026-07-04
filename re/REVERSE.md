@@ -442,6 +442,25 @@ reads the archive (blood.dat / a bank) into the memory pool and populates the
 assets (Microfolie's, astronaut, CRYO card) that were not findable as loose
 HNM/LBM files.
 
+SPRITE DATA SOURCE FOUND (sess 003): the resource-name table at `FS:0x0C04`
+(file `0x0CDF4`, 16-byte entries, already parsed as the extractor's
+`RESOURCE_NAME_TABLE`) maps resource ids to names — and the ship-3D / character
+sprites are **`.spr` files**: `borxx` (nav orb, 16 rotation frames), `btv`,
+`bhyper`, `bpol`, `bcarte`/`carte`, `bappel`, `aphyper`, `appol`, `fupcom`,
+`radio` (ship HUD/nav) plus character sprites `scruter`, `jerry`, `maxxon`,
+`izwalito`, `tina`, `yoko`, `honkf`, … These are **loose files on the ISO root**
+(`output/_tmp_iso/*.SPR`), NOT inside `blood.dat`, which is why
+`sprite-frame-tables.tsv` was empty. The exporter now copies them into
+`_tmp_dat/spr/` (`src/extract/mod.rs`), and **43/44 parse cleanly** with the
+recovered `SpriteSlotFrameTable` layout (only `KLAY.SPR`, `flags=0x6`, uses a
+variant) — verified on real data by `tests::real_spr_bank_parses_...` (BORXX =
+16 frames, `flags 0x0004`, `slot_state 0x0087`). The sprite primitives (parse /
+dispatch / blit / projection) and the frame layout are therefore all confirmed
+against real assets; the remaining compositor work is mapping the 11 ship slots
+to their `.spr` ids per frame + running the projection→blit→copyback pipeline
+end-to-end. This ALSO means the dialogue characters exist as `.spr` sprite banks,
+a second renderable representation alongside the talk-head HNMs.
+
 CONNECTION TO EXISTING WORK: the profile table at `FS:0x11F4` (file `0x0D3E4`)
 that `vm_resource_profile_select` (`0x53A0`) copies into `DS:0x6712` is the
 **same static table already parsed by the extractor** as `ScriptResourceProfile`

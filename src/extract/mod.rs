@@ -388,6 +388,30 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     fs::create_dir_all(&tmp_dat)?;
     let count = extract_dat(&blood_dat, &tmp_dat)?;
     eprintln!("Extracted {count} files from blood.dat");
+    // The `.spr` sprite banks (ship-3D nav sprites like BORXX/BTV/BHYPER and the
+    // character sprites SCRUTER/JERRY/MAXXON/IZWALITO/...) are loose files on the
+    // ISO root, not inside blood.dat, and `_tmp_iso` is deleted below. Copy them
+    // into `_tmp_dat/spr/` so they are preserved and picked up by the sprite
+    // frame-table manifest (they parse with the recovered SpriteSlotFrameTable
+    // layout). See re/REVERSE.md "SPRITE PIXEL-DATA SOURCE".
+    let spr_dir = tmp_dat.join("spr");
+    fs::create_dir_all(&spr_dir)?;
+    let mut spr_copied = 0usize;
+    for path in walk_files(&tmp_iso) {
+        if path
+            .extension()
+            .and_then(|e| e.to_str())
+            .map(|e| e.eq_ignore_ascii_case("spr"))
+            .unwrap_or(false)
+        {
+            if let Some(name) = path.file_name() {
+                if fs::copy(&path, spr_dir.join(name)).is_ok() {
+                    spr_copied += 1;
+                }
+            }
+        }
+    }
+    eprintln!("Copied {spr_copied} .spr sprite banks from the ISO");
     let sprite_frame_rows = parse_sprite_frame_tables_manifest(&tmp_dat)?;
     write_sprite_frame_tables_manifest(
         &sprite_frame_rows,

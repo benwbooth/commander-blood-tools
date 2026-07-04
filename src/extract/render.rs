@@ -1118,6 +1118,29 @@ mod tests {
     }
 
     #[test]
+    fn real_spr_bank_parses_with_recovered_frame_table_layout() {
+        // The ship-3D nav orb sprite bank. If the ISO has been extracted, the
+        // loose .spr files land under _tmp_iso; the exporter now copies them into
+        // _tmp_dat/spr/. Confirm the recovered SpriteSlotFrameTable layout parses
+        // a real bank: BORXX.SPR is 16 rotation frames with flags 0x0004.
+        let candidates = [
+            "output/_tmp_iso/BORXX.SPR",
+            "output/_tmp_dat/spr/BORXX.SPR",
+            "../output/_tmp_iso/BORXX.SPR",
+        ];
+        let Some(data) = candidates.iter().find_map(|p| std::fs::read(p).ok()) else {
+            eprintln!("skipping: BORXX.SPR not available (run the exporter first)");
+            return;
+        };
+        let table = SpriteSlotFrameTable::parse(&data).expect("BORXX.SPR parses");
+        assert_eq!(table.flags, 0x0004);
+        assert_eq!(table.frames.len(), 16);
+        assert_eq!(table.slot_state_flags(), 0x0087); // (0x0004 & 0x0004) | 0x0083
+        // Each frame carries a parseable raw/rle sprite header.
+        assert!(table.frame(0).is_some());
+    }
+
+    #[test]
     fn sprite_blitter_dispatch_table_matches_binary() {
         // The ship-3D dirty-sprite renderer (0x0299:0x14E1) dispatches through an
         // 8-entry near-pointer table at cs:0x1592 (file 0x4522), indexed by
