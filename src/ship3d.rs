@@ -12,6 +12,7 @@ pub const SHIP_3D_SCROLL_MODE_HOLD: u16 = 0x000a;
 pub const SHIP_3D_TARGET_EXIT_SENTINEL: u16 = 0xffff;
 pub const SHIP_3D_TARGET_RECORD_HEADER_BYTES: u16 = 0x0004;
 pub const SHIP_3D_TARGET_OPEN_STEP: u8 = 0x06;
+pub const SHIP_3D_INTERPOLATION_WORDS: usize = 4;
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dTransitionState {
@@ -57,6 +58,18 @@ pub struct Ship3dTargetSelection {
     pub used_fallback_table: bool,
     pub ran_layout_prepass: bool,
     pub phase_gate_blocked: bool,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dInterpolationGate {
+    pub duration_ticks: u8,
+    pub current_tick: u8,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum Ship3dInterpolationStep {
+    Active([u16; SHIP_3D_INTERPOLATION_WORDS]),
+    Complete,
 }
 
 pub fn update_ship_3d_transition_state(state: &mut Ship3dTransitionState, random_gate_zero: bool) {
@@ -154,6 +167,30 @@ pub fn copy_ship_3d_plane_bands(
     })
 }
 
+pub fn step_ship_3d_interpolation_gate(
+    gate: &mut Ship3dInterpolationGate,
+    source: [u16; SHIP_3D_INTERPOLATION_WORDS],
+    dest: [u16; SHIP_3D_INTERPOLATION_WORDS],
+) -> Option<Ship3dInterpolationStep> {
+    if gate.duration_ticks == gate.current_tick {
+        return Some(Ship3dInterpolationStep::Complete);
+    }
+
+    if gate.duration_ticks == 0 {
+        return None;
+    }
+
+    gate.current_tick = gate.current_tick.wrapping_add(1);
+    let mut interpolated = [0u16; SHIP_3D_INTERPOLATION_WORDS];
+    for index in 0..SHIP_3D_INTERPOLATION_WORDS {
+        let delta = source[index].wrapping_sub(dest[index]) as i16;
+        let quotient = checked_i16_div_i8_to_i8(delta, gate.duration_ticks as i8)?;
+        let step = (quotient as i16).wrapping_mul(gate.current_tick as i8 as i16);
+        interpolated[index] = dest[index].wrapping_add(step as u16);
+    }
+    Some(Ship3dInterpolationStep::Active(interpolated))
+}
+
 pub fn select_ship_3d_target_record(
     state: &mut Ship3dTargetSelectorState,
     primary_targets: &[u16],
@@ -245,6 +282,14 @@ fn start_closing_transition(state: &mut Ship3dTransitionState) {
 
 fn add_to_low_byte(value: u16, addend: u8) -> u16 {
     (value & 0xff00) | value.to_le_bytes()[0].wrapping_add(addend) as u16
+}
+
+fn checked_i16_div_i8_to_i8(dividend: i16, divisor: i8) -> Option<i8> {
+    if divisor == 0 {
+        return None;
+    }
+    let quotient = dividend / divisor as i16;
+    i8::try_from(quotient).ok()
 }
 
 #[cfg(test)]
@@ -554,5 +599,84 @@ mod tests {
 
         assert_eq!(selected.ax, 0);
         assert!(!state.opening);
+    }
+
+    #[test]
+    fn interpolation_gate_reports_complete_without_advancing_at_duration() {
+        let mut gate = Ship3dInterpolationGate {
+            duration_ticks: 6,
+            current_tick: 6,
+        };
+
+        let step = step_ship_3d_interpolation_gate(&mut gate, [10, 20, 30, 40], [0, 0, 0, 0]);
+
+        assert_eq!(step, Some(Ship3dInterpolationStep::Complete));
+        assert_eq!(gate.current_tick, 6);
+    }
+
+    #[test]
+    fn interpolation_gate_increments_tick_and_interpolates_four_words() {
+        let mut gate = Ship3dInterpolationGate {
+            duration_ticks: 6,
+            current_tick: 1,
+        };
+
+        let step = step_ship_3d_interpolation_gate(&mut gate, [60, 66, 72, 78], [0, 6, 12, 18]);
+
+        assert_eq!(
+            step,
+            Some(Ship3dInterpolationStep::Active([20, 26, 32, 38]))
+        );
+        assert_eq!(gate.current_tick, 2);
+    }
+
+    #[test]
+    fn interpolation_gate_uses_signed_truncating_division() {
+        let mut gate = Ship3dInterpolationGate {
+            duration_ticks: 6,
+            current_tick: 2,
+        };
+
+        let step = step_ship_3d_interpolation_gate(
+            &mut gate,
+            [0xfff0, 0x0000, 0x0031, 0x0000],
+            [0, 31, 0, 0],
+        );
+
+        assert_eq!(
+            step,
+            Some(Ship3dInterpolationStep::Active([
+                0xfffa, // (-16 / 6) * 3 = -6, added to 0.
+                0x0010, // (-31 / 6) * 3 = -15, added to 31.
+                0x0018, // (49 / 6) * 3 = 24.
+                0,
+            ]))
+        );
+        assert_eq!(gate.current_tick, 3);
+    }
+
+    #[test]
+    fn interpolation_gate_rejects_binary_idiv_error_shapes() {
+        let mut zero_duration = Ship3dInterpolationGate {
+            duration_ticks: 0,
+            current_tick: 1,
+        };
+        assert_eq!(
+            step_ship_3d_interpolation_gate(&mut zero_duration, [1, 0, 0, 0], [0, 0, 0, 0]),
+            None
+        );
+
+        let mut quotient_overflow = Ship3dInterpolationGate {
+            duration_ticks: 1,
+            current_tick: 0,
+        };
+        assert_eq!(
+            step_ship_3d_interpolation_gate(
+                &mut quotient_overflow,
+                [0x0100, 0, 0, 0],
+                [0, 0, 0, 0]
+            ),
+            None
+        );
     }
 }

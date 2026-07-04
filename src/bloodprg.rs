@@ -81,6 +81,8 @@ pub const NAV_ACTOR_SUBDISPATCH_TABLE_FILE_OFFSET: usize = 0x007eb4;
 pub const NAV_ACTOR_SUBDISPATCH_ENTRY_COUNT: usize = 6;
 pub const NAV_CHOICE_SUBDISPATCH_TABLE_FILE_OFFSET: usize = 0x008709;
 pub const NAV_CHOICE_SUBDISPATCH_ENTRY_COUNT: usize = 5;
+pub const SHIP_3D_INTERPOLATION_GATE_SEGMENT: u16 = 0x008b;
+pub const SHIP_3D_INTERPOLATION_GATE_OFFSET: u16 = 0x0fad;
 pub const SHIP_PRESENTATION_SEGMENT: u16 = 0x0a9a;
 pub const SHIP_PRESENTATION_ENTRY_OFFSET: u16 = 0x0000;
 pub const SHIP_3D_HUD_INIT_OFFSET: u16 = 0x00d9;
@@ -108,6 +110,8 @@ pub const SHIP_3D_EXIT_PENDING_DS_OFFSET: u16 = 0x2532;
 pub const SHIP_3D_TRANSITION_ARMED_DS_OFFSET: u16 = 0x2533;
 pub const SHIP_3D_FALLBACK_TARGET_TABLE_DS_OFFSET: u16 = 0x2537;
 pub const SHIP_3D_NAVIGATION_TRIGGER_DS_OFFSET: u16 = 0x27d8;
+pub const SHIP_3D_INTERPOLATION_DURATION_DS_OFFSET: u16 = 0x0ada;
+pub const SHIP_3D_INTERPOLATION_TICK_DS_OFFSET: u16 = 0x0adb;
 pub const SHIP_3D_PRESENTATION_HOLD_TIMER_DS_OFFSET: u16 = 0x0b3b;
 pub const SHIP_3D_TEMP_SND_TRIGGER_DS_OFFSET: u16 = 0x0ae4;
 pub const SHIP_3D_TEMP_SND_PHASE_DS_OFFSET: u16 = 0x0ae5;
@@ -2317,6 +2321,15 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
 
 pub const PRESENTATION_3D_MARKERS: &[BinarySymbol] = &[
     BinarySymbol {
+        name: "ship_3d_interpolation_gate",
+        file_offset: 0x001e5d,
+        segment: Some(SHIP_3D_INTERPOLATION_GATE_SEGMENT),
+        offset: Some(SHIP_3D_INTERPOLATION_GATE_OFFSET),
+        ds_offset: None,
+        kind: "presentation-3d",
+        comment: "four-word interpolation gate; increments DS:0x0adb toward DS:0x0ada, draws while carry clear, and reports completion with carry set",
+    },
+    BinarySymbol {
         name: "ship_presentation_fsm",
         file_offset: 0x00afa0,
         segment: Some(SHIP_PRESENTATION_SEGMENT),
@@ -2549,6 +2562,24 @@ pub const PRESENTATION_3D_MARKERS: &[BinarySymbol] = &[
         ds_offset: Some(SHIP_3D_NAVIGATION_TRIGGER_DS_OFFSET),
         kind: "presentation-3d-data",
         comment: "state byte gating the ship/navigation update branch at file 0xB34E",
+    },
+    BinarySymbol {
+        name: "ship_3d_interpolation_duration",
+        file_offset: 0x00defa,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_INTERPOLATION_DURATION_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "duration byte consumed as signed BL by the 0x008B:0x0FAD interpolation gate",
+    },
+    BinarySymbol {
+        name: "ship_3d_interpolation_tick",
+        file_offset: 0x00defb,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_INTERPOLATION_TICK_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "current interpolation tick incremented by the 0x008B:0x0FAD gate before drawing",
     },
     BinarySymbol {
         name: "ship_3d_presentation_hold_timer",
@@ -2881,6 +2912,13 @@ mod tests {
         );
         assert_eq!(
             binary.segoff_to_file(
+                SHIP_3D_INTERPOLATION_GATE_SEGMENT,
+                SHIP_3D_INTERPOLATION_GATE_OFFSET
+            ),
+            0x001e5d
+        );
+        assert_eq!(
+            binary.segoff_to_file(
                 SHIP_PRESENTATION_SEGMENT,
                 SHIP_3D_TARGET_RECORD_SELECT_OFFSET
             ),
@@ -2900,6 +2938,7 @@ mod tests {
             .map(|symbol| symbol.name)
             .collect();
         for name in [
+            "ship_3d_interpolation_gate",
             "ship_presentation_fsm",
             "ship_3d_hud_init",
             "ship_3d_target_record_select",
@@ -2908,6 +2947,8 @@ mod tests {
             "ship_3d_plane_band_copy",
             "ship_3d_current_target",
             "ship_3d_navigation_trigger",
+            "ship_3d_interpolation_duration",
+            "ship_3d_interpolation_tick",
             "ship_3d_hud_gate_flag",
         ] {
             assert!(marker_names.contains(name), "{name}");

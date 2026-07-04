@@ -278,6 +278,14 @@ list. Query `AX=-1` returns zero. Target word `-1` returns `AX=-1`, sets
 returns `target_word - 4`; the fallback list returns the current target
 `DS:0x251B`.
 
+`src/ship3d.rs` also ports the `0x008B:0x0FAD` interpolation gate used by that
+phase-2 selector path. The gate compares duration `DS:0x0ADA` with current tick
+`DS:0x0ADB`: equal means complete and returns with carry set; otherwise it
+increments the tick, interpolates four signed words from `SI` toward `DI` using
+the binary's signed 8-bit `idiv BL` then signed 8-bit `imul DS:0x0ADB`, and
+draws through `0x0299:0x040E` with carry clear. The Rust helper returns the four
+draw words for the active case and `Complete` for the carry-set case.
+
 `src/ship3d.rs` ports the recovered transition/blit primitives:
 
 - `0xB692` updates only transition control: when `DS:0x2533` is clear and
@@ -1533,6 +1541,12 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       table behavior, no-selection `AX=0`, and the `-1` sentinel opening
       transition (`DS:0x252F=1`, `DS:0x2531=6`). The remaining 3D state work
       starts at `0xB34E` and the `0x071E:0x0C48` query/layout helper.
+- [x] Port ship 3D interpolation gate:
+      `src/ship3d.rs` implements the `0x008B:0x0FAD` four-word interpolation
+      gate used by the target selector. Tests cover carry-set completion,
+      tick increment, signed truncating division/multiplication, and binary
+      `idiv` error shapes. `inspect-bloodprg.presentation_3d_markers` exposes
+      the gate plus `DS:0x0ADA` duration and `DS:0x0ADB` current tick.
 - [x] Port recovered framebuffer fill/copy primitives:
       `src/extract/render.rs` now has tested Rust helpers for the clipped
       rectangle fill, palette-remap rectangle, scene-band fill, full 320x200
