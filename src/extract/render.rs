@@ -280,6 +280,76 @@ pub(super) enum Ship3dSpriteSlotFrame<'a> {
     Scaled(&'a [u8]),
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(super) struct SpriteSlotFrameTable<'a> {
+    pub(super) flags: u16,
+    pub(super) frames: Vec<&'a [u8]>,
+}
+
+impl<'a> SpriteSlotFrameTable<'a> {
+    pub(super) fn parse(data: &'a [u8]) -> Option<Self> {
+        if data.len() < 4 {
+            return None;
+        }
+
+        let flags = u16::from_le_bytes([data[0], data[1]]);
+        let frame_count = u16::from_le_bytes([data[2], data[3]]) as usize;
+        let table_end = 4usize.checked_add(frame_count.checked_mul(4)?)?;
+        if table_end > data.len() {
+            return None;
+        }
+
+        let mut frame_starts = Vec::with_capacity(frame_count);
+        for idx in 0..frame_count {
+            let pos = 4 + idx * 4;
+            let packed_offset =
+                u32::from_le_bytes([data[pos], data[pos + 1], data[pos + 2], data[pos + 3]])
+                    as usize;
+            let frame_start = 4usize.checked_add(packed_offset)?;
+            if frame_start < table_end || frame_start + 8 > data.len() {
+                return None;
+            }
+            frame_starts.push(frame_start);
+        }
+
+        let mut frames = Vec::with_capacity(frame_count);
+        for (idx, frame_start) in frame_starts.iter().copied().enumerate() {
+            let frame_end = frame_starts.get(idx + 1).copied().unwrap_or(data.len());
+            if frame_end < frame_start || frame_end > data.len() {
+                return None;
+            }
+            frames.push(&data[frame_start..frame_end]);
+        }
+
+        Some(Self { flags, frames })
+    }
+
+    pub(super) fn slot_state_flags(&self) -> u16 {
+        (self.flags & 0x0004) | 0x0083
+    }
+
+    pub(super) fn dispatch_index(&self) -> u8 {
+        ((self.slot_state_flags() >> 1) & 0x07) as u8
+    }
+
+    pub(super) fn frame(&self, index: usize) -> Option<Ship3dSpriteSlotFrame<'a>> {
+        let data = *self.frames.get(index)?;
+        ship_3d_sprite_slot_frame_for_dispatch(data, self.dispatch_index())
+    }
+}
+
+pub(super) fn ship_3d_sprite_slot_frame_for_dispatch(
+    data: &[u8],
+    dispatch_index: u8,
+) -> Option<Ship3dSpriteSlotFrame<'_>> {
+    match dispatch_index {
+        0 | 2 => Some(Ship3dSpriteSlotFrame::Raw(data)),
+        1 | 3 => Some(Ship3dSpriteSlotFrame::Rle(data)),
+        4 => Some(Ship3dSpriteSlotFrame::Scaled(data)),
+        _ => None,
+    }
+}
+
 pub(super) fn blit_raw_transparent_sprite_indexed(
     fb: &mut [u8],
     frame: RawSpriteFrame<'_>,
@@ -1272,6 +1342,88 @@ mod tests {
     }
 
     #[test]
+    fn sprite_slot_frame_table_uses_binary_offset_base_and_dispatch_flags() {
+        let first = rle_sprite_frame(2, 1, &[1, 5, 6]);
+        let second = rle_sprite_frame(3, 1, &[2, 7, 8, 9]);
+        let data = sprite_slot_frame_table(0x0004, &[&first, &second]);
+
+        assert_eq!(u32::from_le_bytes(data[4..8].try_into().unwrap()), 8);
+        let table = SpriteSlotFrameTable::parse(&data).expect("sprite slot frame table");
+
+        assert_eq!(table.flags, 0x0004);
+        assert_eq!(table.slot_state_flags(), 0x0087);
+        assert_eq!(table.dispatch_index(), 3);
+        assert_eq!(table.frames.len(), 2);
+        assert_eq!(
+            u16::from_le_bytes(table.frames[0][0..2].try_into().unwrap()),
+            2
+        );
+        assert!(matches!(
+            table.frame(0),
+            Some(Ship3dSpriteSlotFrame::Rle(_))
+        ));
+    }
+
+    #[test]
+    fn sprite_slot_frame_table_rejects_offsets_inside_header_table() {
+        let mut data = Vec::new();
+        data.extend_from_slice(&0x0004u16.to_le_bytes());
+        data.extend_from_slice(&1u16.to_le_bytes());
+        data.extend_from_slice(&0u32.to_le_bytes());
+        data.extend_from_slice(&rle_sprite_frame(1, 1, &[0, 9]));
+
+        assert_eq!(SpriteSlotFrameTable::parse(&data), None);
+    }
+
+    #[test]
+    fn ship_3d_dirty_sprite_pipeline_can_use_parsed_sprite_frame_table() {
+        let frame = rle_sprite_frame(2, 1, &[1, 0x5a, 0x5b]);
+        let data = sprite_slot_frame_table(0x0004, &[&frame]);
+        let table = SpriteSlotFrameTable::parse(&data).expect("sprite slot frame table");
+        let y = SCENE_TOP;
+        let commands = [ship_3d_sprite_slot_command(
+            table.dispatch_index(),
+            0,
+            10,
+            y as u16,
+            2,
+            1,
+        )];
+        let dirty_rects = [Ship3dProjectionViewport {
+            left: 10,
+            right: 12,
+            top: y as u16,
+            bottom: (y + 1) as u16,
+        }];
+        let mut primary = vec![0u8; VIEWPORT_W * VIEWPORT_H];
+        let mut secondary = vec![0u8; VIEWPORT_W * VIEWPORT_H];
+
+        let result = render_ship_3d_dirty_sprite_commands_indexed(
+            &mut primary,
+            &mut secondary,
+            &commands,
+            &dirty_rects,
+            true,
+            |_| table.frame(0),
+            None,
+            None,
+        );
+
+        assert_eq!(
+            result,
+            Ship3dDirtySpriteRenderResult {
+                rendered_commands: 1,
+                copied_pixels: 2,
+                ..Ship3dDirtySpriteRenderResult::default()
+            }
+        );
+        assert_eq!(
+            &primary[y * VIEWPORT_W + 10..y * VIEWPORT_W + 12],
+            &[0x5a, 0x5b]
+        );
+    }
+
+    #[test]
     fn recovered_raw_transparent_sprite_blit_clips_and_skips_zero_pixels() {
         let mut frame_bytes = vec![0u8; 8];
         frame_bytes[0..2].copy_from_slice(&4u16.to_le_bytes());
@@ -2003,5 +2155,28 @@ mod tests {
                 bottom: VIEWPORT_H as u16,
             },
         }
+    }
+
+    fn rle_sprite_frame(stride: u16, height: u16, encoded: &[u8]) -> Vec<u8> {
+        let mut frame = Vec::new();
+        frame.extend_from_slice(&stride.to_le_bytes());
+        frame.extend_from_slice(&height.to_le_bytes());
+        frame.extend_from_slice(&0i16.to_le_bytes());
+        frame.extend_from_slice(&0i16.to_le_bytes());
+        frame.extend_from_slice(encoded);
+        frame
+    }
+
+    fn sprite_slot_frame_table(flags: u16, frames: &[&[u8]]) -> Vec<u8> {
+        let mut data = Vec::new();
+        data.extend_from_slice(&flags.to_le_bytes());
+        data.extend_from_slice(&(frames.len() as u16).to_le_bytes());
+        data.resize(4 + frames.len() * 4, 0);
+        for (idx, frame) in frames.iter().enumerate() {
+            let offset = data.len() - 4;
+            data[4 + idx * 4..8 + idx * 4].copy_from_slice(&(offset as u32).to_le_bytes());
+            data.extend_from_slice(frame);
+        }
+        data
     }
 }

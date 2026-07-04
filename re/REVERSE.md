@@ -1137,7 +1137,13 @@ Named targets that are already tied to code behavior:
   while non-negative callers route through the resource allocator/resolver.
 - `0x0299:0x1140` (`sprite_slot_resource_frame_load`): resolves a resource frame
   through `0x04B9:0x0190` and loads it into the 32-byte sprite slot selected by
-  `AX` in the `GS:0x6212` table.
+  `AX` in the `GS:0x6212` table. The resource layout is now modeled by
+  `SpriteSlotFrameTable`: `word flags`, `word frame_count`, then `frame_count`
+  packed dword offsets. Because the binary advances the table cursor by four
+  bytes before applying the packed far-pointer math, each frame payload starts
+  at file offset `4 + table_entry`. `flags & 4` is folded into slot state
+  `0x0083`, selecting dispatch mode 1 or 3 for the RLE sprite payloads seen in
+  real `.SPR` files.
 - `0x0299:0x11BE` (`sprite_slot_frame_load`): loads one frame-table entry into
   the 32-byte presentation sprite slot selected by `AX`; four direct callers.
 - `0x0299:0x1241` (`sprite_slot_state_update`): updates one presentation sprite
@@ -1215,8 +1221,11 @@ dispatch modes 0..4, no-op modes 5..7, dirty-rect clip conversion, and the
 `DS:0x5F11`/`DS:0x6011` destination-remap selector. The higher-level
 `render_ship_3d_dirty_sprite_commands_indexed()` helper renders an ordered
 command stream into the secondary framebuffer, tracks missing/rejected frame
-inputs, and runs the recovered dirty-rect copyback gate. The character-HNM clear path
-uses the clipped fill helper instead of open-coded per-pixel bounds checks.
+inputs, and runs the recovered dirty-rect copyback gate. The pipeline can now be
+fed from parsed `.SPR` resource tables through `SpriteSlotFrameTable`, preserving
+the binary's `4 + table_entry` frame-offset base and state-flag dispatch
+selection. The character-HNM clear path uses the clipped fill helper instead of
+open-coded per-pixel bounds checks.
 
 ### Audio subsystem (segment 0x0B1B) — located
 
@@ -1989,6 +1998,11 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       ordered dirty-sprite command stream against the secondary framebuffer,
       records missing/rejected frame inputs, and applies the recovered
       dirty-rectangle secondary-to-primary copyback gate.
+- [x] Parse sprite slot frame tables:
+      `SpriteSlotFrameTable` models the `0x0299:0x1140`/`0x11BE` resource frame
+      layout used by `.SPR` payloads: flags word, frame count, packed dword
+      frame offsets based at `+4`, state-flag dispatch selection, and frame
+      slices that can feed the dirty-sprite render pipeline.
 - [x] Port ship 3D temporary `3D.snd` setup branch:
       `src/ship3d.rs` now models file `0xB591`: the `DS:0x0AE4` one-shot gate,
       phase byte `DS:0x0AE5` cycling across the three `DS:0x0ACC` callback
