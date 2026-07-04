@@ -2286,6 +2286,19 @@ A fresh independent capture re-confirms `mind.hnm` vs its MINDSCAPE frame at
 `~9.9` (capture caught the logo still forming). The Microfolie's-banner and
 astronaut-cinematic source HNMs are not yet pinned.
 
+A longer 60s unattended capture shows the attract sequence continuing:
+"Commander BLOOD V1.0" crew-character showcase → credit letters spelling
+B-L-O-O-D → ship-interior views → a golden **sunset-over-water landscape**.
+That sunset vista was scene-band-scored (`--score-region scene_band`, HUD-agnostic)
+against **all 56 `pl/*.hnm` location backgrounds** and matched none (best `~44`,
+a clean match is `<15`). So the boot/attract sequence is built from **dedicated
+presentation assets, not the standard gameplay location HNMs** — and several
+(Microfolie's banner, astronaut cinematic, CRYO card, sunset vista) are neither
+statically named in BLOODPRG.EXE nor among the obvious `sq/`/`pl/` HNMs (likely
+loaded via the `.xdb` overlays or runtime-built names). Practical takeaway:
+attract-sequence frames are a poor oracle target beyond the Mindscape logo;
+gameplay-scene verification needs scripted navigation to a known scene.
+
 FIRST VERIFIED CUTSCENE (boot sequence, no scripted input needed): the real
 game's deterministic boot plays `sq\mind.HNM` then `sq\the_star.HNM` (a fixed
 0x10-byte-record path table at BLOODPRG.EXE file offset ~0x5C90; trailing slots
