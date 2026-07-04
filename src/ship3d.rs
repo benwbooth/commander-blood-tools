@@ -85,6 +85,8 @@ pub const SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MISMATCH: u8 = 0x0a;
 pub const SHIP_3D_FIELD_SELECTOR_KIND100_MATCH_WORD: u8 = 0x0c;
 pub const SHIP_3D_FIELD_SELECTOR_KIND100_RELATION_WORD: u8 = 0x0e;
 pub const SHIP_3D_FIELD_SELECTOR_PARENT_LINK: u8 = 0x11;
+pub const SHIP_3D_SOURCE_BITSET_SELECTOR: u8 = 0x05;
+pub const SHIP_3D_SOURCE_BITSET_KIND: u16 = 0x0002;
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dTransitionState {
@@ -1106,6 +1108,22 @@ pub fn ship_3d_binary_sqrt(value: u32) -> Option<u16> {
         ax = original_ax;
         dx = original_dx;
     }
+}
+
+pub fn ship_3d_object_table_bit_is_set(
+    object_table_records: &[u16],
+    bitset_base: &[u8],
+    object_record_offset: u16,
+) -> Option<bool> {
+    let object_index = object_table_records
+        .iter()
+        .position(|record| *record == object_record_offset)?;
+    let field_offset =
+        vm::vm_field_offset(SHIP_3D_SOURCE_BITSET_SELECTOR, SHIP_3D_SOURCE_BITSET_KIND)? as usize;
+    let byte_offset = field_offset.checked_add(object_index >> 3)?;
+    let value = *bitset_base.get(byte_offset)?;
+    let mask = vm::bit_flag_mask((object_index & 7) as u8);
+    Some(value & mask != 0)
 }
 
 pub fn run_ship_3d_navigation_trigger_prelude(
@@ -3589,6 +3607,56 @@ mod tests {
         assert_eq!(
             ship_3d_position_distance(&records, &fields, 0x1000, 0x2000, 0, 0x5555),
             Some(8)
+        );
+    }
+
+    #[test]
+    fn object_table_bit_test_uses_selector5_kind2_field_offset() {
+        assert_eq!(
+            vm::vm_field_offset(SHIP_3D_SOURCE_BITSET_SELECTOR, SHIP_3D_SOURCE_BITSET_KIND),
+            Some(0x1e)
+        );
+    }
+
+    #[test]
+    fn object_table_bit_test_uses_high_bit_first_masks() {
+        let object_table = [
+            0x1000, 0x1014, 0x1028, 0x103c, 0x1050, 0x1064, 0x1078, 0x108c, 0x10a0,
+        ];
+        let mut bitset = [0u8; 0x21];
+        bitset[0x1e] = 0x81;
+        bitset[0x1f] = 0x80;
+
+        assert_eq!(
+            ship_3d_object_table_bit_is_set(&object_table, &bitset, 0x1000),
+            Some(true)
+        );
+        assert_eq!(
+            ship_3d_object_table_bit_is_set(&object_table, &bitset, 0x1014),
+            Some(false)
+        );
+        assert_eq!(
+            ship_3d_object_table_bit_is_set(&object_table, &bitset, 0x108c),
+            Some(true)
+        );
+        assert_eq!(
+            ship_3d_object_table_bit_is_set(&object_table, &bitset, 0x10a0),
+            Some(true)
+        );
+    }
+
+    #[test]
+    fn object_table_bit_test_requires_known_object_and_available_byte() {
+        let object_table = [0x1000, 0x1014];
+        let bitset = [0xffu8; 0x1f];
+
+        assert_eq!(
+            ship_3d_object_table_bit_is_set(&object_table, &bitset, 0x9999),
+            None
+        );
+        assert_eq!(
+            ship_3d_object_table_bit_is_set(&object_table, &bitset[..0x1e], 0x1000),
+            None
         );
     }
 

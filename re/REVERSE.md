@@ -625,7 +625,12 @@ returns nonzero after dispatching the matched descriptor script. Rust models tha
 nonzero helper result through `ExecutionContext::with_descript_entry_name`, then
 clears `gs:0x1FB2`, ORs bit `0x02` into `gs:0x67AA`, and sets
 `gs:0x6788 = 0x2B`. Extractor VM traces now seed that context from parsed
-`DESCRIPT.DES` record names. The deeper resolved-table C1 paths remain pending.
+`DESCRIPT.DES` record names. The deeper resolved-table C1 paths remain pending,
+but dependency helper `0x6210` is now decoded: it maps an object record to its
+index in the 20-byte `GS:[0x672C]` object table, adds the selector-`0x05` /
+kind-`0x0002` field offset (`0x1E`) to the caller's bitset base, and tests the
+object's bit high-bit-first. In the C1 mode-0 branch this is the kind-2 source
+filter before selecting a resolved destination slot.
 
 ### 0xCA/0xCB global condition handlers — token shape (DECODED; runtime source pending)
 
@@ -1729,6 +1734,13 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       binary integer-sqrt distance. Rust exposes this as
       `ship_3d_position_distance()` over decoded position records and
       `Ship3dPositionField` coordinate pairs.
+- [x] Port ship 3D object-table bit-test helper:
+      helper `0x006210`, used by the C1 resolved-table branch after building
+      `DS:0x6886`, locates the target object in the 20-byte DEB/object table and
+      tests a high-bit-first bit from the selector-`0x05`/kind-`0x0002` bitset
+      at caller `SI + 0x1E + object_index/8`. Rust exposes this as
+      `ship_3d_object_table_bit_is_set()`, preserving the bit order needed for
+      the remaining C1 source-list filter.
 - [x] Port ship 3D navigation sequence branch:
       the internal branch at `0x0A9A:0x04E1` (file `0xB481`) now has a Rust
       state/effect model as `run_ship_3d_navigation_sequence_update()`. If
