@@ -461,6 +461,20 @@ to their `.spr` ids per frame + running the projection→blit→copyback pipelin
 end-to-end. This ALSO means the dialogue characters exist as `.spr` sprite banks,
 a second renderable representation alongside the talk-head HNMs.
 
+VISUAL CONFIRMATION (sess 003): decoding all 16 `BORXX.SPR` frames end-to-end
+(parse → RLE → index grid) and rendering them (grayscale ramp) shows the **nav
+"eye" orb growing/rising** across the animation (40x33 → 52x82) — the exact
+silvery sphere seen centred in the HUD of every gameplay capture (`frame_12`,
+`frame_29`). So the sprite pipeline produces correct, recognisable game sprites
+from real data. The frame header is `[0]=width, [2]=height, [4]=x, [6]=y`
+(`RleSpriteFrame::parse` currently reads width/x/y but not the `[2]` height,
+which the blitter instead takes from the descriptor extent). The only piece left
+for **color-accurate, composited** sprite output is the scene palette: `.spr`
+banks are palette-index only and use the current ship-view VGA palette (HNMs
+embed their own `pl` chunks; there is no standalone `.pal` resource), so the last
+step is identifying which resource sets the ship-view palette. The orb is
+grayscale in-game, so even the ramp render already matches it closely.
+
 CONNECTION TO EXISTING WORK: the profile table at `FS:0x11F4` (file `0x0D3E4`)
 that `vm_resource_profile_select` (`0x53A0`) copies into `DS:0x6712` is the
 **same static table already parsed by the extractor** as `ScriptResourceProfile`
