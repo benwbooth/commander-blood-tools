@@ -438,10 +438,18 @@ memory manager behind every handle-based asset:
   profile system that drives the SCRIPT1→SCRIPT2 handoff.
 The still-missing piece is the **file→pool load** — the higher-level routine that
 reads the archive (blood.dat / a bank) into the memory pool and populates the
-`FS` handle table + the profile table at `FS:0x11F4` (the id→file/offset
-directory). Reversing that unlocks sprites AND the handle-loaded intro assets
-(Microfolie's, astronaut, CRYO card) that were not findable as loose HNM/LBM
-files.
+`FS` handle table. Reversing that unlocks sprites AND the handle-loaded intro
+assets (Microfolie's, astronaut, CRYO card) that were not findable as loose
+HNM/LBM files.
+
+CONNECTION TO EXISTING WORK: the profile table at `FS:0x11F4` (file `0x0D3E4`)
+that `vm_resource_profile_select` (`0x53A0`) copies into `DS:0x6712` is the
+**same static table already parsed by the extractor** as `ScriptResourceProfile`
+(`src/bloodprg.rs` `SCRIPT_PROFILE_TABLE_*`, 5 profiles × 5 resource-id slots,
+driving the SCRIPT1→SCRIPT2 handoff). So ship-3D sprites, script resources, and
+the profile handoff all flow through one handle/profile/pool system — the
+resource-id → archive directory (the last unknown) is shared, and recovering it
+generalises across every handle-based asset, not just sprites.
 
 The per-slot dirty geometry commit branch in `sprite_slot_commit_dirty_range`
 (`0x0299:0x1467`) is now modeled as
