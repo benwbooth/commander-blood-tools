@@ -416,6 +416,27 @@ populates the `FS:0x0BBF` handle table with sprite blobs) is the final,
 still-open link for a fully composited ship-3D frame — it is the shared
 resource-manager subsystem, so this trace also unlocks other handle-based assets.
 
+RESOURCE-MANAGER SUBSYSTEM MAP (segment `0x04B9`, sess 003) — the shared handle
+memory manager behind every handle-based asset:
+- `0x04B9:0x0000` (file `0x5190`) = the core loader/allocator: takes a handle id,
+  returns its segment if already resident (`flags & 3`), else aligns the size
+  (`ebp` from `entry+4`) to 16 bytes, compares against the free-memory counter
+  `gs:0x0A46`, and runs an **LRU-style eviction** over handle-id lists at
+  `0x0800`/`0x0A00` (walking with `repne scasw` / `std; lodsw`) to make room
+  before loading. Handle entries are `{+0 segment, +2 flags, +4 size dword}` in
+  the `FS` table.
+- `0x04B9:0x0190` (`0x5320`) = fast resident lookup; `0x533C` = get size;
+  `0x5356` = free (clear in-use bit1); `0x5365` = acquire (bit0 set→mark bit1;
+  else evictable→call loader `0x5190`).
+- `0x53A0` = `vm_resource_profile_select(ax)`: on profile change, copies five
+  resource-id/offset words from the profile table at `FS:0x11F4 + ax*0x0A` into
+  `DS:0x6712` and (re)acquires them via `lcall 0x04B9:0x00F8`. This is the same
+  profile system that drives the SCRIPT1→SCRIPT2 handoff.
+The still-missing piece is the **archive read** itself (where `0x5190` pulls the
+bytes once it has made room — the id→file/offset directory). Reversing that one
+routine unlocks sprites AND the handle-loaded intro assets (Microfolie's,
+astronaut, CRYO card) that were not findable as loose HNM/LBM files.
+
 The per-slot dirty geometry commit branch in `sprite_slot_commit_dirty_range`
 (`0x0299:0x1467`) is now modeled as
 `commit_ship_3d_sprite_slot_dirty_geometry()`. It matches the range loop's slot
