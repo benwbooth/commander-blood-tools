@@ -479,10 +479,18 @@ Character `.spr` (SCRUTER/JERRY/IZWALITO, all 104x80, RLE) decode correctly
 (right dimensions, dozens of distinct indices) but need a palette NOT yet
 identified: rendering `JERRY.SPR` with the location palette (`petrol10.hnm`) OR
 Jerry's idle-head palette (`pe/aajer.hnm`) both give a hollow outline with a
-black interior, so neither is the character-sprite palette. The `.spr` character
-palette source (a dedicated character/ship-UI palette, or a palette that ships
-with the sprite bank / is set on scene entry) is the open sub-question for
-color-accurate character rendering; the HNM palette-block format itself is known
+black interior, so neither is the character-sprite palette. PINNED (sess 003): the character `.spr` pixels use a **reserved HIGH palette
+range** — `JERRY`/`SCRUTER` bodies are almost entirely indices **225-236**
+(index 226 dominant) plus index 0 (transparent). The scene/location HNM
+(`petrol10`) and the character idle-head HNM (`pe/aajer.hnm`) **do not define
+indices 224-239 at all** (they cover the low/mid background range), so the
+character sprites are drawn with a separate **character palette loaded into the
+top ~32 DAC slots** when a character is shown — a classic reserved-high-slot
+sprite palette. The open sub-question is therefore narrowed to: where the
+`224-255` character palette is loaded from (a static palette in BLOODPRG.EXE, an
+`.xdb` overlay — SCRUTER is the `croolis`/scrutinizer species — or a per-frame
+`pl` chunk in a character HNM beyond frame 0). The orb uses low indices (2-121,
+grayscale) so it renders without this. The HNM palette-block format is known
 (`render.rs::parse_palette_block`, 6-bit RGB expanded `(v<<2)|(v>>4)`).
 
 CONNECTION TO EXISTING WORK: the profile table at `FS:0x11F4` (file `0x0D3E4`)
