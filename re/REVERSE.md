@@ -1618,6 +1618,19 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `DS:0x676A`, and clears `DS:0x2565`. Rust exposes this as
       `run_ship_3d_nav_choice_handler_0()` returning an explicit deferred-record
       effect for the VM/event renderer.
+- [x] Port ship 3D navigation-choice handler 1:
+      table entry 1 at `0x071E:0x0F4C` handles target-list selection. On phase
+      bit 0 it resets interpolation tick `DS:0x0ADB`, adds four bytes to each
+      non-`-1` target record in the `DS:0x2B13` list, runs the target-list
+      layout prepass with `DS:0x27E6=1`, then increments phase to bit 1. While
+      phase bit 1 is set, it waits for the `0x008B:0x0FAD` interpolation gate;
+      active interpolation returns immediately, while completion clears
+      `DS:0x2565` and falls through to the live target-list query. Query
+      `AX=-1` leaves the choice armed. A selected `-1` clears `DS:0x2A19` and
+      bit `0x04` in `DS:0x2793`; a selected target instead subtracts four bytes,
+      writes deferred `C3` related pointer `DS:0x676A`, sets `DS:0x6768`, reloads
+      `sn\radio.snd` via the SND bank loader, then clears the same choice/HUD
+      state. Rust exposes this as `run_ship_3d_nav_choice_handler_1()`.
 - [x] Port recovered framebuffer fill/copy primitives:
       `src/extract/render.rs` now has tested Rust helpers for the clipped
       rectangle fill, palette-remap rectangle, scene-band fill, full 320x200

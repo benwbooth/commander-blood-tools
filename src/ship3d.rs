@@ -52,6 +52,9 @@ pub const SHIP_3D_NAV_CHOICE_LAYOUT_CENTER_X: u16 = 0x0064;
 pub const SHIP_3D_NAV_CHOICE_INTERPOLATION_DURATION: u8 = 0x0a;
 pub const SHIP_3D_NAV_CHOICE_SELECT_SOUND: u16 = 0x0004;
 pub const SHIP_3D_NAV_CHOICE_RECORD_LINK_TYPE: u16 = 0x00c3;
+pub const SHIP_3D_NAV_CHOICE_TARGET_LIST_FLAG: u8 = 0x04;
+pub const SHIP_3D_NAV_CHOICE_PHASE_INTERPOLATING: u8 = 0x02;
+pub const SHIP_3D_NAV_CHOICE_RADIO_SND_PATH_OFFSET: u16 = 0x0d16;
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dTransitionState {
@@ -214,6 +217,12 @@ pub struct Ship3dNavChoiceHandlerEffect {
     pub deferred_record_type: Option<u16>,
     pub deferred_record_related: Option<u16>,
     pub cleared_handler_phase: bool,
+    pub ran_layout_prepass: bool,
+    pub adjusted_target_records: bool,
+    pub phase_gate_blocked: bool,
+    pub cleared_selected_choice: bool,
+    pub cleared_hud_target_list_flag: bool,
+    pub load_snd_bank_path: Option<u16>,
 }
 
 pub fn update_ship_3d_transition_state(state: &mut Ship3dTransitionState, random_gate_zero: bool) {
@@ -507,7 +516,55 @@ pub fn run_ship_3d_nav_choice_handler_0(
         deferred_record_type: Some(SHIP_3D_NAV_CHOICE_RECORD_LINK_TYPE),
         deferred_record_related: Some(named_honk_object),
         cleared_handler_phase: true,
+        ..Ship3dNavChoiceHandlerEffect::default()
     }
+}
+
+pub fn run_ship_3d_nav_choice_handler_1(
+    state: &mut Ship3dNavChoiceState,
+    target_records: &mut [u16],
+    interpolation_complete: bool,
+    query_selection_ax: u16,
+) -> Option<Ship3dNavChoiceHandlerEffect> {
+    let mut effect = Ship3dNavChoiceHandlerEffect::default();
+
+    if state.handler_phase & SHIP_3D_NAV_CHOICE_HANDLER_PHASE != 0 {
+        state.interpolation_duration_ticks = SHIP_3D_NAV_CHOICE_INTERPOLATION_DURATION;
+        adjust_nav_choice_target_records(target_records);
+        state.handler_phase = state
+            .handler_phase
+            .wrapping_add(SHIP_3D_NAV_CHOICE_HANDLER_PHASE);
+        effect.ran_layout_prepass = true;
+        effect.adjusted_target_records = true;
+    }
+
+    if state.handler_phase & SHIP_3D_NAV_CHOICE_PHASE_INTERPOLATING != 0 {
+        if !interpolation_complete {
+            effect.phase_gate_blocked = true;
+            return Some(effect);
+        }
+        state.handler_phase = 0;
+        effect.cleared_handler_phase = true;
+    }
+
+    if query_selection_ax == SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN {
+        return Some(effect);
+    }
+
+    let target_index = usize::from(query_selection_ax);
+    let target_record = *target_records.get(target_index)?;
+    if target_record != SHIP_3D_TARGET_EXIT_SENTINEL {
+        effect.deferred_record_type = Some(SHIP_3D_NAV_CHOICE_RECORD_LINK_TYPE);
+        effect.deferred_record_related =
+            Some(target_record.wrapping_sub(SHIP_3D_TARGET_RECORD_HEADER_BYTES));
+        effect.load_snd_bank_path = Some(SHIP_3D_NAV_CHOICE_RADIO_SND_PATH_OFFSET);
+    }
+
+    state.selected_choice = 0;
+    state.hud_flags &= !SHIP_3D_NAV_CHOICE_TARGET_LIST_FLAG;
+    effect.cleared_selected_choice = true;
+    effect.cleared_hud_target_list_flag = true;
+    Some(effect)
 }
 
 pub fn draw_ship_3d_target_list(
@@ -732,6 +789,15 @@ fn hit_test_ship_3d_nav_choice(
         return Some(None);
     }
     Some(Some(choice))
+}
+
+fn adjust_nav_choice_target_records(target_records: &mut [u16]) {
+    for target_record in target_records {
+        if *target_record == SHIP_3D_TARGET_EXIT_SENTINEL {
+            break;
+        }
+        *target_record = target_record.wrapping_add(SHIP_3D_TARGET_RECORD_HEADER_BYTES);
+    }
 }
 
 fn next_target_list_draw_color(state: &mut Ship3dTargetHitState, activate: bool) -> u8 {
@@ -1677,6 +1743,7 @@ mod tests {
                 deferred_record_type: Some(SHIP_3D_NAV_CHOICE_RECORD_LINK_TYPE),
                 deferred_record_related: Some(0x6754),
                 cleared_handler_phase: true,
+                ..Ship3dNavChoiceHandlerEffect::default()
             }
         );
         assert_eq!(state.handler_phase, 0);
@@ -1693,5 +1760,117 @@ mod tests {
 
         assert_eq!(effect, Ship3dNavChoiceHandlerEffect::default());
         assert_eq!(state.handler_phase, 0x02);
+    }
+
+    #[test]
+    fn nav_choice_handler_1_adjusts_records_and_waits_for_interpolation() {
+        let mut state = Ship3dNavChoiceState {
+            handler_phase: SHIP_3D_NAV_CHOICE_HANDLER_PHASE,
+            ..Ship3dNavChoiceState::default()
+        };
+        let mut target_records = [0x1000, 0x2000, SHIP_3D_TARGET_EXIT_SENTINEL, 0x3000];
+
+        let effect = run_ship_3d_nav_choice_handler_1(
+            &mut state,
+            &mut target_records,
+            false,
+            SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
+        )
+        .unwrap();
+
+        assert_eq!(
+            target_records,
+            [0x1004, 0x2004, SHIP_3D_TARGET_EXIT_SENTINEL, 0x3000]
+        );
+        assert_eq!(state.handler_phase, SHIP_3D_NAV_CHOICE_PHASE_INTERPOLATING);
+        assert_eq!(
+            state.interpolation_duration_ticks,
+            SHIP_3D_NAV_CHOICE_INTERPOLATION_DURATION
+        );
+        assert_eq!(
+            effect,
+            Ship3dNavChoiceHandlerEffect {
+                ran_layout_prepass: true,
+                adjusted_target_records: true,
+                phase_gate_blocked: true,
+                ..Ship3dNavChoiceHandlerEffect::default()
+            }
+        );
+    }
+
+    #[test]
+    fn nav_choice_handler_1_selects_target_after_interpolation() {
+        let mut state = Ship3dNavChoiceState {
+            selected_choice: 2,
+            hud_flags: SHIP_3D_NAV_CHOICE_TARGET_LIST_FLAG,
+            handler_phase: SHIP_3D_NAV_CHOICE_PHASE_INTERPOLATING,
+            ..Ship3dNavChoiceState::default()
+        };
+        let mut target_records = [0x1004, 0x2004, SHIP_3D_TARGET_EXIT_SENTINEL];
+
+        let effect =
+            run_ship_3d_nav_choice_handler_1(&mut state, &mut target_records, true, 1).unwrap();
+
+        assert_eq!(
+            effect,
+            Ship3dNavChoiceHandlerEffect {
+                deferred_record_type: Some(SHIP_3D_NAV_CHOICE_RECORD_LINK_TYPE),
+                deferred_record_related: Some(0x2000),
+                cleared_handler_phase: true,
+                cleared_selected_choice: true,
+                cleared_hud_target_list_flag: true,
+                load_snd_bank_path: Some(SHIP_3D_NAV_CHOICE_RADIO_SND_PATH_OFFSET),
+                ..Ship3dNavChoiceHandlerEffect::default()
+            }
+        );
+        assert_eq!(state.handler_phase, 0);
+        assert_eq!(state.selected_choice, 0);
+        assert_eq!(state.hud_flags, 0);
+    }
+
+    #[test]
+    fn nav_choice_handler_1_exit_sentinel_clears_choice_without_deferred_record() {
+        let mut state = Ship3dNavChoiceState {
+            selected_choice: 2,
+            hud_flags: SHIP_3D_NAV_CHOICE_TARGET_LIST_FLAG,
+            ..Ship3dNavChoiceState::default()
+        };
+        let mut target_records = [0x1004, SHIP_3D_TARGET_EXIT_SENTINEL];
+
+        let effect =
+            run_ship_3d_nav_choice_handler_1(&mut state, &mut target_records, true, 1).unwrap();
+
+        assert_eq!(
+            effect,
+            Ship3dNavChoiceHandlerEffect {
+                cleared_selected_choice: true,
+                cleared_hud_target_list_flag: true,
+                ..Ship3dNavChoiceHandlerEffect::default()
+            }
+        );
+        assert_eq!(state.selected_choice, 0);
+        assert_eq!(state.hud_flags, 0);
+    }
+
+    #[test]
+    fn nav_choice_handler_1_no_selection_leaves_state_armed() {
+        let mut state = Ship3dNavChoiceState {
+            selected_choice: 2,
+            hud_flags: SHIP_3D_NAV_CHOICE_TARGET_LIST_FLAG,
+            ..Ship3dNavChoiceState::default()
+        };
+        let mut target_records = [0x1004, SHIP_3D_TARGET_EXIT_SENTINEL];
+
+        let effect = run_ship_3d_nav_choice_handler_1(
+            &mut state,
+            &mut target_records,
+            true,
+            SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
+        )
+        .unwrap();
+
+        assert_eq!(effect, Ship3dNavChoiceHandlerEffect::default());
+        assert_eq!(state.selected_choice, 2);
+        assert_eq!(state.hud_flags, SHIP_3D_NAV_CHOICE_TARGET_LIST_FLAG);
     }
 }
