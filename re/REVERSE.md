@@ -401,9 +401,20 @@ scene-setup routine that writes `descriptor+4` is now found at `0x40D0`
   and its header word `[si]` (stride) into `gs:[di+0xc]`.
 
 So `render.rs`'s `SpriteSlotFrameTable` layout is **confirmed faithful to the
-binary scene-setup**, not merely inferred from the (absent) `.spr` files. The
-last remaining unknown is the resource bank behind `0x04B9:0x0190` — which file
-/ in-memory bank the sprite frame-table blobs are loaded from by id.
+binary scene-setup**, not merely inferred from the (absent) `.spr` files.
+
+The resource loader `0x04B9:0x0190` (file `0x5320`) is a **handle-table lookup**,
+not a file read: `shl ax,3` (resource_id * 8) indexes an 8-byte-entry table based
+at `FS` (startup `FS=0x0BBF`), checks load-flags at `entry+2 & 3`, and returns
+`ds = fs:[id*8]` (the resource's segment), `si = 0`. Entry layout:
+`{+0: segment, +2: flags(bit0/1 = loaded), +4: size dword}` — the neighbouring
+stubs at `0x533C/0x5356/0x5365` read the size, free (clear bit1), and re-check the
+same handle. So sprite frame-table blobs live in memory referenced by handle id;
+the blobs are loaded into those segments (EMS/XMS/conventional) by the resource
+manager from a bank file at startup/scene-load. IDENTIFYING THAT BANK FILE (what
+populates the `FS:0x0BBF` handle table with sprite blobs) is the final,
+still-open link for a fully composited ship-3D frame — it is the shared
+resource-manager subsystem, so this trace also unlocks other handle-based assets.
 
 The per-slot dirty geometry commit branch in `sprite_slot_commit_dirty_range`
 (`0x0299:0x1467`) is now modeled as
