@@ -492,11 +492,14 @@ sprite palette. The open sub-question is therefore narrowed to where the
 trailing palette; (b) not in any HNM header palette — scanning every
 `_tmp_dat/**/*.hnm` header block, ZERO define indices 224-239; (c) not set via
 an immediate VGA-DAC write — the only `mov dx,0x3c8` sites (`0x862B`/`0x8694`)
-tweak a few UI indices near 0x7B (123), never 0xE0 (224). So the character
-palette is bulk-uploaded from either a **per-frame `pl` chunk** in a character
-HNM beyond frame 0 (not the header), or an **`.xdb` overlay** (SCRUTER is the
-`croolis`/scrutinizer species → `croolis.xdb`), or dynamic construction — all of
-which tie into the overlay/animation subsystems (thread #2). The orb uses low
+tweak a few UI indices near 0x7B (123), never 0xE0 (224). Also ELIMINATED: (d) the character
+HNMs' **per-frame `pl` chunks** — parsing every frame superchunk of `aajer.hnm`
+(18 frames) and `jerry_10.hnm` (31 frames), none define indices 224-239 either.
+So with `.spr`, all HNM header AND per-frame palettes, and immediate DAC writes
+all ruled out, the `224-255` character palette lives ONLY in an **`.xdb` overlay**
+(SCRUTER is the `croolis`/scrutinizer species → `croolis.xdb`) or is constructed
+dynamically — squarely inside the overlay subsystem (thread #2). Color character
+rendering is thus gated on the overlay decompilation. The orb uses low
 indices (2-121, grayscale) so it renders without this. HNM palette-block format
 is known (`render.rs::parse_palette_block`, 6-bit RGB expanded `(v<<2)|(v>>4)`).
 
