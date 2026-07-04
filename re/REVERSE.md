@@ -1398,13 +1398,22 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 - [ ] Ph3: 3+ functions traced (dispatch loop + 2 handlers) and cross-checked
 - [ ] Ph4: presentation constants (font/layout/timing/palette) extracted & validated
 - [ ] Ph5: script-VM opcode table + scene/actor structs decoded
-- [ ] Ph6: generated cutscene compared against real-game capture with a
-      frame-aligned pass threshold. `accuracy/compare_oracle.py` now normalizes
-      host-window captures and generated MP4 frames to 320x200 and emits metrics,
-      reports recovered screen-band region errors, scans generated-video
-      timestamp windows, can rank candidate generated videos against a reference
-      frame, and `accuracy/oracle-scenarios.tsv` defines named repeatable
-      comparisons, but no matched scene has passed yet.
+- [x] Ph6: generated cutscene compared against real-game capture with a
+      frame-aligned pass threshold — **FIRST PASS achieved**. The boot studio
+      logo `sq/mind.hnm` (Mindscape) reproduces the real DOSBox boot capture
+      `frame_01` at `mean_abs ~= 1.09` (rmse 1.45, every screen-band region
+      < 1.3), locked in as the passing scenario `intro-mind-frame01` in
+      `accuracy/oracle-scenarios.tsv`. This validates the HNM(1) decoder +
+      palette + native-scaling path end-to-end against real game output.
+      `accuracy/compare_oracle.py` normalizes host-window captures and generated
+      MP4 frames to 320x200, emits metrics, reports recovered screen-band region
+      errors, scans generated-video timestamp windows, and ranks candidate
+      generated videos against a reference frame.
+      STILL OPEN for dialogue/gameplay scenes: those need scripted input (or a
+      debug scene selector) to drive DOSBox to a matched scene before a
+      threshold is meaningful; the 1-fps unattended capture cannot frame-align a
+      fast cinematic like `sq/the_star.hnm` (best `mean_abs ~= 20` vs frame_04,
+      phase-limited, not a content error).
 
 ## Reference Resources
 
@@ -2230,6 +2239,20 @@ older `frame_NN.png` capture directories that predate `run_oracle.sh` manifest
 output. Next oracle step is scripted input via `ORACLE_INPUT_SCRIPT` or a debug
 scene selector so one generated dialogue run can be compared against a matched
 real-game capture with a threshold.
+
+FIRST VERIFIED CUTSCENE (boot sequence, no scripted input needed): the real
+game's deterministic boot plays `sq\mind.HNM` then `sq\the_star.HNM` (a fixed
+0x10-byte-record path table at BLOODPRG.EXE file offset ~0x5C90; trailing slots
+are runtime `sq\xxxxxxxx` placeholders). The unattended DOSBox capture therefore
+contains these logos for free. Our render of `mind.hnm` matches `frame_01`
+(Mindscape logo) at `mean_abs ~= 1.09` — near pixel-exact, the 4x diff is almost
+entirely black. The exporter now renders this intro pair as
+`output/mp4/intro - 01 - mind.mp4` / `intro - 02 - the_star.mp4`
+(`INTRO_SEQUENCE` in `src/extract/mod.rs`), and `intro-mind-frame01` is the first
+scenario in `oracle-scenarios.tsv` with a real pass threshold (`max_mean_abs=3.0`,
+fixed `generated_time=1.0`). `the_star` vs `frame_04` only reaches `mean_abs ~= 20`
+because a 58s cinematic cannot be frame-aligned to a 1-fps capture with unknown
+boot phase — a timing/alignment limit, not a decode error.
 
 Current `frame_12` evidence: searching all 43 executed-dialogue composites over
 `0:12:2` ranked `executed-dialogue-run - script3 - 0011 - tumul.mp4` at `6.0s`

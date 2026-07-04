@@ -166,6 +166,19 @@ nix develop --command python accuracy/compare_oracle.py \
   framebuffer (no window manager needed). For pixel-exact 320×200 frames, switch
   to DOSBox-X native screenshots (mapper key) in a later iteration.
 
+## Verified scenarios (pass threshold set)
+
+- **`intro-mind-frame01`** — the deterministic boot sequence needs no scripted
+  input, so the unattended capture already contains the studio/intro logos.
+  Our render of `sq/mind.hnm` (Mindscape logo) matches the real capture
+  `frame_01` at `mean_abs ~= 1.09` (near pixel-exact). This is the first oracle
+  check with a real `max_mean_abs` (3.0) and validates the HNM decoder + palette
+  + native-scaling path against real game output. The generated MP4 is produced
+  by the standard export as `output/mp4/intro - 01 - mind.mp4` (the exporter's
+  `INTRO_SEQUENCE`, which also emits `intro - 02 - the_star.mp4`). Fast cinematics
+  like `the_star` cannot get a threshold from a 1-fps capture (unknown boot
+  phase) — that needs the native-screenshot / scripted-capture work below.
+
 ## Next steps toward scene-by-scene validation
 
 1. Drive input (menu/scene navigation) using `ORACLE_INPUT_SCRIPT` and `xdotool`

@@ -33,6 +33,12 @@ const SILENT_SUBTITLE_SR: u32 = 11025;
 const SCRIPT_OBJECT_TALK_FIELD: u16 = 0x3a;
 const SCRIPT_OBJECT_LOCATION_FIELD: usize = 24;
 
+// The fixed leading entries of BLOODPRG.EXE's boot cutscene path table
+// (0x10-byte records at file offset ~0x5C90: `sq\mind.HNM`, `sq\the_star.HNM`).
+// These play at startup before the main loop; the trailing table slots are
+// runtime-filled placeholders (`sq\xxxxxxxx`) and are not part of the fixed intro.
+const INTRO_SEQUENCE: &[&str] = &["mind", "the_star"];
+
 fn subtitle_reveal_chars_per_second(text_speed_step: u16) -> f64 {
     if text_speed_step == 0 {
         return HNM_FPS as f64;
@@ -498,6 +504,37 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                     eprintln!("[video ERROR] {fname}: {e}");
                     let _ = fs::remove_file(&mp4_out);
                 }
+            }
+        }
+    }
+
+    // --- Decode the boot/intro cutscene sequence ---
+    // BLOODPRG.EXE holds a fixed-width path table (0x10-byte records) whose two
+    // fixed leading entries are the studio logo and the intro cinematic:
+    //   sq\mind.HNM   -> Mindscape logo (verified pixel-accurate against the real
+    //                    game: accuracy/oracle-scenarios.tsv `intro-mind-frame01`)
+    //   sq\the_star.HNM -> opening space cinematic
+    // The remaining table slots are runtime placeholders (`sq\xxxxxxxx`). These
+    // intro HNMs are real game presentation but are not DESCRIPT database scenes,
+    // so the scene decode above skips them; render them here so the faithful
+    // export includes the game's opening and the oracle has a stable path.
+    for (index, stem) in INTRO_SEQUENCE.iter().enumerate() {
+        let hnm_path = tmp_dat.join("sq").join(format!("{stem}.hnm"));
+        if !hnm_path.exists() {
+            eprintln!("[intro ERROR] {stem}: missing HNM asset");
+            video_errors += 1;
+            continue;
+        }
+        let mp4_out = mp4_dir.join(format!("intro - {:02} - {stem}.mp4", index + 1));
+        match decode_hnm_to_mp4(&hnm_path, &mp4_out, None) {
+            Ok(frame_count) => {
+                video_converted += 1;
+                eprintln!("[intro {}] {stem} ({frame_count} frames)", index + 1);
+            }
+            Err(e) => {
+                video_errors += 1;
+                eprintln!("[intro ERROR] {stem}: {e}");
+                let _ = fs::remove_file(&mp4_out);
             }
         }
     }

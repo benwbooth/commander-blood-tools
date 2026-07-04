@@ -1,2 +1,3 @@
 scenario_id	reference	reference_manifest	generated	generated_timeline	generated_time	ref_crop	max_mean_abs	scan_start	scan_end	scan_step	out_dir	notes
 smoke-frame12-pterra	frame_12.png	accuracy/captures/capture-manifest.tsv	output/mp4/executed-dialogue-run - script2 - 0001 - pterra.mp4		0	auto		0	12	1	accuracy/comparisons/smoke-frame12-pterra	Current smoke comparison scans the generated opening window using manifest crop metadata; no pass threshold yet.
+intro-mind-frame01	frame_01.png	accuracy/captures/capture-manifest.tsv	output/mp4/intro - 01 - mind.mp4		1.0	auto	3.0				accuracy/comparisons/intro-mind-frame01	First verified cutscene: Mindscape boot logo (sq/mind.hnm) vs real DOSBox capture frame_01; measured mean_abs~1.09, threshold 3.0 for encoder variance.
