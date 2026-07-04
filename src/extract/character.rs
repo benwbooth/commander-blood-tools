@@ -293,6 +293,92 @@ fn dialogue_chatter_events(segments: &[DialogueSegment]) -> Vec<SubtitleChatterE
     events
 }
 
+fn dialogue_timeline_path(mp4_out: &Path) -> PathBuf {
+    mp4_out.with_extension("timeline.tsv")
+}
+
+fn format_seconds(value: f64) -> String {
+    format!("{value:.6}")
+}
+
+fn write_dialogue_timeline(
+    out_path: &Path,
+    mp4_name: &str,
+    label: &str,
+    segments: &[DialogueSegment],
+) -> Result<(), Box<dyn Error>> {
+    let mut file = File::create(out_path)?;
+    writeln!(
+        file,
+        "mp4\tlabel\tsegment_index\tstart_time\tend_time\tduration\treveal_complete_time\tsubtitle_hold_end_time\tactive_line_id\tsubtitle_chars\thas_voice\tvoice_index\tvoice_duration\tvoice_sample_rate\thas_talk_hnm\ttalk_hnm\tplay_chatter\ttext"
+    )?;
+
+    let mut start_time = 0.0f64;
+    for (idx, seg) in segments.iter().enumerate() {
+        let end_time = start_time + seg.duration;
+        let subtitle_chars = subtitle_reveal_char_count(seg.text.trim());
+        let reveal_complete_time = if subtitle_chars == 0 {
+            String::new()
+        } else {
+            format_seconds(
+                start_time + subtitle_chars as f64 / default_subtitle_reveal_chars_per_second(),
+            )
+        };
+        let subtitle_hold_end_time = if subtitle_chars == 0 {
+            String::new()
+        } else {
+            format_seconds(start_time + subtitle_display_duration(&seg.text))
+        };
+        let voice_index = seg
+            .voice
+            .as_ref()
+            .map(|voice| voice.original_index.to_string())
+            .unwrap_or_default();
+        let voice_duration = seg
+            .voice
+            .as_ref()
+            .map(|voice| format_seconds(voice_duration_seconds(voice)))
+            .unwrap_or_default();
+        let voice_sample_rate = seg
+            .voice
+            .as_ref()
+            .map(|voice| voice.sample_rate.to_string())
+            .unwrap_or_default();
+        let talk_hnm = seg
+            .hnm_path
+            .as_ref()
+            .and_then(|path| path.file_name())
+            .map(|name| name.to_string_lossy().into_owned())
+            .unwrap_or_default();
+
+        writeln!(
+            file,
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t0x{:04x}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            clean_tsv(mp4_name),
+            clean_tsv(label),
+            idx,
+            format_seconds(start_time),
+            format_seconds(end_time),
+            format_seconds(seg.duration),
+            reveal_complete_time,
+            subtitle_hold_end_time,
+            seg.active_line_id,
+            subtitle_chars,
+            seg.voice.is_some(),
+            voice_index,
+            voice_duration,
+            voice_sample_rate,
+            seg.hnm_path.is_some(),
+            clean_tsv(&talk_hnm),
+            seg.play_chatter,
+            clean_tsv(&seg.text)
+        )?;
+        start_time = end_time;
+    }
+
+    Ok(())
+}
+
 /// Create combined character videos for each DESCRIPT.DES character record that
 /// uses this SND bank.
 pub(super) fn create_character_videos(
@@ -1156,6 +1242,8 @@ fn render_dialogue_segments(
 
     let music_path = music_name.map(|music| dat_dir.join("mu").join(format!("{music}.voc")));
     let has_music = music_path.as_ref().is_some_and(|path| path.exists());
+    let timeline_out = dialogue_timeline_path(mp4_out);
+    let _ = fs::remove_file(&timeline_out);
 
     let result = (|| -> Result<bool, Box<dyn Error>> {
         let mut cmd = Command::new("ffmpeg");
@@ -1280,10 +1368,22 @@ fn render_dialogue_segments(
 
     let _ = fs::remove_file(&tmp_voice);
     let _ = fs::remove_file(&tmp_sfx);
-    if result.is_err() {
-        let _ = fs::remove_file(&mp4_out);
+    match result {
+        Ok(true) => {
+            let mp4_name = mp4_out
+                .file_name()
+                .map(|name| name.to_string_lossy().into_owned())
+                .unwrap_or_else(|| mp4_out.display().to_string());
+            write_dialogue_timeline(&timeline_out, &mp4_name, label, segments)?;
+            Ok(true)
+        }
+        Ok(false) => Ok(false),
+        Err(err) => {
+            let _ = fs::remove_file(&mp4_out);
+            let _ = fs::remove_file(&timeline_out);
+            Err(err)
+        }
     }
-    result
 }
 
 /// Load a location landscape background from its LBM (`dat_dir/fd/<lbm>`),
@@ -1399,6 +1499,74 @@ mod tests {
             3.0
         );
         assert_eq!(dialogue_segment_duration("", Some(&short_voice)), 0.5);
+    }
+
+    #[test]
+    fn dialogue_timeline_exports_segment_boundaries() {
+        let root = std::env::temp_dir().join(format!(
+            "commander-blood-dialogue-timeline-{}",
+            std::process::id()
+        ));
+        let _ = fs::create_dir_all(&root);
+        let path = root.join("run.timeline.tsv");
+        let voice = test_voice_clip(5_000, 10_000);
+        let segments = vec![DialogueSegment {
+            text: "abc".to_string(),
+            active_line_id: vm::text_selector_active_line_id(0x01),
+            play_chatter: true,
+            hnm_path: Some(PathBuf::from("pe/talk.hnm")),
+            duration: dialogue_segment_duration("abc", Some(&voice)),
+            voice: Some(voice),
+        }];
+
+        write_dialogue_timeline(&path, "run.mp4", "SCRIPT2 run 1", &segments)
+            .expect("write timeline");
+        let timeline = fs::read_to_string(&path).expect("read timeline");
+        let _ = fs::remove_dir_all(&root);
+        let rows: Vec<Vec<&str>> = timeline
+            .lines()
+            .map(|line| line.split('\t').collect())
+            .collect();
+
+        assert_eq!(
+            rows[0],
+            vec![
+                "mp4",
+                "label",
+                "segment_index",
+                "start_time",
+                "end_time",
+                "duration",
+                "reveal_complete_time",
+                "subtitle_hold_end_time",
+                "active_line_id",
+                "subtitle_chars",
+                "has_voice",
+                "voice_index",
+                "voice_duration",
+                "voice_sample_rate",
+                "has_talk_hnm",
+                "talk_hnm",
+                "play_chatter",
+                "text",
+            ]
+        );
+        assert_eq!(rows[1][0], "run.mp4");
+        assert_eq!(rows[1][1], "SCRIPT2 run 1");
+        assert_eq!(rows[1][2], "0");
+        assert_eq!(rows[1][3], "0.000000");
+        assert_eq!(rows[1][6], "0.250000");
+        assert_eq!(rows[1][7], "1.583333");
+        assert_eq!(rows[1][8], "0x000a");
+        assert_eq!(rows[1][9], "3");
+        assert_eq!(rows[1][10], "true");
+        assert_eq!(rows[1][11], "0");
+        assert_eq!(rows[1][12], "0.500000");
+        assert_eq!(rows[1][13], "10000");
+        assert_eq!(rows[1][14], "true");
+        assert_eq!(rows[1][15], "talk.hnm");
+        assert_eq!(rows[1][16], "true");
+        assert_eq!(rows[1][17], "abc");
     }
 
     #[test]

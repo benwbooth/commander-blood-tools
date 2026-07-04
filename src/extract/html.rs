@@ -90,6 +90,16 @@ pub(super) fn write_executed_dialogue_run_section(
             url_escape(&rel),
             html_escape(&row[1])
         )?;
+        if let Some(stem) = rel.strip_suffix(".mp4") {
+            let timeline_rel = format!("{stem}.timeline.tsv");
+            if out_dir.join(&timeline_rel).exists() {
+                writeln!(
+                    html,
+                    "<div class=\"meta\"><a href=\"{}\">timeline</a></div>",
+                    url_escape(&timeline_rel)
+                )?;
+            }
+        }
         writeln!(
             html,
             "<div class=\"meta\">{} / {}<br>sequence: {}..{}<br>background: {} ({})<br>music: {}<br>actors: {}<br>clips: {}</div>",

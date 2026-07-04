@@ -1383,6 +1383,7 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 | `script-scene-events.tsv` | extraction artifact listing the exact `SceneEvent` stream consumed by default executed dialogue-run MP4s, including source/provenance plus decoded A6 skip-count and loop-target controls on subtitle events |
 | `script-profile-scene-events.tsv` | extraction artifact listing the exact `SceneEvent` stream consumed by profile-sequence dialogue-run MP4s, including source/provenance plus decoded A6 skip-count and loop-target controls on subtitle events |
 | `script-branch-scenario-scene-events.tsv` | extraction artifact listing the exact `SceneEvent` stream consumed by branch-scenario dialogue-run MP4s, including source/provenance plus decoded A6 skip-count and loop-target controls on subtitle events |
+| `mp4/*.timeline.tsv` | per-dialogue-run sidecar artifact emitted beside generated MP4s; records segment start/end, reveal-complete time, subtitle hold end, active line id, voice/talk-HNM presence, chatter flag, and text for frame-aligned oracle comparison |
 | `sprite-frame-tables.tsv` | extraction artifact generated from real `.SPR` files; lists the parsed frame-table flags, dispatch selection, frame offsets, lengths, and frame-header dimensions/origin offsets |
 | `script-executed-dialogue.tsv` | extraction artifact joining `execute_trace` line order to decoded text/actor/background, including explicit A6 skip-count and loop-target controls |
 | `script-executed-dialogue-runs.tsv` | extraction artifact grouping executed dialogue by script/background run; MP4 names correspond to run-level composites |
@@ -2150,6 +2151,13 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `script-profile-scene-events.tsv`, and
       `script-branch-scenario-scene-events.tsv` so the renderer event stream is
       inspectable without decoding generated MP4s.
+- [x] Emit dialogue-run timeline sidecars for oracle alignment:
+      each event-rendered dialogue MP4 now gets a matching `.timeline.tsv` file
+      in `mp4/` with segment start/end, reveal-complete time, subtitle hold end,
+      active line id, voice/talk-HNM presence, chatter flag, and text. These
+      rows are generated from the exact `DialogueSegment` list consumed by the
+      renderer, so oracle frame scans can be narrowed to binary-derived event
+      boundaries instead of broad timestamp guessing.
 - [x] Removed all heuristic fallbacks from the normal full-export dialogue-video
       path (per user "no fallbacks just compute it accurately"): the default MP4
       set now comes from execution-order dialogue runs/profile runs/branch
@@ -2193,10 +2201,13 @@ commander-blood-tools <dir>`) → compare frame candidates with
 manually inspect mismatches → iterate. Blank scenario thresholds record metrics
 as unchecked; scenarios can set `scan_start`/`scan_end`/`scan_step` to search a
 generated MP4 window and prove whether a mismatch is timestamp alignment or the
-wrong scene/presentation state. Candidate search (`--candidate-glob`) ranks
-generated videos before a capture is promoted to a checked-in scenario. Promoted
-oracle checks must use a fixed `generated_time`; `compare_oracle.py` now rejects
-`max_mean_abs` when a scenario still has scan fields, preventing a pass/fail
+wrong scene/presentation state. Generated dialogue MP4s now carry matching
+`.timeline.tsv` sidecars, so promoted oracle scenarios should choose fixed
+`generated_time` values from event boundaries instead of keeping broad scans.
+Candidate search (`--candidate-glob`) ranks generated videos before a capture is
+promoted to a checked-in scenario. Promoted oracle checks must use a fixed
+`generated_time`; `compare_oracle.py` now rejects `max_mean_abs` when a scenario
+still has scan fields, preventing a pass/fail
 result from being produced by searching for the closest generated frame. The
 checked-in smoke scenario now names `accuracy/captures/capture-manifest.tsv`
 explicitly so reruns use the capture-recorded path/crop metadata.
