@@ -13,6 +13,14 @@ pub const SHIP_3D_TARGET_EXIT_SENTINEL: u16 = 0xffff;
 pub const SHIP_3D_TARGET_RECORD_HEADER_BYTES: u16 = 0x0004;
 pub const SHIP_3D_TARGET_OPEN_STEP: u8 = 0x06;
 pub const SHIP_3D_INTERPOLATION_WORDS: usize = 4;
+pub const SHIP_3D_TARGET_LAYOUT_DEFAULT_MAX_WIDTH: u16 = 0x64;
+pub const SHIP_3D_TARGET_LAYOUT_EXTRA_WIDTH: u16 = 0x37;
+pub const SHIP_3D_TARGET_LAYOUT_WIDTH_PADDING: u16 = 0x14;
+pub const SHIP_3D_TARGET_LAYOUT_ROW_STEP: u16 = 0x0b;
+pub const SHIP_3D_TARGET_LAYOUT_EXTRA_HEIGHT: u16 = 0x0a;
+pub const SHIP_3D_TARGET_LAYOUT_HEIGHT_PADDING: u16 = 0x08;
+pub const SHIP_3D_TARGET_LAYOUT_SCREEN_HEIGHT: u16 = 0xc8;
+pub const SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN: u16 = 0xffff;
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dTransitionState {
@@ -70,6 +78,18 @@ pub struct Ship3dInterpolationGate {
 pub enum Ship3dInterpolationStep {
     Active([u16; SHIP_3D_INTERPOLATION_WORDS]),
     Complete,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Ship3dTargetListLayout {
+    pub x: u16,
+    pub y: u16,
+    pub width: u16,
+    pub height: u16,
+    pub max_label_width: u16,
+    pub label_count: usize,
+    pub has_extra_entry: bool,
+    pub selector_mode_return_ax: u16,
 }
 
 pub fn update_ship_3d_transition_state(state: &mut Ship3dTransitionState, random_gate_zero: bool) {
@@ -189,6 +209,46 @@ pub fn step_ship_3d_interpolation_gate(
         interpolated[index] = dest[index].wrapping_add(step as u16);
     }
     Some(Ship3dInterpolationStep::Active(interpolated))
+}
+
+pub fn layout_ship_3d_target_list(
+    measured_label_widths: &[u16],
+    center_x: u16,
+    has_extra_entry: bool,
+) -> Ship3dTargetListLayout {
+    let mut max_label_width = if has_extra_entry {
+        SHIP_3D_TARGET_LAYOUT_EXTRA_WIDTH
+    } else {
+        SHIP_3D_TARGET_LAYOUT_DEFAULT_MAX_WIDTH
+    };
+    let mut height_accumulator = if has_extra_entry {
+        SHIP_3D_TARGET_LAYOUT_EXTRA_HEIGHT
+    } else {
+        0
+    };
+
+    for width in measured_label_widths {
+        if *width >= max_label_width {
+            max_label_width = *width;
+        }
+        height_accumulator = height_accumulator.wrapping_add(SHIP_3D_TARGET_LAYOUT_ROW_STEP);
+    }
+
+    let width = max_label_width.wrapping_add(SHIP_3D_TARGET_LAYOUT_WIDTH_PADDING);
+    let height = height_accumulator.wrapping_add(SHIP_3D_TARGET_LAYOUT_HEIGHT_PADDING);
+    let x = center_x.wrapping_sub(width >> 1);
+    let y = SHIP_3D_TARGET_LAYOUT_SCREEN_HEIGHT.wrapping_sub(height) >> 1;
+
+    Ship3dTargetListLayout {
+        x,
+        y,
+        width,
+        height,
+        max_label_width,
+        label_count: measured_label_widths.len(),
+        has_extra_entry,
+        selector_mode_return_ax: SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
+    }
 }
 
 pub fn select_ship_3d_target_record(
@@ -678,5 +738,63 @@ mod tests {
             ),
             None
         );
+    }
+
+    #[test]
+    fn target_list_layout_uses_binary_default_width_floor_and_centering() {
+        let layout = layout_ship_3d_target_list(&[20, 80], 0x50, false);
+
+        assert_eq!(
+            layout,
+            Ship3dTargetListLayout {
+                x: 20,
+                y: 85,
+                width: 120,
+                height: 30,
+                max_label_width: SHIP_3D_TARGET_LAYOUT_DEFAULT_MAX_WIDTH,
+                label_count: 2,
+                has_extra_entry: false,
+                selector_mode_return_ax: SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
+            }
+        );
+    }
+
+    #[test]
+    fn target_list_layout_grows_to_widest_label() {
+        let layout = layout_ship_3d_target_list(&[120, 50], 0x50, false);
+
+        assert_eq!(layout.max_label_width, 120);
+        assert_eq!(layout.width, 140);
+        assert_eq!(layout.x, 10);
+        assert_eq!(layout.height, 30);
+        assert_eq!(layout.y, 85);
+    }
+
+    #[test]
+    fn target_list_layout_extra_entry_uses_shorter_width_and_height_seed() {
+        let layout = layout_ship_3d_target_list(&[], 0x50, true);
+
+        assert_eq!(
+            layout,
+            Ship3dTargetListLayout {
+                x: 43,
+                y: 91,
+                width: 75,
+                height: 18,
+                max_label_width: SHIP_3D_TARGET_LAYOUT_EXTRA_WIDTH,
+                label_count: 0,
+                has_extra_entry: true,
+                selector_mode_return_ax: SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
+            }
+        );
+    }
+
+    #[test]
+    fn target_list_layout_preserves_binary_wrapping_for_tall_lists() {
+        let widths = vec![1; 20];
+        let layout = layout_ship_3d_target_list(&widths, 0x50, false);
+
+        assert_eq!(layout.height, 228);
+        assert_eq!(layout.y, 0x7ff2);
     }
 }

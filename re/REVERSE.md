@@ -286,6 +286,18 @@ the binary's signed 8-bit `idiv BL` then signed 8-bit `imul DS:0x0ADB`, and
 draws through `0x0299:0x040E` with carry clear. The Rust helper returns the four
 draw words for the active case and `Complete` for the carry-set case.
 
+`src/ship3d.rs` now also ports the selector-mode layout arithmetic from
+`0x071E:0x0C48`. That helper first clears selection byte `DS:0x27E7`, measures
+each nonzero/non-`-1` target label into the width table at `DS:0x2AB3`, and
+writes the centered four-word rectangle at `DS:0x2AAB` as x/y/w/h. Width starts
+at `0x64`, or `0x37` when extra-entry flag `DS:0x0ADD` is set, then grows to
+the widest measured label; final width adds `0x14`. Height starts at `0`, or
+`0x0A` with the extra entry, adds `0x0B` per measured target, then adds `8`.
+X is `DS:0x0AC6 - width/2`; Y is `(0xC8 - height) >> 1` with the same unsigned
+wrapping behavior as the binary. When query-mode byte `DS:0x27E6` is set, the
+helper returns immediately after this layout step with `AX=-1`; the later
+mouse hit-test/draw path remains to be ported.
+
 `src/ship3d.rs` ports the recovered transition/blit primitives:
 
 - `0xB692` updates only transition control: when `DS:0x2533` is clear and
@@ -1547,6 +1559,13 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       tick increment, signed truncating division/multiplication, and binary
       `idiv` error shapes. `inspect-bloodprg.presentation_3d_markers` exposes
       the gate plus `DS:0x0ADA` duration and `DS:0x0ADB` current tick.
+- [x] Port ship 3D target-list layout prepass:
+      `src/ship3d.rs` implements the selector-mode `0x071E:0x0C48` rectangle
+      math that writes `DS:0x2AAB` from measured label widths, center
+      `DS:0x0AC6`, and flags `DS:0x0ADC/0x0ADD/0x27E6`. Tests cover default
+      width floor, widest-label growth, extra-entry sizing, and unsigned
+      over-height wrapping. The mouse hit-test/draw branch of the same helper
+      is still pending.
 - [x] Port recovered framebuffer fill/copy primitives:
       `src/extract/render.rs` now has tested Rust helpers for the clipped
       rectangle fill, palette-remap rectangle, scene-band fill, full 320x200

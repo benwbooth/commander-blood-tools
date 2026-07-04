@@ -83,6 +83,8 @@ pub const NAV_CHOICE_SUBDISPATCH_TABLE_FILE_OFFSET: usize = 0x008709;
 pub const NAV_CHOICE_SUBDISPATCH_ENTRY_COUNT: usize = 5;
 pub const SHIP_3D_INTERPOLATION_GATE_SEGMENT: u16 = 0x008b;
 pub const SHIP_3D_INTERPOLATION_GATE_OFFSET: u16 = 0x0fad;
+pub const SHIP_3D_TARGET_QUERY_LAYOUT_SEGMENT: u16 = NAV_CODE_SEGMENT;
+pub const SHIP_3D_TARGET_QUERY_LAYOUT_OFFSET: u16 = 0x0c48;
 pub const SHIP_PRESENTATION_SEGMENT: u16 = 0x0a9a;
 pub const SHIP_PRESENTATION_ENTRY_OFFSET: u16 = 0x0000;
 pub const SHIP_3D_HUD_INIT_OFFSET: u16 = 0x00d9;
@@ -112,6 +114,14 @@ pub const SHIP_3D_FALLBACK_TARGET_TABLE_DS_OFFSET: u16 = 0x2537;
 pub const SHIP_3D_NAVIGATION_TRIGGER_DS_OFFSET: u16 = 0x27d8;
 pub const SHIP_3D_INTERPOLATION_DURATION_DS_OFFSET: u16 = 0x0ada;
 pub const SHIP_3D_INTERPOLATION_TICK_DS_OFFSET: u16 = 0x0adb;
+pub const SHIP_3D_TARGET_LAYOUT_CENTER_X_DS_OFFSET: u16 = 0x0ac6;
+pub const SHIP_3D_TARGET_LAYOUT_DRAW_PTR_DS_OFFSET: u16 = 0x0ac8;
+pub const SHIP_3D_TARGET_LAYOUT_PRESERVE_WIDTHS_DS_OFFSET: u16 = 0x0adc;
+pub const SHIP_3D_TARGET_LAYOUT_EXTRA_ENTRY_DS_OFFSET: u16 = 0x0add;
+pub const SHIP_3D_TARGET_QUERY_MODE_DS_OFFSET: u16 = 0x27e6;
+pub const SHIP_3D_TARGET_SELECTION_DS_OFFSET: u16 = 0x27e7;
+pub const SHIP_3D_TARGET_LAYOUT_RECT_DS_OFFSET: u16 = 0x2aab;
+pub const SHIP_3D_TARGET_WIDTH_TABLE_DS_OFFSET: u16 = 0x2ab3;
 pub const SHIP_3D_PRESENTATION_HOLD_TIMER_DS_OFFSET: u16 = 0x0b3b;
 pub const SHIP_3D_TEMP_SND_TRIGGER_DS_OFFSET: u16 = 0x0ae4;
 pub const SHIP_3D_TEMP_SND_PHASE_DS_OFFSET: u16 = 0x0ae5;
@@ -2330,6 +2340,15 @@ pub const PRESENTATION_3D_MARKERS: &[BinarySymbol] = &[
         comment: "four-word interpolation gate; increments DS:0x0adb toward DS:0x0ada, draws while carry clear, and reports completion with carry set",
     },
     BinarySymbol {
+        name: "ship_3d_target_query_layout",
+        file_offset: 0x008428,
+        segment: Some(SHIP_3D_TARGET_QUERY_LAYOUT_SEGMENT),
+        offset: Some(SHIP_3D_TARGET_QUERY_LAYOUT_OFFSET),
+        ds_offset: None,
+        kind: "presentation-3d",
+        comment: "target-list label measurement, centered layout rectangle, draw path, and mouse/query return helper used by the ship selector",
+    },
+    BinarySymbol {
         name: "ship_presentation_fsm",
         file_offset: 0x00afa0,
         segment: Some(SHIP_PRESENTATION_SEGMENT),
@@ -2580,6 +2599,78 @@ pub const PRESENTATION_3D_MARKERS: &[BinarySymbol] = &[
         ds_offset: Some(SHIP_3D_INTERPOLATION_TICK_DS_OFFSET),
         kind: "presentation-3d-data",
         comment: "current interpolation tick incremented by the 0x008B:0x0FAD gate before drawing",
+    },
+    BinarySymbol {
+        name: "ship_3d_target_layout_center_x",
+        file_offset: 0x00dee6,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_TARGET_LAYOUT_CENTER_X_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "center x used by the 0x071E:0x0C48 target-list layout helper",
+    },
+    BinarySymbol {
+        name: "ship_3d_target_layout_draw_ptr",
+        file_offset: 0x00dee8,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_TARGET_LAYOUT_DRAW_PTR_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "draw-list pointer consumed by the target-list query/layout helper outside selector-only mode",
+    },
+    BinarySymbol {
+        name: "ship_3d_target_layout_preserve_widths",
+        file_offset: 0x00defc,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_TARGET_LAYOUT_PRESERVE_WIDTHS_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "if set, target-list layout preserves measured per-entry widths instead of normalizing to max width",
+    },
+    BinarySymbol {
+        name: "ship_3d_target_layout_extra_entry",
+        file_offset: 0x00defd,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_TARGET_LAYOUT_EXTRA_ENTRY_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "adds the 0x37-wide extra target-list entry and shorter height seed in the query/layout helper",
+    },
+    BinarySymbol {
+        name: "ship_3d_target_query_mode",
+        file_offset: 0x00fc06,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_TARGET_QUERY_MODE_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "when set, 0x071E:0x0C48 returns after computing layout without mouse hit-test/draw",
+    },
+    BinarySymbol {
+        name: "ship_3d_target_selection",
+        file_offset: 0x00fc07,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_TARGET_SELECTION_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "1-based target-list selection byte; helper returns sign-extended value minus one",
+    },
+    BinarySymbol {
+        name: "ship_3d_target_layout_rect",
+        file_offset: 0x00fecb,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_TARGET_LAYOUT_RECT_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "four-word centered target-list rectangle written by 0x071E:0x0C48 as x/y/w/h",
+    },
+    BinarySymbol {
+        name: "ship_3d_target_width_table",
+        file_offset: 0x00fed3,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_TARGET_WIDTH_TABLE_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "per-entry target label width table populated by the query/layout helper",
     },
     BinarySymbol {
         name: "ship_3d_presentation_hold_timer",
@@ -2919,6 +3010,13 @@ mod tests {
         );
         assert_eq!(
             binary.segoff_to_file(
+                SHIP_3D_TARGET_QUERY_LAYOUT_SEGMENT,
+                SHIP_3D_TARGET_QUERY_LAYOUT_OFFSET
+            ),
+            0x008428
+        );
+        assert_eq!(
+            binary.segoff_to_file(
                 SHIP_PRESENTATION_SEGMENT,
                 SHIP_3D_TARGET_RECORD_SELECT_OFFSET
             ),
@@ -2939,14 +3037,19 @@ mod tests {
             .collect();
         for name in [
             "ship_3d_interpolation_gate",
+            "ship_3d_target_query_layout",
             "ship_presentation_fsm",
             "ship_3d_hud_init",
             "ship_3d_target_record_select",
             "ship_3d_navigation_update",
             "ship_3d_temp_snd_setup",
             "ship_3d_plane_band_copy",
+            "ship_3d_target_layout_rect",
+            "ship_3d_target_width_table",
             "ship_3d_current_target",
             "ship_3d_navigation_trigger",
+            "ship_3d_target_query_mode",
+            "ship_3d_target_selection",
             "ship_3d_interpolation_duration",
             "ship_3d_interpolation_tick",
             "ship_3d_hud_gate_flag",
