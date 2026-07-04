@@ -1592,6 +1592,19 @@ impl Default for BloodPrng {
 }
 
 impl BloodPrng {
+    /// Seed as the DOS routine at `0x2DD3` does: it reads the CMOS RTC seconds
+    /// byte (`out 0x70 / in 0x71`) and writes it into both halves of the XOR
+    /// seed word (`mov ah,al; mov cs:[0xAEE],ax`), leaving the mixing bytes and
+    /// counter at zero. Passing the boot second reproduces that run's stream.
+    pub fn seeded_from_rtc_seconds(seconds: u8) -> Self {
+        Self {
+            seed_word: u16::from(seconds) * 0x0101,
+            a: 0,
+            b: 0,
+            counter: 0,
+        }
+    }
+
     /// Advance the generator and return the next value in `0..modulus`
     /// (or the raw 16-bit word when `modulus == 0`). Faithful port of the
     /// `rcr/rcl` carry chain and byte advance at `0x01CE:0x0B02`.
@@ -6514,6 +6527,20 @@ mod tests {
                 b: 0xff,
                 counter: 1,
             }
+        );
+    }
+
+    #[test]
+    fn blood_prng_rtc_seed_duplicates_seconds_into_both_seed_bytes() {
+        // `mov ah,al` before `mov cs:[0xAEE],ax` puts the seconds byte in both
+        // halves of the seed word, and different seconds give different streams.
+        assert_eq!(BloodPrng::seeded_from_rtc_seconds(0x2a).seed_word, 0x2a2a);
+        assert_eq!(BloodPrng::seeded_from_rtc_seconds(0).seed_word, 0);
+        let mut s5 = BloodPrng::seeded_from_rtc_seconds(5);
+        let mut s6 = BloodPrng::seeded_from_rtc_seconds(6);
+        assert_ne!(
+            (0..8).map(|_| s5.next(0xffff)).collect::<Vec<_>>(),
+            (0..8).map(|_| s6.next(0xffff)).collect::<Vec<_>>(),
         );
     }
 

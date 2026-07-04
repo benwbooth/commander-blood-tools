@@ -328,11 +328,14 @@ CS-segment state at `cs:0x0AEE` (seed word, XOR-only), `cs:0x0AF0/0x0AF1`
 `src/ship3d.rs` as `BloodPrng`/`randomize_ship_3d_point_cloud`, and the whole
 `0x9A10` batch loop is now `render_ship_3d_point_cloud()` (projects every point
 through the camera matrix and depth-shades a `320*200` write-once buffer). IMPORTANT for
-oracle strategy: the state bytes are zero in the image but the startup code
-(refs @`0x709/0x718`) seeds them, so **the exact star positions are not
-reproducible from a static run** — ship-3D background validation against a
-capture must be **statistical/structural** (point density, depth-shade
-distribution, sprite anchors), not exact-pixel. The corridor floor/walls and the
+oracle strategy: the state bytes are zero in the image, but the seed routine at
+`0x2DD3` reads the **CMOS RTC seconds** register (`xor al,al; out 0x70,al;
+in al,0x71; mov ah,al; mov cs:[0xAEE],ax`) into the XOR seed word — so the seed
+varies with the wall-clock second at boot and **the exact star positions are not
+reproducible run-to-run**. Ship-3D background validation against a capture must
+therefore be **statistical/structural** (point density, depth-shade
+distribution, sprite anchors), not exact-pixel. (`BloodPrng::seed_word` models
+this; a faithful live seed would set it to `secs<<8 | secs`.) The corridor floor/walls and the
 HUD (pyramid grid + `pe/eye*.hnm` orb) are separate layers, still to be composed.
 
 The point-cloud projection loop at file `0x9A10` and its pixel helper at
