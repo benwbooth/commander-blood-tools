@@ -127,6 +127,9 @@ pub const SHIP_3D_OBJECT_DEPTH_WRAP_BIAS: i32 = 0x0001_0000;
 pub const SHIP_3D_OBJECT_SCALE_NUMERATOR: u32 = 0x0010_0000;
 pub const SHIP_3D_OBJECT_SCALE_SHIFT: u8 = 0x0a;
 pub const SHIP_3D_OBJECT_PROJECTED_SCALE_OFFSET: u16 = 0x2fbf;
+pub const SHIP_3D_GLOBAL_CLIP_SNAPSHOT_FLAG_OFFSET: u16 = 0x5249;
+pub const SHIP_3D_DIRTY_RECT_LIST_OFFSET: u16 = 0x6612;
+pub const SHIP_3D_DIRTY_RECT_SENTINEL: u16 = 0xffff;
 pub const SHIP_3D_TEMP_SND_CALLBACK_TABLE_OFFSET: u16 = 0x0acc;
 pub const SHIP_3D_TEMP_SND_CALLBACK_OFFSETS: [u16; 3] = [0x0087, 0x0090, 0x009c];
 pub const SHIP_3D_TEMP_SND_PATH_OFFSET: u16 = 0x0d23;
@@ -494,6 +497,29 @@ pub struct Ship3dSpriteSlotUpdateEffect {
     pub updated_extent: bool,
     pub cleared_extent_changed_flag: bool,
     pub committed_geometry: bool,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Ship3dDirtyRectList {
+    pub rects: Vec<Ship3dProjectionViewport>,
+    pub sentinel: u16,
+}
+
+impl Default for Ship3dDirtyRectList {
+    fn default() -> Self {
+        Self {
+            rects: Vec::new(),
+            sentinel: SHIP_3D_DIRTY_RECT_SENTINEL,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dDirtyRectSnapshotEffect {
+    pub ran: bool,
+    pub wrote_clip_rect: bool,
+    pub wrote_sentinel: bool,
+    pub cleared_snapshot_flag: bool,
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -1664,6 +1690,28 @@ pub fn commit_ship_3d_sprite_slot_dirty_geometry(
     descriptor.committed_extent_height = descriptor.extent_height;
     effect.committed_geometry = true;
     effect
+}
+
+pub fn commit_ship_3d_global_clip_snapshot(
+    dirty_rects: &mut Ship3dDirtyRectList,
+    snapshot_armed: &mut bool,
+    clip: Ship3dProjectionViewport,
+) -> Ship3dDirtyRectSnapshotEffect {
+    if !*snapshot_armed {
+        return Ship3dDirtyRectSnapshotEffect::default();
+    }
+
+    dirty_rects.rects.clear();
+    dirty_rects.rects.push(clip);
+    dirty_rects.sentinel = SHIP_3D_DIRTY_RECT_SENTINEL;
+    *snapshot_armed = false;
+
+    Ship3dDirtyRectSnapshotEffect {
+        ran: true,
+        wrote_clip_rect: true,
+        wrote_sentinel: true,
+        cleared_snapshot_flag: true,
+    }
 }
 
 pub fn run_ship_3d_temp_snd_setup(state: &mut Ship3dTempSndState) -> Option<Ship3dTempSndEffect> {
@@ -4634,6 +4682,75 @@ mod tests {
             }
         );
         assert_eq!(inactive_dirty.committed_draw_x, 1);
+    }
+
+    #[test]
+    fn dirty_rect_clip_snapshot_replaces_list_and_clears_flag() {
+        let mut dirty_rects = Ship3dDirtyRectList {
+            rects: vec![Ship3dProjectionViewport {
+                left: 1,
+                right: 2,
+                top: 3,
+                bottom: 4,
+            }],
+            sentinel: 0,
+        };
+        let mut snapshot_armed = true;
+        let clip = Ship3dProjectionViewport {
+            left: 5,
+            right: 100,
+            top: 0x23,
+            bottom: 0xa5,
+        };
+
+        assert_eq!(
+            commit_ship_3d_global_clip_snapshot(&mut dirty_rects, &mut snapshot_armed, clip),
+            Ship3dDirtyRectSnapshotEffect {
+                ran: true,
+                wrote_clip_rect: true,
+                wrote_sentinel: true,
+                cleared_snapshot_flag: true,
+            }
+        );
+        assert!(!snapshot_armed);
+        assert_eq!(
+            dirty_rects,
+            Ship3dDirtyRectList {
+                rects: vec![clip],
+                sentinel: SHIP_3D_DIRTY_RECT_SENTINEL,
+            }
+        );
+    }
+
+    #[test]
+    fn dirty_rect_clip_snapshot_without_flag_is_noop() {
+        let mut dirty_rects = Ship3dDirtyRectList {
+            rects: vec![Ship3dProjectionViewport {
+                left: 1,
+                right: 2,
+                top: 3,
+                bottom: 4,
+            }],
+            sentinel: SHIP_3D_DIRTY_RECT_SENTINEL,
+        };
+        let original = dirty_rects.clone();
+        let mut snapshot_armed = false;
+
+        assert_eq!(
+            commit_ship_3d_global_clip_snapshot(
+                &mut dirty_rects,
+                &mut snapshot_armed,
+                Ship3dProjectionViewport {
+                    left: 5,
+                    right: 100,
+                    top: 0x23,
+                    bottom: 0xa5,
+                },
+            ),
+            Ship3dDirtyRectSnapshotEffect::default()
+        );
+        assert!(!snapshot_armed);
+        assert_eq!(dirty_rects, original);
     }
 
     #[test]

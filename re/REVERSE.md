@@ -330,9 +330,15 @@ The per-slot dirty geometry commit branch in `sprite_slot_commit_dirty_range`
 body: clean slots are skipped, dirty slots without active bit `0x0001` are not
 committed, and dirty active slots copy current position words `+0x08/+0x0A` and
 current extent words `+0x0C/+0x0E` into previous-geometry words
-`+0x10/+0x12/+0x14/+0x16`. The global clip-snapshot branch of `0x1467`, the
-dirty-rectangle intersection loop at `0x0299:0x14E1`, and the internal blitter
-dispatch are still the next sprite-rendering targets.
+`+0x10/+0x12/+0x14/+0x16`.
+
+The global clip-snapshot branch of `0x1467` is now modeled as
+`commit_ship_3d_global_clip_snapshot()`. When flag word `DS:0x5249 & 1` is set,
+the binary writes clip words `DS:0x5235/0x5237/0x5239/0x523B` as the first dirty
+rectangle at `DS:0x6612`, writes a `0xFFFF` sentinel immediately after it, clears
+`DS:0x5249`, and exits without walking the sprite slots. The dirty-rectangle
+intersection loop at `0x0299:0x14E1` and the internal blitter dispatch are still
+the next sprite-rendering targets.
 
 The next control-layer markers are now pinned. `0xB2BB` selects the next
 ship/navigation target record from `DS:0x250B`, or from the inline fallback table
@@ -1941,8 +1947,13 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       the per-slot body of `0x0299:0x1467` is modeled by
       `commit_ship_3d_sprite_slot_dirty_geometry()`, including the dirty-bit
       gate, active-bit gate, and copies from current position/extent fields into
-      previous-geometry fields. The global clip snapshot branch and
-      `0x0299:0x14E1` dirty-rectangle renderer remain open.
+      previous-geometry fields.
+- [x] Port ship 3D global clip dirty-rect snapshot:
+      the alternate branch of `0x0299:0x1467` is modeled by
+      `commit_ship_3d_global_clip_snapshot()`, including the `DS:0x5249` flag,
+      clip words `DS:0x5235..0x523B`, dirty-rect list base `DS:0x6612`, and
+      `0xFFFF` sentinel. The `0x0299:0x14E1` dirty-rectangle renderer remains
+      open.
 - [x] Port ship 3D temporary `3D.snd` setup branch:
       `src/ship3d.rs` now models file `0xB591`: the `DS:0x0AE4` one-shot gate,
       phase byte `DS:0x0AE5` cycling across the three `DS:0x0ACC` callback
