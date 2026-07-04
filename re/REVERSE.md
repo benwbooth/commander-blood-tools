@@ -925,6 +925,10 @@ Named targets that are already tied to code behavior:
   `-control + 1` times. Mode 1 applies the decoded nonzero pixels as the same
   transparent/direct-copy or destination-remap mask as mode 0; mode 3 writes all
   decoded pixels opaquely.
+  Mode 4 reads `source_width` and `source_height` from the first two frame-header
+  words, computes 16.16 source steps as `(source_dim << 16) / dest_dim`, clips by
+  advancing the source accumulators, samples with floor/nearest semantics, and
+  ignores the flip/remap/origin-offset paths used by other blitters.
 - `0x0299:0x210D` (`dirty_rects_copy_secondary_to_primary`): copies dirty
   rectangles described at `ES:DI` from secondary framebuffer `GS:0x5229` back
   into primary framebuffer `GS:0x5221`.
@@ -942,12 +946,13 @@ Rust now ports the safe framebuffer side of the recovered primitives in
 fill (`0x0DEB`/`0x0E2F` shape), full-viewport framebuffer copy
 (`0x0EB6`/`0x0ECB`), palette-remap rectangle (`0x040E`), and VGA
 planar-to-linear capture (`0x0EE0`). It also ports sprite blitter pixel
-semantics for modes 0..3: raw transparent, RLE transparent, raw opaque, and RLE
-opaque. The tests cover dirty-rect clipping, source row stride, frame-header
-origin offsets, horizontal/vertical flip mapping, transparent zero skip,
-destination-palette remap masking, RLE literal runs, RLE repeated-byte runs, and
-opaque zero writes. The character-HNM clear path uses the clipped fill helper
-instead of open-coded per-pixel bounds checks.
+semantics for modes 0..4: raw transparent, RLE transparent, raw opaque, RLE
+opaque, and scaled transparent. The tests cover dirty-rect clipping, source row
+stride, frame-header origin offsets, horizontal/vertical flip mapping,
+transparent zero skip, destination-palette remap masking, RLE literal runs, RLE
+repeated-byte runs, opaque zero writes, 16.16 scaled sampling, scaled clipping
+accumulator advance, and zero destination extents. The character-HNM clear path
+uses the clipped fill helper instead of open-coded per-pixel bounds checks.
 
 ### Audio subsystem (segment 0x0B1B) — located
 
@@ -1418,6 +1423,11 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       transparent sprites and mode 3 RLE opaque sprites. The shared decoder
       follows the recovered signed control-byte format, then reuses the raw
       blit core for clipping, flip, transparency, remap, and opaque writes.
+- [x] Port scaled transparent sprite blitter mode:
+      `src/extract/render.rs` now has a tested Rust helper for mode 4 scaled
+      transparent sprites. It follows the recovered 16.16 fixed-point source
+      stepping, clipped accumulator advance, floor/nearest sampling, and
+      transparent zero skip.
 - [x] Port recovered framebuffer fill/copy primitives:
       `src/extract/render.rs` now has tested Rust helpers for the clipped
       rectangle fill, palette-remap rectangle, scene-band fill, full 320x200

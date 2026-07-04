@@ -203,6 +203,29 @@ impl<'a> RleSpriteFrame<'a> {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct ScaledSpriteFrame<'a> {
+    pub(super) source_width: usize,
+    pub(super) source_height: usize,
+    pub(super) pixels: &'a [u8],
+}
+
+impl<'a> ScaledSpriteFrame<'a> {
+    pub(super) fn parse(data: &'a [u8]) -> Option<Self> {
+        if data.len() < 8 {
+            return None;
+        }
+
+        let source_width = u16::from_le_bytes([data[0], data[1]]) as usize;
+        let source_height = u16::from_le_bytes([data[2], data[3]]) as usize;
+        Some(Self {
+            source_width,
+            source_height,
+            pixels: &data[8..],
+        })
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) struct SpriteBlitRequest {
     pub(super) x: isize,
     pub(super) y: isize,
@@ -263,6 +286,75 @@ pub(super) fn blit_rle_opaque_sprite_indexed(
         pixels: &pixels,
     };
     blit_raw_opaque_sprite_indexed(fb, raw, request);
+}
+
+pub(super) fn blit_scaled_transparent_sprite_indexed(
+    fb: &mut [u8],
+    frame: ScaledSpriteFrame<'_>,
+    request: SpriteBlitRequest,
+) {
+    if fb.len() < VIEWPORT_W * VIEWPORT_H
+        || frame.source_width == 0
+        || frame.source_height == 0
+        || request.width == 0
+        || request.height == 0
+    {
+        return;
+    }
+
+    let rect_left = request.x;
+    let rect_top = request.y;
+    let rect_right = rect_left + request.width as isize;
+    let rect_bottom = rect_top + request.height as isize;
+
+    let (clip_left, clip_right, clip_top, clip_bottom) = request.clip;
+    let x0 = rect_left
+        .max(clip_left as isize)
+        .max(0)
+        .min(VIEWPORT_W as isize) as usize;
+    let y0 = rect_top
+        .max(clip_top as isize)
+        .max(0)
+        .min(VIEWPORT_H as isize) as usize;
+    let x1 = rect_right
+        .min(clip_right as isize)
+        .min(VIEWPORT_W as isize)
+        .max(x0 as isize) as usize;
+    let y1 = rect_bottom
+        .min(clip_bottom as isize)
+        .min(VIEWPORT_H as isize)
+        .max(y0 as isize) as usize;
+
+    if x1 <= x0 || y1 <= y0 {
+        return;
+    }
+
+    let x_step = ((frame.source_width as u64) << 16) / request.width as u64;
+    let y_step = ((frame.source_height as u64) << 16) / request.height as u64;
+    let left_skip = x0 as isize - rect_left;
+    let top_skip = y0 as isize - rect_top;
+
+    for dst_y in y0..y1 {
+        let scaled_y = (top_skip as u64 + (dst_y - y0) as u64) * y_step;
+        let source_y = (scaled_y >> 16) as usize;
+        if source_y >= frame.source_height {
+            continue;
+        }
+        let source_row = source_y * frame.source_width;
+        for dst_x in x0..x1 {
+            let scaled_x = (left_skip as u64 + (dst_x - x0) as u64) * x_step;
+            let source_x = (scaled_x >> 16) as usize;
+            if source_x >= frame.source_width {
+                continue;
+            }
+            let Some(source_pixel) = frame.pixels.get(source_row + source_x).copied() else {
+                continue;
+            };
+            if source_pixel != 0 {
+                fb[dst_y * VIEWPORT_W + dst_x] = source_pixel;
+            }
+        }
+    }
 }
 
 fn decode_rle_sprite_pixels(frame: RleSpriteFrame<'_>, height: usize) -> Option<Vec<u8>> {
@@ -1201,6 +1293,136 @@ mod tests {
         );
 
         assert_eq!(&fb[y * VIEWPORT_W + 10..y * VIEWPORT_W + 13], &[9, 9, 9]);
+    }
+
+    #[test]
+    fn recovered_scaled_transparent_sprite_blit_uses_16_16_nearest_sampling() {
+        let mut frame_bytes = vec![0u8; 8];
+        frame_bytes[0..2].copy_from_slice(&2u16.to_le_bytes());
+        frame_bytes[2..4].copy_from_slice(&2u16.to_le_bytes());
+        frame_bytes.extend_from_slice(&[1, 0, 2, 3]);
+        let frame = ScaledSpriteFrame::parse(&frame_bytes).expect("scaled sprite frame");
+        let y = SCENE_TOP;
+        let mut fb = vec![9u8; VIEWPORT_W * VIEWPORT_H];
+
+        blit_scaled_transparent_sprite_indexed(
+            &mut fb,
+            frame,
+            SpriteBlitRequest {
+                x: 10,
+                y: y as isize,
+                width: 4,
+                height: 4,
+                flip_x: true,
+                flip_y: true,
+                clip: (0, VIEWPORT_W, SCENE_TOP, SCENE_BOTTOM),
+            },
+        );
+
+        assert_eq!(&fb[y * VIEWPORT_W + 10..y * VIEWPORT_W + 14], &[1, 1, 9, 9]);
+        assert_eq!(
+            &fb[(y + 1) * VIEWPORT_W + 10..(y + 1) * VIEWPORT_W + 14],
+            &[1, 1, 9, 9]
+        );
+        assert_eq!(
+            &fb[(y + 2) * VIEWPORT_W + 10..(y + 2) * VIEWPORT_W + 14],
+            &[2, 2, 3, 3]
+        );
+        assert_eq!(
+            &fb[(y + 3) * VIEWPORT_W + 10..(y + 3) * VIEWPORT_W + 14],
+            &[2, 2, 3, 3]
+        );
+    }
+
+    #[test]
+    fn recovered_scaled_transparent_sprite_blit_downsamples_with_integer_source_steps() {
+        let mut frame_bytes = vec![0u8; 8];
+        frame_bytes[0..2].copy_from_slice(&4u16.to_le_bytes());
+        frame_bytes[2..4].copy_from_slice(&1u16.to_le_bytes());
+        frame_bytes.extend_from_slice(&[1, 2, 3, 4]);
+        let frame = ScaledSpriteFrame::parse(&frame_bytes).expect("scaled sprite frame");
+        let y = SCENE_TOP;
+        let mut fb = vec![0u8; VIEWPORT_W * VIEWPORT_H];
+
+        blit_scaled_transparent_sprite_indexed(
+            &mut fb,
+            frame,
+            SpriteBlitRequest {
+                x: 10,
+                y: y as isize,
+                width: 2,
+                height: 1,
+                flip_x: false,
+                flip_y: false,
+                clip: (0, VIEWPORT_W, SCENE_TOP, SCENE_BOTTOM),
+            },
+        );
+
+        assert_eq!(&fb[y * VIEWPORT_W + 10..y * VIEWPORT_W + 12], &[1, 3]);
+    }
+
+    #[test]
+    fn recovered_scaled_transparent_sprite_blit_clipping_advances_accumulators() {
+        let mut frame_bytes = vec![0u8; 8];
+        frame_bytes[0..2].copy_from_slice(&4u16.to_le_bytes());
+        frame_bytes[2..4].copy_from_slice(&4u16.to_le_bytes());
+        frame_bytes.extend_from_slice(&[
+            1, 2, 3, 4, //
+            5, 6, 7, 8, //
+            9, 10, 11, 12, //
+            13, 14, 15, 16,
+        ]);
+        let frame = ScaledSpriteFrame::parse(&frame_bytes).expect("scaled sprite frame");
+        let y = SCENE_TOP;
+        let mut fb = vec![0u8; VIEWPORT_W * VIEWPORT_H];
+
+        blit_scaled_transparent_sprite_indexed(
+            &mut fb,
+            frame,
+            SpriteBlitRequest {
+                x: 8,
+                y: y as isize - 2,
+                width: 8,
+                height: 8,
+                flip_x: false,
+                flip_y: false,
+                clip: (10, 14, SCENE_TOP, SCENE_TOP + 2),
+            },
+        );
+
+        assert_eq!(&fb[y * VIEWPORT_W + 10..y * VIEWPORT_W + 14], &[6, 6, 7, 7]);
+        assert_eq!(
+            &fb[(y + 1) * VIEWPORT_W + 10..(y + 1) * VIEWPORT_W + 14],
+            &[6, 6, 7, 7]
+        );
+        assert_eq!(fb[(y + 2) * VIEWPORT_W + 10], 0);
+    }
+
+    #[test]
+    fn recovered_scaled_transparent_sprite_blit_rejects_zero_destination_extent() {
+        let mut frame_bytes = vec![0u8; 8];
+        frame_bytes[0..2].copy_from_slice(&1u16.to_le_bytes());
+        frame_bytes[2..4].copy_from_slice(&1u16.to_le_bytes());
+        frame_bytes.push(7);
+        let frame = ScaledSpriteFrame::parse(&frame_bytes).expect("scaled sprite frame");
+        let y = SCENE_TOP;
+        let mut fb = vec![9u8; VIEWPORT_W * VIEWPORT_H];
+
+        blit_scaled_transparent_sprite_indexed(
+            &mut fb,
+            frame,
+            SpriteBlitRequest {
+                x: 10,
+                y: y as isize,
+                width: 0,
+                height: 1,
+                flip_x: false,
+                flip_y: false,
+                clip: (0, VIEWPORT_W, SCENE_TOP, SCENE_BOTTOM),
+            },
+        );
+
+        assert_eq!(fb[y * VIEWPORT_W + 10], 9);
     }
 
     #[test]
