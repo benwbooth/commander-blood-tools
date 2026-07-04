@@ -414,6 +414,13 @@ def scan_generated_times(
     scenario_id: str | None = None,
     notes: str = "",
 ) -> dict[str, object]:
+    if max_mean_abs is not None:
+        label = f" for scenario {scenario_id!r}" if scenario_id else ""
+        raise ValueError(
+            "thresholded oracle comparisons must use a fixed generated timestamp"
+            f"{label}; clear scan_start/scan_end/scan_step before setting max_mean_abs"
+        )
+
     times = scan_times(start, end, step)
     if not times:
         raise ValueError("scan range produced no timestamps")

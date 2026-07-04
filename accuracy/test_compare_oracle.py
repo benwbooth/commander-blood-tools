@@ -34,10 +34,10 @@ class CompareOracleTests(unittest.TestCase):
             scenario_file.write_text(
                 "\n".join(
                     [
-                        "scenario_id\treference\tgenerated\tgenerated_time\tref_crop\tmax_mean_abs\tscan_start\tscan_end\tscan_step\tout_dir\tnotes",
-                        f"same\t{reference}\t{same}\t0\tauto\t0\t\t\t\t\tpixel-identical",
-                        f"different\t{reference}\t{different}\t0\tauto\t1\t\t\t\t\tintentional failure",
-                        f"unchecked\t{reference}\t{different}\t0\tauto\t\t\t\t\t\tno threshold yet",
+                        "scenario_id\treference\treference_manifest\tgenerated\tgenerated_time\tref_crop\tmax_mean_abs\tscan_start\tscan_end\tscan_step\tout_dir\tnotes",
+                        f"same\t{reference}\t\t{same}\t0\tauto\t0\t\t\t\t\tpixel-identical",
+                        f"different\t{reference}\t\t{different}\t0\tauto\t1\t\t\t\t\tintentional failure",
+                        f"unchecked\t{reference}\t\t{different}\t0\tauto\t\t\t\t\t\tno threshold yet",
                     ]
                 )
                 + "\n"
@@ -57,6 +57,68 @@ class CompareOracleTests(unittest.TestCase):
             self.assertEqual(statuses["unchecked"], "unchecked")
             self.assertEqual(exit_code, 2)
             self.assertTrue((root / "summary.json").exists())
+
+    def test_batch_scenarios_parse_reference_manifest_column(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="commander-blood-oracle-test-") as tmp:
+            root = Path(tmp)
+            reference = root / "frame_01.png"
+            generated = root / "generated.png"
+            manifest = root / "capture-manifest.tsv"
+            Image.new("RGB", compare_oracle.NATIVE_SIZE, (10, 20, 30)).save(reference)
+            Image.new("RGB", compare_oracle.NATIVE_SIZE, (10, 20, 30)).save(generated)
+            manifest.write_text(
+                "\n".join(
+                    [
+                        "frame\tpath\telapsed_s\tepoch_s\tdisplay\tcapture_kind\tcrop_x\tcrop_y\tcrop_w\tcrop_h\tnative_w\tnative_h",
+                        f"frame_01.png\t{reference}\t1\t123456\t:98\thost-root\t0\t0\t320\t200\t320\t200",
+                    ]
+                )
+                + "\n"
+            )
+
+            scenario_file = root / "scenarios.tsv"
+            scenario_file.write_text(
+                "\n".join(
+                    [
+                        "scenario_id\treference\treference_manifest\tgenerated\tgenerated_time\tref_crop\tmax_mean_abs\tscan_start\tscan_end\tscan_step\tout_dir\tnotes",
+                        f"manifested\tframe_01.png\t{manifest}\t{generated}\t0\tauto\t0\t\t\t\t\tmanifest crop",
+                    ]
+                )
+                + "\n"
+            )
+
+            scenarios = compare_oracle.load_scenarios(scenario_file)
+            self.assertEqual(scenarios[0].reference, Path("frame_01.png"))
+            self.assertEqual(scenarios[0].reference_manifest, manifest)
+
+            results, exit_code = compare_oracle.run_scenarios(
+                scenarios,
+                out_root=root / "comparisons",
+            )
+            self.assertEqual(exit_code, 0)
+            self.assertEqual(results[0]["status"], "pass")
+            self.assertEqual(results[0]["reference_manifest"]["path"], str(reference))
+
+    def test_thresholded_scans_are_rejected(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="commander-blood-oracle-test-") as tmp:
+            root = Path(tmp)
+            reference = root / "reference.png"
+            generated = root / "generated.png"
+            Image.new("RGB", compare_oracle.NATIVE_SIZE, (10, 20, 30)).save(reference)
+            Image.new("RGB", compare_oracle.NATIVE_SIZE, (10, 20, 30)).save(generated)
+
+            with self.assertRaisesRegex(ValueError, "fixed generated timestamp"):
+                compare_oracle.scan_generated_times(
+                    reference,
+                    generated,
+                    start=0.0,
+                    end=1.0,
+                    step=1.0,
+                    ref_crop="auto",
+                    out_dir=root / "comparison",
+                    max_mean_abs=0.0,
+                    scenario_id="thresholded-scan",
+                )
 
     def test_candidate_search_ranks_best_generated_frame(self) -> None:
         with tempfile.TemporaryDirectory(prefix="commander-blood-candidate-test-") as tmp:

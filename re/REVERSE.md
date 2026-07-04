@@ -1640,9 +1640,14 @@ as unchecked; scenarios can set `scan_start`/`scan_end`/`scan_step` to search a
 generated MP4 window and prove whether a mismatch is timestamp alignment or the
 wrong scene/presentation state. Candidate search (`--candidate-glob`) ranks
 generated videos before a capture is promoted to a checked-in scenario. Promoted
-oracle checks should fill in `max_mean_abs`. Next oracle step is scripted input
-via `ORACLE_INPUT_SCRIPT` or a debug scene selector so one generated dialogue run
-can be compared against a matched real-game capture with a threshold.
+oracle checks must use a fixed `generated_time`; `compare_oracle.py` now rejects
+`max_mean_abs` when a scenario still has scan fields, preventing a pass/fail
+result from being produced by searching for the closest generated frame. The
+checked-in smoke scenario now names `accuracy/captures/capture-manifest.tsv`
+explicitly so reruns use the capture-recorded path/crop metadata. Next oracle
+step is scripted input via `ORACLE_INPUT_SCRIPT` or a debug scene selector so one
+generated dialogue run can be compared against a matched real-game capture with a
+threshold.
 
 Current `frame_12` evidence: searching all 43 executed-dialogue composites over
 `0:12:2` ranked `executed-dialogue-run - script3 - 0011 - tumul.mp4` at `6.0s`

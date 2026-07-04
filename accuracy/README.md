@@ -72,7 +72,10 @@ nix develop --command python accuracy/compare_oracle.py \
 `accuracy/oracle-scenarios.tsv` is the checked-in list of repeatable comparison
 targets. Blank `max_mean_abs` values record metrics as `unchecked` without making
 the batch fail; fill in a threshold only after the generated frame is known to be
-frame-aligned with the DOS capture.
+frame-aligned with the DOS capture. Thresholded scenarios must use a fixed
+`generated_time`: `scan_start`/`scan_end`/`scan_step` are for discovery and are
+rejected once `max_mean_abs` is set, so a pass/fail result cannot be produced by
+searching for the best generated frame.
 
 Scenarios may include a `reference_manifest` column. When present, the scenario
 can set `reference` to a frame name such as `frame_12.png`; the comparator uses
