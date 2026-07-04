@@ -177,6 +177,32 @@ impl<'a> RawSpriteFrame<'a> {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) struct RleSpriteFrame<'a> {
+    pub(super) stride: usize,
+    pub(super) x_offset: isize,
+    pub(super) y_offset: isize,
+    pub(super) encoded: &'a [u8],
+}
+
+impl<'a> RleSpriteFrame<'a> {
+    pub(super) fn parse(data: &'a [u8]) -> Option<Self> {
+        if data.len() < 8 {
+            return None;
+        }
+
+        let stride = u16::from_le_bytes([data[0], data[1]]) as usize;
+        let x_offset = i16::from_le_bytes([data[4], data[5]]) as isize;
+        let y_offset = i16::from_le_bytes([data[6], data[7]]) as isize;
+        Some(Self {
+            stride,
+            x_offset,
+            y_offset,
+            encoded: &data[8..],
+        })
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) struct SpriteBlitRequest {
     pub(super) x: isize,
     pub(super) y: isize,
@@ -202,6 +228,77 @@ pub(super) fn blit_raw_opaque_sprite_indexed(
     request: SpriteBlitRequest,
 ) {
     blit_raw_sprite_indexed(fb, frame, request, false, None);
+}
+
+pub(super) fn blit_rle_transparent_sprite_indexed(
+    fb: &mut [u8],
+    frame: RleSpriteFrame<'_>,
+    request: SpriteBlitRequest,
+    remap_table: Option<&[u8; 256]>,
+) {
+    let Some(pixels) = decode_rle_sprite_pixels(frame, request.height) else {
+        return;
+    };
+    let raw = RawSpriteFrame {
+        stride: frame.stride,
+        x_offset: frame.x_offset,
+        y_offset: frame.y_offset,
+        pixels: &pixels,
+    };
+    blit_raw_transparent_sprite_indexed(fb, raw, request, remap_table);
+}
+
+pub(super) fn blit_rle_opaque_sprite_indexed(
+    fb: &mut [u8],
+    frame: RleSpriteFrame<'_>,
+    request: SpriteBlitRequest,
+) {
+    let Some(pixels) = decode_rle_sprite_pixels(frame, request.height) else {
+        return;
+    };
+    let raw = RawSpriteFrame {
+        stride: frame.stride,
+        x_offset: frame.x_offset,
+        y_offset: frame.y_offset,
+        pixels: &pixels,
+    };
+    blit_raw_opaque_sprite_indexed(fb, raw, request);
+}
+
+fn decode_rle_sprite_pixels(frame: RleSpriteFrame<'_>, height: usize) -> Option<Vec<u8>> {
+    if frame.stride == 0 {
+        return None;
+    }
+
+    let len = frame.stride.checked_mul(height)?;
+    let mut pixels = Vec::with_capacity(len);
+    let mut pos = 0usize;
+    for _ in 0..height {
+        let row_start = pixels.len();
+        while pixels.len() - row_start < frame.stride {
+            let control = *frame.encoded.get(pos)?;
+            pos += 1;
+            if control & 0x80 != 0 {
+                let run_len = (0u8.wrapping_sub(control) as usize) + 1;
+                if pixels.len() - row_start + run_len > frame.stride {
+                    return None;
+                }
+                let value = *frame.encoded.get(pos)?;
+                pos += 1;
+                pixels.extend(std::iter::repeat(value).take(run_len));
+            } else {
+                let run_len = control as usize + 1;
+                if pixels.len() - row_start + run_len > frame.stride {
+                    return None;
+                }
+                let end = pos.checked_add(run_len)?;
+                pixels.extend_from_slice(frame.encoded.get(pos..end)?);
+                pos = end;
+            }
+        }
+    }
+
+    Some(pixels)
 }
 
 fn blit_raw_sprite_indexed(
@@ -952,6 +1049,158 @@ mod tests {
 
         assert_eq!(fb[SCENE_TOP * VIEWPORT_W + 318], 4);
         assert_eq!(fb[SCENE_TOP * VIEWPORT_W + 319], 3);
+    }
+
+    #[test]
+    fn recovered_rle_transparent_sprite_blit_decodes_literal_and_fill_runs() {
+        let mut frame_bytes = vec![0u8; 8];
+        frame_bytes[0..2].copy_from_slice(&5u16.to_le_bytes());
+        frame_bytes.extend_from_slice(&[1, 1, 0, 0xfe, 4]);
+        let frame = RleSpriteFrame::parse(&frame_bytes).expect("RLE sprite frame");
+        let y = SCENE_TOP;
+        let mut fb = vec![9u8; VIEWPORT_W * VIEWPORT_H];
+
+        blit_rle_transparent_sprite_indexed(
+            &mut fb,
+            frame,
+            SpriteBlitRequest {
+                x: 10,
+                y: y as isize,
+                width: 5,
+                height: 1,
+                flip_x: false,
+                flip_y: false,
+                clip: (0, VIEWPORT_W, SCENE_TOP, SCENE_BOTTOM),
+            },
+            None,
+        );
+
+        assert_eq!(
+            &fb[y * VIEWPORT_W + 10..y * VIEWPORT_W + 15],
+            &[1, 9, 4, 4, 4]
+        );
+    }
+
+    #[test]
+    fn recovered_rle_transparent_sprite_blit_uses_decoded_nonzero_remap_mask() {
+        let mut frame_bytes = vec![0u8; 8];
+        frame_bytes[0..2].copy_from_slice(&5u16.to_le_bytes());
+        frame_bytes.extend_from_slice(&[1, 1, 0, 0xfe, 4]);
+        let frame = RleSpriteFrame::parse(&frame_bytes).expect("RLE sprite frame");
+        let mut remap = [0u8; 256];
+        for (idx, value) in remap.iter_mut().enumerate() {
+            *value = 255 - idx as u8;
+        }
+        let y = SCENE_TOP;
+        let mut fb = vec![0u8; VIEWPORT_W * VIEWPORT_H];
+        for idx in 0..5 {
+            fb[y * VIEWPORT_W + 10 + idx] = 10 + idx as u8;
+        }
+
+        blit_rle_transparent_sprite_indexed(
+            &mut fb,
+            frame,
+            SpriteBlitRequest {
+                x: 10,
+                y: y as isize,
+                width: 5,
+                height: 1,
+                flip_x: false,
+                flip_y: false,
+                clip: (0, VIEWPORT_W, SCENE_TOP, SCENE_BOTTOM),
+            },
+            Some(&remap),
+        );
+
+        assert_eq!(
+            &fb[y * VIEWPORT_W + 10..y * VIEWPORT_W + 15],
+            &[245, 11, 243, 242, 241]
+        );
+    }
+
+    #[test]
+    fn recovered_rle_opaque_sprite_blit_writes_zero_fill_and_copy_runs() {
+        let mut frame_bytes = vec![0u8; 8];
+        frame_bytes[0..2].copy_from_slice(&5u16.to_le_bytes());
+        frame_bytes.extend_from_slice(&[0xfe, 0, 1, 5, 6]);
+        let frame = RleSpriteFrame::parse(&frame_bytes).expect("RLE sprite frame");
+        let y = SCENE_TOP;
+        let mut fb = vec![9u8; VIEWPORT_W * VIEWPORT_H];
+
+        blit_rle_opaque_sprite_indexed(
+            &mut fb,
+            frame,
+            SpriteBlitRequest {
+                x: 10,
+                y: y as isize,
+                width: 5,
+                height: 1,
+                flip_x: false,
+                flip_y: false,
+                clip: (0, VIEWPORT_W, SCENE_TOP, SCENE_BOTTOM),
+            },
+        );
+
+        assert_eq!(
+            &fb[y * VIEWPORT_W + 10..y * VIEWPORT_W + 15],
+            &[0, 0, 0, 5, 6]
+        );
+    }
+
+    #[test]
+    fn recovered_rle_sprite_blit_reuses_raw_flip_mapping_after_decode() {
+        let mut frame_bytes = vec![0u8; 8];
+        frame_bytes[0..2].copy_from_slice(&3u16.to_le_bytes());
+        frame_bytes.extend_from_slice(&[2, 1, 2, 3, 2, 4, 5, 6]);
+        let frame = RleSpriteFrame::parse(&frame_bytes).expect("RLE sprite frame");
+        let y = SCENE_TOP;
+        let mut fb = vec![9u8; VIEWPORT_W * VIEWPORT_H];
+
+        blit_rle_opaque_sprite_indexed(
+            &mut fb,
+            frame,
+            SpriteBlitRequest {
+                x: 10,
+                y: y as isize,
+                width: 3,
+                height: 2,
+                flip_x: true,
+                flip_y: true,
+                clip: (0, VIEWPORT_W, SCENE_TOP, SCENE_BOTTOM),
+            },
+        );
+
+        assert_eq!(&fb[y * VIEWPORT_W + 10..y * VIEWPORT_W + 13], &[6, 5, 4]);
+        assert_eq!(
+            &fb[(y + 1) * VIEWPORT_W + 10..(y + 1) * VIEWPORT_W + 13],
+            &[3, 2, 1]
+        );
+    }
+
+    #[test]
+    fn recovered_rle_sprite_blit_ignores_incomplete_encoded_rows() {
+        let mut frame_bytes = vec![0u8; 8];
+        frame_bytes[0..2].copy_from_slice(&3u16.to_le_bytes());
+        frame_bytes.extend_from_slice(&[2, 1]);
+        let frame = RleSpriteFrame::parse(&frame_bytes).expect("RLE sprite frame");
+        let y = SCENE_TOP;
+        let mut fb = vec![9u8; VIEWPORT_W * VIEWPORT_H];
+
+        blit_rle_opaque_sprite_indexed(
+            &mut fb,
+            frame,
+            SpriteBlitRequest {
+                x: 10,
+                y: y as isize,
+                width: 3,
+                height: 1,
+                flip_x: false,
+                flip_y: false,
+                clip: (0, VIEWPORT_W, SCENE_TOP, SCENE_BOTTOM),
+            },
+        );
+
+        assert_eq!(&fb[y * VIEWPORT_W + 10..y * VIEWPORT_W + 13], &[9, 9, 9]);
     }
 
     #[test]

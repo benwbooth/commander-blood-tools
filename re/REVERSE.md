@@ -919,6 +919,12 @@ Named targets that are already tied to code behavior:
     scaled transparent blit; source zero skips the destination.
   - modes 5..7 -> `0x0299:0x210A..0x210C`: unused single-byte near-return
     handlers.
+  Modes 1 and 3 use the same row RLE control format: each row decodes until
+  the frame-header stride is reached; control bytes `0x00..0x7F` copy
+  `control + 1` literal bytes, while `0x80..0xFF` repeat the following byte
+  `-control + 1` times. Mode 1 applies the decoded nonzero pixels as the same
+  transparent/direct-copy or destination-remap mask as mode 0; mode 3 writes all
+  decoded pixels opaquely.
 - `0x0299:0x210D` (`dirty_rects_copy_secondary_to_primary`): copies dirty
   rectangles described at `ES:DI` from secondary framebuffer `GS:0x5229` back
   into primary framebuffer `GS:0x5221`.
@@ -935,12 +941,13 @@ Rust now ports the safe framebuffer side of the recovered primitives in
 `src/extract/render.rs`: clipped rectangle fill (`0x0CDC`), current scene-band
 fill (`0x0DEB`/`0x0E2F` shape), full-viewport framebuffer copy
 (`0x0EB6`/`0x0ECB`), palette-remap rectangle (`0x040E`), and VGA
-planar-to-linear capture (`0x0EE0`). It also ports the raw sprite blitter pixel
-semantics for mode 0 (`sprite_blit_raw_transparent`) and mode 2
-(`sprite_blit_raw_opaque`), including dirty-rect clipping, source row stride,
-frame-header origin offsets, horizontal/vertical flip mapping, transparent zero
-skip, and destination-palette remap masking. The character-HNM clear path uses
-the clipped fill helper instead of open-coded per-pixel bounds checks.
+planar-to-linear capture (`0x0EE0`). It also ports sprite blitter pixel
+semantics for modes 0..3: raw transparent, RLE transparent, raw opaque, and RLE
+opaque. The tests cover dirty-rect clipping, source row stride, frame-header
+origin offsets, horizontal/vertical flip mapping, transparent zero skip,
+destination-palette remap masking, RLE literal runs, RLE repeated-byte runs, and
+opaque zero writes. The character-HNM clear path uses the clipped fill helper
+instead of open-coded per-pixel bounds checks.
 
 ### Audio subsystem (segment 0x0B1B) — located
 
@@ -1406,6 +1413,11 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       dirty-rect clipping, source stride, transparent-zero skip, destination
       remap-as-mask behavior, zero writes in opaque mode, and horizontal/vertical
       flip mapping recovered from segment `0x0299`.
+- [x] Port RLE sprite blitter modes:
+      `src/extract/render.rs` now has tested Rust helpers for mode 1 RLE
+      transparent sprites and mode 3 RLE opaque sprites. The shared decoder
+      follows the recovered signed control-byte format, then reuses the raw
+      blit core for clipping, flip, transparency, remap, and opaque writes.
 - [x] Port recovered framebuffer fill/copy primitives:
       `src/extract/render.rs` now has tested Rust helpers for the clipped
       rectangle fill, palette-remap rectangle, scene-band fill, full 320x200
