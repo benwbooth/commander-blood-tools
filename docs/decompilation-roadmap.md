@@ -76,6 +76,9 @@ Core modules:
   and scaling; plus a `wgpu` backend for the recovered 3D/minigame subsystem
   once its original runtime state, projection, geometry, and input semantics are
   decompiled.
+- `ship3d`: recovered ship/procedural-3D transition state, planar page-band
+  copy primitives, and eventually the original geometry/projection/input model
+  that can drive the `wgpu` backend.
 - `audio`: SND/VOC decoding, music, voice, UI chatter, mixing, looping, and
   timing.
 - `input`: DOS mouse/keyboard semantics mapped to modern frontends.
@@ -228,6 +231,9 @@ Exit criteria:
 8. Decompile the ship/procedural-3D path from `0x0A9A:0x0000` and its
    `inspect-bloodprg.presentation_3d_markers` before adding the `wgpu` runtime
    backend.
+9. Replace the temporary `ship3d` primitive coverage with a full recovered
+   ship/minigame state model once the object list, projection math, and input
+   loop are decoded.
 
 ## Open Questions
 

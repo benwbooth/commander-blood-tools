@@ -255,6 +255,29 @@ subsystem, but not yet enough to implement the minigame: the projection,
 geometry/object state, and input loop still need to be decompiled from these
 entrypoints and their xrefs.
 
+`src/ship3d.rs` ports the recovered transition/blit primitives:
+
+- `0xB692` updates only transition control: when `DS:0x2533` is clear and
+  `DS:0x0B3B > 0x78`, it sets step `DS:0x2531=4`, opening flag
+  `DS:0x252F=1`, and arms `DS:0x2533=1`. When armed and `DS:0x0B3B==0`, or
+  when armed/not-opening and the random gate `0x01CE:0x0B02(AX=0x14)` returns
+  zero, it sets step `DS:0x2531=8`, closing flag `DS:0x2530=1`, and clears
+  `DS:0x2533`.
+- `0xB75C` consumes the opening/closing flags. Opening adds `DS:0x2531` to the
+  low byte of `DS:0x2527` and clamps at `0x41`, then clears the opening flag on
+  the following tick. Closing subtracts from the low byte and uses the 8086
+  sign flag from that byte subtraction to clamp underflow to zero, then clears
+  the closing flag on the following tick.
+- `0xB6DD` is a planar two-band copy, not geometry projection. If
+  `DS:0x252E & 1` is clear, it returns. Otherwise it computes
+  `byte_count = (low8(DS:0x2527 + 0x23) * 0x50)`. It copies the bottom
+  `byte_count` bytes of the planar page at offset `0xC000` to destination
+  offset `0`, and copies the top `byte_count` bytes of the planar page at
+  offset `0xDF40` to destination offset `0x3E80 - byte_count`. Unless
+  `DS:0x524D == 0x000A`, it also writes `DS:0x524F = 100 -
+  min(DS:0x2527 * 2, 100)`. Callers at `0x5C06` and `0xB24C` temporarily swap
+  `DS:0x5219` to another framebuffer pointer before invoking this routine.
+
 Implementation direction: keep the 320x200 indexed cutscene/dialogue path as a
 software renderer until it matches oracle captures. Once the 3D/minigame
 semantics above are recovered, route that subsystem through a `wgpu` frontend
@@ -1460,6 +1483,13 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       VGA planar band-copy routine, transition/depth-step helpers, and the key
       DS state variables. This confirms the 3D/minigame work must continue from
       binary-derived runtime state, not from data-file heuristics.
+- [x] Port recovered ship 3D transition and planar band-copy primitives:
+      `src/ship3d.rs` implements the `0xB692` transition flag updater, `0xB75C`
+      depth/plane offset stepper, and `0xB6DD` two-band planar page copy with
+      tests for the original 80-byte row math, `AL`-only stepping, and
+      `DS:0x524F` scroll-value update. This still is not the full 3D minigame;
+      it is the recovered software presentation primitive that the future
+      runtime/`wgpu` path must preserve or replace with equivalent output.
 - [x] Port recovered framebuffer fill/copy primitives:
       `src/extract/render.rs` now has tested Rust helpers for the clipped
       rectangle fill, palette-remap rectangle, scene-band fill, full 320x200

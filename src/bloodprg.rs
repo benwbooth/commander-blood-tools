@@ -93,9 +93,16 @@ pub const SHIP_3D_DEPTH_SCROLL_STEP_OFFSET: u16 = 0x07bc;
 pub const SHIP_3D_HUD_FLAG_DS_OFFSET: u16 = 0x2793;
 pub const SHIP_3D_DEPTH_OFFSET_DS_OFFSET: u16 = 0x2527;
 pub const SHIP_3D_PLANE_COPY_ENABLE_DS_OFFSET: u16 = 0x252e;
+pub const SHIP_3D_OPENING_FLAG_DS_OFFSET: u16 = 0x252f;
+pub const SHIP_3D_CLOSING_FLAG_DS_OFFSET: u16 = 0x2530;
 pub const SHIP_3D_DEPTH_STEP_DS_OFFSET: u16 = 0x2531;
+pub const SHIP_3D_TRANSITION_ARMED_DS_OFFSET: u16 = 0x2533;
+pub const SHIP_3D_PRESENTATION_HOLD_TIMER_DS_OFFSET: u16 = 0x0b3b;
 pub const SHIP_3D_TEMP_SND_TRIGGER_DS_OFFSET: u16 = 0x0ae4;
 pub const SHIP_3D_TEMP_SND_PHASE_DS_OFFSET: u16 = 0x0ae5;
+pub const SHIP_3D_PLANAR_FRAMEBUFFER_PTR_DS_OFFSET: u16 = 0x5219;
+pub const SHIP_3D_SCROLL_MODE_DS_OFFSET: u16 = 0x524d;
+pub const SHIP_3D_SCROLL_VALUE_DS_OFFSET: u16 = 0x524f;
 
 const SND_ENTRY_FAR_CALL: [u8; 5] = [
     0x9a,
@@ -2398,6 +2405,24 @@ pub const PRESENTATION_3D_MARKERS: &[BinarySymbol] = &[
         comment: "nonzero gate for the ship 3D VGA planar page-band copy routine",
     },
     BinarySymbol {
+        name: "ship_3d_opening_flag",
+        file_offset: 0x00f94f,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_OPENING_FLAG_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "opening/scroll-in flag consumed by the ship 3D depth-step routine",
+    },
+    BinarySymbol {
+        name: "ship_3d_closing_flag",
+        file_offset: 0x00f950,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_CLOSING_FLAG_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "closing/scroll-out flag consumed by the ship 3D depth-step routine",
+    },
+    BinarySymbol {
         name: "ship_3d_depth_step",
         file_offset: 0x00f951,
         segment: None,
@@ -2405,6 +2430,24 @@ pub const PRESENTATION_3D_MARKERS: &[BinarySymbol] = &[
         ds_offset: Some(SHIP_3D_DEPTH_STEP_DS_OFFSET),
         kind: "presentation-3d-data",
         comment: "step size used while animating DS:0x2527 toward the active ship 3D target",
+    },
+    BinarySymbol {
+        name: "ship_3d_transition_armed",
+        file_offset: 0x00f953,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_TRANSITION_ARMED_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "state latch used by the ship 3D transition updater before closing is scheduled",
+    },
+    BinarySymbol {
+        name: "ship_3d_presentation_hold_timer",
+        file_offset: 0x00df5b,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_PRESENTATION_HOLD_TIMER_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "timer compared with 0x78/0 by the ship 3D transition updater",
     },
     BinarySymbol {
         name: "ship_3d_temp_snd_trigger",
@@ -2423,6 +2466,33 @@ pub const PRESENTATION_3D_MARKERS: &[BinarySymbol] = &[
         ds_offset: Some(SHIP_3D_TEMP_SND_PHASE_DS_OFFSET),
         kind: "presentation-3d-data",
         comment: "cycles through three temporary sn\\3D.snd presentation phases",
+    },
+    BinarySymbol {
+        name: "ship_3d_planar_framebuffer_ptr",
+        file_offset: 0x012639,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_PLANAR_FRAMEBUFFER_PTR_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "far pointer swapped by callers before ship 3D planar band copies",
+    },
+    BinarySymbol {
+        name: "ship_3d_scroll_mode",
+        file_offset: 0x01266d,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_SCROLL_MODE_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "mode word; value 0x000a suppresses the ship 3D DS:0x524f scroll-value update",
+    },
+    BinarySymbol {
+        name: "ship_3d_scroll_value",
+        file_offset: 0x01266f,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_SCROLL_VALUE_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "updated to 100 - min(DS:0x2527 * 2, 100) by the ship 3D plane-band copy routine",
     },
 ];
 
