@@ -367,6 +367,19 @@ modeled as mutable slot-state updates: active slots are gated by flag mask
 `0x0002` plus extent-changed bit `0x0010`; and natural-size extents clear bit
 `0x0010`, marking dirty only if that bit had been set.
 
+SPRITE PIXEL-DATA SOURCE — the compositor blocker (sess 003): the 11 slot
+descriptor records at `DS:0x6212` (0x20 bytes each) carry position/extent/dirty
+state and a pointer to the slot's frame table, but the frame-table PIXELS are a
+runtime in-memory structure (the `SpriteSlotFrameTable` / `.spr` layout in
+`render.rs`). There are **no `.spr` files in the game data** — `output/
+sprite-frame-tables.tsv` is empty — so the sprite bitmaps are decoded/loaded into
+memory at scene setup from another resource (the `pe/`/`ob/` HNM banks are the
+likely source; the nav orb is `pe/eye*.hnm`). Wiring the sprite layer into a
+composited ship-3D frame therefore needs the scene-init trace that populates the
+descriptor frame-table pointers from a resource — the background layer
+(`render_ship_3d_starfield`, faithful) and every sprite primitive (parse /
+dispatch / raw+rle+scaled blit / projection) are already done and tested.
+
 The per-slot dirty geometry commit branch in `sprite_slot_commit_dirty_range`
 (`0x0299:0x1467`) is now modeled as
 `commit_ship_3d_sprite_slot_dirty_geometry()`. It matches the range loop's slot
