@@ -255,6 +255,16 @@ subsystem, but not yet enough to implement the minigame: the projection,
 geometry/object state, and input loop still need to be decompiled from these
 entrypoints and their xrefs.
 
+The next control-layer markers are now pinned. `0xB2BB` selects the next
+ship/navigation target record from `DS:0x250B`, or from the inline fallback table
+at `DS:0x2537` when the list head is `-1`; a selected `-1` entry arms the
+opening transition with `DS:0x252F=1` and `DS:0x2531=6`. `0xB34E` is the broader
+ship/navigation update branch gated by `DS:0x27D8`; it updates the current target
+record at `DS:0x251B`, sets the sequence-active byte at `DS:0x252A`, touches the
+dialogue/HUD state, and eventually drives the exit/reset branch through
+`DS:0x2532`. The alternate framebuffer call at `0xB24C` temporarily swaps
+`DS:0x5219` to `DS:0x521D` before invoking the recovered plane-band updater.
+
 `src/ship3d.rs` ports the recovered transition/blit primitives:
 
 - `0xB692` updates only transition control: when `DS:0x2533` is clear and
@@ -283,6 +293,13 @@ software renderer until it matches oracle captures. Once the 3D/minigame
 semantics above are recovered, route that subsystem through a `wgpu` frontend
 that renders the original game state and then composites/presents through the
 same palette/timing/oracle pipeline.
+
+The `wgpu` boundary should be a frontend over recovered state, not the source of
+truth. First decompile the target-record stream, input gates, and fixed-point
+camera/projection/object math into a deterministic `ship3d` state model with a
+software oracle renderer. Then add a `wgpu` presenter that consumes the same
+state and outputs the same 320x200 indexed/palette-composited frame sequence for
+interactive play or accelerated capture.
 
 ### Subtitle REVEAL TIMING (DECODED) — dialogue updater file 0x93F8–0x94B8
 
@@ -1490,6 +1507,13 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `DS:0x524F` scroll-value update. This still is not the full 3D minigame;
       it is the recovered software presentation primitive that the future
       runtime/`wgpu` path must preserve or replace with equivalent output.
+- [x] Pin ship 3D target/navigation control markers:
+      `inspect-bloodprg.presentation_3d_markers` now also exposes the alternate
+      framebuffer band-copy call at `0xB24C`, target selector at `0xB2BB`,
+      navigation update branch at `0xB34E`, and the DS state bytes/words around
+      `0x250B`, `0x251B`, `0x252A..0x252C`, `0x2532`, `0x2537`, and `0x27D8`.
+      These are the next decompilation targets before a real `wgpu` minigame
+      frontend can be game-accurate.
 - [x] Port recovered framebuffer fill/copy primitives:
       `src/extract/render.rs` now has tested Rust helpers for the clipped
       rectangle fill, palette-remap rectangle, scene-band fill, full 320x200

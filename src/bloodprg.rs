@@ -84,19 +84,30 @@ pub const NAV_CHOICE_SUBDISPATCH_ENTRY_COUNT: usize = 5;
 pub const SHIP_PRESENTATION_SEGMENT: u16 = 0x0a9a;
 pub const SHIP_PRESENTATION_ENTRY_OFFSET: u16 = 0x0000;
 pub const SHIP_3D_HUD_INIT_OFFSET: u16 = 0x00d9;
+pub const SHIP_3D_ALT_FRAMEBUFFER_BAND_COPY_CALL_OFFSET: u16 = 0x02ac;
+pub const SHIP_3D_TARGET_RECORD_SELECT_OFFSET: u16 = 0x031b;
+pub const SHIP_3D_NAVIGATION_UPDATE_OFFSET: u16 = 0x03ae;
 pub const SHIP_3D_TEMP_SND_SETUP_OFFSET: u16 = 0x05f1;
 pub const SHIP_3D_TEMP_SND_LOAD_CALL_OFFSET: u16 = 0x063c;
 pub const SHIP_3D_TEMP_SND_RESTORE_CALL_OFFSET: u16 = 0x0670;
 pub const SHIP_3D_TRANSITION_STATE_OFFSET: u16 = 0x06f2;
 pub const SHIP_3D_PLANE_BAND_COPY_OFFSET: u16 = 0x073d;
 pub const SHIP_3D_DEPTH_SCROLL_STEP_OFFSET: u16 = 0x07bc;
+pub const SHIP_3D_TARGET_LIST_DS_OFFSET: u16 = 0x250b;
+pub const SHIP_3D_CURRENT_TARGET_DS_OFFSET: u16 = 0x251b;
+pub const SHIP_3D_SEQUENCE_ACTIVE_DS_OFFSET: u16 = 0x252a;
+pub const SHIP_3D_TARGET_SELECT_PHASE_DS_OFFSET: u16 = 0x252b;
+pub const SHIP_3D_TARGET_FALLBACK_DS_OFFSET: u16 = 0x252c;
 pub const SHIP_3D_HUD_FLAG_DS_OFFSET: u16 = 0x2793;
 pub const SHIP_3D_DEPTH_OFFSET_DS_OFFSET: u16 = 0x2527;
 pub const SHIP_3D_PLANE_COPY_ENABLE_DS_OFFSET: u16 = 0x252e;
 pub const SHIP_3D_OPENING_FLAG_DS_OFFSET: u16 = 0x252f;
 pub const SHIP_3D_CLOSING_FLAG_DS_OFFSET: u16 = 0x2530;
 pub const SHIP_3D_DEPTH_STEP_DS_OFFSET: u16 = 0x2531;
+pub const SHIP_3D_EXIT_PENDING_DS_OFFSET: u16 = 0x2532;
 pub const SHIP_3D_TRANSITION_ARMED_DS_OFFSET: u16 = 0x2533;
+pub const SHIP_3D_FALLBACK_TARGET_TABLE_DS_OFFSET: u16 = 0x2537;
+pub const SHIP_3D_NAVIGATION_TRIGGER_DS_OFFSET: u16 = 0x27d8;
 pub const SHIP_3D_PRESENTATION_HOLD_TIMER_DS_OFFSET: u16 = 0x0b3b;
 pub const SHIP_3D_TEMP_SND_TRIGGER_DS_OFFSET: u16 = 0x0ae4;
 pub const SHIP_3D_TEMP_SND_PHASE_DS_OFFSET: u16 = 0x0ae5;
@@ -2324,6 +2335,33 @@ pub const PRESENTATION_3D_MARKERS: &[BinarySymbol] = &[
         comment: "sets DS:0x2793 bit 3, initializes ship HUD/procedural 3D state, copies framebuffer, and calls the plane-band updater",
     },
     BinarySymbol {
+        name: "ship_3d_alt_framebuffer_band_copy_call",
+        file_offset: 0x00b24c,
+        segment: Some(SHIP_PRESENTATION_SEGMENT),
+        offset: Some(SHIP_3D_ALT_FRAMEBUFFER_BAND_COPY_CALL_OFFSET),
+        ds_offset: None,
+        kind: "presentation-3d",
+        comment: "calls the plane-band updater after swapping DS:0x5219 to the alternate framebuffer pointer at DS:0x521d",
+    },
+    BinarySymbol {
+        name: "ship_3d_target_record_select",
+        file_offset: 0x00b2bb,
+        segment: Some(SHIP_PRESENTATION_SEGMENT),
+        offset: Some(SHIP_3D_TARGET_RECORD_SELECT_OFFSET),
+        ds_offset: None,
+        kind: "presentation-3d",
+        comment: "selects the next ship/navigation target record from DS:0x250b or fallback DS:0x2537 and can arm the opening transition",
+    },
+    BinarySymbol {
+        name: "ship_3d_navigation_update",
+        file_offset: 0x00b34e,
+        segment: Some(SHIP_PRESENTATION_SEGMENT),
+        offset: Some(SHIP_3D_NAVIGATION_UPDATE_OFFSET),
+        ds_offset: None,
+        kind: "presentation-3d",
+        comment: "ship/navigation update branch gated by DS:0x27d8; updates target records, dialogue/HUD state, and transition flags",
+    },
+    BinarySymbol {
         name: "ship_3d_temp_snd_setup",
         file_offset: 0x00b591,
         segment: Some(SHIP_PRESENTATION_SEGMENT),
@@ -2376,6 +2414,51 @@ pub const PRESENTATION_3D_MARKERS: &[BinarySymbol] = &[
         ds_offset: None,
         kind: "presentation-3d",
         comment: "moves DS:0x2527 toward 0x41 or 0 according to DS:0x252f/0x2530 using step DS:0x2531",
+    },
+    BinarySymbol {
+        name: "ship_3d_target_list",
+        file_offset: 0x00f92b,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_TARGET_LIST_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "word list/pointer consumed by the ship target selector before falling back to DS:0x2537",
+    },
+    BinarySymbol {
+        name: "ship_3d_current_target",
+        file_offset: 0x00f93b,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_CURRENT_TARGET_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "current ship/navigation target record pointer used by selector and navigation update paths",
+    },
+    BinarySymbol {
+        name: "ship_3d_sequence_active",
+        file_offset: 0x00f94a,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_SEQUENCE_ACTIVE_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "state byte set by the navigation update branch and consumed by the temporary 3D.snd/presentation path",
+    },
+    BinarySymbol {
+        name: "ship_3d_target_select_phase",
+        file_offset: 0x00f94b,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_TARGET_SELECT_PHASE_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "phase byte in the ship target selector; initialized to 1, advanced through the record-query path",
+    },
+    BinarySymbol {
+        name: "ship_3d_target_fallback_flag",
+        file_offset: 0x00f94c,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_TARGET_FALLBACK_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "set when the target selector falls back from DS:0x250b to the inline DS:0x2537 target table",
     },
     BinarySymbol {
         name: "ship_3d_hud_gate_flag",
@@ -2432,6 +2515,15 @@ pub const PRESENTATION_3D_MARKERS: &[BinarySymbol] = &[
         comment: "step size used while animating DS:0x2527 toward the active ship 3D target",
     },
     BinarySymbol {
+        name: "ship_3d_exit_pending",
+        file_offset: 0x00f952,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_EXIT_PENDING_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "state gate set by the ship presentation update before the exit/reset branch",
+    },
+    BinarySymbol {
         name: "ship_3d_transition_armed",
         file_offset: 0x00f953,
         segment: None,
@@ -2439,6 +2531,24 @@ pub const PRESENTATION_3D_MARKERS: &[BinarySymbol] = &[
         ds_offset: Some(SHIP_3D_TRANSITION_ARMED_DS_OFFSET),
         kind: "presentation-3d-data",
         comment: "state latch used by the ship 3D transition updater before closing is scheduled",
+    },
+    BinarySymbol {
+        name: "ship_3d_fallback_target_table",
+        file_offset: 0x00f957,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_FALLBACK_TARGET_TABLE_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "inline fallback target table used by the ship target selector when DS:0x250b is -1",
+    },
+    BinarySymbol {
+        name: "ship_3d_navigation_trigger",
+        file_offset: 0x00fbf8,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_NAVIGATION_TRIGGER_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "state byte gating the ship/navigation update branch at file 0xB34E",
     },
     BinarySymbol {
         name: "ship_3d_presentation_hold_timer",
@@ -2770,6 +2880,17 @@ mod tests {
             0x00b5dc
         );
         assert_eq!(
+            binary.segoff_to_file(
+                SHIP_PRESENTATION_SEGMENT,
+                SHIP_3D_TARGET_RECORD_SELECT_OFFSET
+            ),
+            0x00b2bb
+        );
+        assert_eq!(
+            binary.segoff_to_file(SHIP_PRESENTATION_SEGMENT, SHIP_3D_NAVIGATION_UPDATE_OFFSET),
+            0x00b34e
+        );
+        assert_eq!(
             binary.segoff_to_file(SHIP_PRESENTATION_SEGMENT, SHIP_3D_PLANE_BAND_COPY_OFFSET),
             0x00b6dd
         );
@@ -2781,8 +2902,12 @@ mod tests {
         for name in [
             "ship_presentation_fsm",
             "ship_3d_hud_init",
+            "ship_3d_target_record_select",
+            "ship_3d_navigation_update",
             "ship_3d_temp_snd_setup",
             "ship_3d_plane_band_copy",
+            "ship_3d_current_target",
+            "ship_3d_navigation_trigger",
             "ship_3d_hud_gate_flag",
         ] {
             assert!(marker_names.contains(name), "{name}");
