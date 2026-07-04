@@ -194,7 +194,7 @@ DS:0x523B,render_yclip_hi,render_string y-clip high bound (0xa5 letterbox / 0xc8
 0x008709,nav_choice_subdispatch_table,"five u16 near offsets: 0f33,0f4c,0fdd,1068,108c"
 0x008713,nav_choice_handler_0,"if phase bit set, defers C3 record link to named Honk object and clears phase"
 0x00872C,nav_choice_handler_1,"target-list choice handler: adjusts target records, waits interpolation, defers C3 target, reloads radio.snd"
-0x0087BD,nav_choice_handler_2,"temporary label: cs:0x0f29 table entry 2"
+0x0087BD,nav_choice_handler_2,"special-slot target handler: builds list from DS:0x6D3E, waits interpolation, sets deferred related and input gate"
 0x008848,nav_choice_handler_3,"temporary label: cs:0x0f29 table entry 3"
 0x00886C,nav_choice_handler_4,"temporary label: cs:0x0f29 table entry 4"
 DS:0x00A6,snd_son_name,"son.snd voice/SFX bank filename"

@@ -1631,6 +1631,17 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       writes deferred `C3` related pointer `DS:0x676A`, sets `DS:0x6768`, reloads
       `sn\radio.snd` via the SND bank loader, then clears the same choice/HUD
       state. Rust exposes this as `run_ship_3d_nav_choice_handler_1()`.
+- [x] Port ship 3D navigation-choice handler 2:
+      table entry 2 at `0x071E:0x0FDD` is the special-slot target-list variant.
+      On phase bit 0 it scans the 16-word `DS:0x6D3E` special-slot list, skips
+      zero words, writes each non-`-1` slot plus four bytes into `DS:0x2B13`,
+      copies the `-1` sentinel, resets interpolation tick `DS:0x0ADB`, runs the
+      target-list layout prepass, and advances to phase bit 1. It waits on the
+      same interpolation gate as handler 1. Query `AX=-1` leaves the choice
+      armed. A selected `-1` clears `DS:0x2A19` and bit `0x04` in `DS:0x2793`;
+      a selected target subtracts four bytes into `DS:0x676A` and sets
+      `DS:0x2751 = 1` before clearing the same choice/HUD state. It does not
+      write `DS:0x6768` or reload `radio.snd`.
 - [x] Port recovered framebuffer fill/copy primitives:
       `src/extract/render.rs` now has tested Rust helpers for the clipped
       rectangle fill, palette-remap rectangle, scene-band fill, full 320x200
