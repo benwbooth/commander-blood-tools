@@ -64,6 +64,17 @@ pub const RENDER_SPRITE_SLOT_RANGE_DIRTY_OFFSET: u16 = 0x12b0;
 pub const RENDER_SPRITE_SLOT_EXTENT_OFFSET: u16 = 0x133d;
 pub const RENDER_SPRITE_SLOT_COMMIT_RANGE_OFFSET: u16 = 0x1467;
 pub const RENDER_SPRITE_SLOT_DIRTY_RANGE_RENDER_OFFSET: u16 = 0x14e1;
+pub const RENDER_SPRITE_BLITTER_TABLE_OFFSET: u16 = 0x1592;
+pub const RENDER_SPRITE_BLITTER_TABLE_FILE_OFFSET: usize = 0x004522;
+pub const RENDER_SPRITE_BLITTER_ENTRY_COUNT: usize = 8;
+pub const RENDER_SPRITE_BLIT_RAW_TRANSPARENT_OFFSET: u16 = 0x15a6;
+pub const RENDER_SPRITE_BLIT_RLE_TRANSPARENT_OFFSET: u16 = 0x172c;
+pub const RENDER_SPRITE_BLIT_RAW_OPAQUE_OFFSET: u16 = 0x1c18;
+pub const RENDER_SPRITE_BLIT_RLE_OPAQUE_OFFSET: u16 = 0x1d46;
+pub const RENDER_SPRITE_BLIT_SCALED_TRANSPARENT_OFFSET: u16 = 0x1fd2;
+pub const RENDER_SPRITE_BLIT_NOOP_5_OFFSET: u16 = 0x210a;
+pub const RENDER_SPRITE_BLIT_NOOP_6_OFFSET: u16 = 0x210b;
+pub const RENDER_SPRITE_BLIT_NOOP_7_OFFSET: u16 = 0x210c;
 pub const RENDER_DIRTY_RECTS_COPY_OFFSET: u16 = 0x210d;
 pub const NAV_CODE_SEGMENT: u16 = 0x071e;
 pub const NAV_ACTOR_SUBDISPATCH_TABLE_FILE_OFFSET: usize = 0x007eb4;
@@ -192,6 +203,15 @@ pub struct SubdispatchEntry {
     pub handler_file_offset: usize,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize)]
+pub struct SpriteBlitterDispatchEntry {
+    pub mode: u8,
+    pub handler_offset: u16,
+    pub handler_file_offset: usize,
+    pub name: &'static str,
+    pub note: &'static str,
+}
+
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct ScriptResourceProfileSlot {
     pub slot: usize,
@@ -220,6 +240,7 @@ pub struct BloodPrgInspection {
     pub snd_entry_call_sites: Vec<SndEntryCallSite>,
     pub snd_bank_load_call_sites: Vec<SndBankLoadCallSite>,
     pub render_call_sites: Vec<RenderCallSite>,
+    pub sprite_blitter_dispatch: Vec<SpriteBlitterDispatchEntry>,
     pub script_resource_profiles: Vec<ScriptResourceProfile>,
     pub dialogue_font: DialogueFontTables,
 }
@@ -587,6 +608,28 @@ impl BloodPrg {
             .collect()
     }
 
+    pub fn sprite_blitter_dispatch_entries(&self) -> Result<Vec<SpriteBlitterDispatchEntry>> {
+        let bytes = self.slice(
+            RENDER_SPRITE_BLITTER_TABLE_FILE_OFFSET,
+            RENDER_SPRITE_BLITTER_ENTRY_COUNT * 2,
+            "sprite blitter dispatch table",
+        )?;
+        Ok(bytes
+            .chunks_exact(2)
+            .enumerate()
+            .map(|(mode, pair)| {
+                let handler_offset = u16::from_le_bytes([pair[0], pair[1]]);
+                SpriteBlitterDispatchEntry {
+                    mode: mode as u8,
+                    handler_offset,
+                    handler_file_offset: self.segoff_to_file(RENDER_SEGMENT, handler_offset),
+                    name: sprite_blitter_name(mode as u8, handler_offset),
+                    note: sprite_blitter_note(mode as u8, handler_offset),
+                }
+            })
+            .collect())
+    }
+
     pub fn inspect(&self) -> Result<BloodPrgInspection> {
         Ok(BloodPrgInspection {
             summary: self.summary(),
@@ -600,6 +643,7 @@ impl BloodPrg {
             snd_entry_call_sites: self.snd_entry_call_sites(),
             snd_bank_load_call_sites: self.snd_bank_load_call_sites(),
             render_call_sites: self.render_call_sites(),
+            sprite_blitter_dispatch: self.sprite_blitter_dispatch_entries()?,
             script_resource_profiles: self.script_resource_profiles()?,
             dialogue_font: self.dialogue_font_tables()?,
         })
@@ -1144,6 +1188,48 @@ fn render_call_site_note(file_offset: usize, target_offset: u16) -> &'static str
             "renders active dirty sprite slots through the dirty-rectangle list"
         }
         _ => "unclassified render-segment call",
+    }
+}
+
+fn sprite_blitter_name(mode: u8, handler_offset: u16) -> &'static str {
+    match (mode, handler_offset) {
+        (0, RENDER_SPRITE_BLIT_RAW_TRANSPARENT_OFFSET) => "sprite_blit_raw_transparent",
+        (1, RENDER_SPRITE_BLIT_RLE_TRANSPARENT_OFFSET) => "sprite_blit_rle_transparent",
+        (2, RENDER_SPRITE_BLIT_RAW_OPAQUE_OFFSET) => "sprite_blit_raw_opaque",
+        (3, RENDER_SPRITE_BLIT_RLE_OPAQUE_OFFSET) => "sprite_blit_rle_opaque",
+        (4, RENDER_SPRITE_BLIT_SCALED_TRANSPARENT_OFFSET) => "sprite_blit_scaled_transparent",
+        (5, RENDER_SPRITE_BLIT_NOOP_5_OFFSET) => "sprite_blit_noop_mode5",
+        (6, RENDER_SPRITE_BLIT_NOOP_6_OFFSET) => "sprite_blit_noop_mode6",
+        (7, RENDER_SPRITE_BLIT_NOOP_7_OFFSET) => "sprite_blit_noop_mode7",
+        _ => "unclassified_sprite_blitter",
+    }
+}
+
+fn sprite_blitter_note(mode: u8, handler_offset: u16) -> &'static str {
+    match (mode, handler_offset) {
+        (0, RENDER_SPRITE_BLIT_RAW_TRANSPARENT_OFFSET) => {
+            "uncompressed transparent sprite blit; source zero skips destination, nonzero pixels either copy directly or remap the destination through the selected palette table"
+        }
+        (1, RENDER_SPRITE_BLIT_RLE_TRANSPARENT_OFFSET) => {
+            "RLE transparent sprite blit with the same zero-skip and optional destination-remap behavior as raw transparent mode"
+        }
+        (2, RENDER_SPRITE_BLIT_RAW_OPAQUE_OFFSET) => {
+            "uncompressed opaque sprite blit; copies all source pixels directly with no zero transparency or destination remap"
+        }
+        (3, RENDER_SPRITE_BLIT_RLE_OPAQUE_OFFSET) => {
+            "RLE opaque sprite blit; decodes run spans/fills/copies and writes all pixels without destination remap"
+        }
+        (4, RENDER_SPRITE_BLIT_SCALED_TRANSPARENT_OFFSET) => {
+            "scaled transparent sprite blit; fixed-point source sampling over destination extents and zero source pixels skip destination"
+        }
+        (5, RENDER_SPRITE_BLIT_NOOP_5_OFFSET)
+        | (6, RENDER_SPRITE_BLIT_NOOP_6_OFFSET)
+        | (7, RENDER_SPRITE_BLIT_NOOP_7_OFFSET) => {
+            "unused/no-op sprite blitter mode; handler is a single near return"
+        }
+        _ => {
+            "handler entry is present in the sprite blitter table, but semantics are not yet named"
+        }
     }
 }
 
@@ -1849,6 +1935,87 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         ds_offset: None,
         kind: "presentation",
         comment: "walks active sprite slots in an AX..BX range, intersects each slot with dirty rectangles at GS:0x6612, dispatches the selected blitter, and clears the dirty bit",
+    },
+    BinarySymbol {
+        name: "sprite_blitter_dispatch_table",
+        file_offset: RENDER_SPRITE_BLITTER_TABLE_FILE_OFFSET,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_SPRITE_BLITTER_TABLE_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "eight near handler offsets selected by (slot_state >> 1) & 7 inside sprite_slot_dirty_range_render",
+    },
+    BinarySymbol {
+        name: "sprite_blit_raw_transparent",
+        file_offset: 0x004536,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_SPRITE_BLIT_RAW_TRANSPARENT_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "mode 0 sprite blitter; uncompressed transparent source with optional destination palette remap",
+    },
+    BinarySymbol {
+        name: "sprite_blit_rle_transparent",
+        file_offset: 0x0046bc,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_SPRITE_BLIT_RLE_TRANSPARENT_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "mode 1 sprite blitter; RLE transparent source with optional destination palette remap",
+    },
+    BinarySymbol {
+        name: "sprite_blit_raw_opaque",
+        file_offset: 0x004ba8,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_SPRITE_BLIT_RAW_OPAQUE_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "mode 2 sprite blitter; uncompressed opaque source copy",
+    },
+    BinarySymbol {
+        name: "sprite_blit_rle_opaque",
+        file_offset: 0x004cd6,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_SPRITE_BLIT_RLE_OPAQUE_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "mode 3 sprite blitter; RLE opaque source decode/copy",
+    },
+    BinarySymbol {
+        name: "sprite_blit_scaled_transparent",
+        file_offset: 0x004f62,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_SPRITE_BLIT_SCALED_TRANSPARENT_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "mode 4 sprite blitter; scaled transparent source sampling",
+    },
+    BinarySymbol {
+        name: "sprite_blit_noop_mode5",
+        file_offset: 0x00509a,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_SPRITE_BLIT_NOOP_5_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "mode 5 sprite blitter; unused single-byte near return",
+    },
+    BinarySymbol {
+        name: "sprite_blit_noop_mode6",
+        file_offset: 0x00509b,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_SPRITE_BLIT_NOOP_6_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "mode 6 sprite blitter; unused single-byte near return",
+    },
+    BinarySymbol {
+        name: "sprite_blit_noop_mode7",
+        file_offset: 0x00509c,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_SPRITE_BLIT_NOOP_7_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "mode 7 sprite blitter; unused single-byte near return",
     },
     BinarySymbol {
         name: "dirty_rects_copy_secondary_to_primary",
@@ -2930,6 +3097,103 @@ mod tests {
         assert_eq!(sprite_state.target_offset, RENDER_SPRITE_SLOT_STATE_OFFSET);
         assert_eq!(sprite_state.ax_value, Some(4));
         assert!(sprite_state.note.contains("presentation clear"));
+    }
+
+    #[test]
+    fn sprite_blitter_dispatch_table_recovers_internal_modes() {
+        let Some(binary) = fixture() else {
+            eprintln!("skipping: BLOODPRG.EXE not available");
+            return;
+        };
+
+        let entries = binary
+            .sprite_blitter_dispatch_entries()
+            .expect("sprite blitter dispatch table");
+        let expected = [
+            (
+                0,
+                RENDER_SPRITE_BLIT_RAW_TRANSPARENT_OFFSET,
+                0x004536,
+                "sprite_blit_raw_transparent",
+            ),
+            (
+                1,
+                RENDER_SPRITE_BLIT_RLE_TRANSPARENT_OFFSET,
+                0x0046bc,
+                "sprite_blit_rle_transparent",
+            ),
+            (
+                2,
+                RENDER_SPRITE_BLIT_RAW_OPAQUE_OFFSET,
+                0x004ba8,
+                "sprite_blit_raw_opaque",
+            ),
+            (
+                3,
+                RENDER_SPRITE_BLIT_RLE_OPAQUE_OFFSET,
+                0x004cd6,
+                "sprite_blit_rle_opaque",
+            ),
+            (
+                4,
+                RENDER_SPRITE_BLIT_SCALED_TRANSPARENT_OFFSET,
+                0x004f62,
+                "sprite_blit_scaled_transparent",
+            ),
+            (
+                5,
+                RENDER_SPRITE_BLIT_NOOP_5_OFFSET,
+                0x00509a,
+                "sprite_blit_noop_mode5",
+            ),
+            (
+                6,
+                RENDER_SPRITE_BLIT_NOOP_6_OFFSET,
+                0x00509b,
+                "sprite_blit_noop_mode6",
+            ),
+            (
+                7,
+                RENDER_SPRITE_BLIT_NOOP_7_OFFSET,
+                0x00509c,
+                "sprite_blit_noop_mode7",
+            ),
+        ];
+
+        assert_eq!(entries.len(), RENDER_SPRITE_BLITTER_ENTRY_COUNT);
+        for (entry, (mode, handler_offset, handler_file_offset, name)) in
+            entries.iter().zip(expected)
+        {
+            assert_eq!(entry.mode, mode);
+            assert_eq!(entry.handler_offset, handler_offset);
+            assert_eq!(entry.handler_file_offset, handler_file_offset);
+            assert_eq!(entry.name, name);
+            assert_eq!(
+                entry.handler_file_offset,
+                binary.segoff_to_file(RENDER_SEGMENT, handler_offset)
+            );
+        }
+
+        assert!(entries[0].note.contains("transparent"));
+        assert!(entries[1].note.contains("RLE"));
+        assert!(entries[2].note.contains("opaque"));
+        assert!(entries[4].note.contains("scaled"));
+        for entry in &entries[5..] {
+            let opcode = binary
+                .slice(entry.handler_file_offset, 1, "sprite noop handler")
+                .expect("sprite noop handler");
+            assert_eq!(opcode, b"\xc3");
+        }
+
+        let inspect = binary.inspect().expect("inspection");
+        assert_eq!(inspect.sprite_blitter_dispatch, entries);
+
+        let symbol = KNOWN_SYMBOLS
+            .iter()
+            .find(|symbol| symbol.name == "sprite_blitter_dispatch_table")
+            .expect("sprite blitter table symbol");
+        assert_eq!(symbol.file_offset, RENDER_SPRITE_BLITTER_TABLE_FILE_OFFSET);
+        assert_eq!(symbol.offset, Some(RENDER_SPRITE_BLITTER_TABLE_OFFSET));
     }
 
     #[test]

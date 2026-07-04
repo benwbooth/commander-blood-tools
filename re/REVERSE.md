@@ -899,6 +899,26 @@ Named targets that are already tied to code behavior:
   `AX..BX`, skips inactive slots, intersects each active slot rectangle with the
   dirty-rectangle list at `GS:0x6612`, dispatches the selected internal blitter
   from the slot state word, and clears the slot dirty bit after processing.
+- The internal sprite blitter table lives at `0x0299:0x1592` (file `0x4522`).
+  `sprite_slot_dirty_range_render` uses `(slot_state >> 1) & 7` as the table
+  selector. Original slot-state bit 5 sets the horizontal-flip flag and bit 6
+  sets the vertical-flip flag. Slot byte `+1 & 3` selects the transparent-mode
+  destination remap behavior: `0` copies nonzero source pixels directly, `1`
+  remaps destination pixels through `GS:0x5F11`, and `2`/`3` remap through
+  `GS:0x6011`.
+  - mode 0 -> `0x0299:0x15A6` (`sprite_blit_raw_transparent`): uncompressed
+    transparent blit; source zero skips the destination, nonzero source pixels
+    copy or trigger the selected destination-palette remap.
+  - mode 1 -> `0x0299:0x172C` (`sprite_blit_rle_transparent`): RLE
+    transparent blit with the same zero-skip/remap semantics as mode 0.
+  - mode 2 -> `0x0299:0x1C18` (`sprite_blit_raw_opaque`): uncompressed opaque
+    copy with no zero transparency or remap.
+  - mode 3 -> `0x0299:0x1D46` (`sprite_blit_rle_opaque`): RLE opaque decode
+    and copy with no destination remap.
+  - mode 4 -> `0x0299:0x1FD2` (`sprite_blit_scaled_transparent`): fixed-point
+    scaled transparent blit; source zero skips the destination.
+  - modes 5..7 -> `0x0299:0x210A..0x210C`: unused single-byte near-return
+    handlers.
 - `0x0299:0x210D` (`dirty_rects_copy_secondary_to_primary`): copies dirty
   rectangles described at `ES:DI` from secondary framebuffer `GS:0x5229` back
   into primary framebuffer `GS:0x5221`.
@@ -906,8 +926,9 @@ Named targets that are already tied to code behavior:
 This is still a caller map, not a full renderer decompilation. It removes the
 guesswork about which external render hooks the VM/presentation state machine
 uses. All 32 direct render-segment target offsets are now named and tied to
-instruction behavior; the remaining render RE gap is deeper porting of the
-internal sprite blitter routines dispatched by `sprite_slot_dirty_range_render`.
+instruction behavior, and the sprite-slot blitter dispatch table is now
+decoded. The remaining render RE gap is porting those pixel loops into the Rust
+renderer and validating them against real DOS captures.
 
 Rust now ports the safe framebuffer side of the recovered primitives in
 `src/extract/render.rs`: clipped rectangle fill (`0x0CDC`), current scene-band
@@ -1059,6 +1080,7 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 | `script-executed-dialogue-runs.tsv` | extraction artifact grouping executed dialogue by script/background run; MP4 names correspond to run-level composites |
 | `script-dialogue-runs.tsv` | extraction artifact grouping VM-order dialogue lines by script/background run |
 | `bloodprg-render-call-sites.tsv` | extraction artifact generated from `BLOODPRG.EXE`; lists direct far calls into render/presentation segment `0x0299`, recovered target offsets, local `AX` setup, and current target names |
+| `bloodprg-sprite-blitters.tsv` | extraction artifact generated from `BLOODPRG.EXE`; lists the internal sprite blitter table selected by `sprite_slot_dirty_range_render` |
 
 ## Verification Checklist
 
@@ -1365,9 +1387,14 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       load/clear callbacks, framebuffer fill/copy helpers, subtitle reveal
       wrapper, palette-remap and dither-rectangle fills, resource payload load,
       VGA planar capture, sprite-slot frame/position/extent/dirty-range
-      callbacks, dirty-range rendering, and dirty-rectangle copyback; the
-      remaining sprite blitter internals stay open RE work instead of being
-      guessed by the exporter.
+      callbacks, dirty-range rendering, and dirty-rectangle copyback.
+- [x] Decode sprite blitter dispatch modes:
+      `bloodprg-sprite-blitters.tsv` and
+      `inspect-bloodprg.sprite_blitter_dispatch` expose the table at
+      `0x0299:0x1592`, selected by `(slot_state >> 1) & 7`, with raw/RLE
+      transparent, raw/RLE opaque, scaled transparent, and no-op modes named.
+      The remaining work is Rust-porting the pixel loops and checking them
+      against oracle captures instead of guessing sprite composition.
 - [x] Port recovered framebuffer fill/copy primitives:
       `src/extract/render.rs` now has tested Rust helpers for the clipped
       rectangle fill, palette-remap rectangle, scene-band fill, full 320x200

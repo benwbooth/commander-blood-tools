@@ -202,6 +202,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             let bloodprg = BloodPrg::parse_file(&bloodprg_path)?;
             let snd_call_sites = bloodprg.snd_entry_call_sites();
             let render_call_sites = bloodprg.render_call_sites();
+            let sprite_blitter_dispatch = bloodprg.sprite_blitter_dispatch_entries()?;
             let script_resource_profiles = bloodprg.script_resource_profiles()?;
             write_bloodprg_snd_call_sites_manifest(
                 &snd_call_sites,
@@ -211,6 +212,10 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                 &render_call_sites,
                 &out_dir.join("bloodprg-render-call-sites.tsv"),
             )?;
+            write_bloodprg_sprite_blitter_manifest(
+                &sprite_blitter_dispatch,
+                &out_dir.join("bloodprg-sprite-blitters.tsv"),
+            )?;
             eprintln!(
                 "Recovered {} BLOODPRG.EXE SND entry call sites",
                 snd_call_sites.len()
@@ -218,6 +223,10 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             eprintln!(
                 "Recovered {} BLOODPRG.EXE render call sites",
                 render_call_sites.len()
+            );
+            eprintln!(
+                "Recovered {} BLOODPRG.EXE sprite blitter modes",
+                sprite_blitter_dispatch.len()
             );
             script_resource_profiles
         } else {
@@ -724,6 +733,29 @@ fn write_bloodprg_render_call_sites_manifest(
     Ok(())
 }
 
+fn write_bloodprg_sprite_blitter_manifest(
+    rows: &[SpriteBlitterDispatchEntry],
+    out_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let mut file = File::create(out_path)?;
+    writeln!(
+        file,
+        "mode\thandler_offset\thandler_file_offset\tname\tnote"
+    )?;
+    for row in rows {
+        writeln!(
+            file,
+            "{}\t{:04x}\t0x{:05x}\t{}\t{}",
+            row.mode,
+            row.handler_offset,
+            row.handler_file_offset,
+            row.name,
+            clean_tsv(row.note),
+        )?;
+    }
+    Ok(())
+}
+
 mod audio;
 mod character;
 mod dat;
@@ -742,7 +774,7 @@ use character::*;
 #[cfg(test)]
 use commander_blood_tools::bloodprg::ScriptResourceProfileSlot;
 use commander_blood_tools::bloodprg::{
-    BloodPrg, RenderCallSite, ScriptResourceProfile, SndEntryCallSite,
+    BloodPrg, RenderCallSite, ScriptResourceProfile, SndEntryCallSite, SpriteBlitterDispatchEntry,
 };
 use commander_blood_tools::snd::{SndBank, SndClip};
 use commander_blood_tools::vm;
