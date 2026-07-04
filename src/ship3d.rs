@@ -112,6 +112,17 @@ pub const SHIP_3D_PROJECTION_SCREEN_WIDTH: usize = 0x0140;
 pub const SHIP_3D_PROJECTION_AXIS_SHIFT: u8 = 0x07;
 pub const SHIP_3D_PROJECTION_SHADE_SHIFT: u8 = 0x0c;
 pub const SHIP_3D_PROJECTION_SHADE_BASE: u8 = 0xef;
+pub const SHIP_3D_OBJECT_ANCHOR_OFFSET: u16 = 0x4f09;
+pub const SHIP_3D_OBJECT_ANCHOR_COUNT: usize = 0x0b;
+pub const SHIP_3D_OBJECT_ANCHOR_STRIDE: u16 = 0x0006;
+pub const SHIP_3D_OBJECT_DESCRIPTOR_BASE_OFFSET: u16 = 0x6212;
+pub const SHIP_3D_OBJECT_DESCRIPTOR_STRIDE: u16 = 0x0020;
+pub const SHIP_3D_OBJECT_DESCRIPTOR_INDEX_BIAS: u16 = 0x0015;
+pub const SHIP_3D_OBJECT_VISIBLE_FLAG: u16 = 0x0080;
+pub const SHIP_3D_OBJECT_DEPTH_WRAP_BIAS: i32 = 0x0001_0000;
+pub const SHIP_3D_OBJECT_SCALE_NUMERATOR: u32 = 0x0010_0000;
+pub const SHIP_3D_OBJECT_SCALE_SHIFT: u8 = 0x0a;
+pub const SHIP_3D_OBJECT_PROJECTED_SCALE_OFFSET: u16 = 0x2fbf;
 pub const SHIP_3D_TEMP_SND_CALLBACK_TABLE_OFFSET: u16 = 0x0acc;
 pub const SHIP_3D_TEMP_SND_CALLBACK_OFFSETS: [u16; 3] = [0x0087, 0x0090, 0x009c];
 pub const SHIP_3D_TEMP_SND_PATH_OFFSET: u16 = 0x0d23;
@@ -444,6 +455,25 @@ pub struct Ship3dProjectionViewport {
 pub struct Ship3dProjectedPixel {
     pub offset: usize,
     pub shade: u8,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dObjectSpriteDescriptor {
+    pub flags: u16,
+    pub source_width: u16,
+    pub source_height: u16,
+    pub center_width: u16,
+    pub center_height: u16,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dObjectSpriteProjection {
+    pub projected: Ship3dProjectedPoint,
+    pub depth_scale: u16,
+    pub scaled_width: u16,
+    pub scaled_height: u16,
+    pub draw_x: u16,
+    pub draw_y: u16,
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -1466,6 +1496,72 @@ pub fn ship_3d_projected_point_offset(projected: Ship3dProjectedPoint) -> usize 
     usize::from(projected.y) * SHIP_3D_PROJECTION_SCREEN_WIDTH + usize::from(projected.x)
 }
 
+pub fn project_ship_3d_object_sprite(
+    anchor: Ship3dProjectionPoint,
+    origin: Ship3dProjectionOrigin,
+    matrix: Ship3dProjectionMatrix,
+    descriptor: Ship3dObjectSpriteDescriptor,
+) -> Option<Ship3dObjectSpriteProjection> {
+    if descriptor.flags & SHIP_3D_OBJECT_VISIBLE_FLAG == 0 {
+        return None;
+    }
+
+    let translated = [
+        projection_component(anchor.x, origin.x),
+        projection_component(anchor.y, origin.y),
+        projection_component(anchor.z, origin.z),
+    ];
+    let raw_depth = projection_dot(
+        translated,
+        [matrix.terms[6], matrix.terms[7], matrix.terms[8]],
+    ) >> SHIP_3D_MATRIX_FIXED_SHIFT;
+    if raw_depth == 0 {
+        return None;
+    }
+
+    let depth = if raw_depth < 0 {
+        raw_depth.wrapping_add(SHIP_3D_OBJECT_DEPTH_WRAP_BIAS)
+    } else {
+        raw_depth
+    };
+    if depth == 0 {
+        return None;
+    }
+
+    let depth_scale = (SHIP_3D_OBJECT_SCALE_NUMERATOR / depth as u32) as u16;
+    let screen_x = project_ship_3d_axis(
+        projection_dot(
+            translated,
+            [matrix.terms[0], matrix.terms[1], matrix.terms[2]],
+        ) >> SHIP_3D_PROJECTION_AXIS_SHIFT,
+        depth,
+        SHIP_3D_PROJECTION_SCREEN_CENTER_X,
+    );
+    let screen_y = project_ship_3d_axis(
+        projection_dot(
+            translated,
+            [matrix.terms[3], matrix.terms[4], matrix.terms[5]],
+        ) >> SHIP_3D_PROJECTION_AXIS_SHIFT,
+        depth,
+        SHIP_3D_PROJECTION_SCREEN_CENTER_Y,
+    );
+    let scaled_width = scale_ship_3d_object_dimension(descriptor.source_width, depth_scale);
+    let scaled_height = scale_ship_3d_object_dimension(descriptor.source_height, depth_scale);
+
+    Some(Ship3dObjectSpriteProjection {
+        projected: Ship3dProjectedPoint {
+            x: screen_x,
+            y: screen_y,
+            depth: depth as u16,
+        },
+        depth_scale,
+        scaled_width,
+        scaled_height,
+        draw_x: screen_x.wrapping_sub(descriptor.center_width >> 1),
+        draw_y: screen_y.wrapping_sub(descriptor.center_height >> 1),
+    })
+}
+
 pub fn run_ship_3d_temp_snd_setup(state: &mut Ship3dTempSndState) -> Option<Ship3dTempSndEffect> {
     if !state.trigger {
         return Some(Ship3dTempSndEffect::default());
@@ -2104,6 +2200,10 @@ fn projection_dot(components: [i32; 3], terms: [i32; 3]) -> i32 {
 fn project_ship_3d_axis(numerator: i32, depth: i32, center: u16) -> u16 {
     let quotient = numerator / depth;
     (quotient as u16).wrapping_add(center)
+}
+
+fn scale_ship_3d_object_dimension(dimension: u16, depth_scale: u16) -> u16 {
+    (u32::from(dimension).wrapping_mul(u32::from(depth_scale)) >> SHIP_3D_OBJECT_SCALE_SHIFT) as u16
 }
 
 fn checked_i16_div_i8_to_i8(dividend: i16, divisor: i8) -> Option<i8> {
@@ -4124,6 +4224,128 @@ mod tests {
                 },
             ),
             None
+        );
+    }
+
+    #[test]
+    fn object_sprite_projection_scales_and_centers_visible_descriptor() {
+        let matrix = Ship3dProjectionMatrix {
+            terms: [0x8000, 0, 0, 0, -0x8000, 0, 0, 0, 0x8000],
+        };
+
+        let projection = project_ship_3d_object_sprite(
+            Ship3dProjectionPoint {
+                x: 10,
+                y: 20,
+                z: 1000,
+            },
+            Ship3dProjectionOrigin::default(),
+            matrix,
+            Ship3dObjectSpriteDescriptor {
+                flags: SHIP_3D_OBJECT_VISIBLE_FLAG,
+                source_width: 64,
+                source_height: 32,
+                center_width: 40,
+                center_height: 20,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(
+            projection,
+            Ship3dObjectSpriteProjection {
+                projected: Ship3dProjectedPoint {
+                    x: 162,
+                    y: 95,
+                    depth: 1000,
+                },
+                depth_scale: 1048,
+                scaled_width: 65,
+                scaled_height: 32,
+                draw_x: 142,
+                draw_y: 85,
+            }
+        );
+    }
+
+    #[test]
+    fn object_sprite_projection_skips_hidden_descriptor_and_zero_depth() {
+        let matrix = Ship3dProjectionMatrix {
+            terms: [0x8000, 0, 0, 0, -0x8000, 0, 0, 0, 0x8000],
+        };
+        let descriptor = Ship3dObjectSpriteDescriptor {
+            flags: 0,
+            source_width: 64,
+            source_height: 32,
+            center_width: 40,
+            center_height: 20,
+        };
+
+        assert_eq!(
+            project_ship_3d_object_sprite(
+                Ship3dProjectionPoint {
+                    x: 10,
+                    y: 20,
+                    z: 1000,
+                },
+                Ship3dProjectionOrigin::default(),
+                matrix,
+                descriptor,
+            ),
+            None
+        );
+        assert_eq!(
+            project_ship_3d_object_sprite(
+                Ship3dProjectionPoint { x: 0, y: 0, z: 0 },
+                Ship3dProjectionOrigin::default(),
+                matrix,
+                Ship3dObjectSpriteDescriptor {
+                    flags: SHIP_3D_OBJECT_VISIBLE_FLAG,
+                    ..descriptor
+                },
+            ),
+            None
+        );
+    }
+
+    #[test]
+    fn object_sprite_projection_wraps_negative_depth_before_scaling() {
+        let matrix = Ship3dProjectionMatrix {
+            terms: [0x8000, 0, 0, 0, -0x8000, 0, 0, 0, 0x8000],
+        };
+
+        let projection = project_ship_3d_object_sprite(
+            Ship3dProjectionPoint {
+                x: 0,
+                y: 0,
+                z: 0xffff,
+            },
+            Ship3dProjectionOrigin::default(),
+            matrix,
+            Ship3dObjectSpriteDescriptor {
+                flags: SHIP_3D_OBJECT_VISIBLE_FLAG,
+                source_width: 64,
+                source_height: 32,
+                center_width: 0,
+                center_height: 0,
+            },
+        )
+        .unwrap();
+
+        assert_eq!(
+            projection,
+            Ship3dObjectSpriteProjection {
+                projected: Ship3dProjectedPoint {
+                    x: 160,
+                    y: 100,
+                    depth: 0xffff,
+                },
+                depth_scale: 16,
+                scaled_width: 1,
+                scaled_height: 0,
+                draw_x: 160,
+                draw_y: 100,
+            }
         );
     }
 

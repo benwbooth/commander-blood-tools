@@ -310,8 +310,15 @@ then centered at `(160,100)` before writing scratch words
 `DS:0x2FB9/0x2FBB/0x2FBD`. The `0x9B04` helper clips against
 `DS:0x5235..0x523B`, computes `y * 320 + x`, only writes empty depth-buffer
 pixels, and encodes shade as `0xEF - (depth >> 12)`. The object/sprite
-projection path at `0x9B98` is now the next geometry target; it reuses the same
-matrix math but adds sprite descriptor scaling and draw calls.
+projection path at `0x9B98` is now partially recovered as
+`project_ship_3d_object_sprite()`: it walks eleven three-word anchor records at
+`DS:0x4F09` with a 6-byte stride, uses descriptor records
+`DS:0x6212 + ((counter + 0x15) << 5)`, gates on descriptor flag `0x0080`,
+reuses the same matrix rows and screen centers, wraps negative depth by adding
+`0x10000`, computes scale `(0x08000000 >> 7) / depth`, scales source
+width/height by `>> 10`, and subtracts descriptor center extents at
+`+0x0C/+0x0E` before the far draw call. The remaining object-rendering target is
+the pair of far draw helpers reached at `0x0299:0x133D` and `0x0299:0x127D`.
 
 The next control-layer markers are now pinned. `0xB2BB` selects the next
 ship/navigation target record from `DS:0x250B`, or from the inline fallback table
@@ -1910,6 +1917,12 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       matrix dot products, perspective divide centers `(160,100)`, viewport clip
       words `DS:0x5235..0x523B`, occupied-pixel skip, `y * 320 + x` offset, and
       depth shade `0xEF - (depth >> 12)`.
+- [x] Port ship 3D object/sprite projection prep:
+      file `0x9B98` now maps its visible-descriptor gate, anchor projection,
+      negative-depth wrap, depth-scale divide, source-dimension scaling, and
+      top-left draw positioning into `project_ship_3d_object_sprite()`. This
+      leaves the far draw helpers at `0x0299:0x133D` and `0x0299:0x127D` as the
+      next sprite-rendering target.
 - [x] Port ship 3D temporary `3D.snd` setup branch:
       `src/ship3d.rs` now models file `0xB591`: the `DS:0x0AE4` one-shot gate,
       phase byte `DS:0x0AE5` cycling across the three `DS:0x0ACC` callback
