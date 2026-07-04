@@ -32,11 +32,17 @@ INPUT_PID=""
 case "$DUR" in
   ''|*[!0-9]*) echo "duration must be a positive integer number of seconds"; exit 1 ;;
 esac
+# INTERVAL may be fractional (e.g. 0.5) so the boot logo sequence can be
+# sampled densely enough to frame-align a fast cutscene against a capture.
 case "$INTERVAL" in
-  ''|*[!0-9]*) echo "ORACLE_CAPTURE_INTERVAL must be a positive integer number of seconds"; exit 1 ;;
+  ''|*[!0-9.]*|*.*.*) echo "ORACLE_CAPTURE_INTERVAL must be a positive number of seconds"; exit 1 ;;
 esac
-if [ "$DUR" -le 0 ] || [ "$INTERVAL" -le 0 ]; then
-  echo "duration and ORACLE_CAPTURE_INTERVAL must be positive"
+if [ "$DUR" -le 0 ]; then
+  echo "duration must be positive"
+  exit 1
+fi
+if ! awk "BEGIN{exit !($INTERVAL > 0)}"; then
+  echo "ORACLE_CAPTURE_INTERVAL must be positive"
   exit 1
 fi
 
@@ -95,9 +101,12 @@ printf "frame\tpath\telapsed_s\tepoch_s\tdisplay\tcapture_kind\tcrop_x\tcrop_y\t
 # Grab the framebuffer every few seconds while the game runs.
 n=0
 elapsed=0
-while [ "$elapsed" -lt "$DUR" ]; do
+# Float-safe loop so ORACLE_CAPTURE_INTERVAL can be sub-second. `elapsed` is
+# formatted with awk; the manifest records it verbatim (integer-valued when the
+# interval is whole seconds, so existing manifests are unchanged).
+while awk "BEGIN{exit !($elapsed < $DUR)}"; do
   sleep "$INTERVAL"
-  elapsed=$((elapsed + INTERVAL))
+  elapsed="$(awk "BEGIN{printf \"%g\", $elapsed + $INTERVAL}")"
   n=$((n + 1))
   frame="frame_$(printf '%02d' $n).png"
   if DISPLAY="$DISP" import -window root "$CAP/$frame" 2>/dev/null; then

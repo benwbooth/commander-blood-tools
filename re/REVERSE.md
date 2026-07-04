@@ -2260,6 +2260,18 @@ output. Next oracle step is scripted input via `ORACLE_INPUT_SCRIPT` or a debug
 scene selector so one generated dialogue run can be compared against a matched
 real-game capture with a threshold.
 
+BOOT SEQUENCE MAPPED (sess 003, dense 0.5s capture via
+`ORACLE_CAPTURE_INTERVAL=0.5`): DOSBox-X splash → **MINDSCAPE** (`sq/mind.hnm`,
+~2.5s) → **Microfolie's** silvery banner (a distinct asset, ~3.5s) → **astronaut
+/ red-spacesuit space cinematic** (~7s) → **CRYO** (`sq/microfol.hnm` — note the
+file named "microfol" renders the CRYO developer logo, NOT Microfolie's) → title
+→ gameplay. This corrects two earlier guesses: `microfol.hnm`≠Microfolie's, and
+the astronaut intro is NOT `the_star.hnm` (which renders a cockpit dashboard).
+A fresh independent capture re-confirms `mind.hnm` vs its MINDSCAPE frame at
+`mean_abs 1.09` (bit-for-bit reproducible); `microfol.hnm` vs the CRYO frame is
+`~9.9` (capture caught the logo still forming). The Microfolie's-banner and
+astronaut-cinematic source HNMs are not yet pinned.
+
 FIRST VERIFIED CUTSCENE (boot sequence, no scripted input needed): the real
 game's deterministic boot plays `sq\mind.HNM` then `sq\the_star.HNM` (a fixed
 0x10-byte-record path table at BLOODPRG.EXE file offset ~0x5C90; trailing slots

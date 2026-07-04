@@ -17,7 +17,9 @@ used to normalize the 800x600 host capture back to native 320x200.
 
 Useful environment controls:
 
-- `ORACLE_CAPTURE_INTERVAL=1`: capture cadence in integer seconds.
+- `ORACLE_CAPTURE_INTERVAL=0.5`: capture cadence in seconds; may be fractional
+  (e.g. `0.5`) to sample the boot logo sequence densely enough to frame-align a
+  fast cutscene. `elapsed_s` in the manifest is recorded verbatim.
 - `ORACLE_CAPTURE_DIR=/tmp/cb-captures`: write captures somewhere other than
   `accuracy/captures`.
 - `ORACLE_CAPTURE_MANIFEST=/tmp/cb-captures.tsv`: write capture metadata to a
