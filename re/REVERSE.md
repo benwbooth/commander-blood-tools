@@ -1555,8 +1555,9 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `src/ship3d.rs` now implements the `0xB2BB` target-record selector with
       tests for phase prepass/gating, primary-list target adjustment, fallback
       table behavior, no-selection `AX=0`, and the `-1` sentinel opening
-      transition (`DS:0x252F=1`, `DS:0x2531=6`). The remaining 3D state work
-      starts at `0xB34E` and the `0x071E:0x0C48` query/layout helper.
+      transition (`DS:0x252F=1`, `DS:0x2531=6`). The remaining 3D trigger
+      prelude work starts at `0xB34E`, especially the record-scan contract
+      around `0x04DA:0x1D4E` and the `DS:0x2B53` candidate list.
 - [x] Port ship 3D interpolation gate:
       `src/ship3d.rs` implements the `0x008B:0x0FAD` four-word interpolation
       gate used by the target selector. Tests cover carry-set completion,
@@ -1664,6 +1665,18 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       clears activation latches `DS:0x0A3E/0x0A40`. Any nonnegative selection
       clears `DS:0x2A19` and bit `0x04` in `DS:0x2793`. Rust exposes this as
       `run_ship_3d_nav_choice_handler_4()`.
+- [x] Port ship 3D navigation sequence branch:
+      the internal branch at `0x0A9A:0x04E1` (file `0xB481`) now has a Rust
+      state/effect model as `run_ship_3d_navigation_sequence_update()`. If
+      `DS:0x2532` is set without opening flag `DS:0x252F`, Rust reports that
+      the final reset branch is pending. If no exit is pending but
+      `DS:0x252A` is clear, and presentation defer byte `DS:0x67B0` is also
+      clear, the branch arms `DS:0x2532=1` and `DS:0x252F=1`. The active path
+      runs the temporary `sn\3D.snd` setup and procedural update call, blocks
+      while `DS:0x67AC` is set, otherwise copies the `DS:0x5229` framebuffer,
+      sets dirty byte `DS:0x0DB8=1`, waits while the interpolation gate is
+      active when duration `DS:0x0ADA == 6`, and on a nonnegative target-list
+      query clears `DS:0x252A` and sets `DS:0x2532`.
 - [x] Port recovered framebuffer fill/copy primitives:
       `src/extract/render.rs` now has tested Rust helpers for the clipped
       rectangle fill, palette-remap rectangle, scene-band fill, full 320x200

@@ -60,6 +60,7 @@ pub const SHIP_3D_NAV_CHOICE_HANDLER4_TOGGLE_OFF_TARGET_LIST_OFFSET: u16 = 0x257
 pub const SHIP_3D_NAV_CHOICE_HANDLER4_TOGGLE_ON_TARGET_LIST_OFFSET: u16 = 0x2581;
 pub const SHIP_3D_NAV_CHOICE_TABLO2_VOC_PATH_OFFSET: u16 = 0x0d3d;
 pub const SHIP_3D_NAV_CHOICE_SOUND_GATE_SUPPRESS_TARGETS: u8 = 0x02;
+pub const SHIP_3D_NAVIGATION_INTERPOLATION_DURATION: u8 = 0x06;
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dTransitionState {
@@ -253,6 +254,28 @@ pub struct Ship3dNavChoiceHandler4State {
     pub sound_gate: u8,
     pub target_activate_flag: bool,
     pub target_activate_secondary_flag: bool,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dNavigationSequenceState {
+    pub exit_pending: bool,
+    pub sequence_active: bool,
+    pub opening: bool,
+    pub interpolation_duration_ticks: u8,
+    pub framebuffer_dirty: bool,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dNavigationSequenceEffect {
+    pub ran_temp_snd_setup: bool,
+    pub ran_procedural_update: bool,
+    pub blocked_by_presentation_active: bool,
+    pub copied_framebuffer: bool,
+    pub interpolation_active: bool,
+    pub queried_target_list: bool,
+    pub armed_exit_pending: bool,
+    pub armed_opening_exit: bool,
+    pub final_reset_pending: bool,
 }
 
 pub fn update_ship_3d_transition_state(state: &mut Ship3dTransitionState, random_gate_zero: bool) {
@@ -739,6 +762,67 @@ pub fn run_ship_3d_nav_choice_handler_4(
     state.hud_flags &= !SHIP_3D_NAV_CHOICE_TARGET_LIST_FLAG;
     effect.cleared_selected_choice = true;
     effect.cleared_hud_target_list_flag = true;
+    effect
+}
+
+pub fn run_ship_3d_navigation_sequence_update(
+    state: &mut Ship3dNavigationSequenceState,
+    presentation_active: bool,
+    presentation_defer_active: bool,
+    interpolation_complete: bool,
+    query_selection_ax: u16,
+) -> Ship3dNavigationSequenceEffect {
+    let mut effect = Ship3dNavigationSequenceEffect::default();
+
+    let run_active_sequence = if state.exit_pending {
+        if state.opening {
+            true
+        } else {
+            effect.final_reset_pending = true;
+            return effect;
+        }
+    } else if state.sequence_active {
+        true
+    } else {
+        if !presentation_defer_active {
+            state.exit_pending = true;
+            state.opening = true;
+            effect.armed_opening_exit = true;
+        }
+        return effect;
+    };
+
+    if !run_active_sequence {
+        return effect;
+    }
+
+    effect.ran_temp_snd_setup = true;
+    effect.ran_procedural_update = true;
+
+    if presentation_active {
+        effect.blocked_by_presentation_active = true;
+        return effect;
+    }
+
+    state.framebuffer_dirty = true;
+    effect.copied_framebuffer = true;
+
+    if state.interpolation_duration_ticks != SHIP_3D_NAVIGATION_INTERPOLATION_DURATION {
+        return effect;
+    }
+
+    if !interpolation_complete {
+        effect.interpolation_active = true;
+        return effect;
+    }
+
+    effect.queried_target_list = true;
+    if signed_i16(query_selection_ax) >= 0 {
+        state.sequence_active = false;
+        state.exit_pending = true;
+        effect.armed_exit_pending = true;
+    }
+
     effect
 }
 
@@ -2462,5 +2546,190 @@ mod tests {
         );
         assert_eq!(state.selected_choice, 0);
         assert_eq!(state.hud_flags, 0);
+    }
+
+    #[test]
+    fn navigation_sequence_active_path_runs_temp_snd_and_blocks_on_presentation() {
+        let mut state = Ship3dNavigationSequenceState {
+            sequence_active: true,
+            interpolation_duration_ticks: SHIP_3D_NAVIGATION_INTERPOLATION_DURATION,
+            ..Ship3dNavigationSequenceState::default()
+        };
+
+        let effect = run_ship_3d_navigation_sequence_update(
+            &mut state,
+            true,
+            false,
+            true,
+            SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
+        );
+
+        assert_eq!(
+            effect,
+            Ship3dNavigationSequenceEffect {
+                ran_temp_snd_setup: true,
+                ran_procedural_update: true,
+                blocked_by_presentation_active: true,
+                ..Ship3dNavigationSequenceEffect::default()
+            }
+        );
+        assert!(!state.framebuffer_dirty);
+        assert!(state.sequence_active);
+        assert!(!state.exit_pending);
+    }
+
+    #[test]
+    fn navigation_sequence_copies_framebuffer_without_target_query_when_duration_differs() {
+        let mut state = Ship3dNavigationSequenceState {
+            sequence_active: true,
+            interpolation_duration_ticks: SHIP_3D_NAVIGATION_INTERPOLATION_DURATION - 1,
+            ..Ship3dNavigationSequenceState::default()
+        };
+
+        let effect = run_ship_3d_navigation_sequence_update(&mut state, false, false, true, 0);
+
+        assert_eq!(
+            effect,
+            Ship3dNavigationSequenceEffect {
+                ran_temp_snd_setup: true,
+                ran_procedural_update: true,
+                copied_framebuffer: true,
+                ..Ship3dNavigationSequenceEffect::default()
+            }
+        );
+        assert!(state.framebuffer_dirty);
+        assert!(state.sequence_active);
+        assert!(!state.exit_pending);
+    }
+
+    #[test]
+    fn navigation_sequence_waits_while_interpolation_is_active() {
+        let mut state = Ship3dNavigationSequenceState {
+            sequence_active: true,
+            interpolation_duration_ticks: SHIP_3D_NAVIGATION_INTERPOLATION_DURATION,
+            ..Ship3dNavigationSequenceState::default()
+        };
+
+        let effect = run_ship_3d_navigation_sequence_update(&mut state, false, false, false, 0);
+
+        assert_eq!(
+            effect,
+            Ship3dNavigationSequenceEffect {
+                ran_temp_snd_setup: true,
+                ran_procedural_update: true,
+                copied_framebuffer: true,
+                interpolation_active: true,
+                ..Ship3dNavigationSequenceEffect::default()
+            }
+        );
+        assert!(state.framebuffer_dirty);
+        assert!(state.sequence_active);
+        assert!(!state.exit_pending);
+    }
+
+    #[test]
+    fn navigation_sequence_complete_selection_arms_exit_pending() {
+        let mut state = Ship3dNavigationSequenceState {
+            sequence_active: true,
+            interpolation_duration_ticks: SHIP_3D_NAVIGATION_INTERPOLATION_DURATION,
+            ..Ship3dNavigationSequenceState::default()
+        };
+
+        let effect = run_ship_3d_navigation_sequence_update(&mut state, false, false, true, 0);
+
+        assert_eq!(
+            effect,
+            Ship3dNavigationSequenceEffect {
+                ran_temp_snd_setup: true,
+                ran_procedural_update: true,
+                copied_framebuffer: true,
+                queried_target_list: true,
+                armed_exit_pending: true,
+                ..Ship3dNavigationSequenceEffect::default()
+            }
+        );
+        assert!(state.framebuffer_dirty);
+        assert!(!state.sequence_active);
+        assert!(state.exit_pending);
+    }
+
+    #[test]
+    fn navigation_sequence_complete_no_selection_keeps_sequence_active() {
+        let mut state = Ship3dNavigationSequenceState {
+            sequence_active: true,
+            interpolation_duration_ticks: SHIP_3D_NAVIGATION_INTERPOLATION_DURATION,
+            ..Ship3dNavigationSequenceState::default()
+        };
+
+        let effect = run_ship_3d_navigation_sequence_update(
+            &mut state,
+            false,
+            false,
+            true,
+            SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
+        );
+
+        assert_eq!(
+            effect,
+            Ship3dNavigationSequenceEffect {
+                ran_temp_snd_setup: true,
+                ran_procedural_update: true,
+                copied_framebuffer: true,
+                queried_target_list: true,
+                ..Ship3dNavigationSequenceEffect::default()
+            }
+        );
+        assert!(state.sequence_active);
+        assert!(!state.exit_pending);
+    }
+
+    #[test]
+    fn navigation_sequence_inactive_without_defer_arms_opening_exit() {
+        let mut state = Ship3dNavigationSequenceState::default();
+
+        let effect = run_ship_3d_navigation_sequence_update(
+            &mut state,
+            false,
+            false,
+            false,
+            SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
+        );
+
+        assert_eq!(
+            effect,
+            Ship3dNavigationSequenceEffect {
+                armed_opening_exit: true,
+                ..Ship3dNavigationSequenceEffect::default()
+            }
+        );
+        assert!(state.exit_pending);
+        assert!(state.opening);
+    }
+
+    #[test]
+    fn navigation_sequence_exit_pending_without_opening_reports_final_reset() {
+        let mut state = Ship3dNavigationSequenceState {
+            exit_pending: true,
+            opening: false,
+            ..Ship3dNavigationSequenceState::default()
+        };
+
+        let effect = run_ship_3d_navigation_sequence_update(
+            &mut state,
+            false,
+            false,
+            true,
+            SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
+        );
+
+        assert_eq!(
+            effect,
+            Ship3dNavigationSequenceEffect {
+                final_reset_pending: true,
+                ..Ship3dNavigationSequenceEffect::default()
+            }
+        );
+        assert!(state.exit_pending);
+        assert!(!state.opening);
     }
 }
