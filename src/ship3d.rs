@@ -526,6 +526,7 @@ pub struct Ship3dDirtyRectSnapshotEffect {
 pub struct Ship3dSpriteSlotRenderCommand {
     pub slot_index: usize,
     pub dispatch_index: u8,
+    pub destination_remap_mode: u8,
     pub flip_x: bool,
     pub flip_y: bool,
     pub slot_rect: Ship3dProjectionViewport,
@@ -1753,6 +1754,7 @@ pub fn collect_ship_3d_dirty_sprite_slot_render_commands(
                     commands.push(Ship3dSpriteSlotRenderCommand {
                         slot_index,
                         dispatch_index: ((flags >> 1) & 0x07) as u8,
+                        destination_remap_mode: ((flags >> 8) & 0x03) as u8,
                         flip_x: flags & 0x0020 != 0,
                         flip_y: flags & 0x0040 != 0,
                         slot_rect,
@@ -4821,7 +4823,10 @@ mod tests {
     fn dirty_sprite_slot_render_walk_collects_intersections_descending_and_clears_dirty() {
         let mut slots = vec![
             Ship3dObjectSpriteDescriptor {
-                flags: SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG | SHIP_3D_SPRITE_SLOT_DIRTY_FLAG | 0x0008,
+                flags: SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG
+                    | SHIP_3D_SPRITE_SLOT_DIRTY_FLAG
+                    | 0x0008
+                    | 0x0100,
                 draw_x: 1,
                 draw_y: 1,
                 extent_width: 4,
@@ -4841,7 +4846,8 @@ mod tests {
                     | SHIP_3D_SPRITE_SLOT_DIRTY_FLAG
                     | 0x000c
                     | 0x0020
-                    | 0x0040,
+                    | 0x0040
+                    | 0x0300,
                 draw_x: 20,
                 draw_y: 20,
                 extent_width: 8,
@@ -4868,6 +4874,7 @@ mod tests {
                 Ship3dSpriteSlotRenderCommand {
                     slot_index: 2,
                     dispatch_index: 7,
+                    destination_remap_mode: 3,
                     flip_x: true,
                     flip_y: true,
                     slot_rect: Ship3dProjectionViewport {
@@ -4881,6 +4888,7 @@ mod tests {
                 Ship3dSpriteSlotRenderCommand {
                     slot_index: 0,
                     dispatch_index: 5,
+                    destination_remap_mode: 1,
                     flip_x: false,
                     flip_y: false,
                     slot_rect: Ship3dProjectionViewport {

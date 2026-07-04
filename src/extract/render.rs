@@ -1,4 +1,5 @@
 use super::*;
+use commander_blood_tools::ship3d::{Ship3dProjectionViewport, Ship3dSpriteSlotRenderCommand};
 
 // ===========================================================================
 // Palette and framebuffer helpers
@@ -236,6 +237,13 @@ pub(super) struct SpriteBlitRequest {
     pub(super) clip: (usize, usize, usize, usize),
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum Ship3dSpriteSlotFrame<'a> {
+    Raw(&'a [u8]),
+    Rle(&'a [u8]),
+    Scaled(&'a [u8]),
+}
+
 pub(super) fn blit_raw_transparent_sprite_indexed(
     fb: &mut [u8],
     frame: RawSpriteFrame<'_>,
@@ -357,6 +365,69 @@ pub(super) fn blit_scaled_transparent_sprite_indexed(
     }
 }
 
+pub(super) fn blit_ship_3d_sprite_slot_command_indexed(
+    fb: &mut [u8],
+    command: Ship3dSpriteSlotRenderCommand,
+    frame: Ship3dSpriteSlotFrame<'_>,
+    remap_table_5f11: Option<&[u8; 256]>,
+    remap_table_6011: Option<&[u8; 256]>,
+) -> bool {
+    let request = SpriteBlitRequest {
+        x: signed_word_to_isize(command.slot_rect.left),
+        y: signed_word_to_isize(command.slot_rect.top),
+        width: command.slot_rect.right.wrapping_sub(command.slot_rect.left) as usize,
+        height: command.slot_rect.bottom.wrapping_sub(command.slot_rect.top) as usize,
+        flip_x: command.flip_x,
+        flip_y: command.flip_y,
+        clip: ship_3d_viewport_clip(command.dirty_rect),
+    };
+    let remap_table = ship_3d_destination_remap_table(
+        command.destination_remap_mode,
+        remap_table_5f11,
+        remap_table_6011,
+    );
+
+    match (command.dispatch_index, frame) {
+        (0, Ship3dSpriteSlotFrame::Raw(data)) => {
+            let Some(frame) = RawSpriteFrame::parse(data) else {
+                return false;
+            };
+            blit_raw_transparent_sprite_indexed(fb, frame, request, remap_table);
+            true
+        }
+        (1, Ship3dSpriteSlotFrame::Rle(data)) => {
+            let Some(frame) = RleSpriteFrame::parse(data) else {
+                return false;
+            };
+            blit_rle_transparent_sprite_indexed(fb, frame, request, remap_table);
+            true
+        }
+        (2, Ship3dSpriteSlotFrame::Raw(data)) => {
+            let Some(frame) = RawSpriteFrame::parse(data) else {
+                return false;
+            };
+            blit_raw_opaque_sprite_indexed(fb, frame, request);
+            true
+        }
+        (3, Ship3dSpriteSlotFrame::Rle(data)) => {
+            let Some(frame) = RleSpriteFrame::parse(data) else {
+                return false;
+            };
+            blit_rle_opaque_sprite_indexed(fb, frame, request);
+            true
+        }
+        (4, Ship3dSpriteSlotFrame::Scaled(data)) => {
+            let Some(frame) = ScaledSpriteFrame::parse(data) else {
+                return false;
+            };
+            blit_scaled_transparent_sprite_indexed(fb, frame, request);
+            true
+        }
+        (5..=7, _) => true,
+        _ => false,
+    }
+}
+
 fn decode_rle_sprite_pixels(frame: RleSpriteFrame<'_>, height: usize) -> Option<Vec<u8>> {
     if frame.stride == 0 {
         return None;
@@ -462,6 +533,35 @@ fn blit_raw_sprite_indexed(
             };
         }
     }
+}
+
+fn ship_3d_destination_remap_table<'a>(
+    mode: u8,
+    remap_table_5f11: Option<&'a [u8; 256]>,
+    remap_table_6011: Option<&'a [u8; 256]>,
+) -> Option<&'a [u8; 256]> {
+    match mode & 0x03 {
+        0 => None,
+        1 => remap_table_5f11,
+        _ => remap_table_6011,
+    }
+}
+
+fn ship_3d_viewport_clip(viewport: Ship3dProjectionViewport) -> (usize, usize, usize, usize) {
+    (
+        clamp_signed_word_to_viewport(viewport.left, VIEWPORT_W),
+        clamp_signed_word_to_viewport(viewport.right, VIEWPORT_W),
+        clamp_signed_word_to_viewport(viewport.top, VIEWPORT_H),
+        clamp_signed_word_to_viewport(viewport.bottom, VIEWPORT_H),
+    )
+}
+
+fn clamp_signed_word_to_viewport(value: u16, limit: usize) -> usize {
+    signed_word_to_isize(value).clamp(0, limit as isize) as usize
+}
+
+fn signed_word_to_isize(value: u16) -> isize {
+    value as i16 as isize
 }
 
 pub(super) fn render_subtitles_indexed(fb: &mut [u8], cues: &[SubtitleCue], time: f64) {
@@ -1426,6 +1526,95 @@ mod tests {
     }
 
     #[test]
+    fn ship_3d_sprite_slot_command_uses_secondary_destination_remap_table() {
+        let mut frame_bytes = vec![0u8; 8];
+        frame_bytes[0..2].copy_from_slice(&3u16.to_le_bytes());
+        frame_bytes.extend_from_slice(&[7, 0, 8]);
+        let mut remap_5f11 = [0u8; 256];
+        let mut remap_6011 = [0u8; 256];
+        for (idx, value) in remap_5f11.iter_mut().enumerate() {
+            *value = idx as u8;
+        }
+        for (idx, value) in remap_6011.iter_mut().enumerate() {
+            *value = 255 - idx as u8;
+        }
+        let y = SCENE_TOP;
+        let mut fb = vec![0u8; VIEWPORT_W * VIEWPORT_H];
+        fb[y * VIEWPORT_W + 10] = 10;
+        fb[y * VIEWPORT_W + 11] = 11;
+        fb[y * VIEWPORT_W + 12] = 12;
+
+        assert!(blit_ship_3d_sprite_slot_command_indexed(
+            &mut fb,
+            ship_3d_sprite_slot_command(0, 2, 10, y as u16, 3, 1),
+            Ship3dSpriteSlotFrame::Raw(&frame_bytes),
+            Some(&remap_5f11),
+            Some(&remap_6011),
+        ));
+
+        assert_eq!(
+            &fb[y * VIEWPORT_W + 10..y * VIEWPORT_W + 13],
+            &[245, 11, 243]
+        );
+    }
+
+    #[test]
+    fn ship_3d_sprite_slot_command_dispatches_rle_opaque_and_scaled_modes() {
+        let mut rle_frame = vec![0u8; 8];
+        rle_frame[0..2].copy_from_slice(&3u16.to_le_bytes());
+        rle_frame.extend_from_slice(&[0xfe, 4]);
+        let y = SCENE_TOP;
+        let mut fb = vec![9u8; VIEWPORT_W * VIEWPORT_H];
+
+        assert!(blit_ship_3d_sprite_slot_command_indexed(
+            &mut fb,
+            ship_3d_sprite_slot_command(3, 0, 10, y as u16, 3, 1),
+            Ship3dSpriteSlotFrame::Rle(&rle_frame),
+            None,
+            None,
+        ));
+        assert_eq!(&fb[y * VIEWPORT_W + 10..y * VIEWPORT_W + 13], &[4, 4, 4]);
+
+        let mut scaled_frame = vec![0u8; 8];
+        scaled_frame[0..2].copy_from_slice(&2u16.to_le_bytes());
+        scaled_frame[2..4].copy_from_slice(&1u16.to_le_bytes());
+        scaled_frame.extend_from_slice(&[5, 6]);
+
+        assert!(blit_ship_3d_sprite_slot_command_indexed(
+            &mut fb,
+            ship_3d_sprite_slot_command(4, 0, 20, y as u16, 4, 1),
+            Ship3dSpriteSlotFrame::Scaled(&scaled_frame),
+            None,
+            None,
+        ));
+        assert_eq!(&fb[y * VIEWPORT_W + 20..y * VIEWPORT_W + 24], &[5, 5, 6, 6]);
+    }
+
+    #[test]
+    fn ship_3d_sprite_slot_command_keeps_noop_modes_and_rejects_frame_mismatch() {
+        let mut fb = vec![7u8; VIEWPORT_W * VIEWPORT_H];
+        let before = fb.clone();
+
+        assert!(blit_ship_3d_sprite_slot_command_indexed(
+            &mut fb,
+            ship_3d_sprite_slot_command(5, 0, 10, SCENE_TOP as u16, 1, 1),
+            Ship3dSpriteSlotFrame::Raw(&[]),
+            None,
+            None,
+        ));
+        assert_eq!(fb, before);
+
+        assert!(!blit_ship_3d_sprite_slot_command_indexed(
+            &mut fb,
+            ship_3d_sprite_slot_command(2, 0, 10, SCENE_TOP as u16, 1, 1),
+            Ship3dSpriteSlotFrame::Rle(&[]),
+            None,
+            None,
+        ));
+        assert_eq!(fb, before);
+    }
+
+    #[test]
     fn subtitles_use_binary_reveal_palette_indices() {
         let cues = [SubtitleCue {
             tick: 0,
@@ -1459,5 +1648,34 @@ mod tests {
 
         assert!(rgb.chunks_exact(3).any(|pixel| pixel == [1, 2, 3]));
         assert!(rgb.chunks_exact(3).any(|pixel| pixel == [4, 5, 6]));
+    }
+
+    fn ship_3d_sprite_slot_command(
+        dispatch_index: u8,
+        destination_remap_mode: u8,
+        x: u16,
+        y: u16,
+        width: u16,
+        height: u16,
+    ) -> Ship3dSpriteSlotRenderCommand {
+        Ship3dSpriteSlotRenderCommand {
+            slot_index: 0,
+            dispatch_index,
+            destination_remap_mode,
+            flip_x: false,
+            flip_y: false,
+            slot_rect: Ship3dProjectionViewport {
+                left: x,
+                right: x.wrapping_add(width),
+                top: y,
+                bottom: y.wrapping_add(height),
+            },
+            dirty_rect: Ship3dProjectionViewport {
+                left: 0,
+                right: VIEWPORT_W as u16,
+                top: 0,
+                bottom: VIEWPORT_H as u16,
+            },
+        }
     }
 }

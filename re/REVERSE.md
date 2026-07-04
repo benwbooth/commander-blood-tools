@@ -342,9 +342,12 @@ intersection loop at `0x0299:0x14E1` is now modeled as
 dirty-rect list starts with a negative/sentinel word, walks the requested slot
 range in descending order, skips inactive slots for drawing, uses signed-word
 exclusive-edge rectangle tests, selects the internal blitter dispatch as
-`(slot_state >> 1) & 7`, extracts horizontal/vertical flip from state bits 5/6,
-and clears dirty bit `0x0002` after each visited slot. The internal blitter
-bodies remain the next sprite-rendering target.
+`(slot_state >> 1) & 7`, extracts destination-remap selector `slot_state>>8 & 3`,
+extracts horizontal/vertical flip from state bits 5/6, and clears dirty bit
+`0x0002` after each visited slot. `blit_ship_3d_sprite_slot_command_indexed()`
+now connects those recovered commands to the Rust ports of the dispatch table's
+raw/RLE/scaled sprite blitters; the next sprite-rendering target is wiring this
+bridge into the broader event renderer and validating against DOS captures.
 
 The next control-layer markers are now pinned. `0xB2BB` selects the next
 ship/navigation target record from `DS:0x250B`, or from the inline fallback table
@@ -1188,9 +1191,8 @@ This is still a caller map, not a full renderer decompilation. It removes the
 guesswork about which external render hooks the VM/presentation state machine
 uses. All 32 direct render-segment target offsets are now named and tied to
 instruction behavior, and the sprite-slot blitter dispatch table is now
-decoded. The remaining render RE gap is porting those pixel loops into the Rust
-renderer, wiring them into the event renderer, and validating them against real
-DOS captures.
+decoded. The remaining render RE gap is wiring the recovered command/blitter
+path into the event renderer and validating it against real DOS captures.
 
 Rust now ports the safe framebuffer side of the recovered primitives in
 `src/extract/render.rs`: clipped rectangle fill (`0x0CDC`), current scene-band
@@ -1202,7 +1204,10 @@ opaque, and scaled transparent. The tests cover dirty-rect clipping, source row
 stride, frame-header origin offsets, horizontal/vertical flip mapping,
 transparent zero skip, destination-palette remap masking, RLE literal runs, RLE
 repeated-byte runs, opaque zero writes, 16.16 scaled sampling, scaled clipping
-accumulator advance, and zero destination extents. The character-HNM clear path
+accumulator advance, and zero destination extents. `src/extract/render.rs` also
+bridges `Ship3dSpriteSlotRenderCommand` values into those blitters, including
+dispatch modes 0..4, no-op modes 5..7, dirty-rect clip conversion, and the
+`DS:0x5F11`/`DS:0x6011` destination-remap selector. The character-HNM clear path
 uses the clipped fill helper instead of open-coded per-pixel bounds checks.
 
 ### Audio subsystem (segment 0x0B1B) — located
@@ -1958,15 +1963,19 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       the alternate branch of `0x0299:0x1467` is modeled by
       `commit_ship_3d_global_clip_snapshot()`, including the `DS:0x5249` flag,
       clip words `DS:0x5235..0x523B`, dirty-rect list base `DS:0x6612`, and
-      `0xFFFF` sentinel. The `0x0299:0x14E1` dirty-rectangle renderer remains
-      open.
+      `0xFFFF` sentinel.
 - [x] Port ship 3D dirty-rectangle sprite-slot render selection:
       `collect_ship_3d_dirty_sprite_slot_render_commands()` models the
       `0x0299:0x14E1` slot walk through dirty rectangles, including descending
       slot order, active-slot gate, signed exclusive-edge intersection checks,
-      dispatch selector `(state >> 1) & 7`, flip bits, and dirty-bit clearing.
-      The actual internal blitter bodies are still the remaining pixel-rendering
-      target.
+      dispatch selector `(state >> 1) & 7`, destination-remap selector
+      `(state >> 8) & 3`, flip bits, and dirty-bit clearing.
+- [x] Bridge ship 3D dirty sprite commands to recovered pixel blitters:
+      `blit_ship_3d_sprite_slot_command_indexed()` maps the recovered
+      `Ship3dSpriteSlotRenderCommand` stream into the Rust ports of dispatch
+      modes 0..4, preserves no-op modes 5..7, converts dirty rectangles to the
+      renderer clip tuple, and selects the two transparent-mode destination
+      remap tables using the binary high-state-byte selector.
 - [x] Port ship 3D temporary `3D.snd` setup branch:
       `src/ship3d.rs` now models file `0xB591`: the `DS:0x0AE4` one-shot gate,
       phase byte `DS:0x0AE5` cycling across the three `DS:0x0ACC` callback
