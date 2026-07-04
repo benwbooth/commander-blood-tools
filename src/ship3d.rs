@@ -9,6 +9,9 @@ pub const SHIP_3D_PLANE_SOURCE_PAGE0_OFFSET: usize = 0xc000;
 pub const SHIP_3D_PLANE_SOURCE_PAGE1_OFFSET: usize = 0xdf40;
 pub const SHIP_3D_PLANE_DEST_BYTES: usize = SHIP_3D_PLANE_PAGE_BYTES * 2;
 pub const SHIP_3D_SCROLL_MODE_HOLD: u16 = 0x000a;
+pub const SHIP_3D_TARGET_EXIT_SENTINEL: u16 = 0xffff;
+pub const SHIP_3D_TARGET_RECORD_HEADER_BYTES: u16 = 0x0004;
+pub const SHIP_3D_TARGET_OPEN_STEP: u8 = 0x06;
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dTransitionState {
@@ -36,6 +39,24 @@ pub struct Ship3dPlaneBandCopy {
     pub second_source_start: usize,
     pub second_dest_start: usize,
     pub new_scroll_value: Option<u16>,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dTargetSelectorState {
+    pub current_target: u16,
+    pub target_select_phase: u8,
+    pub target_fallback: bool,
+    pub target_animation_tick: u8,
+    pub opening: bool,
+    pub depth_step: u8,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Ship3dTargetSelection {
+    pub ax: u16,
+    pub used_fallback_table: bool,
+    pub ran_layout_prepass: bool,
+    pub phase_gate_blocked: bool,
 }
 
 pub fn update_ship_3d_transition_state(state: &mut Ship3dTransitionState, random_gate_zero: bool) {
@@ -130,6 +151,74 @@ pub fn copy_ship_3d_plane_bands(
         second_dest_start,
         new_scroll_value: (scroll_mode != SHIP_3D_SCROLL_MODE_HOLD)
             .then(|| ship_3d_scroll_value(depth_offset)),
+    })
+}
+
+pub fn select_ship_3d_target_record(
+    state: &mut Ship3dTargetSelectorState,
+    primary_targets: &[u16],
+    fallback_targets: &[u16],
+    query_index_ax: u16,
+    phase_gate_complete: bool,
+) -> Option<Ship3dTargetSelection> {
+    state.target_fallback = false;
+    let mut targets = primary_targets;
+    if primary_targets.first().copied() == Some(SHIP_3D_TARGET_EXIT_SENTINEL) {
+        targets = fallback_targets;
+        state.target_fallback = true;
+    }
+    let used_fallback_table = state.target_fallback;
+
+    let mut ran_layout_prepass = false;
+    if state.target_select_phase & 1 != 0 {
+        ran_layout_prepass = true;
+        state.target_animation_tick = 0;
+        state.target_select_phase = state.target_select_phase.wrapping_add(1);
+    }
+
+    if state.target_select_phase & 2 != 0 {
+        if !phase_gate_complete {
+            return Some(Ship3dTargetSelection {
+                ax: 0,
+                used_fallback_table,
+                ran_layout_prepass,
+                phase_gate_blocked: true,
+            });
+        }
+        state.target_select_phase = 0;
+    }
+
+    if query_index_ax == SHIP_3D_TARGET_EXIT_SENTINEL {
+        return Some(Ship3dTargetSelection {
+            ax: 0,
+            used_fallback_table,
+            ran_layout_prepass,
+            phase_gate_blocked: false,
+        });
+    }
+
+    let selected = targets.get(query_index_ax as usize).copied()?;
+    if selected == SHIP_3D_TARGET_EXIT_SENTINEL {
+        state.opening = true;
+        state.depth_step = SHIP_3D_TARGET_OPEN_STEP;
+        return Some(Ship3dTargetSelection {
+            ax: SHIP_3D_TARGET_EXIT_SENTINEL,
+            used_fallback_table,
+            ran_layout_prepass,
+            phase_gate_blocked: false,
+        });
+    }
+
+    let ax = if state.target_fallback {
+        state.current_target
+    } else {
+        selected.wrapping_sub(SHIP_3D_TARGET_RECORD_HEADER_BYTES)
+    };
+    Some(Ship3dTargetSelection {
+        ax,
+        used_fallback_table,
+        ran_layout_prepass,
+        phase_gate_blocked: false,
     })
 }
 
@@ -313,11 +402,9 @@ mod tests {
             &dest[copied.second_dest_start..copied.second_dest_start + copied.byte_count],
             &source[copied.second_source_start..copied.second_source_start + copied.byte_count]
         );
-        assert!(
-            dest[copied.byte_count..copied.second_dest_start]
-                .iter()
-                .all(|value| *value == 0xee)
-        );
+        assert!(dest[copied.byte_count..copied.second_dest_start]
+            .iter()
+            .all(|value| *value == 0xee));
         assert_eq!(copied.new_scroll_value, Some(0x64));
     }
 
@@ -358,5 +445,114 @@ mod tests {
         assert_eq!(ship_3d_scroll_value(50), 0);
         assert_eq!(ship_3d_scroll_value(SHIP_3D_MAX_DEPTH_OFFSET), 0);
         assert_eq!(copy_ship_3d_plane_bands(&mut [], &[], 0, false, 0), None);
+    }
+
+    #[test]
+    fn target_selector_runs_phase_prepass_and_blocks_while_gate_is_active() {
+        let mut state = Ship3dTargetSelectorState {
+            target_select_phase: 1,
+            target_animation_tick: 7,
+            ..Ship3dTargetSelectorState::default()
+        };
+
+        let selected = select_ship_3d_target_record(&mut state, &[0x1200], &[], 0, false).unwrap();
+
+        assert_eq!(
+            selected,
+            Ship3dTargetSelection {
+                ax: 0,
+                used_fallback_table: false,
+                ran_layout_prepass: true,
+                phase_gate_blocked: true,
+            }
+        );
+        assert_eq!(state.target_select_phase, 2);
+        assert_eq!(state.target_animation_tick, 0);
+    }
+
+    #[test]
+    fn target_selector_returns_primary_target_after_phase_gate_completes() {
+        let mut state = Ship3dTargetSelectorState {
+            target_select_phase: 2,
+            ..Ship3dTargetSelectorState::default()
+        };
+
+        let selected =
+            select_ship_3d_target_record(&mut state, &[0x1200, 0x2345], &[], 1, true).unwrap();
+
+        assert_eq!(
+            selected,
+            Ship3dTargetSelection {
+                ax: 0x2341,
+                used_fallback_table: false,
+                ran_layout_prepass: false,
+                phase_gate_blocked: false,
+            }
+        );
+        assert_eq!(state.target_select_phase, 0);
+        assert!(!state.opening);
+    }
+
+    #[test]
+    fn target_selector_fallback_table_returns_current_target() {
+        let mut state = Ship3dTargetSelectorState {
+            current_target: 0x4567,
+            ..Ship3dTargetSelectorState::default()
+        };
+
+        let selected = select_ship_3d_target_record(
+            &mut state,
+            &[SHIP_3D_TARGET_EXIT_SENTINEL],
+            &[0x2222],
+            0,
+            true,
+        )
+        .unwrap();
+
+        assert_eq!(
+            selected,
+            Ship3dTargetSelection {
+                ax: 0x4567,
+                used_fallback_table: true,
+                ran_layout_prepass: false,
+                phase_gate_blocked: false,
+            }
+        );
+        assert!(state.target_fallback);
+    }
+
+    #[test]
+    fn target_selector_exit_sentinel_arms_opening_transition() {
+        let mut state = Ship3dTargetSelectorState::default();
+
+        let selected = select_ship_3d_target_record(
+            &mut state,
+            &[0x1200, SHIP_3D_TARGET_EXIT_SENTINEL],
+            &[],
+            1,
+            true,
+        )
+        .unwrap();
+
+        assert_eq!(selected.ax, SHIP_3D_TARGET_EXIT_SENTINEL);
+        assert!(state.opening);
+        assert_eq!(state.depth_step, SHIP_3D_TARGET_OPEN_STEP);
+    }
+
+    #[test]
+    fn target_selector_no_query_selection_returns_zero_ax() {
+        let mut state = Ship3dTargetSelectorState::default();
+
+        let selected = select_ship_3d_target_record(
+            &mut state,
+            &[0x1200],
+            &[],
+            SHIP_3D_TARGET_EXIT_SENTINEL,
+            true,
+        )
+        .unwrap();
+
+        assert_eq!(selected.ax, 0);
+        assert!(!state.opening);
     }
 }

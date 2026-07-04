@@ -265,6 +265,19 @@ dialogue/HUD state, and eventually drives the exit/reset branch through
 `DS:0x2532`. The alternate framebuffer call at `0xB24C` temporarily swaps
 `DS:0x5219` to `DS:0x521D` before invoking the recovered plane-band updater.
 
+`src/ship3d.rs` now ports the local `0xB2BB` selector behavior. Its persistent
+state is `DS:0x251B` (current target), `DS:0x252B` (phase), `DS:0x252C`
+(fallback flag), `DS:0x0ADB` (animation tick reset), `DS:0x252F` (opening), and
+`DS:0x2531` (depth step). If phase bit 0 is set, the routine runs a layout
+prepass through `0x071E:0x0C48`, resets `DS:0x0ADB`, and increments the phase.
+If phase bit 1 is still set and the `0x008B:0x0FAD` interpolation gate has not
+completed, it returns `AX=0`. Once the gate completes, it clears the phase and
+uses the `0x071E:0x0C48` query result as a word index into the active target
+list. Query `AX=-1` returns zero. Target word `-1` returns `AX=-1`, sets
+`DS:0x252F=1`, and writes step `6` to `DS:0x2531`. Otherwise, the normal list
+returns `target_word - 4`; the fallback list returns the current target
+`DS:0x251B`.
+
 `src/ship3d.rs` ports the recovered transition/blit primitives:
 
 - `0xB692` updates only transition control: when `DS:0x2533` is clear and
@@ -1514,6 +1527,12 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `0x250B`, `0x251B`, `0x252A..0x252C`, `0x2532`, `0x2537`, and `0x27D8`.
       These are the next decompilation targets before a real `wgpu` minigame
       frontend can be game-accurate.
+- [x] Port ship 3D target selector:
+      `src/ship3d.rs` now implements the `0xB2BB` target-record selector with
+      tests for phase prepass/gating, primary-list target adjustment, fallback
+      table behavior, no-selection `AX=0`, and the `-1` sentinel opening
+      transition (`DS:0x252F=1`, `DS:0x2531=6`). The remaining 3D state work
+      starts at `0xB34E` and the `0x071E:0x0C48` query/layout helper.
 - [x] Port recovered framebuffer fill/copy primitives:
       `src/extract/render.rs` now has tested Rust helpers for the clipped
       rectangle fill, palette-remap rectangle, scene-band fill, full 320x200
