@@ -486,12 +486,19 @@ range** — `JERRY`/`SCRUTER` bodies are almost entirely indices **225-236**
 indices 224-239 at all** (they cover the low/mid background range), so the
 character sprites are drawn with a separate **character palette loaded into the
 top ~32 DAC slots** when a character is shown — a classic reserved-high-slot
-sprite palette. The open sub-question is therefore narrowed to: where the
-`224-255` character palette is loaded from (a static palette in BLOODPRG.EXE, an
-`.xdb` overlay — SCRUTER is the `croolis`/scrutinizer species — or a per-frame
-`pl` chunk in a character HNM beyond frame 0). The orb uses low indices (2-121,
-grayscale) so it renders without this. The HNM palette-block format is known
-(`render.rs::parse_palette_block`, 6-bit RGB expanded `(v<<2)|(v>>4)`).
+sprite palette. The open sub-question is therefore narrowed to where the
+`224-255` character palette is loaded from. Sources ELIMINATED this session:
+(a) not embedded in the `.spr` — the banks end exactly at their last frame, no
+trailing palette; (b) not in any HNM header palette — scanning every
+`_tmp_dat/**/*.hnm` header block, ZERO define indices 224-239; (c) not set via
+an immediate VGA-DAC write — the only `mov dx,0x3c8` sites (`0x862B`/`0x8694`)
+tweak a few UI indices near 0x7B (123), never 0xE0 (224). So the character
+palette is bulk-uploaded from either a **per-frame `pl` chunk** in a character
+HNM beyond frame 0 (not the header), or an **`.xdb` overlay** (SCRUTER is the
+`croolis`/scrutinizer species → `croolis.xdb`), or dynamic construction — all of
+which tie into the overlay/animation subsystems (thread #2). The orb uses low
+indices (2-121, grayscale) so it renders without this. HNM palette-block format
+is known (`render.rs::parse_palette_block`, 6-bit RGB expanded `(v<<2)|(v>>4)`).
 
 CONNECTION TO EXISTING WORK: the profile table at `FS:0x11F4` (file `0x0D3E4`)
 that `vm_resource_profile_select` (`0x53A0`) copies into `DS:0x6712` is the
