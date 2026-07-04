@@ -337,8 +337,14 @@ The global clip-snapshot branch of `0x1467` is now modeled as
 the binary writes clip words `DS:0x5235/0x5237/0x5239/0x523B` as the first dirty
 rectangle at `DS:0x6612`, writes a `0xFFFF` sentinel immediately after it, clears
 `DS:0x5249`, and exits without walking the sprite slots. The dirty-rectangle
-intersection loop at `0x0299:0x14E1` and the internal blitter dispatch are still
-the next sprite-rendering targets.
+intersection loop at `0x0299:0x14E1` is now modeled as
+`collect_ship_3d_dirty_sprite_slot_render_commands()`: it exits when the
+dirty-rect list starts with a negative/sentinel word, walks the requested slot
+range in descending order, skips inactive slots for drawing, uses signed-word
+exclusive-edge rectangle tests, selects the internal blitter dispatch as
+`(slot_state >> 1) & 7`, extracts horizontal/vertical flip from state bits 5/6,
+and clears dirty bit `0x0002` after each visited slot. The internal blitter
+bodies remain the next sprite-rendering target.
 
 The next control-layer markers are now pinned. `0xB2BB` selects the next
 ship/navigation target record from `DS:0x250B`, or from the inline fallback table
@@ -1954,6 +1960,13 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       clip words `DS:0x5235..0x523B`, dirty-rect list base `DS:0x6612`, and
       `0xFFFF` sentinel. The `0x0299:0x14E1` dirty-rectangle renderer remains
       open.
+- [x] Port ship 3D dirty-rectangle sprite-slot render selection:
+      `collect_ship_3d_dirty_sprite_slot_render_commands()` models the
+      `0x0299:0x14E1` slot walk through dirty rectangles, including descending
+      slot order, active-slot gate, signed exclusive-edge intersection checks,
+      dispatch selector `(state >> 1) & 7`, flip bits, and dirty-bit clearing.
+      The actual internal blitter bodies are still the remaining pixel-rendering
+      target.
 - [x] Port ship 3D temporary `3D.snd` setup branch:
       `src/ship3d.rs` now models file `0xB591`: the `DS:0x0AE4` one-shot gate,
       phase byte `DS:0x0AE5` cycling across the three `DS:0x0ACC` callback

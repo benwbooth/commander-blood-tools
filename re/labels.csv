@@ -126,6 +126,7 @@ DS:0x6612,sprite_dirty_rect_list,"dirty rectangle list consumed by sprite_slot_d
 0x00420D,sprite_slot_position_update,"updates sprite slot +0x08/+0x0A screen position words and sets dirty bit on change"
 0x0042CD,sprite_slot_extent_update,"updates sprite slot +0x0C/+0x0E extent words and sets dirty/source-change bits on change"
 0x0043F7,sprite_slot_commit_dirty_range,"commits dirty active sprite-slot current geometry into previous-geometry fields across AX..BX"
+0x004471,sprite_slot_dirty_range_render,"walks active sprite slots against dirty rects, selects blitter dispatch, and clears dirty bit"
 0x008428,ship_3d_target_query_layout,"target-list label measurement, centered layout rectangle, draw path, and mouse/query return helper"
 0x009656,ship_3d_procedural_angle_update,"ship HUD/procedural update: angle state, mouse ring wrapping, and target-list rotation gate"
 0x0098B9,ship_3d_projection_matrix_build,"builds 3x3 fixed-point projection matrix at DS:0x2F95 from angle table DS:0x4F45 and angle words DS:0x2F71/0x2F6D/0x2F6F"

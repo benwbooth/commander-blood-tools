@@ -522,6 +522,16 @@ pub struct Ship3dDirtyRectSnapshotEffect {
     pub cleared_snapshot_flag: bool,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Ship3dSpriteSlotRenderCommand {
+    pub slot_index: usize,
+    pub dispatch_index: u8,
+    pub flip_x: bool,
+    pub flip_y: bool,
+    pub slot_rect: Ship3dProjectionViewport,
+    pub dirty_rect: Ship3dProjectionViewport,
+}
+
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dTempSndState {
     pub trigger: bool,
@@ -1714,6 +1724,50 @@ pub fn commit_ship_3d_global_clip_snapshot(
     }
 }
 
+pub fn collect_ship_3d_dirty_sprite_slot_render_commands(
+    slots: &mut [Ship3dObjectSpriteDescriptor],
+    dirty_rects: &Ship3dDirtyRectList,
+    start_index: usize,
+    end_index: usize,
+) -> Vec<Ship3dSpriteSlotRenderCommand> {
+    if dirty_rects.rects.is_empty() || start_index > end_index {
+        return Vec::new();
+    }
+
+    let mut commands = Vec::new();
+    for slot_index in (start_index..=end_index).rev() {
+        let Some(slot) = slots.get_mut(slot_index) else {
+            continue;
+        };
+        let flags = slot.flags;
+
+        if flags & SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG != 0 {
+            let slot_rect = Ship3dProjectionViewport {
+                left: slot.draw_x,
+                right: slot.draw_x.wrapping_add(slot.extent_width),
+                top: slot.draw_y,
+                bottom: slot.draw_y.wrapping_add(slot.extent_height),
+            };
+            for dirty_rect in &dirty_rects.rects {
+                if ship_3d_rects_intersect(slot_rect, *dirty_rect) {
+                    commands.push(Ship3dSpriteSlotRenderCommand {
+                        slot_index,
+                        dispatch_index: ((flags >> 1) & 0x07) as u8,
+                        flip_x: flags & 0x0020 != 0,
+                        flip_y: flags & 0x0040 != 0,
+                        slot_rect,
+                        dirty_rect: *dirty_rect,
+                    });
+                }
+            }
+        }
+
+        slot.flags &= !SHIP_3D_SPRITE_SLOT_DIRTY_FLAG;
+    }
+
+    commands
+}
+
 pub fn run_ship_3d_temp_snd_setup(state: &mut Ship3dTempSndState) -> Option<Ship3dTempSndEffect> {
     if !state.trigger {
         return Some(Ship3dTempSndEffect::default());
@@ -2356,6 +2410,16 @@ fn project_ship_3d_axis(numerator: i32, depth: i32, center: u16) -> u16 {
 
 fn scale_ship_3d_object_dimension(dimension: u16, depth_scale: u16) -> u16 {
     (u32::from(dimension).wrapping_mul(u32::from(depth_scale)) >> SHIP_3D_OBJECT_SCALE_SHIFT) as u16
+}
+
+fn ship_3d_rects_intersect(
+    slot_rect: Ship3dProjectionViewport,
+    dirty_rect: Ship3dProjectionViewport,
+) -> bool {
+    signed_i16(slot_rect.left) < signed_i16(dirty_rect.right)
+        && signed_i16(slot_rect.top) < signed_i16(dirty_rect.bottom)
+        && signed_i16(slot_rect.right) > signed_i16(dirty_rect.left)
+        && signed_i16(slot_rect.bottom) > signed_i16(dirty_rect.top)
 }
 
 fn checked_i16_div_i8_to_i8(dividend: i16, divisor: i8) -> Option<i8> {
@@ -4751,6 +4815,137 @@ mod tests {
         );
         assert!(!snapshot_armed);
         assert_eq!(dirty_rects, original);
+    }
+
+    #[test]
+    fn dirty_sprite_slot_render_walk_collects_intersections_descending_and_clears_dirty() {
+        let mut slots = vec![
+            Ship3dObjectSpriteDescriptor {
+                flags: SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG | SHIP_3D_SPRITE_SLOT_DIRTY_FLAG | 0x0008,
+                draw_x: 1,
+                draw_y: 1,
+                extent_width: 4,
+                extent_height: 4,
+                ..Ship3dObjectSpriteDescriptor::default()
+            },
+            Ship3dObjectSpriteDescriptor {
+                flags: SHIP_3D_SPRITE_SLOT_DIRTY_FLAG,
+                draw_x: 10,
+                draw_y: 10,
+                extent_width: 4,
+                extent_height: 4,
+                ..Ship3dObjectSpriteDescriptor::default()
+            },
+            Ship3dObjectSpriteDescriptor {
+                flags: SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG
+                    | SHIP_3D_SPRITE_SLOT_DIRTY_FLAG
+                    | 0x000c
+                    | 0x0020
+                    | 0x0040,
+                draw_x: 20,
+                draw_y: 20,
+                extent_width: 8,
+                extent_height: 8,
+                ..Ship3dObjectSpriteDescriptor::default()
+            },
+        ];
+        let dirty_rects = Ship3dDirtyRectList {
+            rects: vec![Ship3dProjectionViewport {
+                left: 0,
+                right: 30,
+                top: 0,
+                bottom: 30,
+            }],
+            sentinel: SHIP_3D_DIRTY_RECT_SENTINEL,
+        };
+
+        let commands =
+            collect_ship_3d_dirty_sprite_slot_render_commands(&mut slots, &dirty_rects, 0, 2);
+
+        assert_eq!(
+            commands,
+            vec![
+                Ship3dSpriteSlotRenderCommand {
+                    slot_index: 2,
+                    dispatch_index: 7,
+                    flip_x: true,
+                    flip_y: true,
+                    slot_rect: Ship3dProjectionViewport {
+                        left: 20,
+                        right: 28,
+                        top: 20,
+                        bottom: 28,
+                    },
+                    dirty_rect: dirty_rects.rects[0],
+                },
+                Ship3dSpriteSlotRenderCommand {
+                    slot_index: 0,
+                    dispatch_index: 5,
+                    flip_x: false,
+                    flip_y: false,
+                    slot_rect: Ship3dProjectionViewport {
+                        left: 1,
+                        right: 5,
+                        top: 1,
+                        bottom: 5,
+                    },
+                    dirty_rect: dirty_rects.rects[0],
+                },
+            ]
+        );
+        assert_eq!(slots[0].flags & SHIP_3D_SPRITE_SLOT_DIRTY_FLAG, 0);
+        assert_eq!(slots[1].flags & SHIP_3D_SPRITE_SLOT_DIRTY_FLAG, 0);
+        assert_eq!(slots[2].flags & SHIP_3D_SPRITE_SLOT_DIRTY_FLAG, 0);
+    }
+
+    #[test]
+    fn dirty_sprite_slot_render_walk_without_dirty_rects_is_noop() {
+        let mut slots = vec![Ship3dObjectSpriteDescriptor {
+            flags: SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG | SHIP_3D_SPRITE_SLOT_DIRTY_FLAG,
+            draw_x: 1,
+            draw_y: 1,
+            extent_width: 4,
+            extent_height: 4,
+            ..Ship3dObjectSpriteDescriptor::default()
+        }];
+
+        assert_eq!(
+            collect_ship_3d_dirty_sprite_slot_render_commands(
+                &mut slots,
+                &Ship3dDirtyRectList::default(),
+                0,
+                0,
+            ),
+            Vec::<Ship3dSpriteSlotRenderCommand>::new()
+        );
+        assert_ne!(slots[0].flags & SHIP_3D_SPRITE_SLOT_DIRTY_FLAG, 0);
+    }
+
+    #[test]
+    fn dirty_sprite_slot_render_walk_uses_exclusive_edges() {
+        let mut slots = vec![Ship3dObjectSpriteDescriptor {
+            flags: SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG | SHIP_3D_SPRITE_SLOT_DIRTY_FLAG,
+            draw_x: 10,
+            draw_y: 10,
+            extent_width: 5,
+            extent_height: 5,
+            ..Ship3dObjectSpriteDescriptor::default()
+        }];
+        let dirty_rects = Ship3dDirtyRectList {
+            rects: vec![Ship3dProjectionViewport {
+                left: 15,
+                right: 30,
+                top: 10,
+                bottom: 30,
+            }],
+            sentinel: SHIP_3D_DIRTY_RECT_SENTINEL,
+        };
+
+        assert_eq!(
+            collect_ship_3d_dirty_sprite_slot_render_commands(&mut slots, &dirty_rects, 0, 0),
+            Vec::<Ship3dSpriteSlotRenderCommand>::new()
+        );
+        assert_eq!(slots[0].flags & SHIP_3D_SPRITE_SLOT_DIRTY_FLAG, 0);
     }
 
     #[test]
