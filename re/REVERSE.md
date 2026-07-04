@@ -307,7 +307,11 @@ subtracting that offset. The target-list bit `DS:0x2793 & 4` switches the
 inactive-HUD branch from angle auto-rotation to cursor repositioning.
 
 The matrix builder at file `0x98B9` is now identified as the 3x3 fixed-point
-projection matrix setup. It reads cosine/sine pairs from table `DS:0x4F45`,
+projection matrix setup. It reads cosine/sine pairs from table `DS:0x4F45`
+(now RECOVERED, sess 003: a static 180-entry `(cos,sin)` trig table, 2°/entry,
+Q14 amplitude `0x4000`, embedded byte-exact as `SHIP_3D_ANGLE_TABLE` in
+`src/ship3d.rs` with a binary-verification test — the matrix builder doubles
+each value to Q15),
 doubles them from `0x4000` to `0x8000` scale into the scratch vector at
 `DS:0x2F7D`, consumes angle words `DS:0x2F71`, `DS:0x2F6D`, and `DS:0x2F6F`,
 then writes nine signed dwords at `DS:0x2F95`. The multiply order is preserved

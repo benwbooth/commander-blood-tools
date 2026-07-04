@@ -417,6 +417,51 @@ pub struct Ship3dAngleTableEntry {
     pub sine: i16,
 }
 
+/// The recovered ship-3D rotation trig table at `DS:0x4F45` in BLOODPRG.EXE:
+/// 180 `(cosine, sine)` pairs, one per **2 degrees** (index 45 = 90°, 90 = 180°,
+/// wrapping at 180), stored at Q14 amplitude `0x4000`. `matrix_pair_for_angle`
+/// doubles each value to Q15 before the fixed-point matrix math. Angle words
+/// (`DS:0x2F71` etc.) index this table directly. Verified byte-exact against the
+/// binary by `tests::angle_table_matches_binary`.
+#[rustfmt::skip]
+pub const SHIP_3D_ANGLE_TABLE: [Ship3dAngleTableEntry; 180] = {
+    const fn e(cosine: i16, sine: i16) -> Ship3dAngleTableEntry {
+        Ship3dAngleTableEntry { cosine, sine }
+    }
+    [
+        e(16384, 0), e(16374, 571), e(16344, 1142), e(16294, 1712), e(16224, 2280), e(16135, 2845),
+        e(16025, 3406), e(15897, 3963), e(15749, 4516), e(15582, 5062), e(15395, 5603), e(15190, 6137),
+        e(14967, 6663), e(14725, 7182), e(14466, 7691), e(14188, 8191), e(13894, 8682), e(13582, 9161),
+        e(13254, 9630), e(12910, 10086), e(12550, 10531), e(12175, 10963), e(11785, 11381), e(11381, 11785),
+        e(10963, 12175), e(10531, 12550), e(10086, 12910), e(9630, 13254), e(9161, 13582), e(8682, 13894),
+        e(8192, 14188), e(7691, 14466), e(7182, 14725), e(6663, 14967), e(6137, 15190), e(5603, 15395),
+        e(5062, 15582), e(4516, 15749), e(3963, 15897), e(3406, 16025), e(2845, 16135), e(2280, 16224),
+        e(1712, 16294), e(1142, 16344), e(571, 16374), e(0, 16384), e(-571, 16374), e(-1142, 16344),
+        e(-1712, 16294), e(-2280, 16224), e(-2845, 16135), e(-3406, 16025), e(-3963, 15897), e(-4516, 15749),
+        e(-5062, 15582), e(-5603, 15395), e(-6137, 15190), e(-6663, 14967), e(-7182, 14725), e(-7691, 14466),
+        e(-8191, 14188), e(-8682, 13894), e(-9161, 13582), e(-9630, 13254), e(-10086, 12910), e(-10531, 12550),
+        e(-10963, 12175), e(-11381, 11785), e(-11785, 11381), e(-12175, 10963), e(-12550, 10531), e(-12910, 10086),
+        e(-13254, 9630), e(-13582, 9161), e(-13894, 8682), e(-14188, 8192), e(-14466, 7691), e(-14725, 7182),
+        e(-14967, 6663), e(-15190, 6137), e(-15395, 5603), e(-15582, 5062), e(-15749, 4516), e(-15897, 3963),
+        e(-16025, 3406), e(-16135, 2845), e(-16224, 2280), e(-16294, 1712), e(-16344, 1142), e(-16374, 571),
+        e(-16384, 0), e(-16374, -571), e(-16344, -1142), e(-16294, -1712), e(-16224, -2280), e(-16135, -2845),
+        e(-16025, -3406), e(-15897, -3963), e(-15749, -4516), e(-15582, -5062), e(-15395, -5603), e(-15190, -6137),
+        e(-14967, -6663), e(-14725, -7182), e(-14466, -7691), e(-14188, -8191), e(-13894, -8682), e(-13582, -9161),
+        e(-13254, -9630), e(-12910, -10086), e(-12550, -10531), e(-12175, -10963), e(-11785, -11381), e(-11381, -11785),
+        e(-10963, -12175), e(-10531, -12550), e(-10086, -12910), e(-9630, -13254), e(-9161, -13582), e(-8682, -13894),
+        e(-8192, -14188), e(-7691, -14466), e(-7182, -14725), e(-6663, -14967), e(-6137, -15190), e(-5603, -15395),
+        e(-5062, -15582), e(-4516, -15749), e(-3963, -15897), e(-3406, -16025), e(-2845, -16135), e(-2280, -16224),
+        e(-1712, -16294), e(-1142, -16344), e(-571, -16374), e(0, -16384), e(571, -16374), e(1142, -16344),
+        e(1712, -16294), e(2280, -16224), e(2845, -16135), e(3406, -16025), e(3963, -15897), e(4516, -15749),
+        e(5062, -15582), e(5603, -15395), e(6137, -15190), e(6663, -14967), e(7182, -14725), e(7691, -14466),
+        e(8191, -14188), e(8682, -13894), e(9161, -13582), e(9630, -13254), e(10086, -12910), e(10531, -12550),
+        e(10963, -12175), e(11381, -11785), e(11785, -11381), e(12175, -10963), e(12550, -10531), e(12910, -10086),
+        e(13254, -9630), e(13582, -9161), e(13894, -8682), e(14188, -8192), e(14466, -7691), e(14725, -7182),
+        e(14967, -6663), e(15190, -6137), e(15395, -5603), e(15582, -5062), e(15749, -4516), e(15897, -3963),
+        e(16025, -3406), e(16135, -2845), e(16224, -2280), e(16294, -1712), e(16344, -1142), e(16374, -571),
+    ]
+};
+
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dMatrixAngles {
     pub angle_2f71: u16,
@@ -6528,6 +6573,51 @@ mod tests {
                 counter: 1,
             }
         );
+    }
+
+    #[test]
+    fn angle_table_matches_binary() {
+        // Byte-exact vs the little-endian (cosine, sine) i16 pairs at DS:0x4F45
+        // (file 0xD420 + 0x4F45). Skips when the binary is not checked out.
+        let candidates = ["re/bin/BLOODPRG.EXE", "../re/bin/BLOODPRG.EXE"];
+        let Some(data) = candidates.iter().find_map(|p| std::fs::read(p).ok()) else {
+            eprintln!("skipping: BLOODPRG.EXE not available");
+            return;
+        };
+        let base = 0xD420 + 0x4F45;
+        for (i, entry) in SHIP_3D_ANGLE_TABLE.iter().enumerate() {
+            let off = base + i * 4;
+            let cos = i16::from_le_bytes([data[off], data[off + 1]]);
+            let sin = i16::from_le_bytes([data[off + 2], data[off + 3]]);
+            assert_eq!(entry.cosine, cos, "cosine mismatch at index {i}");
+            assert_eq!(entry.sine, sin, "sine mismatch at index {i}");
+        }
+    }
+
+    #[test]
+    fn angle_table_is_a_consistent_trig_table() {
+        assert_eq!(SHIP_3D_ANGLE_TABLE.len(), 180);
+        // 0deg, 90deg (index 45), 180deg (index 90) at Q14 amplitude 0x4000.
+        let entry = |c, s| Ship3dAngleTableEntry { cosine: c, sine: s };
+        assert_eq!(SHIP_3D_ANGLE_TABLE[0], entry(0x4000, 0));
+        assert_eq!(SHIP_3D_ANGLE_TABLE[45], entry(0, 0x4000));
+        assert_eq!(SHIP_3D_ANGLE_TABLE[90], entry(-0x4000, 0));
+        // Every entry sits on the Q14 unit circle within rounding.
+        for (i, e) in SHIP_3D_ANGLE_TABLE.iter().enumerate() {
+            let mag = (i32::from(e.cosine).pow(2) + i32::from(e.sine).pow(2)) as f64;
+            assert!(
+                (mag.sqrt() - 16384.0).abs() < 2.0,
+                "index {i} off the unit circle: {}",
+                mag.sqrt()
+            );
+        }
+        // The table feeds the matrix builder without an index-out-of-range.
+        let angles = Ship3dMatrixAngles {
+            angle_2f71: 10,
+            projection_angle_2f6d: 45,
+            angle_2f6f: 179,
+        };
+        assert!(build_ship_3d_projection_matrix(&SHIP_3D_ANGLE_TABLE, angles).is_some());
     }
 
     #[test]
