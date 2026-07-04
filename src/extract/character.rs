@@ -640,6 +640,8 @@ fn create_executed_dialogue_run_video(
             voice_selector: line.param0,
             active_line_id: line.active_line_id,
             flags_b4: line.param1,
+            skip_count: line.skip_count,
+            loop_target: line.loop_target,
             clip_index: line.clip_index,
             text: line.text.clone(),
         })
@@ -744,6 +746,8 @@ fn create_profile_dialogue_run_video(
             voice_selector: line.row.param0,
             active_line_id: line.row.active_line_id,
             flags_b4: line.row.param1,
+            skip_count: line.row.skip_count,
+            loop_target: line.row.loop_target,
             clip_index: line.row.clip_index,
             text: line.row.text.clone(),
         })
@@ -939,6 +943,8 @@ pub(super) fn create_character_dialogue_video(
             voice_selector: line.param0,
             active_line_id: line.active_line_id,
             flags_b4: line.param1,
+            skip_count: line.skip_count,
+            loop_target: line.loop_target,
             clip_index: line.clip_index,
             text: line.text.clone(),
         })
@@ -1332,6 +1338,8 @@ mod tests {
             background_music: location.map(|loc| format!("{loc}_music")),
             param0,
             param1: 0,
+            skip_count: None,
+            loop_target: None,
             active_line_id: vm::text_selector_active_line_id(param0),
             clip_index,
             text: text.to_string(),

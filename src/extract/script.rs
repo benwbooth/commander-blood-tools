@@ -224,7 +224,7 @@ pub(super) fn parse_script_text_flags(
 }
 
 fn text_skip_count(flags_b4: u8, flags_b5: u8) -> Option<u8> {
-    (flags_b4 & 0x08 != 0).then_some(((flags_b5 >> 4) & 0x07) + 1)
+    vm::text_conditional_skip_count(flags_b4, flags_b5)
 }
 
 fn text_control_summary(flags_b4: u8, flags_b5: u8, loop_target: Option<u16>) -> String {
@@ -633,6 +633,7 @@ struct TextCallInfo {
     voice_selector: u8,
     flags_b4: u8,
     flags_b5: u8,
+    skip_count: Option<u8>,
     loop_target: Option<u16>,
     text: String,
     text_end: usize,
@@ -1195,6 +1196,8 @@ fn executed_speech_rows_from_trace(
                 .and_then(|background| background.music.clone()),
             param0: call.voice_selector,
             param1: call.flags_b4,
+            skip_count: call.skip_count,
+            loop_target: call.loop_target,
             active_line_id: vm::text_selector_active_line_id(call.voice_selector),
             clip_index,
             text: call.text.clone(),
@@ -1234,6 +1237,7 @@ fn text_calls_by_offset(cod: &[u8], words: &HashMap<u16, String>) -> HashMap<usi
                 voice_selector,
                 flags_b4,
                 flags_b5,
+                skip_count: vm::text_conditional_skip_count(flags_b4, flags_b5),
                 loop_target,
                 text: assemble_dialogue(&decoded_words),
                 text_end,
@@ -1343,6 +1347,7 @@ pub(super) fn parse_script_text_calls(
                 line_index,
                 voice_selector,
                 flags_b4,
+                flags_b5,
                 loop_target,
                 word_offsets,
                 ..
@@ -1398,6 +1403,8 @@ pub(super) fn parse_script_text_calls(
                     actor_record: actor.as_ref().map(|actor| actor.record_name.clone()),
                     param0,
                     param1,
+                    skip_count: vm::text_conditional_skip_count(flags_b4, flags_b5),
+                    loop_target,
                     active_line_id: Some(active_line_id),
                     clip_index,
                     // Prefer the runtime location computed by executing the script; fall
@@ -2274,12 +2281,12 @@ pub(super) fn write_script_speech_manifest(
     let mut file = File::create(out_path)?;
     writeln!(
         file,
-        "script\tfunction\toffset\tactor\tparam0\tparam1\tactive_line_id\tclip_index\tbackground_record\tbackground_hnm\tbackground_music\tsource\ttext\tcall_target\tparams_hex\ttext_end\tactor_ref\tactor_proof\tword_count"
+        "script\tfunction\toffset\tactor\tparam0\tparam1\tskip_count\tloop_target\tactive_line_id\tclip_index\tbackground_record\tbackground_hnm\tbackground_music\tsource\ttext\tcall_target\tparams_hex\ttext_end\tactor_ref\tactor_proof\tword_count"
     )?;
     for row in rows {
         writeln!(
             file,
-            "{}\t{}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t0x{:04x}\t{}\t0x{:05x}\t{}\t{}\t{}",
+            "{}\t{}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t0x{:04x}\t{}\t0x{:05x}\t{}\t{}\t{}",
             row.script,
             row.function_name,
             row.offset,
@@ -2289,6 +2296,12 @@ pub(super) fn write_script_speech_manifest(
                 .unwrap_or_default(),
             row.param1
                 .map(|param| format!("{param:02x}"))
+                .unwrap_or_default(),
+            row.skip_count
+                .map(|count| count.to_string())
+                .unwrap_or_default(),
+            row.loop_target
+                .map(|target| format!("0x{target:04x}"))
                 .unwrap_or_default(),
             row.active_line_id
                 .map(|active_line_id| format!("0x{active_line_id:04x}"))
@@ -2356,12 +2369,12 @@ pub(super) fn write_script_executed_speech_manifest(
     let mut file = File::create(out_path)?;
     writeln!(
         file,
-        "script\tsequence_index\tfunction\toffset\tactor\tactor_ref\tlocation_offset\tbackground_record\tbackground_hnm\tbackground_music\tparam0\tparam1\tactive_line_id\tclip_index\tcall_target\ttext_end\tsource\ttext"
+        "script\tsequence_index\tfunction\toffset\tactor\tactor_ref\tlocation_offset\tbackground_record\tbackground_hnm\tbackground_music\tparam0\tparam1\tskip_count\tloop_target\tactive_line_id\tclip_index\tcall_target\ttext_end\tsource\ttext"
     )?;
     for row in rows {
         writeln!(
             file,
-            "{}\t{}\t{}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}\t{:02x}\t{:02x}\t0x{:04x}\t{}\t0x{:04x}\t0x{:05x}\t{}\t{}",
+            "{}\t{}\t{}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}\t{:02x}\t{:02x}\t{}\t{}\t0x{:04x}\t{}\t0x{:04x}\t0x{:05x}\t{}\t{}",
             row.script,
             row.sequence_index,
             row.function_name,
@@ -2378,6 +2391,12 @@ pub(super) fn write_script_executed_speech_manifest(
             row.background_music.as_deref().unwrap_or(""),
             row.param0,
             row.param1,
+            row.skip_count
+                .map(|count| count.to_string())
+                .unwrap_or_default(),
+            row.loop_target
+                .map(|target| format!("0x{target:04x}"))
+                .unwrap_or_default(),
             row.active_line_id,
             row.clip_index
                 .map(|idx| idx.to_string())
@@ -2398,12 +2417,12 @@ pub(super) fn write_script_branch_scenario_speech_manifest(
     let mut file = File::create(out_path)?;
     writeln!(
         file,
-        "scenario_id\tscript\tsequence_index\tfunction\toffset\tactor\tactor_ref\tlocation_offset\tbackground_record\tbackground_hnm\tbackground_music\tparam0\tparam1\tactive_line_id\tclip_index\tcall_target\ttext_end\tsource\ttext"
+        "scenario_id\tscript\tsequence_index\tfunction\toffset\tactor\tactor_ref\tlocation_offset\tbackground_record\tbackground_hnm\tbackground_music\tparam0\tparam1\tskip_count\tloop_target\tactive_line_id\tclip_index\tcall_target\ttext_end\tsource\ttext"
     )?;
     for row in rows {
         writeln!(
             file,
-            "{}\t{}\t{}\t{}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}\t{:02x}\t{:02x}\t0x{:04x}\t{}\t0x{:04x}\t0x{:05x}\t{}\t{}",
+            "{}\t{}\t{}\t{}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}\t{:02x}\t{:02x}\t{}\t{}\t0x{:04x}\t{}\t0x{:04x}\t0x{:05x}\t{}\t{}",
             row.scenario_id.as_deref().unwrap_or(""),
             row.script,
             row.sequence_index,
@@ -2421,6 +2440,12 @@ pub(super) fn write_script_branch_scenario_speech_manifest(
             row.background_music.as_deref().unwrap_or(""),
             row.param0,
             row.param1,
+            row.skip_count
+                .map(|count| count.to_string())
+                .unwrap_or_default(),
+            row.loop_target
+                .map(|target| format!("0x{target:04x}"))
+                .unwrap_or_default(),
             row.active_line_id,
             row.clip_index
                 .map(|idx| idx.to_string())
@@ -2475,12 +2500,12 @@ pub(super) fn write_script_profile_executed_speech_manifest(
     let mut file = File::create(out_path)?;
     writeln!(
         file,
-        "sequence_id\tglobal_sequence_index\trun_index\tprofile_index\td2_operand\tscript\tscript_sequence_index\tfunction\toffset\tactor\tactor_ref\tlocation_offset\tbackground_record\tbackground_hnm\tbackground_music\tparam0\tparam1\tactive_line_id\tclip_index\tcall_target\ttext_end\tsource\ttext"
+        "sequence_id\tglobal_sequence_index\trun_index\tprofile_index\td2_operand\tscript\tscript_sequence_index\tfunction\toffset\tactor\tactor_ref\tlocation_offset\tbackground_record\tbackground_hnm\tbackground_music\tparam0\tparam1\tskip_count\tloop_target\tactive_line_id\tclip_index\tcall_target\ttext_end\tsource\ttext"
     )?;
     for row in rows {
         writeln!(
             file,
-            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}\t{:02x}\t{:02x}\t0x{:04x}\t{}\t0x{:04x}\t0x{:05x}\t{}\t{}",
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t0x{:05x}\t{}\t{}\t{}\t{}\t{}\t{}\t{:02x}\t{:02x}\t{}\t{}\t0x{:04x}\t{}\t0x{:04x}\t0x{:05x}\t{}\t{}",
             row.sequence_id,
             row.global_sequence_index,
             row.run_index,
@@ -2504,6 +2529,14 @@ pub(super) fn write_script_profile_executed_speech_manifest(
             row.row.background_music.as_deref().unwrap_or(""),
             row.row.param0,
             row.row.param1,
+            row.row
+                .skip_count
+                .map(|count| count.to_string())
+                .unwrap_or_default(),
+            row.row
+                .loop_target
+                .map(|target| format!("0x{target:04x}"))
+                .unwrap_or_default(),
             row.row.active_line_id,
             row.row
                 .clip_index
@@ -3146,6 +3179,8 @@ fn executed_line_input(row: &ScriptExecutedSpeechLine) -> vm::LineInput {
         voice_selector: row.param0,
         active_line_id: row.active_line_id,
         flags_b4: row.param1,
+        skip_count: row.skip_count,
+        loop_target: row.loop_target,
         clip_index: row.clip_index,
         text: row.text.clone(),
     }
@@ -3181,6 +3216,8 @@ fn format_scene_event_fields(
     String,
     String,
     String,
+    String,
+    String,
 ) {
     let mut actor = source
         .and_then(|line| line.actor_record.clone())
@@ -3198,6 +3235,8 @@ fn format_scene_event_fields(
     let mut voice_selector = String::new();
     let mut active_line_id = String::new();
     let mut flags_b4 = String::new();
+    let mut skip_count = String::new();
+    let mut loop_target = String::new();
     let mut text = String::new();
     let source_detail = source
         .map(|line| clean_tsv(&line.source))
@@ -3227,10 +3266,18 @@ fn format_scene_event_fields(
             voice_selector: event_voice_selector,
             active_line_id: event_active_line_id,
             flags,
+            skip_count: event_skip_count,
+            loop_target: event_loop_target,
         } => {
             voice_selector = format!("{event_voice_selector:02x}");
             active_line_id = format!("0x{event_active_line_id:04x}");
             flags_b4 = format!("{flags:02x}");
+            skip_count = event_skip_count
+                .map(|count| count.to_string())
+                .unwrap_or_default();
+            loop_target = event_loop_target
+                .map(|target| format!("0x{target:04x}"))
+                .unwrap_or_default();
             text = clean_tsv(event_text);
         }
         vm::SceneEvent::PlayChatter {
@@ -3265,6 +3312,8 @@ fn format_scene_event_fields(
         voice_selector,
         active_line_id,
         flags_b4,
+        skip_count,
+        loop_target,
         text,
         source_detail,
     )
@@ -3278,7 +3327,7 @@ pub(super) fn write_script_scene_events_manifest(
     let mut file = File::create(out_path)?;
     writeln!(
         file,
-        "scenario_id\trun_id\tmp4\tscript\trun_index\tevent_index\tevent_kind\tsequence_index\toffset\tactor\tbackground_record\tbackground_hnm\tbackground_music\tclip_index\tvoice_selector\tactive_line_id\tflags_b4\ttext\tsource"
+        "scenario_id\trun_id\tmp4\tscript\trun_index\tevent_index\tevent_kind\tsequence_index\toffset\tactor\tbackground_record\tbackground_hnm\tbackground_music\tclip_index\tvoice_selector\tactive_line_id\tflags_b4\tskip_count\tloop_target\ttext\tsource"
     )?;
     for run in runs {
         let run_id = executed_dialogue_run_id(&run);
@@ -3306,12 +3355,14 @@ pub(super) fn write_script_scene_events_manifest(
                 voice_selector,
                 active_line_id,
                 flags_b4,
+                skip_count,
+                loop_target,
                 text,
                 source_detail,
             ) = format_scene_event_fields(event, source);
             writeln!(
                 file,
-                "{}\t{}\t{}.mp4\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                "{}\t{}\t{}.mp4\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
                 run.scenario_id.as_deref().unwrap_or(""),
                 run_id,
                 output_stem,
@@ -3333,6 +3384,8 @@ pub(super) fn write_script_scene_events_manifest(
                 voice_selector,
                 active_line_id,
                 flags_b4,
+                skip_count,
+                loop_target,
                 text,
                 source_detail,
             )?;
@@ -3352,7 +3405,7 @@ pub(super) fn write_script_profile_scene_events_manifest(
     let mut file = File::create(out_path)?;
     writeln!(
         file,
-        "sequence_id\trun_id\tmp4\trun_index\tfirst_profile_index\tlast_profile_index\tevent_index\tevent_kind\tglobal_sequence_index\tprofile_index\td2_operand\tscript\tscript_sequence_index\toffset\tactor\tbackground_record\tbackground_hnm\tbackground_music\tclip_index\tvoice_selector\tactive_line_id\tflags_b4\ttext\tsource"
+        "sequence_id\trun_id\tmp4\trun_index\tfirst_profile_index\tlast_profile_index\tevent_index\tevent_kind\tglobal_sequence_index\tprofile_index\td2_operand\tscript\tscript_sequence_index\toffset\tactor\tbackground_record\tbackground_hnm\tbackground_music\tclip_index\tvoice_selector\tactive_line_id\tflags_b4\tskip_count\tloop_target\ttext\tsource"
     )?;
     for run in runs {
         let run_id = profile_dialogue_run_id(&run);
@@ -3380,12 +3433,14 @@ pub(super) fn write_script_profile_scene_events_manifest(
                 voice_selector,
                 active_line_id,
                 flags_b4,
+                skip_count,
+                loop_target,
                 text,
                 source_detail,
             ) = format_scene_event_fields(event, source.map(|line| &line.row));
             writeln!(
                 file,
-                "{}\t{}\t{}.mp4\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+                "{}\t{}\t{}.mp4\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
                 run.sequence_id,
                 run_id,
                 output_stem,
@@ -3418,6 +3473,8 @@ pub(super) fn write_script_profile_scene_events_manifest(
                 voice_selector,
                 active_line_id,
                 flags_b4,
+                skip_count,
+                loop_target,
                 text,
                 source_detail,
             )?;
@@ -3780,6 +3837,8 @@ mod tests {
             actor_record: actor.map(str::to_string),
             param0: Some(1),
             param1: Some(0),
+            skip_count: None,
+            loop_target: None,
             active_line_id: Some(vm::text_selector_active_line_id(1)),
             clip_index: actor.map(|_| 0),
             background_record: location.map(str::to_string),
@@ -3818,6 +3877,8 @@ mod tests {
             background_music: location.map(|loc| format!("{loc}_music")),
             param0: 1,
             param1: 0,
+            skip_count: None,
+            loop_target: None,
             active_line_id: vm::text_selector_active_line_id(1),
             clip_index: actor.map(|_| 0),
             text: text.to_string(),
@@ -4693,9 +4754,14 @@ mod tests {
 
     #[test]
     fn scene_events_manifest_exports_renderer_event_stream() {
+        let mut looped =
+            executed_speech_line("SCRIPT2", 1, 0x60, Some("Actor_A"), Some("Room1"), "second");
+        looped.param1 = 0x18;
+        looped.skip_count = Some(3);
+        looped.loop_target = Some(0x1234);
         let rows = vec![
             executed_speech_line("SCRIPT2", 0, 0x50, Some("Actor_A"), Some("Room1"), "first"),
-            executed_speech_line("SCRIPT2", 1, 0x60, Some("Actor_A"), Some("Room1"), "second"),
+            looped,
         ];
 
         let path = std::env::temp_dir().join(format!(
@@ -4724,7 +4790,8 @@ mod tests {
             manifest
                 .contains("\tplay_voice\t0\t0x00050\tActor_A\tRoom1\tRoom1.hnm\tRoom1_music\t0")
         );
-        assert!(manifest.contains("\tdraw_subtitle\t0\t0x00050\tActor_A\tRoom1\tRoom1.hnm\tRoom1_music\t\t01\t0x000a\t00\tfirst"));
+        assert!(manifest.contains("\tdraw_subtitle\t0\t0x00050\tActor_A\tRoom1\tRoom1.hnm\tRoom1_music\t\t01\t0x000a\t00\t\t\tfirst"));
+        assert!(manifest.contains("\tdraw_subtitle\t1\t0x00060\tActor_A\tRoom1\tRoom1.hnm\tRoom1_music\t\t01\t0x000a\t18\t3\t0x1234\tsecond"));
         assert!(manifest.contains(
             "\tplay_chatter\t0\t0x00050\tActor_A\tRoom1\tRoom1.hnm\tRoom1_music\t\t\t0x000a"
         ));
@@ -4735,11 +4802,11 @@ mod tests {
         assert!(draw.ends_with("\tfirst\ttest"));
         let last = manifest.lines().last().expect("last scene-event row");
         let columns = last.split('\t').collect::<Vec<_>>();
-        assert_eq!(columns.len(), 19);
+        assert_eq!(columns.len(), 21);
         assert_eq!(columns[6], "clear");
         assert_eq!(columns[7], "");
         assert_eq!(columns[8], "");
-        assert_eq!(columns[18], "");
+        assert_eq!(columns[20], "");
     }
 
     #[test]
@@ -4790,7 +4857,7 @@ mod tests {
         assert_eq!(columns[7], "0");
         assert_eq!(columns[8], "0x00050");
         assert_eq!(columns[15], "0x000a");
-        assert_eq!(columns[18], "test");
+        assert_eq!(columns[20], "test");
 
         let unresolved_actor = manifest
             .lines()
@@ -4800,7 +4867,7 @@ mod tests {
         assert_eq!(columns[7], "0");
         assert_eq!(columns[8], "0x00050");
         assert_eq!(columns[15], "0x000a");
-        assert_eq!(columns[18], "test");
+        assert_eq!(columns[20], "test");
 
         let unresolved_voice = manifest
             .lines()
@@ -4815,7 +4882,7 @@ mod tests {
         assert_eq!(columns[12], "Room1_music");
         assert_eq!(columns[14], "05");
         assert_eq!(columns[15], "0x000e");
-        assert_eq!(columns[18], "test");
+        assert_eq!(columns[20], "test");
         assert_eq!(manifest.matches("\tunresolved_voice\t").count(), 1);
     }
 

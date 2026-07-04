@@ -1367,18 +1367,18 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 |------|----------|
 | `re/labels.csv` | accumulated address labels (file-offset / SEG:OFF / DS: forms) |
 | `re/bin/BLOODPRG.EXE` | unpacked target (MZ image == whole file, no decompression needed) |
-| `script-text-flags.tsv` | extraction artifact listing every `0xA6` TEXT token's b3/b4/b5 control fields and decoded flag summary |
+| `script-text-flags.tsv` | extraction artifact listing every `0xA6` TEXT token's b3/b4/b5 control fields, decoded skip count, loop target, and flag summary |
 | `script-branch-trace.tsv` | extraction artifact listing `execute_trace` branch/control events per script |
 | `script-branch-decisions.tsv` | extraction artifact listing default observed conditional path and alternate target/path |
 | `script-branch-coverage.tsv` | extraction artifact summarizing all text calls vs default executed trace coverage per script |
 | `script-branch-scenarios.tsv` | extraction artifact forcing each branch decision's opposite condition once and measuring newly exposed text calls |
-| `script-branch-scenario-dialogue.tsv` | extraction artifact joining each forced branch scenario trace to decoded text/actor/background rows |
+| `script-branch-scenario-dialogue.tsv` | extraction artifact joining each forced branch scenario trace to decoded text/actor/background rows, including explicit A6 skip-count and loop-target controls |
 | `script-branch-scenario-dialogue-runs.tsv` | extraction artifact grouping branch scenario dialogue rows into renderer-ready run slices; full export also emits matching `branch-scenario-dialogue-run - ...mp4` files |
-| `script-scene-events.tsv` | extraction artifact listing the exact `SceneEvent` stream consumed by default executed dialogue-run MP4s, including the source/provenance string for each event row |
-| `script-profile-scene-events.tsv` | extraction artifact listing the exact `SceneEvent` stream consumed by profile-sequence dialogue-run MP4s, including source/provenance |
-| `script-branch-scenario-scene-events.tsv` | extraction artifact listing the exact `SceneEvent` stream consumed by branch-scenario dialogue-run MP4s, including source/provenance |
+| `script-scene-events.tsv` | extraction artifact listing the exact `SceneEvent` stream consumed by default executed dialogue-run MP4s, including source/provenance plus decoded A6 skip-count and loop-target controls on subtitle events |
+| `script-profile-scene-events.tsv` | extraction artifact listing the exact `SceneEvent` stream consumed by profile-sequence dialogue-run MP4s, including source/provenance plus decoded A6 skip-count and loop-target controls on subtitle events |
+| `script-branch-scenario-scene-events.tsv` | extraction artifact listing the exact `SceneEvent` stream consumed by branch-scenario dialogue-run MP4s, including source/provenance plus decoded A6 skip-count and loop-target controls on subtitle events |
 | `sprite-frame-tables.tsv` | extraction artifact generated from real `.SPR` files; lists the parsed frame-table flags, dispatch selection, frame offsets, lengths, and frame-header dimensions/origin offsets |
-| `script-executed-dialogue.tsv` | extraction artifact joining `execute_trace` line order to decoded text/actor/background |
+| `script-executed-dialogue.tsv` | extraction artifact joining `execute_trace` line order to decoded text/actor/background, including explicit A6 skip-count and loop-target controls |
 | `script-executed-dialogue-runs.tsv` | extraction artifact grouping executed dialogue by script/background run; MP4 names correspond to run-level composites |
 | `script-dialogue-runs.tsv` | extraction artifact grouping VM-order dialogue lines by script/background run |
 | `bloodprg-render-call-sites.tsv` | extraction artifact generated from `BLOODPRG.EXE`; lists direct far calls into render/presentation segment `0x0299`, recovered target offsets, local `AX` setup, and current target names |
@@ -2093,6 +2093,13 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       accepted lines clear `b5 & 0x80` for subsequent visits to the same token;
       `b4 & 0x01` preserves it for reusable/looping text. The
       `script-text-flags.tsv` summary now reports this bit as `preserve-active`.
+- [x] Carry A6 skip/loop controls through the VM event stream:
+      `SceneEvent::DrawSubtitle` now includes the handler-derived conditional
+      skip count (`gs:0x67AB = ((b5 >> 4) & 7) + 1`) and loop target
+      (`b4 & 0x10`, stored by the DOS handler at `gs:0x6778`). The
+      executed-dialogue and scene-event TSVs expose these as first-class
+      columns instead of requiring downstream renderer code to decode raw
+      `flags_b4`.
 - [x] Route profile-sequence rows into run-level videos:
       `src/extract/character.rs` now renders `ScriptProfileDialogueRun`s through
       the same VM event emitter as the existing dialogue videos, preserving

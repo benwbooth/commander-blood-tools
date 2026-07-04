@@ -115,6 +115,9 @@ pub const TEXT_SELECTOR_SILENT: u8 = 0x00;
 pub const ACTIVE_LINE_ID_BIAS: u16 = 9;
 pub const CHATTER_HOLD_EXTRA_TICKS: u16 = 6;
 pub const TEXT_PRESERVE_ACTIVE_FLAG: u8 = 0x01;
+pub const TEXT_EXTRA_CONTROL_WORD_FLAG: u8 = 0x04;
+pub const TEXT_CONDITIONAL_SKIP_FLAG: u8 = 0x08;
+pub const TEXT_LOOP_TARGET_FLAG: u8 = 0x10;
 pub const TEXT_ACTIVE_DISPLAY_FLAG: u8 = 0x80;
 pub const TEXT_LINE_ALREADY_SHOWN_FLAG: u16 = 0x8000;
 
@@ -144,6 +147,12 @@ pub fn text_selector_requests_voice(selector: u8) -> bool {
 
 pub fn text_flags_are_active(flags_b5: u8) -> bool {
     flags_b5 & TEXT_ACTIVE_DISPLAY_FLAG != 0
+}
+
+/// Port the A6 handler's conditional-skip count at file `0x661E..0x662C`:
+/// `b4 & 0x08` stores `((b5 >> 4) & 7) + 1` in `gs:0x67AB`.
+pub fn text_conditional_skip_count(flags_b4: u8, flags_b5: u8) -> Option<u8> {
+    (flags_b4 & TEXT_CONDITIONAL_SKIP_FLAG != 0).then_some(((flags_b5 >> 4) & 0x07) + 1)
 }
 
 /// Port the accepted-line self-modifying write in the A6 handler at file
@@ -3089,6 +3098,8 @@ pub enum SceneEvent {
         voice_selector: u8,
         active_line_id: u16,
         flags: u8,
+        skip_count: Option<u8>,
+        loop_target: Option<u16>,
     },
     /// Subtitle chatter event from the dialogue display state machine (tb.snd).
     PlayChatter {
@@ -3119,6 +3130,8 @@ pub struct LineInput {
     pub voice_selector: u8,
     pub active_line_id: u16,
     pub flags_b4: u8,
+    pub skip_count: Option<u8>,
+    pub loop_target: Option<u16>,
     pub clip_index: Option<usize>,
     pub text: String,
 }
@@ -3181,6 +3194,8 @@ pub fn emit_scene_events(lines: &[LineInput]) -> Vec<SceneEvent> {
             voice_selector: line.voice_selector,
             active_line_id: line.active_line_id,
             flags: line.flags_b4,
+            skip_count: line.skip_count,
+            loop_target: line.loop_target,
         });
         events.push(SceneEvent::PlayChatter {
             active_line_id: line.active_line_id,
@@ -6712,7 +6727,8 @@ mod tests {
                 clip_index: Some(1),
                 voice_selector: 0xFF,
                 active_line_id: text_selector_active_line_id(0xFF),
-                flags_b4: 0x10,
+                flags_b4: TEXT_LOOP_TARGET_FLAG,
+                loop_target: Some(0x1234),
                 text: "there".into(),
                 ..Default::default()
             },
@@ -6749,8 +6765,11 @@ mod tests {
             SceneEvent::DrawSubtitle {
                 text,
                 active_line_id,
+                loop_target,
                 ..
-            } if text == "there" && *active_line_id == text_selector_active_line_id(0xFF)
+            } if text == "there"
+                && *active_line_id == text_selector_active_line_id(0xFF)
+                && *loop_target == Some(0x1234)
         )));
         assert!(ev.iter().any(|e| matches!(
             e,
