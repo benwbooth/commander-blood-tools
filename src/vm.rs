@@ -701,12 +701,12 @@ fn read_u16(cod: &[u8], at: usize) -> Option<u16> {
 //       DOS handler. Mode 0 writes the direct record entry and updates speaker
 //       tracking; mode 1 compares the record entry and may branch.
 //   * 0xC3: record link. The handler writes {0x00C3, related, 1}; this is
-//       presentation record state, not a speaker change.
+//       presentation record state, not a speaker change. Known guarded mode-0
+//       failures branch when owner context is available.
 //   * 0xC5..=0xC8: record entries. Successful mode-0 writes are guarded per
 //       handler (C6 is unconditional; C8 stores zero despite consuming an
 //       operand), and mode-1 direct compares are evaluated when host state has a
-//       concrete record entry. Guarded mode-0 failure branches still need the
-//       fuller line-record table model before execution can be exact.
+//       concrete record entry. Known guarded mode-0 failures branch.
 //   * 0xC9: record clear. The handler zeroes a 6-byte record in both modes and,
 //       when the previous entry was 0xC4, clears the related actor subrecord too.
 //   * 0xCA/0xCB: global conditions. They compare token operands against
@@ -1670,6 +1670,24 @@ fn write_record_link(state: &mut [u8], record_offset: u16, related_record_offset
     state_set_u16(state, record_offset.wrapping_add(4), 1);
 }
 
+fn write_record_link_mode0(
+    state: &mut [u8],
+    context: &ExecutionContext,
+    record_offset: u16,
+    related_record_offset: u16,
+) -> Option<bool> {
+    let owner_active = record_owner_is_active(state, context, record_offset)?;
+    if !owner_active
+        || state_u8(state, related_record_offset.wrapping_add(2)) & 1 == 0
+        || state_u16(state, record_offset) == OP_ACTOR as u16
+    {
+        return Some(false);
+    }
+
+    write_record_link(state, record_offset, related_record_offset);
+    Some(true)
+}
+
 fn record_state_condition(
     state: &[u8],
     context: &ExecutionContext,
@@ -2029,6 +2047,26 @@ fn record_entry_condition(
 
 fn branch_fail(branch_stack: &mut Vec<u16>) -> Option<u16> {
     branch_stack.pop()
+}
+
+fn push_mode0_branch_fail(
+    branch_stack: &mut Vec<u16>,
+    branch_events: &mut Vec<BranchEvent>,
+    offset: usize,
+    opcode: u8,
+    detail: &'static str,
+) -> Option<u16> {
+    let target = branch_fail(branch_stack)?;
+    branch_events.push(BranchEvent {
+        offset,
+        opcode,
+        target: Some(target),
+        branch_taken: true,
+        condition_passed: Some(false),
+        stack_depth: branch_stack.len(),
+        detail,
+    });
+    Some(target)
 }
 
 fn compare_vm_words(operator: u8, left: u16, right: u16) -> Option<bool> {
@@ -2680,17 +2718,52 @@ fn execute_trace_state_with_overrides_and_context(
         if !mode1 && op == OP_RECORD_LINK {
             let record_offset = read_u16(cod, token_start + 1).unwrap_or(0);
             let related_record_offset = read_u16(cod, token_start + 3).unwrap_or(0);
-            if record_owner_is_active(&state, context, record_offset) == Some(true)
-                && state_u8(&state, related_record_offset.wrapping_add(2)) & 1 != 0
-                && state_u16(&state, record_offset) != OP_ACTOR as u16
+            if let Some(false) =
+                write_record_link_mode0(&mut state, context, record_offset, related_record_offset)
             {
-                write_record_link(&mut state, record_offset, related_record_offset);
+                if let Some(target) = push_mode0_branch_fail(
+                    &mut branch_stack,
+                    &mut branch_events,
+                    token_start,
+                    op,
+                    "mode0 C3 write failed",
+                ) {
+                    mode1 = false;
+                    if target as usize >= end {
+                        halted = ExecutionHalt::InvalidTarget {
+                            offset: token_start,
+                            target,
+                        };
+                        break 'execution;
+                    }
+                    pos = target as usize;
+                    continue;
+                }
             }
         }
         if !mode1 && is_record_entry_opcode(op) {
             let record_offset = read_u16(cod, token_start + 1).unwrap_or(0);
             let operand = read_u16(cod, token_start + 3).unwrap_or(0);
-            write_record_entry_mode0(&mut state, op, record_offset, operand);
+            if !write_record_entry_mode0(&mut state, op, record_offset, operand) {
+                if let Some(target) = push_mode0_branch_fail(
+                    &mut branch_stack,
+                    &mut branch_events,
+                    token_start,
+                    op,
+                    "mode0 record entry write failed",
+                ) {
+                    mode1 = false;
+                    if target as usize >= end {
+                        halted = ExecutionHalt::InvalidTarget {
+                            offset: token_start,
+                            target,
+                        };
+                        break 'execution;
+                    }
+                    pos = target as usize;
+                    continue;
+                }
+            }
         }
         if !mode1 && ASSIGN_7.contains(&op) && token_start + 7 <= end {
             let op1 = read_u16(cod, token_start + 1).unwrap_or(0);
@@ -2758,17 +2831,14 @@ fn execute_trace_state_with_overrides_and_context(
             if let Some(false) =
                 write_c1_record_state_mode0(&mut state, context, record_offset, operand)
             {
-                if let Some(target) = branch_fail(&mut branch_stack) {
+                if let Some(target) = push_mode0_branch_fail(
+                    &mut branch_stack,
+                    &mut branch_events,
+                    token_start,
+                    op,
+                    "mode0 C1 write failed",
+                ) {
                     mode1 = false;
-                    branch_events.push(BranchEvent {
-                        offset: token_start,
-                        opcode: op,
-                        target: Some(target),
-                        branch_taken: true,
-                        condition_passed: Some(false),
-                        stack_depth: branch_stack.len(),
-                        detail: "mode0 C1 write failed",
-                    });
                     if target as usize >= end {
                         halted = ExecutionHalt::InvalidTarget {
                             offset: token_start,
@@ -5245,6 +5315,75 @@ mod tests {
     }
 
     #[test]
+    fn execution_trace_record_entry_mode0_known_failures_branch() {
+        fn failed_entry_trace(
+            opcode: u8,
+            record: u16,
+            operand: u16,
+            var: Vec<u8>,
+        ) -> (ExecutionTrace, usize, u16) {
+            let mut cod = Vec::new();
+            let a0_offset = cod.len();
+            cod.push(0xA0);
+            cod.extend_from_slice(&0u16.to_le_bytes());
+            cod.push(0xA1);
+            let condition_offset = cod.len();
+            cod.push(opcode);
+            cod.extend_from_slice(&record.to_le_bytes());
+            cod.extend_from_slice(&operand.to_le_bytes());
+            push_empty_text(&mut cod);
+            let target = cod.len() as u16;
+            cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+            push_empty_text(&mut cod);
+            cod.push(0xff);
+            (execute_trace(&cod, &var), condition_offset, target)
+        }
+
+        let (trace, condition_offset, target) =
+            failed_entry_trace(0xC5, 0x0020, 0x0100, vec![0; 0x0200]);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 1);
+        assert_eq!(trace.line_states[0].offset, target as usize);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == 0xC5
+                && event.branch_taken
+                && event.condition_passed == Some(false)
+                && event.target == Some(target)
+                && event.detail == "mode0 record entry write failed"
+        }));
+
+        let (trace, condition_offset, target) =
+            failed_entry_trace(0xC7, 0x0040, 0x0120, vec![0; 0x0200]);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 1);
+        assert_eq!(trace.line_states[0].offset, target as usize);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == 0xC7
+                && event.branch_taken
+                && event.condition_passed == Some(false)
+                && event.target == Some(target)
+                && event.detail == "mode0 record entry write failed"
+        }));
+
+        let mut var = vec![0; 0x0200];
+        state_set_u16(&mut var, 0x0060, 0x1234);
+        let (trace, condition_offset, target) = failed_entry_trace(0xC8, 0x0060, 0x0120, var);
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 1);
+        assert_eq!(trace.line_states[0].offset, target as usize);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == 0xC8
+                && event.branch_taken
+                && event.condition_passed == Some(false)
+                && event.target == Some(target)
+                && event.detail == "mode0 record entry write failed"
+        }));
+    }
+
+    #[test]
     fn execution_trace_compares_record_state_entries() {
         let record = 0x0020u16;
         let operand = 0x1052u16;
@@ -6195,6 +6334,79 @@ mod tests {
                 && event.branch_taken
                 && event.condition_passed == Some(false)
                 && event.target == Some(target)
+        }));
+    }
+
+    #[test]
+    fn execution_trace_c3_mode0_known_failure_branches() {
+        let owner = 0x0100u16;
+        let record = owner + TALK_FIELD;
+        let related = 0x0180u16;
+        let mut var = vec![0; 0x0200];
+        state_set_u8(&mut var, related + 2, 1);
+        let context = ExecutionContext::from_object_offsets([owner, 0x0200]);
+
+        let mut cod = Vec::new();
+        let a0_offset = cod.len();
+        cod.push(0xA0);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        cod.push(0xA1);
+        let condition_offset = cod.len();
+        cod.push(OP_RECORD_LINK);
+        cod.extend_from_slice(&record.to_le_bytes());
+        cod.extend_from_slice(&related.to_le_bytes());
+        push_empty_text(&mut cod);
+        let target = cod.len() as u16;
+        cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xff);
+
+        let trace = execute_trace_with_context(&cod, &var, &context);
+
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 1);
+        assert_eq!(trace.line_states[0].offset, target as usize);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == condition_offset
+                && event.opcode == OP_RECORD_LINK
+                && event.branch_taken
+                && event.condition_passed == Some(false)
+                && event.target == Some(target)
+                && event.detail == "mode0 C3 write failed"
+        }));
+    }
+
+    #[test]
+    fn execution_trace_c3_mode0_missing_owner_context_does_not_branch() {
+        let owner = 0x0100u16;
+        let record = owner + TALK_FIELD;
+        let related = 0x0180u16;
+        let mut var = vec![0; 0x0200];
+        state_set_u8(&mut var, related + 2, 1);
+
+        let mut cod = Vec::new();
+        let a0_offset = cod.len();
+        cod.push(0xA0);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        cod.push(0xA1);
+        let condition_offset = cod.len();
+        cod.push(OP_RECORD_LINK);
+        cod.extend_from_slice(&record.to_le_bytes());
+        cod.extend_from_slice(&related.to_le_bytes());
+        let first_text = cod.len();
+        push_empty_text(&mut cod);
+        let target = cod.len() as u16;
+        cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xff);
+
+        let trace = execute_trace(&cod, &var);
+
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 2);
+        assert_eq!(trace.line_states[0].offset, first_text);
+        assert!(trace.branch_events.iter().all(|event| {
+            event.offset != condition_offset || event.detail != "mode0 C3 write failed"
         }));
     }
 

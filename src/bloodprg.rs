@@ -901,13 +901,13 @@ fn opcode_metadata(opcode: u8, handler_file_offset: usize) -> OpcodeMetadata {
             mnemonic: "record_link",
             family: "line-record",
             rust_status: "partially-executed",
-            notes: "C3 line-record relation; Rust decodes A1 inversion, executes guarded mode0 writes and mode1 compares with DEB object context, and deliberately does not treat it as a speaker marker",
+            notes: "C3 line-record relation; Rust decodes A1 inversion, executes guarded mode0 writes, known mode0 branch-fails, and mode1 compares with DEB object context, and deliberately does not treat it as a speaker marker",
         },
         op if vm::is_record_entry_opcode(op) => OpcodeMetadata {
             mnemonic: "record_entry",
             family: "line-record",
             rust_status: "partially-executed",
-            notes: "C5-C8 line-record entries; Rust decodes A1 inversion, executes successful guarded mode0 writes, and evaluates direct mode1 compares with concrete host-state evidence",
+            notes: "C5-C8 line-record entries; Rust decodes A1 inversion, executes successful guarded mode0 writes, known mode0 branch-fails, and direct mode1 compares with concrete host-state evidence",
         },
         vm::OP_RECORD_CLEAR => OpcodeMetadata {
             mnemonic: "record_clear",

@@ -754,9 +754,11 @@ real scripts emit narrator/system text after `C9` then `C3`; treating `C3` as a
 speaker would reintroduce wrong actor/background attribution. Rust exposes it as
 `VmToken::RecordLink { ..., inverted }`, applies the guarded mode-0 write when a
 DEB-derived `ExecutionContext` can resolve the owner object, and evaluates direct
-mode-1 compares with the same context. The parsers deliberately do not update
-current speaker state from it. `script-disassembly.tsv` now emits it as
-`record_link` instead of leaving those bytes in raw rows.
+mode-1 compares with the same context. Known mode-0 failures now branch through
+the recovered A0/A1 stack; missing owner context remains unresolved rather than
+guessed. The parsers deliberately do not update current speaker state from it.
+`script-disassembly.tsv` now emits it as `record_link` instead of leaving those
+bytes in raw rows.
 
 ### 0xC5..0xC8 record-entry handlers — relation state (DECODED)
 
@@ -781,8 +783,9 @@ successful mode-0 writes for the whole family, including C5's active/type-0x0200
 operand guard, C7's active-operand plus empty-or-C4 destination guard, and C8's
 empty-destination write of `{0x00C8, 0, 0}` despite consuming a second token
 word. Direct mode-1 record-entry compares are evaluated when host state has a
-concrete record entry. Guarded mode-0 failure branches still need the fuller
-line-record table model.
+concrete record entry. Known guarded mode-0 failures for C5, C7, and C8 now
+branch through the recovered A0/A1 stack; C6 remains an unconditional mode-0
+write.
 
 ### 0xC4 actor/record handler @ file 0x6C7E — operands (DECODED)
 
@@ -1400,14 +1403,14 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       single actor id.
 - [x] Port 0xC3 record-link semantics. `src/vm.rs` exposes
       `VmToken::RecordLink` with optional mode-1 inversion, the context-aware VM
-      applies guarded mode-0 writes and direct mode-1 compares using DEB object
-      offsets, and parser tests lock in that `C3` does not restore speaker
-      context after a `C9` clear.
+      applies guarded mode-0 writes, known mode-0 branch-fails, and direct
+      mode-1 compares using DEB object offsets, and parser tests lock in that
+      `C3` does not restore speaker context after a `C9` clear.
 - [x] Port 0xC5..0xC8 record-entry token semantics. `src/vm.rs` exposes the
       family as `VmToken::RecordEntry` including raw operand and recovered
       stored-related slot; disassembly now emits `record_entry` rows.
-      Successful mode-0 writes for C5/C6/C7/C8 and direct mode-1 compares are
-      now executed; guarded mode-0 failure branches remain pending.
+      Successful mode-0 writes for C5/C6/C7/C8, guarded mode-0 failure branches
+      for C5/C7/C8, and direct mode-1 compares are now executed.
 - [x] Port 0xC9 record-clear speaker lifetime semantics. `src/vm.rs` exposes
       `VmToken::RecordClear`, the bounded interpreter clears the active actor
       when its talk-field record is cleared in either VM mode, and the script
