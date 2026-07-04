@@ -297,8 +297,21 @@ doubles them from `0x4000` to `0x8000` scale into the scratch vector at
 then writes nine signed dwords at `DS:0x2F95`. The multiply order is preserved
 as two-operand `imul` plus arithmetic `sar 0x0F`; the three compound terms reuse
 the intermediate `(b_sin * c_sin) >> 15` and `(c_sin * b_cos) >> 15` products
-before the final shift. The point/object projection loops at `0x9A10+` are now
-the next geometry targets.
+before the final shift.
+
+The point-cloud projection loop at file `0x9A10` and its pixel helper at
+`0x9B04` are now split out in `src/ship3d.rs` as `project_ship_3d_point()` and
+`plot_ship_3d_projected_point()`. The loop walks 1000 eight-byte records from
+`DS:0x2FC1`, copies each point into scratch `DS:0x4F01`, subtracts camera origin
+words `DS:0x2F65/0x2F67/0x2F69` with word wrapping, sign-extends X/Y/Z, and
+projects through matrix `DS:0x2F95`. Depth uses row 3 shifted by 15 and skips
+zero/negative results. X/Y use rows 1/2 shifted by 7, signed-divided by depth,
+then centered at `(160,100)` before writing scratch words
+`DS:0x2FB9/0x2FBB/0x2FBD`. The `0x9B04` helper clips against
+`DS:0x5235..0x523B`, computes `y * 320 + x`, only writes empty depth-buffer
+pixels, and encodes shade as `0xEF - (depth >> 12)`. The object/sprite
+projection path at `0x9B98` is now the next geometry target; it reuses the same
+matrix math but adds sprite descriptor scaling and draw calls.
 
 The next control-layer markers are now pinned. `0xB2BB` selects the next
 ship/navigation target record from `DS:0x250B`, or from the inline fallback table
@@ -1890,6 +1903,13 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       doubles the table pairs into the binary's `0x8000` fixed-point scale, and
       emits the nine dword terms written at `DS:0x2F95` with wrapping `imul` and
       arithmetic `sar 15` semantics.
+- [x] Port ship 3D point-cloud projection and pixel shade:
+      files `0x9A10` and `0x9B04` now map to `project_ship_3d_point()` and
+      `plot_ship_3d_projected_point()`. The helpers preserve the binary's
+      word-wrapping camera subtraction, signed positive-depth gate, row-based
+      matrix dot products, perspective divide centers `(160,100)`, viewport clip
+      words `DS:0x5235..0x523B`, occupied-pixel skip, `y * 320 + x` offset, and
+      depth shade `0xEF - (depth >> 12)`.
 - [x] Port ship 3D temporary `3D.snd` setup branch:
       `src/ship3d.rs` now models file `0xB591`: the `DS:0x0AE4` one-shot gate,
       phase byte `DS:0x0AE5` cycling across the three `DS:0x0ACC` callback

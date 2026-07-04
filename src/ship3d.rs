@@ -93,6 +93,25 @@ pub const SHIP_3D_MATRIX_ANGLE_C_OFFSET: u16 = 0x2f6f;
 pub const SHIP_3D_MATRIX_TEMP_OFFSET: u16 = 0x2f7d;
 pub const SHIP_3D_PROJECTION_MATRIX_OFFSET: u16 = 0x2f95;
 pub const SHIP_3D_MATRIX_FIXED_SHIFT: u8 = 0x0f;
+pub const SHIP_3D_PROJECTION_CAMERA_X_OFFSET: u16 = 0x2f65;
+pub const SHIP_3D_PROJECTION_CAMERA_Y_OFFSET: u16 = 0x2f67;
+pub const SHIP_3D_PROJECTION_CAMERA_Z_OFFSET: u16 = 0x2f69;
+pub const SHIP_3D_POINT_CLOUD_COUNT: usize = 0x03e8;
+pub const SHIP_3D_POINT_BUFFER_OFFSET: u16 = 0x2fc1;
+pub const SHIP_3D_PROJECTION_WORK_VECTOR_OFFSET: u16 = 0x4f01;
+pub const SHIP_3D_PROJECTED_X_OFFSET: u16 = 0x2fb9;
+pub const SHIP_3D_PROJECTED_Y_OFFSET: u16 = 0x2fbb;
+pub const SHIP_3D_PROJECTED_DEPTH_OFFSET: u16 = 0x2fbd;
+pub const SHIP_3D_PROJECTION_VIEWPORT_LEFT_OFFSET: u16 = 0x5235;
+pub const SHIP_3D_PROJECTION_VIEWPORT_RIGHT_OFFSET: u16 = 0x5237;
+pub const SHIP_3D_PROJECTION_VIEWPORT_TOP_OFFSET: u16 = 0x5239;
+pub const SHIP_3D_PROJECTION_VIEWPORT_BOTTOM_OFFSET: u16 = 0x523b;
+pub const SHIP_3D_PROJECTION_SCREEN_CENTER_X: u16 = 0x00a0;
+pub const SHIP_3D_PROJECTION_SCREEN_CENTER_Y: u16 = 0x0064;
+pub const SHIP_3D_PROJECTION_SCREEN_WIDTH: usize = 0x0140;
+pub const SHIP_3D_PROJECTION_AXIS_SHIFT: u8 = 0x07;
+pub const SHIP_3D_PROJECTION_SHADE_SHIFT: u8 = 0x0c;
+pub const SHIP_3D_PROJECTION_SHADE_BASE: u8 = 0xef;
 pub const SHIP_3D_TEMP_SND_CALLBACK_TABLE_OFFSET: u16 = 0x0acc;
 pub const SHIP_3D_TEMP_SND_CALLBACK_OFFSETS: [u16; 3] = [0x0087, 0x0090, 0x009c];
 pub const SHIP_3D_TEMP_SND_PATH_OFFSET: u16 = 0x0d23;
@@ -390,6 +409,41 @@ pub struct Ship3dMatrixAngles {
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dProjectionMatrix {
     pub terms: [i32; 9],
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dProjectionPoint {
+    pub x: u16,
+    pub y: u16,
+    pub z: u16,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dProjectionOrigin {
+    pub x: u16,
+    pub y: u16,
+    pub z: u16,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dProjectedPoint {
+    pub x: u16,
+    pub y: u16,
+    pub depth: u16,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dProjectionViewport {
+    pub left: u16,
+    pub right: u16,
+    pub top: u16,
+    pub bottom: u16,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dProjectedPixel {
+    pub offset: usize,
+    pub shade: u8,
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -1337,6 +1391,81 @@ pub fn build_ship_3d_projection_matrix(
     })
 }
 
+pub fn project_ship_3d_point(
+    point: Ship3dProjectionPoint,
+    origin: Ship3dProjectionOrigin,
+    matrix: Ship3dProjectionMatrix,
+) -> Option<Ship3dProjectedPoint> {
+    let translated = [
+        projection_component(point.x, origin.x),
+        projection_component(point.y, origin.y),
+        projection_component(point.z, origin.z),
+    ];
+
+    let depth = projection_dot(
+        translated,
+        [matrix.terms[6], matrix.terms[7], matrix.terms[8]],
+    ) >> SHIP_3D_MATRIX_FIXED_SHIFT;
+    if depth <= 0 {
+        return None;
+    }
+
+    let screen_x = project_ship_3d_axis(
+        projection_dot(
+            translated,
+            [matrix.terms[0], matrix.terms[1], matrix.terms[2]],
+        ) >> SHIP_3D_PROJECTION_AXIS_SHIFT,
+        depth,
+        SHIP_3D_PROJECTION_SCREEN_CENTER_X,
+    );
+    let screen_y = project_ship_3d_axis(
+        projection_dot(
+            translated,
+            [matrix.terms[3], matrix.terms[4], matrix.terms[5]],
+        ) >> SHIP_3D_PROJECTION_AXIS_SHIFT,
+        depth,
+        SHIP_3D_PROJECTION_SCREEN_CENTER_Y,
+    );
+
+    Some(Ship3dProjectedPoint {
+        x: screen_x,
+        y: screen_y,
+        depth: depth as u16,
+    })
+}
+
+pub fn plot_ship_3d_projected_point(
+    depth_buffer: &mut [u8],
+    viewport: Ship3dProjectionViewport,
+    projected: Ship3dProjectedPoint,
+) -> Option<Ship3dProjectedPixel> {
+    if signed_i16(projected.x) < signed_i16(viewport.left)
+        || signed_i16(projected.x) >= signed_i16(viewport.right)
+        || signed_i16(projected.y) < signed_i16(viewport.top)
+        || signed_i16(projected.y) >= signed_i16(viewport.bottom)
+    {
+        return None;
+    }
+
+    let offset = ship_3d_projected_point_offset(projected);
+    let pixel = depth_buffer.get_mut(offset)?;
+    if *pixel != 0 {
+        return None;
+    }
+
+    let shade = ship_3d_projected_point_shade(projected.depth);
+    *pixel = shade;
+    Some(Ship3dProjectedPixel { offset, shade })
+}
+
+pub fn ship_3d_projected_point_shade(depth: u16) -> u8 {
+    SHIP_3D_PROJECTION_SHADE_BASE.wrapping_sub((depth >> SHIP_3D_PROJECTION_SHADE_SHIFT) as u8)
+}
+
+pub fn ship_3d_projected_point_offset(projected: Ship3dProjectedPoint) -> usize {
+    usize::from(projected.y) * SHIP_3D_PROJECTION_SCREEN_WIDTH + usize::from(projected.x)
+}
+
 pub fn run_ship_3d_temp_snd_setup(state: &mut Ship3dTempSndState) -> Option<Ship3dTempSndEffect> {
     if !state.trigger {
         return Some(Ship3dTempSndEffect::default());
@@ -1959,6 +2088,22 @@ fn matrix_pair_for_angle(angle_table: &[Ship3dAngleTableEntry], angle: u16) -> O
 
 fn fixed_mul_shift_15(lhs: i32, rhs: i32) -> i32 {
     lhs.wrapping_mul(rhs) >> SHIP_3D_MATRIX_FIXED_SHIFT
+}
+
+fn projection_component(point_component: u16, origin_component: u16) -> i32 {
+    i32::from(signed_i16(point_component.wrapping_sub(origin_component)))
+}
+
+fn projection_dot(components: [i32; 3], terms: [i32; 3]) -> i32 {
+    components[0]
+        .wrapping_mul(terms[0])
+        .wrapping_add(components[1].wrapping_mul(terms[1]))
+        .wrapping_add(components[2].wrapping_mul(terms[2]))
+}
+
+fn project_ship_3d_axis(numerator: i32, depth: i32, center: u16) -> u16 {
+    let quotient = numerator / depth;
+    (quotient as u16).wrapping_add(center)
 }
 
 fn checked_i16_div_i8_to_i8(dividend: i16, divisor: i8) -> Option<i8> {
@@ -3849,6 +3994,133 @@ mod tests {
                     angle_2f71: 0,
                     projection_angle_2f6d: 1,
                     angle_2f6f: 0,
+                },
+            ),
+            None
+        );
+    }
+
+    #[test]
+    fn projection_point_uses_matrix_depth_and_screen_centers() {
+        let matrix = Ship3dProjectionMatrix {
+            terms: [0x8000, 0, 0, 0, -0x8000, 0, 0, 0, 0x8000],
+        };
+
+        let projected = project_ship_3d_point(
+            Ship3dProjectionPoint {
+                x: 10,
+                y: 20,
+                z: 1000,
+            },
+            Ship3dProjectionOrigin::default(),
+            matrix,
+        )
+        .unwrap();
+
+        assert_eq!(
+            projected,
+            Ship3dProjectedPoint {
+                x: 162,
+                y: 95,
+                depth: 1000,
+            }
+        );
+    }
+
+    #[test]
+    fn projection_point_rejects_zero_and_negative_depth_like_binary_branch() {
+        let matrix = Ship3dProjectionMatrix {
+            terms: [0x8000, 0, 0, 0, -0x8000, 0, 0, 0, 0x8000],
+        };
+
+        assert_eq!(
+            project_ship_3d_point(
+                Ship3dProjectionPoint { x: 0, y: 0, z: 0 },
+                Ship3dProjectionOrigin::default(),
+                matrix,
+            ),
+            None
+        );
+        assert_eq!(
+            project_ship_3d_point(
+                Ship3dProjectionPoint {
+                    x: 0,
+                    y: 0,
+                    z: 0xffff,
+                },
+                Ship3dProjectionOrigin::default(),
+                matrix,
+            ),
+            None
+        );
+    }
+
+    #[test]
+    fn projection_point_subtracts_origin_as_wrapping_words_before_sign_extend() {
+        let matrix = Ship3dProjectionMatrix {
+            terms: [0x8000, 0, 0, 0, -0x8000, 0, 0, 0, 0x8000],
+        };
+
+        let projected = project_ship_3d_point(
+            Ship3dProjectionPoint {
+                x: 0,
+                y: 0,
+                z: 1000,
+            },
+            Ship3dProjectionOrigin {
+                x: 0xfc18,
+                y: 0,
+                z: 0,
+            },
+            matrix,
+        )
+        .unwrap();
+
+        assert_eq!(projected.x, 416);
+        assert_eq!(projected.y, 100);
+        assert_eq!(projected.depth, 1000);
+    }
+
+    #[test]
+    fn projection_plot_clips_occupied_pixels_and_writes_depth_shade() {
+        let viewport = Ship3dProjectionViewport {
+            left: 0,
+            right: 320,
+            top: 0,
+            bottom: 200,
+        };
+        let projected = Ship3dProjectedPoint {
+            x: 10,
+            y: 2,
+            depth: 0x3000,
+        };
+        let mut depth_buffer = vec![0; SHIP_3D_PROJECTION_SCREEN_WIDTH * 200];
+
+        let pixel = plot_ship_3d_projected_point(&mut depth_buffer, viewport, projected).unwrap();
+
+        assert_eq!(
+            pixel,
+            Ship3dProjectedPixel {
+                offset: 650,
+                shade: 0xec,
+            }
+        );
+        assert_eq!(depth_buffer[650], 0xec);
+
+        assert_eq!(
+            plot_ship_3d_projected_point(&mut depth_buffer, viewport, projected),
+            None
+        );
+        assert_eq!(depth_buffer[650], 0xec);
+
+        assert_eq!(
+            plot_ship_3d_projected_point(
+                &mut depth_buffer,
+                viewport,
+                Ship3dProjectedPoint {
+                    x: 320,
+                    y: 2,
+                    depth: 0x3000,
                 },
             ),
             None
