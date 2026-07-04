@@ -30,6 +30,8 @@ use std::collections::BTreeMap;
 
 use serde::Serialize;
 
+use crate::ship3d;
+
 /// Per-opcode descriptor bytes for opcodes `0xA0..=0xD3`, transcribed from
 /// `BLOODPRG.EXE` file offset 0x14338 (`DS:0x6F18`). `(len_mode0, byte1)` where
 /// `byte1` is either `len_mode1` or a mode-control sentinel (bit7 set).
@@ -175,7 +177,11 @@ pub fn is_pair_record_opcode(opcode: u8) -> bool {
 }
 
 pub fn record_entry_stored_related_offset(opcode: u8, operand: u16) -> u16 {
-    if opcode == 0xC8 { 0 } else { operand }
+    if opcode == 0xC8 {
+        0
+    } else {
+        operand
+    }
 }
 
 /// Port the `0xD2` handler at `BLOODPRG.EXE` file `0x64B8`:
@@ -679,7 +685,9 @@ fn read_u16(cod: &[u8], at: usize) -> Option<u16> {
 //   * 0xC1, 5 bytes plus optional A1 prefix:
 //       writes {0x00C1, operand, 2} to an active owner's empty direct record in
 //       mode 0; mode-1 direct compares are evaluated when host state has that
-//       concrete record entry. Resolved-table fallback paths remain pending.
+//       concrete record entry. The kind-0x10 ship-3D source-list path is
+//       available when `ExecutionContext` supplies the live DS:0x6886 scratch
+//       bytes and navigation/object tables.
 //   * 0xC2, 5 bytes plus optional A1 prefix:
 //       in mode 0, active owners can mark the operand record's kind-specific
 //       field as 0xffff via helper table 0x6D60 and kind-2 records set active
@@ -933,6 +941,13 @@ struct ExecutedTrace {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
+struct Ship3dC1RuntimeContext {
+    navigation_records: Vec<ship3d::Ship3dNavigationRuntimeRecord>,
+    object_table_records: Vec<u16>,
+    source_list_bytes: Vec<u8>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct VmNamedObjectOffsets {
     pub blood: Option<u16>,
     pub orxx: Option<u16>,
@@ -994,6 +1009,11 @@ impl VmNamedObjectOffsets {
 /// `named_object_offsets` mirrors the startup scan at `0x5486`, which compares
 /// DEB object names against built-in strings and stores matching offsets in VM
 /// globals (`blood` -> `0x674E`, `orxx` -> `0x6750`, `arche` -> `0x6752`, ...).
+///
+/// `ship3d_c1_runtime` is the recovered scratch/runtime state for the C1
+/// kind-`0x10` branch. It is explicit because helper `0x006210` reads from the
+/// live `DS:0x6886` bytes using the current `SI` cursor, not just from parsed
+/// object records.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ExecutionContext {
     object_offsets: Vec<u16>,
@@ -1005,6 +1025,7 @@ pub struct ExecutionContext {
     text_presentation_record_gating: bool,
     text_line_display_gating: bool,
     strict_actor_record_branching: bool,
+    ship3d_c1_runtime: Option<Ship3dC1RuntimeContext>,
 }
 
 impl ExecutionContext {
@@ -1077,6 +1098,24 @@ impl ExecutionContext {
 
     pub fn with_strict_actor_record_branching(mut self) -> Self {
         self.strict_actor_record_branching = true;
+        self
+    }
+
+    pub fn with_ship_3d_c1_runtime<I, J>(
+        mut self,
+        navigation_records: I,
+        object_table_records: J,
+        source_list_bytes: impl Into<Vec<u8>>,
+    ) -> Self
+    where
+        I: IntoIterator<Item = ship3d::Ship3dNavigationRuntimeRecord>,
+        J: IntoIterator<Item = u16>,
+    {
+        self.ship3d_c1_runtime = Some(Ship3dC1RuntimeContext {
+            navigation_records: navigation_records.into_iter().collect(),
+            object_table_records: object_table_records.into_iter().collect(),
+            source_list_bytes: source_list_bytes.into(),
+        });
         self
     }
 
@@ -1623,14 +1662,103 @@ fn record_state_condition(
     Some(if inverted { !matched } else { matched })
 }
 
-fn write_c1_record_state_direct(
+fn ship3d_c1_source_records_from_bytes(source_list_bytes: &[u8]) -> Option<Vec<u16>> {
+    let mut source_records = Vec::new();
+    for chunk in source_list_bytes.chunks_exact(2) {
+        let record = u16::from_le_bytes([chunk[0], chunk[1]]);
+        source_records.push(record);
+        if record == ship3d::SHIP_3D_TARGET_EXIT_SENTINEL {
+            return Some(source_records);
+        }
+    }
+    None
+}
+
+fn ship3d_record_state_slot(state: &[u8], record_offset: u16) -> ship3d::Ship3dRecordStateSlot {
+    ship3d::Ship3dRecordStateSlot {
+        opcode: state_u16(state, record_offset),
+        operand: state_u16(state, record_offset.wrapping_add(2)),
+        aux_word: state_u16(state, record_offset.wrapping_add(4)),
+    }
+}
+
+fn write_ship3d_record_state_slot(
+    state: &mut [u8],
+    record_offset: u16,
+    slot: ship3d::Ship3dRecordStateSlot,
+) {
+    state_set_u16(state, record_offset, slot.opcode);
+    state_set_u16(state, record_offset.wrapping_add(2), slot.operand);
+    state_set_u16(state, record_offset.wrapping_add(4), slot.aux_word);
+}
+
+fn write_c1_record_state_ship3d_kind10(
+    state: &mut [u8],
+    context: &ExecutionContext,
+    owner_offset: u16,
+    operand: u16,
+) -> Option<bool> {
+    if state_u16(state, owner_offset) != ship3d::SHIP_3D_C1_KIND10_RECORD_KIND {
+        return None;
+    }
+
+    let Some(runtime) = context.ship3d_c1_runtime.as_ref() else {
+        return None;
+    };
+    let Some(source_records) = ship3d_c1_source_records_from_bytes(&runtime.source_list_bytes)
+    else {
+        return Some(false);
+    };
+    let Some(selected_source) = ship3d::select_ship_3d_c1_source_record(
+        &source_records,
+        &runtime.navigation_records,
+        &runtime.object_table_records,
+        &runtime.source_list_bytes,
+        operand,
+        state_u8(state, operand.wrapping_add(2)),
+    ) else {
+        return Some(false);
+    };
+    if selected_source.is_none() {
+        return Some(false);
+    }
+
+    let Some(destination_record_offset) = ship3d::resolve_ship_3d_c1_kind10_destination_record(
+        owner_offset,
+        ship3d::SHIP_3D_C1_KIND10_RECORD_KIND,
+    ) else {
+        return Some(false);
+    };
+    let mut slot = ship3d_record_state_slot(state, destination_record_offset);
+    match ship3d::write_ship_3d_c1_kind10_destination_slot(
+        owner_offset,
+        ship3d::SHIP_3D_C1_KIND10_RECORD_KIND,
+        &mut slot,
+        operand,
+    ) {
+        Some(Some(write)) => {
+            write_ship3d_record_state_slot(state, write.destination_record_offset, write.slot);
+            Some(true)
+        }
+        None | Some(None) => Some(false),
+    }
+}
+
+fn write_c1_record_state_mode0(
     state: &mut [u8],
     context: &ExecutionContext,
     record_offset: u16,
     operand: u16,
 ) -> bool {
-    if record_owner_is_active(state, context, record_offset) != Some(true) {
+    let Some(owner_offset) = record_owner_object_offset(context, record_offset) else {
         return false;
+    };
+    if state_u8(state, owner_offset.wrapping_add(2)) & 1 == 0 {
+        return false;
+    }
+    if let Some(wrote) = write_c1_record_state_ship3d_kind10(state, context, owner_offset, operand)
+    {
+        return wrote;
     }
     if state_u16(state, record_offset) != 0 {
         return false;
@@ -1936,7 +2064,7 @@ pub fn interpret_line_states_with_context(
         if !mode1 && op == OP_RECORD_STATE_MIN && pos + 5 <= end {
             let record_offset = read_u16(cod, pos + 1).unwrap_or(0);
             let operand = read_u16(cod, pos + 3).unwrap_or(0);
-            write_c1_record_state_direct(&mut state, context, record_offset, operand);
+            write_c1_record_state_mode0(&mut state, context, record_offset, operand);
         }
         if !mode1 && op == OP_RECORD_STATE_MAX && pos + 5 <= end {
             let record_offset = read_u16(cod, pos + 1).unwrap_or(0);
@@ -2503,7 +2631,7 @@ fn execute_trace_state_with_overrides_and_context(
         if !mode1 && op == OP_RECORD_STATE_MIN && token_start + 5 <= end {
             let record_offset = read_u16(cod, token_start + 1).unwrap_or(0);
             let operand = read_u16(cod, token_start + 3).unwrap_or(0);
-            write_c1_record_state_direct(&mut state, context, record_offset, operand);
+            write_c1_record_state_mode0(&mut state, context, record_offset, operand);
         }
         if !mode1 && op == OP_RECORD_STATE_MAX && token_start + 5 <= end {
             let record_offset = read_u16(cod, token_start + 1).unwrap_or(0);
@@ -4337,11 +4465,10 @@ mod tests {
         assert_eq!(trace.line_states[0].location_offset, Some(0x1111));
         assert_eq!(trace.line_states[1].offset, target as usize);
         assert_eq!(trace.line_states[1].actor_offset, Some(actor));
-        assert!(
-            trace.branch_events.iter().all(|event| {
-                event.offset != condition_offset || event.condition_passed.is_none()
-            })
-        );
+        assert!(trace
+            .branch_events
+            .iter()
+            .all(|event| { event.offset != condition_offset || event.condition_passed.is_none() }));
     }
 
     #[test]
@@ -5030,11 +5157,10 @@ mod tests {
 
         let trace = execute_trace(&c2_cod, &var);
         assert_eq!(trace.halted, ExecutionHalt::EndMarker);
-        assert!(
-            trace.branch_events.iter().all(|event| {
-                event.offset != condition_offset || event.condition_passed.is_none()
-            })
-        );
+        assert!(trace
+            .branch_events
+            .iter()
+            .all(|event| { event.offset != condition_offset || event.condition_passed.is_none() }));
 
         let trace = execute_trace_with_context(&c2_cod, &var, &context);
         assert_eq!(trace.halted, ExecutionHalt::EndMarker);
@@ -5106,11 +5232,10 @@ mod tests {
 
         let trace = execute_trace(&cod, &var);
         assert_eq!(trace.halted, ExecutionHalt::EndMarker);
-        assert!(
-            trace.branch_events.iter().all(|event| {
-                event.offset != condition_offset || event.condition_passed.is_none()
-            })
-        );
+        assert!(trace
+            .branch_events
+            .iter()
+            .all(|event| { event.offset != condition_offset || event.condition_passed.is_none() }));
 
         let trace = execute_trace_with_context(&cod, &var, &context);
         assert_eq!(trace.halted, ExecutionHalt::EndMarker);
@@ -5122,6 +5247,137 @@ mod tests {
                 && !event.branch_taken
                 && event.condition_passed == Some(true)
         }));
+    }
+
+    #[test]
+    fn execution_trace_applies_ship3d_c1_kind10_resolved_write_with_context() {
+        let owner = 0x0100u16;
+        let record = 0x0140u16;
+        let destination = owner + 0x1c;
+        let operand = 0x2000u16;
+        let source = 0x3000u16;
+        let mut var = vec![0; 0x3100];
+        state_set_u16(&mut var, owner, ship3d::SHIP_3D_C1_KIND10_RECORD_KIND);
+        state_set_u8(&mut var, owner + 2, 1);
+        state_set_u16(&mut var, operand, ship3d::SHIP_3D_C1_SOURCE_KIND_BITSET);
+
+        let mut source_list_bytes = [0u8; 0x21];
+        source_list_bytes[0..2].copy_from_slice(&source.to_le_bytes());
+        source_list_bytes[2..4]
+            .copy_from_slice(&ship3d::SHIP_3D_TARGET_EXIT_SENTINEL.to_le_bytes());
+        source_list_bytes[0x20] = 0x80;
+        let context = ExecutionContext::from_object_offsets([owner, operand])
+            .with_ship_3d_c1_runtime(
+                [ship3d::Ship3dNavigationRuntimeRecord {
+                    offset: source,
+                    kind_flags: ship3d::SHIP_3D_C1_SOURCE_KIND_BITSET,
+                    state_flags: 0,
+                    counter_link: 0,
+                    related_target: 0,
+                    source_parent: None,
+                }],
+                [operand],
+                source_list_bytes,
+            );
+
+        let mut cod = Vec::new();
+        cod.push(OP_RECORD_STATE_MIN);
+        cod.extend_from_slice(&record.to_le_bytes());
+        cod.extend_from_slice(&operand.to_le_bytes());
+        cod.push(0xff);
+
+        let executed = execute_trace_state_with_overrides_and_context(&cod, &var, &[], &context);
+
+        assert_eq!(executed.trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(state_u16(&executed.final_state, record), 0);
+        assert_eq!(
+            state_u16(&executed.final_state, destination),
+            OP_RECORD_STATE_MIN as u16
+        );
+        assert_eq!(state_u16(&executed.final_state, destination + 2), operand);
+        assert_eq!(state_u16(&executed.final_state, destination + 4), 2);
+    }
+
+    #[test]
+    fn execution_trace_ship3d_c1_kind10_source_rejects_without_direct_fallback() {
+        let owner = 0x0100u16;
+        let record = 0x0140u16;
+        let destination = owner + 0x1c;
+        let operand = 0x2000u16;
+        let source = 0x3000u16;
+        let mut var = vec![0; 0x3100];
+        state_set_u16(&mut var, owner, ship3d::SHIP_3D_C1_KIND10_RECORD_KIND);
+        state_set_u8(&mut var, owner + 2, 1);
+        state_set_u16(&mut var, operand, ship3d::SHIP_3D_C1_SOURCE_KIND_BITSET);
+
+        let mut source_list_bytes = [0u8; 0x21];
+        source_list_bytes[0..2].copy_from_slice(&source.to_le_bytes());
+        source_list_bytes[2..4]
+            .copy_from_slice(&ship3d::SHIP_3D_TARGET_EXIT_SENTINEL.to_le_bytes());
+        let context = ExecutionContext::from_object_offsets([owner, operand])
+            .with_ship_3d_c1_runtime(
+                [ship3d::Ship3dNavigationRuntimeRecord {
+                    offset: source,
+                    kind_flags: ship3d::SHIP_3D_C1_SOURCE_KIND_BITSET,
+                    state_flags: 0,
+                    counter_link: 0,
+                    related_target: 0,
+                    source_parent: None,
+                }],
+                [operand],
+                source_list_bytes,
+            );
+
+        let mut cod = Vec::new();
+        cod.push(OP_RECORD_STATE_MIN);
+        cod.extend_from_slice(&record.to_le_bytes());
+        cod.extend_from_slice(&operand.to_le_bytes());
+        cod.push(0xff);
+
+        let executed = execute_trace_state_with_overrides_and_context(&cod, &var, &[], &context);
+
+        assert_eq!(executed.trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(state_u16(&executed.final_state, record), 0);
+        assert_eq!(state_u16(&executed.final_state, destination), 0);
+    }
+
+    #[test]
+    fn execution_trace_ship3d_c1_kind10_requires_source_list_sentinel() {
+        let owner = 0x0100u16;
+        let record = 0x0140u16;
+        let destination = owner + 0x1c;
+        let operand = 0x2000u16;
+        let source = 0x3000u16;
+        let mut var = vec![0; 0x3100];
+        state_set_u16(&mut var, owner, ship3d::SHIP_3D_C1_KIND10_RECORD_KIND);
+        state_set_u8(&mut var, owner + 2, 1);
+        state_set_u16(&mut var, operand, ship3d::SHIP_3D_C1_SOURCE_KIND_BITSET);
+
+        let context = ExecutionContext::from_object_offsets([owner, operand])
+            .with_ship_3d_c1_runtime(
+                [ship3d::Ship3dNavigationRuntimeRecord {
+                    offset: source,
+                    kind_flags: ship3d::SHIP_3D_C1_SOURCE_KIND_BITSET,
+                    state_flags: 0,
+                    counter_link: 0,
+                    related_target: 0,
+                    source_parent: None,
+                }],
+                [operand],
+                source.to_le_bytes(),
+            );
+
+        let mut cod = Vec::new();
+        cod.push(OP_RECORD_STATE_MIN);
+        cod.extend_from_slice(&record.to_le_bytes());
+        cod.extend_from_slice(&operand.to_le_bytes());
+        cod.push(0xff);
+
+        let executed = execute_trace_state_with_overrides_and_context(&cod, &var, &[], &context);
+
+        assert_eq!(executed.trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(state_u16(&executed.final_state, record), 0);
+        assert_eq!(state_u16(&executed.final_state, destination), 0);
     }
 
     #[test]
@@ -5289,11 +5545,10 @@ mod tests {
 
         let trace = execute_trace(&cod, &var);
         assert_eq!(trace.halted, ExecutionHalt::EndMarker);
-        assert!(
-            trace.branch_events.iter().all(|event| {
-                event.offset != condition_offset || event.condition_passed.is_none()
-            })
-        );
+        assert!(trace
+            .branch_events
+            .iter()
+            .all(|event| { event.offset != condition_offset || event.condition_passed.is_none() }));
 
         state_set_u16(&mut var, record, OP_RECORD_LINK as u16);
         state_set_u16(&mut var, record.wrapping_add(2), related);
@@ -5412,11 +5667,10 @@ mod tests {
 
         let trace = execute_trace(&cod, &var);
         assert_eq!(trace.halted, ExecutionHalt::EndMarker);
-        assert!(
-            trace.branch_events.iter().all(|event| {
-                event.offset != condition_offset || event.condition_passed.is_none()
-            })
-        );
+        assert!(trace
+            .branch_events
+            .iter()
+            .all(|event| { event.offset != condition_offset || event.condition_passed.is_none() }));
 
         let passing_context = ExecutionContext::default().with_bios_rtc(8, 1, 1);
         let trace = execute_trace_with_context(&cod, &var, &passing_context);

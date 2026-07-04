@@ -612,9 +612,13 @@ and the script disassembly emits `record_state` rows. `execute_trace` evaluates
 direct mode-1 compares when host state already contains a concrete
 `{opcode, operand, ...}` record entry, and Rust now applies the direct `C1`
 mode-0 success write when `ExecutionContext` proves the owner object is active
-and the destination record is empty. `C2` compare evaluation also requires the
-DEB-derived `ExecutionContext` because the binary checks the owner object active
-via helper `0x6034`. Rust also ports the direct C2 mode-0 operand-record write:
+and the destination record is empty. When `ExecutionContext` supplies explicit
+ship-3D C1 runtime tables and the live `DS:0x6886` scratch bytes, `execute_trace`
+also follows the kind-`0x10` source-list gate and writes the selector-`0x13`
+destination instead of falling back to the raw token record. `C2` compare
+evaluation also requires the DEB-derived `ExecutionContext` because the binary
+checks the owner object active via helper `0x6034`. Rust also ports the direct
+C2 mode-0 operand-record write:
 if the owner is active, `operand+2` has bit `0x20`, and the runtime sentinel
 list accepts the operand, helper table `gs:0x6D60` selects a kind-specific field
 and Rust writes `0xFFFF` there. Kind `2` records also clear `gs:0x1FB2` and set
@@ -625,8 +629,8 @@ returns nonzero after dispatching the matched descriptor script. Rust models tha
 nonzero helper result through `ExecutionContext::with_descript_entry_name`, then
 clears `gs:0x1FB2`, ORs bit `0x02` into `gs:0x67AA`, and sets
 `gs:0x6788 = 0x2B`. Extractor VM traces now seed that context from parsed
-`DESCRIPT.DES` record names. The deeper resolved-table C1 paths remain pending,
-but dependency helper `0x6210` is now decoded: it maps an object record to its
+`DESCRIPT.DES` record names. For the C1 resolved-table path, dependency helper
+`0x6210` is now decoded: it maps an object record to its
 index in the 20-byte `GS:[0x672C]` object table, adds the selector-`0x05` /
 kind-`0x0002` field offset (`0x1E`) to the caller's bitset base, and tests the
 object's bit high-bit-first. In the C1 mode-0 branch this is the kind-2 source
@@ -638,9 +642,13 @@ scratch list, accepts kind `1` records when the operand state byte has bit
 `0x02`, and ignores other kinds. Rust also ports the `0x006C48..0x006C6B`
 destination-slot write: for the original kind-`0x10` `DI` record it resolves
 selector `0x13` using hardcoded kind `0x0010`, checks only the destination's
-first word for emptiness, and writes `{0x00C1, operand, 0x0002}`. The remaining
-work is wiring these resolved C1 helpers into the higher-level Rust VM execution
-state with real `DS:0x6886` scratch-list bytes.
+first word for emptiness, and writes `{0x00C1, operand, 0x0002}`. `src/vm.rs`
+now wires this kind-`0x10` C1 path through
+`ExecutionContext::with_ship_3d_c1_runtime(...)`; tests prove a selected source
+writes `owner+0x1C` and a rejected source does not fall back to the direct token
+record. Remaining C1 resolved-table work includes the distance/selector-`0x11`
+redirect before the source-list gate, resolved mode-1 comparisons, and exact
+branch-fail side effects.
 
 ### 0xCA/0xCB global condition handlers — token shape (DECODED; runtime source pending)
 
@@ -1340,8 +1348,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       (`gs:0x6788 = 0x27`), and the kind-0x0400/helper-0x7409 active-line side
       effect (`gs:0x67AA|=2`, `gs:0x6788 = 0x2B`) when `ExecutionContext`
       supplies the matching `descript.des` directory name. Extractor trace paths
-      seed those names from parsed `DESCRIPT.DES`; resolved-table C1 paths
-      remain pending.
+      seed those names from parsed `DESCRIPT.DES`; the ship-3D kind-`0x10`
+      source-list/destination C1 mode-0 path is wired when `ExecutionContext`
+      supplies navigation records, object-table order, and the live `DS:0x6886`
+      scratch bytes.
 - [x] Expose 0xCA/0xCB global condition tokens. `src/vm.rs` preserves the
       consumed compare operands as `VmToken::GlobalWordCompare` and
       `VmToken::GlobalPairCompare`; `execute_trace` evaluates their branches
@@ -1767,6 +1777,13 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `{0x00C1, operand, 0x0002}`. Rust exposes this as
       `write_ship_3d_c1_kind10_destination_slot()` with a slot model that keeps
       the binary's first-word-only emptiness check explicit.
+- [x] Wire ship 3D C1 kind-0x10 mode-0 path into VM execution:
+      `ExecutionContext::with_ship_3d_c1_runtime(...)` now carries the recovered
+      navigation records, object-table order, and raw `DS:0x6886` scratch bytes.
+      `execute_trace` decodes that scratch list, applies the `0x006C1C` source
+      filter, and writes the `0x006C48` selector-`0x13` destination. Tests cover
+      both the accepted source write and the rejected-source no-direct-fallback
+      behavior.
 - [x] Port ship 3D navigation sequence branch:
       the internal branch at `0x0A9A:0x04E1` (file `0xB481`) now has a Rust
       state/effect model as `run_ship_3d_navigation_sequence_update()`. If
