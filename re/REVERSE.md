@@ -1611,6 +1611,13 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       Once `DS:0x2793 & 8` clears, an existing `DS:0x2A19` dispatches through
       the `CS:0x0F29` five-entry handler table. The handler bodies remain
       separate decompilation targets.
+- [x] Port ship 3D navigation-choice handler 0:
+      table entry 0 at `0x071E:0x0F33` checks `DS:0x2565 & 1`; when clear it
+      returns without side effects. When set, it writes deferred record type
+      `0x00C3` to `DS:0x6768`, writes named object `Honk` from `DS:0x6754` to
+      `DS:0x676A`, and clears `DS:0x2565`. Rust exposes this as
+      `run_ship_3d_nav_choice_handler_0()` returning an explicit deferred-record
+      effect for the VM/event renderer.
 - [x] Port recovered framebuffer fill/copy primitives:
       `src/extract/render.rs` now has tested Rust helpers for the clipped
       rectangle fill, palette-remap rectangle, scene-band fill, full 320x200
