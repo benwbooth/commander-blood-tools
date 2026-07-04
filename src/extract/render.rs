@@ -464,6 +464,57 @@ pub(super) fn blit_ship_3d_sprite_slot_command_indexed(
     }
 }
 
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub(super) struct Ship3dDirtySpriteRenderResult {
+    pub(super) rendered_commands: usize,
+    pub(super) missing_frames: usize,
+    pub(super) rejected_commands: usize,
+    pub(super) copied_pixels: usize,
+}
+
+pub(super) fn render_ship_3d_dirty_sprite_commands_indexed<'a, F>(
+    primary: &mut [u8],
+    secondary: &mut [u8],
+    commands: &[Ship3dSpriteSlotRenderCommand],
+    dirty_rects: &[Ship3dProjectionViewport],
+    copyback_enabled: bool,
+    mut frame_for_command: F,
+    remap_table_5f11: Option<&[u8; 256]>,
+    remap_table_6011: Option<&[u8; 256]>,
+) -> Ship3dDirtySpriteRenderResult
+where
+    F: FnMut(&Ship3dSpriteSlotRenderCommand) -> Option<Ship3dSpriteSlotFrame<'a>>,
+{
+    let mut result = Ship3dDirtySpriteRenderResult::default();
+
+    for command in commands {
+        let Some(frame) = frame_for_command(command) else {
+            result.missing_frames += 1;
+            continue;
+        };
+
+        if blit_ship_3d_sprite_slot_command_indexed(
+            secondary,
+            *command,
+            frame,
+            remap_table_5f11,
+            remap_table_6011,
+        ) {
+            result.rendered_commands += 1;
+        } else {
+            result.rejected_commands += 1;
+        }
+    }
+
+    result.copied_pixels = copy_dirty_rects_secondary_to_primary_indexed(
+        primary,
+        secondary,
+        dirty_rects,
+        copyback_enabled,
+    );
+    result
+}
+
 fn decode_rle_sprite_pixels(frame: RleSpriteFrame<'_>, height: usize) -> Option<Vec<u8>> {
     if frame.stride == 0 {
         return None;
@@ -1741,6 +1792,135 @@ mod tests {
     }
 
     #[test]
+    fn ship_3d_dirty_sprite_pipeline_renders_commands_in_order_and_copybacks() {
+        let mut frame_a = vec![0u8; 8];
+        frame_a[0..2].copy_from_slice(&2u16.to_le_bytes());
+        frame_a.extend_from_slice(&[1, 2]);
+        let mut frame_b = vec![0u8; 8];
+        frame_b[0..2].copy_from_slice(&2u16.to_le_bytes());
+        frame_b.extend_from_slice(&[3, 4]);
+        let y = SCENE_TOP;
+        let commands = [
+            ship_3d_sprite_slot_command_for_slot(0, 2, 0, 10, y as u16, 2, 1),
+            ship_3d_sprite_slot_command_for_slot(1, 2, 0, 11, y as u16, 2, 1),
+        ];
+        let dirty_rects = [Ship3dProjectionViewport {
+            left: 10,
+            right: 13,
+            top: y as u16,
+            bottom: (y + 1) as u16,
+        }];
+        let mut primary = vec![9u8; VIEWPORT_W * VIEWPORT_H];
+        let mut secondary = vec![0u8; VIEWPORT_W * VIEWPORT_H];
+
+        let result = render_ship_3d_dirty_sprite_commands_indexed(
+            &mut primary,
+            &mut secondary,
+            &commands,
+            &dirty_rects,
+            true,
+            |command| match command.slot_index {
+                0 => Some(Ship3dSpriteSlotFrame::Raw(&frame_a)),
+                1 => Some(Ship3dSpriteSlotFrame::Raw(&frame_b)),
+                _ => None,
+            },
+            None,
+            None,
+        );
+
+        assert_eq!(
+            result,
+            Ship3dDirtySpriteRenderResult {
+                rendered_commands: 2,
+                copied_pixels: 3,
+                ..Ship3dDirtySpriteRenderResult::default()
+            }
+        );
+        assert_eq!(
+            &secondary[y * VIEWPORT_W + 10..y * VIEWPORT_W + 13],
+            &[1, 3, 4]
+        );
+        assert_eq!(
+            &primary[y * VIEWPORT_W + 10..y * VIEWPORT_W + 13],
+            &[1, 3, 4]
+        );
+        assert_eq!(primary[y * VIEWPORT_W + 9], 9);
+    }
+
+    #[test]
+    fn ship_3d_dirty_sprite_pipeline_reports_missing_and_rejected_frames() {
+        let y = SCENE_TOP;
+        let commands = [
+            ship_3d_sprite_slot_command_for_slot(0, 2, 0, 10, y as u16, 1, 1),
+            ship_3d_sprite_slot_command_for_slot(1, 2, 0, 11, y as u16, 1, 1),
+        ];
+        let mut primary = vec![7u8; VIEWPORT_W * VIEWPORT_H];
+        let mut secondary = vec![3u8; VIEWPORT_W * VIEWPORT_H];
+        let before_primary = primary.clone();
+        let before_secondary = secondary.clone();
+
+        let result = render_ship_3d_dirty_sprite_commands_indexed(
+            &mut primary,
+            &mut secondary,
+            &commands,
+            &[],
+            false,
+            |command| (command.slot_index == 1).then_some(Ship3dSpriteSlotFrame::Rle(&[])),
+            None,
+            None,
+        );
+
+        assert_eq!(
+            result,
+            Ship3dDirtySpriteRenderResult {
+                missing_frames: 1,
+                rejected_commands: 1,
+                ..Ship3dDirtySpriteRenderResult::default()
+            }
+        );
+        assert_eq!(primary, before_primary);
+        assert_eq!(secondary, before_secondary);
+    }
+
+    #[test]
+    fn ship_3d_dirty_sprite_pipeline_can_render_without_copyback() {
+        let mut frame = vec![0u8; 8];
+        frame[0..2].copy_from_slice(&1u16.to_le_bytes());
+        frame.push(0x4d);
+        let y = SCENE_TOP;
+        let commands = [ship_3d_sprite_slot_command(2, 0, 10, y as u16, 1, 1)];
+        let dirty_rects = [Ship3dProjectionViewport {
+            left: 10,
+            right: 11,
+            top: y as u16,
+            bottom: (y + 1) as u16,
+        }];
+        let mut primary = vec![0u8; VIEWPORT_W * VIEWPORT_H];
+        let mut secondary = vec![0u8; VIEWPORT_W * VIEWPORT_H];
+
+        let result = render_ship_3d_dirty_sprite_commands_indexed(
+            &mut primary,
+            &mut secondary,
+            &commands,
+            &dirty_rects,
+            false,
+            |_| Some(Ship3dSpriteSlotFrame::Raw(&frame)),
+            None,
+            None,
+        );
+
+        assert_eq!(
+            result,
+            Ship3dDirtySpriteRenderResult {
+                rendered_commands: 1,
+                ..Ship3dDirtySpriteRenderResult::default()
+            }
+        );
+        assert_eq!(secondary[y * VIEWPORT_W + 10], 0x4d);
+        assert_eq!(primary[y * VIEWPORT_W + 10], 0);
+    }
+
+    #[test]
     fn subtitles_use_binary_reveal_palette_indices() {
         let cues = [SubtitleCue {
             tick: 0,
@@ -1784,8 +1964,28 @@ mod tests {
         width: u16,
         height: u16,
     ) -> Ship3dSpriteSlotRenderCommand {
+        ship_3d_sprite_slot_command_for_slot(
+            0,
+            dispatch_index,
+            destination_remap_mode,
+            x,
+            y,
+            width,
+            height,
+        )
+    }
+
+    fn ship_3d_sprite_slot_command_for_slot(
+        slot_index: usize,
+        dispatch_index: u8,
+        destination_remap_mode: u8,
+        x: u16,
+        y: u16,
+        width: u16,
+        height: u16,
+    ) -> Ship3dSpriteSlotRenderCommand {
         Ship3dSpriteSlotRenderCommand {
-            slot_index: 0,
+            slot_index,
             dispatch_index,
             destination_remap_mode,
             flip_x: false,
