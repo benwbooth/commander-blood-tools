@@ -391,10 +391,30 @@ def default_candidate_search_out_dir(reference: Path) -> Path:
     return Path("accuracy/comparisons") / f"{safe_reference}__candidate_search"
 
 
-def comparison_status(metrics: dict[str, object], max_mean_abs: float | None) -> str:
+def comparison_score(metrics: dict[str, object], score_region: str | None) -> float:
+    """The mean-abs value used for pass/fail and scan ranking. Defaults to the
+    whole frame; with ``score_region`` it uses only that screen region so a
+    letterboxed scene can be scored on its content band, ignoring the HUD/bars
+    our renders do not draw."""
+    if score_region is None:
+        return float(metrics["mean_abs"])
+    regions = metrics.get("regions")
+    if not isinstance(regions, dict) or score_region not in regions:
+        raise ValueError(
+            f"unknown score region {score_region!r}; expected one of "
+            f"{sorted(SCREEN_REGIONS)}"
+        )
+    return float(regions[score_region]["mean_abs"])
+
+
+def comparison_status(
+    metrics: dict[str, object],
+    max_mean_abs: float | None,
+    score_region: str | None = None,
+) -> str:
     if max_mean_abs is None:
         return "unchecked"
-    return "pass" if float(metrics["mean_abs"]) <= max_mean_abs else "fail"
+    return "pass" if comparison_score(metrics, score_region) <= max_mean_abs else "fail"
 
 
 def compare_paths(
@@ -409,6 +429,7 @@ def compare_paths(
     scenario_id: str | None = None,
     notes: str = "",
     extra_metrics: dict[str, object] | None = None,
+    score_region: str | None = None,
 ) -> dict[str, object]:
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -427,12 +448,14 @@ def compare_paths(
 
     metrics = diff_metrics(reference_native, generated_native)
     metrics["regions"] = region_metrics(reference_native, generated_native)
-    status = comparison_status(metrics, max_mean_abs)
+    status = comparison_status(metrics, max_mean_abs, score_region)
     metrics.update(
         {
             "scenario_id": scenario_id,
             "status": status,
             "max_mean_abs": max_mean_abs,
+            "score_region": score_region,
+            "score": comparison_score(metrics, score_region),
             "reference": str(reference_source.path),
             "generated": str(generated_path),
             "generated_time": generated_time,
@@ -466,6 +489,7 @@ def scan_generated_times(
     max_mean_abs: float | None = None,
     scenario_id: str | None = None,
     notes: str = "",
+    score_region: str | None = None,
 ) -> dict[str, object]:
     times = scan_times(start, end, step)
     return scan_generated_time_list(
@@ -484,6 +508,7 @@ def scan_generated_times(
             "scan_end": end,
             "scan_step": step,
         },
+        score_region=score_region,
     )
 
 
@@ -498,6 +523,7 @@ def scan_generated_timeline(
     max_mean_abs: float | None = None,
     scenario_id: str | None = None,
     notes: str = "",
+    score_region: str | None = None,
 ) -> dict[str, object]:
     times = load_timeline_times(generated_timeline)
     return scan_generated_time_list(
@@ -514,6 +540,7 @@ def scan_generated_timeline(
             "scan_source": "timeline",
             "generated_timeline": str(generated_timeline),
         },
+        score_region=score_region,
     )
 
 
@@ -529,6 +556,7 @@ def scan_generated_time_list(
     scenario_id: str | None = None,
     notes: str = "",
     scan_summary: dict[str, object] | None = None,
+    score_region: str | None = None,
 ) -> dict[str, object]:
     if max_mean_abs is not None:
         label = f" for scenario {scenario_id!r}" if scenario_id else ""
@@ -549,15 +577,20 @@ def scan_generated_time_list(
     )
 
     scan_results = scan_generated_against_reference(
-        reference_native, generated_path, times
+        reference_native, generated_path, times, score_region
     )
 
-    best = min(scan_results, key=lambda result: float(result["mean_abs"]))
+    # Rank by the region score (defaults to whole-frame mean_abs) so a
+    # letterboxed scene can be aligned on its content band, not the HUD.
+    best = min(scan_results, key=lambda result: float(result["score"]))
     summary = {
         "scan_count": len(scan_results),
         "best_generated_time": best["generated_time"],
         "best_mean_abs": best["mean_abs"],
     }
+    if score_region is not None:
+        summary["score_region"] = score_region
+        summary["best_score"] = best["score"]
     if scan_summary:
         summary = {**scan_summary, **summary}
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -576,11 +609,15 @@ def scan_generated_time_list(
         scenario_id=scenario_id,
         notes=notes,
         extra_metrics=summary,
+        score_region=score_region,
     )
 
 
 def scan_generated_against_reference(
-    reference_native: Image.Image, generated_path: Path, times: list[float]
+    reference_native: Image.Image,
+    generated_path: Path,
+    times: list[float],
+    score_region: str | None = None,
 ) -> list[dict[str, object]]:
     scan_results: list[dict[str, object]] = []
     with tempfile.TemporaryDirectory(prefix="commander-blood-scan-") as tmp:
@@ -595,16 +632,20 @@ def scan_generated_against_reference(
                 continue
             generated_native = load_native_image(generated_source)
             metrics = diff_metrics(reference_native, generated_native)
-            scan_results.append(
-                {
-                    "generated_time": time_sec,
-                    "mean_abs": metrics["mean_abs"],
-                    "rmse": metrics["rmse"],
-                    "max_abs": metrics["max_abs"],
-                    "exact_pixel_percent": metrics["exact_pixel_percent"],
-                    "mean_abs_rgb": metrics["mean_abs_rgb"],
-                }
-            )
+            result = {
+                "generated_time": time_sec,
+                "mean_abs": metrics["mean_abs"],
+                "rmse": metrics["rmse"],
+                "max_abs": metrics["max_abs"],
+                "exact_pixel_percent": metrics["exact_pixel_percent"],
+                "mean_abs_rgb": metrics["mean_abs_rgb"],
+            }
+            if score_region is not None:
+                metrics["regions"] = region_metrics(reference_native, generated_native)
+                result["score"] = comparison_score(metrics, score_region)
+            else:
+                result["score"] = float(metrics["mean_abs"])
+            scan_results.append(result)
     if not scan_results:
         raise ValueError(f"no frames extracted from {generated_path}")
     return scan_results
@@ -632,6 +673,7 @@ def search_candidate_videos(
     reference_manifest: Path | None = None,
     top_n: int = 20,
     candidate_timeline: str | None = None,
+    score_region: str | None = None,
 ) -> dict[str, object]:
     if not candidates:
         raise ValueError("candidate search found no files")
@@ -665,32 +707,34 @@ def search_candidate_videos(
                 scan_source = "range"
             assert times is not None
             scan_results = scan_generated_against_reference(
-                reference_native, candidate, times
+                reference_native, candidate, times, score_region
             )
         except (subprocess.CalledProcessError, OSError, ValueError) as exc:
             errors.append({"generated": str(candidate), "error": str(exc)})
             continue
-        best = min(scan_results, key=lambda result: float(result["mean_abs"]))
-        rows.append(
-            {
-                "generated": str(candidate),
-                "best_generated_time": best["generated_time"],
-                "best_mean_abs": best["mean_abs"],
-                "best_rmse": best["rmse"],
-                "best_max_abs": best["max_abs"],
-                "best_exact_pixel_percent": best["exact_pixel_percent"],
-                "best_mean_abs_rgb": best["mean_abs_rgb"],
-                "scan_count": len(scan_results),
-                "scan_source": scan_source,
-            }
-        )
+        best = min(scan_results, key=lambda result: float(result["score"]))
+        row = {
+            "generated": str(candidate),
+            "best_generated_time": best["generated_time"],
+            "best_mean_abs": best["mean_abs"],
+            "best_rmse": best["rmse"],
+            "best_max_abs": best["max_abs"],
+            "best_exact_pixel_percent": best["exact_pixel_percent"],
+            "best_mean_abs_rgb": best["mean_abs_rgb"],
+            "scan_count": len(scan_results),
+            "scan_source": scan_source,
+        }
+        if score_region is not None:
+            row["score_region"] = score_region
+            row["best_score"] = best["score"]
+        rows.append(row)
         if generated_timeline is not None:
             rows[-1]["generated_timeline"] = str(generated_timeline)
 
     if not rows:
         raise ValueError("candidate search produced no comparable frames")
 
-    ranked = sorted(rows, key=lambda row: float(row["best_mean_abs"]))
+    ranked = sorted(rows, key=lambda row: float(row.get("best_score", row["best_mean_abs"])))
     for rank, row in enumerate(ranked, start=1):
         row["rank"] = rank
 
@@ -729,6 +773,7 @@ def search_candidate_videos(
             "candidate_count": len(candidates),
             "candidate_search_out": str(out_dir / "candidate-search.json"),
         },
+        score_region=score_region,
     )
     return summary
 
@@ -901,6 +946,15 @@ def main() -> int:
         choices=["auto"],
         help="For --candidate-glob, scan each candidate's timeline sidecar; currently supports 'auto'",
     )
+    parser.add_argument(
+        "--score-region",
+        choices=sorted(SCREEN_REGIONS),
+        help=(
+            "Score pass/fail and scan ranking on only this screen region "
+            "(e.g. 'scene_band') so a letterboxed location/dialogue scene is "
+            "compared on its content band, ignoring the HUD our renders omit."
+        ),
+    )
     args = parser.parse_args()
 
     if args.scenario_file:
@@ -940,6 +994,7 @@ def main() -> int:
                 reference_manifest=args.reference_manifest,
                 top_n=args.candidate_top,
                 candidate_timeline=args.candidate_timeline,
+                score_region=args.score_region,
             )
             print(json.dumps(summary, indent=2))
             return 0
@@ -963,6 +1018,7 @@ def main() -> int:
             out_dir=out_dir,
             reference_manifest=args.reference_manifest,
             max_mean_abs=args.max_mean_abs,
+            score_region=args.score_region,
         )
     elif args.scan_generated:
         start, end, step = parse_scan_range(args.scan_generated)
@@ -976,6 +1032,7 @@ def main() -> int:
             out_dir=out_dir,
             reference_manifest=args.reference_manifest,
             max_mean_abs=args.max_mean_abs,
+            score_region=args.score_region,
         )
     else:
         metrics = compare_paths(
@@ -986,6 +1043,7 @@ def main() -> int:
             out_dir=out_dir,
             reference_manifest=args.reference_manifest,
             max_mean_abs=args.max_mean_abs,
+            score_region=args.score_region,
         )
     print(json.dumps(metrics, indent=2))
     if metrics["status"] == "fail":

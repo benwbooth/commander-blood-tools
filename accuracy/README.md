@@ -55,6 +55,13 @@ The comparison output lands under `accuracy/comparisons/` (gitignored):
 (`y=165..193`), and `bottom_bar` (`y=194..199`). This separates wrong
 background/foreground/subtitle failures from missing ship-HUD failures.
 
+Add `--score-region scene_band` to score pass/fail **and** scan/candidate
+ranking on only that band. A letterboxed location or dialogue scene always has
+the pyramid-nav HUD (which our renders leave black), so whole-frame scores are
+dominated by that mismatch; `--score-region scene_band` compares just the scene
+content, letting a real background match surface. Works with `--generated-time`,
+`--scan-generated`, and `--candidate-glob`.
+
 Current `run_oracle.sh` screenshots are 800x600 host-window grabs. The compare
 script therefore defaults to the measured DOSBox viewport crop
 `80,100,640,480`; override with `--ref-crop x,y,w,h` if the capture setup

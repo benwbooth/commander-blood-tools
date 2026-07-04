@@ -294,6 +294,62 @@ class CompareOracleTests(unittest.TestCase):
             self.assertEqual(summary["best"]["generated"], str(close))
             self.assertEqual(summary["scan_start"], 0.0)
 
+    def test_score_region_ranks_on_scene_band_not_whole_frame(self) -> None:
+        # Build a reference and two candidates where whole-frame and scene_band
+        # ranking disagree: candidate A matches the scene band but differs in the
+        # HUD/bar rows; candidate B matches everywhere except a small scene-band
+        # offset. Whole-frame favours B; --score-region scene_band favours A.
+        import io
+        import json as _json
+        import sys as _sys
+        from contextlib import redirect_stdout
+
+        x, y, w, h = compare_oracle.SCREEN_REGIONS["scene_band"]
+
+        def make(path, band_rgb, rest_rgb):
+            img = Image.new("RGB", compare_oracle.NATIVE_SIZE, rest_rgb)
+            img.paste(Image.new("RGB", (w, h), band_rgb), (x, y))
+            img.save(path)
+
+        with tempfile.TemporaryDirectory(prefix="commander-blood-region-") as tmp:
+            root = Path(tmp)
+            reference = root / "reference.png"
+            cand_a = root / "candidate-a-band.png"
+            cand_b = root / "candidate-b-rest.png"
+            make(reference, (10, 10, 10), (10, 10, 10))
+            make(cand_a, (10, 10, 10), (110, 10, 10))  # band matches, rest far
+            make(cand_b, (20, 10, 10), (10, 10, 10))  # band slightly off, rest exact
+
+            def run(extra_args):
+                argv = [
+                    "compare_oracle.py",
+                    "--reference",
+                    str(reference),
+                    "--candidate-glob",
+                    str(root / "candidate-*.png"),
+                    "--out-dir",
+                    str(root / f"search{len(extra_args)}"),
+                    *extra_args,
+                ]
+                saved = _sys.argv
+                buf = io.StringIO()
+                try:
+                    _sys.argv = argv
+                    with redirect_stdout(buf):
+                        code = compare_oracle.main()
+                finally:
+                    _sys.argv = saved
+                self.assertEqual(code, 0)
+                return _json.loads(buf.getvalue())
+
+            whole = run([])
+            self.assertEqual(whole["best"]["generated"], str(cand_b))
+
+            scoped = run(["--score-region", "scene_band"])
+            self.assertEqual(scoped["best"]["generated"], str(cand_a))
+            self.assertEqual(scoped["best"]["score_region"], "scene_band")
+            self.assertEqual(scoped["best"]["best_score"], 0.0)
+
     def test_candidate_search_can_use_candidate_timelines(self) -> None:
         with tempfile.TemporaryDirectory(prefix="commander-blood-candidate-test-") as tmp:
             root = Path(tmp)
