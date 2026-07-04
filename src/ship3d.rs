@@ -1655,6 +1655,47 @@ pub fn randomize_ship_3d_point_cloud(prng: &mut BloodPrng) -> Vec<Ship3dProjecti
         .collect()
 }
 
+/// Height of the ship-3D point-cloud depth/color buffer in rows. The DOS pixel
+/// helper computes `y * 320 + x` into the active page; 200 native rows cover it.
+pub const SHIP_3D_PROJECTION_SCREEN_HEIGHT: usize = 200;
+
+/// One plotted starfield pixel and, alongside the returned count, the whole
+/// depth-shaded buffer produced by [`render_ship_3d_point_cloud`].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Ship3dPointCloudRender {
+    /// `320 * 200` depth-shaded buffer; `0` means "no point drawn here".
+    pub buffer: Vec<u8>,
+    /// Number of points that projected in front of the camera and won their
+    /// depth-buffer cell (matches the DOS write-once behavior).
+    pub plotted: usize,
+}
+
+/// Render the full ship-3D starfield background: the batch loop at `0x9A10`.
+/// Each point is translated by `origin`, projected through `matrix`, and
+/// depth-shaded into a `320 * 200` buffer, skipping points at non-positive
+/// depth and cells already claimed by a nearer point (the DOS helper only
+/// writes empty depth-buffer pixels). This drives the existing
+/// [`project_ship_3d_point`] / [`plot_ship_3d_projected_point`] primitives over
+/// the whole cloud instead of a single point.
+pub fn render_ship_3d_point_cloud(
+    points: &[Ship3dProjectionPoint],
+    origin: Ship3dProjectionOrigin,
+    matrix: Ship3dProjectionMatrix,
+    viewport: Ship3dProjectionViewport,
+) -> Ship3dPointCloudRender {
+    let mut buffer = vec![0u8; SHIP_3D_PROJECTION_SCREEN_WIDTH * SHIP_3D_PROJECTION_SCREEN_HEIGHT];
+    let mut plotted = 0usize;
+    for &point in points {
+        let Some(projected) = project_ship_3d_point(point, origin, matrix) else {
+            continue;
+        };
+        if plot_ship_3d_projected_point(&mut buffer, viewport, projected).is_some() {
+            plotted += 1;
+        }
+    }
+    Ship3dPointCloudRender { buffer, plotted }
+}
+
 pub fn project_ship_3d_object_sprite(
     anchor: Ship3dProjectionPoint,
     origin: Ship3dProjectionOrigin,
@@ -6396,6 +6437,66 @@ mod tests {
         assert_eq!(effect.incremented_counter_record, Some(0x2a00));
         assert!(effect.opened_target_list);
         assert_eq!(state.hud_flags, SHIP_3D_NAVIGATION_TARGET_LIST_FLAG);
+    }
+
+    fn axis_aligned_projection_matrix() -> Ship3dProjectionMatrix {
+        // Rows 1/2/3 pick x, y, z directly at ~unit Q15 scale so a translated
+        // point (tx,ty,tz>0) projects near screen centre with depth ~= tz.
+        Ship3dProjectionMatrix {
+            terms: [
+                0x7fff, 0, 0, // screen-x numerator uses tx
+                0, 0x7fff, 0, // screen-y numerator uses ty
+                0, 0, 0x7fff, // depth uses tz
+            ],
+        }
+    }
+
+    #[test]
+    fn render_point_cloud_matches_manual_primitive_loop_and_writes_once() {
+        let matrix = axis_aligned_projection_matrix();
+        let origin = Ship3dProjectionOrigin { x: 0, y: 0, z: 0 };
+        let viewport = Ship3dProjectionViewport {
+            left: 0,
+            right: SHIP_3D_PROJECTION_SCREEN_WIDTH as u16,
+            top: 0,
+            bottom: SHIP_3D_PROJECTION_SCREEN_HEIGHT as u16,
+        };
+
+        // A spread of points, including the on-axis (0,0,z) point that projects
+        // to screen centre, and a duplicate of it to exercise write-once.
+        let p = |x, y, z| Ship3dProjectionPoint { x, y, z };
+        let points = vec![
+            p(0, 0, 0x0100),
+            p(0, 0, 0x0100), // duplicate cell -> write-once
+            p(0x40, 0x30, 0x0180),
+            p(0x80, 0x20, 0x0200),
+            p(0, 0, 0), // depth 0 -> skipped
+            p(0x20, 0x60, 0x0140),
+        ];
+
+        // Expected buffer/count from calling the primitives directly.
+        let mut expected_buffer =
+            vec![0u8; SHIP_3D_PROJECTION_SCREEN_WIDTH * SHIP_3D_PROJECTION_SCREEN_HEIGHT];
+        let mut expected_plotted = 0usize;
+        for &point in &points {
+            if let Some(projected) = project_ship_3d_point(point, origin, matrix) {
+                if plot_ship_3d_projected_point(&mut expected_buffer, viewport, projected).is_some()
+                {
+                    expected_plotted += 1;
+                }
+            }
+        }
+
+        let render = render_ship_3d_point_cloud(&points, origin, matrix, viewport);
+        assert_eq!(render.plotted, expected_plotted);
+        assert_eq!(render.buffer, expected_buffer);
+
+        // The on-axis point must land somewhere, and the duplicate must not be
+        // double-counted (write-once): fewer plotted than non-degenerate points.
+        assert!(render.plotted >= 1);
+        assert!(render.plotted < points.len());
+        // Every drawn cell carries a depth shade, never a stray zero.
+        assert!(render.buffer.iter().filter(|&&p| p != 0).count() == render.plotted);
     }
 
     #[test]

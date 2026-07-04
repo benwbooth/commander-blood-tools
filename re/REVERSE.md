@@ -311,7 +311,9 @@ geometry model. The PRNG at `0x01CE:0x0B02` is an LFSR-style generator with
 CS-segment state at `cs:0x0AEE` (seed word, XOR-only), `cs:0x0AF0/0x0AF1`
 (mixing bytes, advanced each call from the `cs:0x0AF2` counter); it returns
 `value % modulus`. Both the PRNG and the randomizer are ported+tested in
-`src/ship3d.rs` as `BloodPrng`/`randomize_ship_3d_point_cloud`. IMPORTANT for
+`src/ship3d.rs` as `BloodPrng`/`randomize_ship_3d_point_cloud`, and the whole
+`0x9A10` batch loop is now `render_ship_3d_point_cloud()` (projects every point
+through the camera matrix and depth-shades a `320*200` write-once buffer). IMPORTANT for
 oracle strategy: the state bytes are zero in the image but the startup code
 (refs @`0x709/0x718`) seeds them, so **the exact star positions are not
 reproducible from a static run** — ship-3D background validation against a
