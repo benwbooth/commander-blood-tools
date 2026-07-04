@@ -114,6 +114,7 @@ pub const SHIP_3D_FALLBACK_TARGET_TABLE_DS_OFFSET: u16 = 0x2537;
 pub const SHIP_3D_NAVIGATION_TRIGGER_DS_OFFSET: u16 = 0x27d8;
 pub const SHIP_3D_INTERPOLATION_DURATION_DS_OFFSET: u16 = 0x0ada;
 pub const SHIP_3D_INTERPOLATION_TICK_DS_OFFSET: u16 = 0x0adb;
+pub const SHIP_3D_TARGET_EXTRA_LABEL_DS_OFFSET: u16 = 0x0174;
 pub const SHIP_3D_TARGET_LAYOUT_CENTER_X_DS_OFFSET: u16 = 0x0ac6;
 pub const SHIP_3D_TARGET_LAYOUT_DRAW_PTR_DS_OFFSET: u16 = 0x0ac8;
 pub const SHIP_3D_TARGET_LAYOUT_PRESERVE_WIDTHS_DS_OFFSET: u16 = 0x0adc;
@@ -1103,7 +1104,7 @@ fn render_call_site_note(file_offset: usize, target_offset: u16) -> &'static str
         }
         (0x001e4f, RENDER_UI_TEXT_OFFSET) => "menu prompt path renders one 10-row UI text label",
         (0x008597 | 0x0085ce, RENDER_UI_TEXT_OFFSET) => {
-            "dialogue/menu list path renders 10-row UI text with active-line color switching"
+            "ship target-list draw path renders centered 10-row UI text with hover/active color switching"
         }
         (0x001ac6, RENDER_PLANAR_UI_TEXT_OFFSET) => {
             "startup/presentation path renders 10-row UI text through VGA plane masks into GS:0x521D"
@@ -2607,6 +2608,15 @@ pub const PRESENTATION_3D_MARKERS: &[BinarySymbol] = &[
         comment: "current interpolation tick incremented by the 0x008B:0x0FAD gate before drawing",
     },
     BinarySymbol {
+        name: "ship_3d_target_extra_label",
+        file_offset: 0x00d594,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_TARGET_EXTRA_LABEL_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "static CANCEL string drawn as the target-list extra entry",
+    },
+    BinarySymbol {
         name: "ship_3d_target_layout_center_x",
         file_offset: 0x00dee6,
         segment: None,
@@ -3104,6 +3114,7 @@ mod tests {
             "ship_3d_navigation_update",
             "ship_3d_temp_snd_setup",
             "ship_3d_plane_band_copy",
+            "ship_3d_target_extra_label",
             "ship_3d_target_mouse_x",
             "ship_3d_target_mouse_y",
             "ship_3d_target_requested_presentation",

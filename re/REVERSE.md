@@ -295,8 +295,12 @@ the widest measured label; final width adds `0x14`. Height starts at `0`, or
 `0x0A` with the extra entry, adds `0x0B` per measured target, then adds `8`.
 X is `DS:0x0AC6 - width/2`; Y is `(0xC8 - height) >> 1` with the same unsigned
 wrapping behavior as the binary. When query-mode byte `DS:0x27E6` is set, the
-helper returns immediately after this layout step with `AX=-1`; the later
-mouse hit-test/draw path remains to be ported.
+helper returns immediately after this layout step with `AX=-1`. The later
+non-query branch is now split into Rust hit-test state plus draw-command
+emission: mouse bounds update `DS:0x27C7/0x27E7` and presentation modes, then
+the draw loop centers each target label from `DS:0x2AB3`, mutates the hover
+counter as a countdown, and emits the same UI font/color choices used by the
+binary.
 
 `src/ship3d.rs` ports the recovered transition/blit primitives:
 
@@ -1576,7 +1580,19 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       `DS:0x27E7` and plays `sn\3D.snd` clip 0; the Rust result exposes that as
       `play_select_sound`. Return `AX` matches the original sign-extended
       `selected_row - 1` shape, so no committed selection returns `0xFFFF`.
-      The remaining branch is the actual target-list text draw.
+      The remaining branch at this helper's boundary was the target-list text
+      draw, now ported separately.
+- [x] Port ship 3D target-list draw events:
+      `src/ship3d.rs` now exposes the recovered draw branch of
+      `0x071E:0x0C48` as target-list UI draw commands. The binary consumes the
+      `DS:0x2AB3` width table, centers each row inside `x + 0x0A` and
+      `width - 0x14`, starts drawing at `y + 4`, advances rows by `0x0B`, and
+      calls `0x0299:0x0176` with colors `0xE8` default, `0xEF` hover, and
+      `0xFE` active-click. `DS:0x27C7` is a destructive hover countdown during
+      drawing, so later rows wrap after the highlighted row. If
+      `DS:0x0ADD & 1` is set, the helper draws the extra static `CANCEL` string
+      at `DS:0x0174`. This gives the future software oracle and `wgpu` frontend
+      an exact event stream for the target-list UI instead of inferred labels.
 - [x] Port recovered framebuffer fill/copy primitives:
       `src/extract/render.rs` now has tested Rust helpers for the clipped
       rectangle fill, palette-remap rectangle, scene-band fill, full 320x200

@@ -143,6 +143,7 @@ DS:0x2537,ship_3d_fallback_target_table,"inline fallback target table used when 
 DS:0x27D8,ship_3d_navigation_trigger,"state byte gating ship/navigation update at file 0xB34E"
 DS:0x0ADA,ship_3d_interpolation_duration,"duration byte consumed by 0x008B:0x0FAD interpolation gate"
 DS:0x0ADB,ship_3d_interpolation_tick,"current interpolation tick incremented by 0x008B:0x0FAD gate"
+DS:0x0174,ship_3d_target_extra_label,"static CANCEL string drawn as the target-list extra entry"
 DS:0x0AC6,ship_3d_target_layout_center_x,"center x used by target-list layout helper"
 DS:0x0AC8,ship_3d_target_layout_draw_ptr,"draw-list pointer used by target-list helper outside selector-only mode"
 DS:0x0ADC,ship_3d_target_layout_preserve_widths,"preserve measured per-entry widths instead of normalizing to max width"

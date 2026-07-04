@@ -26,6 +26,12 @@ pub const SHIP_3D_TARGET_HIT_TEST_BOTTOM_INSET: u16 = 0x08;
 pub const SHIP_3D_TARGET_HOVER_PRESENTATION_MODE: u16 = 0x0006;
 pub const SHIP_3D_TARGET_ACTIVE_PRESENTATION_MODE: u16 = 0x0007;
 pub const SHIP_3D_TARGET_IDLE_PRESENTATION_MODE: u16 = 0x0001;
+pub const SHIP_3D_TARGET_DRAW_X_INSET: u16 = 0x0a;
+pub const SHIP_3D_TARGET_DEFAULT_TEXT_COLOR: u8 = 0xe8;
+pub const SHIP_3D_TARGET_HOVER_TEXT_COLOR: u8 = 0xef;
+pub const SHIP_3D_TARGET_ACTIVE_TEXT_COLOR: u8 = 0xfe;
+pub const SHIP_3D_TARGET_EXTRA_LABEL_OFFSET: u16 = 0x0174;
+pub const SHIP_3D_TARGET_ALIAS_LABEL_OFFSET: u16 = 0x273b;
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dTransitionState {
@@ -113,6 +119,30 @@ pub struct Ship3dTargetHitResult {
     pub selected_row: u8,
     pub return_ax: u16,
     pub play_select_sound: bool,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum Ship3dTargetTextSegment {
+    TargetList,
+    GameData,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Ship3dTargetDrawCommand {
+    pub row_index: usize,
+    pub string_segment: Ship3dTargetTextSegment,
+    pub string_offset: u16,
+    pub x: u16,
+    pub y: u16,
+    pub color: u8,
+    pub measured_width: u16,
+    pub extra_entry: bool,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct Ship3dTargetDrawResult {
+    pub commands: Vec<Ship3dTargetDrawCommand>,
+    pub final_hover_counter: u8,
 }
 
 pub fn update_ship_3d_transition_state(state: &mut Ship3dTransitionState, random_gate_zero: bool) {
@@ -336,6 +366,64 @@ pub fn hit_test_ship_3d_target_list(
     })
 }
 
+pub fn draw_ship_3d_target_list(
+    state: &mut Ship3dTargetHitState,
+    layout: Ship3dTargetListLayout,
+    label_offsets: &[u16],
+    width_table: &[u16],
+    activate: bool,
+    alias_source_offset: Option<u16>,
+) -> Option<Ship3dTargetDrawResult> {
+    let inner_width = layout
+        .width
+        .wrapping_sub(SHIP_3D_TARGET_LAYOUT_WIDTH_PADDING);
+    let x_origin = layout.x.wrapping_add(SHIP_3D_TARGET_DRAW_X_INSET);
+    let mut y = layout.y.wrapping_add(SHIP_3D_TARGET_HIT_TEST_TOP_INSET);
+    let mut commands = Vec::new();
+
+    for (row_index, label_offset) in label_offsets.iter().copied().enumerate() {
+        if label_offset == 0 || label_offset == SHIP_3D_TARGET_EXIT_SENTINEL {
+            break;
+        }
+        let measured_width = *width_table.get(row_index)?;
+        commands.push(Ship3dTargetDrawCommand {
+            row_index,
+            string_segment: Ship3dTargetTextSegment::TargetList,
+            string_offset: if Some(label_offset) == alias_source_offset {
+                SHIP_3D_TARGET_ALIAS_LABEL_OFFSET
+            } else {
+                label_offset
+            },
+            x: target_list_draw_x(x_origin, inner_width, measured_width),
+            y,
+            color: next_target_list_draw_color(state, activate),
+            measured_width,
+            extra_entry: false,
+        });
+        y = y.wrapping_add(SHIP_3D_TARGET_LAYOUT_ROW_STEP);
+    }
+
+    if layout.has_extra_entry {
+        let row_index = commands.len();
+        let measured_width = *width_table.get(row_index)?;
+        commands.push(Ship3dTargetDrawCommand {
+            row_index,
+            string_segment: Ship3dTargetTextSegment::GameData,
+            string_offset: SHIP_3D_TARGET_EXTRA_LABEL_OFFSET,
+            x: target_list_draw_x(x_origin, inner_width, measured_width),
+            y,
+            color: next_target_list_draw_color(state, activate),
+            measured_width,
+            extra_entry: true,
+        });
+    }
+
+    Some(Ship3dTargetDrawResult {
+        commands,
+        final_hover_counter: state.hover_row,
+    })
+}
+
 pub fn select_ship_3d_target_record(
     state: &mut Ship3dTargetSelectorState,
     primary_targets: &[u16],
@@ -447,6 +535,23 @@ fn checked_u16_div_u8_to_u8(dividend: u16, divisor: u8) -> Option<u8> {
 
 fn signed_i16(value: u16) -> i16 {
     value as i16
+}
+
+fn target_list_draw_x(x_origin: u16, inner_width: u16, measured_width: u16) -> u16 {
+    x_origin.wrapping_add(inner_width.wrapping_sub(measured_width) >> 1)
+}
+
+fn next_target_list_draw_color(state: &mut Ship3dTargetHitState, activate: bool) -> u8 {
+    state.hover_row = state.hover_row.wrapping_sub(1);
+    if state.hover_row == 0 {
+        if activate {
+            SHIP_3D_TARGET_ACTIVE_TEXT_COLOR
+        } else {
+            SHIP_3D_TARGET_HOVER_TEXT_COLOR
+        }
+    } else {
+        SHIP_3D_TARGET_DEFAULT_TEXT_COLOR
+    }
 }
 
 #[cfg(test)]
@@ -1036,6 +1141,136 @@ mod tests {
 
         assert_eq!(
             hit_test_ship_3d_target_list(&mut state, layout, 0, 0x0b04, false),
+            None
+        );
+    }
+
+    #[test]
+    fn target_draw_centers_rows_from_width_table_and_highlights_hover() {
+        let layout = layout_ship_3d_target_list(&[20, 80], 0x50, false);
+        let mut state = Ship3dTargetHitState {
+            hover_row: 2,
+            ..Ship3dTargetHitState::default()
+        };
+
+        let drawn = draw_ship_3d_target_list(
+            &mut state,
+            layout,
+            &[0x1000, 0x2000, SHIP_3D_TARGET_EXIT_SENTINEL],
+            &[20, 80],
+            false,
+            None,
+        )
+        .unwrap();
+
+        assert_eq!(
+            drawn.commands,
+            vec![
+                Ship3dTargetDrawCommand {
+                    row_index: 0,
+                    string_segment: Ship3dTargetTextSegment::TargetList,
+                    string_offset: 0x1000,
+                    x: 70,
+                    y: 89,
+                    color: SHIP_3D_TARGET_DEFAULT_TEXT_COLOR,
+                    measured_width: 20,
+                    extra_entry: false,
+                },
+                Ship3dTargetDrawCommand {
+                    row_index: 1,
+                    string_segment: Ship3dTargetTextSegment::TargetList,
+                    string_offset: 0x2000,
+                    x: 40,
+                    y: 100,
+                    color: SHIP_3D_TARGET_HOVER_TEXT_COLOR,
+                    measured_width: 80,
+                    extra_entry: false,
+                },
+            ]
+        );
+        assert_eq!(drawn.final_hover_counter, 0);
+        assert_eq!(state.hover_row, 0);
+    }
+
+    #[test]
+    fn target_draw_uses_active_color_and_keeps_decrementing_after_hover() {
+        let layout = layout_ship_3d_target_list(&[20, 80, 40], 0x50, false);
+        let mut state = Ship3dTargetHitState {
+            hover_row: 1,
+            ..Ship3dTargetHitState::default()
+        };
+
+        let drawn = draw_ship_3d_target_list(
+            &mut state,
+            layout,
+            &[0x1000, 0x2000, 0x3000],
+            &[20, 80, 40],
+            true,
+            None,
+        )
+        .unwrap();
+
+        assert_eq!(drawn.commands[0].color, SHIP_3D_TARGET_ACTIVE_TEXT_COLOR);
+        assert_eq!(drawn.commands[1].color, SHIP_3D_TARGET_DEFAULT_TEXT_COLOR);
+        assert_eq!(drawn.commands[2].color, SHIP_3D_TARGET_DEFAULT_TEXT_COLOR);
+        assert_eq!(drawn.final_hover_counter, 0xfe);
+    }
+
+    #[test]
+    fn target_draw_stops_at_sentinel_then_draws_cancel_extra_entry() {
+        let layout = layout_ship_3d_target_list(&[20], 0x50, true);
+        let mut state = Ship3dTargetHitState {
+            hover_row: 2,
+            ..Ship3dTargetHitState::default()
+        };
+
+        let drawn = draw_ship_3d_target_list(
+            &mut state,
+            layout,
+            &[0x1000, SHIP_3D_TARGET_EXIT_SENTINEL, 0x3000],
+            &[20, SHIP_3D_TARGET_LAYOUT_EXTRA_WIDTH],
+            false,
+            None,
+        )
+        .unwrap();
+
+        assert_eq!(drawn.commands.len(), 2);
+        assert_eq!(drawn.commands[0].string_offset, 0x1000);
+        assert_eq!(drawn.commands[1].row_index, 1);
+        assert_eq!(
+            drawn.commands[1].string_segment,
+            Ship3dTargetTextSegment::GameData
+        );
+        assert_eq!(
+            drawn.commands[1].string_offset,
+            SHIP_3D_TARGET_EXTRA_LABEL_OFFSET
+        );
+        assert_eq!(drawn.commands[1].color, SHIP_3D_TARGET_HOVER_TEXT_COLOR);
+        assert!(drawn.commands[1].extra_entry);
+    }
+
+    #[test]
+    fn target_draw_applies_alias_blank_label_offset() {
+        let layout = layout_ship_3d_target_list(&[20], 0x50, false);
+        let mut state = Ship3dTargetHitState::default();
+
+        let drawn =
+            draw_ship_3d_target_list(&mut state, layout, &[0x4444], &[20], false, Some(0x4444))
+                .unwrap();
+
+        assert_eq!(
+            drawn.commands[0].string_offset,
+            SHIP_3D_TARGET_ALIAS_LABEL_OFFSET
+        );
+    }
+
+    #[test]
+    fn target_draw_requires_matching_width_table_entries() {
+        let layout = layout_ship_3d_target_list(&[20, 80], 0x50, false);
+        let mut state = Ship3dTargetHitState::default();
+
+        assert_eq!(
+            draw_ship_3d_target_list(&mut state, layout, &[0x1000, 0x2000], &[20], false, None),
             None
         );
     }
