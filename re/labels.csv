@@ -9,6 +9,7 @@
 0x0073AF,vm_token_walker,scan script for 0xA6 text token matching index bx
 0x0072A8,dlg_record_end_hold,"sets gs:0x0b35=gs:0x27cf*(gs:0x0aca/2)+6 and gs:0x67bb=1"
 0x014338,vm_opcode_lengths,"per-opcode length/sentinel table DS:0x6f18, opcodes A0..D3 x2 bytes"
+0x002E33,binary_u32_sqrt,"integer square-root helper for DX:AX, used by ship 3D position distance"
 0x0031C8,render_string,"subtitle glyph blitter: SI=ascii str, DI=screen off, DL=color, ES=screen, stride 320; font tables gs:0x7802/0x78b2/0x7908"
 DS:0x7802,font_ascii_map,ASCII->glyph index (xlatb base)
 DS:0x78B2,font_advances_ds,per-glyph advance widths (DS offset)
@@ -202,7 +203,7 @@ DS:0x678A,vm_displayed_line,currently-displayed dialogue-line id (vs active gs:0
 DS:0x5239,render_yclip_lo,render_string y-clip low bound (set 0x23 for letterbox)
 DS:0x523B,render_yclip_hi,render_string y-clip high bound (0xa5 letterbox / 0xc8 full)
 0x006023,vm_field_offset,"helper: returns GS:0x6D60[selector*16 + bsf(kind)] as a kind-specific record-field offset"
-0x0060DD,ship_3d_position_distance,"computes squared distance between two runtime object coordinate fields resolved through selector helpers"
+0x0060DD,ship_3d_position_distance,"computes binary integer-sqrt distance between two runtime object coordinate fields resolved through selector helpers"
 0x0061A6,ship_3d_position_field_resolve,"resolves the coordinate field for an object by following selector-0x11 links, with arche fallback and kind-0x0100 match/mismatch blocks"
 0x007409,vm_c2_descript_lookup,"C2 kind-0x0400 helper: opens descript.des and dispatches matching descriptor script"
 0x007D7B,nav_actor_slot_update_loop,"walks six 0x18-byte navigation actor/object slots and dispatches via cs:0x06d4"

@@ -83,6 +83,7 @@ pub const SHIP_3D_FIELD_SELECTOR_POSITION: u8 = 0x0b;
 pub const SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MATCH: u8 = 0x09;
 pub const SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MISMATCH: u8 = 0x0a;
 pub const SHIP_3D_FIELD_SELECTOR_KIND100_MATCH_WORD: u8 = 0x0c;
+pub const SHIP_3D_FIELD_SELECTOR_KIND100_RELATION_WORD: u8 = 0x0e;
 pub const SHIP_3D_FIELD_SELECTOR_PARENT_LINK: u8 = 0x11;
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -325,6 +326,14 @@ pub struct Ship3dPositionRecord {
     /// `0xffff` sentinel, which falls back to the named arche object.
     pub parent_link: Option<u16>,
     pub kind100_match_word: Option<u16>,
+    pub kind100_relation_word: Option<u16>,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dPositionField {
+    pub offset: u16,
+    pub x: u16,
+    pub y: u16,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -1017,6 +1026,88 @@ pub fn resolve_ship_3d_position_field(
     None
 }
 
+pub fn ship_3d_position_distance(
+    records: &[Ship3dPositionRecord],
+    fields: &[Ship3dPositionField],
+    first_record_offset: u16,
+    second_record_offset: u16,
+    arche_object: u16,
+    inherited_kind100_compare_word: u16,
+) -> Option<u16> {
+    let first_record = find_ship_3d_position_record(records, first_record_offset)?;
+    let second_record = find_ship_3d_position_record(records, second_record_offset)?;
+    let first_field_offset = resolve_ship_3d_distance_position_field(
+        records,
+        first_record,
+        second_record,
+        arche_object,
+        inherited_kind100_compare_word,
+    )?;
+    let second_field_offset = resolve_ship_3d_distance_position_field(
+        records,
+        second_record,
+        first_record,
+        arche_object,
+        inherited_kind100_compare_word,
+    )?;
+    let first_field = find_ship_3d_position_field(fields, first_field_offset)?;
+    let second_field = find_ship_3d_position_field(fields, second_field_offset)?;
+    ship_3d_position_field_distance(first_field, second_field)
+}
+
+pub fn ship_3d_position_field_distance(
+    first: Ship3dPositionField,
+    second: Ship3dPositionField,
+) -> Option<u16> {
+    let dx = binary_abs_word_diff(first.x, second.x) as i16 as i32 as u32;
+    let dy = binary_abs_word_diff(first.y, second.y) as i16 as i32 as u32;
+    let squared = dx.wrapping_mul(dx).wrapping_add(dy.wrapping_mul(dy));
+    ship_3d_binary_sqrt(squared)
+}
+
+pub fn ship_3d_binary_sqrt(value: u32) -> Option<u16> {
+    let mut ax = value as u16;
+    let mut dx = (value >> 16) as u16;
+    let original_ax = ax;
+    let original_dx = dx;
+
+    let mut bx = if dx != 0 {
+        if dx & 0xff00 != 0 {
+            if dx >= 0xfffe {
+                return Some(ax);
+            }
+            0xffff
+        } else {
+            0x0fff
+        }
+    } else {
+        if ax == 0 {
+            return Some(ax);
+        }
+        if ax & 0xff00 != 0 {
+            0x00ff
+        } else {
+            0x000f
+        }
+    };
+
+    loop {
+        let dividend = ((dx as u32) << 16) | ax as u32;
+        let quotient = dividend / bx as u32;
+        if quotient > u16::MAX as u32 {
+            return None;
+        }
+        let (sum, carry) = (quotient as u16).overflowing_add(bx);
+        let candidate = (sum >> 1) | if carry { 0x8000 } else { 0 };
+        if candidate >= bx {
+            return Some(candidate);
+        }
+        bx = candidate;
+        ax = original_ax;
+        dx = original_dx;
+    }
+}
+
 pub fn run_ship_3d_navigation_trigger_prelude(
     state: &mut Ship3dNavigationTriggerState,
     records: &[Ship3dNavigationRuntimeRecord],
@@ -1403,8 +1494,58 @@ fn find_ship_3d_position_record(
         .find(|record| record.offset == offset)
 }
 
+fn find_ship_3d_position_field(
+    fields: &[Ship3dPositionField],
+    offset: u16,
+) -> Option<Ship3dPositionField> {
+    fields.iter().copied().find(|field| field.offset == offset)
+}
+
+fn resolve_ship_3d_distance_position_field(
+    records: &[Ship3dPositionRecord],
+    record: Ship3dPositionRecord,
+    other_record: Ship3dPositionRecord,
+    arche_object: u16,
+    inherited_kind100_compare_word: u16,
+) -> Option<u16> {
+    if record.kind_flags == SHIP_3D_OBJECT_KIND_POSITION_KIND100 {
+        return resolve_ship_3d_position_field(
+            records,
+            record.offset,
+            arche_object,
+            kind100_relation_word(other_record)?,
+        );
+    }
+
+    resolve_ship_3d_position_field(
+        records,
+        record.offset,
+        arche_object,
+        inherited_kind100_compare_word,
+    )
+}
+
+fn kind100_relation_word(record: Ship3dPositionRecord) -> Option<u16> {
+    match vm::vm_field_offset(
+        SHIP_3D_FIELD_SELECTOR_KIND100_RELATION_WORD,
+        record.kind_flags,
+    )? {
+        0 => Some(record.kind_flags),
+        _ => record.kind100_relation_word,
+    }
+}
+
 fn ship_3d_record_field(record_offset: u16, kind_flags: u16, selector: u8) -> Option<u16> {
     vm::vm_field_offset(selector, kind_flags).map(|field| record_offset.wrapping_add(field))
+}
+
+fn binary_abs_word_diff(first: u16, second: u16) -> u16 {
+    let diff = first.wrapping_sub(second);
+    if diff & 0x8000 != 0 {
+        diff.wrapping_neg()
+    } else {
+        diff
+    }
 }
 
 fn next_target_list_draw_color(state: &mut Ship3dTargetHitState, activate: bool) -> u8 {
@@ -3202,22 +3343,52 @@ mod tests {
         kind_flags: u16,
         parent_link: Option<u16>,
         kind100_match_word: Option<u16>,
+        kind100_relation_word: Option<u16>,
     ) -> Ship3dPositionRecord {
         Ship3dPositionRecord {
             offset,
             kind_flags,
             parent_link,
             kind100_match_word,
+            kind100_relation_word,
         }
+    }
+
+    fn position_field(offset: u16, x: u16, y: u16) -> Ship3dPositionField {
+        Ship3dPositionField { offset, x, y }
     }
 
     #[test]
     fn position_field_resolves_direct_coordinate_kinds() {
         let records = [
-            position_record(0x1000, SHIP_3D_OBJECT_KIND_POSITION_DIRECT_8, None, None),
-            position_record(0x1100, SHIP_3D_OBJECT_KIND_POSITION_DIRECT_10, None, None),
-            position_record(0x1200, SHIP_3D_OBJECT_KIND_POSITION_DIRECT_40, None, None),
-            position_record(0x1300, SHIP_3D_OBJECT_KIND_POSITION_DIRECT_200, None, None),
+            position_record(
+                0x1000,
+                SHIP_3D_OBJECT_KIND_POSITION_DIRECT_8,
+                None,
+                None,
+                None,
+            ),
+            position_record(
+                0x1100,
+                SHIP_3D_OBJECT_KIND_POSITION_DIRECT_10,
+                None,
+                None,
+                None,
+            ),
+            position_record(
+                0x1200,
+                SHIP_3D_OBJECT_KIND_POSITION_DIRECT_40,
+                None,
+                None,
+                None,
+            ),
+            position_record(
+                0x1300,
+                SHIP_3D_OBJECT_KIND_POSITION_DIRECT_200,
+                None,
+                None,
+                None,
+            ),
         ];
 
         assert_eq!(
@@ -3241,9 +3412,15 @@ mod tests {
     #[test]
     fn position_field_follows_selector_11_parent_chain() {
         let records = [
-            position_record(0x1000, 0x0002, Some(0x1100), None),
-            position_record(0x1100, 0x0002, Some(0x1200), None),
-            position_record(0x1200, SHIP_3D_OBJECT_KIND_POSITION_DIRECT_8, None, None),
+            position_record(0x1000, 0x0002, Some(0x1100), None, None),
+            position_record(0x1100, 0x0002, Some(0x1200), None, None),
+            position_record(
+                0x1200,
+                SHIP_3D_OBJECT_KIND_POSITION_DIRECT_8,
+                None,
+                None,
+                None,
+            ),
         ];
 
         assert_eq!(
@@ -3255,8 +3432,14 @@ mod tests {
     #[test]
     fn position_field_uses_arche_for_selector_11_sentinel() {
         let records = [
-            position_record(0x1000, 0x0002, None, None),
-            position_record(0x2000, SHIP_3D_OBJECT_KIND_POSITION_DIRECT_10, None, None),
+            position_record(0x1000, 0x0002, None, None, None),
+            position_record(
+                0x2000,
+                SHIP_3D_OBJECT_KIND_POSITION_DIRECT_10,
+                None,
+                None,
+                None,
+            ),
         ];
 
         assert_eq!(
@@ -3272,6 +3455,7 @@ mod tests {
             SHIP_3D_OBJECT_KIND_POSITION_KIND100,
             None,
             Some(0x2222),
+            None,
         )];
 
         assert_eq!(
@@ -3287,8 +3471,8 @@ mod tests {
     #[test]
     fn position_field_rejects_unresolvable_parent_chain() {
         let records = [
-            position_record(0x1000, 0x0002, Some(0x1000), None),
-            position_record(0x2000, 0x0020, Some(0x1000), None),
+            position_record(0x1000, 0x0002, Some(0x1000), None, None),
+            position_record(0x2000, 0x0020, Some(0x1000), None, None),
         ];
 
         assert_eq!(
@@ -3298,6 +3482,113 @@ mod tests {
         assert_eq!(
             resolve_ship_3d_position_field(&records, 0x2000, 0x1000, 0),
             None
+        );
+    }
+
+    #[test]
+    fn position_distance_uses_binary_sqrt_distance() {
+        let first = position_field(0x1000, 10, 20);
+        let second = position_field(0x2000, 13, 24);
+
+        assert_eq!(ship_3d_position_field_distance(first, second), Some(5));
+    }
+
+    #[test]
+    fn position_distance_uses_binary_rounded_sqrt() {
+        assert_eq!(ship_3d_binary_sqrt(24), Some(5));
+        assert_eq!(ship_3d_binary_sqrt(20), Some(4));
+        assert_eq!(
+            ship_3d_position_field_distance(
+                position_field(0x1000, 0, 0),
+                position_field(0x2000, 2, 4),
+            ),
+            Some(4)
+        );
+    }
+
+    #[test]
+    fn position_distance_uses_wrapping_signed_word_diffs() {
+        assert_eq!(
+            ship_3d_position_field_distance(
+                position_field(0x1000, 0xffff, 0),
+                position_field(0x2000, 0x0001, 0),
+            ),
+            Some(2)
+        );
+    }
+
+    #[test]
+    fn position_distance_resolves_kind100_against_other_relation_word() {
+        let first = position_record(
+            0x1000,
+            SHIP_3D_OBJECT_KIND_POSITION_KIND100,
+            None,
+            Some(0x2222),
+            None,
+        );
+        let second_match = position_record(
+            0x2000,
+            SHIP_3D_OBJECT_KIND_POSITION_DIRECT_8,
+            None,
+            None,
+            Some(0x2222),
+        );
+        let second_mismatch = position_record(
+            0x2100,
+            SHIP_3D_OBJECT_KIND_POSITION_DIRECT_8,
+            None,
+            None,
+            Some(0x3333),
+        );
+        let fields = [
+            position_field(0x1018, 0, 0),
+            position_field(0x101c, 10, 0),
+            position_field(0x2018, 3, 4),
+            position_field(0x2118, 3, 4),
+        ];
+
+        assert_eq!(
+            ship_3d_position_distance(&[first, second_match], &fields, 0x1000, 0x2000, 0, 0),
+            Some(5)
+        );
+        assert_eq!(
+            ship_3d_position_distance(&[first, second_mismatch], &fields, 0x1000, 0x2100, 0, 0),
+            Some(8)
+        );
+    }
+
+    #[test]
+    fn position_distance_follows_parent_chain_with_inherited_kind100_compare_word() {
+        let records = [
+            position_record(0x1000, 0x0002, Some(0x1100), None, None),
+            position_record(
+                0x1100,
+                SHIP_3D_OBJECT_KIND_POSITION_KIND100,
+                None,
+                Some(0x4444),
+                None,
+            ),
+            position_record(
+                0x2000,
+                SHIP_3D_OBJECT_KIND_POSITION_DIRECT_8,
+                None,
+                None,
+                None,
+            ),
+        ];
+        let fields = [
+            position_field(0x1118, 0, 0),
+            position_field(0x111c, 10, 0),
+            position_field(0x2018, 3, 4),
+        ];
+
+        assert_eq!(
+            ship_3d_position_distance(&records, &fields, 0x1000, 0x2000, 0, 0x4444),
+            Some(5)
+        );
+        assert_eq!(
+            ship_3d_position_distance(&records, &fields, 0x1000, 0x2000, 0, 0x5555),
+            Some(8)
         );
     }
 

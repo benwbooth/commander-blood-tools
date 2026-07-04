@@ -332,7 +332,12 @@ binary.
   kind `0x0100`, which chooses selector `0x09`/`0x0A` from a selector-`0x0C`
   word comparison. A selector-`0x11` value of `0xFFFF` falls back to the named
   `arche` object (`DS:0x6752`). The distance caller at `0x0060DD` also treats
-  kind `0x0040` as a direct selector-`0x0B` coordinate source.
+  kind `0x0040` as a direct selector-`0x0B` coordinate source. It reads two
+  coordinate words from each resolved field, uses 16-bit wrapping signed
+  subtraction and absolute value for the x/y deltas, sums the two squares, and
+  calls the shared `DX:AX` integer square-root helper at `0x002E33`
+  (`0x01CE:0x0B53`). The result is a binary-rounded distance, not a raw squared
+  distance.
 
 Implementation direction: keep the 320x200 indexed cutscene/dialogue path as a
 software renderer until it matches oracle captures. Once the 3D/minigame
@@ -1715,6 +1720,15 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       selector `0x0C`. Rust exposes this as `resolve_ship_3d_position_field()`,
       giving the future software oracle and `wgpu` frontend a binary-derived
       coordinate source instead of a guessed object position.
+- [x] Port ship 3D object distance helper:
+      the near caller at `0x006BEA` invokes `0x0060DD` for kind-1/kind-2 record
+      paths. The helper resolves both coordinate fields, with top-level
+      kind-`0x0100` records comparing their selector-`0x0C` word against the
+      other object's selector-`0x0E` relation word. It then computes x/y deltas
+      with 16-bit wrapping signed arithmetic and calls `0x002E33` to return the
+      binary integer-sqrt distance. Rust exposes this as
+      `ship_3d_position_distance()` over decoded position records and
+      `Ship3dPositionField` coordinate pairs.
 - [x] Port ship 3D navigation sequence branch:
       the internal branch at `0x0A9A:0x04E1` (file `0xB481`) now has a Rust
       state/effect model as `run_ship_3d_navigation_sequence_update()`. If
