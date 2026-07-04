@@ -482,7 +482,10 @@ chars/sec; at ~15 fps and a mid text speed (`gs:0xACA≈5`) ≈ **12 chars/sec**
 (the old `SUBTITLE_CHARS_PER_SEC = 36` was ~3× too fast). Rust now uses
 `subtitle_reveal_chars_per_second(DEFAULT_SUBTITLE_TEXT_SPEED_STEP=5)` for
 subtitle drawing, silent-line duration, and line-complete chatter placement, so
-those three outputs share the same binary-derived timing source.
+those three outputs share the same binary-derived timing source. Dialogue-run
+segment lifetime now uses the decoded `reveal_complete_hold_ticks` value after
+subtitle reveal completion; voiced lines last for at least that subtitle display
+duration and extend only when the PCM clip is longer.
 
 ### Subtitle TEXT ASSEMBLY (DECODED) — 0xA6 handler file 0x66CD–0x6739
 
@@ -1546,10 +1549,11 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       reveal palette indices are tied to `0x5E5C/0x5E5E`, `0xB31/0xACA`, and the
       `0x06A0` wrapper. Rust derives the default reveal rate from
       `DEFAULT_SUBTITLE_TEXT_SPEED_STEP=5`, and uses it consistently for drawing,
-      silent-line duration, and line-complete chatter placement.
+      line duration, and line-complete chatter placement. Subtitle segment
+      lifetime uses the decoded `reveal_complete_hold_ticks` timer, with voice
+      PCM length acting as the minimum only when it is longer.
 - [ ] Remaining presentation timing: recover player/config text-speed selection,
-      exact voiceless line hold policy, HNM actor reset/loop policy, and audio
-      mix levels.
+      HNM actor reset/loop policy, and audio mix levels.
 
 ### Renderer Integration (replaces skill's "Web Port")
 

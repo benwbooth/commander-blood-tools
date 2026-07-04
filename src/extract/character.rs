@@ -216,10 +216,29 @@ impl PendingDialogueMedia {
     }
 }
 
-fn silent_subtitle_duration(text: &str) -> f64 {
-    let chars = text.chars().filter(|c| !c.is_control()).count();
-    let reveal = chars as f64 / default_subtitle_reveal_chars_per_second();
-    (reveal + SILENT_SUBTITLE_HOLD_SEC).max(SILENT_SUBTITLE_MIN_SEC)
+fn subtitle_line_complete_hold_seconds() -> f64 {
+    vm::reveal_complete_hold_ticks(DEFAULT_SUBTITLE_TEXT_SPEED_STEP) as f64 / HNM_FPS as f64
+}
+
+fn subtitle_display_duration(text: &str) -> f64 {
+    let reveal_chars = subtitle_reveal_char_count(text.trim());
+    if reveal_chars == 0 {
+        return 0.0;
+    }
+    reveal_chars as f64 / default_subtitle_reveal_chars_per_second()
+        + subtitle_line_complete_hold_seconds()
+}
+
+fn voice_duration_seconds(voice: &SndClip) -> f64 {
+    voice.pcm.len() as f64 / voice.sample_rate as f64
+}
+
+fn dialogue_segment_duration(text: &str, voice: Option<&SndClip>) -> f64 {
+    let subtitle_duration = subtitle_display_duration(text);
+    voice
+        .map(voice_duration_seconds)
+        .unwrap_or(0.0)
+        .max(subtitle_duration)
 }
 
 fn silent_dialogue_segment(text: &str, active_line_id: u16) -> DialogueSegment {
@@ -229,7 +248,7 @@ fn silent_dialogue_segment(text: &str, active_line_id: u16) -> DialogueSegment {
         play_chatter: false,
         hnm_path: None,
         voice: None,
-        duration: silent_subtitle_duration(text),
+        duration: subtitle_display_duration(text),
     }
 }
 
@@ -896,10 +915,7 @@ fn resolve_actor_event_segment(
     if hnm_path.is_none() && voice.is_none() {
         return None;
     }
-    let duration = voice
-        .as_ref()
-        .map(|voice| voice.pcm.len() as f64 / voice.sample_rate as f64)
-        .unwrap_or_else(|| silent_subtitle_duration(text));
+    let duration = dialogue_segment_duration(text, voice.as_ref());
     Some(DialogueSegment {
         text: text.to_string(),
         active_line_id,
@@ -975,10 +991,7 @@ pub(super) fn create_character_dialogue_video(
         if hnm_path.is_none() && voice.is_none() {
             return None;
         }
-        let duration = voice
-            .as_ref()
-            .map(|voice| voice.pcm.len() as f64 / voice.sample_rate as f64)
-            .unwrap_or_else(|| silent_subtitle_duration(text));
+        let duration = dialogue_segment_duration(text, voice.as_ref());
         Some(DialogueSegment {
             text: text.to_string(),
             active_line_id,
@@ -1348,6 +1361,44 @@ mod tests {
             text_end: offset + 12,
             source: "test".to_string(),
         }
+    }
+
+    fn test_voice_clip(samples: usize, sample_rate: u32) -> SndClip {
+        SndClip {
+            original_index: 0,
+            file_offset: 0,
+            pcm_file_offset: 0,
+            sample_rate_code: 0,
+            sample_rate,
+            pcm: vec![0x80; samples],
+        }
+    }
+
+    #[test]
+    fn subtitle_display_duration_uses_binary_reveal_complete_hold() {
+        let expected = 3.0 / default_subtitle_reveal_chars_per_second()
+            + vm::reveal_complete_hold_ticks(DEFAULT_SUBTITLE_TEXT_SPEED_STEP) as f64
+                / HNM_FPS as f64;
+
+        assert!((subtitle_display_duration("abc") - expected).abs() < f64::EPSILON);
+        assert_eq!(subtitle_display_duration(" \r\n "), 0.0);
+    }
+
+    #[test]
+    fn dialogue_segment_duration_waits_for_subtitle_or_voice() {
+        let short_voice = test_voice_clip(5_000, 10_000);
+        let long_voice = test_voice_clip(30_000, 10_000);
+        let subtitle_duration = subtitle_display_duration("a subtitle line");
+
+        assert_eq!(
+            dialogue_segment_duration("a subtitle line", Some(&short_voice)),
+            subtitle_duration
+        );
+        assert_eq!(
+            dialogue_segment_duration("a subtitle line", Some(&long_voice)),
+            3.0
+        );
+        assert_eq!(dialogue_segment_duration("", Some(&short_voice)), 0.5);
     }
 
     #[test]

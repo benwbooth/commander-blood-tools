@@ -25,12 +25,7 @@ const DEFAULT_SUBTITLE_TEXT_SPEED_STEP: u16 = 5;
 // the player still saw on-screen, with no son.snd voice clip — see re/REVERSE.md
 // "voice clip-index") is rendered subtitle-only: its text over the scene
 // background, with no talking-head HNM and no voice. Its on-screen duration =
-// reveal time (the RE-derived rate) + a fixed readable
-// hold. The game holds such a line until player input, which is not statically
-// knowable, so the hold/min below are a presentation choice (documented), not a
-// recovered constant.
-const SILENT_SUBTITLE_HOLD_SEC: f64 = 1.5;
-const SILENT_SUBTITLE_MIN_SEC: f64 = 2.0;
+// reveal time (the RE-derived rate) + the decoded line-complete hold timer.
 // Sample rate used to generate silence for a subtitle-only scene that has no
 // voiced clip to inherit a rate from (any rate works for silence; this just
 // keeps the concatenated u8 PCM track well-formed).
