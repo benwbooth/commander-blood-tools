@@ -620,6 +620,24 @@ pub fn run_ship_3d_nav_choice_handler_2(
     Some(effect)
 }
 
+pub fn run_ship_3d_nav_choice_handler_3(
+    state: &mut Ship3dNavChoiceState,
+    related_record: u16,
+) -> Ship3dNavChoiceHandlerEffect {
+    if state.handler_phase & SHIP_3D_NAV_CHOICE_HANDLER_PHASE == 0 {
+        return Ship3dNavChoiceHandlerEffect::default();
+    }
+
+    state.handler_phase = 0;
+    Ship3dNavChoiceHandlerEffect {
+        deferred_record_type: Some(SHIP_3D_NAV_CHOICE_RECORD_LINK_TYPE),
+        deferred_record_related: Some(related_record),
+        cleared_handler_phase: true,
+        load_snd_bank_path: Some(SHIP_3D_NAV_CHOICE_RADIO_SND_PATH_OFFSET),
+        ..Ship3dNavChoiceHandlerEffect::default()
+    }
+}
+
 pub fn draw_ship_3d_target_list(
     state: &mut Ship3dTargetHitState,
     layout: Ship3dTargetListLayout,
@@ -2056,5 +2074,46 @@ mod tests {
             None
         );
         assert_eq!(target_records, vec![0x1204]);
+    }
+
+    #[test]
+    fn nav_choice_handler_3_defers_static_record_link_and_reloads_radio_bank() {
+        let mut state = Ship3dNavChoiceState {
+            selected_choice: 4,
+            hud_flags: SHIP_3D_NAV_CHOICE_TARGET_LIST_FLAG,
+            handler_phase: SHIP_3D_NAV_CHOICE_HANDLER_PHASE,
+            interpolation_current_tick: 8,
+            ..Ship3dNavChoiceState::default()
+        };
+
+        let effect = run_ship_3d_nav_choice_handler_3(&mut state, 0x6756);
+
+        assert_eq!(
+            effect,
+            Ship3dNavChoiceHandlerEffect {
+                deferred_record_type: Some(SHIP_3D_NAV_CHOICE_RECORD_LINK_TYPE),
+                deferred_record_related: Some(0x6756),
+                cleared_handler_phase: true,
+                load_snd_bank_path: Some(SHIP_3D_NAV_CHOICE_RADIO_SND_PATH_OFFSET),
+                ..Ship3dNavChoiceHandlerEffect::default()
+            }
+        );
+        assert_eq!(state.handler_phase, 0);
+        assert_eq!(state.selected_choice, 4);
+        assert_eq!(state.hud_flags, SHIP_3D_NAV_CHOICE_TARGET_LIST_FLAG);
+        assert_eq!(state.interpolation_current_tick, 8);
+    }
+
+    #[test]
+    fn nav_choice_handler_3_returns_without_phase_bit() {
+        let mut state = Ship3dNavChoiceState {
+            handler_phase: SHIP_3D_NAV_CHOICE_PHASE_INTERPOLATING,
+            ..Ship3dNavChoiceState::default()
+        };
+
+        let effect = run_ship_3d_nav_choice_handler_3(&mut state, 0x6756);
+
+        assert_eq!(effect, Ship3dNavChoiceHandlerEffect::default());
+        assert_eq!(state.handler_phase, SHIP_3D_NAV_CHOICE_PHASE_INTERPOLATING);
     }
 }

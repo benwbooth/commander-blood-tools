@@ -1642,6 +1642,14 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       a selected target subtracts four bytes into `DS:0x676A` and sets
       `DS:0x2751 = 1` before clearing the same choice/HUD state. It does not
       write `DS:0x6768` or reload `radio.snd`.
+- [x] Port ship 3D navigation-choice handler 3:
+      table entry 3 at `0x071E:0x1068` is a one-shot static record-link handler.
+      If phase bit 0 is set, it copies `DS:0x6756` into deferred related record
+      `DS:0x676A`, writes deferred type `0x00C3` to `DS:0x6768`, clears
+      `DS:0x2565`, and reloads `sn\radio.snd` through the same SND bank-loader
+      path offset used by handler 1. It does not clear `DS:0x2A19` or the
+      target-list HUD bit. Rust exposes this as
+      `run_ship_3d_nav_choice_handler_3()`.
 - [x] Port recovered framebuffer fill/copy primitives:
       `src/extract/render.rs` now has tested Rust helpers for the clipped
       rectangle fill, palette-remap rectangle, scene-band fill, full 320x200
