@@ -83,6 +83,13 @@ pub const SHIP_3D_TEMP_SND_SCENE_SELECTOR_SENTINEL: u16 = 0xffff;
 pub const SHIP_3D_TEMP_SND_VIEWPORT_DESCRIPTOR: [u16; 8] = [
     0x0000, 0x0001, 0x0004, 0x0000, 0x0140, 0x00c8, 0x0000, 0x0000,
 ];
+pub const SHIP_3D_FINAL_RESET_HUD_FLAGS: u16 = 0x0009;
+pub const SHIP_3D_FINAL_RESET_NAV_TIMER: u16 = 0x0032;
+pub const SHIP_3D_FINAL_RESET_SELECTOR_SENTINEL: u16 = 0xffff;
+pub const SHIP_3D_FINAL_RESET_ACTIVE_RECORD_SENTINEL: u16 = 0xffff;
+pub const SHIP_3D_FINAL_RESET_DIRTY_MARKER: u8 = 0xff;
+pub const SHIP_3D_FINAL_RESET_SCROLL_MODE: u16 = SHIP_3D_SCROLL_MODE_HOLD;
+pub const SHIP_3D_FINAL_RESET_STATUS_FLAG_MASK: u8 = 0xfc;
 pub const SHIP_3D_OBJECT_KIND_POSITION_DIRECT_8: u16 = 0x0008;
 pub const SHIP_3D_OBJECT_KIND_POSITION_DIRECT_10: u16 = 0x0010;
 pub const SHIP_3D_OBJECT_KIND_POSITION_DIRECT_40: u16 = 0x0040;
@@ -353,6 +360,80 @@ pub struct Ship3dTempSndEffect {
     pub enabled_plane_copy: bool,
     pub reset_scene_selector: bool,
     pub reset_setup_flags: bool,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Ship3dNavigationFinalResetState {
+    pub exit_pending: bool,
+    pub opening: bool,
+    pub hud_flags: u16,
+    pub nav_choice_hold_ticks: u16,
+    pub nav_choice_timer: u16,
+    pub post_reset_gate: bool,
+    pub navigation_gate: bool,
+    pub dialogue_state: u16,
+    pub scene_band_top: u16,
+    pub scene_selector: u16,
+    pub active_record: u16,
+    pub presentation_gate: bool,
+    pub pending_state_byte: bool,
+    pub subtitle_gate: bool,
+    pub presentation_defer_active: bool,
+    pub secondary_presentation_defer_active: bool,
+    pub plane_copy_enabled: bool,
+    pub sequence_active: bool,
+    pub status_flags: u8,
+    pub secondary_status_flag: bool,
+    pub dirty_marker: u8,
+    pub scroll_value: u16,
+    pub scroll_mode: u16,
+}
+
+impl Default for Ship3dNavigationFinalResetState {
+    fn default() -> Self {
+        Self {
+            exit_pending: false,
+            opening: false,
+            hud_flags: 0,
+            nav_choice_hold_ticks: 0,
+            nav_choice_timer: 0,
+            post_reset_gate: false,
+            navigation_gate: false,
+            dialogue_state: 0,
+            scene_band_top: 0,
+            scene_selector: 0,
+            active_record: 0,
+            presentation_gate: false,
+            pending_state_byte: false,
+            subtitle_gate: false,
+            presentation_defer_active: false,
+            secondary_presentation_defer_active: false,
+            plane_copy_enabled: false,
+            sequence_active: false,
+            status_flags: 0,
+            secondary_status_flag: false,
+            dirty_marker: 0,
+            scroll_value: 0,
+            scroll_mode: 0,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dNavigationFinalResetEffect {
+    pub ran: bool,
+    pub reentered_active_sequence: bool,
+    pub cleared_dialogue_state: bool,
+    pub reset_hud_state: bool,
+    pub reset_presentation_gates: bool,
+    pub reset_sequence_flags: bool,
+    pub reset_status_flags: bool,
+    pub copied_backbuffer_restore_block: bool,
+    pub cleared_overlay_scratch: bool,
+    pub reset_scroll_state: bool,
+    pub called_render_clear: bool,
+    pub called_input_reset: bool,
+    pub called_target_cleanup: bool,
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -1055,6 +1136,62 @@ pub fn run_ship_3d_temp_snd_setup(state: &mut Ship3dTempSndState) -> Option<Ship
     }
 
     Some(effect)
+}
+
+pub fn run_ship_3d_navigation_final_reset(
+    state: &mut Ship3dNavigationFinalResetState,
+) -> Ship3dNavigationFinalResetEffect {
+    if !state.exit_pending {
+        return Ship3dNavigationFinalResetEffect::default();
+    }
+
+    if state.opening {
+        return Ship3dNavigationFinalResetEffect {
+            reentered_active_sequence: true,
+            ..Ship3dNavigationFinalResetEffect::default()
+        };
+    }
+
+    state.hud_flags = SHIP_3D_FINAL_RESET_HUD_FLAGS;
+    state.nav_choice_hold_ticks = 0;
+    state.nav_choice_timer = SHIP_3D_FINAL_RESET_NAV_TIMER;
+    state.post_reset_gate = true;
+    state.navigation_gate = true;
+
+    state.dialogue_state = 0;
+    state.scene_band_top = 0;
+    state.scene_selector = SHIP_3D_FINAL_RESET_SELECTOR_SENTINEL;
+    state.active_record = SHIP_3D_FINAL_RESET_ACTIVE_RECORD_SENTINEL;
+    state.presentation_gate = false;
+    state.exit_pending = false;
+    state.pending_state_byte = false;
+    state.subtitle_gate = false;
+    state.presentation_defer_active = false;
+    state.secondary_presentation_defer_active = false;
+    state.plane_copy_enabled = false;
+    state.sequence_active = false;
+    state.status_flags &= SHIP_3D_FINAL_RESET_STATUS_FLAG_MASK;
+    state.secondary_status_flag = false;
+
+    state.dirty_marker = SHIP_3D_FINAL_RESET_DIRTY_MARKER;
+    state.scroll_value = 0;
+    state.scroll_mode = SHIP_3D_FINAL_RESET_SCROLL_MODE;
+
+    Ship3dNavigationFinalResetEffect {
+        ran: true,
+        cleared_dialogue_state: true,
+        reset_hud_state: true,
+        reset_presentation_gates: true,
+        reset_sequence_flags: true,
+        reset_status_flags: true,
+        copied_backbuffer_restore_block: true,
+        cleared_overlay_scratch: true,
+        reset_scroll_state: true,
+        called_render_clear: true,
+        called_input_reset: true,
+        called_target_cleanup: true,
+        ..Ship3dNavigationFinalResetEffect::default()
+    }
 }
 
 pub fn build_ship_3d_navigation_source_records(
@@ -3364,6 +3501,135 @@ mod tests {
         );
         assert!(!state.setup_flag_a);
         assert!(!state.setup_flag_b);
+    }
+
+    #[test]
+    fn navigation_final_reset_without_exit_pending_is_noop() {
+        let mut state = Ship3dNavigationFinalResetState {
+            hud_flags: 0xaaaa,
+            status_flags: 0xff,
+            scroll_mode: 0x1234,
+            ..Ship3dNavigationFinalResetState::default()
+        };
+
+        let effect = run_ship_3d_navigation_final_reset(&mut state);
+
+        assert_eq!(effect, Ship3dNavigationFinalResetEffect::default());
+        assert_eq!(
+            state,
+            Ship3dNavigationFinalResetState {
+                hud_flags: 0xaaaa,
+                status_flags: 0xff,
+                scroll_mode: 0x1234,
+                ..Ship3dNavigationFinalResetState::default()
+            }
+        );
+    }
+
+    #[test]
+    fn navigation_final_reset_reenters_active_sequence_while_opening() {
+        let mut state = Ship3dNavigationFinalResetState {
+            exit_pending: true,
+            opening: true,
+            hud_flags: 0xaaaa,
+            status_flags: 0xff,
+            scroll_mode: 0x1234,
+            ..Ship3dNavigationFinalResetState::default()
+        };
+
+        let effect = run_ship_3d_navigation_final_reset(&mut state);
+
+        assert_eq!(
+            effect,
+            Ship3dNavigationFinalResetEffect {
+                reentered_active_sequence: true,
+                ..Ship3dNavigationFinalResetEffect::default()
+            }
+        );
+        assert_eq!(
+            state,
+            Ship3dNavigationFinalResetState {
+                exit_pending: true,
+                opening: true,
+                hud_flags: 0xaaaa,
+                status_flags: 0xff,
+                scroll_mode: 0x1234,
+                ..Ship3dNavigationFinalResetState::default()
+            }
+        );
+    }
+
+    #[test]
+    fn navigation_final_reset_applies_binary_teardown_state() {
+        let mut state = Ship3dNavigationFinalResetState {
+            exit_pending: true,
+            hud_flags: 0x1111,
+            nav_choice_hold_ticks: 0x2222,
+            nav_choice_timer: 0x3333,
+            dialogue_state: 0x4444,
+            scene_band_top: 0x5555,
+            scene_selector: 0x6666,
+            active_record: 0x7777,
+            presentation_gate: true,
+            pending_state_byte: true,
+            subtitle_gate: true,
+            presentation_defer_active: true,
+            secondary_presentation_defer_active: true,
+            plane_copy_enabled: true,
+            sequence_active: true,
+            status_flags: 0xff,
+            secondary_status_flag: true,
+            dirty_marker: 0x12,
+            scroll_value: 0x8888,
+            scroll_mode: 0x9999,
+            ..Ship3dNavigationFinalResetState::default()
+        };
+
+        let effect = run_ship_3d_navigation_final_reset(&mut state);
+
+        assert_eq!(
+            effect,
+            Ship3dNavigationFinalResetEffect {
+                ran: true,
+                cleared_dialogue_state: true,
+                reset_hud_state: true,
+                reset_presentation_gates: true,
+                reset_sequence_flags: true,
+                reset_status_flags: true,
+                copied_backbuffer_restore_block: true,
+                cleared_overlay_scratch: true,
+                reset_scroll_state: true,
+                called_render_clear: true,
+                called_input_reset: true,
+                called_target_cleanup: true,
+                ..Ship3dNavigationFinalResetEffect::default()
+            }
+        );
+        assert_eq!(state.hud_flags, SHIP_3D_FINAL_RESET_HUD_FLAGS);
+        assert_eq!(state.nav_choice_hold_ticks, 0);
+        assert_eq!(state.nav_choice_timer, SHIP_3D_FINAL_RESET_NAV_TIMER);
+        assert!(state.post_reset_gate);
+        assert!(state.navigation_gate);
+        assert_eq!(state.dialogue_state, 0);
+        assert_eq!(state.scene_band_top, 0);
+        assert_eq!(state.scene_selector, SHIP_3D_FINAL_RESET_SELECTOR_SENTINEL);
+        assert_eq!(
+            state.active_record,
+            SHIP_3D_FINAL_RESET_ACTIVE_RECORD_SENTINEL
+        );
+        assert!(!state.presentation_gate);
+        assert!(!state.exit_pending);
+        assert!(!state.pending_state_byte);
+        assert!(!state.subtitle_gate);
+        assert!(!state.presentation_defer_active);
+        assert!(!state.secondary_presentation_defer_active);
+        assert!(!state.plane_copy_enabled);
+        assert!(!state.sequence_active);
+        assert_eq!(state.status_flags, SHIP_3D_FINAL_RESET_STATUS_FLAG_MASK);
+        assert!(!state.secondary_status_flag);
+        assert_eq!(state.dirty_marker, SHIP_3D_FINAL_RESET_DIRTY_MARKER);
+        assert_eq!(state.scroll_value, 0);
+        assert_eq!(state.scroll_mode, SHIP_3D_FINAL_RESET_SCROLL_MODE);
     }
 
     #[test]

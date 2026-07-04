@@ -267,6 +267,18 @@ the branch temporarily disables plane copying, re-enables `DS:0x252E`, and
 resets `DS:0x1FA3=-1`; otherwise it runs the non-sequence redraw path and clears
 the setup latches `DS:0x5B53/0x5B57`.
 
+The final reset path at file `0xB4F2..0xB586` is now split out as
+`run_ship_3d_navigation_final_reset()`. It only runs when exit-pending byte
+`DS:0x2532` is set and opening byte `DS:0x252F` is clear; if opening is still
+set, the binary re-enters the active sequence branch. The reset path restores
+HUD flags `DS:0x2793=9`, clears the choice hold timer, writes `DS:0x279D=0x32`,
+sets gates `DS:0x27D9/0x2739`, clears dialogue/scene/presentation bytes
+`DS:0x24F3`, `0x1FA7`, `0x1FB2`, `0x2532`, `0x2529`, `0x5E64`, `0x67B0`,
+`0x67BC`, `0x252E`, `0x252A`, masks `DS:0x67AA &= 0xFC`, clears `DS:0x67BA`,
+sets sentinels `DS:0x1FAB=0xFFFF` and `DS:0x6788=0xFFFF`, restores/clears the
+backbuffer scratch blocks, sets dirty marker `DS:0x5B52=0xFF`, and resets ship
+scroll state to `DS:0x524F=0`, `DS:0x524D=0x000A`.
+
 The next control-layer markers are now pinned. `0xB2BB` selects the next
 ship/navigation target record from `DS:0x250B`, or from the inline fallback table
 at `DS:0x2537` when the list head is `-1`; a selected `-1` entry arms the
@@ -1828,7 +1840,7 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       the internal branch at `0x0A9A:0x04E1` (file `0xB481`) now has a Rust
       state/effect model as `run_ship_3d_navigation_sequence_update()`. If
       `DS:0x2532` is set without opening flag `DS:0x252F`, Rust reports that
-      the final reset branch is pending. If no exit is pending but
+      the recovered final reset helper should run. If no exit is pending but
       `DS:0x252A` is clear, and presentation defer byte `DS:0x67B0` is also
       clear, the branch arms `DS:0x2532=1` and `DS:0x252F=1`. The active path
       runs the temporary `sn\3D.snd` setup and procedural update call, blocks
@@ -1836,6 +1848,13 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       sets dirty byte `DS:0x0DB8=1`, waits while the interpolation gate is
       active when duration `DS:0x0ADA == 6`, and on a nonnegative target-list
       query clears `DS:0x252A` and sets `DS:0x2532`.
+- [x] Port ship 3D navigation final reset branch:
+      `src/ship3d.rs` exposes file `0xB4F2..0xB586` as
+      `run_ship_3d_navigation_final_reset()`. The helper preserves the binary's
+      gate shape (`DS:0x2532` required, `DS:0x252F` re-enters the active branch),
+      then applies the HUD/dialogue/presentation teardown, backbuffer scratch
+      restore/clear effects, dirty marker `DS:0x5B52=0xFF`, and scroll reset
+      `DS:0x524F=0`, `DS:0x524D=0x000A`.
 - [x] Port ship 3D temporary `3D.snd` setup branch:
       `src/ship3d.rs` now models file `0xB591`: the `DS:0x0AE4` one-shot gate,
       phase byte `DS:0x0AE5` cycling across the three `DS:0x0ACC` callback
