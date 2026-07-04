@@ -283,6 +283,7 @@ pub(super) enum Ship3dSpriteSlotFrame<'a> {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) struct SpriteSlotFrameTable<'a> {
     pub(super) flags: u16,
+    pub(super) frame_offsets: Vec<usize>,
     pub(super) frames: Vec<&'a [u8]>,
 }
 
@@ -321,7 +322,11 @@ impl<'a> SpriteSlotFrameTable<'a> {
             frames.push(&data[frame_start..frame_end]);
         }
 
-        Some(Self { flags, frames })
+        Some(Self {
+            flags,
+            frame_offsets: frame_starts,
+            frames,
+        })
     }
 
     pub(super) fn slot_state_flags(&self) -> u16 {
@@ -1353,6 +1358,7 @@ mod tests {
         assert_eq!(table.flags, 0x0004);
         assert_eq!(table.slot_state_flags(), 0x0087);
         assert_eq!(table.dispatch_index(), 3);
+        assert_eq!(table.frame_offsets, vec![12, 23]);
         assert_eq!(table.frames.len(), 2);
         assert_eq!(
             u16::from_le_bytes(table.frames[0][0..2].try_into().unwrap()),

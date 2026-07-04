@@ -270,6 +270,7 @@ pub(super) fn write_manifest_section(
         "script-branch-scenario-dialogue.tsv",
         "script-branch-scenario-dialogue-runs.tsv",
         "script-branch-scenario-scene-events.tsv",
+        "sprite-frame-tables.tsv",
         "DESCRIPT.DES",
     ];
     writeln!(html, "<h2>Manifests</h2><ul>")?;

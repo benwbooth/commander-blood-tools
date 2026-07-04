@@ -376,6 +376,23 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     fs::create_dir_all(&tmp_dat)?;
     let count = extract_dat(&blood_dat, &tmp_dat)?;
     eprintln!("Extracted {count} files from blood.dat");
+    let sprite_frame_rows = parse_sprite_frame_tables_manifest(&tmp_dat)?;
+    write_sprite_frame_tables_manifest(
+        &sprite_frame_rows,
+        &out_dir.join("sprite-frame-tables.tsv"),
+    )?;
+    if !sprite_frame_rows.is_empty() {
+        let sprite_file_count = sprite_frame_rows
+            .iter()
+            .map(|row| row.path.as_str())
+            .collect::<BTreeSet<_>>()
+            .len();
+        eprintln!(
+            "Recovered {} sprite frame-table rows from {} SPR files",
+            sprite_frame_rows.len(),
+            sprite_file_count
+        );
+    }
 
     let _ = fs::remove_dir_all(&tmp_iso);
 
@@ -756,6 +773,173 @@ fn write_bloodprg_sprite_blitter_manifest(
     Ok(())
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct SpriteFrameTableManifestRow {
+    path: String,
+    parse_status: String,
+    flags: Option<u16>,
+    slot_state_flags: Option<u16>,
+    dispatch_index: Option<u8>,
+    frame_count: Option<usize>,
+    frame_index: Option<usize>,
+    frame_offset: Option<usize>,
+    frame_length: Option<usize>,
+    width: Option<u16>,
+    height: Option<u16>,
+    x_offset: Option<i16>,
+    y_offset: Option<i16>,
+}
+
+fn parse_sprite_frame_tables_manifest(
+    root: &Path,
+) -> Result<Vec<SpriteFrameTableManifestRow>, Box<dyn Error>> {
+    let mut rows = Vec::new();
+    for path in walk_files(root) {
+        if !path
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .map(|ext| ext.eq_ignore_ascii_case("spr"))
+            .unwrap_or(false)
+        {
+            continue;
+        }
+
+        let rel_path = path
+            .strip_prefix(root)?
+            .to_string_lossy()
+            .replace('\\', "/");
+        let data = fs::read(&path)?;
+        if let Some(table) = SpriteSlotFrameTable::parse(&data) {
+            if table.frames.is_empty() {
+                rows.push(SpriteFrameTableManifestRow {
+                    path: rel_path,
+                    parse_status: "ok".to_string(),
+                    flags: Some(table.flags),
+                    slot_state_flags: Some(table.slot_state_flags()),
+                    dispatch_index: Some(table.dispatch_index()),
+                    frame_count: Some(0),
+                    frame_index: None,
+                    frame_offset: None,
+                    frame_length: None,
+                    width: None,
+                    height: None,
+                    x_offset: None,
+                    y_offset: None,
+                });
+                continue;
+            }
+
+            for (frame_index, frame) in table.frames.iter().copied().enumerate() {
+                let (width, height, x_offset, y_offset) = parse_sprite_frame_header(frame);
+                rows.push(SpriteFrameTableManifestRow {
+                    path: rel_path.clone(),
+                    parse_status: "ok".to_string(),
+                    flags: Some(table.flags),
+                    slot_state_flags: Some(table.slot_state_flags()),
+                    dispatch_index: Some(table.dispatch_index()),
+                    frame_count: Some(table.frames.len()),
+                    frame_index: Some(frame_index),
+                    frame_offset: table.frame_offsets.get(frame_index).copied(),
+                    frame_length: Some(frame.len()),
+                    width,
+                    height,
+                    x_offset,
+                    y_offset,
+                });
+            }
+        } else {
+            rows.push(SpriteFrameTableManifestRow {
+                path: rel_path,
+                parse_status: "invalid".to_string(),
+                flags: None,
+                slot_state_flags: None,
+                dispatch_index: None,
+                frame_count: None,
+                frame_index: None,
+                frame_offset: None,
+                frame_length: None,
+                width: None,
+                height: None,
+                x_offset: None,
+                y_offset: None,
+            });
+        }
+    }
+    Ok(rows)
+}
+
+fn parse_sprite_frame_header(frame: &[u8]) -> (Option<u16>, Option<u16>, Option<i16>, Option<i16>) {
+    if frame.len() < 8 {
+        return (None, None, None, None);
+    }
+
+    (
+        Some(u16::from_le_bytes([frame[0], frame[1]])),
+        Some(u16::from_le_bytes([frame[2], frame[3]])),
+        Some(i16::from_le_bytes([frame[4], frame[5]])),
+        Some(i16::from_le_bytes([frame[6], frame[7]])),
+    )
+}
+
+fn write_sprite_frame_tables_manifest(
+    rows: &[SpriteFrameTableManifestRow],
+    out_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let mut file = File::create(out_path)?;
+    writeln!(
+        file,
+        "path\tparse_status\tflags\tslot_state_flags\tdispatch_index\tframe_count\tframe_index\tframe_offset\tframe_length\twidth\theight\tx_offset\ty_offset"
+    )?;
+    for row in rows {
+        writeln!(
+            file,
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}",
+            clean_tsv(&row.path),
+            row.parse_status,
+            format_u16_hex(row.flags),
+            format_u16_hex(row.slot_state_flags),
+            format_u8_dec(row.dispatch_index),
+            format_usize_dec(row.frame_count),
+            format_usize_dec(row.frame_index),
+            format_usize_hex(row.frame_offset),
+            format_usize_dec(row.frame_length),
+            format_u16_dec(row.width),
+            format_u16_dec(row.height),
+            format_i16_dec(row.x_offset),
+            format_i16_dec(row.y_offset),
+        )?;
+    }
+    Ok(())
+}
+
+fn format_u16_hex(value: Option<u16>) -> String {
+    value
+        .map(|value| format!("0x{value:04x}"))
+        .unwrap_or_default()
+}
+
+fn format_usize_hex(value: Option<usize>) -> String {
+    value
+        .map(|value| format!("0x{value:05x}"))
+        .unwrap_or_default()
+}
+
+fn format_u16_dec(value: Option<u16>) -> String {
+    value.map(|value| value.to_string()).unwrap_or_default()
+}
+
+fn format_u8_dec(value: Option<u8>) -> String {
+    value.map(|value| value.to_string()).unwrap_or_default()
+}
+
+fn format_usize_dec(value: Option<usize>) -> String {
+    value.map(|value| value.to_string()).unwrap_or_default()
+}
+
+fn format_i16_dec(value: Option<i16>) -> String {
+    value.map(|value| value.to_string()).unwrap_or_default()
+}
+
 mod audio;
 mod character;
 mod dat;
@@ -786,3 +970,102 @@ use html::*;
 use render::*;
 use script::*;
 use subtitle_sfx::*;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn temp_extract_dir(name: &str) -> PathBuf {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("clock before epoch")
+            .as_nanos();
+        env::temp_dir().join(format!("{name}-{}-{unique}", std::process::id()))
+    }
+
+    fn sprite_frame(width: u16, height: u16, x_offset: i16, y_offset: i16, body: &[u8]) -> Vec<u8> {
+        let mut frame = Vec::new();
+        frame.extend_from_slice(&width.to_le_bytes());
+        frame.extend_from_slice(&height.to_le_bytes());
+        frame.extend_from_slice(&x_offset.to_le_bytes());
+        frame.extend_from_slice(&y_offset.to_le_bytes());
+        frame.extend_from_slice(body);
+        frame
+    }
+
+    fn sprite_frame_table(flags: u16, frames: &[&[u8]]) -> Vec<u8> {
+        let mut data = Vec::new();
+        data.extend_from_slice(&flags.to_le_bytes());
+        data.extend_from_slice(&(frames.len() as u16).to_le_bytes());
+
+        let mut next_frame_start = 4 + frames.len() * 4;
+        for frame in frames {
+            data.extend_from_slice(&((next_frame_start - 4) as u32).to_le_bytes());
+            next_frame_start += frame.len();
+        }
+
+        for frame in frames {
+            data.extend_from_slice(frame);
+        }
+        data
+    }
+
+    #[test]
+    fn sprite_frame_tables_manifest_reports_parsed_and_invalid_spr_files() {
+        let root = temp_extract_dir("commander-blood-sprite-manifest");
+        let subdir = root.join("sprites");
+        fs::create_dir_all(&subdir).expect("create temp sprite dir");
+
+        let frame = sprite_frame(2, 1, -1, 3, &[1, 0xaa, 0xbb]);
+        fs::write(
+            subdir.join("BOB.SPR"),
+            sprite_frame_table(0x0004, &[&frame]),
+        )
+        .expect("write valid sprite");
+
+        let mut invalid = Vec::new();
+        invalid.extend_from_slice(&0x0004u16.to_le_bytes());
+        invalid.extend_from_slice(&1u16.to_le_bytes());
+        invalid.extend_from_slice(&0u32.to_le_bytes());
+        invalid.extend_from_slice(&frame);
+        fs::write(root.join("BROKEN.SPR"), invalid).expect("write invalid sprite");
+
+        let rows = parse_sprite_frame_tables_manifest(&root).expect("parse sprite manifest");
+        let ok = rows
+            .iter()
+            .find(|row| row.path == "sprites/BOB.SPR")
+            .expect("valid sprite row");
+        assert_eq!(ok.parse_status, "ok");
+        assert_eq!(ok.flags, Some(0x0004));
+        assert_eq!(ok.slot_state_flags, Some(0x0087));
+        assert_eq!(ok.dispatch_index, Some(3));
+        assert_eq!(ok.frame_count, Some(1));
+        assert_eq!(ok.frame_index, Some(0));
+        assert_eq!(ok.frame_offset, Some(8));
+        assert_eq!(ok.frame_length, Some(11));
+        assert_eq!(ok.width, Some(2));
+        assert_eq!(ok.height, Some(1));
+        assert_eq!(ok.x_offset, Some(-1));
+        assert_eq!(ok.y_offset, Some(3));
+
+        let broken = rows
+            .iter()
+            .find(|row| row.path == "BROKEN.SPR")
+            .expect("invalid sprite row");
+        assert_eq!(broken.parse_status, "invalid");
+        assert_eq!(broken.flags, None);
+
+        let out_path = root.join("sprite-frame-tables.tsv");
+        write_sprite_frame_tables_manifest(&rows, &out_path).expect("write manifest");
+        let manifest = fs::read_to_string(&out_path).expect("read manifest");
+        assert!(manifest.starts_with("path\tparse_status\tflags\tslot_state_flags"));
+        assert!(
+            manifest
+                .contains("sprites/BOB.SPR\tok\t0x0004\t0x0087\t3\t1\t0\t0x00008\t11\t2\t1\t-1\t3")
+        );
+        assert!(manifest.contains("BROKEN.SPR\tinvalid\t"));
+
+        fs::remove_dir_all(root).expect("remove temp sprite dir");
+    }
+}
