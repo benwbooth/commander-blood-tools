@@ -682,9 +682,10 @@ fn read_u16(cod: &[u8], at: usize) -> Option<u16> {
 //       writes {0x00C1, operand, 2} to an active owner's empty direct record in
 //       mode 0; mode-1 direct compares and the raw-operand 1/2 resolved
 //       selector-0x11/selector-0x13 compares are evaluated when host state has
-//       the concrete record entries. The kind-0x10 ship-3D source-list path is
-//       available when `ExecutionContext` supplies the live DS:0x6886 scratch
-//       bytes and navigation/object tables.
+//       the concrete record entries. Known mode-0 write failures call the
+//       branch-fail helper in branch-aware traces. The kind-0x10 ship-3D
+//       source-list path is available when `ExecutionContext` supplies the live
+//       DS:0x6886 scratch bytes and navigation/object tables.
 //   * 0xC2, 5 bytes plus optional A1 prefix:
 //       in mode 0, active owners can mark the operand record's kind-specific
 //       field as 0xffff via helper table 0x6D60 and kind-2 records set active
@@ -1873,23 +1874,23 @@ fn write_c1_record_state_mode0(
     context: &ExecutionContext,
     record_offset: u16,
     operand: u16,
-) -> bool {
+) -> Option<bool> {
     let Some(owner_offset) = record_owner_object_offset(context, record_offset) else {
-        return false;
+        return None;
     };
     if state_u8(state, owner_offset.wrapping_add(2)) & 1 == 0 {
-        return false;
+        return Some(false);
     }
     if let Some(wrote) = write_c1_record_state_ship3d(state, context, owner_offset, operand) {
-        return wrote;
+        return Some(wrote);
     }
     if state_u16(state, record_offset) != 0 {
-        return false;
+        return Some(false);
     }
     state_set_u16(state, record_offset, OP_RECORD_STATE_MIN as u16);
     state_set_u16(state, record_offset.wrapping_add(2), operand);
     state_set_u16(state, record_offset.wrapping_add(4), 2);
-    true
+    Some(true)
 }
 
 fn write_c2_record_state_direct(
@@ -2187,7 +2188,7 @@ pub fn interpret_line_states_with_context(
         if !mode1 && op == OP_RECORD_STATE_MIN && pos + 5 <= end {
             let record_offset = read_u16(cod, pos + 1).unwrap_or(0);
             let operand = read_u16(cod, pos + 3).unwrap_or(0);
-            write_c1_record_state_mode0(&mut state, context, record_offset, operand);
+            let _ = write_c1_record_state_mode0(&mut state, context, record_offset, operand);
         }
         if !mode1 && op == OP_RECORD_STATE_MAX && pos + 5 <= end {
             let record_offset = read_u16(cod, pos + 1).unwrap_or(0);
@@ -2754,7 +2755,31 @@ fn execute_trace_state_with_overrides_and_context(
         if !mode1 && op == OP_RECORD_STATE_MIN && token_start + 5 <= end {
             let record_offset = read_u16(cod, token_start + 1).unwrap_or(0);
             let operand = read_u16(cod, token_start + 3).unwrap_or(0);
-            write_c1_record_state_mode0(&mut state, context, record_offset, operand);
+            if let Some(false) =
+                write_c1_record_state_mode0(&mut state, context, record_offset, operand)
+            {
+                if let Some(target) = branch_fail(&mut branch_stack) {
+                    mode1 = false;
+                    branch_events.push(BranchEvent {
+                        offset: token_start,
+                        opcode: op,
+                        target: Some(target),
+                        branch_taken: true,
+                        condition_passed: Some(false),
+                        stack_depth: branch_stack.len(),
+                        detail: "mode0 C1 write failed",
+                    });
+                    if target as usize >= end {
+                        halted = ExecutionHalt::InvalidTarget {
+                            offset: token_start,
+                            target,
+                        };
+                        break 'execution;
+                    }
+                    pos = target as usize;
+                    continue;
+                }
+            }
         }
         if !mode1 && op == OP_RECORD_STATE_MAX && token_start + 5 <= end {
             let record_offset = read_u16(cod, token_start + 1).unwrap_or(0);
@@ -5373,6 +5398,79 @@ mod tests {
                 && !event.branch_taken
                 && event.condition_passed == Some(true)
         }));
+    }
+
+    #[test]
+    fn execution_trace_c1_mode0_known_failure_branches() {
+        let owner = 0x0100u16;
+        let record = owner + TALK_FIELD;
+        let operand = 0x1052u16;
+        let var = vec![0; 0x0200];
+        let context = ExecutionContext::from_object_offsets([owner, 0x0200]);
+
+        let mut cod = Vec::new();
+        let a0_offset = cod.len();
+        cod.push(0xA0);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        cod.push(0xA1);
+        let c1_offset = cod.len();
+        cod.push(OP_RECORD_STATE_MIN);
+        cod.extend_from_slice(&record.to_le_bytes());
+        cod.extend_from_slice(&operand.to_le_bytes());
+        push_empty_text(&mut cod);
+        let target = cod.len() as u16;
+        cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xff);
+
+        let trace = execute_trace_with_context(&cod, &var, &context);
+
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 1);
+        assert_eq!(trace.line_states[0].offset, target as usize);
+        assert!(trace.branch_events.iter().any(|event| {
+            event.offset == c1_offset
+                && event.opcode == OP_RECORD_STATE_MIN
+                && event.branch_taken
+                && event.condition_passed == Some(false)
+                && event.target == Some(target)
+                && event.detail == "mode0 C1 write failed"
+        }));
+    }
+
+    #[test]
+    fn execution_trace_c1_mode0_missing_owner_context_does_not_branch() {
+        let owner = 0x0100u16;
+        let record = owner + TALK_FIELD;
+        let operand = 0x1052u16;
+        let var = vec![0; 0x0200];
+
+        let mut cod = Vec::new();
+        let a0_offset = cod.len();
+        cod.push(0xA0);
+        cod.extend_from_slice(&0u16.to_le_bytes());
+        cod.push(0xA1);
+        let c1_offset = cod.len();
+        cod.push(OP_RECORD_STATE_MIN);
+        cod.extend_from_slice(&record.to_le_bytes());
+        cod.extend_from_slice(&operand.to_le_bytes());
+        let first_text = cod.len();
+        push_empty_text(&mut cod);
+        let target = cod.len() as u16;
+        cod[a0_offset + 1..a0_offset + 3].copy_from_slice(&target.to_le_bytes());
+        push_empty_text(&mut cod);
+        cod.push(0xff);
+
+        let trace = execute_trace(&cod, &var);
+
+        assert_eq!(trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(trace.line_states.len(), 2);
+        assert_eq!(trace.line_states[0].offset, first_text);
+        assert!(
+            trace.branch_events.iter().all(|event| {
+                event.offset != c1_offset || event.detail != "mode0 C1 write failed"
+            })
+        );
     }
 
     #[test]

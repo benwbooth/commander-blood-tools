@@ -895,7 +895,7 @@ fn opcode_metadata(opcode: u8, handler_file_offset: usize) -> OpcodeMetadata {
             mnemonic: "record_state",
             family: "line-record",
             rust_status: "partially-executed",
-            notes: "C1/C2 line-record state operations; Rust decodes A1 inversion, evaluates direct and ship-3D resolved C1 mode1 compares, applies the context-gated direct C1 mode0 write, wires the ship-3D C1 distance redirect plus kind-0x10 source-list/destination write when runtime tables are supplied, and ports the C2 kind-field plus kind2/kind400 active-line mode0 paths while deeper resolved-table side effects remain under RE",
+            notes: "C1/C2 line-record state operations; Rust decodes A1 inversion, evaluates direct and ship-3D resolved C1 mode1 compares, applies the context-gated direct C1 mode0 write and known mode0 branch-fails, wires the ship-3D C1 distance redirect plus kind-0x10 source-list/destination write when runtime tables are supplied, and ports the C2 kind-field plus kind2/kind400 active-line mode0 paths while deeper resolved-table side effects remain under RE",
         },
         vm::OP_RECORD_LINK => OpcodeMetadata {
             mnemonic: "record_link",
