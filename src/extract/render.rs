@@ -1141,6 +1141,38 @@ mod tests {
     }
 
     #[test]
+    fn real_spr_rle_frame_decodes_to_width_by_height_pixels() {
+        // Decode a real ship-sprite frame end to end. The .spr frame header is
+        // [0]=width(stride), [2]=height, [4]=x offset, [6]=y offset, RLE bytes
+        // from +8. BORXX.SPR (nav orb) dispatches RLE; frame 0 is 40x33.
+        let candidates = [
+            "output/_tmp_iso/BORXX.SPR",
+            "output/_tmp_dat/spr/BORXX.SPR",
+            "../output/_tmp_iso/BORXX.SPR",
+        ];
+        let Some(data) = candidates.iter().find_map(|p| std::fs::read(p).ok()) else {
+            eprintln!("skipping: BORXX.SPR not available (run the exporter first)");
+            return;
+        };
+        let table = SpriteSlotFrameTable::parse(&data).expect("BORXX.SPR parses");
+        assert_eq!(table.dispatch_index(), 3); // (0x87 >> 1) & 7 = RLE
+        let frame0 = table.frames[0];
+        let width = u16::from_le_bytes([frame0[0], frame0[1]]) as usize;
+        let height = u16::from_le_bytes([frame0[2], frame0[3]]) as usize;
+        assert_eq!((width, height), (40, 33));
+        let rle = RleSpriteFrame::parse(frame0).expect("rle frame header");
+        assert_eq!(rle.stride, width);
+        let pixels = decode_rle_sprite_pixels(rle, height).expect("rle decode");
+        assert_eq!(pixels.len(), width * height);
+        // A real orb frame, not a flat fill: many distinct palette indices.
+        let distinct = pixels
+            .iter()
+            .collect::<std::collections::HashSet<_>>()
+            .len();
+        assert!(distinct > 16, "orb frame looks flat: {distinct} indices");
+    }
+
+    #[test]
     fn sprite_blitter_dispatch_table_matches_binary() {
         // The ship-3D dirty-sprite renderer (0x0299:0x14E1) dispatches through an
         // 8-entry near-pointer table at cs:0x1592 (file 0x4522), indexed by
