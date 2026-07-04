@@ -67,8 +67,50 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         eprintln!("With --snd, decode SND voice banks; legacy character muxing uses");
         eprintln!("DESCRIPT.DES when it is present beside the extracted data root.");
         eprintln!();
+        eprintln!("With --spr, decode .spr sprite banks to grayscale index-preview PGMs.");
         eprintln!("Requires: curl, 7z/7zz, ffmpeg (--hnm/--snd only need ffmpeg)");
         eprintln!("Default output dir: commander-blood-audio/");
+        return Ok(());
+    }
+
+    // --spr direct mode: decode sprite banks to grayscale index-preview PGMs.
+    // The `.spr` banks are palette-indexed and use the runtime scene palette, so
+    // these previews visualise the decoded index data (grayscale = index value),
+    // not final colours — useful for inspecting the recovered sprite decode. The
+    // nav orb (BORXX.spr) is grayscale in-game so its preview reads true.
+    if args.iter().any(|a| a == "--spr") {
+        let mut files = Vec::new();
+        let mut out_dir = PathBuf::from(".");
+        let mut iter = args.iter();
+        while let Some(arg) = iter.next() {
+            match arg.as_str() {
+                "--spr" => {}
+                "-o" => {
+                    if let Some(d) = iter.next() {
+                        out_dir = PathBuf::from(d);
+                    }
+                }
+                _ => files.push(PathBuf::from(arg)),
+            }
+        }
+        fs::create_dir_all(&out_dir)?;
+        for path in &files {
+            let stem = path.file_stem().ok_or("no filename")?.to_string_lossy();
+            let data = fs::read(path)?;
+            match decode_sprite_bank_indices(&data) {
+                Some(frames) if !frames.is_empty() => {
+                    let pgm_out = out_dir.join(format!("{stem}.pgm"));
+                    write_sprite_bank_preview_pgm(&frames, &pgm_out)?;
+                    eprintln!(
+                        "{}: {} frame(s) -> {}",
+                        path.display(),
+                        frames.len(),
+                        pgm_out.display()
+                    );
+                }
+                _ => eprintln!("{}: not a decodable .spr bank", path.display()),
+            }
+        }
         return Ok(());
     }
 
@@ -855,6 +897,36 @@ struct SpriteFrameTableManifestRow {
     height: Option<u16>,
     x_offset: Option<i16>,
     y_offset: Option<i16>,
+}
+
+/// Write decoded `.spr` frames as a horizontal grayscale montage in binary PGM
+/// (P5) format — each pixel's palette index shown as a gray level. No ffmpeg or
+/// palette needed; this is an index-visualisation for inspecting sprite decode.
+fn write_sprite_bank_preview_pgm(
+    frames: &[SpriteFrameImage],
+    out_path: &Path,
+) -> Result<(), Box<dyn Error>> {
+    let gap = 2usize;
+    let height = frames.iter().map(|f| f.height).max().unwrap_or(0);
+    let width: usize =
+        frames.iter().map(|f| f.width).sum::<usize>() + gap * frames.len().saturating_sub(1);
+    if width == 0 || height == 0 {
+        return Err("empty sprite montage".into());
+    }
+    let mut canvas = vec![0u8; width * height];
+    let mut x0 = 0usize;
+    for frame in frames {
+        for y in 0..frame.height {
+            for x in 0..frame.width {
+                canvas[y * width + x0 + x] = frame.indices[y * frame.width + x];
+            }
+        }
+        x0 += frame.width + gap;
+    }
+    let mut file = File::create(out_path)?;
+    write!(file, "P5\n{width} {height}\n255\n")?;
+    file.write_all(&canvas)?;
+    Ok(())
 }
 
 fn parse_sprite_frame_tables_manifest(

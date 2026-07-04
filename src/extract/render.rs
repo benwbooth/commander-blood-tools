@@ -355,6 +355,57 @@ pub(super) fn ship_3d_sprite_slot_frame_for_dispatch(
     }
 }
 
+/// One decoded `.spr` frame as a width x height grid of palette indices.
+pub(super) struct SpriteFrameImage {
+    pub(super) width: usize,
+    pub(super) height: usize,
+    pub(super) indices: Vec<u8>,
+}
+
+/// Decode every frame of a `.spr` sprite bank to palette-index grids. The frame
+/// header is `[0]=width, [2]=height, [4]=x offset, [6]=y offset`; Raw frames are
+/// `width*height` bytes after the 8-byte header, RLE frames decode via
+/// [`decode_rle_sprite_pixels`]. Returns `None` if the bank header is unparseable;
+/// individual frames that fail to decode are skipped. This exposes the verified
+/// decode for inspection tooling (`--spr`).
+pub(super) fn decode_sprite_bank_indices(data: &[u8]) -> Option<Vec<SpriteFrameImage>> {
+    let table = SpriteSlotFrameTable::parse(data)?;
+    let dispatch = table.dispatch_index();
+    let mut out = Vec::new();
+    for frame in &table.frames {
+        if frame.len() < 8 {
+            continue;
+        }
+        let width = u16::from_le_bytes([frame[0], frame[1]]) as usize;
+        let height = u16::from_le_bytes([frame[2], frame[3]]) as usize;
+        if width == 0 || height == 0 {
+            continue;
+        }
+        let indices = match ship_3d_sprite_slot_frame_for_dispatch(frame, dispatch) {
+            Some(Ship3dSpriteSlotFrame::Raw(d)) => {
+                let body = &d[8..];
+                if body.len() < width * height {
+                    continue;
+                }
+                body[..width * height].to_vec()
+            }
+            Some(Ship3dSpriteSlotFrame::Rle(d)) => {
+                match RleSpriteFrame::parse(d).and_then(|f| decode_rle_sprite_pixels(f, height)) {
+                    Some(px) if px.len() == width * height => px,
+                    _ => continue,
+                }
+            }
+            _ => continue,
+        };
+        out.push(SpriteFrameImage {
+            width,
+            height,
+            indices,
+        });
+    }
+    Some(out)
+}
+
 pub(super) fn blit_raw_transparent_sprite_indexed(
     fb: &mut [u8],
     frame: RawSpriteFrame<'_>,
@@ -1138,6 +1189,24 @@ mod tests {
         assert_eq!(table.slot_state_flags(), 0x0087); // (0x0004 & 0x0004) | 0x0083
         // Each frame carries a parseable raw/rle sprite header.
         assert!(table.frame(0).is_some());
+    }
+
+    #[test]
+    fn decode_sprite_bank_indices_decodes_all_orb_frames() {
+        let candidates = [
+            "output/_tmp_iso/BORXX.SPR",
+            "output/_tmp_dat/spr/BORXX.SPR",
+            "../output/_tmp_iso/BORXX.SPR",
+        ];
+        let Some(data) = candidates.iter().find_map(|p| std::fs::read(p).ok()) else {
+            eprintln!("skipping: BORXX.SPR not available (run the exporter first)");
+            return;
+        };
+        let frames = decode_sprite_bank_indices(&data).expect("bank decodes");
+        assert_eq!(frames.len(), 16);
+        assert_eq!((frames[0].width, frames[0].height), (40, 33));
+        assert_eq!(frames[0].indices.len(), 40 * 33);
+        assert!(frames.iter().all(|f| f.indices.len() == f.width * f.height));
     }
 
     #[test]
