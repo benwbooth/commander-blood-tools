@@ -1556,8 +1556,8 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       tests for phase prepass/gating, primary-list target adjustment, fallback
       table behavior, no-selection `AX=0`, and the `-1` sentinel opening
       transition (`DS:0x252F=1`, `DS:0x2531=6`). The remaining 3D trigger
-      prelude work starts at `0xB34E`, especially the record-scan contract
-      around `0x04DA:0x1D4E` and the `DS:0x2B53` candidate list.
+      work starts after the now-recovered `0xB34E` prelude, especially the
+      lower-level helper that fills the source list at `DS:0x6886`.
 - [x] Port ship 3D interpolation gate:
       `src/ship3d.rs` implements the `0x008B:0x0FAD` four-word interpolation
       gate used by the target selector. Tests cover carry-set completion,
@@ -1665,6 +1665,28 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       clears activation latches `DS:0x0A3E/0x0A40`. Any nonnegative selection
       clears `DS:0x2A19` and bit `0x04` in `DS:0x2793`. Rust exposes this as
       `run_ship_3d_nav_choice_handler_4()`.
+- [x] Port ship 3D navigation trigger prelude:
+      when trigger byte `DS:0x27D8` is set, `0x0A9A:0x03AE` first copies pending
+      presentation word `DS:0x0A36` into requested presentation state
+      `DS:0x0A32`, increments the active target counter slot (following the
+      `0x80` redirect through `[current+0x14]` when present), and calls
+      `0x04DA:0x1D4E` to build the zero-terminated candidate list at
+      `DS:0x2B53`. That helper consumes the source list at `DS:0x6886`, skips
+      named Honk (`DS:0x6754`), and retains only kind-2 records whose byte
+      `+2` has bit `0x01` set. The trigger scan keeps advancing until either
+      the current target allows any candidate (`current[+2] & 0x02`) or the
+      candidate's `+0x18` relation equals current target `DS:0x251B`. A candidate
+      related to Ark (`DS:0x6758`) opens the target-list branch unless Ark is
+      the current target; otherwise the branch writes deferred type `0x00C4` to
+      `DS:0x6768`, deferred related candidate to `DS:0x676A`, and calls the
+      follow-up handler with `candidate + 4`. If no candidate is accepted, it
+      opens the target list: sets HUD bit `0x04`, resets interpolation tick,
+      sets duration `DS:0x0ADA = 6`, runs the target-list layout query for
+      list `DS:0x253B`, and snapshots only x/width from `DS:0x2AAB/0x2AAF` into
+      `DS:0x254D/0x2551`. Both paths then clear `DS:0x27D8`, set
+      `DS:0x252A=1`, configure scene-band state, reset selector
+      `DS:0x1FAB=-1`, and request closing with `DS:0x2530=1`,
+      `DS:0x2531=2`.
 - [x] Port ship 3D navigation sequence branch:
       the internal branch at `0x0A9A:0x04E1` (file `0xB481`) now has a Rust
       state/effect model as `run_ship_3d_navigation_sequence_update()`. If

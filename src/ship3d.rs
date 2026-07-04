@@ -61,6 +61,17 @@ pub const SHIP_3D_NAV_CHOICE_HANDLER4_TOGGLE_ON_TARGET_LIST_OFFSET: u16 = 0x2581
 pub const SHIP_3D_NAV_CHOICE_TABLO2_VOC_PATH_OFFSET: u16 = 0x0d3d;
 pub const SHIP_3D_NAV_CHOICE_SOUND_GATE_SUPPRESS_TARGETS: u8 = 0x02;
 pub const SHIP_3D_NAVIGATION_INTERPOLATION_DURATION: u8 = 0x06;
+pub const SHIP_3D_NAVIGATION_DEFERRED_RECORD_TYPE: u16 = 0x00c4;
+pub const SHIP_3D_NAVIGATION_RECORD_KIND_CANDIDATE: u16 = 0x0002;
+pub const SHIP_3D_NAVIGATION_RECORD_ACTIVE_FLAG: u8 = 0x01;
+pub const SHIP_3D_NAVIGATION_CURRENT_TARGET_MATCH_ANY_FLAG: u8 = 0x02;
+pub const SHIP_3D_NAVIGATION_REDIRECT_COUNTER_FLAG: u16 = 0x0080;
+pub const SHIP_3D_NAVIGATION_TARGET_LIST_FLAG: u8 = 0x04;
+pub const SHIP_3D_NAVIGATION_LAYOUT_TARGET_LIST_OFFSET: u16 = 0x253b;
+pub const SHIP_3D_NAVIGATION_SCENE_BAND_TOP: u16 = 0x0023;
+pub const SHIP_3D_NAVIGATION_RENDER_CLIP_BOTTOM: u16 = 0x00a5;
+pub const SHIP_3D_NAVIGATION_RENDER_CLIP_RESTORED_BOTTOM: u16 = 0x00c8;
+pub const SHIP_3D_NAVIGATION_TRIGGER_CLOSE_STEP: u8 = 0x02;
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dTransitionState {
@@ -276,6 +287,76 @@ pub struct Ship3dNavigationSequenceEffect {
     pub armed_exit_pending: bool,
     pub armed_opening_exit: bool,
     pub final_reset_pending: bool,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dNavigationRuntimeRecord {
+    pub offset: u16,
+    pub kind_flags: u16,
+    pub state_flags: u8,
+    pub counter_link: u16,
+    pub related_target: u16,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Ship3dNavigationTriggerState {
+    pub trigger_active: bool,
+    pub current_target: u16,
+    pub requested_presentation_state: u16,
+    pub hud_flags: u8,
+    pub interpolation_duration_ticks: u8,
+    pub interpolation_current_tick: u8,
+    pub target_query_mode: bool,
+    pub layout_rect_snapshot: [u16; SHIP_3D_INTERPOLATION_WORDS],
+    pub sequence_active: bool,
+    pub scene_band_top: u16,
+    pub render_clip_top: u16,
+    pub render_clip_bottom: u16,
+    pub active_dialogue_record: u16,
+    pub closing: bool,
+    pub depth_step: u8,
+}
+
+impl Default for Ship3dNavigationTriggerState {
+    fn default() -> Self {
+        Self {
+            trigger_active: false,
+            current_target: 0,
+            requested_presentation_state: 0,
+            hud_flags: 0,
+            interpolation_duration_ticks: 0,
+            interpolation_current_tick: 0,
+            target_query_mode: false,
+            layout_rect_snapshot: [0; SHIP_3D_INTERPOLATION_WORDS],
+            sequence_active: false,
+            scene_band_top: 0,
+            render_clip_top: 0,
+            render_clip_bottom: SHIP_3D_NAVIGATION_RENDER_CLIP_RESTORED_BOTTOM,
+            active_dialogue_record: 0,
+            closing: false,
+            depth_step: 0,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dNavigationTriggerEffect {
+    pub candidate_records: Vec<u16>,
+    pub copied_pending_presentation_state: bool,
+    pub incremented_counter_record: Option<u16>,
+    pub deferred_record_type: Option<u16>,
+    pub deferred_record_related: Option<u16>,
+    pub candidate_handler_record: Option<u16>,
+    pub opened_target_list: bool,
+    pub reset_interpolation_tick: bool,
+    pub ran_layout_prepass: bool,
+    pub copied_layout_x_and_width: bool,
+    pub cleared_trigger: bool,
+    pub started_sequence: bool,
+    pub set_scene_band: bool,
+    pub restored_render_clip: bool,
+    pub cleared_active_dialogue_record: bool,
+    pub requested_closing: bool,
 }
 
 pub fn update_ship_3d_transition_state(state: &mut Ship3dTransitionState, random_gate_zero: bool) {
@@ -826,6 +907,112 @@ pub fn run_ship_3d_navigation_sequence_update(
     effect
 }
 
+pub fn build_ship_3d_navigation_candidate_records(
+    source_records: &[u16],
+    records: &[Ship3dNavigationRuntimeRecord],
+    honk_object: u16,
+) -> Option<Vec<u16>> {
+    let mut candidates = Vec::new();
+    for record_offset in source_records {
+        if *record_offset == SHIP_3D_TARGET_EXIT_SENTINEL {
+            return Some(candidates);
+        }
+        if *record_offset == honk_object {
+            continue;
+        }
+
+        let record = find_ship_3d_navigation_record(records, *record_offset)?;
+        if record.kind_flags == SHIP_3D_NAVIGATION_RECORD_KIND_CANDIDATE
+            && record.state_flags & SHIP_3D_NAVIGATION_RECORD_ACTIVE_FLAG != 0
+        {
+            candidates.push(*record_offset);
+        }
+    }
+    None
+}
+
+pub fn run_ship_3d_navigation_trigger_prelude(
+    state: &mut Ship3dNavigationTriggerState,
+    records: &[Ship3dNavigationRuntimeRecord],
+    source_records: &[u16],
+    honk_object: u16,
+    ark_object: u16,
+    pending_presentation_state: u16,
+    layout_rect: [u16; SHIP_3D_INTERPOLATION_WORDS],
+) -> Option<Ship3dNavigationTriggerEffect> {
+    let mut effect = Ship3dNavigationTriggerEffect::default();
+    if !state.trigger_active {
+        return Some(effect);
+    }
+
+    state.requested_presentation_state = pending_presentation_state;
+    effect.copied_pending_presentation_state = true;
+
+    let current_record = find_ship_3d_navigation_record(records, state.current_target)?;
+    effect.incremented_counter_record = Some(
+        if current_record.kind_flags & SHIP_3D_NAVIGATION_REDIRECT_COUNTER_FLAG != 0 {
+            current_record.counter_link
+        } else {
+            current_record.offset
+        },
+    );
+
+    let candidate_records =
+        build_ship_3d_navigation_candidate_records(source_records, records, honk_object)?;
+    effect.candidate_records = candidate_records;
+
+    let mut opened_target_list = true;
+    for candidate_record_offset in &effect.candidate_records {
+        let candidate_record = find_ship_3d_navigation_record(records, *candidate_record_offset)?;
+        if current_record.state_flags & SHIP_3D_NAVIGATION_CURRENT_TARGET_MATCH_ANY_FLAG == 0
+            && candidate_record.related_target != state.current_target
+        {
+            continue;
+        }
+
+        if ark_object != state.current_target && candidate_record.related_target == ark_object {
+            break;
+        }
+
+        effect.deferred_record_type = Some(SHIP_3D_NAVIGATION_DEFERRED_RECORD_TYPE);
+        effect.deferred_record_related = Some(*candidate_record_offset);
+        effect.candidate_handler_record =
+            Some(candidate_record_offset.wrapping_add(SHIP_3D_TARGET_RECORD_HEADER_BYTES));
+        opened_target_list = false;
+        break;
+    }
+
+    if opened_target_list {
+        state.hud_flags |= SHIP_3D_NAVIGATION_TARGET_LIST_FLAG;
+        state.interpolation_current_tick = 0;
+        state.interpolation_duration_ticks = SHIP_3D_NAVIGATION_INTERPOLATION_DURATION;
+        state.target_query_mode = false;
+        state.layout_rect_snapshot[0] = layout_rect[0];
+        state.layout_rect_snapshot[2] = layout_rect[2];
+        effect.opened_target_list = true;
+        effect.reset_interpolation_tick = true;
+        effect.ran_layout_prepass = true;
+        effect.copied_layout_x_and_width = true;
+    }
+
+    state.trigger_active = false;
+    state.sequence_active = true;
+    state.scene_band_top = SHIP_3D_NAVIGATION_SCENE_BAND_TOP;
+    state.render_clip_top = 0;
+    state.render_clip_bottom = SHIP_3D_NAVIGATION_RENDER_CLIP_RESTORED_BOTTOM;
+    state.active_dialogue_record = SHIP_3D_TARGET_EXIT_SENTINEL;
+    state.closing = true;
+    state.depth_step = SHIP_3D_NAVIGATION_TRIGGER_CLOSE_STEP;
+    effect.cleared_trigger = true;
+    effect.started_sequence = true;
+    effect.set_scene_band = true;
+    effect.restored_render_clip = true;
+    effect.cleared_active_dialogue_record = true;
+    effect.requested_closing = true;
+
+    Some(effect)
+}
+
 pub fn draw_ship_3d_target_list(
     state: &mut Ship3dTargetHitState,
     layout: Ship3dTargetListLayout,
@@ -1075,6 +1262,16 @@ fn rebuild_nav_choice_special_target_records(
         target_records.push(special_slot.wrapping_add(SHIP_3D_TARGET_RECORD_HEADER_BYTES));
     }
     None
+}
+
+fn find_ship_3d_navigation_record(
+    records: &[Ship3dNavigationRuntimeRecord],
+    offset: u16,
+) -> Option<Ship3dNavigationRuntimeRecord> {
+    records
+        .iter()
+        .copied()
+        .find(|record| record.offset == offset)
 }
 
 fn next_target_list_draw_color(state: &mut Ship3dTargetHitState, activate: bool) -> u8 {
@@ -2731,5 +2928,249 @@ mod tests {
         );
         assert!(state.exit_pending);
         assert!(!state.opening);
+    }
+
+    fn nav_record(
+        offset: u16,
+        kind_flags: u16,
+        state_flags: u8,
+        counter_link: u16,
+        related_target: u16,
+    ) -> Ship3dNavigationRuntimeRecord {
+        Ship3dNavigationRuntimeRecord {
+            offset,
+            kind_flags,
+            state_flags,
+            counter_link,
+            related_target,
+        }
+    }
+
+    #[test]
+    fn navigation_candidates_filter_kind2_active_records_and_skip_honk() {
+        let records = [
+            nav_record(0x1000, SHIP_3D_NAVIGATION_RECORD_KIND_CANDIDATE, 0x01, 0, 0),
+            nav_record(0x1100, SHIP_3D_NAVIGATION_RECORD_KIND_CANDIDATE, 0x00, 0, 0),
+            nav_record(0x1200, 0x0003, 0x01, 0, 0),
+            nav_record(0x1300, SHIP_3D_NAVIGATION_RECORD_KIND_CANDIDATE, 0x01, 0, 0),
+        ];
+
+        let candidates = build_ship_3d_navigation_candidate_records(
+            &[0x1000, 0x1100, 0x1200, 0x1300, 0xffff, 0x1400],
+            &records,
+            0x1300,
+        )
+        .unwrap();
+
+        assert_eq!(candidates, vec![0x1000]);
+    }
+
+    #[test]
+    fn navigation_candidates_require_source_sentinel() {
+        let records = [nav_record(
+            0x1000,
+            SHIP_3D_NAVIGATION_RECORD_KIND_CANDIDATE,
+            0x01,
+            0,
+            0,
+        )];
+
+        assert_eq!(
+            build_ship_3d_navigation_candidate_records(&[0x1000], &records, 0),
+            None
+        );
+    }
+
+    #[test]
+    fn navigation_trigger_defers_first_matching_c4_candidate() {
+        let records = [
+            nav_record(0x2000, 0x0000, 0x00, 0x2550, 0),
+            nav_record(
+                0x3100,
+                SHIP_3D_NAVIGATION_RECORD_KIND_CANDIDATE,
+                0x01,
+                0,
+                0x2000,
+            ),
+        ];
+        let mut state = Ship3dNavigationTriggerState {
+            trigger_active: true,
+            current_target: 0x2000,
+            render_clip_bottom: 0x9999,
+            ..Ship3dNavigationTriggerState::default()
+        };
+
+        let effect = run_ship_3d_navigation_trigger_prelude(
+            &mut state,
+            &records,
+            &[0x3100, 0xffff],
+            0x6754,
+            0x6758,
+            0x0007,
+            [0x10, 0x20, 0x30, 0x40],
+        )
+        .unwrap();
+
+        assert_eq!(
+            effect,
+            Ship3dNavigationTriggerEffect {
+                candidate_records: vec![0x3100],
+                copied_pending_presentation_state: true,
+                incremented_counter_record: Some(0x2000),
+                deferred_record_type: Some(SHIP_3D_NAVIGATION_DEFERRED_RECORD_TYPE),
+                deferred_record_related: Some(0x3100),
+                candidate_handler_record: Some(0x3104),
+                cleared_trigger: true,
+                started_sequence: true,
+                set_scene_band: true,
+                restored_render_clip: true,
+                cleared_active_dialogue_record: true,
+                requested_closing: true,
+                ..Ship3dNavigationTriggerEffect::default()
+            }
+        );
+        assert!(!state.trigger_active);
+        assert!(state.sequence_active);
+        assert_eq!(state.requested_presentation_state, 0x0007);
+        assert_eq!(state.scene_band_top, SHIP_3D_NAVIGATION_SCENE_BAND_TOP);
+        assert_eq!(
+            state.render_clip_bottom,
+            SHIP_3D_NAVIGATION_RENDER_CLIP_RESTORED_BOTTOM
+        );
+        assert_eq!(state.active_dialogue_record, SHIP_3D_TARGET_EXIT_SENTINEL);
+        assert!(state.closing);
+        assert_eq!(state.depth_step, SHIP_3D_NAVIGATION_TRIGGER_CLOSE_STEP);
+        assert_eq!(state.hud_flags, 0);
+    }
+
+    #[test]
+    fn navigation_trigger_match_any_flag_ignores_candidate_related_target() {
+        let records = [
+            nav_record(
+                0x2000,
+                0x0000,
+                SHIP_3D_NAVIGATION_CURRENT_TARGET_MATCH_ANY_FLAG,
+                0x2550,
+                0,
+            ),
+            nav_record(
+                0x3100,
+                SHIP_3D_NAVIGATION_RECORD_KIND_CANDIDATE,
+                0x01,
+                0,
+                0x9999,
+            ),
+        ];
+        let mut state = Ship3dNavigationTriggerState {
+            trigger_active: true,
+            current_target: 0x2000,
+            ..Ship3dNavigationTriggerState::default()
+        };
+
+        let effect = run_ship_3d_navigation_trigger_prelude(
+            &mut state,
+            &records,
+            &[0x3100, 0xffff],
+            0x6754,
+            0x6758,
+            0,
+            [0; SHIP_3D_INTERPOLATION_WORDS],
+        )
+        .unwrap();
+
+        assert_eq!(effect.deferred_record_related, Some(0x3100));
+        assert!(!effect.opened_target_list);
+    }
+
+    #[test]
+    fn navigation_trigger_ark_related_candidate_opens_target_list() {
+        let records = [
+            nav_record(0x2000, 0x0000, 0x00, 0, 0),
+            nav_record(
+                0x3100,
+                SHIP_3D_NAVIGATION_RECORD_KIND_CANDIDATE,
+                0x01,
+                0,
+                0x6758,
+            ),
+        ];
+        let mut state = Ship3dNavigationTriggerState {
+            trigger_active: true,
+            current_target: 0x2000,
+            layout_rect_snapshot: [0xaaaa, 0xbbbb, 0xcccc, 0xdddd],
+            interpolation_current_tick: 5,
+            ..Ship3dNavigationTriggerState::default()
+        };
+
+        let effect = run_ship_3d_navigation_trigger_prelude(
+            &mut state,
+            &records,
+            &[0x3100, 0xffff],
+            0x6754,
+            0x6758,
+            0,
+            [0x10, 0x20, 0x30, 0x40],
+        )
+        .unwrap();
+
+        assert_eq!(
+            effect,
+            Ship3dNavigationTriggerEffect {
+                candidate_records: vec![0x3100],
+                copied_pending_presentation_state: true,
+                incremented_counter_record: Some(0x2000),
+                opened_target_list: true,
+                reset_interpolation_tick: true,
+                ran_layout_prepass: true,
+                copied_layout_x_and_width: true,
+                cleared_trigger: true,
+                started_sequence: true,
+                set_scene_band: true,
+                restored_render_clip: true,
+                cleared_active_dialogue_record: true,
+                requested_closing: true,
+                ..Ship3dNavigationTriggerEffect::default()
+            }
+        );
+        assert_eq!(state.hud_flags, SHIP_3D_NAVIGATION_TARGET_LIST_FLAG);
+        assert_eq!(
+            state.interpolation_duration_ticks,
+            SHIP_3D_NAVIGATION_INTERPOLATION_DURATION
+        );
+        assert_eq!(state.interpolation_current_tick, 0);
+        assert_eq!(state.layout_rect_snapshot, [0x10, 0xbbbb, 0x30, 0xdddd]);
+        assert!(!state.target_query_mode);
+    }
+
+    #[test]
+    fn navigation_trigger_no_candidate_opens_target_list_and_redirects_counter_increment() {
+        let records = [nav_record(
+            0x2000,
+            SHIP_3D_NAVIGATION_REDIRECT_COUNTER_FLAG,
+            0x00,
+            0x2a00,
+            0,
+        )];
+        let mut state = Ship3dNavigationTriggerState {
+            trigger_active: true,
+            current_target: 0x2000,
+            ..Ship3dNavigationTriggerState::default()
+        };
+
+        let effect = run_ship_3d_navigation_trigger_prelude(
+            &mut state,
+            &records,
+            &[0xffff],
+            0x6754,
+            0x6758,
+            0,
+            [0x10, 0x20, 0x30, 0x40],
+        )
+        .unwrap();
+
+        assert_eq!(effect.candidate_records, Vec::<u16>::new());
+        assert_eq!(effect.incremented_counter_record, Some(0x2a00));
+        assert!(effect.opened_target_list);
+        assert_eq!(state.hud_flags, SHIP_3D_NAVIGATION_TARGET_LIST_FLAG);
     }
 }
