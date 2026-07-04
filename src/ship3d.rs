@@ -55,6 +55,11 @@ pub const SHIP_3D_NAV_CHOICE_RECORD_LINK_TYPE: u16 = 0x00c3;
 pub const SHIP_3D_NAV_CHOICE_TARGET_LIST_FLAG: u8 = 0x04;
 pub const SHIP_3D_NAV_CHOICE_PHASE_INTERPOLATING: u8 = 0x02;
 pub const SHIP_3D_NAV_CHOICE_RADIO_SND_PATH_OFFSET: u16 = 0x0d16;
+pub const SHIP_3D_NAV_CHOICE_HANDLER4_TARGET_LIST_OFFSET: u16 = 0x2567;
+pub const SHIP_3D_NAV_CHOICE_HANDLER4_TOGGLE_OFF_TARGET_LIST_OFFSET: u16 = 0x2578;
+pub const SHIP_3D_NAV_CHOICE_HANDLER4_TOGGLE_ON_TARGET_LIST_OFFSET: u16 = 0x2581;
+pub const SHIP_3D_NAV_CHOICE_TABLO2_VOC_PATH_OFFSET: u16 = 0x0d3d;
+pub const SHIP_3D_NAV_CHOICE_SOUND_GATE_SUPPRESS_TARGETS: u8 = 0x02;
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dTransitionState {
@@ -219,14 +224,35 @@ pub struct Ship3dNavChoiceHandlerEffect {
     pub deferred_record_related: Option<u16>,
     pub cleared_handler_phase: bool,
     pub ran_layout_prepass: bool,
+    pub copied_layout_rect_snapshot: bool,
     pub adjusted_target_records: bool,
     pub phase_gate_blocked: bool,
     pub cleared_selected_choice: bool,
     pub cleared_hud_target_list_flag: bool,
     pub load_snd_bank_path: Option<u16>,
+    pub load_voc_path: Option<u16>,
+    pub start_voc_playback: bool,
     pub reset_interpolation_tick: bool,
     pub rebuilt_target_records: bool,
     pub set_input_gate_b: bool,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dNavChoiceHandler4State {
+    pub layout_rect_snapshot: [u16; SHIP_3D_INTERPOLATION_WORDS],
+    pub menu_gate: bool,
+    pub secondary_menu_gate: bool,
+    pub voc_enabled: bool,
+    pub voc_stream_phase: u8,
+    pub tablo2_voc_active: bool,
+    pub tablo2_voc_reset_gate: bool,
+    pub active_target_list_offset: u16,
+    pub shared_motion_gate: bool,
+    pub left_motion_gate: bool,
+    pub right_motion_gate: bool,
+    pub sound_gate: u8,
+    pub target_activate_flag: bool,
+    pub target_activate_secondary_flag: bool,
 }
 
 pub fn update_ship_3d_transition_state(state: &mut Ship3dTransitionState, random_gate_zero: bool) {
@@ -636,6 +662,84 @@ pub fn run_ship_3d_nav_choice_handler_3(
         load_snd_bank_path: Some(SHIP_3D_NAV_CHOICE_RADIO_SND_PATH_OFFSET),
         ..Ship3dNavChoiceHandlerEffect::default()
     }
+}
+
+pub fn run_ship_3d_nav_choice_handler_4(
+    state: &mut Ship3dNavChoiceState,
+    handler_state: &mut Ship3dNavChoiceHandler4State,
+    layout_rect: [u16; SHIP_3D_INTERPOLATION_WORDS],
+    interpolation_complete: bool,
+    query_selection_ax: u16,
+) -> Ship3dNavChoiceHandlerEffect {
+    let mut effect = Ship3dNavChoiceHandlerEffect::default();
+
+    if state.handler_phase & SHIP_3D_NAV_CHOICE_HANDLER_PHASE != 0 {
+        state.interpolation_current_tick = 0;
+        state.handler_phase = state
+            .handler_phase
+            .wrapping_add(SHIP_3D_NAV_CHOICE_HANDLER_PHASE);
+        handler_state.layout_rect_snapshot = layout_rect;
+        effect.ran_layout_prepass = true;
+        effect.copied_layout_rect_snapshot = true;
+        effect.reset_interpolation_tick = true;
+    }
+
+    if state.handler_phase & SHIP_3D_NAV_CHOICE_PHASE_INTERPOLATING != 0 {
+        if !interpolation_complete {
+            effect.phase_gate_blocked = true;
+            return effect;
+        }
+        state.handler_phase = 0;
+        effect.cleared_handler_phase = true;
+    }
+
+    if signed_i16(query_selection_ax) < 0 {
+        return effect;
+    }
+
+    match query_selection_ax.to_le_bytes()[0] {
+        0 => {
+            handler_state.menu_gate = true;
+            handler_state.secondary_menu_gate = true;
+        }
+        1 => {
+            if handler_state.voc_enabled {
+                handler_state.voc_stream_phase = 0;
+                if handler_state.tablo2_voc_active {
+                    handler_state.tablo2_voc_active = false;
+                    handler_state.active_target_list_offset =
+                        SHIP_3D_NAV_CHOICE_HANDLER4_TOGGLE_OFF_TARGET_LIST_OFFSET;
+                } else {
+                    handler_state.tablo2_voc_reset_gate = false;
+                    handler_state.tablo2_voc_active = true;
+                    handler_state.active_target_list_offset =
+                        SHIP_3D_NAV_CHOICE_HANDLER4_TOGGLE_ON_TARGET_LIST_OFFSET;
+                    effect.load_voc_path = Some(SHIP_3D_NAV_CHOICE_TABLO2_VOC_PATH_OFFSET);
+                    effect.start_voc_playback = true;
+                }
+            }
+        }
+        2 => {
+            handler_state.shared_motion_gate = true;
+            handler_state.left_motion_gate = true;
+        }
+        3 => {
+            handler_state.shared_motion_gate = true;
+            handler_state.right_motion_gate = true;
+        }
+        4 => {
+            handler_state.sound_gate = SHIP_3D_NAV_CHOICE_SOUND_GATE_SUPPRESS_TARGETS;
+            handler_state.target_activate_flag = false;
+            handler_state.target_activate_secondary_flag = false;
+        }
+        _ => {}
+    }
+
+    state.selected_choice = 0;
+    state.hud_flags &= !SHIP_3D_NAV_CHOICE_TARGET_LIST_FLAG;
+    effect.cleared_selected_choice = true;
+    effect.cleared_hud_target_list_flag = true;
+    effect
 }
 
 pub fn draw_ship_3d_target_list(
@@ -2115,5 +2219,248 @@ mod tests {
 
         assert_eq!(effect, Ship3dNavChoiceHandlerEffect::default());
         assert_eq!(state.handler_phase, SHIP_3D_NAV_CHOICE_PHASE_INTERPOLATING);
+    }
+
+    #[test]
+    fn nav_choice_handler_4_runs_layout_snapshot_and_waits_for_interpolation() {
+        let mut state = Ship3dNavChoiceState {
+            handler_phase: SHIP_3D_NAV_CHOICE_HANDLER_PHASE,
+            interpolation_current_tick: 9,
+            ..Ship3dNavChoiceState::default()
+        };
+        let mut handler_state = Ship3dNavChoiceHandler4State::default();
+        let layout_rect = [0x10, 0x20, 0x30, 0x40];
+
+        let effect = run_ship_3d_nav_choice_handler_4(
+            &mut state,
+            &mut handler_state,
+            layout_rect,
+            false,
+            SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
+        );
+
+        assert_eq!(state.handler_phase, SHIP_3D_NAV_CHOICE_PHASE_INTERPOLATING);
+        assert_eq!(state.interpolation_current_tick, 0);
+        assert_eq!(handler_state.layout_rect_snapshot, layout_rect);
+        assert_eq!(
+            effect,
+            Ship3dNavChoiceHandlerEffect {
+                ran_layout_prepass: true,
+                copied_layout_rect_snapshot: true,
+                reset_interpolation_tick: true,
+                phase_gate_blocked: true,
+                ..Ship3dNavChoiceHandlerEffect::default()
+            }
+        );
+    }
+
+    #[test]
+    fn nav_choice_handler_4_no_selection_leaves_choice_armed_after_phase_clear() {
+        let mut state = Ship3dNavChoiceState {
+            selected_choice: 5,
+            hud_flags: SHIP_3D_NAV_CHOICE_TARGET_LIST_FLAG,
+            handler_phase: SHIP_3D_NAV_CHOICE_PHASE_INTERPOLATING,
+            ..Ship3dNavChoiceState::default()
+        };
+        let mut handler_state = Ship3dNavChoiceHandler4State::default();
+
+        let effect = run_ship_3d_nav_choice_handler_4(
+            &mut state,
+            &mut handler_state,
+            [0; SHIP_3D_INTERPOLATION_WORDS],
+            true,
+            SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
+        );
+
+        assert_eq!(
+            effect,
+            Ship3dNavChoiceHandlerEffect {
+                cleared_handler_phase: true,
+                ..Ship3dNavChoiceHandlerEffect::default()
+            }
+        );
+        assert_eq!(state.handler_phase, 0);
+        assert_eq!(state.selected_choice, 5);
+        assert_eq!(state.hud_flags, SHIP_3D_NAV_CHOICE_TARGET_LIST_FLAG);
+    }
+
+    #[test]
+    fn nav_choice_handler_4_menu_choice_sets_both_menu_gates_and_clears_choice() {
+        let mut state = Ship3dNavChoiceState {
+            selected_choice: 5,
+            hud_flags: SHIP_3D_NAV_CHOICE_TARGET_LIST_FLAG,
+            ..Ship3dNavChoiceState::default()
+        };
+        let mut handler_state = Ship3dNavChoiceHandler4State::default();
+
+        let effect = run_ship_3d_nav_choice_handler_4(
+            &mut state,
+            &mut handler_state,
+            [0; SHIP_3D_INTERPOLATION_WORDS],
+            true,
+            0,
+        );
+
+        assert!(handler_state.menu_gate);
+        assert!(handler_state.secondary_menu_gate);
+        assert_eq!(
+            effect,
+            Ship3dNavChoiceHandlerEffect {
+                cleared_selected_choice: true,
+                cleared_hud_target_list_flag: true,
+                ..Ship3dNavChoiceHandlerEffect::default()
+            }
+        );
+        assert_eq!(state.selected_choice, 0);
+        assert_eq!(state.hud_flags, 0);
+    }
+
+    #[test]
+    fn nav_choice_handler_4_voc_choice_toggles_tablo2_playback() {
+        let mut state = Ship3dNavChoiceState {
+            selected_choice: 5,
+            hud_flags: SHIP_3D_NAV_CHOICE_TARGET_LIST_FLAG,
+            ..Ship3dNavChoiceState::default()
+        };
+        let mut handler_state = Ship3dNavChoiceHandler4State {
+            voc_enabled: true,
+            tablo2_voc_reset_gate: true,
+            ..Ship3dNavChoiceHandler4State::default()
+        };
+
+        let start_effect = run_ship_3d_nav_choice_handler_4(
+            &mut state,
+            &mut handler_state,
+            [0; SHIP_3D_INTERPOLATION_WORDS],
+            true,
+            1,
+        );
+
+        assert_eq!(handler_state.voc_stream_phase, 0);
+        assert!(handler_state.tablo2_voc_active);
+        assert!(!handler_state.tablo2_voc_reset_gate);
+        assert_eq!(
+            handler_state.active_target_list_offset,
+            SHIP_3D_NAV_CHOICE_HANDLER4_TOGGLE_ON_TARGET_LIST_OFFSET
+        );
+        assert_eq!(
+            start_effect,
+            Ship3dNavChoiceHandlerEffect {
+                cleared_selected_choice: true,
+                cleared_hud_target_list_flag: true,
+                load_voc_path: Some(SHIP_3D_NAV_CHOICE_TABLO2_VOC_PATH_OFFSET),
+                start_voc_playback: true,
+                ..Ship3dNavChoiceHandlerEffect::default()
+            }
+        );
+
+        state.selected_choice = 5;
+        state.hud_flags = SHIP_3D_NAV_CHOICE_TARGET_LIST_FLAG;
+        let stop_effect = run_ship_3d_nav_choice_handler_4(
+            &mut state,
+            &mut handler_state,
+            [0; SHIP_3D_INTERPOLATION_WORDS],
+            true,
+            1,
+        );
+
+        assert_eq!(handler_state.voc_stream_phase, 0);
+        assert!(!handler_state.tablo2_voc_active);
+        assert_eq!(
+            handler_state.active_target_list_offset,
+            SHIP_3D_NAV_CHOICE_HANDLER4_TOGGLE_OFF_TARGET_LIST_OFFSET
+        );
+        assert_eq!(
+            stop_effect,
+            Ship3dNavChoiceHandlerEffect {
+                cleared_selected_choice: true,
+                cleared_hud_target_list_flag: true,
+                ..Ship3dNavChoiceHandlerEffect::default()
+            }
+        );
+    }
+
+    #[test]
+    fn nav_choice_handler_4_motion_choices_set_left_and_right_gates() {
+        let mut left_state = Ship3dNavChoiceState {
+            selected_choice: 5,
+            hud_flags: SHIP_3D_NAV_CHOICE_TARGET_LIST_FLAG,
+            ..Ship3dNavChoiceState::default()
+        };
+        let mut left_handler_state = Ship3dNavChoiceHandler4State::default();
+
+        let left_effect = run_ship_3d_nav_choice_handler_4(
+            &mut left_state,
+            &mut left_handler_state,
+            [0; SHIP_3D_INTERPOLATION_WORDS],
+            true,
+            2,
+        );
+
+        assert!(left_handler_state.shared_motion_gate);
+        assert!(left_handler_state.left_motion_gate);
+        assert!(!left_handler_state.right_motion_gate);
+        assert!(left_effect.cleared_selected_choice);
+        assert!(left_effect.cleared_hud_target_list_flag);
+
+        let mut right_state = Ship3dNavChoiceState {
+            selected_choice: 5,
+            hud_flags: SHIP_3D_NAV_CHOICE_TARGET_LIST_FLAG,
+            ..Ship3dNavChoiceState::default()
+        };
+        let mut right_handler_state = Ship3dNavChoiceHandler4State::default();
+
+        let right_effect = run_ship_3d_nav_choice_handler_4(
+            &mut right_state,
+            &mut right_handler_state,
+            [0; SHIP_3D_INTERPOLATION_WORDS],
+            true,
+            3,
+        );
+
+        assert!(right_handler_state.shared_motion_gate);
+        assert!(!right_handler_state.left_motion_gate);
+        assert!(right_handler_state.right_motion_gate);
+        assert!(right_effect.cleared_selected_choice);
+        assert!(right_effect.cleared_hud_target_list_flag);
+    }
+
+    #[test]
+    fn nav_choice_handler_4_sound_choice_blocks_dispatch_and_clears_activation() {
+        let mut state = Ship3dNavChoiceState {
+            selected_choice: 5,
+            hud_flags: SHIP_3D_NAV_CHOICE_TARGET_LIST_FLAG,
+            ..Ship3dNavChoiceState::default()
+        };
+        let mut handler_state = Ship3dNavChoiceHandler4State {
+            target_activate_flag: true,
+            target_activate_secondary_flag: true,
+            ..Ship3dNavChoiceHandler4State::default()
+        };
+
+        let effect = run_ship_3d_nav_choice_handler_4(
+            &mut state,
+            &mut handler_state,
+            [0; SHIP_3D_INTERPOLATION_WORDS],
+            true,
+            4,
+        );
+
+        assert_eq!(
+            handler_state.sound_gate,
+            SHIP_3D_NAV_CHOICE_SOUND_GATE_SUPPRESS_TARGETS
+        );
+        assert!(!handler_state.target_activate_flag);
+        assert!(!handler_state.target_activate_secondary_flag);
+        assert_eq!(
+            effect,
+            Ship3dNavChoiceHandlerEffect {
+                cleared_selected_choice: true,
+                cleared_hud_target_list_flag: true,
+                ..Ship3dNavChoiceHandlerEffect::default()
+            }
+        );
+        assert_eq!(state.selected_choice, 0);
+        assert_eq!(state.hud_flags, 0);
     }
 }

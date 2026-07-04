@@ -1650,6 +1650,20 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       path offset used by handler 1. It does not clear `DS:0x2A19` or the
       target-list HUD bit. Rust exposes this as
       `run_ship_3d_nav_choice_handler_3()`.
+- [x] Port ship 3D navigation-choice handler 4:
+      table entry 4 at `0x071E:0x108C` is the five-way menu/action handler. On
+      phase bit 0 it queries layout for target list `DS:0x2567`, resets
+      interpolation tick `DS:0x0ADB`, advances `DS:0x2565`, and copies the
+      four-word layout rect `DS:0x2AAB` into `DS:0x25CF`. It then waits on the
+      same interpolation gate. Query `AX=-1` returns without clearing the armed
+      choice. Selection 0 sets menu latches `DS:0x259B/0x259C`; selection 1
+      toggles `mu\tablo2.voc` state through `DS:0x0ADE/0x0BA0/0x0BA3/0x0D30`
+      and switches active target-list pointer `DS:0x2569` between `0x2578` and
+      `0x2581`; selection 2 sets `DS:0x2738/0x2736`; selection 3 sets
+      `DS:0x2738/0x2737`; selection 4 sets sound gate `DS:0x0B13 = 2` and
+      clears activation latches `DS:0x0A3E/0x0A40`. Any nonnegative selection
+      clears `DS:0x2A19` and bit `0x04` in `DS:0x2793`. Rust exposes this as
+      `run_ship_3d_nav_choice_handler_4()`.
 - [x] Port recovered framebuffer fill/copy primitives:
       `src/extract/render.rs` now has tested Rust helpers for the clipped
       rectangle fill, palette-remap rectangle, scene-band fill, full 320x200
