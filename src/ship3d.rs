@@ -1754,6 +1754,25 @@ pub fn render_ship_3d_point_cloud(
     Ship3dPointCloudRender { buffer, plotted }
 }
 
+/// Render a complete ship-3D starfield background from real game data: randomize
+/// the point cloud from `prng`, build the camera matrix from `angles` using the
+/// recovered [`SHIP_3D_ANGLE_TABLE`], and project/depth-shade into a 320x200
+/// buffer. Returns `None` only if `angles` index outside the trig table (they
+/// are `% 180` in the engine, so any in-range angle succeeds). This is the whole
+/// background layer — the sprite slots and HUD compose over it separately.
+pub fn render_ship_3d_starfield(
+    prng: &mut BloodPrng,
+    angles: Ship3dMatrixAngles,
+    origin: Ship3dProjectionOrigin,
+    viewport: Ship3dProjectionViewport,
+) -> Option<Ship3dPointCloudRender> {
+    let points = randomize_ship_3d_point_cloud(prng);
+    let matrix = build_ship_3d_projection_matrix(&SHIP_3D_ANGLE_TABLE, angles)?;
+    Some(render_ship_3d_point_cloud(
+        &points, origin, matrix, viewport,
+    ))
+}
+
 pub fn project_ship_3d_object_sprite(
     anchor: Ship3dProjectionPoint,
     origin: Ship3dProjectionOrigin,
@@ -6572,6 +6591,43 @@ mod tests {
                 b: 0xff,
                 counter: 1,
             }
+        );
+    }
+
+    #[test]
+    fn render_ship_3d_starfield_uses_real_table_and_plots_points() {
+        // Full faithful path: PRNG -> randomized cloud -> recovered angle table
+        // -> camera matrix -> depth-shaded buffer. The point cloud spans the
+        // full u16 range, so an origin near its centre keeps points in front of
+        // the camera and on screen.
+        let mut prng = BloodPrng::seeded_from_rtc_seconds(17);
+        let angles = Ship3dMatrixAngles {
+            angle_2f71: 0,
+            projection_angle_2f6d: 0,
+            angle_2f6f: 0,
+        };
+        let origin = Ship3dProjectionOrigin {
+            x: 0x8000,
+            y: 0x8000,
+            z: 0x8000,
+        };
+        let viewport = Ship3dProjectionViewport {
+            left: 0,
+            right: SHIP_3D_PROJECTION_SCREEN_WIDTH as u16,
+            top: 0,
+            bottom: SHIP_3D_PROJECTION_SCREEN_HEIGHT as u16,
+        };
+        let render = render_ship_3d_starfield(&mut prng, angles, origin, viewport).unwrap();
+        assert_eq!(
+            render.buffer.len(),
+            SHIP_3D_PROJECTION_SCREEN_WIDTH * SHIP_3D_PROJECTION_SCREEN_HEIGHT
+        );
+        // Some points project in front of the camera and shade the buffer, and
+        // every drawn cell carries a nonzero depth shade (write-once contract).
+        assert!(render.plotted > 0);
+        assert_eq!(
+            render.buffer.iter().filter(|&&p| p != 0).count(),
+            render.plotted
         );
     }
 
