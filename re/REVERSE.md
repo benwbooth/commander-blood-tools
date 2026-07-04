@@ -479,7 +479,10 @@ Static RE has not found a direct `0x67BB` → `0x0B1B:0x011D` SND call; the dire
 `gs:0xACA = (textspeed/2)+1` (init @0x1B3A; `textspeed` from a config getter,
 special-cased so index 4 → 7). So reveal rate = `4 * frame_rate / gs:0xACA`
 chars/sec; at ~15 fps and a mid text speed (`gs:0xACA≈5`) ≈ **12 chars/sec**
-(the old `SUBTITLE_CHARS_PER_SEC = 36` was ~3× too fast).
+(the old `SUBTITLE_CHARS_PER_SEC = 36` was ~3× too fast). Rust now uses
+`subtitle_reveal_chars_per_second(DEFAULT_SUBTITLE_TEXT_SPEED_STEP=5)` for
+subtitle drawing, silent-line duration, and line-complete chatter placement, so
+those three outputs share the same binary-derived timing source.
 
 ### Subtitle TEXT ASSEMBLY (DECODED) — 0xA6 handler file 0x66CD–0x6739
 
@@ -1539,10 +1542,14 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       parsers stop carrying actor/background context past matching `C9` tokens.
       The port also applies the selector-0x13 related C4 subrecord clear and the
       `gs:0x252A/0x2531` presentation gate reset.
-- [ ] Map presentation constants: subtitle position, reveal rate, and reveal
-      palette indices are now tied to `0x5E5C/0x5E5E`, `0xB31/0xACA`, and the
-      `0x36A0` wrapper; remaining timing, HNM actor reset/loop policy, and audio
-      mix levels remain pending.
+- [x] Map subtitle presentation constants: subtitle position, reveal rate, and
+      reveal palette indices are tied to `0x5E5C/0x5E5E`, `0xB31/0xACA`, and the
+      `0x06A0` wrapper. Rust derives the default reveal rate from
+      `DEFAULT_SUBTITLE_TEXT_SPEED_STEP=5`, and uses it consistently for drawing,
+      silent-line duration, and line-complete chatter placement.
+- [ ] Remaining presentation timing: recover player/config text-speed selection,
+      exact voiceless line hold policy, HNM actor reset/loop policy, and audio
+      mix levels.
 
 ### Renderer Integration (replaces skill's "Web Port")
 

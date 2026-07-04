@@ -16,16 +16,16 @@ const OUTPUT_SCALE: usize = 3;
 const OUTPUT_W: usize = VIEWPORT_W * OUTPUT_SCALE;
 const OUTPUT_H: usize = VIEWPORT_H * OUTPUT_SCALE;
 const HNM_FPS: u32 = 15;
-// Subtitle reveal rate. The game reveals one char per `gs:0xACA/4` frames
-// (BLOODPRG.EXE dialogue updater @0x94B4), where `gs:0xACA = (textspeed/2)+1`.
-// rate = 4 * frame_rate / gs:0xACA chars/sec; ~12/s at ~15fps and a mid text
-// speed (gs:0xACA≈5). See re/REVERSE.md "Subtitle REVEAL TIMING".
-const SUBTITLE_CHARS_PER_SEC: f64 = 12.0;
+// The exported videos use the default/mid text-speed step observed in the
+// binary-derived notes. `subtitle_reveal_chars_per_second` maps this through the
+// dialogue updater formula (`4 * frame_rate / gs:0x0ACA`), keeping subtitle
+// reveal drawing and line-complete chatter on the same timing source.
+const DEFAULT_SUBTITLE_TEXT_SPEED_STEP: u16 = 5;
 // A voiceless dialogue line (0xA6 b3==0xFF: radio-receiver / narrator / menu text
 // the player still saw on-screen, with no son.snd voice clip — see re/REVERSE.md
 // "voice clip-index") is rendered subtitle-only: its text over the scene
 // background, with no talking-head HNM and no voice. Its on-screen duration =
-// reveal time (SUBTITLE_CHARS_PER_SEC, the RE-derived rate) + a fixed readable
+// reveal time (the RE-derived rate) + a fixed readable
 // hold. The game holds such a line until player input, which is not statically
 // knowable, so the hold/min below are a presentation choice (documented), not a
 // recovered constant.
@@ -37,6 +37,17 @@ const SILENT_SUBTITLE_MIN_SEC: f64 = 2.0;
 const SILENT_SUBTITLE_SR: u32 = 11025;
 const SCRIPT_OBJECT_TALK_FIELD: u16 = 0x3a;
 const SCRIPT_OBJECT_LOCATION_FIELD: usize = 24;
+
+fn subtitle_reveal_chars_per_second(text_speed_step: u16) -> f64 {
+    if text_speed_step == 0 {
+        return HNM_FPS as f64;
+    }
+    4.0 * HNM_FPS as f64 / text_speed_step as f64
+}
+
+fn default_subtitle_reveal_chars_per_second() -> f64 {
+    subtitle_reveal_chars_per_second(DEFAULT_SUBTITLE_TEXT_SPEED_STEP)
+}
 
 pub fn run() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().skip(1).collect();
@@ -982,6 +993,17 @@ mod tests {
             .expect("clock before epoch")
             .as_nanos();
         env::temp_dir().join(format!("{name}-{}-{unique}", std::process::id()))
+    }
+
+    #[test]
+    fn subtitle_reveal_rate_uses_binary_text_speed_step() {
+        assert_eq!(subtitle_reveal_chars_per_second(5), 12.0);
+        assert_eq!(
+            default_subtitle_reveal_chars_per_second(),
+            subtitle_reveal_chars_per_second(DEFAULT_SUBTITLE_TEXT_SPEED_STEP)
+        );
+        assert_eq!(subtitle_reveal_chars_per_second(4), 15.0);
+        assert_eq!(subtitle_reveal_chars_per_second(6), 10.0);
     }
 
     fn sprite_frame(width: u16, height: u16, x_offset: i16, y_offset: i16, body: &[u8]) -> Vec<u8> {

@@ -72,7 +72,8 @@ fn subtitle_chatter_events(cues: &[SubtitleCue]) -> Vec<SubtitleChatterEvent> {
             // This is a line-complete chatter event, not one SFX per character.
             let cue_start = cue.tick as f64 / 10.0;
             Some(SubtitleChatterEvent {
-                start_time: cue_start + reveal_chars as f64 / SUBTITLE_CHARS_PER_SEC,
+                start_time: cue_start
+                    + reveal_chars as f64 / default_subtitle_reveal_chars_per_second(),
                 active_line_id: cue.active_line_id,
             })
         })
@@ -135,7 +136,10 @@ mod tests {
         let events = subtitle_chatter_events(&[cue(10, "abc"), cue(20, "a\nb"), cue(30, "   ")]);
         assert_eq!(events.len(), 2);
         assert!((events[0].start_time - 1.25).abs() < f64::EPSILON);
-        assert!((events[1].start_time - (2.0 + 2.0 / SUBTITLE_CHARS_PER_SEC)).abs() < f64::EPSILON);
+        assert!(
+            (events[1].start_time - (2.0 + 2.0 / default_subtitle_reveal_chars_per_second())).abs()
+                < f64::EPSILON
+        );
     }
 
     #[test]
@@ -180,7 +184,8 @@ mod tests {
             .enumerate()
             .filter_map(|(idx, sample)| (*sample != 128).then_some(idx))
             .collect();
-        let start = (4.0 / SUBTITLE_CHARS_PER_SEC * rate as f64).round() as usize;
+        let start =
+            (4.0 / default_subtitle_reveal_chars_per_second() * rate as f64).round() as usize;
         assert_eq!(non_silence, vec![start, start + 1]);
     }
 
@@ -201,8 +206,10 @@ mod tests {
         let track = fs::read(&out).expect("read sfx");
         let _ = fs::remove_dir_all(&root);
 
-        let first = (1.0 / SUBTITLE_CHARS_PER_SEC * rate as f64).round() as usize;
-        let second = ((1.0 + 1.0 / SUBTITLE_CHARS_PER_SEC) * rate as f64).round() as usize;
+        let first =
+            (1.0 / default_subtitle_reveal_chars_per_second() * rate as f64).round() as usize;
+        let second = ((1.0 + 1.0 / default_subtitle_reveal_chars_per_second()) * rate as f64)
+            .round() as usize;
         assert_eq!(&track[first..first + 2], &[200, 180]);
         assert_eq!(&track[second..second + 2], &[200, 180]);
     }

@@ -218,7 +218,7 @@ impl PendingDialogueMedia {
 
 fn silent_subtitle_duration(text: &str) -> f64 {
     let chars = text.chars().filter(|c| !c.is_control()).count();
-    let reveal = chars as f64 / SUBTITLE_CHARS_PER_SEC;
+    let reveal = chars as f64 / default_subtitle_reveal_chars_per_second();
     (reveal + SILENT_SUBTITLE_HOLD_SEC).max(SILENT_SUBTITLE_MIN_SEC)
 }
 
@@ -263,7 +263,8 @@ fn dialogue_chatter_events(segments: &[DialogueSegment]) -> Vec<SubtitleChatterE
             let reveal_chars = subtitle_reveal_char_count(&seg.text);
             if reveal_chars > 0 {
                 events.push(SubtitleChatterEvent {
-                    start_time: segment_start + reveal_chars as f64 / SUBTITLE_CHARS_PER_SEC,
+                    start_time: segment_start
+                        + reveal_chars as f64 / default_subtitle_reveal_chars_per_second(),
                     active_line_id: Some(seg.active_line_id),
                 });
             }
@@ -1412,7 +1413,10 @@ mod tests {
             events[0].active_line_id,
             Some(vm::text_selector_active_line_id(0xff))
         );
-        assert!((events[0].start_time - (1.2 + 6.0 / SUBTITLE_CHARS_PER_SEC)).abs() < f64::EPSILON);
+        assert!(
+            (events[0].start_time - (1.2 + 6.0 / default_subtitle_reveal_chars_per_second())).abs()
+                < f64::EPSILON
+        );
     }
 
     #[test]

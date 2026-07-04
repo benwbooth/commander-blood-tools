@@ -770,7 +770,8 @@ fn active_subtitle_lines(cues: &[SubtitleCue], time: f64) -> Option<(&SubtitleCu
     }
 
     let start = cue.tick as f64 / 10.0;
-    let visible_chars = ((time - start).max(0.0) * SUBTITLE_CHARS_PER_SEC).ceil() as usize;
+    let visible_chars =
+        ((time - start).max(0.0) * default_subtitle_reveal_chars_per_second()).ceil() as usize;
     if visible_chars == 0 {
         return None;
     }
@@ -2087,7 +2088,11 @@ mod tests {
         }];
         let mut fb = vec![0u8; VIEWPORT_W * VIEWPORT_H];
 
-        render_subtitles_indexed(&mut fb, &cues, 2.0 / SUBTITLE_CHARS_PER_SEC);
+        render_subtitles_indexed(
+            &mut fb,
+            &cues,
+            2.0 / default_subtitle_reveal_chars_per_second(),
+        );
 
         assert!(fb.iter().any(|sample| *sample == SUBTITLE_COLOR_REVEALED));
         assert!(
@@ -2108,7 +2113,12 @@ mod tests {
         palette[SUBTITLE_COLOR_REVEAL_EDGE as usize] = [4, 5, 6];
         let mut rgb = vec![0u8; VIEWPORT_W * VIEWPORT_H * 3];
 
-        render_subtitles_rgb(&mut rgb, &palette, &cues, 2.0 / SUBTITLE_CHARS_PER_SEC);
+        render_subtitles_rgb(
+            &mut rgb,
+            &palette,
+            &cues,
+            2.0 / default_subtitle_reveal_chars_per_second(),
+        );
 
         assert!(rgb.chunks_exact(3).any(|pixel| pixel == [1, 2, 3]));
         assert!(rgb.chunks_exact(3).any(|pixel| pixel == [4, 5, 6]));
