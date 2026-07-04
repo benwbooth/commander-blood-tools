@@ -301,6 +301,24 @@ as two-operand `imul` plus arithmetic `sar 0x0F`; the three compound terms reuse
 the intermediate `(b_sin * c_sin) >> 15` and `(c_sin * b_cos) >> 15` products
 before the final shift.
 
+POINT-CLOUD SOURCE RESOLVED (sess 003): the 1000-point buffer at `DS:0x2FC1` is
+**all zeros in the shipped image** — it is populated at runtime by
+`ship_3d_point_cloud_randomize` (`0x9B67`), which loops `cx=0x3E8` records and,
+per record, calls the engine PRNG `far 0x01CE:0x0B02` **three times** (x/y/z,
+each `rng(0xFFFF)`) then `add di,2` to skip the 4th word. So the ship-3D
+"corridor" background is a **procedurally random 3D starfield**, not a fixed
+geometry model. The PRNG at `0x01CE:0x0B02` is an LFSR-style generator with
+CS-segment state at `cs:0x0AEE` (seed word, XOR-only), `cs:0x0AF0/0x0AF1`
+(mixing bytes, advanced each call from the `cs:0x0AF2` counter); it returns
+`value % modulus`. Both the PRNG and the randomizer are ported+tested in
+`src/ship3d.rs` as `BloodPrng`/`randomize_ship_3d_point_cloud`. IMPORTANT for
+oracle strategy: the state bytes are zero in the image but the startup code
+(refs @`0x709/0x718`) seeds them, so **the exact star positions are not
+reproducible from a static run** — ship-3D background validation against a
+capture must be **statistical/structural** (point density, depth-shade
+distribution, sprite anchors), not exact-pixel. The corridor floor/walls and the
+HUD (pyramid grid + `pe/eye*.hnm` orb) are separate layers, still to be composed.
+
 The point-cloud projection loop at file `0x9A10` and its pixel helper at
 `0x9B04` are now split out in `src/ship3d.rs` as `project_ship_3d_point()` and
 `plot_ship_3d_projected_point()`. The loop walks 1000 eight-byte records from

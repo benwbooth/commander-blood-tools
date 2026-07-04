@@ -1553,6 +1553,108 @@ pub fn ship_3d_projected_point_offset(projected: Ship3dProjectedPoint) -> usize 
     usize::from(projected.y) * SHIP_3D_PROJECTION_SCREEN_WIDTH + usize::from(projected.x)
 }
 
+/// Number of 3D point-cloud records the starfield background is built from.
+/// The DOS randomizer loops `cx = 0x3E8` records at `DS:0x2FC1`.
+pub const SHIP_3D_POINT_CLOUD_LEN: usize = 0x3e8;
+
+/// The engine's pseudo-random generator (`far 0x01CE:0x0B02` in BLOODPRG.EXE).
+///
+/// Called as `rng(ax = modulus)` and returns `value % modulus` (for
+/// `modulus == 0` it returns the raw 16-bit value). The generator threads a
+/// carry chain through two state bytes to build a 16-bit word, XORs it with a
+/// fixed 16-bit seed word, then advances the two bytes via an incrementing
+/// counter. State lives at `cs:0x0AEE` (`seed_word`), `cs:0x0AF0` (`a`),
+/// `cs:0x0AF1` (`b`), `cs:0x0AF2` (`counter`); all are zero in the shipped
+/// image (the fields below default to that), but the startup code seeds them,
+/// so a live run's sequence is not reproducible from the static image alone.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct BloodPrng {
+    /// `cs:0x0AEE` — XORed into each result; never mutated by the generator.
+    pub seed_word: u16,
+    /// `cs:0x0AF0` — low mixing byte, advanced each call.
+    pub a: u8,
+    /// `cs:0x0AF1` — high mixing byte, advanced each call.
+    pub b: u8,
+    /// `cs:0x0AF2` — call counter used to advance `a`/`b`.
+    pub counter: u8,
+}
+
+impl Default for BloodPrng {
+    /// The static (unseeded) state from the shipped BLOODPRG.EXE image.
+    fn default() -> Self {
+        Self {
+            seed_word: 0,
+            a: 0,
+            b: 0,
+            counter: 0,
+        }
+    }
+}
+
+impl BloodPrng {
+    /// Advance the generator and return the next value in `0..modulus`
+    /// (or the raw 16-bit word when `modulus == 0`). Faithful port of the
+    /// `rcr/rcl` carry chain and byte advance at `0x01CE:0x0B02`.
+    pub fn next(&mut self, modulus: u16) -> u16 {
+        // Build a 16-bit word by threading the carry flag through
+        // `rcr bl,1 / rcl ax,1 / rcl bh,1 / rcl ax,1`, eight times, starting
+        // from a cleared carry (the DOS code `xor ax,ax` clears CF).
+        let mut bl = self.a;
+        let mut bh = self.b;
+        let mut ax: u16 = 0;
+        let mut carry: u16 = 0;
+        for _ in 0..8 {
+            // rcr bl,1
+            let new_carry = u16::from(bl & 1);
+            bl = ((carry as u8) << 7) | (bl >> 1);
+            carry = new_carry;
+            // rcl ax,1
+            let new_carry = ax >> 15;
+            ax = (ax << 1) | carry;
+            carry = new_carry;
+            // rcl bh,1
+            let new_carry = u16::from(bh >> 7);
+            bh = ((bh << 1) | (carry as u8)) & 0xff;
+            carry = new_carry;
+            // rcl ax,1
+            let new_carry = ax >> 15;
+            ax = (ax << 1) | carry;
+            carry = new_carry;
+        }
+
+        ax ^= self.seed_word;
+
+        // Advance the two mixing bytes from the incrementing counter.
+        self.counter = self.counter.wrapping_add(1);
+        let step = self.counter;
+        self.b = self.b.wrapping_sub(step);
+        self.a ^= step.rotate_left(1);
+
+        // Range-reduce `ax %= modulus` via the DOS repeated-subtraction loop.
+        if modulus != 0 {
+            while ax >= modulus {
+                ax = ax.wrapping_sub(modulus);
+            }
+        }
+        ax
+    }
+}
+
+/// Populate the ship-3D starfield point cloud (`ship_3d_point_cloud_randomize`
+/// at `0x9B67`). Each of the [`SHIP_3D_POINT_CLOUD_LEN`] records gets random
+/// `x`/`y`/`z` words from [`BloodPrng::next`] with modulus `0xFFFF`; the DOS
+/// loop `add di,2` after the three `stosw`s leaves each record's fourth word
+/// untouched, which the projection scratch reuses per frame.
+pub fn randomize_ship_3d_point_cloud(prng: &mut BloodPrng) -> Vec<Ship3dProjectionPoint> {
+    (0..SHIP_3D_POINT_CLOUD_LEN)
+        .map(|_| Ship3dProjectionPoint {
+            x: prng.next(0xffff),
+            y: prng.next(0xffff),
+            z: prng.next(0xffff),
+        })
+        .collect()
+}
+
 pub fn project_ship_3d_object_sprite(
     anchor: Ship3dProjectionPoint,
     origin: Ship3dProjectionOrigin,
@@ -6294,5 +6396,84 @@ mod tests {
         assert_eq!(effect.incremented_counter_record, Some(0x2a00));
         assert!(effect.opened_target_list);
         assert_eq!(state.hud_flags, SHIP_3D_NAVIGATION_TARGET_LIST_FLAG);
+    }
+
+    #[test]
+    fn blood_prng_first_call_from_zero_state_returns_zero_and_advances_bytes() {
+        // Hand-traced from the shipped all-zero state: the 8-iteration carry
+        // chain over two zero bytes yields 0, XOR seed 0 stays 0, then the byte
+        // advance sets counter=1, b -= 1 (0x00 -> 0xFF), a ^= rol(1,1)=2.
+        let mut prng = BloodPrng::default();
+        assert_eq!(prng.next(0xffff), 0);
+        assert_eq!(
+            prng,
+            BloodPrng {
+                seed_word: 0,
+                a: 2,
+                b: 0xff,
+                counter: 1,
+            }
+        );
+    }
+
+    #[test]
+    fn blood_prng_is_deterministic_for_a_given_seed() {
+        let mut lhs = BloodPrng {
+            seed_word: 0x1234,
+            a: 0x9a,
+            b: 0x57,
+            counter: 3,
+        };
+        let mut rhs = lhs;
+        let lhs_seq: Vec<u16> = (0..64).map(|_| lhs.next(0xffff)).collect();
+        let rhs_seq: Vec<u16> = (0..64).map(|_| rhs.next(0xffff)).collect();
+        assert_eq!(lhs_seq, rhs_seq);
+        assert_eq!(lhs, rhs);
+        // A non-trivial seed must actually produce variation, not a constant.
+        assert!(
+            lhs_seq
+                .iter()
+                .collect::<std::collections::HashSet<_>>()
+                .len()
+                > 1
+        );
+    }
+
+    #[test]
+    fn blood_prng_respects_modulus_range() {
+        let mut prng = BloodPrng {
+            seed_word: 0xbeef,
+            a: 0x11,
+            b: 0x22,
+            counter: 0,
+        };
+        for modulus in [1u16, 2, 7, 100, 320, 0x8000, 0xffff] {
+            for _ in 0..500 {
+                assert!(
+                    prng.next(modulus) < modulus,
+                    "value out of range for {modulus}"
+                );
+            }
+        }
+        // modulus 0 returns the raw 16-bit word (no range reduction path).
+        let _ = prng.next(0);
+    }
+
+    #[test]
+    fn randomize_point_cloud_fills_all_records_and_consumes_three_rng_calls_each() {
+        let mut prng = BloodPrng::default();
+        let points = randomize_ship_3d_point_cloud(&mut prng);
+        assert_eq!(points.len(), SHIP_3D_POINT_CLOUD_LEN);
+        // Each x/y/z came from next(0xffff), so all are strictly below 0xffff.
+        for point in &points {
+            assert!(point.x < 0xffff && point.y < 0xffff && point.z < 0xffff);
+        }
+        // 3 * 0x3E8 = 3000 rng calls advanced the counter (3000 mod 256 = 184).
+        assert_eq!(
+            prng.counter,
+            (3 * SHIP_3D_POINT_CLOUD_LEN as u32 % 256) as u8
+        );
+        // Not a degenerate all-zero fill.
+        assert!(points.iter().any(|p| p.x != 0 || p.y != 0 || p.z != 0));
     }
 }
