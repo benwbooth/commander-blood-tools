@@ -322,9 +322,17 @@ then subtracts the updated descriptor extent words `+0x0C/+0x0E` before calling
 modeled as mutable slot-state updates: active slots are gated by flag mask
 `0x0081`; position changes set dirty bit `0x0002`; scaled extents set dirty bit
 `0x0002` plus extent-changed bit `0x0010`; and natural-size extents clear bit
-`0x0010`, marking dirty only if that bit had been set. The remaining
-object-rendering target is the dirty sprite-slot renderer at `0x0299:0x14E1`
-and its internal blitter dispatch.
+`0x0010`, marking dirty only if that bit had been set.
+
+The per-slot dirty geometry commit branch in `sprite_slot_commit_dirty_range`
+(`0x0299:0x1467`) is now modeled as
+`commit_ship_3d_sprite_slot_dirty_geometry()`. It matches the range loop's slot
+body: clean slots are skipped, dirty slots without active bit `0x0001` are not
+committed, and dirty active slots copy current position words `+0x08/+0x0A` and
+current extent words `+0x0C/+0x0E` into previous-geometry words
+`+0x10/+0x12/+0x14/+0x16`. The global clip-snapshot branch of `0x1467`, the
+dirty-rectangle intersection loop at `0x0299:0x14E1`, and the internal blitter
+dispatch are still the next sprite-rendering targets.
 
 The next control-layer markers are now pinned. `0xB2BB` selects the next
 ship/navigation target record from `DS:0x250B`, or from the inline fallback table
@@ -1928,9 +1936,13 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       negative-depth wrap, depth-scale divide, source-dimension scaling, and
       mutable sprite-slot extent/position updates into
       `project_ship_3d_object_sprite()`, `update_ship_3d_sprite_slot_extent()`,
-      and `update_ship_3d_sprite_slot_position()`. This leaves dirty slot commit
-      and rendering (`0x0299:0x1467` / `0x0299:0x14E1`) as the next
-      sprite-rendering target.
+      and `update_ship_3d_sprite_slot_position()`.
+- [x] Port ship 3D sprite-slot dirty geometry commit:
+      the per-slot body of `0x0299:0x1467` is modeled by
+      `commit_ship_3d_sprite_slot_dirty_geometry()`, including the dirty-bit
+      gate, active-bit gate, and copies from current position/extent fields into
+      previous-geometry fields. The global clip snapshot branch and
+      `0x0299:0x14E1` dirty-rectangle renderer remain open.
 - [x] Port ship 3D temporary `3D.snd` setup branch:
       `src/ship3d.rs` now models file `0xB591`: the `DS:0x0AE4` one-shot gate,
       phase byte `DS:0x0AE5` cycling across the three `DS:0x0ACC` callback

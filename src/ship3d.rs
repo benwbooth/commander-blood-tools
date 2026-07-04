@@ -119,6 +119,7 @@ pub const SHIP_3D_OBJECT_DESCRIPTOR_BASE_OFFSET: u16 = 0x6212;
 pub const SHIP_3D_OBJECT_DESCRIPTOR_STRIDE: u16 = 0x0020;
 pub const SHIP_3D_OBJECT_DESCRIPTOR_INDEX_BIAS: u16 = 0x0015;
 pub const SHIP_3D_OBJECT_VISIBLE_FLAG: u16 = 0x0080;
+pub const SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG: u16 = 0x0001;
 pub const SHIP_3D_SPRITE_SLOT_ACTIVE_MASK: u16 = 0x0081;
 pub const SHIP_3D_SPRITE_SLOT_DIRTY_FLAG: u16 = 0x0002;
 pub const SHIP_3D_SPRITE_SLOT_EXTENT_CHANGED_FLAG: u16 = 0x0010;
@@ -469,6 +470,10 @@ pub struct Ship3dObjectSpriteDescriptor {
     pub draw_y: u16,
     pub extent_width: u16,
     pub extent_height: u16,
+    pub committed_draw_x: u16,
+    pub committed_draw_y: u16,
+    pub committed_extent_width: u16,
+    pub committed_extent_height: u16,
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -488,6 +493,7 @@ pub struct Ship3dSpriteSlotUpdateEffect {
     pub updated_position: bool,
     pub updated_extent: bool,
     pub cleared_extent_changed_flag: bool,
+    pub committed_geometry: bool,
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -1636,6 +1642,27 @@ pub fn update_ship_3d_sprite_slot_extent(
         effect.marked_dirty = true;
         effect.updated_extent = true;
     }
+    effect
+}
+
+pub fn commit_ship_3d_sprite_slot_dirty_geometry(
+    descriptor: &mut Ship3dObjectSpriteDescriptor,
+) -> Ship3dSpriteSlotUpdateEffect {
+    let mut effect = Ship3dSpriteSlotUpdateEffect::default();
+    if descriptor.flags & SHIP_3D_SPRITE_SLOT_DIRTY_FLAG == 0 {
+        return effect;
+    }
+
+    effect.ran = true;
+    if descriptor.flags & SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG == 0 {
+        return effect;
+    }
+
+    descriptor.committed_draw_x = descriptor.draw_x;
+    descriptor.committed_draw_y = descriptor.draw_y;
+    descriptor.committed_extent_width = descriptor.extent_width;
+    descriptor.committed_extent_height = descriptor.extent_height;
+    effect.committed_geometry = true;
     effect
 }
 
@@ -4310,13 +4337,14 @@ mod tests {
             terms: [0x8000, 0, 0, 0, -0x8000, 0, 0, 0, 0x8000],
         };
         let mut descriptor = Ship3dObjectSpriteDescriptor {
-            flags: SHIP_3D_OBJECT_VISIBLE_FLAG,
+            flags: SHIP_3D_OBJECT_VISIBLE_FLAG | SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG,
             source_width: 64,
             source_height: 32,
             draw_x: 0,
             draw_y: 0,
             extent_width: 64,
             extent_height: 32,
+            ..Ship3dObjectSpriteDescriptor::default()
         };
 
         let projection = project_ship_3d_object_sprite(
@@ -4350,6 +4378,7 @@ mod tests {
             descriptor,
             Ship3dObjectSpriteDescriptor {
                 flags: SHIP_3D_OBJECT_VISIBLE_FLAG
+                    | SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG
                     | SHIP_3D_SPRITE_SLOT_DIRTY_FLAG
                     | SHIP_3D_SPRITE_SLOT_EXTENT_CHANGED_FLAG,
                 source_width: 64,
@@ -4358,6 +4387,7 @@ mod tests {
                 draw_y: 79,
                 extent_width: 65,
                 extent_height: 32,
+                ..Ship3dObjectSpriteDescriptor::default()
             }
         );
     }
@@ -4375,6 +4405,7 @@ mod tests {
             draw_y: 0,
             extent_width: 64,
             extent_height: 32,
+            ..Ship3dObjectSpriteDescriptor::default()
         };
 
         assert_eq!(
@@ -4415,6 +4446,7 @@ mod tests {
             draw_y: 0,
             extent_width: 64,
             extent_height: 32,
+            ..Ship3dObjectSpriteDescriptor::default()
         };
 
         let projection = project_ship_3d_object_sprite(
@@ -4489,7 +4521,10 @@ mod tests {
         );
         assert_eq!(active.draw_x, 10);
         assert_eq!(active.draw_y, 21);
-        assert_eq!(active.flags, 0x0001 | SHIP_3D_SPRITE_SLOT_DIRTY_FLAG);
+        assert_eq!(
+            active.flags,
+            SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG | SHIP_3D_SPRITE_SLOT_DIRTY_FLAG
+        );
     }
 
     #[test]
@@ -4536,6 +4571,69 @@ mod tests {
         );
         assert_eq!(natural.extent_width, 80);
         assert_eq!(natural.extent_height, 40);
+    }
+
+    #[test]
+    fn sprite_slot_dirty_commit_copies_current_geometry_for_active_dirty_slots() {
+        let mut descriptor = Ship3dObjectSpriteDescriptor {
+            flags: SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG | SHIP_3D_SPRITE_SLOT_DIRTY_FLAG,
+            draw_x: 10,
+            draw_y: 20,
+            extent_width: 30,
+            extent_height: 40,
+            committed_draw_x: 1,
+            committed_draw_y: 2,
+            committed_extent_width: 3,
+            committed_extent_height: 4,
+            ..Ship3dObjectSpriteDescriptor::default()
+        };
+
+        assert_eq!(
+            commit_ship_3d_sprite_slot_dirty_geometry(&mut descriptor),
+            Ship3dSpriteSlotUpdateEffect {
+                ran: true,
+                committed_geometry: true,
+                ..Ship3dSpriteSlotUpdateEffect::default()
+            }
+        );
+        assert_eq!(descriptor.committed_draw_x, 10);
+        assert_eq!(descriptor.committed_draw_y, 20);
+        assert_eq!(descriptor.committed_extent_width, 30);
+        assert_eq!(descriptor.committed_extent_height, 40);
+        assert_eq!(
+            descriptor.flags,
+            SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG | SHIP_3D_SPRITE_SLOT_DIRTY_FLAG
+        );
+    }
+
+    #[test]
+    fn sprite_slot_dirty_commit_skips_clean_or_inactive_slots() {
+        let mut clean = Ship3dObjectSpriteDescriptor {
+            flags: SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG,
+            draw_x: 10,
+            committed_draw_x: 1,
+            ..Ship3dObjectSpriteDescriptor::default()
+        };
+        assert_eq!(
+            commit_ship_3d_sprite_slot_dirty_geometry(&mut clean),
+            Ship3dSpriteSlotUpdateEffect::default()
+        );
+        assert_eq!(clean.committed_draw_x, 1);
+
+        let mut inactive_dirty = Ship3dObjectSpriteDescriptor {
+            flags: SHIP_3D_SPRITE_SLOT_DIRTY_FLAG,
+            draw_x: 10,
+            committed_draw_x: 1,
+            ..Ship3dObjectSpriteDescriptor::default()
+        };
+        assert_eq!(
+            commit_ship_3d_sprite_slot_dirty_geometry(&mut inactive_dirty),
+            Ship3dSpriteSlotUpdateEffect {
+                ran: true,
+                ..Ship3dSpriteSlotUpdateEffect::default()
+            }
+        );
+        assert_eq!(inactive_dirty.committed_draw_x, 1);
     }
 
     #[test]
