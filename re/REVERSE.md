@@ -1564,8 +1564,19 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       math that writes `DS:0x2AAB` from measured label widths, center
       `DS:0x0AC6`, and flags `DS:0x0ADC/0x0ADD/0x27E6`. Tests cover default
       width floor, widest-label growth, extra-entry sizing, and unsigned
-      over-height wrapping. The mouse hit-test/draw branch of the same helper
-      is still pending.
+      over-height wrapping. The actual target-list text draw branch of the same
+      helper is still pending.
+- [x] Port ship 3D target-list hit-test state:
+      `src/ship3d.rs` now implements the non-query state branch of
+      `0x071E:0x0C48` before text drawing. It clears `DS:0x27C7/0x27E7`,
+      tests signed mouse bounds against the centered rectangle, computes the
+      1-based hover row as `(mouse_y - (y + 4)) / 0x0B + 1`, requests
+      presentation mode `6` for hover, mode `7` for activation, and mode `1`
+      when the cursor leaves the rectangle. The activation flag commits
+      `DS:0x27E7` and plays `sn\3D.snd` clip 0; the Rust result exposes that as
+      `play_select_sound`. Return `AX` matches the original sign-extended
+      `selected_row - 1` shape, so no committed selection returns `0xFFFF`.
+      The remaining branch is the actual target-list text draw.
 - [x] Port recovered framebuffer fill/copy primitives:
       `src/extract/render.rs` now has tested Rust helpers for the clipped
       rectangle fill, palette-remap rectangle, scene-band fill, full 320x200

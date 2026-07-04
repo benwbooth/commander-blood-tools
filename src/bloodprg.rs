@@ -118,6 +118,12 @@ pub const SHIP_3D_TARGET_LAYOUT_CENTER_X_DS_OFFSET: u16 = 0x0ac6;
 pub const SHIP_3D_TARGET_LAYOUT_DRAW_PTR_DS_OFFSET: u16 = 0x0ac8;
 pub const SHIP_3D_TARGET_LAYOUT_PRESERVE_WIDTHS_DS_OFFSET: u16 = 0x0adc;
 pub const SHIP_3D_TARGET_LAYOUT_EXTRA_ENTRY_DS_OFFSET: u16 = 0x0add;
+pub const SHIP_3D_TARGET_MOUSE_X_DS_OFFSET: u16 = 0x0a2a;
+pub const SHIP_3D_TARGET_MOUSE_Y_DS_OFFSET: u16 = 0x0a2c;
+pub const SHIP_3D_TARGET_REQUESTED_PRESENTATION_DS_OFFSET: u16 = 0x0a32;
+pub const SHIP_3D_TARGET_PRESENTATION_STATE_DS_OFFSET: u16 = 0x0a34;
+pub const SHIP_3D_TARGET_ACTIVATE_FLAG_DS_OFFSET: u16 = 0x0a3e;
+pub const SHIP_3D_TARGET_HOVER_ROW_DS_OFFSET: u16 = 0x27c7;
 pub const SHIP_3D_TARGET_QUERY_MODE_DS_OFFSET: u16 = 0x27e6;
 pub const SHIP_3D_TARGET_SELECTION_DS_OFFSET: u16 = 0x27e7;
 pub const SHIP_3D_TARGET_LAYOUT_RECT_DS_OFFSET: u16 = 0x2aab;
@@ -2637,6 +2643,60 @@ pub const PRESENTATION_3D_MARKERS: &[BinarySymbol] = &[
         comment: "adds the 0x37-wide extra target-list entry and shorter height seed in the query/layout helper",
     },
     BinarySymbol {
+        name: "ship_3d_target_mouse_x",
+        file_offset: 0x00de4a,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_TARGET_MOUSE_X_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "mouse x tested against the target-list rectangle by 0x071E:0x0C48",
+    },
+    BinarySymbol {
+        name: "ship_3d_target_mouse_y",
+        file_offset: 0x00de4c,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_TARGET_MOUSE_Y_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "mouse y tested against the target-list rectangle by 0x071E:0x0C48",
+    },
+    BinarySymbol {
+        name: "ship_3d_target_requested_presentation",
+        file_offset: 0x00de52,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_TARGET_REQUESTED_PRESENTATION_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "target-list helper writes requested presentation mode 1/6/7 here",
+    },
+    BinarySymbol {
+        name: "ship_3d_target_presentation_state",
+        file_offset: 0x00de54,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_TARGET_PRESENTATION_STATE_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "current presentation mode compared before requesting target-list hover/idle transitions",
+    },
+    BinarySymbol {
+        name: "ship_3d_target_activate_flag",
+        file_offset: 0x00de5e,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_TARGET_ACTIVATE_FLAG_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "activation flag that commits target-list selection and plays SND clip 0",
+    },
+    BinarySymbol {
+        name: "ship_3d_target_hover_row",
+        file_offset: 0x00fbe7,
+        segment: None,
+        offset: None,
+        ds_offset: Some(SHIP_3D_TARGET_HOVER_ROW_DS_OFFSET),
+        kind: "presentation-3d-data",
+        comment: "1-based target-list hover row computed from mouse y by 0x071E:0x0C48",
+    },
+    BinarySymbol {
         name: "ship_3d_target_query_mode",
         file_offset: 0x00fc06,
         segment: None,
@@ -3044,6 +3104,12 @@ mod tests {
             "ship_3d_navigation_update",
             "ship_3d_temp_snd_setup",
             "ship_3d_plane_band_copy",
+            "ship_3d_target_mouse_x",
+            "ship_3d_target_mouse_y",
+            "ship_3d_target_requested_presentation",
+            "ship_3d_target_presentation_state",
+            "ship_3d_target_activate_flag",
+            "ship_3d_target_hover_row",
             "ship_3d_target_layout_rect",
             "ship_3d_target_width_table",
             "ship_3d_current_target",

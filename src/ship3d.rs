@@ -21,6 +21,11 @@ pub const SHIP_3D_TARGET_LAYOUT_EXTRA_HEIGHT: u16 = 0x0a;
 pub const SHIP_3D_TARGET_LAYOUT_HEIGHT_PADDING: u16 = 0x08;
 pub const SHIP_3D_TARGET_LAYOUT_SCREEN_HEIGHT: u16 = 0xc8;
 pub const SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN: u16 = 0xffff;
+pub const SHIP_3D_TARGET_HIT_TEST_TOP_INSET: u16 = 0x04;
+pub const SHIP_3D_TARGET_HIT_TEST_BOTTOM_INSET: u16 = 0x08;
+pub const SHIP_3D_TARGET_HOVER_PRESENTATION_MODE: u16 = 0x0006;
+pub const SHIP_3D_TARGET_ACTIVE_PRESENTATION_MODE: u16 = 0x0007;
+pub const SHIP_3D_TARGET_IDLE_PRESENTATION_MODE: u16 = 0x0001;
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dTransitionState {
@@ -90,6 +95,24 @@ pub struct Ship3dTargetListLayout {
     pub label_count: usize,
     pub has_extra_entry: bool,
     pub selector_mode_return_ax: u16,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dTargetHitState {
+    pub hover_row: u8,
+    pub selected_row: u8,
+    pub presentation_state: u16,
+    pub requested_presentation_state: u16,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Ship3dTargetHitResult {
+    pub inside: bool,
+    pub activated: bool,
+    pub hover_row: u8,
+    pub selected_row: u8,
+    pub return_ax: u16,
+    pub play_select_sound: bool,
 }
 
 pub fn update_ship_3d_transition_state(state: &mut Ship3dTransitionState, random_gate_zero: bool) {
@@ -251,6 +274,68 @@ pub fn layout_ship_3d_target_list(
     }
 }
 
+pub fn hit_test_ship_3d_target_list(
+    state: &mut Ship3dTargetHitState,
+    layout: Ship3dTargetListLayout,
+    mouse_x: u16,
+    mouse_y: u16,
+    activate: bool,
+) -> Option<Ship3dTargetHitResult> {
+    state.hover_row = 0;
+    state.selected_row = 0;
+    let mut inside = false;
+    let mut activated = false;
+    let mut play_select_sound = false;
+
+    if signed_i16(mouse_x) >= signed_i16(layout.x) {
+        let right = layout.x.wrapping_add(layout.width);
+        if signed_i16(mouse_x) <= signed_i16(right) {
+            let row_origin = layout.y.wrapping_add(SHIP_3D_TARGET_HIT_TEST_TOP_INSET);
+            let row_offset = mouse_y.wrapping_sub(row_origin);
+            if signed_i16(row_offset) >= 0 {
+                let hit_height = layout
+                    .height
+                    .wrapping_sub(SHIP_3D_TARGET_HIT_TEST_BOTTOM_INSET);
+                if signed_i16(row_offset) < signed_i16(hit_height) {
+                    let row =
+                        checked_u16_div_u8_to_u8(row_offset, SHIP_3D_TARGET_LAYOUT_ROW_STEP as u8)?
+                            .wrapping_add(1);
+                    state.hover_row = row;
+                    inside = true;
+
+                    if state.presentation_state != SHIP_3D_TARGET_HOVER_PRESENTATION_MODE {
+                        state.presentation_state = 0;
+                        state.requested_presentation_state = SHIP_3D_TARGET_HOVER_PRESENTATION_MODE;
+                    }
+
+                    if activate {
+                        state.requested_presentation_state =
+                            SHIP_3D_TARGET_ACTIVE_PRESENTATION_MODE;
+                        state.selected_row = row;
+                        activated = true;
+                        play_select_sound = true;
+                    }
+                }
+            }
+        }
+    }
+
+    if !inside && state.presentation_state != SHIP_3D_TARGET_IDLE_PRESENTATION_MODE {
+        state.presentation_state = 0;
+        state.requested_presentation_state = SHIP_3D_TARGET_IDLE_PRESENTATION_MODE;
+    }
+
+    let return_ax = (state.selected_row as u8).wrapping_sub(1) as i8 as i16 as u16;
+    Some(Ship3dTargetHitResult {
+        inside,
+        activated,
+        hover_row: state.hover_row,
+        selected_row: state.selected_row,
+        return_ax,
+        play_select_sound,
+    })
+}
+
 pub fn select_ship_3d_target_record(
     state: &mut Ship3dTargetSelectorState,
     primary_targets: &[u16],
@@ -350,6 +435,18 @@ fn checked_i16_div_i8_to_i8(dividend: i16, divisor: i8) -> Option<i8> {
     }
     let quotient = dividend / divisor as i16;
     i8::try_from(quotient).ok()
+}
+
+fn checked_u16_div_u8_to_u8(dividend: u16, divisor: u8) -> Option<u8> {
+    if divisor == 0 {
+        return None;
+    }
+    let quotient = dividend / divisor as u16;
+    u8::try_from(quotient).ok()
+}
+
+fn signed_i16(value: u16) -> i16 {
+    value as i16
 }
 
 #[cfg(test)]
@@ -796,5 +893,150 @@ mod tests {
 
         assert_eq!(layout.height, 228);
         assert_eq!(layout.y, 0x7ff2);
+    }
+
+    #[test]
+    fn target_hit_test_commits_selection_only_when_active() {
+        let layout = layout_ship_3d_target_list(&[20, 80], 0x50, false);
+        let mut state = Ship3dTargetHitState::default();
+
+        let hover = hit_test_ship_3d_target_list(&mut state, layout, 30, 90, false).unwrap();
+        assert_eq!(
+            hover,
+            Ship3dTargetHitResult {
+                inside: true,
+                activated: false,
+                hover_row: 1,
+                selected_row: 0,
+                return_ax: SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
+                play_select_sound: false,
+            }
+        );
+        assert_eq!(state.hover_row, 1);
+        assert_eq!(state.selected_row, 0);
+        assert_eq!(
+            state.requested_presentation_state,
+            SHIP_3D_TARGET_HOVER_PRESENTATION_MODE
+        );
+
+        let active = hit_test_ship_3d_target_list(&mut state, layout, 30, 101, true).unwrap();
+        assert_eq!(
+            active,
+            Ship3dTargetHitResult {
+                inside: true,
+                activated: true,
+                hover_row: 2,
+                selected_row: 2,
+                return_ax: 1,
+                play_select_sound: true,
+            }
+        );
+        assert_eq!(
+            state.requested_presentation_state,
+            SHIP_3D_TARGET_ACTIVE_PRESENTATION_MODE
+        );
+    }
+
+    #[test]
+    fn target_hit_test_uses_inclusive_x_and_exclusive_bottom_y() {
+        let layout = layout_ship_3d_target_list(&[20, 80], 0x50, false);
+        let mut state = Ship3dTargetHitState::default();
+
+        assert!(
+            hit_test_ship_3d_target_list(
+                &mut state,
+                layout,
+                layout.x,
+                layout.y + SHIP_3D_TARGET_HIT_TEST_TOP_INSET,
+                false,
+            )
+            .unwrap()
+            .inside
+        );
+        assert!(
+            hit_test_ship_3d_target_list(
+                &mut state,
+                layout,
+                layout.x + layout.width,
+                layout.y + layout.height - SHIP_3D_TARGET_HIT_TEST_TOP_INSET - 1,
+                false,
+            )
+            .unwrap()
+            .inside
+        );
+        assert!(
+            !hit_test_ship_3d_target_list(
+                &mut state,
+                layout,
+                layout.x + layout.width + 1,
+                layout.y + SHIP_3D_TARGET_HIT_TEST_TOP_INSET,
+                false,
+            )
+            .unwrap()
+            .inside
+        );
+        assert!(
+            !hit_test_ship_3d_target_list(
+                &mut state,
+                layout,
+                layout.x,
+                layout.y + layout.height - SHIP_3D_TARGET_HIT_TEST_TOP_INSET,
+                false,
+            )
+            .unwrap()
+            .inside
+        );
+    }
+
+    #[test]
+    fn target_hit_test_clears_selection_then_requests_idle_when_outside() {
+        let layout = layout_ship_3d_target_list(&[20, 80], 0x50, false);
+        let mut state = Ship3dTargetHitState {
+            selected_row: 2,
+            presentation_state: SHIP_3D_TARGET_HOVER_PRESENTATION_MODE,
+            requested_presentation_state: SHIP_3D_TARGET_HOVER_PRESENTATION_MODE,
+            ..Ship3dTargetHitState::default()
+        };
+
+        let result = hit_test_ship_3d_target_list(&mut state, layout, 0, 0, false).unwrap();
+
+        assert_eq!(
+            result,
+            Ship3dTargetHitResult {
+                inside: false,
+                activated: false,
+                hover_row: 0,
+                selected_row: 0,
+                return_ax: SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
+                play_select_sound: false,
+            }
+        );
+        assert_eq!(state.hover_row, 0);
+        assert_eq!(state.selected_row, 0);
+        assert_eq!(state.presentation_state, 0);
+        assert_eq!(
+            state.requested_presentation_state,
+            SHIP_3D_TARGET_IDLE_PRESENTATION_MODE
+        );
+    }
+
+    #[test]
+    fn target_hit_test_rejects_binary_div_overflow_shape() {
+        let layout = Ship3dTargetListLayout {
+            x: 0,
+            y: 0,
+            width: 1,
+            height: 0x0b09,
+            max_label_width: 1,
+            label_count: 256,
+            has_extra_entry: false,
+            selector_mode_return_ax: SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
+        };
+        let mut state = Ship3dTargetHitState::default();
+
+        assert_eq!(
+            hit_test_ship_3d_target_list(&mut state, layout, 0, 0x0b04, false),
+            None
+        );
     }
 }
