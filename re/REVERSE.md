@@ -1644,10 +1644,12 @@ oracle checks must use a fixed `generated_time`; `compare_oracle.py` now rejects
 `max_mean_abs` when a scenario still has scan fields, preventing a pass/fail
 result from being produced by searching for the closest generated frame. The
 checked-in smoke scenario now names `accuracy/captures/capture-manifest.tsv`
-explicitly so reruns use the capture-recorded path/crop metadata. Next oracle
-step is scripted input via `ORACLE_INPUT_SCRIPT` or a debug scene selector so one
-generated dialogue run can be compared against a matched real-game capture with a
-threshold.
+explicitly so reruns use the capture-recorded path/crop metadata.
+`accuracy/retrofit_capture_manifest.py` can write the same manifest shape for
+older `frame_NN.png` capture directories that predate `run_oracle.sh` manifest
+output. Next oracle step is scripted input via `ORACLE_INPUT_SCRIPT` or a debug
+scene selector so one generated dialogue run can be compared against a matched
+real-game capture with a threshold.
 
 Current `frame_12` evidence: searching all 43 executed-dialogue composites over
 `0:12:2` ranked `executed-dialogue-run - script3 - 0011 - tumul.mp4` at `6.0s`

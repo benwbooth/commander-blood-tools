@@ -86,6 +86,17 @@ MP4 window and save the best matching frame as the scenario comparison. The scan
 writes `scan.json` next to `comparison.json`; this is useful for proving whether
 a mismatch is just timestamp alignment or the wrong scene/presentation state.
 
+Older capture directories may have `frame_NN.png` files but no manifest. Retrofit
+the metadata before running manifest-aware scenarios:
+
+```sh
+nix develop --command python accuracy/retrofit_capture_manifest.py \
+  accuracy/captures --interval 1 --display :99
+```
+
+This writes `accuracy/captures/capture-manifest.tsv` with the same default
+800x600-host to 320x200-native crop used by `run_oracle.sh`.
+
 Single comparisons can use the same scanner:
 
 ```sh
