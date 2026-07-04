@@ -635,20 +635,27 @@ index in the 20-byte `GS:[0x672C]` object table, adds the selector-`0x05` /
 kind-`0x0002` field offset (`0x1E`) to the caller's bitset base, and tests the
 object's bit high-bit-first. In the C1 mode-0 branch this is the kind-2 source
 filter before selecting a resolved destination slot. Rust also ports the
-`0x006C1C` source-list scan: it walks the `0x00624B`-built `DS:0x6886` list to
-the `0xFFFF` sentinel, accepts kind `2` records when helper `0x6210` reports the
-operand object's bit set from the current post-`lodsw` `SI` cursor into that
-scratch list, accepts kind `1` records when the operand state byte has bit
-`0x02`, and ignores other kinds. Rust also ports the `0x006C48..0x006C6B`
-destination-slot write: for the original kind-`0x10` `DI` record it resolves
-selector `0x13` using hardcoded kind `0x0010`, checks only the destination's
-first word for emptiness, and writes `{0x00C1, operand, 0x0002}`. `src/vm.rs`
-now wires this kind-`0x10` C1 path through
-`ExecutionContext::with_ship_3d_c1_runtime(...)`; tests prove a selected source
-writes `owner+0x1C` and a rejected source does not fall back to the direct token
-record. Remaining C1 resolved-table work includes the distance/selector-`0x11`
-redirect before the source-list gate, resolved mode-1 comparisons, and exact
-branch-fail side effects.
+distance/selector-`0x11` redirect at `0x006BEA..0x006C04`: when the raw C1
+operand word is exactly `1` or `2`, the binary calls
+`ship_3d_position_distance(operand, current_target)`. A zero distance leaves
+`DI` unchanged. A nonzero distance loads the selector-`0x11` word from the
+current target, makes that the new `DI`, and requires the new record kind to be
+`0x0010`; failure rejects the C1 write without falling back to the direct token
+record. After that, Rust ports the `0x006C1C` source-list scan: it walks the
+`0x00624B`-built `DS:0x6886` list to the `0xFFFF` sentinel, accepts kind `2`
+records when helper `0x6210` reports the operand object's bit set from the
+current post-`lodsw` `SI` cursor into that scratch list, accepts kind `1`
+records when the operand state byte has bit `0x02`, and ignores other kinds.
+Rust also ports the `0x006C48..0x006C6B` destination-slot write: for the
+resolved kind-`0x10` `DI` record it resolves selector `0x13` using hardcoded
+kind `0x0010`, checks only the destination's first word for emptiness, and
+writes `{0x00C1, operand, 0x0002}`. `src/vm.rs` now wires this C1 path through
+`ExecutionContext::with_ship_3d_c1_runtime(...)`, with optional
+`with_ship_3d_c1_positions(...)` data for the distance redirect; tests prove a
+selected source writes the resolved target's `+0x1C` slot, distance zero keeps
+the original kind-`0x10` owner, and a non-kind-`0x10` redirect target does not
+fall back to the direct token record. Remaining C1 resolved-table work includes
+resolved mode-1 comparisons and exact branch-fail side effects.
 
 ### 0xCA/0xCB global condition handlers — token shape (DECODED; runtime source pending)
 
@@ -1349,9 +1356,10 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       effect (`gs:0x67AA|=2`, `gs:0x6788 = 0x2B`) when `ExecutionContext`
       supplies the matching `descript.des` directory name. Extractor trace paths
       seed those names from parsed `DESCRIPT.DES`; the ship-3D kind-`0x10`
-      source-list/destination C1 mode-0 path is wired when `ExecutionContext`
-      supplies navigation records, object-table order, and the live `DS:0x6886`
-      scratch bytes.
+      C1 mode-0 path is wired when `ExecutionContext` supplies navigation
+      records, object-table order, and the live `DS:0x6886` scratch bytes; the
+      optional position runtime ports the raw-operand `1/2`
+      distance/selector-`0x11` redirect before the source-list gate.
 - [x] Expose 0xCA/0xCB global condition tokens. `src/vm.rs` preserves the
       consumed compare operands as `VmToken::GlobalWordCompare` and
       `VmToken::GlobalPairCompare`; `execute_trace` evaluates their branches
