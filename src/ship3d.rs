@@ -90,6 +90,10 @@ pub const SHIP_3D_SOURCE_BITSET_KIND: u16 = 0x0002;
 pub const SHIP_3D_C1_SOURCE_KIND_OPERAND_FLAG: u16 = 0x0001;
 pub const SHIP_3D_C1_SOURCE_KIND_BITSET: u16 = 0x0002;
 pub const SHIP_3D_C1_SOURCE_OPERAND_STATE_FLAG: u8 = 0x02;
+pub const SHIP_3D_C1_KIND10_RECORD_KIND: u16 = 0x0010;
+pub const SHIP_3D_C1_DESTINATION_SELECTOR: u8 = 0x13;
+pub const SHIP_3D_C1_RECORD_STATE_OPCODE: u16 = vm::OP_RECORD_STATE_MIN as u16;
+pub const SHIP_3D_C1_RECORD_STATE_AUX_WORD: u16 = 0x0002;
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dTransitionState {
@@ -339,6 +343,19 @@ pub struct Ship3dPositionField {
     pub offset: u16,
     pub x: u16,
     pub y: u16,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dRecordStateSlot {
+    pub opcode: u16,
+    pub operand: u16,
+    pub aux_word: u16,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct Ship3dC1DestinationWrite {
+    pub destination_record_offset: u16,
+    pub slot: Ship3dRecordStateSlot,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -1168,6 +1185,43 @@ pub fn select_ship_3d_c1_source_record(
     }
 
     None
+}
+
+pub fn resolve_ship_3d_c1_kind10_destination_record(
+    target_record_offset: u16,
+    target_kind_flags: u16,
+) -> Option<u16> {
+    if target_kind_flags != SHIP_3D_C1_KIND10_RECORD_KIND {
+        return None;
+    }
+    vm::vm_field_offset(
+        SHIP_3D_C1_DESTINATION_SELECTOR,
+        SHIP_3D_C1_KIND10_RECORD_KIND,
+    )
+    .map(|field| target_record_offset.wrapping_add(field))
+}
+
+pub fn write_ship_3d_c1_kind10_destination_slot(
+    target_record_offset: u16,
+    target_kind_flags: u16,
+    destination_slot: &mut Ship3dRecordStateSlot,
+    operand_record_offset: u16,
+) -> Option<Option<Ship3dC1DestinationWrite>> {
+    let destination_record_offset =
+        resolve_ship_3d_c1_kind10_destination_record(target_record_offset, target_kind_flags)?;
+    if destination_slot.opcode != 0 {
+        return Some(None);
+    }
+
+    *destination_slot = Ship3dRecordStateSlot {
+        opcode: SHIP_3D_C1_RECORD_STATE_OPCODE,
+        operand: operand_record_offset,
+        aux_word: SHIP_3D_C1_RECORD_STATE_AUX_WORD,
+    };
+    Some(Some(Ship3dC1DestinationWrite {
+        destination_record_offset,
+        slot: *destination_slot,
+    }))
 }
 
 pub fn run_ship_3d_navigation_trigger_prelude(
@@ -3828,6 +3882,105 @@ mod tests {
                 0,
             ),
             None
+        );
+    }
+
+    #[test]
+    fn c1_kind10_destination_uses_selector13_kind10_field_offset() {
+        assert_eq!(
+            vm::vm_field_offset(
+                SHIP_3D_C1_DESTINATION_SELECTOR,
+                SHIP_3D_C1_KIND10_RECORD_KIND
+            ),
+            Some(0x1c)
+        );
+        assert_eq!(
+            resolve_ship_3d_c1_kind10_destination_record(0x4000, SHIP_3D_C1_KIND10_RECORD_KIND,),
+            Some(0x401c)
+        );
+        assert_eq!(
+            resolve_ship_3d_c1_kind10_destination_record(0x4000, 0x0002),
+            None
+        );
+    }
+
+    #[test]
+    fn c1_kind10_destination_write_records_c1_operand_and_aux2() {
+        let mut slot = Ship3dRecordStateSlot::default();
+
+        let write = write_ship_3d_c1_kind10_destination_slot(
+            0x4000,
+            SHIP_3D_C1_KIND10_RECORD_KIND,
+            &mut slot,
+            0x2000,
+        );
+
+        let expected_slot = Ship3dRecordStateSlot {
+            opcode: SHIP_3D_C1_RECORD_STATE_OPCODE,
+            operand: 0x2000,
+            aux_word: SHIP_3D_C1_RECORD_STATE_AUX_WORD,
+        };
+        assert_eq!(
+            write,
+            Some(Some(Ship3dC1DestinationWrite {
+                destination_record_offset: 0x401c,
+                slot: expected_slot,
+            }))
+        );
+        assert_eq!(slot, expected_slot);
+    }
+
+    #[test]
+    fn c1_kind10_destination_write_branches_when_destination_occupied() {
+        let mut slot = Ship3dRecordStateSlot {
+            opcode: 0x00c4,
+            operand: 0x1111,
+            aux_word: 0x2222,
+        };
+
+        let write = write_ship_3d_c1_kind10_destination_slot(
+            0x4000,
+            SHIP_3D_C1_KIND10_RECORD_KIND,
+            &mut slot,
+            0x2000,
+        );
+
+        assert_eq!(write, Some(None));
+        assert_eq!(
+            slot,
+            Ship3dRecordStateSlot {
+                opcode: 0x00c4,
+                operand: 0x1111,
+                aux_word: 0x2222,
+            }
+        );
+    }
+
+    #[test]
+    fn c1_kind10_destination_write_checks_only_first_destination_word() {
+        let mut slot = Ship3dRecordStateSlot {
+            opcode: 0,
+            operand: 0x1111,
+            aux_word: 0x2222,
+        };
+
+        assert_eq!(
+            write_ship_3d_c1_kind10_destination_slot(
+                0x4000,
+                SHIP_3D_C1_KIND10_RECORD_KIND,
+                &mut slot,
+                0x2000,
+            )
+            .map(|write| write.map(|write| write.destination_record_offset)),
+            Some(Some(0x401c))
+        );
+        assert_eq!(
+            slot,
+            Ship3dRecordStateSlot {
+                opcode: SHIP_3D_C1_RECORD_STATE_OPCODE,
+                operand: 0x2000,
+                aux_word: SHIP_3D_C1_RECORD_STATE_AUX_WORD,
+            }
         );
     }
 

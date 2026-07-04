@@ -635,9 +635,12 @@ filter before selecting a resolved destination slot. Rust also ports the
 the `0xFFFF` sentinel, accepts kind `2` records when helper `0x6210` reports the
 operand object's bit set from the current post-`lodsw` `SI` cursor into that
 scratch list, accepts kind `1` records when the operand state byte has bit
-`0x02`, and ignores other kinds. The final C1 destination-slot write around
-`0x006C48..0x006C6B` still needs to be wired into the higher-level Rust VM state
-model.
+`0x02`, and ignores other kinds. Rust also ports the `0x006C48..0x006C6B`
+destination-slot write: for the original kind-`0x10` `DI` record it resolves
+selector `0x13` using hardcoded kind `0x0010`, checks only the destination's
+first word for emptiness, and writes `{0x00C1, operand, 0x0002}`. The remaining
+work is wiring these resolved C1 helpers into the higher-level Rust VM execution
+state with real `DS:0x6886` scratch-list bytes.
 
 ### 0xCA/0xCB global condition handlers — token shape (DECODED; runtime source pending)
 
@@ -1755,8 +1758,15 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       the helper's bitset base is the post-`lodsw` `SI` cursor for the current
       source-list entry. Kind `0x0001` candidates accept only when the operand
       state byte has bit `0x02`; all other kinds are skipped. Rust exposes this as
-      `select_ship_3d_c1_source_record()` so the remaining C1 destination-slot
-      write can be connected without heuristic source matching.
+      `select_ship_3d_c1_source_record()` so the remaining C1 state integration
+      can reuse binary-derived source matching.
+- [x] Port ship 3D C1 kind-0x10 destination-slot write:
+      the block labeled `0x006C48` hardcodes selector `0x13` with kind `0x0010`,
+      adds that field (`0x1C`) to the original `DI` record, branches if the
+      destination's first word is nonzero, and otherwise writes
+      `{0x00C1, operand, 0x0002}`. Rust exposes this as
+      `write_ship_3d_c1_kind10_destination_slot()` with a slot model that keeps
+      the binary's first-word-only emptiness check explicit.
 - [x] Port ship 3D navigation sequence branch:
       the internal branch at `0x0A9A:0x04E1` (file `0xB481`) now has a Rust
       state/effect model as `run_ship_3d_navigation_sequence_update()`. If

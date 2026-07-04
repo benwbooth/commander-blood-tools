@@ -60,6 +60,7 @@ DS:0x6D3E,vm_special_slots,"16-word runtime list for fields set to the blood/0xf
 0x006B06,vm_pair_record_6b06,"B8/B9/BD pair-record assignment/compare handler"
 0x006B4C,vm_op_c1_record_state,"0xC1 line-record state handler; raw token C1 record operand"
 0x006C1C,ship_3d_c1_source_list_select,"C1 kind-0x10 source-list scan: kind-2 object-table bitset or kind-1 operand flag selects the resolved branch"
+0x006C48,ship_3d_c1_kind10_destination_write,"C1 kind-0x10 resolved branch writes {0x00c1, operand, 0x0002} to selector-0x13 destination if empty"
 0x006E34,vm_op_c2_record_state,"0xC2 line-record state handler; raw token C2 record operand"
 0x006EEE,vm_op_c3_record_link,"0xC3 record-link handler; writes es:[record]={0xc3,related,1} on mode-0 success"
 0x006C7E,vm_op_c4_actor,"0xC4 actor/record handler; consumes record+related u16 operands and writes es:[record]={0xc4,related,0}"
