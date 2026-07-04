@@ -255,6 +255,18 @@ subsystem, but not yet enough to implement the minigame: the projection,
 geometry/object state, and input loop still need to be decompiled from these
 entrypoints and their xrefs.
 
+`src/ship3d.rs` now ports the local state effects of the `0xB591` temporary
+`3D.snd` branch. The one-shot gate `DS:0x0AE4` clears itself plus
+`DS:0x0AE3`, selects one of the three DS-table offsets at `DS:0x0ACC`
+(`0x0087`, `0x0090`, `0x009C`), cycles phase byte `DS:0x0AE5` modulo 3, loads
+`sn\3D.snd` from `DS:0x0D23`, calls the presentation callback through
+`DS:0x0A96`, then restores `sn\tb.snd` from `DS:0x0CFC`. The port exposes the
+mouse-coordinate preservation, callback-bank gate reset, hold-timer reset, and
+fullscreen descriptor write. If navigation sequence byte `DS:0x252A` is set,
+the branch temporarily disables plane copying, re-enables `DS:0x252E`, and
+resets `DS:0x1FA3=-1`; otherwise it runs the non-sequence redraw path and clears
+the setup latches `DS:0x5B53/0x5B57`.
+
 The next control-layer markers are now pinned. `0xB2BB` selects the next
 ship/navigation target record from `DS:0x250B`, or from the inline fallback table
 at `DS:0x2537` when the list head is `-1`; a selected `-1` entry arms the
@@ -1824,6 +1836,15 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       sets dirty byte `DS:0x0DB8=1`, waits while the interpolation gate is
       active when duration `DS:0x0ADA == 6`, and on a nonnegative target-list
       query clears `DS:0x252A` and sets `DS:0x2532`.
+- [x] Port ship 3D temporary `3D.snd` setup branch:
+      `src/ship3d.rs` now models file `0xB591`: the `DS:0x0AE4` one-shot gate,
+      phase byte `DS:0x0AE5` cycling across the three `DS:0x0ACC` callback
+      offsets (`0x0087`, `0x0090`, `0x009C`), `sn\3D.snd` bank load from
+      `DS:0x0D23`, presentation callback, `sn\tb.snd` restore from
+      `DS:0x0CFC`, hold-timer reset, fullscreen descriptor write, and the split
+      sequence-active/non-sequence redraw side effects. This converts the
+      navigation sequence's old boolean "ran temp snd setup" into a reusable
+      event/state model for the future oracle and `wgpu` presenter.
 - [x] Port recovered framebuffer fill/copy primitives:
       `src/extract/render.rs` now has tested Rust helpers for the clipped
       rectangle fill, palette-remap rectangle, scene-band fill, full 320x200

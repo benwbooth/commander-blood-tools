@@ -74,6 +74,15 @@ pub const SHIP_3D_NAVIGATION_SCENE_BAND_TOP: u16 = 0x0023;
 pub const SHIP_3D_NAVIGATION_RENDER_CLIP_BOTTOM: u16 = 0x00a5;
 pub const SHIP_3D_NAVIGATION_RENDER_CLIP_RESTORED_BOTTOM: u16 = 0x00c8;
 pub const SHIP_3D_NAVIGATION_TRIGGER_CLOSE_STEP: u8 = 0x02;
+pub const SHIP_3D_TEMP_SND_CALLBACK_TABLE_OFFSET: u16 = 0x0acc;
+pub const SHIP_3D_TEMP_SND_CALLBACK_OFFSETS: [u16; 3] = [0x0087, 0x0090, 0x009c];
+pub const SHIP_3D_TEMP_SND_PATH_OFFSET: u16 = 0x0d23;
+pub const SHIP_3D_TB_SND_PATH_OFFSET: u16 = 0x0cfc;
+pub const SHIP_3D_TEMP_SND_PHASE_COUNT: u8 = 3;
+pub const SHIP_3D_TEMP_SND_SCENE_SELECTOR_SENTINEL: u16 = 0xffff;
+pub const SHIP_3D_TEMP_SND_VIEWPORT_DESCRIPTOR: [u16; 8] = [
+    0x0000, 0x0001, 0x0004, 0x0000, 0x0140, 0x00c8, 0x0000, 0x0000,
+];
 pub const SHIP_3D_OBJECT_KIND_POSITION_DIRECT_8: u16 = 0x0008;
 pub const SHIP_3D_OBJECT_KIND_POSITION_DIRECT_10: u16 = 0x0010;
 pub const SHIP_3D_OBJECT_KIND_POSITION_DIRECT_40: u16 = 0x0040;
@@ -309,6 +318,41 @@ pub struct Ship3dNavigationSequenceEffect {
     pub armed_exit_pending: bool,
     pub armed_opening_exit: bool,
     pub final_reset_pending: bool,
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dTempSndState {
+    pub trigger: bool,
+    pub auxiliary_trigger: bool,
+    pub phase: u8,
+    pub sequence_active: bool,
+    pub plane_copy_enabled: bool,
+    pub scene_selector: u16,
+    pub hold_ticks: u16,
+    pub fullscreen_refresh: bool,
+    pub setup_flag_a: bool,
+    pub setup_flag_b: bool,
+    pub viewport_descriptor: [u16; 8],
+}
+
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct Ship3dTempSndEffect {
+    pub ran: bool,
+    pub selected_callback_offset: Option<u16>,
+    pub next_phase: Option<u8>,
+    pub load_snd_bank_path: Option<u16>,
+    pub restore_snd_bank_path: Option<u16>,
+    pub preserved_mouse_position: bool,
+    pub reset_callback_bank_gate: bool,
+    pub called_presentation_callback: bool,
+    pub reset_hold_ticks: bool,
+    pub wrote_viewport_descriptor: bool,
+    pub sequence_branch: bool,
+    pub non_sequence_branch: bool,
+    pub temporarily_disabled_plane_copy: bool,
+    pub enabled_plane_copy: bool,
+    pub reset_scene_selector: bool,
+    pub reset_setup_flags: bool,
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -967,6 +1011,52 @@ pub fn run_ship_3d_navigation_sequence_update(
     effect
 }
 
+pub fn run_ship_3d_temp_snd_setup(state: &mut Ship3dTempSndState) -> Option<Ship3dTempSndEffect> {
+    if !state.trigger {
+        return Some(Ship3dTempSndEffect::default());
+    }
+
+    let selected_callback_offset =
+        SHIP_3D_TEMP_SND_CALLBACK_OFFSETS.get(usize::from(state.phase))?;
+    let mut effect = Ship3dTempSndEffect {
+        ran: true,
+        selected_callback_offset: Some(*selected_callback_offset),
+        load_snd_bank_path: Some(SHIP_3D_TEMP_SND_PATH_OFFSET),
+        restore_snd_bank_path: Some(SHIP_3D_TB_SND_PATH_OFFSET),
+        preserved_mouse_position: true,
+        reset_callback_bank_gate: true,
+        called_presentation_callback: true,
+        reset_hold_ticks: true,
+        wrote_viewport_descriptor: true,
+        ..Ship3dTempSndEffect::default()
+    };
+
+    state.trigger = false;
+    state.auxiliary_trigger = false;
+    state.phase = next_ship_3d_temp_snd_phase(state.phase);
+    effect.next_phase = Some(state.phase);
+    state.hold_ticks = 0;
+    state.fullscreen_refresh = true;
+    state.viewport_descriptor = SHIP_3D_TEMP_SND_VIEWPORT_DESCRIPTOR;
+
+    if state.sequence_active {
+        state.plane_copy_enabled = false;
+        effect.temporarily_disabled_plane_copy = true;
+        state.plane_copy_enabled = true;
+        state.scene_selector = SHIP_3D_TEMP_SND_SCENE_SELECTOR_SENTINEL;
+        effect.enabled_plane_copy = true;
+        effect.reset_scene_selector = true;
+        effect.sequence_branch = true;
+    } else {
+        state.setup_flag_a = false;
+        state.setup_flag_b = false;
+        effect.reset_setup_flags = true;
+        effect.non_sequence_branch = true;
+    }
+
+    Some(effect)
+}
+
 pub fn build_ship_3d_navigation_source_records(
     source_entries: &[Ship3dNavigationSourceEntry],
     records: &[Ship3dNavigationRuntimeRecord],
@@ -1106,11 +1196,7 @@ pub fn ship_3d_binary_sqrt(value: u32) -> Option<u16> {
         if ax == 0 {
             return Some(ax);
         }
-        if ax & 0xff00 != 0 {
-            0x00ff
-        } else {
-            0x000f
-        }
+        if ax & 0xff00 != 0 { 0x00ff } else { 0x000f }
     };
 
     loop {
@@ -1557,6 +1643,15 @@ fn rebuild_nav_choice_special_target_records(
     None
 }
 
+fn next_ship_3d_temp_snd_phase(phase: u8) -> u8 {
+    let next = phase.wrapping_add(1);
+    if next == SHIP_3D_TEMP_SND_PHASE_COUNT {
+        0
+    } else {
+        next
+    }
+}
+
 fn append_ship_3d_navigation_source_children(
     source_entries: &[Ship3dNavigationSourceEntry],
     records: &[Ship3dNavigationRuntimeRecord],
@@ -1832,9 +1927,11 @@ mod tests {
             &dest[copied.second_dest_start..copied.second_dest_start + copied.byte_count],
             &source[copied.second_source_start..copied.second_source_start + copied.byte_count]
         );
-        assert!(dest[copied.byte_count..copied.second_dest_start]
-            .iter()
-            .all(|value| *value == 0xee));
+        assert!(
+            dest[copied.byte_count..copied.second_dest_start]
+                .iter()
+                .all(|value| *value == 0xee)
+        );
         assert_eq!(copied.new_scroll_value, Some(0x64));
     }
 
@@ -3133,6 +3230,140 @@ mod tests {
         );
         assert_eq!(state.selected_choice, 0);
         assert_eq!(state.hud_flags, 0);
+    }
+
+    #[test]
+    fn temp_snd_setup_without_trigger_is_noop() {
+        let mut state = Ship3dTempSndState {
+            phase: 1,
+            plane_copy_enabled: false,
+            scene_selector: 0x1234,
+            hold_ticks: 0x0055,
+            setup_flag_a: true,
+            setup_flag_b: true,
+            ..Ship3dTempSndState::default()
+        };
+
+        let effect = run_ship_3d_temp_snd_setup(&mut state).unwrap();
+
+        assert_eq!(effect, Ship3dTempSndEffect::default());
+        assert_eq!(
+            state,
+            Ship3dTempSndState {
+                phase: 1,
+                plane_copy_enabled: false,
+                scene_selector: 0x1234,
+                hold_ticks: 0x0055,
+                setup_flag_a: true,
+                setup_flag_b: true,
+                ..Ship3dTempSndState::default()
+            }
+        );
+    }
+
+    #[test]
+    fn temp_snd_setup_cycles_phase_and_runs_sequence_branch() {
+        let mut state = Ship3dTempSndState {
+            trigger: true,
+            auxiliary_trigger: true,
+            phase: 0,
+            sequence_active: true,
+            plane_copy_enabled: false,
+            scene_selector: 0x2222,
+            hold_ticks: 0x0040,
+            setup_flag_a: true,
+            setup_flag_b: true,
+            ..Ship3dTempSndState::default()
+        };
+
+        let effect = run_ship_3d_temp_snd_setup(&mut state).unwrap();
+
+        assert_eq!(
+            effect,
+            Ship3dTempSndEffect {
+                ran: true,
+                selected_callback_offset: Some(0x0087),
+                next_phase: Some(1),
+                load_snd_bank_path: Some(SHIP_3D_TEMP_SND_PATH_OFFSET),
+                restore_snd_bank_path: Some(SHIP_3D_TB_SND_PATH_OFFSET),
+                preserved_mouse_position: true,
+                reset_callback_bank_gate: true,
+                called_presentation_callback: true,
+                reset_hold_ticks: true,
+                wrote_viewport_descriptor: true,
+                sequence_branch: true,
+                temporarily_disabled_plane_copy: true,
+                enabled_plane_copy: true,
+                reset_scene_selector: true,
+                ..Ship3dTempSndEffect::default()
+            }
+        );
+        assert!(!state.trigger);
+        assert!(!state.auxiliary_trigger);
+        assert_eq!(state.phase, 1);
+        assert!(state.plane_copy_enabled);
+        assert_eq!(
+            state.scene_selector,
+            SHIP_3D_TEMP_SND_SCENE_SELECTOR_SENTINEL
+        );
+        assert_eq!(state.hold_ticks, 0);
+        assert!(state.fullscreen_refresh);
+        assert_eq!(
+            state.viewport_descriptor,
+            SHIP_3D_TEMP_SND_VIEWPORT_DESCRIPTOR
+        );
+        assert!(state.setup_flag_a);
+        assert!(state.setup_flag_b);
+    }
+
+    #[test]
+    fn temp_snd_setup_wraps_phase_and_runs_non_sequence_branch() {
+        let mut state = Ship3dTempSndState {
+            trigger: true,
+            auxiliary_trigger: true,
+            phase: 2,
+            sequence_active: false,
+            plane_copy_enabled: false,
+            scene_selector: 0x3333,
+            hold_ticks: 0x0040,
+            setup_flag_a: true,
+            setup_flag_b: true,
+            ..Ship3dTempSndState::default()
+        };
+
+        let effect = run_ship_3d_temp_snd_setup(&mut state).unwrap();
+
+        assert_eq!(
+            effect,
+            Ship3dTempSndEffect {
+                ran: true,
+                selected_callback_offset: Some(0x009c),
+                next_phase: Some(0),
+                load_snd_bank_path: Some(SHIP_3D_TEMP_SND_PATH_OFFSET),
+                restore_snd_bank_path: Some(SHIP_3D_TB_SND_PATH_OFFSET),
+                preserved_mouse_position: true,
+                reset_callback_bank_gate: true,
+                called_presentation_callback: true,
+                reset_hold_ticks: true,
+                wrote_viewport_descriptor: true,
+                non_sequence_branch: true,
+                reset_setup_flags: true,
+                ..Ship3dTempSndEffect::default()
+            }
+        );
+        assert!(!state.trigger);
+        assert!(!state.auxiliary_trigger);
+        assert_eq!(state.phase, 0);
+        assert!(!state.plane_copy_enabled);
+        assert_eq!(state.scene_selector, 0x3333);
+        assert_eq!(state.hold_ticks, 0);
+        assert!(state.fullscreen_refresh);
+        assert_eq!(
+            state.viewport_descriptor,
+            SHIP_3D_TEMP_SND_VIEWPORT_DESCRIPTOR
+        );
+        assert!(!state.setup_flag_a);
+        assert!(!state.setup_flag_b);
     }
 
     #[test]
