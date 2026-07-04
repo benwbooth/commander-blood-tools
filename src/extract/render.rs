@@ -103,6 +103,38 @@ pub(super) fn copy_framebuffer_full_indexed(dst: &mut [u8], src: &[u8]) {
     dst[..len].copy_from_slice(&src[..len]);
 }
 
+pub(super) fn remap_rect_indexed_clipped(
+    fb: &mut [u8],
+    table: &[u8; 256],
+    x: isize,
+    y: isize,
+    width: isize,
+    height: isize,
+    clip: (usize, usize, usize, usize),
+) {
+    if width <= 0 || height <= 0 || fb.len() < VIEWPORT_W * VIEWPORT_H {
+        return;
+    }
+
+    let (clip_left, clip_right, clip_top, clip_bottom) = clip;
+    let x0 = x.max(clip_left as isize).max(0) as usize;
+    let y0 = y.max(clip_top as isize).max(0) as usize;
+    let x1 = (x + width)
+        .min(clip_right as isize)
+        .min(VIEWPORT_W as isize)
+        .max(x0 as isize) as usize;
+    let y1 = (y + height)
+        .min(clip_bottom as isize)
+        .min(VIEWPORT_H as isize)
+        .max(y0 as isize) as usize;
+
+    for row in y0..y1 {
+        for px in &mut fb[row * VIEWPORT_W + x0..row * VIEWPORT_W + x1] {
+            *px = table[*px as usize];
+        }
+    }
+}
+
 pub(super) fn copy_vga_planar_to_linear_indexed(dst: &mut [u8], planes: &[u8]) {
     let len = VIEWPORT_W * VIEWPORT_H;
     let plane_len = len / 4;
@@ -592,6 +624,36 @@ mod tests {
         assert_eq!(dst[0], 11);
         assert_eq!(dst[len - 1], 22);
         assert_eq!(dst[len], 3);
+    }
+
+    #[test]
+    fn recovered_rect_palette_remap_clips_and_uses_source_pixel_as_table_index() {
+        let mut table = [0u8; 256];
+        for (idx, value) in table.iter_mut().enumerate() {
+            *value = 255 - idx as u8;
+        }
+        let mut fb = vec![0u8; VIEWPORT_W * VIEWPORT_H];
+        fb[SCENE_TOP * VIEWPORT_W + 318] = 10;
+        fb[SCENE_TOP * VIEWPORT_W + 319] = 11;
+        fb[(SCENE_TOP + 1) * VIEWPORT_W + 318] = 12;
+        fb[(SCENE_TOP + 1) * VIEWPORT_W + 319] = 13;
+        fb[(SCENE_TOP + 2) * VIEWPORT_W + 318] = 14;
+
+        remap_rect_indexed_clipped(
+            &mut fb,
+            &table,
+            318,
+            SCENE_TOP as isize,
+            8,
+            8,
+            (0, VIEWPORT_W, SCENE_TOP, SCENE_TOP + 2),
+        );
+
+        assert_eq!(fb[SCENE_TOP * VIEWPORT_W + 318], 245);
+        assert_eq!(fb[SCENE_TOP * VIEWPORT_W + 319], 244);
+        assert_eq!(fb[(SCENE_TOP + 1) * VIEWPORT_W + 318], 243);
+        assert_eq!(fb[(SCENE_TOP + 1) * VIEWPORT_W + 319], 242);
+        assert_eq!(fb[(SCENE_TOP + 2) * VIEWPORT_W + 318], 14);
     }
 
     #[test]

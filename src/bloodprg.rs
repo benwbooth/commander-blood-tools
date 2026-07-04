@@ -39,6 +39,7 @@ pub const RENDER_FIXED_8X8_TEXT_OFFSET: u16 = 0x00d6;
 pub const RENDER_FONT_STRING_WIDTH_OFFSET: u16 = 0x013d;
 pub const RENDER_UI_TEXT_OFFSET: u16 = 0x0176;
 pub const RENDER_STRING_OFFSET: u16 = 0x0202;
+pub const RENDER_FRAMEBUFFER_RECT_REMAP_OFFSET: u16 = 0x040e;
 pub const RENDER_PLANAR_UI_TEXT_OFFSET: u16 = 0x0498;
 pub const RENDER_PLANAR_DIALOGUE_TEXT_OFFSET: u16 = 0x05de;
 pub const RENDER_SUBTITLE_REVEAL_OFFSET: u16 = 0x06a0;
@@ -54,6 +55,7 @@ pub const RENDER_FRAMEBUFFER_COPY_OFFSET: u16 = 0x0eb6;
 pub const RENDER_SECONDARY_FRAMEBUFFER_COPY_OFFSET: u16 = 0x0ecb;
 pub const RENDER_VGA_PLANAR_TO_LINEAR_COPY_OFFSET: u16 = 0x0ee0;
 pub const RENDER_PLANAR_COPY_OFFSET: u16 = 0x0f3e;
+pub const RENDER_RESOURCE_FILE_LOAD_OFFSET: u16 = 0x1037;
 pub const RENDER_SPRITE_SLOT_LOAD_OFFSET: u16 = 0x11be;
 pub const RENDER_SPRITE_SLOT_STATE_OFFSET: u16 = 0x1241;
 pub const RENDER_SPRITE_SLOT_RESOURCE_LOAD_OFFSET: u16 = 0x1140;
@@ -61,6 +63,7 @@ pub const RENDER_SPRITE_SLOT_POSITION_OFFSET: u16 = 0x127d;
 pub const RENDER_SPRITE_SLOT_RANGE_DIRTY_OFFSET: u16 = 0x12b0;
 pub const RENDER_SPRITE_SLOT_EXTENT_OFFSET: u16 = 0x133d;
 pub const RENDER_SPRITE_SLOT_COMMIT_RANGE_OFFSET: u16 = 0x1467;
+pub const RENDER_SPRITE_SLOT_DIRTY_RANGE_RENDER_OFFSET: u16 = 0x14e1;
 pub const RENDER_DIRTY_RECTS_COPY_OFFSET: u16 = 0x210d;
 pub const NAV_CODE_SEGMENT: u16 = 0x071e;
 pub const NAV_ACTOR_SUBDISPATCH_TABLE_FILE_OFFSET: usize = 0x007eb4;
@@ -937,6 +940,7 @@ fn render_target_name(target_offset: u16) -> &'static str {
         RENDER_FONT_STRING_WIDTH_OFFSET => "font_string_width_measure",
         RENDER_UI_TEXT_OFFSET => "ui_text_render_10row",
         RENDER_STRING_OFFSET => "render_string_entry",
+        RENDER_FRAMEBUFFER_RECT_REMAP_OFFSET => "framebuffer_rect_palette_remap",
         RENDER_PLANAR_UI_TEXT_OFFSET => "planar_ui_text_render_10row",
         RENDER_PLANAR_DIALOGUE_TEXT_OFFSET => "planar_dialogue_text_render",
         RENDER_SUBTITLE_REVEAL_OFFSET => "subtitle_reveal_draw_wrapper",
@@ -952,6 +956,7 @@ fn render_target_name(target_offset: u16) -> &'static str {
         RENDER_SECONDARY_FRAMEBUFFER_COPY_OFFSET => "secondary_framebuffer_copy_full",
         RENDER_VGA_PLANAR_TO_LINEAR_COPY_OFFSET => "vga_planar_to_linear_framebuffer_copy",
         RENDER_PLANAR_COPY_OFFSET => "planar_framebuffer_copy",
+        RENDER_RESOURCE_FILE_LOAD_OFFSET => "resource_file_payload_load",
         RENDER_SPRITE_SLOT_RESOURCE_LOAD_OFFSET => "sprite_slot_resource_frame_load",
         RENDER_SPRITE_SLOT_LOAD_OFFSET => "sprite_slot_frame_load",
         RENDER_SPRITE_SLOT_STATE_OFFSET => "sprite_slot_state_update",
@@ -959,10 +964,8 @@ fn render_target_name(target_offset: u16) -> &'static str {
         RENDER_SPRITE_SLOT_RANGE_DIRTY_OFFSET => "sprite_slot_range_mark_dirty",
         RENDER_SPRITE_SLOT_EXTENT_OFFSET => "sprite_slot_extent_update",
         RENDER_SPRITE_SLOT_COMMIT_RANGE_OFFSET => "sprite_slot_commit_dirty_range",
+        RENDER_SPRITE_SLOT_DIRTY_RANGE_RENDER_OFFSET => "sprite_slot_dirty_range_render",
         RENDER_DIRTY_RECTS_COPY_OFFSET => "dirty_rects_copy_secondary_to_primary",
-        0x1037 => "framebuffer_object_init",
-        0x14e1 => "sprite_range_render",
-        0x040e => "sprite_blit_or_copy",
         _ => "unclassified_render_entry",
     }
 }
@@ -1006,6 +1009,9 @@ fn render_call_site_note(file_offset: usize, target_offset: u16) -> &'static str
         (0x001ac6, RENDER_PLANAR_UI_TEXT_OFFSET) => {
             "startup/presentation path renders 10-row UI text through VGA plane masks into GS:0x521D"
         }
+        (0x001eb1 | 0x0078c4 | 0x00851d | 0x008edc, RENDER_FRAMEBUFFER_RECT_REMAP_OFFSET) => {
+            "applies a 256-byte palette remap table to an already-rendered clipped primary-framebuffer rectangle"
+        }
         (0x0072f6, RENDER_PLANAR_DIALOGUE_TEXT_OFFSET) => {
             "dialogue line-layout path renders dialogue-font text through VGA plane masks into GS:0x5219"
         }
@@ -1023,6 +1029,12 @@ fn render_call_site_note(file_offset: usize, target_offset: u16) -> &'static str
         }
         (0x008d14, RENDER_VGA_PLANAR_TO_LINEAR_COPY_OFFSET) => {
             "captures VGA A000:0xC000 planar page bytes into a linear RAM framebuffer before sprite/object composition"
+        }
+        (0x000fb9, RENDER_RESOURCE_FILE_LOAD_OFFSET) => {
+            "loads resource index 0x2C by filename through the FS resource-name table"
+        }
+        (0x00597f | 0x0070cd, RENDER_RESOURCE_FILE_LOAD_OFFSET) => {
+            "loads a high-bit resource index directly into the caller-provided ES:DI buffer"
         }
         (0x008d76 | 0x008d96 | 0x008df5 | 0x0095e7, RENDER_SPRITE_SLOT_RESOURCE_LOAD_OFFSET) => {
             "loads a resolver-backed resource frame into a 32-byte sprite slot at GS:0x6212"
@@ -1044,6 +1056,9 @@ fn render_call_site_note(file_offset: usize, target_offset: u16) -> &'static str
         }
         (0x007849 | 0x009575 | 0x00b1d0, RENDER_SPRITE_SLOT_COMMIT_RANGE_OFFSET) => {
             "commits dirty sprite-slot geometry into the previous-geometry fields before range rendering/copyback"
+        }
+        (0x00789a | 0x00957a | 0x00b9b5, RENDER_SPRITE_SLOT_DIRTY_RANGE_RENDER_OFFSET) => {
+            "renders the requested sprite-slot range against dirty rectangles in GS:0x6612"
         }
         (0x00787f | 0x008ea0 | 0x00b1d8, RENDER_DIRTY_RECTS_COPY_OFFSET) => {
             "copies dirty rectangles from secondary framebuffer GS:0x5229 back into primary framebuffer GS:0x5221"
@@ -1104,6 +1119,9 @@ fn render_call_site_note(file_offset: usize, target_offset: u16) -> &'static str
         (_, RENDER_PLANAR_DIALOGUE_TEXT_OFFSET) => {
             "renders dialogue-font text through VGA plane masks into the GS:0x5219 framebuffer"
         }
+        (_, RENDER_FRAMEBUFFER_RECT_REMAP_OFFSET) => {
+            "applies a palette remap lookup table to a clipped primary-framebuffer rectangle"
+        }
         (_, RENDER_PLANAR_HORIZONTAL_LINE_OFFSET) => {
             "draws a clipped horizontal line into the GS:0x5219 planar framebuffer"
         }
@@ -1118,6 +1136,12 @@ fn render_call_site_note(file_offset: usize, target_offset: u16) -> &'static str
         }
         (_, RENDER_VGA_PLANAR_TO_LINEAR_COPY_OFFSET) => {
             "copies four VGA read-map planes into one linear 320x200 framebuffer"
+        }
+        (_, RENDER_RESOURCE_FILE_LOAD_OFFSET) => {
+            "loads a resource file payload addressed by the FS resource-name table"
+        }
+        (_, RENDER_SPRITE_SLOT_DIRTY_RANGE_RENDER_OFFSET) => {
+            "renders active dirty sprite slots through the dirty-rectangle list"
         }
         _ => "unclassified render-segment call",
     }
@@ -1593,6 +1617,15 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         comment: "dialogue string renderer entry; BX=x, DX=y, SI=ASCIIZ string, DL=color",
     },
     BinarySymbol {
+        name: "framebuffer_rect_palette_remap",
+        file_offset: 0x00339e,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_FRAMEBUFFER_RECT_REMAP_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "clips a primary-framebuffer rectangle and replaces each pixel by table[pixel] using the 256-byte table at DS:SI",
+    },
+    BinarySymbol {
         name: "planar_ui_text_render_10row",
         file_offset: 0x003428,
         segment: Some(RENDER_SEGMENT),
@@ -1737,6 +1770,15 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         comment: "copies planar/interleaved source data into primary framebuffer DS:0x5219",
     },
     BinarySymbol {
+        name: "resource_file_payload_load",
+        file_offset: 0x003fc7,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_RESOURCE_FILE_LOAD_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "looks up a resource filename in the FS:0x0C04 table and loads the payload either through the resource allocator or into caller-provided ES:DI",
+    },
+    BinarySymbol {
         name: "sprite_slot_resource_frame_load",
         file_offset: 0x0040d0,
         segment: Some(RENDER_SEGMENT),
@@ -1798,6 +1840,15 @@ pub const KNOWN_SYMBOLS: &[BinarySymbol] = &[
         ds_offset: None,
         kind: "presentation",
         comment: "commits dirty sprite slot current geometry into previous-geometry fields across an AX..BX range",
+    },
+    BinarySymbol {
+        name: "sprite_slot_dirty_range_render",
+        file_offset: 0x004471,
+        segment: Some(RENDER_SEGMENT),
+        offset: Some(RENDER_SPRITE_SLOT_DIRTY_RANGE_RENDER_OFFSET),
+        ds_offset: None,
+        kind: "presentation",
+        comment: "walks active sprite slots in an AX..BX range, intersects each slot with dirty rectangles at GS:0x6612, dispatches the selected blitter, and clears the dirty bit",
     },
     BinarySymbol {
         name: "dirty_rects_copy_secondary_to_primary",
@@ -2515,6 +2566,10 @@ mod tests {
             Some(&3)
         );
         assert_eq!(target_counts.get(&RENDER_UI_TEXT_OFFSET), Some(&6));
+        assert_eq!(
+            target_counts.get(&RENDER_FRAMEBUFFER_RECT_REMAP_OFFSET),
+            Some(&7)
+        );
         assert_eq!(target_counts.get(&RENDER_PLANAR_UI_TEXT_OFFSET), Some(&1));
         assert_eq!(
             target_counts.get(&RENDER_PLANAR_DIALOGUE_TEXT_OFFSET),
@@ -2549,6 +2604,14 @@ mod tests {
             Some(&1)
         );
         assert_eq!(target_counts.get(&RENDER_PLANAR_COPY_OFFSET), Some(&6));
+        assert_eq!(
+            target_counts.get(&RENDER_RESOURCE_FILE_LOAD_OFFSET),
+            Some(&4)
+        );
+        assert_eq!(
+            target_counts.get(&RENDER_SPRITE_SLOT_DIRTY_RANGE_RENDER_OFFSET),
+            Some(&7)
+        );
 
         let target_name = |target_offset| {
             sites
@@ -2574,6 +2637,10 @@ mod tests {
             "font_string_width_measure"
         );
         assert_eq!(target_name(RENDER_UI_TEXT_OFFSET), "ui_text_render_10row");
+        assert_eq!(
+            target_name(RENDER_FRAMEBUFFER_RECT_REMAP_OFFSET),
+            "framebuffer_rect_palette_remap"
+        );
         assert_eq!(
             target_name(RENDER_PLANAR_UI_TEXT_OFFSET),
             "planar_ui_text_render_10row"
@@ -2624,6 +2691,10 @@ mod tests {
             "planar_framebuffer_copy"
         );
         assert_eq!(
+            target_name(RENDER_RESOURCE_FILE_LOAD_OFFSET),
+            "resource_file_payload_load"
+        );
+        assert_eq!(
             target_name(RENDER_SPRITE_SLOT_RESOURCE_LOAD_OFFSET),
             "sprite_slot_resource_frame_load"
         );
@@ -2646,6 +2717,10 @@ mod tests {
         assert_eq!(
             target_name(RENDER_DIRTY_RECTS_COPY_OFFSET),
             "dirty_rects_copy_secondary_to_primary"
+        );
+        assert_eq!(
+            target_name(RENDER_SPRITE_SLOT_DIRTY_RANGE_RENDER_OFFSET),
+            "sprite_slot_dirty_range_render"
         );
 
         let palette_load = sites
@@ -2694,6 +2769,17 @@ mod tests {
         assert_eq!(ui_text.target_name, "ui_text_render_10row");
         assert!(ui_text.note.contains("10-row UI text"));
 
+        let rect_remap = sites
+            .iter()
+            .find(|site| site.file_offset == 0x0078c4)
+            .expect("framebuffer palette remap call");
+        assert_eq!(
+            rect_remap.target_offset,
+            RENDER_FRAMEBUFFER_RECT_REMAP_OFFSET
+        );
+        assert_eq!(rect_remap.target_name, "framebuffer_rect_palette_remap");
+        assert!(rect_remap.note.contains("palette remap"));
+
         let planar_dialogue_text = sites
             .iter()
             .find(|site| site.file_offset == 0x0072f6)
@@ -2740,6 +2826,17 @@ mod tests {
         );
         assert_eq!(planar_capture.ax_value, Some(0xa000));
         assert!(planar_capture.note.contains("A000:0xC000"));
+
+        let direct_resource_load = sites
+            .iter()
+            .find(|site| site.file_offset == 0x00597f)
+            .expect("direct-buffer resource payload load call");
+        assert_eq!(
+            direct_resource_load.target_offset,
+            RENDER_RESOURCE_FILE_LOAD_OFFSET
+        );
+        assert_eq!(direct_resource_load.ax_value, Some(0x8007));
+        assert!(direct_resource_load.note.contains("ES:DI"));
 
         let resource_load = sites
             .iter()
@@ -2789,6 +2886,17 @@ mod tests {
             RENDER_SPRITE_SLOT_COMMIT_RANGE_OFFSET
         );
         assert_eq!(slot_commit.ax_value, Some(21));
+
+        let slot_render = sites
+            .iter()
+            .find(|site| site.file_offset == 0x00957a)
+            .expect("dirty sprite slot range render call");
+        assert_eq!(
+            slot_render.target_offset,
+            RENDER_SPRITE_SLOT_DIRTY_RANGE_RENDER_OFFSET
+        );
+        assert_eq!(slot_render.ax_value, Some(21));
+        assert!(slot_render.note.contains("dirty rectangles"));
 
         let dirty_copy = sites
             .iter()

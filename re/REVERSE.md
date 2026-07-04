@@ -837,6 +837,10 @@ Named targets that are already tied to code behavior:
   tables `GS:0x7362/0x7412/0x7442`.
 - `0x0299:0x0202` (`render_string_entry`): dialogue/UI string renderer using the
   embedded font tables.
+- `0x0299:0x040E` (`framebuffer_rect_palette_remap`): clips a primary-framebuffer
+  rectangle and replaces each existing pixel with `table[pixel]` from the
+  256-byte table at `DS:SI`; direct callers use the palette-remap tables at
+  `0x5F11` and `0x6011` for UI/HUD and transition effects.
 - `0x0299:0x0498` (`planar_ui_text_render_10row`): renders 10-row UI text
   through VGA plane masks into framebuffer pointer `GS:0x521D`.
 - `0x0299:0x05DE` (`planar_dialogue_text_render`): renders dialogue-font text
@@ -870,6 +874,10 @@ Named targets that are already tied to code behavior:
   composition.
 - `0x0299:0x0F3E` (`planar_framebuffer_copy`): copies planar/interleaved image
   data into primary framebuffer `DS:0x5219`.
+- `0x0299:0x1037` (`resource_file_payload_load`): looks up a resource filename in
+  the FS resource-name table (`FS:0x0C04 + AX*0x10`) and loads the file payload;
+  high-bit `AX` callers read directly into the caller-provided `ES:DI` buffer,
+  while non-negative callers route through the resource allocator/resolver.
 - `0x0299:0x1140` (`sprite_slot_resource_frame_load`): resolves a resource frame
   through `0x04B9:0x0190` and loads it into the 32-byte sprite slot selected by
   `AX` in the `GS:0x6212` table.
@@ -887,22 +895,26 @@ Named targets that are already tied to code behavior:
 - `0x0299:0x1467` (`sprite_slot_commit_dirty_range`): commits dirty slot current
   geometry into previous-geometry fields across an `AX..BX` range; also handles
   the `GS:0x5249` global clip snapshot into the dirty-rect list at `GS:0x6612`.
+- `0x0299:0x14E1` (`sprite_slot_dirty_range_render`): walks the sprite slot range
+  `AX..BX`, skips inactive slots, intersects each active slot rectangle with the
+  dirty-rectangle list at `GS:0x6612`, dispatches the selected internal blitter
+  from the slot state word, and clears the slot dirty bit after processing.
 - `0x0299:0x210D` (`dirty_rects_copy_secondary_to_primary`): copies dirty
   rectangles described at `ES:DI` from secondary framebuffer `GS:0x5229` back
   into primary framebuffer `GS:0x5221`.
 
 This is still a caller map, not a full renderer decompilation. It removes the
 guesswork about which external render hooks the VM/presentation state machine
-uses. All 32 direct render-segment target offsets are now named; the remaining
-render RE gap is deeper porting of the 3 provisionally named sprite/object
-targets whose semantics still need instruction-by-instruction recovery.
+uses. All 32 direct render-segment target offsets are now named and tied to
+instruction behavior; the remaining render RE gap is deeper porting of the
+internal sprite blitter routines dispatched by `sprite_slot_dirty_range_render`.
 
 Rust now ports the safe framebuffer side of the recovered primitives in
 `src/extract/render.rs`: clipped rectangle fill (`0x0CDC`), current scene-band
 fill (`0x0DEB`/`0x0E2F` shape), full-viewport framebuffer copy
-(`0x0EB6`/`0x0ECB`), and VGA planar-to-linear capture (`0x0EE0`). The
-character-HNM clear path uses the clipped fill helper instead of open-coded
-per-pixel bounds checks.
+(`0x0EB6`/`0x0ECB`), palette-remap rectangle (`0x040E`), and VGA
+planar-to-linear capture (`0x0EE0`). The character-HNM clear path uses the
+clipped fill helper instead of open-coded per-pixel bounds checks.
 
 ### Audio subsystem (segment 0x0B1B) — located
 
@@ -1351,15 +1363,17 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       across 32 target offsets. Named targets include the text renderers,
       fixed 8x8/UI font helpers, planar text/line primitives, VGA DAC palette
       load/clear callbacks, framebuffer fill/copy helpers, subtitle reveal
-      wrapper, dither-rectangle fill, VGA planar capture, sprite-slot
-      frame/position/extent/dirty-range callbacks, and dirty-rectangle copyback;
-      the remaining target semantics stay open RE work instead of being guessed
-      by the exporter.
+      wrapper, palette-remap and dither-rectangle fills, resource payload load,
+      VGA planar capture, sprite-slot frame/position/extent/dirty-range
+      callbacks, dirty-range rendering, and dirty-rectangle copyback; the
+      remaining sprite blitter internals stay open RE work instead of being
+      guessed by the exporter.
 - [x] Port recovered framebuffer fill/copy primitives:
       `src/extract/render.rs` now has tested Rust helpers for the clipped
-      rectangle fill, scene-band fill, and full 320x200 framebuffer copy shapes
-      recovered from render segment `0x0299`; the character-HNM clear path uses
-      the clipped rectangle helper.
+      rectangle fill, palette-remap rectangle, scene-band fill, full 320x200
+      framebuffer copy, and VGA planar-to-linear capture shapes recovered from
+      render segment `0x0299`; the character-HNM clear path uses the clipped
+      rectangle helper.
 - [x] Emit binary-derived SND bank-loader call sites:
       `src/bloodprg.rs` scans direct far calls to `0x0B1B:0x0855`, recovers the
       upstream `AX` bank mode plus `SI` static SND path, and test-locks the seven
