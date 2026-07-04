@@ -475,6 +475,16 @@ embed their own `pl` chunks; there is no standalone `.pal` resource), so the las
 step is identifying which resource sets the ship-view palette. The orb is
 grayscale in-game, so even the ramp render already matches it closely.
 
+Character `.spr` (SCRUTER/JERRY/IZWALITO, all 104x80, RLE) decode correctly
+(right dimensions, dozens of distinct indices) but need a palette NOT yet
+identified: rendering `JERRY.SPR` with the location palette (`petrol10.hnm`) OR
+Jerry's idle-head palette (`pe/aajer.hnm`) both give a hollow outline with a
+black interior, so neither is the character-sprite palette. The `.spr` character
+palette source (a dedicated character/ship-UI palette, or a palette that ships
+with the sprite bank / is set on scene entry) is the open sub-question for
+color-accurate character rendering; the HNM palette-block format itself is known
+(`render.rs::parse_palette_block`, 6-bit RGB expanded `(v<<2)|(v>>4)`).
+
 CONNECTION TO EXISTING WORK: the profile table at `FS:0x11F4` (file `0x0D3E4`)
 that `vm_resource_profile_select` (`0x53A0`) copies into `DS:0x6712` is the
 **same static table already parsed by the extractor** as `ScriptResourceProfile`
