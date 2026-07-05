@@ -165,6 +165,9 @@ pub struct EngineState {
     /// Per-line resolved talk-HNM asset path (the speaker's animation for each
     /// dialogue line), loaded automatically as playback advances.
     dialogue_scene_paths: Vec<Option<std::path::PathBuf>>,
+    /// The next scene/profile index this script's D2 handoff requests (the
+    /// scene-to-scene dispatch target), or `None` if the script has no successor.
+    pending_profile: Option<u16>,
     /// Optional talk-HNM / scene background for the dialogue scene band, decoded
     /// per frame behind the subtitle.
     scene_hnm: Option<HnmFile>,
@@ -199,6 +202,7 @@ impl EngineState {
             dialogue_hold_frames: 60,
             dialogue_timer: 0,
             dialogue_scene_paths: Vec::new(),
+            pending_profile: None,
             scene_hnm: None,
             scene_palette: [[0u8; 3]; 256],
             framebuffer: vec![0u8; ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT],
@@ -277,7 +281,10 @@ impl EngineState {
                 }
             }
         }
-        self.dialogue = execute_trace(cod, var).line_states;
+        let trace = execute_trace(cod, var);
+        // D2 scene-to-scene handoff: the next scene/profile this script requests.
+        self.pending_profile = trace.pending_script_profile();
+        self.dialogue = trace.line_states;
         self.dialogue_texts = self
             .dialogue
             .iter()
@@ -290,6 +297,19 @@ impl EngineState {
     /// The dialogue line currently being presented, if a script is loaded.
     pub fn current_dialogue(&self) -> Option<&LineState> {
         self.dialogue.get(self.dialogue_cursor)
+    }
+
+    /// The next scene/profile the loaded script's D2 handoff dispatches to (for
+    /// scene-to-scene chaining), or `None` if this is a terminal scene. The driver
+    /// loads that profile's script when the current dialogue finishes.
+    pub fn pending_next_scene(&self) -> Option<u16> {
+        self.pending_profile
+    }
+
+    /// Whether dialogue playback has reached the final line (the point at which the
+    /// D2 handoff to [`EngineState::pending_next_scene`] would fire).
+    pub fn dialogue_finished(&self) -> bool {
+        !self.dialogue.is_empty() && self.dialogue_cursor + 1 >= self.dialogue.len()
     }
 
     /// The current dialogue line's reconstructed subtitle text, if non-empty.
@@ -879,6 +899,42 @@ mod tests {
         e.dialogue_cursor = idx;
         e.load_current_scene();
         assert!(e.scene_hnm.is_some(), "the line's speaker talk-HNM loads");
+    }
+
+    #[test]
+    fn dialogue_exposes_d2_handoff_and_finish() {
+        let read = |n: &[&str]| n.iter().find_map(|p| std::fs::read(p).ok());
+        let (Some(cod), Some(var), Some(dic)) = (
+            read(&[
+                "output/_tmp_iso/SCRIPT1.COD",
+                "../output/_tmp_iso/SCRIPT1.COD",
+            ]),
+            read(&[
+                "output/_tmp_iso/SCRIPT1.VAR",
+                "../output/_tmp_iso/SCRIPT1.VAR",
+            ]),
+            read(&[
+                "output/_tmp_iso/SCRIPT1.DIC",
+                "../output/_tmp_iso/SCRIPT1.DIC",
+            ]),
+        ) else {
+            return;
+        };
+        let mut e = EngineState::new();
+        e.load_dialogue(&cod, &var, &dic);
+        assert!(!e.dialogue_finished(), "not finished at the first line");
+        // pending_next_scene is the D2 handoff target (Some/None both valid; must
+        // be queryable and consistent with a terminal-vs-chaining scene).
+        let _next = e.pending_next_scene();
+        // Drive to the end; dialogue_finished flips true at the last line.
+        e.dialogue_hold_frames = 1;
+        for _ in 0..(e.dialogue_len() as u32 + 2) {
+            e.step(MouseInput::default());
+        }
+        assert!(
+            e.dialogue_finished(),
+            "playback reaches the terminal line (D2 point)"
+        );
     }
 
     #[test]
