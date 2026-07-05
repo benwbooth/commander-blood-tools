@@ -2004,6 +2004,61 @@ pub fn project_star_map_point(
     Some((sx, sy, scale))
 }
 
+/// Projection-accurate star-map nav view: a receding grid of star-system pyramids
+/// projected with the game's decoded projection ([`project_star_map_point`]) plus the
+/// central eye-orb — the systems tile the ground plane and the compass heading pans the
+/// field. Uses the real 0x9BBA projection math (verified), so the perspective is the
+/// game's, not a hand-drawn approximation. `light`/`dark`/`orb` are palette indices.
+pub fn render_star_map_navview_projected(buffer: &mut [u8], light: u8, dark: u8, orb: u8, compass_angle: u16) {
+    const W: isize = SHIP_3D_PROJECTION_SCREEN_WIDTH as isize;
+    const H: isize = SHIP_3D_PROJECTION_SCREEN_HEIGHT as isize;
+    // Camera pitched down over a ground plane of star systems; heading pans in x.
+    let m = match build_ship_3d_projection_matrix(
+        &SHIP_3D_ANGLE_TABLE,
+        Ship3dMatrixAngles { angle_2f71: 0, projection_angle_2f6d: 0, angle_2f6f: 10 },
+    ) {
+        Some(m) => m,
+        None => return,
+    };
+    let origin = [0i32, -3500, 0];
+    let pan = (compass_angle as i32 - 90) * 24; // steer left/right about centre
+    for zi in 0..6 {
+        for xi in -4..=4 {
+            let d = [xi * 2200 + pan, 0, 2500 + zi * 2400];
+            let Some((px, py, _)) = project_star_map_point(d, origin, &m) else {
+                continue;
+            };
+            if !(0..W as i32).contains(&px) || !(0..H as i32).contains(&py) {
+                continue;
+            }
+            // filled pyramid (lit left / shadowed right), size by row (near = bigger)
+            let hh = 7 - zi as isize;
+            for h in 0..hh {
+                let half = hh - h;
+                for x in -half..=half {
+                    let (a, b) = (px as isize + x, py as isize - h);
+                    if (0..W).contains(&a) && (0..H).contains(&b) {
+                        buffer[(b * W + a) as usize] = if x <= 0 { light } else { dark };
+                    }
+                }
+            }
+        }
+    }
+    // Central eye-orb.
+    let (ocx, ocy, r) = (W / 2, 96 + 22, 20isize);
+    for y in -r..=r {
+        for x in -r..=r {
+            let d2 = x * x + y * y;
+            if d2 <= r * r {
+                let (a, b) = (ocx + x, ocy + y);
+                if (0..W).contains(&a) && (0..H).contains(&b) {
+                    buffer[(b * W + a) as usize] = if d2 > (r - 3) * (r - 3) { light } else { orb };
+                }
+            }
+        }
+    }
+}
+
 pub fn render_star_map_navview_panned(
     buffer: &mut [u8],
     light: u8,
@@ -3306,6 +3361,19 @@ mod tests {
         assert_eq!((x, y, sc), (162, 105, 0x40000));
         // depth 0 -> culled
         assert!(project_star_map_point([1, 1, 0], origin, &m).is_none());
+    }
+
+    #[test]
+    fn projected_navview_draws_perspective_grid_and_orb() {
+        let mut fb = vec![0u8; SHIP_3D_PROJECTION_SCREEN_WIDTH * SHIP_3D_PROJECTION_SCREEN_HEIGHT];
+        render_star_map_navview_projected(&mut fb, 200, 90, 240, 90);
+        assert!(fb.iter().any(|&p| p == 200), "lit pyramid faces");
+        assert!(fb.iter().any(|&p| p == 90), "shadowed faces");
+        assert!(fb.iter().any(|&p| p == 240), "orb");
+        // heading pans the grid -> a different heading differs
+        let mut fb2 = vec![0u8; fb.len()];
+        render_star_map_navview_projected(&mut fb2, 200, 90, 240, 40);
+        assert!(fb != fb2, "grid pans with heading");
     }
 
     #[test]

@@ -443,7 +443,7 @@ impl EngineState {
         // Star-map nav grid: a perspective grid of shaded pyramids + eye-orb (the
         // navigable star systems), panned by the compass heading so mouse steering
         // rotates the view (approximating the real game's interactive nav).
-        crate::ship3d::render_star_map_navview_panned(
+        crate::ship3d::render_star_map_navview_projected(
             &mut self.framebuffer,
             200,
             90,
