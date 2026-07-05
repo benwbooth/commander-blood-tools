@@ -1207,7 +1207,11 @@ fn render_dialogue_segments(
         .and_then(|lbm| load_landscape_lbm(dat_dir, lbm))
         .or_else(|| background_hnm.and_then(|hnm| load_planet_hnm(dat_dir, hnm)))
         .unwrap_or_else(|| (vec![0u8; VIEWPORT_W * VIEWPORT_H], [[0u8; 3]; 256]));
-    let (bg_fb, bg_pal) = bg;
+    let (bg_fb, mut bg_pal) = bg;
+    // Scene LBM/HNM palettes leave the reserved subtitle indices 0xFD/0xFE at
+    // [0,0,0], which renders the reveal BLACK (invisible) on some scenes. Set them
+    // to the game's subtitle colour so subtitles show on every background.
+    apply_reserved_subtitle_palette(&mut bg_pal);
     let mut bg_rgb = vec![0u8; VIEWPORT_W * VIEWPORT_H * 3];
     fb_to_rgb(&bg_fb, &bg_pal, &mut bg_rgb);
 

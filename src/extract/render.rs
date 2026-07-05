@@ -1046,6 +1046,24 @@ pub(super) const GAME_FONT_HEIGHT: usize = 8;
 pub(super) const GAME_FONT_LINE_HEIGHT: usize = 8;
 pub(super) const SUBTITLE_COLOR_REVEALED: u8 = 0xFD;
 pub(super) const SUBTITLE_COLOR_REVEAL_EDGE: u8 = 0xFE;
+// The subtitle reveal draws with palette indices 0xFD (revealed) / 0xFE (edge)
+// — see REVERSE.md "0xFD for already-revealed glyphs and 0xFE" for the edge.
+// These are RESERVED high-palette entries (0xC0..0xFF) that the game fills at
+// runtime; a scene's LBM/HNM palette leaves them [0,0,0], so drawing the subtitle
+// through the raw scene palette renders it BLACK (invisible) — verified against a
+// real playthrough where some scenes (e.g. usine/moskit10) showed no subtitle.
+// The near-white [245,245,245] is the game's subtitle colour (matches the fixed
+// RGB used before subtitles moved to palette indices in commit 881b184).
+const SUBTITLE_RGB: [u8; 3] = [245, 245, 245];
+
+/// Set the reserved subtitle-reveal palette entries (0xFD/0xFE) to the game's
+/// subtitle colour. Call on any scene palette before rendering subtitles through
+/// it, so the reveal is visible regardless of what the scene LBM/HNM left at those
+/// reserved indices. Safe: 0xFD/0xFE are reserved and unused by scene backgrounds.
+pub(super) fn apply_reserved_subtitle_palette(pal: &mut [[u8; 3]; 256]) {
+    pal[SUBTITLE_COLOR_REVEALED as usize] = SUBTITLE_RGB;
+    pal[SUBTITLE_COLOR_REVEAL_EDGE as usize] = SUBTITLE_RGB;
+}
 // Space advance: the game's glyph blitter (BLOODPRG.EXE render_string @0x31D7)
 // advances a 0x20 space by 6 pixels (`add di, 6`), not a full glyph cell.
 pub(super) const GAME_FONT_SPACE_ADVANCE: usize = 6;
@@ -1179,6 +1197,37 @@ mod tests {
         let e = game_font_glyph('e').expect("e glyph");
         assert_eq!(e.advance, 8);
         assert_eq!(e.rows, [0x00, 0x00, 0xfc, 0x84, 0xfc, 0x80, 0xfc, 0x00]);
+    }
+
+    #[test]
+    fn reserved_subtitle_palette_makes_reveal_visible_on_black_scene_palette() {
+        // Regression: a scene palette with [0,0,0] at the reserved subtitle
+        // indices (as real LBM/HNM palettes have) rendered subtitles invisible.
+        let mut pal = [[0u8; 3]; 256];
+        assert_eq!(pal[SUBTITLE_COLOR_REVEALED as usize], [0, 0, 0]);
+        assert_eq!(pal[SUBTITLE_COLOR_REVEAL_EDGE as usize], [0, 0, 0]);
+        apply_reserved_subtitle_palette(&mut pal);
+        assert_eq!(pal[SUBTITLE_COLOR_REVEALED as usize], SUBTITLE_RGB);
+        assert_eq!(pal[SUBTITLE_COLOR_REVEAL_EDGE as usize], SUBTITLE_RGB);
+        assert_ne!(SUBTITLE_RGB, [0, 0, 0]);
+
+        // And a full render through such a palette now produces visible pixels.
+        let cues = [SubtitleCue {
+            tick: 0,
+            text: "ME".to_string(),
+            active_line_id: None,
+        }];
+        let mut rgb = vec![0u8; VIEWPORT_W * VIEWPORT_H * 3];
+        render_subtitles_rgb(
+            &mut rgb,
+            &pal,
+            &cues,
+            2.0 / default_subtitle_reveal_chars_per_second(),
+        );
+        assert!(
+            rgb.chunks_exact(3).any(|px| px == SUBTITLE_RGB),
+            "subtitle should be visible after applying reserved palette"
+        );
     }
 
     #[test]

@@ -465,7 +465,11 @@ pub(super) fn decode_hnm_scene_to_mp4(
                 } else {
                     let mut subtitle_fb = fb.clone();
                     render_subtitles_indexed(&mut subtitle_fb, subtitles, time);
-                    fb_to_rgb(&subtitle_fb, &pal, &mut rgb);
+                    // The HNM palette leaves the reserved subtitle indices
+                    // 0xFD/0xFE at [0,0,0]; set them so the reveal is visible.
+                    let mut sub_pal = pal;
+                    apply_reserved_subtitle_palette(&mut sub_pal);
+                    fb_to_rgb(&subtitle_fb, &sub_pal, &mut rgb);
                 }
                 stdin.write_all(&rgb)?;
                 global_frame += 1;
