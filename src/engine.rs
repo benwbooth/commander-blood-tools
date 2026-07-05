@@ -38,7 +38,49 @@ use crate::ship3d::{
     render_ship_3d_starfield,
 };
 use crate::sprite::{SpriteFrameImage, blit_sprite_frame_centered, decode_sprite_bank_indices};
-use crate::vm::{LineState, execute_trace};
+use crate::vm::{LineState, VmToken, execute_trace, walk};
+use std::collections::HashMap;
+
+/// Parse a `SCRIPTn.DIC` dictionary: NUL-terminated words keyed by their byte
+/// offset (a Text token's `word_offsets` index into this).
+fn parse_dictionary(dic: &[u8]) -> HashMap<u16, String> {
+    let mut words = HashMap::new();
+    let mut pos = 0usize;
+    while pos < dic.len() {
+        let start = pos;
+        while pos < dic.len() && dic[pos] != 0 {
+            pos += 1;
+        }
+        if pos > start {
+            words.insert(
+                start as u16,
+                String::from_utf8_lossy(&dic[start..pos]).into_owned(),
+            );
+        }
+        pos += 1;
+    }
+    words
+}
+
+/// Join dictionary words into a subtitle line: a space between words unless the
+/// next begins with attaching punctuation (mirrors `assemble_dialogue`).
+fn assemble_words(parts: &[String]) -> String {
+    let parts: Vec<&String> = parts.iter().filter(|w| !w.is_empty()).collect();
+    let mut out = String::new();
+    for (i, w) in parts.iter().enumerate() {
+        out.push_str(w);
+        if i + 1 < parts.len() {
+            let attaches = matches!(
+                parts[i + 1].chars().next(),
+                Some(',' | '.' | '?' | '!' | ':')
+            );
+            if !attaches {
+                out.push(' ');
+            }
+        }
+    }
+    out
+}
 
 /// Screen dimensions of the engine framebuffer (VGA mode 13h / mode-X, 320x200).
 pub const ENGINE_SCREEN_WIDTH: usize = 320;
@@ -72,6 +114,8 @@ pub struct EngineState {
     /// Dialogue line sequence for the loaded script (from the VM trace), played
     /// back frame-by-frame — the script/scene stepping the main loop drives.
     dialogue: Vec<LineState>,
+    /// The reconstructed subtitle text for each `dialogue` line (parallel vec).
+    dialogue_texts: Vec<String>,
     /// Playback cursor into [`EngineState::dialogue`].
     dialogue_cursor: usize,
     /// Frames to hold each dialogue line before advancing to the next.
@@ -102,6 +146,7 @@ impl EngineState {
             hud_grid: Vec::new(),
             hud_orb: Vec::new(),
             dialogue: Vec::new(),
+            dialogue_texts: Vec::new(),
             dialogue_cursor: 0,
             dialogue_hold_frames: 60,
             dialogue_timer: 0,
@@ -114,8 +159,32 @@ impl EngineState {
     /// step`] advances the playback timer; the current line is [`EngineState::
     /// current_dialogue`]. This is the script/scene stepping the engine's main loop
     /// drives (the `D2` script/scene handoff at `0x108E`).
-    pub fn load_dialogue(&mut self, cod: &[u8], var: &[u8]) {
+    pub fn load_dialogue(&mut self, cod: &[u8], var: &[u8], dic: &[u8]) {
+        // Reconstruct each text call's subtitle text from the dictionary.
+        let words = parse_dictionary(dic);
+        let mut text_by_offset: HashMap<usize, String> = HashMap::new();
+        for tok in walk(cod, 0, cod.len()) {
+            if let VmToken::Text {
+                offset,
+                word_offsets,
+                ..
+            } = tok
+            {
+                let parts: Vec<String> = word_offsets
+                    .iter()
+                    .filter_map(|o| words.get(o).cloned())
+                    .collect();
+                if !parts.is_empty() {
+                    text_by_offset.insert(offset, assemble_words(&parts));
+                }
+            }
+        }
         self.dialogue = execute_trace(cod, var).line_states;
+        self.dialogue_texts = self
+            .dialogue
+            .iter()
+            .map(|l| text_by_offset.get(&l.offset).cloned().unwrap_or_default())
+            .collect();
         self.dialogue_cursor = 0;
         self.dialogue_timer = 0;
     }
@@ -123,6 +192,14 @@ impl EngineState {
     /// The dialogue line currently being presented, if a script is loaded.
     pub fn current_dialogue(&self) -> Option<&LineState> {
         self.dialogue.get(self.dialogue_cursor)
+    }
+
+    /// The current dialogue line's reconstructed subtitle text, if non-empty.
+    pub fn current_subtitle(&self) -> Option<&str> {
+        self.dialogue_texts
+            .get(self.dialogue_cursor)
+            .map(String::as_str)
+            .filter(|s| !s.is_empty())
     }
 
     /// Number of dialogue lines the loaded script reached.
@@ -377,7 +454,7 @@ mod tests {
         let read = |names: &[&str]| -> Option<Vec<u8>> {
             names.iter().find_map(|p| std::fs::read(p).ok())
         };
-        let (Some(cod), Some(var)) = (
+        let (Some(cod), Some(var), Some(dic)) = (
             read(&[
                 "output/_tmp_iso/SCRIPT1.COD",
                 "../output/_tmp_iso/SCRIPT1.COD",
@@ -386,15 +463,26 @@ mod tests {
                 "output/_tmp_iso/SCRIPT1.VAR",
                 "../output/_tmp_iso/SCRIPT1.VAR",
             ]),
+            read(&[
+                "output/_tmp_iso/SCRIPT1.DIC",
+                "../output/_tmp_iso/SCRIPT1.DIC",
+            ]),
         ) else {
             eprintln!("skipping: SCRIPT1 not available");
             return;
         };
         let mut e = EngineState::new();
-        e.load_dialogue(&cod, &var);
+        e.load_dialogue(&cod, &var, &dic);
         assert!(
             e.dialogue_len() > 1,
             "script reached multiple dialogue lines"
+        );
+        // The reconstructed subtitle text is real dialogue (letters, not empty).
+        assert!(
+            e.dialogue_texts
+                .iter()
+                .any(|t| t.chars().any(|c| c.is_alphabetic())),
+            "dialogue lines reconstruct real subtitle text from the dictionary"
         );
         e.dialogue_hold_frames = 2;
         let first = e.current_dialogue().map(|l| l.offset);
