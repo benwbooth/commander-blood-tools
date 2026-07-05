@@ -1830,6 +1830,13 @@ pub const SHIP_3D_HUD_BAND_TOP: usize = 0xA5; // 165
 /// reimplement by projecting the 32 verts with build_ship_3d_projection_matrix(HUD
 /// angle 0xB3) + origin=[0x2F65/67/69], then blit the pyramid sprite at each. The one
 /// remaining runtime value is the origin [0x2F65/67/69] (camera position).
+/// ORIGIN IS DYNAMIC: [0x2F65] is reset to the immediate (0x2710,0x2EE0,0)=(10000,
+/// 12000,0) @0x8AFE/0x8CB4 but updated per-frame @0x8A85 (`mov [0x2F65],ax`) from a
+/// computed camera position. Projecting the 32 verts with the existing projector +
+/// the STATIC base origin gives a scatter, not the symmetric grid (confirmed) — so
+/// exact-grid repro needs the RUNTIME camera origin (trace the 0x8A85 source, i.e. the
+/// ship-position update, or dump [0x2F65/67/69] from a live savestate). Everything else
+/// (algorithm, matrix, perspective, draw) is decoded.
 ///
 /// PIPELINE NOW MAPPED END-TO-END (routine level): hud_init (verts→0x5491, angle
 /// 0xB3) → prelude (band y165-200) → 0x1CE:0 (/100 perspective) → 0x299:0x1467
