@@ -305,6 +305,25 @@ three parts, TWO of which are already done/available:
    state. So the ship-HUD is ~2/3 done (angle + orb); remaining = the pyramid-grid
    pixel routine.
 
+PYRAMID GRID — STATUS (sess 004): geometry recovered (32 3D vertices from DS:0x5D98
+= file 0x131B8, copied by ship_3d_hud_init @0xB079; `SHIP_3D_HUD_PYRAMID_VERTICES`).
+Confirmed they are VALID geometry (all 32 project with positive depth), BUT with the
+standard projection (origin 0,0,0, centre 160,100) they spread OFF-SCREEN (x 160..667,
+y ≤100), NOT into the HUD band (rows 165..193). So the byte-exact render is blocked
+on the HUD-SPECIFIC projection setup (origin/centre/scale) + the draw routine, both
+buried in the per-frame ship render (traced ~17 routines across sessions — all
+setup/state, never the plot; refs via pointer indirection). A FUNCTIONAL pyramid-HUD
+render already exists (render_ship_3d_pyramid_hud). This is the hardest remaining
+static piece; low ROI (cosmetic, functional version shipped).
+
+RESIDUAL TEXT — RESOLVED (sess 004): the non-character "narrator" text is UI/system
+text (cyberspace/modem terminal, ship-AI Honk console, help, menus, narration/debug
+recap) — NOT dialogue scenes. Rendered as text-on-dark CAPTIONS (`ui-caption-run`
+videos; that IS how terminals/consoles/menus present). Text coverage 95.8% → 98.9%.
+So the video-pipeline TEXT deliverable (character dialogue scenes + UI captions) is
+essentially complete; remaining engine work = pyramid-HUD byte-exact (above) +
+per-alien 3D point-cloud data (runtime-populated).
+
 ## Memory Map (load image, base segment 0)
 
 | Region | File range | Notes |
