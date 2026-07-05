@@ -597,6 +597,17 @@ impl EngineState {
         }
     }
 
+    /// Lowercase file stem of the first resolved talk-HNM in the loaded dialogue, so a
+    /// driver can look its background music up via `DescriptDb::hnm_music_map`.
+    pub fn first_scene_hnm_stem(&self) -> Option<String> {
+        self.dialogue_scene_paths
+            .iter()
+            .flatten()
+            .next()
+            .and_then(|p| p.file_stem())
+            .map(|s| s.to_string_lossy().to_lowercase())
+    }
+
     /// Take the pending nav destination selection (the compass heading the player
     /// clicked in the nav view), clearing it. A driver polls this each frame to load
     /// the selected destination's dialogue — the nav→dialogue game-loop transition.

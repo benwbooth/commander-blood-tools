@@ -146,40 +146,57 @@ fn run_engine_play(iso: &str, assets: &str, out: &str, script: &str) -> anyhow::
     engine.load_dialogue_scenes(&cod, &var, &dic, &deb, &descript, Path::new(assets));
     engine.dialogue_hold_frames = 20; // ~1.3s per line at 15 fps
 
-    let total = (engine.dialogue_len().max(1) as u32) * engine.dialogue_hold_frames + 30;
+    // Best-effort scene music (.voc, which ffmpeg reads directly). NOTE: the DESCRIPT
+    // music map is keyed by scene/LOCATION background HNMs, not the character TALK HNMs
+    // the engine loads — so this resolves only when a talk-HNM stem happens to match a
+    // location; full audio needs the script's location→background-HNM→music resolution
+    // (currently `pub(super)` in `extract`). Kept as a best-effort hook for now.
+    let hnm_music = descript.hnm_music_map();
+    let music_voc = engine
+        .first_scene_hnm_stem()
+        .and_then(|stem| hnm_music.get(&stem).cloned())
+        .map(|m| format!("{assets}/mu/{m}.voc"))
+        .filter(|p| Path::new(p).exists());
+
+    let size = format!("{ENGINE_SCREEN_WIDTH}x{ENGINE_SCREEN_HEIGHT}");
+    let mut args: Vec<String> = ["-y", "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", &size,
+        "-r", "15", "-i", "-"].iter().map(|s| s.to_string()).collect();
+    if let Some(m) = &music_voc {
+        args.push("-i".into());
+        args.push(m.clone());
+    }
+    args.extend(["-c:v", "libx264", "-crf", "18", "-pix_fmt", "yuv420p"].iter().map(|s| s.to_string()));
+    if music_voc.is_some() {
+        args.extend(["-c:a", "aac", "-shortest"].iter().map(|s| s.to_string()));
+    }
+    args.push(out.to_string());
+    if let Some(m) = &music_voc {
+        eprintln!("scene music: {m}");
+    }
     let mut ff = Command::new("ffmpeg")
-        .args([
-            "-y",
-            "-f",
-            "rawvideo",
-            "-pix_fmt",
-            "rgb24",
-            "-s",
-            &format!("{ENGINE_SCREEN_WIDTH}x{ENGINE_SCREEN_HEIGHT}"),
-            "-r",
-            "15",
-            "-i",
-            "-",
-            "-c:v",
-            "libx264",
-            "-crf",
-            "18",
-            "-pix_fmt",
-            "yuv420p",
-            out,
-        ])
+        .args(&args)
         .stdin(Stdio::piped())
         .stderr(Stdio::null())
         .spawn()?;
     let mut stdin = ff.stdin.take().unwrap();
     let mut rgb = vec![0u8; ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT * 3];
-    for _ in 0..total {
+    // Length-scaled per-line hold means a fixed total is wrong: step until the dialogue
+    // finishes, then hold the last line briefly, capped for safety.
+    let cap = engine.dialogue_len() as u32 * 260 + 90;
+    let mut done_at: Option<u32> = None;
+    for i in 0..cap {
         engine.step(MouseInput::default());
-        for (i, &idx) in engine.framebuffer.iter().enumerate() {
+        for (j, &idx) in engine.framebuffer.iter().enumerate() {
             let c = engine.scene_palette[idx as usize];
-            rgb[i * 3..i * 3 + 3].copy_from_slice(&c);
+            rgb[j * 3..j * 3 + 3].copy_from_slice(&c);
         }
         stdin.write_all(&rgb)?;
+        if engine.dialogue_finished() {
+            let d = *done_at.get_or_insert(i);
+            if i - d > 45 {
+                break;
+            }
+        }
     }
     drop(stdin);
     ff.wait()?;
