@@ -1979,6 +1979,31 @@ pub fn render_star_map_navview(buffer: &mut [u8], light: u8, dark: u8, orb: u8) 
 /// `compass_angle` (0..179) so the view rotates with the ship's heading (mouse
 /// steering) — the interactive nav behaviour. Nearer rows pan more than far rows
 /// (parallax); the orb stays centred.
+/// Project a 3D nav position with the EXACT star-map projection decoded from the game
+/// (loop @0x9BBA): `t = pos - origin`; `depth = (t·row_z) >> 15` (cull if ≤0);
+/// `screen_x = ((t·row_x) >> 7) / depth + 160`; `screen_y = ((t·row_y) >> 7) / depth +
+/// 100`. `matrix.terms` are the row-major 3×3 (`build_ship_3d_projection_matrix`).
+/// Returns the on-screen (x, y) and the 1/depth sprite scale, or None if culled.
+pub fn project_star_map_point(
+    pos: [i32; 3],
+    origin: [i32; 3],
+    matrix: &Ship3dProjectionMatrix,
+) -> Option<(i32, i32, i32)> {
+    let m = &matrix.terms;
+    let t = [pos[0] - origin[0], pos[1] - origin[1], pos[2] - origin[2]];
+    let mut depth = (t[0] * m[6] + t[1] * m[7] + t[2] * m[8]) >> 15;
+    if depth == 0 {
+        return None;
+    }
+    if depth < 0 {
+        depth += 0x10000;
+    }
+    let sx = ((t[0] * m[0] + t[1] * m[1] + t[2] * m[2]) >> 7) / depth + 0xa0;
+    let sy = ((t[0] * m[3] + t[1] * m[4] + t[2] * m[5]) >> 7) / depth + 0x64;
+    let scale = 0x100000 / depth;
+    Some((sx, sy, scale))
+}
+
 pub fn render_star_map_navview_panned(
     buffer: &mut [u8],
     light: u8,
@@ -3268,6 +3293,19 @@ mod tests {
         // different heading -> different pixels (the grid panned), but both still draw
         assert!(a != b, "grid pans with heading");
         assert!(b.iter().any(|&p| p == 200) && b.iter().any(|&p| p == 240));
+    }
+
+    #[test]
+    fn star_map_projection_matches_decoded_formula() {
+        // Identity-ish matrix: row_x=[1<<7,0,0], row_y=[0,1<<7,0], row_z=[0,0,1<<15].
+        let m = Ship3dProjectionMatrix { terms: [128, 0, 0, 0, 128, 0, 0, 0, 32768] };
+        let origin = [0, 0, 0];
+        // pos (10, 20, 4): depth = (4*32768)>>15 = 4; sx = ((10*128)>>7)/4 + 160 = 10/4+160 = 162;
+        // sy = ((20*128)>>7)/4 + 100 = 20/4+100 = 105; scale = 0x100000/4 = 0x40000.
+        let (x, y, sc) = project_star_map_point([10, 20, 4], origin, &m).unwrap();
+        assert_eq!((x, y, sc), (162, 105, 0x40000));
+        // depth 0 -> culled
+        assert!(project_star_map_point([1, 1, 0], origin, &m).is_none());
     }
 
     #[test]
