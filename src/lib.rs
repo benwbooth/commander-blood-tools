@@ -1,6 +1,7 @@
 pub mod bloodprg;
 pub mod descript;
 pub mod engine;
+pub mod font;
 pub mod script;
 pub mod ship3d;
 pub mod snd;

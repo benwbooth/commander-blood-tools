@@ -32,6 +32,7 @@ impl MouseInput {
     }
 }
 
+use crate::font::draw_text_indexed;
 use crate::ship3d::{
     BloodPrng, Ship3dMatrixAngles, Ship3dProjectionOrigin, Ship3dProjectionViewport,
     render_ship_3d_starfield,
@@ -187,9 +188,8 @@ impl EngineState {
                 .filter(|(_, f)| f.height >= 64)
                 .map(|(i, _)| i)
                 .collect();
-            (!grid.is_empty()).then(|| {
-                grid[(self.compass_angle as usize * grid.len() / 180).min(grid.len() - 1)]
-            })
+            (!grid.is_empty())
+                .then(|| grid[(self.compass_angle as usize * grid.len() / 180).min(grid.len() - 1)])
         };
         if let Some(gi) = grid_idx {
             let frame = self.hud_grid[gi].clone();
@@ -212,6 +212,22 @@ impl EngineState {
                 172,
             );
         }
+    }
+
+    /// Draw a subtitle line into the framebuffer at the game's subtitle reveal
+    /// position (scene band, `SUBTITLE_X`/`SUBTITLE_Y` = 10/8) using the game font.
+    /// The scene band's talk-HNM background composes separately; this is the text
+    /// layer of the dialogue scene the engine presents for the current line.
+    pub fn draw_subtitle(&mut self, text: &str, color: u8) {
+        draw_text_indexed(
+            &mut self.framebuffer,
+            ENGINE_SCREEN_WIDTH,
+            ENGINE_SCREEN_HEIGHT,
+            text,
+            10,
+            8,
+            color,
+        );
     }
 
     /// The mouse input poll (`0:0x70E`): store the frame's cursor state and, if the
@@ -296,17 +312,28 @@ mod tests {
         e.on_ship = true;
         // Step with the mouse at the left, then far right: the compass angle should
         // track the mouse and the rendered starfield should differ.
-        e.step(MouseInput { x: 0, y: 100, buttons: 0 });
+        e.step(MouseInput {
+            x: 0,
+            y: 100,
+            buttons: 0,
+        });
         let angle_left = e.compass_angle;
         let frame_left = e.framebuffer.clone();
-        e.step(MouseInput { x: 319, y: 100, buttons: 0 });
+        e.step(MouseInput {
+            x: 319,
+            y: 100,
+            buttons: 0,
+        });
         assert_eq!(angle_left, 0);
         assert!(e.compass_angle > 150, "mouse right steers the compass high");
         assert!(
             frame_left.iter().any(|&p| p != 0),
             "the starfield renders some points"
         );
-        assert_ne!(frame_left, e.framebuffer, "different angle -> different view");
+        assert_ne!(
+            frame_left, e.framebuffer,
+            "different angle -> different view"
+        );
     }
 
     #[test]
@@ -315,7 +342,10 @@ mod tests {
             names.iter().find_map(|p| std::fs::read(p).ok())
         };
         let (Some(bc), Some(bo)) = (
-            read(&["output/_tmp_iso/BCARTE.SPR", "../output/_tmp_iso/BCARTE.SPR"]),
+            read(&[
+                "output/_tmp_iso/BCARTE.SPR",
+                "../output/_tmp_iso/BCARTE.SPR",
+            ]),
             read(&["output/_tmp_iso/BORXX.SPR", "../output/_tmp_iso/BORXX.SPR"]),
         ) else {
             eprintln!("skipping: HUD sprites not available");
@@ -326,13 +356,20 @@ mod tests {
         e.load_hud_sprites(&bc, &bo);
         assert!(!e.hud_grid.is_empty() && !e.hud_orb.is_empty());
         // Render without HUD (empty) vs with HUD -> the HUD band gains sprite pixels.
-        e.step(MouseInput { x: 90, y: 100, buttons: 0 });
+        e.step(MouseInput {
+            x: 90,
+            y: 100,
+            buttons: 0,
+        });
         // Count non-zero pixels in the HUD band (rows 150..195, where the HUD sits).
         let band: usize = (150..195)
             .flat_map(|y| (0..ENGINE_SCREEN_WIDTH).map(move |x| (x, y)))
             .filter(|&(x, y)| e.framebuffer[y * ENGINE_SCREEN_WIDTH + x] != 0)
             .count();
-        assert!(band > 200, "sprite HUD composites into the band (got {band})");
+        assert!(
+            band > 200,
+            "sprite HUD composites into the band (got {band})"
+        );
     }
 
     #[test]
@@ -341,15 +378,24 @@ mod tests {
             names.iter().find_map(|p| std::fs::read(p).ok())
         };
         let (Some(cod), Some(var)) = (
-            read(&["output/_tmp_iso/SCRIPT1.COD", "../output/_tmp_iso/SCRIPT1.COD"]),
-            read(&["output/_tmp_iso/SCRIPT1.VAR", "../output/_tmp_iso/SCRIPT1.VAR"]),
+            read(&[
+                "output/_tmp_iso/SCRIPT1.COD",
+                "../output/_tmp_iso/SCRIPT1.COD",
+            ]),
+            read(&[
+                "output/_tmp_iso/SCRIPT1.VAR",
+                "../output/_tmp_iso/SCRIPT1.VAR",
+            ]),
         ) else {
             eprintln!("skipping: SCRIPT1 not available");
             return;
         };
         let mut e = EngineState::new();
         e.load_dialogue(&cod, &var);
-        assert!(e.dialogue_len() > 1, "script reached multiple dialogue lines");
+        assert!(
+            e.dialogue_len() > 1,
+            "script reached multiple dialogue lines"
+        );
         e.dialogue_hold_frames = 2;
         let first = e.current_dialogue().map(|l| l.offset);
         // Step past the hold window: playback advances to the next line.
@@ -358,6 +404,21 @@ mod tests {
         }
         let second = e.current_dialogue().map(|l| l.offset);
         assert_ne!(first, second, "dialogue playback advances to the next line");
+    }
+
+    #[test]
+    fn draw_subtitle_renders_text_into_scene_band() {
+        let mut e = EngineState::new();
+        e.draw_subtitle("HELLO COMMANDER", 0xFD);
+        // Text draws at y=8 (the subtitle band); pixels appear in that row range.
+        let band: usize = (8..16)
+            .flat_map(|y| (0..ENGINE_SCREEN_WIDTH).map(move |x| y * ENGINE_SCREEN_WIDTH + x))
+            .filter(|&i| e.framebuffer[i] == 0xFD)
+            .count();
+        assert!(
+            band > 20,
+            "subtitle text renders into the band (got {band})"
+        );
     }
 
     #[test]
