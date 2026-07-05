@@ -1795,9 +1795,13 @@ pub const SHIP_3D_HUD_BAND_TOP: usize = 0xA5; // 165
 /// PIPELINE NOW MAPPED END-TO-END (routine level): hud_init (verts→0x5491, angle
 /// 0xB3) → prelude (band y165-200) → 0x1CE:0 (/100 perspective) → 0x299:0x1467
 /// (32-byte-record display list @0x6212→0x6612) → 0x299:0x210D (8-byte-segment
-/// rasteriser). TODO (next session): pin the exact 32-byte + 8-byte record field
-/// layouts (byte-level) to reimplement the render; confirm the 0x5F11 camera
-/// transform. Then the star-map grid can be drawn to match the real game.
+/// rasteriser). The `0x1CE:0`/`0x22E0` transform reads a rotation matrix from
+/// `0x5251` (byte components via `lodsb`/`cwde`), applies `/100` fixed-point scaling
+/// with per-axis scale (`[bp+0x10]`) + offset (`[bp+0x12/14/16]`) params, emitting
+/// projected coords — i.e. matrix×vector then perspective, same shape as
+/// [`project_ship_3d_point`] but with the HUD's own 0x5251 matrix + 0x5F11 origin.
+/// TODO (next session): pin the exact 32-byte + 8-byte record field layouts + the
+/// 0x5251 matrix / 0x5F11 origin values to reimplement the render to match the game.
 pub const SHIP_3D_HUD_PYRAMID_VERTICES: [[i16; 3]; 32] = [
     [0, 2304, 3075],
     [776, 1803, 2820],
