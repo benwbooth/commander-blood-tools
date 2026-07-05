@@ -1,4 +1,5 @@
 pub mod bloodprg;
+pub mod decompress;
 pub mod descript;
 pub mod engine;
 pub mod font;
