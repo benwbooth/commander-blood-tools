@@ -225,7 +225,9 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     let mut engine = EngineState::new();
     engine.load_dialogue_scenes(&cod, &var, &dic, &deb, &descript, Path::new(assets));
     engine.dialogue_hold_frames = 20;
-    // Start in the star-map nav view; the playable loop below switches nav<->dialogue.
+    // Play the startup intro videos first (logos + intro cutscene), like the real game.
+    engine.load_intro(Path::new(assets));
+    // After the intro, start in the star-map nav view; the loop switches nav<->dialogue.
     engine.on_ship = true;
     // Load SCRIPT<n>'s dialogue into the engine (the destination's scene).
     let load_script = |engine: &mut EngineState, n: u32| {
@@ -309,7 +311,10 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
         });
         // Playable loop: a nav-view click commits a destination → load its dialogue and
         // switch to the scene; when the dialogue finishes, return to the nav view.
-        if let Some(heading) = engine.take_nav_selection() {
+        // Suppressed while the startup intro is still playing.
+        if engine.intro_active() {
+            // intro plays; no nav/dialogue transitions yet
+        } else if let Some(heading) = engine.take_nav_selection() {
             let dest = (heading as u32 * 5 / 180).clamp(0, 4) + 1; // heading → SCRIPT1..5
             load_script(&mut engine, dest);
             engine.on_ship = false;

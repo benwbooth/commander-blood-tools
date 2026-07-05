@@ -196,6 +196,12 @@ pub struct EngineState {
     pub scene_palette: [[u8; 3]; 256],
     /// Indexed (palette) framebuffer the render subsystems draw into.
     pub framebuffer: Vec<u8>,
+    /// Startup intro sequence: HNM paths played in order before the game proper.
+    intro_hnms: Vec<std::path::PathBuf>,
+    /// Index of the intro HNM currently playing.
+    intro_index: usize,
+    /// True while the startup intro sequence is playing (gates the main render path).
+    intro_active: bool,
 }
 
 impl Default for EngineState {
@@ -233,6 +239,9 @@ impl EngineState {
             scene_frame: 0,
             scene_palette: [[0u8; 3]; 256],
             framebuffer: vec![0u8; ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT],
+            intro_hnms: Vec::new(),
+            intro_index: 0,
+            intro_active: false,
         }
     }
 
@@ -250,6 +259,63 @@ impl EngineState {
                 *p = 0;
             }
         }
+    }
+
+    /// Queue the startup intro-video sequence (developer/publisher logos, the intro
+    /// cutscene) to play full-screen before the game proper — the first thing the real
+    /// game shows. `assets` is the DAT root; missing files are skipped. The sequence
+    /// mirrors the original's boot order (Microfolie's → intro cutscene → CRYO →
+    /// Commander Blood title). Activates the intro and loads the first clip.
+    pub fn load_intro(&mut self, assets: &Path) {
+        let sq = assets.join("sq");
+        let order = [
+            "microfol", // Microfolie's (developer) logo
+            "inter_sh", // intro ship cutscene
+            "cryogel",  // CRYO Interactive logo
+            "logo_bl",  // Commander Blood title logo
+        ];
+        self.intro_hnms = order
+            .iter()
+            .map(|n| sq.join(format!("{n}.hnm")))
+            .filter(|p| p.exists())
+            .collect();
+        self.intro_index = 0;
+        self.intro_active = !self.intro_hnms.is_empty();
+        if self.intro_active {
+            let first = self.intro_hnms[0].clone();
+            self.load_scene_hnm(&first);
+        }
+    }
+
+    /// True while the startup intro sequence is still playing.
+    pub fn intro_active(&self) -> bool {
+        self.intro_active
+    }
+
+    /// Render one frame of the current intro clip full-screen; when a clip's frames are
+    /// exhausted, advance to the next; when the sequence ends, deactivate the intro so
+    /// the main loop takes over.
+    fn render_intro_frame(&mut self) {
+        let Some(hnm) = self.scene_hnm.take() else {
+            self.intro_active = false;
+            return;
+        };
+        let count = hnm.frame_count().max(1);
+        if self.scene_frame >= count {
+            // Current clip finished — advance to the next, or end the intro.
+            self.intro_index += 1;
+            if self.intro_index < self.intro_hnms.len() {
+                let next = self.intro_hnms[self.intro_index].clone();
+                self.load_scene_hnm(&next);
+            } else {
+                self.intro_active = false;
+            }
+            return;
+        }
+        hnm.decode_frame(self.scene_frame, &mut self.scene_buffer, &mut self.scene_palette);
+        self.scene_hnm = Some(hnm);
+        self.scene_frame += 1;
+        self.framebuffer.copy_from_slice(&self.scene_buffer);
     }
 
     /// Load a dialogue script AND resolve each line's speaker to its talk-HNM asset
@@ -634,6 +700,13 @@ impl EngineState {
     /// so the loop is drivable and testable headlessly.
     pub fn step(&mut self, input: MouseInput) {
         self.poll_input(input);
+        // Startup intro videos play full-screen first (developer/publisher logos +
+        // intro cutscene), exactly as the real game boots, before any nav/dialogue.
+        if self.intro_active {
+            self.render_intro_frame();
+            self.frame += 1;
+            return;
+        }
         // On-ship gate ([0x2793] & 8): steer the compass from the mouse and render
         // the nav view's starfield background (the render subsystems the main loop
         // calls). Mouse x across the screen maps to the 0..179 compass rotation.
@@ -668,6 +741,35 @@ impl EngineState {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn intro_plays_startup_videos_then_ends() {
+        let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("sq").is_dir());
+        let Some(assets) = assets else { return };
+        let mut e = EngineState::new();
+        e.on_ship = true;
+        e.load_intro(assets);
+        assert!(e.intro_active(), "intro activates when clips are present");
+        // While the intro runs, the main (nav) view must NOT render — the intro owns
+        // the frame — and the intro must produce real (non-blank) content at some point.
+        let mut saw_content = false;
+        let mut ended = false;
+        for _ in 0..6000 {
+            e.step(MouseInput::default());
+            if e.framebuffer.iter().filter(|&&p| p != 0).count() > 2000 {
+                saw_content = true;
+            }
+            if !e.intro_active() {
+                ended = true;
+                break;
+            }
+        }
+        assert!(saw_content, "intro renders real video frames");
+        assert!(ended, "intro sequence finishes and hands off to the game");
+    }
 
     #[test]
     fn step_advances_frame_and_polls_input() {
