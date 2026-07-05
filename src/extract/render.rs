@@ -1324,6 +1324,54 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
+    fn compose_bcarte_pyramid_hud_preview() {
+        let read = |names: &[&str]| -> Option<Vec<u8>> {
+            names.iter().find_map(|p| std::fs::read(p).ok())
+        };
+        let Some(bc) = read(&["output/_tmp_iso/BCARTE.SPR", "../output/_tmp_iso/BCARTE.SPR"]) else {
+            eprintln!("skipping: BCARTE.SPR not available");
+            return;
+        };
+        let grid = decode_sprite_bank_indices(&bc).expect("bcarte decodes");
+        eprintln!("BCARTE frames: {}", grid.len());
+        for (i, f) in grid.iter().enumerate() {
+            eprintln!("  frame {i}: {}x{}", f.width, f.height);
+        }
+        // Composite a mid-rotation grid frame into a 320x200 buffer's HUD band.
+        let (w, h) = (320usize, 200usize);
+        let mut fb = vec![0u8; w * h];
+        let blit = |fb: &mut [u8], f: &SpriteFrameImage, cx: i32, cy: i32| {
+            for y in 0..f.height {
+                for x in 0..f.width {
+                    let idx = f.indices[y * f.width + x];
+                    if idx == 0 {
+                        continue;
+                    }
+                    let (px, py) = (cx + x as i32 - f.width as i32 / 2, cy + y as i32 - f.height as i32 / 2);
+                    if (0..w as i32).contains(&px) && (0..h as i32).contains(&py) {
+                        fb[py as usize * w + px as usize] = idx;
+                    }
+                }
+            }
+        };
+        // grid frame ~8 (mid rotation), centred in the HUD band (~row 170)
+        let gf = &grid[grid.len().saturating_sub(1).min(8)];
+        blit(&mut fb, gf, 160, 170);
+        if let Some(bo) = read(&["output/_tmp_iso/BORXX.SPR", "../output/_tmp_iso/BORXX.SPR"]) {
+            if let Some(orb) = decode_sprite_bank_indices(&bo) {
+                blit(&mut fb, &orb[0], 160, 170);
+            }
+        }
+        // write a PGM (amplify indices so it's visible)
+        let vis: Vec<u8> = fb.iter().map(|&v| if v == 0 { 0 } else { 0x40u8.saturating_add(v.wrapping_mul(3)) }).collect();
+        let mut out = format!("P5\n{w} {h}\n255\n").into_bytes();
+        out.extend_from_slice(&vis);
+        std::fs::write("/tmp/ben_bcarte_hud.pgm", out).unwrap();
+        eprintln!("wrote /tmp/ben_bcarte_hud.pgm");
+    }
+
+    #[test]
     fn decode_sprite_bank_indices_decodes_all_orb_frames() {
         let candidates = [
             "output/_tmp_iso/BORXX.SPR",
