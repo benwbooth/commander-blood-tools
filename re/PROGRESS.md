@@ -57,4 +57,16 @@ the routine level (see the big comment on `SHIP_3D_HUD_PYRAMID_VERTICES` in `shi
 - **Remaining:** map the intro→interactive-dialogue input flow to reach a known scene,
   then pixel-compare it to the engine's render of the same script line.
 
+### Memory dump — SOLVED (re/tools/dump_dosbox_mem.py)
+Earlier I claimed this DOSBox-X build can't dump memory (no savestate/debugger). WRONG:
+DOSBox-X is a Linux process and DS RAM is in its address space; under ptrace_scope=1 a
+process can ptrace its own child, so the tool LAUNCHES dosbox-x, PTRACE_ATTACHes, and
+reads /proc/pid/mem — locating BLOODPRG's DS by the static vertex anchor (DS:0x5D98).
+Verified: reads origin_2F65/angle_2F71/2F6D/nav_recs_4F09 live. So thread 1's runtime
+camera+destinations ARE obtainable — BUT only meaningfully once the game is in ACTIVE
+navigation (in the attract/intro they're default: origin=(10000,12000,0), recs all
+(10200,12100,900)). So threads 1 and 2 are LINKED: drive the game to active nav
+(drive_real_game.sh, needs the input-flow mapped), then dump_dosbox_mem.py the live
+star-map state, feed it to project_star_map_point, and render the bit-exact grid.
+
 See `MEMORY.md` notes and the `ship3d.rs` / `engine.rs` comments for exact addresses.
