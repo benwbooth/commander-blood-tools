@@ -33,6 +33,7 @@ impl MouseInput {
 }
 
 use crate::font::draw_text_indexed;
+use crate::hnm::HnmFile;
 use crate::ship3d::{
     BloodPrng, Ship3dMatrixAngles, Ship3dProjectionOrigin, Ship3dProjectionViewport,
     render_ship_3d_starfield,
@@ -40,6 +41,7 @@ use crate::ship3d::{
 use crate::sprite::{SpriteFrameImage, blit_sprite_frame_centered, decode_sprite_bank_indices};
 use crate::vm::{LineState, VmToken, execute_trace, walk};
 use std::collections::HashMap;
+use std::path::Path;
 
 /// Parse a `SCRIPTn.DIC` dictionary: NUL-terminated words keyed by their byte
 /// offset (a Text token's `word_offsets` index into this).
@@ -122,6 +124,11 @@ pub struct EngineState {
     pub dialogue_hold_frames: u32,
     /// Frames the current dialogue line has been held.
     dialogue_timer: u32,
+    /// Optional talk-HNM / scene background for the dialogue scene band, decoded
+    /// per frame behind the subtitle.
+    scene_hnm: Option<HnmFile>,
+    /// Palette filled by the scene HNM decode (the framebuffer is indexed).
+    pub scene_palette: [[u8; 3]; 256],
     /// Indexed (palette) framebuffer the render subsystems draw into.
     pub framebuffer: Vec<u8>,
 }
@@ -150,8 +157,16 @@ impl EngineState {
             dialogue_cursor: 0,
             dialogue_hold_frames: 60,
             dialogue_timer: 0,
+            scene_hnm: None,
+            scene_palette: [[0u8; 3]; 256],
             framebuffer: vec![0u8; ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT],
         }
+    }
+
+    /// Load a talk-HNM / scene-background HNM for the dialogue scene band, decoded
+    /// behind the subtitle by [`EngineState::render_dialogue_frame`].
+    pub fn load_scene_hnm(&mut self, path: &Path) {
+        self.scene_hnm = HnmFile::open(path).ok();
     }
 
     /// Load a dialogue script (`SCRIPTn.COD` + `.VAR`): run the VM trace and queue
@@ -311,9 +326,18 @@ impl EngineState {
     /// draw the reconstructed subtitle text. (The talk-HNM scene background layer
     /// composites behind this once the HNM decoder is moved into the lib.)
     pub fn render_dialogue_frame(&mut self) {
-        for p in self.framebuffer.iter_mut() {
-            *p = 0;
+        // Scene background: decode the current talk-HNM frame (indices + palette)
+        // into the framebuffer, or clear if none loaded.
+        if let Some(hnm) = self.scene_hnm.take() {
+            let frame_idx = (self.frame as usize) % hnm.frame_count().max(1);
+            hnm.decode_frame(frame_idx, &mut self.framebuffer, &mut self.scene_palette);
+            self.scene_hnm = Some(hnm);
+        } else {
+            for p in self.framebuffer.iter_mut() {
+                *p = 0;
+            }
         }
+        // Subtitle text layer over the scene.
         if let Some(text) = self.current_subtitle().map(str::to_string) {
             self.draw_subtitle(&text, 0xFD);
         }
@@ -531,10 +555,21 @@ mod tests {
     fn demo_render_real_dialogue_frame() {
         let read = |names: &[&str]| names.iter().find_map(|p| std::fs::read(p).ok());
         let (Some(cod), Some(var), Some(dic)) = (
-            read(&["output/_tmp_iso/SCRIPT1.COD", "../output/_tmp_iso/SCRIPT1.COD"]),
-            read(&["output/_tmp_iso/SCRIPT1.VAR", "../output/_tmp_iso/SCRIPT1.VAR"]),
-            read(&["output/_tmp_iso/SCRIPT1.DIC", "../output/_tmp_iso/SCRIPT1.DIC"]),
-        ) else { return; };
+            read(&[
+                "output/_tmp_iso/SCRIPT1.COD",
+                "../output/_tmp_iso/SCRIPT1.COD",
+            ]),
+            read(&[
+                "output/_tmp_iso/SCRIPT1.VAR",
+                "../output/_tmp_iso/SCRIPT1.VAR",
+            ]),
+            read(&[
+                "output/_tmp_iso/SCRIPT1.DIC",
+                "../output/_tmp_iso/SCRIPT1.DIC",
+            ]),
+        ) else {
+            return;
+        };
         let mut e = EngineState::new();
         e.load_dialogue(&cod, &var, &dic);
         // Advance to the first line that has real subtitle text.
@@ -544,8 +579,13 @@ mod tests {
         let text = e.current_subtitle().unwrap_or("(no text)").to_string();
         eprintln!("engine subtitle: {text:?}");
         e.draw_subtitle(&text, 0xFD);
-        let vis: Vec<u8> = e.framebuffer.iter().map(|&v| if v==0 {0} else {255}).collect();
-        let mut out = format!("P5\n{ENGINE_SCREEN_WIDTH} {ENGINE_SCREEN_HEIGHT}\n255\n").into_bytes();
+        let vis: Vec<u8> = e
+            .framebuffer
+            .iter()
+            .map(|&v| if v == 0 { 0 } else { 255 })
+            .collect();
+        let mut out =
+            format!("P5\n{ENGINE_SCREEN_WIDTH} {ENGINE_SCREEN_HEIGHT}\n255\n").into_bytes();
         out.extend_from_slice(&vis);
         std::fs::write("/tmp/ben_engine_frame.pgm", out).unwrap();
         eprintln!("wrote /tmp/ben_engine_frame.pgm");
@@ -555,10 +595,21 @@ mod tests {
     fn step_auto_renders_current_dialogue_subtitle() {
         let read = |names: &[&str]| names.iter().find_map(|p| std::fs::read(p).ok());
         let (Some(cod), Some(var), Some(dic)) = (
-            read(&["output/_tmp_iso/SCRIPT1.COD", "../output/_tmp_iso/SCRIPT1.COD"]),
-            read(&["output/_tmp_iso/SCRIPT1.VAR", "../output/_tmp_iso/SCRIPT1.VAR"]),
-            read(&["output/_tmp_iso/SCRIPT1.DIC", "../output/_tmp_iso/SCRIPT1.DIC"]),
-        ) else { return; };
+            read(&[
+                "output/_tmp_iso/SCRIPT1.COD",
+                "../output/_tmp_iso/SCRIPT1.COD",
+            ]),
+            read(&[
+                "output/_tmp_iso/SCRIPT1.VAR",
+                "../output/_tmp_iso/SCRIPT1.VAR",
+            ]),
+            read(&[
+                "output/_tmp_iso/SCRIPT1.DIC",
+                "../output/_tmp_iso/SCRIPT1.DIC",
+            ]),
+        ) else {
+            return;
+        };
         let mut e = EngineState::new();
         e.load_dialogue(&cod, &var, &dic);
         // Advance the cursor to a line with real text, then step (auto-renders it).
@@ -568,7 +619,34 @@ mod tests {
         e.dialogue_hold_frames = u32::MAX; // hold the line so the cursor stays put
         e.step(MouseInput::default());
         let lit = e.framebuffer.iter().filter(|&&p| p == 0xFD).count();
-        assert!(lit > 20, "step auto-renders the dialogue subtitle (got {lit})");
+        assert!(
+            lit > 20,
+            "step auto-renders the dialogue subtitle (got {lit})"
+        );
+    }
+
+    #[test]
+    fn dialogue_frame_composites_scene_hnm_behind_subtitle() {
+        // Find any scene/talk HNM to load as the background.
+        let cand = [
+            "output/_tmp_dat/pe/aabob.hnm",
+            "../output/_tmp_dat/pe/aabob.hnm",
+        ];
+        let Some(path) = cand.iter().map(std::path::Path::new).find(|p| p.exists()) else {
+            eprintln!("skipping: no HNM available");
+            return;
+        };
+        let mut e = EngineState::new();
+        e.load_scene_hnm(path);
+        assert!(e.scene_hnm.is_some(), "HNM opens via the lib decoder");
+        e.render_dialogue_frame();
+        // The decoded HNM frame fills the framebuffer with non-zero background pixels
+        // (the talk animation), not a cleared black frame.
+        let bg = e.framebuffer.iter().filter(|&&p| p != 0).count();
+        assert!(
+            bg > 5000,
+            "scene HNM decodes into the background (got {bg})"
+        );
     }
 
     #[test]
