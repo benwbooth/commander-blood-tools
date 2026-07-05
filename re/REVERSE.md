@@ -120,7 +120,18 @@ PRNG+timer animation state machine, dispatched per frame — feeding the same
 per-object 3D draw pattern as the ship view. RECOVERED: overlay spine end-to-end
 (entry→dispatch→palette/mouse init→plane clear→object loop→camera→object state
 machines). REMAINING: the geometry/blit inside the sub-methods (`[si+0xE]`), the
-init subs `0x1E1D/0x5DC/0x775`, and the same for `amer/scrut/manu3.xdb`. The palette buffer at file 0x525A is the character-sprite
+init subs `0x1E1D/0x5DC/0x775`, and the same for `amer/scrut/manu3.xdb`.
+
+OVERLAY 3D GEOMETRY SETUP (sess 003, `croolis.xdb` sub `0x775`): copies a 9-dword
+block `ds:0x22BA -> es:0xD4C`, then reads 32-bit FIXED-POINT object coords
+`[0x22EA]/[0x22EE]/[0x22F2]`, `shr e{bx,cx,dx},0xD` (13 fractional bits →
+screen-space) and stores X/Y/Z at `[0xD7C]/[0xD80]/[0xD84]`, and builds a 5-entry
+sprite/geometry pointer table `[0x8DA]=0x4AF, [0x8DC..0x8E2]=0x1F3A,0x253A,0x2B3A,
+0x313A` (stride 0x600 = 1536B per layer). So the overlay positions its alien with
+the SAME fixed-point-3D (>>13) + layered-sprite pattern as the ship-3D view —
+strong evidence the overlays reuse the engine's 3D projection/blit, so decoding
+one informs the ship-3D COMPOSITOR directly. NEXT: the projection math + blit that
+consume `[0xD7C..0xD84]` and the 0x600-stride sprite layers. The palette buffer at file 0x525A is the character-sprite
 palette source; `amer.xdb`/`scrut.xdb` share the same entry-stub shape.
 
 ## Memory Map (load image, base segment 0)
