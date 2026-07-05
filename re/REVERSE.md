@@ -2597,7 +2597,21 @@ piece is only the **UI element rectangles** the ~6 hit-test handlers compare
 against (to click the right targets), and the opening's own handler apparently
 defers click processing until the narration finishes. Tracing those ~6 handlers
 (each reads `gs:0xA2A`) yields the clickable-region map, which is the final step
-to drive DOSBox to a dialogue scene and verify the 394 dialogue videos. (The narrated intro is itself deterministic character-over-background
+to drive DOSBox to a dialogue scene and verify the 394 dialogue videos.
+
+SHIP-NAV STEERING RECOVERED (sess 003): the ship-3D-view handler at `0x7824`
+does `cmp word gs:[0xA2A], 0xA0` (mouse X vs the 160 screen centre) → sets the
+nav-direction state `gs:0xA32` to `2` when X > 160 (right) or `3` when X ≤ 160
+(left), then runs `ship_3d_procedural_angle_update` (`0x9656`) and
+`nav_actor_slot_update_loop` (`0x7D7B`). So **in the ship view, clicking left vs
+right of centre steers the pyramid-nav** — directly scriptable (`xdotool` click
+at native X<160 or X>160, scaled to the 800×600 window). This is the concrete
+in-game navigation primitive. The remaining gate is only reaching the ship view
+past the opening narration (the opening handler defers clicks until it
+completes); once there, left/right clicks drive to planets/scenes and thus to
+matched dialogue captures. So the navigation path is now mapped end-to-end at the
+engine level: input → click events → ship-nav steering; only the opening-skip
+timing and the planet→dialogue trigger remain to script the full capture run. (The narrated intro is itself deterministic character-over-background
 dialogue content, so it is a candidate oracle target IF its narrator HNM +
 backdrops are identified — a compositor task.)
 
