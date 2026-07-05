@@ -2938,3 +2938,14 @@ pass/fail threshold candidate for the dialogue renderer. Region metrics for that
 best all-MP4 candidate show `scene_band ~= 25.82`, `hud_panel ~= 63.56`, and
 `bottom_bar ~= 59.79`, which keeps the missing/incorrect HUD problem separate
 from scene-band content mismatch.
+
+PYRAMID VERTEX DATA LOCATED (sess 003): `ship_3d_hud_init` @file 0xB079 copies 192
+bytes (0x30 dwords) from DS:0x5D98 = **file 0x131B8** into the HUD working area
+(es:0x5491) at ship-view entry, then sets angle DS:0x2795=0xB3 and on-ship flag
+DS:0x2793|=8. That source is the PYRAMID VERTEX GEOMETRY: 32 3D vertices as signed
+16-bit (X,Y,Z) triples ((0,2304,3075),(776,1803,2820),(775,1546,2306),... range
+0..~4615, fixed-point). So the accurate pyramid HUD = extract these 32 vertices
+(DONE, file 0x131B8) -> the shared matrix x vector + perspective projection
+(DONE, ship3d) -> draw edges between projected vertices. Remaining is just the
+EDGE TOPOLOGY (which vertex pairs form pyramid edges) + wiring. The HUD is no
+longer "deep RE" - it's bounded data + a known projection.
