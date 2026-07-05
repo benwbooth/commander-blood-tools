@@ -1787,9 +1787,17 @@ pub const SHIP_3D_HUD_BAND_TOP: usize = 0xA5; // 165
 ///   (indexes by `ax<<5`), emitting to the `di=0x6612` draw list (dword pairs from
 ///   `[0x5235]`/`[0x5239]` + a 0xFFFF terminator). So the projected pyramid geometry
 ///   is a 32-byte-record display list; `0x299:0x210D` consumes/rasterises it.
-/// TODO (next session): decode the 0x6212 32-byte record layout + `0x299:0x210D`
-/// rasteriser for the vertex→pyramid edge/face topology; confirm the projection
-/// origin (angle 0xB3; origin 0 culls the verts, so the 0x5F11 transform is camera).
+/// - `0x299:0x210D` (file 0x509D) is the **rasteriser**: gated by `gs:[0x5231]`, it
+///   walks the display list reading 8-byte segment records (`es:[di]`, `[di+2]`,
+///   `[di+4]`, `[di+6]` = endpoints; `di += 8`), computes framebuffer offsets against
+///   width 0x140=320, and draws the pyramid edges/spans into `gs:[0x5221]`.
+///
+/// PIPELINE NOW MAPPED END-TO-END (routine level): hud_init (verts→0x5491, angle
+/// 0xB3) → prelude (band y165-200) → 0x1CE:0 (/100 perspective) → 0x299:0x1467
+/// (32-byte-record display list @0x6212→0x6612) → 0x299:0x210D (8-byte-segment
+/// rasteriser). TODO (next session): pin the exact 32-byte + 8-byte record field
+/// layouts (byte-level) to reimplement the render; confirm the 0x5F11 camera
+/// transform. Then the star-map grid can be drawn to match the real game.
 pub const SHIP_3D_HUD_PYRAMID_VERTICES: [[i16; 3]; 32] = [
     [0, 2304, 3075],
     [776, 1803, 2820],
