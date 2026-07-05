@@ -146,15 +146,10 @@ fn run_engine_play(iso: &str, assets: &str, out: &str, script: &str) -> anyhow::
     engine.load_dialogue_scenes(&cod, &var, &dic, &deb, &descript, Path::new(assets));
     engine.dialogue_hold_frames = 20; // ~1.3s per line at 15 fps
 
-    // Best-effort scene music (.voc, which ffmpeg reads directly). NOTE: the DESCRIPT
-    // music map is keyed by scene/LOCATION background HNMs, not the character TALK HNMs
-    // the engine loads — so this resolves only when a talk-HNM stem happens to match a
-    // location; full audio needs the script's location→background-HNM→music resolution
-    // (currently `pub(super)` in `extract`). Kept as a best-effort hook for now.
-    let hnm_music = descript.hnm_music_map();
-    let music_voc = engine
-        .first_scene_hnm_stem()
-        .and_then(|stem| hnm_music.get(&stem).cloned())
+    // Scene background music (.voc, which ffmpeg reads directly), resolved via the
+    // script's location→music the same way the video pipeline does, so the video isn't
+    // silent. (The DESCRIPT music map is keyed by scene/location HNMs, not talk HNMs.)
+    let music_voc = extract::script_background_music(Path::new(iso), script)
         .map(|m| format!("{assets}/mu/{m}.voc"))
         .filter(|p| Path::new(p).exists());
 

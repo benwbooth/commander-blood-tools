@@ -1394,6 +1394,20 @@ mod render;
 mod script;
 mod subtitle_sfx;
 
+/// The background-music stem for a `SCRIPTn`'s first scene, resolved via the same
+/// script-context + DESCRIPT location→music path the video pipeline uses (the music map
+/// is keyed by scene/location HNMs, so this — not the talk HNM — is the correct source).
+/// Parses the extract-side DESCRIPT itself (its `DescriptDb` differs from the lib's).
+/// Public so the `engine-play` driver can add the scene's music to its output.
+pub fn script_background_music(iso_dir: &std::path::Path, script: &str) -> Option<String> {
+    let descript = parse_descript(&iso_dir.join("DESCRIPT.DES")).ok()?;
+    let hnm_music = descript.hnm_music_map();
+    let ctxs = script::parse_script_character_contexts(iso_dir, &descript, &hnm_music).ok()?;
+    ctxs.iter()
+        .filter(|c| c.script == script)
+        .find_map(|c| c.background_music.clone())
+}
+
 use audio::*;
 use character::*;
 #[cfg(test)]
