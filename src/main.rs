@@ -201,8 +201,10 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     use x11rb::connection::Connection;
     use x11rb::protocol::Event;
     use x11rb::protocol::xproto::{
-        ConnectionExt, CreateGCAux, CreateWindowAux, EventMask, ImageFormat, WindowClass,
+        AtomEnum, ConnectionExt, CreateGCAux, CreateWindowAux, EventMask, ImageFormat, PropMode,
+        WindowClass,
     };
+    use x11rb::wrapper::ConnectionExt as _;
 
     let rd = |ext: &str| std::fs::read(format!("{iso}/{script}.{ext}"));
     let (cod, var, dic, deb) = (rd("COD")?, rd("VAR")?, rd("DIC")?, rd("DEB")?);
@@ -211,6 +213,15 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     let mut engine = EngineState::new();
     engine.load_dialogue_scenes(&cod, &var, &dic, &deb, &descript, Path::new(assets));
     engine.dialogue_hold_frames = 20;
+    // Start in the star-map nav view; the playable loop below switches nav<->dialogue.
+    engine.on_ship = true;
+    // Load SCRIPT<n>'s dialogue into the engine (the destination's scene).
+    let load_script = |engine: &mut EngineState, n: u32| {
+        let r = |ext: &str| std::fs::read(format!("{iso}/SCRIPT{n}.{ext}"));
+        if let (Ok(c), Ok(v), Ok(d), Ok(b)) = (r("COD"), r("VAR"), r("DIC"), r("DEB")) {
+            engine.load_dialogue_scenes(&c, &v, &d, &b, &descript, Path::new(assets));
+        }
+    };
 
     let (conn, screen_num) =
         x11rb::connect(None).map_err(|e| anyhow::anyhow!("X11 connect: {e}"))?;
@@ -236,6 +247,13 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 | EventMask::STRUCTURE_NOTIFY,
         ),
     )?;
+    conn.change_property8(
+        PropMode::REPLACE,
+        win,
+        u32::from(AtomEnum::WM_NAME),
+        u32::from(AtomEnum::STRING),
+        b"Commander Blood - engine",
+    )?;
     conn.map_window(win)?;
     let gc = conn.generate_id()?;
     conn.create_gc(gc, win, &CreateGCAux::new())?;
@@ -244,6 +262,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     // 4 bytes/pixel Z-pixmap (little-endian BGRX for the common depth-24 visual).
     let mut image = vec![0u8; ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT * 4];
     let (mut mx, mut my, mut buttons) = (0u16, 0u16, 0u16);
+    let mut clicked = false;
     let mut frames_since_input = 0u32;
     loop {
         while let Some(event) = conn.poll_for_event()? {
@@ -252,20 +271,36 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     mx = m.event_x.clamp(0, w as i16 - 1) as u16;
                     my = m.event_y.clamp(0, h as i16 - 1) as u16;
                 }
+                // Left button drives nav selection (via the engine); right button is a
+                // manual nav<->dialogue view toggle for convenience.
                 Event::ButtonPress(b) if b.detail == 1 => {
                     buttons = 1;
-                    engine.on_ship = !engine.on_ship;
+                    clicked = true; // latch so a fast press+release still reaches step()
                 }
+                Event::ButtonPress(b) if b.detail == 3 => engine.on_ship = !engine.on_ship,
                 Event::ButtonRelease(b) if b.detail == 1 => buttons = 0,
                 Event::DestroyNotify(_) => return Ok(()),
                 _ => {}
             }
         }
+        // A click that arrived and released within one frame still presents as pressed
+        // for this step, so the engine's edge-triggered nav select fires.
+        let step_buttons = if clicked { 1 } else { buttons };
+        clicked = false;
         engine.step(MouseInput {
             x: mx,
             y: my,
-            buttons,
+            buttons: step_buttons,
         });
+        // Playable loop: a nav-view click commits a destination → load its dialogue and
+        // switch to the scene; when the dialogue finishes, return to the nav view.
+        if let Some(heading) = engine.take_nav_selection() {
+            let dest = (heading as u32 * 5 / 180).clamp(0, 4) + 1; // heading → SCRIPT1..5
+            load_script(&mut engine, dest);
+            engine.on_ship = false;
+        } else if !engine.on_ship && engine.dialogue_finished() {
+            engine.on_ship = true;
+        }
         for (i, &idx) in engine.framebuffer.iter().enumerate() {
             let c = engine.scene_palette[idx as usize];
             image[i * 4] = c[2];
