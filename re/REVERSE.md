@@ -105,10 +105,22 @@ is the per-object update/draw method. Init sub `0x22A` is the MOUSE CAMERA CONTR
 tests buttons in `[0x2E]` (bit0=left, bit1=right). So `croolis.xdb` is an
 INTERACTIVE 3D ALIEN-VIEW SCREEN: mouse-controlled smoothed camera + the
 object/vtable-dispatched render loop above — structurally the same shape as the
-ship-3D view (mouse delta from centre → camera, per-object draw). NEXT: map the
-vtable method at `+0x103A` (per-object update/draw) and the remaining init subs
-(`0x1E1D,0x5DC,0x775`); the object list + vtable + camera-control are the
-recovered spine of the alien-species logic. The palette buffer at file 0x525A is the character-sprite
+ship-3D view (mouse delta from centre → camera, per-object draw). OVERLAY OBJECT/BEHAVIOR LOGIC DECODED (sess 003, `croolis.xdb`): the per-object
+method table is at `fs:0x103A` (file 0x432A), near-ptr entries indexed by
+`bx=fs:[di+0x34]` (0x1D27=`ret` null-method, plus 0xA30/0x16A4/0x12DE/0x999/0x36A).
+Object records are 0x5E bytes: `+0x16`=data ptr, `+0x36`=state flag, `+0x38`=timer
+(init 0x32), `+0x3C`=animation accumulator, and the 0x5E sub-record holds a
+sub-method at `+0xE`. Method `0x12DE` iterates `cx=[di+0x1A]` sub-objects, `call
+[si+0xE]` advancing `si+=0x5E`, gated by frame timer `cs:0xB72` (reset 7). Method
+`0x16A4` is an animation state machine: a PRNG (`mov ax,fs:[0x105C]; ror ax,7; sbb
+ax,0; store back`) drives object state (`[di+0x36]=1, +0x38=0x32 timer,
++0x3C=anim` from `cs:[0x16A2]` incremented by 0xFA/call), else `jmp [si+0xE]` to a
+sub-behaviour. So the alien-species logic = a list of 0x5E-byte objects, each a
+PRNG+timer animation state machine, dispatched per frame — feeding the same
+per-object 3D draw pattern as the ship view. RECOVERED: overlay spine end-to-end
+(entry→dispatch→palette/mouse init→plane clear→object loop→camera→object state
+machines). REMAINING: the geometry/blit inside the sub-methods (`[si+0xE]`), the
+init subs `0x1E1D/0x5DC/0x775`, and the same for `amer/scrut/manu3.xdb`. The palette buffer at file 0x525A is the character-sprite
 palette source; `amer.xdb`/`scrut.xdb` share the same entry-stub shape.
 
 ## Memory Map (load image, base segment 0)
