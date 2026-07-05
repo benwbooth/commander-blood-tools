@@ -432,6 +432,18 @@ impl EngineState {
         if let Some(render) = render_ship_3d_starfield(&mut prng, angles, origin, viewport) {
             self.framebuffer.copy_from_slice(&render.buffer);
         }
+        // Star-map nav grid: a perspective grid of shaded pyramids + eye-orb (the
+        // navigable star systems), approximating the real game's nav-view layout.
+        crate::ship3d::render_star_map_navview(&mut self.framebuffer, 200, 90, 240);
+        // Display palette for the ship view: a grey ramp for the starfield depth
+        // shades + the nav-grid face/orb indices (framebuffer is indexed).
+        for (i, slot) in self.scene_palette.iter_mut().enumerate() {
+            let g = (i.min(255)) as u8;
+            *slot = [g, g, g];
+        }
+        self.scene_palette[90] = [96, 96, 104];
+        self.scene_palette[200] = [176, 176, 184];
+        self.scene_palette[240] = [232, 232, 240];
         // Composite the sprite HUD over the starfield: the BCARTE perspective grid
         // frame selected by the compass angle, then the BORXX orb, into the HUD band.
         let grid_idx = {
