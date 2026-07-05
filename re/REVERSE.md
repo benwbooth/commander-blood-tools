@@ -289,6 +289,22 @@ renderer); remaining ship-view visual = compose the pyramid-HUD overlay (grid +
 orb) over the scene, driven by the destination list. Bounded sprite compositing,
 not new rendering.
 
+SHIP-HUD PARTS — PRECISELY SCOPED (sess 003): the pyramid-nav HUD decomposes into
+three parts, TWO of which are already done/available:
+1. ANGLE/compass update — routine @file 0x9656 (`ship_3d_procedural_angle_update`,
+   gated by `[0x2793]&8`, angle math 0xB4/0x5A) is ALREADY implemented + tested in
+   `ship3d.rs`. Done.
+2. ORB animation — `pe/eye01..10.hnm` + `pe/eyeer.hnm` (NOT BORXX.SPR): CONFIRMED
+   decodable via the existing HNM pipeline (`--hnm pe/eye01.hnm` = 31 frames ->
+   MP4). Available now; just needs compositing into the HUD band (rows ~146..193,
+   centred). Done/available.
+3. PYRAMID GRID pixels — the ONLY remaining ship-HUD RE piece: a separate
+   procedural pixel-drawing routine (uses the 0x9656 angle to draw the grey
+   pyramid grid). 0x9656 is the angle math, not the pixel plot; the plot routine
+   is still to be located + decoded. This is bounded RE (one routine), not runtime
+   state. So the ship-HUD is ~2/3 done (angle + orb); remaining = the pyramid-grid
+   pixel routine.
+
 ## Memory Map (load image, base segment 0)
 
 | Region | File range | Notes |
