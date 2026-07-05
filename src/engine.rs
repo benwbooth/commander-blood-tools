@@ -483,7 +483,10 @@ impl EngineState {
                 *p = 0;
             }
         }
-        // Subtitle text layer over the scene.
+        // Subtitle text layer over the scene. Force the reserved subtitle index to
+        // white so it's visible regardless of the scene palette (mirrors the game's
+        // reserved high-palette subtitle colour).
+        self.scene_palette[0xFD] = [245, 245, 245];
         if let Some(text) = self.current_subtitle().map(str::to_string) {
             self.draw_subtitle(&text, 0xFD);
         }

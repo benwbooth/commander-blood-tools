@@ -98,6 +98,81 @@ fn run() -> anyhow::Result<()> {
             }
             Ok(())
         }
+        Some("engine-play") => {
+            let iso = args.next().ok_or_else(|| {
+                anyhow::anyhow!("usage: engine-play <iso-dir> <asset-dir> <out.mp4> [SCRIPTn]")
+            })?;
+            let assets = args
+                .next()
+                .ok_or_else(|| anyhow::anyhow!("missing asset-dir"))?;
+            let out = args
+                .next()
+                .ok_or_else(|| anyhow::anyhow!("missing out.mp4"))?;
+            let script = args.next().unwrap_or_else(|| "SCRIPT1".to_string());
+            run_engine_play(&iso, &assets, &out, &script)
+        }
         _ => extract::run().map_err(|err| anyhow::anyhow!("{err}")),
     }
+}
+
+/// Headless real-time engine driver: run the runnable engine (`EngineState`) over a
+/// script's dialogue scene flow and encode each stepped frame to an MP4 — the
+/// engine playing the game, produced without a graphics window (the windowed
+/// backend layers the same loop onto a display).
+fn run_engine_play(iso: &str, assets: &str, out: &str, script: &str) -> anyhow::Result<()> {
+    use commander_blood_tools::engine::{
+        ENGINE_SCREEN_HEIGHT, ENGINE_SCREEN_WIDTH, EngineState, MouseInput,
+    };
+    use std::io::Write;
+    use std::path::Path;
+    use std::process::{Command, Stdio};
+
+    let rd = |ext: &str| std::fs::read(format!("{iso}/{script}.{ext}"));
+    let (cod, var, dic, deb) = (rd("COD")?, rd("VAR")?, rd("DIC")?, rd("DEB")?);
+    let descript =
+        commander_blood_tools::descript::DescriptDb::parse_file(format!("{iso}/DESCRIPT.DES"))?;
+
+    let mut engine = EngineState::new();
+    engine.load_dialogue_scenes(&cod, &var, &dic, &deb, &descript, Path::new(assets));
+    engine.dialogue_hold_frames = 20; // ~1.3s per line at 15 fps
+
+    let total = (engine.dialogue_len().max(1) as u32) * engine.dialogue_hold_frames + 30;
+    let mut ff = Command::new("ffmpeg")
+        .args([
+            "-y",
+            "-f",
+            "rawvideo",
+            "-pix_fmt",
+            "rgb24",
+            "-s",
+            &format!("{ENGINE_SCREEN_WIDTH}x{ENGINE_SCREEN_HEIGHT}"),
+            "-r",
+            "15",
+            "-i",
+            "-",
+            "-c:v",
+            "libx264",
+            "-crf",
+            "18",
+            "-pix_fmt",
+            "yuv420p",
+            out,
+        ])
+        .stdin(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn()?;
+    let mut stdin = ff.stdin.take().unwrap();
+    let mut rgb = vec![0u8; ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT * 3];
+    for _ in 0..total {
+        engine.step(MouseInput::default());
+        for (i, &idx) in engine.framebuffer.iter().enumerate() {
+            let c = engine.scene_palette[idx as usize];
+            rgb[i * 3..i * 3 + 3].copy_from_slice(&c);
+        }
+        stdin.write_all(&rgb)?;
+    }
+    drop(stdin);
+    ff.wait()?;
+    eprintln!("engine played {} lines -> {out}", engine.dialogue_len());
+    Ok(())
 }
