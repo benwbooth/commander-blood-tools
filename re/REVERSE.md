@@ -529,6 +529,18 @@ portrait `.spr` is shown). Color character rendering therefore REQUIRES tracing
 that runtime remap — static extraction is definitively ruled out. The orb
 (grayscale, low indices) is unaffected and renders correctly today.
 
+REMAP DIRECTION CONFIRMED (sess 003): remapping `JERRY.SPR`'s high indices
+`224-236` down into the idle-head HNM `pe/aajer.hnm`'s defined palette range
+(non-black at indices 2-126) makes a **recognisable character figure emerge**
+(offset ~208-223 turns ~5600/8320 pixels non-black, vs a hollow outline with the
+raw palette). So the portrait `.spr` high slots ARE the idle-head HNM colours
+mapped down — the runtime display path builds the `224-255` character palette by
+copying the character's own HNM palette into the high slots. The exact offset /
+per-index mapping (the render is still murky at a naive linear offset, so it is
+not a plain `idx-208`) is the remaining detail, resolvable only from the display
+path code that performs the copy. This is the precise, well-scoped task for color
+character rendering.
+
 So with `.spr`, all HNM header AND per-frame palettes, and immediate DAC writes
 all ruled out, the `224-255` character palette lives ONLY in an **`.xdb` overlay**
 (SCRUTER is the `croolis`/scrutinizer species → `croolis.xdb`) or is constructed
