@@ -1073,10 +1073,17 @@ pub(super) fn parse_script_uncovered_speech(
 
         let mut seq = 0usize;
         for line in &static_lines {
+            // Renderable if a resolved actor speaks with EITHER a scene background
+            // (planet dialogue) OR a talk clip (ship-side characters like Cap'n Bob
+            // / Bob_Morlock, whose DESCRIPT record has a talk HNM `aabob.hnm` but no
+            // planet location — they render over their talk animation, not a bg).
+            let renderable = line.actor_record.is_some()
+                && (line.background_hnm.is_some()
+                    || line.background_record.is_some()
+                    || line.clip_index.is_some());
             if covered_fns.contains(line.function_name.as_str())
                 || executed_offsets.contains(&line.offset)
-                || line.actor_record.is_none()
-                || (line.background_hnm.is_none() && line.background_record.is_none())
+                || !renderable
                 || line.text.trim().is_empty()
             {
                 continue;

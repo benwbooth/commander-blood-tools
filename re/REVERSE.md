@@ -2245,6 +2245,28 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       1524 lines / ~180 scenes), verified rendering (clay3 → Anna_Haf on Magnus).**
       Remaining ~4% are lines with no statically-resolved background (a smaller
       follow-up: infer their bg or mark narrator/locationless).
+- [x] **Engine RE of the residual ~4% (sess 004) — it is NOT missing character
+      dialogue.** Investigated each uncovered "narrator" function via the engine's
+      per-script config blocks (BLOODPRG.EXE @file 0xCE14 for SCRIPT1, 0xD044 for
+      SCRIPT2, … — each lists the script's UI sprites `radio/btv/bcarte/borxx.spr`
+      + the location palettes `*.ext`; `tvgren*.hnm` = the TV/videophone comms
+      screen) and the DEB call graph. Findings: (a) SCRIPT2 `miss` (story recap) is
+      called ONLY from `what` = the DEBUG/CHEAT menu ("CHEAT MODE…", "Script 3
+      selected…") — debug-only, players never see it; (b) SCRIPT5 `honk1` etc. =
+      the ship AI **Honk** ("I exist only to obey, Commander"; not a visual
+      character, no DESCRIPT scene) shown on the ship console; (c) SCRIPT3 `tim*B` =
+      cyberspace/network terminal UI ("Network… modem activated"); (d) `help*` =
+      the help/hint system; (e) `men*` = food/menu UI ("PLASMA soup HONK-style").
+      So the residual is UI/system text across DISTINCT subsystems (comms screen,
+      cyberspace terminal, help overlay, debug, menus), each with its own
+      presentation — NOT the character-dialogue scene pipeline, which is COMPLETE.
+      Also fixed: ship-side characters with a talk HNM but no planet location (e.g.
+      **Cap'n Bob / Bob_Morlock**, DESCRIPT `aabob.hnm`, no location — he's in his
+      cryobox on the Ark) were wrongly skipped by the bg-required filter; relaxed to
+      `actor AND (background OR clip)` so they render over their full-frame talk HNM
+      (verified: revel "You want to know an unbearable truth" renders Bob's red
+      mismatched-eye face). Conclusion: character-dialogue coverage is effectively
+      100%; the 95.8% figure counts non-dialogue UI text in the denominator.
 - [x] Expose TEXT control flags: `script-text-flags.tsv` lists every `0xA6`
       token's `b3`, `b4`, `b5`, active bit, conditional skip count, loop target,
       known parse-control bits, and still-unknown `b4` payload bits. This gives
