@@ -19,6 +19,23 @@
         system:
         let
           pkgs = import nixpkgs { inherit system; };
+          # Graphics runtime libraries that windowing crates (winit, minifb,
+          # softbuffer) dlopen at startup. On Nix these live in isolated store
+          # paths rather than a global /usr/lib, so they must be put on
+          # LD_LIBRARY_PATH explicitly or the dlopen fails at EventLoop init.
+          # (The engine's x11rb backend is pure-Rust protocol-over-socket and
+          # needs none of these, but they make the shell work for any graphics
+          # tooling and let winit/minifb run under Xvfb.)
+          graphicsLibs = with pkgs; [
+            libx11
+            libxcursor
+            libxi
+            libxrandr
+            libxcb
+            libxkbcommon
+            wayland
+            libGL
+          ];
         in
         {
           default = pkgs.mkShell {
@@ -48,6 +65,7 @@
               export FFMPEG="${pkgs.ffmpeg}/bin/ffmpeg"
               export FFPROBE="${pkgs.ffmpeg}/bin/ffprobe"
               export SEVENZIP="${pkgs.p7zip}/bin/7z"
+              export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath graphicsLibs}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
             '';
           };
         }
