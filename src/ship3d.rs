@@ -1869,6 +1869,71 @@ pub const SHIP_3D_HUD_PYRAMID_VERTICES: [[i16; 3]; 32] = [
 /// position marked. FUNCTIONAL render: the exact per-pixel procedural algorithm
 /// (BLOODPRG.EXE ship-3D HUD @~0x9656/0xB193, 3D-projected pyramid vertices) is
 /// still being decoded; this fills the HUD band with the correct structure.
+/// Render a plausible full-screen star-map navigation view into an indexed 320x200
+/// framebuffer: a receding perspective grid of shaded pyramids (the navigable star
+/// systems) with the central eye-orb, matching the real game's layout (verified
+/// against the DOSBox-X oracle capture — scene-view on top, pyramid grid filling the
+/// lower half). This is a VISUAL APPROXIMATION for the engine's nav view: it
+/// reproduces the game's on-screen composition (rows of pyramids + orb) without the
+/// exact recovered geometry/projection (see `SHIP_3D_HUD_PYRAMID_VERTICES` — the
+/// game's own projection is still being decoded). `light`/`dark`/`orb` are palette
+/// indices for the lit pyramid faces, shadowed faces, and the orb.
+pub fn render_star_map_navview(buffer: &mut [u8], light: u8, dark: u8, orb: u8) {
+    const W: isize = SHIP_3D_PROJECTION_SCREEN_WIDTH as isize; // 320
+    const H: isize = SHIP_3D_PROJECTION_SCREEN_HEIGHT as isize; // 200
+    let horizon: isize = 96; // grid recedes to here; scene band is above
+    let put = |buf: &mut [u8], x: isize, y: isize, c: u8| {
+        if (0..W).contains(&x) && (0..H).contains(&y) {
+            buf[(y * W + x) as usize] = c;
+        }
+    };
+    // Fill one pyramid: a triangle (apex up) with a lit left face + shadowed right
+    // face for a simple 3D look, centred at (cx, base_y) with half-width hw + height h.
+    let pyramid = |buf: &mut [u8], cx: isize, base_y: isize, hw: isize, h: isize| {
+        let apex_y = base_y - h;
+        for y in apex_y..=base_y {
+            let t = (y - apex_y) as f32 / (h.max(1)) as f32; // 0 apex .. 1 base
+            let half = (t * hw as f32) as isize;
+            for x in (cx - half)..=(cx + half) {
+                // left of centre = lit face, right = shadowed
+                let c = if x <= cx { light } else { dark };
+                put(buf, x, y, c);
+            }
+        }
+    };
+    // Perspective grid: rows recede from the bottom up to the horizon; nearer rows are
+    // larger and fewer-spaced, farther rows smaller and denser.
+    let rows = 4;
+    for r in 0..rows {
+        let depth = r as f32 / rows as f32; // 0 near .. ~1 far
+        let base_y = H - 8 - (depth * (H - 8 - horizon) as f32) as isize;
+        let hw = (26.0 * (1.0 - depth * 0.7)) as isize;
+        let h = (30.0 * (1.0 - depth * 0.7)) as isize;
+        let spacing = (72.0 * (1.0 - depth * 0.55)) as isize;
+        // stagger alternate rows so pyramids interleave like the real grid
+        let offset = if r % 2 == 0 { 0 } else { spacing / 2 };
+        let mut cx = 8 + offset;
+        while cx < W - 8 {
+            // skip drawing right behind the orb so it reads on top
+            if !(depth < 0.5 && (cx - W / 2).abs() < 26) {
+                pyramid(buffer, cx, base_y, hw.max(3), h.max(4));
+            }
+            cx += spacing.max(20);
+        }
+    }
+    // Central eye-orb: a filled disc with a lit rim.
+    let (ocx, ocy, orad) = (W / 2, horizon + 22, 20isize);
+    for y in -orad..=orad {
+        for x in -orad..=orad {
+            let d2 = x * x + y * y;
+            if d2 <= orad * orad {
+                let c = if d2 > (orad - 3) * (orad - 3) { light } else { orb };
+                put(buffer, ocx + x, ocy + y, c);
+            }
+        }
+    }
+}
+
 pub fn render_ship_3d_pyramid_hud(buffer: &mut [u8], grid_color: u8, orb_color: u8) {
     const W: isize = SHIP_3D_PROJECTION_SCREEN_WIDTH as isize; // 320
     const H: isize = SHIP_3D_PROJECTION_SCREEN_HEIGHT as isize; // 200
@@ -3082,6 +3147,20 @@ mod tests {
             })
             .count();
         assert!(projected > 0, "some HUD vertices must project on-screen");
+    }
+
+    #[test]
+    fn star_map_navview_renders_grid_and_orb() {
+        let mut fb = vec![0u8; SHIP_3D_PROJECTION_SCREEN_WIDTH * SHIP_3D_PROJECTION_SCREEN_HEIGHT];
+        render_star_map_navview(&mut fb, 200, 90, 240);
+        // pyramids (light+dark) and the orb are all drawn
+        assert!(fb.iter().any(|&p| p == 200), "lit pyramid faces");
+        assert!(fb.iter().any(|&p| p == 90), "shadowed pyramid faces");
+        assert!(fb.iter().any(|&p| p == 240), "orb");
+        // orb sits around screen centre (x~160, y~118)
+        let orb_row = 118 * SHIP_3D_PROJECTION_SCREEN_WIDTH;
+        assert!(fb[orb_row + 150..orb_row + 170].iter().any(|&p| p == 240),
+            "orb near centre");
     }
 
     #[test]
