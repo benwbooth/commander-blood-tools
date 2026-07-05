@@ -1809,11 +1809,16 @@ pub const SHIP_3D_HUD_BAND_TOP: usize = 0xA5; // 165
 /// at DS:0x2F95 from the angle table + angle words 0x2F71/0x2F6D/0x2F6F — i.e. this is
 /// exactly [`build_ship_3d_projection_matrix`] (same angle fields). 0x5251 is then a
 /// working copy (`rep movsd 0xC0` from 0x5B58). So the rotation half of the HUD
-/// projection is ALREADY implemented; the only remaining unknowns are (a) how the
-/// compass angle [0x2795]=0xB3 maps into the matrix angle 0x2F6D, and (b) the 0x5F11
-/// origin/translation + the /100 perspective divide in `0x22E0`.
-/// TODO (next session): pin (a)+(b), then reimplement the render via the existing
-/// matrix builder + these params and diff vs the DOSBox-X oracle.
+/// projection is ALREADY implemented.
+///
+/// CORRECTION (was wrong before): `0x1CE:0`/`0x22E0` is NOT the perspective transform.
+/// Full decode shows it computes squared distances `Σ(a_i-b_i)²` over records and
+/// tracks the minimum — a NEAREST-POINT / hit-test search (which pyramid the cursor is
+/// closest to), not a projection. So the actual vertex→screen PROJECTION for the
+/// pyramids is still unlocated — it runs before `0x299:0x1467` fills the 0x6212 records
+/// with already-projected coords. TODO (next session): find the routine that projects
+/// the 0x5491 verts into the 0x6212 display-list records (that IS the missing
+/// projection), plus the compass→matrix-angle map; then reimplement + diff vs oracle.
 pub const SHIP_3D_HUD_PYRAMID_VERTICES: [[i16; 3]; 32] = [
     [0, 2304, 3075],
     [776, 1803, 2820],
