@@ -111,6 +111,16 @@ fn run() -> anyhow::Result<()> {
             let script = args.next().unwrap_or_else(|| "SCRIPT1".to_string());
             run_engine_play(&iso, &assets, &out, &script)
         }
+        Some("engine-window") => {
+            let iso = args.next().ok_or_else(|| {
+                anyhow::anyhow!("usage: engine-window <iso-dir> <asset-dir> [SCRIPTn]")
+            })?;
+            let assets = args
+                .next()
+                .ok_or_else(|| anyhow::anyhow!("missing asset-dir"))?;
+            let script = args.next().unwrap_or_else(|| "SCRIPT1".to_string());
+            run_engine_window(&iso, &assets, &script)
+        }
         _ => extract::run().map_err(|err| anyhow::anyhow!("{err}")),
     }
 }
@@ -174,5 +184,61 @@ fn run_engine_play(iso: &str, assets: &str, out: &str, script: &str) -> anyhow::
     drop(stdin);
     ff.wait()?;
     eprintln!("engine played {} lines -> {out}", engine.dialogue_len());
+    Ok(())
+}
+
+/// Real-time windowed backend: present the runnable engine in a live 320x200 window
+/// and drive it with real mouse input (position steers the ship-nav compass; Space
+/// toggles the on-ship view vs the dialogue scene). This is the interactive
+/// presentation layer over the same [`EngineState::step`] loop the headless
+/// `engine-play` driver uses. Requires a graphics display to run.
+fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()> {
+    use commander_blood_tools::engine::{
+        ENGINE_SCREEN_HEIGHT, ENGINE_SCREEN_WIDTH, EngineState, MouseInput,
+    };
+    use minifb::{Key, MouseButton, MouseMode, Scale, Window, WindowOptions};
+    use std::path::Path;
+
+    let rd = |ext: &str| std::fs::read(format!("{iso}/{script}.{ext}"));
+    let (cod, var, dic, deb) = (rd("COD")?, rd("VAR")?, rd("DIC")?, rd("DEB")?);
+    let descript =
+        commander_blood_tools::descript::DescriptDb::parse_file(format!("{iso}/DESCRIPT.DES"))?;
+
+    let mut engine = EngineState::new();
+    engine.load_dialogue_scenes(&cod, &var, &dic, &deb, &descript, Path::new(assets));
+    engine.dialogue_hold_frames = 30;
+
+    let mut window = Window::new(
+        "Commander Blood — engine",
+        ENGINE_SCREEN_WIDTH,
+        ENGINE_SCREEN_HEIGHT,
+        WindowOptions {
+            scale: Scale::X2,
+            ..WindowOptions::default()
+        },
+    )?;
+    window.set_target_fps(15);
+
+    let mut buffer = vec![0u32; ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT];
+    let mut prev_space = false;
+    while window.is_open() && !window.is_key_down(Key::Escape) {
+        let (mx, my) = window.get_mouse_pos(MouseMode::Clamp).unwrap_or((0.0, 0.0));
+        let buttons = u16::from(window.get_mouse_down(MouseButton::Left));
+        let space = window.is_key_down(Key::Space);
+        if space && !prev_space {
+            engine.on_ship = !engine.on_ship;
+        }
+        prev_space = space;
+        engine.step(MouseInput {
+            x: mx as u16,
+            y: my as u16,
+            buttons,
+        });
+        for (i, &idx) in engine.framebuffer.iter().enumerate() {
+            let c = engine.scene_palette[idx as usize];
+            buffer[i] = ((c[0] as u32) << 16) | ((c[1] as u32) << 8) | (c[2] as u32);
+        }
+        window.update_with_buffer(&buffer, ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT)?;
+    }
     Ok(())
 }
