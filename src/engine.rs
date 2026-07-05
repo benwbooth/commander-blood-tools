@@ -168,6 +168,12 @@ pub struct EngineState {
     /// The next scene/profile index this script's D2 handoff requests (the
     /// scene-to-scene dispatch target), or `None` if the script has no successor.
     pending_profile: Option<u16>,
+    /// Queued scene scripts `(cod, var, dic)` for auto-chaining: when the current
+    /// dialogue finishes, the driver advances to the next queued scene (the
+    /// scene-to-scene flow the D2 handoff drives).
+    scene_queue: Vec<(Vec<u8>, Vec<u8>, Vec<u8>)>,
+    /// Index of the currently-playing scene in [`EngineState::scene_queue`].
+    scene_queue_idx: usize,
     /// Optional talk-HNM / scene background for the dialogue scene band, decoded
     /// per frame behind the subtitle.
     scene_hnm: Option<HnmFile>,
@@ -203,6 +209,8 @@ impl EngineState {
             dialogue_timer: 0,
             dialogue_scene_paths: Vec::new(),
             pending_profile: None,
+            scene_queue: Vec::new(),
+            scene_queue_idx: 0,
             scene_hnm: None,
             scene_palette: [[0u8; 3]; 256],
             framebuffer: vec![0u8; ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT],
@@ -310,6 +318,37 @@ impl EngineState {
     /// D2 handoff to [`EngineState::pending_next_scene`] would fire).
     pub fn dialogue_finished(&self) -> bool {
         !self.dialogue.is_empty() && self.dialogue_cursor + 1 >= self.dialogue.len()
+    }
+
+    /// Queue a sequence of scene scripts `(cod, var, dic)` and start the first, so
+    /// the engine auto-advances scene-to-scene as each finishes (the scene flow the
+    /// D2 handoff drives). Returns the number of scenes queued.
+    pub fn queue_scenes(&mut self, scenes: Vec<(Vec<u8>, Vec<u8>, Vec<u8>)>) -> usize {
+        self.scene_queue = scenes;
+        self.scene_queue_idx = 0;
+        let n = self.scene_queue.len();
+        if let Some((cod, var, dic)) = self.scene_queue.first().cloned() {
+            self.load_dialogue(&cod, &var, &dic);
+        }
+        n
+    }
+
+    /// The index of the scene currently playing in the queue.
+    pub fn current_scene_index(&self) -> usize {
+        self.scene_queue_idx
+    }
+
+    /// If the current dialogue has finished and another scene is queued, advance to
+    /// it (loading its script). Returns true if it advanced.
+    fn advance_scene_if_finished(&mut self) -> bool {
+        if self.dialogue_finished() && self.scene_queue_idx + 1 < self.scene_queue.len() {
+            self.scene_queue_idx += 1;
+            let (cod, var, dic) = self.scene_queue[self.scene_queue_idx].clone();
+            self.load_dialogue(&cod, &var, &dic);
+            true
+        } else {
+            false
+        }
     }
 
     /// The current dialogue line's reconstructed subtitle text, if non-empty.
@@ -483,8 +522,10 @@ impl EngineState {
             self.render_dialogue_frame();
         }
         // Script/scene stepping (the D2 handoff the main loop drives): advance the
-        // loaded dialogue playback.
+        // loaded dialogue playback, then chain to the next queued scene if this one
+        // just finished (the scene-to-scene dispatch).
         self.advance_dialogue();
+        self.advance_scene_if_finished();
         // Countdown at [0x0A40]: advanced each iteration, saturating at 0.
         self.countdown = self.countdown.saturating_sub(1);
         self.frame += 1;
@@ -935,6 +976,41 @@ mod tests {
             e.dialogue_finished(),
             "playback reaches the terminal line (D2 point)"
         );
+    }
+
+    #[test]
+    fn scene_queue_auto_chains_to_the_next_scene() {
+        let read = |n: &[&str]| n.iter().find_map(|p| std::fs::read(p).ok());
+        let load = |i: u32| -> Option<(Vec<u8>, Vec<u8>, Vec<u8>)> {
+            Some((
+                read(&[
+                    &format!("output/_tmp_iso/SCRIPT{i}.COD"),
+                    &format!("../output/_tmp_iso/SCRIPT{i}.COD"),
+                ])?,
+                read(&[
+                    &format!("output/_tmp_iso/SCRIPT{i}.VAR"),
+                    &format!("../output/_tmp_iso/SCRIPT{i}.VAR"),
+                ])?,
+                read(&[
+                    &format!("output/_tmp_iso/SCRIPT{i}.DIC"),
+                    &format!("../output/_tmp_iso/SCRIPT{i}.DIC"),
+                ])?,
+            ))
+        };
+        let (Some(s1), Some(s2)) = (load(1), load(2)) else {
+            return;
+        };
+        let mut e = EngineState::new();
+        let n = e.queue_scenes(vec![s1, s2]);
+        assert_eq!(n, 2);
+        assert_eq!(e.current_scene_index(), 0, "starts on the first scene");
+        assert!(e.dialogue_len() > 0);
+        // Drive fast to finish scene 0; the engine auto-chains to scene 1.
+        e.dialogue_hold_frames = 1;
+        for _ in 0..(e.dialogue_len() as u32 + 4) {
+            e.step(MouseInput::default());
+        }
+        assert_eq!(e.current_scene_index(), 1, "auto-chained to the next scene");
     }
 
     #[test]
