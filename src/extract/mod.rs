@@ -120,10 +120,11 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     // pipeline the alien overlays use) rendered as an actual artifact.
     if args.iter().any(|a| a == "--ship3d") {
         use commander_blood_tools::ship3d::{
-            BloodPrng, SHIP_3D_PROJECTION_SCREEN_HEIGHT, SHIP_3D_PROJECTION_SCREEN_WIDTH,
-            Ship3dMatrixAngles, Ship3dObjectSpriteDescriptor, Ship3dProjectionMatrix,
-            Ship3dProjectionOrigin, Ship3dProjectionPoint, Ship3dProjectionViewport,
-            render_ship_3d_starfield,
+            BloodPrng, SHIP_3D_PROJECTION_SCREEN_CENTER_X, SHIP_3D_PROJECTION_SCREEN_HEIGHT,
+            SHIP_3D_PROJECTION_SCREEN_WIDTH, Ship3dMatrixAngles, Ship3dObjectSpriteDescriptor,
+            Ship3dProjectionMatrix, Ship3dProjectionOrigin, Ship3dProjectionPoint,
+            Ship3dProjectionViewport, Ship3dTargetHitState, draw_ship_3d_target_list,
+            layout_ship_3d_target_list, render_ship_3d_starfield,
         };
         let mut out_dir = PathBuf::from(".");
         let mut iter = args.iter();
@@ -249,6 +250,71 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             eprintln!(
                 "ship-3D scene angle {proj}: starfield + object -> {}",
                 scene_out.display()
+            );
+
+            // Full nav view: draw the destination selector menu (data-driven layout
+            // from the location names) over the scene, using the tested
+            // layout_ship_3d_target_list + draw_ship_3d_target_list.
+            let dest_names = ["PTERRA", "USINE", "MAGNUS", "EKATOMB"];
+            let widths: Vec<u16> = dest_names
+                .iter()
+                .map(|n| n.chars().map(game_font_advance).sum::<usize>() as u16)
+                .collect();
+            let label_offsets: Vec<u16> = (1..=dest_names.len() as u16).collect();
+            let layout =
+                layout_ship_3d_target_list(&widths, SHIP_3D_PROJECTION_SCREEN_CENTER_X, false);
+            let mut nav = scene.clone();
+            let (bx, by, bw, bh) = (
+                layout.x as usize,
+                layout.y as usize,
+                layout.width as usize,
+                layout.height as usize,
+            );
+            for x in bx..(bx + bw).min(SHIP_3D_PROJECTION_SCREEN_WIDTH) {
+                if by < SHIP_3D_PROJECTION_SCREEN_HEIGHT {
+                    nav[by * SHIP_3D_PROJECTION_SCREEN_WIDTH + x] = 0xFD;
+                }
+                let yb = by + bh;
+                if yb < SHIP_3D_PROJECTION_SCREEN_HEIGHT {
+                    nav[yb * SHIP_3D_PROJECTION_SCREEN_WIDTH + x] = 0xFD;
+                }
+            }
+            let mut hit = Ship3dTargetHitState::default();
+            if let Some(draw_result) =
+                draw_ship_3d_target_list(&mut hit, layout, &label_offsets, &widths, false, None)
+            {
+                for cmd in &draw_result.commands {
+                    draw_game_text_indexed_clipped(
+                        &mut nav,
+                        dest_names[cmd.row_index],
+                        cmd.x as usize,
+                        cmd.y as usize,
+                        0,
+                        SHIP_3D_PROJECTION_SCREEN_HEIGHT,
+                    );
+                }
+            }
+            let nav_visible: Vec<u8> = nav
+                .iter()
+                .map(|&v| {
+                    if v == 0 {
+                        0
+                    } else {
+                        0x40u8.saturating_add(v.saturating_mul(12))
+                    }
+                })
+                .collect();
+            let nav_out = out_dir.join(format!("ship3d-navview-angle{proj:03}.pgm"));
+            let mut nfile = File::create(&nav_out)?;
+            write!(
+                nfile,
+                "P5\n{SHIP_3D_PROJECTION_SCREEN_WIDTH} {SHIP_3D_PROJECTION_SCREEN_HEIGHT}\n255\n"
+            )?;
+            nfile.write_all(&nav_visible)?;
+            eprintln!(
+                "ship-3D nav view angle {proj}: {} destinations -> {}",
+                dest_names.len(),
+                nav_out.display()
             );
         }
         return Ok(());

@@ -929,7 +929,7 @@ pub(super) fn visible_subtitle_lines(lines: &[String], visible_chars: usize) -> 
     out
 }
 
-fn draw_game_text_indexed_clipped(
+pub(super) fn draw_game_text_indexed_clipped(
     fb: &mut [u8],
     text: &str,
     x: usize,
