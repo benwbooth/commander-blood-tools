@@ -10,38 +10,7 @@ use commander_blood_tools::ship3d::{
 // Palette and framebuffer helpers
 // ===========================================================================
 
-pub(super) fn parse_palette_block(
-    data: &[u8],
-    mut pos: usize,
-    palette: &mut [[u8; 3]; 256],
-) -> usize {
-    while pos + 1 < data.len() {
-        let start = data[pos];
-        let count = data[pos + 1];
-        pos += 2;
-
-        if start == 0xFF && count == 0xFF {
-            break;
-        }
-
-        let n = if count == 0 { 256 } else { count as usize };
-        for i in 0..n {
-            if pos + 2 >= data.len() {
-                return pos;
-            }
-            let idx = start as usize + i;
-            if idx < 256 {
-                palette[idx] = [
-                    (data[pos] << 2) | (data[pos] >> 4),
-                    (data[pos + 1] << 2) | (data[pos + 1] >> 4),
-                    (data[pos + 2] << 2) | (data[pos + 2] >> 4),
-                ];
-            }
-            pos += 3;
-        }
-    }
-    pos
-}
+pub(super) use commander_blood_tools::hnm::parse_palette_block;
 
 pub(super) fn fb_to_rgb(fb: &[u8], palette: &[[u8; 3]; 256], rgb: &mut [u8]) {
     for (i, &px) in fb.iter().enumerate() {
@@ -1329,7 +1298,10 @@ mod tests {
         let read = |names: &[&str]| -> Option<Vec<u8>> {
             names.iter().find_map(|p| std::fs::read(p).ok())
         };
-        let Some(bc) = read(&["output/_tmp_iso/BCARTE.SPR", "../output/_tmp_iso/BCARTE.SPR"]) else {
+        let Some(bc) = read(&[
+            "output/_tmp_iso/BCARTE.SPR",
+            "../output/_tmp_iso/BCARTE.SPR",
+        ]) else {
             eprintln!("skipping: BCARTE.SPR not available");
             return;
         };
@@ -1348,7 +1320,10 @@ mod tests {
                     if idx == 0 {
                         continue;
                     }
-                    let (px, py) = (cx + x as i32 - f.width as i32 / 2, cy + y as i32 - f.height as i32 / 2);
+                    let (px, py) = (
+                        cx + x as i32 - f.width as i32 / 2,
+                        cy + y as i32 - f.height as i32 / 2,
+                    );
                     if (0..w as i32).contains(&px) && (0..h as i32).contains(&py) {
                         fb[py as usize * w + px as usize] = idx;
                     }
@@ -1364,7 +1339,16 @@ mod tests {
             }
         }
         // write a PGM (amplify indices so it's visible)
-        let vis: Vec<u8> = fb.iter().map(|&v| if v == 0 { 0 } else { 0x40u8.saturating_add(v.wrapping_mul(3)) }).collect();
+        let vis: Vec<u8> = fb
+            .iter()
+            .map(|&v| {
+                if v == 0 {
+                    0
+                } else {
+                    0x40u8.saturating_add(v.wrapping_mul(3))
+                }
+            })
+            .collect();
         let mut out = format!("P5\n{w} {h}\n255\n").into_bytes();
         out.extend_from_slice(&vis);
         std::fs::write("/tmp/ben_bcarte_hud.pgm", out).unwrap();

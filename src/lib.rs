@@ -3,6 +3,7 @@ pub mod decompress;
 pub mod descript;
 pub mod engine;
 pub mod font;
+pub mod hnm;
 pub mod script;
 pub mod ship3d;
 pub mod snd;
