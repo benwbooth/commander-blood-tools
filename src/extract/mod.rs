@@ -854,6 +854,38 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         }
     }
 
+    // --- Decode the pre-rendered alien 3D-view animations ---
+    // The alien "3D view" content (e.g. Scruter Jo's rotating/animating model) is
+    // PRE-RENDERED HNM animation (pe/scrut_a..d.hnm, caiscrut.hnm), NOT a runtime
+    // point cloud as earlier assumed. Like the intro cinematics these are real game
+    // presentation but not DESCRIPT scene records, so the scene decode skips them;
+    // decode them here so the export includes the per-alien 3D views.
+    for path in walk_files(&tmp_dat).into_iter().filter(|p| {
+        p.file_name()
+            .map(|n| {
+                let n = n.to_string_lossy().to_ascii_lowercase();
+                n.starts_with("scrut_") && n.ends_with(".hnm") || n == "caiscrut.hnm"
+            })
+            .unwrap_or(false)
+    }) {
+        let stem = path.file_stem().map(|s| s.to_string_lossy().into_owned());
+        let Some(stem) = stem else { continue };
+        let mp4_out = mp4_dir.join(format!("alien-3dview - {stem}.mp4"));
+        if mp4_out.exists() {
+            continue;
+        }
+        match decode_hnm_to_mp4(&path, &mp4_out, None) {
+            Ok(frames) => {
+                video_converted += 1;
+                eprintln!("[alien-3dview] {stem} ({frames} frames)");
+            }
+            Err(e) => {
+                eprintln!("[alien-3dview ERROR] {stem}: {e}");
+                let _ = fs::remove_file(&mp4_out);
+            }
+        }
+    }
+
     // --- Convert VOC audio files ---
     let voc_files: Vec<_> = walk_files(&tmp_dat)
         .into_iter()
