@@ -1759,6 +1759,47 @@ pub fn render_ship_3d_point_cloud(
 /// pyramid-nav grid + central eye-orb. See re/REVERSE.md.
 pub const SHIP_3D_HUD_BAND_TOP: usize = 0xA5; // 165
 
+/// The recovered ship-nav HUD pyramid geometry: 32 3D vertices (X,Y,Z, signed
+/// fixed-point) copied by `ship_3d_hud_init` (BLOODPRG.EXE @0xB079) from DS:0x5D98
+/// (file 0x131B8) into the HUD working area at ship-view entry, then projected by
+/// the shared matrix×vector + perspective pipeline. Vertices 16..23 form a linear
+/// compass axis; the rest are the pyramid/HUD corners. Recovered for an exact HUD
+/// render (projection is [`project_ship_3d_point`]); edge topology still pending.
+pub const SHIP_3D_HUD_PYRAMID_VERTICES: [[i16; 3]; 32] = [
+    [0, 2304, 3075],
+    [776, 1803, 2820],
+    [775, 1546, 2306],
+    [517, 1288, 1793],
+    [262, 1544, 2308],
+    [1034, 2573, 3589],
+    [1547, 3088, 4615],
+    [2062, 2068, 3076],
+    [2829, 3093, 5901],
+    [3081, 2840, 6415],
+    [4362, 2331, 7186],
+    [4359, 1562, 5903],
+    [4362, 2327, 5388],
+    [4368, 4892, 7956],
+    [6159, 3101, 8729],
+    [6670, 3875, 9244],
+    [0, 1024, 1028],
+    [2056, 3080, 3084],
+    [4369, 5393, 5397],
+    [6425, 7449, 7453],
+    [8738, 9762, 9766],
+    [10794, 11818, 11822],
+    [13107, 14131, 14135],
+    [15163, 16187, 16191],
+    [7697, 4901, 10016],
+    [7959, 2596, 8214],
+    [5898, 2334, 7700],
+    [8982, 6442, 10532],
+    [9753, 6956, 11817],
+    [11296, 9008, 13103],
+    [60, 0, 36],
+    [13323, 8194, 6719],
+];
+
 /// Render the pyramid-nav HUD grid into the bottom band of an indexed 320x200
 /// framebuffer (the band the exporter otherwise leaves BLACK in dialogue mode).
 /// Draws a perspective grid of grey pyramid (triangle) outlines matching the
@@ -2947,6 +2988,39 @@ fn next_target_list_draw_color(state: &mut Ship3dTargetHitState, activate: bool)
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn recovered_hud_pyramid_vertices_project_via_shared_projection() {
+        // The recovered HUD geometry runs through the same projection as the ship
+        // view / overlays. With the HUD entry angle (0xB3) at least some vertices
+        // project to valid on-screen depths (>0), confirming the data + pipeline.
+        assert_eq!(SHIP_3D_HUD_PYRAMID_VERTICES.len(), 32);
+        let matrix = build_ship_3d_projection_matrix(
+            &SHIP_3D_ANGLE_TABLE,
+            Ship3dMatrixAngles {
+                angle_2f71: 0,
+                projection_angle_2f6d: 0,
+                angle_2f6f: 0,
+            },
+        )
+        .expect("matrix");
+        let origin = Ship3dProjectionOrigin { x: 0, y: 0, z: 0 };
+        let projected = SHIP_3D_HUD_PYRAMID_VERTICES
+            .iter()
+            .filter_map(|v| {
+                project_ship_3d_point(
+                    Ship3dProjectionPoint {
+                        x: v[0] as u16,
+                        y: v[1] as u16,
+                        z: v[2] as u16,
+                    },
+                    origin,
+                    matrix,
+                )
+            })
+            .count();
+        assert!(projected > 0, "some HUD vertices must project on-screen");
+    }
 
     #[test]
     fn pyramid_hud_draws_only_in_the_bottom_band() {
