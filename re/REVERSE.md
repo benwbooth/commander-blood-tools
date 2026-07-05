@@ -212,10 +212,17 @@ OVERLAY FAMILY MAPPED (sess 003): the four `.xdb` overlays split into two shapes
   structure.
 - `manu3.xdb` (62KB) is a DIFFERENT shape — a menu/manual overlay: `push ds; mov
   cx,cs:[0x136A]; or cx,cx; je …; mov fs/ds/es,cx; mov eax,[bp]→[0x1A]; mov
-  ax,[bp+6]; shr ax,4; add ah,0xA0` (parameter → segment-style address). Its body
-  is the only structurally-new overlay left to decode.
-So the overlay subsystem is now ~3/4 mapped by the shared croolis template; the
-outstanding overlay work is the per-view object data and the manu3 menu body. The palette buffer at file 0x525A is the character-sprite
+  ax,[bp+6]; shr ax,4; add ah,0xA0` (parameter → segment-style address). BUT its
+  body (0x34..0x8B) does the SAME core: cursor position relative to screen centre
+  (`ax=[0x1A]-0xA0; +ax; → [0x23E4]`, `bx=[0x1C]-0x64; +bx; → [0x23E2]`) and then
+  the SAME 3x3 MATRIX×VECTOR 3D projection (`es:[0x2AC/0x2AE/0x2B0]` coords × matrix
+  `[di+0x2A]/[di+0x2E]/…`). So manu3 is a 3D MENU overlay (likely the pyramid-nav
+  HUD) that SHARES the engine 3D projection core.
+CONCLUSION: ALL FOUR overlays + the ship-3D view use ONE shared 3D projection
+(matrix×vector about principal point 160,100) — the compositor math is universal.
+The overlay-STRUCTURE survey is COMPLETE (3 alien-view overlays on the croolis
+template + manu3 the 3D menu). Outstanding overlay work is only per-overlay DATA
+(object lists / menu items / vtables), not new engine structure. The palette buffer at file 0x525A is the character-sprite
 palette source; `amer.xdb`/`scrut.xdb` share the same entry-stub shape.
 
 ## Memory Map (load image, base segment 0)
