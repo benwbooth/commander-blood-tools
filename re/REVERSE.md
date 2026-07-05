@@ -505,6 +505,18 @@ that master buffer — which means the open question is precisely *who writes
 load only fills the low/mid range). That writer is the remaining trace; it is
 reached through the `gs:0x5221` far pointer so it can't be grepped by a DS offset.
 
+`.ext` FILES ARE LOCATION PALETTES (sess 003): the 50 `.ext` resources
+(`KULT.EXT`, `CORPO.EXT`, `EDEN.EXT`, … — named per location/context in the
+RESOURCE_NAME_TABLE) begin with an HNM-style palette block (`start,count` + 6-bit
+RGB triples, `(v<<2)|(v>>4)`) defining the **low/mid background range**, followed
+by location tile/sprite data. They are the authoritative per-location palettes.
+But they do NOT supply the character high-slot palette: indices 224-236 are
+either reserved black or fall past the palette into tile data (a naive block
+parse there yields out-of-range values). So the character body colour (index 226)
+is still loaded at runtime onto the `.ext`/HNM base by the character-display path
+— confirming the `224-255` character palette is written into the `gs:0x5221`
+master buffer per character, not shipped in `.spr`/HNM/`.ext`.
+
 So with `.spr`, all HNM header AND per-frame palettes, and immediate DAC writes
 all ruled out, the `224-255` character palette lives ONLY in an **`.xdb` overlay**
 (SCRUTER is the `croolis`/scrutinizer species → `croolis.xdb`) or is constructed
