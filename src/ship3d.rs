@@ -2022,9 +2022,12 @@ pub fn render_star_map_navview_projected(buffer: &mut [u8], light: u8, dark: u8,
     };
     let origin = [0i32, -3500, 0];
     let pan = (compass_angle as i32 - 90) * 24; // steer left/right about centre
-    for zi in 0..6 {
-        for xi in -4..=4 {
-            let d = [xi * 2200 + pan, 0, 2500 + zi * 2400];
+    // Fewer, larger, wider-spaced pyramids in a corridor — matched against the real
+    // game's title-screen decorative HUD (which has ~4 rows of big pyramids, not a dense
+    // field). Verified visually against a boot capture of the original.
+    for zi in 0..4 {
+        for xi in -3..=3 {
+            let d = [xi * 3400 + pan, 0, 2200 + zi * 3300];
             let Some((px, py, _)) = project_star_map_point(d, origin, &m) else {
                 continue;
             };
@@ -2032,7 +2035,7 @@ pub fn render_star_map_navview_projected(buffer: &mut [u8], light: u8, dark: u8,
                 continue;
             }
             // filled pyramid (lit left / shadowed right), size by row (near = bigger)
-            let hh = 7 - zi as isize;
+            let hh = 12 - zi as isize * 2;
             for h in 0..hh {
                 let half = hh - h;
                 for x in -half..=half {
@@ -2044,17 +2047,29 @@ pub fn render_star_map_navview_projected(buffer: &mut [u8], light: u8, dark: u8,
             }
         }
     }
-    // Central eye-orb.
+    // Central eye-orb: pale sphere with a rim, plus a darker iris ring and pupil so it
+    // reads as the game's eye-orb rather than a plain disc.
     let (ocx, ocy, r) = (W / 2, 96 + 22, 20isize);
     for y in -r..=r {
         for x in -r..=r {
             let d2 = x * x + y * y;
-            if d2 <= r * r {
-                let (a, b) = (ocx + x, ocy + y);
-                if (0..W).contains(&a) && (0..H).contains(&b) {
-                    buffer[(b * W + a) as usize] = if d2 > (r - 3) * (r - 3) { light } else { orb };
-                }
+            if d2 > r * r {
+                continue;
             }
+            let (a, b) = (ocx + x, ocy + y);
+            if !((0..W).contains(&a) && (0..H).contains(&b)) {
+                continue;
+            }
+            let px = if d2 > (r - 3) * (r - 3) {
+                light // bright rim
+            } else if d2 <= 16 {
+                dark // pupil
+            } else if d2 <= 49 {
+                light // iris ring highlight
+            } else {
+                orb // sclera
+            };
+            buffer[(b * W + a) as usize] = px;
         }
     }
 }
