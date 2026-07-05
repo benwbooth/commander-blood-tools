@@ -520,10 +520,16 @@ and write one pixel). The real accessors of the palette buffer are only
 `0x8160` restores a **base palette from `DS:0x5251` → master[0..191]**
 (`rep movsd`, 0x90 dwords = 192 entries); both `0x5251` and `0x5B58` are runtime
 BSS (zero in the image). So the palette chain is `base DS:0x5251` (runtime-filled)
-→ `master DS:0x5B58` → DAC. The character high slots `224-236` are written by one
-of the remaining accessors (`0x9608/0x98A1/0xB563`) on the character-display path
-— the precise, now-narrowed trace target (only 3 sites, all direct `DS:0x5B58`
-loads, no far-pointer indirection).
+→ `master DS:0x5B58` → DAC. The three remaining accessors are all palette
+**save/restore backups**, NOT the character writer: `0x9608` and `0x98A1` copy
+master `0x5B58` → base `0x5251` (full 256 entries, `cx=0xC0` dwords); `0xB563`
+copies `0x5B58` → `0x5851` (192 entries) and zeroes `0x5551`. So the palette
+subsystem is fully mapped (buffer `0x5B58`, base `0x5251`, backups `0x5851`/
+`0x5551`, upload `0x0299:0x0000`, base-restore `0x8160`) — but the write that
+puts character colours into `master[224..236]` is in NONE of them, nor in any HNM
+`pl` chunk, nor static. It is therefore in the specific `.spr`-portrait display
+context (a menu/roster/overlay routine), still unlocated. That display-context
+routine is the exact remaining target for colour character rendering.
 
 `.ext` FILES ARE LOCATION PALETTES (sess 003): the 50 `.ext` resources
 (`KULT.EXT`, `CORPO.EXT`, `EDEN.EXT`, … — named per location/context in the
