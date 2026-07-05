@@ -1802,6 +1802,12 @@ pub const SHIP_3D_HUD_BAND_TOP: usize = 0xA5; // 165
 /// nothing — the caller must be found by CODE-FLOW tracing from the HUD update
 /// (0xB1D0 calls 0x299:0x1467/0x210D; the projection is invoked in/around there),
 /// using dis.py's reloc resolution rather than a raw byte grep.
+/// RENDER SIDE TRACED (sess 005): the record renderer @0x299:~0x14E1 (file 0x4473)
+/// iterates the 0x6612 records and dispatches each to a draw routine via a flag-indexed
+/// jump table at `cs:[((flags>>1)&0xE)+0x1592]` — i.e. the pyramids are drawn by a
+/// per-record dispatched draw op (sprite blit / fill / line) selected by the record
+/// flags. So the whole RENDER side (build list → flag-dispatch draw → segment raster)
+/// is mapped; only the upstream PROJECTION that writes the record coords remains.
 ///
 /// PIPELINE NOW MAPPED END-TO-END (routine level): hud_init (verts→0x5491, angle
 /// 0xB3) → prelude (band y165-200) → 0x1CE:0 (/100 perspective) → 0x299:0x1467
