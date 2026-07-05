@@ -64,6 +64,44 @@ fn parse_dictionary(dic: &[u8]) -> HashMap<u16, String> {
     words
 }
 
+/// Parse a `SCRIPTn.DEB` symbol table: object records (`kind==1`) mapping an
+/// object's byte offset to its name (the speaker's `actor_offset` indexes this).
+fn parse_deb_object_names(deb: &[u8]) -> HashMap<u16, String> {
+    let mut names = HashMap::new();
+    for r in deb.chunks_exact(20) {
+        let nl = r[..16].iter().position(|&b| b == 0).unwrap_or(16);
+        let offset = u16::from_le_bytes([r[16], r[17]]);
+        let kind = u16::from_le_bytes([r[18], r[19]]);
+        if kind == 1 {
+            names.insert(offset, String::from_utf8_lossy(&r[..nl]).into_owned());
+        }
+    }
+    names
+}
+
+/// Recursively collect `*.hnm` asset paths under `dir`, keyed by lowercase
+/// filename, so a DESCRIPT talk-HNM name resolves to its file.
+fn collect_hnm_paths(dir: &Path) -> HashMap<String, std::path::PathBuf> {
+    let mut map = HashMap::new();
+    let mut stack = vec![dir.to_path_buf()];
+    while let Some(d) = stack.pop() {
+        let Ok(rd) = std::fs::read_dir(&d) else {
+            continue;
+        };
+        for entry in rd.flatten() {
+            let p = entry.path();
+            if p.is_dir() {
+                stack.push(p);
+            } else if p.extension().is_some_and(|x| x.eq_ignore_ascii_case("hnm")) {
+                if let Some(n) = p.file_name() {
+                    map.insert(n.to_string_lossy().to_lowercase(), p);
+                }
+            }
+        }
+    }
+    map
+}
+
 /// Join dictionary words into a subtitle line: a space between words unless the
 /// next begins with attaching punctuation (mirrors `assemble_dialogue`).
 fn assemble_words(parts: &[String]) -> String {
@@ -124,6 +162,9 @@ pub struct EngineState {
     pub dialogue_hold_frames: u32,
     /// Frames the current dialogue line has been held.
     dialogue_timer: u32,
+    /// Per-line resolved talk-HNM asset path (the speaker's animation for each
+    /// dialogue line), loaded automatically as playback advances.
+    dialogue_scene_paths: Vec<Option<std::path::PathBuf>>,
     /// Optional talk-HNM / scene background for the dialogue scene band, decoded
     /// per frame behind the subtitle.
     scene_hnm: Option<HnmFile>,
@@ -157,6 +198,7 @@ impl EngineState {
             dialogue_cursor: 0,
             dialogue_hold_frames: 60,
             dialogue_timer: 0,
+            dialogue_scene_paths: Vec::new(),
             scene_hnm: None,
             scene_palette: [[0u8; 3]; 256],
             framebuffer: vec![0u8; ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT],
@@ -171,6 +213,42 @@ impl EngineState {
             // palette updates on top of it.
             self.scene_palette = hnm.palette;
             self.scene_hnm = Some(hnm);
+        }
+    }
+
+    /// Load a dialogue script AND resolve each line's speaker to its talk-HNM asset
+    /// (actor `0xC4` offset → DEB object name → DESCRIPT record → talk HNM → file in
+    /// `asset_dir`), so playback automatically shows the right character per line.
+    pub fn load_dialogue_scenes(
+        &mut self,
+        cod: &[u8],
+        var: &[u8],
+        dic: &[u8],
+        deb: &[u8],
+        descript_db: &crate::descript::DescriptDb,
+        asset_dir: &Path,
+    ) {
+        self.load_dialogue(cod, var, dic);
+        let object_names = parse_deb_object_names(deb);
+        let hnm_paths = collect_hnm_paths(asset_dir);
+        self.dialogue_scene_paths = self
+            .dialogue
+            .iter()
+            .map(|l| {
+                l.actor_offset
+                    .and_then(|o| object_names.get(&o))
+                    .and_then(|name| descript_db.record(name))
+                    .and_then(|r| r.talk_hnms.first())
+                    .and_then(|m| hnm_paths.get(&m.name.to_lowercase()).cloned())
+            })
+            .collect();
+        self.load_current_scene();
+    }
+
+    /// Load the talk-HNM resolved for the current dialogue line (if any).
+    fn load_current_scene(&mut self) {
+        if let Some(Some(path)) = self.dialogue_scene_paths.get(self.dialogue_cursor).cloned() {
+            self.load_scene_hnm(&path);
         }
     }
 
@@ -238,6 +316,10 @@ impl EngineState {
             self.dialogue_timer = 0;
             if self.dialogue_cursor + 1 < self.dialogue.len() {
                 self.dialogue_cursor += 1;
+                // New line: load its resolved talk-HNM (the right speaker).
+                if !self.dialogue_scene_paths.is_empty() {
+                    self.load_current_scene();
+                }
             }
         }
     }
@@ -677,6 +759,126 @@ mod tests {
         }
         std::fs::write("/tmp/ben_engine_scene.ppm", out).unwrap();
         eprintln!("wrote /tmp/ben_engine_scene.ppm");
+    }
+
+    #[test]
+    #[ignore]
+    fn probe_per_line_talk_hnm_resolution() {
+        let read = |n: &[&str]| n.iter().find_map(|p| std::fs::read(p).ok());
+        let (Some(cod), Some(var), Some(dic), Some(deb)) = (
+            read(&[
+                "output/_tmp_iso/SCRIPT1.COD",
+                "../output/_tmp_iso/SCRIPT1.COD",
+            ]),
+            read(&[
+                "output/_tmp_iso/SCRIPT1.VAR",
+                "../output/_tmp_iso/SCRIPT1.VAR",
+            ]),
+            read(&[
+                "output/_tmp_iso/SCRIPT1.DIC",
+                "../output/_tmp_iso/SCRIPT1.DIC",
+            ]),
+            read(&[
+                "output/_tmp_iso/SCRIPT1.DEB",
+                "../output/_tmp_iso/SCRIPT1.DEB",
+            ]),
+        ) else {
+            return;
+        };
+        let dpath = [
+            "output/_tmp_iso/DESCRIPT.DES",
+            "../output/_tmp_iso/DESCRIPT.DES",
+        ]
+        .iter()
+        .map(std::path::Path::new)
+        .find(|p| p.exists());
+        let Some(dpath) = dpath else {
+            return;
+        };
+        let descript = crate::descript::DescriptDb::parse_file(dpath).unwrap();
+        let object_names = parse_deb_object_names(&deb);
+        let mut e = EngineState::new();
+        e.load_dialogue(&cod, &var, &dic);
+        let mut resolved = 0usize;
+        let mut sample = Vec::new();
+        for l in &e.dialogue {
+            if let Some(name) = l.actor_offset.and_then(|o| object_names.get(&o)) {
+                if let Some(hnm) = descript.record(name).and_then(|r| r.talk_hnms.first()) {
+                    resolved += 1;
+                    if sample.len() < 4 {
+                        sample.push(format!("{name} -> {}", hnm.name));
+                    }
+                }
+            }
+        }
+        eprintln!(
+            "resolved {resolved}/{} lines; sample: {sample:?}",
+            e.dialogue.len()
+        );
+        assert!(resolved > 0, "per-line actor -> talk HNM resolution works");
+    }
+
+    #[test]
+    fn load_dialogue_scenes_resolves_per_line_speakers() {
+        let read = |n: &[&str]| n.iter().find_map(|p| std::fs::read(p).ok());
+        let (Some(cod), Some(var), Some(dic), Some(deb)) = (
+            read(&[
+                "output/_tmp_iso/SCRIPT1.COD",
+                "../output/_tmp_iso/SCRIPT1.COD",
+            ]),
+            read(&[
+                "output/_tmp_iso/SCRIPT1.VAR",
+                "../output/_tmp_iso/SCRIPT1.VAR",
+            ]),
+            read(&[
+                "output/_tmp_iso/SCRIPT1.DIC",
+                "../output/_tmp_iso/SCRIPT1.DIC",
+            ]),
+            read(&[
+                "output/_tmp_iso/SCRIPT1.DEB",
+                "../output/_tmp_iso/SCRIPT1.DEB",
+            ]),
+        ) else {
+            return;
+        };
+        let Some(dpath) = [
+            "output/_tmp_iso/DESCRIPT.DES",
+            "../output/_tmp_iso/DESCRIPT.DES",
+        ]
+        .iter()
+        .map(std::path::Path::new)
+        .find(|p| p.exists()) else {
+            return;
+        };
+        let Some(assets) = ["output/_tmp_dat", "../output/_tmp_dat"]
+            .iter()
+            .map(std::path::Path::new)
+            .find(|p| p.exists())
+        else {
+            return;
+        };
+        let descript = crate::descript::DescriptDb::parse_file(dpath).unwrap();
+        let mut e = EngineState::new();
+        e.load_dialogue_scenes(&cod, &var, &dic, &deb, &descript, assets);
+        // Many lines resolve to their speaker's talk-HNM asset file.
+        let resolved = e
+            .dialogue_scene_paths
+            .iter()
+            .filter(|p| p.is_some())
+            .count();
+        assert!(
+            resolved > 10,
+            "per-line speaker HNMs resolve to asset files (got {resolved})"
+        );
+        // Jump to a line that has a resolved speaker HNM and load it.
+        let idx = e
+            .dialogue_scene_paths
+            .iter()
+            .position(|p| p.is_some())
+            .unwrap();
+        e.dialogue_cursor = idx;
+        e.load_current_scene();
+        assert!(e.scene_hnm.is_some(), "the line's speaker talk-HNM loads");
     }
 
     #[test]
