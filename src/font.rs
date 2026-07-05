@@ -204,6 +204,31 @@ pub fn draw_text_indexed(
 mod tests {
     use super::*;
 
+    /// The extracted glyphs must match `BLOODPRG.EXE` byte-for-byte (rows @0x14D28,
+    /// advances @0x14CD2, ASCII→index map @0x14C22) — this is what makes the subtitle
+    /// font verified-by-construction against the game (no gameplay needed). Skips if the
+    /// executable isn't present in this checkout.
+    #[test]
+    fn glyphs_match_bloodprg_exe_byte_for_byte() {
+        let exe = match std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        {
+            Ok(b) => b,
+            Err(_) => return,
+        };
+        let (map, adv, rows) = (0x14c22usize, 0x14cd2usize, 0x14d28usize);
+        let mut checked = 0;
+        for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,!?:".chars() {
+            let idx = exe[map + ch as usize] as usize;
+            if let Some(g) = game_font_glyph(ch) {
+                checked += 1;
+                assert_eq!(g.rows, exe[rows + idx * 8..rows + idx * 8 + 8], "glyph '{ch}' rows");
+                assert_eq!(g.advance as u8, exe[adv + idx], "glyph '{ch}' advance");
+            }
+        }
+        assert!(checked >= 40, "checked most printable glyphs");
+    }
+
     #[test]
     fn draws_glyphs_and_skips_spaces() {
         let (w, h) = (64usize, 12usize);
