@@ -1855,6 +1855,13 @@ pub const SHIP_3D_HUD_BAND_TOP: usize = 0xA5; // 165
 /// animated) AND all three matrix angles 0x2F71/0x2F6D/0x2F6F (I assumed 6D/6F=0; verify
 /// their runtime values). Bit-exact render = this formula + the live camera state
 /// (savestate/memory dump of 0x2F65/67/69 + 0x2F6D/6F/71, or trace their per-frame set).
+/// ALL PARAMS NOW IDENTIFIED: angle_2f6d = the COMPASS angle DS:0x2795 (=0xB3 at entry,
+/// set @0x97EA `[0x2F6D]=[0x2795]`); angle_2f71 = the CAMERA angle (animated); angle_2f6f
+/// = 0 (never written); origin = (0x2F65 anim, 0x2F67=12000, 0x2F69=0). Brute-forcing
+/// "verts on-screen" finds DEGENERATE diagonal configs (compass-axis verts 16-23 collapse
+/// to a line), NOT the grid — so the grid needs the EXACT runtime frame (origin_x +
+/// angle_2f71 at a specific animation frame): savestate/memory dump, or image-fit vs the
+/// real char_7 grid. Formula + matrix + all param sources are decoded.
 ///
 /// PIPELINE NOW MAPPED END-TO-END (routine level): hud_init (verts→0x5491, angle
 /// 0xB3) → prelude (band y165-200) → 0x1CE:0 (/100 perspective) → 0x299:0x1467
