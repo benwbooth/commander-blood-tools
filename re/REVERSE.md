@@ -507,15 +507,23 @@ an immediate VGA-DAC write — the only `mov dx,0x3c8` sites (`0x862B`/`0x8694`)
 tweak a few UI indices near 0x7B (123), never 0xE0 (224). Also ELIMINATED: (d) the character
 HNMs' **per-frame `pl` chunks** — parsing every frame superchunk of `aajer.hnm`
 (18 frames) and `jerry_10.hnm` (31 frames), none define indices 224-239 either.
-PALETTE UPLOAD MECHANISM (sess 003): the full 256-colour DAC upload is `0x2F90`
-(`mov dx,0x3c8; xor al,al; out; inc dl; mov cx,0x300; rep outsb` — 768 bytes from
-`ds:si`); `0x2FA6` blacks the DAC; `0x2FBB` loads the source via
-`lds si, gs:[0x5221]`, i.e. there is a **master palette buffer behind the far
-pointer `gs:0x5221`**. So the character indices 224-236 ARE uploaded — as part of
-that master buffer — which means the open question is precisely *who writes
-`master_palette[224*3 .. 236*3]`* on the character-display path (the HNM palette
-load only fills the low/mid range). That writer is the remaining trace; it is
-reached through the `gs:0x5221` far pointer so it can't be grepped by a DS offset.
+PALETTE UPLOAD MECHANISM (sess 003, CORRECTED): the full 256-colour DAC upload is
+`0x0299:0x0000` (file `0x2F90`: `mov dx,0x3c8; xor al,al; out; inc dl;
+mov cx,0x300; rep outsb` — 768 bytes from `ds:si`); `0x0299:0x0016` blacks the
+DAC. It is called (from `0x16B0` / `0x179A`) with `ds:si = gs:0x5B58`, so the
+**master palette buffer is `gs:0x5B58`** (768 bytes). CORRECTION: an earlier note
+said the palette buffer was `gs:0x5221` — that is WRONG; `gs:0x5221` is the
+**framebuffer** pointer (the pixel-plot primitives at `0x2FBB`/`0x3000` bounds-
+check `x<0x140`, `y<0xC8`, compute planar/linear `y*80+x` offsets via `out 0x3c4`
+and write one pixel). The real accessors of the palette buffer are only
+`mov si,0x5B58` @ `0x16AD/0x9608/0x98A1/0xB563` and `mov di,0x5B58` @ `0x8169`.
+`0x8160` restores a **base palette from `DS:0x5251` → master[0..191]**
+(`rep movsd`, 0x90 dwords = 192 entries); both `0x5251` and `0x5B58` are runtime
+BSS (zero in the image). So the palette chain is `base DS:0x5251` (runtime-filled)
+→ `master DS:0x5B58` → DAC. The character high slots `224-236` are written by one
+of the remaining accessors (`0x9608/0x98A1/0xB563`) on the character-display path
+— the precise, now-narrowed trace target (only 3 sites, all direct `DS:0x5B58`
+loads, no far-pointer indirection).
 
 `.ext` FILES ARE LOCATION PALETTES (sess 003): the 50 `.ext` resources
 (`KULT.EXT`, `CORPO.EXT`, `EDEN.EXT`, … — named per location/context in the
