@@ -1792,6 +1792,13 @@ pub const SHIP_3D_HUD_BAND_TOP: usize = 0xA5; // 165
 ///   `[di+4]`, `[di+6]` = endpoints; `di += 8`), computes framebuffer offsets against
 ///   width 0x140=320, and draws the pyramid edges/spans into `gs:[0x5221]`.
 ///
+/// MORE RECORD FIELDS (sess 005): the 0x6212 32-byte record also has coord fields at
+/// `[0x18]/[0x1A]/[0x1C]/[0x1E]`, written by a far-call setter @0x299:0x13FB (file
+/// 0x438D) from bx/cx/dx/bp; sibling setters @0x4374 toggle flag bits. So the record
+/// holds {flags@0, coords@8/0xC, prev@0x10/0x14, more@0x18-0x1E}. The actual PROJECTION
+/// is the routine that computes those coords and far-calls these setters — the next
+/// decode target (find callers of 0x299:0x13FB).
+///
 /// PIPELINE NOW MAPPED END-TO-END (routine level): hud_init (verts→0x5491, angle
 /// 0xB3) → prelude (band y165-200) → 0x1CE:0 (/100 perspective) → 0x299:0x1467
 /// (32-byte-record display list @0x6212→0x6612) → 0x299:0x210D (8-byte-segment
