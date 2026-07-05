@@ -1072,24 +1072,33 @@ pub(super) fn parse_script_uncovered_speech(
             .collect();
 
         let mut seq = 0usize;
+        let mut cap_seq = 0usize;
         for line in &static_lines {
-            // Renderable if a resolved actor speaks with EITHER a scene background
-            // (planet dialogue) OR a talk clip (ship-side characters like Cap'n Bob
-            // / Bob_Morlock, whose DESCRIPT record has a talk HNM `aabob.hnm` but no
-            // planet location — they render over their talk animation, not a bg).
-            let renderable = line.actor_record.is_some()
-                && (line.background_hnm.is_some()
-                    || line.background_record.is_some()
-                    || line.clip_index.is_some());
             if covered_fns.contains(line.function_name.as_str())
                 || executed_offsets.contains(&line.offset)
-                || !renderable
                 || line.text.trim().is_empty()
             {
                 continue;
             }
-            rows.push(executed_line_from_static(&script, line, seq));
-            seq += 1;
+            // A character scene: a resolved actor with EITHER a scene background
+            // (planet dialogue) OR a talk clip (ship-side characters like Cap'n Bob
+            // / Bob_Morlock, whose DESCRIPT record has a talk HNM `aabob.hnm` but no
+            // planet location — they render over their talk animation).
+            let has_scene = line.actor_record.is_some()
+                && (line.background_hnm.is_some()
+                    || line.background_record.is_some()
+                    || line.clip_index.is_some());
+            if has_scene {
+                rows.push(executed_line_from_static(&script, line, seq));
+                seq += 1;
+            } else if line.actor_record.is_none() {
+                // UI/system/narration text with no character speaker: terminal,
+                // ship-AI console, help, menu, or narration text. These are text
+                // displays, accurately rendered as text-on-dark captions (that IS
+                // how terminals/consoles/menus present), not character scenes.
+                rows.push(caption_line_from_static(&script, line, cap_seq));
+                cap_seq += 1;
+            }
         }
     }
 
@@ -1128,6 +1137,42 @@ fn executed_line_from_static(
         call_target: line.call_target,
         text_end: line.text_end,
         source: "static uncovered function scene".to_string(),
+    }
+}
+
+/// Convert a no-character UI/system/narration [`ScriptSpeechLine`] into a caption
+/// line (tagged `cap:<script>:<fn>`) — rendered as text-on-dark by the dialogue-run
+/// renderer (no actor, no background), which is how the game presents terminals,
+/// the ship-AI console, help, menus, and narration text.
+fn caption_line_from_static(
+    script: &str,
+    line: &ScriptSpeechLine,
+    sequence_index: usize,
+) -> ScriptExecutedSpeechLine {
+    ScriptExecutedSpeechLine {
+        scenario_id: Some(format!("cap:{}:{}", script, line.function_name)),
+        script: script.to_string(),
+        sequence_index,
+        function_name: line.function_name.clone(),
+        offset: line.offset,
+        actor_record: None,
+        actor_ref: None,
+        location_offset: None,
+        background_record: None,
+        background_hnm: None,
+        background_music: None,
+        param0: line.param0.unwrap_or(0),
+        param1: line.param1.unwrap_or(0),
+        skip_count: line.skip_count,
+        loop_target: line.loop_target,
+        active_line_id: line
+            .active_line_id
+            .unwrap_or_else(|| vm::text_selector_active_line_id(1)),
+        clip_index: None,
+        text: line.text.clone(),
+        call_target: line.call_target,
+        text_end: line.text_end,
+        source: "static UI/system/narration caption".to_string(),
     }
 }
 
@@ -3369,6 +3414,14 @@ pub(super) fn executed_dialogue_run_output_stem(run: &ScriptExecutedDialogueRun<
                 safe_file_stem(location)
             );
         }
+        // UI/system/narration captions are tagged `cap:<script>:<function>`.
+        if let Some(rest) = scenario_id.strip_prefix("cap:") {
+            return format!(
+                "ui-caption-run - {} - {:04}",
+                safe_file_stem(&rest.replace(':', "-")),
+                run.run_index,
+            );
+        }
         format!(
             "branch-scenario-dialogue-run - {} - {:04} - {}",
             safe_file_stem(scenario_id),
@@ -4705,9 +4758,10 @@ mod tests {
         };
         let tmp_iso = out.join("_tmp_iso");
         let tmp_dat = out.join("_tmp_dat");
-        let db =
-            super::descript::parse_descript(&find_file_recursive(&tmp_iso, "DESCRIPT.DES").unwrap())
-                .unwrap();
+        let db = super::descript::parse_descript(
+            &find_file_recursive(&tmp_iso, "DESCRIPT.DES").unwrap(),
+        )
+        .unwrap();
         let hnm_music = db.hnm_music_map();
         let clay3: Vec<_> = parse_script_uncovered_speech(&tmp_iso, Some(&db), &hnm_music)
             .unwrap()
@@ -4747,12 +4801,16 @@ mod tests {
         };
         let tmp_iso = out.join("_tmp_iso");
         let tmp_dat = out.join("_tmp_dat");
-        let db =
-            super::descript::parse_descript(&find_file_recursive(&tmp_iso, "DESCRIPT.DES").unwrap())
-                .unwrap();
+        let db = super::descript::parse_descript(
+            &find_file_recursive(&tmp_iso, "DESCRIPT.DES").unwrap(),
+        )
+        .unwrap();
         let hnm_music = db.hnm_music_map();
         let rows = parse_script_uncovered_speech(&tmp_iso, Some(&db), &hnm_music).unwrap();
-        let mp4_dir = out.parent().unwrap_or(Path::new(".")).join("output_subfix4/mp4");
+        let mp4_dir = out
+            .parent()
+            .unwrap_or(Path::new("."))
+            .join("output_subfix4/mp4");
         let _ = fs::create_dir_all(&mp4_dir);
         let subtitle_sfx = tmp_dat.join("sn").join("tb.snd");
         let n = crate::extract::character::create_executed_dialogue_run_videos(
@@ -4763,7 +4821,10 @@ mod tests {
             subtitle_sfx.exists().then_some(subtitle_sfx.as_path()),
         )
         .unwrap();
-        eprintln!("rendered {n} uncovered function-scene videos -> {}", mp4_dir.display());
+        eprintln!(
+            "rendered {n} uncovered function-scene videos -> {}",
+            mp4_dir.display()
+        );
         assert!(n > 100, "expected many uncovered scene videos");
     }
 
