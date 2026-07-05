@@ -2568,7 +2568,21 @@ dialogue scene needs the correct *sequence of interactions* (the game's actual
 UI), not a single skip key — which is why generic mashing fails. The keyboard
 peek `0x0207:0x000D` has no direct far-callers (called through an input
 abstraction / jump table), so the interaction handler is a further trace. This
-is the real shape of the navigation blocker. (The narrated intro is itself deterministic character-over-background
+is the real shape of the navigation blocker.
+
+INPUT IS MOUSE-DRIVEN (sess 003): the main loop's `lcall 0:0x70E` (file `0xD0E`)
+is the mouse-poll handler — `int 33h AX=3` (get position+buttons) storing into
+`gs:0xA2A` = cursor X, `gs:0xA2C` = cursor Y, `gs:0xA2E` = button mask, with the
+last-moved position cached at `gs:0xA38`/`gs:0xA3A` (a move clears `gs:0xB3B`).
+So the game reads the mouse every frame into `gs:0xA2A..0xA2E`, and the UI/state
+handlers dispatch on those (click position → nav-pyramid / dialogue-option
+selection). Practical consequence for the oracle: to reach a dialogue scene, an
+`ORACLE_INPUT_SCRIPT` must `xdotool` **mouse clicks at the correct UI targets**
+(the opening's interactive prompts, then the pyramid-nav), not keypresses — and
+the opening narration appears to consume/ignore clicks until it completes, so the
+sequence + timing matters. The exact UI hit-regions are the remaining trace (read
+by handlers comparing `gs:0xA2A/0xA2C` against element rects). This precisely
+targets the navigation work. (The narrated intro is itself deterministic character-over-background
 dialogue content, so it is a candidate oracle target IF its narrator HNM +
 backdrops are identified — a compositor task.)
 
