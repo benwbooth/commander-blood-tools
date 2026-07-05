@@ -131,7 +131,27 @@ sprite/geometry pointer table `[0x8DA]=0x4AF, [0x8DC..0x8E2]=0x1F3A,0x253A,0x2B3
 the SAME fixed-point-3D (>>13) + layered-sprite pattern as the ship-3D view —
 strong evidence the overlays reuse the engine's 3D projection/blit, so decoding
 one informs the ship-3D COMPOSITOR directly. NEXT: the projection math + blit that
-consume `[0xD7C..0xD84]` and the 0x600-stride sprite layers. The palette buffer at file 0x525A is the character-sprite
+consume `[0xD7C..0xD84]` and the 0x600-stride sprite layers.
+
+3D PROJECTION PIPELINE RECOVERED (sess 003, `croolis.xdb` 0x7E3..0x8B4) — this is
+the COMPOSITOR's core, shared by overlays and the ship-3D view:
+1. PRNG jitter: for each axis `esi=ror7;sbb0; sub {bx,cx,dx},si` (small per-frame
+   random shimmer on the object position). Then `movsx` X/Y/Z to 32-bit.
+2. 3x3 ROTATION MATRIX x vector (matrix at `ds:[0xD4C..0xD6C]`, 9 dwords loaded by
+   sub 0x775): `X' = [0xD4C]·X+[0xD50]·Y+[0xD54]·Z`, `Y' = [0xD58]·X+[0xD5C]·Y+
+   [0xD60]·Z`, `depth ebp = [0xD64]·X+[0xD68]·Y+[0xD6C]·Z`; `sar ebp,8`; cull if
+   `depth<=0` (behind camera, `js/je -> skip`).
+3. PERSPECTIVE DIVIDE: `screen_x = idiv(X',depth) + 0xA0` (centre 160), cull if
+   `<0 || >=0x140` (320); `screen_y = -idiv(Y',depth) + 0x64` (centre 100), cull if
+   `<0 || >=0xC8` (200). So the view is 320x200, principal point (160,100).
+4. VGA PLANAR PLOT: `dx=y; dx<<=6; dh+=al (=> y*320); dx+=x; plane=x&3; byte_off=
+   dx>>2` — 4-plane unchained mode-X-style addressing (matches the Sequencer
+   map-mask writes at 0x12D). 
+This is the recovered 3D projection the ship-3D COMPOSITOR needs: rotation-matrix
+transform + perspective divide about (160,100) + planar plot, with the matrix in
+overlay data at [0xD4C]. Decoding the overlay delivered the compositor's math.
+NEXT: the sprite blit that fills pixels around the projected point (the 0x600-
+stride layers), and lifting this projection into the Rust `ship3d` module. The palette buffer at file 0x525A is the character-sprite
 palette source; `amer.xdb`/`scrut.xdb` share the same entry-stub shape.
 
 ## Memory Map (load image, base segment 0)
