@@ -166,7 +166,12 @@ impl EngineState {
     /// Load a talk-HNM / scene-background HNM for the dialogue scene band, decoded
     /// behind the subtitle by [`EngineState::render_dialogue_frame`].
     pub fn load_scene_hnm(&mut self, path: &Path) {
-        self.scene_hnm = HnmFile::open(path).ok();
+        if let Ok(hnm) = HnmFile::open(path) {
+            // Seed from the file's base palette; decode_frame applies per-frame
+            // palette updates on top of it.
+            self.scene_palette = hnm.palette;
+            self.scene_hnm = Some(hnm);
+        }
     }
 
     /// Load a dialogue script (`SCRIPTn.COD` + `.VAR`): run the VM trace and queue
@@ -647,6 +652,31 @@ mod tests {
             bg > 5000,
             "scene HNM decodes into the background (got {bg})"
         );
+    }
+
+    #[test]
+    #[ignore]
+    fn demo_render_full_dialogue_scene() {
+        let cand = [
+            "output/_tmp_dat/pe/aabob.hnm",
+            "../output/_tmp_dat/pe/aabob.hnm",
+        ];
+        let Some(path) = cand.iter().map(std::path::Path::new).find(|p| p.exists()) else {
+            return;
+        };
+        let mut e = EngineState::new();
+        e.load_scene_hnm(path);
+        e.frame = 0; // keyframe (self-contained + palette)
+        e.render_dialogue_frame();
+        e.draw_subtitle("CAP'N BOB SPEAKS", 0xFD);
+        // Export as PPM using the scene palette (RGB).
+        let mut out =
+            format!("P6\n{ENGINE_SCREEN_WIDTH} {ENGINE_SCREEN_HEIGHT}\n255\n").into_bytes();
+        for &idx in &e.framebuffer {
+            out.extend_from_slice(&e.scene_palette[idx as usize]);
+        }
+        std::fs::write("/tmp/ben_engine_scene.ppm", out).unwrap();
+        eprintln!("wrote /tmp/ben_engine_scene.ppm");
     }
 
     #[test]
