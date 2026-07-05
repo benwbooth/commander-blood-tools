@@ -2507,6 +2507,21 @@ output. Next oracle step is scripted input via `ORACLE_INPUT_SCRIPT` or a debug
 scene selector so one generated dialogue run can be compared against a matched
 real-game capture with a threshold.
 
+NAVIGATION BLOCKER CHARACTERIZED (sess 003): a 100s unattended-with-input run
+(`Return`/`space`/nav-clicks every ~1.8s from t=20s) stayed on the **"CRYO
+Interactive Entertainment 1995" narrated intro** the entire time — a long
+talking-character cutscene (an alien narrator animating over ocean/purple/ice
+backdrops, ~2 min+) that does NOT skip with generic keypresses or nav-orb clicks;
+interactive gameplay was never reached. So driving DOSBox to a matched dialogue
+scene needs either (a) the specific intro-skip input the game expects, (b) a much
+longer wait through the full narrated intro, or (c) a debug scene-select (none
+found). Generic key-mashing only loops the attract/intro. This is the concrete
+blocker for verifying the 394 generated dialogue videos against real captures —
+the bulk of the deliverable — and is the precise next-session target for the
+oracle. (The narrated intro is itself deterministic character-over-background
+dialogue content, so it is a candidate oracle target IF its narrator HNM +
+backdrops are identified — a compositor task.)
+
 BOOT SEQUENCE MAPPED (sess 003, dense 0.5s capture via
 `ORACLE_CAPTURE_INTERVAL=0.5`): DOSBox-X splash → **MINDSCAPE** (`sq/mind.hnm`,
 ~2.5s) → **Microfolie's** silvery banner (a distinct asset, ~3.5s) → **astronaut
