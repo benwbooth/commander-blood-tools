@@ -121,7 +121,8 @@ pub fn run() -> Result<(), Box<dyn Error>> {
     if args.iter().any(|a| a == "--ship3d") {
         use commander_blood_tools::ship3d::{
             BloodPrng, SHIP_3D_PROJECTION_SCREEN_HEIGHT, SHIP_3D_PROJECTION_SCREEN_WIDTH,
-            Ship3dMatrixAngles, Ship3dProjectionOrigin, Ship3dProjectionViewport,
+            Ship3dMatrixAngles, Ship3dObjectSpriteDescriptor, Ship3dProjectionMatrix,
+            Ship3dProjectionOrigin, Ship3dProjectionPoint, Ship3dProjectionViewport,
             render_ship_3d_starfield,
         };
         let mut out_dir = PathBuf::from(".");
@@ -181,6 +182,73 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                 "ship-3D starfield angle {proj}: {} points -> {}",
                 render.plotted,
                 pgm_out.display()
+            );
+
+            // Full scene: composite a projected object (an 8x8 raw sprite "planet")
+            // over the starfield via the integrated scene compositor. Pre-set the
+            // slot to its projected position (centre, extent 8x8 at depth 1024) so
+            // the in-compose projection is a no-op (no DIRTY flag; see the
+            // compose_ship_3d_scene test). Demonstrates the whole ship-3D chain.
+            let mut sprite = Vec::new();
+            sprite.extend_from_slice(&8u16.to_le_bytes()); // stride/width
+            sprite.extend_from_slice(&8u16.to_le_bytes()); // height
+            sprite.extend_from_slice(&0i16.to_le_bytes()); // x_offset
+            sprite.extend_from_slice(&0i16.to_le_bytes()); // y_offset
+            sprite.extend(std::iter::repeat(0xFEu8).take(64)); // 8x8 bright pixels
+            let mut slots = [Ship3dObjectSpriteDescriptor {
+                flags: 0x0080 | 0x0001, // VISIBLE | ACTIVE, dispatch 0 (Raw)
+                source_width: 8,
+                source_height: 8,
+                draw_x: 156,
+                draw_y: 96,
+                extent_width: 8,
+                extent_height: 8,
+                committed_draw_x: 156,
+                committed_draw_y: 96,
+                committed_extent_width: 8,
+                committed_extent_height: 8,
+            }];
+            let anchors = [Ship3dProjectionPoint {
+                x: 0,
+                y: 0,
+                z: 1024,
+            }];
+            let object_matrix = Ship3dProjectionMatrix {
+                terms: [0, 0, 0, 0, 0, 0, 0, 0, 0x8000],
+            };
+            // Object origin (0,0,0) so anchor z=1024 -> depth 1024 -> screen centre,
+            // matching the pre-set slot (independent of the starfield camera origin).
+            let object_origin = Ship3dProjectionOrigin { x: 0, y: 0, z: 0 };
+            let scene = compose_ship_3d_scene_indexed(
+                &render,
+                &mut slots,
+                &anchors,
+                object_origin,
+                object_matrix,
+                |_| Some(Ship3dSpriteSlotFrame::Raw(&sprite)),
+                None,
+                None,
+            );
+            let scene_visible: Vec<u8> = scene
+                .iter()
+                .map(|&v| {
+                    if v == 0 {
+                        0
+                    } else {
+                        0x40u8.saturating_add(v.saturating_mul(12))
+                    }
+                })
+                .collect();
+            let scene_out = out_dir.join(format!("ship3d-scene-angle{proj:03}.pgm"));
+            let mut sfile = File::create(&scene_out)?;
+            write!(
+                sfile,
+                "P5\n{SHIP_3D_PROJECTION_SCREEN_WIDTH} {SHIP_3D_PROJECTION_SCREEN_HEIGHT}\n255\n"
+            )?;
+            sfile.write_all(&scene_visible)?;
+            eprintln!(
+                "ship-3D scene angle {proj}: starfield + object -> {}",
+                scene_out.display()
             );
         }
         return Ok(());
