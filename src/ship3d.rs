@@ -1800,8 +1800,13 @@ pub const SHIP_3D_HUD_BAND_TOP: usize = 0xA5; // 165
 /// with per-axis scale (`[bp+0x10]`) + offset (`[bp+0x12/14/16]`) params, emitting
 /// projected coords — i.e. matrix×vector then perspective, same shape as
 /// [`project_ship_3d_point`] but with the HUD's own 0x5251 matrix + 0x5F11 origin.
-/// TODO (next session): pin the exact 32-byte + 8-byte record field layouts + the
-/// 0x5251 matrix / 0x5F11 origin values to reimplement the render to match the game.
+/// 32-BYTE RECORD LAYOUT (partly decoded from the 0x43F9 loop, stride 0x20):
+///   [0] = flags byte (bits 0+1 both set → the record draws); [8],[0xC] = current
+///   projected coord dwords; [0x10],[0x14] = previous coords (the loop copies 8→0x10,
+///   0xC→0x14 each pass, so the rasteriser's 8-byte segment = prev→cur endpoints).
+///   The 8-byte rasteriser records (0x509D) are the {cur,prev} endpoint pairs.
+/// TODO (next session): pin the remaining record fields + the 0x5251 matrix / 0x5F11
+/// origin values (savestate dump or finish 0x22E0) to reimplement the render.
 pub const SHIP_3D_HUD_PYRAMID_VERTICES: [[i16; 3]; 32] = [
     [0, 2304, 3075],
     [776, 1803, 2820],
