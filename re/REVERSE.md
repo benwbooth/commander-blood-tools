@@ -150,8 +150,21 @@ the COMPOSITOR's core, shared by overlays and the ship-3D view:
 This is the recovered 3D projection the ship-3D COMPOSITOR needs: rotation-matrix
 transform + perspective divide about (160,100) + planar plot, with the matrix in
 overlay data at [0xD4C]. Decoding the overlay delivered the compositor's math.
-NEXT: the sprite blit that fills pixels around the projected point (the 0x600-
-stride layers), and lifting this projection into the Rust `ship3d` module. The palette buffer at file 0x525A is the character-sprite
+CROSS-VALIDATION + CORRECTED COMPOSITOR SCOPE (sess 003): the Rust `ship3d`
+module ALREADY implements this projection — `project_ship_3d_point` does
+matrix×vector + perspective divide about `SHIP_3D_PROJECTION_SCREEN_CENTER_X/Y`
+(0xA0,0x64) with a depth≤0 cull, and `render_ship_3d_point_cloud`/`_starfield`
+render the background layer. The overlay projection is a SECOND, independent
+instance of the same engine 3D projection (structurally identical), confirming
+the module's approach. Per-routine scaling DIFFERS (overlay: depth`>>8`, no axis
+pre-shift, Y negated before +100; `ship3d`: depth`>>15`, axis`>>7`, no negation)
+— these are two distinct projection routines (croolis overlay vs the ship-3D
+code the module was lifted from), so NOT a bug to reconcile. CORRECTED SCOPE: the
+ship-3D compositor's PROJECTION + starfield background ARE implemented; the real
+remaining compositor gap is SPRITE COMPOSITING — drawing the projected sprite
+slots (the 0x600-stride layers here; `BORXX.SPR`/character `.spr` in the ship
+view) over the background and HUD. NEXT: the sprite blit around the projected
+point (overlay sub-method `[si+0xE]`) → the ship-3D sprite-slot compositor. The palette buffer at file 0x525A is the character-sprite
 palette source; `amer.xdb`/`scrut.xdb` share the same entry-stub shape.
 
 ## Memory Map (load image, base segment 0)
