@@ -68,6 +68,27 @@ bodies (alien-species logic + the character-palette remap that fills master
 slots 224-255) is the large remaining subsystem; this entry stub is the
 recovered starting point.
 
+OVERLAY DISPATCH + PALETTE UPLOAD DECODED (sess 003, `croolis.xdb`): after the
+prologue the stub reads the handle, clamps it (`shl ax,3`; if signed→0; if
+`>=0x80`→0x7F; `sub 4`) and self-patches the operand at `cs:0x99`, stores the
+call param `[bp+4]` at `[0x20]`, then `push cs; call 0x00A3` (the body entry) and
+on return writes `(cs:[0x99]+4)>>3` (the handle) back to `es:[di]` and `retf`.
+The body at `0x00A3` is the DISPLAY-INIT + FULL PALETTE UPLOAD: `mov dx,0x3C8;
+xor al,al; out dx,al; inc dl; mov cx,0x300; rep outsb` — uploads 768 bytes (all
+256 DAC colours, 6-bit) from `ds:0x1F6A` = **file offset 0x525A** (ds = load_seg
++ 0x32F paragraphs). Then two more block copies (`call 0x34B` cx=0x280 dx=0x400;
+`call 0x35C` cx=0x140 dx=0x200) and inits fs globals (`fs:0x22A8=0`,
+`fs:0x22EC=0x75D`, `fs:0x22F0=0xFF11`). So the "character-palette remap" is this
+overlay's own 768-byte palette at file 0x525A. Its reserved high slots are
+sprite colours, NOT subtitle white: 0xE0=(23,23,17)6b, 0xFC=(44,42,20),
+0xFD=(50,7,41)=magenta, 0xFE=(1,20,17)=teal, 0xFF=(0,0,63)=blue (6-bit; ×4 for
+8-bit). CONFIRMS 0xFD/0xFE are CONTEXT-DEPENDENT — the overlay uses them for the
+alien character sprite, while dialogue subtitles use white (see the
+`apply_reserved_subtitle_palette` fix, playthrough-validated). NEXT overlay work:
+map the two block-copy targets (0x34B/0x35C) and the body past 0xE7 (the
+alien-species logic dispatched by the self-patched `cs:0x99` operand); the
+palette buffer at 0x525A is the recovered character-sprite palette source.
+
 ## Memory Map (load image, base segment 0)
 
 | Region | File range | Notes |
