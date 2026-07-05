@@ -1876,6 +1876,14 @@ pub const SHIP_3D_HUD_BAND_TOP: usize = 0xA5; // 165
 /// (`[0x2F77]=1000` @0x9A1D). So the nav grid = 11 projected records from a source array
 /// (bx, +6/rec). Bit-exact grid = those 11 source positions (nav destination data) + the
 /// decoded projection + runtime camera. Projection done; the 11-record source is the piece.
+/// SOURCE FOUND + IT'S RUNTIME DATA: the loop reads from `bx=DS:0x4F09` (dest 0x4F01,
+/// matrix bp=0x2F95), 6 bytes/record. The STATIC bytes there are all (10200,12100,900)
+/// (a default placeholder) — so the 11 real destination positions are POPULATED AT
+/// RUNTIME from the nav state. CONCLUSION: the star-map is fully decoded at the code
+/// level (projection formula + matrix + params + 11-record loop + sprite-blit draw); a
+/// bit-exact render needs only RUNTIME STATE — the 11 live destination positions
+/// (DS:0x4F09) + camera (origin 0x2F65/67/69, angles 0x2F71/6D) — obtainable via a
+/// DOSBox-X savestate/memory dump at the nav view, not from the static binary.
 ///
 /// PIPELINE NOW MAPPED END-TO-END (routine level): hud_init (verts→0x5491, angle
 /// 0xB3) → prelude (band y165-200) → 0x1CE:0 (/100 perspective) → 0x299:0x1467
