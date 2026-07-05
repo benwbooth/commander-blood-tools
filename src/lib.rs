@@ -4,6 +4,7 @@ pub mod engine;
 pub mod script;
 pub mod ship3d;
 pub mod snd;
+pub mod sprite;
 pub mod util;
 pub mod vm;
 

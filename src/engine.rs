@@ -36,6 +36,7 @@ use crate::ship3d::{
     BloodPrng, Ship3dMatrixAngles, Ship3dProjectionOrigin, Ship3dProjectionViewport,
     render_ship_3d_starfield,
 };
+use crate::sprite::{SpriteFrameImage, blit_sprite_frame_centered, decode_sprite_bank_indices};
 
 /// Screen dimensions of the engine framebuffer (VGA mode 13h / mode-X, 320x200).
 pub const ENGINE_SCREEN_WIDTH: usize = 320;
@@ -62,6 +63,10 @@ pub struct EngineState {
     /// Deterministic PRNG seed for the starfield point cloud (the engine seeds
     /// from CMOS RTC seconds at runtime; fixed here for reproducibility).
     pub starfield_seed: u8,
+    /// Decoded ship-nav HUD sprite banks: BCARTE perspective grid frames.
+    hud_grid: Vec<SpriteFrameImage>,
+    /// Decoded ship-nav HUD orb sprite frames (BORXX).
+    hud_orb: Vec<SpriteFrameImage>,
     /// Indexed (palette) framebuffer the render subsystems draw into.
     pub framebuffer: Vec<u8>,
 }
@@ -83,8 +88,18 @@ impl EngineState {
             countdown: 0,
             compass_angle: 0,
             starfield_seed: 17,
+            hud_grid: Vec::new(),
+            hud_orb: Vec::new(),
             framebuffer: vec![0u8; ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT],
         }
+    }
+
+    /// Load the ship-nav HUD sprite banks (BCARTE grid frames + BORXX orb) from
+    /// their raw `.spr` bytes so [`EngineState::render_ship_view`] composites the
+    /// accurate sprite HUD over the starfield.
+    pub fn load_hud_sprites(&mut self, bcarte_spr: &[u8], borxx_spr: &[u8]) {
+        self.hud_grid = decode_sprite_bank_indices(bcarte_spr).unwrap_or_default();
+        self.hud_orb = decode_sprite_bank_indices(borxx_spr).unwrap_or_default();
     }
 
     /// Render the on-ship nav view's starfield background at the current compass
@@ -111,6 +126,41 @@ impl EngineState {
         };
         if let Some(render) = render_ship_3d_starfield(&mut prng, angles, origin, viewport) {
             self.framebuffer.copy_from_slice(&render.buffer);
+        }
+        // Composite the sprite HUD over the starfield: the BCARTE perspective grid
+        // frame selected by the compass angle, then the BORXX orb, into the HUD band.
+        let grid_idx = {
+            let grid: Vec<usize> = self
+                .hud_grid
+                .iter()
+                .enumerate()
+                .filter(|(_, f)| f.height >= 64)
+                .map(|(i, _)| i)
+                .collect();
+            (!grid.is_empty()).then(|| {
+                grid[(self.compass_angle as usize * grid.len() / 180).min(grid.len() - 1)]
+            })
+        };
+        if let Some(gi) = grid_idx {
+            let frame = self.hud_grid[gi].clone();
+            blit_sprite_frame_centered(
+                &mut self.framebuffer,
+                ENGINE_SCREEN_WIDTH,
+                ENGINE_SCREEN_HEIGHT,
+                &frame,
+                160,
+                172,
+            );
+        }
+        if let Some(orb) = self.hud_orb.first().cloned() {
+            blit_sprite_frame_centered(
+                &mut self.framebuffer,
+                ENGINE_SCREEN_WIDTH,
+                ENGINE_SCREEN_HEIGHT,
+                &orb,
+                160,
+                172,
+            );
         }
     }
 
@@ -204,6 +254,32 @@ mod tests {
             "the starfield renders some points"
         );
         assert_ne!(frame_left, e.framebuffer, "different angle -> different view");
+    }
+
+    #[test]
+    fn on_ship_render_composites_sprite_hud_when_loaded() {
+        let read = |names: &[&str]| -> Option<Vec<u8>> {
+            names.iter().find_map(|p| std::fs::read(p).ok())
+        };
+        let (Some(bc), Some(bo)) = (
+            read(&["output/_tmp_iso/BCARTE.SPR", "../output/_tmp_iso/BCARTE.SPR"]),
+            read(&["output/_tmp_iso/BORXX.SPR", "../output/_tmp_iso/BORXX.SPR"]),
+        ) else {
+            eprintln!("skipping: HUD sprites not available");
+            return;
+        };
+        let mut e = EngineState::new();
+        e.on_ship = true;
+        e.load_hud_sprites(&bc, &bo);
+        assert!(!e.hud_grid.is_empty() && !e.hud_orb.is_empty());
+        // Render without HUD (empty) vs with HUD -> the HUD band gains sprite pixels.
+        e.step(MouseInput { x: 90, y: 100, buttons: 0 });
+        // Count non-zero pixels in the HUD band (rows 150..195, where the HUD sits).
+        let band: usize = (150..195)
+            .flat_map(|y| (0..ENGINE_SCREEN_WIDTH).map(move |x| (x, y)))
+            .filter(|&(x, y)| e.framebuffer[y * ENGINE_SCREEN_WIDTH + x] != 0)
+            .count();
+        assert!(band > 200, "sprite HUD composites into the band (got {band})");
     }
 
     #[test]
