@@ -56,6 +56,18 @@ scrutinizer logic live in these overlays, loaded on demand into EMS/XMS, not in
 `BLOODPRG.EXE`'s static image. (They are also why several boot/intro assets and
 some runtime buffers are absent from the static image.)
 
+OVERLAY ENTRY STRUCTURE (sess 003, `croolis.xdb`, 258KB): the file begins with a
+16-bit self-relocating dispatch stub — after the register-save prologue it does
+`mov ax,cs; add ax,cs:[0x32E5]; mov ds,ax; mov fs,ax` (its own data segment =
+load segment + a stored delta), chains `add ax,[0x0C]/[0x0E]/[0x10]` to derive
+`es`/further segments from an internal segment table at file `0x0C..0x10`, and
+reads its call parameter via `les di,[bp]; mov ax,es:[di]; shl ax,3` — the same
+`id*8` handle indexing as the resource manager, so the overlay is invoked with a
+handle/selector and self-relocates before dispatching. Decompiling the overlay
+bodies (alien-species logic + the character-palette remap that fills master
+slots 224-255) is the large remaining subsystem; this entry stub is the
+recovered starting point.
+
 ## Memory Map (load image, base segment 0)
 
 | Region | File range | Notes |
