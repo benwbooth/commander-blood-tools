@@ -1783,9 +1783,13 @@ pub const SHIP_3D_HUD_BAND_TOP: usize = 0xA5; // 165
 ///   0x299: `lcall 0x299:0x1467` and `lcall 0x299:0x210D` (after `ship_3d_target_
 ///   record_select` @0xB2BB selects the active target). So the vertex→screen raster
 ///   lives in seg 0x299; `di=0x6612`/`0x6724` are its record pointers.
-/// TODO (next session): decode `0x299:0x1467` + `0x299:0x210D` for the vertex→pyramid
-/// edge/face topology + rasterisation; confirm the projection origin (angle 0xB3;
-/// origin 0 culls the verts, so the transform at 0x5F11 supplies the camera).
+/// - `0x299:0x1467` (file 0x43F9) iterates **32-byte records** at `si=0x6212`
+///   (indexes by `ax<<5`), emitting to the `di=0x6612` draw list (dword pairs from
+///   `[0x5235]`/`[0x5239]` + a 0xFFFF terminator). So the projected pyramid geometry
+///   is a 32-byte-record display list; `0x299:0x210D` consumes/rasterises it.
+/// TODO (next session): decode the 0x6212 32-byte record layout + `0x299:0x210D`
+/// rasteriser for the vertex→pyramid edge/face topology; confirm the projection
+/// origin (angle 0xB3; origin 0 culls the verts, so the 0x5F11 transform is camera).
 pub const SHIP_3D_HUD_PYRAMID_VERTICES: [[i16; 3]; 32] = [
     [0, 2304, 3075],
     [776, 1803, 2820],
