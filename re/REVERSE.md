@@ -553,6 +553,21 @@ not a plain `idx-208`) is the remaining detail, resolvable only from the display
 path code that performs the copy. This is the precise, well-scoped task for color
 character rendering.
 
+TWO CHARACTER REPRESENTATIONS (sess 003): the crew showcase in the attract
+sequence (long-capture frames 13-21, e.g. a brown tusked crew alien over an ice
+backdrop) renders the FULL-COLOUR **talk-head HNMs** (`pe/aa*.hnm`), NOT the
+`.spr` portraits — so those characters are already renderable by our HNM decoder
+(low-index palettes, no high-slot remap needed). Verifying one against the
+showcase capture is a **compositor** task, though: a standalone talk-head is a
+transparent head animation (scene-band score only ~59 vs frame_17 since it lacks
+the background + scale/position), so a clean match needs the head composited over
+the themed background at the right scale — i.e. the same dialogue-compositor path
+(character-over-background) the pipeline already models for dialogue videos. So
+character verification does NOT depend on the `.spr` high-slot palette at all;
+the `.spr` portraits are a separate small-icon representation. This splits the
+character work: (1) talk-head-over-background compositing (verifiable now via the
+HNM path), (2) `.spr` portrait colour (overlay-remap, deferred).
+
 So with `.spr`, all HNM header AND per-frame palettes, and immediate DAC writes
 all ruled out, the `224-255` character palette lives ONLY in an **`.xdb` overlay**
 (SCRUTER is the `croolis`/scrutinizer species → `croolis.xdb`) or is constructed
