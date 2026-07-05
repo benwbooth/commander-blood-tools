@@ -88,6 +88,13 @@ tool + dis.py):
   (c) The pyramid grid shown
   at the title/credits is a **persistent DECORATIVE HUD** (renders with default data),
   DISTINCT from active gameplay nav — the engine's projection render matches this HUD.
+- **Input exhausted (sess 005):** tried absolute mouse clicks, RELATIVE mouse
+  (`mousemove_relative` + autolock, the PROGRESS-diagnosed int-33h fix), keys, and
+  mode-forcing — NONE advance the title (gate stays 0x45, `[0x24F3]` stays 0). So the
+  gate to interactive gameplay is DEEPER than input technique: the game most likely needs
+  the full CD install / proper EMS-XMS memory setup to proceed past attract/title in this
+  headless DOSBox-X. That's a DOS-environment/data-completeness problem (multi-session, or
+  a real full-game install), not an input-scripting one.
 - **Conclusion (evidence-based, not assumed):** reaching active gameplay navigation with
   real destination data requires an actual interactive new-game session (intro→ship→click
   a destination object). The headless attract + synthetic input + mode-forcing cannot
