@@ -1816,6 +1816,21 @@ pub const SHIP_3D_HUD_BAND_TOP: usize = 0xA5; // 165
 /// PROJECTION is therefore precisely the routine that computes bx/cx/dx/bp and far-calls
 /// the setter 0x299:0x13FB (writes `[di+0x18..0x1E]` = the coords the blit reads).
 ///
+/// *** PROJECTION LOCATED (sess 005) *** — the per-vertex loop @0x9BBA:
+///   for each vertex: copy to working (di), record = 0x6212+((idx+0x15)<<5);
+///   translated = vertex − ORIGIN (ORIGIN = DS:0x2F65/0x2F67/0x2F69, the camera pos —
+///     NOT the 0x5F11 I earlier guessed);
+///   depth = Σ translated_i · matrix_row3(bp+0x18/1C/20) >> 0xF;  (cull if depth<=0)
+///   persp = 0x8000000>>7 / depth = 0x100000/depth  (fixed-point 1/z);
+///   screen_x = Σ translated_i · matrix_row1(bp+0/4/8) · persp;  (y via row2);
+///   then sub sprite half-size ([si+0xC/0xE]>>1) to centre, and far-call the seg-0x299
+///   draw ops (0x299:0x133D / 0x127D).
+/// This is EXACTLY [`project_ship_3d_point`] (matrix on the bp-stack is the 0x2F95
+/// build = [`build_ship_3d_projection_matrix`]). So the star-map is now FULLY decoded:
+/// reimplement by projecting the 32 verts with build_ship_3d_projection_matrix(HUD
+/// angle 0xB3) + origin=[0x2F65/67/69], then blit the pyramid sprite at each. The one
+/// remaining runtime value is the origin [0x2F65/67/69] (camera position).
+///
 /// PIPELINE NOW MAPPED END-TO-END (routine level): hud_init (verts→0x5491, angle
 /// 0xB3) → prelude (band y165-200) → 0x1CE:0 (/100 perspective) → 0x299:0x1467
 /// (32-byte-record display list @0x6212→0x6612) → 0x299:0x210D (8-byte-segment
