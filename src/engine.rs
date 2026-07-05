@@ -500,15 +500,44 @@ impl EngineState {
     /// The scene band's talk-HNM background composes separately; this is the text
     /// layer of the dialogue scene the engine presents for the current line.
     pub fn draw_subtitle(&mut self, text: &str, color: u8) {
-        draw_text_indexed(
-            &mut self.framebuffer,
-            ENGINE_SCREEN_WIDTH,
-            ENGINE_SCREEN_HEIGHT,
-            text,
-            10,
-            8,
-            color,
-        );
+        use crate::font::{GAME_FONT_LINE_HEIGHT, GAME_FONT_SPACE_ADVANCE, game_font_advance};
+        // Word-wrap to the screen width (the game wraps long lines rather than
+        // clipping at the right edge); draw each wrapped line down from the top.
+        let max_w = ENGINE_SCREEN_WIDTH - 20;
+        let word_w = |w: &str| w.chars().map(game_font_advance).sum::<usize>();
+        let mut lines: Vec<String> = Vec::new();
+        let mut cur = String::new();
+        let mut cur_w = 0usize;
+        for word in text.split_whitespace() {
+            let ww = word_w(word);
+            let sep = if cur.is_empty() { 0 } else { GAME_FONT_SPACE_ADVANCE };
+            if !cur.is_empty() && cur_w + sep + ww > max_w {
+                lines.push(std::mem::take(&mut cur));
+                cur_w = 0;
+            }
+            if !cur.is_empty() {
+                cur.push(' ');
+                cur_w += GAME_FONT_SPACE_ADVANCE;
+            }
+            cur.push_str(word);
+            cur_w += ww;
+        }
+        if !cur.is_empty() {
+            lines.push(cur);
+        }
+        let mut y = 8;
+        for line in &lines {
+            draw_text_indexed(
+                &mut self.framebuffer,
+                ENGINE_SCREEN_WIDTH,
+                ENGINE_SCREEN_HEIGHT,
+                line,
+                10,
+                y,
+                color,
+            );
+            y += GAME_FONT_LINE_HEIGHT + 2;
+        }
     }
 
     /// Render the current dialogue line's frame into the framebuffer: clear, then
@@ -1094,6 +1123,21 @@ mod tests {
         // holding the button (no new edge) does not re-commit
         e.step(MouseInput { x: 200, y: 100, buttons: 1 });
         assert!(e.take_nav_selection().is_none());
+    }
+
+    #[test]
+    fn subtitle_wraps_long_lines() {
+        let mut e = EngineState::new();
+        e.scene_palette[0xFD] = [255, 255, 255];
+        // a long line that would clip on one row: wrapping draws pixels on multiple rows
+        let long = "You can wake Cap'n Bob by clicking on the CRYO chamber control panel now";
+        e.draw_subtitle(long, 0xFD);
+        // count rows that contain subtitle pixels; wrapping => more than one glyph row
+        let w = ENGINE_SCREEN_WIDTH;
+        let rows_with_text = (0..30)
+            .filter(|&r| e.framebuffer[r * w..(r + 1) * w].iter().any(|&p| p == 0xFD))
+            .count();
+        assert!(rows_with_text > 8, "text occupies multiple wrapped lines (rows={rows_with_text})");
     }
 
     #[test]
