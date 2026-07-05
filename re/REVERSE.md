@@ -2582,7 +2582,22 @@ selection). Practical consequence for the oracle: to reach a dialogue scene, an
 the opening narration appears to consume/ignore clicks until it completes, so the
 sequence + timing matters. The exact UI hit-regions are the remaining trace (read
 by handlers comparing `gs:0xA2A/0xA2C` against element rects). This precisely
-targets the navigation work. (The narrated intro is itself deterministic character-over-background
+targets the navigation work.
+
+CLICK EDGE-DETECTION (sess 003): the main loop's `0x1FBC` converts the raw button
+mask `gs:0xA2E` into one-shot click events on the press edge: left button →
+`gs:0xA3E=1`, right button → `gs:0xA3F=1` (using previous-buttons `gs:0xA30` to
+detect the transition; also bumps `gs:0xA40`). So the input layer is fully
+mapped: `0:0x70E` reads mouse X/Y/buttons into `gs:0xA2A/0xA2C/0xA2E`; `0x1FBC`
+edge-detects into click-event flags `gs:0xA3E`/`gs:0xA3F`; the UI hit-test
+handlers (`gs:0xA2A` readers @ `0x7826/0x78E6/0x7D99/0x80A0/0x8272/0x829E`)
+consume the event + position. IMPLICATION for the oracle: `xdotool` mouse clicks
+DO register (they set `gs:0xA3E`), so navigation IS scriptable — the remaining
+piece is only the **UI element rectangles** the ~6 hit-test handlers compare
+against (to click the right targets), and the opening's own handler apparently
+defers click processing until the narration finishes. Tracing those ~6 handlers
+(each reads `gs:0xA2A`) yields the clickable-region map, which is the final step
+to drive DOSBox to a dialogue scene and verify the 394 dialogue videos. (The narrated intro is itself deterministic character-over-background
 dialogue content, so it is a candidate oracle target IF its narrator HNM +
 backdrops are identified — a compositor task.)
 
