@@ -37,6 +37,7 @@ use crate::ship3d::{
     render_ship_3d_starfield,
 };
 use crate::sprite::{SpriteFrameImage, blit_sprite_frame_centered, decode_sprite_bank_indices};
+use crate::vm::{LineState, execute_trace};
 
 /// Screen dimensions of the engine framebuffer (VGA mode 13h / mode-X, 320x200).
 pub const ENGINE_SCREEN_WIDTH: usize = 320;
@@ -67,6 +68,15 @@ pub struct EngineState {
     hud_grid: Vec<SpriteFrameImage>,
     /// Decoded ship-nav HUD orb sprite frames (BORXX).
     hud_orb: Vec<SpriteFrameImage>,
+    /// Dialogue line sequence for the loaded script (from the VM trace), played
+    /// back frame-by-frame — the script/scene stepping the main loop drives.
+    dialogue: Vec<LineState>,
+    /// Playback cursor into [`EngineState::dialogue`].
+    dialogue_cursor: usize,
+    /// Frames to hold each dialogue line before advancing to the next.
+    pub dialogue_hold_frames: u32,
+    /// Frames the current dialogue line has been held.
+    dialogue_timer: u32,
     /// Indexed (palette) framebuffer the render subsystems draw into.
     pub framebuffer: Vec<u8>,
 }
@@ -90,7 +100,47 @@ impl EngineState {
             starfield_seed: 17,
             hud_grid: Vec::new(),
             hud_orb: Vec::new(),
+            dialogue: Vec::new(),
+            dialogue_cursor: 0,
+            dialogue_hold_frames: 60,
+            dialogue_timer: 0,
             framebuffer: vec![0u8; ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT],
+        }
+    }
+
+    /// Load a dialogue script (`SCRIPTn.COD` + `.VAR`): run the VM trace and queue
+    /// its reached dialogue lines for frame-stepped playback. Each [`EngineState::
+    /// step`] advances the playback timer; the current line is [`EngineState::
+    /// current_dialogue`]. This is the script/scene stepping the engine's main loop
+    /// drives (the `D2` script/scene handoff at `0x108E`).
+    pub fn load_dialogue(&mut self, cod: &[u8], var: &[u8]) {
+        self.dialogue = execute_trace(cod, var).line_states;
+        self.dialogue_cursor = 0;
+        self.dialogue_timer = 0;
+    }
+
+    /// The dialogue line currently being presented, if a script is loaded.
+    pub fn current_dialogue(&self) -> Option<&LineState> {
+        self.dialogue.get(self.dialogue_cursor)
+    }
+
+    /// Number of dialogue lines the loaded script reached.
+    pub fn dialogue_len(&self) -> usize {
+        self.dialogue.len()
+    }
+
+    /// Advance the dialogue playback: after `dialogue_hold_frames`, step to the next
+    /// reached line (stops at the last line).
+    fn advance_dialogue(&mut self) {
+        if self.dialogue.is_empty() {
+            return;
+        }
+        self.dialogue_timer += 1;
+        if self.dialogue_timer >= self.dialogue_hold_frames {
+            self.dialogue_timer = 0;
+            if self.dialogue_cursor + 1 < self.dialogue.len() {
+                self.dialogue_cursor += 1;
+            }
         }
     }
 
@@ -191,6 +241,9 @@ impl EngineState {
                 ((self.mouse.x as u32 * 180) / ENGINE_SCREEN_WIDTH as u32).min(179) as u16;
             self.render_ship_view();
         }
+        // Script/scene stepping (the D2 handoff the main loop drives): advance the
+        // loaded dialogue playback.
+        self.advance_dialogue();
         // Countdown at [0x0A40]: advanced each iteration, saturating at 0.
         self.countdown = self.countdown.saturating_sub(1);
         self.frame += 1;
@@ -280,6 +333,31 @@ mod tests {
             .filter(|&(x, y)| e.framebuffer[y * ENGINE_SCREEN_WIDTH + x] != 0)
             .count();
         assert!(band > 200, "sprite HUD composites into the band (got {band})");
+    }
+
+    #[test]
+    fn dialogue_playback_steps_through_script_lines() {
+        let read = |names: &[&str]| -> Option<Vec<u8>> {
+            names.iter().find_map(|p| std::fs::read(p).ok())
+        };
+        let (Some(cod), Some(var)) = (
+            read(&["output/_tmp_iso/SCRIPT1.COD", "../output/_tmp_iso/SCRIPT1.COD"]),
+            read(&["output/_tmp_iso/SCRIPT1.VAR", "../output/_tmp_iso/SCRIPT1.VAR"]),
+        ) else {
+            eprintln!("skipping: SCRIPT1 not available");
+            return;
+        };
+        let mut e = EngineState::new();
+        e.load_dialogue(&cod, &var);
+        assert!(e.dialogue_len() > 1, "script reached multiple dialogue lines");
+        e.dialogue_hold_frames = 2;
+        let first = e.current_dialogue().map(|l| l.offset);
+        // Step past the hold window: playback advances to the next line.
+        for _ in 0..3 {
+            e.step(MouseInput::default());
+        }
+        let second = e.current_dialogue().map(|l| l.offset);
+        assert_ne!(first, second, "dialogue playback advances to the next line");
     }
 
     #[test]
