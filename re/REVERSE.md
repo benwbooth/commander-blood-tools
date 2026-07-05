@@ -1595,6 +1595,19 @@ narration and the pyramid-nav UI are driven. That is the concrete entry point fo
 the next-session navigation trace (drive the mouse to the right UI targets, or
 find the handler that advances the opening).
 
+MOUSE INPUT POLL DECODED (sess 004, `0:0x70E` = file 0xD0E): the shared dispatcher
+the main loop far-calls each frame is the MOUSE INPUT poll — `int 33h AX=3` reads
+cursor x (cx)→`gs:[0xA2A]`, y (dx)→`gs:[0xA2C]`, buttons (bx)→`gs:[0xA2E]`, then
+compares to the previous pos `gs:[0xA38]/[0xA3A]` and, if moved, updates it and
+zeroes an idle timer `gs:[0xB3B]`. So the engine input core = this poll (writes the
+live mouse state) + the per-handler hit-testing that reads `gs:[0xA2A..0xA2E]` to
+dispatch clicks/steering (UI target hit-test `draw_ship_3d_target_list`, nav
+steering `0x7824`). This + the main loop `0x0FFB` decode means the playable-engine
+INTEGRATION is now fully scoped: main loop (done) → mouse poll `0x70E` (done) →
+render subsystems (compositor done) → VM/script (done) → audio (done); remaining is
+wiring these built components + the full input→action dispatch into a runnable Rust
+loop (multi-week integration, all components present).
+
 The main loop at `0x108E` does not consume a pending `D2` profile request until
 the presentation state is idle. The exact gate is:
 
