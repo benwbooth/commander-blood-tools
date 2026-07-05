@@ -399,7 +399,10 @@ impl EngineState {
             .get(self.dialogue_cursor)
             .map(|t| t.len() as u32)
             .unwrap_or(0);
-        (self.dialogue_hold_frames + len * 3 / 4).clamp(self.dialogue_hold_frames, 240)
+        // Base + reading time, capped at 240 — but never below the base, and never
+        // reduce a caller's very-large base (used in tests to "hold forever").
+        let base = self.dialogue_hold_frames;
+        base.saturating_add(len * 3 / 4).min(base.max(240))
     }
 
     fn advance_dialogue(&mut self) {
@@ -794,9 +797,12 @@ mod tests {
         );
         e.dialogue_hold_frames = 2;
         let first = e.current_dialogue().map(|l| l.offset);
-        // Step past the hold window: playback advances to the next line.
-        for _ in 0..3 {
+        // Step past the hold window (variable per line): playback advances.
+        for _ in 0..300 {
             e.step(MouseInput::default());
+            if e.current_dialogue().map(|l| l.offset) != first {
+                break;
+            }
         }
         let second = e.current_dialogue().map(|l| l.offset);
         assert_ne!(first, second, "dialogue playback advances to the next line");
@@ -1086,10 +1092,14 @@ mod tests {
         // pending_next_scene is the D2 handoff target (Some/None both valid; must
         // be queryable and consistent with a terminal-vs-chaining scene).
         let _next = e.pending_next_scene();
-        // Drive to the end; dialogue_finished flips true at the last line.
+        // Drive to the end; dialogue_finished flips true at the last line. Per-line
+        // hold is length-scaled, so step generously (≤240 frames/line).
         e.dialogue_hold_frames = 1;
-        for _ in 0..(e.dialogue_len() as u32 + 2) {
+        for _ in 0..(e.dialogue_len() as u32 * 245 + 8) {
             e.step(MouseInput::default());
+            if e.dialogue_finished() {
+                break;
+            }
         }
         assert!(
             e.dialogue_finished(),
@@ -1124,10 +1134,14 @@ mod tests {
         assert_eq!(n, 2);
         assert_eq!(e.current_scene_index(), 0, "starts on the first scene");
         assert!(e.dialogue_len() > 0);
-        // Drive fast to finish scene 0; the engine auto-chains to scene 1.
+        // Drive to finish scene 0; the engine auto-chains to scene 1. Per-line hold is
+        // length-scaled, so step generously (≤240 frames/line).
         e.dialogue_hold_frames = 1;
-        for _ in 0..(e.dialogue_len() as u32 + 4) {
+        for _ in 0..(e.dialogue_len() as u32 * 245 + 8) {
             e.step(MouseInput::default());
+            if e.current_scene_index() == 1 {
+                break;
+            }
         }
         assert_eq!(e.current_scene_index(), 1, "auto-chained to the next scene");
     }
