@@ -2540,7 +2540,18 @@ intro/HNM playback loop that CALLS the peek `0x267D` and tests the returned
 scancode — finding that test (and thus the exact skip key, if any) is the
 next-session trace for driving DOSBox to interactive gameplay. A no-input 60s run
 DOES progress through the attract to gameplay-style views (ship interior, desert
-at frames 26-30) but those are auto-played attract-demo frames, not interactive. (The narrated intro is itself deterministic character-over-background
+at frames 26-30) but those are auto-played attract-demo frames, not interactive.
+INPUT IS DELIVERED (sess 003): comparing the two runs shows input reaches DOSBox
+— the with-input run *stayed on* the "CRYO 1995" narration at 100s while the
+no-input run had moved on to attract-gameplay views by 60s, so the keypresses
+changed behaviour. The narration is therefore **interactive** (it responds to
+input by continuing/holding, not skipping), i.e. the opening is a scripted
+interactive sequence, not a passive skippable cutscene. Reaching a specific
+dialogue scene needs the correct *sequence of interactions* (the game's actual
+UI), not a single skip key — which is why generic mashing fails. The keyboard
+peek `0x0207:0x000D` has no direct far-callers (called through an input
+abstraction / jump table), so the interaction handler is a further trace. This
+is the real shape of the navigation blocker. (The narrated intro is itself deterministic character-over-background
 dialogue content, so it is a candidate oracle target IF its narrator HNM +
 backdrops are identified — a compositor task.)
 
