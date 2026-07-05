@@ -305,6 +305,20 @@ three parts, TWO of which are already done/available:
    state. So the ship-HUD is ~2/3 done (angle + orb); remaining = the pyramid-grid
    pixel routine.
 
+PYRAMID GRID = A SPRITE, NOT PROCEDURAL (sess 004 BREAKTHROUGH): the pyramid-nav
+HUD is **BCARTE.SPR** (16 frames) — frames ~4-13 are the perspective pyramid grid
+PRE-RENDERED at successive compass-rotation angles (converging lines, shifting
+vanishing point), the circular frames are the eye-orb; **CARTE.SPR** (7 frames) =
+the nav target icons + a crosshair reticle. So the "procedural pyramid-grid pixel
+routine" I hunted for 18+ routines DOES NOT EXIST — the HUD is drawn by SELECTING
+the BCARTE frame by the compass angle ([0x2795], updated @0x9656) and BLITTING it
+(the elusive "draw" was a sprite blit reached via pointer indirection, which is why
+tracing never converged; the recovered DS:0x5D98 "vertices" were NOT pyramid
+geometry). This UNBLOCKS the byte-exact HUD: decode BCARTE/CARTE (via
+`decode_sprite_bank_indices`), pick the grid frame from the angle, blit into the
+HUD band — all with existing sprite infrastructure. bcarte.spr is named in the
+engine config blocks @0xCF04 (SCRIPT1) / 0xD719.
+
 PYRAMID GRID — STATUS (sess 004): geometry recovered (32 3D vertices from DS:0x5D98
 = file 0x131B8, copied by ship_3d_hud_init @0xB079; `SHIP_3D_HUD_PYRAMID_VERTICES`).
 Confirmed they are VALID geometry (all 32 project with positive depth), BUT with the
