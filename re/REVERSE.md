@@ -86,10 +86,22 @@ sprite colours, NOT subtitle white: 0xE0=(23,23,17)6b, 0xFC=(44,42,20),
 0xFD=(50,7,41)=magenta, 0xFE=(1,20,17)=teal, 0xFF=(0,0,63)=blue (6-bit; ×4 for
 8-bit). CONFIRMS 0xFD/0xFE are CONTEXT-DEPENDENT — the overlay uses them for the
 alien character sprite, while dialogue subtitles use white (see the
-`apply_reserved_subtitle_palette` fix, playthrough-validated). NEXT overlay work:
-map the two block-copy targets (0x34B/0x35C) and the body past 0xE7 (the
-alien-species logic dispatched by the self-patched `cs:0x99` operand); the
-palette buffer at 0x525A is the recovered character-sprite palette source.
+`apply_reserved_subtitle_palette` fix, playthrough-validated). OVERLAY BODY = OBJECT-DISPATCH MAIN LOOP (sess 003, `croolis.xdb` 0xE7..0x174):
+after the palette+mouse init it (1) sets more fs function-pointer globals
+(`fs:0x22F0=0xFF11, 0x22F4=0xD9C2, 0x22F8=0x678`), adjusts a pointer
+`fs:0x1A = fs:0x16 - 0x26C`; (2) CLEARS all VGA planes — `mov ds,cs:[0x32E7];
+mov es,[0x28]; mov dx,0x3C4; mov ax,0x0F02; out dx,ax` (Sequencer Map-Mask = all
+4 planes) then `xor ax,ax; mov cx,0x1F40; rep stosw`; (3) calls four init subs
+(`0x22A, 0x1E1D, 0x5DC, 0x775`); (4) runs the MAIN LOOP over an object list —
+`si=0x2308; di=fs:[si]` (object ptr), `bx=fs:[di+0x34]` (object's vtable),
+`call fs:[bx+0x103A]` (virtual method) then `call 0x206C`, advancing `si+=2` and
+looping while `fs:[si]!=0`; (5) cleanup `call 0x2514`. So the overlay is an
+OBJECT-ORIENTED, vtable-dispatched interaction screen: a null-terminated list of
+alien objects at `fs:0x2308`, each with a vtable at `+0x34` whose `+0x103A` slot
+is the per-object update/draw method. NEXT: map the vtable method at `+0x103A`
+and the four init subs; the object list + vtable layout is the recovered spine of
+the alien-species logic. The palette buffer at file 0x525A is the character-sprite
+palette source; `amer.xdb`/`scrut.xdb` share the same entry-stub shape.
 
 ## Memory Map (load image, base segment 0)
 
