@@ -4683,6 +4683,47 @@ mod tests {
         );
     }
 
+    // Renders clay3's uncovered scene(s) against cached _tmp_dat to a scratch dir:
+    //   cargo test render_sample_uncovered_scene -- --ignored --nocapture
+    #[test]
+    #[ignore]
+    fn render_sample_uncovered_scene() {
+        let Some(out) = ["output", "../output"]
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("_tmp_dat").exists() && p.join("_tmp_iso").exists())
+        else {
+            eprintln!("skipping: no cached extraction");
+            return;
+        };
+        let tmp_iso = out.join("_tmp_iso");
+        let tmp_dat = out.join("_tmp_dat");
+        let db =
+            super::descript::parse_descript(&find_file_recursive(&tmp_iso, "DESCRIPT.DES").unwrap())
+                .unwrap();
+        let hnm_music = db.hnm_music_map();
+        let clay3: Vec<_> = parse_script_uncovered_speech(&tmp_iso, Some(&db), &hnm_music)
+            .unwrap()
+            .into_iter()
+            .filter(|r| r.scenario_id.as_deref() == Some("fn:SCRIPT4:clay3"))
+            .collect();
+        assert!(!clay3.is_empty(), "clay3 lines exist");
+        eprintln!("clay3 lines: {}", clay3.len());
+        let mp4_dir = Path::new("/tmp/ben_uncov_render");
+        let _ = fs::create_dir_all(mp4_dir);
+        let subtitle_sfx = tmp_dat.join("sn").join("tb.snd");
+        let n = crate::extract::character::create_executed_dialogue_run_videos(
+            &tmp_dat,
+            mp4_dir,
+            &db,
+            &clay3,
+            subtitle_sfx.exists().then_some(subtitle_sfx.as_path()),
+        )
+        .unwrap();
+        eprintln!("rendered {n} clay3 scene video(s) -> {}", mp4_dir.display());
+        assert!(n >= 1, "at least one clay3 scene must render");
+    }
+
     // Validates parse_script_uncovered_speech against cached extraction:
     //   cargo test measure_uncovered_speech_rows -- --ignored --nocapture
     #[test]
