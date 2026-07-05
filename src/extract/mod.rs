@@ -114,6 +114,78 @@ pub fn run() -> Result<(), Box<dyn Error>> {
         return Ok(());
     }
 
+    // --ship3d: render the ship-3D starfield background layer to PGM previews at a
+    // few camera angles, using the recovered PRNG + trig table + point-cloud
+    // renderer. This is the ship-3D view's background layer (the same point-cloud
+    // pipeline the alien overlays use) rendered as an actual artifact.
+    if args.iter().any(|a| a == "--ship3d") {
+        use commander_blood_tools::ship3d::{
+            BloodPrng, SHIP_3D_PROJECTION_SCREEN_HEIGHT, SHIP_3D_PROJECTION_SCREEN_WIDTH,
+            Ship3dMatrixAngles, Ship3dProjectionOrigin, Ship3dProjectionViewport,
+            render_ship_3d_starfield,
+        };
+        let mut out_dir = PathBuf::from(".");
+        let mut iter = args.iter();
+        while let Some(arg) = iter.next() {
+            if arg == "-o" {
+                if let Some(d) = iter.next() {
+                    out_dir = PathBuf::from(d);
+                }
+            }
+        }
+        fs::create_dir_all(&out_dir)?;
+        for proj in [0u16, 30, 60, 90] {
+            // Deterministic seed for a reproducible preview (the engine seeds from
+            // CMOS RTC seconds at runtime).
+            let mut prng = BloodPrng::seeded_from_rtc_seconds(17);
+            let angles = Ship3dMatrixAngles {
+                angle_2f71: 0,
+                projection_angle_2f6d: proj,
+                angle_2f6f: 0,
+            };
+            let origin = Ship3dProjectionOrigin {
+                x: 0x8000,
+                y: 0x8000,
+                z: 0x8000,
+            };
+            let viewport = Ship3dProjectionViewport {
+                left: 0,
+                right: SHIP_3D_PROJECTION_SCREEN_WIDTH as u16,
+                top: 0,
+                bottom: SHIP_3D_PROJECTION_SCREEN_HEIGHT as u16,
+            };
+            let Some(render) = render_ship_3d_starfield(&mut prng, angles, origin, viewport) else {
+                eprintln!("ship-3D starfield: projection angle {proj} out of trig-table range");
+                continue;
+            };
+            // Amplify the depth-shade so plotted points are visible in the preview.
+            let visible: Vec<u8> = render
+                .buffer
+                .iter()
+                .map(|&v| {
+                    if v == 0 {
+                        0
+                    } else {
+                        0x40u8.saturating_add(v.saturating_mul(12))
+                    }
+                })
+                .collect();
+            let pgm_out = out_dir.join(format!("ship3d-starfield-angle{proj:03}.pgm"));
+            let mut file = File::create(&pgm_out)?;
+            write!(
+                file,
+                "P5\n{SHIP_3D_PROJECTION_SCREEN_WIDTH} {SHIP_3D_PROJECTION_SCREEN_HEIGHT}\n255\n"
+            )?;
+            file.write_all(&visible)?;
+            eprintln!(
+                "ship-3D starfield angle {proj}: {} points -> {}",
+                render.plotted,
+                pgm_out.display()
+            );
+        }
+        return Ok(());
+    }
+
     // --hnm / --snd direct mode
     if args.iter().any(|a| a == "--hnm" || a == "--snd") {
         require("ffmpeg");
