@@ -1844,6 +1844,17 @@ pub const SHIP_3D_HUD_BAND_TOP: usize = 0xA5; // 165
 /// reproduce the grid (confirmed: ≤8/32 with the base origin/angle), so a bit-exact
 /// render must TRANSCRIBE the exact 0x9BBA math (shifts 0xF/7, div 0x100000, center
 /// 0x64) AND use the runtime animated origin (0x2F65 dec-by-100) + angle (0x2F71).
+/// EXACT FORMULA (transcribed from 0x9BBA-0x9CAA; matrix rows are i32 dwords on the
+/// bp-stack = the 0x2F95 build; t = vertex − origin):
+///   depth  = (t·row_z) >> 15;          // row_z = m[6..8]; cull if 0; if <0, += 0x10000
+///   sprite_scale = 0x100000 / depth;    // used to scale the blit sprite
+///   screen_x = ((t·row_x) >> 7) / depth + 0xA0;   // row_x = m[0..2]; center 160
+///   screen_y = ((t·row_y) >> 7) / depth + 0x64;   // row_y = m[3..5]; center 100
+/// Transcribed EXACTLY, sweeping origin_x + angle_2F71 still only lands ≤9/32 verts in
+/// a scatter — so the grid needs the FULL runtime camera frame: origin_x (0x2F65,
+/// animated) AND all three matrix angles 0x2F71/0x2F6D/0x2F6F (I assumed 6D/6F=0; verify
+/// their runtime values). Bit-exact render = this formula + the live camera state
+/// (savestate/memory dump of 0x2F65/67/69 + 0x2F6D/6F/71, or trace their per-frame set).
 ///
 /// PIPELINE NOW MAPPED END-TO-END (routine level): hud_init (verts→0x5491, angle
 /// 0xB3) → prelude (band y165-200) → 0x1CE:0 (/100 perspective) → 0x299:0x1467
