@@ -1308,6 +1308,23 @@ as a COD PC handoff after the post-update pass. The `0x27D7` gate is distinct
 from the main-loop idle gate at `0x27DA`; Rust tests cover that split so the
 adjacent addresses do not get collapsed.
 
+MAIN GAME LOOP HEAD (sess 003, `0x0FFB`): the engine's top-level dispatch loop
+begins at `0x0FFB` (reached via `jmp 0x0FFB` at `0x1077` and the setup at
+`0x0FF0`). Each iteration: (1) polls/sets the **mouse** (`int 33h AX=4` with the
+cursor position/limits at `0x0A2A`/`0x0A2C`, `0x0A38`/`0x0A3A`); (2) resets the
+sprite dirty-rect list (`[0x6612]=0xFFFF`) and clip flag (`[0x5249]=1`); (3)
+calls render/present subsystems (`0x210E`, then `0x1A93`, `0x1FBC`); (4) gates on
+the **on-ship flag** `[0x2793] & 8` (the ship-nav HUD state — bit 3, the same
+flag that selects letterbox-planet vs on-ship rendering) to choose the mouse/
+cursor path; (5) advances a countdown at `[0x0A40]`; (6) far-calls the shared
+dispatcher `lcall 0:0x70E`; and (7) falls through to the pending-profile check
+`main_pending_profile_check` (`0x108E`, below) for `D2` script/scene handoff. So
+**interactive navigation and input dispatch live in this loop** — the mouse poll
+here plus the subsystems `0x1A93`/`0x1FBC` are where the opening's interactive
+narration and the pyramid-nav UI are driven. That is the concrete entry point for
+the next-session navigation trace (drive the mouse to the right UI targets, or
+find the handler that advances the opening).
+
 The main loop at `0x108E` does not consume a pending `D2` profile request until
 the presentation state is idle. The exact gate is:
 
