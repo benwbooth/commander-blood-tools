@@ -187,17 +187,22 @@ fn run_engine_play(iso: &str, assets: &str, out: &str, script: &str) -> anyhow::
     Ok(())
 }
 
-/// Real-time windowed backend: present the runnable engine in a live 320x200 window
-/// and drive it with real mouse input (position steers the ship-nav compass; Space
-/// toggles the on-ship view vs the dialogue scene). This is the interactive
-/// presentation layer over the same [`EngineState::step`] loop the headless
-/// `engine-play` driver uses. Requires a graphics display to run.
+/// Real-time windowed backend: present the runnable engine in a live window and
+/// drive it with real mouse input (position steers the ship-nav compass; left
+/// button toggles the on-ship view vs the dialogue scene). This is the interactive
+/// presentation layer (winit + softbuffer, which runs under a virtual framebuffer)
+/// over the same [`EngineState::step`] loop the headless `engine-play` driver uses.
 fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()> {
     use commander_blood_tools::engine::{
         ENGINE_SCREEN_HEIGHT, ENGINE_SCREEN_WIDTH, EngineState, MouseInput,
     };
-    use minifb::{Key, MouseButton, MouseMode, Scale, Window, WindowOptions};
+    use std::num::NonZeroU32;
     use std::path::Path;
+    use std::rc::Rc;
+    use winit::dpi::LogicalSize;
+    use winit::event::{ElementState, Event, MouseButton, WindowEvent};
+    use winit::event_loop::{ControlFlow, EventLoop};
+    use winit::window::WindowBuilder;
 
     let rd = |ext: &str| std::fs::read(format!("{iso}/{script}.{ext}"));
     let (cod, var, dic, deb) = (rd("COD")?, rd("VAR")?, rd("DIC")?, rd("DEB")?);
@@ -208,37 +213,74 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     engine.load_dialogue_scenes(&cod, &var, &dic, &deb, &descript, Path::new(assets));
     engine.dialogue_hold_frames = 30;
 
-    let mut window = Window::new(
-        "Commander Blood — engine",
-        ENGINE_SCREEN_WIDTH,
-        ENGINE_SCREEN_HEIGHT,
-        WindowOptions {
-            scale: Scale::X2,
-            ..WindowOptions::default()
-        },
-    )?;
-    window.set_target_fps(15);
+    let event_loop = EventLoop::new()?;
+    let window = Rc::new(
+        WindowBuilder::new()
+            .with_title("Commander Blood — engine")
+            .with_inner_size(LogicalSize::new(
+                (ENGINE_SCREEN_WIDTH * 2) as u32,
+                (ENGINE_SCREEN_HEIGHT * 2) as u32,
+            ))
+            .build(&event_loop)?,
+    );
+    let context = softbuffer::Context::new(window.clone())
+        .map_err(|e| anyhow::anyhow!("softbuffer context: {e}"))?;
+    let mut surface = softbuffer::Surface::new(&context, window.clone())
+        .map_err(|e| anyhow::anyhow!("softbuffer surface: {e}"))?;
 
-    let mut buffer = vec![0u32; ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT];
-    let mut prev_space = false;
-    while window.is_open() && !window.is_key_down(Key::Escape) {
-        let (mx, my) = window.get_mouse_pos(MouseMode::Clamp).unwrap_or((0.0, 0.0));
-        let buttons = u16::from(window.get_mouse_down(MouseButton::Left));
-        let space = window.is_key_down(Key::Space);
-        if space && !prev_space {
-            engine.on_ship = !engine.on_ship;
-        }
-        prev_space = space;
-        engine.step(MouseInput {
-            x: mx as u16,
-            y: my as u16,
-            buttons,
-        });
-        for (i, &idx) in engine.framebuffer.iter().enumerate() {
-            let c = engine.scene_palette[idx as usize];
-            buffer[i] = ((c[0] as u32) << 16) | ((c[1] as u32) << 8) | (c[2] as u32);
-        }
-        window.update_with_buffer(&buffer, ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT)?;
-    }
+    let (mut mx, mut my, mut buttons) = (0u16, 0u16, 0u16);
+    event_loop.set_control_flow(ControlFlow::Poll);
+    event_loop.run(move |event, elwt| match event {
+        Event::WindowEvent { event, .. } => match event {
+            WindowEvent::CloseRequested => elwt.exit(),
+            WindowEvent::CursorMoved { position, .. } => {
+                let size = window.inner_size();
+                mx = ((position.x / size.width.max(1) as f64) * ENGINE_SCREEN_WIDTH as f64) as u16;
+                my =
+                    ((position.y / size.height.max(1) as f64) * ENGINE_SCREEN_HEIGHT as f64) as u16;
+            }
+            WindowEvent::MouseInput { state, button, .. } => {
+                if button == MouseButton::Left {
+                    let down = state == ElementState::Pressed;
+                    buttons = u16::from(down);
+                    if down {
+                        engine.on_ship = !engine.on_ship;
+                    }
+                }
+            }
+            WindowEvent::RedrawRequested => {
+                engine.step(MouseInput {
+                    x: mx,
+                    y: my,
+                    buttons,
+                });
+                let size = window.inner_size();
+                let (w, h) = (size.width.max(1), size.height.max(1));
+                surface
+                    .resize(NonZeroU32::new(w).unwrap(), NonZeroU32::new(h).unwrap())
+                    .ok();
+                if let Ok(mut buf) = surface.buffer_mut() {
+                    // Nearest-neighbour scale the 320x200 indexed framebuffer to the
+                    // window and pack ARGB.
+                    for y in 0..h {
+                        let sy = (y as usize * ENGINE_SCREEN_HEIGHT / h as usize)
+                            .min(ENGINE_SCREEN_HEIGHT - 1);
+                        for x in 0..w {
+                            let sx = (x as usize * ENGINE_SCREEN_WIDTH / w as usize)
+                                .min(ENGINE_SCREEN_WIDTH - 1);
+                            let idx = engine.framebuffer[sy * ENGINE_SCREEN_WIDTH + sx];
+                            let c = engine.scene_palette[idx as usize];
+                            buf[(y * w + x) as usize] =
+                                ((c[0] as u32) << 16) | ((c[1] as u32) << 8) | (c[2] as u32);
+                        }
+                    }
+                    buf.present().ok();
+                }
+                window.request_redraw();
+            }
+            _ => {}
+        },
+        _ => {}
+    })?;
     Ok(())
 }
