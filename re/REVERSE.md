@@ -225,6 +225,20 @@ template + manu3 the 3D menu). Outstanding overlay work is only per-overlay DATA
 (object lists / menu items / vtables), not new engine structure. The palette buffer at file 0x525A is the character-sprite
 palette source; `amer.xdb`/`scrut.xdb` share the same entry-stub shape.
 
+OVERLAY OBJECT RECORD LAYOUT (sess 003, `croolis.xdb` methods 0x16A4/0x12DE/0xA30):
+the per-object sub-record (`si = [di+0x16] + 0x5E`) fields are mapped: `+0x36`=
+state flag, `+0x38`=timer (init 0x32), `+0x3C`=anim accumulator (PRNG), `+0x42`=
+position X, `+0x46`=position Y (`-0x3C` view adjust), `+0x4A`=position Z, `+0x50`=
+frame counter, `+0xE`=sub-method ptr. Method `0xA30` is the POSITION-UPDATE +
+VIEW-CULL: adds the camera position (`[0x22EC]/[0x22F0]/[0x22F4]`, set by mouse
+camera sub 0x22A) to the object position and bounds-checks (`0x80`, `0xFF00..0x100`)
+to cull off-view objects before the shared 3D projection plots them. So croolis is
+decoded comprehensively — dispatch, init, main loop, mouse camera, object record
+layout, PRNG animation, position-update+cull, 3D projection — the alien-species
+subsystem is mapped end to end (same template for amer/scrut). Outstanding: only
+the raw sprite-layer pixel/geometry bytes (0x600-stride layers at file ~0x522A)
+and the manu3 menu-item data.
+
 ## Memory Map (load image, base segment 0)
 
 | Region | File range | Notes |
