@@ -4724,6 +4724,42 @@ mod tests {
         assert!(n >= 1, "at least one clay3 scene must render");
     }
 
+    // Renders ALL uncovered function scenes to output_subfix4/mp4 (the new
+    // deliverable content) against cached _tmp_dat:
+    //   cargo test render_all_uncovered_scenes -- --ignored --nocapture
+    #[test]
+    #[ignore]
+    fn render_all_uncovered_scenes() {
+        let Some(out) = ["output", "../output"]
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("_tmp_dat").exists() && p.join("_tmp_iso").exists())
+        else {
+            eprintln!("skipping: no cached extraction");
+            return;
+        };
+        let tmp_iso = out.join("_tmp_iso");
+        let tmp_dat = out.join("_tmp_dat");
+        let db =
+            super::descript::parse_descript(&find_file_recursive(&tmp_iso, "DESCRIPT.DES").unwrap())
+                .unwrap();
+        let hnm_music = db.hnm_music_map();
+        let rows = parse_script_uncovered_speech(&tmp_iso, Some(&db), &hnm_music).unwrap();
+        let mp4_dir = out.parent().unwrap_or(Path::new(".")).join("output_subfix4/mp4");
+        let _ = fs::create_dir_all(&mp4_dir);
+        let subtitle_sfx = tmp_dat.join("sn").join("tb.snd");
+        let n = crate::extract::character::create_executed_dialogue_run_videos(
+            &tmp_dat,
+            &mp4_dir,
+            &db,
+            &rows,
+            subtitle_sfx.exists().then_some(subtitle_sfx.as_path()),
+        )
+        .unwrap();
+        eprintln!("rendered {n} uncovered function-scene videos -> {}", mp4_dir.display());
+        assert!(n > 100, "expected many uncovered scene videos");
+    }
+
     // Validates parse_script_uncovered_speech against cached extraction:
     //   cargo test measure_uncovered_speech_rows -- --ignored --nocapture
     #[test]
