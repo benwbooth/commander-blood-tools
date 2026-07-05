@@ -198,7 +198,24 @@ ship-3D COMPOSITOR is therefore ALGORITHMICALLY COMPLETE — the remaining work 
 an actual in-game ship-view frame is (a) the ship-nav VM STATE that supplies which
 objects/slots are live and their 3D positions (the nav FSM is partly mapped:
 steering `0x7824`, on-ship flag `0xB079`, mouse poll `0:0x70E`), and (b) wiring
-the chain into the exporter to emit the frame. Not new rendering algorithms. The palette buffer at file 0x525A is the character-sprite
+the chain into the exporter to emit the frame. Not new rendering algorithms.
+
+OVERLAY FAMILY MAPPED (sess 003): the four `.xdb` overlays split into two shapes:
+- `croolis.xdb` (258KB), `amer.xdb` (266KB), `scrut.xdb` (258KB) ALL share the
+  SAME entry stub (push eax..ebp/ds/es/fs/gs; `mov ax,cs; add ax,cs:[0x32E5]`
+  self-relocate; `ds_delta@0x32E5` = 0x32F/0xD404/0xDCE respectively). So the full
+  croolis decode (dispatch→palette+mouse init→VGA-plane clear→object/vtable loop→
+  mouse camera→PRNG animation state machines→3x3 matrix 3D projection) is the
+  SHARED template for all three — they are the alien-species/scrutinizer
+  INTERACTIVE-3D-VIEW overlays (amer, scrut=Scruter_Jo, croolis). Remaining
+  per-overlay work is just their specific object data / vtable contents, not new
+  structure.
+- `manu3.xdb` (62KB) is a DIFFERENT shape — a menu/manual overlay: `push ds; mov
+  cx,cs:[0x136A]; or cx,cx; je …; mov fs/ds/es,cx; mov eax,[bp]→[0x1A]; mov
+  ax,[bp+6]; shr ax,4; add ah,0xA0` (parameter → segment-style address). Its body
+  is the only structurally-new overlay left to decode.
+So the overlay subsystem is now ~3/4 mapped by the shared croolis template; the
+outstanding overlay work is the per-view object data and the manu3 menu body. The palette buffer at file 0x525A is the character-sprite
 palette source; `amer.xdb`/`scrut.xdb` share the same entry-stub shape.
 
 ## Memory Map (load image, base segment 0)
