@@ -273,6 +273,22 @@ per-frame nav-FSM state (steering `0x7824`, on-ship `0xB079`). This is bounded
 wiring of tested components with available data, NOT new rendering or open-ended
 runtime modelling. The ship-3D subsystem is substantially COMPLETE.
 
+SHIP-NAV VIEW COMPOSITION — VERIFIED vs PLAYTHROUGH (sess 003): the real in-game
+ship-nav view (playthrough t85/90/130) is NOT a starfield + text menu. It is:
+(1) a SCENE in the upper band — a character/creature over a background, RENDERED
+THE SAME WAY as the dialogue scenes (character HNM over scene background) which are
+already implemented + verified against the playthrough; plus (2) the PYRAMID-NAV
+HUD at the bottom — the grid of grey pyramids + the central eye-orb (BORXX.SPR,
+decoded). The green "1" day counter is top-left. So the ship-nav view largely
+REUSES the verified dialogue scene rendering for its scene band; the only
+additional visual is the pyramid-HUD overlay (pyramid grid + BORXX orb, both
+decodable). The starfield point-cloud renderer is a DIFFERENT element (space/warp
+background), and `layout_ship_3d_target_list` is a separate on-interaction text
+selector, NOT the main HUD. CORRECTED ship-view scope: scene band = done (dialogue
+renderer); remaining ship-view visual = compose the pyramid-HUD overlay (grid +
+orb) over the scene, driven by the destination list. Bounded sprite compositing,
+not new rendering.
+
 ## Memory Map (load image, base segment 0)
 
 | Region | File range | Notes |
