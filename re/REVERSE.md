@@ -98,9 +98,17 @@ mov es,[0x28]; mov dx,0x3C4; mov ax,0x0F02; out dx,ax` (Sequencer Map-Mask = all
 looping while `fs:[si]!=0`; (5) cleanup `call 0x2514`. So the overlay is an
 OBJECT-ORIENTED, vtable-dispatched interaction screen: a null-terminated list of
 alien objects at `fs:0x2308`, each with a vtable at `+0x34` whose `+0x103A` slot
-is the per-object update/draw method. NEXT: map the vtable method at `+0x103A`
-and the four init subs; the object list + vtable layout is the recovered spine of
-the alien-species logic. The palette buffer at file 0x525A is the character-sprite
+is the per-object update/draw method. Init sub `0x22A` is the MOUSE CAMERA CONTROL:
+`int 33h ax=3` (read mouse x=cx,y=dx,buttons=bx), subtracts the centre
+(0x140,0x200), and smooths the delta into camera globals — `[0x1058]`/`fs:0x22F8`
+(pan X), `fs:0x22FA`, `fs:0x22F6` (tilt Y) via halve+clamp(±5)+accumulate — then
+tests buttons in `[0x2E]` (bit0=left, bit1=right). So `croolis.xdb` is an
+INTERACTIVE 3D ALIEN-VIEW SCREEN: mouse-controlled smoothed camera + the
+object/vtable-dispatched render loop above — structurally the same shape as the
+ship-3D view (mouse delta from centre → camera, per-object draw). NEXT: map the
+vtable method at `+0x103A` (per-object update/draw) and the remaining init subs
+(`0x1E1D,0x5DC,0x775`); the object list + vtable + camera-control are the
+recovered spine of the alien-species logic. The palette buffer at file 0x525A is the character-sprite
 palette source; `amer.xdb`/`scrut.xdb` share the same entry-stub shape.
 
 ## Memory Map (load image, base segment 0)
