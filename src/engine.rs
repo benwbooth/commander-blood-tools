@@ -510,6 +510,31 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
+    fn demo_render_real_dialogue_frame() {
+        let read = |names: &[&str]| names.iter().find_map(|p| std::fs::read(p).ok());
+        let (Some(cod), Some(var), Some(dic)) = (
+            read(&["output/_tmp_iso/SCRIPT1.COD", "../output/_tmp_iso/SCRIPT1.COD"]),
+            read(&["output/_tmp_iso/SCRIPT1.VAR", "../output/_tmp_iso/SCRIPT1.VAR"]),
+            read(&["output/_tmp_iso/SCRIPT1.DIC", "../output/_tmp_iso/SCRIPT1.DIC"]),
+        ) else { return; };
+        let mut e = EngineState::new();
+        e.load_dialogue(&cod, &var, &dic);
+        // Advance to the first line that has real subtitle text.
+        while e.current_subtitle().is_none() && e.dialogue_cursor + 1 < e.dialogue_len() {
+            e.dialogue_cursor += 1;
+        }
+        let text = e.current_subtitle().unwrap_or("(no text)").to_string();
+        eprintln!("engine subtitle: {text:?}");
+        e.draw_subtitle(&text, 0xFD);
+        let vis: Vec<u8> = e.framebuffer.iter().map(|&v| if v==0 {0} else {255}).collect();
+        let mut out = format!("P5\n{ENGINE_SCREEN_WIDTH} {ENGINE_SCREEN_HEIGHT}\n255\n").into_bytes();
+        out.extend_from_slice(&vis);
+        std::fs::write("/tmp/ben_engine_frame.pgm", out).unwrap();
+        eprintln!("wrote /tmp/ben_engine_frame.pgm");
+    }
+
+    #[test]
     fn framebuffer_is_full_screen_indexed() {
         let e = EngineState::new();
         assert_eq!(
