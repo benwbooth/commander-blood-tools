@@ -1778,8 +1778,14 @@ pub const SHIP_3D_HUD_BAND_TOP: usize = 0xA5; // 165
 ///   renders via `lcall 0x1CE:0` (the projection/raster segment). So the ship3d HUD
 ///   is the COMPACT dialogue-mode nav strip; the full-screen star-map nav screen
 ///   (rows of shaded pyramids) is a SEPARATE view — don't conflate them.
-/// TODO: decode `0x1CE:0` for the vertex→pyramid edge/face topology + rasterisation,
-/// and confirm the projection origin (angle is 0xB3; origin 0 culls the verts).
+/// - `0x1CE:0` (file 0x22E0) is a `/100` fixed-point perspective helper (called with
+///   ax=-50, di=0x5F11 workspace). The pyramid render then dispatches through segment
+///   0x299: `lcall 0x299:0x1467` and `lcall 0x299:0x210D` (after `ship_3d_target_
+///   record_select` @0xB2BB selects the active target). So the vertex→screen raster
+///   lives in seg 0x299; `di=0x6612`/`0x6724` are its record pointers.
+/// TODO (next session): decode `0x299:0x1467` + `0x299:0x210D` for the vertex→pyramid
+/// edge/face topology + rasterisation; confirm the projection origin (angle 0xB3;
+/// origin 0 culls the verts, so the transform at 0x5F11 supplies the camera).
 pub const SHIP_3D_HUD_PYRAMID_VERTICES: [[i16; 3]; 32] = [
     [0, 2304, 3075],
     [776, 1803, 2820],
