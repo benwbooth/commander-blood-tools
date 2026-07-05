@@ -1870,6 +1870,12 @@ pub const SHIP_3D_HUD_BAND_TOP: usize = 0xA5; // 165
 /// @0x9BBA iterates `[0x2F77]` records, likely > 32, reusing the template with per-
 /// instance offsets). Bit-exact grid therefore needs the INSTANCING (how many records,
 /// their per-instance origin/offset) on top of the decoded per-vertex projection.
+/// COUNT FOUND: `[0x2F77]` (the 0x9BBA loop count) = 11 (set @0x9BB4 right before the HUD
+/// loop) — the nav view projects **11 records** (destination pyramids + compass elements),
+/// NOT the 32 template verts. The SAME 0x9BBA loop also projects the 1000-point STARFIELD
+/// (`[0x2F77]=1000` @0x9A1D). So the nav grid = 11 projected records from a source array
+/// (bx, +6/rec). Bit-exact grid = those 11 source positions (nav destination data) + the
+/// decoded projection + runtime camera. Projection done; the 11-record source is the piece.
 ///
 /// PIPELINE NOW MAPPED END-TO-END (routine level): hud_init (verts→0x5491, angle
 /// 0xB3) → prelude (band y165-200) → 0x1CE:0 (/100 perspective) → 0x299:0x1467
