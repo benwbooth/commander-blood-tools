@@ -390,12 +390,24 @@ impl EngineState {
 
     /// Advance the dialogue playback: after `dialogue_hold_frames`, step to the next
     /// reached line (stops at the last line).
+    /// Hold for the current line: `dialogue_hold_frames` as a base plus reading time
+    /// proportional to the subtitle length, so long lines linger and short ones don't
+    /// (approximating the game's per-line pacing without a fixed one-size hold).
+    fn current_line_hold(&self) -> u32 {
+        let len = self
+            .dialogue_texts
+            .get(self.dialogue_cursor)
+            .map(|t| t.len() as u32)
+            .unwrap_or(0);
+        (self.dialogue_hold_frames + len * 3 / 4).clamp(self.dialogue_hold_frames, 240)
+    }
+
     fn advance_dialogue(&mut self) {
         if self.dialogue.is_empty() {
             return;
         }
         self.dialogue_timer += 1;
-        if self.dialogue_timer >= self.dialogue_hold_frames {
+        if self.dialogue_timer >= self.current_line_hold() {
             self.dialogue_timer = 0;
             if self.dialogue_cursor + 1 < self.dialogue.len() {
                 self.dialogue_cursor += 1;
@@ -1151,6 +1163,23 @@ mod tests {
             .filter(|&r| e.framebuffer[r * w..(r + 1) * w].iter().any(|&p| p == 0xFD))
             .count();
         assert!(rows_with_text > 8, "text occupies multiple wrapped lines (rows={rows_with_text})");
+    }
+
+    #[test]
+    fn dialogue_hold_scales_with_line_length() {
+        let mut e = EngineState::new();
+        e.dialogue_hold_frames = 20;
+        e.dialogue_texts = vec!["Hi".into(), "A rather long dialogue line that should linger longer".into()];
+        e.dialogue = vec![
+            LineState { offset: 0, actor_offset: None, location_offset: None },
+            LineState { offset: 1, actor_offset: None, location_offset: None },
+        ];
+        e.dialogue_cursor = 0;
+        let short = e.current_line_hold();
+        e.dialogue_cursor = 1;
+        let long = e.current_line_hold();
+        assert!(long > short, "longer line held longer ({long} > {short})");
+        assert!(short >= 20, "at least the base hold");
     }
 
     #[test]
