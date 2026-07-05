@@ -164,7 +164,28 @@ ship-3D compositor's PROJECTION + starfield background ARE implemented; the real
 remaining compositor gap is SPRITE COMPOSITING — drawing the projected sprite
 slots (the 0x600-stride layers here; `BORXX.SPR`/character `.spr` in the ship
 view) over the background and HUD. NEXT: the sprite blit around the projected
-point (overlay sub-method `[si+0xE]`) → the ship-3D sprite-slot compositor. The palette buffer at file 0x525A is the character-sprite
+point (overlay sub-method `[si+0xE]`) → the ship-3D sprite-slot compositor.
+
+COMPOSITOR STATE — ACCURATE ASSESSMENT (sess 003): reading the code, the ship-3D
+compositor's ALGORITHMIC pieces are ALL implemented AND unit-tested, not
+"untouched":
+- projection — `ship3d::project_ship_3d_point` (matrix×vector + perspective
+  divide about 160/100 + depth cull), cross-validated by the croolis.xdb overlay.
+- background — `render_ship_3d_point_cloud` / `render_ship_3d_starfield`
+  (PRNG point cloud + depth-shaded plot).
+- sprite frame decode — `Ship3dSpriteSlotFrame` Raw/Rle/Scaled +
+  `ship_3d_sprite_slot_frame_for_dispatch` (dispatch 0-4).
+- sprite blit — `blit_ship_3d_sprite_slot_command_indexed` (flip, clip,
+  destination remap tables 5F11/6011).
+- FULL COMPOSITOR — `render_ship_3d_dirty_sprite_commands_indexed`: iterates slot
+  commands, blits each to the secondary buffer, then dirty-rect copies to primary
+  (double-buffered, matching the engine). Tested at render.rs 1648/2215/2261/2300.
+So the REAL remaining compositor gap is INTEGRATION, not algorithms: drive these
+from the live ship-3D slot state (slot table → project each slot's 3D pos into a
+`Ship3dSpriteSlotRenderCommand` with dispatch/rect/flip → call the dirty compositor
+→ emit the frame over the starfield + HUD). This means the "compositor" lever is
+mostly DONE (pieces done+tested); it needs wiring into the export, which is far
+smaller than the earlier "implement a compositor" framing implied. The palette buffer at file 0x525A is the character-sprite
 palette source; `amer.xdb`/`scrut.xdb` share the same entry-stub shape.
 
 ## Memory Map (load image, base segment 0)
