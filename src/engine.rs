@@ -177,6 +177,15 @@ pub struct EngineState {
     /// Optional talk-HNM / scene background for the dialogue scene band, decoded
     /// per frame behind the subtitle.
     scene_hnm: Option<HnmFile>,
+    /// Persistent scene buffer the HNM decodes into. Kept separate from the display
+    /// framebuffer because HNM *delta* frames build on the previous frame's pixels —
+    /// drawing the subtitle straight into this buffer would leave old subtitle text
+    /// in regions the next delta doesn't touch, piling up across lines.
+    scene_buffer: Vec<u8>,
+    /// Per-scene frame counter: reset to 0 when a new talk-HNM loads so each scene
+    /// plays from its keyframe forward (delta frames need their own keyframe base,
+    /// not `global_frame % count` which would start mid-animation on a stale buffer).
+    scene_frame: usize,
     /// Palette filled by the scene HNM decode (the framebuffer is indexed).
     pub scene_palette: [[u8; 3]; 256],
     /// Indexed (palette) framebuffer the render subsystems draw into.
@@ -212,6 +221,8 @@ impl EngineState {
             scene_queue: Vec::new(),
             scene_queue_idx: 0,
             scene_hnm: None,
+            scene_buffer: vec![0u8; ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT],
+            scene_frame: 0,
             scene_palette: [[0u8; 3]; 256],
             framebuffer: vec![0u8; ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT],
         }
@@ -225,6 +236,11 @@ impl EngineState {
             // palette updates on top of it.
             self.scene_palette = hnm.palette;
             self.scene_hnm = Some(hnm);
+            // New scene: restart at its keyframe on a cleared buffer.
+            self.scene_frame = 0;
+            for p in self.scene_buffer.iter_mut() {
+                *p = 0;
+            }
         }
     }
 
@@ -473,11 +489,16 @@ impl EngineState {
     /// composites behind this once the HNM decoder is moved into the lib.)
     pub fn render_dialogue_frame(&mut self) {
         // Scene background: decode the current talk-HNM frame (indices + palette)
-        // into the framebuffer, or clear if none loaded.
+        // into the persistent scene buffer (so delta frames chain correctly), then
+        // copy it to the display framebuffer. Drawing the subtitle onto the copy —
+        // not the scene buffer — keeps old subtitle text from accumulating across
+        // frames/lines in regions later deltas don't repaint.
         if let Some(hnm) = self.scene_hnm.take() {
-            let frame_idx = (self.frame as usize) % hnm.frame_count().max(1);
-            hnm.decode_frame(frame_idx, &mut self.framebuffer, &mut self.scene_palette);
+            let frame_idx = self.scene_frame % hnm.frame_count().max(1);
+            hnm.decode_frame(frame_idx, &mut self.scene_buffer, &mut self.scene_palette);
             self.scene_hnm = Some(hnm);
+            self.scene_frame += 1;
+            self.framebuffer.copy_from_slice(&self.scene_buffer);
         } else {
             for p in self.framebuffer.iter_mut() {
                 *p = 0;
