@@ -882,7 +882,7 @@ fn draw_game_text_indexed_clipped(
     let visible_chars = text.chars().count();
     let mut cx = x;
     for (char_index, ch) in text.chars().enumerate() {
-        if let Some(glyph) = game_font_glyph(ch).or_else(|| game_font_glyph('?')) {
+        if let Some(glyph) = subtitle_draw_glyph(ch) {
             draw_game_glyph_indexed_clipped(
                 fb,
                 glyph.rows,
@@ -912,7 +912,7 @@ fn draw_game_text_rgb_clipped(
     let visible_chars = text.chars().count();
     let mut cx = x;
     for (char_index, ch) in text.chars().enumerate() {
-        if let Some(glyph) = game_font_glyph(ch).or_else(|| game_font_glyph('?')) {
+        if let Some(glyph) = subtitle_draw_glyph(ch) {
             draw_game_glyph_rgb_clipped(
                 rgb,
                 glyph.rows,
@@ -991,6 +991,19 @@ fn draw_game_glyph_rgb_clipped(
 pub(super) struct GameFontGlyph {
     pub(super) rows: [u8; GAME_FONT_HEIGHT],
     pub(super) advance: usize,
+}
+
+/// The glyph to blit for a subtitle character. Unknown glyphs fall back to '?'
+/// so garbage is visible, BUT a space (' ') draws NOTHING (returns None) — the
+/// game's `render_string` (BLOODPRG.EXE @0x31D7) skips the space glyph and only
+/// advances DI by 6. Without this, `game_font_glyph(' ')` (None, no space glyph)
+/// fell through to the '?' fallback and rendered every space as '?'. Verified
+/// against a real playthrough (spaces were showing as '?' in generated subtitles).
+pub(super) fn subtitle_draw_glyph(ch: char) -> Option<GameFontGlyph> {
+    if ch == ' ' {
+        return None;
+    }
+    game_font_glyph(ch).or_else(|| game_font_glyph('?'))
 }
 
 pub(super) fn game_font_glyph(ch: char) -> Option<GameFontGlyph> {
@@ -1166,6 +1179,18 @@ mod tests {
         let e = game_font_glyph('e').expect("e glyph");
         assert_eq!(e.advance, 8);
         assert_eq!(e.rows, [0x00, 0x00, 0xfc, 0x84, 0xfc, 0x80, 0xfc, 0x00]);
+    }
+
+    #[test]
+    fn subtitle_space_draws_nothing_not_a_question_mark() {
+        // Regression: a space must draw NO glyph (blank), while unknown chars
+        // still fall back to '?'. Previously space fell through to '?'.
+        assert!(subtitle_draw_glyph(' ').is_none());
+        // A known glyph is drawn as itself.
+        assert_eq!(subtitle_draw_glyph('M'), game_font_glyph('M'));
+        // A genuinely unknown, non-space char falls back to the '?' glyph.
+        assert_eq!(subtitle_draw_glyph('\u{2603}'), game_font_glyph('?'));
+        assert!(game_font_glyph('?').is_some());
     }
 
     #[test]
