@@ -307,6 +307,18 @@ impl EngineState {
         );
     }
 
+    /// Render the current dialogue line's frame into the framebuffer: clear, then
+    /// draw the reconstructed subtitle text. (The talk-HNM scene background layer
+    /// composites behind this once the HNM decoder is moved into the lib.)
+    pub fn render_dialogue_frame(&mut self) {
+        for p in self.framebuffer.iter_mut() {
+            *p = 0;
+        }
+        if let Some(text) = self.current_subtitle().map(str::to_string) {
+            self.draw_subtitle(&text, 0xFD);
+        }
+    }
+
     /// The mouse input poll (`0:0x70E`): store the frame's cursor state and, if the
     /// cursor moved since last frame, reset the idle timer; otherwise advance it.
     fn poll_input(&mut self, input: MouseInput) {
@@ -333,6 +345,11 @@ impl EngineState {
             self.compass_angle =
                 ((self.mouse.x as u32 * 180) / ENGINE_SCREEN_WIDTH as u32).min(179) as u16;
             self.render_ship_view();
+        } else if !self.dialogue.is_empty() {
+            // Dialogue scene present: render the current line's frame (the
+            // talk-HNM scene background composites behind this once the HNM decoder
+            // is lib-side; for now the subtitle text layer over a cleared band).
+            self.render_dialogue_frame();
         }
         // Script/scene stepping (the D2 handoff the main loop drives): advance the
         // loaded dialogue playback.
@@ -532,6 +549,26 @@ mod tests {
         out.extend_from_slice(&vis);
         std::fs::write("/tmp/ben_engine_frame.pgm", out).unwrap();
         eprintln!("wrote /tmp/ben_engine_frame.pgm");
+    }
+
+    #[test]
+    fn step_auto_renders_current_dialogue_subtitle() {
+        let read = |names: &[&str]| names.iter().find_map(|p| std::fs::read(p).ok());
+        let (Some(cod), Some(var), Some(dic)) = (
+            read(&["output/_tmp_iso/SCRIPT1.COD", "../output/_tmp_iso/SCRIPT1.COD"]),
+            read(&["output/_tmp_iso/SCRIPT1.VAR", "../output/_tmp_iso/SCRIPT1.VAR"]),
+            read(&["output/_tmp_iso/SCRIPT1.DIC", "../output/_tmp_iso/SCRIPT1.DIC"]),
+        ) else { return; };
+        let mut e = EngineState::new();
+        e.load_dialogue(&cod, &var, &dic);
+        // Advance the cursor to a line with real text, then step (auto-renders it).
+        while e.current_subtitle().is_none() && e.dialogue_cursor + 1 < e.dialogue_len() {
+            e.dialogue_cursor += 1;
+        }
+        e.dialogue_hold_frames = u32::MAX; // hold the line so the cursor stays put
+        e.step(MouseInput::default());
+        let lit = e.framebuffer.iter().filter(|&&p| p == 0xFD).count();
+        assert!(lit > 20, "step auto-renders the dialogue subtitle (got {lit})");
     }
 
     #[test]
