@@ -1819,6 +1819,14 @@ pub const SHIP_3D_HUD_BAND_TOP: usize = 0xA5; // 165
 /// with already-projected coords. TODO (next session): find the routine that projects
 /// the 0x5491 verts into the 0x6212 display-list records (that IS the missing
 /// projection), plus the compass→matrix-angle map; then reimplement + diff vs oracle.
+///
+/// FURTHER (sess 005): the 0x6212-record builder @0x40D0 (seg 0x299) writes
+/// `((flags & 4) | 0x83)` into each record — that is the SPRITE bank dispatch (same
+/// formula as `sprite::bank_dispatch_index`). So the 0x6212 records carry sprite-draw
+/// dispatch: the HUD pyramids are very likely SPRITES drawn at projected positions,
+/// not a pure 3D wireframe. This reframes the render as hybrid (3D-projected placement
+/// + sprite blit) and is why single-routine estimates kept being wrong. Genuinely
+/// multi-session: needs the projection→position math AND the pyramid sprite source.
 pub const SHIP_3D_HUD_PYRAMID_VERTICES: [[i16; 3]; 32] = [
     [0, 2304, 3075],
     [776, 1803, 2820],
