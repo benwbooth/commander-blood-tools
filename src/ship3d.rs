@@ -1805,8 +1805,15 @@ pub const SHIP_3D_HUD_BAND_TOP: usize = 0xA5; // 165
 ///   projected coord dwords; [0x10],[0x14] = previous coords (the loop copies 8→0x10,
 ///   0xC→0x14 each pass, so the rasteriser's 8-byte segment = prev→cur endpoints).
 ///   The 8-byte rasteriser records (0x509D) are the {cur,prev} endpoint pairs.
-/// TODO (next session): pin the remaining record fields + the 0x5251 matrix / 0x5F11
-/// origin values (savestate dump or finish 0x22E0) to reimplement the render.
+/// MATRIX CONFIRMED: `ship_3d_projection_matrix_build` @0x98B9 builds the 3×3 matrix
+/// at DS:0x2F95 from the angle table + angle words 0x2F71/0x2F6D/0x2F6F — i.e. this is
+/// exactly [`build_ship_3d_projection_matrix`] (same angle fields). 0x5251 is then a
+/// working copy (`rep movsd 0xC0` from 0x5B58). So the rotation half of the HUD
+/// projection is ALREADY implemented; the only remaining unknowns are (a) how the
+/// compass angle [0x2795]=0xB3 maps into the matrix angle 0x2F6D, and (b) the 0x5F11
+/// origin/translation + the /100 perspective divide in `0x22E0`.
+/// TODO (next session): pin (a)+(b), then reimplement the render via the existing
+/// matrix builder + these params and diff vs the DOSBox-X oracle.
 pub const SHIP_3D_HUD_PYRAMID_VERTICES: [[i16; 3]; 32] = [
     [0, 2304, 3075],
     [776, 1803, 2820],
