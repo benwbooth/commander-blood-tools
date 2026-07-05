@@ -1,5 +1,10 @@
 use super::*;
-use commander_blood_tools::ship3d::{Ship3dProjectionViewport, Ship3dSpriteSlotRenderCommand};
+use commander_blood_tools::ship3d::{
+    Ship3dDirtyRectList, Ship3dObjectSpriteDescriptor, Ship3dPointCloudRender,
+    Ship3dProjectionMatrix, Ship3dProjectionOrigin, Ship3dProjectionPoint,
+    Ship3dProjectionViewport, Ship3dSpriteSlotRenderCommand,
+    collect_ship_3d_dirty_sprite_slot_render_commands, project_ship_3d_object_sprite,
+};
 
 // ===========================================================================
 // Palette and framebuffer helpers
@@ -639,6 +644,59 @@ where
         copyback_enabled,
     );
     result
+}
+
+/// Compose a complete ship-3D view frame from the individually-tested pipeline
+/// stages: start from the `render_ship_3d_starfield` background, project each
+/// object's 3D anchor into its slot descriptor (`project_ship_3d_object_sprite`),
+/// then composite the sprite slots over the background with the double-buffered
+/// dirty-rect compositor. Returns the 320x200 indexed frame. This is the
+/// top-level integration that wires the ship-3D render chain into one scene
+/// render — previously the stages (projection, command collection, blit,
+/// starfield) were only exercised separately.
+pub(super) fn compose_ship_3d_scene_indexed<'a, F>(
+    background: &Ship3dPointCloudRender,
+    slots: &mut [Ship3dObjectSpriteDescriptor],
+    anchors: &[Ship3dProjectionPoint],
+    origin: Ship3dProjectionOrigin,
+    matrix: Ship3dProjectionMatrix,
+    frame_for_command: F,
+    remap_5f11: Option<&[u8; 256]>,
+    remap_6011: Option<&[u8; 256]>,
+) -> Vec<u8>
+where
+    F: FnMut(&Ship3dSpriteSlotRenderCommand) -> Option<Ship3dSpriteSlotFrame<'a>>,
+{
+    for (slot, anchor) in slots.iter_mut().zip(anchors.iter()) {
+        let _ = project_ship_3d_object_sprite(*anchor, origin, matrix, slot);
+    }
+    let mut primary = background.buffer.clone();
+    let mut secondary = background.buffer.clone();
+    if slots.is_empty() {
+        return primary;
+    }
+    let dirty = Ship3dDirtyRectList {
+        rects: vec![Ship3dProjectionViewport {
+            left: 0,
+            top: 0,
+            right: VIEWPORT_W as u16,
+            bottom: VIEWPORT_H as u16,
+        }],
+        sentinel: 0,
+    };
+    let commands =
+        collect_ship_3d_dirty_sprite_slot_render_commands(slots, &dirty, 0, slots.len() - 1);
+    render_ship_3d_dirty_sprite_commands_indexed(
+        &mut primary,
+        &mut secondary,
+        &commands,
+        &dirty.rects,
+        true,
+        frame_for_command,
+        remap_5f11,
+        remap_6011,
+    );
+    primary
 }
 
 fn decode_rle_sprite_pixels(frame: RleSpriteFrame<'_>, height: usize) -> Option<Vec<u8>> {
@@ -1620,6 +1678,71 @@ mod tests {
         data.extend_from_slice(&rle_sprite_frame(1, 1, &[0, 9]));
 
         assert_eq!(SpriteSlotFrameTable::parse(&data), None);
+    }
+
+    #[test]
+    fn compose_ship_3d_scene_overlays_sprite_on_starfield_background() {
+        // Uniform "starfield" background distinct from the sprite pixels.
+        let background = Ship3dPointCloudRender {
+            buffer: vec![0x11u8; VIEWPORT_W * VIEWPORT_H],
+            plotted: 0,
+        };
+        // A real parsed sprite frame (reuses the tested sprite-table path).
+        let frame = rle_sprite_frame(2, 1, &[1, 0x5a, 0x5b]);
+        let data = sprite_slot_frame_table(0x0004, &[&frame]);
+        let table = SpriteSlotFrameTable::parse(&data).expect("sprite slot frame table");
+        let dispatch = table.dispatch_index() as u16;
+
+        // One visible+active slot whose flags encode that dispatch index. Pre-set
+        // to the projected position/extent (draw 159,100 extent 2x1) so the
+        // in-compose projection is a no-op and never raises the DIRTY flag (which
+        // shares a bit with the dispatch index).
+        let mut slots = [Ship3dObjectSpriteDescriptor {
+            flags: 0x0080 | 0x0001 | (dispatch << 1),
+            source_width: 2,
+            source_height: 1,
+            draw_x: 159,
+            draw_y: 100,
+            extent_width: 2,
+            extent_height: 1,
+            committed_draw_x: 159,
+            committed_draw_y: 100,
+            committed_extent_width: 2,
+            committed_extent_height: 1,
+        }];
+        // Project to screen centre: X'/Y' matrix rows zero -> (160,100); depth from
+        // z with terms[8]=0x8000 and z=1024 gives depth=1024 -> extent 2x1 (matches
+        // the pre-set values, so nothing changes and no DIRTY bit is raised).
+        let matrix = Ship3dProjectionMatrix {
+            terms: [0, 0, 0, 0, 0, 0, 0, 0, 0x8000],
+        };
+        let anchors = [Ship3dProjectionPoint {
+            x: 0,
+            y: 0,
+            z: 1024,
+        }];
+        let origin = Ship3dProjectionOrigin { x: 0, y: 0, z: 0 };
+
+        let composed = compose_ship_3d_scene_indexed(
+            &background,
+            &mut slots,
+            &anchors,
+            origin,
+            matrix,
+            |_| table.frame(0),
+            None,
+            None,
+        );
+
+        assert_eq!(composed.len(), VIEWPORT_W * VIEWPORT_H);
+        assert!(
+            composed.iter().any(|&p| p == 0x11),
+            "starfield background must be preserved outside the sprite"
+        );
+        assert!(
+            composed.iter().any(|&p| p == 0x5a || p == 0x5b),
+            "the projected sprite must be composited over the background"
+        );
     }
 
     #[test]
