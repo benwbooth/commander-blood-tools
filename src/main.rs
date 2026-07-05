@@ -244,6 +244,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 | EventMask::POINTER_MOTION
                 | EventMask::BUTTON_PRESS
                 | EventMask::BUTTON_RELEASE
+                | EventMask::KEY_PRESS
                 | EventMask::STRUCTURE_NOTIFY,
         ),
     )?;
@@ -278,6 +279,8 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     clicked = true; // latch so a fast press+release still reaches step()
                 }
                 Event::ButtonPress(b) if b.detail == 3 => engine.on_ship = !engine.on_ship,
+                // Keyboard loop controls: Escape (keycode 9) returns to the nav view.
+                Event::KeyPress(k) if k.detail == 9 => engine.on_ship = true,
                 Event::ButtonRelease(b) if b.detail == 1 => buttons = 0,
                 Event::DestroyNotify(_) => return Ok(()),
                 _ => {}
