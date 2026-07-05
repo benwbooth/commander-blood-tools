@@ -2630,6 +2630,22 @@ nav — which is already fully mapped above. NOTE: `BLOOD.EXE` is the installer 
 `BLOODPRG.EXE` is run directly (bypassing install); the attract-exit may depend on
 an installed-save/config that the direct-boot lacks, which would explain the loop.
 
+ROOT-CAUSE CANDIDATE (sess 003): BLOODPRG.EXE's resource filename table (file
+`0xD4xx`: `b.big, file.lst, orx.fd, chart.fd, frigo.fd, blood.sav, descript.des,
+manu3.xdb, …`) includes **`blood.sav`**, and elsewhere it names save slots
+`game1.sav`..`game10.sav` plus a `SAVE` label. NONE of these `.sav` files exist on
+the direct-boot ISO / in the extraction. So the most likely reason the attract
+demo never yields to interactive gameplay is that there is **no save/install to
+start from** — the game loops its demo when `blood.sav`/`game*.sav` are absent.
+CONCRETE NEXT-SESSION TEST: either (a) run the `BLOOD.EXE` installer in DOSBox
+(scripted) to create the install + `blood.sav` on the writable `C:` (accuracy/
+cdrive), then run `BLOODPRG.EXE` and check whether it enters interactive gameplay;
+or (b) trace BLOODPRG's `blood.sav` open (int 21h AH=3D on the table entry) and
+its file-absent branch to see exactly what state the missing save forces. If (a)
+lets the attract exit, the already-mapped nav FSM (mouse click left/right of
+centre → steer) becomes drivable and the 394 dialogue videos become
+capture-verifiable — closing the bulk of the deliverable's verification gap.
+
 BOOT SEQUENCE MAPPED (sess 003, dense 0.5s capture via
 `ORACLE_CAPTURE_INTERVAL=0.5`): DOSBox-X splash → **MINDSCAPE** (`sq/mind.hnm`,
 ~2.5s) → **Microfolie's** silvery banner (a distinct asset, ~3.5s) → **astronaut
