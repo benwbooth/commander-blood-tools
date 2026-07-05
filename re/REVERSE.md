@@ -2630,21 +2630,28 @@ nav — which is already fully mapped above. NOTE: `BLOOD.EXE` is the installer 
 `BLOODPRG.EXE` is run directly (bypassing install); the attract-exit may depend on
 an installed-save/config that the direct-boot lacks, which would explain the loop.
 
-ROOT-CAUSE CANDIDATE (sess 003): BLOODPRG.EXE's resource filename table (file
-`0xD4xx`: `b.big, file.lst, orx.fd, chart.fd, frigo.fd, blood.sav, descript.des,
-manu3.xdb, …`) includes **`blood.sav`**, and elsewhere it names save slots
-`game1.sav`..`game10.sav` plus a `SAVE` label. NONE of these `.sav` files exist on
-the direct-boot ISO / in the extraction. So the most likely reason the attract
-demo never yields to interactive gameplay is that there is **no save/install to
-start from** — the game loops its demo when `blood.sav`/`game*.sav` are absent.
-CONCRETE NEXT-SESSION TEST: either (a) run the `BLOOD.EXE` installer in DOSBox
-(scripted) to create the install + `blood.sav` on the writable `C:` (accuracy/
-cdrive), then run `BLOODPRG.EXE` and check whether it enters interactive gameplay;
-or (b) trace BLOODPRG's `blood.sav` open (int 21h AH=3D on the table entry) and
-its file-absent branch to see exactly what state the missing save forces. If (a)
-lets the attract exit, the already-mapped nav FSM (mouse click left/right of
-centre → steer) becomes drivable and the 394 dialogue videos become
-capture-verifiable — closing the bulk of the deliverable's verification gap.
+LAUNCH ARGS — ROOT CAUSE FOUND (sess 003, via the eXoDOS reference install):
+the oracle looped the attract demo because it ran `BLOODPRG.EXE` with **NO
+command-line arguments**. The eXoDOS install's `cblood/BLOOD.BAT`
+(`/mnt/stuff/eXoDOS/eXo/eXoDOS/Commander Blood (1994).zip`) shows the real launch:
+
+    D:
+    BLOODPRG AMR S162227 EMS WRIC:\cblood\
+
+Decoded from BLOODPRG's arg-keyword strings (file ~`0xD658`): sound-driver
+selectors `S16`=SoundBlaster-16 / `MID`=MIDI / `SBP`=SB Pro / `GRV`=Gravis, and
+`WRI`=write path. So `AMR`=region, `S162227`=SB16 config `2227`, `EMS`=use EMS,
+`WRIC:\cblood\`=writable save path (for `blood.sav` / `game1..10.sav`). Without
+these the game only demos. `accuracy/dosbox.conf` is now fixed: `memsize=64`,
+`gus=true`, creates `C:\cblood\`, and runs `BLOODPRG AMR S162227 EMS WRIC:\cblood\`.
+With the full eXoDOS setup (its own `Commander Blood.bin` CD, `memsize=64`) the
+game RUNS CORRECTLY — the intro plays through, no 3s reset. REMAINING: getting
+past the game's interactive opening (the "CRYO Interactive 1995" talking-narrator
+sequence — a point-and-click dialogue) into a named dialogue scene; passive play
+cycles the intro, generic input holds the narrator. Once at a scene, the mapped
+nav FSM (click left/right of centre → ship steering) drives to matched captures
+to verify the 394 dialogue videos. Manual: `Manuals/MS-DOS/Commander Blood
+(1994).pdf`.
 
 BOOT SEQUENCE MAPPED (sess 003, dense 0.5s capture via
 `ORACLE_CAPTURE_INTERVAL=0.5`): DOSBox-X splash → **MINDSCAPE** (`sq/mind.hnm`,
