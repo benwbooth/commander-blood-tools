@@ -517,6 +517,18 @@ is still loaded at runtime onto the `.ext`/HNM base by the character-display pat
 — confirming the `224-255` character palette is written into the `gs:0x5221`
 master buffer per character, not shipped in `.spr`/HNM/`.ext`.
 
+CONCLUSIVE (sess 003): a brute-force scan of EVERY game resource for a palette
+that defines index 226 (the char body colour) as a valid non-black 6-bit colour
+found NOTHING usable — checked all `output/_tmp_iso/*` (`.spr`/`.ext`/`.EXE`/
+`BLOOD.DAT`), every HNM header + per-frame `pl` chunk, and the `.xdb` overlays
+(`croolis`/`scrut`/`amer` — only zero-region false positives). So the character
+portrait palette (slots 224-236) is **not statically stored in any file**: it is
+constructed/remapped at runtime by the character-display path (most likely the
+character's own idle-head HNM colours remapped into the high slots when the
+portrait `.spr` is shown). Color character rendering therefore REQUIRES tracing
+that runtime remap — static extraction is definitively ruled out. The orb
+(grayscale, low indices) is unaffected and renders correctly today.
+
 So with `.spr`, all HNM header AND per-frame palettes, and immediate DAC writes
 all ruled out, the `224-255` character palette lives ONLY in an **`.xdb` overlay**
 (SCRUTER is the `croolis`/scrutinizer species → `croolis.xdb`) or is constructed
