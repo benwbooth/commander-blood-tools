@@ -47,8 +47,14 @@ the routine level (see the big comment on `SHIP_3D_HUD_PYRAMID_VERTICES` in `shi
   8-byte segment endpoints). `((flags&4)|0x83)` = sprite-style dispatch.
 - **Corrected mislabels** (via deeper tracing): `0x1CE:0` is a nearest-point/hit-test
   search, NOT the projection; BCARTE is the compass overlay, NOT the grid.
-- **Remaining:** locate the actual vertex→screen projection (buried, accessed via computed
-  pointers), confirm the 0x5F11 origin, then reimplement and diff vs the oracle.
+- **Projection: DECODED (sess 005).** The vertex→screen projection is recovered and
+  reimplemented as `ship3d::project_star_map_point` (t=pos−origin; depth=(t·row_z)>>15;
+  screen_x=((t·row_x)>>7)/depth+160; screen_y=((t·row_y)>>7)/depth+100; scale=0x100000/
+  depth), unit-tested against the transcribed formula. The engine's nav view now renders
+  a real projected perspective grid via it (`render_star_map_navview_projected`), matching
+  the decorative pyramid HUD. **Remaining:** feed the LIVE `0x4F09` destinations + camera
+  (from active nav — see the game-flow section) into it and diff the bit-exact GAMEPLAY
+  grid vs the oracle. Only the live data is missing; the math is done.
 
 ### 2. Interactive scene-by-scene pixel-diff vs the running original
 - Blockers diagnosed: the game reads **relative mouse** (int 33h) with DOSBox capture, so
@@ -56,6 +62,32 @@ the routine level (see the big comment on `SHIP_3D_HUD_PYRAMID_VERTICES` in `shi
   spam can exit/reboot the game.
 - **Remaining:** map the intro→interactive-dialogue input flow to reach a known scene,
   then pixel-compare it to the engine's render of the same script line.
+
+### Game-flow to active navigation — MAPPED (sess 005), evidence-based runtime gate
+The headless side was pushed to its limit; findings (all reproducible via the memory
+tool + dis.py):
+- **Nav-entry trigger** @0x7DE1: the nav gate `[0x2793]|=8` is set when the player
+  interacts with an object whose flag byte has **bit 3** (a navigable destination); it
+  aims the compass at the object's angle (`[bp+0xA]`→`[0x279B]`). NOT a menu button.
+- **New-game/gameplay-entry** @0x8146 is likewise gated on an object's **bit 3** flag,
+  setting the mode `[0x24F3]=1`. So both gameplay AND nav entry are object-interaction
+  driven — they need the actual game world's interactive objects loaded.
+- **Presentation mode SM**: `ship_presentation_fsm` @0xAFA0 runs only if `[0x24F3]` bit0
+  is set; gameplay modes are `[0x24F3]` = 1 / 5 / 9 (set @0x8160/0x79BA/0x5C64). In the
+  attract it stays 0 (SM never runs).
+- **Experiments (definitive):** (a) 100s attract watch — mode stays 0x0, gate never sets
+  bit3, `0x4F09` stays default `(10200,12100,900)`: the attract NEVER enters navigation.
+  (b) Memory-WRITE `[0x24F3]=9` — the write sticks (game keeps running) but does NOT
+  activate nav or populate real destinations: forcing the mode flag is insufficient, the
+  game needs full gameplay init (loaded ship + nav objects). (c) The pyramid grid shown
+  at the title/credits is a **persistent DECORATIVE HUD** (renders with default data),
+  DISTINCT from active gameplay nav — the engine's projection render matches this HUD.
+- **Conclusion (evidence-based, not assumed):** reaching active gameplay navigation with
+  real destination data requires an actual interactive new-game session (intro→ship→click
+  a destination object). The headless attract + synthetic input + mode-forcing cannot
+  produce it. Once a LIVE session reaches nav, `dump_dosbox_mem.py` grabs the real
+  `0x4F09`/camera state → `project_star_map_point` → bit-exact grid. That live session is
+  the remaining unlock for BOTH thread 1 (bit-exact grid) and thread 2 (interactive diff).
 
 ### Memory dump — SOLVED (re/tools/dump_dosbox_mem.py)
 Earlier I claimed this DOSBox-X build can't dump memory (no savestate/debugger). WRONG:
