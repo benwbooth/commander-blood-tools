@@ -905,6 +905,27 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             }
             Err(e) => eprintln!("[dialogue runs ERROR] {e}"),
         }
+        // Event-triggered scenes the main trace never enters: generate their
+        // dialogue from static per-offset context (sess-004 coverage lever).
+        match parse_script_uncovered_speech(&tmp_iso, descript_db.as_ref(), &hnm_music).and_then(
+            |uncovered| {
+                create_executed_dialogue_run_videos(
+                    &tmp_dat,
+                    &mp4_dir,
+                    db,
+                    &uncovered,
+                    subtitle_sfx.exists().then_some(subtitle_sfx.as_path()),
+                )
+            },
+        ) {
+            Ok(n) => {
+                dialogue_run_videos += n;
+                if n > 0 {
+                    eprintln!("[dialogue runs] {n} uncovered-function scene video(s) created");
+                }
+            }
+            Err(e) => eprintln!("[uncovered dialogue runs ERROR] {e}"),
+        }
         match create_profile_dialogue_run_videos(
             &tmp_dat,
             &mp4_dir,

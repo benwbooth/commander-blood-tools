@@ -999,6 +999,131 @@ pub(super) fn parse_script_executed_speech(
     Ok(rows)
 }
 
+/// Dialogue in named COD functions the main execution trace never enters
+/// (event-triggered scenes — the source of ~40% of otherwise-uncovered dialogue).
+/// These lines are resolved by the STATIC analysis (`parse_script_text_calls`:
+/// per-offset actor + runtime background), not execution, because the function's
+/// speaker is set by its caller, not within it. Emits only renderable lines (a
+/// resolved actor AND background) in never-executed functions, skipping any line
+/// the trace already reached (dedup). Grouped per function via a `fn:<script>:<fn>`
+/// scenario id so each becomes its own scene run. See the sess-004 breakthrough in
+/// the YouTube-oracle memory.
+pub(super) fn parse_script_uncovered_speech(
+    iso_dir: &Path,
+    descript_db: Option<&DescriptDb>,
+    hnm_music: &HashMap<String, String>,
+) -> Result<Vec<ScriptExecutedSpeechLine>, Box<dyn Error>> {
+    let mut rows = Vec::new();
+    let character_names = descript_db
+        .map(|db| db.character_names())
+        .unwrap_or_default();
+
+    for script_idx in 1..=5 {
+        let (Some(cod_path), Some(dic_path), Some(deb_path), Some(var_path)) = (
+            find_file_recursive(iso_dir, &format!("SCRIPT{script_idx}.COD")),
+            find_file_recursive(iso_dir, &format!("SCRIPT{script_idx}.DIC")),
+            find_file_recursive(iso_dir, &format!("SCRIPT{script_idx}.DEB")),
+            find_file_recursive(iso_dir, &format!("SCRIPT{script_idx}.VAR")),
+        ) else {
+            continue;
+        };
+        let Some(db) = descript_db else {
+            continue;
+        };
+
+        let cod = fs::read(&cod_path)?;
+        let var = fs::read(&var_path)?;
+        let deb = fs::read(&deb_path)?;
+        let words = parse_script_dictionary(&dic_path)?;
+        let script = format!("SCRIPT{script_idx}");
+        let runtime_bg = resolve_runtime_backgrounds(&cod, &var, &deb, db, hnm_music);
+        let (mut functions, actor_refs, _) = parse_script_symbols(
+            &script,
+            &deb_path,
+            &var_path,
+            db,
+            hnm_music,
+            &character_names,
+        )?;
+        if functions.is_empty() {
+            functions.push((0, script.clone()));
+        }
+        functions.sort_by_key(|(offset, _)| *offset);
+        functions.push((cod.len(), "END".to_string()));
+
+        // All static text-call lines, fully resolved (actor + runtime background).
+        let static_lines =
+            parse_script_text_calls(&script, &cod, &words, &functions, &actor_refs, &runtime_bg);
+
+        // Offsets the main execution trace actually reached.
+        let context = vm_execution_context_from_deb(&deb, descript_db);
+        let text_calls = text_calls_by_offset(&cod, &words);
+        let trace = vm::execute_trace_with_context(&cod, &var, &context);
+        let executed_offsets: std::collections::BTreeSet<usize> =
+            executed_text_offsets(&trace, &text_calls)
+                .into_iter()
+                .collect();
+        // A function is "covered" if any of its text calls executed; skip those
+        // entirely so we only add genuinely-missing event-triggered scenes.
+        let covered_fns: std::collections::BTreeSet<&str> = static_lines
+            .iter()
+            .filter(|line| executed_offsets.contains(&line.offset))
+            .map(|line| line.function_name.as_str())
+            .collect();
+
+        let mut seq = 0usize;
+        for line in &static_lines {
+            if covered_fns.contains(line.function_name.as_str())
+                || executed_offsets.contains(&line.offset)
+                || line.actor_record.is_none()
+                || (line.background_hnm.is_none() && line.background_record.is_none())
+                || line.text.trim().is_empty()
+            {
+                continue;
+            }
+            rows.push(executed_line_from_static(&script, line, seq));
+            seq += 1;
+        }
+    }
+
+    Ok(rows)
+}
+
+/// Convert a statically-resolved [`ScriptSpeechLine`] into the executed-line form
+/// the dialogue-run video renderer consumes, tagging it with a `fn:<script>:<fn>`
+/// scenario id so it groups into a per-function scene run.
+fn executed_line_from_static(
+    script: &str,
+    line: &ScriptSpeechLine,
+    sequence_index: usize,
+) -> ScriptExecutedSpeechLine {
+    ScriptExecutedSpeechLine {
+        scenario_id: Some(format!("fn:{}:{}", script, line.function_name)),
+        script: script.to_string(),
+        sequence_index,
+        function_name: line.function_name.clone(),
+        offset: line.offset,
+        actor_record: line.actor_record.clone(),
+        actor_ref: line.actor_ref,
+        location_offset: None,
+        background_record: line.background_record.clone(),
+        background_hnm: line.background_hnm.clone(),
+        background_music: line.background_music.clone(),
+        param0: line.param0.unwrap_or(0),
+        param1: line.param1.unwrap_or(0),
+        skip_count: line.skip_count,
+        loop_target: line.loop_target,
+        active_line_id: line
+            .active_line_id
+            .unwrap_or_else(|| vm::text_selector_active_line_id(1)),
+        clip_index: line.clip_index,
+        text: line.text.clone(),
+        call_target: line.call_target,
+        text_end: line.text_end,
+        source: "static uncovered function scene".to_string(),
+    }
+}
+
 pub(super) fn parse_script_profile_sequence(
     iso_dir: &Path,
     profiles: &[ScriptResourceProfile],
@@ -3228,6 +3353,15 @@ pub(super) fn executed_dialogue_run_output_stem(run: &ScriptExecutedDialogueRun<
         .or(run.background_hnm.as_deref())
         .unwrap_or("nolocation");
     if let Some(scenario_id) = &run.scenario_id {
+        // Static uncovered-function scenes are tagged `fn:<script>:<function>`.
+        if let Some(rest) = scenario_id.strip_prefix("fn:") {
+            return format!(
+                "function-dialogue-run - {} - {:04} - {}",
+                safe_file_stem(&rest.replace(':', "-")),
+                run.run_index,
+                safe_file_stem(location)
+            );
+        }
         format!(
             "branch-scenario-dialogue-run - {} - {:04} - {}",
             safe_file_stem(scenario_id),
@@ -4547,6 +4681,46 @@ mod tests {
         eprintln!(
             "TOTAL text-calls reached: default={tot_d} single-flip={tot_s} depth2={tot_2} depth3={tot_3}"
         );
+    }
+
+    // Validates parse_script_uncovered_speech against cached extraction:
+    //   cargo test measure_uncovered_speech_rows -- --ignored --nocapture
+    #[test]
+    #[ignore]
+    fn measure_uncovered_speech_rows() {
+        let Some(iso) = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter()
+            .map(Path::new)
+            .find(|p| find_file_recursive(p, "SCRIPT4.COD").is_some())
+        else {
+            eprintln!("skipping: no cached _tmp_iso");
+            return;
+        };
+        let descript_path = find_file_recursive(iso, "DESCRIPT.DES").unwrap();
+        let db = super::descript::parse_descript(&descript_path).unwrap();
+        let hnm_music = db.hnm_music_map();
+        let rows = parse_script_uncovered_speech(iso, Some(&db), &hnm_music).unwrap();
+        eprintln!("uncovered speech rows: {}", rows.len());
+        for idx in 1..=5 {
+            let s = format!("SCRIPT{idx}");
+            let c = rows.iter().filter(|r| r.script == s).count();
+            let runs = rows
+                .iter()
+                .filter(|r| r.script == s)
+                .map(|r| r.scenario_id.clone())
+                .collect::<std::collections::BTreeSet<_>>()
+                .len();
+            eprintln!("  {s}: {c} lines across {runs} function-scenes");
+        }
+        let honk = rows.iter().find(|r| r.text.contains("Honk filled me in"));
+        eprintln!(
+            "Honk line present: {} actor={:?} bg={:?}",
+            honk.is_some(),
+            honk.map(|r| r.actor_record.as_deref()),
+            honk.map(|r| r.background_hnm.as_deref()),
+        );
+        assert!(rows.len() > 500, "expected substantial uncovered coverage");
+        assert!(honk.is_some(), "clay3 'Honk filled me in' must be covered");
     }
 
     // Verifies the PRODUCTION path (parse_script_branch_scenarios) emits depth-2

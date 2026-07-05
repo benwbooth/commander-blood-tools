@@ -2372,7 +2372,24 @@ pub fn execute_trace_with_overrides_and_context(
     overrides: &[BranchOverride],
     context: &ExecutionContext,
 ) -> ExecutionTrace {
-    execute_trace_state_with_overrides_and_context(cod, var, overrides, context).trace
+    execute_trace_state_with_overrides_and_context(cod, var, overrides, context, 0).trace
+}
+
+/// Execute a concrete VM path starting at an arbitrary COD `start` offset instead
+/// of the script entry (0). Used to reach dialogue in named functions that the
+/// main control flow never calls (event-triggered scenes) — the biggest source of
+/// uncovered dialogue. The function is expected to establish its own actor and
+/// background context via its opening tokens, which the static symbol analysis
+/// confirms it does (e.g. clay3 sets Anna_Haf / Magnus).
+pub fn execute_trace_from_offset(cod: &[u8], var: &[u8], start: usize) -> ExecutionTrace {
+    execute_trace_state_with_overrides_and_context(
+        cod,
+        var,
+        &[],
+        &ExecutionContext::default(),
+        start,
+    )
+    .trace
 }
 
 fn execute_trace_state_with_overrides_and_context(
@@ -2380,6 +2397,7 @@ fn execute_trace_state_with_overrides_and_context(
     var: &[u8],
     overrides: &[BranchOverride],
     context: &ExecutionContext,
+    start: usize,
 ) -> ExecutedTrace {
     const STEP_LIMIT_MULTIPLIER: usize = 64;
 
@@ -2392,7 +2410,7 @@ fn execute_trace_state_with_overrides_and_context(
     let mut post_update = PostUpdateTrace::default();
     let mut special_slots = SpecialObjectSlots::default();
     let mut text_token_flags = TextTokenRuntimeFlags::default();
-    let mut pos = 0usize;
+    let mut pos = start;
     let mut mode1 = false;
     let end = cod.len();
     let step_limit = end.saturating_mul(STEP_LIMIT_MULTIPLIER).max(1024);
@@ -3021,6 +3039,7 @@ pub fn execute_script_profile_sequence(
             initial_state,
             &[],
             &program.context,
+            0,
         );
         runtime_states.insert(program.profile_index, executed.final_state);
         let trace = executed.trace;
@@ -5923,7 +5942,7 @@ mod tests {
         cod.extend_from_slice(&operand.to_le_bytes());
         cod.push(0xff);
 
-        let executed = execute_trace_state_with_overrides_and_context(&cod, &var, &[], &context);
+        let executed = execute_trace_state_with_overrides_and_context(&cod, &var, &[], &context, 0);
 
         assert_eq!(executed.trace.halted, ExecutionHalt::EndMarker);
         assert_eq!(state_u16(&executed.final_state, record), 0);
@@ -5971,7 +5990,7 @@ mod tests {
         cod.extend_from_slice(&operand.to_le_bytes());
         cod.push(0xff);
 
-        let executed = execute_trace_state_with_overrides_and_context(&cod, &var, &[], &context);
+        let executed = execute_trace_state_with_overrides_and_context(&cod, &var, &[], &context, 0);
 
         assert_eq!(executed.trace.halted, ExecutionHalt::EndMarker);
         assert_eq!(state_u16(&executed.final_state, record), 0);
@@ -6010,7 +6029,7 @@ mod tests {
         cod.extend_from_slice(&operand.to_le_bytes());
         cod.push(0xff);
 
-        let executed = execute_trace_state_with_overrides_and_context(&cod, &var, &[], &context);
+        let executed = execute_trace_state_with_overrides_and_context(&cod, &var, &[], &context, 0);
 
         assert_eq!(executed.trace.halted, ExecutionHalt::EndMarker);
         assert_eq!(state_u16(&executed.final_state, record), 0);
@@ -6070,7 +6089,7 @@ mod tests {
             );
         let cod = ship3d_c1_cod(record, operand);
 
-        let executed = execute_trace_state_with_overrides_and_context(&cod, &var, &[], &context);
+        let executed = execute_trace_state_with_overrides_and_context(&cod, &var, &[], &context, 0);
 
         assert_eq!(executed.trace.halted, ExecutionHalt::EndMarker);
         assert_eq!(state_u16(&executed.final_state, record), 0);
@@ -6130,7 +6149,7 @@ mod tests {
             );
         let cod = ship3d_c1_cod(record, operand);
 
-        let executed = execute_trace_state_with_overrides_and_context(&cod, &var, &[], &context);
+        let executed = execute_trace_state_with_overrides_and_context(&cod, &var, &[], &context, 0);
 
         assert_eq!(executed.trace.halted, ExecutionHalt::EndMarker);
         assert_eq!(state_u16(&executed.final_state, record), 0);
@@ -6202,7 +6221,7 @@ mod tests {
             );
         let cod = ship3d_c1_cod(record, operand);
 
-        let executed = execute_trace_state_with_overrides_and_context(&cod, &var, &[], &context);
+        let executed = execute_trace_state_with_overrides_and_context(&cod, &var, &[], &context, 0);
 
         assert_eq!(executed.trace.halted, ExecutionHalt::EndMarker);
         assert_eq!(state_u16(&executed.final_state, record), 0);
