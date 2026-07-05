@@ -144,6 +144,12 @@ pub struct EngineState {
     pub countdown: u16,
     /// Ship-nav compass rotation angle (`[0x2795]`, 0..179), steered by the mouse.
     pub compass_angle: u16,
+    /// Set to the compass heading of the destination the player committed by clicking
+    /// in the nav view (edge-triggered). A driver polls [`EngineState::take_nav_selection`]
+    /// to load that destination's dialogue — the nav→dialogue game-loop hook.
+    nav_selection: Option<u16>,
+    /// Previous-frame left-button state, for edge-detecting nav clicks.
+    prev_left_down: bool,
     /// Deterministic PRNG seed for the starfield point cloud (the engine seeds
     /// from CMOS RTC seconds at runtime; fixed here for reproducibility).
     pub starfield_seed: u8,
@@ -208,6 +214,8 @@ impl EngineState {
             on_ship: false,
             countdown: 0,
             compass_angle: 0,
+            nav_selection: None,
+            prev_left_down: false,
             starfield_seed: 17,
             hud_grid: Vec::new(),
             hud_orb: Vec::new(),
@@ -532,6 +540,13 @@ impl EngineState {
         }
     }
 
+    /// Take the pending nav destination selection (the compass heading the player
+    /// clicked in the nav view), clearing it. A driver polls this each frame to load
+    /// the selected destination's dialogue — the nav→dialogue game-loop transition.
+    pub fn take_nav_selection(&mut self) -> Option<u16> {
+        self.nav_selection.take()
+    }
+
     /// The mouse input poll (`0:0x70E`): store the frame's cursor state and, if the
     /// cursor moved since last frame, reset the idle timer; otherwise advance it.
     fn poll_input(&mut self, input: MouseInput) {
@@ -557,6 +572,13 @@ impl EngineState {
         if self.on_ship {
             self.compass_angle =
                 ((self.mouse.x as u32 * 180) / ENGINE_SCREEN_WIDTH as u32).min(179) as u16;
+            // Edge-triggered nav commit: a fresh left-click selects the destination at
+            // the current heading (the nav→dialogue transition hook a driver acts on).
+            let left = self.mouse.left_down();
+            if left && !self.prev_left_down {
+                self.nav_selection = Some(self.compass_angle);
+            }
+            self.prev_left_down = left;
             self.render_ship_view();
         } else if !self.dialogue.is_empty() {
             // Dialogue scene present: render the current line's frame (the
@@ -1054,6 +1076,24 @@ mod tests {
             e.step(MouseInput::default());
         }
         assert_eq!(e.current_scene_index(), 1, "auto-chained to the next scene");
+    }
+
+    #[test]
+    fn nav_click_commits_a_destination_selection() {
+        let mut e = EngineState::new();
+        e.on_ship = true;
+        // move to a heading, no click yet -> no selection
+        e.step(MouseInput { x: 200, y: 100, buttons: 0 });
+        assert!(e.take_nav_selection().is_none());
+        // click at a heading -> selection committed at that compass angle
+        e.step(MouseInput { x: 200, y: 100, buttons: 1 });
+        let sel = e.take_nav_selection();
+        assert_eq!(sel, Some(e.compass_angle));
+        // taken once, cleared
+        assert!(e.take_nav_selection().is_none());
+        // holding the button (no new edge) does not re-commit
+        e.step(MouseInput { x: 200, y: 100, buttons: 1 });
+        assert!(e.take_nav_selection().is_none());
     }
 
     #[test]
