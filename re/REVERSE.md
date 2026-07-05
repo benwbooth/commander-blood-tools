@@ -2229,6 +2229,22 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       a specific condition result, and `script-branch-scenarios.tsv` applies the
       opposite path to every concrete branch decision once, measuring text-call
       deltas. This turns the branch coverage gap into executable scenario data.
+- [x] **Event-triggered scene coverage (sess 004) — the decisive coverage lever.**
+      Root cause of the remaining gap: video generation only ever entered the ~22
+      of ~65 named COD functions the main trace (entry 0) reaches; the rest are
+      event-triggered scenes (menu/object handlers) the flow never calls, holding
+      ~40% of dialogue (e.g. SCRIPT4/clay3 "Honk filled me in"). This dialogue is
+      NOT runtime-gated: the static `parse_script_text_calls` analysis already
+      resolves each line's actor + runtime background per offset (only the speaker
+      is caller-set, so cold execution loses context — the static context is the
+      correct source). `parse_script_uncovered_speech` emits renderable lines
+      (resolved actor+bg) for never-executed functions, deduped vs executed
+      offsets, tagged `fn:<script>:<function>` so each groups into a per-function
+      scene run, rendered as `function-dialogue-run - …` videos by the existing
+      renderer. **Result: unique dialogue-text coverage 57.9% → 95.8% (+933 texts;
+      1524 lines / ~180 scenes), verified rendering (clay3 → Anna_Haf on Magnus).**
+      Remaining ~4% are lines with no statically-resolved background (a smaller
+      follow-up: infer their bg or mark narrator/locationless).
 - [x] Expose TEXT control flags: `script-text-flags.tsv` lists every `0xA6`
       token's `b3`, `b4`, `b5`, active bit, conditional skip count, loop target,
       known parse-control bits, and still-unknown `b4` payload bits. This gives
