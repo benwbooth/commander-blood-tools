@@ -2532,7 +2532,15 @@ longer wait through the full narrated intro, or (c) a debug scene-select (none
 found). Generic key-mashing only loops the attract/intro. This is the concrete
 blocker for verifying the 394 generated dialogue videos against real captures —
 the bulk of the deliverable — and is the precise next-session target for the
-oracle. (The narrated intro is itself deterministic character-over-background
+oracle. INPUT LAYER recovered (sess 003): the BIOS keyboard wrappers are at
+`0x2678` (`xor ax,ax; int 16h` = blocking read), `0x267D` (`ax=0x100; int 16h;
+je …; read` = non-blocking peek-then-read), `0x268D` (`ax=0x200; int 16h` =
+shift flags); mouse is `int 33h` @ `0xCF6+`. The intro-skip condition is in the
+intro/HNM playback loop that CALLS the peek `0x267D` and tests the returned
+scancode — finding that test (and thus the exact skip key, if any) is the
+next-session trace for driving DOSBox to interactive gameplay. A no-input 60s run
+DOES progress through the attract to gameplay-style views (ship interior, desert
+at frames 26-30) but those are auto-played attract-demo frames, not interactive. (The narrated intro is itself deterministic character-over-background
 dialogue content, so it is a candidate oracle target IF its narrator HNM +
 backdrops are identified — a compositor task.)
 
