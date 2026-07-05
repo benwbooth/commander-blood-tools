@@ -493,6 +493,19 @@ impl EngineState {
                 172,
             );
         }
+        // Label the destination the compass currently points at, so clicking to select
+        // is intentional (the driver maps the heading to a scene the same way).
+        let sector = (self.compass_angle as u32 * 5 / 180).min(4) + 1;
+        self.scene_palette[0xFE] = [245, 245, 160];
+        draw_text_indexed(
+            &mut self.framebuffer,
+            ENGINE_SCREEN_WIDTH,
+            ENGINE_SCREEN_HEIGHT,
+            &format!("SECTOR {sector}"),
+            8,
+            6,
+            0xFE,
+        );
     }
 
     /// Draw a subtitle line into the framebuffer at the game's subtitle reveal
