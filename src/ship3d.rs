@@ -1808,6 +1808,13 @@ pub const SHIP_3D_HUD_BAND_TOP: usize = 0xA5; // 165
 /// per-record dispatched draw op (sprite blit / fill / line) selected by the record
 /// flags. So the whole RENDER side (build list → flag-dispatch draw → segment raster)
 /// is mapped; only the upstream PROJECTION that writes the record coords remains.
+/// DRAW MODEL CONFIRMED (sess 005): the dispatch table (cs:0x1592, file 0x4524) points
+/// at 8 draw ops; the sprite dispatch (0x83>>1&7 = 1) → entry 1 @0x4BAA is a SPRITE
+/// BLIT: it reads the record's projected coords `[di+0x1C]/[di+0x1E]` and a sprite
+/// source pointer `[di+4]` and blits. So the pyramids are SPRITE INSTANCES at projected
+/// positions (entries 4-6 = 0x210A-C near the segment rasteriser 0x210D). The
+/// PROJECTION is therefore precisely the routine that computes bx/cx/dx/bp and far-calls
+/// the setter 0x299:0x13FB (writes `[di+0x18..0x1E]` = the coords the blit reads).
 ///
 /// PIPELINE NOW MAPPED END-TO-END (routine level): hud_init (verts→0x5491, angle
 /// 0xB3) → prelude (band y165-200) → 0x1CE:0 (/100 perspective) → 0x299:0x1467
