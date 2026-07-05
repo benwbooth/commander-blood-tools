@@ -255,6 +255,24 @@ this is exactly `ship3d::render_ship_3d_point_cloud`. The engine has a SINGLE
 ship view and all overlays. Overlay RENDERING is now fully understood; the only
 overlay data left is the artistic depth-colour table contents and manu3's menu.
 
+SHIP-3D NAV VIEW — ACCURATE COMPLETION (sess 003): the ship-3D view's components
+are ALL implemented AND tested in `ship3d`, not "needs runtime modelling":
+- background: `render_ship_3d_starfield` (point cloud) — runnable via `--ship3d`.
+- 3D object compositor: `project_ship_3d_object_sprite` → `collect_..._commands` →
+  `render_ship_3d_dirty_sprite_commands_indexed`, wired in `compose_ship_3d_scene
+  _indexed` — runnable via `--ship3d` (starfield + projected object).
+- DESTINATION selector: `layout_ship_3d_target_list` (data-driven from the
+  destination label widths → list-box x/y/w/h), `hit_test_ship_3d_target_list`,
+  `Ship3dTargetDrawCommand/DrawResult`, `Ship3dTargetSelectorState/Selection` —
+  the pyramid-nav destination MENU, laid out from the location names (available in
+  DESCRIPT). Transition control (open/close steps `SHIP_3D_TRANSITION_*`) present.
+So the REAL remaining "game-accurate ship view" gap is INTEGRATION WIRING — feed
+the current location's destination list (names → labels → layout) + the live
+object slots into the (already-runnable) compositor and emit the frame — plus the
+per-frame nav-FSM state (steering `0x7824`, on-ship `0xB079`). This is bounded
+wiring of tested components with available data, NOT new rendering or open-ended
+runtime modelling. The ship-3D subsystem is substantially COMPLETE.
+
 ## Memory Map (load image, base segment 0)
 
 | Region | File range | Notes |
