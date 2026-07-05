@@ -2615,6 +2615,21 @@ timing and the planet→dialogue trigger remain to script the full capture run. 
 dialogue content, so it is a candidate oracle target IF its narrator HNM +
 backdrops are identified — a compositor task.)
 
+EMPIRICAL (sess 003): an informed 165s run (start-click at t=3s, opening left
+uninterrupted to t=110s, then alternating right/left steering clicks) STILL
+cycled the full attract/intro demo the whole time (Mindscape → Microfolie's →
+CRYO → crew showcase → credit letters → character/location parade), frame-counter
+stuck at `1`, never entering interactive gameplay. So the FSM map alone does NOT
+unblock navigation: the specific **attract-exit trigger** (what transitions from
+the demo loop into the interactive game — a particular key/click, full-attract
+completion, or an installed-save requirement) is the precise unknown. Input IS
+delivered (`int 16h`/`int 33h`) but the demo loop doesn't yield to it. So the
+next-session target is the attract state machine's **exit condition** (what sets
+the first interactive game state / increments the day counter), NOT the in-game
+nav — which is already fully mapped above. NOTE: `BLOOD.EXE` is the installer and
+`BLOODPRG.EXE` is run directly (bypassing install); the attract-exit may depend on
+an installed-save/config that the direct-boot lacks, which would explain the loop.
+
 BOOT SEQUENCE MAPPED (sess 003, dense 0.5s capture via
 `ORACLE_CAPTURE_INTERVAL=0.5`): DOSBox-X splash → **MINDSCAPE** (`sq/mind.hnm`,
 ~2.5s) → **Microfolie's** silvery banner (a distinct asset, ~3.5s) → **astronaut
