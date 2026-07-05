@@ -239,6 +239,22 @@ subsystem is mapped end to end (same template for amer/scrut). Outstanding: only
 the raw sprite-layer pixel/geometry bytes (0x600-stride layers at file ~0x522A)
 and the manu3 menu-item data.
 
+OVERLAY RENDERING = 3D POINT CLOUD (sess 003, `croolis.xdb` 0x8B4..0x8FC) — the
+UNIFYING decode: the alien is drawn as a depth-coloured 3D POINT CLOUD, the SAME
+technique as the ship-3D starfield. Per projected point: compute VGA planar addr
+(`dx = (y*320+x)>>2`, `di = x&3` plane) + depth colour (`ebp>>0xF`), and append the
+4-byte pair `(addr, colour)` to that plane's point-list — the `0x600`-stride
+"layers" `0x1F3A/0x253A/0x2B3A/0x313A` (file ~0x522A) ARE the 4 VGA-plane point
+lists (up to 0x600/4 = 384 pts each). Then the BLIT walks each plane list: `dx=
+0x3C4; ax=0x0102/0x0202/0x0402/0x0802 out` (Sequencer map-mask → plane 0..3) and
+for each entry `es:[addr] = [colour + 0x7D6]` — a depth→palette lookup at
+`ds:0x7D6` = file 0x3AC6 (extracted). So aliens AND the starfield use ONE
+point-cloud renderer (project pts → per-plane lists → planar plot → depth colour);
+this is exactly `ship3d::render_ship_3d_point_cloud`. The engine has a SINGLE
+3D-object pipeline (matrix projection + point-cloud planar plot) reused across the
+ship view and all overlays. Overlay RENDERING is now fully understood; the only
+overlay data left is the artistic depth-colour table contents and manu3's menu.
+
 ## Memory Map (load image, base segment 0)
 
 | Region | File range | Notes |
