@@ -433,8 +433,15 @@ impl EngineState {
             self.framebuffer.copy_from_slice(&render.buffer);
         }
         // Star-map nav grid: a perspective grid of shaded pyramids + eye-orb (the
-        // navigable star systems), approximating the real game's nav-view layout.
-        crate::ship3d::render_star_map_navview(&mut self.framebuffer, 200, 90, 240);
+        // navigable star systems), panned by the compass heading so mouse steering
+        // rotates the view (approximating the real game's interactive nav).
+        crate::ship3d::render_star_map_navview_panned(
+            &mut self.framebuffer,
+            200,
+            90,
+            240,
+            self.compass_angle % 180,
+        );
         // Display palette for the ship view: a grey ramp for the starfield depth
         // shades + the nav-grid face/orb indices (framebuffer is indexed).
         for (i, slot) in self.scene_palette.iter_mut().enumerate() {

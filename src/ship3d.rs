@@ -1879,6 +1879,20 @@ pub const SHIP_3D_HUD_PYRAMID_VERTICES: [[i16; 3]; 32] = [
 /// game's own projection is still being decoded). `light`/`dark`/`orb` are palette
 /// indices for the lit pyramid faces, shadowed faces, and the orb.
 pub fn render_star_map_navview(buffer: &mut [u8], light: u8, dark: u8, orb: u8) {
+    render_star_map_navview_panned(buffer, light, dark, orb, 0);
+}
+
+/// As [`render_star_map_navview`], but pans the pyramid field horizontally by
+/// `compass_angle` (0..179) so the view rotates with the ship's heading (mouse
+/// steering) — the interactive nav behaviour. Nearer rows pan more than far rows
+/// (parallax); the orb stays centred.
+pub fn render_star_map_navview_panned(
+    buffer: &mut [u8],
+    light: u8,
+    dark: u8,
+    orb: u8,
+    compass_angle: u16,
+) {
     const W: isize = SHIP_3D_PROJECTION_SCREEN_WIDTH as isize; // 320
     const H: isize = SHIP_3D_PROJECTION_SCREEN_HEIGHT as isize; // 200
     let horizon: isize = 96; // grid recedes to here; scene band is above
@@ -1912,8 +1926,11 @@ pub fn render_star_map_navview(buffer: &mut [u8], light: u8, dark: u8, orb: u8) 
         let spacing = (72.0 * (1.0 - depth * 0.55)) as isize;
         // stagger alternate rows so pyramids interleave like the real grid
         let offset = if r % 2 == 0 { 0 } else { spacing / 2 };
-        let mut cx = 8 + offset;
-        while cx < W - 8 {
+        // Parallax pan: heading pans nearer rows more; wrap within a spacing cell.
+        let pan = (compass_angle as isize * 2 * (rows - r) as isize / rows as isize)
+            .rem_euclid(spacing.max(20));
+        let mut cx = 8 + offset - spacing + pan;
+        while cx < W - 8 + spacing {
             // skip drawing right behind the orb so it reads on top
             if !(depth < 0.5 && (cx - W / 2).abs() < 26) {
                 pyramid(buffer, cx, base_y, hw.max(3), h.max(4));
@@ -3147,6 +3164,17 @@ mod tests {
             })
             .count();
         assert!(projected > 0, "some HUD vertices must project on-screen");
+    }
+
+    #[test]
+    fn star_map_navview_pans_with_heading() {
+        let mut a = vec![0u8; SHIP_3D_PROJECTION_SCREEN_WIDTH * SHIP_3D_PROJECTION_SCREEN_HEIGHT];
+        let mut b = a.clone();
+        render_star_map_navview_panned(&mut a, 200, 90, 240, 0);
+        render_star_map_navview_panned(&mut b, 200, 90, 240, 60);
+        // different heading -> different pixels (the grid panned), but both still draw
+        assert!(a != b, "grid pans with heading");
+        assert!(b.iter().any(|&p| p == 200) && b.iter().any(|&p| p == 240));
     }
 
     #[test]
