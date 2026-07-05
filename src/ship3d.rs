@@ -1862,6 +1862,14 @@ pub const SHIP_3D_HUD_BAND_TOP: usize = 0xA5; // 165
 /// to a line), NOT the grid — so the grid needs the EXACT runtime frame (origin_x +
 /// angle_2f71 at a specific animation frame): savestate/memory dump, or image-fit vs the
 /// real char_7 grid. Formula + matrix + all param sources are decoded.
+/// FINDING (sess 005): rendering the 32 verts with the EXACT formula + the INIT camera
+/// (origin=(10000,12000,0), a71=0, a6d init) gives a DIAGONAL scatter (compass-axis verts
+/// 16-23 form a line, pyramid verts cluster), NOT the symmetric grid — at any tested
+/// angle. So the 32 verts are almost certainly a small TEMPLATE (a few pyramids + the
+/// compass axis) that the render INSTANCES/tiles across the nav field (the record loop
+/// @0x9BBA iterates `[0x2F77]` records, likely > 32, reusing the template with per-
+/// instance offsets). Bit-exact grid therefore needs the INSTANCING (how many records,
+/// their per-instance origin/offset) on top of the decoded per-vertex projection.
 ///
 /// PIPELINE NOW MAPPED END-TO-END (routine level): hud_init (verts→0x5491, angle
 /// 0xB3) → prelude (band y165-200) → 0x1CE:0 (/100 perspective) → 0x299:0x1467
