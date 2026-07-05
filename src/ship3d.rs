@@ -1797,7 +1797,11 @@ pub const SHIP_3D_HUD_BAND_TOP: usize = 0xA5; // 165
 /// 0x438D) from bx/cx/dx/bp; sibling setters @0x4374 toggle flag bits. So the record
 /// holds {flags@0, coords@8/0xC, prev@0x10/0x14, more@0x18-0x1E}. The actual PROJECTION
 /// is the routine that computes those coords and far-calls these setters — the next
-/// decode target (find callers of 0x299:0x13FB).
+/// decode target (find callers of 0x299:0x13FB). NOTE: the seg-0x299 far calls are
+/// RELOCATED (segment patched at load), so byte-searching for `9A fb 13 99 02` finds
+/// nothing — the caller must be found by CODE-FLOW tracing from the HUD update
+/// (0xB1D0 calls 0x299:0x1467/0x210D; the projection is invoked in/around there),
+/// using dis.py's reloc resolution rather than a raw byte grep.
 ///
 /// PIPELINE NOW MAPPED END-TO-END (routine level): hud_init (verts→0x5491, angle
 /// 0xB3) → prelude (band y165-200) → 0x1CE:0 (/100 perspective) → 0x299:0x1467
