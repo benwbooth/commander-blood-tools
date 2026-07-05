@@ -4328,6 +4328,102 @@ mod tests {
         eprintln!("skipping: extracted output scripts not available");
     }
 
+    // Measurement (not an assertion): does reachability-validated depth-2 branch
+    // exploration reach more dialogue text-calls than the current single-flip? Run
+    // with `cargo test measure_depth2_branch_coverage_gain -- --ignored --nocapture`.
+    #[test]
+    #[ignore]
+    fn measure_depth2_branch_coverage_gain() {
+        use std::collections::BTreeSet;
+        let Some(root) = ["output", "../output"]
+            .iter()
+            .map(Path::new)
+            .find(|r| find_file_recursive(r, "SCRIPT1.COD").is_some())
+        else {
+            eprintln!("skipping: extracted output scripts not available");
+            return;
+        };
+        let (mut tot_d, mut tot_s, mut tot_2) = (0usize, 0usize, 0usize);
+        for idx in 1..=5 {
+            let (Some(cod_p), Some(dic_p), Some(var_p)) = (
+                find_file_recursive(root, &format!("SCRIPT{idx}.COD")),
+                find_file_recursive(root, &format!("SCRIPT{idx}.DIC")),
+                find_file_recursive(root, &format!("SCRIPT{idx}.VAR")),
+            ) else {
+                continue;
+            };
+            let cod = fs::read(&cod_p).unwrap();
+            let var = fs::read(&var_p).unwrap();
+            let context = match find_file_recursive(root, &format!("SCRIPT{idx}.DEB")) {
+                Some(p) => vm_execution_context_from_deb(&fs::read(p).unwrap(), None),
+                None => vm::ExecutionContext::default(),
+            };
+            let words = parse_script_dictionary(&dic_p).unwrap();
+            let text_calls = text_calls_by_offset(&cod, &words);
+            let offs = |ovr: &[vm::BranchOverride]| -> Vec<usize> {
+                let t = vm::execute_trace_with_overrides_and_context(&cod, &var, ovr, &context);
+                executed_text_offsets(&t, &text_calls)
+            };
+            let default_trace =
+                vm::execute_trace_with_overrides_and_context(&cod, &var, &[], &context);
+            let covered: BTreeSet<usize> = executed_text_offsets(&default_trace, &text_calls)
+                .into_iter()
+                .collect();
+            let n_default = covered.len();
+            let decisions: Vec<(usize, bool)> = default_trace
+                .branch_events
+                .iter()
+                .filter_map(|e| e.condition_passed.map(|c| (e.offset, c)))
+                .collect();
+            let mut single = covered.clone();
+            let mut d1: Vec<Vec<vm::BranchOverride>> = Vec::new();
+            for (off, cp) in &decisions {
+                let ovr = vec![vm::BranchOverride {
+                    offset: *off,
+                    condition_passed: !cp,
+                }];
+                single.extend(offs(&ovr));
+                d1.push(ovr);
+            }
+            let mut depth2 = single.clone();
+            let mut budget = 3000usize;
+            for ovr1 in &d1 {
+                if budget == 0 {
+                    break;
+                }
+                let t1 = vm::execute_trace_with_overrides_and_context(&cod, &var, ovr1, &context);
+                for e in &t1.branch_events {
+                    if budget == 0 {
+                        break;
+                    }
+                    let Some(cp) = e.condition_passed else {
+                        continue;
+                    };
+                    if e.offset == ovr1[0].offset {
+                        continue;
+                    }
+                    let mut ovr2 = ovr1.clone();
+                    ovr2.push(vm::BranchOverride {
+                        offset: e.offset,
+                        condition_passed: !cp,
+                    });
+                    depth2.extend(offs(&ovr2));
+                    budget -= 1;
+                }
+            }
+            eprintln!(
+                "SCRIPT{idx}: default={n_default} single-flip={} depth2={} (decisions={})",
+                single.len(),
+                depth2.len(),
+                decisions.len()
+            );
+            tot_d += n_default;
+            tot_s += single.len();
+            tot_2 += depth2.len();
+        }
+        eprintln!("TOTAL text-calls reached: default={tot_d} single-flip={tot_s} depth2={tot_2}");
+    }
+
     #[test]
     fn script_post_update_manifest_records_pending_profile_gate() {
         let nonce = std::time::SystemTime::now()
