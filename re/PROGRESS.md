@@ -79,7 +79,13 @@ tool + dis.py):
   bit3, `0x4F09` stays default `(10200,12100,900)`: the attract NEVER enters navigation.
   (b) Memory-WRITE `[0x24F3]=9` — the write sticks (game keeps running) but does NOT
   activate nav or populate real destinations: forcing the mode flag is insufficient, the
-  game needs full gameplay init (loaded ship + nav objects). (c) The pyramid grid shown
+  game needs full gameplay init (loaded ship + nav objects). (b2) DATA-RECONSTRUCTION
+  RULED OUT: traced the destination builder `ship_3d_navigation_update` @0xB34E — it walks
+  the candidate list (DS:0x2B53, kind-2 active objects from `candidate_build` @0x70EE) and
+  reads each destination's position from LIVE object instances in the object heap
+  (`es=[0x6726]`, `di=[0x251B]`, fields at +0x14/+0x18). Positions are RUNTIME object
+  state, not static data — so there is no static shortcut; the real grid needs live data.
+  (c) The pyramid grid shown
   at the title/credits is a **persistent DECORATIVE HUD** (renders with default data),
   DISTINCT from active gameplay nav — the engine's projection render matches this HUD.
 - **Conclusion (evidence-based, not assumed):** reaching active gameplay navigation with
