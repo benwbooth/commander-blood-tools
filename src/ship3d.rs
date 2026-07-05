@@ -1763,8 +1763,23 @@ pub const SHIP_3D_HUD_BAND_TOP: usize = 0xA5; // 165
 /// fixed-point) copied by `ship_3d_hud_init` (BLOODPRG.EXE @0xB079) from DS:0x5D98
 /// (file 0x131B8) into the HUD working area at ship-view entry, then projected by
 /// the shared matrix×vector + perspective pipeline. Vertices 16..23 form a linear
-/// compass axis; the rest are the pyramid/HUD corners. Recovered for an exact HUD
-/// render (projection is [`project_ship_3d_point`]); edge topology still pending.
+/// compass axis; the rest are the pyramid/HUD corners.
+///
+/// Disassembly-recovered render path (sess 005), the missing transform + draw:
+/// - `ship_3d_hud_init` @0xB079: `rep movsd` 0x30=48 dwords (32 verts × 3 words =
+///   96 words) from `si=0x5D98` to `di=0x5491` (working copy); then `[0x2795]=0xB3`
+///   (the compass *entry angle* — this is the projection angle to use, NOT 0),
+///   `[0x279B]=0`, and `[0x2793] |= 8` (HUD gate bit 3).
+/// - The compass angle `[0x2795]` animates 0..0xB3 (wraps at 0xB4=180) in
+///   `ship_3d_procedural_angle_update` @0x9656.
+/// - HUD draw prelude @0xB14A: re-copies 0x10 dwords from `0x5491` into the frame
+///   working area `0x5551`, sets the band bounds `[0x5239]=0x23` (35) and
+///   `[0x523B]=0xA5` (165) → **the HUD occupies the y=165..200 band (35px)**, then
+///   renders via `lcall 0x1CE:0` (the projection/raster segment). So the ship3d HUD
+///   is the COMPACT dialogue-mode nav strip; the full-screen star-map nav screen
+///   (rows of shaded pyramids) is a SEPARATE view — don't conflate them.
+/// TODO: decode `0x1CE:0` for the vertex→pyramid edge/face topology + rasterisation,
+/// and confirm the projection origin (angle is 0xB3; origin 0 culls the verts).
 pub const SHIP_3D_HUD_PYRAMID_VERTICES: [[i16; 3]; 32] = [
     [0, 2304, 3075],
     [776, 1803, 2820],
