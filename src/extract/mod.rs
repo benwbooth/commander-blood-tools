@@ -136,6 +136,33 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             }
         }
         fs::create_dir_all(&out_dir)?;
+        // Pyramid-nav HUD sprites: BCARTE = the perspective grid frames at
+        // successive compass angles, BORXX = the eye-orb. The HUD is an accurate
+        // sprite composite (frame selected by angle + blit), not a procedural grid.
+        let find_spr = |name: &str| -> Option<Vec<render::SpriteFrameImage>> {
+            ["output/_tmp_iso", "output/_tmp_dat/spr", "."]
+                .iter()
+                .find_map(|d| fs::read(Path::new(d).join(name)).ok())
+                .and_then(|d| decode_sprite_bank_indices(&d))
+        };
+        let bcarte_hud = find_spr("BCARTE.SPR");
+        let borxx_orb = find_spr("BORXX.SPR");
+        let blit_hud = |fb: &mut [u8], f: &render::SpriteFrameImage, cx: i32, cy: i32| {
+            let (w, h) = (320i32, 200i32);
+            for y in 0..f.height {
+                for x in 0..f.width {
+                    let idx = f.indices[y * f.width + x];
+                    if idx == 0 {
+                        continue;
+                    }
+                    let px = cx + x as i32 - f.width as i32 / 2;
+                    let py = cy + y as i32 - f.height as i32 / 2;
+                    if (0..w).contains(&px) && (0..h).contains(&py) {
+                        fb[(py * w + px) as usize] = idx;
+                    }
+                }
+            }
+        };
         for proj in [0u16, 30, 60, 90] {
             // Deterministic seed for a reproducible preview (the engine seeds from
             // CMOS RTC seconds at runtime).
@@ -294,8 +321,22 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                     );
                 }
             }
-            // Pyramid-nav HUD grid + eye-orb in the bottom band.
-            commander_blood_tools::ship3d::render_ship_3d_pyramid_hud(&mut nav, 0x80, 0xFD);
+            // Pyramid-nav HUD: blit the real BCARTE grid frame (selected by the
+            // compass angle) + the BORXX orb into the bottom band. Falls back to the
+            // procedural render only if the sprites aren't available.
+            if let Some(frames) = &bcarte_hud {
+                let grid: Vec<&render::SpriteFrameImage> =
+                    frames.iter().filter(|f| f.height >= 64).collect();
+                if !grid.is_empty() {
+                    let gi = (proj as usize * grid.len() / 91).min(grid.len() - 1);
+                    blit_hud(&mut nav, grid[gi], 160, 172);
+                }
+                if let Some(orb) = &borxx_orb {
+                    blit_hud(&mut nav, &orb[0], 160, 172);
+                }
+            } else {
+                commander_blood_tools::ship3d::render_ship_3d_pyramid_hud(&mut nav, 0x80, 0xFD);
+            }
             let nav_visible: Vec<u8> = nav
                 .iter()
                 .map(|&v| {
