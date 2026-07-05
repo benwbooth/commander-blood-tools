@@ -185,7 +185,20 @@ from the live ship-3D slot state (slot table → project each slot's 3D pos into
 `Ship3dSpriteSlotRenderCommand` with dispatch/rect/flip → call the dirty compositor
 → emit the frame over the starfield + HUD). This means the "compositor" lever is
 mostly DONE (pieces done+tested); it needs wiring into the export, which is far
-smaller than the earlier "implement a compositor" framing implied. The palette buffer at file 0x525A is the character-sprite
+smaller than the earlier "implement a compositor" framing implied.
+
+FULL PIPELINE IS PRESENT (sess 003, final assessment): the projection→descriptor
+step ALSO exists — `project_ship_3d_object_sprite` (ship3d.rs 1776) projects an
+object's 3D position, centres it (`draw_x = screen_x - extent_width/2`, same for
+y) and updates the slot descriptor. So the WHOLE ship-3D render chain is
+implemented AND tested: `project_ship_3d_object_sprite` → set descriptor draw_x/y
+→ `collect_ship_3d_dirty_sprite_slot_render_commands` → `render_ship_3d_dirty
+_sprite_commands_indexed` (double-buffered), over `render_ship_3d_starfield`. The
+ship-3D COMPOSITOR is therefore ALGORITHMICALLY COMPLETE — the remaining work for
+an actual in-game ship-view frame is (a) the ship-nav VM STATE that supplies which
+objects/slots are live and their 3D positions (the nav FSM is partly mapped:
+steering `0x7824`, on-ship flag `0xB079`, mouse poll `0:0x70E`), and (b) wiring
+the chain into the exporter to emit the frame. Not new rendering algorithms. The palette buffer at file 0x525A is the character-sprite
 palette source; `amer.xdb`/`scrut.xdb` share the same entry-stub shape.
 
 ## Memory Map (load image, base segment 0)
