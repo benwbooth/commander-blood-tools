@@ -1754,6 +1754,77 @@ pub fn render_ship_3d_point_cloud(
     Ship3dPointCloudRender { buffer, plotted }
 }
 
+/// The ship-nav HUD band occupies the bottom rows of the 320x200 frame (below the
+/// scene band that ends at row 0xA5=165), where the engine draws the grey
+/// pyramid-nav grid + central eye-orb. See re/REVERSE.md.
+pub const SHIP_3D_HUD_BAND_TOP: usize = 0xA5; // 165
+
+/// Render the pyramid-nav HUD grid into the bottom band of an indexed 320x200
+/// framebuffer (the band the exporter otherwise leaves BLACK in dialogue mode).
+/// Draws a perspective grid of grey pyramid (triangle) outlines matching the
+/// in-game nav HUD verified against the playthrough, with the central eye-orb
+/// position marked. FUNCTIONAL render: the exact per-pixel procedural algorithm
+/// (BLOODPRG.EXE ship-3D HUD @~0x9656/0xB193, 3D-projected pyramid vertices) is
+/// still being decoded; this fills the HUD band with the correct structure.
+pub fn render_ship_3d_pyramid_hud(buffer: &mut [u8], grid_color: u8, orb_color: u8) {
+    const W: isize = SHIP_3D_PROJECTION_SCREEN_WIDTH as isize; // 320
+    const H: isize = SHIP_3D_PROJECTION_SCREEN_HEIGHT as isize; // 200
+    let band_top = SHIP_3D_HUD_BAND_TOP as isize; // 165
+    let plot = |buf: &mut [u8], x: isize, y: isize, c: u8| {
+        if (0..W).contains(&x) && (band_top..H).contains(&y) {
+            buf[(y * W + x) as usize] = c;
+        }
+    };
+    // Bresenham line, clipped to the HUD band.
+    let line = |buf: &mut [u8], x0: isize, y0: isize, x1: isize, y1: isize, c: u8| {
+        let (dx, dy) = ((x1 - x0).abs(), -(y1 - y0).abs());
+        let (sx, sy) = (if x0 < x1 { 1 } else { -1 }, if y0 < y1 { 1 } else { -1 });
+        let (mut err, mut x, mut y) = (dx + dy, x0, y0);
+        loop {
+            plot(buf, x, y, c);
+            if x == x1 && y == y1 {
+                break;
+            }
+            let e2 = 2 * err;
+            if e2 >= dy {
+                err += dy;
+                x += sx;
+            }
+            if e2 <= dx {
+                err += dx;
+                y += sy;
+            }
+        }
+    };
+    // Perspective grid: rows recede toward a vanishing point up-centre; nearer
+    // (lower) rows have larger, wider-spaced pyramids.
+    let center_x = W / 2;
+    for row in 0..3isize {
+        let base_y = band_top + 6 + row * 9; // row baseline
+        let half = 4 + row * 2; // pyramid half-width grows toward front
+        let apex = base_y - (5 + row * 2); // taller toward front
+        let spacing = (half * 2 + 6) as isize;
+        let cols = (W / spacing) + 1;
+        for col in -(cols / 2)..=(cols / 2) {
+            let cx = center_x + col * spacing;
+            // pyramid = two slanted edges to the apex + a base line
+            line(buffer, cx - half, base_y, cx, apex, grid_color);
+            line(buffer, cx + half, base_y, cx, apex, grid_color);
+            line(buffer, cx - half, base_y, cx + half, base_y, grid_color);
+        }
+    }
+    // Central eye-orb: a small filled disc centred in the band.
+    let orb_cy = band_top + 16;
+    let r = 6isize;
+    for y in -r..=r {
+        for x in -r..=r {
+            if x * x + y * y <= r * r {
+                plot(buffer, center_x + x, orb_cy + y, orb_color);
+            }
+        }
+    }
+}
+
 /// Render a complete ship-3D starfield background from real game data: randomize
 /// the point cloud from `prng`, build the camera matrix from `angles` using the
 /// recovered [`SHIP_3D_ANGLE_TABLE`], and project/depth-shade into a 320x200
@@ -2876,6 +2947,21 @@ fn next_target_list_draw_color(state: &mut Ship3dTargetHitState, activate: bool)
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn pyramid_hud_draws_only_in_the_bottom_band() {
+        let mut fb = vec![0u8; SHIP_3D_PROJECTION_SCREEN_WIDTH * SHIP_3D_PROJECTION_SCREEN_HEIGHT];
+        render_ship_3d_pyramid_hud(&mut fb, 0x80, 0xFD);
+        // Draws grid + orb pixels...
+        assert!(fb.iter().any(|&p| p == 0x80), "pyramid grid drawn");
+        assert!(fb.iter().any(|&p| p == 0xFD), "eye-orb drawn");
+        // ...and NOTHING above the HUD band (the scene band stays untouched).
+        let band_start = SHIP_3D_HUD_BAND_TOP * SHIP_3D_PROJECTION_SCREEN_WIDTH;
+        assert!(
+            fb[..band_start].iter().all(|&p| p == 0),
+            "HUD render must not touch the scene band above row 165"
+        );
+    }
 
     fn source_segment() -> Vec<u8> {
         (0..SHIP_3D_PLANE_SOURCE_PAGE1_OFFSET + SHIP_3D_PLANE_PAGE_BYTES)

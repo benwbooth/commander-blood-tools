@@ -294,6 +294,8 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                     );
                 }
             }
+            // Pyramid-nav HUD grid + eye-orb in the bottom band.
+            commander_blood_tools::ship3d::render_ship_3d_pyramid_hud(&mut nav, 0x80, 0xFD);
             let nav_visible: Vec<u8> = nav
                 .iter()
                 .map(|&v| {
