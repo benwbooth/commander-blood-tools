@@ -32,6 +32,11 @@ impl MouseInput {
     }
 }
 
+use crate::ship3d::{
+    BloodPrng, Ship3dMatrixAngles, Ship3dProjectionOrigin, Ship3dProjectionViewport,
+    render_ship_3d_starfield,
+};
+
 /// Screen dimensions of the engine framebuffer (VGA mode 13h / mode-X, 320x200).
 pub const ENGINE_SCREEN_WIDTH: usize = 320;
 pub const ENGINE_SCREEN_HEIGHT: usize = 200;
@@ -52,6 +57,11 @@ pub struct EngineState {
     pub on_ship: bool,
     /// Frame countdown at `[0x0A40]` advanced each iteration.
     pub countdown: u16,
+    /// Ship-nav compass rotation angle (`[0x2795]`, 0..179), steered by the mouse.
+    pub compass_angle: u16,
+    /// Deterministic PRNG seed for the starfield point cloud (the engine seeds
+    /// from CMOS RTC seconds at runtime; fixed here for reproducibility).
+    pub starfield_seed: u8,
     /// Indexed (palette) framebuffer the render subsystems draw into.
     pub framebuffer: Vec<u8>,
 }
@@ -71,7 +81,36 @@ impl EngineState {
             idle_ticks: 0,
             on_ship: false,
             countdown: 0,
+            compass_angle: 0,
+            starfield_seed: 17,
             framebuffer: vec![0u8; ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT],
+        }
+    }
+
+    /// Render the on-ship nav view's starfield background at the current compass
+    /// angle into the framebuffer (the background layer of the ship-3D view; the
+    /// sprite HUD + scene band compose over it). Uses the recovered PRNG point
+    /// cloud + projection. No-op if the angle is outside the trig table.
+    pub fn render_ship_view(&mut self) {
+        let mut prng = BloodPrng::seeded_from_rtc_seconds(self.starfield_seed);
+        let angles = Ship3dMatrixAngles {
+            angle_2f71: 0,
+            projection_angle_2f6d: self.compass_angle % 180,
+            angle_2f6f: 0,
+        };
+        let origin = Ship3dProjectionOrigin {
+            x: 0x8000,
+            y: 0x8000,
+            z: 0x8000,
+        };
+        let viewport = Ship3dProjectionViewport {
+            left: 0,
+            right: ENGINE_SCREEN_WIDTH as u16,
+            top: 0,
+            bottom: ENGINE_SCREEN_HEIGHT as u16,
+        };
+        if let Some(render) = render_ship_3d_starfield(&mut prng, angles, origin, viewport) {
+            self.framebuffer.copy_from_slice(&render.buffer);
         }
     }
 
@@ -94,6 +133,14 @@ impl EngineState {
     /// so the loop is drivable and testable headlessly.
     pub fn step(&mut self, input: MouseInput) {
         self.poll_input(input);
+        // On-ship gate ([0x2793] & 8): steer the compass from the mouse and render
+        // the nav view's starfield background (the render subsystems the main loop
+        // calls). Mouse x across the screen maps to the 0..179 compass rotation.
+        if self.on_ship {
+            self.compass_angle =
+                ((self.mouse.x as u32 * 180) / ENGINE_SCREEN_WIDTH as u32).min(179) as u16;
+            self.render_ship_view();
+        }
         // Countdown at [0x0A40]: advanced each iteration, saturating at 0.
         self.countdown = self.countdown.saturating_sub(1);
         self.frame += 1;
@@ -138,6 +185,25 @@ mod tests {
             buttons: 0,
         });
         assert_eq!(e.idle_ticks, 0, "movement zeroes the idle timer");
+    }
+
+    #[test]
+    fn on_ship_step_renders_starfield_steered_by_mouse() {
+        let mut e = EngineState::new();
+        e.on_ship = true;
+        // Step with the mouse at the left, then far right: the compass angle should
+        // track the mouse and the rendered starfield should differ.
+        e.step(MouseInput { x: 0, y: 100, buttons: 0 });
+        let angle_left = e.compass_angle;
+        let frame_left = e.framebuffer.clone();
+        e.step(MouseInput { x: 319, y: 100, buttons: 0 });
+        assert_eq!(angle_left, 0);
+        assert!(e.compass_angle > 150, "mouse right steers the compass high");
+        assert!(
+            frame_left.iter().any(|&p| p != 0),
+            "the starfield renders some points"
+        );
+        assert_ne!(frame_left, e.framebuffer, "different angle -> different view");
     }
 
     #[test]
