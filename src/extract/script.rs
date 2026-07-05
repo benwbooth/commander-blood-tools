@@ -457,37 +457,41 @@ pub(super) fn parse_script_branch_scenarios(
         let default_trace = vm::execute_trace_with_context(&cod, &var, &context);
         let default_offsets = executed_text_offsets(&default_trace, &text_calls);
 
-        let mut decision_index = 0usize;
-        for decision in branch_rows
+        let default_set: BTreeSet<usize> = default_offsets.iter().copied().collect();
+        let mut single_flip_covered = default_set.clone();
+        let decisions: Vec<(usize, u8, bool)> = branch_rows
             .iter()
             .filter(|row| row.script == script && row.condition_passed.is_some())
-        {
+            .map(|row| (row.offset, row.opcode, row.condition_passed.unwrap()))
+            .collect();
+        let mut decision_index = 0usize;
+        for &(dec_offset, dec_opcode, default_condition_passed) in &decisions {
             decision_index += 1;
-            let default_condition_passed = decision.condition_passed.unwrap();
             let forced_condition_passed = !default_condition_passed;
             let scenario_trace = vm::execute_trace_with_overrides_and_context(
                 &cod,
                 &var,
                 &[vm::BranchOverride {
-                    offset: decision.offset,
+                    offset: dec_offset,
                     condition_passed: forced_condition_passed,
                 }],
                 &context,
             );
             let scenario_offsets = executed_text_offsets(&scenario_trace, &text_calls);
-            let default_set: BTreeSet<usize> = default_offsets.iter().copied().collect();
             let scenario_set: BTreeSet<usize> = scenario_offsets.iter().copied().collect();
             let new_offsets: Vec<usize> = scenario_set.difference(&default_set).copied().collect();
             let lost_offsets: Vec<usize> = default_set.difference(&scenario_set).copied().collect();
+            single_flip_covered.extend(scenario_set.iter().copied());
             rows.push(ScriptBranchScenarioLine {
                 scenario_kind: "branch-override".to_string(),
                 script: script.clone(),
                 scenario_id: format!("{}-branch-{:04}", script, decision_index),
                 decision_index,
-                forced_offset: decision.offset,
-                opcode: decision.opcode,
+                forced_offset: dec_offset,
+                opcode: dec_opcode,
                 default_condition_passed,
                 forced_condition_passed,
+                extra_overrides: Vec::new(),
                 rtc_hour: None,
                 rtc_month: None,
                 rtc_day: None,
@@ -504,6 +508,82 @@ pub(super) fn parse_script_branch_scenarios(
                 halted: format!("{:?}", scenario_trace.halted),
                 steps: scenario_trace.steps,
             });
+        }
+
+        // Depth-2 reachability-validated exploration: for each single-flip
+        // decision, flip a SECOND decision that is actually reached in the
+        // depth-1 trace, and emit the scenario only if it reaches dialogue lines
+        // no single-flip did. Validated to add ~11% coverage (see the ignored
+        // measure_depth2_branch_coverage_gain test). Budget-capped so the extra
+        // video count stays bounded.
+        let mut depth2_index = 0usize;
+        let mut depth2_budget = 2000usize;
+        let mut depth2_emitted = 0usize;
+        'outer: for &(dec_offset, _, default_condition_passed) in &decisions {
+            let ovr1 = vm::BranchOverride {
+                offset: dec_offset,
+                condition_passed: !default_condition_passed,
+            };
+            let t1 = vm::execute_trace_with_overrides_and_context(&cod, &var, &[ovr1], &context);
+            for event in &t1.branch_events {
+                if depth2_budget == 0 || depth2_emitted >= 60 {
+                    break 'outer;
+                }
+                let Some(cp2) = event.condition_passed else {
+                    continue;
+                };
+                if event.offset == dec_offset {
+                    continue;
+                }
+                depth2_budget -= 1;
+                let ovr2 = vm::BranchOverride {
+                    offset: event.offset,
+                    condition_passed: !cp2,
+                };
+                let t2 = vm::execute_trace_with_overrides_and_context(
+                    &cod,
+                    &var,
+                    &[ovr1, ovr2],
+                    &context,
+                );
+                let t2_set: BTreeSet<usize> = executed_text_offsets(&t2, &text_calls)
+                    .into_iter()
+                    .collect();
+                let new_offsets: Vec<usize> =
+                    t2_set.difference(&single_flip_covered).copied().collect();
+                if new_offsets.is_empty() {
+                    continue;
+                }
+                single_flip_covered.extend(new_offsets.iter().copied());
+                depth2_index += 1;
+                depth2_emitted += 1;
+                rows.push(ScriptBranchScenarioLine {
+                    scenario_kind: "branch-override".to_string(),
+                    script: script.clone(),
+                    scenario_id: format!("{}-branch2-{:04}", script, depth2_index),
+                    decision_index: depth2_index,
+                    forced_offset: dec_offset,
+                    opcode: 0,
+                    default_condition_passed,
+                    forced_condition_passed: !default_condition_passed,
+                    extra_overrides: vec![(event.offset, !cp2)],
+                    rtc_hour: None,
+                    rtc_month: None,
+                    rtc_day: None,
+                    default_text_calls: default_offsets.len(),
+                    scenario_text_calls: t2_set.len(),
+                    new_text_calls: new_offsets.len(),
+                    lost_text_calls: 0,
+                    first_new_offsets: new_offsets
+                        .iter()
+                        .take(12)
+                        .map(|offset| format!("0x{offset:05x}"))
+                        .collect::<Vec<_>>()
+                        .join(","),
+                    halted: format!("{:?}", t2.halted),
+                    steps: t2.steps,
+                });
+            }
         }
 
         for rtc in rtc_replay_scenarios_for_cod(&cod) {
@@ -526,6 +606,7 @@ pub(super) fn parse_script_branch_scenarios(
                 opcode: 0,
                 default_condition_passed: false,
                 forced_condition_passed: false,
+                extra_overrides: Vec::new(),
                 rtc_hour: Some(rtc.hour),
                 rtc_month: Some(rtc.month),
                 rtc_day: Some(rtc.day),
@@ -1098,13 +1179,20 @@ pub(super) fn parse_script_branch_scenario_speech(
                 scenario_context = scenario_context.with_bios_rtc(hour, month, day);
             }
             let trace = if scenario.scenario_kind == "branch-override" {
+                let mut overrides = vec![vm::BranchOverride {
+                    offset: scenario.forced_offset,
+                    condition_passed: scenario.forced_condition_passed,
+                }];
+                overrides.extend(scenario.extra_overrides.iter().map(|&(offset, cp)| {
+                    vm::BranchOverride {
+                        offset,
+                        condition_passed: cp,
+                    }
+                }));
                 vm::execute_trace_with_overrides_and_context(
                     &cod,
                     &var,
-                    &[vm::BranchOverride {
-                        offset: scenario.forced_offset,
-                        condition_passed: scenario.forced_condition_passed,
-                    }],
+                    &overrides,
                     &scenario_context,
                 )
             } else {
@@ -4422,6 +4510,38 @@ mod tests {
             tot_2 += depth2.len();
         }
         eprintln!("TOTAL text-calls reached: default={tot_d} single-flip={tot_s} depth2={tot_2}");
+    }
+
+    // Verifies the PRODUCTION path (parse_script_branch_scenarios) emits depth-2
+    // "branch2" scenarios that cover dialogue lines no single-flip did.
+    #[test]
+    #[ignore]
+    fn depth2_scenarios_add_coverage_in_production() {
+        let Some(root) = ["output", "../output"]
+            .iter()
+            .map(Path::new)
+            .find(|r| find_file_recursive(r, "SCRIPT1.COD").is_some())
+        else {
+            eprintln!("skipping: extracted output scripts not available");
+            return;
+        };
+        let branch_rows = parse_script_branch_trace(root, None).expect("branch trace");
+        let scenarios = parse_script_branch_scenarios(root, &branch_rows, None).expect("scenarios");
+        let branch2: Vec<_> = scenarios
+            .iter()
+            .filter(|s| s.scenario_id.contains("-branch2-"))
+            .collect();
+        let new_lines: usize = branch2.iter().map(|s| s.new_text_calls).sum();
+        eprintln!(
+            "production depth-2 scenarios: {} covering {} new text-calls beyond single-flip",
+            branch2.len(),
+            new_lines
+        );
+        assert!(
+            !branch2.is_empty(),
+            "expected depth-2 scenarios to be emitted"
+        );
+        assert!(new_lines > 0, "depth-2 should cover new dialogue lines");
     }
 
     #[test]

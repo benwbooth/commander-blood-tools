@@ -175,6 +175,11 @@ pub(super) struct ScriptBranchScenarioLine {
     pub(super) opcode: u8,
     pub(super) default_condition_passed: bool,
     pub(super) forced_condition_passed: bool,
+    // Additional (offset, forced_condition_passed) branch overrides applied on top
+    // of `forced_offset` for depth-2+ reachability-validated scenarios. Empty for
+    // single-flip and RTC scenarios. Not serialized to the manifest (in-memory
+    // input to the scenario speech trace).
+    pub(super) extra_overrides: Vec<(usize, bool)>,
     pub(super) rtc_hour: Option<u8>,
     pub(super) rtc_month: Option<u8>,
     pub(super) rtc_day: Option<u8>,
