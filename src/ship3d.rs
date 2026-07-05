@@ -1837,6 +1837,13 @@ pub const SHIP_3D_HUD_BAND_TOP: usize = 0xA5; // 165
 /// exact-grid repro needs the RUNTIME camera origin (trace the 0x8A85 source, i.e. the
 /// ship-position update, or dump [0x2F65/67/69] from a live savestate). Everything else
 /// (algorithm, matrix, perspective, draw) is decoded.
+/// CORRECTION: the 0x9BBA loop is STRUCTURALLY like [`project_ship_3d_point`] but NOT
+/// bit-exact — its perspective/scale differs: `persp = 0x8000000>>7 / depth =
+/// 0x100000/depth`; then the screen coord is `(dot(row) >> 7) idiv <divisor> + 0x64`
+/// (center 0x64=100). Projecting the verts with the existing projector does NOT
+/// reproduce the grid (confirmed: ≤8/32 with the base origin/angle), so a bit-exact
+/// render must TRANSCRIBE the exact 0x9BBA math (shifts 0xF/7, div 0x100000, center
+/// 0x64) AND use the runtime animated origin (0x2F65 dec-by-100) + angle (0x2F71).
 ///
 /// PIPELINE NOW MAPPED END-TO-END (routine level): hud_init (verts→0x5491, angle
 /// 0xB3) → prelude (band y165-200) → 0x1CE:0 (/100 perspective) → 0x299:0x1467
