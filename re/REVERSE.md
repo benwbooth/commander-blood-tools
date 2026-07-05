@@ -76,8 +76,10 @@ on return writes `(cs:[0x99]+4)>>3` (the handle) back to `es:[di]` and `retf`.
 The body at `0x00A3` is the DISPLAY-INIT + FULL PALETTE UPLOAD: `mov dx,0x3C8;
 xor al,al; out dx,al; inc dl; mov cx,0x300; rep outsb` — uploads 768 bytes (all
 256 DAC colours, 6-bit) from `ds:0x1F6A` = **file offset 0x525A** (ds = load_seg
-+ 0x32F paragraphs). Then two more block copies (`call 0x34B` cx=0x280 dx=0x400;
-`call 0x35C` cx=0x140 dx=0x200) and inits fs globals (`fs:0x22A8=0`,
++ 0x32F paragraphs). Then MOUSE setup — `call 0x34B` (int 33h ax=8 set vertical
+cursor range cx=0..dx=0x400, then ax=7 set horizontal range 0..0x280) and `call
+0x35C` (int 33h ax=4 set cursor position cx=0x140,dx=0x200) — and inits fs globals
+(`fs:0x22A8=0`,
 `fs:0x22EC=0x75D`, `fs:0x22F0=0xFF11`). So the "character-palette remap" is this
 overlay's own 768-byte palette at file 0x525A. Its reserved high slots are
 sprite colours, NOT subtitle white: 0xE0=(23,23,17)6b, 0xFC=(44,42,20),
