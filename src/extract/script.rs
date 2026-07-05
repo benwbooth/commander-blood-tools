@@ -4431,7 +4431,7 @@ mod tests {
             eprintln!("skipping: extracted output scripts not available");
             return;
         };
-        let (mut tot_d, mut tot_s, mut tot_2) = (0usize, 0usize, 0usize);
+        let (mut tot_d, mut tot_s, mut tot_2, mut tot_3) = (0usize, 0usize, 0usize, 0usize);
         for idx in 1..=5 {
             let (Some(cod_p), Some(dic_p), Some(var_p)) = (
                 find_file_recursive(root, &format!("SCRIPT{idx}.COD")),
@@ -4474,6 +4474,7 @@ mod tests {
                 d1.push(ovr);
             }
             let mut depth2 = single.clone();
+            let mut d2_new: Vec<Vec<vm::BranchOverride>> = Vec::new();
             let mut budget = 3000usize;
             for ovr1 in &d1 {
                 if budget == 0 {
@@ -4495,21 +4496,57 @@ mod tests {
                         offset: e.offset,
                         condition_passed: !cp,
                     });
+                    let before = depth2.len();
                     depth2.extend(offs(&ovr2));
+                    if depth2.len() > before {
+                        d2_new.push(ovr2);
+                    }
                     budget -= 1;
                 }
             }
+            // depth-3: flip a 3rd reachable decision on the new-covering depth-2
+            // scenarios (reachability-validated, budget-capped).
+            let mut depth3 = depth2.clone();
+            let mut budget3 = 3000usize;
+            for ovr2 in &d2_new {
+                if budget3 == 0 {
+                    break;
+                }
+                let t2 = vm::execute_trace_with_overrides_and_context(&cod, &var, ovr2, &context);
+                for e in &t2.branch_events {
+                    if budget3 == 0 {
+                        break;
+                    }
+                    let Some(cp) = e.condition_passed else {
+                        continue;
+                    };
+                    if ovr2.iter().any(|o| o.offset == e.offset) {
+                        continue;
+                    }
+                    let mut ovr3 = ovr2.clone();
+                    ovr3.push(vm::BranchOverride {
+                        offset: e.offset,
+                        condition_passed: !cp,
+                    });
+                    depth3.extend(offs(&ovr3));
+                    budget3 -= 1;
+                }
+            }
             eprintln!(
-                "SCRIPT{idx}: default={n_default} single-flip={} depth2={} (decisions={})",
+                "SCRIPT{idx}: default={n_default} single-flip={} depth2={} depth3={} (decisions={})",
                 single.len(),
                 depth2.len(),
+                depth3.len(),
                 decisions.len()
             );
             tot_d += n_default;
             tot_s += single.len();
             tot_2 += depth2.len();
+            tot_3 += depth3.len();
         }
-        eprintln!("TOTAL text-calls reached: default={tot_d} single-flip={tot_s} depth2={tot_2}");
+        eprintln!(
+            "TOTAL text-calls reached: default={tot_d} single-flip={tot_s} depth2={tot_2} depth3={tot_3}"
+        );
     }
 
     // Verifies the PRODUCTION path (parse_script_branch_scenarios) emits depth-2
