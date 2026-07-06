@@ -240,7 +240,10 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     let (conn, screen_num) =
         x11rb::connect(None).map_err(|e| anyhow::anyhow!("X11 connect: {e}"))?;
     let screen = &conn.setup().roots[screen_num];
-    let (w, h) = (ENGINE_SCREEN_WIDTH as u16, ENGINE_SCREEN_HEIGHT as u16);
+    // Source is the 320x200 engine framebuffer; the window is larger and resizable,
+    // with the framebuffer scaled to fit while preserving the 320:200 (8:5) aspect.
+    let (src_w, src_h) = (ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT);
+    let (mut win_w, mut win_h) = (960u16, 600u16); // 3x, aspect-correct
     let win = conn.generate_id()?;
     conn.create_window(
         screen.root_depth,
@@ -248,8 +251,8 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
         screen.root,
         0,
         0,
-        w,
-        h,
+        win_w,
+        win_h,
         0,
         WindowClass::INPUT_OUTPUT,
         screen.root_visual,
@@ -274,17 +277,32 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     conn.create_gc(gc, win, &CreateGCAux::new())?;
     conn.flush()?;
 
-    // 4 bytes/pixel Z-pixmap (little-endian BGRX for the common depth-24 visual).
-    let mut image = vec![0u8; ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT * 4];
+    // 4 bytes/pixel Z-pixmap (little-endian BGRX for the common depth-24 visual),
+    // sized to the (resizable) window.
+    let mut image = vec![0u8; win_w as usize * win_h as usize * 4];
     let (mut mx, mut my, mut buttons) = (0u16, 0u16, 0u16);
     let mut clicked = false;
     let mut frames_since_input = 0u32;
+    // Conservative X11 request-size cap (safe even without the big-requests extension);
+    // put_image is chunked into row-strips under this.
+    let max_req = 262_144usize;
     loop {
+        // Aspect-preserving fit: largest integer scale of 320x200 that fits the window,
+        // centered (letterboxed). Used for both drawing and mouse-coord mapping.
+        let scale = ((win_w as usize / src_w).min(win_h as usize / src_h)).max(1);
+        let (dst_w, dst_h) = (src_w * scale, src_h * scale);
+        let off_x = (win_w as usize).saturating_sub(dst_w) / 2;
+        let off_y = (win_h as usize).saturating_sub(dst_h) / 2;
         while let Some(event) = conn.poll_for_event()? {
             match event {
                 Event::MotionNotify(m) => {
-                    mx = m.event_x.clamp(0, w as i16 - 1) as u16;
-                    my = m.event_y.clamp(0, h as i16 - 1) as u16;
+                    // Map window coords back through the letterbox+scale to source pixels.
+                    let ex = (m.event_x as isize - off_x as isize)
+                        .clamp(0, dst_w as isize - 1) as usize;
+                    let ey = (m.event_y as isize - off_y as isize)
+                        .clamp(0, dst_h as isize - 1) as usize;
+                    mx = (ex / scale).min(src_w - 1) as u16;
+                    my = (ey / scale).min(src_h - 1) as u16;
                 }
                 // Left button drives nav selection (via the engine); right button is a
                 // manual nav<->dialogue view toggle for convenience.
@@ -296,6 +314,14 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 // Keyboard loop controls: Escape (keycode 9) returns to the nav view.
                 Event::KeyPress(k) if k.detail == 9 => engine.on_ship = true,
                 Event::ButtonRelease(b) if b.detail == 1 => buttons = 0,
+                // Window resized: track the new size and re-alloc the image buffer.
+                Event::ConfigureNotify(c) => {
+                    if c.width > 0 && c.height > 0 && (c.width != win_w || c.height != win_h) {
+                        win_w = c.width;
+                        win_h = c.height;
+                        image = vec![0u8; win_w as usize * win_h as usize * 4];
+                    }
+                }
                 Event::DestroyNotify(_) => return Ok(()),
                 _ => {}
             }
@@ -321,24 +347,55 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
         } else if !engine.on_ship && engine.dialogue_finished() {
             engine.on_ship = true;
         }
-        for (i, &idx) in engine.framebuffer.iter().enumerate() {
-            let c = engine.scene_palette[idx as usize];
-            image[i * 4] = c[2];
-            image[i * 4 + 1] = c[1];
-            image[i * 4 + 2] = c[0];
+        // Clear the whole window (letterbox borders + a full erase so nothing from the
+        // previous frame can bleed through), then scale the framebuffer in.
+        for b in image.iter_mut() {
+            *b = 0;
         }
-        conn.put_image(
-            ImageFormat::Z_PIXMAP,
-            win,
-            gc,
-            w,
-            h,
-            0,
-            0,
-            0,
-            screen.root_depth,
-            &image,
-        )?;
+        let stride = win_w as usize * 4;
+        for sy in 0..src_h {
+            let src_row = sy * src_w;
+            for row in 0..scale {
+                let dy = off_y + sy * scale + row;
+                if dy >= win_h as usize {
+                    break;
+                }
+                let mut di = dy * stride + off_x * 4;
+                for sx in 0..src_w {
+                    let c = engine.scene_palette[engine.framebuffer[src_row + sx] as usize];
+                    for _ in 0..scale {
+                        if di + 2 < image.len() {
+                            image[di] = c[2];
+                            image[di + 1] = c[1];
+                            image[di + 2] = c[0];
+                        }
+                        di += 4;
+                    }
+                }
+            }
+        }
+        // put_image is one request; chunk by row-strips so a large window stays under
+        // the server's maximum request size.
+        let row_bytes = win_w as usize * 4;
+        let max_rows = (max_req.saturating_sub(64) / row_bytes.max(1)).max(1);
+        let mut y = 0usize;
+        while y < win_h as usize {
+            let rows = max_rows.min(win_h as usize - y);
+            let start = y * row_bytes;
+            conn.put_image(
+                ImageFormat::Z_PIXMAP,
+                win,
+                gc,
+                win_w,
+                rows as u16,
+                0,
+                y as i16,
+                0,
+                screen.root_depth,
+                &image[start..start + rows * row_bytes],
+            )?;
+            y += rows;
+        }
         conn.flush()?;
         std::thread::sleep(Duration::from_millis(66));
         // Headless-safety: exit after a bounded run if no display consumer.
