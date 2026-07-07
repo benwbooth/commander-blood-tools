@@ -184,6 +184,12 @@ pub struct EngineState {
     /// Smoothed camera pan for the alien view (mouse delta from centre, clamped),
     /// selecting the pre-rendered rotation angle.
     alien_pan: i32,
+    /// The scrutinizer-apparatus intro animation (`sq/caiscrut.hnm`) played once when
+    /// the examination screen opens, before the rotatable alien.
+    alien_intro: Option<HnmFile>,
+    /// Intro-animation frame counter; `None` once the intro has finished (or if there
+    /// is no intro), so the rotatable alien takes over.
+    alien_intro_frame: Option<usize>,
     /// Dialogue line sequence for the loaded script (from the VM trace), played
     /// back frame-by-frame — the script/scene stepping the main loop drives.
     dialogue: Vec<LineState>,
@@ -270,6 +276,8 @@ impl EngineState {
             alien_views: Vec::new(),
             alien_view_active: false,
             alien_pan: 0,
+            alien_intro: None,
+            alien_intro_frame: None,
             dialogue: Vec::new(),
             dialogue_texts: Vec::new(),
             dialogue_cursor: 0,
@@ -380,7 +388,18 @@ impl EngineState {
             .iter()
             .filter_map(|c| HnmFile::open(&pe.join(format!("{stem}_{c}.hnm"))).ok())
             .collect();
+        // The scrutinizer-apparatus intro (`sq/cai<stem>.hnm`), played on entry.
+        self.alien_intro = HnmFile::open(&assets.join("sq").join(format!("cai{stem}.hnm"))).ok();
         self.alien_pan = 0;
+    }
+
+    /// Arm the scrutinizer-apparatus intro to play from its first frame the next time
+    /// the examination screen renders (call when opening the screen).
+    pub fn arm_alien_intro(&mut self) {
+        if self.alien_intro.is_some() {
+            self.alien_intro_frame = Some(0);
+            self.scene_frame = 0;
+        }
     }
 
     /// Render the alien-examination screen: the mouse pan (delta from centre,
@@ -388,6 +407,24 @@ impl EngineState {
     /// the pre-rendered rotation views, whose animation plays looped. Steer left/right
     /// to rotate the alien.
     fn render_alien_view(&mut self) {
+        // Play the scrutinizer-apparatus intro once, then hand off to the rotatable
+        // alien. `alien_intro_frame` is armed to 0 when the screen is (re)opened.
+        if let Some(f) = self.alien_intro_frame {
+            if let Some(intro) = self.alien_intro.take() {
+                let count = intro.frame_count().max(1);
+                if f < count {
+                    self.scene_palette = intro.palette;
+                    intro.decode_frame(f, &mut self.scene_buffer, &mut self.scene_palette);
+                    self.framebuffer.copy_from_slice(&self.scene_buffer);
+                    self.alien_intro = Some(intro);
+                    self.alien_intro_frame = Some(f + 1);
+                    return;
+                }
+                self.alien_intro = Some(intro);
+            }
+            self.alien_intro_frame = None; // intro done
+            self.scene_frame = 0;
+        }
         // Smooth the pan toward the mouse's centre-delta (halve+accumulate), clamped.
         let target = (self.mouse.x as i32 - ENGINE_SCREEN_WIDTH as i32 / 2) / 2;
         self.alien_pan = (self.alien_pan + target) / 2;

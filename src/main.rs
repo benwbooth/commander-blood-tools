@@ -375,9 +375,13 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     engine.alien_view_active = false;
                     engine.on_ship = true;
                 }
-                // 'c' (keycode 54): toggle the alien-examination screen.
+                // 'c' (keycode 54): toggle the alien-examination screen (plays the
+                // scrutinizer intro on entry).
                 Event::KeyPress(k) if k.detail == 54 => {
                     engine.alien_view_active = !engine.alien_view_active;
+                    if engine.alien_view_active {
+                        engine.arm_alien_intro();
+                    }
                 }
                 Event::ButtonRelease(b) if b.detail == 1 => buttons = 0,
                 // Window resized: track the new size and re-alloc the image buffer.
