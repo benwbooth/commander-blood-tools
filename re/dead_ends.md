@@ -183,3 +183,17 @@ Lifecycle: **Active** → **RESOLVED (date)** → delete after 20+ sessions.
   network) and trace forward to its level load. Then decode CYBER.EXT's graph format
   (word[0]=2, then byte records) from that consumer.
 - **Session**: 007
+
+## "Combat" is NOT a subsystem in this game (RESOLVED sess 007)
+
+- Repeatedly listed "combat" as a remaining undecoded subsystem this session - that was an
+  UNVERIFIED assumption, now checked and FALSE.
+- String search for combat/weapon/attack/damage/health/fight/laser/shoot/enemy/hit: ZERO
+  hits in BLOODPRG.EXE.
+- Commander Blood is a dialogue/exploration/puzzle adventure (CRYO). The actual gameplay
+  systems are: dialogue (VM A6 text opcode + DESCRIPT), navigation (ship-3D + star map),
+  alien examination (scrut/croolis), comms/Hate-TV, cyberspace (hyper_* + CYBER*.EXT graph),
+  and the manu3 menu - all decoded/ported this session. There is no combat/action layer.
+- Correction: stop listing "combat" as remaining work. The genuinely-remaining decode is
+  the deep .ext world-body record semantics + the ~70% of exe functions not yet touched
+  (utility/init/hardware/overlay-specific), NOT a combat subsystem.
