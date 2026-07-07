@@ -166,9 +166,20 @@ Lifecycle: **Active** → **RESOLVED (date)** → delete after 20+ sessions.
   (DS or a const seg set, then a small/computed offset), or the name is assembled. The
   0xd034 copy at `SEG 0x0ca3:0x0004` (offset 4) can't be found by immediate search
   because offset `0x0004` is too common to disambiguate.
-- **Next approach for a focused session**: disassemble the file-open call sites
-  (int 21h AH=3D / the game's fopen wrapper) and walk back to which DS/const-seg + offset
-  each loads; or find the cyberspace *entry* routine (the code that runs when the player
-  enters the modem/network) and trace forward to its level load. Then decode CYBER.EXT's
-  graph format (nodes/edges) from that consumer.
+- **MECHANISM FOUND (sess 007, continue from here)**: filenames are gs-relative + path-
+  assembled, which is why every offset search fails. The fopen sites (int 21h AH=3D, e.g.
+  0xf70 `mov ax,0x3d00; int 21h`) are preceded by `mov dx,<off>` + `lcall 0x1ce:0x3b3`
+  (file 0x2693) — a path BUILDER. That builder does `mov es,gs; mov si,dx; mov di,0x259;
+  call 0x25a4` — i.e. **DX = the filename's offset in the `gs` string segment**, copied
+  into a path buffer at DS:0x259, then `.ext`/dir prepended (calls 0x27e9/0x26cf/0x27c3).
+  So the loader for cyber.ext calls the fopen wrapper with `DX = cyber.ext's gs-offset`.
+- **Remaining unknown**: `gs`'s base segment + cyber.ext's offset within it. The two
+  known copies (DS:0x429, SEG 0x0ca3:0x04) may not be the gs-segment copy; there may be a
+  third copy in the gs resource/string segment. `mov dx,0x429` has zero hits, so gs≠DS
+  here (or the gs copy is at a different offset).
+- **Next approach**: (a) determine gs's base (set at startup — trace `mov gs,...`), then
+  find cyber.ext in that segment to get its offset, then search `mov dx,<offset>` +
+  nearby fopen; OR (b) find the cyberspace *entry* routine (runs on entering the modem/
+  network) and trace forward to its level load. Then decode CYBER.EXT's graph format
+  (word[0]=2, then byte records) from that consumer.
 - **Session**: 007
