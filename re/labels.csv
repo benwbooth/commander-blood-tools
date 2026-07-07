@@ -325,3 +325,8 @@ GS:0x6CDE,vm_record_table_16b,"table of 16-byte records at gs:0x6cde, indexed by
 0x00685C,vm_op_ac_yield,"VM opcode 0xAC: set gs:[0x67b4]=1 (yield flag) - alias of 0xAA, yields/breaks the VM frame after this opcode"
 0x006EEE,vm_op_c3_state_record,"VM opcode 0xC3: object/line-record state op (les di,gs:0x6724 + 0xA1-skip prologue). C-range state-table family; exact field op partial"
 0x006DCF,vm_op_c7_state_record,"VM opcode 0xC7: object/line-record state op (state-table + 0xA1-skip prologue). C-range family; exact field op partial"
+0x0064E5,vm_op_ca_compare_var,"VM opcode 0xCA: lodsw tag (dl), lodsw value; if tag==0xf1 (variable-ref marker) compare value vs gs:[0xaa6] and branch (jg). Conditional comparison of a script value/variable against game state [0xaa6]"
+0x006510,vm_op_cb_compare_byte,"VM opcode 0xCB: lodsb tag, lodsw bx, lodsw; if tag==0xf1 compare bh vs gs:[0xaaa] and branch. Byte comparison of a script variable vs game state [0xaaa]. Companion to 0xCA"
+0x006902,vm_op_shared_ae_b0_state,"VM opcodes 0xAE + 0xB0 (shared handler 0x6902): object/line-record state op (les di,gs:0x6724 + 0xA1-skip). State-table family; exact op partial"
+0x0069C7,vm_op_cd_state_gated,"VM opcode 0xCD: state-table record op (les di,gs:0x6724, gated on gs:[0x67ad]&1, 0xA1-skip). State-table family; exact op partial"
+GS:0x0AA6,vm_compare_state_var,"game-state variables compared by opcodes 0xCA (word gs:[0xaa6]) / 0xCB (byte gs:[0xaaa]); the 0xf1 tag in the script marks a variable reference"
