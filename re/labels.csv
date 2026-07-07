@@ -320,3 +320,8 @@ GS:0x6CDE,vm_record_table_16b,"table of 16-byte records at gs:0x6cde, indexed by
 0x0067BA,vm_op_a7_set_if_presentation,"VM opcode 0xA7: lodsw operand; if gs:[0x67ac]&1 (presentation active) set gs:[0x6770]=operand. Conditional set-state"
 0x006830,vm_op_a9_cond_jump,"VM opcode 0xA9: lodsb al; if bit0 CLEAR, si=[si] (jump to operand). Conditional jump on operand bit0"
 0x006855,vm_op_aa_yield,"VM opcode 0xAA: set gs:[0x67b4]=1 - the yield flag the exec loop checks after each handler (0x562a); makes the VM break/yield the current frame. A yield/wait opcode"
+0x0067C8,vm_op_a8_load_string,"VM opcode 0xA8: copy a null-terminated string operand from the script into a buffer at 0x2120 (lodsb/[bp]=al loop until 0), then re-reads it. A string set/load op (filename or text into the 0x2120 buffer)"
+0x00684C,vm_op_ab_poke_byte,"VM opcode 0xAB: lodsb al value; bx=[si] address; [bx]=al; si+=2. Writes a byte to an arbitrary DS address given by the operand - a set-variable/poke op"
+0x00685C,vm_op_ac_yield,"VM opcode 0xAC: set gs:[0x67b4]=1 (yield flag) - alias of 0xAA, yields/breaks the VM frame after this opcode"
+0x006EEE,vm_op_c3_state_record,"VM opcode 0xC3: object/line-record state op (les di,gs:0x6724 + 0xA1-skip prologue). C-range state-table family; exact field op partial"
+0x006DCF,vm_op_c7_state_record,"VM opcode 0xC7: object/line-record state op (state-table + 0xA1-skip prologue). C-range family; exact field op partial"
