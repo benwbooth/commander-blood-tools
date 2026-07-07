@@ -501,13 +501,37 @@ impl EngineState {
             .collect();
     }
 
-    /// Render the ship-bridge hub: a dark console with each station's icon + label.
-    /// Steer/hover isn't required — the icons are click targets (see [`bridge_click`]).
+    /// Render the ship-bridge hub: the ship's space view (the decoded starfield) with
+    /// the station console overlaid — clicking an icon opens that screen. The bridge in
+    /// the game is the out-the-viewport space view plus the control console, not a
+    /// separate menu screen. The icons are click targets (see [`bridge_click`]).
     fn render_bridge(&mut self) {
-        for p in self.framebuffer.iter_mut() {
-            *p = 0;
+        // Space background: the decoded ship-3D starfield point cloud.
+        let mut prng = BloodPrng::seeded_from_rtc_seconds(self.starfield_seed);
+        let angles = Ship3dMatrixAngles {
+            angle_2f71: 0,
+            projection_angle_2f6d: 0,
+            angle_2f6f: 0,
+        };
+        let origin = Ship3dProjectionOrigin {
+            x: 0x8000,
+            y: 0x8000,
+            z: 0x8000,
+        };
+        let viewport = Ship3dProjectionViewport {
+            left: 0,
+            right: ENGINE_SCREEN_WIDTH as u16,
+            top: 0,
+            bottom: ENGINE_SCREEN_HEIGHT as u16,
+        };
+        if let Some(render) = render_ship_3d_starfield(&mut prng, angles, origin, viewport) {
+            self.framebuffer.copy_from_slice(&render.buffer);
+        } else {
+            for p in self.framebuffer.iter_mut() {
+                *p = 0;
+            }
         }
-        // A neutral grey ramp so the indexed station art reads on the dark console.
+        // Grey ramp so the indexed starfield + station art read; reserved label colour.
         for (i, slot) in self.scene_palette.iter_mut().enumerate() {
             let g = i.min(255) as u8;
             *slot = [g, g, g];
