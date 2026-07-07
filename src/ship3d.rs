@@ -2536,6 +2536,99 @@ pub fn run_ship_3d_navigation_final_reset(
     }
 }
 
+/// The ship-3D camera-approach animation state, driven by phase counter `DS:0x27DF`
+/// (BLOODPRG.EXE `0x8A6A..0x8B5A`). The nav camera moves because this scripted FSM
+/// walks the camera origin `[0x2F65/67/69]` and angle `[0x2F71]` through fixed phases
+/// each frame — the source of the "the ship travels" motion, decoded and portable.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Ship3dCameraApproach {
+    /// Phase counter (`DS:0x27DF`): 1 = pull-in X, 2 = accelerate Z, 3 = reset,
+    /// 4 = hold, then done.
+    pub phase: u8,
+    /// Camera origin words `DS:0x2F65/0x2F67/0x2F69`.
+    pub origin_x: u16,
+    pub origin_y: u16,
+    pub origin_z: u16,
+    /// Z acceleration accumulator `DS:0x2F6B` (added to Z each frame in phase 2,
+    /// itself growing by 0x64/frame).
+    pub z_accel: u16,
+    /// Camera yaw `DS:0x2F71` (0..0xB4 = 0..180°), rotated during phase 1.
+    pub angle_2f71: u16,
+    /// True once the approach animation has completed all phases.
+    pub done: bool,
+}
+
+impl Default for Ship3dCameraApproach {
+    fn default() -> Self {
+        // Phase-3 reset immediates (`0x8AF2..0x8AFE`): the approach's start state.
+        Self {
+            phase: 1,
+            origin_x: 0x2710, // 10000
+            origin_y: 0,
+            origin_z: 0x4E20, // 20000
+            z_accel: 0,
+            angle_2f71: 0,
+            done: false,
+        }
+    }
+}
+
+impl Ship3dCameraApproach {
+    /// Advance one frame through the decoded phase machine (`0x8A6A..0x8B5A`):
+    /// - **P1** (`0x8A76`): if `X >= 0x2328` (9000), `X -= 0x64`; the yaw
+    ///   `[0x2F71]` decrements toward 0 (wrapping to 0xB4). When `X < 0x2328`, P1
+    ///   ends (`inc phase`).
+    /// - **P2** (`0x8AB3`): while `Z <= 0x4E20` (20000), `Z += z_accel` and
+    ///   `z_accel += 0x64` (accelerating). Above it, P2 ends.
+    /// - **P3** (`0x8AE0`): reset `Z=0x4E20`, `[0x2F71]=0`, `X=0x2710`; P3 ends.
+    /// - **P4** (`0x8B2B`): set `Z=0x7530` (30000); P4 ends → animation done.
+    pub fn step(&mut self) {
+        match self.phase {
+            1 => {
+                if self.origin_x >= 0x2328 {
+                    self.origin_x = self.origin_x.wrapping_sub(0x64);
+                    // yaw--, wrapping 0 -> 0xB4 (dec ax; jns; else 0xB4).
+                    self.angle_2f71 = if self.angle_2f71 == 0 {
+                        0xB4
+                    } else {
+                        self.angle_2f71 - 1
+                    };
+                } else {
+                    self.phase += 1;
+                }
+            }
+            2 => {
+                if self.origin_z <= 0x4E20 {
+                    self.origin_z = self.origin_z.wrapping_add(self.z_accel);
+                    self.z_accel = self.z_accel.wrapping_add(0x64);
+                } else {
+                    self.phase += 1;
+                }
+            }
+            3 => {
+                self.origin_z = 0x4E20;
+                self.angle_2f71 = 0;
+                self.origin_x = 0x2710;
+                self.phase += 1;
+            }
+            4 => {
+                self.origin_z = 0x7530;
+                self.phase += 1;
+            }
+            _ => self.done = true,
+        }
+    }
+
+    /// The camera origin as a projection origin (for `project_star_map_point` etc.).
+    pub fn origin(&self) -> [i32; 3] {
+        [
+            self.origin_x as i16 as i32,
+            self.origin_y as i16 as i32,
+            self.origin_z as i16 as i32,
+        ]
+    }
+}
+
 pub fn build_ship_3d_navigation_source_records(
     source_entries: &[Ship3dNavigationSourceEntry],
     records: &[Ship3dNavigationRuntimeRecord],
@@ -3320,6 +3413,41 @@ fn next_target_list_draw_color(state: &mut Ship3dTargetHitState, activate: bool)
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn camera_approach_walks_the_decoded_phase_machine() {
+        let mut cam = Ship3dCameraApproach::default();
+        assert_eq!((cam.phase, cam.origin_x, cam.origin_z), (1, 0x2710, 0x4E20));
+        // Phase 1: X pulls in by 0x64/frame until below 0x2328, yaw rotates down.
+        let mut steps = 0;
+        while cam.phase == 1 && steps < 1000 {
+            let prev_x = cam.origin_x;
+            cam.step();
+            if cam.phase == 1 {
+                assert_eq!(cam.origin_x, prev_x - 0x64, "X decreases 0x64/frame");
+            }
+            steps += 1;
+        }
+        assert!(cam.origin_x < 0x2328, "phase 1 pulls X in below 0x2328");
+        // 0x2710->0x2328 is 10 decrements to reach 0x2328 (still >=, so one more to
+        // 0x2264), then the frame that sees X<0x2328 trips the phase: 12 steps.
+        assert_eq!(steps, 12);
+        // Phase 2: Z accelerates.
+        let z_before = cam.origin_z;
+        cam.step();
+        assert!(cam.origin_z >= z_before && cam.z_accel == 0x64, "Z accelerates");
+        while cam.phase == 2 {
+            cam.step();
+        }
+        // Phase 3 reset then phase 4 sets Z=0x7530.
+        assert_eq!(cam.phase, 3);
+        cam.step();
+        assert_eq!((cam.origin_x, cam.origin_z, cam.angle_2f71), (0x2710, 0x4E20, 0));
+        cam.step(); // phase 4
+        assert_eq!(cam.origin_z, 0x7530);
+        cam.step();
+        assert!(cam.done, "animation completes");
+    }
 
     #[test]
     fn recovered_hud_pyramid_vertices_project_via_shared_projection() {

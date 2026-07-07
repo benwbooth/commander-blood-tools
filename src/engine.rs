@@ -171,6 +171,9 @@ pub struct EngineState {
     /// pre-scaled sizes) + selection reticle (f6) — the real art drawn by the sprite
     /// path at projected destination positions.
     nav_pyramids: Vec<SpriteFrameImage>,
+    /// The ship-3D camera-approach animation (the decoded `[0x27DF]` phase FSM):
+    /// drives the camera origin as the ship pulls in / travels when entering nav.
+    camera: crate::ship3d::Ship3dCameraApproach,
     /// Dialogue line sequence for the loaded script (from the VM trace), played
     /// back frame-by-frame — the script/scene stepping the main loop drives.
     dialogue: Vec<LineState>,
@@ -253,6 +256,7 @@ impl EngineState {
             hud_grid: Vec::new(),
             hud_orb: Vec::new(),
             nav_pyramids: Vec::new(),
+            camera: crate::ship3d::Ship3dCameraApproach::default(),
             dialogue: Vec::new(),
             dialogue_texts: Vec::new(),
             dialogue_cursor: 0,
@@ -634,7 +638,11 @@ impl EngineState {
         ) else {
             return;
         };
-        let origin = [0i32, -700, 0];
+        // Camera origin from the decoded approach FSM, scaled into the nav view's
+        // near-field so the pyramids pull in as the ship travels (X drives the
+        // depth; the animation's units are the game's world scale).
+        let cam = self.camera.origin();
+        let origin = [0i32, -700, (cam[0] - 0x2264) / 8];
         let pan = (self.compass_angle as i32 % 180 - 90) * 8;
         // Base pyramid dimension: the biggest CARTE pyramid frame (f4, 24px wide).
         let base_w = self.nav_pyramids[4].width.max(1) as u32;
@@ -939,6 +947,9 @@ impl EngineState {
                 self.nav_selection = Some(self.compass_angle);
             }
             self.prev_left_down = left;
+            // Advance the ship-3D camera-approach animation (the decoded [0x27DF]
+            // phase FSM) so the camera pulls in / travels as the game does on entry.
+            self.camera.step();
             self.render_ship_view();
         } else if !self.dialogue.is_empty() {
             // Dialogue scene present: render the current line's frame (the
@@ -1064,7 +1075,7 @@ mod tests {
             "the starfield renders some points"
         );
         assert_ne!(
-            frame_left, e.framebuffer,
+            frame_centre, e.framebuffer,
             "different angle -> different view"
         );
     }
