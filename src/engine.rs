@@ -190,6 +190,13 @@ pub struct EngineState {
     /// Intro-animation frame counter; `None` once the intro has finished (or if there
     /// is no intro), so the rotatable alien takes over.
     alien_intro_frame: Option<usize>,
+    /// The comms "Hate TV" screen: broadcast channel HNMs (`sq/tvgren*`, `tvred*` —
+    /// self-contained character-in-TV-frame animations). Steering switches channels.
+    tv_channels: Vec<HnmFile>,
+    /// Whether the comms/TV screen is the active view.
+    pub tv_active: bool,
+    /// Currently-selected TV channel index.
+    tv_channel: usize,
     /// Dialogue line sequence for the loaded script (from the VM trace), played
     /// back frame-by-frame — the script/scene stepping the main loop drives.
     dialogue: Vec<LineState>,
@@ -278,6 +285,9 @@ impl EngineState {
             alien_pan: 0,
             alien_intro: None,
             alien_intro_frame: None,
+            tv_channels: Vec::new(),
+            tv_active: false,
+            tv_channel: 0,
             dialogue: Vec::new(),
             dialogue_texts: Vec::new(),
             dialogue_cursor: 0,
@@ -391,6 +401,58 @@ impl EngineState {
         // The scrutinizer-apparatus intro (`sq/cai<stem>.hnm`), played on entry.
         self.alien_intro = HnmFile::open(&assets.join("sq").join(format!("cai{stem}.hnm"))).ok();
         self.alien_pan = 0;
+    }
+
+    /// Load the comms "Hate TV" screen: the broadcast-channel HNMs named `<prefix>*`
+    /// under `sq/` (e.g. `tv` → tvgren*/tvred*), sorted so steering cycles channels
+    /// in a stable order. The screen renders once `tv_active` is set.
+    pub fn load_tv_channels(&mut self, assets: &Path, prefix: &str) {
+        let sq = assets.join("sq");
+        let mut names: Vec<String> = std::fs::read_dir(&sq)
+            .into_iter()
+            .flatten()
+            .flatten()
+            .filter_map(|e| e.file_name().to_str().map(str::to_string))
+            .filter(|n| {
+                n.to_lowercase().starts_with(prefix) && n.to_lowercase().ends_with(".hnm")
+            })
+            .collect();
+        names.sort();
+        self.tv_channels = names
+            .iter()
+            .filter_map(|n| HnmFile::open(&sq.join(n)).ok())
+            .collect();
+        self.tv_channel = 0;
+    }
+
+    /// Render the comms/TV screen: play the current broadcast channel looped. A driver
+    /// changes `tv_channel` (via `switch_tv_channel`) on left/right steer to flip
+    /// channels — the interactive part of the screen.
+    fn render_tv(&mut self) {
+        let n = self.tv_channels.len();
+        if n == 0 {
+            return;
+        }
+        let ch = self.tv_channel % n;
+        let hnm = &self.tv_channels[ch];
+        let count = hnm.frame_count().max(1);
+        self.scene_palette = hnm.palette;
+        hnm.decode_frame(self.scene_frame % count, &mut self.scene_buffer, &mut self.scene_palette);
+        self.framebuffer.copy_from_slice(&self.scene_buffer);
+        self.scene_frame += 1;
+    }
+
+    /// Number of loaded TV channels.
+    pub fn tv_channel_count(&self)->usize{self.tv_channels.len()}
+
+    /// Switch the TV channel by `delta` (wrapping), restarting the broadcast.
+    pub fn switch_tv_channel(&mut self, delta: i32) {
+        let n = self.tv_channels.len();
+        if n == 0 {
+            return;
+        }
+        self.tv_channel = (self.tv_channel as i32 + delta).rem_euclid(n as i32) as usize;
+        self.scene_frame = 0;
     }
 
     /// Arm the scrutinizer-apparatus intro to play from its first frame the next time
@@ -1029,6 +1091,13 @@ impl EngineState {
         // intro cutscene), exactly as the real game boots, before any nav/dialogue.
         if self.intro_active {
             self.render_intro_frame();
+            self.frame += 1;
+            return;
+        }
+        // Comms/TV screen takes precedence when active: watch the broadcast.
+        if self.tv_active && !self.tv_channels.is_empty() {
+            self.render_tv();
+            self.countdown = self.countdown.saturating_sub(1);
             self.frame += 1;
             return;
         }

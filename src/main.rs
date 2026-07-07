@@ -236,6 +236,8 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     engine.load_intro(Path::new(assets));
     // The alien-examination screen (Scruter Jo): press 'c' to toggle it in nav.
     engine.load_alien_view(Path::new(assets), "scrut");
+    // The comms "Hate TV" screen: press 't' to toggle, left/right to change channel.
+    engine.load_tv_channels(Path::new(assets), "tv");
     // The boot reel's music (`mu/blintr.voc` — "BLood INTRo"): starts with the intro
     // and is stopped when the intro hands off to the game.
     let mut intro_music_started = false;
@@ -363,6 +365,11 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     mx = (ex / scale).min(src_w - 1) as u16;
                     my = (ey / scale).min(src_h - 1) as u16;
                 }
+                // On the TV screen, left/right buttons change channel (must precede the
+                // generic nav-button handlers below).
+                Event::ButtonPress(b) if engine.tv_active && (b.detail == 1 || b.detail == 3) => {
+                    engine.switch_tv_channel(if b.detail == 1 { 1 } else { -1 });
+                }
                 // Left button drives nav selection (via the engine); right button is a
                 // manual nav<->dialogue view toggle for convenience.
                 Event::ButtonPress(b) if b.detail == 1 => {
@@ -373,6 +380,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 // Keyboard loop controls: Escape (keycode 9) returns to the nav view.
                 Event::KeyPress(k) if k.detail == 9 => {
                     engine.alien_view_active = false;
+                    engine.tv_active = false;
                     engine.on_ship = true;
                 }
                 // 'c' (keycode 54): toggle the alien-examination screen (plays the
@@ -382,6 +390,10 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     if engine.alien_view_active {
                         engine.arm_alien_intro();
                     }
+                }
+                // 't' (keycode 28): toggle the comms/TV screen.
+                Event::KeyPress(k) if k.detail == 28 => {
+                    engine.tv_active = !engine.tv_active;
                 }
                 Event::ButtonRelease(b) if b.detail == 1 => buttons = 0,
                 // Window resized: track the new size and re-alloc the image buffer.
