@@ -100,9 +100,20 @@ pub fn primary_worlds() -> impl Iterator<Item = &'static LevelEntry> {
     })
 }
 
-/// Look up a directory entry by its world index.
+/// Look up a directory entry by its resource ID.
 pub fn entry(index: u8) -> Option<&'static LevelEntry> {
     LEVEL_DIRECTORY.get(index as usize)
+}
+
+/// The resource ID the game loads a world by (its `FS:0x0c04` table index), given the
+/// world stem (`"venusia"` → 25). This is the handle passed to the resource loader
+/// (`vm_resource_profile_select` / `resource_handle_resolve`). Returns `None` for
+/// unknown stems.
+pub fn world_resource_id(stem: &str) -> Option<u8> {
+    LEVEL_DIRECTORY
+        .iter()
+        .find(|e| e.kind == LevelKind::World && e.stem == stem)
+        .map(|e| e.index)
 }
 
 /// The 8-byte header every `.ext` world file begins with — verified identical across the
@@ -194,6 +205,24 @@ pub fn parse_room_view(filename: &str, prefix: &str) -> Option<(String, char)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn world_resource_ids_match_the_fs0c04_table() {
+        // The resource IDs the game loads worlds by (verified vs the FS:0x0c04 table).
+        assert_eq!(world_resource_id("black"), Some(22));
+        assert_eq!(world_resource_id("venusia"), Some(25));
+        assert_eq!(world_resource_id("magnus"), Some(28));
+        assert_eq!(world_resource_id("cyber"), Some(36));
+        assert_eq!(world_resource_id("corpo"), Some(43));
+        // Sprites/scripts aren't "worlds".
+        assert_eq!(world_resource_id("bcarte"), None);
+        assert_eq!(world_resource_id("nope"), None);
+        // Round-trips: entry(id).stem == the queried world.
+        for w in ["venusia", "magnus", "cyber"] {
+            let id = world_resource_id(w).unwrap();
+            assert_eq!(entry(id).unwrap().stem, w);
+        }
+    }
 
     #[test]
     fn art_matches_a_world_across_all_floors() {
