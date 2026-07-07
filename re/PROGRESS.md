@@ -27,6 +27,30 @@ Audio is fully in-process (cpal) + cross-platform.
 - ~72% of BLOODPRG.EXE's ~435 functions still undecoded — true 100% is a multi-month
   decompile.
 
+## GAMEPLAY-LOGIC PORTED (sess 007) — beyond presentation
+
+Decompiled + ported from the overlays (disassembled via capstone on the raw `.xdb`
+files), each tested:
+
+**Shared alien-behaviour engine** (`src/croolis.rs`) — verified identical across
+`croolis.xdb`/`amer.xdb`/`scrut.xdb` (same `ror ax,7; sbb ax,0` anim PRNG + `0x5E`
+object stride). Complete method set: `0x16A4` anim state machine, `0x12DE` frame-gated
+colony dispatcher, `fs:0x103A` behaviour vtable, `0x999` position toroidal-wrap
+(`±0x4000`), `0x36A` object initializer, `0xA30` proximity/visibility gate. Object
+positions at record `+0x42/+0x46/+0x4a`; transform at `+0x12/+0x22/+0x32`. Remaining:
+per-object 3D draw (reuses shared ship-3D compositor).
+
+**manu3 3D-menu core** (`src/manu3.rs`) — the ship's pyramid menu. Ported: input-coord
+decode (`[bp+4]&0x1F` item, `[bp+6]>>4` row), item-selection dispatch (`0x181`,
+`base+table[item]`), tween setup (`0x1DF`, `delta=(end-current)<<16/count`), tween list
+(`0x19B`, fixed-point animate + swap-remove), camera pan (`0x34..0x51`, centre-delta),
+pyramid angle setup (`0x270`, angles `+0x4E/+0x50/+0x52 & 0xFFC` → shared projection).
+Remaining: data-driven per-item action handlers + final vertex blit.
+
+**Still undecoded (the majority — multi-month):** cyberspace minigame (BLOODPRG logic +
+`CYBER*.EXT` graph data), combat, the global object/navigation simulation, and ~70% of
+BLOODPRG.EXE's ~435 functions. True 100% is a complete decompile.
+
 ## VERIFICATION MATRIX (full pass, sess 005-007)
 
 Coverage denominator: BLOODPRG.EXE has ~435 functions (distinct near-call targets);
