@@ -507,3 +507,5 @@ DS:0x65F2,ui_region_table,"table of 8-byte clickable-UI-region records (0x1f ent
 0x0082E8,nav_state_gate,"per-frame nav/state gate: test [0x27da]&1 and [0x278a]&1 -> branch. Guards the nav/camera update flow based on the transition flags"
 0x008963,presentation_ready_gate,"presentation-ready gate: test [0x67ac]&1 (presentation active) and [0x27d7]&1 -> branch. Guards the dialogue/presentation update when the subsystem is ready"
 0x008BAB,mode_gate_27e8,"dual-mode gate: test [0x27e8]&1 and [0x27e9]&1 -> branch. A per-frame mode/state gate for a screen-flow transition"
+0x00147F,file_open_dd7,"open a specific file: cx=4; dx=0xdd7 (filename in the string segment); opens the named resource. A dedicated file-open (dd7 = a specific config/data file)"
+0x001855,scene_transition_2751,"scene transition trigger: al=[0x2751]; if bit0 set, [0x5249]=1 (arm a scene/screen transition). Gates a scene change on the [0x2751] flag"
