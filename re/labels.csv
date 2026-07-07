@@ -433,3 +433,7 @@ GS:0x6726,object_heap_segment,"segment of the runtime object/instance heap (es:[
 0x003106,gfx_plot_modex_variants,"family of clipped mode-X plot/span primitives (0x3106/0x3192/0x3225/0x356e): each clips dx(y) vs gs:[0x523b]/[0x5239] like graphics_plot_modex 0x3428, differing in the shape/vertical offset (sub cx,0xa or 8). The game's set of low-level draw primitives (point/short-span/etc.)"
 0x0036EA,gfx_draw_to_page,"draw to the VGA display page: les di,gs:[0x5219] (display page ptr); ch=dl; x offset = bx<<4. Renders directly into the visible VGA page (vs the linear back-buffer)"
 0x003775,order_two_coords,"order/sort two coordinate pairs: cmp bx,dx; if out of order xchg dx,bx and bp,cx. Ensures p0<=p1 for a span/line draw (line-clipping min/max helper)"
+0x003E46,full_screen_blit,"full-screen copy: les di,gs:[0x5221] (display); cx=0x3e80 (16000); rep movsd (16000 dwords = 64000 bytes = entire 320x200 frame) from si into the display buffer. The full-frame present/copy (whole-screen page copy)"
+0x003B45,composite_draw_a,"composite shape draw: call 0x32ac + call gfx_clipped_draw 0x3321 (two plot primitives with xchg bp,dx between). Draws a filled/compound shape from the clipped primitives"
+0x003B65,composite_draw_b,"composite shape draw: call 0x39bb + call 0x3ab3. Another filled/compound shape via the plot-primitive family"
+0x003972,display_buffer_save,"display-buffer save/clear: ds=ax; si=0x6612; push [0x5221] (save display ptr); [0x5221]=0. Saves + resets the display buffer pointer (for a page swap/restore)"
