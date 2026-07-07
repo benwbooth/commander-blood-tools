@@ -437,3 +437,7 @@ GS:0x6726,object_heap_segment,"segment of the runtime object/instance heap (es:[
 0x003B45,composite_draw_a,"composite shape draw: call 0x32ac + call gfx_clipped_draw 0x3321 (two plot primitives with xchg bp,dx between). Draws a filled/compound shape from the clipped primitives"
 0x003B65,composite_draw_b,"composite shape draw: call 0x39bb + call 0x3ab3. Another filled/compound shape via the plot-primitive family"
 0x003972,display_buffer_save,"display-buffer save/clear: ds=ax; si=0x6612; push [0x5221] (save display ptr); [0x5221]=0. Saves + resets the display buffer pointer (for a page swap/restore)"
+0x00713D,vm_state_record_processor,"VM state-record processor: lds si,gs:[0x6724] (object/line-record state table); les di,gs:[0x672c] (lookup); bp=0x24fb (dispatch base); si=gs:[0x6752]. Walks/processes the state records - part of the per-frame VM presentation update"
+0x00755E,index_lookup_dca,"index-table lookup: di=0xdca; lodsb al (operand); dec al; cwde (index-1 signed). Indexes a table at DS:0xdca by the script operand"
+0x007788,fs_name_area_read,"read from the FS resource-name area: es=fs; di=0xc74 (near the FS:0x0c04 resource-name table); lodsb - reads a resource name/entry indexed by the script"
+0x00071CF,vm_lookup_prep,"VM lookup prep (also 0x721a): call table_672c_process 0x604e; si=0x6a16 (the processed lookup output). Prepares the 0x672c->0x6a16 lookup for VM record resolution"
