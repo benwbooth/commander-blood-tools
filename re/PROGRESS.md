@@ -38,9 +38,23 @@ see the four module audits, sess 007).
   scene music + boot-reel music + per-line character voice (real sn/*.snd clips via the
   decoded one-based selector), extracted sn/ voice banks from BLOOD.DAT.
 
-**Still approximated (tracked):** engine nav-selection click hook (heading→SCRIPTn
-mapping is a driver convenience), script.rs offline extraction heuristics
-(`build_character_contexts`, speech attribution).
+**Ship-movement simulation — DECODED + IMPLEMENTED (sess 007):** the nav camera moves
+because the phase FSM at `0x8A6A..0x8B5A` (counter `DS:0x27DF`) walks the camera origin
+`[0x2F65/67/69]` + yaw `[0x2F71]` each frame: P1 pulls X in 0x64/frame to 0x2328
+(rotating yaw), P2 accelerates Z via `[0x2F6B]` to 0x4E20, P3 resets, P4 sets Z=0x7530.
+Ported as `ship3d::Ship3dCameraApproach` (tested vs the decoded phases) and driven by the
+engine each on-ship frame — the camera now animates from the game's own logic, not a
+static origin. Nav steering is the decoded centre-delta rate model. The nav-choice
+handlers (`run_ship_3d_nav_choice_handler_0..4`) are already faithful (audit).
+
+**Still approximated (tracked):**
+- Nav destination OBJECT INSTANCES: which kind-2 systems exist + their per-object
+  positions come from the runtime object heap (`es:[0x6726]`, candidate list DS:0x2B53).
+  The camera motion + projection + draw are now faithful; the set of destinations drawn
+  is a plausible grid until the object instances are populated (from the object DB /
+  live state). This is the last runtime-data-linked piece.
+- `script.rs` offline extraction heuristics (`build_character_contexts`, speech
+  attribution) — tooling for reference-video generation, not the runnable engine.
 
 **Gated on live gameplay (proven, not assumed):** bit-exact gameplay star-map
 (destinations are runtime object-heap state, 0xB34E) and interactive scene sequencing.
