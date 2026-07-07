@@ -225,6 +225,13 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     let mut engine = EngineState::new();
     engine.load_dialogue_scenes(&cod, &var, &dic, &deb, &descript, Path::new(assets));
     engine.dialogue_hold_frames = 20;
+    // The real star-map sprites: CARTE pyramids + BORXX orb for the nav view.
+    if let (Ok(carte), Ok(borxx)) = (
+        std::fs::read(format!("{iso}/CARTE.SPR")),
+        std::fs::read(format!("{iso}/BORXX.SPR")),
+    ) {
+        engine.load_nav_sprites(&carte, &borxx);
+    }
     // Play the startup intro videos first (logos + intro cutscene), like the real game.
     engine.load_intro(Path::new(assets));
     // After the intro, start in the star-map nav view; the loop switches nav<->dialogue.

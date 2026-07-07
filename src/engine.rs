@@ -167,6 +167,10 @@ pub struct EngineState {
     hud_grid: Vec<SpriteFrameImage>,
     /// Decoded ship-nav HUD orb sprite frames (BORXX).
     hud_orb: Vec<SpriteFrameImage>,
+    /// The game's star-map destination pyramid frames (CARTE.SPR f0..f5, six
+    /// pre-scaled sizes) + selection reticle (f6) — the real art drawn by the sprite
+    /// path at projected destination positions.
+    nav_pyramids: Vec<SpriteFrameImage>,
     /// Dialogue line sequence for the loaded script (from the VM trace), played
     /// back frame-by-frame — the script/scene stepping the main loop drives.
     dialogue: Vec<LineState>,
@@ -243,6 +247,7 @@ impl EngineState {
             starfield_seed: 17,
             hud_grid: Vec::new(),
             hud_orb: Vec::new(),
+            nav_pyramids: Vec::new(),
             dialogue: Vec::new(),
             dialogue_texts: Vec::new(),
             dialogue_cursor: 0,
@@ -549,6 +554,87 @@ impl EngineState {
         self.hud_orb = decode_sprite_bank_indices(borxx_spr).unwrap_or_default();
     }
 
+    /// Load the star-map nav sprites: `CARTE.SPR` holds the game's actual destination
+    /// pyramid frames at six pre-scaled sizes (f0..f5) plus the selection reticle
+    /// (f6); `BORXX.SPR` the eye-orb frames. These are the real art the game's
+    /// sprite-blit path (0x4BAA) draws at projected destination positions.
+    pub fn load_nav_sprites(&mut self, carte_spr: &[u8], borxx_spr: &[u8]) {
+        self.nav_pyramids = decode_sprite_bank_indices(carte_spr).unwrap_or_default();
+        if self.hud_orb.is_empty() {
+            self.hud_orb = decode_sprite_bank_indices(borxx_spr).unwrap_or_default();
+        }
+    }
+
+    /// Draw the star-map destination pyramids with the game's real components: the
+    /// ground-plane grid of destinations is projected point-by-point with
+    /// `project_star_map_point` (the decoded 0x9BBA math, compass-panned), and each
+    /// projection blits the CARTE.SPR pyramid frame whose pre-scaled size best
+    /// matches the projected sprite scale (`0x100000/depth`, the sprite path's scale
+    /// term). Real art + real math; the destination layout itself is the documented
+    /// runtime-gated remainder (live `DS:0x4F09` records).
+    fn render_nav_pyramid_sprites(&mut self) {
+        use crate::ship3d::{
+            SHIP_3D_ANGLE_TABLE, Ship3dMatrixAngles, build_ship_3d_projection_matrix,
+            project_star_map_point,
+        };
+        let Some(m) = build_ship_3d_projection_matrix(
+            &SHIP_3D_ANGLE_TABLE,
+            Ship3dMatrixAngles {
+                angle_2f71: 0,
+                projection_angle_2f6d: 0,
+                angle_2f6f: 10,
+            },
+        ) else {
+            return;
+        };
+        let origin = [0i32, -700, 0];
+        let pan = (self.compass_angle as i32 % 180 - 90) * 8;
+        // Base pyramid dimension: the biggest CARTE pyramid frame (f4, 24px wide).
+        let base_w = self.nav_pyramids[4].width.max(1) as u32;
+        const ROW_Z: [i32; 4] = [600, 1500, 3000, 5600];
+        for (zi, &z) in ROW_Z.iter().enumerate() {
+            let _ = zi;
+            for xi in -3..=3i32 {
+                let d = [xi * 700 + pan, 0, z];
+                let Some((sx, sy, scale)) = project_star_map_point(d, origin, &m) else {
+                    continue;
+                };
+                if !(0..ENGINE_SCREEN_WIDTH as i32).contains(&sx)
+                    || !(0..ENGINE_SCREEN_HEIGHT as i32).contains(&sy)
+                {
+                    continue;
+                }
+                // The sprite path's exact dimension scaling: `dim * depth_scale >> 10`
+                // with `depth_scale = 0x100000/depth` (== `scale` here), then the
+                // closest pre-scaled CARTE frame (f0..f5).
+                let sw = ((base_w.saturating_mul(scale as u32 & 0xFFFF)) >> 10).max(2) as i32;
+                let fi = (0..6)
+                    .min_by_key(|&i| (self.nav_pyramids[i].width as i32 - sw).abs())
+                    .unwrap_or(4);
+                let frame = self.nav_pyramids[fi].clone();
+                blit_sprite_frame_centered(
+                    &mut self.framebuffer,
+                    ENGINE_SCREEN_WIDTH,
+                    ENGINE_SCREEN_HEIGHT,
+                    &frame,
+                    sx,
+                    sy,
+                );
+            }
+        }
+        // The eye-orb (BORXX, real art) at the view centre.
+        if let Some(orb) = self.hud_orb.first().cloned() {
+            blit_sprite_frame_centered(
+                &mut self.framebuffer,
+                ENGINE_SCREEN_WIDTH,
+                ENGINE_SCREEN_HEIGHT,
+                &orb,
+                160,
+                120,
+            );
+        }
+    }
+
     /// Render the on-ship nav view's starfield background at the current compass
     /// angle into the framebuffer (the background layer of the ship-3D view; the
     /// sprite HUD + scene band compose over it). Uses the recovered PRNG point
@@ -574,16 +660,23 @@ impl EngineState {
         if let Some(render) = render_ship_3d_starfield(&mut prng, angles, origin, viewport) {
             self.framebuffer.copy_from_slice(&render.buffer);
         }
-        // Star-map nav grid: a perspective grid of shaded pyramids + eye-orb (the
-        // navigable star systems), panned by the compass heading so mouse steering
-        // rotates the view (approximating the real game's interactive nav).
-        crate::ship3d::render_star_map_navview_projected(
-            &mut self.framebuffer,
-            200,
-            90,
-            240,
-            self.compass_angle % 180,
-        );
+        // Star-map nav grid. With CARTE.SPR loaded this draws the game's REAL
+        // destination-pyramid sprite frames at positions projected by the decoded
+        // 0x9BBA math, frame-selected by the projected scale — the faithful render
+        // path (art + projection + scale selection); only the destination LAYOUT
+        // remains the runtime-gated piece (live DS:0x4F09 records). Falls back to the
+        // drawn approximation when the sprite bank isn't loaded (headless tests).
+        if self.nav_pyramids.len() >= 6 {
+            self.render_nav_pyramid_sprites();
+        } else {
+            crate::ship3d::render_star_map_navview_projected(
+                &mut self.framebuffer,
+                200,
+                90,
+                240,
+                self.compass_angle % 180,
+            );
+        }
         // Display palette for the ship view: a grey ramp for the starfield depth
         // shades + the nav-grid face/orb indices (framebuffer is indexed).
         for (i, slot) in self.scene_palette.iter_mut().enumerate() {
@@ -617,15 +710,19 @@ impl EngineState {
                 172,
             );
         }
-        if let Some(orb) = self.hud_orb.first().cloned() {
-            blit_sprite_frame_centered(
-                &mut self.framebuffer,
-                ENGINE_SCREEN_WIDTH,
-                ENGINE_SCREEN_HEIGHT,
-                &orb,
-                160,
-                172,
-            );
+        // Legacy orb composite for the non-sprite nav path only (the sprite path
+        // draws the BORXX orb itself).
+        if self.nav_pyramids.len() < 6 {
+            if let Some(orb) = self.hud_orb.first().cloned() {
+                blit_sprite_frame_centered(
+                    &mut self.framebuffer,
+                    ENGINE_SCREEN_WIDTH,
+                    ENGINE_SCREEN_HEIGHT,
+                    &orb,
+                    160,
+                    172,
+                );
+            }
         }
         // Label the destination the compass currently points at, so clicking to select
         // is intentional (the driver maps the heading to a scene the same way).
