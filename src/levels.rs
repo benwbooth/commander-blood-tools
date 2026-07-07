@@ -83,6 +83,17 @@ pub fn entry(index: u8) -> Option<&'static LevelEntry> {
     LEVEL_DIRECTORY.get(index as usize)
 }
 
+/// The 8-byte header every `.ext` world file begins with — verified identical across the
+/// planet worlds (venusia/eden/magnus/black/kortex/pterra/…) AND the cyberspace levels
+/// (cyber/cyber2/cyber3). So cyberspace is a world in the same format as the planets, not
+/// a special minigame data blob; decoding the world format decodes all of them.
+pub const EXT_WORLD_MAGIC: [u8; 8] = [0x02, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x81];
+
+/// Whether `data` is a `.ext` world file (begins with [`EXT_WORLD_MAGIC`]).
+pub fn is_ext_world(data: &[u8]) -> bool {
+    data.len() >= EXT_WORLD_MAGIC.len() && data[..EXT_WORLD_MAGIC.len()] == EXT_WORLD_MAGIC
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -96,6 +107,25 @@ mod tests {
         assert_eq!(entry(19).unwrap().stem, "cyber");
         assert_eq!(entry(29).unwrap().stem, "cyber2");
         assert_eq!(entry(30).unwrap().stem, "cyber3");
+    }
+
+    #[test]
+    fn all_worlds_share_the_ext_magic_incl_cyberspace() {
+        // Every world file — planets and cyberspace alike — begins with EXT_WORLD_MAGIC.
+        // Confirms the shared format. Skips if assets aren't present.
+        let dir = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter().map(std::path::Path::new).find(|p| p.exists());
+        let Some(dir) = dir else { return };
+        let mut checked = 0;
+        for name in ["VENUSIA", "EDEN", "MAGNUS", "BLACK", "KORTEX", "PTERRA", "CYBER", "CYBER2"] {
+            let p = dir.join(format!("{name}.EXT"));
+            let Ok(data) = std::fs::read(&p) else { continue };
+            assert!(is_ext_world(&data), "{name}.EXT begins with the shared world magic");
+            checked += 1;
+        }
+        // A non-world byte string is rejected.
+        assert!(!is_ext_world(b"not a world file"));
+        let _ = checked;
     }
 
     #[test]
