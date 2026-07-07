@@ -4,6 +4,7 @@ pub mod croolis;
 pub mod decompress;
 pub mod descript;
 pub mod engine;
+pub mod ext;
 pub mod font;
 pub mod hnm;
 pub mod lbm;
