@@ -174,6 +174,16 @@ pub struct EngineState {
     /// The ship-3D camera-approach animation (the decoded `[0x27DF]` phase FSM):
     /// drives the camera origin as the ship pulls in / travels when entering nav.
     camera: crate::ship3d::Ship3dCameraApproach,
+    /// The alien-examination screen (croolis.xdb): pre-rendered rotation views of an
+    /// alien (e.g. Scruter Jo's `pe/scrut_a..d.hnm`) selected by the mouse camera pan
+    /// — the interactive 3D alien-view decoded at `re/REVERSE.md` (mouse delta →
+    /// smoothed camera, per-angle pre-rendered HNM). Empty = screen not loaded.
+    alien_views: Vec<HnmFile>,
+    /// Whether the alien-examination screen is the active view.
+    pub alien_view_active: bool,
+    /// Smoothed camera pan for the alien view (mouse delta from centre, clamped),
+    /// selecting the pre-rendered rotation angle.
+    alien_pan: i32,
     /// Dialogue line sequence for the loaded script (from the VM trace), played
     /// back frame-by-frame — the script/scene stepping the main loop drives.
     dialogue: Vec<LineState>,
@@ -257,6 +267,9 @@ impl EngineState {
             hud_orb: Vec::new(),
             nav_pyramids: Vec::new(),
             camera: crate::ship3d::Ship3dCameraApproach::default(),
+            alien_views: Vec::new(),
+            alien_view_active: false,
+            alien_pan: 0,
             dialogue: Vec::new(),
             dialogue_texts: Vec::new(),
             dialogue_cursor: 0,
@@ -356,6 +369,42 @@ impl EngineState {
     /// True while the startup intro sequence is still playing.
     pub fn intro_active(&self) -> bool {
         self.intro_active
+    }
+
+    /// Load an alien-examination screen's pre-rendered rotation views (the
+    /// `pe/<stem>_a..d.hnm` set, e.g. `scrut` → Scruter Jo). Any that open are kept
+    /// in rotation order; the screen renders once activated with `alien_view_active`.
+    pub fn load_alien_view(&mut self, assets: &Path, stem: &str) {
+        let pe = assets.join("pe");
+        self.alien_views = ['a', 'b', 'c', 'd']
+            .iter()
+            .filter_map(|c| HnmFile::open(&pe.join(format!("{stem}_{c}.hnm"))).ok())
+            .collect();
+        self.alien_pan = 0;
+    }
+
+    /// Render the alien-examination screen: the mouse pan (delta from centre,
+    /// smoothed + clamped like the decoded camera at `re/REVERSE.md`) selects one of
+    /// the pre-rendered rotation views, whose animation plays looped. Steer left/right
+    /// to rotate the alien.
+    fn render_alien_view(&mut self) {
+        // Smooth the pan toward the mouse's centre-delta (halve+accumulate), clamped.
+        let target = (self.mouse.x as i32 - ENGINE_SCREEN_WIDTH as i32 / 2) / 2;
+        self.alien_pan = (self.alien_pan + target) / 2;
+        let n = self.alien_views.len();
+        if n == 0 {
+            return;
+        }
+        // Map the clamped pan (−160..160) to a rotation view index.
+        let span = ENGINE_SCREEN_WIDTH as i32 / 2;
+        let t = (self.alien_pan + span).clamp(0, 2 * span - 1) as usize;
+        let idx = (t * n / (2 * span as usize)).min(n - 1);
+        let hnm = &self.alien_views[idx];
+        let count = hnm.frame_count().max(1);
+        self.scene_palette = hnm.palette;
+        hnm.decode_frame(self.scene_frame % count, &mut self.scene_buffer, &mut self.scene_palette);
+        self.framebuffer.copy_from_slice(&self.scene_buffer);
+        self.scene_frame += 1;
     }
 
     /// Render one frame of the current intro clip full-screen; when a clip's frames are
@@ -946,6 +995,14 @@ impl EngineState {
             self.frame += 1;
             return;
         }
+        // Alien-examination screen takes precedence when active: rotate the
+        // pre-rendered alien with the mouse.
+        if self.alien_view_active && !self.alien_views.is_empty() {
+            self.render_alien_view();
+            self.countdown = self.countdown.saturating_sub(1);
+            self.frame += 1;
+            return;
+        }
         // On-ship gate ([0x2793] & 8): steer the compass from the mouse and render
         // the nav view's starfield background. The game reads the cursor position
         // relative to the screen CENTRE (int 33h ax=3 then subtracts the centre,
@@ -991,6 +1048,23 @@ impl EngineState {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn alien_view_rotates_through_prerendered_angles() {
+        let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
+            .iter().map(Path::new).find(|p| p.join("pe").is_dir());
+        let Some(assets) = assets else { return };
+        let mut e = EngineState::new();
+        e.load_alien_view(assets, "scrut");
+        if e.alien_views.is_empty() { return; }
+        e.alien_view_active = true;
+        // Steer full left, capture; steer full right, capture: different rotation view.
+        for _ in 0..12 { e.step(MouseInput { x: 5, y: 100, buttons: 0 }); }
+        let left = e.framebuffer.clone();
+        for _ in 0..12 { e.step(MouseInput { x: 315, y: 100, buttons: 0 }); }
+        assert!(left.iter().any(|&p| p != 0), "alien renders");
+        assert_ne!(left, e.framebuffer, "mouse rotates to a different pre-rendered view");
+    }
 
     #[test]
     fn intro_plays_startup_videos_then_ends() {

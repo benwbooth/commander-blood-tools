@@ -234,6 +234,8 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     }
     // Play the startup intro videos first (logos + intro cutscene), like the real game.
     engine.load_intro(Path::new(assets));
+    // The alien-examination screen (Scruter Jo): press 'c' to toggle it in nav.
+    engine.load_alien_view(Path::new(assets), "scrut");
     // The boot reel's music (`mu/blintr.voc` — "BLood INTRo"): starts with the intro
     // and is stopped when the intro hands off to the game.
     let mut intro_music_started = false;
@@ -369,7 +371,14 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 }
                 Event::ButtonPress(b) if b.detail == 3 => engine.on_ship = !engine.on_ship,
                 // Keyboard loop controls: Escape (keycode 9) returns to the nav view.
-                Event::KeyPress(k) if k.detail == 9 => engine.on_ship = true,
+                Event::KeyPress(k) if k.detail == 9 => {
+                    engine.alien_view_active = false;
+                    engine.on_ship = true;
+                }
+                // 'c' (keycode 54): toggle the alien-examination screen.
+                Event::KeyPress(k) if k.detail == 54 => {
+                    engine.alien_view_active = !engine.alien_view_active;
+                }
                 Event::ButtonRelease(b) if b.detail == 1 => buttons = 0,
                 // Window resized: track the new size and re-alloc the image buffer.
                 Event::ConfigureNotify(c) => {
