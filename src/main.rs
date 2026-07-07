@@ -240,6 +240,8 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     engine.load_tv_channels(Path::new(assets), "tv");
     // The cyberspace hyperspace-tunnel screen: press 'y' to toggle.
     engine.load_cyberspace(Path::new(assets));
+    // The ship-bridge hub: press 'b' to open; click a station icon to enter its screen.
+    engine.load_bridge(Path::new(iso));
     // The boot reel's music (`mu/blintr.voc` — "BLood INTRo"): starts with the intro
     // and is stopped when the intro hands off to the game.
     let mut intro_music_started = false;
@@ -367,6 +369,18 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     mx = (ex / scale).min(src_w - 1) as u16;
                     my = (ey / scale).min(src_h - 1) as u16;
                 }
+                // On the bridge hub, a click on a station icon opens its screen.
+                Event::ButtonPress(b) if engine.bridge_active && b.detail == 1 => {
+                    if let Some(station) = engine.bridge_click(mx, my) {
+                        engine.bridge_active = false;
+                        use commander_blood_tools::engine::BridgeStation::*;
+                        match station {
+                            Nav => engine.on_ship = true,
+                            Comms => engine.tv_active = true,
+                            Cyberspace => engine.cyber_active = true,
+                        }
+                    }
+                }
                 // On the TV screen, left/right buttons change channel (must precede the
                 // generic nav-button handlers below).
                 Event::ButtonPress(b) if engine.tv_active && (b.detail == 1 || b.detail == 3) => {
@@ -384,7 +398,8 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     engine.alien_view_active = false;
                     engine.tv_active = false;
                     engine.cyber_active = false;
-                    engine.on_ship = true;
+                    // Esc from a screen returns to the bridge hub.
+                    engine.bridge_active = true;
                 }
                 // 'c' (keycode 54): toggle the alien-examination screen (plays the
                 // scrutinizer intro on entry).
@@ -401,6 +416,13 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 // 'y' (keycode 29): toggle the cyberspace tunnel screen.
                 Event::KeyPress(k) if k.detail == 29 => {
                     engine.cyber_active = !engine.cyber_active;
+                }
+                // 'b' (keycode 56): open the ship-bridge hub (click stations to enter).
+                Event::KeyPress(k) if k.detail == 56 => {
+                    engine.alien_view_active = false;
+                    engine.tv_active = false;
+                    engine.cyber_active = false;
+                    engine.bridge_active = !engine.bridge_active;
                 }
                 Event::ButtonRelease(b) if b.detail == 1 => buttons = 0,
                 // Window resized: track the new size and re-alloc the image buffer.

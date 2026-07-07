@@ -132,6 +132,14 @@ fn assemble_words(parts: &[String]) -> String {
     out
 }
 
+/// A ship-bridge station the player can click to open its screen.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum BridgeStation {
+    Nav,
+    Comms,
+    Cyberspace,
+}
+
 /// Screen dimensions of the engine framebuffer (VGA mode 13h / mode-X, 320x200).
 pub const ENGINE_SCREEN_WIDTH: usize = 320;
 pub const ENGINE_SCREEN_HEIGHT: usize = 200;
@@ -205,6 +213,12 @@ pub struct EngineState {
     pub cyber_active: bool,
     /// Current tunnel-segment index (advances as you "travel").
     cyber_segment: usize,
+    /// The ship-bridge hub: clickable station icons (`BCARTE`=nav map, `BTV`=comms,
+    /// `BHYPER`=cyberspace) that open each screen — the interface tying them together.
+    /// Each entry is (icon frame, label, centre x/y, station id).
+    bridge_stations: Vec<(SpriteFrameImage, &'static str, (i32, i32), BridgeStation)>,
+    /// Whether the ship-bridge hub is the active view.
+    pub bridge_active: bool,
     /// Dialogue line sequence for the loaded script (from the VM trace), played
     /// back frame-by-frame — the script/scene stepping the main loop drives.
     dialogue: Vec<LineState>,
@@ -299,6 +313,8 @@ impl EngineState {
             cyber_tunnels: Vec::new(),
             cyber_active: false,
             cyber_segment: 0,
+            bridge_stations: Vec::new(),
+            bridge_active: false,
             dialogue: Vec::new(),
             dialogue_texts: Vec::new(),
             dialogue_cursor: 0,
@@ -464,6 +480,79 @@ impl EngineState {
         }
         self.tv_channel = (self.tv_channel as i32 + delta).rem_euclid(n as i32) as usize;
         self.scene_frame = 0;
+    }
+
+    /// Load the ship-bridge hub station icons from their `.SPR` banks (frame 0 of each)
+    /// and lay them out across the console. `iso` is the directory holding the sprite
+    /// banks. Stations without a decodable icon are skipped.
+    pub fn load_bridge(&mut self, iso: &Path) {
+        let load = |name: &str| -> Option<SpriteFrameImage> {
+            let data = std::fs::read(iso.join(format!("{name}.SPR"))).ok()?;
+            decode_sprite_bank_indices(&data)?.into_iter().next()
+        };
+        let layout: [(&str, &'static str, (i32, i32), BridgeStation); 3] = [
+            ("BCARTE", "MAP", (70, 120), BridgeStation::Nav),
+            ("BTV", "COMMS", (160, 120), BridgeStation::Comms),
+            ("BHYPER", "CYBER", (250, 120), BridgeStation::Cyberspace),
+        ];
+        self.bridge_stations = layout
+            .iter()
+            .filter_map(|(spr, label, pos, id)| load(spr).map(|f| (f, *label, *pos, *id)))
+            .collect();
+    }
+
+    /// Render the ship-bridge hub: a dark console with each station's icon + label.
+    /// Steer/hover isn't required — the icons are click targets (see [`bridge_click`]).
+    fn render_bridge(&mut self) {
+        for p in self.framebuffer.iter_mut() {
+            *p = 0;
+        }
+        // A neutral grey ramp so the indexed station art reads on the dark console.
+        for (i, slot) in self.scene_palette.iter_mut().enumerate() {
+            let g = i.min(255) as u8;
+            *slot = [g, g, g];
+        }
+        self.scene_palette[0xFE] = [245, 245, 160];
+        // Collect draws first (borrow the station list immutably), then blit.
+        let draws: Vec<(SpriteFrameImage, &'static str, (i32, i32))> = self
+            .bridge_stations
+            .iter()
+            .map(|(f, label, pos, _)| (f.clone(), *label, *pos))
+            .collect();
+        for (frame, label, (cx, cy)) in draws {
+            blit_sprite_frame_centered(
+                &mut self.framebuffer,
+                ENGINE_SCREEN_WIDTH,
+                ENGINE_SCREEN_HEIGHT,
+                &frame,
+                cx,
+                cy,
+            );
+            let lx = (cx - (label.len() as i32 * 3)).max(0) as usize;
+            draw_text_indexed(
+                &mut self.framebuffer,
+                ENGINE_SCREEN_WIDTH,
+                ENGINE_SCREEN_HEIGHT,
+                label,
+                lx,
+                (cy + 30).clamp(0, ENGINE_SCREEN_HEIGHT as i32 - 8) as usize,
+                0xFE,
+            );
+        }
+    }
+
+    /// Map a click at `(x, y)` to the station whose icon it falls within (nearest
+    /// centre within the icon's half-extents), if any. A driver calls this on the
+    /// bridge screen to open the selected station's screen.
+    pub fn bridge_click(&self, x: u16, y: u16) -> Option<BridgeStation> {
+        let (px, py) = (x as i32, y as i32);
+        self.bridge_stations
+            .iter()
+            .find(|(f, _, (cx, cy), _)| {
+                let (hw, hh) = (f.width as i32 / 2 + 4, f.height as i32 / 2 + 4);
+                (px - cx).abs() <= hw && (py - cy).abs() <= hh
+            })
+            .map(|(_, _, _, id)| *id)
     }
 
     /// Load the cyberspace hyperspace-tunnel animations (`sq/hyper_*.hnm`), sorted so
@@ -1148,6 +1237,13 @@ impl EngineState {
             self.frame += 1;
             return;
         }
+        // Ship-bridge hub takes precedence when active: show the station console.
+        if self.bridge_active && !self.bridge_stations.is_empty() {
+            self.render_bridge();
+            self.countdown = self.countdown.saturating_sub(1);
+            self.frame += 1;
+            return;
+        }
         // Cyberspace tunnel screen (presentation) takes precedence when active.
         if self.cyber_active && !self.cyber_tunnels.is_empty() {
             self.render_cyberspace();
@@ -1215,6 +1311,24 @@ impl EngineState {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn bridge_hub_renders_stations_and_maps_clicks() {
+        let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter().map(Path::new).find(|p| p.join("BCARTE.SPR").exists());
+        let Some(iso) = iso else { return };
+        let mut e = EngineState::new();
+        e.load_bridge(iso);
+        if e.bridge_stations.is_empty() { return; }
+        e.bridge_active = true;
+        e.step(MouseInput::default());
+        assert!(e.framebuffer.iter().any(|&p| p != 0), "bridge draws the station console");
+        // Clicks on the laid-out station centres map to their screens.
+        assert_eq!(e.bridge_click(70, 120), Some(BridgeStation::Nav));
+        assert_eq!(e.bridge_click(160, 120), Some(BridgeStation::Comms));
+        assert_eq!(e.bridge_click(250, 120), Some(BridgeStation::Cyberspace));
+        assert_eq!(e.bridge_click(160, 5), None, "empty console area selects nothing");
+    }
 
     #[test]
     fn alien_view_rotates_through_prerendered_angles() {
