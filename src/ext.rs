@@ -1,13 +1,20 @@
 //! Partial decoder for the `.ext` world-body structure (the planet/cyberspace world
 //! files). Decoded so far (see `re/REVERSE.md`): after the 8-byte world magic
 //! ([`crate::levels::EXT_WORLD_MAGIC`]) the body is a series of sections. The first is a
-//! **count-prefixed table of 3-byte records** terminated by `FF FF`. Characterized
-//! (sess 007): these are **triangle-mesh face connectivity** — ~73% are strictly-
-//! ascending vertex-index triples (`a<b<c`), vertices are reused across faces (high
-//! shared in-degree), and it is not a tree — the geometry of the location's pseudo-3D
-//! scene. A following section carries 16-bit coordinate records (vertex positions /
-//! anchors, e.g. 134,117) then a largely preallocated/sparse region. The vertex-
-//! coordinate layout + object semantics past the mesh are still under study.
+//! **count-prefixed table of 3-byte records** terminated by `FF FF`. Validated across
+//! 36/37 world files (sess 007): the count (body byte 8) is ~63 for most worlds
+//! (occasionally 62/55/49/33/12), the section is `FF FF`-terminated, and every record's
+//! three values index within the record count (`0` = no link) — a fixed-size adjacency/
+//! index table.
+//!
+//! NOTE (corrected): an earlier claim that these are *triangle-mesh faces* was
+//! **over-generalized from venusia alone**. The cross-world survey shows the
+//! strictly-ascending-triple share varies wildly — venusia 79%, ekatomb3 71%,
+//! venusia2 53%, but corpo/crazy/cyber/magnus/kortex/… are ~0%. So "ascending triangle
+//! faces" is a per-world value pattern, not the table's universal semantic; the records
+//! are a 3-link index/adjacency structure whose meaning is still under study. A
+//! following section carries 16-bit values (e.g. 134,117) then a largely preallocated/
+//! sparse region.
 
 use crate::levels::EXT_WORLD_MAGIC;
 
@@ -24,13 +31,12 @@ pub struct ExtWorld {
 }
 
 impl ExtWorld {
-    /// The first-section records that are strictly-ascending index triples (`a<b<c`) —
-    /// **triangle-mesh faces** (vertex-index triples). The characterization: on the real
-    /// worlds ~73% of records are proper ascending triples, indices share high in-degree
-    /// (vertices reused across faces), and the structure is not a tree — the signature of
-    /// mesh face connectivity for the location's pseudo-3D geometry, not a room/script
-    /// tree. Returns the `(a,b,c)` faces.
-    pub fn mesh_faces(&self) -> Vec<[u8; 3]> {
+    /// The records that are strictly-ascending index triples (`a<b<c`). In some worlds
+    /// (venusia 79%, ekatomb3 71%) these dominate — consistent with triangle-mesh face
+    /// connectivity there — but in most worlds they are near 0%, so this is a per-world
+    /// pattern, not the table's universal semantic (see the module note). Kept as a
+    /// diagnostic, not an asserted interpretation.
+    pub fn ascending_triple_records(&self) -> Vec<[u8; 3]> {
         self.table1
             .iter()
             .filter(|r| r[0] < r[1] && r[1] < r[2])
@@ -38,9 +44,18 @@ impl ExtWorld {
             .collect()
     }
 
-    /// The highest vertex index referenced by any mesh face (the implied vertex count is
-    /// this + 1), for locating/validating the vertex-coordinate section.
-    pub fn max_vertex_index(&self) -> u8 {
+    /// The fraction (0..100) of records that are strictly-ascending triples — the
+    /// diagnostic that varies per world (venusia ~79%, magnus ~0%).
+    pub fn ascending_triple_percent(&self) -> usize {
+        if self.table1.is_empty() {
+            return 0;
+        }
+        self.ascending_triple_records().len() * 100 / self.table1.len()
+    }
+
+    /// The highest index referenced by any record (`+1` = the index space size), for
+    /// locating/validating the following section.
+    pub fn max_index(&self) -> u8 {
         self.table1.iter().flatten().copied().max().unwrap_or(0)
     }
 
@@ -140,28 +155,27 @@ mod tests {
     }
 
     #[test]
-    fn first_section_is_triangle_mesh_connectivity() {
-        let Some(data) = load("VENUSIA.EXT") else { return };
-        let ext = parse_ext(&data).unwrap();
-        let faces = ext.mesh_faces();
-        // The majority of records are proper ascending triangle faces.
-        assert!(
-            faces.len() * 100 / ext.table1.len() >= 60,
-            "most records are ascending triangles ({}/{})",
-            faces.len(),
-            ext.table1.len()
-        );
-        // Faces are ascending and index within the vertex range.
-        let maxv = ext.max_vertex_index();
-        for f in &faces {
-            assert!(f[0] < f[1] && f[1] < f[2]);
-            assert!(f[2] <= maxv);
+    fn ascending_triple_share_varies_by_world_not_universal() {
+        // The corrected finding: the ascending-triple share is per-world, NOT a
+        // universal mesh signature. venusia is high, magnus/cyber ~0.
+        if let Some(v) = load("VENUSIA.EXT") {
+            let ext = parse_ext(&v).unwrap();
+            assert!(ext.ascending_triple_percent() >= 60, "venusia is highly ascending");
+            // Ascending records are in-range and strictly ordered.
+            for f in ext.ascending_triple_records() {
+                assert!(f[0] < f[1] && f[1] < f[2] && f[2] <= ext.max_index());
+            }
         }
-        // Vertices are reused across faces (mesh, not a tree): fewer distinct vertices
-        // than face-vertex slots.
-        let distinct: std::collections::BTreeSet<u8> =
-            faces.iter().flatten().copied().collect();
-        assert!(distinct.len() < faces.len() * 3, "vertices are shared across faces");
+        for low in ["MAGNUS.EXT", "CYBER.EXT"] {
+            if let Some(d) = load(low) {
+                let ext = parse_ext(&d).unwrap();
+                assert!(
+                    ext.ascending_triple_percent() < 30,
+                    "{low} is not ascending-dominated ({}%)",
+                    ext.ascending_triple_percent()
+                );
+            }
+        }
     }
 
     #[test]
