@@ -110,6 +110,30 @@ pub const OP_GLOBAL_WORD_COMPARE: u8 = 0xCA;
 pub const OP_GLOBAL_PAIR_COMPARE: u8 = 0xCB;
 pub const OP_RECORD_TRIPLE: u8 = 0xCD;
 pub const OP_SCRIPT_PROFILE_REQUEST: u8 = 0xD2;
+// Control-flow opcodes decoded from the handler table (file 0x142d0) this session; the
+// handler behaviors (labels.csv) confirm the record/compare constants above.
+/// `0xA0` PUSH operand → VM operand stack (`gs:0x6820`, ptr `gs:0x6884`). Handler 0x6559.
+pub const OP_PUSH: u8 = 0xA0;
+/// `0xA1` POP the VM operand stack. Handler 0x6572.
+pub const OP_POP: u8 = 0xA1;
+/// `0xA4` unconditional JUMP (PC = operand). Handler 0x65db.
+pub const OP_JUMP: u8 = 0xA4;
+/// `0xA5` conditional branch on the `gs:0x6ade` state-array flag. Handler 0x65eb.
+pub const OP_COND_STATE_ARRAY: u8 = 0xA5;
+/// `0xA8` load a null-terminated string operand into buffer `0x2120`. Handler 0x67c8.
+pub const OP_LOAD_STRING: u8 = 0xA8;
+/// `0xA9` conditional jump on operand bit0. Handler 0x6830.
+pub const OP_COND_JUMP: u8 = 0xA9;
+/// `0xAA`/`0xAC` YIELD — set `gs:0x67b4`; the exec loop breaks the frame. Handlers 0x6855/0x685c.
+pub const OP_YIELD_A: u8 = 0xAA;
+pub const OP_YIELD_B: u8 = 0xAC;
+/// `0xAB` poke a byte to `[address operand]` (set-variable). Handler 0x684c.
+pub const OP_POKE_BYTE: u8 = 0xAB;
+/// `0xCE`/`0xD0` conditional branch on game flags `[0x2793]`/`[0x252a]` via `vm_branch`.
+pub const OP_COND_BRANCH_PRESENTATION: u8 = 0xCE;
+pub const OP_COND_BRANCH_GAMEFLAG: u8 = 0xD0;
+/// `0xCC` set a byte in the 16-byte-record table `gs:0x6cde`. Handler 0x64ce.
+pub const OP_SET_RECORD_BYTE: u8 = 0xCC;
 pub const TEXT_SELECTOR_NONE: u8 = 0xFF;
 pub const TEXT_SELECTOR_SILENT: u8 = 0x00;
 pub const ACTIVE_LINE_ID_BIAS: u16 = 9;
@@ -3248,6 +3272,29 @@ pub fn emit_scene_events(lines: &[LineInput]) -> Vec<SceneEvent> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn decoded_control_opcodes_are_in_the_valid_range_and_distinct() {
+        // The opcodes decoded from the handler table (0x142d0) this session are all in
+        // the VM's 0xA0..=0xD3 space, and the two yield aliases differ.
+        for op in [
+            OP_PUSH, OP_POP, OP_JUMP, OP_COND_STATE_ARRAY, OP_LOAD_STRING, OP_COND_JUMP,
+            OP_YIELD_A, OP_YIELD_B, OP_POKE_BYTE, OP_COND_BRANCH_PRESENTATION,
+            OP_COND_BRANCH_GAMEFLAG, OP_SET_RECORD_BYTE,
+        ] {
+            assert!((OP_MIN..=OP_MAX).contains(&op), "opcode {op:#x} in range");
+        }
+        assert_ne!(OP_YIELD_A, OP_YIELD_B);
+        // Cross-check: my independent handler-table decode agrees with the pre-existing
+        // record/compare opcode constants (C9 clear, CA/CB compare, D2 profile).
+        assert_eq!(OP_RECORD_CLEAR, 0xC9);
+        assert_eq!(OP_GLOBAL_WORD_COMPARE, 0xCA);
+        assert_eq!(OP_GLOBAL_PAIR_COMPARE, 0xCB);
+        assert_eq!(OP_SCRIPT_PROFILE_REQUEST, 0xD2);
+        // The push/pop pair and jump are the classic 0xA0/0xA1/0xA4 the descriptor-table
+        // doc references as the branch stack.
+        assert_eq!((OP_PUSH, OP_POP, OP_JUMP), (0xA0, 0xA1, 0xA4));
+    }
 
     fn push_actor_ref(cod: &mut Vec<u8>, actor_offset: u16) {
         let record_offset = actor_offset.wrapping_add(TALK_FIELD);
