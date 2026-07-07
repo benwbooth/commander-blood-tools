@@ -453,3 +453,8 @@ GS:0x6726,object_heap_segment,"segment of the runtime object/instance heap (es:[
 0x00414E,entity_record_setter,"entity record write: ds=gs; si=0x6212 + id<<5 (entity_object_table[id]); writes a field into the 32-byte entity record. Part of the object-instance accessor set"
 0x0041F0,entity_flag_accessors,"entity flag get/set family (0x41f0/0x426d/0x42ab/0x4374): bx=0x6212 + id<<5; read/modify a flag field (word at gs:[bx] or byte at +offset) of the entity_object_table record. Variants of the entity flag accessors (get_flags 0x41c3 / transition 0x41d1 etc.)"
 0x004240,range_count,"count/length calc: cx = bx - ax + 1 (inclusive range length). A span-length helper"
+0x005314,resource_get_flags,"resource-table flags getter: bx=handle<<3; return ax = fs:[bx+2] (flags word of the 8-byte resource-table entry). Companion to resource_handle_resolve 0x5320"
+0x00533C,resource_get_field4,"resource-table +4 getter: bx=handle<<3; return eax = fs:[bx+4] (the dword at +4 of the entry - resource size or data offset)"
+0x005356,resource_clear_flag,"resource-table flag clear: bx=handle<<3; and fs:[bx+2],0xfffd (clear bit1 of the entry flags). Resets a resource-state bit"
+0x005365,resource_is_loaded,"resource loaded-check: bx=handle<<3; test fs:[bx+2] bit0 (loaded flag). Returns whether the resource is currently loaded"
+0x005A74,vm_state_processor,"per-run VM state processor (called by vm_run_wrapper 0x55f5): lds si,gs:[0x6724] (state table), les di,gs:[0x672c]+0x10 (lookup); walks the object/line-record state before the exec loop. Prepares/updates the VM state each run"
