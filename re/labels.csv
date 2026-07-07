@@ -393,3 +393,7 @@ GS:0x2789,entity_draw_scale,"entity draw zoom/scale factor: entity_draw computes
 0x00A38E,queue_d8c_wrap,"ring-buffer pointer wrap (2 calls): si += ax; if si > [0x5233] (buffer end) wrap. Handles the gs:0xd8c queue's circular wraparound"
 0x00A240,mode_check_27e0,"dual mode-flag check (2 calls): test [0x27e0]&1 AND [0x27e1]&1 -> proceed only if both set. A subsystem-ready gate"
 0x00A7E6,mem_copy_words,"word-block copy (2 calls): rep-style movsw es:[di]<-[si]. Copies N words between buffers"
+0x00A734,queue_d8c_enqueue,"enqueue into the gs:0xd8c ring buffer (2 calls): [0xd8c] += ax (advance head), [0xd9a] += ax (add to count); clc. Adds an ax-byte entry to the queue head - the enqueue counterpart to queue_d8c_consume 0xa3d0"
+0x00A4ED,linear_offset_calc,"linear screen offset calc (2 calls): bx*256 (xchg al,ah) + bx*64 (shl bx,6) = bx*320; = the y*320 row-offset into the linear buffer. A coordinate->offset helper"
+0x00B8CD,snd_play_clip,"SND clip player (2 calls): test gs:[0xade]&1 (sound enabled); ds=gs; plays a sound clip (AX=clip index). Matches the prior-session finding (dead_ends): the SND player at 0xb8cd, clip*4 table @DS:0x0BBF, final AX via the lcall [0xcdf] driver callback. The audio playback entry"
+0x00BB9D,snd_driver_call,"SND driver callback invoke (2 calls): ds=gs; lcall [0xcdf] (the registered SND-driver far fn-ptr, per dead_ends sess 001-002 - statically unresolvable). Dispatches to the loaded .drv sound driver"
