@@ -504,3 +504,6 @@ DS:0x65F2,ui_region_table,"table of 8-byte clickable-UI-region records (0x1f ent
 0x0078D0,presentation_mode_dispatch,"presentation-mode dispatcher: bp=0x2a27; test [0x2793]&0x50 / &0x40 (presentation mode bits) -> branch to the mode-specific handler. Routes the per-frame update by presentation state"
 0x00792D,camera_nav_update,"camera/nav per-frame update: test [0x278a]&1; al=[0x27df] (the camera-approach FSM phase, ship3d.rs Ship3dCameraApproach). Steps the ship-nav camera state"
 0x0079E5,screen_mode_update,"screen-mode update gate: test [0x27e1]&1; es=gs. Guards a screen/mode-specific per-frame update path"
+0x0082E8,nav_state_gate,"per-frame nav/state gate: test [0x27da]&1 and [0x278a]&1 -> branch. Guards the nav/camera update flow based on the transition flags"
+0x008963,presentation_ready_gate,"presentation-ready gate: test [0x67ac]&1 (presentation active) and [0x27d7]&1 -> branch. Guards the dialogue/presentation update when the subsystem is ready"
+0x008BAB,mode_gate_27e8,"dual-mode gate: test [0x27e8]&1 and [0x27e9]&1 -> branch. A per-frame mode/state gate for a screen-flow transition"
