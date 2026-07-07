@@ -164,8 +164,13 @@ pub struct EngineState {
     dialogue_texts: Vec<String>,
     /// Playback cursor into [`EngineState::dialogue`].
     dialogue_cursor: usize,
-    /// Frames to hold each dialogue line before advancing to the next.
+    /// Driver-set floor on the per-line hold (the faithful hold is computed from the
+    /// text-speed step; see [`EngineState::current_line_hold`]).
     pub dialogue_hold_frames: u32,
+    /// The game's text-speed step (`gs:[0x0ACA]`), from the config text-speed setting
+    /// via `vm::text_speed_step_from_setting` (init @0x1B3A). Drives the subtitle
+    /// reveal rate and line-hold timers. Default: setting 3 → step 4.
+    pub text_speed_step: u16,
     /// Frames the current dialogue line has been held.
     dialogue_timer: u32,
     /// Per-line resolved talk-HNM asset path (the speaker's animation for each
@@ -232,6 +237,7 @@ impl EngineState {
             dialogue_texts: Vec::new(),
             dialogue_cursor: 0,
             dialogue_hold_frames: 60,
+            text_speed_step: crate::vm::text_speed_step_from_setting(3),
             dialogue_timer: 0,
             dialogue_scene_paths: Vec::new(),
             pending_profile: None,
@@ -490,19 +496,22 @@ impl EngineState {
 
     /// Advance the dialogue playback: after `dialogue_hold_frames`, step to the next
     /// reached line (stops at the last line).
-    /// Hold for the current line: `dialogue_hold_frames` as a base plus reading time
-    /// proportional to the subtitle length, so long lines linger and short ones don't
-    /// (approximating the game's per-line pacing without a fixed one-size hold).
+    /// Hold for the current line, using the game's decoded subtitle timing: the text
+    /// reveals at `reveal_frames_per_char(step)` frames per character (`gs:[0xB31] =
+    /// step >> 2`, REVERSE.md @0x94BA), then holds `reveal_complete_hold_ticks(step)`
+    /// (`gs:[0xB35] = step << 2` @0x94D4) before the next line. `dialogue_hold_frames`
+    /// acts as a driver-set floor (tests use a huge floor to freeze playback).
     fn current_line_hold(&self) -> u32 {
+        use crate::vm::{reveal_complete_hold_ticks, reveal_frames_per_char};
         let len = self
             .dialogue_texts
             .get(self.dialogue_cursor)
-            .map(|t| t.len() as u32)
+            .map(|t| t.chars().count() as u32)
             .unwrap_or(0);
-        // Base + reading time, capped at 240 — but never below the base, and never
-        // reduce a caller's very-large base (used in tests to "hold forever").
-        let base = self.dialogue_hold_frames;
-        base.saturating_add(len * 3 / 4).min(base.max(240))
+        let step = self.text_speed_step;
+        let reveal = len.saturating_mul(u32::from(reveal_frames_per_char(step)));
+        let hold = u32::from(reveal_complete_hold_ticks(step));
+        self.dialogue_hold_frames.max(reveal.saturating_add(hold))
     }
 
     fn advance_dialogue(&mut self) {

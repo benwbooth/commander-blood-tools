@@ -232,6 +232,27 @@ pub fn reveal_complete_hold_ticks(text_speed_step: u16) -> u16 {
     text_speed_step.wrapping_shl(2)
 }
 
+/// Port the text-speed init at `BLOODPRG.EXE` `0x1B29..0x1B3D`: the config text-speed
+/// setting index is doubled (`add ax,ax`), setting 4 is special-cased (`cmp ax,8;
+/// add ax,4`), then `gs:[0x0ACA] = (ax >> 1) + 1`. Settings 0..4 map to steps
+/// {1,2,3,4,7}; the step drives the reveal rate (`gs:[0xB31] = step >> 2` frames per
+/// character, @0x94BA region) and the hold timers around this one.
+pub fn text_speed_step_from_setting(setting: u16) -> u16 {
+    let mut ax = setting.wrapping_add(setting);
+    if ax == 8 {
+        ax = ax.wrapping_add(4);
+    }
+    (ax >> 1).wrapping_add(1)
+}
+
+/// Frames per revealed character for a text-speed step: the reveal loop resets the
+/// per-character countdown `gs:[0xB31] = step >> 2` (see `REVERSE.md` @0x94BA); a
+/// zero countdown reveals a character every frame, so the effective cost is at least
+/// one frame per character.
+pub fn reveal_frames_per_char(text_speed_step: u16) -> u16 {
+    (text_speed_step >> 2).max(1)
+}
+
 /// Port the record-end hold timer at `BLOODPRG.EXE` `0x7378..0x738C`:
 /// `b35 = gs:[0x27CF] * (gs:[0x0ACA] >> 1) + 6; gs:[0x67BB] = 1`.
 pub fn record_end_hold_ticks(record_units: u16, text_speed_step: u16) -> u16 {
@@ -6957,6 +6978,21 @@ mod tests {
 
     /// If the real binary is present, confirm the embedded descriptor table
     /// matches `BLOODPRG.EXE` file offset 0x14338, so the constant can't drift.
+    #[test]
+    fn text_speed_setting_maps_like_the_init_at_0x1b3a() {
+        // Settings 0..4 -> steps {1,2,3,4,7}: ax=setting*2, setting 4 special-cased
+        // (+4), then (ax>>1)+1.
+        assert_eq!(
+            (0..5).map(text_speed_step_from_setting).collect::<Vec<_>>(),
+            vec![1, 2, 3, 4, 7]
+        );
+        // Reveal cost: step>>2 frames per char, floored at one frame.
+        assert_eq!(reveal_frames_per_char(1), 1);
+        assert_eq!(reveal_frames_per_char(4), 1);
+        assert_eq!(reveal_frames_per_char(7), 1);
+        assert_eq!(reveal_frames_per_char(8), 2);
+    }
+
     #[test]
     fn table_matches_binary() {
         const TABLE_OFF: usize = 0x14338;
