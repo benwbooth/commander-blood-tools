@@ -388,3 +388,8 @@ GS:0x2789,entity_draw_scale,"entity draw zoom/scale factor: entity_draw computes
 0x00A20C,ems_list_query,"query the banked list (2 calls): cmp [0xd96],0 (active ptr); cx=[0xd9a] (count); stc. Reads the list's active/count state for iteration/bounds"
 0x00A0C3,draw_cleanup_set_dirty,"draw epilogue (2 calls): restore ds/es; dx=si; gs:[0x5b55]=1 (mark screen dirty so render_present_if_dirty flushes). Common draw-routine cleanup"
 0x005B38,mem_clear_regs,"memory/register clear helper (2 calls): es=ds; zero eax/edx/... - a buffer/state clear prologue"
+0x00A3D0,queue_d8c_consume,"consume a variable-length entry from the gs:0xd8c queue (2 calls): les si,[0xd90] (tail); lodsw ax = entry size; [0xd9a] -= ax (dec remaining count); si += ax (advance past the entry). Dequeues one variable-length record"
+0x00A3AD,queue_d8c_empty_check,"queue empty/full check (2 calls): ax=[0xd8c] head, bx=[0xd90] tail; cmp -> the gs:0xd8c queue is a ring buffer, head vs tail determines empty. Confirms 0xd8c = a variable-length RING-BUFFER QUEUE (head 0xd8c, tail 0xd90, count 0xd9a, wrap [0x5233])"
+0x00A38E,queue_d8c_wrap,"ring-buffer pointer wrap (2 calls): si += ax; if si > [0x5233] (buffer end) wrap. Handles the gs:0xd8c queue's circular wraparound"
+0x00A240,mode_check_27e0,"dual mode-flag check (2 calls): test [0x27e0]&1 AND [0x27e1]&1 -> proceed only if both set. A subsystem-ready gate"
+0x00A7E6,mem_copy_words,"word-block copy (2 calls): rep-style movsw es:[di]<-[si]. Copies N words between buffers"
