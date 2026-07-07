@@ -419,7 +419,12 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     if engine.world_location_active() {
                         engine.cycle_world_room(1);
                     } else if let Some(world) = engine.targeted_world_name() {
-                        engine.visit_world(world, Path::new(assets));
+                        if engine.visit_world(world, Path::new(assets)) {
+                            // Overlay the world's decoded .ext object positions (from the ISO).
+                            if let Ok(ext) = std::fs::read(format!("{iso}/{}.EXT", world.to_uppercase())) {
+                                engine.set_world_ext(&ext);
+                            }
+                        }
                     }
                 }
                 // 'c' (keycode 54): toggle the alien-examination screen (plays the

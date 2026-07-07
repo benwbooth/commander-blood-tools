@@ -148,6 +148,9 @@ struct WorldVisit {
     rooms: Vec<std::path::PathBuf>,
     current: usize,
     image: crate::lbm::LbmImage,
+    /// Decoded `.ext` object positions `(x, y)` to mark on the location (from
+    /// [`crate::ext::ExtWorld::objects`]); empty until supplied by the caller.
+    objects: Vec<(u16, u16)>,
 }
 
 /// Screen dimensions of the engine framebuffer (VGA mode 13h / mode-X, 320x200).
@@ -1078,8 +1081,23 @@ impl EngineState {
             rooms,
             current: 0,
             image: img,
+            objects: Vec::new(),
         });
         true
+    }
+
+    /// Supply the visited world's `.ext` bytes so its decoded object positions are marked
+    /// on the location screen. Parses the objects via [`crate::ext`] and stores their
+    /// `(x, y)`. No-op if no world is being visited or the data isn't a world file.
+    pub fn set_world_ext(&mut self, ext_data: &[u8]) -> usize {
+        let Some(visit) = &mut self.world_location else {
+            return 0;
+        };
+        let Some(world) = crate::ext::parse_ext(ext_data) else {
+            return 0;
+        };
+        visit.objects = world.objects(ext_data).iter().map(|o| (o.x, o.y)).collect();
+        visit.objects.len()
     }
 
     /// Cycle to another room of the currently-visited world (`delta` = +1/-1), decoding
@@ -1158,6 +1176,18 @@ impl EngineState {
         }
         self.scene_palette = img.palette;
         self.scene_palette[0xFE] = [245, 245, 160];
+        self.scene_palette[0xFD] = [255, 80, 80]; // object marker colour
+        // Mark the decoded .ext object positions with a small crosshair.
+        for &(ox, oy) in &visit.objects {
+            let (cx, cy) = (ox as usize, oy as usize);
+            for d in 0..5usize {
+                for (px, py) in [(cx + d, cy), (cx.wrapping_sub(d), cy), (cx, cy + d), (cx, cy.wrapping_sub(d))] {
+                    if px < ENGINE_SCREEN_WIDTH && py < ENGINE_SCREEN_HEIGHT {
+                        self.framebuffer[py * ENGINE_SCREEN_WIDTH + px] = 0xFD;
+                    }
+                }
+            }
+        }
         draw_text_indexed(
             &mut self.framebuffer,
             ENGINE_SCREEN_WIDTH,
@@ -2259,6 +2289,21 @@ mod tests {
         // Dismissing advances past the title.
         e.dismiss_title();
         assert!(!e.title_active());
+    }
+
+    #[test]
+    fn world_ext_objects_are_marked_on_the_location() {
+        let dat = ["output/_tmp_dat","../output/_tmp_dat"].iter().map(std::path::Path::new).find(|p| p.exists());
+        let iso = ["output/_tmp_iso","../output/_tmp_iso"].iter().map(std::path::Path::new).find(|p| p.exists());
+        let (Some(dat), Some(iso)) = (dat, iso) else { return };
+        let mut e = EngineState::new();
+        if !e.visit_world("venusia", dat) { return; }
+        let ext = std::fs::read(iso.join("VENUSIA.EXT")).unwrap();
+        let n = e.set_world_ext(&ext);
+        assert!(n >= 1, "venusia has >=1 decoded object");
+        // Rendering marks them: the marker index 0xFD appears in the framebuffer.
+        e.step(MouseInput::default());
+        assert!(e.framebuffer.iter().any(|&p| p == 0xFD), "object marker rendered");
     }
 
     #[test]
