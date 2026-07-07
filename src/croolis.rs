@@ -65,9 +65,70 @@ impl AlienObject {
     }
 }
 
+/// The overlay's per-frame object-list dispatcher (method `0x12DE`): each `0x12DE`
+/// call iterates `cx = [di+0x1A]` sub-objects, calling each object's sub-method
+/// (`call [si+0xE]`, `si += 0x5E`), but only when the frame timer `cs:0xB72` has
+/// elapsed (it resets to 7) — so the colony advances every 7th frame. This ports the
+/// dispatch cadence + object iteration; each object runs its [`AlienObject`] state
+/// machine.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct AlienColony {
+    /// The overlay's list of behaviour objects (`0x5E`-byte records).
+    pub objects: Vec<AlienObject>,
+    /// Frame-gate countdown (`cs:0xB72`); the colony steps when it reaches 0, then
+    /// reloads to [`ALIEN_COLONY_FRAME_GATE`].
+    pub frame_timer: u8,
+}
+
+/// The dispatcher's frame-gate reload (`cs:0xB72` reset value = 7).
+pub const ALIEN_COLONY_FRAME_GATE: u8 = 7;
+
+impl AlienColony {
+    /// A colony of `count` objects, PRNG-seeded distinctly (the overlay seeds each
+    /// object from `fs:[0x105C]`; here we vary the seed per index so they de-sync).
+    pub fn new(count: usize, base_seed: u16) -> Self {
+        Self {
+            objects: (0..count)
+                .map(|i| AlienObject::new(base_seed.wrapping_add((i as u16).wrapping_mul(0x9E3B))))
+                .collect(),
+            frame_timer: ALIEN_COLONY_FRAME_GATE,
+        }
+    }
+
+    /// Advance one frame: gated by `cs:0xB72`, step every object's state machine on the
+    /// 7th frame. Returns `true` on the frames the colony actually updated.
+    pub fn step(&mut self) -> bool {
+        if self.frame_timer > 0 {
+            self.frame_timer -= 1;
+            return false;
+        }
+        self.frame_timer = ALIEN_COLONY_FRAME_GATE;
+        for object in &mut self.objects {
+            object.step();
+        }
+        true
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn colony_advances_on_the_frame_gate_cadence() {
+        let mut colony = AlienColony::new(3, 0x1234);
+        assert_eq!(colony.objects.len(), 3);
+        // No update until the gate elapses (7 frames), then one update.
+        let mut updates = 0;
+        for _ in 0..(ALIEN_COLONY_FRAME_GATE as u32 * 3 + 1) {
+            if colony.step() {
+                updates += 1;
+            }
+        }
+        assert_eq!(updates, 3, "colony updates once per 7-frame gate");
+        // Objects are seeded distinctly so they don't all change state in lockstep.
+        assert_ne!(colony.objects[0].prng, colony.objects[1].prng);
+    }
 
     #[test]
     fn anim_prng_matches_ror7_sbb() {
