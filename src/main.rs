@@ -238,6 +238,8 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     engine.load_alien_view(Path::new(assets), "scrut");
     // The comms "Hate TV" screen: press 't' to toggle, left/right to change channel.
     engine.load_tv_channels(Path::new(assets), "tv");
+    // The cyberspace hyperspace-tunnel screen: press 'y' to toggle.
+    engine.load_cyberspace(Path::new(assets));
     // The boot reel's music (`mu/blintr.voc` — "BLood INTRo"): starts with the intro
     // and is stopped when the intro hands off to the game.
     let mut intro_music_started = false;
@@ -381,6 +383,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 Event::KeyPress(k) if k.detail == 9 => {
                     engine.alien_view_active = false;
                     engine.tv_active = false;
+                    engine.cyber_active = false;
                     engine.on_ship = true;
                 }
                 // 'c' (keycode 54): toggle the alien-examination screen (plays the
@@ -394,6 +397,10 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 // 't' (keycode 28): toggle the comms/TV screen.
                 Event::KeyPress(k) if k.detail == 28 => {
                     engine.tv_active = !engine.tv_active;
+                }
+                // 'y' (keycode 29): toggle the cyberspace tunnel screen.
+                Event::KeyPress(k) if k.detail == 29 => {
+                    engine.cyber_active = !engine.cyber_active;
                 }
                 Event::ButtonRelease(b) if b.detail == 1 => buttons = 0,
                 // Window resized: track the new size and re-alloc the image buffer.

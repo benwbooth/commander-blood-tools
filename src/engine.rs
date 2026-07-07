@@ -197,6 +197,14 @@ pub struct EngineState {
     pub tv_active: bool,
     /// Currently-selected TV channel index.
     tv_channel: usize,
+    /// The cyberspace hyperspace-tunnel animations (`sq/hyper_00..07.hnm` — colour
+    /// warp-tunnel variants). This is the cyberspace screen's *presentation*; the
+    /// navigation minigame logic is undecoded.
+    cyber_tunnels: Vec<HnmFile>,
+    /// Whether the cyberspace tunnel screen is active.
+    pub cyber_active: bool,
+    /// Current tunnel-segment index (advances as you "travel").
+    cyber_segment: usize,
     /// Dialogue line sequence for the loaded script (from the VM trace), played
     /// back frame-by-frame — the script/scene stepping the main loop drives.
     dialogue: Vec<LineState>,
@@ -288,6 +296,9 @@ impl EngineState {
             tv_channels: Vec::new(),
             tv_active: false,
             tv_channel: 0,
+            cyber_tunnels: Vec::new(),
+            cyber_active: false,
+            cyber_segment: 0,
             dialogue: Vec::new(),
             dialogue_texts: Vec::new(),
             dialogue_cursor: 0,
@@ -453,6 +464,49 @@ impl EngineState {
         }
         self.tv_channel = (self.tv_channel as i32 + delta).rem_euclid(n as i32) as usize;
         self.scene_frame = 0;
+    }
+
+    /// Load the cyberspace hyperspace-tunnel animations (`sq/hyper_*.hnm`), sorted so
+    /// segments advance in order. The screen renders once `cyber_active` is set.
+    pub fn load_cyberspace(&mut self, assets: &Path) {
+        let sq = assets.join("sq");
+        let mut names: Vec<String> = std::fs::read_dir(&sq)
+            .into_iter()
+            .flatten()
+            .flatten()
+            .filter_map(|e| e.file_name().to_str().map(str::to_string))
+            .filter(|n| {
+                let l = n.to_lowercase();
+                l.starts_with("hyper_") && l.ends_with(".hnm")
+            })
+            .collect();
+        names.sort();
+        self.cyber_tunnels = names
+            .iter()
+            .filter_map(|n| HnmFile::open(&sq.join(n)).ok())
+            .collect();
+        self.cyber_segment = 0;
+    }
+
+    /// Render the cyberspace tunnel: fly through the current warp segment; when it
+    /// finishes, advance to the next segment (wrapping) — the "travel" progression.
+    fn render_cyberspace(&mut self) {
+        let n = self.cyber_tunnels.len();
+        if n == 0 {
+            return;
+        }
+        let seg = self.cyber_segment % n;
+        let hnm = &self.cyber_tunnels[seg];
+        let count = hnm.frame_count().max(1);
+        if self.scene_frame >= count {
+            self.cyber_segment = (self.cyber_segment + 1) % n;
+            self.scene_frame = 0;
+        }
+        let hnm = &self.cyber_tunnels[self.cyber_segment % n];
+        self.scene_palette = hnm.palette;
+        hnm.decode_frame(self.scene_frame, &mut self.scene_buffer, &mut self.scene_palette);
+        self.framebuffer.copy_from_slice(&self.scene_buffer);
+        self.scene_frame += 1;
     }
 
     /// Arm the scrutinizer-apparatus intro to play from its first frame the next time
@@ -1091,6 +1145,13 @@ impl EngineState {
         // intro cutscene), exactly as the real game boots, before any nav/dialogue.
         if self.intro_active {
             self.render_intro_frame();
+            self.frame += 1;
+            return;
+        }
+        // Cyberspace tunnel screen (presentation) takes precedence when active.
+        if self.cyber_active && !self.cyber_tunnels.is_empty() {
+            self.render_cyberspace();
+            self.countdown = self.countdown.saturating_sub(1);
             self.frame += 1;
             return;
         }
