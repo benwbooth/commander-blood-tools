@@ -236,11 +236,47 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     engine.load_intro(Path::new(assets));
     // After the intro, start in the star-map nav view; the loop switches nav<->dialogue.
     engine.on_ship = true;
-    // Load SCRIPT<n>'s dialogue into the engine (the destination's scene).
-    let load_script = |engine: &mut EngineState, n: u32| {
+    // Scene music player: the game plays each location's background music (.voc);
+    // resolve it the same way the video pipeline does and play it via ffplay
+    // (best-effort — silent if ffplay is unavailable). One child at a time.
+    struct Music(Option<std::process::Child>);
+    impl Music {
+        fn play(&mut self, path: &str) {
+            self.stop();
+            self.0 = std::process::Command::new("ffplay")
+                .args(["-nodisp", "-loglevel", "quiet", "-loop", "0", path])
+                .stdout(std::process::Stdio::null())
+                .stderr(std::process::Stdio::null())
+                .spawn()
+                .ok();
+        }
+        fn stop(&mut self) {
+            if let Some(mut c) = self.0.take() {
+                let _ = c.kill();
+                let _ = c.wait();
+            }
+        }
+    }
+    impl Drop for Music {
+        fn drop(&mut self) {
+            self.stop();
+        }
+    }
+    let mut music = Music(None);
+
+    // Load SCRIPT<n>'s dialogue into the engine (the destination's scene) and start
+    // that scene's background music, as the game does per location.
+    let load_script = |engine: &mut EngineState, music: &mut Music, n: u32| {
         let r = |ext: &str| std::fs::read(format!("{iso}/SCRIPT{n}.{ext}"));
         if let (Ok(c), Ok(v), Ok(d), Ok(b)) = (r("COD"), r("VAR"), r("DIC"), r("DEB")) {
             engine.load_dialogue_scenes(&c, &v, &d, &b, &descript, Path::new(assets));
+            if let Some(m) = extract::script_background_music(Path::new(iso), &format!("SCRIPT{n}"))
+            {
+                let voc = format!("{assets}/mu/{m}.voc");
+                if Path::new(&voc).exists() {
+                    music.play(&voc);
+                }
+            }
         }
     };
 
@@ -349,10 +385,11 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
             // intro plays; no nav/dialogue transitions yet
         } else if let Some(heading) = engine.take_nav_selection() {
             let dest = (heading as u32 * 5 / 180).clamp(0, 4) + 1; // heading → SCRIPT1..5
-            load_script(&mut engine, dest);
+            load_script(&mut engine, &mut music, dest);
             engine.on_ship = false;
         } else if !engine.on_ship && engine.dialogue_finished() {
             engine.on_ship = true;
+            music.stop();
         }
         // Clear the whole window (letterbox borders + a full erase so nothing from the
         // previous frame can bleed through), then scale the framebuffer in.
