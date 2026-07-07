@@ -3,8 +3,10 @@
 //! Distinct from the alien overlays (no shared PRNG); its entry (`0x0000`) takes the
 //! caller's input params (mouse coords: `[bp+6]>>4; +0xA0` → screen row, `[bp+4]&0x1F`
 //! → column) and dispatches through the menu handlers. Ported here: the input-coord
-//! decode + item-selection dispatch (`0x181`, `base + table[item]`) and the menu
-//! animation/tween list (`0x19B`). Remaining: the per-item action handlers the
+//! decode + item-selection dispatch (`0x181`, `base + table[item]`), the tween setup
+//! that links selection to animation (`0x1DF`, `delta = (end-current)<<16 / count`),
+//! and the menu animation/tween list (`0x19B`) — the full menu animation pipeline
+//! (select → build tweens → advance). Remaining: the per-item action handlers the
 //! dispatch jumps to, and the 3D pyramid draw.
 
 /// The menu-item column index from the caller's input word (`[bp+4] & 0x1F`, method
@@ -53,6 +55,18 @@ impl MenuTween {
             accumulator: start,
             delta,
         }
+    }
+
+    /// Build a tween from an animation descriptor (method `0x1DF`, the setup that links
+    /// item-selection to the tween list): animate a field from its `current` value to
+    /// the descriptor's `end` value over `count` frames. The accumulator starts at
+    /// `current << 16` and the per-frame delta is `((end - current) << 16) / count`
+    /// (16.16 fixed point: `shl eax,0x10; cdq; idiv ecx`), so the output high word
+    /// walks `current → end`.
+    pub fn to_target(current: i16, end: i16, count: i16) -> Self {
+        let n = (count as i32).max(1);
+        let delta = ((end as i32 - current as i32) << 16) / n;
+        Self::new(count, (current as i32) << 16, delta)
     }
 
     /// The output value written to the target this frame — the accumulator's high word
@@ -121,6 +135,25 @@ mod tests {
         assert_eq!(menu_item_handler(0x2000, &table, 2), 0x2080);
         // Out-of-range item resolves to base (offset 0).
         assert_eq!(menu_item_handler(0x2000, &table, 9), 0x2000);
+    }
+
+    #[test]
+    fn tween_to_target_walks_current_to_end() {
+        // Animate 10 -> 50 over 8 frames: output starts at 10, and after stepping the
+        // full count the high word reaches (about) 50.
+        let mut t = MenuTween::to_target(10, 50, 8);
+        assert_eq!(t.output(), 10, "starts at current");
+        for _ in 0..8 {
+            t.step();
+        }
+        assert_eq!(t.output(), 50, "reaches end after count frames");
+        // Descending target too.
+        let mut d = MenuTween::to_target(100, 20, 4);
+        assert_eq!(d.output(), 100);
+        for _ in 0..4 {
+            d.step();
+        }
+        assert_eq!(d.output(), 20);
     }
 
     #[test]
