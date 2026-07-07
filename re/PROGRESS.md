@@ -26,9 +26,21 @@ see the four module audits, sess 007).
 - Dialogue subtitle reconstruction — 99.8% word resolution across SCRIPT1-5.
 - Nav decorative HUD — visually matched to the title-screen HUD.
 
-**Known-approximated (documented, tracked as tasks):** dialogue pacing (invented hold),
-HUD rasterizer (0x299 draw path not ported), subtitle 0x23 wrap rule, engine glue
-(nav-selection hook), script.rs extraction heuristics.
+**Made faithful (sess 007 accuracy grind — were approximations, now decoded):**
+- Dialogue pacing — decoded text-speed timers (`text_speed_step_from_setting` @0x1B29,
+  reveal `step>>2` frames/char @0x94BA, hold `step<<2` @0x94D4).
+- Subtitle wrap — the decoded 0xA6 rule (35-char, 0x0D breaks, punctuation spacing).
+- Subtitle reveal — character-by-character (@0x93F8, edge glyph 0xFE / body 0xFD).
+- Nav pyramids — the game's real CARTE.SPR frames at 0x9BBA-projected positions with
+  the sprite path's `dim*(0x100000/depth)>>10` scaling (replaced the hand-drawn grid).
+- HNM letterbox band origin (rows 0x23..0xA5) + the RLE delta x,y-placement fix.
+- Audio — in-process cpal playback (own VOC parser `snd::parse_voc_pcm`): per-location
+  scene music + boot-reel music + per-line character voice (real sn/*.snd clips via the
+  decoded one-based selector), extracted sn/ voice banks from BLOOD.DAT.
+
+**Still approximated (tracked):** engine nav-selection click hook (heading→SCRIPTn
+mapping is a driver convenience), script.rs offline extraction heuristics
+(`build_character_contexts`, speech attribution).
 
 **Gated on live gameplay (proven, not assumed):** bit-exact gameplay star-map
 (destinations are runtime object-heap state, 0xB34E) and interactive scene sequencing.
