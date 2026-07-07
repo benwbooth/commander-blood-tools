@@ -4,10 +4,10 @@
 //! object records, each a PRNG + timer *animation state machine*, dispatched per frame
 //! and feeding the shared ship-3D per-object draw. Ported here: the animation-state
 //! PRNG (`0x16A4`), the per-object state machine, the per-frame colony dispatcher
-//! (`0x12DE`, frame-gated), the behaviour vtable (`fs:0x103A`), and the object
-//! position-update wrap (`0x999`). Remaining: the not-yet-decoded sub-behaviour
-//! methods (`0xA30`) and the per-object 3D draw/blit, which reuses the shared
-//! ship-3D compositor.
+//! (`0x12DE`, frame-gated), the behaviour vtable (`fs:0x103A`), the object
+//! position-update wrap (`0x999`), the initializer (`0x36A`), and the proximity/
+//! visibility gate (`0xA30`) — the overlay's complete behaviour-method set. Remaining:
+//! the per-object 3D draw/blit, which reuses the shared ship-3D compositor.
 
 /// The overlay's animation-state PRNG (`0x16A4`: `mov ax,fs:[0x105C]; ror ax,7;
 /// sbb ax,0; store back`). On 8086 `ror ax,7` leaves CF = the result's MSB (the last
@@ -69,6 +69,8 @@ pub struct AlienObject {
     /// initialised to `0x8000` by the object initializer (`0x36A`) — the neutral
     /// fixed-point value the shared 3D transform uses.
     pub transform: [i32; 3],
+    /// Animation frame counter (`+0x50`), advanced by the proximity method (`0xA30`).
+    pub anim_counter: u16,
 }
 
 /// The neutral transform value the initializer writes to `+0x12`/`+0x22`/`+0x32`.
@@ -95,7 +97,33 @@ impl AlienObject {
             method: AlienMethod::AnimStateMachine,
             pos: [0; 3],
             transform: [ALIEN_TRANSFORM_NEUTRAL; 3],
+            anim_counter: 0,
         }
+    }
+
+    /// Port of method `0xA30` (per-object proximity/visibility gate): only runs when
+    /// the object's state flag (`+0x36`) is set; it advances the animation counter
+    /// (`+0x50`) and returns whether the object sits within the on-screen region of the
+    /// camera — its screen y (`anim_offset − 0x3C + pos.y + cam.y`) in `[0, 0x80]` and
+    /// its world x (`pos.x + cam.x`) in `[-0x100, 0x100]`. `anim_offset` is the
+    /// timer-indexed animation value (`fs:[timer&0xFFC + 0x36] >> 8`). Returns `false`
+    /// (no advance) when the state flag is clear.
+    pub fn proximity_visible(&mut self, camera: [i16; 3], anim_offset: i16) -> bool {
+        if self.state_flag == 0 {
+            return false;
+        }
+        self.anim_counter = self.anim_counter.wrapping_add(1);
+        // Screen-y band [0, 0x80].
+        let sy = anim_offset
+            .wrapping_sub(0x3C)
+            .wrapping_add(self.pos[1] as i16)
+            .wrapping_add(camera[1]);
+        if sy < 0 || sy > 0x80 {
+            return false;
+        }
+        // World-x window [-0x100, 0x100] (0xFF00..=0x100 as signed).
+        let sx = (self.pos[0] as i16).wrapping_add(camera[0]);
+        sx >= -0x100 && sx <= 0x100
     }
 
     /// Port of the object initializer (`0x36A`): reset the behaviour state — zero the
@@ -205,6 +233,27 @@ impl AlienColony {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn proximity_gate_advances_and_windows_on_screen() {
+        // State flag clear -> no advance, not visible.
+        let mut obj = AlienObject::new(0x1);
+        obj.state_flag = 0;
+        assert!(!obj.proximity_visible([0, 0, 0], 0x3C));
+        assert_eq!(obj.anim_counter, 0);
+        // State set, object at origin, anim_offset 0x3C (sy=0), camera 0 -> in window.
+        obj.state_flag = 1;
+        obj.pos = [0, 0, 0];
+        assert!(obj.proximity_visible([0, 0, 0], 0x3C), "on-screen object is visible");
+        assert_eq!(obj.anim_counter, 1, "counter advanced");
+        // Push x outside +-0x100 -> not visible (but counter still advances).
+        obj.pos = [0x400, 0, 0];
+        assert!(!obj.proximity_visible([0, 0, 0], 0x3C));
+        assert_eq!(obj.anim_counter, 2);
+        // Push screen-y above 0x80 -> not visible.
+        obj.pos = [0, 0x400, 0];
+        assert!(!obj.proximity_visible([0, 0, 0], 0x3C));
+    }
 
     #[test]
     fn initializer_resets_to_start_pose() {
