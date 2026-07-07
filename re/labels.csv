@@ -449,3 +449,7 @@ GS:0x6726,object_heap_segment,"segment of the runtime object/instance heap (es:[
 0x00BD26,dos_ioctl_device,"DOS IOCTL device call: bx=ax (handle); dx=gs:[0xa60]; ax=0x4400; int21h (IOCTL get/set device info). Configures the sound/CD device driver"
 0x00BD8D,ems_page_offset_split,"EMS address split: cx=ax>>2; ax<<=0xe (14) -> dx. Splits a value into an EMS 16KB-page number + offset (the banked-memory addressing math)"
 0x00BD4E,ems_buffer_setup,"EMS buffer setup: ds=bx; si=0xa6c; [si]=0x4000 (16KB EMS page size); bx=[0xa5e]. Initializes an EMS page-mapped buffer"
+0x004086,file_read,"DOS file read: [0x5b55]=1; cx=2 (or size); ax=0x3f00; bx=di (handle); int21h (read from file into buffer). Reads bytes from an open resource file"
+0x00414E,entity_record_setter,"entity record write: ds=gs; si=0x6212 + id<<5 (entity_object_table[id]); writes a field into the 32-byte entity record. Part of the object-instance accessor set"
+0x0041F0,entity_flag_accessors,"entity flag get/set family (0x41f0/0x426d/0x42ab/0x4374): bx=0x6212 + id<<5; read/modify a flag field (word at gs:[bx] or byte at +offset) of the entity_object_table record. Variants of the entity flag accessors (get_flags 0x41c3 / transition 0x41d1 etc.)"
+0x004240,range_count,"count/length calc: cx = bx - ax + 1 (inclusive range length). A span-length helper"
