@@ -6,6 +6,28 @@
 //! menu **animation system** at method `0x19B`; the item hit-testing/dispatch is future
 //! work.
 
+/// The menu-item column index from the caller's input word (`[bp+4] & 0x1F`, method
+/// entry `0x000`/`0x181`) — 0..31 selects one of up to 32 menu items.
+pub fn menu_item_index(input: u16) -> usize {
+    (input & 0x1F) as usize
+}
+
+/// The screen row derived from the caller's input word (`[bp+6] >> 4`, then the high
+/// byte offset by `0xA0` = row+160 in the entry at `0x000`).
+pub fn menu_screen_row(input: u16) -> u16 {
+    let shifted = input >> 4;
+    // add ah, 0xA0  →  add 0xA0 to the high byte only.
+    shifted.wrapping_add(0xA000u16 as u16)
+}
+
+/// Resolve a selected menu item to its handler offset (method `0x181`): the item index
+/// (word-scaled) reads an entry from the offset table located at `base`, and the
+/// handler is `base + table[item]` (`di = [0x2306]; di += [item*2 + di]`). `table` is
+/// the overlay's word table read at `base`. Out-of-range items resolve to `base`.
+pub fn menu_item_handler(base: u16, table: &[u16], item: usize) -> u16 {
+    base.wrapping_add(table.get(item).copied().unwrap_or(0))
+}
+
 /// One entry in the menu's active-animation list (method `0x19B`): a fixed-point tween
 /// that each frame writes its accumulator's high word to a target field, then advances
 /// the accumulator by a delta, decrementing a frame counter until it expires.
@@ -85,6 +107,20 @@ impl MenuTweenList {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn item_index_and_handler_dispatch() {
+        // Item index = input & 0x1F.
+        assert_eq!(menu_item_index(0x0000), 0);
+        assert_eq!(menu_item_index(0x0007), 7);
+        assert_eq!(menu_item_index(0x1F3F), 0x1F); // high bits ignored
+        // Handler = base + table[item].
+        let table = [0x0010u16, 0x0040, 0x0080];
+        assert_eq!(menu_item_handler(0x2000, &table, 0), 0x2010);
+        assert_eq!(menu_item_handler(0x2000, &table, 2), 0x2080);
+        // Out-of-range item resolves to base (offset 0).
+        assert_eq!(menu_item_handler(0x2000, &table, 9), 0x2000);
+    }
 
     #[test]
     fn tween_outputs_high_word_and_advances_by_delta() {
