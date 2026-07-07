@@ -6,6 +6,7 @@ pub mod descript;
 pub mod engine;
 pub mod font;
 pub mod hnm;
+pub mod lbm;
 pub mod levels;
 pub mod manu3;
 pub mod script;
