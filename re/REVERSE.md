@@ -502,7 +502,16 @@ packed/compressed), so fully decodable with analysis. Layout (venusia, 15892 B):
 | `0x09..` | count × 3-byte records, each value indexes within the count (`0`=no link) — a 3-link adjacency/index table; **FF FF-terminated** (36/37 worlds) |
 | after `FF FF` | sparse index/pointer region (mostly zeros, occasional 16-bit values e.g. 134,117) |
 | ~`0x01a2..0x0e00` | **(tentative)** array of ~23 records at a clean 0x86 (134-byte) stride; each begins with a variable-length prefix of `0x8X` bytes (0x81/0x84/0xb5…) growing 2,3,3,4,5,… then zeros — looks like per-record variable lists (connections/items?), semantic unconfirmed |
-| ~`0x0e00..end` | dense structured payload (uncompressed; ~64 distinct byte values) — the per-room geometry/object data |
+| ~`0x0e00..end` | dense payload — **VERIFIED node-reference sequences**: every byte is `0` or `0x80|node` (node 1..63), spanning exactly the 63 first-section nodes. Sequences of `0x80+node` refs into the first-section node table (0 = separator/pad) — the per-room geometry/connectivity expressed as node-index walks |
+
+**Object records** (decoded + cross-validated, `src/ext.rs ExtWorld::objects`): the section
+right after the first table's `FF FF` is a 10-byte-record array `[id:u16, type:u16,
+reserved:u16, x:u16, y:u16]`, mostly preallocated-empty. Each world's initial object is
+`id=1, type=4` at a world-specific screen position (venusia 134,117 / magnus 169,92 /
+black 199,42) — the coordinates `entity_draw` (0x9240) scales (`[0x2789]` zoom) and renders.
+Now overlaid in the engine's world-location view. So the `.ext` body is fully structurally
+characterized: 63-node table (adjacency/mesh) → object records (id/type/x/y) → node-reference
+payload (per-room geometry). EDEN is the format outlier (different first-section count/no FFFF).
 
 The 0x86-stride array was **cross-validated and did NOT generalize** (sess 007): the
 134-byte stride is venusia-specific (dominant there), magnus shows a different ~168-byte
