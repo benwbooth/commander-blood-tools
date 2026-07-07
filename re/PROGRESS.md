@@ -1,5 +1,38 @@
 # Commander Blood reimplementation — progress & remaining work
 
+## VERIFICATION MATRIX (full pass, sess 005-007)
+
+Coverage denominator: BLOODPRG.EXE has ~435 functions (distinct near-call targets);
+~113 code points are decoded/labeled (labels.csv); the Rust reimplementation's faithful
+core covers the VM, ship-3D math/state, decoders, and loaders (audited per-function —
+see the four module audits, sess 007).
+
+**Verified exact (tested in the suite):**
+- Font tables — byte-for-byte vs the exe (@0x14C22/0x14CD2/0x14D28), regression test.
+- VM opcode descriptor/handler tables + token walk — byte-exact vs binary, tests.
+- `snd_mix_average` — exhaustive equivalence with the 0xBB6D add/rcr idiom.
+- Sprite bank decode — BORXX.SPR regression test.
+- ship3d state machines / projection matrix / PRNG / trig table — `matches_binary` suite.
+- Star-map projection formula — unit-tested vs the decoded 0x9BBA math.
+
+**Verified against the running oracle:**
+- HNM static keyframes — pixel-exact (MINDSCAPE/Microfolie's logos, sess 005).
+- HNM RLE delta-frame placement — FIXED sess 007 (the 0xAB34 x,y-pair read; animation
+  was smearing/speckling, now clean); MINDSCAPE frame matches the oracle up to
+  animation phase (diff localizes to the rippling mountain + capture bar).
+- Boot intro sequence — `sq/mind.hnm` = the complete boot reel (MINDSCAPE →
+  Microfolie's → ship → CRYO), matches the oracle boot order; engine plays it + title.
+- Letterbox band origin — band clips at rows 0x23..0xA5 (gs:[0x1fa7] analogue).
+- Dialogue subtitle reconstruction — 99.8% word resolution across SCRIPT1-5.
+- Nav decorative HUD — visually matched to the title-screen HUD.
+
+**Known-approximated (documented, tracked as tasks):** dialogue pacing (invented hold),
+HUD rasterizer (0x299 draw path not ported), subtitle 0x23 wrap rule, engine glue
+(nav-selection hook), script.rs extraction heuristics.
+
+**Gated on live gameplay (proven, not assumed):** bit-exact gameplay star-map
+(destinations are runtime object-heap state, 0xB34E) and interactive scene sequencing.
+
 Consolidated status of the Rust reimplementation of `BLOODPRG.EXE` (1994 CRYO/Mindscape
 DOS game). The end goal is a **full playable Rust engine verified against the original**.
 This is inherently multi-week; below is what's done, what's verified, and the exact
