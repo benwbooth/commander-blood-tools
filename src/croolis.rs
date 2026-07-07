@@ -96,10 +96,11 @@ impl AlienColony {
     }
 
     /// Advance one frame: gated by `cs:0xB72`, step every object's state machine on the
-    /// 7th frame. Returns `true` on the frames the colony actually updated.
+    /// 7th frame (decrement, and when it hits 0 update + reload to 7). Returns `true`
+    /// on the frames the colony actually updated.
     pub fn step(&mut self) -> bool {
-        if self.frame_timer > 0 {
-            self.frame_timer -= 1;
+        self.frame_timer = self.frame_timer.saturating_sub(1);
+        if self.frame_timer != 0 {
             return false;
         }
         self.frame_timer = ALIEN_COLONY_FRAME_GATE;
