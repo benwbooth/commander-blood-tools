@@ -224,7 +224,64 @@ impl HnmFile {
 }
 
 impl HnmFile {
-    pub fn raw(&self) -> &[u8] { &self.data }
-    pub fn header_size(&self) -> usize { self.header_size }
-    pub fn offset(&self, i: usize) -> u32 { self.offsets[i] }
+    pub fn raw(&self) -> &[u8] {
+        &self.data
+    }
+    pub fn header_size(&self) -> usize {
+        self.header_size
+    }
+    pub fn offset(&self, i: usize) -> u32 {
+        self.offsets[i]
+    }
+
+    /// Parse frame `idx`'s video header (sub-width, sub-height, mode) without
+    /// decompressing any pixel data — walks the typed chunks to the vhdr only.
+    pub fn frame_dims(&self, idx: usize) -> Option<(usize, usize, u8)> {
+        let abs_off = self.header_size + self.offsets.get(idx).copied()? as usize;
+        if abs_off + 2 > self.data.len() {
+            return None;
+        }
+        let sc_size = u16::from_le_bytes([self.data[abs_off], self.data[abs_off + 1]]) as usize;
+        let mut cpos = abs_off + 2;
+        let sc_end = abs_off + sc_size;
+        while cpos < sc_end && cpos + 4 <= self.data.len() {
+            let (t0, t1) = (self.data[cpos], self.data[cpos + 1]);
+            let csz = u16::from_le_bytes([self.data[cpos + 2], self.data[cpos + 3]]) as usize;
+            if (0x20..0x7f).contains(&t0) && (0x20..0x7f).contains(&t1) && csz >= 4 {
+                cpos += csz;
+            } else {
+                break;
+            }
+        }
+        if cpos + 4 > self.data.len() {
+            return None;
+        }
+        let vhdr = u32::from_le_bytes([
+            self.data[cpos],
+            self.data[cpos + 1],
+            self.data[cpos + 2],
+            self.data[cpos + 3],
+        ]);
+        Some((
+            (vhdr & 0x1FF) as usize,
+            ((vhdr >> 16) & 0xFF) as usize,
+            ((vhdr >> 24) & 0xFF) as u8,
+        ))
+    }
+
+    /// The letterbox-band screen origin for this clip: the game blits every frame at
+    /// `stream_y + gs:[0x1fa7]`, where the base is the letterbox band top (row 0x23)
+    /// in band mode and 0 for full-screen clips. Band clips have a band-height
+    /// (<= 0x82 = 130, the blit routine's height cap) keyframe; full-screen clips are
+    /// 200 tall. Returns 0x23 for band clips, 0 for full-screen.
+    pub fn band_y_origin(&self) -> usize {
+        for idx in 0..self.frame_count().min(4) {
+            if let Some((fw, fh, _)) = self.frame_dims(idx) {
+                if fw > 1 && fh > 1 {
+                    return if fh <= 0x82 { 0x23 } else { 0 };
+                }
+            }
+        }
+        0
+    }
 }

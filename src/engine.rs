@@ -192,6 +192,9 @@ pub struct EngineState {
     /// plays from its keyframe forward (delta frames need their own keyframe base,
     /// not `global_frame % count` which would start mid-animation on a stale buffer).
     scene_frame: usize,
+    /// Letterbox origin for the loaded scene clip: 0x23 for 130-tall band clips
+    /// (the game's `gs:[0x1fa7]` blit base), 0 for full-screen clips.
+    scene_band_y: usize,
     /// Palette filled by the scene HNM decode (the framebuffer is indexed).
     pub scene_palette: [[u8; 3]; 256],
     /// Indexed (palette) framebuffer the render subsystems draw into.
@@ -237,6 +240,7 @@ impl EngineState {
             scene_hnm: None,
             scene_buffer: vec![0u8; ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT],
             scene_frame: 0,
+            scene_band_y: 0,
             scene_palette: [[0u8; 3]; 256],
             framebuffer: vec![0u8; ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT],
             intro_hnms: Vec::new(),
@@ -252,12 +256,40 @@ impl EngineState {
             // Seed from the file's base palette; decode_frame applies per-frame
             // palette updates on top of it.
             self.scene_palette = hnm.palette;
+            // Letterbox origin: band clips (130-tall keyframe) present at screen row
+            // 0x23, exactly the game's `stream_y + gs:[0x1fa7]` blit base.
+            self.scene_band_y = hnm.band_y_origin();
             self.scene_hnm = Some(hnm);
             // New scene: restart at its keyframe on a cleared buffer.
             self.scene_frame = 0;
             for p in self.scene_buffer.iter_mut() {
                 *p = 0;
             }
+        }
+    }
+
+    /// Present the decoded scene buffer on the display framebuffer at the clip's
+    /// letterbox origin (`scene_band_y`): band clips land on rows 0x23..0xA5 with
+    /// black bars above/below, full-screen clips copy 1:1 — the engine-level analogue
+    /// of the game's `gs:[0x1fa7]` blit base.
+    fn present_scene_buffer(&mut self) {
+        if self.scene_band_y == 0 {
+            self.framebuffer.copy_from_slice(&self.scene_buffer);
+            return;
+        }
+        for p in self.framebuffer.iter_mut() {
+            *p = 0;
+        }
+        let band_rows = ENGINE_SCREEN_HEIGHT - self.scene_band_y;
+        for y in 0..band_rows.min(ENGINE_SCREEN_HEIGHT) {
+            let dy = y + self.scene_band_y;
+            if dy >= ENGINE_SCREEN_HEIGHT {
+                break;
+            }
+            let s = y * ENGINE_SCREEN_WIDTH;
+            let d = dy * ENGINE_SCREEN_WIDTH;
+            self.framebuffer[d..d + ENGINE_SCREEN_WIDTH]
+                .copy_from_slice(&self.scene_buffer[s..s + ENGINE_SCREEN_WIDTH]);
         }
     }
 
@@ -315,7 +347,7 @@ impl EngineState {
         hnm.decode_frame(self.scene_frame, &mut self.scene_buffer, &mut self.scene_palette);
         self.scene_hnm = Some(hnm);
         self.scene_frame += 1;
-        self.framebuffer.copy_from_slice(&self.scene_buffer);
+        self.present_scene_buffer();
     }
 
     /// Load a dialogue script AND resolve each line's speaker to its talk-HNM asset
@@ -648,7 +680,7 @@ impl EngineState {
             hnm.decode_frame(frame_idx, &mut self.scene_buffer, &mut self.scene_palette);
             self.scene_hnm = Some(hnm);
             self.scene_frame += 1;
-            self.framebuffer.copy_from_slice(&self.scene_buffer);
+            self.present_scene_buffer();
         } else {
             for p in self.framebuffer.iter_mut() {
                 *p = 0;
