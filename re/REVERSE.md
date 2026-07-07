@@ -394,10 +394,15 @@ packed/compressed), so fully decodable with analysis. Layout (venusia, 15892 B):
 | ~`0x01a2..0x0e00` | **(tentative)** array of ~23 records at a clean 0x86 (134-byte) stride; each begins with a variable-length prefix of `0x8X` bytes (0x81/0x84/0xb5…) growing 2,3,3,4,5,… then zeros — looks like per-record variable lists (connections/items?), semantic unconfirmed |
 | ~`0x0e00..end` | dense structured payload (uncompressed; ~64 distinct byte values) — the per-room geometry/object data |
 
-The 0x86-stride array + record semantics are a **tentative observation** (offset/stride
-detected empirically on venusia; not yet cross-validated or confirmed via the consumer) —
-recorded so a future session can verify, not treat as settled. Prior mesh-face reading of
-the first table was already retracted; treat all `.ext` body semantics as under study.
+The 0x86-stride array was **cross-validated and did NOT generalize** (sess 007): the
+134-byte stride is venusia-specific (dominant there), magnus shows a different ~168-byte
+stride, and black/eden/pterra show no clean stride by the 0x8X-marker heuristic — which is
+itself likely venusia-biased (the 0x81/0x84/0xb5 marker bytes may be venusia's data, not a
+format constant). So the middle-region record layout is **per-world / unconfirmed**, not a
+settled universal structure. Combined with the retracted mesh-face reading of the first
+table, treat ALL `.ext` body semantics beyond the validated framing (magic, byte-8 count,
+FF FF-terminated 3-byte index table, uncompressed) as under study — the record meanings
+need the file's consumer (far-pointer/gs-relative load path, see `dead_ends.md`).
 
 CORRECTION: the 3-byte records are **not** universally triangle-mesh faces — that was
 over-generalized from venusia (79% ascending triples); most worlds are ~0% ascending
