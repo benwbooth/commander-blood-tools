@@ -427,3 +427,6 @@ GS:0x6726,object_heap_segment,"segment of the runtime object/instance heap (es:[
 0x002B6B,file_create,"DOS file create: call 0x27c3 (path setup); store gs:[0xa92]=eax; ax=0x3c00; int21h (DOS create/truncate file). Creates a file (temp/save/scratch)"
 0x002901,file_open_wrapper,"file-open wrapper: dx=si (filename); push cs; call path_builder_gs_relative 0x2693; then DOS-open the assembled path. A resource open via the path builder"
 0x0027E9,dos_char_out,"conditional char output: ds=ax; if [0xae0]&1, ah=0x0e; int 10h (BIOS teletype). Outputs a character to the screen when console output is enabled"
+0x002DBE,vga_attribute_write,"VGA attribute-controller write: dx=0x3c0 (attribute address/data port); al=index (0x31 = palette/overscan), out dx,al then the value. Programs the VGA attribute registers (palette mapping / border colour)"
+0x002F18,linear_to_segment,"32-bit-linear to real-mode segment conversion: shr ecx,4 (linear >> 4 = paragraph); mov ds,cx. Converts a 32-bit linear address into a real-mode segment:offset for banked/large-memory access"
+0x002DE2,hash_mix_af0,"bit-mixing hash/checksum: bl=cs:[0xaf0], bh=cs:[0xaf1]; cx=8 bit loop; xor cs:[0xaf0],bl (0x2e1e). An 8-bit mixing/checksum over cs:0xaf0 state (near the BloodPrng seed cs:0xAEE) - a hash or auxiliary PRNG"
