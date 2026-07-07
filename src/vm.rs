@@ -167,6 +167,35 @@ impl QuerySetMode {
         self.query = false;
     }
 
+    /// Apply a compound state operator (the decoded `0x6863`-family operator byte, in
+    /// `ah`) to `state[op1]` with `op2`. In query mode the operator is a **comparison**
+    /// (`0xF0`ne/`0xF1`lt/`0xF2`gt/`0xF3`le/`0xF4`ge/`0xF5`eq) whose result decides
+    /// branch-or-continue; in set mode it is an **assignment** (`0xF5`set/`0xF6`add/
+    /// `0xF7`sub) that returns the new `state[op1]`. Returns `Ok(new_value)` for a set,
+    /// `Err(matched)` for a query (`matched == true` → continue, false → `vm_branch`).
+    pub fn apply_operator(&self, operator: u8, cur: u16, op2: u16) -> Result<u16, bool> {
+        if self.query {
+            let matched = match operator {
+                0xF0 => cur != op2,
+                0xF1 => cur < op2,
+                0xF2 => cur > op2,
+                0xF3 => cur <= op2,
+                0xF4 => cur >= op2,
+                0xF5 => cur == op2,
+                _ => false,
+            };
+            Err(matched)
+        } else {
+            let new = match operator {
+                0xF5 => op2,                    // SET
+                0xF6 => cur.wrapping_add(op2),  // ADD
+                0xF7 => cur.wrapping_sub(op2),  // SUB
+                _ => cur,
+            };
+            Ok(new)
+        }
+    }
+
     /// A 2-word record opcode (`0xB8` family): in query mode compare the operands
     /// `(a, b)` against the record's current `(cur_a, cur_b)` — match falls through, else
     /// branch; in set mode the operands are written. `wildcard` (the `gs:0x674e` sentinel
@@ -3326,6 +3355,27 @@ pub fn emit_scene_events(lines: &[LineInput]) -> Vec<SceneEvent> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn state_operators_match_the_decoded_0x6863_set() {
+        let query = QuerySetMode { query: true };
+        // Query mode = comparisons: cur=5, op2=9.
+        assert_eq!(query.apply_operator(0xF0, 5, 9), Err(true)); // != -> matched
+        assert_eq!(query.apply_operator(0xF1, 5, 9), Err(true)); // <  -> matched
+        assert_eq!(query.apply_operator(0xF2, 5, 9), Err(false)); // > -> no
+        assert_eq!(query.apply_operator(0xF3, 5, 5), Err(true)); // <= (equal)
+        assert_eq!(query.apply_operator(0xF4, 9, 5), Err(true)); // >=
+        assert_eq!(query.apply_operator(0xF5, 5, 5), Err(true)); // ==
+        assert_eq!(query.apply_operator(0xF5, 5, 6), Err(false)); // == mismatch -> branch
+
+        let set = QuerySetMode { query: false };
+        // Set mode = assignments: cur=10, op2=3.
+        assert_eq!(set.apply_operator(0xF5, 10, 3), Ok(3)); // SET
+        assert_eq!(set.apply_operator(0xF6, 10, 3), Ok(13)); // ADD
+        assert_eq!(set.apply_operator(0xF7, 10, 3), Ok(7)); // SUB
+        // SUB wraps like the 16-bit hardware.
+        assert_eq!(set.apply_operator(0xF7, 0, 1), Ok(0xFFFF));
+    }
 
     #[test]
     fn query_set_mode_matches_the_decoded_record_op_semantics() {
