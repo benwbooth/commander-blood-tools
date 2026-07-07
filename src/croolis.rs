@@ -6,7 +6,7 @@
 //! PRNG (`0x16A4`), the per-object state machine, the per-frame colony dispatcher
 //! (`0x12DE`, frame-gated), the behaviour vtable (`fs:0x103A`), and the object
 //! position-update wrap (`0x999`). Remaining: the not-yet-decoded sub-behaviour
-//! methods (`0xA30`/`0x36A`) and the per-object 3D draw/blit, which reuses the shared
+//! methods (`0xA30`) and the per-object 3D draw/blit, which reuses the shared
 //! ship-3D compositor.
 
 /// The overlay's animation-state PRNG (`0x16A4`: `mov ax,fs:[0x105C]; ror ax,7;
@@ -65,7 +65,14 @@ pub struct AlienObject {
     /// Object 3D position (record fields `+0x42`/`+0x46`/`+0x4a`), stored as sign-
     /// extended 32-bit words — camera-relative, wrapped by [`AlienObject::update_position`].
     pub pos: [i32; 3],
+    /// Transform/orientation components (record fields `+0x12`/`+0x22`/`+0x32`),
+    /// initialised to `0x8000` by the object initializer (`0x36A`) — the neutral
+    /// fixed-point value the shared 3D transform uses.
+    pub transform: [i32; 3],
 }
+
+/// The neutral transform value the initializer writes to `+0x12`/`+0x22`/`+0x32`.
+pub const ALIEN_TRANSFORM_NEUTRAL: i32 = 0x8000;
 
 /// The half-extent of the object-space toroidal wrap (`0x4000`); positions wrap into
 /// `[-0x4000, 0x4000)` relative to the wrap origin (method `0x999`).
@@ -87,7 +94,18 @@ impl AlienObject {
             anim: 0,
             method: AlienMethod::AnimStateMachine,
             pos: [0; 3],
+            transform: [ALIEN_TRANSFORM_NEUTRAL; 3],
         }
+    }
+
+    /// Port of the object initializer (`0x36A`): reset the behaviour state — zero the
+    /// state flag + animation accumulator, reload the timer, and set the transform
+    /// components to the neutral `0x8000` — putting the object in its start pose.
+    pub fn reset(&mut self) {
+        self.state_flag = 0;
+        self.anim = 0;
+        self.timer = ALIEN_STATE_TIMER_RELOAD;
+        self.transform = [ALIEN_TRANSFORM_NEUTRAL; 3];
     }
 
     /// Port of method `0x999` (object position update): for each axis, wrap the object's
@@ -187,6 +205,20 @@ impl AlienColony {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn initializer_resets_to_start_pose() {
+        let mut obj = AlienObject::new(0x1);
+        obj.state_flag = 1;
+        obj.anim = 0x500;
+        obj.timer = 3;
+        obj.transform = [0, 0, 0];
+        obj.reset();
+        assert_eq!(obj.state_flag, 0);
+        assert_eq!(obj.anim, 0);
+        assert_eq!(obj.timer, ALIEN_STATE_TIMER_RELOAD);
+        assert_eq!(obj.transform, [ALIEN_TRANSFORM_NEUTRAL; 3]);
+    }
 
     #[test]
     fn position_update_wraps_into_toroidal_space() {
