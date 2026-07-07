@@ -76,15 +76,31 @@ BLOODPRG.EXE's ~435 functions. True 100% is a complete decompile.
 
 ## VERIFICATION MATRIX (full pass, sess 005-007)
 
-Coverage denominator (measured, sess 007): BLOODPRG.EXE has ~360 distinct near-call
-targets (~435 incl. far-call/jump-table/overlay entries). **183 code addresses are now
-decoded/labeled** in labels.csv (up from ~113) — this session added the resource-loading
-pipeline, object-instance system, input dispatch, the full mode-X render path, and the
-VM end-to-end (dispatch + all 51 opcodes' behaviors + the query/set + full operator set).
-So the ARCHITECTURE and every major subsystem are decoded; what remains is the deep `.ext`
-world-body record semantics and the many individual leaf/utility/init/hardware functions
-(~55% of near-call targets still unlabeled). "Combat" was verified NON-existent (retracted).
-True 100% (every function fully decoded + ported) is still a multi-month effort.
+Coverage (measured, sess 007): ~281 ret-preceded clean-prologue function starts in the
+base code segment (the raw E8-scan's ~360 includes mid-instruction false positives).
+**~319 code addresses decoded/labeled** in labels.csv (up from ~113 at session start).
+Every MAJOR SUBSYSTEM is now decoded end-to-end:
+- **Boot/init/hardware**: cmdline args, timer hook + PIT, EMS (int67h) detect, CD-ROM,
+  Ctrl-Break, video-mode save/restore, mouse init/poll, RTC read, sound-card port I/O.
+- **Resource system**: name table (FS:0x0c04) → load-by-id → path build/findfirst/open/read
+  → handle→segment 8-byte table (resolve/release/flags/size/loaded) → EMS-banked
+  ring-buffer queue (gs:0xd8c) + DAT chunk seek.
+- **Render**: linear back-buffer → RLE sprite composite + 2D clipped-plot primitives +
+  3D matrix-mul (Q15) + perspective projection + vertex-list → dirty-rect blit / full-screen
+  blit → mode-X pixel plotter (all verified equivalent to the engine's framebuffer/decoder).
+- **VM**: vm_run_wrapper (per-frame) → exec-loop dispatch (opcode table 0x142d0) → all 51
+  opcode behaviors + query/set model (gs:0x67ad) + full operator set (ne/lt/gt/le/ge/eq/
+  set/add/sub) + DIC/text + object/line-record state (gs:0x6724, typed records).
+- **Objects**: entity_object_table (DS:0x6212, 32-byte records) + populate + flag SM +
+  entity_draw (reads .ext object x/y, scales, renders) + runtime object heap (gs:0x6726).
+- **`.ext` world body** (fully characterized): 63-node table → 10-byte object records
+  (id/type/x/y, cross-validated + engine-rendered) → node-reference geometry payload.
+- **Audio**: SND player + driver callback + software mixer + PC-speaker synth (ported).
+- **UI**: input-action dispatch + xlat table + region hit-testing + camera-approach FSM.
+
+Remaining (~27%): family-sibling leaf functions, tiny state-gates, the exact per-node
+`.ext` geometry meaning, and per-opcode deep internals. "Combat" verified NON-existent
+(retracted). True 100% (every function fully decoded + ported) is still a multi-month effort.
 
 **Verified exact (tested in the suite):**
 - Font tables — byte-for-byte vs the exe (@0x14C22/0x14CD2/0x14D28), regression test.
