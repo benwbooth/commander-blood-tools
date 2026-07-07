@@ -716,10 +716,15 @@ impl EngineState {
             projection_angle_2f6d: self.compass_angle % 180,
             angle_2f6f: 0,
         };
+        // Starfield origin: the neutral cloud centre, offset along Z by the ship's
+        // travel (the camera FSM's Z progress) so stars stream past as the ship
+        // advances — consistent with the pyramids the camera also drives. The low
+        // bits of the wrapping Z give continuous parallax.
+        let z_travel = self.camera.origin_z.wrapping_mul(3);
         let origin = Ship3dProjectionOrigin {
             x: 0x8000,
             y: 0x8000,
-            z: 0x8000,
+            z: 0x8000u16.wrapping_add(z_travel),
         };
         let viewport = Ship3dProjectionViewport {
             left: 0,
