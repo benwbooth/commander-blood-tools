@@ -21,6 +21,29 @@ pub struct ExtWorld {
     pub next_section: usize,
 }
 
+impl ExtWorld {
+    /// The non-zero index links of first-section record `i` — each 3-byte record holds
+    /// up to three references to other records (`0` = no link), i.e. the section is an
+    /// adjacency table (each node links to up to 3 others). Returns the linked indices.
+    /// (The semantic — room graph vs mesh connectivity — is still under study; the
+    /// structure itself is decoded and validated.)
+    pub fn record_links(&self, i: usize) -> Vec<u8> {
+        self.table1
+            .get(i)
+            .map(|r| r.iter().copied().filter(|&v| v != 0).collect())
+            .unwrap_or_default()
+    }
+
+    /// Whether every record link references a valid record index (< record count) — a
+    /// consistency check that the adjacency interpretation holds.
+    pub fn links_are_valid(&self) -> bool {
+        let n = self.table1.len();
+        self.table1
+            .iter()
+            .all(|r| r.iter().all(|&v| (v as usize) <= n))
+    }
+}
+
 /// Parse the framing of an `.ext` world body. Returns `None` if it isn't a world file.
 /// The first-section record count is body byte 8; records are 3 bytes each and the
 /// section is expected to end with `FF FF` (holds for venusia/magnus/black/cyber; some
@@ -78,6 +101,20 @@ mod tests {
             // The next section begins right after the terminator.
             assert_eq!(ext.next_section, 9 + count * 3 + 2);
         }
+    }
+
+    #[test]
+    fn first_section_is_a_valid_adjacency_table() {
+        let Some(data) = load("VENUSIA.EXT") else { return };
+        let ext = parse_ext(&data).unwrap();
+        // All record links reference valid record indices.
+        assert!(ext.links_are_valid());
+        // record_links drops the zero (no-link) entries. venusia record 1 = (8,10,14).
+        assert_eq!(ext.record_links(1), vec![8, 10, 14]);
+        // A (0,0,c) record has a single link.
+        assert_eq!(ext.record_links(0), vec![8]); // (0,0,8)
+        // Out-of-range record -> no links.
+        assert!(ext.record_links(9999).is_empty());
     }
 
     #[test]
