@@ -231,8 +231,10 @@ mod tests {
         let img = decode_lbm(&data).expect("decodes ILBM");
         assert_eq!((img.width, img.height), (640, 480));
         assert_eq!(img.pixels.len(), 640 * 480);
+        // BLOOD.LBM is a 4-plane (16-colour) image; a correct decode uses the full range.
         let distinct = img.pixels.iter().collect::<std::collections::BTreeSet<_>>().len();
-        assert!(distinct > 16, "planar decode yields a real image ({distinct} colours)");
+        assert!(distinct >= 12, "planar decode yields a real image ({distinct} colours)");
+        assert!(img.pixels.iter().all(|&p| p < 16), "4-plane image uses indices 0..16");
     }
 
     #[test]
