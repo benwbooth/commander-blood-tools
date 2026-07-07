@@ -21,17 +21,17 @@ pub fn alien_anim_prng_next(seed: u16) -> u16 {
 
 /// The overlay's per-object behaviour method, selected via the vtable at `fs:0x103A`
 /// (near-ptr entries indexed by `bx = [di+0x34]`). The decoded entries are:
-/// `0x1D27` (null/`ret`), `0x16A4` (animation state machine — ported here),
-/// `0x12DE` (colony iterator), `0x999` (position update — ported), and
-/// `0xA30`/`0x36A` (sub-behaviours, not yet decoded).
+/// `0x1D27` (null/`ret`), `0x16A4` (animation state machine — ported), `0x12DE`
+/// (colony iterator — ported), `0x999` (position update — ported), `0x36A`
+/// (initializer — ported), and `0xA30` (a sub-behaviour, not yet decoded).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum AlienMethod {
     /// `0x1D27` — the null method (`ret`); the object does nothing.
     Null,
     /// `0x16A4` — the animation state machine ([`AlienObject::step`]).
     AnimStateMachine,
-    /// A decoded-but-not-yet-ported sub-behaviour (`0xA30`/`0x999`/`0x36A`), kept as
-    /// its table offset so the dispatch shape is faithful; runs as a no-op for now.
+    /// The not-yet-decoded sub-behaviour method (`0xA30`), kept as its table offset so
+    /// the dispatch shape is faithful; runs as a no-op for now.
     SubBehaviour(u16),
 }
 
