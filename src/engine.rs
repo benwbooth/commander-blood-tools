@@ -1245,6 +1245,12 @@ impl EngineState {
         );
     }
 
+    /// The name of the world the nav compass currently targets (for "visit this
+    /// destination" input).
+    pub fn targeted_world_name(&self) -> Option<&'static str> {
+        self.nav_world_labels.get(self.targeted_world_index()).copied()
+    }
+
     /// The index into [`Self::nav_world_labels`] the compass heading currently targets:
     /// the heading (0..180°) maps across the decoded primary worlds, so panning the ship
     /// sweeps through the real navigable planets.

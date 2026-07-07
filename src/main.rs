@@ -395,11 +395,23 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 Event::ButtonPress(b) if b.detail == 3 => engine.on_ship = !engine.on_ship,
                 // Keyboard loop controls: Escape (keycode 9) returns to the nav view.
                 Event::KeyPress(k) if k.detail == 9 => {
-                    engine.alien_view_active = false;
-                    engine.tv_active = false;
-                    engine.cyber_active = false;
-                    // Esc from a screen returns to the bridge hub.
-                    engine.bridge_active = true;
+                    // A visited world-location screen closes back to the nav view first.
+                    if engine.world_location_active() {
+                        engine.leave_world();
+                    } else {
+                        engine.alien_view_active = false;
+                        engine.tv_active = false;
+                        engine.cyber_active = false;
+                        // Esc from a screen returns to the bridge hub.
+                        engine.bridge_active = true;
+                    }
+                }
+                // 'v' (keycode 55): visit the nav destination the compass targets —
+                // shows that world's decoded fd/ location background.
+                Event::KeyPress(k) if k.detail == 55 => {
+                    if let Some(world) = engine.targeted_world_name() {
+                        engine.visit_world(world, Path::new(assets));
+                    }
                 }
                 // 'c' (keycode 54): toggle the alien-examination screen (plays the
                 // scrutinizer intro on entry).
