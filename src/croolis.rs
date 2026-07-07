@@ -2,9 +2,11 @@
 //!
 //! Decoded (see `re/REVERSE.md`, sess 003): the overlay drives a list of 0x5E-byte
 //! object records, each a PRNG + timer *animation state machine*, dispatched per frame
-//! and feeding the shared ship-3D per-object draw. This module ports the decoded pieces
-//! (the animation-state PRNG and the per-object state machine at method `0x16A4`); the
-//! full per-object draw/vtable dispatch is future work.
+//! and feeding the shared ship-3D per-object draw. Ported here: the animation-state
+//! PRNG (`0x16A4`), the per-object state machine, the per-frame colony dispatcher
+//! (`0x12DE`, frame-gated), and the behaviour vtable (`fs:0x103A`). Remaining: the
+//! not-yet-decoded sub-behaviour methods (`0xA30`/`0x999`/`0x36A`) and the per-object
+//! 3D draw/blit, which reuses the shared ship-3D compositor.
 
 /// The overlay's animation-state PRNG (`0x16A4`: `mov ax,fs:[0x105C]; ror ax,7;
 /// sbb ax,0; store back`). On 8086 `ror ax,7` leaves CF = the result's MSB (the last
