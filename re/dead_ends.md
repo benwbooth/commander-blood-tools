@@ -145,3 +145,30 @@ Lifecycle: **Active** → **RESOLVED (date)** → delete after 20+ sessions.
   real-mode MZ that uses 386 instructions + EMS/XMS banking.
 - **Resolution**: load as DOS MZ, CS_MODE_16, 80386 ISA. Confirmed by mzfile.py.
 - **Session**: 001
+
+## Cyberspace loader — cyber.ext file-load path (Active)
+
+- **Goal**: find the BLOODPRG routine that opens `cyber.ext`/`cyber2.ext`/`cyber3.ext`
+  (the cyberspace network-graph levels) to decode the minigame's graph format from its
+  consumer.
+- **Confirmed facts**: filename strings at file 0xd034 (`SEG 0x0ca3:0x04`) and 0xd849
+  (`DS:0x429`) — two copies. `CYBER.EXT` (13189 B) is DATA, not code: begins
+  `02 00 00 01 00 00 00 81 3f 02 ...` — a graph/table structure, word[0]=2.
+- **Failed approaches (do NOT re-try these quick searches, sess 007)**:
+  1. Immediate-operand search for `0x429` (push/mov ax/si/di/dx 0x429) — ZERO hits.
+  2. Raw-byte search for `29 04` anywhere in the file — ZERO hits. So the `DS:0x429`
+     copy is never referenced by that offset; the loader uses the other copy or builds
+     the name at runtime.
+  3. Filename pointer-table search (`0x429`..`0x459` consecutive) — none.
+  4. `xref.py` far call/jmp to both SEG:OFFs — none (it only finds code targets; the
+     string is data, so this can't find data refs by construction).
+- **Why deep**: the reference is indirect — a far-pointer/segment-register load
+  (DS or a const seg set, then a small/computed offset), or the name is assembled. The
+  0xd034 copy at `SEG 0x0ca3:0x0004` (offset 4) can't be found by immediate search
+  because offset `0x0004` is too common to disambiguate.
+- **Next approach for a focused session**: disassemble the file-open call sites
+  (int 21h AH=3D / the game's fopen wrapper) and walk back to which DS/const-seg + offset
+  each loads; or find the cyberspace *entry* routine (the code that runs when the player
+  enters the modem/network) and trace forward to its level load. Then decode CYBER.EXT's
+  graph format (nodes/edges) from that consumer.
+- **Session**: 007
