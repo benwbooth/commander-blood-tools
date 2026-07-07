@@ -234,6 +234,9 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     }
     // Play the startup intro videos first (logos + intro cutscene), like the real game.
     engine.load_intro(Path::new(assets));
+    // The boot reel's music (`mu/blintr.voc` — "BLood INTRo"): starts with the intro
+    // and is stopped when the intro hands off to the game.
+    let mut intro_music_started = false;
     // After the intro, start in the star-map nav view; the loop switches nav<->dialogue.
     engine.on_ship = true;
     // Scene music: the game plays each location's background music (.voc). Decoded
@@ -376,7 +379,15 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
         // switch to the scene; when the dialogue finishes, return to the nav view.
         // Suppressed while the startup intro is still playing.
         if engine.intro_active() {
-            // intro plays; no nav/dialogue transitions yet
+            // Intro playing: start its music once; no nav/dialogue transitions yet.
+            if !intro_music_started {
+                intro_music_started = true;
+                music.play(&format!("{assets}/mu/blintr.voc"));
+            }
+        } else if intro_music_started {
+            // Intro just ended: silence the reel music (once).
+            intro_music_started = false;
+            music.stop();
         } else if let Some(heading) = engine.take_nav_selection() {
             let dest = (heading as u32 * 5 / 180).clamp(0, 4) + 1; // heading → SCRIPT1..5
             load_script(&mut engine, &mut music, dest);
