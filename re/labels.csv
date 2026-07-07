@@ -373,3 +373,7 @@ GS:0x0D84,ems_paged_addr,"32-bit linear address into EMS-banked memory, split by
 0x003AB3,gfx_clipped_primitive_c,"clipped graphics draw primitive (2 calls): same clipped-draw family (dx-param, bp=ax). Shape/span draw variant. The 0x3321/0x32ac/0x39bb/0x3ab3 cluster are the game's 2D drawing primitives"
 0x0022D0,set_flag_b15,"tiny setter (2 calls): [0xb15]=dl; ret. Sets the [0xb15] state byte"
 0x0027C3,set_ds_gs_check_ae0,"gs-setup helper (2 calls): ds=gs; test [0xae0]&1 -> branch. Establishes DS=the gs data segment then checks the [0xae0] mode flag"
+0x0056A6,vm_script_block_scan,"VM nested script-block scanner (2 calls): di=0x6eb0 (opcode handler table); lodsb opcode; scan to 0xff terminator - executes/skips a nested script block using the same dispatch as vm_exec_loop_dispatch. A block/subroutine executor"
+0x00739B,vm_cod_scan,"COD script scanner (2 calls): lds si,gs:[0x671c] (COD script far ptr); lodsb; scan to 0xff. Walks/finds a marker in the loaded script - a script traversal helper"
+0x007CB4,record_access_7bb8,"32-byte-record accessor (2 calls): si=0x7bb8 + [0x27e3]*32 (al=[0x27e3]; cwde; shl 5). Indexes a 32-byte-record table at 0x7bb8 by the [0x27e3] index"
+0x00604E,table_672c_process,"processes the 20-byte lookup table (2 calls): es=gs; di=0x6a16; lds si,gs:[0x672c] (the vm_lookup_table_20b); copies/transforms entries into 0x6a16. Prepares the 0x672c lookup data"
