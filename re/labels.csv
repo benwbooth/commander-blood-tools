@@ -487,3 +487,6 @@ DS:0x65F2,ui_region_table,"table of 8-byte clickable-UI-region records (0x1f ent
 0x001D94,vm_context_pointer_setup,"VM context setup: les di,gs:[0xabc] (work buffer); lds si,gs:[0x671c] (COD script); lfs bp,gs:[0x672c] (lookup table). Establishes the far pointers the VM exec loop reads (COD/lookup/buffer) before a run"
 0x001F78,transition_progress_524,"transition/fade progress counter: ax=[0x524f]; cmp 0x64 (100 = complete); else add [0x524d] (step). A 0..100 progress counter driving a fade/scroll/transition"
 0x002140,presentation_state_check_67a6,"presentation-state check (family 0x2140/0x218d): test [0x67a6]&3; read active line [0x679e]; cmp -1. Gates on the dialogue/presentation state (active-line + busy bits)"
+0x004BA8,accumulate_record_coords,"coordinate accumulation (family 0x4ba8/0x4cd6): lds si,[di+4] (record data ptr); ax+=[si+4], bx+=[si+6], dx+=[si+4] - sums the x/y coordinate fields across records (bounds/centroid/offset accumulation for object/geometry positioning)"
+0x004E35,cs_table_offset_172a,"code-segment table offset (family 0x4e35/0x4e55): bx = cs:[0x172a] - ax; lodsb; advance si by ax. Indexes/offsets a cs:0x172a table (a text/geometry layout table)"
+0x004EF3,cs_table_offset_1728,"code-segment table offset (family 0x4ef3/0x4f1c): bx = cs:[0x1728] - ax. Companion to cs_table_offset_172a - indexes the cs:0x1728 layout table"
