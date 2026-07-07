@@ -1,5 +1,32 @@
 # Commander Blood reimplementation — progress & remaining work
 
+## RUNNABLE ENGINE — SCREEN COVERAGE (sess 007)
+
+The `engine-window` now implements the game's major SCREENS from decoded assets, each
+verified visually + tested:
+- **Boot intro** — the `mind.hnm` reel (MINDSCAPE→Microfolie's→ship→CRYO) + fire title,
+  with `blintr.voc` music.
+- **Nav** — moving camera (decoded `[0x27DF]` approach FSM), real CARTE.SPR pyramids
+  (decoded projection/scaling), centre-delta steering, camera-driven streaming starfield.
+- **Dialogue** — VM trace, char-by-char subtitle reveal (decoded pacing/wrap/font),
+  per-line character voice (real sn/*.snd), scene music, tb.snd chatter, D2 scene-chaining.
+- **Alien examination** (`croolis`) — `caiscrut` scrutinizer intro → mouse-rotatable
+  Scruter Jo (`scrut_a..d`).
+- **Comms / "Hate TV"** — 18 broadcast channels (`tvgren*`/`tvred*`), channel-switchable.
+- **Cyberspace** — hyperspace-tunnel presentation (`hyper_*`) with segment travel.
+
+Controls: intro auto-plays; `c` alien exam, `t` comms TV, `y` cyberspace, Esc back.
+Audio is fully in-process (cpal) + cross-platform.
+
+**REMAINING = deep gameplay LOGIC (undecoded, multi-session each), NOT asset wiring:**
+- Cyberspace navigation minigame (input→steer, obstacles, scoring).
+- Alien-behaviour AI object state machines (`croolis` `+0x36/+0x38/+0x3C` records).
+- `manu3` 3D menu / ship-bridge hub navigation (ties the screens together).
+- Combat, the `amer` alien overlay, and the global object-simulation driving which
+  content appears when (incl. the nav destination instances).
+- ~72% of BLOODPRG.EXE's ~435 functions still undecoded — true 100% is a multi-month
+  decompile.
+
 ## VERIFICATION MATRIX (full pass, sess 005-007)
 
 Coverage denominator: BLOODPRG.EXE has ~435 functions (distinct near-call targets);
