@@ -27,6 +27,29 @@ Audio is fully in-process (cpal) + cross-platform.
 - ~72% of BLOODPRG.EXE's ~435 functions still undecoded — true 100% is a multi-month
   decompile.
 
+## RESOURCE-LOADING PIPELINE (decoded end-to-end, sess 007)
+
+The game loads everything (sprites, the script1-5 bytecode sets, `.ext` worlds) by
+**resource ID** through one pipeline (all labeled in `labels.csv`):
+
+1. `resource_name_table` `FS:0x0c04` (file 0xCDF4): 16-byte filename records indexed by
+   resource ID. IDs 0..21 engine sprites/drivers/script1/buffers; **22..36 the primary
+   worlds** (black=22, venusia=25, magnus=28, cyber=36); 37+ script2 set + sub-levels.
+   Ported as `src/levels.rs LEVEL_DIRECTORY` (+ `world_resource_id`).
+2. `resource_load_by_id(AX=id)` `0x287b`: `si=0xc04+id*16` → filename; lookup `0x28ca`,
+   alloc `0x4b9:0`, file-load `0x2abb`.
+3. `resource_file_load` `0x2abb`: path-build `0x2693` (gs-relative), FindFirst `0x4e00`
+   → size to `GS:0x0A8E`, open `0x3d00`, read into the resource segment.
+4. `resource_handle_resolve` `0x5320` / `resource_release` `0x5288`: 8-byte table entry
+   `{segment@+0, flags@+2 (bits0-1=loaded)}` at `fs:[handle<<3]`.
+5. `vm_resource_profile_select` `0x53A0`: a script "profile" = 5 resource IDs
+   (COD/BAS/VAR/DIC/DEB) from `FS:0x11f4` (10-byte entries); frees old + loads new.
+
+So a world loads via `resource_load_by_id(world_resource_id)` and its **uncompressed**
+`.ext` data lives at the resource segment (`src/ext.rs` decodes the body framing). NOTE:
+the `.ext` body has no single parse routine — the world-logic code reads fields directly
+from the segment, so the record *semantics* need that (undecoded) world-logic decode.
+
 ## GAMEPLAY-LOGIC PORTED (sess 007) — beyond presentation
 
 Decompiled + ported from the overlays (disassembled via capstone on the raw `.xdb`
