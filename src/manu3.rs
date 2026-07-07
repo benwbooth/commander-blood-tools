@@ -8,7 +8,7 @@
 //! the menu animation/tween list (`0x19B`) — the full menu animation pipeline
 //! (select → build tweens → advance) — and the 3D-menu camera pan (`0x34..0x51`,
 //! centre-delta steering). Remaining: the per-item action handlers the dispatch jumps
-//! to, and the pyramid vertex draw (`0x270`, via the shared ship-3D compositor).
+//! to, and the pyramid vertex blit; the draw's angle/matrix setup (`0x270`) is ported and the projection reuses the shared ship-3D compositor.
 
 /// The menu-item column index from the caller's input word (`[bp+4] & 0x1F`, method
 /// entry `0x000`/`0x181`) — 0..31 selects one of up to 32 menu items.
@@ -34,6 +34,23 @@ pub fn menu_item_handler(base: u16, table: &[u16], item: usize) -> u16 {
 
 /// The menu-view centre the camera pans around (`0xA0`/`0x64` = screen 160,100).
 pub const MENU_CAMERA_CENTRE: (i16, i16) = (0xA0, 0x64);
+
+/// The rotation angle-index mask the pyramid draw applies (`0xFFC` = a 10-bit angle
+/// scaled ×4 into the shared trig table).
+pub const MENU_ANGLE_MASK: u16 = 0x0FFC;
+
+/// The pyramid draw's per-axis rotation angle indices (method `0x270` setup): the three
+/// object angle fields (`+0x4E`/`+0x50`/`+0x52`), each masked to `0xFFC`, form the
+/// trig-table offsets that build the rotation matrix — after which the menu reuses the
+/// **shared ship-3D projection** (`build_ship_3d_projection_matrix` + `project_ship_3d_point`)
+/// to draw the pyramid. Objects use the same `0x5E`-byte stride as the alien engine.
+pub fn menu_pyramid_angles(angle_x: u16, angle_y: u16, angle_z: u16) -> [u16; 3] {
+    [
+        angle_x & MENU_ANGLE_MASK,
+        angle_y & MENU_ANGLE_MASK,
+        angle_z & MENU_ANGLE_MASK,
+    ]
+}
 
 /// The 3D-menu camera pan from the cursor position (entry `0x34..0x51`): the cursor's
 /// delta from the view centre, doubled, is added to the view offset `[0x23E4]` (x from
@@ -137,6 +154,14 @@ impl MenuTweenList {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn pyramid_angles_mask_to_trig_offsets() {
+        // Each angle field masked to 0xFFC (clears low 2 bits + bits above 0x0FFC).
+        assert_eq!(menu_pyramid_angles(0x1234, 0x0FFF, 0x0003), [0x0234, 0x0FFC, 0x0000]);
+        // Already-aligned angles pass through.
+        assert_eq!(menu_pyramid_angles(0x0400, 0x0800, 0x0FFC), [0x0400, 0x0800, 0x0FFC]);
+    }
 
     #[test]
     fn camera_pans_by_doubled_centre_delta() {
