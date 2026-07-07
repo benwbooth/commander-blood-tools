@@ -436,6 +436,21 @@ impl EngineState {
         self.dialogue_cursor
     }
 
+    /// How many subtitle characters are currently revealed on the active line (the
+    /// game's reveal pointer `gs:0x5E58`), and the line's total character count. A
+    /// driver plays the `tb.snd` chatter (clip 0) when `revealed` first reaches
+    /// `total` — the decoded one-chatter-per-completed-line behaviour (@0x94BA).
+    pub fn subtitle_reveal_progress(&self) -> Option<(usize, usize)> {
+        let text = self.dialogue_texts.get(self.dialogue_cursor)?;
+        if text.is_empty() {
+            return None;
+        }
+        let total = text.chars().count();
+        let per_char = u32::from(crate::vm::reveal_frames_per_char(self.text_speed_step));
+        let revealed = ((self.dialogue_timer / per_char.max(1)) as usize).min(total);
+        Some((revealed, total))
+    }
+
     /// The current line's voice: the speaker's SND bank path + the line's voice
     /// selector byte (the A6 token's `b3`; `0xFF`/subtitle-only lines yield `None`).
     /// A driver resolves the clip via `vm::text_selector_voice_clip_index` against

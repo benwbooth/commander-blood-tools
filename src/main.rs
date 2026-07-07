@@ -269,6 +269,15 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     let mut snd_cache: std::collections::HashMap<std::path::PathBuf, commander_blood_tools::snd::SndBank> =
         std::collections::HashMap::new();
 
+    // Subtitle chatter: the game plays sn/tb.snd clip 0 once per fully-revealed
+    // subtitle line (@0x94BA). Track the reveal edge and fire it.
+    let tb_snd = commander_blood_tools::snd::SndBank::read(
+        std::path::Path::new(&format!("{assets}/sn/tb.snd")),
+    )
+    .ok();
+    let mut chatter: Option<commander_blood_tools::audio::MusicPlayer> = None;
+    let mut chatter_done_line: Option<usize> = None;
+
     // Load SCRIPT<n>'s dialogue into the engine (the destination's scene) and start
     // that scene's background music, as the game does per location.
     let load_script = |engine: &mut EngineState, music: &mut Music, n: u32| {
@@ -431,6 +440,25 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
             }
         }
         let _ = &voice; // keep the stream alive while the line plays
+        // Subtitle chatter: when the current line finishes revealing, play tb.snd
+        // clip 0 once (per decoded @0x94BA behaviour).
+        if !engine.on_ship {
+            let line = engine.dialogue_cursor();
+            if let Some((revealed, total)) = engine.subtitle_reveal_progress() {
+                if revealed >= total && chatter_done_line != Some(line) {
+                    chatter_done_line = Some(line);
+                    if let Some(bank) = &tb_snd {
+                        if let Some(clip) = bank.clip(0).filter(|c| !c.pcm.is_empty()) {
+                            chatter = commander_blood_tools::audio::MusicPlayer::start_once(
+                                clip.pcm.clone(),
+                                clip.sample_rate,
+                            );
+                        }
+                    }
+                }
+            }
+        }
+        let _ = &chatter;
         // Clear the whole window (letterbox borders + a full erase so nothing from the
         // previous frame can bleed through), then scale the framebuffer in.
         for b in image.iter_mut() {
