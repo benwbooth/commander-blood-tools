@@ -120,9 +120,43 @@ pub fn world_location_art_prefix(stem: &str) -> Option<&'static str> {
     })
 }
 
+/// Parse a world's `fd/` room-art filename into `(room, view)`: after the world's
+/// [`world_location_art_prefix`], the trailing letter is the view-angle (the direction
+/// the player faces — `b`/`d`/`f`/`g`) and the leading part is the room id. E.g.
+/// `1venus2f` → room `"2"`, view `'f'`; `kortex1b` → room `"1"`, view `'b'`. Returns
+/// `None` if `filename` doesn't match the prefix.
+pub fn parse_room_view(filename: &str, prefix: &str) -> Option<(String, char)> {
+    let name = filename.strip_suffix(".lbm").unwrap_or(filename);
+    let rest = name.strip_prefix(prefix)?;
+    let view = rest.chars().last()?;
+    if !view.is_ascii_alphabetic() {
+        return None;
+    }
+    let room = rest[..rest.len() - view.len_utf8()].to_string();
+    Some((room, view))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn parses_room_and_view_from_art_filenames() {
+        assert_eq!(
+            parse_room_view("1venus2f.lbm", "1venus"),
+            Some(("2".to_string(), 'f'))
+        );
+        assert_eq!(
+            parse_room_view("1ekato1b.lbm", "1ekato"),
+            Some(("1".to_string(), 'b'))
+        );
+        assert_eq!(
+            parse_room_view("kortex1g.lbm", "kortex"),
+            Some(("1".to_string(), 'g'))
+        );
+        // Wrong prefix -> None.
+        assert_eq!(parse_room_view("1magnu1f.lbm", "1venus"), None);
+    }
 
     #[test]
     fn directory_indices_are_dense_and_ordered() {

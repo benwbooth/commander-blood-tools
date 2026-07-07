@@ -1114,7 +1114,31 @@ impl EngineState {
             return;
         };
         let img = &visit.image;
-        let name = format!("{}  {}/{}", visit.name, visit.current + 1, visit.rooms.len());
+        // Caption with the decoded room + facing (view-angle) parsed from the art name.
+        let name = {
+            let file = visit.rooms[visit.current]
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("")
+                .to_lowercase();
+            let prefix = crate::levels::world_location_art_prefix(
+                &visit.name.to_lowercase(),
+            )
+            .unwrap_or("");
+            match crate::levels::parse_room_view(&file, prefix) {
+                Some((room, view)) => {
+                    let facing = match view {
+                        'f' => "FRONT",
+                        'b' => "BACK",
+                        'd' => "LEFT",
+                        'g' => "RIGHT",
+                        _ => "VIEW",
+                    };
+                    format!("{}  ROOM {}  {}", visit.name, room, facing)
+                }
+                None => format!("{}  {}/{}", visit.name, visit.current + 1, visit.rooms.len()),
+            }
+        };
         // Blit the decoded room background (320x200 fills the screen).
         for y in 0..ENGINE_SCREEN_HEIGHT.min(img.height) {
             for x in 0..ENGINE_SCREEN_WIDTH.min(img.width) {
