@@ -102,13 +102,18 @@ fn collect_hnm_paths(dir: &Path) -> HashMap<String, std::path::PathBuf> {
     map
 }
 
-/// Join dictionary words into a subtitle line: a space between words unless the
-/// next begins with attaching punctuation (mirrors `assemble_dialogue`).
+/// Join dictionary words into the on-screen subtitle string with the game's decoded
+/// text-assembly rule (0xA6 handler @0x66CD–0x6739): a space between words unless the
+/// next begins with attaching punctuation (`, . ? ! :`), and after inserting a space,
+/// wrap to a new line (`0x0D`, `'\n'` here) once the current line length reaches 0x23
+/// (35) characters. No wrap check on the no-space path; long words are not split.
 fn assemble_words(parts: &[String]) -> String {
     let parts: Vec<&String> = parts.iter().filter(|w| !w.is_empty()).collect();
     let mut out = String::new();
+    let mut line_len: usize = 0;
     for (i, w) in parts.iter().enumerate() {
         out.push_str(w);
+        line_len += w.chars().count();
         if i + 1 < parts.len() {
             let attaches = matches!(
                 parts[i + 1].chars().next(),
@@ -116,6 +121,11 @@ fn assemble_words(parts: &[String]) -> String {
             );
             if !attaches {
                 out.push(' ');
+                line_len += 1;
+                if line_len >= 0x23 {
+                    out.push('\n');
+                    line_len = 0;
+                }
             }
         }
     }
@@ -637,43 +647,21 @@ impl EngineState {
     /// The scene band's talk-HNM background composes separately; this is the text
     /// layer of the dialogue scene the engine presents for the current line.
     pub fn draw_subtitle(&mut self, text: &str, color: u8) {
-        use crate::font::{GAME_FONT_LINE_HEIGHT, GAME_FONT_SPACE_ADVANCE, game_font_advance};
-        // Word-wrap to the screen width (the game wraps long lines rather than
-        // clipping at the right edge); draw each wrapped line down from the top.
-        let max_w = ENGINE_SCREEN_WIDTH - 20;
-        let word_w = |w: &str| w.chars().map(game_font_advance).sum::<usize>();
-        let mut lines: Vec<String> = Vec::new();
-        let mut cur = String::new();
-        let mut cur_w = 0usize;
-        for word in text.split_whitespace() {
-            let ww = word_w(word);
-            let sep = if cur.is_empty() { 0 } else { GAME_FONT_SPACE_ADVANCE };
-            if !cur.is_empty() && cur_w + sep + ww > max_w {
-                lines.push(std::mem::take(&mut cur));
-                cur_w = 0;
-            }
-            if !cur.is_empty() {
-                cur.push(' ');
-                cur_w += GAME_FONT_SPACE_ADVANCE;
-            }
-            cur.push_str(word);
-            cur_w += ww;
-        }
-        if !cur.is_empty() {
-            lines.push(cur);
-        }
-        let mut y = 8;
-        for line in &lines {
+        use crate::font::GAME_FONT_LINE_HEIGHT;
+        // The subtitle string is pre-wrapped by the game's decoded text-assembly rule
+        // (35-char wrap with 0x0D breaks — `assemble_words`); draw each line at the
+        // subtitle origin, one font row apart, exactly as the game's `render_string`
+        // renders the 0x0D-separated buffer.
+        for (idx, line) in text.split('\n').enumerate() {
             draw_text_indexed(
                 &mut self.framebuffer,
                 ENGINE_SCREEN_WIDTH,
                 ENGINE_SCREEN_HEIGHT,
                 line,
                 10,
-                y,
+                8 + idx * GAME_FONT_LINE_HEIGHT,
                 color,
             );
-            y += GAME_FONT_LINE_HEIGHT + 2;
         }
     }
 
@@ -1322,17 +1310,27 @@ mod tests {
 
     #[test]
     fn subtitle_wraps_long_lines() {
+        // Text assembly wraps with the game's decoded 0xA6 rule: a line break after
+        // the space once the line reaches 0x23 (35) chars.
+        let words: Vec<String> = "You can wake Cap'n Bob by clicking on the CRYO chamber control panel now"
+            .split_whitespace()
+            .map(str::to_string)
+            .collect();
+        let assembled = assemble_words(&words);
+        assert!(assembled.contains('\n'), "long line wraps: {assembled:?}");
+        for line in assembled.split('\n') {
+            // 35 chars plus at most one unsplit word beyond the boundary.
+            assert!(line.chars().count() <= 35 + 12, "line within wrap bound: {line:?}");
+        }
+        // And the drawer renders each wrapped line on its own font row.
         let mut e = EngineState::new();
         e.scene_palette[0xFD] = [255, 255, 255];
-        // a long line that would clip on one row: wrapping draws pixels on multiple rows
-        let long = "You can wake Cap'n Bob by clicking on the CRYO chamber control panel now";
-        e.draw_subtitle(long, 0xFD);
-        // count rows that contain subtitle pixels; wrapping => more than one glyph row
+        e.draw_subtitle(&assembled, 0xFD);
         let w = ENGINE_SCREEN_WIDTH;
         let rows_with_text = (0..30)
             .filter(|&r| e.framebuffer[r * w..(r + 1) * w].iter().any(|&p| p == 0xFD))
             .count();
-        assert!(rows_with_text > 8, "text occupies multiple wrapped lines (rows={rows_with_text})");
+        assert!(rows_with_text > 8, "text occupies multiple wrapped rows (rows={rows_with_text})");
     }
 
     #[test]
