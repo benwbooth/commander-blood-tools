@@ -379,6 +379,28 @@ these; use `dump_segments.py --contains <imgoff>` to map an offset to its segmen
 | 0x00D420 | 0x0152D8 | 0x7EB8 | data | strings, font, tables |
 | 0x014C22 | 0x014D28 | 0x106 | asset: dialogue font | confirmed (README + screenshots) |
 
+## Object-instance system (decoded, sess 007)
+
+The runtime object/entity table — reached by tracing `resource_handle_resolve` consumers
+(all in `labels.csv`). `entity_object_table` at `DS:0x6212` (gs-relative), **32-byte
+records** indexed by `object-id << 5` (size triple-confirmed: two populate routines +
+a `rep movsd cx=8` copy). Record map:
+
+| Off | Field |
+|-----|-------|
+| `+0x00` | flags word — bit map: `0x80`=active, `0x01/0x02`=state pair (0x01→0x02 advance), `0x20/0x40`=toggle states, `0x04`=source-carried; `0x83` init |
+| `+0x04`/`+0x06` | far pointer to the object's data (offset/segment), unpacked from a packed dword |
+| `+0x08` | comparable id/group/target (mismatch vs param → state advance) |
+| `+0x0c`/`+0x0e` | two data words (position?) |
+| `+0x14`/`+0x16` | initial backups of `+0x0c`/`+0x0e` (reset-to values) |
+
+Routines: `entity_object_populate` 0x40d0 (from resolved resource) / `_from_src` 0x4150
+(from `es:di`); `entity_get_flags` 0x41c3; a **flag-toggle family** (0x41d1, 0x420d,
+0x428c, …) each gating a distinct state-bit change on the active bit; `entity_make_active`
+0x4316 (copy record → work-copy `GS:0x0AF2`). The ~21-routine cluster `0x40d0..0x4400` is
+the accessor layer. **Remaining**: the per-frame iterator/update/draw that loops the
+table and calls these (the object-simulation proper) — not yet located.
+
 ## `.ext` world-file structure (partial, sess 007)
 
 The planet/cyberspace world files (`src/ext.rs` ports the framing). **Uncompressed**
