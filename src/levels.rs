@@ -94,6 +94,32 @@ pub fn is_ext_world(data: &[u8]) -> bool {
     data.len() >= EXT_WORLD_MAGIC.len() && data[..EXT_WORLD_MAGIC.len()] == EXT_WORLD_MAGIC
 }
 
+/// The `fd/` location-art filename prefix for a world's rooms. Each world has multiple
+/// room backgrounds under `fd/` (floors `1`/`2`/`3`, view-angle suffixes `b`/`d`/`f`/`g`);
+/// the naming is per-world (some `1<5char>` like `1venus`, some `<name>1<suffix>` like
+/// `kortex1`), so this is an explicit verified map rather than a computed rule. Returns
+/// the prefix that a world's location LBMs start with, or `None` if the world's art isn't
+/// under this naming (e.g. sprite/script entries, or worlds shown via HNM not LBM).
+pub fn world_location_art_prefix(stem: &str) -> Option<&'static str> {
+    Some(match stem {
+        "venusia" => "1venus",
+        "eden" => "1eeden",
+        "ekatomb" => "1ekato",
+        "erazor" => "1erazo",
+        "kult" => "1kkult",
+        "magnus" => "1magnu",
+        "mastacho" => "1masta",
+        "rondo" => "1rondo",
+        "vista" => "1vista",
+        "cyber" => "1cyber",
+        "kortex" => "kortex",
+        "pterra" => "pterra",
+        "crazy" => "crazys",
+        "moskito" => "moskit",
+        _ => return None,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -107,6 +133,28 @@ mod tests {
         assert_eq!(entry(19).unwrap().stem, "cyber");
         assert_eq!(entry(29).unwrap().stem, "cyber2");
         assert_eq!(entry(30).unwrap().stem, "cyber3");
+    }
+
+    #[test]
+    fn world_location_art_prefixes_resolve_to_real_fd_files() {
+        // Each mapped world must have at least one matching fd/ location LBM.
+        let dir = ["output/_tmp_dat/fd", "../output/_tmp_dat/fd"]
+            .iter().map(std::path::Path::new).find(|p| p.exists());
+        let Some(dir) = dir else { return };
+        let files: Vec<String> = std::fs::read_dir(dir)
+            .unwrap()
+            .filter_map(|e| e.ok())
+            .map(|e| e.file_name().to_string_lossy().to_lowercase())
+            .collect();
+        for world in ["venusia", "eden", "ekatomb", "kult", "magnus", "kortex", "pterra"] {
+            let prefix = world_location_art_prefix(world).unwrap();
+            assert!(
+                files.iter().any(|f| f.starts_with(prefix) && f.ends_with(".lbm")),
+                "world {world} -> prefix {prefix} has an fd/ LBM"
+            );
+        }
+        // A non-mapped entry returns None.
+        assert!(world_location_art_prefix("script2.cod").is_none());
     }
 
     #[test]
