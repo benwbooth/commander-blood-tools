@@ -401,3 +401,7 @@ GS:0x2789,entity_draw_scale,"entity draw zoom/scale factor: entity_draw computes
 0x00AABC,rle_decode_step,"RLE decode step (2 calls): ah=0; al=[bx] control byte; if negative (js) it's a run (al+=al, cl=[bx+1] run length). A run-length decompression primitive (same negative-control convention as the sprite blit)"
 0x00BD09,timer_tick_b9f,"timer/counter tick (2 calls): bl=gs:[0xb9f]; dec; if it underflows call 0xbd26 (reload/fire) else store back. A countdown timer (sound-tempo/frame pacing) that fires 0xbd26 on expiry"
 GS:0x0B9F,timer_counter,"countdown timer counter (gs:0xb9f); decremented by timer_tick_b9f 0xbd09, fires 0xbd26 + reloads on expiry. A tempo/frame-pacing counter"
+0x00079C,save_timer_vector,"startup: int21h ax=0x3508 (get interrupt vector 8 = the system timer); store the original handler seg:off to gs:[0xb1d]/[0xb1f] so it can be chained/restored. Hooks the timer interrupt for the game's tick"
+0x0007EA,program_pit,"startup: cli; out 0x43,0x36 (PIT ch0 mode 3 square wave) + out 0x42/al=0xff divisor. Reprograms the 8253 PIT tick rate for the game's timing (faster than the default 18.2Hz)"
+0x00099F,get_ems_int_vector,"startup: int21h ax=0x3567 (get interrupt vector 0x67 = the EMS driver entry); di=0xa. EMS (int 67h) detection/setup - the large-memory banking the gs:0xd8c/ems_paged_read subsystem uses"
+0x000726,read_cmdline_args,"startup: bp=0x23a (PSP/args area); cmp [bp],0; parse command-line arguments (the game needs 'AMR S162227 EMS WRIC:...' launch args, see memory). Reads the invocation config"
