@@ -441,3 +441,6 @@ GS:0x6726,object_heap_segment,"segment of the runtime object/instance heap (es:[
 0x00755E,index_lookup_dca,"index-table lookup: di=0xdca; lodsb al (operand); dec al; cwde (index-1 signed). Indexes a table at DS:0xdca by the script operand"
 0x007788,fs_name_area_read,"read from the FS resource-name area: es=fs; di=0xc74 (near the FS:0x0c04 resource-name table); lodsb - reads a resource name/entry indexed by the script"
 0x00071CF,vm_lookup_prep,"VM lookup prep (also 0x721a): call table_672c_process 0x604e; si=0x6a16 (the processed lookup output). Prepares the 0x672c->0x6a16 lookup for VM record resolution"
+0x00994D,matrix3d_mul_fixed,"fixed-point 3D matrix multiply (family 0x994d/0x9982/0x99a5 = the matrix product rows): imul dword [si+off1] * [si+off2]; sar eax,0xf (Q15 fixed-point >>15); stosd es:[di]. Computes the rotation/projection matrix element products - the ship-3D / object-3D transform math (native counterpart to ship3d.rs build_ship_3d_projection_matrix)"
+0x0097D6,angle_wrap_180,"angle normalization: if bx>=0x168 (360) subtract 360; shr bx,1 (->0..180). Wraps a 0..360 angle into the 0..180 half-range used by the trig/projection tables"
+0x00963F,matrix_table_clear_2a1b,"clear the 3D matrix/object table: bp=0x2a1b; cx=6 records; [bp]=0; bp+=0x18 (24-byte stride). Zeros 6x 24-byte records (the per-object transform slots at 0x2a1b)"
