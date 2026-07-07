@@ -474,3 +474,6 @@ DS:0x65F2,ui_region_table,"table of 8-byte clickable-UI-region records (0x1f ent
 0x0026CF,resource_close_check,"resource-handle close check: cmp gs:[0xa86],0; if a handle is open, close/release it before reuse. Guards resource-handle reuse"
 0x00280F,resource_lookup_helper,"resource lookup helper: push cs; call resource_name_lookup 0x28ca; ebp result. Resolves a resource by its name-table entry (used in the load path)"
 0x002E73,fullscreen_op,"full-screen (0xfa00=64000-byte) operation: ebp=0xfa00 budget; 32-bit fill/copy loop over the whole 320x200 frame. A screen clear/fill or bulk-decode over the full framebuffer"
+0x006433,dic_word_lookup,"DIC dictionary lookup: lds si,gs:[0x6728] (the DIC far pointer = the text-word dictionary); les di,gs:[0x672c]; si+=ax (word offset). Fetches a dictionary word for 0xA6 TEXT assembly (the b1b2 dictionary-word offsets)"
+0x00647B,scan_zero_word,"0x0000-word-terminated operand scanner: cx=0xffff; loop lodsw until a zero word. This is the length-0 opcode operand-advance (0xA8/0xAC/0xCC/0xD3) documented in dead_ends sess 001 - scans the variable operand to its 0x0000 terminator"
+0x0067A7,strlen_b,"null-terminated string length (repne scasb variant of strlen 0x2665): cx=0xffff; scan es:di for 0; neg cx = length"
