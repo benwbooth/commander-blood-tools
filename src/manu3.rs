@@ -5,9 +5,10 @@
 //! → column) and dispatches through the menu handlers. Ported here: the input-coord
 //! decode + item-selection dispatch (`0x181`, `base + table[item]`), the tween setup
 //! that links selection to animation (`0x1DF`, `delta = (end-current)<<16 / count`),
-//! and the menu animation/tween list (`0x19B`) — the full menu animation pipeline
-//! (select → build tweens → advance). Remaining: the per-item action handlers the
-//! dispatch jumps to, and the 3D pyramid draw.
+//! the menu animation/tween list (`0x19B`) — the full menu animation pipeline
+//! (select → build tweens → advance) — and the 3D-menu camera pan (`0x34..0x51`,
+//! centre-delta steering). Remaining: the per-item action handlers the dispatch jumps
+//! to, and the pyramid vertex draw (`0x270`, via the shared ship-3D compositor).
 
 /// The menu-item column index from the caller's input word (`[bp+4] & 0x1F`, method
 /// entry `0x000`/`0x181`) — 0..31 selects one of up to 32 menu items.
