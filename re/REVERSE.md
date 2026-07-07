@@ -379,6 +379,30 @@ these; use `dump_segments.py --contains <imgoff>` to map an offset to its segmen
 | 0x00D420 | 0x0152D8 | 0x7EB8 | data | strings, font, tables |
 | 0x014C22 | 0x014D28 | 0x106 | asset: dialogue font | confirmed (README + screenshots) |
 
+## Level/world-file directory (decoded, sess 007)
+
+The game's level manifest is a table of **16-byte filename records** in segment
+`0x0ca3` (file `0xcf04`, spans the segment wrap at `0xffff→0`). Filenames are loaded
+via this table (gs/es set to `0x0ca3` + record offset), which is why plain DS-offset
+searches for e.g. `cyber.ext` (`mov dx,0x429`) find nothing — see `dead_ends.md`.
+
+Entries (index: `0x0ca3:offset` filename):
+
+```
+ 0 bcarte.spr    1 bhyper.spr   2 bpol.spr     3 aphyper.spr  4 appol.spr   (bridge/HUD sprites)
+ 5 black.ext     6 kult.ext     7 rondo.ext    8 venusia.ext  9 erazor.ext  (planet worlds)
+10 mastacho.ext 11 magnus.ext  12 ekatomb.ext 13 crazy.ext   14 eden.ext
+15 kortex.ext   16 vista.ext   17 moskito.ext 18 pterra.ext  19 cyber.ext
+20 script2.cod  21 script2.bas 22 script2.var 23 script2.dic 24 script2.deb (script bytecode set)
+25 dnsdb.drv    26 corpo.ext   27 carte.spr   28 bigark.ext
+29 cyber2.ext   30 cyber3.ext                                (cyberspace has 3 levels)
+31 eden2.ext    32 eden3.ext   33 ekatomb2.ext 34 ekatomb3.ext 35 erazor2.ext (planet sub-levels)
+```
+
+These `.ext` worlds are the navigable destinations (venusia/magnus/ekatomb/eden/kortex/…
+match the `fd/1<name>*.lbm` location art). cyberspace = entries 19/29/30. So level
+loading is table-driven off this directory, indexed by world number.
+
 ## Key Findings
 
 ### Architecture
