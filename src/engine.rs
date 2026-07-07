@@ -178,6 +178,9 @@ pub struct EngineState {
     /// Real world names to label the nearest nav-destination row with (the navigable
     /// `.ext` planets from the decoded level directory, [`crate::levels`]).
     nav_world_labels: Vec<&'static str>,
+    /// When a world is being "visited" from the nav map, its decoded location-room
+    /// background (the `fd/` PBM art) + name, shown as the landing screen.
+    world_location: Option<(crate::lbm::LbmImage, String)>,
     /// The game's star-map destination pyramid frames (CARTE.SPR f0..f5, six
     /// pre-scaled sizes) + selection reticle (f6) — the real art drawn by the sprite
     /// path at projected destination positions.
@@ -308,6 +311,7 @@ impl EngineState {
             hud_grid: Vec::new(),
             hud_orb: Vec::new(),
             nav_world_labels: crate::levels::primary_worlds().map(|e| e.stem).collect(),
+            world_location: None,
             nav_pyramids: Vec::new(),
             camera: crate::ship3d::Ship3dCameraApproach::default(),
             alien_views: Vec::new(),
@@ -973,6 +977,84 @@ impl EngineState {
         self.nav_world_labels.iter().take(7).copied().collect()
     }
 
+    /// Visit a world by name: load its entry-room location background (the decoded `fd/`
+    /// PBM art the world maps to) from `assets` and show it as the landing screen.
+    /// Returns whether a background was found + loaded. The floor-1, standard-view (`f`)
+    /// room is the entry room; falls back to any matching room LBM.
+    pub fn visit_world(&mut self, world: &str, assets: &std::path::Path) -> bool {
+        let Some(prefix) = crate::levels::world_location_art_prefix(world) else {
+            return false;
+        };
+        let fd = assets.join("fd");
+        let candidates = [format!("{prefix}1f.lbm"), format!("{prefix}1d.lbm")];
+        let mut chosen: Option<std::path::PathBuf> = None;
+        for c in &candidates {
+            let p = fd.join(c);
+            if p.exists() {
+                chosen = Some(p);
+                break;
+            }
+        }
+        // Fall back to the first fd/ file with this prefix (any floor/view).
+        if chosen.is_none() {
+            if let Ok(rd) = std::fs::read_dir(&fd) {
+                chosen = rd
+                    .filter_map(|e| e.ok())
+                    .map(|e| e.path())
+                    .filter(|p| {
+                        p.file_name()
+                            .and_then(|n| n.to_str())
+                            .map(|n| n.to_lowercase().starts_with(prefix) && n.ends_with(".lbm"))
+                            .unwrap_or(false)
+                    })
+                    .min();
+            }
+        }
+        let Some(path) = chosen else { return false };
+        let Ok(data) = std::fs::read(&path) else { return false };
+        let Some(img) = crate::lbm::decode_pbm(&data) else {
+            return false;
+        };
+        self.world_location = Some((img, world.to_uppercase()));
+        true
+    }
+
+    /// Whether the world-location landing screen is active.
+    pub fn world_location_active(&self) -> bool {
+        self.world_location.is_some()
+    }
+
+    /// Close the world-location screen (back to nav).
+    pub fn leave_world(&mut self) {
+        self.world_location = None;
+    }
+
+    /// Render the current world-location background (its decoded palette + pixels) with
+    /// the world name captioned, into the framebuffer.
+    fn render_world_location(&mut self) {
+        let Some((img, name)) = &self.world_location else {
+            return;
+        };
+        // Blit the decoded room background (320x200 fills the screen).
+        for y in 0..ENGINE_SCREEN_HEIGHT.min(img.height) {
+            for x in 0..ENGINE_SCREEN_WIDTH.min(img.width) {
+                self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] = img.pixels[y * img.width + x];
+            }
+        }
+        self.scene_palette = img.palette;
+        self.scene_palette[0xFE] = [245, 245, 160];
+        let name = name.clone();
+        draw_text_indexed(
+            &mut self.framebuffer,
+            ENGINE_SCREEN_WIDTH,
+            ENGINE_SCREEN_HEIGHT,
+            &name,
+            8,
+            6,
+            0xFE,
+        );
+    }
+
     fn render_nav_pyramid_sprites(&mut self) {
         use crate::ship3d::{
             SHIP_3D_ANGLE_TABLE, Ship3dMatrixAngles, build_ship_3d_projection_matrix,
@@ -1306,6 +1388,14 @@ impl EngineState {
         // Ship-bridge hub takes precedence when active: show the station console.
         if self.bridge_active && !self.bridge_stations.is_empty() {
             self.render_bridge();
+            self.countdown = self.countdown.saturating_sub(1);
+            self.frame += 1;
+            return;
+        }
+        // World-location landing screen: the decoded fd/ room background of a visited
+        // world takes precedence while active.
+        if self.world_location.is_some() {
+            self.render_world_location();
             self.countdown = self.countdown.saturating_sub(1);
             self.frame += 1;
             return;
@@ -2009,6 +2099,27 @@ mod tests {
         let long = e.current_line_hold();
         assert!(long > short, "longer line held longer ({long} > {short})");
         assert!(short >= 20, "at least the base hold");
+    }
+
+    #[test]
+    fn visiting_a_world_loads_its_decoded_location_background() {
+        let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
+            .iter().map(std::path::Path::new).find(|p| p.exists());
+        let Some(assets) = assets else { return };
+        let mut e = EngineState::new();
+        assert!(!e.world_location_active());
+        // Visiting a mapped world loads its fd/ room background.
+        assert!(e.visit_world("venusia", assets), "venusia has decoded location art");
+        assert!(e.world_location_active());
+        // The landing screen renders the background (non-blank framebuffer).
+        e.step(MouseInput::default());
+        let distinct = e.framebuffer.iter().collect::<std::collections::BTreeSet<_>>().len();
+        assert!(distinct > 8, "location background renders real content");
+        // Leaving returns to nav.
+        e.leave_world();
+        assert!(!e.world_location_active());
+        // A world with no fd/ mapping (e.g. black) declines gracefully.
+        assert!(!e.visit_world("script2.cod", assets));
     }
 
     #[test]
