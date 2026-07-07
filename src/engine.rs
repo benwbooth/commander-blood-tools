@@ -191,6 +191,9 @@ pub struct EngineState {
     /// When a world is being "visited" from the nav map, its decoded rooms (the `fd/`
     /// PBM art) — cyclable — shown as the landing/exploration screen.
     world_location: Option<WorldVisit>,
+    /// The decoded title art (`BLOOD.LBM`, 640×480 planar ILBM) downscaled to the
+    /// 320×200 framebuffer + its palette, shown as the title screen when armed.
+    title_screen: Option<(Vec<u8>, [[u8; 3]; 256])>,
     /// The game's star-map destination pyramid frames (CARTE.SPR f0..f5, six
     /// pre-scaled sizes) + selection reticle (f6) — the real art drawn by the sprite
     /// path at projected destination positions.
@@ -322,6 +325,7 @@ impl EngineState {
             hud_orb: Vec::new(),
             nav_world_labels: crate::levels::primary_worlds().map(|e| e.stem).collect(),
             world_location: None,
+            title_screen: None,
             nav_pyramids: Vec::new(),
             camera: crate::ship3d::Ship3dCameraApproach::default(),
             alien_views: Vec::new(),
@@ -987,6 +991,48 @@ impl EngineState {
         self.nav_world_labels.iter().take(7).copied().collect()
     }
 
+    /// Load + arm the title screen from `BLOOD.LBM` under `iso`: decode the planar ILBM
+    /// title art and downscale it 2× (640×480 → 320×200, nearest) into the framebuffer's
+    /// resolution. Returns whether it loaded. Shown until dismissed.
+    pub fn load_title(&mut self, iso: &std::path::Path) -> bool {
+        let Ok(data) = std::fs::read(iso.join("BLOOD.LBM")) else {
+            return false;
+        };
+        let Some(img) = crate::lbm::decode_lbm(&data) else {
+            return false;
+        };
+        // Downscale by the integer ratio to the engine framebuffer (nearest sample).
+        let sx = (img.width / ENGINE_SCREEN_WIDTH).max(1);
+        let sy = (img.height / ENGINE_SCREEN_HEIGHT).max(1);
+        let mut buf = vec![0u8; ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT];
+        for y in 0..ENGINE_SCREEN_HEIGHT {
+            for x in 0..ENGINE_SCREEN_WIDTH {
+                let src = (y * sy).min(img.height - 1) * img.width + (x * sx).min(img.width - 1);
+                buf[y * ENGINE_SCREEN_WIDTH + x] = img.pixels[src];
+            }
+        }
+        self.title_screen = Some((buf, img.palette));
+        true
+    }
+
+    /// Whether the title screen is armed/showing.
+    pub fn title_active(&self) -> bool {
+        self.title_screen.is_some()
+    }
+
+    /// Dismiss the title screen (advance to the intro/game).
+    pub fn dismiss_title(&mut self) {
+        self.title_screen = None;
+    }
+
+    /// Render the downscaled title art into the framebuffer.
+    fn render_title(&mut self) {
+        if let Some((buf, pal)) = &self.title_screen {
+            self.framebuffer.copy_from_slice(buf);
+            self.scene_palette = *pal;
+        }
+    }
+
     /// Visit a world by name: collect all its decoded `fd/` rooms (floor/view-angle
     /// backgrounds the world maps to) from `assets`, show the first, and enable cycling.
     /// Returns whether any room was found + loaded. Rooms are ordered by filename so
@@ -1418,6 +1464,12 @@ impl EngineState {
     /// so the loop is drivable and testable headlessly.
     pub fn step(&mut self, input: MouseInput) {
         self.poll_input(input);
+        // Title art (BLOOD.LBM) shows first when armed, until dismissed.
+        if self.title_screen.is_some() {
+            self.render_title();
+            self.frame += 1;
+            return;
+        }
         // Startup intro videos play full-screen first (developer/publisher logos +
         // intro cutscene), exactly as the real game boots, before any nav/dialogue.
         if self.intro_active {
@@ -2139,6 +2191,23 @@ mod tests {
         let long = e.current_line_hold();
         assert!(long > short, "longer line held longer ({long} > {short})");
         assert!(short >= 20, "at least the base hold");
+    }
+
+    #[test]
+    fn title_screen_loads_and_shows_the_decoded_box_art() {
+        let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter().map(std::path::Path::new).find(|p| p.exists());
+        let Some(iso) = iso else { return };
+        let mut e = EngineState::new();
+        assert!(e.load_title(iso), "BLOOD.LBM title art loads");
+        assert!(e.title_active());
+        // The title takes render precedence and fills the framebuffer with real art.
+        e.step(MouseInput::default());
+        let distinct = e.framebuffer.iter().collect::<std::collections::BTreeSet<_>>().len();
+        assert!(distinct >= 8, "title art renders ({distinct} indices)");
+        // Dismissing advances past the title.
+        e.dismiss_title();
+        assert!(!e.title_active());
     }
 
     #[test]

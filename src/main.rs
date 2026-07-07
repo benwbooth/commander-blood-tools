@@ -232,7 +232,9 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     ) {
         engine.load_nav_sprites(&carte, &borxx);
     }
-    // Play the startup intro videos first (logos + intro cutscene), like the real game.
+    // Show the decoded title/box art (BLOOD.LBM) first; a click or key dismisses it.
+    engine.load_title(Path::new(iso));
+    // Play the startup intro videos next (logos + intro cutscene), like the real game.
     engine.load_intro(Path::new(assets));
     // The alien-examination screen (Scruter Jo): press 'c' to toggle it in nav.
     engine.load_alien_view(Path::new(assets), "scrut");
@@ -368,6 +370,10 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         .clamp(0, dst_h as isize - 1) as usize;
                     mx = (ex / scale).min(src_w - 1) as u16;
                     my = (ey / scale).min(src_h - 1) as u16;
+                }
+                // Any click/key dismisses the title screen first (advance to the intro).
+                Event::ButtonPress(_) | Event::KeyPress(_) if engine.title_active() => {
+                    engine.dismiss_title();
                 }
                 // On the bridge hub, a click on a station icon opens its screen.
                 Event::ButtonPress(b) if engine.bridge_active && b.detail == 1 => {
