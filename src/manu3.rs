@@ -174,6 +174,33 @@ mod tests {
     }
 
     #[test]
+    fn item_dispatch_matches_real_manu3_table() {
+        // Verify the ported dispatch against the real overlay: base = [0x2306], and
+        // handler = base + table[item] must land inside the overlay's code. Skips if
+        // the asset isn't present.
+        let path = ["output/_tmp_dat/manu3.xdb", "../output/_tmp_dat/manu3.xdb"]
+            .iter().map(std::path::Path::new).find(|p| p.exists());
+        let Some(path) = path else { return };
+        let data = std::fs::read(path).unwrap();
+        let base = u16::from_le_bytes([data[0x2306], data[0x2307]]);
+        assert_eq!(base, 0x3E72, "the [0x2306] table base");
+        let table: Vec<u16> = (0..12)
+            .map(|i| {
+                let o = base as usize + i * 2;
+                u16::from_le_bytes([data[o], data[o + 1]])
+            })
+            .collect();
+        // Item 0's handler resolves to a real code offset inside the file.
+        let h0 = menu_item_handler(base, &table, 0);
+        assert_eq!(h0, 0x6254);
+        assert!((h0 as usize) < data.len(), "handler is within the overlay");
+        // The dispatch equals base + table[item] for every item.
+        for (i, &entry) in table.iter().enumerate() {
+            assert_eq!(menu_item_handler(base, &table, i), base.wrapping_add(entry));
+        }
+    }
+
+    #[test]
     fn item_index_and_handler_dispatch() {
         // Item index = input & 0x1F.
         assert_eq!(menu_item_index(0x0000), 0);
