@@ -379,6 +379,26 @@ these; use `dump_segments.py --contains <imgoff>` to map an offset to its segmen
 | 0x00D420 | 0x0152D8 | 0x7EB8 | data | strings, font, tables |
 | 0x014C22 | 0x014D28 | 0x106 | asset: dialogue font | confirmed (README + screenshots) |
 
+## `.ext` world-file structure (partial, sess 007)
+
+The planet/cyberspace world files (`src/ext.rs` ports the framing). **Uncompressed**
+structured data throughout (dense-tail entropy ≈ 3.37 bits/byte, ~50% zeros — not
+packed/compressed), so fully decodable with analysis. Layout (venusia, 15892 B):
+
+| Range | Contents |
+|-------|----------|
+| `0x00..0x08` | 8-byte magic `02 00 00 01 00 00 00 81` (identical across all worlds) |
+| `0x08` | first-section record count (byte): ~63 most worlds (62/55/49/33/12 some) |
+| `0x09..` | count × 3-byte records, each value indexes within the count (`0`=no link) — a 3-link adjacency/index table; **FF FF-terminated** (36/37 worlds) |
+| after `FF FF` | sparse index/pointer region (mostly zeros, occasional 16-bit values e.g. 134,117) |
+| ~`0x0e00..end` | dense structured payload (uncompressed; ~64 distinct byte values) — the per-room geometry/object data |
+
+CORRECTION: the 3-byte records are **not** universally triangle-mesh faces — that was
+over-generalized from venusia (79% ascending triples); most worlds are ~0% ascending
+(see `ext.rs` note). The adjacency/index framing is what's validated; the record
+*semantic* + the payload layout are still under study (need the file's consumer, whose
+load path is far-pointer/gs-relative — see `dead_ends.md`).
+
 ## Level/world-file directory (decoded, sess 007)
 
 The game's level manifest is a table of **16-byte filename records** in segment
