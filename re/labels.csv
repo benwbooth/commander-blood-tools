@@ -519,3 +519,7 @@ DS:0x65F2,ui_region_table,"table of 8-byte clickable-UI-region records (0x1f ent
 0x00000003,entity_accessor_family_note,"NOTE: the cluster 0x426d/0x42ab/0x4374/0x438d/0x43b9/0x43d8/0x414e/0x41f0 (and neighbours) are all entity_object_table accessors - each does shl ax,5; bx=0x6212+ax<<5; read/write a specific field (word at gs:[bx] or byte at an offset) of the 32-byte entity record. They are per-field get/set variants of the object-instance accessor set (get_flags 0x41c3, transition 0x41d1, toggle family), not distinct subsystems"
 0x00608F,vm_lookup_process_694e,"VM lookup processor: es=ax; lfs bx,gs:[0x672c] (lookup table); di=0x694e (destination); bx=2. Processes the 0x672c lookup entries into the 0x694e work area for VM record resolution"
 0x006339,vm_condition_5,"VM conditional check: test cl,2; ax=5; lcall 0x1ce:0xb02 (the condition/PRNG evaluator, param 5). Evaluates a script condition (branch on the result)"
+0x007259,vm_text_helper_6886,"VM/dialogue helper: ds=ax; bp=0x6886; call 0x624b. Processes dialogue/text state at gs:0x6886 (near the active-line record)"
+0x007325,draw_accumulate_27d1,"draw + accumulate: ax=1; lcall 0x299:0x13d (draw); gs:[0x27d1] += bx. Draws an element and advances the [0x27d1] rotation/scroll accumulator (nav/HUD sweep)"
+0x0076EA,index_lookup_1fd7,"index-table lookup: di=0x1fd7; lodsb operand; cwde (signed index). Indexes a table at DS:0x1fd7 by the script operand"
+0x007CE8,list_walk_f18,"list walk: ds=ax; si=[0xf18]; loop lodsw until 0. Walks a null-word-terminated list pointed to by [0xf18]"
