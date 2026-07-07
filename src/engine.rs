@@ -190,6 +190,11 @@ pub struct EngineState {
     /// Per-line resolved talk-HNM asset path (the speaker's animation for each
     /// dialogue line), loaded automatically as playback advances.
     dialogue_scene_paths: Vec<Option<std::path::PathBuf>>,
+    /// Per-line resolved speaker voice bank (`sn/<name>.snd`), parallel to
+    /// [`EngineState::dialogue`].
+    dialogue_voice_banks: Vec<Option<std::path::PathBuf>>,
+    /// The A6 voice-selector byte per text-token offset (for the current script).
+    voice_by_offset: HashMap<usize, u8>,
     /// The next scene/profile index this script's D2 handoff requests (the
     /// scene-to-scene dispatch target), or `None` if the script has no successor.
     pending_profile: Option<u16>,
@@ -255,6 +260,8 @@ impl EngineState {
             text_speed_step: crate::vm::text_speed_step_from_setting(3),
             dialogue_timer: 0,
             dialogue_scene_paths: Vec::new(),
+            dialogue_voice_banks: Vec::new(),
+            voice_by_offset: HashMap::new(),
             pending_profile: None,
             scene_queue: Vec::new(),
             scene_queue_idx: 0,
@@ -399,7 +406,44 @@ impl EngineState {
                     .and_then(|m| hnm_paths.get(&m.name.to_lowercase()).cloned())
             })
             .collect();
+        // Per-line speaker voice bank (`sn/<name>.snd` from the speaker's DESCRIPT
+        // record) — the bank the game's voice path plays clips from.
+        self.dialogue_voice_banks = self
+            .dialogue
+            .iter()
+            .map(|l| {
+                l.actor_offset
+                    .and_then(|o| object_names.get(&o))
+                    .and_then(|name| descript_db.record(name))
+                    .and_then(|r| r.snd.as_ref())
+                    .map(|s| {
+                        let stem = s.rsplit(['\\', '/']).next().unwrap_or(s).to_lowercase();
+                        asset_dir.join("sn").join(stem)
+                    })
+                    .filter(|p| p.exists())
+            })
+            .collect();
         self.load_current_scene();
+    }
+
+    /// Current dialogue playback cursor (line index), for drivers that react to line
+    /// changes (e.g. per-line voice playback).
+    pub fn dialogue_cursor(&self) -> usize {
+        self.dialogue_cursor
+    }
+
+    /// The current line's voice: the speaker's SND bank path + the line's voice
+    /// selector byte (the A6 token's `b3`; `0xFF`/subtitle-only lines yield `None`).
+    /// A driver resolves the clip via `vm::text_selector_voice_clip_index` against
+    /// the bank's clip count and plays it once at line start.
+    pub fn current_voice(&self) -> Option<(std::path::PathBuf, u8)> {
+        let bank = self
+            .dialogue_voice_banks
+            .get(self.dialogue_cursor)?
+            .clone()?;
+        let line = self.dialogue.get(self.dialogue_cursor)?;
+        let sel = *self.voice_by_offset.get(&line.offset)?;
+        Some((bank, sel))
     }
 
     /// Load the talk-HNM resolved for the current dialogue line (if any).
@@ -418,9 +462,11 @@ impl EngineState {
         // Reconstruct each text call's subtitle text from the dictionary.
         let words = parse_dictionary(dic);
         let mut text_by_offset: HashMap<usize, String> = HashMap::new();
+        self.voice_by_offset.clear();
         for tok in walk(cod, 0, cod.len()) {
             if let VmToken::Text {
                 offset,
+                voice_selector,
                 word_offsets,
                 ..
             } = tok
@@ -432,6 +478,7 @@ impl EngineState {
                 if !parts.is_empty() {
                     text_by_offset.insert(offset, assemble_words(&parts));
                 }
+                self.voice_by_offset.insert(offset, voice_selector);
             }
         }
         let trace = execute_trace(cod, var);

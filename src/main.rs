@@ -261,6 +261,14 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     }
     let mut music = Music(None);
 
+    // Per-line voice: when the dialogue line changes, play the speaker's SND clip
+    // for that line (bank from the speaker's DESCRIPT record, clip index from the
+    // A6 voice selector via the decoded one-based mapping). One voice at a time.
+    let mut voice: Option<commander_blood_tools::audio::MusicPlayer> = None;
+    let mut voice_line: Option<usize> = None;
+    let mut snd_cache: std::collections::HashMap<std::path::PathBuf, commander_blood_tools::snd::SndBank> =
+        std::collections::HashMap::new();
+
     // Load SCRIPT<n>'s dialogue into the engine (the destination's scene) and start
     // that scene's background music, as the game does per location.
     let load_script = |engine: &mut EngineState, music: &mut Music, n: u32| {
@@ -395,7 +403,34 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
         } else if !engine.on_ship && engine.dialogue_finished() {
             engine.on_ship = true;
             music.stop();
+            voice = None;
+            voice_line = None;
         }
+        // Speak the current line once when playback reaches it.
+        if !engine.on_ship && voice_line != Some(engine.dialogue_cursor()) {
+            voice_line = Some(engine.dialogue_cursor());
+            voice = None;
+            if let Some((bank_path, selector)) = engine.current_voice() {
+                let bank = snd_cache.entry(bank_path.clone()).or_insert_with(|| {
+                    commander_blood_tools::snd::SndBank::read(&bank_path).unwrap_or_else(|_| {
+                        commander_blood_tools::snd::SndBank::parse(&[0, 0, 0, 0, 0, 0])
+                            .expect("empty bank")
+                    })
+                });
+                if let Some(idx) = commander_blood_tools::vm::text_selector_voice_clip_index(
+                    selector,
+                    bank.clip_count(),
+                ) {
+                    if let Some(clip) = bank.clip(idx) {
+                        voice = commander_blood_tools::audio::MusicPlayer::start_once(
+                            clip.pcm.clone(),
+                            clip.sample_rate,
+                        );
+                    }
+                }
+            }
+        }
+        let _ = &voice; // keep the stream alive while the line plays
         // Clear the whole window (letterbox borders + a full erase so nothing from the
         // previous frame can bleed through), then scale the framebuffer in.
         for b in image.iter_mut() {

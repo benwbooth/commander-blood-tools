@@ -18,6 +18,16 @@ impl MusicPlayer {
     /// Start looping playback. Returns `None` when no output device is available
     /// (the engine stays silent — audio is never a hard dependency).
     pub fn start(pcm: Vec<u8>, src_rate: u32) -> Option<Self> {
+        Self::start_inner(pcm, src_rate, true)
+    }
+
+    /// Play once (voice clips): the stream goes silent at the end of the data and
+    /// idles until dropped.
+    pub fn start_once(pcm: Vec<u8>, src_rate: u32) -> Option<Self> {
+        Self::start_inner(pcm, src_rate, false)
+    }
+
+    fn start_inner(pcm: Vec<u8>, src_rate: u32, looped: bool) -> Option<Self> {
         if pcm.is_empty() || src_rate == 0 {
             return None;
         }
@@ -46,9 +56,15 @@ impl MusicPlayer {
                     }
                     let mut p = pos.load(Ordering::Relaxed);
                     for frame in out.chunks_mut(channels) {
-                        let idx = (p >> 16) % pcm.len();
-                        // u8 unsigned PCM -> f32 in [-1, 1].
-                        let s = (pcm[idx] as f32 - 128.0) / 128.0;
+                        let raw = p >> 16;
+                        let s = if looped {
+                            (pcm[raw % pcm.len()] as f32 - 128.0) / 128.0
+                        } else if raw < pcm.len() {
+                            // u8 unsigned PCM -> f32 in [-1, 1].
+                            (pcm[raw] as f32 - 128.0) / 128.0
+                        } else {
+                            0.0 // play-once: silence past the end
+                        };
                         for slot in frame.iter_mut() {
                             *slot = s;
                         }
