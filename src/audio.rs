@@ -96,3 +96,82 @@ impl Drop for MusicPlayer {
         self.stop();
     }
 }
+
+/// The 8253/8254 PIT input clock (Hz) — the base frequency the PC-speaker channel-2
+/// square wave is divided down from.
+pub const PIT_CLOCK_HZ: f32 = 1_193_182.0;
+
+/// Convert a PIT frequency divisor (the value written to port 0x42) to the PC-speaker
+/// tone frequency in Hz, exactly as the hardware does: `1193182 / divisor`. The game's
+/// beep handler (`cmd_handler_pc_speaker_beep` 0x6c0) writes divisor `0x2e9c` → ~100 Hz.
+pub fn pit_divisor_to_hz(divisor: u16) -> f32 {
+    if divisor == 0 {
+        return 0.0;
+    }
+    PIT_CLOCK_HZ / divisor as f32
+}
+
+/// Synthesize the PC-speaker beep as `secs` of unsigned-8-bit mono square wave at `hz`
+/// (sampled at `rate`) — the waveform the speaker gate produces. Returns the PCM buffer,
+/// playable through [`MusicPlayer::start_once`]. This reproduces the game's decoded
+/// PC-speaker SFX (distinct from its VOC audio) in the cross-platform audio path.
+pub fn square_wave_pcm(hz: f32, secs: f32, rate: u32) -> Vec<u8> {
+    let n = ((rate as f32) * secs).max(0.0) as usize;
+    if hz <= 0.0 || n == 0 {
+        return vec![0x80; n]; // silence (unsigned-8 midpoint)
+    }
+    let period = rate as f32 / hz; // samples per full cycle
+    (0..n)
+        .map(|i| {
+            // First half of each period high, second half low — a 50% square wave.
+            if (i as f32 % period) < period / 2.0 {
+                0xC0
+            } else {
+                0x40
+            }
+        })
+        .collect()
+}
+
+/// Play the decoded PC-speaker beep (PIT `divisor`) for `secs` on the default device,
+/// returning a play-once player (or `None` if no device). Convenience wrapper tying the
+/// decoded divisor→frequency to the square-wave synth + cpal output.
+pub fn beep(divisor: u16, secs: f32) -> Option<MusicPlayer> {
+    let rate = 22_050u32;
+    let pcm = square_wave_pcm(pit_divisor_to_hz(divisor), secs, rate);
+    MusicPlayer::start_once(pcm, rate)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn pit_divisor_matches_the_hardware_formula() {
+        // The game's beep divisor 0x2e9c -> ~100 Hz.
+        let hz = pit_divisor_to_hz(0x2e9c);
+        assert!((hz - 100.0).abs() < 1.0, "0x2e9c -> ~100 Hz, got {hz}");
+        // A440 would need divisor ~2712.
+        assert!((pit_divisor_to_hz(2712) - 440.0).abs() < 1.0);
+        // Divisor 0 is treated as silence (avoid div-by-zero).
+        assert_eq!(pit_divisor_to_hz(0), 0.0);
+    }
+
+    #[test]
+    fn square_wave_has_the_right_period_and_swing() {
+        // 100 Hz at 22050 -> 220.5 samples/period; first half high, second half low.
+        let pcm = square_wave_pcm(100.0, 0.05, 22050);
+        assert_eq!(pcm.len(), (22050.0 * 0.05) as usize);
+        let period = 22050.0f32 / 100.0;
+        assert!(pcm[0] > 0x80, "cycle starts high");
+        assert!(pcm[(period * 0.75) as usize] < 0x80, "second half is low");
+        // It oscillates (both high and low samples present).
+        assert!(pcm.iter().any(|&s| s > 0x80) && pcm.iter().any(|&s| s < 0x80));
+    }
+
+    #[test]
+    fn zero_frequency_is_silence() {
+        let pcm = square_wave_pcm(0.0, 0.01, 22050);
+        assert!(pcm.iter().all(|&s| s == 0x80));
+    }
+}
