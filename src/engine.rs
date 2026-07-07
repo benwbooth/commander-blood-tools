@@ -175,6 +175,9 @@ pub struct EngineState {
     hud_grid: Vec<SpriteFrameImage>,
     /// Decoded ship-nav HUD orb sprite frames (BORXX).
     hud_orb: Vec<SpriteFrameImage>,
+    /// Real world names to label the nearest nav-destination row with (the navigable
+    /// `.ext` planets from the decoded level directory, [`crate::levels`]).
+    nav_world_labels: Vec<&'static str>,
     /// The game's star-map destination pyramid frames (CARTE.SPR f0..f5, six
     /// pre-scaled sizes) + selection reticle (f6) — the real art drawn by the sprite
     /// path at projected destination positions.
@@ -304,6 +307,7 @@ impl EngineState {
             starfield_seed: 17,
             hud_grid: Vec::new(),
             hud_orb: Vec::new(),
+            nav_world_labels: crate::levels::primary_worlds().map(|e| e.stem).collect(),
             nav_pyramids: Vec::new(),
             camera: crate::ship3d::Ship3dCameraApproach::default(),
             alien_views: Vec::new(),
@@ -964,6 +968,11 @@ impl EngineState {
     /// matches the projected sprite scale (`0x100000/depth`, the sprite path's scale
     /// term). Real art + real math; the destination layout itself is the documented
     /// runtime-gated remainder (live `DS:0x4F09` records).
+    /// Test/inspection: the world labels used on the nearest nav-destination row.
+    pub fn nav_world_label_sample(&self) -> Vec<&'static str> {
+        self.nav_world_labels.iter().take(7).copied().collect()
+    }
+
     fn render_nav_pyramid_sprites(&mut self) {
         use crate::ship3d::{
             SHIP_3D_ANGLE_TABLE, Ship3dMatrixAngles, build_ship_3d_projection_matrix,
@@ -1008,6 +1017,7 @@ impl EngineState {
                     .min_by_key(|&i| (self.nav_pyramids[i].width as i32 - sw).abs())
                     .unwrap_or(4);
                 let frame = self.nav_pyramids[fi].clone();
+                let fh = frame.height as i32;
                 blit_sprite_frame_centered(
                     &mut self.framebuffer,
                     ENGINE_SCREEN_WIDTH,
@@ -1016,6 +1026,7 @@ impl EngineState {
                     sx,
                     sy,
                 );
+                let _ = fh;
             }
         }
         // The eye-orb (BORXX, real art) at the view centre.
@@ -1129,15 +1140,35 @@ impl EngineState {
         // is intentional (the driver maps the heading to a scene the same way).
         let sector = (self.compass_angle as u32 * 5 / 180).min(4) + 1;
         self.scene_palette[0xFE] = [245, 245, 160];
+        // The real decoded world the compass currently targets (from the level
+        // directory) — so the heading names an actual destination, as the game does.
+        let target = self
+            .nav_world_labels
+            .get(self.targeted_world_index())
+            .copied()
+            .unwrap_or("");
+        let label = if target.is_empty() {
+            format!("SECTOR {sector}")
+        } else {
+            format!("SECTOR {sector}  {}", target.to_uppercase())
+        };
         draw_text_indexed(
             &mut self.framebuffer,
             ENGINE_SCREEN_WIDTH,
             ENGINE_SCREEN_HEIGHT,
-            &format!("SECTOR {sector}"),
+            &label,
             8,
             6,
             0xFE,
         );
+    }
+
+    /// The index into [`Self::nav_world_labels`] the compass heading currently targets:
+    /// the heading (0..180°) maps across the decoded primary worlds, so panning the ship
+    /// sweeps through the real navigable planets.
+    pub fn targeted_world_index(&self) -> usize {
+        let n = self.nav_world_labels.len().max(1);
+        (self.compass_angle as usize * n / 180).min(n - 1)
     }
 
     /// Draw a subtitle line into the framebuffer at the game's subtitle reveal
@@ -1978,6 +2009,25 @@ mod tests {
         let long = e.current_line_hold();
         assert!(long > short, "longer line held longer ({long} > {short})");
         assert!(short >= 20, "at least the base hold");
+    }
+
+    #[test]
+    fn nav_targets_real_decoded_worlds_across_the_heading() {
+        let mut e = EngineState::new();
+        // The nav labels come from the decoded level directory's primary worlds.
+        assert_eq!(e.nav_world_label_sample()[0], "black");
+        assert!(e.nav_world_label_sample().contains(&"venusia"));
+        // Heading 0° targets the first world; sweeping the compass moves through them.
+        e.compass_angle = 0;
+        assert_eq!(e.targeted_world_index(), 0);
+        let n = crate::levels::primary_worlds().count();
+        e.compass_angle = 179;
+        assert_eq!(e.targeted_world_index(), n - 1, "max heading targets the last world");
+        // Monotonic, in-range across the full sweep.
+        for a in 0..180u16 {
+            e.compass_angle = a;
+            assert!(e.targeted_world_index() < n);
+        }
     }
 
     #[test]
