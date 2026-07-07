@@ -6,9 +6,12 @@
 //! decode + item-selection dispatch (`0x181`, `base + table[item]`), the tween setup
 //! that links selection to animation (`0x1DF`, `delta = (end-current)<<16 / count`),
 //! the menu animation/tween list (`0x19B`) — the full menu animation pipeline
-//! (select → build tweens → advance) — and the 3D-menu camera pan (`0x34..0x51`,
-//! centre-delta steering). Remaining: the per-item action handlers the dispatch jumps
-//! to, and the pyramid vertex blit; the draw's angle/matrix setup (`0x270`) is ported and the projection reuses the shared ship-3D compositor.
+//! (select → build tweens → advance) — the 3D-menu camera pan (`0x34..0x51`,
+//! centre-delta steering), the pyramid angle/matrix setup (`0x270`, projection via the
+//! shared ship-3D compositor), and the per-item animation descriptors (the DATA the
+//! dispatch selects — phase|count/target/end — not code routines). So manu3's logic is
+//! ported end-to-end; the remaining pieces are overlay DATA (the descriptor tables) and
+//! the final pyramid vertex blit.
 
 /// The menu-item column index from the caller's input word (`[bp+4] & 0x1F`, method
 /// entry `0x000`/`0x181`) — 0..31 selects one of up to 32 menu items.
@@ -61,6 +64,47 @@ pub fn menu_camera_pan(cursor_x: i16, cursor_y: i16) -> (i16, i16) {
     let dx = cursor_x.wrapping_sub(MENU_CAMERA_CENTRE.0).wrapping_mul(2);
     let dy = cursor_y.wrapping_sub(MENU_CAMERA_CENTRE.1).wrapping_mul(2);
     (dx, dy)
+}
+
+/// A menu item's animation descriptor — the DATA the item-dispatch (`0x181`) selects
+/// and the tween setup (`0x1DF`) consumes. NOT a code routine: `0x1DF` reads `[si]` as
+/// a packed `(phase<<8 | frame_count)` word (its high byte `ch` is matched against the
+/// phase flag `[0x102C]`), `[si+4]` as the target field address, and `[si+6]` as the
+/// end value; it then builds a [`MenuTween`] animating the target's current value to
+/// `end` over `count` frames.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct MenuAnimDescriptor {
+    /// High byte of `[si]` (`ch`) — the phase group, gated against `[0x102C]`.
+    pub phase: u8,
+    /// Low byte of `[si]` (`cl`) — the tween frame count.
+    pub count: u8,
+    /// `[si+4]` — the target menu field the tween writes.
+    pub target: u16,
+    /// `[si+6]` — the end value the field animates to.
+    pub end: i16,
+}
+
+impl MenuAnimDescriptor {
+    /// Parse the descriptor at `off` in the overlay data (`[off]`=phase|count,
+    /// `[off+4]`=target, `[off+6]`=end).
+    pub fn parse(data: &[u8], off: usize) -> Option<Self> {
+        let w = |o: usize| -> Option<u16> {
+            Some(u16::from_le_bytes([*data.get(o)?, *data.get(o + 1)?]))
+        };
+        let packed = w(off)?;
+        Some(Self {
+            phase: (packed >> 8) as u8,
+            count: (packed & 0xFF) as u8,
+            target: w(off + 4)?,
+            end: w(off + 6)? as i16,
+        })
+    }
+
+    /// Build the tween this descriptor drives (via `0x1DF`): animate the target field
+    /// from its `current` value to `end` over `count` frames.
+    pub fn tween(&self, current: i16) -> MenuTween {
+        MenuTween::to_target(current, self.end, self.count as i16)
+    }
 }
 
 /// One entry in the menu's active-animation list (method `0x19B`): a fixed-point tween
@@ -171,6 +215,28 @@ mod tests {
         assert_eq!(menu_camera_pan(0xA0 + 10, 0x64 + 5), (20, 10));
         // Left/up -> negative.
         assert_eq!(menu_camera_pan(0xA0 - 8, 0x64 - 4), (-16, -8));
+    }
+
+    #[test]
+    fn item0_descriptor_decodes_and_builds_tween() {
+        // Item 0's descriptor in the real overlay: phase 1, count 124, target 0x11B0,
+        // end 300 (0x012C). Skips if the asset isn't present.
+        let path = ["output/_tmp_dat/manu3.xdb", "../output/_tmp_dat/manu3.xdb"]
+            .iter().map(std::path::Path::new).find(|p| p.exists());
+        let Some(path) = path else { return };
+        let data = std::fs::read(path).unwrap();
+        let d = MenuAnimDescriptor::parse(&data, 0x6254).unwrap();
+        assert_eq!(d.phase, 1);
+        assert_eq!(d.count, 124);
+        assert_eq!(d.target, 0x11B0);
+        assert_eq!(d.end, 300);
+        // The descriptor builds a tween that walks a field to (near) its end over the
+        // count; fixed-point truncation ((300<<16)/124) lands one short, as the game's.
+        let mut t = d.tween(0);
+        for _ in 0..d.count {
+            t.step();
+        }
+        assert!((299..=300).contains(&t.output()), "reaches ~300, got {}", t.output());
     }
 
     #[test]
