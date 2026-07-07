@@ -192,6 +192,10 @@ pub struct EngineState {
     /// Smoothed camera pan for the alien view (mouse delta from centre, clamped),
     /// selecting the pre-rendered rotation angle.
     alien_pan: i32,
+    /// The alien's decoded behaviour object (`croolis.xdb` `0x16A4` state machine):
+    /// its PRNG+timer picks new animation states, giving the examined alien an idle
+    /// life of its own between the player's rotations.
+    alien_object: crate::croolis::AlienObject,
     /// The scrutinizer-apparatus intro animation (`sq/caiscrut.hnm`) played once when
     /// the examination screen opens, before the rotatable alien.
     alien_intro: Option<HnmFile>,
@@ -305,6 +309,7 @@ impl EngineState {
             alien_views: Vec::new(),
             alien_view_active: false,
             alien_pan: 0,
+            alien_object: crate::croolis::AlienObject::new(0x2DD3),
             alien_intro: None,
             alien_intro_frame: None,
             tv_channels: Vec::new(),
@@ -665,6 +670,12 @@ impl EngineState {
         let span = ENGINE_SCREEN_WIDTH as i32 / 2;
         let t = (self.alien_pan + span).clamp(0, 2 * span - 1) as usize;
         let idx = (t * n / (2 * span as usize)).min(n - 1);
+        // Advance the alien's decoded behaviour state machine; when it picks a new
+        // animation state it nudges the animation phase, so the alien has idle life
+        // (fidgets) between the player's rotations rather than a fixed loop.
+        if self.alien_object.step() {
+            self.scene_frame = self.scene_frame.wrapping_add(self.alien_object.anim as usize % 3);
+        }
         let hnm = &self.alien_views[idx];
         let count = hnm.frame_count().max(1);
         self.scene_palette = hnm.palette;

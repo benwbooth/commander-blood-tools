@@ -1,5 +1,6 @@
 pub mod audio;
 pub mod bloodprg;
+pub mod croolis;
 pub mod decompress;
 pub mod descript;
 pub mod engine;
