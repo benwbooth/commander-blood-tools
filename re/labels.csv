@@ -414,3 +414,7 @@ GS:0x0A9E,sound_card_base_port,"the sound card's base I/O port (set at init); +6
 0x000CC0,set_video_mode_saved,"restore/set the video mode: al=gs:[0x5232] (the saved entry mode from get_video_mode); int 10h ah=0 (set video mode). Restores the original text mode on exit / sets the saved mode"
 0x000CEF,mouse_reset_hide,"mouse init: int 33h ax=0 (reset driver), int 33h ax=2 (hide cursor). Initializes the mouse driver with cursor hidden (the game draws its own cursor)"
 0x000D4A,mouse_set_hrange,"mouse range: cx=ax(min), dx=bx(max); int 33h ax=7 (set horizontal cursor range). Clamps mouse X to the game's coordinate range"
+0x00149B,object_heap_access,"runtime object-heap accessor: es=[0x6726] (object heap segment), lds si,[0x672c] (lookup table); di=[si+0x10]; test es:[di],0x118 (object flags). Reads a live object from the runtime heap via the 0x672c lookup - the object-instance heap access (es:0x6726 is the runtime object heap)"
+0x00155F,open_file_c1,"resource open: lcall 0x1ce:0x509 (prep); dx=0xc1 (filename in the string seg); ax=0x3d00; int21h (DOS open). Opens a specific resource file (name at gs:0xc1)"
+0x0014CA,presentation_state_set,"presentation state set: if [0xb13]&2, [0xa32]=1 and [0x2793]|=4 (mark presentation active/pending). Sets the dialogue/presentation-active flags"
+GS:0x6726,object_heap_segment,"segment of the runtime object/instance heap (es:[0x6726]); accessed via the 0x672c lookup table by object_heap_access 0x149b. Holds live object instances (the runtime-gated nav destinations + scene objects)"
