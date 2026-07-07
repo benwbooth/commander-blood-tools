@@ -35,6 +35,7 @@
             libxkbcommon
             wayland
             libGL
+            alsa-lib
           ];
         in
         {
@@ -50,6 +51,7 @@
               nasm
               p7zip
               pkg-config
+              alsa-lib
               (python3.withPackages (ps: with ps; [ capstone pillow numpy ]))
               ripgrep
               rust-analyzer

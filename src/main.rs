@@ -236,30 +236,24 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     engine.load_intro(Path::new(assets));
     // After the intro, start in the star-map nav view; the loop switches nav<->dialogue.
     engine.on_ship = true;
-    // Scene music player: the game plays each location's background music (.voc);
-    // resolve it the same way the video pipeline does and play it via ffplay
-    // (best-effort — silent if ffplay is unavailable). One child at a time.
-    struct Music(Option<std::process::Child>);
+    // Scene music: the game plays each location's background music (.voc). Decoded
+    // with our own VOC parser and played through cpal (cross-platform, in-process) —
+    // best-effort, the engine stays silent without an output device.
+    struct Music(Option<commander_blood_tools::audio::MusicPlayer>);
     impl Music {
-        fn play(&mut self, path: &str) {
+        fn play(&mut self, voc_path: &str) {
             self.stop();
-            self.0 = std::process::Command::new("ffplay")
-                .args(["-nodisp", "-loglevel", "quiet", "-loop", "0", path])
-                .stdout(std::process::Stdio::null())
-                .stderr(std::process::Stdio::null())
-                .spawn()
-                .ok();
+            self.0 = std::fs::read(voc_path)
+                .ok()
+                .and_then(|data| commander_blood_tools::snd::parse_voc_pcm(&data))
+                .and_then(|(pcm, rate)| {
+                    commander_blood_tools::audio::MusicPlayer::start(pcm, rate)
+                });
         }
         fn stop(&mut self) {
-            if let Some(mut c) = self.0.take() {
-                let _ = c.kill();
-                let _ = c.wait();
+            if let Some(mut p) = self.0.take() {
+                p.stop();
             }
-        }
-    }
-    impl Drop for Music {
-        fn drop(&mut self) {
-            self.stop();
         }
     }
     let mut music = Music(None);

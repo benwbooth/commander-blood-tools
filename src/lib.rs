@@ -1,3 +1,4 @@
+pub mod audio;
 pub mod bloodprg;
 pub mod decompress;
 pub mod descript;

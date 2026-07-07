@@ -121,6 +121,48 @@ pub fn snd_sample_rate(sample_rate_code: u8) -> u32 {
     }
 }
 
+/// Parse a Creative VOC file (the game's `mu/*.voc` music) into its unsigned 8-bit
+/// mono PCM samples + sample rate. Handles block type 1 (sound data: u24 length,
+/// time-constant byte, codec byte, samples; codec 0 = raw u8 PCM) and type 2
+/// (continuation), skipping other block types; stops at the type-0 terminator.
+/// Returns `None` if the header magic is missing or no PCM block is found.
+pub fn parse_voc_pcm(data: &[u8]) -> Option<(Vec<u8>, u32)> {
+    const MAGIC: &[u8] = b"Creative Voice File\x1a";
+    if !data.starts_with(MAGIC) || data.len() < 26 {
+        return None;
+    }
+    let header_size = u16::from_le_bytes([data[20], data[21]]) as usize;
+    let mut pos = header_size;
+    let mut pcm = Vec::new();
+    let mut rate: Option<u32> = None;
+    while pos < data.len() {
+        let block_type = data[pos];
+        if block_type == 0 {
+            break; // terminator
+        }
+        if pos + 4 > data.len() {
+            break;
+        }
+        let len = u32::from_le_bytes([data[pos + 1], data[pos + 2], data[pos + 3], 0]) as usize;
+        let body = pos + 4;
+        let end = (body + len).min(data.len());
+        match block_type {
+            1 if len >= 2 => {
+                let tc = data[body];
+                let codec = data[body + 1];
+                if codec == 0 {
+                    rate.get_or_insert_with(|| snd_sample_rate(tc));
+                    pcm.extend_from_slice(&data[body + 2..end]);
+                }
+            }
+            2 => pcm.extend_from_slice(&data[body..end]),
+            _ => {} // markers, silence, repeat blocks: skip
+        }
+        pos = body + len;
+    }
+    rate.filter(|_| !pcm.is_empty()).map(|r| (pcm, r))
+}
+
 /// Mix one unsigned 8-bit SND sample into another.
 ///
 /// This ports BLOODPRG.EXE `0xBB6D..0xBB74`: `lodsb; add al,es:[di];
@@ -141,6 +183,23 @@ pub fn mix_unsigned_pcm_average(destination: &mut [u8], source: &[u8]) -> usize 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn parses_real_voc_music() {
+        // The game's intro/scene music: header magic, type-1 block (tc 0xA6 ->
+        // 11111 Hz), u8 PCM. Skips when assets aren't present in this checkout.
+        for p in [
+            "output/_tmp_dat/mu/blintr.voc",
+            "../output/_tmp_dat/mu/blintr.voc",
+        ] {
+            if let Ok(data) = std::fs::read(p) {
+                let (pcm, rate) = parse_voc_pcm(&data).expect("valid voc");
+                assert_eq!(rate, 11111);
+                assert!(pcm.len() > 100_000, "substantial music data: {}", pcm.len());
+                return;
+            }
+        }
+    }
 
     fn test_snd(clips: &[&[u8]]) -> Vec<u8> {
         let mut data = Vec::new();
