@@ -791,21 +791,50 @@ impl EngineState {
     /// The scene band's talk-HNM background composes separately; this is the text
     /// layer of the dialogue scene the engine presents for the current line.
     pub fn draw_subtitle(&mut self, text: &str, color: u8) {
-        use crate::font::GAME_FONT_LINE_HEIGHT;
+        let n = text.chars().count();
+        self.draw_subtitle_with_color(text, n, color, color);
+    }
+
+    /// Draw the pre-wrapped subtitle with only the first `visible` characters shown,
+    /// the newest one in the reveal-edge colour (0xFE) — the game's per-character
+    /// reveal. Non-visible characters aren't drawn yet.
+    fn draw_subtitle_revealed(&mut self, text: &str, visible: usize) {
+        self.draw_subtitle_with_color(text, visible, 0xFD, 0xFE);
+    }
+
+    fn draw_subtitle_with_color(&mut self, text: &str, visible: usize, body: u8, edge: u8) {
+        use crate::font::{GAME_FONT_LINE_HEIGHT, game_font_advance};
         // The subtitle string is pre-wrapped by the game's decoded text-assembly rule
         // (35-char wrap with 0x0D breaks — `assemble_words`); draw each line at the
-        // subtitle origin, one font row apart, exactly as the game's `render_string`
-        // renders the 0x0D-separated buffer.
-        for (idx, line) in text.split('\n').enumerate() {
-            draw_text_indexed(
-                &mut self.framebuffer,
-                ENGINE_SCREEN_WIDTH,
-                ENGINE_SCREEN_HEIGHT,
-                line,
-                10,
-                8 + idx * GAME_FONT_LINE_HEIGHT,
-                color,
-            );
+        // subtitle origin (10,8), one font row apart, exactly as the game's
+        // `render_string` renders the 0x0D-separated buffer. Newline chars count
+        // toward the reveal position (the game reveals the buffer including 0x0D).
+        let mut shown = 0usize; // characters (incl. newlines) consumed so far
+        let mut y = 8usize;
+        for (li, line) in text.split('\n').enumerate() {
+            if li > 0 {
+                shown += 1; // the 0x0D separator
+                y += GAME_FONT_LINE_HEIGHT;
+            }
+            let mut x = 10usize;
+            for ch in line.chars() {
+                if shown >= visible {
+                    return;
+                }
+                let is_edge = shown + 1 == visible;
+                let mut buf = [0u8; 4];
+                draw_text_indexed(
+                    &mut self.framebuffer,
+                    ENGINE_SCREEN_WIDTH,
+                    ENGINE_SCREEN_HEIGHT,
+                    ch.encode_utf8(&mut buf),
+                    x,
+                    y,
+                    if is_edge { edge } else { body },
+                );
+                x += game_font_advance(ch);
+                shown += 1;
+            }
         }
     }
 
@@ -829,12 +858,19 @@ impl EngineState {
                 *p = 0;
             }
         }
-        // Subtitle text layer over the scene. Force the reserved subtitle index to
-        // white so it's visible regardless of the scene palette (mirrors the game's
-        // reserved high-palette subtitle colour).
+        // Subtitle text layer over the scene, revealed one character at a time (the
+        // game's reveal @0x93F8–0x94B8: `gs:0x5E58` advances one char whenever the
+        // per-char timer `gs:0xB31 = step>>2` elapses). Reserved indices 0xFD
+        // (revealed) / 0xFE (newest edge glyph) are forced to the subtitle colour.
         self.scene_palette[0xFD] = [245, 245, 245];
+        self.scene_palette[0xFE] = [245, 245, 245];
         if let Some(text) = self.current_subtitle().map(str::to_string) {
-            self.draw_subtitle(&text, 0xFD);
+            // Advance the reveal pointer at the decoded rate, keyed off the per-line
+            // timer (elapsed frames on this line), so it works with or without a
+            // talk-HNM scene.
+            let per_char = u32::from(crate::vm::reveal_frames_per_char(self.text_speed_step));
+            let visible = (self.dialogue_timer / per_char.max(1)) as usize;
+            self.draw_subtitle_revealed(&text, visible);
         }
     }
 
@@ -1178,8 +1214,16 @@ mod tests {
             e.dialogue_cursor += 1;
         }
         e.dialogue_hold_frames = u32::MAX; // hold the line so the cursor stays put
-        e.step(MouseInput::default());
-        let lit = e.framebuffer.iter().filter(|&&p| p == 0xFD).count();
+        // Step enough frames for the character-by-character reveal to fully draw.
+        for _ in 0..400 {
+            e.step(MouseInput::default());
+        }
+        // Revealed glyphs use 0xFD; the single reveal-edge glyph uses 0xFE.
+        let lit = e
+            .framebuffer
+            .iter()
+            .filter(|&&p| p == 0xFD || p == 0xFE)
+            .count();
         assert!(
             lit > 20,
             "step auto-renders the dialogue subtitle (got {lit})"
