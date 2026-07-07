@@ -1591,6 +1591,22 @@ impl EngineState {
     }
 }
 
+/// The game's mode-X screen address for pixel `(x, y)` — `(byte_offset, plane)` where
+/// `byte_offset = y*80 + x/4` and `plane = x & 3`, exactly as `graphics_plot_modex`
+/// (`0x299:0x498`) computes it. Provided to document + verify that the engine's linear
+/// `y*ENGINE_SCREEN_WIDTH + x` framebuffer is address-equivalent to the game's mode-X:
+/// `byte_offset*4 + plane == y*320 + x` (see [`mode_x_to_linear`]).
+pub fn mode_x_offset(x: usize, y: usize) -> (usize, usize) {
+    (y * 80 + x / 4, x & 3)
+}
+
+/// Invert [`mode_x_offset`] back to the linear framebuffer index the engine uses:
+/// `byte_offset*4 + plane`. Equals `y*ENGINE_SCREEN_WIDTH + x`, proving the two layouts
+/// address the same pixel.
+pub fn mode_x_to_linear(byte_offset: usize, plane: usize) -> usize {
+    byte_offset * 4 + plane
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2293,6 +2309,26 @@ mod tests {
             e.compass_angle = a;
             assert!(e.targeted_world_index() < n);
         }
+    }
+
+    #[test]
+    fn mode_x_layout_is_address_equivalent_to_the_linear_framebuffer() {
+        // For every screen pixel, the game's mode-X (byte_offset, plane) maps back to the
+        // engine's linear index y*320+x — so the linear framebuffer is faithful to the
+        // decoded graphics_plot_modex (0x299:0x498) addressing.
+        for y in 0..ENGINE_SCREEN_HEIGHT {
+            for x in 0..ENGINE_SCREEN_WIDTH {
+                let (off, plane) = mode_x_offset(x, y);
+                assert_eq!(plane, x & 3);
+                assert_eq!(
+                    mode_x_to_linear(off, plane),
+                    y * ENGINE_SCREEN_WIDTH + x,
+                    "mode-X ({x},{y}) must address the same pixel as linear",
+                );
+            }
+        }
+        // The row stride is 80 bytes/row * 4 planes = 320 pixels, matching the width.
+        assert_eq!(mode_x_offset(0, 1).0, 80);
     }
 
     #[test]
