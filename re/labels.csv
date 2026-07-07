@@ -458,3 +458,7 @@ GS:0x6726,object_heap_segment,"segment of the runtime object/instance heap (es:[
 0x005356,resource_clear_flag,"resource-table flag clear: bx=handle<<3; and fs:[bx+2],0xfffd (clear bit1 of the entry flags). Resets a resource-state bit"
 0x005365,resource_is_loaded,"resource loaded-check: bx=handle<<3; test fs:[bx+2] bit0 (loaded flag). Returns whether the resource is currently loaded"
 0x005A74,vm_state_processor,"per-run VM state processor (called by vm_run_wrapper 0x55f5): lds si,gs:[0x6724] (state table), les di,gs:[0x672c]+0x10 (lookup); walks the object/line-record state before the exec loop. Prepares/updates the VM state each run"
+0x008269,mouse_hit_test,"UI mouse hit-test (family 0x8269/0x8295): gated on mouse-button flag [0xa3e]; ax=mouse-x [0xa2a]; cmp vs a region bound [si]/[bp]. Detects clicks in a screen region - the UI/HUD click hit-testing"
+0x0082C3,ui_region_table_scan,"UI clickable-region table scan: bp=0x65f2; iterate 8-byte records (bl=[bp]; bp+=8); ax=0x1f (count). Walks the table of clickable UI regions/buttons at 0x65f2"
+0x008A4E,camera_fsm_state_gate,"camera-approach FSM gate: test [0x27df]&7 (the DS:0x27DF camera-approach phase, ship3d.rs Ship3dCameraApproach); set [0xa32]=1, clear [0x278a]. Gates on the camera state machine phase"
+DS:0x65F2,ui_region_table,"table of 8-byte clickable-UI-region records (0x1f entries) at DS:0x65f2; scanned by ui_region_table_scan 0x82c3 for hit-testing (mouse_hit_test 0x8269)"
