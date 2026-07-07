@@ -1,11 +1,13 @@
 //! Partial decoder for the `.ext` world-body structure (the planet/cyberspace world
 //! files). Decoded so far (see `re/REVERSE.md`): after the 8-byte world magic
 //! ([`crate::levels::EXT_WORLD_MAGIC`]) the body is a series of sections. The first is a
-//! **count-prefixed table of 3-byte records** terminated by `FF FF`; the values index
-//! within the record count (a lookup/adjacency table). A following section carries
-//! 16-bit coordinate records (screen-space positions like 134,117). The full geometry/
-//! object semantics past this framing are still under study — this ports the section
-//! framing so the body can be walked.
+//! **count-prefixed table of 3-byte records** terminated by `FF FF`. Characterized
+//! (sess 007): these are **triangle-mesh face connectivity** — ~73% are strictly-
+//! ascending vertex-index triples (`a<b<c`), vertices are reused across faces (high
+//! shared in-degree), and it is not a tree — the geometry of the location's pseudo-3D
+//! scene. A following section carries 16-bit coordinate records (vertex positions /
+//! anchors, e.g. 134,117) then a largely preallocated/sparse region. The vertex-
+//! coordinate layout + object semantics past the mesh are still under study.
 
 use crate::levels::EXT_WORLD_MAGIC;
 
@@ -22,6 +24,26 @@ pub struct ExtWorld {
 }
 
 impl ExtWorld {
+    /// The first-section records that are strictly-ascending index triples (`a<b<c`) —
+    /// **triangle-mesh faces** (vertex-index triples). The characterization: on the real
+    /// worlds ~73% of records are proper ascending triples, indices share high in-degree
+    /// (vertices reused across faces), and the structure is not a tree — the signature of
+    /// mesh face connectivity for the location's pseudo-3D geometry, not a room/script
+    /// tree. Returns the `(a,b,c)` faces.
+    pub fn mesh_faces(&self) -> Vec<[u8; 3]> {
+        self.table1
+            .iter()
+            .filter(|r| r[0] < r[1] && r[1] < r[2])
+            .copied()
+            .collect()
+    }
+
+    /// The highest vertex index referenced by any mesh face (the implied vertex count is
+    /// this + 1), for locating/validating the vertex-coordinate section.
+    pub fn max_vertex_index(&self) -> u8 {
+        self.table1.iter().flatten().copied().max().unwrap_or(0)
+    }
+
     /// The non-zero index links of first-section record `i` — each 3-byte record holds
     /// up to three references to other records (`0` = no link), i.e. the section is an
     /// adjacency table (each node links to up to 3 others). Returns the linked indices.
@@ -115,6 +137,31 @@ mod tests {
         assert_eq!(ext.record_links(0), vec![8]); // (0,0,8)
         // Out-of-range record -> no links.
         assert!(ext.record_links(9999).is_empty());
+    }
+
+    #[test]
+    fn first_section_is_triangle_mesh_connectivity() {
+        let Some(data) = load("VENUSIA.EXT") else { return };
+        let ext = parse_ext(&data).unwrap();
+        let faces = ext.mesh_faces();
+        // The majority of records are proper ascending triangle faces.
+        assert!(
+            faces.len() * 100 / ext.table1.len() >= 60,
+            "most records are ascending triangles ({}/{})",
+            faces.len(),
+            ext.table1.len()
+        );
+        // Faces are ascending and index within the vertex range.
+        let maxv = ext.max_vertex_index();
+        for f in &faces {
+            assert!(f[0] < f[1] && f[1] < f[2]);
+            assert!(f[2] <= maxv);
+        }
+        // Vertices are reused across faces (mesh, not a tree): fewer distinct vertices
+        // than face-vertex slots.
+        let distinct: std::collections::BTreeSet<u8> =
+            faces.iter().flatten().copied().collect();
+        assert!(distinct.len() < faces.len() * 3, "vertices are shared across faces");
     }
 
     #[test]
