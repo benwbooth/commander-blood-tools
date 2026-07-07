@@ -250,6 +250,29 @@ mod tests {
     }
 
     #[test]
+    fn decodes_every_location_background_in_the_asset_set() {
+        // The decoder must handle the whole fd/ location set, not just one file. Skips
+        // if assets aren't present.
+        let dir = ["output/_tmp_dat/fd", "../output/_tmp_dat/fd"]
+            .iter().map(std::path::Path::new).find(|p| p.exists());
+        let Some(dir) = dir else { return };
+        let mut count = 0;
+        for e in std::fs::read_dir(dir).unwrap().filter_map(|e| e.ok()) {
+            let p = e.path();
+            if p.extension().and_then(|s| s.to_str()) != Some("lbm") {
+                continue;
+            }
+            let data = std::fs::read(&p).unwrap();
+            let img = decode_lbm(&data)
+                .unwrap_or_else(|| panic!("{} failed to decode", p.display()));
+            assert_eq!((img.width, img.height), (320, 200), "{}", p.display());
+            assert_eq!(img.pixels.len(), img.width * img.height);
+            count += 1;
+        }
+        assert!(count >= 160, "decoded the full location set ({count} files)");
+    }
+
+    #[test]
     fn byterun1_literal_and_replicate() {
         // literal run: control 2 (=n+1=3 bytes) then AA BB CC
         assert_eq!(decode_byterun1(&[0x02, 0xAA, 0xBB, 0xCC], 3), vec![0xAA, 0xBB, 0xCC]);
