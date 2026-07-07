@@ -481,3 +481,6 @@ DS:0x65F2,ui_region_table,"table of 8-byte clickable-UI-region records (0x1f ent
 0x009510,presentation_mode_check,"presentation-mode gate: ax=[0x2793]; and 0xff0f; test 2 -> branch on the presentation-active bit of [0x2793]"
 0x0093F5,screen_mode_check,"screen-mode gate: test [0x27e2]&2 and [0x5e64]&1 -> branch. Guards a screen/render mode-specific path"
 0x009982,matrix3d_mul_rows,"matrix3d_mul_fixed sibling rows (0x9982/0x99a5/0x99da): same Q15 fixed-point matrix-element products (imul [si+off]*[si+off]; sar 0xf; stosd) as 0x994d - the remaining rotation/projection matrix rows"
+0x002FA6,gfx_display_draw_family,"display-buffer draw primitives (0x2fa6/0x2fbb/0x3000/0x3066/0x3d7b + les-di variants): lds/les to gs:[0x5221] (display page) and draw a span/shape. The visible-page 2D draw variants (siblings of the linear-back-buffer plotters)"
+0x00221F,object_heap_672e_access,"second object-heap accessor (0x221f/0x2224): mov ds,gs:[0x672e] (object-heap data segment, paired with the 0x6726 heap seg + 0x672c lookup). Accesses a live object's data. Object-instance heap access family"
+0x009F53,presentation_update_1fb2,"presentation update step: test [0x1fb2]&1; call 0xa2dd; test [0x24f3]&8. A per-frame dialogue/presentation state-machine step gated on the [0x1fb2]/[0x24f3] flags"
