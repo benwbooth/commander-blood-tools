@@ -410,10 +410,23 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
             load_script(&mut engine, &mut music, dest);
             engine.on_ship = false;
         } else if !engine.on_ship && engine.dialogue_finished() {
-            engine.on_ship = true;
-            music.stop();
-            voice = None;
-            voice_line = None;
+            // Scene finished: follow the decoded D2 handoff if the script requested a
+            // successor profile (profile_index → SCRIPT<index+1>), chaining scene to
+            // scene like the game; otherwise return to the nav view.
+            match engine.pending_next_scene() {
+                Some(profile) => {
+                    voice = None;
+                    voice_line = None;
+                    chatter_done_line = None;
+                    load_script(&mut engine, &mut music, u32::from(profile) + 1);
+                }
+                None => {
+                    engine.on_ship = true;
+                    music.stop();
+                    voice = None;
+                    voice_line = None;
+                }
+            }
         }
         // Speak the current line once when playback reaches it.
         if !engine.on_ship && voice_line != Some(engine.dialogue_cursor()) {
