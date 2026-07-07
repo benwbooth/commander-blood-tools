@@ -346,3 +346,7 @@ GS:0x674E,vm_wildcard_ref_value,"the VM wildcard sentinel: in the shared record 
 0x00AD96,gfx_scanline_advance,"rendering row helper (22 call sites - most-used unlabeled utility): dec row counter [bp-6]; if 0 return via 0xada9; else di=[bp-8]+0x140 (advance one scanline = 320 bytes in the linear back-buffer), store [bp-8]=di, cx=[bp-0xa]. The per-row advance used across the render/blit loops"
 0x00933A,back_buffer_copy_from,"blit helper (10 calls): les di,gs:[0x5229] (linear back-buffer dest); lds si,gs:[0xabc] (source surface); copies from the gs:0xabc source into the back buffer. A surface->backbuffer copy"
 0x007E1C,presentation_line_helper,"presentation/dialogue helper (8 calls): gated on [0x2793]&8 (presentation-busy) and [bp]&4; processes a presentation line record. Part of the dialogue/subtitle presentation path"
+0x009F80,lookup_table_1fb5,"4-byte-record table accessor (5 calls): bx=0x1fb5 + ax*4 (add bx,ax x4); return word [bx]. Indexes a table of 4-byte records at DS:0x1fb5 by AX, returning the first word. A data-structure lookup helper"
+0x00959D,screen_flags_init,"state-init helper (4 calls): [0x27d9]=0; [0x5b53]=1; [0x5b55]=1. Sets screen/presentation-ready flags - part of a mode/screen setup sequence"
+0x008C96,vm_segment_call_wrapper,"wrapper (4 calls): saves regs, lcall 0x4da:0x1c53 (into the VM code segment), post-processes with gs. A thunk into a VM-segment routine"
+DS:0x1FB5,table_1fb5_4byte_records,"table of 4-byte records at DS:0x1fb5, indexed by AX; accessed via lookup_table_1fb5 0x9f80"
