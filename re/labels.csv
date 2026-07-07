@@ -468,3 +468,6 @@ DS:0x65F2,ui_region_table,"table of 8-byte clickable-UI-region records (0x1f ent
 0x000950,get_rtc_date,"read the real-time clock date: ah=4; int 1Ah (BIOS get RTC date); al=dl; call bcd_to_binary 0x986. Reads + decodes the CMOS RTC date (used for the PRNG seed + any date logic)"
 0x000D0E,poll_mouse,"poll the mouse: ax=3; int 33h (get position + button status); store gs:[0xa2a]=cx (x), gs:[0xa2c]=dx (y). Reads the mouse cursor position each frame (bx=buttons -> [0xa3e]). Feeds mouse_hit_test 0x8269"
 0x000813,state_gate_b21,"conditional gate on gs:[0xb21]&1; guards a per-frame update path"
+0x000D75,set_vga_segment,"set the VGA video-memory segment: gs:[0x5223]=0xa000 (the VGA graphics segment A000:0). Establishes the base segment for direct VGA writes"
+0x000E08,display_message,"display a message string (family 0x0dd8/0x0e08/0x0e36): si=message index (0x73/0x7d/...); lcall 0x299:0x75a (format+render the message). Shows a HUD/status/error message by id"
+0x001344,ae6_gated_processor,"family of routines (0x1344/0x1397/0x13c4) gated on gs:[0xae6]&1 (a mode flag - intro/special state); es=gs then process/copy. Mode-conditional processing"
