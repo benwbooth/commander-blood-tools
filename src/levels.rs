@@ -1,12 +1,15 @@
-//! The game's level/world-file directory — decoded from the 16-byte filename-record
-//! table in segment `0x0ca3` (see `re/REVERSE.md`). Level loading is table-driven off
-//! this directory indexed by world number; the `.ext` planet worlds are the navigable
-//! destinations (they match the `fd/1<name>*.lbm` location art).
+//! The game's resource/level directory — the `resource_name_table` at `FS:0x0c04`
+//! (file 0xCDF4, label `resource_name_table`): 16-byte filename records **indexed by
+//! resource ID**. The game loads any resource (sprites, the script1-5 bytecode sets,
+//! and the `.ext` planet/cyberspace worlds) by its resource ID through this table +
+//! the decoded resource loader (`vm_resource_profile_select` 0x53A0). The `index` field
+//! here is the true resource ID. Worlds (`.ext`) are IDs 22..36 + sub-levels; they are
+//! the navigable destinations and match the `fd/1<name>*.lbm` location art.
 
 /// A directory entry: the base filename (no dir/extension) and its kind.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct LevelEntry {
-    /// Directory index (the world number the loader uses).
+    /// The resource ID (`FS:0x0c04` table index) the loader uses.
     pub index: u8,
     /// The base file stem, e.g. `"venusia"` for `venusia.ext`.
     pub stem: &'static str,
@@ -26,44 +29,63 @@ pub enum LevelKind {
     Resource,
 }
 
-/// The decoded directory, in table order (index = position in the segment-0x0ca3 table).
+/// The decoded resource directory (`FS:0x0c04`), `index` = resource ID = table
+/// position. IDs 0..21 are engine sprites/drivers/the script1 set/buffers, 22..36 the
+/// primary `.ext` worlds, 37+ the script2 set + more worlds/sub-levels.
 pub const LEVEL_DIRECTORY: &[LevelEntry] = &[
-    LevelEntry { index: 0, stem: "bcarte", kind: LevelKind::Sprite },
-    LevelEntry { index: 1, stem: "bhyper", kind: LevelKind::Sprite },
-    LevelEntry { index: 2, stem: "bpol", kind: LevelKind::Sprite },
-    LevelEntry { index: 3, stem: "aphyper", kind: LevelKind::Sprite },
-    LevelEntry { index: 4, stem: "appol", kind: LevelKind::Sprite },
-    LevelEntry { index: 5, stem: "black", kind: LevelKind::World },
-    LevelEntry { index: 6, stem: "kult", kind: LevelKind::World },
-    LevelEntry { index: 7, stem: "rondo", kind: LevelKind::World },
-    LevelEntry { index: 8, stem: "venusia", kind: LevelKind::World },
-    LevelEntry { index: 9, stem: "erazor", kind: LevelKind::World },
-    LevelEntry { index: 10, stem: "mastacho", kind: LevelKind::World },
-    LevelEntry { index: 11, stem: "magnus", kind: LevelKind::World },
-    LevelEntry { index: 12, stem: "ekatomb", kind: LevelKind::World },
-    LevelEntry { index: 13, stem: "crazy", kind: LevelKind::World },
-    LevelEntry { index: 14, stem: "eden", kind: LevelKind::World },
-    LevelEntry { index: 15, stem: "kortex", kind: LevelKind::World },
-    LevelEntry { index: 16, stem: "vista", kind: LevelKind::World },
-    LevelEntry { index: 17, stem: "moskito", kind: LevelKind::World },
-    LevelEntry { index: 18, stem: "pterra", kind: LevelKind::World },
-    LevelEntry { index: 19, stem: "cyber", kind: LevelKind::World },
-    LevelEntry { index: 20, stem: "script2.cod", kind: LevelKind::Script },
-    LevelEntry { index: 21, stem: "script2.bas", kind: LevelKind::Script },
-    LevelEntry { index: 22, stem: "script2.var", kind: LevelKind::Script },
-    LevelEntry { index: 23, stem: "script2.dic", kind: LevelKind::Script },
-    LevelEntry { index: 24, stem: "script2.deb", kind: LevelKind::Script },
-    LevelEntry { index: 25, stem: "dnsdb.drv", kind: LevelKind::Resource },
-    LevelEntry { index: 26, stem: "corpo", kind: LevelKind::World },
-    LevelEntry { index: 27, stem: "carte", kind: LevelKind::Sprite },
-    LevelEntry { index: 28, stem: "bigark", kind: LevelKind::World },
-    LevelEntry { index: 29, stem: "cyber2", kind: LevelKind::World },
-    LevelEntry { index: 30, stem: "cyber3", kind: LevelKind::World },
-    LevelEntry { index: 31, stem: "eden2", kind: LevelKind::World },
-    LevelEntry { index: 32, stem: "eden3", kind: LevelKind::World },
-    LevelEntry { index: 33, stem: "ekatomb2", kind: LevelKind::World },
-    LevelEntry { index: 34, stem: "ekatomb3", kind: LevelKind::World },
-    LevelEntry { index: 35, stem: "erazor2", kind: LevelKind::World },
+    LevelEntry { index: 0, stem: "fupcom", kind: LevelKind::Sprite },
+    LevelEntry { index: 1, stem: "nosound.drv", kind: LevelKind::Resource },
+    LevelEntry { index: 2, stem: "script1.cod", kind: LevelKind::Script },
+    LevelEntry { index: 3, stem: "script1.bas", kind: LevelKind::Script },
+    LevelEntry { index: 4, stem: "script1.var", kind: LevelKind::Script },
+    LevelEntry { index: 5, stem: "script1.dic", kind: LevelKind::Script },
+    LevelEntry { index: 6, stem: "script1.deb", kind: LevelKind::Script },
+    LevelEntry { index: 7, stem: "radio", kind: LevelKind::Sprite },
+    LevelEntry { index: 8, stem: "buffer", kind: LevelKind::Resource },
+    LevelEntry { index: 9, stem: "buffer", kind: LevelKind::Resource },
+    LevelEntry { index: 10, stem: "buffer", kind: LevelKind::Resource },
+    LevelEntry { index: 11, stem: "buffer", kind: LevelKind::Resource },
+    LevelEntry { index: 12, stem: "buffer", kind: LevelKind::Resource },
+    LevelEntry { index: 13, stem: "bappel", kind: LevelKind::Sprite },
+    LevelEntry { index: 14, stem: "bappel", kind: LevelKind::Sprite },
+    LevelEntry { index: 15, stem: "btv", kind: LevelKind::Sprite },
+    LevelEntry { index: 16, stem: "borxx", kind: LevelKind::Sprite },
+    LevelEntry { index: 17, stem: "bcarte", kind: LevelKind::Sprite },
+    LevelEntry { index: 18, stem: "bhyper", kind: LevelKind::Sprite },
+    LevelEntry { index: 19, stem: "bpol", kind: LevelKind::Sprite },
+    LevelEntry { index: 20, stem: "aphyper", kind: LevelKind::Sprite },
+    LevelEntry { index: 21, stem: "appol", kind: LevelKind::Sprite },
+    LevelEntry { index: 22, stem: "black", kind: LevelKind::World },
+    LevelEntry { index: 23, stem: "kult", kind: LevelKind::World },
+    LevelEntry { index: 24, stem: "rondo", kind: LevelKind::World },
+    LevelEntry { index: 25, stem: "venusia", kind: LevelKind::World },
+    LevelEntry { index: 26, stem: "erazor", kind: LevelKind::World },
+    LevelEntry { index: 27, stem: "mastacho", kind: LevelKind::World },
+    LevelEntry { index: 28, stem: "magnus", kind: LevelKind::World },
+    LevelEntry { index: 29, stem: "ekatomb", kind: LevelKind::World },
+    LevelEntry { index: 30, stem: "crazy", kind: LevelKind::World },
+    LevelEntry { index: 31, stem: "eden", kind: LevelKind::World },
+    LevelEntry { index: 32, stem: "kortex", kind: LevelKind::World },
+    LevelEntry { index: 33, stem: "vista", kind: LevelKind::World },
+    LevelEntry { index: 34, stem: "moskito", kind: LevelKind::World },
+    LevelEntry { index: 35, stem: "pterra", kind: LevelKind::World },
+    LevelEntry { index: 36, stem: "cyber", kind: LevelKind::World },
+    LevelEntry { index: 37, stem: "script2.cod", kind: LevelKind::Script },
+    LevelEntry { index: 38, stem: "script2.bas", kind: LevelKind::Script },
+    LevelEntry { index: 39, stem: "script2.var", kind: LevelKind::Script },
+    LevelEntry { index: 40, stem: "script2.dic", kind: LevelKind::Script },
+    LevelEntry { index: 41, stem: "script2.deb", kind: LevelKind::Script },
+    LevelEntry { index: 42, stem: "dnsdb.drv", kind: LevelKind::Resource },
+    LevelEntry { index: 43, stem: "corpo", kind: LevelKind::World },
+    LevelEntry { index: 44, stem: "carte", kind: LevelKind::Sprite },
+    LevelEntry { index: 45, stem: "bigark", kind: LevelKind::World },
+    LevelEntry { index: 46, stem: "cyber2", kind: LevelKind::World },
+    LevelEntry { index: 47, stem: "cyber3", kind: LevelKind::World },
+    LevelEntry { index: 48, stem: "eden2", kind: LevelKind::World },
+    LevelEntry { index: 49, stem: "eden3", kind: LevelKind::World },
+    LevelEntry { index: 50, stem: "ekatomb2", kind: LevelKind::World },
+    LevelEntry { index: 51, stem: "ekatomb3", kind: LevelKind::World },
+    LevelEntry { index: 52, stem: "erazor2", kind: LevelKind::World },
 ];
 
 /// The primary navigable planet worlds — the distinct destinations shown on the nav
@@ -209,10 +231,14 @@ mod tests {
         for (i, e) in LEVEL_DIRECTORY.iter().enumerate() {
             assert_eq!(e.index as usize, i, "entry {i} index matches position");
         }
-        // cyberspace is entry 19, its extra levels 29/30.
-        assert_eq!(entry(19).unwrap().stem, "cyber");
-        assert_eq!(entry(29).unwrap().stem, "cyber2");
-        assert_eq!(entry(30).unwrap().stem, "cyber3");
+        // Resource IDs match the FS:0x0c04 table: script1 set at 2..6, worlds at 22+.
+        assert_eq!(entry(2).unwrap().stem, "script1.cod");
+        assert_eq!(entry(22).unwrap().stem, "black");
+        assert_eq!(entry(25).unwrap().stem, "venusia");
+        // cyberspace is resource ID 36, its extra levels 46/47.
+        assert_eq!(entry(36).unwrap().stem, "cyber");
+        assert_eq!(entry(46).unwrap().stem, "cyber2");
+        assert_eq!(entry(47).unwrap().stem, "cyber3");
     }
 
     #[test]
