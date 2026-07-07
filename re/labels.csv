@@ -306,3 +306,6 @@ GS:0x6820,vm_stack,"VM operand stack (16-bit entries); stack pointer at gs:0x688
 0x0064C0,vm_op_cf_clear_state,"VM opcode 0xCF: clear gs:[0x67b1]=0 and gs:[0x6764]=0 (reset resume/PC-related VM state)"
 0x0064CE,vm_op_cc_set_record_byte,"VM opcode 0xCC: bp=0x6cde + (operand1-1)*16; [bp]=operand2. Writes a byte into a 16-byte-record table at gs:0x6cde indexed by (operand-1) - a set-property/set-variable op"
 GS:0x6CDE,vm_record_table_16b,"table of 16-byte records at gs:0x6cde, indexed by (operand-1); written by opcode 0xCC (set-property). Likely script variables / per-entity properties"
+0x006AA7,vm_op_b7_record_op,"VM opcode 0xB7: les di,gs:[0x6724] (object/line-record state table); optional 0xA1(POP) skip; lodsw index/offset + lodsb value -> read/write a field in the state-table record. An object/line-record manipulation opcode"
+0x006B06,vm_op_b8_record_compare,"VM opcode 0xB8: les di,gs:[0x6724]; di += operand (record offset); lodsw compare-value bx; lodsw; if gs:[0x67ad]&1, cmp bx vs es:[di] (record field) - conditional on a state-table record field. Record-field compare/branch"
+0x006E34,vm_op_c2_record_call,"VM opcode 0xC2: les di,gs:[0x6724]; optional 0xA1 skip; lodsw bp; call 0x6034 - object/line-record op with a subcall. Manipulates the runtime state table"
