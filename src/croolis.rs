@@ -61,7 +61,14 @@ pub struct AlienObject {
     pub anim: u16,
     /// The object's behaviour method (`[di+0x34]` → `fs:0x103A` vtable entry).
     pub method: AlienMethod,
+    /// Object 3D position (record fields `+0x42`/`+0x46`/`+0x4a`), stored as sign-
+    /// extended 32-bit words — camera-relative, wrapped by [`AlienObject::update_position`].
+    pub pos: [i32; 3],
 }
+
+/// The half-extent of the object-space toroidal wrap (`0x4000`); positions wrap into
+/// `[-0x4000, 0x4000)` relative to the wrap origin (method `0x999`).
+pub const ALIEN_POSITION_WRAP: i16 = 0x4000;
 
 /// Timer reload when a new animation state is chosen (`+0x38 = 0x32`).
 pub const ALIEN_STATE_TIMER_RELOAD: u16 = 0x32;
@@ -78,6 +85,26 @@ impl AlienObject {
             timer: ALIEN_STATE_TIMER_RELOAD,
             anim: 0,
             method: AlienMethod::AnimStateMachine,
+            pos: [0; 3],
+        }
+    }
+
+    /// Port of method `0x999` (object position update): for each axis, wrap the object's
+    /// WORLD position (`camera + pos`) into `[-0x4000, 0x4000)` then subtract the camera
+    /// back — keeping objects within a toroidal play-space around the camera. The 8086
+    /// does this in 16-bit (`add;+0x4000;and 0x7fff;-0x4000`) then `movsx` to 32-bit.
+    pub fn update_position(&mut self, camera: [i16; 3]) {
+        for axis in 0..3 {
+            let cam = camera[axis];
+            // ax = camera + pos (16-bit)
+            let mut ax = cam.wrapping_add(self.pos[axis] as i16);
+            // wrap into [-0x4000, 0x4000): +0x4000; &0x7fff; -0x4000
+            ax = ax.wrapping_add(ALIEN_POSITION_WRAP);
+            ax = (ax as u16 & 0x7fff) as i16;
+            ax = ax.wrapping_sub(ALIEN_POSITION_WRAP);
+            // ax -= camera; movsx to 32-bit
+            ax = ax.wrapping_sub(cam);
+            self.pos[axis] = ax as i32;
         }
     }
 
@@ -159,6 +186,27 @@ impl AlienColony {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn position_update_wraps_into_toroidal_space() {
+        // An object far outside the wrap window wraps back inside relative to camera.
+        let mut obj = AlienObject::new(0x1);
+        obj.pos = [0x5000, -0x5000, 0x100];
+        obj.update_position([0, 0, 0]);
+        for &p in &obj.pos {
+            assert!(
+                (-(ALIEN_POSITION_WRAP as i32)..(ALIEN_POSITION_WRAP as i32)).contains(&p),
+                "axis {p} wrapped into [-0x4000, 0x4000)"
+            );
+        }
+        // 0x5000 world -> (0x5000+0x4000)&0x7fff-0x4000 = -0x3000.
+        assert_eq!(obj.pos[0], -0x3000);
+        // A position already inside the window, camera 0, is unchanged.
+        let mut inside = AlienObject::new(0x1);
+        inside.pos = [0x1000, -0x2000, 0];
+        inside.update_position([0, 0, 0]);
+        assert_eq!(inside.pos, [0x1000, -0x2000, 0]);
+    }
 
     #[test]
     fn vtable_dispatch_routes_methods() {
