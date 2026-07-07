@@ -140,6 +140,16 @@ pub enum BridgeStation {
     Cyberspace,
 }
 
+/// A world being visited from the nav map: its decoded `fd/` rooms (paths, decoded
+/// lazily) with the currently-shown room. Rooms are the world's floor/view-angle
+/// backgrounds; cycling walks through them.
+struct WorldVisit {
+    name: String,
+    rooms: Vec<std::path::PathBuf>,
+    current: usize,
+    image: crate::lbm::LbmImage,
+}
+
 /// Screen dimensions of the engine framebuffer (VGA mode 13h / mode-X, 320x200).
 pub const ENGINE_SCREEN_WIDTH: usize = 320;
 pub const ENGINE_SCREEN_HEIGHT: usize = 200;
@@ -178,9 +188,9 @@ pub struct EngineState {
     /// Real world names to label the nearest nav-destination row with (the navigable
     /// `.ext` planets from the decoded level directory, [`crate::levels`]).
     nav_world_labels: Vec<&'static str>,
-    /// When a world is being "visited" from the nav map, its decoded location-room
-    /// background (the `fd/` PBM art) + name, shown as the landing screen.
-    world_location: Option<(crate::lbm::LbmImage, String)>,
+    /// When a world is being "visited" from the nav map, its decoded rooms (the `fd/`
+    /// PBM art) — cyclable — shown as the landing/exploration screen.
+    world_location: Option<WorldVisit>,
     /// The game's star-map destination pyramid frames (CARTE.SPR f0..f5, six
     /// pre-scaled sizes) + selection reticle (f6) — the real art drawn by the sprite
     /// path at projected destination positions.
@@ -977,46 +987,66 @@ impl EngineState {
         self.nav_world_labels.iter().take(7).copied().collect()
     }
 
-    /// Visit a world by name: load its entry-room location background (the decoded `fd/`
-    /// PBM art the world maps to) from `assets` and show it as the landing screen.
-    /// Returns whether a background was found + loaded. The floor-1, standard-view (`f`)
-    /// room is the entry room; falls back to any matching room LBM.
+    /// Visit a world by name: collect all its decoded `fd/` rooms (floor/view-angle
+    /// backgrounds the world maps to) from `assets`, show the first, and enable cycling.
+    /// Returns whether any room was found + loaded. Rooms are ordered by filename so
+    /// floor 1 (the entry room) shows first.
     pub fn visit_world(&mut self, world: &str, assets: &std::path::Path) -> bool {
         let Some(prefix) = crate::levels::world_location_art_prefix(world) else {
             return false;
         };
         let fd = assets.join("fd");
-        let candidates = [format!("{prefix}1f.lbm"), format!("{prefix}1d.lbm")];
-        let mut chosen: Option<std::path::PathBuf> = None;
-        for c in &candidates {
-            let p = fd.join(c);
-            if p.exists() {
-                chosen = Some(p);
-                break;
-            }
+        let mut rooms: Vec<std::path::PathBuf> = match std::fs::read_dir(&fd) {
+            Ok(rd) => rd
+                .filter_map(|e| e.ok())
+                .map(|e| e.path())
+                .filter(|p| {
+                    p.file_name()
+                        .and_then(|n| n.to_str())
+                        .map(|n| n.to_lowercase().starts_with(prefix) && n.ends_with(".lbm"))
+                        .unwrap_or(false)
+                })
+                .collect(),
+            Err(_) => return false,
+        };
+        rooms.sort();
+        if rooms.is_empty() {
+            return false;
         }
-        // Fall back to the first fd/ file with this prefix (any floor/view).
-        if chosen.is_none() {
-            if let Ok(rd) = std::fs::read_dir(&fd) {
-                chosen = rd
-                    .filter_map(|e| e.ok())
-                    .map(|e| e.path())
-                    .filter(|p| {
-                        p.file_name()
-                            .and_then(|n| n.to_str())
-                            .map(|n| n.to_lowercase().starts_with(prefix) && n.ends_with(".lbm"))
-                            .unwrap_or(false)
-                    })
-                    .min();
-            }
-        }
-        let Some(path) = chosen else { return false };
-        let Ok(data) = std::fs::read(&path) else { return false };
-        let Some(img) = crate::lbm::decode_pbm(&data) else {
+        let Some(img) = std::fs::read(&rooms[0]).ok().and_then(|d| crate::lbm::decode_pbm(&d))
+        else {
             return false;
         };
-        self.world_location = Some((img, world.to_uppercase()));
+        self.world_location = Some(WorldVisit {
+            name: world.to_uppercase(),
+            rooms,
+            current: 0,
+            image: img,
+        });
         true
+    }
+
+    /// Cycle to another room of the currently-visited world (`delta` = +1/-1), decoding
+    /// its background. No-op if no world is being visited.
+    pub fn cycle_world_room(&mut self, delta: i32) {
+        let Some(visit) = &mut self.world_location else {
+            return;
+        };
+        let n = visit.rooms.len();
+        if n <= 1 {
+            return;
+        }
+        let next = (visit.current as i32 + delta).rem_euclid(n as i32) as usize;
+        if let Some(img) = std::fs::read(&visit.rooms[next]).ok().and_then(|d| crate::lbm::decode_pbm(&d))
+        {
+            visit.current = next;
+            visit.image = img;
+        }
+    }
+
+    /// The visited world's room count + current index (for HUD/tests), if active.
+    pub fn world_room_position(&self) -> Option<(usize, usize)> {
+        self.world_location.as_ref().map(|v| (v.current, v.rooms.len()))
     }
 
     /// Whether the world-location landing screen is active.
@@ -1030,11 +1060,15 @@ impl EngineState {
     }
 
     /// Render the current world-location background (its decoded palette + pixels) with
-    /// the world name captioned, into the framebuffer.
+    /// the world name + room index captioned, into the framebuffer.
     fn render_world_location(&mut self) {
-        let Some((img, name)) = &self.world_location else {
+        // Take the visit out so the blit can mutate the framebuffer without a borrow
+        // conflict, then put it back.
+        let Some(visit) = self.world_location.take() else {
             return;
         };
+        let img = &visit.image;
+        let name = format!("{}  {}/{}", visit.name, visit.current + 1, visit.rooms.len());
         // Blit the decoded room background (320x200 fills the screen).
         for y in 0..ENGINE_SCREEN_HEIGHT.min(img.height) {
             for x in 0..ENGINE_SCREEN_WIDTH.min(img.width) {
@@ -1043,7 +1077,6 @@ impl EngineState {
         }
         self.scene_palette = img.palette;
         self.scene_palette[0xFE] = [245, 245, 160];
-        let name = name.clone();
         draw_text_indexed(
             &mut self.framebuffer,
             ENGINE_SCREEN_WIDTH,
@@ -1053,6 +1086,7 @@ impl EngineState {
             6,
             0xFE,
         );
+        self.world_location = Some(visit);
     }
 
     fn render_nav_pyramid_sprites(&mut self) {
@@ -2121,6 +2155,16 @@ mod tests {
         e.step(MouseInput::default());
         let distinct = e.framebuffer.iter().collect::<std::collections::BTreeSet<_>>().len();
         assert!(distinct > 8, "location background renders real content");
+        // Venusia has multiple rooms (floors 1f/2f/3f); cycling advances + wraps.
+        let (start, count) = e.world_room_position().unwrap();
+        assert!(count >= 2, "venusia has multiple rooms ({count})");
+        assert_eq!(start, 0);
+        e.cycle_world_room(1);
+        assert_eq!(e.world_room_position().unwrap().0, 1);
+        e.cycle_world_room(-1);
+        assert_eq!(e.world_room_position().unwrap().0, 0);
+        e.cycle_world_room(-1);
+        assert_eq!(e.world_room_position().unwrap().0, count - 1, "wraps backward");
         // Leaving returns to nav.
         e.leave_world();
         assert!(!e.world_location_active());

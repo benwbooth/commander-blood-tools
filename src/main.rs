@@ -407,9 +407,12 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     }
                 }
                 // 'v' (keycode 55): visit the nav destination the compass targets —
-                // shows that world's decoded fd/ location background.
+                // shows that world's decoded fd/ location background. While visiting,
+                // 'v' cycles forward through the world's rooms.
                 Event::KeyPress(k) if k.detail == 55 => {
-                    if let Some(world) = engine.targeted_world_name() {
+                    if engine.world_location_active() {
+                        engine.cycle_world_room(1);
+                    } else if let Some(world) = engine.targeted_world_name() {
                         engine.visit_world(world, Path::new(assets));
                     }
                 }
