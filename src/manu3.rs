@@ -31,6 +31,20 @@ pub fn menu_item_handler(base: u16, table: &[u16], item: usize) -> u16 {
     base.wrapping_add(table.get(item).copied().unwrap_or(0))
 }
 
+/// The menu-view centre the camera pans around (`0xA0`/`0x64` = screen 160,100).
+pub const MENU_CAMERA_CENTRE: (i16, i16) = (0xA0, 0x64);
+
+/// The 3D-menu camera pan from the cursor position (entry `0x34..0x51`): the cursor's
+/// delta from the view centre, doubled, is added to the view offset `[0x23E4]` (x from
+/// `[0x1A]`) / `[0x23E2]` (y from `[0x1C]`) each frame before the pyramid draw (`0x270`)
+/// — the same centre-delta steering as the ship-3D / alien views. Returns the
+/// `(dx, dy)` added to the view offset.
+pub fn menu_camera_pan(cursor_x: i16, cursor_y: i16) -> (i16, i16) {
+    let dx = cursor_x.wrapping_sub(MENU_CAMERA_CENTRE.0).wrapping_mul(2);
+    let dy = cursor_y.wrapping_sub(MENU_CAMERA_CENTRE.1).wrapping_mul(2);
+    (dx, dy)
+}
+
 /// One entry in the menu's active-animation list (method `0x19B`): a fixed-point tween
 /// that each frame writes its accumulator's high word to a target field, then advances
 /// the accumulator by a delta, decrementing a frame counter until it expires.
@@ -122,6 +136,16 @@ impl MenuTweenList {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn camera_pans_by_doubled_centre_delta() {
+        // Cursor at the centre -> no pan.
+        assert_eq!(menu_camera_pan(0xA0, 0x64), (0, 0));
+        // Right/down of centre -> positive doubled deltas.
+        assert_eq!(menu_camera_pan(0xA0 + 10, 0x64 + 5), (20, 10));
+        // Left/up -> negative.
+        assert_eq!(menu_camera_pan(0xA0 - 8, 0x64 - 4), (-16, -8));
+    }
 
     #[test]
     fn item_index_and_handler_dispatch() {
