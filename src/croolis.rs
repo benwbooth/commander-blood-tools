@@ -16,6 +16,34 @@ pub fn alien_anim_prng_next(seed: u16) -> u16 {
     rotated.wrapping_sub(carry)
 }
 
+/// The overlay's per-object behaviour method, selected via the vtable at `fs:0x103A`
+/// (near-ptr entries indexed by `bx = [di+0x34]`). The decoded entries are:
+/// `0x1D27` (null/`ret`), `0x16A4` (animation state machine — ported here), plus
+/// `0xA30`/`0x12DE`/`0x999`/`0x36A` (dispatch/sub-behaviours; `0x12DE` is the colony
+/// iterator, the rest not yet decoded).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum AlienMethod {
+    /// `0x1D27` — the null method (`ret`); the object does nothing.
+    Null,
+    /// `0x16A4` — the animation state machine ([`AlienObject::step`]).
+    AnimStateMachine,
+    /// A decoded-but-not-yet-ported sub-behaviour (`0xA30`/`0x999`/`0x36A`), kept as
+    /// its table offset so the dispatch shape is faithful; runs as a no-op for now.
+    SubBehaviour(u16),
+}
+
+impl AlienMethod {
+    /// Resolve a vtable index (`[di+0x34]`) to its method, mirroring the `fs:0x103A`
+    /// table entries.
+    pub fn from_vtable_offset(offset: u16) -> Self {
+        match offset {
+            0x1D27 => AlienMethod::Null,
+            0x16A4 => AlienMethod::AnimStateMachine,
+            other => AlienMethod::SubBehaviour(other),
+        }
+    }
+}
+
 /// A `croolis` object's animation state (the 0x5E-byte record's behaviour fields):
 /// `+0x36` state flag, `+0x38` timer (init 0x32), `+0x3C` animation accumulator, plus
 /// its PRNG seed word (`fs:[0x105C]`).
@@ -29,6 +57,8 @@ pub struct AlienObject {
     pub timer: u16,
     /// `+0x3C` animation accumulator (`cs:[0x16A2]` advanced by 0xFA per state change).
     pub anim: u16,
+    /// The object's behaviour method (`[di+0x34]` → `fs:0x103A` vtable entry).
+    pub method: AlienMethod,
 }
 
 /// Timer reload when a new animation state is chosen (`+0x38 = 0x32`).
@@ -37,13 +67,26 @@ pub const ALIEN_STATE_TIMER_RELOAD: u16 = 0x32;
 pub const ALIEN_ANIM_STEP: u16 = 0xFA;
 
 impl AlienObject {
-    /// Create an object with the decoded initial state (`+0x38 = 0x32`), seeded PRNG.
+    /// Create an object with the decoded initial state (`+0x38 = 0x32`), seeded PRNG,
+    /// running the animation state machine by default.
     pub fn new(seed: u16) -> Self {
         Self {
             prng: seed,
             state_flag: 0,
             timer: ALIEN_STATE_TIMER_RELOAD,
             anim: 0,
+            method: AlienMethod::AnimStateMachine,
+        }
+    }
+
+    /// Dispatch one frame through the object's vtable method (`call [si+0xE]` in the
+    /// colony iterator): the animation state machine advances, the null method and
+    /// not-yet-decoded sub-behaviours are no-ops. Returns `true` on an anim state
+    /// change.
+    pub fn dispatch(&mut self) -> bool {
+        match self.method {
+            AlienMethod::AnimStateMachine => self.step(),
+            AlienMethod::Null | AlienMethod::SubBehaviour(_) => false,
         }
     }
 
@@ -105,7 +148,7 @@ impl AlienColony {
         }
         self.frame_timer = ALIEN_COLONY_FRAME_GATE;
         for object in &mut self.objects {
-            object.step();
+            object.dispatch();
         }
         true
     }
@@ -114,6 +157,25 @@ impl AlienColony {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn vtable_dispatch_routes_methods() {
+        assert_eq!(AlienMethod::from_vtable_offset(0x1D27), AlienMethod::Null);
+        assert_eq!(AlienMethod::from_vtable_offset(0x16A4), AlienMethod::AnimStateMachine);
+        assert_eq!(
+            AlienMethod::from_vtable_offset(0x0A30),
+            AlienMethod::SubBehaviour(0x0A30)
+        );
+        // The null method never changes state; the anim method eventually does.
+        let mut null = AlienObject::new(0x1);
+        null.method = AlienMethod::Null;
+        for _ in 0..100 {
+            assert!(!null.dispatch());
+        }
+        let mut anim = AlienObject::new(0x1);
+        let changed = (0..100).any(|_| anim.dispatch());
+        assert!(changed, "anim-state object changes state within its timer window");
+    }
 
     #[test]
     fn colony_advances_on_the_frame_gate_cadence() {
