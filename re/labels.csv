@@ -465,3 +465,6 @@ DS:0x65F2,ui_region_table,"table of 8-byte clickable-UI-region records (0x1f ent
 0x009AA4,project_perspective_x,"3D->2D perspective projection X (family 0x9aa4/0x9c69): sar eax,7 (val>>7); cdq; idiv ecx (divide by depth); add ax,0xa0 (160 = screen centre x). Projects a transformed 3D x coordinate to screen x. The native project_ship_3d_point X (ship3d.rs)"
 0x009AD9,project_perspective_y,"3D->2D perspective projection Y (family 0x9ad9/0x9c9e): val>>7 / depth + 0x64 (100 = screen centre y). Projects 3D y to screen y. The native perspective-projection Y"
 0x009B48,draw_vertex_list,"vertex-list/polyline draw: lds si,gs:[0x5221] (display); si=[bp] vertex ptr; loop while si!=-1 (0xffff terminator). Draws a 3D polyline/vertex list (the ship-HUD pyramid/route skyline)"
+0x000950,get_rtc_date,"read the real-time clock date: ah=4; int 1Ah (BIOS get RTC date); al=dl; call bcd_to_binary 0x986. Reads + decodes the CMOS RTC date (used for the PRNG seed + any date logic)"
+0x000D0E,poll_mouse,"poll the mouse: ax=3; int 33h (get position + button status); store gs:[0xa2a]=cx (x), gs:[0xa2c]=dx (y). Reads the mouse cursor position each frame (bx=buttons -> [0xa3e]). Feeds mouse_hit_test 0x8269"
+0x000813,state_gate_b21,"conditional gate on gs:[0xb21]&1; guards a per-frame update path"
