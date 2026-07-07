@@ -411,3 +411,6 @@ GS:0x0B9F,timer_counter,"countdown timer counter (gs:0xb9f); decremented by time
 0x000A99,dos_dup_handle,"DOS file-handle dup (ah=0x45) of the handle at gs:[0xa64] if valid (!=-1). Duplicates a file handle"
 0x000C7C,program_sound_port,"program a sound-hardware register: dx=gs:[0xa9e] (sound base port); out dx,al. Writes to the sound card's I/O port"
 GS:0x0A9E,sound_card_base_port,"the sound card's base I/O port (set at init); +6 = status register (polled by 0x0b42/0x0b4e for bit8), written by program_sound_port 0x0c7c. Hardware audio I/O base"
+0x000CC0,set_video_mode_saved,"restore/set the video mode: al=gs:[0x5232] (the saved entry mode from get_video_mode); int 10h ah=0 (set video mode). Restores the original text mode on exit / sets the saved mode"
+0x000CEF,mouse_reset_hide,"mouse init: int 33h ax=0 (reset driver), int 33h ax=2 (hide cursor). Initializes the mouse driver with cursor hidden (the game draws its own cursor)"
+0x000D4A,mouse_set_hrange,"mouse range: cx=ax(min), dx=bx(max); int 33h ax=7 (set horizontal cursor range). Clamps mouse X to the game's coordinate range"
