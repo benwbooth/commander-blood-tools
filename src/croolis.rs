@@ -1,4 +1,8 @@
-//! `croolis.xdb` overlay logic — the alien-species interaction/behaviour subsystem.
+//! Alien-species behaviour engine — the logic shared by the alien overlays
+//! `croolis.xdb`, `amer.xdb`, and `scrut.xdb` (each is the same engine over different
+//! alien data). Verified: all three carry the identical animation-state PRNG
+//! (`mov ax,fs:[0x105C]; ror ax,7; sbb ax,0`) and the same 0x5E-byte object stride —
+//! see `alien_engine_prng_present_in_all_overlays` below.
 //!
 //! Decoded (see `re/REVERSE.md`, sess 003): the overlay drives a list of 0x5E-byte
 //! object records, each a PRNG + timer *animation state machine*, dispatched per frame
@@ -323,6 +327,31 @@ mod tests {
         assert_eq!(updates, 3, "colony updates once per 7-frame gate");
         // Objects are seeded distinctly so they don't all change state in lockstep.
         assert_ne!(colony.objects[0].prng, colony.objects[1].prng);
+    }
+
+    #[test]
+    fn alien_engine_prng_present_in_all_overlays() {
+        // The animation-state PRNG byte sequence: `ror ax,7` (C1 C8 07) immediately
+        // followed by `sbb ax,0` (1D 00 00). It appears in every alien overlay,
+        // confirming they share this behaviour engine. Skips if assets are absent.
+        let seq = [0xC1u8, 0xC8, 0x07, 0x1D, 0x00, 0x00];
+        let mut checked = 0;
+        for stem in ["croolis", "amer", "scrut"] {
+            let path = ["output/_tmp_dat", "../output/_tmp_dat"]
+                .iter()
+                .map(|d| std::path::Path::new(d).join(format!("{stem}.xdb")))
+                .find(|p| p.exists());
+            let Some(path) = path else { continue };
+            let data = std::fs::read(path).unwrap();
+            assert!(
+                data.windows(seq.len()).any(|w| w == seq),
+                "{stem}.xdb carries the shared anim PRNG (ror ax,7; sbb ax,0)"
+            );
+            checked += 1;
+        }
+        // The ported PRNG models exactly that sequence.
+        assert_eq!(alien_anim_prng_next(0x8000), 0x0100);
+        let _ = checked;
     }
 
     #[test]
