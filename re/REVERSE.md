@@ -391,7 +391,13 @@ packed/compressed), so fully decodable with analysis. Layout (venusia, 15892 B):
 | `0x08` | first-section record count (byte): ~63 most worlds (62/55/49/33/12 some) |
 | `0x09..` | count × 3-byte records, each value indexes within the count (`0`=no link) — a 3-link adjacency/index table; **FF FF-terminated** (36/37 worlds) |
 | after `FF FF` | sparse index/pointer region (mostly zeros, occasional 16-bit values e.g. 134,117) |
+| ~`0x01a2..0x0e00` | **(tentative)** array of ~23 records at a clean 0x86 (134-byte) stride; each begins with a variable-length prefix of `0x8X` bytes (0x81/0x84/0xb5…) growing 2,3,3,4,5,… then zeros — looks like per-record variable lists (connections/items?), semantic unconfirmed |
 | ~`0x0e00..end` | dense structured payload (uncompressed; ~64 distinct byte values) — the per-room geometry/object data |
+
+The 0x86-stride array + record semantics are a **tentative observation** (offset/stride
+detected empirically on venusia; not yet cross-validated or confirmed via the consumer) —
+recorded so a future session can verify, not treat as settled. Prior mesh-face reading of
+the first table was already retracted; treat all `.ext` body semantics as under study.
 
 CORRECTION: the 3-byte records are **not** universally triangle-mesh faces — that was
 over-generalized from venusia (79% ascending triples); most worlds are ~0% ascending
