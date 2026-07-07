@@ -500,3 +500,7 @@ DS:0x65F2,ui_region_table,"table of 8-byte clickable-UI-region records (0x1f ent
 0x00555B,vm_record_state_proc,"VM record-state processor: bp=0x6d3e; les di,gs:[0x672c]; lds si,gs:[0x6724]; cmp es:[di+0x12],1. Processes the object/line-record state (reads field +0x12) during the dialogue/presentation update"
 0x006195,fixed_point_divide,"fixed-point 32-bit divide: shld edx,eax,0x10 (form a 48-bit dividend); lcall 0x1ce:0xb53 (32-bit division helper). Computes a scaled/fixed-point quotient (used in projection/scaling)"
 0x0062A3,scan_char_match,"string char scan: cx=0xffff; ah=al (target char); loop lodsb; cmp al,ah until match. Finds a delimiter/character in a string (e.g. word/line split)"
+0x006FF3,draw_hud_element_2bc7,"draw a HUD element: ax=0x1f; lcall 0x299:0x1241 (draw); bp=0x2bc7 (element data table). Renders a HUD/status element from the 0x2bc7 layout data"
+0x0078D0,presentation_mode_dispatch,"presentation-mode dispatcher: bp=0x2a27; test [0x2793]&0x50 / &0x40 (presentation mode bits) -> branch to the mode-specific handler. Routes the per-frame update by presentation state"
+0x00792D,camera_nav_update,"camera/nav per-frame update: test [0x278a]&1; al=[0x27df] (the camera-approach FSM phase, ship3d.rs Ship3dCameraApproach). Steps the ship-nav camera state"
+0x0079E5,screen_mode_update,"screen-mode update gate: test [0x27e1]&1; es=gs. Guards a screen/mode-specific per-frame update path"
