@@ -7,6 +7,9 @@ use std::error::Error;
 
 pub fn decompress_lz_171(data: &[u8], offset: usize) -> Result<Vec<u8>, Box<dyn Error>> {
     let unpacked_len = u16::from_le_bytes([data[offset], data[offset + 1]]) as usize;
+    // NOTE: unlike RLE block 173, LZ blocks carry no flags byte / x,y placement pair —
+    // byte 4 of their 6-byte header is payload-derived data (verified on logo_bl /
+    // inter_sh, whose byte-4 values vary arbitrarily while decoding correctly from +6).
     let mut pos = offset + 6;
     let mut out = Vec::with_capacity(unpacked_len);
     let mut bits_left = 0u32;

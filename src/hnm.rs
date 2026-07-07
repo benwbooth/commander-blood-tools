@@ -172,16 +172,36 @@ impl HnmFile {
             None
         };
 
+        // Destination placement (RLE blocks only): when the RLE block header's flags
+        // bit 0x04 is clear, the 4 bytes after the 6-byte header carry the sub-frame's
+        // x,y words; the game's blit routine (0xAB34..0xAB7E) reads them (`al=[si+4];
+        // add si,6; test al,4; jne` then `mov dx,[si]; mov cx,[si+2]; add si,4`) and
+        // writes at `di = y*320 + x`. LZ blocks have no flags/x,y (byte 4 is payload
+        // data) and always draw at the band origin. Ignoring the pair drew every RLE
+        // delta sub-frame at (0,0), smearing them across the screen (the intro
+        // trail/speckle artifact).
+        let (dst_x, dst_y) = if checksum == 0xAD
+            && self.data[fds + 4] & 0x04 == 0
+            && fds + 10 <= self.data.len()
+        {
+            (
+                u16::from_le_bytes([self.data[fds + 6], self.data[fds + 7]]) as usize,
+                u16::from_le_bytes([self.data[fds + 8], self.data[fds + 9]]) as usize,
+            )
+        } else {
+            (0, 0)
+        };
+
         if let Some(pixels) = pixels {
-            let cw = fw.min(VIEWPORT_W);
-            let ch = fh.min(VIEWPORT_H);
+            let cw = fw.min(VIEWPORT_W.saturating_sub(dst_x));
+            let ch = fh.min(VIEWPORT_H.saturating_sub(dst_y));
             match mode {
                 0xFF => {
                     for y in 0..ch {
                         for x in 0..cw {
                             let si = y * fw + x;
                             if si < pixels.len() && (clear_zeroes || pixels[si] != 0) {
-                                fb[y * VIEWPORT_W + x] = pixels[si];
+                                fb[(dst_y + y) * VIEWPORT_W + dst_x + x] = pixels[si];
                             }
                         }
                     }
@@ -189,7 +209,7 @@ impl HnmFile {
                 _ => {
                     for y in 0..ch {
                         let so = y * fw;
-                        let d = y * VIEWPORT_W;
+                        let d = (dst_y + y) * VIEWPORT_W + dst_x;
                         let rl = cw.min(pixels.len().saturating_sub(so));
                         if rl > 0 {
                             fb[d..d + rl].copy_from_slice(&pixels[so..so + rl]);
@@ -201,4 +221,10 @@ impl HnmFile {
 
         (fw, fh, mode)
     }
+}
+
+impl HnmFile {
+    pub fn raw(&self) -> &[u8] { &self.data }
+    pub fn header_size(&self) -> usize { self.header_size }
+    pub fn offset(&self, i: usize) -> u32 { self.offsets[i] }
 }
