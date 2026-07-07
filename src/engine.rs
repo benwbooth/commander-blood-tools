@@ -293,18 +293,20 @@ impl EngineState {
         }
     }
 
-    /// Queue the startup intro-video sequence (developer/publisher logos, the intro
-    /// cutscene) to play full-screen before the game proper — the first thing the real
-    /// game shows. `assets` is the DAT root; missing files are skipped. The sequence
-    /// mirrors the original's boot order (Microfolie's → intro cutscene → CRYO →
-    /// Commander Blood title). Activates the intro and loads the first clip.
+    /// Queue the startup intro-video sequence to play before the game proper — the
+    /// first thing the real game shows. `assets` is the DAT root; missing files are
+    /// skipped. `sq/mind.hnm` is the complete boot reel (verified by decoding: frames
+    /// ~0-30 MINDSCAPE logo, ~40-80 Microfolie's logo zoom, ~100-200 the
+    /// ship-over-planet cutscene, tail the CRYO card) — matching the oracle-captured
+    /// boot order exactly — followed by the fire "COMMANDER Blood" title.
+    /// (`microfol.hnm` is a shorter variant of the same reel without MINDSCAPE;
+    /// `inter_sh` is the ship interior, `cryogel`/`cryorad` cryo-chamber scenes,
+    /// `logo01/02` the HATE-TV logo — none of them boot clips.)
     pub fn load_intro(&mut self, assets: &Path) {
         let sq = assets.join("sq");
         let order = [
-            "microfol", // Microfolie's (developer) logo
-            "inter_sh", // intro ship cutscene
-            "cryogel",  // CRYO Interactive logo
-            "logo_bl",  // Commander Blood title logo
+            "mind",    // complete boot reel: MINDSCAPE + Microfolie's + ship + CRYO
+            "logo_bl", // fire "COMMANDER Blood" title
         ];
         self.intro_hnms = order
             .iter()
