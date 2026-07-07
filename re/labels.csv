@@ -477,3 +477,7 @@ DS:0x65F2,ui_region_table,"table of 8-byte clickable-UI-region records (0x1f ent
 0x006433,dic_word_lookup,"DIC dictionary lookup: lds si,gs:[0x6728] (the DIC far pointer = the text-word dictionary); les di,gs:[0x672c]; si+=ax (word offset). Fetches a dictionary word for 0xA6 TEXT assembly (the b1b2 dictionary-word offsets)"
 0x00647B,scan_zero_word,"0x0000-word-terminated operand scanner: cx=0xffff; loop lodsw until a zero word. This is the length-0 opcode operand-advance (0xA8/0xAC/0xCC/0xD3) documented in dead_ends sess 001 - scans the variable operand to its 0x0000 terminator"
 0x0067A7,strlen_b,"null-terminated string length (repne scasb variant of strlen 0x2665): cx=0xffff; scan es:di for 0; neg cx = length"
+0x008CCE,nav_camera_state_check,"nav/camera state gate: ds=ax; cmp [0x278b],0; test [0x278a]&1. Checks the camera/nav transition flags before a per-frame update"
+0x009510,presentation_mode_check,"presentation-mode gate: ax=[0x2793]; and 0xff0f; test 2 -> branch on the presentation-active bit of [0x2793]"
+0x0093F5,screen_mode_check,"screen-mode gate: test [0x27e2]&2 and [0x5e64]&1 -> branch. Guards a screen/render mode-specific path"
+0x009982,matrix3d_mul_rows,"matrix3d_mul_fixed sibling rows (0x9982/0x99a5/0x99da): same Q15 fixed-point matrix-element products (imul [si+off]*[si+off]; sar 0xf; stosd) as 0x994d - the remaining rotation/projection matrix rows"
