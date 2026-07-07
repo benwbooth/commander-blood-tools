@@ -81,6 +81,53 @@ impl ExtWorld {
     }
 }
 
+/// A world object record — the 10-byte entries in the section after the first table
+/// (`next_section`). Cross-validated across venusia/magnus/black: each world's initial
+/// object is `id=1, type=4` at a world-specific screen position (venusia 134,117; magnus
+/// 169,92; black 199,42). Most slots are zero (preallocated, filled at runtime). The
+/// `x`/`y` are the object coordinates `entity_draw` (0x9240) scales + renders.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ExtObject {
+    pub id: u16,       // +0x00
+    pub kind: u16,     // +0x02
+    pub reserved: u16, // +0x04
+    pub x: u16,        // +0x06
+    pub y: u16,        // +0x08
+}
+
+impl ExtWorld {
+    /// Parse the object records (10-byte `[id, type, reserved, x, y]`) starting at
+    /// [`Self::next_section`] from `data`, returning the non-empty (any field set) ones.
+    pub fn objects(&self, data: &[u8]) -> Vec<ExtObject> {
+        let w = |o: usize| -> u16 {
+            u16::from_le_bytes([
+                data.get(o).copied().unwrap_or(0),
+                data.get(o + 1).copied().unwrap_or(0),
+            ])
+        };
+        let mut out = Vec::new();
+        let mut o = self.next_section;
+        // Bounded scan of the object-record region (stop at the dense payload / EOF).
+        for _ in 0..64 {
+            if o + 10 > data.len() {
+                break;
+            }
+            let obj = ExtObject {
+                id: w(o),
+                kind: w(o + 2),
+                reserved: w(o + 4),
+                x: w(o + 6),
+                y: w(o + 8),
+            };
+            if obj != (ExtObject { id: 0, kind: 0, reserved: 0, x: 0, y: 0 }) {
+                out.push(obj);
+            }
+            o += 10;
+        }
+        out
+    }
+}
+
 /// Parse the framing of an `.ext` world body. Returns `None` if it isn't a world file.
 /// The first-section record count is body byte 8; records are 3 bytes each and the
 /// section is expected to end with `FF FF` (holds for venusia/magnus/black/cyber; some
@@ -175,6 +222,21 @@ mod tests {
                     ext.ascending_triple_percent()
                 );
             }
+        }
+    }
+
+    #[test]
+    fn object_records_decode_the_initial_world_object() {
+        // Each world's first object record is id=1, type=4 at a world-specific position.
+        for (name, x, y) in [("VENUSIA.EXT", 134, 117), ("MAGNUS.EXT", 169, 92), ("BLACK.EXT", 199, 42)] {
+            let Some(data) = load(name) else { continue };
+            let ext = parse_ext(&data).unwrap();
+            let objs = ext.objects(&data);
+            assert!(!objs.is_empty(), "{name} has an initial object");
+            let first = objs[0];
+            assert_eq!(first.id, 1, "{name} object id");
+            assert_eq!(first.kind, 4, "{name} object type");
+            assert_eq!((first.x, first.y), (x, y), "{name} object position");
         }
     }
 
