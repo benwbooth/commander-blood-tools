@@ -2,9 +2,10 @@
 //!
 //! Distinct from the alien overlays (no shared PRNG); its entry (`0x0000`) takes the
 //! caller's input params (mouse coords: `[bp+6]>>4; +0xA0` → screen row, `[bp+4]&0x1F`
-//! → column) and dispatches through the menu handlers. This module ports the decoded
-//! menu **animation system** at method `0x19B`; the item hit-testing/dispatch is future
-//! work.
+//! → column) and dispatches through the menu handlers. Ported here: the input-coord
+//! decode + item-selection dispatch (`0x181`, `base + table[item]`) and the menu
+//! animation/tween list (`0x19B`). Remaining: the per-item action handlers the
+//! dispatch jumps to, and the 3D pyramid draw.
 
 /// The menu-item column index from the caller's input word (`[bp+4] & 0x1F`, method
 /// entry `0x000`/`0x181`) — 0..31 selects one of up to 32 menu items.
