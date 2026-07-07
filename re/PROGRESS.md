@@ -76,10 +76,15 @@ BLOODPRG.EXE's ~435 functions. True 100% is a complete decompile.
 
 ## VERIFICATION MATRIX (full pass, sess 005-007)
 
-Coverage denominator: BLOODPRG.EXE has ~435 functions (distinct near-call targets);
-~113 code points are decoded/labeled (labels.csv); the Rust reimplementation's faithful
-core covers the VM, ship-3D math/state, decoders, and loaders (audited per-function —
-see the four module audits, sess 007).
+Coverage denominator (measured, sess 007): BLOODPRG.EXE has ~360 distinct near-call
+targets (~435 incl. far-call/jump-table/overlay entries). **183 code addresses are now
+decoded/labeled** in labels.csv (up from ~113) — this session added the resource-loading
+pipeline, object-instance system, input dispatch, the full mode-X render path, and the
+VM end-to-end (dispatch + all 51 opcodes' behaviors + the query/set + full operator set).
+So the ARCHITECTURE and every major subsystem are decoded; what remains is the deep `.ext`
+world-body record semantics and the many individual leaf/utility/init/hardware functions
+(~55% of near-call targets still unlabeled). "Combat" was verified NON-existent (retracted).
+True 100% (every function fully decoded + ported) is still a multi-month effort.
 
 **Verified exact (tested in the suite):**
 - Font tables — byte-for-byte vs the exe (@0x14C22/0x14CD2/0x14D28), regression test.
