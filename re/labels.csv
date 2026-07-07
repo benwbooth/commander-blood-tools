@@ -444,3 +444,8 @@ GS:0x6726,object_heap_segment,"segment of the runtime object/instance heap (es:[
 0x00994D,matrix3d_mul_fixed,"fixed-point 3D matrix multiply (family 0x994d/0x9982/0x99a5 = the matrix product rows): imul dword [si+off1] * [si+off2]; sar eax,0xf (Q15 fixed-point >>15); stosd es:[di]. Computes the rotation/projection matrix element products - the ship-3D / object-3D transform math (native counterpart to ship3d.rs build_ship_3d_projection_matrix)"
 0x0097D6,angle_wrap_180,"angle normalization: if bx>=0x168 (360) subtract 360; shr bx,1 (->0..180). Wraps a 0..360 angle into the 0..180 half-range used by the trig/projection tables"
 0x00963F,matrix_table_clear_2a1b,"clear the 3D matrix/object table: bp=0x2a1b; cx=6 records; [bp]=0; bp+=0x18 (24-byte stride). Zeros 6x 24-byte records (the per-object transform slots at 0x2a1b)"
+0x00BBB3,audio_playback_gated,"SND/VOC audio playback+mix family (0xbbb3/0xbc50/0xbdb7): gated on gs:[0xade]&1 (sound enabled) and gs:[0xba3]&1; processes/mixes a sound clip into the audio output. The core software audio-mixing routines"
+0x00B7E3,audio_process_ade,"audio processing routine gated on [0xade]&1 (sound) + [0xadf]&1; part of the SND playback path (feeds the driver callback / mixer)"
+0x00BD26,dos_ioctl_device,"DOS IOCTL device call: bx=ax (handle); dx=gs:[0xa60]; ax=0x4400; int21h (IOCTL get/set device info). Configures the sound/CD device driver"
+0x00BD8D,ems_page_offset_split,"EMS address split: cx=ax>>2; ax<<=0xe (14) -> dx. Splits a value into an EMS 16KB-page number + offset (the banked-memory addressing math)"
+0x00BD4E,ems_buffer_setup,"EMS buffer setup: ds=bx; si=0xa6c; [si]=0x4000 (16KB EMS page size); bx=[0xa5e]. Initializes an EMS page-mapped buffer"
