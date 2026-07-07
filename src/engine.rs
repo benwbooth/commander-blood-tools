@@ -1038,9 +1038,9 @@ impl EngineState {
     /// Returns whether any room was found + loaded. Rooms are ordered by filename so
     /// floor 1 (the entry room) shows first.
     pub fn visit_world(&mut self, world: &str, assets: &std::path::Path) -> bool {
-        let Some(prefix) = crate::levels::world_location_art_prefix(world) else {
+        if crate::levels::world_location_abbrev(world).is_none() {
             return false;
-        };
+        }
         let fd = assets.join("fd");
         let mut rooms: Vec<std::path::PathBuf> = match std::fs::read_dir(&fd) {
             Ok(rd) => rd
@@ -1049,13 +1049,23 @@ impl EngineState {
                 .filter(|p| {
                     p.file_name()
                         .and_then(|n| n.to_str())
-                        .map(|n| n.to_lowercase().starts_with(prefix) && n.ends_with(".lbm"))
+                        .map(|n| {
+                            let n = n.to_lowercase();
+                            n.ends_with(".lbm") && crate::levels::art_belongs_to_world(&n, world)
+                        })
                         .unwrap_or(false)
                 })
                 .collect(),
             Err(_) => return false,
         };
-        rooms.sort();
+        // Sort by floor then filename so all floors of the world are explorable in order.
+        rooms.sort_by(|a, b| {
+            let fa = a.file_name().and_then(|n| n.to_str()).unwrap_or("");
+            let fb = b.file_name().and_then(|n| n.to_str()).unwrap_or("");
+            crate::levels::art_floor(fa)
+                .cmp(&crate::levels::art_floor(fb))
+                .then_with(|| fa.cmp(fb))
+        });
         if rooms.is_empty() {
             return false;
         }
@@ -1114,18 +1124,19 @@ impl EngineState {
             return;
         };
         let img = &visit.image;
-        // Caption with the decoded room + facing (view-angle) parsed from the art name.
+        // Caption with the decoded floor + room + facing parsed from the art name.
         let name = {
             let file = visit.rooms[visit.current]
                 .file_name()
                 .and_then(|n| n.to_str())
                 .unwrap_or("")
                 .to_lowercase();
-            let prefix = crate::levels::world_location_art_prefix(
-                &visit.name.to_lowercase(),
-            )
-            .unwrap_or("");
-            match crate::levels::parse_room_view(&file, prefix) {
+            let floor = crate::levels::art_floor(&file);
+            let abbrev = crate::levels::world_location_abbrev(&visit.name.to_lowercase())
+                .unwrap_or("");
+            // Match against the abbreviation, skipping any leading floor digit.
+            let body = file.strip_prefix(|c: char| c.is_ascii_digit()).unwrap_or(&file);
+            match crate::levels::parse_room_view(body, abbrev) {
                 Some((room, view)) => {
                     let facing = match view {
                         'f' => "FRONT",
@@ -1134,7 +1145,7 @@ impl EngineState {
                         'g' => "RIGHT",
                         _ => "VIEW",
                     };
-                    format!("{}  ROOM {}  {}", visit.name, room, facing)
+                    format!("{}  FLOOR {floor} ROOM {}  {}", visit.name, room, facing)
                 }
                 None => format!("{}  {}/{}", visit.name, visit.current + 1, visit.rooms.len()),
             }

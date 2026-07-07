@@ -120,6 +120,39 @@ pub fn world_location_art_prefix(stem: &str) -> Option<&'static str> {
     })
 }
 
+/// The world's abbreviation used in its `fd/` art names, without the leading floor
+/// digit — so it matches every floor of the world. Derived from
+/// [`world_location_art_prefix`] by dropping a single leading digit (`1venus` →
+/// `venus`, `kortex` → `kortex`).
+pub fn world_location_abbrev(world: &str) -> Option<&'static str> {
+    let prefix = world_location_art_prefix(world)?;
+    Some(match prefix.strip_prefix(|c: char| c.is_ascii_digit()) {
+        Some(rest) if !rest.is_empty() => rest,
+        _ => prefix,
+    })
+}
+
+/// Whether an `fd/` filename belongs to `world` on any floor: it starts with the world's
+/// abbreviation, optionally preceded by a single floor digit (`1magnu…`, `2magnu…`).
+pub fn art_belongs_to_world(filename: &str, world: &str) -> bool {
+    let Some(abbrev) = world_location_abbrev(world) else {
+        return false;
+    };
+    let f = filename;
+    f.starts_with(abbrev)
+        || (f.as_bytes().first().map(|b| b.is_ascii_digit()).unwrap_or(false)
+            && f[1..].starts_with(abbrev))
+}
+
+/// The floor number of an `fd/` art filename (the leading digit, or 1 if none).
+pub fn art_floor(filename: &str) -> u32 {
+    filename
+        .chars()
+        .next()
+        .and_then(|c| c.to_digit(10))
+        .unwrap_or(1)
+}
+
 /// Parse a world's `fd/` room-art filename into `(room, view)`: after the world's
 /// [`world_location_art_prefix`], the trailing letter is the view-angle (the direction
 /// the player faces — `b`/`d`/`f`/`g`) and the leading part is the room id. E.g.
@@ -139,6 +172,19 @@ pub fn parse_room_view(filename: &str, prefix: &str) -> Option<(String, char)> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn art_matches_a_world_across_all_floors() {
+        assert_eq!(world_location_abbrev("magnus"), Some("magnu"));
+        assert_eq!(world_location_abbrev("kortex"), Some("kortex"));
+        // Floor 1 and floor 2 art both belong to magnus.
+        assert!(art_belongs_to_world("1magnu1f.lbm", "magnus"));
+        assert!(art_belongs_to_world("2magnu1b.lbm", "magnus"));
+        assert_eq!(art_floor("1magnu1f.lbm"), 1);
+        assert_eq!(art_floor("2magnu1b.lbm"), 2);
+        // A different world's art doesn't match.
+        assert!(!art_belongs_to_world("1venus1f.lbm", "magnus"));
+    }
 
     #[test]
     fn parses_room_and_view_from_art_filenames() {
