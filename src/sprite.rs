@@ -159,6 +159,25 @@ mod tests {
     use super::*;
 
     #[test]
+    fn rle_control_bytes_match_the_decoded_sprite_blit() {
+        // Verify decode_rle_frame's control-byte semantics against the disassembled
+        // sprite_blit_rle (0x2cd6): negative control -> run of (-control)+1 of the next
+        // byte; non-negative control -> literal run of control+1. frame[0]=stride, the
+        // encoded stream starts at +8.
+        // stride 4, one row: 0xFE (run of 3) 0xAA ; 0x00 (literal 1) 0xBB -> AA AA AA BB
+        let frame = [4u8, 0, 0, 0, 0, 0, 0, 0, 0xFE, 0xAA, 0x00, 0xBB];
+        let px = decode_rle_frame(&frame, 1).expect("decodes");
+        assert_eq!(px, vec![0xAA, 0xAA, 0xAA, 0xBB]);
+        // A literal run of 3: control 0x02 -> copy next 3 bytes.
+        let frame2 = [3u8, 0, 0, 0, 0, 0, 0, 0, 0x02, 0x11, 0x22, 0x33];
+        assert_eq!(decode_rle_frame(&frame2, 1).unwrap(), vec![0x11, 0x22, 0x33]);
+        // Index 0 in the decoded output is the transparent value the blit skips
+        // (blit_sprite_frame_centered / the decoded di+=cx transparent-skip path).
+        let frame3 = [4u8, 0, 0, 0, 0, 0, 0, 0, 0xFE, 0x00, 0x00, 0x77];
+        assert_eq!(decode_rle_frame(&frame3, 1).unwrap(), vec![0x00, 0x00, 0x00, 0x77]);
+    }
+
+    #[test]
     fn decodes_borxx_orb_bank_matching_the_extract_decoder() {
         let candidates = [
             "output/_tmp_iso/BORXX.SPR",
