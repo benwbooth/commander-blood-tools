@@ -919,11 +919,19 @@ impl EngineState {
             return;
         }
         // On-ship gate ([0x2793] & 8): steer the compass from the mouse and render
-        // the nav view's starfield background (the render subsystems the main loop
-        // calls). Mouse x across the screen maps to the 0..179 compass rotation.
+        // the nav view's starfield background. The game reads the cursor position
+        // relative to the screen CENTRE (int 33h ax=3 then subtracts the centre,
+        // BLOODPRG.EXE ~0x102/0x216) and turns the camera by that delta each frame —
+        // a joystick-style rate, not an absolute cursor-to-angle map. Cursor near
+        // centre = no turn; near an edge = turn fast. `compass_angle` wraps 0..179.
         if self.on_ship {
-            self.compass_angle =
-                ((self.mouse.x as u32 * 180) / ENGINE_SCREEN_WIDTH as u32).min(179) as u16;
+            let dx = self.mouse.x as i32 - ENGINE_SCREEN_WIDTH as i32 / 2;
+            // Dead-zone near centre; scaled turn rate outside it.
+            if dx.abs() > 8 {
+                let rate = dx / 20; // degrees/frame, proportional to centre distance
+                self.compass_angle =
+                    (self.compass_angle as i32 + rate).rem_euclid(180) as u16;
+            }
             // Edge-triggered nav commit: a fresh left-click selects the destination at
             // the current heading (the nav→dialogue transition hook a driver acts on).
             let left = self.mouse.left_down();
@@ -1022,24 +1030,37 @@ mod tests {
     fn on_ship_step_renders_starfield_steered_by_mouse() {
         let mut e = EngineState::new();
         e.on_ship = true;
-        // Step with the mouse at the left, then far right: the compass angle should
-        // track the mouse and the rendered starfield should differ.
+        // Rate-based (joystick) steering: cursor at centre → no turn; cursor held to
+        // one side turns the compass a bit each frame in that direction.
+        e.compass_angle = 90;
         e.step(MouseInput {
-            x: 0,
+            x: 160,
             y: 100,
             buttons: 0,
         });
-        let angle_left = e.compass_angle;
-        let frame_left = e.framebuffer.clone();
-        e.step(MouseInput {
-            x: 319,
-            y: 100,
-            buttons: 0,
-        });
-        assert_eq!(angle_left, 0);
-        assert!(e.compass_angle > 150, "mouse right steers the compass high");
+        assert_eq!(e.compass_angle, 90, "centred cursor holds heading");
+        let frame_centre = e.framebuffer.clone();
+        // Hold right for several frames: heading advances upward.
+        for _ in 0..10 {
+            e.step(MouseInput {
+                x: 300,
+                y: 100,
+                buttons: 0,
+            });
+        }
+        let right = e.compass_angle;
+        // Hold left: heading moves back down past where it was.
+        for _ in 0..20 {
+            e.step(MouseInput {
+                x: 20,
+                y: 100,
+                buttons: 0,
+            });
+        }
+        assert!(right > 90, "holding right turns the compass up (got {right})");
+        assert!(e.compass_angle < right, "holding left reverses the turn");
         assert!(
-            frame_left.iter().any(|&p| p != 0),
+            frame_centre.iter().any(|&p| p != 0),
             "the starfield renders some points"
         );
         assert_ne!(
