@@ -134,6 +134,60 @@ pub const OP_COND_BRANCH_PRESENTATION: u8 = 0xCE;
 pub const OP_COND_BRANCH_GAMEFLAG: u8 = 0xD0;
 /// `0xCC` set a byte in the 16-byte-record table `gs:0x6cde`. Handler 0x64ce.
 pub const OP_SET_RECORD_BYTE: u8 = 0xCC;
+
+/// The decoded VM query/set model (`gs:0x67ad`): record opcodes COMPARE-and-branch while
+/// query mode is on (inside an `A0 … A1` block), or WRITE (set) while it is off — the
+/// behaviour verified across `0xB8`/`0x6946`/the `C5..C8` family. This is the tested
+/// model of that dual mode: [`enter_query`] (opcode `0xA0`) / [`exit_query`] (`0xA1`) toggle
+/// it, and [`record_op`] dispatches a 2-word record access accordingly.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct QuerySetMode {
+    /// `gs:0x67ad` — true while inside an `A0 … A1` query block.
+    pub query: bool,
+}
+
+/// The result of a record opcode under [`QuerySetMode`].
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RecordOpResult {
+    /// Query mode: the record's two words matched the operands (fall through).
+    QueryMatched,
+    /// Query mode: mismatch — the VM branches (`vm_branch` 0x6462).
+    QueryBranch,
+    /// Set mode: the two words `(a, b)` were written into the record.
+    Wrote(u16, u16),
+}
+
+impl QuerySetMode {
+    /// Opcode `0xA0` PUSH — enter query mode (`gs:0x67ad = 1`).
+    pub fn enter_query(&mut self) {
+        self.query = true;
+    }
+    /// Opcode `0xA1` POP — exit query mode (`gs:0x67ad = 0`).
+    pub fn exit_query(&mut self) {
+        self.query = false;
+    }
+
+    /// A 2-word record opcode (`0xB8` family): in query mode compare the operands
+    /// `(a, b)` against the record's current `(cur_a, cur_b)` — match falls through, else
+    /// branch; in set mode the operands are written. `wildcard` (the `gs:0x674e` sentinel
+    /// substitution used by the shared `0x6946` handler) makes an operand match anything.
+    pub fn record_op(
+        &self,
+        operands: (u16, u16),
+        current: (u16, u16),
+        wildcard: Option<u16>,
+    ) -> RecordOpResult {
+        if !self.query {
+            return RecordOpResult::Wrote(operands.0, operands.1);
+        }
+        let matches = |op: u16, cur: u16| wildcard == Some(op) || op == cur;
+        if matches(operands.0, current.0) && matches(operands.1, current.1) {
+            RecordOpResult::QueryMatched
+        } else {
+            RecordOpResult::QueryBranch
+        }
+    }
+}
 pub const TEXT_SELECTOR_NONE: u8 = 0xFF;
 pub const TEXT_SELECTOR_SILENT: u8 = 0x00;
 pub const ACTIVE_LINE_ID_BIAS: u16 = 9;
@@ -3272,6 +3326,23 @@ pub fn emit_scene_events(lines: &[LineInput]) -> Vec<SceneEvent> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn query_set_mode_matches_the_decoded_record_op_semantics() {
+        let mut m = QuerySetMode::default();
+        // Outside a query block (set mode): record op WRITES the operands.
+        assert_eq!(m.record_op((5, 9), (0, 0), None), RecordOpResult::Wrote(5, 9));
+        // A0 PUSH enters query mode; matching operands fall through, mismatch branches.
+        m.enter_query();
+        assert_eq!(m.record_op((5, 9), (5, 9), None), RecordOpResult::QueryMatched);
+        assert_eq!(m.record_op((5, 9), (5, 8), None), RecordOpResult::QueryBranch);
+        // Wildcard (gs:0x674e sentinel) makes that operand match anything.
+        assert_eq!(m.record_op((7, 9), (123, 9), Some(7)), RecordOpResult::QueryMatched);
+        assert_eq!(m.record_op((7, 3), (123, 9), Some(7)), RecordOpResult::QueryBranch);
+        // A1 POP exits query mode -> back to writing.
+        m.exit_query();
+        assert_eq!(m.record_op((1, 2), (9, 9), None), RecordOpResult::Wrote(1, 2));
+    }
 
     #[test]
     fn decoded_control_opcodes_are_in_the_valid_range_and_distinct() {
