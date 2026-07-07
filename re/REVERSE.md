@@ -402,6 +402,28 @@ the accessor layer. **Remaining**: the per-frame iterator/update/draw that loops
 table and calls these (the object-simulation proper) — not yet located.
 
 
+## VM script language — decoded opcode behaviors (sess 007)
+
+The VM (`vm_run_wrapper` 0x55a4 → `vm_exec_loop_dispatch` 0x5613) executes the loaded
+COD script; each opcode is `0xA0 + index`, dispatched via the handler table (below). All
+handlers verified in `labels.csv`. **Core model:** the query-mode flag `gs:0x67ad` (set
+by `0xA0` PUSH, cleared by `0xA1` POP) makes record opcodes COMPARE-and-branch inside an
+`A0 … A1` block, or WRITE (set) outside it.
+
+- Control flow: `A0` push/enter-query, `A1` pop/exit-query, `A2` cond-call, `A3` block,
+  `A4` jump, `A5` cond-branch (state-array `0x6ade`), `A9` cond-jump (operand bit0),
+  `AA`/`AC` yield, `CE`/`D0`/`D1` cond-branch (flags `0x2793`/`0x252a`/`0x274f`).
+- Data/vars: `A7` set-if-presentation, `A8` load-string→`0x2120`, `AB` poke-byte,
+  `CC` set-record-byte (`0x6cde`), `CA`/`CB` compare var vs `0xaa6`/`0xaaa` (tag `0xf1`).
+- Records (typed `+0`=opcode, `+2`=id; on `gs:0x6724`): `B7` field op, `B8`/`B9`/`BD`
+  2-word read/write, `C5`/`C6`/`C7`/`C8` self-typed record match, `C9` clear-field,
+  `C2` record-lookup (`0x6034`→`0x672c`), `AD/AF/B2/B3/BA/BB/BC` shared generic
+  compare/write with `0x674e` wildcard→`0xffff`, `B1/B4/B5/B6/BE/BF/C0` shared field+marker.
+- Domain: `A6` TEXT (dialogue), `C1` ship-3D, `C4` actor, `D2` script-profile request.
+
+Remaining fully-unverified specifics: a few shared-handler set-paths + the domain
+handlers' deep internals (A6/C1/C4/D2 already decoded in `vm.rs`/`ship3d.rs`).
+
 ## VM opcode table (ENUMERATED, sess 007)
 
 The script VM's complete opcode-handler table, at file **0x142d0** (offsets relative to
