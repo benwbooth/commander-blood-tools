@@ -351,3 +351,20 @@ drive the game (drive_real_game.sh) to a specific dialogue scene / location, who
 decode, then compare GS:0x5b58 byte-for-byte against that asset's palette (DAC = CMAP>>2). That
 deterministic drive is the completing step. STATUS: live per-scene palette capture proven; the
 known-scene byte comparison is the remaining work.
+
+## Behavioral verification: palette-comparison machinery built; attract scene unidentifiable — 2026-07
+Attempted the byte-equivalence comparison against the live 70s attract palette:
+- Built the comparison machinery: extract CMAP from all 173 IFF FORM assets (.FD/.LBM in iso +
+  _tmp_dat), convert 8-bit CMAP -> 6-bit DAC (>>2), score L1 distance vs the live palette, and a
+  fade-scalar test (is live[i] ~= dac[i]*k for constant k, since the game fades scenes).
+- RESULT (honest negative): NO asset matches. Best raw match ORX.FD ~36/channel (poor); the
+  fade test gives ORX k=1.0 but only over 24 dark channels (unconvincing), CHART k=0.36 residual
+  9.3, FRIGO k=0.51 residual 22.8 - none is a clean fade of a decoded palette. The 70s attract
+  scene is UNIDENTIFIABLE from a free-running sample: it is likely an HNM cutscene frame (video
+  palette, not a FORM asset) or a procedural/faded scene. So this sample yields no positive
+  equivalence match - and no false one either (recorded honestly).
+CONCLUSION (reaffirmed with evidence): the palette-comparison tooling is proven, but a POSITIVE
+byte-equivalence result requires a DETERMINISTIC, fully-faded-in, KNOWN scene - which only a
+scripted drive (drive_real_game.sh navigating to a specific location, waiting for fade-in)
+provides. The free-running attract demo structurally cannot supply it. That scripted drive is
+the completing step; it has not yet been done.
