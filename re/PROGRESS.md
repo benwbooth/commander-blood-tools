@@ -285,3 +285,20 @@ See `MEMORY.md` notes and the `ship3d.rs` / `engine.rs` comments for exact addre
   from entry with per-segment base resolution — the genuinely hard, multi-week part. The
   honest coverage statement is therefore structural (every subsystem decoded end-to-end; the
   clean-prologue code-segment scan exhausted), not a single percentage.
+
+## Behavioral verification: first frame-level comparison (boot logos) — 2026-07
+Ran the full behavioral-equivalence loop end-to-end for the first time:
+1. Captured the REAL game's boot sequence under DOSBox-X+Xvfb (capture_real_game.sh):
+   boot_6s = MINDSCAPE logo, boot_10s/14s = Microfolie's logo (animating in).
+2. Decoded the same logos with our HNM decoder (output/mp4/"intro - 01 - mind.mp4").
+3. Compared frames. RESULT: the decoder reproduces both boot logos - same text, colours,
+   font, and brushstroke texture (visually confirmed). A rough text-band RMSE is ~0.19
+   (normalized), full-frame ~0.22.
+CAVEAT (honest): that RMSE is an UPPER BOUND confounded by three alignment artifacts, none
+of which are decoder error: (a) animation phase - the passive capture samples mid-reveal while
+our extracted frame is fully revealed; (b) geometry - capture_real_game.sh crops 640x360 and
+resizes to 320x200 (aspect distortion) whereas our decode is a clean upscale; (c) different
+anti-aliasing from the two scaling paths. A RIGOROUS pixel-parity metric needs: capture the
+native 640x400 VGA frame (no lossy crop), and align the exact HNM frame index to the captured
+timestamp. That harness upgrade is the next behavioral-verification step. STATUS: methodology
+proven + qualitative boot-logo match confirmed; rigorous per-pixel parity NOT yet established.
