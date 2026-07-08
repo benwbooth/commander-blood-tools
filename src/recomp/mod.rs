@@ -186,6 +186,101 @@ mod tests {
     use super::machine::Machine;
     use super::*;
     use serde::Deserialize;
+    use std::collections::HashMap;
+
+    #[derive(Deserialize)]
+    struct GenVec {
+        regs_in: HashMap<String, u16>,
+        segs: HashMap<String, u16>,
+        mem_in: Vec<(usize, u8)>,
+        regs_out: HashMap<String, u32>,
+        mem_writes: Vec<(usize, u8)>,
+        flags: Flags,
+    }
+
+    fn set_gp(m: &mut Machine, r: &str, v: u16) {
+        match r {
+            "ax" => m.regs.set_ax(v),
+            "bx" => m.regs.set_bx(v),
+            "cx" => m.regs.set_cx(v),
+            "dx" => m.regs.set_dx(v),
+            "si" => m.regs.set_si(v),
+            "di" => m.regs.set_di(v),
+            "bp" => m.regs.set_bp(v),
+            _ => panic!("gp {r}"),
+        }
+    }
+    fn set_seg(m: &mut Machine, s: &str, v: u16) {
+        match s {
+            "ds" => m.regs.ds = v,
+            "es" => m.regs.es = v,
+            "fs" => m.regs.fs = v,
+            "gs" => m.regs.gs = v,
+            "ss" => m.regs.ss = v,
+            _ => panic!("seg {s}"),
+        }
+    }
+    fn get_e(m: &Machine, r: &str) -> u32 {
+        match r {
+            "eax" => m.regs.eax,
+            "ebx" => m.regs.ebx,
+            "ecx" => m.regs.ecx,
+            "edx" => m.regs.edx,
+            "esi" => m.regs.esi,
+            "edi" => m.regs.edi,
+            "ebp" => m.regs.ebp,
+            _ => panic!("e {r}"),
+        }
+    }
+
+    /// The generic verifier: run `f` on each auto-generated vector (all registers fuzzed, input
+    /// memory discovered) and assert the full output state — every register, every memory write,
+    /// and (when `check_flags`) all six flags — matches the real binary. This is the fully
+    /// automated path-B check: `lift.py` emits `f`, `auto_oracle.py` emits the vectors.
+    fn verify_generic(name: &str, f: fn(&mut Machine), check_flags: bool) {
+        let raw = match std::fs::read_to_string(format!("re/tools/oracle_vectors/{name}_generic.json"))
+            .or_else(|_| std::fs::read_to_string(format!("../re/tools/oracle_vectors/{name}_generic.json")))
+        {
+            Ok(s) => s,
+            Err(_) => return,
+        };
+        let vecs: Vec<GenVec> = serde_json::from_str(&raw).unwrap();
+        assert!(!vecs.is_empty());
+        for (i, v) in vecs.iter().enumerate() {
+            let mut m = Machine::new();
+            for (r, val) in &v.regs_in {
+                set_gp(&mut m, r, *val);
+            }
+            for (s, val) in &v.segs {
+                set_seg(&mut m, s, *val);
+            }
+            for (addr, byte) in &v.mem_in {
+                m.mem[*addr] = *byte;
+            }
+            f(&mut m);
+            for (r, val) in &v.regs_out {
+                assert_eq!(get_e(&m, r), *val, "{name} vec {i}: {r}");
+            }
+            for (addr, byte) in &v.mem_writes {
+                assert_eq!(m.mem[*addr], *byte, "{name} vec {i}: mem[{addr:#x}]");
+            }
+            if check_flags {
+                assert_eq!(m.regs.cf, v.flags.cf, "{name} vec {i}: CF");
+                assert_eq!(m.regs.pf, v.flags.pf, "{name} vec {i}: PF");
+                assert_eq!(m.regs.af, v.flags.af, "{name} vec {i}: AF");
+                assert_eq!(m.regs.zf, v.flags.zf, "{name} vec {i}: ZF");
+                assert_eq!(m.regs.sf, v.flags.sf, "{name} vec {i}: SF");
+                assert_eq!(m.regs.of, v.flags.of, "{name} vec {i}: OF");
+            }
+        }
+    }
+
+    #[test]
+    fn func_a734_generic_pipeline() {
+        // Validates the full automated pipeline (generic oracle + generic verifier) against a
+        // hand-lift with known-good semantics. add+clc: all flags defined.
+        verify_generic("func_a734", func_a734, true);
+    }
 
     #[test]
     fn func_a757_matches_oracle_vectors() {

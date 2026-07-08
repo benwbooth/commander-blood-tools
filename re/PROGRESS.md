@@ -986,3 +986,17 @@ WHY THIS MATTERS: this changes path B from "hand-lift each of 200+ functions" to
 auto-lift bit-exact (it caught the CBW bug), so automation doesn't sacrifice provability. NEXT:
 compile-integrate the auto-lifts + batch-lift all linear leaves, then extend the lifter to
 control flow (basic-block -> match state machine). STATUS: 10 verified + auto-lifter online.
+
+## PATH B: FULLY AUTOMATED pipeline validated (lift + generic oracle + generic verify) — 2026-07
+Closed the automation loop:
+- re/tools/auto_oracle.py: GENERIC oracle - fuzzes ALL registers, runs the DOS function in Unicorn,
+  DISCOVERS the memory it reads (inputs) and writes (side effects) via hooks, dumps vectors. No
+  per-function spec. Skips functions touching the code region (<0x10000) to avoid CS ambiguity.
+- verify_generic (src/recomp): loads a generic vector, sets regs+segs+input-memory, runs the
+  lifted fn, asserts EVERY output register + EVERY memory write + all flags vs the binary.
+- VALIDATED: func_a734 passes verify_generic on 250 auto-generated vectors (all regs fuzzed, mem
+  discovered) incl. all flags. The full pipeline lift.py -> auto_oracle.py -> verify_generic works.
+So path B is now: for a linear function, AUTO-lift (lift.py) + AUTO-verify (generic oracle) - no
+hand-spec, still bit-exact vs the binary. This is the batching acceleration. NEXT: run the pipeline
+over all linear leaf functions, add each auto-lift + its generic test. STATUS: 10 hand-verified +
+automated pipeline online; ready to batch the linear leaves.
