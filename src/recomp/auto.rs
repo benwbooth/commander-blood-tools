@@ -7389,3 +7389,333 @@ pub fn func_9364(m: &mut Machine) {
         }
     }
 }
+
+pub fn func_555b(m: &mut Machine) {
+    let mut __blk: u32 = 0x555b;
+    let mut __guard: u32 = 0;
+    loop {
+        __guard += 1;
+        if __guard > 5_000_000 { panic!("func_555b: iteration guard tripped (non-terminating input)"); }
+        match __blk {
+            0x555b => {
+                // 0x0555b: push ax
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, (m.regs.ax()) as u16);
+                // 0x0555c: push bx
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, (m.regs.bx()) as u16);
+                // 0x0555d: push es
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, (m.regs.es) as u16);
+                // 0x0555e: push di
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, (m.regs.di()) as u16);
+                // 0x0555f: push ds
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, (m.regs.ds) as u16);
+                // 0x05560: push si
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, (m.regs.si()) as u16);
+                // 0x05561: push bp
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, (m.regs.bp()) as u16);
+                // 0x05562: mov bp, 0x6d3e
+                m.regs.set_bp((0x6d3e) as u16);
+                // 0x05565: les di, ptr gs:[0x672c]
+                let __o = m.read16(m.regs.gs, 0x672cu32);
+                let __s = m.read16(m.regs.gs, (0x672cu32).wrapping_add(2));
+                m.regs.set_di(__o);
+                m.regs.es = __s;
+                // 0x0556a: lds si, ptr gs:[0x6724]
+                let __o = m.read16(m.regs.gs, 0x6724u32);
+                let __s = m.read16(m.regs.gs, (0x6724u32).wrapping_add(2));
+                m.regs.set_si(__o);
+                m.regs.ds = __s;
+                __blk = 0x556f;
+            }
+            0x556f => {
+                // 0x0556f: cmp word ptr es:[di + 0x12], 1
+                m.regs.cmp16((m.read16(m.regs.es, ((m.regs.di().wrapping_add(0x12u16)) as u32))) as u16, (0x1) as u16);
+                // 0x05574: jne 0x559c
+                if !m.regs.zf { __blk = 0x559c; } else { __blk = 0x5576; }
+            }
+            0x5576 => {
+                // 0x05576: mov si, word ptr es:[di + 0x10]
+                m.regs.set_si((m.read16(m.regs.es, ((m.regs.di().wrapping_add(0x10u16)) as u32))) as u16);
+                // 0x0557a: mov bx, word ptr [si]
+                m.regs.set_bx((m.read16(m.regs.ds, ((m.regs.si()) as u32))) as u16);
+                // 0x0557c: mov ax, 0x11
+                m.regs.set_ax((0x11) as u16);
+                // 0x0557f: call 0x6023
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, 0x5582);
+                func_6023(m);
+                m.regs.set_sp(m.regs.sp().wrapping_add(2));
+                // 0x05582: cwde 
+                let __s = m.regs.ax() as i16 as i32 as u32; m.regs.eax = __s;
+                // 0x05584: cmp word ptr [eax + esi], -1
+                m.regs.cmp16((m.read16(m.regs.ds, (m.regs.eax as u32).wrapping_add((m.regs.esi as u32)))) as u16, (0xffff) as u16);
+                // 0x05589: jne 0x5597
+                if !m.regs.zf { __blk = 0x5597; } else { __blk = 0x558b; }
+            }
+            0x558b => {
+                // 0x0558b: mov word ptr [bp], si
+                m.write16(m.regs.ss, ((m.regs.bp()) as u32), (m.regs.si()) as u16);
+                // 0x0558e: add bp, 2
+                let __r = m.regs.add16((m.regs.bp()) as u16, (0x2) as u16);
+                m.regs.set_bp(__r);
+                // 0x05591: cmp word ptr [bp], -1
+                m.regs.cmp16((m.read16(m.regs.ss, ((m.regs.bp()) as u32))) as u16, (0xffff) as u16);
+                // 0x05595: je 0x559c
+                if m.regs.zf { __blk = 0x559c; } else { __blk = 0x5597; }
+            }
+            0x5597 => {
+                // 0x05597: add di, 0x14
+                let __r = m.regs.add16((m.regs.di()) as u16, (0x14) as u16);
+                m.regs.set_di(__r);
+                // 0x0559a: jmp 0x556f
+                __blk = 0x556f;
+            }
+            0x559c => {
+                // 0x0559c: pop bp
+                let __v = m.read16(m.regs.ss, m.regs.sp() as u32);
+                m.regs.set_sp(m.regs.sp().wrapping_add(2));
+                m.regs.set_bp((__v) as u16);
+                // 0x0559d: pop si
+                let __v = m.read16(m.regs.ss, m.regs.sp() as u32);
+                m.regs.set_sp(m.regs.sp().wrapping_add(2));
+                m.regs.set_si((__v) as u16);
+                // 0x0559e: pop ds
+                let __v = m.read16(m.regs.ss, m.regs.sp() as u32);
+                m.regs.set_sp(m.regs.sp().wrapping_add(2));
+                m.regs.ds = (__v) as u16;
+                // 0x0559f: pop di
+                let __v = m.read16(m.regs.ss, m.regs.sp() as u32);
+                m.regs.set_sp(m.regs.sp().wrapping_add(2));
+                m.regs.set_di((__v) as u16);
+                // 0x055a0: pop es
+                let __v = m.read16(m.regs.ss, m.regs.sp() as u32);
+                m.regs.set_sp(m.regs.sp().wrapping_add(2));
+                m.regs.es = (__v) as u16;
+                // 0x055a1: pop bx
+                let __v = m.read16(m.regs.ss, m.regs.sp() as u32);
+                m.regs.set_sp(m.regs.sp().wrapping_add(2));
+                m.regs.set_bx((__v) as u16);
+                // 0x055a2: pop ax
+                let __v = m.read16(m.regs.ss, m.regs.sp() as u32);
+                m.regs.set_sp(m.regs.sp().wrapping_add(2));
+                m.regs.set_ax((__v) as u16);
+                // 0x055a3: retf 
+                return;
+            }
+            _ => unreachable!(),
+        }
+    }
+}
+
+pub fn func_713d(m: &mut Machine) {
+    let mut __blk: u32 = 0x713d;
+    let mut __guard: u32 = 0;
+    loop {
+        __guard += 1;
+        if __guard > 5_000_000 { panic!("func_713d: iteration guard tripped (non-terminating input)"); }
+        match __blk {
+            0x713d => {
+                // 0x0713d: push ds
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, (m.regs.ds) as u16);
+                // 0x0713e: push si
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, (m.regs.si()) as u16);
+                // 0x0713f: push es
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, (m.regs.es) as u16);
+                // 0x07140: push di
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, (m.regs.di()) as u16);
+                // 0x07141: push bp
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, (m.regs.bp()) as u16);
+                // 0x07142: push edx
+                m.regs.set_sp(m.regs.sp().wrapping_sub(4));
+                m.write32(m.regs.ss, m.regs.sp() as u32, (m.regs.edx) as u32);
+                // 0x07144: push bx
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, (m.regs.bx()) as u16);
+                // 0x07145: push ax
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, (m.regs.ax()) as u16);
+                // 0x07146: lds si, ptr gs:[0x6724]
+                let __o = m.read16(m.regs.gs, 0x6724u32);
+                let __s = m.read16(m.regs.gs, (0x6724u32).wrapping_add(2));
+                m.regs.set_si(__o);
+                m.regs.ds = __s;
+                // 0x0714b: les di, ptr gs:[0x672c]
+                let __o = m.read16(m.regs.gs, 0x672cu32);
+                let __s = m.read16(m.regs.gs, (0x672cu32).wrapping_add(2));
+                m.regs.set_di(__o);
+                m.regs.es = __s;
+                // 0x07150: mov bp, 0x24fb
+                m.regs.set_bp((0x24fb) as u16);
+                // 0x07153: mov si, word ptr gs:[0x6752]
+                m.regs.set_si((m.read16(m.regs.gs, 0x6752u32)) as u16);
+                // 0x07158: mov bx, word ptr [si]
+                m.regs.set_bx((m.read16(m.regs.ds, ((m.regs.si()) as u32))) as u16);
+                // 0x0715a: mov ax, 0xb
+                m.regs.set_ax((0xb) as u16);
+                // 0x0715d: call 0x6023
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, 0x7160);
+                func_6023(m);
+                m.regs.set_sp(m.regs.sp().wrapping_add(2));
+                // 0x07160: add si, ax
+                let __r = m.regs.add16((m.regs.si()) as u16, (m.regs.ax()) as u16);
+                m.regs.set_si(__r);
+                // 0x07162: mov edx, dword ptr [si]
+                m.regs.edx = (m.read32(m.regs.ds, ((m.regs.si()) as u32))) as u32;
+                __blk = 0x7165;
+            }
+            0x7165 => {
+                // 0x07165: mov al, byte ptr es:[di + 0x12]
+                m.regs.set_al((m.read8(m.regs.es, ((m.regs.di().wrapping_add(0x12u16)) as u32))) as u8);
+                // 0x07169: cmp al, 1
+                m.regs.cmp8((m.regs.al()) as u8, (0x1) as u8);
+                // 0x0716b: jne 0x71c0
+                if !m.regs.zf { __blk = 0x71c0; } else { __blk = 0x716d; }
+            }
+            0x716d => {
+                // 0x0716d: mov si, word ptr es:[di + 0x10]
+                m.regs.set_si((m.read16(m.regs.es, ((m.regs.di().wrapping_add(0x10u16)) as u32))) as u16);
+                // 0x07171: mov al, byte ptr [si + 2]
+                m.regs.set_al((m.read8(m.regs.ds, ((m.regs.si().wrapping_add(0x2u16)) as u32))) as u8);
+                // 0x07174: and al, 1
+                let __r = m.regs.and8((m.regs.al()) as u8, (0x1) as u8);
+                m.regs.set_al(__r);
+                // 0x07176: je 0x71bb
+                if m.regs.zf { __blk = 0x71bb; } else { __blk = 0x7178; }
+            }
+            0x7178 => {
+                // 0x07178: mov ax, word ptr [si]
+                m.regs.set_ax((m.read16(m.regs.ds, ((m.regs.si()) as u32))) as u16);
+                // 0x0717a: test ax, 0x98
+                m.regs.test16((m.regs.ax()) as u16, (0x98) as u16);
+                // 0x0717d: je 0x71bb
+                if m.regs.zf { __blk = 0x71bb; } else { __blk = 0x717f; }
+            }
+            0x717f => {
+                // 0x0717f: cmp si, word ptr gs:[0x6752]
+                m.regs.cmp16((m.regs.si()) as u16, (m.read16(m.regs.gs, 0x6752u32)) as u16);
+                // 0x07184: je 0x71bb
+                if m.regs.zf { __blk = 0x71bb; } else { __blk = 0x7186; }
+            }
+            0x7186 => {
+                // 0x07186: mov word ptr [bp], si
+                m.write16(m.regs.ss, ((m.regs.bp()) as u32), (m.regs.si()) as u16);
+                // 0x07189: test ax, 0x80
+                m.regs.test16((m.regs.ax()) as u16, (0x80) as u16);
+                // 0x0718c: je 0x71a9
+                if m.regs.zf { __blk = 0x71a9; } else { __blk = 0x718e; }
+            }
+            0x718e => {
+                // 0x0718e: mov bx, 0x80
+                m.regs.set_bx((0x80) as u16);
+                // 0x07191: mov ax, 0x11
+                m.regs.set_ax((0x11) as u16);
+                // 0x07194: call 0x6023
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, 0x7197);
+                func_6023(m);
+                m.regs.set_sp(m.regs.sp().wrapping_add(2));
+                // 0x07197: add si, ax
+                let __r = m.regs.add16((m.regs.si()) as u16, (m.regs.ax()) as u16);
+                m.regs.set_si(__r);
+                // 0x07199: mov si, word ptr [si]
+                m.regs.set_si((m.read16(m.regs.ds, ((m.regs.si()) as u32))) as u16);
+                // 0x0719b: mov al, byte ptr [si + 2]
+                m.regs.set_al((m.read8(m.regs.ds, ((m.regs.si().wrapping_add(0x2u16)) as u32))) as u8);
+                // 0x0719e: test al, 1
+                m.regs.test8((m.regs.al()) as u8, (0x1) as u8);
+                // 0x071a0: je 0x71bb
+                if m.regs.zf { __blk = 0x71bb; } else { __blk = 0x71a2; }
+            }
+            0x71a2 => {
+                // 0x071a2: mov ax, word ptr [si]
+                m.regs.set_ax((m.read16(m.regs.ds, ((m.regs.si()) as u32))) as u16);
+                // 0x071a4: test ax, 0x18
+                m.regs.test16((m.regs.ax()) as u16, (0x18) as u16);
+                // 0x071a7: je 0x71bb
+                if m.regs.zf { __blk = 0x71bb; } else { __blk = 0x71a9; }
+            }
+            0x71a9 => {
+                // 0x071a9: mov bx, ax
+                m.regs.set_bx((m.regs.ax()) as u16);
+                // 0x071ab: mov ax, 0xb
+                m.regs.set_ax((0xb) as u16);
+                // 0x071ae: call 0x6023
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, 0x71b1);
+                func_6023(m);
+                m.regs.set_sp(m.regs.sp().wrapping_add(2));
+                // 0x071b1: add si, ax
+                let __r = m.regs.add16((m.regs.si()) as u16, (m.regs.ax()) as u16);
+                m.regs.set_si(__r);
+                // 0x071b3: cmp edx, dword ptr [si]
+                m.regs.cmp32((m.regs.edx) as u32, (m.read32(m.regs.ds, ((m.regs.si()) as u32))) as u32);
+                // 0x071b6: jne 0x71bb
+                if !m.regs.zf { __blk = 0x71bb; } else { __blk = 0x71b8; }
+            }
+            0x71b8 => {
+                // 0x071b8: add bp, 2
+                let __r = m.regs.add16((m.regs.bp()) as u16, (0x2) as u16);
+                m.regs.set_bp(__r);
+                __blk = 0x71bb;
+            }
+            0x71bb => {
+                // 0x071bb: add di, 0x14
+                let __r = m.regs.add16((m.regs.di()) as u16, (0x14) as u16);
+                m.regs.set_di(__r);
+                // 0x071be: jmp 0x7165
+                __blk = 0x7165;
+            }
+            0x71c0 => {
+                // 0x071c0: mov word ptr [bp], 0
+                m.write16(m.regs.ss, ((m.regs.bp()) as u32), (0x0) as u16);
+                // 0x071c5: pop ax
+                let __v = m.read16(m.regs.ss, m.regs.sp() as u32);
+                m.regs.set_sp(m.regs.sp().wrapping_add(2));
+                m.regs.set_ax((__v) as u16);
+                // 0x071c6: pop bx
+                let __v = m.read16(m.regs.ss, m.regs.sp() as u32);
+                m.regs.set_sp(m.regs.sp().wrapping_add(2));
+                m.regs.set_bx((__v) as u16);
+                // 0x071c7: pop edx
+                let __v = m.read32(m.regs.ss, m.regs.sp() as u32);
+                m.regs.set_sp(m.regs.sp().wrapping_add(4));
+                m.regs.edx = (__v) as u32;
+                // 0x071c9: pop bp
+                let __v = m.read16(m.regs.ss, m.regs.sp() as u32);
+                m.regs.set_sp(m.regs.sp().wrapping_add(2));
+                m.regs.set_bp((__v) as u16);
+                // 0x071ca: pop di
+                let __v = m.read16(m.regs.ss, m.regs.sp() as u32);
+                m.regs.set_sp(m.regs.sp().wrapping_add(2));
+                m.regs.set_di((__v) as u16);
+                // 0x071cb: pop es
+                let __v = m.read16(m.regs.ss, m.regs.sp() as u32);
+                m.regs.set_sp(m.regs.sp().wrapping_add(2));
+                m.regs.es = (__v) as u16;
+                // 0x071cc: pop si
+                let __v = m.read16(m.regs.ss, m.regs.sp() as u32);
+                m.regs.set_sp(m.regs.sp().wrapping_add(2));
+                m.regs.set_si((__v) as u16);
+                // 0x071cd: pop ds
+                let __v = m.read16(m.regs.ss, m.regs.sp() as u32);
+                m.regs.set_sp(m.regs.sp().wrapping_add(2));
+                m.regs.ds = (__v) as u16;
+                // 0x071ce: retf 
+                return;
+            }
+            _ => unreachable!(),
+        }
+    }
+}
