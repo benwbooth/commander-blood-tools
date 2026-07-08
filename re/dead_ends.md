@@ -271,3 +271,20 @@ some other runtime segment (set by whoever calls 0x210e). Pinning it needs dynam
 CONCLUSION: mechanism fully decoded; exact handler enumeration requires the runtime DS value
 = a dynamic fact. This supersedes the older "input jump-table handler count unknowable" note
 with the concrete mechanism and the precise reason (DS-relative xlat table, runtime DS).
+
+## Input dispatch table: CS vs DS base BOTH inconclusive statically (FINAL, dynamic-only)
+Further attempt to resolve the input handler table (10+ tool calls, stopping):
+- The table at **CS:0x113e (file 0x173e) IS populated** (237/256 nonzero) and the handler
+  table at CS:0x123e (file 0x183e) is populated (231/252 nonzero) - so if DS=CS at dispatch,
+  this is the live table. But validation is weak: of the 51 xlatb-selected indices, only
+  **3/51 (5%)** of the handler-table entries land on a KNOWN function start, and 46/51 merely
+  fall somewhere in the 0x600-0xd000 code range - which for random 16-bit offsets happens ~79%
+  of the time anyway. So "points into code" is NOT evidence the table is correctly resolved.
+- The DGROUP copy (DS base 0xD420 -> file 0xE55E) is 0/256 (empty in the static image).
+- No code writes to 0x113e (no runtime-fill found), so the table is not obviously built at boot.
+CONCLUSION (final): the handler entries could be legitimate mid-function code labels (normal
+for a dispatch table) OR the CS-base assumption is wrong; static analysis cannot decide, because
+the effective DS for the xlatb source and the semantics of the entries both require observing a
+live dispatch. This is a DYNAMIC-tracing task (single-step the real game at 0x2137, read BX and
+the resolved target). Mechanism = fully decoded; table contents = deferred to the dynamic phase.
+Do not re-attempt statically.
