@@ -48,3 +48,20 @@ LESSON (reinforces the strategy note): whole-program execution needs PIT-timer e
 (periodically invoking the hooked int-08h ISR) + vsync + full port I/O - i.e. progressively
 MORE of a PC emulator. Bit-exact whole-program parity converges toward "build DOSBox". The
 per-function oracle (diff_oracle_prng.py) needs none of this and is the tractable verifier.
+
+## Timer-injection attempt (confirms the emulator-convergence) — 2026-07
+Extended the tracer to capture the game's installed int-08h ISR vector (int 21h AH=25 AL=08 ->
+cs:0x213, correctly captured) and inject a timer interrupt periodically (push flags/cs/ip, jump
+to the ISR). It did NOT get the binary past boot: correct injection needs iret-return detection,
+re-entrancy guards, PIC EOI (out 0x20), and a real PIT tick model - and even then the game polls
+vsync + PIT + keyboard timing that all need faithful emulation. Each fix is another piece of PC
+hardware. CONCLUSION (now empirically ironclad, not just argued): running the binary faithfully =
+building a PC emulator (timer/PIC/vsync/ports). DOSBox already IS that. So:
+- WHOLE-PROGRAM bit-exact parity -> use/extend an emulator (DOSBox), not a from-scratch Rust run.
+- PER-FUNCTION verification -> the Unicorn oracle (diff_oracle_prng.py) is the tractable, proven
+  tool; needs no hardware. It's the right verifier for a 1-to-1 static recompilation OR for
+  bug-finding in the current idiomatic port.
+DECISION for the maintainer: (A) idiomatic engine + oracle-driven leaf verification + accept
+asymptotic-not-100 fidelity; or (B) 1-to-1 static recompilation verified per-function by the
+oracle (large, non-idiomatic, provably 100%); or (C) treat DOSBox as the shipping runtime and the
+Rust as tooling/asset pipeline. There is no idiomatic-AND-provably-100% middle.
