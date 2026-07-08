@@ -523,3 +523,6 @@ DS:0x65F2,ui_region_table,"table of 8-byte clickable-UI-region records (0x1f ent
 0x007325,draw_accumulate_27d1,"draw + accumulate: ax=1; lcall 0x299:0x13d (draw); gs:[0x27d1] += bx. Draws an element and advances the [0x27d1] rotation/scroll accumulator (nav/HUD sweep)"
 0x0076EA,index_lookup_1fd7,"index-table lookup: di=0x1fd7; lodsb operand; cwde (signed index). Indexes a table at DS:0x1fd7 by the script operand"
 0x007CE8,list_walk_f18,"list walk: ds=ax; si=[0xf18]; loop lodsw until 0. Walks a null-word-terminated list pointed to by [0xf18]"
+0x00918E,ptr_copy_setup_es,"pointer copy setup: si=di+4; ds=es. Rebases DS to ES and advances si past a 4-byte header - a struct-field copy helper used by the 3D transform setup"
+0x0099A5,matrix_row_mul_q15_hi,"Q15 matrix row multiply (upper terms): sar eax,15 (>>15 fixed-point normalise); stosd; eax=[si+8]; imul eax,[si+0x10]. Inner step of the 3x3 rotation-matrix * vector transform (sibling of matrix_mul 0x994d), accumulating the higher row terms"
+0x0099DA,matrix_row_mul_q15_lo,"Q15 matrix row multiply (lower terms): sar eax,15; stosd; eax=[si+4]; imul eax,[si+8]. Inner step of the rotation-matrix * vector transform, accumulating the lower row terms (sibling of 0x994d/0x99a5)"
