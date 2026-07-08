@@ -3356,6 +3356,36 @@ pub fn emit_scene_events(lines: &[LineInput]) -> Vec<SceneEvent> {
 mod tests {
     use super::*;
 
+    /// Executing each real SCRIPT<n> (walk + VAR-initialised interpret) must produce the exact
+    /// number of dialogue LINE STATES recovered by RE - the text-line count per script. Extends
+    /// the walk-level check to the interpreter. Skips when the game data isn't in this checkout.
+    #[test]
+    fn interprets_real_scripts_to_documented_line_counts() {
+        let expected = [
+            ("SCRIPT1", 111usize),
+            ("SCRIPT2", 1157),
+            ("SCRIPT3", 1048),
+            ("SCRIPT4", 719),
+            ("SCRIPT5", 652),
+        ];
+        let read = |name: &str, ext: &str| {
+            std::fs::read(format!("output/_tmp_iso/{name}.{ext}"))
+                .or_else(|_| std::fs::read(format!("../output/_tmp_iso/{name}.{ext}")))
+        };
+        let mut checked = 0;
+        for (name, count) in expected {
+            let (Ok(cod), Ok(var)) = (read(name, "COD"), read(name, "VAR")) else {
+                continue;
+            };
+            let states = interpret_line_states(&cod, &var);
+            assert_eq!(states.len(), count, "{name} line-state count");
+            checked += 1;
+        }
+        if checked > 0 {
+            assert_eq!(checked, 5, "all 5 scripts present when any is");
+        }
+    }
+
     /// The linear COD walker must walk each real SCRIPT<n>.COD cleanly to its `0xFF` end
     /// marker, producing the exact token counts recovered by reverse-engineering (see
     /// re/dead_ends.md). Guards the walker against regressions on the real game scripts.

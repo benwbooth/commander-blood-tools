@@ -709,3 +709,16 @@ So the raw-sprite bug existed in BOTH decoders; both now fixed. This is why cros
 verification matters - the same defect was duplicated. Suite now 428 tests, 0 failing. Two real
 accuracy bugs found+fixed by the verification push (both the raw-sprite dispatch, engine+extract).
 STILL not whole-game: composited display pixels, all-function behavioral parity, runtime pixels.
+
+## Behavioral verification: VM interpreter produces exact line-state counts for all 5 scripts — 2026-07
+Extended VM verification from the WALK (token counts) to EXECUTION (interpret + VAR-init):
+- interpret_line_states on each real SCRIPT<n> (COD+VAR) produces the exact RE'd dialogue
+  line-state counts: SCRIPT1=111, SCRIPT2=1157, SCRIPT3=1048, SCRIPT4=719, SCRIPT5=652 - matching
+  the recovered per-script text-line counts. New test interprets_real_scripts_to_documented_line_
+  counts (passes). Also cross-checked the two RLE sprite decoders (engine decode_rle_frame vs
+  extract decode_rle_sprite_pixels) - IDENTICAL control-byte semantics (negative=replicate
+  -control+1, positive=literal control+1), consistent.
+So the VM is now verified at both levels: bytecode WALK (all 5 scripts to exact token counts) and
+EXECUTION (all 5 scripts to exact line-state counts), on top of the execution_trace behavioral
+family. Suite now 430. STILL not whole-game: composited display pixels, all-function behavioral
+parity, and runtime pixel values remain unverified.
