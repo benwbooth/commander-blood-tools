@@ -321,6 +321,12 @@ mod tests {
                 .frame_dims(0)
                 .unwrap_or_else(|| panic!("{}: no frame-0 dims", p.display()));
             assert!((1..=511).contains(&w) && (1..=255).contains(&h), "{}: dims {w}x{h}", p.display());
+            // Actually DECODE frame 0 (exercises the palette 'pl'-chunk parse + RLE body decode,
+            // which frame_dims skips). A generously-sized fb (max mode-X) absorbs the sub-frame.
+            let mut fb = vec![0u8; 512 * 256];
+            let mut pal = [[0u8; 3]; 256];
+            let (sw, sh, _m) = hnm.decode_frame(0, &mut fb, &mut pal);
+            assert!(sw <= 512 && sh <= 256, "{}: decoded sub-frame {sw}x{sh} too large", p.display());
             checked += 1;
         }
         if checked > 0 {

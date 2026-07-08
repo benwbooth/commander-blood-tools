@@ -777,3 +777,14 @@ sprite-anchoring issue lives, so this doesn't exercise blit_sprite_frame_centere
 DOSBox capture (gated on the same alignment/vga.mem issues). So: render pipeline confirmed to
 produce coherent output; byte-exact display parity + the animated-sprite anchoring in-context
 remain unverified. A real positive on pipeline coherence, not whole-game parity.
+
+## Verification: HNM decode-frame-0 across all 645 files, debug + release (no palette overflow) — 2026-07
+Strengthened opens_and_parses_every_hnm_asset from frame_dims-only to actually DECODING frame 0
+of every HNM (645 files) - exercising the 'pl' palette-chunk parse (data[pos]<<2 6-bit->8-bit
+expansion) and the RLE body decode that frame_dims skips.
+- Passes in RELEASE and in DEBUG (overflow-checked): so `data[pos] << 2` never overflows across
+  the full set = every HNM palette byte is <=63 (valid 6-bit VGA DAC). No latent overflow/panic,
+  no out-of-range sub-frame. The HNM decoder + incremental-palette parser are robust end-to-end.
+Checked for (and ruled out) a real potential bug (palette-byte overflow in the <<2 expansion).
+Decoder verification is now exercised on the actual decode path, not just header parsing. Still
+not whole-game: display-frame pixel parity + all-function behavioral parity remain unverified.
