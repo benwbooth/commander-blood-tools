@@ -302,3 +302,22 @@ anti-aliasing from the two scaling paths. A RIGOROUS pixel-parity metric needs: 
 native 640x400 VGA frame (no lossy crop), and align the exact HNM frame index to the captured
 timestamp. That harness upgrade is the next behavioral-verification step. STATUS: methodology
 proven + qualitative boot-logo match confirmed; rigorous per-pixel parity NOT yet established.
+
+## Behavioral verification: screen-scrape is insufficient; need memory-level comparison — 2026-07
+Follow-up to the boot-logo comparison. Built a geometry-correct capture (re/tools/
+capture_real_game_native.sh): forces windowresolution=640x400 + render aspect=false, crops the
+centered 640x400 game rect (+80+100 in an 800x600 Xvfb) and Box-downscales to an undistorted
+320x200 - fixing capture_real_game.sh's 640x360-South aspect distortion.
+FINDING (empirical): even with correct geometry + menu masking + phase-matched fully-revealed
+frames, the Microfolie's-logo RMSE vs our HNM decode is ~0.25-0.27 (grayscale NCC ~0.43) -
+NO better than the distorted capture. The logos are VISUALLY IDENTICAL, so this residual is
+measurement artifact, not decoder inaccuracy: (a) two different scaling paths (DOSBox SDL
+surface scaler vs ffmpeg yuv->rgb + engine upscale) blur/resample differently; (b) palette /
+gamma differ between the DOSBox output surface and ffmpeg's decode; (c) high-contrast text
+makes RMSE explode on sub-pixel misalignment. CONCLUSION: screen-scrape pixel-diff CANNOT
+yield a rigorous per-pixel parity metric - the confounds are in the capture+scaling pipeline,
+not the code under test. The correct rigorous method is MEMORY-LEVEL: read the game's exact
+mode-X framebuffer bytes (4 planes at the VGA page, de-interleaved) from DOSBox RAM via the
+ptrace tool, and compare against the engine's exact framebuffer bytes - no scaler, no palette
+reinterpretation. That is the next behavioral-verification step. STATUS: qualitative match
+confirmed (boot logos); rigorous per-pixel parity still requires the memory-framebuffer harness.
