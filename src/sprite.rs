@@ -13,11 +13,17 @@
 pub struct SpriteFrameImage {
     pub width: usize,
     pub height: usize,
+    /// The frame's authored draw offset (header +4/+6). Animation frames vary this to keep the
+    /// sprite anchored as its size changes (e.g. the BORXX orb pulses with y-offset 0..49). The
+    /// engine captures it so offset-aware draws stay aligned; `blit_sprite_frame_centered`
+    /// ignores it (centres by size) for the HUD sprites that are authored symmetric.
+    pub x_offset: u16,
+    pub y_offset: u16,
     pub indices: Vec<u8>,
 }
 
-/// Frame dispatch index from the bank header flags: `((flags & 4) | 0x83) >> 1 & 7`
-/// selects Raw (0/2), RLE (1/3), or Scaled (4) frame decode for the whole bank.
+/// Frame dispatch index from the bank header flags: bit 2 selects RAW (0) vs RLE (3) frame
+/// decode for the whole bank (see the body for the cross-bank verification).
 fn bank_dispatch_index(flags: u16) -> u8 {
     // Bit 2 of the bank flags selects the frame encoding: clear -> RAW (uncompressed
     // width*height bytes), set -> RLE (row-compressed). Verified across all 44 sprite
@@ -69,6 +75,8 @@ pub fn decode_sprite_bank_indices(data: &[u8]) -> Option<Vec<SpriteFrameImage>> 
         }
         let width = u16::from_le_bytes([frame[0], frame[1]]) as usize;
         let height = u16::from_le_bytes([frame[2], frame[3]]) as usize;
+        let x_offset = u16::from_le_bytes([frame[4], frame[5]]);
+        let y_offset = u16::from_le_bytes([frame[6], frame[7]]);
         if width == 0 || height == 0 {
             continue;
         }
@@ -89,6 +97,8 @@ pub fn decode_sprite_bank_indices(data: &[u8]) -> Option<Vec<SpriteFrameImage>> 
         out.push(SpriteFrameImage {
             width,
             height,
+            x_offset,
+            y_offset,
             indices,
         });
     }
@@ -247,10 +257,39 @@ mod tests {
     }
 
     #[test]
+    fn captures_frame_draw_offsets_from_the_header() {
+        // The decoder must capture each frame's authored x/y draw offset (header +4/+6), not
+        // discard it. BORXX.SPR (the nav orb) animates with a varying y-offset. Skips if absent.
+        let Some(data) = ["output/_tmp_iso/BORXX.SPR", "../output/_tmp_iso/BORXX.SPR"]
+            .iter()
+            .find_map(|p| std::fs::read(p).ok())
+        else {
+            return;
+        };
+        let frames = decode_sprite_bank_indices(&data).expect("decodes");
+        // Cross-check the captured offsets against the raw frame headers in the file.
+        let fc = u16::from_le_bytes([data[2], data[3]]) as usize;
+        for (i, f) in frames.iter().enumerate().take(fc) {
+            let start = 4 + u32::from_le_bytes([
+                data[4 + i * 4],
+                data[5 + i * 4],
+                data[6 + i * 4],
+                data[7 + i * 4],
+            ]) as usize;
+            assert_eq!(f.x_offset, u16::from_le_bytes([data[start + 4], data[start + 5]]));
+            assert_eq!(f.y_offset, u16::from_le_bytes([data[start + 6], data[start + 7]]));
+        }
+        // The orb frames genuinely vary their y-offset (animation anchoring).
+        assert!(frames.iter().map(|f| f.y_offset).collect::<std::collections::BTreeSet<_>>().len() > 1);
+    }
+
+    #[test]
     fn blit_centers_and_skips_transparent() {
         let frame = SpriteFrameImage {
             width: 2,
             height: 2,
+            x_offset: 0,
+            y_offset: 0,
             indices: vec![0, 5, 5, 0],
         };
         let mut fb = vec![0u8; 4 * 4];

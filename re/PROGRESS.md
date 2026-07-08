@@ -722,3 +722,16 @@ So the VM is now verified at both levels: bytecode WALK (all 5 scripts to exact 
 EXECUTION (all 5 scripts to exact line-state counts), on top of the execution_trace behavioral
 family. Suite now 430. STILL not whole-game: composited display pixels, all-function behavioral
 parity, and runtime pixel values remain unverified.
+
+## Accuracy improvement: sprite decoder now captures the frame draw-offset (was discarded) — 2026-07
+Found via the sprite-frame investigation: SpriteFrameImage stored only width/height/indices,
+DISCARDING each frame's authored x/y draw offset (header +4/+6). These offsets vary per frame to
+anchor animations as the sprite resizes (BORXX orb: y-offset 0..49; BAPPEL/BCARTE also vary).
+Dropping them loses the authored anchoring the game uses.
+- Added x_offset/y_offset to SpriteFrameImage, populated from the header, with test
+  captures_frame_draw_offsets_from_the_header (cross-checks captured vs file bytes; confirms the
+  orb's offsets genuinely vary). blit_sprite_frame_centered still centres (correct for symmetric
+  HUD sprites); the offset is now AVAILABLE for offset-aware draws. Also fixed a stale doc comment
+  on bank_dispatch_index (still described the old buggy formula).
+The decoder now captures the COMPLETE frame header instead of discarding anchor data - a real
+accuracy improvement (third fix from the verification push). Suite now 431. Still not whole-game.
