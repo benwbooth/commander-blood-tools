@@ -123,14 +123,14 @@ for off in clean:
     print(f"  ok   {name}: {nv} det-vectors ({'retf' if retf else 'ret'})")
 
 # Deterministic composition: with gen_det there is no read-hook corruption, so non-leaf functions
-# that near-CALL a verified callee compose and verify here (the random-fuzz composition tier could
-# not, since these are pointer-driven and non-terminating under random memory). Iterate to fixpoint.
+# that CALL a verified callee compose and verify here (near OR far/retf callees — gen_det mirrors a
+# copy of each far callee at its resolved address). Iterate to a fixpoint so deeper tiers compose.
 det_off = {off for off, _ in det_kept}
 all_verified = kept_offs | det_off
 progress = True
 while progress:
     progress = False
-    lift.AVAILABLE = {f for f in all_verified if ret_kind(f) == "ret"}  # near-ret callees
+    lift.AVAILABLE = set(all_verified)  # near + far callees both safe under the det oracle
     for f_s, callees in _cg.items():
         f = int(f_s)
         if f in all_verified or f in EXCLUDE or not callees:

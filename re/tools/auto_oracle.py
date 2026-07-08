@@ -120,6 +120,27 @@ def gen(entry, retf, n=250):
                    "zf": bool(fl & 0x40), "sf": bool(fl & 0x80), "of": bool(fl & 0x800)}))
     return vecs
 
+def _far_targets(entry, _seen=None):
+    """Transitive set of file offsets a function reaches via direct far calls (lcall 0x9A). The
+    deterministic oracle maps a copy of each at `target - 0x600` so the far call — which Unicorn
+    resolves as seg*16+off, i.e. 0x600 short of the file offset — lands on the real callee code."""
+    if _seen is None:
+        _seen = set()
+    for i in _MD.disasm(EXE[entry:entry + 400], entry):
+        mn = i.mnemonic
+        # direct far call = opcode 0x9A, encoding `9A off_lo off_hi seg_lo seg_hi` (no operand
+        # detail needed — _MD has detail off). Relative segment is 0x600-header-based.
+        if i.bytes and i.bytes[0] == 0x9A and len(i.bytes) >= 5:
+            seg = int.from_bytes(i.bytes[3:5], "little")
+            off = int.from_bytes(i.bytes[1:3], "little")
+            t = 0x600 + seg * 16 + off
+            if t not in _seen and 0x600 <= t < 0xd000:
+                _seen.add(t)
+                _far_targets(t, _seen)
+        if mn in ("ret", "retf", "iret"):
+            break
+    return _seen
+
 def gen_det(entry, retf, n=200):
     """DETERMINISTIC oracle. Memory = the raw EXE image (no random segment fill); the segments
     (ds=0x2000 -> phys 0x20000, etc.) index into it, so `ds:si` reads real, reproducible bytes.
@@ -131,11 +152,14 @@ def gen_det(entry, retf, n=200):
     vecs = []
     tries = 0
     rets = _ret_addrs(entry)
+    far = _far_targets(entry)  # far-call callees to mirror at (target - 0x600)
     while len(vecs) < n and tries < n * 8:
         tries += 1
         mu = Uc(UC_ARCH_X86, UC_MODE_16)
         mu.mem_map(0, 0x300000)
         mu.mem_write(0, EXE + b"\x00" * (0x120000 - len(EXE)))  # deterministic image, no random fill
+        for t in far:
+            mu.mem_write(t - 0x600, EXE[t:t + 0x800])  # callee copy at the far-call-resolved address
         regs_in = {r: random.randint(0, 0xFFFF) for r, _ in GP}
         sp0 = 0xFFF0 - (4 if retf else 2)
         regs_in["sp"] = sp0

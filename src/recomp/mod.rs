@@ -451,10 +451,19 @@ mod tests {
             ("func_92a3", super::auto::func_92a3),
             ("func_933a", super::auto::func_933a),
             ("func_9364", super::auto::func_9364),
-            // composed non-leaf functions (near-CALL a verified leaf), verifiable now that the
-            // deterministic oracle has no read hook to corrupt the callee/caller retf:
+            ("func_1e5d", super::auto::func_1e5d),
             ("func_555b", super::auto::func_555b),
+            ("func_1dd8", super::auto::func_1dd8),
             ("func_713d", super::auto::func_713d),
+            ("func_3b45", super::auto::func_3b45),
+            ("func_8bab", super::auto::func_8bab),
+            ("func_7ce8", super::auto::func_7ce8),
+            ("func_3b85", super::auto::func_3b85),
+            ("func_82c3", super::auto::func_82c3),
+            ("func_40d0", super::auto::func_40d0),
+            ("func_9240", super::auto::func_9240),
+            ("func_14ca", super::auto::func_14ca),
+            ("func_792d", super::auto::func_792d),
         ];
         let mut failures = Vec::new();
         for (name, f) in batch {

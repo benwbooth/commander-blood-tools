@@ -12,6 +12,34 @@ import capstone, sys
 # Populated by scan_clean/gen_batch before lifting non-leaf functions.
 AVAILABLE = set()
 
+_IS_RETF_CACHE = {}
+def _is_retf(off):
+    """True if the function at `off` returns far (retf) — a `push cs; call near` to it makes its
+    retf pop 4 bytes (IP+CS), so the caller's near-CALL model must pop 4, not 2."""
+    if off in _IS_RETF_CACHE:
+        return _IS_RETF_CACHE[off]
+    r = False
+    a = off
+    seen = set()
+    while 0x600 <= a < 0xd000 and a not in seen:
+        seen.add(a)
+        stop = False
+        for i in MD.disasm(D[a:a + 400], a):
+            if i.mnemonic == "retf":
+                r = True; stop = True; break
+            if i.mnemonic in ("ret", "iret"):
+                stop = True; break
+            if i.mnemonic == "jmp" and i.op_str.startswith("0x"):
+                a = int(i.op_str, 16); break
+            if i.mnemonic == "jmp":
+                stop = True; break
+        else:
+            stop = True
+        if stop:
+            break
+    _IS_RETF_CACHE[off] = r
+    return r
+
 D = open("re/bin/BLOODPRG.EXE", "rb").read()
 MD = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_16)
 MD.detail = True
@@ -298,6 +326,26 @@ def emit(insn):
                 "m.regs.cf = __f & 1 != 0; m.regs.pf = __f & 4 != 0; m.regs.af = __f & 0x10 != 0;",
                 "m.regs.zf = __f & 0x40 != 0; m.regs.sf = __f & 0x80 != 0;",
                 "m.regs.df = __f & 0x400 != 0; m.regs.of = __f & 0x800 != 0;"]
+    if m == "lcall":
+        # far direct call (0x9A seg:off). Relative segments are based at the 0x600 MZ header, so
+        # the target file offset is 0x600 + seg*16 + off. Compose it like a near call but with the
+        # far-return stack shape: push CS then IP (4 bytes); the callee's retf (a Rust `return`) is
+        # mirrored by popping 4 after. CS is the caller's (0 in the oracle/verifier).
+        o = op[0]
+        if o.type == capstone.x86.X86_OP_IMM and len(insn.bytes) >= 5:
+            seg = int.from_bytes(insn.bytes[3:5], "little")
+            off = int.from_bytes(insn.bytes[1:3], "little")
+            t = 0x600 + seg * 16 + off
+            if t in AVAILABLE:
+                ret_ip = insn.address + insn.size
+                return ["m.regs.set_sp(m.regs.sp().wrapping_sub(2));",
+                        "m.write16(m.regs.ss, m.regs.sp() as u32, m.regs.cs);",
+                        "m.regs.set_sp(m.regs.sp().wrapping_sub(2));",
+                        f"m.write16(m.regs.ss, m.regs.sp() as u32, 0x{ret_ip:x});",
+                        f"func_{t:x}(m);",
+                        "m.regs.set_sp(m.regs.sp().wrapping_add(4));"]
+            raise NotImplementedError(f"lcall 0x{t:x} (callee not available)")
+        raise NotImplementedError("indirect lcall")
     if m == "call":
         o = op[0]
         if o.type == capstone.x86.X86_OP_IMM:
@@ -305,13 +353,15 @@ def emit(insn):
             if t in AVAILABLE:
                 ret_ip = insn.address + insn.size
                 # Model the near CALL exactly: push the return offset (the callee sees the
-                # correct SP and its transient stack writes land where the oracle records
-                # them), invoke the lifted callee, then pop (the callee's near RET, modelled
-                # as a Rust `return`, would have popped it).
+                # correct SP and its transient stack writes land where the oracle records them),
+                # invoke the lifted callee, then pop what the callee's return popped — 2 for a near
+                # RET, 4 for a retf (the `push cs; call near` far-return pattern, where the extra CS
+                # was pushed by a preceding `push cs`).
+                pop = 4 if _is_retf(t) else 2
                 return [f"m.regs.set_sp(m.regs.sp().wrapping_sub(2));",
                         f"m.write16(m.regs.ss, m.regs.sp() as u32, 0x{ret_ip:x});",
                         f"func_{t:x}(m);",
-                        "m.regs.set_sp(m.regs.sp().wrapping_add(2));"]
+                        f"m.regs.set_sp(m.regs.sp().wrapping_add({pop}));"]
             raise NotImplementedError(f"call 0x{t:x} (callee not available)")
         raise NotImplementedError("indirect call")
     if m == "xlatb":
