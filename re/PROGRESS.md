@@ -827,3 +827,19 @@ placement, station icons) is not reproduced. This is an honest, significant scop
 reimplementation's RENDER/UI diverges from the original - beyond decoders (which are accurate) and
 into full-scene composition. Faithful bridge reproduction is substantial UI-reconstruction work,
 gated on per-pixel verification (framebuffer-parity blocker). Decoders accurate; scene layout not.
+
+## Accuracy gap ROOT CAUSE: nav pyramids are a synthetic grid, not the 11 real destinations — 2026-07
+Traced the nav-layout divergence to its exact cause:
+- ENGINE render_nav_pyramid_sprites projects a SYNTHETIC GRID: loops xi in -3..=3 x ROW_Z with a
+  made-up origin=[0,-700,(cam[0]-0x2264)/8], drawing a scattered lattice of pyramids. It uses the
+  correct decoded projection (project_star_map_point / build_ship_3d_projection_matrix) but on
+  INVENTED input positions.
+- GAME ship_3d_object_sprite_project (0x9B98) projects the 11 ACTUAL nav destination records from
+  DS:0x4F09 (each a real 3D star-map position) + descriptors from DS:0x6212. So the game draws the
+  real star-chart destinations at their projected positions; the engine draws a placeholder grid.
+So the projection MATH is decoded and correct in the engine; the INPUT DATA is a placeholder. To
+be faithful, the engine must feed the real 11 nav-destination positions (per-world star-map data)
+through project_star_map_point, matching ship_3d_object_sprite_project. That is concrete, scoped
+reimplementation work (the math is done; the destination data source + per-frame update FSM at
+0x8A6A remain to port), gated on per-pixel verification. Precise root-cause scoping of the nav
+render gap - the divergence is placeholder INPUT, not wrong projection.
