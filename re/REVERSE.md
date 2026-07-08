@@ -3207,3 +3207,24 @@ DS:0x2793|=8. That source is the PYRAMID VERTEX GEOMETRY: 32 3D vertices as sign
 (DONE, ship3d) -> draw edges between projected vertices. Remaining is just the
 EDGE TOPOLOGY (which vertex pairs form pyramid edges) + wiring. The HUD is no
 longer "deep RE" - it's bounded data + a known projection.
+
+## .ext node table: directed graph with 0x3F "no-link" sentinel (verified)
+The first-section 3-byte records (`[a,b,c]`, count = body byte 8, `FF FF`-terminated) are a
+**directed node graph**, cross-validated across the real world files:
+- **Node references**: every one of the three fields is either a valid node index (`< count`)
+  or exactly **0x3F (63)**, which is the *no-link sentinel* (the 6-bit-index analogue of the
+  `FF FF` section terminator). Verified: **35/36** clean count+FF-FF worlds satisfy
+  `value < count OR value == 0x3F` for all fields. Lone exception: CYBER3 (count 33, distinct
+  first-section layout). This supersedes the earlier "0 = no link" note — 0x3F is the true
+  sentinel; 0 is filtered too but is also a legitimate index (node 0).
+- **Directed, not undirected**: BLACK has 168 directed links but only ~4% are reciprocated,
+  so the table is a directed graph / tree (traversal or scene-object containment order),
+  **not** the symmetric room-adjacency graph previously speculated. The mesh-face
+  interpretation was already retracted; the room-adjacency interpretation is now also ruled
+  out on reciprocity grounds. Precise gameplay role (nav order vs object hierarchy) still open.
+- **No embedded geometry**: node records carry no coordinates (3 bytes, all index-range).
+  Screen geometry lives exclusively in the 10-byte object records (`[id,type,reserved,x,y]`)
+  that follow the terminator — confirmed by BLACK's initial object `id=1,type=4 @ (199,42)`.
+  So there is no "per-node geometry" to decode: the split is topology (nodes) vs placement
+  (objects). Encoded in src/ext.rs: `ExtWorld::NO_LINK`, `record_links`, `links_are_valid`,
+  test `node_refs_are_index_or_0x3f_sentinel_across_worlds`.

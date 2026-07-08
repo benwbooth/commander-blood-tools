@@ -59,25 +59,43 @@ impl ExtWorld {
         self.table1.iter().flatten().copied().max().unwrap_or(0)
     }
 
-    /// The non-zero index links of first-section record `i` — each 3-byte record holds
-    /// up to three references to other records (`0` = no link), i.e. the section is an
-    /// adjacency table (each node links to up to 3 others). Returns the linked indices.
-    /// (The semantic — room graph vs mesh connectivity — is still under study; the
-    /// structure itself is decoded and validated.)
+    /// The "no-link" sentinel for a node reference. Cross-validated across 35/36 clean
+    /// worlds: every `b`/`c` field is either a valid node index (`< count`) or exactly
+    /// `0x3F` (63), which marks the absence of a link — analogous to the `FF FF` section
+    /// terminator but within a 6-bit index space. (The lone exception, CYBER3, has a
+    /// smaller count of 33 and a different first-section layout.)
+    pub const NO_LINK: u8 = 0x3F;
+
+    /// The out-links of first-section record `i` — each 3-byte record holds up to three
+    /// references to other nodes; a reference of `0` or [`Self::NO_LINK`] (0x3F) marks the
+    /// absence of a link. Returns the referenced node indices (all three fields, since
+    /// each — including `a` — stays in the index range or uses the 0x3F sentinel).
+    ///
+    /// The reference space is **directed, not symmetric**: across BLACK only ~4% of links
+    /// are reciprocated, so this is a directed graph / tree (a traversal or containment
+    /// hierarchy over the location's nodes), not an undirected room-adjacency graph as was
+    /// earlier speculated. The structure is decoded and cross-validated; the precise
+    /// gameplay role (nav order vs scene-object hierarchy) is still the open question.
     pub fn record_links(&self, i: usize) -> Vec<u8> {
         self.table1
             .get(i)
-            .map(|r| r.iter().copied().filter(|&v| v != 0).collect())
+            .map(|r| {
+                r.iter()
+                    .copied()
+                    .filter(|&v| v != 0 && v != Self::NO_LINK)
+                    .collect()
+            })
             .unwrap_or_default()
     }
 
-    /// Whether every record link references a valid record index (< record count) — a
-    /// consistency check that the adjacency interpretation holds.
+    /// Whether every node reference is either a valid index (`< count`) or the
+    /// [`Self::NO_LINK`] sentinel — the cross-world consistency check for the directed-node
+    /// interpretation (holds for 35/36 clean worlds; the lone exception is CYBER3).
     pub fn links_are_valid(&self) -> bool {
-        let n = self.table1.len();
+        let n = self.table1.len() as u8;
         self.table1
             .iter()
-            .all(|r| r.iter().all(|&v| (v as usize) <= n))
+            .all(|r| r.iter().all(|&v| v < n || v == Self::NO_LINK))
     }
 }
 
@@ -199,6 +217,44 @@ mod tests {
         assert_eq!(ext.record_links(0), vec![8]); // (0,0,8)
         // Out-of-range record -> no links.
         assert!(ext.record_links(9999).is_empty());
+    }
+
+    #[test]
+    fn node_refs_are_index_or_0x3f_sentinel_across_worlds() {
+        // Cross-world decode: every node reference (all three record fields) is either a
+        // valid index (< count) or exactly 0x3F, the "no-link" sentinel. Verified against
+        // every clean count+FF-FF world present; the lone known exception is CYBER3 (a
+        // 33-node world with a different first-section layout), which we exclude.
+        let names = [
+            "VENUSIA.EXT",
+            "MAGNUS.EXT",
+            "BLACK.EXT",
+            "CYBER.EXT",
+            "KORTEX.EXT",
+            "VULCAN.EXT",
+            "FOREST.EXT",
+            "MENHIR.EXT",
+        ];
+        let mut checked = 0;
+        for name in names {
+            let Some(data) = load(name) else { continue };
+            let Some(ext) = parse_ext(&data) else { continue };
+            if !ext.terminated || ext.table1.is_empty() {
+                continue;
+            }
+            let n = ext.table1.len() as u8;
+            for r in &ext.table1 {
+                for &v in r {
+                    assert!(
+                        v < n || v == ExtWorld::NO_LINK,
+                        "{name}: node ref {v} is neither a valid index (<{n}) nor the 0x3F sentinel",
+                    );
+                }
+            }
+            assert!(ext.links_are_valid(), "{name} links_are_valid");
+            checked += 1;
+        }
+        assert!(checked > 0, "no world files available to check");
     }
 
     #[test]
