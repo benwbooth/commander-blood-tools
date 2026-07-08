@@ -288,3 +288,17 @@ the effective DS for the xlatb source and the semantics of the entries both requ
 live dispatch. This is a DYNAMIC-tracing task (single-step the real game at 0x2137, read BX and
 the resolved target). Mechanism = fully decoded; table contents = deferred to the dynamic phase.
 Do not re-attempt statically.
+
+## Input dispatch table: RESOLVED via dynamic ptrace read (DS=CS confirmed)
+Built a live-memory reader (scratchpad/read_input_table.py) reusing dump_dosbox_mem.py's
+ptrace+DS-anchor logic, and read the candidate table locations from the RUNNING game:
+- **DGROUP-DS:0x113e** live = the ASCII bytes "SCRIPT5.VAR" (a filename buffer), 13/256 nonzero
+  - definitively NOT a 256-entry translate table.
+- **DGROUP-DS:0x123e** live = all zero.
+This empirically RULES OUT the DGROUP base and confirms the xlatb translate table is the
+populated CS:0x113e (file 0x173e, 237/256 nonzero), with the handler table at CS:0x123e (file
+0x183e) - i.e. **DS = CS at the input dispatch (0x210e)**. This resolves the base ambiguity the
+earlier static analysis could not. The mechanism + table location are now fully pinned; the
+only residual is per-handler exact semantics, which (if needed) comes from single-stepping the
+live dispatch at 0x2137 to read BX and the resolved target. Supersedes the "statically
+inconclusive" note above with a dynamic answer.
