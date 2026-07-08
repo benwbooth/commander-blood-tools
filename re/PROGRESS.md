@@ -888,3 +888,23 @@ graph, the whole program runs identically by construction. Function 1 of ~N done
 Next: (a) recursive-descent function enumeration from entry + call graph, (b) lift the leaf/pure
 functions first (each a clean oracle win), (c) build the composition (shared Machine + call graph
 + the DOS/hardware boundary for int/port). Suite green.
+
+## PATH B: function denominator established (recursive-descent enumeration) — 2026-07
+Built a recursive-descent enumerator (re/func_graph.json generator, capstone per project
+convention): walk control flow from the MZ entry (0:0 = file 0x600), resolving near-call targets
+(E8 -> file offset) and far-call targets (9A seg:off -> 0x600+seg*16+off), following jmp/Jcc.
+RESULT - the path-B denominator:
+- 222 reachable functions (statically, from entry). More principled than the flat 281-prologue
+  scan or the ~435 estimate; this is the reachable-from-entry set.
+- 442 call-graph edges (re/func_graph.json has the full graph).
+- 112 LEAF functions (no resolved internal callees) - the clean first oracle wins; the PRNG
+  (0x2de2, DONE) is one of them.
+- 48 unresolved INDIRECT call/jmp sites (register-indirect dispatch - VM opcode table, input
+  handler, callbacks). These reach MORE functions that recursive descent can't follow statically;
+  enumerating them needs the dynamic tracer (or dataflow). So true total = 222 + indirect-reached.
+PATH-B PLAN (denominator-driven): (1) lift the ~112 leaves first - each self-contained, verified
+bit-exact by an oracle vector set like the PRNG; (2) lift internal nodes bottom-up (composing
+verified callees); (3) resolve the 48 indirect sites via the dynamic tracer to enumerate + lift
+the remainder; (4) compose a lifted entry over the shared Machine + a thin int/port boundary.
+STATUS: 1 / 222+ functions lifted+verified (PRNG). The grind is now against a known denominator,
+each step individually provable against the binary. This is the concrete route to 100%.
