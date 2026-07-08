@@ -134,11 +134,103 @@ pub fn func_a634(m: &mut Machine) {
     m.regs.test8(b, 1);
 }
 
+/// `func_a73e` — file 0xA73E: init 4 word globals to 0/0/0xFFFF/0xFFFF (no input, no flags).
+pub fn func_a73e(m: &mut Machine) {
+    let ds = m.regs.ds;
+    m.write16(ds, 0xd60, 0x0000);
+    m.write16(ds, 0xd62, 0x0000);
+    m.write16(ds, 0xd64, 0xffff);
+    m.write16(ds, 0xd66, 0xffff);
+}
+
+/// `func_6023` — file 0x6023: `push bx; shl ax,4; bsf bx,bx; add bx,ax; mov al,gs:[bx+0x6D60];
+/// CBW; pop bx; ret`. Indexes a byte table at `gs:0x6D60` by `bsf(bx) + (ax<<4)`, sign-extends
+/// the byte from `AL` into `AX` (byte `98` is CBW in 16-bit mode — the oracle caught this vs
+/// capstone's "cwde" mislabel). `BX` preserved. Flags from the final `add`. Contract: `BX != 0`
+/// (bsf of 0 is undefined). Lifted 1-to-1; oracle-verified.
+pub fn func_6023(m: &mut Machine) {
+    let shifted = m.regs.shl16(m.regs.ax(), 4);
+    m.regs.set_ax(shifted);
+    let idx = m.regs.bx().trailing_zeros() as u16; // bsf bx,bx (bx != 0)
+    let addr = m.regs.add16(idx, m.regs.ax()); // add bx,ax -> final flags
+    let al = m.read8(m.regs.gs, addr.wrapping_add(0x6d60));
+    m.regs.set_al(al);
+    // cbw: AX = sign-extend(AL); EAX high word unchanged.
+    let signed = m.regs.al() as i8 as i16 as u16;
+    m.regs.set_ax(signed);
+}
+
 #[cfg(test)]
 mod tests {
     use super::machine::Machine;
     use super::*;
     use serde::Deserialize;
+
+    #[test]
+    fn func_a73e_matches_oracle_vectors() {
+        #[derive(Deserialize)]
+        struct V {
+            a: u16,
+            b: u16,
+            c: u16,
+            dd: u16,
+        }
+        let raw = match std::fs::read_to_string("re/tools/oracle_vectors/func_a73e.json")
+            .or_else(|_| std::fs::read_to_string("../re/tools/oracle_vectors/func_a73e.json"))
+        {
+            Ok(s) => s,
+            Err(_) => return,
+        };
+        const DS: u16 = 0x2000;
+        for (i, v) in serde_json::from_str::<Vec<V>>(&raw).unwrap().iter().enumerate() {
+            let mut m = Machine::new();
+            m.regs.ds = DS;
+            func_a73e(&mut m);
+            assert_eq!(m.read16(DS, 0xd60), v.a, "vec {i}");
+            assert_eq!(m.read16(DS, 0xd62), v.b, "vec {i}");
+            assert_eq!(m.read16(DS, 0xd64), v.c, "vec {i}");
+            assert_eq!(m.read16(DS, 0xd66), v.dd, "vec {i}");
+        }
+    }
+
+    #[test]
+    fn func_6023_matches_oracle_vectors() {
+        #[derive(Deserialize)]
+        struct V {
+            ax: u16,
+            bx: u16,
+            byte: u8,
+            eax_out: u32,
+            bx_out: u16,
+            flags: Flags,
+        }
+        let raw = match std::fs::read_to_string("re/tools/oracle_vectors/func_6023.json")
+            .or_else(|_| std::fs::read_to_string("../re/tools/oracle_vectors/func_6023.json"))
+        {
+            Ok(s) => s,
+            Err(_) => return,
+        };
+        const GS: u16 = 0x3000;
+        for (i, v) in serde_json::from_str::<Vec<V>>(&raw).unwrap().iter().enumerate() {
+            let mut m = Machine::new();
+            m.regs.gs = GS;
+            m.regs.set_ax(v.ax);
+            m.regs.set_bx(v.bx);
+            let shifted = (v.ax << 4) & 0xffff;
+            let idx = v.bx.trailing_zeros() as u16;
+            let addr = idx.wrapping_add(shifted);
+            m.write8(GS, addr.wrapping_add(0x6d60), v.byte);
+            func_6023(&mut m);
+            assert_eq!(m.regs.eax, v.eax_out, "vec {i}: EAX");
+            assert_eq!(m.regs.bx(), v.bx_out, "vec {i}: BX preserved");
+            assert_eq!(m.regs.cf, v.flags.cf, "vec {i}: CF");
+            assert_eq!(m.regs.pf, v.flags.pf, "vec {i}: PF");
+            assert_eq!(m.regs.af, v.flags.af, "vec {i}: AF");
+            assert_eq!(m.regs.zf, v.flags.zf, "vec {i}: ZF");
+            assert_eq!(m.regs.sf, v.flags.sf, "vec {i}: SF");
+            assert_eq!(m.regs.of, v.flags.of, "vec {i}: OF");
+        }
+    }
 
     #[derive(Deserialize)]
     struct ByteFlagsVec {

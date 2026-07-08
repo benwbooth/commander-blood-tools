@@ -954,3 +954,14 @@ Added cmp8/test8 flag helpers + 2 flag-only functions:
 Skipped 0xA72E (unbalanced push es = data misparse, not a function).
 STATUS: 7 / 222+ functions lifted+verified. Helper set now: add16/sub-via-cmp/shl16/cmp8/test8,
 regs 8/16/32, flags with undefined-exclusion. Honest: 7 of 222+, not 100%.
+
+## PATH B: 9 functions + oracle CAUGHT A LIFT BUG (CBW vs CWDE) — 2026-07
+- func_a73e (0xA73E): init 4 globals. 20 vectors.
+- func_6023 (0x6023): byte-table index via shl/bsf/add + sign-extend into AX. 300 vectors incl.
+  EAX + BX-preserved + all flags.
+KEY: the oracle CAUGHT A REAL LIFT BUG. Byte 0x98 is CBW (AL->AX) in 16-bit mode, but capstone
+labels it "cwde"; I first lifted cwde (AX->EAX) and the 300 differential vectors FAILED immediately
+(eax 0x112a vs oracle 0x2a), pinpointing it. Fixed to CBW -> 300/300 pass. This is exactly why
+path B is provable: every lift is checked against the real binary, so mistranslations can't hide.
+STATUS: 9 / 222+ functions lifted+verified. The differential oracle is doing its job (1 bug
+caught + fixed). Honest: 9 of 222+, not 100%.

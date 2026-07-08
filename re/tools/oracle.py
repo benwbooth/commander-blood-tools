@@ -139,3 +139,35 @@ for byte in list(range(256)):
     vecs6.append(dict(byte=byte, flags=o["flags"]))
 json.dump(vecs6, open("re/tools/oracle_vectors/func_a634.json", "w"))
 print(f"wrote {len(vecs6)} func_a634 oracle vectors")
+
+# --- spec: func_a73e (mov [0xD60],0;[0xD62],0;[0xD64],0xFFFF;[0xD66],0xFFFF; ret) ---
+DSg = 0x2000
+spec7 = dict(name="func_a73e", entry=0xA73E, retf=False,
+             out_regs=[], out_mem=[(DSg, 0xD60, 2), (DSg, 0xD62, 2), (DSg, 0xD64, 2), (DSg, 0xD66, 2)])
+vecs7 = []
+for _ in range(20):
+    o = run(spec7, dict(regs={"ds": DSg}, mem=[]))
+    vecs7.append(dict(a=struct.unpack("<H", bytes(o["mem"][0][2]))[0],
+                      b=struct.unpack("<H", bytes(o["mem"][1][2]))[0],
+                      c=struct.unpack("<H", bytes(o["mem"][2][2]))[0],
+                      dd=struct.unpack("<H", bytes(o["mem"][3][2]))[0]))
+json.dump(vecs7, open("re/tools/oracle_vectors/func_a73e.json", "w"))
+print(f"wrote {len(vecs7)} func_a73e oracle vectors")
+
+# --- spec: func_6023 (shl ax,4; bsf bx,bx; add bx,ax; mov al,gs:[bx+0x6D60]; cwde; ret) ---
+GSg = 0x3000
+spec8 = dict(name="func_6023", entry=0x6023, retf=False, out_regs=["eax", "bx"], out_mem=[])
+vecs8 = []
+random.seed(6023)
+while len(vecs8) < 300:
+    ax = random.randint(0, 0xFFFF)
+    bx = random.randint(1, 0xFFFF)          # bsf undefined for 0 -> avoid
+    shifted = (ax * 16) & 0xFFFF
+    idx = (bx & -bx).bit_length() - 1        # index of lowest set bit
+    addr = (idx + shifted) & 0xFFFF
+    memoff = (addr + 0x6D60) & 0xFFFF
+    byte = random.randint(0, 0xFF)
+    o = run(spec8, dict(regs={"ax": ax, "bx": bx, "gs": GSg}, mem=[(GSg, memoff, bytes([byte]))]))
+    vecs8.append(dict(ax=ax, bx=bx, byte=byte, eax_out=o["regs"]["eax"], bx_out=o["regs"]["bx"], flags=o["flags"]))
+json.dump(vecs8, open("re/tools/oracle_vectors/func_6023.json", "w"))
+print(f"wrote {len(vecs8)} func_6023 oracle vectors")
