@@ -33,3 +33,18 @@ RECOMPILATION (every function lifted, same call graph, shared 1MB image) - at wh
 per-function fuzzing verifies each lift. Whole-program tracing in Unicorn additionally
 needs a mini-DOS (stubs for int 21h/10h/16h/1Ah/2Fh/67h + VGA/PIT ports) since Unicorn is
 a bare CPU. See re/PROGRESS.md.
+
+## Whole-program tracing PoC (minidos_tracer.py) — 2026-07
+A mini-DOS on Unicorn that MZ-loads BLOODPRG.EXE (367 relocs applied), sets up a PSP+stack,
+boots from the real entry point, and stubs int 21h (file I/O against the real game files,
+memory alloc, vectors, version), int 2Fh/67h (XMS/EMS absent), int 33h (mouse absent),
+int 16h/1Ah. RESULT: the binary boots and executes its REAL startup (int 21h mem-alloc +
+vector hook -> int 10h SET MODE 13h -> int 2Fh XMS/CD detect), matching the statically
+decoded boot. It then STALLS in a vsync/tick wait loop at file 0xB5A:
+  test gs:[0xB35],3; in al,dx; and al,8; xor al,ah; je (count vsync into [0xB12])
+which exits only when [0xB35] is cleared by the game's TIMER ISR (int 08h @ cs:0x213). The
+emulator never fires that ISR, so time never advances and it spins.
+LESSON (reinforces the strategy note): whole-program execution needs PIT-timer emulation
+(periodically invoking the hooked int-08h ISR) + vsync + full port I/O - i.e. progressively
+MORE of a PC emulator. Bit-exact whole-program parity converges toward "build DOSBox". The
+per-function oracle (diff_oracle_prng.py) needs none of this and is the tractable verifier.
