@@ -788,3 +788,14 @@ expansion) and the RLE body decode that frame_dims skips.
 Checked for (and ruled out) a real potential bug (palette-byte overflow in the <<2 expansion).
 Decoder verification is now exercised on the actual decode path, not just header parsing. Still
 not whole-game: display-frame pixel parity + all-function behavioral parity remain unverified.
+
+## Verification: HNM decode of ALL frames across all 645 files (debug + release) — 2026-07
+Extended the HNM test from frame-0 to EVERY frame of every HNM (645 files, all frames) - now
+exercising the inter-frame DELTA decode + incremental 'pl' palette updates across whole clips,
+the paths where a later-frame bug (delta overflow, out-of-range write) would hide.
+- Passes in DEBUG (overflow-checked, 36s) and release: no overflow, no out-of-range sub-frame,
+  no panic across every frame of every HNM. The full HNM decode pipeline (header, delta, palette,
+  RLE body) is robust end-to-end over the entire video asset set.
+This is the deepest asset-decoder verification yet: every frame of every video decoded under
+overflow checking. No bug found (the 3 real bugs this session were all in sprites). STILL not
+whole-game: byte-exact display parity + all-function behavioral parity remain unverified.
