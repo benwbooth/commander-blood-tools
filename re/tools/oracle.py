@@ -70,3 +70,31 @@ for _ in range(300):
 os.makedirs("re/tools/oracle_vectors", exist_ok=True)
 json.dump(vecs, open("re/tools/oracle_vectors/func_a734.json", "w"))
 print(f"wrote {len(vecs)} func_a734 oracle vectors")
+
+# --- spec: func_a744  (mov [0xD62],0 ; mov [0xD64],0xFFFF ; mov [0xD66],0xFFFF ; ret) ---
+DS2 = 0x2000
+spec2 = dict(name="func_a744", entry=0xA744, retf=False,
+             out_regs=[], out_mem=[(DS2, 0xD62, 2), (DS2, 0xD64, 2), (DS2, 0xD66, 2)])
+vecs2 = []
+for _ in range(20):
+    inp = dict(regs={"ds": DS2}, mem=[])
+    o = run(spec2, inp)
+    vecs2.append(dict(a=struct.unpack("<H", bytes(o["mem"][0][2]))[0],
+                      b=struct.unpack("<H", bytes(o["mem"][1][2]))[0],
+                      c=struct.unpack("<H", bytes(o["mem"][2][2]))[0]))
+json.dump(vecs2, open("re/tools/oracle_vectors/func_a744.json", "w"))
+print(f"wrote {len(vecs2)} func_a744 oracle vectors")
+
+# --- spec: func_9f80  (bx=0x1FB5; add bx,ax x4 (=0x1FB5+4*ax); mov bx,[bx]; ret) ---
+DS3 = 0x2000
+spec3 = dict(name="func_9f80", entry=0x9F80, retf=False, out_regs=["bx"], out_mem=[])
+vecs3 = []
+for _ in range(300):
+    ax = random.randint(0, 0xFFFF)
+    bx = (0x1FB5 + 4 * ax) & 0xFFFF
+    word = random.randint(0, 0xFFFF)
+    inp = dict(regs={"ax": ax, "ds": DS3}, mem=[(DS3, bx, struct.pack("<H", word))])
+    o = run(spec3, inp)
+    vecs3.append(dict(ax=ax, word=word, bx_out=o["regs"]["bx"], flags=o["flags"]))
+json.dump(vecs3, open("re/tools/oracle_vectors/func_9f80.json", "w"))
+print(f"wrote {len(vecs3)} func_9f80 oracle vectors")

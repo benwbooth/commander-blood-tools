@@ -86,6 +86,26 @@ pub fn func_a734(m: &mut Machine) {
     m.regs.cf = false; // clc
 }
 
+/// `func_a744` — file 0xA744: initialise three word globals to constants (no input, no flags).
+pub fn func_a744(m: &mut Machine) {
+    let ds = m.regs.ds;
+    m.write16(ds, 0xd62, 0x0000);
+    m.write16(ds, 0xd64, 0xffff);
+    m.write16(ds, 0xd66, 0xffff);
+}
+
+/// `func_9f80` — file 0x9F80: `bx=0x1FB5; add bx,ax (x4); mov bx,[bx]; ret`. Computes the table
+/// address `0x1FB5 + 4*ax` (16-bit wrapping), reads the word there (DS-relative) into `BX`.
+/// Flags come from the 4th `add`. Lifted 1-to-1; oracle-verified (BX + all 6 flags).
+pub fn func_9f80(m: &mut Machine) {
+    let ax = m.regs.ax;
+    let mut addr: u16 = 0x1fb5;
+    for _ in 0..4 {
+        addr = m.regs.add16(addr, ax);
+    }
+    m.regs.bx = m.read16(m.regs.ds, addr);
+}
+
 #[cfg(test)]
 mod tests {
     use super::machine::Machine;
@@ -134,6 +154,74 @@ mod tests {
             assert_eq!(m.regs.ax, v.ax_out, "vec {i}: AX");
             assert_eq!(m.read16(DS, 0xd8c), v.w1_out, "vec {i}: [0xD8C]");
             assert_eq!(m.read16(DS, 0xd9a), v.w2_out, "vec {i}: [0xD9A]");
+            assert_eq!(m.regs.cf, v.flags.cf, "vec {i}: CF");
+            assert_eq!(m.regs.pf, v.flags.pf, "vec {i}: PF");
+            assert_eq!(m.regs.af, v.flags.af, "vec {i}: AF");
+            assert_eq!(m.regs.zf, v.flags.zf, "vec {i}: ZF");
+            assert_eq!(m.regs.sf, v.flags.sf, "vec {i}: SF");
+            assert_eq!(m.regs.of, v.flags.of, "vec {i}: OF");
+        }
+    }
+
+    #[derive(Deserialize)]
+    struct A744Vec {
+        a: u16,
+        b: u16,
+        c: u16,
+    }
+
+    #[test]
+    fn func_a744_matches_oracle_vectors() {
+        let raw = match std::fs::read_to_string("re/tools/oracle_vectors/func_a744.json")
+            .or_else(|_| std::fs::read_to_string("../re/tools/oracle_vectors/func_a744.json"))
+        {
+            Ok(s) => s,
+            Err(_) => return,
+        };
+        const DS: u16 = 0x2000;
+        let vecs: Vec<A744Vec> = serde_json::from_str(&raw).unwrap();
+        assert!(!vecs.is_empty());
+        for (i, v) in vecs.iter().enumerate() {
+            let mut m = Machine::new();
+            m.regs.ds = DS;
+            func_a744(&mut m);
+            assert_eq!(m.read16(DS, 0xd62), v.a, "vec {i}: [0xD62]");
+            assert_eq!(m.read16(DS, 0xd64), v.b, "vec {i}: [0xD64]");
+            assert_eq!(m.read16(DS, 0xd66), v.c, "vec {i}: [0xD66]");
+        }
+    }
+
+    #[derive(Deserialize)]
+    struct F9f80Vec {
+        ax: u16,
+        word: u16,
+        bx_out: u16,
+        flags: Flags,
+    }
+
+    #[test]
+    fn func_9f80_matches_oracle_vectors() {
+        let raw = match std::fs::read_to_string("re/tools/oracle_vectors/func_9f80.json")
+            .or_else(|_| std::fs::read_to_string("../re/tools/oracle_vectors/func_9f80.json"))
+        {
+            Ok(s) => s,
+            Err(_) => return,
+        };
+        const DS: u16 = 0x2000;
+        let vecs: Vec<F9f80Vec> = serde_json::from_str(&raw).unwrap();
+        assert!(!vecs.is_empty());
+        for (i, v) in vecs.iter().enumerate() {
+            let mut m = Machine::new();
+            m.regs.ds = DS;
+            m.regs.ax = v.ax;
+            let addr = (0x1fb5u16)
+                .wrapping_add(v.ax)
+                .wrapping_add(v.ax)
+                .wrapping_add(v.ax)
+                .wrapping_add(v.ax);
+            m.write16(DS, addr, v.word);
+            func_9f80(&mut m);
+            assert_eq!(m.regs.bx, v.bx_out, "vec {i}: BX");
             assert_eq!(m.regs.cf, v.flags.cf, "vec {i}: CF");
             assert_eq!(m.regs.pf, v.flags.pf, "vec {i}: PF");
             assert_eq!(m.regs.af, v.flags.af, "vec {i}: AF");

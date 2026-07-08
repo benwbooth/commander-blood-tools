@@ -922,3 +922,13 @@ STATUS: 2 / 222+ functions lifted+verified (prng_2de2, func_a734), each bit-exac
 incl. full flag state. 37 pure short leaves identified as the next clean targets. The template +
 harness + flag model are in place; remaining is the (large) grind of lifting each function.
 Honest: 2 of 222+ done. Not 100%.
+
+## PATH B: 4 functions lifted+verified (grinding leaves) — 2026-07
+Lifted two more pure leaves, each oracle-verified bit-exact (regs + memory + all 6 flags):
+- func_a744 (0xA744): init 3 word globals to 0/0xFFFF/0xFFFF (no flags). 20/20 vectors.
+- func_9f80 (0x9F80): table addr 0x1FB5+4*ax (16-bit wrap) -> BX = word[DS:addr]; flags from the
+  4th add. 300/300 vectors incl. all flags.
+STATUS: 4 / 222+ functions lifted+verified (prng_2de2, func_a734, func_a744, func_9f80). Each
+bit-exact vs the binary incl. full flag state. Deferred: shift/bsf leaves (0x533c, 0x6023) pending
+per-flag "defined" tracking (shl OF/AF undefined for count>1 - assert only defined flags). The
+grind continues; infrastructure makes each lift ~1 spec + 1 fn + 1 test. Honest: 4 of 222+.
