@@ -455,3 +455,21 @@ dialogue/location screen, read gs:0x5229 when stable) - the same deterministic-d
 dependency that gates the multi-scene palette comparison. The read/decode harness is complete
 and proven; every remaining behavioral check is now gated on either deterministic gameplay
 driving or full engine-side render-pipeline reproduction. Both are substantial, not yet done.
+
+## Behavioral verification: reached gameplay; mapped render paths; VGA mem separately paged — 2026-07
+Drove the real game into actual GAMEPLAY deterministically (launch args
+`BLOODPRG.EXE AMR S162227 EMS WRIC:\cblood\`, cblood/ dir present): past the intro logos
+(MINDSCAPE/Microfolie's/CRYO) to the main "Commander BLOOD V 1.0" nav interface (alien
+viewscreen + CARTE nav pyramids + BORXX orb). Findings on the render architecture (confirmed
+by reading gs:0x5229 across screens):
+- STAR-MAP (attract ~50s): uses the LINEAR back-buffer gs:0x5229 (procedurally composed).
+- MAIN NAV / most game screens: gs:0x5229 = 0 (null) even when a stable game screen is shown =>
+  they render DIRECTLY to VGA mode-X (gs:0x521d = A000:xxxx), bypassing the linear back-buffer.
+- HNM cutscenes: own path, no back-buffer.
+- Tested reading the emulated VGA window at dos_base+0xA0000: 0/65536 nonzero => DOSBox-X stores
+  live VGA RAM in a SEPARATE vga.mem allocation, NOT in the conventional-RAM block at 0xA0000.
+CONCLUSION: the linear-back-buffer read only covers the procedural star-map. Per-pixel parity for
+the (majority) VGA-rendered screens requires locating DOSBox-X's separate vga.mem region in the
+process (search all mmaps for the mode-X frame) and de-interleaving 4 planes - not yet done. This
+maps the remaining framebuffer-parity work precisely: it is a vga.mem-location + planar-decode
+task, distinct from the (solved) linear-buffer + palette reads.
