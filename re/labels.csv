@@ -558,3 +558,4 @@ GS:0x0BA3,audio_channel_active_flag,"audio-active/second channel-live flag, test
 0x004E55,table_index_172a,"table index: bx=cs:[0x172a] (const base); bx-=ax; si+=ax; jmp. Indexes a cs-segment table using 0x172a as the base bound (reverse index)"
 0x004F1C,table_index_1728,"table index (sibling of 0x4e55): bx=cs:[0x1728] const base; bx-=ax; si+=ax. Reverse index into a second cs-segment table"
 0x004F62,frame_func_locals18,"framed function: push bp; sub sp,0x12; bp=sp. C-style stack frame with 18 bytes of locals (a compound routine with local working storage)"
+0x008295,flag_gated_compare_a3e,"flag-gated compare: test byte [0xa3e],1; if clear skip to 0x82c0, else ax=[0xa2a]; cmp ax,[bp] (compare the 0xa2a value/counter against a caller argument). Conditional value check gated on the 0xa3e enable bit"
