@@ -548,3 +548,22 @@ match - so it is NOT added to the confirmed-parity tally. The clean value-matche
 4 (palette 120/120; camera origin; nav destinations; clip rect). Refining the 0x6212 record
 field layout against these live bytes (and getting a ground-truth object set) is follow-up work.
 Also note DS:0x2789 (zoom) = 0 in both states.
+
+## Behavioral verification: STATIC-DATA parity - ship-3D vertex table matches exe exactly — 2026-07
+Added a confound-free STATIC-DATA axis (engine's embedded tables vs the exe's compiled data,
+verified directly from BLOODPRG.EXE - no DOSBox, instant):
+- SHIP_3D_HUD_PYRAMID_VERTICES (src/ship3d.rs, [[i16;3];32]) vs exe file 0x131B8 (the DS:0x5D98
+  vertex table that ship_3d_hud_init 0xB079 copies to the HUD working area): 32/32 vertices
+  BYTE-FOR-BYTE IDENTICAL (e.g. v0=(0,2304,3075), v1=(776,1803,2820)). The region is exactly 32
+  vertices (192 bytes) then other data - matching our documented count.
+- This CHAINS with the live axis: the ptrace DS-anchor IS this same vertex table (0x5D98), which
+  we confirmed present in live runtime memory. So: exe static (0x131B8) == engine embedded
+  (32/32) == live runtime (anchor found) - a full three-way match on the ship-3D geometry data.
+- SHIP_3D_TEMP_SND_VIEWPORT_DESCRIPTOR embeds [.,.,.,.,0x140,0xc8,..] = 320x200, consistent with
+  the live-verified clip rect [0,320]x[0,200].
+CONFIRMED-PARITY TALLY now 5 confound-free positives across 3 axes:
+  asset: (1) palette CHART.FD 120/120.
+  state: (2) camera origin, (3) nav destinations, (4) clip rect [0,320]x[0,200].
+  static-data: (5) ship-3D vertex table 32/32 (exe==engine==live).
+STILL NOT whole-game: descriptor/sprite-pixel values, dynamic per-frame math, VM evolution, and
+the composited display frame remain unverified. Five verified data points, not 100%.
