@@ -253,3 +253,21 @@ Net: the "register-indirect targets" are overwhelmingly EXTERNAL (XMS driver, sa
 vectors), not missing internal code. This shrinks the static gap to essentially the computed
 input jump-table plus proving behavioral equivalence. The former remains a genuine static
 limit; the latter is the dynamic/behavioral phase (not yet built out).
+
+## Input dispatch: MECHANISM decoded, full enumeration blocked by runtime DS (REFINED)
+The "input jump-table" is now precisely located (input_dispatch 0x210e):
+  read event (lcall 0x1ce:0x39d) -> AL, else AH -> optional `or al,0x80` (alt path)
+  -> `mov bx,0x113e; xlatb`  (translate the input code via a 256-byte table at DS:0x113e)
+  -> if the translated value has bit7 set, ignore; else `add ax,ax; mov bx,ax`
+  -> `call cs:[bx+0x123e]`   (handler table at file 0x183e; entry 0 = handler @ file 0x1f06)
+The handler table is CS-relative and its first entries decode to clean code. What is NOT
+statically resolvable is the COMPLETE live-handler set, because the xlatb translate step reads
+DS:0x113e and DS at the dispatch is inherited from the caller (the function sets no DS):
+  - Reading the table CS-relative (file 0x173e) yields a plausible-looking but INCONSISTENT
+    index set (indices up to 125, most of whose handler slots decode to non-code) -> wrong base.
+  - Reading it DGROUP-relative (DS base 0xD420 -> file 0xE55E) yields 256 zero bytes -> also wrong.
+Neither candidate DS base produces a valid 256-entry translate table, so the effective DS is
+some other runtime segment (set by whoever calls 0x210e). Pinning it needs dynamic tracing.
+CONCLUSION: mechanism fully decoded; exact handler enumeration requires the runtime DS value
+= a dynamic fact. This supersedes the older "input jump-table handler count unknowable" note
+with the concrete mechanism and the precise reason (DS-relative xlat table, runtime DS).
