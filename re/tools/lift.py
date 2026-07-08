@@ -7,6 +7,11 @@ coverage incrementally; control-flow (branches/loops) is a later extension.
 Usage (PYTHONSAFEPATH=1): re/tools/lift.py <file_offset_hex> <rust_fn_name>"""
 import capstone, sys
 
+# Offsets of already-lifted functions that a `call` may compose against. Only NEAR-ret callees
+# belong here (a retf callee executing mid-run trips the Unicorn read-hook bug in the oracle).
+# Populated by scan_clean/gen_batch before lifting non-leaf functions.
+AVAILABLE = set()
+
 D = open("re/bin/BLOODPRG.EXE", "rb").read()
 MD = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_16)
 MD.detail = True
@@ -290,6 +295,22 @@ def emit(insn):
                 "m.regs.cf = __f & 1 != 0; m.regs.pf = __f & 4 != 0; m.regs.af = __f & 0x10 != 0;",
                 "m.regs.zf = __f & 0x40 != 0; m.regs.sf = __f & 0x80 != 0;",
                 "m.regs.df = __f & 0x400 != 0; m.regs.of = __f & 0x800 != 0;"]
+    if m == "call":
+        o = op[0]
+        if o.type == capstone.x86.X86_OP_IMM:
+            t = o.imm & 0xffffffff
+            if t in AVAILABLE:
+                ret_ip = insn.address + insn.size
+                # Model the near CALL exactly: push the return offset (the callee sees the
+                # correct SP and its transient stack writes land where the oracle records
+                # them), invoke the lifted callee, then pop (the callee's near RET, modelled
+                # as a Rust `return`, would have popped it).
+                return [f"m.regs.set_sp(m.regs.sp().wrapping_sub(2));",
+                        f"m.write16(m.regs.ss, m.regs.sp() as u32, 0x{ret_ip:x});",
+                        f"func_{t:x}(m);",
+                        "m.regs.set_sp(m.regs.sp().wrapping_add(2));"]
+            raise NotImplementedError(f"call 0x{t:x} (callee not available)")
+        raise NotImplementedError("indirect call")
     if m == "xlatb":
         # AL = [DS:BX + AL]  (table lookup translate; 16-bit addressing wraps at 64K)
         return ["let __a = m.read8(m.regs.ds, m.regs.bx().wrapping_add(m.regs.al() as u16) as u32);",
