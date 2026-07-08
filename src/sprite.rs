@@ -19,7 +19,12 @@ pub struct SpriteFrameImage {
 /// Frame dispatch index from the bank header flags: `((flags & 4) | 0x83) >> 1 & 7`
 /// selects Raw (0/2), RLE (1/3), or Scaled (4) frame decode for the whole bank.
 fn bank_dispatch_index(flags: u16) -> u8 {
-    ((((flags & 0x0004) | 0x0083) >> 1) & 0x07) as u8
+    // Bit 2 of the bank flags selects the frame encoding: clear -> RAW (uncompressed
+    // width*height bytes), set -> RLE (row-compressed). Verified across all 44 sprite
+    // banks: for flags&4==0 every frame body is exactly width*height (RAW, e.g. BAPPEL.SPR);
+    // for flags&4==4 the body is shorter (RLE, e.g. BCARTE.SPR). The earlier formula only
+    // ever yielded odd (RLE) codes, so it silently failed RAW banks (decoded to 0 frames).
+    if flags & 0x0004 == 0 { 0 } else { 3 }
 }
 
 /// Decode every frame of a `.spr` sprite bank to palette-index grids. The bank
@@ -193,6 +198,49 @@ mod tests {
         assert_eq!(frames.len(), 16);
         assert_eq!((frames[0].width, frames[0].height), (40, 33));
         assert!(frames.iter().all(|f| f.indices.len() == f.width * f.height));
+    }
+
+    #[test]
+    fn decodes_every_sprite_bank_to_valid_frames() {
+        // Decode ALL .spr banks in the game data and assert each yields a non-empty frame set
+        // whose every frame's index buffer is exactly width*height. Broadens the BORXX-only
+        // check to the full sprite set. Skips if the game data isn't in this checkout.
+        let dir = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter()
+            .map(std::path::PathBuf::from)
+            .find(|p| p.exists());
+        let Some(dir) = dir else { return };
+        let mut standard = 0;
+        for entry in std::fs::read_dir(&dir).unwrap() {
+            let path = entry.unwrap().path();
+            if path.extension().and_then(|e| e.to_str()).map(|e| e.eq_ignore_ascii_case("spr"))
+                != Some(true)
+            {
+                continue;
+            }
+            let data = std::fs::read(&path).unwrap();
+            let name = path.file_name().unwrap().to_string_lossy().to_string();
+            // Bank flags word: bit 2 = encoding (0 raw / 4 RLE); other values (e.g. KLAY.SPR
+            // flags=6, a non-frame-table asset) are not standard sprite banks.
+            let flags = u16::from_le_bytes([data[0], data[1]]);
+            if flags != 0 && flags != 4 {
+                assert!(
+                    decode_sprite_bank_indices(&data).is_none(),
+                    "{name}: non-standard flags {flags} should not decode as a sprite bank",
+                );
+                continue;
+            }
+            let frames = decode_sprite_bank_indices(&data)
+                .unwrap_or_else(|| panic!("{name}: standard bank (flags {flags}) must decode"));
+            assert!(!frames.is_empty(), "{name}: has frames");
+            for f in &frames {
+                assert_eq!(f.indices.len(), f.width * f.height, "{name}: frame index count");
+            }
+            standard += 1;
+        }
+        if standard > 0 {
+            assert_eq!(standard, 43, "all 43 standard sprite banks decode (41 RLE + 2 raw)");
+        }
     }
 
     #[test]

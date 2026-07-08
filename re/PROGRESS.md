@@ -639,3 +639,17 @@ Extended the .ext object cross-validation from 3 worlds to all 16 primary worlds
 Verification base keeps broadening (static-data byte-exact tables + VM structure/semantics +
 all-world .ext parsing + 7 confound-free live/exe value-matches). STILL targeted, not whole-game:
 full render output, all-function behavioral parity, runtime descriptor/sprite pixels unverified.
+
+## Bug fix (found via verification): raw sprite banks decoded to 0 frames — 2026-07
+The broadened all-sprite-banks decode test surfaced a REAL decoder bug:
+- bank_dispatch_index computed `(((flags&4)|0x83)>>1)&7`, which only ever yields odd values
+  (1 or 3 = RLE) - so it NEVER selected the RAW path (0/2), silently decoding RAW banks to 0
+  frames. Verified across all 44 banks: flags bit2 selects encoding (flags&4==0 => RAW body ==
+  width*height, e.g. BAPPEL.SPR 11/11 raw frames; flags&4==4 => RLE, e.g. BCARTE). Fixed to
+  `if flags&4==0 {0 /*raw*/} else {3 /*RLE*/}`.
+- Result: all 43 standard sprite banks (41 RLE + 2 raw) now decode to valid frames. KLAY.SPR
+  (flags=6, frame_count=256 with garbage offsets) is a non-frame-table asset and is correctly
+  rejected (returns None) - the test asserts that too.
+- New test decodes_every_sprite_bank_to_valid_frames (passes) locks this in.
+This is the FIRST behavioral fix found by the verification push (not just a confirmation): 2 raw
+sprite banks were previously mis-decoded. Suite now 422 tests, 0 failing. Accuracy improved.
