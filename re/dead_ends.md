@@ -302,3 +302,22 @@ earlier static analysis could not. The mechanism + table location are now fully 
 only residual is per-handler exact semantics, which (if needed) comes from single-stepping the
 live dispatch at 0x2137 to read BX and the resolved target. Supersedes the "statically
 inconclusive" note above with a dynamic answer.
+
+## Framebuffer-pixel parity: GS render arena not locatable from DGROUP (blocked, 2026-07)
+Palette per-byte parity succeeded because the palette buffer GS:0x5b58 is in DGROUP (readable
+via the vertex-table DS anchor; matched CHART.FD 120/120). Attempted the same for the
+FRAMEBUFFER (to compare rendered pixels), and hit a wall:
+- The linear back-buffer is a far ptr at gs:0x5229; the mode-X screen buffer at gs:0x521d
+  (static value A000:0000 = VGA). Read live from DGROUP: 0x5229/0x521d/0x5221 all = 0.
+- The GS work-arena globals 0xa98 (the 64K arena segment stored by mem_alloc_64k), 0x671c
+  (objects), 0x672c (VM table) also all read 0 from DGROUP at 55s.
+- Yet DGROUP:0x5b58 (palette) HAS valid data. => GS is a SEPARATELY-ALLOCATED segment (EMS/XMS
+  or a malloc'd 64K arena), NOT the DGROUP that the anchor locates. Its base is not stored in a
+  readable DGROUP global (0xa98=0), so the render pointers can't be resolved from the anchor.
+- The VGA path (0x521d -> A000:0000) is mode-X PLANAR and lives in DOSBox-X's separately-paged
+  vga.mem, not at conventional-RAM base+0xA0000, so a flat read there won't get live pixels.
+Two viable future approaches (not yet done): (a) locate DOSBox-X's vga.mem region in the
+process by searching for a known de-interleaved frame signature; (b) use a DOSBox-X debugger
+build to read the live GS register at a render call, giving the arena base directly. Recorded
+tools: re/tools/read_live_framebuffer.py (linear-bb attempt). Framebuffer-pixel parity remains
+OPEN; palette per-byte parity (CHART.FD, 120/120 scene colors) stands as the positive result.
