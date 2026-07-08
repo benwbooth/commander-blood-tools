@@ -2377,6 +2377,18 @@ mod tests {
     }
 
     #[test]
+    fn mode_x_offset_matches_the_game_plot_formula_exactly() {
+        // graphics_plot_modex (BLOODPRG.EXE 0x299:0x498 / file 0x3428) computes, per the RE:
+        // byte offset = y*80 + x/4, plane = x&3. Assert the engine reproduces this exact
+        // addressing for every pixel in the 320x200 mode-X screen (not just equivalence).
+        for y in 0..ENGINE_SCREEN_HEIGHT {
+            for x in 0..ENGINE_SCREEN_WIDTH {
+                assert_eq!(mode_x_offset(x, y), (y * 80 + x / 4, x & 3), "({x},{y})");
+            }
+        }
+    }
+
+    #[test]
     fn framebuffer_is_full_screen_indexed() {
         let e = EngineState::new();
         assert_eq!(
