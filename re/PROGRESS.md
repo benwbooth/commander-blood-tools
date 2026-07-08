@@ -749,3 +749,19 @@ FOLLOW-UP (honest): the engine's current orb draw is a legacy path drawing frame
 wiring the animated, offset-anchored orb render needs the game's orb anchor screen position (and
 visual verification, which is gated on the framebuffer-parity blocker). The primitive + the
 anchoring fact are locked in; the render wiring is the remaining step. Suite 432.
+
+## Accuracy scope: sprite offset is the UNIVERSAL positioning mechanism — 2026-07
+Surveyed the frame-offset anchoring across all 44 .spr banks to scope the render inaccuracy:
+- 34 banks are single-frame (offset positions the one frame; no animation-anchor question).
+- Of the ~15 MULTI-frame (animated) banks, the offset yields a consistent per-sprite anchor:
+  bottom-anchored 3 (yoff+h const, e.g. BORXX orb), top 3, right 4, left 5, and 4 with no simple
+  constant but still offset-driven. So the specific anchor is emergent from the authored offsets.
+- CONCLUSION: drawing each frame at base+(x_offset,y_offset) - i.e. blit_sprite_frame_at -
+  reproduces the game's positioning for EVERY sprite by construction; centre-blitting
+  (blit_sprite_frame_centered) is INCORRECT for all ~15 animated banks (it holds the centre fixed
+  instead of the authored anchor). So the render inaccuracy is precisely scoped: any engine path
+  that centre-blits a multi-frame animated sprite mis-anchors it.
+The correct primitive (blit_sprite_frame_at) + captured offsets are in place; converting the
+animated-sprite render paths (orb, and any other centre-blitted animation) to offset-anchoring is
+the scoped remaining render fix, pending the anchor base + visual verification (framebuffer-parity
+gated). Honest scoping of a real render-accuracy gap; the data/primitive are correct and tested.
