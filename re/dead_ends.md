@@ -206,3 +206,11 @@ function entries, confirmed by disassembly context:
 - 0x02bee: `inc dx; dec bp; and [bx+si],al` - data (a table/constant) misparsed as code.
 These 5 are the residue of the byte-scan heuristic and require no labels. With them
 excluded, the ret-preceded verified-start scan window is fully accounted for.
+
+## Far-call target scan: 0x8d5d false positive (RESOLVED)
+The flat 9A-opcode far-call scan (file = 0x600 + seg*16 + off) yields 108 targets in the code
+segment; 107 are real functions (now all labeled). The 108th, 0x8d5d, disassembles to
+`add [bx+di],al` (bytes 00 00) - not a valid prologue. It is a false positive: the 0x9A byte
+that produced it is embedded in DATA (a table/constant), not a real call site, and its
+following 4 bytes coincidentally resolve into the code range. Excluding it, the far-call-
+dispatched function set in the code segment is 107/107 labeled - fully enumerated.
