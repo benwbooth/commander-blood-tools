@@ -1000,3 +1000,17 @@ So path B is now: for a linear function, AUTO-lift (lift.py) + AUTO-verify (gene
 hand-spec, still bit-exact vs the binary. This is the batching acceleration. NEXT: run the pipeline
 over all linear leaf functions, add each auto-lift + its generic test. STATUS: 10 hand-verified +
 automated pipeline online; ready to batch the linear leaves.
+
+## PATH B: CONTROL-FLOW lifter (branches/loops) built — 2026-07
+Extended lift.py with lift_cfg(): decomposes a function into basic blocks and emits a
+`loop { match __blk { ... } }` state machine - handling arbitrary branches (full Jcc condition
+table -> flag exprs), jmp, and `loop` (cx-- + branch). This is the hard part of static
+recompilation. Validated: auto-lifting func_a40b (cmp/je/cmp) produces the correct block
+structure + je->zf condition, matching the hand-lift.
+COVERAGE of the 112 leaves with the CFG lifter: 8 clean (auto-liftable now, incl. the 0x963f loop
++ 0xa40b branch), 22 blocked by I/O (int/out/in -> need the composition/DOS layer), 82 blocked by
+other opcodes (string movs/stos, 32-bit arith, setcc, xchg-mem - the opcode-coverage frontier).
+So the grind is now "add opcode -> unlock N functions" (mechanical) rather than hand-lift-each.
+Also added Machine::inc16/dec16/shr16. STATUS: 10 hand-verified + auto-pipeline (linear+CFG) online;
+next is opcode-coverage expansion (unlocks the 82) + the I/O composition layer (the 22) + internal
+non-leaf functions. Not 100%; the tooling to get there is now substantially built.

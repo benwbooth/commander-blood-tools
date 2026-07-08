@@ -183,6 +183,49 @@ impl Regs {
         self.af = false;
     }
 
+    /// 16-bit `INC` (a + 1). Sets ZF/SF/PF/OF/AF; **CF is not affected** (unlike ADD).
+    pub fn inc16(&mut self, a: u16) -> u16 {
+        let r = a.wrapping_add(1);
+        self.af = (a & 0xf) + 1 > 0xf;
+        self.zf = r == 0;
+        self.sf = r & 0x8000 != 0;
+        self.of = a == 0x7fff;
+        self.pf = (r as u8).count_ones() % 2 == 0;
+        r
+    }
+
+    /// 16-bit `DEC` (a - 1). Sets ZF/SF/PF/OF/AF; **CF is not affected**.
+    pub fn dec16(&mut self, a: u16) -> u16 {
+        let r = a.wrapping_sub(1);
+        self.af = a & 0xf == 0;
+        self.zf = r == 0;
+        self.sf = r & 0x8000 != 0;
+        self.of = a == 0x8000;
+        self.pf = (r as u8).count_ones() % 2 == 0;
+        r
+    }
+
+    /// 16-bit `SHR` by `count` (logical). CF = last bit out; ZF/SF/PF from the result. OF defined
+    /// only for count==1 (= MSB of the original); undefined otherwise (assigned, not asserted).
+    pub fn shr16(&mut self, val: u16, count: u8) -> u16 {
+        let count = count & 0x1f;
+        if count == 0 {
+            return val;
+        }
+        let mut r = val;
+        let mut cf = false;
+        for _ in 0..count {
+            cf = r & 1 != 0;
+            r >>= 1;
+        }
+        self.cf = cf;
+        self.zf = r == 0;
+        self.sf = r & 0x8000 != 0;
+        self.pf = (r as u8).count_ones() % 2 == 0;
+        self.of = val & 0x8000 != 0;
+        r
+    }
+
     /// 16-bit `SHL` by `count` (386: count masked to 5 bits). Sets the DEFINED flags exactly:
     /// CF = last bit shifted out, and ZF/SF/PF from the result. OF is defined only for count==1
     /// (OF = SF xor CF); AF is undefined — both are assigned here but NOT oracle-asserted for
