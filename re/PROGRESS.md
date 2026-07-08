@@ -388,3 +388,19 @@ measurement in the project.
 SCOPE (honest): this verifies ONE screen's background PALETTE only - not the framebuffer pixels,
 not sprite/UI palette entries (which are runtime-composed), and not the other screens or the
 render/VM/gameplay logic. It is a concrete positive data point, not whole-game equivalence.
+
+## Behavioral verification: star-map palette parity is REPRODUCIBLE — 2026-07
+Strengthened the CHART.FD (star-map) palette-parity result from one measurement to a
+reproducible one:
+- Two INDEPENDENT DOSBox-X runs (different process memory layouts, captured at 55s and 52s)
+  both yield the IDENTICAL comparison vs our decoder's CMAP>>2 DAC: background colors 0..119 =
+  120/120 byte-exact, 189/256 total exact, differences confined to the cycle range 123-127 and
+  runtime sprite/UI-overlay indices 193-255.
+- Cross-checked a non-matching sample (a mid-fade / non-FORM scene) which correctly scores
+  ~1/120 background - so the 120/120 is a genuine scene-specific match, not an artifact that
+  fires on any palette.
+So the decoder's star-map palette provably equals the DOS game's runtime DAC, reproducibly.
+NOTE (honest, unchanged): still ONE screen's background palette. Other attract samples land on
+mid-fade or non-FORM (HNM/procedural) scenes that can't be matched without deterministic
+driving; framebuffer-pixel parity remains blocked on locating the GS render arena / DOSBox
+vga.mem (see dead_ends.md). This is a reproducible positive data point, not whole-game parity.
