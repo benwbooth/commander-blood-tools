@@ -665,3 +665,15 @@ This broadens verified decoder coverage: LBM (169 fd/ art, was already tested), 
 (43 standard + KLAY rejected, bug fixed last turn), HNM (645 files, new). The asset-decoder
 surface is now systematically covered. STILL not whole-game: full composited render output,
 all-function behavioral parity, and runtime pixel values remain unverified.
+
+## Behavioral verification: audio decoders robust across all SND/VOC assets — 2026-07
+Extended the systematic decoder-coverage push to audio:
+- parses_every_real_snd_bank: all 25 SND voice/sfx banks parse into a bank with >0 clips.
+- parses_every_real_voc: all 44 .voc files carry the "Creative Voice File" signature and parse;
+  some yield PCM (music/voice), verified non-empty at a valid rate.
+Both pass - the SND bank parser and VOC decoder are robust across the full asset set. No gap
+(unlike the sprite raw-decode bug). Suite now 426 tests, 0 failing.
+Asset-decoder coverage is now systematic across ALL asset types: LBM 169, sprites 43+reject,
+HNM 645, SND 25, VOC 44 - every decoder verified against its full asset set, one real bug fixed
+(raw sprites). This is thorough decoder-parity, but STILL not whole-game: the composited render
+output, all-function behavioral parity, and runtime pixel values remain unverified.

@@ -184,6 +184,74 @@ pub fn mix_unsigned_pcm_average(destination: &mut [u8], source: &[u8]) -> usize 
 mod tests {
     use super::*;
 
+    fn collect(root: &str, ext: &str) -> Vec<std::path::PathBuf> {
+        let mut out = Vec::new();
+        let mut stack = vec![std::path::PathBuf::from(root)];
+        while let Some(d) = stack.pop() {
+            let Ok(rd) = std::fs::read_dir(&d) else { continue };
+            for e in rd.filter_map(|e| e.ok()) {
+                let p = e.path();
+                if p.is_dir() {
+                    stack.push(p);
+                } else if p.extension().and_then(|s| s.to_str()) == Some(ext) {
+                    out.push(p);
+                }
+            }
+        }
+        out
+    }
+
+    /// Every real SND voice/sfx bank in the game data must parse into a bank with clips.
+    /// Broad robustness check (the sprite equivalent found a real decoder bug). Skips if absent.
+    #[test]
+    fn parses_every_real_snd_bank() {
+        let files = ["output/_tmp_dat", "../output/_tmp_dat"]
+            .iter()
+            .find(|r| std::path::Path::new(r).exists())
+            .map(|r| collect(r, "snd"))
+            .unwrap_or_default();
+        if files.is_empty() {
+            return;
+        }
+        let mut checked = 0;
+        for p in &files {
+            let data = std::fs::read(p).unwrap();
+            let bank = SndBank::parse(&data)
+                .unwrap_or_else(|e| panic!("{}: SND parse failed: {e}", p.display()));
+            assert!(bank.clips().count() > 0, "{}: no clips", p.display());
+            checked += 1;
+        }
+        assert!(checked >= 20, "parsed the SND set ({checked})");
+    }
+
+    /// Every real .voc music/voice file must be a valid Creative VOC (either yields PCM, or is a
+    /// recognised non-PCM/silence VOC). Verifies the VOC parser handles the whole set.
+    #[test]
+    fn parses_every_real_voc() {
+        let files = ["output/_tmp_dat", "../output/_tmp_dat"]
+            .iter()
+            .find(|r| std::path::Path::new(r).exists())
+            .map(|r| collect(r, "voc"))
+            .unwrap_or_default();
+        if files.is_empty() {
+            return;
+        }
+        let mut checked = 0;
+        let mut with_pcm = 0;
+        for p in &files {
+            let data = std::fs::read(p).unwrap();
+            // Must at least have the "Creative Voice File" signature.
+            assert!(data.starts_with(b"Creative Voice File"), "{}: not a VOC", p.display());
+            if let Some((pcm, rate)) = parse_voc_pcm(&data) {
+                assert!(!pcm.is_empty() && rate > 0, "{}: empty PCM", p.display());
+                with_pcm += 1;
+            }
+            checked += 1;
+        }
+        assert!(checked >= 40, "checked the VOC set ({checked})");
+        assert!(with_pcm > 0, "at least some VOCs yield PCM");
+    }
+
     #[test]
     fn parses_real_voc_music() {
         // The game's intro/scene music: header magic, type-1 block (tc 0xA6 ->
