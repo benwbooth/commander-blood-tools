@@ -146,6 +146,34 @@ fn decode_rle_frame(frame: &[u8], height: usize) -> Option<Vec<u8>> {
 
 /// Blit a decoded sprite frame into a `width`-stride indexed framebuffer, centred
 /// at `(cx, cy)`, skipping transparent index 0.
+/// Blit a frame using its authored draw offset: the frame's top-left is placed at
+/// `(base_x + x_offset, base_y + y_offset)`. This reproduces the game's per-frame anchoring -
+/// e.g. the BORXX orb, whose `y_offset + height == 82` is constant, so it stays BOTTOM-anchored
+/// as it grows (33..82 px tall) rather than growing symmetrically from its centre. Index 0 is
+/// transparent; writes are clipped to the framebuffer.
+pub fn blit_sprite_frame_at(
+    fb: &mut [u8],
+    fb_width: usize,
+    fb_height: usize,
+    frame: &SpriteFrameImage,
+    base_x: i32,
+    base_y: i32,
+) {
+    for y in 0..frame.height {
+        for x in 0..frame.width {
+            let idx = frame.indices[y * frame.width + x];
+            if idx == 0 {
+                continue;
+            }
+            let px = base_x + frame.x_offset as i32 + x as i32;
+            let py = base_y + frame.y_offset as i32 + y as i32;
+            if px >= 0 && (px as usize) < fb_width && py >= 0 && (py as usize) < fb_height {
+                fb[py as usize * fb_width + px as usize] = idx;
+            }
+        }
+    }
+}
+
 pub fn blit_sprite_frame_centered(
     fb: &mut [u8],
     fb_width: usize,
@@ -254,6 +282,22 @@ mod tests {
         if standard > 0 {
             assert_eq!(standard, 43, "all 43 standard sprite banks decode (41 RLE + 2 raw)");
         }
+    }
+
+    #[test]
+    fn offset_blit_bottom_anchors_the_orb_like_the_game() {
+        // Two orb frames of different heights, both with yoff+h == 82 (the BORXX invariant).
+        // Drawn with blit_sprite_frame_at at the same base, their BOTTOM edges must coincide -
+        // the game's bottom-anchored growth, which centre-blitting would not reproduce.
+        let small = SpriteFrameImage { width: 1, height: 4, x_offset: 0, y_offset: 6, indices: vec![5; 4] };
+        let big = SpriteFrameImage { width: 1, height: 8, x_offset: 0, y_offset: 2, indices: vec![5; 8] };
+        assert_eq!(small.y_offset as usize + small.height, big.y_offset as usize + big.height);
+        let bottom = |f: &SpriteFrameImage| {
+            let mut fb = vec![0u8; 1 * 16];
+            blit_sprite_frame_at(&mut fb, 1, 16, f, 0, 0);
+            (0..16).rev().find(|&y| fb[y] != 0).unwrap()
+        };
+        assert_eq!(bottom(&small), bottom(&big), "bottom edges coincide (bottom-anchored)");
     }
 
     #[test]

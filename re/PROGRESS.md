@@ -735,3 +735,17 @@ Dropping them loses the authored anchoring the game uses.
   on bank_dispatch_index (still described the old buggy formula).
 The decoder now captures the COMPLETE frame header instead of discarding anchor data - a real
 accuracy improvement (third fix from the verification push). Suite now 431. Still not whole-game.
+
+## Accuracy: game bottom-anchors the orb; added offset-aware blit primitive — 2026-07
+Decoded the orb's animation anchoring and provided the correct primitive:
+- BORXX orb: across all 16 frames, y_offset + height == 82 (CONSTANT). So the game draws each
+  frame at base+(x_offset,y_offset) top-left, keeping the orb's BOTTOM edge fixed as it grows
+  (33..82 px tall) - it grows UPWARD, not symmetrically. blit_sprite_frame_centered keeps the
+  CENTRE fixed, which would grow the orb symmetrically = wrong anchoring.
+- Added blit_sprite_frame_at(fb, base_x, base_y): draws at base+offset (the game's anchoring),
+  with test offset_blit_bottom_anchors_the_orb_like_the_game (two different-height frames sharing
+  yoff+h land their bottom edges on the same row). The correct primitive now exists.
+FOLLOW-UP (honest): the engine's current orb draw is a legacy path drawing frame 0 centred; fully
+wiring the animated, offset-anchored orb render needs the game's orb anchor screen position (and
+visual verification, which is gated on the framebuffer-parity blocker). The primitive + the
+anchoring fact are locked in; the render wiring is the remaining step. Suite 432.
