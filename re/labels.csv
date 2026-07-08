@@ -542,3 +542,8 @@ GS:0x0BA3,audio_channel_active_flag,"audio-active/second channel-live flag, test
 0x001817,backbuffer_clear_flags,"back-buffer setup: si=0xe3; les di,[0x5229] (the linear render back-buffer); clears byte [0x5b53] and [0x5b57]. Resets the two render-state flags before drawing into the back buffer"
 0x001D74,copy_abc_to_671c,"buffer copy: lds si,gs:[0xabc]; les di,gs:[0x671c]; lodsw loop. Word-copies from the 0xabc source buffer into the 0x671c object/work area"
 0x001DD8,flag_gated_b15,"flag-gated routine: si=0x273b; al=[0xb15]; test/branch. Gates on the 0xb15 state byte (a mode/enable flag)"
+0x00218D,vm_querymode_gated_67a6,"VM query-mode gated routine: test byte [0x67a6],3; if clear skip to 0x21d9, else ds=gs. Branches on the 0x67a6 query/compare mode bits (companion to the 0x67ad query flag)"
+0x002224,set_b15_test_query,"sets [0xb15]=dl (mode byte); test [0x67a6],1; reads [0x67a2]. Records a mode flag then dispatches on the VM query-mode state"
+0x00224D,state_reset_adf,"state reset: [0xadf]=0 (clears the audio/mixer sub-flag); test [0x1fb2],1 and [0x2534],1 to branch on two enable bits. Resets audio state at a mode transition"
+0x00248B,clear_block_5251,"buffer clear: es=gs; cx=0x90; di=0x5251; xor eax; stosd loop -> zeroes 0x90 (144) dwords = 576 bytes at gs:0x5251 (render-state block adjacent to back-buffer ptr 0x5229)"
+0x002532,byte_bit_process_18,"byte/bit processor: ah=al; bl=0x18; cx=8 loop; al=bl. 8-iteration per-byte transform (character-cell or mask expansion using stride 0x18)"
