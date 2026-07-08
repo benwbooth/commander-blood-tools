@@ -229,10 +229,27 @@ static enumeration are exactly those reached through register-indirect dispatch:
   file = entry + 0x53a0), the 51 entries are known; listed here only for completeness.
 
 Why static analysis stops here: resolving these needs either full inter-block dataflow
-(tracking the pointer from its load site) or DYNAMIC tracing. The correct next tool is the
-real-game headless oracle (re/tools/capture_real_game.sh, DOSBox-X+Xvfb): instrument the call
-sites and log the actual targets at runtime. That same dynamic harness is also the only way
-to establish the outstanding BEHAVIORAL-EQUIVALENCE bar (cycle/output parity vs the DOS
-binary), which static labeling cannot prove. This is the boundary between the static RE (now
-substantially complete for directly- and far-called functions) and the dynamic/behavioral
-verification phase (not yet built out).
+(tracking the pointer from its load site) or DYNAMIC tracing. That same dynamic harness is
+also the only way to establish the outstanding BEHAVIORAL-EQUIVALENCE bar (cycle/output parity
+vs the DOS binary), which static labeling cannot prove.
+
+## UPDATE (RESOLVED via dataflow): the indirect slots are EXTERNAL entry points
+The register-indirect call slots above were traced to their store sites and are NOT
+un-enumerated internal functions - they are external system/driver entry points captured at
+boot, which a decompile invokes as services:
+- **gs:[0xa4a]/[0xa4c]** = the **XMS driver** far entry point. Boot does int 2Fh AX=4300
+  (XMS install check, AL=80 if present) then AX=4310 (get driver entry -> ES:BX), stored at
+  0xa1b/0xa20. The ~18 `call gs:[0xa4a]` sites call HIMEM.SYS (AH = XMS function code). External.
+- **gs:[0xb1d]/[0xb1f]** = the **saved original INT 08h (PIT timer) vector**. install_timer_isr_hook
+  (0x79c) does int 21h AX=3508 (get vector -> ES:BX, stored 0x7a6) then AX=2508 to install the
+  game's own ISR at cs:0x213 (file 0x813). The game's timer ISR chains to the original via
+  `call gs:[0xb1d]`. The internal ISR (0x813) IS labeled; the chained target is the BIOS handler.
+  Verified: ISR 0x813 gates on gs:0xb21 then services gs:0xadf (the audio mixer sub-flag) -
+  i.e. the PIT ISR drives the software audio mixer, consistent with the whole audio chain.
+- **gs:[0xa96]** = a third indirect slot (call sites 0x169e, 0xb5fe); its store is via a
+  far-pointer load (les/lds), same external-entry shape - likely another saved vector/driver.
+
+Net: the "register-indirect targets" are overwhelmingly EXTERNAL (XMS driver, saved interrupt
+vectors), not missing internal code. This shrinks the static gap to essentially the computed
+input jump-table plus proving behavioral equivalence. The former remains a genuine static
+limit; the latter is the dynamic/behavioral phase (not yet built out).
