@@ -858,3 +858,15 @@ state. Faithful reproduction requires modelling the per-screen state machine (wh
 what feeds the pyramids in each), not a single projection. This is honest scoping: the divergence
 is a multi-screen STATE + composition gap, deeper than one projection call. Decoders remain
 accurate; the nav/bridge scene-state machine is the substantial unported piece.
+
+## Verification: subtitle cues monotonic + fully font-renderable — 2026-07
+Verified the DESCRIPT.DES subtitle system (48 cues) end-to-end against its consumers:
+- All ticks non-decreasing within each record (correct reveal ordering): 0 violations.
+- Every subtitle char is renderable by the game font (the 73-glyph set + space): 0 unrenderable
+  chars. So every subtitle can be drawn correctly - the subtitle text and the verified font
+  charset are consistent (cross-subsystem: descript subtitles <-> font glyphs).
+- New test real_subtitles_are_monotonic_and_font_renderable (passes). Suite now 433.
+Cross-subsystem consistency (subtitles fit the font) is a real correctness property. Stepped back
+from the nav/bridge scene-state deep-dive (no single screen selector; distributed VM+flag state =
+substantial distributed RE) to lock in this completable verification. STILL not whole-game:
+nav/bridge composition, display-pixel parity, all-function behavioral parity remain unverified.

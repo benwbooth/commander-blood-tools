@@ -491,6 +491,41 @@ mod tests {
         assert_eq!(count(RecordKind::Character), 35);
     }
 
+    /// The real DESCRIPT.DES subtitle cues must be well-formed: ticks non-decreasing within each
+    /// record (correct reveal ordering) and every text character renderable by the game font
+    /// (the 73-glyph set + space). An unrenderable char would draw wrong on screen. Skips if the
+    /// game data isn't in this checkout.
+    #[test]
+    fn real_subtitles_are_monotonic_and_font_renderable() {
+        let db = ["output/_tmp_iso/DESCRIPT.DES", "../output/_tmp_iso/DESCRIPT.DES"]
+            .iter()
+            .find_map(|p| DescriptDb::parse_file(p).ok());
+        let Some(db) = db else { return };
+        let exe = match std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        {
+            Ok(b) => b,
+            Err(_) => return,
+        };
+        let (map, space) = (0x14c22usize, exe[0x14c22 + b' ' as usize]);
+        let renderable = |ch: char| ch == ' ' || (ch.is_ascii() && exe[map + ch as usize] != space);
+        let mut cues = 0;
+        for r in &db.records {
+            let mut prev = 0u16;
+            for cue in &r.subtitles {
+                assert!(cue.tick >= prev, "{}: subtitle ticks must be non-decreasing", r.name);
+                prev = cue.tick;
+                for ch in cue.text.chars() {
+                    assert!(renderable(ch), "{}: char {ch:?} not in the game font", r.name);
+                }
+                cues += 1;
+            }
+        }
+        if cues > 0 {
+            assert_eq!(cues, 48, "expected 48 subtitle cues in DESCRIPT.DES");
+        }
+    }
+
     #[test]
     fn record_length_excludes_next_record_kind_byte() {
         let count = 2u16;
