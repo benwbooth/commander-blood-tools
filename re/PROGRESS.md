@@ -512,3 +512,23 @@ verified at the value level - not the dynamic per-frame nav math, not the object
 active play, not the VM variable evolution. A deeper state check (drive active navigation, read
 the evolving camera/destinations, compare to our engine's per-frame computation) is the next
 step. Positive data points on the state axis; not whole-game state parity.
+
+## Behavioral verification: STATE parity - render clip rect matches decoded 320x200 — 2026-07
+Broadened the state-axis confirmation by reading render-state globals from the live game vs our
+static RE decode:
+- x-CLIP: DS:0x5235 = 0, DS:0x5237 = 0x140 (320). Our decode: 0x5235/0x5237 = x-clip bounds
+  (gfx_clipped_draw 0x3321). Live = [0, 320] = full screen width. MATCH.
+- y-CLIP: DS:0x5239 = 0, DS:0x523b = 0xC8 (200). Our decode: 0x5239/0x523b = y-clip min/max
+  (graphics_plot_modex 0x3428, back_buffer_fill 0x3dbf). Live = [0, 200] = full screen height.
+  MATCH.
+So the game's runtime clip rectangle is exactly [0,320]x[0,200] - confirming our decoded screen
+geometry (mode-X 320x200) against live memory, confound-free.
+- DS:0x5221:0x5223 = 0000:2cee = the display-page far pointer to a RAM back-buffer this frame
+  (consistent with the decoded double-buffering; the 0xa000 in set_vga_segment 0xD75 is the init
+  value, and the page-flip swaps the segment - so 0x2cee here is the off-screen page, not a
+  contradiction).
+Running tally of confound-free positive equivalence results: (1) palette CHART.FD 120/120
+[asset], (2) camera origin (10000,12000,0) [state], (3) nav destinations (10200,12100,900)
+[state], (4) clip rect [0,320]x[0,200] [state]. Four independent confirmations across asset +
+state axes. STILL NOT whole-game: dynamic per-frame math, VM evolution, object table under play,
+and display-frame pixels remain unverified.
