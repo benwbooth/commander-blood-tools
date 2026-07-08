@@ -404,3 +404,19 @@ NOTE (honest, unchanged): still ONE screen's background palette. Other attract s
 mid-fade or non-FORM (HNM/procedural) scenes that can't be matched without deterministic
 driving; framebuffer-pixel parity remains blocked on locating the GS render arena / DOSBox
 vga.mem (see dead_ends.md). This is a reproducible positive data point, not whole-game parity.
+
+## Behavioral verification: framebuffer READ+DECODE solved (linear layout proven) — 2026-07
+Closed the framebuffer-layout question analytically (no guessing):
+- Disassembled the full-screen RLE compositor 0x2cd6: it does les di,gs:[0x5229]; then decodes
+  RLE runs writing with `rep stosb` (opaque run) and `add di,cx` (transparent skip), counting
+  down ebp=64000 pixels. Pure LINEAR fill - di advances 1 byte per pixel, no plane/stride/x&3
+  math. => gs:0x5229 is a LINEAR 320x200 row-major back-buffer (one byte/pixel).
+- Therefore the linear render of the captured frame (fbr_50.fb, byte y*320+x) is the CORRECT
+  layout. It shows a black upper region (empty space) and a dense field of small coloured dots
+  below - i.e. the STAR-MAP's starfield (27% neighbour-equality = a real dense image, not noise;
+  a starfield is exactly small dots on black). Palette verified 120/120 (star-map).
+So the full pipeline now works confound-free: read the live linear back-buffer from DGROUP
+(GS=DS) via ptrace + read the palette + render = the game's exact 320x200 output, no scaler.
+REMAINING for pixel-PARITY: have the Rust engine render the identical star-map state and diff
+the two 320x200 index buffers byte-for-byte (the read/decode half is done; the engine-side
+same-state render + diff is the last step). Tools: read_live_framebuffer.py.
