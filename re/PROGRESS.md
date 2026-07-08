@@ -799,3 +799,16 @@ the paths where a later-frame bug (delta overflow, out-of-range write) would hid
 This is the deepest asset-decoder verification yet: every frame of every video decoded under
 overflow checking. No bug found (the 3 real bugs this session were all in sprites). STILL not
 whole-game: byte-exact display parity + all-function behavioral parity remain unverified.
+
+## Verification: entire suite passes in DEBUG mode (overflow-checked) — 2026-07
+Ran the FULL test suite (432 tests) in debug mode, which enables Rust's arithmetic overflow
+checks (panic on integer over/underflow, out-of-bounds shifts, index OOB). ALL 432 pass, 0
+failures, no overflow/panic. This spans:
+- every asset decoder over its FULL real asset set (sprite 43 banks, LBM 169, HNM 645 all-frames,
+  SND 25, VOC 44) - all decode without any integer overflow,
+- all VM walk+execution over the 5 real scripts, all ship3d fixed-point math, all execution_trace
+  behavioral tests, all ~33 exe-comparison tests.
+So the tested codebase is INTEGER-OVERFLOW SAFE end-to-end while processing the real game data -
+a class of latent bug (silent wrap in release) proven absent across every exercised path. No new
+bug found; the 3 real bugs this session were logic (sprite dispatch/offset), all fixed. STILL not
+whole-game: display-frame pixel parity + all-function behavioral parity remain unverified.
