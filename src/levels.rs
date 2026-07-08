@@ -206,6 +206,38 @@ pub fn parse_room_view(filename: &str, prefix: &str) -> Option<(String, char)> {
 mod tests {
     use super::*;
 
+    /// Every `LEVEL_DIRECTORY` entry must match the game's resource name table compiled into
+    /// BLOODPRG.EXE (file 0xCDF4 = FS:0x0c04, 16-byte filename records indexed by resource id),
+    /// byte-for-byte at the record's stem. Skips if the exe isn't in this checkout.
+    #[test]
+    fn level_directory_matches_bloodprg_resource_table() {
+        let exe = match std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        {
+            Ok(b) => b,
+            Err(_) => return,
+        };
+        const BASE: usize = 0xCDF4;
+        let mut checked = 0;
+        for e in LEVEL_DIRECTORY {
+            let rec = &exe[BASE + e.index as usize * 16..BASE + e.index as usize * 16 + 16];
+            let exe_name = rec.split(|&b| b == 0).next().unwrap();
+            let exe_str = std::str::from_utf8(exe_name).unwrap().to_ascii_lowercase();
+            let stem = e.stem.to_ascii_lowercase();
+            // sprite/world stems drop the extension; compare the leading filename stem.
+            let exe_stem = exe_str.split('.').next().unwrap();
+            let eng_stem = stem.split('.').next().unwrap();
+            assert_eq!(
+                exe_stem, eng_stem,
+                "id {}: engine {:?} vs exe {:?}",
+                e.index, e.stem, exe_str
+            );
+            checked += 1;
+        }
+        assert_eq!(checked, LEVEL_DIRECTORY.len());
+        assert_eq!(checked, 53, "expected 53 resource entries");
+    }
+
     #[test]
     fn world_resource_ids_match_the_fs0c04_table() {
         // The resource IDs the game loads worlds by (verified vs the FS:0x0c04 table).

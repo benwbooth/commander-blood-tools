@@ -588,3 +588,15 @@ traces - NOT every one of the ~435 functions, NOT the full composited render out
 descriptor/sprite-pixel runtime values. Broad and passing != whole-game per-byte parity. The
 coverage is substantial and real, but targeted; the uncovered remainder (full render pipeline,
 all functions behaviorally, display-frame pixels) is exactly why 100% is not met.
+
+## Behavioral verification: STATIC-DATA parity #6 - level directory matches exe resource table — 2026-07
+Verified the full resource name table and made it a permanent regression test:
+- src/levels.rs LEVEL_DIRECTORY (53 entries) vs BLOODPRG.EXE file 0xCDF4 (FS:0x0c04, 16-byte
+  filename records indexed by resource id): 53/53 stems match byte-for-byte (fupcom.spr,
+  nosound.drv, script1.cod/bas/var/dic/deb, radio.spr, buffer x5, bappel/btv/borxx/bcarte/
+  bhyper/bpol/aphyper/appol.spr, black.ext, kult.ext, ...).
+- Added test level_directory_matches_bloodprg_resource_table (passes) - now part of the suite
+  (420 tests). This is confirmation #6 on the static-data axis.
+Tally: 6 confound-free positives - asset (palette 120/120); state (camera, nav, clip); static-
+data (ship-3D vertex table 32/32; resource name table 53/53). STILL targeted, not whole-game:
+full render output, all-function behavior, and descriptor/sprite runtime pixels remain unverified.
