@@ -20,7 +20,7 @@ use machine::Machine;
 /// from the disassembly (0x2DE2..0x2E32); verified bit-exact vs the binary by the oracle vectors.
 pub fn prng_2de2(m: &mut Machine) {
     let cs = m.regs.cs;
-    let modulus = m.regs.ax; // mov dx, ax  (dx is scratch, restored by pop)
+    let modulus = m.regs.ax(); // mov dx, ax  (dx is scratch, restored by pop)
 
     // mov bl,cs:[0xAF0]; mov bh,cs:[0xAF1]; mov cx,8; xor ax,ax (clears CF)
     let mut bl = m.read8(cs, 0xaf0);
@@ -67,7 +67,7 @@ pub fn prng_2de2(m: &mut Machine) {
             ax = ax.wrapping_sub(modulus);
         }
     }
-    m.regs.ax = ax;
+    m.regs.set_ax(ax);
     // bx/cx/dx are pushed then popped -> unchanged; we never touched m.regs.{bx,cx,dx}.
 }
 
@@ -76,7 +76,7 @@ pub fn prng_2de2(m: &mut Machine) {
 /// CF. `AX`/`DS` unchanged. Lifted 1-to-1; oracle-verified (return regs, memory, all 6 flags).
 pub fn func_a734(m: &mut Machine) {
     let ds = m.regs.ds;
-    let ax = m.regs.ax;
+    let ax = m.regs.ax();
     let v1 = m.read16(ds, 0xd8c);
     let r1 = m.regs.add16(v1, ax);
     m.write16(ds, 0xd8c, r1);
@@ -98,12 +98,21 @@ pub fn func_a744(m: &mut Machine) {
 /// address `0x1FB5 + 4*ax` (16-bit wrapping), reads the word there (DS-relative) into `BX`.
 /// Flags come from the 4th `add`. Lifted 1-to-1; oracle-verified (BX + all 6 flags).
 pub fn func_9f80(m: &mut Machine) {
-    let ax = m.regs.ax;
+    let ax = m.regs.ax();
     let mut addr: u16 = 0x1fb5;
     for _ in 0..4 {
         addr = m.regs.add16(addr, ax);
     }
-    m.regs.bx = m.read16(m.regs.ds, addr);
+    m.regs.set_bx(m.read16(m.regs.ds, addr));
+}
+
+/// `func_533c` — file 0x533C (resource_get_field4): `push bx; shl ax,3; mov bx,ax;
+/// mov eax,fs:[bx+4]; pop bx; retf`. Loads `EAX` from the dword at `fs:(ax*8 + 4)` — the +4 field
+/// of the resource-table entry indexed by `AX`. `BX` preserved. Flags come from `shl ax,3`
+/// (CF/ZF/SF/PF defined; OF/AF undefined for a >1-bit shift). Lifted 1-to-1; oracle-verified.
+pub fn func_533c(m: &mut Machine) {
+    let shifted = m.regs.shl16(m.regs.ax(), 3);
+    m.regs.eax = m.read32(m.regs.fs, shifted.wrapping_add(4));
 }
 
 #[cfg(test)]
@@ -111,6 +120,45 @@ mod tests {
     use super::machine::Machine;
     use super::*;
     use serde::Deserialize;
+
+    #[derive(Deserialize)]
+    struct F533cVec {
+        ax: u16,
+        bx: u16,
+        off: u16,
+        dword: u32,
+        eax_out: u32,
+        bx_out: u16,
+        flags: Flags,
+    }
+
+    #[test]
+    fn func_533c_matches_oracle_vectors() {
+        let raw = match std::fs::read_to_string("re/tools/oracle_vectors/func_533c.json")
+            .or_else(|_| std::fs::read_to_string("../re/tools/oracle_vectors/func_533c.json"))
+        {
+            Ok(s) => s,
+            Err(_) => return,
+        };
+        const FS: u16 = 0x4000;
+        let vecs: Vec<F533cVec> = serde_json::from_str(&raw).unwrap();
+        assert!(!vecs.is_empty());
+        for (i, v) in vecs.iter().enumerate() {
+            let mut m = Machine::new();
+            m.regs.fs = FS;
+            m.regs.set_ax(v.ax);
+            m.regs.set_bx(v.bx);
+            m.write32(FS, v.off, v.dword);
+            func_533c(&mut m);
+            assert_eq!(m.regs.eax, v.eax_out, "vec {i}: EAX");
+            assert_eq!(m.regs.bx(), v.bx_out, "vec {i}: BX preserved");
+            // shl by 3: only CF/ZF/SF/PF are architecturally defined.
+            assert_eq!(m.regs.cf, v.flags.cf, "vec {i}: CF");
+            assert_eq!(m.regs.zf, v.flags.zf, "vec {i}: ZF");
+            assert_eq!(m.regs.sf, v.flags.sf, "vec {i}: SF");
+            assert_eq!(m.regs.pf, v.flags.pf, "vec {i}: PF");
+        }
+    }
 
     #[derive(Deserialize)]
     struct Flags {
@@ -147,11 +195,11 @@ mod tests {
         for (i, v) in vecs.iter().enumerate() {
             let mut m = Machine::new();
             m.regs.ds = DS;
-            m.regs.ax = v.ax;
+            m.regs.set_ax(v.ax);
             m.write16(DS, 0xd8c, v.w1);
             m.write16(DS, 0xd9a, v.w2);
             func_a734(&mut m);
-            assert_eq!(m.regs.ax, v.ax_out, "vec {i}: AX");
+            assert_eq!(m.regs.ax(), v.ax_out, "vec {i}: AX");
             assert_eq!(m.read16(DS, 0xd8c), v.w1_out, "vec {i}: [0xD8C]");
             assert_eq!(m.read16(DS, 0xd9a), v.w2_out, "vec {i}: [0xD9A]");
             assert_eq!(m.regs.cf, v.flags.cf, "vec {i}: CF");
@@ -213,7 +261,7 @@ mod tests {
         for (i, v) in vecs.iter().enumerate() {
             let mut m = Machine::new();
             m.regs.ds = DS;
-            m.regs.ax = v.ax;
+            m.regs.set_ax(v.ax);
             let addr = (0x1fb5u16)
                 .wrapping_add(v.ax)
                 .wrapping_add(v.ax)
@@ -221,7 +269,7 @@ mod tests {
                 .wrapping_add(v.ax);
             m.write16(DS, addr, v.word);
             func_9f80(&mut m);
-            assert_eq!(m.regs.bx, v.bx_out, "vec {i}: BX");
+            assert_eq!(m.regs.bx(), v.bx_out, "vec {i}: BX");
             assert_eq!(m.regs.cf, v.flags.cf, "vec {i}: CF");
             assert_eq!(m.regs.pf, v.flags.pf, "vec {i}: PF");
             assert_eq!(m.regs.af, v.flags.af, "vec {i}: AF");
@@ -260,13 +308,13 @@ mod tests {
         for (i, v) in vecs.iter().enumerate() {
             let mut m = Machine::new();
             m.regs.cs = v.cs;
-            m.regs.ax = v.ax_in;
+            m.regs.set_ax(v.ax_in);
             m.write16(v.cs, 0xaee, v.seed);
             m.write8(v.cs, 0xaf0, v.a);
             m.write8(v.cs, 0xaf1, v.b);
             m.write8(v.cs, 0xaf2, v.counter);
             prng_2de2(&mut m);
-            assert_eq!(m.regs.ax, v.ax_out, "vec {i}: AX");
+            assert_eq!(m.regs.ax(), v.ax_out, "vec {i}: AX");
             assert_eq!(m.read8(v.cs, 0xaf0), v.a_out, "vec {i}: a");
             assert_eq!(m.read8(v.cs, 0xaf1), v.b_out, "vec {i}: b");
             assert_eq!(m.read8(v.cs, 0xaf2), v.counter_out, "vec {i}: counter");

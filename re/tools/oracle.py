@@ -98,3 +98,25 @@ for _ in range(300):
     vecs3.append(dict(ax=ax, word=word, bx_out=o["regs"]["bx"], flags=o["flags"]))
 json.dump(vecs3, open("re/tools/oracle_vectors/func_9f80.json", "w"))
 print(f"wrote {len(vecs3)} func_9f80 oracle vectors")
+
+# --- spec: func_533c  (push bx; shl ax,3; mov bx,ax; mov eax,fs:[bx+4]; pop bx; retf) ---
+# resource_get_field4: EAX = dword at fs:(ax*8 + 4). BX preserved. Flags from shl ax,3.
+FS = 0x4000
+spec4 = dict(name="func_533c", entry=0x533C, retf=True, out_regs=["eax", "bx"], out_mem=[])
+vecs4 = []
+random.seed(424242)
+while len(vecs4) < 300:
+    ax = random.randint(0, 0xFFFF)
+    bx = random.randint(0, 0xFFFF)         # must be preserved
+    shifted = (ax * 8) & 0xFFFF
+    off = (shifted + 4) & 0xFFFF
+    if off + 3 >= 0x10000:                  # skip 64K-boundary-crossing dword (offset-wrap edge)
+        continue
+    dword = random.randint(0, 0xFFFFFFFF)
+    inp = dict(regs={"ax": ax, "bx": bx, "fs": FS},
+               mem=[(FS, off, struct.pack("<I", dword))])
+    o = run(spec4, inp)
+    vecs4.append(dict(ax=ax, bx=bx, off=off, dword=dword,
+                      eax_out=o["regs"]["eax"], bx_out=o["regs"]["bx"], flags=o["flags"]))
+json.dump(vecs4, open("re/tools/oracle_vectors/func_533c.json", "w"))
+print(f"wrote {len(vecs4)} func_533c oracle vectors")

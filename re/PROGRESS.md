@@ -932,3 +932,16 @@ STATUS: 4 / 222+ functions lifted+verified (prng_2de2, func_a734, func_a744, fun
 bit-exact vs the binary incl. full flag state. Deferred: shift/bsf leaves (0x533c, 0x6023) pending
 per-flag "defined" tracking (shl OF/AF undefined for count>1 - assert only defined flags). The
 grind continues; infrastructure makes each lift ~1 spec + 1 fn + 1 test. Honest: 4 of 222+.
+
+## PATH B: 32-bit register foundation + 5th function (shift/eax) — 2026-07
+Upgraded the Machine to faithful 386 registers + lifted a function needing them:
+- Regs now 32-bit (eax..esp) with exact 16-bit (ax) and 8-bit (al/ah) sub-register aliasing
+  (a 16-bit write preserves the high word). BLOODPRG is 386 code, so this is required for
+  fidelity. Added Machine::read32/write32, and Regs::shl16 (exact DEFINED flags CF/ZF/SF/PF;
+  OF/AF undefined for >1-bit shifts -> assigned deterministically but NOT oracle-asserted).
+- func_533c (0x533C, resource_get_field4): shl ax,3; mov eax,fs:[ax*8+4]; retf. 300/300 vectors
+  bit-exact on EAX (32-bit) + BX-preserved + the 4 defined flags. First 32-bit-result + shift lift.
+- Existing 4 functions re-verified against the 32-bit regs (all pass).
+STATUS: 5 / 222+ functions lifted+verified. Foundation now handles 32-bit regs, 8086 ADD/SHL
+flags, undefined-flag exclusion, memory 8/16/32. This unblocks the many shift/32-bit leaves.
+Honest: 5 of 222+, not 100%.

@@ -10,26 +10,30 @@
 //! This is deliberately NOT idiomatic — it mirrors the CPU. Idiomatic Rust lives in the engine
 //! crate; this module exists only to be provably identical to the DOS binary.
 
-/// The 8086 register file (16-bit general/segment registers + FLAGS). 8-bit halves are accessed
-/// through methods so `al`/`ah` stay consistent with `ax`, matching the hardware aliasing.
+/// The 80386 register file: 32-bit general registers (`eax`..`esp`) with 16-bit (`ax`) and 8-bit
+/// (`al`/`ah`) sub-register accessors that alias them exactly like the hardware, plus segment
+/// registers and the arithmetic flags. BLOODPRG is 386 code (0x66/0x67 prefixes, `eax`/`esi`…),
+/// so registers are 32-bit; a 16-bit op writes the low word and leaves the high word intact.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Regs {
-    pub ax: u16,
-    pub bx: u16,
-    pub cx: u16,
-    pub dx: u16,
-    pub si: u16,
-    pub di: u16,
-    pub bp: u16,
-    pub sp: u16,
+    pub eax: u32,
+    pub ebx: u32,
+    pub ecx: u32,
+    pub edx: u32,
+    pub esi: u32,
+    pub edi: u32,
+    pub ebp: u32,
+    pub esp: u32,
     pub cs: u16,
     pub ds: u16,
     pub es: u16,
     pub ss: u16,
     pub fs: u16,
     pub gs: u16,
-    /// Carry flag (bit 0 of FLAGS). Only the flags the lifts actually use are modelled explicitly;
-    /// extend as needed and keep them oracle-verified.
+    /// Arithmetic flags. Only the flags the lifts use are modelled; extend as needed and keep
+    /// them oracle-verified. Instructions leaving a flag *architecturally undefined* (e.g. OF/AF
+    /// after a multi-bit shift) still assign it deterministically here, but such flags are not
+    /// asserted in the oracle tests (the real program never depends on them).
     pub cf: bool,
     pub zf: bool,
     pub sf: bool,
@@ -39,36 +43,61 @@ pub struct Regs {
     pub df: bool,
 }
 
-macro_rules! byte_halves {
-    ($lo:ident, $set_lo:ident, $hi:ident, $set_hi:ident, $reg:ident) => {
+macro_rules! word_reg {
+    ($w:ident, $set_w:ident, $lo:ident, $set_lo:ident, $hi:ident, $set_hi:ident, $e:ident) => {
+        #[inline]
+        pub fn $w(&self) -> u16 {
+            self.$e as u16
+        }
+        #[inline]
+        pub fn $set_w(&mut self, v: u16) {
+            self.$e = (self.$e & 0xffff_0000) | v as u32;
+        }
         #[inline]
         pub fn $lo(&self) -> u8 {
-            self.$reg as u8
+            self.$e as u8
         }
         #[inline]
         pub fn $set_lo(&mut self, v: u8) {
-            self.$reg = (self.$reg & 0xff00) | v as u16;
+            self.$e = (self.$e & 0xffff_ff00) | v as u32;
         }
         #[inline]
         pub fn $hi(&self) -> u8 {
-            (self.$reg >> 8) as u8
+            (self.$e >> 8) as u8
         }
         #[inline]
         pub fn $set_hi(&mut self, v: u8) {
-            self.$reg = (self.$reg & 0x00ff) | ((v as u16) << 8);
+            self.$e = (self.$e & 0xffff_00ff) | ((v as u32) << 8);
+        }
+    };
+}
+
+macro_rules! word_only {
+    ($w:ident, $set_w:ident, $e:ident) => {
+        #[inline]
+        pub fn $w(&self) -> u16 {
+            self.$e as u16
+        }
+        #[inline]
+        pub fn $set_w(&mut self, v: u16) {
+            self.$e = (self.$e & 0xffff_0000) | v as u32;
         }
     };
 }
 
 impl Regs {
-    byte_halves!(al, set_al, ah, set_ah, ax);
-    byte_halves!(bl, set_bl, bh, set_bh, bx);
-    byte_halves!(cl, set_cl, ch, set_ch, cx);
-    byte_halves!(dl, set_dl, dh, set_dh, dx);
+    word_reg!(ax, set_ax, al, set_al, ah, set_ah, eax);
+    word_reg!(bx, set_bx, bl, set_bl, bh, set_bh, ebx);
+    word_reg!(cx, set_cx, cl, set_cl, ch, set_ch, ecx);
+    word_reg!(dx, set_dx, dl, set_dl, dh, set_dh, edx);
+    word_only!(si, set_si, esi);
+    word_only!(di, set_di, edi);
+    word_only!(bp, set_bp, ebp);
+    word_only!(sp, set_sp, esp);
 
     /// 16-bit `ADD` with exact 8086 flag semantics: returns the truncated result and sets
-    /// `cf/pf/af/zf/sf/of` on `self`. Reused by every lifted arithmetic instruction so flag
-    /// state stays bit-exact (a caller may branch on it). PF is even-parity of the low byte.
+    /// `cf/pf/af/zf/sf/of`. Reused by every lifted arithmetic instruction so flag state stays
+    /// bit-exact. PF is even-parity of the low byte.
     pub fn add16(&mut self, a: u16, b: u16) -> u16 {
         let full = a as u32 + b as u32;
         let r = full as u16;
@@ -78,6 +107,29 @@ impl Regs {
         self.sf = r & 0x8000 != 0;
         self.of = (a ^ r) & (b ^ r) & 0x8000 != 0;
         self.pf = (r as u8).count_ones() % 2 == 0;
+        r
+    }
+
+    /// 16-bit `SHL` by `count` (386: count masked to 5 bits). Sets the DEFINED flags exactly:
+    /// CF = last bit shifted out, and ZF/SF/PF from the result. OF is defined only for count==1
+    /// (OF = SF xor CF); AF is undefined — both are assigned here but NOT oracle-asserted for
+    /// count>1. A count of 0 changes no flags.
+    pub fn shl16(&mut self, val: u16, count: u8) -> u16 {
+        let count = count & 0x1f;
+        if count == 0 {
+            return val;
+        }
+        let mut r = val;
+        let mut cf = false;
+        for _ in 0..count {
+            cf = r & 0x8000 != 0;
+            r = r.wrapping_shl(1);
+        }
+        self.cf = cf;
+        self.zf = r == 0;
+        self.sf = r & 0x8000 != 0;
+        self.pf = (r as u8).count_ones() % 2 == 0;
+        self.of = (r & 0x8000 != 0) != cf; // exact for count==1; deterministic otherwise
         r
     }
 }
@@ -129,6 +181,15 @@ impl Machine {
         self.write8(seg, off, lo);
         self.write8(seg, off.wrapping_add(1), hi);
     }
+    #[inline]
+    pub fn read32(&self, seg: u16, off: u16) -> u32 {
+        (self.read16(seg, off) as u32) | ((self.read16(seg, off.wrapping_add(2)) as u32) << 16)
+    }
+    #[inline]
+    pub fn write32(&mut self, seg: u16, off: u16, v: u32) {
+        self.write16(seg, off, v as u16);
+        self.write16(seg, off.wrapping_add(2), (v >> 16) as u16);
+    }
 }
 
 #[cfg(test)]
@@ -138,12 +199,14 @@ mod tests {
     #[test]
     fn byte_halves_alias_the_word_registers() {
         let mut r = Regs::default();
-        r.ax = 0x1234;
+        r.eax = 0xDEAD_1234;
+        assert_eq!(r.ax(), 0x1234);
         assert_eq!((r.al(), r.ah()), (0x34, 0x12));
         r.set_al(0xAB);
-        assert_eq!(r.ax, 0x12AB);
-        r.set_ah(0xCD);
-        assert_eq!(r.ax, 0xCDAB);
+        assert_eq!(r.ax(), 0x12AB);
+        assert_eq!(r.eax, 0xDEAD_12AB, "16/8-bit writes preserve the high dword");
+        r.set_ax(0x5678);
+        assert_eq!(r.eax, 0xDEAD_5678);
     }
 
     #[test]
