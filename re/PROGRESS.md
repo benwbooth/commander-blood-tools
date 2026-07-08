@@ -532,3 +532,19 @@ Running tally of confound-free positive equivalence results: (1) palette CHART.F
 [state], (4) clip rect [0,320]x[0,200] [state]. Four independent confirmations across asset +
 state axes. STILL NOT whole-game: dynamic per-frame math, VM evolution, object table under play,
 and display-frame pixels remain unverified.
+
+## Behavioral verification: object table populated in gameplay (structural, not value-matched) — 2026-07
+Read the entity_object_table DS:0x6212 in two states:
+- ATTRACT star-map (50s): all records zero (entity system not active in attract nav).
+- GAMEPLAY (72s, launch args, main nav interface): records POPULATED with structured data -
+  rec0 flags=0x0055 id=0x004d + pointer/data words; rec1 flags=0x0020 id=0x0051; rec2
+  flags=0x0071. So the 32-byte entity-record table IS live and populated during play, confirming
+  the decoded object system activates.
+HONEST LIMITATION: the populated field values do NOT cleanly map onto our decoded 32-byte layout
+(+0 flags,+8 id,+0xc/+0xe pos): the "pos" words read as (73,31130) etc = not screen coords, so
+either the record stride/field offsets need refinement or these hold world/other coords. This is
+a STRUCTURAL confirmation (table active + populated in the right state) but NOT a value-level
+match - so it is NOT added to the confirmed-parity tally. The clean value-matched tally stays at
+4 (palette 120/120; camera origin; nav destinations; clip rect). Refining the 0x6212 record
+field layout against these live bytes (and getting a ground-truth object set) is follow-up work.
+Also note DS:0x2789 (zoom) = 0 in both states.
