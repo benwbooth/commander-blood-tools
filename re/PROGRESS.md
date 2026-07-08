@@ -843,3 +843,18 @@ through project_star_map_point, matching ship_3d_object_sprite_project. That is 
 reimplementation work (the math is done; the destination data source + per-frame update FSM at
 0x8A6A remain to port), gated on per-pixel verification. Precise root-cause scoping of the nav
 render gap - the divergence is placeholder INPUT, not wrong projection.
+
+## Refinement: nav destination data is context-dependent (correction to the root-cause) — 2026-07
+Read DS:0x4F09 live during the BRIDGE screen (gameplay 72s): all ZERO (camera origin 0,0,0 too).
+So the previous turn's root-cause ("engine should just project the 11 real 0x4F09 destinations")
+is REFINED/partly corrected:
+- At the BRIDGE screen ("Commander BLOOD V1.0", orb + bottom pyramids): 0x4F09 = all zero. So the
+  bridge's bottom pyramid bar is likely a STATIC HUD arrangement, not projected nav destinations.
+- At the attract STAR-MAP: 0x4F09 = default (10200,12100,900) x11 (not real per-world positions).
+- The PROJECTED destinations only populate during ACTIVE star-map navigation (a distinct state).
+So the nav/bridge rendering spans MULTIPLE screens/states (bridge HUD, star-map background, active
+nav projection), each with a different data source, and 0x4F09 is only meaningful in the active-nav
+state. Faithful reproduction requires modelling the per-screen state machine (which screen is up,
+what feeds the pyramids in each), not a single projection. This is honest scoping: the divergence
+is a multi-screen STATE + composition gap, deeper than one projection call. Decoders remain
+accurate; the nav/bridge scene-state machine is the substantial unported piece.
