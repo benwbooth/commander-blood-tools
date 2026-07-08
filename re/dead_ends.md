@@ -340,3 +340,24 @@ displayed mode-X page) and de-interleave; (b) determine the game's back-buffer s
 from the blit routine (0x509d dirty-rect blit / 0x3e46 full blit) which encodes the exact
 src->dst layout. The frame DATA is captured and proven real (re/tools/read_live_framebuffer.py);
 only the layout mapping remains. This is progress from the prior null-pointer state.
+
+## Display-frame parity via DOSBox vga.mem: BLOCKED on emulator-internal layout (2026-07)
+Extensive attempt (multiple turns/runs) to read the DISPLAYED mode-X frame from DOSBox-X memory,
+after establishing that most screens render direct to VGA (gs:0x521d=A000), not the linear
+texture buffer gs:0x5229:
+- dos_base+0xA0000 (conventional-RAM VGA window) = all zeros: DOSBox pages VGA separately.
+- Enumerated all process mmaps; the VGA-sized anonymous rw regions (256KB, 132KB) are 0-1%
+  nonzero = NOT the active framebuffer. The live frame is inside a LARGER emulator-internal
+  allocation (DOSBox-X SVGA memsize, several MB) whose internal layout (plane storage order,
+  page base within vga.mem) is emulator-private and not identifiable by region size alone.
+- Locating it would require either matching a de-interleaved window against the paired
+  screenshot across many MB (expensive, fragile) or reading DOSBox-X's C++ `vga.mem.linear`
+  symbol via a debug build. Neither is a quick memory read.
+CONCLUSION: confound-free DISPLAY-frame pixel parity is not reachable with plain /proc/mem +
+the DS anchor (which only reaches DGROUP-relative data: palette 0x5b58, VM/object state, and
+the starfield texture 0x5229). Reachable via memory: palette (DONE, 120/120), and any
+DGROUP-relative game STATE. NOT reachable this way: the composited VGA display frame.
+Alternatives for a future session: (a) a DOSBox-X debug build exposing vga.mem; (b) compare the
+geometry-correct SCREENSHOT (capture_real_game_native.sh) accepting the scaler/palette confound
+as a bounded qualitative check; (c) pivot verification to DGROUP-relative STATE parity (VM
+records, object table, nav state) which IS memory-reachable. Stopping the vga.mem drill.
