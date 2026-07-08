@@ -765,3 +765,15 @@ The correct primitive (blit_sprite_frame_at) + captured offsets are in place; co
 animated-sprite render paths (orb, and any other centre-blitted animation) to offset-anchoring is
 the scoped remaining render fix, pending the anchor base + visual verification (framebuffer-parity
 gated). Honest scoping of a real render-accuracy gap; the data/primitive are correct and tested.
+
+## Behavioral verification: engine render pipeline produces coherent frames (qualitative) — 2026-07
+Ran the engine window under Xvfb and captured its output: at ~30s the engine renders a detailed,
+coherent HNM intro-cutscene frame (nebula + spaceship + star) - confirming the full pipeline
+(HNM decode -> linear framebuffer -> x11 present) works end-to-end and produces proper game
+content, not garbage. This is a QUALITATIVE render-pipeline check (the frames look right).
+LIMITS (honest): (a) at 30s the engine is still in the intro, not the nav interface where the
+sprite-anchoring issue lives, so this doesn't exercise blit_sprite_frame_centered on the orb;
+(b) it is not per-pixel parity vs the game - that needs frame-index alignment against a matching
+DOSBox capture (gated on the same alignment/vga.mem issues). So: render pipeline confirmed to
+produce coherent output; byte-exact display parity + the animated-sprite anchoring in-context
+remain unverified. A real positive on pipeline coherence, not whole-game parity.
