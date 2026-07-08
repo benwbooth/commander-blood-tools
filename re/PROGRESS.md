@@ -567,3 +567,24 @@ CONFIRMED-PARITY TALLY now 5 confound-free positives across 3 axes:
   static-data: (5) ship-3D vertex table 32/32 (exe==engine==live).
 STILL NOT whole-game: descriptor/sprite-pixel values, dynamic per-frame math, VM evolution, and
 the composited display frame remain unverified. Five verified data points, not 100%.
+
+## Verification accounting: 419 passing tests incl. ~32 exe-comparison + VM traces — 2026-07
+Fuller (honest) accounting of the EXISTING verification base, beyond the per-turn dynamic tally:
+- The Rust suite has 419 tests, 0 failing. Of these, ~32 test fns load BLOODPRG.EXE and assert
+  engine data/behaviour BYTE-EXACT or math-exact against it, including:
+  * angle_table_matches_binary (the DS:0x4F45 180-entry Q14 trig table),
+  * SHIP_3D_HUD_PYRAMID_VERTICES vs 0x131B8 (32/32, this session),
+  * font glyph tables vs 0x14D28 (extracts_dialogue_font_tables_from_binary),
+  * anim_prng_matches_ror (the 0x1CE:0x0B02 PRNG),
+  * projection_matrix_preserves_binary_fixed_point_operation_order, position_distance_uses_
+    binary_rounded_sqrt, plane_band_copy_reports_scroll_value_like_binary_math, etc.
+  * a large family of execution_trace_* tests that run our VM interpreter and compare record/
+    state/branch behaviour against the decoded COD semantics.
+So static-table parity + VM-semantics parity for the DECODED subsystems is already under test
+and passing. My dynamic /proc/mem work adds a LIVE-runtime axis on top (5 confound-free
+confirmations: palette, camera, nav, clip, vertex table - the last a 3-way exe==engine==live).
+HONEST SCOPE (unchanged): these tests verify the SPECIFIC decoded tables, routines, and VM
+traces - NOT every one of the ~435 functions, NOT the full composited render output, NOT
+descriptor/sprite-pixel runtime values. Broad and passing != whole-game per-byte parity. The
+coverage is substantial and real, but targeted; the uncovered remainder (full render pipeline,
+all functions behaviorally, display-frame pixels) is exactly why 100% is not met.
