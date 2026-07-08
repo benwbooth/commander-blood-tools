@@ -689,3 +689,10 @@ Verified surface: decoders (LBM/sprite/HNM/SND/VOC full sets), data files (DESCR
 resource table, level dir, .ext all worlds, COD all scripts), static tables (vertex/font),
 state (nav/camera/clip), VM (walk+traces). STILL not whole-game: composited display output,
 all-function behavioral parity, runtime pixels unverified.
+
+## Verification: sprite decoder decodes ALL header frames (no drops) — 2026-07
+Strengthened the all-sprite-banks test: for every standard bank, the decoded frame count now
+must equal the header frame_count (frames.len() == header count) - so no frame is silently
+dropped. Verified across all 43 standard banks (total ~600+ frames). Combined with the raw-decode
+bug fix, the sprite decoder is now proven to decode every frame of every standard bank correctly.
+This is the payoff pattern: broad exhaustive tests either confirm 100% coverage or expose a bug.

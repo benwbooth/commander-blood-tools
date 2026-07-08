@@ -230,9 +230,12 @@ mod tests {
                 );
                 continue;
             }
+            let header_count = u16::from_le_bytes([data[2], data[3]]) as usize;
             let frames = decode_sprite_bank_indices(&data)
                 .unwrap_or_else(|| panic!("{name}: standard bank (flags {flags}) must decode"));
             assert!(!frames.is_empty(), "{name}: has frames");
+            // No frame is silently dropped: the decoded count equals the header frame count.
+            assert_eq!(frames.len(), header_count, "{name}: decoded all header frames");
             for f in &frames {
                 assert_eq!(f.indices.len(), f.width * f.height, "{name}: frame index count");
             }
