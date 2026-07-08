@@ -8,6 +8,7 @@ pub mod entity;
 pub mod ext;
 pub mod font;
 pub mod hnm;
+pub mod recomp;
 pub mod lbm;
 pub mod levels;
 pub mod manu3;

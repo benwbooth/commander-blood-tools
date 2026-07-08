@@ -870,3 +870,21 @@ Cross-subsystem consistency (subtitles fit the font) is a real correctness prope
 from the nav/bridge scene-state deep-dive (no single screen selector; distributed VM+flag state =
 substantial distributed RE) to lock in this completable verification. STILL not whole-game:
 nav/bridge composition, display-pixel parity, all-function behavioral parity remain unverified.
+
+## PATH B CHOSEN: 1-to-1 static recompilation, per-function oracle-verified — 2026-07
+Maintainer chose path B (provably bit-exact). Built the foundation + first verified function:
+- src/recomp/machine.rs: the shared Machine (8086 register/flag file + flat 1 MB real-mode
+  memory, seg*16+off addressing). Tested.
+- src/recomp/mod.rs: prng_2de2 - the game PRNG (file 0x2DE2, far 0x1CE:0x0B02) LIFTED 1-to-1
+  from the disassembly to operate on the Machine (state at cs:0xAEE/0xAF0/0xAF1/0xAF2, bx/cx/dx
+  preserved, exact rcr/rcl carry chain).
+- re/tools/gen_oracle_vectors.py: runs the REAL DOS function in Unicorn over fuzzed inputs and
+  dumps (input-state -> output-state) vectors to re/tools/oracle_vectors/prng_2de2.json (300).
+- Test prng_2de2_matches_oracle_vectors: replays all 300 -> AX + a/b/counter + seed all
+  BIT-EXACT. So prng_2de2 is provably identical to the binary over its fuzzed domain.
+This is the TEMPLATE for path B: every reachable function follows disasm -> lift(m) -> oracle
+vectors -> bit-exact test. When all are lifted + verified and composed in the binary's call
+graph, the whole program runs identically by construction. Function 1 of ~N done, provably 100%.
+Next: (a) recursive-descent function enumeration from entry + call graph, (b) lift the leaf/pure
+functions first (each a clean oracle win), (c) build the composition (shared Machine + call graph
++ the DOS/hardware boundary for int/port). Suite green.
