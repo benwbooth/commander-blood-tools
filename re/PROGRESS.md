@@ -368,3 +368,23 @@ byte-equivalence result requires a DETERMINISTIC, fully-faded-in, KNOWN scene - 
 scripted drive (drive_real_game.sh navigating to a specific location, waiting for fade-in)
 provides. The free-running attract demo structurally cannot supply it. That scripted drive is
 the completing step; it has not yet been done.
+
+## Behavioral verification: FIRST positive per-byte parity — star-map palette exact — 2026-07
+Achieved the first confound-free per-byte behavioral-equivalence result between the Rust
+reimplementation and the original DOS binary:
+- Captured a stable attract-demo scene's live DAC palette from GS:0x5b58 via ptrace (paired
+  reader re/tools/read_live_scene_palette.py), sampled fully-faded-in (max channel = 63).
+- Matched it against all 173 decoded IFF FORM asset palettes: best = CHART.FD (the star-map/
+  star-chart screen) at 6.06 avg L1/channel, decisively ahead of the next (16.5).
+- Detailed per-color comparison (our decoder's CMAP>>2 DAC vs the live game DAC):
+  * **colors 0..119 (the entire scene-background palette): 120/120 EXACT, byte-for-byte.**
+  * 189/256 total exact. The differences are confined to contiguous ranges 123-127 (a small
+    palette-cycle/animation range) and 193-255 (high indices the game overlays with sprite/UI
+    colours at runtime - NOT part of the static CHART.FD asset, which leaves them 0).
+CONCLUSION: for the star-map screen, our LBM/PBM decoder produces the EXACT palette the DOS game
+loads into its VGA DAC - proven at the byte level, with zero scaling/gamma/scaler confounds
+(direct memory read vs direct asset decode). This is the first positive per-byte parity
+measurement in the project.
+SCOPE (honest): this verifies ONE screen's background PALETTE only - not the framebuffer pixels,
+not sprite/UI palette entries (which are runtime-composed), and not the other screens or the
+render/VM/gameplay logic. It is a concrete positive data point, not whole-game equivalence.
