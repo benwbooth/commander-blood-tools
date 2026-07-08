@@ -438,3 +438,20 @@ draws + procedural starfield + sprite overlays), i.e. the engine must run the sa
 pipeline and produce the same gs:0x5229 bytes - not merely decode the source asset. That full
 same-state compose+diff is the remaining behavioral step. The read/decode harness is complete;
 the engine-side pipeline reproduction is the deep part still outstanding.
+
+## Behavioral verification: attract demo exposes only star-map + HNM; static-scene parity needs driving — 2026-07
+To get a framebuffer-vs-static-asset pixel match (unlike the procedural star-map), sampled
+gs:0x5229 deeper into the attract demo (90s, 120s) hoping for a dialogue/location screen with a
+static full-screen background. Both caught bb_5229 = 0000:0000 (null back-buffer) => the attract
+was showing HNM CUTSCENES, which render via their own path and leave gs:0x5229 unallocated.
+Pattern (confirmed over many samples): the free-running attract demo reliably exposes only
+(a) the STAR-MAP (~50s, back-buffer allocated but PROCEDURALLY composed - starfield, so it does
+not byte-match any static asset), and (b) HNM cutscenes (no back-buffer). It does NOT reliably
+surface a static-background game-engine screen (dialogue/location) whose live gs:0x5229 would be
+a direct blit of a decoded fd/ location asset.
+CONCLUSION: a clean framebuffer pixel-parity result (live back-buffer == our decoded asset)
+requires a DETERMINISTIC drive into actual gameplay (launch with the AMR/EMS args, navigate to a
+dialogue/location screen, read gs:0x5229 when stable) - the same deterministic-driving
+dependency that gates the multi-scene palette comparison. The read/decode harness is complete
+and proven; every remaining behavioral check is now gated on either deterministic gameplay
+driving or full engine-side render-pipeline reproduction. Both are substantial, not yet done.
