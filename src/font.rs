@@ -217,16 +217,24 @@ mod tests {
             Err(_) => return,
         };
         let (map, adv, rows) = (0x14c22usize, 0x14cd2usize, 0x14d28usize);
+        let space_idx = exe[map + b' ' as usize];
         let mut checked = 0;
-        for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,!?:".chars() {
-            let idx = exe[map + ch as usize] as usize;
-            if let Some(g) = game_font_glyph(ch) {
-                checked += 1;
-                assert_eq!(g.rows, exe[rows + idx * 8..rows + idx * 8 + 8], "glyph '{ch}' rows");
-                assert_eq!(g.advance as u8, exe[adv + idx], "glyph '{ch}' advance");
+        // Verify EVERY printable ASCII char that the exe maps to a non-space glyph -
+        // uppercase, lowercase, digits, and punctuation - byte-for-byte.
+        for c in 33u8..127 {
+            let ch = c as char;
+            let idx = exe[map + c as usize];
+            if idx == space_idx {
+                continue;
             }
+            let g = game_font_glyph(ch)
+                .unwrap_or_else(|| panic!("engine missing glyph for {ch:?} (exe idx {idx})"));
+            checked += 1;
+            let idx = idx as usize;
+            assert_eq!(g.rows, exe[rows + idx * 8..rows + idx * 8 + 8], "glyph '{ch}' rows");
+            assert_eq!(g.advance as u8, exe[adv + idx], "glyph '{ch}' advance");
         }
-        assert!(checked >= 40, "checked most printable glyphs");
+        assert_eq!(checked, 73, "expected 73 printable non-space glyphs incl. lowercase");
     }
 
     #[test]

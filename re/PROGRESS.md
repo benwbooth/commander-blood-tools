@@ -600,3 +600,16 @@ Verified the full resource name table and made it a permanent regression test:
 Tally: 6 confound-free positives - asset (palette 120/120); state (camera, nav, clip); static-
 data (ship-3D vertex table 32/32; resource name table 53/53). STILL targeted, not whole-game:
 full render output, all-function behavior, and descriptor/sprite runtime pixels remain unverified.
+
+## Behavioral verification: STATIC-DATA parity #7 - full font (73 glyphs incl lowercase) — 2026-07
+Broadened the existing font byte-comparison test from ~40 glyphs to the FULL printable set:
+- src/font.rs GAME_FONT_GLYPHS + GAME_FONT_WIDTHS vs BLOODPRG.EXE glyph map 0x14c22 / advances
+  0x14cd2 / rows 0x14d28: all 73 printable ASCII chars the exe maps to a non-space glyph
+  (uppercase A-Z, LOWERCASE a-z, digits 0-9, punctuation !"'+,-.:;?_) match BYTE-FOR-BYTE on both
+  the 8-byte glyph rows AND the advance width. Previously only uppercase+digits+5 punct were
+  checked; lowercase (a idx 39 != A idx 0, distinct glyphs) is now verified too.
+- The engine panics if any exe glyph is missing - none is; 73/73 present and exact.
+Static-data parity confirmations now: vertex table 32/32, resource table 53/53, font 73/73.
+Tally of confound-free positives = 7 (asset palette; state camera/nav/clip; static-data vertex/
+resource/font). Still targeted, not whole-game: full render output, all-function behavior, and
+runtime descriptor/sprite pixels remain unverified.
