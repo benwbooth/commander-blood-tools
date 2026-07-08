@@ -554,3 +554,7 @@ GS:0x0BA3,audio_channel_active_flag,"audio-active/second channel-live flag, test
 0x003225,clipped_blit_w8_b,"clipped blit (sibling of 0x3192): same gs:0x523b height / gs:0x5239 width clip, 8-px span, different reject target 0x32a3"
 0x00356E,clipped_blit_w10,"clipped blit (10-px span variant): cmp dx,gs:[0x523b] height clip; cx=gs:[0x5239]-0xa width clip. Wider-span bounds-checked copy"
 0x00339E,blit_coord_guard,"blit coordinate guard: or dx,dx; je/js skip (reject zero-or-negative coordinate); or bp,bp. Entry guard shared by the clipped-blit family (also at 0x3b85, 0x3c6c) that culls off-screen/degenerate spans before drawing"
+0x004CD6,entity_coord_accumulate,"entity coordinate accumulate: lds si,[di+4] (entity record's +4/+6 data far ptr); add ax,[si+4]; add bx,[si+6]; add dx,[si+4]. Sums the entity's stored x/y offsets into the running screen position"
+0x004E55,table_index_172a,"table index: bx=cs:[0x172a] (const base); bx-=ax; si+=ax; jmp. Indexes a cs-segment table using 0x172a as the base bound (reverse index)"
+0x004F1C,table_index_1728,"table index (sibling of 0x4e55): bx=cs:[0x1728] const base; bx-=ax; si+=ax. Reverse index into a second cs-segment table"
+0x004F62,frame_func_locals18,"framed function: push bp; sub sp,0x12; bp=sp. C-style stack frame with 18 bytes of locals (a compound routine with local working storage)"
