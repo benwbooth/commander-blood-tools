@@ -120,6 +120,65 @@ def gen(entry, retf, n=250):
                    "zf": bool(fl & 0x40), "sf": bool(fl & 0x80), "of": bool(fl & 0x800)}))
     return vecs
 
+def gen_det(entry, retf, n=200):
+    """DETERMINISTIC oracle. Memory = the raw EXE image (no random segment fill); the segments
+    (ds=0x2000 -> phys 0x20000, etc.) index into it, so `ds:si` reads real, reproducible bytes.
+    The Rust verifier mirrors the SAME EXE image into its Machine, so no per-read capture is
+    needed — and with NO read hook the 16-bit retf/read-hook corruption disappears, which lets
+    non-leaf functions whose callees `retf` be composed and verified. Only the WRITE hook (safe)
+    and a stop-at-ret code hook run. Registers are still fuzzed. Vectors carry NO mem_in (the
+    verifier reconstructs input memory from the EXE image)."""
+    vecs = []
+    tries = 0
+    rets = _ret_addrs(entry)
+    while len(vecs) < n and tries < n * 8:
+        tries += 1
+        mu = Uc(UC_ARCH_X86, UC_MODE_16)
+        mu.mem_map(0, 0x300000)
+        mu.mem_write(0, EXE + b"\x00" * (0x120000 - len(EXE)))  # deterministic image, no random fill
+        regs_in = {r: random.randint(0, 0xFFFF) for r, _ in GP}
+        sp0 = 0xFFF0 - (4 if retf else 2)
+        regs_in["sp"] = sp0
+        for r, uc in GP:
+            mu.reg_write(uc, regs_in[r])
+        for s, v in SEGS.items():
+            mu.reg_write({"ds": UC_X86_REG_DS, "es": UC_X86_REG_ES, "fs": UC_X86_REG_FS,
+                          "gs": UC_X86_REG_GS, "ss": UC_X86_REG_SS}[s], v)
+        mu.reg_write(UC_X86_REG_SP, sp0)
+        # return frame (only matters if the function reads it; stop-at-ret means ret never executes)
+        if retf:
+            mu.mem_write(SEGS["ss"] * 16 + 0xFFF0 - 4, struct.pack("<HH", RET_IP, RET_CS))
+        else:
+            mu.mem_write(SEGS["ss"] * 16 + 0xFFF0 - 2, struct.pack("<H", RET_IP))
+        mu.reg_write(UC_X86_REG_CS, 0)
+        writes = {}
+        def onwrite(u, acc, addr, size, val, ud):
+            for k in range(size):
+                writes[addr + k] = (val >> (8 * k)) & 0xFF
+        returned = [False]
+        def oncode(u, addr, size, ud):
+            if addr in rets:
+                returned[0] = True
+                u.emu_stop()
+        mu.hook_add(UC_HOOK_MEM_WRITE, onwrite)
+        mu.hook_add(UC_HOOK_CODE, oncode)
+        try:
+            mu.emu_start(entry, SENT if retf else RET_IP, count=40000)
+        except UcError:
+            continue
+        if not returned[0]:
+            continue
+        # A write into the EXE code image (< len(EXE)) would need the Rust Machine to be preloaded
+        # there too; it already is (full image), so such writes are fine — keep them.
+        fl = mu.reg_read(UC_X86_REG_EFLAGS)
+        vecs.append(dict(
+            regs_in=regs_in, segs=SEGS,
+            regs_out={r: mu.reg_read(uc) for r, uc in OUT},
+            mem_writes=[[a, b] for a, b in writes.items()],
+            flags={"cf": bool(fl & 1), "pf": bool(fl & 4), "af": bool(fl & 0x10),
+                   "zf": bool(fl & 0x40), "sf": bool(fl & 0x80), "of": bool(fl & 0x800)}))
+    return vecs
+
 if __name__ == "__main__":
     entry = int(sys.argv[1], 16); retf = sys.argv[2] == "retf"; name = sys.argv[3]
     v = gen(entry, retf)

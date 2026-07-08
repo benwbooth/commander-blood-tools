@@ -88,7 +88,10 @@ def emit(insn):
         if o.type == capstone.x86.X86_OP_REG:
             return rd(insn.reg_name(o.reg)), o.size
         if o.type == capstone.x86.X86_OP_IMM:
-            return f"0x{o.imm & 0xffffffff:x}", o.size
+            # mask the (possibly sign-extended) immediate to the operand size so the emitted
+            # literal fits the Rust cast target (e.g. `cmp word,-1` -> 0xffff, not 0xffffffff)
+            mask = (1 << (o.size * 8)) - 1
+            return f"0x{o.imm & mask:x}", o.size
         if o.type == capstone.x86.X86_OP_MEM:
             seg, off, sz = mem_addr(insn, o)
             rdfn = {1: "read8", 2: "read16", 4: "read32"}[sz]

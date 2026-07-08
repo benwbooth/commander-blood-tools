@@ -281,6 +281,71 @@ mod tests {
         }
     }
 
+    /// A deterministic-oracle vector: no `mem_in` (input memory IS the EXE image, loaded below).
+    #[derive(Deserialize)]
+    struct DetVec {
+        regs_in: HashMap<String, u16>,
+        segs: HashMap<String, u16>,
+        regs_out: HashMap<String, u32>,
+        mem_writes: Vec<(usize, u8)>,
+        flags: Flags,
+    }
+
+    /// Load the raw BLOODPRG.EXE image (padded to 0x120000, exactly as the oracle maps it).
+    fn load_exe_image() -> Option<Vec<u8>> {
+        let raw = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+            .ok()?;
+        let mut img = raw;
+        img.resize(0x120000, 0);
+        Some(img)
+    }
+
+    /// Verify a lift against DETERMINISTIC oracle vectors (`{name}_det.json`): memory starts as the
+    /// real EXE image (the Machine mirrors what Unicorn saw), so no `mem_in` capture is needed and
+    /// there is no read hook to corrupt 16-bit `retf`. Asserts regs_out + every memory write are
+    /// bit-exact. This is the oracle that can verify pointer-/sentinel-driven and composed
+    /// (retf-callee) functions the random-fuzz oracle cannot.
+    fn verify_det(name: &str, f: fn(&mut Machine), exe: &[u8]) {
+        let raw = match std::fs::read_to_string(format!("re/tools/oracle_vectors/{name}_det.json"))
+            .or_else(|_| std::fs::read_to_string(format!("../re/tools/oracle_vectors/{name}_det.json")))
+        {
+            Ok(s) => s,
+            Err(_) => return,
+        };
+        let vecs: Vec<DetVec> = serde_json::from_str(&raw).unwrap();
+        assert!(!vecs.is_empty(), "{name}: no det vectors");
+        // Addresses any vector writes — restored to the EXE image before each run so a correct
+        // lift sees a pristine deterministic image every time.
+        let mut m = Machine::new();
+        m.mem[..exe.len()].copy_from_slice(exe);
+        let written: std::collections::HashSet<usize> =
+            vecs.iter().flat_map(|v| v.mem_writes.iter().map(|(a, _)| *a)).collect();
+        for (i, v) in vecs.iter().enumerate() {
+            for &a in &written {
+                m.mem[a] = if a < exe.len() { exe[a] } else { 0 };
+            }
+            m.regs = super::machine::Regs::default();
+            for (r, val) in &v.regs_in {
+                set_gp(&mut m, r, *val);
+            }
+            for (s, val) in &v.segs {
+                set_seg(&mut m, s, *val);
+            }
+            // return frame at ss:sp (retf pushes 4, near ret 2; sp already encodes which)
+            let sp = m.regs.sp() as u32;
+            m.write16(m.regs.ss, sp, 0x0000);
+            m.write16(m.regs.ss, sp.wrapping_add(2), 0x0020);
+            f(&mut m);
+            for (r, val) in &v.regs_out {
+                assert_eq!(get_e(&m, r), *val, "{name} det vec {i}: {r}");
+            }
+            for (addr, byte) in &v.mem_writes {
+                assert_eq!(m.mem[*addr], *byte, "{name} det vec {i}: mem[{addr:#x}]");
+            }
+        }
+    }
+
     #[test]
     fn func_a734_generic_pipeline() {
         // Validates the full automated pipeline (generic oracle + generic verifier) against a
@@ -363,6 +428,42 @@ mod tests {
         assert!(
             failures.is_empty(),
             "{}/{} auto-lifts failed generic verification: {:?}",
+            failures.len(),
+            batch.len(),
+            failures
+        );
+    }
+
+    /// The DETERMINISTIC batch: pointer-/sentinel-driven leaves the random-fuzz oracle cannot
+    /// verify (non-terminating or garbage-dereferencing under random memory). Verified against
+    /// the real EXE image (mirrored into the Machine) — includes retf functions the read-hook
+    /// oracle mishandles. Registers + every memory write must be bit-exact vs the binary.
+    #[test]
+    fn det_lifted_batch_matches_oracle() {
+        let Some(exe) = load_exe_image() else { return };
+        let batch: &[(&str, fn(&mut Machine))] = &[
+            ("func_1d94", super::auto::func_1d94),
+            ("func_2de2", super::auto::func_2de2),
+            ("func_4240", super::auto::func_4240),
+            ("func_43f7", super::auto::func_43f7),
+            ("func_5afd", super::auto::func_5afd),
+            ("func_604e", super::auto::func_604e),
+            ("func_92a3", super::auto::func_92a3),
+            ("func_933a", super::auto::func_933a),
+            ("func_9364", super::auto::func_9364),
+        ];
+        let mut failures = Vec::new();
+        for (name, f) in batch {
+            let (f, name) = (*f, *name);
+            if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| verify_det(name, f, &exe)))
+                .is_err()
+            {
+                failures.push(name);
+            }
+        }
+        assert!(
+            failures.is_empty(),
+            "{}/{} det auto-lifts failed verification: {:?}",
             failures.len(),
             batch.len(),
             failures

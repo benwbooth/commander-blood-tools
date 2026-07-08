@@ -866,7 +866,8 @@ pub struct Machine {
     pub mem: Vec<u8>,
 }
 
-pub const MEM_SIZE: usize = 0x10_0000; // 1 MB
+pub const MEM_SIZE: usize = 0x20_0000; // 2 MB — holds the whole ~1.1 MB EXE image (deterministic
+// oracle mirrors it) plus real-mode + 32-bit-addressing reach. Power of two so `lin` can mask.
 
 impl Default for Machine {
     fn default() -> Self {
@@ -942,11 +943,14 @@ mod tests {
     }
 
     #[test]
-    fn segmented_memory_addressing_wraps_at_1mb() {
+    fn segmented_memory_addressing() {
         let mut m = Machine::new();
         m.write16(0x1000, 0x0004, 0xBEEF); // linear 0x10004
         assert_eq!(m.read16(0x1000, 0x0004), 0xBEEF);
         assert_eq!(m.read8(0x1000, 0x0005), 0xBE);
-        assert_eq!(Machine::lin(0xFFFF, 0x0010), 0x0000); // 0xFFFF0 + 0x10 wraps to 0
+        // 2 MB image (holds the whole EXE): normal real-mode addresses never wrap; the mask only
+        // bites past 2 MB (0xFFFF0 + 0x10 = 0x100000 is a real address here, not 0).
+        assert_eq!(Machine::lin(0xFFFF, 0x0010), 0x100000);
+        assert_eq!(Machine::lin(0xFFFF, 0x10_0010), 0x0000); // 0xFFFF0 + 0x100010 = 0x200000 wraps to 0
     }
 }
