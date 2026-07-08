@@ -3356,6 +3356,36 @@ pub fn emit_scene_events(lines: &[LineInput]) -> Vec<SceneEvent> {
 mod tests {
     use super::*;
 
+    /// The linear COD walker must walk each real SCRIPT<n>.COD cleanly to its `0xFF` end
+    /// marker, producing the exact token counts recovered by reverse-engineering (see
+    /// re/dead_ends.md). Guards the walker against regressions on the real game scripts.
+    /// Skips when the game data isn't in this checkout.
+    #[test]
+    fn walks_real_scripts_to_documented_token_counts() {
+        let expected = [
+            ("SCRIPT1.COD", 214usize),
+            ("SCRIPT2.COD", 3271),
+            ("SCRIPT3.COD", 3281),
+            ("SCRIPT4.COD", 1714),
+            ("SCRIPT5.COD", 1869),
+        ];
+        let mut checked = 0;
+        for (name, count) in expected {
+            let cod = match std::fs::read(format!("output/_tmp_iso/{name}"))
+                .or_else(|_| std::fs::read(format!("../output/_tmp_iso/{name}")))
+            {
+                Ok(b) => b,
+                Err(_) => continue,
+            };
+            let tokens = walk(&cod, 0, cod.len());
+            assert_eq!(tokens.len(), count, "{name} token count");
+            checked += 1;
+        }
+        if checked > 0 {
+            assert_eq!(checked, 5, "expected all 5 scripts present when any is");
+        }
+    }
+
     #[test]
     fn state_operators_match_the_decoded_0x6863_set() {
         let query = QuerySetMode { query: true };

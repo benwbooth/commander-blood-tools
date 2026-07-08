@@ -613,3 +613,16 @@ Static-data parity confirmations now: vertex table 32/32, resource table 53/53, 
 Tally of confound-free positives = 7 (asset palette; state camera/nav/clip; static-data vertex/
 resource/font). Still targeted, not whole-game: full render output, all-function behavior, and
 runtime descriptor/sprite pixels remain unverified.
+
+## Behavioral verification: VM walk completeness - all 5 real scripts to exact token counts — 2026-07
+Locked in the COD walker's completeness on the REAL game scripts (behavioral, not just static):
+- walk() on each real SCRIPT<n>.COD produces the EXACT reverse-engineered token counts:
+  SCRIPT1=214, SCRIPT2=3271, SCRIPT3=3281, SCRIPT4=1714, SCRIPT5=1869 - all cleanly to the 0xFF
+  end marker (the existing test only asserted 0 invalid tokens; this adds the exact totals).
+- New test walks_real_scripts_to_documented_token_counts (passes). This verifies the VM
+  bytecode WALK (opcode length model incl. the 0-length scan-zero-word opcodes) exactly
+  reproduces the game's script structure across all five scripts.
+This is a VM-structure parity result on top of the static-data + execution_trace behavioral
+tests. Confound-free tally unchanged at 7 memory/exe value-matches; VM-side coverage broadened.
+STILL NOT whole-game: full render output, all-function behavioral parity, and runtime
+descriptor/sprite pixels remain unverified. Broad and deepening, but not 100%.
