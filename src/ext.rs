@@ -183,6 +183,33 @@ mod tests {
             .and_then(|p| std::fs::read(p).ok())
     }
 
+    /// Every primary world's `.ext` must parse and expose an initial object `id=1, type=4`
+    /// at an on-screen position (0..=320, 0..=200) - the actor/room anchor. Extends the
+    /// venusia/magnus/black cross-validation to all 16 primary worlds. Skips absent files.
+    #[test]
+    fn all_primary_worlds_parse_with_valid_initial_object() {
+        const WORLDS: &[&str] = &[
+            "BLACK", "KULT", "VENUSIA", "ERAZOR", "MASTACHO", "MAGNUS", "EKATOMB", "CRAZY",
+            "KORTEX", "VISTA", "MOSKITO", "PTERRA", "CYBER", "CORPO", "MENHIR", "VULCAN",
+        ];
+        let mut checked = 0;
+        for w in WORLDS {
+            let Some(data) = load(&format!("{w}.EXT")) else {
+                continue;
+            };
+            let ext = parse_ext(&data).unwrap_or_else(|| panic!("{w}.EXT parses"));
+            let objs = ext.objects(&data);
+            let first = objs.first().unwrap_or_else(|| panic!("{w}.EXT has an object"));
+            assert_eq!(first.id, 1, "{w} initial object id");
+            assert_eq!(first.kind, 4, "{w} initial object type");
+            assert!(first.x <= 320 && first.y <= 200, "{w} object pos ({},{})", first.x, first.y);
+            checked += 1;
+        }
+        if checked > 0 {
+            assert_eq!(checked, WORLDS.len(), "all present worlds validated");
+        }
+    }
+
     #[test]
     fn parses_first_section_framing_of_real_worlds() {
         // venusia/magnus/black/cyber: count-prefixed 3-byte records + FF FF terminator.

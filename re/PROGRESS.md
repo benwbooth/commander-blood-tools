@@ -626,3 +626,16 @@ This is a VM-structure parity result on top of the static-data + execution_trace
 tests. Confound-free tally unchanged at 7 memory/exe value-matches; VM-side coverage broadened.
 STILL NOT whole-game: full render output, all-function behavioral parity, and runtime
 descriptor/sprite pixels remain unverified. Broad and deepening, but not 100%.
+
+## Behavioral verification: .ext parsing across ALL 16 primary worlds — 2026-07
+Extended the .ext object cross-validation from 3 worlds to all 16 primary worlds:
+- Every primary world (.ext) parses and exposes an initial object id=1, type=4 at an on-screen
+  position: BLACK(199,42), KULT(133,57), VENUSIA(134,117), ERAZOR(133,124), MASTACHO(109,90),
+  MAGNUS(169,92), EKATOMB(202,102), CRAZY(143,90), KORTEX(84,87), VISTA(133,111), MOSKITO
+  (103,103), PTERRA(144,96), CYBER(173,75), CORPO(126,107), MENHIR(106,79), VULCAN(84,68).
+  16/16 valid; the 3 previously-documented (black/venusia/magnus) match.
+- New test all_primary_worlds_parse_with_valid_initial_object (passes). Confirms our .ext
+  parser + object decoder handle the full world set, not just the 3 spot-checked worlds.
+Verification base keeps broadening (static-data byte-exact tables + VM structure/semantics +
+all-world .ext parsing + 7 confound-free live/exe value-matches). STILL targeted, not whole-game:
+full render output, all-function behavioral parity, runtime descriptor/sprite pixels unverified.
