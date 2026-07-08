@@ -361,3 +361,21 @@ Alternatives for a future session: (a) a DOSBox-X debug build exposing vga.mem; 
 geometry-correct SCREENSHOT (capture_real_game_native.sh) accepting the scaler/palette confound
 as a bounded qualitative check; (c) pivot verification to DGROUP-relative STATE parity (VM
 records, object table, nav state) which IS memory-reachable. Stopping the vga.mem drill.
+
+## Object-descriptor value parity: blocked by EMS/XMS banking (2026-07)
+Tried to close object-state value parity by following the entity record's +4 descriptor far
+pointer (live gameplay: rec0 = 0x7979:0x004d) and reading width/height at descriptor +0/+2 to
+compare vs our decoded sprite dimensions. All descriptor reads at dos_base + seg*16 + off = 0.
+Reason: the far-ptr segments (0x7979, 0x7545, ...) point into EMS/XMS-BANKED resource memory,
+NOT conventional RAM. The game loads sprites/descriptors into EMS (int 67h) / XMS banks; the
+linear dos_base+seg*16 formula only resolves CONVENTIONAL-RAM segments, so a banked segment
+reads as unmapped/zero at that linear address (the same 16-bit segment maps different physical
+pages depending on the current int-67h page-frame mapping).
+CONSEQUENCE - the confound-free /proc/mem + DS-anchor method reaches exactly the CONVENTIONAL-RAM
+DGROUP state: palette (0x5b58), nav/camera (0x2F65/0x4F09), render clip (0x5235/0x5239), the
+entity RECORD fields (0x6212, flags/id/ptrs) - all VERIFIED. It does NOT reach the DATA behind
+far pointers into EMS/XMS banks (descriptors, sprite pixels, resource bodies). Reaching those
+would require reading the live int-67h EMS page-frame mapping (gs:0xa60/0xa66 area) and following
+the bank->physical translation - a further layer, not done. This is the memory-side analogue of
+the VGA-mem blocker: DGROUP state is reachable; banked resource data + the VGA display frame are
+not, via plain linear /proc/mem. The 4 value-level confirmations stand on the reachable state.
