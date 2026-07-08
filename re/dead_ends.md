@@ -214,3 +214,25 @@ segment; 107 are real functions (now all labeled). The 108th, 0x8d5d, disassembl
 that produced it is embedded in DATA (a table/constant), not a real call site, and its
 following 4 bytes coincidentally resolve into the code range. Excluding it, the far-call-
 dispatched function set in the code segment is 107/107 labeled - fully enumerated.
+
+## The static-analysis boundary: register-indirect dispatch (CHARACTERIZED)
+With the ret-preceded-prologue scan exhausted, the far-call (9A) target set 107/107 labeled,
+and the VM opcode handler table (51 handlers) enumerated, the functions NOT reachable by
+static enumeration are exactly those reached through register-indirect dispatch:
+- **gs:[0xa4a]** - a stored callback, `call gs:[0xa4a]` appears 8x. There are NO immediate
+  stores to it (`65 C7 06 4A 0A ..` finds zero hits) and none to its seg half 0xa4c, so the
+  pointer is loaded from a register/memory at runtime, not a constant. Its target(s) cannot
+  be resolved by byte-pattern or single-pass sweep.
+- **gs:[0xb1d]**, **gs:[0xa96]** - two more indirect call slots, same situation.
+- **The input jump-table** (documented earlier) - handler offsets are computed, not immediate.
+- **The VM computed dispatch** `call gs:[(op-0xA0)*2 + 0x6eb0]` - table IS resolved (handler
+  file = entry + 0x53a0), the 51 entries are known; listed here only for completeness.
+
+Why static analysis stops here: resolving these needs either full inter-block dataflow
+(tracking the pointer from its load site) or DYNAMIC tracing. The correct next tool is the
+real-game headless oracle (re/tools/capture_real_game.sh, DOSBox-X+Xvfb): instrument the call
+sites and log the actual targets at runtime. That same dynamic harness is also the only way
+to establish the outstanding BEHAVIORAL-EQUIVALENCE bar (cycle/output parity vs the DOS
+binary), which static labeling cannot prove. This is the boundary between the static RE (now
+substantially complete for directly- and far-called functions) and the dynamic/behavioral
+verification phase (not yet built out).
