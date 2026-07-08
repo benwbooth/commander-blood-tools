@@ -8,6 +8,7 @@
 //! function is lifted + verified and composed in the binary's call graph, the whole program runs
 //! identically by construction (see re/tools/README_oracle.md).
 
+pub mod auto;
 pub mod machine;
 
 use machine::Machine;
@@ -207,6 +208,7 @@ mod tests {
             "si" => m.regs.set_si(v),
             "di" => m.regs.set_di(v),
             "bp" => m.regs.set_bp(v),
+            "sp" => m.regs.set_sp(v),
             _ => panic!("gp {r}"),
         }
     }
@@ -280,6 +282,27 @@ mod tests {
         // Validates the full automated pipeline (generic oracle + generic verifier) against a
         // hand-lift with known-good semantics. add+clc: all flags defined.
         verify_generic("func_a734", func_a734, true);
+    }
+
+    /// The AUTO-lifted batch (src/recomp/auto.rs, produced by lift.py) verified against
+    /// auto-generated generic vectors (auto_oracle.py). Registers + every memory write must be
+    /// bit-exact vs the real binary. Flags are checked separately per-function where all-defined;
+    /// here we assert the register + memory side effects (the substantive state), since some
+    /// carry architecturally-undefined flag bits.
+    #[test]
+    fn auto_lifted_batch_matches_oracle() {
+        let batch: &[(&str, fn(&mut Machine))] = &[
+            ("func_1fbc", super::auto::func_1fbc),
+            ("func_5fd8", super::auto::func_5fd8),
+            ("func_5ff6", super::auto::func_5ff6),
+            ("func_78d0", super::auto::func_78d0),
+            ("func_8269", super::auto::func_8269),
+            ("func_a3ad", super::auto::func_a3ad),
+            ("func_b75c", super::auto::func_b75c),
+        ];
+        for (name, f) in batch {
+            verify_generic(name, *f, false);
+        }
     }
 
     #[test]

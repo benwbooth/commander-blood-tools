@@ -58,8 +58,6 @@ def mem_addr(insn, opnd):
 def emit(insn):
     """Emit Rust lines for one linear instruction. Returns list[str] or raises NotImplementedError."""
     m, op = insn.mnemonic, insn.operands
-    if m in ("push", "pop"):
-        return [f"// {m} {insn.op_str} (balanced -> register preserved)"]
     if m in ("ret", "retf", "nop"):
         return [f"// {m}"]
     if m == "clc": return ["m.regs.cf = false;"]
@@ -112,21 +110,39 @@ def emit(insn):
             wrfn = {1: "write8", 2: "write16", 4: "write32"}[sz]
             return [f"m.{wrfn}({seg}, {off}, {expr});"]
         raise NotImplementedError("dst")
+    if m == "push":
+        o = op[0]
+        if o.size == 2:
+            v, _ = opval(o)
+            return ["m.regs.set_sp(m.regs.sp().wrapping_sub(2));",
+                    f"m.write16(m.regs.ss, m.regs.sp(), ({v}) as u16);"]
+        raise NotImplementedError(f"push size {o.size}")
+    if m == "pop":
+        o = op[0]
+        if o.size == 2:
+            return ["let __v = m.read16(m.regs.ss, m.regs.sp());",
+                    "m.regs.set_sp(m.regs.sp().wrapping_add(2));"] + opset(o, "(__v) as u16")
+        raise NotImplementedError(f"pop size {o.size}")
     if m == "mov":
         src, _ = opval(op[1])
         castsz = {1: "u8", 2: "u16", 4: "u32"}[op[0].size]
         return opset(op[0], f"({src}) as {castsz}")
     if m in ("add", "xor", "sub", "and", "or"):
-        a, _ = opval(op[0]); b, _ = opval(op[1])
-        helper = {"add": "add16", "xor": "xor16", "sub": "sub16", "and": "and16", "or": "or16"}[m]
-        if op[0].size != 2:
-            raise NotImplementedError(f"{m} size {op[0].size}")
-        return [f"let __r = m.regs.{helper}(({a}) as u16, ({b}) as u16);"] + opset(op[0], "__r")
+        a, _ = opval(op[0]); b, _ = opval(op[1]); sz = op[0].size
+        if sz == 2:
+            h = {"add": "add16", "xor": "xor16", "sub": "sub16", "and": "and16", "or": "or16"}[m]
+            return [f"let __r = m.regs.{h}(({a}) as u16, ({b}) as u16);"] + opset(op[0], "__r")
+        if sz == 1:
+            h = {"add": "add8", "xor": "xor8", "sub": "sub8", "and": "and8", "or": "or8"}[m]
+            return [f"let __r = m.regs.{h}(({a}) as u8, ({b}) as u8);"] + opset(op[0], "__r")
+        raise NotImplementedError(f"{m} size {sz}")
     if m in ("cmp", "test"):
-        a, _ = opval(op[0]); b, _ = opval(op[1])
-        if op[0].size == 1:
-            return [f"m.regs.{('cmp8' if m=='cmp' else 'test8')}(({a}) as u8, ({b}) as u8);"]
-        raise NotImplementedError(f"{m} size {op[0].size}")
+        a, _ = opval(op[0]); b, _ = opval(op[1]); sz = op[0].size
+        suf = {1: "8", 2: "16"}.get(sz)
+        if suf:
+            cast = {1: "u8", 2: "u16"}[sz]
+            return [f"m.regs.{m}{suf}(({a}) as {cast}, ({b}) as {cast});"]
+        raise NotImplementedError(f"{m} size {sz}")
     raise NotImplementedError(f"opcode {m} ({insn.op_str})")
 
 def lift(off, name):

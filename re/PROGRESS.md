@@ -1014,3 +1014,16 @@ So the grind is now "add opcode -> unlock N functions" (mechanical) rather than 
 Also added Machine::inc16/dec16/shr16. STATUS: 10 hand-verified + auto-pipeline (linear+CFG) online;
 next is opcode-coverage expansion (unlocks the 82) + the I/O composition layer (the 22) + internal
 non-leaf functions. Not 100%; the tooling to get there is now substantially built.
+
+## PATH B: AUTOMATED batch verified - 7 auto-lifts bit-exact + 2 lifter bugs caught — 2026-07
+Ran the full automated pipeline (lift.py CFG -> auto_oracle.py generic vectors -> verify_generic)
+over the clean-liftable leaves. Expanded opcode coverage first: added cmp16/test16 + 8-bit
+arithmetic (add8/sub8/xor8/and8/or8) + inc16/dec16/shr16 -> 17/112 leaves auto-liftable.
+- src/recomp/auto.rs: 7 AUTO-lifted functions (func_1fbc/5fd8/5ff6/78d0/8269/a3ad/b75c), each
+  verified bit-exact (registers + every memory write) against 250 auto-generated generic vectors.
+- The oracle CAUGHT 2 REAL LIFTER BUGS: (1) push/pop was a no-op comment, wrong for funcs that
+  modify+restore a register (func_5fd8 push cx/bp) -> fixed to real stack manipulation (SP + SS
+  memory); (2) func_92a3's branch to 0x9339 exposes a remaining lifter gap (deferred, WIP).
+STATUS: 17 functions verified bit-exact (10 hand + 7 AUTO). The automated pipeline works end-to-end
+and its oracle keeps it honest (2 bugs caught+1 fixed this batch). Grind now scales by opcode
+coverage. Honest: 17 of 222+, not 100%.

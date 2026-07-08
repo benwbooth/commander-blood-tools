@@ -35,17 +35,18 @@ def gen(entry, retf, n=250):
             mu.mem_write(base, data)
             seed_bytes[base] = data
         regs_in = {r: random.randint(0, 0xFFFF) for r, _ in GP}
+        sp0 = 0xFFF0 - (4 if retf else 2)
+        regs_in["sp"] = sp0
         for r, uc in GP:
             mu.reg_write(uc, regs_in[r])
         for s, v in SEGS.items():
             mu.reg_write({"ds": UC_X86_REG_DS, "es": UC_X86_REG_ES, "fs": UC_X86_REG_FS,
                           "gs": UC_X86_REG_GS, "ss": UC_X86_REG_SS}[s], v)
-        sp = 0xFFF0
-        mu.reg_write(UC_X86_REG_SP, sp - (4 if retf else 2))
+        mu.reg_write(UC_X86_REG_SP, sp0)
         if retf:
-            mu.mem_write(SEGS["ss"] * 16 + sp - 4, struct.pack("<HH", RET_IP, RET_CS))
+            mu.mem_write(SEGS["ss"] * 16 + 0xFFF0 - 4, struct.pack("<HH", RET_IP, RET_CS))
         else:
-            mu.mem_write(SEGS["ss"] * 16 + sp - 2, struct.pack("<H", RET_IP))
+            mu.mem_write(SEGS["ss"] * 16 + 0xFFF0 - 2, struct.pack("<H", RET_IP))
         mu.reg_write(UC_X86_REG_CS, 0)
         reads, writes, bad = {}, {}, [False]
         def onread(u, acc, addr, size, val, ud):

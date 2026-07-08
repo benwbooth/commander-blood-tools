@@ -171,6 +171,72 @@ impl Regs {
         self.pf = r.count_ones() % 2 == 0;
     }
 
+    /// 16-bit `CMP` (a - b, discarded): sets all six flags like `SUB`.
+    pub fn cmp16(&mut self, a: u16, b: u16) {
+        self.sub16(a, b);
+    }
+
+    /// 16-bit `TEST` (a & b, discarded): clears CF/OF, sets ZF/SF/PF. AF undefined.
+    pub fn test16(&mut self, a: u16, b: u16) {
+        let r = a & b;
+        self.cf = false;
+        self.of = false;
+        self.zf = r == 0;
+        self.sf = r & 0x8000 != 0;
+        self.pf = (r as u8).count_ones() % 2 == 0;
+        self.af = false;
+    }
+
+    /// 8-bit `ADD` with exact flags.
+    pub fn add8(&mut self, a: u8, b: u8) -> u8 {
+        let full = a as u16 + b as u16;
+        let r = full as u8;
+        self.cf = full > 0xff;
+        self.af = (a & 0xf) + (b & 0xf) > 0xf;
+        self.zf = r == 0;
+        self.sf = r & 0x80 != 0;
+        self.of = (a ^ r) & (b ^ r) & 0x80 != 0;
+        self.pf = r.count_ones() % 2 == 0;
+        r
+    }
+
+    /// 8-bit `SUB` with exact flags.
+    pub fn sub8(&mut self, a: u8, b: u8) -> u8 {
+        let r = a.wrapping_sub(b);
+        self.cf = a < b;
+        self.af = (a & 0xf) < (b & 0xf);
+        self.zf = r == 0;
+        self.sf = r & 0x80 != 0;
+        self.of = (a ^ b) & (a ^ r) & 0x80 != 0;
+        self.pf = r.count_ones() % 2 == 0;
+        r
+    }
+
+    /// 8-bit `AND`/`OR`/`XOR`: clear CF/OF, set ZF/SF/PF; AF undefined.
+    fn logic8_flags(&mut self, r: u8) {
+        self.cf = false;
+        self.of = false;
+        self.zf = r == 0;
+        self.sf = r & 0x80 != 0;
+        self.pf = r.count_ones() % 2 == 0;
+        self.af = false;
+    }
+    pub fn and8(&mut self, a: u8, b: u8) -> u8 {
+        let r = a & b;
+        self.logic8_flags(r);
+        r
+    }
+    pub fn or8(&mut self, a: u8, b: u8) -> u8 {
+        let r = a | b;
+        self.logic8_flags(r);
+        r
+    }
+    pub fn xor8(&mut self, a: u8, b: u8) -> u8 {
+        let r = a ^ b;
+        self.logic8_flags(r);
+        r
+    }
+
     /// 8-bit `TEST` (a & b, result discarded): clears CF/OF, sets ZF/SF/PF from the AND. AF is
     /// undefined (assigned false here, not oracle-asserted).
     pub fn test8(&mut self, a: u8, b: u8) {
