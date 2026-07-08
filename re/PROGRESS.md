@@ -812,3 +812,18 @@ So the tested codebase is INTEGER-OVERFLOW SAFE end-to-end while processing the 
 a class of latent bug (silent wrap in release) proven absent across every exercised path. No new
 bug found; the 3 real bugs this session were logic (sprite dispatch/offset), all fixed. STILL not
 whole-game: display-frame pixel parity + all-function behavioral parity remain unverified.
+
+## Accuracy gap (direct engine-vs-game comparison): nav/bridge layout diverges — 2026-07
+Captured the engine's nav interface (Xvfb) and compared to the game's bridge screen (DOSBox
+gp70.png). Real STRUCTURAL divergence found:
+- ENGINE nav: BORXX orb centred, CARTE nav pyramids scattered in a pattern, "SECTOR 4 EDEN"
+  label, starfield. (The orb being GREYSCALE is CORRECT - BORXX is grey in-game.)
+- GAME bridge: orb + nav pyramids along the BOTTOM edge, an alien viewscreen filling the top,
+  "Commander BLOOD V1.0". A full HUD composition.
+So the engine's nav view is a SIMPLIFIED APPROXIMATION, not a layout/pixel-faithful reproduction
+of the game's bridge screen. The animated-sprite anchoring gap (centre vs offset-anchored) is a
+SMALL part of a LARGER divergence: the whole bridge HUD layout (viewscreen, orb+pyramid bottom
+placement, station icons) is not reproduced. This is an honest, significant scoping of where the
+reimplementation's RENDER/UI diverges from the original - beyond decoders (which are accurate) and
+into full-scene composition. Faithful bridge reproduction is substantial UI-reconstruction work,
+gated on per-pixel verification (framebuffer-parity blocker). Decoders accurate; scene layout not.
