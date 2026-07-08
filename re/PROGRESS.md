@@ -269,3 +269,19 @@ navigation (in the attract/intro they're default: origin=(10000,12000,0), recs a
 star-map state, feed it to project_star_map_point, and render the bit-exact grid.
 
 See `MEMORY.md` notes and the `ship3d.rs` / `engine.rs` comments for exact addresses.
+
+## Code/data extent confirmed + why exact function-counting is hard (2026-07)
+- **Load module**: file 0x600–0x15298 (86680 bytes). MZ header: 170 pages, 96 header paras.
+- **Code segment**: 0x600–0xd000. All 281 ret-preceded clean prologues fall in this range;
+  0 above 0xd000. **Data segment**: 0xd420–0x15298 (matches the known DS base file 0xd420).
+  So the ret-preceded scan window covered the *entire* code segment — no hidden code region.
+- **Coverage of the scan window**: every clean ret-preceded verified start in 0x600–0xd000 is
+  now either labeled or a documented non-entry (5 false positives in dead_ends.md).
+- **Why an exact "N of 435" is not cleanly measurable**: this is a large-model binary that
+  dispatches predominantly via **far calls** (`lcall seg:off`), whose offset is relative to a
+  per-segment base (e.g. VM segment 0x4da → file 0x53a0). A flat file-offset E8 scan yields
+  ~343 "targets" but most are 0xE8 bytes inside operands/data (they disassemble to junk); a
+  single linear sweep desyncs on embedded jump-tables. A true count needs recursive-descent
+  from entry with per-segment base resolution — the genuinely hard, multi-week part. The
+  honest coverage statement is therefore structural (every subsystem decoded end-to-end; the
+  clean-prologue code-segment scan exhausted), not a single percentage.
