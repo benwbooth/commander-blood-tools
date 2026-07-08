@@ -379,3 +379,21 @@ would require reading the live int-67h EMS page-frame mapping (gs:0xa60/0xa66 ar
 the bank->physical translation - a further layer, not done. This is the memory-side analogue of
 the VGA-mem blocker: DGROUP state is reachable; banked resource data + the VGA display frame are
 not, via plain linear /proc/mem. The 4 value-level confirmations stand on the reachable state.
+
+## CORRECTION: object descriptors are NOT EMS-banked - EMS/XMS is inactive (2026-07)
+The prior note blamed EMS/XMS banking for the zero descriptor reads. That was WRONG - corrected:
+- Read the EMS/XMS state live: DS:0xa60 (EMS page frame) = 0, DS:0xa66 (EMS handle) = 0, DS:0xa4a
+  (XMS entry off) = 0. EMS/XMS is NOT ACTIVE in this run (DOSBox-X here provides no EMS/XMS, so
+  the game runs from conventional memory - no banking).
+- The descriptor segments (0x7979, 0x7545) ARE inside the mapped conventional region, but the
+  64-byte windows there read all-zero. So the pointers are set but the pointed-to descriptors
+  were UNPOPULATED at the 72s capture instant (records mid-load, or the +4 values were stale/
+  transitional), NOT banked-out.
+CONSEQUENCE (reopens the path): with EMS/XMS inactive, ALL resource data (descriptors, sprite
+pixels) lives in CONVENTIONAL RAM and IS reachable via dos_base+seg*16+off. The zero reads were
+a timing/population issue, not an addressing wall. Also confirmed dos_base+0xA0000 IS inside the
+mapped region (so the VGA-window zeros are DOSBox not shadowing VGA there, a separate matter).
+NEXT: capture object descriptors at a STABLE fully-loaded gameplay moment (not a transition),
+or follow a record whose +4 ptr lands on non-zero memory, to read real width/height and compare
+to our decoded sprite descriptor. The descriptor-value parity is NOT blocked - it needs a clean
+populated capture. Honest correction of the previous EMS claim.
