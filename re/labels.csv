@@ -582,3 +582,8 @@ GS:0x0BA3,audio_channel_active_flag,"audio-active/second channel-live flag, test
 0x0043D8,entity_flag_accessor_6,"entity_object_table accessor (0x6212+id<<5) - entity_flag_accessors family member"
 0x003B85,blit_coord_guard_b,"blit coordinate guard (sibling of 0x339e): or dx,dx; je/js 0x3c63 cull; or bp,bp. Off-screen/degenerate-span cull"
 0x003C6C,blit_coord_guard_c,"blit coordinate guard (sibling of 0x339e): si=ax; or dx,dx; je/js 0x3d71 cull"
+0x00242D,ds_es_rebase_gs,"helper prologue: bp=ax; ds=es=gs. Rebases the segment registers to the GS work arena before a data operation"
+0x0024EB,cs_data_ptr_setup,"cs-relative data pointer setup: ds=cs; si=0x1c6; si+=0xb. Points si at a cs-segment constant table (offset 0x1c6+0xb) for read"
+0x002E1E,toggle_cs_byte_af0,"self-modifying state toggle: xor byte cs:[0xaf0],bl; or dx,dx. Flips bits in the cs:0xaf0 state byte (a persistent mode toggle stored in the code segment)"
+0x002EAF,accumulate32_loop,"32-bit accumulate loop: add ecx,eax; cmp ecx,edx; jl. Running 32-bit sum with an upper-bound compare (fixed-point / offset accumulation)"
+0x002F60,clear_regs_setup,"register-clear setup: xor eax,eax; ebx=eax; bx=si. Zero-extends si into ebx and clears eax before a 32-bit computation"

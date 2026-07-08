@@ -197,3 +197,12 @@ Lifecycle: **Active** → **RESOLVED (date)** → delete after 20+ sessions.
 - Correction: stop listing "combat" as remaining work. The genuinely-remaining decode is
   the deep .ext world-body record semantics + the ~70% of exe functions not yet touched
   (utility/init/hardware/overlay-specific), NOT a combat subsystem.
+
+## ret-preceded prologue scan: confirmed false positives (RESOLVED)
+The ret-preceded clean-prologue scan (0x600-0xd000) leaves 5 addresses that are NOT
+function entries, confirmed by disassembly context:
+- 0x00dd8, 0x0220d, 0x02216, 0x02f73: `pop.../retf` sequences - these are function
+  EPILOGUES (mid-function tails) that happen to follow a ret byte; not entries.
+- 0x02bee: `inc dx; dec bp; and [bx+si],al` - data (a table/constant) misparsed as code.
+These 5 are the residue of the byte-scan heuristic and require no labels. With them
+excluded, the ret-preceded verified-start scan window is fully accounted for.
