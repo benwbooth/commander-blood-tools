@@ -473,3 +473,21 @@ the (majority) VGA-rendered screens requires locating DOSBox-X's separate vga.me
 process (search all mmaps for the mode-X frame) and de-interleaving 4 planes - not yet done. This
 maps the remaining framebuffer-parity work precisely: it is a vga.mem-location + planar-decode
 task, distinct from the (solved) linear-buffer + palette reads.
+
+## Behavioral verification: CORRECTION - gs:0x5229 is a starfield TEXTURE, not the display frame — 2026-07
+Self-correction of an earlier over-claim ("framebuffer read+decode solved via gs:0x5229"):
+- Compared two captures of gs:0x5229 from DIFFERENT runs and DIFFERENT screens: gp45 (CRYO
+  logo, gameplay run) vs fbr_50 (star-map, attract run). They are 84% IDENTICAL with near-
+  identical value histograms. A per-frame display buffer would differ completely between two
+  different screens; 84% sameness means gs:0x5229 holds a PERSISTENT STARFIELD TEXTURE, not the
+  composited display frame.
+- So my earlier "captured the star-map framebuffer" was actually capturing this starfield
+  texture source. The linear-buffer read/decode pipeline is real, but it reads a TEXTURE, not
+  the screen. The actual displayed frame is VGA mode-X (gs:0x521d = A000), in DOSBox-X's
+  SEPARATE vga.mem (confirmed: dos_base+0xA0000 = all zeros).
+STANDING (unaffected by this correction): the palette per-byte parity (CHART.FD 120/120,
+reproducible) and asset-decoder correctness (coherent CHART.FD render) - those used the palette
+buffer (0x5b58, genuinely in DGROUP) and the decoded IFF asset, not gs:0x5229.
+CORRECTED next step: display-frame pixel-parity for ALL screens is gated on locating DOSBox-X's
+separate vga.mem region (search the process mmaps for the mode-X frame) + planar de-interleave.
+The gs:0x5229 texture path does not yield display frames. Honest downgrade of the prior claim.
