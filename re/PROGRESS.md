@@ -336,3 +336,18 @@ NEXT: drive the game to a location screen (drive_real_game.sh) so it loads that 
 palette into GS:0x5b58, then compare byte-for-byte against our decoded location-art palette -
 a rigorous, confound-free decoder-accuracy check. STATUS: palette-readback capability proven;
 the location-palette equivalence comparison is the next step.
+
+## Behavioral verification: live scene-palette capture works; needs a KNOWN scene to compare — 2026-07
+Extended the palette read into the attract demo:
+- At boot/9s/45s: GS:0x5b58 = the exe's baked default palette (0/768 changed).
+- At 70s (attract demo playing a game scene): GS:0x5b58 = a DISTINCT valid DAC palette (dark-red
+  gradient, 561/768 bytes changed from default, 551/768 nonzero, all <=63). So the live read
+  correctly captures per-scene palettes the game loads - confound-free, exact bytes.
+BLOCKER for the byte-equivalence comparison: the free-running attract demo shows an UNIDENTIFIED
+scene at any given timestamp, so its live palette can't be matched to a specific decoded asset
+(a naive scan of all HNM palettes found no clean match - the shown scene is simply unknown, and
+HNM palettes aren't raw 768-byte blocks). The comparison needs a DETERMINISTIC known screen:
+drive the game (drive_real_game.sh) to a specific dialogue scene / location, whose asset we can
+decode, then compare GS:0x5b58 byte-for-byte against that asset's palette (DAC = CMAP>>2). That
+deterministic drive is the completing step. STATUS: live per-scene palette capture proven; the
+known-scene byte comparison is the remaining work.
