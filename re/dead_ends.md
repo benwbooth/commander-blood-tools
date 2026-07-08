@@ -397,3 +397,19 @@ NEXT: capture object descriptors at a STABLE fully-loaded gameplay moment (not a
 or follow a record whose +4 ptr lands on non-zero memory, to read real width/height and compare
 to our decoded sprite descriptor. The descriptor-value parity is NOT blocked - it needs a clean
 populated capture. Honest correction of the previous EMS claim.
+
+## Display page 0x5221 RAM buffer: coherent composited frame, but off-screen (not the display) (2026-07)
+Fresh angle on framebuffer parity: the game double-buffers between a RAM page (gs:0x5221) and
+VGA (gs:0x521d=A000). Read the gs:0x5221 RAM page during the attract intro (seg 0x2cee, 47%
+nonzero) and rendered it LINEARLY: 94% horizontal-neighbour equality = a highly COHERENT frame,
+showing the CRYO logo (recognisable). So unlike the 0x5229 starfield TEXTURE, the 0x5221 page IS
+a real composited game frame in conventional RAM, LINEAR layout, readable via the anchor.
+BUT it does NOT match the live display: the paired screenshot shows CRYO centred on black, while
+the 0x5221 buffer shows CRYO upper-left on green - i.e. the 0x5221 RAM page is the OFF-SCREEN
+double-buffer page (mid-composite / previous frame), not the frame VGA is currently scanning out.
+The DISPLAYED frame is in VGA mode-X (separately paged vga.mem), still unreachable.
+NET: I can now read a coherent linear composited frame from the 0x5221 off-screen page - a real
+advance over the texture (0x5229) and VGA (unreachable) dead-ends. Byte-exact DISPLAY parity
+still needs either (a) catching the off-screen page at the exact frame our engine also renders
+(frame-index alignment), or (b) the VGA vga.mem read. The read+decode of the off-screen composited
+frame WORKS (linear, palette-correct); only the same-frame alignment vs our engine remains.
