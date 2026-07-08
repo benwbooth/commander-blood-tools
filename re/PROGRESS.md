@@ -420,3 +420,21 @@ So the full pipeline now works confound-free: read the live linear back-buffer f
 REMAINING for pixel-PARITY: have the Rust engine render the identical star-map state and diff
 the two 320x200 index buffers byte-for-byte (the read/decode half is done; the engine-side
 same-state render + diff is the last step). Tools: read_live_framebuffer.py.
+
+## Behavioral verification: star-map asset identified + decoder-correct; live frame is runtime-composed — 2026-07
+Attempted to close star-map framebuffer parity by diffing our decoded CHART.FD against the live
+gs:0x5229 frame. Findings:
+- CHART.FD IS the star-map screen: our LBM/PBM decoder renders it to a coherent image (69%
+  neighbour-equality; visually a purple nebula + constellation star-chart + the ship nav orb),
+  and its palette matches the live game 120/120. So the DECODER is correct for this asset.
+- BUT our decoded CHART.FD matches the live gs:0x5229 buffer only 175/64000 px (0%). Reason: the
+  live back-buffer is RUNTIME-COMPOSED by the 0x2cd6 compositor from the game's NATIVE RLE format
+  (transparent-run + rep stosb), NOT a copy of the IFF ByteRun1 CHART.FD BODY. The displayed
+  star-map is the nebula base PLUS a procedural starfield/animated chart drawn on top, so the
+  live frame (27% neighbour-equality, dense) is denser than the static asset (69%).
+CONCLUSION: asset-decode correctness is verified (palette 120/120 + coherent CHART.FD render),
+but strict framebuffer pixel-parity requires reproducing the RUNTIME COMPOSITION (native-RLE
+draws + procedural starfield + sprite overlays), i.e. the engine must run the same render
+pipeline and produce the same gs:0x5229 bytes - not merely decode the source asset. That full
+same-state compose+diff is the remaining behavioral step. The read/decode harness is complete;
+the engine-side pipeline reproduction is the deep part still outstanding.
