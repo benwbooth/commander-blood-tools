@@ -3228,3 +3228,19 @@ The first-section 3-byte records (`[a,b,c]`, count = body byte 8, `FF FF`-termin
   So there is no "per-node geometry" to decode: the split is topology (nodes) vs placement
   (objects). Encoded in src/ext.rs: `ExtWorld::NO_LINK`, `record_links`, `links_are_valid`,
   test `node_refs_are_index_or_0x3f_sentinel_across_worlds`.
+
+## entity_draw 0x9240 + corrected 0x6212 record layout (2026-07, live-validated)
+Disassembled entity_draw (0x9240) and cross-checked against the LIVE gameplay object table:
+- `mov si,0x6212; les di,[si+4]` - the object's geometry is behind a DESCRIPTOR FAR POINTER at
+  record +4/+6 (live rec0 = 0x7979:0x004d, a valid heap ptr), NOT inline in the record.
+- scale = (3*[0x2789 zoom])/2 + 1; then `ax=es:[di]` (descriptor +0 = width) `*scale >>4 -> cx`,
+  `ax=es:[di+2]` (descriptor +2 = height) `*scale >>4 -> dx`; lcall 0x299:0x133d (size setup).
+- SCREEN POSITION is computed from camera/viewport globals, not the record: bx from [0x2aab] +
+  ([0x2780]-[0x277e]-bx)/0xd*dh; cx from [0x2aad] + ([0x2782]+0xa-cx)/0xd*dh; lcall 0x299:0x127d
+  (draw at bx,cx). ([0x277e]/[0x2780]/[0x2782] = camera/viewport, [0x2aab]/[0x2aad] = anchor.)
+CORRECTION to the earlier 32-byte record map: +0xc/+0xe is NOT a position - live bytes show it
+is another far pointer (rec0 = 0x799a:0x0049). Corrected record fields (live-validated):
+  +0 flags (0x0055) | +4/+6 descriptor far ptr (geometry source) | +8 id/group (0x004d) |
+  +0xc/+0xe a second far ptr. The object's on-screen x/y is DERIVED from camera globals +
+  descriptor size at draw time, not stored per-record. This resolves why the live "pos" read as
+  (73,31130) nonsense - those bytes are a pointer, not coordinates.
