@@ -491,3 +491,24 @@ buffer (0x5b58, genuinely in DGROUP) and the decoded IFF asset, not gs:0x5229.
 CORRECTED next step: display-frame pixel-parity for ALL screens is gated on locating DOSBox-X's
 separate vga.mem region (search the process mmaps for the mode-X frame) + planar de-interleave.
 The gs:0x5229 texture path does not yield display frames. Honest downgrade of the prior claim.
+
+## Behavioral verification: STATE parity - nav/camera constants match live runtime — 2026-07
+Pivoted from framebuffer pixels (blocked on DOSBox vga.mem) to DGROUP-relative STATE parity,
+which IS memory-reachable via the DS anchor. Read the live ship-3D / star-map nav state from the
+running game and compared to our STATIC RE decode - two exact confound-free matches:
+- CAMERA ORIGIN DS:0x2F65: our decode (ship3d.rs:1833) = reset to (0x2710,0x2EE0,0) =
+  (10000,12000,0). Live runtime memory = (10000,12000,0). EXACT MATCH.
+- NAV DESTINATION RECORDS DS:0x4F09: our decode (ship3d.rs:1880) = static default
+  (10200,12100,900) per 6-byte record. Live runtime = (10200,12100,900) for 10/11 records
+  (the 11th slot = (0x4000,0,0x3FF6) = adjacent Q14 rotation-matrix data, array boundary).
+  EXACT MATCH on the destination records.
+So our static reverse-engineering of the navigation subsystem's state layout + constants is
+confirmed against the live game's runtime memory, confound-free (direct DGROUP read, no
+scaler/emulation artifacts). This is a STATE-level equivalence result complementing the
+asset-level palette parity (CHART.FD 120/120) - two independent axes now have positive
+confound-free confirmation.
+SCOPE (honest): these are static/default state constants (camera origin + destination defaults),
+verified at the value level - not the dynamic per-frame nav math, not the object table under
+active play, not the VM variable evolution. A deeper state check (drive active navigation, read
+the evolving camera/destinations, compare to our engine's per-frame computation) is the next
+step. Positive data points on the state axis; not whole-game state parity.
