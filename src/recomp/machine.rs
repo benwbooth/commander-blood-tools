@@ -110,6 +110,19 @@ impl Regs {
         r
     }
 
+    /// 16-bit `XOR`: returns `a ^ b`, clears CF/OF, sets ZF/SF/PF from the result. AF undefined
+    /// (assigned false, not oracle-asserted).
+    pub fn xor16(&mut self, a: u16, b: u16) -> u16 {
+        let r = a ^ b;
+        self.cf = false;
+        self.of = false;
+        self.zf = r == 0;
+        self.sf = r & 0x8000 != 0;
+        self.pf = (r as u8).count_ones() % 2 == 0;
+        self.af = false;
+        r
+    }
+
     /// 8-bit `CMP` (a - b, result discarded): sets all six flags exactly like `SUB`. Used for
     /// the many `cmp byte …` branch conditions.
     pub fn cmp8(&mut self, a: u8, b: u8) {

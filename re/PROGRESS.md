@@ -965,3 +965,10 @@ labels it "cwde"; I first lifted cwde (AX->EAX) and the 300 differential vectors
 path B is provable: every lift is checked against the real binary, so mistranslations can't hide.
 STATUS: 9 / 222+ functions lifted+verified. The differential oracle is doing its job (1 bug
 caught + fixed). Honest: 9 of 222+, not 100%.
+
+## PATH B: 10 functions lifted+verified — 2026-07
+- Regs::xor16 (CF/OF cleared, ZF/SF/PF set, AF undefined).
+- func_a757 (0xA757): state reset - 8 word globals set from [0xA7E]/[0x5233] via mov + xor ax,ax.
+  200 vectors bit-exact on AX + all 8 memory words + flags.
+STATUS: 10 / 222+ functions lifted+verified. Helper library: add16/shl16/xor16/cmp8/test8 + CBW +
+bsf + 8/16/32-bit regs/mem + full flag model w/ undefined-exclusion. Honest: 10 of 222+, not 100%.

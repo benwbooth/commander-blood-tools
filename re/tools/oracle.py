@@ -171,3 +171,18 @@ while len(vecs8) < 300:
     vecs8.append(dict(ax=ax, bx=bx, byte=byte, eax_out=o["regs"]["eax"], bx_out=o["regs"]["bx"], flags=o["flags"]))
 json.dump(vecs8, open("re/tools/oracle_vectors/func_6023.json", "w"))
 print(f"wrote {len(vecs8)} func_6023 oracle vectors")
+
+# --- spec: func_a757  (state reset: ax=[0xA7E]; movs; xor ax,ax; movs; ax=[0x5233]; retf) ---
+DSh = 0x2000
+outs = [0xD8C, 0xD8E, 0xD90, 0xD92, 0xD96, 0xD98, 0xD9A, 0xDA0]
+spec9 = dict(name="func_a757", entry=0xA757, retf=True, out_regs=["ax"],
+             out_mem=[(DSh, o, 2) for o in outs])
+vecs9 = []
+for _ in range(200):
+    a7e = random.randint(0, 0xFFFF); r5233 = random.randint(0, 0xFFFF)
+    o = run(spec9, dict(regs={"ds": DSh},
+                        mem=[(DSh, 0xA7E, struct.pack("<H", a7e)), (DSh, 0x5233, struct.pack("<H", r5233))]))
+    mem = {outs[k]: struct.unpack("<H", bytes(o["mem"][k][2]))[0] for k in range(len(outs))}
+    vecs9.append(dict(a7e=a7e, r5233=r5233, ax_out=o["regs"]["ax"], flags=o["flags"], mem=mem))
+json.dump(vecs9, open("re/tools/oracle_vectors/func_a757.json", "w"))
+print(f"wrote {len(vecs9)} func_a757 oracle vectors")

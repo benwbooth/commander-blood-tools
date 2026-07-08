@@ -160,11 +160,69 @@ pub fn func_6023(m: &mut Machine) {
     m.regs.set_ax(signed);
 }
 
+/// `func_a757` — file 0xA757: a state reset. `ax=[0xA7E]; [0xD8E]=ax; [0xD92]=ax; xor ax,ax;
+/// [0xD8C]=[0xD90]=[0xD9A]=[0xDA0]=[0xD96]=0; ax=[0x5233]; [0xD98]=ax; retf`. Flags from the
+/// `xor ax,ax` (ZF=1, SF=0, PF=1, CF=0, OF=0; AF undefined). Lifted 1-to-1; oracle-verified.
+pub fn func_a757(m: &mut Machine) {
+    let ds = m.regs.ds;
+    let a = m.read16(ds, 0xa7e);
+    m.regs.set_ax(a);
+    m.write16(ds, 0xd8e, a);
+    m.write16(ds, 0xd92, a);
+    let z = m.regs.xor16(a, a);
+    m.regs.set_ax(z);
+    m.write16(ds, 0xd8c, z);
+    m.write16(ds, 0xd90, z);
+    m.write16(ds, 0xd9a, z);
+    m.write16(ds, 0xda0, z);
+    m.write16(ds, 0xd96, z);
+    let b = m.read16(ds, 0x5233);
+    m.regs.set_ax(b);
+    m.write16(ds, 0xd98, b);
+}
+
 #[cfg(test)]
 mod tests {
     use super::machine::Machine;
     use super::*;
     use serde::Deserialize;
+
+    #[test]
+    fn func_a757_matches_oracle_vectors() {
+        #[derive(Deserialize)]
+        struct V {
+            a7e: u16,
+            r5233: u16,
+            ax_out: u16,
+            flags: Flags,
+            mem: std::collections::HashMap<String, u16>,
+        }
+        let raw = match std::fs::read_to_string("re/tools/oracle_vectors/func_a757.json")
+            .or_else(|_| std::fs::read_to_string("../re/tools/oracle_vectors/func_a757.json"))
+        {
+            Ok(s) => s,
+            Err(_) => return,
+        };
+        const DS: u16 = 0x2000;
+        for (i, v) in serde_json::from_str::<Vec<V>>(&raw).unwrap().iter().enumerate() {
+            let mut m = Machine::new();
+            m.regs.ds = DS;
+            m.write16(DS, 0xa7e, v.a7e);
+            m.write16(DS, 0x5233, v.r5233);
+            func_a757(&mut m);
+            assert_eq!(m.regs.ax(), v.ax_out, "vec {i}: AX");
+            for off in [0xd8c, 0xd8e, 0xd90, 0xd92, 0xd96, 0xd98, 0xd9a, 0xda0] {
+                let want = v.mem[&format!("{off}")];
+                assert_eq!(m.read16(DS, off), want, "vec {i}: [{off:#x}]");
+            }
+            // xor ax,ax flags (AF undefined -> not asserted).
+            assert_eq!(m.regs.cf, v.flags.cf, "vec {i}: CF");
+            assert_eq!(m.regs.of, v.flags.of, "vec {i}: OF");
+            assert_eq!(m.regs.zf, v.flags.zf, "vec {i}: ZF");
+            assert_eq!(m.regs.sf, v.flags.sf, "vec {i}: SF");
+            assert_eq!(m.regs.pf, v.flags.pf, "vec {i}: PF");
+        }
+    }
 
     #[test]
     fn func_a73e_matches_oracle_vectors() {
