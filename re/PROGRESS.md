@@ -972,3 +972,17 @@ caught + fixed). Honest: 9 of 222+, not 100%.
   200 vectors bit-exact on AX + all 8 memory words + flags.
 STATUS: 10 / 222+ functions lifted+verified. Helper library: add16/shl16/xor16/cmp8/test8 + CBW +
 bsf + 8/16/32-bit regs/mem + full flag model w/ undefined-exclusion. Honest: 10 of 222+, not 100%.
+
+## PATH B: AUTOMATED LIFTER built (option c - the tractability unlock) — 2026-07
+Built re/tools/lift.py: an automated instruction lifter that translates a LINEAR DOS function's
+disassembly to a Rust fn(m: &mut Machine) using the verified flag helpers. Handles mov (reg/mem/
+imm, all sizes, seg overrides, [reg+disp] incl bp->SS), add/sub/xor/and/or/cmp/test (via the
+oracle-verified helpers), shl, cbw, clc/stc/cld/std, push/pop (balanced->preserved). Emits
+`// TODO(lifter)` for unhandled opcodes so gaps are explicit.
+VALIDATION: auto-lifting func_a744/func_a734/func_a757 reproduces the HAND-lifts essentially
+verbatim (correct add16/xor16/write16/mem-addressing). Added Machine::sub16/and16/or16 helpers.
+WHY THIS MATTERS: this changes path B from "hand-lift each of 200+ functions" to "run the lifter
++ oracle-verify" - the acceleration needed to make 100% tractable. The oracle still checks every
+auto-lift bit-exact (it caught the CBW bug), so automation doesn't sacrifice provability. NEXT:
+compile-integrate the auto-lifts + batch-lift all linear leaves, then extend the lifter to
+control flow (basic-block -> match state machine). STATUS: 10 verified + auto-lifter online.

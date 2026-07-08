@@ -110,6 +110,42 @@ impl Regs {
         r
     }
 
+    /// 16-bit `SUB` with exact 8086 flags (borrow in CF/AF). Returns the truncated difference.
+    pub fn sub16(&mut self, a: u16, b: u16) -> u16 {
+        let r = a.wrapping_sub(b);
+        self.cf = a < b;
+        self.af = (a & 0xf) < (b & 0xf);
+        self.zf = r == 0;
+        self.sf = r & 0x8000 != 0;
+        self.of = (a ^ b) & (a ^ r) & 0x8000 != 0;
+        self.pf = (r as u8).count_ones() % 2 == 0;
+        r
+    }
+
+    /// 16-bit `AND`: clears CF/OF, sets ZF/SF/PF. AF undefined (assigned false, not asserted).
+    pub fn and16(&mut self, a: u16, b: u16) -> u16 {
+        let r = a & b;
+        self.cf = false;
+        self.of = false;
+        self.zf = r == 0;
+        self.sf = r & 0x8000 != 0;
+        self.pf = (r as u8).count_ones() % 2 == 0;
+        self.af = false;
+        r
+    }
+
+    /// 16-bit `OR`: clears CF/OF, sets ZF/SF/PF. AF undefined (assigned false, not asserted).
+    pub fn or16(&mut self, a: u16, b: u16) -> u16 {
+        let r = a | b;
+        self.cf = false;
+        self.of = false;
+        self.zf = r == 0;
+        self.sf = r & 0x8000 != 0;
+        self.pf = (r as u8).count_ones() % 2 == 0;
+        self.af = false;
+        r
+    }
+
     /// 16-bit `XOR`: returns `a ^ b`, clears CF/OF, sets ZF/SF/PF from the result. AF undefined
     /// (assigned false, not oracle-asserted).
     pub fn xor16(&mut self, a: u16, b: u16) -> u16 {
