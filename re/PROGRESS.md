@@ -653,3 +653,15 @@ The broadened all-sprite-banks decode test surfaced a REAL decoder bug:
 - New test decodes_every_sprite_bank_to_valid_frames (passes) locks this in.
 This is the FIRST behavioral fix found by the verification push (not just a confirmation): 2 raw
 sprite banks were previously mis-decoded. Suite now 422 tests, 0 failing. Accuracy improved.
+
+## Behavioral verification: HNM parse robustness across all 645 files — 2026-07
+Added a broad HNM(1) parse-robustness test (following the sprite-bank pattern that found a bug):
+- opens_and_parses_every_hnm_asset walks the asset tree and, for every .hnm (645 files),
+  asserts HnmFile::open succeeds, frame_count() > 0, and frame_dims(0) is a valid (1..=511 x
+  1..=255) size. ALL 645 pass - the HNM header/superchunk parser is robust across the full set
+  (intro logos, character animations tr*/cg, cutscenes). No gap here (unlike sprites).
+- Suite now 424 tests, 0 failing.
+This broadens verified decoder coverage: LBM (169 fd/ art, was already tested), sprite banks
+(43 standard + KLAY rejected, bug fixed last turn), HNM (645 files, new). The asset-decoder
+surface is now systematically covered. STILL not whole-game: full composited render output,
+all-function behavioral parity, and runtime pixel values remain unverified.

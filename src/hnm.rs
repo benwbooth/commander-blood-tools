@@ -285,3 +285,46 @@ impl HnmFile {
         0
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Every HNM(1) file in the game data must OPEN, report a positive frame count, and expose
+    /// valid frame dimensions for frame 0 (width 1..=511, height 1..=255) - a broad parse-
+    /// robustness check across the whole HNM asset set. Skips if the data isn't in this checkout.
+    #[test]
+    fn opens_and_parses_every_hnm_asset() {
+        let roots = ["output/_tmp_dat", "../output/_tmp_dat"];
+        let Some(root) = roots.iter().map(std::path::Path::new).find(|p| p.exists()) else {
+            return;
+        };
+        // Walk the asset tree collecting .hnm files.
+        let mut stack = vec![root.to_path_buf()];
+        let mut files = Vec::new();
+        while let Some(dir) = stack.pop() {
+            let Ok(rd) = std::fs::read_dir(&dir) else { continue };
+            for e in rd.filter_map(|e| e.ok()) {
+                let p = e.path();
+                if p.is_dir() {
+                    stack.push(p);
+                } else if p.extension().and_then(|s| s.to_str()) == Some("hnm") {
+                    files.push(p);
+                }
+            }
+        }
+        let mut checked = 0;
+        for p in &files {
+            let hnm = HnmFile::open(p).unwrap_or_else(|e| panic!("{}: open failed: {e}", p.display()));
+            assert!(hnm.frame_count() > 0, "{}: zero frames", p.display());
+            let (w, h, _m) = hnm
+                .frame_dims(0)
+                .unwrap_or_else(|| panic!("{}: no frame-0 dims", p.display()));
+            assert!((1..=511).contains(&w) && (1..=255).contains(&h), "{}: dims {w}x{h}", p.display());
+            checked += 1;
+        }
+        if checked > 0 {
+            assert!(checked >= 600, "parsed the full HNM set ({checked} files)");
+        }
+    }
+}
