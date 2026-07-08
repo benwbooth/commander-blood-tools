@@ -331,6 +331,7 @@ mod tests {
             ("func_8295", super::auto::func_8295),
             ("func_9510", super::auto::func_9510),
             ("func_963f", super::auto::func_963f),
+            ("func_98b9", super::auto::func_98b9),
             ("func_9b04", super::auto::func_9b04),
             ("func_9f80", super::auto::func_9f80),
             ("func_a117", super::auto::func_a117),

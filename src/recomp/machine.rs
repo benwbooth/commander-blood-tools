@@ -794,6 +794,63 @@ impl Regs {
         r
     }
 
+    /// `SAR` (arithmetic shift right, sign-preserving) for 8/16/32-bit. CF = last bit shifted out;
+    /// ZF/SF/PF from the result; OF = 0 (defined for count==1, deterministic otherwise).
+    pub fn sar8(&mut self, val: u8, count: u8) -> u8 {
+        let c = count & 0x1f;
+        if c == 0 {
+            return val;
+        }
+        let mut r = val as i8;
+        let mut cf = false;
+        for _ in 0..c {
+            cf = r & 1 != 0;
+            r >>= 1;
+        }
+        self.cf = cf;
+        self.zf = r == 0;
+        self.sf = r < 0;
+        self.pf = (r as u8).count_ones() % 2 == 0;
+        self.of = false;
+        r as u8
+    }
+    pub fn sar16(&mut self, val: u16, count: u8) -> u16 {
+        let c = count & 0x1f;
+        if c == 0 {
+            return val;
+        }
+        let mut r = val as i16;
+        let mut cf = false;
+        for _ in 0..c {
+            cf = r & 1 != 0;
+            r >>= 1;
+        }
+        self.cf = cf;
+        self.zf = r == 0;
+        self.sf = r < 0;
+        self.pf = (r as u8).count_ones() % 2 == 0;
+        self.of = false;
+        r as u16
+    }
+    pub fn sar32(&mut self, val: u32, count: u8) -> u32 {
+        let c = count & 0x1f;
+        if c == 0 {
+            return val;
+        }
+        let mut r = val as i32;
+        let mut cf = false;
+        for _ in 0..c {
+            cf = r & 1 != 0;
+            r >>= 1;
+        }
+        self.cf = cf;
+        self.zf = r == 0;
+        self.sf = r < 0;
+        self.pf = (r as u8).count_ones() % 2 == 0;
+        self.of = false;
+        r as u32
+    }
+
     /// `BTR` (bit test and reset) on a 16-bit destination: CF = old bit `bit % 16`, then clear it.
     pub fn btr16(&mut self, val: u16, bit: u8) -> u16 {
         let b = bit & 0xf;

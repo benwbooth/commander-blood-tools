@@ -118,9 +118,10 @@ def emit(insn):
                 "m.regs.set_sp(m.regs.sp().wrapping_add(2));",
                 "m.regs.set_bp(__v);"]
     if m in ("cli", "sti"): return [f"// {m} (IF not modelled)"]
-    if m in ("shl", "sal", "shr"):
+    if m in ("shl", "sal", "shr", "sar"):
         a, _ = opval(op[0]); cnt, _ = opval(op[1])
-        pfx = {1: "shl8", 2: "shl16", 4: "shl32"} if m in ("shl", "sal") else {1: "shr8", 2: "shr16", 4: "shr32"}
+        base = "shl" if m in ("shl", "sal") else ("sar" if m == "sar" else "shr")
+        pfx = {1: f"{base}8", 2: f"{base}16", 4: f"{base}32"}
         cast = {1: "u8", 2: "u16", 4: "u32"}[op[0].size]
         h = pfx.get(op[0].size)
         if h:
