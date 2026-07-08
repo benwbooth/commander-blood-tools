@@ -104,7 +104,7 @@ pub fn func_9f80(m: &mut Machine) {
     for _ in 0..4 {
         addr = m.regs.add16(addr, ax);
     }
-    m.regs.set_bx(m.read16(m.regs.ds, addr));
+    m.regs.set_bx(m.read16(m.regs.ds, addr as u32));
 }
 
 /// `func_533c` — file 0x533C (resource_get_field4): `push bx; shl ax,3; mov bx,ax;
@@ -113,7 +113,7 @@ pub fn func_9f80(m: &mut Machine) {
 /// (CF/ZF/SF/PF defined; OF/AF undefined for a >1-bit shift). Lifted 1-to-1; oracle-verified.
 pub fn func_533c(m: &mut Machine) {
     let shifted = m.regs.shl16(m.regs.ax(), 3);
-    m.regs.eax = m.read32(m.regs.fs, shifted.wrapping_add(4));
+    m.regs.eax = m.read32(m.regs.fs, (shifted.wrapping_add(4)) as u32);
 }
 
 /// `func_a40b` — file 0xA40B: `cmp gs:[0xD5F],0; je .end; cmp gs:[0xD5F],1; .end: ret`. A
@@ -154,7 +154,7 @@ pub fn func_6023(m: &mut Machine) {
     m.regs.set_ax(shifted);
     let idx = m.regs.bx().trailing_zeros() as u16; // bsf bx,bx (bx != 0)
     let addr = m.regs.add16(idx, m.regs.ax()); // add bx,ax -> final flags
-    let al = m.read8(m.regs.gs, addr.wrapping_add(0x6d60));
+    let al = m.read8(m.regs.gs, (addr.wrapping_add(0x6d60)) as u32);
     m.regs.set_al(al);
     // cbw: AX = sign-extend(AL); EAX high word unchanged.
     let signed = m.regs.al() as i8 as i16 as u16;
@@ -240,12 +240,16 @@ mod tests {
     /// and (when `check_flags`) all six flags — matches the real binary. This is the fully
     /// automated path-B check: `lift.py` emits `f`, `auto_oracle.py` emits the vectors.
     fn verify_generic(name: &str, f: fn(&mut Machine), check_flags: bool) {
-        let raw = match std::fs::read_to_string(format!("re/tools/oracle_vectors/{name}_generic.json"))
-            .or_else(|_| std::fs::read_to_string(format!("../re/tools/oracle_vectors/{name}_generic.json")))
-        {
-            Ok(s) => s,
-            Err(_) => return,
-        };
+        let raw =
+            match std::fs::read_to_string(format!("re/tools/oracle_vectors/{name}_generic.json"))
+                .or_else(|_| {
+                    std::fs::read_to_string(format!(
+                        "../re/tools/oracle_vectors/{name}_generic.json"
+                    ))
+                }) {
+                Ok(s) => s,
+                Err(_) => return,
+            };
         let vecs: Vec<GenVec> = serde_json::from_str(&raw).unwrap();
         assert!(!vecs.is_empty());
         for (i, v) in vecs.iter().enumerate() {
@@ -292,17 +296,73 @@ mod tests {
     #[test]
     fn auto_lifted_batch_matches_oracle() {
         let batch: &[(&str, fn(&mut Machine))] = &[
+            ("func_149b", super::auto::func_149b),
             ("func_1fbc", super::auto::func_1fbc),
+            ("func_248b", super::auto::func_248b),
+            ("func_25a4", super::auto::func_25a4),
+            ("func_2612", super::auto::func_2612),
+            ("func_2e73", super::auto::func_2e73),
+            ("func_3066", super::auto::func_3066),
+            ("func_30cd", super::auto::func_30cd),
+            ("func_3106", super::auto::func_3106),
+            ("func_3192", super::auto::func_3192),
+            ("func_32ac", super::auto::func_32ac),
+            ("func_3321", super::auto::func_3321),
+            ("func_339e", super::auto::func_339e),
+            ("func_3c6c", super::auto::func_3c6c),
+            ("func_3d7b", super::auto::func_3d7b),
+            ("func_3dbf", super::auto::func_3dbf),
+            ("func_414e", super::auto::func_414e),
+            ("func_41d1", super::auto::func_41d1),
+            ("func_420d", super::auto::func_420d),
+            ("func_509d", super::auto::func_509d),
+            ("func_5320", super::auto::func_5320),
+            ("func_533c", super::auto::func_533c),
+            ("func_577a", super::auto::func_577a),
+            ("func_5791", super::auto::func_5791),
             ("func_5fd8", super::auto::func_5fd8),
             ("func_5ff6", super::auto::func_5ff6),
             ("func_78d0", super::auto::func_78d0),
+            ("func_7cb4", super::auto::func_7cb4),
             ("func_8269", super::auto::func_8269),
+            ("func_8295", super::auto::func_8295),
+            ("func_9510", super::auto::func_9510),
+            ("func_963f", super::auto::func_963f),
+            ("func_9b04", super::auto::func_9b04),
+            ("func_9f80", super::auto::func_9f80),
+            ("func_a117", super::auto::func_a117),
             ("func_a3ad", super::auto::func_a3ad),
+            ("func_a3d0", super::auto::func_a3d0),
+            ("func_a40b", super::auto::func_a40b),
+            ("func_a634", super::auto::func_a634),
+            ("func_a734", super::auto::func_a734),
+            ("func_a73e", super::auto::func_a73e),
+            ("func_a744", super::auto::func_a744),
+            ("func_a757", super::auto::func_a757),
+            ("func_a7e6", super::auto::func_a7e6),
+            ("func_aabc", super::auto::func_aabc),
+            ("func_ad96", super::auto::func_ad96),
             ("func_b75c", super::auto::func_b75c),
         ];
+        let mut failures = Vec::new();
         for (name, f) in batch {
-            verify_generic(name, *f, false);
+            let f = *f;
+            let name = *name;
+            if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                verify_generic(name, f, false)
+            }))
+            .is_err()
+            {
+                failures.push(name);
+            }
         }
+        assert!(
+            failures.is_empty(),
+            "{}/{} auto-lifts failed generic verification: {:?}",
+            failures.len(),
+            batch.len(),
+            failures
+        );
     }
 
     #[test]
@@ -322,7 +382,11 @@ mod tests {
             Err(_) => return,
         };
         const DS: u16 = 0x2000;
-        for (i, v) in serde_json::from_str::<Vec<V>>(&raw).unwrap().iter().enumerate() {
+        for (i, v) in serde_json::from_str::<Vec<V>>(&raw)
+            .unwrap()
+            .iter()
+            .enumerate()
+        {
             let mut m = Machine::new();
             m.regs.ds = DS;
             m.write16(DS, 0xa7e, v.a7e);
@@ -358,7 +422,11 @@ mod tests {
             Err(_) => return,
         };
         const DS: u16 = 0x2000;
-        for (i, v) in serde_json::from_str::<Vec<V>>(&raw).unwrap().iter().enumerate() {
+        for (i, v) in serde_json::from_str::<Vec<V>>(&raw)
+            .unwrap()
+            .iter()
+            .enumerate()
+        {
             let mut m = Machine::new();
             m.regs.ds = DS;
             func_a73e(&mut m);
@@ -387,7 +455,11 @@ mod tests {
             Err(_) => return,
         };
         const GS: u16 = 0x3000;
-        for (i, v) in serde_json::from_str::<Vec<V>>(&raw).unwrap().iter().enumerate() {
+        for (i, v) in serde_json::from_str::<Vec<V>>(&raw)
+            .unwrap()
+            .iter()
+            .enumerate()
+        {
             let mut m = Machine::new();
             m.regs.gs = GS;
             m.regs.set_ax(v.ax);
@@ -395,7 +467,7 @@ mod tests {
             let shifted = (v.ax << 4) & 0xffff;
             let idx = v.bx.trailing_zeros() as u16;
             let addr = idx.wrapping_add(shifted);
-            m.write8(GS, addr.wrapping_add(0x6d60), v.byte);
+            m.write8(GS, (addr.wrapping_add(0x6d60)) as u32, v.byte);
             func_6023(&mut m);
             assert_eq!(m.regs.eax, v.eax_out, "vec {i}: EAX");
             assert_eq!(m.regs.bx(), v.bx_out, "vec {i}: BX preserved");
@@ -424,7 +496,9 @@ mod tests {
 
     #[test]
     fn func_a40b_matches_oracle_vectors() {
-        let Some(vecs) = load_byte_flags("func_a40b") else { return };
+        let Some(vecs) = load_byte_flags("func_a40b") else {
+            return;
+        };
         const GS: u16 = 0x3000;
         for (i, v) in vecs.iter().enumerate() {
             let mut m = Machine::new();
@@ -442,7 +516,9 @@ mod tests {
 
     #[test]
     fn func_a634_matches_oracle_vectors() {
-        let Some(vecs) = load_byte_flags("func_a634") else { return };
+        let Some(vecs) = load_byte_flags("func_a634") else {
+            return;
+        };
         const GS: u16 = 0x3000;
         for (i, v) in vecs.iter().enumerate() {
             let mut m = Machine::new();
@@ -485,7 +561,7 @@ mod tests {
             m.regs.fs = FS;
             m.regs.set_ax(v.ax);
             m.regs.set_bx(v.bx);
-            m.write32(FS, v.off, v.dword);
+            m.write32(FS, v.off as u32, v.dword);
             func_533c(&mut m);
             assert_eq!(m.regs.eax, v.eax_out, "vec {i}: EAX");
             assert_eq!(m.regs.bx(), v.bx_out, "vec {i}: BX preserved");
@@ -604,7 +680,7 @@ mod tests {
                 .wrapping_add(v.ax)
                 .wrapping_add(v.ax)
                 .wrapping_add(v.ax);
-            m.write16(DS, addr, v.word);
+            m.write16(DS, addr as u32, v.word);
             func_9f80(&mut m);
             assert_eq!(m.regs.bx(), v.bx_out, "vec {i}: BX");
             assert_eq!(m.regs.cf, v.flags.cf, "vec {i}: CF");

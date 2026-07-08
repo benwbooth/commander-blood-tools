@@ -7,8 +7,40 @@ Requires unicorn; run with PYTHONSAFEPATH=1."""
 from unicorn import *
 from unicorn.x86_const import *
 import struct, random, json, sys
+import capstone
 
 EXE = open("re/bin/BLOODPRG.EXE", "rb").read()
+_MD = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_16)
+_RET_CACHE = {}
+
+def _ret_addrs(entry):
+    """Addresses of every ret/retf/iret reachable in the function (linear sweep of blocks).
+    We stop emulation AT these rather than letting the CPU execute the return: a Unicorn
+    read-hook bug corrupts the far-return (retf) multi-byte stack pop, and stopping before
+    it both dodges that and captures the exact pre-return register state the Rust lift's
+    `return` reproduces."""
+    if entry in _RET_CACHE:
+        return _RET_CACHE[entry]
+    rets, leaders, seen = set(), [entry], set()
+    while leaders:
+        a = leaders.pop()
+        if a in seen or not (0x600 <= a < 0xd000):
+            continue
+        for i in _MD.disasm(EXE[a:a + 400], a):
+            if i.address in seen:
+                break
+            seen.add(i.address)
+            mn = i.mnemonic
+            if mn in ("ret", "retf", "iret"):
+                rets.add(i.address); break
+            if mn == "jmp" and i.op_str.startswith("0x"):
+                leaders.append(int(i.op_str, 16)); break
+            if mn == "jmp":
+                break
+            if i.op_str.startswith("0x") and (mn[0] == "j" or mn == "loop"):
+                leaders.append(int(i.op_str, 16))
+    _RET_CACHE[entry] = rets
+    return rets
 GP = [("ax", UC_X86_REG_AX), ("bx", UC_X86_REG_BX), ("cx", UC_X86_REG_CX), ("dx", UC_X86_REG_DX),
       ("si", UC_X86_REG_SI), ("di", UC_X86_REG_DI), ("bp", UC_X86_REG_BP)]
 OUT = [("eax", UC_X86_REG_EAX), ("ebx", UC_X86_REG_EBX), ("ecx", UC_X86_REG_ECX),
@@ -59,13 +91,24 @@ def gen(entry, retf, n=250):
             if addr < 0x10000: bad[0] = True
             for k in range(size):
                 writes[addr + k] = (val >> (8 * k)) & 0xFF
+        # Stop AT the first ret/retf reached (before it executes): dodges a Unicorn read-hook
+        # bug that corrupts the far-return stack pop, and captures the pre-return register
+        # state the Rust `return` mirrors. `returned` distinguishes a real return from an
+        # instruction-cap timeout (non-terminating fuzzed input -> discard).
+        rets = _ret_addrs(entry)
+        returned = [False]
+        def oncode(u, addr, size, ud):
+            if addr in rets:
+                returned[0] = True
+                u.emu_stop()
         mu.hook_add(UC_HOOK_MEM_READ, onread)
         mu.hook_add(UC_HOOK_MEM_WRITE, onwrite)
+        mu.hook_add(UC_HOOK_CODE, oncode)
         try:
-            mu.emu_start(entry, SENT if retf else RET_IP, count=5000)
+            mu.emu_start(entry, SENT if retf else RET_IP, count=20000)
         except UcError:
             continue
-        if bad[0]:
+        if bad[0] or not returned[0]:
             continue
         fl = mu.reg_read(UC_X86_REG_EFLAGS)
         vecs.append(dict(

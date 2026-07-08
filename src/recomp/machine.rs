@@ -176,6 +176,97 @@ impl Regs {
         self.sub16(a, b);
     }
 
+    /// 16-bit `NEG` (0 - a). Flags as `SUB(0, a)`: CF set unless a==0.
+    pub fn neg16(&mut self, a: u16) -> u16 {
+        self.sub16(0, a)
+    }
+
+    /// 32-bit `ADD`/`SUB`/`AND`/`OR`/`XOR`/`SHL`/`SHR`/`CMP` with exact 386 flags. SF/OF use bit
+    /// 31; PF is even-parity of the low byte; shift OF is exact only for count==1.
+    pub fn add32(&mut self, a: u32, b: u32) -> u32 {
+        let full = a as u64 + b as u64;
+        let r = full as u32;
+        self.cf = full > 0xffff_ffff;
+        self.af = (a & 0xf) + (b & 0xf) > 0xf;
+        self.zf = r == 0;
+        self.sf = r & 0x8000_0000 != 0;
+        self.of = (a ^ r) & (b ^ r) & 0x8000_0000 != 0;
+        self.pf = (r as u8).count_ones() % 2 == 0;
+        r
+    }
+    pub fn sub32(&mut self, a: u32, b: u32) -> u32 {
+        let r = a.wrapping_sub(b);
+        self.cf = a < b;
+        self.af = (a & 0xf) < (b & 0xf);
+        self.zf = r == 0;
+        self.sf = r & 0x8000_0000 != 0;
+        self.of = (a ^ b) & (a ^ r) & 0x8000_0000 != 0;
+        self.pf = (r as u8).count_ones() % 2 == 0;
+        r
+    }
+    pub fn cmp32(&mut self, a: u32, b: u32) {
+        self.sub32(a, b);
+    }
+    fn logic32_flags(&mut self, r: u32) {
+        self.cf = false;
+        self.of = false;
+        self.zf = r == 0;
+        self.sf = r & 0x8000_0000 != 0;
+        self.pf = (r as u8).count_ones() % 2 == 0;
+        self.af = false;
+    }
+    pub fn and32(&mut self, a: u32, b: u32) -> u32 {
+        let r = a & b;
+        self.logic32_flags(r);
+        r
+    }
+    pub fn or32(&mut self, a: u32, b: u32) -> u32 {
+        let r = a | b;
+        self.logic32_flags(r);
+        r
+    }
+    pub fn xor32(&mut self, a: u32, b: u32) -> u32 {
+        let r = a ^ b;
+        self.logic32_flags(r);
+        r
+    }
+    pub fn shl32(&mut self, val: u32, count: u8) -> u32 {
+        let count = count & 0x1f;
+        if count == 0 {
+            return val;
+        }
+        let mut r = val;
+        let mut cf = false;
+        for _ in 0..count {
+            cf = r & 0x8000_0000 != 0;
+            r = r.wrapping_shl(1);
+        }
+        self.cf = cf;
+        self.zf = r == 0;
+        self.sf = r & 0x8000_0000 != 0;
+        self.pf = (r as u8).count_ones() % 2 == 0;
+        self.of = (r & 0x8000_0000 != 0) != cf;
+        r
+    }
+    pub fn shr32(&mut self, val: u32, count: u8) -> u32 {
+        let count = count & 0x1f;
+        if count == 0 {
+            return val;
+        }
+        let mut r = val;
+        let mut cf = false;
+        for _ in 0..count {
+            cf = r & 1 != 0;
+            r >>= 1;
+        }
+        self.cf = cf;
+        self.zf = r == 0;
+        self.sf = r & 0x8000_0000 != 0;
+        self.pf = (r as u8).count_ones() % 2 == 0;
+        self.of = val & 0x8000_0000 != 0;
+        r
+    }
+
     /// 16-bit `TEST` (a & b, discarded): clears CF/OF, sets ZF/SF/PF. AF undefined.
     pub fn test16(&mut self, a: u16, b: u16) {
         let r = a & b;
@@ -314,6 +405,171 @@ impl Regs {
         self.of = (r & 0x8000 != 0) != cf; // exact for count==1; deterministic otherwise
         r
     }
+
+    /// 8-bit `INC`/`DEC` (CF not affected).
+    pub fn inc8(&mut self, a: u8) -> u8 {
+        let r = a.wrapping_add(1);
+        self.af = (a & 0xf) + 1 > 0xf;
+        self.zf = r == 0;
+        self.sf = r & 0x80 != 0;
+        self.of = a == 0x7f;
+        self.pf = r.count_ones() % 2 == 0;
+        r
+    }
+    pub fn dec8(&mut self, a: u8) -> u8 {
+        let r = a.wrapping_sub(1);
+        self.af = a & 0xf == 0;
+        self.zf = r == 0;
+        self.sf = r & 0x80 != 0;
+        self.of = a == 0x80;
+        self.pf = r.count_ones() % 2 == 0;
+        r
+    }
+
+    /// 32-bit `INC`/`DEC` (CF not affected).
+    pub fn inc32(&mut self, a: u32) -> u32 {
+        let r = a.wrapping_add(1);
+        self.af = (a & 0xf) + 1 > 0xf;
+        self.zf = r == 0;
+        self.sf = r & 0x8000_0000 != 0;
+        self.of = a == 0x7fff_ffff;
+        self.pf = (r as u8).count_ones() % 2 == 0;
+        r
+    }
+    pub fn dec32(&mut self, a: u32) -> u32 {
+        let r = a.wrapping_sub(1);
+        self.af = a & 0xf == 0;
+        self.zf = r == 0;
+        self.sf = r & 0x8000_0000 != 0;
+        self.of = a == 0x8000_0000;
+        self.pf = (r as u8).count_ones() % 2 == 0;
+        r
+    }
+
+    /// 8-bit / 32-bit `NEG` (0 - a).
+    pub fn neg8(&mut self, a: u8) -> u8 {
+        self.sub8(0, a)
+    }
+    pub fn neg32(&mut self, a: u32) -> u32 {
+        self.sub32(0, a)
+    }
+
+    /// 8-bit `SHL`/`SHR` (count masked to 5 bits like the 386).
+    pub fn shl8(&mut self, val: u8, count: u8) -> u8 {
+        let count = count & 0x1f;
+        if count == 0 {
+            return val;
+        }
+        let mut r = val;
+        let mut cf = false;
+        for _ in 0..count {
+            cf = r & 0x80 != 0;
+            r = r.wrapping_shl(1);
+        }
+        self.cf = cf;
+        self.zf = r == 0;
+        self.sf = r & 0x80 != 0;
+        self.pf = r.count_ones() % 2 == 0;
+        self.of = (r & 0x80 != 0) != cf;
+        r
+    }
+    pub fn shr8(&mut self, val: u8, count: u8) -> u8 {
+        let count = count & 0x1f;
+        if count == 0 {
+            return val;
+        }
+        let mut r = val;
+        let mut cf = false;
+        for _ in 0..count {
+            cf = r & 1 != 0;
+            r >>= 1;
+        }
+        self.cf = cf;
+        self.zf = r == 0;
+        self.sf = r & 0x80 != 0;
+        self.pf = r.count_ones() % 2 == 0;
+        self.of = val & 0x80 != 0;
+        r
+    }
+
+    /// 8-bit `SBB` (a - b - CF). CF/AF/OF as subtract-with-borrow; ZF/SF/PF from result.
+    pub fn sbb8(&mut self, a: u8, b: u8) -> u8 {
+        let bin = self.cf as u16;
+        let full = a as u16 + b as u16 + bin; // for borrow detection
+        let r = a.wrapping_sub(b).wrapping_sub(bin as u8);
+        self.cf = full > 0xff; // borrow: a < b + cin
+        self.af = (a & 0xf) < (b & 0xf) + bin as u8;
+        self.zf = r == 0;
+        self.sf = r & 0x80 != 0;
+        self.of = (a ^ b) & (a ^ r) & 0x80 != 0;
+        self.pf = r.count_ones() % 2 == 0;
+        r
+    }
+    /// 16-bit `SBB` (a - b - CF).
+    pub fn sbb16(&mut self, a: u16, b: u16) -> u16 {
+        let bin = self.cf as u32;
+        let full = a as u32 + b as u32 + bin;
+        let r = a.wrapping_sub(b).wrapping_sub(bin as u16);
+        self.cf = full > 0xffff;
+        self.af = (a & 0xf) < (b & 0xf) + bin as u16;
+        self.zf = r == 0;
+        self.sf = r & 0x8000 != 0;
+        self.of = (a ^ b) & (a ^ r) & 0x8000 != 0;
+        self.pf = (r as u8).count_ones() % 2 == 0;
+        r
+    }
+
+    /// 8-bit / 16-bit `ADC` (a + b + CF) with exact carry/overflow flags.
+    pub fn adc8(&mut self, a: u8, b: u8) -> u8 {
+        let cin = self.cf as u16;
+        let full = a as u16 + b as u16 + cin;
+        let r = full as u8;
+        self.cf = full > 0xff;
+        self.af = (a & 0xf) as u16 + (b & 0xf) as u16 + cin > 0xf;
+        self.zf = r == 0;
+        self.sf = r & 0x80 != 0;
+        self.of = (a ^ r) & (b ^ r) & 0x80 != 0;
+        self.pf = r.count_ones() % 2 == 0;
+        r
+    }
+    pub fn adc16(&mut self, a: u16, b: u16) -> u16 {
+        let cin = self.cf as u32;
+        let full = a as u32 + b as u32 + cin;
+        let r = full as u16;
+        self.cf = full > 0xffff;
+        self.af = (a & 0xf) as u32 + (b & 0xf) as u32 + cin > 0xf;
+        self.zf = r == 0;
+        self.sf = r & 0x8000 != 0;
+        self.of = (a ^ r) & (b ^ r) & 0x8000 != 0;
+        self.pf = (r as u8).count_ones() % 2 == 0;
+        r
+    }
+
+    /// 8-bit unsigned `MUL`: AX = AL * src. CF=OF = (AH != 0); ZF/SF/PF undefined (assigned).
+    pub fn mul8(&mut self, src: u8) {
+        let r = self.al() as u16 * src as u16;
+        self.set_ax(r);
+        let of = r & 0xff00 != 0;
+        self.cf = of;
+        self.of = of;
+        self.zf = r == 0;
+        self.sf = r & 0x8000 != 0;
+        self.pf = (r as u8).count_ones() % 2 == 0;
+        self.af = false;
+    }
+    /// 16-bit unsigned `MUL`: DX:AX = AX * src. CF=OF = (DX != 0).
+    pub fn mul16(&mut self, src: u16) {
+        let r = self.ax() as u32 * src as u32;
+        self.set_ax(r as u16);
+        self.set_dx((r >> 16) as u16);
+        let of = r & 0xffff_0000 != 0;
+        self.cf = of;
+        self.of = of;
+        self.zf = (r as u16) == 0;
+        self.sf = r & 0x8000 != 0;
+        self.pf = (r as u8).count_ones() % 2 == 0;
+        self.af = false;
+    }
 }
 
 /// Flat real-mode memory + registers. Addressing is `seg*16 + off` (20-bit, wraps at 1 MB like
@@ -339,36 +595,40 @@ impl Machine {
         }
     }
 
-    /// Linear address for a real-mode `seg:off` pair, wrapped to the 1 MB image.
+    /// Linear address for a real-mode `seg:off` pair, wrapped to the 1 MB image. `off` is `u32`
+    /// so 32-bit effective addresses (0x67-prefixed `[eax+edi]` etc.) add their full value to
+    /// `seg*16` without a 16-bit truncation — matching the CPU's real-mode 32-bit addressing (the
+    /// oracle records reads/writes up to ~0x7A000 past the segment base). 16-bit addressing forms
+    /// are wrapped to 16 bits by the lifter *before* the value reaches here.
     #[inline]
-    pub fn lin(seg: u16, off: u16) -> usize {
+    pub fn lin(seg: u16, off: u32) -> usize {
         ((seg as usize) * 16 + off as usize) & (MEM_SIZE - 1)
     }
 
     #[inline]
-    pub fn read8(&self, seg: u16, off: u16) -> u8 {
+    pub fn read8(&self, seg: u16, off: u32) -> u8 {
         self.mem[Self::lin(seg, off)]
     }
     #[inline]
-    pub fn write8(&mut self, seg: u16, off: u16, v: u8) {
+    pub fn write8(&mut self, seg: u16, off: u32, v: u8) {
         self.mem[Self::lin(seg, off)] = v;
     }
     #[inline]
-    pub fn read16(&self, seg: u16, off: u16) -> u16 {
+    pub fn read16(&self, seg: u16, off: u32) -> u16 {
         u16::from_le_bytes([self.read8(seg, off), self.read8(seg, off.wrapping_add(1))])
     }
     #[inline]
-    pub fn write16(&mut self, seg: u16, off: u16, v: u16) {
+    pub fn write16(&mut self, seg: u16, off: u32, v: u16) {
         let [lo, hi] = v.to_le_bytes();
         self.write8(seg, off, lo);
         self.write8(seg, off.wrapping_add(1), hi);
     }
     #[inline]
-    pub fn read32(&self, seg: u16, off: u16) -> u32 {
+    pub fn read32(&self, seg: u16, off: u32) -> u32 {
         (self.read16(seg, off) as u32) | ((self.read16(seg, off.wrapping_add(2)) as u32) << 16)
     }
     #[inline]
-    pub fn write32(&mut self, seg: u16, off: u16, v: u32) {
+    pub fn write32(&mut self, seg: u16, off: u32, v: u32) {
         self.write16(seg, off, v as u16);
         self.write16(seg, off.wrapping_add(2), (v >> 16) as u16);
     }
@@ -386,7 +646,10 @@ mod tests {
         assert_eq!((r.al(), r.ah()), (0x34, 0x12));
         r.set_al(0xAB);
         assert_eq!(r.ax(), 0x12AB);
-        assert_eq!(r.eax, 0xDEAD_12AB, "16/8-bit writes preserve the high dword");
+        assert_eq!(
+            r.eax, 0xDEAD_12AB,
+            "16/8-bit writes preserve the high dword"
+        );
         r.set_ax(0x5678);
         assert_eq!(r.eax, 0xDEAD_5678);
     }
