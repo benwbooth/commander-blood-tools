@@ -321,3 +321,18 @@ mode-X framebuffer bytes (4 planes at the VGA page, de-interleaved) from DOSBox 
 ptrace tool, and compare against the engine's exact framebuffer bytes - no scaler, no palette
 reinterpretation. That is the next behavioral-verification step. STATUS: qualitative match
 confirmed (boot logos); rigorous per-pixel parity still requires the memory-framebuffer harness.
+
+## Behavioral verification: confound-free palette read from live memory — 2026-07
+Toward the memory-level comparison (screen-scrape was shown insufficient), established the
+palette half of it end-to-end:
+- Traced vga_palette_write (0x2f90): rep outsb 768 bytes from DS:SI to DAC port 0x3c9. The
+  caller (0x16a7) sets ds=gs, si=0x5b58 -> the palette buffer is GS:0x5b58 = DGROUP:0x5b58.
+- Read it LIVE via ptrace (re/tools/read_live_palette.py): 768/768 bytes in valid DAC range
+  (<=63); matches the baked default at file 0x12f78. This is a CONFOUND-FREE per-byte read of
+  the game's exact palette - no scaler, no gamma, unlike screen-scraping.
+- The intro HNM logos leave DS:0x5b58 at the default (they drive the DAC via their own
+  per-frame palette path); DS:0x5b58 is the GAME-screen palette (locations/nav/dialogue).
+NEXT: drive the game to a location screen (drive_real_game.sh) so it loads that location's
+palette into GS:0x5b58, then compare byte-for-byte against our decoded location-art palette -
+a rigorous, confound-free decoder-accuracy check. STATUS: palette-readback capability proven;
+the location-palette equivalence comparison is the next step.
