@@ -7,9 +7,39 @@ fn main() {
     }
 }
 
+/// Locate a directory that holds the game data (`DESCRIPT.DES` + `SCRIPT1.COD`).
+/// Checked in order: the `CBLOOD_DATA` env var, then the usual extracted-ISO
+/// locations in this tree. Used so a bare `cargo run` can launch the game
+/// window without the caller having to spell out the data paths.
+fn default_data_dir() -> Option<std::path::PathBuf> {
+    let mut candidates: Vec<std::path::PathBuf> = Vec::new();
+    if let Ok(dir) = std::env::var("CBLOOD_DATA") {
+        candidates.push(dir.into());
+    }
+    candidates.push("commander-blood-audio/_tmp_iso".into());
+    candidates.push("output".into());
+    candidates
+        .into_iter()
+        .find(|d| d.join("DESCRIPT.DES").is_file() && d.join("SCRIPT1.COD").is_file())
+}
+
 fn run() -> anyhow::Result<()> {
     let mut args = std::env::args().skip(1);
     match args.next().as_deref() {
+        // Bare `cargo run` (no subcommand): launch the live game window using the
+        // auto-detected data directory. Set CBLOOD_DATA to override the location.
+        None => {
+            let dir = default_data_dir().ok_or_else(|| {
+                anyhow::anyhow!(
+                    "no game data found (looked for DESCRIPT.DES + SCRIPT1.COD in \
+                     $CBLOOD_DATA, commander-blood-audio/_tmp_iso, output).\n\
+                     Run `cargo run -- engine-window <iso-dir> <asset-dir>` with an \
+                     extracted ISO, or set CBLOOD_DATA to that directory."
+                )
+            })?;
+            let dir = dir.to_string_lossy().into_owned();
+            run_engine_window(&dir, &dir, "SCRIPT1")
+        }
         Some("inspect-bloodprg") => {
             let path = args
                 .next()
