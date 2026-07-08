@@ -321,3 +321,22 @@ process by searching for a known de-interleaved frame signature; (b) use a DOSBo
 build to read the live GS register at a render call, giving the arena base directly. Recorded
 tools: re/tools/read_live_framebuffer.py (linear-bb attempt). Framebuffer-pixel parity remains
 OPEN; palette per-byte parity (CHART.FD, 120/120 scene colors) stands as the positive result.
+
+## Framebuffer read: UNBLOCKED (GS=DS); real frame captured; layout decode pending — 2026-07
+The prior "GS render arena not in DGROUP" blocker was WRONG about the cause. Confirmed from the
+code: there is exactly ONE `mov gs` in the whole binary, at boot 0x61e (`mov ax,ds; mov gs,ax`),
+so **GS == DS == DGROUP for the entire program**. The earlier live reads got 0 at gs:0x5229
+because that run happened to catch an HNM cutscene (which renders via its own path, back-buffer
+unallocated), NOT the star-map.
+- Re-ran during a CONFIRMED star-map (palette 120/120): gs:0x5229 = 3cef:0000 (allocated linear
+  back-buffer), gs:0x521d = a000:4000 (VGA mode-X page 1). Read 64000 bytes from 3cef:0000.
+- The data is a REAL frame, not garbage: histogram = 51% index-0 (black) with a clean fully-zero
+  top band and stddev-of-counts 2064 (highly skewed => real image; uniform garbage would be ~15).
+- BUT: rendered with the (verified) palette, neither a linear 320x200 nor a 4x16000 plane-bank
+  nor a 4-interleaved layout produces a recognizable star-map - the bottom renders as per-pixel
+  noise (adjacent pixels uncorrelated), so the exact buffer layout is still wrong.
+NEXT (concrete): (a) try reading the VGA page itself at dos_base + 0xA0000 + 0x4000 (the actual
+displayed mode-X page) and de-interleave; (b) determine the game's back-buffer stride/paging
+from the blit routine (0x509d dirty-rect blit / 0x3e46 full blit) which encodes the exact
+src->dst layout. The frame DATA is captured and proven real (re/tools/read_live_framebuffer.py);
+only the layout mapping remains. This is progress from the prior null-pointer state.
