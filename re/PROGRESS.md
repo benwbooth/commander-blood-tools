@@ -696,3 +696,16 @@ must equal the header frame_count (frames.len() == header count) - so no frame i
 dropped. Verified across all 43 standard banks (total ~600+ frames). Combined with the raw-decode
 bug fix, the sprite decoder is now proven to decode every frame of every standard bank correctly.
 This is the payoff pattern: broad exhaustive tests either confirm 100% coverage or expose a bug.
+
+## Bug fix #2 (cross-decoder verification): extract-side sprite decoder had the SAME raw bug — 2026-07
+Cross-checking the two independent sprite decoders (engine src/sprite.rs vs extract src/extract/
+render.rs) revealed the SAME raw/RLE dispatch bug in the extract-side path (used for the MP4/PGM
+sprite exports):
+- SpriteSlotFrameTable::dispatch_index() = ((flags&4)|0x83)>>1 & 7, which only ever yields odd
+  (RLE) codes, so RAW banks (flags&4==0, BAPPEL.SPR + 1 other) silently exported 0 frames.
+- Fixed identically: `if flags&4==0 {0 raw} else {3 RLE}`. Added regression test
+  raw_sprite_bank_decodes_via_extract_decoder (passes).
+So the raw-sprite bug existed in BOTH decoders; both now fixed. This is why cross-decoder
+verification matters - the same defect was duplicated. Suite now 428 tests, 0 failing. Two real
+accuracy bugs found+fixed by the verification push (both the raw-sprite dispatch, engine+extract).
+STILL not whole-game: composited display pixels, all-function behavioral parity, runtime pixels.

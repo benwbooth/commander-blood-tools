@@ -308,7 +308,11 @@ impl<'a> SpriteSlotFrameTable<'a> {
     }
 
     pub(super) fn dispatch_index(&self) -> u8 {
-        ((self.slot_state_flags() >> 1) & 0x07) as u8
+        // Bank flags bit 2 selects the frame encoding: clear -> RAW (uncompressed width*height),
+        // set -> RLE. The older `(slot_state_flags()>>1)&7` form only ever yielded odd (RLE)
+        // codes, so RAW banks (flags&4==0, e.g. BAPPEL.SPR) silently decoded to 0 frames.
+        // Verified across all 44 .spr banks (see src/sprite.rs bank_dispatch_index).
+        if self.flags & 0x0004 == 0 { 0 } else { 3 }
     }
 
     pub(super) fn frame(&self, index: usize) -> Option<Ship3dSpriteSlotFrame<'a>> {
@@ -1214,6 +1218,29 @@ pub(super) const GAME_FONT_GLYPHS: [[u8; GAME_FONT_HEIGHT]; 86] = [
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// RAW sprite banks (flags&4==0, e.g. BAPPEL.SPR) must decode via the extract-side decoder -
+    /// regression for the dispatch bug that treated all banks as RLE and dropped raw frames.
+    /// Skips if the asset isn't present.
+    #[test]
+    fn raw_sprite_bank_decodes_via_extract_decoder() {
+        let data = [
+            "output/_tmp_iso/BAPPEL.SPR",
+            "output/_tmp_dat/spr/BAPPEL.SPR",
+            "../output/_tmp_iso/BAPPEL.SPR",
+        ]
+        .iter()
+        .find_map(|p| std::fs::read(p).ok());
+        let Some(data) = data else { return };
+        let table = SpriteSlotFrameTable::parse(&data).expect("BAPPEL parses");
+        assert_eq!(table.flags & 0x0004, 0, "BAPPEL is a RAW bank (flags&4==0)");
+        assert_eq!(table.dispatch_index(), 0, "raw dispatch");
+        let frames = decode_sprite_bank_indices(&data).expect("decodes");
+        assert!(!frames.is_empty(), "raw bank must yield frames");
+        for f in &frames {
+            assert_eq!(f.indices.len(), f.width * f.height);
+        }
+    }
 
     #[test]
     pub(super) fn recovered_game_font_matches_executable_rows() {
