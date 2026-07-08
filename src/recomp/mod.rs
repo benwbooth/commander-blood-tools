@@ -115,11 +115,80 @@ pub fn func_533c(m: &mut Machine) {
     m.regs.eax = m.read32(m.regs.fs, shifted.wrapping_add(4));
 }
 
+/// `func_a40b` — file 0xA40B: `cmp gs:[0xD5F],0; je .end; cmp gs:[0xD5F],1; .end: ret`. A
+/// tri-state check of the byte at `gs:0xD5F`: leaves flags from `cmp(b,0)` if b==0, else from
+/// `cmp(b,1)` (so the caller can branch <1 / ==1 / >1). No register/memory change. Oracle-verified.
+pub fn func_a40b(m: &mut Machine) {
+    let b = m.read8(m.regs.gs, 0xd5f);
+    m.regs.cmp8(b, 0);
+    if !m.regs.zf {
+        m.regs.cmp8(b, 1);
+    }
+}
+
+/// `func_a634` — file 0xA634: `test byte [DS←GS:0xB17],1; ret` (with AX/DS saved+restored).
+/// Sets ZF from bit 0 of `gs:0xB17` (CF/OF cleared). No register/memory change. Oracle-verified
+/// (CF/OF/ZF/SF/PF; AF undefined for TEST).
+pub fn func_a634(m: &mut Machine) {
+    let b = m.read8(m.regs.gs, 0xb17);
+    m.regs.test8(b, 1);
+}
+
 #[cfg(test)]
 mod tests {
     use super::machine::Machine;
     use super::*;
     use serde::Deserialize;
+
+    #[derive(Deserialize)]
+    struct ByteFlagsVec {
+        #[allow(dead_code)]
+        byte: u8,
+        flags: Flags,
+    }
+
+    fn load_byte_flags(name: &str) -> Option<Vec<ByteFlagsVec>> {
+        let raw = std::fs::read_to_string(format!("re/tools/oracle_vectors/{name}.json"))
+            .or_else(|_| std::fs::read_to_string(format!("../re/tools/oracle_vectors/{name}.json")))
+            .ok()?;
+        Some(serde_json::from_str(&raw).unwrap())
+    }
+
+    #[test]
+    fn func_a40b_matches_oracle_vectors() {
+        let Some(vecs) = load_byte_flags("func_a40b") else { return };
+        const GS: u16 = 0x3000;
+        for (i, v) in vecs.iter().enumerate() {
+            let mut m = Machine::new();
+            m.regs.gs = GS;
+            m.write8(GS, 0xd5f, v.byte);
+            func_a40b(&mut m);
+            assert_eq!(m.regs.cf, v.flags.cf, "vec {i}: CF");
+            assert_eq!(m.regs.pf, v.flags.pf, "vec {i}: PF");
+            assert_eq!(m.regs.af, v.flags.af, "vec {i}: AF");
+            assert_eq!(m.regs.zf, v.flags.zf, "vec {i}: ZF");
+            assert_eq!(m.regs.sf, v.flags.sf, "vec {i}: SF");
+            assert_eq!(m.regs.of, v.flags.of, "vec {i}: OF");
+        }
+    }
+
+    #[test]
+    fn func_a634_matches_oracle_vectors() {
+        let Some(vecs) = load_byte_flags("func_a634") else { return };
+        const GS: u16 = 0x3000;
+        for (i, v) in vecs.iter().enumerate() {
+            let mut m = Machine::new();
+            m.regs.gs = GS;
+            m.write8(GS, 0xb17, v.byte);
+            func_a634(&mut m);
+            // TEST: CF/OF cleared, ZF/SF/PF from the AND (AF undefined).
+            assert_eq!(m.regs.cf, v.flags.cf, "vec {i}: CF");
+            assert_eq!(m.regs.of, v.flags.of, "vec {i}: OF");
+            assert_eq!(m.regs.zf, v.flags.zf, "vec {i}: ZF");
+            assert_eq!(m.regs.sf, v.flags.sf, "vec {i}: SF");
+            assert_eq!(m.regs.pf, v.flags.pf, "vec {i}: PF");
+        }
+    }
 
     #[derive(Deserialize)]
     struct F533cVec {

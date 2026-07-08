@@ -120,3 +120,22 @@ while len(vecs4) < 300:
                       eax_out=o["regs"]["eax"], bx_out=o["regs"]["bx"], flags=o["flags"]))
 json.dump(vecs4, open("re/tools/oracle_vectors/func_533c.json", "w"))
 print(f"wrote {len(vecs4)} func_533c oracle vectors")
+
+# --- spec: func_a40b (cmp gs:[0xD5F],0; je; cmp gs:[0xD5F],1; ret) -- flags only ---
+GS = 0x3000
+spec5 = dict(name="func_a40b", entry=0xA40B, retf=False, out_regs=[], out_mem=[])
+vecs5 = []
+for byte in list(range(256)) + [random.randint(0, 255) for _ in range(44)]:
+    o = run(spec5, dict(regs={"gs": GS}, mem=[(GS, 0xD5F, bytes([byte]))]))
+    vecs5.append(dict(byte=byte, flags=o["flags"]))
+json.dump(vecs5, open("re/tools/oracle_vectors/func_a40b.json", "w"))
+print(f"wrote {len(vecs5)} func_a40b oracle vectors")
+
+# --- spec: func_a634 (test byte [DS=GS:0xB17],1; ret) -- flags only ---
+spec6 = dict(name="func_a634", entry=0xA634, retf=False, out_regs=[], out_mem=[])
+vecs6 = []
+for byte in list(range(256)):
+    o = run(spec6, dict(regs={"gs": GS}, mem=[(GS, 0xB17, bytes([byte]))]))
+    vecs6.append(dict(byte=byte, flags=o["flags"]))
+json.dump(vecs6, open("re/tools/oracle_vectors/func_a634.json", "w"))
+print(f"wrote {len(vecs6)} func_a634 oracle vectors")

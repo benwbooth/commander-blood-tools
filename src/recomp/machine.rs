@@ -110,6 +110,30 @@ impl Regs {
         r
     }
 
+    /// 8-bit `CMP` (a - b, result discarded): sets all six flags exactly like `SUB`. Used for
+    /// the many `cmp byte …` branch conditions.
+    pub fn cmp8(&mut self, a: u8, b: u8) {
+        let r = a.wrapping_sub(b);
+        self.cf = a < b;
+        self.af = (a & 0xf) < (b & 0xf);
+        self.zf = r == 0;
+        self.sf = r & 0x80 != 0;
+        self.of = (a ^ b) & (a ^ r) & 0x80 != 0;
+        self.pf = r.count_ones() % 2 == 0;
+    }
+
+    /// 8-bit `TEST` (a & b, result discarded): clears CF/OF, sets ZF/SF/PF from the AND. AF is
+    /// undefined (assigned false here, not oracle-asserted).
+    pub fn test8(&mut self, a: u8, b: u8) {
+        let r = a & b;
+        self.cf = false;
+        self.of = false;
+        self.zf = r == 0;
+        self.sf = r & 0x80 != 0;
+        self.pf = r.count_ones() % 2 == 0;
+        self.af = false;
+    }
+
     /// 16-bit `SHL` by `count` (386: count masked to 5 bits). Sets the DEFINED flags exactly:
     /// CF = last bit shifted out, and ZF/SF/PF from the result. OF is defined only for count==1
     /// (OF = SF xor CF); AF is undefined — both are assigned here but NOT oracle-asserted for

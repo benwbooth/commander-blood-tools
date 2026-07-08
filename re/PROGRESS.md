@@ -945,3 +945,12 @@ Upgraded the Machine to faithful 386 registers + lifted a function needing them:
 STATUS: 5 / 222+ functions lifted+verified. Foundation now handles 32-bit regs, 8086 ADD/SHL
 flags, undefined-flag exclusion, memory 8/16/32. This unblocks the many shift/32-bit leaves.
 Honest: 5 of 222+, not 100%.
+
+## PATH B: 7 functions lifted+verified (cmp/test flag functions) — 2026-07
+Added cmp8/test8 flag helpers + 2 flag-only functions:
+- Regs::cmp8 (all 6 flags like SUB) + Regs::test8 (ZF/SF/PF, CF/OF cleared, AF undefined).
+- func_a40b (0xA40B): tri-state cmp of gs:[0xD5F] vs 0/1 -> flags. 300 vectors, all 6 flags.
+- func_a634 (0xA634): test gs:[0xB17]&1 -> flags. 256 vectors (CF/OF/ZF/SF/PF; AF undefined).
+Skipped 0xA72E (unbalanced push es = data misparse, not a function).
+STATUS: 7 / 222+ functions lifted+verified. Helper set now: add16/sub-via-cmp/shl16/cmp8/test8,
+regs 8/16/32, flags with undefined-exclusion. Honest: 7 of 222+, not 100%.
