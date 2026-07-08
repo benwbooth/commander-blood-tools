@@ -298,6 +298,7 @@ mod tests {
         let batch: &[(&str, fn(&mut Machine))] = &[
             ("func_149b", super::auto::func_149b),
             ("func_1fbc", super::auto::func_1fbc),
+            ("func_242d", super::auto::func_242d),
             ("func_248b", super::auto::func_248b),
             ("func_25a4", super::auto::func_25a4),
             ("func_2612", super::auto::func_2612),
@@ -315,6 +316,7 @@ mod tests {
             ("func_414e", super::auto::func_414e),
             ("func_41d1", super::auto::func_41d1),
             ("func_420d", super::auto::func_420d),
+            ("func_42cd", super::auto::func_42cd),
             ("func_509d", super::auto::func_509d),
             ("func_5320", super::auto::func_5320),
             ("func_533c", super::auto::func_533c),
@@ -322,6 +324,7 @@ mod tests {
             ("func_5791", super::auto::func_5791),
             ("func_5fd8", super::auto::func_5fd8),
             ("func_5ff6", super::auto::func_5ff6),
+            ("func_6023", super::auto::func_6023),
             ("func_78d0", super::auto::func_78d0),
             ("func_7cb4", super::auto::func_7cb4),
             ("func_8269", super::auto::func_8269),

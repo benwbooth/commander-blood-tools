@@ -228,6 +228,67 @@ def emit(insn):
         if h:
             return [f"let __r = m.regs.{h}(({a}) as {cast}, ({b}) as {cast});"] + opset(op[0], "__r")
         raise NotImplementedError(f"sbb size {sz}")
+    if m in ("rol", "ror", "rcl", "rcr"):
+        a, _ = opval(op[0]); cnt, _ = opval(op[1]); sz = op[0].size
+        cast = {1: "u8", 2: "u16", 4: "u32"}.get(sz)
+        # only rol/ror have 32-bit helpers; rcl/rcr stay 8/16-bit
+        avail = {1: f"{m}8", 2: f"{m}16"}
+        if m in ("rol", "ror"):
+            avail[4] = f"{m}32"
+        h = avail.get(sz)
+        if h:
+            return [f"let __r = m.regs.{h}(({a}) as {cast}, ({cnt}) as u8);"] + opset(op[0], "__r")
+        raise NotImplementedError(f"{m} size {sz}")
+    if m == "btr":
+        a, _ = opval(op[0]); b, _ = opval(op[1])
+        if op[0].size == 2:
+            return [f"let __r = m.regs.btr16(({a}) as u16, ({b}) as u8);"] + opset(op[0], "__r")
+        raise NotImplementedError(f"btr size {op[0].size}")
+    if m in ("div", "idiv"):
+        src, _ = opval(op[0]); sz = op[0].size
+        cast = {1: "u8", 2: "u16"}.get(sz)
+        h = {("div", 1): "div8", ("div", 2): "div16", ("idiv", 1): "idiv8", ("idiv", 2): "idiv16"}.get((m, sz))
+        if h:
+            return [f"m.regs.{h}(({src}) as {cast});"]
+        raise NotImplementedError(f"{m} size {sz}")
+    if m == "imul":
+        sz = op[0].size
+        if len(op) == 1:  # one-operand: AX/DX:AX = acc * src
+            src, _ = opval(op[0]); cast = {1: "u8", 2: "u16"}.get(sz)
+            h = {1: "imul8_1", 2: "imul16_1"}.get(sz)
+            if h:
+                return [f"m.regs.{h}(({src}) as {cast});"]
+            raise NotImplementedError(f"imul1 size {sz}")
+        if sz in (2, 4):  # two/three-operand, 16- or 32-bit dst
+            if len(op) == 2:
+                a, _ = opval(op[0]); b, _ = opval(op[1])
+            else:  # three-operand: dst = src * imm
+                a, _ = opval(op[1]); b, _ = opval(op[2])
+            cast = {2: "u16", 4: "u32"}[sz]
+            h = {2: "imul16_2", 4: "imul32_2"}[sz]
+            return [f"let __r = m.regs.{h}(({a}) as {cast}, ({b}) as {cast});"] + opset(op[0], "__r")
+        raise NotImplementedError(f"imul{len(op)} size {sz}")
+    if m == "bsf":
+        src, _ = opval(op[1]); cur, _ = opval(op[0])
+        return [f"let __r = m.regs.bsf16(({src}) as u16, ({cur}) as u16);"] + opset(op[0], "__r")
+    if m == "pushf" or m == "pushfd":
+        # push the flags word (only the modelled bits; bit1 always set on 8086)
+        return ["let __f: u16 = 0x0002",
+                "    | (m.regs.cf as u16)",
+                "    | ((m.regs.pf as u16) << 2)",
+                "    | ((m.regs.af as u16) << 4)",
+                "    | ((m.regs.zf as u16) << 6)",
+                "    | ((m.regs.sf as u16) << 7)",
+                "    | ((m.regs.df as u16) << 10)",
+                "    | ((m.regs.of as u16) << 11);",
+                "m.regs.set_sp(m.regs.sp().wrapping_sub(2));",
+                "m.write16(m.regs.ss, m.regs.sp() as u32, __f);"]
+    if m == "popf" or m == "popfd":
+        return ["let __f = m.read16(m.regs.ss, m.regs.sp() as u32);",
+                "m.regs.set_sp(m.regs.sp().wrapping_add(2));",
+                "m.regs.cf = __f & 1 != 0; m.regs.pf = __f & 4 != 0; m.regs.af = __f & 0x10 != 0;",
+                "m.regs.zf = __f & 0x40 != 0; m.regs.sf = __f & 0x80 != 0;",
+                "m.regs.df = __f & 0x400 != 0; m.regs.of = __f & 0x800 != 0;"]
     if m == "xlatb":
         # AL = [DS:BX + AL]  (table lookup translate; 16-bit addressing wraps at 64K)
         return ["let __a = m.read8(m.regs.ds, m.regs.bx().wrapping_add(m.regs.al() as u16) as u32);",
@@ -345,7 +406,8 @@ def lift_cfg(off, name):
                 t = int(i.op_str, 16); leaders.add(t); worklist.append(t); break
             if mn == "jmp":
                 break  # indirect jmp - stop (handled as TODO)
-            if (mn in JCC or mn == "loop") and i.op_str.startswith("0x"):
+            if (mn in JCC or mn in ("loop", "loope", "loopz", "loopne", "loopnz", "jcxz", "jecxz")) \
+                    and i.op_str.startswith("0x"):
                 t = int(i.op_str, 16); leaders.add(t); worklist.append(t)
                 leaders.add(i.address + i.size)  # fallthrough is a leader
             # fallthrough continues
@@ -395,6 +457,15 @@ def lift_cfg(off, name):
             t = int(last.op_str, 16); fall = nxt[lead]
             out.append("                let __c = m.regs.cx().wrapping_sub(1); m.regs.set_cx(__c);")
             out.append(f"                if __c != 0 {{ __blk = 0x{t:x}; }} else {{ __blk = 0x{fall:x}; }}")
+        elif mn in ("loope", "loopz", "loopne", "loopnz") and last.op_str.startswith("0x"):
+            t = int(last.op_str, 16); fall = nxt[lead]
+            zc = "m.regs.zf" if mn in ("loope", "loopz") else "!m.regs.zf"
+            out.append("                let __c = m.regs.cx().wrapping_sub(1); m.regs.set_cx(__c);")
+            out.append(f"                if __c != 0 && {zc} {{ __blk = 0x{t:x}; }} else {{ __blk = 0x{fall:x}; }}")
+        elif mn in ("jcxz", "jecxz") and last.op_str.startswith("0x"):
+            t = int(last.op_str, 16); fall = nxt[lead]
+            reg = "m.regs.cx()" if mn == "jcxz" else "m.regs.ecx"
+            out.append(f"                if {reg} == 0 {{ __blk = 0x{t:x}; }} else {{ __blk = 0x{fall:x}; }}")
         else:
             # non-terminator last insn (block ends because next addr is a leader): lift + fallthrough
             try:

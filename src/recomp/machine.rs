@@ -570,6 +570,236 @@ impl Regs {
         self.pf = (r as u8).count_ones() % 2 == 0;
         self.af = false;
     }
+
+    /// 8-bit / 16-bit unsigned `DIV`. AL/AX = quotient, AH/DX = remainder. A zero divisor or a
+    /// quotient overflow is #DE on real hardware — the oracle discards those fuzzed vectors, so
+    /// here we simply leave state unchanged (never reached by a kept vector). Flags undefined.
+    pub fn div8(&mut self, src: u8) {
+        if src == 0 {
+            return;
+        }
+        let n = self.ax();
+        let q = n / src as u16;
+        if q > 0xff {
+            return;
+        }
+        self.set_al(q as u8);
+        self.set_ah((n % src as u16) as u8);
+    }
+    pub fn div16(&mut self, src: u16) {
+        if src == 0 {
+            return;
+        }
+        let n = ((self.dx() as u32) << 16) | self.ax() as u32;
+        let q = n / src as u32;
+        if q > 0xffff {
+            return;
+        }
+        self.set_ax(q as u16);
+        self.set_dx((n % src as u32) as u16);
+    }
+
+    /// 8-bit / 16-bit one-operand signed `IMUL`: AX / DX:AX = accumulator * src (signed). CF=OF
+    /// set when the full product doesn't fit in the low half (sign-extended); other flags undefined.
+    pub fn imul8_1(&mut self, src: u8) {
+        let r = (self.al() as i8 as i16) * (src as i8 as i16);
+        self.set_ax(r as u16);
+        let of = r != (r as i8 as i16);
+        self.cf = of;
+        self.of = of;
+    }
+    pub fn imul16_1(&mut self, src: u16) {
+        let r = (self.ax() as i16 as i32) * (src as i16 as i32);
+        self.set_ax(r as u16);
+        self.set_dx((r >> 16) as u16);
+        let of = r != (r as i16 as i32);
+        self.cf = of;
+        self.of = of;
+    }
+    /// Two/three-operand signed `IMUL` (result truncated to 16 bits). CF=OF on overflow.
+    pub fn imul16_2(&mut self, a: u16, b: u16) -> u16 {
+        let full = (a as i16 as i32) * (b as i16 as i32);
+        let r = full as u16;
+        let of = full != (r as i16 as i32);
+        self.cf = of;
+        self.of = of;
+        r
+    }
+
+    /// 16-bit `BSF` (bit scan forward): if `src==0`, ZF=1 and the destination is left unchanged;
+    /// otherwise ZF=0 and the destination becomes the index of the lowest set bit. Returns the new
+    /// destination value (the caller passes the current one through for the src==0 case).
+    pub fn bsf16(&mut self, src: u16, dst_cur: u16) -> u16 {
+        if src == 0 {
+            self.zf = true;
+            dst_cur
+        } else {
+            self.zf = false;
+            src.trailing_zeros() as u16
+        }
+    }
+
+    /// 8/16-bit rotates (count masked to 5 bits like the 386). `ROL`/`ROR` set CF to the bit
+    /// rotated into the other end and OF (for count==1) to CF xor MSB; `RCL`/`RCR` rotate through
+    /// CF (a 9-/17-bit rotation). AF/SF/ZF/PF unaffected by rotates.
+    pub fn rol16(&mut self, val: u16, count: u8) -> u16 {
+        let c = (count & 0x1f) % 16;
+        if count & 0x1f == 0 {
+            return val;
+        }
+        let r = val.rotate_left(c as u32);
+        self.cf = r & 1 != 0;
+        self.of = (r & 0x8000 != 0) != self.cf;
+        r
+    }
+    pub fn ror16(&mut self, val: u16, count: u8) -> u16 {
+        let c = (count & 0x1f) % 16;
+        if count & 0x1f == 0 {
+            return val;
+        }
+        let r = val.rotate_right(c as u32);
+        self.cf = r & 0x8000 != 0;
+        self.of = (r & 0x8000 != 0) != (r & 0x4000 != 0);
+        r
+    }
+    pub fn rol8(&mut self, val: u8, count: u8) -> u8 {
+        let c = (count & 0x1f) % 8;
+        if count & 0x1f == 0 {
+            return val;
+        }
+        let r = val.rotate_left(c as u32);
+        self.cf = r & 1 != 0;
+        self.of = (r & 0x80 != 0) != self.cf;
+        r
+    }
+    pub fn ror8(&mut self, val: u8, count: u8) -> u8 {
+        let c = (count & 0x1f) % 8;
+        if count & 0x1f == 0 {
+            return val;
+        }
+        let r = val.rotate_right(c as u32);
+        self.cf = r & 0x80 != 0;
+        self.of = (r & 0x80 != 0) != (r & 0x40 != 0);
+        r
+    }
+    pub fn rcl16(&mut self, val: u16, count: u8) -> u16 {
+        let c = (count & 0x1f) % 17;
+        let mut r = val;
+        for _ in 0..c {
+            let newcf = r & 0x8000 != 0;
+            r = (r << 1) | self.cf as u16;
+            self.cf = newcf;
+        }
+        if c != 0 {
+            self.of = (r & 0x8000 != 0) != self.cf;
+        }
+        r
+    }
+    pub fn rcr16(&mut self, val: u16, count: u8) -> u16 {
+        let c = (count & 0x1f) % 17;
+        let mut r = val;
+        for _ in 0..c {
+            let newcf = r & 1 != 0;
+            r = (r >> 1) | ((self.cf as u16) << 15);
+            self.cf = newcf;
+        }
+        if c != 0 {
+            self.of = (r & 0x8000 != 0) != (r & 0x4000 != 0);
+        }
+        r
+    }
+    pub fn rcl8(&mut self, val: u8, count: u8) -> u8 {
+        let c = (count & 0x1f) % 9;
+        let mut r = val;
+        for _ in 0..c {
+            let newcf = r & 0x80 != 0;
+            r = (r << 1) | self.cf as u8;
+            self.cf = newcf;
+        }
+        if c != 0 {
+            self.of = (r & 0x80 != 0) != self.cf;
+        }
+        r
+    }
+    pub fn rcr8(&mut self, val: u8, count: u8) -> u8 {
+        let c = (count & 0x1f) % 9;
+        let mut r = val;
+        for _ in 0..c {
+            let newcf = r & 1 != 0;
+            r = (r >> 1) | ((self.cf as u8) << 7);
+            self.cf = newcf;
+        }
+        if c != 0 {
+            self.of = (r & 0x80 != 0) != (r & 0x40 != 0);
+        }
+        r
+    }
+    pub fn rol32(&mut self, val: u32, count: u8) -> u32 {
+        let c = count & 0x1f;
+        if c == 0 {
+            return val;
+        }
+        let r = val.rotate_left(c as u32);
+        self.cf = r & 1 != 0;
+        self.of = (r & 0x8000_0000 != 0) != self.cf;
+        r
+    }
+    pub fn ror32(&mut self, val: u32, count: u8) -> u32 {
+        let c = count & 0x1f;
+        if c == 0 {
+            return val;
+        }
+        let r = val.rotate_right(c as u32);
+        self.cf = r & 0x8000_0000 != 0;
+        self.of = (r & 0x8000_0000 != 0) != (r & 0x4000_0000 != 0);
+        r
+    }
+
+    /// 8-bit / 16-bit signed `IDIV`. AL/AX = quotient, AH/DX = remainder. #DE cases (zero divisor
+    /// or quotient out of range) leave state unchanged — the oracle discards them.
+    pub fn idiv8(&mut self, src: u8) {
+        if src == 0 {
+            return;
+        }
+        let n = self.ax() as i16;
+        let d = src as i8 as i16;
+        let q = n / d;
+        if !(-128..=127).contains(&q) {
+            return;
+        }
+        self.set_al(q as u8);
+        self.set_ah((n % d) as u8);
+    }
+    pub fn idiv16(&mut self, src: u16) {
+        if src == 0 {
+            return;
+        }
+        let n = ((((self.dx() as u32) << 16) | self.ax() as u32) as i32) as i64;
+        let d = src as i16 as i64;
+        let q = n / d;
+        if !(-32768..=32767).contains(&q) {
+            return;
+        }
+        self.set_ax(q as u16);
+        self.set_dx((n % d) as u16);
+    }
+
+    /// Two-operand signed `IMUL` (32-bit, result truncated to 32). CF=OF on overflow.
+    pub fn imul32_2(&mut self, a: u32, b: u32) -> u32 {
+        let full = (a as i32 as i64) * (b as i32 as i64);
+        let r = full as u32;
+        let of = full != (r as i32 as i64);
+        self.cf = of;
+        self.of = of;
+        r
+    }
+
+    /// `BTR` (bit test and reset) on a 16-bit destination: CF = old bit `bit % 16`, then clear it.
+    pub fn btr16(&mut self, val: u16, bit: u8) -> u16 {
+        let b = bit & 0xf;
+        self.cf = (val >> b) & 1 != 0;
+        val & !(1u16 << b)
+    }
 }
 
 /// Flat real-mode memory + registers. Addressing is `seg*16 + off` (20-bit, wraps at 1 MB like

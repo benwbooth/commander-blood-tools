@@ -12,7 +12,13 @@ import lift, auto_oracle
 MIN_VECS = 120
 N = 200
 CODEGEN_ONLY = "--codegen-only" in sys.argv  # re-emit auto.rs from existing vectors, skip oracle
-clean = [int(x, 16) for x in json.load(open("re/tools/cfg_clean.json"))]
+# Functions the generic oracle cannot fairly verify (documented, not silent):
+EXCLUDE = {
+    0xccb: "CPU-type detection: reads FLAGS bits 12-15 (IOPL/NT) via pushf/popf; result is "
+           "CPU-model-specific and depends on flag bits the 7-flag Machine model omits. "
+           "Returns 1 (386) on the target; composition can treat it as constant.",
+}
+clean = [int(x, 16) for x in json.load(open("re/tools/cfg_clean.json")) if int(x, 16) not in EXCLUDE]
 
 def ret_kind(off):
     """retf if the function's terminator(s) are far returns, else ret."""
