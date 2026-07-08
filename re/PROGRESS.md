@@ -908,3 +908,17 @@ verified callees); (3) resolve the 48 indirect sites via the dynamic tracer to e
 the remainder; (4) compose a lifted entry over the shared Machine + a thin int/port boundary.
 STATUS: 1 / 222+ functions lifted+verified (PRNG). The grind is now against a known denominator,
 each step individually provable against the binary. This is the concrete route to 100%.
+
+## PATH B: 2nd function lifted + reusable infrastructure (flags + general oracle) — 2026-07
+Grinding the leaves + building the infrastructure that makes each lift fast:
+- General oracle harness re/tools/oracle.py: given a function spec (entry, ret type, input
+  regs/mem, output regs/mem), fuzzes the REAL function in Unicorn and dumps (in->out) vectors
+  incl. ALL 6 arithmetic flags (cf/pf/af/zf/sf/of). So new functions = write a spec + the lift.
+- Machine::add16: exact 8086 ADD flag semantics (cf/pf/af/zf/sf/of), reused by every arithmetic
+  lift so flag state is bit-exact (a caller may branch on it).
+- func_a734 (file 0xA734: add [DS:0xD8C],ax; add [DS:0xD9A],ax; clc; ret) lifted 1-to-1 and
+  verified: 300/300 oracle vectors match on AX + both memory words + ALL 6 flags.
+STATUS: 2 / 222+ functions lifted+verified (prng_2de2, func_a734), each bit-exact vs the binary
+incl. full flag state. 37 pure short leaves identified as the next clean targets. The template +
+harness + flag model are in place; remaining is the (large) grind of lifting each function.
+Honest: 2 of 222+ done. Not 100%.

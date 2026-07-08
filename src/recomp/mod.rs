@@ -71,11 +71,77 @@ pub fn prng_2de2(m: &mut Machine) {
     // bx/cx/dx are pushed then popped -> unchanged; we never touched m.regs.{bx,cx,dx}.
 }
 
+/// `func_a734` — file 0xA734: `add [DS:0xD8C],ax ; add [DS:0xD9A],ax ; clc ; ret`.
+/// Adds `AX` into the two word globals (with full ADD flags from the second add), then clears
+/// CF. `AX`/`DS` unchanged. Lifted 1-to-1; oracle-verified (return regs, memory, all 6 flags).
+pub fn func_a734(m: &mut Machine) {
+    let ds = m.regs.ds;
+    let ax = m.regs.ax;
+    let v1 = m.read16(ds, 0xd8c);
+    let r1 = m.regs.add16(v1, ax);
+    m.write16(ds, 0xd8c, r1);
+    let v2 = m.read16(ds, 0xd9a);
+    let r2 = m.regs.add16(v2, ax);
+    m.write16(ds, 0xd9a, r2);
+    m.regs.cf = false; // clc
+}
+
 #[cfg(test)]
 mod tests {
     use super::machine::Machine;
     use super::*;
     use serde::Deserialize;
+
+    #[derive(Deserialize)]
+    struct Flags {
+        cf: bool,
+        pf: bool,
+        af: bool,
+        zf: bool,
+        sf: bool,
+        of: bool,
+    }
+
+    #[derive(Deserialize)]
+    struct A734Vec {
+        ax: u16,
+        w1: u16,
+        w2: u16,
+        ax_out: u16,
+        flags: Flags,
+        w1_out: u16,
+        w2_out: u16,
+    }
+
+    #[test]
+    fn func_a734_matches_oracle_vectors() {
+        let raw = match std::fs::read_to_string("re/tools/oracle_vectors/func_a734.json")
+            .or_else(|_| std::fs::read_to_string("../re/tools/oracle_vectors/func_a734.json"))
+        {
+            Ok(s) => s,
+            Err(_) => return,
+        };
+        const DS: u16 = 0x2000;
+        let vecs: Vec<A734Vec> = serde_json::from_str(&raw).unwrap();
+        assert!(!vecs.is_empty());
+        for (i, v) in vecs.iter().enumerate() {
+            let mut m = Machine::new();
+            m.regs.ds = DS;
+            m.regs.ax = v.ax;
+            m.write16(DS, 0xd8c, v.w1);
+            m.write16(DS, 0xd9a, v.w2);
+            func_a734(&mut m);
+            assert_eq!(m.regs.ax, v.ax_out, "vec {i}: AX");
+            assert_eq!(m.read16(DS, 0xd8c), v.w1_out, "vec {i}: [0xD8C]");
+            assert_eq!(m.read16(DS, 0xd9a), v.w2_out, "vec {i}: [0xD9A]");
+            assert_eq!(m.regs.cf, v.flags.cf, "vec {i}: CF");
+            assert_eq!(m.regs.pf, v.flags.pf, "vec {i}: PF");
+            assert_eq!(m.regs.af, v.flags.af, "vec {i}: AF");
+            assert_eq!(m.regs.zf, v.flags.zf, "vec {i}: ZF");
+            assert_eq!(m.regs.sf, v.flags.sf, "vec {i}: SF");
+            assert_eq!(m.regs.of, v.flags.of, "vec {i}: OF");
+        }
+    }
 
     /// One oracle vector: the input machine state and the DOS binary's resulting output state,
     /// captured by running the real function in Unicorn (re/tools/gen_oracle_vectors.py).

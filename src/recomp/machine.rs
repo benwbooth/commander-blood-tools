@@ -65,6 +65,21 @@ impl Regs {
     byte_halves!(bl, set_bl, bh, set_bh, bx);
     byte_halves!(cl, set_cl, ch, set_ch, cx);
     byte_halves!(dl, set_dl, dh, set_dh, dx);
+
+    /// 16-bit `ADD` with exact 8086 flag semantics: returns the truncated result and sets
+    /// `cf/pf/af/zf/sf/of` on `self`. Reused by every lifted arithmetic instruction so flag
+    /// state stays bit-exact (a caller may branch on it). PF is even-parity of the low byte.
+    pub fn add16(&mut self, a: u16, b: u16) -> u16 {
+        let full = a as u32 + b as u32;
+        let r = full as u16;
+        self.cf = full > 0xffff;
+        self.af = (a & 0xf) + (b & 0xf) > 0xf;
+        self.zf = r == 0;
+        self.sf = r & 0x8000 != 0;
+        self.of = (a ^ r) & (b ^ r) & 0x8000 != 0;
+        self.pf = (r as u8).count_ones() % 2 == 0;
+        r
+    }
 }
 
 /// Flat real-mode memory + registers. Addressing is `seg*16 + off` (20-bit, wraps at 1 MB like
