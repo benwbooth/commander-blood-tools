@@ -677,3 +677,15 @@ Asset-decoder coverage is now systematic across ALL asset types: LBM 169, sprite
 HNM 645, SND 25, VOC 44 - every decoder verified against its full asset set, one real bug fixed
 (raw sprites). This is thorough decoder-parity, but STILL not whole-game: the composited render
 output, all-function behavioral parity, and runtime pixel values remain unverified.
+
+## Behavioral verification: DESCRIPT.DES scene database parses consistently — 2026-07
+Added a real-file regression test for the scene/dialogue database (was only synthetic-tested):
+- parses_real_descript_des_consistently: the real DESCRIPT.DES parses into 145 records with the
+  exact kind distribution (11 Sequence, 35 Object, 64 Location, 35 Character), every record
+  named, and every referenced snd/sprite stem non-empty. Passes.
+This locks in the descript parser (the game's scene graph: locations, characters, objects,
+cutscene sequences, their media + subtitles) against the shipped data file. Suite now 427.
+Verified surface: decoders (LBM/sprite/HNM/SND/VOC full sets), data files (DESCRIPT.DES,
+resource table, level dir, .ext all worlds, COD all scripts), static tables (vertex/font),
+state (nav/camera/clip), VM (walk+traces). STILL not whole-game: composited display output,
+all-function behavioral parity, runtime pixels unverified.

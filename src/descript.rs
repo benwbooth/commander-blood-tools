@@ -463,6 +463,34 @@ fn is_opcode(byte: u8) -> bool {
 mod tests {
     use super::*;
 
+    /// The real DESCRIPT.DES (the game's scene/dialogue database) must parse into its full,
+    /// consistent record set: 145 records across the four kinds, every record named, and every
+    /// referenced media stem non-empty. Regression-guards the descript parser on the real file.
+    /// Skips if the game data isn't in this checkout.
+    #[test]
+    fn parses_real_descript_des_consistently() {
+        let db = ["output/_tmp_iso/DESCRIPT.DES", "../output/_tmp_iso/DESCRIPT.DES"]
+            .iter()
+            .find_map(|p| DescriptDb::parse_file(p).ok());
+        let Some(db) = db else { return };
+        assert_eq!(db.records.len(), 145, "DESCRIPT.DES record count");
+        for r in &db.records {
+            assert!(!r.name.is_empty(), "record has a name");
+            if let Some(s) = &r.snd {
+                assert!(!s.is_empty(), "{}: empty snd stem", r.name);
+            }
+            if let Some(s) = &r.sprite {
+                assert!(!s.is_empty(), "{}: empty sprite stem", r.name);
+            }
+        }
+        let count = |k: RecordKind| db.records.iter().filter(|r| r.kind == k).count();
+        // The four record kinds and their counts (verified against the shipped DESCRIPT.DES).
+        assert_eq!(count(RecordKind::Sequence), 11);
+        assert_eq!(count(RecordKind::Object), 35);
+        assert_eq!(count(RecordKind::Location), 64);
+        assert_eq!(count(RecordKind::Character), 35);
+    }
+
     #[test]
     fn record_length_excludes_next_record_kind_byte() {
         let count = 2u16;
