@@ -233,6 +233,7 @@ mod tests {
             "esi" => m.regs.esi,
             "edi" => m.regs.edi,
             "ebp" => m.regs.ebp,
+            "esp" => m.regs.esp,
             _ => panic!("e {r}"),
         }
     }
@@ -481,6 +482,163 @@ mod tests {
             "interp corpus: {} failing functions:\n{}",
             failures.len(),
             failures.join("\n")
+        );
+    }
+
+    /// One differential-fuzz vector (re/tools/diff_fuzz.py): a single instruction, input state,
+    /// and Unicorn's ground-truth output. Memory is the deterministic fill `fill(a)`.
+    #[derive(Deserialize)]
+    struct DiffVec {
+        code: String,
+        asm: String,
+        regs_in: HashMap<String, u32>,
+        segs: HashMap<String, u16>,
+        flags_in: u16,
+        regs_out: HashMap<String, u32>,
+        segs_out: HashMap<String, u16>,
+        ip_out: u16,
+        flags_out: u16,
+        mem_writes: Vec<(usize, u8)>,
+    }
+
+    /// M1b: harden the interpreter beyond the corpus' mix by differentially fuzzing EVERY unique
+    /// instruction encoding in the game's code (+ the SND driver) against Unicorn, one instruction
+    /// at a time. Asserts GP registers, IP, memory writes, and the DEFINED arithmetic flags match.
+    /// (Flags left architecturally undefined by an instruction are not asserted — same policy as
+    /// the oracle; we compare only flags both models define deterministically per opcode class.)
+    #[test]
+    fn interp_matches_unicorn_diff() {
+        let dir = if std::path::Path::new("re/tools/oracle_vectors").is_dir() {
+            "re/tools/oracle_vectors"
+        } else {
+            "../re/tools/oracle_vectors"
+        };
+        let raw = match std::fs::read_to_string(format!("{dir}/diff_fuzz.json")) {
+            Ok(s) => s,
+            Err(_) => return,
+        };
+        let vecs: Vec<DiffVec> = serde_json::from_str(&raw).unwrap();
+        assert!(!vecs.is_empty());
+        const CS_BASE: u16 = 0x1000;
+        const MEM_TOP: usize = 0x110000;
+        let fill = |a: usize| -> u8 { ((a.wrapping_mul(2654435761) >> 16) & 0xFF) as u8 };
+
+        let mut fails: Vec<String> = vec![];
+        let mut checked = 0usize;
+        // Which arithmetic flags an instruction leaves defined — keyed by mnemonic. Anything not
+        // listed: compare none (mul/div/shifts-by-cl/etc. have undefined flags Unicorn fills
+        // differently). This mirrors machine.rs's "assigned but not asserted" policy.
+        let all6 = 0x8d5u16; // CF PF AF ZF SF OF bit positions mask (0,2,4,6,7,11)
+        for (i, v) in vecs.iter().enumerate() {
+            let code = (0..v.code.len() / 2)
+                .map(|k| u8::from_str_radix(&v.code[k * 2..k * 2 + 2], 16).unwrap())
+                .collect::<Vec<u8>>();
+            let mut m = Machine::new();
+            // deterministic memory fill
+            for a in 0..MEM_TOP {
+                m.mem[a] = fill(a);
+            }
+            let base = (CS_BASE as usize) * 16;
+            m.mem[base..base + code.len()].copy_from_slice(&code);
+            for (r, val) in &v.regs_in {
+                match r.as_str() {
+                    "eax" => m.regs.eax = *val,
+                    "ebx" => m.regs.ebx = *val,
+                    "ecx" => m.regs.ecx = *val,
+                    "edx" => m.regs.edx = *val,
+                    "esi" => m.regs.esi = *val,
+                    "edi" => m.regs.edi = *val,
+                    "ebp" => m.regs.ebp = *val,
+                    "esp" => m.regs.esp = *val,
+                    _ => {}
+                }
+            }
+            for (s, val) in &v.segs {
+                set_seg(&mut m, s, *val);
+            }
+            let f = v.flags_in;
+            m.regs.cf = f & 1 != 0;
+            m.regs.pf = f & 4 != 0;
+            m.regs.af = f & 0x10 != 0;
+            m.regs.zf = f & 0x40 != 0;
+            m.regs.sf = f & 0x80 != 0;
+            m.regs.df = f & 0x400 != 0;
+            m.regs.of = f & 0x800 != 0;
+
+            let mut cpu = interp::Cpu::new(CS_BASE, 0);
+            cpu.flags_high = f & 0x7000;
+            cpu.iflag = f & 0x200 != 0; // sync IF so pushf matches Unicorn's flag word
+            cpu.depth = 1 << 30; // not oracle-replay: ret/retf must EXECUTE (pop), not stop
+            let _ = cpu.step_public(&mut m);
+            checked += 1;
+
+            let mut bad = vec![];
+            for (r, val) in &v.regs_out {
+                if get_e(&m, r) != *val {
+                    bad.push(format!("{r}={:#x}!={:#x}", get_e(&m, r), val));
+                }
+            }
+            for (sname, sval) in &v.segs_out {
+                let got = match sname.as_str() {
+                    "ds" => m.regs.ds,
+                    "es" => m.regs.es,
+                    "ss" => m.regs.ss,
+                    "fs" => m.regs.fs,
+                    "gs" => m.regs.gs,
+                    _ => continue,
+                };
+                if got != *sval {
+                    bad.push(format!("{sname}={got:#x}!={sval:#x}"));
+                }
+            }
+            if cpu.ip != v.ip_out {
+                bad.push(format!("ip={:#x}!={:#x}", cpu.ip, v.ip_out));
+            }
+            for (addr, byte) in &v.mem_writes {
+                if *addr < MEM_TOP && m.mem[*addr] != *byte {
+                    bad.push(format!("mem[{addr:#x}]={:#x}!={byte:#x}", m.mem[*addr]));
+                }
+            }
+            // Defined-flag comparison per opcode class.
+            let mn = v.asm.split_whitespace().next().unwrap_or("");
+            let defined: u16 = match mn {
+                "add" | "sub" | "adc" | "sbb" | "cmp" | "neg" | "xadd" => all6,
+                "and" | "or" | "xor" | "test" => 0x8d5 & !0x810, // CF/OF cleared, AF undefined
+                "inc" | "dec" => all6 & !1, // CF unaffected
+                "shl" | "shr" | "sar" | "rol" | "ror" | "sal" => 0, // count-dependent undefined
+                "bt" | "btr" | "bts" | "btc" => 1, // CF only
+                "bsf" | "bsr" => 0x40, // ZF only
+                _ => 0,
+            };
+            let cur = (m.regs.cf as u16)
+                | ((m.regs.pf as u16) << 2)
+                | ((m.regs.af as u16) << 4)
+                | ((m.regs.zf as u16) << 6)
+                | ((m.regs.sf as u16) << 7)
+                | ((m.regs.of as u16) << 11);
+            if (cur ^ v.flags_out) & defined != 0 {
+                bad.push(format!(
+                    "flags {:#x}!={:#x} (defined {:#x})",
+                    cur & defined,
+                    v.flags_out & defined,
+                    defined
+                ));
+            }
+            if !bad.is_empty() && fails.len() < 40 {
+                fails.push(format!("vec {i} [{}] {}: {}", v.code, v.asm, bad.join(", ")));
+            } else if !bad.is_empty() {
+                fails.push(String::new());
+            }
+        }
+        let nfail = fails.iter().filter(|s| !s.is_empty()).count()
+            + fails.iter().filter(|s| s.is_empty()).count();
+        println!("diff-fuzz: {checked} instructions checked, {nfail} mismatched");
+        let shown: Vec<&String> = fails.iter().filter(|s| !s.is_empty()).collect();
+        assert!(
+            shown.is_empty(),
+            "diff-fuzz mismatches ({} shown):\n{}",
+            shown.len(),
+            shown.iter().map(|s| s.as_str()).collect::<Vec<_>>().join("\n")
         );
     }
 

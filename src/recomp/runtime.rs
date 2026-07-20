@@ -752,12 +752,18 @@ impl Runtime {
             0x3cf => {
                 self.gc[(self.gc_idx & 15) as usize] = v;
                 if let Some(vga) = self.m.vga.as_deref_mut() {
-                    if self.gc_idx & 15 == 4 {
-                        vga.read_map = v & 3;
+                    match self.gc_idx & 15 {
+                        0 => vga.set_reset = v & 0x0f,
+                        1 => vga.enable_sr = v & 0x0f,
+                        3 => {
+                            vga.rotate = v & 7;
+                            vga.logic_op = (v >> 3) & 3;
+                        }
+                        4 => vga.read_map = v & 3,
+                        5 => vga.write_mode = v & 3,
+                        8 => vga.bit_mask = v,
+                        _ => {}
                     }
-                }
-                if self.gc_idx & 15 == 5 && v & 3 != 0 && self.trace_ints {
-                    eprintln!("VGA write mode {} set (latches not modelled)", v & 3);
                 }
             }
             0x3d4 => self.crtc_idx = v,

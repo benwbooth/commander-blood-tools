@@ -961,6 +961,15 @@ pub struct Vga {
     pub map_mask: u8,
     pub read_map: u8,
     pub chain4: bool,
+    /// The four latches, loaded by every VRAM read; unmasked/copied bits come from here.
+    /// `Cell` so loads can happen on the `&self` read path (single-threaded machine).
+    pub latches: std::cell::Cell<[u8; 4]>,
+    pub write_mode: u8, // GC reg 5 bits 0-1
+    pub bit_mask: u8,   // GC reg 8
+    pub set_reset: u8,  // GC reg 0
+    pub enable_sr: u8,  // GC reg 1
+    pub logic_op: u8,   // GC reg 3 bits 3-4: 0=copy 1=AND 2=OR 3=XOR (with latch)
+    pub rotate: u8,     // GC reg 3 bits 0-2
 }
 
 impl Default for Vga {
@@ -970,6 +979,13 @@ impl Default for Vga {
             map_mask: 0x0f,
             read_map: 0,
             chain4: true,
+            latches: std::cell::Cell::new([0; 4]),
+            write_mode: 0,
+            bit_mask: 0xff,
+            set_reset: 0,
+            enable_sr: 0,
+            logic_op: 0,
+            rotate: 0,
         }
     }
 }
@@ -979,11 +995,48 @@ impl Vga {
     pub fn write(&mut self, off: usize, v: u8) {
         if self.chain4 {
             self.planes[(off & 3) * 0x10000 + (off >> 2)] = v;
-        } else {
-            let o = off & 0xffff;
-            for p in 0..4 {
-                if self.map_mask & (1 << p) != 0 {
-                    self.planes[p * 0x10000 + o] = v;
+            return;
+        }
+        let o = off & 0xffff;
+        match self.write_mode & 3 {
+            1 => {
+                // mode 1: plane-to-plane copy from the latches
+                let l = self.latches.get();
+                for p in 0..4 {
+                    if self.map_mask & (1 << p) != 0 {
+                        self.planes[p * 0x10000 + o] = l[p];
+                    }
+                }
+            }
+            m => {
+                let l = self.latches.get();
+                let rot = v.rotate_right(self.rotate as u32 & 7);
+                for p in 0..4 {
+                    if self.map_mask & (1 << p) == 0 {
+                        continue;
+                    }
+                    let mut val = match m {
+                        2 => {
+                            // mode 2: CPU bit p expands to a full byte
+                            if v & (1 << p) != 0 { 0xff } else { 0x00 }
+                        }
+                        _ => {
+                            // mode 0: optional set/reset substitution per plane
+                            if self.enable_sr & (1 << p) != 0 {
+                                if self.set_reset & (1 << p) != 0 { 0xff } else { 0x00 }
+                            } else {
+                                rot
+                            }
+                        }
+                    };
+                    val = match self.logic_op & 3 {
+                        1 => val & l[p as usize],
+                        2 => val | l[p as usize],
+                        3 => val ^ l[p as usize],
+                        _ => val,
+                    };
+                    let out = (val & self.bit_mask) | (l[p as usize] & !self.bit_mask);
+                    self.planes[p as usize * 0x10000 + o] = out;
                 }
             }
         }
@@ -991,10 +1044,17 @@ impl Vga {
     #[inline]
     pub fn read(&self, off: usize) -> u8 {
         if self.chain4 {
-            self.planes[(off & 3) * 0x10000 + (off >> 2)]
-        } else {
-            self.planes[(self.read_map as usize & 3) * 0x10000 + (off & 0xffff)]
+            return self.planes[(off & 3) * 0x10000 + (off >> 2)];
         }
+        let o = off & 0xffff;
+        let l = [
+            self.planes[o],
+            self.planes[0x10000 + o],
+            self.planes[0x20000 + o],
+            self.planes[0x30000 + o],
+        ];
+        self.latches.set(l);
+        l[self.read_map as usize & 3]
     }
 }
 

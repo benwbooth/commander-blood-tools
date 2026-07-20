@@ -498,6 +498,12 @@ impl Cpu {
         }
     }
 
+    /// Execute exactly one instruction (test/tools entry point). Returns the same `Exit` the
+    /// run loop sees, or `None` if the instruction completed normally.
+    pub fn step_public(&mut self, m: &mut Machine) -> Option<Exit> {
+        self.step(m)
+    }
+
     /// Execute one instruction. `None` = keep going.
     fn step(&mut self, m: &mut Machine) -> Option<Exit> {
         self.steps += 1;
