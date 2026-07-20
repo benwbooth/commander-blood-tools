@@ -1329,3 +1329,26 @@ writes are faithful; the mismatch is in the record LAYOUT/semantics my analysis 
 needs the record structs decoded (C4 handler write layout vs post-exec scan read layout) or a DOSBox
 record-memory differential. New diagnostics: resname (handle-table load flags), vmtrace <cs> <ip>
 (al capture at any IP), rdw (gs word dump).
+
+## KEY: VM inputs load BIT-EXACT — divergence is upstream/mechanism, not the loader (2026-07-20)
+Decisive verification this session: captured the loaded VM script segments during the run and compared
+to the real files BYTE-FOR-BYTE:
+- SCRIPT1.COD (VM bytecode, ds=7775): first 64 bytes IDENTICAL to accuracy/cdrive/cblood/SCRIPT1.COD.
+- SCRIPT1.VAR (state table, ds=7838): first 64 bytes IDENTICAL to the file ("baby1"/"baby" object
+  records visible). The record at si=0x28 is type-1 (word 0x0001), its field 0x13 (si+8 = 0x30) = 0 —
+  matching the UNMODIFIED file, i.e. the C4 opcode never wrote 0xc4 there.
+- All 8 C4 present-opcode invocations take the BRANCH path 0x6d13 (call vm_branch), NEVER the write
+  path 0x6d01 (es:[bp]=0xc4). The write is gated by record-state conditions (gs:[0x67ad] — a flag
+  actively toggled 0/1 by code at file 0x6839/0x6473; and deb/var record flag fields es:[di+2]/es:[bx]).
+IMPLICATION (given the interpreter is proven bit-exact vs Unicorn + oracle): with cod+var loading
+identically, the VM's execution of the C4 opcodes should match DOSBox EXACTLY — so either DOSBox's C4
+opcodes ALSO branch (meaning the credit is presented by a DIFFERENT mechanism than the C4-record ->
+activation-scan path I traced), OR an UPSTREAM non-file input differs (a hardware-timing value, or a
+gs flag like 0x67ad set by earlier divergent code) that changes the record state the C4 handler sees.
+Also confirmed: gs:0x190 (the mixer's subtitle source, ="WAIT COMMANDER" static EXE data) is NEVER
+written by any code (0 writes) and there is NO code that writes a copy target di=0x190 — so the mixer
+path is WAIT-COMMANDER-specific, not the credit path. NET: resolving this needs a DOSBox instruction/
+memory differential at the ~6s credit moment to see (a) whether DOSBox's C4 opcode writes or branches
+and (b) which gs flag / record field diverges — that differential is non-functional in this DOSBox-X
+build. Further guessing at the record semantics without it risks wrong conclusions (already corrected
+one null-ptr misread). New diagnostics: capsegdump (ds:0 snapshot at a trap), resname handle flags.

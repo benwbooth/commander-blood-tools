@@ -1110,6 +1110,8 @@ pub struct Machine {
     /// When set, at this (cs,ip) record regs.al into vm_ops (VM opcode trace).
     pub vm_trace_ip: Option<(u16, u16)>,
     pub vm_ops: Vec<u8>,
+    /// At capture_ip, snapshot 64 bytes at ds:0 (the current ds segment, offset 0).
+    pub captured_seg: Option<Vec<u8>>,
 }
 
 pub const MEM_SIZE: usize = 0x40_0000; // 4 MB — the EXE image (deterministic oracle mirrors it),
@@ -1145,6 +1147,7 @@ impl Machine {
             captured_prev: None,
             vm_trace_ip: None,
             vm_ops: Vec::new(),
+            captured_seg: None,
         }
     }
 

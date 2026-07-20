@@ -464,6 +464,11 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                     eprintln!("capret: not hit");
                 }
             }
+            "capsegdump" => {
+                if let Some(seg) = &rt.m.captured_seg {
+                    eprintln!("captured ds:0..64 = {}", seg.iter().map(|b| format!("{b:02x}")).collect::<Vec<_>>().join(" "));
+                } else { eprintln!("capseg: not hit"); }
+            }
             "ipstart" => { rt.ip_sample = Some(Default::default()); eprintln!("ip sampling on"); }
             "ipdump" => {
                 if let Some(h) = rt.ip_sample.take() {

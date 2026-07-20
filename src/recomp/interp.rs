@@ -521,6 +521,8 @@ impl Cpu {
             let w = |off: u16| m.read16(ss, sp.wrapping_add(off) as u32);
             m.capture_ret = Some((sp, w(0), w(2), w(4)));
             m.captured_prev = Some(m.exec_prev);
+            let ds = m.regs.ds;
+            m.captured_seg = Some((0..64u32).map(|i| m.read8(ds, i)).collect());
         }
         if m.vm_trace_ip == Some((self.cs, ip0)) && m.vm_ops.len() < 400 {
             m.vm_ops.push(m.regs.al());
