@@ -1450,3 +1450,22 @@ differential (verified non-functional here: savestate produces no file, no debug
 The credit is confirmed voice-coupled (mixer presents the static gs:0x190 with no voice; the intro
 voice never plays: gs:0xc49=0, no .voc opened, voice-streaming 0xbf95 runs 0x). The voice-cue never
 fires in my runtime; that is the upstream event whose non-firing produces the WAIT-COMMANDER fallback.
+## CREDIT PRESENTER PRECISELY LOCATED + 2 device fixes (2026-07-20, extended device hunt)
+Two GENUINE device bugs found+fixed+committed (both real divergences from DOSBox, neither alone fixes
+the credit but both were wrong before): (1) SB DSP version 3.01->4.05 (SB16, per S162227 arg); (2) the
+8259 PIC interrupt mask (0x21/0xA1) was completely unimplemented (IRQs delivered ignoring the mask) —
+now tracked+enforced. Reverted as inert/wrong-turn: XMS (game uses EMS for the voice buffer, gs:0xa60
+valid, never calls the XMS driver), RTC/CMOS date, PSP FCBs, pacing.
+CREDIT PRESENTER LOCATED: the clean-glyph credit is written by the "clip presenter" (entry ~file
+0x7563): it builds a per-clip subtitle filename from the table gs:0x0dd7 (currently unfilled "xxxx"),
+reads the text from a file, copies it to gs:0xe18, and sets gs:[0x5e64]=1 (the reveal gate the draw
+checks — ALWAYS 0 in my runtime) + gs:[0x5e58]=0 (fresh materialize = clean glyphs). This routine
+NEVER runs in my runtime. It is dispatched indirectly via the per-frame presentation dispatcher (file
+0x7b00, cs 0x8c0): when a clip is queued (al=[si]!=0 at 0x7b05) it processes via vm_token_walker
+(0x73a9, scans the VM script for 0xA6 TEXT tokens) and calls the WAIT-COMMANDER mixer (0xbdb7) instead
+of the clip presenter. So the credit is presented by the VM processing a 0xA6 text token in a script;
+my VM runs only a 37-opcode init script once and the credit's text-token script is never executed
+(consistent with gs:0x2793&1 always-set -> C4 opcodes match not create). ROOT unchanged: the VM
+cross-script scheduling doesn't run the credit script; every gating flag is bit-exact-consistent so
+the divergence is upstream device-behavior/timing or an interpreter edge case, needing a DOSBox
+execution-trace differential (verified non-functional: no savestate file, no debugger in this build).
