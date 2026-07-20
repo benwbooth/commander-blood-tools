@@ -383,10 +383,12 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                 eprintln!("  C4 opcode handler ptr = {c4:04x} (VM-seg offset; ~file {c4_file:#07x}) cs~{c4_cs:04x}");
             }
             "vmtrace" => {
-                // record VM opcodes: cs:ip = 067c:0274 (right after lodsb, al=opcode)
-                rt.m.vm_trace_ip = Some((0x067c, 0x0274));
+                // record al at cs:ip (default 067c:0274 = VM opcode; or pass cs ip to trace elsewhere)
+                let cs = w.get(1).and_then(|s| u16::from_str_radix(s,16).ok()).unwrap_or(0x067c);
+                let ip = w.get(2).and_then(|s| u16::from_str_radix(s,16).ok()).unwrap_or(0x0274);
+                rt.m.vm_trace_ip = Some((cs, ip));
                 rt.m.vm_ops.clear();
-                eprintln!("vm opcode trace armed");
+                eprintln!("al trace armed at {cs:04x}:{ip:04x}");
             }
             "vmdump" => {
                 let ops = &rt.m.vm_ops;
@@ -395,6 +397,25 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                 // opcodes are 0xA0-based; note key ones: C4=present, D2=schedule
                 let key: Vec<String> = ops.iter().filter(|b| **b >= 0xc0).map(|b| format!("{b:02x}")).collect();
                 eprintln!("  >=0xC0 opcodes seen: {}", key.join(" "));
+            }
+            "resname" => {
+                let fs = rt.m.regs.fs;
+                for ids in w.iter().skip(1) {
+                    if let Ok(id) = ids.parse::<u32>() {
+                        let mut name = String::new();
+                        for i in 0..14u32 {
+                            let b = rt.m.read8(fs, 0x0c04 + id*16 + i);
+                            if b == 0 { break; }
+                            name.push(if (0x20..0x7f).contains(&b) { b as char } else { '.' });
+                        }
+                        // resource_handle_resolve (0x5320): bx=id<<3; seg=fs:[bx], flags=fs:[bx+2]; loaded iff flags&3
+                        let hseg = rt.m.read16(fs, id*8);
+                        let hflags = rt.m.read16(fs, id*8 + 2);
+                        let hsize = rt.m.read16(fs, id*8 + 4) as u32 | ((rt.m.read16(fs, id*8+6) as u32) << 16);
+                        eprintln!("  id {id}: \"{name}\"  handle[seg={hseg:04x} flags={hflags:04x} loaded={} size={hsize}]",
+                            hflags & 3 != 0);
+                    }
+                }
             }
             "rdstr" => {
                 let off = u32::from_str_radix(w.get(1).unwrap_or(&"d2d"), 16).unwrap_or(0);

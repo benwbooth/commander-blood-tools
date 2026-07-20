@@ -1308,3 +1308,24 @@ note. The linkage between C4-opcode-created records and the activation scan (rec
 and the per-frame cadence of the processor at 0x5860) is where it breaks; the interpreter is bit-exact
 so the record bytes the game writes are correct — the divergence is in WHEN/HOW my runtime drives the
 processor scan vs DOSBox. Needs a DOSBox record-memory differential at ~6s to pin (unavailable here).
+
+## CORRECTION + refined root: records ARE created, activation scan doesn't match them (2026-07-20)
+CORRECTION to the previous entry: the "gs:0x6724 is null" claim was WRONG — it was read at tick 200
+AFTER the VM unloaded its script package. During the VM run gs:[0x6724]=7838 is VALID. Verified: the
+5 VM resources (id2 script1.cod, id3 .bas, id4 .var, id5 .dic, id6 .deb) ALL resolve loaded=1 (traced
+the resolve return ax at 065b:01ab = 1 for every call). The resolve loop (0x55d9) fills gs:0x671c/20/
+24/28/2c with valid far ptrs; cod=7775, var=7838.
+REFINED ROOT: the VM DOES run the credit script and the C4 PRESENT opcode handler (vm_op_c4_actor,
+cs 067c:18de) executes 8 times, reading the script (ds=7775) and creating records in the var table
+(es:di = gs:[0x6724] = 7838). The post-exec record update (vm_post_exec_record_update 0x5816) runs
+ONCE after the exec loop (VM 0xff end 0x568a x1), but the activation site 0x5904 (which would set
+gs:0x67ac=1 and open the clean-reveal gate) is reached 0 TIMES: the scan `cmp bx,1` (0x58cd) then
+`cmp ds:[bp],0xc4` (0x58d4) sees ds:[bp]=7838:0x30 != 0xc4 and branches away. So the C4-opcode-created
+records and the activation scan's iteration DON'T LINE UP — a record-type/stride/index mismatch in the
+gs:0x6724 (var/state) + gs:0x672c (deb/object) processing (the scan only reaches 0x58d4 for records
+with bx==1; the C4 records may carry a different type/index). This is the gs:0x6724 record-structure /
+callback subsystem (documented pending). The interpreter is bit-exact so the record BYTES the game
+writes are faithful; the mismatch is in the record LAYOUT/semantics my analysis hasn't fully mapped —
+needs the record structs decoded (C4 handler write layout vs post-exec scan read layout) or a DOSBox
+record-memory differential. New diagnostics: resname (handle-table load flags), vmtrace <cs> <ip>
+(al capture at any IP), rdw (gs word dump).
