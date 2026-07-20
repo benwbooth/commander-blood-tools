@@ -1514,6 +1514,12 @@ impl Runtime {
                 // open
                 let path = self.read_asciiz(self.m.regs.ds, self.m.regs.dx());
                 let write = self.m.regs.al() & 3 != 0;
+                let opened = self.resolve(&path, false).ok().filter(|p| {
+                    std::fs::OpenOptions::new().read(true).write(write).open(p).is_ok()
+                }).is_some();
+                if self.trace_ints {
+                    eprintln!("int21 open \"{path}\" -> {}", if opened { "OK" } else { "FAIL" });
+                }
                 match self.resolve(&path, false) {
                     Ok(p) => {
                         let res = std::fs::OpenOptions::new()
