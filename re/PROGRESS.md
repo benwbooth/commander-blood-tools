@@ -1261,3 +1261,34 @@ interactivity, 357 tests). NEXT: find what SHOULD drive the intro cinematic's cr
 (trace how DOSBox reaches the 0xC4 handler / cliptoot.hnm subtitle opcode at the elephant-alien
 scene) — a DOSBox memory/instruction differential at ~6s would pin the exact trigger.
 Diagnostics added this session (blood.rs --script): revsample, memfind, presflags, ipstart/ipdump.
+
+## INTRO-CREDIT SUBTITLE — traced to the VM cross-script scheduling (2026-07-20, deep dive)
+Continuing the root-cause: the intro credit ("CRYO Interactive Entertainment 1995", clean glyphs in
+DOSBox) requires the CLEAN-reveal path (reveal draw 0x93F5 with pos gs:[0x5e58]==0 -> phase gs:0x5e65
+init to 2 at 0x9436 -> materialize 2->1->0 via table 0x5e6f). The static "WAIT COMMANDER" my runtime
+shows is the OTHER path: the voice-mixer subtitle presenter `mixer_gated_proc_b` (real entry file
+0xbdb7, NOT 0xbdc0 which is mid-instruction), gated gs:[0xade]&1 && gs:[0xba3]&1, which copies the
+STATIC EXE default gs:0x190="WAIT COMMANDER ...GO ON OFF REC..." to gs:0xe18 and draws phase-0 static.
+Key facts nailed down this session:
+- gs:0x190 is NEVER written (0 writes/500 ticks) -> permanently the static default. So the mixer path
+  is WAIT-COMMANDER-specific, not the credit path.
+- The voice handle gs:[0xc49]=0 (never written); NO .voc file is ever opened. The voice-clip streaming
+  routine (create-temp at file 0xbf95, stream loop 0xbee8/0xbf60) executes 0 times. The voice-filename
+  table at gs:0x0d2d is a 16-byte-stride list: [0]="mu\xxxxxxxx.voc" (template), [1]="mu\tablo2.voc",
+  [2]="mu\credits.voc" (all inside BLOOD.DAT). A clip-name fill routine (file 0x77a9: copies+uppercases
+  a name into the template's xxxxxxxx at gs:0x0d30, sets gs:[0xba1]=1 if changed else gs:[0xba0]|=1)
+  writes 'B' (blintr) only at ~tick 470-500, AFTER the wrong subtitle already showed at ~465.
+- The credit's clean path needs the dialogue-VM 0xC4 presentation record (handler file 0x58d4,
+  activation 0x5904 sets gs:0x67ac=1). gs:0x67ac is ALWAYS 0. The VM executor (vm_exec_loop wrapper
+  file 0x55f5 -> loop 0x5a74, opcode dispatch 0x5613) RUNS but only ONCE in 600 ticks: it processes
+  37 opcodes (dispatch 0x5613 x37) from ds=7a03 then hits the 0xff end (0x568a x1). It reaches the
+  0xC4 compare (0x58d8) once but the record is not 0xC4, so no credit activation. So the VM runs a
+  short INIT script once and stops; the intro-credit SCRIPT (containing the 0xC4 credit record) is
+  never loaded/scheduled onto the VM.
+CONCLUSION: the remaining divergence is the VM CROSS-SCRIPT SCHEDULING (D2 profile scheduling) not
+loading+running the intro-credit script during the attract. The credit text (DESCRIPT.DES 0xa3a) and
+the intro assets ARE resident in memory; only the VM never presents them. This is the deep, prior-
+flagged dialogue-VM subsystem. A DOSBox instruction/memory differential at ~6s (which script/profile
+the VM loads and what event schedules it) would pin the exact trigger; that path is non-functional in
+this DOSBox-X build. New diagnostics: capret/capretdump (return-addr + prev-instr capture),
+trapadd/trapclear, rdstr, revsample, memfind. interp.rs now tracks m.exec_prev for jump-source capture.

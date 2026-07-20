@@ -1101,6 +1101,12 @@ pub struct Machine {
     /// Snapshot of (bp, byte-at-SS:bp) each time capture_ip2 hits, bounded.
     pub capture_ip2: Option<(u16, u16)>,
     pub captured2: Vec<(u16, u16)>,
+    /// Return-address capture at capture_ip: (sp, [ss:sp], [ss:sp+2], [ss:sp+4]).
+    pub capture_ret: Option<(u16, u16, u16, u16)>,
+    /// (cs,ip) of the instruction executed immediately before the current one.
+    pub exec_prev: (u16, u16),
+    /// Snapshot of exec_prev captured at capture_ip.
+    pub captured_prev: Option<(u16, u16)>,
 }
 
 pub const MEM_SIZE: usize = 0x40_0000; // 4 MB — the EXE image (deterministic oracle mirrors it),
@@ -1131,6 +1137,9 @@ impl Machine {
             captured: None,
             capture_ip2: None,
             captured2: Vec::new(),
+            capture_ret: None,
+            exec_prev: (0, 0),
+            captured_prev: None,
         }
     }
 

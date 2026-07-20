@@ -370,6 +370,53 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                 }
                 eprintln!("memfind '{}': {} hits", String::from_utf8_lossy(needle), hits);
             }
+            "rdstr" => {
+                let off = u32::from_str_radix(w.get(1).unwrap_or(&"d2d"), 16).unwrap_or(0);
+                let gs = rt.m.regs.gs;
+                let mut t = String::new();
+                for i in 0..40u32 {
+                    let b = rt.m.read8(gs, off + i);
+                    t.push(if (0x20..0x7f).contains(&b) { b as char } else { '.' });
+                }
+                eprintln!("gs:{off:04x} = \"{t}\"  [0xc49 handle={:04x}]", rt.m.read16(gs, 0xc49));
+            }
+            "trapadd" => {
+                let cs = u16::from_str_radix(w.get(1).unwrap_or(&"0cbd"), 16).unwrap_or(0);
+                let ip = u16::from_str_radix(w.get(2).unwrap_or(&"0610"), 16).unwrap_or(0);
+                rt.m.trap_ips.insert((cs, ip), 0);
+                eprintln!("trap added {cs:04x}:{ip:04x}");
+            }
+            "trapclear" => { rt.m.trap_ips.clear(); eprintln!("traps cleared"); }
+            "capret" => {
+                // capret <cs_hex> <ip_hex>: capture the return address (dispatch site) when (cs,ip) is first hit
+                let cs = u16::from_str_radix(w.get(1).unwrap_or(&"0cbd"), 16).unwrap_or(0x0cbd);
+                let ip = u16::from_str_radix(w.get(2).unwrap_or(&"0610"), 16).unwrap_or(0x0610);
+                rt.m.capture_ip = Some((cs, ip));
+                rt.m.captured = None;
+                rt.m.capture_ret = None;
+                eprintln!("capret armed for {cs:04x}:{ip:04x}");
+            }
+            "capretdump" => {
+                if let Some((sp, w0, w1, w2)) = rt.m.capture_ret {
+                    // interpret [ss:sp] as near-return ip in the same cs, and far (ip,cs)
+                    let cs = rt.m.capture_ip.map(|(c,_)| c).unwrap_or(0);
+                    let near_file = 0x600 + (cs.wrapping_sub(0x1a2) as usize)*16 + w0 as usize;
+                    let far_cs = w1;
+                    let far_file = 0x600 + (far_cs.wrapping_sub(0x1a2) as usize)*16 + w0 as usize;
+                    eprintln!("capret sp={sp:04x} stack=[{w0:04x} {w1:04x} {w2:04x}]");
+                    eprintln!("  if NEAR call: caller ret {cs:04x}:{w0:04x} (file {near_file:#07x})");
+                    eprintln!("  if FAR  call: caller ret {far_cs:04x}:{w0:04x} (file {far_file:#07x})");
+                    if let Some((ss,ds,es,si,bp,bx)) = rt.m.captured {
+                        eprintln!("  regs at entry: ss={ss:04x} ds={ds:04x} es={es:04x} si={si:04x} bp={bp:04x} bx={bx:04x}");
+                    }
+                    if let Some((pcs,pip)) = rt.m.captured_prev {
+                        let pfile = 0x600 + (pcs.wrapping_sub(0x1a2) as usize)*16 + pip as usize;
+                        eprintln!("  PREV instr (jump/call source): {pcs:04x}:{pip:04x} (file {pfile:#07x})");
+                    }
+                } else {
+                    eprintln!("capret: not hit");
+                }
+            }
             "ipstart" => { rt.ip_sample = Some(Default::default()); eprintln!("ip sampling on"); }
             "ipdump" => {
                 if let Some(h) = rt.ip_sample.take() {

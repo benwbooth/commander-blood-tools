@@ -517,7 +517,12 @@ impl Cpu {
         }
         if m.capture_ip == Some((self.cs, ip0)) && m.captured.is_none() {
             m.captured = Some((m.regs.ss, m.regs.ds, m.regs.es, m.regs.si(), m.regs.bp(), m.regs.bx()));
+            let (ss, sp) = (m.regs.ss, m.regs.sp());
+            let w = |off: u16| m.read16(ss, sp.wrapping_add(off) as u32);
+            m.capture_ret = Some((sp, w(0), w(2), w(4)));
+            m.captured_prev = Some(m.exec_prev);
         }
+        m.exec_prev = (self.cs, ip0);
         if m.capture_ip2 == Some((self.cs, ip0)) && m.captured2.len() < 40 {
             // at the pixel write: record (es, di) = where the glyph pixel lands
             m.captured2.push((m.regs.es, m.regs.di()));
