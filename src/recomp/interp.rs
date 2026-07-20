@@ -522,6 +522,9 @@ impl Cpu {
             m.capture_ret = Some((sp, w(0), w(2), w(4)));
             m.captured_prev = Some(m.exec_prev);
         }
+        if m.vm_trace_ip == Some((self.cs, ip0)) && m.vm_ops.len() < 400 {
+            m.vm_ops.push(m.regs.al());
+        }
         m.exec_prev = (self.cs, ip0);
         if m.capture_ip2 == Some((self.cs, ip0)) && m.captured2.len() < 40 {
             // at the pixel write: record (es, di) = where the glyph pixel lands

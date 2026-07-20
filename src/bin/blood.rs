@@ -370,6 +370,32 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                 }
                 eprintln!("memfind '{}': {} hits", String::from_utf8_lossy(needle), hits);
             }
+            "rdw" => {
+                let off = u32::from_str_radix(w.get(1).unwrap_or(&"6eb0"), 16).unwrap_or(0);
+                let n = w.get(2).and_then(|s| s.parse().ok()).unwrap_or(8u32);
+                let gs = rt.m.regs.gs;
+                let vals: Vec<String> = (0..n).map(|i| format!("{:04x}", rt.m.read16(gs, off + i*2))).collect();
+                eprintln!("gs:{off:04x} words: {}", vals.join(" "));
+                // C4 opcode = idx 0x24, handler at table+0x24*2
+                let c4 = rt.m.read16(gs, 0x6eb0 + 0x24*2);
+                let c4_cs = rt.m.regs.cs; // handler is in the VM code seg; report file via 0x4da base
+                let c4_file = 0x600 + 0x4dausize*16 + c4 as usize;
+                eprintln!("  C4 opcode handler ptr = {c4:04x} (VM-seg offset; ~file {c4_file:#07x}) cs~{c4_cs:04x}");
+            }
+            "vmtrace" => {
+                // record VM opcodes: cs:ip = 067c:0274 (right after lodsb, al=opcode)
+                rt.m.vm_trace_ip = Some((0x067c, 0x0274));
+                rt.m.vm_ops.clear();
+                eprintln!("vm opcode trace armed");
+            }
+            "vmdump" => {
+                let ops = &rt.m.vm_ops;
+                eprintln!("VM opcodes ({}): {}", ops.len(),
+                    ops.iter().map(|b| format!("{b:02x}")).collect::<Vec<_>>().join(" "));
+                // opcodes are 0xA0-based; note key ones: C4=present, D2=schedule
+                let key: Vec<String> = ops.iter().filter(|b| **b >= 0xc0).map(|b| format!("{b:02x}")).collect();
+                eprintln!("  >=0xC0 opcodes seen: {}", key.join(" "));
+            }
             "rdstr" => {
                 let off = u32::from_str_radix(w.get(1).unwrap_or(&"d2d"), 16).unwrap_or(0);
                 let gs = rt.m.regs.gs;

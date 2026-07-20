@@ -1107,6 +1107,9 @@ pub struct Machine {
     pub exec_prev: (u16, u16),
     /// Snapshot of exec_prev captured at capture_ip.
     pub captured_prev: Option<(u16, u16)>,
+    /// When set, at this (cs,ip) record regs.al into vm_ops (VM opcode trace).
+    pub vm_trace_ip: Option<(u16, u16)>,
+    pub vm_ops: Vec<u8>,
 }
 
 pub const MEM_SIZE: usize = 0x40_0000; // 4 MB — the EXE image (deterministic oracle mirrors it),
@@ -1140,6 +1143,8 @@ impl Machine {
             capture_ret: None,
             exec_prev: (0, 0),
             captured_prev: None,
+            vm_trace_ip: None,
+            vm_ops: Vec::new(),
         }
     }
 

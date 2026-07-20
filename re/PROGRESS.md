@@ -1292,3 +1292,19 @@ flagged dialogue-VM subsystem. A DOSBox instruction/memory differential at ~6s (
 the VM loads and what event schedules it) would pin the exact trigger; that path is non-functional in
 this DOSBox-X build. New diagnostics: capret/capretdump (return-addr + prev-instr capture),
 trapadd/trapclear, rdstr, revsample, memfind. interp.rs now tracks m.exec_prev for jump-source capture.
+
+## DEEPEST CORE: VM creates C4 records but activation doesn't fire (2026-07-20)
+Traced one more level: the dialogue VM DOES run the intro-credit script — VM opcode trace (new
+`vmtrace`/`vmdump` diagnostics) shows 37 opcodes `a9 ce c4` x8 ... `d1 bf ff`, i.e. the 0xC4 PRESENT
+opcode executes 8 times (once per credit line). The C4 opcode handler `vm_op_c4_actor` (dispatch
+table gs:0x6eb0 idx 0x24 -> VM-seg offset 0x18de = file 0x6c7e) CREATES 0xC4-type actor records in
+the gs:0x6724 runtime-object area (es:di=gs:[0x6724], writes {0xc4, related, 0}), gated gs:[0x67ad]&1.
+BUT the separate record-PROCESSOR that turns a 0xC4 record into the visible subtitle activation
+(file 0x58d4: `cmp bx,1` then `cmp ds:[bp],0xc4` -> 0x5904 sets gs:0x67ac=1) runs only ONCE and sees
+ds:[bp] != 0xc4, so it never activates. So the C4 records are created but never processed into a
+presentation. This is the gs:0x6724 record-structure / callback-linkage subsystem — the exact
+"detailed callback semantics and shared engine globals remain pending" item from the runtime memory
+note. The linkage between C4-opcode-created records and the activation scan (record stride/index bp,
+and the per-frame cadence of the processor at 0x5860) is where it breaks; the interpreter is bit-exact
+so the record bytes the game writes are correct — the divergence is in WHEN/HOW my runtime drives the
+processor scan vs DOSBox. Needs a DOSBox record-memory differential at ~6s to pin (unavailable here).
