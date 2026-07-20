@@ -2426,10 +2426,25 @@ mean_abs 1.09), known launch args (`AMR S162227 EMS WRIC:\cblood\`).
       fill OR, when `gs:[0x5b56]&1`, a PALETTE-REMAP span (`mov al,es:[di];
       xlatb DS:0x5f11; stosb`). So the subtitle band is filled/remapped to 0xEF.
       NEXT THREAD: find the subtitle caller of gfx_clipped_draw + why bp/the
-      remap table 0x5f11 yields 0xEF scramble (is 0x5f11 loaded? is [0x5b56]
-      set? is this the reveal "materialize" remap effect?). The VRAM blitter
-      0x3630 (fd/fe/ff) is a SEPARATE path that gets overwritten by the chunky
-      blit. Diagnostics in blood.rs --script: watchef/watchchunky/watchdump.
+      remap table 0x5f11 yields 0xEF scramble. ROOT CAUSE FOUND + DOSBox-CONFIRMED
+      (2026-07-20): the 0xEF is the subtitle's MATERIALIZE/DISSOLVE effect — the
+      chunky-buffer glyph plotter at 0x299:0xc22 (file 0x3c22) drives an LFSR
+      (`rcl ax,4; xor ax,bx`, 16-bit period) that plots color-`dl` pixels at
+      pseudo-random positions so text emerges from noise over several frames.
+      DOSBox ground truth (accuracy/captures/dialogue/, reached by sending Space
+      via the oracle harness — this UNBLOCKS the long-stuck dialogue oracle!)
+      shows the SAME scene with the subtitle FULLY MATERIALIZED = clean white
+      "CRYO Interactive Entertainment 1995". So mine is stuck mid-dissolve: the
+      dialogue-updater DRAW at 0x93F8 is gated by `[0x27e2]&2 || [0x5e64]&1 ||
+      ([0x67bc]&1 && [0x679a]==0x5e64)` — all clear in my capture (67bc=0), so
+      the subtitle stops being redrawn before the dissolve finishes, freezing the
+      last noisy frame. The reveal pointer 0x5e58 also froze (updater not
+      re-entered). NEXT: find what sets/clears [0x67bc]/[0x5e64]/[0x27e2] per
+      frame and why they clear early — a frame-cadence coupling between the
+      reveal-advance rate and the per-char dissolve duration (likely pacing
+      calibration: my draw/advance ratio ≠ real hardware). NOT a font/VGA bug
+      (font, map, blit, planar model all verified correct). Diagnostics in
+      blood.rs --script: watchef/watchchunky/watchdump/vga/font/buf/peek.
 - [ ] M5 — progressive replacement: dispatch table IP→lifted-fn at basic-block
       entry; runtime trace logs (a) indirect-call targets → feeds the static
       composition tiers, (b) per-function coverage → lift priority list. Keep

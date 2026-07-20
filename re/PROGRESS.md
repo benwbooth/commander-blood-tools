@@ -1110,3 +1110,20 @@ M5 (lift dispatch at verified entry points + runtime trace -> indirect-site reso
   (0x94c8 sets gs:0x67bb=1) didn't run -> the dialogue updater's final clean-text draw/flip isn't
   persisting. Diagnostic commands added to blood.rs (--script): vga/font/buf/peek/scanpages/
   dumpvram for future RE. All 357 lib tests green.
+
+## SUBTITLE ROOT CAUSE FOUND + DOSBox-confirmed; dialogue oracle UNBLOCKED — 2026-07-20
+Via a Machine write-watch (records code-addr + ds:si of each 0xEF write), traced the subtitle
+0xEF fully: it's the game's MATERIALIZE/DISSOLVE effect. Chunky-buffer glyph plotter 0x299:0xc22
+(file 0x3c22) runs an LFSR (rcl ax,4; xor ax,bx) plotting color-dl pixels at pseudo-random
+positions -> text emerges from noise over frames. Pipeline: compositor -> chunky buffer (seg
+0x266c) -> chunky->planar de-interleave blit (0x299:0xf91) -> Mode-X VRAM.
+DOSBox GROUND TRUTH obtained (accuracy/captures/dialogue/): sent Space via the oracle harness's
+xdotool input hook to advance the intro into a dialogue scene -> the SAME scene (alien creature)
+shows the subtitle FULLY MATERIALIZED as clean white "CRYO Interactive Entertainment 1995". This
+UNBLOCKS the dialogue-scene oracle that was stuck the whole project (generic input DOES advance
+the intro; the earlier note that it didn't was about reaching deeper gameplay).
+So mine is stuck mid-dissolve: the dialogue-updater draw (0x93F8) is gated by [0x27e2]&2 ||
+[0x5e64]&1 || ([0x67bc]&1 && [0x679a]==0x5e64); all clear in my capture -> subtitle stops being
+redrawn before the dissolve completes -> last noisy frame freezes (reveal ptr 0x5e58 also froze).
+This is a FRAME-CADENCE issue (draw/advance ratio vs real hw), NOT a font/VGA/interp bug (all
+verified correct). NEXT: trace the per-frame set/clear of those gate flags + pacing calibration.
