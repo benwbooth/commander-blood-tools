@@ -1143,6 +1143,7 @@ impl Cpu {
                 };
                 let delta = if m.regs.df { size.wrapping_neg() } else { size };
                 let sseg = self.resolve_seg(m, ovr, false);
+                let cx0 = m.regs.cx();
                 loop {
                     if rep.is_some() {
                         if m.regs.cx() == 0 {
@@ -1227,6 +1228,11 @@ impl Cpu {
                         }
                         _ => {}
                     }
+                }
+                // Charge REP iterations as steps: a 64000-byte blit is 64000 instructions'
+                // worth of emulated time, not 1 — keeps pacing (and wall cost) realistic.
+                if rep.is_some() {
+                    self.steps += cx0.wrapping_sub(m.regs.cx()) as u64;
                 }
             }
 

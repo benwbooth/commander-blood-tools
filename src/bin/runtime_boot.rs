@@ -66,6 +66,21 @@ fn main() {
     let mstep = rt.cpu.steps / 1_000_000;
     rt.write_ppm(&out.join(format!("final_{mstep:05}M.ppm"))).unwrap();
     println!("=== end: {end:?} after {} steps (mode {:#04x}) ===", rt.cpu.steps, rt.vga_mode);
+    let [ins, outs, ints, hlts, chunks] = rt.exit_counts;
+    println!("exits: in={ins} out={outs} int={ints} hlt={hlts} chunks={chunks}");
+    println!("{}", rt.debug_state());
+    {
+        let ss = rt.m.regs.ss;
+        let sp = rt.m.regs.sp() as u32;
+        let w: Vec<String> = (0..6).map(|i| format!("{:04x}", rt.m.read16(ss, sp + i * 2))).collect();
+        println!("stack top: {}", w.join(" "));
+    }
+    std::fs::write(out.join("driver.bin"), &rt.m.mem[0x765e0..0x765e0 + 0x1000]).unwrap();
+    // dump the code around the final cs:ip for offline disassembly
+    let base = (rt.cpu.cs as usize) * 16 + rt.cpu.ip as usize;
+    let lo = base.saturating_sub(64);
+    std::fs::write(out.join("spin_code.bin"), &rt.m.mem[lo..base + 192]).unwrap();
+    eprintln!("spin code dumped ({:#x}..{:#x}, ip at +64)", lo, base + 192);
     let txt = rt.text_screen();
     if !txt.is_empty() {
         println!("--- text screen ---\n{txt}");

@@ -30,6 +30,10 @@ const EMS_STORE: usize = 0x10_0000;
 const EMS_PAGE: usize = 0x4000;
 const EMS_MAX_PAGES: usize = (super::machine::MEM_SIZE - EMS_STORE) / EMS_PAGE;
 
+/// Modelled CPU speed: interpreter steps per emulated second. Wall-clock pacing and the PIT
+/// divisor -> IRQ0 cadence both derive from this (1 step ~= 1 instruction on a ~8 MIPS 386/33).
+pub const STEPS_PER_SECOND: u64 = 8_000_000;
+
 const PSP_SEG: u16 = 0x0192;
 const ENV_SEG: u16 = 0x0180;
 const MEM_TOP_SEG: u16 = 0xa000;
@@ -95,6 +99,8 @@ pub struct Runtime {
     next_tick_at: u64,
     pub steps_per_tick: u64,
     pit_divisor: u32,
+    pit_lo: u8,
+    pit_phase: u8,
     // EMS: handle -> logical pages (indices into the store)
     ems_handles: Vec<Option<Vec<u32>>>,
     ems_next_page: u32,
@@ -117,6 +123,18 @@ pub struct Runtime {
     alloc_next: u16,
     kbd_queue: VecDeque<(u8, u8)>, // (scancode, ascii) pending hardware events
     bios_keys: VecDeque<(u8, u8)>, // decoded buffer served by int 16h
+    kbd_irq_pending: u32,          // int 9 deliveries owed (when the game hooked int 9)
+    // int 33h mouse state. Coordinates are DOS-virtual: x 0..639 (2px granularity in mode 13h),
+    // y 0..199.
+    mouse_x: u16,
+    mouse_y: u16,
+    mouse_buttons: u16,
+    mouse_presses: [(u16, u16, u16); 2],  // per button: count, last x, last y
+    mouse_releases: [(u16, u16, u16); 2],
+    mouse_handler: Option<(u16, u16, u16)>, // event mask, seg, off
+    mouse_pending: u16,                     // accumulated event mask awaiting delivery
+    mouse_saved: Option<(super::machine::Regs, u16, u16, bool, u16)>, // ctx during callback
+    mouse_shown: i16,
     /// FindFirst/FindNext state per DTA address: (matches, next index).
     searches: HashMap<(u16, u16), (Vec<(String, u32, u8)>, usize)>,
     /// (vector, AH) -> count, for the boot log.
@@ -124,6 +142,28 @@ pub struct Runtime {
     pub trace_ints: bool,
     console: String,
     exit_code: Option<u8>,
+    /// exit-path counters for performance triage: [in, out, int, hlt, chunks]
+    pub exit_counts: [u64; 5],
+    // 8237 DMA (channels 0-3): [base_addr, base_count, cur_addr, cur_count] + page, per channel.
+    dma_flipflop: bool,
+    dma_addr: [u16; 4],
+    dma_count: [u16; 4],
+    dma_cur_count: [u16; 4],
+    dma_page: [u8; 4],
+    dma_mode: [u8; 4],
+    dma_tc: u8, // terminal-count status bits
+    // SoundBlaster DSP at base 0x220 (game config S162227: SB16, IRQ 2, DMA 1).
+    sb_reset_state: u8,
+    sb_out: VecDeque<u8>,      // bytes readable at 0x22A
+    sb_cmd: Option<(u8, Vec<u8>, usize)>, // in-progress command: (cmd, args, needed)
+    sb_time_constant: u8,
+    sb_rate_hz: u32,
+    /// Active playback: (dma channel, start step, total samples, auto_init, samples_done)
+    sb_play: Option<(usize, u64, u32, bool)>,
+    /// Captured PCM (what the game streamed) — the M4 audio-out tap.
+    pub sb_pcm: Vec<u8>,
+    pub sb_pcm_rate: u32,
+    sb_irq_pending: bool,
 }
 
 impl Runtime {
@@ -143,6 +183,8 @@ impl Runtime {
             next_tick_at: 0,
             steps_per_tick: 450_000, // ~18.2 Hz at a modelled ~8 MIPS; PIT reprogramming scales it
             pit_divisor: 0x1_0000,
+            pit_lo: 0,
+            pit_phase: 0,
             ems_handles: vec![Some(vec![])], // handle 0 reserved (the OS handle)
             ems_next_page: 0,
             ems_map: [None; 4],
@@ -161,11 +203,38 @@ impl Runtime {
             cmos_idx: 0,
             kbd_queue: VecDeque::new(),
             bios_keys: VecDeque::new(),
+            kbd_irq_pending: 0,
+            mouse_x: 320,
+            mouse_y: 100,
+            mouse_buttons: 0,
+            mouse_presses: [(0, 0, 0); 2],
+            mouse_releases: [(0, 0, 0); 2],
+            mouse_handler: None,
+            mouse_pending: 0,
+            mouse_saved: None,
+            mouse_shown: -1,
             searches: HashMap::new(),
             int_log: HashMap::new(),
             trace_ints: false,
             console: String::new(),
             exit_code: None,
+            exit_counts: [0; 5],
+            dma_flipflop: false,
+            dma_addr: [0; 4],
+            dma_count: [0; 4],
+            dma_cur_count: [0; 4],
+            dma_page: [0; 4],
+            dma_mode: [0; 4],
+            dma_tc: 0,
+            sb_reset_state: 0,
+            sb_out: VecDeque::new(),
+            sb_cmd: None,
+            sb_time_constant: 0xa6, // ~11 kHz default
+            sb_rate_hz: 11111,
+            sb_play: None,
+            sb_pcm: Vec::new(),
+            sb_pcm_rate: 11111,
+            sb_irq_pending: false,
         };
         rt.m.vga = Some(Box::default());
         rt.init_bios();
@@ -185,6 +254,8 @@ impl Runtime {
         for (i, b) in b"EMMXXXX0".iter().enumerate() {
             self.m.write8(EMS_STUB_SEG, 0x0a + i as u32, *b);
         }
+        // Mouse-callback return trampoline (far-called by the guest handler's retf path).
+        self.m.write8(STUB_SEG, 0x420, 0xf4);
         // BIOS data area.
         self.m.write16(0x40, 0x10, 0x0021); // equipment: 80x25 color
         self.m.write16(0x40, 0x13, 640); // conventional KB
@@ -354,6 +425,58 @@ impl Runtime {
             if self.cpu.steps >= max_steps {
                 return RunEnd::StepBudget;
             }
+            // pending mouse events -> user callback (a real DOS mouse driver far-calls it)
+            if self.mouse_pending != 0 {
+                match self.mouse_handler {
+                    Some((mask, seg, off))
+                        if self.mouse_pending & mask != 0
+                            && self.cpu.iflag
+                            && self.mouse_saved.is_none() =>
+                    {
+                        let ev = self.mouse_pending & mask;
+                        self.mouse_pending = 0;
+                        self.mouse_saved = Some((
+                            self.m.regs,
+                            self.cpu.cs,
+                            self.cpu.ip,
+                            self.cpu.iflag,
+                            self.cpu.flags_high,
+                        ));
+                        let r = &mut self.m.regs;
+                        r.set_ax(ev);
+                        r.set_bx(self.mouse_buttons);
+                        r.set_cx(self.mouse_x);
+                        r.set_dx(self.mouse_y);
+                        r.set_si(0);
+                        r.set_di(0);
+                        // far return frame -> trampoline stub
+                        r.set_sp(r.sp().wrapping_sub(2));
+                        let (ss, sp) = (r.ss, r.sp() as u32);
+                        self.m.write16(ss, sp, STUB_SEG);
+                        let r = &mut self.m.regs;
+                        r.set_sp(r.sp().wrapping_sub(2));
+                        let (ss, sp) = (r.ss, r.sp() as u32);
+                        self.m.write16(ss, sp, 0x0420);
+                        self.cpu.cs = seg;
+                        self.cpu.ip = off;
+                        self.m.regs.cs = seg;
+                    }
+                    Some(_) | None => self.mouse_pending = 0,
+                }
+            }
+            // int 9 keyboard IRQ (only when the game hooked it; int 16h polls work regardless)
+            if self.kbd_irq_pending > 0 && self.cpu.iflag && self.ivt_hooked(9) {
+                self.kbd_irq_pending -= 1;
+                self.cpu.deliver_int(&mut self.m, 9);
+            }
+            // SoundBlaster completion IRQ (driver config block: base 220, IRQ 7 -> vector 0x0F)
+            self.tick_sb_playback();
+            if self.sb_irq_pending && self.cpu.iflag {
+                self.sb_irq_pending = false;
+                if self.ivt_hooked(0x0f) {
+                    self.cpu.deliver_int(&mut self.m, 0x0f);
+                }
+            }
             // timer IRQ0
             if self.cpu.steps >= self.next_tick_at {
                 if self.cpu.iflag {
@@ -364,11 +487,28 @@ impl Runtime {
                 }
             }
             let budget = (max_steps - self.cpu.steps).min(4096);
+            self.exit_counts[4] += 1;
             match self.cpu.run(&mut self.m, budget) {
                 Exit::StepLimit => {}
-                Exit::Int { vector } => self.cpu.deliver_int(&mut self.m, vector),
+                Exit::Int { vector } => {
+                    self.exit_counts[2] += 1;
+                    self.cpu.deliver_int(&mut self.m, vector)
+                }
                 Exit::Hlt => {
+                    self.exit_counts[3] += 1;
                     let (cs, ip) = (self.cpu.cs, self.cpu.ip);
+                    if cs == STUB_SEG && ip == 0x421 {
+                        // mouse-callback trampoline: restore the interrupted context
+                        if let Some((regs, ccs, cip, ifl, fh)) = self.mouse_saved.take() {
+                            self.m.regs = regs;
+                            self.cpu.cs = ccs;
+                            self.cpu.ip = cip;
+                            self.cpu.iflag = ifl;
+                            self.cpu.flags_high = fh;
+                            continue;
+                        }
+                        return RunEnd::Fatal("trampoline hlt without saved context".into());
+                    }
                     let v = if cs == STUB_SEG && ip >= 1 {
                         ((ip - 1) / 4) as u8
                     } else if cs == EMS_STUB_SEG {
@@ -381,14 +521,39 @@ impl Runtime {
                     }
                 }
                 Exit::In { port, size } => {
-                    let val = self.port_in(port, size);
+                    self.exit_counts[0] += 1;
+                    // A word-sized IN reads port then port+1 (hardware bus behavior — VGA/DMA
+                    // index+data pairs rely on it).
+                    let val = match size {
+                        1 => self.port_in(port, 1),
+                        _ => {
+                            let lo = self.port_in(port, 1) & 0xff;
+                            let hi = self.port_in(port.wrapping_add(1), 1) & 0xff;
+                            lo | (hi << 8)
+                        }
+                    };
                     match size {
                         1 => self.m.regs.set_al(val as u8),
                         2 => self.m.regs.set_ax(val as u16),
                         _ => self.m.regs.eax = val,
                     }
                 }
-                Exit::Out { port, size, value } => self.port_out(port, size, value),
+                Exit::Out { port, size, value } => {
+                    self.exit_counts[1] += 1;
+                    // A word-sized OUT writes AL to port and AH to port+1 — the standard VGA
+                    // index+data idiom (`out dx, ax` with AL=index, AH=data).
+                    match size {
+                        1 => self.port_out(port, 1, value),
+                        _ => {
+                            self.port_out(port, 1, value & 0xff);
+                            self.port_out(port.wrapping_add(1), 1, (value >> 8) & 0xff);
+                            if size == 4 {
+                                self.port_out(port.wrapping_add(2), 1, (value >> 16) & 0xff);
+                                self.port_out(port.wrapping_add(3), 1, (value >> 24) & 0xff);
+                            }
+                        }
+                    }
+                }
                 Exit::Unimplemented { cs, ip, byte, what } => {
                     let ctx: Vec<String> = (0..8)
                         .map(|i| format!("{:02x}", self.m.read8(cs, ip.wrapping_sub(1).wrapping_add(i) as u32)))
@@ -407,6 +572,42 @@ impl Runtime {
 
     fn port_in(&mut self, port: u16, _size: u8) -> u32 {
         match port {
+            // 8237 DMA: current address/count with lo/hi flip-flop
+            0x00 | 0x02 | 0x04 | 0x06 => {
+                let ch = (port >> 1) as usize;
+                let v = self.dma_addr[ch]; // current address not modelled separately
+                self.dma_flipflop = !self.dma_flipflop;
+                if self.dma_flipflop { (v & 0xff) as u32 } else { (v >> 8) as u32 }
+            }
+            0x01 | 0x03 | 0x05 | 0x07 => {
+                let ch = (port >> 1) as usize;
+                self.tick_sb_playback();
+                let v = self.dma_cur_count[ch];
+                self.dma_flipflop = !self.dma_flipflop;
+                if self.dma_flipflop { (v & 0xff) as u32 } else { (v >> 8) as u32 }
+            }
+            0x08 => {
+                let v = self.dma_tc as u32;
+                self.dma_tc = 0;
+                v
+            }
+            // SoundBlaster DSP (base 0x220)
+            0x22a => {
+                let v = self.sb_out.pop_front().unwrap_or(0xff) as u32;
+                if self.trace_ints {
+                    eprintln!("SB in 22a -> {v:#x} @{:04x}:{:04x}", self.cpu.cs, self.cpu.ip);
+                }
+                v
+            }
+            0x22c => 0x7f, // write-buffer status: ready
+            0x22e => {
+                let v = if self.sb_out.is_empty() { 0x7f } else { 0xff };
+                if self.trace_ints {
+                    eprintln!("SB in 22e -> {v:#x} @{:04x}:{:04x}", self.cpu.cs, self.cpu.ip);
+                }
+                v
+            }
+            0x224 | 0x225 => 0, // mixer
             0x3c9 => {
                 let v = self.dac[self.dac_ridx % 768];
                 self.dac_ridx = (self.dac_ridx + 1) % 768;
@@ -422,7 +623,7 @@ impl Runtime {
                 let hblank = vsync || (self.cpu.steps % 97) < 20;
                 ((vsync as u32) << 3) | hblank as u32
             }
-            0x60 => self.kbd_queue.front().map(|(s, _)| *s as u32).unwrap_or(0),
+            0x60 => self.kbd_queue.pop_front().map(|(s, _)| s as u32).unwrap_or(0),
             0x61 => 0x20,
             0x71 => match self.cmos_idx {
                 0x00 => 0x27, // RTC seconds (fixed: deterministic PRNG seed)
@@ -451,6 +652,58 @@ impl Runtime {
     fn port_out(&mut self, port: u16, _size: u8, value: u32) {
         let v = value as u8;
         match port {
+            0x00 | 0x02 | 0x04 | 0x06 => {
+                let ch = (port >> 1) as usize;
+                self.dma_flipflop = !self.dma_flipflop;
+                if self.dma_flipflop {
+                    self.dma_addr[ch] = (self.dma_addr[ch] & 0xff00) | v as u16;
+                } else {
+                    self.dma_addr[ch] = (self.dma_addr[ch] & 0x00ff) | ((v as u16) << 8);
+                }
+            }
+            0x01 | 0x03 | 0x05 | 0x07 => {
+                let ch = (port >> 1) as usize;
+                self.dma_flipflop = !self.dma_flipflop;
+                if self.dma_flipflop {
+                    self.dma_count[ch] = (self.dma_count[ch] & 0xff00) | v as u16;
+                } else {
+                    self.dma_count[ch] = (self.dma_count[ch] & 0x00ff) | ((v as u16) << 8);
+                    self.dma_cur_count[ch] = self.dma_count[ch];
+                    if self.trace_ints {
+                        eprintln!(
+                            "DMA ch{ch} count={:#06x} addr={:#06x} page={:#04x} @step {}",
+                            self.dma_count[ch], self.dma_addr[ch], self.dma_page[ch], self.cpu.steps
+                        );
+                    }
+                }
+            }
+            0x0a => {} // mask
+            0x0b => {
+                let ch = (v & 3) as usize;
+                self.dma_mode[ch] = v;
+            }
+            0x0c => self.dma_flipflop = false,
+            0x0d => {
+                self.dma_flipflop = false; // master clear
+            }
+            0x87 => self.dma_page[0] = v,
+            0x83 => self.dma_page[1] = v,
+            0x81 => self.dma_page[2] = v,
+            0x82 => self.dma_page[3] = v,
+            0x226 => {
+                // DSP reset: 1 then 0 -> respond 0xAA
+                if v == 1 {
+                    self.sb_reset_state = 1;
+                } else if v == 0 && self.sb_reset_state == 1 {
+                    self.sb_reset_state = 0;
+                    self.sb_out.clear();
+                    self.sb_out.push_back(0xaa);
+                    self.sb_cmd = None;
+                    self.sb_play = None;
+                }
+            }
+            0x22c => self.sb_dsp_write(v),
+            0x224 | 0x225 => {} // mixer
             0x3c8 => {
                 self.dac_widx = (v as usize) * 3;
             }
@@ -461,11 +714,28 @@ impl Runtime {
             0x3c7 => self.dac_ridx = (v as usize) * 3,
             0x70 => self.cmos_idx = v & 0x7f,
             0x40 => {
-                // PIT channel 0 divisor (two writes, lo then hi)
-                self.pit_divisor = (self.pit_divisor >> 8 | ((v as u32) << 8)) & 0xffff;
-                let d = if self.pit_divisor == 0 { 0x1_0000 } else { self.pit_divisor };
-                // ~8 modelled instructions per PIT count (1.19 MHz vs ~8 MIPS -> ~7).
-                self.steps_per_tick = (d as u64 * 7).max(2000);
+                // PIT channel 0 divisor: lo byte then hi byte (phase reset by port 43h)
+                if self.pit_phase == 0 {
+                    self.pit_lo = v;
+                    self.pit_phase = 1;
+                } else {
+                    self.pit_phase = 0;
+                    let d = ((v as u32) << 8) | self.pit_lo as u32;
+                    self.pit_divisor = if d == 0 { 0x1_0000 } else { d };
+                    self.steps_per_tick =
+                        (self.pit_divisor as u64 * STEPS_PER_SECOND / 1_193_182).max(1000);
+                    if self.trace_ints {
+                        eprintln!(
+                            "PIT ch0 divisor {:#x} -> {} steps/tick",
+                            self.pit_divisor, self.steps_per_tick
+                        );
+                    }
+                }
+            }
+            0x43 => {
+                if v & 0xc0 == 0 {
+                    self.pit_phase = 0;
+                }
             }
             0x3c4 => self.seq_idx = v,
             0x3c5 => {
@@ -492,7 +762,7 @@ impl Runtime {
             }
             0x3d4 => self.crtc_idx = v,
             0x3d5 => self.crtc[(self.crtc_idx & 31) as usize] = v,
-            0x20 | 0x21 | 0xa0 | 0xa1 | 0x43 | 0x41 | 0x42 | 0x61 | 0x3c2 | 0x3c0 => {}
+            0x20 | 0x21 | 0xa0 | 0xa1 | 0x41 | 0x42 | 0x61 | 0x3c2 | 0x3c0 => {}
             _ => {
                 if self.trace_ints {
                     eprintln!("out port {port:#x} = {value:#x}");
@@ -502,6 +772,12 @@ impl Runtime {
     }
 
     // ---------------- native interrupt services ----------------
+
+    fn ivt_hooked(&self, v: u8) -> bool {
+        let off = self.m.read16(0, v as u32 * 4);
+        let seg = self.m.read16(0, v as u32 * 4 + 2);
+        (off, seg) != ((v as u16) * 4, STUB_SEG)
+    }
 
     fn log_int(&mut self, v: u8, ah: u8) {
         let n = self.int_log.entry((v, ah)).or_insert(0);
@@ -707,23 +983,110 @@ impl Runtime {
 
     fn int33(&mut self) -> Result<(), String> {
         match self.m.regs.ax() {
-            0x0000 => {
+            0x0000 | 0x0021 => {
                 self.m.regs.set_ax(0xffff); // mouse present
                 self.m.regs.set_bx(2);
+                self.mouse_handler = None;
+                self.mouse_shown = -1;
+                self.mouse_x = 320;
+                self.mouse_y = 100;
             }
+            0x0001 => self.mouse_shown += 1,
+            0x0002 => self.mouse_shown -= 1,
             0x0003 => {
-                self.m.regs.set_bx(0);
-                self.m.regs.set_cx(320);
-                self.m.regs.set_dx(100);
+                self.m.regs.set_bx(self.mouse_buttons);
+                self.m.regs.set_cx(self.mouse_x);
+                self.m.regs.set_dx(self.mouse_y);
             }
+            0x0004 => {
+                self.mouse_x = self.m.regs.cx();
+                self.mouse_y = self.m.regs.dx();
+            }
+            0x0005 => {
+                let b = (self.m.regs.bx() as usize).min(1);
+                let (n, x, y) = self.mouse_presses[b];
+                self.mouse_presses[b] = (0, x, y);
+                self.m.regs.set_ax(self.mouse_buttons);
+                self.m.regs.set_bx(n);
+                self.m.regs.set_cx(x);
+                self.m.regs.set_dx(y);
+            }
+            0x0006 => {
+                let b = (self.m.regs.bx() as usize).min(1);
+                let (n, x, y) = self.mouse_releases[b];
+                self.mouse_releases[b] = (0, x, y);
+                self.m.regs.set_ax(self.mouse_buttons);
+                self.m.regs.set_bx(n);
+                self.m.regs.set_cx(x);
+                self.m.regs.set_dx(y);
+            }
+            0x0007 | 0x0008 => {} // ranges: virtual coords already span the full screen
             0x000b => {
-                self.m.regs.set_cx(0);
+                self.m.regs.set_cx(0); // mickeys since last read: frontend feeds absolute
                 self.m.regs.set_dx(0);
             }
-            _ => {} // show/hide/ranges/handlers: accept silently (M3 wires real input)
+            0x000c => {
+                let mask = self.m.regs.cx();
+                if mask == 0 {
+                    self.mouse_handler = None;
+                } else {
+                    self.mouse_handler = Some((mask, self.m.regs.es, self.m.regs.dx()));
+                }
+            }
+            0x0014 => {
+                let (omask, oseg, ooff) = self.mouse_handler.take().unwrap_or((0, 0, 0));
+                self.mouse_handler = Some((self.m.regs.cx(), self.m.regs.es, self.m.regs.dx()));
+                self.m.regs.set_cx(omask);
+                self.m.regs.es = oseg;
+                self.m.regs.set_dx(ooff);
+            }
+            0x0015 => {
+                self.m.regs.set_bx(0); // driver state save size: none needed
+            }
+            0x0016 | 0x0017 => {}
+            0x0024 => {
+                self.m.regs.set_bx(0x0805); // driver 8.05
+                self.m.regs.set_ch(4);      // PS/2
+                self.m.regs.set_cl(0);
+            }
+            _ => {}
         }
         self.cpu.emulate_iret(&mut self.m);
         Ok(())
+    }
+
+    /// Feed a mouse state change (DOS-virtual coords: x 0..639, y 0..199, buttons bit0=left
+    /// bit1=right). Computes the int 33h event mask and queues the user callback if installed.
+    pub fn mouse_event(&mut self, x: u16, y: u16, buttons: u16) {
+        let mut mask = 0u16;
+        if x != self.mouse_x || y != self.mouse_y {
+            mask |= 1;
+        }
+        let old = self.mouse_buttons;
+        for b in 0..2u16 {
+            let was = old & (1 << b) != 0;
+            let is = buttons & (1 << b) != 0;
+            if !was && is {
+                mask |= 2 << (b * 2);
+                let n = self.mouse_presses[b as usize].0 + 1;
+                self.mouse_presses[b as usize] = (n, x, y);
+            }
+            if was && !is {
+                mask |= 4 << (b * 2);
+                let n = self.mouse_releases[b as usize].0 + 1;
+                self.mouse_releases[b as usize] = (n, x, y);
+            }
+        }
+        self.mouse_x = x;
+        self.mouse_y = y;
+        self.mouse_buttons = buttons;
+        if mask != 0 {
+            self.mouse_pending |= mask;
+        }
+    }
+
+    pub fn ticks(&self) -> u32 {
+        self.ticks
     }
 
     fn int67(&mut self) -> Result<(), String> {
@@ -811,6 +1174,106 @@ impl Runtime {
         }
         self.cpu.emulate_iret(&mut self.m);
         Ok(())
+    }
+
+    /// DSP command byte stream at 0x22C.
+    fn sb_dsp_write(&mut self, v: u8) {
+        if let Some((cmd, mut args, need)) = self.sb_cmd.take() {
+            args.push(v);
+            if args.len() < need {
+                self.sb_cmd = Some((cmd, args, need));
+            } else {
+                self.sb_dsp_exec(cmd, &args);
+            }
+            return;
+        }
+        let need = match v {
+            0x40 | 0xe0 | 0x10 | 0x48 => 1,
+            0x14 | 0x16 | 0x17 | 0x41 | 0x42 => 2,
+            _ => 0,
+        };
+        let need = if v == 0x48 { 2 } else { need };
+        if need == 0 {
+            self.sb_dsp_exec(v, &[]);
+        } else {
+            self.sb_cmd = Some((v, vec![], need));
+        }
+    }
+
+    fn sb_dsp_exec(&mut self, cmd: u8, args: &[u8]) {
+        if self.trace_ints {
+            eprintln!("SB DSP cmd {cmd:#04x} args {args:x?} @step {}", self.cpu.steps);
+        }
+        match cmd {
+            0x40 => {
+                self.sb_time_constant = args[0];
+                self.sb_rate_hz = 1_000_000 / (256 - args[0] as u32);
+            }
+            0x41 | 0x42 => {
+                self.sb_rate_hz = ((args[0] as u32) << 8) | args[1] as u32;
+            }
+            0x14 | 0x16 | 0x17 => {
+                // 8-bit single-cycle DMA playback, length = args+1
+                let len = (((args[1] as u32) << 8) | args[0] as u32) + 1;
+                self.sb_start_playback(len, false);
+            }
+            0x1c | 0x90 => {
+                // auto-init: block size was set via 0x48 (stored in dma count)
+                let len = self.dma_count[1] as u32 + 1;
+                self.sb_start_playback(len, true);
+            }
+            0x48 => {} // block size: playback uses the DMA count
+            0xd0 | 0xd3 => {} // pause / speaker off
+            0xd1 | 0xd4 => {} // speaker on / continue
+            0xda => self.sb_play = None, // exit auto-init
+            0xe0 => {
+                let a = args[0];
+                self.sb_out.push_back(!a);
+            }
+            0xe1 => {
+                self.sb_out.push_back(3); // DSP 3.01 (SB Pro era protocol the game speaks)
+                self.sb_out.push_back(1);
+            }
+            _ => {
+                if self.trace_ints {
+                    eprintln!("SB DSP cmd {cmd:#04x} args {args:?} (ignored)");
+                }
+            }
+        }
+    }
+
+    fn sb_start_playback(&mut self, len: u32, auto: bool) {
+        // Capture the PCM the game just queued (DMA ch1) — the audio-out tap.
+        let ch = 1usize;
+        let base = ((self.dma_page[ch] as usize) << 16) | (self.dma_addr[ch] as usize);
+        let n = (len as usize).min(0x10000);
+        if base + n <= self.m.mem.len() {
+            self.sb_pcm.extend_from_slice(&self.m.mem[base..base + n]);
+            self.sb_pcm_rate = self.sb_rate_hz;
+        }
+        self.sb_play = Some((ch, self.cpu.steps, len, auto));
+        self.dma_cur_count[ch] = self.dma_count[ch];
+    }
+
+    /// Advance the modelled DMA count from the playback clock; fire the SB IRQ on completion.
+    fn tick_sb_playback(&mut self) {
+        let Some((ch, start, len, auto)) = self.sb_play else {
+            return;
+        };
+        let elapsed = self.cpu.steps - start;
+        let played = (elapsed * self.sb_rate_hz as u64 / STEPS_PER_SECOND) as u32;
+        if played >= len {
+            self.dma_tc |= 1 << ch;
+            self.dma_cur_count[ch] = 0xffff;
+            if auto {
+                self.sb_play = Some((ch, self.cpu.steps, len, auto));
+            } else {
+                self.sb_play = None;
+            }
+            self.sb_irq_pending = true;
+        } else {
+            self.dma_cur_count[ch] = (self.dma_count[ch]).wrapping_sub(played as u16);
+        }
     }
 
     /// Write a mapped physical EMS page back to its logical store before remapping.
@@ -1338,6 +1801,40 @@ impl Runtime {
         s
     }
 
+    /// One-line machine state summary for boot triage.
+    pub fn debug_state(&self) -> String {
+        let ivt8 = (self.m.read16(0, 0x22), self.m.read16(0, 0x20));
+        let ivt9 = (self.m.read16(0, 0x26), self.m.read16(0, 0x24));
+        let ivt1c = (self.m.read16(0, 0x72), self.m.read16(0, 0x70));
+        format!(
+            "cs:ip={:04x}:{:04x} iflag={} ticks={} steps_per_tick={} pit={:#x} \n\
+             ivt8={:04x}:{:04x} ivt9={:04x}:{:04x} ivt1c={:04x}:{:04x} \n\
+             seq={:02x?} gc={:02x?} crtc0c/0d/13={:02x}/{:02x}/{:02x} chain4={} mouse_handler={:?}",
+            self.cpu.cs, self.cpu.ip, self.cpu.iflag, self.ticks, self.steps_per_tick,
+            self.pit_divisor,
+            ivt8.0, ivt8.1, ivt9.0, ivt9.1, ivt1c.0, ivt1c.1,
+            self.seq, self.gc, self.crtc[0x0c], self.crtc[0x0d], self.crtc[0x13],
+            self.m.vga.as_deref().map(|v| v.chain4).unwrap_or(true),
+            self.mouse_handler,
+        ) + &{
+            let mut hooks = String::from("\nhooked vectors:");
+            for v in 0..=255u8 {
+                if v != 0x67 && self.ivt_hooked(v) {
+                    let off = self.m.read16(0, v as u32 * 4);
+                    let seg = self.m.read16(0, v as u32 * 4 + 2);
+                    hooks += &format!(" {v:02x}->{seg:04x}:{off:04x}");
+                }
+            }
+            hooks += &format!(
+                "\nsb: play={:?} pcm_bytes={} rate={} dma1 base={:04x} cnt={:04x} cur={:04x} page={:02x} mode={:02x}",
+                self.sb_play, self.sb_pcm.len(), self.sb_rate_hz,
+                self.dma_addr[1], self.dma_count[1], self.dma_cur_count[1],
+                self.dma_page[1], self.dma_mode[1],
+            );
+            hooks
+        }
+    }
+
     pub fn console_output(&self) -> &str {
         &self.console
     }
@@ -1346,5 +1843,6 @@ impl Runtime {
     pub fn key_event(&mut self, scancode: u8, ascii: u8) {
         self.kbd_queue.push_back((scancode, ascii));
         self.bios_keys.push_back((scancode, ascii));
+        self.kbd_irq_pending += 1;
     }
 }
