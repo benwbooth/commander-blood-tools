@@ -11,7 +11,10 @@
 //! Coordinates are native 320x200; the runtime converts to DOS-virtual mouse coords.
 
 use commander_blood_tools::recomp::runtime::{RunEnd, Runtime, STEPS_PER_SECOND};
+use std::collections::VecDeque;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 const TICK: Duration = Duration::from_micros(54_925); // 18.2065 Hz PIT
@@ -147,7 +150,84 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
         }
     }
     rt.write_ppm(&out_dir.join("end.ppm")).map_err(|e| e.to_string())?;
+    if !rt.sb_pcm.is_empty() {
+        write_wav(&out_dir.join("end.wav"), &rt.sb_pcm, rt.sb_pcm_rate).map_err(|e| e.to_string())?;
+        eprintln!("wav: {} bytes at {} Hz", rt.sb_pcm.len(), rt.sb_pcm_rate);
+    }
     Ok(())
+}
+
+/// Minimal 8-bit unsigned mono WAV writer for the SB PCM tap.
+fn write_wav(path: &std::path::Path, pcm: &[u8], rate: u32) -> std::io::Result<()> {
+    let mut d = Vec::with_capacity(44 + pcm.len());
+    d.extend_from_slice(b"RIFF");
+    d.extend_from_slice(&(36 + pcm.len() as u32).to_le_bytes());
+    d.extend_from_slice(b"WAVEfmt ");
+    d.extend_from_slice(&16u32.to_le_bytes());
+    d.extend_from_slice(&1u16.to_le_bytes()); // PCM
+    d.extend_from_slice(&1u16.to_le_bytes()); // mono
+    d.extend_from_slice(&rate.to_le_bytes());
+    d.extend_from_slice(&rate.to_le_bytes()); // byte rate (8-bit mono)
+    d.extend_from_slice(&1u16.to_le_bytes()); // block align
+    d.extend_from_slice(&8u16.to_le_bytes()); // bits
+    d.extend_from_slice(b"data");
+    d.extend_from_slice(&(pcm.len() as u32).to_le_bytes());
+    d.extend_from_slice(pcm);
+    std::fs::write(path, d)
+}
+
+/// Live audio: a ring buffer the emulation fills from the SB PCM tap and a cpal stream
+/// drains with naive resampling. Absent an output device the game just runs silent.
+struct AudioOut {
+    _stream: cpal::Stream,
+    ring: Arc<Mutex<VecDeque<u8>>>,
+    src_rate: Arc<AtomicU32>,
+}
+
+impl AudioOut {
+    fn start() -> Option<Self> {
+        use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+        let host = cpal::default_host();
+        let device = host.default_output_device()?;
+        let config = device.default_output_config().ok()?;
+        let dev_rate = config.sample_rate().0.max(1) as u64;
+        let channels = config.channels() as usize;
+        let ring: Arc<Mutex<VecDeque<u8>>> = Arc::default();
+        let src_rate = Arc::new(AtomicU32::new(11111));
+        let (r2, sr) = (Arc::clone(&ring), Arc::clone(&src_rate));
+        let mut frac: u64 = 0;
+        let mut cur: f32 = 0.0;
+        let stream = device
+            .build_output_stream(
+                &config.config(),
+                move |out: &mut [f32], _| {
+                    let mut q = r2.lock().unwrap();
+                    let step = ((sr.load(Ordering::Relaxed) as u64) << 16) / dev_rate;
+                    for frame in out.chunks_mut(channels) {
+                        frac += step;
+                        while frac >= 1 << 16 {
+                            frac -= 1 << 16;
+                            match q.pop_front() {
+                                Some(b) => cur = (b as f32 - 128.0) / 128.0,
+                                None => cur *= 0.995, // underrun: decay to silence, no click
+                            }
+                        }
+                        for s in frame.iter_mut() {
+                            *s = cur;
+                        }
+                    }
+                },
+                |_| {},
+                None,
+            )
+            .ok()?;
+        stream.play().ok()?;
+        Some(Self {
+            _stream: stream,
+            ring,
+            src_rate,
+        })
+    }
 }
 
 fn run_window(turbo: bool) -> anyhow::Result<()> {
@@ -197,6 +277,8 @@ fn run_window(turbo: bool) -> anyhow::Result<()> {
     conn.create_gc(gc, win, &CreateGCAux::new())?;
     conn.flush()?;
 
+    let audio = AudioOut::start();
+    let mut pcm_consumed = 0usize;
     let max_req = 262_144usize;
     let (mut mx, mut my, mut mb) = (160u16, 100u16, 0u16);
     let mut next_frame = Instant::now();
@@ -246,6 +328,20 @@ fn run_window(turbo: bool) -> anyhow::Result<()> {
             Ok(false) => return Ok(()),
             Err(e) => anyhow::bail!("runtime fault: {e}"),
         }
+
+        // Feed freshly streamed SB PCM to the audio ring (cap ~2 s to bound turbo runaway).
+        if let Some(a) = &audio {
+            if rt.sb_pcm.len() > pcm_consumed {
+                let mut q = a.ring.lock().unwrap();
+                q.extend(&rt.sb_pcm[pcm_consumed..]);
+                let cap = (rt.sb_pcm_rate as usize) * 2;
+                while q.len() > cap {
+                    q.pop_front();
+                }
+                a.src_rate.store(rt.sb_pcm_rate, Ordering::Relaxed);
+            }
+        }
+        pcm_consumed = rt.sb_pcm.len();
 
         // Present: scale the 320x200 frame into a BGRX image, letterboxed.
         let rgb = rt.screenshot_rgb();
