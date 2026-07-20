@@ -1393,3 +1393,25 @@ the debugger/savestate is non-functional here, so pinning the exact diverging br
 that capability enabled, or a pacing bisection (vary STEPS_PER_SECOND / add I/O latency and observe
 whether the credit path is taken). Fresh-DOSBox frame capture IS now reproducible in-env as a
 coarser oracle (output frames, not memory).
+
+## PATH-B: hardware-input hypotheses TESTED and RULED OUT (2026-07-20)
+Continued hypothesis-and-test (no differential available). Tested and ruled out:
+- PACING/CPU speed: set STEPS_PER_SECOND to 2M and 24M (vs 8M) -> subtitle still ONLY "WAIT COMMAND",
+  never the credit. The credit path is not CPU-to-timer-ratio dependent. (reverted to 8M)
+- RTC (int 1Ah ah=4 date, previously unimplemented) and CMOS date registers (ports 0x70/0x71 regs
+  0x07/0x08/0x09/0x32): implemented realistic BCD date -> NO change; gs:0xaa6 (RTC time) and gs:0xaa8
+  (RTC date) STAY 0 regardless, i.e. the game never reads the RTC/CMOS date in my execution path, so
+  it's bit-exact-consistent (0 in DOSBox too). (reverted - inert + unverifiable)
+NET STATE OF THE INVESTIGATION: the intro-credit divergence is CONFIRMED real (fresh DOSBox with
+matching args shows "CRYO..."; mine shows "WAIT COMMANDER" forever). Yet EVERY checkable input is
+bit-exact-consistent between my runtime and DOSBox: CPU proven bit-exact (oracle+diff-fuzz),
+SCRIPT1.COD/VAR load byte-identical, HNM/cinematic is the game's own code (no native decoder), and
+every gating flag/pointer (gs:0x2793&1 always-set, gs:0x67ad, gs:0xa5e=-1, gs:0xade, gs:0xba3,
+gs:0xaa6/aa8=0) is identical. Pacing and RTC/CMOS ruled out. This leaves only two possible roots,
+BOTH requiring an instruction-level execution-trace comparison against DOSBox to pin (its debugger/
+savestate is non-functional in this env): (1) a subtle interpreter bug in a code path NOT covered by
+the 75-function oracle / 1218-encoding diff-fuzz, or (2) a DEVICE-emulation difference (most likely
+the SoundBlaster DSP/DMA status polling that gates the intro voice-clip, or a VGA/PIT status read)
+that makes a status-poll branch resolve differently and sends the intro down the WAIT-COMMANDER path
+instead of the credit path. Next concrete step if a differential becomes available: single-step both
+from the post-boot-reel point and diff the first instruction where CS:IP or a register diverges.
