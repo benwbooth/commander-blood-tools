@@ -510,6 +510,18 @@ impl Cpu {
         m.regs.cs = self.cs;
         let ip0 = self.ip;
         m.ip = ip0;
+        if !m.trap_ips.is_empty() {
+            if let Some(c) = m.trap_ips.get_mut(&(self.cs, ip0)) {
+                *c += 1;
+            }
+        }
+        if m.capture_ip == Some((self.cs, ip0)) && m.captured.is_none() {
+            m.captured = Some((m.regs.ss, m.regs.ds, m.regs.es, m.regs.si(), m.regs.bp(), m.regs.bx()));
+        }
+        if m.capture_ip2 == Some((self.cs, ip0)) && m.captured2.len() < 40 {
+            // at the pixel write: record (es, di) = where the glyph pixel lands
+            m.captured2.push((m.regs.es, m.regs.di()));
+        }
         let mut ovr: Option<u8> = None;
         let mut opsz = false;
         let mut adsz = false;

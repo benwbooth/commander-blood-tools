@@ -140,6 +140,7 @@ pub struct Runtime {
     /// (vector, AH) -> count, for the boot log.
     pub int_log: HashMap<(u8, u8), u64>,
     pub trace_ints: bool,
+    pub force_sub: bool,
     pub trace_glyph: bool,
     pub glyph_log: Vec<(u8, u32, u8)>, // (plane_mask, offset, value) for subtitle-row writes
     console: String,
@@ -218,6 +219,7 @@ impl Runtime {
             searches: HashMap::new(),
             int_log: HashMap::new(),
             trace_ints: false,
+            force_sub: false,
             trace_glyph: false,
             glyph_log: Vec::new(),
             console: String::new(),
@@ -428,6 +430,11 @@ impl Runtime {
             }
             if self.cpu.steps >= max_steps {
                 return RunEnd::StepBudget;
+            }
+            // EXPERIMENT: force the subtitle-active gate flag so the per-frame reveal draw
+            // (0x93f8) always renders. Confirms whether "drawn once, not persisted" is the bug.
+            if self.force_sub {
+                self.m.write16(0x0e84, 0x27e2, 2);
             }
             // pending mouse events -> user callback (a real DOS mouse driver far-calls it)
             if self.mouse_pending != 0 {

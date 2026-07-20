@@ -1093,6 +1093,14 @@ pub struct Machine {
     /// When set, `write8` records (addr,value,cs,ip) of every write into this range (bounded).
     pub trace_range: Option<std::ops::Range<usize>>,
     pub range_hits: Vec<(usize, u8, u16, u16)>,
+    /// Execution counters: (cs,ip) -> times the interpreter started an instruction there.
+    pub trap_ips: std::collections::HashMap<(u16, u16), u64>,
+    /// One-shot register snapshot at a target (cs,ip): (ss,ds,es,si,bp,bx).
+    pub capture_ip: Option<(u16, u16)>,
+    pub captured: Option<(u16, u16, u16, u16, u16, u16)>,
+    /// Snapshot of (bp, byte-at-SS:bp) each time capture_ip2 hits, bounded.
+    pub capture_ip2: Option<(u16, u16)>,
+    pub captured2: Vec<(u16, u16)>,
 }
 
 pub const MEM_SIZE: usize = 0x40_0000; // 4 MB — the EXE image (deterministic oracle mirrors it),
@@ -1118,6 +1126,11 @@ impl Machine {
             addr_hits: Vec::new(),
             trace_range: None,
             range_hits: Vec::new(),
+            trap_ips: std::collections::HashMap::new(),
+            capture_ip: None,
+            captured: None,
+            capture_ip2: None,
+            captured2: Vec::new(),
         }
     }
 

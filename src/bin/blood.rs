@@ -193,10 +193,68 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
             }
             "trace" => {
                 let gs = rt.m.regs.gs;
+                eprintln!("  crtc_start={:#06x} 5219={:04x}:{:04x} 521d={:04x}:{:04x}",
+                    ((rt.crtc_reg(0x0c) as u16) << 8) | rt.crtc_reg(0x0d) as u16,
+                    rt.m.read16(gs,0x521b), rt.m.read16(gs,0x5219),
+                    rt.m.read16(gs,0x521f), rt.m.read16(gs,0x521d));
                 eprintln!("t{:>4} 5e58={:04x} 5e65={:04x} b31={:04x} b37={:04x} 67bc={:02x} 67bb={:02x} 5e64={:02x} 27e2={:04x} 679a={:04x}",
                     rt.ticks(),
                     rt.m.read16(gs,0x5e58), rt.m.read16(gs,0x5e65), rt.m.read16(gs,0xb31), rt.m.read16(gs,0xb37),
                     rt.m.read8(gs,0x67bc), rt.m.read8(gs,0x67bb), rt.m.read8(gs,0x5e64), rt.m.read16(gs,0x27e2), rt.m.read16(gs,0x679a));
+            }
+            "trapset" => {
+                // arm exec counters for the glyph blitter entry + reveal draw glyph-call site
+                rt.m.trap_ips.clear();
+                rt.m.trap_ips.insert((0x043b, 0x06a0), 0); // glyph blitter 0x299:0x6a0 (file 0x3630)
+                rt.m.trap_ips.insert((0x08c0, 0x1d0e), 0); // lcall glyph blitter (0x94ee), seg 0x71e->0x8c0
+                rt.m.trap_ips.insert((0x08c0, 0x1c15), 0); // reveal draw entry (0x93f5)
+                rt.m.trap_ips.insert((0x08c0, 0x1c4a), 0); // reveal draw 0x942a-ish region (0x93f8+)
+                rt.m.trap_ips.insert((0x043b, 0x0f91), 0); // chunky->planar scene blit (per frame)
+                rt.m.trap_ips.insert((0x0cbd, 0x0679), 0); // 0xbe00 audio subtitle present (seg 0xb1b->0xcbd)
+                rt.m.trap_ips.insert((0x043b, 0x0722), 0); // glyph pixel write 1 (file 0x36b2 = ip 0x722)
+                rt.m.trap_ips.insert((0x043b, 0x072a), 0); // glyph pixel write 2 (file 0x36ba = ip 0x72a)
+                rt.m.trap_ips.insert((0x043b, 0x06e2), 0); // char loop head (0x3672)
+                rt.m.trap_ips.insert((0x043b, 0x0718), 0); // column loop (0x36a8)
+                rt.m.trap_ips.insert((0x043b, 0x071b), 0); // row loop body (0x36ab)
+                rt.m.trap_ips.insert((0x043b, 0x074d), 0); // char loop dec (0x36dd)
+                rt.m.trap_ips.insert((0x043b, 0x0721), 0); // js skip (0x36e1)
+                rt.m.trap_ips.insert((0x0cbd, 0x0610), 0); // subtitle-present routine ENTRY (0xbdc0)
+                rt.m.trap_ips.insert((0x0cbd, 0x0617), 0); // after test 0xade (0xbdc7)
+                rt.m.trap_ips.insert((0x0cbd, 0x0621), 0); // after test 0xba3 (0xbdd1)
+                rt.m.trap_ips.insert((0x0cbd, 0x05e0), 0); // file-chunk read routine 0xbd90 (0xb1b:0x5e0)
+                rt.m.trap_ips.insert((0x0cbd, 0x05ff), 0); // the int21 read (0xbdaf)
+                eprintln!("traps armed");
+            }
+            "capglyph" => {
+                rt.m.capture_ip = Some((0x043b, 0x06a0)); // glyph blitter entry
+                rt.m.capture_ip2 = Some((0x043b, 0x0722)); // pixel write (es:di target)
+                rt.m.captured = None;
+                rt.m.captured2.clear();
+                eprintln!("capture armed at glyph blitter");
+            }
+            "capdump" => {
+                match rt.m.captured {
+                    Some((ss,ds,es,si,bp,bx)) => {
+                        eprintln!("at glyph blit: ss={ss:04x} ds={ds:04x} es={es:04x} si={si:04x} bp={bp:04x} bx={bx:04x}");
+                        let fss = (0..8).map(|i| format!("{:02x}", rt.m.read8(ss, 0x71aa+i))).collect::<Vec<_>>().join(" ");
+                        let fgs = (0..8).map(|i| format!("{:02x}", rt.m.read8(0x0e84, 0x71aa+i))).collect::<Vec<_>>().join(" ");
+                        eprintln!("  SS:71aa (glyph src) = {fss}");
+                        eprintln!("  gs:71aa (valid font)= {fgs}");
+                    }
+                    None => eprintln!("glyph blitter not captured"),
+                }
+                eprintln!("glyph pixel targets (es:di): {:04x?}", &rt.m.captured2[..rt.m.captured2.len().min(12)]);
+            }
+            "trapdump" => {
+                let mut rows: Vec<_> = rt.m.trap_ips.iter().collect();
+                rows.sort();
+                for ((cs,ip),n) in rows { eprintln!("  {cs:04x}:{ip:04x} executed {n} times"); }
+            }
+            "tracevga" => {
+                // trace VGA page-1 (a000:8000) subtitle-band writes during the next draw
+                rt.m.trace_range = Some(0xa9000..0xaab00);
+                rt.m.range_hits.clear();
+                eprintln!("tracing VGA page-1 subtitle-band writes");
             }
             "tracechunky" => {
                 // trace all writes to the chunky-buffer subtitle band during the next draw
@@ -347,6 +405,10 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                 }
                 std::fs::write(out_dir.join("vram_sub.bin"), &out).unwrap();
                 eprintln!("dumped {} bytes of subtitle VRAM (35 rows x 4 planes x 80)", out.len());
+            }
+            "forcesub" => {
+                rt.force_sub = true;
+                eprintln!("force_sub enabled (27e2=2 each frame)");
             }
             "vga" => {
                 let v = rt.m.vga.as_deref().unwrap();
