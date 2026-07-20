@@ -327,6 +327,24 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                     rt.m.read16(gs, 0x5e65), rt.m.read8(gs, 0x5b56),
                     rt.m.read8(gs, 0x5e64), rt.m.read16(gs, 0x27e2), rt.m.read16(gs, 0x679a));
             }
+            "resid" => {
+                let gs = rt.m.regs.gs;
+                let fs = rt.m.regs.fs;
+                let id = rt.m.read16(gs, 0xc3b);
+                let mut name = String::new();
+                for i in 0..14u32 {
+                    let b = rt.m.read8(fs, 0x0c04 + (id as u32)*16 + i);
+                    if b == 0 { break; }
+                    name.push(if (0x20..0x7f).contains(&b) { b as char } else { '.' });
+                }
+                eprintln!("resource [0xc3b]={id} fs={fs:04x} name-table entry = \"{name}\"");
+                // also dump a few nearby resource ids' names
+                for rid in [id.wrapping_sub(1), id, id.wrapping_add(1)] {
+                    let mut n=String::new();
+                    for i in 0..14u32 { let b=rt.m.read8(fs,0x0c04+(rid as u32)*16+i); if b==0{break} n.push(if (0x20..0x7f).contains(&b){b as char}else{'.'}); }
+                    eprintln!("  id {rid}: \"{n}\"");
+                }
+            }
             "peek" => {
                 // peek gs-relative words: reveal pointer 0x5E58, timer 0xB31, text-speed 0xACA
                 let gs = rt.m.regs.gs;

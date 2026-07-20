@@ -1408,6 +1408,10 @@ impl Runtime {
             0x4e => {
                 // FindFirst: pattern in DS:DX, attrs in CX; results via the DTA
                 let pattern = self.read_asciiz(self.m.regs.ds, self.m.regs.dx());
+                if self.trace_ints {
+                    let found = self.resolve(&pattern, false).map(|p| p.exists()).unwrap_or(false);
+                    eprintln!("FindFirst \"{pattern}\" -> {}", if found { "found" } else { "NONE" });
+                }
                 let want_dirs = self.m.regs.cx() & 0x10 != 0;
                 let (dir_part, file_part) = match pattern.rfind(['\\', ':']) {
                     Some(i) => (pattern[..=i].to_string(), pattern[i + 1..].to_string()),
