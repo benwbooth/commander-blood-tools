@@ -1027,3 +1027,49 @@ arithmetic (add8/sub8/xor8/and8/or8) + inc16/dec16/shr16 -> 17/112 leaves auto-l
 STATUS: 17 functions verified bit-exact (10 hand + 7 AUTO). The automated pipeline works end-to-end
 and its oracle keeps it honest (2 bugs caught+1 fixed this batch). Grind now scales by opcode
 coverage. Honest: 17 of 222+, not 100%.
+
+## PATH B RUNTIME PIVOT: interpreter core built + corpus-verified (M1) — 2026-07-20
+STRATEGY DECISION (recorded as the M1-M5 roadmap in REVERSE.md "Path B runtime"): the project
+was stuck because both tracks were sequenced away from the goal. The hand-written exporter has a
+proven accuracy ceiling (runtime state, heuristics, no proof mechanism) and can never become the
+faithful game; the static-lift grind is provably faithful but its remaining 149/222 functions are
+exactly the statically-hard ones (37 I/O-blocked, 48 indirect call sites, 84 callee-cascade,
+plus .xdb overlays). FIX: invert the sequencing — build the RUNTIME now (interpreter + DOS layer
+over the oracle-verified Machine), boot the real BLOODPRG.EXE inside it. Faithful by construction
+from first boot; indirect dispatch resolves at runtime; overlays just run; the DOS layer doubles
+as the oracle for I/O leaves; lifted functions become progressive replacement (fallback -> 0%).
+SHIPPED THIS SESSION:
+- src/recomp/interp.rs: real-mode 386 interpreter over Machine — full prefix handling
+  (seg/0x66/0x67/rep/lock), 16+32-bit ModRM/SIB, the complete common map + 0x0F map, string ops,
+  reusing the oracle-verified Regs flag helpers so flags stay bit-exact. int/in/out/hlt EXIT to
+  the caller (the future DOS/hardware layer); ret/retf at depth 0 mirror the oracle stop-at-ret.
+- machine.rs: adc32/sbb32/test32/mul32/imul32_1 helpers.
+- re/tools/gen_far_copies.py -> oracle_vectors/far_copies.json: the det oracle's far-callee copy
+  layout, so the interpreter replays composed det vectors against gen_det's exact memory.
+- mod.rs test interp_replays_full_oracle_corpus: replays the ENTIRE corpus through the
+  interpreter — 75 vector files, 14,999 vectors, ALL bit-exact (first run; mutation-tested).
+The interpreter executes the same original bytes the oracle ran, so every future lifted function
+keeps its existing verification, and the corpus regression-tests the interpreter for free.
+NEXT (M2): MZ loader (relocations, PSP, args "AMR S162227 EMS WRIC:\cblood\"), int 21h file I/O,
+int 67h EMS, VGA mode 13h + DAC ports, timer -> run to first frame, pixel-diff vs
+accuracy/captures/frame_01.png (Mindscape logo, known-good at mean_abs 1.09).
+
+## PATH B RUNTIME M2: THE REAL GAME BOOTS — intro verified vs DOSBox capture — 2026-07-20
+Built src/recomp/runtime.rs (DOS/BIOS/EMS/VGA layer) + src/bin/runtime_boot.rs. MZ loader with
+relocations/PSP/env/cmdtail; int 21h services incl. file I/O mapped C:=accuracy/cdrive,
+D:=output/_tmp_iso, alloc accounting, FindFirst/Next w/ 8.3 wildcards; EMS 4.0 (frame at E000,
+logical pages above 1MB in Machine mem, MEM_SIZE 2MB->4MB); BIOS video/kbd/timer; mouse+MSCDEX
+stubs; PIT/CMOS/DAC ports. Interrupt model: ALL vectors dispatch through the guest IVT onto
+1-byte hlt stubs -> native service + emulated iret, so game hooks chain exactly like real DOS.
+Interpreter grew: iret, IF flag semantics (pushf/popf/frames), FLAGS bits 12-14 storage (386
+detection!), outs/outsw string I/O (REP rewind protocol), VGA reg latches.
+KEY FIND: the game runs mode 13h UNCHAINED (Mode-X planar) — flat A0000 collapse showed a 4x
+tiled mini-screen; added Machine::Vga (4 planes, map-mask writes, read-map, chain4) + CRTC
+start/offset compositing. After that: PIXEL-CLEAN frames.
+BOOT GATES cleared in order: "386 minimum!" (FLAGS high bits), "Not enough memory (570Ko min)!"
+(4Ah/48h accounting), mkdir C:\cblood, save scan (FindFirst), EMS alloc+map, VGA planar.
+**VERIFIED: Mindscape logo frame mean_abs=1.99 vs accuracy/captures/frame_01.png (threshold 3.0);
+astronaut intro cinematic renders at 100M steps. The ORIGINAL code is playing its intro in our
+runtime.** All 356 lib tests remain green (incl. the 14,999-vector interp corpus).
+NEXT: longer boot -> attract loop; M3 input (keyboard/mouse events into the queues); timer/PIT
+calibration vs capture timeline; M4 audio (SB DSP/DMA or SND driver boundary); M5 lift dispatch.

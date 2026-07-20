@@ -857,17 +857,159 @@ impl Regs {
         self.cf = (val >> b) & 1 != 0;
         val & !(1u16 << b)
     }
+
+    /// 32-bit `ADC`/`SBB` (same flag semantics as the 16-bit forms, widened).
+    pub fn adc32(&mut self, a: u32, b: u32) -> u32 {
+        let cin = self.cf as u64;
+        let full = a as u64 + b as u64 + cin;
+        let r = full as u32;
+        self.cf = full > 0xffff_ffff;
+        self.af = (a & 0xf) as u64 + (b & 0xf) as u64 + cin > 0xf;
+        self.zf = r == 0;
+        self.sf = r & 0x8000_0000 != 0;
+        self.of = (a ^ r) & (b ^ r) & 0x8000_0000 != 0;
+        self.pf = (r as u8).count_ones() % 2 == 0;
+        r
+    }
+    pub fn sbb32(&mut self, a: u32, b: u32) -> u32 {
+        let cin = self.cf as u64;
+        let r = (a as u64).wrapping_sub(b as u64 + cin) as u32;
+        self.cf = (a as u64) < b as u64 + cin;
+        self.af = (a & 0xf) < (b & 0xf) + cin as u32;
+        self.zf = r == 0;
+        self.sf = r & 0x8000_0000 != 0;
+        self.of = (a ^ b) & (a ^ r) & 0x8000_0000 != 0;
+        self.pf = (r as u8).count_ones() % 2 == 0;
+        r
+    }
+
+    /// 32-bit `TEST` (AND flags, result discarded).
+    pub fn test32(&mut self, a: u32, b: u32) {
+        self.and32(a, b);
+    }
+
+    /// 32-bit unsigned `MUL`: EDX:EAX = EAX * src. CF=OF = (EDX != 0).
+    pub fn mul32(&mut self, src: u32) {
+        let r = self.eax as u64 * src as u64;
+        self.eax = r as u32;
+        self.edx = (r >> 32) as u32;
+        let of = self.edx != 0;
+        self.cf = of;
+        self.of = of;
+        self.zf = r == 0;
+        self.sf = r & 0x8000_0000_0000_0000 != 0;
+        self.pf = (r as u8).count_ones() % 2 == 0;
+        self.af = false;
+    }
+    /// 32-bit one-operand `IMUL`: EDX:EAX = EAX * src (signed). CF=OF = significant high half.
+    pub fn imul32_1(&mut self, src: u32) {
+        let r = (self.eax as i32 as i64).wrapping_mul(src as i32 as i64);
+        self.eax = r as u32;
+        self.edx = (r >> 32) as u32;
+        let of = r != r as i32 as i64;
+        self.cf = of;
+        self.of = of;
+        self.zf = r == 0;
+        self.sf = r < 0;
+        self.pf = (r as u8).count_ones() % 2 == 0;
+        self.af = false;
+    }
+
+    /// 32-bit unsigned/signed `DIV`/`IDIV`: EDX:EAX / src -> EAX quotient, EDX remainder. #DE
+    /// (zero divisor / overflow) leaves state unchanged (oracle discards those vectors).
+    pub fn div32(&mut self, src: u32) {
+        if src == 0 {
+            return;
+        }
+        let n = ((self.edx as u64) << 32) | self.eax as u64;
+        let q = n / src as u64;
+        if q > 0xffff_ffff {
+            return;
+        }
+        self.eax = q as u32;
+        self.edx = (n % src as u64) as u32;
+    }
+    pub fn idiv32(&mut self, src: u32) {
+        if src == 0 {
+            return;
+        }
+        let n = (((self.edx as u64) << 32) | self.eax as u64) as i64;
+        let d = src as i32 as i64;
+        let q = n / d;
+        if !(-0x8000_0000..=0x7fff_ffff).contains(&q) {
+            return;
+        }
+        self.eax = q as u32;
+        self.edx = (n % d) as u32;
+    }
+
+    /// `CWD` (DX = sign of AX) / `CDQ` (EDX = sign of EAX). No flags.
+    pub fn cwd(&mut self) {
+        self.set_dx(if self.ax() & 0x8000 != 0 { 0xffff } else { 0 });
+    }
+    pub fn cdq(&mut self) {
+        self.edx = if self.eax & 0x8000_0000 != 0 { 0xffff_ffff } else { 0 };
+    }
+}
+
+/// VGA video memory with plane semantics (256 KB as 4 × 64 KB planes). The game runs mode 13h
+/// UNCHAINED (Mode-X-style planar 320x200): CPU writes at A000:off go to the planes selected by
+/// the sequencer map mask, reads come from the GC read-map plane. With chain-4 on (stock mode
+/// 13h) the low two address bits select the plane, matching linear addressing.
+pub struct Vga {
+    pub planes: Vec<u8>, // 4 * 0x10000; plane p at p * 0x10000
+    pub map_mask: u8,
+    pub read_map: u8,
+    pub chain4: bool,
+}
+
+impl Default for Vga {
+    fn default() -> Self {
+        Self {
+            planes: vec![0; 4 * 0x10000],
+            map_mask: 0x0f,
+            read_map: 0,
+            chain4: true,
+        }
+    }
+}
+
+impl Vga {
+    #[inline]
+    pub fn write(&mut self, off: usize, v: u8) {
+        if self.chain4 {
+            self.planes[(off & 3) * 0x10000 + (off >> 2)] = v;
+        } else {
+            let o = off & 0xffff;
+            for p in 0..4 {
+                if self.map_mask & (1 << p) != 0 {
+                    self.planes[p * 0x10000 + o] = v;
+                }
+            }
+        }
+    }
+    #[inline]
+    pub fn read(&self, off: usize) -> u8 {
+        if self.chain4 {
+            self.planes[(off & 3) * 0x10000 + (off >> 2)]
+        } else {
+            self.planes[(self.read_map as usize & 3) * 0x10000 + (off & 0xffff)]
+        }
+    }
 }
 
 /// Flat real-mode memory + registers. Addressing is `seg*16 + off` (20-bit, wraps at 1 MB like
 /// the 8086's segment arithmetic — high-memory area aside, which BLOODPRG doesn't use).
+/// When `vga` is present (the runtime enables it), accesses to A000:0..FFFF get plane semantics.
 pub struct Machine {
     pub regs: Regs,
     pub mem: Vec<u8>,
+    pub vga: Option<Box<Vga>>,
 }
 
-pub const MEM_SIZE: usize = 0x20_0000; // 2 MB — holds the whole ~1.1 MB EXE image (deterministic
-// oracle mirrors it) plus real-mode + 32-bit-addressing reach. Power of two so `lin` can mask.
+pub const MEM_SIZE: usize = 0x40_0000; // 4 MB — the EXE image (deterministic oracle mirrors it),
+// real-mode + 32-bit-addressing reach, and the runtime's EMS logical-page store above 1 MB
+// (0x100000.., see recomp::runtime). Power of two so `lin` can mask.
 
 impl Default for Machine {
     fn default() -> Self {
@@ -880,6 +1022,7 @@ impl Machine {
         Self {
             regs: Regs::default(),
             mem: vec![0u8; MEM_SIZE],
+            vga: None,
         }
     }
 
@@ -895,11 +1038,23 @@ impl Machine {
 
     #[inline]
     pub fn read8(&self, seg: u16, off: u32) -> u8 {
-        self.mem[Self::lin(seg, off)]
+        let a = Self::lin(seg, off);
+        if let Some(vga) = self.vga.as_deref() {
+            if (0xa0000..0xb0000).contains(&a) {
+                return vga.read(a - 0xa0000);
+            }
+        }
+        self.mem[a]
     }
     #[inline]
     pub fn write8(&mut self, seg: u16, off: u32, v: u8) {
-        self.mem[Self::lin(seg, off)] = v;
+        let a = Self::lin(seg, off);
+        if let Some(vga) = self.vga.as_deref_mut() {
+            if (0xa0000..0xb0000).contains(&a) {
+                return vga.write(a - 0xa0000, v);
+            }
+        }
+        self.mem[a] = v;
     }
     #[inline]
     pub fn read16(&self, seg: u16, off: u32) -> u16 {
@@ -948,9 +1103,9 @@ mod tests {
         m.write16(0x1000, 0x0004, 0xBEEF); // linear 0x10004
         assert_eq!(m.read16(0x1000, 0x0004), 0xBEEF);
         assert_eq!(m.read8(0x1000, 0x0005), 0xBE);
-        // 2 MB image (holds the whole EXE): normal real-mode addresses never wrap; the mask only
-        // bites past 2 MB (0xFFFF0 + 0x10 = 0x100000 is a real address here, not 0).
+        // 4 MB image: normal real-mode addresses never wrap; the mask only bites past 4 MB
+        // (0xFFFF0 + 0x10 = 0x100000 is a real address here, not 0).
         assert_eq!(Machine::lin(0xFFFF, 0x0010), 0x100000);
-        assert_eq!(Machine::lin(0xFFFF, 0x10_0010), 0x0000); // 0xFFFF0 + 0x100010 = 0x200000 wraps to 0
+        assert_eq!(Machine::lin(0xFFFF, 0x30_0010), 0x0000); // 0xFFFF0 + 0x300010 = 0x400000 wraps to 0
     }
 }

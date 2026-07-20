@@ -2320,6 +2320,65 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 - [ ] Remaining presentation timing: recover player/config text-speed selection,
       HNM actor reset/loop policy, and audio mix levels.
 
+### Path B runtime — playable faithful port (ROADMAP, decided 2026-07-20)
+
+Strategy: invert Path B's sequencing. Instead of lifting to 100% coverage and
+only then building a runtime, build the **runtime harness now** around the
+oracle-verified `Machine` and boot the real BLOODPRG.EXE inside it. The game is
+then faithful by construction from day one (the original code executes), and
+every static blocker dissolves at runtime: the 48 indirect lcall sites resolve
+by observation, the .xdb overlays just run, the DOS/hardware layer doubles as
+the oracle environment for the ~37 I/O-blocked leaves, and verified lifted
+functions progressively replace interpretation until fallback hits 0% = full
+static recomp. Assets already in place: flag-exact ALU helpers (oracle-proven),
+~75-function vector corpus (free interpreter regression suite), deterministic
+boot + DOSBox-X capture ground truth (`accuracy/`, mind.hnm matches at
+mean_abs 1.09), known launch args (`AMR S162227 EMS WRIC:\cblood\`).
+
+- [x] M1 — interpreter core: real-mode 386 decoder + executor in
+      `src/recomp/interp.rs` reusing `machine.rs` flag helpers (16-bit default,
+      0x66/0x67 prefixes, seg overrides, string ops, full ModRM/SIB, 0x0F map).
+      VERIFIED 2026-07-20: `interp_replays_full_oracle_corpus` replays the
+      ENTIRE oracle corpus — 75 vector files, 14,999 vectors, all bit-exact
+      (regs + every recorded memory write), same pass criteria as the lifted
+      batches. Det composed functions replay against the same far-callee-copy
+      memory layout gen_det used (`re/tools/gen_far_copies.py` →
+      `oracle_vectors/far_copies.json`). Mutation-tested: an injected inc→dec
+      bug fails 39 functions. `int`/`in`/`out`/`hlt` exit to the caller (the
+      future DOS layer) by design.
+- [ ] M1b — harden the interpreter beyond the corpus' instruction mix:
+      differential single-step vs Unicorn on randomized instruction streams
+      (boot will execute opcodes the 75 verified functions never touch);
+      backfill rcl32/rcr32/pushad/popad/iret and any gaps the boot trace hits.
+- [x] M2 — boot: DONE 2026-07-20 (`src/recomp/runtime.rs` + `src/bin/
+      runtime_boot.rs`). MZ loader (relocations, PSP+env+cmdtail, FCBs), int 21h
+      (file I/O rooted at C:=accuracy/cdrive D:=output/_tmp_iso, alloc
+      accounting, vectors, FindFirst/Next, mkdir/chdir), int 67h EMS 4.0
+      (page frame E000, logical store above 1 MB), BIOS int 10h/16h/1Ah/11h/12h,
+      int 33h mouse stub, int 2Fh MSCDEX, PIT/PIC/CMOS/DAC ports, and PLANAR
+      VGA (Machine::Vga — the game runs mode 13h UNCHAINED with map-masked
+      writes; chain4 + Mode-X compositing with CRTC start/offset). Interrupts
+      dispatch through the guest IVT onto hlt stubs → native service, so game
+      hooks chain like real DOS. Gates passed en route: 386 FLAGS-bit
+      detection (Cpu::flags_high), 570KB memory probe, EMS presence.
+      **VERIFIED: the real game boots and plays its intro in the runtime —
+      Mindscape logo frame scores mean_abs=1.99 vs the DOSBox-X capture
+      (threshold 3.0, intro-mind-frame01 scenario), and the astronaut intro
+      cinematic renders at 100M steps.** `runtime_boot --steps N --shot-every M
+      --out DIR [--trace]` dumps PPM frames + int histogram.
+- [ ] M3 — interactive: keyboard (int 09h/16h) + mouse (int 33h) + a frontend
+      (SDL2/winit window or headless PNG/input-script mode), correct PIT
+      pacing. Verify full boot sequence vs the dense 0.5s DOSBox captures;
+      then play: attract → title → gameplay.
+- [ ] M4 — audio: SND driver boundary (segment 0x0B1B / far 0x0B1B calls) —
+      either emulate the SB DMA/port layer or hook the driver's far-call
+      surface and feed PCM natively (document which; bit-exactness boundary).
+- [ ] M5 — progressive replacement: dispatch table IP→lifted-fn at basic-block
+      entry; runtime trace logs (a) indirect-call targets → feeds the static
+      composition tiers, (b) per-function coverage → lift priority list. Keep
+      the grind (opcodes → scan_clean → gen_batch) until interpreted residue
+      is 0%.
+
 ### Renderer Integration (replaces skill's "Web Port")
 
 - [x] Embed the recovered opcode-length table + 0xA6 decoder as a verified Rust

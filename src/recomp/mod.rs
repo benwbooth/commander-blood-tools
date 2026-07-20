@@ -9,7 +9,9 @@
 //! identically by construction (see re/tools/README_oracle.md).
 
 pub mod auto;
+pub mod interp;
 pub mod machine;
+pub mod runtime;
 
 use machine::Machine;
 
@@ -344,6 +346,142 @@ mod tests {
                 assert_eq!(m.mem[*addr], *byte, "{name} det vec {i}: mem[{addr:#x}]");
             }
         }
+    }
+
+    /// One oracle vector of either kind (`flags` ignored — register/memory effects are the
+    /// substantive state, mirroring the batch tests).
+    #[derive(Deserialize)]
+    struct AnyVec {
+        regs_in: HashMap<String, u16>,
+        segs: HashMap<String, u16>,
+        #[serde(default)]
+        mem_in: Vec<(usize, u8)>,
+        regs_out: HashMap<String, u32>,
+        mem_writes: Vec<(usize, u8)>,
+    }
+
+    /// M1 gate for the path-B RUNTIME: the real-mode interpreter (`interp::Cpu`) must replay the
+    /// ENTIRE oracle corpus — every function, generic and deterministic — by executing the
+    /// ORIGINAL EXE bytes, with the same pass criteria as the lifted batches (all output
+    /// registers + every recorded memory write bit-exact).
+    ///
+    /// Memory layout mirrors the oracle exactly: the raw EXE image at physical 0 (CS=0, entry =
+    /// file offset), plus for generic vectors the recorded `mem_in` overlay, and for det vectors
+    /// the far-callee copies `gen_det` mirrored (far_copies.json) + the return frame.
+    #[test]
+    fn interp_replays_full_oracle_corpus() {
+        let exe = match load_exe_image() {
+            Some(e) => e,
+            None => return,
+        };
+        let dir = if std::path::Path::new("re/tools/oracle_vectors").is_dir() {
+            "re/tools/oracle_vectors"
+        } else {
+            "../re/tools/oracle_vectors"
+        };
+        let far_copies: HashMap<String, Vec<usize>> =
+            std::fs::read_to_string(format!("{dir}/far_copies.json"))
+                .map(|s| serde_json::from_str(&s).unwrap())
+                .unwrap_or_default();
+
+        let mut names: Vec<(String, bool, u16)> = vec![];
+        for e in std::fs::read_dir(dir).unwrap() {
+            let f = e.unwrap().file_name().into_string().unwrap();
+            for (suffix, det) in [("_generic.json", false), ("_det.json", true)] {
+                if let Some(stem) = f.strip_suffix(suffix) {
+                    if let Some(hexpart) = stem.strip_prefix("func_") {
+                        if let Ok(entry) = u16::from_str_radix(hexpart, 16) {
+                            names.push((stem.to_string(), det, entry));
+                        }
+                    }
+                }
+            }
+        }
+        names.sort();
+        assert!(!names.is_empty(), "no oracle vectors found in {dir}");
+
+        let mut m = Machine::new();
+        let mut failures: Vec<String> = vec![];
+        let mut unimpl: HashMap<String, usize> = HashMap::new();
+        let (mut nfuncs, mut nvecs) = (0usize, 0usize);
+        for (name, det, entry) in &names {
+            let suffix = if *det { "det" } else { "generic" };
+            let raw = std::fs::read_to_string(format!("{dir}/{name}_{suffix}.json")).unwrap();
+            let vecs: Vec<AnyVec> = serde_json::from_str(&raw).unwrap();
+            nfuncs += 1;
+            'vecs: for (i, v) in vecs.iter().enumerate() {
+                nvecs += 1;
+                m.mem[..exe.len()].copy_from_slice(&exe);
+                m.mem[exe.len()..].fill(0);
+                if *det {
+                    if let Some(ts) = far_copies.get(name) {
+                        for &t in ts {
+                            let len = 0x800.min(exe.len() - t);
+                            m.mem[t - 0x600..t - 0x600 + len].copy_from_slice(&exe[t..t + len]);
+                        }
+                    }
+                }
+                for (addr, byte) in &v.mem_in {
+                    m.mem[*addr] = *byte;
+                }
+                m.regs = super::machine::Regs::default();
+                for (r, val) in &v.regs_in {
+                    set_gp(&mut m, r, *val);
+                }
+                for (s, val) in &v.segs {
+                    set_seg(&mut m, s, *val);
+                }
+                if *det {
+                    let sp = m.regs.sp() as u32;
+                    m.write16(m.regs.ss, sp, 0x0000);
+                    m.write16(m.regs.ss, sp.wrapping_add(2), 0x0020);
+                }
+                let mut cpu = interp::Cpu::new(0, *entry);
+                cpu.iflag = false; // Unicorn's initial EFLAGS has IF=0; pushf must match it
+                match cpu.run(&mut m, 2_000_000) {
+                    interp::Exit::Ret | interp::Exit::Retf => {}
+                    interp::Exit::Unimplemented { cs, ip, byte, what } => {
+                        *unimpl.entry(format!("{what} (op {byte:#04x})")).or_default() += 1;
+                        failures.push(format!(
+                            "{name} vec {i}: UNIMPLEMENTED {what} op {byte:#04x} near {cs:#06x}:{ip:#06x}"
+                        ));
+                        break 'vecs;
+                    }
+                    other => {
+                        failures.push(format!("{name} vec {i}: unexpected exit {other:?}"));
+                        break 'vecs;
+                    }
+                }
+                for (r, val) in &v.regs_out {
+                    let got = get_e(&m, r);
+                    if got != *val {
+                        failures.push(format!("{name} vec {i}: {r} = {got:#x}, want {val:#x}"));
+                        break 'vecs;
+                    }
+                }
+                for (addr, byte) in &v.mem_writes {
+                    if m.mem[*addr] != *byte {
+                        failures.push(format!(
+                            "{name} vec {i}: mem[{addr:#x}] = {:#04x}, want {byte:#04x}",
+                            m.mem[*addr]
+                        ));
+                        break 'vecs;
+                    }
+                }
+            }
+        }
+        println!("interp corpus: {nfuncs} function/vector-files, {nvecs} vectors replayed");
+        if !unimpl.is_empty() {
+            let mut h: Vec<_> = unimpl.into_iter().collect();
+            h.sort_by_key(|(_, n)| std::cmp::Reverse(*n));
+            println!("unimplemented histogram: {h:?}");
+        }
+        assert!(
+            failures.is_empty(),
+            "interp corpus: {} failing functions:\n{}",
+            failures.len(),
+            failures.join("\n")
+        );
     }
 
     #[test]
