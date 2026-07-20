@@ -1008,6 +1008,22 @@ impl Vga {
                     }
                 }
             }
+            3 => {
+                // mode 3: the rotated CPU byte AND the bit-mask register form the effective mask;
+                // the color comes entirely from set/reset. Standard color-font blit mode — this
+                // is what draws the subtitle glyphs.
+                let l = self.latches.get();
+                let rot = v.rotate_right(self.rotate as u32 & 7);
+                let eff = rot & self.bit_mask;
+                for p in 0..4 {
+                    if self.map_mask & (1 << p) == 0 {
+                        continue;
+                    }
+                    let sr = if self.set_reset & (1 << p) != 0 { 0xff } else { 0x00 };
+                    let out = (sr & eff) | (l[p as usize] & !eff);
+                    self.planes[p as usize * 0x10000 + o] = out;
+                }
+            }
             m => {
                 let l = self.latches.get();
                 let rot = v.rotate_right(self.rotate as u32 & 7);

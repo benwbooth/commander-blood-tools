@@ -2394,6 +2394,29 @@ mean_abs 1.09), known launch args (`AMR S162227 EMS WRIC:\cblood\`).
       must write AL→port, AH→port+1 (VGA index/data + DAC pairs; fixing this
       un-garbled the menu band and palette); PIT lo/hi write phase via port
       0x43.
+- [x] M1b — interpreter hardening DONE 2026-07-20: `re/tools/diff_fuzz.py` +
+      `interp_matches_unicorn_diff` differentially fuzz EVERY unique instruction
+      encoding in the game+driver (1218 encodings, 3640 vectors) one-at-a-time
+      vs Unicorn — bit-exact on regs/ip/mem/defined-flags. Interpreter now proven
+      two independent ways (corpus + diff-fuzz).
+- [x] VERIFICATION MILESTONE 2026-07-20: runtime is DETERMINISTIC (two identical
+      runs = 0.000 MAE) and INTERACTIVE (a keypress changes state by MAE 67.5 —
+      the game skips the intro cinematic into a dialogue scene). Deterministic
+      graphics pixel-match DOSBox: Mindscape 1.0, Microfolie's 1.5, astronaut
+      cinematic 3.8 (nav/attract diverge only on the documented RNG starfield).
+- [ ] SUBTITLE TEXT rendering (OPEN, well-localized 2026-07-20): dialogue scenes
+      show a scrambled 0xEF band where subtitles go. RULED OUT: interp (bit-exact),
+      text buffer (holds correct ASCII "WAIT COMMANDER ..."), reveal state machine
+      (pointer reaches the NUL = reveal completes), the subtitle font (gs:0x71aa =
+      valid 8-byte glyphs, 'A' bitmap confirmed), the ASCII→glyph map (gs:0x70fa
+      monotonic), the framebuffer far-pointer (gs:0x5219 = a000:8000, correct
+      page), the blitter code (0x299:0x6a0 = file 0x3630, correct Mode-X, writes
+      color 0xfd/fe/ff). ROOT CAUSE remaining: the visible band is a STALE 0xEF
+      scramble layer; the clean fd/fe/ff glyphs from 0x3630 are sparse on both
+      pages, and the reveal-complete handler (0x94c8, sets gs:0x67bb=1) did NOT
+      run (67bb=0) — so the dialogue updater's final clean-text draw/flip isn't
+      persisting. NEXT: trace the dialogue updater 0x93F8-0x94B8 call cadence +
+      page-flip ordering; the 0xEF scramble source routine (not 0x3630).
 - [ ] M5 — progressive replacement: dispatch table IP→lifted-fn at basic-block
       entry; runtime trace logs (a) indirect-call targets → feeds the static
       composition tiers, (b) per-function coverage → lift priority list. Keep

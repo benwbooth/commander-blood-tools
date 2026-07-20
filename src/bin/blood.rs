@@ -146,6 +146,89 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                 rt.write_ppm(&out_dir.join(format!("{name}.ppm"))).map_err(|e| e.to_string())?;
                 eprintln!("shot {name} at tick {}", rt.ticks());
             }
+            "font" => {
+                let ds = rt.m.regs.ds;
+                let ss = rt.m.regs.ss;
+                let dump = |seg: u16, off: u32, n: u32, rt: &Runtime| -> String {
+                    (0..n).map(|i| format!("{:02x}", rt.m.read8(seg, off + i))).collect::<Vec<_>>().join(" ")
+                };
+                eprintln!("ds={ds:04x} ss={ss:04x}");
+                eprintln!("DS:6fa8 (ascii->glyph map, 'A'=0x41): {}", dump(ds, 0x6fa8 + 0x41, 8, &rt));
+                eprintln!("DS:7028 (glyphs)   : {}", dump(ds, 0x7028, 20, &rt));
+                eprintln!("SS:7028 (glyphs)   : {}", dump(ss, 0x7028, 20, &rt));
+                let gs = rt.m.regs.gs;
+                let fb_off = rt.m.read16(gs, 0x5219);
+                let fb_seg = rt.m.read16(gs, 0x521b);
+                eprintln!("gs={gs:04x} framebuffer ptr gs:5219 = {fb_seg:04x}:{fb_off:04x}");
+                eprintln!("DS:70fa (subtitle map @'A'): {}", dump(ds, 0x70fa + 0x41, 8, &rt));
+                eprintln!("DS:71aa (subtitle glyphs)  : {}", dump(ds, 0x71aa, 24, &rt));
+                // during the subtitle blit DS==gs (chars read from the gs state buffer via DS:si)
+                eprintln!("gs:70fa (map @'A'): {}", dump(gs, 0x70fa + 0x41, 8, &rt));
+                eprintln!("gs:71aa (glyphs)  : {}", dump(gs, 0x71aa, 24, &rt));
+                let gidx = rt.m.read8(gs, 0x70fa + 0x57) as u32;
+                eprintln!("(gs) 'W'->glyph {gidx:#x}, bitmap: {}", dump(gs, 0x71aa + gidx*8, 8, &rt));
+            }
+            "buf" => {
+                let gs = rt.m.regs.gs;
+                let mut txt = String::new();
+                for i in 0..48u32 {
+                    let b = rt.m.read8(gs, 0x0e18 + i);
+                    txt.push_str(&format!("{:02x}", b));
+                    txt.push(if (0x20..0x7f).contains(&b) { b as char } else { '.' });
+                    txt.push(' ');
+                }
+                eprintln!("buffer gs:0E18: {txt}");
+                eprintln!("reveal_ptr={:04x} (offset {})", rt.m.read16(gs, 0x5e58), rt.m.read16(gs, 0x5e58).wrapping_sub(0x0e18));
+                eprintln!("gates: 67bb={:02x} 67bc={:02x} b35={:04x} cfb={:02x}",
+                    rt.m.read8(gs, 0x67bb), rt.m.read8(gs, 0x67bc),
+                    rt.m.read16(gs, 0xb35), rt.m.read8(gs, 0xcfb));
+            }
+            "peek" => {
+                // peek gs-relative words: reveal pointer 0x5E58, timer 0xB31, text-speed 0xACA
+                let gs = rt.m.regs.gs;
+                eprintln!(
+                    "tick {} gs={:04x} reveal_ptr(5E58)={:04x} timer(B31)={:04x} speed(ACA)={:04x} buf0(0E18)={:02x}{:02x}{:02x}{:02x}",
+                    rt.ticks(), gs,
+                    rt.m.read16(gs, 0x5e58), rt.m.read16(gs, 0xb31), rt.m.read16(gs, 0xaca),
+                    rt.m.read8(gs, 0x0e18), rt.m.read8(gs, 0x0e19), rt.m.read8(gs, 0x0e1a), rt.m.read8(gs, 0x0e1b),
+                );
+            }
+            "scanpages" => {
+                let v = rt.m.vga.as_deref().unwrap();
+                for (name, base) in [("page0", 0usize), ("page1", 0x8000usize)] {
+                    let mut cnt = std::collections::HashMap::<u8, usize>::new();
+                    for plane in 0..4 {
+                        for o in base..base + 0x8000 {
+                            *cnt.entry(v.planes[plane * 0x10000 + o]).or_default() += 1;
+                        }
+                    }
+                    let fdfe = cnt.get(&0xfd).copied().unwrap_or(0) + cnt.get(&0xfe).copied().unwrap_or(0) + cnt.get(&0xff).copied().unwrap_or(0);
+                    let ef = cnt.get(&0xef).copied().unwrap_or(0);
+                    eprintln!("{name}: 0xFD/FE/FF pixels={fdfe}  0xEF pixels={ef}");
+                }
+            }
+            "dumpvram" => {
+                // dump planes at the subtitle rows for offline glyph reconstruction
+                let v = rt.m.vga.as_deref().unwrap();
+                let start = 0x8000usize;
+                let mut out = Vec::new();
+                for y in 95..130usize {
+                    for plane in 0..4usize {
+                        for xb in 0..80usize {
+                            out.push(v.planes[plane * 0x10000 + start + y * 80 + xb]);
+                        }
+                    }
+                }
+                std::fs::write(out_dir.join("vram_sub.bin"), &out).unwrap();
+                eprintln!("dumped {} bytes of subtitle VRAM (35 rows x 4 planes x 80)", out.len());
+            }
+            "vga" => {
+                let v = rt.m.vga.as_deref().unwrap();
+                eprintln!(
+                    "VGA: chain4={} map_mask={:#x} read_map={} write_mode={} bit_mask={:#x} set_reset={:#x} enable_sr={:#x} logic_op={} rotate={}",
+                    v.chain4, v.map_mask, v.read_map, v.write_mode, v.bit_mask, v.set_reset, v.enable_sr, v.logic_op, v.rotate,
+                );
+            }
             other => return Err(format!("line {}: unknown command {other}", ln + 1)),
         }
     }

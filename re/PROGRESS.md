@@ -1093,3 +1093,20 @@ and wall-clock pacing; headless --script mode drives deterministic input timelin
 NEXT: map attract-exit -> interactive gameplay (game-specific input; use --script probes on the
 early menu), DOS mouse-driver cursor overlay, timer calibration vs dense DOSBox captures, then
 M5 (lift dispatch at verified entry points + runtime trace -> indirect-site resolution).
+
+## PATH B RUNTIME: verification + subtitle localization — 2026-07-20 (same session)
+- M1b: diff_fuzz.py differentially fuzzes 1218 unique game+driver instruction encodings (3640
+  vectors) one-at-a-time vs Unicorn; interp bit-exact on regs/ip/mem/defined-flags. Interpreter
+  now proven TWO ways (14,999-vector corpus + per-instruction diff-fuzz).
+- Determinism proven: two identical --script runs = 0.000 MAE (fixed CMOS clock -> reproducible
+  PRNG). Interactivity proven: a keypress changes state by MAE 67.5 (skips intro cinematic ->
+  dialogue scene). Faithfulness scorecard vs DOSBox captures: Mindscape 1.0, Microfolie's 1.5,
+  astronaut cinematic 3.8; nav/attract diverge ONLY on the documented RNG starfield.
+- Added VGA write mode 3 + full GC/set-reset/latch model (machine.rs Vga).
+- SUBTITLE TEXT bug localized (open): scenes show a scrambled 0xEF band. Exhaustively ruled out
+  interp, text buffer (correct ASCII), reveal state machine (completes), font (gs:0x71aa valid),
+  map (gs:0x70fa monotonic), framebuffer ptr (gs:0x5219=a000:8000), blitter (file 0x3630, correct
+  Mode-X, color fd/fe/ff). The visible band is a STALE 0xEF scramble; the reveal-complete handler
+  (0x94c8 sets gs:0x67bb=1) didn't run -> the dialogue updater's final clean-text draw/flip isn't
+  persisting. Diagnostic commands added to blood.rs (--script): vga/font/buf/peek/scanpages/
+  dumpvram for future RE. All 357 lib tests green.

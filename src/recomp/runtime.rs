@@ -140,6 +140,8 @@ pub struct Runtime {
     /// (vector, AH) -> count, for the boot log.
     pub int_log: HashMap<(u8, u8), u64>,
     pub trace_ints: bool,
+    pub trace_glyph: bool,
+    pub glyph_log: Vec<(u8, u32, u8)>, // (plane_mask, offset, value) for subtitle-row writes
     console: String,
     exit_code: Option<u8>,
     /// exit-path counters for performance triage: [in, out, int, hlt, chunks]
@@ -216,6 +218,8 @@ impl Runtime {
             searches: HashMap::new(),
             int_log: HashMap::new(),
             trace_ints: false,
+            trace_glyph: false,
+            glyph_log: Vec::new(),
             console: String::new(),
             exit_code: None,
             exit_counts: [0; 5],
@@ -1093,6 +1097,10 @@ impl Runtime {
 
     pub fn ticks(&self) -> u32 {
         self.ticks
+    }
+
+    pub fn crtc_reg(&self, i: usize) -> u8 {
+        self.crtc[i & 31]
     }
 
     fn int67(&mut self) -> Result<(), String> {
