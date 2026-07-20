@@ -1173,3 +1173,19 @@ current page every frame. "WAIT COMMANDER..." now renders STABLY in all dialogue
 regression: Mindscape logo still 1.02, all 357 tests pass. Targeted activation-signal fix (not the
 fully-faithful mechanism — the upstream reason the game keeps the gate set, and the separate
 mid-screen transmission static, still want a DOSBox differential). Diagnostics retained.
+
+## CORRECTION: the "subtitle persistence fix" was WRONG — reverted — 2026-07-20 (final)
+No-input SEQUENCE comparison (both runtimes deterministic) settled it: DOSBox's no-input attract
+shows the alien scenes + nav HUD + the green "1" counter and NO subtitle text. My runtime was
+drawing a spurious "WAIT COMMANDER..." overlay there (stale content from gs:0x190), and the
+force_sub "persistence fix" made that SPURIOUS overlay persistent — i.e. it made the output LESS
+faithful, not more. REVERTED force_sub to default off; the no-input attract now MATCHES DOSBox
+(no subtitle). The real bug is a SPURIOUS SUBTITLE ACTIVATION: my runtime's attract state presents
+a subtitle (subtitle-present routine runs once with stale gs:0x190="WAIT COMMANDER...GO ON OFF
+REC...C:\cbl") when DOSBox presents none. This is an upstream VM-state divergence (which the
+persistence angle mis-framed). NET after revert: the no-input boot+attract is FAITHFUL to DOSBox
+(sequence matches: Mindscape->Microfolie's->astronaut->alien attract, no spurious overlay);
+deterministic content pixel-matches. Remaining: the spurious-activation VM divergence (why my
+attract presents a stale subtitle at all) + the with-input dialogue subtitle content/persistence
+(DOSBox shows a real "CRYO..." credit; mine diverges) — both need the DOSBox memory differential.
+Lesson: verify against DOSBox BEFORE calling a rendering change a "fix".

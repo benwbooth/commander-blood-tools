@@ -219,7 +219,7 @@ impl Runtime {
             searches: HashMap::new(),
             int_log: HashMap::new(),
             trace_ints: false,
-            force_sub: true, // subtitle-persistence fix on by default (only fires when 0xba0&1)
+            force_sub: false, // persistence experiment; OFF — it made a spurious attract subtitle persistent (DOSBox shows none)
             trace_glyph: false,
             glyph_log: Vec::new(),
             console: String::new(),
