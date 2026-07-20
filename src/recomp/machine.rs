@@ -1087,6 +1087,12 @@ pub struct Machine {
     /// When set, `write8` records (cs,ip,ds,si) of any write of `watch_val` into `watch_range`.
     pub watch: Option<(u8, std::ops::Range<usize>)>,
     pub watch_hits: Vec<(u16, u16, u16, u16)>,
+    /// When set, `write8` records (value,cs,ip) of EVERY write to this exact linear address.
+    pub watch_addr: Option<usize>,
+    pub addr_hits: Vec<(u8, u16, u16)>,
+    /// When set, `write8` records (addr,value,cs,ip) of every write into this range (bounded).
+    pub trace_range: Option<std::ops::Range<usize>>,
+    pub range_hits: Vec<(usize, u8, u16, u16)>,
 }
 
 pub const MEM_SIZE: usize = 0x40_0000; // 4 MB — the EXE image (deterministic oracle mirrors it),
@@ -1108,6 +1114,10 @@ impl Machine {
             ip: 0,
             watch: None,
             watch_hits: Vec::new(),
+            watch_addr: None,
+            addr_hits: Vec::new(),
+            trace_range: None,
+            range_hits: Vec::new(),
         }
     }
 
@@ -1140,6 +1150,16 @@ impl Machine {
                 if !self.watch_hits.iter().any(|h| h.0 == hit.0 && h.1 == hit.1) {
                     self.watch_hits.push(hit);
                 }
+            }
+        }
+        if let Some(wa) = self.watch_addr {
+            if a == wa && self.addr_hits.len() < 5000 {
+                self.addr_hits.push((v, self.regs.cs, self.ip));
+            }
+        }
+        if let Some(range) = &self.trace_range {
+            if v != 0 && range.contains(&a) && self.range_hits.len() < 20000 {
+                self.range_hits.push((a, v, self.regs.cs, self.ip));
             }
         }
         if let Some(vga) = self.vga.as_deref_mut() {

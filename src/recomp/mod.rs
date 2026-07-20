@@ -605,7 +605,11 @@ mod tests {
                 "add" | "sub" | "adc" | "sbb" | "cmp" | "neg" | "xadd" => all6,
                 "and" | "or" | "xor" | "test" => 0x8d5 & !0x810, // CF/OF cleared, AF undefined
                 "inc" | "dec" => all6 & !1, // CF unaffected
-                "shl" | "shr" | "sar" | "rol" | "ror" | "sal" => 0, // count-dependent undefined
+                // Shifts/rotates: CF is DEFINED (the bit shifted out / rotated through) for any
+                // nonzero count; the other flags are count-dependent/undefined. A wrong carry-out
+                // silently corrupts chained-rotate loops (e.g. the subtitle glyph plotter), so
+                // assert CF here. (Count could be 0 → CF unchanged, but that still matches Unicorn.)
+                "shl" | "shr" | "sar" | "rol" | "ror" | "sal" | "rcl" | "rcr" => 1, // CF (bit 0)
                 "bt" | "btr" | "bts" | "btc" => 1, // CF only
                 "bsf" | "bsr" => 0x40, // ZF only
                 _ => 0,

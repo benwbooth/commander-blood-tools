@@ -2455,9 +2455,28 @@ mean_abs 1.09), known launch args (`AMR S162227 EMS WRIC:\cblood\`).
       presentation bits). NEXT: trace who should set gs:0x67bc=1 (setter at
       0x5928 `mov gs:[0x67bc],al`; also gs:0x67aa/0x1fb3 presentation flags at
       0x6753/0x678b) when a dialogue line becomes active, and why the VM leaves
-      it clear — likely a C4/C2 presentation-record path or a gs:0x6724 init not
-      yet modelled. Diagnostics in blood.rs --script: trace/watchef/watchchunky/
-      watchdump/vga/font/buf/remap/peek/scanpages/dumpvram; Machine.watch.
+      it clear. **DEFINITIVELY CONFIRMED a real rendering bug (2026-07-20 cont.):**
+      with SPACE input (scancode 0x39, matching the DOSBox oracle — earlier tests
+      wrongly used `key 1` = scancode 1 = ESC, reaching a different comms-HUD
+      screen), my runtime reaches the SAME alien-dialogue scenes as DOSBox, and
+      the subtitle STILL scrambles where DOSBox renders clean text ("CRYO
+      Interactive Entertainment 1995"). DOSBox shows clean STABLE text (no
+      dissolve). CONTROL-FLOW DIVERGENCE found: the font-glyph blitter 0x3630
+      (reads font gs:0x71aa, writes colors 0xfd/fe/ff) NEVER runs in my runtime
+      (no fd/fe/ff in the framebuffer); instead the procedural plot loop at
+      0x299:0xc22/0xc45 (file 0x3c22/0x3c45, `rcl/xor` pattern) draws the 0xEF
+      scramble, driven by the {di,bx,cx,dx} entries of the runtime-built command
+      tables gs:0x5e6f/0x5eaf (state-0 path). The scene/box-dim remap (0x33f6,
+      color 0x0e) is CORRECT. So the bug is a state/data divergence upstream that
+      makes the text-draw pick the procedural path + wrong glyph data. Verified
+      NOT interp (bit-exact incl. now rotate-CF, closed a real gap), NOT font/map
+      (correct), NOT VGA/DAC/planar (scene pixel-matches). NEXT (needs a new
+      technique): instruction-level differential trace vs a DOSBox memory dump at
+      the subtitle draw to find where control flow / the command-table build
+      diverges — the command-table builder (reveal setup feeding 0x5e6f/0x5eaf)
+      is the prime suspect. Diagnostics in blood.rs --script: trace/watchef/
+      watchchunky/watchdump/tracechunky/tracedump/vga/font/buf/remap/src190/
+      fbptr/peek/watchaddr/watchlin; Machine.watch/watch_addr/trace_range.
 - [ ] M5 — progressive replacement: dispatch table IP→lifted-fn at basic-block
       entry; runtime trace logs (a) indirect-call targets → feeds the static
       composition tiers, (b) per-function coverage → lift priority list. Keep

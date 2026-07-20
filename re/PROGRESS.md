@@ -1127,3 +1127,15 @@ So mine is stuck mid-dissolve: the dialogue-updater draw (0x93F8) is gated by [0
 redrawn before the dissolve completes -> last noisy frame freezes (reveal ptr 0x5e58 also froze).
 This is a FRAME-CADENCE issue (draw/advance ratio vs real hw), NOT a font/VGA/interp bug (all
 verified correct). NEXT: trace the per-frame set/clear of those gate flags + pacing calibration.
+
+## SUBTITLE: confirmed real bug + control-flow divergence localized — 2026-07-20 (cont.)
+Testing fix: earlier used `key 1` (scancode 1 = ESC) reaching a DIFFERENT comms-HUD screen; with
+SPACE (0x39, matching the DOSBox oracle) my runtime reaches the SAME alien-dialogue scenes and the
+subtitle STILL scrambles vs DOSBox's clean "CRYO Interactive Entertainment 1995". So it's a genuine
+rendering bug, not a screen mismatch or aesthetic. DOSBox text is clean+stable (NO dissolve).
+Control-flow divergence: the font-glyph blitter 0x3630 (writes 0xfd/fe/ff) never runs; the
+procedural plot loop 0x299:0xc22/0xc45 (rcl/xor) draws the 0xEF scramble from the runtime-built
+command tables gs:0x5e6f/0x5eaf. Scene box-dim remap (0x33f6, 0x0e) is correct. Also CLOSED a real
+verification gap: diff_fuzz now asserts CF for shifts/rotates (was skipped) — 0 mismatches, so
+rcl/rcr/rol/ror CF is correct (not the bug). NEXT needs instruction-level differential vs a DOSBox
+memory dump to find where the command-table build / control flow diverges. All 357 lib tests green.

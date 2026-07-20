@@ -168,12 +168,71 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                 let gidx = rt.m.read8(gs, 0x70fa + 0x57) as u32;
                 eprintln!("(gs) 'W'->glyph {gidx:#x}, bitmap: {}", dump(gs, 0x71aa + gidx*8, 8, &rt));
             }
+            "watchaddr" => {
+                let off = usize::from_str_radix(w.get(1).unwrap_or(&"67bc"), 16).unwrap_or(0x67bc);
+                let lin = 0x0e84usize * 16 + off;
+                rt.m.watch_addr = Some(lin);
+                rt.m.addr_hits.clear();
+                eprintln!("watching writes to 0e84:{off:04x} (lin {lin:#x})");
+            }
+            "watchlin" => {
+                // watchlin <hexlinear>: all writes to a raw linear address
+                let lin = usize::from_str_radix(w.get(1).unwrap_or(&"2e4c0"), 16).unwrap_or(0x2e4c0);
+                rt.m.watch_addr = Some(lin);
+                rt.m.addr_hits.clear();
+                eprintln!("watching all writes to lin {lin:#x}");
+            }
+            "watchaddrdump" => {
+                eprintln!("writes ({}):", rt.m.addr_hits.len());
+                for (v, cs, ip) in &rt.m.addr_hits {
+                    let rel = cs.wrapping_sub(0x1a2);
+                    let file = 0x600 + (rel as usize) * 16 + *ip as usize;
+                    eprintln!("  =0x{v:02x} @ {cs:04x}:{ip:04x} (seg 0x{rel:x}, file {file:#07x})");
+                }
+                rt.m.watch_addr = None;
+            }
             "trace" => {
                 let gs = rt.m.regs.gs;
                 eprintln!("t{:>4} 5e58={:04x} 5e65={:04x} b31={:04x} b37={:04x} 67bc={:02x} 67bb={:02x} 5e64={:02x} 27e2={:04x} 679a={:04x}",
                     rt.ticks(),
                     rt.m.read16(gs,0x5e58), rt.m.read16(gs,0x5e65), rt.m.read16(gs,0xb31), rt.m.read16(gs,0xb37),
                     rt.m.read8(gs,0x67bc), rt.m.read8(gs,0x67bb), rt.m.read8(gs,0x5e64), rt.m.read16(gs,0x27e2), rt.m.read16(gs,0x679a));
+            }
+            "tracechunky" => {
+                // trace all writes to the chunky-buffer subtitle band during the next draw
+                let base = 0x266cusize * 16;
+                rt.m.trace_range = Some(base + 0x7c00..base + 0x8800);
+                rt.m.range_hits.clear();
+                eprintln!("tracing chunky subtitle-band writes");
+            }
+            "tracedump" => {
+                let hits = rt.m.range_hits.clone();
+                eprintln!("range writes: {}", hits.len());
+                // per-code-address summary: count + value histogram
+                use std::collections::HashMap;
+                let mut by_code: HashMap<(u16,u16), (usize, HashMap<u8,usize>)> = HashMap::new();
+                for (_a, v, cs, ip) in &hits {
+                    let e = by_code.entry((*cs,*ip)).or_default();
+                    e.0 += 1; *e.1.entry(*v).or_default() += 1;
+                }
+                let mut rows: Vec<_> = by_code.into_iter().collect();
+                rows.sort_by_key(|(_,v)| std::cmp::Reverse(v.0));
+                for ((cs,ip),(n,vals)) in rows.into_iter().take(12) {
+                    let rel = cs.wrapping_sub(0x1a2);
+                    let file = 0x600 + (rel as usize)*16 + ip as usize;
+                    let mut vv: Vec<_> = vals.into_iter().collect(); vv.sort_by_key(|(_,c)| std::cmp::Reverse(*c));
+                    let top: Vec<String> = vv.iter().take(4).map(|(val,c)| format!("0x{val:02x}x{c}")).collect();
+                    eprintln!("  {cs:04x}:{ip:04x} (file {file:#07x}) n={n} vals=[{}]", top.join(" "));
+                }
+                rt.m.trace_range = None;
+            }
+            "fbptr" => {
+                let gs = rt.m.regs.gs;
+                let r32 = |off: u32| ((rt.m.read16(gs, off+2) as u32) << 16) | rt.m.read16(gs, off) as u32;
+                eprintln!("gs:5219 (cur FB) = {:04x}:{:04x}", rt.m.read16(gs,0x521b), rt.m.read16(gs,0x5219));
+                eprintln!("gs:521d (alt FB) = {:04x}:{:04x}", rt.m.read16(gs,0x521f), rt.m.read16(gs,0x521d));
+                eprintln!("gs:5221 (disp)   = {:04x}:{:04x}", rt.m.read16(gs,0x5223), rt.m.read16(gs,0x5221));
+                let _ = r32;
             }
             "remap" => {
                 let gs = rt.m.regs.gs;
@@ -182,6 +241,15 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                 eprintln!("remap 5f11[0xf0..]: {}", d(0x5f11 + 0xf0, 16));
                 eprintln!("cmd-table 5e6f: {}", d(0x5e6f, 16));
                 eprintln!("cmd-table 5eaf: {}", d(0x5eaf, 16));
+            }
+            "src190" => {
+                let gs = rt.m.regs.gs;
+                let mut t = String::new();
+                for i in 0..48u32 {
+                    let b = rt.m.read8(gs, 0x190 + i);
+                    t.push(if (0x20..0x7f).contains(&b) { b as char } else { '.' });
+                }
+                eprintln!("gs:0190 source text: \"{t}\"");
             }
             "buf" => {
                 let gs = rt.m.regs.gs;
@@ -216,6 +284,14 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                 rt.m.watch = Some((0xef, start..start + 30 * 80 + 0x30000));
                 rt.m.watch_hits.clear();
                 eprintln!("watch armed for 0xEF writes to VRAM subtitle band");
+            }
+            "watchval" => {
+                // watchval <hex>: watch that value written anywhere in VGA page-1 band
+                let v = u8::from_str_radix(w.get(1).unwrap_or(&"fd"), 16).unwrap_or(0xfd);
+                let start = 0xa0000 + 0x8000 + 60 * 80;
+                rt.m.watch = Some((v, start..start + 80 * 80 + 0x30000));
+                rt.m.watch_hits.clear();
+                eprintln!("watch armed for 0x{v:02x} writes to VGA page-1");
             }
             "watchchunky" => {
                 // 0xEF writes into the chunky back-buffer (seg 0x266c) subtitle band
