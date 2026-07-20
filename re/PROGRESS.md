@@ -1371,3 +1371,25 @@ without a differential) is: the credit subtitle is emitted by the HNM cinematic 
 frame command) or by the voice-clip start, neither of which runs/emits in my runtime. The bit-exact
 paradox (verified file loads + bit-exact CPU, yet divergent output) points the remaining cause at a
 hardware-timing input (SB/DMA/voice-clip streaming cadence) that gates whether the voice+credit fire.
+
+## GROUND-TRUTH CONFIRMATION via fresh DOSBox run (2026-07-20)
+Ran the real BLOODPRG.EXE headless under DOSBox-X with the EXACT SAME launch as my runtime
+(C:=accuracy/cdrive, D:=output/_tmp_iso, CWD=D:\, args " AMR S162227 EMS WRIC:\cblood\") and
+captured the intro (re-runnable via a db_intro/db_long script in scratch). Findings:
+- DOSBox's intro is SLOW in wall-clock: Mindscape ~18s, Microfolie's ~24-30s, astronaut/space
+  ~36-48s, CRYO logo ~54s, and "CRYO Interactive Entertainment 1995" over an alien face at ~66s.
+  So DOSBox DOES present the credit with matching args -> the divergence is REAL (not a bad ref).
+- DOSBox NEVER shows "WAIT COMMANDER" in the intro. My runtime shows ONLY "WAIT COMMANDER"
+  (subtitle buffer gs:0xe18) across 4500 ticks and NEVER "CRYO..." -> my runtime SPURIOUSLY and
+  PERSISTENTLY presents the WAIT-COMMANDER loading-prompt where DOSBox plays the credit.
+This CONFIRMS the divergence and rules out "faithful runtime, different reference". Combined with:
+bit-exact CPU (proven), SCRIPT1.COD/VAR load byte-identical, HNM/cinematic is the GAME's own code
+(no native decoder), and every gating flag checked is bit-exact-consistent (gs:0x2793&1 always set,
+gs:0xa5e always -1, gs:0xade set, gs:0xba3 static-1) -> the divergence is an intro-sequencing
+EXECUTION-FLOW difference driven by a hardware-timing/pacing input (DOSBox's real disk-I/O + timer
+cadence over a 66s intro vs my runtime's instant in-memory I/O), which makes a timing-dependent
+branch pick the WAIT-COMMANDER path instead of the credit path. NEXT (needs DOSBox internal state):
+the debugger/savestate is non-functional here, so pinning the exact diverging branch needs either
+that capability enabled, or a pacing bisection (vary STEPS_PER_SECOND / add I/O latency and observe
+whether the credit path is taken). Fresh-DOSBox frame capture IS now reproducible in-env as a
+coarser oracle (output frames, not memory).
