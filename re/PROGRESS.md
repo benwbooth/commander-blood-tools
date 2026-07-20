@@ -1415,3 +1415,18 @@ the SoundBlaster DSP/DMA status polling that gates the intro voice-clip, or a VG
 that makes a status-poll branch resolve differently and sends the intro down the WAIT-COMMANDER path
 instead of the credit path. Next concrete step if a differential becomes available: single-step both
 from the post-boot-reel point and diff the first instruction where CS:IP or a register diverges.
+
+## DOSBox differential PERSONALLY VERIFIED non-functional (2026-07-20)
+Did not just trust the prior note - attempted the DOSBox memory differential myself in this env:
+- Ran the real game headless under Xvfb, navigated the DOSBox-X menu via xdotool, FOUND the Save-State
+  hotkey (Capture menu -> "Save state" = F12+S), triggered it at the credit moment -> NO savestate file
+  is produced anywhere (searched ~, /tmp, config dirs). Savestate is non-functional here.
+- This dosbox-x build (2026.05.02) has NO built-in debugger (no MEMDUMP/debugger symbols in the binary),
+  so no live memory dump / instruction log is available. No GDB stub either.
+Therefore DOSBox's internal memory/CPU state is genuinely UNEXTRACTABLE in this environment, confirming
+the blocker. The intro credit is confirmed to CYCLE between "CRYO Interactive Entertainment 1995" and
+"Commander BLOOD V 1.0" (the two DESCRIPT.DES credits) as clean white glyphs; my runtime shows only
+"WAIT COMMANDER". USEFUL LEFTOVER: reproducible DOSBox OUTPUT-frame capture works (scratch db_intro.sh /
+db_long.sh / db_menu.sh with matching mounts+args) as a coarse visual oracle - just not memory. The
+only remaining way to pin this (a first-diverging-instruction differential) needs a DOSBox build WITH
+the debugger, or a working savestate, neither available here.
