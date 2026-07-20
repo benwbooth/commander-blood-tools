@@ -168,6 +168,13 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                 let gidx = rt.m.read8(gs, 0x70fa + 0x57) as u32;
                 eprintln!("(gs) 'W'->glyph {gidx:#x}, bitmap: {}", dump(gs, 0x71aa + gidx*8, 8, &rt));
             }
+            "trace" => {
+                let gs = rt.m.regs.gs;
+                eprintln!("t{:>4} 5e58={:04x} 5e65={:04x} b31={:04x} b37={:04x} 67bc={:02x} 67bb={:02x} 5e64={:02x} 27e2={:04x} 679a={:04x}",
+                    rt.ticks(),
+                    rt.m.read16(gs,0x5e58), rt.m.read16(gs,0x5e65), rt.m.read16(gs,0xb31), rt.m.read16(gs,0xb37),
+                    rt.m.read8(gs,0x67bc), rt.m.read8(gs,0x67bb), rt.m.read8(gs,0x5e64), rt.m.read16(gs,0x27e2), rt.m.read16(gs,0x679a));
+            }
             "remap" => {
                 let gs = rt.m.regs.gs;
                 let d = |off: u32, n: u32| (0..n).map(|i| format!("{:02x}", rt.m.read8(gs, off + i))).collect::<Vec<_>>().join(" ");

@@ -2441,10 +2441,23 @@ mean_abs 1.09), known launch args (`AMR S162227 EMS WRIC:\cblood\`).
       last noisy frame. The reveal pointer 0x5e58 also froze (updater not
       re-entered). NEXT: find what sets/clears [0x67bc]/[0x5e64]/[0x27e2] per
       frame and why they clear early — a frame-cadence coupling between the
-      reveal-advance rate and the per-char dissolve duration (likely pacing
-      calibration: my draw/advance ratio ≠ real hardware). NOT a font/VGA bug
-      (font, map, blit, planar model all verified correct). Diagnostics in
-      blood.rs --script: watchef/watchchunky/watchdump/vga/font/buf/peek.
+      reveal-advance rate and the per-char dissolve duration. KEY REFRAME after a
+      frame-by-frame state trace (blood.rs --script `trace`): the reveal ptr
+      gs:0x5e58 jumps 0 -> 0x0e2b (END) in ONE step (never per-char), gs:0x5e65
+      stays 0, and the updater ENTRY GATES gs:[0x27e2]&2 / gs:[0x5e64]&1 /
+      gs:[0x67bc]&1 stay ALL-CLEAR the whole time. So the reveal updater 0x93F8
+      NEVER properly runs (its init 0x9432 that would set 5e58=0xe18 + 5e65=2
+      doesn't fire) — the "subtitle active" presentation state is never set by the
+      DIALOGUE VM. This is NOT a renderer/timing bug (font/map/blit/planar model
+      all verified; interp bit-exact; DOSBox pixel-match on deterministic
+      content). It connects to the DIALOGUE-VM PRESENTATION STATE from prior
+      sessions (the C2/C4 handlers, gs:0x6724 runtime object/state, the b4/b5
+      presentation bits). NEXT: trace who should set gs:0x67bc=1 (setter at
+      0x5928 `mov gs:[0x67bc],al`; also gs:0x67aa/0x1fb3 presentation flags at
+      0x6753/0x678b) when a dialogue line becomes active, and why the VM leaves
+      it clear — likely a C4/C2 presentation-record path or a gs:0x6724 init not
+      yet modelled. Diagnostics in blood.rs --script: trace/watchef/watchchunky/
+      watchdump/vga/font/buf/remap/peek/scanpages/dumpvram; Machine.watch.
 - [ ] M5 — progressive replacement: dispatch table IP→lifted-fn at basic-block
       entry; runtime trace logs (a) indirect-call targets → feeds the static
       composition tiers, (b) per-function coverage → lift priority list. Keep
