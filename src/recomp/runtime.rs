@@ -117,6 +117,10 @@ pub struct Runtime {
     crtc_idx: u8,
     crtc: [u8; 32],
     cmos_idx: u8,
+    /// 8259 PIC interrupt masks (port 0x21 master, 0xA1 slave). A set bit masks that IRQ line.
+    /// Default: IRQ0(timer)/IRQ1(kbd)/IRQ2(cascade)/IRQ6 unmasked on the master (0xB8), slave all masked.
+    pic_mask0: u8,
+    pic_mask1: u8,
     /// Conventional-memory accounting: the program block ends here after int 21h/4Ah; 48h
     /// allocations bump from `alloc_next` toward MEM_TOP_SEG.
     prog_end: u16,
@@ -205,6 +209,8 @@ impl Runtime {
             crtc_idx: 0,
             crtc: [0; 32],
             cmos_idx: 0,
+            pic_mask0: 0xb8,
+            pic_mask1: 0xff,
             kbd_queue: VecDeque::new(),
             bios_keys: VecDeque::new(),
             kbd_irq_pending: 0,
@@ -483,13 +489,15 @@ impl Runtime {
                 }
             }
             // int 9 keyboard IRQ (only when the game hooked it; int 16h polls work regardless)
-            if self.kbd_irq_pending > 0 && self.cpu.iflag && self.ivt_hooked(9) {
+            if self.kbd_irq_pending > 0 && self.cpu.iflag && self.ivt_hooked(9)
+                && self.pic_mask0 & 0x02 == 0
+            {
                 self.kbd_irq_pending -= 1;
                 self.cpu.deliver_int(&mut self.m, 9);
             }
             // SoundBlaster completion IRQ (driver config block: base 220, IRQ 7 -> vector 0x0F)
             self.tick_sb_playback();
-            if self.sb_irq_pending && self.cpu.iflag {
+            if self.sb_irq_pending && self.cpu.iflag && self.pic_mask0 & 0x80 == 0 {
                 self.sb_irq_pending = false;
                 if self.ivt_hooked(0x0f) {
                     self.cpu.deliver_int(&mut self.m, 0x0f);
@@ -497,7 +505,7 @@ impl Runtime {
             }
             // timer IRQ0
             if self.cpu.steps >= self.next_tick_at {
-                if self.cpu.iflag {
+                if self.cpu.iflag && self.pic_mask0 & 0x01 == 0 {
                     self.next_tick_at = self.cpu.steps + self.steps_per_tick;
                     self.cpu.deliver_int(&mut self.m, 8);
                 } else {
@@ -628,7 +636,12 @@ impl Runtime {
                 }
                 v
             }
-            0x224 | 0x225 => 0, // mixer
+            0x224 | 0x225 => {
+                if self.trace_ints {
+                    eprintln!("SB MIXER read port {port:#x} idx={:#x} @{:04x}:{:04x}", self.cmos_idx, self.cpu.cs, self.cpu.ip);
+                }
+                0
+            } // mixer
             0x3c9 => {
                 let v = self.dac[self.dac_ridx % 768];
                 self.dac_ridx = (self.dac_ridx + 1) % 768;
@@ -661,6 +674,8 @@ impl Runtime {
             0x42 => (self.cpu.steps >> 2) as u32 & 0xff, // PIT ch2: a moving count
             0x40 => (self.cpu.steps >> 1) as u32 & 0xff,
             0x201 => 0xff, // joystick: none
+            0x21 => self.pic_mask0 as u32,  // 8259 master IMR
+            0xa1 => self.pic_mask1 as u32,  // 8259 slave IMR
             _ => {
                 if self.trace_ints {
                     eprintln!("in port {port:#x}");
@@ -789,7 +804,9 @@ impl Runtime {
             }
             0x3d4 => self.crtc_idx = v,
             0x3d5 => self.crtc[(self.crtc_idx & 31) as usize] = v,
-            0x20 | 0x21 | 0xa0 | 0xa1 | 0x41 | 0x42 | 0x61 | 0x3c2 | 0x3c0 => {}
+            0x21 => self.pic_mask0 = v, // 8259 master IMR: the game masks/unmasks IRQ lines here
+            0xa1 => self.pic_mask1 = v, // 8259 slave IMR
+            0x20 | 0xa0 | 0x41 | 0x42 | 0x61 | 0x3c2 | 0x3c0 => {}
             _ => {
                 if self.trace_ints {
                     eprintln!("out port {port:#x} = {value:#x}");
