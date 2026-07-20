@@ -327,6 +327,20 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                     rt.m.read16(gs, 0x5e65), rt.m.read8(gs, 0x5b56),
                     rt.m.read8(gs, 0x5e64), rt.m.read16(gs, 0x27e2), rt.m.read16(gs, 0x679a));
             }
+            "ipstart" => { rt.ip_sample = Some(Default::default()); eprintln!("ip sampling on"); }
+            "ipdump" => {
+                if let Some(h) = rt.ip_sample.take() {
+                    let mut v: Vec<_> = h.into_iter().collect();
+                    v.sort_by_key(|(_,c)| std::cmp::Reverse(*c));
+                    let total: u64 = v.iter().map(|(_,c)| *c).sum();
+                    eprintln!("ip histogram (top hot spots, total {total} samples):");
+                    for ((cs,ip),c) in v.into_iter().take(14) {
+                        let rel = cs.wrapping_sub(0x1a2);
+                        let file = 0x600 + (rel as usize)*16 + ip as usize;
+                        eprintln!("  {cs:04x}:{ip:04x} (seg 0x{rel:x} file {file:#07x}): {c} ({:.0}%)", 100.0*c as f64/total as f64);
+                    }
+                }
+            }
             "resid" => {
                 let gs = rt.m.regs.gs;
                 let fs = rt.m.regs.fs;

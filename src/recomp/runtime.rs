@@ -140,6 +140,7 @@ pub struct Runtime {
     /// (vector, AH) -> count, for the boot log.
     pub int_log: HashMap<(u8, u8), u64>,
     pub trace_ints: bool,
+    pub ip_sample: Option<std::collections::HashMap<(u16,u16), u64>>,
     pub force_sub: bool,
     pub trace_glyph: bool,
     pub glyph_log: Vec<(u8, u32, u8)>, // (plane_mask, offset, value) for subtitle-row writes
@@ -219,6 +220,7 @@ impl Runtime {
             searches: HashMap::new(),
             int_log: HashMap::new(),
             trace_ints: false,
+            ip_sample: None,
             force_sub: false, // persistence experiment; OFF — it made a spurious attract subtitle persistent (DOSBox shows none)
             trace_glyph: false,
             glyph_log: Vec::new(),
@@ -501,6 +503,9 @@ impl Runtime {
                 } else {
                     self.next_tick_at = self.cpu.steps + 1000; // retry once IF is set
                 }
+            }
+            if let Some(h) = self.ip_sample.as_mut() {
+                *h.entry((self.cpu.cs, self.cpu.ip)).or_default() += 1;
             }
             let budget = (max_steps - self.cpu.steps).min(4096);
             self.exit_counts[4] += 1;

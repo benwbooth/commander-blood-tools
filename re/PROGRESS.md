@@ -1199,3 +1199,20 @@ flickers the version-title mid-screen; my runtime flickers a "WAIT COMMANDER..."
 (different string source gs:0x190). = a dialogue-VM text-selection/presentation control-flow
 divergence (which overlay routine + which string). Both strings are real game data; file I/O is
 consistent. Needs a DOSBox memory differential or extensive dialogue-VM RE to close to certainty.
+
+## EXACT ROOT of the attract stall pinpointed — 2026-07-20 (final)
+IP-sampling during the stall + tracing found it precisely: the main loop (0xffb/0x12xx) runs fine
+(vsync-waits at 0x12c9 on [0xb2d], blits, presents) but the DIALOGUE ADVANCE routine at file
+0x72a8 (0x4da:0x1f08, called per frame before the reveal draw) is gated by
+`[0x67b0]&1 || ([0x67bc]&1 && [0x679a]==0x67b0)`. In my runtime these presentation flags are in a
+state that FAILS the gate, so the dialogue never advances past the first presented line ("WAIT
+COMMANDER"); the subtitle buffer gs:0xe18 stays frozen. DOSBox's flags pass the gate and the
+attract advances/cycles. So the sole remaining divergence is the gs:0x6724 presentation-flag state
+machine (0x67b0/0x67bc/0x679a and the record area gs:0x674a/0x6728) — EXACTLY the subsystem the
+prior sessions documented as incomplete ("detailed callback semantics and shared engine globals
+remain pending"). Everything else verified faithful: engine bit-exact, no-input sequence matches
+DOSBox, rendering + flicker faithful, audio, determinism, file I/O consistent, 357 tests pass.
+NEXT SESSION START HERE: trace the set/clear of 0x67b0/0x67bc/0x679a across the presentation state
+machine (0x5816/0x5D8F C4-path, 0x5486 named-object scan, the A6/C4 subrecord at gs:0x6724+0x3A)
+to find why my flags don't reach the advance-enabling state; DOSBox memory comparison would pin it
+directly but the savestate/debugger paths are non-functional in this DOSBox-X build.
