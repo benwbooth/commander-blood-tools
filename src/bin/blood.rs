@@ -168,6 +168,14 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                 let gidx = rt.m.read8(gs, 0x70fa + 0x57) as u32;
                 eprintln!("(gs) 'W'->glyph {gidx:#x}, bitmap: {}", dump(gs, 0x71aa + gidx*8, 8, &rt));
             }
+            "remap" => {
+                let gs = rt.m.regs.gs;
+                let d = |off: u32, n: u32| (0..n).map(|i| format!("{:02x}", rt.m.read8(gs, off + i))).collect::<Vec<_>>().join(" ");
+                eprintln!("remap 5f11[0..32]: {}", d(0x5f11, 32));
+                eprintln!("remap 5f11[0xf0..]: {}", d(0x5f11 + 0xf0, 16));
+                eprintln!("cmd-table 5e6f: {}", d(0x5e6f, 16));
+                eprintln!("cmd-table 5eaf: {}", d(0x5eaf, 16));
+            }
             "buf" => {
                 let gs = rt.m.regs.gs;
                 let mut txt = String::new();
@@ -182,6 +190,9 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                 eprintln!("gates: 67bb={:02x} 67bc={:02x} b35={:04x} cfb={:02x}",
                     rt.m.read8(gs, 0x67bb), rt.m.read8(gs, 0x67bc),
                     rt.m.read16(gs, 0xb35), rt.m.read8(gs, 0xcfb));
+                eprintln!("draw-mode: 5e65(state)={:04x} 5b56(remap flag)={:02x} 5e64={:02x} 27e2={:04x} 679a={:04x}",
+                    rt.m.read16(gs, 0x5e65), rt.m.read8(gs, 0x5b56),
+                    rt.m.read8(gs, 0x5e64), rt.m.read16(gs, 0x27e2), rt.m.read16(gs, 0x679a));
             }
             "peek" => {
                 // peek gs-relative words: reveal pointer 0x5E58, timer 0xB31, text-speed 0xACA
