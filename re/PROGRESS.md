@@ -1189,3 +1189,13 @@ deterministic content pixel-matches. Remaining: the spurious-activation VM diver
 attract presents a stale subtitle at all) + the with-input dialogue subtitle content/persistence
 (DOSBox shows a real "CRYO..." credit; mine diverges) — both need the DOSBox memory differential.
 Lesson: verify against DOSBox BEFORE calling a rendering change a "fix".
+
+## FINAL CORRECTED UNDERSTANDING (2026-07-20): flicker is faithful; only overlay CONTENT differs
+Dense 0.3s DOSBox no-input capture (my 1-fps captures had missed it): DOSBox's attract FLICKERS the
+version-title "Commander BLOOD  V 1.0" (BLOOD.DAT/DESCRIPT.DES) in ~1/3 of frames = the triple-buffer
+(draw-once, 1-of-3-pages). So my RENDERING and FLICKER behavior are FAITHFUL, and reverting the
+persistence "fix" (which made it constant) was correct. The sole remaining divergence: DOSBox
+flickers the version-title mid-screen; my runtime flickers a "WAIT COMMANDER..." subtitle top-screen
+(different string source gs:0x190). = a dialogue-VM text-selection/presentation control-flow
+divergence (which overlay routine + which string). Both strings are real game data; file I/O is
+consistent. Needs a DOSBox memory differential or extensive dialogue-VM RE to close to certainty.
