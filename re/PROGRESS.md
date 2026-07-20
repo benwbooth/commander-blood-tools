@@ -1352,3 +1352,22 @@ memory differential at the ~6s credit moment to see (a) whether DOSBox's C4 opco
 and (b) which gs flag / record field diverges — that differential is non-functional in this DOSBox-X
 build. Further guessing at the record semantics without it risks wrong conclusions (already corrected
 one null-ptr misread). New diagnostics: capsegdump (ds:0 snapshot at a trap), resname handle flags.
+
+## PATH-B RESULT: C4-record path RULED OUT — credit is voice/cinematic-presented (2026-07-20)
+Hypothesis-and-test (no differential): traced the C4 present-opcode's create-vs-match decision to a
+single flag. Sequence in script1.cod is `a9(01) ce c4`: opcode 0xA9 sets gs:[0x67ad]=1 (match mode);
+opcode 0xCE (vm_op_ce_cond_branch, file 0x6494) calls vm_branch to clear gs:[0x67ad]=0 (create mode)
+ONLY IF gs:[0x2793]&1 is CLEAR. Watched gs:0x2793: 139 writes, EVERY value has bit0 SET (0x01 at
+setup 0xfc8, then 0x41/0x45) - it is NEVER cleared. So 0xCE never branches, so all 8 C4 opcodes MATCH
+(branch 0x6d13) and never CREATE the record (write 0x6d01). CRUCIAL: since the interpreter is bit-exact
+and gs:0x2793 is set by the same game code, DOSBox's C4 opcodes ALSO match - so the C4-record ->
+activation-scan path is NOT how the credit is presented (in EITHER emulator). This RULES OUT the entire
+path I had been tracing. The credit ("CRYO Interactive Entertainment 1995", clean glyphs -> reveal
+gs:0xe18) must come from the VOICE/CINEMATIC presenter. Established: the voice-mixer (0xbdb7, gated
+0xade/0xba3 - both bit-exact-set so it runs in DOSBox too) presents the static gs:0x190="WAIT COMMANDER"
+with NO voice (gs:0xc49=0, no .voc opened, voice-streaming routine 0xbf95 runs 0x). The intro credit is
+grouped in DESCRIPT.DES with blintr.voc + cliptoot.hnm - so the NEXT concrete hypothesis (testable
+without a differential) is: the credit subtitle is emitted by the HNM cinematic player (cliptoot.hnm
+frame command) or by the voice-clip start, neither of which runs/emits in my runtime. The bit-exact
+paradox (verified file loads + bit-exact CPU, yet divergent output) points the remaining cause at a
+hardware-timing input (SB/DMA/voice-clip streaming cadence) that gates whether the voice+credit fire.
