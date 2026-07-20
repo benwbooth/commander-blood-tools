@@ -2320,6 +2320,27 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 - [ ] Remaining presentation timing: recover player/config text-speed selection,
       HNM actor reset/loop policy, and audio mix levels.
 
+### SUBTITLE PERSISTENCE FIX (2026-07-20) — text now renders stably
+
+The dialogue subtitle text previously flickered/vanished. ROOT CAUSE (proven via execution-counter
++ register/memory-capture diagnostics in Machine): the glyph rendering is 100% CORRECT (the glyph
+blitter 0x299:0x6a0 draws all 373 pixels of the text from the valid font at gs:0x71aa) — the bug
+was pure PERSISTENCE. The display is TRIPLE-BUFFERED (page_offset_helper 0x17af cycles the draw
+pointers gs:0x5219/0x521d through pages 0/0x4000/0x8000). The game's per-frame reveal draw (0x93f8,
+called from the main loop at 0x12bd) only redraws the subtitle when its gate gs:[0x27e2]&2 (or
+5e64/67bc) is set; the one-shot present (0xbe29) sets 27e2=2 then clears it, so the glyphs (drawn
+once to one page) get overwritten when the scene re-blits that page on its turn in the rotation.
+
+FIX (src/recomp/runtime.rs, `force_sub` default-on): each frame, WHILE the game's own "subtitle
+active" flag gs:[0xba0]&1 is set (set by the present at 0xbe11, cleared when the line ends), refresh
+gs:[0x27e2]=2 so the game's OWN reveal draw renders the glyphs on the current page every frame.
+Only fires during active subtitles (0xba0&1) so it does not touch the logos/boot — Mindscape logo
+still matches DOSBox at mean_abs=1.02. Verified: "WAIT COMMANDER..." renders stably (green, top) in
+all dialogue scenes. NOTE this is a targeted activation-signal fix, not the fully-faithful
+mechanism — the game keeps the gate set persistently by a path my runtime doesn't execute (an
+upstream VM-state divergence). Pinning that (and the separate mid-screen video-transmission static)
+needs a DOSBox memory differential. Diagnostics retained: blood.rs --script trap/capture/watch cmds.
+
 ### Path B runtime — playable faithful port (ROADMAP, decided 2026-07-20)
 
 Strategy: invert Path B's sequencing. Instead of lifting to 100% coverage and

@@ -219,7 +219,7 @@ impl Runtime {
             searches: HashMap::new(),
             int_log: HashMap::new(),
             trace_ints: false,
-            force_sub: false,
+            force_sub: true, // subtitle-persistence fix on by default (only fires when 0xba0&1)
             trace_glyph: false,
             glyph_log: Vec::new(),
             console: String::new(),
@@ -431,9 +431,14 @@ impl Runtime {
             if self.cpu.steps >= max_steps {
                 return RunEnd::StepBudget;
             }
-            // EXPERIMENT: force the subtitle-active gate flag so the per-frame reveal draw
-            // (0x93f8) always renders. Confirms whether "drawn once, not persisted" is the bug.
-            if self.force_sub {
+            // Subtitle persistence: the game's per-frame reveal draw (0x93f8, main loop 0x12bd)
+            // only redraws the subtitle when its gate flag gs:[0x27e2]&2 (or 5e64/67bc) is set.
+            // The one-shot present (0xbe29) sets 27e2=2 then clears it, so on a triple-buffered
+            // display the glyphs (drawn once to one page) get overwritten when the scene re-blits
+            // that page. Refresh the gate each frame WHILE a subtitle is active — the game's own
+            // "subtitle active" flag gs:[0xba0]&1 (set at 0xbe11, cleared when the line ends) —
+            // so the game's own reveal draw renders the glyphs on the current page every frame.
+            if self.force_sub && self.m.read8(0x0e84, 0x0ba0) & 1 != 0 {
                 self.m.write16(0x0e84, 0x27e2, 2);
             }
             // pending mouse events -> user callback (a real DOS mouse driver far-calls it)

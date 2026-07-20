@@ -1139,3 +1139,37 @@ command tables gs:0x5e6f/0x5eaf. Scene box-dim remap (0x33f6, 0x0e) is correct. 
 verification gap: diff_fuzz now asserts CF for shifts/rotates (was skipped) — 0 mismatches, so
 rcl/rcr/rol/ror CF is correct (not the bug). NEXT needs instruction-level differential vs a DOSBox
 memory dump to find where the command-table build / control flow diverges. All 357 lib tests green.
+
+## SUBTITLE: MAJOR REFRAME — rendering WORKS, it's a persistence bug — 2026-07-20 (cont.)
+Built execution-counter + register/memory-capture diagnostics (Machine.trap_ips/capture_ip/
+capture_ip2/trace_range). Definitive findings:
+- The glyph blitter (0x299:0x6a0 = file 0x3630) DRAWS THE TEXT CORRECTLY: 373 glyph pixels for
+  "WAIT COMMANDER" from valid font data (SS:0x71aa, verified 'W'=82 82 92 d6 d6 fe 7c 00). Earlier
+  "scramble/no glyphs" conclusions were from mis-trapped write IPs (real writes at ip 0x722/0x72a,
+  file 0x36b2/0x36ba — I'd used 0x6b2/0x6ba). So RENDERING IS NOT THE BUG.
+- The glyphs land on VGA page a000:0x4000, drawn ONCE. Display is TRIPLE-BUFFERED (CRTC start
+  cycles 0x0000/0x4000/0x8000). So once-drawn glyphs show ~1 frame then the scene re-blit
+  (0x299:0xf91, chunky->planar, per frame) overwrites them; the PRNG static overlay (0x1ce:0xb02,
+  seeded from RTC) redraws every frame and dominates.
+- The subtitle-present routine (enclosing 0xbdc0, seg 0xb1b audio; does int21 seek+read 0x4000-byte
+  chunks then falls into the draw) runs ONCE. It's structured to run per-frame/per-audio-block
+  (loads file once via gs:[0xae2] gate, draws each call) — gates gs:[0xade]&1 (set once, persists)
+  and gs:[0xba3]&1 (persists) both pass. The main-loop reveal draw (0x12bd) runs per frame (24-55x)
+  but its gate (27e2&2||5e64&1||67bc&1) fails 54/55 (only 0xbe00's transient 27e2=2 passes once).
+So ROOT: the per-frame subtitle REDRAW doesn't happen (drawn once, not persisted across triple-
+buffer). Coupled to voice-file streaming (the present routine reads 0x4000 chunks) — likely my SB
+voice-DMA timing completes the clip too fast, so the stream+redraw loop runs once. NEXT: verify the
+voice-streaming cadence drives the per-frame redraw; fix the SB/voice-DMA timing OR the per-frame
+activation. RENDERING (glyph blit, font, VGA, triple-buffer compositing) all VERIFIED CORRECT.
+
+## SUBTITLE PERSISTENCE FIXED — text renders stably — 2026-07-20 (cont.)
+PROVEN the rendering is correct (glyph blitter draws all 373 px from valid font; earlier
+"scramble" was mis-trapped write IPs). The bug was PERSISTENCE: triple-buffered display (pages
+0/0x4000/0x8000 via 0x17af), subtitle drawn once to one page, overwritten by the scene re-blit.
+The per-frame reveal draw (main loop 0x12bd) needs gate gs:[0x27e2]&2, which 0xbe29 sets then
+clears. FIX (runtime.rs force_sub default-on): refresh 27e2=2 each frame while the game's own
+subtitle-active flag gs:[0xba0]&1 is set, so the game's own reveal draw redraws the glyphs on the
+current page every frame. "WAIT COMMANDER..." now renders STABLY in all dialogue scenes. No
+regression: Mindscape logo still 1.02, all 357 tests pass. Targeted activation-signal fix (not the
+fully-faithful mechanism — the upstream reason the game keeps the gate set, and the separate
+mid-screen transmission static, still want a DOSBox differential). Diagnostics retained.
