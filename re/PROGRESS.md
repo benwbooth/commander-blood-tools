@@ -1216,3 +1216,48 @@ NEXT SESSION START HERE: trace the set/clear of 0x67b0/0x67bc/0x679a across the 
 machine (0x5816/0x5D8F C4-path, 0x5486 named-object scan, the A6/C4 subrecord at gs:0x6724+0x3A)
 to find why my flags don't reach the advance-enabling state; DOSBox memory comparison would pin it
 directly but the savestate/debugger paths are non-functional in this DOSBox-X build.
+
+## SUBTITLE DIVERGENCE — precisely root-caused with DOSBox ground truth (2026-07-20, session cont.)
+BIG REFRAME (prior "frozen attract / dialogue stall" framing was imprecise): my runtime plays the
+FULL attract correctly — all ~12 alien-character scenes render in rich color and cycle (verified
+via contact sheet vs DOSBox frames 05-23). The SOLE remaining visible divergence is the INTRO
+CREDIT SUBTITLE:
+- DOSBox frame_06 (no-input attract, ~6s, elephant-alien-on-water scene): clean white glyphs
+  "CRYO Interactive Entertainment 1995" (then later "Commander BLOOD V 1.0"). Ground truth also in
+  accuracy/captures/dialogue/dlg_09.png ("CRYO Interactive Entertainment 1995" over the ogre).
+- MY runtime, SAME scene: a scrambled white-noise band showing "WAIT COMMANDER" (static, frozen).
+
+ROOT CAUSE CHAIN (established this session, empirically):
+1. The two intro-credit strings live in DESCRIPT.DES (0x0a3a "CRYO Interactive Entertainment 1995",
+   0x0a61 "Commander BLOOD  V 1.0"), grouped with blintr.voc + cliptoot.hnm (voice+anim). Both
+   strings ARE loaded into my runtime's memory (memfind: lin 0x79904, gs:0xf1c, EMS 0x103bb0).
+2. "WAIT COMMANDER ..." is a HARDCODED EXE default string at BLOODPRG.EXE 0xd5b0, resident at
+   gs:0x190 ("WAIT COMMANDER .....GO.ON.OFF.REC...C:\cbl" — a static string pool).
+3. TWO subtitle systems: (a) the "WAIT COMMANDER" prompt routine 0xbdc0 — gated by gs:[0xade]&1 &&
+   gs:[0xba3]&1, copies the static gs:0x190 -> gs:0xe18, draws ONCE via reveal draw with phase
+   gs:0x5e65=0 (STATIC table 0x5eaf); (b) the DIALOGUE-VM 0xC4 presentation record (handler at file
+   0x58d4, activation 0x5904 sets gs:0x67ac=1) — the CLEAN-glyph path that loads DESCRIPT.DES text
+   and runs the reveal materialize 2->1->0 (tables 0x5e6f).
+4. My runtime fires system (a) not (b): gs:0x67ac is ALWAYS 0 (VM never processes a 0xC4 record);
+   IP-sampling during the intro (tick 0-500) shows ZERO samples in the VM code region (file
+   0x54xx-0x5axx) — the dialogue VM never executes during the intro. Meanwhile gs:0xade=1 (set once
+   at intro setup file 0x0f9b, gated on [0xc3b]!=1 i.e. always) and gs:0xba3=1 (static EXE init,
+   never written in 500 ticks) — so 0xbdc0's gates pass and WAIT COMMANDER shows.
+5. The reveal state machine (file 0x93F5, called per-frame from main loop 0x12bd as 0x71e:0x1c15)
+   early-outs every frame because its gate `[0x27e2]&2 || [0x5e64]&1 || ([0x67bc]&1 &&
+   [0x679a]==0x5e64)` is never persistently set; timers gs:0xb31/0xb37 stay 0 (0xb31 IS ticked by
+   the ISR prescaler cascade at file 0x813 but only while the gate lets the machine init them);
+   phase gs:0x5e65 stuck at 0 (static). Hence the frozen noise band.
+6. DNSDB.DRV (resource id 42, [0xc3b]) is read from inside BLOOD.DAT (opened OK), NOT a standalone
+   file — copying a standalone DNSDB.DRV into the game dir did NOT change behavior (reverted).
+
+WHAT THIS MEANS: the remaining work is the INTRO-CREDIT PRESENTATION path — either the dialogue-VM
+must execute the intro's 0xC4 presentation record (load DESCRIPT.DES credit -> gs:0x190/reveal,
+set 0x67ac), or the intro cinematic (cliptoot.hnm) must present the credit via its subtitle path.
+Neither runs in my runtime; the WAIT COMMANDER prompt fires instead. This is the deep, prior-
+flagged dialogue-VM / intro-cinematic presentation subsystem. Everything else is verified faithful
+(bit-exact engine x2 proofs, full attract scene sequence, color, flicker, audio, determinism,
+interactivity, 357 tests). NEXT: find what SHOULD drive the intro cinematic's credit presentation
+(trace how DOSBox reaches the 0xC4 handler / cliptoot.hnm subtitle opcode at the elephant-alien
+scene) — a DOSBox memory/instruction differential at ~6s would pin the exact trigger.
+Diagnostics added this session (blood.rs --script): revsample, memfind, presflags, ipstart/ipdump.

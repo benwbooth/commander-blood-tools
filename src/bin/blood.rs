@@ -327,6 +327,49 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                     rt.m.read16(gs, 0x5e65), rt.m.read8(gs, 0x5b56),
                     rt.m.read8(gs, 0x5e64), rt.m.read16(gs, 0x27e2), rt.m.read16(gs, 0x679a));
             }
+            "presflags" => {
+                let gs = rt.m.regs.gs;
+                eprintln!("67b0={:02x} 67bc={:02x} 679a={:04x} (needs 679a==0x67b0 or 67b0&1) 6724fp={:04x}:{:04x} 674a={:04x}:{:04x} 6728={:04x}:{:04x}",
+                    rt.m.read8(gs,0x67b0), rt.m.read8(gs,0x67bc), rt.m.read16(gs,0x679a),
+                    rt.m.read16(gs,0x6726), rt.m.read16(gs,0x6724),
+                    rt.m.read16(gs,0x674c), rt.m.read16(gs,0x674a),
+                    rt.m.read16(gs,0x672a), rt.m.read16(gs,0x6728));
+            }
+            "revsample" => {
+                let count = if w.len() > 1 { arg(1) } else { 20 };
+                let step = if w.len() > 2 { arg(2) } else { 20 };
+                for _ in 0..count {
+                    let gs = rt.m.regs.gs;
+                    let txt: String = (0..12u32).map(|i| {
+                        let b = rt.m.read8(gs, 0x0e18 + i);
+                        if (0x20..0x7f).contains(&b) { b as char } else { '.' }
+                    }).collect();
+                    eprintln!("t{:>5} phase={} pos={:04x} 67ac={:02x} ade={:02x} ba3={:02x} ba0={:02x} ae2={:02x} 67bc={:02x} 5e64={:02x} 27e2={:02x} txt='{}'",
+                        rt.ticks(),
+                        rt.m.read16(gs,0x5e65), rt.m.read16(gs,0x5e58),
+                        rt.m.read8(gs,0x67ac), rt.m.read8(gs,0xade), rt.m.read8(gs,0xba3),
+                        rt.m.read8(gs,0xba0), rt.m.read8(gs,0xae2), rt.m.read8(gs,0x67bc),
+                        rt.m.read8(gs,0x5e64), rt.m.read8(gs,0x27e2), txt);
+                    for _ in 0..step {
+                        if !run_tick(&mut rt).map_err(|e| format!("line {}: {e}", ln + 1))? { return Ok(()); }
+                    }
+                }
+            }
+            "memfind" => {
+                let needle = w.get(1).unwrap_or(&"CRYO").as_bytes();
+                let mut hits = 0;
+                let mem = &rt.m.mem;
+                for i in 0..mem.len().saturating_sub(needle.len()) {
+                    if &mem[i..i+needle.len()] == needle {
+                        let seg = (i >> 4) as u32;
+                        eprintln!("  found '{}' at lin {:#07x} (~{:04x}:{:04x})",
+                            String::from_utf8_lossy(needle), i, seg, (i as u32)&0xf);
+                        hits += 1;
+                        if hits >= 8 { break; }
+                    }
+                }
+                eprintln!("memfind '{}': {} hits", String::from_utf8_lossy(needle), hits);
+            }
             "ipstart" => { rt.ip_sample = Some(Default::default()); eprintln!("ip sampling on"); }
             "ipdump" => {
                 if let Some(h) = rt.ip_sample.take() {
