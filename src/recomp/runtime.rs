@@ -1262,8 +1262,8 @@ impl Runtime {
                 self.sb_out.push_back(!a);
             }
             0xe1 => {
-                self.sb_out.push_back(3); // DSP 3.01 (SB Pro era protocol the game speaks)
-                self.sb_out.push_back(1);
+                self.sb_out.push_back(4); // DSP 4.05 — SB16 (matches DOSBox default sbtype=sb16;
+                self.sb_out.push_back(5); // the game is launched as SB16 via the S162227 arg)
             }
             _ => {
                 if self.trace_ints {
