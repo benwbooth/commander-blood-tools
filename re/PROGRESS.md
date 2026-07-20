@@ -1430,3 +1430,23 @@ the blocker. The intro credit is confirmed to CYCLE between "CRYO Interactive En
 db_long.sh / db_menu.sh with matching mounts+args) as a coarse visual oracle - just not memory. The
 only remaining way to pin this (a first-diverging-instruction differential) needs a DOSBox build WITH
 the debugger, or a working savestate, neither available here.
+
+## TWO REAL DEVICE BUGS FOUND + FIXED (2026-07-20) — path-B device hunt
+Systematically traced EVERY port the game reads during the intro and checked each against standard
+SB16/PC hardware. This found TWO genuine device-value bugs (disproving the earlier "everything
+bit-exact-consistent" inference — device differences DID exist):
+1. SB DSP version: my runtime reported 3.01 (SB Pro); DOSBox's default sbtype=sb16 (which the S162227
+   launch arg selects) reports 4.05. FIXED -> 4.05. Safe (same SB command stream, no 16-bit DMA).
+2. 8259 PIC interrupt mask (ports 0x21/0xA1): my run loop delivered IRQs (timer/kbd/SB) based ONLY on
+   the CPU IF, never checking the mask; the mask ports were unhandled (writes ignored, reads 0xff).
+   FIXED: track pic_mask0/1 (default 0xB8/0xFF), serve reads, honor writes, gate IRQ delivery on the
+   mask bit. Verified: game unmasks IRQ7 for the SB so audio still works; timer/boot/attract unaffected.
+NEITHER fixes the intro-credit gap, BUT both reduce real divergence from DOSBox. After these, the
+intro's device READS are all handled correctly (SB reset 0x226=0xff, DSP version 4.05, PIC mask
+tracked). So the credit divergence is NOT a device read value. It is narrowed to either a device
+BEHAVIOR/timing difference (SB IRQ/DMA completion cadence, VGA 0x3DA retrace phase) or an interpreter
+edge case not covered by the oracle/diff-fuzz — both still needing a DOSBox execution-trace
+differential (verified non-functional here: savestate produces no file, no debugger in this build).
+The credit is confirmed voice-coupled (mixer presents the static gs:0x190 with no voice; the intro
+voice never plays: gs:0xc49=0, no .voc opened, voice-streaming 0xbf95 runs 0x). The voice-cue never
+fires in my runtime; that is the upstream event whose non-firing produces the WAIT-COMMANDER fallback.
