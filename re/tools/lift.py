@@ -283,11 +283,45 @@ def emit(insn):
         raise NotImplementedError(f"btr size {op[0].size}")
     if m in ("div", "idiv"):
         src, _ = opval(op[0]); sz = op[0].size
-        cast = {1: "u8", 2: "u16"}.get(sz)
-        h = {("div", 1): "div8", ("div", 2): "div16", ("idiv", 1): "idiv8", ("idiv", 2): "idiv16"}.get((m, sz))
+        cast = {1: "u8", 2: "u16", 4: "u32"}.get(sz)
+        h = {("div", 1): "div8", ("div", 2): "div16", ("div", 4): "div32",
+             ("idiv", 1): "idiv8", ("idiv", 2): "idiv16", ("idiv", 4): "idiv32"}.get((m, sz))
         if h:
             return [f"m.regs.{h}(({src}) as {cast});"]
         raise NotImplementedError(f"{m} size {sz}")
+    if m == "cwd":
+        return ["m.regs.cwd();"]
+    if m == "cdq":
+        return ["m.regs.cdq();"]
+    if m == "enter":
+        # enter imm16, imm8 — only level 0 is modelled (push bp; bp=sp; sp-=imm16).
+        frame = op[0].imm & 0xffff
+        level = op[1].imm & 0xff
+        if level != 0:
+            raise NotImplementedError(f"enter level {level}")
+        return ["m.regs.set_sp(m.regs.sp().wrapping_sub(2));",
+                "m.write16(m.regs.ss, m.regs.sp() as u32, m.regs.bp());",
+                "m.regs.set_bp(m.regs.sp());",
+                f"m.regs.set_sp(m.regs.sp().wrapping_sub(0x{frame:x}));"]
+    if m.startswith("repne ") or m.startswith("repe ") or m in ("scasb", "scasw"):
+        # (rep(n)e) scasb/scasw: compare AL/AX with es:[di], di += step, cx-- (if prefixed),
+        # repeat while cx!=0 and ZF matches the prefix (repne: until equal, repe: while equal).
+        pref = m.split()[0] if " " in m else None
+        base = m.split()[-1]
+        sz = 1 if base == "scasb" else 2
+        rdfn = "read8" if sz == 1 else "read16"
+        acc = "m.regs.al()" if sz == 1 else "m.regs.ax()"
+        cmpfn = "cmp8" if sz == 1 else "cmp16"
+        step = f"(if m.regs.df {{ ({sz}u16).wrapping_neg() }} else {{ {sz}u16 }})"
+        body = [f"m.regs.{cmpfn}({acc}, m.{rdfn}(m.regs.es, m.regs.di() as u32));",
+                f"m.regs.set_di(m.regs.di().wrapping_add({step}));"]
+        if pref is None:
+            return body
+        cond = "m.regs.zf" if pref == "repne" else "!m.regs.zf"  # continue while this holds
+        return ["while m.regs.cx() != 0 {",
+                "    m.regs.set_cx(m.regs.cx().wrapping_sub(1));"] + \
+               ["    " + b for b in body] + \
+               [f"    if {cond} {{ break; }}", "}"]
     if m == "imul":
         sz = op[0].size
         if len(op) == 1:  # one-operand: AX/DX:AX = acc * src
@@ -376,11 +410,12 @@ def emit(insn):
                 f"let __s = m.read16({seg}, ({off}).wrapping_add(2));",
                 wr(dst, "__o"), f"m.regs.{segreg} = __s;"]
     if m == "xchg":
-        if op[0].type == capstone.x86.X86_OP_REG and op[1].type == capstone.x86.X86_OP_REG:
-            a = insn.reg_name(op[0].reg); b = insn.reg_name(op[1].reg)
-            av, _ = opval(op[0]); bv, _ = opval(op[1])
-            return [f"let __t = {av};"] + opset(op[0], bv) + opset(op[1], "__t".replace("__t", f"({{}})".format("__t")))
-        raise NotImplementedError("xchg mem")
+        # swap the two operands (reg,reg or reg,mem / mem,reg). Capture both values first, then
+        # write each back crossed. No flags.
+        av, _ = opval(op[0]); bv, _ = opval(op[1])
+        castsz = {1: "u8", 2: "u16", 4: "u32"}[op[0].size]
+        return [f"let __t = ({av}) as {castsz};", f"let __u = ({bv}) as {castsz};"] \
+            + opset(op[0], "__u") + opset(op[1], "__t")
     if m == "push":
         o = op[0]
         if o.size == 2:
