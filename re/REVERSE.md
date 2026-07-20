@@ -2414,9 +2414,22 @@ mean_abs 1.09), known launch args (`AMR S162227 EMS WRIC:\cblood\`).
       color 0xfd/fe/ff). ROOT CAUSE remaining: the visible band is a STALE 0xEF
       scramble layer; the clean fd/fe/ff glyphs from 0x3630 are sparse on both
       pages, and the reveal-complete handler (0x94c8, sets gs:0x67bb=1) did NOT
-      run (67bb=0) — so the dialogue updater's final clean-text draw/flip isn't
-      persisting. NEXT: trace the dialogue updater 0x93F8-0x94B8 call cadence +
-      page-flip ordering; the 0xEF scramble source routine (not 0x3630).
+      run (67bb=0). FULL PIPELINE NOW TRACED (2026-07-20, via a Machine write-watch
+      that records the code addr + ds:si of each 0xEF write): rendering is
+      compositor -> CHUNKY back-buffer (seg 0x266c, linear 1 byte/px) -> a
+      chunky->planar de-interleave blit (seg 0x299:0xf91 = file 0x3F21, `movsb`
+      per plane with map-mask 0x102/0x202/0x402/0x802) -> Mode-X VRAM. The SCENE
+      composites correctly (smooth gradients in the chunky buffer); only the
+      subtitle band holds 0xEF. The 0xEF enters the CHUNKY buffer via the span
+      primitive `gfx_clipped_draw` (0x299:0x3321, file 0x3321): it does
+      `les di,gs:[0x5221]` (display buffer) then either a solid `rep stosb al=bp`
+      fill OR, when `gs:[0x5b56]&1`, a PALETTE-REMAP span (`mov al,es:[di];
+      xlatb DS:0x5f11; stosb`). So the subtitle band is filled/remapped to 0xEF.
+      NEXT THREAD: find the subtitle caller of gfx_clipped_draw + why bp/the
+      remap table 0x5f11 yields 0xEF scramble (is 0x5f11 loaded? is [0x5b56]
+      set? is this the reveal "materialize" remap effect?). The VRAM blitter
+      0x3630 (fd/fe/ff) is a SEPARATE path that gets overwritten by the chunky
+      blit. Diagnostics in blood.rs --script: watchef/watchchunky/watchdump.
 - [ ] M5 — progressive replacement: dispatch table IP→lifted-fn at basic-block
       entry; runtime trace logs (a) indirect-call targets → feeds the static
       composition tiers, (b) per-function coverage → lift priority list. Keep

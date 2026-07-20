@@ -193,6 +193,38 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                     rt.m.read8(gs, 0x0e18), rt.m.read8(gs, 0x0e19), rt.m.read8(gs, 0x0e1a), rt.m.read8(gs, 0x0e1b),
                 );
             }
+            "watchef" => {
+                let start = 0xa0000 + 0x8000 + 100 * 80;
+                rt.m.watch = Some((0xef, start..start + 30 * 80 + 0x30000));
+                rt.m.watch_hits.clear();
+                eprintln!("watch armed for 0xEF writes to VRAM subtitle band");
+            }
+            "watchchunky" => {
+                // 0xEF writes into the chunky back-buffer (seg 0x266c) subtitle band
+                let base = 0x266cusize * 16;
+                rt.m.watch = Some((0xef, base + 0x7c00..base + 0x8600));
+                rt.m.watch_hits.clear();
+                eprintln!("watch armed for 0xEF writes to chunky buffer band");
+            }
+            "watchdump" => {
+                let mut hits = rt.m.watch_hits.clone();
+                hits.sort();
+                eprintln!("0xEF writers ({}):", hits.len());
+                for (cs, ip, ds, si) in &hits {
+                    let rel = cs.wrapping_sub(0x1a2);
+                    let file = 0x600 + (rel as usize) * 16 + *ip as usize;
+                    eprintln!("  cs:ip={cs:04x}:{ip:04x} (seg 0x{rel:x}, file ~{file:#07x}) src ds:si={ds:04x}:{si:04x}");
+                }
+                // dump the chunky source around the first hit's ds:si
+                if let Some((_, _, ds, si)) = hits.first() {
+                    let base = si.saturating_sub(4);
+                    let mut chunk = Vec::new();
+                    for i in 0..320u32 { chunk.push(rt.m.read8(*ds, base as u32 + i)); }
+                    std::fs::write(out_dir.join("chunky_src.bin"), &chunk).unwrap();
+                    eprintln!("dumped 320B chunky source at {ds:04x}:{base:04x}");
+                }
+                rt.m.watch = None;
+            }
             "scanpages" => {
                 let v = rt.m.vga.as_deref().unwrap();
                 for (name, base) in [("page0", 0usize), ("page1", 0x8000usize)] {

@@ -1081,6 +1081,12 @@ pub struct Machine {
     pub regs: Regs,
     pub mem: Vec<u8>,
     pub vga: Option<Box<Vga>>,
+    /// Current instruction pointer, updated by the interpreter each step. Lets memory-write
+    /// watches attribute a write to the code address that made it (diagnostics only).
+    pub ip: u16,
+    /// When set, `write8` records (cs,ip,ds,si) of any write of `watch_val` into `watch_range`.
+    pub watch: Option<(u8, std::ops::Range<usize>)>,
+    pub watch_hits: Vec<(u16, u16, u16, u16)>,
 }
 
 pub const MEM_SIZE: usize = 0x40_0000; // 4 MB — the EXE image (deterministic oracle mirrors it),
@@ -1099,6 +1105,9 @@ impl Machine {
             regs: Regs::default(),
             mem: vec![0u8; MEM_SIZE],
             vga: None,
+            ip: 0,
+            watch: None,
+            watch_hits: Vec::new(),
         }
     }
 
@@ -1125,6 +1134,14 @@ impl Machine {
     #[inline]
     pub fn write8(&mut self, seg: u16, off: u32, v: u8) {
         let a = Self::lin(seg, off);
+        if let Some((wv, range)) = &self.watch {
+            if v == *wv && range.contains(&a) && self.watch_hits.len() < 10000 {
+                let hit = (self.regs.cs, self.ip, self.regs.ds, self.regs.si());
+                if !self.watch_hits.iter().any(|h| h.0 == hit.0 && h.1 == hit.1) {
+                    self.watch_hits.push(hit);
+                }
+            }
+        }
         if let Some(vga) = self.vga.as_deref_mut() {
             if (0xa0000..0xb0000).contains(&a) {
                 return vga.write(a - 0xa0000, v);

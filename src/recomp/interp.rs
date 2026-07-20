@@ -509,6 +509,7 @@ impl Cpu {
         self.steps += 1;
         m.regs.cs = self.cs;
         let ip0 = self.ip;
+        m.ip = ip0;
         let mut ovr: Option<u8> = None;
         let mut opsz = false;
         let mut adsz = false;
