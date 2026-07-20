@@ -2366,13 +2366,34 @@ mean_abs 1.09), known launch args (`AMR S162227 EMS WRIC:\cblood\`).
       (threshold 3.0, intro-mind-frame01 scenario), and the astronaut intro
       cinematic renders at 100M steps.** `runtime_boot --steps N --shot-every M
       --out DIR [--trace]` dumps PPM frames + int histogram.
-- [ ] M3 — interactive: keyboard (int 09h/16h) + mouse (int 33h) + a frontend
-      (SDL2/winit window or headless PNG/input-script mode), correct PIT
-      pacing. Verify full boot sequence vs the dense 0.5s DOSBox captures;
-      then play: attract → title → gameplay.
-- [ ] M4 — audio: SND driver boundary (segment 0x0B1B / far 0x0B1B calls) —
-      either emulate the SB DMA/port layer or hook the driver's far-call
-      surface and feed PCM natively (document which; bit-exactness boundary).
+- [x] M3 core — interactive frontend DONE 2026-07-20: `src/bin/blood.rs` — X11
+      window (x11rb, 3x aspect-fit, letterbox) with real keyboard (scancode+
+      ascii → int 16h/int 9) and mouse (full int 33h: state, counters, ranges,
+      0x0C user-callback via a hlt trampoline at F000:0420), wall-clock pacing
+      at modelled 8 MIPS (STEPS_PER_SECOND) with PIT-divisor-accurate IRQ0
+      cadence (game reprograms to 200 Hz), REP iterations charged as steps so
+      blits cost realistic emulated time. Headless `--script` mode (wait/key/
+      move/click/shot + WAV dump) = the future scene-navigation oracle.
+      VERIFIED under Xvfb: full boot → attract reel (sunset vista, canyon,
+      alien ship, live-action characters, ship corridor) at 3x in the window;
+      xdotool input arrives. Attract-exit → interactive gameplay: still to
+      be mapped (game-specific input; generic keys don't exit attract in real
+      DOSBox either, per earlier RE).
+- [x] M4 core — audio DONE 2026-07-20 (the SB path, not the far-call shortcut:
+      the REAL SND driver code runs). SoundBlaster DSP at base 220 (reset/
+      E0-identify/E1-version 3.01/0x40 TC/0x41-42 rate/0x14 single-cycle/
+      0x1C auto-init/0x48/0xD0-D4) + 8237 DMA ch1 (addr/count flip-flop, page,
+      mode, status TC bits) + completion IRQ 7 → vector 0x0F (driver config
+      block at drv cs:[0x49A]=base,[0x49C]=irq,[0x49D]=dma). The driver's
+      1-byte probe detection passes (probe handler at drv:05C3 sets the flag,
+      EOI 0x20). Playback clock: DMA count decrements at the DSP sample rate
+      vs the step clock; the count-poll helper (drv:02CA) drives the game's
+      streaming. PCM tapped at DMA-start into `sb_pcm` (verified real speech/
+      music: full 8-bit range, std=39) and streamed live via cpal in the
+      frontend (ring + resampler). KEY FIXES en route: word-sized `out dx,ax`
+      must write AL→port, AH→port+1 (VGA index/data + DAC pairs; fixing this
+      un-garbled the menu band and palette); PIT lo/hi write phase via port
+      0x43.
 - [ ] M5 — progressive replacement: dispatch table IP→lifted-fn at basic-block
       entry; runtime trace logs (a) indirect-call targets → feeds the static
       composition tiers, (b) per-function coverage → lift priority list. Keep

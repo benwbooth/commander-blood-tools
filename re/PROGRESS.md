@@ -1073,3 +1073,23 @@ astronaut intro cinematic renders at 100M steps. The ORIGINAL code is playing it
 runtime.** All 356 lib tests remain green (incl. the 14,999-vector interp corpus).
 NEXT: longer boot -> attract loop; M3 input (keyboard/mouse events into the queues); timer/PIT
 calibration vs capture timeline; M4 audio (SB DSP/DMA or SND driver boundary); M5 lift dispatch.
+
+## PATH B RUNTIME M3+M4: PLAYABLE WINDOW + REAL AUDIO — 2026-07-20 (same session)
+The game now runs in an X11 window (src/bin/blood.rs) with live cpal audio, real mouse/keyboard,
+and wall-clock pacing; headless --script mode drives deterministic input timelines + screenshots
++ WAV dumps (the future dialogue-scene oracle). Debug journey worth remembering:
+- "Menu stuck grayscale/noise/static" was FOUR stacked causes, unpeeled in order:
+  (1) mode-13h-UNCHAINED planar VGA (fixed with Machine::Vga planes),
+  (2) word OUT `out dx,ax` dropping AH — VGA index/data pairs never programmed (map mask!),
+  (3) SB detection waiting for the completion IRQ — driver config block says IRQ 7 (vector 0x0F),
+      not IRQ 2 as the launch-arg guess suggested; probe handler at driver cs:05C3,
+  (4) rep-string steps uncounted -> blits free -> pathological wall cost + wrong pacing.
+- The game's SND driver (loaded to a runtime segment, cs~765E) does: DSP reset/E0/E1 handshake,
+  1-byte DMA probe w/ IRQ-flag timeout loop, then streams 0x14 single-cycle blocks (~11kHz) and
+  polls the DMA count (helper drv:02CA) for position. All of it now runs AS-IS.
+- PCM tap verified real audio (mean 128.8, std 38.9, all 256 values); live-streamed via cpal.
+- VERIFIED under Xvfb+xdotool: boot -> attract reel in-window (sunset vista/canyon/alien ship/
+  live-action chars/corridor), input events reach the game.
+NEXT: map attract-exit -> interactive gameplay (game-specific input; use --script probes on the
+early menu), DOS mouse-driver cursor overlay, timer calibration vs dense DOSBox captures, then
+M5 (lift dispatch at verified entry points + runtime trace -> indirect-site resolution).
