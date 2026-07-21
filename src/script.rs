@@ -10,7 +10,7 @@ use crate::util::media_stem;
 use crate::vm::{self, VmToken};
 
 pub const OBJECT_LOCATION_FIELD: usize = 24;
-pub const OBJECT_TALK_FIELD: u16 = 0x3a;
+pub const OBJECT_TALK_FIELD: u16 = 58;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
 pub struct DebSymbol {

@@ -84,7 +84,7 @@ pub const ALIEN_TRANSFORM_NEUTRAL: i32 = 0x8000;
 
 /// The half-extent of the object-space toroidal wrap (`0x4000`); positions wrap into
 /// `[-0x4000, 0x4000)` relative to the wrap origin (method `0x999`).
-pub const ALIEN_POSITION_WRAP: i16 = 0x4000;
+pub const ALIEN_POSITION_WRAP: i16 = 16384;
 
 /// Low-15-bit mask used while folding a position into the toroidal play-space (a bit mask, so
 /// hexadecimal is the natural form).
