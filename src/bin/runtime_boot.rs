@@ -286,50 +286,46 @@ fn main() {
             rt.mouse_release(0);
             next_input += 5_000_000;
         }
-        let read_sub = |rt: &Runtime| -> String {
-            let g = 0x0e84u16;
-            let mut s = String::new();
-            for i in 0..60u32 {
-                let b = rt.m.read8(g, 0xe18 + i);
-                if b == 0 {
-                    break;
-                }
-                if (32..127).contains(&b) {
-                    s.push(b as char);
-                }
-            }
-            s
-        };
-        // Calibrated from the gridded console frame: the orange orb (the hand's target,
-        // "Cap'n Bob is waiting") is at ~(58,118); the golden menu rows are HONK y95,
-        // TELEPHONE y108, CRYOBOX y122, MENU y137, OPTION y150 at x~165. Click the orb
-        // repeatedly (the tutorial target) with OPTION probed too.
+        // CORRECTLY calibrated from the gridded "Cap'n Bob is waiting" console frame:
+        // orange orb (the hand's target, click-to-advance) at (125,118); Cap'n Bob's
+        // portrait at (65,110); golden menu at x~230 rows HONK y90 / TELEPHONE y105 /
+        // CRYOBOX y120 / MENU y135 / OPTION y150. The tutorial "Click quick" wants the orb,
+        // so click it RAPIDLY (short gaps), interleaving the menu buttons.
+        // The tutorial teaches each console button in turn ("CLICK QUICK ON 'CRYOBOX'"),
+        // so cycle the orb (125,118) + all 5 menu buttons (x~230: HONK y88, TELEPHONE y103,
+        // CRYOBOX y118, MENU y133, OPTION y148) + the submenu-option area (175,115, where a
+        // {BOB_MORLOCK,CANCEL}-style sub-choice appears) — whatever the current step wants
+        // gets clicked, and any sub-choice is dismissed so the tutorial keeps advancing.
         let targets = [
-            (58u16, 118u16), (58, 118), (58, 118), (60, 115), (55, 122),
-            (58, 118), (165, 150), (58, 118), (165, 137), (58, 118),
+            (125u16, 118u16), (230, 88), (230, 103), (230, 118), (230, 133), (230, 148), (175, 115),
         ];
+        let baseline = rt.opened_files.len();
         let mut reached2 = false;
-        for round in 0..48 {
+        for round in 0..250 {
             let (sx, sy) = targets[round % targets.len()];
             rt.set_mouse_pos(sx * 2, sy);
-            let _ = rt.run(rt.cpu.steps + 600_000);
+            let _ = rt.run(rt.cpu.steps + 150_000);
             rt.mouse_press(0);
-            let _ = rt.run(rt.cpu.steps + 600_000);
+            let _ = rt.run(rt.cpu.steps + 150_000);
             rt.mouse_release(0);
-            let _ = rt.run(rt.cpu.steps + 4_000_000);
-            let sub = read_sub(&rt);
-            let has2 = rt
-                .opened_files
-                .iter()
-                .any(|(_, p)| p.to_lowercase().contains("script2"));
-            println!("round {round:2} click({sx},{sy}) files={} sub={sub:?} script2={has2}", rt.opened_files.len());
-            if has2 {
-                reached2 = true;
-                rt.write_ppm(&out.join(format!("tut_reached2_r{round}.ppm"))).unwrap();
-                break;
-            }
-            if round % 6 == 0 {
-                rt.write_ppm(&out.join(format!("tut_r{round:02}.ppm"))).unwrap();
+            let _ = rt.run(rt.cpu.steps + 1_000_000);
+            // A NEW asset beyond the console baseline = a scene transition (tutorial done /
+            // a location loaded). Report the moment it happens.
+            if rt.opened_files.len() > baseline {
+                let newest: Vec<String> = rt.opened_files[baseline..]
+                    .iter().map(|(_, p)| p.clone()).collect();
+                let has2 = newest.iter().any(|p| p.to_lowercase().contains("script2"));
+                println!("round {round:2} NEW files since console: {newest:?} script2={has2}");
+                if has2 || round % 10 == 0 {
+                    rt.write_ppm(&out.join(format!("tut_r{round:03}.ppm"))).unwrap();
+                }
+                if has2 {
+                    reached2 = true;
+                    break;
+                }
+            } else if round % 20 == 0 {
+                println!("round {round:3} click({sx},{sy}) files={} (no new scene yet)", rt.opened_files.len());
+                rt.write_ppm(&out.join(format!("tut_r{round:03}.ppm"))).unwrap();
             }
         }
         println!("TUTORIAL done, reached_script2={reached2} @ {} steps", rt.cpu.steps);

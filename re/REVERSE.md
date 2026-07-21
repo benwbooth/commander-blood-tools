@@ -364,9 +364,23 @@ strings at file 0x13bde): `blood`/`orxx`/`Honk`/`menu`/`arche`/`cryobox`/`Scrute
   reads a save on startup (relevant to the blood.sav-format RE).
 - BOTH ORACLE PATHS TO INTERACTIVE GAMEPLAY ARE BLOCKED (sess: this — WHY OPTION/mini-games/
   progression stay un-RE'd, not lack of trying):
-  1. RECOMP EMULATOR locks at the "WAIT COMMANDER" credit divergence — STATEDUMP (no input):
-     gate flags 5e58=0x0e2b / 6780=0xffff stable 240M→400M steps; never reaches interactive
-     play. This IS the credit-divergence bug (exhaustively bisected; needs a DOSBox trace diff).
+  1. RECOMP EMULATOR — CORRECTED UNDERSTANDING (sess: this, TUTORIAL runs tut4-7 with
+     CORRECT console coords): the emulator IS INTERACTIVE within the tutorial scene — clicks
+     register (clicking a button opens its screen/submenu; the SCRIPT1 tutorial DIALOGUE
+     ADVANCES line by line: "You found the right button" → "WELCOME ABOARD THE ARK… I'M HONK
+     YOUR TRUSTY [COOK]" → "CAP'N BOB KNOWS EVERYTHING… THAT'S WHY HE'S THE BOSS" → "OF COURSE
+     YOU CAN WAKE CAP'N BOB AND QUESTION HIM"). CONSOLE COORDS (gridded): orange orb / advance
+     button (125,118); Cap'n Bob portrait (65,110); golden menu x~230 rows HONK y88 /
+     TELEPHONE y103 / CRYOBOX y118 / MENU y133 / OPTION y148. DECODED: clicking CRYOBOX opens
+     a {BOB_MORLOCK, CANCEL} sub-choice. BUT the tutorial STEP never COMPLETES: it loops back
+     to "CLICK QUICK ON 'CRYOBOX' CAP'N BOB IS WAITING…" and NEVER transitions to SCRIPT2
+     (250 rounds of orb+all-buttons+submenu clicks → no script2.* ever loads). So the REFINED
+     emulator blocker is NOT "can't reach interactive play" (my earlier wrong conclusion) — it's
+     that SCENE/STEP TRANSITIONS don't fire, consistent with the credit-divergence SCENE-
+     COORDINATOR bug (STATEDUMP passive-lock 5e58=0x0e2b is the same coordinator failing to
+     promote the next scene). Fixing the credit divergence = fixing scene transitions = reaching
+     gameplay. Still needs the DOSBox instruction differential, confirmed UNAVAILABLE (this
+     DOSBox-X build has no CPU-logging / heavy-debugger).
   2. REAL GAME under DOSBox-X (drive_real_game.sh, args `AMR S162227 EMS WRIC:\cblood\`) RUNS and
      PROCEEDS PAST the credit — shows "CRYO Interactive Entertainment 1995" + "Commander BLOOD V
      1.0" over the crew showcase (pyramid-floor + eye-orb HUD, green "1" counter). Confirms the
