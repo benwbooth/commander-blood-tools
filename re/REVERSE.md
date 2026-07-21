@@ -332,6 +332,21 @@ strings at file 0x13bde): `blood`/`orxx`/`Honk`/`menu`/`arche`/`cryobox`/`Scrute
   file 0xcec4/0xd6d9) -> a character (izwalito.spr seen loading on click). OPTION likely
   the 3D pyramid menu (manu3.xdb — which is a SEPARATE animated menu, not the console
   text menu handler). The console TEXT menu uses the HONKF.SPR 8x8 font (ported).
+- TELEPHONE ✅ PORTED (sess: this): two-state video-phone. Dialling = BAPPEL.SPR animated
+  call widget (11 frames, idx 1..121 — low-index, renders in the game palette) + callable-
+  crew contact list in the console font. Connected = the crew's talk-head HNM `pe/aa*.hnm`
+  (full-colour, decodes cleanly) as the live feed — used INSTEAD of the `.spr` crew portrait,
+  whose high slots 224-236 need the runtime remap that is NOT statically stored (see the
+  portrait-palette analysis ~L1076). EngineState::load_telephone/render_telephone/phone_*.
+- MENU / OPTION still RE-BLOCKED (need emulator object-handler traces, not fabrication):
+  `menu` and `Honk` are BOTH kind=1 GLOBAL objects present in ALL of SCRIPT1..5's DEB (not
+  per-location characters) — engine built-ins. HONK's handler = SCRIPT1 (decoded); `menu`'s
+  handler scene/assets are undecoded (drive the emulator: open console -> click MENU ->
+  read `opened_files` + MEMDUMP, the CHART.FD method). OPTION = manu3.xdb: manu3.rs ports the
+  logic end-to-end (input decode, item dispatch, tweens, camera pan, pyramid angles, shared
+  ship-3D projection) but the MENU-ITEM DESCRIPTOR TABLES (data) + exact pyramid vertex blit
+  are undecoded, and render_star_map_navview's pyramid is itself a documented approximation —
+  so a FAITHFUL OPTION render is blocked on both. Do not invent a pyramid/menu items.
 
 INTERACTIVE SHIP CONSOLE — REACHED via emulator input injection (sess: whole-game RE).
 The recomp emulator is a driveable runtime oracle: `runtime.inject_key` /
