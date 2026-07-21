@@ -433,3 +433,24 @@ tutorial. This unblocks OPTION + the interactive gameplay (progression, mini-gam
 CONFIRMED THIS RUN (positive): reached the console; MENU opens the {EXPLANATIONS, GAME}
 submenu (3rd confirmation); console = CHART.FD + grayscale portrait orb + orange orb
 button + pointing hand + golden menu.
+
+## Headless DOSBox-X mouse drive of the real game (sess: whole-game RE, 2026-07-21)
+GOAL: reach interactive gameplay in the REAL game (which, unlike the recomp emulator,
+proceeds past the credit -> shows "CRYO Interactive Entertainment 1995", not WAIT COMMANDER)
+so OPTION/mini-games/progression can be observed + decoded.
+TRIED: (1) drive_real_game.sh + args, Esc/Return/center-clicks -> cycles the attract
+(CRYO logo -> crew showcase -> static -> repeat), never stable interactive control.
+(2) autolock=false absolute clicks -> DOSBox menu bar appears, still cycles.
+(3) autolock=true + mousemove_relative (home to 0,0 then relative to target) + click -> the
+mouse is NEVER CAPTURED (DOSBox menu bar stays visible = pointer not grabbed), so neither
+absolute nor relative motion drives the int33 cursor; content keeps cycling the attract.
+WHY-FAILED: headless Xvfb + DOSBox-X mouse capture/hit-testing -- xdotool events don't reach
+the game's int33 mouse. The game is mouse-driven (pyramid-nav + dialogue clicks) so keyboard
+alone can't drive it. Same wall a prior dedicated session hit (sess 003). machine=svga_s3,
+cycles=max, autolock on/off all tried.
+BETTER-APPROACH: (a) run DOSBox-X NON-headless (real X display) where mouse capture works;
+(b) the USER runs the game once + captures reference frames of OPTION/gameplay (user confirms
+the intro auto-ends into gameplay on a real machine); (c) DOSBox-X MAPPER-scripted input
+instead of xdotool; (d) fix the recomp emulator credit divergence so the emulator (which HAS
+programmatic inject_key/mouse_press) can reach interactive play. Any ONE unblocks the
+interactive-systems RE. STOP-RULE: do NOT keep retrying headless xdotool mouse -- confirmed wall.
