@@ -111,6 +111,16 @@ fn main() {
         e.phone_active = false;
     }
 
+    // Ending finale: arms, plays real content, and reaches completion.
+    if e.load_ending(assets) {
+        e.start_ending();
+        for _ in 0..6 { e.step(MouseInput::default()); }
+        check(nonblank(&e.framebuffer) > 500, "ending finale renders");
+        for _ in 0..4000 { if e.ending_finished() { break; } e.step(MouseInput::default()); }
+        check(e.ending_finished(), "ending finale plays to completion");
+        e.ending_active = false;
+    }
+
     // 5) Play each destination's dialogue scene to completion, following D2 chaining.
     for dest in 1..=5u32 {
         if let (Ok(c), Ok(v), Ok(d), Ok(b)) = (rd(dest, "COD"), rd(dest, "VAR"), rd(dest, "DIC"), rd(dest, "DEB")) {

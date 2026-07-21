@@ -261,6 +261,13 @@ pub struct EngineState {
     console_font: Vec<SpriteFrameImage>,
     /// Whether the ship-bridge hub is the active view.
     pub bridge_active: bool,
+    /// The game-ending finale cutscene (`sq/fin.hnm`) — the bookend to the intro, played
+    /// once to completion when the player has finished the game.
+    ending_scene: Option<HnmFile>,
+    /// The finale's current frame (advances to the last frame, then holds).
+    ending_frame: usize,
+    /// Whether the ending finale is the active view.
+    pub ending_active: bool,
     /// The video-phone call screen (console TELEPHONE option): the animated call widget
     /// (`BAPPEL.SPR`, a low-index UI sprite that decodes cleanly) plus the roster of
     /// callable crew. Each contact is (display name, their talk-head HNM `pe/aa*.hnm`,
@@ -384,6 +391,9 @@ impl EngineState {
             bridge_stations: Vec::new(),
             console_font: Vec::new(),
             bridge_active: false,
+            ending_scene: None,
+            ending_frame: 0,
+            ending_active: false,
             phone_widget: Vec::new(),
             phone_contacts: Vec::new(),
             phone_contact: 0,
@@ -833,6 +843,43 @@ impl EngineState {
         self.framebuffer.copy_from_slice(&self.scene_buffer);
         self.scene_frame += 1;
         self.cryobox_scene = Some(hnm);
+    }
+
+    /// Load the game-ending finale cutscene (`sq/fin.hnm`, the "fin"/end video) — the
+    /// bookend to the intro. Returns whether it loaded.
+    pub fn load_ending(&mut self, assets: &Path) -> bool {
+        self.ending_scene = HnmFile::open(&assets.join("sq").join("fin.hnm")).ok();
+        self.ending_scene.is_some()
+    }
+
+    /// Start the ending finale from its first frame (call when the game is completed).
+    pub fn start_ending(&mut self) {
+        self.ending_frame = 0;
+        self.ending_active = self.ending_scene.is_some();
+    }
+
+    /// Whether the ending finale has played through all its frames.
+    pub fn ending_finished(&self) -> bool {
+        match &self.ending_scene {
+            Some(hnm) => self.ending_frame + 1 >= hnm.frame_count().max(1),
+            None => true,
+        }
+    }
+
+    /// Render the ending finale, advancing one frame per call and holding on the last.
+    fn render_ending(&mut self) {
+        let Some(hnm) = self.ending_scene.take() else {
+            return;
+        };
+        let count = hnm.frame_count().max(1);
+        let frame = self.ending_frame.min(count - 1);
+        self.scene_palette = hnm.palette;
+        hnm.decode_frame(frame, &mut self.scene_buffer, &mut self.scene_palette);
+        self.framebuffer.copy_from_slice(&self.scene_buffer);
+        if self.ending_frame + 1 < count {
+            self.ending_frame += 1;
+        }
+        self.ending_scene = Some(hnm);
     }
 
     /// The video-phone's callable crew: display name + their talk-head HNM basename
@@ -2139,6 +2186,13 @@ impl EngineState {
             self.frame += 1;
             return;
         }
+        // The game-ending finale (the bookend to the intro) takes precedence once armed,
+        // playing full-screen to completion.
+        if self.ending_active && self.ending_scene.is_some() {
+            self.render_ending();
+            self.frame += 1;
+            return;
+        }
         // Ship-bridge hub takes precedence when active: show the station console.
         if self.bridge_active && !self.bridge_stations.is_empty() {
             self.render_bridge();
@@ -2504,6 +2558,31 @@ mod tests {
         // Hanging up returns to the dial screen.
         e.phone_hangup();
         assert!(!e.phone_connected(), "hung up back to dial");
+    }
+
+    /// The game-ending finale (`sq/fin.hnm`) loads, plays full-screen in colour, and
+    /// reports finished once it reaches its last frame — the bookend to the intro.
+    #[test]
+    fn ending_finale_plays_to_completion() {
+        let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
+            .iter().map(Path::new).find(|p| p.join("sq").join("fin.hnm").exists());
+        let Some(assets) = assets else { return };
+        let mut e = EngineState::new();
+        assert!(e.load_ending(assets), "fin.hnm loads");
+        e.start_ending();
+        assert!(e.ending_active, "finale armed");
+        assert!(!e.ending_finished(), "finale not finished at the start");
+        // First frame renders real (many-colour) content.
+        e.step(MouseInput::default());
+        assert!(e.framebuffer.iter().filter(|&&p| p != 0).count() > 5000, "finale renders");
+        let distinct = e.framebuffer.iter().collect::<std::collections::HashSet<_>>().len();
+        assert!(distinct > 16, "finale has real colour ({distinct})");
+        // Step through to completion.
+        for _ in 0..4000 {
+            if e.ending_finished() { break; }
+            e.step(MouseInput::default());
+        }
+        assert!(e.ending_finished(), "finale plays through all frames");
     }
 
     /// The port's save/load round-trips the resumable game state through the engine: a

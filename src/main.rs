@@ -288,6 +288,9 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     // The console TELEPHONE option: the video-phone call screen (BAPPEL call widget +
     // the crew's talk-head HNMs as the live call feed).
     engine.load_telephone(Path::new(iso), Path::new(assets));
+    // The game-ending finale (sq/fin.hnm) — plays once the player has visited every
+    // free-choice destination (the bookend to the intro).
+    engine.load_ending(Path::new(assets));
     // The choose-a-location nav list: the free-choice destinations (SCRIPT3/4/5), each
     // labelled by its first speaking character (the location's host) and carrying that
     // script's full decoded dialogue. Clicking one on the star-map visits that location.
@@ -327,6 +330,13 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     // then chains to SCRIPT2 via its decoded D2 handoff, after which control returns to
     // the nav view for free destination choice). Fire it exactly once.
     let mut tutorial_played = false;
+    // The free-choice destinations (SCRIPT3/4/5) the player has visited. When all three
+    // are done, the game plays its ending finale — a decoded completion model grounded in
+    // the three D2-free destinations (the exact narrative trigger is progression-gated and
+    // still RE-blocked; visiting every location is a faithful "you've finished" heuristic).
+    let free_choice_scripts: [u32; 3] = [3, 4, 5];
+    let mut visited_destinations: std::collections::HashSet<u32> = std::collections::HashSet::new();
+    let mut ending_started = false;
     // After the intro, start in the star-map nav view; the loop switches nav<->dialogue.
     engine.on_ship = true;
     // Scene music: the game plays each location's background music (.voc). Decoded
@@ -540,7 +550,9 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         && engine.nav_destination_click(mx, my).is_some() =>
                 {
                     if let Some(i) = engine.nav_destination_click(mx, my) {
-                        load_script(&mut engine, &mut music, 3 + i as u32);
+                        let dest = 3 + i as u32;
+                        visited_destinations.insert(dest);
+                        load_script(&mut engine, &mut music, dest);
                         engine.on_ship = false;
                     }
                 }
@@ -661,7 +673,14 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
         // Playable loop: a nav-view click commits a destination → load its dialogue and
         // switch to the scene; when the dialogue finishes, return to the nav view.
         // Suppressed while the startup intro is still playing.
-        if engine.intro_active() {
+        if engine.ending_active {
+            // The finale is playing; when it completes, bookend back to the title screen.
+            if engine.ending_finished() {
+                engine.ending_active = false;
+                music.stop();
+                engine.load_title(Path::new(iso));
+            }
+        } else if engine.intro_active() {
             // Intro playing: start its music once; no nav/dialogue transitions yet.
             if !intro_music_started {
                 intro_music_started = true;
@@ -682,6 +701,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
             // SCRIPT1/2 are the forced tutorial + first encounter (played after the intro
             // and chained). The nav offers the free-choice destinations: SCRIPT3/4/5.
             let dest = (heading as u32 * 3 / 180).clamp(0, 2) + 3; // heading → SCRIPT3..5
+            visited_destinations.insert(dest);
             load_script(&mut engine, &mut music, dest);
             engine.on_ship = false;
         } else if !engine.on_ship && engine.dialogue_finished() {
@@ -694,6 +714,17 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     voice_line = None;
                     chatter_done_line = None;
                     load_script(&mut engine, &mut music, u32::from(profile) + 1);
+                }
+                None if !ending_started
+                    && free_choice_scripts.iter().all(|s| visited_destinations.contains(s)) =>
+                {
+                    // Every free-choice location has been visited: play the ending finale.
+                    ending_started = true;
+                    music.stop();
+                    voice = None;
+                    voice_line = None;
+                    current_script.set(0);
+                    engine.start_ending();
                 }
                 None => {
                     engine.on_ship = true;
