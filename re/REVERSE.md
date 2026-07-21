@@ -289,6 +289,25 @@ renderer); remaining ship-view visual = compose the pyramid-HUD overlay (grid +
 orb) over the scene, driven by the destination list. Bounded sprite compositing,
 not new rendering.
 
+NAV-DESTINATION PROJECTION DECODED (`0x9B98` `ship_3d_object_sprite_project`): the
+"unlocated" nav-destination projection is this routine. It loops 11 times (counter
+`[0x2F77]`=0xB down) over the anchor buffer `DS:0x4F09` (8-byte records; the
+projection uses the first three signed words x,y,z at +0/+2/+4). Each iteration:
+copies the anchor to work area `DS:0x4F01`; maps it to the `DS:0x6212` display-list
+record at index `(counter+0x15)` stride 0x20, gated on record `flags & 0x80`
+(active); subtracts the camera origin `[0x2F65]/[0x2F67]/[0x2F69]`; then the
+STANDARD perspective projection with matrix at `bp=0x2F95`:
+  depth = (x·m[6] + y·m[7] + z·m[8]) >> 15   (matrix dwords bp+0x18/+0x1c/+0x20)
+  scale = 0x100000 / depth                    -> record[bp+0x2A]
+  screen_x = ((x·m[0]+y·m[1]+z·m[2]) >> 7) idiv depth + 0xA0(160)  -> [bp+0x24]
+  screen_y = ((x·m[3]+y·m[4]+z·m[5]) >> 7) idiv depth + centre_y   -> [bp+0x28]
+This is IDENTICAL to the port's `project_ship_3d_point` / `project_star_map_point`.
+So the projection is NOT the gap — the gap is the 11 runtime anchor positions in
+`DS:0x4F09`, which are populated per-context (nav destinations vs the credit-scene
+cinematic objects) from the live `DS:0x6212` entity table. Getting the real nav
+layout therefore needs a runtime dump at the interactive nav state (the emulator is
+currently stuck in the long intro; see the credit-divergence scheduling issue).
+
 SHIP-HUD PARTS — PRECISELY SCOPED (sess 003): the pyramid-nav HUD decomposes into
 three parts, TWO of which are already done/available:
 1. ANGLE/compass update — routine @file 0x9656 (`ship_3d_procedural_angle_update`,
@@ -927,9 +946,15 @@ from real data. The frame header is `[0]=width, [2]=height, [4]=x, [6]=y`
 which the blitter instead takes from the descriptor extent). The only piece left
 for **color-accurate, composited** sprite output is the scene palette: `.spr`
 banks are palette-index only and use the current ship-view VGA palette (HNMs
-embed their own `pl` chunks; there is no standalone `.pal` resource), so the last
-step is identifying which resource sets the ship-view palette. The orb is
-grayscale in-game, so even the ramp render already matches it closely.
+embed their own `pl` chunks; there is no standalone `.pal` resource).
+**RESOLVED (which resource sets the ship-view palette):** none — it is the BAKED
+DEFAULT the executable ships in its data segment at `DS:0x5B58` (= file `0x12F78`,
+768 bytes, 6-bit DAC). No location resource overrides it for the nav/bridge; a
+location only swaps the upper range. Extracted to the Rust port as
+`palette::GAME_SCREEN_PALETTE_DAC` (provenance file 0x12F78) and cross-checked
+against the running game via the recomp emulator (`MEMDUMP gs:0x5B58`: first 128
+entries byte-identical). `render_bridge`/`render_ship_view` now use it. The orb is
+grayscale in-game, so even the old ramp render matched it closely.
 
 Character `.spr` (SCRUTER/JERRY/IZWALITO, all 104x80, RLE) decode correctly
 (right dimensions, dozens of distinct indices) but need a palette NOT yet
