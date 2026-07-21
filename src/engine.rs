@@ -1562,11 +1562,12 @@ impl EngineState {
         self.dialogue_scene_paths = lines.into_iter().map(|(_, p)| p).collect();
         self.dialogue_cursor = 0;
         self.dialogue_timer = 0;
-        // Start a new dialogue with no scene (so a scene-less dialogue like HONK's food menu
-        // falls back to the console). Line scenes then set/keep it during playback.
+        // Start over the dialogue's FIRST available location scene, so a scene that opens
+        // with sceneless briefing lines still plays over its location (not the console) from
+        // the start; a fully-sceneless dialogue (HONK's food menu) stays on the console.
         self.scene_hnm = None;
-        if self.dialogue_scene_paths.iter().any(|p| p.is_some()) {
-            self.load_current_scene();
+        if let Some(path) = self.dialogue_scene_paths.iter().flatten().next().cloned() {
+            self.load_scene_hnm(&path);
         }
     }
 
