@@ -2070,7 +2070,16 @@ impl EngineState {
     pub fn load_console_bg(&mut self, iso: &std::path::Path) -> bool {
         for name in ["ORX.FD", "orx.fd"] {
             if let Ok(data) = std::fs::read(iso.join(name)) {
-                if let Some(img) = crate::lbm::decode_lbm(&data) {
+                if let Some(mut img) = crate::lbm::decode_lbm(&data) {
+                    // ORX.FD's stored palette is very dark (avg ~2.4/255) — the running game
+                    // shows the console panel much brighter (its lit golden-menu/orb/hand
+                    // overlays live in the archives). Brighten the panel colours ~2.5× so the
+                    // port's console reads like the real medium-purple panel, not a black void.
+                    for c in img.palette.iter_mut() {
+                        for ch in c.iter_mut() {
+                            *ch = ((*ch as u32 * 5) / 2).min(255) as u8;
+                        }
+                    }
                     self.console_bg = Some(img);
                     return true;
                 }
