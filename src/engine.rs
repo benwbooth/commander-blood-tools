@@ -1572,6 +1572,14 @@ impl EngineState {
             self.scene_hnm = Some(hnm);
             self.scene_frame += 1;
             self.present_scene_buffer();
+        } else if let Some(chart) = self.nav_chart.as_ref().filter(|c| {
+            c.width == ENGINE_SCREEN_WIDTH && c.height == ENGINE_SCREEN_HEIGHT
+        }) {
+            // No talk-HNM (e.g. the on-ship console tutorial): the dialogue happens on the
+            // ship, so show the ship-console screen (CHART.FD) rather than a black void.
+            self.scene_buffer.copy_from_slice(&chart.pixels);
+            self.scene_palette = chart.palette;
+            self.framebuffer.copy_from_slice(&chart.pixels);
         } else {
             for p in self.framebuffer.iter_mut() {
                 *p = 0;
