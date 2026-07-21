@@ -63,6 +63,26 @@ fn main() {
         return;
     }
 
+    if let Ok(w) = std::env::var("REVWATCH") {
+        // Watch writes to a chosen gs offset (default 0x5e65 = reveal phase) across the credit
+        // scene, recording (value, cs, ip) so we can see WHO sets it and to WHAT. gs seg = 0x0e84.
+        let off: u32 = u32::from_str_radix(w.trim_start_matches("0x"), 16).unwrap_or(0x5e65);
+        // fast-forward to just before the credit scene, then arm the watch
+        let _ = rt.run(213_000_000);
+        rt.m.watch_addr = Some(0x0e84 * 16 + off as usize);
+        let _ = rt.run(steps);
+        println!("writes to gs:{off:#06x} (value, cs:ip), {} hits:", rt.m.addr_hits.len());
+        let mut seen = std::collections::HashSet::new();
+        for (v, cs, ip) in &rt.m.addr_hits {
+            if seen.insert((*v, *cs, *ip)) {
+                let fseg = (*cs as i32 - 0x1a2) as u32;
+                println!("  ={v:#04x} at {cs:04x}:{ip:04x}  (file ~{:#07x})", fseg * 16 + *ip as u32);
+            }
+        }
+        eprintln!("revwatch done at {} steps", rt.cpu.steps);
+        return;
+    }
+
     let mut next_shot = shot_every;
     let end = loop {
         match rt.run(next_shot.min(steps)) {

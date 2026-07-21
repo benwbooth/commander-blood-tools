@@ -1469,3 +1469,48 @@ my VM runs only a 37-opcode init script once and the credit's text-token script 
 cross-script scheduling doesn't run the credit script; every gating flag is bit-exact-consistent so
 the divergence is upstream device-behavior/timing or an interpreter edge case, needing a DOSBox
 execution-trace differential (verified non-functional: no savestate file, no debugger in this build).
+
+## 2026-07-20 — INTERPRETER CONCLUSIVELY RULED OUT via interp-vs-Unicorn lockstep
+
+Built the interpreter-vs-Unicorn LOCKSTEP differential (the one way to find a CPU-level bug without
+a DOSBox execution trace): `runtime_boot --lockstep SKIP WINDOW out.bin` records a per-instruction
+trace of the LIVE intro (pure-CPU 'X' after-regs; device 'D' after-regs+writes; VRAM routed linear
+so both sides share memory semantics), and `re/tools/lockstep.py` replays it on Unicorn — each
+pure-CPU instruction is re-executed independently and its regs/segs/ip + per-mnemonic defined flags
+compared; device events applied authoritatively. Two harness false-positives found+fixed en route
+(rep-string completion: Unicorn count=1 = one iteration; bulk-write logging: file-read / EMS-map /
+screen-clear bypass write8 — added Machine::log_range).
+
+RESULT: **20,000,000+ pure-CPU instructions matched Unicorn BIT-EXACT** — 10M across boot→attract-
+decision (incl. presentation dispatcher cs=08c0 and WAIT-COMMANDER mixer cs=0b13) AND 10M across the
+EXACT credit scene at skip=210M (incl. the VM profile dispatch cs=067c and the reveal/mixer cs=0b13).
+The interpreter takes NO wrong branch anywhere in the intro. The credit divergence is NOT an
+interpreter bug.
+
+## CORRECTED reproduction + precise localization of the credit divergence
+
+Earlier runs stopped at ~180M steps — TOO EARLY. The divergence actually occurs at **~214–218M steps**
+(~27s): the game DOES advance — real voice DMAs begin at step ~210M (0x14, count=0x0c86/0x1929/0x26cf/
+0x3fff = KB-sized audio, not the 1-byte probe), the elephant-alien intro-credit scene renders, and a
+subtitle band appears — but SCRAMBLED (stuck in the reveal's static phase) instead of clean
+"CRYO Interactive Entertainment 1995".
+
+Localized exactly (new tool: `runtime_boot` with env `REVWATCH=<gsoff>` watches writes to a gs offset
+across the credit scene, printing value+cs:ip):
+- Reveal phase gs:0x5e65 is written ONCE in the whole scene: **=0 (static) at cs=0cbd:0687**, and the
+  persistent gate gs:0x67bc =0 at 0cbd:068d. Nothing ever sets phase=2 (clean glyphs).
+- cs=0cbd is a dynamically-loaded OVERLAY (base-EXE file-offset mapping does NOT apply — disassemble
+  from runtime memory). It is presenter (a), the STATIC voice/mixer present routine: copies text
+  →gs:0xe18, sets [0x27e2]=2 momentarily, **[0x5e65]=0 (static)**, clears [0x67bc]=0, draws the reveal
+  ONCE via `lcall 0x8c0:0x1c15`, then clears [0x27e2]=0 → the per-frame reveal draw never re-runs →
+  band frozen in static.
+- Presenter (b), the CLEAN clip presenter at cs=08c0:0383 (= file 0x7563) that sets gs:0x5e64=1 +
+  phase=2, **NEVER runs**: gs:0x5e64 is written 13× in the scene, ALL =0 (main loop clear at 022d:0302).
+
+CONCLUSION: the game presents the intro credit via the static voice-present overlay (a) instead of the
+clean subtitle-clip presenter (b). Since the interpreter is now proven bit-exact AND all device reads
+match AND files load byte-exact, the presenter-choice (a vs b) is decided by correctly-executing code
+on device-TIMING-driven state (the sole remaining variable) — most likely the SB voice-completion IRQ
+cadence driving the clip sequencer (state first changes at ~214.4M, exactly when the first ~0.5s voice
+would complete). NEXT: trace the presentation dispatcher's (cs=08c0) clip-type decision back to the
+device-timing source that routes the credit to (a) instead of (b).
