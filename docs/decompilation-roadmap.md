@@ -34,7 +34,7 @@ Against the Definition of Done below:
 |---|-----------|--------|-------|
 | 1 | Boot on original CD data | **Done** | loads DESCRIPT/SCRIPT/HNM/LBM/SPR/SND/VOC |
 | 2 | Intro + HNM cutscenes (timing/palette/audio/subtitles) | **Done** | HNM carries its own palette; intro credit sourced from DESCRIPT; reveal timing + chatter decoded |
-| 3 | Ship/nav UI + mouse/keyboard | **Partial** | compass steering + click + screen toggles work; nav *layout* + *palette* are approximations (RE-blocked, see below) |
+| 3 | Ship/nav UI + mouse/keyboard | **Partial** | compass steering + click + screen toggles work; *palette* now decoded (true colours); nav *layout* still needs the real anchor positions (see below) |
 | 4 | Execute compiled BASIC scripts | **Done** | `vm.rs` walk + `execute_trace`; A6 text/voice decoded |
 | 5 | Dialogue scenes (bg/actor/voice/subtitle/sfx/music/timing) | **Done** | talk-HNM background, per-line voice, subtitle reveal + chatter, scene music; HUD strip approximate |
 | 6 | Location navigation + interactive object flows | **Partial** | location visit is a faithful static room viewer with decoded `.ext` object positions; interaction semantics RE-blocked |
@@ -46,30 +46,34 @@ Phase 3 (game-accurate presentation) substantially complete** (subtitle assembly
 reveal/chatter timing, voice indexing, talk-HNM behavior all decoded and ported);
 **Phases 4–5 blocked** on the RE items below.
 
-### RE-blocked remainder (needs decoding before it can be ported faithfully)
+### RE work remaining (in progress — decode, then port)
 
-- **Ship-view / bridge / nav VGA palette** — the real palette is uploaded at
-  runtime from an as-yet-unidentified resource (`re/REVERSE.md`: "identifying
-  which resource sets the ship-view palette"; master buffer `gs:0x5B58`). The port
-  substitutes a grey ramp so the indexed starfield/sprites read. `engine.rs`
-  `render_bridge`/`render_ship_view`.
-- **Star-map destination layout** — the 11 destinations live in runtime data
-  `DS:0x4F09` not reproducible from the static binary; the port tiles an
-  approximate grid (`engine.rs::render_nav_pyramid_sprites`, `ship3d.rs:1881-1888`).
-- **HUD pyramid vertex→screen projection** — the recovered verts exist
-  (`SHIP_3D_HUD_PYRAMID_VERTICES`) but the projecting routine is unlocated
-  (`ship3d.rs:1911-1916`); the dialogue-mode nav strip uses a placeholder.
-- **On-planet object interaction** — `entity.rs` models the decoded object record
-  + flag state machine, but object population source, per-screen rendering, and
-  click/interaction semantics are undecoded.
-- **Comms/cyberspace mini-game logic** — presentation-only; input/goal logic
-  undecoded (`engine.rs` note "the navigation minigame logic is undecoded").
-- **Pyramid-menu UI** — `manu3.rs` provides the decoded interaction/animation math
-  but the pyramid renderer depends on the unlocated projection above.
+The full game is the target; these are the subsystems still being reverse-engineered.
 
-All of these need instruction-level oracle ground truth to decode, which is the
-same DOSBox-differential bottleneck tracked elsewhere; none can be reproduced
-faithfully by writing more port code against what is currently decoded.
+- **Ship-view / bridge / nav VGA palette** — ✅ **DONE.** Resolved: it's the baked
+  default at `DS:0x5B58` (file `0x12F78`), not a resource. Extracted to
+  `palette::GAME_SCREEN_PALETTE_DAC` (provenance documented), cross-checked against
+  the running game (recomp `MEMDUMP gs:0x5B58`), and wired into
+  `render_bridge`/`render_ship_view`. Bridge icons + nav destinations now render in
+  true colours.
+- **Nav-destination projection** — ✅ **DECODED** (`0x9B98`): the standard
+  perspective projection of 11 anchors from `DS:0x4F09` via the matrix at `0x2F95`,
+  identical to the port's `project_ship_3d_point`. The projection is no longer the
+  gap; the runtime anchor *positions* are.
+- **Star-map destination layout** — the 11 anchor positions (`DS:0x4F09`) are
+  populated per-context from the live `DS:0x6212` entity table; need a dump at
+  real player-controlled gameplay (the recomp emulator reaches the *attract-mode*
+  bridge by ~500M steps but with demo/identity data). **Enabler: input injection.**
+- **On-planet object interaction**, **comms/cyberspace mini-game logic**,
+  **pyramid-menu UI**, **save/load** — all need the same enabler: driving a runtime
+  oracle into real gameplay to observe the live entity table, input handling, and
+  state, then decoding each.
+
+**Key enabler (next):** the recomp emulator runs the real BLOODPRG.EXE and can dump
+any runtime memory (used above for the palette + projection), but currently only
+reaches attract-mode demos. Adding scripted keyboard/mouse injection to drive it
+into player-controlled gameplay unblocks the runtime dumps the remaining subsystems
+need — turning "undecoded runtime data" into observable ground truth without DOSBox.
 
 ## Ground Rules
 
