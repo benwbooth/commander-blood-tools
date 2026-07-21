@@ -45,9 +45,11 @@ Against the Definition of Done below:
 | 3 | Ship/nav UI + mouse/keyboard | **Partial** | compass steering + click + screen toggles + the *choose-a-location* destination list (click a location → its dialogue) all work; *palette* decoded (true colours); nav *layout* still needs the real anchor positions (see below) |
 | 4 | Execute compiled BASIC scripts | **Done** | `vm.rs` walk + `execute_trace`; A6 text/voice decoded |
 | 5 | Dialogue scenes (bg/actor/voice/subtitle/sfx/music/timing) | **Done** | talk-HNM background, per-line voice, subtitle reveal + chatter, scene music; HUD strip approximate |
-| 6 | Location navigation + interactive object flows | **Partial** | location visit is a faithful static room viewer with decoded `.ext` object positions; interaction semantics RE-blocked |
-| 7 | Save/load state | **Done (port-native)** | `save.rs` persists the resumable state (screen, nav heading, location/script, dialogue progress, phone selection, text speed) via F5/F9; NOT the DOS `blood.sav` byte layout (that field layout is separately RE-blocked) |
-| 8 | Oracle suite | **Partial** | per-behavior tests + smoke playthrough; no full frame-diff oracle suite |
+| 6 | Location navigation + interactive object flows | **Partial** | location visit is a faithful static room viewer with decoded `.ext` object positions + the **choose-a-location** nav; **progression** tracked via `progress.rs` (`GameProgress` over the decoded entity flag state machine → completion → ending); on-planet click semantics still RE-blocked |
+| 6b | Console functions | **Done** | all five: HONK (SCRIPT1), TELEPHONE (video-phone), CRYOBOX (cryo-chamber), MENU ({EXPLANATIONS,GAME} submenu), **OPTION** (3D pyramid menu from decoded `manu3.xdb` + `manu3.rs` + ship-3D projection) |
+| 6c | Mini-game | **Done (grounded)** | cyberspace hyperspace **traversal**: steer through the real `hyper_*.hnm` segments to arrival; tunnel video is decoded, the steer/arrive interaction is the port's documented interpretation |
+| 7 | Save/load state | **Done (port-native)** | `save.rs` persists the resumable state (screen, nav heading, location/script, dialogue progress, phone selection, text speed, **visited-progression**) via F5/F9; NOT the DOS `blood.sav` byte layout (that field layout is separately RE-blocked and unnecessary for a modern port) |
+| 8 | Oracle suite | **Partial** | per-behavior tests + smoke playthrough (now covers every screen incl. OPTION + the cyberspace traversal to arrival); no full frame-diff oracle suite |
 
 Phase status: **Phase 1 (data layer) and Phase 2 (script VM/trace) complete;
 Phase 3 (game-accurate presentation) substantially complete** (subtitle assembly,
