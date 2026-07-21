@@ -80,6 +80,41 @@ fn main() {
         return;
     }
 
+    if std::env::var("SKIPPROBE").is_ok() {
+        // Inject input periodically from early on and capture frames, to find the EARLIEST
+        // step at which interactive gameplay (bridge/menu) appears — i.e. can we skip the
+        // long intro? Captures boot_skip/skip_<M>.ppm every 15M steps to 300M.
+        let mut next_shot = 15_000_000u64;
+        let mut next_input = 5_000_000u64;
+        let limit = 90_000_000u64;
+        while rt.cpu.steps < limit {
+            let target = next_shot.min(next_input).min(limit);
+            let _ = rt.run(target);
+            if rt.cpu.steps >= next_input {
+                // press any-key + click to try to dismiss/skip the current intro screen
+                rt.inject_key(0x01, 0x1b); // Esc
+                rt.inject_key(0x1c, 0x0d); // Enter
+                rt.inject_key(0x39, 0x20); // Space
+                rt.set_mouse_pos(320, 100);
+                rt.mouse_press(0);
+                let _ = rt.run(rt.cpu.steps + 500_000);
+                rt.mouse_release(0);
+                next_input += 5_000_000;
+            }
+            if rt.cpu.steps >= next_shot {
+                let m = rt.cpu.steps / 1_000_000;
+                rt.write_ppm(&out.join(format!("skip_{m:05}M.ppm"))).unwrap();
+                next_shot += 15_000_000;
+            }
+        }
+        // Dump the nav runtime region at this interactive state for offline analysis.
+        let g = 0x0e84u16;
+        let bytes: Vec<u8> = (0..8448u32).map(|i| rt.m.read8(g, 0x2f00 + i)).collect();
+        std::fs::write(out.join("skip_navstate.bin"), &bytes).unwrap();
+        println!("SKIPPROBE done -> {}/skip_*.ppm + skip_navstate.bin @ {} steps", out.display(), rt.cpu.steps);
+        return;
+    }
+
     if std::env::var("INPUTPROBE").is_ok() {
         // Reach the bridge state, snapshot, inject mouse motion + clicks + keys, run on,
         // and report whether the frame / nav data changed (i.e. is it interactive?).
