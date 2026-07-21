@@ -41,6 +41,7 @@ fn main() {
     e.load_bridge(iso);
     e.load_nav_chart(iso);
     e.load_console_font(iso);
+    e.load_telephone(iso, assets);
     e.on_ship = true;
 
     let mut fail = 0;
@@ -97,6 +98,18 @@ fn main() {
     for _ in 0..12 { e.step(MouseInput { x: 315, y: 100, buttons: 0 }); }
     check(nonblank(&e.framebuffer) > 500, "alien-examination screen renders");
     e.alien_view_active = false;
+
+    // Video-phone: dial screen renders, then a connected call shows the crew feed.
+    if e.phone_contact_count() > 0 {
+        e.phone_active = true;
+        for _ in 0..6 { e.step(MouseInput::default()); }
+        check(nonblank(&e.framebuffer) > 500, "video-phone dial screen renders");
+        e.phone_connect(0);
+        for _ in 0..6 { e.step(MouseInput::default()); }
+        check(nonblank(&e.framebuffer) > 500, "video-phone call feed renders");
+        e.phone_hangup();
+        e.phone_active = false;
+    }
 
     // 5) Play each destination's dialogue scene to completion, following D2 chaining.
     for dest in 1..=5u32 {

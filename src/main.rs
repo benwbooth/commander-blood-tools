@@ -285,6 +285,9 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     engine.load_nav_chart(Path::new(iso));
     engine.load_console_font(Path::new(iso));
     engine.load_cryobox(Path::new(assets));
+    // The console TELEPHONE option: the video-phone call screen (BAPPEL call widget +
+    // the crew's talk-head HNMs as the live call feed).
+    engine.load_telephone(Path::new(iso), Path::new(assets));
     // The choose-a-location nav list: the free-choice destinations (SCRIPT3/4/5), each
     // labelled by its first speaking character (the location's host) and carrying that
     // script's full decoded dialogue. Clicking one on the star-map visits that location.
@@ -476,19 +479,23 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 // On the bridge hub, a click on a station icon opens its screen.
                 Event::ButtonPress(b) if engine.bridge_active && b.detail == 1 => {
                     // The ship-console menu (decoded console -> VM object dispatch):
-                    // HONK (0) opens the cook's daily-fare menu (SCRIPT1); CRYOBOX (2)
-                    // opens the cryo-chamber. TELEPHONE/MENU/OPTION are not yet decoded.
+                    // HONK (0) opens the cook's daily-fare menu (SCRIPT1); TELEPHONE (1)
+                    // the video-phone; CRYOBOX (2) the cryo-chamber. MENU/OPTION not decoded.
                     match engine.console_menu_click(mx, my) {
                         Some(0) => {
                             engine.bridge_active = false;
                             load_script(&mut engine, &mut music, 1);
                             engine.on_ship = false;
                         }
+                        Some(1) => {
+                            engine.bridge_active = false;
+                            engine.phone_active = true;
+                        }
                         Some(2) => {
                             engine.bridge_active = false;
                             engine.cryobox_active = true;
                         }
-                        Some(_) => {} // TELEPHONE/MENU/OPTION: functions not yet decoded
+                        Some(_) => {} // MENU/OPTION: functions not yet decoded
                         None => {
                             if let Some(station) = engine.bridge_click(mx, my) {
                                 engine.bridge_active = false;
@@ -506,6 +513,18 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 // generic nav-button handlers below).
                 Event::ButtonPress(b) if engine.tv_active && (b.detail == 1 || b.detail == 3) => {
                     engine.switch_tv_channel(if b.detail == 1 { 1 } else { -1 });
+                }
+                // On the video-phone: a left click on a contact connects the call (dialling)
+                // or hangs it up (connected); the right button cycles the dialled contact.
+                Event::ButtonPress(b) if engine.phone_active && b.detail == 1 => {
+                    if engine.phone_connected() {
+                        engine.phone_hangup();
+                    } else if let Some(i) = engine.phone_contact_click(mx, my) {
+                        engine.phone_connect(i);
+                    }
+                }
+                Event::ButtonPress(b) if engine.phone_active && b.detail == 3 => {
+                    engine.phone_cycle_contact(1);
                 }
                 // On the nav star-map, a left click on a destination in the
                 // choose-a-location list visits it (loads SCRIPT<3+i> — that location's
@@ -532,11 +551,15 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     // A visited world-location screen closes back to the nav view first.
                     if engine.world_location_active() {
                         engine.leave_world();
+                    } else if engine.phone_active && engine.phone_connected() {
+                        // A connected call hangs up first, back to the phone's dial screen.
+                        engine.phone_hangup();
                     } else {
                         engine.alien_view_active = false;
                         engine.tv_active = false;
                         engine.cyber_active = false;
                         engine.cryobox_active = false;
+                        engine.phone_active = false;
                         // Esc from a screen returns to the bridge hub.
                         engine.bridge_active = true;
                     }

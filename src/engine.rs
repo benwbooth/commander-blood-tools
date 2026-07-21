@@ -261,6 +261,20 @@ pub struct EngineState {
     console_font: Vec<SpriteFrameImage>,
     /// Whether the ship-bridge hub is the active view.
     pub bridge_active: bool,
+    /// The video-phone call screen (console TELEPHONE option): the animated call widget
+    /// (`BAPPEL.SPR`, a low-index UI sprite that decodes cleanly) plus the roster of
+    /// callable crew. Each contact is (display name, their talk-head HNM `pe/aa*.hnm`,
+    /// full-colour, shown as the "video feed" when the call connects). Two states:
+    /// dialling (widget + contact list) and connected (the animated talk-head).
+    phone_widget: Vec<SpriteFrameImage>,
+    #[allow(clippy::type_complexity)]
+    phone_contacts: Vec<(String, HnmFile)>,
+    /// The currently selected/dialled contact index.
+    phone_contact: usize,
+    /// Whether the call is connected (showing the talk-head) vs still dialling.
+    phone_connected: bool,
+    /// Whether the video-phone screen is the active view.
+    pub phone_active: bool,
     /// Dialogue line sequence for the loaded script (from the VM trace), played
     /// back frame-by-frame — the script/scene stepping the main loop drives.
     dialogue: Vec<LineState>,
@@ -370,6 +384,11 @@ impl EngineState {
             bridge_stations: Vec::new(),
             console_font: Vec::new(),
             bridge_active: false,
+            phone_widget: Vec::new(),
+            phone_contacts: Vec::new(),
+            phone_contact: 0,
+            phone_connected: false,
+            phone_active: false,
             dialogue: Vec::new(),
             dialogue_texts: Vec::new(),
             dialogue_cursor: 0,
@@ -814,6 +833,160 @@ impl EngineState {
         self.framebuffer.copy_from_slice(&self.scene_buffer);
         self.scene_frame += 1;
         self.cryobox_scene = Some(hnm);
+    }
+
+    /// The video-phone's callable crew: display name + their talk-head HNM basename
+    /// (`pe/aa*.hnm`). These are the crew whose full-colour idle-head animations exist and
+    /// decode cleanly; the phone shows the dialled one as the live "video feed".
+    const PHONE_CONTACTS: [(&'static str, &'static str); 9] = [
+        ("BOB MORLOCK", "aabob"),
+        ("HOM", "aahom"),
+        ("IZWALITO", "aaisw"),
+        ("JERRY", "aajer"),
+        ("MAXXON", "aamax"),
+        ("MIGRAX", "aamig"),
+        ("HANZ", "aahan"),
+        ("TINA", "aatin"),
+        ("RGB", "aargb"),
+    ];
+    /// The video-phone contact-list layout (dialling state): top-left of the name column
+    /// and the row pitch.
+    pub const PHONE_LIST_X: i32 = 12;
+    pub const PHONE_LIST_Y: i32 = 44;
+    pub const PHONE_LIST_PITCH: i32 = 13;
+
+    /// Load the video-phone call screen (console TELEPHONE option): the call widget
+    /// (`BAPPEL.SPR`, from `iso`) and every callable crew's talk-head HNM (`pe/aa*.hnm`,
+    /// from `assets`). Returns whether the widget and at least one contact loaded.
+    pub fn load_telephone(&mut self, iso: &Path, assets: &Path) -> bool {
+        if let Ok(data) = std::fs::read(iso.join("BAPPEL.SPR")) {
+            if let Some(frames) = decode_sprite_bank_indices(&data) {
+                self.phone_widget = frames;
+            }
+        }
+        self.phone_contacts = Self::PHONE_CONTACTS
+            .iter()
+            .filter_map(|(name, stem)| {
+                HnmFile::open(&assets.join("pe").join(format!("{stem}.hnm")))
+                    .ok()
+                    .map(|h| (name.to_string(), h))
+            })
+            .collect();
+        !self.phone_widget.is_empty() && !self.phone_contacts.is_empty()
+    }
+
+    /// The number of callable phone contacts loaded.
+    pub fn phone_contact_count(&self) -> usize {
+        self.phone_contacts.len()
+    }
+
+    /// The display name of the currently selected/dialled contact.
+    pub fn phone_contact_name(&self) -> Option<&str> {
+        self.phone_contacts.get(self.phone_contact).map(|(n, _)| n.as_str())
+    }
+
+    /// Whether the call is connected (showing the talk-head video feed).
+    pub fn phone_connected(&self) -> bool {
+        self.phone_connected
+    }
+
+    /// Cycle the dialled contact (`dir` +1/−1), while dialling (a no-op once connected).
+    pub fn phone_cycle_contact(&mut self, dir: i32) {
+        let n = self.phone_contacts.len();
+        if n == 0 || self.phone_connected {
+            return;
+        }
+        self.phone_contact = (self.phone_contact as i32 + dir).rem_euclid(n as i32) as usize;
+    }
+
+    /// Map a click to a contact-list row (dialling state), matching the drawn layout.
+    pub fn phone_contact_click(&self, x: u16, y: u16) -> Option<usize> {
+        if self.phone_contacts.is_empty() {
+            return None;
+        }
+        let (px, py) = (x as i32, y as i32);
+        if px < Self::PHONE_LIST_X || px > Self::PHONE_LIST_X + 140 {
+            return None;
+        }
+        (0..self.phone_contacts.len())
+            .find(|&i| (py - (Self::PHONE_LIST_Y + i as i32 * Self::PHONE_LIST_PITCH)).abs() <= 5)
+    }
+
+    /// Connect the call to `index` (switch to the video-feed state). Invalid index = no-op.
+    pub fn phone_connect(&mut self, index: usize) -> bool {
+        if index >= self.phone_contacts.len() {
+            return false;
+        }
+        self.phone_contact = index;
+        self.phone_connected = true;
+        self.scene_frame = 0;
+        true
+    }
+
+    /// Hang up a connected call, returning to the dialling state.
+    pub fn phone_hangup(&mut self) {
+        self.phone_connected = false;
+    }
+
+    /// Render the video-phone. Dialling: the console-palette backdrop, the animated
+    /// `BAPPEL` call widget, and the crew contact list in the console font (the dialled
+    /// row highlighted). Connected: the dialled crew's full-colour talk-head HNM, looped.
+    fn render_telephone(&mut self) {
+        if self.phone_connected {
+            let contacts = std::mem::take(&mut self.phone_contacts);
+            if let Some((_, hnm)) = contacts.get(self.phone_contact) {
+                let frame = self.scene_frame % hnm.frame_count().max(1);
+                self.scene_palette = hnm.palette;
+                hnm.decode_frame(frame, &mut self.scene_buffer, &mut self.scene_palette);
+                self.framebuffer.copy_from_slice(&self.scene_buffer);
+                self.scene_frame += 1;
+            }
+            self.phone_contacts = contacts;
+            return;
+        }
+        // Dialling: the ship-console backdrop (CHART.FD), else the console palette on black.
+        if let Some(chart) = self.nav_chart.as_ref().filter(|c| {
+            c.width == ENGINE_SCREEN_WIDTH && c.height == ENGINE_SCREEN_HEIGHT
+        }) {
+            self.framebuffer.copy_from_slice(&chart.pixels);
+            self.scene_palette = chart.palette;
+        } else {
+            self.framebuffer.iter_mut().for_each(|p| *p = 0);
+            self.scene_palette = crate::palette::game_screen_palette();
+        }
+        // The animated call widget (BAPPEL) on the right of the console.
+        if !self.phone_widget.is_empty() {
+            let frame = self.phone_widget[self.scene_frame % self.phone_widget.len()].clone();
+            blit_sprite_frame_centered(
+                &mut self.framebuffer,
+                ENGINE_SCREEN_WIDTH,
+                ENGINE_SCREEN_HEIGHT,
+                &frame,
+                250,
+                130,
+            );
+        }
+        // The crew contact list in the console font; the dialled row is highlighted.
+        if !self.console_font.is_empty() {
+            const COLOR: u8 = 0xFD;
+            const HILITE: u8 = 0xFE;
+            self.scene_palette[COLOR as usize] = [232, 216, 40]; // console yellow
+            self.scene_palette[HILITE as usize] = [245, 245, 160]; // brighter selection
+            self.draw_console_text(
+                "CALL WHO",
+                Self::PHONE_LIST_X as usize,
+                (Self::PHONE_LIST_Y - 18) as usize,
+                COLOR,
+            );
+            let selected = self.phone_contact;
+            let names: Vec<String> = self.phone_contacts.iter().map(|(n, _)| n.clone()).collect();
+            for (i, name) in names.iter().enumerate() {
+                let color = if i == selected { HILITE } else { COLOR };
+                let y = (Self::PHONE_LIST_Y + i as i32 * Self::PHONE_LIST_PITCH) as usize;
+                self.draw_console_text(name, Self::PHONE_LIST_X as usize, y, color);
+            }
+        }
+        self.scene_frame += 1;
     }
 
     /// Arm the scrutinizer-apparatus intro to play from its first frame the next time
@@ -1363,6 +1536,7 @@ impl EngineState {
             && !self.tv_active
             && !self.cyber_active
             && !self.cryobox_active
+            && !self.phone_active
             && !self.alien_view_active
             && !self.world_location_active()
     }
@@ -1924,6 +2098,13 @@ impl EngineState {
             self.frame += 1;
             return;
         }
+        // The video-phone call screen (console TELEPHONE option) takes precedence.
+        if self.phone_active && !self.phone_contacts.is_empty() {
+            self.render_telephone();
+            self.countdown = self.countdown.saturating_sub(1);
+            self.frame += 1;
+            return;
+        }
         // Comms/TV screen takes precedence when active: watch the broadcast.
         if self.tv_active && !self.tv_channels.is_empty() {
             self.render_tv();
@@ -2216,6 +2397,43 @@ mod tests {
         assert!(e.framebuffer.iter().filter(|&&p| p != 0).count() > 5000, "cryo-chamber renders");
         let distinct = e.framebuffer.iter().collect::<std::collections::HashSet<_>>().len();
         assert!(distinct > 20, "cryo-chamber has real colour ({distinct})");
+    }
+
+    /// The console TELEPHONE option opens the video-phone: the call widget + contact list
+    /// render (dialling), a click connects a crew member, and the connected state shows
+    /// their full-colour talk-head HNM feed. Esc/hangup returns to dialling.
+    #[test]
+    fn telephone_console_function_renders() {
+        let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter().map(Path::new).find(|p| p.join("BAPPEL.SPR").is_file());
+        let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
+            .iter().map(Path::new).find(|p| p.join("pe").is_dir());
+        let (Some(iso), Some(assets)) = (iso, assets) else { return };
+        let mut e = EngineState::new();
+        assert!(e.load_telephone(iso, assets), "BAPPEL.SPR + talk-heads load");
+        assert!(e.load_console_font(iso), "console font loads");
+        e.load_nav_chart(iso);
+        assert!(e.phone_contact_count() >= 3, "several crew are callable");
+        e.phone_active = true;
+        // Dialling: the widget + contact list render as real content.
+        for _ in 0..8 { e.step(MouseInput::default()); }
+        assert!(!e.phone_connected(), "starts on the dial screen");
+        assert!(e.framebuffer.iter().filter(|&&p| p != 0).count() > 500, "dial screen renders");
+        // A click on the second contact row connects that call.
+        let x = (EngineState::PHONE_LIST_X + 4) as u16;
+        let y = (EngineState::PHONE_LIST_Y + EngineState::PHONE_LIST_PITCH) as u16;
+        let row = e.phone_contact_click(x, y).expect("row 1 hits");
+        assert_eq!(row, 1);
+        assert!(e.phone_connect(row));
+        assert!(e.phone_connected(), "call connected");
+        let name = e.phone_contact_name().unwrap().to_string();
+        // Connected: the crew's talk-head HNM feed fills the frame in colour.
+        for _ in 0..8 { e.step(MouseInput::default()); }
+        let distinct = e.framebuffer.iter().collect::<std::collections::HashSet<_>>().len();
+        assert!(distinct > 16, "call feed for {name} has real colour ({distinct})");
+        // Hanging up returns to the dial screen.
+        e.phone_hangup();
+        assert!(!e.phone_connected(), "hung up back to dial");
     }
 
     /// `set_speech_dialogue` plays the full decoded per-character dialogue (all lines)
