@@ -306,6 +306,22 @@ anchors there are the ship-view background, not the nav star-map (which needs
 driving further into the console). This unblocks per-screen RE:
 drive -> MEMDUMP -> decode -> port -> verify (the method that resolved the palette).
 
+SCREEN-ASSET MAP via emulator FILE-OPEN TRACE (`runtime.opened_files`, dumped by
+`runtime_boot` SKIPPROBE/EXPLORE). Driving the emulator into gameplay and reading
+which files each screen opens is the fast way to identify a screen's real assets:
+- Nav/console boot loads: `blood.dat` (main archive), `tb.big`, **`CHART.FD`** (the
+  star-map: nebula + destination stars + route lines + console — an IFF/PBM, PORTED
+  as the nav background), `CARTE.SPR`, `script1.*` (so the tutorial CONSOLE screen IS
+  a SCRIPT1 dialogue scene), `descript.des`, `btv.spr`.
+- Clicking console options loads `bappel.spr` (the "appel"/call screen) + character
+  sprites e.g. `izwalito.spr` — the TELEPHONE/comms path to a character.
+- The console screen is a COMPOSITE: ship-console background + crew-portrait orb +
+  pointing-hand sprite + the graphical menu **HONK/TELEPHONE/CRYOBOX/MENU/OPTION**
+  (the labels are NOT plain ASCII in the data — graphical/encoded) + the SCRIPT1
+  tutorial subtitle ("You found the right button. So far so good"). Port's flat
+  3-icon bridge should become this console. Menu strings not found as text -> menu is
+  sprite/manu-resource driven (see `manu3.xdb`).
+
 NAV-DESTINATION PROJECTION DECODED (`0x9B98` `ship_3d_object_sprite_project`): the
 "unlocated" nav-destination projection is this routine. It loops 11 times (counter
 `[0x2F77]`=0xB down) over the anchor buffer `DS:0x4F09` (8-byte records; the

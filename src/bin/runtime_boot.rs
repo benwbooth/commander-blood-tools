@@ -123,6 +123,49 @@ fn main() {
         return;
     }
 
+    if std::env::var("EXPLORE").is_ok() {
+        // Skip to interactive, then systematically click the console menu rows + corners and
+        // press keys over a long run, capturing a frame + the FULL opened-files map. Surfaces
+        // which assets many screens load, to guide bulk porting.
+        let mut next_input = 5_000_000u64;
+        while rt.cpu.steps < 45_000_000 {
+            let _ = rt.run(next_input);
+            rt.inject_key(0x01, 0x1b);
+            rt.inject_key(0x1c, 0x0d);
+            rt.set_mouse_pos(320, 100);
+            rt.mouse_press(0);
+            let _ = rt.run(rt.cpu.steps + 400_000);
+            rt.mouse_release(0);
+            next_input += 5_000_000;
+        }
+        // Poke each console menu row (and back out) repeatedly, capturing frames.
+        let rows = [65u16, 82, 98, 114, 130];
+        let mut shot = 0;
+        for pass in 0..3 {
+            for &sy in &rows {
+                rt.set_mouse_pos(160 * 2, sy);
+                let _ = rt.run(rt.cpu.steps + 800_000);
+                rt.mouse_press(0);
+                let _ = rt.run(rt.cpu.steps + 800_000);
+                rt.mouse_release(0);
+                let _ = rt.run(rt.cpu.steps + 4_000_000);
+                rt.write_ppm(&out.join(format!("exp_{shot:02}_p{pass}_y{sy}.ppm"))).unwrap();
+                shot += 1;
+                rt.inject_key(0x01, 0x1b); // Esc back
+                let _ = rt.run(rt.cpu.steps + 2_000_000);
+            }
+        }
+        println!("--- ALL opened files (deduped, in order) ---");
+        let mut seen = std::collections::HashSet::new();
+        for (step, path) in &rt.opened_files {
+            if seen.insert(path.to_lowercase()) {
+                println!("  @{:>10} {path}", step);
+            }
+        }
+        println!("EXPLORE done -> {}/exp_*.ppm ({} steps)", out.display(), rt.cpu.steps);
+        return;
+    }
+
     if std::env::var("MENUMAP").is_ok() {
         // Fast-skip to the ship-console menu, then click each menu-item row and capture the
         // resulting screen, to map the menu -> screen structure.
