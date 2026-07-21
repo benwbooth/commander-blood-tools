@@ -299,6 +299,10 @@ pub struct EngineState {
     pub framebuffer: Vec<u8>,
     /// Startup intro sequence: HNM paths played in order before the game proper.
     intro_hnms: Vec<std::path::PathBuf>,
+    /// Subtitle cues to overlay on each intro clip (parallel to `intro_hnms`; empty for
+    /// clips with none). The publisher-credit clip (`cliptoot.hnm`, the DESCRIPT `present`
+    /// record) carries "CRYO Interactive Entertainment 1995" / "Commander BLOOD  V 1.0".
+    intro_cues: Vec<Vec<crate::descript::SubtitleCue>>,
     /// Index of the intro HNM currently playing.
     intro_index: usize,
     /// True while the startup intro sequence is playing (gates the main render path).
@@ -364,6 +368,7 @@ impl EngineState {
             scene_palette: [[0u8; 3]; 256],
             framebuffer: vec![0u8; ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT],
             intro_hnms: Vec::new(),
+            intro_cues: Vec::new(),
             intro_index: 0,
             intro_active: false,
         }
@@ -415,24 +420,49 @@ impl EngineState {
 
     /// Queue the startup intro-video sequence to play before the game proper — the
     /// first thing the real game shows. `assets` is the DAT root; missing files are
-    /// skipped. `sq/mind.hnm` is the complete boot reel (verified by decoding: frames
+    /// skipped. `sq/mind.hnm` is the boot-logo reel (verified by decoding: frames
     /// ~0-30 MINDSCAPE logo, ~40-80 Microfolie's logo zoom, ~100-200 the
-    /// ship-over-planet cutscene, tail the CRYO card) — matching the oracle-captured
-    /// boot order exactly — followed by the fire "COMMANDER Blood" title.
-    /// (`microfol.hnm` is a shorter variant of the same reel without MINDSCAPE;
+    /// ship-over-planet cutscene). `sq/cliptoot.hnm` is the CRYO presentation cinematic
+    /// (the DESCRIPT `present` Sequence record) over which the publisher credit is
+    /// overlaid; then the fire "COMMANDER Blood" title (`logo_bl`).
+    /// (`microfol.hnm` is a shorter variant of the boot reel without MINDSCAPE;
     /// `inter_sh` is the ship interior, `cryogel`/`cryorad` cryo-chamber scenes,
     /// `logo01/02` the HATE-TV logo — none of them boot clips.)
-    pub fn load_intro(&mut self, assets: &Path) {
+    ///
+    /// `descript_db` supplies the credit subtitles: the `present` record's cues
+    /// ("CRYO Interactive Entertainment 1995", "Commander BLOOD  V 1.0") are overlaid
+    /// on its `cliptoot.hnm` clip, sourced from the game data rather than hard-coded.
+    pub fn load_intro(&mut self, assets: &Path, descript_db: &crate::descript::DescriptDb) {
+        const CREDIT_RECORD: &str = "present";
         let sq = assets.join("sq");
-        let order = [
-            "mind",    // complete boot reel: MINDSCAPE + Microfolie's + ship + CRYO
-            "logo_bl", // fire "COMMANDER Blood" title
-        ];
-        self.intro_hnms = order
+        // Each intro clip is (hnm stem, subtitle cues to overlay). The credit clip's cues
+        // come straight from the DESCRIPT `present` record.
+        let credit_cues = descript_db
+            .records
             .iter()
-            .map(|n| sq.join(format!("{n}.hnm")))
-            .filter(|p| p.exists())
-            .collect();
+            .find(|r| r.name == CREDIT_RECORD)
+            .map(|r| r.subtitles.clone())
+            .unwrap_or_default();
+        let credit_clip = descript_db
+            .records
+            .iter()
+            .find(|r| r.name == CREDIT_RECORD)
+            .and_then(|r| r.sequence_hnms.first().cloned())
+            .unwrap_or_else(|| "cliptoot.hnm".to_string());
+        let order: [(String, Vec<crate::descript::SubtitleCue>); 3] = [
+            ("mind.hnm".to_string(), Vec::new()), // boot logos: MINDSCAPE + Microfolie's + ship
+            (credit_clip, credit_cues),           // CRYO presentation cinematic + publisher credit
+            ("logo_bl.hnm".to_string(), Vec::new()), // fire "COMMANDER Blood" title
+        ];
+        self.intro_hnms = Vec::new();
+        self.intro_cues = Vec::new();
+        for (name, cues) in order {
+            let path = sq.join(&name);
+            if path.exists() {
+                self.intro_hnms.push(path);
+                self.intro_cues.push(cues);
+            }
+        }
         self.intro_index = 0;
         self.intro_active = !self.intro_hnms.is_empty();
         if self.intro_active {
@@ -731,8 +761,49 @@ impl EngineState {
         }
         hnm.decode_frame(self.scene_frame, &mut self.scene_buffer, &mut self.scene_palette);
         self.scene_hnm = Some(hnm);
+        let frame = self.scene_frame;
         self.scene_frame += 1;
         self.present_scene_buffer();
+        // Overlay this clip's active credit subtitle (the DESCRIPT `present` cues on the
+        // CRYO cinematic) centred in the lower letterbox, in the verified game font.
+        self.draw_intro_credit(frame);
+    }
+
+    /// Frame index at which a credit cue's `tick` becomes active. The intro cinematic
+    /// advances one clip frame per stepped game frame, so a cue displays from `tick`
+    /// frames in until the next cue supersedes it (calibratable against the oracle).
+    const INTRO_CREDIT_FRAMES_PER_TICK: usize = 1;
+    /// Baseline row for the credit text, inside the cinematic's lower black letterbox.
+    const INTRO_CREDIT_BASELINE_Y: usize = 178;
+    /// Reserved palette index forced to white for the credit glyphs (mirrors the
+    /// dialogue reveal's reserved 0xFD/0xFE slots).
+    const INTRO_CREDIT_COLOR_INDEX: u8 = 253;
+
+    /// Draw the credit subtitle active at intro clip `frame` (if any) centred in the
+    /// lower letterbox. The active cue is the last one whose `tick` has been reached.
+    fn draw_intro_credit(&mut self, frame: usize) {
+        let Some(cues) = self.intro_cues.get(self.intro_index) else {
+            return;
+        };
+        let active = cues
+            .iter()
+            .filter(|c| frame >= c.tick as usize * Self::INTRO_CREDIT_FRAMES_PER_TICK)
+            .next_back();
+        let Some(text) = active.map(|c| c.text.clone()) else {
+            return;
+        };
+        let width: usize = text.chars().map(crate::font::game_font_advance).sum();
+        let x = ENGINE_SCREEN_WIDTH.saturating_sub(width) / 2;
+        self.scene_palette[Self::INTRO_CREDIT_COLOR_INDEX as usize] = [245, 245, 245];
+        draw_text_indexed(
+            &mut self.framebuffer,
+            ENGINE_SCREEN_WIDTH,
+            ENGINE_SCREEN_HEIGHT,
+            &text,
+            x,
+            Self::INTRO_CREDIT_BASELINE_Y,
+            Self::INTRO_CREDIT_COLOR_INDEX,
+        );
     }
 
     /// Load a dialogue script AND resolve each line's speaker to its talk-HNM asset
@@ -1685,7 +1756,7 @@ mod tests {
         let Some(assets) = assets else { return };
         let mut e = EngineState::new();
         e.on_ship = true;
-        e.load_intro(assets);
+        e.load_intro(assets, &crate::descript::DescriptDb { records: Vec::new() });
         assert!(e.intro_active(), "intro activates when clips are present");
         // While the intro runs, the main (nav) view must NOT render — the intro owns
         // the frame — and the intro must produce real (non-blank) content at some point.
@@ -1703,6 +1774,53 @@ mod tests {
         }
         assert!(saw_content, "intro renders real video frames");
         assert!(ended, "intro sequence finishes and hands off to the game");
+    }
+
+    /// The intro must actually overlay the publisher credit sourced from DESCRIPT.DES
+    /// onto the CRYO cinematic — the scene where the bit-exact emulator diverges. This
+    /// steps the intro up to the credit clip and confirms the reserved credit-colour
+    /// glyphs light up (i.e. "CRYO Interactive Entertainment 1995" is drawn), proving
+    /// the credit is presented in-game, not just renderable in isolation.
+    #[test]
+    fn intro_overlays_cryo_credit_from_descript() {
+        let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("sq").join("cliptoot.hnm").exists());
+        let Some(assets) = assets else { return };
+        let db = ["output/_tmp_iso/DESCRIPT.DES", "../output/_tmp_iso/DESCRIPT.DES"]
+            .iter()
+            .find_map(|p| crate::descript::DescriptDb::parse_file(p).ok());
+        let Some(db) = db else { return };
+        // Sanity: the credit clip and its cues must be wired from the data.
+        let mut e = EngineState::new();
+        e.on_ship = true;
+        e.load_intro(assets, &db);
+        let credit_clip = e
+            .intro_hnms
+            .iter()
+            .position(|p| p.file_stem().is_some_and(|s| s == "cliptoot"))
+            .expect("cliptoot credit clip is queued in the intro");
+        assert!(
+            !e.intro_cues[credit_clip].is_empty(),
+            "the credit clip carries DESCRIPT `present` subtitle cues"
+        );
+        // Step until the credit clip is active and past its first cue, then check the
+        // reserved credit-colour glyphs were drawn into the framebuffer.
+        let mut drew_credit = false;
+        for _ in 0..4000 {
+            e.step(MouseInput::default());
+            if e.intro_index == credit_clip
+                && e.framebuffer.iter().filter(|&&p| p == EngineState::INTRO_CREDIT_COLOR_INDEX).count() > 100
+            {
+                drew_credit = true;
+                break;
+            }
+            if !e.intro_active() {
+                break;
+            }
+        }
+        assert!(drew_credit, "the CRYO publisher credit is overlaid during the intro");
     }
 
     #[test]

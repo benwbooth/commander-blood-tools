@@ -265,7 +265,8 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     // Show the decoded title/box art (BLOOD.LBM) first; a click or key dismisses it.
     engine.load_title(Path::new(iso));
     // Play the startup intro videos next (logos + intro cutscene), like the real game.
-    engine.load_intro(Path::new(assets));
+    // The DESCRIPT `present` record supplies the CRYO publisher-credit overlay.
+    engine.load_intro(Path::new(assets), &descript);
     // The alien-examination screen (Scruter Jo): press 'c' to toggle it in nav.
     engine.load_alien_view(Path::new(assets), "scrut");
     // The comms "Hate TV" screen: press 't' to toggle, left/right to change channel.
