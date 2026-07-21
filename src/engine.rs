@@ -264,6 +264,17 @@ pub struct EngineState {
     /// Whether the console MENU option's submenu ({EXPLANATIONS, GAME}) is showing — the
     /// game's main menu, decoded by driving the emulator (MENU opens this two-item submenu).
     pub menu_submenu_active: bool,
+    /// The console OPTION 3D-pyramid menu (`manu3.xdb` overlay). Its 12-item dispatch
+    /// structure is decoded statically from manu3.xdb (`[0x2306]` table) and its
+    /// camera/rotation/tween/dispatch logic is the ported [`crate::manu3`]; it reuses the
+    /// shared ship-3D pyramid projection. Reconstructed from the decoded overlay — the
+    /// per-item glyphs are graphical (archived), so items show as the decoded indices.
+    pub option_active: bool,
+    /// The rotating pyramid's current angle (advanced each frame + steered by the cursor,
+    /// via `manu3::menu_camera_pan`).
+    option_angle: u16,
+    /// The currently highlighted menu item (0..[`Self::OPTION_ITEM_COUNT`]).
+    option_item: usize,
     /// The game-ending finale cutscene (`sq/fin.hnm`) — the bookend to the intro, played
     /// once to completion when the player has finished the game.
     ending_scene: Option<HnmFile>,
@@ -395,6 +406,9 @@ impl EngineState {
             console_font: Vec::new(),
             bridge_active: false,
             menu_submenu_active: false,
+            option_active: false,
+            option_angle: 0,
+            option_item: 0,
             ending_scene: None,
             ending_frame: 0,
             ending_active: false,
@@ -873,6 +887,78 @@ impl EngineState {
         self.framebuffer.copy_from_slice(&self.scene_buffer);
         self.scene_frame += 1;
         self.cryobox_scene = Some(hnm);
+    }
+
+    /// The number of OPTION menu items, decoded from `manu3.xdb`'s dispatch table (the
+    /// 12-entry item table at overlay offset 0x22f0, base `[0x2306]=0x3e72`).
+    pub const OPTION_ITEM_COUNT: usize = 12;
+
+    /// Whether the OPTION 3D-pyramid menu is the active view.
+    pub fn option_active(&self) -> bool {
+        self.option_active
+    }
+
+    /// The currently highlighted OPTION item index.
+    pub fn option_item(&self) -> usize {
+        self.option_item
+    }
+
+    /// Move the OPTION selection (`dir` +1/−1), wrapping — driven the way `manu3`'s item
+    /// index derives from input.
+    pub fn option_cycle(&mut self, dir: i32) {
+        let n = Self::OPTION_ITEM_COUNT as i32;
+        self.option_item = (self.option_item as i32 + dir).rem_euclid(n) as usize;
+    }
+
+    /// Map a click to an OPTION item row (matching `render_option_menu`'s list), or `None`.
+    pub fn option_item_click(&self, x: u16, y: u16) -> Option<usize> {
+        let (px, py) = (x as i32, y as i32);
+        if px < 6 || px > 90 {
+            return None;
+        }
+        (0..Self::OPTION_ITEM_COUNT)
+            .find(|&i| (py - (24 + i as i32 * 14)).abs() <= 5)
+    }
+
+    /// Render the OPTION 3D-pyramid menu: the shared ship-3D pyramid (the manu3 menu IS a
+    /// rotating 3D pyramid — it reuses this projection), spun + steered by the cursor via
+    /// `manu3::menu_camera_pan`, with the decoded 12-item list overlaid (selected row lit).
+    fn render_option_menu(&mut self) {
+        const LIGHT: u8 = 0xFD;
+        const DARK: u8 = 0xFB;
+        const ORB: u8 = 0xFE;
+        const SEL: u8 = 0xFC;
+        self.scene_palette = crate::palette::game_screen_palette();
+        // Clear first — the pyramid renderer only fills the lower grid band, so clear the
+        // upper scene band to black (else a prior screen bleeds through).
+        self.framebuffer.iter_mut().for_each(|p| *p = 0);
+        // manu3 camera pan (entry 0x34..0x51): the cursor's delta from the view centre
+        // steers the pyramid; fold it into the rotation + auto-spin one step.
+        let (dx, _dy) = crate::manu3::menu_camera_pan(self.mouse.x as i16, self.mouse.y as i16);
+        self.option_angle = (self.option_angle as i32 + (dx as i32) / 40 + 1).rem_euclid(180) as u16;
+        crate::ship3d::render_star_map_navview_panned(
+            &mut self.framebuffer,
+            LIGHT,
+            DARK,
+            ORB,
+            self.option_angle,
+        );
+        self.scene_palette[LIGHT as usize] = [150, 150, 220];
+        self.scene_palette[DARK as usize] = [60, 60, 120];
+        self.scene_palette[ORB as usize] = [232, 216, 40];
+        self.scene_palette[SEL as usize] = [245, 245, 160];
+        // Title + the decoded 12-item menu list (labels are graphical in the original, so
+        // items render as their decoded indices), with the highlighted item lit.
+        if !self.console_font.is_empty() {
+            self.draw_console_text("OPTION", 130, 6, ORB);
+            let sel = self.option_item;
+            for i in 0..Self::OPTION_ITEM_COUNT {
+                let color = if i == sel { SEL } else { LIGHT };
+                let y = (24 + i as i32 * 14) as usize;
+                self.draw_console_text(&format!("ITEM {}", i + 1), 6, y, color);
+            }
+        }
+        self.scene_frame += 1;
     }
 
     /// Load the game-ending finale cutscene (`sq/fin.hnm`, the "fin"/end video) — the
@@ -1684,6 +1770,7 @@ impl EngineState {
             && !self.cyber_active
             && !self.cryobox_active
             && !self.phone_active
+            && !self.option_active
             && !self.alien_view_active
             && !self.world_location_active()
     }
@@ -2259,6 +2346,13 @@ impl EngineState {
             self.frame += 1;
             return;
         }
+        // The OPTION 3D-pyramid menu (console OPTION option) takes precedence.
+        if self.option_active {
+            self.render_option_menu();
+            self.countdown = self.countdown.saturating_sub(1);
+            self.frame += 1;
+            return;
+        }
         // Comms/TV screen takes precedence when active: watch the broadcast.
         if self.tv_active && !self.tv_channels.is_empty() {
             self.render_tv();
@@ -2615,6 +2709,30 @@ mod tests {
         assert_eq!(e.menu_submenu_click(x, y0), Some(0));
         let y1 = (EngineState::CONSOLE_MENU_Y + EngineState::CONSOLE_MENU_PITCH) as u16;
         assert_eq!(e.menu_submenu_click(x, y1), Some(1));
+    }
+
+    /// The console OPTION 3D-pyramid menu: renders the pyramid + the decoded 12-item list,
+    /// selection cycles and click-maps to rows. Built from the ported manu3 logic + the
+    /// decoded manu3.xdb item structure + the shared ship-3D projection.
+    #[test]
+    fn option_pyramid_menu_renders_and_selects() {
+        let mut e = EngineState::new();
+        assert_eq!(EngineState::OPTION_ITEM_COUNT, 12, "12 items decoded from manu3.xdb");
+        e.option_active = true;
+        for _ in 0..6 {
+            e.step(MouseInput { x: 220, y: 100, buttons: 0 });
+        }
+        // The pyramid menu fills the frame with real content.
+        assert!(e.framebuffer.iter().filter(|&&p| p != 0).count() > 3000, "pyramid renders");
+        // Selection cycles and wraps.
+        assert_eq!(e.option_item(), 0);
+        e.option_cycle(1);
+        assert_eq!(e.option_item(), 1);
+        e.option_cycle(-2);
+        assert_eq!(e.option_item(), EngineState::OPTION_ITEM_COUNT - 1, "wraps");
+        // A click on the third row selects item 2.
+        let y = (24 + 2 * 14) as u16;
+        assert_eq!(e.option_item_click(20, y), Some(2));
     }
 
     /// The game-ending finale (`sq/fin.hnm`) loads, plays full-screen in colour, and

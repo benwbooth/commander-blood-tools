@@ -173,6 +173,14 @@ fn main() {
     }
     dump(&e, &dir, "qa_nav");
 
+    // OPTION 3D-pyramid menu (console OPTION).
+    e.option_active = true;
+    for _ in 0..8 {
+        e.step(MouseInput { x: 220, y: 100, buttons: 0 });
+    }
+    dump(&e, &dir, "qa_option");
+    e.option_active = false;
+
     // Ending finale (a frame partway in).
     e.on_ship = false;
     e.start_ending();

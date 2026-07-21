@@ -111,6 +111,14 @@ fn main() {
         e.phone_active = false;
     }
 
+    // OPTION 3D-pyramid menu (console OPTION): renders + selection cycles.
+    e.option_active = true;
+    for _ in 0..6 { e.step(MouseInput { x: 220, y: 100, buttons: 0 }); }
+    check(nonblank(&e.framebuffer) > 500, "OPTION 3D pyramid menu renders");
+    e.option_cycle(1);
+    check(e.option_item() == 1, "OPTION selection cycles");
+    e.option_active = false;
+
     // Ending finale: arms, plays real content, and reaches completion.
     if e.load_ending(assets) {
         e.start_ending();
