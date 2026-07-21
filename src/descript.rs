@@ -526,6 +526,44 @@ mod tests {
         }
     }
 
+    /// End-to-end check of the port's intro-credit path — the exact scene where the bit-exact
+    /// emulator diverges (it shows a scrambled "WAIT COMMANDER"). The port must (1) SOURCE the
+    /// real credit strings from DESCRIPT.DES and (2) RENDER them as clean glyphs with the
+    /// verified game font. Skips if the game data isn't in this checkout.
+    #[test]
+    fn intro_credit_is_sourced_and_renders_cleanly() {
+        let db = ["output/_tmp_iso/DESCRIPT.DES", "../output/_tmp_iso/DESCRIPT.DES"]
+            .iter()
+            .find_map(|p| DescriptDb::parse_file(p).ok());
+        let Some(db) = db else { return };
+
+        // (1) Both credit lines must be present as subtitle cues (sourced, not fabricated).
+        let all_subtitles: Vec<&str> =
+            db.records.iter().flat_map(|r| r.subtitles.iter().map(|c| c.text.as_str())).collect();
+        let cryo = all_subtitles
+            .iter()
+            .find(|t| t.contains("CRYO Interactive Entertainment"))
+            .expect("credit line 'CRYO Interactive Entertainment' must be sourced from DESCRIPT.DES");
+        assert!(
+            all_subtitles.iter().any(|t| t.contains("Commander BLOOD")),
+            "credit line 'Commander BLOOD' must be sourced from DESCRIPT.DES"
+        );
+
+        // (2) The sourced credit renders as clean glyphs (non-empty, and every character lands
+        // within the 320x200 screen). A right edge past the pen start proves glyphs were drawn.
+        const WIDTH: usize = crate::VIEWPORT_W;
+        const HEIGHT: usize = crate::VIEWPORT_H;
+        let mut screen = vec![0u8; WIDTH * HEIGHT];
+        const CREDIT_COLOR: u8 = 15;
+        let right_edge = crate::font::draw_text_indexed(&mut screen, WIDTH, HEIGHT, cryo, 20, 100, CREDIT_COLOR);
+
+        let lit = screen.iter().filter(|&&p| p == CREDIT_COLOR).count();
+        assert!(lit > 100, "credit should light many pixels, got {lit}");
+        assert!(right_edge > 20 && right_edge < WIDTH, "credit must fit on screen, right edge {right_edge}");
+        // The rendered pixels are exactly the credit color — nothing scrambled or out of palette.
+        assert!(screen.iter().all(|&p| p == 0 || p == CREDIT_COLOR));
+    }
+
     #[test]
     fn record_length_excludes_next_record_kind_byte() {
         let count = 2u16;
