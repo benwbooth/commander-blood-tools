@@ -45,6 +45,10 @@ pub struct Cpu {
     /// round-tripping them through popf/pushf, so they must persist. Bit 15 stays 0.
     pub flags_high: u16,
     pub steps: u64,
+    /// Diagnostic execution watch: (cs, ip) pairs to detect. When execution reaches one,
+    /// its (first_step, hit_count) is recorded in `exec_hits`. Tiny set → cheap linear scan.
+    pub exec_watch: Vec<(u16, u16)>,
+    pub exec_hits: Vec<(u16, u16, u64, u64)>,
 }
 
 /// General register by 3-bit index, 16-bit view: AX CX DX BX SP BP SI DI.
@@ -275,12 +279,24 @@ impl Cpu {
             iflag: true,
             flags_high: 0,
             steps: 0,
+            exec_watch: Vec::new(),
+            exec_hits: Vec::new(),
         }
     }
 
     /// Run until an [`Exit`] or `max_steps` instructions.
     pub fn run(&mut self, m: &mut Machine, max_steps: u64) -> Exit {
         for _ in 0..max_steps {
+            if !self.exec_watch.is_empty() {
+                let (cs, ip) = (self.cs, self.ip);
+                if self.exec_watch.iter().any(|&(c, i)| c == cs && i == ip) {
+                    let step = self.steps;
+                    match self.exec_hits.iter_mut().find(|h| h.0 == cs && h.1 == ip) {
+                        Some(h) => h.3 += 1,
+                        None => self.exec_hits.push((cs, ip, step, 1)),
+                    }
+                }
+            }
             if let Some(e) = self.step(m) {
                 return e;
             }

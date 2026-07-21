@@ -80,12 +80,95 @@ fn main() {
         return;
     }
 
+    if let Ok(needle) = std::env::var("MEMFIND") {
+        // Run to `steps`, then scan all of guest RAM for an ASCII needle — decisive test of
+        // whether a given string (e.g. a DESCRIPT credit cue) is resident at that moment.
+        let _ = rt.run(steps);
+        let pat = needle.as_bytes();
+        let mem = &rt.m.mem;
+        let mut hits = 0;
+        for i in 0..mem.len().saturating_sub(pat.len()) {
+            if &mem[i..i + pat.len()] == pat {
+                let gs = 0x0e84u32 * 16;
+                let rel = if (i as u32) >= gs { format!("gs:{:#06x}", i as u32 - gs) } else { String::new() };
+                println!("  found {needle:?} at linear {i:#08x} {rel}");
+                hits += 1;
+                if hits >= 8 { println!("  (more; stopping at 8)"); break; }
+            }
+        }
+        println!("MEMFIND {needle:?}: {hits} hit(s) at {} steps", rt.cpu.steps);
+        return;
+    }
+
+    if let Ok(iv) = std::env::var("STATEDUMP") {
+        // Print the credit-scene state machine every <iv> million steps: the two text buffers
+        // and the gate/phase flags that select static "WAIT COMMANDER" vs clean "CRYO..." credit.
+        let iv_m: u64 = iv.parse().unwrap_or(20);
+        let g = 0x0e84u16;
+        let readstr = |rt: &Runtime, off: u32| -> String {
+            let mut s = String::new();
+            for i in 0..40 {
+                let b = rt.m.read8(g, off + i);
+                if b == 0 { break; }
+                s.push(if (0x20..0x7f).contains(&b) { b as char } else { '.' });
+            }
+            s
+        };
+        let mut mark = iv_m * 1_000_000;
+        loop {
+            match rt.run(mark) {
+                RunEnd::StepBudget => {}
+                other => { println!("ended: {other:?} at {}", rt.cpu.steps); break; }
+            }
+            let m = rt.cpu.steps / 1_000_000;
+            println!(
+                "@{m:>3}M 5e64={:#06x} 5e65={:#04x} 5e58={:#06x} 6780={:#06x} ba0={:#06x} 27e2={:#06x} | buf(e18)={:?} src(190)={:?}",
+                rt.m.read16(g, 0x5e64), rt.m.read8(g, 0x5e65), rt.m.read16(g, 0x5e58),
+                rt.m.read16(g, 0x6780), rt.m.read16(g, 0x0ba0), rt.m.read16(g, 0x27e2),
+                readstr(&rt, 0x0e18), readstr(&rt, 0x0190),
+            );
+            mark += iv_m * 1_000_000;
+            if rt.cpu.steps >= steps { break; }
+        }
+        return;
+    }
+
+    if let Ok(w) = std::env::var("EXECWATCH") {
+        // Watch execution of specific cs:ip entry points across the whole run, e.g.
+        // EXECWATCH=08c0:0432,????:9432. Reports first-hit step and hit count for each.
+        // Converts file offsets too: a bare hex >0x1000 is treated as a FILE offset and
+        // mapped to loaded cs:ip via seg = (file>>4)+0x1a2, ip = file&0xf ... but callers
+        // pass explicit cs:ip so we keep it simple.
+        for tok in w.split(',') {
+            let tok = tok.trim();
+            if let Some((c, i)) = tok.split_once(':') {
+                let cs = u16::from_str_radix(c.trim_start_matches("0x"), 16).unwrap();
+                let ip = u16::from_str_radix(i.trim_start_matches("0x"), 16).unwrap();
+                rt.cpu.exec_watch.push((cs, ip));
+                eprintln!("watch {cs:04x}:{ip:04x} (file ~{:#07x})", (cs as u32 - 0x1a2) * 16 + ip as u32);
+            }
+        }
+        let _ = rt.run(steps);
+        println!("exec watch results ({} of {} entries hit):", rt.cpu.exec_hits.len(), rt.cpu.exec_watch.len());
+        for (cs, ip, first, count) in &rt.cpu.exec_hits {
+            println!("  {cs:04x}:{ip:04x} (file ~{:#07x}): first@{first} count={count}", (*cs as u32 - 0x1a2) * 16 + *ip as u32);
+        }
+        for (cs, ip) in &rt.cpu.exec_watch {
+            if !rt.cpu.exec_hits.iter().any(|h| h.0 == *cs && h.1 == *ip) {
+                println!("  {cs:04x}:{ip:04x} (file ~{:#07x}): NEVER EXECUTED", (*cs as u32 - 0x1a2) * 16 + *ip as u32);
+            }
+        }
+        eprintln!("execwatch done at {} steps", rt.cpu.steps);
+        return;
+    }
+
     if let Ok(w) = std::env::var("REVWATCH") {
         // Watch writes to a chosen gs offset (default 0x5e65 = reveal phase) across the credit
         // scene, recording (value, cs, ip) so we can see WHO sets it and to WHAT. gs seg = 0x0e84.
         let off: u32 = u32::from_str_radix(w.trim_start_matches("0x"), 16).unwrap_or(0x5e65);
-        // fast-forward to just before the credit scene, then arm the watch
-        let _ = rt.run(213_000_000);
+        // fast-forward to just before the credit scene, then arm the watch (REVFROM=<Msteps>)
+        let from_m: u64 = std::env::var("REVFROM").ok().and_then(|s| s.parse().ok()).unwrap_or(213);
+        let _ = rt.run(from_m * 1_000_000);
         rt.m.watch_addr = Some(0x0e84 * 16 + off as usize);
         let _ = rt.run(steps);
         println!("writes to gs:{off:#06x} (value, cs:ip), {} hits:", rt.m.addr_hits.len());
