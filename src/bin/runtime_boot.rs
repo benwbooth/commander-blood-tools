@@ -115,6 +115,40 @@ fn main() {
         return;
     }
 
+    if std::env::var("MENUMAP").is_ok() {
+        // Fast-skip to the ship-console menu, then click each menu-item row and capture the
+        // resulting screen, to map the menu -> screen structure.
+        let mut next_input = 5_000_000u64;
+        while rt.cpu.steps < 50_000_000 {
+            let _ = rt.run(next_input);
+            rt.inject_key(0x01, 0x1b);
+            rt.inject_key(0x1c, 0x0d);
+            rt.set_mouse_pos(320, 100);
+            rt.mouse_press(0);
+            let _ = rt.run(rt.cpu.steps + 500_000);
+            rt.mouse_release(0);
+            next_input += 5_000_000;
+        }
+        rt.write_ppm(&out.join("menu_00_base.ppm")).unwrap();
+        // Menu items are stacked in the console box (screen x~165, y 60..130). Click each,
+        // then a corner (to close/return) between probes.
+        let rows = [60u16, 78, 95, 112, 128];
+        for (i, &sy) in rows.iter().enumerate() {
+            rt.set_mouse_pos(165 * 2, sy);
+            let _ = rt.run(rt.cpu.steps + 1_000_000);
+            rt.mouse_press(0);
+            let _ = rt.run(rt.cpu.steps + 1_000_000);
+            rt.mouse_release(0);
+            let _ = rt.run(rt.cpu.steps + 6_000_000);
+            rt.write_ppm(&out.join(format!("menu_{:02}_row{sy}.ppm", i + 1))).unwrap();
+            // try Esc to back out to the menu before the next probe
+            rt.inject_key(0x01, 0x1b);
+            let _ = rt.run(rt.cpu.steps + 3_000_000);
+        }
+        println!("MENUMAP done -> {}/menu_*.ppm", out.display());
+        return;
+    }
+
     if std::env::var("INPUTPROBE").is_ok() {
         // Reach the bridge state, snapshot, inject mouse motion + clicks + keys, run on,
         // and report whether the frame / nav data changed (i.e. is it interactive?).

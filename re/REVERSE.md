@@ -289,6 +289,23 @@ renderer); remaining ship-view visual = compose the pyramid-HUD overlay (grid +
 orb) over the scene, driven by the destination list. Bounded sprite compositing,
 not new rendering.
 
+INTERACTIVE SHIP CONSOLE — REACHED via emulator input injection (sess: whole-game RE).
+The recomp emulator is a driveable runtime oracle: `runtime.inject_key` /
+`set_mouse_pos` / `mouse_press`+`release` drive the real game, and injecting
+Esc/Enter/click periodically from early boot SKIPS the intro to reach interactive
+gameplay by ~45M steps (vs ~500M passive) — see `runtime_boot` SKIPPROBE/MENUMAP/
+INPUTPROBE/MEMDUMP modes. The first interactive screen is the SHIP CONSOLE: a
+purple/orange console panel with a crew portrait (in an orb, left), a pointing
+hand, and a 5-item menu: **HONK / TELEPHONE / CRYOBOX / MENU / OPTION**. Clicking a
+console button triggers live tutorial dialogue (observed: subtitle "You found the
+right button. So..."). So the console is mouse-driven and dialogue-gated. NOTE: the
+port's `render_bridge` (flat 3-icon MAP/COMMS/CYBER hub) does NOT match this — the
+real hub is the HONK/TELEPHONE/CRYOBOX/MENU/OPTION console. Camera `0x2F65` +
+projection matrix `0x2F95` are live (rotating) at this state; the `DS:0x4F09`
+anchors there are the ship-view background, not the nav star-map (which needs
+driving further into the console). This unblocks per-screen RE:
+drive -> MEMDUMP -> decode -> port -> verify (the method that resolved the palette).
+
 NAV-DESTINATION PROJECTION DECODED (`0x9B98` `ship_3d_object_sprite_project`): the
 "unlocated" nav-destination projection is this routine. It loops 11 times (counter
 `[0x2F77]`=0xB down) over the anchor buffer `DS:0x4F09` (8-byte records; the
