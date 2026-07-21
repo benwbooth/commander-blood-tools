@@ -1499,8 +1499,12 @@ impl EngineState {
 
     /// Load the talk-HNM resolved for the current dialogue line (if any).
     fn load_current_scene(&mut self) {
-        if let Some(Some(path)) = self.dialogue_scene_paths.get(self.dialogue_cursor).cloned() {
-            self.load_scene_hnm(&path);
+        match self.dialogue_scene_paths.get(self.dialogue_cursor).cloned() {
+            Some(Some(path)) => self.load_scene_hnm(&path),
+            // No scene for this line (e.g. HONK's food menu, the console tutorial): CLEAR
+            // any stale talk-HNM so `render_dialogue_frame` falls back to the console panel
+            // (ORX.FD) instead of a leftover scene or black.
+            _ => self.scene_hnm = None,
         }
     }
 
@@ -2309,14 +2313,15 @@ impl EngineState {
             self.scene_hnm = Some(hnm);
             self.scene_frame += 1;
             self.present_scene_buffer();
-        } else if let Some(chart) = self.nav_chart.as_ref().filter(|c| {
+        } else if let Some(bg) = self.console_bg.as_ref().or(self.nav_chart.as_ref()).filter(|c| {
             c.width == ENGINE_SCREEN_WIDTH && c.height == ENGINE_SCREEN_HEIGHT
         }) {
-            // No talk-HNM (e.g. the on-ship console tutorial): the dialogue happens on the
-            // ship, so show the ship-console screen (CHART.FD) rather than a black void.
-            self.scene_buffer.copy_from_slice(&chart.pixels);
-            self.scene_palette = chart.palette;
-            self.framebuffer.copy_from_slice(&chart.pixels);
+            // No talk-HNM (e.g. the on-ship console tutorial): the dialogue happens at the
+            // ship console, so show the console panel (ORX.FD, else the nav chart) rather
+            // than a black void.
+            self.scene_buffer.copy_from_slice(&bg.pixels);
+            self.scene_palette = bg.palette;
+            self.framebuffer.copy_from_slice(&bg.pixels);
         } else {
             for p in self.framebuffer.iter_mut() {
                 *p = 0;
