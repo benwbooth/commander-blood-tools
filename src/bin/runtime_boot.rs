@@ -63,6 +63,23 @@ fn main() {
         return;
     }
 
+    if let Ok(w) = std::env::var("READSTR") {
+        // Run to `steps`, then print the ASCII string at gs:<off> (default 0xe18 subtitle buffer).
+        let off: u32 = u32::from_str_radix(w.trim_start_matches("0x"), 16).unwrap_or(0xe18);
+        let _ = rt.run(steps);
+        let g = 0x0e84u16;
+        let mut s = String::new();
+        for i in 0..80 {
+            let b = rt.m.read8(g, off + i);
+            if b == 0 {
+                break;
+            }
+            s.push(if (0x20..0x7f).contains(&b) { b as char } else { '.' });
+        }
+        println!("@{} gs:{off:#06x} = {s:?}", rt.cpu.steps);
+        return;
+    }
+
     if let Ok(w) = std::env::var("REVWATCH") {
         // Watch writes to a chosen gs offset (default 0x5e65 = reveal phase) across the credit
         // scene, recording (value, cs, ip) so we can see WHO sets it and to WHAT. gs seg = 0x0e84.

@@ -1540,3 +1540,23 @@ because the glyph command table gs:0x5e6f is NOT built by a flag-poke — only p
 (b) clean. With interp+device-reads+files all verified, that choice is device-TIMING-driven (SB voice-
 completion IRQ cadence the leading suspect: a fires exactly at voice-completion ~214.4M). NEXT: why the
 VM token walker doesn't process the credit's 0xA6 text token → the timing state gating the dispatch.
+
+## 2026-07-20 (cont. 2) — DECISIVE: subtitle buffer holds "WAIT COMMANDER", not the credit
+
+New diag `runtime_boot` env `READSTR=<gshexoff>` (runs to --steps, prints ASCII at gs:off). At the
+credit scene (214.5–218M) gs:0xe18 (subtitle buffer) = **"WAIT COMMANDER ...."** — NOT
+"CRYO Interactive Entertainment 1995". gs:0x190 (static default source) = same. So the scrambled band
+is a scrambled WAIT-COMMANDER prompt: the CREDIT CLIP is never selected/loaded at all — presenter (a)
+copies the static gs:0x190 prompt into gs:0xe18; presenter (b) (which would read "CRYO..." from the
+clip's subtitle file via table gs:0x0dd7) never runs. Voice-mixer state at 216M: gs:0xc49 (voice
+handle)=0, gs:0xa5e (voice source)=0xffff, gs:0x0dd7 (clip subtitle-file table)=filler 0x78. So the
+game is stuck in the WAIT-COMMANDER *loading/wait* state and never transitions to the credit content.
+
+Force experiments (all env-gated, reverted, all INCONCLUSIVE — none produced clean glyphs, because no
+single flag-poke substitutes for running the real clip-load path): FORCE_ADE=0 mid-scene, FORCE_ADE0
+(clear gs:0xade from boot), FORCE_CLEAN (5e64=1/5e58=0/27e2=2). => gs:0xade is NOT the master lever;
+the reveal machinery is fine; the game genuinely needs to SELECT + LOAD the credit clip (multi-step),
+which is gated off. ROOT stands: the credit profile/clip is never requested (gs:0x6780=-1), keeping the
+game in WAIT-COMMANDER mode. With interp ruled out + reads/files verified, this is device-timing-driven
+clip scheduling. NEXT: find what selects the credit clip (the gs:0x0dd7 table setup + the trigger that
+should replace the WAIT-COMMANDER prompt with the credit clip) and the timing state gating it.
