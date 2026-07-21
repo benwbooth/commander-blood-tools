@@ -1165,6 +1165,76 @@ impl EngineState {
         self.dialogue_cursor
     }
 
+    /// Set the dialogue playback cursor (clamped to the loaded dialogue), used when
+    /// restoring a save so playback resumes at the saved line.
+    pub fn set_dialogue_cursor(&mut self, cursor: usize) {
+        if self.dialogue.is_empty() {
+            self.dialogue_cursor = 0;
+        } else {
+            self.dialogue_cursor = cursor.min(self.dialogue.len() - 1);
+        }
+    }
+
+    /// Capture the resumable game state into a [`crate::save::SaveState`] (the port's own
+    /// save). `script` is the current location/dialogue script number the driver loaded
+    /// (0 = none, on the nav) — the engine doesn't own it, so the driver supplies it.
+    pub fn capture_save(&self, script: u32) -> crate::save::SaveState {
+        use crate::save::SaveScreen;
+        let screen = if self.bridge_active {
+            SaveScreen::Bridge
+        } else if self.tv_active {
+            SaveScreen::Comms
+        } else if self.cyber_active {
+            SaveScreen::Cyberspace
+        } else if self.cryobox_active {
+            SaveScreen::Cryobox
+        } else if self.phone_active {
+            SaveScreen::Telephone
+        } else if self.on_ship {
+            SaveScreen::Nav
+        } else {
+            SaveScreen::Dialogue
+        };
+        crate::save::SaveState {
+            screen,
+            script,
+            compass_angle: self.compass_angle,
+            dialogue_cursor: self.dialogue_cursor,
+            phone_contact: self.phone_contact,
+            phone_connected: self.phone_connected,
+            text_speed_step: self.text_speed_step,
+        }
+    }
+
+    /// Restore the engine-side view and settings from a save. The driver must (re)load
+    /// `save.script`'s dialogue BEFORE calling this so the dialogue cursor lands on a valid
+    /// line; screen selection, nav heading, phone selection and text speed are applied here.
+    pub fn restore_save(&mut self, save: &crate::save::SaveState) {
+        use crate::save::SaveScreen;
+        self.bridge_active = false;
+        self.tv_active = false;
+        self.cyber_active = false;
+        self.cryobox_active = false;
+        self.phone_active = false;
+        self.on_ship = false;
+        match save.screen {
+            SaveScreen::Nav => self.on_ship = true,
+            SaveScreen::Bridge => self.bridge_active = true,
+            SaveScreen::Comms => self.tv_active = true,
+            SaveScreen::Cyberspace => self.cyber_active = true,
+            SaveScreen::Cryobox => self.cryobox_active = true,
+            SaveScreen::Telephone => self.phone_active = true,
+            SaveScreen::Dialogue => {}
+        }
+        self.compass_angle = save.compass_angle % 180;
+        if !self.phone_contacts.is_empty() {
+            self.phone_contact = save.phone_contact.min(self.phone_contacts.len() - 1);
+        }
+        self.phone_connected = save.phone_connected;
+        self.text_speed_step = save.text_speed_step;
+        self.set_dialogue_cursor(save.dialogue_cursor);
+    }
+
     /// How many subtitle characters are currently revealed on the active line (the
     /// game's reveal pointer `gs:0x5E58`), and the line's total character count. A
     /// driver plays the `tb.snd` chatter (clip 0) when `revealed` first reaches
@@ -2434,6 +2504,42 @@ mod tests {
         // Hanging up returns to the dial screen.
         e.phone_hangup();
         assert!(!e.phone_connected(), "hung up back to dial");
+    }
+
+    /// The port's save/load round-trips the resumable game state through the engine: a
+    /// captured `SaveState` (screen + nav heading + dialogue progress + settings), applied
+    /// to a fresh engine with the same dialogue loaded, restores that exact state.
+    #[test]
+    fn save_captures_and_restores_game_state() {
+        // A source engine mid-dialogue on the comms screen, heading 120, line 3.
+        let mut src = EngineState::new();
+        let lines: Vec<(String, Option<std::path::PathBuf>)> =
+            (0..10).map(|i| (format!("line {i}"), None)).collect();
+        src.set_speech_dialogue(lines.clone());
+        src.on_ship = false;
+        src.tv_active = true;
+        src.compass_angle = 120;
+        src.text_speed_step = crate::vm::text_speed_step_from_setting(5);
+        src.set_dialogue_cursor(3);
+        let save = src.capture_save(4);
+        assert_eq!(save.screen, crate::save::SaveScreen::Comms);
+        assert_eq!(save.script, 4);
+
+        // A round-trip through the file text must preserve it.
+        let save = crate::save::SaveState::from_text(&save.to_text()).expect("parses");
+
+        // Restore into a fresh engine that has reloaded the same dialogue.
+        let mut dst = EngineState::new();
+        dst.set_speech_dialogue(lines);
+        dst.restore_save(&save);
+        assert!(dst.tv_active && !dst.on_ship, "restored to the comms screen");
+        assert_eq!(dst.compass_angle, 120, "restored the nav heading");
+        assert_eq!(dst.dialogue_cursor(), 3, "resumed at the saved line");
+        assert_eq!(
+            dst.text_speed_step,
+            crate::vm::text_speed_step_from_setting(5),
+            "restored the text-speed setting"
+        );
     }
 
     /// `set_speech_dialogue` plays the full decoded per-character dialogue (all lines)

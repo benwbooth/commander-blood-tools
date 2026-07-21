@@ -370,7 +370,12 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
 
     // Load SCRIPT<n>'s dialogue into the engine (the destination's scene) and start
     // that scene's background music, as the game does per location.
+    // The location/dialogue script the player is currently in (0 = none, on the nav) —
+    // tracked here (the engine doesn't own it) so a save records where to resume. A Cell
+    // lets the `load_script` closure update it through a shared borrow.
+    let current_script = std::cell::Cell::new(0u32);
     let load_script = |engine: &mut EngineState, music: &mut Music, n: u32| {
+        current_script.set(n);
         let r = |ext: &str| std::fs::read(format!("{iso}/SCRIPT{n}.{ext}"));
         if let (Ok(c), Ok(v), Ok(d), Ok(b)) = (r("COD"), r("VAR"), r("DIC"), r("DEB")) {
             // load_dialogue_scenes sets up the scene + the D2 chaining decision.
@@ -564,6 +569,35 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         engine.bridge_active = true;
                     }
                 }
+                // F5 (keycode 71): save the game to blood.sav (the port's save format).
+                Event::KeyPress(k) if k.detail == 71 => {
+                    let save = engine.capture_save(current_script.get());
+                    match save.write(Path::new("blood.sav")) {
+                        Ok(()) => println!(
+                            "saved blood.sav ({:?}, script {}, line {})",
+                            save.screen, save.script, save.dialogue_cursor
+                        ),
+                        Err(e) => eprintln!("save failed: {e}"),
+                    }
+                }
+                // F9 (keycode 75): load blood.sav and resume that saved state.
+                Event::KeyPress(k) if k.detail == 75 => {
+                    use commander_blood_tools::save::{SaveScreen, SaveState};
+                    if let Some(save) = SaveState::read(Path::new("blood.sav")) {
+                        // If the save was mid-dialogue, reload that location's script first
+                        // so the resumed cursor lands on a real line; then apply the view.
+                        if save.screen == SaveScreen::Dialogue && save.script != 0 {
+                            load_script(&mut engine, &mut music, save.script);
+                        }
+                        engine.restore_save(&save);
+                        println!(
+                            "loaded blood.sav ({:?}, script {}, line {})",
+                            save.screen, save.script, save.dialogue_cursor
+                        );
+                    } else {
+                        eprintln!("no valid blood.sav to load");
+                    }
+                }
                 // 'v' (keycode 55): visit the nav destination the compass targets —
                 // shows that world's decoded fd/ location background. While visiting,
                 // 'v' cycles forward through the world's rooms.
@@ -666,6 +700,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     music.stop();
                     voice = None;
                     voice_line = None;
+                    current_script.set(0); // back on the nav — no active location
                 }
             }
         }
