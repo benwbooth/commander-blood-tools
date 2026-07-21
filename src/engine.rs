@@ -657,10 +657,11 @@ impl EngineState {
     /// (`TELEPHONE`, `CRYOBOX`, `MENU`, `OPTION`) are the real labels but their exact
     /// functions are not yet reverse-engineered.
     pub const CONSOLE_MENU: [&'static str; 5] = ["HONK", "TELEPHONE", "CRYOBOX", "MENU", "OPTION"];
-    /// The console menu's screen layout (top-left of the label column, row pitch).
-    pub const CONSOLE_MENU_X: i32 = 156;
-    pub const CONSOLE_MENU_Y: i32 = 60;
-    pub const CONSOLE_MENU_PITCH: i32 = 13;
+    /// The console menu's screen layout (top-left of the label column, row pitch). Placed on
+    /// the RIGHT of the panel with the eye-orb on the left, as the real console lays it out.
+    pub const CONSOLE_MENU_X: i32 = 196;
+    pub const CONSOLE_MENU_Y: i32 = 78;
+    pub const CONSOLE_MENU_PITCH: i32 = 14;
 
     /// The console MENU option's submenu, decoded by driving the real game (clicking MENU
     /// opens these two items): EXPLANATIONS (the tutorial/help) and GAME (play). Drawn over
