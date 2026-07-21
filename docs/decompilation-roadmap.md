@@ -16,17 +16,25 @@ interactive game loop first.
 ## Current Completion Status
 
 The port (`src/*.rs` outside `src/recomp/`, driven by `EngineState` and
-`run_engine_window`) is a **complete, faithful scene/cutscene player**. The
-remaining gap to a full interactive-game replacement is dominated by subsystems
-that are *not yet reverse-engineered* (undecoded runtime data and mechanics), not
-by unwritten port code — so closing it is new RE work gated on oracle ground
-truth, not transliteration. Fabricating those subsystems would violate the
-"faithfully accurate" requirement, so they are left explicit rather than guessed.
+`run_engine_window`) implements the **whole-game frame end to end**: title → intro
+(with the DESCRIPT-sourced CRYO credit) → SCRIPT1 tutorial → SCRIPT2 (D2-chained) →
+nav *choose-a-location* → the free-choice destinations (all characters' decoded
+dialogue) → the console functions (HONK / TELEPHONE / CRYOBOX) → save/load → the
+`fin.hnm` ending finale → back to title. Every screen was **visually verified**
+faithful (correct palettes + real decoded assets) via the `export_screens` bin
+(2026-07-21). The remaining gap to a full interactive-game replacement is dominated
+by subsystems that are *not yet reverse-engineered* (undecoded runtime data and
+mechanics) — MENU/OPTION console handlers, the mini-game logic, the interactive
+progression/flag layer, and the DOS `blood.sav` byte format — not by unwritten port
+code. Closing it is new RE work gated on oracle ground truth, not transliteration.
+Fabricating those subsystems would violate the "faithfully accurate" requirement, so
+they are left explicit rather than guessed.
 
 Verified end to end by `engine::tests::full_playable_loop_end_to_end` (fast CI
-test) and `src/bin/smoke.rs` (full five-scene headless playthrough): title →
-intro (with the DESCRIPT-sourced CRYO publisher credit) → nav → every screen →
-all five dialogue scenes play to completion (101/169/327/145/258 lines).
+test) and `src/bin/smoke.rs` (headless playthrough of every screen + all five
+dialogue scenes + the video-phone + the ending finale), plus per-feature tests
+(`telephone_console_function_renders`, `nav_destination_list_choose_a_location`,
+`save_captures_and_restores_game_state`, `ending_finale_plays_to_completion`).
 
 Against the Definition of Done below:
 
@@ -34,11 +42,11 @@ Against the Definition of Done below:
 |---|-----------|--------|-------|
 | 1 | Boot on original CD data | **Done** | loads DESCRIPT/SCRIPT/HNM/LBM/SPR/SND/VOC |
 | 2 | Intro + HNM cutscenes (timing/palette/audio/subtitles) | **Done** | HNM carries its own palette; intro credit sourced from DESCRIPT; reveal timing + chatter decoded |
-| 3 | Ship/nav UI + mouse/keyboard | **Partial** | compass steering + click + screen toggles work; *palette* now decoded (true colours); nav *layout* still needs the real anchor positions (see below) |
+| 3 | Ship/nav UI + mouse/keyboard | **Partial** | compass steering + click + screen toggles + the *choose-a-location* destination list (click a location → its dialogue) all work; *palette* decoded (true colours); nav *layout* still needs the real anchor positions (see below) |
 | 4 | Execute compiled BASIC scripts | **Done** | `vm.rs` walk + `execute_trace`; A6 text/voice decoded |
 | 5 | Dialogue scenes (bg/actor/voice/subtitle/sfx/music/timing) | **Done** | talk-HNM background, per-line voice, subtitle reveal + chatter, scene music; HUD strip approximate |
 | 6 | Location navigation + interactive object flows | **Partial** | location visit is a faithful static room viewer with decoded `.ext` object positions; interaction semantics RE-blocked |
-| 7 | Save/load state | **Absent** | downstream of the interactive-state layer (little decoded state to persist yet) |
+| 7 | Save/load state | **Done (port-native)** | `save.rs` persists the resumable state (screen, nav heading, location/script, dialogue progress, phone selection, text speed) via F5/F9; NOT the DOS `blood.sav` byte layout (that field layout is separately RE-blocked) |
 | 8 | Oracle suite | **Partial** | per-behavior tests + smoke playthrough; no full frame-diff oracle suite |
 
 Phase status: **Phase 1 (data layer) and Phase 2 (script VM/trace) complete;
