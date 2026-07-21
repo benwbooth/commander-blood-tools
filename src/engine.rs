@@ -1831,6 +1831,84 @@ mod tests {
         assert!(drew_credit, "the CRYO publisher credit is overlaid during the intro");
     }
 
+    /// End-to-end regression: drive the full playable loop the way the real driver does
+    /// (title -> intro -> nav -> every screen -> a dialogue scene) and assert each stage
+    /// produces real content and progresses. The step loop is pure logic (no real-time
+    /// wait), so a full scene runs in milliseconds. Skips without game data. A broader
+    /// all-five-script playthrough lives in `src/bin/smoke.rs`.
+    #[test]
+    fn full_playable_loop_end_to_end() {
+        let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter().map(Path::new).find(|p| p.join("DESCRIPT.DES").is_file());
+        let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
+            .iter().map(Path::new).find(|p| p.join("sq").is_dir());
+        let (Some(iso), Some(assets)) = (iso, assets) else { return };
+        let db = crate::descript::DescriptDb::parse_file(iso.join("DESCRIPT.DES")).unwrap();
+        let rd = |ext: &str| std::fs::read(iso.join(format!("SCRIPT1.{ext}")));
+        let (Ok(cod), Ok(var), Ok(dic), Ok(deb)) = (rd("COD"), rd("VAR"), rd("DIC"), rd("DEB")) else { return };
+
+        let mut e = EngineState::new();
+        e.load_dialogue_scenes(&cod, &var, &dic, &deb, &db, assets);
+        e.dialogue_hold_frames = 20;
+        if let (Ok(c), Ok(b)) = (std::fs::read(iso.join("CARTE.SPR")), std::fs::read(iso.join("BORXX.SPR"))) {
+            e.load_nav_sprites(&c, &b);
+        }
+        e.load_title(iso);
+        e.load_intro(assets, &db);
+        e.load_alien_view(assets, "scrut");
+        e.load_tv_channels(assets, "tv");
+        e.load_cyberspace(assets);
+        e.load_bridge(iso);
+        e.on_ship = true;
+        let nonblank = |fb: &[u8]| fb.iter().filter(|&&p| p != 0).count();
+
+        // Title, then intro to completion.
+        assert!(e.title_active(), "title armed at startup");
+        e.step(MouseInput::default());
+        assert!(nonblank(&e.framebuffer) > 1000, "title renders art");
+        e.dismiss_title();
+        let mut intro_ended = false;
+        for _ in 0..4000 {
+            e.step(MouseInput::default());
+            if !e.intro_active() { intro_ended = true; break; }
+        }
+        assert!(intro_ended, "intro sequence finishes");
+
+        // Every screen renders real content.
+        e.on_ship = true;
+        for _ in 0..8 { e.step(MouseInput::default()); }
+        assert!(nonblank(&e.framebuffer) > 500, "nav view renders");
+        e.bridge_active = true;
+        for _ in 0..4 { e.step(MouseInput::default()); }
+        assert!(nonblank(&e.framebuffer) > 500, "bridge renders");
+        e.bridge_active = false;
+        e.tv_active = true;
+        for _ in 0..8 { e.step(MouseInput::default()); }
+        assert!(nonblank(&e.framebuffer) > 500, "TV renders");
+        e.tv_active = false;
+        e.cyber_active = true;
+        for _ in 0..8 { e.step(MouseInput::default()); }
+        assert!(nonblank(&e.framebuffer) > 500, "cyberspace renders");
+        e.cyber_active = false;
+        e.alien_view_active = true;
+        e.arm_alien_intro();
+        for _ in 0..12 { e.step(MouseInput::default()); }
+        assert!(nonblank(&e.framebuffer) > 500, "alien view renders");
+        e.alien_view_active = false;
+
+        // A dialogue scene plays through to completion (SCRIPT1 is the short one).
+        e.on_ship = false;
+        let total = e.dialogue_len();
+        let mut finished = false;
+        for _ in 0..20000 {
+            e.step(MouseInput::default());
+            if e.dialogue_finished() { finished = true; break; }
+        }
+        assert!(finished, "SCRIPT1 dialogue scene completes");
+        assert!(total > 1, "SCRIPT1 has real dialogue lines ({total})");
+        assert!(e.dialogue_cursor() + 1 >= total, "cursor reached the last line");
+    }
+
     #[test]
     fn step_advances_frame_and_polls_input() {
         let mut e = EngineState::new();
