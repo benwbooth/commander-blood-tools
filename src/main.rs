@@ -613,6 +613,12 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         engine.on_ship = false;
                     }
                 }
+                // During a dialogue scene, a left click advances it (snaps the current line
+                // fully revealed, then moves to the next) — as the real game does, so the
+                // player isn't stuck watching hundreds of lines auto-play.
+                Event::ButtonPress(b) if engine.in_dialogue() && b.detail == 1 => {
+                    engine.skip_dialogue_line();
+                }
                 // Left button otherwise drives compass nav selection (via the engine);
                 // right button switches between the ship views.
                 Event::ButtonPress(b) if b.detail == 1 => {

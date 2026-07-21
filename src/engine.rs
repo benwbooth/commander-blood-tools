@@ -1653,6 +1653,49 @@ impl EngineState {
         self.dialogue_hold_frames.max(reveal.saturating_add(hold))
     }
 
+    /// Whether a dialogue scene is currently the active view (playing, with no overlay
+    /// screen / nav / intro / ending on top) — so a driver can route clicks to advance it.
+    pub fn in_dialogue(&self) -> bool {
+        !self.dialogue.is_empty()
+            && !self.on_ship
+            && !self.bridge_active
+            && !self.tv_active
+            && !self.cyber_active
+            && !self.cryobox_active
+            && !self.phone_active
+            && !self.option_active
+            && !self.intro_active
+            && !self.ending_active
+            && !self.world_location_active()
+    }
+
+    /// Manually advance the dialogue on a click (as the real game does): if the current
+    /// line is still revealing, snap it fully revealed; otherwise move to the next line.
+    /// Returns `false` when already on the last line's fully-revealed text (the driver then
+    /// ends the dialogue).
+    pub fn skip_dialogue_line(&mut self) -> bool {
+        if self.dialogue.is_empty() {
+            return false;
+        }
+        let full = self.current_line_hold();
+        if self.dialogue_timer + 1 < full {
+            // Still revealing / holding: snap to fully revealed so the whole line shows.
+            self.dialogue_timer = full.saturating_sub(1);
+            return true;
+        }
+        // Fully shown: advance to the next line, or signal the end.
+        self.dialogue_timer = 0;
+        if self.dialogue_cursor + 1 < self.dialogue.len() {
+            self.dialogue_cursor += 1;
+            if !self.dialogue_scene_paths.is_empty() {
+                self.load_current_scene();
+            }
+            true
+        } else {
+            false
+        }
+    }
+
     fn advance_dialogue(&mut self) {
         if self.dialogue.is_empty() {
             return;
@@ -2804,6 +2847,30 @@ mod tests {
         assert_eq!(e.menu_submenu_click(x, y0), Some(0));
         let y1 = (EngineState::CONSOLE_MENU_Y + EngineState::CONSOLE_MENU_PITCH) as u16;
         assert_eq!(e.menu_submenu_click(x, y1), Some(1));
+    }
+
+    /// Click-to-advance dialogue: a click snaps the current line fully revealed, then moves
+    /// to the next; on the last line it returns false (the driver ends the dialogue).
+    #[test]
+    fn click_advances_dialogue() {
+        let mut e = EngineState::new();
+        let lines: Vec<(String, Option<std::path::PathBuf>)> =
+            (0..4).map(|i| (format!("line {i}"), None)).collect();
+        e.set_speech_dialogue(lines);
+        e.on_ship = false;
+        assert!(e.in_dialogue());
+        assert_eq!(e.dialogue_cursor(), 0);
+        // Each line takes two clicks (snap fully revealed, then advance). Click through:
+        // it advances across all lines and eventually signals the end (false).
+        let mut ended = false;
+        for _ in 0..30 {
+            if !e.skip_dialogue_line() {
+                ended = true;
+                break;
+            }
+        }
+        assert!(ended, "click-through reaches the end");
+        assert_eq!(e.dialogue_cursor(), 3, "ended on the last line");
     }
 
     /// The cyberspace traversal mini-game: flies through the real tunnel segments, steers
