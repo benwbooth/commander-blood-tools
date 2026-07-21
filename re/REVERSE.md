@@ -289,6 +289,18 @@ renderer); remaining ship-view visual = compose the pyramid-HUD overlay (grid +
 orb) over the scene, driven by the destination list. Bounded sprite compositing,
 not new rendering.
 
+DIALOGUE IS ALREADY FULLY DECODED (parse_speech_events) — the gap is PLAYBACK WIRING,
+not RE. `ScriptBundle.speech_events` reconstruct the WHOLE game dialogue with text +
+actor + location: SCRIPT2 = 1093 lines / 14 actors, SCRIPT3 = 973 / 24, SCRIPT4 =
+680 / 20, SCRIPT5 = 589 / 23, SCRIPT1 = 106 / 2 (~3400 lines, all ~24 characters:
+Bronko/Bug_Deluxe/Daddy_Gluxx/Anna_Haf/Cyberquizz/Otto_Von_Smile/Hom/Maxxon/...). But
+`EngineState::load_dialogue`/`execute_trace` plays ONE linear branch per script (169
+lines for SCRIPT2), so the engine renders a fraction. To play the full content: wire
+the engine to the speech_events, filtered/grouped by actor (+ location), driven by the
+nav destination list. (`execute_trace_from_offset` at a named function gives 0 lines —
+the per-character dialogue is in the speech-event stream, not reachable by function
+entry.) This is the biggest and most tractable remaining content step.
+
 GAME STRUCTURE — DESTINATIONS ARE LOCATIONS WITH CHARACTERS (major reframe, static via
 inspect-character-combinations): SCRIPT1's DEB defines ~19 CHARACTER objects each bound
 to a LOCATION and a background HNM + music, e.g. Bug_Deluxe@Venusia (2venus10.hnm),
