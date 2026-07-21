@@ -19,12 +19,14 @@ pub fn menu_item_index(input: u16) -> usize {
     (input & 0x1F) as usize
 }
 
-/// The screen row derived from the caller's input word (`[bp+6] >> 4`, then the high
-/// byte offset by `0xA0` = row+160 in the entry at `0x000`).
+/// The amount added to a menu row (placed in the high byte of the derived coordinate word).
+const MENU_ROW_BIAS: u16 = 160;
+
+/// The screen row derived from the caller's input word: shift right by 4, then bias the row
+/// (the high byte) by [`MENU_ROW_BIAS`].
 pub fn menu_screen_row(input: u16) -> u16 {
     let shifted = input >> 4;
-    // add ah, 0xA0  →  add 0xA0 to the high byte only.
-    shifted.wrapping_add(0xA000u16 as u16)
+    shifted.wrapping_add(MENU_ROW_BIAS << 8)
 }
 
 /// Resolve a selected menu item to its handler offset (method `0x181`): the item index
