@@ -329,6 +329,28 @@ fn main() {
             }
         }
         println!("TUTORIAL done, reached_script2={reached2} @ {} steps", rt.cpu.steps);
+        // Locate the REAL tutorial-subtitle buffer: scan RAM for the on-screen text so a
+        // future run can read tutorial STATE (gs:0xe18 held stale attract text).
+        for needle in ["waiting", "Bob", "Click quick", "found"] {
+            let pat = needle.as_bytes();
+            let mem = &rt.m.mem;
+            let gs = 0x0e84u32 * 16;
+            let mut hits = 0;
+            for i in 0..mem.len().saturating_sub(pat.len()) {
+                if &mem[i..i + pat.len()] == pat {
+                    let rel = if (i as u32) >= gs && (i as u32) < gs + 0x10000 {
+                        format!("gs:{:#06x}", i as u32 - gs)
+                    } else {
+                        format!("linear:{i:#08x}")
+                    };
+                    println!("  SUBSCAN {needle:?} @ {rel}");
+                    hits += 1;
+                    if hits >= 4 {
+                        break;
+                    }
+                }
+            }
+        }
         for (step, path) in &rt.opened_files {
             println!("  @{step:>10} {path}");
         }
