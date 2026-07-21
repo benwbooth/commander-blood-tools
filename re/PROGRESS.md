@@ -1514,3 +1514,29 @@ on device-TIMING-driven state (the sole remaining variable) — most likely the 
 cadence driving the clip sequencer (state first changes at ~214.4M, exactly when the first ~0.5s voice
 would complete). NEXT: trace the presentation dispatcher's (cs=08c0) clip-type decision back to the
 device-timing source that routes the credit to (a) instead of (b).
+
+## 2026-07-20 (cont.) — COMPLETE reveal mechanism; bug is purely the presenter DISPATCH
+
+Traced the full scrambled-subtitle chain at the ~218M-step credit scene (all code verified bit-exact
+by the lockstep, so this is real game logic on device-timing state):
+1. At ~214.4M (first credit voice completes) the scene-setup at cs=08c0:0x247 (runs once, gated
+   [0x2b93]==0) does `lcall 0xcbd:0x11d` → presenter (a), the STATIC voice-present overlay.
+2. (a) at cs=0cbd:0x126 gates on `test gs:[0xade],1; je 0x3e3` (skip if clear). gs:[0xade]=1 (set at
+   file 0x0f9b iff resource-check `0x1ce:0x59b([0xc3b]=42)`!=1), so (a) runs: copies text→gs:0xe18,
+   sets [0x5e58]=di+0x12 (NONZERO), [0x5e65]=0 (static phase), [0x67bc]=0; draws reveal once.
+3. Reveal draw (0x8c0:0x1c15) runs per-frame (150× in the window). Its fresh-init (file 0x9426:
+   [0xb31]=2,[0xb37]=1,[0x5e65]=2 CLEAN) is gated at 0x9422 `[0x5e58]==0` — but (a) left [0x5e58]!=0,
+   so fresh-init is SKIPPED every frame → phase stuck 0 → static command table gs:0x5eaf → noise band.
+4. The CLEAN presenter (b), subroutine file 0x7612 (cs=08c0:0x432), sets [0x5e64]=1 + [0x5e58]=0 AND
+   builds the clean glyph command table gs:0x5e6f → fresh-init fires → phase=2 → clean materialize.
+   (b) NEVER runs for the credit: gs:0x5e64 only ever =0 (main-loop clear 022d:0302), timers b31/b37
+   stay 0. (b) is dispatched by the VM token walker (0x73a9) processing the credit's 0xA6 text token;
+   the VM runs (cs=067c) but never processes that token to call (b).
+
+EXPERIMENTS (env-gated, reverted): FORCE_ADE=0 (clear gs:[0xade]) → still scrambled (its clear-path
+0cbd:0x3e3 just returns; doesn't invoke b). FORCE_CLEAN (force 5e64=1/5e58=0/27e2=2) → still scrambled
+because the glyph command table gs:0x5e6f is NOT built by a flag-poke — only presenter (b) builds it.
+=> The reveal MACHINERY is correct; the bug is purely the presenter DISPATCH choosing (a) static over
+(b) clean. With interp+device-reads+files all verified, that choice is device-TIMING-driven (SB voice-
+completion IRQ cadence the leading suspect: a fires exactly at voice-completion ~214.4M). NEXT: why the
+VM token walker doesn't process the credit's 0xA6 text token → the timing state gating the dispatch.
