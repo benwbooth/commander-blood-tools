@@ -95,6 +95,13 @@ pub const ALIEN_STATE_TIMER_RELOAD: u16 = 50;
 /// Animation-accumulator step added per state change.
 pub const ALIEN_ANIM_STEP: u16 = 250;
 
+/// Vertical bias subtracted from the timer-indexed animation offset when testing on-screen y.
+const VISIBLE_ANIM_Y_BIAS: i16 = 60;
+/// Top of the on-screen band an object's screen y must fall within to be drawn.
+const VISIBLE_SCREEN_Y_MAX: i16 = 128;
+/// Half-width of the world-x window (centered on the camera) an object must fall within.
+const VISIBLE_WORLD_X_HALF: i16 = 256;
+
 impl AlienObject {
     /// Create an object with the decoded initial state (timer reloaded to
     /// [`ALIEN_STATE_TIMER_RELOAD`]), seeded PRNG, running the animation state machine by default.
@@ -111,29 +118,25 @@ impl AlienObject {
         }
     }
 
-    /// Port of method `0xA30` (per-object proximity/visibility gate): only runs when
-    /// the object's state flag (`+0x36`) is set; it advances the animation counter
-    /// (`+0x50`) and returns whether the object sits within the on-screen region of the
-    /// camera — its screen y (`anim_offset − 0x3C + pos.y + cam.y`) in `[0, 0x80]` and
-    /// its world x (`pos.x + cam.x`) in `[-0x100, 0x100]`. `anim_offset` is the
-    /// timer-indexed animation value (`fs:[timer&0xFFC + 0x36] >> 8`). Returns `false`
-    /// (no advance) when the state flag is clear.
+    /// Port of method `0xA30` (per-object proximity/visibility gate): only runs when the object's
+    /// state flag is set; it advances the animation counter and returns whether the object sits
+    /// within the on-screen region of the camera — its screen y within
+    /// `[0, VISIBLE_SCREEN_Y_MAX]` and its world x within `[-VISIBLE_WORLD_X_HALF,
+    /// VISIBLE_WORLD_X_HALF]`. Returns `false` (no advance) when the state flag is clear.
     pub fn proximity_visible(&mut self, camera: [i16; 3], anim_offset: i16) -> bool {
         if self.state_flag == 0 {
             return false;
         }
         self.anim_counter = self.anim_counter.wrapping_add(1);
-        // Screen-y band [0, 0x80].
-        let sy = anim_offset
-            .wrapping_sub(0x3C)
+        let screen_y = anim_offset
+            .wrapping_sub(VISIBLE_ANIM_Y_BIAS)
             .wrapping_add(self.pos[1] as i16)
             .wrapping_add(camera[1]);
-        if sy < 0 || sy > 0x80 {
+        if screen_y < 0 || screen_y > VISIBLE_SCREEN_Y_MAX {
             return false;
         }
-        // World-x window [-0x100, 0x100] (0xFF00..=0x100 as signed).
-        let sx = (self.pos[0] as i16).wrapping_add(camera[0]);
-        sx >= -0x100 && sx <= 0x100
+        let world_x = (self.pos[0] as i16).wrapping_add(camera[0]);
+        world_x >= -VISIBLE_WORLD_X_HALF && world_x <= VISIBLE_WORLD_X_HALF
     }
 
     /// Port of the object initializer (`0x36A`): reset the behaviour state — zero the
