@@ -347,6 +347,21 @@ strings at file 0x13bde): `blood`/`orxx`/`Honk`/`menu`/`arche`/`cryobox`/`Scrute
   ship-3D projection) but the MENU-ITEM DESCRIPTOR TABLES (data) + exact pyramid vertex blit
   are undecoded, and render_star_map_navview's pyramid is itself a documented approximation —
   so a FAITHFUL OPTION render is blocked on both. Do not invent a pyramid/menu items.
+- ✅ MENU DECODED (sess: this, via MENUMAP + EXPLORE emulator runs). Drove the emulator to
+  the ship console and clicked each menu row while capturing frames. THE REAL CONSOLE (a
+  COMPOSITE, distinct from the port's simplified CHART.FD+HONKF render): CHART.FD purple
+  organic panel background + a GRAYSCALE CREW-PORTRAIT ORB (left, shows the current speaker —
+  Cap'n Bob's big-headed alien face; grayscale = LOW-index so it renders correctly, unlike the
+  blocked high-slot colour portraits) + an orange orb button (centre) + a BLUE POINTING-HAND
+  sprite + a GOLDEN 3D hierarchical menu (right). The golden menu/hand/orb sprites live inside
+  the blood.dat / tb.big archives (EXPLORE opened_files: blood.dat, tb.big, CARTE.SPR, chart.fd,
+  script1.*, btv.spr, then bappel.spr+izwalito.spr on click), not standalone files. **MENU ->
+  a SUBMENU {EXPLANATIONS, GAME}** (the game's main menu: help vs. play) — captured directly
+  (frame shows EXPLANATIONS/GAME replacing the upper menu rows). The console is TUTORIAL-GATED
+  (SCRIPT1 dialogue: "You found the right button. So far so good" / "Click quick, Cap'n Bob is
+  waiting…"), so OPTION's standalone function + what EXPLANATIONS/GAME do still need a run that
+  gets PAST the tutorial. NOTE: `D:\blood.sav` is opened at BOOT (offset ~296974) — the game
+  reads a save on startup (relevant to the blood.sav-format RE).
 
 INTERACTIVE SHIP CONSOLE — REACHED via emulator input injection (sess: whole-game RE).
 The recomp emulator is a driveable runtime oracle: `runtime.inject_key` /

@@ -261,6 +261,9 @@ pub struct EngineState {
     console_font: Vec<SpriteFrameImage>,
     /// Whether the ship-bridge hub is the active view.
     pub bridge_active: bool,
+    /// Whether the console MENU option's submenu ({EXPLANATIONS, GAME}) is showing — the
+    /// game's main menu, decoded by driving the emulator (MENU opens this two-item submenu).
+    pub menu_submenu_active: bool,
     /// The game-ending finale cutscene (`sq/fin.hnm`) — the bookend to the intro, played
     /// once to completion when the player has finished the game.
     ending_scene: Option<HnmFile>,
@@ -391,6 +394,7 @@ impl EngineState {
             bridge_stations: Vec::new(),
             console_font: Vec::new(),
             bridge_active: false,
+            menu_submenu_active: false,
             ending_scene: None,
             ending_frame: 0,
             ending_active: false,
@@ -621,6 +625,25 @@ impl EngineState {
     pub const CONSOLE_MENU_Y: i32 = 60;
     pub const CONSOLE_MENU_PITCH: i32 = 13;
 
+    /// The console MENU option's submenu, decoded by driving the real game (clicking MENU
+    /// opens these two items): EXPLANATIONS (the tutorial/help) and GAME (play). Drawn over
+    /// the top menu rows, matching the observed golden-menu overlay.
+    pub const MENU_SUBMENU: [&'static str; 2] = ["EXPLANATIONS", "GAME"];
+
+    /// Map a click to a MENU-submenu item (0 = EXPLANATIONS, 1 = GAME) when the submenu is
+    /// showing and the click lands on a row; `None` otherwise. Matches `render_bridge`.
+    pub fn menu_submenu_click(&self, x: u16, y: u16) -> Option<usize> {
+        if !self.menu_submenu_active || self.console_font.is_empty() {
+            return None;
+        }
+        let (px, py) = (x as i32, y as i32);
+        if px < Self::CONSOLE_MENU_X || px > Self::CONSOLE_MENU_X + 96 {
+            return None;
+        }
+        (0..Self::MENU_SUBMENU.len())
+            .find(|&i| (py - (Self::CONSOLE_MENU_Y + i as i32 * Self::CONSOLE_MENU_PITCH)).abs() <= 5)
+    }
+
     /// Map a click to a ship-console menu option index (0 = HONK … 4 = OPTION) when it
     /// lands on one; matches `render_bridge`'s menu layout. `None` off the menu.
     pub fn console_menu_click(&self, x: u16, y: u16) -> Option<usize> {
@@ -758,10 +781,17 @@ impl EngineState {
         }
         // The ship-console function menu, drawn in the console's own HONKF font — the
         // real menu the game shows (HONK the cook's fare, the telephone, the cryobox…).
+        // When the MENU option's submenu is open, the game overlays {EXPLANATIONS, GAME}
+        // on the top rows (decoded from the real console); mirror that here.
         if !self.console_font.is_empty() {
             const MENU_COLOR: u8 = 0xFD;
             self.scene_palette[MENU_COLOR as usize] = [232, 216, 40]; // console yellow
-            for (i, opt) in Self::CONSOLE_MENU.iter().enumerate() {
+            let labels: &[&str] = if self.menu_submenu_active {
+                &Self::MENU_SUBMENU
+            } else {
+                &Self::CONSOLE_MENU
+            };
+            for (i, opt) in labels.iter().enumerate() {
                 let y = (Self::CONSOLE_MENU_Y + i as i32 * Self::CONSOLE_MENU_PITCH) as usize;
                 self.draw_console_text(opt, Self::CONSOLE_MENU_X as usize, y, MENU_COLOR);
             }
@@ -2558,6 +2588,33 @@ mod tests {
         // Hanging up returns to the dial screen.
         e.phone_hangup();
         assert!(!e.phone_connected(), "hung up back to dial");
+    }
+
+    /// The console MENU option opens the decoded {EXPLANATIONS, GAME} submenu: the bridge
+    /// draws those two labels in place of the top menu rows, and a click on a submenu row
+    /// resolves to its index (matching the layout).
+    #[test]
+    fn menu_submenu_decoded_from_real_console() {
+        let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter().map(Path::new).find(|p| p.join("HONKF.SPR").is_file());
+        let Some(iso) = iso else { return };
+        let mut e = EngineState::new();
+        assert!(e.load_console_font(iso), "console font loads");
+        e.load_bridge(iso);
+        e.load_nav_chart(iso);
+        // No submenu clicks resolve until the submenu is open.
+        let x = (EngineState::CONSOLE_MENU_X + 4) as u16;
+        let y0 = EngineState::CONSOLE_MENU_Y as u16;
+        assert_eq!(e.menu_submenu_click(x, y0), None, "closed: no submenu hit");
+        // Open the submenu (as clicking MENU does) and render it.
+        e.menu_submenu_active = true;
+        e.bridge_active = true;
+        e.step(MouseInput::default());
+        assert_eq!(EngineState::MENU_SUBMENU, ["EXPLANATIONS", "GAME"]);
+        // Row 0 = EXPLANATIONS, row 1 = GAME.
+        assert_eq!(e.menu_submenu_click(x, y0), Some(0));
+        let y1 = (EngineState::CONSOLE_MENU_Y + EngineState::CONSOLE_MENU_PITCH) as u16;
+        assert_eq!(e.menu_submenu_click(x, y1), Some(1));
     }
 
     /// The game-ending finale (`sq/fin.hnm`) loads, plays full-screen in colour, and

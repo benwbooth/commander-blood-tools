@@ -491,11 +491,31 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 Event::ButtonPress(_) | Event::KeyPress(_) if engine.title_active() => {
                     engine.dismiss_title();
                 }
+                // While the MENU submenu ({EXPLANATIONS, GAME}, decoded from the real
+                // console) is open, a click resolves it: EXPLANATIONS replays the tutorial
+                // (SCRIPT1 — the game's "explanations"), GAME returns to play (the nav).
+                Event::ButtonPress(b) if engine.bridge_active && engine.menu_submenu_active && b.detail == 1 => {
+                    match engine.menu_submenu_click(mx, my) {
+                        Some(0) => {
+                            engine.menu_submenu_active = false;
+                            engine.bridge_active = false;
+                            load_script(&mut engine, &mut music, 1);
+                            engine.on_ship = false;
+                        }
+                        Some(1) => {
+                            engine.menu_submenu_active = false;
+                            engine.bridge_active = false;
+                            engine.on_ship = true;
+                        }
+                        _ => engine.menu_submenu_active = false, // click off closes it
+                    }
+                }
                 // On the bridge hub, a click on a station icon opens its screen.
                 Event::ButtonPress(b) if engine.bridge_active && b.detail == 1 => {
                     // The ship-console menu (decoded console -> VM object dispatch):
                     // HONK (0) opens the cook's daily-fare menu (SCRIPT1); TELEPHONE (1)
-                    // the video-phone; CRYOBOX (2) the cryo-chamber. MENU/OPTION not decoded.
+                    // the video-phone; CRYOBOX (2) the cryo-chamber; MENU (3) the decoded
+                    // {EXPLANATIONS, GAME} submenu. OPTION (4) not yet decoded.
                     match engine.console_menu_click(mx, my) {
                         Some(0) => {
                             engine.bridge_active = false;
@@ -510,7 +530,8 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                             engine.bridge_active = false;
                             engine.cryobox_active = true;
                         }
-                        Some(_) => {} // MENU/OPTION: functions not yet decoded
+                        Some(3) => engine.menu_submenu_active = true, // MENU -> submenu
+                        Some(_) => {} // OPTION: function not yet decoded
                         None => {
                             if let Some(station) = engine.bridge_click(mx, my) {
                                 engine.bridge_active = false;
@@ -568,6 +589,9 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     // A visited world-location screen closes back to the nav view first.
                     if engine.world_location_active() {
                         engine.leave_world();
+                    } else if engine.menu_submenu_active {
+                        // Close the MENU submenu back to the top-level console menu.
+                        engine.menu_submenu_active = false;
                     } else if engine.phone_active && engine.phone_connected() {
                         // A connected call hangs up first, back to the phone's dial screen.
                         engine.phone_hangup();
