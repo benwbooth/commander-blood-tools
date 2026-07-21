@@ -3588,3 +3588,16 @@ is another far pointer (rec0 = 0x799a:0x0049). Corrected record fields (live-val
   +0xc/+0xe a second far ptr. The object's on-screen x/y is DERIVED from camera globals +
   descriptor size at draw time, not stored per-record. This resolves why the live "pos" read as
   (73,31130) nonsense - those bytes are a pointer, not coordinates.
+
+## OPTION menu (manu3.xdb) — structure DECODED, render still blocked (sess: whole-game RE)
+Static decode of manu3.xdb: [0x2306]=0x3e72 (the item-dispatch base manu3.rs::menu_item_handler
+uses). A 12-entry (code,data) pointer table at 0x22f0 (code 0xefb1/0xf013/…, data 0x3dfc/0x3e15/
+…/0x3eeb) = the 12 OPTION menu items. Each item's DATA (@0x3dfc..0x3eeb) is a MenuAnimDescriptor
+(phase|count / target-field / end-value tween) — PURE ANIMATION DATA, NO ASCII labels. So the
+OPTION menu is a 12-item 3D animated pyramid; the item labels are GRAPHICAL (per earlier: golden
+sprites in blood.dat/tb.big), NOT text. manu3.rs's logic + this table = the decoded menu
+structure, BUT a FAITHFUL render still needs (a) the graphical item sprites (archived, undecoded),
+(b) the manu3 pyramid VERTEX table (not the ship-HUD verts — manu3's own, still to locate), and
+(c) a reference frame of the real OPTION screen to verify (unreachable: emulator scene-coordinator
+gate + headless DOSBox mouse). So OPTION structure is decoded; the faithful render is asset+
+observation-blocked — do not fabricate item labels/geometry.
