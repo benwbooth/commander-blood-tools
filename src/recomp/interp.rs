@@ -49,6 +49,11 @@ pub struct Cpu {
     /// its (first_step, hit_count) is recorded in `exec_hits`. Tiny set → cheap linear scan.
     pub exec_watch: Vec<(u16, u16)>,
     pub exec_hits: Vec<(u16, u16, u64, u64)>,
+    /// Linear-address execution watch (`cs*16+ip`), so a routine is caught regardless of
+    /// which cs:ip decomposition reaches it — resolves segment-relocation ambiguity that a
+    /// plain (cs,ip) watch can miss. Each hit records (linear, first_step, count).
+    pub exec_watch_linear: Vec<u32>,
+    pub exec_hits_linear: Vec<(u32, u64, u64)>,
 }
 
 /// General register by 3-bit index, 16-bit view: AX CX DX BX SP BP SI DI.
@@ -281,6 +286,8 @@ impl Cpu {
             steps: 0,
             exec_watch: Vec::new(),
             exec_hits: Vec::new(),
+            exec_watch_linear: Vec::new(),
+            exec_hits_linear: Vec::new(),
         }
     }
 
@@ -294,6 +301,16 @@ impl Cpu {
                     match self.exec_hits.iter_mut().find(|h| h.0 == cs && h.1 == ip) {
                         Some(h) => h.3 += 1,
                         None => self.exec_hits.push((cs, ip, step, 1)),
+                    }
+                }
+            }
+            if !self.exec_watch_linear.is_empty() {
+                let lin = (self.cs as u32) * 16 + self.ip as u32;
+                if self.exec_watch_linear.contains(&lin) {
+                    let step = self.steps;
+                    match self.exec_hits_linear.iter_mut().find(|h| h.0 == lin) {
+                        Some(h) => h.2 += 1,
+                        None => self.exec_hits_linear.push((lin, step, 1)),
                     }
                 }
             }

@@ -430,6 +430,32 @@ fn main() {
         return;
     }
 
+    if let Ok(w) = std::env::var("EXECWATCHLIN") {
+        // Watch execution by LINEAR address (cs*16+ip), resolving the segment-relocation
+        // ambiguity a (cs,ip) watch has. Spec = comma-separated FILE offsets (hex); each
+        // maps to linear = 0x1a20 + (file - 0x600) (image loaded at para 0x1a2, header 0x600).
+        for tok in w.split(',') {
+            let file = u32::from_str_radix(tok.trim().trim_start_matches("0x"), 16).unwrap();
+            let lin = 0x1a20 + file.saturating_sub(0x600);
+            rt.cpu.exec_watch_linear.push(lin);
+            eprintln!("watch file {file:#07x} -> linear {lin:#07x}");
+        }
+        let _ = rt.run(steps);
+        println!("linear exec-watch results ({} of {} hit) at {} steps:",
+            rt.cpu.exec_hits_linear.len(), rt.cpu.exec_watch_linear.len(), rt.cpu.steps);
+        for &(lin, first, count) in &rt.cpu.exec_hits_linear {
+            let file = lin - 0x1a20 + 0x600;
+            println!("  linear {lin:#07x} (file {file:#07x}): first@{first} count={count}");
+        }
+        for &lin in &rt.cpu.exec_watch_linear {
+            if !rt.cpu.exec_hits_linear.iter().any(|h| h.0 == lin) {
+                let file = lin - 0x1a20 + 0x600;
+                println!("  linear {lin:#07x} (file {file:#07x}): NEVER EXECUTED");
+            }
+        }
+        return;
+    }
+
     if let Ok(w) = std::env::var("EXECWATCH") {
         // Watch execution of specific cs:ip entry points across the whole run, e.g.
         // EXECWATCH=08c0:0432,????:9432. Reports first-hit step and hit count for each.
