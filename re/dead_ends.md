@@ -454,3 +454,18 @@ the intro auto-ends into gameplay on a real machine); (c) DOSBox-X MAPPER-script
 instead of xdotool; (d) fix the recomp emulator credit divergence so the emulator (which HAS
 programmatic inject_key/mouse_press) can reach interactive play. Any ONE unblocks the
 interactive-systems RE. STOP-RULE: do NOT keep retrying headless xdotool mouse -- confirmed wall.
+
+## blood.sav byte-format decode (sess: whole-game RE, 2026-07-21)
+TRIED: (1) static — strings blood.sav@DS:0x00FC/0x02A9, SAVE@DS:0x258B, game1..10.sav
+slot table@DS:0x25FD (spaced 0x20). No `mov dx,imm` (BA xx xx) loads them and 0x25FD has
+0 imm16 refs — the game BUILDS the full path ("C:\cblood\"+"blood.sav") in a buffer, so the
+open uses the buffer offset, not the raw string offset. imm16 refs to 0x00FC are false
+positives (0xFC in jump displacements). (2) dynamic-at-boot — the emulator's 0x3c create /
+0x40 write handlers write real files to accuracy/cdrive/cblood/, but NO *.sav is ever created:
+the game only OPENS (0x3d) blood.sav at boot (fails, file absent) and never writes it there.
+WHY-FAILED: blood.sav is written ONLY on an interactive SAVE (player picks a slot), which is
+behind the walled interactive-gameplay gate (see the DOSBox/emulator dead-ends above). Static
+anchoring needs tracing the path-builder + the int21 0x3c create site (buffer offset), a deeper
+disassembly effort. LOW VALUE: the port already has its own save format; byte-compat blood.sav
+is marginal. BETTER: decode it opportunistically IF interactive play is ever reached (a real
+save then writes a real blood.sav to accuracy/cdrive/cblood/ to examine directly).
