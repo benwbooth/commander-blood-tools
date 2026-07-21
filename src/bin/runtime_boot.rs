@@ -80,6 +80,20 @@ fn main() {
         return;
     }
 
+    if let Ok(spec) = std::env::var("MEMDUMP") {
+        // Dump N bytes at gs:<off> to a file after running to `steps`. Spec: "<offhex>:<len>:<path>".
+        let parts: Vec<&str> = spec.split(':').collect();
+        let off = u32::from_str_radix(parts[0].trim_start_matches("0x"), 16).unwrap();
+        let len: u32 = parts[1].parse().unwrap();
+        let path = parts[2];
+        let _ = rt.run(steps);
+        let g = 0x0e84u16;
+        let bytes: Vec<u8> = (0..len).map(|i| rt.m.read8(g, off + i)).collect();
+        std::fs::write(path, &bytes).unwrap();
+        println!("MEMDUMP gs:{off:#06x} {len} bytes -> {path} @ {} steps", rt.cpu.steps);
+        return;
+    }
+
     if let Ok(needle) = std::env::var("MEMFIND") {
         // Run to `steps`, then scan all of guest RAM for an ASCII needle — decisive test of
         // whether a given string (e.g. a DESCRIPT credit cue) is resident at that moment.

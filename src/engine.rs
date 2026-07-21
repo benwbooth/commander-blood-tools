@@ -591,11 +591,10 @@ impl EngineState {
                 *p = 0;
             }
         }
-        // Grey ramp so the indexed starfield + station art read; reserved label colour.
-        for (i, slot) in self.scene_palette.iter_mut().enumerate() {
-            let g = i.min(255) as u8;
-            *slot = [g, g, g];
-        }
+        // The game's real ship/nav-screen VGA palette (the baked default the executable
+        // uploads for the bridge/nav/location screens), so the indexed starfield and
+        // station art render in their true colours.
+        self.scene_palette = crate::palette::game_screen_palette();
         self.scene_palette[0xFE] = [245, 245, 160];
         // Collect draws first (borrow the station list immutably), then blit.
         let draws: Vec<(SpriteFrameImage, &'static str, (i32, i32))> = self
@@ -1395,15 +1394,10 @@ impl EngineState {
                 self.compass_angle % 180,
             );
         }
-        // Display palette for the ship view: a grey ramp for the starfield depth
-        // shades + the nav-grid face/orb indices (framebuffer is indexed).
-        for (i, slot) in self.scene_palette.iter_mut().enumerate() {
-            let g = (i.min(255)) as u8;
-            *slot = [g, g, g];
-        }
-        self.scene_palette[90] = [96, 96, 104];
-        self.scene_palette[200] = [176, 176, 184];
-        self.scene_palette[240] = [232, 232, 240];
+        // The game's real ship/nav-screen VGA palette (baked default uploaded for the
+        // nav/bridge/location screens), so the starfield and BCARTE/BORXX sprite HUD
+        // render in their true colours.
+        self.scene_palette = crate::palette::game_screen_palette();
         // Composite the sprite HUD over the starfield: the BCARTE perspective grid
         // frame selected by the compass angle, then the BORXX orb, into the HUD band.
         let grid_idx = {
