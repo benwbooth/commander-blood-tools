@@ -809,15 +809,21 @@ impl EngineState {
         // on the top rows (decoded from the real console); mirror that here.
         if !self.console_font.is_empty() {
             const MENU_COLOR: u8 = 0xFD;
-            self.scene_palette[MENU_COLOR as usize] = [232, 216, 40]; // console yellow
+            const MENU_SHADOW: u8 = 0xFB;
+            self.scene_palette[MENU_COLOR as usize] = [240, 208, 48]; // console gold
+            self.scene_palette[MENU_SHADOW as usize] = [60, 40, 8]; // shadow for a 3D read
             let labels: &[&str] = if self.menu_submenu_active {
                 &Self::MENU_SUBMENU
             } else {
                 &Self::CONSOLE_MENU
             };
+            let (mx, my0) = (Self::CONSOLE_MENU_X as usize, Self::CONSOLE_MENU_Y);
             for (i, opt) in labels.iter().enumerate() {
-                let y = (Self::CONSOLE_MENU_Y + i as i32 * Self::CONSOLE_MENU_PITCH) as usize;
-                self.draw_console_text(opt, Self::CONSOLE_MENU_X as usize, y, MENU_COLOR);
+                let y = (my0 + i as i32 * Self::CONSOLE_MENU_PITCH) as usize;
+                // Drop shadow first (offset +1,+1) then the gold text — an embossed look
+                // closer to the real console's golden 3D menu.
+                self.draw_console_text(opt, mx + 1, y + 1, MENU_SHADOW);
+                self.draw_console_text(opt, mx, y, MENU_COLOR);
             }
         }
     }
