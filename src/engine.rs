@@ -122,7 +122,7 @@ fn assemble_words(parts: &[String]) -> String {
             if !attaches {
                 out.push(' ');
                 line_len += 1;
-                if line_len >= 0x23 {
+                if line_len >= crate::script::SUBTITLE_WRAP_COLUMN {
                     out.push('\n');
                     line_len = 0;
                 }

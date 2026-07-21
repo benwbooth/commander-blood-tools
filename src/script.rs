@@ -10,6 +10,10 @@ use crate::util::media_stem;
 use crate::vm::{self, VmToken};
 
 pub const OBJECT_LOCATION_FIELD: usize = 24;
+
+/// A subtitle line is wrapped once its length reaches this many characters (the game's
+/// on-screen dialogue is broken into ~35-column lines).
+pub const SUBTITLE_WRAP_COLUMN: usize = 35;
 pub const OBJECT_TALK_FIELD: u16 = 58;
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
@@ -319,7 +323,7 @@ fn assemble_dialogue_from_offsets(
         if !attaches {
             out.push(' ');
             line_len += 1;
-            if line_len >= 0x23 {
+            if line_len >= SUBTITLE_WRAP_COLUMN {
                 out.push('\n');
                 line_len = 0;
             }
