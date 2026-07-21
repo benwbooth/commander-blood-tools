@@ -118,10 +118,11 @@ fn main() {
     dump(&e, &dir, "qa_tv1");
     e.tv_active = false;
 
-    // Cyberspace tunnel.
+    // Cyberspace traversal mini-game (tunnel + steer reticle + progress bar).
     e.cyber_active = true;
+    e.start_cyberspace();
     for _ in 0..10 {
-        e.step(MouseInput::default());
+        e.step(MouseInput { x: 210, y: 100, buttons: 0 });
     }
     dump(&e, &dir, "qa_cyber");
     e.cyber_active = false;

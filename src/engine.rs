@@ -252,6 +252,10 @@ pub struct EngineState {
     pub cryobox_active: bool,
     /// Current tunnel-segment index (advances as you "travel").
     cyber_segment: usize,
+    /// The cyberspace traversal mini-game's lateral course offset (steered by the mouse).
+    cyber_steer: i32,
+    /// Whether the cyberspace traversal has reached its destination (last segment).
+    pub cyber_arrived: bool,
     /// The ship-bridge hub: clickable station icons (`BCARTE`=nav map, `BTV`=comms,
     /// `BHYPER`=cyberspace) that open each screen — the interface tying them together.
     /// Each entry is (icon frame, label, centre x/y, station id).
@@ -402,6 +406,8 @@ impl EngineState {
             tv_active: false,
             tv_channel: 0,
             cyber_tunnels: Vec::new(),
+            cyber_steer: 0,
+            cyber_arrived: false,
             cyber_active: false,
             cryobox_scene: None,
             cryobox_active: false,
@@ -853,25 +859,80 @@ impl EngineState {
         self.cyber_segment = 0;
     }
 
-    /// Render the cyberspace tunnel: fly through the current warp segment; when it
-    /// finishes, advance to the next segment (wrapping) — the "travel" progression.
+    /// Begin (or restart) a cyberspace traversal from the first segment.
+    pub fn start_cyberspace(&mut self) {
+        self.cyber_segment = 0;
+        self.cyber_steer = 0;
+        self.cyber_arrived = false;
+        self.scene_frame = 0;
+    }
+
+    /// The cyberspace traversal progress: (current segment, total segments).
+    pub fn cyber_progress(&self) -> (usize, usize) {
+        (self.cyber_segment, self.cyber_tunnels.len())
+    }
+
+    /// Render the cyberspace hyperspace-traversal mini-game: fly through the real
+    /// `hyper_*.hnm` warp segments toward the destination, steering the on-course reticle
+    /// with the mouse; each completed segment advances the journey until the last one is
+    /// reached (`cyber_arrived`). A progress bar + the steer reticle overlay the tunnel.
+    ///
+    /// NOTE: the tunnel VIDEO + segment order are the real decoded assets; the traversal
+    /// interaction (steer + arrive) is the port's grounded interpretation — the original's
+    /// exact goal/scoring for this screen is not decoded (see `docs/decompilation-roadmap.md`).
     fn render_cyberspace(&mut self) {
         let n = self.cyber_tunnels.len();
         if n == 0 {
             return;
         }
-        let seg = self.cyber_segment % n;
-        let hnm = &self.cyber_tunnels[seg];
-        let count = hnm.frame_count().max(1);
+        // Steer: the cursor's horizontal delta from centre nudges the course, smoothed +
+        // clamped (the same joystick-style delta the ship nav uses).
+        let target = (self.mouse.x as i32 - ENGINE_SCREEN_WIDTH as i32 / 2) / 3;
+        self.cyber_steer = ((self.cyber_steer * 3 + target) / 4).clamp(-120, 120);
+        let seg = self.cyber_segment.min(n - 1);
+        let count = self.cyber_tunnels[seg].frame_count().max(1);
         if self.scene_frame >= count {
-            self.cyber_segment = (self.cyber_segment + 1) % n;
+            if self.cyber_segment + 1 < n {
+                self.cyber_segment += 1;
+            } else {
+                self.cyber_arrived = true;
+            }
             self.scene_frame = 0;
         }
-        let hnm = &self.cyber_tunnels[self.cyber_segment % n];
+        let hnm = &self.cyber_tunnels[self.cyber_segment.min(n - 1)];
         self.scene_palette = hnm.palette;
         hnm.decode_frame(self.scene_frame, &mut self.scene_buffer, &mut self.scene_palette);
         self.framebuffer.copy_from_slice(&self.scene_buffer);
         self.scene_frame += 1;
+        // HUD overlay: a course reticle (steered) + a journey progress bar.
+        const RETICLE: u8 = 0xFE;
+        const BAR: u8 = 0xFD;
+        self.scene_palette[RETICLE as usize] = [245, 245, 160];
+        self.scene_palette[BAR as usize] = [120, 220, 245];
+        let cx = (ENGINE_SCREEN_WIDTH as i32 / 2 + self.cyber_steer)
+            .clamp(4, ENGINE_SCREEN_WIDTH as i32 - 5) as usize;
+        let cy = ENGINE_SCREEN_HEIGHT / 2;
+        for dy in -3i32..=3 {
+            for dx in -3i32..=3 {
+                if dx.abs() == 3 || dy.abs() == 3 {
+                    let (px, py) = (cx as i32 + dx, cy as i32 + dy);
+                    if px >= 0 && py >= 0 && (px as usize) < ENGINE_SCREEN_WIDTH {
+                        let o = py as usize * ENGINE_SCREEN_WIDTH + px as usize;
+                        if o < self.framebuffer.len() {
+                            self.framebuffer[o] = RETICLE;
+                        }
+                    }
+                }
+            }
+        }
+        // Progress bar along the bottom: filled proportional to segments travelled.
+        let filled = (self.cyber_segment + 1) * ENGINE_SCREEN_WIDTH / n;
+        let bar_y = ENGINE_SCREEN_HEIGHT - 6;
+        for x in 0..filled.min(ENGINE_SCREEN_WIDTH) {
+            for by in 0..3 {
+                self.framebuffer[(bar_y + by) * ENGINE_SCREEN_WIDTH + x] = BAR;
+            }
+        }
     }
 
     /// Load the cryo-chamber scene (`sq/cryorad.hnm`) shown by the console's CRYOBOX
@@ -2719,6 +2780,33 @@ mod tests {
         assert_eq!(e.menu_submenu_click(x, y0), Some(0));
         let y1 = (EngineState::CONSOLE_MENU_Y + EngineState::CONSOLE_MENU_PITCH) as u16;
         assert_eq!(e.menu_submenu_click(x, y1), Some(1));
+    }
+
+    /// The cyberspace traversal mini-game: flies through the real tunnel segments, steers
+    /// with the mouse, and reaches its destination (`cyber_arrived`) at the last segment.
+    #[test]
+    fn cyberspace_traversal_reaches_destination() {
+        let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
+            .iter().map(Path::new).find(|p| p.join("sq").is_dir());
+        let Some(assets) = assets else { return };
+        let mut e = EngineState::new();
+        e.load_cyberspace(assets);
+        let (_, total) = e.cyber_progress();
+        if total == 0 { return; }
+        e.cyber_active = true;
+        e.start_cyberspace();
+        assert!(!e.cyber_arrived, "starts before the destination");
+        // Steering right moves the on-course reticle; the frame stays real content.
+        for _ in 0..8 { e.step(MouseInput { x: 260, y: 100, buttons: 0 }); }
+        assert!(e.framebuffer.iter().filter(|&&p| p != 0).count() > 500, "tunnel + HUD render");
+        // Fly the whole journey to arrival.
+        for _ in 0..30000 {
+            e.step(MouseInput::default());
+            if e.cyber_arrived { break; }
+        }
+        assert!(e.cyber_arrived, "traversal reaches the destination");
+        let (seg, tot) = e.cyber_progress();
+        assert_eq!(seg, tot - 1, "ends on the last segment");
     }
 
     /// The console OPTION 3D-pyramid menu: renders the pyramid + the decoded 12-item list,

@@ -544,7 +544,10 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                 match station {
                                     Nav => engine.on_ship = true,
                                     Comms => engine.tv_active = true,
-                                    Cyberspace => engine.cyber_active = true,
+                                    Cyberspace => {
+                                        engine.cyber_active = true;
+                                        engine.start_cyberspace();
+                                    }
                                 }
                             }
                         }
@@ -679,6 +682,9 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 }
                 // 'y' (keycode 29): toggle the cyberspace tunnel screen.
                 Event::KeyPress(k) if k.detail == 29 => {
+                    if !engine.cyber_active {
+                        engine.start_cyberspace();
+                    }
                     engine.cyber_active = !engine.cyber_active;
                 }
                 // 'b' (keycode 56): open the ship-bridge hub (click stations to enter).
@@ -720,6 +726,10 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 music.stop();
                 engine.load_title(Path::new(iso));
             }
+        } else if engine.cyber_active && engine.cyber_arrived {
+            // The cyberspace traversal reached its destination: return to the bridge hub.
+            engine.cyber_active = false;
+            engine.bridge_active = true;
         } else if engine.intro_active() {
             // Intro playing: start its music once; no nav/dialogue transitions yet.
             if !intro_music_started {

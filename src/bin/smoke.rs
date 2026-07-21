@@ -89,8 +89,12 @@ fn main() {
     e.tv_active = false;
 
     e.cyber_active = true;
-    for _ in 0..8 { e.step(MouseInput::default()); }
+    e.start_cyberspace();
+    for _ in 0..8 { e.step(MouseInput { x: 210, y: 100, buttons: 0 }); }
     check(nonblank(&e.framebuffer) > 500, "cyberspace tunnel renders");
+    let mut arrived = false;
+    for _ in 0..30000 { e.step(MouseInput::default()); if e.cyber_arrived { arrived = true; break; } }
+    check(arrived, "cyberspace traversal reaches its destination");
     e.cyber_active = false;
 
     e.alien_view_active = true;
