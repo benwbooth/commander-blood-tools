@@ -1063,6 +1063,23 @@ impl EngineState {
         self.dialogue_timer = 0;
     }
 
+    /// Play dialogue directly from the port's decoded speech events — the FULL per-script,
+    /// per-character content (every character's lines, with each line's background scene),
+    /// instead of `execute_trace`'s single linear branch (which reaches only a fraction of
+    /// the ~3400 decoded lines). Each `lines` entry is (subtitle, background-HNM path).
+    pub fn set_speech_dialogue(&mut self, lines: Vec<(String, Option<std::path::PathBuf>)>) {
+        self.dialogue = (0..lines.len())
+            .map(|offset| LineState { offset, actor_offset: None, location_offset: None })
+            .collect();
+        self.dialogue_texts = lines.iter().map(|(t, _)| t.clone()).collect();
+        self.dialogue_scene_paths = lines.into_iter().map(|(_, p)| p).collect();
+        self.dialogue_cursor = 0;
+        self.dialogue_timer = 0;
+        if self.dialogue_scene_paths.iter().any(|p| p.is_some()) {
+            self.load_current_scene();
+        }
+    }
+
     /// The dialogue line currently being presented, if a script is loaded.
     pub fn current_dialogue(&self) -> Option<&LineState> {
         self.dialogue.get(self.dialogue_cursor)
@@ -2120,6 +2137,25 @@ mod tests {
         assert!(e.framebuffer.iter().filter(|&&p| p != 0).count() > 5000, "cryo-chamber renders");
         let distinct = e.framebuffer.iter().collect::<std::collections::HashSet<_>>().len();
         assert!(distinct > 20, "cryo-chamber has real colour ({distinct})");
+    }
+
+    /// `set_speech_dialogue` plays the full decoded per-character dialogue (all lines)
+    /// instead of `execute_trace`'s linear branch, and the cursor advances through them.
+    #[test]
+    fn speech_dialogue_plays_all_lines() {
+        let mut e = EngineState::new();
+        let lines: Vec<(String, Option<std::path::PathBuf>)> = (0..250)
+            .map(|i| (format!("line {i}"), None))
+            .collect();
+        e.set_speech_dialogue(lines);
+        assert_eq!(e.dialogue_len(), 250, "all speech lines loaded");
+        assert_eq!(e.current_subtitle(), Some("line 0"));
+        e.on_ship = false;
+        for _ in 0..40000 {
+            e.step(MouseInput::default());
+            if e.dialogue_finished() { break; }
+        }
+        assert!(e.dialogue_cursor() + 1 >= 250, "cursor advances through all lines");
     }
 
     /// The ship-console menu renders in the game's own console font (HONKF.SPR): the

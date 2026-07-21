@@ -252,6 +252,12 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     let (cod, var, dic, deb) = (rd("COD")?, rd("VAR")?, rd("DIC")?, rd("DEB")?);
     let descript =
         commander_blood_tools::descript::DescriptDb::parse_file(format!("{iso}/DESCRIPT.DES"))?;
+    // Parse every script's FULL decoded dialogue (all characters' speech events, ~3400
+    // lines) so the engine can play the whole content, not just execute_trace's single
+    // linear branch.
+    let hnm_music = descript.hnm_music_map();
+    let bundles = commander_blood_tools::script::parse_script_dir(iso, &descript, &hnm_music)
+        .unwrap_or_default();
     let mut engine = EngineState::new();
     engine.load_dialogue_scenes(&cod, &var, &dic, &deb, &descript, Path::new(assets));
     engine.dialogue_hold_frames = 20;
@@ -332,7 +338,28 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     let load_script = |engine: &mut EngineState, music: &mut Music, n: u32| {
         let r = |ext: &str| std::fs::read(format!("{iso}/SCRIPT{n}.{ext}"));
         if let (Ok(c), Ok(v), Ok(d), Ok(b)) = (r("COD"), r("VAR"), r("DIC"), r("DEB")) {
+            // load_dialogue_scenes sets up the scene + the D2 chaining decision.
             engine.load_dialogue_scenes(&c, &v, &d, &b, &descript, Path::new(assets));
+            // Then play the FULL decoded dialogue (every character's speech events, each
+            // over its location background) instead of the single linear execute_trace path.
+            if let Some(bundle) = bundles.iter().find(|bu| bu.script == format!("SCRIPT{n}")) {
+                let lines: Vec<(String, Option<std::path::PathBuf>)> = bundle
+                    .speech_events
+                    .iter()
+                    .filter(|e| !e.text.trim().is_empty())
+                    .map(|e| {
+                        let scene = e
+                            .background_hnm
+                            .as_ref()
+                            .map(|h| std::path::PathBuf::from(format!("{assets}/sq/{h}")))
+                            .filter(|p| p.exists());
+                        (e.text.clone(), scene)
+                    })
+                    .collect();
+                if !lines.is_empty() {
+                    engine.set_speech_dialogue(lines);
+                }
+            }
             if let Some(m) = extract::script_background_music(Path::new(iso), &format!("SCRIPT{n}"))
             {
                 let voc = format!("{assets}/mu/{m}.voc");
