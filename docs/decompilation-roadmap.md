@@ -13,6 +13,64 @@ the first vertical slice: it exercises the asset formats, dialogue VM,
 presentation events, renderer, and audio mixer without needing the whole
 interactive game loop first.
 
+## Current Completion Status
+
+The port (`src/*.rs` outside `src/recomp/`, driven by `EngineState` and
+`run_engine_window`) is a **complete, faithful scene/cutscene player**. The
+remaining gap to a full interactive-game replacement is dominated by subsystems
+that are *not yet reverse-engineered* (undecoded runtime data and mechanics), not
+by unwritten port code — so closing it is new RE work gated on oracle ground
+truth, not transliteration. Fabricating those subsystems would violate the
+"faithfully accurate" requirement, so they are left explicit rather than guessed.
+
+Verified end to end by `engine::tests::full_playable_loop_end_to_end` (fast CI
+test) and `src/bin/smoke.rs` (full five-scene headless playthrough): title →
+intro (with the DESCRIPT-sourced CRYO publisher credit) → nav → every screen →
+all five dialogue scenes play to completion (101/169/327/145/258 lines).
+
+Against the Definition of Done below:
+
+| # | Criterion | Status | Notes |
+|---|-----------|--------|-------|
+| 1 | Boot on original CD data | **Done** | loads DESCRIPT/SCRIPT/HNM/LBM/SPR/SND/VOC |
+| 2 | Intro + HNM cutscenes (timing/palette/audio/subtitles) | **Done** | HNM carries its own palette; intro credit sourced from DESCRIPT; reveal timing + chatter decoded |
+| 3 | Ship/nav UI + mouse/keyboard | **Partial** | compass steering + click + screen toggles work; nav *layout* + *palette* are approximations (RE-blocked, see below) |
+| 4 | Execute compiled BASIC scripts | **Done** | `vm.rs` walk + `execute_trace`; A6 text/voice decoded |
+| 5 | Dialogue scenes (bg/actor/voice/subtitle/sfx/music/timing) | **Done** | talk-HNM background, per-line voice, subtitle reveal + chatter, scene music; HUD strip approximate |
+| 6 | Location navigation + interactive object flows | **Partial** | location visit is a faithful static room viewer with decoded `.ext` object positions; interaction semantics RE-blocked |
+| 7 | Save/load state | **Absent** | downstream of the interactive-state layer (little decoded state to persist yet) |
+| 8 | Oracle suite | **Partial** | per-behavior tests + smoke playthrough; no full frame-diff oracle suite |
+
+Phase status: **Phase 1 (data layer) and Phase 2 (script VM/trace) complete;
+Phase 3 (game-accurate presentation) substantially complete** (subtitle assembly,
+reveal/chatter timing, voice indexing, talk-HNM behavior all decoded and ported);
+**Phases 4–5 blocked** on the RE items below.
+
+### RE-blocked remainder (needs decoding before it can be ported faithfully)
+
+- **Ship-view / bridge / nav VGA palette** — the real palette is uploaded at
+  runtime from an as-yet-unidentified resource (`re/REVERSE.md`: "identifying
+  which resource sets the ship-view palette"; master buffer `gs:0x5B58`). The port
+  substitutes a grey ramp so the indexed starfield/sprites read. `engine.rs`
+  `render_bridge`/`render_ship_view`.
+- **Star-map destination layout** — the 11 destinations live in runtime data
+  `DS:0x4F09` not reproducible from the static binary; the port tiles an
+  approximate grid (`engine.rs::render_nav_pyramid_sprites`, `ship3d.rs:1881-1888`).
+- **HUD pyramid vertex→screen projection** — the recovered verts exist
+  (`SHIP_3D_HUD_PYRAMID_VERTICES`) but the projecting routine is unlocated
+  (`ship3d.rs:1911-1916`); the dialogue-mode nav strip uses a placeholder.
+- **On-planet object interaction** — `entity.rs` models the decoded object record
+  + flag state machine, but object population source, per-screen rendering, and
+  click/interaction semantics are undecoded.
+- **Comms/cyberspace mini-game logic** — presentation-only; input/goal logic
+  undecoded (`engine.rs` note "the navigation minigame logic is undecoded").
+- **Pyramid-menu UI** — `manu3.rs` provides the decoded interaction/animation math
+  but the pyramid renderer depends on the unlocated projection above.
+
+All of these need instruction-level oracle ground truth to decode, which is the
+same DOSBox-differential bottleneck tracked elsewhere; none can be reproduced
+faithfully by writing more port code against what is currently decoded.
+
 ## Ground Rules
 
 - Original data files are the content source. The Rust code should load the
