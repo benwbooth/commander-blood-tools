@@ -555,6 +555,13 @@ impl EngineState {
         self.intro_active
     }
 
+    /// Skip the rest of the boot intro immediately (the real game lets a click/key skip
+    /// straight to the game). Ends intro playback so the driver can hand off to gameplay.
+    pub fn skip_intro(&mut self) {
+        self.intro_active = false;
+        self.intro_hnms.clear();
+    }
+
     /// Load an alien-examination screen's pre-rendered rotation views (the
     /// `pe/<stem>_a..d.hnm` set, e.g. `scrut` → Scruter Jo). Any that open are kept
     /// in rotation order; the screen renders once activated with `alien_view_active`.

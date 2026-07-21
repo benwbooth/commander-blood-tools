@@ -268,10 +268,10 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     ) {
         engine.load_nav_sprites(&carte, &borxx);
     }
-    // Show the decoded title/box art (BLOOD.LBM) first; a click or key dismisses it.
-    engine.load_title(Path::new(iso));
-    // Play the startup intro videos next (logos + intro cutscene), like the real game.
-    // The DESCRIPT `present` record supplies the CRYO publisher-credit overlay.
+    // Boot straight into the intro logos + cutscene, exactly as the real game does
+    // (MINDSCAPE → Microfolie's → intro cutscene → CRYO credit → crew showcase) — NOT a
+    // static box-art title screen (the real game has none; `BLOOD.LBM` box art isn't part
+    // of the boot). The DESCRIPT `present` record supplies the CRYO publisher-credit overlay.
     engine.load_intro(Path::new(assets), &descript);
     // The alien-examination screen (Scruter Jo): press 'c' to toggle it in nav.
     engine.load_alien_view(Path::new(assets), "scrut");
@@ -491,6 +491,11 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 // Any click/key dismisses the title screen first (advance to the intro).
                 Event::ButtonPress(_) | Event::KeyPress(_) if engine.title_active() => {
                     engine.dismiss_title();
+                }
+                // During the boot intro, a click/key SKIPS straight to the game (the real
+                // game lets you skip the logos/cutscene), rather than sitting through it.
+                Event::ButtonPress(_) | Event::KeyPress(_) if engine.intro_active() => {
+                    engine.skip_intro();
                 }
                 // While the MENU submenu ({EXPLANATIONS, GAME}, decoded from the real
                 // console) is open, a click resolves it: EXPLANATIONS replays the tutorial
@@ -737,16 +742,17 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 music.play(&format!("{assets}/mu/blintr.voc"));
             }
         } else if !tutorial_played {
-            // Intro just ended: silence the reel music, then start the SCRIPT1 tutorial
-            // automatically (the game's flow — it chains to SCRIPT2 via D2, then frees the
-            // nav for SCRIPT3/4/5).
+            // Intro just ended (or was skipped): silence the reel music and land on the
+            // interactive ship CONSOLE — the real game drops you at the console (the
+            // HONK/TELEPHONE/CRYOBOX/MENU/OPTION menu) to play, not a passive cutscene.
+            // From here the player clicks a console function or the nav.
             tutorial_played = true;
             if intro_music_started {
                 intro_music_started = false;
                 music.stop();
             }
-            load_script(&mut engine, &mut music, 1);
             engine.on_ship = false;
+            engine.bridge_active = true;
         } else if let Some(heading) = engine.take_nav_selection() {
             // SCRIPT1/2 are the forced tutorial + first encounter (played after the intro
             // and chained). The nav offers the free-choice destinations: SCRIPT3/4/5.
