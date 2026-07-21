@@ -413,3 +413,23 @@ advance over the texture (0x5229) and VGA (unreachable) dead-ends. Byte-exact DI
 still needs either (a) catching the off-screen page at the exact frame our engine also renders
 (frame-index alignment), or (b) the VGA vga.mem read. The read+decode of the off-screen composited
 frame WORKS (linear, palette-correct); only the same-frame alignment vs our engine remains.
+
+## SCRIPT1 tutorial completion via blind clicking (sess: whole-game RE)
+TRIED: TUTORIAL mode in runtime_boot — fast-skip to the ship console (~45M steps),
+then click the centre orb (the pointing-hand target) + all 5 menu rows in rotation for
+48 rounds (~250M more steps), watching opened_files for script2.* and reading the
+subtitle at gs:0xe18.
+WHY-FAILED: never advanced past SCRIPT1 — opened_files stayed at 16 (script1.* only,
+plus bappel/izwalito from TELEPHONE clicks); the console stayed on "Click quick, Cap'n
+Bob is waiting…". The tutorial gates progression on a SPECIFIC interaction (a particular
+button, order, or timed click) that blind rotation doesn't hit. ALSO: gs:0xe18 is NOT
+the live tutorial subtitle buffer — it read stale "WAIT COMMANDER" (the attract/credit
+text, cf. credit-divergence) the whole run while the SCREEN showed the tutorial lines.
+BETTER-APPROACH: (a) find the real tutorial-subtitle buffer (search RAM for "Click
+quick"/"You found" ASCII, then read that offset each round to know tutorial STATE);
+(b) trace the SCRIPT1 VM to find which console object/button its dialogue branch waits
+on, then click exactly that; (c) find a launch-arg / savestate that starts past the
+tutorial. This unblocks OPTION + the interactive gameplay (progression, mini-games).
+CONFIRMED THIS RUN (positive): reached the console; MENU opens the {EXPLANATIONS, GAME}
+submenu (3rd confirmation); console = CHART.FD + grayscale portrait orb + orange orb
+button + pointing hand + golden menu.

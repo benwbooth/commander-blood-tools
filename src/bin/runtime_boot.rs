@@ -270,6 +270,71 @@ fn main() {
         return;
     }
 
+    if std::env::var("TUTORIAL").is_ok() {
+        // Fast-skip to the ship console, then click the SCRIPT1 tutorial's indicated
+        // target (the centre orb the pointing hand points to) and a spread of console
+        // points, watching the subtitle + opened_files, to complete the tutorial and reach
+        // SCRIPT2 gameplay — which unblocks OPTION + the interactive systems.
+        let mut next_input = 5_000_000u64;
+        while rt.cpu.steps < 45_000_000 {
+            let _ = rt.run(next_input);
+            rt.inject_key(0x01, 0x1b);
+            rt.inject_key(0x1c, 0x0d);
+            rt.set_mouse_pos(320, 100);
+            rt.mouse_press(0);
+            let _ = rt.run(rt.cpu.steps + 400_000);
+            rt.mouse_release(0);
+            next_input += 5_000_000;
+        }
+        let read_sub = |rt: &Runtime| -> String {
+            let g = 0x0e84u16;
+            let mut s = String::new();
+            for i in 0..60u32 {
+                let b = rt.m.read8(g, 0xe18 + i);
+                if b == 0 {
+                    break;
+                }
+                if (32..127).contains(&b) {
+                    s.push(b as char);
+                }
+            }
+            s
+        };
+        let targets = [
+            (125u16, 110u16), (160, 100), (150, 120), (130, 115),
+            (165, 60), (165, 78), (165, 95), (165, 112), (165, 128),
+        ];
+        let mut reached2 = false;
+        for round in 0..48 {
+            let (sx, sy) = targets[round % targets.len()];
+            rt.set_mouse_pos(sx * 2, sy);
+            let _ = rt.run(rt.cpu.steps + 600_000);
+            rt.mouse_press(0);
+            let _ = rt.run(rt.cpu.steps + 600_000);
+            rt.mouse_release(0);
+            let _ = rt.run(rt.cpu.steps + 4_000_000);
+            let sub = read_sub(&rt);
+            let has2 = rt
+                .opened_files
+                .iter()
+                .any(|(_, p)| p.to_lowercase().contains("script2"));
+            println!("round {round:2} click({sx},{sy}) files={} sub={sub:?} script2={has2}", rt.opened_files.len());
+            if has2 {
+                reached2 = true;
+                rt.write_ppm(&out.join(format!("tut_reached2_r{round}.ppm"))).unwrap();
+                break;
+            }
+            if round % 6 == 0 {
+                rt.write_ppm(&out.join(format!("tut_r{round:02}.ppm"))).unwrap();
+            }
+        }
+        println!("TUTORIAL done, reached_script2={reached2} @ {} steps", rt.cpu.steps);
+        for (step, path) in &rt.opened_files {
+            println!("  @{step:>10} {path}");
+        }
+        return;
+    }
+
     if let Ok(spec) = std::env::var("MEMDUMP") {
         // Dump N bytes at gs:<off> to a file after running to `steps`. Spec: "<offhex>:<len>:<path>".
         let parts: Vec<&str> = spec.split(':').collect();
