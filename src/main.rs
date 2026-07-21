@@ -330,12 +330,13 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     // then chains to SCRIPT2 via its decoded D2 handoff, after which control returns to
     // the nav view for free destination choice). Fire it exactly once.
     let mut tutorial_played = false;
-    // The free-choice destinations (SCRIPT3/4/5) the player has visited. When all three
-    // are done, the game plays its ending finale — a decoded completion model grounded in
-    // the three D2-free destinations (the exact narrative trigger is progression-gated and
-    // still RE-blocked; visiting every location is a faithful "you've finished" heuristic).
+    // The free-choice destinations (SCRIPT3/4/5) drive completion: visiting all of them
+    // plays the ending finale. Tracked via the decoded entity state machine
+    // (engine.progress), which registers each and marks it visited.
     let free_choice_scripts: [u32; 3] = [3, 4, 5];
-    let mut visited_destinations: std::collections::HashSet<u32> = std::collections::HashSet::new();
+    for n in free_choice_scripts {
+        engine.progress.register(&format!("SCRIPT{n}"), n as u16);
+    }
     let mut ending_started = false;
     // After the intro, start in the star-map nav view; the loop switches nav<->dialogue.
     engine.on_ship = true;
@@ -586,7 +587,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 {
                     if let Some(i) = engine.nav_destination_click(mx, my) {
                         let dest = 3 + i as u32;
-                        visited_destinations.insert(dest);
+                        engine.progress.visit(&format!("SCRIPT{dest}"));
                         load_script(&mut engine, &mut music, dest);
                         engine.on_ship = false;
                     }
@@ -740,7 +741,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
             // SCRIPT1/2 are the forced tutorial + first encounter (played after the intro
             // and chained). The nav offers the free-choice destinations: SCRIPT3/4/5.
             let dest = (heading as u32 * 3 / 180).clamp(0, 2) + 3; // heading → SCRIPT3..5
-            visited_destinations.insert(dest);
+            engine.progress.visit(&format!("SCRIPT{dest}"));
             load_script(&mut engine, &mut music, dest);
             engine.on_ship = false;
         } else if !engine.on_ship && engine.dialogue_finished() {
@@ -754,9 +755,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     chatter_done_line = None;
                     load_script(&mut engine, &mut music, u32::from(profile) + 1);
                 }
-                None if !ending_started
-                    && free_choice_scripts.iter().all(|s| visited_destinations.contains(s)) =>
-                {
+                None if !ending_started && engine.progress.all_visited() => {
                     // Every free-choice location has been visited: play the ending finale.
                     ending_started = true;
                     music.stop();

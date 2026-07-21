@@ -275,6 +275,10 @@ pub struct EngineState {
     option_angle: u16,
     /// The currently highlighted menu item (0..[`Self::OPTION_ITEM_COUNT`]).
     option_item: usize,
+    /// Game-progression state (which locations/crew have been visited), built on the
+    /// decoded entity flag state machine. Drives completion (all visited → ending) and is
+    /// persisted in the save.
+    pub progress: crate::progress::GameProgress,
     /// The game-ending finale cutscene (`sq/fin.hnm`) — the bookend to the intro, played
     /// once to completion when the player has finished the game.
     ending_scene: Option<HnmFile>,
@@ -409,6 +413,7 @@ impl EngineState {
             option_active: false,
             option_angle: 0,
             option_item: 0,
+            progress: crate::progress::GameProgress::new(),
             ending_scene: None,
             ending_frame: 0,
             ending_active: false,
@@ -1366,6 +1371,7 @@ impl EngineState {
             phone_contact: self.phone_contact,
             phone_connected: self.phone_connected,
             text_speed_step: self.text_speed_step,
+            visited: self.progress.visited_names(),
         }
     }
 
@@ -1396,6 +1402,10 @@ impl EngineState {
         self.phone_connected = save.phone_connected;
         self.text_speed_step = save.text_speed_step;
         self.set_dialogue_cursor(save.dialogue_cursor);
+        // Restore the game progression (which locations/crew were visited).
+        for name in &save.visited {
+            self.progress.visit(name);
+        }
     }
 
     /// How many subtitle characters are currently revealed on the active line (the

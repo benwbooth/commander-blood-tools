@@ -37,6 +37,7 @@ pub mod lbm;
 pub mod levels;
 pub mod manu3;
 pub mod palette;
+pub mod progress;
 pub mod save;
 pub mod script;
 pub mod ship3d;

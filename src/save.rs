@@ -62,7 +62,7 @@ impl SaveScreen {
 }
 
 /// The resumable game state persisted by the port.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SaveState {
     /// The screen the player was on.
     pub screen: SaveScreen,
@@ -78,6 +78,8 @@ pub struct SaveState {
     pub phone_connected: bool,
     /// The decoded text-speed reveal step (subtitle characters per tick).
     pub text_speed_step: u16,
+    /// The names of the locations/crew the player has visited (game progression).
+    pub visited: Vec<String>,
 }
 
 /// The save file's first line — a magic + format version, so a foreign or future file is
@@ -95,7 +97,8 @@ impl SaveState {
              dialogue_cursor={}\n\
              phone_contact={}\n\
              phone_connected={}\n\
-             text_speed_step={}\n",
+             text_speed_step={}\n\
+             visited={}\n",
             self.screen.tag(),
             self.script,
             self.compass_angle,
@@ -103,6 +106,7 @@ impl SaveState {
             self.phone_contact,
             self.phone_connected as u8,
             self.text_speed_step,
+            self.visited.join(","),
         )
     }
 
@@ -120,6 +124,7 @@ impl SaveState {
         let mut phone_contact = None;
         let mut phone_connected = None;
         let mut text_speed_step = None;
+        let mut visited: Option<Vec<String>> = None;
         for line in lines {
             let line = line.trim();
             if line.is_empty() {
@@ -134,6 +139,16 @@ impl SaveState {
                 "phone_contact" => phone_contact = value.trim().parse().ok(),
                 "phone_connected" => phone_connected = value.trim().parse::<u8>().ok().map(|v| v != 0),
                 "text_speed_step" => text_speed_step = value.trim().parse().ok(),
+                "visited" => {
+                    visited = Some(
+                        value
+                            .split(',')
+                            .map(str::trim)
+                            .filter(|s| !s.is_empty())
+                            .map(str::to_string)
+                            .collect(),
+                    )
+                }
                 _ => {} // ignore unknown keys for forward compatibility
             }
         }
@@ -145,6 +160,8 @@ impl SaveState {
             phone_contact: phone_contact?,
             phone_connected: phone_connected?,
             text_speed_step: text_speed_step?,
+            // `visited` is optional for forward/backward compatibility (older saves lack it).
+            visited: visited.unwrap_or_default(),
         })
     }
 
@@ -174,6 +191,7 @@ mod tests {
             phone_contact: 2,
             phone_connected: true,
             text_speed_step: 5,
+            visited: vec!["SCRIPT3".into(), "SCRIPT4".into()],
         };
         let parsed = SaveState::from_text(&s.to_text()).expect("parses");
         assert_eq!(parsed, s);
@@ -216,9 +234,10 @@ mod tests {
             phone_contact: 0,
             phone_connected: false,
             text_speed_step: 3,
+            visited: vec![],
         };
         s.write(&path).expect("writes");
-        assert_eq!(SaveState::read(&path), Some(s));
+        assert_eq!(SaveState::read(&path), Some(s.clone()));
         let _ = std::fs::remove_file(&path);
     }
 }
