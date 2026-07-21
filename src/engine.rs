@@ -1499,12 +1499,13 @@ impl EngineState {
 
     /// Load the talk-HNM resolved for the current dialogue line (if any).
     fn load_current_scene(&mut self) {
-        match self.dialogue_scene_paths.get(self.dialogue_cursor).cloned() {
-            Some(Some(path)) => self.load_scene_hnm(&path),
-            // No scene for this line (e.g. HONK's food menu, the console tutorial): CLEAR
-            // any stale talk-HNM so `render_dialogue_frame` falls back to the console panel
-            // (ORX.FD) instead of a leftover scene or black.
-            _ => self.scene_hnm = None,
+        // A line with its own scene switches to it; a line WITHOUT one keeps the current
+        // scene (so a character's sceneless lines play over the location that was last
+        // shown, not the console). `set_speech_dialogue` clears the scene at the start of a
+        // new dialogue, so a dialogue with no scenes at all (HONK's food menu, the console
+        // tutorial) correctly falls back to the console panel.
+        if let Some(Some(path)) = self.dialogue_scene_paths.get(self.dialogue_cursor).cloned() {
+            self.load_scene_hnm(&path);
         }
     }
 
@@ -1561,6 +1562,9 @@ impl EngineState {
         self.dialogue_scene_paths = lines.into_iter().map(|(_, p)| p).collect();
         self.dialogue_cursor = 0;
         self.dialogue_timer = 0;
+        // Start a new dialogue with no scene (so a scene-less dialogue like HONK's food menu
+        // falls back to the console). Line scenes then set/keep it during playback.
+        self.scene_hnm = None;
         if self.dialogue_scene_paths.iter().any(|p| p.is_some()) {
             self.load_current_scene();
         }
