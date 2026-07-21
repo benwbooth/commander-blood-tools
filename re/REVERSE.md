@@ -3601,3 +3601,15 @@ structure, BUT a FAITHFUL render still needs (a) the graphical item sprites (arc
 (c) a reference frame of the real OPTION screen to verify (unreachable: emulator scene-coordinator
 gate + headless DOSBox mouse). So OPTION structure is decoded; the faithful render is asset+
 observation-blocked — do not fabricate item labels/geometry.
+
+## TB.BIG archive (console overlays) — format partly decoded (sess: faithfulness)
+TB.BIG (4.5MB, loaded at the ship console per opened_files) is an archive: a header of
+contiguous (offset:u32, size:u32) pairs (first offset 0x5a0 = 180 entries), each a ~16KB
+chunk. Each chunk begins with a sprite-like 8-byte header (width:u16=0x85=133, height=0x82=
+130, xoff=0x33, yoff=0x2c) then image data — LIGHTLY compressed (15994 data bytes ->
+133*130=17290 px target, ratio ~0.925). NOT the standard sprite RLE (src/sprite.rs
+decode_rle_frame overshoots to 19329 px consuming only 3040/15994 bytes) — a custom
+transparent-skip/copy encoding, still to reverse. These 133x130 frames are likely the
+console OVERLAYS (the animated pointing-hand, the crew-portrait, etc.) — the last pieces
+to make the port console pixel-exact. The panel itself is ORX.FD (the port uses it,
+brightened; chart.fd is the nebula nav-chart, confirmed wrong for the console).
