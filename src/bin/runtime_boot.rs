@@ -123,6 +123,41 @@ fn main() {
         return;
     }
 
+    if let Ok(spec) = std::env::var("CLICKAT") {
+        // Skip to the console, then click a sequence of "sx,sy;sx,sy;..." positions (with
+        // Esc between), capturing a frame + opened-files after each. Finds which button
+        // opens a given screen (e.g. the map/chart).
+        let mut next_input = 5_000_000u64;
+        while rt.cpu.steps < 45_000_000 {
+            let _ = rt.run(next_input);
+            rt.inject_key(0x01, 0x1b);
+            rt.inject_key(0x1c, 0x0d);
+            rt.set_mouse_pos(320, 100);
+            rt.mouse_press(0);
+            let _ = rt.run(rt.cpu.steps + 400_000);
+            rt.mouse_release(0);
+            next_input += 5_000_000;
+        }
+        let before = rt.opened_files.len();
+        for (i, pt) in spec.split(';').enumerate() {
+            let (a, b) = pt.split_once(',').unwrap();
+            let (sx, sy): (u16, u16) = (a.trim().parse().unwrap(), b.trim().parse().unwrap());
+            rt.set_mouse_pos(sx * 2, sy);
+            let _ = rt.run(rt.cpu.steps + 800_000);
+            rt.mouse_press(0);
+            let _ = rt.run(rt.cpu.steps + 800_000);
+            rt.mouse_release(0);
+            let _ = rt.run(rt.cpu.steps + 5_000_000);
+            rt.write_ppm(&out.join(format!("click_{i:02}_{sx}_{sy}.ppm"))).unwrap();
+            println!("click ({sx},{sy}): opened since start:");
+            for (_, p) in rt.opened_files.iter().skip(before) {
+                println!("    {p}");
+            }
+        }
+        println!("CLICKAT done -> {}/click_*.ppm", out.display());
+        return;
+    }
+
     if std::env::var("EXPLORE").is_ok() {
         // Skip to interactive, then systematically click the console menu rows + corners and
         // press keys over a long run, capturing a frame + the FULL opened-files map. Surfaces
