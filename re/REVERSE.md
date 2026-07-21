@@ -362,6 +362,20 @@ strings at file 0x13bde): `blood`/`orxx`/`Honk`/`menu`/`arche`/`cryobox`/`Scrute
   waiting…"), so OPTION's standalone function + what EXPLANATIONS/GAME do still need a run that
   gets PAST the tutorial. NOTE: `D:\blood.sav` is opened at BOOT (offset ~296974) — the game
   reads a save on startup (relevant to the blood.sav-format RE).
+- BOTH ORACLE PATHS TO INTERACTIVE GAMEPLAY ARE BLOCKED (sess: this — WHY OPTION/mini-games/
+  progression stay un-RE'd, not lack of trying):
+  1. RECOMP EMULATOR locks at the "WAIT COMMANDER" credit divergence — STATEDUMP (no input):
+     gate flags 5e58=0x0e2b / 6780=0xffff stable 240M→400M steps; never reaches interactive
+     play. This IS the credit-divergence bug (exhaustively bisected; needs a DOSBox trace diff).
+  2. REAL GAME under DOSBox-X (drive_real_game.sh, args `AMR S162227 EMS WRIC:\cblood\`) RUNS and
+     PROCEEDS PAST the credit — shows "CRYO Interactive Entertainment 1995" + "Commander BLOOD V
+     1.0" over the crew showcase (pyramid-floor + eye-orb HUD, green "1" counter). Confirms the
+     REAL credit is CRYO (emulator wrongly shows WAIT COMMANDER). BUT reaching STABLE interactive
+     control is blocked by the headless-DOSBox-mouse issue (xdotool clicks don't reliably reach
+     the game's mouse hit-testing under Xvfb) — the same wall a prior dedicated session hit.
+     NEXT: fix headless mouse (relative-motion+capture), user runs it, or fix the emulator credit
+     divergence — any ONE unblocks OPTION + the interactive systems. Tools: re/tools/
+     drive_real_game.sh (real game), runtime_boot MENUMAP/EXPLORE/TUTORIAL/STATEDUMP (emulator).
 
 INTERACTIVE SHIP CONSOLE — REACHED via emulator input injection (sess: whole-game RE).
 The recomp emulator is a driveable runtime oracle: `runtime.inject_key` /
