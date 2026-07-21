@@ -86,14 +86,18 @@ pub const ALIEN_TRANSFORM_NEUTRAL: i32 = 0x8000;
 /// `[-0x4000, 0x4000)` relative to the wrap origin (method `0x999`).
 pub const ALIEN_POSITION_WRAP: i16 = 0x4000;
 
-/// Timer reload when a new animation state is chosen (`+0x38 = 0x32`).
-pub const ALIEN_STATE_TIMER_RELOAD: u16 = 0x32;
-/// Animation-accumulator step per state change (`cs:[0x16A2] += 0xFA`).
-pub const ALIEN_ANIM_STEP: u16 = 0xFA;
+/// Low-15-bit mask used while folding a position into the toroidal play-space (a bit mask, so
+/// hexadecimal is the natural form).
+const POSITION_WRAP_MASK: u16 = 0x7fff;
+
+/// Timer reload (in frames) when a new animation state is chosen.
+pub const ALIEN_STATE_TIMER_RELOAD: u16 = 50;
+/// Animation-accumulator step added per state change.
+pub const ALIEN_ANIM_STEP: u16 = 250;
 
 impl AlienObject {
-    /// Create an object with the decoded initial state (`+0x38 = 0x32`), seeded PRNG,
-    /// running the animation state machine by default.
+    /// Create an object with the decoded initial state (timer reloaded to
+    /// [`ALIEN_STATE_TIMER_RELOAD`]), seeded PRNG, running the animation state machine by default.
     pub fn new(seed: u16) -> Self {
         Self {
             prng: seed,
@@ -142,22 +146,18 @@ impl AlienObject {
         self.transform = [ALIEN_TRANSFORM_NEUTRAL; 3];
     }
 
-    /// Port of method `0x999` (object position update): for each axis, wrap the object's
-    /// WORLD position (`camera + pos`) into `[-0x4000, 0x4000)` then subtract the camera
-    /// back — keeping objects within a toroidal play-space around the camera. The 8086
-    /// does this in 16-bit (`add;+0x4000;and 0x7fff;-0x4000`) then `movsx` to 32-bit.
+    /// Port of method `0x999` (object position update): fold each axis of the object's world
+    /// position (`camera + pos`) into the toroidal play-space `[-ALIEN_POSITION_WRAP,
+    /// ALIEN_POSITION_WRAP)` centered on the camera, then re-express it relative to the camera.
+    /// The fold is done in 16 bits and widened back to the stored 32-bit position.
     pub fn update_position(&mut self, camera: [i16; 3]) {
         for axis in 0..3 {
             let cam = camera[axis];
-            // ax = camera + pos (16-bit)
-            let mut ax = cam.wrapping_add(self.pos[axis] as i16);
-            // wrap into [-0x4000, 0x4000): +0x4000; &0x7fff; -0x4000
-            ax = ax.wrapping_add(ALIEN_POSITION_WRAP);
-            ax = (ax as u16 & 0x7fff) as i16;
-            ax = ax.wrapping_sub(ALIEN_POSITION_WRAP);
-            // ax -= camera; movsx to 32-bit
-            ax = ax.wrapping_sub(cam);
-            self.pos[axis] = ax as i32;
+            let world = cam.wrapping_add(self.pos[axis] as i16);
+            let folded =
+                (world.wrapping_add(ALIEN_POSITION_WRAP) as u16 & POSITION_WRAP_MASK) as i16;
+            let relative = folded.wrapping_sub(ALIEN_POSITION_WRAP).wrapping_sub(cam);
+            self.pos[axis] = relative as i32;
         }
     }
 

@@ -207,7 +207,9 @@ pub struct Ship3dTargetSelectorState {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Ship3dTargetSelection {
-    pub ax: u16,
+    /// The chosen target's record value: a record offset, the retained current target, or the
+    /// exit sentinel.
+    pub selected_target: u16,
     pub used_fallback_table: bool,
     pub ran_layout_prepass: bool,
     pub phase_gate_blocked: bool,
@@ -234,7 +236,7 @@ pub struct Ship3dTargetListLayout {
     pub max_label_width: u16,
     pub label_count: usize,
     pub has_extra_entry: bool,
-    pub selector_mode_return_ax: u16,
+    pub selector_mode_return: u16,
 }
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -251,7 +253,7 @@ pub struct Ship3dTargetHitResult {
     pub activated: bool,
     pub hover_row: u8,
     pub selected_row: u8,
-    pub return_ax: u16,
+    pub return_value: u16,
     pub play_select_sound: bool,
 }
 
@@ -950,7 +952,7 @@ pub fn layout_ship_3d_target_list(
         max_label_width,
         label_count: measured_label_widths.len(),
         has_extra_entry,
-        selector_mode_return_ax: SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
+        selector_mode_return: SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
     }
 }
 
@@ -1005,13 +1007,13 @@ pub fn hit_test_ship_3d_target_list(
         state.requested_presentation_state = SHIP_3D_TARGET_IDLE_PRESENTATION_MODE;
     }
 
-    let return_ax = (state.selected_row as u8).wrapping_sub(1) as i8 as i16 as u16;
+    let return_value = (state.selected_row as u8).wrapping_sub(1) as i8 as i16 as u16;
     Some(Ship3dTargetHitResult {
         inside,
         activated,
         hover_row: state.hover_row,
         selected_row: state.selected_row,
-        return_ax,
+        return_value,
         play_select_sound,
     })
 }
@@ -1094,7 +1096,7 @@ pub fn run_ship_3d_nav_choice_handler_1(
     state: &mut Ship3dNavChoiceState,
     target_records: &mut [u16],
     interpolation_complete: bool,
-    query_selection_ax: u16,
+    query_selection: u16,
 ) -> Option<Ship3dNavChoiceHandlerEffect> {
     let mut effect = Ship3dNavChoiceHandlerEffect::default();
 
@@ -1118,11 +1120,11 @@ pub fn run_ship_3d_nav_choice_handler_1(
         effect.cleared_handler_phase = true;
     }
 
-    if query_selection_ax == SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN {
+    if query_selection == SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN {
         return Some(effect);
     }
 
-    let target_index = usize::from(query_selection_ax);
+    let target_index = usize::from(query_selection);
     let target_record = *target_records.get(target_index)?;
     if target_record != SHIP_3D_TARGET_EXIT_SENTINEL {
         effect.deferred_record_type = Some(SHIP_3D_NAV_CHOICE_RECORD_LINK_TYPE);
@@ -1143,7 +1145,7 @@ pub fn run_ship_3d_nav_choice_handler_2(
     special_slots: &[u16],
     target_records: &mut Vec<u16>,
     interpolation_complete: bool,
-    query_selection_ax: u16,
+    query_selection: u16,
 ) -> Option<Ship3dNavChoiceHandlerEffect> {
     let mut effect = Ship3dNavChoiceHandlerEffect::default();
 
@@ -1167,11 +1169,11 @@ pub fn run_ship_3d_nav_choice_handler_2(
         effect.cleared_handler_phase = true;
     }
 
-    if query_selection_ax == SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN {
+    if query_selection == SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN {
         return Some(effect);
     }
 
-    let target_index = usize::from(query_selection_ax);
+    let target_index = usize::from(query_selection);
     let target_record = *target_records.get(target_index)?;
     if target_record != SHIP_3D_TARGET_EXIT_SENTINEL {
         effect.deferred_record_related =
@@ -1209,7 +1211,7 @@ pub fn run_ship_3d_nav_choice_handler_4(
     handler_state: &mut Ship3dNavChoiceHandler4State,
     layout_rect: [u16; SHIP_3D_INTERPOLATION_WORDS],
     interpolation_complete: bool,
-    query_selection_ax: u16,
+    query_selection: u16,
 ) -> Ship3dNavChoiceHandlerEffect {
     let mut effect = Ship3dNavChoiceHandlerEffect::default();
 
@@ -1233,11 +1235,11 @@ pub fn run_ship_3d_nav_choice_handler_4(
         effect.cleared_handler_phase = true;
     }
 
-    if signed_i16(query_selection_ax) < 0 {
+    if signed_i16(query_selection) < 0 {
         return effect;
     }
 
-    match query_selection_ax.to_le_bytes()[0] {
+    match query_selection.to_le_bytes()[0] {
         0 => {
             handler_state.menu_gate = true;
             handler_state.secondary_menu_gate = true;
@@ -1287,7 +1289,7 @@ pub fn run_ship_3d_navigation_sequence_update(
     presentation_active: bool,
     presentation_defer_active: bool,
     interpolation_complete: bool,
-    query_selection_ax: u16,
+    query_selection: u16,
 ) -> Ship3dNavigationSequenceEffect {
     let mut effect = Ship3dNavigationSequenceEffect::default();
 
@@ -1334,7 +1336,7 @@ pub fn run_ship_3d_navigation_sequence_update(
     }
 
     effect.queried_target_list = true;
-    if signed_i16(query_selection_ax) >= 0 {
+    if signed_i16(query_selection) >= 0 {
         state.sequence_active = false;
         state.exit_pending = true;
         effect.armed_exit_pending = true;
@@ -1650,37 +1652,35 @@ impl BloodPrng {
         }
     }
 
-    /// Advance the generator and return the next value in `0..modulus`
-    /// (or the raw 16-bit word when `modulus == 0`). Faithful port of the
-    /// `rcr/rcl` carry chain and byte advance at `0x01CE:0x0B02`.
+    /// Advance the generator and return the next value in `0..modulus` (or the raw 16-bit word
+    /// when `modulus == 0`). Faithful port of the generator at `0x01CE:0x0B02`.
     pub fn next(&mut self, modulus: u16) -> u16 {
-        // Build a 16-bit word by threading the carry flag through
-        // `rcr bl,1 / rcl ax,1 / rcl bh,1 / rcl ax,1`, eight times, starting
-        // from a cleared carry (the DOS code `xor ax,ax` clears CF).
-        let mut bl = self.a;
-        let mut bh = self.b;
-        let mut ax: u16 = 0;
+        // Thread a carry through the two mixing bytes to build a 16-bit word: each of the eight
+        // rounds rotates one bit out of the low byte and one out of the high byte, folding two
+        // bits into the word. The chain starts with a cleared carry.
+        let mut low = self.a;
+        let mut high = self.b;
+        let mut word: u16 = 0;
         let mut carry: u16 = 0;
         for _ in 0..8 {
-            // rcr bl,1
-            let new_carry = u16::from(bl & 1);
-            bl = ((carry as u8) << 7) | (bl >> 1);
-            carry = new_carry;
-            // rcl ax,1
-            let new_carry = ax >> 15;
-            ax = (ax << 1) | carry;
-            carry = new_carry;
-            // rcl bh,1
-            let new_carry = u16::from(bh >> 7);
-            bh = ((bh << 1) | (carry as u8)) & 0xff;
-            carry = new_carry;
-            // rcl ax,1
-            let new_carry = ax >> 15;
-            ax = (ax << 1) | carry;
-            carry = new_carry;
+            let next_carry = u16::from(low & 1);
+            low = ((carry as u8) << 7) | (low >> 1);
+            carry = next_carry;
+
+            let next_carry = word >> 15;
+            word = (word << 1) | carry;
+            carry = next_carry;
+
+            let next_carry = u16::from(high >> 7);
+            high = (high << 1) | (carry as u8);
+            carry = next_carry;
+
+            let next_carry = word >> 15;
+            word = (word << 1) | carry;
+            carry = next_carry;
         }
 
-        ax ^= self.seed_word;
+        word ^= self.seed_word;
 
         // Advance the two mixing bytes from the incrementing counter.
         self.counter = self.counter.wrapping_add(1);
@@ -1688,13 +1688,15 @@ impl BloodPrng {
         self.b = self.b.wrapping_sub(step);
         self.a ^= step.rotate_left(1);
 
-        // Range-reduce `ax %= modulus` via the DOS repeated-subtraction loop.
-        if modulus != 0 {
-            while ax >= modulus {
-                ax = ax.wrapping_sub(modulus);
-            }
+        // Range-reduce into `0..modulus` by repeated subtraction, as the original does.
+        if modulus == 0 {
+            return word;
         }
-        ax
+        let mut reduced = word;
+        while reduced >= modulus {
+            reduced = reduced.wrapping_sub(modulus);
+        }
+        reduced
     }
 }
 
@@ -2750,41 +2752,41 @@ pub fn ship_3d_position_field_distance(
 }
 
 pub fn ship_3d_binary_sqrt(value: u32) -> Option<u16> {
-    let mut ax = value as u16;
-    let mut dx = (value >> 16) as u16;
-    let original_ax = ax;
-    let original_dx = dx;
+    let low = value as u16;
+    let high = (value >> 16) as u16;
 
-    let mut bx = if dx != 0 {
-        if dx & 0xff00 != 0 {
-            if dx >= 0xfffe {
-                return Some(ax);
-            }
-            0xffff
-        } else {
-            0x0fff
+    // Seed the estimate from the input's magnitude (leading-bit brackets, as the original does),
+    // returning early for zero/tiny inputs whose root is the input itself. The brackets are bit
+    // patterns, so hexadecimal is the natural form here.
+    let mut estimate: u16 = if high & 0xff00 != 0 {
+        if high >= 0xfffe {
+            return Some(low);
         }
+        0xffff
+    } else if high != 0 {
+        0x0fff
+    } else if low == 0 {
+        return Some(low);
+    } else if low & 0xff00 != 0 {
+        0x00ff
     } else {
-        if ax == 0 {
-            return Some(ax);
-        }
-        if ax & 0xff00 != 0 { 0x00ff } else { 0x000f }
+        0x000f
     };
 
+    // Newton's method: estimate <- (estimate + value / estimate) / 2, iterated until it stops
+    // decreasing. The (sum >> 1) with carry into the top bit is the exact averaging the original
+    // uses so results are bit-identical.
     loop {
-        let dividend = ((dx as u32) << 16) | ax as u32;
-        let quotient = dividend / bx as u32;
+        let quotient = value / estimate as u32;
         if quotient > u16::MAX as u32 {
             return None;
         }
-        let (sum, carry) = (quotient as u16).overflowing_add(bx);
+        let (sum, carry) = (quotient as u16).overflowing_add(estimate);
         let candidate = (sum >> 1) | if carry { 0x8000 } else { 0 };
-        if candidate >= bx {
+        if candidate >= estimate {
             return Some(candidate);
         }
-        bx = candidate;
-        ax = original_ax;
-        dx = original_dx;
+        estimate = candidate;
     }
 }
 
@@ -3026,7 +3028,7 @@ pub fn select_ship_3d_target_record(
     state: &mut Ship3dTargetSelectorState,
     primary_targets: &[u16],
     fallback_targets: &[u16],
-    query_index_ax: u16,
+    query_index: u16,
     phase_gate_complete: bool,
 ) -> Option<Ship3dTargetSelection> {
     state.target_fallback = false;
@@ -3047,7 +3049,7 @@ pub fn select_ship_3d_target_record(
     if state.target_select_phase & 2 != 0 {
         if !phase_gate_complete {
             return Some(Ship3dTargetSelection {
-                ax: 0,
+                selected_target: 0,
                 used_fallback_table,
                 ran_layout_prepass,
                 phase_gate_blocked: true,
@@ -3056,34 +3058,34 @@ pub fn select_ship_3d_target_record(
         state.target_select_phase = 0;
     }
 
-    if query_index_ax == SHIP_3D_TARGET_EXIT_SENTINEL {
+    if query_index == SHIP_3D_TARGET_EXIT_SENTINEL {
         return Some(Ship3dTargetSelection {
-            ax: 0,
+            selected_target: 0,
             used_fallback_table,
             ran_layout_prepass,
             phase_gate_blocked: false,
         });
     }
 
-    let selected = targets.get(query_index_ax as usize).copied()?;
+    let selected = targets.get(query_index as usize).copied()?;
     if selected == SHIP_3D_TARGET_EXIT_SENTINEL {
         state.opening = true;
         state.depth_step = SHIP_3D_TARGET_OPEN_STEP;
         return Some(Ship3dTargetSelection {
-            ax: SHIP_3D_TARGET_EXIT_SENTINEL,
+            selected_target: SHIP_3D_TARGET_EXIT_SENTINEL,
             used_fallback_table,
             ran_layout_prepass,
             phase_gate_blocked: false,
         });
     }
 
-    let ax = if state.target_fallback {
+    let selected_target = if state.target_fallback {
         state.current_target
     } else {
         selected.wrapping_sub(SHIP_3D_TARGET_RECORD_HEADER_BYTES)
     };
     Some(Ship3dTargetSelection {
-        ax,
+        selected_target,
         used_fallback_table,
         ran_layout_prepass,
         phase_gate_blocked: false,
@@ -3775,7 +3777,7 @@ mod tests {
         assert_eq!(
             selected,
             Ship3dTargetSelection {
-                ax: 0,
+                selected_target: 0,
                 used_fallback_table: false,
                 ran_layout_prepass: true,
                 phase_gate_blocked: true,
@@ -3798,7 +3800,7 @@ mod tests {
         assert_eq!(
             selected,
             Ship3dTargetSelection {
-                ax: 0x2341,
+                selected_target: 0x2341,
                 used_fallback_table: false,
                 ran_layout_prepass: false,
                 phase_gate_blocked: false,
@@ -3827,7 +3829,7 @@ mod tests {
         assert_eq!(
             selected,
             Ship3dTargetSelection {
-                ax: 0x4567,
+                selected_target: 0x4567,
                 used_fallback_table: true,
                 ran_layout_prepass: false,
                 phase_gate_blocked: false,
@@ -3849,13 +3851,13 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(selected.ax, SHIP_3D_TARGET_EXIT_SENTINEL);
+        assert_eq!(selected.selected_target, SHIP_3D_TARGET_EXIT_SENTINEL);
         assert!(state.opening);
         assert_eq!(state.depth_step, SHIP_3D_TARGET_OPEN_STEP);
     }
 
     #[test]
-    fn target_selector_no_query_selection_returns_zero_ax() {
+    fn target_selector_no_query_selection_returns_zero() {
         let mut state = Ship3dTargetSelectorState::default();
 
         let selected = select_ship_3d_target_record(
@@ -3867,7 +3869,7 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(selected.ax, 0);
+        assert_eq!(selected.selected_target, 0);
         assert!(!state.opening);
     }
 
@@ -3964,7 +3966,7 @@ mod tests {
                 max_label_width: SHIP_3D_TARGET_LAYOUT_DEFAULT_MAX_WIDTH,
                 label_count: 2,
                 has_extra_entry: false,
-                selector_mode_return_ax: SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
+                selector_mode_return: SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
             }
         );
     }
@@ -3994,7 +3996,7 @@ mod tests {
                 max_label_width: SHIP_3D_TARGET_LAYOUT_EXTRA_WIDTH,
                 label_count: 0,
                 has_extra_entry: true,
-                selector_mode_return_ax: SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
+                selector_mode_return: SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
             }
         );
     }
@@ -4021,7 +4023,7 @@ mod tests {
                 activated: false,
                 hover_row: 1,
                 selected_row: 0,
-                return_ax: SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
+                return_value: SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
                 play_select_sound: false,
             }
         );
@@ -4040,7 +4042,7 @@ mod tests {
                 activated: true,
                 hover_row: 2,
                 selected_row: 2,
-                return_ax: 1,
+                return_value: 1,
                 play_select_sound: true,
             }
         );
@@ -4120,7 +4122,7 @@ mod tests {
                 activated: false,
                 hover_row: 0,
                 selected_row: 0,
-                return_ax: SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
+                return_value: SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
                 play_select_sound: false,
             }
         );
@@ -4143,7 +4145,7 @@ mod tests {
             max_label_width: 1,
             label_count: 256,
             has_extra_entry: false,
-            selector_mode_return_ax: SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
+            selector_mode_return: SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN,
         };
         let mut state = Ship3dTargetHitState::default();
 
