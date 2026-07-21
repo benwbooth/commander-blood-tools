@@ -296,8 +296,14 @@ fn main() {
         // CRYOBOX y118, MENU y133, OPTION y148) + the submenu-option area (175,115, where a
         // {BOB_MORLOCK,CANCEL}-style sub-choice appears) — whatever the current step wants
         // gets clicked, and any sub-choice is dismissed so the tutorial keeps advancing.
+        // Cycle the orb (125,118) + all 5 menu buttons (x~230: HONK y88, TELEPHONE y103,
+        // CRYOBOX y118, MENU y133, OPTION y148) + the sub-choice area (110,88=BOB_MORLOCK,
+        // 115,102=CANCEL) so whatever the current tutorial step wants gets clicked. This
+        // advances the SCRIPT1 tutorial dialogue but never triggers a scene transition to
+        // SCRIPT2 (the credit-divergence scene-coordinator bug — see re/REVERSE.md).
         let targets = [
-            (125u16, 118u16), (230, 88), (230, 103), (230, 118), (230, 133), (230, 148), (175, 115),
+            (125u16, 118u16), (230, 88), (230, 103), (230, 118), (230, 133), (230, 148),
+            (110, 88), (115, 102),
         ];
         let baseline = rt.opened_files.len();
         let mut reached2 = false;
