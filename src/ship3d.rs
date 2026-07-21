@@ -2542,6 +2542,20 @@ pub fn run_ship_3d_navigation_final_reset(
 /// (BLOODPRG.EXE `0x8A6A..0x8B5A`). The nav camera moves because this scripted FSM
 /// walks the camera origin `[0x2F65/67/69]` and angle `[0x2F71]` through fixed phases
 /// each frame — the source of the "the ship travels" motion, decoded and portable.
+///
+/// Phased camera-intro parameters (see [`Ship3dCameraApproach::step`]):
+/// phase 1 pulls X toward [`SHIP_INTRO_X_END`] in [`SHIP_INTRO_X_STEP`] increments while spinning
+/// the yaw (wrapping at [`SHIP_INTRO_YAW_WRAP`]); phase 2 accelerates Z up to
+/// [`SHIP_INTRO_Z_CRUISE`], gaining [`SHIP_INTRO_Z_ACCEL_STEP`] each frame; phase 3 resets to the
+/// cruise pose ([`SHIP_INTRO_X_RESET`]); phase 4 settles Z at [`SHIP_INTRO_Z_FINAL`].
+const SHIP_INTRO_X_END: u16 = 9000;
+const SHIP_INTRO_X_STEP: u16 = 100;
+const SHIP_INTRO_YAW_WRAP: u16 = 180;
+const SHIP_INTRO_Z_CRUISE: u16 = 20000;
+const SHIP_INTRO_Z_ACCEL_STEP: u16 = 100;
+const SHIP_INTRO_X_RESET: u16 = 10000;
+const SHIP_INTRO_Z_FINAL: u16 = 30000;
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Ship3dCameraApproach {
     /// Phase counter (`DS:0x27DF`): 1 = pull-in X, 2 = accelerate Z, 3 = reset,
@@ -2580,18 +2594,18 @@ impl Ship3dCameraApproach {
     /// - **P1** (`0x8A76`): if `X >= 0x2328` (9000), `X -= 0x64`; the yaw
     ///   `[0x2F71]` decrements toward 0 (wrapping to 0xB4). When `X < 0x2328`, P1
     ///   ends (`inc phase`).
-    /// - **P2** (`0x8AB3`): while `Z <= 0x4E20` (20000), `Z += z_accel` and
-    ///   `z_accel += 0x64` (accelerating). Above it, P2 ends.
-    /// - **P3** (`0x8AE0`): reset `Z=0x4E20`, `[0x2F71]=0`, `X=0x2710`; P3 ends.
-    /// - **P4** (`0x8B2B`): set `Z=0x7530` (30000); P4 ends → animation done.
+    /// - **P2** (`0x8AB3`): while Z is below the cruise altitude, accelerate Z upward. Above it,
+    ///   P2 ends.
+    /// - **P3** (`0x8AE0`): reset to the cruise pose. P3 ends.
+    /// - **P4** (`0x8B2B`): settle Z at its final altitude. P4 ends → animation done.
     pub fn step(&mut self) {
         match self.phase {
             1 => {
-                if self.origin_x >= 0x2328 {
-                    self.origin_x = self.origin_x.wrapping_sub(0x64);
-                    // yaw--, wrapping 0 -> 0xB4 (dec ax; jns; else 0xB4).
+                if self.origin_x >= SHIP_INTRO_X_END {
+                    self.origin_x = self.origin_x.wrapping_sub(SHIP_INTRO_X_STEP);
+                    // Spin the yaw down each frame, wrapping past zero back to the top of the turn.
                     self.angle_2f71 = if self.angle_2f71 == 0 {
-                        0xB4
+                        SHIP_INTRO_YAW_WRAP
                     } else {
                         self.angle_2f71 - 1
                     };
@@ -2600,21 +2614,21 @@ impl Ship3dCameraApproach {
                 }
             }
             2 => {
-                if self.origin_z <= 0x4E20 {
+                if self.origin_z <= SHIP_INTRO_Z_CRUISE {
                     self.origin_z = self.origin_z.wrapping_add(self.z_accel);
-                    self.z_accel = self.z_accel.wrapping_add(0x64);
+                    self.z_accel = self.z_accel.wrapping_add(SHIP_INTRO_Z_ACCEL_STEP);
                 } else {
                     self.phase += 1;
                 }
             }
             3 => {
-                self.origin_z = 0x4E20;
+                self.origin_z = SHIP_INTRO_Z_CRUISE;
                 self.angle_2f71 = 0;
-                self.origin_x = 0x2710;
+                self.origin_x = SHIP_INTRO_X_RESET;
                 self.phase += 1;
             }
             4 => {
-                self.origin_z = 0x7530;
+                self.origin_z = SHIP_INTRO_Z_FINAL;
                 self.phase += 1;
             }
             _ => self.done = true,
