@@ -289,6 +289,22 @@ renderer); remaining ship-view visual = compose the pyramid-HUD overlay (grid +
 orb) over the scene, driven by the destination list. Bounded sprite compositing,
 not new rendering.
 
+GAME STRUCTURE — DESTINATIONS ARE LOCATIONS WITH CHARACTERS (major reframe, static via
+inspect-character-combinations): SCRIPT1's DEB defines ~19 CHARACTER objects each bound
+to a LOCATION and a background HNM + music, e.g. Bug_Deluxe@Venusia (2venus10.hnm),
+Daddy_Gluxx@Ekatomb (1ekato10.hnm), Hom@Kortex (kort_1B.hnm), Anna_Haf@Magnus
+(1magnu10.hnm), Kran_Dobu@Kraner, Otto_Von_Smile@Erazor, Cyberquizz@Cyberock, Maxxon@
+observatory, Izwalito@Hito, Beauregard@Tumul, Eviscerator@prison, Migrator@airport, ...
+So the core loop is: NAVIGATE to a location (the destination list-box `layout_ship_3d_
+target_list`, gated DS:0x259B) -> meet that location's CHARACTER -> their dialogue. The
+dialogue BRANCHES by location/character. IMPLICATION for the port: the port's linear
+`execute_trace` plays ONE default path per script (SCRIPT1 -> HONK's food menu), so it
+currently covers only a few of the ~19 encounters. Faithful nav+dialogue needs: a
+destination list-box of the locations + per-location VM branch selection (set the
+current-location VAR, execute that character's dialogue path). The location background
+HNMs are the `<world>NN.hnm` scene files (already decodable). Nav is NOT click-on-chart
+markers — it's the text list-box of location names.
+
 CONSOLE MENU -> VM OBJECT MAPPING (static): the ship-console menu options dispatch to
 the game's built-in VM NAMED OBJECTS (the `vm_named_object_string_table` at DS:0x67BE,
 strings at file 0x13bde): `blood`/`orxx`/`Honk`/`menu`/`arche`/`cryobox`/`Scruter_Jo`/
