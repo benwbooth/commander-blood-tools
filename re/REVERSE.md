@@ -294,11 +294,11 @@ the game's built-in VM NAMED OBJECTS (the `vm_named_object_string_table` at DS:0
 strings at file 0x13bde): `blood`/`orxx`/`Honk`/`menu`/`arche`/`cryobox`/`Scruter_Jo`/
 `vbio`. So console option -> object -> that object's scene/assets:
 - HONK -> `Honk` -> SCRIPT1 (the cook's daily-fare menu; VERIFIED, ported+clickable).
-- CRYOBOX -> `cryobox` -> the cryo-chamber HNMs `sq/cryogel.hnm` + `sq/cryorad.hnm`
-  (filename refs at file 0xf8b1/0xf8ca; "cryobox" string at 0x13bf9). BLOCKER: both
-  cryo HNMs have an ALL-BLACK embedded palette — they render black; they need their
-  RUNTIME palette (set by the game before play, like the ship-view gs:0x5B58 baked
-  default), which is undecoded. So CRYOBOX render is palette-blocked, not asset-blocked.
+- CRYOBOX -> `cryobox` -> the cryo-chamber HNM `sq/cryorad.hnm` (refs at file
+  0xf8b1/0xf8ca; "cryobox" string at 0x13bf9). PORTED + clickable + tested. NOTE: the
+  cryo HNMs carry their palette in the HNM HEADER (no per-frame `pl` chunk, unlike
+  mind.hnm) — decode with `pal = hnm.palette` (the engine already does
+  `scene_palette = hnm.palette`); a fresh black pal renders black. Not palette-blocked.
 - MENU -> `menu` (the food menu object). Scruter_Jo -> the alien-examination (scrut.xdb,
   which the port already renders). TELEPHONE -> `bappel.spr`/appel (call screen, refs at
   file 0xcec4/0xd6d9) -> a character (izwalito.spr seen loading on click). OPTION likely

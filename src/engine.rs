@@ -241,6 +241,10 @@ pub struct EngineState {
     cyber_tunnels: Vec<HnmFile>,
     /// Whether the cyberspace tunnel screen is active.
     pub cyber_active: bool,
+    /// The cryo-chamber scene (`sq/cryorad.hnm`), shown by the console's CRYOBOX option.
+    cryobox_scene: Option<HnmFile>,
+    /// Whether the CRYOBOX cryo-chamber screen is active.
+    pub cryobox_active: bool,
     /// Current tunnel-segment index (advances as you "travel").
     cyber_segment: usize,
     /// The ship-bridge hub: clickable station icons (`BCARTE`=nav map, `BTV`=comms,
@@ -354,6 +358,8 @@ impl EngineState {
             tv_channel: 0,
             cyber_tunnels: Vec::new(),
             cyber_active: false,
+            cryobox_scene: None,
+            cryobox_active: false,
             cyber_segment: 0,
             bridge_stations: Vec::new(),
             console_font: Vec::new(),
@@ -782,6 +788,26 @@ impl EngineState {
         hnm.decode_frame(self.scene_frame, &mut self.scene_buffer, &mut self.scene_palette);
         self.framebuffer.copy_from_slice(&self.scene_buffer);
         self.scene_frame += 1;
+    }
+
+    /// Load the cryo-chamber scene (`sq/cryorad.hnm`) shown by the console's CRYOBOX
+    /// option — the ship's cryo-pod bay (its palette is the HNM's own header palette).
+    pub fn load_cryobox(&mut self, assets: &Path) -> bool {
+        self.cryobox_scene = HnmFile::open(&assets.join("sq").join("cryorad.hnm")).ok();
+        self.cryobox_scene.is_some()
+    }
+
+    /// Render the CRYOBOX cryo-chamber, looping its frames.
+    fn render_cryobox(&mut self) {
+        let Some(hnm) = self.cryobox_scene.take() else {
+            return;
+        };
+        let frame = self.scene_frame % hnm.frame_count().max(1);
+        self.scene_palette = hnm.palette;
+        hnm.decode_frame(frame, &mut self.scene_buffer, &mut self.scene_palette);
+        self.framebuffer.copy_from_slice(&self.scene_buffer);
+        self.scene_frame += 1;
+        self.cryobox_scene = Some(hnm);
     }
 
     /// Arm the scrutinizer-apparatus intro to play from its first frame the next time
@@ -1795,6 +1821,13 @@ impl EngineState {
             self.frame += 1;
             return;
         }
+        // The CRYOBOX cryo-chamber (console menu option) takes precedence when active.
+        if self.cryobox_active && self.cryobox_scene.is_some() {
+            self.render_cryobox();
+            self.countdown = self.countdown.saturating_sub(1);
+            self.frame += 1;
+            return;
+        }
         // Comms/TV screen takes precedence when active: watch the broadcast.
         if self.tv_active && !self.tv_channels.is_empty() {
             self.render_tv();
@@ -2072,6 +2105,23 @@ mod tests {
     /// The game's real flow after the intro: the SCRIPT1 console tutorial plays, then
     /// chains to SCRIPT2 via its decoded D2 handoff (profile 1). Verifies the chain
     /// trigger the driver relies on (`main.rs` auto-plays SCRIPT1 then follows this).
+    /// The console CRYOBOX option opens the cryo-chamber (cryorad.hnm) — it loads and
+    /// renders (with the HNM's own header palette), and the CRYOBOX menu row is clickable.
+    #[test]
+    fn cryobox_console_function_renders() {
+        let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
+            .iter().map(Path::new).find(|p| p.join("sq").join("cryorad.hnm").exists());
+        let Some(assets) = assets else { return };
+        let mut e = EngineState::new();
+        assert!(e.load_cryobox(assets), "cryorad.hnm loads");
+        e.cryobox_active = true;
+        for _ in 0..16 { e.step(MouseInput::default()); }
+        // The cryo-chamber fills the frame in real (many-colour) content.
+        assert!(e.framebuffer.iter().filter(|&&p| p != 0).count() > 5000, "cryo-chamber renders");
+        let distinct = e.framebuffer.iter().collect::<std::collections::HashSet<_>>().len();
+        assert!(distinct > 20, "cryo-chamber has real colour ({distinct})");
+    }
+
     /// The ship-console menu renders in the game's own console font (HONKF.SPR): the
     /// font loads (A–Z/0–9/punct glyphs) and the bridge draws the menu labels.
     #[test]

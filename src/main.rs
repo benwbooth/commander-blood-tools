@@ -278,6 +278,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     // The real navigation star-map background (CHART.FD) for the ship-nav view.
     engine.load_nav_chart(Path::new(iso));
     engine.load_console_font(Path::new(iso));
+    engine.load_cryobox(Path::new(assets));
     // The boot reel's music (`mu/blintr.voc` — "BLood INTRo"): starts with the intro
     // and is stopped when the intro hands off to the game.
     let mut intro_music_started = false;
@@ -415,20 +416,30 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 }
                 // On the bridge hub, a click on a station icon opens its screen.
                 Event::ButtonPress(b) if engine.bridge_active && b.detail == 1 => {
-                    // The ship-console menu: HONK (option 0) is verified — it opens the
-                    // cook's daily-fare menu (SCRIPT1). Its other options' functions are
-                    // not yet reverse-engineered, so they stay inert for now.
-                    if engine.console_menu_click(mx, my) == Some(0) {
-                        engine.bridge_active = false;
-                        load_script(&mut engine, &mut music, 1);
-                        engine.on_ship = false;
-                    } else if let Some(station) = engine.bridge_click(mx, my) {
-                        engine.bridge_active = false;
-                        use commander_blood_tools::engine::BridgeStation::*;
-                        match station {
-                            Nav => engine.on_ship = true,
-                            Comms => engine.tv_active = true,
-                            Cyberspace => engine.cyber_active = true,
+                    // The ship-console menu (decoded console -> VM object dispatch):
+                    // HONK (0) opens the cook's daily-fare menu (SCRIPT1); CRYOBOX (2)
+                    // opens the cryo-chamber. TELEPHONE/MENU/OPTION are not yet decoded.
+                    match engine.console_menu_click(mx, my) {
+                        Some(0) => {
+                            engine.bridge_active = false;
+                            load_script(&mut engine, &mut music, 1);
+                            engine.on_ship = false;
+                        }
+                        Some(2) => {
+                            engine.bridge_active = false;
+                            engine.cryobox_active = true;
+                        }
+                        Some(_) => {} // TELEPHONE/MENU/OPTION: functions not yet decoded
+                        None => {
+                            if let Some(station) = engine.bridge_click(mx, my) {
+                                engine.bridge_active = false;
+                                use commander_blood_tools::engine::BridgeStation::*;
+                                match station {
+                                    Nav => engine.on_ship = true,
+                                    Comms => engine.tv_active = true,
+                                    Cyberspace => engine.cyber_active = true,
+                                }
+                            }
                         }
                     }
                 }
@@ -453,6 +464,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         engine.alien_view_active = false;
                         engine.tv_active = false;
                         engine.cyber_active = false;
+                        engine.cryobox_active = false;
                         // Esc from a screen returns to the bridge hub.
                         engine.bridge_active = true;
                     }
