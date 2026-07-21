@@ -289,6 +289,22 @@ renderer); remaining ship-view visual = compose the pyramid-HUD overlay (grid +
 orb) over the scene, driven by the destination list. Bounded sprite compositing,
 not new rendering.
 
+CONSOLE MENU -> VM OBJECT MAPPING (static): the ship-console menu options dispatch to
+the game's built-in VM NAMED OBJECTS (the `vm_named_object_string_table` at DS:0x67BE,
+strings at file 0x13bde): `blood`/`orxx`/`Honk`/`menu`/`arche`/`cryobox`/`Scruter_Jo`/
+`vbio`. So console option -> object -> that object's scene/assets:
+- HONK -> `Honk` -> SCRIPT1 (the cook's daily-fare menu; VERIFIED, ported+clickable).
+- CRYOBOX -> `cryobox` -> the cryo-chamber HNMs `sq/cryogel.hnm` + `sq/cryorad.hnm`
+  (filename refs at file 0xf8b1/0xf8ca; "cryobox" string at 0x13bf9). BLOCKER: both
+  cryo HNMs have an ALL-BLACK embedded palette — they render black; they need their
+  RUNTIME palette (set by the game before play, like the ship-view gs:0x5B58 baked
+  default), which is undecoded. So CRYOBOX render is palette-blocked, not asset-blocked.
+- MENU -> `menu` (the food menu object). Scruter_Jo -> the alien-examination (scrut.xdb,
+  which the port already renders). TELEPHONE -> `bappel.spr`/appel (call screen, refs at
+  file 0xcec4/0xd6d9) -> a character (izwalito.spr seen loading on click). OPTION likely
+  the 3D pyramid menu (manu3.xdb — which is a SEPARATE animated menu, not the console
+  text menu handler). The console TEXT menu uses the HONKF.SPR 8x8 font (ported).
+
 INTERACTIVE SHIP CONSOLE — REACHED via emulator input injection (sess: whole-game RE).
 The recomp emulator is a driveable runtime oracle: `runtime.inject_key` /
 `set_mouse_pos` / `mouse_press`+`release` drive the real game, and injecting
