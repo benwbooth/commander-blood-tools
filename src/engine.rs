@@ -1377,6 +1377,19 @@ impl EngineState {
                         *px = CURSOR_COLOR;
                     }
                 }
+                // Targeted-destination label (top-left) so steering shows where the ship
+                // is headed on the chart.
+                if let Some(label) = self.targeted_world_name().map(str::to_uppercase) {
+                    draw_text_indexed(
+                        &mut self.framebuffer,
+                        ENGINE_SCREEN_WIDTH,
+                        ENGINE_SCREEN_HEIGHT,
+                        &label,
+                        6,
+                        6,
+                        CURSOR_COLOR,
+                    );
+                }
                 return;
             }
         }
