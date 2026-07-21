@@ -415,7 +415,14 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 }
                 // On the bridge hub, a click on a station icon opens its screen.
                 Event::ButtonPress(b) if engine.bridge_active && b.detail == 1 => {
-                    if let Some(station) = engine.bridge_click(mx, my) {
+                    // The ship-console menu: HONK (option 0) is verified — it opens the
+                    // cook's daily-fare menu (SCRIPT1). Its other options' functions are
+                    // not yet reverse-engineered, so they stay inert for now.
+                    if engine.console_menu_click(mx, my) == Some(0) {
+                        engine.bridge_active = false;
+                        load_script(&mut engine, &mut music, 1);
+                        engine.on_ship = false;
+                    } else if let Some(station) = engine.bridge_click(mx, my) {
                         engine.bridge_active = false;
                         use commander_blood_tools::engine::BridgeStation::*;
                         match station {

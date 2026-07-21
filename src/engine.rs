@@ -570,6 +570,30 @@ impl EngineState {
             .collect();
     }
 
+    /// The ship-console menu labels, drawn on the bridge in the console font. Index 0
+    /// (`HONK`) is verified — it is the cook's daily-fare menu (SCRIPT1). The rest
+    /// (`TELEPHONE`, `CRYOBOX`, `MENU`, `OPTION`) are the real labels but their exact
+    /// functions are not yet reverse-engineered.
+    pub const CONSOLE_MENU: [&'static str; 5] = ["HONK", "TELEPHONE", "CRYOBOX", "MENU", "OPTION"];
+    /// The console menu's screen layout (top-left of the label column, row pitch).
+    pub const CONSOLE_MENU_X: i32 = 156;
+    pub const CONSOLE_MENU_Y: i32 = 60;
+    pub const CONSOLE_MENU_PITCH: i32 = 13;
+
+    /// Map a click to a ship-console menu option index (0 = HONK … 4 = OPTION) when it
+    /// lands on one; matches `render_bridge`'s menu layout. `None` off the menu.
+    pub fn console_menu_click(&self, x: u16, y: u16) -> Option<usize> {
+        if self.console_font.is_empty() {
+            return None;
+        }
+        let (px, py) = (x as i32, y as i32);
+        if px < Self::CONSOLE_MENU_X || px > Self::CONSOLE_MENU_X + 96 {
+            return None;
+        }
+        (0..Self::CONSOLE_MENU.len())
+            .find(|&i| (py - (Self::CONSOLE_MENU_Y + i as i32 * Self::CONSOLE_MENU_PITCH)).abs() <= 5)
+    }
+
     /// Load the ship-console UI font from `HONKF.SPR` (49 8×8 glyphs: A–Z, 0–9,
     /// punctuation) — the game draws its console menu labels with it. Returns whether it
     /// loaded.
@@ -694,11 +718,11 @@ impl EngineState {
         // The ship-console function menu, drawn in the console's own HONKF font — the
         // real menu the game shows (HONK the cook's fare, the telephone, the cryobox…).
         if !self.console_font.is_empty() {
-            const CONSOLE_MENU: [&str; 5] = ["HONK", "TELEPHONE", "CRYOBOX", "MENU", "OPTION"];
             const MENU_COLOR: u8 = 0xFD;
             self.scene_palette[MENU_COLOR as usize] = [232, 216, 40]; // console yellow
-            for (i, opt) in CONSOLE_MENU.iter().enumerate() {
-                self.draw_console_text(opt, 156, 60 + i * 13, MENU_COLOR);
+            for (i, opt) in Self::CONSOLE_MENU.iter().enumerate() {
+                let y = (Self::CONSOLE_MENU_Y + i as i32 * Self::CONSOLE_MENU_PITCH) as usize;
+                self.draw_console_text(opt, Self::CONSOLE_MENU_X as usize, y, MENU_COLOR);
             }
         }
     }
@@ -2067,6 +2091,13 @@ mod tests {
         // The menu is drawn in the reserved console-yellow index 0xFD.
         let lit = e.framebuffer.iter().filter(|&&p| p == 0xFD).count();
         assert!(lit > 60, "console menu renders glyphs ({lit} lit)");
+        // A click on the HONK row (option 0) is detected; off-menu clicks are not.
+        assert_eq!(
+            e.console_menu_click(EngineState::CONSOLE_MENU_X as u16 + 4, EngineState::CONSOLE_MENU_Y as u16),
+            Some(0),
+            "HONK console option is clickable",
+        );
+        assert_eq!(e.console_menu_click(10, 190), None, "off-menu click hits nothing");
     }
 
     #[test]
