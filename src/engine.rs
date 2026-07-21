@@ -799,6 +799,36 @@ impl EngineState {
             self.scene_palette = crate::palette::game_screen_palette();
         }
         self.scene_palette[0xFE] = [245, 245, 160];
+        // Composite the ship's glowing eye-orb (BORXX.SPR) onto the console, as the real
+        // console shows. The orb frame is an orange sphere on a teal backing; the teal is a
+        // border-connected region, so flood-fill from the frame edges to mark it transparent
+        // and blit only the orb itself. ORX.FD uses only indices 0/193..207, so overlay the
+        // game palette on the orb's low indices (2..121) — no palette conflict.
+        if self.console_bg.is_some() && !self.hud_orb.is_empty() {
+            let game_pal = crate::palette::game_screen_palette();
+            for i in 2..=121usize {
+                self.scene_palette[i] = game_pal[i];
+            }
+            let frame = self.hud_orb[0].clone(); // the clean, mostly-orb frame
+            let (w, h) = (frame.width, frame.height);
+            let (cx, cy) = (96i32, 116i32);
+            // Color-key: the orb is orange (red > blue); its teal backing is blue-dominant.
+            // Blit only the orb pixels (red > blue) so the teal box drops out.
+            for y in 0..h {
+                for x in 0..w {
+                    let idx = frame.indices[y * w + x];
+                    let c = game_pal[idx as usize];
+                    if idx == 0 || c[2] >= c[0] {
+                        continue; // transparent (index 0) or teal/blue backing
+                    }
+                    let px = cx + x as i32 - w as i32 / 2;
+                    let py = cy + y as i32 - h as i32 / 2;
+                    if px >= 0 && (px as usize) < ENGINE_SCREEN_WIDTH && py >= 0 && (py as usize) < ENGINE_SCREEN_HEIGHT {
+                        self.framebuffer[py as usize * ENGINE_SCREEN_WIDTH + px as usize] = idx;
+                    }
+                }
+            }
+        }
         // NOTE: the station-icon sprites (BCARTE/BTV/BHYPER) are NOT blitted here — they
         // carry their own palette indices that read as black boxes over ORX.FD's console
         // palette, and the real console is the organic panel + the text menu, not those
