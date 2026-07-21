@@ -530,7 +530,9 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
             load_script(&mut engine, &mut music, 1);
             engine.on_ship = false;
         } else if let Some(heading) = engine.take_nav_selection() {
-            let dest = (heading as u32 * 5 / 180).clamp(0, 4) + 1; // heading → SCRIPT1..5
+            // SCRIPT1/2 are the forced tutorial + first encounter (played after the intro
+            // and chained). The nav offers the free-choice destinations: SCRIPT3/4/5.
+            let dest = (heading as u32 * 3 / 180).clamp(0, 2) + 3; // heading → SCRIPT3..5
             load_script(&mut engine, &mut music, dest);
             engine.on_ship = false;
         } else if !engine.on_ship && engine.dialogue_finished() {
