@@ -300,9 +300,13 @@ fn main() {
             }
             s
         };
+        // Calibrated from the gridded console frame: the orange orb (the hand's target,
+        // "Cap'n Bob is waiting") is at ~(58,118); the golden menu rows are HONK y95,
+        // TELEPHONE y108, CRYOBOX y122, MENU y137, OPTION y150 at x~165. Click the orb
+        // repeatedly (the tutorial target) with OPTION probed too.
         let targets = [
-            (125u16, 110u16), (160, 100), (150, 120), (130, 115),
-            (165, 60), (165, 78), (165, 95), (165, 112), (165, 128),
+            (58u16, 118u16), (58, 118), (58, 118), (60, 115), (55, 122),
+            (58, 118), (165, 150), (58, 118), (165, 137), (58, 118),
         ];
         let mut reached2 = false;
         for round in 0..48 {
