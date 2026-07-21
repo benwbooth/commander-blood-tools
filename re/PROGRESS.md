@@ -1578,3 +1578,28 @@ WAIT-COMMANDER mode (gs:0xade&&gs:0xba3 set) ← the nav-choice command toggling
 ← the intro command/event that should send it doesn't fire ← device-timing-gated (interp+reads+files
 all verified correct). Terminal cause = a specific intro command/event/state that differs from DOSBox;
 needs a DOSBox execution/memory trace at the credit frame OR more layers of tracing to pin.
+
+## 2026-07-20 (cont. 4) — BUILT DOSBox-X ground-truth debugger; file-I/O + timeline confirmed
+
+The environment's stock dosbox-x has no debugger. BUILT one via nix override with the heavy debugger
+(`--enable-debug=heavy` + ncurses) -- see re/tools/dosbox_debug/. This is the ground-truth capability
+that was previously the sole blocker. Confirmed working: Alt+Pause break (headless via Xvfb+xdotool on
+a pty), MEMDUMPBIN (dumps to MEMDUMP.BIN in DOSBox CWD), register read, screenshots.
+
+Findings via the debugger (all consistent, none contradict the earlier analysis):
+- `-debug -log-fileio`: DOSBox opens the SAME files my runtime does -- blood.dat, tb.big,
+  descript.des, script1.{cod,bas,var,dic,deb}, btv.spr, CARTE.SPR, chart.fd; blood.sav open FAILS in
+  BOTH (file absent). So the credit divergence is NOT a file-I/O difference (confirms files match).
+- Screenshot timeline (cycles=max): Microfolie's -> spaceship-over-Earth -> CRYO logo ->
+  elephant+"CRYO Interactive Entertainment 1995" (CLEAN, ~t56) -> "Commander BLOOD V 1.0". The scene
+  ORDER + pacing MATCH my runtime's own timeline -> pacing is consistent (the earlier apparent "4.5x
+  slowdown" was a wall-clock artifact of comparing my SPS=8M seconds to DOSBox capture wall-seconds).
+- DOSBox also has a "LOADING" prompt screen between scenes (English "LOADING"; my runtime shows the
+  static "WAIT COMMANDER" from gs:0x190 -- a hint the two loading-prompt paths differ).
+- DOSBox's game gs = 0x1505 region (loads lower than my 0x0e84, since DOS puts COMMAND.COM first).
+
+REMAINING (now a bounded automation task, NOT an unavailable-ground-truth wall): the headless break
+keeps landing on transient LOADING screens; refine resume(F5)+timing OR set a BPINT on the descript.des
+read to freeze AT the credit frame, then MEMDUMPBIN and read gs:0x6780 (profile), gs:0x5e64 (reveal
+gate), gs:0x5e65 (phase), gs:0xe18 (subtitle text). Comparing those to my runtime's values pinpoints
+the exact divergent state that keeps the credit clip unselected -> the fix.
