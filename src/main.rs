@@ -280,6 +280,10 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     // The boot reel's music (`mu/blintr.voc` — "BLood INTRo"): starts with the intro
     // and is stopped when the intro hands off to the game.
     let mut intro_music_started = false;
+    // The game plays the SCRIPT1 console tutorial automatically once the intro ends (it
+    // then chains to SCRIPT2 via its decoded D2 handoff, after which control returns to
+    // the nav view for free destination choice). Fire it exactly once.
+    let mut tutorial_played = false;
     // After the intro, start in the star-map nav view; the loop switches nav<->dialogue.
     engine.on_ship = true;
     // Scene music: the game plays each location's background music (.voc). Decoded
@@ -514,10 +518,17 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 intro_music_started = true;
                 music.play(&format!("{assets}/mu/blintr.voc"));
             }
-        } else if intro_music_started {
-            // Intro just ended: silence the reel music (once).
-            intro_music_started = false;
-            music.stop();
+        } else if !tutorial_played {
+            // Intro just ended: silence the reel music, then start the SCRIPT1 tutorial
+            // automatically (the game's flow — it chains to SCRIPT2 via D2, then frees the
+            // nav for SCRIPT3/4/5).
+            tutorial_played = true;
+            if intro_music_started {
+                intro_music_started = false;
+                music.stop();
+            }
+            load_script(&mut engine, &mut music, 1);
+            engine.on_ship = false;
         } else if let Some(heading) = engine.take_nav_selection() {
             let dest = (heading as u32 * 5 / 180).clamp(0, 4) + 1; // heading → SCRIPT1..5
             load_script(&mut engine, &mut music, dest);

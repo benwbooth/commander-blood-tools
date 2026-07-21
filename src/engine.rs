@@ -1938,6 +1938,31 @@ mod tests {
         assert!(e.dialogue_cursor() + 1 >= total, "cursor reached the last line");
     }
 
+    /// The game's real flow after the intro: the SCRIPT1 console tutorial plays, then
+    /// chains to SCRIPT2 via its decoded D2 handoff (profile 1). Verifies the chain
+    /// trigger the driver relies on (`main.rs` auto-plays SCRIPT1 then follows this).
+    #[test]
+    fn script1_tutorial_chains_to_script2() {
+        let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter().map(Path::new).find(|p| p.join("SCRIPT1.COD").is_file());
+        let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
+            .iter().map(Path::new).find(|p| p.join("sq").is_dir());
+        let (Some(iso), Some(assets)) = (iso, assets) else { return };
+        let db = crate::descript::DescriptDb::parse_file(iso.join("DESCRIPT.DES")).unwrap();
+        let rd = |ext: &str| std::fs::read(iso.join(format!("SCRIPT1.{ext}"))).unwrap();
+        let mut e = EngineState::new();
+        e.load_dialogue_scenes(&rd("COD"), &rd("VAR"), &rd("DIC"), &rd("DEB"), &db, assets);
+        e.dialogue_hold_frames = 20;
+        e.on_ship = false;
+        for _ in 0..20000 {
+            e.step(MouseInput::default());
+            if e.dialogue_finished() { break; }
+        }
+        assert!(e.dialogue_finished(), "SCRIPT1 tutorial completes");
+        // Its D2 handoff requests profile 1 -> the driver loads SCRIPT(1+1)=SCRIPT2.
+        assert_eq!(e.pending_next_scene(), Some(1), "SCRIPT1 chains to SCRIPT2 via D2");
+    }
+
     #[test]
     fn step_advances_frame_and_polls_input() {
         let mut e = EngineState::new();
