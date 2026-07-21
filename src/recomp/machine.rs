@@ -1112,6 +1112,12 @@ pub struct Machine {
     pub vm_ops: Vec<u8>,
     /// At capture_ip, snapshot 64 bytes at ds:0 (the current ds segment, offset 0).
     pub captured_seg: Option<Vec<u8>>,
+    /// Lockstep capture: route VRAM (0xa0000..0xb0000) to linear `mem` instead of the planar Vga
+    /// object, so interp-vs-Unicorn lockstep sees identical (linear) VRAM semantics on both sides.
+    pub vga_linear: bool,
+    /// Lockstep capture: when Some, every write8 appends (linear_addr, value). Enabled only around
+    /// device-service actions so the harness can replay their memory effects onto Unicorn.
+    pub wlog: Option<Vec<(u32, u8)>>,
 }
 
 pub const MEM_SIZE: usize = 0x40_0000; // 4 MB — the EXE image (deterministic oracle mirrors it),
@@ -1148,6 +1154,8 @@ impl Machine {
             vm_trace_ip: None,
             vm_ops: Vec::new(),
             captured_seg: None,
+            vga_linear: false,
+            wlog: None,
         }
     }
 
@@ -1164,16 +1172,30 @@ impl Machine {
     #[inline]
     pub fn read8(&self, seg: u16, off: u32) -> u8 {
         let a = Self::lin(seg, off);
-        if let Some(vga) = self.vga.as_deref() {
-            if (0xa0000..0xb0000).contains(&a) {
-                return vga.read(a - 0xa0000);
+        if !self.vga_linear {
+            if let Some(vga) = self.vga.as_deref() {
+                if (0xa0000..0xb0000).contains(&a) {
+                    return vga.read(a - 0xa0000);
+                }
             }
         }
         self.mem[a]
     }
     #[inline]
+    /// Lockstep capture: after a BULK direct-`mem` write (file read, EMS page map, screen clear —
+    /// paths that bypass write8), record the affected linear range into wlog so the harness can
+    /// replay those bytes onto Unicorn. No-op unless wlog is active.
+    pub fn log_range(&mut self, start: usize, len: usize) {
+        if self.wlog.is_some() {
+            let v: Vec<(u32, u8)> = (start..start + len).map(|a| (a as u32, self.mem[a])).collect();
+            self.wlog.as_mut().unwrap().extend(v);
+        }
+    }
     pub fn write8(&mut self, seg: u16, off: u32, v: u8) {
         let a = Self::lin(seg, off);
+        if let Some(log) = self.wlog.as_mut() {
+            log.push((a as u32, v));
+        }
         if let Some((wv, range)) = &self.watch {
             if v == *wv && range.contains(&a) && self.watch_hits.len() < 10000 {
                 let hit = (self.regs.cs, self.ip, self.regs.ds, self.regs.si());
@@ -1192,9 +1214,11 @@ impl Machine {
                 self.range_hits.push((a, v, self.regs.cs, self.ip));
             }
         }
-        if let Some(vga) = self.vga.as_deref_mut() {
-            if (0xa0000..0xb0000).contains(&a) {
-                return vga.write(a - 0xa0000, v);
+        if !self.vga_linear {
+            if let Some(vga) = self.vga.as_deref_mut() {
+                if (0xa0000..0xb0000).contains(&a) {
+                    return vga.write(a - 0xa0000, v);
+                }
             }
         }
         self.mem[a] = v;

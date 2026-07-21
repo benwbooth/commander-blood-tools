@@ -597,6 +597,217 @@ impl Runtime {
         }
     }
 
+    /// Lockstep capture: fast-forward `skip` steps, then record a per-instruction trace of the
+    /// next `window` pure-CPU instructions for offline interp-vs-Unicorn differential replay
+    /// (`re/tools/lockstep.py`). VRAM is routed to linear `mem` (vga_linear) so both interpreters
+    /// share identical memory semantics — the goal is finding a CONTROL-FLOW (branch) divergence
+    /// in game logic, not pixel fidelity.
+    ///
+    /// Trace format (little-endian): header = b"LSTP", window:u32, mem_len:u32, initial regs (48B),
+    /// mem (mem_len B). Then events: type:u8 (0=pure-CPU 'X', 1=device 'D'), after-regs (48B), and
+    /// for 'D' only: nwrites:u32 then nwrites*(addr:u32, val:u8).
+    /// Regs (48B): eax,ebx,ecx,edx,esi,edi,ebp,esp (8*u32); cs,ds,es,ss,fs,gs,ip,flags (8*u16).
+    pub fn lockstep_capture(&mut self, skip: u64, window: u64, out: &Path) -> std::io::Result<()> {
+        fn snap(m: &Machine, cpu: &Cpu) -> [u8; 48] {
+            let r = &m.regs;
+            let flags: u16 = 0x0002
+                | (r.cf as u16)
+                | ((r.pf as u16) << 2)
+                | ((r.af as u16) << 4)
+                | ((r.zf as u16) << 6)
+                | ((r.sf as u16) << 7)
+                | ((cpu.iflag as u16) << 9)
+                | ((r.df as u16) << 10)
+                | ((r.of as u16) << 11)
+                | cpu.flags_high;
+            let mut b = [0u8; 48];
+            let mut o = 0;
+            for v in [r.eax, r.ebx, r.ecx, r.edx, r.esi, r.edi, r.ebp, r.esp] {
+                b[o..o + 4].copy_from_slice(&v.to_le_bytes());
+                o += 4;
+            }
+            for v in [cpu.cs, r.ds, r.es, r.ss, r.fs, r.gs, cpu.ip, flags] {
+                b[o..o + 2].copy_from_slice(&v.to_le_bytes());
+                o += 2;
+            }
+            b
+        }
+        // Fast-forward past boot (normal run, planar VGA).
+        while self.exit_code.is_none() && self.cpu.steps < skip {
+            match self.run(skip) {
+                RunEnd::StepBudget | RunEnd::Exited(_) => break,
+                RunEnd::Fatal(e) => {
+                    return Err(std::io::Error::new(std::io::ErrorKind::Other, e))
+                }
+            }
+        }
+        self.m.vga_linear = true; // from here, VRAM is linear on both sides
+
+        let f = std::fs::File::create(out)?;
+        let mut w = std::io::BufWriter::new(f);
+        w.write_all(b"LSTP")?;
+        w.write_all(&(window as u32).to_le_bytes())?;
+        w.write_all(&(self.m.mem.len() as u32).to_le_bytes())?;
+        w.write_all(&snap(&self.m, &self.cpu))?;
+        w.write_all(&self.m.mem)?;
+
+        // Emit a 'D' (device) event: after-regs + the memory writes captured in wlog.
+        macro_rules! emit_d {
+            ($w:expr, $s:expr, $writes:expr) => {{
+                $w.write_all(&[1u8])?;
+                $w.write_all(&$s)?;
+                $w.write_all(&($writes.len() as u32).to_le_bytes())?;
+                for (a, v) in &$writes {
+                    $w.write_all(&a.to_le_bytes())?;
+                    $w.write_all(&[*v])?;
+                }
+            }};
+        }
+
+        let mut xcount: u64 = 0;
+        while self.exit_code.is_none() && xcount < window {
+            // ---- pre-instruction injections (mirror run(); each clears IF so ≤1 fires) ----
+            let mut injected = false;
+            // int 9 keyboard IRQ
+            if !injected
+                && self.kbd_irq_pending > 0
+                && self.cpu.iflag
+                && self.ivt_hooked(9)
+                && self.pic_mask0 & 0x02 == 0
+            {
+                self.kbd_irq_pending -= 1;
+                self.m.wlog = Some(Vec::new());
+                self.cpu.deliver_int(&mut self.m, 9);
+                let wr = self.m.wlog.take().unwrap();
+                emit_d!(w, snap(&self.m, &self.cpu), wr);
+                injected = true;
+            }
+            self.tick_sb_playback();
+            if !injected && self.sb_irq_pending && self.cpu.iflag && self.pic_mask0 & 0x80 == 0 {
+                self.sb_irq_pending = false;
+                if self.ivt_hooked(0x0f) {
+                    self.m.wlog = Some(Vec::new());
+                    self.cpu.deliver_int(&mut self.m, 0x0f);
+                    let wr = self.m.wlog.take().unwrap();
+                    emit_d!(w, snap(&self.m, &self.cpu), wr);
+                    injected = true;
+                }
+            }
+            if !injected && self.cpu.steps >= self.next_tick_at {
+                if self.cpu.iflag && self.pic_mask0 & 0x01 == 0 {
+                    self.next_tick_at = self.cpu.steps + self.steps_per_tick;
+                    self.m.wlog = Some(Vec::new());
+                    self.cpu.deliver_int(&mut self.m, 8);
+                    let wr = self.m.wlog.take().unwrap();
+                    emit_d!(w, snap(&self.m, &self.cpu), wr);
+                    injected = true;
+                } else {
+                    self.next_tick_at = self.cpu.steps + 1000;
+                }
+            }
+            if injected {
+                continue;
+            }
+
+            // ---- one instruction ----
+            match self.cpu.run(&mut self.m, 1) {
+                Exit::StepLimit => {
+                    // pure-CPU 'X' — Unicorn re-executes this; only after-regs recorded.
+                    w.write_all(&[0u8])?;
+                    w.write_all(&snap(&self.m, &self.cpu))?;
+                    xcount += 1;
+                }
+                Exit::Int { vector } => {
+                    self.m.wlog = Some(Vec::new());
+                    self.cpu.deliver_int(&mut self.m, vector);
+                    let wr = self.m.wlog.take().unwrap();
+                    emit_d!(w, snap(&self.m, &self.cpu), wr);
+                }
+                Exit::Hlt => {
+                    let (cs, ip) = (self.cpu.cs, self.cpu.ip);
+                    if cs == STUB_SEG && ip == 0x421 {
+                        if let Some((regs, ccs, cip, ifl, fh)) = self.mouse_saved.take() {
+                            self.m.regs = regs;
+                            self.cpu.cs = ccs;
+                            self.cpu.ip = cip;
+                            self.cpu.iflag = ifl;
+                            self.cpu.flags_high = fh;
+                            emit_d!(w, snap(&self.m, &self.cpu), Vec::<(u32, u8)>::new());
+                            continue;
+                        }
+                        return Err(std::io::Error::new(
+                            std::io::ErrorKind::Other,
+                            "trampoline hlt without saved context",
+                        ));
+                    }
+                    let v = if cs == STUB_SEG && ip >= 1 {
+                        ((ip - 1) / 4) as u8
+                    } else if cs == EMS_STUB_SEG {
+                        0x67
+                    } else {
+                        return Err(std::io::Error::new(
+                            std::io::ErrorKind::Other,
+                            format!("hlt outside stubs at {cs:04x}:{ip:04x}"),
+                        ));
+                    };
+                    self.m.wlog = Some(Vec::new());
+                    let r = self.native_int(v);
+                    let wr = self.m.wlog.take().unwrap();
+                    if let Err(e) = r {
+                        return Err(std::io::Error::new(std::io::ErrorKind::Other, e));
+                    }
+                    emit_d!(w, snap(&self.m, &self.cpu), wr);
+                }
+                Exit::In { port, size } => {
+                    let val = match size {
+                        1 => self.port_in(port, 1),
+                        _ => {
+                            let lo = self.port_in(port, 1) & 0xff;
+                            let hi = self.port_in(port.wrapping_add(1), 1) & 0xff;
+                            lo | (hi << 8)
+                        }
+                    };
+                    match size {
+                        1 => self.m.regs.set_al(val as u8),
+                        2 => self.m.regs.set_ax(val as u16),
+                        _ => self.m.regs.eax = val,
+                    }
+                    emit_d!(w, snap(&self.m, &self.cpu), Vec::<(u32, u8)>::new());
+                }
+                Exit::Out { port, size, value } => {
+                    self.m.wlog = Some(Vec::new());
+                    match size {
+                        1 => self.port_out(port, 1, value),
+                        _ => {
+                            self.port_out(port, 1, value & 0xff);
+                            self.port_out(port.wrapping_add(1), 1, (value >> 8) & 0xff);
+                            if size == 4 {
+                                self.port_out(port.wrapping_add(2), 1, (value >> 16) & 0xff);
+                                self.port_out(port.wrapping_add(3), 1, (value >> 24) & 0xff);
+                            }
+                        }
+                    }
+                    let wr = self.m.wlog.take().unwrap();
+                    emit_d!(w, snap(&self.m, &self.cpu), wr);
+                }
+                Exit::Unimplemented { cs, ip, byte, what } => {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        format!("unimplemented {what} (op {byte:#04x}) at {cs:04x}:{ip:04x}"),
+                    ));
+                }
+                Exit::Ret | Exit::Retf => {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        "depth-0 ret in lockstep",
+                    ))
+                }
+            }
+        }
+        w.flush()?;
+        Ok(())
+    }
+
     // ---------------- port I/O ----------------
 
     fn port_in(&mut self, port: u16, _size: u8) -> u32 {
@@ -948,6 +1159,7 @@ impl Runtime {
                     }
                 } else {
                     self.m.mem[0xb8000..0xc0000].fill(0);
+                    self.m.log_range(0xb8000, 0x8000);
                 }
             }
             0x01 | 0x02 | 0x03 | 0x05 | 0x06 | 0x07 => {}
@@ -1181,6 +1393,7 @@ impl Runtime {
                                 let src = EMS_STORE + store_page as usize * EMS_PAGE;
                                 let dst = (EMS_FRAME_SEG as usize) * 16 + phys * EMS_PAGE;
                                 self.m.mem.copy_within(src..src + EMS_PAGE, dst);
+                                self.m.log_range(dst, EMS_PAGE);
                                 self.ems_map[phys] = Some(store_page);
                                 self.m.regs.set_ah(0);
                             }
@@ -1588,6 +1801,7 @@ impl Runtime {
                         let n = hf.f.read(&mut buf).unwrap_or(0);
                         let base = Machine::lin(ds, dx as u32);
                         self.m.mem[base..base + n].copy_from_slice(&buf[..n]);
+                        self.m.log_range(base, n);
                         self.m.regs.set_ax(n as u16);
                         self.cpu.patch_frame_cf(&mut self.m, false);
                     }

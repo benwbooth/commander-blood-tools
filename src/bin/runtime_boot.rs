@@ -12,10 +12,18 @@ fn main() {
     let mut shot_every: u64 = 10_000_000;
     let mut out = PathBuf::from("boot_frames");
     let mut trace = false;
+    let mut lockstep: Option<(u64, u64, PathBuf)> = None;
     let args: Vec<String> = std::env::args().skip(1).collect();
     let mut i = 0;
     while i < args.len() {
         match args[i].as_str() {
+            "--lockstep" => {
+                let skip = args[i + 1].parse().unwrap();
+                let window = args[i + 2].parse().unwrap();
+                let path = PathBuf::from(&args[i + 3]);
+                lockstep = Some((skip, window, path));
+                i += 3;
+            }
             "--steps" => {
                 i += 1;
                 steps = args[i].parse().unwrap();
@@ -47,6 +55,13 @@ fn main() {
     rt.trace_ints = trace;
     rt.load_exe(&exe, " AMR S162227 EMS WRIC:\\cblood\\", "D:\\BLOODPRG.EXE")
         .unwrap();
+
+    if let Some((skip, window, path)) = lockstep {
+        eprintln!("lockstep: skip={skip} window={window} -> {}", path.display());
+        rt.lockstep_capture(skip, window, &path).unwrap();
+        eprintln!("lockstep capture done ({} steps reached)", rt.cpu.steps);
+        return;
+    }
 
     let mut next_shot = shot_every;
     let end = loop {
