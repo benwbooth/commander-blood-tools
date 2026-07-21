@@ -1560,3 +1560,21 @@ which is gated off. ROOT stands: the credit profile/clip is never requested (gs:
 game in WAIT-COMMANDER mode. With interp ruled out + reads/files verified, this is device-timing-driven
 clip scheduling. NEXT: find what selects the credit clip (the gs:0x0dd7 table setup + the trigger that
 should replace the WAIT-COMMANDER prompt with the credit clip) and the timing state gating it.
+
+## 2026-07-20 (cont. 3) — WAIT-COMMANDER is a nav-choice command toggle that never fires
+
+Traced deeper: the WAIT-COMMANDER gate gs:[0xba3]&1 is toggled by a NAVIGATION-CHOICE command handler
+(file 0x88df; the `dec al; jns` chain at 0x8923+ is a switch on command code al; neighbors are labeled
+nav_choice_handler_3/4/5). SET branch (0x8902) sets gs:0xba3=1 + presents WAIT COMMANDER (lcall
+0xb1b:0x607/0x403); CLEAR branch (0x88eb) sets gs:0xba3=0 (exit). In my runtime gs:0xba3 is NEVER
+written (stays static-init 1) → this command handler never runs → the game never receives the command
+to exit WAIT-COMMANDER. WAIT COMMANDER itself is drawn by the per-frame redraw (0cbd:0x403, gated
+gs:0xade&&gs:0xba3&&gs:0xba0) since both flags stay set.
+
+FULL TRACE CHAIN (interpreter ruled out at every layer; ~7 layers deep):
+scrambled band ← reveal phase gs:0x5e65 stuck 0 (static) ← presenter (a) static runs / (b) clean never
+runs ← credit CLIP never selected (gs:0xe18 holds "WAIT COMMANDER" not "CRYO...") ← game stuck in
+WAIT-COMMANDER mode (gs:0xade&&gs:0xba3 set) ← the nav-choice command toggling gs:0xba3 off never fires
+← the intro command/event that should send it doesn't fire ← device-timing-gated (interp+reads+files
+all verified correct). Terminal cause = a specific intro command/event/state that differs from DOSBox;
+needs a DOSBox execution/memory trace at the credit frame OR more layers of tracing to pin.
