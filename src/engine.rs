@@ -205,6 +205,10 @@ pub struct EngineState {
     /// nebula + destination stars + route lines + the ship console. When loaded it
     /// replaces the procedural starfield in the nav view.
     nav_chart: Option<crate::lbm::LbmImage>,
+    /// The real ship-CONSOLE background (`ORX.FD` — the Orxx ship's organic control panel).
+    /// Distinct from the nav star-map (`CHART.FD`): the console/bridge hub uses this, the
+    /// nav uses the chart. When loaded, `render_bridge` draws it behind the console menu.
+    console_bg: Option<crate::lbm::LbmImage>,
     /// The choose-a-location destination list shown on the nav chart: each entry is a
     /// (label, that character's dialogue lines). Clicking one visits it (plays that
     /// character's decoded dialogue). Empty = the plain compass-steer nav.
@@ -394,6 +398,7 @@ impl EngineState {
             title_screen: None,
             nav_pyramids: Vec::new(),
             nav_chart: None,
+            console_bg: None,
             nav_destinations: Vec::new(),
             camera: crate::ship3d::Ship3dCameraApproach::default(),
             alien_views: Vec::new(),
@@ -761,17 +766,17 @@ impl EngineState {
         pen
     }
 
-    /// Render the ship-bridge hub: the ship's real control console (the `CHART.FD`
-    /// star-map + console background) with the station-button sprites overlaid as click
-    /// targets (see [`bridge_click`]). The real console uses icon buttons — no English
-    /// text labels. Falls back to the decoded starfield when the chart isn't loaded.
+    /// Render the ship-bridge hub: the ship's real control console (`ORX.FD`, the Orxx
+    /// organic control panel) with the console menu + station-button sprites overlaid as
+    /// click targets (see [`bridge_click`]). Falls back to the nav chart, then the decoded
+    /// starfield, when `ORX.FD` isn't loaded.
     fn render_bridge(&mut self) {
-        // Background: the real ship-console screen (CHART.FD), else the decoded starfield.
-        if let Some(chart) = &self.nav_chart {
-            if chart.width == ENGINE_SCREEN_WIDTH && chart.height == ENGINE_SCREEN_HEIGHT {
-                self.framebuffer.copy_from_slice(&chart.pixels);
-                self.scene_palette = chart.palette;
-            }
+        // Background: the real ship CONSOLE (ORX.FD), else the nav chart, else the starfield.
+        if let Some(bg) = self.console_bg.as_ref().or(self.nav_chart.as_ref()).filter(|c| {
+            c.width == ENGINE_SCREEN_WIDTH && c.height == ENGINE_SCREEN_HEIGHT
+        }) {
+            self.framebuffer.copy_from_slice(&bg.pixels);
+            self.scene_palette = bg.palette;
         } else {
             let mut prng = BloodPrng::seeded_from_rtc_seconds(self.starfield_seed);
             let angles = Ship3dMatrixAngles {
@@ -794,23 +799,10 @@ impl EngineState {
             self.scene_palette = crate::palette::game_screen_palette();
         }
         self.scene_palette[0xFE] = [245, 245, 160];
-        // Collect draws first (borrow the station list immutably), then blit.
-        let draws: Vec<(SpriteFrameImage, (i32, i32))> = self
-            .bridge_stations
-            .iter()
-            .map(|(f, _, pos, _)| (f.clone(), *pos))
-            .collect();
-        // The real console shows only the icon buttons (no English text labels).
-        for (frame, (cx, cy)) in draws {
-            blit_sprite_frame_centered(
-                &mut self.framebuffer,
-                ENGINE_SCREEN_WIDTH,
-                ENGINE_SCREEN_HEIGHT,
-                &frame,
-                cx,
-                cy,
-            );
-        }
+        // NOTE: the station-icon sprites (BCARTE/BTV/BHYPER) are NOT blitted here — they
+        // carry their own palette indices that read as black boxes over ORX.FD's console
+        // palette, and the real console is the organic panel + the text menu, not those
+        // icons. `bridge_click` still maps their positions so navigation keeps working.
         // The ship-console function menu, drawn in the console's own HONKF font — the
         // real menu the game shows (HONK the cook's fare, the telephone, the cryobox…).
         // When the MENU option's submenu is open, the game overlays {EXPLANATIONS, GAME}
@@ -2007,6 +1999,21 @@ impl EngineState {
             if let Ok(data) = std::fs::read(iso.join(name)) {
                 if let Some(img) = crate::lbm::decode_lbm(&data) {
                     self.nav_chart = Some(img);
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
+    /// Load the real ship-console background (`ORX.FD`, the Orxx ship's organic control
+    /// panel) for the bridge/console hub — distinct from the nav star-map (`CHART.FD`).
+    /// Returns whether it loaded.
+    pub fn load_console_bg(&mut self, iso: &std::path::Path) -> bool {
+        for name in ["ORX.FD", "orx.fd"] {
+            if let Ok(data) = std::fs::read(iso.join(name)) {
+                if let Some(img) = crate::lbm::decode_lbm(&data) {
+                    self.console_bg = Some(img);
                     return true;
                 }
             }

@@ -283,6 +283,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     engine.load_bridge(Path::new(iso));
     // The real navigation star-map background (CHART.FD) for the ship-nav view.
     engine.load_nav_chart(Path::new(iso));
+    engine.load_console_bg(Path::new(iso)); // ORX.FD ship console panel (distinct from the nav chart)
     engine.load_console_font(Path::new(iso));
     engine.load_cryobox(Path::new(assets));
     // The console TELEPHONE option: the video-phone call screen (BAPPEL call widget +
