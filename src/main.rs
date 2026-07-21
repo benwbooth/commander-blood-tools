@@ -23,6 +23,20 @@ fn default_data_dir() -> Option<std::path::PathBuf> {
         .find(|d| d.join("DESCRIPT.DES").is_file() && d.join("SCRIPT1.COD").is_file())
 }
 
+/// Resolve a dialogue-scene HNM by name across the asset subdirs. Location backgrounds
+/// live in `pl/` (e.g. `pterra10.hnm`), cutscenes in `sq/`, character talk-heads in `pe/`,
+/// objects in `ob/` — the DEB's `background_hnm` names don't carry the dir, so search them
+/// all and return the first that exists.
+fn resolve_scene_hnm(assets: &str, h: &str) -> Option<std::path::PathBuf> {
+    for sub in ["pl", "sq", "pe", "ob"] {
+        let p = std::path::PathBuf::from(format!("{assets}/{sub}/{h}"));
+        if p.exists() {
+            return Some(p);
+        }
+    }
+    None
+}
+
 fn run() -> anyhow::Result<()> {
     let mut args = std::env::args().skip(1);
     match args.next().as_deref() {
@@ -307,8 +321,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     let scene = e
                         .background_hnm
                         .as_ref()
-                        .map(|h| std::path::PathBuf::from(format!("{assets}/sq/{h}")))
-                        .filter(|p| p.exists());
+                        .and_then(|h| resolve_scene_hnm(assets, h));
                     (e.text.clone(), scene)
                 })
                 .collect();
@@ -403,8 +416,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         let scene = e
                             .background_hnm
                             .as_ref()
-                            .map(|h| std::path::PathBuf::from(format!("{assets}/sq/{h}")))
-                            .filter(|p| p.exists());
+                            .and_then(|h| resolve_scene_hnm(assets, h));
                         (e.text.clone(), scene)
                     })
                     .collect();
