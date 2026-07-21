@@ -841,14 +841,28 @@ impl EngineState {
         if !self.console_font.is_empty() {
             const MENU_COLOR: u8 = 0xFD;
             const MENU_SHADOW: u8 = 0xFB;
+            const MENU_BOX: u8 = 0xFA;
             self.scene_palette[MENU_COLOR as usize] = [240, 208, 48]; // console gold
             self.scene_palette[MENU_SHADOW as usize] = [60, 40, 8]; // shadow for a 3D read
+            self.scene_palette[MENU_BOX as usize] = [66, 52, 16]; // golden menu-panel box
             let labels: &[&str] = if self.menu_submenu_active {
                 &Self::MENU_SUBMENU
             } else {
                 &Self::CONSOLE_MENU
             };
             let (mx, my0) = (Self::CONSOLE_MENU_X as usize, Self::CONSOLE_MENU_Y);
+            // The real console frames the menu in a golden panel box; fill it behind the
+            // labels so the gold text reads as an embossed menu, not floating letters.
+            let bx0 = mx.saturating_sub(6);
+            let by0 = (my0 - 4).max(0) as usize;
+            let bx1 = (mx + 92).min(ENGINE_SCREEN_WIDTH);
+            let by1 = ((my0 + Self::CONSOLE_MENU_PITCH * labels.len() as i32 + 2) as usize)
+                .min(ENGINE_SCREEN_HEIGHT);
+            for y in by0..by1 {
+                for x in bx0..bx1 {
+                    self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] = MENU_BOX;
+                }
+            }
             for (i, opt) in labels.iter().enumerate() {
                 let y = (my0 + i as i32 * Self::CONSOLE_MENU_PITCH) as usize;
                 // Drop shadow first (offset +1,+1) then the gold text — an embossed look
