@@ -80,6 +80,41 @@ fn main() {
         return;
     }
 
+    if std::env::var("INPUTPROBE").is_ok() {
+        // Reach the bridge state, snapshot, inject mouse motion + clicks + keys, run on,
+        // and report whether the frame / nav data changed (i.e. is it interactive?).
+        let reach: u64 = std::env::var("REACH").ok().and_then(|s| s.parse().ok()).unwrap_or(500) * 1_000_000;
+        let _ = rt.run(reach);
+        let g = 0x0e84u16;
+        let snap_frame = rt.m.mem.clone();
+        let nav_before: Vec<u8> = (0..88).map(|i| rt.m.read8(g, 0x4f09 + i)).collect();
+        rt.write_ppm(&out.join("probe_before.ppm")).unwrap();
+        eprintln!("reached {reach} steps; injecting input");
+        // Sweep the mouse across the screen and click at several spots; also press a few keys.
+        let spots = [(160u16, 100u16), (80, 60), (240, 60), (160, 150), (60, 180), (260, 180)];
+        for (i, &(sx, sy)) in spots.iter().enumerate() {
+            rt.set_mouse_pos(sx * 2, sy);
+            let _ = rt.run(rt.cpu.steps + 2_000_000);
+            rt.mouse_press(0);
+            let _ = rt.run(rt.cpu.steps + 1_000_000);
+            rt.mouse_release(0);
+            let _ = rt.run(rt.cpu.steps + 2_000_000);
+            if i % 2 == 0 {
+                rt.inject_key(0x1c, 0x0d); // Enter
+                rt.inject_key(0x39, 0x20); // Space
+            }
+            let _ = rt.run(rt.cpu.steps + 2_000_000);
+        }
+        let _ = rt.run(rt.cpu.steps + 20_000_000);
+        rt.write_ppm(&out.join("probe_after.ppm")).unwrap();
+        let nav_after: Vec<u8> = (0..88).map(|i| rt.m.read8(g, 0x4f09 + i)).collect();
+        let mem_changed = rt.m.mem.iter().zip(snap_frame.iter()).filter(|(a, b)| a != b).count();
+        let nav_changed = nav_before.iter().zip(nav_after.iter()).filter(|(a, b)| a != b).count();
+        println!("INPUTPROBE: {} RAM bytes changed since snapshot; {}/88 nav-anchor bytes changed", mem_changed, nav_changed);
+        println!("  (frames: probe_before.ppm vs probe_after.ppm in {})", out.display());
+        return;
+    }
+
     if let Ok(spec) = std::env::var("MEMDUMP") {
         // Dump N bytes at gs:<off> to a file after running to `steps`. Spec: "<offhex>:<len>:<path>".
         let parts: Vec<&str> = spec.split(':').collect();

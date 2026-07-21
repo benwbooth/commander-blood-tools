@@ -431,6 +431,45 @@ impl Runtime {
 
     // ---------------- the run loop ----------------
 
+    /// Inject a keystroke: buffered for `int 16h` (BIOS read) and queued as a hardware
+    /// scancode for the `int 9` IRQ path (when the game hooked it). Drives the game's
+    /// menus/prompts from a headless driver.
+    pub fn inject_key(&mut self, scancode: u8, ascii: u8) {
+        self.bios_keys.push_back((scancode, ascii));
+        self.kbd_queue.push_back((scancode, ascii));
+        self.kbd_irq_pending += 1;
+    }
+
+    /// Move the virtual mouse (DOS-virtual coords: x 0..639, y 0..199 — screen column
+    /// `sx` is `sx*2`). Flags a move event for the game's mouse callback if registered.
+    pub fn set_mouse_pos(&mut self, x: u16, y: u16) {
+        self.mouse_x = x;
+        self.mouse_y = y;
+        if let Some((mask, _, _)) = self.mouse_handler {
+            self.mouse_pending |= mask & 0x01;
+        }
+    }
+
+    /// Press a mouse button (0 = left, 1 = right) at the current position: bumps the
+    /// int33 ax=5 press counter and flags the press event.
+    pub fn mouse_press(&mut self, button: u16) {
+        let b = (button as usize).min(1);
+        self.mouse_presses[b].0 = self.mouse_presses[b].0.wrapping_add(1);
+        self.mouse_presses[b] = (self.mouse_presses[b].0, self.mouse_x, self.mouse_y);
+        self.mouse_buttons |= if button == 0 { 1 } else { 2 };
+        self.mouse_pending |= if button == 0 { 0x02 } else { 0x08 };
+    }
+
+    /// Release a mouse button (0 = left, 1 = right): bumps the int33 ax=6 release
+    /// counter and flags the release event.
+    pub fn mouse_release(&mut self, button: u16) {
+        let b = (button as usize).min(1);
+        self.mouse_releases[b].0 = self.mouse_releases[b].0.wrapping_add(1);
+        self.mouse_releases[b] = (self.mouse_releases[b].0, self.mouse_x, self.mouse_y);
+        self.mouse_buttons &= !(if button == 0 { 1 } else { 2 });
+        self.mouse_pending |= if button == 0 { 0x04 } else { 0x10 };
+    }
+
     pub fn run(&mut self, max_steps: u64) -> RunEnd {
         loop {
             if let Some(c) = self.exit_code {
