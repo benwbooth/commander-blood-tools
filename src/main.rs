@@ -285,6 +285,38 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     engine.load_nav_chart(Path::new(iso));
     engine.load_console_font(Path::new(iso));
     engine.load_cryobox(Path::new(assets));
+    // The choose-a-location nav list: the free-choice destinations (SCRIPT3/4/5), each
+    // labelled by its first speaking character (the location's host) and carrying that
+    // script's full decoded dialogue. Clicking one on the star-map visits that location.
+    // (Index i in the list maps to SCRIPT<3+i>, so main.rs plays it with scene music.)
+    let script_destination =
+        |n: u32| -> Option<(String, Vec<(String, Option<std::path::PathBuf>)>)> {
+            let bundle = bundles.iter().find(|bu| bu.script == format!("SCRIPT{n}"))?;
+            let lines: Vec<(String, Option<std::path::PathBuf>)> = bundle
+                .speech_events
+                .iter()
+                .filter(|e| !e.text.trim().is_empty())
+                .map(|e| {
+                    let scene = e
+                        .background_hnm
+                        .as_ref()
+                        .map(|h| std::path::PathBuf::from(format!("{assets}/sq/{h}")))
+                        .filter(|p| p.exists());
+                    (e.text.clone(), scene)
+                })
+                .collect();
+            if lines.is_empty() {
+                return None;
+            }
+            let label = bundle
+                .speech_events
+                .iter()
+                .find_map(|e| e.actor_record.clone())
+                .unwrap_or_else(|| format!("SCRIPT{n}"))
+                .to_uppercase();
+            Some((label, lines))
+        };
+    engine.set_nav_destinations((3..=5).filter_map(script_destination).collect());
     // The boot reel's music (`mu/blintr.voc` — "BLood INTRo"): starts with the intro
     // and is stopped when the intro hands off to the game.
     let mut intro_music_started = false;
@@ -475,8 +507,21 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 Event::ButtonPress(b) if engine.tv_active && (b.detail == 1 || b.detail == 3) => {
                     engine.switch_tv_channel(if b.detail == 1 { 1 } else { -1 });
                 }
-                // Left button drives nav selection (via the engine); right button is a
-                // manual nav<->dialogue view toggle for convenience.
+                // On the nav star-map, a left click on a destination in the
+                // choose-a-location list visits it (loads SCRIPT<3+i> — that location's
+                // character dialogue with its scene music).
+                Event::ButtonPress(b)
+                    if b.detail == 1
+                        && engine.nav_view_active()
+                        && engine.nav_destination_click(mx, my).is_some() =>
+                {
+                    if let Some(i) = engine.nav_destination_click(mx, my) {
+                        load_script(&mut engine, &mut music, 3 + i as u32);
+                        engine.on_ship = false;
+                    }
+                }
+                // Left button otherwise drives compass nav selection (via the engine);
+                // right button is a manual nav<->dialogue view toggle for convenience.
                 Event::ButtonPress(b) if b.detail == 1 => {
                     buttons = 1;
                     clicked = true; // latch so a fast press+release still reaches step()

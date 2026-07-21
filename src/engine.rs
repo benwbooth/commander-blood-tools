@@ -205,6 +205,11 @@ pub struct EngineState {
     /// nebula + destination stars + route lines + the ship console. When loaded it
     /// replaces the procedural starfield in the nav view.
     nav_chart: Option<crate::lbm::LbmImage>,
+    /// The choose-a-location destination list shown on the nav chart: each entry is a
+    /// (label, that character's dialogue lines). Clicking one visits it (plays that
+    /// character's decoded dialogue). Empty = the plain compass-steer nav.
+    #[allow(clippy::type_complexity)]
+    nav_destinations: Vec<(String, Vec<(String, Option<std::path::PathBuf>)>)>,
     /// The ship-3D camera-approach animation (the decoded `[0x27DF]` phase FSM):
     /// drives the camera origin as the ship pulls in / travels when entering nav.
     camera: crate::ship3d::Ship3dCameraApproach,
@@ -346,6 +351,7 @@ impl EngineState {
             title_screen: None,
             nav_pyramids: Vec::new(),
             nav_chart: None,
+            nav_destinations: Vec::new(),
             camera: crate::ship3d::Ship3dCameraApproach::default(),
             alien_views: Vec::new(),
             alien_view_active: false,
@@ -1348,6 +1354,19 @@ impl EngineState {
         self.world_location.is_some()
     }
 
+    /// Whether the plain nav star-map is the active view — on the ship with no overlay
+    /// screen (bridge/comms/cyberspace/cryobox/alien/world-landing) open. This is the
+    /// view that shows the choose-a-location destination list.
+    pub fn nav_view_active(&self) -> bool {
+        self.on_ship
+            && !self.bridge_active
+            && !self.tv_active
+            && !self.cyber_active
+            && !self.cryobox_active
+            && !self.alien_view_active
+            && !self.world_location_active()
+    }
+
     /// Close the world-location screen (back to nav).
     pub fn leave_world(&mut self) {
         self.world_location = None;
@@ -1509,6 +1528,51 @@ impl EngineState {
         false
     }
 
+    /// Layout of the choose-a-location destination list drawn on the nav chart.
+    pub const NAV_DEST_X: i32 = 6;
+    pub const NAV_DEST_Y: i32 = 22;
+    pub const NAV_DEST_PITCH: i32 = 10;
+    const NAV_DEST_W: i32 = 150;
+
+    /// Set the choose-a-location destination list for the nav (each entry: a label and
+    /// that character's decoded dialogue lines). The nav then shows them as a clickable
+    /// list; clicking one plays that character's dialogue via [`Self::set_speech_dialogue`].
+    #[allow(clippy::type_complexity)]
+    pub fn set_nav_destinations(
+        &mut self,
+        dests: Vec<(String, Vec<(String, Option<std::path::PathBuf>)>)>,
+    ) {
+        self.nav_destinations = dests;
+    }
+
+    /// The number of nav destinations currently offered.
+    pub fn nav_destination_count(&self) -> usize {
+        self.nav_destinations.len()
+    }
+
+    /// Map a click on the nav chart to a destination index, matching the list layout.
+    pub fn nav_destination_click(&self, x: u16, y: u16) -> Option<usize> {
+        if self.nav_destinations.is_empty() {
+            return None;
+        }
+        let (px, py) = (x as i32, y as i32);
+        if px < Self::NAV_DEST_X || px > Self::NAV_DEST_X + Self::NAV_DEST_W {
+            return None;
+        }
+        (0..self.nav_destinations.len())
+            .find(|&i| (py - (Self::NAV_DEST_Y + i as i32 * Self::NAV_DEST_PITCH)).abs() <= 4)
+    }
+
+    /// Visit the chosen nav destination — play that character's decoded dialogue. Returns
+    /// whether the index was valid.
+    pub fn visit_nav_destination(&mut self, index: usize) -> bool {
+        let Some((_, lines)) = self.nav_destinations.get(index).cloned() else {
+            return false;
+        };
+        self.set_speech_dialogue(lines);
+        true
+    }
+
     /// Render the on-ship nav view. With the real chart (`CHART.FD`) loaded this draws
     /// that star-map background (nebula + destinations + console) and a heading cursor;
     /// otherwise it falls back to the procedural starfield + projected pyramid HUD.
@@ -1529,9 +1593,24 @@ impl EngineState {
                         *px = CURSOR_COLOR;
                     }
                 }
-                // Targeted-destination label (top-left) so steering shows where the ship
-                // is headed on the chart.
-                if let Some(label) = self.targeted_world_name().map(str::to_uppercase) {
+                // Choose-a-location destination list (each character's location), clickable
+                // — the game's list-box nav. Falls back to the compass-target label.
+                if !self.nav_destinations.is_empty() {
+                    let labels: Vec<String> =
+                        self.nav_destinations.iter().map(|(l, _)| l.clone()).collect();
+                    for (i, label) in labels.iter().enumerate() {
+                        let y = (Self::NAV_DEST_Y + i as i32 * Self::NAV_DEST_PITCH) as usize;
+                        draw_text_indexed(
+                            &mut self.framebuffer,
+                            ENGINE_SCREEN_WIDTH,
+                            ENGINE_SCREEN_HEIGHT,
+                            label,
+                            Self::NAV_DEST_X as usize,
+                            y,
+                            CURSOR_COLOR,
+                        );
+                    }
+                } else if let Some(label) = self.targeted_world_name().map(str::to_uppercase) {
                     draw_text_indexed(
                         &mut self.framebuffer,
                         ENGINE_SCREEN_WIDTH,
@@ -2156,6 +2235,34 @@ mod tests {
             if e.dialogue_finished() { break; }
         }
         assert!(e.dialogue_cursor() + 1 >= 250, "cursor advances through all lines");
+    }
+
+    /// The choose-a-location nav: a destination list is offered on the star-map, a click
+    /// on an entry maps to its index (matching the drawn layout), and visiting it plays
+    /// that location's decoded dialogue.
+    #[test]
+    fn nav_destination_list_choose_a_location() {
+        let mut e = EngineState::new();
+        let dests: Vec<(String, Vec<(String, Option<std::path::PathBuf>)>)> = vec![
+            ("EKATOMB".into(), (0..5).map(|i| (format!("daddy {i}"), None)).collect()),
+            ("VENUSIA".into(), (0..7).map(|i| (format!("bug {i}"), None)).collect()),
+            ("KORTEX".into(), (0..3).map(|i| (format!("hom {i}"), None)).collect()),
+        ];
+        e.set_nav_destinations(dests);
+        assert_eq!(e.nav_destination_count(), 3);
+        // A click on the second row (index 1) resolves to that destination.
+        let x = (EngineState::NAV_DEST_X + 4) as u16;
+        let y = (EngineState::NAV_DEST_Y + EngineState::NAV_DEST_PITCH) as u16;
+        assert_eq!(e.nav_destination_click(x, y), Some(1));
+        // A click far from any row resolves to none.
+        assert_eq!(e.nav_destination_click(300, 190), None);
+        // Visiting it plays that character's dialogue (7 lines for VENUSIA).
+        assert!(e.visit_nav_destination(1));
+        assert_eq!(e.dialogue_len(), 7);
+        assert_eq!(e.current_subtitle(), Some("bug 0"));
+        // The nav star-map renders the destination labels without panicking.
+        e.on_ship = true;
+        e.render_ship_view();
     }
 
     /// The ship-console menu renders in the game's own console font (HONKF.SPR): the
