@@ -566,48 +566,47 @@ impl EngineState {
             .collect();
     }
 
-    /// Render the ship-bridge hub: the ship's space view (the decoded starfield) with
-    /// the station console overlaid — clicking an icon opens that screen. The bridge in
-    /// the game is the out-the-viewport space view plus the control console, not a
-    /// separate menu screen. The icons are click targets (see [`bridge_click`]).
+    /// Render the ship-bridge hub: the ship's real control console (the `CHART.FD`
+    /// star-map + console background) with the station-button sprites overlaid as click
+    /// targets (see [`bridge_click`]). The real console uses icon buttons — no English
+    /// text labels. Falls back to the decoded starfield when the chart isn't loaded.
     fn render_bridge(&mut self) {
-        // Space background: the decoded ship-3D starfield point cloud.
-        let mut prng = BloodPrng::seeded_from_rtc_seconds(self.starfield_seed);
-        let angles = Ship3dMatrixAngles {
-            angle_2f71: 0,
-            projection_angle_2f6d: 0,
-            angle_2f6f: 0,
-        };
-        let origin = Ship3dProjectionOrigin {
-            x: 0x8000,
-            y: 0x8000,
-            z: 0x8000,
-        };
-        let viewport = Ship3dProjectionViewport {
-            left: 0,
-            right: ENGINE_SCREEN_WIDTH as u16,
-            top: 0,
-            bottom: ENGINE_SCREEN_HEIGHT as u16,
-        };
-        if let Some(render) = render_ship_3d_starfield(&mut prng, angles, origin, viewport) {
-            self.framebuffer.copy_from_slice(&render.buffer);
-        } else {
-            for p in self.framebuffer.iter_mut() {
-                *p = 0;
+        // Background: the real ship-console screen (CHART.FD), else the decoded starfield.
+        if let Some(chart) = &self.nav_chart {
+            if chart.width == ENGINE_SCREEN_WIDTH && chart.height == ENGINE_SCREEN_HEIGHT {
+                self.framebuffer.copy_from_slice(&chart.pixels);
+                self.scene_palette = chart.palette;
             }
+        } else {
+            let mut prng = BloodPrng::seeded_from_rtc_seconds(self.starfield_seed);
+            let angles = Ship3dMatrixAngles {
+                angle_2f71: 0,
+                projection_angle_2f6d: 0,
+                angle_2f6f: 0,
+            };
+            let origin = Ship3dProjectionOrigin { x: 0x8000, y: 0x8000, z: 0x8000 };
+            let viewport = Ship3dProjectionViewport {
+                left: 0,
+                right: ENGINE_SCREEN_WIDTH as u16,
+                top: 0,
+                bottom: ENGINE_SCREEN_HEIGHT as u16,
+            };
+            if let Some(render) = render_ship_3d_starfield(&mut prng, angles, origin, viewport) {
+                self.framebuffer.copy_from_slice(&render.buffer);
+            } else {
+                self.framebuffer.iter_mut().for_each(|p| *p = 0);
+            }
+            self.scene_palette = crate::palette::game_screen_palette();
         }
-        // The game's real ship/nav-screen VGA palette (the baked default the executable
-        // uploads for the bridge/nav/location screens), so the indexed starfield and
-        // station art render in their true colours.
-        self.scene_palette = crate::palette::game_screen_palette();
         self.scene_palette[0xFE] = [245, 245, 160];
         // Collect draws first (borrow the station list immutably), then blit.
-        let draws: Vec<(SpriteFrameImage, &'static str, (i32, i32))> = self
+        let draws: Vec<(SpriteFrameImage, (i32, i32))> = self
             .bridge_stations
             .iter()
-            .map(|(f, label, pos, _)| (f.clone(), *label, *pos))
+            .map(|(f, _, pos, _)| (f.clone(), *pos))
             .collect();
-        for (frame, label, (cx, cy)) in draws {
+        // The real console shows only the icon buttons (no English text labels).
+        for (frame, (cx, cy)) in draws {
             blit_sprite_frame_centered(
                 &mut self.framebuffer,
                 ENGINE_SCREEN_WIDTH,
@@ -615,16 +614,6 @@ impl EngineState {
                 &frame,
                 cx,
                 cy,
-            );
-            let lx = (cx - (label.len() as i32 * 3)).max(0) as usize;
-            draw_text_indexed(
-                &mut self.framebuffer,
-                ENGINE_SCREEN_WIDTH,
-                ENGINE_SCREEN_HEIGHT,
-                label,
-                lx,
-                (cy + 30).clamp(0, ENGINE_SCREEN_HEIGHT as i32 - 8) as usize,
-                0xFE,
             );
         }
     }
