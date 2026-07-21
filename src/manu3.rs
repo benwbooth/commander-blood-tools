@@ -37,8 +37,8 @@ pub fn menu_item_handler(base: u16, table: &[u16], item: usize) -> u16 {
     base.wrapping_add(table.get(item).copied().unwrap_or(0))
 }
 
-/// The menu-view centre the camera pans around (`0xA0`/`0x64` = screen 160,100).
-pub const MENU_CAMERA_CENTRE: (i16, i16) = (0xA0, 0x64);
+/// The menu-view centre the camera pans around (screen 160,100).
+pub const MENU_CAMERA_CENTRE: (i16, i16) = (160, 100);
 
 /// The rotation angle-index mask the pyramid draw applies (`0xFFC` = a 10-bit angle
 /// scaled ×4 into the shared trig table).

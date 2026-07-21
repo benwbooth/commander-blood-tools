@@ -3436,14 +3436,14 @@ mod tests {
         //   screen = (dot >> 7) idiv depth + centre;  centre_x = 0xA0, centre_y = 0x64.
         // Assert the ported constants match the disassembly exactly.
         assert_eq!(SHIP_3D_PROJECTION_AXIS_SHIFT, 7, "native sar eax,7");
-        assert_eq!(SHIP_3D_PROJECTION_SCREEN_CENTER_X, 0xA0, "native add ax,0xA0");
-        assert_eq!(SHIP_3D_PROJECTION_SCREEN_CENTER_Y, 0x64, "native add ax,0x64");
+        assert_eq!(SHIP_3D_PROJECTION_SCREEN_CENTER_X, 160, "native add ax,0xA0 (=160)");
+        assert_eq!(SHIP_3D_PROJECTION_SCREEN_CENTER_Y, 100, "native add ax,0x64 (=100)");
         // project_ship_3d_axis reproduces `numerator idiv depth + centre` exactly.
         // e.g. numerator=(dot>>7)=1000, depth=8 -> 125 + 160 = 285.
         assert_eq!(project_ship_3d_axis(1000, 8, SHIP_3D_PROJECTION_SCREEN_CENTER_X), 285);
         // A point on the view axis (numerator 0) projects to the screen centre.
-        assert_eq!(project_ship_3d_axis(0, 100, SHIP_3D_PROJECTION_SCREEN_CENTER_X), 0xA0);
-        assert_eq!(project_ship_3d_axis(0, 100, SHIP_3D_PROJECTION_SCREEN_CENTER_Y), 0x64);
+        assert_eq!(project_ship_3d_axis(0, 100, SHIP_3D_PROJECTION_SCREEN_CENTER_X), 160);
+        assert_eq!(project_ship_3d_axis(0, 100, SHIP_3D_PROJECTION_SCREEN_CENTER_Y), 100);
     }
 
     #[test]

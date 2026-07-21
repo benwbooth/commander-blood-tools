@@ -345,11 +345,11 @@ pub fn reveal_complete_hold_ticks(text_speed_step: u16) -> u16 {
 /// {1,2,3,4,7}; the step drives the reveal rate (`gs:[0xB31] = step >> 2` frames per
 /// character, @0x94BA region) and the hold timers around this one.
 pub fn text_speed_step_from_setting(setting: u16) -> u16 {
-    let mut ax = setting.wrapping_add(setting);
-    if ax == 8 {
-        ax = ax.wrapping_add(4);
+    let mut doubled = setting.wrapping_add(setting);
+    if doubled == 8 {
+        doubled = doubled.wrapping_add(4);
     }
-    (ax >> 1).wrapping_add(1)
+    (doubled >> 1).wrapping_add(1)
 }
 
 /// Frames per revealed character for a text-speed step: the reveal loop resets the

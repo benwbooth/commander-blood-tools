@@ -1066,8 +1066,9 @@ impl EngineState {
     }
 
     /// Load + arm the title screen from `BLOOD.LBM` under `iso`: decode the planar ILBM
-    /// title art and downscale it 2× (640×480 → 320×200, nearest) into the framebuffer's
-    /// resolution. Returns whether it loaded. Shown until dismissed.
+    /// title art and downscale it aspect-correctly (e.g. 640×480 → 320×200, nearest,
+    /// keeping the full image) into the framebuffer's resolution. Returns whether it
+    /// loaded. Shown until dismissed.
     pub fn load_title(&mut self, iso: &std::path::Path) -> bool {
         let Ok(data) = std::fs::read(iso.join("BLOOD.LBM")) else {
             return false;
@@ -1075,14 +1076,17 @@ impl EngineState {
         let Some(img) = crate::lbm::decode_lbm(&data) else {
             return false;
         };
-        // Downscale by the integer ratio to the engine framebuffer (nearest sample).
-        let sx = (img.width / ENGINE_SCREEN_WIDTH).max(1);
-        let sy = (img.height / ENGINE_SCREEN_HEIGHT).max(1);
+        // Downscale to the engine framebuffer with the true width/height ratios (nearest
+        // sample). Integer ratios crop: 480 rows over 200 at 2x would only sample rows
+        // 0..400 and lose the bottom 80px, so scale by the exact source span instead —
+        // the whole image maps into 320x200 (e.g. 640x480 -> 2.0x horizontal, 2.4x
+        // vertical), preserving all of the art.
         let mut buf = vec![0u8; ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT];
         for y in 0..ENGINE_SCREEN_HEIGHT {
+            let src_y = (y * img.height / ENGINE_SCREEN_HEIGHT).min(img.height - 1);
             for x in 0..ENGINE_SCREEN_WIDTH {
-                let src = (y * sy).min(img.height - 1) * img.width + (x * sx).min(img.width - 1);
-                buf[y * ENGINE_SCREEN_WIDTH + x] = img.pixels[src];
+                let src_x = (x * img.width / ENGINE_SCREEN_WIDTH).min(img.width - 1);
+                buf[y * ENGINE_SCREEN_WIDTH + x] = img.pixels[src_y * img.width + src_x];
             }
         }
         self.title_screen = Some((buf, img.palette));
@@ -1289,8 +1293,12 @@ impl EngineState {
         // Camera origin from the decoded approach FSM, scaled into the nav view's
         // near-field so the pyramids pull in as the ship travels (X drives the
         // depth; the animation's units are the game's world scale).
+        // Depth bias subtracted from the approach-FSM camera X so the pyramids sit in
+        // the nav view's near field, then compressed by the world-to-view scale divisor.
+        const CAMERA_DEPTH_BIAS: i32 = 8804;
+        const WORLD_TO_VIEW_DEPTH_DIVISOR: i32 = 8;
         let cam = self.camera.origin();
-        let origin = [0i32, -700, (cam[0] - 0x2264) / 8];
+        let origin = [0i32, -700, (cam[0] - CAMERA_DEPTH_BIAS) / WORLD_TO_VIEW_DEPTH_DIVISOR];
         let pan = (self.compass_angle as i32 % 180 - 90) * 8;
         // Base pyramid dimension: the biggest CARTE pyramid frame (f4, 24px wide).
         let base_w = self.nav_pyramids[4].width.max(1) as u32;
