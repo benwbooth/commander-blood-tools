@@ -602,12 +602,25 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     }
                 }
                 // Left button otherwise drives compass nav selection (via the engine);
-                // right button is a manual nav<->dialogue view toggle for convenience.
+                // right button switches between the ship views.
                 Event::ButtonPress(b) if b.detail == 1 => {
                     buttons = 1;
                     clicked = true; // latch so a fast press+release still reaches step()
                 }
-                Event::ButtonPress(b) if b.detail == 3 => engine.on_ship = !engine.on_ship,
+                // Right button switches ship views: console → nav star-map (and back).
+                // Without this, landing on the console after the intro would trap the
+                // player there with no way to reach navigation/gameplay.
+                Event::ButtonPress(b) if b.detail == 3 => {
+                    if engine.bridge_active {
+                        engine.bridge_active = false;
+                        engine.on_ship = true; // console -> nav
+                    } else if engine.on_ship {
+                        engine.on_ship = false;
+                        engine.bridge_active = true; // nav -> console
+                    } else {
+                        engine.on_ship = true; // from a dialogue scene, back to the nav
+                    }
+                }
                 // Keyboard loop controls: Escape (keycode 9) returns to the nav view.
                 Event::KeyPress(k) if k.detail == 9 => {
                     // A visited world-location screen closes back to the nav view first.
