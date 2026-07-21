@@ -40,6 +40,7 @@ fn main() {
     e.load_cyberspace(assets);
     e.load_bridge(iso);
     e.load_nav_chart(iso);
+    e.load_console_font(iso);
     e.on_ship = true;
 
     let mut fail = 0;

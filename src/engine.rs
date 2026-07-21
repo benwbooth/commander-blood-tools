@@ -247,6 +247,9 @@ pub struct EngineState {
     /// `BHYPER`=cyberspace) that open each screen — the interface tying them together.
     /// Each entry is (icon frame, label, centre x/y, station id).
     bridge_stations: Vec<(SpriteFrameImage, &'static str, (i32, i32), BridgeStation)>,
+    /// The ship-console UI font (`HONKF.SPR`): 49 8×8 glyphs — A–Z, 0–9, punctuation —
+    /// the game draws its console menu labels with. Empty until loaded.
+    console_font: Vec<SpriteFrameImage>,
     /// Whether the ship-bridge hub is the active view.
     pub bridge_active: bool,
     /// Dialogue line sequence for the loaded script (from the VM trace), played
@@ -353,6 +356,7 @@ impl EngineState {
             cyber_active: false,
             cyber_segment: 0,
             bridge_stations: Vec::new(),
+            console_font: Vec::new(),
             bridge_active: false,
             dialogue: Vec::new(),
             dialogue_texts: Vec::new(),
@@ -566,6 +570,77 @@ impl EngineState {
             .collect();
     }
 
+    /// Load the ship-console UI font from `HONKF.SPR` (49 8×8 glyphs: A–Z, 0–9,
+    /// punctuation) — the game draws its console menu labels with it. Returns whether it
+    /// loaded.
+    pub fn load_console_font(&mut self, iso: &Path) -> bool {
+        for name in ["HONKF.SPR", "honkf.spr"] {
+            if let Ok(data) = std::fs::read(iso.join(name)) {
+                if let Some(glyphs) = decode_sprite_bank_indices(&data) {
+                    if glyphs.len() >= 36 {
+                        self.console_font = glyphs;
+                        return true;
+                    }
+                }
+            }
+        }
+        false
+    }
+
+    /// Map a character to its HONKF console-font glyph index (uppercase A–Z = 0..25,
+    /// 0–9 = 26..35, then punctuation in the bank's authored order).
+    fn console_glyph_index(ch: char) -> Option<usize> {
+        match ch.to_ascii_uppercase() {
+            c @ 'A'..='Z' => Some(c as usize - 'A' as usize),
+            c @ '0'..='9' => Some(26 + c as usize - '0' as usize),
+            '?' => Some(36),
+            '!' => Some(37),
+            '.' => Some(38),
+            ',' => Some(39),
+            ':' => Some(40),
+            ';' => Some(41),
+            '_' => Some(42),
+            '+' => Some(43),
+            '-' => Some(44),
+            '"' => Some(45),
+            '\'' => Some(46),
+            '[' => Some(47),
+            ']' => Some(48),
+            _ => None,
+        }
+    }
+
+    /// Draw text with the ship-console font (HONKF), blitting each glyph's lit pixels in
+    /// `color` at proportional spacing. Returns the pen's right edge. No-op without the
+    /// font loaded.
+    fn draw_console_text(&mut self, text: &str, x: usize, y: usize, color: u8) -> usize {
+        let mut pen = x;
+        for ch in text.chars() {
+            if ch == ' ' {
+                pen += 4;
+                continue;
+            }
+            let advance = match Self::console_glyph_index(ch).and_then(|gi| self.console_font.get(gi)) {
+                Some(glyph) => {
+                    for gy in 0..glyph.height {
+                        for gx in 0..glyph.width {
+                            if glyph.indices[gy * glyph.width + gx] != 0 {
+                                let (px, py) = (pen + gx, y + gy);
+                                if px < ENGINE_SCREEN_WIDTH && py < ENGINE_SCREEN_HEIGHT {
+                                    self.framebuffer[py * ENGINE_SCREEN_WIDTH + px] = color;
+                                }
+                            }
+                        }
+                    }
+                    glyph.width + 1
+                }
+                None => 8,
+            };
+            pen += advance;
+        }
+        pen
+    }
+
     /// Render the ship-bridge hub: the ship's real control console (the `CHART.FD`
     /// star-map + console background) with the station-button sprites overlaid as click
     /// targets (see [`bridge_click`]). The real console uses icon buttons — no English
@@ -615,6 +690,16 @@ impl EngineState {
                 cx,
                 cy,
             );
+        }
+        // The ship-console function menu, drawn in the console's own HONKF font — the
+        // real menu the game shows (HONK the cook's fare, the telephone, the cryobox…).
+        if !self.console_font.is_empty() {
+            const CONSOLE_MENU: [&str; 5] = ["HONK", "TELEPHONE", "CRYOBOX", "MENU", "OPTION"];
+            const MENU_COLOR: u8 = 0xFD;
+            self.scene_palette[MENU_COLOR as usize] = [232, 216, 40]; // console yellow
+            for (i, opt) in CONSOLE_MENU.iter().enumerate() {
+                self.draw_console_text(opt, 156, 60 + i * 13, MENU_COLOR);
+            }
         }
     }
 
@@ -1903,6 +1988,7 @@ mod tests {
         e.load_cyberspace(assets);
         e.load_bridge(iso);
         let has_chart = e.load_nav_chart(iso);
+        e.load_console_font(iso);
         e.on_ship = true;
         let nonblank = |fb: &[u8]| fb.iter().filter(|&&p| p != 0).count();
 
@@ -1962,6 +2048,27 @@ mod tests {
     /// The game's real flow after the intro: the SCRIPT1 console tutorial plays, then
     /// chains to SCRIPT2 via its decoded D2 handoff (profile 1). Verifies the chain
     /// trigger the driver relies on (`main.rs` auto-plays SCRIPT1 then follows this).
+    /// The ship-console menu renders in the game's own console font (HONKF.SPR): the
+    /// font loads (A–Z/0–9/punct glyphs) and the bridge draws the menu labels.
+    #[test]
+    fn console_font_loads_and_renders_menu() {
+        let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter().map(Path::new).find(|p| p.join("HONKF.SPR").is_file());
+        let Some(iso) = iso else { return };
+        let mut e = EngineState::new();
+        assert!(e.load_console_font(iso), "HONKF.SPR console font loads");
+        e.load_bridge(iso);
+        e.load_nav_chart(iso);
+        // HONK = H(7) O(14) N(13) K(10): the mapping must resolve uppercase letters.
+        assert_eq!(EngineState::console_glyph_index('H'), Some(7));
+        assert_eq!(EngineState::console_glyph_index('0'), Some(26));
+        e.bridge_active = true;
+        e.step(MouseInput::default());
+        // The menu is drawn in the reserved console-yellow index 0xFD.
+        let lit = e.framebuffer.iter().filter(|&&p| p == 0xFD).count();
+        assert!(lit > 60, "console menu renders glyphs ({lit} lit)");
+    }
+
     #[test]
     fn script1_tutorial_chains_to_script2() {
         let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
