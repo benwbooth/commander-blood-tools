@@ -275,6 +275,8 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     engine.load_cyberspace(Path::new(assets));
     // The ship-bridge hub: press 'b' to open; click a station icon to enter its screen.
     engine.load_bridge(Path::new(iso));
+    // The real navigation star-map background (CHART.FD) for the ship-nav view.
+    engine.load_nav_chart(Path::new(iso));
     // The boot reel's music (`mu/blintr.voc` — "BLood INTRo"): starts with the intro
     // and is stopped when the intro hands off to the game.
     let mut intro_music_started = false;

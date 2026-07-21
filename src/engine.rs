@@ -201,6 +201,10 @@ pub struct EngineState {
     /// pre-scaled sizes) + selection reticle (f6) — the real art drawn by the sprite
     /// path at projected destination positions.
     nav_pyramids: Vec<SpriteFrameImage>,
+    /// The real navigation star-map background (`CHART.FD`): the game's chart image —
+    /// nebula + destination stars + route lines + the ship console. When loaded it
+    /// replaces the procedural starfield in the nav view.
+    nav_chart: Option<crate::lbm::LbmImage>,
     /// The ship-3D camera-approach animation (the decoded `[0x27DF]` phase FSM):
     /// drives the camera origin as the ship pulls in / travels when entering nav.
     camera: crate::ship3d::Ship3dCameraApproach,
@@ -334,6 +338,7 @@ impl EngineState {
             world_location: None,
             title_screen: None,
             nav_pyramids: Vec::new(),
+            nav_chart: None,
             camera: crate::ship3d::Ship3dCameraApproach::default(),
             alien_views: Vec::new(),
             alien_view_active: false,
@@ -1347,11 +1352,45 @@ impl EngineState {
         }
     }
 
-    /// Render the on-ship nav view's starfield background at the current compass
-    /// angle into the framebuffer (the background layer of the ship-3D view; the
-    /// sprite HUD + scene band compose over it). Uses the recovered PRNG point
-    /// cloud + projection. No-op if the angle is outside the trig table.
+    /// Load the real navigation star-map background from `CHART.FD` (an IFF/PBM image
+    /// under `iso`) — the game's own chart the ship-nav screen shows. Returns whether it
+    /// loaded; when present, `render_ship_view` draws it instead of the procedural
+    /// starfield. (Identified from the game's file-open trace at the nav screen.)
+    pub fn load_nav_chart(&mut self, iso: &std::path::Path) -> bool {
+        for name in ["CHART.FD", "chart.fd"] {
+            if let Ok(data) = std::fs::read(iso.join(name)) {
+                if let Some(img) = crate::lbm::decode_lbm(&data) {
+                    self.nav_chart = Some(img);
+                    return true;
+                }
+            }
+        }
+        false
+    }
+
+    /// Render the on-ship nav view. With the real chart (`CHART.FD`) loaded this draws
+    /// that star-map background (nebula + destinations + console) and a heading cursor;
+    /// otherwise it falls back to the procedural starfield + projected pyramid HUD.
     pub fn render_ship_view(&mut self) {
+        // Real navigation chart background, when available.
+        if let Some(chart) = &self.nav_chart {
+            if chart.width == ENGINE_SCREEN_WIDTH && chart.height == ENGINE_SCREEN_HEIGHT {
+                self.framebuffer.copy_from_slice(&chart.pixels);
+                self.scene_palette = chart.palette;
+                // Heading cursor: a reserved-colour tick along the chart's top, swept by
+                // the compass angle, so steering has visible feedback over the static chart.
+                const CURSOR_COLOR: u8 = 0xFE;
+                self.scene_palette[CURSOR_COLOR as usize] = [245, 245, 160];
+                let cursor_x = (self.compass_angle as usize % 180) * (ENGINE_SCREEN_WIDTH - 1) / 179;
+                for dy in 0..4 {
+                    let row = dy * ENGINE_SCREEN_WIDTH;
+                    if let Some(px) = self.framebuffer.get_mut(row + cursor_x) {
+                        *px = CURSOR_COLOR;
+                    }
+                }
+                return;
+            }
+        }
         let mut prng = BloodPrng::seeded_from_rtc_seconds(self.starfield_seed);
         let angles = Ship3dMatrixAngles {
             angle_2f71: 0,
@@ -1853,6 +1892,7 @@ mod tests {
         e.load_tv_channels(assets, "tv");
         e.load_cyberspace(assets);
         e.load_bridge(iso);
+        let has_chart = e.load_nav_chart(iso);
         e.on_ship = true;
         let nonblank = |fb: &[u8]| fb.iter().filter(|&&p| p != 0).count();
 
@@ -1872,6 +1912,12 @@ mod tests {
         e.on_ship = true;
         for _ in 0..8 { e.step(MouseInput::default()); }
         assert!(nonblank(&e.framebuffer) > 500, "nav view renders");
+        if has_chart {
+            // With CHART.FD present the nav view is the real star-map: a rich, many-colour
+            // image, not a sparse procedural starfield.
+            let distinct = e.framebuffer.iter().collect::<std::collections::HashSet<_>>().len();
+            assert!(distinct > 40, "nav view shows the real CHART.FD star-map ({distinct} colours)");
+        }
         e.bridge_active = true;
         for _ in 0..4 { e.step(MouseInput::default()); }
         assert!(nonblank(&e.framebuffer) > 500, "bridge renders");

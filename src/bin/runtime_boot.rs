@@ -111,6 +111,14 @@ fn main() {
         let g = 0x0e84u16;
         let bytes: Vec<u8> = (0..8448u32).map(|i| rt.m.read8(g, 0x2f00 + i)).collect();
         std::fs::write(out.join("skip_navstate.bin"), &bytes).unwrap();
+        // Which files did the game open? (deduped, in order) — identifies the screen's assets.
+        println!("--- opened files (deduped) ---");
+        let mut seen = std::collections::HashSet::new();
+        for (step, path) in &rt.opened_files {
+            if seen.insert(path.clone()) {
+                println!("  @{:>10} {path}", step);
+            }
+        }
         println!("SKIPPROBE done -> {}/skip_*.ppm + skip_navstate.bin @ {} steps", out.display(), rt.cpu.steps);
         return;
     }

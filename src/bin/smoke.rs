@@ -39,6 +39,7 @@ fn main() {
     e.load_tv_channels(assets, "tv");
     e.load_cyberspace(assets);
     e.load_bridge(iso);
+    e.load_nav_chart(iso);
     e.on_ship = true;
 
     let mut fail = 0;

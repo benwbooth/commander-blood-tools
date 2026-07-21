@@ -143,6 +143,9 @@ pub struct Runtime {
     searches: HashMap<(u16, u16), (Vec<(String, u32, u8)>, usize)>,
     /// (vector, AH) -> count, for the boot log.
     pub int_log: HashMap<(u8, u8), u64>,
+    /// Every file the game opens, with the step it happened — identifies which assets a
+    /// given screen/scene loads (drive the emulator there, then inspect this).
+    pub opened_files: Vec<(u64, String)>,
     pub trace_ints: bool,
     pub ip_sample: Option<std::collections::HashMap<(u16,u16), u64>>,
     pub force_sub: bool,
@@ -225,6 +228,7 @@ impl Runtime {
             mouse_shown: -1,
             searches: HashMap::new(),
             int_log: HashMap::new(),
+            opened_files: Vec::new(),
             trace_ints: false,
             ip_sample: None,
             force_sub: false, // persistence experiment; OFF — it made a spurious attract subtitle persistent (DOSBox shows none)
@@ -1791,6 +1795,7 @@ impl Runtime {
             0x3d => {
                 // open
                 let path = self.read_asciiz(self.m.regs.ds, self.m.regs.dx());
+                self.opened_files.push((self.cpu.steps, path.clone()));
                 let write = self.m.regs.al() & 3 != 0;
                 let opened = self.resolve(&path, false).ok().filter(|p| {
                     std::fs::OpenOptions::new().read(true).write(write).open(p).is_ok()
