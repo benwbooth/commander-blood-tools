@@ -131,6 +131,14 @@ impl BasMenuStack {
         self.menus.iter().find(|m| m.bas_offset == off)
     }
 
+    /// The current menu's full parsed BLOCK — its topics plus the `0xA6` response
+    /// tokens up to the `0xAC` terminator (grammar from [`parse_menu_block`],
+    /// verified against the runtime trace). Ties the stack to the block parser so
+    /// the conversation VM has the current menu's responses available to display.
+    pub fn current_block(&self, bas: &[u8], dic: &[u8]) -> Option<MenuBlock> {
+        parse_menu_block(bas, dic, *self.stack.last()?)
+    }
+
     /// All decoded menus (for wiring topic → sub-menu targets from the BAS flow).
     pub fn menus(&self) -> &[ConceptMenu] {
         &self.menus
@@ -227,5 +235,26 @@ mod tests {
         // The block terminates at the 0xAC the trace hit (si=0x612).
         assert_eq!(block.end, 0x612, "block ends at the traced 0xAC (got {:#x})", block.end);
         assert!(!block.responses.is_empty(), "has 0xA6 responses: {}", block.responses.len());
+    }
+
+    /// The stack ties to the block parser: after entering the fear/anger menu, the
+    /// stack's `current_block` returns that menu's parsed block (topics + responses),
+    /// consolidating the navigation + block-decode pieces into one API.
+    #[test]
+    fn stack_current_block_ties_navigation_to_block_parser() {
+        let rd = |ext: &str| {
+            ["accuracy/cdrive/cblood", "../accuracy/cdrive/cblood"]
+                .iter()
+                .find_map(|b| std::fs::read(Path::new(b).join(format!("SCRIPT2.{ext}"))).ok())
+        };
+        let (Some(bas), Some(dic)) = (rd("BAS"), rd("DIC")) else {
+            return;
+        };
+        let mut st = BasMenuStack::new(&bas, &dic).expect("menus");
+        st.push(0x42d);
+        let block = st.current_block(&bas, &dic).expect("current block");
+        assert_eq!(block.menu_offset, 0x42d);
+        assert_eq!(block.end, 0x612);
+        assert!(block.topics.iter().any(|t| t == "fear"));
     }
 }
