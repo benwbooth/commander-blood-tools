@@ -3909,3 +3909,15 @@ manu3 file offset 0x1370).
   static home in the EXE data too) and use it for on-console text. OCR with
   this font reads the live line ('WELC' mid-reveal) — TUTORIAL4 now uses it.
   Text indices: 0xE0 settled + 0xFD..0xFF revealing; rows 8/18.
+- **TUTORIAL4 OCR WORKS**: the driver transcribes the LIVE tutorial verbatim
+  ("WELCOME ABOARD THE ARK, COMMANDER." / "I'M HERE TO HELP YOU A LOT..." /
+  "IF THE PHONE RINGS, JUST HIT THE..." / "CAP'N BOB, OUR REVERED LEADER, IS
+  ..." / "OUR SHIP IS CURRENTLY SURROUNDED..." / round 115: "CLICK QUICK ON
+  'CRYOBOX' CAP'N BOB" — obeyed). Font note: I and 1 share a glyph. The run
+  stalled AFTER the CRYOBOX click (no further text; the view presumably left
+  the console for the cryo screen and the driver kept clicking blind).
+  NEXT ITERATION: after obeying an instruction, detect leaving the console
+  (empty OCR + frame checks), capture the new screen, press Esc to return,
+  and continue following. Also: the bold font's STATIC HOME CONFIRMED =
+  EXE file 0x145CA (glyphs) / 0x1451A (map) — byte-identical to the live dump;
+  port it as the console/tutorial subtitle font.
