@@ -484,3 +484,12 @@ its stream construction from a state where the box IS open (capture such a
 state first — e.g. the psychotherapy concept menu, which opens reliably via the
 HOOKSNAP orb click). Non-blocking: 19 letters harvested (span-majority) cover
 common words; generator = 100% coverage only.
+
+## Dense hand-atlas from the SCRIPT2 savestate (2026-07-22)
+Tried: capture a dense cursor-grid hand atlas by resuming accuracy/script2.state
+(fast) and diffing screen_indices vs the decoded panorama. Failed: at the
+post-tutorial SCRIPT2 state the background is NOT the clean panorama (dialogue
+text, different frame), so every diff blob = the whole 320x200 screen (no hand
+isolated). Densifying the atlas must use the CLEAN pre-tutorial console state
+(the ~50M-step boot path, as the original working 10-sprite atlas did), not a
+savestate whose scene differs from the base panorama.
