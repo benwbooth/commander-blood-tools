@@ -4746,3 +4746,17 @@ scene/dialogue data instead of running the VM; giving IT per-beat menus means
 reimplementing the BAS-VM menu logic (or reading gs:0x6772 from a co-run
 interpreter). This reframes #3/#6: faithful-frontend = done; clean-port = a
 simplification-parity task, optional since the interpreter is the faithful path.
+
+## BAS topic-dispatch = conversation control flow (branch-target decoder scope)
+
+Examined the BAS after a menu's topic list (top-level menu 0x2f, topics end 0x42):
+the topic handlers are CONVERSATION CONTROL FLOW, not a jump table — 0xA6 TEXT
+responses interleaved with branch/condition opcodes (0xd0, 0xcf, 0xb6, 0xc3, 0xbc,
+0xb3) and 0xffff target/terminator words. So piece (a) of the clean-port per-beat
+menus — the topic→sub-menu branch-target decoder — requires decoding these BAS VM
+control opcodes' semantics (from their handlers via the gs:0x6EB0 table), i.e. a
+faithful BAS conversation-flow interpreter. That is the substantial remaining RE
+for full per-beat navigation. BUILT this session: the menu-stack model (src/bas_vm.rs,
+verified vs live gs:0x6772/0x6774) + all menu LABELS (src/concept_menu.rs, verified
+vs capture). REMAINING: control-flow opcode semantics → branch targets → engine.rs
+wiring. Each is specified; the control-flow interpreter is the large piece.
