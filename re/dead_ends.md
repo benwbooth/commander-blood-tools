@@ -469,3 +469,18 @@ anchoring needs tracing the path-builder + the int21 0x3c create site (buffer of
 disassembly effort. LOW VALUE: the port already has its own save format; byte-compat blood.sav
 is marginal. BETTER: decode it opportunistically IF interactive play is ever reached (a real
 save then writes a real blood.sav to accuracy/cdrive/cblood/ to examine directly).
+
+## Square-caps glyph GENERATOR via 0xE8-write watch (2026-07-22)
+Tried: watch value==0xE8 writes into the gs:0x175 stream region (and the chunky
+buffer seg 0x266c) while opening the MENU submenu from the SCRIPT2 savestate,
+to find the builder that bakes the square-caps glyphs into the RLE overlay.
+Why it failed: (1) from the resumed post-tutorial state the MENU-row click does
+not reliably open the submenu box, so the builder never runs in the watch
+window (only UI-state writers gs:0x0a2a/0x0ab4 appear); (2) even when it runs,
+0xE8 in the RLE stream is a run/length/fill byte, so a value==0xE8 watch is
+ambiguous. Better approach: EXEC-watch the panorama-unpacker's caller for the
+box (the routine that sets ds:si=gs:0x175 then calls unpack) and single-step
+its stream construction from a state where the box IS open (capture such a
+state first — e.g. the psychotherapy concept menu, which opens reliably via the
+HOOKSNAP orb click). Non-blocking: 19 letters harvested (span-majority) cover
+common words; generator = 100% coverage only.
