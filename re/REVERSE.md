@@ -4921,3 +4921,20 @@ DISPLAY for empirical MENUTREE is conversation-gated, so a static decode of the 
 words (or a single-step trace from a branching menu) is the path. NET: block grammar +
 parser + menu-stack + record-gating are BUILT/specified; the sub-menu JUMP mechanism
 is the remaining decode for the full executor loop.
+
+## Topic→sub-menu jump: NOT in nested-0xA3 or 0xA6 control words (2026-07-22)
+
+Narrowed the sub-menu push mechanism by elimination:
+  - NOT nested 0xA3 (blocks are 0xA3 topics + 0xA6 responses + 0xAC only).
+  - NOT 0xA6 control/loop words: the top-level menu 0x2f block has just 4 responses,
+    all with b4 loop(0x10)/control(0x04) bits UNSET — no jump target words.
+  - The 0xAC pops to the PARENT via the call stack (BASSTEP: si 0x612→0x2f).
+So the PUSH (topic → sub-menu 0xA3) is driven by neither inline structure nor the
+response control words — it is the VM's record/selection-driven control flow reaching
+a different 0xA3 (menus are laid out sequentially in the BAS; execution jumps via the
+call-stack push at 0x465, not source order). To capture it: single-step-trace (BASSTEP)
+from a BRANCHING menu while selecting a sub-menu-opening topic, to see si jump INTO the
+sub-menu's 0xA3. That state is conversation-gated (the top-level 0x2f pops to the console,
+not a clickable list), so reaching a branching-menu display is the prerequisite. NET:
+the executor's sub-menu push is the one remaining unknown; block parser + stack + record-
+gating are built/specified. This is genuine remaining RE (reach a branching menu → trace).
