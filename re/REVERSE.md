@@ -4795,3 +4795,18 @@ gs:0x6762 selection, 0x10c2 skip) but the exact byte layout of topic→block is 
 open — a genuine remaining RE step before a correct clean-Rust conversation-flow
 interpreter can be written. Honest status: menu labels + menu-stack are BUILT and
 verified; the conversation-flow interpreter's structural decode is incomplete.
+
+## BAS VM is a CALL-STACK machine — 0x10c2 = pop/return (2026-07-22)
+
+Continued the conversation-VM decode: 0x10c2 (the "skip on no-match" routine) is
+actually a POP/RETURN over a call stack at gs:0x6820 (stack pointer gs:0x6884):
+`sub gs:[0x6884],2; si = [gs:0x6884 + 0x6820]` — it restores si to the caller.
+So the VM is a CALL-STACK machine: entering a menu/sub-conversation PUSHES a return
+si; a topic mismatch or back-out POPS (0x10c2) to resume the caller. The non-opcode
+byte handler 0x353 (reached when a stream byte < 0xA0, i.e. a bare DIC/topic
+reference) far-calls 0x1a2:0x775 to process the selected topic word. So the full
+model: dispatch (0x309, gs:0x6EB0 table) + display/execute modes (gs:0x67b2) +
+selection gs:0x6762 + call stack gs:0x6820/0x6884 + return 0x10c2. Implementing a
+faithful clean-Rust conversation VM = model this call-stack machine + its ~52
+opcode handlers. RE is now substantially decoded (dispatch, stack, modes, selection,
+return); the clean-Rust build + verification is the remaining multi-session work.
