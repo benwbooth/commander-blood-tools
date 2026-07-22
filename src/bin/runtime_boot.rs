@@ -2254,7 +2254,22 @@ fn main() {
             let after = cur_menu(&rt);
             let tag = if after != base { "NAVIGATED" } else { "(stayed)" };
             println!("  topic {i} '{name}' (y{my}): {base:#06x} -> {after:#06x} {tag}");
+            rt.write_ppm(&out.join(format!("menutree_{i}_{name}.ppm"))).unwrap();
         }
+        // Then pop to the parent (talk) and map THAT menu (the top-level, which
+        // has the real topic→sub-menu navigation), writing its screen for geometry.
+        rt.load_state(statepath).unwrap();
+        let fr = frame(&rt);
+        let ring = (200i32 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+        rt.set_mouse_pos(ring, 64);
+        let _ = rt.run(rt.cpu.steps + 500_000);
+        rt.mouse_press(0);
+        let _ = rt.run(rt.cpu.steps + 300_000);
+        rt.mouse_release(0);
+        let _ = rt.run(rt.cpu.steps + 4_000_000);
+        println!("MENUTREE after talk: menu = {:#06x}", cur_menu(&rt));
+        rt.write_ppm(&out.join("menutree_parent.ppm")).unwrap();
+        rt.save_state(std::path::Path::new("accuracy/menu_toplevel.state")).unwrap();
         return;
     }
 

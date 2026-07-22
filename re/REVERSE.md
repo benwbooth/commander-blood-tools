@@ -4824,3 +4824,17 @@ run MENUTREE from each menu (navigate to it first); this is automatable ground t
 for the clean-port conversation VM's branch table — the correct build path (observe
 transitions, tabulate) rather than reverse-engineering every control opcode. Tool +
 first menu's data committed; per-menu enumeration is the mechanical continuation.
+
+## Concept menus are CONVERSATION-STATE-gated (not free-navigable) — 2026-07-22
+
+MENUTREE extended: popping the fear/anger menu (talk → gs:0x6772=0x2f) returns to
+the CONSOLE (TELEPHONE/CRYOBOX/MENU/OPTION shown), NOT a top-level concept list. So
+the concept menus display only inside an ACTIVE CONVERSATION (e.g. the psychotherapy
+consultation); backing out to the top level exits to the bridge console. CONSEQUENCE
+for empirical enumeration: a menu can only be MENUTREE-mapped while it is the active
+displayed conversation menu — you can't just click through the whole tree from one
+state. To map menu M you must first drive the conversation INTO M's display (via the
+COD/BAS flow), then map it. So full ground-truth tree extraction is coupled to the
+conversation flow after all — the clean-port per-beat menus genuinely need the
+conversation-flow VM (to reach + display each menu), confirming that as the core
+remaining build. Mapped so far: fear/anger menu 0x42d (talk→pop, emotions→response).
