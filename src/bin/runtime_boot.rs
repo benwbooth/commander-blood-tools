@@ -625,6 +625,21 @@ fn main() {
                         silent = 0;
                     }
                 }
+                // NUMKEY: answer the SCRIPT2 exercise by pressing the digit key
+                // matching the prompted number word.
+                if std::env::var("NUMKEY").is_ok() {
+                    let words: [(&str, u8, u8); 9] = [
+                        ("ONE", 0x02, b'1'), ("TWO", 0x03, b'2'), ("THREE", 0x04, b'3'),
+                        ("FOUR", 0x05, b'4'), ("F1VE", 0x06, b'5'), ("S1X", 0x07, b'6'),
+                        ("SEVEN", 0x08, b'7'), ("E1GHT", 0x09, b'8'), ("N1NE", 0x0a, b'9'),
+                    ];
+                    if let Some(&(w, sc, ch)) = words.iter().find(|(w, _, _)| line == *w) {
+                        println!("round {round}: prompt {w:?} -> pressing key");
+                        rt.inject_key(sc, ch);
+                        let _ = rt.run(rt.cpu.steps + 3_000_000);
+                        continue;
+                    }
+                }
                 // NUMSNAP: capture the screen the moment a number prompt shows.
                 if std::env::var("NUMSNAP").is_ok() {
                     let numbers = ["ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "E1GHT", "EIGHT", "N1NE", "NINE"];
