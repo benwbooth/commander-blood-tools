@@ -4714,3 +4714,19 @@ conversation events the COD dialogue already exposes. The residual is no longer
 "unclear RE"; it is "port the BAS conversation VM / menu-stack" with the exact
 state variable (gs:0x6772), opcode (0xA3 push @0x446), and buffer (gs:0x67f8)
 identified. concept_menu.rs already decodes any gs:0x6772 offset to its labels.
+
+## Port-side per-beat wiring needs the FULL BAS VM (count-match verified insufficient)
+
+Tested whether a shortcut (show the concept menu whose non-talk topic count matches
+a script's help* handler count) could avoid porting the BAS VM: it CANNOT.
+  - SCRIPT2 (9 helps): 3 different 9-topic menus (settings / numerology / character
+    list) — ambiguous.
+  - SCRIPT3 (14 helps): ZERO 14-topic menus — its help1..14 span MULTIPLE sub-
+    conversation menus (per-NPC), so no single menu maps to them.
+  - SCRIPT4 (5 helps): 4 different 5-topic menus — ambiguous.
+So the correct per-beat menu can only come from executing the BAS conversation VM
+(seg 0x067c) and reading gs:0x6772 (solved above). Port-side implementation =
+port that VM (its ~0x32 opcode handlers in menu_code_067c.bin drive the menu
+stack + topic→sub-menu navigation). That is a bounded but real implementation task
+(a second VM alongside the COD one), NOT a heuristic wiring. RE is complete; the
+build is the remaining work.
