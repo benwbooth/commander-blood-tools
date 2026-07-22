@@ -4046,3 +4046,13 @@ manu3 file offset 0x1370).
   MODEL: one list-menu widget + one gold choice-box widget cover the game's
   interactive UI; dialogue engine = topic-menu navigation over the decoded
   script objects (help*/men*/named topics).
+- **★ THE NAV SCREEN OPENED (travelprobe2)**: with the menu engagement cleared
+  (UNPIN diagnostic: [0x2A19]=0 + [0x2793]&=~0xC — rotation freed instantly,
+  confirming the decoded clamp), rotating to the pyramid sector and clicking
+  the orb opens the REAL NAVIGATION SCREEN: grayscale pyramid grid + white orb
+  + hand, upper viewport full of static (untuned viewscreen / dissolve).
+  Capture: accuracy/captures/bridge/nav_screen_opened.ppm. Right-click does
+  NOT release engagement ([0x2793]=0x25, [0x2A19]=2 after) — find the legit
+  release (xref the bit-2 clearers of [0x2793]). NEXT: interact with the nav
+  screen (pyramids = destinations?), capture the tuning/selection flow — the
+  travel mechanics ground truth.
