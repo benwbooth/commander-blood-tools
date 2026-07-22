@@ -5093,3 +5093,21 @@ but genuinely multi-session — NOT a bounded-pass task. Meanwhile the interpret
 222 functions bit-exact (triple-verified), so the game is faithful-by-construction now.
 NET whole-binary status: 34% statically lifted (fixpoint); the rest is I/O-oracle lifting
 + composition, multi-session. This is the dominant remaining item for a pure-static port.
+
+## I/O-boundary leaf inventory (the multi-session lift frontier) — 2026-07-22
+
+Precise inventory of the 41 I/O-blocked leaves (why the static lift caps at 75):
+  - opcode int: 21 (0x79c, 0x99f, 0xa99, 0xb32, 0xbff, 0xcc0, 0xcef, 0xd4a, …)
+  - opcode out: 13 (0x7ea, 0x17af, 0x2dd3, 0x2f90, 0x2fa6, 0x3428, 0x356e, 0x3630, …)
+  - indirect lcall: 5 (0x1610, 0xa240, 0xb7b0, 0xbb9d, 0xbd4e)
+  - opcode in: 1 (0xb42); indirect call: 1 (0x4471)
+lift.py lifts these functions' CPU logic cleanly but emits a TODO at the int/out/in
+instruction (e.g. func_79c: pushes/logic lift fine, TODO at `int`). To lift them:
+  1) extend lift.py to emit runtime handler calls (m.dispatch_int / port out/in) for
+     int/out/in — the handlers exist in src/recomp/runtime.rs;
+  2) verify against the INTERPRETER as oracle (Unicorn can't model DOS I/O);
+  3) resolve the 6 indirect call/lcall sites (dispatch tables) by observation;
+  4) re-run composition → the fixpoint grows past 75 toward 222.
+This is bounded (222 fns, handlers exist) but genuinely MULTI-SESSION infrastructure +
+per-function work — NOT a bounded-pass task. The interpreter runs all 222 bit-exact
+now, so this is a pure-static-formalization milestone, not a fidelity gap.
