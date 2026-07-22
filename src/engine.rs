@@ -1062,6 +1062,24 @@ impl EngineState {
             .unwrap_or_default()
     }
 
+    /// The complete per-beat concept-menu interaction: a click on `row` either pops
+    /// (talk/bye_bye — back out) returning `None`, or advances the current menu's
+    /// sequential response monologue and returns the next response's subtitle text.
+    /// This is the whole menu behavior (concept menus are flat sequential leaves).
+    pub fn bas_menu_interact(&mut self, row: usize) -> Option<String> {
+        let labels = self.current_bas_menu_labels();
+        if labels.get(row).is_some_and(|l| crate::bas_vm::BasMenuStack::is_back_topic(l)) {
+            self.bas_topic_click(row);
+            self.bas_responses = None; // fresh monologue for the menu we backed out to
+            return None;
+        }
+        if self.bas_responses.is_none() {
+            self.bas_start_responses();
+        }
+        let offset = self.bas_advance_response()?;
+        self.bas_menus.as_ref().and_then(|s| s.response_text(offset))
+    }
+
     /// Sync the displayed topic menu to the current BAS concept menu, so the decoded
     /// menus actually RENDER (via [`draw_list_menu`]/the topic-menu widget). Each row
     /// carries its topic index; a click is handled by [`Self::bas_topic_click`]. No-op
@@ -3159,6 +3177,13 @@ mod tests {
             n += 1;
         }
         assert_eq!(n, 13, "all 13 sequential responses played");
+        // The complete interaction: clicking a topic (row 1 = FEAR) returns its subtitle;
+        // clicking TALK (row 0) pops back out to the parent menu.
+        e.bas_start_responses();
+        let sub = e.bas_menu_interact(1).expect("fear -> subtitle");
+        assert!(sub.contains("several ways to lose"), "first subtitle: {sub:?}");
+        assert!(e.bas_menu_interact(0).is_none(), "talk pops (no subtitle)");
+        assert!(e.current_bas_menu_labels().iter().any(|l| l == "OPTIMIZATION"), "popped to parent");
     }
 
     /// Oracle: the LIST MENU (dialogue topics / nav destinations) renders the
