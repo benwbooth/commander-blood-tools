@@ -4115,3 +4115,12 @@ On LOAD, after reading: copy [0xABC]→[0x671C] (`copy_abc_to_671c` 0x1D74),
 rebuild derived VM pointers (lcall 0x4DA:0x1BB, 0x71E:0x14B6), set redraw flags.
 So blood.sav = {profile:u16, flags512, state96, objblock[var], workbuf[var]}.
 The port's save.rs is a port-native format; this is the byte-exact DOS layout.
+- NAV ANCHORS (DS:0x4F09) live-dumped from the SCRIPT2 savestate: hold
+  DEFAULT/uninitialized data (values overlap the adjacent Q14 angle table at
+  0x4F45 — 900/10200/12100 cycling then the cos ramp) = **the anchors are
+  EMPTY until the story grants destinations** (confirms the empty-nav finding).
+  They populate per-context from the entity table when coordinates are granted
+  (crew interactions / phone). So the port's destination model (hosts from
+  script speech-events) is the faithful stand-in until a granted-destination
+  state is reached; the real anchor positions require driving the story to a
+  planet-coordinates grant (recorded lead for #3).
