@@ -3793,3 +3793,10 @@ manu3 file offset 0x1370).
   translated by twice the cursor offset from screen centre. call 0x270 = the
   transform+render pass. Rust port signature: render_hand(cursor_x, cursor_y,
   pose_id, vram_page).
+- Render pass 0x270: the bank BASE is 0x2336 (the "preceding word" at 0x3642 is
+  a self-pointer; the 3DB0 payload is relocated in place). ROOT NODE = 0x2336 +
+  0x5E = 0x2394 -> [0x2248]; root fields +0x4E/+0x50/+0x52 = EULER ANGLE indices
+  (masked 0xFFC = dword-aligned trig offsets, stored to [0x20]/[0x22]/[0x24]);
+  rotation matrix built from the Q14 trig table (cos/sin at table entry +0x26/
+  +0x28) into camera globals [0x2250..0x2268]. [0x22F2] -> [0x224A] = a second
+  list head. Node stride ~0x5E.
