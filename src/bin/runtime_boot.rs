@@ -413,24 +413,38 @@ fn main() {
                         // glyph must be >= 0xFD on screen, and its column must
                         // contain at least one lit pixel.
                         let mut matched = None;
-                        for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'\",.!?-".chars() {
+                        // Bigger glyphs first so punctuation can't subset-match
+                        // inside letters; require STRICT cell equality (on==lit).
+                        let mut candidates: Vec<(char, usize)> = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'\",.!?-"
+                            .chars()
+                            .filter_map(|ch| {
+                                let g = game_font_glyph(ch)?;
+                                let lit: usize = g
+                                    .rows
+                                    .iter()
+                                    .map(|r| r.count_ones() as usize)
+                                    .sum();
+                                Some((ch, lit))
+                            })
+                            .collect();
+                        candidates.sort_by_key(|&(_, lit)| std::cmp::Reverse(lit));
+                        for (ch, lit_total) in candidates {
                             let Some(g) = game_font_glyph(ch) else { continue };
-                            let mut lit = 0;
-                            let mut ok = true;
-                            for gy in 0..8usize {
+                            let mut ok = lit_total >= 5;
+                            'cell: for gy in 0..8usize {
                                 for gx in 0..g.advance.min(8) {
                                     let on = (g.rows[gy] >> (7 - gx)) & 1 == 1;
                                     let px = idx
                                         .get((row0 + gy) * 320 + x + gx)
                                         .copied()
                                         .unwrap_or(0);
-                                    let scr = px >= 0xFD;
-                                    if on && !scr { ok = false; break; }
-                                    if on { lit += 1; }
+                                    if on != (px >= 0xFD) {
+                                        ok = false;
+                                        break 'cell;
+                                    }
                                 }
-                                if !ok { break; }
                             }
-                            if ok && lit >= 4 {
+                            if ok {
                                 matched = Some((ch, game_font_advance(ch)));
                                 break;
                             }
@@ -458,7 +472,11 @@ fn main() {
             for round in 0..500 {
                 let (fr, _, _) = state(&rt);
                 let delta = fr as i32 - 45;
-                let line = ocr(&rt.screen_indices());
+                // OCR twice with a settle gap; only trust a stable, fully-revealed line.
+                let line_a = ocr(&rt.screen_indices());
+                let _ = rt.run(rt.cpu.steps + 400_000);
+                let line_b = ocr(&rt.screen_indices());
+                let line = if line_a == line_b { line_b } else { String::new() };
                 if line != last && !line.is_empty() {
                     println!("round {round}: OCR {line:?}");
                     last = line.clone();
