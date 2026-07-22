@@ -466,6 +466,73 @@ fn main() {
                 println!("hand code/data segments dumped");
             }
         }
+        // HANDATLAS: capture the pointing-hand sprite from the LIVE renderer at a
+        // grid of cursor positions on the console view (frame 55). Each capture is
+        // diffed against the decoded panorama frame; the largest connected diff
+        // blob = the hand (stars are sparse single pixels). Output: one .bin per
+        // position {x_anchor,y_anchor,w,h,u16s then w*h indices}, consumed by the
+        // engine as REAL-CAPTURE interim art while the mesh-renderer port lands.
+        if std::env::var("HANDATLAS").is_ok() {
+            let pano = std::fs::read("output/_tmp_iso/TB.BIG")
+                .ok()
+                .and_then(commander_blood_tools::tbbig::BridgePanorama::parse)
+                .expect("TB.BIG");
+            let bg = pano.frame_pixels(55).unwrap();
+            let grid: Vec<(u16, u16)> = [
+                (60u16, 60u16), (160, 60), (260, 60),
+                (60, 120), (160, 120), (260, 120),
+                (60, 170), (160, 170), (260, 170),
+            ]
+            .to_vec();
+            for (gx, gy) in grid {
+                // Park the hardware cursor so the game's ring-anchored cursor sits
+                // at screen (gx,gy) for view frame 55: ring = gx + 55*8 - 160.
+                let ring = (gx as i32 + 55 * 8 - 160).rem_euclid(1440) as u16;
+                rt.set_mouse_pos(ring, gy);
+                let _ = rt.run(rt.cpu.steps + 6_000_000);
+                let live = rt.screen_indices();
+                // Diff vs the decoded panorama; collect blob pixels.
+                let mut diff: Vec<usize> = (0..64000)
+                    .filter(|&i| live[i] != bg[i] && live[i] != 0)
+                    .collect();
+                // Drop pixels with no diff neighbour (isolated stars).
+                let set: std::collections::HashSet<usize> = diff.iter().copied().collect();
+                diff.retain(|&i| {
+                    let (x, y) = (i % 320, i / 320);
+                    [(1i32, 0i32), (-1, 0), (0, 1), (0, -1)].iter().any(|&(dx, dy)| {
+                        let (nx, ny) = (x as i32 + dx, y as i32 + dy);
+                        (0..320).contains(&nx)
+                            && (0..200).contains(&ny)
+                            && set.contains(&((ny * 320 + nx) as usize))
+                    })
+                });
+                if diff.len() < 50 {
+                    println!("atlas ({gx},{gy}): no hand blob ({} px)", diff.len());
+                    continue;
+                }
+                let (mut x0, mut y0, mut x1, mut y1) = (320usize, 200usize, 0usize, 0usize);
+                for &i in &diff {
+                    let (x, y) = (i % 320, i / 320);
+                    x0 = x0.min(x); x1 = x1.max(x); y0 = y0.min(y); y1 = y1.max(y);
+                }
+                let (w, h) = (x1 - x0 + 1, y1 - y0 + 1);
+                let mut sprite = vec![0u8; w * h]; // 0 = transparent
+                for &i in &diff {
+                    let (x, y) = (i % 320, i / 320);
+                    sprite[(y - y0) * w + (x - x0)] = live[i];
+                }
+                let mut blob = Vec::new();
+                for v in [gx as i32 - x0 as i32, gy as i32 - y0 as i32, w as i32, h as i32] {
+                    blob.extend_from_slice(&(v as i16).to_le_bytes());
+                }
+                blob.extend_from_slice(&sprite);
+                std::fs::write(out.join(format!("hand_{gx}_{gy}.bin")), &blob).unwrap();
+                println!("atlas ({gx},{gy}): blob {}px bbox {w}x{h} at ({x0},{y0})", diff.len());
+            }
+            println!("HANDATLAS done -> {}/hand_*.bin", out.display());
+            return;
+        }
+
         // Vertex-buffer INIT trace: who seeds the runtime vertex records past the
         // image (data:0xE000+)? trace_range during the whole skip-to-console run
         // was armed in main before boot when VERTINIT is set (see below), so just
