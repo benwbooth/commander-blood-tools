@@ -1471,6 +1471,35 @@ impl EngineState {
         self.scene_frame += 1;
     }
 
+    /// Overlay the OPTION-style 3D-pyramid console floor + eye-orb onto the EXISTING framebuffer
+    /// (the crew viewscreen) WITHOUT clearing it — the composite the real SCRIPT1 tutorial uses
+    /// (accuracy/captures/frame_6-9): a crew talk-HNM fills the top viewscreen and the pyramid
+    /// console sits along the bottom. Unlike [`Self::render_option_menu`] (which clears to black
+    /// and tints the pyramids purple with a yellow orb), this OVERLAYS and uses the real GRAY
+    /// pyramids + WHITE eye-orb seen in the captures. The pyramid renderer fills only the lower
+    /// grid band, so the crew scene in the upper band shows through.
+    // Building block for the tutorial-console composite; the flow wiring (use it as SCRIPT1's view
+    // without orphaning the bridge/console hub) is the deliberate next step — see
+    // docs/faithfulness-audit.md risk #1.
+    #[allow(dead_code)]
+    fn overlay_console_pyramids(&mut self) {
+        const LIGHT: u8 = 0xFD;
+        const DARK: u8 = 0xFB;
+        const ORB: u8 = 0xFE;
+        crate::ship3d::render_star_map_navview_panned(
+            &mut self.framebuffer,
+            LIGHT,
+            DARK,
+            ORB,
+            self.option_angle,
+        );
+        // Real tutorial-console palette (frames 6-9): grey pyramids, white eye-orb — NOT the
+        // OPTION menu's purple/yellow.
+        self.scene_palette[LIGHT as usize] = [180, 180, 190];
+        self.scene_palette[DARK as usize] = [90, 90, 100];
+        self.scene_palette[ORB as usize] = [235, 235, 235];
+    }
+
     /// Load the game-ending finale cutscene (`sq/fin.hnm`, the "fin"/end video) — the
     /// bookend to the intro. Returns whether it loaded.
     pub fn load_ending(&mut self, assets: &Path) -> bool {
@@ -3549,6 +3578,25 @@ mod tests {
             (90..300).contains(&credit_frames),
             "credit clip runs its ~tick-100 cue span ({credit_frames} frames), not the full {full_len}"
         );
+    }
+
+    /// The SCRIPT1-tutorial console COMPOSITE (accuracy/captures/frame_6-9): the pyramid console
+    /// floor + eye-orb overlays the crew viewscreen WITHOUT clearing it — the crew (upper band)
+    /// shows through, and the pyramids sit along the bottom. Guards the gap where the port rendered
+    /// the bridge/dialogue/OPTION as separate full-screen views instead of this composite.
+    #[test]
+    fn tutorial_console_overlays_pyramids_over_crew_viewscreen() {
+        let mut e = EngineState::new();
+        // A "crew viewscreen" already in the framebuffer (a non-zero, non-reserved index).
+        e.framebuffer.iter_mut().for_each(|p| *p = 0x30);
+        e.overlay_console_pyramids();
+        // Upper band: the crew shows through (the pyramid floor draws only along the bottom).
+        let top = &e.framebuffer[..ENGINE_SCREEN_WIDTH * 40];
+        assert!(top.iter().all(|&p| p == 0x30), "the crew viewscreen (top) shows through");
+        // Bottom band: the pyramid console + eye-orb are drawn (reserved indices).
+        let bottom = &e.framebuffer[ENGINE_SCREEN_WIDTH * 120..];
+        let pyramid_px = bottom.iter().filter(|&&p| p == 0xFD || p == 0xFB || p == 0xFE).count();
+        assert!(pyramid_px > 100, "the pyramid console draws along the bottom ({pyramid_px} px)");
     }
 
     /// End-to-end regression: drive the full playable loop the way the real driver does
