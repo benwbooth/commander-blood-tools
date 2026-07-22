@@ -4003,3 +4003,10 @@ manu3 file offset 0x1370).
   Scruter_K (radio, Trashlando): "YOU DO THE COUNTING...". Numbers are
   DISPLAYED to be observed/counted (digit keys are NOT the answer — prompt
   persists under keypresses). Frame-series capture of the display in flight.
+- **HONK TOPIC LIST (SCRIPT2 series captures)**: a vertical list "TALK / ONE /
+  TWO / ... / NINE" in the blue square-capitals face down the console's right
+  (x~168.., rows from y~35, ~13px pitch) — the game's DIALOGUE-TOPIC CHOOSER.
+  The numerology exercise = click the word matching the prompt. MAJOR PORT
+  IMPLICATION: dialogues are TOPIC-DRIVEN interactions (numbered choices), not
+  passive line playback — the port's dialogue model needs the topic list UI +
+  choice routing. Captures: numseries/series_*.ppm.
