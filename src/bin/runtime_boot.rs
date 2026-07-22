@@ -2225,6 +2225,41 @@ fn main() {
         return;
     }
 
+    // MENUWATCH: watch writes to the current-menu word gs:0x6772 while driving a
+    // conversation, logging each menu change + the code (cs:ip) that made it — reveals
+    // the push/pop routines and every menu transition empirically (the ground truth
+    // for the clean-port conversation VM's navigation).
+    if std::env::var("MENUWATCH").is_ok() {
+        let g = 0x0e84u16;
+        let cur = |rt: &Runtime| rt.m.read8(g, 0x6772) as u16 | ((rt.m.read8(g, 0x6773) as u16) << 8);
+        let frame = |rt: &Runtime| rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
+        println!("MENUWATCH start menu = {:#06x}", cur(&rt));
+        rt.m.watch_addr = Some(0xe84usize * 16 + 0x6772);
+        rt.m.addr_hits.clear();
+        for pass in 0..12u32 {
+            let fr = frame(&rt);
+            // rotate through the topic rows + the orb, to provoke navigation.
+            let (mx, my) = if pass % 4 == 3 { (125u16, 118u16) } else { (200, 61 + 11 * (pass % 7) as u16 + 3) };
+            let ring = (mx as i32 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+            rt.set_mouse_pos(ring, my);
+            let _ = rt.run(rt.cpu.steps + 400_000);
+            rt.mouse_press(0);
+            let _ = rt.run(rt.cpu.steps + 250_000);
+            rt.mouse_release(0);
+            let _ = rt.run(rt.cpu.steps + 2_000_000);
+        }
+        rt.m.watch_addr = None;
+        println!("MENUWATCH: {} writes to gs:0x6772", rt.m.addr_hits.len());
+        let mut seen = std::collections::HashSet::new();
+        for &(v, cs, ip) in rt.m.addr_hits.iter() {
+            if seen.insert((v, cs, ip)) {
+                println!("  gs:0x6772 low={v:#04x} written by {cs:04x}:{ip:04x}");
+            }
+        }
+        println!("MENUWATCH end menu = {:#06x}", cur(&rt));
+        return;
+    }
+
     // MENUTREE: empirically map a concept menu's topic→sub-menu branch targets by
     // clicking each topic (reloading the savestate to isolate each) and reading the
     // resulting current-menu offset gs:0x6772. Gives the ground-truth navigation the

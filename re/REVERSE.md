@@ -4838,3 +4838,20 @@ COD/BAS flow), then map it. So full ground-truth tree extraction is coupled to t
 conversation flow after all — the clean-port per-beat menus genuinely need the
 conversation-flow VM (to reach + display each menu), confirming that as the core
 remaining build. Mapped so far: fear/anger menu 0x42d (talk→pop, emotions→response).
+
+## MENUWATCH — gs:0x6772 writers captured; push confirmed at 067c:0465 (2026-07-22)
+
+Built MENUWATCH (runtime_boot): watches writes to the current-menu word gs:0x6772
+while driving a conversation, logging value + writer cs:ip. RESULT: gs:0x6772 is
+written by exactly two sites in the conversation VM (seg 0x067c):
+  - 0465 = the PUSH (`mov gs:[0x6772], si` — the 0xA3 menu handler tail I decoded):
+    sets the current menu to the BAS position when execution reaches a 0xA3 menu.
+  - 03ae = the second writer (restore/re-enter path).
+Observed transitions from the fear/anger state: → 0x2f (top-level, via talk-pop) →
+0x42d (re-enter). So the displayed menu = wherever BAS EXECUTION currently sits at
+a 0xA3; there is no static "topic→menu" table — the menu is a function of the VM's
+program counter. CONFIRMS (definitively, empirically) that the clean-port per-beat
+menus require EXECUTING the BAS conversation VM (tracking si → gs:0x6772), which is
+the core remaining build. Tooling now in place to validate that VM: MENUTREE
+(topic→destination), MENUWATCH (menu-change events + writers), the menu-stack model
+(bas_vm.rs), and the engine integration. The VM executor is the remaining piece.
