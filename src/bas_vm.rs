@@ -151,6 +151,9 @@ pub struct BasMenuStack {
     menus: Vec<ConceptMenu>,
     /// Active menu BAS offsets, innermost last (the top = current = `gs:0x6772`).
     stack: Vec<usize>,
+    /// The script's `.BAS`/`.DIC` (owned) so blocks/responses parse without re-passing.
+    bas: Vec<u8>,
+    dic: Vec<u8>,
 }
 
 impl BasMenuStack {
@@ -160,7 +163,7 @@ impl BasMenuStack {
     pub fn new(bas: &[u8], dic: &[u8]) -> Option<Self> {
         let menus = decode_menus(bas, dic, 3);
         let entry = menus.first()?.bas_offset;
-        Some(Self { menus, stack: vec![entry] })
+        Some(Self { menus, stack: vec![entry], bas: bas.to_vec(), dic: dic.to_vec() })
     }
 
     /// The menu currently displayed (the top of the stack = `gs:0x6772`).
@@ -173,8 +176,13 @@ impl BasMenuStack {
     /// tokens up to the `0xAC` terminator (grammar from [`parse_menu_block`],
     /// verified against the runtime trace). Ties the stack to the block parser so
     /// the conversation VM has the current menu's responses available to display.
-    pub fn current_block(&self, bas: &[u8], dic: &[u8]) -> Option<MenuBlock> {
-        parse_menu_block(bas, dic, *self.stack.last()?)
+    pub fn current_block(&self) -> Option<MenuBlock> {
+        parse_menu_block(&self.bas, &self.dic, *self.stack.last()?)
+    }
+
+    /// A sequential-response player for the current menu's block (its monologue).
+    pub fn current_responses(&self) -> Option<SequentialResponses> {
+        self.current_block().map(|b| SequentialResponses::new(&b))
     }
 
     /// All decoded menus (for wiring topic → sub-menu targets from the BAS flow).
@@ -341,9 +349,13 @@ mod tests {
         };
         let mut st = BasMenuStack::new(&bas, &dic).expect("menus");
         st.push(0x42d);
-        let block = st.current_block(&bas, &dic).expect("current block");
+        let block = st.current_block().expect("current block");
         assert_eq!(block.menu_offset, 0x42d);
         assert_eq!(block.end, 0x612);
         assert!(block.topics.iter().any(|t| t == "fear"));
+        // The stack yields a sequential-response player for the current menu.
+        let mut seq = st.current_responses().expect("responses");
+        assert_eq!(seq.total(), 13);
+        assert_eq!(seq.advance(), Some(0x43e));
     }
 }
