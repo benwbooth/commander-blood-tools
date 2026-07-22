@@ -3921,3 +3921,11 @@ manu3 file offset 0x1370).
   and continue following. Also: the bold font's STATIC HOME CONFIRMED =
   EXE file 0x145CA (glyphs) / 0x1451A (map) — byte-identical to the live dump;
   port it as the console/tutorial subtitle font.
+- **CRYOBOX OBEY WORKED — CAP'N BOB WOKEN** (tut12 silent_475 capture): the
+  cryobox opens into Cap'n Bob's extreme close-up dialogue ("My age dictates I
+  sleep through most of it in the CRYOBOX. WAKE ME ONLY IN AN EMERGENCY. My
+  time is very precious..."). The 'silence' was the OCR failing on THIS
+  screen's different subtitle layout (3 lines at the very top, white glyphs
+  over the letterboxed scene). Next: generalize OCR row alignment (scan row0
+  0..40) + index set (white subtitle indices), then converse with Bob (clicks
+  advance; expect choice boxes) toward SCRIPT2.
