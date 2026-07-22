@@ -38,12 +38,21 @@ everywhere.** Priority = how visible/audible + how confidently fixable.
   the tick-scale risk below.)
 
 ## Open faithfulness risks (prioritized) — each needs its named source
-1. **Intro clip order/content is hardcoded + unverified** (`engine.rs` load_intro: mind→cliptoot→
-   logo_bl). No single DESCRIPT record defines the boot sequence, so it is BOOT-CODE driven. Source
-   to consult: the boot/intro sequencer in the disassembly (find the caller that plays the logo/
-   cinematic HNMs in order; the DESCRIPT `present`/`microkid`/`hatetv` records are the pieces). RISK:
-   wrong logos, wrong order, missing a clip. The oracle can't confirm — intro assets load from
-   inside blood.dat (invisible to the file-open trace).
+1. **Intro STRUCTURE is wrong — DIAGNOSED from ground-truth captures** (`accuracy/captures/frame_*`,
+   real game @1s intervals). The real intro is SHORT and the credits overlay the LIVE console:
+     - 1s: MINDSCAPE logo (full screen) · 2s: Microfolie's logo · ~3-4s: space cinematic (pilot
+       over a planet) — this whole run == the port's `mind.hnm` clip, which IS correct.
+     - ~6s: the CONSOLE/BRIDGE is already active (3D pyramid menu + eye orb + a character over a
+       seascape) with the subtitle "CRYO Interactive Entertainment 1995" OVERLAID on it.
+     - ~9s: interactive gameplay (bridge + a talking character).
+   So the "CRYO 1995" / "Commander BLOOD V 1.0" credits are SUBTITLES over the already-running
+   console (the `present` record's subtitles overlaid on the bridge), NOT a separate full-screen
+   cinematic — and the intro→gameplay is ~8 s. The port INSTEAD plays `cliptoot.hnm` as a separate
+   ~69 s full-screen cinematic clip (1258 frames @ ~18 fps). FIX (grounded, but a restructure):
+   after `mind.hnm`, go straight to the bridge/console and overlay the `present` credits there for
+   their tick span, rather than playing cliptoot standalone. Confirm cliptoot's role by decoding a
+   few of its frames (is it the seascape bridge background, or a distinct clip?). This is the top
+   visible intro bug; needs care (it reshapes the intro→console handoff in main.rs/engine.rs).
 2. **Intro/HNM playback RATE** (`INTRO_CREDIT_FRAMES_PER_TICK = 1`, one HNM frame per game step).
    A guess flagged "calibratable". Source: the HNM player's frame-advance timing in the asm (ticks
    per HNM frame) + the DESCRIPT tick unit. RISK: intro plays too fast/slow; subtitles mistimed.
