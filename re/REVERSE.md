@@ -5044,3 +5044,21 @@ COMPLETE concept-menu display+navigation behavior. What I was chasing as "branch
 CONSEQUENCE: the per-beat concept-menu SUBSYSTEM (display + topic navigation) is DONE
 and verified; the remaining is only which game action opens which menu (console/flow
 integration), a separate game-flow concern — NOT a record VM / branching decode.
+
+## On-planet loop = the concept-menu system (built this session) — consolidation 2026-07-22
+
+The "on-planet interaction loop" residual is NOT a separate system: per the earlier RE
+resolution (ON-PLANET INTERACTION — MODEL RESOLVED), on-planet interaction IS the
+CONCEPT-MENU conversation system applied to the location scripts. This session BUILT
+that system in clean Rust and ACTIVATED it for SCRIPT3/4/5: navigate to a location →
+its concept menu (decoded topics) shows → click a topic → the flat sequential responses
+play (real subtitles) → talk/bye_bye backs out. So the on-planet interaction LOOP's core
+(nav[built] → dialogue[built] → topic menu[built this session] → responses[built]) is now
+functional in the port. REMAINING for full on-planet fidelity: the per-topic PROGRESSION
+TRIGGERS (which topic exchanges an object / grants coordinates → advances GameProgress),
+which are game-flow tied to the location-specific record state — the same runtime-record
+layer, not new menu structure. So of the "three residuals", per-beat menus AND on-planet
+are the SAME (concept-menu) system, now built+activated; the distinct remaining subsystems
+are: manu3 procedural rasterizer (low value — atlas is pixel-exact) and the whole-binary
+clean-Rust replacement (the large multi-month remainder). Progression triggers are the
+on-planet game-flow refinement on top of the built interaction.
