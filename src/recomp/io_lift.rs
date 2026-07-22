@@ -195,6 +195,33 @@ pub fn func_79c(rt: &mut Runtime) {
     rt.m.regs.set_ax(ax);
 }
 
+/// `func_7ea` (`program_pit` / restore-timer, 0x07EA): reprogram PIT channel 0 back to the
+/// default ~18.2 Hz (out 0x43=0x36; out 0x40 = 0xFFFF lo/hi), clear the timer-active flag
+/// gs:[0xB21], and restore the original INT 08h vector saved by [`func_79c`] at
+/// gs:[0xB1D]/[0xB1F] (int21 fn 0x25). The teardown counterpart of func_79c.
+pub fn func_7ea(rt: &mut Runtime) {
+    push16(rt, rt.m.regs.ax());
+    push16(rt, rt.m.regs.dx());
+    push16(rt, rt.m.regs.ds);
+    out8(rt, 0x43, 0x36);
+    out8(rt, 0x40, 0xff);
+    out8(rt, 0x40, 0xff); // divisor 0xFFFF -> default tick rate
+    let gs = rt.m.regs.gs;
+    rt.m.write8(gs, 0xb21, 0);
+    let saved_seg = rt.m.read16(gs, 0xb1f); // ax=gs:[0xb1f]; ds=ax
+    rt.m.regs.ds = saved_seg;
+    let saved_off = rt.m.read16(gs, 0xb1d);
+    rt.m.regs.set_dx(saved_off);
+    rt.m.regs.set_ax(0x2508); // set INT 08h vector, al=0x08
+    int_call(rt, 0x21);
+    let ds = pop16(rt);
+    rt.m.regs.ds = ds;
+    let dx = pop16(rt);
+    rt.m.regs.set_dx(dx);
+    let ax = pop16(rt);
+    rt.m.regs.set_ax(ax);
+}
+
 /// `func_bff` (`install_ctrl_break_handler`, 0x0BFF): `ds=cs`; `int 21h` AX=0x2523 (set
 /// INT 23h = Ctrl-Break) to ds:0x619, then AX=0x2524 (set INT 24h = critical-error) to
 /// ds:0x61A. Traps Ctrl-Break / critical-error so the game cleans up on exit. (A recomp-path
@@ -304,6 +331,9 @@ mod tests {
         // es:bx on both sides (the lift has the Runtime default; the oracle has EXE-overlay bytes).
         rt.m.write16(0, 0x08 * 4, 0x1234);
         rt.m.write16(0, 0x08 * 4 + 2, 0x5678);
+        // A saved INT 08h vector for func_7ea to restore (gs:[0xb1d]=off, gs:[0xb1f]=seg).
+        rt.m.write16(0x3000, 0xb1d, 0x1234);
+        rt.m.write16(0x3000, 0xb1f, 0x5678);
     }
 
     /// Every Runtime-context I/O lift reproduces the REAL function bytes exactly: run the lift and
@@ -325,6 +355,8 @@ mod tests {
             ("func_bff", 0x0bff, func_bff, &[], &[0x8c, 0x8e, 0x90, 0x92]),
             // saved vector gs:[0xb1d/0xb1f], timer-state gs:[0xb21/0xb25/0xb27]; INT 08h at 0:[0x20/0x22].
             ("func_79c", 0x079c, func_79c, &[0xb1d, 0xb1f, 0xb21, 0xb25, 0xb27], &[0x20, 0x22]),
+            // clears gs:[0xb21]; restores INT 08h at 0:[0x20/0x22] to the saved gs:[0xb1d/0xb1f].
+            ("func_7ea", 0x07ea, func_7ea, &[0xb21], &[0x20, 0x22]),
         ];
         for &(name, offset, lift, gs_checks, seg0_checks) in leaves {
             let mut rt_lift = test_runtime();
