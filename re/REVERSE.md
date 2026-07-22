@@ -4513,3 +4513,19 @@ not a fidelity gap):
   (BRIDGEPROBE already isolates the hand bbox/palette). NOT worth it unless the
   hand must render at atlas-absent angles; the atlas covers the console at
   mean_abs 0.14.
+
+## Path-B lift coverage 73 → 75 oracle-verified functions (2026-07-22)
+
+With Unicorn reinstalled (venv), re-ran the lift pipeline. `scan_clean.py`: 71/112
+leaves lift CLEAN; the 41 blocked leaves are I/O leaves (21 int, 13 out, 5 indirect
+lcall, 1 in, 1 indirect call) that only resolve at runtime — by design handled by
+the interpreter, not the static lift. Probed the clean leaves NOT yet in auto.rs:
+6 yield <120 clean fuzz vectors (code-region access — legitimately oracle-blocked:
+0x22e0/0x23c5/0x2d50/0x6293/0xa4ed/0xa867) but **func_a38e yields 250 clean vectors**
+and was simply missing from the generated auto.rs. Regenerated auto.rs via
+`gen_batch.py --codegen-only`: func_a38e (leaf) + its enabled composition func_726
+now included → 75 functions, BOTH oracle batches pass bit-exact
+(auto_lifted_batch_matches_oracle + det_lifted_batch_matches_oracle, all 402 lib
+tests green). The remaining unlifted leaves are all documented I/O-blocked or
+<120-vector code-region cases — the generic static oracle's real ceiling; deeper
+coverage needs the interpreter runtime (now itself lockstep-verified, see M1b).

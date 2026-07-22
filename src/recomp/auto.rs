@@ -1002,9 +1002,10 @@ pub fn func_3066(m: &mut Machine) {
                 // 0x03074: mov cx, bx
                 m.regs.set_cx((m.regs.bx()) as u16);
                 // 0x03076: xchg cl, ch
-                let __t = m.regs.cl();
-                m.regs.set_cl(m.regs.ch());
-                m.regs.set_ch((__t));
+                let __t = (m.regs.cl()) as u8;
+                let __u = (m.regs.ch()) as u8;
+                m.regs.set_cl(__u);
+                m.regs.set_ch(__t);
                 // 0x03078: shl bx, 6
                 let __r = m.regs.shl16((m.regs.bx()) as u16, (0x6) as u8);
                 m.regs.set_bx(__r);
@@ -1329,9 +1330,10 @@ pub fn func_3106(m: &mut Machine) {
                 // 0x0312e: mov ax, dx
                 m.regs.set_ax((m.regs.dx()) as u16);
                 // 0x03130: xchg ah, al
-                let __t = m.regs.ah();
-                m.regs.set_ah(m.regs.al());
-                m.regs.set_al((__t));
+                let __t = (m.regs.ah()) as u8;
+                let __u = (m.regs.al()) as u8;
+                m.regs.set_ah(__u);
+                m.regs.set_al(__t);
                 // 0x03132: shl dx, 6
                 let __r = m.regs.shl16((m.regs.dx()) as u16, (0x6) as u8);
                 m.regs.set_dx(__r);
@@ -1394,9 +1396,10 @@ pub fn func_3106(m: &mut Machine) {
                 // 0x03160: mov ax, word ptr [bp]
                 m.regs.set_ax((m.read16(m.regs.ss, ((m.regs.bp()) as u32))) as u16);
                 // 0x03163: xchg ah, al
-                let __t = m.regs.ah();
-                m.regs.set_ah(m.regs.al());
-                m.regs.set_al((__t));
+                let __t = (m.regs.ah()) as u8;
+                let __u = (m.regs.al()) as u8;
+                m.regs.set_ah(__u);
+                m.regs.set_al(__t);
                 // 0x03165: push di
                 m.regs.set_sp(m.regs.sp().wrapping_sub(2));
                 m.write16(m.regs.ss, m.regs.sp() as u32, (m.regs.di()) as u16);
@@ -1561,9 +1564,10 @@ pub fn func_3192(m: &mut Machine) {
                 // 0x031ba: mov ax, dx
                 m.regs.set_ax((m.regs.dx()) as u16);
                 // 0x031bc: xchg ah, al
-                let __t = m.regs.ah();
-                m.regs.set_ah(m.regs.al());
-                m.regs.set_al((__t));
+                let __t = (m.regs.ah()) as u8;
+                let __u = (m.regs.al()) as u8;
+                m.regs.set_ah(__u);
+                m.regs.set_al(__t);
                 // 0x031be: shl dx, 6
                 let __r = m.regs.shl16((m.regs.dx()) as u16, (0x6) as u8);
                 m.regs.set_dx(__r);
@@ -1858,9 +1862,10 @@ pub fn func_32ac(m: &mut Machine) {
                 // 0x032f0: mov ax, cx
                 m.regs.set_ax((m.regs.cx()) as u16);
                 // 0x032f2: xchg ah, al
-                let __t = m.regs.ah();
-                m.regs.set_ah(m.regs.al());
-                m.regs.set_al((__t));
+                let __t = (m.regs.ah()) as u8;
+                let __u = (m.regs.al()) as u8;
+                m.regs.set_ah(__u);
+                m.regs.set_al(__t);
                 // 0x032f4: shl cx, 6
                 let __r = m.regs.shl16((m.regs.cx()) as u16, (0x6) as u8);
                 m.regs.set_cx(__r);
@@ -2066,9 +2071,10 @@ pub fn func_3321(m: &mut Machine) {
                 // 0x03364: mov ax, cx
                 m.regs.set_ax((m.regs.cx()) as u16);
                 // 0x03366: xchg al, ah
-                let __t = m.regs.al();
-                m.regs.set_al(m.regs.ah());
-                m.regs.set_ah((__t));
+                let __t = (m.regs.al()) as u8;
+                let __u = (m.regs.ah()) as u8;
+                m.regs.set_al(__u);
+                m.regs.set_ah(__t);
                 // 0x03368: shl cx, 6
                 let __r = m.regs.shl16((m.regs.cx()) as u16, (0x6) as u8);
                 m.regs.set_cx(__r);
@@ -2321,9 +2327,10 @@ pub fn func_339e(m: &mut Machine) {
                 // 0x033fa: mov ax, cx
                 m.regs.set_ax((m.regs.cx()) as u16);
                 // 0x033fc: xchg ah, al
-                let __t = m.regs.ah();
-                m.regs.set_ah(m.regs.al());
-                m.regs.set_al((__t));
+                let __t = (m.regs.ah()) as u8;
+                let __u = (m.regs.al()) as u8;
+                m.regs.set_ah(__u);
+                m.regs.set_al(__t);
                 // 0x033fe: shl cx, 6
                 let __r = m.regs.shl16((m.regs.cx()) as u16, (0x6) as u8);
                 m.regs.set_cx(__r);
@@ -2572,9 +2579,10 @@ pub fn func_3c6c(m: &mut Machine) {
                 // 0x03cd7: mov ax, cx
                 m.regs.set_ax((m.regs.cx()) as u16);
                 // 0x03cd9: xchg ah, al
-                let __t = m.regs.ah();
-                m.regs.set_ah(m.regs.al());
-                m.regs.set_al((__t));
+                let __t = (m.regs.ah()) as u8;
+                let __u = (m.regs.al()) as u8;
+                m.regs.set_ah(__u);
+                m.regs.set_al(__t);
                 // 0x03cdb: shl cx, 6
                 let __r = m.regs.shl16((m.regs.cx()) as u16, (0x6) as u8);
                 m.regs.set_cx(__r);
@@ -2593,9 +2601,10 @@ pub fn func_3c6c(m: &mut Machine) {
                 let __r = m.regs.sub16((m.regs.bx()) as u16, (m.regs.dx()) as u16);
                 m.regs.set_bx(__r);
                 // 0x03ce9: xchg bx, bp
-                let __t = m.regs.bx();
-                m.regs.set_bx(m.regs.bp());
-                m.regs.set_bp((__t));
+                let __t = (m.regs.bx()) as u16;
+                let __u = (m.regs.bp()) as u16;
+                m.regs.set_bx(__u);
+                m.regs.set_bp(__t);
                 // 0x03ceb: mov ax, si
                 m.regs.set_ax((m.regs.si()) as u16);
                 // 0x03ced: mov cx, dx
@@ -2892,9 +2901,10 @@ pub fn func_3d7b(m: &mut Machine) {
                 // 0x03d8c: mov bx, cx
                 m.regs.set_bx((m.regs.cx()) as u16);
                 // 0x03d8e: xchg ch, cl
-                let __t = m.regs.ch();
-                m.regs.set_ch(m.regs.cl());
-                m.regs.set_cl((__t));
+                let __t = (m.regs.ch()) as u8;
+                let __u = (m.regs.cl()) as u8;
+                m.regs.set_ch(__u);
+                m.regs.set_cl(__t);
                 // 0x03d90: mov di, cx
                 m.regs.set_di((m.regs.cx()) as u16);
                 // 0x03d92: shl bx, 6
@@ -2998,9 +3008,10 @@ pub fn func_3dbf(m: &mut Machine) {
                 // 0x03dd0: mov bx, cx
                 m.regs.set_bx((m.regs.cx()) as u16);
                 // 0x03dd2: xchg ch, cl
-                let __t = m.regs.ch();
-                m.regs.set_ch(m.regs.cl());
-                m.regs.set_cl((__t));
+                let __t = (m.regs.ch()) as u8;
+                let __u = (m.regs.cl()) as u8;
+                m.regs.set_ch(__u);
+                m.regs.set_cl(__t);
                 // 0x03dd4: mov di, cx
                 m.regs.set_di((m.regs.cx()) as u16);
                 // 0x03dd6: shl bx, 6
@@ -3562,9 +3573,10 @@ pub fn func_509d(m: &mut Machine) {
                 // 0x050c2: mov cx, bx
                 m.regs.set_cx((m.regs.bx()) as u16);
                 // 0x050c4: xchg bh, bl
-                let __t = m.regs.bh();
-                m.regs.set_bh(m.regs.bl());
-                m.regs.set_bl((__t));
+                let __t = (m.regs.bh()) as u8;
+                let __u = (m.regs.bl()) as u8;
+                m.regs.set_bh(__u);
+                m.regs.set_bl(__t);
                 // 0x050c6: shl cx, 6
                 let __r = m.regs.shl16((m.regs.cx()) as u16, (0x6) as u8);
                 m.regs.set_cx(__r);
@@ -4538,9 +4550,10 @@ pub fn func_7cb4(m: &mut Machine) {
                 m.regs.set_ax(__v);
                 m.regs.set_si(m.regs.si().wrapping_add((if m.regs.df { (2 as u16).wrapping_neg() } else { (2 as u16) })));
                 // 0x07cd0: xchg ah, al
-                let __t = m.regs.ah();
-                m.regs.set_ah(m.regs.al());
-                m.regs.set_al((__t));
+                let __t = (m.regs.ah()) as u8;
+                let __u = (m.regs.al()) as u8;
+                m.regs.set_ah(__u);
+                m.regs.set_al(__t);
                 __blk = 0x7cd2;
             }
             0x7cd2 => {
@@ -5229,9 +5242,10 @@ pub fn func_9b04(m: &mut Machine) {
                 // 0x09b25: mov di, bx
                 m.regs.set_di((m.regs.bx()) as u16);
                 // 0x09b27: xchg bh, bl
-                let __t = m.regs.bh();
-                m.regs.set_bh(m.regs.bl());
-                m.regs.set_bl((__t));
+                let __t = (m.regs.bh()) as u8;
+                let __u = (m.regs.bl()) as u8;
+                m.regs.set_bh(__u);
+                m.regs.set_bl(__t);
                 // 0x09b29: shl di, 6
                 let __r = m.regs.shl16((m.regs.di()) as u16, (0x6) as u8);
                 m.regs.set_di(__r);
@@ -5369,6 +5383,56 @@ pub fn func_a117(m: &mut Machine) {
                 m.regs.set_sp(m.regs.sp().wrapping_add(2));
                 m.regs.ds = (__v) as u16;
                 // 0x0a133: ret 
+                return;
+            }
+            _ => unreachable!(),
+        }
+    }
+}
+
+pub fn func_a38e(m: &mut Machine) {
+    let mut __blk: u32 = 0xa38e;
+    let mut __guard: u32 = 0;
+    loop {
+        __guard += 1;
+        if __guard > 5_000_000 { panic!("func_a38e: iteration guard tripped (non-terminating input)"); }
+        match __blk {
+            0xa38e => {
+                // 0x0a38e: add si, ax
+                let __r = m.regs.add16((m.regs.si()) as u16, (m.regs.ax()) as u16);
+                m.regs.set_si(__r);
+                // 0x0a390: jb 0xa398
+                if m.regs.cf { __blk = 0xa398; } else { __blk = 0xa392; }
+            }
+            0xa392 => {
+                // 0x0a392: cmp si, word ptr [0x5233]
+                m.regs.cmp16((m.regs.si()) as u16, (m.read16(m.regs.ds, 0x5233u32)) as u16);
+                // 0x0a396: jbe 0xa3a2
+                if (m.regs.cf || m.regs.zf) { __blk = 0xa3a2; } else { __blk = 0xa398; }
+            }
+            0xa398 => {
+                // 0x0a398: xor cx, cx
+                let __r = m.regs.xor16((m.regs.cx()) as u16, (m.regs.cx()) as u16);
+                m.regs.set_cx(__r);
+                // 0x0a39a: xchg word ptr [0xd8c], cx
+                let __t = (m.read16(m.regs.ds, 0xd8cu32)) as u16;
+                let __u = (m.regs.cx()) as u16;
+                m.write16(m.regs.ds, 0xd8cu32, __u);
+                m.regs.set_cx(__t);
+                // 0x0a39e: mov word ptr [0xd98], cx
+                m.write16(m.regs.ds, 0xd98u32, (m.regs.cx()) as u16);
+                __blk = 0xa3a2;
+            }
+            0xa3a2 => {
+                // 0x0a3a2: sub ax, 2
+                let __r = m.regs.sub16((m.regs.ax()) as u16, (0x2) as u16);
+                m.regs.set_ax(__r);
+                // 0x0a3a5: mov word ptr [0xda0], ax
+                m.write16(m.regs.ds, 0xda0u32, (m.regs.ax()) as u16);
+                // 0x0a3a8: inc word ptr [0xd62]
+                let __r = m.regs.inc16((m.read16(m.regs.ds, 0xd62u32)) as u16);
+                m.write16(m.regs.ds, 0xd62u32, __r);
+                // 0x0a3ac: ret 
                 return;
             }
             _ => unreachable!(),
@@ -7009,9 +7073,10 @@ pub fn func_933a(m: &mut Machine) {
                 // 0x0934a: mov ax, cx
                 m.regs.set_ax((m.regs.cx()) as u16);
                 // 0x0934c: xchg ah, al
-                let __t = m.regs.ah();
-                m.regs.set_ah(m.regs.al());
-                m.regs.set_al((__t));
+                let __t = (m.regs.ah()) as u8;
+                let __u = (m.regs.al()) as u8;
+                m.regs.set_ah(__u);
+                m.regs.set_al(__t);
                 // 0x0934e: shl cx, 6
                 let __r = m.regs.shl16((m.regs.cx()) as u16, (0x6) as u8);
                 m.regs.set_cx(__r);
@@ -7128,13 +7193,15 @@ pub fn func_9364(m: &mut Machine) {
             }
             0x9380 => {
                 // 0x09380: xchg dx, bx
-                let __t = m.regs.dx();
-                m.regs.set_dx(m.regs.bx());
-                m.regs.set_bx((__t));
+                let __t = (m.regs.dx()) as u16;
+                let __u = (m.regs.bx()) as u16;
+                m.regs.set_dx(__u);
+                m.regs.set_bx(__t);
                 // 0x09382: xchg bp, cx
-                let __t = m.regs.bp();
-                m.regs.set_bp(m.regs.cx());
-                m.regs.set_cx((__t));
+                let __t = (m.regs.bp()) as u16;
+                let __u = (m.regs.cx()) as u16;
+                m.regs.set_bp(__u);
+                m.regs.set_cx(__t);
                 __blk = 0x9384;
             }
             0x9384 => {
@@ -7171,9 +7238,10 @@ pub fn func_9364(m: &mut Machine) {
             }
             0x9399 => {
                 // 0x09399: xchg dx, bp
-                let __t = m.regs.dx();
-                m.regs.set_dx(m.regs.bp());
-                m.regs.set_bp((__t));
+                let __t = (m.regs.dx()) as u16;
+                let __u = (m.regs.bp()) as u16;
+                m.regs.set_dx(__u);
+                m.regs.set_bp(__t);
                 // 0x0939b: mov bx, bp
                 m.regs.set_bx((m.regs.bp()) as u16);
                 // 0x0939d: add bx, bx
@@ -8115,9 +8183,10 @@ pub fn func_3b45(m: &mut Machine) {
                 func_32ac(m);
                 m.regs.set_sp(m.regs.sp().wrapping_add(4));
                 // 0x03b4a: xchg bp, dx
-                let __t = m.regs.bp();
-                m.regs.set_bp(m.regs.dx());
-                m.regs.set_dx((__t));
+                let __t = (m.regs.bp()) as u16;
+                let __u = (m.regs.dx()) as u16;
+                m.regs.set_bp(__u);
+                m.regs.set_dx(__t);
                 // 0x03b4c: push cs
                 m.regs.set_sp(m.regs.sp().wrapping_sub(2));
                 m.write16(m.regs.ss, m.regs.sp() as u32, (m.regs.cs) as u16);
@@ -8147,9 +8216,10 @@ pub fn func_3b45(m: &mut Machine) {
                 let __r = m.regs.inc16((m.regs.bx()) as u16);
                 m.regs.set_bx(__r);
                 // 0x03b5a: xchg bp, dx
-                let __t = m.regs.bp();
-                m.regs.set_bp(m.regs.dx());
-                m.regs.set_dx((__t));
+                let __t = (m.regs.bp()) as u16;
+                let __u = (m.regs.dx()) as u16;
+                m.regs.set_bp(__u);
+                m.regs.set_dx(__t);
                 // 0x03b5c: add cx, bp
                 let __r = m.regs.add16((m.regs.cx()) as u16, (m.regs.bp()) as u16);
                 m.regs.set_cx(__r);
@@ -8299,9 +8369,10 @@ pub fn func_8bab(m: &mut Machine) {
                 // 0x08c01: mov bx, ax
                 m.regs.set_bx((m.regs.ax()) as u16);
                 // 0x08c03: xchg ah, al
-                let __t = m.regs.ah();
-                m.regs.set_ah(m.regs.al());
-                m.regs.set_al((__t));
+                let __t = (m.regs.ah()) as u8;
+                let __u = (m.regs.al()) as u8;
+                m.regs.set_ah(__u);
+                m.regs.set_al(__t);
                 // 0x08c05: shl bx, 6
                 let __r = m.regs.shl16((m.regs.bx()) as u16, (0x6) as u8);
                 m.regs.set_bx(__r);
@@ -8699,9 +8770,10 @@ pub fn func_7ce8(m: &mut Machine) {
             }
             0x7d32 => {
                 // 0x07d32: xchg di, si
-                let __t = m.regs.di();
-                m.regs.set_di(m.regs.si());
-                m.regs.set_si((__t));
+                let __t = (m.regs.di()) as u16;
+                let __u = (m.regs.si()) as u16;
+                m.regs.set_di(__u);
+                m.regs.set_si(__t);
                 // 0x07d34: inc cx
                 let __r = m.regs.inc16((m.regs.cx()) as u16);
                 m.regs.set_cx(__r);
@@ -8974,9 +9046,10 @@ pub fn func_3b85(m: &mut Machine) {
                 // 0x03bf7: mov ax, cx
                 m.regs.set_ax((m.regs.cx()) as u16);
                 // 0x03bf9: xchg ah, al
-                let __t = m.regs.ah();
-                m.regs.set_ah(m.regs.al());
-                m.regs.set_al((__t));
+                let __t = (m.regs.ah()) as u8;
+                let __u = (m.regs.al()) as u8;
+                m.regs.set_ah(__u);
+                m.regs.set_al(__t);
                 // 0x03bfb: shl cx, 6
                 let __r = m.regs.shl16((m.regs.cx()) as u16, (0x6) as u8);
                 m.regs.set_cx(__r);
@@ -9020,9 +9093,10 @@ pub fn func_3b85(m: &mut Machine) {
             }
             0x3c1c => {
                 // 0x03c1c: xchg dh, dl
-                let __t = m.regs.dh();
-                m.regs.set_dh(m.regs.dl());
-                m.regs.set_dl((__t));
+                let __t = (m.regs.dh()) as u8;
+                let __u = (m.regs.dl()) as u8;
+                m.regs.set_dh(__u);
+                m.regs.set_dl(__t);
                 // 0x03c1e: dec si
                 let __r = m.regs.dec16((m.regs.si()) as u16);
                 m.regs.set_si(__r);
@@ -9102,9 +9176,10 @@ pub fn func_3b85(m: &mut Machine) {
             }
             0x3c43 => {
                 // 0x03c43: xchg dx, ax
-                let __t = m.regs.dx();
-                m.regs.set_dx(m.regs.ax());
-                m.regs.set_ax((__t));
+                let __t = (m.regs.dx()) as u16;
+                let __u = (m.regs.ax()) as u16;
+                m.regs.set_dx(__u);
+                m.regs.set_ax(__t);
                 // 0x03c44: pop si
                 let __v = m.read16(m.regs.ss, m.regs.sp() as u32);
                 m.regs.set_sp(m.regs.sp().wrapping_add(2));
@@ -9128,9 +9203,10 @@ pub fn func_3b85(m: &mut Machine) {
             }
             0x3c4c => {
                 // 0x03c4c: xchg ah, al
-                let __t = m.regs.ah();
-                m.regs.set_ah(m.regs.al());
-                m.regs.set_al((__t));
+                let __t = (m.regs.ah()) as u8;
+                let __u = (m.regs.al()) as u8;
+                m.regs.set_ah(__u);
+                m.regs.set_al(__t);
                 __blk = 0x3c4e;
             }
             0x3c4e => {
@@ -9582,6 +9658,215 @@ pub fn func_9240(m: &mut Machine) {
                 m.regs.set_sp(m.regs.sp().wrapping_add(2));
                 m.regs.es = (__v) as u16;
                 // 0x092a2: ret 
+                return;
+            }
+            _ => unreachable!(),
+        }
+    }
+}
+
+pub fn func_726(m: &mut Machine) {
+    let mut __blk: u32 = 0x726;
+    let mut __guard: u32 = 0;
+    loop {
+        __guard += 1;
+        if __guard > 5_000_000 { panic!("func_726: iteration guard tripped (non-terminating input)"); }
+        match __blk {
+            0x726 => {
+                // 0x00726: push bp
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, (m.regs.bp()) as u16);
+                // 0x00727: push cx
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, (m.regs.cx()) as u16);
+                // 0x00728: push di
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, (m.regs.di()) as u16);
+                // 0x00729: push si
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, (m.regs.si()) as u16);
+                // 0x0072a: mov bp, 0x23a
+                m.regs.set_bp((0x23a) as u16);
+                __blk = 0x72d;
+            }
+            0x72d => {
+                // 0x0072d: cmp byte ptr [bp], 0
+                m.regs.cmp8((m.read8(m.regs.ss, ((m.regs.bp()) as u32))) as u8, (0x0) as u8);
+                // 0x00731: je 0x797
+                if m.regs.zf { __blk = 0x797; } else { __blk = 0x733; }
+            }
+            0x733 => {
+                // 0x00733: mov cx, 3
+                m.regs.set_cx((0x3) as u16);
+                // 0x00736: push bp
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, (m.regs.bp()) as u16);
+                // 0x00737: push di
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, (m.regs.di()) as u16);
+                __blk = 0x738;
+            }
+            0x738 => {
+                // 0x00738: mov al, byte ptr [bp]
+                m.regs.set_al((m.read8(m.regs.ss, ((m.regs.bp()) as u32))) as u8);
+                // 0x0073b: cmp al, byte ptr es:[di]
+                m.regs.cmp8((m.regs.al()) as u8, (m.read8(m.regs.es, ((m.regs.di()) as u32))) as u8);
+                // 0x0073e: jne 0x754
+                if !m.regs.zf { __blk = 0x754; } else { __blk = 0x740; }
+            }
+            0x740 => {
+                // 0x00740: inc bp
+                let __r = m.regs.inc16((m.regs.bp()) as u16);
+                m.regs.set_bp(__r);
+                // 0x00741: inc di
+                let __r = m.regs.inc16((m.regs.di()) as u16);
+                m.regs.set_di(__r);
+                // 0x00742: loop 0x738
+                let __c = m.regs.cx().wrapping_sub(1); m.regs.set_cx(__c);
+                if __c != 0 { __blk = 0x738; } else { __blk = 0x744; }
+            }
+            0x744 => {
+                // 0x00744: add sp, 4
+                let __r = m.regs.add16((m.regs.sp()) as u16, (0x4) as u16);
+                m.regs.set_sp(__r);
+                // 0x00747: mov al, byte ptr [bp]
+                m.regs.set_al((m.read8(m.regs.ss, ((m.regs.bp()) as u32))) as u8);
+                // 0x0074a: test al, 1
+                m.regs.test8((m.regs.al()) as u8, (0x1) as u8);
+                // 0x0074c: jne 0x782
+                if !m.regs.zf { __blk = 0x782; } else { __blk = 0x74e; }
+            }
+            0x74e => {
+                // 0x0074e: test al, 2
+                m.regs.test8((m.regs.al()) as u8, (0x2) as u8);
+                // 0x00750: jne 0x75b
+                if !m.regs.zf { __blk = 0x75b; } else { __blk = 0x752; }
+            }
+            0x752 => {
+                // 0x00752: jmp 0x797
+                __blk = 0x797;
+            }
+            0x754 => {
+                // 0x00754: pop di
+                let __v = m.read16(m.regs.ss, m.regs.sp() as u32);
+                m.regs.set_sp(m.regs.sp().wrapping_add(2));
+                m.regs.set_di((__v) as u16);
+                // 0x00755: pop bp
+                let __v = m.read16(m.regs.ss, m.regs.sp() as u32);
+                m.regs.set_sp(m.regs.sp().wrapping_add(2));
+                m.regs.set_bp((__v) as u16);
+                // 0x00756: add bp, 5
+                let __r = m.regs.add16((m.regs.bp()) as u16, (0x5) as u16);
+                m.regs.set_bp(__r);
+                // 0x00759: jmp 0x72d
+                __blk = 0x72d;
+            }
+            0x75b => {
+                // 0x0075b: push es
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, (m.regs.es) as u16);
+                // 0x0075c: push ds
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, (m.regs.ds) as u16);
+                // 0x0075d: mov si, di
+                m.regs.set_si((m.regs.di()) as u16);
+                // 0x0075f: push es
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, (m.regs.es) as u16);
+                // 0x00760: pop ds
+                let __v = m.read16(m.regs.ss, m.regs.sp() as u32);
+                m.regs.set_sp(m.regs.sp().wrapping_add(2));
+                m.regs.ds = (__v) as u16;
+                // 0x00761: xor bl, bl
+                let __r = m.regs.xor8((m.regs.bl()) as u8, (m.regs.bl()) as u8);
+                m.regs.set_bl(__r);
+                // 0x00763: xchg byte ptr [si + 3], bl
+                let __t = (m.read8(m.regs.ds, ((m.regs.si().wrapping_add(0x3u16)) as u32))) as u8;
+                let __u = (m.regs.bl()) as u8;
+                m.write8(m.regs.ds, ((m.regs.si().wrapping_add(0x3u16)) as u32), __u);
+                m.regs.set_bl(__t);
+                // 0x00766: lcall 0x1ce, 0x332
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, m.regs.cs);
+                m.regs.set_sp(m.regs.sp().wrapping_sub(2));
+                m.write16(m.regs.ss, m.regs.sp() as u32, 0x76b);
+                func_2612(m);
+                m.regs.set_sp(m.regs.sp().wrapping_add(4));
+                // 0x0076b: shl ax, 4
+                let __r = m.regs.shl16((m.regs.ax()) as u16, (0x4) as u8);
+                m.regs.set_ax(__r);
+                // 0x0076e: sub bl, 0x30
+                let __r = m.regs.sub8((m.regs.bl()) as u8, (0x30) as u8);
+                m.regs.set_bl(__r);
+                // 0x00771: or al, bl
+                let __r = m.regs.or8((m.regs.al()) as u8, (m.regs.bl()) as u8);
+                m.regs.set_al(__r);
+                // 0x00773: mov word ptr gs:[0xc45], ax
+                m.write16(m.regs.gs, 0xc45u32, (m.regs.ax()) as u16);
+                // 0x00777: mov al, byte ptr [bp + 1]
+                m.regs.set_al((m.read8(m.regs.ss, ((m.regs.bp().wrapping_add(0x1u16)) as u32))) as u8);
+                // 0x0077a: mov byte ptr gs:[0xc3b], al
+                m.write8(m.regs.gs, 0xc3bu32, (m.regs.al()) as u8);
+                // 0x0077e: pop ds
+                let __v = m.read16(m.regs.ss, m.regs.sp() as u32);
+                m.regs.set_sp(m.regs.sp().wrapping_add(2));
+                m.regs.ds = (__v) as u16;
+                // 0x0077f: pop es
+                let __v = m.read16(m.regs.ss, m.regs.sp() as u32);
+                m.regs.set_sp(m.regs.sp().wrapping_add(2));
+                m.regs.es = (__v) as u16;
+                // 0x00780: jmp 0x797
+                __blk = 0x797;
+            }
+            0x782 => {
+                // 0x00782: mov bp, 0x1ba
+                m.regs.set_bp((0x1ba) as u16);
+                __blk = 0x785;
+            }
+            0x785 => {
+                // 0x00785: mov al, byte ptr es:[di]
+                m.regs.set_al((m.read8(m.regs.es, ((m.regs.di()) as u32))) as u8);
+                // 0x00788: or al, al
+                let __r = m.regs.or8((m.regs.al()) as u8, (m.regs.al()) as u8);
+                m.regs.set_al(__r);
+                // 0x0078a: je 0x793
+                if m.regs.zf { __blk = 0x793; } else { __blk = 0x78c; }
+            }
+            0x78c => {
+                // 0x0078c: mov byte ptr [bp], al
+                m.write8(m.regs.ss, ((m.regs.bp()) as u32), (m.regs.al()) as u8);
+                // 0x0078f: inc bp
+                let __r = m.regs.inc16((m.regs.bp()) as u16);
+                m.regs.set_bp(__r);
+                // 0x00790: inc di
+                let __r = m.regs.inc16((m.regs.di()) as u16);
+                m.regs.set_di(__r);
+                // 0x00791: jmp 0x785
+                __blk = 0x785;
+            }
+            0x793 => {
+                // 0x00793: mov byte ptr [bp - 1], 0
+                m.write8(m.regs.ss, ((m.regs.bp().wrapping_add(0xffffu16)) as u32), (0x0) as u8);
+                __blk = 0x797;
+            }
+            0x797 => {
+                // 0x00797: pop si
+                let __v = m.read16(m.regs.ss, m.regs.sp() as u32);
+                m.regs.set_sp(m.regs.sp().wrapping_add(2));
+                m.regs.set_si((__v) as u16);
+                // 0x00798: pop di
+                let __v = m.read16(m.regs.ss, m.regs.sp() as u32);
+                m.regs.set_sp(m.regs.sp().wrapping_add(2));
+                m.regs.set_di((__v) as u16);
+                // 0x00799: pop cx
+                let __v = m.read16(m.regs.ss, m.regs.sp() as u32);
+                m.regs.set_sp(m.regs.sp().wrapping_add(2));
+                m.regs.set_cx((__v) as u16);
+                // 0x0079a: pop bp
+                let __v = m.read16(m.regs.ss, m.regs.sp() as u32);
+                m.regs.set_sp(m.regs.sp().wrapping_add(2));
+                m.regs.set_bp((__v) as u16);
+                // 0x0079b: ret 
                 return;
             }
             _ => unreachable!(),

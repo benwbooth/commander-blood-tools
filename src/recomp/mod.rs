@@ -704,6 +704,7 @@ mod tests {
             ("func_9b04", super::auto::func_9b04),
             ("func_9f80", super::auto::func_9f80),
             ("func_a117", super::auto::func_a117),
+            ("func_a38e", super::auto::func_a38e),
             ("func_a3ad", super::auto::func_a3ad),
             ("func_a3d0", super::auto::func_a3d0),
             ("func_a40b", super::auto::func_a40b),
@@ -766,6 +767,7 @@ mod tests {
             ("func_82c3", super::auto::func_82c3),
             ("func_40d0", super::auto::func_40d0),
             ("func_9240", super::auto::func_9240),
+            ("func_726", super::auto::func_726),
             ("func_14ca", super::auto::func_14ca),
             ("func_792d", super::auto::func_792d),
         ];
