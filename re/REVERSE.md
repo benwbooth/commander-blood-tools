@@ -3765,3 +3765,13 @@ manu3 file offset 0x1370).
   -> a skeletal hand (fingers = child nodes). Static root node @0x35E4 (Q15
   identity, zero pos). NEXT: decode the 3DB0 bank layout (node tree + vertex/
   face lists + UV), then port to src/manu3.rs.
+- Read-watch on the 3DB0 bank (BRIDGEPROBE, new Machine.read_watch): per-frame
+  consumers manu3+0x0273/0x0550/0x068A/0x0700 — the bank region is initialized
+  IN PLACE as live record tables. The 0x068A loop: cx=[0x22FE] records, walk
+  di=fs:[0x22FA] stride 0x14 (20 bytes), copy {dword +0x0A, dword +0x0E, word
+  +0x12} (pose fields) from each record's SOURCE ptr (+4) — an animation-pose
+  copy pass. fs:[2] supplies the data segment. So the hand's live pose flows
+  source-records -> 0x14-stride table -> node transform -> edge list -> blitter.
+  NEXT (continuation plan): coverage-trace manu3's segment (trap_ips) at the
+  console to enumerate its per-frame call tree, then decompile top-down into
+  src/manu3.rs (transform 0x420/0x468, edge insert, span walk, blitter 0xB5D).
