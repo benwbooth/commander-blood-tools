@@ -1224,7 +1224,7 @@ fn main() {
             }
             for &(cs, ip, ds, si, addr) in rt.m.watch_hits.iter() {
                 // Only surface writes into the composition/back-buffer/VRAM ranges.
-                if (0x30000..0x40000).contains(&addr) || addr >= 0xA0000 {
+                if (0x266C0..0x366C0).contains(&addr) || addr >= 0xA0000 {
                     println!("0xE8 pixel writer {cs:04x}:{ip:04x} -> {addr:#07x} (ds:si={ds:04x}:{si:04x})");
                 }
             }
