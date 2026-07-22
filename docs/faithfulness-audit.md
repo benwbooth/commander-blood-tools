@@ -76,6 +76,25 @@ everywhere.** Priority = how visible/audible + how confidently fixable.
    a console COMPOSITE view (crew HNM + pyramid menu + buttons) rather than bridge-or-dialogue.
    This is architecture work (a hub/composite model), not a one-line toggle — do it deliberately,
    verified frame-by-frame vs captures 1-9, not guessed.
+   OPEN UNCERTAINTY (must resolve before building the composite — do NOT guess): frames 6-9 show a
+   GRAY 3D-pyramid FLOOR + central eye-orb + a crew-in-viewscreen (top ~75%). But `render_bridge`
+   draws the tb.big panorama + a GOLDEN choice-box menu, which memory records as PIXEL-VERIFIED vs
+   the live game ([[commander-blood-bridge-panorama]], accuracy/captures/bridge/*). So the frames-
+   6-9 view is a DIFFERENT console state/screen than the verified golden-menu bridge — not simply
+   "the port is wrong". Resolve FIRST (deeper RE or interactive capture): is the gray-pyramid floor
+   the OPTION/manu3 mesh, a decorative console floor, or the default nav console? How does the
+   crew-in-viewscreen relate to the bridge vs the dialogue talk-HNM? Are 6-9 the intro-tutorial
+   state specifically? Only after this is grounded can the composite be built faithfully. Sourced:
+   render_bridge/render_option_menu (engine.rs) + captures 6-9 + the bridge/ capture set.
+   RESOLVED (compared captures): frames 6-9 ARE a distinct screen from the bridge. The verified
+   bridge (accuracy/captures/bridge/choice_box_bob_morlock.ppm, script2_first_frame.ppm) is the
+   PURPLE ORGANIC PANORAMA + GOLDEN HONK/TELEPHONE menu + orange orb + blue hand — and SCRIPT2
+   opens on it. Frames 6-9 (SCRIPT1 intro/tutorial) are a GRAY 3D-pyramid floor + eye-orb + a crew
+   member in the viewscreen — no purple panorama, no golden menu. So the game has (≥)2 console
+   screens: the bridge (nav/SCRIPT2+) and the SCRIPT1-tutorial pyramid-console. The port renders
+   the bridge for both and lacks the tutorial console. STILL TO GROUND before building: exactly
+   what the gray-pyramid floor is (OPTION/manu3 mesh? a distinct tutorial console?) and its draw
+   path in the asm — do that RE first, then build; do not guess the composite.
 2. **Intro/HNM playback RATE** (`INTRO_CREDIT_FRAMES_PER_TICK = 1`, one HNM frame per game step).
    A guess flagged "calibratable". Source: the HNM player's frame-advance timing in the asm (ticks
    per HNM frame) + the DESCRIPT tick unit. RISK: intro plays too fast/slow; subtitles mistimed.
