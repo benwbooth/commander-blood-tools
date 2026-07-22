@@ -74,7 +74,7 @@ Against the Definition of Done below:
 | 6b | Console functions | **Done** | all five: HONK (SCRIPT1), TELEPHONE (video-phone), CRYOBOX (cryo-chamber), MENU ({EXPLANATIONS,GAME} submenu), **OPTION** (3D pyramid menu from decoded `manu3.xdb` + `manu3.rs` + ship-3D projection) |
 | 6c | Mini-game | **Done (grounded)** | cyberspace hyperspace **traversal**: steer through the real `hyper_*.hnm` segments to arrival; tunnel video is decoded, the steer/arrive interaction is the port's documented interpretation |
 | 7 | Save/load state | **Done** | `save.rs` = port-native F5/F9 state; **`bloodsav.rs` = the byte-exact DOS `blood.sav` layout, now DECODED** (profile u16 + 512 flags + 96 state + runtime object/work blocks, from save/load @0x1C3F/0x1CBD) with a tested reader/writer |
-| 8 | Oracle suite | **Partial** | per-behavior tests + smoke playthrough (now covers every screen incl. OPTION + the cyberspace traversal to arrival); no full frame-diff oracle suite |
+| 8 | Oracle suite | **Substantially done** | a runnable representative frame-diff oracle suite (`tests/oracle_suite.rs`) pixel-diffs the port vs real-game emulator captures with measured thresholds — panorama decode (console 2.47, steered 3.8/3.4) + full engine console render (0.14), PASS/FAIL reported; plus per-widget structural oracles (choice box 0x15/0xE0/0xE8, list-menu geometry), the Mindscape HNM oracle (1.09), and the smoke playthrough. Remaining scope = broadening the corpus to dialogue-scene + planet frames |
 
 Phase status: **Phase 1 (data layer) and Phase 2 (script VM/trace) complete;
 Phase 3 (game-accurate presentation) substantially complete** (subtitle assembly,
