@@ -928,8 +928,20 @@ impl EngineState {
     /// so a black backdrop (index 0xE0, DAC 0,0,0) is filled behind them for
     /// legibility. `selected` re-renders one row in the brighter 0xEF white.
     const CHOICE_BOX_CENTER_X: usize = 100;
-    const CHOICE_BOX_TOP_Y: usize = 89;
+    /// The choice box is VERTICALLY CENTERED: the centre of the row-tops sits on
+    /// this y regardless of item count (measured: 1 item → top y=95, 2 items →
+    /// tops 89/100 whose centre is 94.5; both anchor the tops-centre at ~95).
+    const CHOICE_BOX_TOPS_CENTER_Y: usize = 95;
     const CHOICE_BOX_PITCH: usize = 11;
+
+    /// The top y of the first choice-box row for a box of `rows` items (vertical
+    /// centring around [`Self::CHOICE_BOX_TOPS_CENTER_Y`]).
+    fn choice_box_top_y(rows: usize) -> usize {
+        (Self::CHOICE_BOX_TOPS_CENTER_Y as i32
+            - ((rows.max(1) as i32 - 1) * Self::CHOICE_BOX_PITCH as i32 + 1) / 2)
+            .max(0) as usize
+    }
+
     fn draw_choice_box(&mut self, labels: &[String], selected: Option<usize>) {
         if labels.is_empty() {
             return;
@@ -945,14 +957,15 @@ impl EngineState {
             .map(|l| crate::font::square_caps_text_width(l))
             .max()
             .unwrap_or(0);
+        let text_top = Self::choice_box_top_y(rows);
         // Black backdrop enclosing the centered text (3px padding each side); a
         // 3px border index (0x15) then the fill (0xE0) — both DAC(0,0,0), from the
         // prior live index-dump measurement (RGB can't distinguish them).
         let half = widest / 2 + 4;
         let x0 = Self::CHOICE_BOX_CENTER_X.saturating_sub(half);
         let x1 = (Self::CHOICE_BOX_CENTER_X + half).min(ENGINE_SCREEN_WIDTH);
-        let y0 = Self::CHOICE_BOX_TOP_Y.saturating_sub(3);
-        let y1 = (Self::CHOICE_BOX_TOP_Y + rows * Self::CHOICE_BOX_PITCH + 3).min(ENGINE_SCREEN_HEIGHT);
+        let y0 = text_top.saturating_sub(3);
+        let y1 = (text_top + rows * Self::CHOICE_BOX_PITCH + 3).min(ENGINE_SCREEN_HEIGHT);
         for y in y0..y1 {
             for x in x0..x1 {
                 let edge = y < y0 + 3 || y + 3 >= y1 || x < x0 + 3 || x + 3 >= x1;
@@ -969,7 +982,7 @@ impl EngineState {
                 ENGINE_SCREEN_HEIGHT,
                 label,
                 lx,
-                Self::CHOICE_BOX_TOP_Y + i * Self::CHOICE_BOX_PITCH,
+                text_top + i * Self::CHOICE_BOX_PITCH,
                 color,
             );
         }
@@ -985,9 +998,10 @@ impl EngineState {
         if !(40..=160).contains(&x) {
             return None;
         }
-        let top = Self::CHOICE_BOX_TOP_Y as i32 - 3;
+        let rows = num_rows.min(8);
+        let top = Self::choice_box_top_y(rows) as i32 - 3;
         let row = (y - top) / Self::CHOICE_BOX_PITCH as i32;
-        (row >= 0 && (row as usize) < num_rows.min(8)).then_some(row as usize)
+        (row >= 0 && (row as usize) < rows).then_some(row as usize)
     }
 
     /// Draw a LIST MENU — the game's blue square-capitals vertical list (topic
@@ -1382,8 +1396,12 @@ impl EngineState {
         if self.phone_contacts.is_empty() {
             return None;
         }
-        // Contacts render through draw_choice_box, so share its hit geometry.
-        self.choice_box_row_at(x, y, self.phone_contacts.len())
+        // The drawn box is [up to 7 contacts…, CANCEL] (see the dialling render),
+        // vertically centred for that total. Hit-test the same total, but only a
+        // contact row selects a call — the trailing CANCEL row backs out.
+        let contacts = self.phone_contacts.len().min(7);
+        let row = self.choice_box_row_at(x, y, contacts + 1)?;
+        (row < contacts).then_some(row)
     }
 
     /// Connect the call to `index` (switch to the video-feed state). Invalid index = no-op.
@@ -2972,6 +2990,62 @@ mod tests {
         assert!(iou > 0.55, "choice-box text must overlap the live capture (IoU {iou:.3} <= 0.55)");
     }
 
+    /// Oracle: a single-item choice box (the lone "CANCEL" offered post-tutorial)
+    /// is VERTICALLY CENTERED — with one row it sits lower (y=95) than a two-row
+    /// box's first row (y=89). Verifies the count-dependent vertical layout against
+    /// `post2_option_choice.ppm` (CANCEL at x73..130, y95..102).
+    #[test]
+    fn choice_box_single_item_is_vertically_centered_vs_capture() {
+        let path = ["accuracy/captures/bridge/post2_option_choice.ppm", "../accuracy/captures/bridge/post2_option_choice.ppm"]
+            .iter()
+            .map(Path::new)
+            .find(|p| p.exists());
+        let Some(path) = path else { return };
+        let raw = std::fs::read(path).unwrap();
+        let at = raw.windows(4).position(|w| w == b"255\n").unwrap() + 4;
+        let cap = &raw[at..];
+        if cap.len() != ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT * 3 {
+            return;
+        }
+        // One-row box lands at y=95 (not the two-row anchor 89).
+        assert_eq!(EngineState::choice_box_top_y(1), 95);
+        assert_eq!(EngineState::choice_box_top_y(2), 89);
+
+        let mut e = EngineState::new();
+        e.draw_choice_box(&["CANCEL".to_string()], None);
+
+        let is_grey = |o: usize| {
+            let (r, g, b) = (cap[o] as i32, cap[o + 1] as i32, cap[o + 2] as i32);
+            (r - 138).abs() < 45
+                && (g - 138).abs() < 45
+                && (b - 138).abs() < 45
+                && (r.max(g).max(b) - r.min(g).min(b)) < 25
+        };
+        // Vertical centroid of the CANCEL text (robust to the ~2px horizontal
+        // centering-rounding difference between the port and the capture): the
+        // port must place the row at the SAME height as the live game (~y98).
+        let centroid_y = |mut f: Box<dyn FnMut(usize, usize) -> bool>| {
+            let (mut sum, mut n) = (0f64, 0u32);
+            for y in 88..110usize {
+                for x in 55..150usize {
+                    if f(x, y) {
+                        sum += y as f64;
+                        n += 1;
+                    }
+                }
+            }
+            (n > 0).then(|| sum / n as f64)
+        };
+        let fb = e.framebuffer.clone();
+        let port_y = centroid_y(Box::new(move |x, y| fb[y * ENGINE_SCREEN_WIDTH + x] == 0xE8)).unwrap();
+        let live_y = centroid_y(Box::new(move |x, y| is_grey((y * ENGINE_SCREEN_WIDTH + x) * 3))).unwrap();
+        eprintln!("single-CANCEL vertical centroid: port={port_y:.1} live={live_y:.1}");
+        assert!(
+            (port_y - live_y).abs() < 2.0,
+            "single-item box must be vertically centered like the live game (port {port_y:.1} vs live {live_y:.1})"
+        );
+    }
+
     /// Oracle: the LIST MENU (dialogue topics / nav destinations) renders the
     /// square-capitals face at index 0xE8 at the measured geometry (x 175, rows
     /// from y 45, 11 px pitch). Locks the widget + face to the harvested values.
@@ -3240,7 +3314,11 @@ mod tests {
         assert!(!e.phone_connected(), "starts on the dial screen");
         assert!(e.framebuffer.iter().filter(|&&p| p != 0).count() > 500, "dial screen renders");
         // A click on the second contact row (choice-box row 1) connects that call.
-        let row = e.phone_contact_click(100, 100).expect("row 1 hits");
+        // The box is vertically centred for (contacts+CANCEL) rows, so derive row
+        // 1's y from that layout rather than assuming a fixed anchor.
+        let total = (e.phone_contact_count().min(7) + 1).min(8);
+        let y = (EngineState::choice_box_top_y(total) + EngineState::CHOICE_BOX_PITCH + 2) as u16;
+        let row = e.phone_contact_click(100, y).expect("row 1 hits");
         assert_eq!(row, 1);
         assert!(e.phone_connect(row));
         assert!(e.phone_connected(), "call connected");

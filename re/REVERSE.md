@@ -4464,3 +4464,18 @@ BOB_MORLOCK/CANCEL and compares the 0xE8 glyph mask to the capture's grey text
 mask → IoU 0.679 (BOB_MORLOCK lands pixel-exact x48..152; the residual is the
 capture's 1px inter-row center jitter against thin 1px strokes). Confirms centered
 layout (a left-aligned render scores near zero).
+
+## Choice box is VERTICALLY CENTERED (count-dependent top) — 2026-07-22
+
+The single-item "CANCEL" box (`post2_menu_choice.ppm` / `post2_option_choice.ppm`:
+CANCEL at x73..130, y95..102, centroid y98.5) vs the two-item BOB_MORLOCK/CANCEL
+box (rows y89/100) shows the choice box is VERTICALLY CENTERED, not top-anchored:
+the centre of the row-tops is fixed at y≈95 for any item count. Formula (ported):
+first_row_top = 95 - ((rows-1)*11 + 1)/2  → N=1→95, N=2→89, N=3→84, N=8→56.
+Implemented as EngineState::choice_box_top_y(rows); both draw_choice_box and the
+shared choice_box_row_at hit-test use it, and phone_contact_click accounts for the
+(contacts+CANCEL) total so its vertical layout matches the render. VERIFIED: oracle
+`choice_box_single_item_is_vertically_centered_vs_capture` — port vertical centroid
+98.5 == live 98.5 (exact); horizontal has a known ~2px per-label centering-rounding
+residual (capture centres CANCEL at 101.5 but BOB_MORLOCK at 100 — no single axis
+matches both; port uses x=100, exact for BOB_MORLOCK).
