@@ -4373,3 +4373,23 @@ tutorial→SCRIPT2 and save at the "WHAT DO YOU WANT COMMANDER" hub (a stable
 interactive point). THEN the `what`-topic path (decoded above) reaches the
 world-load. The full mechanism + dispatch are decoded; the block is purely a
 mid-transition savestate, now diagnosed.
+
+## CLEAN SAVESTATE regenerated + tested — block is CONVERSATION-FLOW, not state (2026-07-22 final)
+
+Fixed the mid-transition savestate: accuracy/script2.state now regenerated
+AFTER SCRIPT2 stabilizes (8 dialogue advances; runtime_boot TUTORIAL4 clean-save
+code) — script2_stable capture shows a STABLE interactive console (full golden
+menu HONK/TELEPHONE/CRYOBOX/MENU/OPTION + a CANCEL choice box), not the
+glowing-empty transition. But GRANTWALK from the CLEAN state (600 rounds) STILL
+leaves anchors empty / frame 45. So the block was NOT only savestate quality:
+even with a stable interactive console, exhaustive console-menu interaction does
+NOT reach the `what` destination chooser — because the path to `what` is through
+SCRIPT2's CONVERSATION FLOW (the concept-menu dialogue navigation to the navigate
+topic), which blind/exhaustive clicking does not traverse. FINAL precise resume
+point: the last unknown is SCRIPT2's conversation STRUCTURE — which topic
+sequence from the hub leads to the `what` navigate topic. Decode it by
+instrumenting the VM PC over a conversation-aware drive (read each concept menu's
+topics, pick the story-advancing one) until PC reaches the `what` function
+(0x11A4) → D2 (0x1269) → world load. Everything else in the #3/#6 chain is
+decoded: activation (0x8CCE), dispatch (`what` topic → function), and now a
+clean drivable savestate. This is a fresh-session conversation-flow RE task.
