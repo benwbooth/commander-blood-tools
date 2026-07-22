@@ -490,6 +490,16 @@ fn main() {
             let rw = |off: u32| -> u16 {
                 rt.m.read8(m3, off) as u16 | ((rt.m.read8(m3, off + 1) as u16) << 8)
             };
+            println!("manu3 data:[0]={:#06x} [2]={:#06x} [4]={:#06x} [6]={:#06x} [8]={:#06x}",
+                rw(0), rw(2), rw(4), rw(6), rw(8));
+            // Dump the vertex-buffer segment (fs:[2]) so the runtime vertex records
+            // (face-table targets) can be decoded offline.
+            {
+                let vseg = rw(2);
+                let base = (vseg as usize) * 16;
+                let dump: Vec<u8> = rt.m.mem[base..(base + 0x10000).min(rt.m.mem.len())].to_vec();
+                std::fs::write(out.join(format!("manu3_vertseg_{vseg:04x}.bin")), &dump).unwrap();
+            }
             let (faces, nfaces) = (rw(0x2300), rw(0x2304));
             let (recs, nrecs) = (rw(0x22fa), rw(0x22fe));
             println!("manu3 live: faces@{faces:#06x} n={nfaces:#x} pose-recs@{recs:#06x} n={nrecs:#x} root={:#06x} list2={:#06x}", rw(0x2248), rw(0x224a));
