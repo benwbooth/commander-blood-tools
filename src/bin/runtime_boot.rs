@@ -542,7 +542,60 @@ fn main() {
                 let line_a = ocr(&rt.screen_indices(), &font);
                 let _ = rt.run(rt.cpu.steps + 400_000);
                 let line_b = ocr(&rt.screen_indices(), &font);
-                let line = if line_a == line_b { line_b } else { String::new() };
+                let mut line = if line_a == line_b { line_b } else { String::new() };
+                // Second pass: scene subtitles (letterboxed close-ups) use the
+                // THIN variable-width GAME_FONT at index 0xEF — the port's own
+                // decoded font tables read them directly.
+                if line.is_empty() {
+                    use commander_blood_tools::font::{game_font_advance, game_font_glyph};
+                    let idx = rt.screen_indices();
+                    let lit = |px: u8| px == 0xEE || px == 0xEF;
+                    let mut text = String::new();
+                    let mut row0 = 6usize;
+                    while row0 < 30 {
+                        let mut l = String::new();
+                        let mut blanks = 0usize;
+                        let mut x = 0usize;
+                        while x < 312 {
+                            let mut got = None;
+                            for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'\",.!?-".chars() {
+                                let Some(gl) = game_font_glyph(ch) else { continue };
+                                let adv = game_font_advance(ch);
+                                let total: u32 = gl.rows.iter().map(|r| r.count_ones()).sum();
+                                if total < 4 { continue; }
+                                let mut ok = true;
+                                'c: for gy in 0..8usize {
+                                    for gx in 0..adv.min(8) {
+                                        let on = (gl.rows[gy] >> (7 - gx)) & 1 == 1;
+                                        let px = idx
+                                            .get((row0 + gy) * 320 + x + gx)
+                                            .copied()
+                                            .unwrap_or(0);
+                                        if on != lit(px) { ok = false; break 'c; }
+                                    }
+                                }
+                                if ok { got = Some((ch, adv)); break; }
+                            }
+                            if let Some((ch, adv)) = got {
+                                if blanks >= 5 && !l.is_empty() { l.push(' '); }
+                                l.push(ch);
+                                blanks = 0;
+                                x += adv.max(2);
+                            } else {
+                                blanks += 1;
+                                x += 1;
+                            }
+                        }
+                        if l.chars().filter(|c| c.is_ascii_alphanumeric()).count() >= 3 {
+                            if !text.is_empty() { text.push(' '); }
+                            text.push_str(&l);
+                            row0 += 8;
+                        } else {
+                            row0 += 1;
+                        }
+                    }
+                    line = text;
+                }
                 if line != last && !line.is_empty() {
                     println!("round {round}: OCR {line:?}");
                     last = line.clone();
