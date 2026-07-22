@@ -6,46 +6,107 @@
 //! `int` (which needs Runtime state: file table, DOS/BIOS/port handlers). So I/O
 //! functions are lifted here as **Runtime-context** functions that call the same
 //! `Runtime::native_int` / port handlers the interpreter uses, and are verified
-//! against the INTERPRETER (deterministic — same handlers). This module holds the
-//! first such lift, proving the architecture; the rest follow the same shape.
+//! against the INTERPRETER (deterministic — same handlers). Each lift follows the
+//! same shape: translate the CPU ops, and for an `int`, [`int_call`] pushes the
+//! interrupt frame (FLAGS, CS, IP) so `native_int`'s IRET balances the stack.
 
 use super::runtime::Runtime;
 
-/// `func_cc0` (`set_video_mode_saved`, file 0x0CC0): restore the saved video mode.
-/// `push ax; xor ax,ax; mov al,gs:[0x5232]; int 0x10; pop ax; retf` — sets BIOS video
-/// mode `AH=0` to the byte saved at `gs:0x5232`. The `int 0x10` routes through
-/// `Runtime::native_int` (the same DOS/BIOS service the interpreter uses).
-pub fn func_cc0(rt: &mut Runtime) {
-    // push ax
-    let (ss, sp0) = (rt.m.regs.ss, rt.m.regs.sp());
-    let sp = sp0.wrapping_sub(2);
+/// Push a 16-bit word onto the guest stack (SS:SP).
+fn push16(rt: &mut Runtime, v: u16) {
+    let sp = rt.m.regs.sp().wrapping_sub(2);
     rt.m.regs.set_sp(sp);
-    let ax = rt.m.regs.ax();
-    rt.m.write16(ss, sp as u32, ax);
-    // xor ax, ax
-    rt.m.regs.set_ax(0);
-    // mov al, gs:[0x5232]
-    let gs = rt.m.regs.gs;
-    let al = rt.m.read8(gs, 0x5232);
-    rt.m.regs.set_al(al);
-    // int 0x10 — BIOS video service (AH=0 set mode). Real `int` pushes the frame
-    // (FLAGS, CS, IP); native_int services then IRETs (pops the frame). We push the
-    // matching frame so the net stack effect is zero and the service runs correctly.
+    let ss = rt.m.regs.ss;
+    rt.m.write16(ss, sp as u32, v);
+}
+
+/// Pop a 16-bit word from the guest stack (SS:SP).
+fn pop16(rt: &mut Runtime) -> u16 {
+    let (ss, sp) = (rt.m.regs.ss, rt.m.regs.sp());
+    let v = rt.m.read16(ss, sp as u32);
+    rt.m.regs.set_sp(sp.wrapping_add(2));
+    v
+}
+
+/// Service an `int vector` from a lifted function exactly as the CPU + handler do:
+/// push the interrupt frame (FLAGS, CS, IP) as the real `int` instruction does, then
+/// `native_int` services it and IRETs (popping the frame). Net stack effect zero.
+fn int_call(rt: &mut Runtime, vector: u8) {
     let flags =
         super::interp::flags_word(&rt.m.regs) | ((rt.cpu.iflag as u16) << 9) | rt.cpu.flags_high;
     let (cs, ip) = (rt.cpu.cs, rt.cpu.ip);
-    for w in [flags, cs, ip] {
-        let sp = rt.m.regs.sp().wrapping_sub(2);
-        rt.m.regs.set_sp(sp);
-        rt.m.write16(rt.m.regs.ss, sp as u32, w);
-    }
-    let _ = rt.native_int(0x10); // services int 0x10 and IRETs the frame we pushed
-    // pop ax
-    let (ss, sp) = (rt.m.regs.ss, rt.m.regs.sp());
-    let popped = rt.m.read16(ss, sp as u32);
-    rt.m.regs.set_sp(sp.wrapping_add(2));
-    rt.m.regs.set_ax(popped);
-    // retf — the caller resumes; net stack effect is balanced (push/pop cancel).
+    push16(rt, flags);
+    push16(rt, cs);
+    push16(rt, ip);
+    let _ = rt.native_int(vector);
+}
+
+/// `func_cc0` (`set_video_mode_saved`, 0x0CC0): `push ax; xor ax,ax;
+/// mov al,gs:[0x5232]; int 0x10; pop ax; retf` — set BIOS video mode to the byte
+/// saved at gs:0x5232.
+pub fn func_cc0(rt: &mut Runtime) {
+    push16(rt, rt.m.regs.ax());
+    rt.m.regs.set_ax(0);
+    let gs = rt.m.regs.gs;
+    let al = rt.m.read8(gs, 0x5232);
+    rt.m.regs.set_al(al);
+    int_call(rt, 0x10);
+    let ax = pop16(rt);
+    rt.m.regs.set_ax(ax);
+}
+
+/// `func_d4a` (`mouse_set_hrange`, 0x0D4A): `push ax,bx,cx,dx; cx=ax; dx=bx; ax=7;
+/// int 33h; pop dx,cx; ax=8; int 33h; pop bx,ax; retf` — set the mouse cursor's
+/// horizontal (fn 7) then vertical (fn 8) range to [AX,BX].
+pub fn func_d4a(rt: &mut Runtime) {
+    push16(rt, rt.m.regs.ax());
+    push16(rt, rt.m.regs.bx());
+    push16(rt, rt.m.regs.cx());
+    push16(rt, rt.m.regs.dx());
+    let (ax, bx) = (rt.m.regs.ax(), rt.m.regs.bx());
+    rt.m.regs.set_cx(ax);
+    rt.m.regs.set_dx(bx);
+    rt.m.regs.set_ax(7);
+    int_call(rt, 0x33);
+    let dx = pop16(rt);
+    rt.m.regs.set_dx(dx);
+    let cx = pop16(rt);
+    rt.m.regs.set_cx(cx);
+    rt.m.regs.set_ax(8);
+    int_call(rt, 0x33);
+    let bx = pop16(rt);
+    rt.m.regs.set_bx(bx);
+    let ax = pop16(rt);
+    rt.m.regs.set_ax(ax);
+}
+
+/// `func_cef` (`mouse_reset_hide`, 0x0CEF): reset the mouse driver (fn 0), hide the
+/// cursor (fn 2), and set the mickey/pixel ratio (fn 0xF, cx=dx=0xC). The game draws
+/// its own cursor.
+pub fn func_cef(rt: &mut Runtime) {
+    push16(rt, rt.m.regs.ax());
+    push16(rt, rt.m.regs.bx());
+    push16(rt, rt.m.regs.cx());
+    push16(rt, rt.m.regs.dx());
+    push16(rt, rt.m.regs.es);
+    rt.m.regs.set_ax(0);
+    int_call(rt, 0x33);
+    rt.m.regs.set_ax(2);
+    int_call(rt, 0x33);
+    rt.m.regs.set_cx(0xc);
+    rt.m.regs.set_dx(0xc);
+    rt.m.regs.set_ax(0xf);
+    int_call(rt, 0x33);
+    let es = pop16(rt);
+    rt.m.regs.es = es;
+    let dx = pop16(rt);
+    rt.m.regs.set_dx(dx);
+    let cx = pop16(rt);
+    rt.m.regs.set_cx(cx);
+    let bx = pop16(rt);
+    rt.m.regs.set_bx(bx);
+    let ax = pop16(rt);
+    rt.m.regs.set_ax(ax);
 }
 
 #[cfg(test)]
@@ -54,39 +115,141 @@ mod tests {
     use std::path::PathBuf;
 
     fn test_runtime() -> Runtime {
-        // Same roots the boot uses; construction alone (no boot) is enough here.
         Runtime::new(PathBuf::from("accuracy/cdrive"), PathBuf::from("output/_tmp_iso"))
     }
 
-    /// The Runtime-context I/O lift runs correctly: it preserves AX (balanced
-    /// push/pop), leaves SP net-unchanged, loads the saved mode into AL, and its
-    /// `int 0x10` routes through `native_int` (BIOS video service) without fault —
-    /// proving the I/O-lift architecture (Runtime-context + native_int) works.
+    /// The raw BLOODPRG.EXE image, mirrored at physical 0 (CS=0, IP=file offset) exactly as the
+    /// pure-CPU oracle maps it — so the interpreter executes the REAL function bytes.
+    fn load_exe() -> Option<Vec<u8>> {
+        let raw = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+            .ok()?;
+        let mut img = raw;
+        img.resize(0x120000, 0);
+        Some(img)
+    }
+
+    /// INTERPRETER ORACLE: execute the real function bytes at file `offset` (CS=0) through the
+    /// interpreter until its terminal `retf` (depth-0 return), servicing each `int` through the
+    /// SAME [`int_call`] path the lifts use. Leaves `rt` holding the real function's output state.
+    /// This validates the hand-written CPU translation (register/stack/memory plumbing) against the
+    /// original instruction stream — the interpreter is the oracle (Unicorn can't model DOS I/O).
+    /// The caller must mirror the EXE at physical 0 (see the test) BEFORE seeding, so the seed's
+    /// scratch memory survives — a 16-bit segment can't address above the 0x120000 mirror.
+    fn interp_leaf(rt: &mut Runtime, offset: u16) {
+        rt.cpu.cs = 0;
+        rt.cpu.ip = offset;
+        rt.m.regs.cs = 0;
+        rt.cpu.depth = 0;
+        for _ in 0..100_000 {
+            match rt.cpu.run(&mut rt.m, 4096) {
+                super::super::interp::Exit::Ret | super::super::interp::Exit::Retf => return,
+                super::super::interp::Exit::Int { vector } => int_call(rt, vector),
+                super::super::interp::Exit::StepLimit => continue,
+                other => panic!("interp_leaf: unexpected exit {other:?} at offset {offset:#x}"),
+            }
+        }
+        panic!("interp_leaf: {offset:#x} did not return within guard");
+    }
+
+    /// Set the register state each leaf is verified from (arbitrary sentinels in every register
+    /// the lift touches, so a mis-plumbed push/pop is caught).
+    fn seed(rt: &mut Runtime) {
+        rt.m.regs.ss = 0x2000;
+        rt.m.regs.set_sp(0x0100);
+        rt.m.regs.set_ax(0xBEEF);
+        rt.m.regs.set_bx(0x0130);
+        rt.m.regs.set_cx(0xAAAA);
+        rt.m.regs.set_dx(0xBBBB);
+        rt.m.regs.es = 0x1357;
+        rt.m.regs.gs = 0x3000;
+        rt.m.write8(0x3000, 0x5232, 0x03); // saved video mode for func_cc0
+        // A distinct sentinel in the BIOS video-mode byte so func_cc0 genuinely changes it (3≠0xEE)
+        // and the leaves that DON'T set it (d4a/cef) leave 0xEE on both sides. Written after the
+        // EXE mirror so it isn't clobbered by the byte at physical 0x449.
+        rt.m.write8(0x40, 0x49, 0xEE);
+    }
+
+    /// Every Runtime-context I/O lift reproduces the REAL function bytes exactly: run the lift and
+    /// the interpreter-over-the-original-bytes from an identical seed state and assert the full
+    /// observable state (all GP regs, SP, ES, video mode, mouse state) is bit-identical. This is
+    /// the same "oracle-verified" standard the pure-CPU lifts have — here the interpreter is the
+    /// oracle. Adding a leaf to this table is the gate for calling it verified.
     #[test]
-    fn io_lift_func_cc0_executes_and_preserves_state() {
+    fn io_lifts_match_interpreter_oracle() {
+        let Some(exe) = load_exe() else { return };
+        let leaves: &[(&str, u16, fn(&mut Runtime))] = &[
+            ("func_cc0", 0x0cc0, func_cc0),
+            ("func_d4a", 0x0d4a, func_d4a),
+            ("func_cef", 0x0cef, func_cef),
+        ];
+        for &(name, offset, lift) in leaves {
+            let mut rt_lift = test_runtime();
+            seed(&mut rt_lift);
+            lift(&mut rt_lift);
+
+            let mut rt_oracle = test_runtime();
+            // Mirror the EXE at physical 0 (CS=0, IP=offset) BEFORE seeding so the seed's scratch
+            // memory (gs:0x5232, stack) isn't clobbered by the mirror.
+            rt_oracle.m.mem[..exe.len()].copy_from_slice(&exe);
+            seed(&mut rt_oracle);
+            interp_leaf(&mut rt_oracle, offset);
+
+            let l = &rt_lift.m.regs;
+            let o = &rt_oracle.m.regs;
+            assert_eq!(l.ax(), o.ax(), "{name}: AX (lift {:#x} vs real {:#x})", l.ax(), o.ax());
+            assert_eq!(l.bx(), o.bx(), "{name}: BX");
+            assert_eq!(l.cx(), o.cx(), "{name}: CX");
+            assert_eq!(l.dx(), o.dx(), "{name}: DX");
+            assert_eq!(l.sp(), o.sp(), "{name}: SP (stack balance)");
+            assert_eq!(l.es, o.es, "{name}: ES");
+            assert_eq!(
+                rt_lift.m.read8(0x40, 0x49),
+                rt_oracle.m.read8(0x40, 0x49),
+                "{name}: BIOS video mode"
+            );
+            assert_eq!(rt_lift.mouse_shown, rt_oracle.mouse_shown, "{name}: mouse_shown");
+        }
+    }
+
+    /// The Runtime-context I/O lifts run correctly: they preserve their pushed
+    /// registers (balanced push/pop, net-zero SP) and their `int`s route through
+    /// native_int with the right side effects — proving the I/O-lift architecture.
+    #[test]
+    fn io_lifts_preserve_state_and_service_interrupts() {
+        // func_cc0: sets video mode from gs:0x5232, preserves AX.
         let mut rt = test_runtime();
-        // Set up a valid stack + the saved video mode at gs:0x5232.
         rt.m.regs.ss = 0x2000;
         rt.m.regs.set_sp(0x0100);
         rt.m.regs.set_ax(0xBEEF);
         let gs = rt.m.regs.gs;
-        rt.m.write8(gs, 0x5232, 0x03); // saved mode = 3 (80x25 text)
-        let (ss0, sp0) = (rt.m.regs.ss, rt.m.regs.sp());
-
+        rt.m.write8(gs, 0x5232, 0x03);
         func_cc0(&mut rt);
+        assert_eq!(rt.m.regs.ax(), 0xBEEF, "cc0 preserves AX");
+        assert_eq!(rt.m.regs.sp(), 0x0100, "cc0 net-zero SP");
+        assert_eq!(rt.m.read8(0x40, 0x49), 0x03, "cc0 set the video mode");
 
-        eprintln!(
-            "after func_cc0: ax={:#06x} sp={:#06x} ss={:#06x} mode(40:49)={:#04x}",
-            rt.m.regs.ax(),
-            rt.m.regs.sp(),
-            rt.m.regs.ss,
-            rt.m.read8(0x40, 0x49)
-        );
-        // AX is restored (balanced push/pop); SP and SS are net-unchanged.
-        assert_eq!(rt.m.regs.ax(), 0xBEEF, "AX preserved");
-        assert_eq!(rt.m.regs.sp(), sp0, "SP net-unchanged");
-        assert_eq!(rt.m.regs.ss, ss0, "SS unchanged");
-        // The BIOS current-video-mode byte (40:0x49) reflects the set mode (3).
-        assert_eq!(rt.m.read8(0x40, 0x49), 0x03, "int 0x10 set the video mode via native_int");
+        // func_d4a: set mouse H/V range; preserves AX/BX/CX/DX.
+        let mut rt = test_runtime();
+        rt.m.regs.ss = 0x2000;
+        rt.m.regs.set_sp(0x0100);
+        rt.m.regs.set_ax(0x0010);
+        rt.m.regs.set_bx(0x0130);
+        rt.m.regs.set_cx(0xAAAA);
+        rt.m.regs.set_dx(0xBBBB);
+        func_d4a(&mut rt);
+        assert_eq!(rt.m.regs.sp(), 0x0100, "d4a net-zero SP");
+        assert_eq!((rt.m.regs.ax(), rt.m.regs.bx()), (0x0010, 0x0130), "d4a preserves AX/BX");
+        assert_eq!((rt.m.regs.cx(), rt.m.regs.dx()), (0xAAAA, 0xBBBB), "d4a preserves CX/DX");
+
+        // func_cef: reset+hide the mouse; reset (fn 0) sets the driver's state.
+        let mut rt = test_runtime();
+        rt.m.regs.ss = 0x2000;
+        rt.m.regs.set_sp(0x0100);
+        rt.m.regs.set_ax(0x1234);
+        func_cef(&mut rt);
+        assert_eq!(rt.m.regs.sp(), 0x0100, "cef net-zero SP");
+        assert_eq!(rt.m.regs.ax(), 0x1234, "cef preserves AX");
+        assert_eq!(rt.mouse_shown, -2, "cef: reset(-1) then hide(-1) → -2");
     }
 }

@@ -141,7 +141,7 @@ pub struct Runtime {
     mouse_handler: Option<(u16, u16, u16)>, // event mask, seg, off
     mouse_pending: u16,                     // accumulated event mask awaiting delivery
     mouse_saved: Option<(super::machine::Regs, u16, u16, bool, u16)>, // ctx during callback
-    mouse_shown: i16,
+    pub(crate) mouse_shown: i16,
     /// FindFirst/FindNext state per DTA address: (matches, next index).
     searches: HashMap<(u16, u16), (Vec<(String, u32, u8)>, usize)>,
     /// (vector, AH) -> count, for the boot log.

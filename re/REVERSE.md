@@ -5157,3 +5157,34 @@ architecture (Runtime-context codegen + handler exposure + oracle harness) in pl
 This DEFINITIVELY confirms the whole-binary static port is a multi-session project with no
 bounded-pass entry point; it is fully specified in the sections above (architecture → I/O
 worklist → composition). The interpreter runs all 222 bit-exact meanwhile.
+
+## REFUTED: a bounded per-function I/O-lift IS possible — harness + 3 leaves (2026-07-22)
+
+The section above was wrong that no bounded increment exists. The three prerequisites it
+listed have now all been built, and they are cheap, not multi-session:
+  1. `native_int` exposed as `pub(crate) fn native_int(&mut self, v: u8)` on Runtime
+     (+ `interp::flags_word` pub(crate)) — one-line visibility changes.
+  2. The Runtime-context lift path: **src/recomp/io_lift.rs**. Helpers `push16`/`pop16` and
+     `int_call(rt, vec)` (pushes the interrupt frame FLAGS/CS/IP — because native_int's handlers
+     IRET — then calls native_int). An I/O leaf is a plain `fn(&mut Runtime)` that translates the
+     CPU ops and calls `int_call` for each `int`.
+  3. The **interpreter-oracle harness** `io_lifts_match_interpreter_oracle`: mirror the raw EXE at
+     physical 0, run the ORIGINAL bytes at CS=0/IP=offset through the interpreter until the leaf's
+     depth-0 `retf`, servicing each `int` via the same `int_call`, from a seeded register/memory
+     state; then assert the lifted `fn`'s full observable output (AX/BX/CX/DX/SP/ES + BIOS video
+     mode + mouse state) is bit-identical. The interpreter IS the oracle (Unicorn can't model DOS
+     I/O). Adding a leaf to the `leaves` table is the verification gate.
+
+Three I/O leaves lifted + oracle-verified this way:
+  - `func_cc0` (0x0CC0, set_video_mode_saved): int 10h from gs:[0x5232].
+  - `func_d4a` (0x0D4A, mouse_set_hrange): int 33h fn 7 then fn 8.
+  - `func_cef` (0x0CEF, mouse_reset_hide): int 33h fns 0, 2, 0xF.
+The harness even caught two real test-plumbing bugs (EXE mirror clobbering the gs scratch, and
+40:0x49 clobbered by the overlay) before going green — evidence it actually discriminates.
+
+So the whole-binary static port now HAS a bounded, safe, verified per-function entry point: add
+the next I/O leaf's `fn(&mut Runtime)` + one `leaves`-table row, and it's oracle-checked against
+the original bytes. Completing all ~41 I/O leaves + unblocking compositions to the 222-fn fixpoint
+is still session-by-session work (and could be codegen'd in lift.py), but the per-pass increment
+is real and demonstrated — not blocked on a multi-session prerequisite. Count: 75 pure-CPU + 3
+I/O = 78 lifted, I/O path proven and reusable.
