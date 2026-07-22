@@ -185,6 +185,21 @@ impl BasMenuStack {
         self.current_block().map(|b| SequentialResponses::new(&b))
     }
 
+    /// The subtitle text of the response `0xA6` token at `bas_offset` — its dictionary
+    /// words assembled with the game's punctuation-aware spacing. So a played response
+    /// yields the actual on-screen line, not just an offset.
+    pub fn response_text(&self, bas_offset: usize) -> Option<String> {
+        let words = parse_dic_words(&self.dic);
+        for tok in walk(&self.bas, bas_offset, self.bas.len()) {
+            if let VmToken::Text { word_offsets, .. } = tok {
+                let parts: Vec<String> =
+                    word_offsets.iter().filter_map(|o| words.get(o).cloned()).collect();
+                return Some(crate::engine::assemble_words(&parts));
+            }
+        }
+        None
+    }
+
     /// All decoded menus (for wiring topic → sub-menu targets from the BAS flow).
     pub fn menus(&self) -> &[ConceptMenu] {
         &self.menus
@@ -405,6 +420,10 @@ mod tests {
         // The stack yields a sequential-response player for the current menu.
         let mut seq = st.current_responses().expect("responses");
         assert_eq!(seq.total(), 13);
-        assert_eq!(seq.advance(), Some(0x43e));
+        let first = seq.advance().expect("first");
+        assert_eq!(first, 0x43e);
+        // And the played response assembles to its actual on-screen subtitle.
+        let text = st.response_text(first).expect("response text");
+        assert!(text.contains("several ways to lose"), "response text: {text:?}");
     }
 }

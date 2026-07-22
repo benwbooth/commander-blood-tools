@@ -107,7 +107,7 @@ fn collect_hnm_paths(dir: &Path) -> HashMap<String, std::path::PathBuf> {
 /// next begins with attaching punctuation (`, . ? ! :`), and after inserting a space,
 /// wrap to a new line (`0x0D`, `'\n'` here) once the current line length reaches 0x23
 /// (35) characters. No wrap check on the no-space path; long words are not split.
-fn assemble_words(parts: &[String]) -> String {
+pub(crate) fn assemble_words(parts: &[String]) -> String {
     let parts: Vec<&String> = parts.iter().filter(|w| !w.is_empty()).collect();
     let mut out = String::new();
     let mut line_len: usize = 0;
