@@ -1098,6 +1098,11 @@ pub struct Machine {
     /// When set, `write8` records (addr,value,cs,ip) of every write into this range (bounded).
     pub trace_range: Option<std::ops::Range<usize>>,
     pub range_hits: Vec<(usize, u8, u16, u16)>,
+    /// When set, the interpreter bumps `coverage[ip]` for every instruction executed
+    /// with cs == this segment — a whole-segment execution histogram for mapping an
+    /// overlay's per-frame call tree (e.g. manu3). Allocate `coverage` to 65536 first.
+    pub coverage_seg: Option<u16>,
+    pub coverage: Vec<u32>,
     /// Execution counters: (cs,ip) -> times the interpreter started an instruction there.
     pub trap_ips: std::collections::HashMap<(u16, u16), u64>,
     /// One-shot register snapshot at a target (cs,ip): (ss,ds,es,si,bp,bx).
@@ -1150,6 +1155,8 @@ impl Machine {
             addr_hits: Vec::new(),
             trace_range: None,
             range_hits: Vec::new(),
+            coverage_seg: None,
+            coverage: Vec::new(),
             trap_ips: std::collections::HashMap::new(),
             capture_ip: None,
             captured: None,

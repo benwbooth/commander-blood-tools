@@ -462,6 +462,27 @@ fn main() {
                 println!("hand code/data segments dumped");
             }
         }
+        // Coverage-map manu3's segment for one second of console time: which code
+        // runs per frame (entry points by hit count) — the decompile worklist.
+        {
+            rt.m.coverage_seg = Some(0x166c);
+            rt.m.coverage = vec![0u32; 65536];
+            let _ = rt.run(rt.cpu.steps + 8_000_000);
+            rt.m.coverage_seg = None;
+            // Report basic-block heads: covered ip whose predecessor byte is uncovered.
+            let cov = std::mem::take(&mut rt.m.coverage);
+            let mut blocks: Vec<(u32, usize)> = Vec::new();
+            for ip in 1..65536usize {
+                if cov[ip] > 0 && cov[ip - 1] == 0 {
+                    blocks.push((cov[ip], ip));
+                }
+            }
+            blocks.sort_unstable_by(|a, b| b.cmp(a));
+            for (hits, ip) in blocks.iter().take(30) {
+                println!("manu3 hot entry {ip:#06x} ({hits} hits)");
+            }
+            println!("manu3 covered bytes: {}", cov.iter().filter(|&&c| c > 0).count());
+        }
         // Who READS the manu3 "3DB0" mesh bank (file 0x3642.. at seg 0x166C)?
         {
             let bank = 0x166cusize * 16 + 0x3642;

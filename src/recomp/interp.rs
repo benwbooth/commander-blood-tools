@@ -543,6 +543,11 @@ impl Cpu {
         m.regs.cs = self.cs;
         let ip0 = self.ip;
         m.ip = ip0;
+        if m.coverage_seg == Some(self.cs) {
+            if let Some(slot) = m.coverage.get_mut(ip0 as usize) {
+                *slot += 1;
+            }
+        }
         if !m.trap_ips.is_empty() {
             if let Some(c) = m.trap_ips.get_mut(&(self.cs, ip0)) {
                 *c += 1;
