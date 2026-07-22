@@ -1243,6 +1243,23 @@ fn main() {
                 rt.mouse_release(0);
                 let _ = rt.run(rt.cpu.steps + 2_500_000);
             }
+            // Try right-click (back) then check the engagement flags directly.
+            rt.mouse_press(1);
+            let _ = rt.run(rt.cpu.steps + 500_000);
+            rt.mouse_release(1);
+            let _ = rt.run(rt.cpu.steps + 5_000_000);
+            let flags = rt.m.read8(g, 0x2793) as u16 | ((rt.m.read8(g, 0x2794) as u16) << 8);
+            let item = rt.m.read8(g, 0x2a19) as u16 | ((rt.m.read8(g, 0x2a1a) as u16) << 8);
+            println!("after right-click: [0x2793]={flags:#06x} [0x2A19]={item:#06x}");
+            if std::env::var("UNPIN").is_ok() {
+                // Diagnostic: clear the menu engagement and see if rotation frees.
+                rt.m.write8(g, 0x2a19, 0);
+                rt.m.write8(g, 0x2a1a, 0);
+                let f = flags & !0x000C;
+                rt.m.write8(g, 0x2793, f as u8);
+                rt.m.write8(g, 0x2794, (f >> 8) as u8);
+                println!("UNPIN: cleared [0x2A19] and [0x2793] bits 2/3");
+            }
             // Rotation sweep toward the pyramid sector.
             for stop in 0..8 {
                 let (fr, _, _) = state(&rt);
