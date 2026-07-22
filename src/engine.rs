@@ -1478,14 +1478,11 @@ impl EngineState {
     /// and tints the pyramids purple with a yellow orb), this OVERLAYS and uses the real GRAY
     /// pyramids + WHITE eye-orb seen in the captures. The pyramid renderer fills only the lower
     /// grid band, so the crew scene in the upper band shows through.
-    // Building block for the tutorial-console composite; the flow wiring (use it as SCRIPT1's view
-    // without orphaning the bridge/console hub) is the deliberate next step — see
-    // docs/faithfulness-audit.md risk #1.
-    #[allow(dead_code)]
     fn overlay_console_pyramids(&mut self) {
-        const LIGHT: u8 = 0xFD;
+        // Reserved palette slots that avoid the credit text (0xFD) and the subtitle reveal (0xFE).
+        const LIGHT: u8 = 0xFA;
         const DARK: u8 = 0xFB;
-        const ORB: u8 = 0xFE;
+        const ORB: u8 = 0xFC;
         crate::ship3d::render_star_map_navview_panned(
             &mut self.framebuffer,
             LIGHT,
@@ -1756,6 +1753,16 @@ impl EngineState {
         let frame = self.scene_frame;
         self.scene_frame += 1;
         self.present_scene_buffer();
+        // The credit clip is the intro CREW SHOWCASE: cliptoot.hnm cycles crew members and the
+        // game overlays the pyramid console over the bottom (accuracy/captures/frame_6-9 — the
+        // pyramid floor occludes the crew's lower body). Only clips carrying credit cues get it.
+        if self
+            .intro_cues
+            .get(self.intro_index)
+            .is_some_and(|cues| !cues.is_empty())
+        {
+            self.overlay_console_pyramids();
+        }
         // Overlay this clip's active credit subtitle (the DESCRIPT `present` cues on the
         // CRYO cinematic) centred in the lower letterbox, in the verified game font.
         self.draw_intro_credit(frame);
@@ -3580,6 +3587,43 @@ mod tests {
         );
     }
 
+    /// Diagnostic dump: drive the intro to the credit clip and dump the COMPOSITE (crew showcase
+    /// cliptoot + pyramid console overlay + credits) to a PPM, to eyeball it against captures 6-9.
+    #[test]
+    #[ignore = "diagnostic dump, run explicitly"]
+    fn dump_intro_composite() {
+        let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("sq").join("cliptoot.hnm").exists());
+        let Some(assets) = assets else { return };
+        let db = ["output/_tmp_iso/DESCRIPT.DES", "../output/_tmp_iso/DESCRIPT.DES"]
+            .iter()
+            .find_map(|p| crate::descript::DescriptDb::parse_file(p).ok());
+        let Some(db) = db else { return };
+        let mut e = EngineState::new();
+        e.load_intro(assets, &db);
+        let credit = e
+            .intro_hnms
+            .iter()
+            .position(|p| p.file_stem().is_some_and(|s| s == "cliptoot"))
+            .unwrap();
+        for _ in 0..6000 {
+            e.step(MouseInput::default());
+            if e.intro_index() == credit && e.scene_frame > 45 {
+                break;
+            }
+            if !e.intro_active() {
+                break;
+            }
+        }
+        let mut buf = Vec::from(&b"P6\n320 200\n255\n"[..]);
+        for &idx in &e.framebuffer {
+            buf.extend_from_slice(&e.scene_palette[idx as usize]);
+        }
+        std::fs::write("output/_tmp_intro_composite.ppm", buf).unwrap();
+    }
+
     /// The SCRIPT1-tutorial console COMPOSITE (accuracy/captures/frame_6-9): the pyramid console
     /// floor + eye-orb overlays the crew viewscreen WITHOUT clearing it — the crew (upper band)
     /// shows through, and the pyramids sit along the bottom. Guards the gap where the port rendered
@@ -3595,7 +3639,7 @@ mod tests {
         assert!(top.iter().all(|&p| p == 0x30), "the crew viewscreen (top) shows through");
         // Bottom band: the pyramid console + eye-orb are drawn (reserved indices).
         let bottom = &e.framebuffer[ENGINE_SCREEN_WIDTH * 120..];
-        let pyramid_px = bottom.iter().filter(|&&p| p == 0xFD || p == 0xFB || p == 0xFE).count();
+        let pyramid_px = bottom.iter().filter(|&&p| p == 0xFA || p == 0xFB || p == 0xFC).count();
         assert!(pyramid_px > 100, "the pyramid console draws along the bottom ({pyramid_px} px)");
     }
 
