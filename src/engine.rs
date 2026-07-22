@@ -278,6 +278,10 @@ pub struct EngineState {
     topic_menu: Vec<(String, usize)>,
     /// Currently highlighted topic row.
     pub topic_selected: Option<usize>,
+    /// The decoded BAS concept-menu stack for the active conversation script (the
+    /// game's `gs:0x6772`/`gs:0x6774` menu stack — see [`crate::bas_vm`]). Present
+    /// once a script's `.BAS` is loaded; `current()` is the menu to display.
+    pub bas_menus: Option<crate::bas_vm::BasMenuStack>,
     /// The decompiled bridge interaction state ([`crate::bridge`]): mouse-push
     /// steering, station seeks, and the golden-menu hit testing/highlighting.
     pub bridge: crate::bridge::BridgeView,
@@ -438,6 +442,7 @@ impl EngineState {
             bold_font: None,
             topic_menu: Vec::new(),
             topic_selected: None,
+            bas_menus: None,
             bridge: crate::bridge::BridgeView::default(),
             console_font: Vec::new(),
             bridge_active: false,
@@ -1032,6 +1037,25 @@ impl EngineState {
     pub fn set_topic_menu(&mut self, topics: Vec<(String, usize)>) {
         self.topic_menu = topics;
         self.topic_selected = None;
+    }
+
+    /// Load the conversation script's decoded concept-menu stack (the game's
+    /// `gs:0x6772` menu system, [`crate::bas_vm`]) from its `.BAS`/`.DIC`. Seeds at
+    /// the entry menu; `current_bas_menu_labels` then gives the menu to display.
+    pub fn load_bas_menus(&mut self, bas: &[u8], dic: &[u8]) {
+        self.bas_menus = crate::bas_vm::BasMenuStack::new(bas, dic);
+    }
+
+    /// The current BAS concept menu's topic labels (uppercased, as the square-caps
+    /// menu renders them). Empty if no `.BAS` menus are loaded. Enter/back-out
+    /// navigation is driven via [`crate::bas_vm::BasMenuStack::push`]/`pop` on the
+    /// `bas_menus` field as the conversation reaches each menu.
+    pub fn current_bas_menu_labels(&self) -> Vec<String> {
+        self.bas_menus
+            .as_ref()
+            .and_then(|s| s.current())
+            .map(|m| m.labels.iter().map(|l| l.to_uppercase()).collect())
+            .unwrap_or_default()
     }
 
     /// A click while the topic menu is showing: selects the topic and jumps the
@@ -3044,6 +3068,33 @@ mod tests {
             (port_y - live_y).abs() < 2.0,
             "single-item box must be vertically centered like the live game (port {port_y:.1} vs live {live_y:.1})"
         );
+    }
+
+    /// The engine loads and exposes the decoded BAS concept-menu stack: after
+    /// `load_bas_menus`, the current menu is the script's ENTRY menu (SCRIPT2's
+    /// top-level: OPTIMIZATION/CONSULTATION/EXPLANATIONS/…), and push/pop navigate
+    /// it (the game's gs:0x6772 stack). Ties src/bas_vm.rs into the clean port.
+    #[test]
+    fn engine_holds_and_navigates_the_bas_menu_stack() {
+        let read = |ext: &str| {
+            ["accuracy/cdrive/cblood", "../accuracy/cdrive/cblood"]
+                .iter()
+                .find_map(|b| std::fs::read(Path::new(b).join(format!("SCRIPT2.{ext}"))).ok())
+        };
+        let (Some(bas), Some(dic)) = (read("BAS"), read("DIC")) else {
+            return;
+        };
+        let mut e = EngineState::new();
+        assert!(e.current_bas_menu_labels().is_empty(), "no menus before load");
+        e.load_bas_menus(&bas, &dic);
+        let entry = e.current_bas_menu_labels();
+        assert!(entry.iter().any(|l| l == "OPTIMIZATION"), "entry = top-level menu: {entry:?}");
+        // Navigate: enter the fear/anger sub-menu (BAS 0x42d, verified live) → current.
+        assert!(e.bas_menus.as_mut().unwrap().push(0x42d));
+        assert!(e.current_bas_menu_labels().iter().any(|l| l == "FEAR"));
+        // Back out (pop) → the top-level entry menu again.
+        assert!(e.bas_menus.as_mut().unwrap().pop());
+        assert!(e.current_bas_menu_labels().iter().any(|l| l == "OPTIMIZATION"));
     }
 
     /// Oracle: the LIST MENU (dialogue topics / nav destinations) renders the
