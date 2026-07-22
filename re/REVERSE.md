@@ -4200,3 +4200,20 @@ blocked on int/out/in that the interpreter models but the static lifter does
 not, plus 6 indirect-call sites). Growing 73→N does not change the port's
 fidelity; it advances the static-recomp formalization. Pipeline restored this
 session (venv unicorn 2.1.4 + capstone; scan_clean = 71 clean leaves).
+
+## TOPIC-LABEL SOURCE — RE lead (not a static token; runtime-assembled)
+
+The concept-menu topic LABELS (SCRIPT2 numerology TALK/ONE..NINE; psychotherapy
+TALK/EGO/SUPER_EGO/UNDER_EGO/END_OF_MONTH/LIBIDO/WHO/WHERE/WHEN/WHAT/HOW/WHY;
+locations GIVE/BIONIUM/CYBERSPACE/... per SCRIPT3-5.DIC) are DIC dictionary
+words, but they are NOT carried by a single VM token — SCRIPT2's token census is
+Op/Text/Actor/RecordClear/RecordTriple/RecordLink/GlobalWordCompare only, no
+topic-list token. The list is ASSEMBLED AT RUNTIME per conversation context from
+the DIC, then drawn as the square-caps list overlay. To decode the label→topic
+map: from a concept-menu-open state (e.g. the psychotherapy hook — HOOKSNAP
+opens it reliably), read-watch the DIC segment + trace the list-population code
+(the routine that fills the list-menu label slots before the orb opens it),
+correlating each help* topic handler to its concept DIC word. THEN the port can
+wire location topic menus faithfully (main.rs currently offers the menu ONLY for
+SCRIPT2's live-verified labels; locations keep linear playback — no guesswork).
+This is deep VM RE (runtime list construction), best done from the savestate.
