@@ -4038,3 +4038,11 @@ manu3 file offset 0x1370).
   text form) — the game's core conversation mechanic. PORT: the dialogue
   engine needs per-context topic menus; the lists should derive from the
   script's decoded objects/dictionary (EGO/LIBIDO/etc are SCRIPT2 dict words).
+- SYNTHESIS: SCRIPT2.DEB has help1..help9 (the numbered consultation topics),
+  men1..men6 (menu items), trak1..trak27. The long-decoded
+  "layout_ship_3d_target_list" IS the universal LIST-MENU widget — the same
+  blue square-capitals list serves dialogue TOPIC menus, nav DESTINATIONS, and
+  contacts; per-context entries come from script records/dict words. PORT
+  MODEL: one list-menu widget + one gold choice-box widget cover the game's
+  interactive UI; dialogue engine = topic-menu navigation over the decoded
+  script objects (help*/men*/named topics).
