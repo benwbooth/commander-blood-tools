@@ -1135,7 +1135,10 @@ fn main() {
         // at frame 55 the box shifts -8px/frame => right edge 207) and capture
         // what actually opens — ground truth for the submenu/OPTION ports.
         if std::env::var("SUBMENUCAP").is_ok() {
-            // Watch who writes the box-text colour 0xE8 during the clicks.
+            // Watch who BUILDS the choice-box RLE stream at gs:0x0175 (the
+            // panorama unpacker composites the box from there).
+            rt.m.trace_range = Some(0xE840 + 0x100..0xE840 + 0x2000);
+            rt.m.range_hits.clear();
             rt.m.watch = Some((0xE8, 0..0x100000));
             rt.m.watch_hits.clear();
             for (row, name) in [(3u16, "menu"), (4, "option")] {
@@ -1229,6 +1232,14 @@ fn main() {
                 }
             }
             rt.m.watch = None;
+            let mut seen = std::collections::HashSet::new();
+            for &(addr, v, cs, ip) in rt.m.range_hits.iter() {
+                if seen.insert((cs, ip)) {
+                    println!("stream builder {cs:04x}:{ip:04x} -> gs:{:#06x} = {v:#04x}", addr - 0xE840);
+                }
+                if seen.len() > 15 { break; }
+            }
+            rt.m.trace_range = None;
             println!("SUBMENUCAP done");
             return;
         }
