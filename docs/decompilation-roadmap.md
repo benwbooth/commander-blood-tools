@@ -25,8 +25,23 @@ overlays) and verified against the real game running in the in-repo emulator**
 (`src/recomp/` boots the original EXE bit-exact; `runtime_boot` diagnostics drive
 it into gameplay and dump any state or frame).
 
-Progress under that standard:
+Progress under that standard (updated through the 2026-07-22 session):
 
+- **The emulator now PLAYS the game itself**: a deterministic OCR driver reads
+  the live game's subtitles with the game's own fonts and obeys tutorial
+  instructions — it completed the SCRIPT1 tutorial live (cryobox, waking Cap'n
+  Bob, the full Bob/HONK scene, verbatim transcript recorded) and reached
+  SCRIPT2. A full-machine savestate (`accuracy/script2.state`, CBSAVE01) resumes
+  there in seconds, making all post-tutorial ground truth cheap to capture.
+- **The console is at pixel-parity with the running original** (mean_abs 0.14):
+  TB.BIG panorama + decompiled steering/menu/DAC interaction + the pointing hand
+  composited from real-renderer captures (the manu3 skeletal-mesh renderer is
+  decoded — texture, transform, edge lists, blitter — and queued to replace the
+  capture atlas).
+- **The choice box** — the game's universal console interaction (measured spec:
+  border idx 0x15, gold fill 0xE0, square-capitals text at 0xE8) — is ported and
+  used by the phone dial and nav destinations; MENU/OPTION routing to choice
+  boxes is in progress (their real item lists are being captured now).
 - **The ship bridge is now real and verified.** TB.BIG decoded (the whole bridge
   is a 360° 180-frame panorama; golden menu text baked in), the steering/seek/menu
   interaction decompiled from the binary into `src/bridge.rs`, and the engine's
