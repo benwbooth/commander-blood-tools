@@ -58,6 +58,13 @@ everywhere.** Priority = how visible/audible + how confidently fixable.
    proves "Commander BLOOD V 1.0" is a SUBTITLE over the console (the present tick-30 cue), not a
    separate title screen. REMAINING: render the CRYO/title credits over the CONSOLE (as the real
    game does) rather than over the bare cliptoot clip — the last piece of the intro structure.
+   DEEPER FINDING (frames 6-9): the "console" during the credits is the **SCRIPT1 console tutorial
+   already running** — CREW characters (alien/mutant) on the console screen with the 3D pyramid
+   menu + eye orb, credits overlaid on the first ~2s. The port instead goes post-intro to the
+   BRIDGE PANORAMA (tb.big, purple organic) — a different screen. So the faithful post-intro state
+   is SCRIPT1's console-tutorial view (crew talk-HNMs + pyramid menu), not the bridge panorama;
+   the CRYO/title credits overlay its opening. This couples the intro fix to the console/SCRIPT1
+   flow (risk #3) — a careful restructure, sourced to the captures + the SCRIPT1 console tutorial.
 2. **Intro/HNM playback RATE** (`INTRO_CREDIT_FRAMES_PER_TICK = 1`, one HNM frame per game step).
    A guess flagged "calibratable". Source: the HNM player's frame-advance timing in the asm (ticks
    per HNM frame) + the DESCRIPT tick unit. RISK: intro plays too fast/slow; subtitles mistimed.
