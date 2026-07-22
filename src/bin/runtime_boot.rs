@@ -554,6 +554,11 @@ fn main() {
                         // menu items in order with long dwells (the tutorial may
                         // be waiting for a function to actually be USED).
                         rt.write_ppm(&out.join(format!("silent_{round}.ppm"))).unwrap();
+                        std::fs::write(
+                            out.join(format!("silent_{round}_indices.bin")),
+                            rt.screen_indices(),
+                        )
+                        .unwrap();
                         println!("round {round}: silent 40 rounds (frame {fr}) — captured");
                         silent = 0;
                     }
