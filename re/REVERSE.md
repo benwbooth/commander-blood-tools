@@ -3848,3 +3848,10 @@ manu3 file offset 0x1370).
   data:0x0006) — face-table vertex ptrs (0xE66E..) are offsets into THAT
   segment, not data+0xE000 (vertex-init trace on data+0xE000 = 0 hits).
   Next: read data:[0..8] live -> the buffer segments; dump + trace them.
+- manu3 SEGMENT TABLE at data:[0..8] (live): [0]=0xAABB magic, [2]=0x1B76
+  vertex-buffer segment (es of transform/face loops), [4]=0x1C94 TEXTURE
+  segment (= image file 0x6280 ✓), [6]=0x2094 working/edge segment (= image
+  file 0xA280 ✓), [8]=0x0F32. Vertex-seg static dump at the console showed
+  fill patterns at the face-table's v-ptr offsets — the live record addresses
+  are being captured via read-watch (probe in flight); face-table v-ptrs may
+  need a further mapping (per-pose bank?).
