@@ -229,3 +229,23 @@ everywhere.** Priority = how visible/audible + how confidently fixable.
 - **Auto-tutorial flow (999)**: ORACLE-VERIFIED (no-input INTROTRACE boot reaches script1.*+
   chart.fd + tutorial voices) — the game runs SCRIPT1 automatically post-intro; the port now does
   too (was: park on bridge until HONK).
+
+## User-reported bugs — fixed via asm (commits 1002-1005)
+- **Subtitle font+color (Honk)**: the REAL subtitle renderer @0x3630 (called per CR-line from the
+  reveal @0x94E2, 8px pitch) uses the FIXED-WIDTH console font (DS:0x70FA/0x71AA = file 0x1451A/
+  0x145CA = BoldConsoleFont) and draws with palette 0xFF, stepping 0xFE/0xFD at the reveal edge;
+  the baked game palette (0x12F78) holds GREENS there (0xFD dark→0xFF bright) and HNM pl blocks
+  only cover 1..127 so the greens persist under every scene. Port now: console font + green fade
+  (settled 0xFD, newest 0xFE, fully-revealed 0xFF). Intro credit stays white-proportional (real
+  capture dlg_05: white + lowercase = the render_string path).
+- **Bridge steering**: the original tracks the mouse in RING space ([0xa2a] over the 1440-px ring,
+  driver h-range; rebased near the view @0x97FC) — physical motion keeps rotating past the screen
+  edge. Port now feeds RAW pointer-lock deltas (MouseInput.dx/dy) to the ring anchor.
+- **Dialogue gating**: only the scripted opening auto-plays; the dialogue HOLDS at the topic menu
+  (autoplay_end); a topic click plays its segment then re-holds (the real pacing gates = the 0xCE
+  presentation-wait loops + [0x67AC] busy-gates; content is menu-driven). SCRIPT1/2 wired.
+  REMAINING: SCRIPT3/4/5 (bas concept-menu scripts) still auto-play their full streams — needs the
+  BAS response→COD line mapping to gate the same way.
+- **Mouse lock (Wayland)**: KDE/XWayland ignores X confine grabs — lock = hidden cursor +
+  centre-warp (XWayland promotes to a Wayland pointer lock) + drawn virtual cursor; Right Shift
+  releases.
