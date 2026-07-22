@@ -396,6 +396,39 @@ fn main() {
         let (fr, ang, st) = state(&rt);
         println!("console reached: tb_frame={fr} angle={ang:#x} station={st:#x} @ {} steps", rt.cpu.steps);
         rt.write_ppm(&out.join("bridge_00_console.ppm")).unwrap();
+        // SUBFIND: locate the LIVE tutorial-subtitle buffer — run a while at the
+        // console, then scan RAM for words known to be on screen (from captures)
+        // and print their addresses (gs-relative when inside the data segment).
+        if std::env::var("SUBFIND").is_ok() {
+            let _ = rt.run(rt.cpu.steps + 20_000_000);
+            rt.write_ppm(&out.join("subfind_screen.ppm")).unwrap();
+            let gs_lin = 0x0e84usize * 16;
+            for needle in ["waiting", "WAITING", "Cap'n", "CAP'N", "Click", "CLICK", "quick", "QUICK", "course", "COURSE"] {
+                let pat = needle.as_bytes();
+                let mem = &rt.m.mem[..0x100000.min(rt.m.mem.len())];
+                let mut shown = 0;
+                let mut pos = 0;
+                while let Some(i) = mem[pos..].windows(pat.len()).position(|w| w == pat) {
+                    let at = pos + i;
+                    let rel = if at >= gs_lin && at < gs_lin + 0x10000 {
+                        format!("gs:{:#06x}", at - gs_lin)
+                    } else {
+                        format!("lin:{at:#07x}")
+                    };
+                    let ctx: String = mem[at.saturating_sub(8)..(at + 40).min(mem.len())]
+                        .iter()
+                        .map(|&b| if (0x20..0x7f).contains(&b) { b as char } else { '.' })
+                        .collect();
+                    println!("SUBFIND {needle:?} @ {rel}: {ctx:?}");
+                    shown += 1;
+                    pos = at + 1;
+                    if shown >= 3 { break; }
+                }
+            }
+            println!("SUBFIND done");
+            return;
+        }
+
         // TUTORIAL3: instruction-FOLLOWING tutorial driver — scans RAM each round
         // for the live tutorial text ("...HONK/TELEPHONE/CRYOBOX/MENU/OPTION...")
         // and clicks the named golden-menu row; choice boxes get their first row;
