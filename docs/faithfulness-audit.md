@@ -52,6 +52,14 @@ everywhere.** Priority = how visible/audible + how confidently fixable.
   start_descript_cutscene(record) at that execution point. REMAINING (multi-piece, needs the
   cutscene to fire at the FAITHFUL script point — verify by running to it): thread the cutscene
   event through main.rs's speech-event/dialogue pipeline. Trigger path fully grounded now.
+  FIRING ATTEMPT + SELF-CORRECTION (reverted): tried emitting a cutscene event when a 0xC4
+  (VmToken::Actor) references a cutscene object at its DEB symbol offset - NO matches in SCRIPT1's
+  token stream, test caught it, reverted. WHY: actors resolve via symbol.offset + OBJECT_TALK_FIELD
+  (+58) as the actor_talk_ref (script.rs:201), NOT the raw DEB offset. So the 0xC4 record_offset for
+  a cutscene is likely cutscene_symbol.offset + <field>, not the raw offset. CORRECTED DIRECTION:
+  determine the cutscene object's talk/ref field offset (like OBJECT_TALK_FIELD for actors) and map
+  THAT to the cutscene name; verify a 0xC4 in the token stream matches before wiring. DETECTION
+  (cutscene_record_names) works + is committed; only the offset-correct FIRING remains.
 - **[CLEARED] Intro/HNM subtitle tick scale** (risk #2, partial). The DESCRIPT subtitle ticks are
   HNM frame numbers (microkid→120, hatetv→200, cliptoot 1258 frames), so `FRAMES_PER_TICK = 1`
   (frame == tick) is faithful. The absolute HNM playback fps vs the game's tick rate is still worth
