@@ -640,6 +640,19 @@ fn main() {
                         continue;
                     }
                 }
+                // NUMSERIES: at the first number prompt, capture a 16-frame series
+                // (the numbers display/animation) then stop.
+                if std::env::var("NUMSERIES").is_ok() {
+                    let numbers = ["ONE", "TWO", "THREE", "FOUR", "F1VE", "S1X", "SEVEN", "E1GHT", "N1NE"];
+                    if numbers.iter().any(|n| line == *n) {
+                        println!("round {round}: prompt {line:?} — capturing series");
+                        for shot in 0..16 {
+                            rt.write_ppm(&out.join(format!("series_{shot:02}.ppm"))).unwrap();
+                            let _ = rt.run(rt.cpu.steps + 2_000_000);
+                        }
+                        break;
+                    }
+                }
                 // NUMSNAP: capture the screen the moment a number prompt shows.
                 if std::env::var("NUMSNAP").is_ok() {
                     let numbers = ["ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "E1GHT", "EIGHT", "N1NE", "NINE"];
