@@ -1265,6 +1265,58 @@ fn main() {
             return;
         }
 
+        // GRANTWALK: from SCRIPT2, interact exhaustively (topics, orb, phone
+        // rows, menu) and watch DS:0x4F09 nav anchors for POPULATION (a granted
+        // destination). On non-empty anchors: save a milestone state + capture.
+        if std::env::var("GRANTWALK").is_ok() {
+            let anchors_nonempty = |rt: &Runtime| {
+                // Empty = the default trig-table-overlap pattern; treat all-equal
+                // or zero as empty. Non-empty = varied small coordinate values.
+                let vals: Vec<i16> = (0..33u32)
+                    .map(|i| {
+                        let lo = rt.m.read8(g, 0x4f09 + i * 2) as u16;
+                        let hi = rt.m.read8(g, 0x4f09 + i * 2 + 1) as u16;
+                        (lo | (hi << 8)) as i16
+                    })
+                    .collect();
+                // Heuristic: a populated anchor set has values in a plausible
+                // world-coordinate range and not the 900/10200/12100 default cycle.
+                let defaulty = vals.windows(3).any(|w| w == [10200, 12100, 900]);
+                !defaulty && vals.iter().any(|&v| v.abs() > 0 && v.abs() < 8000)
+            };
+            let targets: [(u16, u16); 10] = [
+                (190, 45), (190, 56), (190, 67), (190, 78), (190, 89), // topic rows
+                (125, 118), // orb
+                (230, 88), (230, 103), (230, 118), (230, 133), // menu rows
+            ];
+            let mut milestones = 0;
+            for round in 0..600u32 {
+                let (fr, _, _) = state(&rt);
+                let (sx, sy) = targets[(round as usize) % targets.len()];
+                let ring = (sx as i32 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+                rt.set_mouse_pos(ring, sy);
+                let _ = rt.run(rt.cpu.steps + 500_000);
+                rt.mouse_press(0);
+                let _ = rt.run(rt.cpu.steps + 300_000);
+                rt.mouse_release(0);
+                let _ = rt.run(rt.cpu.steps + 1_500_000);
+                if anchors_nonempty(&rt) {
+                    println!("round {round}: NAV ANCHORS POPULATED!");
+                    rt.write_ppm(&out.join(format!("granted_{round}.ppm"))).unwrap();
+                    rt.save_state(std::path::Path::new("accuracy/granted.state")).unwrap();
+                    milestones += 1;
+                    if milestones >= 2 { break; }
+                }
+                if round % 60 == 0 {
+                    println!("round {round}: frame {fr}, anchors {}",
+                        if anchors_nonempty(&rt) { "populated" } else { "empty" });
+                    rt.write_ppm(&out.join(format!("grant_r{round}.ppm"))).unwrap();
+                }
+            }
+            println!("GRANTWALK done, milestones={milestones}");
+            return;
+        }
+
         // GLYPHSRC: watch 0xE8 writes into the CHUNKY composition buffer (seg
         // 0x266c) during a MENU-submenu open — the writer is the box-text
         // drawer; its ds:si reveals the glyph source (font table / strokes).
