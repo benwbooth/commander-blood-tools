@@ -4266,3 +4266,29 @@ drives 0x8D2A with the destination descriptors (the world-load path that maps a
 story beat → populate entities 0x15..0x1F), then the anchors' world coords are
 the populated +0x0C/+0x0E fields. The port's entity-flag model (progress.rs /
 croolis.rs over the 0x6212 records) already mirrors this activation structure.
+
+## NAV-DESTINATION ACTIVATION — FULL CHAIN DECODED (closes the #3/#6 trigger RE)
+
+Complete trigger chain, entity primitive → per-frame update:
+1. **`nav_camera_state_check` @0x8CCE** — the per-frame NAV/CAMERA update (gated
+   by the view-state byte [0x278B] and [0x278A]&1). This is where destinations
+   populate, so it only runs in the nav view.
+2. → **`lcall 0x4DA:0x1E7A` @0x8D1F** returns AX = the object count for the
+   CURRENT loaded world/context. `or ax,ax; je` — if 0 (no world objects loaded,
+   e.g. the SCRIPT2 console), the whole population is SKIPPED → empty nav.
+3. → **`object_population_loop` @0x8D2A** walks the world's object-descriptor
+   table (DS:0x2AD3, 0x2C stride) and for each calls...
+4. → **`entity_object_populate` @0x40D0** which sets entity 0x6212+id*32 flags to
+   0x83 (ACTIVE) and copies its world coords to +0x0C/+0x0E.
+5. → the ACTIVE entities 0x15..0x1F are then projected as the nav anchors by
+   **`ship_3d_object_sprite_project` @0x9B98** (gate test&0x80) — screen positions.
+
+So nav DESTINATIONS appear ⟺ a world with object descriptors is LOADED and the
+nav view is active. At the SCRIPT2 console no destination world is loaded (count
+0 via 0x4DA:0x1E7A) → empty nav; destinations populate after the story loads a
+destination world (a navigation/progression event). This FULLY DECODES the
+#3/#6 activation trigger (RE question closed). The only remaining step to EXTRACT
+live anchor positions/labels is reaching a world-loaded state (drive nav to load
+a world, then the +0x0C/+0x0E fields are the coords) — a state-driving task, not
+an RE unknown. The port's progress.rs entity model + project_ship_3d_point
+already mirror steps 4-5; wiring live coords is gated only on that state.
