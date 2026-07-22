@@ -534,7 +534,7 @@ fn main() {
             let mut last = String::new();
             let mut silent = 0usize;
             let mut reached2 = false;
-            for round in 0..500 {
+            for round in 0..1200 {
                 let (fr, _, _) = state(&rt);
                 let delta = fr as i32 - 45;
                 let font = read_font(&rt);
