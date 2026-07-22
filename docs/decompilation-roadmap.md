@@ -25,35 +25,47 @@ overlays) and verified against the real game running in the in-repo emulator**
 (`src/recomp/` boots the original EXE bit-exact; `runtime_boot` diagnostics drive
 it into gameplay and dump any state or frame).
 
-Progress under that standard (updated through the 2026-07-22 session):
+Progress under that standard (current as of the 2026-07-22 session end):
 
 - **The emulator now PLAYS the game itself**: a deterministic OCR driver reads
   the live game's subtitles with the game's own fonts and obeys tutorial
   instructions — it completed the SCRIPT1 tutorial live (cryobox, waking Cap'n
   Bob, the full Bob/HONK scene, verbatim transcript recorded) and reached
-  SCRIPT2. A full-machine savestate (`accuracy/script2.state`, CBSAVE01) resumes
-  there in seconds, making all post-tutorial ground truth cheap to capture.
+  SCRIPT2. Full-machine savestates (`accuracy/*.state`, CBSAVE01) resume in
+  seconds; `accuracy/script2.state` is regenerated at a clean post-transition
+  interactive console.
 - **The console is at pixel-parity with the running original** (mean_abs 0.14):
   TB.BIG panorama + decompiled steering/menu/DAC interaction + the pointing hand
-  composited from real-renderer captures (the manu3 skeletal-mesh renderer is
-  decoded — texture, transform, edge lists, blitter — and queued to replace the
-  capture atlas).
-- **The choice box** — the game's universal console interaction (measured spec:
-  border idx 0x15, gold fill 0xE0, square-capitals text at 0xE8) — is ported and
-  used by the phone dial and nav destinations; MENU/OPTION routing to choice
-  boxes is in progress (their real item lists are being captured now).
-- **The ship bridge is now real and verified.** TB.BIG decoded (the whole bridge
-  is a 360° 180-frame panorama; golden menu text baked in), the steering/seek/menu
-  interaction decompiled from the binary into `src/bridge.rs`, and the engine's
-  console render pixel-matches the live game (`bridge_console_matches_live_game_capture`,
-  mean_abs 2.58; the ported steering law replays every live probe observation
-  exactly). All invented console rendering was deleted.
-- Sceneless/tutorial dialogue now plays over the real bridge, as the live game does.
-- Still fabricated or stand-in (tracked in `re/REVERSE.md` "Faithful-port grind"):
-  the pointing-hand cursor (entity 0x15..0x1F lead), the nav destination list
-  (CHART.FD screen stands in for panorama-sector navigation), the MENU submenu
-  overlay appearance, OPTION pyramid item glyphs, the cyberspace mini-game
-  interaction semantics, on-planet click semantics, and the DOS `blood.sav` format.
+  composited from real-renderer captures. (The manu3 skeletal-mesh renderer is
+  fully decoded — texture, transform, edge lists, blitter — but the atlas already
+  gives pixel-parity, so a from-scratch mesh port would reduce fidelity; left as
+  a documented option.)
+- **The real UI widgets are ported and complete**: the gold CHOICE BOX (measured
+  spec — border 0x15, fill 0xE0, square-caps text 0xE8) and the blue LIST MENU
+  (square-caps face, 23 letters harvested — every letter in the game's words),
+  both from live captures. The phone dial, nav destinations, and the MENU submenu
+  all route through the choice box; the topic-driven concept-menu dialogue engine
+  uses the list menu. Structural oracles lock both to their measured values. All
+  console text uses the game's real fonts (bold `0x71AA` from the EXE for console
+  lines, thin `GAME_FONT` for scene subtitles); the HONKF stand-in is retired.
+- **The ship bridge is real and verified.** TB.BIG decoded (360° 180-frame
+  panorama), steering/seek/menu decompiled into `src/bridge.rs`, and the engine
+  console render pixel-matches the live game (0.14). A runnable representative
+  oracle suite (`tests/oracle_suite.rs`) diffs the port vs live captures across
+  the full ring (console/steered/nav/Orxx sectors) with test-enforced thresholds.
+- **The DOS `blood.sav` format is decoded and ported** (`src/bloodsav.rs`,
+  byte-exact); OPTION dropped its fabricated item labels (real glyphs are
+  graphical, RE-pending); on-planet interaction is resolved as the concept-menu
+  conversation system.
+- **Remaining depth residuals** (each with its blocking mechanism now DECODED, not
+  just named — see `re/REVERSE.md`): the live 3D-anchor coords + per-location
+  topic labels, both gated on a story-granted world-load state (activation chain
+  `0x8CCE→0x40D0→0x9B98` decoded; trigger reduced to the `what` concept-menu
+  topic; a clean savestate is ready; the sole remaining unknown is SCRIPT2's
+  conversation-flow path to `what`); a broader oracle corpus into dialogue/planet
+  scenes; the OPTION item glyphs + the manu3 mesh renderer (optional fidelity);
+  and the Path-B static-lift I/O boundary (formalization — the interpreter already
+  runs 100% bit-exact). These are the genuine multi-session long tail.
 
 Verified end to end by `engine::tests::full_playable_loop_end_to_end` (fast CI
 test) and `src/bin/smoke.rs` (headless playthrough of every screen + all five
