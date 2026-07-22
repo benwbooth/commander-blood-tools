@@ -4183,3 +4183,20 @@ location scripts. Evidence:
   table; locations' labels are concept words — the label→handler map is the
   remaining RE, same mechanism). So #6's interaction MODEL is resolved (concept-
   menu, ported); the residual is wiring location topic labels, not new semantics.
+
+
+## FAITHFULNESS vs STATIC-LIFT COUNT (clarification, 2026-07-22)
+
+The "~70% of functions undecoded" figure refers to the PATH-B STATIC
+RECOMPILATION (lifting each function to a hand-written Rust fn, oracle-verified
+bit-exact — 73/~112 leaves+composed so far). It does NOT mean the port is 70%
+unfaithful: the INTERPRETER (src/recomp/interp.rs) executes ALL ~435 functions
+BIT-EXACT (proven two ways — replays the entire 14,999-vector oracle corpus AND
+differential-fuzzes every unique instruction encoding vs Unicorn), and boots +
+plays the real BLOODPRG.EXE. So the running port IS faithful to 100% of the
+binary's behaviour via interpretation; the static lift is a SEPARATE "provably
+100% by construction" milestone (large, gated on the I/O boundary — 35 leaves
+blocked on int/out/in that the interpreter models but the static lifter does
+not, plus 6 indirect-call sites). Growing 73→N does not change the port's
+fidelity; it advances the static-recomp formalization. Pipeline restored this
+session (venv unicorn 2.1.4 + capstone; scan_clean = 71 clean leaves).
