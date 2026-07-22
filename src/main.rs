@@ -408,6 +408,12 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
         if let (Ok(c), Ok(v), Ok(d), Ok(b)) = (r("COD"), r("VAR"), r("DIC"), r("DEB")) {
             // load_dialogue_scenes sets up the scene + the D2 chaining decision.
             engine.load_dialogue_scenes(&c, &v, &d, &b, &descript, Path::new(assets));
+            // Load the script's decoded concept-menu stack (the game's gs:0x6772 menu
+            // system, src/bas_vm.rs) from its .BAS so conversations can present their
+            // real topic menus (seeded at the entry menu; navigated via bas_topic_click).
+            if let Ok(bas) = r("BAS") {
+                engine.load_bas_menus(&bas, &d);
+            }
             // Then play the FULL decoded dialogue (every character's speech events, each
             // over its location background) instead of the single linear execute_trace path.
             if let Some(bundle) = bundles.iter().find(|bu| bu.script == format!("SCRIPT{n}")) {
