@@ -4312,3 +4312,25 @@ positions are a rendering detail, not a missing destination. NOTE the port's
 execute_trace halts at 745 steps (EndMarker) on the initial-state path without
 reaching the D2 offers — it derives destinations from speech-event hosts instead
 (equivalent + verified against the D2 targets).
+
+## WORLD-LOADED STATE — unreachable by driver (4 attempts, conclusive 2026-07-22)
+
+FOUR independent drivers from the SCRIPT2-start savestate all fail to reach the
+world-loaded / destination-active state that gates the #3/#6 depth residuals:
+- GRANTWALK (600 rounds exhaustive console interaction) — anchors empty.
+- PHONEWALK (TELEPHONE + all contact rows) — only a CANCEL box, no content.
+- ADIEUWALK (topic-row walk watching [0x2793] bit2) — never releases.
+- SCRIPT2FWD (1500 click-to-advance rounds) — frame pinned 45, ZERO new files,
+  anchors empty the whole run.
+CONCLUSION: accuracy/script2.state sits in SCRIPT2's CONCEPT-MENU CONVERSATION
+HUB, which advances ONLY by navigating the topic menus to a specific completion
+(not by clicking-to-advance or blind topic-cycling). Reaching the free-choice
+nav (which loads a world → populates entities 0x15..0x1F → 3D anchors + location
+content) requires either (a) decoding SCRIPT2's exact conversation-COMPLETION
+flow (which topic sequence exits the hub to the D2 destination-offer at COD
+offset 4713 — deep VM flow RE), or (b) a conversation-aware driver that reads
+each concept menu and selects the story-advancing topic. Both are genuinely
+multi-session. The activation MECHANISM is fully decoded (0x8CCE chain); only
+this state-reaching remains, and it is NOT a quick driver task — 4 approaches
+exhausted. Precise resume point: instrument SCRIPT2's VM PC to find the token
+path from the hub (WHAT DO YOU WANT COMMANDER, ~offset 0x0edx) to offset 4713.
