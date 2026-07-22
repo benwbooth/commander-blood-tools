@@ -5127,3 +5127,19 @@ verification + indirect-dispatch resolution. CONCLUSION: the whole-binary pure-s
 replacement (75→222) is a genuine multi-session engineering project, precisely scoped now:
 architecture (Runtime-context/resumable lifts) → I/O-leaf lift+verify → composition fixpoint.
 The interpreter already runs all 222 bit-exact, so this is a formalization milestone.
+
+## I/O-lift architecture FULLY specified: Runtime-context lifts call native_int (2026-07-22)
+
+Traced the int service to its callable core: Exit::Int → deliver_int → (for DOS/BIOS
+stubs) `native_int(v)` — a Rust method on Runtime that services int 21h/10h/etc. So the
+I/O-lift architecture is now fully specified:
+  - lifted I/O functions take a RUNTIME-context (not just &mut Machine);
+  - lift.py emits `rt.native_int(vec)` for `int`, and the runtime port out/in handlers
+    for `out`/`in` (both already exist in runtime.rs);
+  - verify against the INTERPRETER as oracle (same handlers → deterministic match);
+  - resolve the 6 indirect call/lcall sites by observation; re-run composition.
+So the whole-binary pure-static port (75→222) is a fully-specified multi-session project:
+(1) change the lift codegen to Runtime-context + native_int/port emission, (2) lift+verify
+the 41 I/O leaves, (3) unblock compositions to the fixpoint. Bounded (222 fns, all handlers
+exist) but multi-session. The interpreter runs all 222 bit-exact now — this is the
+pure-static formalization milestone, fully scoped down to the emit-`rt.native_int(v)` step.
