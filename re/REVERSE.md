@@ -3865,3 +3865,14 @@ manu3 file offset 0x1370).
   divergence thread). PORT IMPLICATION: during the tutorial, menu clicks should
   drive the script (line advance / item demo), not open standalone screens —
   the port's current click->screen routing is a post-tutorial behaviour.
+- **CHOICE BOX ground truth (TUTORIAL2 r360 capture, saved as
+  accuracy/captures/bridge/choice_box_bob_morlock.ppm)**: interactive choices
+  appear as a GOLDEN ROUNDED BOX on the console's LEFT (over the window,
+  ~x45..130, rows ~y95/y108) with gold text rows — here {BOB_MORLOCK, CANCEL}
+  = the TELEPHONE contact chooser, live during the tutorial. CRYOBOX menu row
+  shown red = the DAC hover highlight operating. PORT IMPLICATIONS: (a) the
+  phone dial is NOT a separate screen — contacts are a choice box OVER the
+  console; (b) runtime golden text = HONKF-style font (validates the port's
+  console font approach); (c) the tutorial's expected action here is likely
+  clicking BOB_MORLOCK (added to TUTORIAL2's targets). descript.des reopened
+  when this flow activated (~round 380).
