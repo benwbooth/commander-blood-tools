@@ -4626,3 +4626,16 @@ when a topic list appears), NOT derivable by walking either file alone. The labe
 decode (concept_menu.rs) stands verified; this identifies the exact next RE step
 for wiring (was: "a BAS conversation-flow parser"; corrected to: "the COD→BAS
 menu-selection linkage", since BAS isn't a walkable bytecode).
+
+## manu3 face-table @0xb18 is a PROJECTED-coord buffer, not face indices (2026-07-22)
+
+Decoding the dumped `manu3_face_table.bin` (data:0xb18, n=0xd8): the records are
+NOT [nverts, v-indices, shade] polygon descriptors — they are pairs of smoothly
+varying u16 (x decreasing c57f→…, y increasing e66e→…), i.e. a PRECOMPUTED
+projected-coordinate / curve buffer (per-frame scratch the rasterizer consumes),
+not the static face-index source. So the procedural port still needs the actual
+FACE-INDEX table located (the rasterizer at 0x0b55/0x0ca4 reads it; trace its
+source pointer), plus the shade computation. CONFIRMS manu3 procedural render is
+NOT a bounded one-pass task, and its marginal value is ~zero (the baked hand
+atlas already renders the console hand at mean_abs 0.14). Pipeline + vertex format
+recovered (above); face-index source + rasterizer port remain, deprioritized.
