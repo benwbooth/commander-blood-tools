@@ -133,6 +133,20 @@ fn assemble_words(parts: &[String]) -> String {
 }
 
 
+/// One captured pointing-hand sprite: the live game's 3D hand renderer output
+/// at a given cursor position (fingertip anchor = the cursor hotspot).
+struct HandSprite {
+    /// Cursor position this sprite was captured at (the renderer orients the
+    /// hand by position); the nearest sprite is drawn.
+    captured_at: (i32, i32),
+    /// Cursor hotspot offset into the sprite (cursor - anchor = top-left).
+    anchor: (i32, i32),
+    width: usize,
+    height: usize,
+    /// Palette-index pixels, 0 = transparent.
+    indices: Vec<u8>,
+}
+
 /// A world being visited from the nav map: its decoded `fd/` rooms (paths, decoded
 /// lazily) with the currently-shown room. Rooms are the world's floor/view-angle
 /// backgrounds; cycling walks through them.
@@ -252,6 +266,9 @@ pub struct EngineState {
     /// The real ship bridge: the TB.BIG 360° panorama ([`crate::tbbig`]) whose
     /// frames ARE the console/menu/nav-room/Orxx views (golden menu text baked in).
     panorama: Option<crate::tbbig::BridgePanorama>,
+    /// Pointing-hand cursor sprites captured from the REAL renderer (see
+    /// [`EngineState::load_hand_atlas`]); empty = no hand drawn.
+    hand_atlas: Vec<HandSprite>,
     /// The decompiled bridge interaction state ([`crate::bridge`]): mouse-push
     /// steering, station seeks, and the golden-menu hit testing/highlighting.
     pub bridge: crate::bridge::BridgeView,
@@ -408,6 +425,7 @@ impl EngineState {
             cryobox_active: false,
             cyber_segment: 0,
             panorama: None,
+            hand_atlas: Vec::new(),
             bridge: crate::bridge::BridgeView::default(),
             console_font: Vec::new(),
             bridge_active: false,
@@ -775,6 +793,7 @@ impl EngineState {
         self.bridge.update_view();
         self.compass_angle = self.bridge.frame;
         self.render_bridge_background();
+        self.draw_hand_cursor();
         // The MENU submenu overlay ({EXPLANATIONS, GAME}, decoded by driving
         // the real game) drawn over the golden menu box in the console font.
         if self.menu_submenu_active && !self.console_font.is_empty() {
@@ -785,6 +804,77 @@ impl EngineState {
             for (i, opt) in Self::MENU_SUBMENU.iter().enumerate() {
                 let y = (0x48 + i as i32 * 0x12).max(0) as usize;
                 self.draw_console_text(opt, left, y, SUBMENU_COLOR);
+            }
+        }
+    }
+
+    /// Load the pointing-hand capture atlas: sprites of the REAL game's 3D hand
+    /// renderer output, captured per cursor position from the emulator running
+    /// the original (runtime_boot `BRIDGEPROBE HANDATLAS`; files under
+    /// `accuracy/captures/bridge/hand/hand_<x>_<y>.bin` = {anchor_x, anchor_y,
+    /// w, h: i16, then w*h palette indices, 0 transparent}). This is interim
+    /// real-capture art: the hand's actual renderer (manu3.xdb skeletal mesh +
+    /// affine texture mapping, decoded in re/REVERSE.md) is still to be ported;
+    /// until then the port composites the genuine renderer's output.
+    pub fn load_hand_atlas(&mut self, dir: &Path) {
+        let Ok(entries) = std::fs::read_dir(dir) else { return };
+        for entry in entries.flatten() {
+            let name = entry.file_name().to_string_lossy().into_owned();
+            let Some(pos) = name
+                .strip_prefix("hand_")
+                .and_then(|s| s.strip_suffix(".bin"))
+                .and_then(|s| s.split_once('_'))
+                .and_then(|(a, b)| Some((a.parse::<i32>().ok()?, b.parse::<i32>().ok()?)))
+            else {
+                continue;
+            };
+            let Ok(data) = std::fs::read(entry.path()) else { continue };
+            if data.len() < 8 {
+                continue;
+            }
+            let word = |at: usize| i16::from_le_bytes([data[at], data[at + 1]]) as i32;
+            let (anchor_x, anchor_y, w, h) = (word(0), word(2), word(4), word(6));
+            if w <= 0 || h <= 0 || data.len() < 8 + (w * h) as usize {
+                continue;
+            }
+            self.hand_atlas.push(HandSprite {
+                captured_at: pos,
+                anchor: (anchor_x, anchor_y),
+                width: w as usize,
+                height: h as usize,
+                indices: data[8..8 + (w * h) as usize].to_vec(),
+            });
+        }
+    }
+
+    /// Draw the pointing-hand cursor at the virtual cursor position, using the
+    /// atlas sprite captured nearest to it (the real renderer varies the hand's
+    /// orientation with position). No-op with an empty atlas.
+    fn draw_hand_cursor(&mut self) {
+        let (cx, cy) = (self.bridge.mouse_screen_x(), self.bridge.mouse_y);
+        let Some(sprite) = self
+            .hand_atlas
+            .iter()
+            .min_by_key(|s| {
+                let (dx, dy) = (s.captured_at.0 - cx, s.captured_at.1 - cy);
+                dx * dx + dy * dy
+            })
+        else {
+            return;
+        };
+        let (x0, y0) = (cx - sprite.anchor.0, cy - sprite.anchor.1);
+        for y in 0..sprite.height {
+            for x in 0..sprite.width {
+                let index = sprite.indices[y * sprite.width + x];
+                if index == 0 {
+                    continue;
+                }
+                let (px, py) = (x0 + x as i32, y0 + y as i32);
+                if (0..ENGINE_SCREEN_WIDTH as i32).contains(&px)
+                    && (0..ENGINE_SCREEN_HEIGHT as i32).contains(&py)
+                {
+                    self.framebuffer[py as usize * ENGINE_SCREEN_WIDTH + px as usize] = index;
+                }
             }
         }
     }
@@ -2580,6 +2670,12 @@ mod tests {
         let mut e = EngineState::new();
         e.load_bridge(iso);
         if e.panorama.is_none() { return; }
+        // The captured-hand atlas, when present, must land the hand where the live
+        // game drew it (tightening the diff, not loosening it).
+        for dir in ["accuracy/captures/bridge/hand", "../accuracy/captures/bridge/hand"] {
+            e.load_hand_atlas(Path::new(dir));
+            if !e.hand_atlas.is_empty() { break; }
+        }
         e.bridge_active = true;
         // Reproduce the live probe's state: view at frame 55, cursor at ring 320
         // (screen x 40), y 100 — the exact state the capture was taken in.

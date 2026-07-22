@@ -409,7 +409,8 @@ fn main() {
                 .expect("TB.BIG");
             let bg = pano.frame_pixels(55).unwrap();
             let grid: Vec<(u16, u16)> = [
-                (60u16, 60u16), (160, 60), (260, 60),
+                (40u16, 100u16), // the BRIDGEPROBE rest state (test ground truth)
+                (60, 60), (160, 60), (260, 60),
                 (60, 120), (160, 120), (260, 120),
                 (60, 170), (160, 170), (260, 170),
             ]
@@ -441,6 +442,51 @@ fn main() {
                 if diff.len() < 50 {
                     println!("atlas ({gx},{gy}): no hand blob ({} px)", diff.len());
                     continue;
+                }
+                // Keep only the connected component nearest the cursor: the hand is
+                // drawn at the cursor; the tutorial subtitle band / portrait are
+                // separate far-away components.
+                {
+                    let set: std::collections::HashSet<usize> = diff.iter().copied().collect();
+                    let mut seen: std::collections::HashSet<usize> = Default::default();
+                    let mut best: Vec<usize> = Vec::new();
+                    let mut best_d = i64::MAX;
+                    for &start in &diff {
+                        if seen.contains(&start) { continue; }
+                        let mut comp = vec![start];
+                        let mut stack = vec![start];
+                        seen.insert(start);
+                        while let Some(i) = stack.pop() {
+                            let (x, y) = ((i % 320) as i32, (i / 320) as i32);
+                            for (dx, dy) in [(1i32, 0i32), (-1, 0), (0, 1), (0, -1), (1, 1), (-1, -1), (1, -1), (-1, 1)] {
+                                let (nx, ny) = (x + dx, y + dy);
+                                if !(0..320).contains(&nx) || !(0..200).contains(&ny) { continue; }
+                                let n = (ny * 320 + nx) as usize;
+                                if set.contains(&n) && seen.insert(n) {
+                                    comp.push(n);
+                                    stack.push(n);
+                                }
+                            }
+                        }
+                        if comp.len() < 200 { continue; } // stars / speckle
+                        let d = comp
+                            .iter()
+                            .map(|&i| {
+                                let (x, y) = ((i % 320) as i64, (i / 320) as i64);
+                                (x - gx as i64).pow(2) + (y - gy as i64).pow(2)
+                            })
+                            .min()
+                            .unwrap_or(i64::MAX);
+                        if d < best_d {
+                            best_d = d;
+                            best = comp;
+                        }
+                    }
+                    if best.is_empty() {
+                        println!("atlas ({gx},{gy}): no component near cursor");
+                        continue;
+                    }
+                    diff = best;
                 }
                 let (mut x0, mut y0, mut x1, mut y1) = (320usize, 200usize, 0usize, 0usize);
                 for &i in &diff {

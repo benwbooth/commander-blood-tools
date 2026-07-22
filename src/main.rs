@@ -293,8 +293,10 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     engine.load_tv_channels(Path::new(assets), "tv");
     // The cyberspace hyperspace-tunnel screen: press 'y' to toggle.
     engine.load_cyberspace(Path::new(assets));
-    // The ship-bridge hub: press 'b' to open; click a station icon to enter its screen.
+    // The ship bridge: the TB.BIG panorama + the captured pointing-hand cursor
+    // (real-renderer output; regenerate with runtime_boot BRIDGEPROBE HANDATLAS).
     engine.load_bridge(Path::new(iso));
+    engine.load_hand_atlas(Path::new("accuracy/captures/bridge/hand"));
     // The real navigation star-map background (CHART.FD) for the ship-nav view.
     engine.load_nav_chart(Path::new(iso));
 
