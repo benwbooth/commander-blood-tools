@@ -398,11 +398,6 @@ pub struct EngineState {
     /// `Music` ("blintr.voc") to its `cliptoot.hnm` cinematic — so the MINDSCAPE/Microfolie's
     /// logo reel (`mind.hnm`) plays SILENT and the music starts only with the cinematic.
     intro_music: Vec<Option<String>>,
-    /// SCRIPT1 (the tutorial/early game) is presented on the PYRAMID CONSOLE — a viewscreen scene
-    /// + a persistent grey 3D-pyramid floor + eye-orb (ground truth: accuracy/captures/frame_6-22)
-    /// — whereas SCRIPT2+ use the purple-panorama bridge. When set, the dialogue renderer overlays
-    /// the pyramid console over the scene and skips the bridge panorama.
-    pyramid_console: bool,
     /// Index of the intro HNM currently playing.
     intro_index: usize,
     /// True while the startup intro sequence is playing (gates the main render path).
@@ -498,7 +493,6 @@ impl EngineState {
             intro_hnms: Vec::new(),
             intro_cues: Vec::new(),
             intro_music: Vec::new(),
-            pyramid_console: false,
             intro_index: 0,
             intro_active: false,
         }
@@ -624,12 +618,6 @@ impl EngineState {
     /// The frontend watches this for changes to start each clip's music at the right moment.
     pub fn intro_index(&self) -> usize {
         self.intro_index
-    }
-
-    /// Present the loaded dialogue on the SCRIPT1 pyramid console (viewscreen + pyramid floor +
-    /// eye-orb) rather than the SCRIPT2+ bridge — set by the driver per active script.
-    pub fn set_pyramid_console(&mut self, on: bool) {
-        self.pyramid_console = on;
     }
 
     /// The background-music stem to start WITH the current intro clip, if any (the logo reel
@@ -2863,10 +2851,12 @@ impl EngineState {
             self.scene_hnm = Some(hnm);
             self.scene_frame += 1;
             self.present_scene_buffer();
-        } else if self.panorama.is_some() && !self.pyramid_console {
-            // No talk-HNM (e.g. HONK's food menu) on the SCRIPT2+ BRIDGE: composite the real
-            // bridge panorama behind the subtitle text — and the TOPIC MENU when this dialogue
-            // offers one (the concept-menu conversation system, e.g. HONK's TALK/ONE..NINE).
+        } else if self.panorama.is_some() {
+            // No talk-HNM (e.g. the on-ship console tutorial, HONK's food menu):
+            // the dialogue happens AT THE SHIP CONSOLE in the real game, so
+            // composite the real bridge panorama behind the subtitle text —
+            // and the TOPIC MENU when this dialogue offers one (the concept-menu
+            // conversation system, e.g. HONK's TALK/ONE..NINE).
             self.render_bridge_background();
             if !self.topic_menu.is_empty() {
                 let labels: Vec<String> =
@@ -2875,16 +2865,9 @@ impl EngineState {
             }
             self.scene_buffer.copy_from_slice(&self.framebuffer);
         } else {
-            // No talk-HNM: black viewscreen (SCRIPT1 pyramid console draws its own floor below).
             for p in self.framebuffer.iter_mut() {
                 *p = 0;
             }
-        }
-        // SCRIPT1 (tutorial/early) is presented on the PYRAMID CONSOLE: overlay the grey pyramid
-        // floor + eye-orb over the viewscreen scene (ground truth: accuracy/captures/frame_6-22).
-        // SCRIPT2+ keep the bridge. Uses palette slots 0xFA-0xFC (clear of the subtitle 0xFD/0xFE).
-        if self.pyramid_console {
-            self.overlay_console_pyramids();
         }
         // Subtitle text layer over the scene, revealed one character at a time (the
         // game's reveal @0x93F8–0x94B8: `gs:0x5E58` advances one char whenever the
