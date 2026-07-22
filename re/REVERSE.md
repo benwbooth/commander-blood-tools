@@ -5143,3 +5143,17 @@ So the whole-binary pure-static port (75→222) is a fully-specified multi-sessi
 the 41 I/O leaves, (3) unblock compositions to the fixpoint. Bounded (222 fns, all handlers
 exist) but multi-session. The interpreter runs all 222 bit-exact now — this is the
 pure-static formalization milestone, fully scoped down to the emit-`rt.native_int(v)` step.
+
+## No bounded I/O-lift increment exists — confirmed (2026-07-22)
+
+Attempted to find a bounded "lift one I/O function" start: the simplest int leaf func_79c
+is `install_timer_isr_hook` — int 21h AX=3508 (get INT 08h vec) + int 21h AH=25 (set it) +
+`out 0x43/0x40` (PIT program) + gs writes. Lifting even THIS one function requires the full
+architecture first: (a) native_int is a PRIVATE Runtime method (would need pub + a stable
+call signature), (b) no Runtime-context lift path exists (auto.rs fns are &mut Machine), (c)
+no interpreter-oracle harness for Runtime-context lifts. So there is NO bounded, safe,
+high-value I/O-lift increment — the smallest step (one function) needs the multi-session
+architecture (Runtime-context codegen + handler exposure + oracle harness) in place first.
+This DEFINITIVELY confirms the whole-binary static port is a multi-session project with no
+bounded-pass entry point; it is fully specified in the sections above (architecture → I/O
+worklist → composition). The interpreter runs all 222 bit-exact meanwhile.
