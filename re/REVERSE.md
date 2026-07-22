@@ -2337,6 +2337,32 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 
 ## Next Tasks
 
+### Faithful-port grind (2026-07-21 session — replace guesswork with decompiled truth)
+
+- [x] TB.BIG decoded + ported (`src/tbbig.rs`), bridge interaction decompiled + ported
+      (`src/bridge.rs`), engine console = real panorama, end-to-end pixel test vs the
+      live game (mean_abs 2.58). See "TB.BIG = THE BRIDGE 360° PANORAMA".
+- [ ] **Pointing-hand cursor**: the game's bridge cursor is a teal pointing hand drawn
+      over the panorama (visible in accuracy/captures/bridge/*.ppm). NOT in blood.dat,
+      not a loose .SPR, not int33h. Find its draw routine via a framebuffer write-watch
+      at the hand pixels in the emulator (Machine.watch/watch_addr), then its asset.
+      Note: station records 4/5 (live 0x2A1B dump) hold static boxes {18,111,96,47} /
+      {215,112,75,27} + screen positions at +0x14 — possibly related UI overlays.
+- [ ] **Nav sector merge**: rotate to frames 72..107 = the pyramid navigation room.
+      Verify vs the live ring captures (ringprobe rotate_*.ppm) what the real nav shows
+      (destination pyramids? labels?) and port destination selection onto the panorama
+      sector, replacing the CHART.FD stand-in nav screen. The choose-a-location list
+      logic (layout_ship_3d_target_list, DS:0x259B gate) is already decoded.
+- [ ] **On-ship dialogue overlay**: the tutorial (Cap'n Bob) plays OVER the console
+      panorama in the real game (subtitle + portrait over the bridge, gs:[0x2793]&8
+      path) — the port currently switches to a separate dialogue screen. Composite
+      dialogue over the panorama when on-ship.
+- [ ] Station records 4/5 semantics (+4 kind 0x14/0x15): what do they click? (Bob
+      portrait? orb sub-regions?) Decode via the record-scan handlers at 0x7dae's
+      cs:0x06d4 dispatch (bx=kind-1 doubled → handler).
+- [ ] MENU submenu: capture the REAL submenu overlay appearance from the emulator
+      (MENUMAP row-click captures) and replace the HONKF-font stand-in drawing.
+
 ### RE Investigation
 
 - [x] Locate the VM token layer: decoder `token_advance` @0x62B6, walker
@@ -3646,3 +3672,29 @@ accuracy/captures/bridge/{console_rest,rotate_left,rotate_right}.ppm.
 console/bridge/nav rendering must be REPLACED by this panorama (ORX.FD-brightened panel,
 invented menu text/positions, separate bridge/nav screens are all wrong — the real
 console IS panorama frame 55 + hand cursor + starfield through the windows).
+
+### Bridge INTERACTION fully decompiled + ported (same session) — src/bridge.rs
+
+- Chunk header 8 bytes = the EYE-ORB's clickable rect **{x,y,w,h}** per frame (field
+  order proven by mouse_hit_test 0x8269; earlier "w,h,x,y" guess corrected). Copied
+  into the station table [0x2A1B+rec*0x18+0xC]; rec picked by chunk word@+8.
+- Station records: +0xA = seek target (2*rest frame; live dump: frames 0/45/90/135 for
+  helm/menu/nav/Orxx), +0 flags (bit0 active, bit3 set by hit test while button down).
+  Orb click -> seek ([0x2793]|=8, [0x279B]=target): half-remaining-distance ease per
+  tick (min 1), shortest way around the 180-ring (0x9667..0x96F5).
+- Steering (0x973D..0x97E3): the mouse lives in RING space (1440px around; hardware
+  cursor warped to ring+0x5A0 each tick at 0x9722 = infinite push steering). The view
+  chases the cursor: dead zone 0x1F arc units (±124 screen px), then the frame lands
+  0x1E arc (15 frames) short of the cursor on the near side. [0x27A7]=frame*8-160
+  rebases ring->screen for hit tests (0x97FC). REPLAYED: ring 320 -> frame 55, left
+  edge -> 15, right edge -> 64 = exactly the live BRIDGEPROBE observations.
+- Golden menu (0x8613, gated frame 0x28..0x3C): box right = 0x11F - delta*8, width
+  0x6E; rows top = 0x48 + |delta|*1.25, pitch 0x12 - |delta|/8, 5 rows. Hover
+  highlight via DYNAMIC DAC entries 0x7B+row (each baked menu row uses its own
+  palette index): idle (16,12,0), hover (63,0,0). Click: [0x2A19]=row+1, seek to
+  frame 45, [0x2793]|=0xC (bit2 = cursor clamp while engaged).
+- END-TO-END VERIFIED: the port engine's full console render (starfield -> transparent
+  panorama -> menu DAC rows) matches the live capture at **mean_abs 2.58** (test
+  `bridge_console_matches_live_game_capture`; residual = unported hand cursor + RNG
+  stars). The invented console (ORX.FD brighten, menu at x=196, station icons) is
+  REMOVED from the engine.

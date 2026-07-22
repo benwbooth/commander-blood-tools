@@ -392,30 +392,38 @@ fn main() {
         let (fr, ang, st) = state(&rt);
         println!("console reached: tb_frame={fr} angle={ang:#x} station={st:#x} @ {} steps", rt.cpu.steps);
         rt.write_ppm(&out.join("bridge_00_console.ppm")).unwrap();
-        // Candidate rotation inputs; after each, run a while and report the state words.
-        let probes: [(&str, u16, u16, Option<(u8, u8)>); 6] = [
-            ("mouse-left-edge", 2, 100, None),
-            ("mouse-right-edge", 636, 100, None),
-            ("mouse-center", 320, 100, None),
-            ("key-left", 320, 100, Some((0x4b, 0x00))),
-            ("key-right", 320, 100, Some((0x4d, 0x00))),
-            ("key-right-x8", 320, 100, Some((0x4d, 0x00))),
-        ];
-        for (i, &(name, mx, my, key)) in probes.iter().enumerate() {
-            rt.set_mouse_pos(mx, my);
-            if let Some((sc, ch)) = key {
-                let reps = if name.ends_with("x8") { 8 } else { 1 };
-                for _ in 0..reps {
-                    rt.inject_key(sc, ch);
-                    let _ = rt.run(rt.cpu.steps + 1_000_000);
-                }
+        // Dump the live 6-record station table (gs:0x2A1B, 0x18 stride) so the port
+        // can mirror the real records: +0 flags, +0xA = 2*rest-frame seek target,
+        // +0xC..0x13 = current bbox {w,h,x,y}.
+        let dump_table = |rt: &Runtime, tag: &str| {
+            for rec in 0..6u32 {
+                let base = 0x2a1b + rec * 0x18;
+                let words: Vec<String> = (0..12)
+                    .map(|w| {
+                        let lo = rt.m.read8(g, base + w * 2) as u16;
+                        let hi = rt.m.read8(g, base + w * 2 + 1) as u16;
+                        format!("{:04x}", lo | (hi << 8))
+                    })
+                    .collect();
+                println!("station[{rec}] {tag}: {}", words.join(" "));
             }
-            let _ = rt.run(rt.cpu.steps + 8_000_000);
+        };
+        dump_table(&rt, "console");
+        // Candidate rotation inputs; after each, run a while and report the state words.
+        // Rotate around the FULL panorama ring by repeatedly parking the cursor at
+        // ring positions ahead of the view (the steering law chases it), capturing
+        // each stop — live references of every bridge sector (nav pyramids, Orxx).
+        for stop in 1..=12u32 {
+            // Aim the cursor 120 ring px ahead of the current view centre.
+            let (fr, _, _) = state(&rt);
+            let target = ((fr as u32 * 8 + 280) % 1440) as u16;
+            rt.set_mouse_pos(target, 100);
+            let _ = rt.run(rt.cpu.steps + 10_000_000);
             let (fr, ang, st) = state(&rt);
-            println!("probe {name}: tb_frame={fr} angle={ang:#x} station={st:#x}");
-            rt.write_ppm(&out.join(format!("bridge_{:02}_{name}.ppm", i + 1))).unwrap();
+            println!("rotate stop {stop}: tb_frame={fr} angle={ang:#x} station={st:#x}");
+            rt.write_ppm(&out.join(format!("rotate_{stop:02}_f{fr}.ppm"))).unwrap();
         }
-        println!("BRIDGEPROBE done -> {}/bridge_*.ppm", out.display());
+        println!("BRIDGEPROBE done -> {}/bridge_*.ppm + rotate_*.ppm", out.display());
         return;
     }
 
