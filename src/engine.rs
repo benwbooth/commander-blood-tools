@@ -388,6 +388,12 @@ pub struct EngineState {
     dialogue_texts: Vec<String>,
     /// Playback cursor into [`EngineState::dialogue`].
     dialogue_cursor: usize,
+    /// Auto-play stops when the cursor reaches this line (exclusive) — the SCRIPTED OPENING
+    /// plays unprompted, then the dialogue HOLDS at the topic menu and further content is
+    /// player-driven (a topic click plays its segment, then re-holds). `None` = play through.
+    /// The real game gates topic content behind the conversation menu (the player clicks HONK /
+    /// a topic); only scripted events auto-play (user-reported: Honk rattled everything off).
+    autoplay_end: Option<usize>,
     /// Driver-set floor on the per-line hold (the faithful hold is computed from the
     /// text-speed step; see [`EngineState::current_line_hold`]).
     pub dialogue_hold_frames: u32,
@@ -530,6 +536,7 @@ impl EngineState {
             dialogue: Vec::new(),
             dialogue_texts: Vec::new(),
             dialogue_cursor: 0,
+            autoplay_end: None,
             dialogue_hold_frames: 60,
             text_speed_step: crate::vm::text_speed_step_from_setting(3),
             dialogue_timer: 0,
@@ -1445,7 +1452,22 @@ impl EngineState {
         let line = self.topic_menu[row].1;
         self.set_dialogue_cursor(line);
         self.dialogue_timer = 0;
+        // Play only THIS topic's segment: auto-play runs to the next topic's first line (the
+        // nearest topic start after this one), then re-holds at the menu.
+        let next_start = self
+            .topic_menu
+            .iter()
+            .map(|(_, l)| *l)
+            .filter(|&l| l > line)
+            .min();
+        self.autoplay_end = next_start;
         Some(row)
+    }
+
+    /// Gate auto-play at `end` (exclusive): the scripted opening plays unprompted, then the
+    /// dialogue holds at the topic menu and topic clicks drive the rest.
+    pub fn set_dialogue_autoplay_end(&mut self, end: Option<usize>) {
+        self.autoplay_end = end;
     }
 
     /// Map a click to a list-menu row (the measured geometry above).
@@ -2233,6 +2255,7 @@ impl EngineState {
     /// instead of `execute_trace`'s single linear branch (which reaches only a fraction of
     /// the ~3400 decoded lines). Each `lines` entry is (subtitle, background-HNM path).
     pub fn set_speech_dialogue(&mut self, lines: Vec<(String, Option<std::path::PathBuf>)>) {
+        self.autoplay_end = None; // a new scene plays through unless the driver gates it
         self.dialogue = (0..lines.len())
             .map(|offset| LineState { offset, actor_offset: None, location_offset: None })
             .collect();
@@ -2361,7 +2384,13 @@ impl EngineState {
             self.dialogue_timer = full.saturating_sub(1);
             return true;
         }
-        // Fully shown: advance to the next line, or signal the end.
+        // Fully shown: advance to the next line, or signal the end. A click does not blow
+        // through the autoplay boundary — the topic menu owns what plays next.
+        if let Some(end) = self.autoplay_end {
+            if self.dialogue_cursor + 1 >= end {
+                return false;
+            }
+        }
         self.dialogue_timer = 0;
         if self.dialogue_cursor + 1 < self.dialogue.len() {
             self.dialogue_cursor += 1;
@@ -2377,6 +2406,17 @@ impl EngineState {
     fn advance_dialogue(&mut self) {
         if self.dialogue.is_empty() {
             return;
+        }
+        // Hold at the autoplay boundary: the current line stays fully shown and the topic menu
+        // waits for the player (freeze the timer at the reveal-complete point).
+        if let Some(end) = self.autoplay_end {
+            if self.dialogue_cursor + 1 >= end {
+                let full = self.current_line_hold().saturating_sub(1);
+                if self.dialogue_timer >= full {
+                    self.dialogue_timer = full;
+                    return;
+                }
+            }
         }
         self.dialogue_timer += 1;
         if self.dialogue_timer >= self.current_line_hold() {
@@ -3796,6 +3836,32 @@ mod tests {
                 "in-game cutscene plays its full HNM ({frames} frames), not cut to its ~tick-10 cues"
             );
         }
+    }
+
+    /// Topic-gated dialogue: the scripted OPENING auto-plays, then the dialogue HOLDS at the
+    /// topic menu; a topic click plays only ITS segment and re-holds. Guards the user-reported
+    /// bug where Honk rattled off his entire food menu unprompted.
+    #[test]
+    fn dialogue_autoplay_holds_at_the_topic_menu() {
+        let mut e = EngineState::new();
+        let lines: Vec<(String, Option<std::path::PathBuf>)> =
+            (0..10).map(|i| (format!("LINE {i}"), None)).collect();
+        e.set_speech_dialogue(lines);
+        e.dialogue_hold_frames = 2;
+        e.set_topic_menu(vec![("TALK".into(), 4), ("ONE".into(), 7)]);
+        e.set_dialogue_autoplay_end(Some(4));
+        for _ in 0..600 {
+            e.step(MouseInput::default());
+        }
+        assert_eq!(e.dialogue_cursor(), 3, "auto-play holds on the last opening line");
+        assert!(!e.dialogue_finished(), "the held dialogue is not finished");
+        // Clicking the TALK topic (row 0) plays its segment only, then re-holds.
+        let row = e.topic_menu_click(200, 40);
+        assert_eq!(row, Some(0));
+        for _ in 0..600 {
+            e.step(MouseInput::default());
+        }
+        assert_eq!(e.dialogue_cursor(), 6, "the topic segment holds before the next topic");
     }
 
     /// The TV plays the real DESCRIPT PROGRAMMING: the broadcast records that self-identify via

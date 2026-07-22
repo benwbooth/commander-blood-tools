@@ -501,7 +501,15 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         line_index += 1;
                     }
                     topics.sort_by_key(|(l, _)| if l == "TALK" { 0 } else { 1 });
-                    engine.set_topic_menu(if topics.len() >= 3 { topics } else { Vec::new() });
+                    let usable = topics.len() >= 3;
+                    // Gate auto-play at the first topic-owned line: the scripted OPENING plays
+                    // unprompted (the real game's scripted event), then the dialogue holds at
+                    // the topic menu — Honk's food menu and the rest play only when clicked.
+                    if usable {
+                        let first_topic_line = topics.iter().map(|(_, l)| *l).min();
+                        engine.set_dialogue_autoplay_end(first_topic_line);
+                    }
+                    engine.set_topic_menu(if usable { topics } else { Vec::new() });
                 } else {
                     // Location scripts (SCRIPT3/4/5): show the decoded concept menu
                     // (bas_vm) — its real topics, clickable via bas_menu_click. Was:
