@@ -844,6 +844,11 @@ impl EngineState {
     /// real-capture art: the hand's actual renderer (manu3.xdb skeletal mesh +
     /// affine texture mapping, decoded in re/REVERSE.md) is still to be ported;
     /// until then the port composites the genuine renderer's output.
+    /// How many pointing-hand sprites the atlas holds (0 = none loaded).
+    pub fn hand_atlas_len(&self) -> usize {
+        self.hand_atlas.len()
+    }
+
     pub fn load_hand_atlas(&mut self, dir: &Path) {
         let Ok(entries) = std::fs::read_dir(dir) else { return };
         for entry in entries.flatten() {
