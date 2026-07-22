@@ -133,7 +133,7 @@ DS:0x6612,sprite_dirty_rect_list,"dirty rectangle list consumed by sprite_slot_d
 0x009A10,ship_3d_point_cloud_project,"projects 1000 DS:0x2FC1 point-cloud records through DS:0x2F95 matrix and plots clipped depth shades"
 0x009B04,ship_3d_projected_point_plot,"clips projected point against DS:0x5235..0x523B and writes depth shade into ES framebuffer if empty"
 0x009B67,ship_3d_point_cloud_randomize,"initializes 1000 point-cloud records at DS:0x2FC1 with random x/y/z words"
-0x009B98,ship_3d_object_sprite_project,"projects eleven object sprite anchors from DS:0x4F09 and draws scaled descriptors from DS:0x6212"
+0x009B98,ship_3d_object_sprite_project,"nav-destination projector: loops 11 entities 0x6212+(idx+0x15)*32 (=entities 0x15..0x1F), gate test[si]&0x80 (active only), projects world coords via matrix 0x2F95 -> screen (x=dot>>7/depth+160, y=+100). Anchors DS:0x4F09 are its per-frame scratch, NOT stored. Nav destinations = active entities 0x15..0x1F, positioned by entity world coords, activated by story progression. Port model (GameProgress) structurally faithful"
 0x00AFA0,ship_presentation_fsm,"ship/navigation presentation FSM; dispatches ship HUD, procedural 3D, and dialogue update branches"
 0x00B079,ship_3d_hud_init,"sets DS:0x2793 bit 3 and initializes ship HUD/procedural-3D state"
 0x00B24C,ship_3d_alt_framebuffer_band_copy_call,"calls plane-band updater after swapping DS:0x5219 to DS:0x521D"
