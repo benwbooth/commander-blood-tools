@@ -68,6 +68,28 @@ pub struct ScriptBundle {
     pub speech_events: Vec<SpeechEvent>,
 }
 
+impl ScriptBundle {
+    /// The DESCRIPT **Sequence** (cutscene) records this script references through its DEB symbols
+    /// — the in-game cutscenes the script can trigger (e.g. SCRIPT1 → `maledict`). Verified against
+    /// the real data (SCRIPT1's DEB captures `maledict` as a kind-5 object → the Sequence record).
+    /// The faithful PLAYER is [`crate::engine::EngineState::start_descript_cutscene`]; the remaining
+    /// wire is firing each at its 0xC4 reference point in the dialogue pass (docs/faithfulness-audit.md).
+    /// Deduplicated, in first-seen order.
+    pub fn cutscene_record_names(&self, descript_db: &DescriptDb) -> Vec<String> {
+        let mut seen = std::collections::HashSet::new();
+        self.symbols
+            .iter()
+            .filter(|s| {
+                descript_db
+                    .record(&s.name)
+                    .is_some_and(|r| r.kind == RecordKind::Sequence)
+            })
+            .map(|s| s.name.clone())
+            .filter(|name| seen.insert(name.clone()))
+            .collect()
+    }
+}
+
 pub fn parse_deb(data: &[u8]) -> Vec<DebSymbol> {
     data.chunks_exact(20)
         .filter_map(|record| {
@@ -459,6 +481,44 @@ mod tests {
         let dict = parse_dictionary(b"HELLO\0WORLD\0");
         assert_eq!(dict.get(&0).map(String::as_str), Some("HELLO"));
         assert_eq!(dict.get(&6).map(String::as_str), Some("WORLD"));
+    }
+
+    /// Scripts reference in-game cutscenes (DESCRIPT Sequence records) via their DEB symbols, and
+    /// `cutscene_record_names` identifies them — the first wiring step for `start_descript_cutscene`.
+    /// Real data: SCRIPT1 references the `garde` cutscene; `maledict` is referenced by some script.
+    #[test]
+    fn scripts_expose_the_cutscenes_they_reference() {
+        let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .into_iter()
+            .find(|p| Path::new(p).join("DESCRIPT.DES").is_file());
+        let Some(iso) = iso else { return };
+        let Ok(db) = crate::descript::DescriptDb::parse_file(Path::new(iso).join("DESCRIPT.DES"))
+        else {
+            return;
+        };
+        let hnm_music = db.hnm_music_map();
+        let Ok(bundles) = parse_script_dir(iso, &db, &hnm_music) else {
+            return;
+        };
+        let Some(s1) = bundles.iter().find(|b| b.script == "SCRIPT1") else {
+            return;
+        };
+        let cutscenes = s1.cutscene_record_names(&db);
+        assert!(
+            cutscenes.iter().any(|n| n == "garde"),
+            "SCRIPT1 must expose the garde cutscene it references, got {cutscenes:?}"
+        );
+        // And each name resolves to a real DESCRIPT Sequence record (the cutscene player's input).
+        assert!(cutscenes.iter().all(|n| db
+            .record(n)
+            .is_some_and(|r| r.kind == RecordKind::Sequence)));
+        // maledict is referenced by SOME script (verified separately via inspect-scripts).
+        assert!(
+            bundles
+                .iter()
+                .any(|b| b.cutscene_record_names(&db).iter().any(|n| n == "maledict")),
+            "some script references the maledict cutscene"
+        );
     }
 
     #[test]
