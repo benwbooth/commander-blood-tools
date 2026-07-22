@@ -166,6 +166,16 @@ pub const ENGINE_SCREEN_HEIGHT: usize = 200;
 
 /// Per-frame engine state — the subset of the `DS`/`gs` globals the main loop
 /// (`0x0FFB`) touches, plus the indexed framebuffer the render subsystems fill.
+/// One TV broadcast program: a DESCRIPT Sequence record that self-identifies as a channel
+/// (its subtitles announce "…watching…"), played as its chained HNM clips + music +
+/// tick-timed subtitle cues. See [`EngineState::load_tv_programs`].
+struct TvProgram {
+    name: String,
+    clips: Vec<HnmFile>,
+    cues: Vec<crate::descript::SubtitleCue>,
+    music: Option<String>,
+}
+
 pub struct EngineState {
     /// Frame counter (increments once per [`EngineState::step`]).
     pub frame: u64,
@@ -242,11 +252,24 @@ pub struct EngineState {
     alien_intro_frame: Option<usize>,
     /// The comms "Hate TV" screen: broadcast channel HNMs (`sq/tvgren*`, `tvred*` —
     /// self-contained character-in-TV-frame animations). Steering switches channels.
+    /// Legacy fallback when no `tv_programs` are available.
     tv_channels: Vec<HnmFile>,
+    /// The real TV PROGRAMMING: the DESCRIPT Sequence records that self-identify as broadcasts —
+    /// their own subtitles announce the channel ("YOU ARE WATCHING HATE TV" / "…you're watching
+    /// the IZWAL channel"), i.e. `hatetv` (8 chained clips + hatetv.voc) and `microkid` (IZWAL,
+    /// 3 clips + balise.voc). Each channel plays its record's clips in sequence with its music
+    /// and tick-timed subtitles — the data-faithful broadcast, not a silent raw HNM loop.
+    tv_programs: Vec<TvProgram>,
     /// Whether the comms/TV screen is the active view.
     pub tv_active: bool,
     /// Currently-selected TV channel index.
     tv_channel: usize,
+    /// Current clip index within the active TV program (its record chains several HNMs).
+    tv_clip: usize,
+    /// Frame index within the current TV clip.
+    tv_clip_frame: usize,
+    /// Total frames elapsed in the active program (drives its subtitle-cue ticks; wraps on loop).
+    tv_program_frame: usize,
     /// The cyberspace hyperspace-tunnel animations (`sq/hyper_00..07.hnm` — colour
     /// warp-tunnel variants). This is the cyberspace screen's *presentation*; the
     /// navigation minigame logic is undecoded.
@@ -444,8 +467,12 @@ impl EngineState {
             alien_intro: None,
             alien_intro_frame: None,
             tv_channels: Vec::new(),
+            tv_programs: Vec::new(),
             tv_active: false,
             tv_channel: 0,
+            tv_clip: 0,
+            tv_clip_frame: 0,
+            tv_program_frame: 0,
             cyber_tunnels: Vec::new(),
             cyber_steer: 0,
             cyber_arrived: false,
@@ -701,9 +728,56 @@ impl EngineState {
         self.alien_pan = 0;
     }
 
+    /// Load the TV PROGRAMMING from the DESCRIPT data: every Sequence record whose own subtitles
+    /// announce it as a broadcast (text contains "watching" — `hatetv`: "YOU ARE WATCHING HATE TV",
+    /// `microkid`: "…you're watching the IZWAL channel"). Each becomes one TV channel playing its
+    /// chained clips + music + tick-subtitles. Sorted by record name for a stable channel order.
+    pub fn load_tv_programs(&mut self, db: &crate::descript::DescriptDb, assets: &Path) {
+        let sq = assets.join("sq");
+        let mut programs: Vec<TvProgram> = db
+            .records
+            .iter()
+            .filter(|r| {
+                r.kind == crate::descript::RecordKind::Sequence
+                    && r.subtitles
+                        .iter()
+                        .any(|c| c.text.to_lowercase().contains("watching"))
+            })
+            .map(|r| TvProgram {
+                name: r.name.clone(),
+                clips: r
+                    .sequence_hnms
+                    .iter()
+                    .filter_map(|h| HnmFile::open(&sq.join(h)).ok())
+                    .collect(),
+                cues: r.subtitles.clone(),
+                music: r.music.first().cloned(),
+            })
+            .filter(|p| !p.clips.is_empty())
+            .collect();
+        programs.sort_by(|a, b| a.name.cmp(&b.name));
+        self.tv_programs = programs;
+        self.tv_channel = 0;
+        self.tv_clip = 0;
+        self.tv_clip_frame = 0;
+        self.tv_program_frame = 0;
+    }
+
+    /// The current TV channel's broadcast music (from its record), for the driver to play while
+    /// the channel is on — e.g. `hatetv.voc` / `balise.voc`. `None` on the legacy raw channels.
+    pub fn tv_music(&self) -> Option<&str> {
+        if self.tv_programs.is_empty() {
+            return None;
+        }
+        self.tv_programs[self.tv_channel % self.tv_programs.len()]
+            .music
+            .as_deref()
+    }
+
     /// Load the comms "Hate TV" screen: the broadcast-channel HNMs named `<prefix>*`
     /// under `sq/` (e.g. `tv` → tvgren*/tvred*), sorted so steering cycles channels
-    /// in a stable order. The screen renders once `tv_active` is set.
+    /// in a stable order. The screen renders once `tv_active` is set. Legacy fallback for
+    /// when the DESCRIPT programming (`load_tv_programs`) is unavailable.
     pub fn load_tv_channels(&mut self, assets: &Path, prefix: &str) {
         let sq = assets.join("sq");
         let mut names: Vec<String> = std::fs::read_dir(&sq)
@@ -726,7 +800,62 @@ impl EngineState {
     /// Render the comms/TV screen: play the current broadcast channel looped. A driver
     /// changes `tv_channel` (via `switch_tv_channel`) on left/right steer to flip
     /// channels — the interactive part of the screen.
+    ///
+    /// With DESCRIPT programming loaded, the channel is a broadcast RECORD: its clips play chained
+    /// (advancing clip-by-clip, looping the whole program), and its tick-timed subtitle cues are
+    /// drawn over the picture ("YOU ARE WATCHING HATE TV", …) — ticks are HNM frames, as verified
+    /// for the intro cues. Without programming, falls back to the legacy raw `tv*` HNM loop.
     fn render_tv(&mut self) {
+        if !self.tv_programs.is_empty() {
+            let prog = &self.tv_programs[self.tv_channel % self.tv_programs.len()];
+            if prog.clips.is_empty() {
+                return;
+            }
+            // Advance to the next clip (or loop the program) when the current clip is exhausted.
+            let mut clip_idx = self.tv_clip % prog.clips.len();
+            if self.tv_clip_frame >= prog.clips[clip_idx].frame_count().max(1) {
+                clip_idx = (clip_idx + 1) % prog.clips.len();
+                self.tv_clip = clip_idx;
+                self.tv_clip_frame = 0;
+                if clip_idx == 0 {
+                    self.tv_program_frame = 0; // the broadcast loops from the top
+                }
+            }
+            let clip = &prog.clips[clip_idx];
+            if self.tv_clip_frame == 0 {
+                self.scene_palette = clip.palette;
+            }
+            clip.decode_frame(
+                self.tv_clip_frame,
+                &mut self.scene_buffer,
+                &mut self.scene_palette,
+            );
+            self.framebuffer.copy_from_slice(&self.scene_buffer);
+            self.tv_clip_frame += 1;
+            self.tv_program_frame += 1;
+            // The broadcast's active subtitle cue (last cue whose tick has been reached).
+            let text = prog
+                .cues
+                .iter()
+                .filter(|c| self.tv_program_frame >= c.tick as usize)
+                .next_back()
+                .map(|c| c.text.clone());
+            if let Some(text) = text.filter(|t| !t.is_empty()) {
+                let width: usize = text.chars().map(crate::font::game_font_advance).sum();
+                let x = ENGINE_SCREEN_WIDTH.saturating_sub(width) / 2;
+                self.scene_palette[Self::INTRO_CREDIT_COLOR_INDEX as usize] = [245, 245, 245];
+                draw_text_indexed(
+                    &mut self.framebuffer,
+                    ENGINE_SCREEN_WIDTH,
+                    ENGINE_SCREEN_HEIGHT,
+                    &text,
+                    x,
+                    Self::INTRO_CREDIT_BASELINE_Y,
+                    Self::INTRO_CREDIT_COLOR_INDEX,
+                );
+            }
+            return;
+        }
         let n = self.tv_channels.len();
         if n == 0 {
             return;
@@ -741,16 +870,26 @@ impl EngineState {
     }
 
     /// Number of loaded TV channels.
-    pub fn tv_channel_count(&self)->usize{self.tv_channels.len()}
+    pub fn tv_channel_count(&self) -> usize {
+        if self.tv_programs.is_empty() {
+            self.tv_channels.len()
+        } else {
+            self.tv_programs.len()
+        }
+    }
 
     /// Switch the TV channel by `delta` (wrapping), restarting the broadcast.
     pub fn switch_tv_channel(&mut self, delta: i32) {
-        let n = self.tv_channels.len();
+        let n = self.tv_channel_count();
         if n == 0 {
             return;
         }
         self.tv_channel = (self.tv_channel as i32 + delta).rem_euclid(n as i32) as usize;
+        // Restart the new broadcast from its top (clip 0, frame 0, cue clock reset).
         self.scene_frame = 0;
+        self.tv_clip = 0;
+        self.tv_clip_frame = 0;
+        self.tv_program_frame = 0;
     }
 
     /// Load the real ship bridge: the `TB.BIG` 360° panorama archive (the whole
@@ -3565,6 +3704,55 @@ mod tests {
         }
     }
 
+    /// The TV plays the real DESCRIPT PROGRAMMING: the broadcast records that self-identify via
+    /// their "…watching…" subtitles (hatetv + microkid/IZWAL), each with chained clips, music,
+    /// and tick-timed cues drawn over the picture. Guards the gap where the TV looped raw silent
+    /// HNMs with no broadcast content.
+    #[test]
+    fn tv_plays_descript_broadcast_programming() {
+        let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("sq").join("hatetv02.hnm").exists());
+        let Some(assets) = assets else { return };
+        let db = ["output/_tmp_iso/DESCRIPT.DES", "../output/_tmp_iso/DESCRIPT.DES"]
+            .iter()
+            .find_map(|p| crate::descript::DescriptDb::parse_file(p).ok());
+        let Some(db) = db else { return };
+        let mut e = EngineState::new();
+        e.load_tv_programs(&db, assets);
+        // Both self-identified broadcasts load as channels, each with clips + music + cues.
+        let names: Vec<&str> = e.tv_programs.iter().map(|p| p.name.as_str()).collect();
+        assert_eq!(names, ["hatetv", "microkid"], "the broadcast channels, in stable order");
+        for p in &e.tv_programs {
+            assert!(!p.clips.is_empty(), "{}: clips loaded", p.name);
+            assert!(p.music.is_some(), "{}: broadcast music", p.name);
+            assert!(
+                p.cues.iter().any(|c| c.text.to_lowercase().contains("watching")),
+                "{}: self-identifying broadcast cue",
+                p.name
+            );
+        }
+        assert_eq!(e.tv_music(), Some("hatetv.voc"), "channel 0 carries the HATE-TV music");
+        // Render a few frames: the picture shows and the tick-1 "YOU ARE WATCHING HATE TV" cue
+        // is drawn (reserved credit-colour glyphs present).
+        e.tv_active = true;
+        for _ in 0..3 {
+            e.render_tv();
+        }
+        let nonblank = e.framebuffer.iter().filter(|&&p| p != 0).count();
+        assert!(nonblank > 1000, "the broadcast picture renders ({nonblank} px)");
+        let cue_px = e
+            .framebuffer
+            .iter()
+            .filter(|&&p| p == EngineState::INTRO_CREDIT_COLOR_INDEX)
+            .count();
+        assert!(cue_px > 50, "the broadcast subtitle cue is drawn ({cue_px} px)");
+        // Switching channels restarts the new broadcast and switches its music.
+        e.switch_tv_channel(1);
+        assert_eq!(e.tv_music(), Some("balise.voc"), "IZWAL channel music after switch");
+    }
+
     /// The intro montage (`cliptoot.hnm`) plays FULL-LENGTH under the pyramid console — VERIFIED
     /// by decoding its checkpoints against the real-game captures: it is the whole intro montage
     /// (crew + locations + hyperspace, frames 120..1150 matching captures 6..22), with the CRYO/
@@ -3608,6 +3796,32 @@ mod tests {
             montage_frames >= full_len,
             "the montage plays FULL-LENGTH ({montage_frames} of {full_len} frames), not cut to its credit span"
         );
+    }
+
+    /// Diagnostic dump: render the TV broadcast (hatetv, a few frames in) to a PPM for eyeballing.
+    #[test]
+    #[ignore = "diagnostic dump, run explicitly"]
+    fn dump_tv_broadcast() {
+        let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("sq").join("hatetv02.hnm").exists());
+        let Some(assets) = assets else { return };
+        let db = ["output/_tmp_iso/DESCRIPT.DES", "../output/_tmp_iso/DESCRIPT.DES"]
+            .iter()
+            .find_map(|p| crate::descript::DescriptDb::parse_file(p).ok());
+        let Some(db) = db else { return };
+        let mut e = EngineState::new();
+        e.load_tv_programs(&db, assets);
+        e.tv_active = true;
+        for _ in 0..30 {
+            e.render_tv();
+        }
+        let mut buf = Vec::from(&b"P6\n320 200\n255\n"[..]);
+        for &idx in &e.framebuffer {
+            buf.extend_from_slice(&e.scene_palette[idx as usize]);
+        }
+        std::fs::write("output/_tmp_tv.ppm", buf).unwrap();
     }
 
     /// Diagnostic dump: decode cliptoot.hnm SEQUENTIALLY (delta frames chain) and save checkpoints

@@ -291,6 +291,10 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     // The alien-examination screen (Scruter Jo): press 'c' to toggle it in nav.
     engine.load_alien_view(Path::new(assets), "scrut");
     // The comms "Hate TV" screen: press 't' to toggle, left/right to change channel.
+    // The real PROGRAMMING comes from the DESCRIPT broadcast records (hatetv / microkid,
+    // self-identified by their "…watching…" subtitles) — chained clips + music + cues;
+    // the raw tv* HNMs remain as a fallback when the records' clips are missing.
+    engine.load_tv_programs(&descript, Path::new(assets));
     engine.load_tv_channels(Path::new(assets), "tv");
     // The cyberspace hyperspace-tunnel screen: press 'y' to toggle.
     engine.load_cyberspace(Path::new(assets));
@@ -345,6 +349,9 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     // music when the clip BEGINS and keep the logos silent. Track the last clip we started music
     // for so a given clip's music fires exactly once.
     let mut intro_music_clip: Option<usize> = None;
+    // The TV channel's broadcast music (hatetv.voc / balise.voc, from the channel's DESCRIPT
+    // record): one per-frame watcher covers every open/close/switch path.
+    let mut tv_music_playing: Option<String> = None;
     // The game plays the SCRIPT1 console tutorial automatically once the intro ends (it
     // then chains to SCRIPT2 via its decoded D2 handoff, after which control returns to
     // the nav view for free destination choice). Fire it exactly once.
@@ -920,6 +927,18 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     current_script.set(0); // back on the nav — no active location
                 }
             }
+        }
+        // TV broadcast music: while a channel is on, play its record's music; stop when the TV
+        // closes. Watching per-frame covers every open/close/switch path with one handler.
+        if engine.tv_active {
+            if let Some(m) = engine.tv_music().map(str::to_string) {
+                if tv_music_playing.as_deref() != Some(m.as_str()) {
+                    music.play(&format!("{assets}/mu/{m}"));
+                    tv_music_playing = Some(m);
+                }
+            }
+        } else if tv_music_playing.take().is_some() {
+            music.stop();
         }
         // Speak the current line once when playback reaches it.
         if !engine.on_ship && voice_line != Some(engine.dialogue_cursor()) {
