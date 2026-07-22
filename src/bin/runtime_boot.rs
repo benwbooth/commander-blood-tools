@@ -396,6 +396,74 @@ fn main() {
         let (fr, ang, st) = state(&rt);
         println!("console reached: tb_frame={fr} angle={ang:#x} station={st:#x} @ {} steps", rt.cpu.steps);
         rt.write_ppm(&out.join("bridge_00_console.ppm")).unwrap();
+        // TUTORIAL2: drive the SCRIPT1 tutorial with DECODED-geometry clicks (the
+        // old TUTORIAL used pre-panorama guessed coordinates). Each round clicks
+        // the next target: the eye-orb (live box from the station table) or a
+        // golden-menu row (decoded box math at the live frame), in ring space.
+        // Watches opened_files for script2.* = tutorial complete.
+        if std::env::var("TUTORIAL2").is_ok() {
+            let baseline = rt.opened_files.len();
+            let mut reached2 = false;
+            for round in 0..400 {
+                let (fr, _, _) = state(&rt);
+                let delta = fr as i32 - 45;
+                // Targets: 5 menu rows (only valid frames 40..60) + the orb.
+                let target = round % 6;
+                let (sx, sy) = if target < 5 && (40..=60).contains(&fr) {
+                    let x = 0x11f - delta * 8 - 0x37; // box centre-ish
+                    let y = 0x48
+                        + delta.unsigned_abs() as i32 * 5 / 4
+                        + target as i32 * (0x12 - delta.unsigned_abs() as i32 / 8)
+                        + 8;
+                    (x, y)
+                } else {
+                    // The eye-orb: current frame's box from the station table
+                    // (gs:0x2A1B, the record with a valid box at +0xC..+0x13).
+                    let mut orb = None;
+                    for rec in 0..4u32 {
+                        let base = 0x2a1b + rec * 0x18;
+                        let w16 = |o: u32| {
+                            rt.m.read8(g, base + o) as u16
+                                | ((rt.m.read8(g, base + o + 1) as u16) << 8)
+                        };
+                        let (x, y, w, h) = (w16(0xc), w16(0xe), w16(0x10), w16(0x12));
+                        if x != 0xffff {
+                            orb = Some((x as i32 + w as i32 / 2, y as i32 + h as i32 / 2));
+                            break;
+                        }
+                    }
+                    orb.unwrap_or((160, 120))
+                };
+                let ring = (sx + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+                rt.set_mouse_pos(ring, sy as u16);
+                let _ = rt.run(rt.cpu.steps + 700_000);
+                rt.mouse_press(0);
+                let _ = rt.run(rt.cpu.steps + 400_000);
+                rt.mouse_release(0);
+                let _ = rt.run(rt.cpu.steps + 1_200_000);
+                if rt.opened_files.len() > baseline {
+                    let newest: Vec<String> = rt.opened_files[baseline..]
+                        .iter()
+                        .map(|(_, p)| p.clone())
+                        .collect();
+                    let has2 = newest.iter().any(|p| p.to_lowercase().contains("script2"));
+                    println!("round {round}: NEW files {newest:?} script2={has2}");
+                    if has2 {
+                        reached2 = true;
+                        rt.write_ppm(&out.join("tut2_script2.ppm")).unwrap();
+                        break;
+                    }
+                }
+                if round % 40 == 0 {
+                    let (fr2, _, _) = state(&rt);
+                    println!("round {round}: frame {fr2}, files {}", rt.opened_files.len());
+                    rt.write_ppm(&out.join(format!("tut2_r{round:03}.ppm"))).unwrap();
+                }
+            }
+            println!("TUTORIAL2 done, reached_script2={reached2} @ {} steps", rt.cpu.steps);
+            return;
+        }
+
         // SUBMENUCAP: click the golden menu's MENU and OPTION rows (decoded box:
         // screen x 177..287, rows top 0x48 pitch 0x12 at frame 45-centred view;
         // at frame 55 the box shifts -8px/frame => right edge 207) and capture
