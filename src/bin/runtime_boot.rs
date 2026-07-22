@@ -410,6 +410,39 @@ fn main() {
         };
         dump_table(&rt, "console");
         // Candidate rotation inputs; after each, run a while and report the state words.
+        // Find the pointing-hand drawer: watch a chunky back-buffer pixel inside
+        // the hand (screen ~(85,130) at the console — the hand hovers there) and
+        // report which code writes it + what ds:si (pixel source) it reads.
+        {
+            let bb_off = rt.m.read8(g, 0x5229) as u32 | ((rt.m.read8(g, 0x522a) as u32) << 8);
+            let bb_seg = rt.m.read8(g, 0x522b) as u32 | ((rt.m.read8(g, 0x522c) as u32) << 8);
+            let linear = (bb_seg * 16 + bb_off) as usize + 130 * 320 + 85;
+            println!("back buffer = {bb_seg:04x}:{bb_off:04x}, watching hand pixel linear {linear:#x}");
+            rt.m.watch = Some((0, usize::MAX..usize::MAX)); // unused variant off
+            rt.m.watch = None;
+            rt.m.watch_addr = Some(linear);
+            let _ = rt.run(rt.cpu.steps + 6_000_000);
+            let mut seen = std::collections::HashSet::new();
+            for &(v, cs, ip) in rt.m.addr_hits.iter() {
+                if seen.insert((cs, ip)) {
+                    println!("hand pixel write: value {v:#04x} from {cs:04x}:{ip:04x}");
+                }
+            }
+            rt.m.watch_addr = None;
+        }
+        // Dump the bridge overlay entity records (gs:0x6212 + id*32, ids 0x10..0x20
+        // — page_flip commits 0x15..0x1F) to find the pointing-hand's pixel source.
+        for id in 0x10u32..0x20 {
+            let base = 0x6212 + id * 32;
+            let words: Vec<String> = (0..16)
+                .map(|w| {
+                    let lo = rt.m.read8(g, base + w * 2) as u16;
+                    let hi = rt.m.read8(g, base + w * 2 + 1) as u16;
+                    format!("{:04x}", lo | (hi << 8))
+                })
+                .collect();
+            println!("entity[{id:#04x}] {}", words.join(" "));
+        }
         // Rotate around the FULL panorama ring by repeatedly parking the cursor at
         // ring positions ahead of the view (the steering law chases it), capturing
         // each stop — live references of every bridge sector (nav pyramids, Orxx).
