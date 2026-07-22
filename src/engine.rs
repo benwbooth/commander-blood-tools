@@ -1058,6 +1058,24 @@ impl EngineState {
             .unwrap_or_default()
     }
 
+    /// Handle a click on `row` of the current BAS concept menu. Back-out topics
+    /// (`talk`/`bye_bye`) POP to the parent menu — verified against the running
+    /// game (MENUTREE: fear/anger menu `talk` → the top-level parent 0x2f). Other
+    /// topics select the row: their response/sub-menu is driven by the conversation
+    /// flow (a `push` when it opens a sub-menu). Returns the new current labels.
+    pub fn bas_topic_click(&mut self, row: usize) -> Vec<String> {
+        if let Some(stack) = self.bas_menus.as_mut() {
+            let back = stack
+                .current()
+                .and_then(|m| m.labels.get(row))
+                .is_some_and(|l| crate::bas_vm::BasMenuStack::is_back_topic(l));
+            if back {
+                stack.pop();
+            }
+        }
+        self.current_bas_menu_labels()
+    }
+
     /// A click while the topic menu is showing: selects the topic and jumps the
     /// dialogue to its first line. Returns the selected topic index.
     pub fn topic_menu_click(&mut self, x: u16, y: u16) -> Option<usize> {
@@ -3092,9 +3110,13 @@ mod tests {
         // Navigate: enter the fear/anger sub-menu (BAS 0x42d, verified live) → current.
         assert!(e.bas_menus.as_mut().unwrap().push(0x42d));
         assert!(e.current_bas_menu_labels().iter().any(|l| l == "FEAR"));
-        // Back out (pop) → the top-level entry menu again.
-        assert!(e.bas_menus.as_mut().unwrap().pop());
-        assert!(e.current_bas_menu_labels().iter().any(|l| l == "OPTIMIZATION"));
+        // Clicking a non-back topic (row 1 = FEAR) stays on the menu (plays a response).
+        let after_fear = e.bas_topic_click(1);
+        assert!(after_fear.iter().any(|l| l == "FEAR"), "emotion topic stays: {after_fear:?}");
+        // Clicking row 0 (TALK, the back-out) POPS to the top-level entry menu —
+        // exactly what the running game does (MENUTREE: talk → parent 0x2f).
+        let after_talk = e.bas_topic_click(0);
+        assert!(after_talk.iter().any(|l| l == "OPTIMIZATION"), "talk pops to parent: {after_talk:?}");
     }
 
     /// Oracle: the LIST MENU (dialogue topics / nav destinations) renders the
