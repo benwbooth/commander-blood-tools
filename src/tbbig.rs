@@ -317,6 +317,40 @@ mod tests {
         );
     }
 
+    /// Oracle: decoding an arbitrary steered frame must match the live game at
+    /// that view too — frames 15 (mouse at the left screen edge) and 64 (right
+    /// edge) were captured live (`BRIDGEPROBE` steering). The residual is the
+    /// hand cursor + window starfield the game overlays; a small threshold
+    /// catches any decode regression across the ring, not just the rest frame.
+    #[test]
+    fn steered_frames_match_live_game_captures() {
+        let Some(pan) = load_real_archive() else { return };
+        let dac = &crate::palette::GAME_SCREEN_PALETTE_DAC;
+        let expand = |v: u8| (v << 2) | (v >> 4);
+        for (frame, capture_name) in [(15usize, "rotate_left"), (64, "rotate_right")] {
+            let path = format!("accuracy/captures/bridge/{capture_name}.ppm");
+            let path = Path::new(&path);
+            if !path.exists() {
+                continue;
+            }
+            let capture = read_ppm_320x200(&std::fs::read(path).unwrap());
+            let indices = pan.frame_pixels(frame).unwrap();
+            let mut total_abs = 0u64;
+            for (pixel, &index) in indices.iter().enumerate() {
+                for channel in 0..3 {
+                    let ours = expand(dac[index as usize * 3 + channel]);
+                    let live = capture[pixel * 3 + channel];
+                    total_abs += (ours as i32 - live as i32).unsigned_abs() as u64;
+                }
+            }
+            let mean_abs = total_abs as f64 / (PANORAMA_FRAME_PIXELS * 3) as f64;
+            assert!(
+                mean_abs < 5.0,
+                "frame {frame} ({capture_name}) diverges: mean_abs = {mean_abs:.2}"
+            );
+        }
+    }
+
     /// Minimal P6 reader for the emulator's fixed-format 320x200 captures.
     fn read_ppm_320x200(raw: &[u8]) -> Vec<u8> {
         let header_end = raw
