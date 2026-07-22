@@ -166,6 +166,21 @@ pub const ENGINE_SCREEN_HEIGHT: usize = 200;
 
 /// Per-frame engine state — the subset of the `DS`/`gs` globals the main loop
 /// (`0x0FFB`) touches, plus the indexed framebuffer the render subsystems fill.
+/// Days-since-Unix-epoch → (year, month, day) civil date (Howard Hinnant's `civil_from_days`).
+/// Used for the TV ad channel's seasonal variants (Dec 25 / Jan 1) — no external time dep needed.
+fn civil_from_days(z: i64) -> (i64, u32, u32) {
+    let z = z + 719_468;
+    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
+    let doe = (z - era * 146_097) as u64; // day of era [0, 146096]
+    let yoe = (doe - doe / 1460 + doe / 36524 - doe / 146_096) / 365; // year of era
+    let y = yoe as i64 + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100); // day of year
+    let mp = (5 * doy + 2) / 153;
+    let d = (doy - (153 * mp + 2) / 5 + 1) as u32;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 } as u32;
+    (if m <= 2 { y + 1 } else { y }, m, d)
+}
+
 /// One TV broadcast program: a DESCRIPT Sequence record that self-identifies as a channel
 /// (its subtitles announce "…watching…"), played as its chained HNM clips + music +
 /// tick-timed subtitle cues. See [`EngineState::load_tv_programs`].
@@ -729,19 +744,48 @@ impl EngineState {
     }
 
     /// Load the TV PROGRAMMING from the DESCRIPT data: every Sequence record whose own subtitles
-    /// announce it as a broadcast (text contains "watching" — `hatetv`: "YOU ARE WATCHING HATE TV",
-    /// `microkid`: "…you're watching the IZWAL channel"). Each becomes one TV channel playing its
-    /// chained clips + music + tick-subtitles. Sorted by record name for a stable channel order.
+    /// announce it as broadcast content. The records self-identify decisively:
+    ///   `hatetv` "YOU ARE WATCHING HATE TV" · `microkid` "…you're watching the IZWAL channel" ·
+    ///   `garde` "CROOLIS CHANNEL WATCHES THE WATCHERS" · `ppit` "WELCOME TO PETIT-PITEUX'S CYBER
+    ///   CHANNEL" · `scrut` "SCRUT CHANNEL" · `match` "Welcome to our nice gameshow…" · `venus`
+    ///   "PUBLICITY" (the Venusia ad).
+    /// Each becomes one TV channel playing its chained clips + music + tick-subtitles, sorted by
+    /// record name for a stable channel order. Seasonal easter egg restored from the data: the
+    /// `christmas` / `year` records are the SAME Venusia ad with seasonal text ("VENUSIA YULETIDE
+    /// SALES" / "NEW YEAR SALES"), so on Dec 25 / Jan 1 they replace the `venus` ad channel.
     pub fn load_tv_programs(&mut self, db: &crate::descript::DescriptDb, assets: &Path) {
         let sq = assets.join("sq");
+        // The ad channel's seasonal variant, by today's (UTC) civil date.
+        let seasonal = {
+            let days = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_secs() / 86_400)
+                .unwrap_or(0) as i64;
+            let (_, m, d) = civil_from_days(days);
+            match (m, d) {
+                (12, 25) => Some("christmas"),
+                (1, 1) => Some("year"),
+                _ => None,
+            }
+        };
+        let is_broadcast = |r: &crate::descript::DescriptRecord| {
+            r.subtitles.iter().any(|c| {
+                let t = c.text.to_lowercase();
+                ["watching", "channel", "publicity", "gameshow"]
+                    .iter()
+                    .any(|k| t.contains(k))
+            })
+        };
         let mut programs: Vec<TvProgram> = db
             .records
             .iter()
-            .filter(|r| {
-                r.kind == crate::descript::RecordKind::Sequence
-                    && r.subtitles
-                        .iter()
-                        .any(|c| c.text.to_lowercase().contains("watching"))
+            .filter(|r| r.kind == crate::descript::RecordKind::Sequence && is_broadcast(r))
+            .map(|r| {
+                // Seasonal swap: the venus ad becomes the christmas / new-year variant on the day.
+                seasonal
+                    .filter(|_| r.name == "venus")
+                    .and_then(|s| db.records.iter().find(|x| x.name == s))
+                    .unwrap_or(r)
             })
             .map(|r| TvProgram {
                 name: r.name.clone(),
@@ -841,18 +885,39 @@ impl EngineState {
                 .next_back()
                 .map(|c| c.text.clone());
             if let Some(text) = text.filter(|t| !t.is_empty()) {
-                let width: usize = text.chars().map(crate::font::game_font_advance).sum();
-                let x = ENGINE_SCREEN_WIDTH.saturating_sub(width) / 2;
                 self.scene_palette[Self::INTRO_CREDIT_COLOR_INDEX as usize] = [245, 245, 245];
-                draw_text_indexed(
-                    &mut self.framebuffer,
-                    ENGINE_SCREEN_WIDTH,
-                    ENGINE_SCREEN_HEIGHT,
-                    &text,
-                    x,
-                    Self::INTRO_CREDIT_BASELINE_Y,
-                    Self::INTRO_CREDIT_COLOR_INDEX,
-                );
+                // Wrap at the game's ~35-column subtitle width (crate::script::SUBTITLE_WRAP_COLUMN)
+                // and centre each line in the lower band, like the dialogue subtitles.
+                let mut lines: Vec<String> = Vec::new();
+                let mut cur = String::new();
+                for word in text.split_whitespace() {
+                    if !cur.is_empty() && cur.len() + 1 + word.len() > crate::script::SUBTITLE_WRAP_COLUMN
+                    {
+                        lines.push(std::mem::take(&mut cur));
+                    }
+                    if !cur.is_empty() {
+                        cur.push(' ');
+                    }
+                    cur.push_str(word);
+                }
+                if !cur.is_empty() {
+                    lines.push(cur);
+                }
+                let first_y =
+                    Self::INTRO_CREDIT_BASELINE_Y.saturating_sub(10 * lines.len().saturating_sub(1));
+                for (i, line) in lines.iter().enumerate() {
+                    let width: usize = line.chars().map(crate::font::game_font_advance).sum();
+                    let x = ENGINE_SCREEN_WIDTH.saturating_sub(width) / 2;
+                    draw_text_indexed(
+                        &mut self.framebuffer,
+                        ENGINE_SCREEN_WIDTH,
+                        ENGINE_SCREEN_HEIGHT,
+                        line,
+                        x,
+                        first_y + 10 * i,
+                        Self::INTRO_CREDIT_COLOR_INDEX,
+                    );
+                }
             }
             return;
         }
@@ -3721,19 +3786,24 @@ mod tests {
         let Some(db) = db else { return };
         let mut e = EngineState::new();
         e.load_tv_programs(&db, assets);
-        // Both self-identified broadcasts load as channels, each with clips + music + cues.
+        // The full self-identified channel lineup loads (each record announces itself as a
+        // channel/broadcast in its own subtitles), stable name order. On Dec 25 / Jan 1 the
+        // `venus` ad is the christmas/year seasonal variant, so accept either in that slot.
         let names: Vec<&str> = e.tv_programs.iter().map(|p| p.name.as_str()).collect();
-        assert_eq!(names, ["hatetv", "microkid"], "the broadcast channels, in stable order");
+        for expect in ["garde", "hatetv", "match", "microkid", "ppit", "scrut"] {
+            assert!(names.contains(&expect), "channel lineup includes {expect}, got {names:?}");
+        }
+        assert!(
+            names.contains(&"venus") || names.contains(&"christmas") || names.contains(&"year"),
+            "the ad channel (or its seasonal variant) is present: {names:?}"
+        );
         for p in &e.tv_programs {
             assert!(!p.clips.is_empty(), "{}: clips loaded", p.name);
             assert!(p.music.is_some(), "{}: broadcast music", p.name);
-            assert!(
-                p.cues.iter().any(|c| c.text.to_lowercase().contains("watching")),
-                "{}: self-identifying broadcast cue",
-                p.name
-            );
         }
-        assert_eq!(e.tv_music(), Some("hatetv.voc"), "channel 0 carries the HATE-TV music");
+        let hate = names.iter().position(|n| *n == "hatetv").unwrap();
+        e.tv_channel = hate;
+        assert_eq!(e.tv_music(), Some("hatetv.voc"), "the HATE-TV channel carries its music");
         // Render a few frames: the picture shows and the tick-1 "YOU ARE WATCHING HATE TV" cue
         // is drawn (reserved credit-colour glyphs present).
         e.tv_active = true;
@@ -3748,9 +3818,10 @@ mod tests {
             .filter(|&&p| p == EngineState::INTRO_CREDIT_COLOR_INDEX)
             .count();
         assert!(cue_px > 50, "the broadcast subtitle cue is drawn ({cue_px} px)");
-        // Switching channels restarts the new broadcast and switches its music.
+        // Switching channels restarts the new broadcast and switches its music (hatetv → match,
+        // whose gameshow runs on the HATE-TV music family, hatetv2.voc).
         e.switch_tv_channel(1);
-        assert_eq!(e.tv_music(), Some("balise.voc"), "IZWAL channel music after switch");
+        assert_eq!(e.tv_music(), Some("hatetv2.voc"), "next channel's music after switch");
     }
 
     /// The intro montage (`cliptoot.hnm`) plays FULL-LENGTH under the pyramid console — VERIFIED
@@ -3814,6 +3885,12 @@ mod tests {
         let mut e = EngineState::new();
         e.load_tv_programs(&db, assets);
         e.tv_active = true;
+        if let Ok(ch) = std::env::var("TV_CH") {
+            let want = ch;
+            if let Some(i) = e.tv_programs.iter().position(|p| p.name == want) {
+                e.tv_channel = i;
+            }
+        }
         for _ in 0..30 {
             e.render_tv();
         }
