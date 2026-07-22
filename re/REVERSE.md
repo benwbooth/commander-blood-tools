@@ -4639,3 +4639,18 @@ source pointer), plus the shade computation. CONFIRMS manu3 procedural render is
 NOT a bounded one-pass task, and its marginal value is ~zero (the baked hand
 atlas already renders the console hand at mean_abs 0.14). Pipeline + vertex format
 recovered (above); face-index source + rasterizer port remain, deprioritized.
+
+## COD contains NO menu tables — linkage is runtime-only (2026-07-22, definitive)
+
+Checked whether the port could derive concept menus from COD (which it already
+parses) instead of BAS: NO. The topic words that appear near each other in COD
+(one/two/three/four/five @0xc54..0xd48) are DIALOGUE TEXT inside 0xA6 tokens
+("We've got one dose of BIONIUM left, Commander" / "…two doses…" — the numerology
+dealer's lines), NOT a menu-build table. COD has zero 0xA3 menu tables. DEFINITIVE:
+menus exist only as BAS 0xA3 tables; dialogue only as COD 0xA6 text; the two are
+associated at RUNTIME (the console's menu handler selects a BAS menu for the
+current conversation state). So per-beat wiring cannot be done statically from
+either file — it requires observing the running console's menu-selection (watch
+which BAS menu offset the console reads when a topic list appears), a runtime-RE
+task. The concept_menu.rs LABEL decode remains valid+verified; only the per-beat
+SELECTION is runtime-gated. This is the definitive characterization of the residual.
