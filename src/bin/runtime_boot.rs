@@ -396,6 +396,48 @@ fn main() {
         let (fr, ang, st) = state(&rt);
         println!("console reached: tb_frame={fr} angle={ang:#x} station={st:#x} @ {} steps", rt.cpu.steps);
         rt.write_ppm(&out.join("bridge_00_console.ppm")).unwrap();
+        // TEXTBAND: provoke tutorial text, then dump the top-band palette indices
+        // (rows 0..24) + histogram — pins the subtitle glyphs' actual indices and
+        // row offsets for the OCR.
+        if std::env::var("TEXTBAND").is_ok() {
+            // Click HONK to provoke a line.
+            let (fr, _, _) = state(&rt);
+            let delta = fr as i32 - 45;
+            let x = 0x11f - delta * 8 - 0x37;
+            let y = 0x48 + delta.unsigned_abs() as i32 * 5 / 4 + 8;
+            let ring = (x + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+            rt.set_mouse_pos(ring, y as u16);
+            let _ = rt.run(rt.cpu.steps + 700_000);
+            rt.mouse_press(0);
+            let _ = rt.run(rt.cpu.steps + 400_000);
+            rt.mouse_release(0);
+            let _ = rt.run(rt.cpu.steps + 8_000_000);
+            let idx = rt.screen_indices();
+            rt.write_ppm(&out.join("textband.ppm")).unwrap();
+            let mut hist = std::collections::HashMap::new();
+            for yy in 0..24usize {
+                for xx in 0..320usize {
+                    *hist.entry(idx[yy * 320 + xx]).or_insert(0u32) += 1;
+                }
+            }
+            let mut top: Vec<_> = hist.into_iter().collect();
+            top.sort_by_key(|&(_, n)| std::cmp::Reverse(n));
+            println!("top-band histogram: {:?}", &top[..top.len().min(12)]);
+            // Print rows 0..24 as glyph-mask ASCII for the two most text-like
+            // indices (sparse ones).
+            for &(v, n) in top.iter().filter(|&&(v, n)| v != 0 && n < 3000).take(3) {
+                println!("mask for index {v:#04x} ({n} px):");
+                for yy in 0..20usize {
+                    let row: String = (0..120)
+                        .map(|xx| if idx[yy * 320 + xx] == v { '#' } else { '.' })
+                        .collect();
+                    println!("  {row}");
+                }
+            }
+            println!("TEXTBAND done");
+            return;
+        }
+
         // TUTORIAL4: screen-OCR instruction follower. The game's subtitle glyphs
         // write reserved indices >= 0xFD; OCR the top rows of screen_indices()
         // against the game's own font bitmaps to read the live line, then click
