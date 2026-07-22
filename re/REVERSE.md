@@ -3826,3 +3826,14 @@ manu3 file offset 0x1370).
   tween machinery already decoded for the OPTION menu and ported in
   src/manu3.rs. The hand's 32 poses are tween scripts over node fields; the
   existing Rust tween code is directly reusable for the hand.
+- MESH DATA MODEL COMPLETE (live-verified vs static): manu3 DATA SEGMENT =
+  image + 0x1370 (live 0x17A3). Globals (data-relative): [0x2300]=0x0B18 face
+  list, [0x2304]=0xD8 (216 faces), [0x22FA]=0x898 pose recs, [0x22FE]=0x20 (32).
+  FACE = 8 bytes {attr_word, v0_ptr, v1_ptr, v2_ptr} — static in file at 0x1E88
+  (NOT relocated; pointers target RUNTIME vertex buffers past the file image,
+  data:~0xE000+, 0x14-stride, filled per frame by pose+node transform). The
+  3DB0 header sits at data:0x22D8 (file 0x3648); its word[0]=0x2336 = the node
+  tree base (file 0x36A6), root node at +0x5E. The earlier "0x22F0 12-entry
+  OPTION table" reads map to file 0x3660 = the live global block [0x22F0..],
+  so old file-offset-0x22F0 notes used the WRONG base (audit manu3.rs's
+  constants against this corrected mapping when porting).
