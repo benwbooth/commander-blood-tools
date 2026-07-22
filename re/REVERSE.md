@@ -4134,3 +4134,28 @@ The port's save.rs is a port-native format; this is the byte-exact DOS layout.
   (next probe). The 19 harvested letters (span-majority from live captures)
   remain the faithful stand-in; the generator gives 100% letter coverage but is
   not blocking (common words render correctly).
+
+## NAV ANCHORS — RE RESOLVED (0x9B98 projector, entity source 0x6212[0x15..0x1F])
+
+The 11 nav-destination anchors are NOT stored positions — they are PROJECTED
+each frame by `ship_3d_object_sprite_project` @0x9B98 from the ENTITY TABLE:
+- Loop 11 iterations (idx 0x0A..0x00), entity record = `gs:[0x6212 + (idx+0x15)*32]`
+  (i.e. entities **0x15..0x1F** — the SAME range as the bridge overlay entities).
+- Gate: `test [si],0x80` — only ACTIVE entities (bit 0x80 set) become anchors;
+  inactive → skipped (no destination). At the console ALL of 0x15..0x1F are
+  zero/inactive (dumped live), which is why the nav viewscreen is empty/static.
+- Position: the entity's world coords (di=0x4F01 scratch, minus camera 0x2F65/
+  67/69) run through the projection matrix at 0x2F95 → screen x = dot>>7 /depth
+  +0xA0(160), screen y = +0x64(100) (project_x/y_center).
+- So NAV DESTINATIONS = the active entities 0x15..0x1F, positioned by their
+  entity-record world coords. They ACTIVATE via story progression (the entity
+  flag state machine — the `[0x6212]` +0x00 bit0/1/7 transitions in
+  `src/croolis.rs`/`progress.rs`), NOT by console interaction (GRANTWALK: 600
+  rounds of console clicks left them inactive — the grant is a narrative event).
+- **PORT MODEL CONFIRMED FAITHFUL IN STRUCTURE**: the port derives nav
+  destinations from the decoded progression state (GameProgress over the entity
+  flags), which is exactly this mechanism. The exact per-destination positions
+  are the entity records' world-coordinate fields (in the decoded .ext/entity
+  data), projected identically to the port's `project_ship_3d_point`. So #3's
+  "real anchor positions" are entity-record fields gated by progression — no
+  separate anchor table to recover.
