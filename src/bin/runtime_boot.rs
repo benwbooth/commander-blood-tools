@@ -482,6 +482,26 @@ fn main() {
                 println!("manu3 hot entry {ip:#06x} ({hits} hits)");
             }
             println!("manu3 covered bytes: {}", cov.iter().filter(|&&c| c > 0).count());
+            // Contiguous covered spans (allowing <=8-byte gaps for instruction bodies):
+            // the decompile worklist, written as "start end max_hits" lines.
+            let mut spans = String::new();
+            let mut start: Option<usize> = None;
+            let mut gap = 0usize;
+            let mut peak = 0u32;
+            for ip in 0..65536usize {
+                if cov[ip] > 0 {
+                    if start.is_none() { start = Some(ip); peak = 0; }
+                    peak = peak.max(cov[ip]);
+                    gap = 0;
+                } else if let Some(s0) = start {
+                    gap += 1;
+                    if gap > 8 {
+                        spans.push_str(&format!("{:#06x} {:#06x} {}\n", s0, ip - gap, peak));
+                        start = None;
+                    }
+                }
+            }
+            std::fs::write(out.join("manu3_coverage_spans.txt"), spans).unwrap();
         }
         // Who READS the manu3 "3DB0" mesh bank (file 0x3642.. at seg 0x166C)?
         {
