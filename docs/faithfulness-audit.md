@@ -65,6 +65,17 @@ everywhere.** Priority = how visible/audible + how confidently fixable.
    is SCRIPT1's console-tutorial view (crew talk-HNMs + pyramid menu), not the bridge panorama;
    the CRYO/title credits overlay its opening. This couples the intro fix to the console/SCRIPT1
    flow (risk #3) — a careful restructure, sourced to the captures + the SCRIPT1 console tutorial.
+   PRECISE STRUCTURE (frames 6-9): the SCRIPT1 tutorial plays ON the console COMPOSITE — the crew
+   talk-HNM (main view) + the 3D pyramid menu + eye orb (bottom) + the button panel (left) are
+   shown TOGETHER, with the credits overlaid on the opening. The port renders these as SEPARATE
+   screens: `render_bridge` (tb.big panorama + text menu) vs SCRIPT1 dialogue (crew HNM +
+   subtitles). Two coupled changes needed: (a) FLOW — auto-play SCRIPT1 after the intro (matching
+   the real game + the port's own line-348 comment; the code at main.rs:887 instead lands on the
+   bridge and requires a HONK click), WITHOUT orphaning the bridge/console-function hub (HONK/
+   TELEPHONE/… live on `bridge_active`, only re-entered post-intro + post-cyberspace); (b) RENDER —
+   a console COMPOSITE view (crew HNM + pyramid menu + buttons) rather than bridge-or-dialogue.
+   This is architecture work (a hub/composite model), not a one-line toggle — do it deliberately,
+   verified frame-by-frame vs captures 1-9, not guessed.
 2. **Intro/HNM playback RATE** (`INTRO_CREDIT_FRAMES_PER_TICK = 1`, one HNM frame per game step).
    A guess flagged "calibratable". Source: the HNM player's frame-advance timing in the asm (ticks
    per HNM frame) + the DESCRIPT tick unit. RISK: intro plays too fast/slow; subtitles mistimed.
