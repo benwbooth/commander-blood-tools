@@ -1230,6 +1230,38 @@ fn main() {
             return;
         }
 
+        // ADIEUWALK: read the live topic list (square-caps OCR is host-side: we
+        // just reuse TUTORIAL4's loop), click TALK first (back to the hub), then
+        // walk topics watching [0x2793] bit2 — find the exit that releases the
+        // script-owned engagement legitimately.
+        if std::env::var("ADIEUWALK").is_ok() {
+            let flags = |rt: &Runtime| rt.m.read8(g, 0x2793) as u16 | ((rt.m.read8(g, 0x2794) as u16) << 8);
+            println!("start: [0x2793]={:#06x}", flags(&rt));
+            // Topic rows at x~175/pitch 11 from y45 (list geometry) + the hub rows
+            // (TALK first). Click each row, then check the engagement bit.
+            for row in 0..12u16 {
+                let (fr, _, _) = state(&rt);
+                let sx = 190i32;
+                let sy = 45 + 11 * row as i32;
+                let ring = (sx + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+                rt.set_mouse_pos(ring, sy as u16);
+                let _ = rt.run(rt.cpu.steps + 700_000);
+                rt.mouse_press(0);
+                let _ = rt.run(rt.cpu.steps + 400_000);
+                rt.mouse_release(0);
+                let _ = rt.run(rt.cpu.steps + 6_000_000);
+                let f = flags(&rt);
+                println!("row {row}: [0x2793]={f:#06x}");
+                if f & 4 == 0 {
+                    println!("RELEASED at row {row}!");
+                    rt.write_ppm(&out.join(format!("released_row{row}.ppm"))).unwrap();
+                    break;
+                }
+            }
+            println!("ADIEUWALK done");
+            return;
+        }
+
         // TRAVELPROBE: leave HONK's consultation (Esc / TALK), then attempt the
         // rotation to the nav sector and the orb click — the travel exit.
         if std::env::var("TRAVELPROBE").is_ok() {
