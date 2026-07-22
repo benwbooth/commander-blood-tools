@@ -258,8 +258,8 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     use x11rb::connection::Connection;
     use x11rb::protocol::Event;
     use x11rb::protocol::xproto::{
-        AtomEnum, ConnectionExt, CreateGCAux, CreateWindowAux, EventMask, ImageFormat, PropMode,
-        WindowClass,
+        AtomEnum, ConnectionExt, CreateGCAux, CreateWindowAux, EventMask, GrabMode, ImageFormat,
+        PropMode, WindowClass,
     };
     use x11rb::wrapper::ConnectionExt as _;
 
@@ -565,6 +565,9 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     let mut image = vec![0u8; win_w as usize * win_h as usize * 4];
     let (mut mx, mut my, mut buttons) = (0u16, 0u16, 0u16);
     let mut clicked = false;
+    // Mouse capture: clicking into the window CONFINES the cursor to it (the bridge steers by
+    // relative cursor motion, like the original's captured DOS mouse); Right Shift releases.
+    let mut pointer_locked = false;
     let mut frames_since_input = 0u32;
     // Conservative X11 request-size cap (safe even without the big-requests extension);
     // put_image is chunked into row-strips under this.
@@ -586,6 +589,46 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         .clamp(0, dst_h as isize - 1) as usize;
                     mx = (ex / scale).min(src_w - 1) as u16;
                     my = (ey / scale).min(src_h - 1) as u16;
+                }
+                // Clicking into the window LOCKS the mouse to it (grab + confine): the bridge
+                // steering consumes relative cursor motion like the original's captured DOS
+                // mouse, so confinement keeps the cursor from escaping mid-steer. The locking
+                // click is swallowed (it doesn't also click the game). Right Shift releases.
+                Event::ButtonPress(_) if !pointer_locked => {
+                    pointer_locked = true;
+                    let _ = conn.grab_pointer(
+                        true,
+                        win,
+                        EventMask::POINTER_MOTION
+                            | EventMask::BUTTON_PRESS
+                            | EventMask::BUTTON_RELEASE,
+                        GrabMode::ASYNC,
+                        GrabMode::ASYNC,
+                        win, // confine the cursor to the window
+                        x11rb::NONE,
+                        x11rb::CURRENT_TIME,
+                    );
+                    conn.change_property8(
+                        PropMode::REPLACE,
+                        win,
+                        u32::from(AtomEnum::WM_NAME),
+                        u32::from(AtomEnum::STRING),
+                        b"Commander Blood - engine  [mouse locked - Right Shift releases]",
+                    )?;
+                }
+                // Right Shift (keycode 62): release the mouse lock.
+                Event::KeyPress(k) if k.detail == 62 => {
+                    if pointer_locked {
+                        pointer_locked = false;
+                        let _ = conn.ungrab_pointer(x11rb::CURRENT_TIME);
+                        conn.change_property8(
+                            PropMode::REPLACE,
+                            win,
+                            u32::from(AtomEnum::WM_NAME),
+                            u32::from(AtomEnum::STRING),
+                            b"Commander Blood - engine",
+                        )?;
+                    }
                 }
                 // Any click/key dismisses the title screen first (advance to the intro).
                 Event::ButtonPress(_) | Event::KeyPress(_) if engine.title_active() => {
