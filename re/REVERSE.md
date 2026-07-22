@@ -4730,3 +4730,19 @@ port that VM (its ~0x32 opcode handlers in menu_code_067c.bin drive the menu
 stack + topic→sub-menu navigation). That is a bounded but real implementation task
 (a second VM alongside the COD one), NOT a heuristic wiring. RE is complete; the
 build is the remaining work.
+
+## BAS VM shares the COD dispatch (gs:0x6EB0) — interpreter ALREADY runs it faithfully
+
+Disassembling the BAS conversation VM's dispatch (seg 0x067c @0x306): `mov di,0x6eb0`
+then `call gs:[bx+di]` — it dispatches through the SAME handler table gs:0x6EB0 the
+COD VM uses. So the "BAS VM" and "COD VM" are ONE VM executing two streams; opcode
+0xA3's handler (seg 0x067c +0x446) does the menu-push. KEY CONSEQUENCE: the recomp
+INTERPRETER (src/recomp), which runs the whole binary bit-exact (triple-verified
+this session), ALREADY executes seg 0x067c and therefore handles the concept-menu
+system + per-beat selection FAITHFULLY. So per-beat menus are NOT a gap in the
+faithful (interpreter) frontend — they work there by construction. The residual is
+specifically in the SIMPLIFIED clean port (src/engine.rs), which replays decoded
+scene/dialogue data instead of running the VM; giving IT per-beat menus means
+reimplementing the BAS-VM menu logic (or reading gs:0x6772 from a co-run
+interpreter). This reframes #3/#6: faithful-frontend = done; clean-port = a
+simplification-parity task, optional since the interpreter is the faithful path.
