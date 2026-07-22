@@ -5000,3 +5000,18 @@ full branching decode = disassemble the VM's selection-match path + observe one 
 NET: input handler + hit-test + selection setup now decoded; the selection→sub-menu
 match is the remaining record-driven piece. Tooling: SELWATCH (input handler),
 MENUWATCH/MENUTREE/BASSTEP (VM). Display path fully built; branching decode advancing.
+
+## Selection = clicked topic's u16 value (CONFIRMED, 2026-07-22)
+
+The captured selection low byte 0x39 == the low byte of FEAR's topic value 0x3f39
+(its DIC offset — fear/anger topics: talk=0x0001, fear=0x3f39, weakness=0x3f3e,
+complain=0x3f47, anger=0x3f50, break=0x3f56, cry=0x2acc). So gs:0x6762 = the CLICKED
+TOPIC'S u16 VALUE (not an index), which the VM's 0xA3 handler @0x11f6 compares
+(`lodsw; cmp ax, [gs:0x6762]`) against each menu's topic. Match → execute that path;
+no match → 0x10c2. So the branching MATCH is value-based: selecting a topic with
+value V makes the VM execute the menu/record path whose condition == V. For the
+clean port this means: on a topic click, set selection = topic value, then the VM
+(over the record state) routes to the matching response/sub-menu. The remaining
+piece is which menu-head/record condition a sub-menu-opening topic matches (needs a
+branching menu to observe the push), but the SELECTION side is fully decoded:
+input handler (08c0:1242) sets gs:0x6762 = topic value; VM matches it.
