@@ -4334,3 +4334,23 @@ multi-session. The activation MECHANISM is fully decoded (0x8CCE chain); only
 this state-reaching remains, and it is NOT a quick driver task — 4 approaches
 exhausted. Precise resume point: instrument SCRIPT2's VM PC to find the token
 path from the hub (WHAT DO YOU WANT COMMANDER, ~offset 0x0edx) to offset 4713.
+
+## SCRIPT2 → WORLD-LOAD PATH NARROWED to a single topic (`what`, 2026-07-22)
+
+The D2 destination-offer (COD 0x1269 "Script 3/4/5 selected..." + D2 operands
+3/4/5) lives in the DEB function **`what`** (starts COD 0x11A4). `what` is NOT
+reached by a COD jump (no refs to 0x11A4) — it is invoked via the CONCEPT-MENU
+TOPIC DISPATCH: selecting the `what` topic (the navigate/"WHAT" concept) runs the
+`what` function → offers destinations → D2 → loads SCRIPT3/4/5 + their worlds →
+populates entities 0x15..0x1F → nav anchors + location content ACTIVE.
+So the ENTIRE #3/#6 gate reduces to: **select the `what` concept-menu topic in
+SCRIPT2's conversation.** This is a precise, actionable resume point (vs "decode
+the whole flow"). The remaining obstacle is only that the concept menu must be
+OPEN to click `what` — from accuracy/script2.state the orb click did NOT open it
+(SCRIPT2FWD), so the savestate is at a conversation point before the menu is
+offered (HONK's "CLICK ON ANYTHING NOW" prompt precedes it). NEXT (fresh
+session): drive SCRIPT2 to a "click on anything" prompt (HOOKSNAP reaches one
+from the tutorial), open the concept menu, OCR the topics, and click the `what`
+row → the world loads and the live anchors/labels become extractable. The whole
+activation MECHANISM (0x8CCE chain) + this DISPATCH are now decoded; only that
+one topic-click in the right state remains.
