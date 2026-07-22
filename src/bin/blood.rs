@@ -536,13 +536,13 @@ fn run_script(script_path: &str, out_dir: &PathBuf) -> Result<(), String> {
                 let mut hits = rt.m.watch_hits.clone();
                 hits.sort();
                 eprintln!("0xEF writers ({}):", hits.len());
-                for (cs, ip, ds, si) in &hits {
+                for (cs, ip, ds, si, _addr) in &hits {
                     let rel = cs.wrapping_sub(0x1a2);
                     let file = 0x600 + (rel as usize) * 16 + *ip as usize;
                     eprintln!("  cs:ip={cs:04x}:{ip:04x} (seg 0x{rel:x}, file ~{file:#07x}) src ds:si={ds:04x}:{si:04x}");
                 }
                 // dump the chunky source around the first hit's ds:si
-                if let Some((_, _, ds, si)) = hits.first() {
+                if let Some((_, _, ds, si, _)) = hits.first() {
                     let base = si.saturating_sub(4);
                     let mut chunk = Vec::new();
                     for i in 0..320u32 { chunk.push(rt.m.read8(*ds, base as u32 + i)); }

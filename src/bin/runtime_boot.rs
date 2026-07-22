@@ -440,17 +440,17 @@ fn main() {
             let bb_off = rt.m.read8(g, 0x5229) as usize | ((rt.m.read8(g, 0x522a) as usize) << 8);
             let bb_seg = rt.m.read8(g, 0x522b) as usize | ((rt.m.read8(g, 0x522c) as usize) << 8);
             let bb = bb_seg * 16 + bb_off;
-            // Both flip pages: the game toggles [0x5229]; cover a generous window.
-            rt.m.watch = Some((246, bb.saturating_sub(0x10000)..bb + 0x20000));
+            println!("back buffer at linear {bb:#x}");
+            rt.m.watch = Some((246, 0..0x100000));
             rt.m.watch_hits.clear();
             let _ = rt.run(rt.cpu.steps + 4_000_000);
-            for &(cs, ip, ds, si) in rt.m.watch_hits.iter() {
-                println!("hand pixel write from {cs:04x}:{ip:04x} (ds:si={ds:04x}:{si:04x})");
+            for &(cs, ip, ds, si, addr) in rt.m.watch_hits.iter() {
+                println!("hand colour write from {cs:04x}:{ip:04x} -> linear {addr:#07x} (ds:si={ds:04x}:{si:04x})");
             }
             rt.m.watch = None;
             // 3. Identify the writer segment's contents (dynamic overlay?): dump it
             //    plus the source data segments for offline matching.
-            if let Some(&(cs, _, ds, _)) = rt.m.watch_hits.first() {
+            if let Some(&(cs, _, ds, _, _)) = rt.m.watch_hits.first() {
                 for (seg, len, tag) in [(cs, 0x4000usize, "code"), (ds, 0x4000, "data")] {
                     let base = (seg as usize) * 16;
                     std::fs::write(

@@ -1086,7 +1086,7 @@ pub struct Machine {
     pub ip: u16,
     /// When set, `write8` records (cs,ip,ds,si) of any write of `watch_val` into `watch_range`.
     pub watch: Option<(u8, std::ops::Range<usize>)>,
-    pub watch_hits: Vec<(u16, u16, u16, u16)>,
+    pub watch_hits: Vec<(u16, u16, u16, u16, usize)>,
     /// When set, `write8` records (value,cs,ip) of EVERY write to this exact linear address.
     pub watch_addr: Option<usize>,
     pub addr_hits: Vec<(u8, u16, u16)>,
@@ -1198,7 +1198,7 @@ impl Machine {
         }
         if let Some((wv, range)) = &self.watch {
             if v == *wv && range.contains(&a) && self.watch_hits.len() < 10000 {
-                let hit = (self.regs.cs, self.ip, self.regs.ds, self.regs.si());
+                let hit = (self.regs.cs, self.ip, self.regs.ds, self.regs.si(), a);
                 if !self.watch_hits.iter().any(|h| h.0 == hit.0 && h.1 == hit.1) {
                     self.watch_hits.push(hit);
                 }
