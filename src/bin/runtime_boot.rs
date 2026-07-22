@@ -1281,14 +1281,16 @@ fn main() {
             rt.mouse_press(0);
             let _ = rt.run(rt.cpu.steps + 400_000);
             rt.mouse_release(0);
-            let cbuf = 0x266cusize * 16;
-            rt.m.watch = Some((0xE8, cbuf..cbuf + 0x10000));
+            // Watch 0xE8 writes into the gs data segment RLE-stream region (the
+            // BUILDER that bakes glyphs into the stream at gs:0x175).
+            let gsbuf = 0x0e84usize * 16;
+            rt.m.watch = Some((0xE8, gsbuf + 0x100..gsbuf + 0x3000));
             rt.m.watch_hits.clear();
             let _ = rt.run(rt.cpu.steps + 6_000_000);
             let mut seen = std::collections::HashSet::new();
             for &(cs, ip, ds, si, addr) in rt.m.watch_hits.iter() {
                 if seen.insert((cs, ip)) {
-                    println!("box glyph writer {cs:04x}:{ip:04x} -> {addr:#07x} (ds:si={ds:04x}:{si:04x})");
+                    println!("stream builder {cs:04x}:{ip:04x} -> gs:{:#06x} (ds:si={ds:04x}:{si:04x})", addr - gsbuf);
                 }
             }
             rt.m.watch = None;
