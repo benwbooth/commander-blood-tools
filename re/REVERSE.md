@@ -5062,3 +5062,18 @@ are the SAME (concept-menu) system, now built+activated; the distinct remaining 
 are: manu3 procedural rasterizer (low value — atlas is pixel-exact) and the whole-binary
 clean-Rust replacement (the large multi-month remainder). Progression triggers are the
 on-planet game-flow refinement on top of the built interaction.
+
+## manu3 rasterizer 0x0b55 = scanline polygon fill (confirmed low-value, 2026-07-22)
+
+Disassembled the manu3 rasterizer inner loop @0x0b55: a vertical SCANLINE FILL —
+`mov ch,[bx]` (source/shade byte) → `mov es:[di],ch` → `add di,0x50` (VGA row stride)
+→ `dec cl; jne` down a column; face records are flagged `test [bx+2],0x8001`. So it's
+a real textured/shaded polygon rasterizer over the 216-face hand mesh. Building it
+faithfully = decode the face records + the texture/shade source (bx) + the scanline
+setup (0x0b80: imul dx,ax / imul ax,bp = edge interpolation) + pixel-match the atlas.
+That is a substantial subsystem whose OUTPUT ALREADY EXISTS pixel-exact via the baked
+hand atlas (engine-console-render mean_abs 0.14). So manu3 procedural render remains
+DEPRIORITIZED: substantial effort for zero visible improvement. Pipeline + mesh + this
+rasterizer characterization are decoded; the port would only add procedural rendering
+at atlas-absent poses. The genuinely dominant remaining item is the whole-binary
+clean-Rust replacement (multi-month) — the interpreter runs 100% bit-exact meanwhile.
