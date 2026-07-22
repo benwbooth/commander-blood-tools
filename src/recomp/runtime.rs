@@ -1188,7 +1188,7 @@ impl Runtime {
 
     // ---------------- port I/O ----------------
 
-    fn port_in(&mut self, port: u16, _size: u8) -> u32 {
+    pub(crate) fn port_in(&mut self, port: u16, _size: u8) -> u32 {
         match port {
             // 8237 DMA: current address/count with lo/hi flip-flop
             0x00 | 0x02 | 0x04 | 0x06 => {
@@ -1274,7 +1274,7 @@ impl Runtime {
         }
     }
 
-    fn port_out(&mut self, port: u16, _size: u8, value: u32) {
+    pub(crate) fn port_out(&mut self, port: u16, _size: u8, value: u32) {
         let v = value as u8;
         match port {
             0x00 | 0x02 | 0x04 | 0x06 => {

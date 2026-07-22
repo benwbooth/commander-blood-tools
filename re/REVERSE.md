@@ -5181,6 +5181,11 @@ Four I/O leaves lifted + oracle-verified this way:
   - `func_cef` (0x0CEF, mouse_reset_hide): int 33h fns 0, 2, 0xF.
   - `func_d0e` (0x0D0E, poll_mouse): int 33h fn 3 → gs mouse fields + changed-position latch (a
     conditional branch + 6 gs memory writes; the oracle compares each gs offset too).
+  - `func_bff` (0x0BFF, install_ctrl_break_handler): int21 fn 0x25 → INT 23h/24h vectors (oracle
+    compares the IVT slots at segment 0).
+  - `func_79c` (0x079C, install_timer_isr_hook): int21 fn 0x35 (save INT 08h) + fn 0x25 (install)
+    + PIT reprogram (out 0x43/0x40) + timer-state gs writes — combines int AND out; the oracle now
+    services Exit::Out/Exit::In via the same port handlers Runtime::run uses.
 The harness even caught two real test-plumbing bugs (EXE mirror clobbering the gs scratch, and
 40:0x49 clobbered by the overlay) before going green — evidence it actually discriminates.
 Note: `func_c26` (get_video_mode) looked like a neighbor leaf but is NOT one — it has a far
@@ -5191,5 +5196,5 @@ So the whole-binary static port now HAS a bounded, safe, verified per-function e
 the next I/O leaf's `fn(&mut Runtime)` + one `leaves`-table row, and it's oracle-checked against
 the original bytes. Completing all ~41 I/O leaves + unblocking compositions to the 222-fn fixpoint
 is still session-by-session work (and could be codegen'd in lift.py), but the per-pass increment
-is real and demonstrated — not blocked on a multi-session prerequisite. Count: 75 pure-CPU + 4
-I/O = 79 lifted, I/O path proven and reusable, oracle now compares regs + gs memory writes.
+is real and demonstrated — not blocked on a multi-session prerequisite. Count: 75 pure-CPU + 6
+I/O = 81 lifted; oracle services int+out+in and compares regs + gs + IVT memory.

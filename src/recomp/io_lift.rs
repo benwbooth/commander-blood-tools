@@ -143,6 +143,58 @@ pub fn func_d0e(rt: &mut Runtime) {
     rt.m.regs.set_ax(ax);
 }
 
+/// Emit a byte `out port, al` from a lifted function — routes to the same port handler the
+/// interpreter's run loop uses for `Exit::Out`.
+fn out8(rt: &mut Runtime, port: u16, val: u8) {
+    rt.port_out(port, 1, val as u32);
+}
+
+/// `func_79c` (`install_timer_isr_hook`, 0x079C): save the original INT 08h vector (int21 fn
+/// 0x35) to gs:[0xB1D]/[0xB1F], install the game's own PIT handler (int21 fn 0x25 → cs:0x213),
+/// then reprogram PIT channel 0 to ~200 Hz (out 0x43=0x36; out 0x40 = 0x1746 lo then hi) and set
+/// the timer-state bytes/words at gs:[0xB21..0xB27]. Hooks the tick, chaining to the saved vector.
+pub fn func_79c(rt: &mut Runtime) {
+    push16(rt, rt.m.regs.ax());
+    push16(rt, rt.m.regs.bx());
+    push16(rt, rt.m.regs.dx());
+    push16(rt, rt.m.regs.es);
+    push16(rt, rt.m.regs.ds);
+    rt.m.regs.set_ax(0x3508); // get INT 08h vector -> es:bx
+    int_call(rt, 0x21);
+    let (bx, es) = (rt.m.regs.bx(), rt.m.regs.es);
+    let gs = rt.m.regs.gs;
+    rt.m.write16(gs, 0xb1d, bx);
+    rt.m.write16(gs, 0xb1f, es);
+    rt.m.regs.set_ah(0x25); // set-vector; al still 0x08
+    let cs = rt.m.regs.cs;
+    rt.m.regs.set_bx(cs);
+    rt.m.regs.ds = cs; // mov bx,cs; mov ds,bx
+    rt.m.regs.set_dx(0x0213);
+    int_call(rt, 0x21); // set INT 08h -> cs:0x213
+    // cli — no IF modelling needed for a leaf; the ints are already serviced.
+    out8(rt, 0x43, 0x36); // PIT: ch0, mode 3, lo/hi byte
+    rt.m.regs.set_ax(0x1746); // ~200 Hz divisor
+    out8(rt, 0x40, rt.m.regs.al()); // divisor low (0x46)
+    let ah = rt.m.regs.ah();
+    rt.m.regs.set_al(ah); // mov al,ah
+    out8(rt, 0x40, rt.m.regs.al()); // divisor high (0x17)
+    rt.m.write8(gs, 0xb21, 1);
+    rt.m.write8(gs, 0xb22, 0xb);
+    rt.m.write16(gs, 0xb27, 0x19);
+    rt.m.write16(gs, 0xb25, 3);
+    // sti
+    let ds = pop16(rt);
+    rt.m.regs.ds = ds;
+    let es = pop16(rt);
+    rt.m.regs.es = es;
+    let dx = pop16(rt);
+    rt.m.regs.set_dx(dx);
+    let bx = pop16(rt);
+    rt.m.regs.set_bx(bx);
+    let ax = pop16(rt);
+    rt.m.regs.set_ax(ax);
+}
+
 /// `func_bff` (`install_ctrl_break_handler`, 0x0BFF): `ds=cs`; `int 21h` AX=0x2523 (set
 /// INT 23h = Ctrl-Break) to ds:0x619, then AX=0x2524 (set INT 24h = critical-error) to
 /// ds:0x61A. Traps Ctrl-Break / critical-error so the game cleans up on exit. (A recomp-path
@@ -199,11 +251,26 @@ mod tests {
         rt.cpu.ip = offset;
         rt.m.regs.cs = 0;
         rt.cpu.depth = 0;
+        use super::super::interp::Exit;
         for _ in 0..100_000 {
             match rt.cpu.run(&mut rt.m, 4096) {
-                super::super::interp::Exit::Ret | super::super::interp::Exit::Retf => return,
-                super::super::interp::Exit::Int { vector } => int_call(rt, vector),
-                super::super::interp::Exit::StepLimit => continue,
+                Exit::Ret | Exit::Retf => return,
+                Exit::Int { vector } => int_call(rt, vector),
+                // Service port I/O exactly as Runtime::run does (byte-wise; these leaves only OUT
+                // single bytes), through the same port handlers the lifts call.
+                Exit::Out { port, size, value } => {
+                    for i in 0..size as u16 {
+                        rt.port_out(port.wrapping_add(i), 1, (value >> (i * 8)) & 0xff);
+                    }
+                }
+                Exit::In { port, size } => {
+                    let v = rt.port_in(port, 1);
+                    match size {
+                        1 => rt.m.regs.set_al(v as u8),
+                        _ => rt.m.regs.set_ax(v as u16),
+                    }
+                }
+                Exit::StepLimit => continue,
                 other => panic!("interp_leaf: unexpected exit {other:?} at offset {offset:#x}"),
             }
         }
@@ -233,6 +300,10 @@ mod tests {
         rt.mouse_x = 0x0040;
         rt.mouse_y = 0x0030;
         rt.mouse_buttons = 0x0002;
+        // Pre-existing INT 08h vector so func_79c's get-vector (int21 fn 0x35) returns the same
+        // es:bx on both sides (the lift has the Runtime default; the oracle has EXE-overlay bytes).
+        rt.m.write16(0, 0x08 * 4, 0x1234);
+        rt.m.write16(0, 0x08 * 4 + 2, 0x5678);
     }
 
     /// Every Runtime-context I/O lift reproduces the REAL function bytes exactly: run the lift and
@@ -252,6 +323,8 @@ mod tests {
             ("func_d0e", 0x0d0e, func_d0e, &[0xa2a, 0xa2c, 0xa2e, 0xa38, 0xa3a, 0xb3b], &[]),
             // INT 23h vector at 0:[0x8c/0x8e], INT 24h vector at 0:[0x90/0x92].
             ("func_bff", 0x0bff, func_bff, &[], &[0x8c, 0x8e, 0x90, 0x92]),
+            // saved vector gs:[0xb1d/0xb1f], timer-state gs:[0xb21/0xb25/0xb27]; INT 08h at 0:[0x20/0x22].
+            ("func_79c", 0x079c, func_79c, &[0xb1d, 0xb1f, 0xb21, 0xb25, 0xb27], &[0x20, 0x22]),
         ];
         for &(name, offset, lift, gs_checks, seg0_checks) in leaves {
             let mut rt_lift = test_runtime();
