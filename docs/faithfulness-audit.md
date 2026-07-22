@@ -60,6 +60,13 @@ everywhere.** Priority = how visible/audible + how confidently fixable.
   determine the cutscene object's talk/ref field offset (like OBJECT_TALK_FIELD for actors) and map
   THAT to the cutscene name; verify a 0xC4 in the token stream matches before wiring. DETECTION
   (cutscene_record_names) works + is committed; only the offset-correct FIRING remains.
+  CORRECTION (verified — the direction above is a DEAD END): `garde` is NOT referenced by ANY token
+  in SCRIPT1's COD (checked 2648 raw / 2706 +58 / 2672 +24 — none; the 9 Actor/0xC4 tokens all
+  reference CHARACTERS). So the DEB Sequence symbols are DEFINED, not necessarily TRIGGERED — the
+  "SCRIPT1→garde trigger" was a FALSE POSITIVE. `cutscene_record_names` correctly lists a script's
+  Sequence symbols but is NOT the trigger. The real cutscene trigger is a DIFFERENT mechanism (the
+  C4 presentation VM @0x5816 traced above, or a runtime path) — genuinely deeper presentation-VM RE,
+  NOT a 0xC4-at-DEB-offset wire. Player still built+render-verified; the trigger stays open.
 - **[CLEARED] Intro/HNM subtitle tick scale** (risk #2, partial). The DESCRIPT subtitle ticks are
   HNM frame numbers (microkid→120, hatetv→200, cliptoot 1258 frames), so `FRAMES_PER_TICK = 1`
   (frame == tick) is faithful. The absolute HNM playback fps vs the game's tick rate is still worth
