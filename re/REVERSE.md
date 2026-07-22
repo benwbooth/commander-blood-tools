@@ -3938,3 +3938,14 @@ manu3 file offset 0x1370).
   raised to 1200). Scene subtitles = thin GAME_FONT @0xEF (3 lines y~9/17/25);
   console = bold 0x71AA font. The port's dialogue content for this scene can
   now be verified VERBATIM against the live game.
+- **★ SCRIPT2 REACHED (tut16, round 577, ~2.01B steps)** — the tutorial COMPLETED
+  by playing it: cryobox -> Bob woken -> Bob/HONK argument -> "IF YOU NEED ME
+  WAKE ME UP" -> "See you later Commander... Im cryonizing Aaaahhhh!" -> HONK:
+  "THE OLD TURKEY'S OUT FOR THE COUNT..." -> script2.* loaded. The old
+  "scene-coordinator bug blocks SCRIPT2" theory is DISPROVED — the tutorial
+  just had to be played correctly (the decoded geometry + OCR driver did it).
+  First SCRIPT2 frame: console, menu box glowing empty (rebuilding) —
+  accuracy/captures/bridge/script2_first_frame.ppm. UNLOCKED: post-tutorial
+  ground truth for MENU/OPTION/destinations/progression. NEXT INFRA: a
+  SAVESTATE (serialize Machine mem+regs+device state at SCRIPT2) to cut the
+  25-min replay to seconds, then explore the post-tutorial console.
