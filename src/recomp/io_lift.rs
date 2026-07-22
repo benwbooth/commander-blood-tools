@@ -143,6 +143,30 @@ pub fn func_d0e(rt: &mut Runtime) {
     rt.m.regs.set_ax(ax);
 }
 
+/// `func_bff` (`install_ctrl_break_handler`, 0x0BFF): `ds=cs`; `int 21h` AX=0x2523 (set
+/// INT 23h = Ctrl-Break) to ds:0x619, then AX=0x2524 (set INT 24h = critical-error) to
+/// ds:0x61A. Traps Ctrl-Break / critical-error so the game cleans up on exit. (A recomp-path
+/// lift — installing a guest vector to a guest code address is segmented by nature.)
+pub fn func_bff(rt: &mut Runtime) {
+    push16(rt, rt.m.regs.ax());
+    push16(rt, rt.m.regs.dx());
+    push16(rt, rt.m.regs.ds);
+    let cs = rt.m.regs.cs;
+    rt.m.regs.ds = cs; // mov ax,cs; mov ds,ax
+    rt.m.regs.set_ax(0x2523);
+    rt.m.regs.set_dx(0x0619);
+    int_call(rt, 0x21); // set INT 23h -> ds:0x619
+    rt.m.regs.set_al(0x24); // ax = 0x2524 (ah=0x25 set-vector, al=0x24)
+    rt.m.regs.set_dx(0x061a);
+    int_call(rt, 0x21); // set INT 24h -> ds:0x61a
+    let ds = pop16(rt);
+    rt.m.regs.ds = ds;
+    let dx = pop16(rt);
+    rt.m.regs.set_dx(dx);
+    let ax = pop16(rt);
+    rt.m.regs.set_ax(ax);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -196,6 +220,8 @@ mod tests {
         rt.m.regs.set_cx(0xAAAA);
         rt.m.regs.set_dx(0xBBBB);
         rt.m.regs.es = 0x1357;
+        // CS matches the oracle's interp run (CS=0) so func_bff's `ds=cs` is identical on both sides.
+        rt.m.regs.cs = 0x0000;
         rt.m.regs.gs = 0x3000;
         rt.m.write8(0x3000, 0x5232, 0x03); // saved video mode for func_cc0
         // A distinct sentinel in the BIOS video-mode byte so func_cc0 genuinely changes it (3≠0xEE)
@@ -217,14 +243,17 @@ mod tests {
     #[test]
     fn io_lifts_match_interpreter_oracle() {
         let Some(exe) = load_exe() else { return };
-        // (name, file offset, lifted fn, gs offsets the fn writes — compared against the real bytes)
-        let leaves: &[(&str, u16, fn(&mut Runtime), &[u16])] = &[
-            ("func_cc0", 0x0cc0, func_cc0, &[]),
-            ("func_d4a", 0x0d4a, func_d4a, &[]),
-            ("func_cef", 0x0cef, func_cef, &[]),
-            ("func_d0e", 0x0d0e, func_d0e, &[0xa2a, 0xa2c, 0xa2e, 0xa38, 0xa3a, 0xb3b]),
+        // (name, file offset, lifted fn, gs offsets written, segment-0/IVT offsets written) —
+        // every listed offset is compared word-for-word against the real bytes' output.
+        let leaves: &[(&str, u16, fn(&mut Runtime), &[u16], &[u16])] = &[
+            ("func_cc0", 0x0cc0, func_cc0, &[], &[]),
+            ("func_d4a", 0x0d4a, func_d4a, &[], &[]),
+            ("func_cef", 0x0cef, func_cef, &[], &[]),
+            ("func_d0e", 0x0d0e, func_d0e, &[0xa2a, 0xa2c, 0xa2e, 0xa38, 0xa3a, 0xb3b], &[]),
+            // INT 23h vector at 0:[0x8c/0x8e], INT 24h vector at 0:[0x90/0x92].
+            ("func_bff", 0x0bff, func_bff, &[], &[0x8c, 0x8e, 0x90, 0x92]),
         ];
-        for &(name, offset, lift, gs_checks) in leaves {
+        for &(name, offset, lift, gs_checks, seg0_checks) in leaves {
             let mut rt_lift = test_runtime();
             seed(&mut rt_lift);
             lift(&mut rt_lift);
@@ -256,6 +285,13 @@ mod tests {
                     rt_lift.m.read16(gs, off as u32),
                     rt_oracle.m.read16(gs, off as u32),
                     "{name}: gs:[{off:#x}]"
+                );
+            }
+            for &off in seg0_checks {
+                assert_eq!(
+                    rt_lift.m.read16(0, off as u32),
+                    rt_oracle.m.read16(0, off as u32),
+                    "{name}: 0:[{off:#x}] (IVT)"
                 );
             }
         }
