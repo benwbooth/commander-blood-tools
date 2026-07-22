@@ -643,6 +643,23 @@ fn main() {
                 // NUMANSWER: click the topic-list row matching the prompted word.
                 // The list (TALK/ONE..NINE, blue square-capitals) runs down the
                 // console's right at x~168.., rows from y~35 at ~13px pitch.
+                // TOPICTOUR: click each consultation topic once (TALK,1..8),
+                // transcribing what each yields, then try rotating the bridge.
+                if std::env::var("TOPICTOUR").is_ok() {
+                    let topic = (round / 60) % 9; // ~60 rounds per topic
+                    if round % 60 == 0 {
+                        let (sx, sy) = (190i32, 35 + 13 * topic as i32);
+                        let ring = (sx + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+                        println!("round {round}: TOUR clicking topic row {topic}");
+                        rt.set_mouse_pos(ring, sy as u16);
+                        let _ = rt.run(rt.cpu.steps + 700_000);
+                        rt.mouse_press(0);
+                        let _ = rt.run(rt.cpu.steps + 400_000);
+                        rt.mouse_release(0);
+                        let _ = rt.run(rt.cpu.steps + 2_000_000);
+                        continue;
+                    }
+                }
                 if std::env::var("NUMANSWER").is_ok() {
                     // The top-left word is the ECHO of what was clicked (clicking
                     // EIGHT echoes "EIGHT"); "NINE... GOOD WORK" in the transcript
