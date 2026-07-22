@@ -4529,3 +4529,29 @@ now included → 75 functions, BOTH oracle batches pass bit-exact
 tests green). The remaining unlifted leaves are all documented I/O-blocked or
 <120-vector code-region cases — the generic static oracle's real ceiling; deeper
 coverage needs the interpreter runtime (now itself lockstep-verified, see M1b).
+
+## manu3 hand mesh — RUNTIME-DUMPED + vertex structure decoded (2026-07-22)
+
+Using the now-lockstep-verified runtime, BRIDGEPROBE drove to the console
+(tb_frame=55) and dumped manu3's LIVE (bank-relocated) 3D tables — the runtime
+data the procedural port needed:
+  - manu3 data segment = 0x17A3 (patched at load; file statics are stale). Data
+    heads: [0]=0xaabb [2]=0x1b76(vertex seg) [4]=0x1c94 [6]=0x2094 [8]=0x0f32.
+  - HAND MESH: faces @ data:0x0b18, **n=0xD8 (216 faces)**; pose records @
+    data:0x0898, **n=0x20 (32 poses)**; scene root node @ 0x2916.
+  - VERTEX RECORD = 20 bytes (seg 0x1b76): +0 projected_screen_x, +2
+    projected_screen_y, +4 raw_mesh_x, +6 raw_mesh_y, +8 raw_mesh_z (small signed,
+    ~±13 for the hand), +14 flags. The raw +4/+6/+8 triple is exactly what the
+    transform at 0x549 reads (`movsx …, es:[si+4/6/8]`); +0/+2 is the projection
+    output the rasterizer consumes. Live reads cluster at record offsets
+    4,6,8,a,e,12,32,3a,82,8a,140,… (the active vertices).
+  - RASTERIZER hot entries (per-frame, from segment coverage): the 0x0b55..0x0b67
+    inner loop (48312 hits) + 0x0ca4..0x0cc5 (25454 hits) — the polygon fill.
+So the full pipeline + DATA are now recovered: matrix builder 0x279 (trig table)
+→ transform 0x477 → project 0x549 (into vertex +0/+2) → rasterize 0x0b55/0x0ca4
+over the 216-face table. REMAINING to render procedurally: decode the face-record
+format (vertex-index tuples + shade) at data:0x0b18 and the teal shade ramp, then
+port the rasterizer. DEFERRED (not a fidelity gap): the baked hand atlas already
+renders the console hand at mean_abs 0.14; the procedural renderer only matters
+for atlas-absent poses. Dumps regenerable via `BRIDGEPROBE=1 runtime_boot`
+(manu3_face_table.bin + manu3_vertseg_1b76.bin).
