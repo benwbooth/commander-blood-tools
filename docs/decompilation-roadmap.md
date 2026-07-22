@@ -104,11 +104,24 @@ The full game is the target; these are the subsystems still being reverse-engine
   oracle into real gameplay to observe the live entity table, input handling, and
   state, then decoding each.
 
-**Key enabler (next):** the recomp emulator runs the real BLOODPRG.EXE and can dump
-any runtime memory (used above for the palette + projection), but currently only
-reaches attract-mode demos. Adding scripted keyboard/mouse injection to drive it
-into player-controlled gameplay unblocks the runtime dumps the remaining subsystems
-need — turning "undecoded runtime data" into observable ground truth without DOSBox.
+**Key enabler — NOW BUILT (2026-07-22).** The "drive the emulator into real
+gameplay" enabler the earlier text called for is done and proven: a deterministic
+OCR driver (`runtime_boot` `TUTORIAL4`) reads the live game's subtitles with the
+game's own fonts and *plays* it — it completed the SCRIPT1 tutorial, reached
+SCRIPT2, walked HONK's consultation hub, and mapped the conversation system.
+Full-machine savestates (`accuracy/*.state`, CBSAVE01) resume any reached point in
+seconds. This turned the remaining "undecoded runtime data" into cheap, repeatable
+ground truth. Confirmed via this enabler this session: TB.BIG = the whole bridge
+(ported to pixel-parity 0.14); the steering/seek/menu laws (`src/bridge.rs`); the
+choice box + list-menu widgets + their square-capitals face (measured from live
+captures); the bold console font (from the user's EXE); the concept-menu
+conversation system (`src/engine.rs` topic menu); and SCRIPT2's D2 travel handoff
+(operands 3/4/5 → SCRIPT3/4/5, validating the port's choose-a-location model
+against the bytecode). Remaining, each with recorded leads + fast instruments:
+the manu3 skeletal-mesh hand renderer (decoded; interim real-capture atlas in
+place), the square-capitals glyph *generator* RE (16 letters harvested), on-planet
+object interaction, the cyberspace mini-game input model, and the DOS `blood.sav`
+byte format.
 
 ## Ground Rules
 
