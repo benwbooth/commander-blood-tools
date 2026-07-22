@@ -1293,6 +1293,23 @@ fn main() {
                             let _ = rt.run(rt.cpu.steps + 12_000_000);
                             rt.write_ppm(&out.join("travel_after_orb.ppm")).unwrap();
                             println!("nav orb clicked at ({ox},{oy})");
+                            // Interact with the opened NAV SCREEN: click pyramids
+                            // (candidate destinations) + the centre orb, capturing.
+                            let targets: [(u16, u16, &str); 6] = [
+                                (60, 165, "pyr_left"), (120, 155, "pyr_midl"),
+                                (200, 155, "pyr_midr"), (260, 165, "pyr_right"),
+                                (160, 100, "viewscreen"), (160, 160, "orb2"),
+                            ];
+                            for (px, py, name) in targets {
+                                rt.set_mouse_pos(px * 2, py);
+                                let _ = rt.run(rt.cpu.steps + 1_000_000);
+                                rt.mouse_press(0);
+                                let _ = rt.run(rt.cpu.steps + 500_000);
+                                rt.mouse_release(0);
+                                let _ = rt.run(rt.cpu.steps + 8_000_000);
+                                rt.write_ppm(&out.join(format!("navscr_{name}.ppm"))).unwrap();
+                                println!("nav screen: clicked {name}");
+                            }
                             break;
                         }
                     }
