@@ -462,6 +462,22 @@ fn main() {
                 println!("hand code/data segments dumped");
             }
         }
+        // Dump manu3's live table heads + the face/vertex tables they point to
+        // (the bank relocation fills these; statics in the file are stale).
+        {
+            let m3 = 0x166cu16;
+            let rw = |off: u32| -> u16 {
+                rt.m.read8(m3, off) as u16 | ((rt.m.read8(m3, off + 1) as u16) << 8)
+            };
+            let (faces, nfaces) = (rw(0x2300), rw(0x2304));
+            let (recs, nrecs) = (rw(0x22fa), rw(0x22fe));
+            println!("manu3 live: faces@{faces:#06x} n={nfaces:#x} pose-recs@{recs:#06x} n={nrecs:#x} root={:#06x} list2={:#06x}", rw(0x2248), rw(0x224a));
+            let mut dump = Vec::new();
+            for i in 0..0x6000u32 {
+                dump.push(rt.m.read8(m3, faces as u32 + i));
+            }
+            std::fs::write(out.join("manu3_face_table.bin"), &dump).unwrap();
+        }
         // Coverage-map manu3's segment for one second of console time: which code
         // runs per frame (entry points by hit count) — the decompile worklist.
         {
