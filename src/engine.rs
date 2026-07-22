@@ -3628,6 +3628,33 @@ mod tests {
         );
     }
 
+    /// Diagnostic dump: play an in-game cutscene (maledict) via start_descript_cutscene and dump a
+    /// frame — verify it renders FULL-SCREEN (no pyramid console) with its subtitle.
+    #[test]
+    #[ignore = "diagnostic dump, run explicitly"]
+    fn dump_cutscene() {
+        let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("sq").join("maledict.hnm").exists());
+        let Some(assets) = assets else { return };
+        let db = ["output/_tmp_iso/DESCRIPT.DES", "../output/_tmp_iso/DESCRIPT.DES"]
+            .iter()
+            .find_map(|p| crate::descript::DescriptDb::parse_file(p).ok());
+        let Some(db) = db else { return };
+        let rec = db.records.iter().find(|r| r.name == "maledict").unwrap();
+        let mut e = EngineState::new();
+        e.start_descript_cutscene(rec, assets);
+        for _ in 0..8 {
+            e.step(MouseInput::default());
+        }
+        let mut buf = Vec::from(&b"P6\n320 200\n255\n"[..]);
+        for &idx in &e.framebuffer {
+            buf.extend_from_slice(&e.scene_palette[idx as usize]);
+        }
+        std::fs::write("output/_tmp_cutscene.ppm", buf).unwrap();
+    }
+
     /// Diagnostic dump: drive the intro to the credit clip and dump the COMPOSITE (crew showcase
     /// cliptoot + pyramid console overlay + credits) to a PPM, to eyeball it against captures 6-9.
     #[test]
