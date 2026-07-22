@@ -3929,3 +3929,12 @@ manu3 file offset 0x1370).
   over the letterboxed scene). Next: generalize OCR row alignment (scan row0
   0..40) + index set (white subtitle indices), then converse with Bob (clicks
   advance; expect choice boxes) toward SCRIPT2.
+- **FULL BOB CONVERSATION TRANSCRIBED LIVE** (tut15): the driver reads and
+  advances the whole cryobox scene — Bob: "I have provided you with an ONBOARD
+  COMPUTER called HONK" / HONK: "YES SIR," / Bob: "Why you hunk o' junk YOU
+  WERE ASLEEP!!!" / HONK: "NO, CAP'N BOB. I WAS BLACK HOLE!..." / Bob: "Your
+  mother!! I've a good mind to short-circuit every wire in your lazy carcass!
+  Keep an eye on him Commander" (scene concluding at the 500-round cap; cap
+  raised to 1200). Scene subtitles = thin GAME_FONT @0xEF (3 lines y~9/17/25);
+  console = bold 0x71AA font. The port's dialogue content for this scene can
+  now be verified VERBATIM against the live game.
