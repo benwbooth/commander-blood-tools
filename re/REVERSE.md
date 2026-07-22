@@ -4689,3 +4689,28 @@ feeds it) → the COD-state → BAS-menu map. Then the port shows the right menu
 beat. This is concrete, DRIVEN progress (not scoping): the residual went from
 "unclear" to "menu-draw routine @067c reads BAS[offset]; offset-selection is the
 last unknown, localized to 3 instruction addresses."
+
+## Per-beat linkage SOLVED — current menu = gs:0x6772 (2026-07-22)
+
+Disassembled the menu-selection routine (seg 0x067c) found by BASWATCH and VERIFIED
+the mechanism against live state. RESULT — the linkage is fully decoded:
+  - `.BAS` is executed by a SEPARATE conversation VM at segment 0x067c (its own
+    dispatch @0x309: `sub bl,0xa0; cmp bl,0x32; call gs:[bx+di]` — opcodes 0xA0..0xD2
+    via a handler table, distinct from the COD VM's length-table dispatch). This is
+    why `.BAS` isn't walkable by the COD walker: it's a different VM.
+  - Opcode 0xA3 handler @0x446: PUSHES the menu — saves current menu ptr gs:0x6782→
+    gs:0x6784 and current menu si gs:0x6772→gs:0x6774, then sets gs:0x6782=ax,
+    gs:0x6772=si (the new menu's BAS position). @0x76c copies the menu's u16 topic
+    offsets into the display buffer gs:0x67f8 until the 0-terminator.
+  - So the MENU SHOWN AT ANY BEAT = the BAS offset in **gs:0x6772** (a menu stack;
+    gs:0x6774 = previous). VERIFIED live (milestone_script2.state): gs:0x6772=0x42d
+    = [talk,fear,weakness,complain,anger,break,cry] (current sub-conversation),
+    gs:0x6774=0x2f = the top-level menu (pushed under it). Exactly matches the
+    concept_menu.rs decode of those BAS offsets.
+PORT IMPLICATION (per-beat wiring, now well-defined): the port tracks the current
+menu by executing the BAS conversation VM (seg 0x067c handlers) and reading its
+gs:0x6772-equivalent, OR — simpler — mirrors the menu stack driven by the same
+conversation events the COD dialogue already exposes. The residual is no longer
+"unclear RE"; it is "port the BAS conversation VM / menu-stack" with the exact
+state variable (gs:0x6772), opcode (0xA3 push @0x446), and buffer (gs:0x67f8)
+identified. concept_menu.rs already decodes any gs:0x6772 offset to its labels.
