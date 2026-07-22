@@ -5077,3 +5077,19 @@ DEPRIORITIZED: substantial effort for zero visible improvement. Pipeline + mesh 
 rasterizer characterization are decoded; the port would only add procedural rendering
 at atlas-absent poses. The genuinely dominant remaining item is the whole-binary
 clean-Rust replacement (multi-month) — the interpreter runs 100% bit-exact meanwhile.
+
+## Whole-binary static-lift precisely scoped: 222 fns, 75 lifted (fixpoint) — 2026-07-22
+
+Precise counts: the binary has 222 functions (callgraph), 112 leaves, 71 clean leaves.
+LIFTED + oracle-verified: 75 (auto.rs). The 75 is the static-lift FIXPOINT given the I/O
+boundary: the ~147 unlifted are (a) 10 documented-excluded clean leaves (self-modifying
+0x1d74/0x3e46/0x3e5b, CPU-detect 0xccb, code-region <120-vec 0x22e0/0x23c5/0x2d50/0x6293/
+0xa4ed/0xa867), (b) ~41 I/O leaves (int/out/in — Unicorn can't model DOS, so they need
+the INTERPRETER as oracle + wiring to the runtime DOS/VGA/SB handlers), (c) non-leaf
+functions whose compositions are BLOCKED by those I/O callees. So completing the static
+replacement = lift the I/O leaves (interp-oracle + handler wiring) → unblock compositions
+→ fixpoint grows. That is bounded (222 fns, handlers already exist in src/recomp/runtime.rs)
+but genuinely multi-session — NOT a bounded-pass task. Meanwhile the interpreter runs ALL
+222 functions bit-exact (triple-verified), so the game is faithful-by-construction now.
+NET whole-binary status: 34% statically lifted (fixpoint); the rest is I/O-oracle lifting
++ composition, multi-session. This is the dominant remaining item for a pure-static port.
