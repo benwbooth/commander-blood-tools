@@ -474,9 +474,13 @@ fn main() {
                 out
             };
             let ocr = |idx: &[u8], font: &[(char, [u8; 8])]| -> String {
-                let lit = |px: u8| px == 0xE0 || px >= 0xFD;
+                let lit = |px: u8| px == 0xE0 || px == 0xEE || px == 0xEF || px >= 0xFD;
                 let mut text = String::new();
-                for row0 in [8usize, 18] {
+                // Dynamic alignment: subtitle rows differ per screen (console
+                // 8/18; scene close-ups draw 3 lines from the very top). Find
+                // aligned rows by trying each and keeping non-empty reads.
+                let mut row0 = 0usize;
+                while row0 < 40 {
                     let mut line = String::new();
                     let mut blanks = 0usize;
                     let mut x = 0usize;
@@ -514,11 +518,14 @@ fn main() {
                             x += 1;
                         }
                     }
-                    if !line.is_empty() {
+                    if line.chars().filter(|c| c.is_ascii_alphanumeric()).count() >= 3 {
                         if !text.is_empty() {
                             text.push(' ');
                         }
                         text.push_str(&line);
+                        row0 += 9; // next line
+                    } else {
+                        row0 += 1;
                     }
                 }
                 text
