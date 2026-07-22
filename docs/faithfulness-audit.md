@@ -39,6 +39,12 @@ everywhere.** Priority = how visible/audible + how confidently fixable.
   turns into `start_descript_cutscene(record)`. The player is built + render-verified (maledict);
   what's left is the 0xC4→record kind resolution + threading the event through the flow — bounded
   RE, no longer open-ended.
+  WHY IT DOESN'T FIRE (static RE): the port's 0xC4 resolution (actor_by_offset in script.rs)
+  maps DEB/object offsets ONLY to Character records - a 0xC4 referencing a Sequence record falls
+  through as 'no tracked actor'. Fix direction: build a parallel offset->Sequence-record map and
+  detect those 0xC4s. ONE VERIFICATION FIRST (do not skip): confirm the DEB/object table actually
+  references Sequence records (that cutscenes ARE triggered by a 0xC4, not a different mechanism)
+  - check the object-name->DESCRIPT mapping for Sequence-kind entries before building the map.
 - **[CLEARED] Intro/HNM subtitle tick scale** (risk #2, partial). The DESCRIPT subtitle ticks are
   HNM frame numbers (microkid→120, hatetv→200, cliptoot 1258 frames), so `FRAMES_PER_TICK = 1`
   (frame == tick) is faithful. The absolute HNM playback fps vs the game's tick rate is still worth
