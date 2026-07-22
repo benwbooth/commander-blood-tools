@@ -3893,3 +3893,11 @@ manu3 file offset 0x1370).
   LIVE VM active-line id (gs:0x1FAB / gs:0x6788 A6 bookkeeping) and look it up
   in the port's decoded SCRIPT1 line table (vm.rs speech events) — wiring the
   port's decoded content to the live game's state. Implement next.
+- TUTORIAL3 result: gs:0xE18 is only TRANSIENTLY populated (empty at every
+  round boundary across 500 rounds; VMWATCH saw text because it read right
+  after a click mid-presentation). The reliable instruction reader is
+  SCREEN-OCR with the game's own font: subtitle rows render at the top of the
+  frame; the port knows the exact glyph bitmaps (draw_subtitle_revealed's font)
+  — match glyph columns against screen_indices() rows 0..30 to recover the
+  line text deterministically, then click the named item. Implement as the
+  next driver iteration (TUTORIAL4).
