@@ -3721,3 +3721,7 @@ map the node list the hand belongs to, the projection + the polygon rasterizer
 (writer ips 0x2AF..0x13xx), and the hand mesh vertices in manu3 data (runtime ds
 0x17A3 dump = handprobe4 scratchpad; ds 0x17A3 = manu3 seg + 0x137 paragraphs =
 manu3 file offset 0x1370).
+- manu3 data ds 0x17A3 (file 0x1370): a fine-step Q14 SIN/COS pair table from
+  +0x30 (amplitude 16384) — the 3D core's trig LUT. The other rasterizer source
+  segments map to manu3 file offsets: ds 0x1C94 -> file 0x6280, ds 0x2094 ->
+  file 0xA280 (mesh/shade data candidates — decode next).
