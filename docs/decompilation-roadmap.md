@@ -73,7 +73,7 @@ Against the Definition of Done below:
 | 6 | Location navigation + interactive object flows | **Partial** | location visit is a faithful static room viewer with decoded `.ext` object positions + the **choose-a-location** nav; **progression** tracked via `progress.rs` (`GameProgress` over the decoded entity flag state machine → completion → ending); on-planet click semantics still RE-blocked |
 | 6b | Console functions | **Done** | all five: HONK (SCRIPT1), TELEPHONE (video-phone), CRYOBOX (cryo-chamber), MENU ({EXPLANATIONS,GAME} submenu), **OPTION** (3D pyramid menu from decoded `manu3.xdb` + `manu3.rs` + ship-3D projection) |
 | 6c | Mini-game | **Done (grounded)** | cyberspace hyperspace **traversal**: steer through the real `hyper_*.hnm` segments to arrival; tunnel video is decoded, the steer/arrive interaction is the port's documented interpretation |
-| 7 | Save/load state | **Done (port-native)** | `save.rs` persists the resumable state (screen, nav heading, location/script, dialogue progress, phone selection, text speed, **visited-progression**) via F5/F9; NOT the DOS `blood.sav` byte layout (that field layout is separately RE-blocked and unnecessary for a modern port) |
+| 7 | Save/load state | **Done** | `save.rs` = port-native F5/F9 state; **`bloodsav.rs` = the byte-exact DOS `blood.sav` layout, now DECODED** (profile u16 + 512 flags + 96 state + runtime object/work blocks, from save/load @0x1C3F/0x1CBD) with a tested reader/writer |
 | 8 | Oracle suite | **Partial** | per-behavior tests + smoke playthrough (now covers every screen incl. OPTION + the cyberspace traversal to arrival); no full frame-diff oracle suite |
 
 Phase status: **Phase 1 (data layer) and Phase 2 (script VM/trace) complete;
