@@ -491,7 +491,11 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     topics.sort_by_key(|(l, _)| if l == "TALK" { 0 } else { 1 });
                     engine.set_topic_menu(if topics.len() >= 3 { topics } else { Vec::new() });
                 } else {
+                    // Location scripts (SCRIPT3/4/5): show the decoded concept menu
+                    // (bas_vm) — its real topics, clickable via bas_menu_click. Was:
+                    // empty (no menu). The menu's flat sequential responses play on click.
                     engine.set_topic_menu(Vec::new());
+                    engine.sync_topic_menu_from_bas();
                 }
             }
             if let Some(m) = extract::script_background_music(Path::new(iso), &format!("SCRIPT{n}"))
