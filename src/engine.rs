@@ -2677,13 +2677,16 @@ mod tests {
             if !e.hand_atlas.is_empty() { break; }
         }
         e.bridge_active = true;
-        // Reproduce the live probe's state: view at frame 55, cursor at ring 320
-        // (screen x 40), y 100 — the exact state the capture was taken in.
+        // Prime prev_pos so the render step sees zero cursor motion, then
+        // reproduce the live probe's state exactly: view frame 55, cursor at
+        // ring 320 (screen x 40), y 100 — the state the capture was taken in.
+        e.step(MouseInput { x: 160, y: 100, buttons: 0 });
         e.bridge.frame = 55;
         e.bridge.ring_mouse_x = 320;
         e.bridge.mouse_y = 100;
         e.step(MouseInput { x: 160, y: 100, buttons: 0 });
         assert_eq!(e.bridge.frame, 55, "view must not drift during the render");
+        assert_eq!(e.bridge.mouse_screen_x(), 40, "virtual cursor at the capture position");
 
         let mut total_abs = 0u64;
         for (pixel, &index) in e.framebuffer.iter().enumerate() {
@@ -2703,8 +2706,12 @@ mod tests {
             std::fs::write(&dump, ppm).unwrap();
             eprintln!("bridge console render -> {dump} (mean_abs vs live = {mean_abs:.2})");
         }
+        // With the captured-hand atlas the render is near pixel-perfect (0.14
+        // observed; residual = window-starfield RNG); without it the missing
+        // hand accounts for ~2.6.
+        let threshold = if e.hand_atlas.is_empty() { 4.0 } else { 1.0 };
         assert!(
-            mean_abs < 4.0,
+            mean_abs < threshold,
             "port console diverges from the live game: mean_abs = {mean_abs:.2}"
         );
     }
