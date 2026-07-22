@@ -203,8 +203,10 @@ fn concept_menu_text_matches_live_game_capture() {
     }
     let iou = inter as f64 / uni as f64;
     eprintln!("concept-menu text IoU = {iou:.3} (inter={inter}, union={uni})");
+    // Observed 1.000 (pixel-exact). A tight gate so a geometry/advance regression
+    // (e.g. reverting the proportional advance, which misaligns LIBIDO) fails here.
     assert!(
-        iou > 0.60,
-        "concept-menu text mask must overlap the live capture (IoU {iou:.3} <= 0.60)"
+        iou > 0.90,
+        "concept-menu text mask must overlap the live capture (IoU {iou:.3} <= 0.90)"
     );
 }
