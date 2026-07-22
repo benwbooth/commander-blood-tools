@@ -285,6 +285,9 @@ pub struct EngineState {
     /// The in-progress sequential response player for the active menu's monologue
     /// (advances one `0xA6` response per interaction — the already-shown gating).
     pub bas_responses: Option<crate::bas_vm::SequentialResponses>,
+    /// Whether the displayed `topic_menu` is a BAS concept menu (so clicks route to
+    /// [`Self::bas_menu_interact`]) rather than the legacy line-jump topic menu.
+    pub topic_menu_is_bas: bool,
     /// The decompiled bridge interaction state ([`crate::bridge`]): mouse-push
     /// steering, station seeks, and the golden-menu hit testing/highlighting.
     pub bridge: crate::bridge::BridgeView,
@@ -447,6 +450,7 @@ impl EngineState {
             topic_selected: None,
             bas_menus: None,
             bas_responses: None,
+            topic_menu_is_bas: false,
             bridge: crate::bridge::BridgeView::default(),
             console_font: Vec::new(),
             bridge_active: false,
@@ -1041,6 +1045,7 @@ impl EngineState {
     pub fn set_topic_menu(&mut self, topics: Vec<(String, usize)>) {
         self.topic_menu = topics;
         self.topic_selected = None;
+        self.topic_menu_is_bas = false;
     }
 
     /// Load the conversation script's decoded concept-menu stack (the game's
@@ -1080,6 +1085,16 @@ impl EngineState {
         self.bas_menus.as_ref().and_then(|s| s.response_text(offset))
     }
 
+    /// Handle a screen click on the displayed BAS concept menu: map (x,y) to a topic
+    /// row (the list-menu geometry) and run [`Self::bas_menu_interact`]. Returns the
+    /// response subtitle (empty string on a pop/back), or `None` if the click missed
+    /// the menu rows (so the caller can fall through to advancing the dialogue).
+    pub fn bas_menu_click(&mut self, x: u16, y: u16) -> Option<String> {
+        let row = Self::list_menu_click(self.topic_menu.len(), x, y)?;
+        self.topic_selected = Some(row);
+        Some(self.bas_menu_interact(row).unwrap_or_default())
+    }
+
     /// Sync the displayed topic menu to the current BAS concept menu, so the decoded
     /// menus actually RENDER (via [`draw_list_menu`]/the topic-menu widget). Each row
     /// carries its topic index; a click is handled by [`Self::bas_topic_click`]. No-op
@@ -1089,6 +1104,7 @@ impl EngineState {
         if !labels.is_empty() {
             self.topic_menu = labels.into_iter().enumerate().map(|(i, l)| (l, i)).collect();
             self.topic_selected = None;
+            self.topic_menu_is_bas = true;
         }
     }
 

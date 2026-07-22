@@ -695,8 +695,15 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 // player isn't stuck watching hundreds of lines auto-play.
                 Event::ButtonPress(b) if engine.in_dialogue() && b.detail == 1 => {
                     // The topic menu takes the click when it is showing (the
-                    // concept-menu conversation system); otherwise advance.
-                    if engine.topic_menu_click(mx, my).is_none() {
+                    // concept-menu conversation system); otherwise advance. A BAS
+                    // concept menu (topic_menu_is_bas) routes through the decoded
+                    // conversation VM (bas_menu_click → sequential responses / pop).
+                    let handled = if engine.topic_menu_is_bas {
+                        engine.bas_menu_click(mx, my).is_some()
+                    } else {
+                        engine.topic_menu_click(mx, my).is_some()
+                    };
+                    if !handled {
                         engine.skip_dialogue_line();
                     }
                 }
