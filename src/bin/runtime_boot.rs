@@ -643,6 +643,42 @@ fn main() {
                 // NUMANSWER: click the topic-list row matching the prompted word.
                 // The list (TALK/ONE..NINE, blue square-capitals) runs down the
                 // console's right at x~168.., rows from y~35 at ~13px pitch.
+                // HOOKSNAP: when HONK says "CLICK ON ... OVER THERE", capture a
+                // frame series (the direction may highlight/animate the target),
+                // then follow: click the eye-orb.
+                if std::env::var("HOOKSNAP").is_ok() && (line.contains("CL1CK ON") || line.contains("OVER THERE")) {
+                    println!("round {round}: HOOK {line:?}");
+                    for shot in 0..6 {
+                        rt.write_ppm(&out.join(format!("hook_{round}_{shot}.ppm"))).unwrap();
+                        let _ = rt.run(rt.cpu.steps + 3_000_000);
+                    }
+                    // Follow the direction: click the current frame's orb box.
+                    let mut orb = (160i32, 120i32);
+                    for rec in 0..4u32 {
+                        let base = 0x2a1b + rec * 0x18;
+                        let w16 = |o: u32| {
+                            rt.m.read8(g, base + o) as u16
+                                | ((rt.m.read8(g, base + o + 1) as u16) << 8)
+                        };
+                        if w16(0xc) != 0xffff {
+                            orb = (
+                                w16(0xc) as i32 + w16(0x10) as i32 / 2,
+                                w16(0xe) as i32 + w16(0x12) as i32 / 2,
+                            );
+                            break;
+                        }
+                    }
+                    let ring = (orb.0 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+                    rt.set_mouse_pos(ring, orb.1 as u16);
+                    let _ = rt.run(rt.cpu.steps + 700_000);
+                    rt.mouse_press(0);
+                    let _ = rt.run(rt.cpu.steps + 400_000);
+                    rt.mouse_release(0);
+                    let _ = rt.run(rt.cpu.steps + 10_000_000);
+                    rt.write_ppm(&out.join(format!("hook_{round}_after_orb.ppm"))).unwrap();
+                    println!("round {round}: followed to orb {orb:?} — captured");
+                    continue;
+                }
                 // TOPICTOUR: click each consultation topic once (TALK,1..8),
                 // transcribing what each yields, then try rotating the bridge.
                 if std::env::var("TOPICTOUR").is_ok() {
