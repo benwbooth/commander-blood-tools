@@ -2225,6 +2225,39 @@ fn main() {
         return;
     }
 
+    // MENUTREE: empirically map a concept menu's topic→sub-menu branch targets by
+    // clicking each topic (reloading the savestate to isolate each) and reading the
+    // resulting current-menu offset gs:0x6772. Gives the ground-truth navigation the
+    // clean-port conversation VM must reproduce, without a full static VM decode.
+    if std::env::var("MENUTREE").is_ok() {
+        let g = 0x0e84u16;
+        let cur_menu = |rt: &Runtime| rt.m.read8(g, 0x6772) as u16 | ((rt.m.read8(g, 0x6773) as u16) << 8);
+        let frame = |rt: &Runtime| rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
+        let statepath = std::path::Path::new("accuracy/milestone_script2.state");
+        // The current menu's topic rows (measured from the fear/anger menu capture):
+        // x=175.., first row top y=61, 11px pitch.
+        let topics = ["talk", "fear", "weakness", "complain", "anger", "break", "cry"];
+        rt.load_state(statepath).unwrap();
+        let base = cur_menu(&rt);
+        println!("MENUTREE base menu = {base:#06x} ({} topics)", topics.len());
+        for (i, name) in topics.iter().enumerate() {
+            rt.load_state(statepath).unwrap();
+            let fr = frame(&rt);
+            let my = 61 + 11 * i as u16 + 3;
+            let ring = (200i32 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+            rt.set_mouse_pos(ring, my);
+            let _ = rt.run(rt.cpu.steps + 500_000);
+            rt.mouse_press(0);
+            let _ = rt.run(rt.cpu.steps + 300_000);
+            rt.mouse_release(0);
+            let _ = rt.run(rt.cpu.steps + 4_000_000);
+            let after = cur_menu(&rt);
+            let tag = if after != base { "NAVIGATED" } else { "(stayed)" };
+            println!("  topic {i} '{name}' (y{my}): {base:#06x} -> {after:#06x} {tag}");
+        }
+        return;
+    }
+
     // BASWATCH: from a resumed SCRIPT2 state, read-watch the loaded SCRIPT2.BAS
     // region and report which BAS offsets the console menu handler READS while
     // a concept menu is displayed/redrawn — decodes the COD→BAS menu-selection

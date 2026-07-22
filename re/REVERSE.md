@@ -4810,3 +4810,17 @@ selection gs:0x6762 + call stack gs:0x6820/0x6884 + return 0x10c2. Implementing 
 faithful clean-Rust conversation VM = model this call-stack machine + its ~52
 opcode handlers. RE is now substantially decoded (dispatch, stack, modes, selection,
 return); the clean-Rust build + verification is the remaining multi-session work.
+
+## Branch targets — EMPIRICAL extractor works (MENUTREE), fear/anger menu mapped
+
+Built `MENUTREE` in runtime_boot: reloads milestone_script2.state, clicks each topic
+row of the live concept menu (x175, y=61+11i), reads gs:0x6772 after → the exact
+topic→destination map, by OBSERVATION (avoids the still-incomplete static VM decode).
+First result (fear/anger menu 0x42d): `talk` → 0x2f (POPS to the top-level parent —
+confirms talk/bye_bye = the call-stack pop), all emotion topics (fear/weakness/
+complain/anger/break/cry) → stay at 0x42d (they play a RESPONSE, no sub-menu). So
+the tree-navigation vs response-only distinction is directly observable. FULL tree =
+run MENUTREE from each menu (navigate to it first); this is automatable ground truth
+for the clean-port conversation VM's branch table — the correct build path (observe
+transitions, tabulate) rather than reverse-engineering every control opcode. Tool +
+first menu's data committed; per-menu enumeration is the mechanical continuation.
