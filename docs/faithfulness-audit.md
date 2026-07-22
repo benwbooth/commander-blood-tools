@@ -115,6 +115,19 @@ everywhere.** Priority = how visible/audible + how confidently fixable.
    — cycle the crew talk-HNMs, overlay the pyramid console + credits. STILL TO GROUND: which crew
    HNMs, in what order/timing (from the intro/showcase data or the asm) — get that before building,
    don't guess the roster.
+   BUILT + VERIFIED (commit 978): the intro crew-showcase composite — cliptoot.hnm (confirmed the
+   crew video: decoded frame 60 = a crew mutant in a cockpit) with `overlay_console_pyramids` (grey
+   pyramids + white eye-orb) + the credits. Rendered the port's composite and matched it to frame 7
+   (crew + grey pyramids + white orb + "Commander BLOOD V 1.0"). The port previously played cliptoot
+   bare.
+   EXTENDED FINDING (frame 15 @15s): the gray pyramid console + eye-orb is PERSISTENT — still shown
+   with a LOCATION scene (sunset seascape) in the viewscreen, not just the crew showcase. So the
+   pyramid console is the game's PRIMARY early-game INTERFACE (a viewscreen showing the current
+   crew/location + a persistent pyramid console below), distinct from the verified purple-panorama
+   BRIDGE (choice_box_bob_morlock.ppm / script2_first_frame.ppm, SCRIPT2+). The port uses the bridge
+   as the main hub and lacks this pyramid-console interface. OPEN: how the two console UIs relate
+   (pyramid-console = SCRIPT1/early nav? bridge = ship menu?) — a real architecture question to
+   resolve (deeper RE / interactive) before rebuilding the main interface; do not guess.
 2. **Intro/HNM playback RATE** (`INTRO_CREDIT_FRAMES_PER_TICK = 1`, one HNM frame per game step).
    A guess flagged "calibratable". Source: the HNM player's frame-advance timing in the asm (ticks
    per HNM frame) + the DESCRIPT tick unit. RISK: intro plays too fast/slow; subtitles mistimed.
