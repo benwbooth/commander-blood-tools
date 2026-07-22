@@ -4479,3 +4479,27 @@ shared choice_box_row_at hit-test use it, and phone_contact_click accounts for t
 98.5 == live 98.5 (exact); horizontal has a known ~2px per-label centering-rounding
 residual (capture centres CANCEL at 101.5 but BOB_MORLOCK at 100 — no single axis
 matches both; port uses x=100, exact for BOB_MORLOCK).
+
+## manu3 3D pipeline — matrix builder 0x279 decoded (2026-07-22)
+
+Further characterized the manu3 hand/pyramid 3D renderer (top unchecked PORT task;
+the hand cursor is already pixel-exact via the baked atlas, so this is completeness,
+not a fidelity gap):
+  - 0x279 = ROTATION-MATRIX BUILDER. Reads a scene-node's three rotation fields
+    (word[di+0x4e], [di+0x50], [di+0x52], each masked `&0x0FFC` → a 4-byte-aligned
+    index into a ~1024-entry trig table), fetches word pairs at +0x26/+0x28
+    (sin/cos components), combines them (sub/add/`sar ,1` halving, negate) and
+    writes the nine Q15 entries of the 3×3 matrix at ds:0x2250..0x2270 (column-major:
+    0x2250/54/58 col0, 0x225c/60/64 col1, 0x2268/6c/70 col2).
+  - 0x477 = per-node VERTEX TRANSFORM (already noted): applies that matrix to each
+    vertex (`imul` + `sar ,0xf` = ÷2^15), accumulates translation at [di+0x36],
+    recurses the node tree ([0x2248]/[0x224a] countdown), then 0x549 projects mesh
+    verts (16-bit signed es:[si+4/6/8], per-node matrix [di+0x2a..0x32], `sar ,8`).
+  So the pipeline is: build node matrix (0x279, trig table) → transform verts
+  (0x477) → project (0x549) → rasterize (0x2AF.., writes teal ramp 240..249).
+  REMAINING to port procedurally: the trig-table BASE + the node/mesh DATA layout
+  are populated in the overlay's data at load/runtime (not statically resolvable
+  from the file alone) — needs a runtime dump of segment 0x166C's data region
+  (BRIDGEPROBE already isolates the hand bbox/palette). NOT worth it unless the
+  hand must render at atlas-absent angles; the atlas covers the console at
+  mean_abs 0.14.
