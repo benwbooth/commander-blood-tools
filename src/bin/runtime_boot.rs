@@ -414,6 +414,7 @@ fn main() {
             let _ = rt.run(rt.cpu.steps + 8_000_000);
             let idx = rt.screen_indices();
             rt.write_ppm(&out.join("textband.ppm")).unwrap();
+            std::fs::write(out.join("textband_indices.bin"), &idx).unwrap();
             let mut hist = std::collections::HashMap::new();
             for yy in 0..24usize {
                 for xx in 0..320usize {
