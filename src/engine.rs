@@ -1735,23 +1735,28 @@ impl EngineState {
             return;
         };
         let count = hnm.frame_count().max(1);
-        // A credit clip (carrying the DESCRIPT `present` cues — the branded CRYO/title sequence)
-        // runs only for its CREDIT SPAN in the real game (~tick 100, the final clearing cue, then
-        // gameplay by ~9s), NOT the full 1258-frame cliptoot clip (~69s @18fps). Ground truth:
-        // accuracy/captures/frame_* — MINDSCAPE(1s)→Microfolie's(2s)→cinematic→CRYO logo(5s)→
-        // console with the credit overlaid(6s)→gameplay(9s). So end the credit clip when its cues
-        // finish (last tick + a short hold), rather than playing it out. Non-credit clips (the
-        // logo reel) play their full length.
-        let clip_end = self
-            .intro_cues
-            .get(self.intro_index)
-            .filter(|cues| !cues.is_empty())
-            .map(|cues| {
-                let last_tick = cues.iter().map(|c| c.tick as usize).max().unwrap_or(0);
-                (last_tick * Self::INTRO_CREDIT_FRAMES_PER_TICK + Self::INTRO_CREDIT_HOLD_FRAMES)
-                    .min(count)
-            })
-            .unwrap_or(count);
+        // The intro CREDIT/SHOWCASE clip (cliptoot, `intro_pyramid`) runs only for its CREDIT SPAN
+        // in the real game (~tick 100, the final clearing cue, then gameplay by ~9s), NOT the full
+        // 1258-frame clip (~69s). Ground truth: accuracy/captures/frame_* — MINDSCAPE(1s)→
+        // Microfolie's(2s)→cinematic→CRYO logo(5s)→console with the credit overlaid(6s)→gameplay(9s).
+        // So end it when its cues finish (last tick + a short hold). Everything else — the silent
+        // logo reel AND in-game cutscenes played through this same path via `start_descript_cutscene`
+        // (which carry their own cues) — plays its FULL HNM length. (Gating on intro_pyramid keeps
+        // this intro-specific early-end from cutting cutscenes short.)
+        let clip_end = if self.intro_pyramid.get(self.intro_index).copied().unwrap_or(false) {
+            self.intro_cues
+                .get(self.intro_index)
+                .filter(|cues| !cues.is_empty())
+                .map(|cues| {
+                    let last_tick = cues.iter().map(|c| c.tick as usize).max().unwrap_or(0);
+                    (last_tick * Self::INTRO_CREDIT_FRAMES_PER_TICK
+                        + Self::INTRO_CREDIT_HOLD_FRAMES)
+                        .min(count)
+                })
+                .unwrap_or(count)
+        } else {
+            count
+        };
         if self.scene_frame >= clip_end {
             // Current clip finished — advance to the next, or end the intro.
             self.intro_index += 1;
@@ -3558,6 +3563,25 @@ mod tests {
             e.intro_pyramid.iter().all(|&p| !p),
             "an in-game cutscene must NOT get the pyramid console overlay"
         );
+        // And an in-game cutscene plays its FULL HNM, not cut to its subtitle-cue span (the
+        // intro-credit early-end is intro-only). maledict's cues end at tick 10 (~34 frames).
+        let full = crate::hnm::HnmFile::open(&e.intro_hnms[0])
+            .map(|h| h.frame_count())
+            .unwrap_or(0);
+        if full > 60 {
+            let mut frames = 0usize;
+            for _ in 0..full + 100 {
+                if !e.intro_active() {
+                    break;
+                }
+                e.step(MouseInput::default());
+                frames += 1;
+            }
+            assert!(
+                frames > 60,
+                "in-game cutscene plays its full HNM ({frames} frames), not cut to its ~tick-10 cues"
+            );
+        }
     }
 
     /// The intro credit clip (`cliptoot.hnm`, carrying the `present` cues to tick 100) must run
