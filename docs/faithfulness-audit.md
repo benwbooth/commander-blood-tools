@@ -95,6 +95,16 @@ everywhere.** Priority = how visible/audible + how confidently fixable.
    the bridge for both and lacks the tutorial console. STILL TO GROUND before building: exactly
    what the gray-pyramid floor is (OPTION/manu3 mesh? a distinct tutorial console?) and its draw
    path in the asm — do that RE first, then build; do not guess the composite.
+   CONFIRMED (compared the port's OPTION render to frames 6-9): the gray-pyramid floor IS the
+   OPTION/manu3 3D-pyramid menu — the port's `render_option_menu` draws the SAME structure (rows of
+   perspective 3D pyramids + a central orb). So the SCRIPT1-tutorial console = the OPTION pyramid
+   menu (bottom) + a CREW talk-HNM in the top viewscreen + the credits overlaid. The port already
+   HAS both pieces (render_option_menu + the dialogue crew-HNM path) but never COMPOSITES them, and
+   only shows the pyramid after a manual OPTION click. TO BUILD (now grounded): (1) a composite
+   render = crew talk-HNM in the top ~75% viewscreen + the pyramid menu + eye-orb in the bottom;
+   (2) use it as SCRIPT1's tutorial view; (3) palette — real is GRAY pyramids + WHITE eye-orb, the
+   port's standalone OPTION render is purple + yellow (verify it's a scene-palette-context issue,
+   not a wrong palette). Careful multi-piece rendering + flow work — grounded, not guessed.
 2. **Intro/HNM playback RATE** (`INTRO_CREDIT_FRAMES_PER_TICK = 1`, one HNM frame per game step).
    A guess flagged "calibratable". Source: the HNM player's frame-advance timing in the asm (ticks
    per HNM frame) + the DESCRIPT tick unit. RISK: intro plays too fast/slow; subtitles mistimed.
