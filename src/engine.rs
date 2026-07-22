@@ -393,6 +393,11 @@ pub struct EngineState {
     /// clips with none). The publisher-credit clip (`cliptoot.hnm`, the DESCRIPT `present`
     /// record) carries "CRYO Interactive Entertainment 1995" / "Commander BLOOD  V 1.0".
     intro_cues: Vec<Vec<crate::descript::SubtitleCue>>,
+    /// Background music to start when each intro clip BEGINS (parallel to `intro_hnms`; `None`
+    /// for the silent clips). Faithful to the DESCRIPT data: the `present` record ties its
+    /// `Music` ("blintr.voc") to its `cliptoot.hnm` cinematic — so the MINDSCAPE/Microfolie's
+    /// logo reel (`mind.hnm`) plays SILENT and the music starts only with the cinematic.
+    intro_music: Vec<Option<String>>,
     /// Index of the intro HNM currently playing.
     intro_index: usize,
     /// True while the startup intro sequence is playing (gates the main render path).
@@ -487,6 +492,7 @@ impl EngineState {
             framebuffer: vec![0u8; ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT],
             intro_hnms: Vec::new(),
             intro_cues: Vec::new(),
+            intro_music: Vec::new(),
             intro_index: 0,
             intro_active: false,
         }
@@ -567,18 +573,29 @@ impl EngineState {
             .find(|r| r.name == CREDIT_RECORD)
             .and_then(|r| r.sequence_hnms.first().cloned())
             .unwrap_or_else(|| "cliptoot.hnm".to_string());
-        let order: [(String, Vec<crate::descript::SubtitleCue>); 3] = [
-            ("mind.hnm".to_string(), Vec::new()), // boot logos: MINDSCAPE + Microfolie's + ship
-            (credit_clip, credit_cues),           // CRYO presentation cinematic + publisher credit
-            ("logo_bl.hnm".to_string(), Vec::new()), // fire "COMMANDER Blood" title
+        // The intro music the game ties to the credit cinematic (DESCRIPT `present` -> Music).
+        // It belongs to the cinematic clip, NOT the boot-logo reel — so the logos stay silent.
+        let credit_music = descript_db
+            .records
+            .iter()
+            .find(|r| r.name == CREDIT_RECORD)
+            .and_then(|r| r.music.first().cloned());
+        // (hnm stem, subtitle cues, music-to-start-with-this-clip). Only the credit cinematic
+        // carries music; the logo reel and the fire-title are silent, matching the real game.
+        let order: [(String, Vec<crate::descript::SubtitleCue>, Option<String>); 3] = [
+            ("mind.hnm".to_string(), Vec::new(), None), // boot logos: MINDSCAPE + Microfolie's + ship
+            (credit_clip, credit_cues, credit_music),   // CRYO cinematic + publisher credit + music
+            ("logo_bl.hnm".to_string(), Vec::new(), None), // fire "COMMANDER Blood" title
         ];
         self.intro_hnms = Vec::new();
         self.intro_cues = Vec::new();
-        for (name, cues) in order {
+        self.intro_music = Vec::new();
+        for (name, cues, music) in order {
             let path = sq.join(&name);
             if path.exists() {
                 self.intro_hnms.push(path);
                 self.intro_cues.push(cues);
+                self.intro_music.push(music);
             }
         }
         self.intro_index = 0;
@@ -592,6 +609,20 @@ impl EngineState {
     /// True while the startup intro sequence is still playing.
     pub fn intro_active(&self) -> bool {
         self.intro_active
+    }
+
+    /// Index of the intro clip currently playing (0 = logo reel, 1 = credit cinematic, …).
+    /// The frontend watches this for changes to start each clip's music at the right moment.
+    pub fn intro_index(&self) -> usize {
+        self.intro_index
+    }
+
+    /// The background-music stem to start WITH the current intro clip, if any (the logo reel
+    /// returns `None` — it is silent; the credit cinematic returns the DESCRIPT `present` music).
+    pub fn intro_clip_music(&self) -> Option<&str> {
+        self.intro_music
+            .get(self.intro_index)
+            .and_then(|m| m.as_deref())
     }
 
     /// Skip the rest of the boot intro immediately (the real game lets a click/key skip
@@ -3341,6 +3372,47 @@ mod tests {
             }
         }
         assert!(drew_credit, "the CRYO publisher credit is overlaid during the intro");
+    }
+
+    /// Intro AUDIO timing, faithful to the DESCRIPT data: the MINDSCAPE/Microfolie's logo reel
+    /// (`mind.hnm`) plays SILENT, and the intro music (`blintr.voc`, the `present` record's Music)
+    /// starts only with the credit cinematic (`cliptoot.hnm`). This guards the bug where the port
+    /// started the music at intro frame 0 (over the logos) instead of with the cinematic.
+    #[test]
+    fn intro_music_silent_over_logos_starts_with_cinematic() {
+        let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("sq").join("cliptoot.hnm").exists());
+        let Some(assets) = assets else { return };
+        let db = ["output/_tmp_iso/DESCRIPT.DES", "../output/_tmp_iso/DESCRIPT.DES"]
+            .iter()
+            .find_map(|p| crate::descript::DescriptDb::parse_file(p).ok());
+        let Some(db) = db else { return };
+        let mut e = EngineState::new();
+        e.load_intro(assets, &db);
+        // The logo reel is the first clip and must carry NO music.
+        let logo = e
+            .intro_hnms
+            .iter()
+            .position(|p| p.file_stem().is_some_and(|s| s == "mind"))
+            .expect("mind.hnm logo reel is queued");
+        assert_eq!(logo, 0, "the logo reel is the first intro clip");
+        assert!(e.intro_music[logo].is_none(), "the logo reel plays SILENT");
+        // The credit cinematic carries the DESCRIPT `present` music (blintr.voc).
+        let credit = e
+            .intro_hnms
+            .iter()
+            .position(|p| p.file_stem().is_some_and(|s| s == "cliptoot"))
+            .expect("cliptoot cinematic is queued");
+        let m = e.intro_music[credit].as_deref().unwrap_or("");
+        assert!(
+            m.contains("blintr"),
+            "the credit cinematic starts the intro music, got {m:?}"
+        );
+        // And the current-clip accessor reflects it: silent at the logos, music at the cinematic.
+        assert_eq!(e.intro_index(), 0);
+        assert_eq!(e.intro_clip_music(), None, "no music while the logos play");
     }
 
     /// End-to-end regression: drive the full playable loop the way the real driver does

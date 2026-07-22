@@ -340,9 +340,11 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
             Some((label, lines))
         };
     engine.set_nav_destinations((3..=5).filter_map(script_destination).collect());
-    // The boot reel's music (`mu/blintr.voc` — "BLood INTRo"): starts with the intro
-    // and is stopped when the intro hands off to the game.
-    let mut intro_music_started = false;
+    // The intro music is tied to a specific clip by the DESCRIPT data (the `present` record's
+    // Music plays with its cliptoot.hnm cinematic, NOT the logo reel) — so we start each clip's
+    // music when the clip BEGINS and keep the logos silent. Track the last clip we started music
+    // for so a given clip's music fires exactly once.
+    let mut intro_music_clip: Option<usize> = None;
     // The game plays the SCRIPT1 console tutorial automatically once the intro ends (it
     // then chains to SCRIPT2 via its decoded D2 handoff, after which control returns to
     // the nav view for free destination choice). Fire it exactly once.
@@ -860,10 +862,16 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
             engine.cyber_active = false;
             engine.bridge_active = true;
         } else if engine.intro_active() {
-            // Intro playing: start its music once; no nav/dialogue transitions yet.
-            if !intro_music_started {
-                intro_music_started = true;
-                music.play(&format!("{assets}/mu/blintr.voc"));
+            // Intro playing: start THIS clip's music when the clip begins (the logo reel is
+            // silent; the credit cinematic starts blintr.voc). Data-driven from the DESCRIPT
+            // `present` record via engine.intro_clip_music(), so timing matches the real game.
+            let clip = engine.intro_index();
+            if intro_music_clip != Some(clip) {
+                intro_music_clip = Some(clip);
+                match engine.intro_clip_music() {
+                    Some(stem) => music.play(&format!("{assets}/mu/{stem}")),
+                    None => music.stop(), // entering a silent clip (the logos): no music
+                }
             }
         } else if !tutorial_played {
             // Intro just ended (or was skipped): silence the reel music and land on the
@@ -871,8 +879,8 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
             // HONK/TELEPHONE/CRYOBOX/MENU/OPTION menu) to play, not a passive cutscene.
             // From here the player clicks a console function or the nav.
             tutorial_played = true;
-            if intro_music_started {
-                intro_music_started = false;
+            if intro_music_clip.is_some() {
+                intro_music_clip = None;
                 music.stop();
             }
             engine.on_ship = false;
