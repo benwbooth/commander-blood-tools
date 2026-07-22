@@ -2875,6 +2875,42 @@ mod tests {
         );
     }
 
+    /// Oracle: the gold CHOICE BOX renders exactly per the spec MEASURED from
+    /// live-game index dumps — a 3-px border of palette index 0x15, a gold fill
+    /// of 0xE0, and item text in 0xE8 (see `re/REVERSE.md` "CHOICE BOX SPEC
+    /// MEASURED"). This locks the widget to the decoded values so a regression
+    /// (wrong index, missing border/fill) fails a test.
+    #[test]
+    fn choice_box_matches_the_measured_spec() {
+        let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter().map(Path::new).find(|p| p.join("TB.BIG").exists());
+        let Some(iso) = iso else { return };
+        let mut e = EngineState::new();
+        e.load_bridge(iso);
+        e.load_console_font(iso);
+        if e.panorama.is_none() { return; }
+        // Open the MENU submenu (a choice box) and render one frame.
+        e.bridge_active = true;
+        e.menu_submenu_active = true;
+        e.step(MouseInput { x: 160, y: 100, buttons: 0 });
+        // The measured spec: border 0x15, fill 0xE0, text 0xE8. Count each in the
+        // box region (x 63.., y 88..~120) — all three must be present.
+        let count = |idx: u8| {
+            let mut n = 0;
+            for y in 88..122usize {
+                for x in 63..175usize {
+                    if e.framebuffer[y * ENGINE_SCREEN_WIDTH + x] == idx {
+                        n += 1;
+                    }
+                }
+            }
+            n
+        };
+        assert!(count(0x15) > 100, "choice-box border (0x15) present: {}", count(0x15));
+        assert!(count(0xE0) > 500, "choice-box gold fill (0xE0) present: {}", count(0xE0));
+        assert!(count(0xE8) > 20, "choice-box text (0xE8) present: {}", count(0xE8));
+    }
+
     #[test]
     fn bridge_renders_the_real_panorama() {
         let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
