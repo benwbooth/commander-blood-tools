@@ -5175,16 +5175,21 @@ listed have now all been built, and they are cheap, not multi-session:
      mode + mouse state) is bit-identical. The interpreter IS the oracle (Unicorn can't model DOS
      I/O). Adding a leaf to the `leaves` table is the verification gate.
 
-Three I/O leaves lifted + oracle-verified this way:
+Four I/O leaves lifted + oracle-verified this way:
   - `func_cc0` (0x0CC0, set_video_mode_saved): int 10h from gs:[0x5232].
   - `func_d4a` (0x0D4A, mouse_set_hrange): int 33h fn 7 then fn 8.
   - `func_cef` (0x0CEF, mouse_reset_hide): int 33h fns 0, 2, 0xF.
+  - `func_d0e` (0x0D0E, poll_mouse): int 33h fn 3 → gs mouse fields + changed-position latch (a
+    conditional branch + 6 gs memory writes; the oracle compares each gs offset too).
 The harness even caught two real test-plumbing bugs (EXE mirror clobbering the gs scratch, and
 40:0x49 clobbered by the overlay) before going green — evidence it actually discriminates.
+Note: `func_c26` (get_video_mode) looked like a neighbor leaf but is NOT one — it has a far
+`lcall 0x299:0x16` + VGA port I/O (a whole mode-13h init routine), so it lifts only after its
+callee + the out/in path (a composition, not a leaf).
 
 So the whole-binary static port now HAS a bounded, safe, verified per-function entry point: add
 the next I/O leaf's `fn(&mut Runtime)` + one `leaves`-table row, and it's oracle-checked against
 the original bytes. Completing all ~41 I/O leaves + unblocking compositions to the 222-fn fixpoint
 is still session-by-session work (and could be codegen'd in lift.py), but the per-pass increment
-is real and demonstrated — not blocked on a multi-session prerequisite. Count: 75 pure-CPU + 3
-I/O = 78 lifted, I/O path proven and reusable.
+is real and demonstrated — not blocked on a multi-session prerequisite. Count: 75 pure-CPU + 4
+I/O = 79 lifted, I/O path proven and reusable, oracle now compares regs + gs memory writes.

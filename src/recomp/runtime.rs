@@ -133,9 +133,9 @@ pub struct Runtime {
     kbd_irq_pending: u32,          // int 9 deliveries owed (when the game hooked int 9)
     // int 33h mouse state. Coordinates are DOS-virtual: x 0..639 (2px granularity in mode 13h),
     // y 0..199.
-    mouse_x: u16,
-    mouse_y: u16,
-    mouse_buttons: u16,
+    pub(crate) mouse_x: u16,
+    pub(crate) mouse_y: u16,
+    pub(crate) mouse_buttons: u16,
     mouse_presses: [(u16, u16, u16); 2],  // per button: count, last x, last y
     mouse_releases: [(u16, u16, u16); 2],
     mouse_handler: Option<(u16, u16, u16)>, // event mask, seg, off

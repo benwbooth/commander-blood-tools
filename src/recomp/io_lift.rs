@@ -109,6 +109,40 @@ pub fn func_cef(rt: &mut Runtime) {
     rt.m.regs.set_ax(ax);
 }
 
+/// `func_d0e` (`poll_mouse`, 0x0D0E): `int 33h` fn 3 (get position + buttons) → store
+/// cx/dx/bx to gs:[0xA2A]/[0xA2C]/[0xA2E]; if the position changed since the last poll
+/// (gs:[0xA38]/[0xA3A]), latch the new position and clear the "cursor idle" counter
+/// gs:[0xB3B]. Runs every frame; feeds the hit-test at 0x8269.
+pub fn func_d0e(rt: &mut Runtime) {
+    push16(rt, rt.m.regs.ax());
+    push16(rt, rt.m.regs.bx());
+    push16(rt, rt.m.regs.cx());
+    push16(rt, rt.m.regs.dx());
+    rt.m.regs.set_ax(3);
+    int_call(rt, 0x33); // cx=x, dx=y, bx=buttons
+    let (cx, dx, bx) = (rt.m.regs.cx(), rt.m.regs.dx(), rt.m.regs.bx());
+    let gs = rt.m.regs.gs;
+    rt.m.write16(gs, 0xa2a, cx);
+    rt.m.write16(gs, 0xa2c, dx);
+    rt.m.write16(gs, 0xa2e, bx);
+    // update UNLESS both coords equal the last-latched pair (jne then je in the original).
+    let last_x = rt.m.read16(gs, 0xa38);
+    let last_y = rt.m.read16(gs, 0xa3a);
+    if cx != last_x || dx != last_y {
+        rt.m.write16(gs, 0xa38, cx);
+        rt.m.write16(gs, 0xa3a, dx);
+        rt.m.write16(gs, 0xb3b, 0);
+    }
+    let dx = pop16(rt);
+    rt.m.regs.set_dx(dx);
+    let cx = pop16(rt);
+    rt.m.regs.set_cx(cx);
+    let bx = pop16(rt);
+    rt.m.regs.set_bx(bx);
+    let ax = pop16(rt);
+    rt.m.regs.set_ax(ax);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -168,6 +202,11 @@ mod tests {
         // and the leaves that DON'T set it (d4a/cef) leave 0xEE on both sides. Written after the
         // EXE mirror so it isn't clobbered by the byte at physical 0x449.
         rt.m.write8(0x40, 0x49, 0xEE);
+        // Mouse state for func_d0e: distinct position/buttons, and a stale latched position
+        // (gs:[0xa38]/[0xa3a] default 0 ≠ 0x40/0x30) so the position-changed branch is taken.
+        rt.mouse_x = 0x0040;
+        rt.mouse_y = 0x0030;
+        rt.mouse_buttons = 0x0002;
     }
 
     /// Every Runtime-context I/O lift reproduces the REAL function bytes exactly: run the lift and
@@ -178,12 +217,14 @@ mod tests {
     #[test]
     fn io_lifts_match_interpreter_oracle() {
         let Some(exe) = load_exe() else { return };
-        let leaves: &[(&str, u16, fn(&mut Runtime))] = &[
-            ("func_cc0", 0x0cc0, func_cc0),
-            ("func_d4a", 0x0d4a, func_d4a),
-            ("func_cef", 0x0cef, func_cef),
+        // (name, file offset, lifted fn, gs offsets the fn writes — compared against the real bytes)
+        let leaves: &[(&str, u16, fn(&mut Runtime), &[u16])] = &[
+            ("func_cc0", 0x0cc0, func_cc0, &[]),
+            ("func_d4a", 0x0d4a, func_d4a, &[]),
+            ("func_cef", 0x0cef, func_cef, &[]),
+            ("func_d0e", 0x0d0e, func_d0e, &[0xa2a, 0xa2c, 0xa2e, 0xa38, 0xa3a, 0xb3b]),
         ];
-        for &(name, offset, lift) in leaves {
+        for &(name, offset, lift, gs_checks) in leaves {
             let mut rt_lift = test_runtime();
             seed(&mut rt_lift);
             lift(&mut rt_lift);
@@ -209,6 +250,14 @@ mod tests {
                 "{name}: BIOS video mode"
             );
             assert_eq!(rt_lift.mouse_shown, rt_oracle.mouse_shown, "{name}: mouse_shown");
+            let gs = l.gs;
+            for &off in gs_checks {
+                assert_eq!(
+                    rt_lift.m.read16(gs, off as u32),
+                    rt_oracle.m.read16(gs, off as u32),
+                    "{name}: gs:[{off:#x}]"
+                );
+            }
         }
     }
 
