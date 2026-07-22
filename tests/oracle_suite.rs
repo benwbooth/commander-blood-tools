@@ -81,12 +81,20 @@ fn representative_oracle_suite() {
     let pan = BridgePanorama::parse(std::fs::read(iso.join("TB.BIG")).unwrap()).unwrap();
     let mut results: Vec<Scenario> = Vec::new();
 
-    // 1. Panorama decode: console rest frame (55), and the two steered views
-    //    (15 = left edge, 64 = right edge), each vs its live emulator capture.
-    for (frame, cap, threshold) in [(55usize, "console_rest.ppm", 3.0), (15, "rotate_left.ppm", 5.0), (64, "rotate_right.ppm", 5.0)] {
+    // 1. Panorama decode across all four station sectors, each vs a live
+    //    emulator capture at that view: helm/menu console (frame 55), the two
+    //    steered edges (15/64), the pyramid-nav room (95), and the Orxx mass
+    //    (135). Covers the whole 360° ring, not just the rest frame.
+    for (frame, name, cap, threshold) in [
+        (55usize, "panorama-console-f55", "console_rest.ppm", 3.0),
+        (15, "panorama-steer-f15", "rotate_left.ppm", 5.0),
+        (64, "panorama-steer-f64", "rotate_right.ppm", 5.0),
+        (95, "panorama-nav-f95", "sector_nav_f95.ppm", 5.0),
+        (135, "panorama-orxx-f135", "sector_orxx_f135.ppm", 3.0),
+    ] {
         if let Some(live) = capture(cap) {
             results.push(Scenario {
-                name: match frame { 55 => "panorama-console-f55", 15 => "panorama-steer-f15", _ => "panorama-steer-f64" },
+                name,
                 mean_abs: mean_abs(&panorama_rgb(&pan, frame), &live),
                 threshold,
             });
