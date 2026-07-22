@@ -4217,3 +4217,26 @@ correlating each help* topic handler to its concept DIC word. THEN the port can
 wire location topic menus faithfully (main.rs currently offers the menu ONLY for
 SCRIPT2's live-verified labels; locations keep linear playback — no guesswork).
 This is deep VM RE (runtime list construction), best done from the savestate.
+
+## DEPTH RESIDUALS #3/#6 — gated on STORY-PROGRESSION states (conclusive, 2026-07-22)
+
+Two independent driving attempts from the SCRIPT2 savestate confirm the exact
+gating of the remaining depth residuals (nav-anchor positions #3; per-location
+topic labels #6):
+- GRANTWALK: 600 rounds of exhaustive console interaction (topics/orb/menu rows)
+  — nav anchors [0x4F09] stayed EMPTY, frame pinned at 45.
+- PHONEWALK: clicking TELEPHONE opens the choice box but it shows only "CANCEL"
+  (phone_dial capture) — NO callable contacts; calling each row grants nothing.
+CONCLUSION: the console FUNCTIONS work post-tutorial (menu rows open their choice
+boxes), but their CONTENT — phone contacts, nav destinations, location
+conversations, and thus the entity 0x15..0x1F activations that populate the nav
+anchors and the location topic labels — is UNLOCKED BY STORY-PROGRESSION EVENTS
+reached by playing SCRIPT2's narrative to specific beats, NOT by console
+interaction from the SCRIPT2 start state. So both residuals are gated on the same
+thing: reaching a mid-story state (a granted destination / an active crew
+contact). Reaching it needs either (a) the exact narrative trigger decoded (deep
+VM RE of what sets entity 0x15..0x1F active / [0x6780] the crew profile), or (b)
+a story-aware driver that plays SCRIPT2's branch structure to the grant. Both are
+multi-session; the port's conservative behaviour (no fabricated anchors/labels;
+choose-a-location + linear dialogue as the faithful stand-in) is correct until
+then. This is the precise, instrumented resume point for #3/#6 depth work.
