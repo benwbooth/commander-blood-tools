@@ -4610,3 +4610,19 @@ CONVERSATION BEAT in the port needs one more layer, now scoped precisely:
 DONE this session: label decode (src/concept_menu.rs, verified vs capture) +
 SCRIPT2 numerology menu wired live in the port (main.rs). The location per-beat
 menus await the BAS-flow parser above.
+
+## BAS is a SEPARATE format from COD (2026-07-22, per-beat wiring blocker refined)
+
+Attempted to reuse the port's faithful VM walker (`vm::walk`, opcode-length table
+@0x14338) to parse SCRIPTn.BAS and get the menu↔dialogue conversation structure
+for free. It does NOT apply: the length table says opcode 0xA3 = (len 3, sentinel
+0xFB) — a FIXED 3-byte VM opcode with a mode-switch, NOT a variable menu. So the
+.COD executed by the VM and the .BAS (where the verified 0xA3 concept-menu tables
+live) are DIFFERENT formats — .BAS is a menu/source-definition file, not VM
+bytecode. Consequence for per-beat wiring: it needs the game's .BAS↔.COD menu
+LINKAGE mechanism (how the running COD selects a BAS menu to display) — a distinct
+RE task, likely runtime-observed (watch which BAS menu offset the console reads
+when a topic list appears), NOT derivable by walking either file alone. The label
+decode (concept_menu.rs) stands verified; this identifies the exact next RE step
+for wiring (was: "a BAS conversation-flow parser"; corrected to: "the COD→BAS
+menu-selection linkage", since BAS isn't a walkable bytecode).
