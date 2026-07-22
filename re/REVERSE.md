@@ -3785,3 +3785,11 @@ manu3 file offset 0x1370).
   helper. The hand model has ~110 nodes. Spans file: BRIDGEPROBE out/
   manu3_coverage_spans.txt. This is the complete decompile worklist for the
   faithful hand port.
+- manu3 ENTRY CONTRACT (0x0000-0x0058 decoded): called with stack args =
+  {dword cursor pos -> [0x1A]=x/[0x1C]=y, word pose (&0x1F; nonzero -> pose
+  apply call 0x181), word target (>>4 then +0xA0 high byte -> [0x18] = the VGA
+  segment slice — hence direct-to-VRAM drawing)}. cs:[0x136A] = overlay data
+  segment. Camera terms [0x23E2]/[0x23E4] += 2*(y-100)/2*(x-160): the hand is
+  translated by twice the cursor offset from screen centre. call 0x270 = the
+  transform+render pass. Rust port signature: render_hand(cursor_x, cursor_y,
+  pose_id, vram_page).
