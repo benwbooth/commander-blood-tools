@@ -4354,3 +4354,22 @@ from the tutorial), open the concept menu, OCR the topics, and click the `what`
 row → the world loads and the live anchors/labels become extractable. The whole
 activation MECHANISM (0x8CCE chain) + this DISPATCH are now decoded; only that
 one topic-click in the right state remains.
+
+## SAVESTATE is MID-TRANSITION — root cause of the driver stalls (2026-07-22)
+
+HUBSCAN capture of accuracy/script2.state shows the console with the golden menu
+panel GLOWING EMPTY (mid-rebuild) — no menu text, no dialogue, no concept menu.
+The savestate was taken at the EXACT frame SCRIPT2's profile loaded (tutorial
+round 577), which is a TRANSITIONAL console-rebuild moment, NOT a clean
+SCRIPT2-interactive state. This is why all four drivers stall: the game is in a
+transitional limbo and does not progress via clicks (SCRIPT2FWD: 1500 rounds, no
+change), and the concept menu / `what` topic are not yet available (HUBSCAN: orb
++ WHAT-row clicks hit nothing). ROOT CAUSE of the #3/#6 state-reaching block:
+the savestate quality — it needs to be taken LATER, after SCRIPT2 stabilizes
+into its interactive conversation hub. FIX (fresh session): in TUTORIAL4, on
+SCRIPT2 load, run forward N more million steps for the console to finish
+rebuilding + the first dialogue to present BEFORE save_state; OR re-drive the
+tutorial→SCRIPT2 and save at the "WHAT DO YOU WANT COMMANDER" hub (a stable
+interactive point). THEN the `what`-topic path (decoded above) reaches the
+world-load. The full mechanism + dispatch are decoded; the block is purely a
+mid-transition savestate, now diagnosed.
