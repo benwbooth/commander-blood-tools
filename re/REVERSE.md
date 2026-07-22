@@ -4056,3 +4056,16 @@ manu3 file offset 0x1370).
   release (xref the bit-2 clearers of [0x2793]). NEXT: interact with the nav
   screen (pyramids = destinations?), capture the tuning/selection flow — the
   travel mechanics ground truth.
+- NAV SCREEN semantics: with no granted destinations the viewscreen shows
+  STATIC and pyramid/orb/viewscreen clicks do nothing (navscr captures) —
+  destinations populate the DS:0x4F09 anchors from STORY grants ("planetary
+  coordinates" given by characters; "Izwalito knows... other planetary
+  coordinates" per the DIC). Port: static viewscreen + inert grid is the
+  correct empty-nav state; destination granting flows from dialogue topics.
+- LEGIT ENGAGEMENT RELEASE (static xref): [0x2793] bit2 cleared at (a) 0x1544
+  (UI close handler: lcall 0x71e:0xab5 check over the 0x255D record, resets
+  [0xa3e]/[0xa40] buttons, [0xa32]=0xb) and (b) 0x59C0 (the VM PRESENTATION
+  TEARDOWN — clears [0x67ac]/[0x67aa]/[0x67f8]) — the engagement is
+  SCRIPT-OWNED: it releases when the consultation's script flow ENDS (the
+  DEB's 'adieu' function = the goodbye exit). Driver: choose the exit topic
+  to leave HONK legitimately.
