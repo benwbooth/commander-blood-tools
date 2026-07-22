@@ -541,7 +541,31 @@ fn main() {
                 }
                 let names = ["HONK", "TELEPHONE", "CRYOBOX", "MENU", "OPTION"];
                 let want = names.iter().position(|n| line.contains(n));
-                let effective = want.or_else(|| { let t = round % 8; (t < 5).then_some(t) });
+                if let Some(row) = want {
+                    // Obey the instruction, then WATCH what opens: capture the
+                    // resulting screen (ground truth for that console function),
+                    // and Esc back to the console before continuing.
+                    if (40..=60).contains(&fr) {
+                        let x = 0x11f - delta * 8 - 0x37;
+                        let y = 0x48 + delta.unsigned_abs() as i32 * 5 / 4
+                            + row as i32 * (0x12 - delta.unsigned_abs() as i32 / 8) + 8;
+                        let ring = (x + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+                        rt.set_mouse_pos(ring, y as u16);
+                        let _ = rt.run(rt.cpu.steps + 700_000);
+                        rt.mouse_press(0);
+                        let _ = rt.run(rt.cpu.steps + 400_000);
+                        rt.mouse_release(0);
+                        let _ = rt.run(rt.cpu.steps + 12_000_000);
+                        rt.write_ppm(&out.join(format!("obeyed_{}_{round}.ppm", names[row])))
+                            .unwrap();
+                        println!("round {round}: obeyed {} -> captured", names[row]);
+                        // Return to the console if we left it.
+                        rt.inject_key(0x01, 0x1b);
+                        let _ = rt.run(rt.cpu.steps + 6_000_000);
+                        continue;
+                    }
+                }
+                let effective: Option<usize> = { let t = round % 8; (t < 5).then_some(t) };
                 let (sx, sy) = match effective {
                     Some(row) if (40..=60).contains(&fr) => {
                         let x = 0x11f - delta * 8 - 0x37;
