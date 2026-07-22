@@ -723,6 +723,11 @@ fn main() {
                         println!("round {round}: prompt {line:?} — capturing series");
                         for shot in 0..16 {
                             rt.write_ppm(&out.join(format!("series_{shot:02}.ppm"))).unwrap();
+                            std::fs::write(
+                                out.join(format!("series_{shot:02}_indices.bin")),
+                                rt.screen_indices(),
+                            )
+                            .unwrap();
                             let _ = rt.run(rt.cpu.steps + 2_000_000);
                         }
                         break;
