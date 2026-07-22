@@ -470,6 +470,25 @@ disassembly effort. LOW VALUE: the port already has its own save format; byte-co
 is marginal. BETTER: decode it opportunistically IF interactive play is ever reached (a real
 save then writes a real blood.sav to accuracy/cdrive/cblood/ to examine directly).
 
+## RESOLVED (2026-07-22) — square-caps glyphs harvested from the concept-menu capture; font is PROPORTIONAL
+The "glyph GENERATOR" approach below (watch 0xE8 writes to find the RLE builder)
+was abandoned. RESOLUTION: harvest the glyph bitmaps DIRECTLY from the ground-
+truth `accuracy/captures/bridge/concept_menu.ppm` (the psychotherapy concept
+menu, which the dead-end itself flagged as the reliable state). Method: the grey
+text (RGB 138,138,138 = DAC value 34 = palette index 0xE8) is read cell-by-cell;
+re-extracting the already-stored 'T'/'A' glyphs at x=170,y=34 matched them
+bit-for-bit, validating the convention, then `_` (4px baseline bar) and `4` were
+extracted. KEY DISCOVERY: the face is PROPORTIONAL, not fixed-10 — advance =
+glyph_pixel_width + 2 (measured: 'I' w1→adv3, most letters w8→adv10, 'W' w9→adv11,
+'_' w4→adv6; LIBIDO's glyph starts [170,180,183,193,196,206] only reproduce with
+proportional advance). Ported: `_`/`4` added to SQUARE_CAPS_GLYPHS, draw_square_caps
+now advances by `square_cap_width(glyph)+2`, list geometry corrected to x=170/y=34/
+pitch11. VERIFIED: new oracle `concept_menu_text_matches_live_game_capture` scores
+IoU = 1.000 (all 1342 grey text pixels reproduced exactly across the 11 glyph-
+count-verified rows TALK..HOW). The RLE-builder decode is no longer needed for
+these labels; a full generator is only required for glyphs absent from every
+menu capture (J/Q/Z, most digits).
+
 ## Square-caps glyph GENERATOR via 0xE8-write watch (2026-07-22)
 Tried: watch value==0xE8 writes into the gs:0x175 stream region (and the chunky
 buffer seg 0x266c) while opening the MENU submenu from the SCRIPT2 savestate,

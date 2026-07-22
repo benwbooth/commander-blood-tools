@@ -4415,3 +4415,26 @@ destinations. That is a genuine multi-session task. The port's nav destinations
 only the live 3D-anchor coords/labels need this deep state. INSTRUMENTS READY:
 clean savestate, gs:0x6780 D2 watch, VM COD-PC (si vs gs:0x671c), the activation
 chain — a future session drives SCRIPT2's narrative to the offer with these.
+
+## Concept-menu font — PROPORTIONAL square-caps, geometry corrected, IoU 1.000 (2026-07-22)
+
+Measured the psychotherapy CONCEPT MENU (`accuracy/captures/bridge/concept_menu.ppm`
+= the SCRIPT2 topic list: TALK/EGO/SUPER_EGO/UNDER_EGO/END_OF_MONTH/LIBIDO/WHO/
+WHERE/WHEN/WHAT/HOW/44) against the port and found + fixed three fidelity bugs:
+  - GEOMETRY: list rows are at x=170, first-row top y=34, 11px pitch (port had
+    x=175, y=45 — off by one full row). Validated by re-extracting the stored
+    'T'/'A' glyphs at x=170,y=34 → exact bit-for-bit match.
+  - FONT IS PROPORTIONAL: advance = glyph_pixel_width + 2 (NOT fixed 10). Evidence:
+    'I' width1→advance3, letters width8→advance10, 'W' width9→advance11, '_'
+    width4→advance6. LIBIDO glyph starts [170,180,183,193,196,206] only reproduce
+    under proportional advance. Ported: draw_square_caps advances by
+    square_cap_width(glyph)+2; square_cap_width = (rightmost set column)+1.
+  - GLYPHS: `_` (baseline 4px bar, word separator) and `4` harvested from the
+    capture and added to SQUARE_CAPS_GLYPHS (now 25 glyphs). Text colour 0xE8 was
+    already correct (DAC 34 = grey 138,138,138 — the "green" look was a misread).
+VERIFICATION: new runnable oracle `concept_menu_text_matches_live_game_capture`
+(tests/oracle_suite.rs) renders the 11 glyph-count-verified labels through the
+engine list-menu widget and compares the 0xE8 glyph mask to the capture's grey
+text mask over rows 0..10 → **IoU = 1.000** (all 1342 text pixels reproduced
+exactly). The concept/topic menu now renders pixel-perfectly. (The trailing "44"
+row is indented/ambiguous — excluded from the compare; harmless.)

@@ -329,9 +329,13 @@ impl BoldConsoleFont {
 /// captures (numseries/choice-box dumps; each row's word is known, so cells
 /// segment exactly) — the face exists in no file (it is emitted by a runtime
 /// RLE builder, see re/REVERSE.md). Letters not yet harvested fall back to
-/// [`game_font_glyph`]. Monospace advance 10 px (measured pitch).
+/// [`game_font_glyph`]. Harvested glyphs use a PROPORTIONAL advance (glyph width
+/// + 2px, see [`square_cap_width`]); the constant below is the fallback pitch for
+/// unharvested characters drawn in the thin game font.
 pub const SQUARE_CAPS_ADVANCE: usize = 10;
-pub const SQUARE_CAPS_GLYPHS: [(char, [u16; 8]); 23] = [
+/// Advance for a space between square-caps words (narrow-glyph-sized gap).
+pub const SQUARE_CAPS_SPACE_ADVANCE: usize = 6;
+pub const SQUARE_CAPS_GLYPHS: [(char, [u16; 8]); 25] = [
     ('A', [0x7F00, 0x8100, 0x8100, 0x8100, 0x8100, 0xBF00, 0x8100, 0x8100]),
     ('B', [0xFE00, 0x0200, 0x8200, 0xBF00, 0x8100, 0x8100, 0x8100, 0xFF00]),
     ('C', [0xFE00, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0xFF00]),
@@ -355,7 +359,29 @@ pub const SQUARE_CAPS_GLYPHS: [(char, [u16; 8]); 23] = [
     ('W', [0x8080, 0x8080, 0x8080, 0x8080, 0x8080, 0x8880, 0x8880, 0x7700]),
     ('X', [0x8100, 0x8100, 0x8100, 0x7E00, 0x8100, 0x8100, 0x8100, 0x8100]),
     ('Y', [0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0xFF00, 0x0400, 0x0400]),
+    // Harvested from the psychotherapy concept menu (`accuracy/captures/bridge/
+    // concept_menu.ppm`): `_` is a 4px baseline bar (SUPER_EGO / END_OF_MONTH word
+    // separator); `4` is the digit in the trailing "44" concept row.
+    ('_', [0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0xF000]),
+    ('4', [0x8100, 0x8100, 0x8100, 0x0100, 0x3F00, 0x0100, 0x0100, 0x0100]),
 ];
+
+/// Pixel width of a square-caps glyph = (rightmost set column + 1). The real
+/// face is PROPORTIONAL: the horizontal advance is this width + a 2px gap
+/// (measured from `concept_menu.ppm`: 'I' width 1 → advance 3, most letters
+/// width 8 → advance 10, 'W' width 9 → advance 11, '_' width 4 → advance 6).
+fn square_cap_width(rows: &[u16; 8]) -> usize {
+    let mut max_col = 0;
+    for &row in rows {
+        if row != 0 {
+            let col = 15 - row.trailing_zeros() as usize;
+            if col > max_col {
+                max_col = col;
+            }
+        }
+    }
+    max_col + 1
+}
 
 /// Draw square-capitals text (list menus / choice boxes) at (x, y) in `color`.
 /// Unharvested letters use the thin game font as a stand-in.
@@ -373,7 +399,7 @@ pub fn draw_square_caps(
         let up = ch.to_ascii_uppercase();
         if let Some((_, rows)) = SQUARE_CAPS_GLYPHS.iter().find(|(c, _)| *c == up) {
             for (gy, row) in rows.iter().enumerate() {
-                for gx in 0..10 {
+                for gx in 0..16 {
                     if row & (0x8000u16 >> gx) != 0 {
                         let (px, py) = (pen + gx, y + gy);
                         if px < fb_width && py < fb_height {
@@ -382,7 +408,15 @@ pub fn draw_square_caps(
                     }
                 }
             }
-        } else if up != ' ' {
+            // Proportional advance: this glyph's pixel width + a 2px gap.
+            pen += square_cap_width(rows) + 2;
+            continue;
+        } else if up == ' ' {
+            // Word space (not present in the concept labels, which use `_`): a
+            // gap comparable to a narrow glyph cell.
+            pen += SQUARE_CAPS_SPACE_ADVANCE;
+            continue;
+        } else {
             draw_text_indexed(fb, fb_width, fb_height, &up.to_string(), pen, y, color);
         }
         pen += SQUARE_CAPS_ADVANCE;

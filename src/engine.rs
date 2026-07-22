@@ -986,8 +986,11 @@ impl EngineState {
                 ENGINE_SCREEN_WIDTH,
                 ENGINE_SCREEN_HEIGHT,
                 label,
-                175,
-                45 + i * 11,
+                // Measured from `concept_menu.ppm`: first row top y=34, x=170,
+                // 11px pitch (rows 34,45,56,…). Validated by re-extracting the
+                // stored 'T'/'A' glyphs at exactly these coordinates.
+                170,
+                34 + i * 11,
                 color,
             );
         }
@@ -1015,7 +1018,8 @@ impl EngineState {
         if !(170..=245).contains(&(x as i32)) {
             return None;
         }
-        let row = (y as i32 - 45) / 11;
+        // Rows start at y=34 with an 11px pitch (measured from concept_menu.ppm).
+        let row = (y as i32 - 34) / 11;
         (row >= 0 && (row as usize) < labels_len.min(12)).then_some(row as usize)
     }
 
@@ -2925,7 +2929,7 @@ mod tests {
         // Feed a topic menu and render it over a blank frame via the public draw.
         let labels = vec!["TALK".to_string(), "ONE".to_string(), "TWO".to_string()];
         e.draw_list_menu(&labels, Some(1));
-        // Row 0 (TALK) glyphs at y 45.., row 1 (ONE, selected) at y 56.. bright.
+        // Row 0 (TALK) glyphs at y 34.., row 1 (ONE, selected) at y 45.. bright.
         let count_in = |idx: u8, y0: usize, y1: usize| {
             let mut n = 0;
             for y in y0..y1 {
@@ -2938,8 +2942,8 @@ mod tests {
             n
         };
         // Unselected rows use 0xE8; the selected row uses the bright 0xEF.
-        assert!(count_in(0xE8, 44, 54) > 10, "TALK row in square-caps 0xE8");
-        assert!(count_in(0xEF, 55, 65) > 6, "selected ONE row in bright 0xEF");
+        assert!(count_in(0xE8, 33, 43) > 10, "TALK row in square-caps 0xE8");
+        assert!(count_in(0xEF, 44, 54) > 6, "selected ONE row in bright 0xEF");
     }
 
     #[test]

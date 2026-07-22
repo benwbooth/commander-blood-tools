@@ -149,3 +149,62 @@ fn representative_oracle_suite() {
     }
     assert!(failures.is_empty(), "oracle scenarios failed: {failures:?}");
 }
+
+/// Oracle: the psychotherapy CONCEPT MENU text (the square-caps topic list) is
+/// rendered faithfully. We feed the port the twelve real concept labels harvested
+/// from the live `concept_menu.ppm` capture, render them through the engine's
+/// list-menu widget, and compare the resulting glyph mask (framebuffer index
+/// 0xE8) against the capture's grey text mask over the eleven glyph-count-verified
+/// rows (TALK..HOW). A high intersection-over-union proves the widget's geometry
+/// (x=170, first row y=34, 11px pitch), the PROPORTIONAL advance (glyph width +
+/// 2px), and the glyph shapes all match the original — the whole word "LIBIDO"
+/// (with two 1px-wide 'I's) only lands correctly if the advance is proportional.
+#[test]
+fn concept_menu_text_matches_live_game_capture() {
+    let Some(cap) = capture("concept_menu.ppm") else {
+        eprintln!("concept-menu oracle skipped: no concept_menu.ppm");
+        return;
+    };
+    // The real concept list. Rows 0..=10 are glyph-count-verified against the
+    // capture; the trailing "44" row (indented) is excluded from the compare.
+    let labels: Vec<String> = [
+        "TALK", "EGO", "SUPER_EGO", "UNDER_EGO", "END_OF_MONTH", "LIBIDO", "WHO", "WHERE", "WHEN",
+        "WHAT", "HOW",
+    ]
+    .iter()
+    .map(|s| s.to_string())
+    .collect();
+
+    let mut e = EngineState::new();
+    e.draw_list_menu(&labels, None);
+
+    // The list region: right column, first eleven rows (y 32..153).
+    let (x0, x1, y0, y1) = (168usize, 305usize, 32usize, 153usize);
+    let is_grey = |r: u8, g: u8, b: u8| {
+        let (r, g, b) = (r as i32, g as i32, b as i32);
+        (r - 138).abs() < 45
+            && (g - 138).abs() < 45
+            && (b - 138).abs() < 45
+            && (r.max(g).max(b) - r.min(g).min(b)) < 25
+    };
+    let (mut inter, mut uni) = (0u32, 0u32);
+    for y in y0..y1 {
+        for x in x0..x1 {
+            let port = e.framebuffer[y * ENGINE_SCREEN_WIDTH + x] == 0xE8;
+            let o = (y * ENGINE_SCREEN_WIDTH + x) * 3;
+            let live = is_grey(cap[o], cap[o + 1], cap[o + 2]);
+            if port && live {
+                inter += 1;
+            }
+            if port || live {
+                uni += 1;
+            }
+        }
+    }
+    let iou = inter as f64 / uni as f64;
+    eprintln!("concept-menu text IoU = {iou:.3} (inter={inter}, union={uni})");
+    assert!(
+        iou > 0.60,
+        "concept-menu text mask must overlap the live capture (IoU {iou:.3} <= 0.60)"
+    );
+}
