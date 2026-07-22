@@ -70,7 +70,7 @@ pub struct ScriptBundle {
 
 impl ScriptBundle {
     /// The DESCRIPT **Sequence** (cutscene) records this script references through its DEB symbols
-    /// — the in-game cutscenes the script can trigger (e.g. SCRIPT1 → `maledict`). Verified against
+    /// — the Sequence records DEFINED in the script's DEB (NOT proven triggered — see faithfulness-audit). Verified against
     /// the real data (SCRIPT1's DEB captures `maledict` as a kind-5 object → the Sequence record).
     /// The faithful PLAYER is [`crate::engine::EngineState::start_descript_cutscene`]; the remaining
     /// wire is firing each at its 0xC4 reference point in the dialogue pass (docs/faithfulness-audit.md).
