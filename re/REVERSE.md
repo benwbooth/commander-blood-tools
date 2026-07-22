@@ -4292,3 +4292,23 @@ live anchor positions/labels is reaching a world-loaded state (drive nav to load
 a world, then the +0x0C/+0x0E fields are the coords) — a state-driving task, not
 an RE unknown. The port's progress.rs entity model + project_ship_3d_point
 already mirror steps 4-5; wiring live coords is gated only on that state.
+
+## #3 RESIDUAL NARROWED — port nav destinations ARE faithful (2026-07-22)
+
+Two nav representations exist:
+1. The choose-a-location LIST (destinations = SCRIPT3/4/5). The port derives this
+   from each script's speech-event HOST, and these MATCH the binary's D2 handoff
+   targets exactly (SCRIPT2 tokens 422/429/436 = operands 3/4/5 = profiles for
+   SCRIPT3/4/5). So the port offers the CORRECT nav destinations — #3's core
+   navigation capability is FAITHFUL, validated against the bytecode.
+2. The 3D-projected PYRAMID ANCHORS (entity 0x15..0x1F world coords projected by
+   0x9B98) — a secondary nav-VIEW rendering that needs the destination world
+   loaded (activation chain 0x8CCE→0x40D0, decoded above). At the console these
+   are inactive (empty), which is faithful to that state.
+So #3's ONLY residual is the exact 3D pyramid-anchor POSITIONS in the nav-view
+render — a secondary representation of already-correct destinations, gated on a
+world-loaded state. The port shows the faithful destination list; the 3D-anchor
+positions are a rendering detail, not a missing destination. NOTE the port's
+execute_trace halts at 745 steps (EndMarker) on the initial-state path without
+reaching the D2 offers — it derives destinations from speech-event hosts instead
+(equivalent + verified against the D2 targets).
