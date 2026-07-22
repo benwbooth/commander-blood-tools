@@ -1137,24 +1137,22 @@ fn main() {
                         rt.screen_indices(),
                     )
                     .unwrap();
-                    // OCR the choice-box region with the game's bold font.
+                    // OCR the choice-box region: thin GAME_FONT knocked out at
+                    // index 0xE8 (the measured box spec).
+                    use commander_blood_tools::font::{game_font_advance, game_font_glyph};
                     let idx = rt.screen_indices();
-                    let mut lit_font: Vec<(char, [u8; 8])> = Vec::new();
+                    let mut lit_font: Vec<(char, [u8; 8], usize)> = Vec::new();
                     for code in 32u8..127 {
-                        let gi = rt.m.read8(g, 0x70fa + code as u32);
-                        if gi == 0xFF { continue; }
-                        let mut rows = [0u8; 8];
-                        for (i, r) in rows.iter_mut().enumerate() {
-                            *r = rt.m.read8(g, 0x71aa + gi as u32 * 8 + i as u32);
-                        }
-                        if rows.iter().map(|r| r.count_ones()).sum::<u32>() >= 3 {
-                            lit_font.push((code as char, rows));
+                        if let Some(gl) = game_font_glyph(code as char) {
+                            if gl.rows.iter().map(|r| r.count_ones()).sum::<u32>() >= 4 {
+                                lit_font.push((code as char, gl.rows, game_font_advance(code as char)));
+                            }
                         }
                     }
-                    lit_font.sort_by_key(|(_, rows)| {
+                    lit_font.sort_by_key(|(_, rows, _)| {
                         std::cmp::Reverse(rows.iter().map(|r| r.count_ones()).sum::<u32>())
                     });
-                    let lit = |px: u8| px == 0xE0 || px >= 0xFD;
+                    let lit = |px: u8| px == 0xE8 || px == 0xEF;
                     let mut row0 = 60usize;
                     while row0 < 170 {
                         let mut line = String::new();
@@ -1162,10 +1160,10 @@ fn main() {
                         let mut x = 0usize;
                         while x < 312 {
                             let mut got = None;
-                            for (ch, rows) in &lit_font {
+                            for (ch, rows, adv) in &lit_font {
                                 let mut ok = true;
                                 'c: for gy in 0..8usize {
-                                    for gx in 0..8usize {
+                                    for gx in 0..adv.min(&8usize).clone() {
                                         let on = (rows[gy] >> (7 - gx)) & 1 == 1;
                                         let px = idx
                                             .get((row0 + gy) * 320 + x + gx)
@@ -1174,13 +1172,13 @@ fn main() {
                                         if on != lit(px) { ok = false; break 'c; }
                                     }
                                 }
-                                if ok { got = Some(*ch); break; }
+                                if ok { got = Some((*ch, *adv)); break; }
                             }
-                            if let Some(ch) = got {
+                            if let Some((ch, adv)) = got {
                                 if blanks >= 8 && !line.is_empty() { line.push(' '); }
                                 line.push(ch);
                                 blanks = 0;
-                                x += 8;
+                                x += adv.max(2);
                             } else {
                                 blanks += 1;
                                 x += 1;
