@@ -3981,3 +3981,8 @@ manu3 file offset 0x1370).
   gs:[0x5221] (the unpack's lds source) — read that pointer AT CLICK TIME and
   trace writers INTO that region next (the gs:0x100..0x2000 trace only caught
   general UI state traffic: 0xA2A/0xA32/0xB2x timers etc).
+- NAVPROBE (post-SCRIPT2 savestate): the bridge REFUSES to rotate — frame
+  pinned at 45 through 6 rotation attempts. SCRIPT2's opening flow holds the
+  console (menu-engaged clamp or script gating); its dialogue must be advanced
+  first. SCRIPT2 walk with the OCR driver running (script2walk logs) — expect
+  the script's opening lines, then check rotation/destinations again.
