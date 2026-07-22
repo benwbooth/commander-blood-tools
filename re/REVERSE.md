@@ -3800,3 +3800,9 @@ manu3 file offset 0x1370).
   rotation matrix built from the Q14 trig table (cos/sin at table entry +0x26/
   +0x28) into camera globals [0x2250..0x2268]. [0x22F2] -> [0x224A] = a second
   list head. Node stride ~0x5E.
+- Vertex transform+project loop at ~0x557: di=node, [di+2]=next, [di+6]=vertex
+  list (es:si, 0x14-stride records: +4/+6/+8 s16 local pos, +0xE dword computed
+  depth = row3·v + tz >> 8, +0x12 flag word init 0x8000 = not-projected;
+  depth <= 0 -> cull to 0x679). Matrix rows in the node at +0x1E/+0x22/+0x26
+  (row1), +0x2A/+0x2E/+0x32 (row3), translation +0x3E. Same 0x14 stride as the
+  0x068A pose-copy records — the pose copy feeds these vertex records.
