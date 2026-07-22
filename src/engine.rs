@@ -1691,7 +1691,24 @@ impl EngineState {
             return;
         };
         let count = hnm.frame_count().max(1);
-        if self.scene_frame >= count {
+        // A credit clip (carrying the DESCRIPT `present` cues — the branded CRYO/title sequence)
+        // runs only for its CREDIT SPAN in the real game (~tick 100, the final clearing cue, then
+        // gameplay by ~9s), NOT the full 1258-frame cliptoot clip (~69s @18fps). Ground truth:
+        // accuracy/captures/frame_* — MINDSCAPE(1s)→Microfolie's(2s)→cinematic→CRYO logo(5s)→
+        // console with the credit overlaid(6s)→gameplay(9s). So end the credit clip when its cues
+        // finish (last tick + a short hold), rather than playing it out. Non-credit clips (the
+        // logo reel) play their full length.
+        let clip_end = self
+            .intro_cues
+            .get(self.intro_index)
+            .filter(|cues| !cues.is_empty())
+            .map(|cues| {
+                let last_tick = cues.iter().map(|c| c.tick as usize).max().unwrap_or(0);
+                (last_tick * Self::INTRO_CREDIT_FRAMES_PER_TICK + Self::INTRO_CREDIT_HOLD_FRAMES)
+                    .min(count)
+            })
+            .unwrap_or(count);
+        if self.scene_frame >= clip_end {
             // Current clip finished — advance to the next, or end the intro.
             self.intro_index += 1;
             if self.intro_index < self.intro_hnms.len() {
@@ -1716,6 +1733,10 @@ impl EngineState {
     /// advances one clip frame per stepped game frame, so a cue displays from `tick`
     /// frames in until the next cue supersedes it (calibratable against the oracle).
     const INTRO_CREDIT_FRAMES_PER_TICK: usize = 1;
+    /// Frames to hold after a credit clip's last cue before ending it (a brief beat so the final
+    /// credit isn't cut instantly). Keeps the credit sequence to its ~tick-100 span, not the full
+    /// 1258-frame clip — matching the real game's ~short intro.
+    const INTRO_CREDIT_HOLD_FRAMES: usize = 24;
     /// Baseline row for the credit text, inside the cinematic's lower black letterbox.
     const INTRO_CREDIT_BASELINE_Y: usize = 178;
     /// Reserved palette index forced to white for the credit glyphs (mirrors the
@@ -3480,6 +3501,50 @@ mod tests {
         assert!(
             e.intro_cues[0].iter().any(|c| c.text.contains("CURSED")),
             "the record's subtitle text is carried"
+        );
+    }
+
+    /// The intro credit clip (`cliptoot.hnm`, carrying the `present` cues to tick 100) must run
+    /// only its CREDIT SPAN — the real intro reaches gameplay by ~9s (ground truth:
+    /// accuracy/captures/frame_*), not the full 1258-frame clip (~69s). Guards the "intro way too
+    /// long" bug: the credit clip should end shortly after its last cue, not play out in full.
+    #[test]
+    fn intro_credit_clip_ends_with_its_cues_not_full_length() {
+        let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("sq").join("cliptoot.hnm").exists());
+        let Some(assets) = assets else { return };
+        let db = ["output/_tmp_iso/DESCRIPT.DES", "../output/_tmp_iso/DESCRIPT.DES"]
+            .iter()
+            .find_map(|p| crate::descript::DescriptDb::parse_file(p).ok());
+        let Some(db) = db else { return };
+        let mut e = EngineState::new();
+        e.load_intro(assets, &db);
+        let credit = e
+            .intro_hnms
+            .iter()
+            .position(|p| p.file_stem().is_some_and(|s| s == "cliptoot"))
+            .expect("cliptoot credit clip queued");
+        let full_len = crate::hnm::HnmFile::open(&e.intro_hnms[credit])
+            .map(|h| h.frame_count())
+            .unwrap_or(0);
+        assert!(full_len > 1000, "cliptoot is a long clip ({full_len} frames)");
+        // Drive the intro, counting frames spent in the credit clip.
+        let mut credit_frames = 0usize;
+        for _ in 0..6000 {
+            let at_credit = e.intro_index() == credit && e.intro_active();
+            e.step(MouseInput::default());
+            if at_credit {
+                credit_frames += 1;
+            }
+            if !e.intro_active() {
+                break;
+            }
+        }
+        assert!(
+            (90..300).contains(&credit_frames),
+            "credit clip runs its ~tick-100 cue span ({credit_frames} frames), not the full {full_len}"
         );
     }
 
