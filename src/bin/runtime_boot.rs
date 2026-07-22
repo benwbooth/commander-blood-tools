@@ -1265,6 +1265,54 @@ fn main() {
             return;
         }
 
+        // PHONEWALK: from SCRIPT2 open the TELEPHONE (golden menu row 1) and call
+        // each crew contact (choice box), watching for a destination grant
+        // (nav anchors populate / a new location .ext opens) — the story beat
+        // HONK flags ("IF THE PHONE RINGS...").
+        if std::env::var("PHONEWALK").is_ok() {
+            let anchors_live = |rt: &Runtime| (0..33u32).any(|i| {
+                let v = (rt.m.read8(g, 0x4f09 + i*2) as u16 | ((rt.m.read8(g, 0x4f09+i*2+1) as u16)<<8)) as i16;
+                v != 0 && v.abs() < 8000 && v.abs() != 900 && v.abs() != 10200 && v.abs() != 12100
+            });
+            let baseline = rt.opened_files.len();
+            // Click TELEPHONE (golden menu row 1 at the console frame).
+            let (fr,_,_) = state(&rt);
+            let delta = fr as i32 - 45;
+            let mx = 0x11f - delta*8 - 0x37;
+            let my = 0x48 + delta.unsigned_abs() as i32*5/4 + 1*(0x12 - delta.unsigned_abs() as i32/8) + 8;
+            let ring = (mx + fr as i32*8 - 160).rem_euclid(1440) as u16;
+            rt.set_mouse_pos(ring, my as u16);
+            let _ = rt.run(rt.cpu.steps + 700_000);
+            rt.mouse_press(0); let _ = rt.run(rt.cpu.steps + 400_000); rt.mouse_release(0);
+            let _ = rt.run(rt.cpu.steps + 10_000_000);
+            rt.write_ppm(&out.join("phone_dial.ppm")).unwrap();
+            let newest: Vec<String> = rt.opened_files[baseline..].iter().map(|(_,p)|p.clone()).collect();
+            println!("after TELEPHONE: new files {newest:?}");
+            // Call each contact row in the choice box (left, y88+13*i).
+            for row in 0..8u16 {
+                let (fr,_,_) = state(&rt);
+                let sy = 88 + 6 + 13*row;
+                let ring = (90i32 + fr as i32*8 - 160).rem_euclid(1440) as u16;
+                rt.set_mouse_pos(ring, sy);
+                let _ = rt.run(rt.cpu.steps + 700_000);
+                rt.mouse_press(0); let _ = rt.run(rt.cpu.steps + 400_000); rt.mouse_release(0);
+                let _ = rt.run(rt.cpu.steps + 15_000_000);
+                rt.write_ppm(&out.join(format!("phone_call_{row}.ppm"))).unwrap();
+                let anchors = anchors_live(&rt);
+                let nf: Vec<String> = rt.opened_files[baseline..].iter().map(|(_,p)|p.clone()).collect();
+                println!("call row {row}: anchors={anchors} files={:?}", &nf[nf.len().saturating_sub(3)..]);
+                if anchors || nf.iter().any(|f| f.to_lowercase().contains(".ext")) {
+                    println!("GRANT at row {row}!");
+                    rt.save_state(std::path::Path::new("accuracy/granted.state")).unwrap();
+                    break;
+                }
+                rt.inject_key(0x01, 0x1b); // Esc back
+                let _ = rt.run(rt.cpu.steps + 4_000_000);
+            }
+            println!("PHONEWALK done");
+            return;
+        }
+
         // GRANTWALK: from SCRIPT2, interact exhaustively (topics, orb, phone
         // rows, menu) and watch DS:0x4F09 nav anchors for POPULATION (a granted
         // destination). On non-empty anchors: save a milestone state + capture.
