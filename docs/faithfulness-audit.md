@@ -53,6 +53,11 @@ everywhere.** Priority = how visible/audible + how confidently fixable.
    their tick span, rather than playing cliptoot standalone. Confirm cliptoot's role by decoding a
    few of its frames (is it the seascape bridge background, or a distinct clip?). This is the top
    visible intro bug; needs care (it reshapes the intro→console handoff in main.rs/engine.rs).
+   PROGRESS (commits 970/971): (a) the credit clip now ends with its cues (~124 frames ≈7s), not
+   the full 1258 (~69s); (b) the spurious `logo_bl.hnm` fire-title clip was REMOVED — frame_07
+   proves "Commander BLOOD V 1.0" is a SUBTITLE over the console (the present tick-30 cue), not a
+   separate title screen. REMAINING: render the CRYO/title credits over the CONSOLE (as the real
+   game does) rather than over the bare cliptoot clip — the last piece of the intro structure.
 2. **Intro/HNM playback RATE** (`INTRO_CREDIT_FRAMES_PER_TICK = 1`, one HNM frame per game step).
    A guess flagged "calibratable". Source: the HNM player's frame-advance timing in the asm (ticks
    per HNM frame) + the DESCRIPT tick unit. RISK: intro plays too fast/slow; subtitles mistimed.

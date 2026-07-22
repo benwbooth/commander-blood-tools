@@ -581,11 +581,14 @@ impl EngineState {
             .find(|r| r.name == CREDIT_RECORD)
             .and_then(|r| r.music.first().cloned());
         // (hnm stem, subtitle cues, music-to-start-with-this-clip). Only the credit cinematic
-        // carries music; the logo reel and the fire-title are silent, matching the real game.
-        let order: [(String, Vec<crate::descript::SubtitleCue>, Option<String>); 3] = [
+        // carries music; the logo reel is silent, matching the real game. Ground truth
+        // (accuracy/captures/frame_*): the intro is logos → cinematic → CRYO logo → console with
+        // the "CRYO 1995"/"Commander BLOOD V 1.0" credits overlaid as SUBTITLES — there is NO
+        // separate fire-title clip, so `logo_bl.hnm` is NOT queued (its "title" is the credit
+        // cue on the CRYO clip). The real title screen art (BLOOD.LBM) is handled separately.
+        let order: [(String, Vec<crate::descript::SubtitleCue>, Option<String>); 2] = [
             ("mind.hnm".to_string(), Vec::new(), None), // boot logos: MINDSCAPE + Microfolie's + ship
             (credit_clip, credit_cues, credit_music),   // CRYO cinematic + publisher credit + music
-            ("logo_bl.hnm".to_string(), Vec::new(), None), // fire "COMMANDER Blood" title
         ];
         self.intro_hnms = Vec::new();
         self.intro_cues = Vec::new();
