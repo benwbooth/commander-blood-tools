@@ -3730,3 +3730,12 @@ manu3 file offset 0x1370).
   hand's texture / pre-shaded spans. ds 0x2094 (file 0xA280) around +0xD9C holds
   ascending offset words (2764,3484,3844..) = a command/span table into it.
   So the hand render = 3D transform (+trig LUT) + span table -> textured spans.
+- ADDRESSED watch (commit +1): manu3's colour-246 writes split three ways —
+  (a) 166c:0B5D writes VGA VRAM DIRECTLY (linear 0xA711A; src ds:si=1C94:009C =
+  manu3 file 0x6280+): the HAND BLITTER — it bypasses the [0x5229] back buffer,
+  which is why the panorama unpack never erases the hand; (b) many sites write
+  into seg 0x2094 (manu3 file 0xA280 = its per-frame WORKING buffers, not a
+  static span table — correct earlier note); (c) stores into manu3's own code
+  segment region (0x19C95..) = self-modifying/inline-patched loop parameters.
+  NEXT: decompile the builder that fills the 0x2094 working buffer from the
+  mesh + Q14 trig LUT, and the VRAM blitter at manu3+0xB5D.
