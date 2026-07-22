@@ -2196,10 +2196,20 @@ fn main() {
     }
 
     if let Ok(needle) = std::env::var("MEMFIND") {
-        // Run to `steps`, then scan all of guest RAM for an ASCII needle — decisive test of
-        // whether a given string (e.g. a DESCRIPT credit cue) is resident at that moment.
+        // Run to `steps`, then scan all of guest RAM for the needle — decisive test of
+        // whether a given pattern is resident. ASCII by default; a `hex:` prefix (e.g.
+        // `hex:a301007a26`) searches for raw bytes (used to locate the loaded SCRIPT*.BAS
+        // by its 0xA3 concept-menu table bytes).
         let _ = rt.run(steps);
-        let pat = needle.as_bytes();
+        let hexbuf: Vec<u8>;
+        let pat: &[u8] = if let Some(hx) = needle.strip_prefix("hex:") {
+            hexbuf = (0..hx.len() / 2)
+                .map(|i| u8::from_str_radix(&hx[i * 2..i * 2 + 2], 16).unwrap_or(0))
+                .collect();
+            &hexbuf
+        } else {
+            needle.as_bytes()
+        };
         let mem = &rt.m.mem;
         let mut hits = 0;
         for i in 0..mem.len().saturating_sub(pat.len()) {
@@ -2212,6 +2222,67 @@ fn main() {
             }
         }
         println!("MEMFIND {needle:?}: {hits} hit(s) at {} steps", rt.cpu.steps);
+        return;
+    }
+
+    // BASWATCH: from a resumed SCRIPT2 state, read-watch the loaded SCRIPT2.BAS
+    // region and report which BAS offsets the console menu handler READS while
+    // a concept menu is displayed/redrawn — decodes the COD→BAS menu-selection
+    // linkage (which BAS menu the conversation state picks). Locates BAS by
+    // searching for the psychotherapy menu bytes (a3 01 00 7a 26 1a 44 24).
+    if std::env::var("BASWATCH").is_ok() {
+        let sig: [u8; 8] = [0xa3, 0x01, 0x00, 0x7a, 0x26, 0x1a, 0x44, 0x24];
+        let menu_lin = (0..rt.m.mem.len().saturating_sub(8)).find(|&i| rt.m.mem[i..i + 8] == sig);
+        let Some(menu_lin) = menu_lin else {
+            println!("BASWATCH: SCRIPT2.BAS not resident (resume milestone_script2.state)");
+            return;
+        };
+        let bas_base = menu_lin - 0xc27; // menu is at BAS file offset 0xc27
+        let bas_size = 0x5825usize; // SCRIPT2.BAS is 22565 bytes
+        println!("BASWATCH: SCRIPT2.BAS @ linear {bas_base:#08x}..{:#08x} (psy menu @ {menu_lin:#08x})", bas_base + bas_size);
+        rt.write_ppm(&out.join("baswatch_00.ppm")).unwrap();
+        // Watch reads across the BAS while driving the console (clicks that would
+        // (re)open a topic list): the menu handler reads the selected menu table.
+        rt.m.read_watch = Some(bas_base..bas_base + bas_size);
+        rt.m.read_hits.borrow_mut().clear();
+        let g = 0x0e84u16;
+        let frame = |rt: &Runtime| rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
+        for pass in 0..6u32 {
+            let fr = frame(&rt);
+            // orb (open concept menu) then a topic-row click, over the console.
+            for (mx, my) in [(125u16, 118u16), (190, 45 + 11 * (pass % 12) as u16)] {
+                let ring = (mx as i32 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+                rt.set_mouse_pos(ring, my);
+                let _ = rt.run(rt.cpu.steps + 500_000);
+                rt.mouse_press(0);
+                let _ = rt.run(rt.cpu.steps + 300_000);
+                rt.mouse_release(0);
+                let _ = rt.run(rt.cpu.steps + 2_000_000);
+            }
+        }
+        rt.m.read_watch = None;
+        let hits = rt.m.read_hits.borrow();
+        // Report distinct BAS offsets read, and whether any is a 0xA3 menu head.
+        let mut offs: Vec<usize> = hits.iter().map(|h| h.0 - bas_base).collect();
+        offs.sort_unstable();
+        offs.dedup();
+        println!("BASWATCH: {} BAS reads, {} distinct offsets", hits.len(), offs.len());
+        let menu_heads: Vec<String> = offs
+            .iter()
+            .filter(|&&o| o < bas_size && rt.m.mem[bas_base + o] == 0xa3)
+            .map(|&o| format!("{o:#06x}"))
+            .collect();
+        println!("BASWATCH: distinct offsets (first 40): {:x?}", &offs[..offs.len().min(40)]);
+        println!("BASWATCH: 0xA3 menu-head offsets READ: {menu_heads:?}");
+        // The READER code (cs:ip) of each menu-head read = the menu-selection/draw
+        // routine; the offset it reads is the per-state selected menu.
+        for &(addr, cs, ip) in hits.iter() {
+            let o = addr - bas_base;
+            if o < bas_size && rt.m.mem[bas_base + o] == 0xa3 {
+                println!("  menu-head @BAS+{o:#06x} read by {cs:04x}:{ip:04x}");
+            }
+        }
+        rt.write_ppm(&out.join("baswatch_end.ppm")).unwrap();
         return;
     }
 

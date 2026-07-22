@@ -4669,3 +4669,23 @@ tutorial via the orb click) and read-watch the BAS menu region to see WHICH menu
 offset the console handler selects; (4) correlate the selected offset with the
 conversation state → the COD-state→BAS-menu map that per-beat wiring needs. This is
 the concrete, ordered runtime-RE plan; step 1 confirms it's tractable.
+
+## Per-beat linkage DRIVEN via runtime — menu-selection routine found (2026-07-22)
+
+Drove the COD→BAS menu-selection linkage on the live (lockstep-verified) runtime,
+resuming milestone_script2.state (SCRIPT2 loaded, step 3.86B). New `BASWATCH` mode
+in runtime_boot. Results (steps 2–4 of the plan, DONE this session):
+  - SCRIPT2.BAS is resident at linear 0x080fe0..0x086805 (psychotherapy menu table
+    at 0x081c07 = BAS file offset 0xc27; MEMFIND now supports `hex:` needles).
+  - Read-watching the BAS region while driving the console shows the menu handler
+    reads BAS menu-head **@0x2f** (the top-level SCRIPT2 menu: optimization/
+    consultation/explanations/play/help) — i.e. the per-state SELECTED menu offset,
+    observed live. It reads through that menu's topic offsets (0x2b..0x60).
+  - The reader (menu-selection/draw routine) is at **segment 0x067c**, IPs 0x0446 /
+    0x0309 / 0x076c. So the linkage mechanism = code@067c reads BAS[selected_offset].
+REMAINING (one more iteration): dump segment 0x067c and disassemble @0x446/0x309/
+0x76c to see HOW the menu offset is chosen (which variable/conversation-state field
+feeds it) → the COD-state → BAS-menu map. Then the port shows the right menu per
+beat. This is concrete, DRIVEN progress (not scoping): the residual went from
+"unclear" to "menu-draw routine @067c reads BAS[offset]; offset-selection is the
+last unknown, localized to 3 instruction addresses."
