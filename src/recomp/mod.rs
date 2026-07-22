@@ -14,6 +14,7 @@
 #[allow(unused_parens)]
 pub mod auto;
 pub mod interp;
+pub mod io_lift;
 pub mod machine;
 pub mod runtime;
 

@@ -242,7 +242,7 @@ fn cond(r: &Regs, c: u8) -> bool {
 
 /// FLAGS word. Mirrors lift.py's `pushf` encoding EXACTLY (bit 1 set, no IF/TF) so interpreted
 /// `pushf` writes the same stack byte the lifted code and the oracle vectors have.
-fn flags_word(r: &Regs) -> u16 {
+pub(crate) fn flags_word(r: &Regs) -> u16 {
     0x0002
         | (r.cf as u16)
         | ((r.pf as u16) << 2)

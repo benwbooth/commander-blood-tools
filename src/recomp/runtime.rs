@@ -1425,7 +1425,7 @@ impl Runtime {
         }
     }
 
-    fn native_int(&mut self, v: u8) -> Result<(), String> {
+    pub(crate) fn native_int(&mut self, v: u8) -> Result<(), String> {
         let ah = self.m.regs.ah();
         self.log_int(v, ah);
         match v {
