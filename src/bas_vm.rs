@@ -81,6 +81,44 @@ pub fn parse_menu_block(bas: &[u8], dic: &[u8], menu_offset: usize) -> Option<Me
     Some(MenuBlock { menu_offset, topics, responses, end })
 }
 
+/// Sequential response player for a menu block whose responses are a monologue shown
+/// one-per-interaction (the already-shown gating `vm.rs` models — verified: the
+/// psychotherapy fear/anger block is 13 pure `0xA6` responses, no per-topic records).
+/// Each [`advance`](Self::advance) yields the next response's BAS offset (the `0xA6`
+/// token), tracking the shown count; the engine renders it via the dialogue system.
+#[derive(Debug, Clone)]
+pub struct SequentialResponses {
+    responses: Vec<usize>,
+    shown: usize,
+}
+
+impl SequentialResponses {
+    /// Start playing a menu block's responses (in stream order).
+    pub fn new(block: &MenuBlock) -> Self {
+        Self { responses: block.responses.clone(), shown: 0 }
+    }
+
+    /// The next response `0xA6` BAS offset to display, advancing the shown count.
+    /// `None` once the monologue is exhausted (all responses already shown).
+    pub fn advance(&mut self) -> Option<usize> {
+        let r = self.responses.get(self.shown).copied();
+        if r.is_some() {
+            self.shown += 1;
+        }
+        r
+    }
+
+    /// Responses not yet shown.
+    pub fn remaining(&self) -> usize {
+        self.responses.len().saturating_sub(self.shown)
+    }
+
+    /// Total responses in the block.
+    pub fn total(&self) -> usize {
+        self.responses.len()
+    }
+}
+
 /// Parse a `SCRIPTn.DIC` into {offset -> word}.
 fn parse_dic_words(dic: &[u8]) -> std::collections::HashMap<u16, String> {
     let mut w = std::collections::HashMap::new();
@@ -260,6 +298,32 @@ mod tests {
         }
         assert_eq!(text, 13, "13 sequential text responses");
         assert_eq!(other, 0, "no record-update opcodes in the block");
+    }
+
+    /// The sequential response player yields the fear/anger block's 13 responses one
+    /// at a time, in stream order, then stops — modelling the already-shown gating.
+    #[test]
+    fn sequential_responses_play_the_monologue_in_order() {
+        let rd = |ext: &str| {
+            ["accuracy/cdrive/cblood", "../accuracy/cdrive/cblood"]
+                .iter()
+                .find_map(|b| std::fs::read(Path::new(b).join(format!("SCRIPT2.{ext}"))).ok())
+        };
+        let (Some(bas), Some(dic)) = (rd("BAS"), rd("DIC")) else {
+            return;
+        };
+        let block = parse_menu_block(&bas, &dic, 0x42d).expect("block");
+        let mut seq = SequentialResponses::new(&block);
+        assert_eq!(seq.total(), 13);
+        let first = seq.advance().expect("first response");
+        assert_eq!(first, 0x43e, "first response at the traced offset");
+        assert_eq!(seq.remaining(), 12);
+        let mut count = 1;
+        while seq.advance().is_some() {
+            count += 1;
+        }
+        assert_eq!(count, 13, "all 13 shown, then exhausted");
+        assert_eq!(seq.remaining(), 0);
     }
 
     /// The stack ties to the block parser: after entering the fear/anger menu, the
