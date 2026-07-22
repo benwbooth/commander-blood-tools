@@ -652,6 +652,33 @@ fn main() {
                         rt.write_ppm(&out.join(format!("hook_{round}_{shot}.ppm"))).unwrap();
                         let _ = rt.run(rt.cpu.steps + 3_000_000);
                     }
+                    // Also: click the orb to open the concept menu, then dump its
+                    // indices (the full topic list = many square-caps letters).
+                    {
+                        let mut orb = (129i32, 117i32);
+                        for rec in 0..4u32 {
+                            let base = 0x2a1b + rec * 0x18;
+                            let w16 = |o: u32| {
+                                rt.m.read8(g, base + o) as u16
+                                    | ((rt.m.read8(g, base + o + 1) as u16) << 8)
+                            };
+                            if w16(0xc) != 0xffff {
+                                orb = (w16(0xc) as i32 + w16(0x10) as i32 / 2,
+                                       w16(0xe) as i32 + w16(0x12) as i32 / 2);
+                                break;
+                            }
+                        }
+                        let ring = (orb.0 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+                        rt.set_mouse_pos(ring, orb.1 as u16);
+                        let _ = rt.run(rt.cpu.steps + 700_000);
+                        rt.mouse_press(0);
+                        let _ = rt.run(rt.cpu.steps + 400_000);
+                        rt.mouse_release(0);
+                        let _ = rt.run(rt.cpu.steps + 8_000_000);
+                        std::fs::write(out.join("concept_menu_indices.bin"), rt.screen_indices()).unwrap();
+                        rt.write_ppm(&out.join("concept_menu.ppm")).unwrap();
+                        println!("concept menu indices dumped");
+                    }
                     // Follow the direction: click the current frame's orb box.
                     let mut orb = (160i32, 120i32);
                     for rec in 0..4u32 {
