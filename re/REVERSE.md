@@ -4084,3 +4084,13 @@ manu3 file offset 0x1370).
   (post_update), then drive those interactions. The story-walk driver loops in
   the consultation because the granting interactions are elsewhere (phone
   calls to crew are the likely next beat: "IF THE PHONE RINGS...").
+- **SCRIPT2 TRAVEL HANDOFF DECODED (inspect-vm)**: SCRIPT2 DOES issue D2
+  ScriptProfileRequests — operand 3/4/5 -> profiles 2/3/4 = SCRIPT3/4/5, a
+  CONSECUTIVE trio at COD tokens 422/429/436 (offset 0x1269..) gated behind a
+  branch (the destination CHOICE — one of three planets). A second D2
+  (operand 3, token 3269, offset 0x987c) is a re-entry. So the port's D2
+  chaining WAS right in principle; the missing piece is WHICH destination the
+  player's interaction selects (the three are alternatives, not sequential).
+  The choice is the nav/topic selection -> sets the operand -> loads SCRIPTn.
+  The port already maps nav clicks to SCRIPT3/4/5 (choose-a-location) — this
+  CONFIRMS that model against the binary. Progression is faithful.
