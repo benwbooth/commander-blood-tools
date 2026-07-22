@@ -250,3 +250,76 @@ mod tests {
         assert_eq!(after, GAME_FONT_SPACE_ADVANCE);
     }
 }
+
+/// The BOLD console/tutorial subtitle font, loaded from the user's
+/// `BLOODPRG.EXE` (glyph bitmaps at file 0x145CA = DS:0x71AA, ascii->glyph map
+/// at file 0x1451A = DS:0x70FA; verified byte-identical to the live game's
+/// in-memory font). Monospace 8 px advance, 8x8 glyphs. The game draws ALL
+/// on-console text (tutorial lines, prompts) with this face — the thin
+/// [`GAME_FONT_GLYPHS`] face is the letterboxed-scene subtitle font.
+pub struct BoldConsoleFont {
+    /// ascii -> glyph index (0xFF = none).
+    map: [u8; 128],
+    /// 8-byte row bitmaps per glyph.
+    glyphs: Vec<[u8; 8]>,
+}
+
+impl BoldConsoleFont {
+    pub const GLYPH_MAP_FILE_OFFSET: usize = 0x1451A;
+    pub const GLYPHS_FILE_OFFSET: usize = 0x145CA;
+    pub const ADVANCE: usize = 8;
+
+    /// Load from a BLOODPRG.EXE image. Returns None if the file is too short.
+    pub fn load_from_exe(exe: &[u8]) -> Option<BoldConsoleFont> {
+        let map_bytes = exe.get(Self::GLYPH_MAP_FILE_OFFSET..Self::GLYPH_MAP_FILE_OFFSET + 128)?;
+        let mut map = [0xFFu8; 128];
+        map.copy_from_slice(map_bytes);
+        let max_glyph = map.iter().filter(|&&g| g != 0xFF).max().copied()? as usize + 1;
+        let table = exe.get(Self::GLYPHS_FILE_OFFSET..Self::GLYPHS_FILE_OFFSET + max_glyph * 8)?;
+        let glyphs = table
+            .chunks_exact(8)
+            .map(|c| {
+                let mut rows = [0u8; 8];
+                rows.copy_from_slice(c);
+                rows
+            })
+            .collect();
+        Some(BoldConsoleFont { map, glyphs })
+    }
+
+    /// Draw `text` at (x, y) in palette index `color`, exactly as the game's
+    /// console text renderer lays glyphs out (monospace 8).
+    pub fn draw(
+        &self,
+        fb: &mut [u8],
+        fb_width: usize,
+        fb_height: usize,
+        text: &str,
+        x: usize,
+        y: usize,
+        color: u8,
+    ) {
+        let mut pen = x;
+        for ch in text.chars() {
+            let code = ch as usize;
+            if code < 128 {
+                let gi = self.map[code];
+                if gi != 0xFF {
+                    if let Some(rows) = self.glyphs.get(gi as usize) {
+                        for (gy, row) in rows.iter().enumerate() {
+                            for gx in 0..8 {
+                                if row & (0x80 >> gx) != 0 {
+                                    let (px, py) = (pen + gx, y + gy);
+                                    if px < fb_width && py < fb_height {
+                                        fb[py * fb_width + px] = color;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            pen += Self::ADVANCE;
+        }
+    }
+}

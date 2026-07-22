@@ -269,6 +269,9 @@ pub struct EngineState {
     /// Pointing-hand cursor sprites captured from the REAL renderer (see
     /// [`EngineState::load_hand_atlas`]); empty = no hand drawn.
     hand_atlas: Vec<HandSprite>,
+    /// The BOLD console subtitle font from the user's BLOODPRG.EXE (the face
+    /// the game uses for ALL on-console text); None until loaded.
+    bold_font: Option<crate::font::BoldConsoleFont>,
     /// The decompiled bridge interaction state ([`crate::bridge`]): mouse-push
     /// steering, station seeks, and the golden-menu hit testing/highlighting.
     pub bridge: crate::bridge::BridgeView,
@@ -426,6 +429,7 @@ impl EngineState {
             cyber_segment: 0,
             panorama: None,
             hand_atlas: Vec::new(),
+            bold_font: None,
             bridge: crate::bridge::BridgeView::default(),
             console_font: Vec::new(),
             bridge_active: false,
@@ -646,6 +650,15 @@ impl EngineState {
     /// bridge as 180 pre-rendered frames — see [`crate::tbbig`]). `iso` is the CD
     /// root directory. Without it the bridge cannot render (no fabricated stand-in).
     pub fn load_bridge(&mut self, iso: &Path) {
+        // The bold console font ships inside the game binary itself.
+        for name in ["BLOODPRG.EXE", "bloodprg.exe"] {
+            if let Ok(exe) = std::fs::read(iso.join(name)) {
+                self.bold_font = crate::font::BoldConsoleFont::load_from_exe(&exe);
+                if self.bold_font.is_some() {
+                    break;
+                }
+            }
+        }
         for name in ["TB.BIG", "tb.big"] {
             if let Ok(data) = std::fs::read(iso.join(name)) {
                 self.panorama = crate::tbbig::BridgePanorama::parse(data);
@@ -2438,6 +2451,43 @@ impl EngineState {
 
     fn draw_subtitle_with_color(&mut self, text: &str, visible: usize, body: u8, edge: u8) {
         use crate::font::{GAME_FONT_LINE_HEIGHT, game_font_advance};
+        // ON-CONSOLE text uses the game's BOLD monospace face (loaded from the
+        // user's BLOODPRG.EXE — the live game draws all console/tutorial lines
+        // with it; the thin face below is the letterboxed-scene subtitle font).
+        if self.panorama.is_some() && self.scene_hnm.is_none() {
+            if let Some(bold) = self.bold_font.take() {
+                let mut shown = 0usize;
+                let mut y = 8usize;
+                for (li, line) in text.split('\n').enumerate() {
+                    if li > 0 {
+                        shown += 1;
+                        y += 10; // console line pitch (rows 8/18 observed live)
+                    }
+                    let mut x = 10usize;
+                    for ch in line.chars() {
+                        if shown >= visible {
+                            self.bold_font = Some(bold);
+                            return;
+                        }
+                        let is_edge = shown + 1 == visible;
+                        let mut buf = [0u8; 4];
+                        bold.draw(
+                            &mut self.framebuffer,
+                            ENGINE_SCREEN_WIDTH,
+                            ENGINE_SCREEN_HEIGHT,
+                            ch.encode_utf8(&mut buf),
+                            x,
+                            y,
+                            if is_edge { edge } else { body },
+                        );
+                        x += crate::font::BoldConsoleFont::ADVANCE;
+                        shown += 1;
+                    }
+                }
+                self.bold_font = Some(bold);
+                return;
+            }
+        }
         // The subtitle string is pre-wrapped by the game's decoded text-assembly rule
         // (35-char wrap with 0x0D breaks — `assemble_words`); draw each line at the
         // subtitle origin (10,8), one font row apart, exactly as the game's
