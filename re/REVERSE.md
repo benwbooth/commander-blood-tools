@@ -4555,3 +4555,34 @@ port the rasterizer. DEFERRED (not a fidelity gap): the baked hand atlas already
 renders the console hand at mean_abs 0.14; the procedural renderer only matters
 for atlas-absent poses. Dumps regenerable via `BRIDGEPROBE=1 runtime_boot`
 (manu3_face_table.bin + manu3_vertseg_1b76.bin).
+
+## CONCEPT-MENU / TOPIC SYSTEM — FULLY DECODED via opcode 0xA3 (2026-07-22)
+
+BREAKTHROUGH on the #3/#6 residual (previously thought to need multi-session
+narrative-driving to reach a "world-loaded state"): the concept-menu topic
+labels are a STATIC BAS-opcode decode, no runtime state needed. The script VM's
+**opcode 0xA3** (in SCRIPTn.BAS) emits a concept menu: the 0xA3 byte is
+immediately followed by a run of little-endian u16 offsets into SCRIPTn.DIC,
+each pointing at a NUL-terminated concept word; the run ends at the first u16
+that isn't a valid single-token dictionary offset. This reliably recovers EVERY
+concept menu in EVERY script with zero dialogue false positives (56 in SCRIPT2,
+36/33/46 in SCRIPT3/4/5). Ported: `src/concept_menu.rs` (decode_menus /
+find_menu_containing). VERIFIED: SCRIPT2's psychotherapy menu decodes to exactly
+[talk,ego,super_ego,under_ego,end_of_month,libido,who,where,when,what,how,why] —
+matching the live `concept_menu.ppm` capture pixel-for-pixel (the 12th topic is
+`why`, correcting the earlier "44" glyph misread). What this resolves:
+  - #6 ON-PLANET TOPICS: every character's conversation menu is a 0xA3 menu
+    (e.g. SCRIPT3: izwal/food/planet/reproduction; war/croolis/treasure/battles;
+    the department-store item menus perfume/necktie/jewel, screwdriver/saws/drills,
+    etc.). On-planet interaction = selecting these topics (concept-menu system,
+    already ported/pixel-verified) — labels now decodable, not "guesswork".
+  - #3 NAV DESTINATIONS: the planet/location names are 0xA3 menus too —
+    SCRIPT3@0x2d7f [talk,corpo,magnus,vista,erazor,trashlando,tumul,pterra,Eden];
+    SCRIPT4@0x2261 [erazor,mastachok,qx20,tumul,rondo,cyberock,troma,ekatomb,…].
+  - SCRIPT2's own menus include the top-level [optimization,consultation,
+    explanations,play,help], numerology [one..nine] (what the port currently
+    shows), the character list [Bob_Morlock,Honk,Ark,Ma,Orxx,Olga,…], etc.
+REMAINING (port wiring, not RE): map each 0xA3 menu to its conversation beat /
+help* handler so the port shows the RIGHT menu at each point (the menus are
+emitted inline in COD/BAS flow order; associate by the enclosing function). The
+LABEL SOURCE — the documented residual — is now fully decoded from disk.
