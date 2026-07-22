@@ -2342,19 +2342,23 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
 - [x] TB.BIG decoded + ported (`src/tbbig.rs`), bridge interaction decompiled + ported
       (`src/bridge.rs`), engine console = real panorama, end-to-end pixel test vs the
       live game (mean_abs 2.58). See "TB.BIG = THE BRIDGE 360° PANORAMA".
-- [ ] **Pointing-hand cursor**: the game's bridge cursor is a teal pointing hand drawn
-      over the panorama (visible in the live captures). NOT in blood.dat, tb.big
-      (fully accounted), any loose .SPR, or the boot file-open trace — it is
-      runtime-composited. LEAD (this session): the hand is one of the bridge overlay
-      ENTITIES 0x15..0x1F in the DS:0x6212 table — page_flip calls 0x299:0x1467
-      (sprite_slot_commit_dirty_range) with ax=0x15 bx=0x1f, and the station-record
-      handlers write kinds 0x15/0x14 into [rec+2]; 0x299:0x1241 is
-      entity_flag_state_transition (AX=entity id), not a gfx call. Next: at the live
-      console, dump entity 0x15/0x14 records (gs:0x6212+id*32) + follow the sprite
-      descriptor ptr (+4 = pixels) to find the hand's pixel source; it may be a
-      real-time-shaded 3D mesh (KLAY.SPR = 256-entry table, likely a shading LUT).
-      Note: station records 4/5 (live 0x2A1B dump) hold static boxes {18,111,96,47} /
-      {215,112,75,27} + screen positions at +0x14 — the hand's rest anchors.
+- [ ] **Pointing-hand cursor = a REAL-TIME 3D MODEL rendered by manu3.xdb**
+      (SOLVED-source, port pending; 2026-07-21 evening). Method that found it:
+      BRIDGEPROBE diffs two cursor parks (Runtime::screen_indices) -> hand bbox +
+      palette (the hand uses the baked teal DAC ramp 240..249 + shadow 67/68 —
+      shades of a lit 3D surface), then Machine.watch on colour 246 writes ->
+      MANY writer ips in runtime segment 0x166C (a polygon rasterizer), dumped and
+      byte-matched: **segment 0x166C = manu3.xdb loaded at its file offset 0**
+      ("manu" = French *main* = hand; manu3 = the 3D-hand overlay, not just the
+      OPTION menu). The transform routine at +0x477 is SHARED by amer/croolis/
+      scrut.xdb (each carries a copy = the common 3D engine core). Hand mesh +
+      shade tables live in manu3's data (runtime ds 0x17A3/0x1C94/0x2094; dumps in
+      the handprobe4 scratchpad, regenerable via BRIDGEPROBE). NEXT: decompile
+      manu3's polygon pipeline (transform +0x477 region, rasterizer write sites
+      0x2AF..0x13xx) + extract the hand mesh -> port as the bridge cursor
+      (src/manu3.rs already ports the overlay's menu/camera logic). Entities
+      0x6212[0x10..0x20] are all zero at the console — NOT the hand (dead end).
+      Station records 4/5 (+0x14 positions) are the hand's rest anchors.
 - [ ] **Nav sector merge**: rotate to frames 72..107 = the pyramid navigation room.
       Verify vs the live ring captures (ringprobe rotate_*.ppm) what the real nav shows
       (destination pyramids? labels?) and port destination selection onto the panorama

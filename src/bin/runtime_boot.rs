@@ -414,21 +414,48 @@ fn main() {
         // the hand (screen ~(85,130) at the console — the hand hovers there) and
         // report which code writes it + what ds:si (pixel source) it reads.
         {
-            let bb_off = rt.m.read8(g, 0x5229) as u32 | ((rt.m.read8(g, 0x522a) as u32) << 8);
-            let bb_seg = rt.m.read8(g, 0x522b) as u32 | ((rt.m.read8(g, 0x522c) as u32) << 8);
-            let linear = (bb_seg * 16 + bb_off) as usize + 130 * 320 + 85;
-            println!("back buffer = {bb_seg:04x}:{bb_off:04x}, watching hand pixel linear {linear:#x}");
-            rt.m.watch = Some((0, usize::MAX..usize::MAX)); // unused variant off
-            rt.m.watch = None;
-            rt.m.watch_addr = Some(linear);
+            // 1. Locate the hand: park the cursor at two spots, snapshot the visible
+            //    frame at each, and diff — the moved pixels are the hand sprite.
+            rt.set_mouse_pos(160, 60);
             let _ = rt.run(rt.cpu.steps + 6_000_000);
-            let mut seen = std::collections::HashSet::new();
-            for &(v, cs, ip) in rt.m.addr_hits.iter() {
-                if seen.insert((cs, ip)) {
-                    println!("hand pixel write: value {v:#04x} from {cs:04x}:{ip:04x}");
-                }
+            let a = rt.screen_indices();
+            rt.set_mouse_pos(160, 160);
+            let _ = rt.run(rt.cpu.steps + 6_000_000);
+            let b = rt.screen_indices();
+            let diff: Vec<usize> = (0..a.len().min(b.len())).filter(|&i| a[i] != b[i]).collect();
+            let (mut x0, mut y0, mut x1, mut y1) = (320usize, 200usize, 0usize, 0usize);
+            for &i in &diff {
+                let (x, y) = (i % 320, i / 320);
+                x0 = x0.min(x); x1 = x1.max(x); y0 = y0.min(y); y1 = y1.max(y);
             }
-            rt.m.watch_addr = None;
+            println!("hand diff: {} px, bbox x{x0}..{x1} y{y0}..{y1}", diff.len());
+            let mut hist = std::collections::HashMap::new();
+            for &i in &diff { *hist.entry(b[i]).or_insert(0u32) += 1; }
+            let mut top: Vec<_> = hist.into_iter().collect();
+            top.sort_by_key(|&(_, n)| std::cmp::Reverse(n));
+            println!("hand palette indices (top): {:?}", &top[..top.len().min(10)]);
+            // 2. Watch every write of the hand's dominant colour (246) anywhere:
+            //    the writer's cs:ip is the hand blitter, and ds:si its pixel source.
+            rt.m.watch = Some((246, 0..0x100000));
+            rt.m.watch_hits.clear();
+            let _ = rt.run(rt.cpu.steps + 4_000_000);
+            for &(cs, ip, ds, si) in rt.m.watch_hits.iter() {
+                println!("hand colour write from {cs:04x}:{ip:04x} (ds:si={ds:04x}:{si:04x})");
+            }
+            rt.m.watch = None;
+            // 3. Identify the writer segment's contents (dynamic overlay?): dump it
+            //    plus the source data segments for offline matching.
+            if let Some(&(cs, _, ds, _)) = rt.m.watch_hits.first() {
+                for (seg, len, tag) in [(cs, 0x4000usize, "code"), (ds, 0x4000, "data")] {
+                    let base = (seg as usize) * 16;
+                    std::fs::write(
+                        out.join(format!("hand_{tag}_{seg:04x}.bin")),
+                        &rt.m.mem[base..(base + len).min(rt.m.mem.len())],
+                    )
+                    .unwrap();
+                }
+                println!("hand code/data segments dumped");
+            }
         }
         // Dump the bridge overlay entity records (gs:0x6212 + id*32, ids 0x10..0x20
         // — page_flip commits 0x15..0x1F) to find the pointing-hand's pixel source.

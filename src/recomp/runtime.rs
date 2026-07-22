@@ -2093,6 +2093,31 @@ impl Runtime {
         out
     }
 
+    /// 320x200 palette-INDEX screenshot (same CRTC compositing as
+    /// [`Runtime::screenshot_rgb`], without the DAC) — for pixel-identity diffs.
+    pub fn screen_indices(&self) -> Vec<u8> {
+        let vga = self.m.vga.as_deref().expect("runtime always has vga");
+        let start = ((self.crtc[0x0c] as usize) << 8) | self.crtc[0x0d] as usize;
+        let stride = {
+            let s = self.crtc[0x13] as usize * 2;
+            if s == 0 { 80 } else { s }
+        };
+        let mut out = Vec::with_capacity(320 * 200);
+        for y in 0..200 {
+            for x in 0..320 {
+                let px = if vga.chain4 {
+                    let i = y * 320 + x;
+                    vga.planes[(i & 3) * 0x10000 + (i >> 2)]
+                } else {
+                    let cell = (start + y * stride + (x >> 2)) & 0xffff;
+                    vga.planes[(x & 3) * 0x10000 + cell]
+                };
+                out.push(px);
+            }
+        }
+        out
+    }
+
     pub fn write_ppm(&self, path: &Path) -> std::io::Result<()> {
         let mut data = b"P6\n320 200\n255\n".to_vec();
         data.extend_from_slice(&self.screenshot_rgb());
