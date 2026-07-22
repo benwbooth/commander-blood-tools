@@ -407,6 +407,11 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     .ok();
     let mut chatter: Option<commander_blood_tools::audio::MusicPlayer> = None;
     let mut chatter_done_line: Option<usize> = None;
+    // Chatter burble state (decoded @0xB898): 4-tick throttle ([0xB2F]), last random pick
+    // ([0xC4D], never repeated back-to-back), and a simple LCG for the roll.
+    let mut chatter_throttle: u32 = 0;
+    let mut chatter_prev: Option<u32> = None;
+    let mut chatter_seed: u32 = 0x1234_5678;
 
     // Load SCRIPT<n>'s dialogue into the engine (the destination's scene) and start
     // that scene's background music, as the game does per location.
@@ -1134,6 +1139,14 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     bank.clip_count(),
                 ) {
                     if let Some(clip) = bank.clip(idx) {
+                        // Voice-paced hold: the real game keeps the line up while its voice
+                        // plays (advance gated on SB playback completion) — hold at least the
+                        // clip's duration in engine frames (18.2 fps ticks), plus a beat.
+                        if clip.sample_rate > 0 {
+                            let secs = clip.pcm.len() as f32 / clip.sample_rate as f32;
+                            let frames = (secs * 18.2).ceil() as u32 + 4;
+                            engine.hold_current_line_at_least(frames);
+                        }
                         voice = commander_blood_tools::audio::MusicPlayer::start_once(
                             clip.pcm.clone(),
                             clip.sample_rate,
@@ -1143,25 +1156,43 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
             }
         }
         let _ = &voice; // keep the stream alive while the line plays
-        // Subtitle chatter: when the current line finishes revealing, play tb.snd
-        // clip 0 once (per decoded @0x94BA behaviour).
+        // Subtitle CHATTER (decoded @0xB898): while a line is REVEALING (the chatter flag
+        // [0xCFB] is set until the reveal completes @0x94CF), every 4 ticks the game plays a
+        // RANDOM burble clip — index 7 + random(0..9) of the talk-burble bank tb.snd (17 clips;
+        // 7..16 are ten ~0.12s blips), never repeating the previous pick ([0xC4D]). This is the
+        // continuous honk-burble under the text, not a single end-of-line blip.
         if !engine.on_ship {
-            let line = engine.dialogue_cursor();
             if let Some((revealed, total)) = engine.subtitle_reveal_progress() {
-                if revealed >= total && chatter_done_line != Some(line) {
-                    chatter_done_line = Some(line);
-                    if let Some(bank) = &tb_snd {
-                        if let Some(clip) = bank.clip(0).filter(|c| !c.pcm.is_empty()) {
-                            chatter = commander_blood_tools::audio::MusicPlayer::start_once(
-                                clip.pcm.clone(),
-                                clip.sample_rate,
-                            );
+                if revealed < total {
+                    if chatter_throttle == 0 {
+                        chatter_throttle = 4; // [0xB2F] = 4 tick throttle
+                        if let Some(bank) = &tb_snd {
+                            // random 0..9, != previous (the asm re-rolls until different)
+                            chatter_seed = chatter_seed.wrapping_mul(1103515245).wrapping_add(12345);
+                            let mut pick = (chatter_seed >> 16) % 10;
+                            if Some(pick) == chatter_prev {
+                                pick = (pick + 1) % 10;
+                            }
+                            chatter_prev = Some(pick);
+                            if let Some(clip) =
+                                bank.clip(7 + pick as usize).filter(|c| !c.pcm.is_empty())
+                            {
+                                chatter = commander_blood_tools::audio::MusicPlayer::start_once(
+                                    clip.pcm.clone(),
+                                    clip.sample_rate,
+                                );
+                            }
                         }
+                    } else {
+                        chatter_throttle -= 1;
                     }
+                } else {
+                    chatter_throttle = 0;
                 }
             }
         }
         let _ = &chatter;
+        let _ = &chatter_done_line;
         // Clear the whole window (letterbox borders + a full erase so nothing from the
         // previous frame can bleed through), then scale the framebuffer in.
         for b in image.iter_mut() {

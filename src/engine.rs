@@ -398,6 +398,10 @@ pub struct EngineState {
     /// opening (auto-plays); each concept-menu interaction plays the next segment then re-holds —
     /// the location scripts' conversation is menu-driven, not a full-stream monologue.
     dialogue_segments: Vec<usize>,
+    /// Per-line minimum hold override, set by the driver from the VOICE clip's duration —
+    /// the real game holds a line while its voice plays (the SB playback completion gates the
+    /// advance), so a long clip must not be cut off by the text-length hold. (line, frames).
+    line_min_hold: Option<(usize, u32)>,
     /// Index of the next unplayed segment in `dialogue_segments`.
     dialogue_segment_pos: usize,
     /// Driver-set floor on the per-line hold (the faithful hold is computed from the
@@ -544,6 +548,7 @@ impl EngineState {
             dialogue_cursor: 0,
             autoplay_end: None,
             dialogue_segments: Vec::new(),
+            line_min_hold: None,
             dialogue_segment_pos: 0,
             dialogue_hold_frames: 60,
             text_speed_step: crate::vm::text_speed_step_from_setting(3),
@@ -1489,6 +1494,12 @@ impl EngineState {
 
     /// Play the next unplayed dialogue segment (a concept-menu interaction advances the
     /// conversation one beat), then re-hold at the menu. Returns false when exhausted.
+    /// Driver hook: the current line's voice clip lasts `frames` engine frames — hold the line
+    /// at least that long (voice-paced advance, as the real game gates on SB completion).
+    pub fn hold_current_line_at_least(&mut self, frames: u32) {
+        self.line_min_hold = Some((self.dialogue_cursor, frames));
+    }
+
     pub fn play_next_dialogue_segment(&mut self) -> bool {
         let Some(&start) = self.dialogue_segments.get(self.dialogue_segment_pos) else {
             return false;
@@ -2380,6 +2391,11 @@ impl EngineState {
     /// (`gs:[0xB35] = step << 2` @0x94D4) before the next line. `dialogue_hold_frames`
     /// acts as a driver-set floor (tests use a huge floor to freeze playback).
     fn current_line_hold(&self) -> u32 {
+        // Voice-paced floor: hold at least as long as the line's voice clip (driver-supplied).
+        let min_hold = match self.line_min_hold {
+            Some((line, frames)) if line == self.dialogue_cursor => frames,
+            _ => 0,
+        };
         use crate::vm::{reveal_complete_hold_ticks, reveal_frames_per_char};
         let len = self
             .dialogue_texts
@@ -2390,6 +2406,7 @@ impl EngineState {
         let reveal = len.saturating_mul(u32::from(reveal_frames_per_char(step)));
         let hold = u32::from(reveal_complete_hold_ticks(step));
         self.dialogue_hold_frames.max(reveal.saturating_add(hold))
+        .max(min_hold)
     }
 
     /// Whether a dialogue scene is currently the active view (playing, with no overlay
