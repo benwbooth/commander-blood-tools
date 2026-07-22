@@ -132,13 +132,6 @@ fn assemble_words(parts: &[String]) -> String {
     out
 }
 
-/// A ship-bridge station the player can click to open its screen.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum BridgeStation {
-    Nav,
-    Comms,
-    Cyberspace,
-}
 
 /// A world being visited from the nav map: its decoded `fd/` rooms (paths, decoded
 /// lazily) with the currently-shown room. Rooms are the world's floor/view-angle
@@ -260,10 +253,12 @@ pub struct EngineState {
     cyber_steer: i32,
     /// Whether the cyberspace traversal has reached its destination (last segment).
     pub cyber_arrived: bool,
-    /// The ship-bridge hub: clickable station icons (`BCARTE`=nav map, `BTV`=comms,
-    /// `BHYPER`=cyberspace) that open each screen — the interface tying them together.
-    /// Each entry is (icon frame, label, centre x/y, station id).
-    bridge_stations: Vec<(SpriteFrameImage, &'static str, (i32, i32), BridgeStation)>,
+    /// The real ship bridge: the TB.BIG 360° panorama ([`crate::tbbig`]) whose
+    /// frames ARE the console/menu/nav-room/Orxx views (golden menu text baked in).
+    panorama: Option<crate::tbbig::BridgePanorama>,
+    /// The decompiled bridge interaction state ([`crate::bridge`]): mouse-push
+    /// steering, station seeks, and the golden-menu hit testing/highlighting.
+    pub bridge: crate::bridge::BridgeView,
     /// The ship-console UI font (`HONKF.SPR`): 49 8×8 glyphs — A–Z, 0–9, punctuation —
     /// the game draws its console menu labels with. Empty until loaded.
     console_font: Vec<SpriteFrameImage>,
@@ -417,7 +412,8 @@ impl EngineState {
             cryobox_scene: None,
             cryobox_active: false,
             cyber_segment: 0,
-            bridge_stations: Vec::new(),
+            panorama: None,
+            bridge: crate::bridge::BridgeView::default(),
             console_font: Vec::new(),
             bridge_active: false,
             menu_submenu_active: false,
@@ -633,35 +629,25 @@ impl EngineState {
         self.scene_frame = 0;
     }
 
-    /// Load the ship-bridge hub station icons from their `.SPR` banks (frame 0 of each)
-    /// and lay them out across the console. `iso` is the directory holding the sprite
-    /// banks. Stations without a decodable icon are skipped.
+    /// Load the real ship bridge: the `TB.BIG` 360° panorama archive (the whole
+    /// bridge as 180 pre-rendered frames — see [`crate::tbbig`]). `iso` is the CD
+    /// root directory. Without it the bridge cannot render (no fabricated stand-in).
     pub fn load_bridge(&mut self, iso: &Path) {
-        let load = |name: &str| -> Option<SpriteFrameImage> {
-            let data = std::fs::read(iso.join(format!("{name}.SPR"))).ok()?;
-            decode_sprite_bank_indices(&data)?.into_iter().next()
-        };
-        let layout: [(&str, &'static str, (i32, i32), BridgeStation); 3] = [
-            ("BCARTE", "MAP", (70, 120), BridgeStation::Nav),
-            ("BTV", "COMMS", (160, 120), BridgeStation::Comms),
-            ("BHYPER", "CYBER", (250, 120), BridgeStation::Cyberspace),
-        ];
-        self.bridge_stations = layout
-            .iter()
-            .filter_map(|(spr, label, pos, id)| load(spr).map(|f| (f, *label, *pos, *id)))
-            .collect();
+        for name in ["TB.BIG", "tb.big"] {
+            if let Ok(data) = std::fs::read(iso.join(name)) {
+                self.panorama = crate::tbbig::BridgePanorama::parse(data);
+                if self.panorama.is_some() {
+                    return;
+                }
+            }
+        }
     }
 
-    /// The ship-console menu labels, drawn on the bridge in the console font. Index 0
-    /// (`HONK`) is verified — it is the cook's daily-fare menu (SCRIPT1). The rest
-    /// (`TELEPHONE`, `CRYOBOX`, `MENU`, `OPTION`) are the real labels but their exact
-    /// functions are not yet reverse-engineered.
+    /// The ship-console menu row order, top to bottom, exactly as baked into the
+    /// golden menu of the TB.BIG panorama frames (verified against the live
+    /// capture): HONK (the cook's daily fare, SCRIPT1), TELEPHONE, CRYOBOX,
+    /// MENU, OPTION.
     pub const CONSOLE_MENU: [&'static str; 5] = ["HONK", "TELEPHONE", "CRYOBOX", "MENU", "OPTION"];
-    /// The console menu's screen layout (top-left of the label column, row pitch). Placed on
-    /// the RIGHT of the panel with the eye-orb on the left, as the real console lays it out.
-    pub const CONSOLE_MENU_X: i32 = 196;
-    pub const CONSOLE_MENU_Y: i32 = 78;
-    pub const CONSOLE_MENU_PITCH: i32 = 14;
 
     /// The console MENU option's submenu, decoded by driving the real game (clicking MENU
     /// opens these two items): EXPLANATIONS (the tutorial/help) and GAME (play). Drawn over
@@ -669,31 +655,47 @@ impl EngineState {
     pub const MENU_SUBMENU: [&'static str; 2] = ["EXPLANATIONS", "GAME"];
 
     /// Map a click to a MENU-submenu item (0 = EXPLANATIONS, 1 = GAME) when the submenu is
-    /// showing and the click lands on a row; `None` otherwise. Matches `render_bridge`.
+    /// showing and the click lands on a row of the real menu box; `None` otherwise.
     pub fn menu_submenu_click(&self, x: u16, y: u16) -> Option<usize> {
-        if !self.menu_submenu_active || self.console_font.is_empty() {
+        if !self.menu_submenu_active {
             return None;
         }
-        let (px, py) = (x as i32, y as i32);
-        if px < Self::CONSOLE_MENU_X || px > Self::CONSOLE_MENU_X + 96 {
-            return None;
-        }
-        (0..Self::MENU_SUBMENU.len())
-            .find(|&i| (py - (Self::CONSOLE_MENU_Y + i as i32 * Self::CONSOLE_MENU_PITCH)).abs() <= 5)
+        let mut probe = self.bridge.clone();
+        Self::point_virtual_cursor(&mut probe, x, y);
+        probe
+            .menu_row_under_cursor()
+            .filter(|&row| row < Self::MENU_SUBMENU.len())
     }
 
-    /// Map a click to a ship-console menu option index (0 = HONK … 4 = OPTION) when it
-    /// lands on one; matches `render_bridge`'s menu layout. `None` off the menu.
+    /// Aim the bridge's virtual ring-space cursor at an absolute screen point —
+    /// the inverse of the game's `screen = ring - (frame*8 - 160)` rebase — so
+    /// absolute click coordinates can be tested with the decoded hit math.
+    fn point_virtual_cursor(view: &mut crate::bridge::BridgeView, x: u16, y: u16) {
+        view.ring_mouse_x = (x as i32
+            + view.frame as i32 * crate::bridge::RING_PX_PER_FRAME
+            - crate::bridge::HALF_SCREEN)
+            .rem_euclid(crate::tbbig::ANGLE_UNITS_PER_REVOLUTION as i32);
+        view.mouse_y = y as i32;
+    }
+
+    /// Map a click to a ship-console menu option index (0 = HONK … 4 = OPTION)
+    /// using the decoded golden-menu hit math (`0x8613`): the menu is only
+    /// clickable while its panorama sector is in view, its box scrolls with the
+    /// rotation, and rows are 18 px apart. `None` off the menu.
     pub fn console_menu_click(&self, x: u16, y: u16) -> Option<usize> {
-        if self.console_font.is_empty() {
-            return None;
-        }
-        let (px, py) = (x as i32, y as i32);
-        if px < Self::CONSOLE_MENU_X || px > Self::CONSOLE_MENU_X + 96 {
-            return None;
-        }
-        (0..Self::CONSOLE_MENU.len())
-            .find(|&i| (py - (Self::CONSOLE_MENU_Y + i as i32 * Self::CONSOLE_MENU_PITCH)).abs() <= 5)
+        let mut probe = self.bridge.clone();
+        Self::point_virtual_cursor(&mut probe, x, y);
+        probe.menu_row_under_cursor()
+    }
+
+    /// A left-button press on the bridge at absolute screen `(x, y)`: runs the
+    /// decoded click paths — a golden-menu row selects that console function
+    /// (returned as 0 = HONK … 4 = OPTION, with the view seeking to centre the
+    /// menu), while a hit on the current station's eye-orb arms a station seek
+    /// (rotating the view there) and returns `None`.
+    pub fn bridge_press(&mut self, x: u16, y: u16) -> Option<usize> {
+        Self::point_virtual_cursor(&mut self.bridge, x, y);
+        self.bridge.click().map(|item| item as usize - 1)
     }
 
     /// Load the ship-console UI font from `HONKF.SPR` (49 8×8 glyphs: A–Z, 0–9,
@@ -767,124 +769,65 @@ impl EngineState {
         pen
     }
 
-    /// Render the ship-bridge hub: the ship's real control console (`ORX.FD`, the Orxx
-    /// organic control panel) with the console menu + station-button sprites overlaid as
-    /// click targets (see [`bridge_click`]). Falls back to the nav chart, then the decoded
-    /// starfield, when `ORX.FD` isn't loaded.
+    /// Render the real ship bridge: the current TB.BIG panorama frame composited
+    /// over the window starfield, with the golden menu's five palette rows
+    /// programmed for hover highlighting — the decompiled composite order of the
+    /// original per-tick path (`page_flip` 0x954A: starfield projection first,
+    /// then the panorama unpacked with colour-0 transparency so the stars show
+    /// through the black window regions).
     fn render_bridge(&mut self) {
-        // Background: the real ship CONSOLE (ORX.FD), else the nav chart, else the starfield.
-        if let Some(bg) = self.console_bg.as_ref().or(self.nav_chart.as_ref()).filter(|c| {
-            c.width == ENGINE_SCREEN_WIDTH && c.height == ENGINE_SCREEN_HEIGHT
-        }) {
-            self.framebuffer.copy_from_slice(&bg.pixels);
-            self.scene_palette = bg.palette;
+        // Advance the decompiled steering / station-seek state machine.
+        self.bridge.update_view();
+        self.compass_angle = self.bridge.frame;
+        // 1. Starfield through the windows: the ship-3D point cloud projected at
+        //    the view's yaw — the panorama frame index IS the yaw index
+        //    (bridge_frame_to_yaw_sync 0x97E4 copies [0x2795] -> [0x2F6D]).
+        let mut prng = BloodPrng::seeded_from_rtc_seconds(self.starfield_seed);
+        let angles = Ship3dMatrixAngles {
+            angle_2f71: 0,
+            projection_angle_2f6d: self.bridge.frame % 180,
+            angle_2f6f: 0,
+        };
+        let origin = Ship3dProjectionOrigin { x: 0x8000, y: 0x8000, z: 0x8000 };
+        let viewport = Ship3dProjectionViewport {
+            left: 0,
+            right: ENGINE_SCREEN_WIDTH as u16,
+            top: 0,
+            bottom: ENGINE_SCREEN_HEIGHT as u16,
+        };
+        if let Some(render) = render_ship_3d_starfield(&mut prng, angles, origin, viewport) {
+            self.framebuffer.copy_from_slice(&render.buffer);
         } else {
-            let mut prng = BloodPrng::seeded_from_rtc_seconds(self.starfield_seed);
-            let angles = Ship3dMatrixAngles {
-                angle_2f71: 0,
-                projection_angle_2f6d: 0,
-                angle_2f6f: 0,
-            };
-            let origin = Ship3dProjectionOrigin { x: 0x8000, y: 0x8000, z: 0x8000 };
-            let viewport = Ship3dProjectionViewport {
-                left: 0,
-                right: ENGINE_SCREEN_WIDTH as u16,
-                top: 0,
-                bottom: ENGINE_SCREEN_HEIGHT as u16,
-            };
-            if let Some(render) = render_ship_3d_starfield(&mut prng, angles, origin, viewport) {
-                self.framebuffer.copy_from_slice(&render.buffer);
-            } else {
-                self.framebuffer.iter_mut().for_each(|p| *p = 0);
-            }
-            self.scene_palette = crate::palette::game_screen_palette();
+            self.framebuffer.iter_mut().for_each(|p| *p = 0);
         }
-        self.scene_palette[0xFE] = [245, 245, 160];
-        // Composite the ship's glowing eye-orb (BORXX.SPR) onto the console, as the real
-        // console shows. The orb frame is an orange sphere on a teal backing; the teal is a
-        // border-connected region, so flood-fill from the frame edges to mark it transparent
-        // and blit only the orb itself. ORX.FD uses only indices 0/193..207, so overlay the
-        // game palette on the orb's low indices (2..121) — no palette conflict.
-        if self.console_bg.is_some() && !self.hud_orb.is_empty() {
-            let game_pal = crate::palette::game_screen_palette();
-            for i in 2..=121usize {
-                self.scene_palette[i] = game_pal[i];
-            }
-            let frame = self.hud_orb[0].clone(); // the clean, mostly-orb frame
-            let (w, h) = (frame.width, frame.height);
-            let (cx, cy) = (96i32, 116i32);
-            // Color-key: the orb is orange (red > blue); its teal backing is blue-dominant.
-            // Blit only the orb pixels (red > blue) so the teal box drops out.
-            for y in 0..h {
-                for x in 0..w {
-                    let idx = frame.indices[y * w + x];
-                    let c = game_pal[idx as usize];
-                    if idx == 0 || c[2] >= c[0] {
-                        continue; // transparent (index 0) or teal/blue backing
-                    }
-                    let px = cx + x as i32 - w as i32 / 2;
-                    let py = cy + y as i32 - h as i32 / 2;
-                    if px >= 0 && (px as usize) < ENGINE_SCREEN_WIDTH && py >= 0 && (py as usize) < ENGINE_SCREEN_HEIGHT {
-                        self.framebuffer[py as usize * ENGINE_SCREEN_WIDTH + px as usize] = idx;
-                    }
-                }
+        // 2. The panorama frame, colour 0 transparent (windows keep the stars).
+        if let Some(panorama) = self.panorama.as_ref() {
+            if let Some(header) =
+                panorama.unpack_frame_over(self.bridge.frame as usize, &mut self.framebuffer, true)
+            {
+                // Refresh the current station's eye-orb click rectangle exactly
+                // as the frame loader does (0x9877..0x9889).
+                let orb_box = (header.box_x != 0xFFFF)
+                    .then_some([header.box_x, header.box_y, header.box_width, header.box_height]);
+                self.bridge.set_frame_orb_box(header.station, orb_box);
             }
         }
-        // NOTE: the station-icon sprites (BCARTE/BTV/BHYPER) are NOT blitted here — they
-        // carry their own palette indices that read as black boxes over ORX.FD's console
-        // palette, and the real console is the organic panel + the text menu, not those
-        // icons. `bridge_click` still maps their positions so navigation keeps working.
-        // The ship-console function menu, drawn in the console's own HONKF font — the
-        // real menu the game shows (HONK the cook's fare, the telephone, the cryobox…).
-        // When the MENU option's submenu is open, the game overlays {EXPLANATIONS, GAME}
-        // on the top rows (decoded from the real console); mirror that here.
-        if !self.console_font.is_empty() {
-            const MENU_COLOR: u8 = 0xFD;
-            const MENU_SHADOW: u8 = 0xFB;
-            const MENU_BOX: u8 = 0xFA;
-            self.scene_palette[MENU_COLOR as usize] = [240, 208, 48]; // console gold
-            self.scene_palette[MENU_SHADOW as usize] = [60, 40, 8]; // shadow for a 3D read
-            self.scene_palette[MENU_BOX as usize] = [66, 52, 16]; // golden menu-panel box
-            let labels: &[&str] = if self.menu_submenu_active {
-                &Self::MENU_SUBMENU
-            } else {
-                &Self::CONSOLE_MENU
-            };
-            let (mx, my0) = (Self::CONSOLE_MENU_X as usize, Self::CONSOLE_MENU_Y);
-            // The real console frames the menu in a golden panel box; fill it behind the
-            // labels so the gold text reads as an embossed menu, not floating letters.
-            let bx0 = mx.saturating_sub(6);
-            let by0 = (my0 - 4).max(0) as usize;
-            let bx1 = (mx + 92).min(ENGINE_SCREEN_WIDTH);
-            let by1 = ((my0 + Self::CONSOLE_MENU_PITCH * labels.len() as i32 + 2) as usize)
-                .min(ENGINE_SCREEN_HEIGHT);
-            for y in by0..by1 {
-                for x in bx0..bx1 {
-                    self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] = MENU_BOX;
-                }
-            }
-            for (i, opt) in labels.iter().enumerate() {
-                let y = (my0 + i as i32 * Self::CONSOLE_MENU_PITCH) as usize;
-                // Drop shadow first (offset +1,+1) then the gold text — an embossed look
-                // closer to the real console's golden 3D menu.
-                self.draw_console_text(opt, mx + 1, y + 1, MENU_SHADOW);
-                self.draw_console_text(opt, mx, y, MENU_COLOR);
+        // 3. The game-screen palette + the menu rows' dynamic DAC entries
+        //    (0x7B..0x7F: idle dark gold, hovered bright — 0x862B..0x86A3).
+        self.scene_palette = crate::palette::game_screen_palette();
+        self.bridge.apply_menu_palette(&mut self.scene_palette);
+        // 4. The MENU submenu overlay ({EXPLANATIONS, GAME}, decoded by driving
+        //    the real game) drawn over the golden menu box in the console font.
+        if self.menu_submenu_active && !self.console_font.is_empty() {
+            const SUBMENU_COLOR: u8 = 0xFD;
+            self.scene_palette[SUBMENU_COLOR as usize] = [240, 208, 48];
+            let delta = self.bridge.frame as i32 - crate::bridge::MENU_REST_FRAME as i32;
+            let left = (177 - delta * crate::bridge::RING_PX_PER_FRAME).max(0) as usize;
+            for (i, opt) in Self::MENU_SUBMENU.iter().enumerate() {
+                let y = (0x48 + i as i32 * 0x12).max(0) as usize;
+                self.draw_console_text(opt, left, y, SUBMENU_COLOR);
             }
         }
-    }
-
-    /// Map a click at `(x, y)` to the station whose icon it falls within (nearest
-    /// centre within the icon's half-extents), if any. A driver calls this on the
-    /// bridge screen to open the selected station's screen.
-    pub fn bridge_click(&self, x: u16, y: u16) -> Option<BridgeStation> {
-        let (px, py) = (x as i32, y as i32);
-        self.bridge_stations
-            .iter()
-            .find(|(f, _, (cx, cy), _)| {
-                let (hw, hh) = (f.width as i32 / 2 + 4, f.height as i32 / 2 + 4);
-                (px - cx).abs() <= hw && (py - cy).abs() <= hh
-            })
-            .map(|(_, _, _, id)| *id)
     }
 
     /// Load the cyberspace hyperspace-tunnel animations (`sq/hyper_*.hnm`), sorted so
@@ -2487,6 +2430,13 @@ impl EngineState {
     /// this faithful control-flow skeleton; for now it advances input + bookkeeping
     /// so the loop is drivable and testable headlessly.
     pub fn step(&mut self, input: MouseInput) {
+        // This frame's relative cursor motion (before poll_input refreshes
+        // prev_pos) — the bridge steering consumes deltas, mirroring how the
+        // original accumulates warped-cursor movement in ring space.
+        let motion = (
+            input.x as i32 - self.prev_pos.0 as i32,
+            input.y as i32 - self.prev_pos.1 as i32,
+        );
         self.poll_input(input);
         // Title art (BLOOD.LBM) shows first when armed, until dismissed.
         if self.title_screen.is_some() {
@@ -2508,8 +2458,11 @@ impl EngineState {
             self.frame += 1;
             return;
         }
-        // Ship-bridge hub takes precedence when active: show the station console.
-        if self.bridge_active && !self.bridge_stations.is_empty() {
+        // Ship bridge takes precedence when active: the TB.BIG panorama with
+        // mouse-push steering. Relative cursor motion feeds the ring-space
+        // anchor exactly as the original's warped hardware cursor accumulates.
+        if self.bridge_active {
+            self.bridge.move_mouse(motion.0, motion.1);
             self.render_bridge();
             self.countdown = self.countdown.saturating_sub(1);
             self.frame += 1;
@@ -2628,22 +2581,80 @@ pub fn mode_x_to_linear(byte_offset: usize, plane: usize) -> usize {
 mod tests {
     use super::*;
 
+    /// End-to-end faithfulness check for the bridge: the engine's full render of
+    /// the console (panorama frame 55 + starfield windows + menu palette rows)
+    /// must match the REAL game's console screen captured from the emulator
+    /// running the original BLOODPRG.EXE (`BRIDGEPROBE`). The tolerance covers
+    /// the pointing-hand cursor sprite (not yet ported) and the RNG starfield.
     #[test]
-    fn bridge_hub_renders_stations_and_maps_clicks() {
+    fn bridge_console_matches_live_game_capture() {
         let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
-            .iter().map(Path::new).find(|p| p.join("BCARTE.SPR").exists());
+            .iter().map(Path::new).find(|p| p.join("TB.BIG").exists());
+        let capture_path = ["accuracy/captures/bridge/console_rest.ppm",
+            "../accuracy/captures/bridge/console_rest.ppm"]
+            .iter().map(Path::new).find(|p| p.exists());
+        let (Some(iso), Some(capture_path)) = (iso, capture_path) else { return };
+        let raw = std::fs::read(capture_path).unwrap();
+        let body_at = raw.windows(4).position(|w| w == b"255\n").unwrap() + 4;
+        let capture = &raw[body_at..];
+        assert_eq!(capture.len(), ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT * 3);
+
+        let mut e = EngineState::new();
+        e.load_bridge(iso);
+        if e.panorama.is_none() { return; }
+        e.bridge_active = true;
+        // Reproduce the live probe's state: view at frame 55, cursor at ring 320
+        // (screen x 40), y 100 — the exact state the capture was taken in.
+        e.bridge.frame = 55;
+        e.bridge.ring_mouse_x = 320;
+        e.bridge.mouse_y = 100;
+        e.step(MouseInput { x: 160, y: 100, buttons: 0 });
+        assert_eq!(e.bridge.frame, 55, "view must not drift during the render");
+
+        let mut total_abs = 0u64;
+        for (pixel, &index) in e.framebuffer.iter().enumerate() {
+            let ours = e.scene_palette[index as usize];
+            for channel in 0..3 {
+                total_abs +=
+                    (ours[channel] as i32 - capture[pixel * 3 + channel] as i32).unsigned_abs() as u64;
+            }
+        }
+        let mean_abs = total_abs as f64 / (ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT * 3) as f64;
+        // Optional visual QA: BRIDGE_DUMP=<path.ppm> writes the rendered frame.
+        if let Ok(dump) = std::env::var("BRIDGE_DUMP") {
+            let mut ppm = format!("P6\n{ENGINE_SCREEN_WIDTH} {ENGINE_SCREEN_HEIGHT}\n255\n").into_bytes();
+            for &index in e.framebuffer.iter() {
+                ppm.extend_from_slice(&e.scene_palette[index as usize]);
+            }
+            std::fs::write(&dump, ppm).unwrap();
+            eprintln!("bridge console render -> {dump} (mean_abs vs live = {mean_abs:.2})");
+        }
+        assert!(
+            mean_abs < 4.0,
+            "port console diverges from the live game: mean_abs = {mean_abs:.2}"
+        );
+    }
+
+    #[test]
+    fn bridge_renders_the_real_panorama() {
+        let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter().map(Path::new).find(|p| p.join("TB.BIG").exists());
         let Some(iso) = iso else { return };
         let mut e = EngineState::new();
         e.load_bridge(iso);
-        if e.bridge_stations.is_empty() { return; }
+        assert!(e.panorama.is_some(), "TB.BIG parses");
         e.bridge_active = true;
-        e.step(MouseInput::default());
-        assert!(e.framebuffer.iter().any(|&p| p != 0), "bridge draws the station console");
-        // Clicks on the laid-out station centres map to their screens.
-        assert_eq!(e.bridge_click(70, 120), Some(BridgeStation::Nav));
-        assert_eq!(e.bridge_click(160, 120), Some(BridgeStation::Comms));
-        assert_eq!(e.bridge_click(250, 120), Some(BridgeStation::Cyberspace));
-        assert_eq!(e.bridge_click(160, 5), None, "empty console area selects nothing");
+        e.step(MouseInput { x: 160, y: 100, buttons: 0 });
+        assert!(e.framebuffer.iter().any(|&p| p != 0), "bridge draws the panorama");
+        // At the menu rest frame, the decoded golden-menu hit math maps clicks to
+        // rows: HONK (row 0) at the box top, OPTION (row 4) at the bottom.
+        e.bridge.frame = crate::bridge::MENU_REST_FRAME;
+        assert_eq!(e.console_menu_click(232, 0x48 + 1), Some(0));
+        assert_eq!(e.console_menu_click(232, 0x48 + 4 * 0x12 + 1), Some(4));
+        assert_eq!(e.console_menu_click(100, 0x48 + 1), None, "left of the menu box");
+        // Away from the menu sector the menu is not clickable at all.
+        e.bridge.frame = 90;
+        assert_eq!(e.console_menu_click(232, 0x48 + 1), None);
     }
 
     #[test]
@@ -2893,10 +2904,9 @@ mod tests {
         let mut e = EngineState::new();
         assert!(e.load_console_font(iso), "console font loads");
         e.load_bridge(iso);
-        e.load_nav_chart(iso);
-        // No submenu clicks resolve until the submenu is open.
-        let x = (EngineState::CONSOLE_MENU_X + 4) as u16;
-        let y0 = EngineState::CONSOLE_MENU_Y as u16;
+        // Submenu rows sit on the real golden-menu box (decoded metrics): with
+        // the menu centred, row 0 starts at y 0x48, pitch 0x12, box x 177..287.
+        let (x, y0) = (232u16, 0x48 + 1);
         assert_eq!(e.menu_submenu_click(x, y0), None, "closed: no submenu hit");
         // Open the submenu (as clicking MENU does) and render it.
         e.menu_submenu_active = true;
@@ -2905,8 +2915,7 @@ mod tests {
         assert_eq!(EngineState::MENU_SUBMENU, ["EXPLANATIONS", "GAME"]);
         // Row 0 = EXPLANATIONS, row 1 = GAME.
         assert_eq!(e.menu_submenu_click(x, y0), Some(0));
-        let y1 = (EngineState::CONSOLE_MENU_Y + EngineState::CONSOLE_MENU_PITCH) as u16;
-        assert_eq!(e.menu_submenu_click(x, y1), Some(1));
+        assert_eq!(e.menu_submenu_click(x, y0 + 0x12), Some(1));
     }
 
     /// Click-to-advance dialogue: a click snaps the current line fully revealed, then moves
@@ -3092,31 +3101,33 @@ mod tests {
         e.render_ship_view();
     }
 
-    /// The ship-console menu renders in the game's own console font (HONKF.SPR): the
-    /// font loads (A–Z/0–9/punct glyphs) and the bridge draws the menu labels.
+    /// The console font (HONKF.SPR) loads, and the real golden menu is present in
+    /// the rendered panorama: its five rows' glyphs are painted with the dedicated
+    /// palette indices 0x7B..0x7F the game programs for hover highlighting.
     #[test]
-    fn console_font_loads_and_renders_menu() {
+    fn console_font_loads_and_menu_rows_render() {
         let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
             .iter().map(Path::new).find(|p| p.join("HONKF.SPR").is_file());
         let Some(iso) = iso else { return };
         let mut e = EngineState::new();
         assert!(e.load_console_font(iso), "HONKF.SPR console font loads");
         e.load_bridge(iso);
-        e.load_nav_chart(iso);
         // HONK = H(7) O(14) N(13) K(10): the mapping must resolve uppercase letters.
         assert_eq!(EngineState::console_glyph_index('H'), Some(7));
         assert_eq!(EngineState::console_glyph_index('0'), Some(26));
+        if e.panorama.is_none() { return; }
         e.bridge_active = true;
-        e.step(MouseInput::default());
-        // The menu is drawn in the reserved console-yellow index 0xFD.
-        let lit = e.framebuffer.iter().filter(|&&p| p == 0xFD).count();
-        assert!(lit > 60, "console menu renders glyphs ({lit} lit)");
+        e.step(MouseInput { x: 160, y: 100, buttons: 0 });
+        // The baked menu glyphs use one palette index per row (0x7B + row).
+        let menu_pixels = e
+            .framebuffer
+            .iter()
+            .filter(|&&p| (0x7B..0x80).contains(&(p as usize)))
+            .count();
+        assert!(menu_pixels > 200, "golden menu rows present ({menu_pixels} px)");
         // A click on the HONK row (option 0) is detected; off-menu clicks are not.
-        assert_eq!(
-            e.console_menu_click(EngineState::CONSOLE_MENU_X as u16 + 4, EngineState::CONSOLE_MENU_Y as u16),
-            Some(0),
-            "HONK console option is clickable",
-        );
+        e.bridge.frame = crate::bridge::MENU_REST_FRAME;
+        assert_eq!(e.console_menu_click(232, 0x48 + 1), Some(0), "HONK row clickable");
         assert_eq!(e.console_menu_click(10, 190), None, "off-menu click hits nothing");
     }
 

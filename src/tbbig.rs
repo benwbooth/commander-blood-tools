@@ -70,17 +70,18 @@ pub struct PanoramaDirEntry {
 }
 
 /// The 10-byte header at the start of each frame chunk. The first 8 bytes are
-/// the frame's animated-region bounding box, copied by `0x981B` into the
-/// station table at DS:0x2A1B + station * 0x18 + 0x0C (all four boxes are reset
-/// to 0xFFFF before the copy); the ninth/tenth byte is the station word that
-/// selects the table entry. A box of all-0xFFFF (frames 21 and 71) marks "no
-/// animated region".
+/// the **eye-orb's clickable rectangle `{x, y, w, h}`** in this frame (field
+/// order proven by the hit test at `0x8269`: `[si]`=x vs mouse x, `[si+2]`=y,
+/// `[si+4]`=w, `[si+6]`=h), copied by `0x981B` into the station table at
+/// DS:0x2A1B + station * 0x18 + 0x0C (all four boxes are reset to 0xFFFF before
+/// the copy); the ninth/tenth byte is the station word that selects the table
+/// entry. A box of all-0xFFFF (frames 21, 64, 71, …) marks "no orb here".
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct PanoramaFrameHeader {
-    pub box_width: u16,
-    pub box_height: u16,
     pub box_x: u16,
     pub box_y: u16,
+    pub box_width: u16,
+    pub box_height: u16,
     /// Which of the four bridge stations this frame belongs to (0..=3):
     /// 0 = wide helm view (frames 0..=21 and 160..=179 — the sector wraps),
     /// 1 = golden console menu (22..=71), 2 = pyramid navigation room
@@ -142,10 +143,10 @@ impl BridgePanorama {
         }
         let word = |at: usize| u16::from_le_bytes([chunk[at], chunk[at + 1]]);
         Some(PanoramaFrameHeader {
-            box_width: word(0),
-            box_height: word(2),
-            box_x: word(4),
-            box_y: word(6),
+            box_x: word(0),
+            box_y: word(2),
+            box_width: word(4),
+            box_height: word(6),
             station: word(8),
         })
     }
@@ -257,14 +258,15 @@ mod tests {
     #[test]
     fn frame_zero_header_matches_binary_observation() {
         let Some(pan) = load_real_archive() else { return };
-        // Directly observed values of the first chunk's header.
+        // Directly observed values of the first chunk's header: the orange
+        // eye-orb of the wide helm view sits at x 133..184, y 130..174.
         assert_eq!(
             pan.frame_header(0).unwrap(),
             PanoramaFrameHeader {
-                box_width: 133,
-                box_height: 130,
-                box_x: 51,
-                box_y: 44,
+                box_x: 133,
+                box_y: 130,
+                box_width: 51,
+                box_height: 44,
                 station: 0
             }
         );

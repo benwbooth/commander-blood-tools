@@ -517,58 +517,55 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     match engine.menu_submenu_click(mx, my) {
                         Some(0) => {
                             engine.menu_submenu_active = false;
+                            engine.bridge.release_menu();
                             engine.bridge_active = false;
                             load_script(&mut engine, &mut music, 1);
                             engine.on_ship = false;
                         }
                         Some(1) => {
                             engine.menu_submenu_active = false;
+                            engine.bridge.release_menu();
                             engine.bridge_active = false;
                             engine.on_ship = true;
                         }
-                        _ => engine.menu_submenu_active = false, // click off closes it
+                        _ => {
+                            // Click off the submenu closes it and drops the engaged item.
+                            engine.menu_submenu_active = false;
+                            engine.bridge.release_menu();
+                        }
                     }
                 }
-                // On the bridge hub, a click on a station icon opens its screen.
+                // On the bridge, a click runs the decoded hit paths: a golden-menu
+                // row selects that console function (HONK (0) = the cook's daily
+                // fare (SCRIPT1); TELEPHONE (1) the video-phone; CRYOBOX (2) the
+                // cryo-chamber; MENU (3) the {EXPLANATIONS, GAME} submenu; OPTION
+                // (4) the 3D pyramid menu), while a hit on the eye-orb arms a
+                // station seek — the view auto-rotates there (no screen change).
                 Event::ButtonPress(b) if engine.bridge_active && b.detail == 1 => {
-                    // The ship-console menu (decoded console -> VM object dispatch):
-                    // HONK (0) opens the cook's daily-fare menu (SCRIPT1); TELEPHONE (1)
-                    // the video-phone; CRYOBOX (2) the cryo-chamber; MENU (3) the decoded
-                    // {EXPLANATIONS, GAME} submenu. OPTION (4) not yet decoded.
-                    match engine.console_menu_click(mx, my) {
+                    match engine.bridge_press(mx, my) {
                         Some(0) => {
+                            engine.bridge.release_menu();
                             engine.bridge_active = false;
                             load_script(&mut engine, &mut music, 1);
                             engine.on_ship = false;
                         }
                         Some(1) => {
+                            engine.bridge.release_menu();
                             engine.bridge_active = false;
                             engine.phone_active = true;
                         }
                         Some(2) => {
+                            engine.bridge.release_menu();
                             engine.bridge_active = false;
                             engine.cryobox_active = true;
                         }
                         Some(3) => engine.menu_submenu_active = true, // MENU -> submenu
                         Some(4) => {
+                            engine.bridge.release_menu();
                             engine.bridge_active = false;
                             engine.option_active = true; // OPTION -> 3D pyramid menu
                         }
-                        Some(_) => {}
-                        None => {
-                            if let Some(station) = engine.bridge_click(mx, my) {
-                                engine.bridge_active = false;
-                                use commander_blood_tools::engine::BridgeStation::*;
-                                match station {
-                                    Nav => engine.on_ship = true,
-                                    Comms => engine.tv_active = true,
-                                    Cyberspace => {
-                                        engine.cyber_active = true;
-                                        engine.start_cyberspace();
-                                    }
-                                }
-                            }
-                        }
+                        _ => {}
                     }
                 }
                 // On the TV screen, left/right buttons change channel (must precede the
