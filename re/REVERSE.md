@@ -4018,3 +4018,13 @@ manu3 file offset 0x1370).
   (capture + transcript = the full HONK consultation content), then re-check
   bridge rotation/destinations after consultations. PORT: HONK dialogue =
   topic-hub interaction.
+- **HONK CONSULTATION CONTENT (topictour transcript)**: topic 1 = a LULLABY
+  ("NIGHT IS FA-AA-AA-LLING... THE WOLF IS HO-OW-OWLING... HONK IS WITH
+  YOU..."), topic 5 = FREE PSYCHOTHERAPY ("THE ANSWER IS WITHIN YOU...",
+  "...THOUGHTS STRAY TO OLGA THE..."), topic 6+ = more sessions ("I'M SENSING
+  STRANGE PULSIONS IN [your left] HEMISPHERE..."), story seeds ("SPACE TRAVEL
+  CAN BE LONG AND...", "AHH! THE ONDOYANTS..."), and — THE PROGRESSION HOOK —
+  round 407: "GOOD... RELAX... CLICK ON [cut] ... OVER THERE..." = HONK
+  directs the player to click something else (nav/orb = the exit toward
+  travel). NEXT: capture at that instruction (full line + screen) and follow
+  it; that is the SCRIPT2 -> free-play transition.
