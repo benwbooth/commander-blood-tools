@@ -625,6 +625,43 @@ impl EngineState {
             .and_then(|m| m.as_deref())
     }
 
+    /// Start a DESCRIPT **Sequence** cutscene faithfully from its OWN record data — its HNM(s)
+    /// (`sequence_hnms`), music (`music`), and tick-timed `subtitles` — reusing the intro playback
+    /// path (`intro_*` fields + `render_intro_frame`/`draw_intro_credit`). The port previously
+    /// played only the boot intro and dialogue scenes, so the in-game cutscenes (IZWAL-TV
+    /// `microkid`, `hatetv`, the `maledict` curse, …) never ran with their data. This is the
+    /// general, data-driven cutscene player; each cutscene's music/subtitles come from the record,
+    /// not hardcoded. Returns true if at least one clip was queued.
+    pub fn start_descript_cutscene(
+        &mut self,
+        record: &crate::descript::DescriptRecord,
+        assets: &Path,
+    ) -> bool {
+        let sq = assets.join("sq");
+        let music = record.music.first().cloned();
+        self.intro_hnms = Vec::new();
+        self.intro_cues = Vec::new();
+        self.intro_music = Vec::new();
+        for (i, name) in record.sequence_hnms.iter().enumerate() {
+            let path = sq.join(name);
+            if path.exists() {
+                self.intro_hnms.push(path);
+                // The record's subtitle cues + music are timed over the sequence from its 1st clip.
+                self.intro_cues
+                    .push(if i == 0 { record.subtitles.clone() } else { Vec::new() });
+                self.intro_music
+                    .push(if i == 0 { music.clone() } else { None });
+            }
+        }
+        self.intro_index = 0;
+        self.intro_active = !self.intro_hnms.is_empty();
+        if self.intro_active {
+            let first = self.intro_hnms[0].clone();
+            self.load_scene_hnm(&first);
+        }
+        self.intro_active
+    }
+
     /// Skip the rest of the boot intro immediately (the real game lets a click/key skip
     /// straight to the game). Ends intro playback so the driver can hand off to gameplay.
     pub fn skip_intro(&mut self) {
@@ -3413,6 +3450,37 @@ mod tests {
         // And the current-clip accessor reflects it: silent at the logos, music at the cinematic.
         assert_eq!(e.intro_index(), 0);
         assert_eq!(e.intro_clip_music(), None, "no music while the logos play");
+    }
+
+    /// The general DESCRIPT-Sequence cutscene player runs a cutscene from its OWN record data —
+    /// HNM + music + tick-subtitles — so the in-game cutscenes (here the `maledict` curse) play
+    /// faithfully, not silently. Guards the gap where the port had no in-game cutscene player.
+    #[test]
+    fn descript_sequence_cutscene_plays_with_its_data() {
+        let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("sq").join("maledict.hnm").exists());
+        let Some(assets) = assets else { return };
+        let db = ["output/_tmp_iso/DESCRIPT.DES", "../output/_tmp_iso/DESCRIPT.DES"]
+            .iter()
+            .find_map(|p| crate::descript::DescriptDb::parse_file(p).ok());
+        let Some(db) = db else { return };
+        let rec = db
+            .records
+            .iter()
+            .find(|r| r.name == "maledict")
+            .expect("maledict cutscene record");
+        let mut e = EngineState::new();
+        assert!(e.start_descript_cutscene(rec, assets), "the cutscene starts");
+        // HNM, music, and tick-subtitles all come from the record — data-driven, not hardcoded.
+        assert!(e.intro_hnms[0].file_stem().is_some_and(|s| s == "maledict"));
+        assert_eq!(e.intro_music[0].as_deref(), Some("klings.voc"), "cutscene music from the record");
+        assert!(!e.intro_cues[0].is_empty(), "the curse subtitles play with the cutscene");
+        assert!(
+            e.intro_cues[0].iter().any(|c| c.text.contains("CURSED")),
+            "the record's subtitle text is carried"
+        );
     }
 
     /// End-to-end regression: drive the full playable loop the way the real driver does

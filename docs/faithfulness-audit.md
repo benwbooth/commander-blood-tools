@@ -14,6 +14,19 @@ everywhere.** Priority = how visible/audible + how confidently fixable.
   engine carries per-clip music from the record; the logo reel is silent. Test:
   `intro_music_silent_over_logos_starts_with_cinematic`.
 
+- **[DONE, mechanism] In-game cutscene player** (commit pending). Gap found this pass: the port
+  parsed `RecordKind::Sequence` but had NO general player — only the boot intro + dialogue scenes
+  ran, so the in-game cutscenes (IZWAL-TV `microkid`, `hatetv`, the `maledict` curse, …) never
+  played with their data-defined music/tick-subtitles/HNMs. Fix: `EngineState::start_descript_
+  cutscene(record, assets)` plays any Sequence record faithfully from its own data, reusing the
+  intro path. Test: `descript_sequence_cutscene_plays_with_its_data` (maledict → maledict.hnm +
+  klings.voc + the "CURSED" subtitles). REMAINING: wire the triggers (which script event fires
+  each cutscene) — needs the script/asm event handler; the faithful PLAYER now exists.
+- **[CLEARED] Intro/HNM subtitle tick scale** (risk #2, partial). The DESCRIPT subtitle ticks are
+  HNM frame numbers (microkid→120, hatetv→200, cliptoot 1258 frames), so `FRAMES_PER_TICK = 1`
+  (frame == tick) is faithful. The absolute HNM playback fps vs the game's tick rate is still worth
+  confirming against the asm, but the cue TIMING relative to the video is correct.
+
 ## Audited FAITHFUL (decoded from the binary/data — no change needed)
 - **Scene background music** — `extract::script_background_music` derives each scene's music from
   the DESCRIPT/character-context data. ✓
