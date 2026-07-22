@@ -1775,22 +1775,26 @@ impl EngineState {
     /// pyramids + WHITE eye-orb seen in the captures. The pyramid renderer fills only the lower
     /// grid band, so the crew scene in the upper band shows through.
     fn overlay_console_pyramids(&mut self) {
-        // Reserved palette slots that avoid the credit text (0xFD) and the subtitle reveal (0xFE).
-        const LIGHT: u8 = 0xFA;
-        const DARK: u8 = 0xFB;
-        const ORB: u8 = 0xFC;
-        crate::ship3d::render_star_map_navview_panned(
-            &mut self.framebuffer,
-            LIGHT,
-            DARK,
-            ORB,
-            self.option_angle,
-        );
-        // Real tutorial-console palette (frames 6-9): grey pyramids, white eye-orb — NOT the
-        // OPTION menu's purple/yellow.
-        self.scene_palette[LIGHT as usize] = [180, 180, 190];
-        self.scene_palette[DARK as usize] = [90, 90, 100];
-        self.scene_palette[ORB as usize] = [235, 235, 235];
+        // The REAL console band, harvested from the real game's captures (frames 9/15/22 are
+        // pixel-identical here — static art): the textured pyramid field + the ornate eye-orb on
+        // the grid floor, 320x60 at rows 140..200, 16 colours installed at palette 0x80..0x8F
+        // (scene palettes only ever cover indices 1..127, so those slots are free). Replaces the
+        // earlier flat-shaded placeholder triangles + plain circle (user-reported as not matching
+        // the original game's art).
+        const BAND: &[u8] = include_bytes!("../accuracy/captures/console_band.bin");
+        let n = BAND[0] as usize;
+        let pal = &BAND[1..1 + n * 3];
+        let map = &BAND[1 + n * 3..];
+        for i in 0..n {
+            self.scene_palette[0x80 + i] = [pal[i * 3], pal[i * 3 + 1], pal[i * 3 + 2]];
+        }
+        for (k, &ci) in map.iter().enumerate() {
+            let x = k % ENGINE_SCREEN_WIDTH;
+            let y = 140 + k / ENGINE_SCREEN_WIDTH;
+            if y < ENGINE_SCREEN_HEIGHT {
+                self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] = (0x80 + ci) as u8;
+            }
+        }
     }
 
     /// Load the game-ending finale cutscene (`sq/fin.hnm`, the "fin"/end video) — the
@@ -4154,13 +4158,13 @@ mod tests {
         // A "crew viewscreen" already in the framebuffer (a non-zero, non-reserved index).
         e.framebuffer.iter_mut().for_each(|p| *p = 0x30);
         e.overlay_console_pyramids();
-        // Upper band: the crew shows through (the pyramid floor draws only along the bottom).
-        let top = &e.framebuffer[..ENGINE_SCREEN_WIDTH * 40];
+        // Upper band: the crew shows through (the console band covers only rows 140..200).
+        let top = &e.framebuffer[..ENGINE_SCREEN_WIDTH * 140];
         assert!(top.iter().all(|&p| p == 0x30), "the crew viewscreen (top) shows through");
-        // Bottom band: the pyramid console + eye-orb are drawn (reserved indices).
-        let bottom = &e.framebuffer[ENGINE_SCREEN_WIDTH * 120..];
-        let pyramid_px = bottom.iter().filter(|&&p| p == 0xFA || p == 0xFB || p == 0xFC).count();
-        assert!(pyramid_px > 100, "the pyramid console draws along the bottom ({pyramid_px} px)");
+        // Bottom band: the REAL harvested console art (palette 0x80..0x8F) fills rows 140..200.
+        let bottom = &e.framebuffer[ENGINE_SCREEN_WIDTH * 140..];
+        let art_px = bottom.iter().filter(|&&p| (0x80..0x90).contains(&p)).count();
+        assert!(art_px > 10_000, "the real console band draws along the bottom ({art_px} px)");
     }
 
     /// End-to-end regression: drive the full playable loop the way the real driver does
