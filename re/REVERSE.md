@@ -3855,3 +3855,13 @@ manu3 file offset 0x1370).
   fill patterns at the face-table's v-ptr offsets — the live record addresses
   are being captured via read-watch (probe in flight); face-table v-ptrs may
   need a further mapping (per-pose bank?).
+- SUBMENUCAP ground truth: at the tutorial console, clicking ANY golden-menu row
+  feeds SCRIPT1's flow — both MENU and OPTION clicks advanced the HONK food-menu
+  dialogue ("Today's" / "PLASMA soup HONK-style." as top subtitles over the
+  console; view seeked to frame 45 on the first click, confirming the decoded
+  click->seek path live). The standalone MENU submenu / OPTION screens are NOT
+  reachable in this state; their real appearance stays gated on completing the
+  tutorial (the scene-coordinator divergence blocking SCRIPT2 — see the credit
+  divergence thread). PORT IMPLICATION: during the tutorial, menu clicks should
+  drive the script (line advance / item demo), not open standalone screens —
+  the port's current click->screen routing is a post-tutorial behaviour.
