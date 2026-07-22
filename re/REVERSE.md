@@ -5111,3 +5111,19 @@ instruction (e.g. func_79c: pushes/logic lift fine, TODO at `int`). To lift them
 This is bounded (222 fns, handlers exist) but genuinely MULTI-SESSION infrastructure +
 per-function work — NOT a bounded-pass task. The interpreter runs all 222 bit-exact
 now, so this is a pure-static-formalization milestone, not a fidelity gap.
+
+## I/O-lift requires architectural change (Runtime-context / resumable lifts) — 2026-07-22
+
+Confirmed why the I/O leaves aren't a simple per-function lift: the interpreter handles
+int/out/in by RETURNING Exit::Int/Out/In from `step`, and runtime.rs's run loop services
+them INLINE (900+/1098+) using RUNTIME state (file table, alloc, DOS/VGA/SB handlers). But
+a statically-lifted function is straight-line Rust taking `&mut Machine` — it cannot
+return-and-resume mid-function, and it has no Runtime context. So lifting the 41 I/O leaves
+requires an ARCHITECTURAL change: either (a) lifted fns take a Runtime-context and call an
+extracted `service_int/port_io(ctx, …)`, or (b) resumable/coroutine lifts that yield at I/O
+and the loop services + resumes. Plus extracting the inline service logic into callable fns.
+That is multi-session architecture, ON TOP OF the per-function lifting + interp-oracle
+verification + indirect-dispatch resolution. CONCLUSION: the whole-binary pure-static
+replacement (75→222) is a genuine multi-session engineering project, precisely scoped now:
+architecture (Runtime-context/resumable lifts) → I/O-leaf lift+verify → composition fixpoint.
+The interpreter already runs all 222 bit-exact, so this is a formalization milestone.
