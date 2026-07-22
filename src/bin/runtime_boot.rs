@@ -1280,6 +1280,52 @@ fn main() {
             return;
         }
 
+        // CHOICEDRIVE: from the CLEAN savestate, click the LEFT choice box rows
+        // (the conversation's topic selector, where CANCEL shows) + watch gs:0x6780
+        // (the D2 profile request — nonzero = the `what` destination offer fired).
+        if std::env::var("CHOICEDRIVE").is_ok() {
+            let d2 = |rt: &Runtime| rt.m.read8(g, 0x6780) as u16 | ((rt.m.read8(g, 0x6781) as u16) << 8);
+            let anchors = |rt: &Runtime| (0..33u32).any(|i| {
+                let v=(rt.m.read8(g,0x4f09+i*2) as u16|((rt.m.read8(g,0x4f09+i*2+1) as u16)<<8)) as i16;
+                v!=0 && v.abs()<8000 && v.abs()!=900 && v.abs()!=10200 && v.abs()!=12100
+            });
+            println!("start: D2={:#06x}", d2(&rt));
+            let baseline = rt.opened_files.len();
+            // Systematically click each LEFT choice-box row (x ~85, y from 88 step 13),
+            // then re-open (orb) between tries. 40 passes.
+            for pass in 0..40u32 {
+                let row = pass % 8;
+                let (fr,_,_) = state(&rt);
+                let sy = 88 + 13*row as u16;
+                let ring = (85i32 + fr as i32*8 - 160).rem_euclid(1440) as u16;
+                rt.set_mouse_pos(ring, sy);
+                let _=rt.run(rt.cpu.steps+600_000); rt.mouse_press(0);
+                let _=rt.run(rt.cpu.steps+300_000); rt.mouse_release(0);
+                let _=rt.run(rt.cpu.steps+6_000_000);
+                let d = d2(&rt); let a = anchors(&rt);
+                let nf = rt.opened_files.len() - baseline;
+                if d != 0xffff || a || nf > 0 {
+                    println!("pass {pass} row {row}: D2={d:#06x} anchors={a} newfiles={nf}");
+                    rt.write_ppm(&out.join(format!("choice_p{pass}.ppm"))).unwrap();
+                }
+                if d != 0xffff || a {
+                    println!("DESTINATION OFFER FIRED at pass {pass}!");
+                    rt.save_state(std::path::Path::new("accuracy/world_loaded.state")).unwrap();
+                    break;
+                }
+                // Try the orb to (re)open a menu between rows.
+                if pass % 8 == 7 {
+                    let oring = (125i32 + fr as i32*8 - 160).rem_euclid(1440) as u16;
+                    rt.set_mouse_pos(oring, 118);
+                    let _=rt.run(rt.cpu.steps+500_000); rt.mouse_press(0);
+                    let _=rt.run(rt.cpu.steps+300_000); rt.mouse_release(0);
+                    let _=rt.run(rt.cpu.steps+5_000_000);
+                }
+            }
+            println!("CHOICEDRIVE done, final D2={:#06x}", d2(&rt));
+            return;
+        }
+
         // HUBSCAN: capture the SCRIPT2-start state + probe whether a topic menu /
         // "click on anything" prompt is showing (OCR the list region), then try
         // opening the concept menu (orb) and clicking the WHAT topic -> the
