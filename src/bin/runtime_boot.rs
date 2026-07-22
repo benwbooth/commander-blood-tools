@@ -625,6 +625,20 @@ fn main() {
                         silent = 0;
                     }
                 }
+                // NUMSNAP: capture the screen the moment a number prompt shows.
+                if std::env::var("NUMSNAP").is_ok() {
+                    let numbers = ["ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "E1GHT", "EIGHT", "N1NE", "NINE"];
+                    if numbers.iter().any(|n| line == *n) {
+                        rt.write_ppm(&out.join(format!("numprompt_{round}.ppm"))).unwrap();
+                        std::fs::write(
+                            out.join(format!("numprompt_{round}_indices.bin")),
+                            rt.screen_indices(),
+                        )
+                        .unwrap();
+                        println!("round {round}: number prompt {line:?} captured");
+                        if round > 40 { break; }
+                    }
+                }
                 let names = ["HONK", "TELEPHONE", "CRYOBOX", "MENU", "OPTION"];
                 let want = names.iter().position(|n| line.contains(n));
                 if let Some(row) = want {
