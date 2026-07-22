@@ -2911,6 +2911,32 @@ mod tests {
         assert!(count(0xE8) > 20, "choice-box text (0xE8) present: {}", count(0xE8));
     }
 
+    /// Oracle: the LIST MENU (dialogue topics / nav destinations) renders the
+    /// square-capitals face at index 0xE8 at the measured geometry (x 175, rows
+    /// from y 45, 11 px pitch). Locks the widget + face to the harvested values.
+    #[test]
+    fn list_menu_renders_square_caps_at_measured_geometry() {
+        let mut e = EngineState::new();
+        // Feed a topic menu and render it over a blank frame via the public draw.
+        let labels = vec!["TALK".to_string(), "ONE".to_string(), "TWO".to_string()];
+        e.draw_list_menu(&labels, Some(1));
+        // Row 0 (TALK) glyphs at y 45.., row 1 (ONE, selected) at y 56.. bright.
+        let count_in = |idx: u8, y0: usize, y1: usize| {
+            let mut n = 0;
+            for y in y0..y1 {
+                for x in 170..250usize {
+                    if e.framebuffer[y * ENGINE_SCREEN_WIDTH + x] == idx {
+                        n += 1;
+                    }
+                }
+            }
+            n
+        };
+        // Unselected rows use 0xE8; the selected row uses the bright 0xEF.
+        assert!(count_in(0xE8, 44, 54) > 10, "TALK row in square-caps 0xE8");
+        assert!(count_in(0xEF, 55, 65) > 6, "selected ONE row in bright 0xEF");
+    }
+
     #[test]
     fn bridge_renders_the_real_panorama() {
         let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
