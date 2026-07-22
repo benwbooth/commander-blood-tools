@@ -1735,29 +1735,14 @@ impl EngineState {
             return;
         };
         let count = hnm.frame_count().max(1);
-        // The intro CREDIT/SHOWCASE clip (cliptoot, `intro_pyramid`) runs only for its CREDIT SPAN
-        // in the real game (~tick 100, the final clearing cue, then gameplay by ~9s), NOT the full
-        // 1258-frame clip (~69s). Ground truth: accuracy/captures/frame_* — MINDSCAPE(1s)→
-        // Microfolie's(2s)→cinematic→CRYO logo(5s)→console with the credit overlaid(6s)→gameplay(9s).
-        // So end it when its cues finish (last tick + a short hold). Everything else — the silent
-        // logo reel AND in-game cutscenes played through this same path via `start_descript_cutscene`
-        // (which carry their own cues) — plays its FULL HNM length. (Gating on intro_pyramid keeps
-        // this intro-specific early-end from cutting cutscenes short.)
-        let clip_end = if self.intro_pyramid.get(self.intro_index).copied().unwrap_or(false) {
-            self.intro_cues
-                .get(self.intro_index)
-                .filter(|cues| !cues.is_empty())
-                .map(|cues| {
-                    let last_tick = cues.iter().map(|c| c.tick as usize).max().unwrap_or(0);
-                    (last_tick * Self::INTRO_CREDIT_FRAMES_PER_TICK
-                        + Self::INTRO_CREDIT_HOLD_FRAMES)
-                        .min(count)
-                })
-                .unwrap_or(count)
-        } else {
-            count
-        };
-        if self.scene_frame >= clip_end {
+        // EVERY clip plays its full HNM length. VERIFIED (decoded cliptoot checkpoints 120..1150 vs
+        // accuracy/captures/frame_6..22): cliptoot.hnm is the full intro MONTAGE — crew members
+        // (the mutant @250/550, the trunk alien @850 — matching captures 6-9), location scenes
+        // (teal bar @400 ≈ capture 22), hyperspace @1000, ship scenes @1150 — all under the
+        // pyramid console, with the CRYO/title credits clearing at tick 100 (why captures 15/22
+        // show no credit text). An earlier ~7s cue-span cut here was WRONG (a misread of capture 9
+        // as gameplay); the real game plays the montage through (a click skips it).
+        if self.scene_frame >= count {
             // Current clip finished — advance to the next, or end the intro.
             self.intro_index += 1;
             if self.intro_index < self.intro_hnms.len() {
@@ -1789,10 +1774,6 @@ impl EngineState {
     /// advances one clip frame per stepped game frame, so a cue displays from `tick`
     /// frames in until the next cue supersedes it (calibratable against the oracle).
     const INTRO_CREDIT_FRAMES_PER_TICK: usize = 1;
-    /// Frames to hold after a credit clip's last cue before ending it (a brief beat so the final
-    /// credit isn't cut instantly). Keeps the credit sequence to its ~tick-100 span, not the full
-    /// 1258-frame clip — matching the real game's ~short intro.
-    const INTRO_CREDIT_HOLD_FRAMES: usize = 24;
     /// Baseline row for the credit text, inside the cinematic's lower black letterbox.
     const INTRO_CREDIT_BASELINE_Y: usize = 178;
     /// Reserved palette index forced to white for the credit glyphs (mirrors the
@@ -3584,12 +3565,13 @@ mod tests {
         }
     }
 
-    /// The intro credit clip (`cliptoot.hnm`, carrying the `present` cues to tick 100) must run
-    /// only its CREDIT SPAN — the real intro reaches gameplay by ~9s (ground truth:
-    /// accuracy/captures/frame_*), not the full 1258-frame clip (~69s). Guards the "intro way too
-    /// long" bug: the credit clip should end shortly after its last cue, not play out in full.
+    /// The intro montage (`cliptoot.hnm`) plays FULL-LENGTH under the pyramid console — VERIFIED
+    /// by decoding its checkpoints against the real-game captures: it is the whole intro montage
+    /// (crew + locations + hyperspace, frames 120..1150 matching captures 6..22), with the CRYO/
+    /// title credits clearing at tick 100 (captures 15/22 show no credit text). Guards against
+    /// cutting the montage to its ~tick-100 credit span (an earlier wrong fix).
     #[test]
-    fn intro_credit_clip_ends_with_its_cues_not_full_length() {
+    fn intro_montage_plays_full_length_with_credits_clearing() {
         let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
             .iter()
             .map(Path::new)
@@ -3605,27 +3587,56 @@ mod tests {
             .intro_hnms
             .iter()
             .position(|p| p.file_stem().is_some_and(|s| s == "cliptoot"))
-            .expect("cliptoot credit clip queued");
+            .expect("cliptoot montage queued");
         let full_len = crate::hnm::HnmFile::open(&e.intro_hnms[credit])
             .map(|h| h.frame_count())
             .unwrap_or(0);
-        assert!(full_len > 1000, "cliptoot is a long clip ({full_len} frames)");
-        // Drive the intro, counting frames spent in the credit clip.
-        let mut credit_frames = 0usize;
-        for _ in 0..6000 {
-            let at_credit = e.intro_index() == credit && e.intro_active();
+        assert!(full_len > 1000, "cliptoot is the long montage ({full_len} frames)");
+        // Drive the intro through, counting frames spent in the montage clip.
+        let mut montage_frames = 0usize;
+        for _ in 0..4000 {
+            let at_montage = e.intro_index() == credit && e.intro_active();
             e.step(MouseInput::default());
-            if at_credit {
-                credit_frames += 1;
+            if at_montage {
+                montage_frames += 1;
             }
             if !e.intro_active() {
                 break;
             }
         }
         assert!(
-            (90..300).contains(&credit_frames),
-            "credit clip runs its ~tick-100 cue span ({credit_frames} frames), not the full {full_len}"
+            montage_frames >= full_len,
+            "the montage plays FULL-LENGTH ({montage_frames} of {full_len} frames), not cut to its credit span"
         );
+    }
+
+    /// Diagnostic dump: decode cliptoot.hnm SEQUENTIALLY (delta frames chain) and save checkpoints
+    /// across its whole 1258-frame range — to verify whether it is the full intro MONTAGE (crew
+    /// showcase AND the location scenes seen in captures frame_15/22: sunset seascape, teal
+    /// structure), which would mean it plays FULL-LENGTH in the real game, not a ~7s credit clip.
+    #[test]
+    #[ignore = "diagnostic dump, run explicitly"]
+    fn dump_cliptoot_montage() {
+        let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("sq").join("cliptoot.hnm").exists());
+        let Some(assets) = assets else { return };
+        let hnm = crate::hnm::HnmFile::open(&assets.join("sq").join("cliptoot.hnm")).unwrap();
+        let mut fb = vec![0u8; ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT];
+        let mut pal = hnm.palette;
+        let n = hnm.frame_count();
+        let checkpoints = [120usize, 250, 400, 550, 700, 850, 1000, 1150];
+        for f in 0..n {
+            hnm.decode_frame(f, &mut fb, &mut pal);
+            if checkpoints.contains(&f) {
+                let mut buf = Vec::from(&b"P6\n320 200\n255\n"[..]);
+                for &idx in &fb {
+                    buf.extend_from_slice(&pal[idx as usize]);
+                }
+                std::fs::write(format!("output/_tmp_clip_{f:04}.ppm"), buf).unwrap();
+            }
+        }
     }
 
     /// Diagnostic dump: play an in-game cutscene (maledict) via start_descript_cutscene and dump a
