@@ -512,10 +512,26 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     engine.set_topic_menu(if usable { topics } else { Vec::new() });
                 } else {
                     // Location scripts (SCRIPT3/4/5): show the decoded concept menu
-                    // (bas_vm) — its real topics, clickable via bas_menu_click. Was:
-                    // empty (no menu). The menu's flat sequential responses play on click.
+                    // (bas_vm) — its real topics, clickable via bas_menu_click. The dialogue is
+                    // SEGMENTED at the script-function beats (scrujo/bronk1../port1.. — one beat
+                    // per character interaction): the host's scripted greeting auto-plays, then
+                    // the conversation HOLDS at the concept menu; each topic interaction plays
+                    // one beat. (Previously the entire multi-character stream auto-played.)
                     engine.set_topic_menu(Vec::new());
                     engine.sync_topic_menu_from_bas();
+                    let mut starts: Vec<usize> = Vec::new();
+                    let mut last_fn = String::new();
+                    let mut idx = 0usize;
+                    for e in bundle.speech_events.iter().filter(|e| !e.text.trim().is_empty()) {
+                        if e.function_name != last_fn {
+                            last_fn = e.function_name.clone();
+                            starts.push(idx);
+                        }
+                        idx += 1;
+                    }
+                    if starts.len() > 1 {
+                        engine.set_dialogue_segments(starts);
+                    }
                 }
             }
             if let Some(m) = extract::script_background_music(Path::new(iso), &format!("SCRIPT{n}"))
@@ -839,7 +855,14 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     // concept menu (topic_menu_is_bas) routes through the decoded
                     // conversation VM (bas_menu_click → sequential responses / pop).
                     let handled = if engine.topic_menu_is_bas {
-                        engine.bas_menu_click(mx, my).is_some()
+                        let hit = engine.bas_menu_click(mx, my).is_some();
+                        if hit {
+                            // A concept-menu interaction advances the conversation one BEAT
+                            // (segment) — the menu drives the location dialogue, it doesn't
+                            // auto-play through every character's lines.
+                            engine.play_next_dialogue_segment();
+                        }
+                        hit
                     } else {
                         engine.topic_menu_click(mx, my).is_some()
                     };

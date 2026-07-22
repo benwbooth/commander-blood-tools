@@ -394,6 +394,12 @@ pub struct EngineState {
     /// The real game gates topic content behind the conversation menu (the player clicks HONK /
     /// a topic); only scripted events auto-play (user-reported: Honk rattled everything off).
     autoplay_end: Option<usize>,
+    /// Dialogue SEGMENT starts (per script-function beats). The first segment is the scripted
+    /// opening (auto-plays); each concept-menu interaction plays the next segment then re-holds —
+    /// the location scripts' conversation is menu-driven, not a full-stream monologue.
+    dialogue_segments: Vec<usize>,
+    /// Index of the next unplayed segment in `dialogue_segments`.
+    dialogue_segment_pos: usize,
     /// Driver-set floor on the per-line hold (the faithful hold is computed from the
     /// text-speed step; see [`EngineState::current_line_hold`]).
     pub dialogue_hold_frames: u32,
@@ -537,6 +543,8 @@ impl EngineState {
             dialogue_texts: Vec::new(),
             dialogue_cursor: 0,
             autoplay_end: None,
+            dialogue_segments: Vec::new(),
+            dialogue_segment_pos: 0,
             dialogue_hold_frames: 60,
             text_speed_step: crate::vm::text_speed_step_from_setting(3),
             dialogue_timer: 0,
@@ -1470,6 +1478,34 @@ impl EngineState {
         self.autoplay_end = end;
     }
 
+    /// Segment the dialogue at the given line starts (script-function beats): the first segment
+    /// (the scripted opening) auto-plays, then the dialogue holds; each call to
+    /// [`Self::play_next_dialogue_segment`] plays one more segment.
+    pub fn set_dialogue_segments(&mut self, starts: Vec<usize>) {
+        self.autoplay_end = starts.get(1).copied();
+        self.dialogue_segments = starts;
+        self.dialogue_segment_pos = 1;
+    }
+
+    /// Play the next unplayed dialogue segment (a concept-menu interaction advances the
+    /// conversation one beat), then re-hold at the menu. Returns false when exhausted.
+    pub fn play_next_dialogue_segment(&mut self) -> bool {
+        let Some(&start) = self.dialogue_segments.get(self.dialogue_segment_pos) else {
+            return false;
+        };
+        self.set_dialogue_cursor(start);
+        self.dialogue_timer = 0;
+        self.dialogue_segment_pos += 1;
+        self.autoplay_end = self
+            .dialogue_segments
+            .get(self.dialogue_segment_pos)
+            .copied();
+        if !self.dialogue_scene_paths.is_empty() {
+            self.load_current_scene();
+        }
+        true
+    }
+
     /// Map a click to a list-menu row (the measured geometry above).
     pub fn list_menu_click(labels_len: usize, x: u16, y: u16) -> Option<usize> {
         if !(170..=245).contains(&(x as i32)) {
@@ -2256,6 +2292,8 @@ impl EngineState {
     /// the ~3400 decoded lines). Each `lines` entry is (subtitle, background-HNM path).
     pub fn set_speech_dialogue(&mut self, lines: Vec<(String, Option<std::path::PathBuf>)>) {
         self.autoplay_end = None; // a new scene plays through unless the driver gates it
+        self.dialogue_segments.clear();
+        self.dialogue_segment_pos = 0;
         self.dialogue = (0..lines.len())
             .map(|offset| LineState { offset, actor_offset: None, location_offset: None })
             .collect();
