@@ -434,13 +434,18 @@ fn main() {
             let mut top: Vec<_> = hist.into_iter().collect();
             top.sort_by_key(|&(_, n)| std::cmp::Reverse(n));
             println!("hand palette indices (top): {:?}", &top[..top.len().min(10)]);
-            // 2. Watch every write of the hand's dominant colour (246) anywhere:
-            //    the writer's cs:ip is the hand blitter, and ds:si its pixel source.
-            rt.m.watch = Some((246, 0..0x100000));
+            // 2. Watch writes of the hand's dominant colour (246) into the BACK
+            //    BUFFER only (filters out same-valued data stores): the writers
+            //    are the true rasterizer sites, ds:si their pixel source.
+            let bb_off = rt.m.read8(g, 0x5229) as usize | ((rt.m.read8(g, 0x522a) as usize) << 8);
+            let bb_seg = rt.m.read8(g, 0x522b) as usize | ((rt.m.read8(g, 0x522c) as usize) << 8);
+            let bb = bb_seg * 16 + bb_off;
+            // Both flip pages: the game toggles [0x5229]; cover a generous window.
+            rt.m.watch = Some((246, bb.saturating_sub(0x10000)..bb + 0x20000));
             rt.m.watch_hits.clear();
             let _ = rt.run(rt.cpu.steps + 4_000_000);
             for &(cs, ip, ds, si) in rt.m.watch_hits.iter() {
-                println!("hand colour write from {cs:04x}:{ip:04x} (ds:si={ds:04x}:{si:04x})");
+                println!("hand pixel write from {cs:04x}:{ip:04x} (ds:si={ds:04x}:{si:04x})");
             }
             rt.m.watch = None;
             // 3. Identify the writer segment's contents (dynamic overlay?): dump it
