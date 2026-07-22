@@ -3986,3 +3986,15 @@ manu3 file offset 0x1370).
   console (menu-engaged clamp or script gating); its dialogue must be advanced
   first. SCRIPT2 walk with the OCR driver running (script2walk logs) — expect
   the script's opening lines, then check rotation/destinations again.
+- **SCRIPT2 = A NUMBER-SELECTION TRAINING EXERCISE** (script2walk transcript):
+  HONK: "COMMANDER, CAP'N BOB'S A SECRETIVE..." / "WHAT DO YOU WANT COMMANDER?"
+  / "WHAT KIND OF CONSULTATION DID YOU..." / "HOW ABOUT A SIMPLE EXERCISE IN
+  ... THERE'S ONLY ONE RIGHT ONE..." then repeated number prompts (EIGHT /
+  FOUR / THREE / SIX / NINE) with "NINE... GOOD WORK, COMMANDER..." on correct
+  picks — the game teaches selecting a NUMBERED item (blind clicks sometimes
+  hit it; the exercise loops). NEXT DRIVER STEP: capture the screen AT a
+  number prompt (see what is being numbered — choice box? pyramids?), then
+  parse the number word and click the matching item deliberately to complete
+  the exercise and advance SCRIPT2. PORT: SCRIPT2's interactive exercise is
+  new required behaviour (currently the port plays SCRIPT2 as passive
+  dialogue).
