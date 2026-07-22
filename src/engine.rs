@@ -2953,75 +2953,85 @@ impl EngineState {
     /// position (scene band, `SUBTITLE_X`/`SUBTITLE_Y` = 10/8) using the game font.
     /// The scene band's talk-HNM background composes separately; this is the text
     /// layer of the dialogue scene the engine presents for the current line.
-    pub fn draw_subtitle(&mut self, text: &str, color: u8) {
+    pub fn draw_subtitle(&mut self, text: &str, _color: u8) {
+        // A fully-shown line: the reveal draw renders it in the fully-revealed colour (0xFF).
         let n = text.chars().count();
-        self.draw_subtitle_with_color(text, n, color, color);
+        self.draw_subtitle_revealed(text, n);
     }
 
     /// Draw the pre-wrapped subtitle with only the first `visible` characters shown,
     /// the newest one in the reveal-edge colour (0xFE) — the game's per-character
     /// reveal. Non-visible characters aren't drawn yet.
     fn draw_subtitle_revealed(&mut self, text: &str, visible: usize) {
-        self.draw_subtitle_with_color(text, visible, 0xFD, 0xFE);
-    }
-
-    fn draw_subtitle_with_color(&mut self, text: &str, visible: usize, body: u8, edge: u8) {
-        use crate::font::{GAME_FONT_LINE_HEIGHT, game_font_advance};
-        // ON-CONSOLE text uses the game's BOLD monospace face (loaded from the
-        // user's BLOODPRG.EXE — the live game draws all console/tutorial lines
-        // with it; the thin face below is the letterboxed-scene subtitle font).
-        if self.panorama.is_some() && self.scene_hnm.is_none() {
-            if let Some(bold) = self.bold_font.take() {
-                let mut shown = 0usize;
-                let mut y = 8usize;
-                for (li, line) in text.split('\n').enumerate() {
-                    if li > 0 {
-                        shown += 1;
-                        y += 10; // console line pitch (rows 8/18 observed live)
-                    }
-                    let mut x = 10usize;
-                    for ch in line.chars() {
-                        if shown >= visible {
-                            self.bold_font = Some(bold);
-                            return;
-                        }
-                        let is_edge = shown + 1 == visible;
-                        let mut buf = [0u8; 4];
-                        bold.draw(
-                            &mut self.framebuffer,
-                            ENGINE_SCREEN_WIDTH,
-                            ENGINE_SCREEN_HEIGHT,
-                            ch.encode_utf8(&mut buf),
-                            x,
-                            y,
-                            if is_edge { edge } else { body },
-                        );
-                        x += crate::font::BoldConsoleFont::ADVANCE;
-                        shown += 1;
-                    }
-                }
-                self.bold_font = Some(bold);
-                return;
+        // The REAL subtitle renderer (BLOODPRG @0x3630): the fixed-width 8x8 console font
+        // (tables DS:0x70FA/0x71AA = BoldConsoleFont) drawn in the game palette's GREEN family —
+        // settled text 0xFD (dark green), the newest revealed char 0xFE (mid green), and the
+        // whole line 0xFF (bright green) once fully revealed. The port previously used the
+        // proportional dialogue font in forced white — both unfaithful (user-reported).
+        use crate::font::GAME_FONT_LINE_HEIGHT;
+        let total: usize = text
+            .split('\n')
+            .enumerate()
+            .map(|(i, l)| l.chars().count() + usize::from(i > 0))
+            .sum();
+        let fully = visible >= total;
+        let color_for = |shown: usize| -> u8 {
+            if fully {
+                0xFF
+            } else if shown + 1 == visible {
+                0xFE
+            } else {
+                0xFD
             }
+        };
+        // Console lines observed live at rows 8/18 (pitch 10); scene subtitles at the same
+        // origin with the font row pitch.
+        let on_console = self.panorama.is_some() && self.scene_hnm.is_none();
+        let pitch = if on_console { 10 } else { GAME_FONT_LINE_HEIGHT };
+        if let Some(bold) = self.bold_font.take() {
+            let mut shown = 0usize;
+            let mut y = 8usize;
+            'outer: for (li, line) in text.split('\n').enumerate() {
+                if li > 0 {
+                    shown += 1; // the 0x0D separator counts toward the reveal position
+                    y += pitch;
+                }
+                let mut x = 10usize;
+                for ch in line.chars() {
+                    if shown >= visible {
+                        break 'outer;
+                    }
+                    let mut buf = [0u8; 4];
+                    bold.draw(
+                        &mut self.framebuffer,
+                        ENGINE_SCREEN_WIDTH,
+                        ENGINE_SCREEN_HEIGHT,
+                        ch.encode_utf8(&mut buf),
+                        x,
+                        y,
+                        color_for(shown),
+                    );
+                    x += crate::font::BoldConsoleFont::ADVANCE;
+                    shown += 1;
+                }
+            }
+            self.bold_font = Some(bold);
+            return;
         }
-        // The subtitle string is pre-wrapped by the game's decoded text-assembly rule
-        // (35-char wrap with 0x0D breaks — `assemble_words`); draw each line at the
-        // subtitle origin (10,8), one font row apart, exactly as the game's
-        // `render_string` renders the 0x0D-separated buffer. Newline chars count
-        // toward the reveal position (the game reveals the buffer including 0x0D).
-        let mut shown = 0usize; // characters (incl. newlines) consumed so far
+        // Fallback without a BLOODPRG.EXE to load the real font from: the proportional face.
+        use crate::font::game_font_advance;
+        let mut shown = 0usize;
         let mut y = 8usize;
         for (li, line) in text.split('\n').enumerate() {
             if li > 0 {
-                shown += 1; // the 0x0D separator
-                y += GAME_FONT_LINE_HEIGHT;
+                shown += 1;
+                y += pitch;
             }
             let mut x = 10usize;
             for ch in line.chars() {
                 if shown >= visible {
                     return;
                 }
-                let is_edge = shown + 1 == visible;
                 let mut buf = [0u8; 4];
                 draw_text_indexed(
                     &mut self.framebuffer,
@@ -3030,7 +3040,7 @@ impl EngineState {
                     ch.encode_utf8(&mut buf),
                     x,
                     y,
-                    if is_edge { edge } else { body },
+                    color_for(shown),
                 );
                 x += game_font_advance(ch);
                 shown += 1;
@@ -3073,10 +3083,15 @@ impl EngineState {
         }
         // Subtitle text layer over the scene, revealed one character at a time (the
         // game's reveal @0x93F8–0x94B8: `gs:0x5E58` advances one char whenever the
-        // per-char timer `gs:0xB31 = step>>2` elapses). Reserved indices 0xFD
-        // (revealed) / 0xFE (newest edge glyph) are forced to the subtitle colour.
-        self.scene_palette[0xFD] = [245, 245, 245];
-        self.scene_palette[0xFE] = [245, 245, 245];
+        // per-char timer `gs:0xB31 = step>>2` elapses). The subtitle colours are the GAME
+        // palette's top entries — HNM `pl` blocks only ever cover indices 1..127, so the
+        // baked game palette's GREEN family persists: 0xFD (0,145,0) settled, 0xFE
+        // (44,210,8) newest char, 0xFF (129,255,105) fully-revealed line. Install them
+        // over whatever the scene palette holds (the scene can't own the top half).
+        let gp = crate::palette::game_screen_palette();
+        for i in [0xFD, 0xFE, 0xFF] {
+            self.scene_palette[i] = gp[i];
+        }
         if let Some(text) = self.current_subtitle().map(str::to_string) {
             // Advance the reveal pointer at the decoded rate, keyed off the per-line
             // timer (elapsed frames on this line), so it works with or without a
@@ -4585,10 +4600,11 @@ mod tests {
     fn draw_subtitle_renders_text_into_scene_band() {
         let mut e = EngineState::new();
         e.draw_subtitle("HELLO COMMANDER", 0xFD);
-        // Text draws at y=8 (the subtitle band); pixels appear in that row range.
+        // Text draws at y=8 (the subtitle band); a fully-shown line renders in the
+        // fully-revealed colour 0xFF (the asm reveal @0x3630's bright green).
         let band: usize = (8..16)
             .flat_map(|y| (0..ENGINE_SCREEN_WIDTH).map(move |x| y * ENGINE_SCREEN_WIDTH + x))
-            .filter(|&i| e.framebuffer[i] == 0xFD)
+            .filter(|&i| e.framebuffer[i] == 0xFF)
             .count();
         assert!(
             band > 20,
@@ -4667,11 +4683,11 @@ mod tests {
         for _ in 0..400 {
             e.step(MouseInput::default());
         }
-        // Revealed glyphs use 0xFD; the single reveal-edge glyph uses 0xFE.
+        // Reveal colours (asm 0x3630): settled 0xFD, newest 0xFE, fully-revealed 0xFF.
         let lit = e
             .framebuffer
             .iter()
-            .filter(|&&p| p == 0xFD || p == 0xFE)
+            .filter(|&&p| p == 0xFD || p == 0xFE || p == 0xFF)
             .count();
         assert!(
             lit > 20,
@@ -4961,11 +4977,10 @@ mod tests {
         }
         // And the drawer renders each wrapped line on its own font row.
         let mut e = EngineState::new();
-        e.scene_palette[0xFD] = [255, 255, 255];
         e.draw_subtitle(&assembled, 0xFD);
         let w = ENGINE_SCREEN_WIDTH;
         let rows_with_text = (0..30)
-            .filter(|&r| e.framebuffer[r * w..(r + 1) * w].iter().any(|&p| p == 0xFD))
+            .filter(|&r| e.framebuffer[r * w..(r + 1) * w].iter().any(|&p| p == 0xFF))
             .count();
         assert!(rows_with_text > 8, "text occupies multiple wrapped rows (rows={rows_with_text})");
     }
