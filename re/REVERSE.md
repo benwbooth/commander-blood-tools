@@ -3739,3 +3739,10 @@ manu3 file offset 0x1370).
   segment region (0x19C95..) = self-modifying/inline-patched loop parameters.
   NEXT: decompile the builder that fills the 0x2094 working buffer from the
   mesh + Q14 trig LUT, and the VRAM blitter at manu3+0xB5D.
+- The +0xB5D blitter is a TEXTURE-MAPPED Mode-X COLUMN rasterizer: node struct
+  carries u/v accumulators (+0x42/+0x44), texture far ptr (+0x54); inner loop
+  bx=(v<<8)|u; mov es:[di],texel; add di,0x50 (plane stride 80). The hand is an
+  affine-texture-mapped 3D model; texture = the 256-wide image at manu3 file
+  0x6280 (0xF0-family teal). Port plan: extract the texture image + mesh, port
+  the transform (node matrix +0x12) + affine rasterizer into src/manu3.rs, and
+  composite the hand in the engine bridge at the ring-cursor position.
