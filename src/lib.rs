@@ -43,6 +43,7 @@ pub mod script;
 pub mod ship3d;
 pub mod snd;
 pub mod sprite;
+pub mod tbbig;
 pub mod util;
 pub mod vm;
 

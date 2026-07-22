@@ -3602,14 +3602,47 @@ structure, BUT a FAITHFUL render still needs (a) the graphical item sprites (arc
 gate + headless DOSBox mouse). So OPTION structure is decoded; the faithful render is asset+
 observation-blocked — do not fabricate item labels/geometry.
 
-## TB.BIG archive (console overlays) — format partly decoded (sess: faithfulness)
-TB.BIG (4.5MB, loaded at the ship console per opened_files) is an archive: a header of
-contiguous (offset:u32, size:u32) pairs (first offset 0x5a0 = 180 entries), each a ~16KB
-chunk. Each chunk begins with a sprite-like 8-byte header (width:u16=0x85=133, height=0x82=
-130, xoff=0x33, yoff=0x2c) then image data — LIGHTLY compressed (15994 data bytes ->
-133*130=17290 px target, ratio ~0.925). NOT the standard sprite RLE (src/sprite.rs
-decode_rle_frame overshoots to 19329 px consuming only 3040/15994 bytes) — a custom
-transparent-skip/copy encoding, still to reverse. These 133x130 frames are likely the
-console OVERLAYS (the animated pointing-hand, the crew-portrait, etc.) — the last pieces
-to make the port console pixel-exact. The panel itself is ORX.FD (the port uses it,
-brightened; chart.fd is the nebula nav-chart, confirmed wrong for the console).
+## TB.BIG = THE BRIDGE 360° PANORAMA — FULLY DECODED + LIVE-VERIFIED (sess: faithful port)
+
+TB.BIG ("tableau de bord" = dashboard) is not console overlays — it is **the entire ship
+bridge**: 180 pre-rendered full-screen (320x200) frames forming a 360° panorama at 2°/frame.
+The mouse steers the view through the ring; the four ship "stations" are sectors of it:
+
+- station 0 = wide helm view w/ eye-orb (frames 0..21 + 160..179, sector wraps)
+- station 1 = **the golden console menu** (frames 22..71; interactive rest frame = **55**) —
+  the HONK/TELEPHONE/CRYOBOX/MENU/OPTION golden text is BAKED INTO the frames
+- station 2 = pyramid navigation room (72..107)
+- station 3 = organic Orxx mass (108..159)
+
+Format (decoded from code, not guessed):
+- Directory: contiguous {offset:u32,size:u32} pairs from file start; first offset 0x5a0 →
+  180 entries.
+- Chunk: 8-byte bbox {w,h,x,y} (the frame's animated-region bounds; -1 = none) + u16
+  station word + RLE stream.
+- RLE (`bridge_panorama_frame_unpack` file 0x2D50 = far 0x1CE:0xA70): decodes EXACTLY
+  64000 px onto the linear back buffer gs:[0x5229]. Signed ctrl byte: <0 = run of
+  (-ctrl+1) x next byte; >=0 = (ctrl+1) literals. gs:[0x5b57]&1 = TRANSPARENT variant
+  (value 0 leaves the underlying pixel — that's how the window starfield + rotation
+  deltas survive); else OPAQUE (station-entry full redraw, 0x95c4 path).
+- Loader `bridge_panorama_frame_load` 0x981B (AX=frame): seek idx*8 → dir entry →
+  read chunk into [0x5221] buffer; resets the 4x0x18 station table gs:0x2A1B bboxes to
+  -1 and copies this chunk's bbox into the entry its station word selects; unpacks;
+  optionally ([0x5b53]&1) refreshes palette 0x5b58→0x5251.
+- State: DS:0x2795 = current frame index; 0x97E4 syncs it → ship-3D yaw [0x2f6d]
+  (the 180 frames match the 180x2° SHIP_3D_ANGLE_TABLE 1:1) and rewraps [0xa2a] by
+  [0x27a7]=frame*8-0xa0 into 0..0x5a0. The old "0x28..0x3C nav-choice gate" on
+  [0x2795] = menu clicks only hit-test while the menu sector (frames 40..60) is in view.
+
+LIVE-VERIFIED against the real game (runtime_boot env BRIDGEPROBE, new): at the
+interactive console the game rests on frame 55/angle 0x28; our decode of frame 55
+matches the emulator's VGA output at **mean_abs=2.47** (threshold 3.0; residual = the
+blue pointing-hand cursor sprite + window starfield drawn over the panorama). Steering:
+mouse at left screen edge → frame 15, right edge → frame 64, springs back to 55 at
+centre; arrow keys do nothing (pure mouse-offset steering). Ground truth saved:
+accuracy/captures/bridge/{console_rest,rotate_left,rotate_right}.ppm.
+
+**Ported: `src/tbbig.rs`** (BridgePanorama parse/unpack, both variants, station structs,
+5 tests incl. the live-capture pixel diff). CONSEQUENCE FOR THE PORT: the engine's
+console/bridge/nav rendering must be REPLACED by this panorama (ORX.FD-brightened panel,
+invented menu text/positions, separate bridge/nav screens are all wrong — the real
+console IS panorama frame 55 + hand cursor + starfield through the windows).

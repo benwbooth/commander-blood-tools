@@ -363,6 +363,62 @@ fn main() {
         return;
     }
 
+    if std::env::var("BRIDGEPROBE").is_ok() {
+        // Verify the TB.BIG bridge-panorama model against the LIVE game: reach the
+        // interactive console, then read the decoded bridge state words each probe —
+        //   gs:0x2795 = current TB.BIG panorama frame index (0..179, feeds ship-3D yaw)
+        //   gs:0x0a2a = bridge view angle (0..0x5a0, 8 units per panorama frame)
+        //   gs:0x278b = station/view state byte (cmp 8 gates the console one-shot draw)
+        // while injecting candidate rotation inputs (mouse at screen edges, arrow keys),
+        // capturing a frame after each so the port's TB.BIG rendering can be pixel-diffed.
+        let g = 0x0e84u16;
+        let state = |rt: &Runtime| {
+            let fr = rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
+            let ang = rt.m.read8(g, 0x0a2a) as u16 | ((rt.m.read8(g, 0x0a2b) as u16) << 8);
+            let st = rt.m.read8(g, 0x278b);
+            (fr, ang, st)
+        };
+        let mut next_input = 5_000_000u64;
+        while rt.cpu.steps < 50_000_000 {
+            let _ = rt.run(next_input);
+            rt.inject_key(0x01, 0x1b);
+            rt.inject_key(0x1c, 0x0d);
+            rt.set_mouse_pos(320, 100);
+            rt.mouse_press(0);
+            let _ = rt.run(rt.cpu.steps + 400_000);
+            rt.mouse_release(0);
+            next_input += 5_000_000;
+        }
+        let (fr, ang, st) = state(&rt);
+        println!("console reached: tb_frame={fr} angle={ang:#x} station={st:#x} @ {} steps", rt.cpu.steps);
+        rt.write_ppm(&out.join("bridge_00_console.ppm")).unwrap();
+        // Candidate rotation inputs; after each, run a while and report the state words.
+        let probes: [(&str, u16, u16, Option<(u8, u8)>); 6] = [
+            ("mouse-left-edge", 2, 100, None),
+            ("mouse-right-edge", 636, 100, None),
+            ("mouse-center", 320, 100, None),
+            ("key-left", 320, 100, Some((0x4b, 0x00))),
+            ("key-right", 320, 100, Some((0x4d, 0x00))),
+            ("key-right-x8", 320, 100, Some((0x4d, 0x00))),
+        ];
+        for (i, &(name, mx, my, key)) in probes.iter().enumerate() {
+            rt.set_mouse_pos(mx, my);
+            if let Some((sc, ch)) = key {
+                let reps = if name.ends_with("x8") { 8 } else { 1 };
+                for _ in 0..reps {
+                    rt.inject_key(sc, ch);
+                    let _ = rt.run(rt.cpu.steps + 1_000_000);
+                }
+            }
+            let _ = rt.run(rt.cpu.steps + 8_000_000);
+            let (fr, ang, st) = state(&rt);
+            println!("probe {name}: tb_frame={fr} angle={ang:#x} station={st:#x}");
+            rt.write_ppm(&out.join(format!("bridge_{:02}_{name}.ppm", i + 1))).unwrap();
+        }
+        println!("BRIDGEPROBE done -> {}/bridge_*.ppm", out.display());
+        return;
+    }
+
     if let Ok(spec) = std::env::var("MEMDUMP") {
         // Dump N bytes at gs:<off> to a file after running to `steps`. Spec: "<offhex>:<len>:<path>".
         let parts: Vec<&str> = spec.split(':').collect();
