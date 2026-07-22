@@ -407,9 +407,14 @@ fn main() {
             for round in 0..400 {
                 let (fr, _, _) = state(&rt);
                 let delta = fr as i32 - 45;
-                // Targets: 5 menu rows (only valid frames 40..60) + the orb.
-                let target = round % 6;
-                let (sx, sy) = if target < 5 && (40..=60).contains(&fr) {
+                // Targets: 5 menu rows (only valid frames 40..60) + the orb + the
+                // LEFT CHOICE BOX rows (e.g. {BOB_MORLOCK, CANCEL} — appears over
+                // the window at ~x45..130, rows ~y95/y108; clicking the first row
+                // answers the tutorial's prompt).
+                let target = round % 8;
+                let (sx, sy) = if target >= 6 {
+                    (85, if target == 6 { 96 } else { 109 })
+                } else if target < 5 && (40..=60).contains(&fr) {
                     let x = 0x11f - delta * 8 - 0x37; // box centre-ish
                     let y = 0x48
                         + delta.unsigned_abs() as i32 * 5 / 4
