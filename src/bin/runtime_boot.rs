@@ -1265,6 +1265,48 @@ fn main() {
             return;
         }
 
+        // SCRIPT2FWD: play SCRIPT2 forward by click-to-advance (NOT re-entering the
+        // topic hub) — advance the linear story past the consultation toward the
+        // free-choice nav, watching DS:0x4F09 anchors + new .ext/script loads.
+        if std::env::var("SCRIPT2FWD").is_ok() {
+            let anchors_live = |rt: &Runtime| (0..33u32).any(|i| {
+                let v = (rt.m.read8(g, 0x4f09 + i*2) as u16 | ((rt.m.read8(g, 0x4f09+i*2+1) as u16)<<8)) as i16;
+                v != 0 && v.abs() < 8000 && v.abs() != 900 && v.abs() != 10200 && v.abs() != 12100
+            });
+            let baseline = rt.opened_files.len();
+            let mut last_files = 0usize;
+            for round in 0..1500u32 {
+                // Advance: a center click (dismiss/next line), occasionally the orb.
+                let (fr,_,_) = state(&rt);
+                let (sx, sy) = if round % 5 == 0 { (125u16, 118u16) } else { (160, 100) };
+                let ring = (sx as i32 + fr as i32*8 - 160).rem_euclid(1440) as u16;
+                rt.set_mouse_pos(ring, sy);
+                let _ = rt.run(rt.cpu.steps + 400_000);
+                rt.mouse_press(0); let _ = rt.run(rt.cpu.steps + 250_000); rt.mouse_release(0);
+                let _ = rt.run(rt.cpu.steps + 1_200_000);
+                let nfiles = rt.opened_files.len();
+                if nfiles > last_files {
+                    let newest: Vec<String> = rt.opened_files[baseline.max(last_files)..].iter().map(|(_,p)|p.clone()).collect();
+                    let has_world = newest.iter().any(|f| f.to_lowercase().ends_with(".ext"));
+                    let has_scr = newest.iter().any(|f| f.to_lowercase().contains("script3")||f.to_lowercase().contains("script4")||f.to_lowercase().contains("script5"));
+                    println!("round {round}: NEW {newest:?} world={has_world} script345={has_scr}");
+                    if has_world || has_scr || anchors_live(&rt) {
+                        println!("REACHED destination/world state at round {round}!");
+                        rt.write_ppm(&out.join(format!("s2fwd_reached_{round}.ppm"))).unwrap();
+                        rt.save_state(std::path::Path::new("accuracy/world_loaded.state")).unwrap();
+                        break;
+                    }
+                    last_files = nfiles;
+                }
+                if round % 150 == 0 {
+                    println!("round {round}: frame {fr}, anchors={} files={}", anchors_live(&rt), nfiles);
+                    rt.write_ppm(&out.join(format!("s2fwd_r{round}.ppm"))).unwrap();
+                }
+            }
+            println!("SCRIPT2FWD done");
+            return;
+        }
+
         // PHONEWALK: from SCRIPT2 open the TELEPHONE (golden menu row 1) and call
         // each crew contact (choice box), watching for a destination grant
         // (nav anchors populate / a new location .ext opens) — the story beat
