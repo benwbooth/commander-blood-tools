@@ -1108,11 +1108,36 @@ fn main() {
             return;
         }
 
+        // FONTFIND: search live RAM for the choice-box glyph bitmaps (not present
+        // in any file — derived or copied at runtime).
+        if std::env::var("FONTFIND").is_ok() {
+            let pats: [(&str, [u8; 8]); 3] = [
+                ("C", [0xfe,0x80,0x80,0x80,0x80,0x80,0x80,0xff]),
+                ("A", [0x7f,0x81,0x81,0x81,0x81,0xbf,0x81,0x81]),
+                ("N", [0xfe,0x81,0x81,0x81,0x81,0x81,0x81,0x81]),
+            ];
+            for (name, pat) in pats {
+                let mut found = 0;
+                for i in 0..rt.m.mem.len().saturating_sub(8) {
+                    if rt.m.mem[i..i + 8] == pat {
+                        println!("FONTFIND {name} at linear {i:#07x}");
+                        found += 1;
+                        if found >= 4 { break; }
+                    }
+                }
+                if found == 0 { println!("FONTFIND {name}: not in RAM"); }
+            }
+            return;
+        }
+
         // SUBMENUCAP: click the golden menu's MENU and OPTION rows (decoded box:
         // screen x 177..287, rows top 0x48 pitch 0x12 at frame 45-centred view;
         // at frame 55 the box shifts -8px/frame => right edge 207) and capture
         // what actually opens — ground truth for the submenu/OPTION ports.
         if std::env::var("SUBMENUCAP").is_ok() {
+            // Watch who writes the box-text colour 0xE8 during the clicks.
+            rt.m.watch = Some((0xE8, 0..0x100000));
+            rt.m.watch_hits.clear();
             for (row, name) in [(3u16, "menu"), (4, "option")] {
                 // Row centre at the CURRENT frame (55): delta=10 => box x 97..207,
                 // top = 0x48 + 12 = 84, pitch 17.
@@ -1197,6 +1222,10 @@ fn main() {
                 rt.inject_key(0x01, 0x1b); // Esc back
                 let _ = rt.run(rt.cpu.steps + 6_000_000);
             }
+            for &(cs, ip, ds, si, addr) in rt.m.watch_hits.iter().take(20) {
+                println!("0xE8 writer {cs:04x}:{ip:04x} -> {addr:#07x} (ds:si={ds:04x}:{si:04x})");
+            }
+            rt.m.watch = None;
             println!("SUBMENUCAP done");
             return;
         }
