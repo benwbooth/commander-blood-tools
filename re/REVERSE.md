@@ -4586,3 +4586,27 @@ REMAINING (port wiring, not RE): map each 0xA3 menu to its conversation beat /
 help* handler so the port shows the RIGHT menu at each point (the menus are
 emitted inline in COD/BAS flow order; associate by the enclosing function). The
 LABEL SOURCE — the documented residual — is now fully decoded from disk.
+
+## Concept-menu PER-BEAT wiring — the precise residual (2026-07-22)
+
+The concept-menu LABELS are decoded (0xA3 in .BAS, verified). Wiring them PER
+CONVERSATION BEAT in the port needs one more layer, now scoped precisely:
+  - The menus live in `.BAS`; the port plays dialogue from `.COD` (speech_events
+    named via `.DEB` kind-2 function offsets). DEB function offsets range to 38571
+    > BAS size (22565) but < COD size (39042) → **DEB offsets are COD offsets**, so
+    a BAS-menu-offset ↔ function association by containment mixes address spaces
+    (invalid). Confirmed: enclosing-fn(BAS menu, DEB-as-BAS) gives nonsense.
+  - `0xA3` in COD is a COMMON opcode (90 sites, typically followed by 0xA1/0xA6),
+    NOT the menu-show; and BAS menu offsets are not referenced by plain COD u16.
+    So there is no trivial COD→BAS menu pointer to follow.
+  - BUT `.BAS` is itself the full conversation script: each `0xA3` MENU is followed
+    by `0xA6` TEXT response tokens (verified: numerology menu@0xf8b → a run of TEXT
+    ops). So the menu↔dialogue association is INHERENT in BAS order/flow.
+  - REMAINING WORK = a BAS conversation-flow parser (decode the 0xA6 TEXT token
+    fields b1..b5 + branch ops in BAS, as the port already does for COD) so each
+    menu associates with its topic responses; then map that onto the port's COD
+    speech_events by conversation order. This is a genuine parser (comparable in
+    size to the existing COD `ScriptBundle` parse), i.e. real RE, not a 1-line wire.
+DONE this session: label decode (src/concept_menu.rs, verified vs capture) +
+SCRIPT2 numerology menu wired live in the port (main.rs). The location per-beat
+menus await the BAS-flow parser above.
