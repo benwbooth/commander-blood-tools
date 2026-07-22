@@ -195,6 +195,23 @@ pub fn func_79c(rt: &mut Runtime) {
     rt.m.regs.set_ax(ax);
 }
 
+/// `func_2dd3` (`cmos_rtc_read`, 0x2DD3): select CMOS register 0 (out 0x70=0), read it (in 0x71)
+/// into AL, duplicate into AH, and store the word to cs:[0xAEE] — seeds the game's PRNG from the
+/// RTC seconds. Exercises the `in` path; AX is preserved (pushed/popped).
+pub fn func_2dd3(rt: &mut Runtime) {
+    push16(rt, rt.m.regs.ax());
+    rt.m.regs.set_ax(0); // xor ax,ax
+    out8(rt, 0x70, 0); // select CMOS register 0
+    let al = rt.port_in(0x71, 1) as u8; // in al, 0x71
+    rt.m.regs.set_al(al);
+    rt.m.regs.set_ah(al); // mov ah, al
+    let cs = rt.m.regs.cs;
+    let ax = rt.m.regs.ax();
+    rt.m.write16(cs, 0xaee, ax); // cs:[0xaee] = ax
+    let ax = pop16(rt);
+    rt.m.regs.set_ax(ax);
+}
+
 /// `func_2f90` (`vga_palette_write`, 0x2F90): reset the DAC write index (out 0x3C8=0) then upload
 /// 768 bytes (256 RGB triples) from ds:si to the DAC data port via `rep outsb` — loads the full
 /// palette. SI advances during the copy but is restored (pushed/popped), so the caller's SI is
@@ -440,6 +457,8 @@ mod tests {
             ("func_2fa6", 0x2fa6, func_2fa6, &[], &[], true),
             // uploads 768 bytes from ds:si to the DAC (rep outsb) — compare the full palette.
             ("func_2f90", 0x2f90, func_2f90, &[], &[], true),
+            // reads CMOS RTC (in 0x71) → cs:[0xaee] (cs=0 here, so a segment-0 word write).
+            ("func_2dd3", 0x2dd3, func_2dd3, &[], &[0xaee], false),
         ];
         for &(name, offset, lift, gs_checks, seg0_checks, check_dac) in leaves {
             let mut rt_lift = test_runtime();
