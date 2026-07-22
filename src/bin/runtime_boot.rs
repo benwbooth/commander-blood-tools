@@ -525,6 +525,7 @@ fn main() {
             };
             let baseline = rt.opened_files.len();
             let mut last = String::new();
+            let mut silent = 0usize;
             let mut reached2 = false;
             for round in 0..500 {
                 let (fr, _, _) = state(&rt);
@@ -538,6 +539,17 @@ fn main() {
                 if line != last && !line.is_empty() {
                     println!("round {round}: OCR {line:?}");
                     last = line.clone();
+                    silent = 0;
+                } else {
+                    silent += 1;
+                    if silent == 40 {
+                        // Long silence: capture the state and start working the
+                        // menu items in order with long dwells (the tutorial may
+                        // be waiting for a function to actually be USED).
+                        rt.write_ppm(&out.join(format!("silent_{round}.ppm"))).unwrap();
+                        println!("round {round}: silent 40 rounds (frame {fr}) — captured");
+                        silent = 0;
+                    }
                 }
                 let names = ["HONK", "TELEPHONE", "CRYOBOX", "MENU", "OPTION"];
                 let want = names.iter().position(|n| line.contains(n));
@@ -555,10 +567,17 @@ fn main() {
                         rt.mouse_press(0);
                         let _ = rt.run(rt.cpu.steps + 400_000);
                         rt.mouse_release(0);
-                        let _ = rt.run(rt.cpu.steps + 12_000_000);
-                        rt.write_ppm(&out.join(format!("obeyed_{}_{round}.ppm", names[row])))
+                        // Long dwell: let the function open and play (some steps
+                        // animate for seconds), capturing along the way.
+                        for shot in 0..3 {
+                            let _ = rt.run(rt.cpu.steps + 15_000_000);
+                            rt.write_ppm(&out.join(format!(
+                                "obeyed_{}_{round}_{shot}.ppm",
+                                names[row]
+                            )))
                             .unwrap();
-                        println!("round {round}: obeyed {} -> captured", names[row]);
+                        }
+                        println!("round {round}: obeyed {} -> captured x3", names[row]);
                         // Return to the console if we left it.
                         rt.inject_key(0x01, 0x1b);
                         let _ = rt.run(rt.cpu.steps + 6_000_000);
