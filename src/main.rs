@@ -188,6 +188,7 @@ fn run_engine_play(iso: &str, assets: &str, out: &str, script: &str) -> anyhow::
 
     let mut engine = EngineState::new();
     engine.load_dialogue_scenes(&cod, &var, &dic, &deb, &descript, Path::new(assets));
+    engine.set_pyramid_console(script == "SCRIPT1"); // SCRIPT1 tutorial = pyramid console
     engine.dialogue_hold_frames = 20; // ~1.3s per line at 15 fps
 
     // Scene background music (.voc, which ffmpeg reads directly), resolved via the
@@ -410,6 +411,9 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
         if let (Ok(c), Ok(v), Ok(d), Ok(b)) = (r("COD"), r("VAR"), r("DIC"), r("DEB")) {
             // load_dialogue_scenes sets up the scene + the D2 chaining decision.
             engine.load_dialogue_scenes(&c, &v, &d, &b, &descript, Path::new(assets));
+            // SCRIPT1 (the tutorial/early game) is presented on the PYRAMID CONSOLE; SCRIPT2+ use
+            // the bridge (ground truth: accuracy/captures/frame_6-22 vs script2_first_frame.ppm).
+            engine.set_pyramid_console(n == 1);
             // Load the script's decoded concept-menu stack (the game's gs:0x6772 menu
             // system, src/bas_vm.rs) from its .BAS so conversations can present their
             // real topic menus (seeded at the entry menu; navigated via bas_topic_click).
