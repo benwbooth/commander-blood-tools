@@ -793,6 +793,13 @@ impl EngineState {
         self.bridge.update_view();
         self.compass_angle = self.bridge.frame;
         self.render_bridge_background();
+        // In the pyramid nav sector, offer the choose-a-location destinations as
+        // a golden choice box over the console's left — the interaction pattern
+        // captured live from the real game (accuracy/captures/bridge/
+        // choice_box_bob_morlock.ppm: golden rounded box, gold text rows).
+        if (72..=107).contains(&self.bridge.frame) && !self.nav_destinations.is_empty() {
+            self.draw_choice_box_labels();
+        }
         self.draw_hand_cursor();
         // The MENU submenu overlay ({EXPLANATIONS, GAME}, decoded by driving
         // the real game) drawn over the golden menu box in the console font.
@@ -877,6 +884,55 @@ impl EngineState {
                 }
             }
         }
+    }
+
+    /// Draw the nav destinations as a golden choice box over the console's left —
+    /// the game's captured interaction pattern (a rounded gold-bordered box with
+    /// gold console-font rows, see accuracy/captures/bridge/
+    /// choice_box_bob_morlock.ppm). Uses the observed geometry: box at x ~40,
+    /// rows from y ~92 at 13 px pitch.
+    fn draw_choice_box_labels(&mut self) {
+        if self.console_font.is_empty() {
+            return;
+        }
+        const GOLD: u8 = 0xFD;
+        const BORDER: u8 = 0xFC;
+        self.scene_palette[GOLD as usize] = [240, 208, 48];
+        self.scene_palette[BORDER as usize] = [140, 110, 20];
+        let rows = self.nav_destinations.len().min(8);
+        let (x0, y0) = (40usize, 88usize);
+        let (w, h) = (110usize, rows * 13 + 8);
+        for y in y0..(y0 + h).min(ENGINE_SCREEN_HEIGHT) {
+            for x in x0..(x0 + w).min(ENGINE_SCREEN_WIDTH) {
+                let edge = y == y0 || y + 1 == y0 + h || x == x0 || x + 1 == x0 + w;
+                if edge {
+                    self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] = BORDER;
+                }
+            }
+        }
+        let labels: Vec<String> = self
+            .nav_destinations
+            .iter()
+            .take(rows)
+            .map(|(label, _)| label.clone())
+            .collect();
+        for (i, label) in labels.iter().enumerate() {
+            self.draw_console_text(label, x0 + 6, y0 + 5 + i * 13, GOLD);
+        }
+    }
+
+    /// Map a click to a nav-sector destination row when the choice box is showing
+    /// (bridge view in the pyramid sector with destinations set).
+    pub fn bridge_nav_destination_click(&self, x: u16, y: u16) -> Option<usize> {
+        if !(72..=107).contains(&self.bridge.frame) || self.nav_destinations.is_empty() {
+            return None;
+        }
+        let (px, py) = (x as i32, y as i32);
+        if !(40..150).contains(&px) {
+            return None;
+        }
+        let row = (py - 93) / 13;
+        (row >= 0 && (row as usize) < self.nav_destinations.len().min(8)).then_some(row as usize)
     }
 
     /// Composite the bridge view into the framebuffer: window starfield, then the

@@ -3876,3 +3876,13 @@ manu3 file offset 0x1370).
   console font approach); (c) the tutorial's expected action here is likely
   clicking BOB_MORLOCK (added to TUTORIAL2's targets). descript.des reopened
   when this flow activated (~round 380).
+- TUTORIAL2 v2 (choice-box aware): the tutorial responds interactively — the
+  choice-box click triggered the call flow (bappel.spr = dial widget,
+  izwalito.spr = speaker portrait) and the script answered "OF COURSE YOU CAN
+  WAKE CAP'N BOB AND QUESTION HIM". Still short of SCRIPT2; next driver
+  iteration should read the live subtitle text to follow instructions
+  step-by-step instead of blind cycling.
+- PORT: nav destinations now render as the captured golden choice-box pattern
+  OVER the panorama's pyramid sector (draw_choice_box_labels /
+  bridge_nav_destination_click; main.rs routes the click to the location
+  script) — the CHART.FD screen remains only as the legacy on_ship path.

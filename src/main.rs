@@ -544,6 +544,16 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 // (4) the 3D pyramid menu), while a hit on the eye-orb arms a
                 // station seek — the view auto-rotates there (no screen change).
                 Event::ButtonPress(b) if engine.bridge_active && b.detail == 1 => {
+                    // In the pyramid nav sector, the destination choice box takes
+                    // the click first (choose a location -> its dialogue).
+                    if let Some(i) = engine.bridge_nav_destination_click(mx, my) {
+                        let dest = 3 + i as u32;
+                        engine.progress.visit(&format!("SCRIPT{dest}"));
+                        load_script(&mut engine, &mut music, dest);
+                        engine.bridge_active = false;
+                        engine.on_ship = false;
+                        continue;
+                    }
                     match engine.bridge_press(mx, my) {
                         Some(0) => {
                             engine.bridge.release_menu();
