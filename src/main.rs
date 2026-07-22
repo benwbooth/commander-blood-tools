@@ -352,6 +352,9 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     // The TV channel's broadcast music (hatetv.voc / balise.voc, from the channel's DESCRIPT
     // record): one per-frame watcher covers every open/close/switch path.
     let mut tv_music_playing: Option<String> = None;
+    // Whether the nav target-list music (`mu\tablo2.voc`, decoded handler-4 toggle @0x886C)
+    // is currently on.
+    let mut nav_music_on = false;
     // The game plays the SCRIPT1 console tutorial automatically once the intro ends (it
     // then chains to SCRIPT2 via its decoded D2 handoff, after which control returns to
     // the nav view for free destination choice). Fire it exactly once.
@@ -911,13 +914,15 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     load_script(&mut engine, &mut music, u32::from(profile) + 1);
                 }
                 None if !ending_started && engine.progress.all_visited() => {
-                    // Every free-choice location has been visited: play the ending finale.
+                    // Every free-choice location has been visited: play the ending finale,
+                    // with the credits music the binary itself names (`mu\credits.voc`,
+                    // string at file 0xE16B — the ending IS the credits sequence).
                     ending_started = true;
-                    music.stop();
                     voice = None;
                     voice_line = None;
                     current_script.set(0);
                     engine.start_ending();
+                    music.play(&format!("{assets}/mu/credits.voc"));
                 }
                 None => {
                     engine.on_ship = true;
@@ -926,6 +931,28 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     voice_line = None;
                     current_script.set(0); // back on the nav — no active location
                 }
+            }
+        }
+        // Nav target-list music: the DECODED nav-choice handler 4 (file 0x886C) toggles
+        // `mu\tablo2.voc` on when the destination list opens and off when it closes (labels
+        // DS:0x2578/0x2581 select the list pointer on tablo2 stop/start; DS:0x0BA3 is the active
+        // latch). Mirror it: play tablo2 while the nav view is the active screen, stop on leave.
+        let nav_music_should_play = engine.nav_view_active()
+            && !engine.intro_active()
+            && !engine.ending_active
+            && !engine.title_active();
+        if nav_music_should_play {
+            if !nav_music_on {
+                nav_music_on = true;
+                music.play(&format!("{assets}/mu/tablo2.voc"));
+            }
+        } else if nav_music_on {
+            nav_music_on = false;
+            // Stop tablo2 only when the next screen brings no music of its own: the quiet
+            // on-ship consoles (bridge/phone/cryobox/option/alien/cyber). Dialogue, the TV,
+            // and the ending each start their own music, which already replaced tablo2.
+            if engine.on_ship && !engine.tv_active && !engine.ending_active {
+                music.stop();
             }
         }
         // TV broadcast music: while a channel is on, play its record's music; stop when the TV
