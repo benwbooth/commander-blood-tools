@@ -15,20 +15,30 @@ interactive game loop first.
 
 ## Current Completion Status
 
-The port (`src/*.rs` outside `src/recomp/`, driven by `EngineState` and
-`run_engine_window`) implements the **whole-game frame end to end**: title → intro
-(with the DESCRIPT-sourced CRYO credit) → SCRIPT1 tutorial → SCRIPT2 (D2-chained) →
-nav *choose-a-location* → the free-choice destinations (all characters' decoded
-dialogue) → the console functions (HONK / TELEPHONE / CRYOBOX) → save/load → the
-`fin.hnm` ending finale → back to title. Every screen was **visually verified**
-faithful (correct palettes + real decoded assets) via the `export_screens` bin
-(2026-07-21). The remaining gap to a full interactive-game replacement is dominated
-by subsystems that are *not yet reverse-engineered* (undecoded runtime data and
-mechanics) — MENU/OPTION console handlers, the mini-game logic, the interactive
-progression/flag layer, and the DOS `blood.sav` byte format — not by unwritten port
-code. Closing it is new RE work gated on oracle ground truth, not transliteration.
-Fabricating those subsystems would violate the "faithfully accurate" requirement, so
-they are left explicit rather than guessed.
+**Honest reassessment (2026-07-21):** earlier status text here overclaimed. The
+port played end to end, but several core screens were *fabricated approximations*
+(a brightened ORX.FD panel standing in for the console, menu text drawn at guessed
+coordinates, station icing icons, separate invented bridge/nav screens). The user
+verdict on the live port — "not even close" — was correct, and the standard going
+forward is: **every ported behaviour must be decompiled from BLOODPRG.EXE (or its
+overlays) and verified against the real game running in the in-repo emulator**
+(`src/recomp/` boots the original EXE bit-exact; `runtime_boot` diagnostics drive
+it into gameplay and dump any state or frame).
+
+Progress under that standard:
+
+- **The ship bridge is now real and verified.** TB.BIG decoded (the whole bridge
+  is a 360° 180-frame panorama; golden menu text baked in), the steering/seek/menu
+  interaction decompiled from the binary into `src/bridge.rs`, and the engine's
+  console render pixel-matches the live game (`bridge_console_matches_live_game_capture`,
+  mean_abs 2.58; the ported steering law replays every live probe observation
+  exactly). All invented console rendering was deleted.
+- Sceneless/tutorial dialogue now plays over the real bridge, as the live game does.
+- Still fabricated or stand-in (tracked in `re/REVERSE.md` "Faithful-port grind"):
+  the pointing-hand cursor (entity 0x15..0x1F lead), the nav destination list
+  (CHART.FD screen stands in for panorama-sector navigation), the MENU submenu
+  overlay appearance, OPTION pyramid item glyphs, the cyberspace mini-game
+  interaction semantics, on-planet click semantics, and the DOS `blood.sav` format.
 
 Verified end to end by `engine::tests::full_playable_loop_end_to_end` (fast CI
 test) and `src/bin/smoke.rs` (headless playthrough of every screen + all five

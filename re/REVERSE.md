@@ -2343,11 +2343,18 @@ full-screen images per README; BLOOD.DAT `FD\*.LBM`).
       (`src/bridge.rs`), engine console = real panorama, end-to-end pixel test vs the
       live game (mean_abs 2.58). See "TB.BIG = THE BRIDGE 360° PANORAMA".
 - [ ] **Pointing-hand cursor**: the game's bridge cursor is a teal pointing hand drawn
-      over the panorama (visible in accuracy/captures/bridge/*.ppm). NOT in blood.dat,
-      not a loose .SPR, not int33h. Find its draw routine via a framebuffer write-watch
-      at the hand pixels in the emulator (Machine.watch/watch_addr), then its asset.
+      over the panorama (visible in the live captures). NOT in blood.dat, tb.big
+      (fully accounted), any loose .SPR, or the boot file-open trace — it is
+      runtime-composited. LEAD (this session): the hand is one of the bridge overlay
+      ENTITIES 0x15..0x1F in the DS:0x6212 table — page_flip calls 0x299:0x1467
+      (sprite_slot_commit_dirty_range) with ax=0x15 bx=0x1f, and the station-record
+      handlers write kinds 0x15/0x14 into [rec+2]; 0x299:0x1241 is
+      entity_flag_state_transition (AX=entity id), not a gfx call. Next: at the live
+      console, dump entity 0x15/0x14 records (gs:0x6212+id*32) + follow the sprite
+      descriptor ptr (+4 = pixels) to find the hand's pixel source; it may be a
+      real-time-shaded 3D mesh (KLAY.SPR = 256-entry table, likely a shading LUT).
       Note: station records 4/5 (live 0x2A1B dump) hold static boxes {18,111,96,47} /
-      {215,112,75,27} + screen positions at +0x14 — possibly related UI overlays.
+      {215,112,75,27} + screen positions at +0x14 — the hand's rest anchors.
 - [ ] **Nav sector merge**: rotate to frames 72..107 = the pyramid navigation room.
       Verify vs the live ring captures (ringprobe rotate_*.ppm) what the real nav shows
       (destination pyramids? labels?) and port destination selection onto the panorama
