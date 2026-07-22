@@ -1108,6 +1108,34 @@ fn main() {
             return;
         }
 
+        // NAVPROBE: post-tutorial nav sector — rotate to the pyramid room and
+        // capture + OCR: are real destinations offered now? (The core
+        // choose-a-location gameplay loop's ground truth.)
+        if std::env::var("NAVPROBE").is_ok() {
+            for stop in 0..6 {
+                let (fr, _, _) = state(&rt);
+                let target = ((fr as u32 * 8 + 280) % 1440) as u16;
+                rt.set_mouse_pos(target, 100);
+                let _ = rt.run(rt.cpu.steps + 10_000_000);
+                let (fr2, _, _) = state(&rt);
+                rt.write_ppm(&out.join(format!("nav_{stop}_f{fr2}.ppm"))).unwrap();
+                std::fs::write(
+                    out.join(format!("nav_{stop}_f{fr2}_indices.bin")),
+                    rt.screen_indices(),
+                )
+                .unwrap();
+                println!("nav stop {stop}: frame {fr2}");
+                if (72..=107).contains(&fr2) {
+                    // In the pyramid sector: linger, click the orb, capture.
+                    let _ = rt.run(rt.cpu.steps + 10_000_000);
+                    rt.write_ppm(&out.join(format!("nav_sector_f{fr2}.ppm"))).unwrap();
+                    break;
+                }
+            }
+            println!("NAVPROBE done");
+            return;
+        }
+
         // FONTFIND: search live RAM for the choice-box glyph bitmaps (not present
         // in any file — derived or copied at runtime).
         if std::env::var("FONTFIND").is_ok() {
