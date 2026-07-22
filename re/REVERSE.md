@@ -3998,3 +3998,8 @@ manu3 file offset 0x1370).
   the exercise and advance SCRIPT2. PORT: SCRIPT2's interactive exercise is
   new required behaviour (currently the port plays SCRIPT2 as passive
   dialogue).
+- SCRIPT2 exercise decoded further (SCRIPT2.DIC): "a simple exercise in
+  Pranayama NUMEROLOGY ... Observe [how] many numbers ... between ... twenty";
+  Scruter_K (radio, Trashlando): "YOU DO THE COUNTING...". Numbers are
+  DISPLAYED to be observed/counted (digit keys are NOT the answer — prompt
+  persists under keypresses). Frame-series capture of the display in flight.
