@@ -3820,3 +3820,9 @@ manu3 file offset 0x1370).
   The rasterisation data flow is complete: faces -> y-sort -> edge list ->
   spans -> texture blit. Remaining for the port: face-record UV fields, pose
   tables (entry 0x181), then write src/manu3.rs renderer.
+- Pose apply 0x181: pose id (&0x1F, doubled) indexes the RELATIVE-offset script
+  table at [0x2306] -> active pose ptr [0x102E], phase [0x102C], working area
+  0x1032, then the tween interpreter at 0x1DF — THE SAME MenuAnimDescriptor
+  tween machinery already decoded for the OPTION menu and ported in
+  src/manu3.rs. The hand's 32 poses are tween scripts over node fields; the
+  existing Rust tween code is directly reusable for the hand.
