@@ -258,8 +258,8 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     use x11rb::connection::Connection;
     use x11rb::protocol::Event;
     use x11rb::protocol::xproto::{
-        AtomEnum, ConnectionExt, CreateGCAux, CreateWindowAux, EventMask, GrabMode, ImageFormat,
-        PropMode, WindowClass,
+        AtomEnum, ChangeWindowAttributesAux, ConnectionExt, CreateGCAux, CreateWindowAux,
+        EventMask, GrabMode, ImageFormat, PropMode, WindowClass,
     };
     use x11rb::wrapper::ConnectionExt as _;
 
@@ -565,9 +565,23 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     let mut image = vec![0u8; win_w as usize * win_h as usize * 4];
     let (mut mx, mut my, mut buttons) = (0u16, 0u16, 0u16);
     let mut clicked = false;
-    // Mouse capture: clicking into the window CONFINES the cursor to it (the bridge steers by
-    // relative cursor motion, like the original's captured DOS mouse); Right Shift releases.
+    // Mouse capture: clicking into the window LOCKS the mouse to it; Right Shift releases.
+    // On Wayland/XWayland an X11 confine-grab is ignored, so we use the pattern XWayland
+    // promotes to a REAL Wayland pointer lock (the SDL/game technique): hide the X cursor and
+    // continuously warp the pointer back to the window centre, accumulating the relative
+    // deltas into a VIRTUAL cursor that we draw ourselves and feed to the engine.
     let mut pointer_locked = false;
+    let (mut vcx, mut vcy): (i32, i32) = (win_w as i32 / 2, win_h as i32 / 2);
+    // A fully-transparent 1x1 cursor (core protocol, no extension): set as the window cursor
+    // while locked so the pinned OS pointer is invisible and only our drawn cursor shows.
+    let blank_cursor = {
+        let pm = conn.generate_id()?;
+        conn.create_pixmap(1, pm, win, 1, 1)?;
+        let cur = conn.generate_id()?;
+        conn.create_cursor(cur, pm, pm, 0, 0, 0, 0, 0, 0, 0, 0)?;
+        conn.free_pixmap(pm)?;
+        cur
+    };
     let mut frames_since_input = 0u32;
     // Conservative X11 request-size cap (safe even without the big-requests extension);
     // put_image is chunked into row-strips under this.
@@ -582,20 +596,56 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
         while let Some(event) = conn.poll_for_event()? {
             match event {
                 Event::MotionNotify(m) => {
-                    // Map window coords back through the letterbox+scale to source pixels.
-                    let ex = (m.event_x as isize - off_x as isize)
-                        .clamp(0, dst_w as isize - 1) as usize;
-                    let ey = (m.event_y as isize - off_y as isize)
-                        .clamp(0, dst_h as isize - 1) as usize;
-                    mx = (ex / scale).min(src_w - 1) as u16;
-                    my = (ey / scale).min(src_h - 1) as u16;
+                    if pointer_locked {
+                        // Locked: the real pointer is pinned to the window centre; each motion
+                        // event's offset from centre is the relative delta. Accumulate it into
+                        // the virtual cursor (clamped to the game's letterboxed area) and warp
+                        // the real pointer back — XWayland turns this into a Wayland pointer
+                        // lock, so the cursor genuinely cannot leave the window.
+                        let (cx, cy) = (win_w as i32 / 2, win_h as i32 / 2);
+                        let (dx, dy) = (m.event_x as i32 - cx, m.event_y as i32 - cy);
+                        if (dx, dy) != (0, 0) {
+                            vcx = (vcx + dx)
+                                .clamp(off_x as i32, (off_x + dst_w) as i32 - 1);
+                            vcy = (vcy + dy)
+                                .clamp(off_y as i32, (off_y + dst_h) as i32 - 1);
+                            let _ = conn.warp_pointer(
+                                x11rb::NONE,
+                                win,
+                                0,
+                                0,
+                                0,
+                                0,
+                                cx as i16,
+                                cy as i16,
+                            );
+                        }
+                        mx = (((vcx - off_x as i32) as usize) / scale).min(src_w - 1) as u16;
+                        my = (((vcy - off_y as i32) as usize) / scale).min(src_h - 1) as u16;
+                    } else {
+                        // Map window coords back through the letterbox+scale to source pixels.
+                        let ex = (m.event_x as isize - off_x as isize)
+                            .clamp(0, dst_w as isize - 1) as usize;
+                        let ey = (m.event_y as isize - off_y as isize)
+                            .clamp(0, dst_h as isize - 1) as usize;
+                        mx = (ex / scale).min(src_w - 1) as u16;
+                        my = (ey / scale).min(src_h - 1) as u16;
+                    }
                 }
-                // Clicking into the window LOCKS the mouse to it (grab + confine): the bridge
-                // steering consumes relative cursor motion like the original's captured DOS
-                // mouse, so confinement keeps the cursor from escaping mid-steer. The locking
-                // click is swallowed (it doesn't also click the game). Right Shift releases.
-                Event::ButtonPress(_) if !pointer_locked => {
+                // Clicking into the window LOCKS the mouse to it: hide the X cursor, pin the
+                // real pointer to the window centre (XWayland promotes centre-warping with a
+                // hidden cursor to a genuine Wayland pointer lock), and track a virtual cursor
+                // that we draw ourselves. The locking click is swallowed (it doesn't also click
+                // the game). Right Shift releases.
+                Event::ButtonPress(b) if !pointer_locked => {
                     pointer_locked = true;
+                    // Start the virtual cursor where the user clicked.
+                    vcx = (b.event_x as i32).clamp(off_x as i32, (off_x + dst_w) as i32 - 1);
+                    vcy = (b.event_y as i32).clamp(off_y as i32, (off_y + dst_h) as i32 - 1);
+                    let _ = conn.change_window_attributes(
+                        win,
+                        &ChangeWindowAttributesAux::new().cursor(blank_cursor),
+                    );
                     let _ = conn.grab_pointer(
                         true,
                         win,
@@ -604,9 +654,19 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                             | EventMask::BUTTON_RELEASE,
                         GrabMode::ASYNC,
                         GrabMode::ASYNC,
-                        win, // confine the cursor to the window
+                        win, // confined on plain X11; ignored by XWayland (centre-warp covers it)
                         x11rb::NONE,
                         x11rb::CURRENT_TIME,
+                    );
+                    let _ = conn.warp_pointer(
+                        x11rb::NONE,
+                        win,
+                        0,
+                        0,
+                        0,
+                        0,
+                        (win_w / 2) as i16,
+                        (win_h / 2) as i16,
                     );
                     conn.change_property8(
                         PropMode::REPLACE,
@@ -616,11 +676,18 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         b"Commander Blood - engine  [mouse locked - Right Shift releases]",
                     )?;
                 }
-                // Right Shift (keycode 62): release the mouse lock.
+                // Right Shift (keycode 62): release the mouse lock, restoring the real cursor
+                // at the virtual cursor's position so the hand-off is seamless.
                 Event::KeyPress(k) if k.detail == 62 => {
                     if pointer_locked {
                         pointer_locked = false;
                         let _ = conn.ungrab_pointer(x11rb::CURRENT_TIME);
+                        let _ =
+                            conn.warp_pointer(x11rb::NONE, win, 0, 0, 0, 0, vcx as i16, vcy as i16);
+                        let _ = conn.change_window_attributes(
+                            win,
+                            &ChangeWindowAttributesAux::new().cursor(x11rb::NONE),
+                        );
                         conn.change_property8(
                             PropMode::REPLACE,
                             win,
@@ -1080,6 +1147,32 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         di += 4;
                     }
                 }
+            }
+        }
+        // While the mouse is locked the OS cursor is hidden and pinned; draw the VIRTUAL cursor
+        // (a small white crosshair with a dark outline) at its window position so the player can
+        // still point at menus and console buttons.
+        if pointer_locked {
+            let stride = win_w as usize * 4;
+            let mut put = |x: i32, y: i32, c: [u8; 3]| {
+                if x >= 0 && y >= 0 && (x as usize) < win_w as usize && (y as usize) < win_h as usize
+                {
+                    let di = y as usize * stride + x as usize * 4;
+                    if di + 2 < image.len() {
+                        image[di] = c[2];
+                        image[di + 1] = c[1];
+                        image[di + 2] = c[0];
+                    }
+                }
+            };
+            for d in -5i32..=5 {
+                // dark outline first, then the white cross on top
+                put(vcx + d, vcy + 1, [20, 20, 20]);
+                put(vcx + 1, vcy + d, [20, 20, 20]);
+            }
+            for d in -5i32..=5 {
+                put(vcx + d, vcy, [245, 245, 245]);
+                put(vcx, vcy + d, [245, 245, 245]);
             }
         }
         // put_image is one request; chunk by row-strips so a large window stays under
