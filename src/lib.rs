@@ -23,6 +23,7 @@
 //! stream.
 
 pub mod audio;
+pub mod bas_vm;
 pub mod bloodprg;
 pub mod bloodsav;
 pub mod bridge;
