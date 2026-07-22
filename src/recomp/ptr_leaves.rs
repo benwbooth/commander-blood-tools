@@ -106,6 +106,58 @@ mod tests {
         );
     }
 
+    /// `func_a4ed` (`sprite_blit_320`, 0x0A4ED..0x0A551) reproduces the original bytes exactly. It
+    /// computes the destination offset DI = BX*320 + DX (a y*320 row-offset + x), then copies a
+    /// BP-wide × (CL rows) block from ds:SI to es:DI — opaque via `rep movsb` or, when CH=0xFF,
+    /// a zero-transparent per-pixel copy — advancing DI by (320-BP) between rows. A core rendering
+    /// primitive (called 2×). We seed a small in-bounds blit (8×4 opaque) with es=gs and compare
+    /// the full gs framebuffer window + every GP register against the interpreter running the real
+    /// bytes. (The Unicorn oracle discards it: random BX makes DI index the code region.)
+    #[test]
+    fn func_a4ed_matches_interpreter_oracle() {
+        let Some(exe) = load_exe() else { return };
+        const GS: u16 = 0x3000;
+        let seed = |m: &mut Machine| {
+            m.regs.gs = GS;
+            m.regs.ds = GS;
+            m.regs.es = GS;
+            m.regs.ss = 0x4000;
+            m.regs.set_sp(0x0800);
+            m.regs.set_bx(0x0010); // y → BX*320 = 0x1400
+            m.regs.set_dx(0x0008); // x offset (DH=0 so DX ends 0 after the height counter)
+            m.regs.set_di(0x0008); // width (copied to BP), != 320 so the row-by-row path
+            m.regs.set_cx(0x0004); // CH=0 (opaque), CL=4 rows
+            m.regs.set_si(0x6000); // source sprite, above the 0x10000 code mirror
+            for k in 0..64u32 {
+                m.write8(GS, 0x6000 + k, (0x21 + k) as u8); // nonzero source pixels
+            }
+        };
+
+        let mut m_lift = Machine::new();
+        m_lift.mem[..0x10000].copy_from_slice(&exe[..0x10000]);
+        seed(&mut m_lift);
+        super::super::ptr_leaves_gen::func_a4ed(&mut m_lift);
+
+        let mut m_oracle = Machine::new();
+        m_oracle.mem[..0x10000].copy_from_slice(&exe[..0x10000]);
+        seed(&mut m_oracle);
+        interp_leaf(&mut m_oracle, 0xa4ed);
+
+        let base = (GS as usize) * 16;
+        assert!(
+            m_lift.mem[base..base + 0x10000] == m_oracle.mem[base..base + 0x10000],
+            "func_a4ed: blitted framebuffer differs from the real bytes"
+        );
+        let (l, o) = (&m_lift.regs, &m_oracle.regs);
+        for (name, lv, ov) in [
+            ("AX", l.ax(), o.ax()), ("BX", l.bx(), o.bx()), ("CX", l.cx(), o.cx()),
+            ("DX", l.dx(), o.dx()), ("SI", l.si(), o.si()), ("DI", l.di(), o.di()),
+            ("BP", l.bp(), o.bp()),
+        ] {
+            assert_eq!(lv, ov, "func_a4ed: {name} lift {lv:#x} vs real {ov:#x}");
+        }
+    }
+
     /// func_6293 reproduces the original bytes exactly across several table layouts: the target
     /// word at varying offsets (aligned + unaligned), with the trailing byte matching AL (= the
     /// target's low byte, since the original loads AX once) or not. The table lives at ds:0x6000
