@@ -198,10 +198,6 @@ pub struct EngineState {
     /// nebula + destination stars + route lines + the ship console. When loaded it
     /// replaces the procedural starfield in the nav view.
     nav_chart: Option<crate::lbm::LbmImage>,
-    /// The real ship-CONSOLE background (`ORX.FD` — the Orxx ship's organic control panel).
-    /// Distinct from the nav star-map (`CHART.FD`): the console/bridge hub uses this, the
-    /// nav uses the chart. When loaded, `render_bridge` draws it behind the console menu.
-    console_bg: Option<crate::lbm::LbmImage>,
     /// The choose-a-location destination list shown on the nav chart: each entry is a
     /// (label, that character's dialogue lines). Clicking one visits it (plays that
     /// character's decoded dialogue). Empty = the plain compass-steer nav.
@@ -393,7 +389,6 @@ impl EngineState {
             title_screen: None,
             nav_pyramids: Vec::new(),
             nav_chart: None,
-            console_bg: None,
             nav_destinations: Vec::new(),
             camera: crate::ship3d::Ship3dCameraApproach::default(),
             alien_views: Vec::new(),
@@ -779,6 +774,28 @@ impl EngineState {
         // Advance the decompiled steering / station-seek state machine.
         self.bridge.update_view();
         self.compass_angle = self.bridge.frame;
+        self.render_bridge_background();
+        // The MENU submenu overlay ({EXPLANATIONS, GAME}, decoded by driving
+        // the real game) drawn over the golden menu box in the console font.
+        if self.menu_submenu_active && !self.console_font.is_empty() {
+            const SUBMENU_COLOR: u8 = 0xFD;
+            self.scene_palette[SUBMENU_COLOR as usize] = [240, 208, 48];
+            let delta = self.bridge.frame as i32 - crate::bridge::MENU_REST_FRAME as i32;
+            let left = (177 - delta * crate::bridge::RING_PX_PER_FRAME).max(0) as usize;
+            for (i, opt) in Self::MENU_SUBMENU.iter().enumerate() {
+                let y = (0x48 + i as i32 * 0x12).max(0) as usize;
+                self.draw_console_text(opt, left, y, SUBMENU_COLOR);
+            }
+        }
+    }
+
+    /// Composite the bridge view into the framebuffer: window starfield, then the
+    /// current TB.BIG panorama frame with colour-0 transparency, then the game
+    /// palette + the golden menu's dynamic DAC rows — the original composite
+    /// order (`page_flip` 0x954A: projection first, then the transparent frame
+    /// unpack). Shared by the bridge screen and by on-ship (sceneless) dialogue,
+    /// which the real game plays OVER the console.
+    fn render_bridge_background(&mut self) {
         // 1. Starfield through the windows: the ship-3D point cloud projected at
         //    the view's yaw — the panorama frame index IS the yaw index
         //    (bridge_frame_to_yaw_sync 0x97E4 copies [0x2795] -> [0x2F6D]).
@@ -816,18 +833,6 @@ impl EngineState {
         //    (0x7B..0x7F: idle dark gold, hovered bright — 0x862B..0x86A3).
         self.scene_palette = crate::palette::game_screen_palette();
         self.bridge.apply_menu_palette(&mut self.scene_palette);
-        // 4. The MENU submenu overlay ({EXPLANATIONS, GAME}, decoded by driving
-        //    the real game) drawn over the golden menu box in the console font.
-        if self.menu_submenu_active && !self.console_font.is_empty() {
-            const SUBMENU_COLOR: u8 = 0xFD;
-            self.scene_palette[SUBMENU_COLOR as usize] = [240, 208, 48];
-            let delta = self.bridge.frame as i32 - crate::bridge::MENU_REST_FRAME as i32;
-            let left = (177 - delta * crate::bridge::RING_PX_PER_FRAME).max(0) as usize;
-            for (i, opt) in Self::MENU_SUBMENU.iter().enumerate() {
-                let y = (0x48 + i as i32 * 0x12).max(0) as usize;
-                self.draw_console_text(opt, left, y, SUBMENU_COLOR);
-            }
-        }
     }
 
     /// Load the cyberspace hyperspace-tunnel animations (`sq/hyper_*.hnm`), sorted so
@@ -2052,30 +2057,6 @@ impl EngineState {
         false
     }
 
-    /// Load the real ship-console background (`ORX.FD`, the Orxx ship's organic control
-    /// panel) for the bridge/console hub — distinct from the nav star-map (`CHART.FD`).
-    /// Returns whether it loaded.
-    pub fn load_console_bg(&mut self, iso: &std::path::Path) -> bool {
-        for name in ["ORX.FD", "orx.fd"] {
-            if let Ok(data) = std::fs::read(iso.join(name)) {
-                if let Some(mut img) = crate::lbm::decode_lbm(&data) {
-                    // ORX.FD's stored palette is very dark (avg ~2.4/255) — the running game
-                    // shows the console panel much brighter (its lit golden-menu/orb/hand
-                    // overlays live in the archives). Brighten the panel colours ~2.5× so the
-                    // port's console reads like the real medium-purple panel, not a black void.
-                    for c in img.palette.iter_mut() {
-                        for ch in c.iter_mut() {
-                            *ch = ((*ch as u32 * 5) / 2).min(255) as u8;
-                        }
-                    }
-                    self.console_bg = Some(img);
-                    return true;
-                }
-            }
-        }
-        false
-    }
-
     /// Layout of the choose-a-location destination list drawn on the nav chart.
     pub const NAV_DEST_X: i32 = 6;
     pub const NAV_DEST_Y: i32 = 22;
@@ -2364,15 +2345,12 @@ impl EngineState {
             self.scene_hnm = Some(hnm);
             self.scene_frame += 1;
             self.present_scene_buffer();
-        } else if let Some(bg) = self.console_bg.as_ref().or(self.nav_chart.as_ref()).filter(|c| {
-            c.width == ENGINE_SCREEN_WIDTH && c.height == ENGINE_SCREEN_HEIGHT
-        }) {
-            // No talk-HNM (e.g. the on-ship console tutorial): the dialogue happens at the
-            // ship console, so show the console panel (ORX.FD, else the nav chart) rather
-            // than a black void.
-            self.scene_buffer.copy_from_slice(&bg.pixels);
-            self.scene_palette = bg.palette;
-            self.framebuffer.copy_from_slice(&bg.pixels);
+        } else if self.panorama.is_some() {
+            // No talk-HNM (e.g. the on-ship console tutorial, HONK's food menu):
+            // the dialogue happens AT THE SHIP CONSOLE in the real game, so
+            // composite the real bridge panorama behind the subtitle text.
+            self.render_bridge_background();
+            self.scene_buffer.copy_from_slice(&self.framebuffer);
         } else {
             for p in self.framebuffer.iter_mut() {
                 *p = 0;
