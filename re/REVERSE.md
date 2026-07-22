@@ -4891,3 +4891,18 @@ This was the last open structural unknown. The executor is now fully specified A
 its block grammar known — buildable in clean Rust with MENUTREE/MENUWATCH/BASSTEP as
 ground-truth validation. Tooling: MENUTREE (topic→dest), MENUWATCH (transitions),
 BASSTEP (opcode walk).
+
+## Topic→response linkage is RUNTIME-RECORD-gated (2026-07-22)
+
+Decoded the fear/anger block's 0xA6 responses: b3 (voice selector) is uniformly 0xff
+(no static per-topic tag); the 13 responses are a dialogue sequence whose DISPLAYED
+line is gated by runtime line-record state (gs:0x6724 / the `es:[line+2]&0x8000`
+already-shown bit), not a static field. Confirmed: the displayed subtitle was "OUCH…"
+= the b4=0x61 response @0x5e8 (b4 low bits differ from the b4=0x60 majority). So the
+executor's "selected topic → which response displays" step needs the RECORD-STATE
+model the port's src/vm.rs already partially implements (TextTokenRuntimeFlags,
+b5&0x80 active + line-record skip). NET: block parser (menu→topics+responses) is
+BUILT+verified; the topic→response gating reuses vm.rs's record model; sub-menu push
+= a nested 0xA3 among the responses. Remaining executor loop: walk block, apply the
+record-gated response selection, push on nested 0xA3, render current+parent stack —
+now specified against vm.rs's existing text-token machinery.
