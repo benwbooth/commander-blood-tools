@@ -3709,3 +3709,15 @@ console IS panorama frame 55 + hand cursor + starfield through the windows).
   `bridge_console_matches_live_game_capture`; residual = unported hand cursor + RNG
   stars). The invented console (ORX.FD brighten, menu at x=196, station icons) is
   REMOVED from the engine.
+
+## manu3.xdb 3D core — decompile started (hand-cursor pipeline)
+
+`re/tools/dis_xdb.py` (PYTHONSAFEPATH=1) disassembles raw .xdb overlays (runtime cs
+== file offset, verified live). The shared transform at manu3+0x468..0x4a4 is a
+3x3 32-bit fixed-point matrix-vector product: scene-NODE struct has the object
+matrix at +0x12 (three rows of 3 dwords) and translation at +0x36/+0x3a; result
+feeds a second (camera) matrix from overlay globals 0x2250/0x225C/0x2268. Next:
+map the node list the hand belongs to, the projection + the polygon rasterizer
+(writer ips 0x2AF..0x13xx), and the hand mesh vertices in manu3 data (runtime ds
+0x17A3 dump = handprobe4 scratchpad; ds 0x17A3 = manu3 seg + 0x137 paragraphs =
+manu3 file offset 0x1370).
