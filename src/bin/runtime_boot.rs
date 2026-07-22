@@ -800,16 +800,24 @@ fn main() {
                 if rt.opened_files.len() > baseline {
                     let newest: Vec<String> = rt.opened_files[baseline..]
                         .iter().map(|(_, p)| p.clone()).collect();
-                    if newest.iter().any(|p| p.to_lowercase().contains("script2")) {
-                        println!("round {round}: SCRIPT2 reached!");
-                        reached2 = true;
-                        rt.write_ppm(&out.join("tut4_script2.ppm")).unwrap();
-                        // Savestate: future runs resume here in seconds instead of
-                        // replaying the 25-minute tutorial.
-                        rt.save_state(std::path::Path::new("accuracy/script2.state")).unwrap();
-                        println!("savestate written -> accuracy/script2.state");
-                        break;
+                    // Milestone: any NEW asset class (scripts, worlds, rooms) =
+                    // story progress — capture + savestate + log.
+                    for marker in ["script2", "script3", "script4", "script5", ".ext", ".fd"] {
+                        if newest.iter().any(|p| p.to_lowercase().contains(marker)) {
+                            let tag = marker.trim_start_matches('.');
+                            println!("round {round}: MILESTONE {marker} (files {newest:?})");
+                            rt.write_ppm(&out.join(format!("milestone_{tag}_{round}.ppm"))).unwrap();
+                            rt.save_state(std::path::Path::new(&format!(
+                                "accuracy/milestone_{tag}.state"
+                            )))
+                            .unwrap();
+                            if marker == "script2" {
+                                reached2 = true;
+                                rt.save_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+                            }
+                        }
                     }
+                    // Keep walking (don't break) — deeper milestones follow.
                 }
             }
             println!("TUTORIAL4 done, reached_script2={reached2} @ {} steps", rt.cpu.steps);
