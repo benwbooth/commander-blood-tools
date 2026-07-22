@@ -4159,3 +4159,27 @@ each frame by `ship_3d_object_sprite_project` @0x9B98 from the ENTITY TABLE:
   data), projected identically to the port's `project_ship_3d_point`. So #3's
   "real anchor positions" are entity-record fields gated by progression — no
   separate anchor table to recover.
+
+## ON-PLANET INTERACTION — MODEL RESOLVED (concept-menu dialogue)
+
+Criterion #6's "on-planet click semantics" is NOT a separate room-click screen:
+on-planet interaction IS the CONCEPT-MENU CONVERSATION SYSTEM applied to the
+location scripts. Evidence:
+- The location dialogue dictionaries (SCRIPT3/4/5.DIC) contain the INVENTORY
+  OBJECTS (jewel, ring, guitar, tools, decoder, perfume, batteries) and the
+  interaction VERBS (GIVE, TAKE, GET) as dialogue words, and concept TOPICS
+  (BIONIUM, CYBERSPACE, CAPTURE, TELEPORT, GIVE, GET) as the list-menu items.
+- The location scripts expose the topic-function structure like SCRIPT2:
+  SCRIPT3 = help1..help14 + helpend (14 topics), SCRIPT4 = help1..help5,
+  SCRIPT5 = a different (linear) structure. Each help* is a topic handler.
+- So the game loop is: navigate to a location (choose-a-location, ported) →
+  talk to its character → select concept topics (ported topic-menu system) to
+  exchange objects / learn coordinates / advance. Object interaction = topic
+  selection, NOT room clicks.
+- PORT STATUS: the concept-menu dialogue engine (topic_menu / draw_list_menu)
+  IS the on-planet interaction system; it already derives topics from help*/
+  honk* functions. Extending it to the location scripts' help1..14 needs the
+  per-topic CONCEPT LABELS (SCRIPT2's ONE..NINE came from its DIC/list-label
+  table; locations' labels are concept words — the label→handler map is the
+  remaining RE, same mechanism). So #6's interaction MODEL is resolved (concept-
+  menu, ported); the residual is wiring location topic labels, not new semantics.
