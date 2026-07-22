@@ -2225,6 +2225,32 @@ fn main() {
         return;
     }
 
+    // BASSTEP: trace the BAS conversation VM's program counter (si) at the dispatch
+    // (067c:0309, the `lodsb` reading each opcode) while triggering a topic — reveals
+    // the exact opcode-walk structure (how a menu's topics/blocks are traversed), the
+    // last piece needed to write the clean-Rust BasConversationVm executor.
+    if std::env::var("BASSTEP").is_ok() {
+        let g = 0x0e84u16;
+        rt.cpu.si_trace_at = Some((0x067c, 0x0309));
+        rt.cpu.si_trace_log.clear();
+        let fr = rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
+        let ring = (200i32 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+        rt.set_mouse_pos(ring, 75); // FEAR (row 1 of the fear/anger menu)
+        let _ = rt.run(rt.cpu.steps + 400_000);
+        rt.mouse_press(0);
+        let _ = rt.run(rt.cpu.steps + 250_000);
+        rt.mouse_release(0);
+        let _ = rt.run(rt.cpu.steps + 3_000_000);
+        let log = std::mem::take(&mut rt.cpu.si_trace_log);
+        rt.cpu.si_trace_at = None;
+        println!("BASSTEP: {} dispatch steps (si @ 067c:0309 = BAS offset, op = byte there)", log.len());
+        for (i, &(si, op)) in log.iter().enumerate().take(64) {
+            let m = if op == 0xa3 { " <MENU>" } else if op == 0xa6 { " <TEXT>" } else { "" };
+            println!("  [{i:2}] si={si:#06x} op={op:#04x}{m}");
+        }
+        return;
+    }
+
     // MENUWATCH: watch writes to the current-menu word gs:0x6772 while driving a
     // conversation, logging each menu change + the code (cs:ip) that made it — reveals
     // the push/pop routines and every menu transition empirically (the ground truth

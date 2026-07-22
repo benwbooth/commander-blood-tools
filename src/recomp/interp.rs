@@ -54,6 +54,11 @@ pub struct Cpu {
     /// plain (cs,ip) watch can miss. Each hit records (linear, first_step, count).
     pub exec_watch_linear: Vec<u32>,
     pub exec_hits_linear: Vec<(u32, u64, u64)>,
+    /// Diagnostic SI trace: when execution reaches this (cs, ip), record `si` and the
+    /// byte at `ds:si` — used to trace the BAS conversation VM's program counter as it
+    /// walks the script (e.g. watch the dispatch `067c:0309` to see the opcode stream).
+    pub si_trace_at: Option<(u16, u16)>,
+    pub si_trace_log: Vec<(u16, u8)>,
 }
 
 /// General register by 3-bit index, 16-bit view: AX CX DX BX SP BP SI DI.
@@ -284,6 +289,8 @@ impl Cpu {
             iflag: true,
             flags_high: 0,
             steps: 0,
+            si_trace_at: None,
+            si_trace_log: Vec::new(),
             exec_watch: Vec::new(),
             exec_hits: Vec::new(),
             exec_watch_linear: Vec::new(),
@@ -294,6 +301,13 @@ impl Cpu {
     /// Run until an [`Exit`] or `max_steps` instructions.
     pub fn run(&mut self, m: &mut Machine, max_steps: u64) -> Exit {
         for _ in 0..max_steps {
+            if let Some((tc, ti)) = self.si_trace_at {
+                if self.cs == tc && self.ip == ti && self.si_trace_log.len() < 4000 {
+                    let si = m.regs.si();
+                    let byte = m.read8(m.regs.ds, si as u32);
+                    self.si_trace_log.push((si, byte));
+                }
+            }
             if !self.exec_watch.is_empty() {
                 let (cs, ip) = (self.cs, self.ip);
                 if self.exec_watch.iter().any(|&(c, i)| c == cs && i == ip) {

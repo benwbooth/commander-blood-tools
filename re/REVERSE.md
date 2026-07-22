@@ -4872,3 +4872,22 @@ CLEAN-PORT BUILD (now fully specified): a BasConversationVm executing the BAS vi
 the gs:0x6EB0 opcode handlers, maintaining the menu stack (gs:0x6772/0x6774) + call
 stack (gs:0x6820), rendering current+parent. Validation tooling ready (MENUTREE,
 MENUWATCH). This is the remaining core implementation; its mechanism is complete.
+
+## BAS execution structure DECODED via single-step trace (BASSTEP) — 2026-07-22
+
+Added si-trace to the interpreter (si_trace_at/si_trace_log) + BASSTEP mode: traces
+the conversation VM's program counter at the dispatch (067c:0309) while triggering a
+topic. RESULT — the menu-block structure is now ground truth:
+  `0xA3 <menu topic-list>  [0xA6 <conditional response>]*  0xAC`
+i.e. a menu (0xA3) is followed by a SEQUENCE of 0xA6 TEXT responses, terminated by
+opcode 0xAC; each 0xA6 is conditionally displayed by its b3/b5 selector (tying it to
+the selected topic). After 0xAC the VM renders the PARENT menu block (trace: si
+0x42d→…→0x612[0xAC]→0x2f[0xA3]→…→0xAC — current menu 0x42d then parent 0x2f, the
+stack render). So the clean-port BasConversationVm now has its full structure:
+  - walk the BAS; a menu block = 0xA3 topics + 0xA6 responses until 0xAC;
+  - selected topic → display the 0xA6 whose selector matches; sub-menu = a nested
+    0xA3 in a response; talk/bye_bye pops; render current+parent stack.
+This was the last open structural unknown. The executor is now fully specified AND
+its block grammar known — buildable in clean Rust with MENUTREE/MENUWATCH/BASSTEP as
+ground-truth validation. Tooling: MENUTREE (topic→dest), MENUWATCH (transitions),
+BASSTEP (opcode walk).
