@@ -415,6 +415,12 @@ fn main() {
             let idx = rt.screen_indices();
             rt.write_ppm(&out.join("textband.ppm")).unwrap();
             std::fs::write(out.join("textband_indices.bin"), &idx).unwrap();
+            // Dump the LIVE subtitle font (glyphs at gs:0x71AA, ascii->glyph map
+            // at gs:0x70FA) so the OCR matches exactly what the game draws.
+            let map: Vec<u8> = (0..256u32).map(|i| rt.m.read8(g, 0x70fa + i)).collect();
+            let glyphs: Vec<u8> = (0..2048u32).map(|i| rt.m.read8(g, 0x71aa + i)).collect();
+            std::fs::write(out.join("live_font_map.bin"), &map).unwrap();
+            std::fs::write(out.join("live_font_glyphs.bin"), &glyphs).unwrap();
             let mut hist = std::collections::HashMap::new();
             for yy in 0..24usize {
                 for xx in 0..320usize {
