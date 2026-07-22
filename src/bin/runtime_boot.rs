@@ -838,9 +838,24 @@ fn main() {
                                 "accuracy/milestone_{tag}.state"
                             )))
                             .unwrap();
-                            if marker == "script2" {
+                            if marker == "script2" && !reached2 {
                                 reached2 = true;
+                                // Run forward past the console-rebuild transition so
+                                // the savestate is a CLEAN interactive SCRIPT2 state
+                                // (the raw load moment is mid-rebuild — glowing-empty
+                                // menu — and doesn't resume into a drivable hub).
+                                // Advance the dialogue a few times to reach the hub.
+                                for _ in 0..8 {
+                                    let (fr2, _, _) = state(&rt);
+                                    rt.set_mouse_pos((160i32 + fr2 as i32 * 8 - 160).rem_euclid(1440) as u16, 100);
+                                    rt.mouse_press(0);
+                                    let _ = rt.run(rt.cpu.steps + 300_000);
+                                    rt.mouse_release(0);
+                                    let _ = rt.run(rt.cpu.steps + 8_000_000);
+                                }
+                                rt.write_ppm(&out.join("script2_stable.ppm")).unwrap();
                                 rt.save_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+                                println!("clean SCRIPT2 savestate written (post-transition)");
                             }
                         }
                     }
