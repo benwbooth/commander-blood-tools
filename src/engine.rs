@@ -892,14 +892,30 @@ impl EngineState {
     /// choice_box_bob_morlock.ppm). Uses the observed geometry: box at x ~40,
     /// rows from y ~92 at 13 px pitch.
     fn draw_choice_box_labels(&mut self) {
-        if self.console_font.is_empty() {
+        let labels: Vec<String> = self
+            .nav_destinations
+            .iter()
+            .take(8)
+            .map(|(label, _)| label.clone())
+            .collect();
+        self.draw_choice_box(&labels, None);
+    }
+
+    /// Draw a golden choice box (border + gold console-font rows) at the
+    /// captured geometry — the game's standard interactive-choice UI (see
+    /// accuracy/captures/bridge/choice_box_bob_morlock.ppm). `selected`
+    /// highlights one row brighter.
+    fn draw_choice_box(&mut self, labels: &[String], selected: Option<usize>) {
+        if self.console_font.is_empty() || labels.is_empty() {
             return;
         }
         const GOLD: u8 = 0xFD;
+        const HILITE: u8 = 0xFE;
         const BORDER: u8 = 0xFC;
         self.scene_palette[GOLD as usize] = [240, 208, 48];
+        self.scene_palette[HILITE as usize] = [255, 240, 120];
         self.scene_palette[BORDER as usize] = [140, 110, 20];
-        let rows = self.nav_destinations.len().min(8);
+        let rows = labels.len().min(8);
         let (x0, y0) = (40usize, 88usize);
         let (w, h) = (110usize, rows * 13 + 8);
         for y in y0..(y0 + h).min(ENGINE_SCREEN_HEIGHT) {
@@ -910,14 +926,9 @@ impl EngineState {
                 }
             }
         }
-        let labels: Vec<String> = self
-            .nav_destinations
-            .iter()
-            .take(rows)
-            .map(|(label, _)| label.clone())
-            .collect();
-        for (i, label) in labels.iter().enumerate() {
-            self.draw_console_text(label, x0 + 6, y0 + 5 + i * 13, GOLD);
+        for (i, label) in labels.iter().take(rows).enumerate() {
+            let color = if selected == Some(i) { HILITE } else { GOLD };
+            self.draw_console_text(label, x0 + 6, y0 + 5 + i * 13, color);
         }
     }
 
@@ -1317,47 +1328,18 @@ impl EngineState {
             self.phone_contacts = contacts;
             return;
         }
-        // Dialling: the ship-console backdrop (CHART.FD), else the console palette on black.
-        if let Some(chart) = self.nav_chart.as_ref().filter(|c| {
-            c.width == ENGINE_SCREEN_WIDTH && c.height == ENGINE_SCREEN_HEIGHT
-        }) {
-            self.framebuffer.copy_from_slice(&chart.pixels);
-            self.scene_palette = chart.palette;
-        } else {
-            self.framebuffer.iter_mut().for_each(|p| *p = 0);
-            self.scene_palette = crate::palette::game_screen_palette();
-        }
-        // The animated call widget (BAPPEL) on the right of the console.
-        if !self.phone_widget.is_empty() {
-            let frame = self.phone_widget[self.scene_frame % self.phone_widget.len()].clone();
-            blit_sprite_frame_centered(
-                &mut self.framebuffer,
-                ENGINE_SCREEN_WIDTH,
-                ENGINE_SCREEN_HEIGHT,
-                &frame,
-                250,
-                130,
-            );
-        }
-        // The crew contact list in the console font; the dialled row is highlighted.
+        // Dialling: the REAL pattern (captured live: choice_box_bob_morlock.ppm)
+        // — contacts appear as a golden choice box OVER the console panorama,
+        // not on a separate chart screen. (The BAPPEL widget belongs to the
+        // subsequent calling animation, which loads after a contact is chosen.)
+        self.render_bridge_background();
         if !self.console_font.is_empty() {
-            const COLOR: u8 = 0xFD;
-            const HILITE: u8 = 0xFE;
-            self.scene_palette[COLOR as usize] = [232, 216, 40]; // console yellow
-            self.scene_palette[HILITE as usize] = [245, 245, 160]; // brighter selection
-            self.draw_console_text(
-                "CALL WHO",
-                Self::PHONE_LIST_X as usize,
-                (Self::PHONE_LIST_Y - 18) as usize,
-                COLOR,
-            );
             let selected = self.phone_contact;
-            let names: Vec<String> = self.phone_contacts.iter().map(|(n, _)| n.clone()).collect();
-            for (i, name) in names.iter().enumerate() {
-                let color = if i == selected { HILITE } else { COLOR };
-                let y = (Self::PHONE_LIST_Y + i as i32 * Self::PHONE_LIST_PITCH) as usize;
-                self.draw_console_text(name, Self::PHONE_LIST_X as usize, y, color);
-            }
+            let mut labels: Vec<String> =
+                self.phone_contacts.iter().map(|(n, _)| n.clone()).collect();
+            labels.truncate(7);
+            labels.push("CANCEL".to_string());
+            self.draw_choice_box(&labels, Some(selected));
         }
         self.scene_frame += 1;
     }
