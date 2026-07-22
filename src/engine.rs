@@ -688,17 +688,20 @@ impl EngineState {
     /// the top menu rows, matching the observed golden-menu overlay.
     pub const MENU_SUBMENU: [&'static str; 2] = ["EXPLANATIONS", "GAME"];
 
-    /// Map a click to a MENU-submenu item (0 = EXPLANATIONS, 1 = GAME) when the submenu is
-    /// showing and the click lands on a row of the real menu box; `None` otherwise.
+    /// Map a click to a MENU-submenu item (0 = EXPLANATIONS, 1 = GAME) when the
+    /// submenu is showing. The submenu is a gold CHOICE BOX (the game's universal
+    /// console-choice widget), so hit-test its rows, not the golden menu.
     pub fn menu_submenu_click(&self, x: u16, y: u16) -> Option<usize> {
         if !self.menu_submenu_active {
             return None;
         }
-        let mut probe = self.bridge.clone();
-        Self::point_virtual_cursor(&mut probe, x, y);
-        probe
-            .menu_row_under_cursor()
-            .filter(|&row| row < Self::MENU_SUBMENU.len())
+        // Choice box: rows from y0+5 at 13 px pitch, box left x0=63 (draw_choice_box).
+        let (x, y) = (x as i32, y as i32);
+        if !(40..170).contains(&x) {
+            return None;
+        }
+        let row = (y - (88 + 5)) / 13;
+        (row >= 0 && (row as usize) < Self::MENU_SUBMENU.len()).then_some(row as usize)
     }
 
     /// Aim the bridge's virtual ring-space cursor at an absolute screen point —
@@ -821,19 +824,14 @@ impl EngineState {
         if (72..=107).contains(&self.bridge.frame) && !self.nav_destinations.is_empty() {
             self.draw_choice_box_labels();
         }
-        self.draw_hand_cursor();
-        // The MENU submenu overlay ({EXPLANATIONS, GAME}, decoded by driving
-        // the real game) drawn over the golden menu box in the console font.
-        if self.menu_submenu_active && !self.console_font.is_empty() {
-            const SUBMENU_COLOR: u8 = 0xFD;
-            self.scene_palette[SUBMENU_COLOR as usize] = [240, 208, 48];
-            let delta = self.bridge.frame as i32 - crate::bridge::MENU_REST_FRAME as i32;
-            let left = (177 - delta * crate::bridge::RING_PX_PER_FRAME).max(0) as usize;
-            for (i, opt) in Self::MENU_SUBMENU.iter().enumerate() {
-                let y = (0x48 + i as i32 * 0x12).max(0) as usize;
-                self.draw_console_text(opt, left, y, SUBMENU_COLOR);
-            }
+        // The MENU submenu ({EXPLANATIONS, GAME}) is a gold CHOICE BOX (the
+        // game's universal console-choice widget) — draw it before the hand so
+        // the cursor sits over it, as the live game composites.
+        if self.menu_submenu_active {
+            let labels: Vec<String> = Self::MENU_SUBMENU.iter().map(|s| s.to_string()).collect();
+            self.draw_choice_box(&labels, None);
         }
+        self.draw_hand_cursor();
     }
 
     /// Load the pointing-hand capture atlas: sprites of the REAL game's 3D hand
@@ -3149,9 +3147,9 @@ mod tests {
         let mut e = EngineState::new();
         assert!(e.load_console_font(iso), "console font loads");
         e.load_bridge(iso);
-        // Submenu rows sit on the real golden-menu box (decoded metrics): with
-        // the menu centred, row 0 starts at y 0x48, pitch 0x12, box x 177..287.
-        let (x, y0) = (232u16, 0x48 + 1);
+        // The submenu is a gold CHOICE BOX (the game's universal console-choice
+        // widget): rows from y0+5 at 13 px pitch, box x 40..170 (draw_choice_box).
+        let (x, y0) = (90u16, 88 + 6);
         assert_eq!(e.menu_submenu_click(x, y0), None, "closed: no submenu hit");
         // Open the submenu (as clicking MENU does) and render it.
         e.menu_submenu_active = true;
@@ -3160,7 +3158,7 @@ mod tests {
         assert_eq!(EngineState::MENU_SUBMENU, ["EXPLANATIONS", "GAME"]);
         // Row 0 = EXPLANATIONS, row 1 = GAME.
         assert_eq!(e.menu_submenu_click(x, y0), Some(0));
-        assert_eq!(e.menu_submenu_click(x, y0 + 0x12), Some(1));
+        assert_eq!(e.menu_submenu_click(x, y0 + 13), Some(1));
     }
 
     /// Click-to-advance dialogue: a click snaps the current line fully revealed, then moves
