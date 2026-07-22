@@ -91,7 +91,7 @@ fn main() {
 
     e.cyber_active = true;
     e.start_cyberspace();
-    for _ in 0..8 { e.step(MouseInput { x: 210, y: 100, buttons: 0 }); }
+    for _ in 0..8 { e.step(MouseInput { x: 210, y: 100, buttons: 0, ..Default::default() }); }
     check(nonblank(&e.framebuffer) > 500, "cyberspace tunnel renders");
     let mut arrived = false;
     for _ in 0..30000 { e.step(MouseInput::default()); if e.cyber_arrived { arrived = true; break; } }
@@ -100,7 +100,7 @@ fn main() {
 
     e.alien_view_active = true;
     e.arm_alien_intro();
-    for _ in 0..12 { e.step(MouseInput { x: 315, y: 100, buttons: 0 }); }
+    for _ in 0..12 { e.step(MouseInput { x: 315, y: 100, buttons: 0, ..Default::default() }); }
     check(nonblank(&e.framebuffer) > 500, "alien-examination screen renders");
     e.alien_view_active = false;
 
@@ -118,7 +118,7 @@ fn main() {
 
     // OPTION 3D-pyramid menu (console OPTION): renders + selection cycles.
     e.option_active = true;
-    for _ in 0..6 { e.step(MouseInput { x: 220, y: 100, buttons: 0 }); }
+    for _ in 0..6 { e.step(MouseInput { x: 220, y: 100, buttons: 0, ..Default::default() }); }
     check(nonblank(&e.framebuffer) > 500, "OPTION 3D pyramid menu renders");
     e.option_cycle(1);
     check(e.option_item() == 1, "OPTION selection cycles");

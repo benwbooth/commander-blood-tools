@@ -572,6 +572,10 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     // deltas into a VIRTUAL cursor that we draw ourselves and feed to the engine.
     let mut pointer_locked = false;
     let (mut vcx, mut vcy): (i32, i32) = (win_w as i32 / 2, win_h as i32 / 2);
+    // Raw relative motion accumulated this frame while locked — fed to the engine as ring-space
+    // deltas (the original's bridge steering tracks the mouse in the 1440-px ring, so rotation
+    // continues while the physical mouse moves even with the cursor clamped at the screen edge).
+    let (mut raw_dx, mut raw_dy): (i32, i32) = (0, 0);
     // A fully-transparent 1x1 cursor (core protocol, no extension): set as the window cursor
     // while locked so the pinned OS pointer is invisible and only our drawn cursor shows.
     let blank_cursor = {
@@ -604,6 +608,8 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         // lock, so the cursor genuinely cannot leave the window.
                         let (cx, cy) = (win_w as i32 / 2, win_h as i32 / 2);
                         let (dx, dy) = (m.event_x as i32 - cx, m.event_y as i32 - cy);
+                        raw_dx += dx;
+                        raw_dy += dy;
                         if (dx, dy) != (0, 0) {
                             vcx = (vcx + dx)
                                 .clamp(off_x as i32, (off_x + dst_w) as i32 - 1);
@@ -966,7 +972,10 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
             x: mx,
             y: my,
             buttons: step_buttons,
+            dx: raw_dx,
+            dy: raw_dy,
         });
+        (raw_dx, raw_dy) = (0, 0);
         // Playable loop: a nav-view click commits a destination → load its dialogue and
         // switch to the scene; when the dialogue finishes, return to the nav view.
         // Suppressed while the startup intro is still playing.

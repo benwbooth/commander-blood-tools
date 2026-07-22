@@ -21,6 +21,14 @@ pub struct MouseInput {
     pub y: u16,
     /// Button bitmask as returned by `int 33h AX=3` in BX (bit0=left, bit1=right).
     pub buttons: u16,
+    /// RAW relative motion this frame (mickeys), independent of the on-screen cursor. The
+    /// original's bridge steering tracks the mouse in RING space — the driver's h-range is the
+    /// 1440-px panorama ring (`[0xa2a]`, rebased near the view @0x97FC), NOT the 320-px screen —
+    /// so pushing the physical mouse keeps rotating the view even when the visible cursor sits
+    /// clamped at the screen edge. Frontends that capture the pointer supply the raw deltas here;
+    /// 0/0 falls back to on-screen cursor deltas (headless drivers, tests).
+    pub dx: i32,
+    pub dy: i32,
 }
 
 impl MouseInput {
@@ -3138,13 +3146,19 @@ impl EngineState {
     /// this faithful control-flow skeleton; for now it advances input + bookkeeping
     /// so the loop is drivable and testable headlessly.
     pub fn step(&mut self, input: MouseInput) {
-        // This frame's relative cursor motion (before poll_input refreshes
-        // prev_pos) — the bridge steering consumes deltas, mirroring how the
-        // original accumulates warped-cursor movement in ring space.
-        let motion = (
-            input.x as i32 - self.prev_pos.0 as i32,
-            input.y as i32 - self.prev_pos.1 as i32,
-        );
+        // This frame's relative cursor motion — the bridge steering consumes deltas in RING
+        // space, mirroring the original (driver h-range = the 1440-px ring, not the screen).
+        // Prefer the frontend's RAW deltas (pointer-locked capture: rotation continues while the
+        // physical mouse moves even with the cursor clamped at the screen edge); fall back to
+        // on-screen cursor deltas when none are supplied.
+        let motion = if input.dx != 0 || input.dy != 0 {
+            (input.dx, input.dy)
+        } else {
+            (
+                input.x as i32 - self.prev_pos.0 as i32,
+                input.y as i32 - self.prev_pos.1 as i32,
+            )
+        };
         self.poll_input(input);
         // Title art (BLOOD.LBM) shows first when armed, until dismissed.
         if self.title_screen.is_some() {
@@ -3320,11 +3334,11 @@ mod tests {
         // Prime prev_pos so the render step sees zero cursor motion, then
         // reproduce the live probe's state exactly: view frame 55, cursor at
         // ring 320 (screen x 40), y 100 — the state the capture was taken in.
-        e.step(MouseInput { x: 160, y: 100, buttons: 0 });
+        e.step(MouseInput { x: 160, y: 100, buttons: 0, ..Default::default() });
         e.bridge.frame = 55;
         e.bridge.ring_mouse_x = 320;
         e.bridge.mouse_y = 100;
-        e.step(MouseInput { x: 160, y: 100, buttons: 0 });
+        e.step(MouseInput { x: 160, y: 100, buttons: 0, ..Default::default() });
         assert_eq!(e.bridge.frame, 55, "view must not drift during the render");
         assert_eq!(e.bridge.mouse_screen_x(), 40, "virtual cursor at the capture position");
 
@@ -3373,7 +3387,7 @@ mod tests {
         // Open the MENU submenu (a choice box) and render one frame.
         e.bridge_active = true;
         e.menu_submenu_active = true;
-        e.step(MouseInput { x: 160, y: 100, buttons: 0 });
+        e.step(MouseInput { x: 160, y: 100, buttons: 0, ..Default::default() });
         // The measured spec: border 0x15, fill 0xE0, text 0xE8. Count each in the
         // box region (x 63.., y 88..~120) — all three must be present.
         let count = |idx: u8| {
@@ -3582,7 +3596,7 @@ mod tests {
         e.load_bridge(iso);
         assert!(e.panorama.is_some(), "TB.BIG parses");
         e.bridge_active = true;
-        e.step(MouseInput { x: 160, y: 100, buttons: 0 });
+        e.step(MouseInput { x: 160, y: 100, buttons: 0, ..Default::default() });
         assert!(e.framebuffer.iter().any(|&p| p != 0), "bridge draws the panorama");
         // At the menu rest frame, the decoded golden-menu hit math maps clicks to
         // rows: HONK (row 0) at the box top, OPTION (row 4) at the bottom.
@@ -3605,9 +3619,9 @@ mod tests {
         if e.alien_views.is_empty() { return; }
         e.alien_view_active = true;
         // Steer full left, capture; steer full right, capture: different rotation view.
-        for _ in 0..12 { e.step(MouseInput { x: 5, y: 100, buttons: 0 }); }
+        for _ in 0..12 { e.step(MouseInput { x: 5, y: 100, buttons: 0, ..Default::default() }); }
         let left = e.framebuffer.clone();
-        for _ in 0..12 { e.step(MouseInput { x: 315, y: 100, buttons: 0 }); }
+        for _ in 0..12 { e.step(MouseInput { x: 315, y: 100, buttons: 0, ..Default::default() }); }
         assert!(left.iter().any(|&p| p != 0), "alien renders");
         assert_ne!(left, e.framebuffer, "mouse rotates to a different pre-rendered view");
     }
@@ -4237,7 +4251,7 @@ mod tests {
         e.start_cyberspace();
         assert!(!e.cyber_arrived, "starts before the destination");
         // Steering right moves the on-course reticle; the frame stays real content.
-        for _ in 0..8 { e.step(MouseInput { x: 260, y: 100, buttons: 0 }); }
+        for _ in 0..8 { e.step(MouseInput { x: 260, y: 100, buttons: 0, ..Default::default() }); }
         assert!(e.framebuffer.iter().filter(|&&p| p != 0).count() > 500, "tunnel + HUD render");
         // Fly the whole journey to arrival.
         for _ in 0..30000 {
@@ -4258,7 +4272,7 @@ mod tests {
         assert_eq!(EngineState::OPTION_ITEM_COUNT, 12, "12 items decoded from manu3.xdb");
         e.option_active = true;
         for _ in 0..6 {
-            e.step(MouseInput { x: 220, y: 100, buttons: 0 });
+            e.step(MouseInput { x: 220, y: 100, buttons: 0, ..Default::default() });
         }
         // The pyramid menu fills the frame with real content.
         assert!(e.framebuffer.iter().filter(|&&p| p != 0).count() > 3000, "pyramid renders");
@@ -4397,7 +4411,7 @@ mod tests {
         assert_eq!(EngineState::console_glyph_index('0'), Some(26));
         if e.panorama.is_none() { return; }
         e.bridge_active = true;
-        e.step(MouseInput { x: 160, y: 100, buttons: 0 });
+        e.step(MouseInput { x: 160, y: 100, buttons: 0, ..Default::default() });
         // The baked menu glyphs use one palette index per row (0x7B + row).
         let menu_pixels = e
             .framebuffer
@@ -4441,6 +4455,7 @@ mod tests {
             x: 100,
             y: 50,
             buttons: 1,
+            ..Default::default()
         };
         e.step(m);
         assert_eq!(e.frame, 1);
@@ -4456,6 +4471,7 @@ mod tests {
             x: 10,
             y: 10,
             buttons: 0,
+            ..Default::default()
         };
         e.step(still); // first frame: moved from (0,0) -> reset
         e.step(still); // stationary -> +1
@@ -4465,6 +4481,7 @@ mod tests {
             x: 11,
             y: 10,
             buttons: 0,
+            ..Default::default()
         });
         assert_eq!(e.idle_ticks, 0, "movement zeroes the idle timer");
     }
@@ -4480,6 +4497,7 @@ mod tests {
             x: 160,
             y: 100,
             buttons: 0,
+            ..Default::default()
         });
         assert_eq!(e.compass_angle, 90, "centred cursor holds heading");
         let frame_centre = e.framebuffer.clone();
@@ -4489,6 +4507,7 @@ mod tests {
                 x: 300,
                 y: 100,
                 buttons: 0,
+                ..Default::default()
             });
         }
         let right = e.compass_angle;
@@ -4498,6 +4517,7 @@ mod tests {
                 x: 20,
                 y: 100,
                 buttons: 0,
+                ..Default::default()
             });
         }
         assert!(right > 90, "holding right turns the compass up (got {right})");
@@ -4536,6 +4556,7 @@ mod tests {
             x: 90,
             y: 100,
             buttons: 0,
+            ..Default::default()
         });
         // Count non-zero pixels in the HUD band (rows 150..195, where the HUD sits).
         let band: usize = (150..195)
@@ -4948,16 +4969,16 @@ mod tests {
         let mut e = EngineState::new();
         e.on_ship = true;
         // move to a heading, no click yet -> no selection
-        e.step(MouseInput { x: 200, y: 100, buttons: 0 });
+        e.step(MouseInput { x: 200, y: 100, buttons: 0, ..Default::default() });
         assert!(e.take_nav_selection().is_none());
         // click at a heading -> selection committed at that compass angle
-        e.step(MouseInput { x: 200, y: 100, buttons: 1 });
+        e.step(MouseInput { x: 200, y: 100, buttons: 1, ..Default::default() });
         let sel = e.take_nav_selection();
         assert_eq!(sel, Some(e.compass_angle));
         // taken once, cleared
         assert!(e.take_nav_selection().is_none());
         // holding the button (no new edge) does not re-commit
-        e.step(MouseInput { x: 200, y: 100, buttons: 1 });
+        e.step(MouseInput { x: 200, y: 100, buttons: 1, ..Default::default() });
         assert!(e.take_nav_selection().is_none());
     }
 

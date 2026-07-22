@@ -112,11 +112,11 @@ fn representative_oracle_suite() {
             }
         }
         e.bridge_active = true;
-        e.step(MouseInput { x: 160, y: 100, buttons: 0 });
+        e.step(MouseInput { x: 160, y: 100, buttons: 0, ..Default::default() });
         e.bridge.frame = 55;
         e.bridge.ring_mouse_x = 320;
         e.bridge.mouse_y = 100;
-        e.step(MouseInput { x: 160, y: 100, buttons: 0 });
+        e.step(MouseInput { x: 160, y: 100, buttons: 0, ..Default::default() });
         // Render to RGB through the engine's scene palette.
         let rgb: Vec<u8> = e
             .framebuffer
