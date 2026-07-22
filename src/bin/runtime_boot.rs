@@ -1265,6 +1265,51 @@ fn main() {
             return;
         }
 
+        // HUBSCAN: capture the SCRIPT2-start state + probe whether a topic menu /
+        // "click on anything" prompt is showing (OCR the list region), then try
+        // opening the concept menu (orb) and clicking the WHAT topic -> the
+        // `what` destination chooser -> world load.
+        if std::env::var("HUBSCAN").is_ok() {
+            rt.write_ppm(&out.join("hub_state.ppm")).unwrap();
+            std::fs::write(out.join("hub_indices.bin"), rt.screen_indices()).unwrap();
+            let baseline = rt.opened_files.len();
+            // Try the concept-menu WHAT row directly (row 9 of the psychotherapy
+            // layout: x~190, y 35+11*9=134) — in case the hub menu is showing.
+            let anchors_live = |rt: &Runtime| (0..33u32).any(|i| {
+                let v=(rt.m.read8(g,0x4f09+i*2) as u16|((rt.m.read8(g,0x4f09+i*2+1) as u16)<<8)) as i16;
+                v!=0 && v.abs()<8000 && v.abs()!=900 && v.abs()!=10200 && v.abs()!=12100
+            });
+            for (name, mx, my) in [("orb-then-what", 125u16, 118u16), ("what-row9", 190, 134),
+                                   ("what-row9b", 190, 145), ("menu-what", 232, 148)] {
+                let (fr,_,_) = state(&rt);
+                // If orb variant: click orb first to open the menu.
+                if name.starts_with("orb") {
+                    let ring=(125i32+fr as i32*8-160).rem_euclid(1440) as u16;
+                    rt.set_mouse_pos(ring,118);
+                    let _=rt.run(rt.cpu.steps+600_000); rt.mouse_press(0);
+                    let _=rt.run(rt.cpu.steps+300_000); rt.mouse_release(0);
+                    let _=rt.run(rt.cpu.steps+4_000_000);
+                }
+                let ring=(mx as i32+fr as i32*8-160).rem_euclid(1440) as u16;
+                rt.set_mouse_pos(ring,my);
+                let _=rt.run(rt.cpu.steps+600_000); rt.mouse_press(0);
+                let _=rt.run(rt.cpu.steps+300_000); rt.mouse_release(0);
+                let _=rt.run(rt.cpu.steps+12_000_000);
+                let nf:Vec<String>=rt.opened_files[baseline..].iter().map(|(_,p)|p.clone()).collect();
+                let anch=anchors_live(&rt);
+                println!("{name}: anchors={anch} files={nf:?}");
+                rt.write_ppm(&out.join(format!("hub_{name}.ppm"))).unwrap();
+                if anch || nf.iter().any(|f| f.to_lowercase().ends_with(".ext")) {
+                    println!("WORLD LOADED via {name}!");
+                    rt.save_state(std::path::Path::new("accuracy/world_loaded.state")).unwrap();
+                    break;
+                }
+                rt.inject_key(0x01,0x1b); let _=rt.run(rt.cpu.steps+3_000_000);
+            }
+            println!("HUBSCAN done");
+            return;
+        }
+
         // SCRIPT2FWD: play SCRIPT2 forward by click-to-advance (NOT re-entering the
         // topic hub) — advance the linear story past the consultation toward the
         // free-choice nav, watching DS:0x4F09 anchors + new .ext/script loads.
