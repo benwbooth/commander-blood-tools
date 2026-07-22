@@ -396,6 +396,107 @@ fn main() {
         let (fr, ang, st) = state(&rt);
         println!("console reached: tb_frame={fr} angle={ang:#x} station={st:#x} @ {} steps", rt.cpu.steps);
         rt.write_ppm(&out.join("bridge_00_console.ppm")).unwrap();
+        // TUTORIAL4: screen-OCR instruction follower. The game's subtitle glyphs
+        // write reserved indices >= 0xFD; OCR the top rows of screen_indices()
+        // against the game's own font bitmaps to read the live line, then click
+        // the named target. Deterministic — no buffers or heuristics.
+        if std::env::var("TUTORIAL4").is_ok() {
+            use commander_blood_tools::font::{game_font_advance, game_font_glyph};
+            let ocr = |idx: &[u8]| -> String {
+                let mut text = String::new();
+                for row0 in [0usize, 10] {
+                    let mut line = String::new();
+                    let mut x = 0usize;
+                    let mut blanks = 0usize;
+                    while x < 314 {
+                        // Try to match a glyph at (x, row0): all lit pixels of the
+                        // glyph must be >= 0xFD on screen, and its column must
+                        // contain at least one lit pixel.
+                        let mut matched = None;
+                        for ch in "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'\",.!?-".chars() {
+                            let Some(g) = game_font_glyph(ch) else { continue };
+                            let mut lit = 0;
+                            let mut ok = true;
+                            for gy in 0..8usize {
+                                for gx in 0..g.advance.min(8) {
+                                    let on = (g.rows[gy] >> (7 - gx)) & 1 == 1;
+                                    let px = idx
+                                        .get((row0 + gy) * 320 + x + gx)
+                                        .copied()
+                                        .unwrap_or(0);
+                                    let scr = px >= 0xFD;
+                                    if on && !scr { ok = false; break; }
+                                    if on { lit += 1; }
+                                }
+                                if !ok { break; }
+                            }
+                            if ok && lit >= 4 {
+                                matched = Some((ch, game_font_advance(ch)));
+                                break;
+                            }
+                        }
+                        if let Some((ch, adv)) = matched {
+                            if blanks > 3 && !line.is_empty() { line.push(' '); }
+                            line.push(ch);
+                            blanks = 0;
+                            x += adv.max(2);
+                        } else {
+                            blanks += 1;
+                            x += 1;
+                        }
+                    }
+                    if !line.is_empty() {
+                        if !text.is_empty() { text.push(' '); }
+                        text.push_str(&line);
+                    }
+                }
+                text
+            };
+            let baseline = rt.opened_files.len();
+            let mut last = String::new();
+            let mut reached2 = false;
+            for round in 0..500 {
+                let (fr, _, _) = state(&rt);
+                let delta = fr as i32 - 45;
+                let line = ocr(&rt.screen_indices());
+                if line != last && !line.is_empty() {
+                    println!("round {round}: OCR {line:?}");
+                    last = line.clone();
+                }
+                let names = ["HONK", "TELEPHONE", "CRYOBOX", "MENU", "OPTION"];
+                let want = names.iter().position(|n| line.contains(n));
+                let effective = want.or_else(|| { let t = round % 8; (t < 5).then_some(t) });
+                let (sx, sy) = match effective {
+                    Some(row) if (40..=60).contains(&fr) => {
+                        let x = 0x11f - delta * 8 - 0x37;
+                        let y = 0x48 + delta.unsigned_abs() as i32 * 5 / 4
+                            + row as i32 * (0x12 - delta.unsigned_abs() as i32 / 8) + 8;
+                        (x, y)
+                    }
+                    _ => if round % 2 == 0 { (85, 96) } else { (125, 118) },
+                };
+                let ring = (sx + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+                rt.set_mouse_pos(ring, sy as u16);
+                let _ = rt.run(rt.cpu.steps + 700_000);
+                rt.mouse_press(0);
+                let _ = rt.run(rt.cpu.steps + 400_000);
+                rt.mouse_release(0);
+                let _ = rt.run(rt.cpu.steps + 1_200_000);
+                if rt.opened_files.len() > baseline {
+                    let newest: Vec<String> = rt.opened_files[baseline..]
+                        .iter().map(|(_, p)| p.clone()).collect();
+                    if newest.iter().any(|p| p.to_lowercase().contains("script2")) {
+                        println!("round {round}: SCRIPT2 reached!");
+                        reached2 = true;
+                        rt.write_ppm(&out.join("tut4_script2.ppm")).unwrap();
+                        break;
+                    }
+                }
+            }
+            println!("TUTORIAL4 done, reached_script2={reached2} @ {} steps", rt.cpu.steps);
+            return;
+        }
+
         // VMWATCH: per-round dump of candidate VM line-id/state words while blind
         // clicking (as TUTORIAL2) — offline correlation against the port's decoded
         // SCRIPT1 lines identifies which word is the active-line id.
