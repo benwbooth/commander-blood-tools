@@ -282,6 +282,9 @@ pub struct EngineState {
     /// game's `gs:0x6772`/`gs:0x6774` menu stack — see [`crate::bas_vm`]). Present
     /// once a script's `.BAS` is loaded; `current()` is the menu to display.
     pub bas_menus: Option<crate::bas_vm::BasMenuStack>,
+    /// The in-progress sequential response player for the active menu's monologue
+    /// (advances one `0xA6` response per interaction — the already-shown gating).
+    pub bas_responses: Option<crate::bas_vm::SequentialResponses>,
     /// The decompiled bridge interaction state ([`crate::bridge`]): mouse-push
     /// steering, station seeks, and the golden-menu hit testing/highlighting.
     pub bridge: crate::bridge::BridgeView,
@@ -443,6 +446,7 @@ impl EngineState {
             topic_menu: Vec::new(),
             topic_selected: None,
             bas_menus: None,
+            bas_responses: None,
             bridge: crate::bridge::BridgeView::default(),
             console_font: Vec::new(),
             bridge_active: false,
@@ -1068,6 +1072,19 @@ impl EngineState {
             self.topic_menu = labels.into_iter().enumerate().map(|(i, l)| (l, i)).collect();
             self.topic_selected = None;
         }
+    }
+
+    /// Begin the current BAS menu's response monologue (its `0xA6` responses), reset
+    /// to the start. Called when a conversation menu becomes active.
+    pub fn bas_start_responses(&mut self) {
+        self.bas_responses = self.bas_menus.as_ref().and_then(|s| s.current_responses());
+    }
+
+    /// Advance to the next response of the active menu (the already-shown gating),
+    /// returning its `0xA6` BAS offset for the dialogue renderer. `None` when the
+    /// monologue is exhausted or no menu is active.
+    pub fn bas_advance_response(&mut self) -> Option<usize> {
+        self.bas_responses.as_mut()?.advance()
     }
 
     /// Handle a click on `row` of the current BAS concept menu. Back-out topics
@@ -3133,6 +3150,15 @@ mod tests {
         e.sync_topic_menu_from_bas();
         assert!(!e.topic_menu.is_empty(), "topic menu populated from BAS");
         assert_eq!(e.topic_menu.get(1).map(|(l, _)| l.as_str()), Some("OPTIMIZATION"));
+        // Enter the fear/anger menu and play its response monologue one at a time.
+        e.bas_menus.as_mut().unwrap().push(0x42d);
+        e.bas_start_responses();
+        assert_eq!(e.bas_advance_response(), Some(0x43e), "first response");
+        let mut n = 1;
+        while e.bas_advance_response().is_some() {
+            n += 1;
+        }
+        assert_eq!(n, 13, "all 13 sequential responses played");
     }
 
     /// Oracle: the LIST MENU (dialogue topics / nav destinations) renders the
