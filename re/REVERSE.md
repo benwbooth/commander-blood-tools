@@ -3746,3 +3746,8 @@ manu3 file offset 0x1370).
   0x6280 (0xF0-family teal). Port plan: extract the texture image + mesh, port
   the transform (node matrix +0x12) + affine rasterizer into src/manu3.rs, and
   composite the hand in the engine bridge at the ring-cursor position.
+- CONFIRMED VISUALLY: manu3 file 0x6280..0xA280 = the hand's 256x64 SKIN TEXTURE
+  (teal organic image, renders cleanly with the game palette; 0x4000 bytes ends
+  exactly where the working buffers begin). Remaining for the hand port: the
+  MESH (vertex/face lists feeding the node transform) + per-frame pose, then the
+  affine rasterizer port.
