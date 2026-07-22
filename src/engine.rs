@@ -1058,6 +1058,18 @@ impl EngineState {
             .unwrap_or_default()
     }
 
+    /// Sync the displayed topic menu to the current BAS concept menu, so the decoded
+    /// menus actually RENDER (via [`draw_list_menu`]/the topic-menu widget). Each row
+    /// carries its topic index; a click is handled by [`Self::bas_topic_click`]. No-op
+    /// if no `.BAS` menus are loaded.
+    pub fn sync_topic_menu_from_bas(&mut self) {
+        let labels = self.current_bas_menu_labels();
+        if !labels.is_empty() {
+            self.topic_menu = labels.into_iter().enumerate().map(|(i, l)| (l, i)).collect();
+            self.topic_selected = None;
+        }
+    }
+
     /// Handle a click on `row` of the current BAS concept menu. Back-out topics
     /// (`talk`/`bye_bye`) POP to the parent menu — verified against the running
     /// game (MENUTREE: fear/anger menu `talk` → the top-level parent 0x2f). Other
@@ -3117,6 +3129,10 @@ mod tests {
         // exactly what the running game does (MENUTREE: talk → parent 0x2f).
         let after_talk = e.bas_topic_click(0);
         assert!(after_talk.iter().any(|l| l == "OPTIMIZATION"), "talk pops to parent: {after_talk:?}");
+        // Syncing renders the current BAS menu as the topic menu (so it displays).
+        e.sync_topic_menu_from_bas();
+        assert!(!e.topic_menu.is_empty(), "topic menu populated from BAS");
+        assert_eq!(e.topic_menu.get(1).map(|(l, _)| l.as_str()), Some("OPTIMIZATION"));
     }
 
     /// Oracle: the LIST MENU (dialogue topics / nav destinations) renders the
