@@ -4760,3 +4760,22 @@ for full per-beat navigation. BUILT this session: the menu-stack model (src/bas_
 verified vs live gs:0x6772/0x6774) + all menu LABELS (src/concept_menu.rs, verified
 vs capture). REMAINING: control-flow opcode semantics → branch targets → engine.rs
 wiring. Each is specified; the control-flow interpreter is the large piece.
+
+## BAS VM control opcodes decoded — 0xA3 is dual-role (display vs case) (2026-07-22)
+
+Dumped the runtime VM handler table (gs:0x6EB0) and disassembled the control
+opcodes. KEY: the 0xA3 handler @0x11f6 (seg 0x067c) is DUAL-ROLE:
+  - DISPLAY mode (gs:0x67b2 & 1 set): shows the menu (the list-copy path, 0x1234).
+  - EXECUTION mode (flag clear): a CASE-COMPARE — reads one u16 topic value, compares
+    it to the player's SELECTION at gs:0x6762 (or gs:0x6764 if gs:0x67b1&2); on
+    mismatch calls skip routine 0x10c2 (advance past this topic's block), on match
+    falls through to execute the block.
+So the conversation structure is: `0xA3 <topic-list> 0x0000` (menu display) then,
+per selectable topic, `0xA3 <topic-value> <block>` where <block> = 0xA6 responses
+and/or a nested display-0xA3 (the SUB-MENU). Other decoded control handlers: 0xD0
+@0x1100 / 0xD1 @0x110c (conditional skips on gs flags 0x252a/0x274f → 0x10c2),
+0x10c2 = the token-skip/advance routine. BRANCH-TARGET DECODER (piece a) is now
+specified: walk the BAS, and for each display menu, its following `0xA3 <topic>`
+case-blocks give the topic→(response|sub-menu display) map. Implementing the full
+conversation-flow interpreter in clean Rust (0x10c2 skip semantics + the ~10
+control opcodes + case matching) is the remaining build; the mechanism is decoded.
