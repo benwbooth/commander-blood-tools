@@ -2299,7 +2299,10 @@ fn main() {
         println!("MENUWATCH start menu = {:#06x}", cur(&rt));
         rt.m.watch_addr = Some(0xe84usize * 16 + 0x6772);
         rt.m.addr_hits.clear();
-        for pass in 0..12u32 {
+        let mut distinct = std::collections::BTreeSet::new();
+        distinct.insert(cur(&rt));
+        let npass: u32 = std::env::var("MW_PASSES").ok().and_then(|s| s.parse().ok()).unwrap_or(12);
+        for pass in 0..npass {
             let fr = frame(&rt);
             // rotate through the topic rows + the orb, to provoke navigation.
             let (mx, my) = if pass % 4 == 3 { (125u16, 118u16) } else { (200, 61 + 11 * (pass % 7) as u16 + 3) };
@@ -2310,8 +2313,10 @@ fn main() {
             let _ = rt.run(rt.cpu.steps + 250_000);
             rt.mouse_release(0);
             let _ = rt.run(rt.cpu.steps + 2_000_000);
+            distinct.insert(cur(&rt));
         }
         rt.m.watch_addr = None;
+        println!("MENUWATCH: distinct menus reached: {:x?}", distinct);
         println!("MENUWATCH: {} writes to gs:0x6772", rt.m.addr_hits.len());
         let mut seen = std::collections::HashSet::new();
         for &(v, cs, ip) in rt.m.addr_hits.iter() {

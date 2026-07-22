@@ -5015,3 +5015,17 @@ clean port this means: on a topic click, set selection = topic value, then the V
 piece is which menu-head/record condition a sub-menu-opening topic matches (needs a
 branching menu to observe the push), but the SELECTION side is fully decoded:
 input handler (08c0:1242) sets gs:0x6762 = topic value; VM matches it.
+
+## Branching push is DEFINITIVELY gated to the current savestate (2026-07-22)
+
+Drove the conversation 40 passes (MENUWATCH MW_PASSES=40) from milestone_script2.state:
+distinct menus reached = {0x2f, 0x42d} ONLY — the fear/anger leaf and its console parent.
+No branching push (no new gs:0x6772 menu) is reachable by clicking from this state. So
+observing a topic→sub-menu PUSH requires a PRE-LEAF conversation savestate (a branching
+menu displayed), which is NOT reachable from the fear/anger state — it needs driving the
+tutorial/consultation to an earlier branching point (the same tutorial-completion gating
+that bounds deeper work). CONCLUSION for the branching decode: the SELECTION side is fully
+decoded (input handler 08c0:1242 → gs:0x6762 = topic value; VM 0xA3 match), but the
+selection→sub-menu PUSH observation is gated on creating the right savestate — genuine
+multi-session work. The DISPLAY path (sequential responses, universal) is built + validated
+and does NOT depend on this. So: display = done; branching push = gated on a new savestate.
