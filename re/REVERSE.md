@@ -3949,3 +3949,13 @@ manu3 file offset 0x1370).
   ground truth for MENU/OPTION/destinations/progression. NEXT INFRA: a
   SAVESTATE (serialize Machine mem+regs+device state at SCRIPT2) to cut the
   25-min replay to seconds, then explore the post-tutorial console.
+- **SAVESTATE VERIFIED + POST-TUTORIAL MENU/OPTION ground truth** (resume at
+  2.01B steps works; probe cost 27min -> ~2min): clicking MENU (row 3) and
+  OPTION (row 4) post-tutorial opens LEFT CHOICE BOXES ("CANCEL" visible;
+  longer dwell + box-region OCR needed for the full item list) — NOT separate
+  screens and NOT the port's current over-the-golden-box {EXPLANATIONS, GAME}
+  overlay. The choice box is the game's universal console interaction. Port
+  tasks: (1) MENU/OPTION -> choice boxes over the panorama (reuse
+  draw_choice_box); (2) extend the OCR row scan to cover the box region
+  (y~88..150) to read item lists. Captures: accuracy/captures/bridge/
+  post2_{menu,option}_choice.ppm.
