@@ -4938,3 +4938,17 @@ sub-menu's 0xA3. That state is conversation-gated (the top-level 0x2f pops to th
 not a clickable list), so reaching a branching-menu display is the prerequisite. NET:
 the executor's sub-menu push is the one remaining unknown; block parser + stack + record-
 gating are built/specified. This is genuine remaining RE (reach a branching menu → trace).
+
+## Topic→response is runtime-record-driven (empirical, 2026-07-22)
+
+Captured the fear/anger menu's per-topic screens (MENUTREE writes menutree_i_name.ppm):
+FEAR → subtitle "OUCH…"; ANGER (single click) → no subtitle (console only). So the
+displayed response is NOT a clean static or single-click-capturable topic→line map —
+it is gated by runtime line-record state (gs:0x6724 + the b5&0x80 active / es:[line+2]
+already-shown bits, b3=0xff so no static tag). CONCLUSION: both remaining conversation-VM
+behaviors — response selection AND sub-menu push — are RECORD-STATE-DRIVEN, so a faithful
+executor must model the line-record state (partially in src/vm.rs TextTokenRuntimeFlags),
+not a static table. NET STATE of the per-beat menu subsystem: STRUCTURE fully built in
+clean Rust (load menus, parse blocks, render current menu, navigate stack, pop verified);
+the record-state-driven response/push logic is the remaining deep piece, reusing+extending
+vm.rs's record model. This is genuine multi-session work (a faithful conversation record VM).
