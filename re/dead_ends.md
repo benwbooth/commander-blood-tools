@@ -515,3 +515,18 @@ Rust mean_abs can't match. CONCLUSION: keep Mindscape in the Python oracle
 (normalized, 1.09); the runnable Rust suite is exact-palette-index decode of the
 bridge (no capture-gamma dependence). To add HNM scenes to the Rust suite would
 require porting compare_oracle.py's normalization — not worth it for one scene.
+
+## Rust scene oracle for mind.hnm — frame-selection, not decode (2026-07-22)
+Captured the EMULATOR's Mindscape boot frame (2M steps, same-palette, avoids the
+DOSBox gamma issue) and compared the port's mind.hnm sequential decode: best 75
+mean_abs. Root: mind.hnm is a MULTI-LOGO REEL (frame 0 black -> Mindscape ->
+frame 80 = "Microfolie's"); a naive decode-frames-0..N doesn't land on the same
+Mindscape frame the emulator shows at 2M steps — it is a FRAME-SELECTION/timing
+mismatch, NOT a decoder break (the export/compare_oracle.py pipeline already
+verifies Mindscape at 1.09). To add an HNM scene to the runnable Rust oracle,
+port the export pipeline's frame-timing (which mp4 frame maps to which HNM
+frame at which step), or capture the emulator + port at the SAME reel position.
+Not worth it for one scene; the bridge oracle (6 scenarios, exact-decode) is the
+solid representative suite. USEFUL BYPRODUCT: confirmed the port's HNM decoder
+renders the reel correctly (black->Mindscape->Microfolie's), just at different
+frame indices than a fixed step count.
