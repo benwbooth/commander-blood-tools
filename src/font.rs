@@ -323,3 +323,61 @@ impl BoldConsoleFont {
         }
     }
 }
+
+/// The SQUARE-CAPITALS face used by the game's list menus and choice boxes
+/// (index-0xE8 text). The glyph bitmaps are HARVESTED from live-game index
+/// captures (numseries/choice-box dumps; each row's word is known, so cells
+/// segment exactly) — the face exists in no file (it is emitted by a runtime
+/// RLE builder, see re/REVERSE.md). Letters not yet harvested fall back to
+/// [`game_font_glyph`]. Monospace advance 10 px (measured pitch).
+pub const SQUARE_CAPS_ADVANCE: usize = 10;
+pub const SQUARE_CAPS_GLYPHS: [(char, [u8; 8]); 16] = [
+    ('A', [0x7F, 0x81, 0x81, 0x81, 0x81, 0xBF, 0x81, 0x81]),
+    ('C', [0xFE, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0xFF]),
+    ('E', [0xFF, 0x80, 0x80, 0xBF, 0x80, 0x80, 0x80, 0xFF]),
+    ('F', [0xFF, 0x80, 0x80, 0xBF, 0x80, 0x80, 0x80, 0x80]),
+    ('I', [0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80]),
+    ('K', [0x82, 0x82, 0x82, 0x82, 0xBE, 0x81, 0x81, 0x81]),
+    ('L', [0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0xFF]),
+    ('N', [0xFE, 0x81, 0x81, 0x81, 0x81, 0x81, 0x81, 0x81]),
+    ('O', [0x7E, 0x81, 0x81, 0x81, 0x81, 0x81, 0x81, 0x7E]),
+    ('R', [0xFF, 0x81, 0x81, 0x81, 0x81, 0xBE, 0x81, 0x81]),
+    ('S', [0xFF, 0x80, 0x80, 0xFF, 0x01, 0x01, 0x01, 0xFF]),
+    ('T', [0xFF, 0x00, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10]),
+    ('U', [0x81, 0x81, 0x81, 0x81, 0x81, 0x81, 0x81, 0xFF]),
+    ('V', [0x81, 0x81, 0x81, 0x81, 0x81, 0x81, 0x82, 0xFC]),
+    ('W', [0x80, 0x80, 0x80, 0x80, 0x80, 0x88, 0x88, 0x77]),
+    ('X', [0x81, 0x81, 0x81, 0x7E, 0x81, 0x81, 0x81, 0x81]),
+];
+
+/// Draw square-capitals text (list menus / choice boxes) at (x, y) in `color`.
+/// Unharvested letters use the thin game font as a stand-in.
+pub fn draw_square_caps(
+    fb: &mut [u8],
+    fb_width: usize,
+    fb_height: usize,
+    text: &str,
+    x: usize,
+    y: usize,
+    color: u8,
+) {
+    let mut pen = x;
+    for ch in text.chars() {
+        let up = ch.to_ascii_uppercase();
+        if let Some((_, rows)) = SQUARE_CAPS_GLYPHS.iter().find(|(c, _)| *c == up) {
+            for (gy, row) in rows.iter().enumerate() {
+                for gx in 0..8 {
+                    if row & (0x80 >> gx) != 0 {
+                        let (px, py) = (pen + gx, y + gy);
+                        if px < fb_width && py < fb_height {
+                            fb[py * fb_width + px] = color;
+                        }
+                    }
+                }
+            }
+        } else if up != ' ' {
+            draw_text_indexed(fb, fb_width, fb_height, &up.to_string(), pen, y, color);
+        }
+        pen += SQUARE_CAPS_ADVANCE;
+    }
+}

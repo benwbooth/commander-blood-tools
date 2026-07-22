@@ -947,7 +947,7 @@ impl EngineState {
         }
         for (i, label) in labels.iter().take(rows).enumerate() {
             let color = if selected == Some(i) { TEXT_SELECTED } else { TEXT };
-            crate::font::draw_text_indexed(
+            crate::font::draw_square_caps(
                 &mut self.framebuffer,
                 ENGINE_SCREEN_WIDTH,
                 ENGINE_SCREEN_HEIGHT,
@@ -957,6 +957,36 @@ impl EngineState {
                 color,
             );
         }
+    }
+
+    /// Draw a LIST MENU — the game's blue square-capitals vertical list (topic
+    /// menus in dialogue, destinations at nav, contacts): entries at the
+    /// measured geometry (x 175, rows from y 45 at 11 px pitch, text index
+    /// 0xE8 over the scene). `selected` brightens one row.
+    pub fn draw_list_menu(&mut self, labels: &[String], selected: Option<usize>) {
+        const TEXT: u8 = 0xE8;
+        const TEXT_SELECTED: u8 = 0xEF;
+        for (i, label) in labels.iter().take(12).enumerate() {
+            let color = if selected == Some(i) { TEXT_SELECTED } else { TEXT };
+            crate::font::draw_square_caps(
+                &mut self.framebuffer,
+                ENGINE_SCREEN_WIDTH,
+                ENGINE_SCREEN_HEIGHT,
+                label,
+                175,
+                45 + i * 11,
+                color,
+            );
+        }
+    }
+
+    /// Map a click to a list-menu row (the measured geometry above).
+    pub fn list_menu_click(labels_len: usize, x: u16, y: u16) -> Option<usize> {
+        if !(170..=245).contains(&(x as i32)) {
+            return None;
+        }
+        let row = (y as i32 - 45) / 11;
+        (row >= 0 && (row as usize) < labels_len.min(12)).then_some(row as usize)
     }
 
     /// Map a click to a nav-sector destination row when the choice box is showing
