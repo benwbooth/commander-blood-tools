@@ -1129,8 +1129,66 @@ fn main() {
                 rt.mouse_press(0);
                 let _ = rt.run(rt.cpu.steps + 1_000_000);
                 rt.mouse_release(0);
-                let _ = rt.run(rt.cpu.steps + 10_000_000);
-                rt.write_ppm(&out.join(format!("submenu_{name}.ppm"))).unwrap();
+                for stage in 0..4 {
+                    let _ = rt.run(rt.cpu.steps + 8_000_000);
+                    rt.write_ppm(&out.join(format!("submenu_{name}_{stage}.ppm"))).unwrap();
+                    // OCR the choice-box region with the game's bold font.
+                    let idx = rt.screen_indices();
+                    let mut lit_font: Vec<(char, [u8; 8])> = Vec::new();
+                    for code in 32u8..127 {
+                        let gi = rt.m.read8(g, 0x70fa + code as u32);
+                        if gi == 0xFF { continue; }
+                        let mut rows = [0u8; 8];
+                        for (i, r) in rows.iter_mut().enumerate() {
+                            *r = rt.m.read8(g, 0x71aa + gi as u32 * 8 + i as u32);
+                        }
+                        if rows.iter().map(|r| r.count_ones()).sum::<u32>() >= 3 {
+                            lit_font.push((code as char, rows));
+                        }
+                    }
+                    lit_font.sort_by_key(|(_, rows)| {
+                        std::cmp::Reverse(rows.iter().map(|r| r.count_ones()).sum::<u32>())
+                    });
+                    let lit = |px: u8| px == 0xE0 || px >= 0xFD;
+                    let mut row0 = 60usize;
+                    while row0 < 170 {
+                        let mut line = String::new();
+                        let mut blanks = 0usize;
+                        let mut x = 0usize;
+                        while x < 312 {
+                            let mut got = None;
+                            for (ch, rows) in &lit_font {
+                                let mut ok = true;
+                                'c: for gy in 0..8usize {
+                                    for gx in 0..8usize {
+                                        let on = (rows[gy] >> (7 - gx)) & 1 == 1;
+                                        let px = idx
+                                            .get((row0 + gy) * 320 + x + gx)
+                                            .copied()
+                                            .unwrap_or(0);
+                                        if on != lit(px) { ok = false; break 'c; }
+                                    }
+                                }
+                                if ok { got = Some(*ch); break; }
+                            }
+                            if let Some(ch) = got {
+                                if blanks >= 8 && !line.is_empty() { line.push(' '); }
+                                line.push(ch);
+                                blanks = 0;
+                                x += 8;
+                            } else {
+                                blanks += 1;
+                                x += 1;
+                            }
+                        }
+                        if line.chars().filter(|c| c.is_ascii_alphanumeric()).count() >= 3 {
+                            println!("{name} stage {stage} y{row0}: {line:?}");
+                            row0 += 9;
+                        } else {
+                            row0 += 1;
+                        }
+                    }
+                }
                 let (fr2, _, st2) = state(&rt);
                 println!("after {name} click: frame {fr2} station {st2:#x}");
                 rt.inject_key(0x01, 0x1b); // Esc back
