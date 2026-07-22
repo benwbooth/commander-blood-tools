@@ -425,6 +425,38 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 if !lines.is_empty() {
                     engine.set_speech_dialogue(lines);
                 }
+                // The TOPIC MENU (the game's concept-menu conversation system,
+                // live-captured): topics come from the script's DEB functions —
+                // helpN = the numbered consultation topics, honk*/talk = TALK.
+                // Each topic jumps the dialogue to that function's first line.
+                let mut topics: Vec<(String, usize)> = Vec::new();
+                let mut line_index = 0usize;
+                let mut last_fn = String::new();
+                for e in bundle.speech_events.iter().filter(|e| !e.text.trim().is_empty()) {
+                    if e.function_name != last_fn {
+                        last_fn = e.function_name.clone();
+                        let label = match last_fn.as_str() {
+                            f if f.starts_with("help") => {
+                                let names = ["ONE", "TWO", "THREE", "FOUR", "FIVE",
+                                             "SIX", "SEVEN", "EIGHT", "NINE"];
+                                f.strip_prefix("help")
+                                    .and_then(|d| d.parse::<usize>().ok())
+                                    .and_then(|d| names.get(d - 1).copied())
+                                    .map(str::to_string)
+                            }
+                            f if f.starts_with("honk") || f == "talk" => Some("TALK".to_string()),
+                            _ => None,
+                        };
+                        if let Some(label) = label {
+                            topics.push((label, line_index));
+                        }
+                    }
+                    line_index += 1;
+                }
+                // Only offer a menu when the script actually has topics (SCRIPT2's
+                // consultation hub); order TALK first as the live game lists it.
+                topics.sort_by_key(|(l, _)| if l == "TALK" { 0 } else { 1 });
+                engine.set_topic_menu(if topics.len() >= 3 { topics } else { Vec::new() });
             }
             if let Some(m) = extract::script_background_music(Path::new(iso), &format!("SCRIPT{n}"))
             {
@@ -626,7 +658,11 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 // fully revealed, then moves to the next) — as the real game does, so the
                 // player isn't stuck watching hundreds of lines auto-play.
                 Event::ButtonPress(b) if engine.in_dialogue() && b.detail == 1 => {
-                    engine.skip_dialogue_line();
+                    // The topic menu takes the click when it is showing (the
+                    // concept-menu conversation system); otherwise advance.
+                    if engine.topic_menu_click(mx, my).is_none() {
+                        engine.skip_dialogue_line();
+                    }
                 }
                 // Left button otherwise drives compass nav selection (via the engine);
                 // right button switches between the ship views.

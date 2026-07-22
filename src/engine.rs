@@ -272,6 +272,12 @@ pub struct EngineState {
     /// The BOLD console subtitle font from the user's BLOODPRG.EXE (the face
     /// the game uses for ALL on-console text); None until loaded.
     bold_font: Option<crate::font::BoldConsoleFont>,
+    /// The dialogue TOPIC MENU (the game's concept-menu conversation system,
+    /// live-captured: TALK/ONE..NINE, TALK/EGO/LIBIDO/...): each entry is a
+    /// label + the dialogue-line index its topic starts at. Empty = no menu.
+    topic_menu: Vec<(String, usize)>,
+    /// Currently highlighted topic row.
+    pub topic_selected: Option<usize>,
     /// The decompiled bridge interaction state ([`crate::bridge`]): mouse-push
     /// steering, station seeks, and the golden-menu hit testing/highlighting.
     pub bridge: crate::bridge::BridgeView,
@@ -430,6 +436,8 @@ impl EngineState {
             panorama: None,
             hand_atlas: Vec::new(),
             bold_font: None,
+            topic_menu: Vec::new(),
+            topic_selected: None,
             bridge: crate::bridge::BridgeView::default(),
             console_font: Vec::new(),
             bridge_active: false,
@@ -978,6 +986,23 @@ impl EngineState {
                 color,
             );
         }
+    }
+
+    /// Set the dialogue topic menu: (label, first line index) per topic.
+    pub fn set_topic_menu(&mut self, topics: Vec<(String, usize)>) {
+        self.topic_menu = topics;
+        self.topic_selected = None;
+    }
+
+    /// A click while the topic menu is showing: selects the topic and jumps the
+    /// dialogue to its first line. Returns the selected topic index.
+    pub fn topic_menu_click(&mut self, x: u16, y: u16) -> Option<usize> {
+        let row = Self::list_menu_click(self.topic_menu.len(), x, y)?;
+        self.topic_selected = Some(row);
+        let line = self.topic_menu[row].1;
+        self.set_dialogue_cursor(line);
+        self.dialogue_timer = 0;
+        Some(row)
     }
 
     /// Map a click to a list-menu row (the measured geometry above).
@@ -2570,8 +2595,15 @@ impl EngineState {
         } else if self.panorama.is_some() {
             // No talk-HNM (e.g. the on-ship console tutorial, HONK's food menu):
             // the dialogue happens AT THE SHIP CONSOLE in the real game, so
-            // composite the real bridge panorama behind the subtitle text.
+            // composite the real bridge panorama behind the subtitle text —
+            // and the TOPIC MENU when this dialogue offers one (the concept-menu
+            // conversation system, e.g. HONK's TALK/ONE..NINE).
             self.render_bridge_background();
+            if !self.topic_menu.is_empty() {
+                let labels: Vec<String> =
+                    self.topic_menu.iter().map(|(l, _)| l.clone()).collect();
+                self.draw_list_menu(&labels, self.topic_selected);
+            }
             self.scene_buffer.copy_from_slice(&self.framebuffer);
         } else {
             for p in self.framebuffer.iter_mut() {
