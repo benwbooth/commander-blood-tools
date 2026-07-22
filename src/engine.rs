@@ -398,6 +398,11 @@ pub struct EngineState {
     /// `Music` ("blintr.voc") to its `cliptoot.hnm` cinematic — so the MINDSCAPE/Microfolie's
     /// logo reel (`mind.hnm`) plays SILENT and the music starts only with the cinematic.
     intro_music: Vec<Option<String>>,
+    /// Whether each intro clip is presented on the PYRAMID CONSOLE (the crew-showcase cliptoot
+    /// clip: crew video + grey pyramid floor + eye-orb — accuracy/captures/frame_6-9). True only
+    /// for the intro's credit/showcase clip; in-game cutscenes played via `start_descript_cutscene`
+    /// (maledict/hatetv/…) are full-screen and set this false, so they don't get the console.
+    intro_pyramid: Vec<bool>,
     /// Index of the intro HNM currently playing.
     intro_index: usize,
     /// True while the startup intro sequence is playing (gates the main render path).
@@ -493,6 +498,7 @@ impl EngineState {
             intro_hnms: Vec::new(),
             intro_cues: Vec::new(),
             intro_music: Vec::new(),
+            intro_pyramid: Vec::new(),
             intro_index: 0,
             intro_active: false,
         }
@@ -593,12 +599,18 @@ impl EngineState {
         self.intro_hnms = Vec::new();
         self.intro_cues = Vec::new();
         self.intro_music = Vec::new();
+        self.intro_pyramid = Vec::new();
         for (name, cues, music) in order {
             let path = sq.join(&name);
             if path.exists() {
+                // The crew-showcase / CRYO credit clip (the one carrying music+cues, i.e. the
+                // `present` cliptoot) is presented on the pyramid console; the silent logo reel is
+                // not.
+                let showcase = music.is_some() && !cues.is_empty();
                 self.intro_hnms.push(path);
                 self.intro_cues.push(cues);
                 self.intro_music.push(music);
+                self.intro_pyramid.push(showcase);
             }
         }
         self.intro_index = 0;
@@ -645,6 +657,7 @@ impl EngineState {
         self.intro_hnms = Vec::new();
         self.intro_cues = Vec::new();
         self.intro_music = Vec::new();
+        self.intro_pyramid = Vec::new();
         for (i, name) in record.sequence_hnms.iter().enumerate() {
             let path = sq.join(name);
             if path.exists() {
@@ -654,6 +667,8 @@ impl EngineState {
                     .push(if i == 0 { record.subtitles.clone() } else { Vec::new() });
                 self.intro_music
                     .push(if i == 0 { music.clone() } else { None });
+                // In-game cutscenes play FULL-SCREEN — no pyramid console (that is intro-only).
+                self.intro_pyramid.push(false);
             }
         }
         self.intro_index = 0;
@@ -1753,14 +1768,11 @@ impl EngineState {
         let frame = self.scene_frame;
         self.scene_frame += 1;
         self.present_scene_buffer();
-        // The credit clip is the intro CREW SHOWCASE: cliptoot.hnm cycles crew members and the
-        // game overlays the pyramid console over the bottom (accuracy/captures/frame_6-9 — the
-        // pyramid floor occludes the crew's lower body). Only clips carrying credit cues get it.
-        if self
-            .intro_cues
-            .get(self.intro_index)
-            .is_some_and(|cues| !cues.is_empty())
-        {
+        // The intro CREW SHOWCASE clip (cliptoot.hnm) cycles crew members and the game overlays the
+        // pyramid console over the bottom (accuracy/captures/frame_6-9 — the pyramid floor occludes
+        // the crew's lower body). ONLY the showcase clip gets it — NOT the logo reel or the in-game
+        // cutscenes played through this same path via `start_descript_cutscene`.
+        if self.intro_pyramid.get(self.intro_index).copied().unwrap_or(false) {
             self.overlay_console_pyramids();
         }
         // Overlay this clip's active credit subtitle (the DESCRIPT `present` cues on the
@@ -3540,6 +3552,11 @@ mod tests {
         assert!(
             e.intro_cues[0].iter().any(|c| c.text.contains("CURSED")),
             "the record's subtitle text is carried"
+        );
+        // In-game cutscenes play FULL-SCREEN — never on the pyramid console (that is intro-only).
+        assert!(
+            e.intro_pyramid.iter().all(|&p| !p),
+            "an in-game cutscene must NOT get the pyramid console overlay"
         );
     }
 
