@@ -128,6 +128,16 @@ everywhere.** Priority = how visible/audible + how confidently fixable.
    as the main hub and lacks this pyramid-console interface. OPEN: how the two console UIs relate
    (pyramid-console = SCRIPT1/early nav? bridge = ship menu?) — a real architecture question to
    resolve (deeper RE / interactive) before rebuilding the main interface; do not guess.
+   RESOLVED (frames 6-22 all show it): the pyramid console persists across the ENTIRE captured
+   SCRIPT1 sequence (crew showcase frames 6-9, then location scenes frames 15/22 = sunset seascape,
+   teal alien structure) - a viewscreen (top ~75%) + the persistent grey pyramid console + eye-orb
+   (bottom ~25%). The purple-panorama bridge appears only at SCRIPT2 (script2_first_frame.ppm). So:
+   SCRIPT1 (the tutorial/early game) uses the PYRAMID CONSOLE; SCRIPT2+ use the BRIDGE. The port
+   uses the bridge for both and lacks the pyramid-console interface for SCRIPT1. TO BUILD (now fully
+   grounded): render SCRIPT1's scenes in the pyramid-console composite (viewscreen scene +
+   overlay_console_pyramids), keep the bridge for SCRIPT2+; the engine needs the active script
+   (main.rs tracks current_script) to pick the interface. Grounded rendering+flow change - verify
+   each SCRIPT1 scene vs the captures before shipping.
 2. **Intro/HNM playback RATE** (`INTRO_CREDIT_FRAMES_PER_TICK = 1`, one HNM frame per game step).
    A guess flagged "calibratable". Source: the HNM player's frame-advance timing in the asm (ticks
    per HNM frame) + the DESCRIPT tick unit. RISK: intro plays too fast/slow; subtitles mistimed.
