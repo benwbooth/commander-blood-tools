@@ -695,13 +695,7 @@ impl EngineState {
         if !self.menu_submenu_active {
             return None;
         }
-        // Choice box: rows from y0+5 at 13 px pitch, box left x0=63 (draw_choice_box).
-        let (x, y) = (x as i32, y as i32);
-        if !(40..170).contains(&x) {
-            return None;
-        }
-        let row = (y - (88 + 5)) / 13;
-        (row >= 0 && (row as usize) < Self::MENU_SUBMENU.len()).then_some(row as usize)
+        self.choice_box_row_at(x, y, Self::MENU_SUBMENU.len())
     }
 
     /// Aim the bridge's virtual ring-space cursor at an absolute screen point —
@@ -927,12 +921,15 @@ impl EngineState {
         self.draw_choice_box(&labels, None);
     }
 
-    /// Draw a golden choice box exactly as the real game composes it (measured
-    /// from live index dumps, post-tutorial MENU probe): a 3-px border of
-    /// palette index 0x15 (dark purple), a GOLD FILL of index 0xE0, and the
-    /// item text as thin GAME_FONT glyphs "knocked out" in index 0xE8 —
-    /// geometry: box from (63, 88), ~54 px wide + text, rows ~13 px apart.
-    /// `selected` re-renders one row in the brighter 0xEF white.
+    /// Draw the console choice box as the real game composes it (measured from
+    /// `choice_box_bob_morlock.ppm`, the telephone contact list): grey square-caps
+    /// item text (index 0xE8) laid out CENTERED on the axis x=100, first row top
+    /// y=89, 11px pitch — the labels sit in the panorama's dark orb-socket region,
+    /// so a black backdrop (index 0xE0, DAC 0,0,0) is filled behind them for
+    /// legibility. `selected` re-renders one row in the brighter 0xEF white.
+    const CHOICE_BOX_CENTER_X: usize = 100;
+    const CHOICE_BOX_TOP_Y: usize = 89;
+    const CHOICE_BOX_PITCH: usize = 11;
     fn draw_choice_box(&mut self, labels: &[String], selected: Option<usize>) {
         if labels.is_empty() {
             return;
@@ -945,36 +942,57 @@ impl EngineState {
         let widest = labels
             .iter()
             .take(rows)
-            .map(|l| l.chars().map(crate::font::game_font_advance).sum::<usize>())
+            .map(|l| crate::font::square_caps_text_width(l))
             .max()
             .unwrap_or(0);
-        let (x0, y0) = (63usize, 88usize);
-        let (w, h) = ((widest + 14).max(54), rows * 13 + 10);
-        // Border (3 px) then the gold fill.
-        for y in y0..(y0 + h).min(ENGINE_SCREEN_HEIGHT) {
-            for x in x0..(x0 + w).min(ENGINE_SCREEN_WIDTH) {
-                let edge = y < y0 + 3 || y + 3 >= y0 + h || x < x0 + 3 || x + 3 >= x0 + w;
-                self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] =
-                    if edge { BORDER } else { FILL };
+        // Black backdrop enclosing the centered text (3px padding each side); a
+        // 3px border index (0x15) then the fill (0xE0) — both DAC(0,0,0), from the
+        // prior live index-dump measurement (RGB can't distinguish them).
+        let half = widest / 2 + 4;
+        let x0 = Self::CHOICE_BOX_CENTER_X.saturating_sub(half);
+        let x1 = (Self::CHOICE_BOX_CENTER_X + half).min(ENGINE_SCREEN_WIDTH);
+        let y0 = Self::CHOICE_BOX_TOP_Y.saturating_sub(3);
+        let y1 = (Self::CHOICE_BOX_TOP_Y + rows * Self::CHOICE_BOX_PITCH + 3).min(ENGINE_SCREEN_HEIGHT);
+        for y in y0..y1 {
+            for x in x0..x1 {
+                let edge = y < y0 + 3 || y + 3 >= y1 || x < x0 + 3 || x + 3 >= x1;
+                self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] = if edge { BORDER } else { FILL };
             }
         }
         for (i, label) in labels.iter().take(rows).enumerate() {
             let color = if selected == Some(i) { TEXT_SELECTED } else { TEXT };
+            let width = crate::font::square_caps_text_width(label);
+            let lx = Self::CHOICE_BOX_CENTER_X.saturating_sub(width / 2);
             crate::font::draw_square_caps(
                 &mut self.framebuffer,
                 ENGINE_SCREEN_WIDTH,
                 ENGINE_SCREEN_HEIGHT,
                 label,
-                x0 + 7,
-                y0 + 7 + i * 13,
+                lx,
+                Self::CHOICE_BOX_TOP_Y + i * Self::CHOICE_BOX_PITCH,
                 color,
             );
         }
     }
 
+    /// Hit-test a click against the console choice box (see [`draw_choice_box`]):
+    /// the box centers on x=100 with its first row band from the box top (y=86)
+    /// at an 11px pitch. Shared by the telephone contact list, the MENU submenu,
+    /// and the nav-destination chooser — all the same rendered widget, so the
+    /// click math is derived from the same measured geometry as the draw.
+    fn choice_box_row_at(&self, x: u16, y: u16, num_rows: usize) -> Option<usize> {
+        let (x, y) = (x as i32, y as i32);
+        if !(40..=160).contains(&x) {
+            return None;
+        }
+        let top = Self::CHOICE_BOX_TOP_Y as i32 - 3;
+        let row = (y - top) / Self::CHOICE_BOX_PITCH as i32;
+        (row >= 0 && (row as usize) < num_rows.min(8)).then_some(row as usize)
+    }
+
     /// Draw a LIST MENU — the game's blue square-capitals vertical list (topic
     /// menus in dialogue, destinations at nav, contacts): entries at the
-    /// measured geometry (x 175, rows from y 45 at 11 px pitch, text index
+    /// measured geometry (x 170, rows from y 34 at 11 px pitch, text index
     /// 0xE8 over the scene). `selected` brightens one row.
     pub fn draw_list_menu(&mut self, labels: &[String], selected: Option<usize>) {
         const TEXT: u8 = 0xE8;
@@ -1029,12 +1047,7 @@ impl EngineState {
         if !(72..=107).contains(&self.bridge.frame) || self.nav_destinations.is_empty() {
             return None;
         }
-        let (px, py) = (x as i32, y as i32);
-        if !(40..150).contains(&px) {
-            return None;
-        }
-        let row = (py - 93) / 13;
-        (row >= 0 && (row as usize) < self.nav_destinations.len().min(8)).then_some(row as usize)
+        self.choice_box_row_at(x, y, self.nav_destinations.len())
     }
 
     /// Composite the bridge view into the framebuffer: window starfield, then the
@@ -1319,11 +1332,6 @@ impl EngineState {
         ("TINA", "aatin"),
         ("RGB", "aargb"),
     ];
-    /// The video-phone contact-list layout (dialling state): top-left of the name column
-    /// and the row pitch.
-    pub const PHONE_LIST_X: i32 = 12;
-    pub const PHONE_LIST_Y: i32 = 44;
-    pub const PHONE_LIST_PITCH: i32 = 13;
 
     /// Load the video-phone call screen (console TELEPHONE option): the call widget
     /// (`BAPPEL.SPR`, from `iso`) and every callable crew's talk-head HNM (`pe/aa*.hnm`,
@@ -1374,12 +1382,8 @@ impl EngineState {
         if self.phone_contacts.is_empty() {
             return None;
         }
-        let (px, py) = (x as i32, y as i32);
-        if px < Self::PHONE_LIST_X || px > Self::PHONE_LIST_X + 140 {
-            return None;
-        }
-        (0..self.phone_contacts.len())
-            .find(|&i| (py - (Self::PHONE_LIST_Y + i as i32 * Self::PHONE_LIST_PITCH)).abs() <= 5)
+        // Contacts render through draw_choice_box, so share its hit geometry.
+        self.choice_box_row_at(x, y, self.phone_contacts.len())
     }
 
     /// Connect the call to `index` (switch to the video-feed state). Invalid index = no-op.
@@ -2920,6 +2924,54 @@ mod tests {
         assert!(count(0xE8) > 20, "choice-box text (0xE8) present: {}", count(0xE8));
     }
 
+    /// Oracle: the telephone choice box renders its item text exactly where the
+    /// real game does. Renders the captured contact list (BOB_MORLOCK / CANCEL)
+    /// and compares the port's 0xE8 glyph mask against the live capture's grey
+    /// text mask — the labels must land CENTERED on x=100 (rows y=89/100) for the
+    /// masks to overlap, which only happens with proportional-centered layout.
+    #[test]
+    fn choice_box_text_matches_live_game_capture() {
+        let path = ["accuracy/captures/bridge/choice_box_bob_morlock.ppm", "../accuracy/captures/bridge/choice_box_bob_morlock.ppm"]
+            .iter()
+            .map(Path::new)
+            .find(|p| p.exists());
+        let Some(path) = path else { return };
+        let raw = std::fs::read(path).unwrap();
+        let at = raw.windows(4).position(|w| w == b"255\n").unwrap() + 4;
+        let cap = &raw[at..];
+        if cap.len() != ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT * 3 {
+            return;
+        }
+
+        let mut e = EngineState::new();
+        e.draw_choice_box(&["BOB_MORLOCK".to_string(), "CANCEL".to_string()], None);
+
+        let is_grey = |o: usize| {
+            let (r, g, b) = (cap[o] as i32, cap[o + 1] as i32, cap[o + 2] as i32);
+            (r - 138).abs() < 45
+                && (g - 138).abs() < 45
+                && (b - 138).abs() < 45
+                && (r.max(g).max(b) - r.min(g).min(b)) < 25
+        };
+        let (mut inter, mut uni) = (0u32, 0u32);
+        for y in 85..112usize {
+            for x in 40..160usize {
+                let idx = y * ENGINE_SCREEN_WIDTH + x;
+                let port = e.framebuffer[idx] == 0xE8;
+                let live = is_grey(idx * 3);
+                if port && live {
+                    inter += 1;
+                }
+                if port || live {
+                    uni += 1;
+                }
+            }
+        }
+        let iou = inter as f64 / uni as f64;
+        eprintln!("choice-box text IoU = {iou:.3} (inter={inter}, union={uni})");
+        assert!(iou > 0.55, "choice-box text must overlap the live capture (IoU {iou:.3} <= 0.55)");
+    }
+
     /// Oracle: the LIST MENU (dialogue topics / nav destinations) renders the
     /// square-capitals face at index 0xE8 at the measured geometry (x 175, rows
     /// from y 45, 11 px pitch). Locks the widget + face to the harvested values.
@@ -3187,10 +3239,8 @@ mod tests {
         for _ in 0..8 { e.step(MouseInput::default()); }
         assert!(!e.phone_connected(), "starts on the dial screen");
         assert!(e.framebuffer.iter().filter(|&&p| p != 0).count() > 500, "dial screen renders");
-        // A click on the second contact row connects that call.
-        let x = (EngineState::PHONE_LIST_X + 4) as u16;
-        let y = (EngineState::PHONE_LIST_Y + EngineState::PHONE_LIST_PITCH) as u16;
-        let row = e.phone_contact_click(x, y).expect("row 1 hits");
+        // A click on the second contact row (choice-box row 1) connects that call.
+        let row = e.phone_contact_click(100, 100).expect("row 1 hits");
         assert_eq!(row, 1);
         assert!(e.phone_connect(row));
         assert!(e.phone_connected(), "call connected");
@@ -3215,9 +3265,9 @@ mod tests {
         let mut e = EngineState::new();
         assert!(e.load_console_font(iso), "console font loads");
         e.load_bridge(iso);
-        // The submenu is a gold CHOICE BOX (the game's universal console-choice
-        // widget): rows from y0+5 at 13 px pitch, box x 40..170 (draw_choice_box).
-        let (x, y0) = (90u16, 88 + 6);
+        // The submenu is the console CHOICE BOX (the game's universal console-choice
+        // widget): rows from the box top (y=86) at 11px pitch (draw_choice_box).
+        let (x, y0) = (90u16, 90u16);
         assert_eq!(e.menu_submenu_click(x, y0), None, "closed: no submenu hit");
         // Open the submenu (as clicking MENU does) and render it.
         e.menu_submenu_active = true;
@@ -3226,7 +3276,7 @@ mod tests {
         assert_eq!(EngineState::MENU_SUBMENU, ["EXPLANATIONS", "GAME"]);
         // Row 0 = EXPLANATIONS, row 1 = GAME.
         assert_eq!(e.menu_submenu_click(x, y0), Some(0));
-        assert_eq!(e.menu_submenu_click(x, y0 + 13), Some(1));
+        assert_eq!(e.menu_submenu_click(x, y0 + 11), Some(1));
     }
 
     /// Click-to-advance dialogue: a click snaps the current line fully revealed, then moves

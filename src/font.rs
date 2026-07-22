@@ -383,6 +383,25 @@ fn square_cap_width(rows: &[u16; 8]) -> usize {
     max_col + 1
 }
 
+/// Rendered pixel width of a square-caps string (sum of per-glyph advances minus
+/// the trailing inter-glyph gap). Used to horizontally CENTER choice-box labels,
+/// which the real game centers on a common axis (measured: "BOB_MORLOCK" and
+/// "CANCEL" both center on x≈100 in `choice_box_bob_morlock.ppm`).
+pub fn square_caps_text_width(text: &str) -> usize {
+    let mut w = 0usize;
+    for ch in text.chars() {
+        let up = ch.to_ascii_uppercase();
+        w += if let Some((_, rows)) = SQUARE_CAPS_GLYPHS.iter().find(|(c, _)| *c == up) {
+            square_cap_width(rows) + 2
+        } else if up == ' ' {
+            SQUARE_CAPS_SPACE_ADVANCE
+        } else {
+            SQUARE_CAPS_ADVANCE
+        };
+    }
+    w.saturating_sub(2)
+}
+
 /// Draw square-capitals text (list menus / choice boxes) at (x, y) in `color`.
 /// Unharvested letters use the thin game font as a stand-in.
 pub fn draw_square_caps(

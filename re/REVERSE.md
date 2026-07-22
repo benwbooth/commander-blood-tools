@@ -4438,3 +4438,29 @@ engine list-menu widget and compares the 0xE8 glyph mask to the capture's grey
 text mask over rows 0..10 → **IoU = 1.000** (all 1342 text pixels reproduced
 exactly). The concept/topic menu now renders pixel-perfectly. (The trailing "44"
 row is indented/ambiguous — excluded from the compare; harmless.)
+
+## Choice box — text is CENTERED, geometry corrected, click unified (2026-07-22)
+
+Measured the telephone choice box (`accuracy/captures/bridge/choice_box_bob_morlock.ppm`
+= contact list BOB_MORLOCK / CANCEL over the panorama):
+  - TEXT IS CENTERED on a common axis x≈100 (BOB_MORLOCK spans x48..152 center100,
+    CANCEL x73..130 center101 — different widths, same center = centered, not
+    left-aligned). Rows at y=89 and y=100 → first-row top y=89, 11px pitch (same
+    square-caps face + proportional advance as the concept menu). The port had
+    left-aligned text at x=70, pitch 13.
+  - The box sits in the panorama's dark orb-socket region (orb stays visible — no
+    bright occluding box); fill/border indices 0xE0/0x15 are both DAC(0,0,0) black,
+    kept from the prior live index-dump measurement (RGB can't distinguish them).
+  - draw_choice_box now centers each label (crate::font::square_caps_text_width) at
+    CHOICE_BOX_CENTER_X=100, CHOICE_BOX_TOP_Y=89, CHOICE_BOX_PITCH=11.
+FIXED A DRAW/CLICK DISCONNECT: the phone contact list (was hit-tested at x12/y44/
+pitch13 — a leftover from the pre-choice-box chart screen), the MENU submenu
+(y93/pitch13) and the nav chooser (y93/pitch13) all render through draw_choice_box
+but hit-tested against three different stale geometries. Unified them onto one
+`choice_box_row_at` derived from the same measured constants (box-top y86, 11px
+pitch, x 40..160). Removed the dead PHONE_LIST_* constants.
+VERIFIED: new oracle `choice_box_text_matches_live_game_capture` renders
+BOB_MORLOCK/CANCEL and compares the 0xE8 glyph mask to the capture's grey text
+mask → IoU 0.679 (BOB_MORLOCK lands pixel-exact x48..152; the residual is the
+capture's 1px inter-row center jitter against thin 1px strokes). Confirms centered
+layout (a left-aligned render scores near zero).
