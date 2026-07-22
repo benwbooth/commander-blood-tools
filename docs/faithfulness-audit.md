@@ -30,6 +30,15 @@ everywhere.** Priority = how visible/audible + how confidently fixable.
   Sequence (cutscene) vs an actor (dialogue) and the record→cliptoot/sq HNM resolution, then call
   `start_descript_cutscene` from the port's VM at that point. This is deep presentation-VM RE
   (multi-session), sourced now — not a quick wire.
+  TRIGGER PATH narrowed (static RE): the trigger is a **0xC4 token** in the COD stream (vm.rs
+  OP_ACTOR = 0xC4; vm_op_c4_actor @0x6C7E) referencing a record. For DIALOGUE that record is an
+  actor/Character (the port already resolves it → actor_record in script.rs). For a CUTSCENE it
+  references a **Sequence-kind** DESCRIPT record instead. So the concrete wire is: in the port's
+  script/VM pass, resolve each 0xC4 token's record (via the DEB/object→DESCRIPT mapping the actor
+  path already uses) and when its kind == Sequence, emit a cutscene-trigger event that the driver
+  turns into `start_descript_cutscene(record)`. The player is built + render-verified (maledict);
+  what's left is the 0xC4→record kind resolution + threading the event through the flow — bounded
+  RE, no longer open-ended.
 - **[CLEARED] Intro/HNM subtitle tick scale** (risk #2, partial). The DESCRIPT subtitle ticks are
   HNM frame numbers (microkid→120, hatetv→200, cliptoot 1258 frames), so `FRAMES_PER_TICK = 1`
   (frame == tick) is faithful. The absolute HNM playback fps vs the game's tick rate is still worth
