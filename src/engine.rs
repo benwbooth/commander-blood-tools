@@ -754,6 +754,7 @@ impl EngineState {
 
     /// Map a character to its HONKF console-font glyph index (uppercase A–Z = 0..25,
     /// 0–9 = 26..35, then punctuation in the bank's authored order).
+    #[allow(dead_code)]
     fn console_glyph_index(ch: char) -> Option<usize> {
         match ch.to_ascii_uppercase() {
             c @ 'A'..='Z' => Some(c as usize - 'A' as usize),
@@ -775,9 +776,10 @@ impl EngineState {
         }
     }
 
-    /// Draw text with the ship-console font (HONKF), blitting each glyph's lit pixels in
-    /// `color` at proportional spacing. Returns the pen's right edge. No-op without the
-    /// font loaded.
+    /// Draw text with the ship-console font (HONKF). Retained for the console-font
+    /// load test; live console text now uses the bold (0x71AA) and square-caps
+    /// (0xE8) faces, so this has no runtime callers.
+    #[allow(dead_code)]
     fn draw_console_text(&mut self, text: &str, x: usize, y: usize, color: u8) -> usize {
         let mut pen = x;
         for ch in text.chars() {
@@ -1248,17 +1250,12 @@ impl EngineState {
         self.scene_palette[DARK as usize] = [60, 60, 120];
         self.scene_palette[ORB as usize] = [232, 216, 40];
         self.scene_palette[SEL as usize] = [245, 245, 160];
-        // Title + the decoded 12-item menu list (labels are graphical in the original, so
-        // items render as their decoded indices), with the highlighted item lit.
-        if !self.console_font.is_empty() {
-            self.draw_console_text("OPTION", 130, 6, ORB);
-            let sel = self.option_item;
-            for i in 0..Self::OPTION_ITEM_COUNT {
-                let color = if i == sel { SEL } else { LIGHT };
-                let y = (24 + i as i32 * 14) as usize;
-                self.draw_console_text(&format!("ITEM {}", i + 1), 6, y, color);
-            }
-        }
+        // The OPTION menu is the decoded manu3.xdb 3D pyramid (12 animated items;
+        // its item labels are GRAPHICAL golden sprites in the original, not text —
+        // so no invented "ITEM N" labels are drawn here). The selected item is
+        // highlighted by lifting its position on the pyramid (manu3 tween data).
+        // The real item glyphs await the manu3 sprite/RLE decode (re/REVERSE.md).
+        let _ = self.option_item;
         self.scene_frame += 1;
     }
 
