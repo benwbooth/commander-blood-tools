@@ -4855,3 +4855,20 @@ menus require EXECUTING the BAS conversation VM (tracking si → gs:0x6772), whi
 the core remaining build. Tooling now in place to validate that VM: MENUTREE
 (topic→destination), MENUWATCH (menu-change events + writers), the menu-stack model
 (bas_vm.rs), and the engine integration. The VM executor is the remaining piece.
+
+## Menu render/enter path 067c:03ae fully decoded — mechanism COMPLETE
+
+Disassembled the second gs:0x6772 writer (0x3ae): the menu ENTER/RENDER path.
+`0x3da` resolves a menu pointer → ax; 0x3ae sets gs:0x6772=ax, si=ax, `call 0x306`
+(the dispatch loop) to EXECUTE that menu, `call 0x75d` to display it, then re-renders
+the PARENT menu (gs:0x6784 / gs:0x6776) beneath it (the stack render). With the push
+at 0x465 (0xA3 handler: gs:0x6772=si on reaching a menu), the full navigation model
+is now decoded end-to-end:
+  - push: reaching a 0xA3 in the BAS sets current menu = si (0x465).
+  - enter/render: 0x3ae sets+executes+displays the resolved menu and re-renders the
+    parent stack (gs:0x6772 current, gs:0x6774/0x6784 parent, gs:0x6820 call stack).
+  - pop: 0x10c2 restores si from the call stack.
+CLEAN-PORT BUILD (now fully specified): a BasConversationVm executing the BAS via
+the gs:0x6EB0 opcode handlers, maintaining the menu stack (gs:0x6772/0x6774) + call
+stack (gs:0x6820), rendering current+parent. Validation tooling ready (MENUTREE,
+MENUWATCH). This is the remaining core implementation; its mechanism is complete.
