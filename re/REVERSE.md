@@ -4393,3 +4393,25 @@ topics, pick the story-advancing one) until PC reaches the `what` function
 (0x11A4) → D2 (0x1269) → world load. Everything else in the #3/#6 chain is
 decoded: activation (0x8CCE), dispatch (`what` topic → function), and now a
 clean drivable savestate. This is a fresh-session conversation-flow RE task.
+
+## CHOICEDRIVE — game PROGRESSES but D2-offer is deep in the narrative (definitive)
+
+Final driving result from the CLEAN savestate (CHOICEDRIVE, watching gs:0x6780 =
+the D2 profile request): clicking DOES progress the game — the orb opened a
+"MESSAGE RADIO:" broadcast story beat (3 assets loaded, choice_p8 capture) — but
+gs:0x6780 stayed 0xFFFF across all interaction points (left choice box x85,
+topic rows x190, orb, golden menu, phone). So the game RESPONDS to interaction
+and plays story content (radio messages, scenes), but the D2 DESTINATION-OFFER
+(`what` function, COD 0x11A4→0x1269) is deep in SCRIPT2's MULTI-BEAT NARRATIVE
+(consultation → radio messages → briefing → …), reached only by navigating the
+full story flow, not any single interaction point. DEFINITIVE #3/#6 conclusion:
+every mechanism is decoded (activation chain 0x8CCE→0x40D0→0x9B98; D2 handoff;
+`what` dispatch; VM COD-PC = si from gs:0x671c; D2 profile = gs:0x6780), and the
+game is confirmed drivable/progressing — but reaching the destination-offer needs
+a NARRATIVE-AWARE driver that follows SCRIPT2's multi-beat story (reading each
+scene's prompt, choosing the story-advancing option) to the briefing that offers
+destinations. That is a genuine multi-session task. The port's nav destinations
+(from speech-event hosts) already match the D2 targets, so navigation is faithful;
+only the live 3D-anchor coords/labels need this deep state. INSTRUMENTS READY:
+clean savestate, gs:0x6780 D2 watch, VM COD-PC (si vs gs:0x671c), the activation
+chain — a future session drives SCRIPT2's narrative to the offer with these.
