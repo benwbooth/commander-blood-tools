@@ -45,6 +45,13 @@ everywhere.** Priority = how visible/audible + how confidently fixable.
   detect those 0xC4s. ONE VERIFICATION FIRST (do not skip): confirm the DEB/object table actually
   references Sequence records (that cutscenes ARE triggered by a 0xC4, not a different mechanism)
   - check the object-name->DESCRIPT mapping for Sequence-kind entries before building the map.
+  VERIFIED (inspect-scripts): CONFIRMED. SCRIPT1's DEB captures `maledict` as an OBJECT (offset
+  5154, KIND 5 — the cutscene/Sequence object kind; actors are kind 2), and the script references
+  it. So the trigger IS a 0xC4 -> kind-5 object, the port already parses the objects, and the wire
+  is bounded: detect 0xC4 references to kind-5 objects in the dialogue-execution pass and fire
+  start_descript_cutscene(record) at that execution point. REMAINING (multi-piece, needs the
+  cutscene to fire at the FAITHFUL script point — verify by running to it): thread the cutscene
+  event through main.rs's speech-event/dialogue pipeline. Trigger path fully grounded now.
 - **[CLEARED] Intro/HNM subtitle tick scale** (risk #2, partial). The DESCRIPT subtitle ticks are
   HNM frame numbers (microkid→120, hatetv→200, cliptoot 1258 frames), so `FRAMES_PER_TICK = 1`
   (frame == tick) is faithful. The absolute HNM playback fps vs the game's tick rate is still worth
