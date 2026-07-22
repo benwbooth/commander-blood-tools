@@ -3968,3 +3968,12 @@ manu3 file offset 0x1370).
   choice boxes (rows widened to 170, index 0xE8 added). Post-tutorial MENU
   box contains only CANCEL at stage 0 — probe longer dwells/other conditions
   for more items.
+- **CHOICE-BOX RENDER PATH**: the box (border+fill+glyphs) is composited by the
+  PANORAMA RLE UNPACKER (writer ip inside bridge_panorama_frame_unpack) from a
+  runtime-built RLE stream around gs:0x0175 — choice boxes are RLE overlays
+  unpacked like TB.BIG frames onto the chunky buffer (then the 043b:0f91
+  de-interleave blit -> VRAM). The square-capitals glyphs exist nowhere as
+  bitmaps (FONTFIND/file searches negative) — they are baked into this stream
+  by a BUILDER (being traced). Port note: rendering the box via the measured
+  spec is visually faithful; the builder's glyph generator is the last piece
+  for glyph-exactness.
