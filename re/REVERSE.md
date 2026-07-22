@@ -3812,3 +3812,11 @@ manu3 file offset 0x1370).
   clip flags accumulated in cl. VERTEX PIPELINE NOW FULLY DECODED: s16 local ->
   node matrix -> +translation -> /z -> +screen centre -> clip flags. Next spans:
   face/edge generation 0x6F6-0x900 -> edge list -> span prep -> blitters.
+- Face loop 0x6F6: fs:[0x2300]=face list ptr, fs:[0x2304]=count. Face record =
+  triangle with THREE VERTEX PTRS at +2/+4/+6. Clip reject = AND of the three
+  vertices' +0x12 flags. Vertices y-sorted (+0xA = screen y) via xchg chains ->
+  edge insert. Vertex record final layout: +4/6/8 s16 local pos, +0xA screen y
+  (after projection), +0xC screen x?, +0xE dword depth, +0x12 clip/proj flags.
+  The rasterisation data flow is complete: faces -> y-sort -> edge list ->
+  spans -> texture blit. Remaining for the port: face-record UV fields, pose
+  tables (entry 0x181), then write src/manu3.rs renderer.
