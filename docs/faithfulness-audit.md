@@ -213,3 +213,19 @@ everywhere.** Priority = how visible/audible + how confidently fixable.
   opens; the interpreter doesn't reproduce intro audio — so it's a scene-FLOW oracle, not an
   audio-timing oracle. For audio timing, trust the DESCRIPT data.
 - `re/tools/hnm_chunks.py` — dump HNM chunk tags (confirmed intro HNMs carry no embedded audio).
+
+## Session update — Fable pass (commits 995-999)
+- **cliptoot = the FULL intro montage (995)**: decoded checkpoints 120..1150 match captures 6..22
+  (mutant@250/550, trunk alien@850, teal bar@400, hyperspace@1000). Plays FULL-LENGTH under the
+  pyramid console; credits clear at tick 100. The earlier ~7s cut was wrong and is removed.
+- **TV = the DESCRIPT broadcast records (996/998)**: hatetv, microkid/IZWAL, garde/CROOLIS,
+  ppit/CYBER-CHANNEL, scrut, match (gameshow), venus (PUBLICITY ads) — all SELF-IDENTIFIED by
+  their own subtitle text. Chained clips + per-channel music + wrapped tick-cues; seasonal
+  christmas/year ad variants on Dec 25/Jan 1. RESOLVES the cutscene-trigger mystery for these
+  records: they are TV programming, not script-fired cutscenes. Only `maledict` remains
+  event-triggered (its offsets are referenced by NO SCRIPT1 token — runtime/presentation-VM side).
+- **Binary-named music wired (997)**: nav target-list plays mu\tablo2.voc (decoded handler-4
+  toggle @0x886C); the ending plays mu\credits.voc (string @0xE16B). Both were silent.
+- **Auto-tutorial flow (999)**: ORACLE-VERIFIED (no-input INTROTRACE boot reaches script1.*+
+  chart.fd + tutorial voices) — the game runs SCRIPT1 automatically post-intro; the port now does
+  too (was: park on bridge until HONK).
