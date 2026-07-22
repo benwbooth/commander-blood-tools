@@ -3959,3 +3959,12 @@ manu3 file offset 0x1370).
   draw_choice_box); (2) extend the OCR row scan to cover the box region
   (y~88..150) to read item lists. Captures: accuracy/captures/bridge/
   post2_{menu,option}_choice.ppm.
+- **CHOICE BOX SPEC MEASURED** (post4 index dumps): border = 3px of palette
+  index 0x15 (dark purple), fill = gold 0xE0, item text = thin GAME_FONT
+  glyphs at index 0xE8 knocked out of the fill (selected/bright = 0xEF),
+  box from ~(63,88), rows ~13px. HONKF.SPR is a DIFFERENT stencil face (not
+  the box font, not the bold 0x71AA font). Port's draw_choice_box now renders
+  this exactly (commit e77b5f6); the driver's thin-font OCR pass also reads
+  choice boxes (rows widened to 170, index 0xE8 added). Post-tutorial MENU
+  box contains only CANCEL at stage 0 — probe longer dwells/other conditions
+  for more items.
