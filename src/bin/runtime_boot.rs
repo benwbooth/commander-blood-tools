@@ -1265,6 +1265,37 @@ fn main() {
             return;
         }
 
+        // GLYPHSRC: watch 0xE8 writes into the CHUNKY composition buffer (seg
+        // 0x266c) during a MENU-submenu open — the writer is the box-text
+        // drawer; its ds:si reveals the glyph source (font table / strokes).
+        if std::env::var("GLYPHSRC").is_ok() {
+            // Open the MENU submenu (row 3) at the console.
+            let (fr, _, _) = state(&rt);
+            let delta = fr as i32 - 45;
+            let x = 0x11f - delta * 8 - 0x37;
+            let y = 0x48 + delta.unsigned_abs() as i32 * 5 / 4
+                + 3 * (0x12 - delta.unsigned_abs() as i32 / 8) + 8;
+            let ring = (x + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+            rt.set_mouse_pos(ring, y as u16);
+            let _ = rt.run(rt.cpu.steps + 700_000);
+            rt.mouse_press(0);
+            let _ = rt.run(rt.cpu.steps + 400_000);
+            rt.mouse_release(0);
+            let cbuf = 0x266cusize * 16;
+            rt.m.watch = Some((0xE8, cbuf..cbuf + 0x10000));
+            rt.m.watch_hits.clear();
+            let _ = rt.run(rt.cpu.steps + 6_000_000);
+            let mut seen = std::collections::HashSet::new();
+            for &(cs, ip, ds, si, addr) in rt.m.watch_hits.iter() {
+                if seen.insert((cs, ip)) {
+                    println!("box glyph writer {cs:04x}:{ip:04x} -> {addr:#07x} (ds:si={ds:04x}:{si:04x})");
+                }
+            }
+            rt.m.watch = None;
+            println!("GLYPHSRC done");
+            return;
+        }
+
         // PINTRACE: trace every write to [0x2793] while attempting rotation from
         // the fresh savestate (no clicks) — identifies the actual pin.
         if std::env::var("PINTRACE").is_ok() {
