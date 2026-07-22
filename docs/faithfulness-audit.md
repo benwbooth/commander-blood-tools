@@ -138,6 +138,15 @@ everywhere.** Priority = how visible/audible + how confidently fixable.
    overlay_console_pyramids), keep the bridge for SCRIPT2+; the engine needs the active script
    (main.rs tracks current_script) to pick the interface. Grounded rendering+flow change - verify
    each SCRIPT1 scene vs the captures before shipping.
+   CORRECTION (reverted commit 981): the SCRIPT1->pyramid change was REVERTED. Stronger evidence
+   says SCRIPT1 uses CHART.FD, not the pyramid: the INTROTRACE oracle shows SCRIPT1 loads chart.fd +
+   script1.* together, and the port-completeness memory records the console tutorial background as
+   CHART.FD. So frames 6-22's pyramid view is the LONG cliptoot intro (crew showcase), NOT SCRIPT1
+   gameplay - which also implies the ~7s cliptoot cut (commit 970) is likely too short (the pyramid
+   crew-showcase spans frames 6-22+ ~= 16s+). KEPT: the intro crew-showcase composite (commit 978,
+   cliptoot + pyramid overlay) - that IS cliptoot. OPEN, needs INTERACTIVE ground truth: cliptoot's
+   true length + the cliptoot->SCRIPT1 boundary + SCRIPT1's CHART.FD console layout. Do not re-guess
+   SCRIPT1's interface without it. (Disciplined self-correction from evidence, not a guess.)
 2. **Intro/HNM playback RATE** (`INTRO_CREDIT_FRAMES_PER_TICK = 1`, one HNM frame per game step).
    A guess flagged "calibratable". Source: the HNM player's frame-advance timing in the asm (ticks
    per HNM frame) + the DESCRIPT tick unit. RISK: intro plays too fast/slow; subtitles mistimed.
