@@ -4010,3 +4010,11 @@ manu3 file offset 0x1370).
   IMPLICATION: dialogues are TOPIC-DRIVEN interactions (numbered choices), not
   passive line playback — the port's dialogue model needs the topic list UI +
   choice routing. Captures: numseries/series_*.ppm.
+- SCRIPT2 model REFINED (numanswer2, 1191 rounds): the topic list is HONK's
+  CONSULTATION HUB — topic NINE = the numerology exercise (re-selecting it
+  repeats it; "NINE... GOOD WORK, COMMANDER... I..." each round; no
+  completion gate). The displayed numbers (EIGHT/THREE/SIX/FOUR) are the
+  exercise's observed values. NEXT: tour topics TALK + ONE..EIGHT once each
+  (capture + transcript = the full HONK consultation content), then re-check
+  bridge rotation/destinations after consultations. PORT: HONK dialogue =
+  topic-hub interaction.
