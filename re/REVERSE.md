@@ -4982,3 +4982,21 @@ already-shown bits, updated by the input/selection handler OUTSIDE the block). S
 This resolves the block-structure question decisively: menu blocks = sequential
 dialogue; branching = runtime record state. The clean-port response path is now
 universally correct; the branching/push path is the record-VM remainder.
+
+## Input handler decoded — selection = hit-tested topic (2026-07-22)
+
+SELWATCH (watch gs:0x6762 writes on a topic click) found + disassembled the INPUT
+HANDLER at seg 0x08c0:0x1242:
+  - lcall 0x22d:0xfad = the topic HIT-TEST → writes the clicked topic to gs:0x6796.
+  - 0x1242: `gs:0x6762 = gs:0x6796` — selection := hit-tested topic.
+  - then clears display state: gs:0x27d7, 0x67b0, 0x5e64, 0x67bb, 0x67ba, 0x67f8
+    (the menu display buffer), 0x67aa&=0xfe.
+The VM (seg 0x067c) then clears gs:0x6762 at 0x046a after processing. So the flow is:
+click → hit-test(0x22d:0xfad)→gs:0x6796 → selection gs:0x6762 → VM processes selection.
+The BRANCHING (selection → sub-menu push at 0x465) is the VM's selection processing;
+for a LEAF menu (fear/anger) it plays a response, for a branching menu it jumps to a
+sub-menu 0xA3 — observing that jump still needs a branching-menu display (gated). So the
+full branching decode = disassemble the VM's selection-match path + observe one branch.
+NET: input handler + hit-test + selection setup now decoded; the selection→sub-menu
+match is the remaining record-driven piece. Tooling: SELWATCH (input handler),
+MENUWATCH/MENUTREE/BASSTEP (VM). Display path fully built; branching decode advancing.

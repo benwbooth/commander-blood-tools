@@ -2251,6 +2251,43 @@ fn main() {
         return;
     }
 
+    // SELWATCH: watch writes to the topic-selection word gs:0x6762 while clicking a
+    // topic, logging the value + writer cs:ip — finds the INPUT HANDLER that turns a
+    // topic click into a selection, the entry to the record-update/branching logic.
+    if std::env::var("SELWATCH").is_ok() {
+        let g = 0x0e84u16;
+        let frame = |rt: &Runtime| rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
+        rt.m.watch_addr = Some(0xe84usize * 16 + 0x6762);
+        rt.m.addr_hits.clear();
+        let fr = frame(&rt);
+        let ring = (200i32 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+        rt.set_mouse_pos(ring, 75); // FEAR row
+        let _ = rt.run(rt.cpu.steps + 400_000);
+        rt.mouse_press(0);
+        let _ = rt.run(rt.cpu.steps + 250_000);
+        rt.mouse_release(0);
+        let _ = rt.run(rt.cpu.steps + 3_000_000);
+        rt.m.watch_addr = None;
+        println!("SELWATCH: {} writes to gs:0x6762 (selection)", rt.m.addr_hits.len());
+        let mut seen = std::collections::HashSet::new();
+        let mut input_cs = None;
+        for &(v, cs, ip) in rt.m.addr_hits.iter() {
+            if seen.insert((cs, ip)) {
+                println!("  gs:0x6762 = {v:#04x} written by {cs:04x}:{ip:04x}");
+                if cs != 0x067c {
+                    input_cs = Some(cs);
+                }
+            }
+        }
+        if let Some(cs) = input_cs {
+            let base = (cs as usize) * 16;
+            let dump = rt.m.mem[base..(base + 0x2000).min(rt.m.mem.len())].to_vec();
+            std::fs::write(out.join(format!("input_code_{cs:04x}.bin")), &dump).unwrap();
+            println!("SELWATCH: dumped input-handler segment {cs:04x} -> input_code_{cs:04x}.bin");
+        }
+        return;
+    }
+
     // MENUWATCH: watch writes to the current-menu word gs:0x6772 while driving a
     // conversation, logging each menu change + the code (cs:ip) that made it — reveals
     // the push/pop routines and every menu transition empirically (the ground truth
