@@ -195,6 +195,27 @@ pub fn func_79c(rt: &mut Runtime) {
     rt.m.regs.set_ax(ax);
 }
 
+/// `func_17af` (`page_offset_helper`, 0x17AF): for each of the two screen-page offsets
+/// ds:[0x5219] and ds:[0x521D], clamp a negative value to 0 else add the VGA page size 0x4000,
+/// then program the CRTC start-address-high register (index 0x0C) at the CRTC base ds:[0xA9E]
+/// with a word `out` (AL=0x0C index, AH=the new offset's high byte). A `near` ret helper that
+/// clobbers AX/DX. (ds==gs in the oracle seed, so gs_checks cover these DS writes.)
+pub fn func_17af(rt: &mut Runtime) {
+    let ds = rt.m.regs.ds;
+    let clamp = |v: u16| if v & 0x8000 != 0 { 0 } else { v.wrapping_add(0x4000) };
+    let p0 = clamp(rt.m.read16(ds, 0x5219));
+    rt.m.write16(ds, 0x5219, p0);
+    let p1 = clamp(rt.m.read16(ds, 0x521d));
+    rt.m.write16(ds, 0x521d, p1);
+    let dx = rt.m.read16(ds, 0xa9e); // CRTC base (e.g. 0x3D4)
+    let ax = (p1 & 0xff00) | 0x0c; // mov al,0x0c (AH = high byte of the 0x521d result)
+    rt.m.regs.set_dx(dx);
+    rt.m.regs.set_ax(ax);
+    // word out dx,ax → index 0x0C to the CRTC address port, AH to the data port (base+1).
+    rt.port_out(dx, 1, 0x0c);
+    rt.port_out(dx.wrapping_add(1), 1, ((ax >> 8) & 0xff) as u32);
+}
+
 /// `func_2dd3` (`cmos_rtc_read`, 0x2DD3): select CMOS register 0 (out 0x70=0), read it (in 0x71)
 /// into AL, duplicate into AH, and store the word to cs:[0xAEE] — seeds the game's PRNG from the
 /// RTC seconds. Exercises the `in` path; AX is preserved (pushed/popped).
@@ -428,6 +449,10 @@ mod tests {
         for i in 0..768u32 {
             rt.m.write8(0x3000, 0x6000 + i, (i * 7 + 1) as u8);
         }
+        // Screen page offsets + CRTC base for func_17af (positive so the +0x4000 path is taken).
+        rt.m.write16(0x3000, 0x5219, 0x0100);
+        rt.m.write16(0x3000, 0x521d, 0x0200);
+        rt.m.write16(0x3000, 0xa9e, 0x03d4);
     }
 
     /// Every Runtime-context I/O lift reproduces the REAL function bytes exactly: run the lift and
@@ -459,6 +484,8 @@ mod tests {
             ("func_2f90", 0x2f90, func_2f90, &[], &[], true),
             // reads CMOS RTC (in 0x71) → cs:[0xaee] (cs=0 here, so a segment-0 word write).
             ("func_2dd3", 0x2dd3, func_2dd3, &[], &[0xaee], false),
+            // clamps+advances the two page offsets ds:[0x5219]/[0x521d] (ds==gs seed) + CRTC out.
+            ("func_17af", 0x17af, func_17af, &[0x5219, 0x521d], &[], false),
         ];
         for &(name, offset, lift, gs_checks, seg0_checks, check_dac) in leaves {
             let mut rt_lift = test_runtime();
