@@ -1230,6 +1230,29 @@ fn main() {
             return;
         }
 
+        // PINTRACE: trace every write to [0x2793] while attempting rotation from
+        // the fresh savestate (no clicks) — identifies the actual pin.
+        if std::env::var("PINTRACE").is_ok() {
+            rt.m.trace_range = Some(0xE840 + 0x2793..0xE840 + 0x2795);
+            rt.m.range_hits.clear();
+            let (fr0, _, _) = state(&rt);
+            let target = ((fr0 as u32 * 8 + 280) % 1440) as u16;
+            rt.set_mouse_pos(target, 100);
+            let _ = rt.run(rt.cpu.steps + 12_000_000);
+            let (fr1, _, _) = state(&rt);
+            println!("rotation attempt: frame {fr0} -> {fr1}");
+            let mut seen = std::collections::HashSet::new();
+            for &(addr, v, cs, ip) in rt.m.range_hits.iter() {
+                if seen.insert((cs, ip, v)) {
+                    println!("[0x2793] write {v:#04x} (byte {}) from {cs:04x}:{ip:04x}", addr - 0xE840 - 0x2793);
+                }
+                if seen.len() > 20 { break; }
+            }
+            rt.m.trace_range = None;
+            println!("PINTRACE done");
+            return;
+        }
+
         // ADIEUWALK: read the live topic list (square-caps OCR is host-side: we
         // just reuse TUTORIAL4's loop), click TALK first (back to the hub), then
         // walk topics watching [0x2793] bit2 — find the exit that releases the

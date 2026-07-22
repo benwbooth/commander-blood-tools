@@ -4069,3 +4069,10 @@ manu3 file offset 0x1370).
   SCRIPT-OWNED: it releases when the consultation's script flow ENDS (the
   DEB's 'adieu' function = the goodbye exit). Driver: choose the exit topic
   to leave HONK legitimately.
+- PIN ROOT (PINTRACE): [0x2793] is actively rewritten by the PRESENTATION code
+  (seg 0x8C0: 0x21/0x25/0x2D — bits 0+5 held, bit2/3 toggled) while SCRIPT2's
+  opening flow is live — the bridge is pinned because the script presentation
+  is ACTIVE in the savestate; it frees at the presentation teardown (0x59C0).
+  => Unlock = play SCRIPT2 forward to its flow's end (story progression), not
+  a UI action. Driver: long story-walk run with milestone savestates on new
+  file opens (script3+/locations).
