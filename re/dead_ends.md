@@ -504,3 +504,14 @@ the PYTHON oracle (intro-mind-frame01 scenario, 1.09); the runnable Rust suite
 covers the bridge ring (exact palette-index decode, no scaling). Don't re-add a
 fixed-crop Mindscape scenario — port compare_oracle.py's crop logic if a Rust
 HNM oracle is wanted.
+
+## Rust Mindscape oracle — palette gamma mismatch (2026-07-22, follow-up)
+Followed up the crop dead-end by SWEEPING mind.hnm frames (0..60) + crops vs a
+320x200 resize of frame_01.png: ALL frames sit at ~52-62 mean_abs (best 51.6),
+never near the Python oracle's 1.09. Root: it is NOT crop or frame timing — the
+DOSBox capture's brightness/gamma differs from the port's 6-bit DAC expansion,
+which compare_oracle.py normalizes (brightness/contrast) before diffing. A raw
+Rust mean_abs can't match. CONCLUSION: keep Mindscape in the Python oracle
+(normalized, 1.09); the runnable Rust suite is exact-palette-index decode of the
+bridge (no capture-gamma dependence). To add HNM scenes to the Rust suite would
+require porting compare_oracle.py's normalization — not worth it for one scene.
