@@ -5202,7 +5202,7 @@ So the whole-binary static port now HAS a bounded, safe, verified per-function e
 the next I/O leaf's `fn(&mut Runtime)` + one `leaves`-table row, and it's oracle-checked against
 the original bytes. Completing all ~41 I/O leaves + unblocking compositions to the 222-fn fixpoint
 is still session-by-session work (and could be codegen'd in lift.py), but the per-pass increment
-is real and demonstrated — not blocked on a multi-session prerequisite. Count: 75 pure-CPU + 12 I/O + 1 ptr-chaser (func_6293, interp-oracle) = 88; was 75 + 12
+is real and demonstrated — not blocked on a multi-session prerequisite. Count: 75 pure-CPU + 12 I/O + 1 ptr-chaser (func_6293, interp-oracle) + func_22e0 (3D projection) = 89; was 75 + 12
 I/O = 87 lifted; oracle services int+out+in and compares regs + gs + IVT + DAC + cs-relative memory.
 
 ## The "6 indirect-dispatch sites" are EXTERNAL-service boundaries, not jump tables (2026-07-22)

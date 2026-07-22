@@ -17,6 +17,8 @@ pub mod interp;
 pub mod io_lift;
 pub mod machine;
 pub mod ptr_leaves;
+#[allow(unused_parens)]
+pub mod ptr_leaves_gen;
 pub mod runtime;
 
 use machine::Machine;
