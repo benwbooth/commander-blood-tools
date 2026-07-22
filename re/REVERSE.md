@@ -4952,3 +4952,17 @@ not a static table. NET STATE of the per-beat menu subsystem: STRUCTURE fully bu
 clean Rust (load menus, parse blocks, render current menu, navigate stack, pop verified);
 the record-state-driven response/push logic is the remaining deep piece, reusing+extending
 vm.rs's record model. This is genuine multi-session work (a faithful conversation record VM).
+
+## Fear/anger block is PURE SEQUENTIAL TEXT (proper walk) — 2026-07-22
+
+Proper VM-walk of the fear/anger block (0x43e..0x612): exactly 13 `0xA6` Text tokens,
+ZERO record-update opcodes (the earlier byte-histogram "record ops" were bytes inside
+TEXT token word-data, not real opcodes). So this menu's 13 responses are a SEQUENTIAL
+therapist monologue, shown ONE PER interaction and gated by the already-shown bit
+(es:[line+2]&0x8000) — the record gate src/vm.rs already models (text_line_already_shown
+/ text_flags_are_active). NOT a per-topic selection. So the SEQUENTIAL case is buildable
+now: track an already-shown set, on each click show the next active-not-shown 0xA6. The
+per-topic/branching case (WHO/WHERE/WHAT → different info, sub-menu push) is the record-
+UPDATE variant that still needs its opcode semantics from a branching menu's block. NET:
+sequential response display is buildable with vm.rs's gate; the branching/record-update
+case is the remaining decode.

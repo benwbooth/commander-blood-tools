@@ -237,6 +237,31 @@ mod tests {
         assert!(!block.responses.is_empty(), "has 0xA6 responses: {}", block.responses.len());
     }
 
+    /// The fear/anger menu block is a PURE SEQUENTIAL TEXT dialogue: a proper VM
+    /// walk finds only `0xA6` Text tokens (13 of them) between the menu and `0xAC`
+    /// — no per-topic record-update opcodes. So this menu's responses are gated by
+    /// the already-shown bit (the record gate `vm.rs` already models), shown one at
+    /// a time, NOT selected per topic. This is the buildable sequential case.
+    #[test]
+    fn fear_anger_block_is_pure_sequential_text() {
+        let rd = |ext: &str| {
+            ["accuracy/cdrive/cblood", "../accuracy/cdrive/cblood"]
+                .iter()
+                .find_map(|b| std::fs::read(Path::new(b).join(format!("SCRIPT2.{ext}"))).ok())
+        };
+        let Some(bas) = rd("BAS") else { return };
+        let mut text = 0;
+        let mut other = 0;
+        for tok in walk(&bas, 0x43e, 0x612) {
+            match tok {
+                VmToken::Text { .. } => text += 1,
+                _ => other += 1,
+            }
+        }
+        assert_eq!(text, 13, "13 sequential text responses");
+        assert_eq!(other, 0, "no record-update opcodes in the block");
+    }
+
     /// The stack ties to the block parser: after entering the fear/anger menu, the
     /// stack's `current_block` returns that menu's parsed block (topics + responses),
     /// consolidating the navigation + block-decode pieces into one API.
