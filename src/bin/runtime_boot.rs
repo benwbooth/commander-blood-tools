@@ -396,6 +396,37 @@ fn main() {
         let (fr, ang, st) = state(&rt);
         println!("console reached: tb_frame={fr} angle={ang:#x} station={st:#x} @ {} steps", rt.cpu.steps);
         rt.write_ppm(&out.join("bridge_00_console.ppm")).unwrap();
+        // SUBMENUCAP: click the golden menu's MENU and OPTION rows (decoded box:
+        // screen x 177..287, rows top 0x48 pitch 0x12 at frame 45-centred view;
+        // at frame 55 the box shifts -8px/frame => right edge 207) and capture
+        // what actually opens — ground truth for the submenu/OPTION ports.
+        if std::env::var("SUBMENUCAP").is_ok() {
+            for (row, name) in [(3u16, "menu"), (4, "option")] {
+                // Row centre at the CURRENT frame (55): delta=10 => box x 97..207,
+                // top = 0x48 + 12 = 84, pitch 17.
+                let (fr, _, _) = state(&rt);
+                let delta = fr as i32 - 45;
+                let x = (0x11f - delta * 8 - 0x37) as u16; // box centre-ish
+                let y = (0x48 + delta.unsigned_abs() as i32 * 5 / 4
+                    + (row as i32) * (0x12 - delta.unsigned_abs() as i32 / 8)
+                    + 8) as u16;
+                let ring = (x as i32 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+                println!("clicking row {row} at screen ({x},{y}) ring {ring} (frame {fr})");
+                rt.set_mouse_pos(ring, y);
+                let _ = rt.run(rt.cpu.steps + 2_000_000);
+                rt.mouse_press(0);
+                let _ = rt.run(rt.cpu.steps + 1_000_000);
+                rt.mouse_release(0);
+                let _ = rt.run(rt.cpu.steps + 10_000_000);
+                rt.write_ppm(&out.join(format!("submenu_{name}.ppm"))).unwrap();
+                let (fr2, _, st2) = state(&rt);
+                println!("after {name} click: frame {fr2} station {st2:#x}");
+                rt.inject_key(0x01, 0x1b); // Esc back
+                let _ = rt.run(rt.cpu.steps + 6_000_000);
+            }
+            println!("SUBMENUCAP done");
+            return;
+        }
         // HANDATLAS: capture the pointing-hand sprite from the LIVE renderer at a
         // grid of cursor positions on the console view (frame 55). Each capture is
         // diffed against the decoded panorama frame; the largest connected diff
