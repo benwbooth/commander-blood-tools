@@ -493,3 +493,14 @@ text, different frame), so every diff blob = the whole 320x200 screen (no hand
 isolated). Densifying the atlas must use the CLEAN pre-tutorial console state
 (the ~50M-step boot path, as the original working 10-sprite atlas did), not a
 savestate whose scene differs from the base panorama.
+
+## Mindscape HNM in the RUNNABLE Rust oracle via naive crop (2026-07-22)
+Tried: add mind.hnm frame 0 vs a content-cropped frame_01.png to
+tests/oracle_suite.rs. Failed: a naive magick crop+resize (720x540+40+30 ->
+320x200) misaligns (mean_abs 63.57, vs the Python compare_oracle.py's proper
+1.09). The DOSBox capture is aspect-corrected + scaled; pixel alignment needs
+compare_oracle.py's normalization, not a fixed crop. Mindscape stays covered by
+the PYTHON oracle (intro-mind-frame01 scenario, 1.09); the runnable Rust suite
+covers the bridge ring (exact palette-index decode, no scaling). Don't re-add a
+fixed-crop Mindscape scenario — port compare_oracle.py's crop logic if a Rust
+HNM oracle is wanted.
