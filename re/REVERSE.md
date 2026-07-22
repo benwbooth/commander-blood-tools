@@ -4654,3 +4654,18 @@ either file — it requires observing the running console's menu-selection (watc
 which BAS menu offset the console reads when a topic list appears), a runtime-RE
 task. The concept_menu.rs LABEL decode remains valid+verified; only the per-beat
 SELECTION is runtime-gated. This is the definitive characterization of the residual.
+
+## Per-beat linkage: BAS IS runtime-loaded — observable (2026-07-22, step 1 done)
+
+Started the highest-leverage residual (COD→BAS menu-selection linkage) via runtime
+observation. STEP 1 (done): the file-open trace (SKIPPROBE) confirms the real game
+LOADS `script1.bas` at runtime (step ~5,876,359, immediately after script1.cod,
+before .var/.dic/.deb). So the concept-menu tables come from the loaded BAS and the
+menu-selection is a RUNTIME-OBSERVABLE mechanism (not blocked). REMAINING STEPS
+(multi-iteration, next session): (2) locate BAS in guest RAM — needs a HEX MEMFIND
+(current MEMFIND is ASCII-only; search for the psychotherapy menu bytes
+`a3 01 00 7a 26 1a 44 …`); (3) drive to a concept-menu display (psychotherapy
+tutorial via the orb click) and read-watch the BAS menu region to see WHICH menu
+offset the console handler selects; (4) correlate the selected offset with the
+conversation state → the COD-state→BAS-menu map that per-beat wiring needs. This is
+the concrete, ordered runtime-RE plan; step 1 confirms it's tractable.
