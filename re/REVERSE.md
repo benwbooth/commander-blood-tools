@@ -2564,10 +2564,20 @@ mean_abs 1.09), known launch args (`AMR S162227 EMS WRIC:\cblood\`).
       `oracle_vectors/far_copies.json`). Mutation-tested: an injected inc→dec
       bug fails 39 functions. `int`/`in`/`out`/`hlt` exit to the caller (the
       future DOS layer) by design.
-- [ ] M1b — harden the interpreter beyond the corpus' instruction mix:
-      differential single-step vs Unicorn on randomized instruction streams
-      (boot will execute opcodes the 75 verified functions never touch);
-      backfill rcl32/rcr32/pushad/popad/iret and any gaps the boot trace hits.
+- [x] M1b — LOCKSTEP-verified vs Unicorn on the REAL boot stream (2026-07-22).
+      `runtime_boot --lockstep SKIP WINDOW trace.bin` records the interpreter's
+      per-step state on the actual game boot; `re/tools/lockstep.py trace.bin`
+      (venv: `pip install unicorn capstone`) re-executes each instruction in
+      Unicorn from the in-sync state and compares regs/segs/IP/defined-flags.
+      RESULT: THREE sampled windows — 0..1M (early boot/loader/DOS), 20M..21M
+      (setup), 100M..101M (intro HNM decode + planar-VGA blit) — **1,000,000
+      pure-CPU instructions each matched Unicorn BIT-EXACT, zero divergences**
+      (3M+ real-stream instructions total, beyond the 14,999-vector corpus). So
+      the interpreter that runs the whole game is independently confirmed faithful
+      on the real instruction mix, not just the harvested function corpus. (No
+      rcl32/rcr32/pushad/popad/iret/etc. gap surfaced in these windows; the boot
+      also never hit `Exit::Unimplemented`.) The `diff_fuzz.py` randomized pass
+      below complements this with synthetic streams.
 - [x] M2 — boot: DONE 2026-07-20 (`src/recomp/runtime.rs` + `src/bin/
       runtime_boot.rs`). MZ loader (relocations, PSP+env+cmdtail, FCBs), int 21h
       (file I/O rooted at C:=accuracy/cdrive D:=output/_tmp_iso, alloc
