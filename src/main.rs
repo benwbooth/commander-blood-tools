@@ -884,17 +884,18 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 }
             }
         } else if !tutorial_played {
-            // Intro just ended (or was skipped): silence the reel music and land on the
-            // interactive ship CONSOLE — the real game drops you at the console (the
-            // HONK/TELEPHONE/CRYOBOX/MENU/OPTION menu) to play, not a passive cutscene.
-            // From here the player clicks a console function or the nav.
+            // Intro just ended (or was skipped): the real game runs the SCRIPT1 console
+            // tutorial AUTOMATICALLY — ORACLE-VERIFIED: a no-input boot of the real
+            // BLOODPRG.EXE (runtime_boot INTROTRACE) loads script1.*+chart.fd and starts the
+            // tutorial's voices with zero injected input. It then chains to SCRIPT2 via the
+            // decoded D2 handoff, after which control returns to the nav for free choice.
             tutorial_played = true;
             if intro_music_clip.is_some() {
                 intro_music_clip = None;
                 music.stop();
             }
+            load_script(&mut engine, &mut music, 1);
             engine.on_ship = false;
-            engine.bridge_active = true;
         } else if let Some(heading) = engine.take_nav_selection() {
             // SCRIPT1/2 are the forced tutorial + first encounter (played after the intro
             // and chained). The nav offers the free-choice destinations: SCRIPT3/4/5.
