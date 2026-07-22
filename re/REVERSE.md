@@ -3886,3 +3886,10 @@ manu3 file offset 0x1370).
   OVER the panorama's pyramid sector (draw_choice_box_labels /
   bridge_nav_destination_click; main.rs routes the click to the location
   script) — the CHART.FD screen remains only as the legacy on_ship path.
+- SUBFIND: NO assembled subtitle string exists in RAM — only the DICTIONARY
+  (linear ~0x798xx: nul-separated words: "Click.quick,.Cap'n.Bob.is.waiting.
+  explanations.game...", '"HONK"' is a single dict word). Lines are assembled
+  per-word at draw time. => The instruction-following driver must read the
+  LIVE VM active-line id (gs:0x1FAB / gs:0x6788 A6 bookkeeping) and look it up
+  in the port's decoded SCRIPT1 line table (vm.rs speech events) — wiring the
+  port's decoded content to the live game's state. Implement next.
