@@ -450,6 +450,183 @@ fn main() {
         // against the game's own font bitmaps to read the live line, then click
         // the named target. Deterministic — no buffers or heuristics.
         if std::env::var("TUTORIAL4").is_ok() {
+            // OCR the live subtitle rows with the game's OWN in-memory font
+            // (glyphs gs:0x71AA, ascii map gs:0x70FA — monospace 8px advance;
+            // calibrated offline against textband dumps: rows 8/18, text
+            // indices 0xE0 (settled) + 0xFD..0xFF (revealing)).
+            let read_font = |rt: &Runtime| -> Vec<(char, [u8; 8])> {
+                let mut out = Vec::new();
+                for code in 32u8..127 {
+                    let gi = rt.m.read8(g, 0x70fa + code as u32);
+                    if gi == 0xFF { continue; }
+                    let mut rows = [0u8; 8];
+                    for (i, r) in rows.iter_mut().enumerate() {
+                        *r = rt.m.read8(g, 0x71aa + gi as u32 * 8 + i as u32);
+                    }
+                    let lit: u32 = rows.iter().map(|r| r.count_ones()).sum();
+                    if lit >= 3 {
+                        out.push((code as char, rows));
+                    }
+                }
+                out.sort_by_key(|(_, rows)| {
+                    std::cmp::Reverse(rows.iter().map(|r| r.count_ones()).sum::<u32>())
+                });
+                out
+            };
+            let ocr = |idx: &[u8], font: &[(char, [u8; 8])]| -> String {
+                let lit = |px: u8| px == 0xE0 || px >= 0xFD;
+                let mut text = String::new();
+                for row0 in [8usize, 18] {
+                    let mut line = String::new();
+                    let mut blanks = 0usize;
+                    let mut x = 0usize;
+                    while x < 313 {
+                        let mut got = None;
+                        for (ch, rows) in font {
+                            let mut ok = true;
+                            'cell: for gy in 0..8usize {
+                                for gx in 0..8usize {
+                                    let on = (rows[gy] >> (7 - gx)) & 1 == 1;
+                                    let px = idx
+                                        .get((row0 + gy) * 320 + x + gx)
+                                        .copied()
+                                        .unwrap_or(0);
+                                    if on != lit(px) {
+                                        ok = false;
+                                        break 'cell;
+                                    }
+                                }
+                            }
+                            if ok {
+                                got = Some(*ch);
+                                break;
+                            }
+                        }
+                        if let Some(ch) = got {
+                            if blanks >= 8 && !line.is_empty() {
+                                line.push(' ');
+                            }
+                            line.push(ch);
+                            blanks = 0;
+                            x += 8;
+                        } else {
+                            blanks += 1;
+                            x += 1;
+                        }
+                    }
+                    if !line.is_empty() {
+                        if !text.is_empty() {
+                            text.push(' ');
+                        }
+                        text.push_str(&line);
+                    }
+                }
+                text
+            };
+            let baseline = rt.opened_files.len();
+            let mut last = String::new();
+            let mut reached2 = false;
+            for round in 0..500 {
+                let (fr, _, _) = state(&rt);
+                let delta = fr as i32 - 45;
+                let font = read_font(&rt);
+                // Only trust a stable (fully revealed) line.
+                let line_a = ocr(&rt.screen_indices(), &font);
+                let _ = rt.run(rt.cpu.steps + 400_000);
+                let line_b = ocr(&rt.screen_indices(), &font);
+                let line = if line_a == line_b { line_b } else { String::new() };
+                if line != last && !line.is_empty() {
+                    println!("round {round}: OCR {line:?}");
+                    last = line.clone();
+                }
+                let names = ["HONK", "TELEPHONE", "CRYOBOX", "MENU", "OPTION"];
+                let want = names.iter().position(|n| line.contains(n));
+                let effective = want.or_else(|| { let t = round % 8; (t < 5).then_some(t) });
+                let (sx, sy) = match effective {
+                    Some(row) if (40..=60).contains(&fr) => {
+                        let x = 0x11f - delta * 8 - 0x37;
+                        let y = 0x48 + delta.unsigned_abs() as i32 * 5 / 4
+                            + row as i32 * (0x12 - delta.unsigned_abs() as i32 / 8) + 8;
+                        (x, y)
+                    }
+                    _ => if round % 2 == 0 { (85, 96) } else { (125, 118) },
+                };
+                let ring = (sx + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+                rt.set_mouse_pos(ring, sy as u16);
+                let _ = rt.run(rt.cpu.steps + 700_000);
+                rt.mouse_press(0);
+                let _ = rt.run(rt.cpu.steps + 400_000);
+                rt.mouse_release(0);
+                let _ = rt.run(rt.cpu.steps + 1_200_000);
+                if rt.opened_files.len() > baseline {
+                    let newest: Vec<String> = rt.opened_files[baseline..]
+                        .iter().map(|(_, p)| p.clone()).collect();
+                    if newest.iter().any(|p| p.to_lowercase().contains("script2")) {
+                        println!("round {round}: SCRIPT2 reached!");
+                        reached2 = true;
+                        rt.write_ppm(&out.join("tut4_script2.ppm")).unwrap();
+                        break;
+                    }
+                }
+            }
+            println!("TUTORIAL4 done, reached_script2={reached2} @ {} steps", rt.cpu.steps);
+            return;
+        }
+
+        // TEXTBAND: provoke tutorial text, then dump the top-band palette indices
+        // (rows 0..24) + histogram — pins the subtitle glyphs' actual indices and
+        // row offsets for the OCR.
+        if std::env::var("TEXTBAND").is_ok() {
+            // Click HONK to provoke a line.
+            let (fr, _, _) = state(&rt);
+            let delta = fr as i32 - 45;
+            let x = 0x11f - delta * 8 - 0x37;
+            let y = 0x48 + delta.unsigned_abs() as i32 * 5 / 4 + 8;
+            let ring = (x + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+            rt.set_mouse_pos(ring, y as u16);
+            let _ = rt.run(rt.cpu.steps + 700_000);
+            rt.mouse_press(0);
+            let _ = rt.run(rt.cpu.steps + 400_000);
+            rt.mouse_release(0);
+            let _ = rt.run(rt.cpu.steps + 8_000_000);
+            let idx = rt.screen_indices();
+            rt.write_ppm(&out.join("textband.ppm")).unwrap();
+            std::fs::write(out.join("textband_indices.bin"), &idx).unwrap();
+            // Dump the LIVE subtitle font (glyphs at gs:0x71AA, ascii->glyph map
+            // at gs:0x70FA) so the OCR matches exactly what the game draws.
+            let map: Vec<u8> = (0..256u32).map(|i| rt.m.read8(g, 0x70fa + i)).collect();
+            let glyphs: Vec<u8> = (0..2048u32).map(|i| rt.m.read8(g, 0x71aa + i)).collect();
+            std::fs::write(out.join("live_font_map.bin"), &map).unwrap();
+            std::fs::write(out.join("live_font_glyphs.bin"), &glyphs).unwrap();
+            let mut hist = std::collections::HashMap::new();
+            for yy in 0..24usize {
+                for xx in 0..320usize {
+                    *hist.entry(idx[yy * 320 + xx]).or_insert(0u32) += 1;
+                }
+            }
+            let mut top: Vec<_> = hist.into_iter().collect();
+            top.sort_by_key(|&(_, n)| std::cmp::Reverse(n));
+            println!("top-band histogram: {:?}", &top[..top.len().min(12)]);
+            // Print rows 0..24 as glyph-mask ASCII for the two most text-like
+            // indices (sparse ones).
+            for &(v, n) in top.iter().filter(|&&(v, n)| v != 0 && n < 3000).take(3) {
+                println!("mask for index {v:#04x} ({n} px):");
+                for yy in 0..20usize {
+                    let row: String = (0..120)
+                        .map(|xx| if idx[yy * 320 + xx] == v { '#' } else { '.' })
+                        .collect();
+                    println!("  {row}");
+                }
+            }
+            println!("TEXTBAND done");
+            return;
+        }
+
+        // TUTORIAL4: screen-OCR instruction follower. The game's subtitle glyphs
+        // write reserved indices >= 0xFD; OCR the top rows of screen_indices()
+        // against the game's own font bitmaps to read the live line, then click
+        // the named target. Deterministic — no buffers or heuristics.
+        if std::env::var("TUTORIAL4").is_ok() {
             use commander_blood_tools::font::{game_font_advance, game_font_glyph};
             let ocr = |idx: &[u8]| -> String {
                 let mut text = String::new();
