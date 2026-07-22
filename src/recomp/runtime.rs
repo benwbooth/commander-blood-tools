@@ -149,6 +149,10 @@ pub struct Runtime {
     /// Every file the game opens, with the step it happened — identifies which assets a
     /// given screen/scene loads (drive the emulator there, then inspect this).
     pub opened_files: Vec<(u64, String)>,
+    /// Every SoundBlaster DMA-playback START, as (step, sample-length, rate-Hz). The oracle
+    /// signal for WHEN the real game begins playing audio — the faithfulness reference the port's
+    /// audio timing is diffed against (e.g. the intro reel is silent until the cinematic).
+    pub sb_play_log: Vec<(u64, u32, u32)>,
     pub trace_ints: bool,
     pub ip_sample: Option<std::collections::HashMap<(u16,u16), u64>>,
     pub force_sub: bool,
@@ -564,6 +568,7 @@ impl Runtime {
             searches: HashMap::new(),
             int_log: HashMap::new(),
             opened_files: Vec::new(),
+            sb_play_log: Vec::new(),
             trace_ints: false,
             ip_sample: None,
             force_sub: false, // persistence experiment; OFF — it made a spurious attract subtitle persistent (DOSBox shows none)
@@ -1891,6 +1896,7 @@ impl Runtime {
             self.sb_pcm_rate = self.sb_rate_hz;
         }
         self.sb_play = Some((ch, self.cpu.steps, len, auto));
+        self.sb_play_log.push((self.cpu.steps, len, self.sb_rate_hz));
         self.dma_cur_count[ch] = self.dma_count[ch];
     }
 

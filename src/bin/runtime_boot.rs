@@ -89,6 +89,43 @@ fn main() {
         return;
     }
 
+    if std::env::var("INTROTRACE").is_ok() {
+        // FAITHFULNESS ORACLE for the boot/intro: boot the real game with NO input injection (so
+        // the intro plays naturally) and merge the file-opens with the SB audio-playback starts
+        // into one step-stamped timeline — the ground truth the port's early sequence is diffed
+        // against ("what asset loads / audio starts, and when"). Frames every 1M steps for the eye.
+        let limit: u64 = std::env::var("STEPS").ok().and_then(|s| s.parse().ok()).unwrap_or(40_000_000);
+        let mut next_shot = 0u64;
+        while rt.cpu.steps < limit {
+            let target = next_shot.min(limit);
+            let _ = rt.run(target);
+            if rt.cpu.steps >= next_shot {
+                let m = rt.cpu.steps / 1_000_000;
+                let _ = rt.write_ppm(&out.join(format!("intro_{m:03}M.ppm")));
+                next_shot += 1_000_000;
+            }
+        }
+        enum Ev { Open(String), Audio(u32, u32) }
+        let mut tl: Vec<(u64, Ev)> = Vec::new();
+        let mut seen = std::collections::HashSet::new();
+        for (step, path) in &rt.opened_files {
+            if seen.insert(path.clone()) { tl.push((*step, Ev::Open(path.clone()))); }
+        }
+        for (step, len, rate) in &rt.sb_play_log {
+            tl.push((*step, Ev::Audio(*len, *rate)));
+        }
+        tl.sort_by_key(|(s, _)| *s);
+        println!("--- REAL-GAME BOOT/INTRO TIMELINE (step: event), to {limit} steps ---");
+        for (step, ev) in &tl {
+            match ev {
+                Ev::Open(p) => println!("  @{step:>10}  OPEN   {p}"),
+                Ev::Audio(len, rate) => println!("  @{step:>10}  AUDIO  play {len}B @ {rate}Hz  <== sound starts"),
+            }
+        }
+        println!("total audio-play events: {}", rt.sb_play_log.len());
+        return;
+    }
+
     if std::env::var("SKIPPROBE").is_ok() {
         // Inject input periodically from early on and capture frames, to find the EARLIEST
         // step at which interactive gameplay (bridge/menu) appears — i.e. can we skip the
