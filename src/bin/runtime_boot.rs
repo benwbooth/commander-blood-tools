@@ -446,7 +446,7 @@ fn main() {
             use commander_blood_tools::font::{game_font_advance, game_font_glyph};
             let ocr = |idx: &[u8]| -> String {
                 let mut text = String::new();
-                for row0 in [0usize, 10] {
+                for row0 in [8usize, 18] {
                     let mut line = String::new();
                     let mut x = 0usize;
                     let mut blanks = 0usize;
@@ -480,7 +480,7 @@ fn main() {
                                         .get((row0 + gy) * 320 + x + gx)
                                         .copied()
                                         .unwrap_or(0);
-                                    if on != (px >= 0xFD) {
+                                    if on != (px == 0xE0 || px >= 0xFD) {
                                         ok = false;
                                         break 'cell;
                                     }
