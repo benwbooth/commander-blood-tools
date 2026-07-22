@@ -105,6 +105,16 @@ everywhere.** Priority = how visible/audible + how confidently fixable.
    (2) use it as SCRIPT1's tutorial view; (3) palette — real is GRAY pyramids + WHITE eye-orb, the
    port's standalone OPTION render is purple + yellow (verify it's a scene-palette-context issue,
    not a wrong palette). Careful multi-piece rendering + flow work — grounded, not guessed.
+   REFRAMED (frames 6-9 = the intro CREW SHOWCASE, not SCRIPT1 dialogue): render_dialogue_frame
+   treats SCRIPT1's console tutorial as NO-talk-HNM (draws the bridge panorama), yet frames 6-9
+   show crew characters — and [[commander-blood-port-completeness]]'s intro flow is "MINDSCAPE →
+   Microfolie's → intro cutscene → CRYO credit → CREW SHOWCASE". So frames 6-9 are the intro's
+   crew-showcase phase: crew talk-HNMs cycled in the viewscreen + the pyramid console (built:
+   `overlay_console_pyramids`, commit 976) + the CRYO/"Commander BLOOD V 1.0" credits overlaid. The
+   port's intro OMITS the crew showcase. TO BUILD: an intro crew-showcase phase after the CRYO clip
+   — cycle the crew talk-HNMs, overlay the pyramid console + credits. STILL TO GROUND: which crew
+   HNMs, in what order/timing (from the intro/showcase data or the asm) — get that before building,
+   don't guess the roster.
 2. **Intro/HNM playback RATE** (`INTRO_CREDIT_FRAMES_PER_TICK = 1`, one HNM frame per game step).
    A guess flagged "calibratable". Source: the HNM player's frame-advance timing in the asm (ticks
    per HNM frame) + the DESCRIPT tick unit. RISK: intro plays too fast/slow; subtitles mistimed.
