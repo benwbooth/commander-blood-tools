@@ -3775,3 +3775,13 @@ manu3 file offset 0x1370).
   NEXT (continuation plan): coverage-trace manu3's segment (trap_ips) at the
   console to enumerate its per-frame call tree, then decompile top-down into
   src/manu3.rs (transform 0x420/0x468, edge insert, span walk, blitter 0xB5D).
+- COVERAGE WORKLIST (BRIDGEPROBE coverage_seg, 8M steps ≈ 22 frames at console):
+  manu3 executes only ~2.7KB per frame — the full hand pipeline:
+  0x0000-0x0120 frame entry/driver (22 hits = 1/frame); 0x0270-0x0620 node
+  TRANSFORM pass (2420 = 110 nodes x 22); 0x0657-0x06B8 pose copy; 0x06F6-0x0730
+  (4752); 0x074E-0x0900 edge setup (21054); 0x096A-0x09D0 edge-list walk;
+  0x09F3-0x0AA1 span prep; 0x0AE0-0x0BD2 texture column blitter (48312);
+  0x0C91-0x1006 blitter variant 2; 0x113E-0x12E6 per-scanline; 0x1329-0x1365
+  helper. The hand model has ~110 nodes. Spans file: BRIDGEPROBE out/
+  manu3_coverage_spans.txt. This is the complete decompile worklist for the
+  faithful hand port.
