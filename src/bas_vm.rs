@@ -185,6 +185,15 @@ impl BasMenuStack {
         self.current_block().map(|b| SequentialResponses::new(&b))
     }
 
+    /// The current menu's full response monologue as renderable subtitle lines (its
+    /// `0xA6` responses assembled in order) — the dialogue the engine plays for the
+    /// active concept menu. Empty if no menu/block is active.
+    pub fn current_menu_dialogue(&self) -> Vec<String> {
+        self.current_block()
+            .map(|b| b.responses.iter().filter_map(|&o| self.response_text(o)).collect())
+            .unwrap_or_default()
+    }
+
     /// The subtitle text of the response `0xA6` token at `bas_offset` — its dictionary
     /// words assembled with the game's punctuation-aware spacing. So a played response
     /// yields the actual on-screen line, not just an offset.
@@ -425,5 +434,9 @@ mod tests {
         // And the played response assembles to its actual on-screen subtitle.
         let text = st.response_text(first).expect("response text");
         assert!(text.contains("several ways to lose"), "response text: {text:?}");
+        // The full menu monologue is available as renderable dialogue lines.
+        let dialogue = st.current_menu_dialogue();
+        assert_eq!(dialogue.len(), 13, "13 response lines");
+        assert!(dialogue[0].contains("several ways to lose"));
     }
 }
