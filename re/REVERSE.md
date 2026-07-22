@@ -5204,3 +5204,26 @@ the original bytes. Completing all ~41 I/O leaves + unblocking compositions to t
 is still session-by-session work (and could be codegen'd in lift.py), but the per-pass increment
 is real and demonstrated — not blocked on a multi-session prerequisite. Count: 75 pure-CPU + 12
 I/O = 87 lifted; oracle services int+out+in and compares regs + gs + IVT + DAC + cs-relative memory.
+
+## The "6 indirect-dispatch sites" are EXTERNAL-service boundaries, not jump tables (2026-07-22)
+
+Characterized every indirect call/lcall site the static lift is blocked on. They do NOT dispatch
+to fixed BLOODPRG.EXE functions — they call code OUTSIDE the 222:
+  - `lcall [gs:0xa4a]` (0xbd84, and the ~18 sites incl. func_a99, func_bd4e): **the XMS driver**
+    (HIMEM.SYS) far entry — an external DOS system component. AH = XMS function code. In THIS
+    Runtime, int 2Fh AX=4300 returns al=0 (no XMS present, runtime.rs:1500), so the game takes the
+    EMS path and these XMS lcall sites are UNREACHABLE — dead in the shipped-emulation config.
+  - `lcall [gs:0xcdf]` (0xbba6, func_bb9d), `lcall [gs:0xcd3]` (0xb7d6, func_b7b0),
+    `lcall [gs:0xcf3]` (0xa255, func_a240): **the loaded SND sound driver** — a separate `.drv`
+    binary extracted from BLOOD.DAT and loaded into guest memory at runtime; gs:0xcdf/cd3/cf3 are
+    fn-ptrs INTO that loaded driver. The interpreter runs it as ordinary guest code; there is no
+    fixed target inside BLOODPRG.EXE.
+CONSEQUENCE — this reframes the completion criterion. "Lift all 222 BLOODPRG.EXE functions" is NOT
+a fully-static game by itself: a handful of the 222 are external-service DISPATCHERS whose targets
+are HIMEM.SYS and a runtime-loaded sound driver. A truly pure-static standalone port must PROVIDE
+those as native Rust services (XMS is trivial — already stubbed; the SND driver is a substantial
+separate reimplementation), then lift the ~5 dispatcher functions as Runtime-context fns that call
+the native service (exactly the int-leaf pattern: an indirect lcall to an emulated service is the
+same boundary as an `int`). So the indirect sites were never "resolve the jump-table target by
+observation" — they are the I/O boundary again, wearing a different opcode. This is why the static
+fixpoint stalls at the I/O frontier and not before it: the frontier is the game/OS boundary itself.
