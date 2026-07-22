@@ -558,10 +558,10 @@ fn main() {
                 if line.is_empty() {
                     use commander_blood_tools::font::{game_font_advance, game_font_glyph};
                     let idx = rt.screen_indices();
-                    let lit = |px: u8| px == 0xEE || px == 0xEF;
+                    let lit = |px: u8| px == 0xEE || px == 0xEF || px == 0xE8;
                     let mut text = String::new();
                     let mut row0 = 6usize;
-                    while row0 < 30 {
+                    while row0 < 170 {
                         let mut l = String::new();
                         let mut blanks = 0usize;
                         let mut x = 0usize;

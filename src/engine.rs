@@ -901,34 +901,48 @@ impl EngineState {
         self.draw_choice_box(&labels, None);
     }
 
-    /// Draw a golden choice box (border + gold console-font rows) at the
-    /// captured geometry — the game's standard interactive-choice UI (see
-    /// accuracy/captures/bridge/choice_box_bob_morlock.ppm). `selected`
-    /// highlights one row brighter.
+    /// Draw a golden choice box exactly as the real game composes it (measured
+    /// from live index dumps, post-tutorial MENU probe): a 3-px border of
+    /// palette index 0x15 (dark purple), a GOLD FILL of index 0xE0, and the
+    /// item text as thin GAME_FONT glyphs "knocked out" in index 0xE8 —
+    /// geometry: box from (63, 88), ~54 px wide + text, rows ~13 px apart.
+    /// `selected` re-renders one row in the brighter 0xEF white.
     fn draw_choice_box(&mut self, labels: &[String], selected: Option<usize>) {
-        if self.console_font.is_empty() || labels.is_empty() {
+        if labels.is_empty() {
             return;
         }
-        const GOLD: u8 = 0xFD;
-        const HILITE: u8 = 0xFE;
-        const BORDER: u8 = 0xFC;
-        self.scene_palette[GOLD as usize] = [240, 208, 48];
-        self.scene_palette[HILITE as usize] = [255, 240, 120];
-        self.scene_palette[BORDER as usize] = [140, 110, 20];
+        const BORDER: u8 = 0x15;
+        const FILL: u8 = 0xE0;
+        const TEXT: u8 = 0xE8;
+        const TEXT_SELECTED: u8 = 0xEF;
         let rows = labels.len().min(8);
-        let (x0, y0) = (40usize, 88usize);
-        let (w, h) = (110usize, rows * 13 + 8);
+        let widest = labels
+            .iter()
+            .take(rows)
+            .map(|l| l.chars().map(crate::font::game_font_advance).sum::<usize>())
+            .max()
+            .unwrap_or(0);
+        let (x0, y0) = (63usize, 88usize);
+        let (w, h) = ((widest + 14).max(54), rows * 13 + 10);
+        // Border (3 px) then the gold fill.
         for y in y0..(y0 + h).min(ENGINE_SCREEN_HEIGHT) {
             for x in x0..(x0 + w).min(ENGINE_SCREEN_WIDTH) {
-                let edge = y == y0 || y + 1 == y0 + h || x == x0 || x + 1 == x0 + w;
-                if edge {
-                    self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] = BORDER;
-                }
+                let edge = y < y0 + 3 || y + 3 >= y0 + h || x < x0 + 3 || x + 3 >= x0 + w;
+                self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] =
+                    if edge { BORDER } else { FILL };
             }
         }
         for (i, label) in labels.iter().take(rows).enumerate() {
-            let color = if selected == Some(i) { HILITE } else { GOLD };
-            self.draw_console_text(label, x0 + 6, y0 + 5 + i * 13, color);
+            let color = if selected == Some(i) { TEXT_SELECTED } else { TEXT };
+            crate::font::draw_text_indexed(
+                &mut self.framebuffer,
+                ENGINE_SCREEN_WIDTH,
+                ENGINE_SCREEN_HEIGHT,
+                label,
+                x0 + 7,
+                y0 + 7 + i * 13,
+                color,
+            );
         }
     }
 
