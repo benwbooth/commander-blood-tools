@@ -4124,3 +4124,13 @@ The port's save.rs is a port-native format; this is the byte-exact DOS layout.
   script speech-events) is the faithful stand-in until a granted-destination
   state is reached; the real anchor positions require driving the story to a
   planet-coordinates grant (recorded lead for #3).
+- SQUARE-CAPS GENERATOR (GLYPHSRC trace): the box/list text is a PRE-BUILT RLE
+  overlay at gs:0x175, unpacked by the panorama unpacker (writer 043b:01da
+  reading ds:si=0e84:0175). The stream is built ONCE at box-open (before the
+  per-frame unpack), so watching per-frame 0xE8 writes misses it — the glyph
+  bytes are RLE-encoded runs, not literal per-pixel 0xE8 stores. The generator
+  builds the whole box (border+fill+glyphs) into the stream at open time; to
+  capture it, arm the watch on the gs:0x175 stream region BEFORE the open click
+  (next probe). The 19 harvested letters (span-majority from live captures)
+  remain the faithful stand-in; the generator gives 100% letter coverage but is
+  not blocking (common words render correctly).
