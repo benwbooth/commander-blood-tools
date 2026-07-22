@@ -5029,3 +5029,18 @@ decoded (input handler 08c0:1242 → gs:0x6762 = topic value; VM 0xA3 match), bu
 selection→sub-menu PUSH observation is gated on creating the right savestate — genuine
 multi-session work. The DISPLAY path (sequential responses, universal) is built + validated
 and does NOT depend on this. So: display = done; branching push = gated on a new savestate.
+
+## RESOLVED: concept menus are FLAT — no topic→sub-menu branching (2026-07-22)
+
+Verified across ALL 82 SCRIPT2 menu heads: ZERO menu blocks contain a nested menu-head
+0xA3. Combined with MENUWATCH (topic clicks only play responses or pop; the only pushes
+are console→consultation at the game-action level), this DEFINITIVELY RESOLVES the
+"branching" question: there is NO topic→sub-menu branching. Concept menus are FLAT
+sequential leaves — each opened by a GAME ACTION (console/orb/conversation-flow), its
+topics play sequential responses (already-shown gated), talk/bye_bye pops/exits. So the
+port's built model — SequentialResponses (universal) + bas_topic_click pop — is the
+COMPLETE concept-menu display+navigation behavior. What I was chasing as "branching"
+(the 0x2f↔0x42d push) is CONSOLE→menu (game-flow), not a menu-internal topic jump.
+CONSEQUENCE: the per-beat concept-menu SUBSYSTEM (display + topic navigation) is DONE
+and verified; the remaining is only which game action opens which menu (console/flow
+integration), a separate game-flow concern — NOT a record VM / branching decode.

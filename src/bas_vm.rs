@@ -332,6 +332,41 @@ mod tests {
         assert_eq!(other, 0, "no record-update opcodes in the block");
     }
 
+    /// The concept menus are FLAT: no menu block contains a nested menu-head `0xA3`
+    /// (checked across every menu in SCRIPT2). Combined with the runtime observation
+    /// that topic clicks only play responses or pop, this proves there is NO
+    /// topic→sub-menu branching — menus are sequential leaves opened by game actions.
+    /// So `SequentialResponses` + pop is the COMPLETE concept-menu behavior.
+    #[test]
+    fn concept_menus_are_flat_no_nested_submenus() {
+        let rd = |ext: &str| {
+            ["accuracy/cdrive/cblood", "../accuracy/cdrive/cblood"]
+                .iter()
+                .find_map(|b| std::fs::read(Path::new(b).join(format!("SCRIPT2.{ext}"))).ok())
+        };
+        let (Some(bas), Some(dic)) = (rd("BAS"), rd("DIC")) else {
+            return;
+        };
+        let menus = decode_menus(&bas, &dic, 3);
+        let heads: std::collections::HashSet<usize> = menus.iter().map(|m| m.bas_offset).collect();
+        let mut nested = 0;
+        for &h in &heads {
+            if let Some(block) = parse_menu_block(&bas, &dic, h) {
+                // A nested menu-head between this menu's responses and its 0xAC.
+                let range = block.responses.first().copied().unwrap_or(h)..block.end;
+                if bas[range]
+                    .windows(1)
+                    .enumerate()
+                    .any(|(i, w)| w[0] == 0xA3 && heads.contains(&(block.responses.first().copied().unwrap_or(h) + i)))
+                {
+                    nested += 1;
+                }
+            }
+        }
+        assert_eq!(nested, 0, "no menu block nests another menu — concept menus are flat");
+        assert!(heads.len() > 50, "many flat menus: {}", heads.len());
+    }
+
     /// Every sampled menu block is PURE SEQUENTIAL: only `0xA6` Text responses (and an
     /// occasional non-record op) up to `0xAC` — NO record-update `0xC1..=0xC8` opcodes,
     /// no nested `0xA3` sub-menus. So [`SequentialResponses`] is the UNIVERSAL response
