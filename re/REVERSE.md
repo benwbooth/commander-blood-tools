@@ -3806,3 +3806,9 @@ manu3 file offset 0x1370).
   depth <= 0 -> cull to 0x679). Matrix rows in the node at +0x1E/+0x22/+0x26
   (row1), +0x2A/+0x2E/+0x32 (row3), translation +0x3E. Same 0x14 stride as the
   0x068A pose-copy records — the pose copy feeds these vertex records.
+- Projection (0x5C1..0x62D): world X = row1(+0x12/16/1A)·v + tx(+0x36); world Y
+  = row2(+0x1E/22/26)·v + ty(+0x3A); screen_x = X/depth + [0x223E], screen_y =
+  -(Y/depth) + centre — TRUE perspective divide (idiv by the +0xE depth), with
+  clip flags accumulated in cl. VERTEX PIPELINE NOW FULLY DECODED: s16 local ->
+  node matrix -> +translation -> /z -> +screen centre -> clip flags. Next spans:
+  face/edge generation 0x6F6-0x900 -> edge list -> span prep -> blitters.
