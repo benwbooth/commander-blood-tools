@@ -3725,3 +3725,8 @@ manu3 file offset 0x1370).
   +0x30 (amplitude 16384) — the 3D core's trig LUT. The other rasterizer source
   segments map to manu3 file offsets: ds 0x1C94 -> file 0x6280, ds 0x2094 ->
   file 0xA280 (mesh/shade data candidates — decode next).
+- ds 0x1C94 (manu3 file 0x6280) region is 8-bit PIXEL data: byte pairs 0xF0F0,
+  0xDEDF, 0xCECE... = the teal hand colour families (0xF0=240 dominant) — the
+  hand's texture / pre-shaded spans. ds 0x2094 (file 0xA280) around +0xD9C holds
+  ascending offset words (2764,3484,3844..) = a command/span table into it.
+  So the hand render = 3D transform (+trig LUT) + span table -> textured spans.
