@@ -51,6 +51,9 @@ pub enum RunEnd {
 
 struct HostFile {
     f: std::fs::File,
+    /// Host path + writability, so a savestate can reopen and reseek the handle.
+    path: PathBuf,
+    writable: bool,
 }
 
 /// DOS 8.3 wildcard match: both sides are padded to 11-char name+ext masks, `*` expands to `?`s
@@ -178,6 +181,338 @@ pub struct Runtime {
 }
 
 impl Runtime {
+    /// Serialize the FULL deterministic machine state to `path` — memory, CPU,
+    /// VGA planes/registers, timers, EMS mapping, input queues, DMA/SB, and the
+    /// open DOS file handles (as host path + seek position, reopened on load).
+    /// Diagnostics (watches/hit logs/coverage) are NOT saved — they don't affect
+    /// execution. Format: "CBSAVE01" + bincode-free field stream (see code
+    /// order; load_state mirrors it exactly).
+    pub fn save_state(&mut self, path: &std::path::Path) -> std::io::Result<()> {
+        use std::io::Write;
+        let mut w = std::io::BufWriter::new(std::fs::File::create(path)?);
+        w.write_all(b"CBSAVE01")?;
+        let wr_u64 = |w: &mut dyn Write, v: u64| w.write_all(&v.to_le_bytes());
+        let wr_u32 = |w: &mut dyn Write, v: u32| w.write_all(&v.to_le_bytes());
+        let wr_u16 = |w: &mut dyn Write, v: u16| w.write_all(&v.to_le_bytes());
+        let wr_u8 = |w: &mut dyn Write, v: u8| w.write_all(&[v]);
+        let wr_bool = |w: &mut dyn Write, v: bool| w.write_all(&[v as u8]);
+        let wr_str = |w: &mut dyn Write, v: &str| -> std::io::Result<()> {
+            wr_u32(w, v.len() as u32)?;
+            w.write_all(v.as_bytes())
+        };
+        // Machine registers.
+        let r = &self.m.regs;
+        for v in [r.eax, r.ebx, r.ecx, r.edx, r.esi, r.edi, r.ebp, r.esp] {
+            wr_u32(&mut w, v)?;
+        }
+        for v in [r.cs, r.ds, r.es, r.ss, r.fs, r.gs] {
+            wr_u16(&mut w, v)?;
+        }
+        for v in [r.cf, r.zf, r.sf, r.of, r.pf, r.af, r.df] {
+            wr_bool(&mut w, v)?;
+        }
+        wr_u16(&mut w, self.m.ip)?;
+        // Memory.
+        wr_u32(&mut w, self.m.mem.len() as u32)?;
+        w.write_all(&self.m.mem)?;
+        // VGA.
+        let vga = self.m.vga.as_ref().expect("runtime always has vga");
+        w.write_all(&vga.planes)?;
+        for v in [vga.map_mask, vga.read_map, vga.write_mode, vga.bit_mask,
+                  vga.set_reset, vga.enable_sr, vga.logic_op, vga.rotate] {
+            wr_u8(&mut w, v)?;
+        }
+        wr_bool(&mut w, vga.chain4)?;
+        w.write_all(&vga.latches.get())?;
+        // CPU.
+        wr_u16(&mut w, self.cpu.cs)?;
+        wr_u16(&mut w, self.cpu.ip)?;
+        wr_u32(&mut w, self.cpu.depth)?;
+        wr_bool(&mut w, self.cpu.iflag)?;
+        wr_u16(&mut w, self.cpu.flags_high)?;
+        wr_u64(&mut w, self.cpu.steps)?;
+        // Runtime scalars.
+        wr_u8(&mut w, self.cur_drive)?;
+        for c in &self.cwd { wr_str(&mut w, c)?; }
+        wr_u16(&mut w, self.dta.0)?;
+        wr_u16(&mut w, self.dta.1)?;
+        wr_u32(&mut w, self.ticks)?;
+        wr_u64(&mut w, self.next_tick_at)?;
+        wr_u64(&mut w, self.steps_per_tick)?;
+        wr_u32(&mut w, self.pit_divisor)?;
+        wr_u8(&mut w, self.pit_lo)?;
+        wr_u8(&mut w, self.pit_phase)?;
+        // EMS handle map (store pages live inside m.mem above 1 MB).
+        wr_u32(&mut w, self.ems_handles.len() as u32)?;
+        for h in &self.ems_handles {
+            match h {
+                None => wr_u8(&mut w, 0)?,
+                Some(pages) => {
+                    wr_u8(&mut w, 1)?;
+                    wr_u32(&mut w, pages.len() as u32)?;
+                    for &pg in pages { wr_u32(&mut w, pg)?; }
+                }
+            }
+        }
+        wr_u32(&mut w, self.ems_next_page)?;
+        for slot in &self.ems_map {
+            match slot {
+                None => wr_u8(&mut w, 0)?,
+                Some(pg) => { wr_u8(&mut w, 1)?; wr_u32(&mut w, *pg)?; }
+            }
+        }
+        // VGA front-end registers.
+        wr_u8(&mut w, self.vga_mode)?;
+        w.write_all(&self.dac)?;
+        wr_u32(&mut w, self.dac_widx as u32)?;
+        wr_u32(&mut w, self.dac_ridx as u32)?;
+        wr_u8(&mut w, self.seq_idx)?;
+        w.write_all(&self.seq)?;
+        wr_u8(&mut w, self.gc_idx)?;
+        w.write_all(&self.gc)?;
+        wr_u8(&mut w, self.crtc_idx)?;
+        w.write_all(&self.crtc)?;
+        wr_u8(&mut w, self.cmos_idx)?;
+        wr_u8(&mut w, self.pic_mask0)?;
+        wr_u8(&mut w, self.pic_mask1)?;
+        wr_u16(&mut w, self.prog_end)?;
+        wr_u16(&mut w, self.alloc_next)?;
+        // Input queues.
+        wr_u32(&mut w, self.kbd_queue.len() as u32)?;
+        for &(a, b) in &self.kbd_queue { wr_u8(&mut w, a)?; wr_u8(&mut w, b)?; }
+        wr_u32(&mut w, self.bios_keys.len() as u32)?;
+        for &(a, b) in &self.bios_keys { wr_u8(&mut w, a)?; wr_u8(&mut w, b)?; }
+        wr_u32(&mut w, self.kbd_irq_pending)?;
+        // Mouse.
+        wr_u16(&mut w, self.mouse_x)?;
+        wr_u16(&mut w, self.mouse_y)?;
+        wr_u16(&mut w, self.mouse_buttons)?;
+        for p in self.mouse_presses.iter().chain(self.mouse_releases.iter()) {
+            wr_u16(&mut w, p.0)?; wr_u16(&mut w, p.1)?; wr_u16(&mut w, p.2)?;
+        }
+        match self.mouse_handler {
+            None => wr_u8(&mut w, 0)?,
+            Some((a, b, c)) => {
+                wr_u8(&mut w, 1)?; wr_u16(&mut w, a)?; wr_u16(&mut w, b)?; wr_u16(&mut w, c)?;
+            }
+        }
+        wr_u16(&mut w, self.mouse_pending)?;
+        wr_bool(&mut w, self.mouse_saved.is_some())?;
+        if let Some((regs, a, b, c, d)) = &self.mouse_saved {
+            for v in [regs.eax, regs.ebx, regs.ecx, regs.edx, regs.esi, regs.edi, regs.ebp, regs.esp] {
+                wr_u32(&mut w, v)?;
+            }
+            for v in [regs.cs, regs.ds, regs.es, regs.ss, regs.fs, regs.gs] {
+                wr_u16(&mut w, v)?;
+            }
+            for v in [regs.cf, regs.zf, regs.sf, regs.of, regs.pf, regs.af, regs.df] {
+                wr_bool(&mut w, v)?;
+            }
+            wr_u16(&mut w, *a)?; wr_u16(&mut w, *b)?; wr_bool(&mut w, *c)?; wr_u16(&mut w, *d)?;
+        }
+        wr_u16(&mut w, self.mouse_shown as u16)?;
+        // DMA + SoundBlaster.
+        wr_bool(&mut w, self.dma_flipflop)?;
+        for arr in [&self.dma_addr, &self.dma_count, &self.dma_cur_count] {
+            for &v in arr.iter() { wr_u16(&mut w, v)?; }
+        }
+        w.write_all(&self.dma_page)?;
+        w.write_all(&self.dma_mode)?;
+        wr_u8(&mut w, self.dma_tc)?;
+        wr_u8(&mut w, self.sb_reset_state)?;
+        wr_u32(&mut w, self.sb_out.len() as u32)?;
+        for &b in &self.sb_out { wr_u8(&mut w, b)?; }
+        match &self.sb_cmd {
+            None => wr_u8(&mut w, 0)?,
+            Some((c, args, need)) => {
+                wr_u8(&mut w, 1)?; wr_u8(&mut w, *c)?;
+                wr_u32(&mut w, args.len() as u32)?;
+                w.write_all(args)?;
+                wr_u32(&mut w, *need as u32)?;
+            }
+        }
+        wr_u8(&mut w, self.sb_time_constant)?;
+        wr_u32(&mut w, self.sb_rate_hz)?;
+        match self.sb_play {
+            None => wr_u8(&mut w, 0)?,
+            Some((ch, start, total, auto)) => {
+                wr_u8(&mut w, 1)?;
+                wr_u32(&mut w, ch as u32)?;
+                wr_u64(&mut w, start)?;
+                wr_u32(&mut w, total)?;
+                wr_bool(&mut w, auto)?;
+            }
+        }
+        wr_u32(&mut w, self.sb_pcm_rate)?;
+        wr_bool(&mut w, self.sb_irq_pending)?;
+        // Open DOS file handles: host path + seek position + writability.
+        wr_u32(&mut w, self.files.len() as u32)?;
+        for slot in &mut self.files {
+            match slot {
+                None => wr_u8(&mut w, 0)?,
+                Some(hf) => {
+                    use std::io::Seek;
+                    wr_u8(&mut w, 1)?;
+                    wr_str(&mut w, &hf.path.to_string_lossy())?;
+                    wr_bool(&mut w, hf.writable)?;
+                    wr_u64(&mut w, hf.f.stream_position().unwrap_or(0))?;
+                }
+            }
+        }
+        w.flush()
+    }
+
+    /// Restore a state written by [`Runtime::save_state`]. The Runtime must be
+    /// constructed with the SAME drive roots; open files are reopened + reseeked.
+    pub fn load_state(&mut self, path: &std::path::Path) -> std::io::Result<()> {
+        use std::io::Read;
+        let mut rdr = std::io::BufReader::new(std::fs::File::open(path)?);
+        let mut magic = [0u8; 8];
+        rdr.read_exact(&mut magic)?;
+        assert_eq!(&magic, b"CBSAVE01", "savestate version mismatch");
+        fn rd_u64(r: &mut dyn Read) -> u64 { let mut b = [0; 8]; r.read_exact(&mut b).unwrap(); u64::from_le_bytes(b) }
+        fn rd_u32(r: &mut dyn Read) -> u32 { let mut b = [0; 4]; r.read_exact(&mut b).unwrap(); u32::from_le_bytes(b) }
+        fn rd_u16(r: &mut dyn Read) -> u16 { let mut b = [0; 2]; r.read_exact(&mut b).unwrap(); u16::from_le_bytes(b) }
+        fn rd_u8(r: &mut dyn Read) -> u8 { let mut b = [0; 1]; r.read_exact(&mut b).unwrap(); b[0] }
+        fn rd_bool(r: &mut dyn Read) -> bool { rd_u8(r) != 0 }
+        fn rd_str(r: &mut dyn Read) -> String {
+            let n = rd_u32(r) as usize;
+            let mut b = vec![0; n];
+            r.read_exact(&mut b).unwrap();
+            String::from_utf8_lossy(&b).into_owned()
+        }
+        fn rd_regs(r: &mut dyn Read) -> super::machine::Regs {
+            let mut regs = super::machine::Regs::default();
+            regs.eax = rd_u32(r); regs.ebx = rd_u32(r); regs.ecx = rd_u32(r); regs.edx = rd_u32(r);
+            regs.esi = rd_u32(r); regs.edi = rd_u32(r); regs.ebp = rd_u32(r); regs.esp = rd_u32(r);
+            regs.cs = rd_u16(r); regs.ds = rd_u16(r); regs.es = rd_u16(r);
+            regs.ss = rd_u16(r); regs.fs = rd_u16(r); regs.gs = rd_u16(r);
+            regs.cf = rd_bool(r); regs.zf = rd_bool(r); regs.sf = rd_bool(r); regs.of = rd_bool(r);
+            regs.pf = rd_bool(r); regs.af = rd_bool(r); regs.df = rd_bool(r);
+            regs
+        }
+        let r = &mut rdr;
+        self.m.regs = rd_regs(r);
+        self.m.ip = rd_u16(r);
+        let mem_len = rd_u32(r) as usize;
+        self.m.mem.resize(mem_len, 0);
+        r.read_exact(&mut self.m.mem)?;
+        {
+            let vga = self.m.vga.as_mut().expect("runtime always has vga");
+            r.read_exact(&mut vga.planes)?;
+            vga.map_mask = rd_u8(r); vga.read_map = rd_u8(r); vga.write_mode = rd_u8(r);
+            vga.bit_mask = rd_u8(r); vga.set_reset = rd_u8(r); vga.enable_sr = rd_u8(r);
+            vga.logic_op = rd_u8(r); vga.rotate = rd_u8(r);
+            vga.chain4 = rd_bool(r);
+            let mut l = [0u8; 4];
+            r.read_exact(&mut l)?;
+            vga.latches.set(l);
+        }
+        self.cpu.cs = rd_u16(r); self.cpu.ip = rd_u16(r);
+        self.cpu.depth = rd_u32(r); self.cpu.iflag = rd_bool(r);
+        self.cpu.flags_high = rd_u16(r); self.cpu.steps = rd_u64(r);
+        self.cur_drive = rd_u8(r);
+        for c in self.cwd.iter_mut() { *c = rd_str(r); }
+        self.dta = (rd_u16(r), rd_u16(r));
+        self.ticks = rd_u32(r);
+        self.next_tick_at = rd_u64(r);
+        self.steps_per_tick = rd_u64(r);
+        self.pit_divisor = rd_u32(r);
+        self.pit_lo = rd_u8(r);
+        self.pit_phase = rd_u8(r);
+        let n = rd_u32(r) as usize;
+        self.ems_handles = (0..n)
+            .map(|_| {
+                if rd_u8(r) == 0 { None } else {
+                    let k = rd_u32(r) as usize;
+                    Some((0..k).map(|_| rd_u32(r)).collect())
+                }
+            })
+            .collect();
+        self.ems_next_page = rd_u32(r);
+        for slot in self.ems_map.iter_mut() {
+            *slot = if rd_u8(r) == 0 { None } else { Some(rd_u32(r)) };
+        }
+        self.vga_mode = rd_u8(r);
+        r.read_exact(&mut self.dac)?;
+        self.dac_widx = rd_u32(r) as usize;
+        self.dac_ridx = rd_u32(r) as usize;
+        self.seq_idx = rd_u8(r);
+        r.read_exact(&mut self.seq)?;
+        self.gc_idx = rd_u8(r);
+        r.read_exact(&mut self.gc)?;
+        self.crtc_idx = rd_u8(r);
+        r.read_exact(&mut self.crtc)?;
+        self.cmos_idx = rd_u8(r);
+        self.pic_mask0 = rd_u8(r);
+        self.pic_mask1 = rd_u8(r);
+        self.prog_end = rd_u16(r);
+        self.alloc_next = rd_u16(r);
+        let n = rd_u32(r) as usize;
+        self.kbd_queue = (0..n).map(|_| (rd_u8(r), rd_u8(r))).collect();
+        let n = rd_u32(r) as usize;
+        self.bios_keys = (0..n).map(|_| (rd_u8(r), rd_u8(r))).collect();
+        self.kbd_irq_pending = rd_u32(r);
+        self.mouse_x = rd_u16(r);
+        self.mouse_y = rd_u16(r);
+        self.mouse_buttons = rd_u16(r);
+        for slot in self.mouse_presses.iter_mut().chain(self.mouse_releases.iter_mut()) {
+            *slot = (rd_u16(r), rd_u16(r), rd_u16(r));
+        }
+        self.mouse_handler = if rd_u8(r) == 0 { None } else { Some((rd_u16(r), rd_u16(r), rd_u16(r))) };
+        self.mouse_pending = rd_u16(r);
+        self.mouse_saved = if rd_bool(r) {
+            let regs = rd_regs(r);
+            Some((regs, rd_u16(r), rd_u16(r), rd_bool(r), rd_u16(r)))
+        } else {
+            None
+        };
+        self.mouse_shown = rd_u16(r) as i16;
+        self.dma_flipflop = rd_bool(r);
+        for arr in [&mut self.dma_addr, &mut self.dma_count, &mut self.dma_cur_count] {
+            for v in arr.iter_mut() { *v = rd_u16(r); }
+        }
+        r.read_exact(&mut self.dma_page)?;
+        r.read_exact(&mut self.dma_mode)?;
+        self.dma_tc = rd_u8(r);
+        self.sb_reset_state = rd_u8(r);
+        let n = rd_u32(r) as usize;
+        self.sb_out = (0..n).map(|_| rd_u8(r)).collect();
+        self.sb_cmd = if rd_u8(r) == 0 { None } else {
+            let c = rd_u8(r);
+            let k = rd_u32(r) as usize;
+            let mut args = vec![0; k];
+            r.read_exact(&mut args)?;
+            Some((c, args, rd_u32(r) as usize))
+        };
+        self.sb_time_constant = rd_u8(r);
+        self.sb_rate_hz = rd_u32(r);
+        self.sb_play = if rd_u8(r) == 0 { None } else {
+            Some((rd_u32(r) as usize, rd_u64(r), rd_u32(r), rd_bool(r)))
+        };
+        self.sb_pcm_rate = rd_u32(r);
+        self.sb_irq_pending = rd_bool(r);
+        let n = rd_u32(r) as usize;
+        self.files = (0..n)
+            .map(|_| {
+                if rd_u8(r) == 0 { return None; }
+                let path = PathBuf::from(rd_str(r));
+                let writable = rd_bool(r);
+                let pos = rd_u64(r);
+                use std::io::Seek;
+                let f = std::fs::OpenOptions::new()
+                    .read(true)
+                    .write(writable)
+                    .open(&path)
+                    .ok()?;
+                let mut hf = HostFile { f, path, writable };
+                hf.f.seek(std::io::SeekFrom::Start(pos)).ok()?;
+                Some(hf)
+            })
+            .collect();
+        Ok(())
+    }
+
     pub fn new(c_root: PathBuf, d_root: PathBuf) -> Self {
         let mut drive_roots: [Option<PathBuf>; 26] = Default::default();
         drive_roots[2] = Some(c_root);
@@ -1777,7 +2112,7 @@ impl Runtime {
                 match self.resolve(&path, true) {
                     Ok(p) => match std::fs::File::create(&p) {
                         Ok(f) => {
-                            let h = self.alloc_handle(HostFile { f });
+                            let h = self.alloc_handle(HostFile { f, path: p.clone(), writable: true });
                             self.m.regs.set_ax(h);
                             self.cpu.patch_frame_cf(&mut self.m, false);
                         }
@@ -1811,7 +2146,7 @@ impl Runtime {
                             .open(&p);
                         match res {
                             Ok(f) => {
-                                let h = self.alloc_handle(HostFile { f });
+                                let h = self.alloc_handle(HostFile { f, path: p.clone(), writable: write });
                                 self.m.regs.set_ax(h);
                                 self.cpu.patch_frame_cf(&mut self.m, false);
                             }

@@ -13,6 +13,7 @@ fn main() {
     let mut out = PathBuf::from("boot_frames");
     let mut trace = false;
     let mut lockstep: Option<(u64, u64, PathBuf)> = None;
+    let mut resume: Option<PathBuf> = None;
     let args: Vec<String> = std::env::args().skip(1).collect();
     let mut i = 0;
     while i < args.len() {
@@ -37,6 +38,10 @@ fn main() {
                 out = PathBuf::from(&args[i]);
             }
             "--trace" => trace = true,
+            "--resume" => {
+                i += 1;
+                resume = Some(PathBuf::from(&args[i]));
+            }
             a => {
                 eprintln!("unknown arg {a}");
                 std::process::exit(2);
@@ -55,6 +60,10 @@ fn main() {
     rt.trace_ints = trace;
     rt.load_exe(&exe, " AMR S162227 EMS WRIC:\\cblood\\", "D:\\BLOODPRG.EXE")
         .unwrap();
+    if let Some(state) = resume {
+        rt.load_state(&state).expect("load savestate");
+        eprintln!("resumed from {} @ {} steps", state.display(), rt.cpu.steps);
+    }
 
     if let Some((skip, window, path)) = lockstep {
         eprintln!("lockstep: skip={skip} window={window} -> {}", path.display());
@@ -673,6 +682,10 @@ fn main() {
                         println!("round {round}: SCRIPT2 reached!");
                         reached2 = true;
                         rt.write_ppm(&out.join("tut4_script2.ppm")).unwrap();
+                        // Savestate: future runs resume here in seconds instead of
+                        // replaying the 25-minute tutorial.
+                        rt.save_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+                        println!("savestate written -> accuracy/script2.state");
                         break;
                     }
                 }
