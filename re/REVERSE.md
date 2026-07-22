@@ -5175,7 +5175,7 @@ listed have now all been built, and they are cheap, not multi-session:
      mode + mouse state) is bit-identical. The interpreter IS the oracle (Unicorn can't model DOS
      I/O). Adding a leaf to the `leaves` table is the verification gate.
 
-Four I/O leaves lifted + oracle-verified this way:
+Ten I/O leaves lifted + oracle-verified this way:
   - `func_cc0` (0x0CC0, set_video_mode_saved): int 10h from gs:[0x5232].
   - `func_d4a` (0x0D4A, mouse_set_hrange): int 33h fn 7 then fn 8.
   - `func_cef` (0x0CEF, mouse_reset_hide): int 33h fns 0, 2, 0xF.
@@ -5186,8 +5186,14 @@ Four I/O leaves lifted + oracle-verified this way:
   - `func_79c` (0x079C, install_timer_isr_hook): int21 fn 0x35 (save INT 08h) + fn 0x25 (install)
     + PIT reprogram (out 0x43/0x40) + timer-state gs writes — combines int AND out; the oracle now
     services Exit::Out/Exit::In via the same port handlers Runtime::run uses.
-The harness even caught two real test-plumbing bugs (EXE mirror clobbering the gs scratch, and
-40:0x49 clobbered by the overlay) before going green — evidence it actually discriminates.
+  - `func_7ea` (0x07EA, program_pit teardown): out 0x43/0x40 + int21 fn 0x25 (restore INT 08h).
+  - `func_b32` (0x0B32, detect_cdrom): near-ret; int 2Fh fn 0x1500 → gs:[0xAE6] CD-present flag.
+  - `func_2fa6` (0x2FA6, vga_dac_clear): out 0x3C8/0x3C9 `loop` — blank all 256 DAC entries.
+  - `func_2f90` (0x2F90, vga_palette_write): out 0x3C8 + `rep outsb` 768 bytes → DAC (palette load).
+The oracle compares regs + gs writes + IVT (segment 0) + the full 768-byte DAC palette, and
+services int/out/in through the same handlers Runtime::run uses. It caught FOUR real test-plumbing
+bugs before going green (EXE mirror clobbering the gs scratch, 40:0x49 clobbered by the overlay,
+a byte-write's stale neighbor, mirror-vs-scratch overlap) — evidence it actually discriminates.
 Note: `func_c26` (get_video_mode) looked like a neighbor leaf but is NOT one — it has a far
 `lcall 0x299:0x16` + VGA port I/O (a whole mode-13h init routine), so it lifts only after its
 callee + the out/in path (a composition, not a leaf).
@@ -5196,5 +5202,5 @@ So the whole-binary static port now HAS a bounded, safe, verified per-function e
 the next I/O leaf's `fn(&mut Runtime)` + one `leaves`-table row, and it's oracle-checked against
 the original bytes. Completing all ~41 I/O leaves + unblocking compositions to the 222-fn fixpoint
 is still session-by-session work (and could be codegen'd in lift.py), but the per-pass increment
-is real and demonstrated — not blocked on a multi-session prerequisite. Count: 75 pure-CPU + 8
-I/O = 83 lifted; oracle services int+out+in and compares regs + gs + IVT memory.
+is real and demonstrated — not blocked on a multi-session prerequisite. Count: 75 pure-CPU + 10
+I/O = 85 lifted; oracle services int+out+in and compares regs + gs + IVT + DAC palette.

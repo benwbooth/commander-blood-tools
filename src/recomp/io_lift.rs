@@ -195,6 +195,62 @@ pub fn func_79c(rt: &mut Runtime) {
     rt.m.regs.set_ax(ax);
 }
 
+/// `func_2f90` (`vga_palette_write`, 0x2F90): reset the DAC write index (out 0x3C8=0) then upload
+/// 768 bytes (256 RGB triples) from ds:si to the DAC data port via `rep outsb` — loads the full
+/// palette. SI advances during the copy but is restored (pushed/popped), so the caller's SI is
+/// preserved. Assumes DF=0 (forward), the game's normal direction.
+pub fn func_2f90(rt: &mut Runtime) {
+    push16(rt, rt.m.regs.ax());
+    push16(rt, rt.m.regs.cx());
+    push16(rt, rt.m.regs.dx());
+    push16(rt, rt.m.regs.si());
+    rt.m.regs.set_dx(0x3c8);
+    rt.m.regs.set_al(0);
+    out8(rt, 0x3c8, 0); // reset PEL write index
+    rt.m.regs.set_dx(0x3c9); // inc dl
+    rt.m.regs.set_cx(0x300);
+    let ds = rt.m.regs.ds;
+    let mut si = rt.m.regs.si();
+    while rt.m.regs.cx() != 0 {
+        let b = rt.m.read8(ds, si as u32); // rep outsb: out 0x3c9, [ds:si]
+        out8(rt, 0x3c9, b);
+        si = si.wrapping_add(1);
+        rt.m.regs.set_cx(rt.m.regs.cx().wrapping_sub(1));
+    }
+    rt.m.regs.set_si(si);
+    let si = pop16(rt);
+    rt.m.regs.set_si(si);
+    let dx = pop16(rt);
+    rt.m.regs.set_dx(dx);
+    let cx = pop16(rt);
+    rt.m.regs.set_cx(cx);
+    let ax = pop16(rt);
+    rt.m.regs.set_ax(ax);
+}
+
+/// `func_2fa6` (`vga_dac_clear`, 0x2FA6): reset the DAC write index (out 0x3C8=0) then write 768
+/// zero bytes to the DAC data port (out 0x3C9) via a `loop` — blanking all 256 palette entries.
+pub fn func_2fa6(rt: &mut Runtime) {
+    push16(rt, rt.m.regs.ax());
+    push16(rt, rt.m.regs.cx());
+    push16(rt, rt.m.regs.dx());
+    rt.m.regs.set_dx(0x3c8);
+    rt.m.regs.set_al(0); // xor al,al
+    out8(rt, 0x3c8, 0); // reset PEL write index
+    rt.m.regs.set_dx(0x3c9); // inc dl
+    rt.m.regs.set_cx(0x300);
+    while rt.m.regs.cx() != 0 {
+        out8(rt, 0x3c9, 0);
+        rt.m.regs.set_cx(rt.m.regs.cx().wrapping_sub(1)); // loop
+    }
+    let dx = pop16(rt);
+    rt.m.regs.set_dx(dx);
+    let cx = pop16(rt);
+    rt.m.regs.set_cx(cx);
+    let ax = pop16(rt);
+    rt.m.regs.set_ax(ax);
+}
+
 /// `func_b32` (`detect_cdrom`, 0x0B32): `int 2Fh` AX=0x1500 (MSCDEX installation check) →
 /// BX = CD-ROM drive count; store gs:[0xAE6] = (BX != 0). A `near` ret helper (no register
 /// preservation — it clobbers AX/BX). The game ships on CD, so this gates the CD path.
@@ -346,6 +402,15 @@ mod tests {
         // A saved INT 08h vector for func_7ea to restore (gs:[0xb1d]=off, gs:[0xb1f]=seg).
         rt.m.write16(0x3000, 0xb1d, 0x1234);
         rt.m.write16(0x3000, 0xb1f, 0x5678);
+        // Non-zero DAC so func_2fa6's clear is observable (a wrong loop count leaves stale entries).
+        rt.dac = [0x2a; 768];
+        // Palette source for func_2f90 at ds:si = 0x3000:0x6000 (above the code overlay, clear of
+        // the gs fields below 0x6000): 768 varied bytes so a mis-indexed copy is caught.
+        rt.m.regs.ds = 0x3000;
+        rt.m.regs.set_si(0x6000);
+        for i in 0..768u32 {
+            rt.m.write8(0x3000, 0x6000 + i, (i * 7 + 1) as u8);
+        }
     }
 
     /// Every Runtime-context I/O lift reproduces the REAL function bytes exactly: run the lift and
@@ -356,23 +421,27 @@ mod tests {
     #[test]
     fn io_lifts_match_interpreter_oracle() {
         let Some(exe) = load_exe() else { return };
-        // (name, file offset, lifted fn, gs offsets written, segment-0/IVT offsets written) —
-        // every listed offset is compared word-for-word against the real bytes' output.
-        let leaves: &[(&str, u16, fn(&mut Runtime), &[u16], &[u16])] = &[
-            ("func_cc0", 0x0cc0, func_cc0, &[], &[]),
-            ("func_d4a", 0x0d4a, func_d4a, &[], &[]),
-            ("func_cef", 0x0cef, func_cef, &[], &[]),
-            ("func_d0e", 0x0d0e, func_d0e, &[0xa2a, 0xa2c, 0xa2e, 0xa38, 0xa3a, 0xb3b], &[]),
+        // (name, file offset, lifted fn, gs offsets written, seg-0/IVT offsets written, cmp DAC?)
+        // — every listed offset is compared word-for-word against the real bytes' output.
+        let leaves: &[(&str, u16, fn(&mut Runtime), &[u16], &[u16], bool)] = &[
+            ("func_cc0", 0x0cc0, func_cc0, &[], &[], false),
+            ("func_d4a", 0x0d4a, func_d4a, &[], &[], false),
+            ("func_cef", 0x0cef, func_cef, &[], &[], false),
+            ("func_d0e", 0x0d0e, func_d0e, &[0xa2a, 0xa2c, 0xa2e, 0xa38, 0xa3a, 0xb3b], &[], false),
             // INT 23h vector at 0:[0x8c/0x8e], INT 24h vector at 0:[0x90/0x92].
-            ("func_bff", 0x0bff, func_bff, &[], &[0x8c, 0x8e, 0x90, 0x92]),
+            ("func_bff", 0x0bff, func_bff, &[], &[0x8c, 0x8e, 0x90, 0x92], false),
             // saved vector gs:[0xb1d/0xb1f], timer-state gs:[0xb21/0xb25/0xb27]; INT 08h at 0:[0x20/0x22].
-            ("func_79c", 0x079c, func_79c, &[0xb1d, 0xb1f, 0xb21, 0xb25, 0xb27], &[0x20, 0x22]),
+            ("func_79c", 0x079c, func_79c, &[0xb1d, 0xb1f, 0xb21, 0xb25, 0xb27], &[0x20, 0x22], false),
             // clears gs:[0xb21]; restores INT 08h at 0:[0x20/0x22] to the saved gs:[0xb1d/0xb1f].
-            ("func_7ea", 0x07ea, func_7ea, &[0xb21], &[0x20, 0x22]),
+            ("func_7ea", 0x07ea, func_7ea, &[0xb21], &[0x20, 0x22], false),
             // CD-present flag gs:[0xae6] (byte); a near-ret leaf via int 2Fh.
-            ("func_b32", 0x0b32, func_b32, &[0xae6], &[]),
+            ("func_b32", 0x0b32, func_b32, &[0xae6], &[], false),
+            // blanks all 256 DAC entries — compare the full 768-byte palette.
+            ("func_2fa6", 0x2fa6, func_2fa6, &[], &[], true),
+            // uploads 768 bytes from ds:si to the DAC (rep outsb) — compare the full palette.
+            ("func_2f90", 0x2f90, func_2f90, &[], &[], true),
         ];
-        for &(name, offset, lift, gs_checks, seg0_checks) in leaves {
+        for &(name, offset, lift, gs_checks, seg0_checks, check_dac) in leaves {
             let mut rt_lift = test_runtime();
             seed(&mut rt_lift);
             lift(&mut rt_lift);
@@ -416,6 +485,9 @@ mod tests {
                     rt_oracle.m.read16(0, off as u32),
                     "{name}: 0:[{off:#x}] (IVT)"
                 );
+            }
+            if check_dac {
+                assert!(rt_lift.dac == rt_oracle.dac, "{name}: DAC palette differs");
             }
         }
     }
