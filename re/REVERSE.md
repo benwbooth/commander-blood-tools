@@ -3901,3 +3901,11 @@ manu3 file offset 0x1370).
   — match glyph columns against screen_indices() rows 0..30 to recover the
   line text deterministically, then click the named item. Implement as the
   next driver iteration (TUTORIAL4).
+- LIVE SUBTITLE FONT: the console/tutorial text uses the BOLD monospace-8 font
+  at gs:0x71AA (ascii->glyph map gs:0x70FA) — verified glyph-exact vs screen
+  masks ('W','E'). This is NOT GAME_FONT_GLYPHS in src/font.rs (a thinner
+  outline font) — **the port draws tutorial/console subtitles with the wrong
+  font**; extract the 0x71AA font (source: dumped live via TEXTBAND; find its
+  static home in the EXE data too) and use it for on-console text. OCR with
+  this font reads the live line ('WELC' mid-reveal) — TUTORIAL4 now uses it.
+  Text indices: 0xE0 settled + 0xFD..0xFF revealing; rows 8/18.
