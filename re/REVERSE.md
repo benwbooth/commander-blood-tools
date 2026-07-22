@@ -4076,3 +4076,11 @@ manu3 file offset 0x1370).
   => Unlock = play SCRIPT2 forward to its flow's end (story progression), not
   a UI action. Driver: long story-walk run with milestone savestates on new
   file opens (script3+/locations).
+- SCRIPT2 progression (static): SCRIPT2 does NOT D2-chain; it contains crew
+  dialogues (boba1..4, bronk1, max1, scrujo, tim1B, scrub, what, encor) and
+  the trak1..27 records (tracks/coordinates) as pure logic. Progression =
+  interactions setting trak/destination records (C1/C4 record ops) — map
+  which topic/call sets which record via vm execute_trace's record writes
+  (post_update), then drive those interactions. The story-walk driver loops in
+  the consultation because the granting interactions are elsewhere (phone
+  calls to crew are the likely next beat: "IF THE PHONE RINGS...").
