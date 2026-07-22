@@ -3977,3 +3977,7 @@ manu3 file offset 0x1370).
   by a BUILDER (being traced). Port note: rendering the box via the measured
   spec is visually faithful; the builder's glyph generator is the last piece
   for glyph-exactness.
+- Stream-builder chase state: the box RLE stream is in the buffer at
+  gs:[0x5221] (the unpack's lds source) — read that pointer AT CLICK TIME and
+  trace writers INTO that region next (the gs:0x100..0x2000 trace only caught
+  general UI state traffic: 0xA2A/0xA32/0xB2x timers etc).
