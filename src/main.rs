@@ -249,6 +249,7 @@ fn run_engine_play(iso: &str, assets: &str, out: &str, script: &str) -> anyhow::
 /// on any X server, including a virtual framebuffer (Xvfb) — the interactive
 /// presentation layer over the same `EngineState::step` loop `engine-play` uses.
 fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()> {
+    use commander_blood_tools::concept_menu;
     use commander_blood_tools::engine::{
         ENGINE_SCREEN_HEIGHT, ENGINE_SCREEN_WIDTH, EngineState, MouseInput,
     };
@@ -436,7 +437,31 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 // help*→ONE..NINE for locations would be guesswork (SCRIPT3's help1
                 // is not the numerology "ONE").
                 if n == 2 {
-                    let names = ["ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT", "NINE"];
+                    // The topic labels are DECODED from the real script, not guessed:
+                    // SCRIPT2's help1..help9 are the numerology consultation, whose
+                    // concept menu (VM opcode 0xA3 in SCRIPT2.BAS) is [talk, one..nine].
+                    // We decode that menu and use its labels; the hard-coded list is only
+                    // a fallback if the .BAS is unavailable. See src/concept_menu.rs.
+                    let names: Vec<String> = std::fs::read(format!("{iso}/SCRIPT{n}.BAS"))
+                        .ok()
+                        .map(|bas| concept_menu::decode_menus(&bas, &d, 4))
+                        .and_then(|menus| {
+                            concept_menu::find_menu_containing(&menus, &["one", "two", "three"]).map(
+                                |m| {
+                                    m.labels
+                                        .iter()
+                                        .filter(|l| !l.eq_ignore_ascii_case("talk"))
+                                        .map(|l| l.to_uppercase())
+                                        .collect()
+                                },
+                            )
+                        })
+                        .unwrap_or_else(|| {
+                            ["ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT", "NINE"]
+                                .iter()
+                                .map(|s| s.to_string())
+                                .collect()
+                        });
                     let mut topics: Vec<(String, usize)> = Vec::new();
                     let mut line_index = 0usize;
                     let mut last_fn = String::new();
@@ -447,8 +472,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                 f if f.starts_with("help") => f
                                     .strip_prefix("help")
                                     .and_then(|d| d.parse::<usize>().ok())
-                                    .and_then(|d| names.get(d - 1).copied())
-                                    .map(str::to_string),
+                                    .and_then(|d| names.get(d - 1).cloned()),
                                 f if f.starts_with("honk") || f == "talk" => Some("TALK".to_string()),
                                 _ => None,
                             };
