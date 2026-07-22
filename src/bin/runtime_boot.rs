@@ -644,11 +644,15 @@ fn main() {
                 // The list (TALK/ONE..NINE, blue square-capitals) runs down the
                 // console's right at x~168.., rows from y~35 at ~13px pitch.
                 if std::env::var("NUMANSWER").is_ok() {
+                    // The top-left word is the ECHO of what was clicked (clicking
+                    // EIGHT echoes "EIGHT"); "NINE... GOOD WORK" in the transcript
+                    // means NINE is the correct topic — always answer row 9.
                     let words = ["TALK", "ONE", "TWO", "THREE", "FOUR", "F1VE", "S1X", "SEVEN", "E1GHT", "N1NE"];
-                    if let Some(row) = words.iter().position(|w| line == *w) {
+                    if words.iter().any(|w| line == *w) {
+                        let row = 9usize; // NINE
                         let (sx, sy) = (190i32, 35 + 13 * row as i32);
                         let ring = (sx + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
-                        println!("round {round}: answering {line:?} -> row {row} at y{sy}");
+                        println!("round {round}: echo {line:?} -> answering NINE at y{sy}");
                         rt.set_mouse_pos(ring, sy as u16);
                         let _ = rt.run(rt.cpu.steps + 700_000);
                         rt.mouse_press(0);
