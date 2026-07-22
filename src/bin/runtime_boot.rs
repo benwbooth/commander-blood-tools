@@ -500,6 +500,21 @@ fn main() {
                 let dump: Vec<u8> = rt.m.mem[base..(base + 0x10000).min(rt.m.mem.len())].to_vec();
                 std::fs::write(out.join(format!("manu3_vertseg_{vseg:04x}.bin")), &dump).unwrap();
             }
+            // Catch the REAL vertex-record addresses: read-watch the vertex segment
+            // for a slice of console time; reads cluster at the live records.
+            {
+                let vseg = rw(2) as usize * 16;
+                rt.m.read_watch = Some(vseg..vseg + 0x10000);
+                rt.m.read_hits.borrow_mut().clear();
+                let _ = rt.run(rt.cpu.steps + 600_000);
+                rt.m.read_watch = None;
+                let hits = rt.m.read_hits.borrow();
+                let mut addrs: Vec<usize> = hits.iter().map(|h| h.0 - vseg).collect();
+                addrs.sort_unstable();
+                addrs.dedup();
+                println!("vertex-seg reads: {} sites, offsets {:x?}", addrs.len(),
+                    &addrs[..addrs.len().min(24)]);
+            }
             let (faces, nfaces) = (rw(0x2300), rw(0x2304));
             let (recs, nrecs) = (rw(0x22fa), rw(0x22fe));
             println!("manu3 live: faces@{faces:#06x} n={nfaces:#x} pose-recs@{recs:#06x} n={nrecs:#x} root={:#06x} list2={:#06x}", rw(0x2248), rw(0x224a));
