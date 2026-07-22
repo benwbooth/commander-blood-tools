@@ -3756,3 +3756,12 @@ manu3 file offset 0x1370).
   0x9BE) — classic scanline polygon rendering over the 0x2094 working buffer.
   The mesh feeds edges into this list; find the edge-insert caller to locate
   the vertex/face source next.
+- **HAND MESH BANK FOUND**: manu3 file 0x3644 = a serialized 3D object bank,
+  magic "3DB0" + version 01 02 + object name "MANU3XXX" (0x3650). Directory
+  words at 0x3660+ (entries with 0x5F6C offsets); s16 vertex-like triples from
+  ~0x3738 (e.g. (-17,1,131) = the local_pos probed at node+0x46). The +0x420
+  transform is HIERARCHICAL: child world pos = parent matrix (9 dwords @+0x12,
+  Q15) * child LOCAL s16 pos (+0x46/48/4A) + parent translation (+0x36/3A/3E)
+  -> a skeletal hand (fingers = child nodes). Static root node @0x35E4 (Q15
+  identity, zero pos). NEXT: decode the 3DB0 bank layout (node tree + vertex/
+  face lists + UV), then port to src/manu3.rs.
