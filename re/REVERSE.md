@@ -4240,3 +4240,29 @@ a story-aware driver that plays SCRIPT2's branch structure to the grant. Both ar
 multi-session; the port's conservative behaviour (no fabricated anchors/labels;
 choose-a-location + linear dialogue as the faithful stand-in) is correct until
 then. This is the precise, instrumented resume point for #3/#6 depth work.
+
+## ENTITY-ACTIVATION TRIGGER DECODED (the #3/#6 gate mechanism)
+
+Traced the exact code that ACTIVATES entities (sets the 0x80 bit that makes nav
+destinations 0x15..0x1F appear and gates location content):
+- **`entity_object_populate` @0x40D0 (= 0x299:0x1140)**: given AX=entity id,
+  DX=resource handle → di=0x6212+id*32; resolves the handle; sets the entity's
+  flags word = `([resource_hdr] & 4) | 0x83` at +0x00 (0x83 = ACTIVE(0x80) +
+  state0 + bit1); unpacks the object's far pointer (+0x04/+0x06) and copies its
+  data words (+0x0C/+0x0E), inits +0x14/+0x16. This is THE entity-activation
+  primitive.
+- **Object-population loop @0x8D2A** (4 call sites into 0x40D0): after a resource
+  loads, iterates the object-DESCRIPTOR table at DS:0x2AD3 (di=[bp], bp advances
+  by dx=0x2C stride), reading each descriptor's kind (es:[di]&0x100/0x10) and
+  resource handle (es:[di+0x18]/[di+0x1a]=bx/cx), and calls entity_object_populate
+  for each — so a loaded world's object list populates+activates a run of entity
+  records. `[0x2790]` counts sub-objects; `[0x27C1]` = the active count.
+So the #3/#6 gate = **which worlds' objects have been populated**. Nav
+destinations 0x15..0x1F activate when the destination world's object descriptors
+run through 0x8D2A (a resource-load event), and the crew/phone/location content
+likewise. This is the OBJECT-INSTANCE system tied to world loading, gated by
+story progression (which worlds load when). NEXT to fully close #3/#6: find who
+drives 0x8D2A with the destination descriptors (the world-load path that maps a
+story beat → populate entities 0x15..0x1F), then the anchors' world coords are
+the populated +0x0C/+0x0E fields. The port's entity-flag model (progress.rs /
+croolis.rs over the 0x6212 records) already mirrors this activation structure.
