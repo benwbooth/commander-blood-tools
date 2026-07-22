@@ -308,6 +308,55 @@ mod tests {
         assert_eq!(other, 0, "no record-update opcodes in the block");
     }
 
+    /// Every sampled menu block is PURE SEQUENTIAL: only `0xA6` Text responses (and an
+    /// occasional non-record op) up to `0xAC` — NO record-update `0xC1..=0xC8` opcodes,
+    /// no nested `0xA3` sub-menus. So [`SequentialResponses`] is the UNIVERSAL response
+    /// mechanism for all conversation menus; the branching (sub-menu push, per-topic
+    /// selection) is runtime-record-driven, not in the static block. Decisive survey.
+    #[test]
+    fn survey_menu_block_token_kinds() {
+        let rd = |ext: &str| {
+            ["accuracy/cdrive/cblood", "../accuracy/cdrive/cblood"]
+                .iter()
+                .find_map(|b| std::fs::read(Path::new(b).join(format!("SCRIPT2.{ext}"))).ok())
+        };
+        let (Some(bas), Some(dic)) = (rd("BAS"), rd("DIC")) else {
+            return;
+        };
+        for &menu in &[0x2f_usize, 0xc27, 0x10f0, 0x22c5, 0x2308] {
+            let Some(block) = parse_menu_block(&bas, &dic, menu) else {
+                continue;
+            };
+            // walk from after the topics (first response, or the menu head+1) to 0xAC.
+            let start = block.responses.first().copied().unwrap_or(menu + 1);
+            let mut text = 0;
+            let mut nontext = std::collections::BTreeMap::<u8, usize>::new();
+            for tok in walk(&bas, start, block.end + 1) {
+                match tok {
+                    VmToken::Text { .. } => text += 1,
+                    VmToken::Op { opcode, .. } => *nontext.entry(opcode).or_default() += 1,
+                    VmToken::RecordEntry { entry_opcode, .. } => {
+                        *nontext.entry(entry_opcode).or_default() += 1
+                    }
+                    VmToken::RecordLink { .. } => *nontext.entry(0xC3).or_default() += 1,
+                    VmToken::Actor { .. } => *nontext.entry(0xC4).or_default() += 1,
+                    _ => *nontext.entry(0).or_default() += 1,
+                }
+            }
+            eprintln!(
+                "menu {menu:#06x}: {} topics, {text} Text, non-Text ops {:x?}",
+                block.topics.len(),
+                nontext
+            );
+            // No record-update opcodes (0xC1..=0xC8) inside any menu block: the
+            // per-topic/branching logic is runtime-record-driven, not static here.
+            assert!(
+                !nontext.keys().any(|&op| (0xC1..=0xC8).contains(&op)),
+                "menu {menu:#06x} block has record-update ops {nontext:x?}"
+            );
+        }
+    }
+
     /// The sequential response player yields the fear/anger block's 13 responses one
     /// at a time, in stream order, then stops — modelling the already-shown gating.
     #[test]

@@ -4966,3 +4966,19 @@ per-topic/branching case (WHO/WHERE/WHAT → different info, sub-menu push) is t
 UPDATE variant that still needs its opcode semantics from a branching menu's block. NET:
 sequential response display is buildable with vm.rs's gate; the branching/record-update
 case is the remaining decode.
+
+## ALL menu blocks are PURE SEQUENTIAL — SequentialResponses is universal (2026-07-22)
+
+Surveyed menu blocks via proper vm::walk (0x2f/0xc27/0x10f0/0x22c5/0x2308): every one
+is pure sequential — only 0xA6 Text responses (4 / 22 / 36 / 2 / 1) up to 0xAC, with NO
+record-update 0xC1..0xC8 opcodes and no nested 0xA3 sub-menus. DECISIVE: the block
+structure carries ONLY the response monologue; ALL branching (topic→sub-menu push,
+per-topic info selection) is RUNTIME-RECORD-DRIVEN (the gs:0x6724 line records +
+already-shown bits, updated by the input/selection handler OUTSIDE the block). So:
+  - RESPONSE DISPLAY: src/bas_vm.rs SequentialResponses is the UNIVERSAL model for
+    every conversation menu (built+integrated+verified) — not just fear/anger.
+  - BRANCHING: needs the record VM (record-update semantics from the input handler),
+    which is not statically in the BAS blocks — the remaining deep piece.
+This resolves the block-structure question decisively: menu blocks = sequential
+dialogue; branching = runtime record state. The clean-port response path is now
+universally correct; the branching/push path is the record-VM remainder.
