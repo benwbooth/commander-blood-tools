@@ -195,6 +195,18 @@ pub fn func_79c(rt: &mut Runtime) {
     rt.m.regs.set_ax(ax);
 }
 
+/// `func_b32` (`detect_cdrom`, 0x0B32): `int 2Fh` AX=0x1500 (MSCDEX installation check) →
+/// BX = CD-ROM drive count; store gs:[0xAE6] = (BX != 0). A `near` ret helper (no register
+/// preservation — it clobbers AX/BX). The game ships on CD, so this gates the CD path.
+pub fn func_b32(rt: &mut Runtime) {
+    rt.m.regs.set_ax(0x1500);
+    rt.m.regs.set_bx(0);
+    int_call(rt, 0x2f); // MSCDEX check → BX = drive count
+    let present = rt.m.regs.bx() != 0; // or bx,bx; setne
+    let gs = rt.m.regs.gs;
+    rt.m.write8(gs, 0xae6, present as u8);
+}
+
 /// `func_7ea` (`program_pit` / restore-timer, 0x07EA): reprogram PIT channel 0 back to the
 /// default ~18.2 Hz (out 0x43=0x36; out 0x40 = 0xFFFF lo/hi), clear the timer-active flag
 /// gs:[0xB21], and restore the original INT 08h vector saved by [`func_79c`] at
@@ -357,6 +369,8 @@ mod tests {
             ("func_79c", 0x079c, func_79c, &[0xb1d, 0xb1f, 0xb21, 0xb25, 0xb27], &[0x20, 0x22]),
             // clears gs:[0xb21]; restores INT 08h at 0:[0x20/0x22] to the saved gs:[0xb1d/0xb1f].
             ("func_7ea", 0x07ea, func_7ea, &[0xb21], &[0x20, 0x22]),
+            // CD-present flag gs:[0xae6] (byte); a near-ret leaf via int 2Fh.
+            ("func_b32", 0x0b32, func_b32, &[0xae6], &[]),
         ];
         for &(name, offset, lift, gs_checks, seg0_checks) in leaves {
             let mut rt_lift = test_runtime();
@@ -364,9 +378,13 @@ mod tests {
             lift(&mut rt_lift);
 
             let mut rt_oracle = test_runtime();
-            // Mirror the EXE at physical 0 (CS=0, IP=offset) BEFORE seeding so the seed's scratch
-            // memory (gs:0x5232, stack) isn't clobbered by the mirror.
-            rt_oracle.m.mem[..exe.len()].copy_from_slice(&exe);
+            // Mirror only the CODE region (all leaves live below 0x2000) at physical 0. Keeping the
+            // mirror below the gs (0x3000→0x30000) and ss (0x2000→0x20000) segments means the gs
+            // scratch and stack start pristine (zero) on BOTH sides — so a byte-sized gs write
+            // compares equal even on its untouched neighbor byte. Seed runs after, as before.
+            const OVERLAY: usize = 0x10000;
+            let n = exe.len().min(OVERLAY);
+            rt_oracle.m.mem[..n].copy_from_slice(&exe[..n]);
             seed(&mut rt_oracle);
             interp_leaf(&mut rt_oracle, offset);
 
