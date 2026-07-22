@@ -396,6 +396,102 @@ fn main() {
         let (fr, ang, st) = state(&rt);
         println!("console reached: tb_frame={fr} angle={ang:#x} station={st:#x} @ {} steps", rt.cpu.steps);
         rt.write_ppm(&out.join("bridge_00_console.ppm")).unwrap();
+        // TUTORIAL3: instruction-FOLLOWING tutorial driver — scans RAM each round
+        // for the live tutorial text ("...HONK/TELEPHONE/CRYOBOX/MENU/OPTION...")
+        // and clicks the named golden-menu row; choice boxes get their first row;
+        // otherwise the orb. Prints each new instruction seen.
+        if std::env::var("TUTORIAL3").is_ok() {
+            let baseline = rt.opened_files.len();
+            let mut last_instr = String::new();
+            let mut reached2 = false;
+            for round in 0..500 {
+                let (fr, _, _) = state(&rt);
+                let delta = fr as i32 - 45;
+                // Find the most recent menu keyword in RAM near the subtitle areas.
+                let names = ["HONK", "TELEPHONE", "CRYOBOX", "MENU", "OPTION"];
+                let mut want: Option<usize> = None;
+                {
+                    let mem = &rt.m.mem[..0x100000.min(rt.m.mem.len())];
+                    // Look for "ON "<NAME>" or "ON '<NAME>" (the tutorial phrasing).
+                    for (row, name) in names.iter().enumerate() {
+                        for pat in [format!("ON \"{name}"), format!("ON '{name}"), format!("on \"{name}")] {
+                            if let Some(pos) = mem
+                                .windows(pat.len())
+                                .position(|w| w == pat.as_bytes())
+                            {
+                                let ctx: String = mem[pos.saturating_sub(24)..(pos + 24).min(mem.len())]
+                                    .iter()
+                                    .map(|&b| if (0x20..0x7f).contains(&b) { b as char } else { '.' })
+                                    .collect();
+                                if ctx != last_instr {
+                                    println!("round {round}: instruction {ctx:?}");
+                                    last_instr = ctx;
+                                }
+                                want = Some(row);
+                                break;
+                            }
+                        }
+                        if want.is_some() { break; }
+                    }
+                }
+                let (sx, sy) = match want {
+                    Some(row) if (40..=60).contains(&fr) => {
+                        let x = 0x11f - delta * 8 - 0x37;
+                        let y = 0x48
+                            + delta.unsigned_abs() as i32 * 5 / 4
+                            + row as i32 * (0x12 - delta.unsigned_abs() as i32 / 8)
+                            + 8;
+                        (x, y)
+                    }
+                    _ => {
+                        // Alternate: choice-box first row, then the orb.
+                        if round % 2 == 0 { (85, 96) } else {
+                            let mut orb = (160, 120);
+                            for rec in 0..4u32 {
+                                let base = 0x2a1b + rec * 0x18;
+                                let w16 = |o: u32| {
+                                    rt.m.read8(g, base + o) as u16
+                                        | ((rt.m.read8(g, base + o + 1) as u16) << 8)
+                                };
+                                if w16(0xc) != 0xffff {
+                                    orb = (
+                                        w16(0xc) as i32 + w16(0x10) as i32 / 2,
+                                        w16(0xe) as i32 + w16(0x12) as i32 / 2,
+                                    );
+                                    break;
+                                }
+                            }
+                            orb
+                        }
+                    }
+                };
+                let ring = (sx + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+                rt.set_mouse_pos(ring, sy as u16);
+                let _ = rt.run(rt.cpu.steps + 700_000);
+                rt.mouse_press(0);
+                let _ = rt.run(rt.cpu.steps + 400_000);
+                rt.mouse_release(0);
+                let _ = rt.run(rt.cpu.steps + 1_200_000);
+                if rt.opened_files.len() > baseline {
+                    let newest: Vec<String> = rt.opened_files[baseline..]
+                        .iter()
+                        .map(|(_, p)| p.clone())
+                        .collect();
+                    if newest.iter().any(|p| p.to_lowercase().contains("script2")) {
+                        println!("round {round}: SCRIPT2 reached! new files {newest:?}");
+                        reached2 = true;
+                        rt.write_ppm(&out.join("tut3_script2.ppm")).unwrap();
+                        break;
+                    }
+                }
+                if round % 50 == 0 {
+                    rt.write_ppm(&out.join(format!("tut3_r{round:03}.ppm"))).unwrap();
+                }
+            }
+            println!("TUTORIAL3 done, reached_script2={reached2} @ {} steps", rt.cpu.steps);
+            return;
+        }
+
         // TUTORIAL2: drive the SCRIPT1 tutorial with DECODED-geometry clicks (the
         // old TUTORIAL used pre-panorama guessed coordinates). Each round clicks
         // the next target: the eye-orb (live box from the station table) or a
