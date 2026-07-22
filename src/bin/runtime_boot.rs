@@ -1269,7 +1269,11 @@ fn main() {
         // 0x266c) during a MENU-submenu open — the writer is the box-text
         // drawer; its ds:si reveals the glyph source (font table / strokes).
         if std::env::var("GLYPHSRC").is_ok() {
-            // Open the MENU submenu (row 3) at the console.
+            // Arm the watch on the gs:0x175 stream region FIRST, THEN open the
+            // MENU submenu — so we catch the builder as it bakes the box.
+            let gsbuf = 0x0e84usize * 16;
+            rt.m.watch = Some((0xE8, gsbuf + 0x100..gsbuf + 0x3000));
+            rt.m.watch_hits.clear();
             let (fr, _, _) = state(&rt);
             let delta = fr as i32 - 45;
             let x = 0x11f - delta * 8 - 0x37;
@@ -1281,11 +1285,6 @@ fn main() {
             rt.mouse_press(0);
             let _ = rt.run(rt.cpu.steps + 400_000);
             rt.mouse_release(0);
-            // Watch 0xE8 writes into the gs data segment RLE-stream region (the
-            // BUILDER that bakes glyphs into the stream at gs:0x175).
-            let gsbuf = 0x0e84usize * 16;
-            rt.m.watch = Some((0xE8, gsbuf + 0x100..gsbuf + 0x3000));
-            rt.m.watch_hits.clear();
             let _ = rt.run(rt.cpu.steps + 6_000_000);
             let mut seen = std::collections::HashSet::new();
             for &(cs, ip, ds, si, addr) in rt.m.watch_hits.iter() {
