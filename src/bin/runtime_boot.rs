@@ -1617,13 +1617,14 @@ fn main() {
                 .and_then(commander_blood_tools::tbbig::BridgePanorama::parse)
                 .expect("TB.BIG");
             let bg = pano.frame_pixels(55).unwrap();
-            let grid: Vec<(u16, u16)> = [
-                (40u16, 100u16), // the BRIDGEPROBE rest state (test ground truth)
-                (60, 60), (160, 60), (260, 60),
-                (60, 120), (160, 120), (260, 120),
-                (60, 170), (160, 170), (260, 170),
-            ]
-            .to_vec();
+            // Dense grid: every ~40 px so the port can pick a near sprite for any
+            // cursor position (smooth tracking). Plus the (40,100) rest state.
+            let mut grid: Vec<(u16, u16)> = vec![(40, 100)];
+            for gy in (50u16..=180).step_by(30) {
+                for gx in (40u16..=280).step_by(40) {
+                    grid.push((gx, gy));
+                }
+            }
             for (gx, gy) in grid {
                 // Park the hardware cursor so the game's ring-anchored cursor sits
                 // at screen (gx,gy) for view frame 55: ring = gx + 55*8 - 160.
