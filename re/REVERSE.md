@@ -4906,3 +4906,18 @@ BUILT+verified; the topic→response gating reuses vm.rs's record model; sub-men
 = a nested 0xA3 among the responses. Remaining executor loop: walk block, apply the
 record-gated response selection, push on nested 0xA3, render current+parent stack —
 now specified against vm.rs's existing text-token machinery.
+
+## Sub-menus are reached by JUMPS, not inline nesting (2026-07-22)
+
+Scanned menu blocks (menu head → 0xAC): they contain NO nested 0xA3 — a block is
+purely `0xA3 topics + 0xA6 responses + 0xAC`. So a topic that opens a sub-menu does
+it via a JUMP to that sub-menu's 0xA3 elsewhere in the BAS (consistent with MENUWATCH:
+gs:0x6772 changes when execution REACHES a 0xA3, and the 0x465 push sets it from si).
+The fear/anger menu (0x42d) is a LEAF: talk→pop, emotions→response, no jump. The
+branching menus (e.g. top-level 0x2f: consultation→sub-menu) carry the jump. The
+topic→jump-target mapping is the next decode — candidates: the 0xA6 b4&0x10 loop_target
+/ b4&0x04 control word in the responses, or a branch opcode; reaching the top-level
+DISPLAY for empirical MENUTREE is conversation-gated, so a static decode of the jump
+words (or a single-step trace from a branching menu) is the path. NET: block grammar +
+parser + menu-stack + record-gating are BUILT/specified; the sub-menu JUMP mechanism
+is the remaining decode for the full executor loop.
