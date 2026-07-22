@@ -465,7 +465,10 @@ fn main() {
         // Dump manu3's live table heads + the face/vertex tables they point to
         // (the bank relocation fills these; statics in the file are stale).
         {
-            let m3 = 0x166cu16;
+            // manu3's data segment is cs:[0x136A], patched at load time.
+            let m3cs = 0x166cu16;
+            let m3 = rt.m.read8(m3cs, 0x136a) as u16 | ((rt.m.read8(m3cs, 0x136b) as u16) << 8);
+            println!("manu3 data segment = {m3:04x}");
             let rw = |off: u32| -> u16 {
                 rt.m.read8(m3, off) as u16 | ((rt.m.read8(m3, off + 1) as u16) << 8)
             };
