@@ -24,6 +24,7 @@
 
 pub mod audio;
 pub mod bloodprg;
+pub mod bloodsav;
 pub mod bridge;
 pub mod croolis;
 pub mod decompress;
