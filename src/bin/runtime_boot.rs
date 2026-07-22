@@ -396,6 +396,44 @@ fn main() {
         let (fr, ang, st) = state(&rt);
         println!("console reached: tb_frame={fr} angle={ang:#x} station={st:#x} @ {} steps", rt.cpu.steps);
         rt.write_ppm(&out.join("bridge_00_console.ppm")).unwrap();
+        // VMWATCH: per-round dump of candidate VM line-id/state words while blind
+        // clicking (as TUTORIAL2) — offline correlation against the port's decoded
+        // SCRIPT1 lines identifies which word is the active-line id.
+        if std::env::var("VMWATCH").is_ok() {
+            for round in 0..60 {
+                let (fr, _, _) = state(&rt);
+                let delta = fr as i32 - 45;
+                let target = round % 8;
+                let (sx, sy) = if target >= 6 {
+                    (85, if target == 6 { 96 } else { 109 })
+                } else if target < 5 && (40..=60).contains(&fr) {
+                    let x = 0x11f - delta * 8 - 0x37;
+                    let y = 0x48 + delta.unsigned_abs() as i32 * 5 / 4
+                        + target as i32 * (0x12 - delta.unsigned_abs() as i32 / 8) + 8;
+                    (x, y)
+                } else {
+                    (125, 118)
+                };
+                let ring = (sx + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+                rt.set_mouse_pos(ring, sy as u16);
+                let _ = rt.run(rt.cpu.steps + 700_000);
+                rt.mouse_press(0);
+                let _ = rt.run(rt.cpu.steps + 400_000);
+                rt.mouse_release(0);
+                let _ = rt.run(rt.cpu.steps + 1_200_000);
+                let w = |off: u32| -> u16 {
+                    rt.m.read8(g, off) as u16 | ((rt.m.read8(g, off + 1) as u16) << 8)
+                };
+                println!(
+                    "r{round:02} fr={fr:3} 1fab={:04x} 6788={:04x} 67aa={:04x} 6780={:04x} 671c={:04x} 6724={:04x}:{:04x} 6752={:04x} 2a19={:04x} e18={:04x}",
+                    w(0x1fab), w(0x6788), w(0x67aa), w(0x6780), w(0x671c),
+                    w(0x6726), w(0x6724), w(0x6752), w(0x2a19), w(0xe18)
+                );
+            }
+            println!("VMWATCH done");
+            return;
+        }
+
         // SUBFIND: locate the LIVE tutorial-subtitle buffer — run a while at the
         // console, then scan RAM for words known to be on screen (from captures)
         // and print their addresses (gs-relative when inside the data segment).
