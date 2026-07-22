@@ -204,6 +204,10 @@ fn main() {
     if std::env::var("MENUMAP").is_ok() {
         // Fast-skip to the ship-console menu, then click each menu-item row and capture the
         // resulting screen, to map the menu -> screen structure.
+        if std::env::var("VERTINIT").is_ok() {
+            // manu3 data segment lands at 0x17A3; vertex buffers at data:0xE000+.
+            rt.m.trace_range = Some(0x17a30 + 0xE000..0x17a30 + 0xF800);
+        }
         let mut next_input = 5_000_000u64;
         while rt.cpu.steps < 50_000_000 {
             let _ = rt.run(next_input);
@@ -461,6 +465,20 @@ fn main() {
                 }
                 println!("hand code/data segments dumped");
             }
+        }
+        // Vertex-buffer INIT trace: who seeds the runtime vertex records past the
+        // image (data:0xE000+)? trace_range during the whole skip-to-console run
+        // was armed in main before boot when VERTINIT is set (see below), so just
+        // report here.
+        if std::env::var("VERTINIT").is_ok() {
+            let mut seen = std::collections::HashSet::new();
+            for &(addr, v, cs, ip) in rt.m.range_hits.iter() {
+                if seen.insert((cs, ip)) {
+                    println!("vert init write: {cs:04x}:{ip:04x} -> {addr:#07x} = {v:#04x}");
+                }
+                if seen.len() > 20 { break; }
+            }
+            println!("vert init: {} total hits", rt.m.range_hits.len());
         }
         // Dump manu3's live table heads + the face/vertex tables they point to
         // (the bank relocation fills these; statics in the file are stale).

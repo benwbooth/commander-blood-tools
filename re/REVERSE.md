@@ -3837,3 +3837,14 @@ manu3 file offset 0x1370).
   OPTION table" reads map to file 0x3660 = the live global block [0x22F0..],
   so old file-offset-0x22F0 notes used the WRONG base (audit manu3.rs's
   constants against this corrected mapping when porting).
+- CORRECTED pose/menu table: [data:0x2306] = 0x2974 (live+static agree) -> the
+  tween-script table at file 0x3CE4; entries are RELATIVE (+0x40/+0x1AE/...);
+  scripts tween the HAND POSITION globals 0x23E2/0x23E4 and node fields.
+  **The old manu3.rs OPTION decode (base 0x3E72 via file[0x2306], items at
+  file 0x3DFC) is INVALID — wrong base; its test asserts unrelated bytes
+  (mid-trig-table). Redo the OPTION structure from data:0x2974 when porting.**
+- Vertex buffers are in a SEPARATE SEGMENT: the face/vertex loops load
+  es = fs:[2] (segment selector at data:0x0002; fs:[6] = second selector at
+  data:0x0006) — face-table vertex ptrs (0xE66E..) are offsets into THAT
+  segment, not data+0xE000 (vertex-init trace on data+0xE000 = 0 hits).
+  Next: read data:[0..8] live -> the buffer segments; dump + trace them.
