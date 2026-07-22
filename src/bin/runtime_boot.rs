@@ -462,6 +462,16 @@ fn main() {
                 println!("hand code/data segments dumped");
             }
         }
+        // Who READS the manu3 "3DB0" mesh bank (file 0x3642.. at seg 0x166C)?
+        {
+            let bank = 0x166cusize * 16 + 0x3642;
+            rt.m.read_watch = Some(bank..bank + 0x60);
+            let _ = rt.run(rt.cpu.steps + 4_000_000);
+            for &(addr, cs, ip) in rt.m.read_hits.borrow().iter() {
+                println!("bank read: {cs:04x}:{ip:04x} <- linear {addr:#07x} (manu3+{:#x})", addr - 0x166c0);
+            }
+            rt.m.read_watch = None;
+        }
         // Dump the bridge overlay entity records (gs:0x6212 + id*32, ids 0x10..0x20
         // — page_flip commits 0x15..0x1F) to find the pointing-hand's pixel source.
         for id in 0x10u32..0x20 {

@@ -1087,6 +1087,11 @@ pub struct Machine {
     /// When set, `write8` records (cs,ip,ds,si) of any write of `watch_val` into `watch_range`.
     pub watch: Option<(u8, std::ops::Range<usize>)>,
     pub watch_hits: Vec<(u16, u16, u16, u16, usize)>,
+    /// When set, `read8` records (addr,cs,ip) of reads inside this linear range
+    /// (deduped by cs:ip; RefCell because read8 takes &self). Diagnostics only —
+    /// finds the CONSUMERS of a data structure (e.g. the manu3 "3DB0" mesh bank).
+    pub read_watch: Option<std::ops::Range<usize>>,
+    pub read_hits: std::cell::RefCell<Vec<(usize, u16, u16)>>,
     /// When set, `write8` records (value,cs,ip) of EVERY write to this exact linear address.
     pub watch_addr: Option<usize>,
     pub addr_hits: Vec<(u8, u16, u16)>,
@@ -1139,6 +1144,8 @@ impl Machine {
             ip: 0,
             watch: None,
             watch_hits: Vec::new(),
+            read_watch: None,
+            read_hits: std::cell::RefCell::new(Vec::new()),
             watch_addr: None,
             addr_hits: Vec::new(),
             trace_range: None,
@@ -1172,6 +1179,14 @@ impl Machine {
     #[inline]
     pub fn read8(&self, seg: u16, off: u32) -> u8 {
         let a = Self::lin(seg, off);
+        if let Some(range) = &self.read_watch {
+            if range.contains(&a) {
+                let mut hits = self.read_hits.borrow_mut();
+                if hits.len() < 4000 && !hits.iter().any(|h| h.1 == self.regs.cs && h.2 == self.ip) {
+                    hits.push((a, self.regs.cs, self.ip));
+                }
+            }
+        }
         if !self.vga_linear {
             if let Some(vga) = self.vga.as_deref() {
                 if (0xa0000..0xb0000).contains(&a) {
