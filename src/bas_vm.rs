@@ -17,6 +17,90 @@
 //! VM's dialogue execution reaches each `0xA3`.
 
 use crate::concept_menu::{decode_menus, ConceptMenu};
+use crate::vm::{walk, VmToken};
+
+/// The `0xAC` opcode terminates a menu's response block (verified via BASSTEP trace).
+const MENU_BLOCK_END: u8 = 0xAC;
+
+/// A decoded menu BLOCK: the menu's topics plus the response `0xA6` TEXT tokens that
+/// follow it, terminated by `0xAC` (grammar: `0xA3 <topics> [0xA6 response]* 0xAC`,
+/// single-step-traced from the running VM). `end` is the `0xAC` offset. This is the
+/// unit the conversation VM walks; a nested `0xA3` among the responses is a sub-menu.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MenuBlock {
+    /// The menu head (`0xA3`) BAS offset.
+    pub menu_offset: usize,
+    /// Topic labels (as stored, lowercase).
+    pub topics: Vec<String>,
+    /// BAS offsets of the response `0xA6` TEXT tokens, in stream order.
+    pub responses: Vec<usize>,
+    /// BAS offset of the block-terminating `0xAC`.
+    pub end: usize,
+}
+
+/// Parse the menu BLOCK at `menu_offset` (a `0xA3`): its topic list, then the `0xA6`
+/// response tokens up to the `0xAC` terminator. Returns `None` if `menu_offset` is not
+/// a menu head. Uses the port's faithful VM token walker for the response tokens.
+pub fn parse_menu_block(bas: &[u8], dic: &[u8], menu_offset: usize) -> Option<MenuBlock> {
+    if bas.get(menu_offset) != Some(&0xA3) {
+        return None;
+    }
+    let dic_words = parse_dic_words(dic);
+    // Topic list: u16 offsets to single-token dictionary words until a non-topic word.
+    let mut p = menu_offset + 1;
+    let mut topics = Vec::new();
+    while p + 1 < bas.len() {
+        let off = u16::from_le_bytes([bas[p], bas[p + 1]]);
+        match dic_words.get(&off) {
+            Some(w) if is_single_token(w) => {
+                topics.push(w.clone());
+                p += 2;
+            }
+            _ => break,
+        }
+    }
+    if topics.is_empty() {
+        return None;
+    }
+    // Skip the 0x0000 topic-list terminator, then walk the response tokens to 0xAC.
+    if p + 1 < bas.len() && bas[p] == 0 && bas[p + 1] == 0 {
+        p += 2;
+    }
+    let mut responses = Vec::new();
+    let mut end = p;
+    for tok in walk(bas, p, bas.len()) {
+        match tok {
+            VmToken::Text { offset, .. } => responses.push(offset),
+            VmToken::Op { opcode: MENU_BLOCK_END, offset, .. } => {
+                end = offset;
+                break;
+            }
+            _ => {}
+        }
+    }
+    Some(MenuBlock { menu_offset, topics, responses, end })
+}
+
+/// Parse a `SCRIPTn.DIC` into {offset -> word}.
+fn parse_dic_words(dic: &[u8]) -> std::collections::HashMap<u16, String> {
+    let mut w = std::collections::HashMap::new();
+    let mut p = 0usize;
+    while p < dic.len() {
+        let s = p;
+        while p < dic.len() && dic[p] != 0 {
+            p += 1;
+        }
+        if p > s {
+            w.insert(s as u16, String::from_utf8_lossy(&dic[s..p]).into_owned());
+        }
+        p += 1;
+    }
+    w
+}
+
+fn is_single_token(w: &str) -> bool {
+    (2..=16).contains(&w.len()) && !w.contains(' ')
+}
 
 /// A back-out topic that pops the menu stack (the game's universal "leave" verb).
 const BACK_TOPICS: [&str; 2] = ["bye_bye", "talk"];
@@ -122,5 +206,26 @@ mod tests {
         assert!(st.pop());
         assert_eq!(st.current().unwrap().bas_offset, 0x2f);
         assert!(BasMenuStack::is_back_topic("bye_bye"));
+    }
+
+    /// The menu-block parser matches the single-step-traced grammar: the fear/anger
+    /// menu (0x42d) block has 7 topics, its `0xA6` responses, and terminates at the
+    /// `0xAC` at 0x612 — exactly where the BASSTEP execution trace ended the block.
+    #[test]
+    fn parse_menu_block_matches_traced_grammar() {
+        let rd = |ext: &str| {
+            ["accuracy/cdrive/cblood", "../accuracy/cdrive/cblood"]
+                .iter()
+                .find_map(|b| std::fs::read(Path::new(b).join(format!("SCRIPT2.{ext}"))).ok())
+        };
+        let (Some(bas), Some(dic)) = (rd("BAS"), rd("DIC")) else {
+            return;
+        };
+        let block = parse_menu_block(&bas, &dic, 0x42d).expect("fear/anger menu block");
+        assert_eq!(block.topics.len(), 7, "topics: {:?}", block.topics);
+        assert!(block.topics.iter().any(|t| t == "fear"));
+        // The block terminates at the 0xAC the trace hit (si=0x612).
+        assert_eq!(block.end, 0x612, "block ends at the traced 0xAC (got {:#x})", block.end);
+        assert!(!block.responses.is_empty(), "has 0xA6 responses: {}", block.responses.len());
     }
 }
