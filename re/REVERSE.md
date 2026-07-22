@@ -4028,3 +4028,13 @@ manu3 file offset 0x1370).
   directs the player to click something else (nav/orb = the exit toward
   travel). NEXT: capture at that instruction (full line + screen) and follow
   it; that is the SCRIPT2 -> free-play transition.
+- **★ THE CONVERSATION SYSTEM REVEALED (hooksnap)**: HONK's psychotherapy
+  session prompts "GOOD... RELAX... CLICK ON ANYTHING... NOW!" and the orb
+  click opens the CONTEXTUAL TOPIC MENU: TALK / EGO / SUPER_EGO / UNDER_EGO /
+  END_OF_MONTH / LIBIDO / WHO / WHERE / WHEN / WHAT / HOW / WHY (capture:
+  accuracy/captures/bridge/psychotherapy_topics.ppm). The earlier ONE..NINE
+  list was the numerology context. => Dialogues are navigated by
+  CONTEXT-DEPENDENT CONCEPT MENUS (the Captain Blood icon-language lineage,
+  text form) — the game's core conversation mechanic. PORT: the dialogue
+  engine needs per-context topic menus; the lists should derive from the
+  script's decoded objects/dictionary (EGO/LIBIDO/etc are SCRIPT2 dict words).
