@@ -505,7 +505,13 @@ fn main() {
                         if want.is_some() { break; }
                     }
                 }
-                let (sx, sy) = match want {
+                // Directed row when the subtitle names one; else cycle all targets
+                // (menu rows / orb / choice rows) so dialogue keeps being provoked.
+                let effective: Option<usize> = want.or_else(|| {
+                    let t = round % 8;
+                    (t < 5).then_some(t)
+                });
+                let (sx, sy) = match effective {
                     Some(row) if (40..=60).contains(&fr) => {
                         let x = 0x11f - delta * 8 - 0x37;
                         let y = 0x48
