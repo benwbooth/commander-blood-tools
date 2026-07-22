@@ -4094,3 +4094,24 @@ manu3 file offset 0x1370).
   The choice is the nav/topic selection -> sets the operand -> loads SCRIPTn.
   The port already maps nav clicks to SCRIPT3/4/5 (choose-a-location) — this
   CONFIRMS that model against the binary. Progression is faithful.
+
+## DOS blood.sav FORMAT — FULLY DECODED (save 0x1C3F, load 0x1CBD)
+
+Save/load (save-game `vm_state_save` @0x1C3F, load-game `vm_state_load` @0x1CBD;
+filename from the profile record `[bp]+0x10`). Both use the SAME field order —
+a serialization of the live VM state. WRITE (int21 ah=0x40) / READ (ah=0x3F):
+
+1. **[0x6780] word (2B)** = current script PROFILE index; on load it's read then
+   passed to lcall 0x4DA:0 (profile-select/load) so the saved script set reloads
+   first, then it's cleared to 0xFFFF.
+2. **[0x6ADE] 512B** = the global flag/state block (persistent world/progression).
+3. **[0x6CDE] 96B** = a secondary state block.
+4. **length = lcall 0x4B9:0x1AC(AX=[0x6716]); write that many bytes from far
+   [0x6724]** = the RUNTIME OBJECT/STATE BLOCK (DS:0x6724, variable length).
+5. **far [0xABC], length AX (0x1D94 on save / 0xFFFF read on load)** = the object
+   work buffer.
+
+On LOAD, after reading: copy [0xABC]→[0x671C] (`copy_abc_to_671c` 0x1D74),
+rebuild derived VM pointers (lcall 0x4DA:0x1BB, 0x71E:0x14B6), set redraw flags.
+So blood.sav = {profile:u16, flags512, state96, objblock[var], workbuf[var]}.
+The port's save.rs is a port-native format; this is the byte-exact DOS layout.
