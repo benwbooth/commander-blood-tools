@@ -3751,3 +3751,8 @@ manu3 file offset 0x1370).
   exactly where the working buffers begin). Remaining for the hand port: the
   MESH (vertex/face lists feeding the node transform) + per-frame pose, then the
   affine rasterizer port.
+- Working-buffer code around manu3+0x96A..0xA07 = ACTIVE-EDGE linked-list
+  management (node ptr fields +2/+4/+6, next links at +0x58, list sentinel
+  0x9BE) — classic scanline polygon rendering over the 0x2094 working buffer.
+  The mesh feeds edges into this list; find the edge-insert caller to locate
+  the vertex/face source next.
