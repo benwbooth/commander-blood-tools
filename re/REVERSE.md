@@ -4779,3 +4779,19 @@ specified: walk the BAS, and for each display menu, its following `0xA3 <topic>`
 case-blocks give the topic→(response|sub-menu display) map. Implementing the full
 conversation-flow interpreter in clean Rust (0x10c2 skip semantics + the ~10
 control opcodes + case matching) is the remaining build; the mechanism is decoded.
+
+## CORRECTION: no 0xA3 case-guards — conversation structure needs more decode
+
+Verified against the BAS bytes: ALL 122 0xA3 opcodes in SCRIPT2.BAS are DISPLAY
+menus (>=2 consecutive topic offsets); there are ZERO single-topic "0xA3 <topic>
+<opcode>" case-guards. So my hypothesis (each topic's block guarded by a case-0xA3)
+is WRONG. The execution-mode 0xA3 handler (0x11f6) does compare one u16 against the
+selection gs:0x6762 and skip via 0x10c2 on mismatch, but the block-delimiting /
+topic→response structure is NOT a simple case chain — it needs more precise VM
+tracing (how the display menu's topics map to their response blocks; likely the
+selection indexes into a per-menu jump/skip structure the handler walks). NET for
+the branch-target decoder: the OPCODE mechanism is decoded (display vs execute,
+gs:0x6762 selection, 0x10c2 skip) but the exact byte layout of topic→block is still
+open — a genuine remaining RE step before a correct clean-Rust conversation-flow
+interpreter can be written. Honest status: menu labels + menu-stack are BUILT and
+verified; the conversation-flow interpreter's structural decode is incomplete.
