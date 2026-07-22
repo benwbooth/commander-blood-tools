@@ -2276,11 +2276,21 @@ fn main() {
         println!("BASWATCH: 0xA3 menu-head offsets READ: {menu_heads:?}");
         // The READER code (cs:ip) of each menu-head read = the menu-selection/draw
         // routine; the offset it reads is the per-state selected menu.
+        let mut reader_cs = None;
         for &(addr, cs, ip) in hits.iter() {
             let o = addr - bas_base;
             if o < bas_size && rt.m.mem[bas_base + o] == 0xa3 {
                 println!("  menu-head @BAS+{o:#06x} read by {cs:04x}:{ip:04x}");
+                reader_cs = Some(cs);
             }
+        }
+        // Dump the menu-selection/draw code segment so its offset-selection can be
+        // disassembled offline (dis_xdb.py) — the last step of the linkage decode.
+        if let Some(cs) = reader_cs {
+            let base = (cs as usize) * 16;
+            let dump = rt.m.mem[base..(base + 0x2000).min(rt.m.mem.len())].to_vec();
+            std::fs::write(out.join(format!("menu_code_{cs:04x}.bin")), &dump).unwrap();
+            println!("BASWATCH: dumped menu-selection code segment {cs:04x} -> menu_code_{cs:04x}.bin");
         }
         rt.write_ppm(&out.join("baswatch_end.ppm")).unwrap();
         return;
