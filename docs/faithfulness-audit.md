@@ -22,6 +22,14 @@ everywhere.** Priority = how visible/audible + how confidently fixable.
   intro path. Test: `descript_sequence_cutscene_plays_with_its_data` (maledict → maledict.hnm +
   klings.voc + the "CURSED" subtitles). REMAINING: wire the triggers (which script event fires
   each cutscene) — needs the script/asm event handler; the faithful PLAYER now exists.
+  TRIGGER MECHANISM located (static RE): cutscenes are presented through the C4 PRESENTATION VM —
+  `vm_op_c4_actor` @0x6C7E writes es:[record]={0xc4,related,0}; the presentation handler @0x5816
+  runs kind-1/kind-2 C4 paths with state at DS:0x675E (primary C4 record), 0x67AC (active), 0x67B7
+  (start-lock), draining deferred records (0x6768..0x676C) and clearing at 0x5C26. A script
+  referencing a Sequence-kind record drives this. TO WIRE: decode which C4 path dispatches a
+  Sequence (cutscene) vs an actor (dialogue) and the record→cliptoot/sq HNM resolution, then call
+  `start_descript_cutscene` from the port's VM at that point. This is deep presentation-VM RE
+  (multi-session), sourced now — not a quick wire.
 - **[CLEARED] Intro/HNM subtitle tick scale** (risk #2, partial). The DESCRIPT subtitle ticks are
   HNM frame numbers (microkid→120, hatetv→200, cliptoot 1258 frames), so `FRAMES_PER_TICK = 1`
   (frame == tick) is faithful. The absolute HNM playback fps vs the game's tick rate is still worth
