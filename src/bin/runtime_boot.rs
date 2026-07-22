@@ -1132,6 +1132,11 @@ fn main() {
                 for stage in 0..4 {
                     let _ = rt.run(rt.cpu.steps + 8_000_000);
                     rt.write_ppm(&out.join(format!("submenu_{name}_{stage}.ppm"))).unwrap();
+                    std::fs::write(
+                        out.join(format!("submenu_{name}_{stage}_indices.bin")),
+                        rt.screen_indices(),
+                    )
+                    .unwrap();
                     // OCR the choice-box region with the game's bold font.
                     let idx = rt.screen_indices();
                     let mut lit_font: Vec<(char, [u8; 8])> = Vec::new();
