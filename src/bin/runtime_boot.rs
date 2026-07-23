@@ -2919,7 +2919,10 @@ fn main() {
         // scores every step. Scenario line format (TSV):
         //   move <x> <y> | click <x> <y> | key <scancode> | wait <frames>
         // Coordinates are SCREEN coords; the ring correction is applied here.
-        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        // VERIFYSTATE overrides the resume state (default: the clean hub).
+        let state_path = std::env::var("VERIFYSTATE")
+            .unwrap_or_else(|_| "accuracy/script2.state".into());
+        rt.load_state(std::path::Path::new(&state_path)).unwrap();
         // Optional write watch during the scenario (WRITEWATCHLIN=<linear hex>):
         // reports every write to the address with the writer's cs:ip — the story
         // event tracer (e.g. the scr record slot at block+0x1276).
@@ -3027,6 +3030,26 @@ fn main() {
                     let frames: u64 = toks[1].parse().unwrap();
                     let _ = rt.run(rt.cpu.steps + frames * 1_850_000);
                 }
+                // poke <gs-off-hex> <byte-hex>: write one byte into the engine's
+                // DS globals — oracle drive tooling (e.g. arm the pending-C4
+                // presentation request protocol the way 0xB3AE does).
+                "poke" => {
+                    let off = u32::from_str_radix(toks[1].trim_start_matches("0x"), 16)
+                        .unwrap();
+                    let val = u8::from_str_radix(toks[2].trim_start_matches("0x"), 16)
+                        .unwrap();
+                    let lin = 0x0e84usize * 16 + off as usize;
+                    rt.m.mem[lin] = val;
+                }
+                // pokel <lin-hex> <byte-hex>: write one byte at a LINEAR address
+                // (for structures outside the DS globals, e.g. the record block).
+                "pokel" => {
+                    let lin = usize::from_str_radix(toks[1].trim_start_matches("0x"), 16)
+                        .unwrap();
+                    let val = u8::from_str_radix(toks[2].trim_start_matches("0x"), 16)
+                        .unwrap();
+                    rt.m.mem[lin] = val;
+                }
                 // park <edge-x> <target-frame>: hold the cursor at screen edge x
                 // (the player's rotate gesture) until the panorama reaches the
                 // target frame (DS:0x2795) — closed-loop sector navigation.
@@ -3048,6 +3071,16 @@ fn main() {
                 _ => {}
             }
             let _ = rt.run(rt.cpu.steps + settle);
+            // DSDUMP=<off>,<off>...: print gs bytes per step (pose, flags...).
+            if let Ok(spec) = std::env::var("DSDUMP") {
+                let mut line = format!("DS step {step}:");
+                for tok in spec.split(',') {
+                    let off = u32::from_str_radix(tok.trim().trim_start_matches("0x"), 16)
+                        .unwrap();
+                    line += &format!(" [{off:#x}]={:#04x}", rt.m.read8(g, off));
+                }
+                println!("{line}");
+            }
             // SAYDUMP: print the subtitle display buffer (gs:0xE18, the 0x7612
             // string-sink target) as text each step — reads dialogue that the
             // frame captures only catch mid-reveal.

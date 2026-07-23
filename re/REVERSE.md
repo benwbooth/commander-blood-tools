@@ -5430,9 +5430,27 @@ TRAVEL = BYTECODE-ARMED PRESENTATION TO A REMOTE ACTOR (assembly + bytecode):
   forbidden-zone radio warning ("HYDRAULIC JACK OF TITANIUM ALLOY ... VAPORIZATION
   IN TWO MINUTES") — the interception cutscene the travel completion starts; the
   Scruter_Jo scan (1860, AWAIT 0x252A) follows.
-The oracle's nav FSM runs (0xAFA0 x534 at the orb) but never completes a travel —
-completion mechanics (what ends the FSM: steering into the black hole? a timer?)
-are the ONE remaining unknown between the hub and the whole story chain.
+The oracle's nav FSM runs (0xAFA0 x534 at the orb) but never completes a travel.
+FURTHER NARROWING (poke experiments, new poke/pokel/VERIFYSTATE scenario tooling):
+- C3 (opcode) = QUEUE presentation of record R; C4 = the block guarding R's arrival.
+  SCRIPT1's only C3 queues Izwalito 0x594 (tutorial, incl. the "game" concept
+  shortcut: RUN PROFILE 1 straight from the first menu). SCRIPT2's C3s queue 0x6FC
+  (Scruter_K radio), 0x6B4, 0x114, 0x594, 0xCC — driven by state[] countdowns armed
+  by self-clearing one-shot blocks deeper in the story. NOTHING queues Scruter_Jo
+  0x744 in bytecode: his arrival is queued by ENGINE code, mechanism still unknown.
+- The pending-slot protocol at the hub: [0x675E]=0x30 (obj 40 field0x10=0x28, +8),
+  [0x674E]=0x28, active rec [0x6758]=0xF5C. Force-writing C4 0x0744 into block+0x30
+  does NOT start the presentation: consumer 0x5C64 sits in a teardown tail (falls in
+  from 0x5BF0 after lcall 0xA9A:0x73D) that neither hub CANCEL nor center clicks
+  reach. Its true entry (a jump from where?) is the missing link.
+NEXT TASKS (frontier):
+- [ ] Find what jumps into the 0x5BF0/0x5C26 teardown (xref segment-level; or exec
+      trace during the TUTORIAL Izwalito queue, where the C3->C4 chain provably runs)
+- [ ] Rerun the tutorial flow with SAYDUMP-instrumented transition (no blind 8
+      clicks) to catch Scruter_Jo's arrival naturally; save arrival-era state
+- [ ] Real-game drive: montage doesn't skip on orb/center clicks — try key skips
+      (Escape/Return/Space), then drive tutorial -> Izwalito "game" shortcut
+- [ ] Then: exam-table writes (scr) verify vs the scrut.xdb static decode
 
 ### scr writer FOUND STATICALLY: the scrutinizer's examination-record table
 `scrut.xdb` data (ds base = file 0x33B0 via cs:[0x33A5] delta 0x33B) holds a
