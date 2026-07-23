@@ -420,11 +420,10 @@ fn fill_triangle_tex(
                 }
                 let ti = v * TEX_W + u;
                 if ti < TEX.len() {
-                    let texel = TEX[ti];
-                    if texel != 0 {
-                        zbuf[pi] = z;
-                        fb[pi] = texel;
-                    }
+                    // Unconditional write — the game's fill has NO transparency
+                    // (texel 0 = opaque black, the wrist's dither pattern).
+                    zbuf[pi] = z;
+                    fb[pi] = TEX[ti];
                 }
             }
         }

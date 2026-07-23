@@ -804,6 +804,8 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     // deltas (the original's bridge steering tracks the mouse in the 1440-px ring, so rotation
     // continues while the physical mouse moves even with the cursor clamped at the screen edge).
     let (mut raw_dx, mut raw_dy): (i32, i32) = (0, 0);
+    let (mut prev_mx, mut prev_my): (i32, i32) = (160, 100);
+    let mut last_tick = std::time::Instant::now();
     // A fully-transparent 1x1 cursor (core protocol, no extension): set as the window cursor
     // while locked so the pinned OS pointer is invisible and only our drawn cursor shows.
     let blank_cursor = {
@@ -1512,15 +1514,60 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
             }
         }
         // A click that arrived and released within one frame still presents as pressed
+        // GAME TICK at the authentic rate (~15Hz); PRESENT at display refresh.
+        // Between ticks the GPU path re-renders with the hand at the live cursor
+        // (geometry follows the mouse at 60fps+; sim + tweens stay game-rate).
+        let tick_due = last_tick.elapsed() >= Duration::from_millis(66);
+        if !tick_due {
+            if let Some(g) = gpu.as_mut() {
+                engine.refresh_gpu_hand(mx, my);
+                let tris: Vec<commander_blood_tools::gpu::HandTri> = engine
+                    .gpu_hand
+                    .take()
+                    .unwrap_or_default()
+                    .into_iter()
+                    .map(commander_blood_tools::gpu::HandTri)
+                    .collect();
+                let stars = engine.gpu_stars.clone().unwrap_or_default();
+                let colorkey = engine.gpu_bg_colorkey;
+                if let Err(e) =
+                    g.present(&engine.framebuffer, &engine.scene_palette, &tris, &stars, colorkey)
+                {
+                    eprintln!("[gpu] present failed ({e}); reverting to software");
+                    gpu = None;
+                    engine.gpu_hand_enabled = false;
+                }
+            }
+            std::thread::sleep(Duration::from_millis(8));
+            continue;
+        }
+        last_tick = std::time::Instant::now();
         // for this step, so the engine's edge-triggered nav select fires.
         let step_buttons = if clicked { 1 } else { buttons };
         clicked = false;
+        // Steering motion: locked = raw pointer deltas (the DOS mickey model).
+        // Unlocked = position deltas, PLUS edge-push — while the cursor rides the
+        // horizontal edge of the game area, synthesize continued ring motion (the
+        // DOS mouse would keep yielding mickeys there; an unlocked X cursor cannot).
+        let (mut step_dx, step_dy) = if pointer_locked {
+            (raw_dx, raw_dy)
+        } else {
+            (mx as i32 - prev_mx, my as i32 - prev_my)
+        };
+        if !pointer_locked {
+            if mx <= 1 {
+                step_dx -= 8;
+            } else if mx as usize >= src_w - 2 {
+                step_dx += 8;
+            }
+        }
+        (prev_mx, prev_my) = (mx as i32, my as i32);
         engine.step(MouseInput {
             x: mx,
             y: my,
             buttons: step_buttons,
-            dx: raw_dx,
-            dy: raw_dy,
+            dx: step_dx,
+            dy: step_dy,
         });
         (raw_dx, raw_dy) = (0, 0);
         // SCRIPT1 VM continuation: when the engine finishes the queued lines, run the
@@ -1767,8 +1814,8 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 .into_iter()
                 .map(commander_blood_tools::gpu::HandTri)
                 .collect();
-            let stars = engine.gpu_stars.take().unwrap_or_default();
-            let colorkey = std::mem::take(&mut engine.gpu_bg_colorkey);
+            let stars = engine.gpu_stars.clone().unwrap_or_default();
+            let colorkey = engine.gpu_bg_colorkey;
             if let Err(e) = g.present(
                 &engine.framebuffer,
                 &engine.scene_palette,
@@ -1834,7 +1881,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
             }
         }
         conn.flush()?;
-        std::thread::sleep(Duration::from_millis(66));
+        std::thread::sleep(Duration::from_millis(2));
         // Headless-safety: exit after a bounded run if no display consumer.
         frames_since_input += 1;
         if frames_since_input > 100_000 {

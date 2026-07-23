@@ -380,6 +380,9 @@ pub struct EngineState {
     /// and the GPU draws the stars behind at window resolution.
     pub gpu_stars: Option<Vec<(u16, u16, u8)>>,
     pub gpu_bg_colorkey: bool,
+    /// Fast-refresh mode: recompute the GPU hand for a new cursor WITHOUT advancing
+    /// pose tweens (the presenter runs at display refresh; tweens tick at game rate).
+    hand_fast_refresh: bool,
     pub console_box_kind: usize,
     /// The console OPTION 3D-pyramid menu (`manu3.xdb` overlay). Its 12-item dispatch
     /// structure is decoded statically from manu3.xdb (`[0x2306]` table) and its
@@ -593,6 +596,7 @@ impl EngineState {
             gpu_hand_enabled: false,
             gpu_stars: None,
             gpu_bg_colorkey: false,
+            hand_fast_refresh: false,
             console_box_kind: 0,
             option_active: false,
             option_angle: 0,
@@ -1340,7 +1344,9 @@ impl EngineState {
                 .hand_mesh
                 .get_or_insert_with(crate::manu3_hand::HandMesh::load);
             mesh.set_pose(sel);
-            mesh.tick_pose();
+            if !self.hand_fast_refresh {
+                mesh.tick_pose();
+            }
             let gp = crate::palette::game_screen_palette();
             for i in 128..=255usize {
                 self.scene_palette[i] = gp[i];
@@ -1385,7 +1391,9 @@ impl EngineState {
             .hand_mesh
             .get_or_insert_with(crate::manu3_hand::HandMesh::load);
         mesh.set_pose(sel);
-        mesh.tick_pose();
+        if !self.hand_fast_refresh {
+            mesh.tick_pose();
+        }
         let gp = crate::palette::game_screen_palette();
         for i in 128..=255usize {
             self.scene_palette[i] = gp[i];
@@ -1401,6 +1409,23 @@ impl EngineState {
             cx,
             cy,
         );
+    }
+
+    /// Recompute the GPU hand for the current cursor at DISPLAY refresh rate —
+    /// geometry follows the mouse every present; pose tweens stay at game rate.
+    pub fn refresh_gpu_hand(&mut self, mx: u16, my: u16) {
+        if !self.gpu_hand_enabled {
+            return;
+        }
+        self.mouse.x = mx;
+        self.mouse.y = my;
+        self.hand_fast_refresh = true;
+        if self.bridge_active && self.on_ship {
+            self.draw_hand_cursor();
+        } else {
+            self.draw_hand_at_mouse();
+        }
+        self.hand_fast_refresh = false;
     }
 
     /// Draw the nav destinations as a golden choice box over the console's left —
@@ -3596,6 +3621,11 @@ impl EngineState {
             )
         };
         self.poll_input(input);
+        // GPU per-tick state resets: only the screen rendered THIS tick may set the
+        // star layer / window colour key (stale bridge stars must not show through
+        // black pixels of other screens).
+        self.gpu_stars = None;
+        self.gpu_bg_colorkey = false;
         // Title art (BLOOD.LBM) shows first when armed, until dismissed.
         if self.title_screen.is_some() {
             self.render_title();

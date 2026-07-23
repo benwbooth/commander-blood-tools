@@ -87,8 +87,10 @@ fn fs(in: VOut) -> @location(0) vec4<f32> {
     let dims = textureDimensions(tex);
     let tx = clamp(i32(in.uv.x), 0, i32(dims.x) - 1);
     let ty = clamp(i32(in.uv.y), 0, i32(dims.y) - 1);
+    // The game's affine fill writes EVERY texel unconditionally (0xC2A: mov es:[di],ch
+    // with no zero test) — texel 0 is opaque palette black (the wrist's dither), not
+    // transparency.
     let texel = textureLoad(tex, vec2<i32>(tx, ty), 0).r;
-    if (texel == 0u) { discard; }
     return textureLoad(pal, vec2<i32>(i32(texel), 0), 0);
 }
 "#;
