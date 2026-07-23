@@ -14,10 +14,14 @@
 //! Affine texturing (the xdb's span engine) is a documented follow-up; the mesh,
 //! motion law, transform math, and palette here are the game's own.
 
-const MESH: &[u8] = include_bytes!("../accuracy/manu3/hand_mesh.bin");
+const MESH: &[u8] = include_bytes!("../accuracy/manu3/hand_mesh_uv.bin");
+/// The hand's 256-wide texture (palette-index rows) lifted from the live data segment.
+const TEX: &[u8] = include_bytes!("../accuracy/manu3/hand_tex.bin");
+const TEX_W: usize = 256;
 
 pub struct HandMesh {
     verts: Vec<[i16; 3]>,
+    uvs: Vec<[i16; 2]>,
     faces: Vec<[u16; 3]>,
 }
 
@@ -26,13 +30,17 @@ impl HandMesh {
         let nv = u16::from_le_bytes([MESH[0], MESH[1]]) as usize;
         let nf = u16::from_le_bytes([MESH[2], MESH[3]]) as usize;
         let mut verts = Vec::with_capacity(nv);
+        let mut uvs = Vec::with_capacity(nv);
         let mut at = 4;
         for _ in 0..nv {
             let x = i16::from_le_bytes([MESH[at], MESH[at + 1]]);
             let y = i16::from_le_bytes([MESH[at + 2], MESH[at + 3]]);
             let z = i16::from_le_bytes([MESH[at + 4], MESH[at + 5]]);
+            let u = i16::from_le_bytes([MESH[at + 6], MESH[at + 7]]);
+            let v = i16::from_le_bytes([MESH[at + 8], MESH[at + 9]]);
             verts.push([x, y, z]);
-            at += 6;
+            uvs.push([u, v]);
+            at += 10;
         }
         let mut faces = Vec::with_capacity(nf);
         for _ in 0..nf {
@@ -42,7 +50,7 @@ impl HandMesh {
             faces.push([a, b, c]);
             at += 6;
         }
-        HandMesh { verts, faces }
+        HandMesh { verts, uvs, faces }
     }
 
     /// Render the hand into an indexed framebuffer with the cursor at (cx, cy).
@@ -98,25 +106,13 @@ impl HandMesh {
             if area <= 0.0 {
                 continue;
             }
-            // Shade: the teal ramp 240..249 by face orientation (normal z of the
-            // rotated face — steeper faces darker), the game's lit-surface look.
-            let nz = {
-                let va = self.verts[a as usize];
-                let vb = self.verts[b as usize];
-                let vc = self.verts[c as usize];
-                let ra = rot(va);
-                let rb = rot(vb);
-                let rc = rot(vc);
-                let ux = [rb[0] - ra[0], rb[1] - ra[1], rb[2] - ra[2]];
-                let vx = [rc[0] - ra[0], rc[1] - ra[1], rc[2] - ra[2]];
-                let n = ux[1] * vx[2] - ux[2] * vx[1];
-                let d = ((ux[0] * ux[0] + ux[1] * ux[1] + ux[2] * ux[2]).sqrt()
-                    * (vx[0] * vx[0] + vx[1] * vx[1] + vx[2] * vx[2]).sqrt())
-                .max(1.0);
-                (n / d).abs()
-            };
-            let color = 240 + ((nz * 9.0) as u8).min(9);
-            fill_triangle(fb, w, h, pa, pb, pc, color);
+            // AFFINE TEXTURING (decoded 0xC2A + gradient setup 0xD93): interpolate the
+            // per-vertex UVs (vertex fields +0/+2) across the triangle; texel =
+            // TEX[v*256+u] — the game's own texture bytes (palette indices).
+            let ta = self.uvs[a as usize];
+            let tb = self.uvs[b as usize];
+            let tc = self.uvs[c as usize];
+            fill_triangle_tex(fb, w, h, pa, pb, pc, ta, tb, tc);
         }
     }
 
@@ -126,6 +122,49 @@ impl HandMesh {
     }
 }
 
+fn fill_triangle_tex(
+    fb: &mut [u8],
+    w: usize,
+    h: usize,
+    a: (f32, f32, f32),
+    b: (f32, f32, f32),
+    c: (f32, f32, f32),
+    ta: [i16; 2],
+    tb: [i16; 2],
+    tc: [i16; 2],
+) {
+    let minx = a.0.min(b.0).min(c.0).floor().max(0.0) as i32;
+    let maxx = a.0.max(b.0).max(c.0).ceil().min(w as f32 - 1.0) as i32;
+    let miny = a.1.min(b.1).min(c.1).floor().max(0.0) as i32;
+    let maxy = a.1.max(b.1).max(c.1).ceil().min(h as f32 - 1.0) as i32;
+    let area = (b.0 - a.0) * (c.1 - a.1) - (b.1 - a.1) * (c.0 - a.0);
+    if area.abs() < 1e-3 {
+        return;
+    }
+    for y in miny..=maxy {
+        for x in minx..=maxx {
+            let (fx, fy) = (x as f32 + 0.5, y as f32 + 0.5);
+            let w0 = ((b.0 - a.0) * (fy - a.1) - (b.1 - a.1) * (fx - a.0)) / area;
+            let w1 = ((c.0 - b.0) * (fy - b.1) - (c.1 - b.1) * (fx - b.0)) / area;
+            let w2 = 1.0 - w0 - w1;
+            if w0 >= 0.0 && w1 >= 0.0 && w2 >= 0.0 {
+                let u = (tb[0] as f32 * w0 + tc[0] as f32 * w1 + ta[0] as f32 * w2)
+                    .clamp(0.0, 255.0) as usize;
+                let v = (tb[1] as f32 * w0 + tc[1] as f32 * w1 + ta[1] as f32 * w2)
+                    .max(0.0) as usize;
+                let ti = v * TEX_W + u;
+                if ti < TEX.len() {
+                    let texel = TEX[ti];
+                    if texel != 0 {
+                        fb[y as usize * w + x as usize] = texel;
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[allow(dead_code)]
 fn fill_triangle(
     fb: &mut [u8],
     w: usize,
