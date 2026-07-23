@@ -1606,32 +1606,8 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 }
             }
         }
-        // While the mouse is locked the OS cursor is hidden and pinned; draw the VIRTUAL cursor
-        // (a small white crosshair with a dark outline) at its window position so the player can
-        // still point at menus and console buttons.
-        if pointer_locked {
-            let stride = win_w as usize * 4;
-            let mut put = |x: i32, y: i32, c: [u8; 3]| {
-                if x >= 0 && y >= 0 && (x as usize) < win_w as usize && (y as usize) < win_h as usize
-                {
-                    let di = y as usize * stride + x as usize * 4;
-                    if di + 2 < image.len() {
-                        image[di] = c[2];
-                        image[di + 1] = c[1];
-                        image[di + 2] = c[0];
-                    }
-                }
-            };
-            for d in -5i32..=5 {
-                // dark outline first, then the white cross on top
-                put(vcx + d, vcy + 1, [20, 20, 20]);
-                put(vcx + 1, vcy + d, [20, 20, 20]);
-            }
-            for d in -5i32..=5 {
-                put(vcx + d, vcy, [245, 245, 245]);
-                put(vcx, vcy + d, [245, 245, 245]);
-            }
-        }
+        // The game draws its OWN cursor (the pointing hand — engine.draw_hand_at_mouse),
+        // exactly like the original: no host-drawn cursor overlay at all.
         // put_image is one request; chunk by row-strips so a large window stays under
         // the server's maximum request size.
         let row_bytes = win_w as usize * 4;

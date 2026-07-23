@@ -157,6 +157,7 @@ pub(crate) fn assemble_words(parts: &[String]) -> String {
 
 /// One captured pointing-hand sprite: the live game's 3D hand renderer output
 /// at a given cursor position (fingertip anchor = the cursor hotspot).
+#[derive(Clone)]
 struct HandSprite {
     /// Cursor position this sprite was captured at (the renderer orients the
     /// hand by position); the nearest sprite is drawn.
@@ -1225,9 +1226,60 @@ impl EngineState {
         }
     }
 
-    /// Draw the pointing-hand cursor at the virtual cursor position, using the
-    /// atlas sprite captured nearest to it (the real renderer varies the hand's
-    /// orientation with position). No-op with an empty atlas.
+    /// Draw the pointing-hand cursor — the game's ONLY cursor — at the current
+    /// mouse position on any screen. The atlas indices are bridge-capture palette
+    /// indices; the bridge palette is the baked game palette, so each sprite's
+    /// colours install into reserved scene-palette slots (0xA8.., scene HNM `pl`
+    /// blocks never touch >127) and the sprite blits remapped. No-op without an
+    /// atlas.
+    fn draw_hand_at_mouse(&mut self) {
+        let (cx, cy) = (self.mouse.x as i32, self.mouse.y as i32);
+        let Some(si) = self
+            .hand_atlas
+            .iter()
+            .enumerate()
+            .min_by_key(|(_, s)| {
+                let (dx, dy) = (s.captured_at.0 - cx, s.captured_at.1 - cy);
+                dx * dx + dy * dy
+            })
+            .map(|(i, _)| i)
+        else {
+            return;
+        };
+        let sprite = self.hand_atlas[si].clone();
+        let gp = crate::palette::game_screen_palette();
+        // Map the sprite's distinct indices into the reserved slots.
+        let mut slot_of = [0u8; 256];
+        let mut used = 0usize;
+        for &idx in &sprite.indices {
+            if idx != 0 && slot_of[idx as usize] == 0 && used < 0x20 {
+                let slot = 0xA8 + used;
+                self.scene_palette[slot] = gp[idx as usize];
+                slot_of[idx as usize] = slot as u8;
+                used += 1;
+            }
+        }
+        let (x0, y0) = (cx - sprite.anchor.0, cy - sprite.anchor.1);
+        for y in 0..sprite.height {
+            for x in 0..sprite.width {
+                let index = sprite.indices[y * sprite.width + x];
+                if index == 0 {
+                    continue;
+                }
+                let (px, py) = (x0 + x as i32, y0 + y as i32);
+                if (0..ENGINE_SCREEN_WIDTH as i32).contains(&px)
+                    && (0..ENGINE_SCREEN_HEIGHT as i32).contains(&py)
+                {
+                    self.framebuffer[py as usize * ENGINE_SCREEN_WIDTH + px as usize] =
+                        slot_of[index as usize];
+                }
+            }
+        }
+    }
+
+    /// Draw the pointing-hand cursor at the bridge's ring-anchored position (the
+    /// steering cursor), using the atlas sprite captured nearest to it (the real
+    /// renderer varies the hand's orientation with position). No-op without an atlas.
     fn draw_hand_cursor(&mut self) {
         let (cx, cy) = (self.bridge.mouse_screen_x(), self.bridge.mouse_y);
         let Some(sprite) = self
@@ -3343,6 +3395,7 @@ impl EngineState {
         // playing full-screen to completion.
         if self.ending_active && self.ending_scene.is_some() {
             self.render_ending();
+            self.draw_hand_at_mouse();
             self.frame += 1;
             return;
         }
@@ -3360,6 +3413,7 @@ impl EngineState {
         // world takes precedence while active.
         if self.world_location.is_some() {
             self.render_world_location();
+            self.draw_hand_at_mouse();
             self.countdown = self.countdown.saturating_sub(1);
             self.frame += 1;
             return;
@@ -3367,6 +3421,7 @@ impl EngineState {
         // Cyberspace tunnel screen (presentation) takes precedence when active.
         if self.cyber_active && !self.cyber_tunnels.is_empty() {
             self.render_cyberspace();
+            self.draw_hand_at_mouse();
             self.countdown = self.countdown.saturating_sub(1);
             self.frame += 1;
             return;
@@ -3374,6 +3429,7 @@ impl EngineState {
         // The CRYOBOX cryo-chamber (console menu option) takes precedence when active.
         if self.cryobox_active && self.cryobox_scene.is_some() {
             self.render_cryobox();
+            self.draw_hand_at_mouse();
             self.countdown = self.countdown.saturating_sub(1);
             self.frame += 1;
             return;
@@ -3381,6 +3437,7 @@ impl EngineState {
         // The video-phone call screen (console TELEPHONE option) takes precedence.
         if self.phone_active && !self.phone_contacts.is_empty() {
             self.render_telephone();
+            self.draw_hand_at_mouse();
             self.countdown = self.countdown.saturating_sub(1);
             self.frame += 1;
             return;
@@ -3388,6 +3445,7 @@ impl EngineState {
         // The OPTION 3D-pyramid menu (console OPTION option) takes precedence.
         if self.option_active {
             self.render_option_menu();
+            self.draw_hand_at_mouse();
             self.countdown = self.countdown.saturating_sub(1);
             self.frame += 1;
             return;
@@ -3395,6 +3453,7 @@ impl EngineState {
         // Comms/TV screen takes precedence when active: watch the broadcast.
         if self.tv_active && !self.tv_channels.is_empty() {
             self.render_tv();
+            self.draw_hand_at_mouse();
             self.countdown = self.countdown.saturating_sub(1);
             self.frame += 1;
             return;
@@ -3403,6 +3462,7 @@ impl EngineState {
         // pre-rendered alien with the mouse.
         if self.alien_view_active && !self.alien_views.is_empty() {
             self.render_alien_view();
+            self.draw_hand_at_mouse();
             self.countdown = self.countdown.saturating_sub(1);
             self.frame += 1;
             return;
@@ -3432,11 +3492,13 @@ impl EngineState {
             // phase FSM) so the camera pulls in / travels as the game does on entry.
             self.camera.step();
             self.render_ship_view();
+            self.draw_hand_at_mouse();
         } else if !self.dialogue.is_empty() {
             // Dialogue scene present: render the current line's frame (the
             // talk-HNM scene background composites behind this once the HNM decoder
             // is lib-side; for now the subtitle text layer over a cleared band).
             self.render_dialogue_frame();
+            self.draw_hand_at_mouse();
         }
         // Script/scene stepping (the D2 handoff the main loop drives): advance the
         // loaded dialogue playback, then chain to the next queued scene if this one
