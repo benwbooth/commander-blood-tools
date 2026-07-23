@@ -198,8 +198,8 @@
   END
 [08FA]   GOTO @0A6B
 [08FE]   AWAIT gameflag_252A
-[08FF]   rec_1148 = 3278
-[0904]   START PRESENTATION Fifi.talk (related 40)
+[08FF]   GUARD rec_1148 == 3278
+[0904]   GUARD active_actor == Fifi.talk (related 40)
 [0909]   ENDIF
 [090A]   SAY "GA... Me Fifi ... Hee Hee Hee..."  '[voice 3]
 [0920]   SAY "Heh heh... That guy knocks me out, Commander..."
@@ -240,8 +240,8 @@
 [0A68]   END PRESENTATION Fifi.talk
 [0A6B]   GOTO @0BE6
 [0A6F]   AWAIT gameflag_252A
-[0A70]   rec_1148 = 3278
-[0A75]   START PRESENTATION Fifi.talk (related 40)
+[0A70]   GUARD rec_1148 == 3278
+[0A75]   GUARD active_actor == Fifi.talk (related 40)
 [0A7A]   ENDIF
 [0A7B]   SAY "Me Fifi ... Hee hee hee ..."  '[voice 3]
 [0A91]   SAY "Heh heh ... I can't get enough of him, Commander..."
@@ -281,9 +281,9 @@
   END
 [0BFD]   GOTO @0D2F
 [0C01]   AWAIT gameflag_252A
-[0C02]   rec_07B2 = 3278
-[0C07]   rec_1148 = 3278
-[0C0C]   START PRESENTATION Fifi.talk (related 40)
+[0C02]   GUARD rec_07B2 == 3278
+[0C07]   GUARD rec_1148 == 3278
+[0C0C]   GUARD active_actor == Fifi.talk (related 40)
 [0C11]   ENDIF
 [0C12]   SAY "Me Fifi ... Hee hee hee ..."  '[voice 3]
 [0C28]   SAY "Heh heh... Still the same crazy guy he always was, Commander..."
@@ -490,9 +490,9 @@
   END
 [14B7]   GOTO @15AB
 [14BB]   AWAIT gameflag_252A
-[14BC]   rec_1148 = 3494
-[14C1]   START PRESENTATION Maziok.talk (related 40)
-[14C6]   maledict = 1
+[14BC]   GUARD rec_1148 == 3494
+[14C1]   GUARD active_actor == Maziok.talk (related 40)
+[14C6]   GUARD maledict == 1
 [14CD]   ENDIF
 [14CE]   SAY "Ga... word_65535 ga hello weather_report work family fatherland"  '[voice 2]
 [14E8]   IF-BLOCK (exit -> @1504)
@@ -1139,7 +1139,7 @@
   END
 [320C]   GOTO @3362
 [3210]   AWAIT gameflag_274F
-[3211]   START PRESENTATION Anna_Haf.talk (related 40)
+[3211]   GUARD active_actor == Anna_Haf.talk (related 40)
 [3216]   ENDIF
 [3217]   IF-BLOCK (exit -> @32DF)
 [321A]     GUARD rec_1148 == 3164
@@ -1218,8 +1218,8 @@
   END
 [352C]   GOTO @35BD
 [3530]   AWAIT presentation
-[3531]   rec_05BA = 3194
-[3536]   START PRESENTATION Anna_Haf.talk (related 40)
+[3531]   GUARD rec_05BA == 3194
+[3536]   GUARD active_actor == Anna_Haf.talk (related 40)
 [353B]   ENDIF
 [353C]   SAY "Come in , Commander ... I'VE GOT THE PORTRAIT OF THE GREAT YOLK !"
 [3560]   SAY "YES !!! Commander, he did it !"
@@ -1351,7 +1351,7 @@
   END
 [3CF4]   GOTO @3E17
 [3CF8]   AWAIT presentation
-[3CF9]   Eviscarator = dialog.value
+[3CF9]   GUARD Eviscarator == dialog.value
 [3D00]   ENDIF
 [3D01]   SAY "Come in , Commander !!! This is General EVISCERATOR ..."  '[voice 0]
 [3D1D]   SAY "I'm mad as mad can be , Commander ... Your mummy has laid a CURSE on us ..."
@@ -1374,7 +1374,7 @@
   END
 [3E2E]   GOTO @3EDF
 [3E32]   AWAIT presentation
-[3E33]   START PRESENTATION Jerry_Khan.talk (related 40)
+[3E33]   GUARD active_actor == Jerry_Khan.talk (related 40)
 [3E38]   ENDIF
 [3E39]   SAY "Come in Commander ... This is Inspector Jerry Khan..."
 [3E53]   SAY "Do you have any news ?"
@@ -1441,7 +1441,7 @@
   END
 [406C]   GOTO @4193
 [4070]   AWAIT presentation
-[4071]   START PRESENTATION Jerry_Khan.talk (related 40)
+[4071]   GUARD active_actor == Jerry_Khan.talk (related 40)
 [4076]   ENDIF
 [4077]   SAY "Come in, Commander ... This is Inspector JERRY KHAN on the SHARK..."
 [4097]   SAY "I have good news ..."
@@ -1476,7 +1476,7 @@
   END
 [41C0]   GOTO @429F
 [41C4]   AWAIT presentation
-[41C5]   START PRESENTATION Jerry_Khan.talk (related 40)
+[41C5]   GUARD active_actor == Jerry_Khan.talk (related 40)
 [41CA]   ENDIF
 [41CB]   SAY "Come in , Commander ... This is Inspector JERRY KHAN on the SHARK..."
 [41ED]   SAY "We're through the black hole... An amazing experience , Commander ..."

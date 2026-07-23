@@ -69,7 +69,7 @@
   END
 [0170]   GOTO @019A
 [0174]   AWAIT gameflag_274F
-[0175]   START PRESENTATION Morning_Oil.talk (related 40)
+[0175]   GUARD active_actor == Morning_Oil.talk (related 40)
 [017A]   ENDIF
 [017B]   SAY "Let me sleep ... Commander..."  '[voice 1]
 [018D]   SAY "..."  '[skip 1]
@@ -930,9 +930,9 @@
   END
 [2E06]   GOTO @2ECF
 [2E0A]   AWAIT gameflag_252A
-[2E0B]   R1 = 0
-[2E12]   START PRESENTATION Cyberquizz.talk (related 40)
-[2E17]   rec_103A = 3392
+[2E0B]   GUARD R1 == 0
+[2E12]   GUARD active_actor == Cyberquizz.talk (related 40)
+[2E17]   GUARD rec_103A == 3392
 [2E1C]   ENDIF
 [2E1D]   SAY "Student Commander Blood ... This is a big day in your life ..."  '[voice 1]
 [2E3F]   SAY "Holy harpoons ! That is hideous , Commander..."

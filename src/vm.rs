@@ -37,7 +37,14 @@ use crate::ship3d;
 /// `byte1` is either `len_mode1` or a mode-control sentinel (bit7 set).
 /// Verified against the binary by `tests::table_matches_binary` when
 /// `re/bin/BLOODPRG.EXE` is available.
-pub const OPCODE_DESC: [(u8, u8); 0x34] = [
+// NOTE: the engine's table at DS:0x6F18 has only 0x34 real entries (A0..D3);
+// the bytes that follow are a debug string ("...memoire libre..."). But
+// vm_token_advance (0x62B6) indexes the table with ANY opcode byte >= 0xA0 —
+// scripts DO use opcodes beyond 0xD3 (SCRIPT2 has 0xE4 at 0x2F60) and the
+// engine then reads the string bytes as (len_mode0, len_mode1). That
+// out-of-bounds read is load-bearing 1994 behavior, so the port's table
+// reproduces all 0x60 entries byte-exactly from the binary image.
+pub const OPCODE_DESC: [(u8, u8); 0x60] = [
     /* A0 */ (0x03, 0xff),
     /* A1 */ (0x01, 0xfe),
     /* A2 */ (0x03, 0x03),
@@ -90,10 +97,54 @@ pub const OPCODE_DESC: [(u8, u8); 0x34] = [
     /* D1 */ (0x01, 0x01),
     /* D2 */ (0x02, 0x02),
     /* D3 */ (0x00, 0x00),
+    /* D4 */ (0x6d, 0x65),
+    /* D5 */ (0x6d, 0x6f),
+    /* D6 */ (0x69, 0x72),
+    /* D7 */ (0x65, 0x20),
+    /* D8 */ (0x6c, 0x69),
+    /* D9 */ (0x62, 0x72),
+    /* DA */ (0x65, 0x00),
+    /* DB */ (0x00, 0x00),
+    /* DC */ (0x46, 0x0a),
+    /* DD */ (0x09, 0x00),
+    /* DE */ (0x66, 0x69),
+    /* DF */ (0x6e, 0x00),
+    /* E0 */ (0x00, 0x00),
+    /* E1 */ (0x00, 0x00),
+    /* E2 */ (0x00, 0x00),
+    /* E3 */ (0x00, 0x00),
+    /* E4 */ (0x00, 0x00),
+    /* E5 */ (0x00, 0x00),
+    /* E6 */ (0x00, 0x00),
+    /* E7 */ (0x00, 0x00),
+    /* E8 */ (0xff, 0xff),
+    /* E9 */ (0xff, 0xff),
+    /* EA */ (0xff, 0xff),
+    /* EB */ (0xff, 0xff),
+    /* EC */ (0xff, 0xff),
+    /* ED */ (0xff, 0xff),
+    /* EE */ (0xff, 0xff),
+    /* EF */ (0xff, 0xff),
+    /* F0 */ (0xff, 0xff),
+    /* F1 */ (0xff, 0xff),
+    /* F2 */ (0xff, 0xff),
+    /* F3 */ (0xff, 0xff),
+    /* F4 */ (0xff, 0xff),
+    /* F5 */ (0xff, 0xff),
+    /* F6 */ (0xff, 0xff),
+    /* F7 */ (0xff, 0xff),
+    /* F8 */ (0xff, 0x27),
+    /* F9 */ (0xff, 0xff),
+    /* FA */ (0xff, 0xff),
+    /* FB */ (0xff, 0x28),
+    /* FC */ (0xff, 0xff),
+    /* FD */ (0xff, 0xff),
+    /* FE */ (0xff, 0x29),
+    /* FF */ (0x25, 0xff),
 ];
 
 pub const OP_MIN: u8 = 0xA0;
-pub const OP_MAX: u8 = 0xD3;
+pub const OP_MAX: u8 = 0xFE;
 pub const OP_TEXT: u8 = 0xA6;
 pub const OP_BIT_FLAG: u8 = 0xB7;
 pub const OP_PAIR_RECORD_A: u8 = 0xB8;
@@ -372,7 +423,6 @@ pub fn record_end_hold_ticks(record_units: u16, text_speed_step: u16) -> u16 {
 /// past them with helper `0x6293`, which scans byte-by-byte for a `0x0000` word
 /// terminator and skips it (plus one more byte if a third zero follows). So
 /// these are variable-length: `opcode <bytes...> 00 00`.
-const VAR_TERMINATED: [u8; 4] = [0xA8, 0xAC, 0xCC, 0xD3];
 
 /// Replicates helper `0x6293`: from `start`, scan byte-by-byte until a `0x0000`
 /// word, skip it, then skip one extra byte if it is also zero. Returns the
@@ -707,22 +757,16 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
             continue;
         }
 
-        if VAR_TERMINATED.contains(&op) {
-            let next = scan_zero_word(cod, pos + 1, end);
-            out.push(VmToken::Op {
-                offset: pos,
-                opcode: op,
-                len: next - pos,
-                operands: cod[pos + 1..next].to_vec(),
-            });
-            pos = next;
-            continue;
-        }
-
-        // Determine token length + any mode change.
+        // Determine token length + any mode change — vm_token_advance 0x62B6
+        // exactly: sentinels (b1 bit7) keep len=b0 (FF/FE switch the mode,
+        // FD/FB take an optional 0xA1 skip); otherwise len = table[mode]. A
+        // resolved length of ZERO means zero-word-terminated (vm_token_special
+        // 0x6293) — this is PER MODE (0xDA/0xDD/0xDF are fixed-length in mode 0
+        // but var-terminated in mode 1), which the old hardcoded VAR_TERMINATED
+        // set missed: it desynced the walk at SCRIPT2 0x2F7F and hid the COD's
+        // entire tail (69% of the stream) from the decompile.
         let len;
         if b1 & 0x80 != 0 {
-            // mode-control sentinel: length is b0, plus a possible 0xA1 skip.
             let mut l = b0 as usize;
             match b1 {
                 0xFF => mode1 = true,
@@ -736,7 +780,19 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
             }
             len = l.max(1);
         } else {
-            len = (if mode1 { b1 } else { b0 } as usize).max(1);
+            let l = if mode1 { b1 } else { b0 } as usize;
+            if l == 0 {
+                let next = scan_zero_word(cod, pos + 1, end);
+                out.push(VmToken::Op {
+                    offset: pos,
+                    opcode: op,
+                    len: next - pos,
+                    operands: cod[pos + 1..next].to_vec(),
+                });
+                pos = next;
+                continue;
+            }
+            len = l;
         }
 
         if op == OP_BIT_FLAG {
@@ -2568,10 +2624,8 @@ pub fn interpret_line_states_with_context(
             }
             continue;
         }
-        if VAR_TERMINATED.contains(&op) {
-            pos = scan_zero_word(cod, pos + 1, end);
-            continue;
-        }
+        // Same per-mode zero-length rule as `walk` (vm_token_advance 0x62B6):
+        // a resolved length of 0 means zero-word-terminated in THAT mode.
         let len = if b1 & 0x80 != 0 {
             let mut l = b0 as usize;
             match b1 {
@@ -2586,7 +2640,12 @@ pub fn interpret_line_states_with_context(
             }
             l.max(1)
         } else {
-            (if mode1 { b1 } else { b0 } as usize).max(1)
+            let l = if mode1 { b1 } else { b0 } as usize;
+            if l == 0 {
+                pos = scan_zero_word(cod, pos + 1, end);
+                continue;
+            }
+            l
         };
         pos += len;
     }
@@ -3219,11 +3278,6 @@ fn execute_trace_state_with_overrides_and_context(
                 _ => unreachable!("decode_text only returns TEXT tokens"),
             }
         }
-        if VAR_TERMINATED.contains(&op) {
-            pos = scan_zero_word(cod, token_start + 1, end);
-            continue;
-        }
-
         let len = if b1 & 0x80 != 0 {
             let mut l = b0 as usize;
             match b1 {
@@ -3238,7 +3292,13 @@ fn execute_trace_state_with_overrides_and_context(
             }
             l.max(1)
         } else {
-            (if mode1 { b1 } else { b0 } as usize).max(1)
+            let l = if mode1 { b1 } else { b0 } as usize;
+            if l == 0 {
+                // Per-mode zero length = zero-word-terminated (0x6293).
+                pos = scan_zero_word(cod, token_start + 1, end);
+                continue;
+            }
+            l
         };
         pos = (token_start + len).min(end);
     }
@@ -4190,9 +4250,6 @@ impl VmMachine {
 /// per-opcode descriptor table + mode rules — identical to the walker's advance
 /// (`mode1` there == query mode here; lengths differ by mode, e.g. 0xA5).
 fn token_len_at(cod: &[u8], pos: usize, op: u8, query: bool) -> usize {
-    if VAR_TERMINATED.contains(&op) {
-        return scan_zero_word(cod, pos + 1, cod.len()) - pos;
-    }
     let (b0, b1) = OPCODE_DESC[(op - OP_MIN) as usize];
     if b1 & 0x80 != 0 {
         let mut l = b0 as usize;
@@ -4201,7 +4258,13 @@ fn token_len_at(cod: &[u8], pos: usize, op: u8, query: bool) -> usize {
         }
         l.max(1)
     } else {
-        (if query { b1 } else { b0 } as usize).max(1)
+        let l = if query { b1 } else { b0 } as usize;
+        if l == 0 {
+            // Per-mode zero length = zero-word-terminated (vm_token_special
+            // 0x6293) — covers A8/AC/CC/D3 (both modes) AND DA/DD/DF (mode 1).
+            return scan_zero_word(cod, pos + 1, cod.len()) - pos;
+        }
+        l
     }
 }
 
@@ -4266,12 +4329,17 @@ pub fn decompile_script(
                 if flags & 1 != 0 {
                     line = format!("BLOCK (exit -> @{target:04X})");
                     blocks.push(target);
-                    query = true;
                     pc += 4;
                 } else {
                     line = format!("GOTO @{target:04X}");
                     pc += 4;
                 }
+                // A9's descriptor is (0x04, 0xFF): the 0xFF sentinel switches the
+                // decoder into query mode UNCONDITIONALLY (vm_token_advance
+                // 0x62DD) — in both the BLOCK and GOTO forms. Missing this on the
+                // GOTO arm desynced the listing at SCRIPT2 0x2F7F and hid the
+                // stream's tail.
+                query = true;
             }
             0xA0 => {
                 let target = read_u16(cod, pc + 1).unwrap_or(0) as usize;
