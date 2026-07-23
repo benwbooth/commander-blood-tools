@@ -77,7 +77,12 @@ evidence in the row. Re-audit pass 1: 2026-07-22..23.
 ## Active fix queue (from the matrix, user-reported first)
 1. [x] Host crosshair removed; hand = the only cursor, all screens (this pass).
 2. [x] Hand hotspot: oracle frames confirm fingertip = mouse position (arm extends down-left); the BRIDGEPROBE-derived atlas anchors encode this. Pose model (nearest-capture) remains APPROX vs the real 3D render.
-3. [ ] OPTION menu render fidelity (largest APPROX on screen): decode the manu3 render or re-source from captures of the real OPTION screen (needs input injection — xdotool on the DOSBox Xvfb).
+3. [ ] OPTION/TELEPHONE/CRYOBOX screen truth: BLOCKED on the interpreter's scene-coordinator bug
+   (the tutorial loops its demos; row clicks only advance content — verified with the tutorial
+   cadence + idle settle; no asset loads follow the clicks). The DOSBox path is blocked by SDL
+   synthetic-input rejection. Fixing the scene coordinator (STATEDUMP passive-lock 0x5E58=0x0E2B,
+   see REVERSE.md) unblocks BOTH this and the credit divergence — it is the highest-leverage
+   remaining RE target.
 4. [ ] Cyberspace interaction (BIOXX touch loop) from the cyber consumer.
 5. [ ] On-planet input handler decode to replace the interpretation.
 6. [ ] ext.rs record semantics via the consumer load path.

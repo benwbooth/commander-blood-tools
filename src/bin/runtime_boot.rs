@@ -194,10 +194,12 @@ fn main() {
         for (i, pt) in spec.split(';').enumerate() {
             let (a, b) = pt.split_once(',').unwrap();
             let (sx, sy): (u16, u16) = (a.trim().parse().unwrap(), b.trim().parse().unwrap());
+            // The TUTORIAL mode's cadence (which achieved dispatch): move, 150K, press,
+            // 150K, release, then a longer settle for any screen build.
             rt.set_mouse_pos(sx * 2, sy);
-            let _ = rt.run(rt.cpu.steps + 800_000);
+            let _ = rt.run(rt.cpu.steps + 150_000);
             rt.mouse_press(0);
-            let _ = rt.run(rt.cpu.steps + 800_000);
+            let _ = rt.run(rt.cpu.steps + 150_000);
             rt.mouse_release(0);
             let _ = rt.run(rt.cpu.steps + 5_000_000);
             rt.write_ppm(&out.join(format!("click_{i:02}_{sx}_{sy}.ppm"))).unwrap();
