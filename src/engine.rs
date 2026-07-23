@@ -2500,6 +2500,11 @@ impl EngineState {
                 let full = self.current_line_hold().saturating_sub(1);
                 if self.dialogue_timer >= full {
                     self.dialogue_timer = full;
+                    // The scripted OPENING (which plays over the pyramid-console band in
+                    // SCRIPT1 — real-game tut_240s) has finished: the interactive phase runs
+                    // on the purple bridge console (interpreter-oracle-verified, golden menu),
+                    // so drop the band from here on.
+                    self.console_band_dialogue = false;
                     return;
                 }
             }
