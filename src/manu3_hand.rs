@@ -73,6 +73,11 @@ fn build_matrix(a1: i32, a2: i32, a3: i32) -> [i32; 9] {
 }
 
 pub struct HandMesh {
+    /// Current pose selector + its running player (selector -> sequence index,
+    /// per the 0x181 dispatch; decoded contexts: 1=rest, 2=steer-right, 3=steer-left,
+    /// 0xB=UI-close, 0xFFFF=hidden).
+    pose_sel: u16,
+    pose: Option<PosePlayer>,
     /// 16 skeleton segments: {vert_count, T (Q8 dwords), angles (raw table offsets)}.
     segs: Vec<(u16, [i32; 3], [i16; 3])>,
     verts: Vec<[i16; 3]>,
@@ -120,7 +125,7 @@ impl HandMesh {
             faces.push([rd16(at), rd16(at + 2), rd16(at + 4)]);
             at += 6;
         }
-        HandMesh { segs, verts, uvs, alias_src, faces }
+        HandMesh { pose_sel: 1, pose: None, segs, verts, uvs, alias_src, faces }
     }
 
     /// Render the hand into an indexed framebuffer with the cursor at (cx, cy).
@@ -372,6 +377,24 @@ impl PosePlayer {
 }
 
 impl HandMesh {
+    /// Select the pose (decoded selector semantics); a change starts that sequence.
+    pub fn set_pose(&mut self, sel: u16) {
+        if sel != self.pose_sel {
+            self.pose_sel = sel;
+            self.pose = PosePlayer::new(sel as usize);
+        }
+    }
+
+    /// Advance the current pose animation one frame (call per rendered frame).
+    pub fn tick_pose(&mut self) {
+        if let Some(mut p) = self.pose.take() {
+            if !p.done() {
+                self.animate(&mut p);
+                self.pose = Some(p);
+            }
+        }
+    }
+
     /// Apply one pose-player frame to the live skeleton: tween cell writes land in
     /// the segment records exactly as in the game (cell = 0x2394 + seg*0x5E + field;
     /// fields 0x4E/0x50/0x52 = angles, 0x36/0x3A/0x3E = translation low words).

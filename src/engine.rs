@@ -422,6 +422,8 @@ pub struct EngineState {
     console_band_dialogue: bool,
     /// The manu3 3D hand model (lazy-loaded).
     hand_mesh: Option<crate::manu3_hand::HandMesh>,
+    /// Last bridge frame (steering-pose detection).
+    prev_bridge_frame: u16,
     /// The VIEWSCREEN console (gray pyramid band + upper viewscreen): the real NAV screen
     /// reached from the bridge's pyramid sector. With no granted destinations the viewscreen
     /// shows STATIC (oracle: nav_screen_opened + navscr captures); with destinations the
@@ -597,6 +599,7 @@ impl EngineState {
             intro_pyramid: Vec::new(),
             console_band_dialogue: false,
             hand_mesh: None,
+            prev_bridge_frame: 0,
             viewscreen_active: false,
             viewscreen_noise: 0x1234_5678,
             autoplay_end: None,
@@ -1367,11 +1370,21 @@ impl EngineState {
     /// renderer varies the hand's orientation with position). No-op without an atlas.
     fn draw_hand_cursor(&mut self) {
         // The bridge's steering hand: the SAME real manu3 3D hand, at the ring-anchored
-        // cursor position (the bridge tracks the mouse in ring space).
+        // cursor position. POSE per the decoded selector rule (0x7809..0x782C):
+        // rest=1; while the view rotates, 2 (cursor right half) / 3 (left half).
         let (cx, cy) = (self.bridge.mouse_screen_x(), self.bridge.mouse_y);
+        let rotating = self.bridge.frame != self.prev_bridge_frame;
+        self.prev_bridge_frame = self.bridge.frame;
+        let sel = if rotating {
+            if cx < 160 { 3 } else { 2 }
+        } else {
+            1
+        };
         let mesh = self
             .hand_mesh
             .get_or_insert_with(crate::manu3_hand::HandMesh::load);
+        mesh.set_pose(sel);
+        mesh.tick_pose();
         let gp = crate::palette::game_screen_palette();
         for i in 128..=255usize {
             self.scene_palette[i] = gp[i];
