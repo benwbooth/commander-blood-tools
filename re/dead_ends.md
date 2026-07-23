@@ -549,3 +549,14 @@ Not worth it for one scene; the bridge oracle (6 scenarios, exact-decode) is the
 solid representative suite. USEFUL BYPRODUCT: confirmed the port's HNM decoder
 renders the reel correctly (black->Mindscape->Microfolie's), just at different
 frame indices than a fixed step count.
+
+## engine-console-render reference regeneration (sess: arrival-chain)
+Tried: recapture console_rest.ppm via CANCEL+settle (frame 45, mean 5+), park 316 55
+(lands 53, mean 24), poke [0x2795]=55 (game renormalizes, mean 29). The Jul-21
+capture's exact console state (frame 55 + specific menu/hand state) is not cheaply
+reproducible with current drive commands.
+Why failed: the panorama frame is derived state — poking it doesn't move the ring
+anchor; park tolerance ±2 ≠ exact; the original capture's provenance is unrecorded.
+Better approach: a `parkx <frame>` exact-frame command (park then single-frame edge
+nudges), THEN re-verify the engine console render against a fresh matched capture —
+and record capture provenance (scenario file) next to every reference PPM.
