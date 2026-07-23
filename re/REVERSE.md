@@ -5403,6 +5403,22 @@ teleported INTO the cryobox (@0298). Driving the arrival in the oracle is the ne
 gate — suspect it routes through the blood.dat presentation dispatch (the documented
 interpreter gap), which would make that ONE tooling feature the story-drive blocker.
 
+### STORY DRIVE BLOCKED AT THE PRESENTATION GAP (empirical, SAYDUMP)
+The oracle CAN reach the pyramid nav room (new `park` closed-loop scenario command;
+frame 90 via DS:0x2795) and click the eye-orb; the AWAIT-gameflag mechanics are
+decoded (opcode 0xD0 awaits byte DS:0x252A; its ONLY set-to-1 writer is
+ship_3d_navigation_update 0xB3F5 on travel-sequence completion — the Scruter arrival
+fires on TRAVEL, not a timer: 2000-frame hub wait writes nothing). But the orb click's
+viewscreen presentation degrades: SAYDUMP (new probe: gs:0xE18 subtitle sink as text
+per scenario step) shows the WAIT-COMMANDER static fallback while alien stills cycle —
+the SAME documented blood.dat presentation gap as the credit divergence. The real
+game's code falls back when the presentation CUE fails to load under our runtime, so
+the gap is ENVIRONMENTAL (resource load failure — EMS int67 or a file path suspect),
+not a missing interpreter feature per se. Fixing that load = unblocking arrival →
+scan (scr) → cyberspace → planets → ending. THE critical-path tooling item.
+Also: the hub state's subtitle buffer still holds SCRIPT1's last line ("The old
+turkey's out for the count...") — the state sits exactly at the profile boundary.
+
 ### scr writer trace: RESOLVED TO AN ADDRESS
 The records block = the far ptr at gs:0x6724 (savestate: 0000:8681 -> linear 0x86810;
 the 210M boot run: 0000:7838). scr's slot = block + 0x1276 = linear 0x87A86 in the

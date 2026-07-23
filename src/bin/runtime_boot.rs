@@ -3020,9 +3020,41 @@ fn main() {
                     let frames: u64 = toks[1].parse().unwrap();
                     let _ = rt.run(rt.cpu.steps + frames * 1_850_000);
                 }
+                // park <edge-x> <target-frame>: hold the cursor at screen edge x
+                // (the player's rotate gesture) until the panorama reaches the
+                // target frame (DS:0x2795) — closed-loop sector navigation.
+                "park" => {
+                    let (ex, target): (u16, u16) =
+                        (toks[1].parse().unwrap(), toks[2].parse().unwrap());
+                    for _ in 0..600 {
+                        let d = (frame(&rt) as i32 - target as i32).rem_euclid(180);
+                        if d.min(180 - d) <= 2 {
+                            break;
+                        }
+                        let ring =
+                            (ex as i32 + frame(&rt) as i32 * 8 - 160).rem_euclid(1440) as u16;
+                        rt.set_mouse_pos(ring, 100);
+                        let _ = rt.run(rt.cpu.steps + 1_000_000);
+                    }
+                    eprintln!("park: frame now {}", frame(&rt));
+                }
                 _ => {}
             }
             let _ = rt.run(rt.cpu.steps + settle);
+            // SAYDUMP: print the subtitle display buffer (gs:0xE18, the 0x7612
+            // string-sink target) as text each step — reads dialogue that the
+            // frame captures only catch mid-reveal.
+            if std::env::var("SAYDUMP").is_ok() {
+                let bytes: Vec<u8> = (0..160u32).map(|i| rt.m.read8(g, 0xe18 + i)).collect();
+                let text: String = bytes
+                    .iter()
+                    .take_while(|&&b| b != 0)
+                    .map(|&b| if (0x20..0x7f).contains(&b) { b as char } else { ' ' })
+                    .collect();
+                if !text.trim().is_empty() {
+                    println!("SAY step {step}: {}", text.trim());
+                }
+            }
             if let Some(off) = rec_watch {
                 let (boff, bseg) = (w16(&rt, 0x6724), w16(&rt, 0x6726));
                 if bseg > 0 {

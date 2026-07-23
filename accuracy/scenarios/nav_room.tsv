@@ -1,0 +1,10 @@
+# pyramid nav room -> eye-orb -> viewscreen
+click 100 98
+wait 20
+park 316 90
+move 160 100
+wait 20
+click 165 158
+wait 40
+wait 40
+wait 40
