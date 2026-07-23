@@ -714,3 +714,9 @@ DS:0x27C7,list_widget_hovered_row,"row under the cursor +1 (0=none): ay=[0xA2C]-
 0xF6C7,scrut_exam_rec_scr,scrut.xdb table entry whose +6 record = 0x1276 (scr - the Honk planet gate)
 0xD526,descript_des_name_a,'descript.des' filename string (a)
 0xD679,descript_des_name_b,'descript.des' filename string (b) ds:0x259
+0xBDFD,voice_open_waitcmd_path,mixer voice-open: int21 3D + flags + WAIT COMMANDER placeholder + seek
+0x5C64,presentation_start_travel_arm,consumes pending C4 via [0x675E]; [0x251B]=target; [0x24F3]=9 (bit3 travel)
+0x9EBB,travel_activate_a,presentation teardown: [0x24F3]&8 -> [0x27D8]=1
+0x9F67,travel_activate_b,sibling teardown travel activation
+0x549A,c4_pending_slot_fill,kind-1 object: [0x674E]=obj+0x10; pending slot [0x675E]=+8
+DS:0x24F3,dialogue_scene_flags,bit3=travel-pending (set only by 0x5C64 imm 9)

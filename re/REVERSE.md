@@ -5405,6 +5405,35 @@ descriptor bank; (2) the missing interpreter presentation dispatch = walking the
 already-parsed fields and routing per kind (the string-sink family are the text-kind
 presenters); the port-side parser gives the exact cue list the oracle should show.
 
+### WAIT-COMMANDER SOLVED + THE TRAVEL CHAIN (the arrival mechanics, end to end)
+The WAIT-COMMANDER copy (file 0xBE1E) is NOT a credit presenter: it lives inside the
+audio mixer's VOICE-OPEN path (0xBDFD `int21 3D00` opens the .voc, then flags
+[0xBA7]/[0xBA1]/[0xBA0], then the copy, then `int21 4200` seeks to the sample at
+[0xA8A]+0x1A). It is the CD-era "please wait" placeholder armed whenever a voice
+starts, meant to be OVERWRITTEN by the timed cue text. The WORKING dialogue text
+writer is 067c:1354 (lin 0x7B14; caught by WRITEWATCHLIN on the subtitle text at
+gs:0xE18+0x12 = lin 0xF66A during honk_talk — note text lands at +0x12 via the
+[0x5E58] reveal pointer, not at 0xE18 itself). The 0x7612 family are the
+presentation-era cue loaders that replace the placeholder; they never fire in the
+interpreter, so presentations show the placeholder forever.
+
+TRAVEL = BYTECODE-ARMED PRESENTATION TO A REMOTE ACTOR (assembly + bytecode):
+- presentation start 0x5C64: consumes a pending C4 request via ptr [0x675E]
+  (filled at 0x549A: slot = kind-1 object's field 0x10 + 8), stores the target in
+  [0x251B], sets [0x24F3]=9 (bit 3 = travel-pending), [0x27D8]=0.
+- presentation teardown 0x9EAC/0x9EBB (and sibling 0x9F67): on FSM end, if
+  [0x24F3]&8 -> [0x27D8]=1 (travel ACTIVE).
+- ship_3d_navigation_update 0xB34E (gated [0x27D8]): on sequence completion walks
+  the record block, increments [rec+0x14], arms the NEXT C4 ([0x6768]=0xC4,
+  [0x676A]=record) and sets [0x252A]=1 — the AWAIT-gameflag (opcode 0xD0) release.
+- SCRIPT2 @27D4 (AWAIT presentation + START PRESENTATION Scruter_K.talk): the
+  forbidden-zone radio warning ("HYDRAULIC JACK OF TITANIUM ALLOY ... VAPORIZATION
+  IN TWO MINUTES") — the interception cutscene the travel completion starts; the
+  Scruter_Jo scan (1860, AWAIT 0x252A) follows.
+The oracle's nav FSM runs (0xAFA0 x534 at the orb) but never completes a travel —
+completion mechanics (what ends the FSM: steering into the black hole? a timer?)
+are the ONE remaining unknown between the hub and the whole story chain.
+
 ### scr writer FOUND STATICALLY: the scrutinizer's examination-record table
 `scrut.xdb` data (ds base = file 0x33B0 via cs:[0x33A5] delta 0x33B) holds a
 111-entry, stride-0x14 table at ds:0xC069 (file 0xF419) whose +0x06 word is a SCRIPT

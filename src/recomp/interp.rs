@@ -324,7 +324,25 @@ impl Cpu {
                     let step = self.steps;
                     match self.exec_hits_linear.iter_mut().find(|h| h.0 == lin) {
                         Some(h) => h.2 += 1,
-                        None => self.exec_hits_linear.push((lin, step, 1)),
+                        None => {
+                            // First hit: capture the far return address (the caller
+                            // of this presenter) from the stack top — the dispatch
+                            // site for computed call chains.
+                            let sp = m.regs.esp & 0xffff;
+                            let ss = m.regs.ss as u32;
+                            let r16 = |o: u32| {
+                                m.mem[(ss * 16 + o) as usize % m.mem.len()] as u32
+                                    | ((m.mem[(ss * 16 + o + 1) as usize % m.mem.len()]
+                                        as u32)
+                                        << 8)
+                            };
+                            let (rip, rcs) = (r16(sp), r16(sp + 2));
+                            eprintln!(
+                                "exec-watch first hit {lin:#07x} @ step {step}: caller {rcs:04x}:{rip:04x} (lin {:#07x})",
+                                rcs * 16 + rip
+                            );
+                            self.exec_hits_linear.push((lin, step, 1));
+                        }
                     }
                 }
             }
