@@ -709,4 +709,4 @@ DS:0x0AC6,list_widget_anchor_x,"the list box's centre-X anchor (x = [0xAC6]-w/2)
 DS:0x27C7,list_widget_hovered_row,"row under the cursor +1 (0=none): ay=[0xA2C]-text_top; row=ay/11+1 (div bl,0x0B @0x8508). Sets hand pose [0xA32]=6 (LIST-BOX HOVER — assembly source of selector 6) and 7 via the [0xA3E] press gate"
 0x0086d9,list_anchor_hub,"mov [0xAC6],0x64 — the hub console box anchors at centre-X 100"
 0x0089a6,list_anchor_console_window,"mov [0xAC6],0xE1 — the in-window concept lists anchor at centre-X 225 (x0 = 225-w/2 derives the observed x~170..175)"
-0x00b0d1,list_anchor_alt,"mov [0xAC6],0x50 — a third list context anchors at centre-X 80 (context to identify)"
+0x00b0d1,list_anchor_world_candidates,"mov [0xAC6],0x50 — the WORLD/entity candidate list anchors at centre-X 80 (inside ship_click_commit, with alt-mode flags [0xADC]/[0xADD]: narrow min-width 0x37, bp-init 10)"

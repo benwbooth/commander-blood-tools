@@ -1751,8 +1751,11 @@ impl EngineState {
     /// so a black backdrop (index 0xE0, DAC 0,0,0) is filled behind them for
     /// legibility. `selected` re-renders one row in the brighter 0xEF white.
     /// The list widget's centre-X anchor — the game's `[0xAC6]`, set per context
-    /// by the caller; the hub console boxes anchor at 100.
+    /// by the caller: hub console boxes 100 (@0x86D9), in-window lists 225
+    /// (@0x89A6), the WORLD/entity candidate list 80 (@0xB0D1, ship_click_commit,
+    /// with the narrow alt-mode flags [0xADC]/[0xADD]).
     const CHOICE_BOX_CENTER_X: usize = 100;
+    const CHOICE_BOX_ANCHOR_WORLD: usize = 80;
     /// Row pitch 11 — ASSEMBLY: the unified list widget steps `add bp,0xB`
     /// (0x847A) and hit-tests `row = dy/11 + 1` (`div bl,0x0B` @0x8508).
     const CHOICE_BOX_PITCH: usize = 11;
@@ -1788,7 +1791,13 @@ impl EngineState {
         // from the live index dump; RGB can't distinguish them).
         let w = widest + 0x14;
         let h = rows * Self::CHOICE_BOX_PITCH + 8;
-        let x0 = Self::CHOICE_BOX_CENTER_X.saturating_sub(w / 2);
+        // The world candidate box (kind 10) anchors at 80 (0xB0D1); others at 100.
+        let anchor = if self.console_box_kind == 10 {
+            Self::CHOICE_BOX_ANCHOR_WORLD
+        } else {
+            Self::CHOICE_BOX_CENTER_X
+        };
+        let x0 = anchor.saturating_sub(w / 2);
         let x1 = (x0 + w).min(ENGINE_SCREEN_WIDTH);
         let y0 = (200usize.saturating_sub(h)) / 2;
         let y1 = (y0 + h).min(ENGINE_SCREEN_HEIGHT);
