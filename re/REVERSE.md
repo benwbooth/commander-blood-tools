@@ -5385,6 +5385,9 @@ the 210M boot run: 0000:7838). scr's slot = block + 0x1276 = linear 0x87A86 in t
 savestate; current value 0 (cheat locked at the fresh hub — correct). Its writer fires
 on later story events. WATCH WIRED (WRITEWATCHLIN env on VERIFYSCRIPT): the 27-step
 story_deep conversation chain produces ZERO writes — scr is NOT a conversation
-counter. Remaining candidates: the Scruter alien-examination screen's scan events,
-or other runtime dispatches; run the watch over an examination-screen scenario next. Also banked: gs:0x6728 = the DIC segment far ptr (the text assembler's word
+counter. Remaining candidates narrowed by TWO more negative watches: the 27-step conversation
+chain AND the steering/orb scenario both write ZERO — scr is neither a conversation
+nor a station-entry counter. Next: find the examination screen's oracle route (its
+station/dispatch), then watch; or trace scr's writer via a full-boot write watch
+(WRITEWATCHLIN through INTROTRACE-length runs). Also banked: gs:0x6728 = the DIC segment far ptr (the text assembler's word
 source), confirming the record/dictionary pointer pair layout.
