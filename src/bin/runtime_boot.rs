@@ -3013,7 +3013,7 @@ fn main() {
             let mut seen: Vec<(u16, u32)> = Vec::new();
             for _ in 0..40 {
                 let _ = rt.run(rt.cpu.steps + 100_000);
-                let sel = rd16(&rt, 0xA32) & 0x1F;
+                let sel = rd16(&rt, 0xAB8);
                 let cur = rd16(&rt, 0xAB4);
                 let _ = cur;
                 if let Some(e) = seen.iter_mut().find(|e| e.0 == sel) {
@@ -3028,7 +3028,7 @@ fn main() {
                 rt.mouse_release(0);
                 for _ in 0..40 {
                     let _ = rt.run(rt.cpu.steps + 100_000);
-                    let sel = rd16(&rt, 0xA32) & 0x1F;
+                    let sel = rd16(&rt, 0xAB8);
                     if let Some(e) = seen.iter_mut().find(|e| e.0 == sel) {
                         e.1 += 1;
                     } else {

@@ -1360,17 +1360,14 @@ impl EngineState {
         // 252/110, y negated), the decoded cursor law on the wrist segment, and the
         // game's own texture — fingertip anchored at the cursor.
         {
-            // POSE per the decoded selector contexts: 6 = choice-box hover,
-            // 4 = presentation active (a line is playing), 1 = rest.
-            let sel = if !self.console_box.is_empty()
-                && self.console_box_click(cx as u16, cy as u16).is_some()
-            {
-                6
-            } else if !self.dialogue.is_empty() && !self.dialogue_finished() {
-                4
-            } else {
-                1
-            };
+            // POSE: REST (1) in every non-bridge context — ORACLE hub_tour (vs_000..008):
+            // the hand keeps the same up-pointing pose while idle, hovering every console
+            // row, hovering AND clicking the orb; SELECTORWATCH reads a constant selector
+            // through hover/click/steer at the hub. (The earlier hover=6 / presentation=4
+            // mapping is not supported by any capture — the down-poke frames in the
+            // row scenarios are the STEERING grab poses 2/3 firing after CANCEL unlocks
+            // the ring, which draw_hand_cursor already models.)
+            let sel = 1;
             let mesh = self
                 .hand_mesh
                 .get_or_insert_with(crate::manu3_hand::HandMesh::load);
@@ -3868,7 +3865,12 @@ impl EngineState {
             // talk-HNM scene background composites behind this once the HNM decoder
             // is lib-side; for now the subtitle text layer over a cleared band).
             self.render_dialogue_frame();
-            self.draw_hand_at_mouse();
+            // The PRESENTATION screen hides the cursor entirely — no hand in any
+            // interpreter capture of the boot/tutorial presentations (bd_218M..bd_290M,
+            // intro_215M); the hand belongs to interactive screens only.
+            if !self.console_band_dialogue {
+                self.draw_hand_at_mouse();
+            }
         }
         // Script/scene stepping (the D2 handoff the main loop drives): advance the
         // loaded dialogue playback, then chain to the next queued scene if this one
