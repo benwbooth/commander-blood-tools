@@ -3379,28 +3379,38 @@ impl EngineState {
         self.scene_palette = img.palette;
         self.scene_palette[0xFE] = [245, 245, 160];
         self.scene_palette[0xFD] = [255, 80, 80]; // object marker colour
-        // Mark the decoded .ext object positions with a small crosshair.
-        for &(ox, oy) in &visit.objects {
-            let (cx, cy) = (ox as usize, oy as usize);
-            for d in 0..5usize {
-                for (px, py) in [(cx + d, cy), (cx.wrapping_sub(d), cy), (cx, cy + d), (cx, cy.wrapping_sub(d))] {
-                    if px < ENGINE_SCREEN_WIDTH && py < ENGINE_SCREEN_HEIGHT {
-                        self.framebuffer[py * ENGINE_SCREEN_WIDTH + px] = 0xFD;
+        // DEBUG-ONLY overlays (CB_DEBUG=1): the location caption and the entity
+        // crosshairs are PORT tooling — no such strings/markers exist in the
+        // binary (searched: no FLOOR/ROOM text; the real screens draw entities
+        // as scene content and interact via the candidate box).
+        if std::env::var("CB_DEBUG").is_ok() {
+            for &(ox, oy) in &visit.objects {
+                let (cx, cy) = (ox as usize, oy as usize);
+                for d in 0..5usize {
+                    for (px, py) in [
+                        (cx + d, cy),
+                        (cx.wrapping_sub(d), cy),
+                        (cx, cy + d),
+                        (cx, cy.wrapping_sub(d)),
+                    ] {
+                        if px < ENGINE_SCREEN_WIDTH && py < ENGINE_SCREEN_HEIGHT {
+                            self.framebuffer[py * ENGINE_SCREEN_WIDTH + px] = 0xFD;
+                        }
                     }
                 }
             }
+            draw_text_indexed(
+                &mut self.framebuffer,
+                ENGINE_SCREEN_WIDTH,
+                ENGINE_SCREEN_HEIGHT,
+                &name,
+                8,
+                6,
+                0xFE,
+            );
         }
-        draw_text_indexed(
-            &mut self.framebuffer,
-            ENGINE_SCREEN_WIDTH,
-            ENGINE_SCREEN_HEIGHT,
-            &name,
-            8,
-            6,
-            0xFE,
-        );
         self.world_location = Some(visit);
-            if !self.console_box.is_empty() {
+        if !self.console_box.is_empty() {
             let labels = self.console_box.clone();
             self.draw_choice_box(&labels, None);
         }
@@ -6071,6 +6081,8 @@ mod tests {
 
     #[test]
     fn world_ext_objects_are_marked_on_the_location() {
+        // The markers are DEBUG-ONLY overlays (no such markers in the binary).
+        unsafe { std::env::set_var("CB_DEBUG", "1") };
         let dat = ["output/_tmp_dat","../output/_tmp_dat"].iter().map(std::path::Path::new).find(|p| p.exists());
         let iso = ["output/_tmp_iso","../output/_tmp_iso"].iter().map(std::path::Path::new).find(|p| p.exists());
         let (Some(dat), Some(iso)) = (dat, iso) else { return };
