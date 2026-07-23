@@ -2502,8 +2502,31 @@ fn main() {
             }
             let _ = rt.run(rt.cpu.steps + 3_000_000);
         }
-        println!("CONVDRIVER: 120 rounds without freeing; state saved for analysis");
-        rt.save_state(std::path::Path::new("accuracy/conv_partial.state")).unwrap();
+        // Round-2 probe: the golden-menu rows (station records), watching EVERY
+        // observable (presentation bit, FSM state, text, opened files).
+        for (name, y) in [("HONK", 88u16), ("TELEPHONE", 103), ("CRYOBOX", 118), ("MENU", 133), ("OPTION", 148)] {
+            rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+            let fr = frame(&rt) as i32;
+            let ring = (230 + fr * 8 - 160).rem_euclid(1440) as u16;
+            rt.set_mouse_pos(ring, y);
+            let _ = rt.run(rt.cpu.steps + 500_000);
+            rt.mouse_press(0);
+            let _ = rt.run(rt.cpu.steps + 300_000);
+            rt.mouse_release(0);
+            let before_files = rt.opened_files.len();
+            let _ = rt.run(rt.cpu.steps + 15_000_000);
+            let idx = rt.screen_indices();
+            let text = ocr(&idx, &font);
+            let fsm = rt.m.read8(g, 0x6788);
+            println!(
+                "{name}: pres={} fsm={} files+{} text='{}'",
+                presenting(&rt),
+                fsm,
+                rt.opened_files.len() - before_files,
+                text.chars().take(50).collect::<String>()
+            );
+        }
+        println!("CONVDRIVER round-2 complete");
         return;
     }
     if std::env::var("PLAYTO").is_ok() {
