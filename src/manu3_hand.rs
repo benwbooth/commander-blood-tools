@@ -121,8 +121,10 @@ impl HandMesh {
         for a in 0..nalias {
             let at = (nvert + a) * 20;
             alias_src.push(rd16(SEG2, at + 4) / 20);
-            let sat = (rd16(SEG2, at + 4) / 20) as usize * 20;
-            uvs.push([rdi16(SEG2, sat), rdi16(SEG2, sat + 2)]);
+            // An alias shares its SOURCE's projected position but carries its OWN
+            // texture coordinates (+0/+2) — aliases ARE the mesh's UV-seam vertices
+            // (verified: every alias's own UV differs from its source's).
+            uvs.push([rdi16(SEG2, at), rdi16(SEG2, at + 2)]);
         }
         let mut faces = Vec::with_capacity(216);
         for f in 0..216 {
@@ -418,10 +420,15 @@ fn fill_triangle_tex(
                 if z >= zbuf[pi] {
                     continue;
                 }
-                let ti = v * TEX_W + u;
+                // Unconditional write — the game's fill has NO transparency.
+                // Rows beyond the banked texture's valid extent (~41) clamp to the
+                // last valid row: the seam/edge faces' per-face texture SEGMENT
+                // (setup 0xE89..0xEB3 folds a face component into the segment) is
+                // not fully decoded yet; the clamp renders them in edge material
+                // instead of the unrelated memory bytes (see port-validation.md).
+                let vc = v.min(41);
+                let ti = vc * TEX_W + u;
                 if ti < TEX.len() {
-                    // Unconditional write — the game's fill has NO transparency
-                    // (texel 0 = opaque black, the wrist's dither pattern).
                     zbuf[pi] = z;
                     fb[pi] = TEX[ti];
                 }

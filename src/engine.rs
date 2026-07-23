@@ -1369,6 +1369,7 @@ impl EngineState {
     /// steering cursor), using the atlas sprite captured nearest to it (the real
     /// renderer varies the hand's orientation with position). No-op without an atlas.
     fn draw_hand_cursor(&mut self) {
+        self.hand_on_screen = true;
         // The bridge's steering hand: the SAME real manu3 3D hand, at the ring-anchored
         // cursor position. POSE per the decoded selector rule (0x7809..0x782C):
         // rest=1; while the view rotates, 2 (cursor right half) / 3 (left half).

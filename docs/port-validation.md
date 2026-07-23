@@ -66,6 +66,14 @@ be PIXEL-COMPARED against the interpreter oracle. Status:
 | subtitle animation/sounds | **ASM-EXACT (re-verified)** | the full reveal law re-read from the binary and confirmed already ported literally: pump 0x93F8/0x949A advances one char per pump when [0xB31] reload ([0xACA]>>2) is 0 == vm::reveal_frames_per_char; speed map 0x1B20 (voice v -> {1,2,3,4,7}) == text_speed_step_from_setting (literal transcription); end-hold 0x7378 (b35 = 27CF*(ACA>>1)+6) == record_end_hold_ticks; honk chatter throttle [0xB2F]=4 in main.rs. Reveal colors 0xFD-0xFF/settle 0xE0 from live TEXTBAND dumps. Note: emulator reveal capture attempts (REVEALDUMP/REVEALTRACE probes, banked) hit the savestate text-exhaustion wall — static verification is the evidence |
 | menus | **FIXED (hub) + verified pipeline** | the top-level console menu is BAKED into the TB.BIG panorama frames (port frame 45 == live hub screen: 93.2% full / 95.4% left-half raw-index match; residue = live overlays CANCEL/orb). The port's floating text double-draw REMOVED; hover stays palette-swap (0x7B..0x7F). Contextual sub-boxes remain live-drawn gold boxes (capture-verified pattern) |
 
+## OPEN ITEM: manu3 per-face texture segment (seam faces)
+The span setup (0xE89..0xEB3) computes each face's texture SEGMENT ([edge+0x56] = fs:[4] +
+a per-face component from [0x622]) — the seam/edge faces (the alias-UV faces, v 57..62) sample a
+DIFFERENT texture page than the main skin (rows 0..41 at the fs:[4]-derived base). Undecoded:
+the exact fold of [0x622] into the segment. INTERIM in the port: out-of-range rows clamp to row
+41 (edge material) — no confetti, slight palm banding vs the oracle's smooth blend. Decode task:
+resolve [0x622]'s format + the segment formula, re-bank the seam texture page, remove the clamp.
+
 ## WHOLE-PLAYTHROUGH GATE (src/bin/playthrough.rs) — PASSES
 One continuous EngineState run, boot -> ending, every stage asserted: title, intro montage,
 SCRIPT1 tutorial (VM-driven to the profile handoff), SCRIPT2 encounter, SCRIPT3/4/5 locations

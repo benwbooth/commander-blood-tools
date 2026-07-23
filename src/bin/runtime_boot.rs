@@ -2885,6 +2885,21 @@ fn main() {
         println!("REVEALDUMP done");
         return;
     }
+    if std::env::var("TEXDUMP").is_ok() {
+        // Re-bank the manu3 hand texture from the CURRENT live state (the original
+        // manu3_ds.bin dump shows noise in rows 40..63 — was it mid-load?).
+        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        let _ = rt.run(rt.cpu.steps + 2_000_000);
+        // manu3 ds runtime segment = 0x17A3 (labels); texture at ds:0x6400, 64 rows.
+        let seg = 0x17A3u16;
+        let mut out_bytes = Vec::with_capacity(64 * 256);
+        for off in 0x6400u32..(0x6400 + 64 * 256) {
+            out_bytes.push(rt.m.read8(seg, off));
+        }
+        std::fs::write(out.join("hand_tex_live.bin"), &out_bytes).unwrap();
+        println!("TEXDUMP done ({} bytes)", out_bytes.len());
+        return;
+    }
     if std::env::var("SELECTORWATCH").is_ok() {
         // POSE-SELECTOR ground truth: resume the hub, perform scripted interactions
         // (idle, move, menu hover, orb hover, click, steer to the edge), sampling the
