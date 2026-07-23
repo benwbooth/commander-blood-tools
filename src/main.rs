@@ -1181,6 +1181,73 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                     );
                                     engine.load_bob_contact(Path::new(iso), Path::new(assets));
                                 }
+                                // HONK's concept box (kind 3): route the clicked
+                                // topic through the VM concept dispatch; TALK
+                                // advances to Honk's FULL conversation (presenter
+                                // 2902 via rec_08B8 — oracle honk_talk2: 'YES,
+                                // COMMANDER?' + the 11-topic in-window menu).
+                                3 => {
+                                    let label = engine
+                                        .console_box
+                                        .get(row)
+                                        .cloned()
+                                        .unwrap_or_default()
+                                        .to_lowercase();
+                                    let off =
+                                        dic_word_offset.borrow().get(&label).copied();
+                                    let mut new_lines: Vec<(
+                                        String,
+                                        Option<std::path::PathBuf>,
+                                        bool,
+                                    )> = Vec::new();
+                                    {
+                                        let mut vm = script_vm.borrow_mut();
+                                        if let Some(m) = vm.as_mut() {
+                                            if let Some(off) = off {
+                                                m.concept = off;
+                                                let map = vm_lines.borrow();
+                                                let out = vm_collect(m, &map);
+                                                new_lines = out.0;
+                                                m.concept = 0;
+                                            }
+                                            if label == "talk" {
+                                                m.start_actor_presentation(2902, 40);
+                                                let map = vm_lines.borrow();
+                                                for ev in m.run_frame() {
+                                                    if let commander_blood_tools::vm::VmEvent::Text { offset } = ev {
+                                                        if let Some(l) = map.get(&offset) {
+                                                            new_lines.push(l.clone());
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if label == "talk" {
+                                        // Honk's full conversation menu (oracle
+                                        // honk_talk2 capture).
+                                        engine.bridge.engaged_row = Some(0);
+                                        engine.console_box = [
+                                            "BYE_BYE", "TALK", "BLOOD", "BOB_MORLOCK",
+                                            "HONK", "ARK", "MA", "ORXX", "OLGA",
+                                            "BIG_BANG", "BLACK_HOLES",
+                                        ]
+                                        .iter()
+                                        .map(|s| s.to_string())
+                                        .collect();
+                                        engine.console_box_kind = 3;
+                                        if new_lines.is_empty() {
+                                            new_lines = vec![(
+                                                "Yes , Commander ?".into(),
+                                                None,
+                                                true,
+                                            )];
+                                        }
+                                    }
+                                    if !new_lines.is_empty() {
+                                        set_vm_dialogue(&mut engine, new_lines);
+                                    }
+                                }
                                 // The OPTION submenu {TEXT, MUSIC_OFF, SAVE, LOAD,
                                 // QUIT, CANCEL} — the decoded row surfaces.
                                 4 => match row {
