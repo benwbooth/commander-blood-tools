@@ -2025,7 +2025,14 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 engine.load_title(Path::new(iso));
             }
         } else if engine.cyber_active && engine.cyber_arrived {
-            // The cyberspace traversal reached its destination: return to the bridge hub.
+            // The cyberspace traversal reached its destination: BIONIUM collected —
+            // increment the script's vbio record (the BIOXX->Mantas->BIONIUM loop;
+            // Bob's cryobox blocks branch on vbio==0/1/2 and acknowledge vbio>0) —
+            // then return to the bridge hub.
+            if let Some(m) = script_vm.borrow_mut().as_mut() {
+                // vbio = record 0x126C (the C0 guard operands @0570/@0616/@0BD3).
+                m.add_record(0x126C, 1);
+            }
             engine.cyber_active = false;
             engine.bridge_active = true;
         } else if engine.intro_active() {

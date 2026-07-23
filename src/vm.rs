@@ -3746,6 +3746,15 @@ impl VmMachine {
         lo | (hi << 8)
     }
 
+    /// Increment a record variable — the runtime hook for world events that the
+    /// scripts observe (e.g. BIONIUM collection: SCRIPT2's `vbio` record, whose
+    /// C0 guards read record 0x126C — operand read from the COD @0570/@0616/@0BD3;
+    /// vbio==0/1/2 branch Bob's cryobox blocks, vbio>0 acknowledges collection).
+    pub fn add_record(&mut self, record_offset: u16, delta: u16) {
+        let v = self.rec_read(record_offset);
+        self.rec_write(record_offset, v.saturating_add(delta));
+    }
+
     fn rec_read(&self, off: u16) -> u16 {
         self.line_records.get(off as usize / 2).copied().unwrap_or(0)
     }
