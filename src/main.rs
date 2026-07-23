@@ -1067,6 +1067,15 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         }
                     }
                 }
+                // Bob's CONTACT screen: BYE_BYE (topic 0) returns to the bridge;
+                // other topics are conversation beats (script wiring pending —
+                // logged in port-validation.md).
+                Event::ButtonPress(b) if engine.bob_contact_active && b.detail == 1 => {
+                    if engine.bob_topic_click(mx, my) == Some(0) {
+                        engine.bob_contact_active = false;
+                        engine.bridge_active = true;
+                    }
+                }
                 Event::ButtonPress(b)
                     if engine.bridge_active && !engine.console_box.is_empty() && b.detail == 1 =>
                 {
@@ -1086,9 +1095,17 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                     engine.phone_connect(row);
                                 }
                                 2 => {
+                                    // BOB_MORLOCK: the CONTACT screen — Bob's eyes
+                                    // (FRIGO.FD) + his concept menu, NOT the cryo
+                                    // chamber (ORACLE cryobox_enter vs_005..007).
                                     engine.bridge.release_menu();
                                     engine.bridge_active = false;
-                                    engine.cryobox_active = true;
+                                    engine.bob_contact_active = true;
+                                    engine.set_speech_dialogue(vec![(
+                                        "HONK! You worthless heap of wires... Are  \nyou working?".into(),
+                                        None,
+                                    )]);
+                                    engine.load_bob_contact(Path::new(iso), Path::new(assets));
                                 }
                                 // The OPTION submenu {TEXT, MUSIC_OFF, SAVE, LOAD,
                                 // QUIT, CANCEL} — the decoded row surfaces.

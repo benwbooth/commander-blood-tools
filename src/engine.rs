@@ -370,6 +370,11 @@ pub struct EngineState {
     /// awaiting a typed slot name (digits+lowercase, Enter commits).
     pub save_ui_active: bool,
     pub save_ui_name: String,
+    /// The BOB_MORLOCK CONTACT screen (CRYOBOX row -> BOB_MORLOCK): Bob's eyes
+    /// (FRIGO.FD) + top-band subtitle + his concept menu — the ORACLE-CAPTURED
+    /// surface (cryobox_enter dual-run vs_005..007; frigo.fd file-open traced).
+    pub bob_contact_active: bool,
+    bob_contact_bg: Option<(usize, usize, Vec<u8>, Vec<[u8; 3]>)>,
     /// The UNIVERSAL console choice box (savestate-verified: every golden-menu row opens a
     /// contextual gold box over the panorama): its item labels, or empty = closed. The last
     /// item is always CANCEL. `console_box_kind` = which console row opened it.
@@ -602,6 +607,8 @@ impl EngineState {
             option_box_active: false,
             save_ui_active: false,
             save_ui_name: String::new(),
+            bob_contact_active: false,
+            bob_contact_bg: None,
             console_box: Vec::new(),
             gpu_hand: None,
             gpu_hand_enabled: false,
@@ -1321,6 +1328,113 @@ impl EngineState {
             self.draw_console_text("CANCEL", 73, 95, 0xE8);
         }
         self.draw_hand_cursor();
+    }
+
+    /// Bob Morlock's concept-menu topics — ORACLE-CAPTURED (cryobox_enter vs_007).
+    pub const BOB_TOPICS: [&'static str; 8] = [
+        "BYE_BYE", "BLACK_HOLE", "BIG_BANG", "BOB_MORLOCK", "KANARY", "MISSION",
+        "CORPO", "GOOD_OL_BOB",
+    ];
+
+    /// Load the BOB_MORLOCK contact screen: Bob's talk-head video (pe/aabob.hnm,
+    /// the oracle's red-face eye close-up) as the live scene, with FRIGO.FD (the
+    /// cryo chamber the real game also file-opens on CONTACT) as static fallback.
+    pub fn load_bob_contact(&mut self, iso: &Path, assets: &Path) {
+        let head = assets.join("pe").join("aabob.hnm");
+        if head.exists() {
+            self.load_scene_hnm(&head);
+        }
+        for name in ["FRIGO.FD", "frigo.fd"] {
+            if let Ok(d) = std::fs::read(iso.join(name)) {
+                if let Some(img) = crate::lbm::decode_lbm(&d) {
+                    self.bob_contact_bg = Some((
+                        img.width as usize,
+                        img.height as usize,
+                        img.pixels,
+                        img.palette.to_vec(),
+                    ));
+                    return;
+                }
+            }
+        }
+    }
+
+    /// Render the BOB_MORLOCK CONTACT screen — layout measured from the dual-run
+    /// oracle captures (vs_005..007): FRIGO.FD full-screen, the dialogue subtitle
+    /// at the console position (10,8) in settled white, and Bob's concept menu as
+    /// square-caps rows at x=170 from y=56 (pitch 11).
+    fn render_bob_contact(&mut self) {
+        // Bob's LIVE talk-head band (pe/aabob.hnm — the red face + mismatched eyes
+        // of the oracle capture) over black bars; FRIGO.FD is the static fallback
+        // when the video is missing. (The oracle frame also shows a dark-teal
+        // machinery border around the band — its palette source is a residual,
+        // logged in port-validation.md; frigo's own LBM palette clashes with the
+        // video's, so it is not the underlay.)
+        for p in self.framebuffer.iter_mut() {
+            *p = 0;
+        }
+        if let Some(hnm) = self.scene_hnm.take() {
+            let idx = self.scene_frame % hnm.frame_count().max(1);
+            hnm.decode_frame(idx, &mut self.scene_buffer, &mut self.scene_palette);
+            self.scene_hnm = Some(hnm);
+            self.scene_frame += 1;
+            self.present_scene_buffer();
+        } else if let Some((w, h, pix, pal)) = &self.bob_contact_bg {
+            for y in 0..ENGINE_SCREEN_HEIGHT.min(*h) {
+                for x in 0..ENGINE_SCREEN_WIDTH.min(*w) {
+                    self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] = pix[y * w + x];
+                }
+            }
+            for (i, c) in pal.iter().take(256).enumerate() {
+                self.scene_palette[i] = *c;
+            }
+        }
+        // The concept menu (grey square-caps; 0xE8 forced to the widget grey).
+        self.scene_palette[0xE8] = [150, 150, 150];
+        self.scene_palette[0xE0] = [255, 255, 255];
+        for (i, label) in Self::BOB_TOPICS.iter().enumerate() {
+            crate::font::draw_square_caps(
+                &mut self.framebuffer,
+                ENGINE_SCREEN_WIDTH,
+                ENGINE_SCREEN_HEIGHT,
+                label,
+                170,
+                56 + i * 11,
+                0xE8,
+            );
+        }
+        // The dialogue line at the console subtitle position, settled white.
+        if let Some(text) = self.current_subtitle().map(str::to_string) {
+            use crate::font::game_font_advance;
+            let mut y = 8usize;
+            for line in text.split('\n') {
+                let mut x = 10usize;
+                for ch in line.chars() {
+                    let mut buf = [0u8; 4];
+                    draw_text_indexed(
+                        &mut self.framebuffer,
+                        ENGINE_SCREEN_WIDTH,
+                        ENGINE_SCREEN_HEIGHT,
+                        ch.encode_utf8(&mut buf),
+                        x,
+                        y,
+                        0xE0,
+                    );
+                    x += game_font_advance(ch);
+                }
+                y += 10;
+            }
+        }
+    }
+
+    /// Hit-test a click against Bob's concept menu rows (x 165..300, rows from
+    /// y=56 at pitch 11). Returns the topic index.
+    pub fn bob_topic_click(&self, x: u16, y: u16) -> Option<usize> {
+        if !(165..=300).contains(&x) {
+            return None;
+        }
+        let row = (y as i32 - 56) / 11;
+        (row >= 0 && (row as usize) < Self::BOB_TOPICS.len()).then_some(row as usize)
     }
 
     /// Feed a typed character to the save-slot name entry — the DOS original's edit
@@ -3859,6 +3973,15 @@ impl EngineState {
         if self.cyber_active && !self.cyber_tunnels.is_empty() {
             self.render_cyberspace();
             self.draw_hand_at_mouse();
+            self.countdown = self.countdown.saturating_sub(1);
+            self.frame += 1;
+            return;
+        }
+        // The BOB_MORLOCK CONTACT screen (CRYOBOX -> BOB_MORLOCK) takes precedence.
+        if self.bob_contact_active {
+            self.render_bob_contact();
+            self.draw_hand_at_mouse();
+            self.advance_dialogue();
             self.countdown = self.countdown.saturating_sub(1);
             self.frame += 1;
             return;
