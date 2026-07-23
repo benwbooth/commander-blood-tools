@@ -3395,7 +3395,6 @@ impl EngineState {
         // playing full-screen to completion.
         if self.ending_active && self.ending_scene.is_some() {
             self.render_ending();
-            self.draw_hand_at_mouse();
             self.frame += 1;
             return;
         }
@@ -3453,7 +3452,6 @@ impl EngineState {
         // Comms/TV screen takes precedence when active: watch the broadcast.
         if self.tv_active && !self.tv_channels.is_empty() {
             self.render_tv();
-            self.draw_hand_at_mouse();
             self.countdown = self.countdown.saturating_sub(1);
             self.frame += 1;
             return;

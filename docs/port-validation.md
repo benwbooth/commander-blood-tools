@@ -39,7 +39,7 @@ evidence in the row. Re-audit pass 1: 2026-07-22..23.
 | ship3d.rs pyramid render | OPTION menu visuals | **APPROX** | flat-shaded stand-in; the real render path (manu3 3D + dither) not ported. Settle: decode the manu3 render loop or capture the real OPTION screen |
 | manu3.rs | menu 3D data | DATA(partial) | camera-pan entries decoded; item sprites/RLE not |
 | engine.rs console band | intro/tutorial pyramid band | CAPTURE | pixel-exact harvest from native DOSBox raws (static across times) |
-| engine.rs hand cursor | pointing-hand | CAPTURE(atlas)+**APPROX**(pose) | sprites harvested from live bridge captures; pose-by-nearest-capture approximates the real manu3 3D hand render. Now the ONLY cursor, drawn on every screen at the mouse position (host crosshair removed) |
+| engine.rs hand cursor | pointing-hand | CAPTURE(atlas)+**APPROX**(pose) | sprites harvested from live bridge captures; pose-by-nearest-capture approximates the real manu3 3D hand render. Now the ONLY cursor; REAL-CAPTURE rule: presentations draw NO cursor (montage/talk frames cursor-free) while interactive screens show the hand (oracle console frames) — hand removed from ending+TV, kept on nav/dialogue/phone/cryobox/option/world/cyber |
 | engine.rs intro flow | logos/montage/credits | CAPTURE+DATA | DESCRIPT present record + real-args DOSBox captures (rows 69/79 credits, band rows 99..200) |
 | engine.rs TV | broadcast channels | DATA | 7 self-identified Sequence records; chained clips+music+cues |
 | engine.rs telephone/cryobox | console screens | DATA+CAPTURE | bappel/character sprites; oracle-observed flows |
