@@ -420,6 +420,8 @@ pub struct EngineState {
     /// Composite the pyramid-console band under the current dialogue (the SCRIPT1 console
     /// tutorial plays its talk-HNMs over the band — real-game-verified, tut_180s..300s).
     console_band_dialogue: bool,
+    /// The manu3 3D hand model (lazy-loaded).
+    hand_mesh: Option<crate::manu3_hand::HandMesh>,
     /// Auto-play stops when the cursor reaches this line (exclusive) — the SCRIPTED OPENING
     /// plays unprompted, then the dialogue HOLDS at the topic menu and further content is
     /// player-driven (a topic click plays its segment, then re-holds). `None` = play through.
@@ -587,6 +589,7 @@ impl EngineState {
             dialogue_cursor: 0,
             intro_pyramid: Vec::new(),
             console_band_dialogue: false,
+            hand_mesh: None,
             autoplay_end: None,
             dialogue_segments: Vec::new(),
             line_min_hold: None,
@@ -1281,6 +1284,30 @@ impl EngineState {
     /// atlas.
     fn draw_hand_at_mouse(&mut self) {
         let (cx, cy) = (self.mouse.x as i32, self.mouse.y as i32);
+        // THE REAL HAND: the manu3.xdb 3D model (142 verts / 216 faces, extracted from the
+        // live game) rendered with the decoded cursor law + transform, flat-shaded with the
+        // game's teal ramp (240..249). The capture atlas below remains only as a fallback
+        // when the mesh asset is unavailable.
+        {
+            let mesh = self
+                .hand_mesh
+                .get_or_insert_with(crate::manu3_hand::HandMesh::load);
+            // Install the teal DAC ramp 240..249 from the baked game palette.
+            let gp = crate::palette::game_screen_palette();
+            for i in 240..=249usize {
+                self.scene_palette[i] = gp[i];
+            }
+            mesh.draw(
+                &mut self.framebuffer,
+                ENGINE_SCREEN_WIDTH,
+                ENGINE_SCREEN_HEIGHT,
+                cx,
+                cy,
+            );
+            return;
+        }
+        #[allow(unreachable_code)]
+        let _ = ();
         let Some(si) = self
             .hand_atlas
             .iter()

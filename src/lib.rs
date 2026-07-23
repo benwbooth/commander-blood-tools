@@ -40,6 +40,7 @@ pub mod recomp;
 pub mod lbm;
 pub mod levels;
 pub mod manu3;
+pub mod manu3_hand;
 pub mod palette;
 pub mod progress;
 pub mod save;
