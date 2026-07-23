@@ -398,6 +398,9 @@ pub struct EngineState {
     /// label + orb click-to-advance remain until CANCELed — the oracle hub state).
     pub hub_presentation: bool,
     pub console_box_kind: usize,
+    /// The engaged topic row of the in-window concept box — renders WHITE while the
+    /// others stay grey (oracle honk_blood: the clicked BLOOD row highlights).
+    pub console_box_selected: Option<usize>,
     /// The console OPTION 3D-pyramid menu (`manu3.xdb` overlay). Its 12-item dispatch
     /// structure is decoded statically from manu3.xdb (`[0x2306]` table) and its
     /// camera/rotation/tween/dispatch logic is the ported [`crate::manu3`]; it reuses the
@@ -618,6 +621,7 @@ impl EngineState {
             hand_state_prev: None,
             hub_presentation: false,
             console_box_kind: 0,
+            console_box_selected: None,
             option_active: false,
             option_angle: 0,
             option_item: 0,
@@ -1129,7 +1133,8 @@ impl EngineState {
             if !(165..=300).contains(&x) {
                 return None;
             }
-            let row = (y as i32 - 81) / 11;
+            let top = if self.console_box.len() > 5 { 37 } else { 81 };
+            let row = (y as i32 - top) / 11;
             return (row >= 0 && (row as usize) < self.console_box.len())
                 .then_some(row as usize);
         }
@@ -1303,19 +1308,25 @@ impl EngineState {
             if !is_baked_menu {
                 if self.console_box_kind == 3 {
                     // The IN-WINDOW concept box (oracle honk_talk vs_005..007):
-                    // grey square-caps rows left-aligned at x=175 from y=83,
-                    // pitch 11, drawn INSIDE the console window with no backdrop.
+                    // grey square-caps rows left-aligned at x=175, pitch 11, drawn
+                    // INSIDE the console window with no backdrop. Short boxes start
+                    // at y=83; tall conversation menus (>5 rows) from y=39 (oracle
+                    // honk_talk2). The ENGAGED topic renders WHITE (honk_blood).
                     self.scene_palette[0xE8] = [150, 150, 150];
+                    self.scene_palette[0xEF] = [255, 255, 255];
                     let labels = self.console_box.clone();
+                    let top = if labels.len() > 5 { 39 } else { 83 };
                     for (i, label) in labels.iter().enumerate() {
+                        let color =
+                            if self.console_box_selected == Some(i) { 0xEF } else { 0xE8 };
                         crate::font::draw_square_caps(
                             &mut self.framebuffer,
                             ENGINE_SCREEN_WIDTH,
                             ENGINE_SCREEN_HEIGHT,
                             label,
                             175,
-                            83 + i * 11,
-                            0xE8,
+                            top + i * 11,
+                            color,
                         );
                     }
                 } else {

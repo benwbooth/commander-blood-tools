@@ -1124,6 +1124,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     if let Some(row) = engine.console_box_click(mx, my) {
                         let last = engine.console_box.len() - 1;
                         let kind = engine.console_box_kind;
+                        let box_labels = engine.console_box.clone();
                         engine.console_box.clear();
                         engine.bridge.engaged_row = None;
                         if row < last {
@@ -1187,8 +1188,8 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                 // 2902 via rec_08B8 — oracle honk_talk2: 'YES,
                                 // COMMANDER?' + the 11-topic in-window menu).
                                 3 => {
-                                    let label = engine
-                                        .console_box
+                                    engine.console_box_selected = Some(row);
+                                    let label = box_labels
                                         .get(row)
                                         .cloned()
                                         .unwrap_or_default()
@@ -1236,6 +1237,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                         .map(|s| s.to_string())
                                         .collect();
                                         engine.console_box_kind = 3;
+                                        engine.console_box_selected = None;
                                         if new_lines.is_empty() {
                                             new_lines = vec![(
                                                 "Yes , Commander ?".into(),
@@ -1243,6 +1245,14 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                                 true,
                                             )];
                                         }
+                                    } else if label != "bye_bye" {
+                                        // Deep topics keep the conversation menu OPEN
+                                        // with the engaged topic highlighted (oracle
+                                        // honk_blood: BLOOD renders white, the menu
+                                        // persists while the answer plays).
+                                        engine.bridge.engaged_row = Some(0);
+                                        engine.console_box = box_labels.clone();
+                                        engine.console_box_kind = 3;
                                     }
                                     if !new_lines.is_empty() {
                                         set_vm_dialogue(&mut engine, new_lines);
