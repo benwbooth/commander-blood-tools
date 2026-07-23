@@ -1122,6 +1122,17 @@ impl EngineState {
         if self.console_box.is_empty() {
             return None;
         }
+        // The IN-WINDOW concept box (kind 3, HONK's TALK/REMEMBER/BYE_BYE):
+        // left-aligned rows at x=175 from y=83, pitch 11 — inside the console
+        // window, no backdrop (oracle honk_talk vs_005..007).
+        if self.console_box_kind == 3 {
+            if !(165..=300).contains(&x) {
+                return None;
+            }
+            let row = (y as i32 - 81) / 11;
+            return (row >= 0 && (row as usize) < self.console_box.len())
+                .then_some(row as usize);
+        }
         self.choice_box_row_at(x, y, self.console_box.len())
     }
 
@@ -1290,8 +1301,27 @@ impl EngineState {
             let is_baked_menu = self.console_box
                 == ["HONK", "TELEPHONE", "CRYOBOX", "MENU", "OPTION"];
             if !is_baked_menu {
-                let labels = self.console_box.clone();
-                self.draw_choice_box(&labels, None);
+                if self.console_box_kind == 3 {
+                    // The IN-WINDOW concept box (oracle honk_talk vs_005..007):
+                    // grey square-caps rows left-aligned at x=175 from y=83,
+                    // pitch 11, drawn INSIDE the console window with no backdrop.
+                    self.scene_palette[0xE8] = [150, 150, 150];
+                    let labels = self.console_box.clone();
+                    for (i, label) in labels.iter().enumerate() {
+                        crate::font::draw_square_caps(
+                            &mut self.framebuffer,
+                            ENGINE_SCREEN_WIDTH,
+                            ENGINE_SCREEN_HEIGHT,
+                            label,
+                            175,
+                            83 + i * 11,
+                            0xE8,
+                        );
+                    }
+                } else {
+                    let labels = self.console_box.clone();
+                    self.draw_choice_box(&labels, None);
+                }
             }
         }
         // The engaged CRYOBOX row RE-LABELS to red "CONTACT" (oracle vs_003, the
@@ -3676,6 +3706,36 @@ impl EngineState {
                 }
             }
             return;
+        }
+        // Completion HOLD phase (oracle honk_talk vs_005..007: the just-completed
+        // line holds in BRIGHT GREEN — every char 0xFF — before the white settle).
+        let per_char = u32::from(crate::vm::reveal_frames_per_char(self.text_speed_step)).max(1);
+        let hold = u32::from(crate::vm::reveal_complete_hold_ticks(self.text_speed_step));
+        let holding = fully
+            && self.dialogue_timer < total as u32 * per_char + hold;
+        if holding {
+            if let Some(bold) = self.bold_font.take() {
+                let mut y = 8usize;
+                for line in text.split('\n') {
+                    let mut x = 10usize;
+                    for ch in line.chars() {
+                        let mut buf = [0u8; 4];
+                        bold.draw(
+                            &mut self.framebuffer,
+                            ENGINE_SCREEN_WIDTH,
+                            ENGINE_SCREEN_HEIGHT,
+                            ch.encode_utf8(&mut buf),
+                            x,
+                            y,
+                            0xFF,
+                        );
+                        x += crate::font::BoldConsoleFont::ADVANCE;
+                    }
+                    y += pitch;
+                }
+                self.bold_font = Some(bold);
+                return;
+            }
         }
         if fully {
             // Settled: thin white (0xE0 — the game's settled-text index).

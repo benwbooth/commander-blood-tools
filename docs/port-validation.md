@@ -108,6 +108,17 @@ be PIXEL-COMPARED against the interpreter oracle. Status:
 | subtitle animation/sounds | **ASM-EXACT + LIVE-CAPTURED** | the full reveal law re-read from the binary and confirmed already ported literally: pump 0x93F8/0x949A advances one char per pump when [0xB31] reload ([0xACA]>>2) is 0 == vm::reveal_frames_per_char; speed map 0x1B20 (voice v -> {1,2,3,4,7}) == text_speed_step_from_setting; end-hold 0x7378 == record_end_hold_ticks; honk chatter throttle [0xB2F]=4 in main.rs. LIVE (REVEALDUMP, fixed: CANCEL -> teardown -> HONK row click with ring x from the CURRENT frame): the reveal captured char-by-char at rows 8..14, x from 10, 8px advance; colour order CORRECTED from the live frames — newest char 0xFF (129,255,105), second-newest 0xFE (44,210,8), older revealed 0xFD (0,145,0) (the port had newest=FE/settled=FF). Honk chatter = a repeating 3-sample rotation (16384/6442/9942 bytes @ 11111 Hz) across the reveal (sb_play_log). STEPS->SECONDS CLOSED: the game reprograms the PIT to 200.27 Hz (divisor 0x1746) x 39946 steps/tick = 8.0M steps per DOS second — SELF-VERIFIED by the SB log itself: consecutive chained DMA starts are 11.80M steps apart = exactly the 16384-byte buffer's 1.4746 s at 11111 Hz x 8.0M. So the chatter is CONTINUOUS chained DMA (the 2.94 s three-sample voice loop repeats seamlessly while the line presents), matching the port's continuous burble model |
 | menus | **FIXED (hub) + verified pipeline** | the top-level console menu is BAKED into the TB.BIG panorama frames (port frame 45 == live hub screen: 93.2% full / 95.4% left-half raw-index match; residue = live overlays CANCEL/orb). The port's floating text double-draw REMOVED; hover stays palette-swap (0x7B..0x7F). Contextual sub-boxes remain live-drawn gold boxes (capture-verified pattern) |
 
+## HONK CONCEPT-BOX + COMPLETION-HOLD (oracle honk_talk, 2026-07-23)
+The honk_talk dual-run (HONK row -> TALK) captured: (a) the {TALK, REMEMBER, BYE_BYE}
+box renders IN-WINDOW — grey square-caps left-aligned at x=175 from y=83, pitch 11, NO
+backdrop (unlike the left contextual boxes) — ported (kind-3 draw + hit-test); (b) the
+just-completed console line HOLDS in BRIGHT GREEN (every char 0xFF) before the white
+settle — ported (the completion-hold phase in draw_subtitle_revealed); (c) the REAL
+first HONK line is 'COMMANDER, REMEMBER OL...' (revealing green) before 'WHAT DO YOU
+WANT COMMANDER?' — the windowed driver + verify_port still hardcode only the prompt
+line; wiring the full presenter block (SCRIPT1 actor 2148's lines via the VM) is the
+logged residual.
+
 ## RESOLVED: manu3 seam-face texture (was: per-face texture segment open item)
 Root cause found by a LIVE FS CAPTURE at the span setup (new SEAMFS probe, capture_ip
 166C:120B + captured_fs): the fill's fs parameter block is fs=17A3 with fs:[2]=1B76
