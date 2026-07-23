@@ -298,3 +298,14 @@ negative; capture past the event before concluding.
   DATA-driven (console/manu resource table, still unlocated). The port routes buttons via DEB
   names (content-equivalent). Remaining open: that table, on-planet click semantics, C4
   presentation-dispatch internals (0x5816 deep RE).
+
+## C4 presentation dispatch @0x5816 — DECODED (commit 1028)
+The 'deep presentation-VM RE' item is resolved in substance: 0x5816 is the post-VM record scan.
+For each ACTIVE directory record (0x672C, +2 bit0): kind 2 = character DISPLAY maintenance
+(primary C4 record 0x675E, wildcard related 0x674E, field-pointer follow — the talk-head/record
+selection the engine already models per line); kind 1 = PRESENTATION START when the record's C4
+field is armed by the VM's C4 SET op: set 0x67AC active + 0x67B7 start-lock + 0x2793|=4 busy and
+clear the dialogue state — i.e. exactly VmMachine::start_actor_presentation + the engine's
+dialogue lifecycle. The port's model is CONFIRMED by the asm rather than changed. Sequence-kind
+records do NOT start through the kind-1/2 paths; the remaining maledict-trigger candidate is the
+kinds 0x10/0x200 shared path @0x5A51 (bounded follow-up).
