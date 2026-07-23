@@ -5355,3 +5355,15 @@ PORT ACTIONS (queue): derive the choice-box draw from {anchor [0xAC6], w=max+20,
 y=(200−h)/2, top+4, pitch 11} replacing the measured constants; restore pose 6/7 on
 box hover/press; text colours 0xE8/0xEF and the backdrop remain as ported (0xE0 fill /
 0xEF frame per the box-open path).
+
+## CREDIT-DIVERGENCE (interpreter tooling bug) — trace shaped (2026-07-23)
+Presenter (b) file 0x7612 (`credit_presenter_b_cryo`) heads a FAMILY of string-sink
+leaves — 0x7612 -> gs:0xE18 (the subtitle display buffer, armed reveal 5e64/5e58),
+0x7629 -> 0x20B8, 0x763E -> 0xD09 — each copying SI to a different UI buffer. No near
+callers and no simple address table found: the dispatch is COMPUTED (call reg / far
+table). In the interpreter the flow selects the WAIT-COMMANDER static sink (cs=0cbd,
+gs:0x190) instead of 0x7612's slot. NEXT TRACE (fresh context): run the interpreter
+to the credit beat with an exec watch on 0x7612's linear address AND on the sink
+family's entries; find the computed dispatch site from the executed-neighbourhood
+log; then diff which selector value the interpreter derives vs what routes to (b).
+Note: this is ORACLE TOOLING only — the port's credit is capture-verified correct.
