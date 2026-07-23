@@ -65,6 +65,12 @@ script-locked and (b) the missing live CANCEL overlay; after fixes: 2.22 mean / 
 across all 9 steps.
 
 ## CAMPAIGN LOG
+- PASS 3b (honk_talk2): the TALK concept advances to Honk's FULL conversation — 'YES,
+  COMMANDER?' + an 11-topic in-window menu {BYE_BYE, TALK, BLOOD, BOB_MORLOCK, HONK, ARK,
+  MA, ORXX, OLGA, BIG_BANG, BLACK_HOLES} (rec_08B8=2902 queues the presenter per @11E9;
+  capture banked accuracy/captures/dialogue/honk_talk_menu.ppm). PORT WIRING NEXT: on the
+  talk concept, start presenter 2902 and surface its topic menu (the concept-dispatch +
+  in-window box machinery both exist).
 - PASS 3 (2026-07-23, deeper-story scenarios): cryobox_enter -> Bob's CONTACT screen decoded
   + ported (talk-head video over the hub, real presenter 132, topics via concept dispatch,
   in-window box style, CONTACT re-label); honk_talk -> the in-window concept box + the
