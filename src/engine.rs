@@ -3122,6 +3122,11 @@ impl EngineState {
     }
 
     /// The number of nav destinations currently offered.
+    /// The label of nav destination `i` (the location's character name), if present.
+    pub fn nav_destination_label(&self, i: usize) -> Option<String> {
+        self.nav_destinations.get(i).map(|(l, _)| l.clone())
+    }
+
     pub fn nav_destination_count(&self) -> usize {
         self.nav_destinations.len()
     }

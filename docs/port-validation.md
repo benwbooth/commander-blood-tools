@@ -91,6 +91,13 @@ evidence in the row. Re-audit pass 1: 2026-07-22..23.
   the viewscreen console (harvested band + static viewscreen per the oracle empty-nav state;
   destination choice box once granted); Esc -> bridge. Row closed to the evidence available.
 
+- REEL ENUMERATED (evidence closed): 230 frames at 1M-step intervals across the ENTIRE intro
+  (INTROTRACE STEPS=230000000; archived accuracy/reel/, regenerable). The reel sequence is now
+  frame-enumerated ground truth; matching scene boundaries to assets + extending the port's
+  intro to the full reel = the remaining port-side work on this row.
+- World-candidate labels: the box now carries the location's REAL character name (the nav
+  destination label for the heading) instead of the generic TALK.
+
 ## Active fix queue (from the matrix, user-reported first)
 1. [x] Host crosshair removed; hand = the only cursor, all screens (this pass).
 2. [x] Hand hotspot: oracle frames confirm fingertip = mouse position (arm extends down-left); the BRIDGEPROBE-derived atlas anchors encode this. Pose model (nearest-capture) remains APPROX vs the real 3D render.

@@ -1129,7 +1129,14 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                             engine.on_ship = false;
                         }
                     } else if engine.world_object_click(mx, my).is_some() {
-                        engine.console_box = vec!["TALK".into(), "CANCEL".into()];
+                        // Label the candidate with the location's REAL character (the same
+                        // name the nav destination list carries for this heading).
+                        let heading = engine.compass_angle;
+                        let dest_idx = (heading as usize * 3 / 180).min(2);
+                        let label = engine
+                            .nav_destination_label(dest_idx)
+                            .unwrap_or_else(|| "TALK".into());
+                        engine.console_box = vec![label, "CANCEL".into()];
                         engine.console_box_kind = 10;
                     } else {
                         engine.cycle_world_room(1);
