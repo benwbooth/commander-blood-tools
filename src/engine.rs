@@ -1388,7 +1388,9 @@ impl EngineState {
         let (cx, cy) = (self.bridge.mouse_screen_x(), self.bridge.mouse_y);
         let rotating = self.bridge.frame != self.prev_bridge_frame;
         self.prev_bridge_frame = self.bridge.frame;
-        let sel = if rotating {
+        let sel = if self.bridge.seeking {
+            0x10 // the decoded AUTO-SEEK/travel pose (station seek in progress)
+        } else if rotating {
             if cx < 160 { 3 } else { 2 }
         } else {
             1
