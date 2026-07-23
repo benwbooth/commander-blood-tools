@@ -309,3 +309,12 @@ clear the dialogue state — i.e. exactly VmMachine::start_actor_presentation + 
 dialogue lifecycle. The port's model is CONFIRMED by the asm rather than changed. Sequence-kind
 records do NOT start through the kind-1/2 paths; the remaining maledict-trigger candidate is the
 kinds 0x10/0x200 shared path @0x5A51 (bounded follow-up).
+
+## Sequence-cutscene dispatch — CONCLUDED (commit 1029)
+The 0x5A51/0x5B38 path (record kinds 0x10/0x200) acts on records typed 0xC1 — SHIP-3D/nav
+presentation maintenance, not cutscenes. So DESCRIPT Sequence records are dispatched by NO path of
+the presentation scan: combined with the earlier token-reference audit (garde/maledict referenced
+by zero script tokens), Sequence records are runtime-event content — the TV channels (self-
+identified, ported) and event cutscenes like maledict (candidate triggers: idle/phone events —
+the player is built; the trigger remains the one genuinely open cutscene item, now tightly
+bounded). This closes the '0x5816 deep internals' line of investigation.
