@@ -1,0 +1,13 @@
+# CRYOBOX -> BOB_MORLOCK -> the MISSION topic (Bob's list x=170 y=56 pitch 11; row 5).
+click 100 98
+wait 20
+click 230 118
+wait 30
+click 100 89
+wait 40
+wait 40
+click 200 113
+wait 40
+wait 40
+click 125 118
+wait 40

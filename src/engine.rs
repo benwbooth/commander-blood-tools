@@ -1449,10 +1449,13 @@ impl EngineState {
                 self.scene_palette[i] = *c;
             }
         }
-        // The concept menu (grey square-caps; 0xE8 forced to the widget grey).
+        // The concept menu (grey square-caps; the ENGAGED topic renders WHITE —
+        // oracle bob_mission: the clicked MISSION row highlights).
         self.scene_palette[0xE8] = [150, 150, 150];
         self.scene_palette[0xE0] = [255, 255, 255];
+        self.scene_palette[0xEF] = [255, 255, 255];
         for (i, label) in Self::BOB_TOPICS.iter().enumerate() {
+            let color = if self.console_box_selected == Some(i) { 0xEF } else { 0xE8 };
             crate::font::draw_square_caps(
                 &mut self.framebuffer,
                 ENGINE_SCREEN_WIDTH,
@@ -1460,7 +1463,7 @@ impl EngineState {
                 label,
                 170,
                 56 + i * 11,
-                0xE8,
+                color,
             );
         }
         // The dialogue line at the console subtitle position, settled white.

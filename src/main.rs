@@ -1098,6 +1098,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                             engine.bridge_active = true;
                         }
                         Some(row) => {
+                            engine.console_box_selected = Some(row);
                             let label = EngineState::BOB_TOPICS[row].to_lowercase();
                             let off = dic_word_offset.borrow().get(&label).copied();
                             if let Some(off) = off {
