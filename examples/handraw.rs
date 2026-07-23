@@ -9,7 +9,7 @@ use std::path::Path;
 fn main() {
     let ds = std::fs::read("accuracy/manu3/manu3_ds.bin").unwrap();
     let seg2 = std::fs::read("accuracy/manu3/manu3_seg2_1b76.bin").unwrap();
-    let tex = std::fs::read("accuracy/manu3/hand_tex.bin").unwrap();
+    let tex = std::fs::read("accuracy/manu3/manu3_seg4_1c94.bin").unwrap();
     let rd16 = |d: &[u8], at: usize| u16::from_le_bytes([d[at], d[at + 1]]) as usize;
     let rdi16 = |d: &[u8], at: usize| i16::from_le_bytes([d[at], d[at + 1]]) as i64;
     let rdi32 = |d: &[u8], at: usize| {

@@ -107,17 +107,19 @@ be PIXEL-COMPARED against the interpreter oracle. Status:
 | subtitle animation/sounds | **ASM-EXACT + LIVE-CAPTURED** | the full reveal law re-read from the binary and confirmed already ported literally: pump 0x93F8/0x949A advances one char per pump when [0xB31] reload ([0xACA]>>2) is 0 == vm::reveal_frames_per_char; speed map 0x1B20 (voice v -> {1,2,3,4,7}) == text_speed_step_from_setting; end-hold 0x7378 == record_end_hold_ticks; honk chatter throttle [0xB2F]=4 in main.rs. LIVE (REVEALDUMP, fixed: CANCEL -> teardown -> HONK row click with ring x from the CURRENT frame): the reveal captured char-by-char at rows 8..14, x from 10, 8px advance; colour order CORRECTED from the live frames — newest char 0xFF (129,255,105), second-newest 0xFE (44,210,8), older revealed 0xFD (0,145,0) (the port had newest=FE/settled=FF). Honk chatter = a repeating 3-sample rotation (16384/6442/9942 bytes @ 11111 Hz) across the reveal (sb_play_log). Remaining: absolute steps->seconds mapping for the chatter cadence |
 | menus | **FIXED (hub) + verified pipeline** | the top-level console menu is BAKED into the TB.BIG panorama frames (port frame 45 == live hub screen: 93.2% full / 95.4% left-half raw-index match; residue = live overlays CANCEL/orb). The port's floating text double-draw REMOVED; hover stays palette-swap (0x7B..0x7F). Contextual sub-boxes remain live-drawn gold boxes (capture-verified pattern) |
 
-## OPEN ITEM: manu3 per-face texture segment (seam faces)
-The span setup (0xE89..0xED0) is now READ: segment = fs:[4] + (high byte of [0x622])<<4, and
-the in-page V accumulator starts at ((low byte of [0x622])<<8 + step/2) — i.e. effective row =
-(v>>8)+(v&0xFF) IF [0x622] is the raw mesh v and fs:[4] is the ds:0x6400 texture base.
-**TRIED AND REFUTED (dead end)**: folding the mesh v that way lands the seam faces (v 1480..1520
--> rows 205..245) in bytes that a 246-row TEXDUMP shows to be PANORAMA data — rendered confetti,
-worse than the clamp. So at fill time either fs:[4] points to a DIFFERENT buffer for these faces
-or [0x622] holds a transformed v. NEXT APPROACH: an interpreter watch on the span-setup reads —
-log the actual (fs, fs:[4], [0x622]) per face during one live hand frame; that resolves both
-unknowns directly. INTERIM in the port: out-of-range rows clamp to row 41 (edge material) — no
-confetti, slight palm banding vs the oracle's smooth blend.
+## RESOLVED: manu3 seam-face texture (was: per-face texture segment open item)
+Root cause found by a LIVE FS CAPTURE at the span setup (new SEAMFS probe, capture_ip
+166C:120B + captured_fs): the fill's fs parameter block is fs=17A3 with fs:[2]=1B76
+(vertex seg = manu3_seg2_1b76.bin), **fs:[4]=1C94 (TEXTURE seg = manu3_seg4_1c94.bin)**,
+fs:[6]=2094. The port's texture bank (hand_tex.bin, dumped from ds:0x6400) was a
+DIFFERENT buffer — its rows past 41 are unrelated scratch, which forced the row-41
+clamp and caused the palm banding. The real texture (seg4) holds smooth material over
+rows 0..62 = exactly the mesh's v range (0..62), so the seam faces (v 43..62) sample
+real skin. The address law itself (segment = fs:[4] + (v>>8)<<4, in-page row = v&0xFF)
+was read correctly at 0xE89/0x120B — with v <= 62 it reduces to plain (v, u) into seg4.
+Port switched to seg4, clamp now only an overshoot bound (62). handcmp: 42.16 -> 41.63
+mean-abs; the seam confetti/banding is gone (seam_port2 vs oracle_hand_160_88).
+The earlier "v 1480..1520" figure was a misread of hand_mesh.bin (different layout).
 
 ## WHOLE-PLAYTHROUGH GATE (src/bin/playthrough.rs) — PASSES
 One continuous EngineState run, boot -> ending, every stage asserted: title, intro montage,

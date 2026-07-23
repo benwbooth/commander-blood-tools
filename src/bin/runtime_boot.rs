@@ -3001,6 +3001,117 @@ fn main() {
         println!("TEXDUMP done ({} bytes)", out_bytes.len());
         return;
     }
+    if let Ok(spec) = std::env::var("SEAMFS") {
+        // Capture FS at the manu3 span-setup (default 0x120B, the uv/segment writer
+        // the hub path uses) — then read the REAL fs parameter block (fs:[2] vertex
+        // seg, fs:[4] TEXTURE seg, fs:[6] data seg) and dump 64 rows from the true
+        // texture base.
+        let ip = u16::from_str_radix(spec.trim_start_matches("0x"), 16).unwrap_or(0x120B);
+        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        rt.m.capture_ip = Some((0x166C, ip));
+        rt.m.captured = None;
+        rt.m.captured_fs = None;
+        let _ = rt.run(rt.cpu.steps + 6_000_000);
+        match rt.m.captured_fs {
+            None => println!("SEAMFS: 166C:{ip:04x} never hit"),
+            Some(fs) => {
+                let w = |off: u32| {
+                    rt.m.read8(fs, off) as u16 | ((rt.m.read8(fs, off + 1) as u16) << 8)
+                };
+                let (w0, vseg, tex, dseg) = (w(0), w(2), w(4), w(6));
+                println!("SEAMFS: fs={fs:04x} [0]={w0:04x} vertexseg={vseg:04x} TEXseg={tex:04x} dataseg={dseg:04x}");
+                let dump: Vec<u8> =
+                    (0..64u32 * 256).map(|i| rt.m.read8(tex, i)).collect();
+                std::fs::write(out.join("seamfs_tex.bin"), &dump).unwrap();
+                println!("dumped 64 rows from {tex:04x}:0 -> seamfs_tex.bin");
+            }
+        }
+        return;
+    }
+    if std::env::var("FSBLOCK").is_ok() {
+        // Find the manu3 fill's fs parameter block: three consecutive words
+        // {vertex seg, TEXTURE seg, data seg} at fs:[2]/[4]/[6]. Scan live memory
+        // for candidate blocks whose [6] word equals the known data segment 0x17A3
+        // and report the neighbours; then dump 64 rows from each texture-seg candidate.
+        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        let _ = rt.run(rt.cpu.steps + 2_000_000);
+        let mut cands: Vec<(usize, u16, u16)> = Vec::new();
+        for a in (0..0x9F000usize).step_by(2) {
+            let w = rt.m.mem[a] as u16 | ((rt.m.mem[a + 1] as u16) << 8);
+            if w == 0x17A3 && a >= 4 {
+                let tex = rt.m.mem[a - 2] as u16 | ((rt.m.mem[a - 1] as u16) << 8);
+                let vseg = rt.m.mem[a - 4] as u16 | ((rt.m.mem[a - 3] as u16) << 8);
+                // Plausible segments only (below 640K, nonzero).
+                if tex > 0x100 && tex < 0x9F00 && vseg > 0x100 && vseg < 0x9F00 {
+                    cands.push((a - 6, vseg, tex));
+                }
+            }
+        }
+        println!("fs-block candidates (base, fs:[2] vertexseg, fs:[4] texseg):");
+        for &(base, vseg, tex) in cands.iter().take(20) {
+            println!("  fs={:04x} vseg={vseg:04x} tex={tex:04x}", base / 16);
+            let lin = (tex as usize) * 16;
+            let sample: Vec<u8> = (0..16).map(|i| rt.m.mem[lin + 45 * 256 + 64 + i]).collect();
+            println!("    row45 sample: {sample:02x?}");
+        }
+        if let Some(&(_, _, tex)) = cands.first() {
+            let lin = (tex as usize) * 16;
+            let dump: Vec<u8> = (0..64 * 256).map(|i| rt.m.mem[lin + i]).collect();
+            std::fs::write(out.join("fsblock_tex.bin"), &dump).unwrap();
+            println!("dumped 64 rows from tex seg {tex:04x} -> fsblock_tex.bin");
+        }
+        return;
+    }
+    if let Ok(spec) = std::env::var("SEAMWATCH") {
+        // Seam-face texture decode: watch writes to manu3's per-face fill slots
+        // during live hub hand frames. Spec = hex ds-offset (default 623 = the HIGH
+        // byte of [0x622], the texture-page selector the span setup shifts into the
+        // segment). Logs every unique (value, cs:ip) writer.
+        let off = u32::from_str_radix(spec.trim_start_matches("0x"), 16).unwrap_or(0x623);
+        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        let _ = rt.run(rt.cpu.steps + 1_000_000);
+        let seg: usize = std::env::var("SEAMSEG")
+            .ok()
+            .and_then(|s| usize::from_str_radix(s.trim_start_matches("0x"), 16).ok())
+            .unwrap_or(0x17A3);
+        rt.m.watch_addr = Some(seg * 16 + off as usize);
+        let _ = rt.run(rt.cpu.steps + 8_000_000);
+        let mut seen = std::collections::HashMap::new();
+        for &(v, cs, ip) in &rt.m.addr_hits {
+            *seen.entry((v, cs, ip)).or_insert(0u32) += 1;
+        }
+        let mut rows: Vec<_> = seen.into_iter().collect();
+        rows.sort_by_key(|&((v, _, _), n)| (std::cmp::Reverse(n), v as u32));
+        println!("writes to manu3 ds:{off:#x} ({} total):", rt.m.addr_hits.len());
+        for ((v, cs, ip), n) in rows.into_iter().take(40) {
+            println!("  ={v:#04x} x{n} at {cs:04x}:{ip:04x}");
+        }
+        // Also: does the manu3 overlay's 0xE80..0xF30 span-setup region even EXECUTE
+        // at the hub? Sample cs:ip for a couple of frames and report overlay hits.
+        rt.ip_sample = Some(Default::default());
+        let _ = rt.run(rt.cpu.steps + 4_000_000);
+        if let Some(h) = rt.ip_sample.take() {
+            let mut manu: Vec<_> = h
+                .iter()
+                .filter(|&(&(cs, _), _)| cs == 0x166C)
+                .map(|(&(_, ip), &n)| (ip, n))
+                .collect();
+            manu.sort_by_key(|&(_, n)| std::cmp::Reverse(n));
+            println!("manu3 overlay (cs=166C) hot ips: {:?}", &manu[..manu.len().min(20)]);
+            let mut segs: Vec<_> = {
+                let mut m = std::collections::HashMap::new();
+                for (&(cs, _), &n) in h.iter() {
+                    *m.entry(cs).or_insert(0u64) += n;
+                }
+                let mut v: Vec<_> = m.into_iter().collect();
+                v.sort_by_key(|&(_, n)| std::cmp::Reverse(n));
+                v
+            };
+            segs.truncate(8);
+            println!("hot segments: {segs:04x?}");
+        }
+        return;
+    }
     if std::env::var("SELECTORWATCH").is_ok() {
         // POSE-SELECTOR ground truth: resume the hub, perform scripted interactions
         // (idle, move, menu hover, orb hover, click, steer to the edge), sampling the

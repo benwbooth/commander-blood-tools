@@ -1122,6 +1122,8 @@ pub struct Machine {
     pub vm_ops: Vec<u8>,
     /// At capture_ip, snapshot 64 bytes at ds:0 (the current ds segment, offset 0).
     pub captured_seg: Option<Vec<u8>>,
+    /// fs at capture_ip (the manu3 fill's parameter-block segment).
+    pub captured_fs: Option<u16>,
     /// Lockstep capture: route VRAM (0xa0000..0xb0000) to linear `mem` instead of the planar Vga
     /// object, so interp-vs-Unicorn lockstep sees identical (linear) VRAM semantics on both sides.
     pub vga_linear: bool,
@@ -1159,6 +1161,7 @@ impl Machine {
             coverage: Vec::new(),
             trap_ips: std::collections::HashMap::new(),
             capture_ip: None,
+            captured_fs: None,
             captured: None,
             capture_ip2: None,
             captured2: Vec::new(),

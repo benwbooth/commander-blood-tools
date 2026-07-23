@@ -34,7 +34,13 @@ const STATE_BASE: usize = 0x2274;
 const STATE_LEN: usize = 0x700;
 const WRIST: usize = 0x2394;
 /// The hand's 256-wide texture (palette-index rows) lifted from the live data segment.
-const TEX: &[u8] = include_bytes!("../accuracy/manu3/hand_tex.bin");
+// THE REAL TEXTURE SEGMENT: the fill's fs parameter block (captured live at the
+// span setup 0x120B: fs=17A3, fs:[2]=1B76 vertex seg, fs:[4]=1C94 TEXTURE seg,
+// fs:[6]=2094) names manu3_seg4_1c94.bin as the texture base — its material spans
+// rows 0..62, exactly the mesh's v range, so the seam faces (v 43..62) sample real
+// smooth skin. (The old hand_tex.bin bank came from ds:0x6400 — a different buffer;
+// rows past 41 there are unrelated scratch, which forced a row clamp + palm banding.)
+const TEX: &[u8] = include_bytes!("../accuracy/manu3/manu3_seg4_1c94.bin");
 const TEX_W: usize = 256;
 /// The game's own sin/cos tables (ds:0x26, 1024 entries x {cos:i16, sin:i16}, Q14).
 const TRIG: &[u8] = include_bytes!("../accuracy/manu3/trig_tables.bin");
@@ -467,12 +473,9 @@ fn fill_triangle_tex(
                     continue;
                 }
                 // Unconditional write — the game's fill has NO transparency.
-                // Rows beyond the banked texture's valid extent (~41) clamp to the
-                // last valid row: the seam/edge faces' per-face texture SEGMENT
-                // (setup 0xE89..0xEB3 folds a face component into the segment) is
-                // not fully decoded yet; the clamp renders them in edge material
-                // instead of the unrelated memory bytes (see port-validation.md).
-                let vc = v.min(41);
+                // The seg4 texture's material spans rows 0..62 = the mesh's whole v
+                // range; clamp only as a safety bound (interpolation overshoot).
+                let vc = v.min(62);
                 let ti = vc * TEX_W + u;
                 if ti < TEX.len() {
                     zbuf[pi] = z;

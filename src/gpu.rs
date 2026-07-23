@@ -86,9 +86,9 @@ fn vs(@location(0) p: vec3<f32>, @location(1) uv: vec2<f32>) -> VOut {
 fn fs(in: VOut) -> @location(0) vec4<f32> {
     let dims = textureDimensions(tex);
     let tx = clamp(i32(in.uv.x), 0, i32(dims.x) - 1);
-    // Valid texture rows end at ~41; the seam faces' per-face texture segment is
-    // not decoded yet — clamp into edge material rather than unrelated memory.
-    let ty = clamp(i32(in.uv.y), 0, 41);
+    // The seg4 texture's material spans rows 0..62 — the mesh's whole v range
+    // (fs:[4]=1C94 capture); clamp only as an interpolation-overshoot bound.
+    let ty = clamp(i32(in.uv.y), 0, 62);
     // The game's affine fill writes EVERY texel unconditionally (0xC2A: mov es:[di],ch
     // with no zero test) — texel 0 is opaque palette black (the wrist's dither), not
     // transparency.
