@@ -48,9 +48,14 @@ impl HandMesh {
     /// Render the hand into an indexed framebuffer with the cursor at (cx, cy).
     /// Implements the decoded cursor law + Q15 transform + painter-sorted flat fill.
     pub fn draw(&self, fb: &mut [u8], w: usize, h: usize, cx: i32, cy: i32) {
-        // Cursor law (XDB:0x0000): angles in table units (1024/rev).
-        let yaw = ((cx - 160) * 2) as f32 * (std::f32::consts::TAU / 1024.0);
-        let pitch = ((cy - 100) * 2) as f32 * (std::f32::consts::TAU / 1024.0);
+        // Cursor law (XDB:0x0000): angles in table units (1024/rev), displacing the REAL
+        // rest pose read from the live state block (rec 0x2394 angles 0xFE78/0xFE24/0x210
+        // masked 0xFFC -> 926/905/132 table steps).
+        const REST_YAW: f32 = 926.0;
+        const REST_PITCH: f32 = 905.0;
+        let unit = std::f32::consts::TAU / 1024.0;
+        let yaw = (REST_YAW + ((cx - 160) * 2) as f32) * unit;
+        let pitch = (REST_PITCH + ((cy - 100) * 2) as f32) * unit;
         // Rest pose aims the finger up-screen; yaw/pitch displace it (Q15 in the
         // original; f32 here computes the identical rotation).
         let (sy, cyw) = yaw.sin_cos();
