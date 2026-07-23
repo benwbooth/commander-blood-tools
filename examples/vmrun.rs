@@ -16,6 +16,10 @@ fn main() {
         m.presentation_busy = true;
         m.presentation_active = true;
     }
+    if std::env::var("VMFLAGS").is_ok() {
+        m.flag_252a = true;
+        m.flag_274f = true;
+    }
     // Start a specific actor's presentation: VMACTOR=<record_offset>,<related>
     if let Ok(spec) = std::env::var("VMACTOR") {
         let parts: Vec<u16> = spec.split(',').filter_map(|p| p.parse().ok()).collect();

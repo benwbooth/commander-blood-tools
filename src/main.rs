@@ -456,6 +456,26 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     // Concept word -> DIC offset (A3 operands are DIC word offsets).
     let dic_word_offset: std::cell::RefCell<std::collections::HashMap<String, u16>> =
         std::cell::RefCell::new(std::collections::HashMap::new());
+    // Collect a VM frame's output: dialogue lines (mapped through vm_lines) and
+    // any D2 profile handoff.
+    let vm_collect = |m: &mut commander_blood_tools::vm::VmMachine,
+                      map: &std::collections::HashMap<usize, (String, Option<std::path::PathBuf>)>|
+     -> (Vec<(String, Option<std::path::PathBuf>)>, Option<i16>) {
+        let mut lines = Vec::new();
+        let mut profile = None;
+        for ev in m.run_frame() {
+            match ev {
+                commander_blood_tools::vm::VmEvent::Text { offset } => {
+                    if let Some(l) = map.get(&offset) {
+                        lines.push(l.clone());
+                    }
+                }
+                commander_blood_tools::vm::VmEvent::ProfileRequest(p) => profile = Some(p),
+                _ => {}
+            }
+        }
+        (lines, profile)
+    };
     let load_script = |engine: &mut EngineState, music: &mut Music, n: u32| {
         current_script.set(n);
         let r = |ext: &str| std::fs::read(format!("{iso}/SCRIPT{n}.{ext}"));
@@ -545,7 +565,6 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                             .collect();
                     }
                                 } else if n == 2 {
-                    *script_vm.borrow_mut() = None;
                     // The topic labels are DECODED from the real script, not guessed:
                     // SCRIPT2's help1..help9 are the numerology consultation, whose
                     // concept menu (VM opcode 0xA3 in SCRIPT2.BAS) is [talk, one..nine].
@@ -602,7 +621,6 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     }
                     engine.set_topic_menu(if usable { topics } else { Vec::new() });
                 } else {
-                    *script_vm.borrow_mut() = None;
                     // Location scripts (SCRIPT3/4/5): show the decoded concept menu
                     // (bas_vm) — its real topics, clickable via bas_menu_click. The dialogue is
                     // SEGMENTED at the script-function beats (scrujo/bronk1../port1.. — one beat
@@ -624,6 +642,60 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     if starts.len() > 1 {
                         engine.set_dialogue_segments(starts);
                     }
+                }
+            }
+            if (2..=5).contains(&n) {
+                // SCRIPT2-5: the same faithful-VM drive as SCRIPT1. The host's
+                // presentation = the first 0xC4 actor in the bytecode (SCRIPT2:
+                // rec_0744, the arrival encounter); arrival sets the game flags the
+                // opening blocks await (D0/D1 gates). Falls back to the legacy
+                // full-stream playback if the first frame yields nothing.
+                let cod = std::fs::read(format!("{iso}/SCRIPT{n}.COD")).unwrap_or_default();
+                let var = std::fs::read(format!("{iso}/SCRIPT{n}.VAR")).unwrap_or_default();
+                let mut map = std::collections::HashMap::new();
+                if let Some(bundle) = bundles.iter().find(|b| b.script == format!("SCRIPT{n}")) {
+                    for e in bundle.speech_events.iter().filter(|e| !e.text.trim().is_empty()) {
+                        let scene = e
+                            .background_hnm
+                            .as_ref()
+                            .and_then(|h| resolve_scene_hnm(assets, h));
+                        map.insert(e.offset, (e.text.clone(), scene));
+                    }
+                }
+                let mut m = commander_blood_tools::vm::VmMachine::new();
+                m.load_cod(&cod);
+                m.load_var(&var);
+                m.flag_252a = true;
+                m.flag_274f = true;
+                let first_actor = commander_blood_tools::vm::walk(&cod, 0, cod.len())
+                    .into_iter()
+                    .find_map(|t| match t {
+                        commander_blood_tools::vm::VmToken::Actor {
+                            record_offset,
+                            related_record_offset,
+                            ..
+                        } => Some((record_offset, related_record_offset)),
+                        _ => None,
+                    });
+                if let Some((rec, rel)) = first_actor {
+                    m.start_actor_presentation(rec, rel);
+                }
+                let (lines, _profile) = vm_collect(&mut m, &map);
+                if !lines.is_empty() {
+                    engine.set_speech_dialogue(lines);
+                    if let Ok(dic_raw) = std::fs::read(format!("{iso}/SCRIPT{n}.DIC")) {
+                        let dict = commander_blood_tools::script::parse_dictionary(&dic_raw);
+                        *dic_word_offset.borrow_mut() = dict
+                            .into_iter()
+                            .map(|(off, w)| (w.to_lowercase(), off))
+                            .collect();
+                    }
+                    *script_vm.borrow_mut() = Some(m);
+                    *vm_lines.borrow_mut() = map;
+                } else {
+                    // Legacy playback keeps the content reachable until the trigger
+                    // for this script's opening is decoded.
+                    *script_vm.borrow_mut() = None;
                 }
             }
             if let Some(m) = extract::script_background_music(Path::new(iso), &format!("SCRIPT{n}"))
@@ -1041,6 +1113,43 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                 3 => engine.menu_submenu_active = true, // {EXPLANATIONS, GAME}
                                 4 => engine.option_active = true,
                                 _ => {}
+                            }
+                        }
+                    }
+                    // VM-driven scripts (2-5): a concept-menu row click sets the
+                    // script CONCEPT — the bytecode's A3 guards then run that
+                    // topic's own blocks (responses, sub-menus, profile handoffs).
+                    if !vm_handled && script_vm.borrow().is_some() && !engine.on_ship {
+                        let labels = if engine.topic_menu_is_bas {
+                            engine.current_bas_menu_labels()
+                        } else {
+                            engine.topic_labels()
+                        };
+                        if let Some(row) = EngineState::list_menu_click(labels.len(), mx, my) {
+                            vm_handled = true;
+                            let label = labels[row].to_lowercase();
+                            if engine.topic_menu_is_bas {
+                                engine.bas_topic_click(row); // keep the menu stack behavior
+                            }
+                            let off = dic_word_offset.borrow().get(&label).copied();
+                            if let Some(off) = off {
+                                let mut out = (Vec::new(), None);
+                                if let Some(m) = script_vm.borrow_mut().as_mut() {
+                                    m.concept = off;
+                                    let map = vm_lines.borrow();
+                                    out = vm_collect(m, &map);
+                                    m.concept = 0;
+                                }
+                                let (new_lines, profile) = out;
+                                if let Some(p) = profile {
+                                    let next = (p.max(0) as u32) + 1;
+                                    *script_vm.borrow_mut() = None;
+                                    current_script.set(0);
+                                    engine.progress.visit(&format!("SCRIPT{next}"));
+                                    load_script(&mut engine, &mut music, next);
+                                } else if !new_lines.is_empty() {
+                                    engine.set_speech_dialogue(new_lines);
+                                }
                             }
                         }
                     }

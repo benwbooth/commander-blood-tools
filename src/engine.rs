@@ -1477,6 +1477,11 @@ impl EngineState {
         self.current_bas_menu_labels()
     }
 
+    /// The current topic-menu labels (for drivers that route clicks themselves).
+    pub fn topic_labels(&self) -> Vec<String> {
+        self.topic_menu.iter().map(|(l, _)| l.clone()).collect()
+    }
+
     /// A click while the topic menu is showing: selects the topic and jumps the
     /// dialogue to its first line. Returns the selected topic index.
     pub fn topic_menu_click(&mut self, x: u16, y: u16) -> Option<usize> {
