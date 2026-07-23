@@ -5378,3 +5378,12 @@ static sink is what displays when the presentation record never loads its cue. S
 credit divergence and the montage gap are ONE limitation with ONE fix: implement the
 blood.dat presentation dispatch in the interpreter (a tooling feature, not a port
 defect — the port's credit + montage are capture-verified). The two ledger items merge.
+
+### scr writer trace: RESOLVED TO AN ADDRESS
+The records block = the far ptr at gs:0x6724 (savestate: 0000:8681 -> linear 0x86810;
+the 210M boot run: 0000:7838). scr's slot = block + 0x1276 = linear 0x87A86 in the
+savestate; current value 0 (cheat locked at the fresh hub — correct). Its writer fires
+on later story events: the executable trace = SEAMWATCH-style write watch on that
+linear address DURING driven story scenarios (wire the watch into VERIFYSCRIPT's run
+loop). Also banked: gs:0x6728 = the DIC segment far ptr (the text assembler's word
+source), confirming the record/dictionary pointer pair layout.
