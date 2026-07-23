@@ -5379,6 +5379,30 @@ credit divergence and the montage gap are ONE limitation with ONE fix: implement
 blood.dat presentation dispatch in the interpreter (a tooling feature, not a port
 defect — the port's credit + montage are capture-verified). The two ledger items merge.
 
+### scr writer FOUND STATICALLY: the scrutinizer's examination-record table
+`scrut.xdb` data (ds base = file 0x33B0 via cs:[0x33A5] delta 0x33B) holds a
+111-entry, stride-0x14 table at ds:0xC069 (file 0xF419) whose +0x06 word is a SCRIPT
+RECORD OFFSET — the examination-result sinks. The record column runs 0x0Fxx..0x13xx
+(SCRIPT1-through-SCRIPT5-range offsets) in GROUPS OF SIX per examination subject; scr's
+group is {1242,1240,122F,1276,122E,1238} (0x1276 at file 0xF6C7) — and SCRIPT4 guards
+rec_1242 against OBJECT OFFSETS (40/1946/65535), so the table's records store scan
+RESULTS (object refs/attributes), and Honk's `scr > 5` gate = "the scan wrote a real
+object offset here". SCRIPT2.VAR initials confirm: scr=0, groupmates non-zero from
+file (1240=434, 122F=0x7300, 122E=1, 1238=114). The +0x00/+0x02/+0x04 words look like
+coordinates (signed values e9ff/39ff present in neighbours). No direct code immediate
+references the base (0xC2C1/0xC08E hits were `mov es,ax` fragments/data) — the
+consumer indexes it computed; the DYNAMIC watch during a driven scan will give the
+writer cs:ip.
+
+STORY POSITION OF THE HUB STATE (RECDUMP/CHARDUMP tooling, VERIFYSCRIPT): the
+script2.state record block (8681:0000) matches SCRIPT2.VAR initials EXACTLY and the
+character-slot block (gs:0x6CDE, 16-byte slots) holds only slot0="present" — record
+1860 (Scruter arrival, SETCHAR slot4="scrut" @004E) has NOT run. The scan that writes
+scr is Scruter Jo's ARRIVAL X-RAY ("SCANNING STRANGER...XRAY"), after which he is
+teleported INTO the cryobox (@0298). Driving the arrival in the oracle is the next
+gate — suspect it routes through the blood.dat presentation dispatch (the documented
+interpreter gap), which would make that ONE tooling feature the story-drive blocker.
+
 ### scr writer trace: RESOLVED TO AN ADDRESS
 The records block = the far ptr at gs:0x6724 (savestate: 0000:8681 -> linear 0x86810;
 the 210M boot run: 0000:7838). scr's slot = block + 0x1276 = linear 0x87A86 in the

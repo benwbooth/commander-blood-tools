@@ -2923,12 +2923,53 @@ fn main() {
         // Optional write watch during the scenario (WRITEWATCHLIN=<linear hex>):
         // reports every write to the address with the writer's cs:ip — the story
         // event tracer (e.g. the scr record slot at block+0x1276).
+        let mut rec_watch: Option<u32> = None;
         if let Ok(w) = std::env::var("WRITEWATCHLIN") {
-            let lin = usize::from_str_radix(w.trim_start_matches("0x"), 16).unwrap();
-            rt.m.watch_addr = Some(lin);
-            eprintln!("write-watch armed at linear {lin:#x}");
+            if let Some(recspec) = w.strip_prefix("rec:") {
+                rec_watch =
+                    Some(u32::from_str_radix(recspec.trim_start_matches("0x"), 16).unwrap());
+                eprintln!("record write-watch armed at block+{:#x}", rec_watch.unwrap());
+            } else {
+                let lin = usize::from_str_radix(w.trim_start_matches("0x"), 16).unwrap();
+                rt.m.watch_addr = Some(lin);
+                eprintln!("write-watch armed at linear {lin:#x}");
+            }
         }
         let g = 0x0e84u16;
+        let w16 = |rt: &Runtime, a: u32| {
+            rt.m.read8(g, a) as u32 | ((rt.m.read8(g, a + 1) as u32) << 8)
+        };
+        // RECDUMP=<off>,<off>,... : print the record block pointer and the named
+        // record slots' values at scenario start and end (the story-state probe).
+        let rec_dump = |rt: &Runtime, tag: &str| {
+            if let Ok(spec) = std::env::var("RECDUMP") {
+                let (boff, bseg) = (w16(rt, 0x6724), w16(rt, 0x6726));
+                let base = bseg as usize * 16 + boff as usize;
+                let mut line = format!("RECDUMP {tag}: block {bseg:04x}:{boff:04x}");
+                for tok in spec.split(',') {
+                    let off = u32::from_str_radix(tok.trim().trim_start_matches("0x"), 16)
+                        .unwrap();
+                    let lin = base + off as usize;
+                    let v = rt.m.mem[lin] as u16 | ((rt.m.mem[lin + 1] as u16) << 8);
+                    line += &format!(" [{off:#06x}]={v}");
+                }
+                println!("{line}");
+            }
+        };
+        rec_dump(&rt, "start");
+        // CHARDUMP: print the 0x60-byte character-slot block (gs:0x6CDE) — the
+        // SETCHAR bindings (which crew/overlay occupies each slot).
+        if std::env::var("CHARDUMP").is_ok() {
+            let bytes: Vec<u8> = (0..0x60u32).map(|i| rt.m.read8(g, 0x6cde + i)).collect();
+            for (i, ch) in bytes.chunks(16).enumerate() {
+                let hex: String = ch.iter().map(|b| format!("{b:02x} ")).collect();
+                let asc: String = ch
+                    .iter()
+                    .map(|&b| if (0x20..0x7f).contains(&b) { b as char } else { '.' })
+                    .collect();
+                println!("CHARDUMP +{:02x}: {hex} {asc}", i * 16);
+            }
+        }
         let frame = |rt: &Runtime| {
             rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8)
         };
@@ -2982,10 +3023,23 @@ fn main() {
                 _ => {}
             }
             let _ = rt.run(rt.cpu.steps + settle);
+            if let Some(off) = rec_watch {
+                let (boff, bseg) = (w16(&rt, 0x6724), w16(&rt, 0x6726));
+                if bseg > 0 {
+                    let lin = bseg as usize * 16 + boff as usize + off as usize;
+                    if rt.m.watch_addr != Some(lin) {
+                        eprintln!(
+                            "record-watch re-armed: block {bseg:04x}:{boff:04x} -> lin {lin:#x} @ step {step}"
+                        );
+                        rt.m.watch_addr = Some(lin);
+                    }
+                }
+            }
             rt.write_ppm(&out.join(format!("vs_{step:03}.ppm"))).unwrap();
             std::fs::write(out.join(format!("vs_{step:03}.idx")), rt.screen_indices()).unwrap();
             step += 1;
         }
+        rec_dump(&rt, "end");
         std::fs::write(out.join("vs_dac.bin"), rt.dac).unwrap();
         println!("VERIFYSCRIPT done: {step} steps");
         if !rt.m.addr_hits.is_empty() {
