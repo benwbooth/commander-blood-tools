@@ -1246,6 +1246,28 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                                 true,
                                             )];
                                         }
+                                    } else if label == "remember" {
+                                        // REMEMBER surfaces the CONSULTATION entry
+                                        // menu (oracle honk_remember: SCRIPT2's BAS
+                                        // entry menu verbatim) — from the decoded
+                                        // BAS stack, captured list as fallback.
+                                        engine.bridge.engaged_row = Some(0);
+                                        let mut labels =
+                                            engine.current_bas_menu_labels();
+                                        if labels.is_empty() {
+                                            labels = [
+                                                "BYE_BYE", "OPTIMIZATION",
+                                                "CONSULTATION", "EXPLANATIONS",
+                                                "CALM_DOWN", "PLAY", "WIN", "LOSE",
+                                                "HELP",
+                                            ]
+                                            .iter()
+                                            .map(|s| s.to_string())
+                                            .collect();
+                                        }
+                                        engine.console_box = labels;
+                                        engine.console_box_kind = 3;
+                                        engine.console_box_selected = None;
                                     } else if label != "bye_bye" {
                                         // Deep topics keep the conversation menu OPEN
                                         // with the engaged topic highlighted (oracle
