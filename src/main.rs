@@ -1443,12 +1443,21 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 Event::KeyPress(k) if k.detail == 28 => {
                     engine.tv_active = !engine.tv_active;
                 }
-                // 'y' (keycode 29): toggle the cyberspace tunnel screen.
+                // 'y' (keycode 29): enter CYBERSPACE — the cyber.ext world (decoded:
+                // cyberspace is a standard .ext world, level index 36 'cyber', rooms
+                // 1cyber*.lbm), visited via the SAME world-visit system as the planets;
+                // BIOXX are its entities (touch -> BIONIUM, the decoded goal). Was: the
+                // hyper_*.hnm hyperspace-TRAVEL videos (a different sequence). The 'y'
+                // hyperspace-flight remains available as the inter-location travel effect
+                // via start_cyberspace, but the cyberspace SCREEN is the cyber world.
                 Event::KeyPress(k) if k.detail == 29 => {
-                    if !engine.cyber_active {
-                        engine.start_cyberspace();
+                    if engine.world_location_active() {
+                        engine.leave_world();
+                    } else if engine.visit_world("cyber", Path::new(assets)) {
+                        if let Ok(ext) = std::fs::read(format!("{iso}/CYBER.EXT")) {
+                            engine.set_world_ext(&ext);
+                        }
                     }
-                    engine.cyber_active = !engine.cyber_active;
                 }
                 // 'b' (keycode 56): open the ship-bridge hub (click stations to enter).
                 Event::KeyPress(k) if k.detail == 56 => {
