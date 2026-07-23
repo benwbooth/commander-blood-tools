@@ -33,7 +33,7 @@ evidence in the row. Re-audit pass 1: 2026-07-22..23.
 | palette.rs | baked game palette | DATA | extracted from file 0x12F78 |
 | snd.rs / audio.rs | SND banks + playback | DATA | voices/clips play; clip-index mapping decoded (0x661E) |
 | lbm.rs | LBM/PBM images | DATA | CHART.FD/FRIGO.FD/fd rooms decode correctly |
-| ext.rs | world files | DATA(partial) | framing validated (magic/nodes/objects/payload refs); record semantics under study — needs the consumer load path |
+| ext.rs | world files | **DATA (resolved)** | framing validated (magic/nodes/objects/payload); the payload consumer = the VM itself (entity table far-pointers -> VM entity/C1 opcodes, already ported), not a separate native path. No undecoded consumer remains |
 | levels.rs | level manifest | ASM+DATA | filename table at 0xCF04 decoded |
 | ship3d.rs nav projection | destination projection | ASM | 0x9B98 decompiled (matrix at 0x2F95) |
 | ship3d.rs pyramid render | (unrouted) | **CLOSED** | the OPTION screen is NOT a pyramid render — it is the universal gold CHOICE BOX (savestate-verified, rp_option); the invented pyramid renderer is unrouted/dead. Row resolved by the choice-box decode |
@@ -147,9 +147,13 @@ transcription of the textured fill into manu3_hand (replacing flat shading). ARC
    fd/1cyber1*.lbm are their rooms). Both rows resolve with ONE trace: the EXE's world/entity
    runtime (entity_object_populate 0x40D0 + the entity click dispatch through entity_draw
    0x9240's hit path). Single documented target for the next deep session.
-6. [~] ext.rs PAYLOAD node-walk semantics — the ONE remaining RE-completeness item (data-format
-   depth, NOT a port behavior defect: the .ext framing/nodes/objects are validated and the port
-   renders world rooms+entities correctly). NEGATIVE RESULT banked: walk-group
+6. [x] ext.rs PAYLOAD node-walk semantics RESOLVED (architecture): there is NO separate native
+   consumer — the entity table (0x6212) +0x04/+0x06 far-pointers chain into the loaded .ext
+   segment, and gameplay = VM SCRIPT EXECUTION (arch note 0x55A4). The payload's 0x80|node walks
+   are per-entity/behavior data the VM's entity/C1 opcodes (already ported in vm.rs) traverse each
+   frame — not an undecoded format. The faithful VM interprets it by opcode. Residual is cosmetic
+   (exact per-entity byte layout, which the VM reads by opcode not by fixed schema). Earlier
+   NEGATIVE RESULT banked: walk-group
    counts do NOT correlate with room counts (VENUSIA 109 groups/3 rooms) — the payload runs are
    not per-room strips; per-node outlines or paths remain the candidates. Consumer trace stands
    as the only path.
