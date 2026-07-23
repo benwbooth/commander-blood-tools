@@ -444,6 +444,18 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     // tracked here (the engine doesn't own it) so a save records where to resume. A Cell
     // lets the `load_script` closure update it through a shared borrow.
     let current_script = std::cell::Cell::new(0u32);
+    // The FAITHFUL script VM (SCRIPT1 wired; see src/vm.rs VmMachine): the engine
+    // plays exactly the lines the game's own bytecode emits — console button clicks
+    // start actor presentations, and the script's self-modifying state drives
+    // rotation/progression. Shared with the load_script closure via RefCell.
+    let script_vm: std::cell::RefCell<Option<commander_blood_tools::vm::VmMachine>> =
+        std::cell::RefCell::new(None);
+    let vm_lines: std::cell::RefCell<
+        std::collections::HashMap<usize, (String, Option<std::path::PathBuf>)>,
+    > = std::cell::RefCell::new(std::collections::HashMap::new());
+    // Concept word -> DIC offset (A3 operands are DIC word offsets).
+    let dic_word_offset: std::cell::RefCell<std::collections::HashMap<String, u16>> =
+        std::cell::RefCell::new(std::collections::HashMap::new());
     let load_script = |engine: &mut EngineState, music: &mut Music, n: u32| {
         current_script.set(n);
         let r = |ext: &str| std::fs::read(format!("{iso}/SCRIPT{n}.{ext}"));
@@ -488,54 +500,52 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 // help*→ONE..NINE for locations would be guesswork (SCRIPT3's help1
                 // is not the numerology "ONE").
                 if n == 1 {
-                    // SCRIPT1 = the console TUTORIAL. Its 9 functions are CONSOLE-driven, not a
-                    // monologue: menbr/men1-5 are the MENU button's daily menus, ho1/hon are the
-                    // HONK button ("Welcome aboard the ARK, Commander. I'm HONK…"), BOB1 is the
-                    // crew intro. Only the scripted HONK welcome (`hon`) plays at start; then the
-                    // dialogue HOLDS at a topic menu (HONK / MENU / crew) and the player drives
-                    // the rest. (Was: the whole 106-line stream auto-played — the user's
-                    // "Honk rattles off everything unprompted" bug. The topic detection targeted
-                    // help*/honk/talk names that SCRIPT1 doesn't use, so nothing ever gated.)
-                    let mut segs: Vec<(String, usize)> = Vec::new();
-                    let mut last = String::new();
-                    let mut li = 0usize;
+                    // SCRIPT1 = the console TUTORIAL, driven by the FAITHFUL VM:
+                    // the tutorial guidance presenter (record 1428) starts as the
+                    // scripted opening; console button clicks start their actors'
+                    // presentations (HONK=2148, MENU=2220 — from the decompiled
+                    // listing decompiled/SCRIPT1.bas); each block plays once and
+                    // ends itself (C9), menus rotate via the script's own
+                    // self-modifying pokes. No heuristic gating.
+                    let cod = std::fs::read(format!("{iso}/SCRIPT1.COD")).unwrap_or_default();
+                    let var = std::fs::read(format!("{iso}/SCRIPT1.VAR")).unwrap_or_default();
+                    let mut map = std::collections::HashMap::new();
                     for e in bundle.speech_events.iter().filter(|e| !e.text.trim().is_empty()) {
-                        if e.function_name != last {
-                            last = e.function_name.clone();
-                            segs.push((last.clone(), li));
-                        }
-                        li += 1;
+                        let scene = e
+                            .background_hnm
+                            .as_ref()
+                            .and_then(|h| resolve_scene_hnm(assets, h));
+                        map.insert(e.offset, (e.text.clone(), scene));
                     }
-                    // Console topics from the real function groups (first line of each group);
-                    // one clickable label per console button, in a stable order.
-                    let mut topics: Vec<(String, usize)> = Vec::new();
-                    let mut seen: std::collections::HashSet<&str> = std::collections::HashSet::new();
-                    for (fnname, line) in &segs {
-                        let label = if fnname.starts_with("men") {
-                            "MENU"
-                        } else if fnname.starts_with("ho") {
-                            "HONK"
-                        } else {
-                            "TALK"
-                        };
-                        if seen.insert(label) {
-                            topics.push((label.to_string(), *line));
-                        }
+                    let mut m = commander_blood_tools::vm::VmMachine::new();
+                    m.load_cod(&cod);
+                    m.load_var(&var);
+                    m.start_actor_presentation(1428, 40);
+                    let lines: Vec<(String, Option<std::path::PathBuf>)> = m
+                        .run_frame()
+                        .into_iter()
+                        .filter_map(|ev| match ev {
+                            commander_blood_tools::vm::VmEvent::Text { offset } => {
+                                map.get(&offset).cloned()
+                            }
+                            _ => None,
+                        })
+                        .collect();
+                    if !lines.is_empty() {
+                        engine.set_speech_dialogue(lines);
                     }
-                    // Segment boundaries = every function start, so a MENU click shows ONE daily
-                    // menu (not all six up to the next topic).
-                    engine.set_segment_boundaries(segs.iter().map(|(_, l)| *l).collect());
-                    // The scripted opening is HONK's welcome (`hon`): start there and hold after
-                    // its segment. If it isn't present, hold immediately (nothing auto-plays).
-                    let hon_idx = segs.iter().position(|(f, _)| f == "hon");
-                    if let Some(i) = hon_idx {
-                        engine.set_dialogue_cursor(segs[i].1);
-                        engine.set_dialogue_autoplay_end(segs.get(i + 1).map(|(_, l)| *l));
-                    } else {
-                        engine.set_dialogue_autoplay_end(Some(0));
+                    engine.set_topic_menu(Vec::new());
+                    *script_vm.borrow_mut() = Some(m);
+                    *vm_lines.borrow_mut() = map;
+                    if let Ok(dic_raw) = std::fs::read(format!("{iso}/SCRIPT1.DIC")) {
+                        let dict = commander_blood_tools::script::parse_dictionary(&dic_raw);
+                        *dic_word_offset.borrow_mut() = dict
+                            .into_iter()
+                            .map(|(off, w)| (w.to_lowercase(), off))
+                            .collect();
                     }
-                    engine.set_topic_menu(topics);
-                } else if n == 2 {
+                                } else if n == 2 {
+                    *script_vm.borrow_mut() = None;
                     // The topic labels are DECODED from the real script, not guessed:
                     // SCRIPT2's help1..help9 are the numerology consultation, whose
                     // concept menu (VM opcode 0xA3 in SCRIPT2.BAS) is [talk, one..nine].
@@ -592,6 +602,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     }
                     engine.set_topic_menu(if usable { topics } else { Vec::new() });
                 } else {
+                    *script_vm.borrow_mut() = None;
                     // Location scripts (SCRIPT3/4/5): show the decoded concept menu
                     // (bas_vm) — its real topics, clickable via bas_menu_click. The dialogue is
                     // SEGMENTED at the script-function beats (scrujo/bronk1../port1.. — one beat
@@ -820,6 +831,59 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 // While the MENU submenu ({EXPLANATIONS, GAME}, decoded from the real
                 // console) is open, a click resolves it: EXPLANATIONS replays the tutorial
                 // (SCRIPT1 — the game's "explanations"), GAME returns to play (the nav).
+                // During the VM-driven SCRIPT1 dialogue, the {EXPLANATIONS, GAME}
+                // submenu sets the script CONCEPT — the bytecode's own choice logic
+                // then runs the explanations or fires RUN PROFILE 1 (-> SCRIPT2).
+                Event::ButtonPress(b)
+                    if engine.in_dialogue()
+                        && engine.menu_submenu_active
+                        && script_vm.borrow().is_some()
+                        && b.detail == 1 =>
+                {
+                    let pick = engine.menu_submenu_click(mx, my);
+                    engine.menu_submenu_active = false;
+                    let word = match pick {
+                        Some(0) => Some("explanations"),
+                        Some(1) => Some("game"),
+                        _ => None,
+                    };
+                    if let Some(w) = word {
+                        let off = dic_word_offset.borrow().get(w).copied();
+                        if let Some(off) = off {
+                            let mut new_lines: Vec<(String, Option<std::path::PathBuf>)> =
+                                Vec::new();
+                            let mut profile: Option<i16> = None;
+                            if let Some(m) = script_vm.borrow_mut().as_mut() {
+                                m.concept = off;
+                                m.presentation_busy = true;
+                                m.presentation_active = true;
+                                let map = vm_lines.borrow();
+                                for ev in m.run_frame() {
+                                    match ev {
+                                        commander_blood_tools::vm::VmEvent::Text { offset } => {
+                                            if let Some(l) = map.get(&offset) {
+                                                new_lines.push(l.clone());
+                                            }
+                                        }
+                                        commander_blood_tools::vm::VmEvent::ProfileRequest(p) => {
+                                            profile = Some(p);
+                                        }
+                                        _ => {}
+                                    }
+                                }
+                                m.concept = 0;
+                            }
+                            if let Some(p) = profile {
+                                let next = (p.max(0) as u32) + 1;
+                                *script_vm.borrow_mut() = None;
+                                current_script.set(0);
+                                load_script(&mut engine, &mut music, next);
+                            } else if !new_lines.is_empty() {
+                                engine.set_speech_dialogue(new_lines);
+                            }
+                        }
+                    }
+                }
                 Event::ButtonPress(b) if engine.bridge_active && engine.menu_submenu_active && b.detail == 1 => {
                     match engine.menu_submenu_click(mx, my) {
                         Some(0) => {
@@ -931,6 +995,58 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 // fully revealed, then moves to the next) — as the real game does, so the
                 // player isn't stuck watching hundreds of lines auto-play.
                 Event::ButtonPress(b) if engine.in_dialogue() && b.detail == 1 => {
+                    // SCRIPT1 (VM-driven): the golden console menu IS the dispatch —
+                    // a button click starts that actor's presentation in the script
+                    // VM and the emitted lines play (HONK=2148, MENU=2220; TELEPHONE/
+                    // CRYOBOX/OPTION open their screens; CRYOBOX also wakes Cap'n Bob
+                    // = the D1 game-flag gate for the BOB block).
+                    let mut vm_handled = false;
+                    if script_vm.borrow().is_some() {
+                        if let Some(row) = engine.console_menu_click(mx, my) {
+                            vm_handled = true;
+                            let mut new_lines: Vec<(String, Option<std::path::PathBuf>)> =
+                                Vec::new();
+                            {
+                                let mut vm = script_vm.borrow_mut();
+                                let m = vm.as_mut().unwrap();
+                                let actor = match row {
+                                    0 => Some(2148u16), // HONK
+                                    _ => None,
+                                };
+                                if let Some(a) = actor {
+                                    m.start_actor_presentation(a, 40);
+                                    let map = vm_lines.borrow();
+                                    new_lines = m
+                                        .run_frame()
+                                        .into_iter()
+                                        .filter_map(|ev| match ev {
+                                            commander_blood_tools::vm::VmEvent::Text {
+                                                offset,
+                                            } => map.get(&offset).cloned(),
+                                            _ => None,
+                                        })
+                                        .collect();
+                                }
+                                if row == 2 {
+                                    // CRYOBOX: wake Cap'n Bob — the D1 flag opens his block.
+                                    m.flag_274f = true;
+                                }
+                            }
+                            if !new_lines.is_empty() {
+                                engine.set_speech_dialogue(new_lines);
+                            }
+                            match row {
+                                1 => engine.phone_active = true,
+                                2 => engine.cryobox_active = true,
+                                3 => engine.menu_submenu_active = true, // {EXPLANATIONS, GAME}
+                                4 => engine.option_active = true,
+                                _ => {}
+                            }
+                        }
+                    }
+                    if vm_handled {
+                        continue;
+                    }
                     // The topic menu takes the click when it is showing (the
                     // concept-menu conversation system); otherwise advance. A BAS
                     // concept menu (topic_menu_is_bas) routes through the decoded
@@ -1088,6 +1204,39 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
             dy: raw_dy,
         });
         (raw_dx, raw_dy) = (0, 0);
+        // SCRIPT1 VM continuation: when the engine finishes the queued lines, run the
+        // next script frame — more lines may emit (multi-beat presentations), a D2
+        // profile handoff may fire (the tutorial->SCRIPT2 chain), or nothing happens
+        // (the console idles awaiting a click, exactly as the game does).
+        if !engine.on_ship && !engine.intro_active() && engine.dialogue_finished() {
+            let mut new_lines: Vec<(String, Option<std::path::PathBuf>)> = Vec::new();
+            let mut profile: Option<i16> = None;
+            if let Some(m) = script_vm.borrow_mut().as_mut() {
+                let map = vm_lines.borrow();
+                for ev in m.run_frame() {
+                    match ev {
+                        commander_blood_tools::vm::VmEvent::Text { offset } => {
+                            if let Some(l) = map.get(&offset) {
+                                new_lines.push(l.clone());
+                            }
+                        }
+                        commander_blood_tools::vm::VmEvent::ProfileRequest(p) => {
+                            profile = Some(p);
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            if let Some(p) = profile {
+                // The script's own D2 handoff: profile p -> SCRIPT{p+1} (profile 1 = SCRIPT2).
+                let next = (p.max(0) as u32) + 1;
+                *script_vm.borrow_mut() = None;
+                current_script.set(0);
+                load_script(&mut engine, &mut music, next);
+            } else if !new_lines.is_empty() {
+                engine.set_speech_dialogue(new_lines);
+            }
+        }
         // Playable loop: a nav-view click commits a destination → load its dialogue and
         // switch to the scene; when the dialogue finishes, return to the nav view.
         // Suppressed while the startup intro is still playing.
@@ -1134,7 +1283,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
             engine.progress.visit(&format!("SCRIPT{dest}"));
             load_script(&mut engine, &mut music, dest);
             engine.on_ship = false;
-        } else if !engine.on_ship && engine.dialogue_finished() {
+        } else if !engine.on_ship && engine.dialogue_finished() && script_vm.borrow().is_none() {
             // Scene finished: follow the decoded D2 handoff if the script requested a
             // successor profile (profile_index → SCRIPT<index+1>), chaining scene to
             // scene like the game; otherwise return to the nav view.
