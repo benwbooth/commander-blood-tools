@@ -3654,13 +3654,10 @@ impl EngineState {
         // a joystick-style rate, not an absolute cursor-to-angle map. Cursor near
         // centre = no turn; near an edge = turn fast. `compass_angle` wraps 0..179.
         if self.on_ship {
-            let dx = self.mouse.x as i32 - ENGINE_SCREEN_WIDTH as i32 / 2;
-            // Dead-zone near centre; scaled turn rate outside it.
-            if dx.abs() > 8 {
-                let rate = dx / 20; // degrees/frame, proportional to centre distance
-                self.compass_angle =
-                    (self.compass_angle as i32 + rate).rem_euclid(180) as u16;
-            }
+            // The chart/nav view is STATIC in the real game (CHART.FD is a fixed image;
+            // selection is the decoded target list). The prior mouse-steered "compass"
+            // (dead-zone 8, rate dx/20) was an invention and is REMOVED; compass_angle
+            // remains only as the port-side world-target selector (cycled via keys).
             // Destination selection is the decoded TARGET LIST only (layout + mouse
             // hit-test @0x8428; DS:0x27E7 selection byte) — the port's earlier
             // "click anywhere commits the compass heading" was an invention (random
@@ -4935,50 +4932,17 @@ mod tests {
         assert_eq!(e.idle_ticks, 0, "movement zeroes the idle timer");
     }
 
+    /// The chart/nav view is STATIC (the invented mouse-steered compass was removed);
+    /// the compass angle changes only via the explicit target-cycle input.
     #[test]
-    fn on_ship_step_renders_starfield_steered_by_mouse() {
+    fn on_ship_view_is_static_mouse_does_not_steer() {
         let mut e = EngineState::new();
         e.on_ship = true;
-        // Rate-based (joystick) steering: cursor at centre → no turn; cursor held to
-        // one side turns the compass a bit each frame in that direction.
         e.compass_angle = 90;
-        e.step(MouseInput {
-            x: 160,
-            y: 100,
-            buttons: 0,
-            ..Default::default()
-        });
-        assert_eq!(e.compass_angle, 90, "centred cursor holds heading");
-        let frame_centre = e.framebuffer.clone();
-        // Hold right for several frames: heading advances upward.
         for _ in 0..10 {
-            e.step(MouseInput {
-                x: 300,
-                y: 100,
-                buttons: 0,
-                ..Default::default()
-            });
+            e.step(MouseInput { x: 315, y: 100, buttons: 0, ..Default::default() });
         }
-        let right = e.compass_angle;
-        // Hold left: heading moves back down past where it was.
-        for _ in 0..20 {
-            e.step(MouseInput {
-                x: 20,
-                y: 100,
-                buttons: 0,
-                ..Default::default()
-            });
-        }
-        assert!(right > 90, "holding right turns the compass up (got {right})");
-        assert!(e.compass_angle < right, "holding left reverses the turn");
-        assert!(
-            frame_centre.iter().any(|&p| p != 0),
-            "the starfield renders some points"
-        );
-        assert_ne!(
-            frame_centre, e.framebuffer,
-            "different angle -> different view"
-        );
+        assert_eq!(e.compass_angle, 90, "mouse position does not steer the chart view");
     }
 
     #[test]

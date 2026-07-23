@@ -1397,7 +1397,11 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 Event::KeyPress(k) if k.detail == 55 => {
                     if engine.world_location_active() {
                         engine.cycle_world_room(1);
-                    } else if let Some(world) = engine.targeted_world_name() {
+                    } else if { engine.compass_angle = (engine.compass_angle + 45) % 180; true } {
+                        let world = match engine.targeted_world_name() {
+                            Some(w) => w,
+                            None => continue,
+                        };
                         if engine.visit_world(world, Path::new(assets)) {
                             // Overlay the world's decoded .ext object positions (from the ISO).
                             if let Ok(ext) = std::fs::read(format!("{iso}/{}.EXT", world.to_uppercase())) {

@@ -101,6 +101,8 @@ evidence in the row. Re-audit pass 1: 2026-07-22..23.
 4. [ ] Cyberspace interaction (BIOXX touch loop) from the cyber consumer.
 5. [ ] On-planet input handler decode to replace the interpretation.
 6. [ ] ext.rs record semantics via the consumer load path.
-7. [ ] Nav compass steer constants (dead-zone/rate) from the ship FSM — currently invented.
+7. [x] Nav compass steer REMOVED (the chart view is static in the real game — CHART.FD fixed
+   image + target-list selection; the mouse-steered compass with dead-zone 8/rate dx/20 was an
+   invention). compass_angle survives only as the explicit key-cycled world-target selector.
 8. [ ] A8 LOADSTR scene reels: wired (SCRIPT5 finale films); verify other scripts' LOADSTR uses (explo3.hnm on SCRIPT2's third warning etc.) play at the right beats.
 9. [ ] DOSBox interactive capture: injected clicks don't reach the game (window focus / SDL mouse capture) — fix with xdotool windowactivate + click-in-window before injection; needed for the real OPTION screen + hand hotspot.
