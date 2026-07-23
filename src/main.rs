@@ -1517,11 +1517,13 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
         // GAME TICK at the authentic rate (~15Hz); PRESENT at display refresh.
         // Between ticks the GPU path re-renders with the hand at the live cursor
         // (geometry follows the mouse at 60fps+; sim + tweens stay game-rate).
-        let tick_due = last_tick.elapsed() >= Duration::from_millis(66);
+        // MEASURED game rate: 21.6 fps at the hub (FRAMERATE probe: VGA page flips
+        // per PIT-timed second in the interpreter) -> 46 ms per tick.
+        let tick_due = last_tick.elapsed() >= Duration::from_millis(46);
         if !tick_due {
             if let Some(g) = gpu.as_mut() {
                 let alpha =
-                    (last_tick.elapsed().as_secs_f32() / 0.066).clamp(0.0, 1.0);
+                    (last_tick.elapsed().as_secs_f32() / 0.046).clamp(0.0, 1.0);
                 engine.refresh_gpu_hand(mx, my, alpha);
                 let tris: Vec<commander_blood_tools::gpu::HandTri> = engine
                     .gpu_hand

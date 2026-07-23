@@ -118,7 +118,7 @@ pub struct Runtime {
     gc_idx: u8,
     gc: [u8; 16],
     crtc_idx: u8,
-    crtc: [u8; 32],
+    pub crtc: [u8; 32],
     cmos_idx: u8,
     /// 8259 PIC interrupt masks (port 0x21 master, 0xA1 slave). A set bit masks that IRQ line.
     /// Default: IRQ0(timer)/IRQ1(kbd)/IRQ2(cascade)/IRQ6 unmasked on the master (0xB8), slave all masked.

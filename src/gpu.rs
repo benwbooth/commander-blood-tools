@@ -625,13 +625,20 @@ impl GpuPresenter {
         self.queue
             .write_buffer(&self.quad_vbuf, 0, bytemuck_cast(&quad));
 
-        // Hand triangles: virtual 320x200 space -> letterboxed NDC; depth normalized.
+        // Hand triangles: virtual 320x200 space -> letterboxed NDC. Painter order:
+        // far-to-near by mean depth (the game's depth-sorted span rule).
+        let mut sorted: Vec<&HandTri> = tris.iter().collect();
+        sorted.sort_by(|a, b| {
+            let da: f32 = a.0.iter().map(|v| v[2]).sum::<f32>();
+            let db: f32 = b.0.iter().map(|v| v[2]).sum::<f32>();
+            db.partial_cmp(&da).unwrap_or(std::cmp::Ordering::Equal)
+        });
         let mut verts: Vec<[f32; 5]> = Vec::with_capacity(tris.len() * 3);
         let max_depth = tris
             .iter()
             .flat_map(|t| t.0.iter().map(|v| v[2]))
             .fold(1.0f32, f32::max);
-        for t in tris {
+        for t in sorted {
             for v in t.0 {
                 let sx = ox + v[0] * scale;
                 let sy = oy + v[1] * scale;

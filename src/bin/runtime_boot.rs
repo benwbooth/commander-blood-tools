@@ -2885,6 +2885,36 @@ fn main() {
         println!("REVEALDUMP done");
         return;
     }
+    if std::env::var("FRAMERATE").is_ok() {
+        // Measure the REAL main-loop frame rate: count subtitle-pump gate reads /
+        // frame-counter increments per emulated second at the hub. The frame counter
+        // [0x0A40] (countdown) and the per-frame [0x27E0] gate change once per main
+        // loop pass; sample a known per-frame cell across exact PIT time.
+        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        let g = 0x0e84u16;
+        // ticks: PIT reprogrammed to 0x1746 (5958) -> 200.27 Hz. steps_per_tick from
+        // the runtime diag ~= 39946. Run exactly 1000 ticks (~5 s) and count changes
+        // of the frame counter byte [0x0A40].
+        let _ = g;
+        let steps_per_tick = 39946u64;
+        // Count VGA page flips (CRTC start-address writes) = presented frames.
+        let mut changes = 0u64;
+        let mut last = (rt.crtc[0x0c], rt.crtc[0x0d]);
+        for _ in 0..1000u64 {
+            let _ = rt.run(rt.cpu.steps + steps_per_tick / 4);
+            let v = (rt.crtc[0x0c], rt.crtc[0x0d]);
+            if v != last {
+                changes += 1;
+                last = v;
+            }
+        }
+        println!(
+            "page flips in ~{:.2}s: {changes} -> {:.1} fps",
+            1000.0 * (steps_per_tick as f64 / 4.0) / (39946.0 * 200.27),
+            changes as f64 / (1000.0 * (steps_per_tick as f64 / 4.0) / (39946.0 * 200.27))
+        );
+        return;
+    }
     if std::env::var("TEXDUMP").is_ok() {
         // Re-bank the manu3 hand texture from the CURRENT live state (the original
         // manu3_ds.bin dump shows noise in rows 40..63 — was it mid-load?).
