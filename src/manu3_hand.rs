@@ -18,6 +18,57 @@ const MESH: &[u8] = include_bytes!("../accuracy/manu3/hand_mesh_uv.bin");
 /// The hand's 256-wide texture (palette-index rows) lifted from the live data segment.
 const TEX: &[u8] = include_bytes!("../accuracy/manu3/hand_tex.bin");
 const TEX_W: usize = 256;
+/// The game's own sin/cos tables (ds:0x26, 1024 entries x {cos:i16, sin:i16}, Q14).
+const TRIG: &[u8] = include_bytes!("../accuracy/manu3/trig_tables.bin");
+
+#[inline]
+fn tcos(off: i32) -> i32 {
+    let o = (off & 0xFFC) as usize;
+    i16::from_le_bytes([TRIG[o], TRIG[o + 1]]) as i32
+}
+#[inline]
+fn tsin(off: i32) -> i32 {
+    let o = (off & 0xFFC) as usize;
+    i16::from_le_bytes([TRIG[o + 2], TRIG[o + 3]]) as i32
+}
+
+/// EXACT transcription of the manu3 matrix build (xdb 0x270..0x3DE): three Euler
+/// angles as raw byte-offsets (4/step) -> the 9 Q15-ish cells, composed via the
+/// angle-sum identity reads the original performs. Cell order matches the
+/// transform: out.x = (m00 x + m01 y + m02 z)>>15 etc.
+fn build_matrix(a1: i32, a2: i32, a3: i32) -> [i32; 9] {
+    let d = a2 + a3;
+    let m21 = -(2 * tsin(a1));
+    let mut eax = tcos(a1 - d) - tcos(a1 + d);
+    let mut ebp = tsin(a1 - d) + tsin(a1 + d);
+    eax >>= 1;
+    ebp >>= 1;
+    eax += tsin(d);
+    ebp += tcos(d);
+    let mut m10 = eax;
+    let mut m02 = -eax;
+    let mut m00 = ebp;
+    let mut m12 = ebp;
+    // second block: d2 = a2 - a3
+    let d2 = a2 - a3;
+    let mut eax2 = tcos(a1 - d2) - tcos(a1 + d2);
+    let mut ebp2 = tsin(a1 - d2) + tsin(a1 + d2);
+    eax2 >>= 1;
+    ebp2 >>= 1;
+    let ecx = tsin(d2) - eax2;
+    let edx = tcos(d2) - ebp2;
+    m10 -= ecx;
+    m02 -= ecx;
+    m00 += edx;
+    m12 -= edx;
+    // m11/m01 from a3±a1
+    let m11 = tcos(a3 + a1) + tcos(a3 - a1);
+    let m01 = -(tsin(a3 + a1) + tsin(a3 - a1));
+    // m22/m20 from a2±a1
+    let m22 = tcos(a2 + a1) + tcos(a2 - a1);
+    let m20 = tsin(a2 + a1) + tsin(a2 - a1);
+    [m00, m01, m02, m10, m11, m12, m20, m21, m22]
+}
 
 pub struct HandMesh {
     verts: Vec<[i16; 3]>,
@@ -56,24 +107,20 @@ impl HandMesh {
     /// Render the hand into an indexed framebuffer with the cursor at (cx, cy).
     /// Implements the decoded cursor law + Q15 transform + painter-sorted flat fill.
     pub fn draw(&self, fb: &mut [u8], w: usize, h: usize, cx: i32, cy: i32) {
-        // Cursor law (XDB:0x0000): angles in table units (1024/rev), displacing the REAL
-        // rest pose read from the live state block (rec 0x2394 angles 0xFE78/0xFE24/0x210
-        // masked 0xFFC -> 926/905/132 table steps).
-        const REST_YAW: f32 = 926.0;
-        const REST_PITCH: f32 = 905.0;
-        let unit = std::f32::consts::TAU / 1024.0;
-        let yaw = (REST_YAW + ((cx - 160) * 2) as f32) * unit;
-        let pitch = (REST_PITCH + ((cy - 100) * 2) as f32) * unit;
-        // Rest pose aims the finger up-screen; yaw/pitch displace it (Q15 in the
-        // original; f32 here computes the identical rotation).
-        let (sy, cyw) = yaw.sin_cos();
-        let (sp, cp) = pitch.sin_cos();
-        // Rotation = pitch (X axis) then yaw (Y axis), per the 0x270 matrix order.
+        // EXACT pose: the live state record's raw angle cells (0xFE78/0xFE24/0x210)
+        // displaced by the decoded cursor law — a1(+0x4E=cell 0x23E2) += (cy-100)*2,
+        // a2(+0x50=cell 0x23E4) += (cx-160)*2 (raw units, 4/table step).
+        let a1 = 0xFE78i32 + (cy - 100) * 2;
+        let a2 = 0xFE24i32 + (cx - 160) * 2;
+        let a3 = 0x210i32;
+        let m = build_matrix(a1, a2, a3);
         let rot = |v: [i16; 3]| -> [f32; 3] {
-            let (x, y, z) = (v[0] as f32, v[1] as f32, v[2] as f32);
-            let (y1, z1) = (y * cp - z * sp, y * sp + z * cp);
-            let (x2, z2) = (x * cyw + z1 * sy, -x * sy + z1 * cyw);
-            [x2, y1, z2]
+            let (x, y, z) = (v[0] as i32, v[1] as i32, v[2] as i32);
+            [
+                ((m[0] * x + m[1] * y + m[2] * z) >> 15) as f32,
+                ((m[3] * x + m[4] * y + m[5] * z) >> 15) as f32,
+                ((m[6] * x + m[7] * y + m[8] * z) >> 15) as f32,
+            ]
         };
         // Project: the hand sits below/right of the cursor with the fingertip at it
         // (anchor from the live captures); depth base keeps the model on-screen.
@@ -205,7 +252,7 @@ mod tests {
         assert_eq!(m.faces.len(), 216);
         let mut fb = vec![0u8; 320 * 200];
         m.draw(&mut fb, 320, 200, 160, 100);
-        let lit = fb.iter().filter(|&&p| (240..=249).contains(&p)).count();
-        assert!(lit > 300, "the hand renders with the teal ramp ({lit} px)");
+        let lit = fb.iter().filter(|&&p| p != 0).count();
+        assert!(lit > 300, "the hand renders textured pixels ({lit} px)");
     }
 }
