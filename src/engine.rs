@@ -3795,15 +3795,27 @@ mod tests {
         assert_eq!(e.bridge.frame, 55, "view must not drift during the render");
         assert_eq!(e.bridge.mouse_screen_x(), 40, "virtual cursor at the capture position");
 
+        // Measure CONSOLE fidelity — excluding the pointing-hand region. The hand is
+        // a live 3D model (never renders identically twice, in the real game or the
+        // port), so pixel-diffing it against ONE frozen captured pose is meaningless;
+        // the console panorama/menu/orb is the fidelity target. Hand bbox from the
+        // atlas capture at this cursor (screen x~40, y~100): a generous 60x80 box.
+        let hand_box = (10i32, 60i32, 100i32, 180i32); // x0,y0,x1,y1
         let mut total_abs = 0u64;
+        let mut counted = 0u64;
         for (pixel, &index) in e.framebuffer.iter().enumerate() {
+            let (px, py) = ((pixel % ENGINE_SCREEN_WIDTH) as i32, (pixel / ENGINE_SCREEN_WIDTH) as i32);
+            if px >= hand_box.0 && px < hand_box.2 && py >= hand_box.1 && py < hand_box.3 {
+                continue; // skip the hand region
+            }
             let ours = e.scene_palette[index as usize];
             for channel in 0..3 {
                 total_abs +=
                     (ours[channel] as i32 - capture[pixel * 3 + channel] as i32).unsigned_abs() as u64;
             }
+            counted += 3;
         }
-        let mean_abs = total_abs as f64 / (ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT * 3) as f64;
+        let mean_abs = total_abs as f64 / counted as f64;
         // Optional visual QA: BRIDGE_DUMP=<path.ppm> writes the rendered frame.
         if let Ok(dump) = std::env::var("BRIDGE_DUMP") {
             let mut ppm = format!("P6\n{ENGINE_SCREEN_WIDTH} {ENGINE_SCREEN_HEIGHT}\n255\n").into_bytes();
@@ -3813,11 +3825,9 @@ mod tests {
             std::fs::write(&dump, ppm).unwrap();
             eprintln!("bridge console render -> {dump} (mean_abs vs live = {mean_abs:.2})");
         }
-        // The reference capture bakes in the ATLAS-pose hand; the port now renders
-        // the LIVE manu3 mesh (legitimately different pixels in the hand region:
-        // ~5.9 observed, console itself still matches). Threshold covers the hand
-        // delta; a span-exact raster will bring this back down (documented residual).
-        let threshold = 7.0;
+        // CONSOLE fidelity (hand region excluded): the panorama + menu + orb must
+        // match the live game near-exactly (the historically-verified ~2.58 level).
+        let threshold = 3.0;
         assert!(
             mean_abs < threshold,
             "port console diverges from the live game: mean_abs = {mean_abs:.2}"
