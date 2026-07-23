@@ -1117,7 +1117,12 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         }
                         Some(row) => {
                             engine.console_box_selected = Some(row);
-                            let label = EngineState::BOB_TOPICS[row].to_lowercase();
+                            let label = if engine.bob_topics.is_empty() {
+                                EngineState::BOB_TOPICS[row].to_string()
+                            } else {
+                                engine.bob_topics[row].clone()
+                            }
+                            .to_lowercase();
                             let off = dic_word_offset.borrow().get(&label).copied();
                             if let Some(off) = off {
                                 let mut out = (Vec::new(), None, None);
@@ -1172,21 +1177,22 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                         Option<std::path::PathBuf>,
                                         bool,
                                     )> = Vec::new();
+                                    engine.bob_topics = Vec::new();
                                     if current_script.get() == 2 {
                                         let mut vm = script_vm.borrow_mut();
                                         if let Some(m) = vm.as_mut() {
                                             m.start_actor_presentation(132, 40);
                                             let map = vm_lines.borrow();
-                                            lines = m
-                                                .run_frame()
-                                                .into_iter()
-                                                .filter_map(|ev| match ev {
-                                                    commander_blood_tools::vm::VmEvent::Text {
-                                                        offset,
-                                                    } => map.get(&offset).cloned(),
-                                                    _ => None,
-                                                })
-                                                .collect();
+                                            let out = vm_collect(m, &map);
+                                            lines = out.0;
+                                            if let Some(menu) = out.2 {
+                                                // The bytecode's own topic list (the
+                                                // prompt line's 0xFFFF-carried words).
+                                                engine.bob_topics = menu
+                                                    .iter()
+                                                    .map(|l| l.to_uppercase())
+                                                    .collect();
+                                            }
                                         }
                                     }
                                     if lines.is_empty() {

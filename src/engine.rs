@@ -375,6 +375,9 @@ pub struct EngineState {
     /// surface (cryobox_enter dual-run vs_005..007; frigo.fd file-open traced).
     pub bob_contact_active: bool,
     bob_contact_bg: Option<(usize, usize, Vec<u8>, Vec<[u8; 3]>)>,
+    /// Bob's topic labels — from his prompt LINE RECORD's 0xFFFF-carried menu
+    /// words (the bytecode source); [`Self::BOB_TOPICS`] only as no-VM fallback.
+    pub bob_topics: Vec<String>,
     /// The presentation box-OPEN animation phase (1..=6 while opening, 0 idle) —
     /// the game's screen_mode_update (0x79E5) zooms the presentation frame through
     /// the 6-rect table at DS:0x2B97 before content shows.
@@ -616,6 +619,7 @@ impl EngineState {
             save_ui_name: String::new(),
             bob_contact_active: false,
             bob_contact_bg: None,
+            bob_topics: Vec::new(),
             presentation_open_phase: 0,
             console_box: Vec::new(),
             gpu_hand: None,
@@ -1478,7 +1482,12 @@ impl EngineState {
         self.scene_palette[0xE8] = [150, 150, 150];
         self.scene_palette[0xE0] = [255, 255, 255];
         self.scene_palette[0xEF] = [255, 255, 255];
-        for (i, label) in Self::BOB_TOPICS.iter().enumerate() {
+        let topics: Vec<String> = if self.bob_topics.is_empty() {
+            Self::BOB_TOPICS.iter().map(|s| s.to_string()).collect()
+        } else {
+            self.bob_topics.clone()
+        };
+        for (i, label) in topics.iter().enumerate() {
             let color = if self.console_box_selected == Some(i) { 0xEF } else { 0xE8 };
             crate::font::draw_square_caps(
                 &mut self.framebuffer,
@@ -1520,8 +1529,13 @@ impl EngineState {
         if !(165..=300).contains(&x) {
             return None;
         }
+        let n = if self.bob_topics.is_empty() {
+            Self::BOB_TOPICS.len()
+        } else {
+            self.bob_topics.len()
+        };
         let row = (y as i32 - 56) / 11;
-        (row >= 0 && (row as usize) < Self::BOB_TOPICS.len()).then_some(row as usize)
+        (row >= 0 && (row as usize) < n).then_some(row as usize)
     }
 
     /// Feed a typed character to the save-slot name entry — the DOS original's edit
