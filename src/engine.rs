@@ -375,6 +375,10 @@ pub struct EngineState {
     /// surface (cryobox_enter dual-run vs_005..007; frigo.fd file-open traced).
     pub bob_contact_active: bool,
     bob_contact_bg: Option<(usize, usize, Vec<u8>, Vec<[u8; 3]>)>,
+    /// The presentation box-OPEN animation phase (1..=6 while opening, 0 idle) —
+    /// the game's screen_mode_update (0x79E5) zooms the presentation frame through
+    /// the 6-rect table at DS:0x2B97 before content shows.
+    presentation_open_phase: u8,
     /// The UNIVERSAL console choice box (savestate-verified: every golden-menu row opens a
     /// contextual gold box over the panorama): its item labels, or empty = closed. The last
     /// item is always CANCEL. `console_box_kind` = which console row opened it.
@@ -612,6 +616,7 @@ impl EngineState {
             save_ui_name: String::new(),
             bob_contact_active: false,
             bob_contact_bg: None,
+            presentation_open_phase: 0,
             console_box: Vec::new(),
             gpu_hand: None,
             gpu_hand_enabled: false,
@@ -2887,6 +2892,11 @@ impl EngineState {
         if self.bridge_active && !lines.is_empty() {
             self.hub_presentation = true;
         }
+        if self.console_band_dialogue && !lines.is_empty() {
+            // The presentation frame ZOOMS OPEN through the 6-phase rect table
+            // (DS:0x2B97, screen_mode_update 0x79E5) before the content shows.
+            self.presentation_open_phase = 1;
+        }
         self.autoplay_end = None; // a new scene plays through unless the driver gates it
         self.dialogue_segments.clear();
         self.dialogue_segment_pos = 0;
@@ -3877,6 +3887,34 @@ impl EngineState {
             self.scene_hnm = Some(hnm);
             self.scene_frame += 1;
             self.present_scene_buffer();
+        } else if self.console_band_dialogue && self.presentation_open_phase > 0 {
+            // BOX-OPEN ANIMATION — the game's 6-phase zoom (table DS:0x2B97, driver
+            // screen_mode_update 0x79E5): {x,y,w,h} growing from a point to the
+            // full 320x130 presentation frame, 0xE0 fill with an 0xEF frame.
+            const BOX_OPEN_PHASES: [(usize, usize, usize, usize); 6] = [
+                (155, 67, 10, 15),
+                (143, 57, 34, 35),
+                (120, 51, 80, 47),
+                (76, 43, 168, 63),
+                (26, 30, 268, 89),
+                (0, 10, 320, 130),
+            ];
+            self.render_bridge_background();
+            let (bx, by, bw, bh) =
+                BOX_OPEN_PHASES[(self.presentation_open_phase as usize - 1).min(5)];
+            self.scene_palette[0xE0] = [0, 0, 0];
+            self.scene_palette[0xEF] = [255, 255, 255];
+            for y in by..(by + bh).min(ENGINE_SCREEN_HEIGHT) {
+                for x in bx..(bx + bw).min(ENGINE_SCREEN_WIDTH) {
+                    let edge = y == by || y + 1 == by + bh || x == bx || x + 1 == bx + bw;
+                    self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] =
+                        if edge { 0xEF } else { 0xE0 };
+                }
+            }
+            self.presentation_open_phase += 1;
+            if self.presentation_open_phase > 6 {
+                self.presentation_open_phase = 0;
+            }
         } else if self.console_band_dialogue {
             // PRESENTATION beat without a talk-HNM: the viewscreen shows STATIC
             // (interpreter ground truth, intro_215M — binary black/white noise in the
