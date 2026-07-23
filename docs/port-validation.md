@@ -132,6 +132,15 @@ From decompiled/SCRIPT2.bas + COD operand reads (assembly-first):
   question for the oracle pass: the green location header) ->
   the Bigbang-concert ending (fin.hnm trigger wired; dual-run pending).
 Each arrow is one dual-run scenario + any needed decode of its dispatch site.
+UPDATE (walk-fix era): the FULL bytecode is now decompiled (vm::walk covers every
+stream byte; SCRIPT2 3636 lines) and the INTERCEPTION CHAIN IS PORTED, bytecode-
+locked (script2_interception_arms_counts_down_and_queues): the shipped-enabled
+@272F one-shot arms state[3]=10 -> the 0x8AA beat countdown (200Hz/25, idle-gated)
+expires it -> @2744's OP_C3 queues the typed {0xC3,40,1} request at 0x6FC -> idle
+promotion starts the presentation (C4, active actor). The frontend beats the
+countdown and promotes queued requests. NEXT: render the interception presentation
+(SS-variant radio dialogue) end-to-end in the port + drive the same beats in the
+oracle for the dual-run; then the scan -> exam-table (scr) writes.
 
 ## CAMPAIGN LOG
 - PASS 7 (story_deep, 27 steps — the longest chain): deep-topic answers play from the
