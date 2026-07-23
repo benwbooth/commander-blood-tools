@@ -156,6 +156,11 @@ transcription of the textured fill into manu3_hand (replacing flat shading). ARC
    0x59C0 teardown decode) => the location savestate needs the CONVERSATION-EXIT step (the
    bye_bye topic through the concept menu) — the TUTORIAL4-OCR driver pattern extends to this;
    single remaining gate for both gated items.
+   UPDATE: neither orb-advances (60) nor any concept-row click (0..8) frees the hub presentation
+   — the conversation must be PLAYED through (topics then goodbye), i.e. the full OCR-driven
+   conversation driver (the proven tut16 pattern: subtitle OCR + instruction following). ALL
+   remaining gated work funnels through that ONE driver project; the residual sub-pixel raster
+   is the only other open item.
 7. [x] Nav compass steer REMOVED (the chart view is static in the real game — CHART.FD fixed
    image + target-list selection; the mouse-steered compass with dead-zone 8/rate dx/20 was an
    invention). compass_angle survives only as the explicit key-cycled world-target selector.
