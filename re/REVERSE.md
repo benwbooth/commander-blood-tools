@@ -5227,3 +5227,28 @@ the native service (exactly the int-leaf pattern: an indirect lcall to an emulat
 same boundary as an `int`). So the indirect sites were never "resolve the jump-table target by
 observation" — they are the I/O boundary again, wearing a different opcode. This is why the static
 fixpoint stalls at the I/O frontier and not before it: the frontier is the game/OS boundary itself.
+
+## SAVE-SLOT UI DECODED (2026-07-23) — the full commit chain, statically
+
+The OPTION->SAVE slot UI (grey name bar + CANCEL) is now read end-to-end from the binary:
+- SLOT TABLE: ten 0x20-byte entries at file 0xFA0D (DS:0x25ED..) = {16-char name field
+  (spaces = empty), NUL, "game<N>.sav"}; pointer table at DS:0x25D7 (file 0xF9F7), 0xFFFF
+  terminated. THE REAL SAVE FILENAMES ARE game1.sav..game10.sav (blood.sav is only the
+  boot-time probe name).
+- EDIT STATE: [0x2734]=active slot ptr, [0x273B]=16-byte edit buffer, [0x2732]=slot index,
+  [0x2738]=edit mode counter, [0x272E]=name length. Init at 0x1BA8 (slot 1 focused on entry).
+- INPUT: the central dispatcher 0x210E clears [0xB15], fetches an event via lcall 0x1CE:0x39D,
+  xlats AL through DS:0x113E, and calls a handler from cs:[0x123E+ax*2]; one handler stores
+  the typed ASCII to [0xB15].
+- COMMIT (0x1DD8, 'flag_gated_b15'): al=[0xB15]; Enter (0x0D) with non-empty name -> copy the
+  edit buffer into the slot record + SET CARRY; digits 0x30..0x39 and LOWERCASE 0x61..0x7A
+  append (max 14); Backspace deletes. Uppercase is REJECTED by the filter.
+- On carry: 0x1C3F lcall vm_state_save then int21 ax=3C00 CREATE with dx = slot ptr + 0x10
+  (the "gameN.sav" name), writing the decoded field order (bloodsav.rs).
+- LOAD mode: [0x2737] bit0 -> vm_state_load at 0x1CBD; slot click path at 0x1C1E indexes the
+  pointer table ([0x2732]=ax slot index; 0xFFFF = empty slot -> 0x1D5B).
+
+RESIDUAL (harness, not game): injected scenario keys (bios_keys/kbd_queue) do not reach
+[0xB15] in the interpreter during the slot UI — the 0x1CE:0x39D fetch path's actual key
+source needs tracing in the emulator (file 0xC5D disassembles misaligned; find the real
+entry via the relocation map) before the live gameN.sav round-trip can complete.

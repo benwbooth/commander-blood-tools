@@ -18,10 +18,10 @@ wait 30
 click 100 89
 wait 60
 wait 60
-click 100 44
-wait 30
-key 30 65
-key 31 66
+key 30 97
+wait 5
+key 48 98
+wait 5
 key 28 13
 wait 60
 wait 60
