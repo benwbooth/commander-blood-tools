@@ -4030,12 +4030,16 @@ impl VmMachine {
             }
             // 0xAB (0x684C): poke byte -> models as a records16-space write when
             // in range; the game pokes an absolute DS address.
+            // 0xAB POKE (0x684C): `lodsb val; bx=[si]; ds:[bx]=val` — ds is the
+            // SCRIPT segment, so this self-modifies the loaded COD image (the
+            // A9 block-gate flag bytes: how one-shots disable themselves and
+            // how queues enable the AWAIT blocks). The old records16 routing
+            // was a misdecode.
             0xAB => {
                 let val = self.lodsb();
-                let addr = self.lodsw();
-                let base = 0x6CDE_u16;
-                if (base..base + 0x60).contains(&addr) {
-                    self.records16[(addr - base) as usize] = val;
+                let addr = self.lodsw() as usize;
+                if let Some(b) = self.cod.get_mut(addr) {
+                    *b = val;
                 }
             }
             // 0xAE/0xB0 (0x6902): record MASK op. Query: test bits (branch per
@@ -4672,6 +4676,89 @@ mod tests {
     /// (`Op` tokens, known by length via the descriptor table) is reported and
     /// bounded. This is the "compiler matches the bitcode" guarantee: the token
     /// model round-trips the real data, not a transcription of it.
+    /// FULL-FLOW interception: load SCRIPT2 as the port does at the profile
+    /// switch, run frames + beats like the frontend loop, and the interception
+    /// must arm, queue, promote, and PLAY its radio dialogue through the normal
+    /// event machinery — no hand-seeding of pc or state.
+    #[test]
+    fn script2_interception_plays_through_the_frame_loop() {
+        let Some(iso) = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter()
+            .find(|d| std::path::Path::new(d).join("SCRIPT2.COD").is_file())
+        else {
+            eprintln!("skipping: extracted SCRIPT2 files not available");
+            return;
+        };
+        let cod = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.COD")).unwrap();
+        let var = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.VAR")).unwrap();
+        let mut m = VmMachine::new();
+        m.load_cod(&cod);
+        m.load_var(&var);
+
+        // Frontend loop model: frames + idle beats until the queue fires.
+        let mut queued = false;
+        for _ in 0..80 {
+            let evs = m.run_frame();
+            if evs
+                .iter()
+                .any(|e| matches!(e, VmEvent::QueuePresentation { offset: 0x6FC }))
+            {
+                queued = true;
+                break;
+            }
+            m.tick_state_countdowns();
+        }
+        assert!(queued, "the interception queues from the normal frame loop");
+
+        // Presentations play SERIALLY: promote whatever is queued, drain its
+        // frames until END PRESENTATION clears the busy flag, and repeat until
+        // the interception (0x6FC) takes the stage — exactly the frontend loop.
+        let mut text_offsets: Vec<usize> = Vec::new();
+        let mut reached = false;
+        'serial: for _ in 0..12 {
+            let Some(started) = m.promote_queued_presentation() else {
+                m.tick_state_countdowns();
+                let _ = m.run_frame();
+                continue;
+            };
+            for _ in 0..40 {
+                for ev in m.run_frame() {
+                    if let VmEvent::Text { offset } = ev {
+                        if started == 0x6FC {
+                            text_offsets.push(offset);
+                        }
+                    }
+                }
+                if started == 0x6FC && !text_offsets.is_empty() {
+                    reached = true;
+                    break 'serial;
+                }
+                if !m.presentation_busy {
+                    break;
+                }
+            }
+            // A presentation that idles awaiting input (the TV commercial's
+            // click-through) gets the player's advance: end it, as the real
+            // player click does, so the queue keeps draining.
+            if m.presentation_busy {
+                if let Some(actor) = m.active_actor {
+                    m.rec_write(actor, 0);
+                }
+                m.active_actor = None;
+                m.presentation_busy = false;
+            }
+        }
+        assert!(reached, "the interception presentation takes the stage");
+        // The radio-warning blocks span @27DA..@3070 (the five SS variants plus
+        // Scruter_K's district-director first-contact warning @2DF5 — "MESSAGE
+        // RADIO: This is SCRUT agent K..."); any of their line records emitting
+        // = the interception PLAYING through the port's own machinery.
+        assert!(
+            text_offsets.iter().any(|&o| (0x27DA..0x3070).contains(&o)),
+            "radio-warning dialogue emits (got offsets {text_offsets:x?})"
+        );
+    }
+
     /// The interception arm/queue chain, executed from SCRIPT2's real bytes:
     /// the shipped-enabled one-shot @272F arms state[3]=10/state[4]=200 (A9 gate
     /// flag 0x01 IN THE FILE), the beat countdown (the 0x8AA law) expires

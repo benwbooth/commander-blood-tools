@@ -62,6 +62,7 @@ fn main() {
                 VmEvent::Actor { offset } => println!("ACTOR @{offset}"),
                 VmEvent::ProfileRequest(p) => println!("PROFILE {p}"),
                 VmEvent::LoadString(s) => println!("STR {s}"),
+                VmEvent::QueuePresentation { offset } => println!("QUEUE @{offset:#x}"),
             }
             total += 1;
             if total > 40 { println!("... (truncated)"); return; }
