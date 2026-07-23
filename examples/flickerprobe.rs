@@ -54,7 +54,7 @@ fn main() {
             fbsig(&e)
         );
         for f in 0..3 {
-            e.refresh_gpu_hand(160, 100);
+            e.refresh_gpu_hand(160, 100, 1.0);
             let fast = e.gpu_hand.take();
             println!(
                 "  fast {f}: {} stars={} key={} fb={:x}",

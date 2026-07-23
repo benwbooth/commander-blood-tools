@@ -8387,4 +8387,50 @@ mod tests {
             }
         }
     }
+
+    /// ORACLE-LOCKED: the SCRIPT1 boot presenter is HONK (2148, related 40) — the live
+    /// game's OCR'd tutorial sequence (tut4_replay.log) plays the [061D] Honk.talk
+    /// block at boot: WELCOME ABOARD -> phone -> Cap'n Bob ... -> CLICK ON CRYOBOX.
+    /// Izwalito's guidance (1428) is the MENU>EXPLANATIONS replay, not the boot.
+    #[test]
+    fn script1_boot_presenter_is_honk_oracle_sequence() {
+        let Some(iso) = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter()
+            .find(|d| std::path::Path::new(d).join("SCRIPT1.COD").is_file())
+        else {
+            return;
+        };
+        let cod = std::fs::read(std::path::Path::new(iso).join("SCRIPT1.COD")).unwrap();
+        let mut m = VmMachine::new();
+        m.load_cod(&cod);
+        m.presentation_busy = true;
+        m.presentation_active = true;
+        m.flag_252a = true;
+        m.flag_274f = true;
+        m.start_actor_presentation(2148, 40);
+        m.satisfy_opening_location_guards();
+        let mut offsets = Vec::new();
+        for _ in 0..400 {
+            for ev in m.run_frame() {
+                if let VmEvent::Text { offset } = ev {
+                    offsets.push(offset);
+                }
+            }
+            if m.halted() {
+                break;
+            }
+        }
+        // The Honk boot block's line records ([0628]..[0750] region) must appear
+        // in bytecode order, ending with the CRYOBOX instruction at 0x750.
+        let expected = [0x628usize, 0x64C, 0x664, 0x68A, 0x6AA, 0x6DA, 0x6F8, 0x714, 0x734, 0x750];
+        let mut cursor = 0usize;
+        for e in expected {
+            let pos = offsets[cursor..].iter().position(|&o| o == e);
+            assert!(
+                pos.is_some(),
+                "boot sequence missing line {e:#x} (got {offsets:x?})"
+            );
+            cursor += pos.unwrap() + 1;
+        }
+    }
 }

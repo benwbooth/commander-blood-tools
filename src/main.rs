@@ -575,8 +575,14 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     let mut m = commander_blood_tools::vm::VmMachine::new();
                     m.load_cod(&cod);
                     m.load_var(&var);
-                    m.start_actor_presentation(1428, 40);
-                    *tutorial_chain.borrow_mut() = vec![2220, 2148]; // popped: honk, then menu
+                    // BOOT PRESENTER = HONK (actor 2148, related 40): oracle-verified
+                    // (TUTORIAL4 live sequence == the [061D] Honk.talk block, 9/9 lines
+                    // in order: WELCOME ABOARD -> ... -> CLICK QUICK ON CRYOBOX).
+                    // Izwalito's guidance (1428) is the MENU>EXPLANATIONS replay block,
+                    // NOT the boot. The follow-ups are event-driven (the CRYOBOX click
+                    // wakes Bob) — no synthetic chain.
+                    m.start_actor_presentation(2148, 40);
+                    *tutorial_chain.borrow_mut() = Vec::new();
                     let lines: Vec<(String, Option<std::path::PathBuf>, bool)> = m
                         .run_frame()
                         .into_iter()
