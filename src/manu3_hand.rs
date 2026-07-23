@@ -20,6 +20,8 @@ const TEX: &[u8] = include_bytes!("../accuracy/manu3/hand_tex.bin");
 const TEX_W: usize = 256;
 /// The game's own sin/cos tables (ds:0x26, 1024 entries x {cos:i16, sin:i16}, Q14).
 const TRIG: &[u8] = include_bytes!("../accuracy/manu3/trig_tables.bin");
+/// The 8 pose-animation sequences (phased 8-byte tween groups, exact 0x1DF spec).
+const POSES: &[u8] = include_bytes!("../accuracy/manu3/hand_poses.bin");
 
 #[inline]
 fn tcos(off: i32) -> i32 {
@@ -284,9 +286,124 @@ fn fill_triangle(
     }
 }
 
+/// The phased tween pose player (exact transcription of 0x181/0x1DF/0x19B):
+/// applies sequence `seq`'s groups to the segment cells, animating the hand.
+/// Cells address the live record block (0x2394 + seg*0x5E + field).
+pub struct PosePlayer {
+    seq: Vec<[u16; 4]>,
+    cursor: usize,
+    phase: u16,
+    active: Vec<(u16, u16, i32, i32)>, // (counter, cell, accum(Q16), step(Q16))
+}
+
+impl PosePlayer {
+    pub fn new(seq_index: usize) -> Option<PosePlayer> {
+        let n = u16::from_le_bytes([POSES[0], POSES[1]]) as usize;
+        if seq_index >= n {
+            return None;
+        }
+        let mut at = 2;
+        let mut seq = Vec::new();
+        for i in 0..n {
+            let cnt = u16::from_le_bytes([POSES[at], POSES[at + 1]]) as usize;
+            at += 2;
+            if i == seq_index {
+                for g in 0..cnt {
+                    let base = at + g * 8;
+                    seq.push([
+                        u16::from_le_bytes([POSES[base], POSES[base + 1]]),
+                        u16::from_le_bytes([POSES[base + 2], POSES[base + 3]]),
+                        u16::from_le_bytes([POSES[base + 4], POSES[base + 5]]),
+                        u16::from_le_bytes([POSES[base + 6], POSES[base + 7]]),
+                    ]);
+                }
+                return Some(PosePlayer { seq, cursor: 0, phase: 0, active: Vec::new() });
+            }
+            at += cnt * 8;
+        }
+        None
+    }
+
+    /// One frame: construct due groups (phase match), step active tweens; writes go
+    /// through `cells` (cell address -> current value), exactly as 0x1DF/0x19B do.
+    pub fn step(&mut self, cells: &mut dyn FnMut(u16, Option<i16>) -> i16) {
+        // Construct groups whose phase == current phase.
+        while self.cursor < self.seq.len() {
+            let g = self.seq[self.cursor];
+            let count = g[0] & 0xFF;
+            let phase = g[0] >> 8;
+            if count == 0 {
+                // count==0 = end of sequence (the 0x23E path).
+                self.cursor = self.seq.len();
+                break;
+            }
+            if phase != self.phase {
+                // Phase boundary: advance once per frame (the 0x239 path).
+                self.phase += 1;
+                break;
+            }
+            let target = g[2];
+            let end = g[3] as i16 as i32;
+            let cur = cells(target, None) as i32;
+            let step = ((end - cur) << 16) / count as i32;
+            self.active.push((count - 1, target, (cur << 16) + step, step));
+            self.cursor += 1;
+        }
+        // Step active tweens (0x19B): write value, decrement, accumulate.
+        let mut i = 0;
+        while i < self.active.len() {
+            let cell = self.active[i].1;
+            let val = (self.active[i].2 >> 16) as i16;
+            cells(cell, Some(val));
+            if self.active[i].0 == 0 {
+                self.active.swap_remove(i);
+            } else {
+                self.active[i].0 -= 1;
+                let step = self.active[i].3;
+                self.active[i].2 += step;
+                i += 1;
+            }
+        }
+    }
+
+    pub fn done(&self) -> bool {
+        self.cursor >= self.seq.len() && self.active.is_empty()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// The pose player runs sequence 0 to completion, writing plausible values
+    /// into the segment cells (the exact 0x1DF construction + 0x19B stepping).
+    #[test]
+    fn pose_player_animates_cells() {
+        // Sequence 0 is the null pose (empty stream); later selectors carry the
+        // real animations — at least one must terminate AND animate cells.
+        let mut animated = false;
+        for si in 0..8 {
+            let Some(mut p) = PosePlayer::new(si) else { continue };
+            let mut store = std::collections::HashMap::new();
+            let mut frames = 0;
+            while !p.done() && frames < 4000 {
+                p.step(&mut |cell, write| {
+                    if let Some(v) = write {
+                        store.insert(cell, v);
+                        v
+                    } else {
+                        store.get(&cell).copied().unwrap_or(0)
+                    }
+                });
+                frames += 1;
+            }
+            if frames < 4000 && store.len() > 4 {
+                animated = true;
+                break;
+            }
+        }
+        assert!(animated, "at least one pose sequence animates cells");
+    }
 
     #[test]
     fn hand_mesh_loads_and_renders() {
