@@ -5298,3 +5298,21 @@ REMAINING sub-task: the concept-menu ROW WORD draw (x + pitch of the selectable 
 inside the opened box). Find the text-draw that renders the line record's 0xFFFF menu
 words as rows — its x/pitch replaces the capture-measured x=175 / pitch 11. Then the
 box-open table above drives the container.
+
+### FOUND: the menu-word INLINE renderer (0x72A8) — and a conflict with the capture model
+`dlg_menu_words_inline_draw` (0x72CA..0x734E): at reveal completion, the line's concept
+words (far ptr gs:0x674A .. end gs:0x27D3 — set by the text assembler at 0x6791 when it
+stops at the 0xFFFF separator, ASSEMBLY-CONFIRMING the display/menu split) draw INLINE:
+x starts 0x0A(10), y starts 8, color 0xEF via 0x299:0x5DE; punctuation words advance by
+[0x27CD]; regular words advance width+6 (width via 0x299:0x13D); wrap at x>=0x12C(300)
+-> x=10, y+=8. ALSO: 0xB7FE hashes the menu words (char-sum+count >>4 -> gs:0xC55) for
+the chatter/voice seeding — a decoded audio detail.
+
+CONFLICT with the capture-derived port model: the captures show the topics as a
+VERTICAL grey list (x~175, pitch ~11) — that widget is NOT this renderer. Either a
+second menu renderer exists (the interactive box list — likely the one hit-tested by
+the click dispatch) or the vertical list is drawn by the overlay/BAS menu system.
+NEXT RE TASK: find the vertical list renderer (candidates: the readers of [0x27D3],
+the click hit-test that maps rows to concepts, or the 0x2B97 box-open completion path
+0x7C7E -> vm_segment_call_wrapper 0x8C96). Until then the port's vertical-list
+constants stay APPROX (docs/port-validation.md).
