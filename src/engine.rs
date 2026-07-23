@@ -385,6 +385,9 @@ pub struct EngineState {
     hand_on_screen: bool,
     /// The skeleton state at the PREVIOUS tick (for between-tick pose interpolation).
     hand_state_prev: Option<Vec<u8>>,
+    /// The hub PRESENTATION surface is live (bridge dialogue arrived; the CANCEL
+    /// label + orb click-to-advance remain until CANCELed — the oracle hub state).
+    pub hub_presentation: bool,
     pub console_box_kind: usize,
     /// The console OPTION 3D-pyramid menu (`manu3.xdb` overlay). Its 12-item dispatch
     /// structure is decoded statically from manu3.xdb (`[0x2306]` table) and its
@@ -600,6 +603,7 @@ impl EngineState {
             gpu_bg_colorkey: false,
             hand_on_screen: false,
             hand_state_prev: None,
+            hub_presentation: false,
             console_box_kind: 0,
             option_active: false,
             option_angle: 0,
@@ -1142,6 +1146,19 @@ impl EngineState {
     /// (returned as 0 = HONK … 4 = OPTION, with the view seeking to centre the
     /// menu), while a hit on the current station's eye-orb arms a station seek
     /// (rotating the view there) and returns `None`.
+    /// A click on the hub presentation's CANCEL label (the abort control).
+    pub fn hub_cancel_click(&mut self, x: u16, y: u16) -> bool {
+        if self.hub_presentation
+            && (70..=134).contains(&x)
+            && (90..=106).contains(&y)
+        {
+            self.hub_presentation = false;
+            self.hand_pose_event(0xB);
+            return true;
+        }
+        false
+    }
+
     pub fn bridge_press(&mut self, x: u16, y: u16) -> Option<usize> {
         Self::point_virtual_cursor(&mut self.bridge, x, y);
         self.bridge.click().map(|item| item as usize - 1)
@@ -1260,11 +1277,13 @@ impl EngineState {
             if !is_baked_menu {
                 let labels = self.console_box.clone();
                 self.draw_choice_box(&labels, None);
-            } else {
-                // The live CANCEL label over the hub presentation (oracle: gray
-                // 0xE8 console text at (73,95); the abort control's caption).
-                self.draw_console_text("CANCEL", 73, 95, 0xE8);
             }
+        }
+        if self.hub_presentation {
+            // The live CANCEL label over the hub presentation (oracle: gray 0xE8
+            // console text at (73,95); the abort control's caption). Persists after
+            // the lines finish — until CANCELed (the oracle hub idle state).
+            self.draw_console_text("CANCEL", 73, 95, 0xE8);
         }
         self.draw_hand_cursor();
     }
@@ -2619,6 +2638,9 @@ impl EngineState {
     /// instead of `execute_trace`'s single linear branch (which reaches only a fraction of
     /// the ~3400 decoded lines). Each `lines` entry is (subtitle, background-HNM path).
     pub fn set_speech_dialogue(&mut self, lines: Vec<(String, Option<std::path::PathBuf>)>) {
+        if self.bridge_active && !lines.is_empty() {
+            self.hub_presentation = true;
+        }
         self.autoplay_end = None; // a new scene plays through unless the driver gates it
         self.dialogue_segments.clear();
         self.dialogue_segment_pos = 0;

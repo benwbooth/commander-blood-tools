@@ -1,0 +1,7 @@
+# Console row option: CANCEL the arrival presentation first (the real gate), then click.
+click 100 98
+wait 20
+move 230 148
+click 230 148
+wait 30
+wait 30

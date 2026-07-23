@@ -1104,6 +1104,10 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 // (4) the 3D pyramid menu), while a hit on the eye-orb arms a
                 // station seek — the view auto-rotates there (no screen change).
                 Event::ButtonPress(b) if engine.bridge_active && b.detail == 1 => {
+                    // The hub presentation's CANCEL label takes the click first.
+                    if engine.hub_cancel_click(mx, my) {
+                        continue;
+                    }
                     // In the pyramid nav sector, the destination choice box takes
                     // the click first (choose a location -> its dialogue).
                     // The nav-sector orb with NO granted destinations opens the VIEWSCREEN

@@ -19,13 +19,9 @@ fn main() {
     e.bridge_active = true;
     // The hub state: ring frame 45 (the oracle's script2.state view), menu baked.
     e.bridge.frame = 45;
-    e.console_box = vec![
-        "HONK".into(),
-        "TELEPHONE".into(),
-        "CRYOBOX".into(),
-        "MENU".into(),
-        "OPTION".into(),
-    ];
+    // The oracle hub is the PRESENTATION state (CANCEL live): model it exactly.
+    e.set_speech_dialogue(vec![(String::new(), None)]);
+    e.hub_presentation = true;
     let (mut mx, mut my) = (160u16, 100u16);
     // The oracle hub is in PRESENTATION state: steering is script-locked ([0x2793]
     // bit2). Model the same lock: pin the ring mouse to the view centre each step.
@@ -56,6 +52,29 @@ fn main() {
             "click" => {
                 mx = toks[1].parse().unwrap();
                 my = toks[2].parse().unwrap();
+                // Mirror the windowed dispatch: CANCEL label, then the decoded
+                // console-row rects, then the engine's own click paths.
+                if !e.hub_cancel_click(mx, my) {
+                    // The console rows only dispatch once the presentation is done
+                    // (the windowed game's dialogue_finished gate; oracle-confirmed:
+                    // clicks during the live presentation are ignored).
+                    match if e.hub_presentation { None } else { e.bridge_press(mx, my) } {
+                        Some(1) => {
+                            let mut items: Vec<String> =
+                                e.phone_contact_labels().into_iter().take(6).collect();
+                            items.push("CANCEL".into());
+                            e.console_box = items;
+                            e.console_box_kind = 1;
+                        }
+                        Some(2) => {
+                            e.console_box = vec!["BOB_MORLOCK".into(), "CANCEL".into()];
+                            e.console_box_kind = 2;
+                        }
+                        Some(3) => e.menu_submenu_active = true,
+                        Some(4) => e.option_box_active = true,
+                        _ => {}
+                    }
+                }
                 step_engine(&mut e, mx, my, 1);
             }
             "key" => {}
