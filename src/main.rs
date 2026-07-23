@@ -1090,6 +1090,45 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                     engine.bridge_active = false;
                                     engine.cryobox_active = true;
                                 }
+                                // The OPTION submenu {TEXT, MUSIC_OFF, SAVE, LOAD,
+                                // QUIT, CANCEL} — the decoded row surfaces.
+                                4 => match row {
+                                    0 => {
+                                        // TEXT: cycle the decoded speed steps {1,2,3,4,7}.
+                                        engine.text_speed_step =
+                                            match engine.text_speed_step {
+                                                1 => 2,
+                                                2 => 3,
+                                                3 => 4,
+                                                4 => 7,
+                                                _ => 1,
+                                            };
+                                    }
+                                    1 => music.stop(), // MUSIC_OFF
+                                    2 => {
+                                        // SAVE: the oracle-measured slot-name UI.
+                                        engine.save_ui_active = true;
+                                        engine.save_ui_name.clear();
+                                    }
+                                    3 => {
+                                        // LOAD: read the DOS-format slot 1 save.
+                                        if let Ok(bytes) =
+                                            std::fs::read(format!("{iso}/game1.sav"))
+                                        {
+                                            let profile = script_vm
+                                                .borrow_mut()
+                                                .as_mut()
+                                                .and_then(|m| m.apply_dos_save(&bytes));
+                                            if let Some(p) = profile {
+                                                let n = (p.max(0) as u32).max(1);
+                                                load_script(&mut engine, &mut music, n);
+                                                engine.on_ship = false;
+                                            }
+                                        }
+                                    }
+                                    4 => return Ok(()), // QUIT
+                                    _ => {}
+                                },
                                 _ => {}
                             }
                         }
@@ -1525,6 +1564,52 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                 engine.set_world_ext(&ext);
                             }
                         }
+                    }
+                }
+                // SAVE-SLOT NAME ENTRY takes every key while active: X11 keycodes
+                // (evdev scancode + 8) -> ASCII, fed through the DOS edit law
+                // (digits+lowercase, backspace, Enter commits). On commit, write the
+                // DOS-format slot files exactly as the original does: game1.sav (the
+                // vm state, bloodsav layout) + blood.sav (the 10x32 slot directory).
+                Event::KeyPress(k) if engine.save_ui_active => {
+                    let ascii: u8 = match k.detail {
+                        10..=18 => b'1' + (k.detail - 10) as u8,
+                        19 => b'0',
+                        24..=33 => b"qwertyuiop"[(k.detail - 24) as usize],
+                        38..=46 => b"asdfghjkl"[(k.detail - 38) as usize],
+                        52..=58 => b"zxcvbnm"[(k.detail - 52) as usize],
+                        36 => 13, // Enter
+                        22 => 8,  // Backspace
+                        9 => {
+                            engine.save_ui_active = false; // Escape cancels
+                            engine.save_ui_name.clear();
+                            continue;
+                        }
+                        _ => 0,
+                    };
+                    if let Some(name) = engine.save_ui_key(ascii) {
+                        let vm_bytes = script_vm
+                            .borrow()
+                            .as_ref()
+                            .map(|m| m.to_dos_save(current_script.get() as u16));
+                        if let Some(bytes) = vm_bytes {
+                            let _ = std::fs::write(format!("{iso}/game1.sav"), &bytes);
+                        }
+                        // The slot directory: ten 32-byte {15-char name, NUL,
+                        // "game<N>.sav"} records, the typed name in slot 1.
+                        let mut dir = Vec::with_capacity(320);
+                        for n in 1..=10u32 {
+                            let mut rec = [0u8; 32];
+                            rec[..15].fill(b' ');
+                            if n == 1 {
+                                rec[..name.len().min(15)]
+                                    .copy_from_slice(&name.as_bytes()[..name.len().min(15)]);
+                            }
+                            let fname = format!("game{n}.sav");
+                            rec[16..16 + fname.len()].copy_from_slice(fname.as_bytes());
+                            dir.extend_from_slice(&rec);
+                        }
+                        let _ = std::fs::write(format!("{iso}/blood.sav"), &dir);
                     }
                 }
                 // 'c' (keycode 54): toggle the alien-examination screen (plays the

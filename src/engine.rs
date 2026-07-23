@@ -366,6 +366,10 @@ pub struct EngineState {
     /// The OPTION choice box (over the panorama) is open — the REAL OPTION interaction
     /// (savestate-verified); replaces the invented 3D-pyramid OPTION screen.
     pub option_box_active: bool,
+    /// The SAVE-SLOT UI (OPTION submenu -> SAVE): the oracle-measured grey name bar
+    /// awaiting a typed slot name (digits+lowercase, Enter commits).
+    pub save_ui_active: bool,
+    pub save_ui_name: String,
     /// The UNIVERSAL console choice box (savestate-verified: every golden-menu row opens a
     /// contextual gold box over the panorama): its item labels, or empty = closed. The last
     /// item is always CANCEL. `console_box_kind` = which console row opened it.
@@ -596,6 +600,8 @@ impl EngineState {
             bridge_active: false,
             menu_submenu_active: false,
             option_box_active: false,
+            save_ui_active: false,
+            save_ui_name: String::new(),
             console_box: Vec::new(),
             gpu_hand: None,
             gpu_hand_enabled: false,
@@ -1281,7 +1287,32 @@ impl EngineState {
                 self.draw_choice_box(&labels, None);
             }
         }
-        if (self.hub_presentation || self.bridge.engaged_row.is_some())
+        if self.save_ui_active {
+            // The SAVE-SLOT UI, oracle-measured (vs_011, the live save flow): a grey
+            // name bar (index 0xE8) at x63..137, y39..48; the typed name in WHITE
+            // (0xEF) bold console glyphs from x=73; CANCEL at (73,150). The DOS
+            // original's edit law (0x1DD8): digits+lowercase only, max 14, Enter
+            // commits (see re/REVERSE.md SAVE-SLOT UI).
+            for y in 39..49usize {
+                for x in 63..138usize {
+                    self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] = 0xE8;
+                }
+            }
+            let name = self.save_ui_name.clone();
+            if let Some(bold) = self.bold_font.take() {
+                bold.draw(
+                    &mut self.framebuffer,
+                    ENGINE_SCREEN_WIDTH,
+                    ENGINE_SCREEN_HEIGHT,
+                    &name,
+                    73,
+                    40,
+                    0xEF,
+                );
+                self.bold_font = Some(bold);
+            }
+            self.draw_console_text("CANCEL", 73, 150, 0xE8);
+        } else if (self.hub_presentation || self.bridge.engaged_row.is_some())
             && self.console_box.is_empty()
         {
             // The live CANCEL label (oracle: gray 0xE8 console text at (73,95)) —
@@ -1290,6 +1321,29 @@ impl EngineState {
             self.draw_console_text("CANCEL", 73, 95, 0xE8);
         }
         self.draw_hand_cursor();
+    }
+
+    /// Feed a typed character to the save-slot name entry — the DOS original's edit
+    /// law (0x1DD8): digits and lowercase letters append (max 14), backspace (8)
+    /// deletes, Enter (13) with a non-empty name COMMITS. Returns the committed name.
+    pub fn save_ui_key(&mut self, ch: u8) -> Option<String> {
+        if !self.save_ui_active {
+            return None;
+        }
+        match ch {
+            13 if !self.save_ui_name.is_empty() => {
+                self.save_ui_active = false;
+                return Some(std::mem::take(&mut self.save_ui_name));
+            }
+            8 => {
+                self.save_ui_name.pop();
+            }
+            b'0'..=b'9' | b'a'..=b'z' if self.save_ui_name.len() < 14 => {
+                self.save_ui_name.push(ch as char);
+            }
+            _ => {}
+        }
+        None
     }
 
     /// Load the pointing-hand capture atlas: sprites of the REAL game's 3D hand
@@ -4791,6 +4845,49 @@ mod tests {
         assert!(finished, "SCRIPT1 dialogue scene completes");
         assert!(total > 1, "SCRIPT1 has real dialogue lines ({total})");
         assert!(e.dialogue_cursor() + 1 >= total, "cursor reached the last line");
+    }
+
+    /// The SAVE-SLOT UI matches the oracle capture (vs_011) and the DOS edit law
+    /// (0x1DD8): grey 0xE8 bar at x63..137 y39..48, typed name in white 0xEF bold
+    /// glyphs from x=73, CANCEL at (73,150); digits+lowercase only (uppercase
+    /// rejected), max 14 chars, backspace deletes, Enter commits the name.
+    #[test]
+    fn save_slot_ui_renders_and_edits_like_the_oracle() {
+        let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter().map(Path::new).find(|p| p.join("TB.BIG").exists());
+        let Some(iso) = iso else { return };
+        let mut e = EngineState::new();
+        e.load_bridge(iso);
+        e.on_ship = true;
+        e.bridge_active = true;
+        e.bridge.frame = 45;
+        e.save_ui_active = true;
+        assert!(e.save_ui_key(b'A').is_none());
+        assert_eq!(e.save_ui_name, "", "uppercase is rejected (the 0x1DD8 filter)");
+        for &c in b"ab" {
+            assert!(e.save_ui_key(c).is_none());
+        }
+        assert_eq!(e.save_ui_name, "ab");
+        for _ in 0..20 {
+            e.save_ui_key(b'x');
+        }
+        assert_eq!(e.save_ui_name.len(), 14, "the 14-char cap");
+        e.save_ui_key(8);
+        assert_eq!(e.save_ui_name.len(), 13, "backspace deletes");
+        e.step(MouseInput { x: 300, y: 190, ..Default::default() });
+        let bar = (39..49usize)
+            .flat_map(|y| (63..138usize).map(move |x| y * ENGINE_SCREEN_WIDTH + x))
+            .filter(|&i| e.framebuffer[i] == 0xE8 || e.framebuffer[i] == 0xEF)
+            .count();
+        assert!(bar > 600, "the grey name bar renders with the typed name ({bar} px)");
+        // Enter with a non-empty name commits and closes the UI.
+        let name = e.save_ui_key(13).expect("Enter commits");
+        assert_eq!(name.len(), 13);
+        assert!(!e.save_ui_active);
+        // Empty name does not commit.
+        e.save_ui_active = true;
+        assert!(e.save_ui_key(13).is_none());
+        assert!(e.save_ui_active);
     }
 
     /// The game's real flow after the intro: the SCRIPT1 console tutorial plays, then
