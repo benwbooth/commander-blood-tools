@@ -464,7 +464,6 @@ pub struct EngineState {
     /// clip: crew video + grey pyramid floor + eye-orb — accuracy/captures/frame_6-9). True only
     /// for the intro's credit/showcase clip; in-game cutscenes played via `start_descript_cutscene`
     /// (maledict/hatetv/…) are full-screen and set this false, so they don't get the console.
-    intro_pyramid: Vec<bool>,
     /// Index of the intro HNM currently playing.
     intro_index: usize,
     /// True while the startup intro sequence is playing (gates the main render path).
@@ -568,7 +567,6 @@ impl EngineState {
             intro_hnms: Vec::new(),
             intro_cues: Vec::new(),
             intro_music: Vec::new(),
-            intro_pyramid: Vec::new(),
             intro_index: 0,
             intro_active: false,
         }
@@ -669,18 +667,12 @@ impl EngineState {
         self.intro_hnms = Vec::new();
         self.intro_cues = Vec::new();
         self.intro_music = Vec::new();
-        self.intro_pyramid = Vec::new();
         for (name, cues, music) in order {
             let path = sq.join(&name);
             if path.exists() {
-                // The crew-showcase / CRYO credit clip (the one carrying music+cues, i.e. the
-                // `present` cliptoot) is presented on the pyramid console; the silent logo reel is
-                // not.
-                let showcase = music.is_some() && !cues.is_empty();
                 self.intro_hnms.push(path);
                 self.intro_cues.push(cues);
                 self.intro_music.push(music);
-                self.intro_pyramid.push(showcase);
             }
         }
         self.intro_index = 0;
@@ -727,7 +719,6 @@ impl EngineState {
         self.intro_hnms = Vec::new();
         self.intro_cues = Vec::new();
         self.intro_music = Vec::new();
-        self.intro_pyramid = Vec::new();
         for (i, name) in record.sequence_hnms.iter().enumerate() {
             let path = sq.join(name);
             if path.exists() {
@@ -737,8 +728,6 @@ impl EngineState {
                     .push(if i == 0 { record.subtitles.clone() } else { Vec::new() });
                 self.intro_music
                     .push(if i == 0 { music.clone() } else { None });
-                // In-game cutscenes play FULL-SCREEN — no pyramid console (that is intro-only).
-                self.intro_pyramid.push(false);
             }
         }
         self.intro_index = 0;
@@ -1767,36 +1756,6 @@ impl EngineState {
         self.scene_frame += 1;
     }
 
-    /// Overlay the OPTION-style 3D-pyramid console floor + eye-orb onto the EXISTING framebuffer
-    /// (the crew viewscreen) WITHOUT clearing it — the composite the real SCRIPT1 tutorial uses
-    /// (accuracy/captures/frame_6-9): a crew talk-HNM fills the top viewscreen and the pyramid
-    /// console sits along the bottom. Unlike [`Self::render_option_menu`] (which clears to black
-    /// and tints the pyramids purple with a yellow orb), this OVERLAYS and uses the real GRAY
-    /// pyramids + WHITE eye-orb seen in the captures. The pyramid renderer fills only the lower
-    /// grid band, so the crew scene in the upper band shows through.
-    fn overlay_console_pyramids(&mut self) {
-        // The REAL console band, harvested from the real game's captures (frames 9/15/22 are
-        // pixel-identical here — static art): the textured pyramid field + the ornate eye-orb on
-        // the grid floor, 320x60 at rows 140..200, 16 colours installed at palette 0x80..0x8F
-        // (scene palettes only ever cover indices 1..127, so those slots are free). Replaces the
-        // earlier flat-shaded placeholder triangles + plain circle (user-reported as not matching
-        // the original game's art).
-        const BAND: &[u8] = include_bytes!("../accuracy/captures/console_band.bin");
-        let n = BAND[0] as usize;
-        let pal = &BAND[1..1 + n * 3];
-        let map = &BAND[1 + n * 3..];
-        for i in 0..n {
-            self.scene_palette[0x80 + i] = [pal[i * 3], pal[i * 3 + 1], pal[i * 3 + 2]];
-        }
-        for (k, &ci) in map.iter().enumerate() {
-            let x = k % ENGINE_SCREEN_WIDTH;
-            let y = 140 + k / ENGINE_SCREEN_WIDTH;
-            if y < ENGINE_SCREEN_HEIGHT {
-                self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] = (0x80 + ci) as u8;
-            }
-        }
-    }
-
     /// Load the game-ending finale cutscene (`sq/fin.hnm`, the "fin"/end video) — the
     /// bookend to the intro. Returns whether it loaded.
     pub fn load_ending(&mut self, assets: &Path) -> bool {
@@ -2043,13 +2002,10 @@ impl EngineState {
         let frame = self.scene_frame;
         self.scene_frame += 1;
         self.present_scene_buffer();
-        // The intro CREW SHOWCASE clip (cliptoot.hnm) cycles crew members and the game overlays the
-        // pyramid console over the bottom (accuracy/captures/frame_6-9 — the pyramid floor occludes
-        // the crew's lower body). ONLY the showcase clip gets it — NOT the logo reel or the in-game
-        // cutscenes played through this same path via `start_descript_cutscene`.
-        if self.intro_pyramid.get(self.intro_index).copied().unwrap_or(false) {
-            self.overlay_console_pyramids();
-        }
+        // The intro montage (cliptoot.hnm) plays FULL-SCREEN, exactly as the HNM decodes — no
+        // console overlay. (A prior agent composited a fabricated pyramid/orb "console" band over
+        // the bottom here; it is NOT in the original game — the real bridge console is the tb.big
+        // panorama, reached only after the intro. Removed.)
         // Overlay this clip's active credit subtitle (the DESCRIPT `present` cues on the
         // CRYO cinematic) centred in the lower letterbox, in the verified game font.
         self.draw_intro_credit(frame);
@@ -3871,11 +3827,6 @@ mod tests {
             e.intro_cues[0].iter().any(|c| c.text.contains("CURSED")),
             "the record's subtitle text is carried"
         );
-        // In-game cutscenes play FULL-SCREEN — never on the pyramid console (that is intro-only).
-        assert!(
-            e.intro_pyramid.iter().all(|&p| !p),
-            "an in-game cutscene must NOT get the pyramid console overlay"
-        );
         // And an in-game cutscene plays its FULL HNM, not cut to its subtitle-cue span (the
         // intro-credit early-end is intro-only). maledict's cues end at tick 10 (~34 frames).
         let full = crate::hnm::HnmFile::open(&e.intro_hnms[0])
@@ -4148,23 +4099,31 @@ mod tests {
         std::fs::write("output/_tmp_intro_composite.ppm", buf).unwrap();
     }
 
-    /// The SCRIPT1-tutorial console COMPOSITE (accuracy/captures/frame_6-9): the pyramid console
-    /// floor + eye-orb overlays the crew viewscreen WITHOUT clearing it — the crew (upper band)
-    /// shows through, and the pyramids sit along the bottom. Guards the gap where the port rendered
-    /// the bridge/dialogue/OPTION as separate full-screen views instead of this composite.
+    /// The intro montage plays the HNM FULL-SCREEN with no fabricated console overlay: a
+    /// real-game capture (MINDSCAPE → Microfolie's → ship-over-planet cinematic) shows no
+    /// pyramid/orb band. Guards against re-introducing the invented console composite.
     #[test]
-    fn tutorial_console_overlays_pyramids_over_crew_viewscreen() {
+    fn intro_montage_has_no_fabricated_console_band() {
+        let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("sq").join("cliptoot.hnm").exists());
+        let Some(assets) = assets else { return };
+        let db = ["output/_tmp_iso/DESCRIPT.DES", "../output/_tmp_iso/DESCRIPT.DES"]
+            .iter()
+            .find_map(|p| crate::descript::DescriptDb::parse_file(p).ok());
+        let Some(db) = db else { return };
         let mut e = EngineState::new();
-        // A "crew viewscreen" already in the framebuffer (a non-zero, non-reserved index).
-        e.framebuffer.iter_mut().for_each(|p| *p = 0x30);
-        e.overlay_console_pyramids();
-        // Upper band: the crew shows through (the console band covers only rows 140..200).
-        let top = &e.framebuffer[..ENGINE_SCREEN_WIDTH * 140];
-        assert!(top.iter().all(|&p| p == 0x30), "the crew viewscreen (top) shows through");
-        // Bottom band: the REAL harvested console art (palette 0x80..0x8F) fills rows 140..200.
+        e.load_intro(assets, &db);
+        // Advance into the montage clip and render several frames.
+        for _ in 0..40 {
+            e.render_intro_frame();
+        }
+        // No harvested-band palette slots (0x80..0x8F were the fabricated art) are used as a
+        // solid bottom console band — the frame is the decoded HNM plus at most the credit text.
         let bottom = &e.framebuffer[ENGINE_SCREEN_WIDTH * 140..];
-        let art_px = bottom.iter().filter(|&&p| (0x80..0x90).contains(&p)).count();
-        assert!(art_px > 10_000, "the real console band draws along the bottom ({art_px} px)");
+        let band_px = bottom.iter().filter(|&&p| (0x80..0x90).contains(&p)).count();
+        assert!(band_px < 2000, "no fabricated console band in the montage ({band_px} px)");
     }
 
     /// End-to-end regression: drive the full playable loop the way the real driver does
