@@ -1293,12 +1293,28 @@ impl EngineState {
     /// atlas.
     fn draw_hand_at_mouse(&mut self) {
         let (cx, cy) = (self.mouse.x as i32, self.mouse.y as i32);
-        // The manu3 3D hand (mesh+UVs+texture extracted, cursor law + rest pose decoded)
-        // is implemented in manu3_hand but its on-screen projection is NOT yet visually
-        // correct — the exact 0x270 matrix composition (axis order/signs) still needs
-        // transcription. Until it matches, the LIVE-CAPTURE atlas (authentic pixels)
-        // remains the on-screen cursor; the mesh path is exercised by its unit test.
-        let _ = &self.hand_mesh;
+        // THE REAL 3D HAND: manu3's skeletal mesh (16 live segments, 110+32 verts,
+        // 216 textured faces) rendered with the transcribed matrix build (game trig
+        // tables), the EXACT perspective projection (0x549: divide by depth, centres
+        // 252/110, y negated), the decoded cursor law on the wrist segment, and the
+        // game's own texture — fingertip anchored at the cursor.
+        {
+            let mesh = self
+                .hand_mesh
+                .get_or_insert_with(crate::manu3_hand::HandMesh::load);
+            let gp = crate::palette::game_screen_palette();
+            for i in 128..=255usize {
+                self.scene_palette[i] = gp[i];
+            }
+            mesh.draw(
+                &mut self.framebuffer,
+                ENGINE_SCREEN_WIDTH,
+                ENGINE_SCREEN_HEIGHT,
+                cx,
+                cy,
+            );
+            return;
+        }
         let Some(si) = self
             .hand_atlas
             .iter()

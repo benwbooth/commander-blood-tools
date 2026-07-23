@@ -124,9 +124,15 @@ impl HandMesh {
     /// Render the hand into an indexed framebuffer with the cursor at (cx, cy).
     /// Implements the decoded cursor law + Q15 transform + painter-sorted flat fill.
     pub fn draw(&self, fb: &mut [u8], w: usize, h: usize, cx: i32, cy: i32) {
-        // SKELETAL ASSEMBLY (decoded): per segment, the exact matrix from ITS live
-        // angles; world = (m·v)>>15 + T>>8; the wrist segment (0) carries the cursor
-        // displacement per the decoded law ((cy-100)*2 / (cx-160)*2 raw units).
+        // EXACT PROJECTION (0x549 path, transcribed): per vertex —
+        //   depth = (z_row·v + Tz) >> 8
+        //   sx = (x_row·v + Tx) / depth + centre_x        (centres live: 252, 110)
+        //   sy = -((y_row·v + Ty) / depth) + centre_y     (y negated)
+        // Rows/T mapping per the code: +0x12=y-row/+0x36=Ty, +0x1E=x-row/+0x3A=Tx,
+        // +0x2A=z-row/+0x3E=Tz. Our matrix cells follow the transform layout
+        // (m00..m22 as x/y/z rows), so y-row = (m10,m11,m12) etc. The asset's T is
+        // stored (T36,T3A,T3E) = (Ty,Tx,Tz) in raw Q; used directly — units cancel
+        // in the divide, no invented scales.
         let mut pts: Vec<(f32, f32, f32)> = Vec::with_capacity(self.uvs.len());
         let mut vi = 0usize;
         for (si, &(cnt, t, a)) in self.segs.iter().enumerate() {
@@ -136,20 +142,23 @@ impl HandMesh {
                 a2 += (cx - 160) * 2;
             }
             let m = build_matrix(a1, a2, a3);
+            let (ty, tx, tz) = (t[0] as i64, t[1] as i64, t[2] as i64);
             for _ in 0..cnt {
                 if vi >= self.verts.len() {
                     break;
                 }
                 let v = self.verts[vi];
-                let (x, y, z) = (v[0] as i32, v[1] as i32, v[2] as i32);
-                let wx = ((m[0] * x + m[1] * y + m[2] * z) >> 15) + (t[0] >> 8);
-                let wy = ((m[3] * x + m[4] * y + m[5] * z) >> 15) + (t[1] >> 8);
-                let wz = ((m[6] * x + m[7] * y + m[8] * z) >> 15) + (t[2] >> 8);
-                // Perspective (sar-8 family): project about the origin first; the
-                // fingertip anchors to the cursor after the pass (capture-verified).
-                let zz = (wz as f32).max(1000.0);
-                let scale = 4200.0 / zz;
-                pts.push((wx as f32 * scale, wy as f32 * scale, zz));
+                let (x, y, z) = (v[0] as i64, v[1] as i64, v[2] as i64);
+                let (m0, m1, m2) = (m[0] as i64, m[1] as i64, m[2] as i64);
+                let (m3, m4, m5) = (m[3] as i64, m[4] as i64, m[5] as i64);
+                let (m6, m7, m8) = (m[6] as i64, m[7] as i64, m[8] as i64);
+                let xr = m0 * x + m1 * y + m2 * z + tx;
+                let yr = m3 * x + m4 * y + m5 * z + ty;
+                let zr = m6 * x + m7 * y + m8 * z + tz;
+                let depth = (zr >> 8).max(1);
+                let sx = (xr / depth) as f32 + 252.0;
+                let sy = -((yr / depth) as f32) + 110.0;
+                pts.push((sx, sy, depth as f32));
                 vi += 1;
             }
         }
