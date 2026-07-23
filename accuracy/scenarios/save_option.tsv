@@ -1,10 +1,12 @@
 # Drive the REAL game to write blood.sav — STATUS: reaches the save-slot UI (grey
 # name bar + CANCEL, vs_005..vs_014) but the name entry needs ASCII-carrying key
-# events: VERIFYSCRIPT's `key` injects scancode with ascii=0, which the name-entry
-# BIOS poll ignores. NEXT: extend the `key` command to pass the ASCII byte
-# (inject_key(sc, ascii)), type a name + Enter (0x1C), then blood.sav should land in
-# accuracy/cdrive/cblood/ (int21 0x3C/0x40 are implemented) for the bloodsav.rs
-# round-trip test.
+# events. STATUS 2: ASCII keys (key <sc> <ascii>) + correctly-placed ring clicks on
+# the slot bar still don't commit — the slot UI's input path is NOT a hot int16 poll
+# (SAVESAMPLE ip histogram shows only the hand fill + VGA blit + timer). FOUND along
+# the way: the real slot filenames are game<N>.sav (the LOAD row open-traces
+# game1.sav) — bloodsav.rs updated. The UI input decode (which event source commits a
+# slot) is the remaining step; the FORMAT itself is already static-decoded from
+# vm_state_save @0x1C3F.
 # Original flow: CANCEL the arrival presentation, open the
 # OPTION submenu, click SAVE (row 2 of TEXT/MUSIC_OFF/SAVE/LOAD/QUIT/CANCEL at pitch 11
 # from top 67, centred x=100).
@@ -18,8 +20,8 @@ wait 60
 wait 60
 click 100 44
 wait 30
-key 30
-key 31
-key 28
+key 30 65
+key 31 66
+key 28 13
 wait 60
 wait 60

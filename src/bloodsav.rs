@@ -136,11 +136,15 @@ mod tests {
         assert!(!save.flag_bit(6, 0));
     }
 
-    /// If the real game has been driven to save (a `blood.sav` exists under the
-    /// C: drive), parse it and sanity-check the fixed header.
+    /// If the real game has been driven to save, parse it and sanity-check the fixed
+    /// header. LIVE-OBSERVED (save_option scenario, OPTION->LOAD file-open trace):
+    /// the real slot filenames are `game<N>.sav` (game1.sav for slot 1) — NOT
+    /// blood.sav (that name is only opened at BOOT as a legacy/quick slot probe).
     #[test]
     fn parses_a_real_save_if_present() {
         let paths = [
+            "accuracy/cdrive/cblood/game1.sav",
+            "../accuracy/cdrive/cblood/game1.sav",
             "accuracy/cdrive/cblood/blood.sav",
             "../accuracy/cdrive/cblood/blood.sav",
         ];

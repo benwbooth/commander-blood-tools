@@ -2932,9 +2932,23 @@ fn main() {
                     let _ = rt.run(rt.cpu.steps + 300_000);
                     rt.mouse_release(0);
                 }
+                // sclick <x> <y>: RAW screen coordinates (no ring conversion) — for
+                // overlay UIs (the save-slot box) that read the mouse in screen space.
+                // DOS-virtual mouse x is 0..639: screen column sx = virtual sx*2.
+                "sclick" => {
+                    let (sx, sy): (u16, u16) = (toks[1].parse().unwrap(), toks[2].parse().unwrap());
+                    rt.set_mouse_pos(sx * 2, sy);
+                    let _ = rt.run(rt.cpu.steps + 400_000);
+                    rt.mouse_press(0);
+                    let _ = rt.run(rt.cpu.steps + 300_000);
+                    rt.mouse_release(0);
+                }
                 "key" => {
+                    // key <scancode> [ascii] — the ASCII byte reaches BIOS-buffer
+                    // consumers (the save-slot name entry polls int16 with ASCII).
                     let sc: u8 = toks[1].parse().unwrap();
-                    rt.inject_key(sc, 0);
+                    let ascii: u8 = toks.get(2).map(|t| t.parse().unwrap()).unwrap_or(0);
+                    rt.inject_key(sc, ascii);
                     let _ = rt.run(rt.cpu.steps + 200_000);
                     rt.inject_key(sc | 0x80, 0);
                 }
@@ -2951,6 +2965,21 @@ fn main() {
         }
         std::fs::write(out.join("vs_dac.bin"), rt.dac).unwrap();
         println!("VERIFYSCRIPT done: {step} steps");
+        for (st, f) in rt.opened_files.iter().rev().take(8) {
+            println!("  opened @{st}: {f}");
+        }
+        if std::env::var("SAVESAMPLE").is_ok() {
+            rt.ip_sample = Some(Default::default());
+            let _ = rt.run(rt.cpu.steps + 4_000_000);
+            if let Some(h) = rt.ip_sample.take() {
+                let mut v: Vec<_> = h.into_iter().collect();
+                v.sort_by_key(|&(_, n)| std::cmp::Reverse(n));
+                println!("  save-UI wait hot ips:");
+                for ((cs, ip), n) in v.into_iter().take(12) {
+                    println!("    {cs:04x}:{ip:04x} x{n}");
+                }
+            }
+        }
         return;
     }
     if std::env::var("FRAMERATE").is_ok() {
