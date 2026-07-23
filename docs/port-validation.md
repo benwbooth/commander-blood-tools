@@ -124,6 +124,11 @@ transcription of the textured fill into manu3_hand (replacing flat shading). ARC
   the tutorial — its enumeration (blood.dat-internal, no file opens, no DESCRIPT record found)
   remains THE open intro item, folded into the ext/overlay consumer-trace work.
 
+- HIT SYSTEMS COMPLETE: both console hit paths fully decoded and confirmed — the region table
+  (32x32B, ring-space {x,y,w,h}@+8, orb/zones; live-validated: presentation state = orb-only)
+  and the station records ({flags, seek-arc, rect@+0xC} through mouse_hit_test 0x8269, menu/
+  stations, auto-seek mechanism). The port's interaction model matches both.
+
 ## Active fix queue (from the matrix, user-reported first)
 1. [x] Host crosshair removed; hand = the only cursor, all screens (this pass).
 2. [x] Hand hotspot: oracle frames confirm fingertip = mouse position (arm extends down-left); the BRIDGEPROBE-derived atlas anchors encode this. Pose model (nearest-capture) remains APPROX vs the real 3D render.
