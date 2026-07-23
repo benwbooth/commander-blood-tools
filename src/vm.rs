@@ -4047,9 +4047,16 @@ pub fn decompile_script(
     // Open blocks: (end_offset, kind). Closed when pc reaches end_offset.
     let mut blocks: Vec<usize> = Vec::new();
     let name_of = |off: usize| -> String {
+        // C4/record refs address the object's TALK field (DEB offset + 58, the
+        // actor_talk_ref) — resolve through it so listings show real names.
         actor_names
             .get(&(off as u16))
             .cloned()
+            .or_else(|| {
+                actor_names
+                    .get(&(off as u16).wrapping_sub(58))
+                    .map(|n| format!("{n}.talk"))
+            })
             .unwrap_or_else(|| format!("rec_{off:04X}"))
     };
     let word_of = |w: u16| -> String {

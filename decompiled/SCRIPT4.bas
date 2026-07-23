@@ -8,7 +8,7 @@
 [0041]     SETCHAR slot 6 = "present"
 [004C]     rec_0CD0 |= 0x2
 [0051]     rec_049A = 4262
-[0056]     rec_0182 = 2984
+[0056]     scrujo.talk = 2984
 [005B]     rec_00AA = 2954
 [0060]     rec_00F2 = 3494
 [0065]     rec_0842 = 2870
@@ -33,17 +33,17 @@
   END
 [00C9]   BLOCK (exit -> @0147)
 [00CD]     AWAIT gameflag_274F
-[00CE]     GUARD active_actor == rec_054C (related 40)
+[00CE]     GUARD active_actor == Bronko.talk (related 40)
 [00D3]     ENDIF
 [00D4]     SAY "Me busy do onboard cooking . Me make tasty meals for Cap'n Bob ..."
 [00F8]     SAY "Let him do his job , Commander . It's about time we had something edible to eat ..."
 [0124]     SAY "Me not have time , Commander ..."
 [013A]     SAY "..."  '[skip 1]
-[0144]     END PRESENTATION rec_054C
+[0144]     END PRESENTATION Bronko.talk
   END
 [0147]   BLOCK (exit -> @0485)
 [014B]     AWAIT gameflag_274F
-[014C]     GUARD active_actor == rec_08AC (related 40)
+[014C]     GUARD active_actor == Scruter_Jo.talk (related 40)
 [0151]     ENDIF
 [0152]     SAY "Commander you go get BIONIUM in CYBERSPACE of SCRUTER JO..."  '[voice 19]
 [016E]     IF-BLOCK (exit -> @0315)
@@ -88,20 +88,20 @@
 [0450]       SAY "Why don't you shut up , wiseguy !!!"
     END
 [0468]     SAY "Bye bye , Commander . Me return to CYBERSPACE..."  '[voice 7, skip 1]
-[0482]     END PRESENTATION rec_08AC
+[0482]     END PRESENTATION Scruter_Jo.talk
   END
 [0485]   BLOCK (exit -> @04C7)
 [0489]     AWAIT gameflag_274F
-[048A]     GUARD active_actor == rec_0354 (related 40)
+[048A]     GUARD active_actor == receiver.talk (related 40)
 [048F]     ENDIF
 [0490]     SAY "zzzzzzzzzz shshshshs... crak ..."
 [04A0]     SAY "It won't work, Commander. We're too far away ..."
 [04BA]     SAY "Krouikk..."  '[skip 1]
-[04C4]     END PRESENTATION rec_0354
+[04C4]     END PRESENTATION receiver.talk
   END
 [04C7]   BLOCK (exit -> @055C)
 [04CB]     AWAIT gameflag_274F
-[04CC]     GUARD active_actor == rec_06B4 (related 40)
+[04CC]     GUARD active_actor == Beauregard.talk (related 40)
 [04D1]     GUARD maledict == 1
 [04D8]     ENDIF
 [04D9]     SAY "AAAAAHHH. Commander , I'm cursed..."  '[voice 23]
@@ -113,11 +113,11 @@
 [0527]     SAY "Gee , Commander . That doesn't sound like fun ... !!!"
 [0545]     SAY "aaaa..."  '[voice 30]
 [054F]     SAY "..."  '[skip 1]
-[0559]     END PRESENTATION rec_06B4
+[0559]     END PRESENTATION Beauregard.talk
   END
 [055C]   BLOCK (exit -> @069D)
 [0560]     AWAIT gameflag_274F
-[0561]     GUARD active_actor == rec_06B4 (related 40)
+[0561]     GUARD active_actor == Beauregard.talk (related 40)
 [0566]     GUARD (rec_104E & 0x2) == 0
 [056C]     GUARD maledict == 0
 [0573]     ENDIF
@@ -131,23 +131,23 @@
 [0656]     SAY "So the thing to do is find the planet Attrox, Commander..."  '[voice 1]
 [0674]     SAY "Commander, Mister Beauregard is so amazingly intelligent..."
 [068A]     SAY "See you soon, Commander..."  '[voice 1, skip 1]
-[069A]     END PRESENTATION rec_06B4
+[069A]     END PRESENTATION Beauregard.talk
   END
 [069D]   BLOCK (exit -> @06FD)
 [06A1]     AWAIT gameflag_274F
-[06A2]     GUARD active_actor == rec_06B4 (related 40)
+[06A2]     GUARD active_actor == Beauregard.talk (related 40)
 [06A7]     GUARD (rec_104E & 0x2) != 0
 [06AC]     GUARD maledict == 0
 [06B3]     ENDIF
 [06B4]     SAY "Ahhhh... Commander ... I feel better now ..."  '[voice 1]
 [06CC]     SAY "I saw the flames of hell, Commander. Not a pretty sight.."  '[voice 2]
 [06EA]     SAY "See you soon, Commander..."  '[voice 1, skip 1]
-[06FA]     END PRESENTATION rec_06B4
+[06FA]     END PRESENTATION Beauregard.talk
   END
 [06FD]   BLOCK (exit -> @08FA)
 [0701]     AWAIT gameflag_252A
 [0702]     GUARD rec_1148 == 3278
-[0707]     GUARD active_actor == rec_07D4 (related 40)
+[0707]     GUARD active_actor == Fifi.talk (related 40)
 [070C]     ENDIF
 [070D]     SAY "Caa..."  '[voice 0]
 [0717]     SAY "aake.."  '[voice 1]
@@ -183,7 +183,7 @@
 [087C]       POKE [0x06FE] = 0
 [0880]       POKE [0x08FB] = 1
 [0884]       CLEAR concept_alt
-[0885]       END PRESENTATION rec_07D4
+[0885]       END PRESENTATION Fifi.talk
     END
 [0888]     SAY "Zorglu... Eta ouch..."  '[voice 5, skip 1]
 [0896]     LOADSTR "brouil.hnm"
@@ -194,12 +194,12 @@
 [08DB]     rec_07E0 = 6
 [08E0]     SAY "Bye bye, Commander... word_65535 bye_bye"  '[skip 2]
 [08F2]     rec_07E0 = 1882
-[08F7]     END PRESENTATION rec_07D4
+[08F7]     END PRESENTATION Fifi.talk
   END
 [08FA]   GOTO @0A6B
 [08FE]   AWAIT gameflag_252A
 [08FF]   rec_1148 = 3278
-[0904]   START PRESENTATION rec_07D4 (related 40)
+[0904]   START PRESENTATION Fifi.talk (related 40)
 [0909]   ENDIF
 [090A]   SAY "GA... Me Fifi ... Hee Hee Hee..."  '[voice 3]
 [0920]   SAY "Heh heh... That guy knocks me out, Commander..."
@@ -234,14 +234,14 @@
 [0A37]     SAY "Fifi go run ..."  '[voice 1, skip 3]
 [0A47]     POKE [0x0A6C] = 1
 [0A4B]     POKE [0x08FB] = 0
-[0A4F]     END PRESENTATION rec_07D4
+[0A4F]     END PRESENTATION Fifi.talk
   END
 [0A52]   SAY "Fifi go run ... Bye bye ..."  '[voice 1, skip 1]
-[0A68]   END PRESENTATION rec_07D4
+[0A68]   END PRESENTATION Fifi.talk
 [0A6B]   GOTO @0BE6
 [0A6F]   AWAIT gameflag_252A
 [0A70]   rec_1148 = 3278
-[0A75]   START PRESENTATION rec_07D4 (related 40)
+[0A75]   START PRESENTATION Fifi.talk (related 40)
 [0A7A]   ENDIF
 [0A7B]   SAY "Me Fifi ... Hee hee hee ..."  '[voice 3]
 [0A91]   SAY "Heh heh ... I can't get enough of him, Commander..."
@@ -268,10 +268,10 @@
 [0BB5]     SAY "..."  '[skip 3]
 [0BBF]     rec_07B2 = 4262
 [0BC4]     POKE [0x0A6C] = 0
-[0BC8]     END PRESENTATION rec_07D4
+[0BC8]     END PRESENTATION Fifi.talk
   END
 [0BCB]   SAY "Fifi go walk ... Bye bye friend ..."  '[voice 0, skip 1]
-[0BE3]   END PRESENTATION rec_07D4
+[0BE3]   END PRESENTATION Fifi.talk
 [0BE6]   BLOCK (exit -> @0BFD)
 [0BEA]     GUARD rec_14E2 == 2450
 [0BEF]     ENDIF
@@ -283,7 +283,7 @@
 [0C01]   AWAIT gameflag_252A
 [0C02]   rec_07B2 = 3278
 [0C07]   rec_1148 = 3278
-[0C0C]   START PRESENTATION rec_07D4 (related 40)
+[0C0C]   START PRESENTATION Fifi.talk (related 40)
 [0C11]   ENDIF
 [0C12]   SAY "Me Fifi ... Hee hee hee ..."  '[voice 3]
 [0C28]   SAY "Heh heh... Still the same crazy guy he always was, Commander..."
@@ -299,7 +299,7 @@
 [0CD5]     SAY "TELEPORTING FIFI TO CRYOBOX"  '[skip 2]
 [0CE5]     rec_07B2 = 65535
 [0CEA]     CLEAR concept_alt
-[0CEB]     END PRESENTATION rec_07D4
+[0CEB]     END PRESENTATION Fifi.talk
   END
 [0CEE]   IF-BLOCK (exit -> @0D2F)
 [0CF1]     GUARD concept == "refuse"
@@ -308,11 +308,11 @@
 [0D07]     SAY "How can you be so heartless , Commander ?"
 [0D21]     SAY "..."  '[skip 2]
 [0D2B]     CLEAR concept_alt
-[0D2C]     END PRESENTATION rec_07D4
+[0D2C]     END PRESENTATION Fifi.talk
   END
 [0D2F]   BLOCK (exit -> @0E4F)
 [0D33]     AWAIT gameflag_274F
-[0D34]     GUARD active_actor == rec_07D4 (related 40)
+[0D34]     GUARD active_actor == Fifi.talk (related 40)
 [0D39]     ENDIF
 [0D3A]     SAY "Fifi happy ... Hee hee hee..."  '[voice 3]
 [0D4E]     SAY "Heh heh ... he'll never change , Commander ..."
@@ -326,7 +326,7 @@
 [0DB3]       SAY "You leave Fifi on MALUS, friend ... Me have friends ..."
 [0DD1]       SAY "HEE ! HEE ! HEE !"
 [0DE5]       SAY "..."  '[skip 1]
-[0DEF]       END PRESENTATION rec_07D4
+[0DEF]       END PRESENTATION Fifi.talk
     END
 [0DF2]     IF-BLOCK (exit -> @0E4F)
 [0DF5]       GUARD rec_1148 == 3878
@@ -338,7 +338,7 @@
 [0E35]         ENDIF
 [0E36]         SAY "TELEPORTING FIFI TO MALUS"  '[skip 3]
 [0E46]         rec_07B2 = 3878
-[0E4B]         END PRESENTATION rec_07D4
+[0E4B]         END PRESENTATION Fifi.talk
 [0E4E]         CLEAR concept_alt
       END
     END
@@ -347,7 +347,7 @@
 [0E53]     AWAIT gameflag_252A
 [0E54]     GUARD rec_07B2 == 3878
 [0E59]     GUARD rec_1148 == 3878
-[0E5E]     GUARD active_actor == rec_07D4 (related 40)
+[0E5E]     GUARD active_actor == Fifi.talk (related 40)
 [0E63]     ENDIF
 [0E64]     SAY "Me happy ... Hee hee hee ..."  '[voice 3]
 [0E7A]     SAY "Heh heh ... he'll never change , Commander..."
@@ -365,12 +365,12 @@
     END
 [0F4B]     SAY "Hee hee hee ... You nice ... Fifi like you ..."
 [0F69]     SAY "Bye bye friend ..."  '[skip 1]
-[0F79]     END PRESENTATION rec_07D4
+[0F79]     END PRESENTATION Fifi.talk
   END
 [0F7C]   BLOCK (exit -> @1080)
 [0F80]     AWAIT gameflag_252A
 [0F81]     GUARD rec_1148 == 3554
-[0F86]     GUARD active_actor == rec_0594 (related 40)
+[0F86]     GUARD active_actor == ondoyant.talk (related 40)
 [0F8B]     ENDIF
 [0F8C]     SAY "..."  '[voice 0]
 [0F96]     SAY "..."  '[voice 1]
@@ -388,12 +388,12 @@
 [1063]       SAY "TELEPORTING ondoyant VERY GENTLY TO ARK"  '[skip 3]
 [1077]       rec_0572 = 65535
 [107C]       CLEAR concept_alt
-[107D]       END PRESENTATION rec_0594
+[107D]       END PRESENTATION ondoyant.talk
     END
   END
 [1080]   BLOCK (exit -> @110C)
 [1084]     AWAIT gameflag_274F
-[1085]     GUARD active_actor == rec_0594 (related 40)
+[1085]     GUARD active_actor == ondoyant.talk (related 40)
 [108A]     ENDIF
 [108B]     SAY "..."  '[voice 0]
 [1095]     SAY "..."  '[voice 1]
@@ -403,12 +403,12 @@
 [10D9]     SAY "Commander ... This makes a nice change from TINA BURNER..."
 [10F5]     SAY "..."  '[voice 4]
 [10FF]     SAY "..."  '[voice 5, skip 1]
-[1109]     END PRESENTATION rec_0594
+[1109]     END PRESENTATION ondoyant.talk
   END
 [110C]   BLOCK (exit -> @12F1)
 [1110]     AWAIT gameflag_252A
 [1111]     GUARD rec_1148 == 3494
-[1116]     GUARD active_actor == rec_0114 (related 40)
+[1116]     GUARD active_actor == Maziok.talk (related 40)
 [111B]     ENDIF
 [111C]     SAY "Ga ..."  '[voice 3]
 [1128]     SAY "Hey, you know what he reminds me of? A ball of Tromp hair . Heh heh..."
@@ -440,12 +440,12 @@
 [12C6]     SAY "Leave me ... I have things to do ..."  '[voice 8]
 [12E0]     SAY "..."  '[skip 2]
 [12EA]     POKE [0x110D] = 0
-[12EE]     END PRESENTATION rec_0114
+[12EE]     END PRESENTATION Maziok.talk
   END
 [12F1]   BLOCK (exit -> @14B7)
 [12F5]     AWAIT gameflag_252A
 [12F6]     GUARD rec_1148 == 3494
-[12FB]     GUARD active_actor == rec_0114 (related 40)
+[12FB]     GUARD active_actor == Maziok.talk (related 40)
 [1300]     GUARD maledict == 1
 [1307]     ENDIF
 [1308]     SAY "GA..."  '[voice 5]
@@ -460,7 +460,7 @@
 [134B]       GUARD NOT concept == "ga"
 [134F]       ENDIF
 [1350]       SAY "You are so rude ... Bye bye , stranger..."  '[voice 3, skip 2]
-[136A]       END PRESENTATION rec_0114
+[136A]       END PRESENTATION Maziok.talk
 [136D]       CLEAR concept_alt
     END
 [136E]     SAY "Smart thinking , Commander ..."
@@ -483,15 +483,15 @@
 [1465]       SAY "Well , I have things to do ... Bye bye ... word_65535 bye_bye"  '[voice 8, skip 3]
 [1487]       POKE [0x12F2] = 0
 [148B]       POKE [0x14B8] = 1
-[148F]       END PRESENTATION rec_0114
+[148F]       END PRESENTATION Maziok.talk
     END
 [1492]     SAY "Well , I have things to do ... Bye bye .. word_65535 bye_bye"  '[voice 8, skip 1]
-[14B4]     END PRESENTATION rec_0114
+[14B4]     END PRESENTATION Maziok.talk
   END
 [14B7]   GOTO @15AB
 [14BB]   AWAIT gameflag_252A
 [14BC]   rec_1148 = 3494
-[14C1]   START PRESENTATION rec_0114 (related 40)
+[14C1]   START PRESENTATION Maziok.talk (related 40)
 [14C6]   maledict = 1
 [14CD]   ENDIF
 [14CE]   SAY "Ga... word_65535 ga hello weather_report work family fatherland"  '[voice 2]
@@ -505,7 +505,7 @@
 [1507]     GUARD NOT concept == "ga"
 [150B]     ENDIF
 [150C]     SAY "You are so rude ... Bye bye , stranger..."  '[voice 3, skip 2]
-[1526]     END PRESENTATION rec_0114
+[1526]     END PRESENTATION Maziok.talk
 [1529]     CLEAR concept_alt
   END
 [152A]   SAY "You're weird , stranger. You look like you have the evil eye ..."  '[voice 7]
@@ -513,11 +513,11 @@
 [156C]   SAY "Or a curse ... Ha!!! Mmmm ..."  '[voice 4]
 [1582]   SAY "We've got a CURSE . I knew it , Commander..."
 [159E]   SAY "..."  '[voice 7, skip 1]
-[15A8]   END PRESENTATION rec_0114
+[15A8]   END PRESENTATION Maziok.talk
 [15AB]   BLOCK (exit -> @1788)
 [15AF]     AWAIT gameflag_252A
 [15B0]     GUARD rec_1148 == 3494
-[15B5]     GUARD active_actor == rec_0114 (related 40)
+[15B5]     GUARD active_actor == Maziok.talk (related 40)
 [15BA]     GUARD maledict == 0
 [15C1]     ENDIF
 [15C2]     SAY "GA..."  '[voice 5]
@@ -532,7 +532,7 @@
 [1605]       GUARD NOT concept == "ga"
 [1609]       ENDIF
 [160A]       SAY "You are so rude ... Bye bye , stranger..."  '[voice 5, skip 2]
-[1624]       END PRESENTATION rec_0114
+[1624]       END PRESENTATION Maziok.talk
 [1627]       CLEAR concept_alt
     END
 [1628]     SAY "What do you want to know ?"  '[voice 2, skip 1]
@@ -558,17 +558,17 @@
 [1738]       ENDIF
 [1739]       SAY "Bye bye ... May the Great Yolk guide your trajectory ... word_65535 bye_bye"  '[skip 2]
 [175B]       rec_00F2 = 4262
-[1760]       END PRESENTATION rec_0114
+[1760]       END PRESENTATION Maziok.talk
     END
 [1763]     SAY "Bye bye ... May the Great Yolk guide your trajectory ... word_65535 bye_bye"  '[skip 1]
-[1785]     END PRESENTATION rec_0114
+[1785]     END PRESENTATION Maziok.talk
   END
 [1788]   BLOCK (exit -> @1AB9)
 [178C]     AWAIT gameflag_252A
 [178D]     GUARD rec_1148 == 3110
 [1792]     GUARD NOT rec_03C2 == 65535
-[1798]     GUARD rec_0062 == 3110
-[179D]     GUARD active_actor == rec_0084 (related 40)
+[1798]     GUARD blood.talk == 3110
+[179D]     GUARD active_actor == Bratakas.talk (related 40)
 [17A2]     ENDIF
 [17A3]     IF-BLOCK (exit -> @1828)
 [17A6]       GUARD rec_0080 == 1
@@ -627,7 +627,7 @@
 [1A49]       GUARD decodeur == 0
 [1A50]       ENDIF
 [1A51]       SAY "Bye bye ..."  '[skip 1]
-[1A5F]       END PRESENTATION rec_0084
+[1A5F]       END PRESENTATION Bratakas.talk
     END
 [1A62]     IF-BLOCK (exit -> @1AB9)
 [1A65]       GUARD concept == "bye_bye"
@@ -644,12 +644,12 @@
 [1AC2]     GUARD rec_1242 == 40
 [1AC7]     GUARD rec_03C2 == 65535
 [1ACC]     ENDIF
-[1ACD]     rec_0062 = 4262
+[1ACD]     blood.talk = 4262
   END
 [1AD2]   BLOCK (exit -> @1E59)
 [1AD6]     AWAIT gameflag_252A
 [1AD7]     GUARD rec_1148 == 3110
-[1ADC]     GUARD active_actor == rec_03E4 (related 40)
+[1ADC]     GUARD active_actor == Hom.talk (related 40)
 [1AE1]     ENDIF
 [1AE2]     SAY "Welcome , stranger . My name is Hom ..."  '[voice 1, skip 1]
 [1AFC]     rec_03F0 = 6
@@ -711,7 +711,7 @@
 [1E0D]         SAY "TELEPORTING HOM TO CRYOBOX"  '[skip 3]
 [1E1D]         rec_03C2 = 65535
 [1E22]         CLEAR concept_alt
-[1E23]         END PRESENTATION rec_03E4
+[1E23]         END PRESENTATION Hom.talk
       END
     END
 [1E26]     SAY "What you want know , friend ? Me be OMNISCIENT... ME KNOW EVERYTHING ..."  '[voice 4, skip 1]
@@ -719,21 +719,21 @@
 [1E4F]     IF-BLOCK (exit -> @1E59)
 [1E52]       GUARD concept == "bye_bye"
 [1E55]       ENDIF
-[1E56]       END PRESENTATION rec_03E4
+[1E56]       END PRESENTATION Hom.talk
     END
   END
 [1E59]   BLOCK (exit -> @1EA3)
 [1E5D]     AWAIT gameflag_274F
-[1E5E]     GUARD active_actor == rec_03E4 (related 40)
+[1E5E]     GUARD active_actor == Hom.talk (related 40)
 [1E63]     ENDIF
 [1E64]     SAY "Me HOM..."  '[voice 6]
 [1E70]     SAY "Me be OMNISCIENT... ME KNOW EVERYTHING ..."  '[voice 1]
 [1E86]     SAY "Bye bye ... Me sleep in star dust ..."  '[voice 2, skip 1]
-[1EA0]     END PRESENTATION rec_03E4
+[1EA0]     END PRESENTATION Hom.talk
   END
 [1EA3]   BLOCK (exit -> @21AD)
 [1EA7]     AWAIT gameflag_252A
-[1EA8]     GUARD active_actor == rec_09CC (related 40)
+[1EA8]     GUARD active_actor == Super_Zen.talk (related 40)
 [1EAD]     GUARD NOT rec_122A == 40
 [1EB3]     GUARD rec_1148 == 3614
 [1EB8]     ENDIF
@@ -779,7 +779,7 @@
 [2197]     SAY "..."  '[skip 3]
 [21A1]     POKE [0x1EA4] = 0
 [21A5]     rec_09AA = 4262
-[21AA]     END PRESENTATION rec_09CC
+[21AA]     END PRESENTATION Super_Zen.talk
   END
 [21AD]   BLOCK (exit -> @21C0)
 [21B1]     GUARD rec_122A == 40
@@ -789,7 +789,7 @@
   END
 [21C0]   BLOCK (exit -> @2230)
 [21C4]     AWAIT gameflag_252A
-[21C5]     GUARD active_actor == rec_09CC (related 40)
+[21C5]     GUARD active_actor == Super_Zen.talk (related 40)
 [21CA]     GUARD rec_122A == 40
 [21CF]     GUARD rec_1148 == 3614
 [21D4]     ENDIF
@@ -806,7 +806,7 @@
   END
 [2230]   BLOCK (exit -> @2462)
 [2234]     AWAIT gameflag_252A
-[2235]     GUARD active_actor == rec_09CC (related 40)
+[2235]     GUARD active_actor == Super_Zen.talk (related 40)
 [223A]     GUARD rec_122A == 2450
 [223F]     GUARD rec_1148 == 3614
 [2244]     ENDIF
@@ -842,7 +842,7 @@
 [244F]     maledict = 0
 [2456]     POKE [0x2231] = 0
 [245A]     rec_09AA = 4262
-[245F]     END PRESENTATION rec_09CC
+[245F]     END PRESENTATION Super_Zen.talk
   END
 [2462]   BLOCK (exit -> @247A)
 [2466]     GUARD rec_122A == 2450
@@ -853,7 +853,7 @@
   END
 [247A]   BLOCK (exit -> @272E)
 [247E]     AWAIT gameflag_252A
-[247F]     GUARD active_actor == rec_09CC (related 40)
+[247F]     GUARD active_actor == Super_Zen.talk (related 40)
 [2484]     GUARD rec_122A == 2450
 [2489]     GUARD rec_1148 == 3614
 [248E]     ENDIF
@@ -904,16 +904,16 @@
 [26D9]       SAY "So long , my friends ... I must travel for some time now ..."  '[voice 4]
 [26FD]       SAY "..."  '[skip 2]
 [2707]       rec_09AA = 4262
-[270C]       END PRESENTATION rec_09CC
+[270C]       END PRESENTATION Super_Zen.talk
     END
 [270F]     SAY "We'll come back later ..."
 [2721]     SAY "..."  '[skip 1]
-[272B]     END PRESENTATION rec_09CC
+[272B]     END PRESENTATION Super_Zen.talk
   END
 [272E]   BLOCK (exit -> @2C4C)
 [2732]     AWAIT gameflag_252A
 [2733]     GUARD rec_1148 == 4172
-[2738]     GUARD active_actor == rec_015C (related 40)
+[2738]     GUARD active_actor == Betakam.talk (related 40)
 [273D]     ENDIF
 [273E]     SAY "..."  '[voice 1]
 [2748]     SAY "..."  '[voice 1]
@@ -943,7 +943,7 @@
 [28AD]       SAY "You're the bossman , Commander..."
 [28BF]       SAY "But I have a feeling we're out of our depth here ..."  '[skip 2]
 [28DF]       CLEAR concept_alt
-[28E0]       END PRESENTATION rec_015C
+[28E0]       END PRESENTATION Betakam.talk
     END
 [28E3]     SAY "Ok , Commander... Mister Beauregard , wakey wakey !"
 [28FD]     SAY "Yes ... I'm here ..."  '[skip 1]
@@ -993,7 +993,7 @@
 [2BD8]         SAY "TELEPORTING BETAKAM IV TO ARK"  '[skip 3]
 [2BEA]         rec_013A = 65535
 [2BEF]         CLEAR concept_alt
-[2BF0]         END PRESENTATION rec_015C
+[2BF0]         END PRESENTATION Betakam.talk
       END
     END
 [2BF3]     SAY "I don't know about you , but I have some murffalo meat in the oven ..."
@@ -1001,11 +1001,11 @@
 [2C25]     SAY "..."  '[voice 1]
 [2C2F]     SAY "..."  '[voice 1]
 [2C39]     SAY "See you soon ..."  '[skip 1]
-[2C49]     END PRESENTATION rec_015C
+[2C49]     END PRESENTATION Betakam.talk
   END
 [2C4C]   BLOCK (exit -> @2D3D)
 [2C50]     AWAIT gameflag_274F
-[2C51]     GUARD active_actor == rec_015C (related 40)
+[2C51]     GUARD active_actor == Betakam.talk (related 40)
 [2C56]     ENDIF
 [2C57]     SAY "Did you find a planet ?"
 [2C6B]     IF-BLOCK (exit -> @2CEE)
@@ -1020,7 +1020,7 @@
 [2CD3]         SAY "TELEPORTING BETAKAM TO PLANET SAT"  '[skip 3]
 [2CE5]         rec_013A = 2840
 [2CEA]         CLEAR concept_alt
-[2CEB]         END PRESENTATION rec_015C
+[2CEB]         END PRESENTATION Betakam.talk
       END
     END
 [2CEE]     IF-BLOCK (exit -> @2D3D)
@@ -1029,12 +1029,12 @@
 [2CF8]       SAY "That planet doesn't have good vibrations ..."
 [2D0E]       SAY "The murffalo intestines are not favorable ..."
 [2D24]       SAY "I don't wish to go there ..."  '[skip 1]
-[2D3A]       END PRESENTATION rec_015C
+[2D3A]       END PRESENTATION Betakam.talk
     END
   END
 [2D3D]   BLOCK (exit -> @2DCA)
 [2D41]     AWAIT gameflag_252A
-[2D42]     GUARD active_actor == rec_015C (related 40)
+[2D42]     GUARD active_actor == Betakam.talk (related 40)
 [2D47]     GUARD rec_1148 == 2840
 [2D4C]     ENDIF
 [2D4D]     SAY "It's not bad ... I'm enjoying it ..."
@@ -1042,18 +1042,18 @@
 [2D75]     SAY "It's more up to date , you know ? ... Stinks of oil ..."
 [2D99]     SAY "Well , I have to go read the murffalo intestines ..."
 [2DB7]     SAY "Bye , friends ..."  '[skip 1]
-[2DC7]     END PRESENTATION rec_015C
+[2DC7]     END PRESENTATION Betakam.talk
   END
 [2DCA]   BLOCK (exit -> @2E76)
 [2DCE]     AWAIT gameflag_252A
-[2DCF]     GUARD active_actor == rec_01EC (related 40)
+[2DCF]     GUARD active_actor == Super_Tromp.talk (related 40)
 [2DD4]     GUARD rec_1148 == 3164
 [2DD9]     ENDIF
 [2DDA]     SAY "Welcome to the planet Vista , stranger ..."  '[voice 0]
 [2DF2]     SAY "How may I help you ?"  '[voice 1, skip 1]
 [2E06]     rec_01F8 = 1
 [2E0B]     SAY "You're leaving ? See you again , stranger ... word_65535 bye_bye"  '[voice 2, skip 1]
-[2E29]     END PRESENTATION rec_01EC
+[2E29]     END PRESENTATION Super_Tromp.talk
 [2E2C]     IF-BLOCK (exit -> @2E76)
 [2E2F]       GUARD yo == 1
 [2E36]       ENDIF
@@ -1065,7 +1065,7 @@
 [2E76]   BLOCK (exit -> @3084)
 [2E7A]     AWAIT gameflag_252A
 [2E7B]     GUARD rec_1148 == 3164
-[2E80]     GUARD active_actor == rec_0234 (related 40)
+[2E80]     GUARD active_actor == Sinox.talk (related 40)
 [2E85]     ENDIF
 [2E86]     SAY "Shhh ... Do not make noise , stranger ..."  '[voice 0]
 [2EA0]     SAY "For ten centuries , the Great Yolk has rested in peace in this mausoleum ..."  '[voice 1]
@@ -1094,12 +1094,12 @@
 [3050]     SAY "Goodbye , space pilgrim ... May the Great Yolk go with you ..."  '[voice 0]
 [3072]     SAY "..."  '[voice 1, skip 2]
 [307C]     rec_0212 = 4262
-[3081]     END PRESENTATION rec_0234
+[3081]     END PRESENTATION Sinox.talk
   END
 [3084]   BLOCK (exit -> @30C6)
 [3088]     AWAIT gameflag_274F
 [3089]     GUARD (rec_0C5E & 0x2) == 0
-[308F]     GUARD active_actor == rec_05DC (related 40)
+[308F]     GUARD active_actor == Anna_Haf.talk (related 40)
 [3094]     ENDIF
 [3095]     SAY "..."
 [309F]     SAY "BROKEN ROBOT word_65535 bye_bye"
@@ -1107,14 +1107,14 @@
 [30B4]       GUARD concept == "bye_bye"
 [30B7]       ENDIF
 [30B8]       SAY "..."  '[skip 1]
-[30C2]       END PRESENTATION rec_05DC
+[30C2]       END PRESENTATION Anna_Haf.talk
 [30C5]       CLEAR concept_alt
     END
   END
 [30C6]   BLOCK (exit -> @31EF)
 [30CA]     AWAIT gameflag_274F
 [30CB]     GUARD (rec_0C5E & 0x2) != 0
-[30D0]     GUARD active_actor == rec_05DC (related 40)
+[30D0]     GUARD active_actor == Anna_Haf.talk (related 40)
 [30D5]     ENDIF
 [30D6]     SAY "I've got him fixed , Commander ... His name's Sighs Ate Anna Haf ..."
 [30FA]     SAY "His multiplexors are shot to hell ..."
@@ -1127,7 +1127,7 @@
 [31C0]     SAY "I'd call that somewhat rich possibility-wise . Right , Commander ?"
 [31DE]     SAY "..."  '[skip 2]
 [31E8]     POKE [0x30C7] = 0
-[31EC]     END PRESENTATION rec_05DC
+[31EC]     END PRESENTATION Anna_Haf.talk
   END
 [31EF]   BLOCK (exit -> @320C)
 [31F3]     GUARD (rec_0C5E & 0x2) != 0
@@ -1139,7 +1139,7 @@
   END
 [320C]   GOTO @3362
 [3210]   AWAIT gameflag_274F
-[3211]   START PRESENTATION rec_05DC (related 40)
+[3211]   START PRESENTATION Anna_Haf.talk (related 40)
 [3216]   ENDIF
 [3217]   IF-BLOCK (exit -> @32DF)
 [321A]     GUARD rec_1148 == 3164
@@ -1154,7 +1154,7 @@
 [3297]       rec_05BA = 3194
 [329C]       POKE [0x320D] = 0
 [32A0]       CLEAR concept_alt
-[32A1]       END PRESENTATION rec_05DC
+[32A1]       END PRESENTATION Anna_Haf.talk
     END
 [32A4]     IF-BLOCK (exit -> @32DF)
 [32A7]       GUARD concept == "refuse"
@@ -1162,28 +1162,28 @@
 [32AB]       SAY "Whatever you say , Commander ..."
 [32BF]       SAY "Maybe you ought to think about it , Commander ..."  '[voice 2, skip 2]
 [32DB]       CLEAR concept_alt
-[32DC]       END PRESENTATION rec_05DC
+[32DC]       END PRESENTATION Anna_Haf.talk
     END
   END
 [32DF]   SAY "He could help us get our hands on that painting , Commander ..."
 [3301]   SAY "Quite true , Commander . Honk has brought me up to speed on the situation ..."  '[voice 2]
 [3329]   SAY "Think about it , Commander... We just have to approach Vista and say the word to Haf ..."
 [3355]   SAY "..."  '[skip 1]
-[335F]   END PRESENTATION rec_05DC
+[335F]   END PRESENTATION Anna_Haf.talk
 [3362]   BLOCK (exit -> @33DC)
 [3366]     AWAIT gameflag_252A
 [3367]     GUARD rec_1148 == 3164
-[336C]     GUARD active_actor == rec_05DC (related 40)
+[336C]     GUARD active_actor == Anna_Haf.talk (related 40)
 [3371]     ENDIF
 [3372]     SAY "Don't stay here , Commander . I'll look for the painting ... There are some cases to examine ..."  '[voice 0]
 [33A0]     SAY "See you later , Commander ..."  '[voice 1]
 [33B4]     SAY "Bye bye ... Leave now and let me do my job ..."  '[voice 2, skip 2]
 [33D4]     rec_05A4 |= 0x2
-[33D9]     END PRESENTATION rec_05DC
+[33D9]     END PRESENTATION Anna_Haf.talk
   END
 [33DC]   BLOCK (exit -> @3518)
 [33E0]     AWAIT presentation
-[33E1]     GUARD active_actor == rec_05DC (related 40)
+[33E1]     GUARD active_actor == Anna_Haf.talk (related 40)
 [33E6]     ENDIF
 [33E7]     IF-BLOCK (exit -> @3460)
 [33EA]       GUARD NOT rec_1148 == 3164
@@ -1192,7 +1192,7 @@
 [3405]       SAY "Sighs Ate Anna Haf here . This is a lousy line , Commander..."
 [3427]       SAY "We're too far away . We'll need to get closer to the planet Vista .."
 [344D]       SAY "KL KL KL KRUIKKKk..."  '[skip 1]
-[345D]       END PRESENTATION rec_05DC
+[345D]       END PRESENTATION Anna_Haf.talk
     END
 [3460]     IF-BLOCK (exit -> @3518)
 [3463]       GUARD rec_1148 == 3164
@@ -1206,7 +1206,7 @@
 [3507]       rec_05A4 &= !0x2
 [350D]       state[7] = 60
 [3511]       POKE [0x33DD] = 0
-[3515]       END PRESENTATION rec_05DC
+[3515]       END PRESENTATION Anna_Haf.talk
     END
   END
 [3518]   BLOCK (exit -> @352C)
@@ -1219,7 +1219,7 @@
 [352C]   GOTO @35BD
 [3530]   AWAIT presentation
 [3531]   rec_05BA = 3194
-[3536]   START PRESENTATION rec_05DC (related 40)
+[3536]   START PRESENTATION Anna_Haf.talk (related 40)
 [353B]   ENDIF
 [353C]   SAY "Come in , Commander ... I'VE GOT THE PORTRAIT OF THE GREAT YOLK !"
 [3560]   SAY "YES !!! Commander, he did it !"
@@ -1228,10 +1228,10 @@
 [35A6]   SAY "Kruikkk..."  '[skip 3]
 [35B0]   POKE [0x3363] = 0
 [35B4]   rec_05A4 &= !0x2
-[35BA]   END PRESENTATION rec_05DC
+[35BA]   END PRESENTATION Anna_Haf.talk
 [35BD]   BLOCK (exit -> @3683)
 [35C1]     AWAIT gameflag_252A
-[35C2]     GUARD active_actor == rec_05DC (related 40)
+[35C2]     GUARD active_actor == Anna_Haf.talk (related 40)
 [35C7]     ENDIF
 [35C8]     SAY "Come in , Commander ... I'VE GOT THE PORTRAIT OF THE GREAT YOLK !"  '[voice 2]
 [35EC]     SAY "YES !!! Commander, he did it !"
@@ -1251,21 +1251,21 @@
 [366A]       SAY "TELEPORT HAF TO ARK"  '[skip 3]
 [367A]       rec_05BA = 65535
 [367F]       CLEAR concept_alt
-[3680]       END PRESENTATION rec_05DC
+[3680]       END PRESENTATION Anna_Haf.talk
     END
   END
 [3683]   BLOCK (exit -> @36CD)
 [3687]     AWAIT gameflag_274F
-[3688]     GUARD active_actor == rec_05DC (related 40)
+[3688]     GUARD active_actor == Anna_Haf.talk (related 40)
 [368D]     ENDIF
 [368E]     SAY "Hello , Commander... I'm sleeping real well ..."  '[voice 2]
 [36A6]     SAY "Just call if you need me ..."  '[voice 4]
 [36BC]     SAY "Nite nite ..."  '[voice 5, skip 1]
-[36CA]     END PRESENTATION rec_05DC
+[36CA]     END PRESENTATION Anna_Haf.talk
   END
 [36CD]   BLOCK (exit -> @381D)
 [36D1]     AWAIT gameflag_252A
-[36D2]     GUARD active_actor == rec_00CC (related 40)
+[36D2]     GUARD active_actor == Rotator.talk (related 40)
 [36D7]     ENDIF
 [36D8]     SAY "Halt ! Who goes there ? I am ROTATOR , second class Croolis ventriloquist ..."  '[voice 1]
 [36FE]     SAY "Careful , stranger . Don't try anything ... My laser-pulper could do bad things to your body ..."  '[voice 2]
@@ -1281,7 +1281,7 @@
   END
 [381D]   BLOCK (exit -> @3BA1)
 [3821]     AWAIT gameflag_252A
-[3822]     GUARD active_actor == rec_01A4 (related 40)
+[3822]     GUARD active_actor == Outrageor.talk (related 40)
 [3827]     ENDIF
 [3828]     SAY "Enter , Commander ... Surprised that I call you Commander ???"  '[voice 0]
 [3846]     SAY "Our radar has been tracking you for some time ..."  '[voice 1]
@@ -1322,13 +1322,13 @@
 [3B64]     SAY "Get out of here ... Don't let me see you again !"  '[voice 1]
 [3B84]     SAY "Bye bye"  '[skip 4]
 [3B90]     state[15] = 60
-[3B94]     rec_0182 = 4262
+[3B94]     scrujo.talk = 4262
 [3B99]     rec_037A = 2984
-[3B9E]     END PRESENTATION rec_01A4
+[3B9E]     END PRESENTATION Outrageor.talk
   END
 [3BA1]   BLOCK (exit -> @3CE0)
 [3BA5]     AWAIT gameflag_252A
-[3BA6]     GUARD active_actor == rec_00CC (related 40)
+[3BA6]     GUARD active_actor == Rotator.talk (related 40)
 [3BAB]     ENDIF
 [3BAC]     SAY "Halt ! Who goes there ? I am ROTATOR , second class Croolis ventriloquist ..."  '[voice 1]
 [3BD2]     SAY "Careful , stranger . Don't try anything ... My laser-pulper could do bad things to your body ..."  '[voice 2]
@@ -1340,7 +1340,7 @@
 [3CA4]     SAY "Co Co... Commander... Maybe this isn't such a good place to be ..."
 [3CC6]     SAY "BAAAOOOM..."  '[voice 5, skip 2]
 [3CD0]     LOADSTR "explo3.hnm"
-[3CDD]     END PRESENTATION rec_00CC
+[3CDD]     END PRESENTATION Rotator.talk
   END
 [3CE0]   BLOCK (exit -> @3CF4)
 [3CE4]     GUARD state[15] == 0
@@ -1364,7 +1364,7 @@
 [3DF3]   SAY "OK ?... We're waiting ..."
 [3E05]   SAY "KRUIIK"  '[skip 2]
 [3E0F]   rec_1194 |= 0x2
-[3E14]   END PRESENTATION rec_039C
+[3E14]   END PRESENTATION Eviscerator.talk
 [3E17]   BLOCK (exit -> @3E2E)
 [3E1B]     GUARD (rec_1194 & 0x2) != 0
 [3E20]     ENDIF
@@ -1374,7 +1374,7 @@
   END
 [3E2E]   GOTO @3EDF
 [3E32]   AWAIT presentation
-[3E33]   START PRESENTATION rec_0504 (related 40)
+[3E33]   START PRESENTATION Jerry_Khan.talk (related 40)
 [3E38]   ENDIF
 [3E39]   SAY "Come in Commander ... This is Inspector Jerry Khan..."
 [3E53]   SAY "Do you have any news ?"
@@ -1385,10 +1385,10 @@
 [3ECD]   rec_040A = 4498
 [3ED2]   rec_04CC &= !0x2
 [3ED8]   POKE [0x3E2F] = 0
-[3EDC]   END PRESENTATION rec_0504
+[3EDC]   END PRESENTATION Jerry_Khan.talk
 [3EDF]   BLOCK (exit -> @3F94)
 [3EE3]     AWAIT gameflag_252A
-[3EE4]     GUARD active_actor == rec_042C (related 40)
+[3EE4]     GUARD active_actor == Yoko.talk (related 40)
 [3EE9]     GUARD rec_1148 == 4498
 [3EEE]     ENDIF
 [3EEF]     SAY "Me happy see you , Commander ..."
@@ -1405,29 +1405,29 @@
 [3F85]       rec_040A = 65535
 [3F8A]       rec_1194 &= !0x2
 [3F90]       CLEAR concept_alt
-[3F91]       END PRESENTATION rec_042C
+[3F91]       END PRESENTATION Yoko.talk
     END
   END
 [3F94]   BLOCK (exit -> @3FF6)
 [3F98]     AWAIT gameflag_274F
-[3F99]     GUARD active_actor == rec_042C (related 40)
+[3F99]     GUARD active_actor == Yoko.talk (related 40)
 [3F9E]     ENDIF
 [3F9F]     SAY "Thank you... Thank you ... Commander..."
 [3FB3]     SAY "Me happy see you , Commander ..."
 [3FC9]     SAY "You have save my father..."
 [3FDB]     SAY "Thank you..."
 [3FE7]     SAY "Thank you..."  '[skip 1]
-[3FF3]     END PRESENTATION rec_042C
+[3FF3]     END PRESENTATION Yoko.talk
   END
 [3FF6]   BLOCK (exit -> @4046)
 [3FFA]     AWAIT gameflag_274F
-[3FFB]     GUARD active_actor == rec_0744 (related 40)
+[3FFB]     GUARD active_actor == Maxxon.talk (related 40)
 [4000]     ENDIF
 [4001]     SAY "Thank you ... Commander..."
 [4011]     SAY "It was terrible... Eviscerator is crazy..."
 [4025]     SAY "The nightmare is off now..."
 [4037]     SAY "Thank you..."  '[skip 1]
-[4043]     END PRESENTATION rec_0744
+[4043]     END PRESENTATION Maxxon.talk
   END
 [4046]   BLOCK (exit -> @406C)
 [404A]     GUARD rec_013A == 2840
@@ -1441,7 +1441,7 @@
   END
 [406C]   GOTO @4193
 [4070]   AWAIT presentation
-[4071]   START PRESENTATION rec_0504 (related 40)
+[4071]   START PRESENTATION Jerry_Khan.talk (related 40)
 [4076]   ENDIF
 [4077]   SAY "Come in, Commander ... This is Inspector JERRY KHAN on the SHARK..."
 [4097]   SAY "I have good news ..."
@@ -1457,7 +1457,7 @@
 [4172]   SAY "BYE BYE COMMANDER ..."
 [4182]   SAY "..."  '[skip 2]
 [418C]   POKE [0x4194] = 1
-[4190]   END PRESENTATION rec_0504
+[4190]   END PRESENTATION Jerry_Khan.talk
 [4193]   GOTO @419F
 [4197]   OP_C6 C6 4E 11 12 11
 [419C]   ENDIF
@@ -1476,7 +1476,7 @@
   END
 [41C0]   GOTO @429F
 [41C4]   AWAIT presentation
-[41C5]   START PRESENTATION rec_0504 (related 40)
+[41C5]   START PRESENTATION Jerry_Khan.talk (related 40)
 [41CA]   ENDIF
 [41CB]   SAY "Come in , Commander ... This is Inspector JERRY KHAN on the SHARK..."
 [41ED]   SAY "We're through the black hole... An amazing experience , Commander ..."
@@ -1490,11 +1490,11 @@
 [428D]   rec_1170 |= 0x2
 [4292]   rec_04CC &= !0x2
 [4298]   POKE [0x41C1] = 0
-[429C]   END PRESENTATION rec_0504
+[429C]   END PRESENTATION Jerry_Khan.talk
 [429F]   BLOCK (exit -> @43DD)
 [42A3]     AWAIT gameflag_252A
 [42A4]     GUARD rec_1148 == 4462
-[42A9]     GUARD active_actor == rec_0504 (related 40)
+[42A9]     GUARD active_actor == Jerry_Khan.talk (related 40)
 [42AE]     ENDIF
 [42AF]     SAY "Welcome aboard the Shark, Commander..."  '[voice 4]
 [42C1]     SAY "What a crazy adventure ... have you visited the sector ?"  '[voice 5]
@@ -1512,7 +1512,7 @@
 [43CC]     rec_1170 &= !0x2
 [43D2]     POKE [0x42A0] = 0
 [43D6]     POKE [0x43DE] = 1
-[43DA]     END PRESENTATION rec_0504
+[43DA]     END PRESENTATION Jerry_Khan.talk
   END
 [43DD]   GOTO @43EA
 [43E1]   ENDIF
@@ -1534,7 +1534,7 @@
   END
 [4411]   BLOCK (exit -> @44BA)
 [4415]     AWAIT presentation
-[4416]     GUARD active_actor == rec_0504 (related 40)
+[4416]     GUARD active_actor == Jerry_Khan.talk (related 40)
 [441B]     GUARD ta == 1
 [4422]     ENDIF
 [4423]     SAY "This is Inspector Jerry Khan..."  '[voice 2]
@@ -1544,7 +1544,7 @@
 [449D]     SAY "SEE YOU"
 [44A9]     SAY "Kruikk..."  '[skip 2]
 [44B3]     POKE [0x4401] = 0
-[44B7]     END PRESENTATION rec_0504
+[44B7]     END PRESENTATION Jerry_Khan.talk
   END
 [44BA]   BLOCK (exit -> @44CB)
 [44BE]     GUARD ta == 2
@@ -1553,7 +1553,7 @@
   END
 [44CB]   BLOCK (exit -> @454E)
 [44CF]     AWAIT presentation
-[44D0]     GUARD active_actor == rec_0504 (related 40)
+[44D0]     GUARD active_actor == Jerry_Khan.talk (related 40)
 [44D5]     GUARD ta == 2
 [44DC]     ENDIF
 [44DD]     SAY "This is Jerry Khan..."  '[voice 2]
@@ -1562,11 +1562,11 @@
 [4513]     SAY "Glad to hear it ... I'll call you if I need any help ..."
 [4537]     SAY "See you , Commander..."  '[skip 2]
 [4547]     POKE [0x44BB] = 0
-[454B]     END PRESENTATION rec_0504
+[454B]     END PRESENTATION Jerry_Khan.talk
   END
 [454E]   BLOCK (exit -> @4601)
 [4552]     AWAIT presentation
-[4553]     GUARD active_actor == rec_0AEC (related 40)
+[4553]     GUARD active_actor == menu.talk (related 40)
 [4558]     GUARD rec_052A == 65535
 [455D]     ENDIF
 [455E]     SAY ""IMPROVED MENU""
@@ -1578,11 +1578,11 @@
 [45CE]     SAY "Recycled water"
 [45DA]     SAY "Chef Bronko says ... Burping's bad manners ! ..."
 [45F4]     SAY "stop"  '[skip 1]
-[45FE]     END PRESENTATION rec_0AEC
+[45FE]     END PRESENTATION menu.talk
   END
 [4601]   BLOCK (exit -> @46B1)
 [4605]     AWAIT presentation
-[4606]     GUARD active_actor == rec_0AEC (related 40)
+[4606]     GUARD active_actor == menu.talk (related 40)
 [460B]     GUARD NOT rec_052A == 65535
 [4611]     ENDIF
 [4612]     SAY ""MENU""
@@ -1595,11 +1595,11 @@
 [4680]     SAY "The chef says ... Don't eat with your mouth full ! ..."
 [46A0]     SAY "Stop"  '[skip 2]
 [46AA]     POKE [0x4602] = 0
-[46AE]     END PRESENTATION rec_0AEC
+[46AE]     END PRESENTATION menu.talk
   END
 [46B1]   BLOCK (exit -> @475B)
 [46B5]     AWAIT presentation
-[46B6]     GUARD active_actor == rec_0AEC (related 40)
+[46B6]     GUARD active_actor == menu.talk (related 40)
 [46BB]     GUARD NOT rec_052A == 65535
 [46C1]     ENDIF
 [46C2]     SAY ""MENU""
@@ -1612,12 +1612,12 @@
 [472A]     SAY "The chef says ... Don't talk with your mouth open ! ..."
 [474A]     SAY "stop"  '[skip 2]
 [4754]     POKE [0x46B2] = 0
-[4758]     END PRESENTATION rec_0AEC
+[4758]     END PRESENTATION menu.talk
   END
 [475B]   BLOCK (exit -> @4807)
 [475F]     AWAIT presentation
 [4760]     GUARD NOT rec_052A == 65535
-[4766]     GUARD active_actor == rec_0AEC (related 40)
+[4766]     GUARD active_actor == menu.talk (related 40)
 [476B]     ENDIF
 [476C]     SAY ""MENU""
 [4776]     SAY "Today's fare :"
@@ -1629,11 +1629,11 @@
 [47D8]     SAY "The chef says ... Somebody didn't finish his wrigglers yesterday ..."
 [47F6]     SAY "stop"  '[skip 2]
 [4800]     POKE [0x475C] = 0
-[4804]     END PRESENTATION rec_0AEC
+[4804]     END PRESENTATION menu.talk
   END
 [4807]   BLOCK (exit -> @48BB)
 [480B]     AWAIT presentation
-[480C]     GUARD active_actor == rec_0AEC (related 40)
+[480C]     GUARD active_actor == menu.talk (related 40)
 [4811]     GUARD NOT rec_052A == 65535
 [4817]     ENDIF
 [4818]     SAY ""MENU""
@@ -1646,11 +1646,11 @@
 [488C]     SAY "The chef says ... Plenty more in the kitchen ! ..."
 [48AA]     SAY "stop"  '[skip 2]
 [48B4]     POKE [0x4808] = 0
-[48B8]     END PRESENTATION rec_0AEC
+[48B8]     END PRESENTATION menu.talk
   END
 [48BB]   BLOCK (exit -> @4977)
 [48BF]     AWAIT presentation
-[48C0]     GUARD active_actor == rec_0AEC (related 40)
+[48C0]     GUARD active_actor == menu.talk (related 40)
 [48C5]     GUARD NOT rec_052A == 65535
 [48CB]     ENDIF
 [48CC]     SAY ""IMPROVED MENU""
@@ -1664,7 +1664,7 @@
 [4962]     SAY "stop"  '[skip 3]
 [496C]     POKE [0x48BC] = 0
 [4970]     POKE [0x4978] = 1
-[4974]     END PRESENTATION rec_0AEC
+[4974]     END PRESENTATION menu.talk
   END
 [4977]   GOTO @4994
 [497B]   ENDIF
@@ -1676,7 +1676,7 @@
 [4990]   POKE [0x4978] = 0
 [4994]   BLOCK (exit -> @4BB8)
 [4998]     AWAIT presentation
-[4999]     GUARD active_actor == rec_0AA4 (related 40)
+[4999]     GUARD active_actor == Honk.talk (related 40)
 [499E]     ENDIF
 [499F]     SAY "I exist only to obey , Commander"
 [49B5]     IF-BLOCK (exit -> @4A2A)
@@ -1734,7 +1734,7 @@
   END
 [4BB8]   BLOCK (exit -> @4C34)
 [4BBC]     AWAIT presentation
-[4BBD]     GUARD active_actor == rec_0AA4 (related 40)
+[4BBD]     GUARD active_actor == Honk.talk (related 40)
 [4BC2]     GUARD vbio > 2
 [4BC9]     GUARD rec_05BA == 65535
 [4BCE]     GUARD NOT rec_122A == 65535
@@ -1745,11 +1745,11 @@
 [4C02]     vbio -= 3
 [4C09]     SAY "Service with a smile ! That's the story of my life , Commander ..."  '[skip 2]
 [4C2D]     POKE [0x4BB9] = 0
-[4C31]     END PRESENTATION rec_0AA4
+[4C31]     END PRESENTATION Honk.talk
   END
 [4C34]   BLOCK (exit -> @4C95)
 [4C38]     AWAIT presentation
-[4C39]     GUARD active_actor == rec_0AA4 (related 40)
+[4C39]     GUARD active_actor == Honk.talk (related 40)
 [4C3E]     GUARD vbio > 2
 [4C45]     GUARD rec_14E2 == 65535
 [4C4A]     ENDIF
@@ -1757,11 +1757,11 @@
 [4C63]     vbio -= 3
 [4C6A]     SAY "Service with a smile ! That's the story of my life , Commander ..."  '[skip 2]
 [4C8E]     POKE [0x4C35] = 0
-[4C92]     END PRESENTATION rec_0AA4
+[4C92]     END PRESENTATION Honk.talk
   END
 [4C95]   BLOCK (exit -> @4CF8)
 [4C99]     AWAIT presentation
-[4C9A]     GUARD active_actor == rec_0AA4 (related 40)
+[4C9A]     GUARD active_actor == Honk.talk (related 40)
 [4C9F]     GUARD vbio > 2
 [4CA6]     GUARD (rec_0B1A & 0x2) == 0
 [4CAC]     GUARD rec_013A == 65535
@@ -1770,11 +1770,11 @@
 [4CC6]     vbio -= 3
 [4CCD]     SAY "Service with a smile ! That's the story of my life , Commander ..."  '[skip 2]
 [4CF1]     POKE [0x4C96] = 0
-[4CF5]     END PRESENTATION rec_0AA4
+[4CF5]     END PRESENTATION Honk.talk
   END
 [4CF8]   BLOCK (exit -> @4D5E)
 [4CFC]     AWAIT presentation
-[4CFD]     GUARD active_actor == rec_0AA4 (related 40)
+[4CFD]     GUARD active_actor == Honk.talk (related 40)
 [4D02]     GUARD vbio > 2
 [4D09]     GUARD rec_07D0 > 0
 [4D10]     GUARD rec_1242 == 65535
@@ -1783,11 +1783,11 @@
 [4D2C]     vbio -= 3
 [4D33]     SAY "Service with a smile ! That's the story of my life , Commander ..."  '[skip 2]
 [4D57]     POKE [0x4CF9] = 0
-[4D5B]     END PRESENTATION rec_0AA4
+[4D5B]     END PRESENTATION Honk.talk
   END
 [4D5E]   BLOCK (exit -> @4DBF)
 [4D62]     AWAIT presentation
-[4D63]     GUARD active_actor == rec_0AA4 (related 40)
+[4D63]     GUARD active_actor == Honk.talk (related 40)
 [4D68]     GUARD vbio > 2
 [4D6F]     GUARD rec_07B2 == 65535
 [4D74]     ENDIF
@@ -1795,18 +1795,18 @@
 [4D8D]     vbio -= 3
 [4D94]     SAY "Service with a smile ! That's the story of my life , Commander ..."  '[skip 2]
 [4DB8]     POKE [0x4D5F] = 0
-[4DBC]     END PRESENTATION rec_0AA4
+[4DBC]     END PRESENTATION Honk.talk
   END
 [4DBF]   BLOCK (exit -> @4DDF)
 [4DC3]     AWAIT presentation
-[4DC4]     GUARD active_actor == rec_0AA4 (related 40)
+[4DC4]     GUARD active_actor == Honk.talk (related 40)
 [4DC9]     ENDIF
 [4DCA]     SAY "Bye bye , Commander ..."  '[skip 1]
-[4DDC]     END PRESENTATION rec_0AA4
+[4DDC]     END PRESENTATION Honk.talk
   END
 [4DDF]   BLOCK (exit -> @4E90)
 [4DE3]     AWAIT gameflag_274F
-[4DE4]     GUARD active_actor == rec_027C (related 40)
+[4DE4]     GUARD active_actor == Bob_Morlock.talk (related 40)
 [4DE9]     ENDIF
 [4DEA]     SAY "What do you want , Commander?"  '[voice 2]
 [4DFE]     rec_0288 = 1
@@ -1819,7 +1819,7 @@
 [4E2B]       SAY "Ahhhh !!!"  '[voice 3]
 [4E37]       SAY "stop"  '[skip 2]
 [4E41]       state[1] = 65535
-[4E45]       END PRESENTATION rec_027C
+[4E45]       END PRESENTATION Bob_Morlock.talk
     END
 [4E48]     SAY "I feel weak ... word_65535 bye_bye"  '[voice 6, skip 1]
 [4E5C]     adieu = 1
@@ -1830,12 +1830,12 @@
 [4E78]       SAY "stop"  '[skip 3]
 [4E82]       adieu = 0
 [4E89]       state[1] = 65535
-[4E8D]       END PRESENTATION rec_027C
+[4E8D]       END PRESENTATION Bob_Morlock.talk
     END
   END
 [4E90]   BLOCK (exit -> @4F90)
 [4E94]     AWAIT gameflag_274F
-[4E95]     GUARD active_actor == rec_027C (related 40)
+[4E95]     GUARD active_actor == Bob_Morlock.talk (related 40)
 [4E9A]     GUARD emplo == 1
 [4EA1]     GUARD emp == 0
 [4EA8]     ENDIF
@@ -1849,7 +1849,7 @@
   END
 [4F90]   BLOCK (exit -> @5157)
 [4F94]     AWAIT gameflag_274F
-[4F95]     GUARD active_actor == rec_027C (related 40)
+[4F95]     GUARD active_actor == Bob_Morlock.talk (related 40)
 [4F9A]     GUARD reve == 1
 [4FA1]     GUARD revelat == 0
 [4FA8]     ENDIF

@@ -36,7 +36,7 @@
   END
 [00C8]   BLOCK (exit -> @0406)
 [00CC]     AWAIT gameflag_274F
-[00CD]     GUARD active_actor == rec_081C (related 40)
+[00CD]     GUARD active_actor == Scruter_Jo.talk (related 40)
 [00D2]     ENDIF
 [00D3]     SAY "Commander you go get BIONIUM in CYBERSPACE of SCRUTER JO..."  '[voice 19]
 [00EF]     IF-BLOCK (exit -> @0296)
@@ -81,7 +81,7 @@
 [03D1]       SAY "Why don't you shut up , wiseguy !!!"
     END
 [03E9]     SAY "Bye bye , Commander . Me return to CYBERSPACE..."  '[voice 7, skip 1]
-[0403]     END PRESENTATION rec_081C
+[0403]     END PRESENTATION Scruter_Jo.talk
   END
 [0406]   BLOCK (exit -> @04A4)
 [040A]     AWAIT gameflag_252A
@@ -98,16 +98,16 @@
 [048B]       SAY "TELEPORTING ROBOT TO CRYOBOX"  '[skip 3]
 [049B]       rec_04E2 = 65535
 [04A0]       CLEAR concept_alt
-[04A1]       END PRESENTATION rec_0504
+[04A1]       END PRESENTATION Anna_Haf.talk
     END
   END
 [04A4]   BLOCK (exit -> @04D6)
 [04A8]     AWAIT gameflag_274F
-[04A9]     GUARD active_actor == rec_0504 (related 40)
+[04A9]     GUARD active_actor == Anna_Haf.talk (related 40)
 [04AE]     ENDIF
 [04AF]     SAY "Commander , this is one tough repair job ..."
 [04C9]     SAY "stop"  '[skip 1]
-[04D3]     END PRESENTATION rec_0504
+[04D3]     END PRESENTATION Anna_Haf.talk
   END
 [04D6]   BLOCK (exit -> @04E6)
 [04DA]     GUARD NOT rec_02A2 == 2846
@@ -118,7 +118,7 @@
 [04EA]     AWAIT gameflag_252A
 [04EB]     GUARD A1 == 0
 [04F2]     GUARD rec_1088 == 3608
-[04F7]     GUARD active_actor == rec_06B4 (related 40)
+[04F7]     GUARD active_actor == Izwalito.talk (related 40)
 [04FC]     ENDIF
 [04FD]     SAY "Izwalito happy to see you back , friend ..."  '[voice 2]
 [0517]     SAY "You know bad news ?"  '[voice 0]
@@ -130,7 +130,7 @@
 [05AF]     SAY "Me hide ... FEAR ... FEAR ..."  '[voice 4]
 [05C5]     SAY "Bye bye ..."  '[voice 5, skip 3]
 [05D3]     rec_0692 = 4070
-[05D8]     END PRESENTATION rec_06B4
+[05D8]     END PRESENTATION Izwalito.talk
   END
 [05DB]   BLOCK (exit -> @05EF)
 [05DF]     GUARD kra2 == 1
@@ -146,7 +146,7 @@
   END
 [05FF]   BLOCK (exit -> @06F6)
 [0603]     AWAIT presentation
-[0604]     GUARD active_actor == rec_0624 (related 40)
+[0604]     GUARD active_actor == Kran_Dobu.talk (related 40)
 [0609]     ENDIF
 [060A]     SAY "This is Kran Dobu , Space Knight ..."
 [0622]     SAY "Radio message to Ark ... Ha! Ha! I bet my Kraner IV flies faster than your clunker ..."
@@ -158,11 +158,11 @@
 [06DE]     SAY "Bye bye"  '[skip 3]
 [06EA]     POKE [0x0600] = 0
 [06EE]     rec_10F8 |= 0x2
-[06F3]     END PRESENTATION rec_0624
+[06F3]     END PRESENTATION Kran_Dobu.talk
   END
 [06F6]   BLOCK (exit -> @0881)
 [06FA]     AWAIT gameflag_252A
-[06FB]     GUARD active_actor == rec_0624 (related 40)
+[06FB]     GUARD active_actor == Kran_Dobu.talk (related 40)
 [0700]     ENDIF
 [0701]     SAY "Ha! Ha! Ha!"  '[voice 1]
 [070F]     SAY "What a heap of reject junk ... You mean that thing actually flies ? Ha! Ha! Ha!"  '[voice 2]
@@ -182,7 +182,7 @@
 [086F]     rec_10F8 &= !0x2
 [0875]     rec_0F70 |= 0x2
 [087A]     POKE [0x06F7] = 0
-[087E]     END PRESENTATION rec_0624
+[087E]     END PRESENTATION Kran_Dobu.talk
   END
 [0881]   BLOCK (exit -> @0893)
 [0885]     GUARD rec_1088 == 3950
@@ -199,7 +199,7 @@
   END
 [08A7]   GOTO @09A9
 [08AB]   AWAIT presentation
-[08AC]   START PRESENTATION rec_0624 (related 40)
+[08AC]   START PRESENTATION Kran_Dobu.talk (related 40)
 [08B1]   ENDIF
 [08B2]   SAY "Ti ti ti , ta ta ta , ti ti ti ..."
 [08D2]   SAY "Ti ti ti , ta ta ta , ti ti ti ..."
@@ -211,10 +211,10 @@
 [0981]   SAY "KRUIIIK ..."  '[skip 1]
 [098D]   LOADSTR "krando20.hnm"
 [099C]   SAY "..."  '[skip 1]
-[09A6]   END PRESENTATION rec_0624
+[09A6]   END PRESENTATION Kran_Dobu.talk
 [09A9]   BLOCK (exit -> @0A6B)
 [09AD]     AWAIT gameflag_252A
-[09AE]     GUARD active_actor == rec_0624 (related 40)
+[09AE]     GUARD active_actor == Kran_Dobu.talk (related 40)
 [09B3]     GUARD panne == 0
 [09BA]     ENDIF
 [09BB]     SAY "Ha! Hi guy . I was wondering when you'd show up ..."  '[voice 1]
@@ -224,11 +224,11 @@
 [0A45]     SAY "I'm waiting , guy ..."  '[voice 4]
 [0A57]     SAY "..."  '[skip 2]
 [0A61]     panne = 1
-[0A68]     END PRESENTATION rec_0624
+[0A68]     END PRESENTATION Kran_Dobu.talk
   END
 [0A6B]   BLOCK (exit -> @0C75)
 [0A6F]     AWAIT gameflag_252A
-[0A70]     GUARD active_actor == rec_0624 (related 40)
+[0A70]     GUARD active_actor == Kran_Dobu.talk (related 40)
 [0A75]     ENDIF
 [0A76]     IF-BLOCK (exit -> @0ACF)
 [0A79]       GUARD panne == 1
@@ -236,7 +236,7 @@
 [0A85]       ENDIF
 [0A86]       SAY "I'm still waiting , old buddy . You're not gonna let me down now , huh ? ..."  '[voice 1]
 [0AB2]       SAY "Commander , Morning Oil is an expert repairman ..."  '[skip 1]
-[0ACC]       END PRESENTATION rec_0624
+[0ACC]       END PRESENTATION Kran_Dobu.talk
     END
 [0ACF]     IF-BLOCK (exit -> @0B84)
 [0AD2]       GUARD rec_03C2 == 4070
@@ -274,13 +274,13 @@
 [0C5B]     SAY "..."  '[skip 3]
 [0C65]     rec_10F8 &= !0x2
 [0C6B]     rec_110E.pair = (100, 10)
-[0C72]     END PRESENTATION rec_0624
+[0C72]     END PRESENTATION Kran_Dobu.talk
   END
 [0C75]   BLOCK (exit -> @0D76)
 [0C79]     AWAIT gameflag_252A
 [0C7A]     GUARD rec_03C2 == 4246
 [0C7F]     GUARD B1 == 0
-[0C86]     GUARD active_actor == rec_03E4 (related 40)
+[0C86]     GUARD active_actor == Morning_Oil.talk (related 40)
 [0C8B]     ENDIF
 [0C8C]     SAY "I reprogrammed him , Commander . He's operational ..."
 [0CA6]     SAY "Hello , Commander ..."
@@ -297,22 +297,22 @@
 [0D25]         SAY "TELEPORTING MORNING OIL TO KRANER ..."  '[skip 3]
 [0D39]         rec_03C2 = 4070
 [0D3E]         CLEAR concept_alt
-[0D3F]         END PRESENTATION rec_03E4
+[0D3F]         END PRESENTATION Morning_Oil.talk
       END
 [0D42]       IF-BLOCK (exit -> @0D69)
 [0D45]         GUARD concept == "refuse"
 [0D48]         ENDIF
 [0D49]         SAY "OK , Commander . Your wish is my command ..."  '[skip 2]
 [0D65]         CLEAR concept_alt
-[0D66]         END PRESENTATION rec_03E4
+[0D66]         END PRESENTATION Morning_Oil.talk
       END
     END
 [0D69]     SAY "..."  '[skip 1]
-[0D73]     END PRESENTATION rec_03E4
+[0D73]     END PRESENTATION Morning_Oil.talk
   END
 [0D76]   BLOCK (exit -> @0E7A)
 [0D7A]     AWAIT gameflag_274F
-[0D7B]     GUARD active_actor == rec_03E4 (related 40)
+[0D7B]     GUARD active_actor == Morning_Oil.talk (related 40)
 [0D80]     ENDIF
 [0D81]     IF-BLOCK (exit -> @0E31)
 [0D84]       GUARD panne == 3
@@ -325,19 +325,19 @@
 [0DDD]       SAY "How about that ... Very weird key rings , believe me ... What in the name of Pete are they for ? ..."
 [0E13]       SAY "Happy now , Commander ? ..."  '[skip 2]
 [0E27]       B1 = 1
-[0E2E]       END PRESENTATION rec_03E4
+[0E2E]       END PRESENTATION Morning_Oil.talk
     END
 [0E31]     SAY "I hear and obey , Commander ..."
 [0E47]     SAY "Don't you love the way I programmed him ... Total docility is his watchword ..."
 [0E6D]     SAY "..."  '[skip 1]
-[0E77]     END PRESENTATION rec_03E4
+[0E77]     END PRESENTATION Morning_Oil.talk
   END
 [0E7A]   BLOCK (exit -> @1141)
 [0E7E]     AWAIT gameflag_274F
 [0E7F]     GUARD NOT bronk4 == 1082
 [0E85]     GUARD F1 == 0
 [0E8C]     GUARD NOT rec_1088 == 2684
-[0E92]     GUARD active_actor == rec_0474 (related 40)
+[0E92]     GUARD active_actor == Bronko.talk (related 40)
 [0E97]     ENDIF
 [0E98]     SAY "Commander , I'm getting rusty ..."  '[voice 2]
 [0EAC]     IF-BLOCK (exit -> @0F2D)
@@ -380,13 +380,13 @@
 [1108]     SAY "If you need me , don't hesitate a second ..."  '[voice 3]
 [1124]     SAY "See you soon ..."  '[voice 5]
 [1134]     SAY "..."  '[skip 1]
-[113E]     END PRESENTATION rec_0474
+[113E]     END PRESENTATION Bronko.talk
   END
 [1141]   BLOCK (exit -> @12EF)
 [1145]     AWAIT gameflag_274F
 [1146]     GUARD rec_1088 == 2684
 [114B]     GUARD NOT bronk4 == 1082
-[1151]     GUARD active_actor == rec_0474 (related 40)
+[1151]     GUARD active_actor == Bronko.talk (related 40)
 [1156]     ENDIF
 [1157]     SAY "Commander , I'm getting bored in a big big way ... I need action ..."  '[voice 3]
 [117D]     IF-BLOCK (exit -> @11FE)
@@ -412,7 +412,7 @@
 [12B6]         brk = 1
 [12BD]         rec_0452 = 2684
 [12C2]         CLEAR concept_alt
-[12C3]         END PRESENTATION rec_0474
+[12C3]         END PRESENTATION Bronko.talk
       END
 [12C6]       IF-BLOCK (exit -> @12E2)
 [12C9]         GUARD concept == "NO"
@@ -422,12 +422,12 @@
       END
     END
 [12E2]     SAY "..."  '[skip 1]
-[12EC]     END PRESENTATION rec_0474
+[12EC]     END PRESENTATION Bronko.talk
   END
 [12EF]   BLOCK (exit -> @13A9)
 [12F3]     AWAIT gameflag_252A
 [12F4]     GUARD rec_1088 == 2684
-[12F9]     GUARD active_actor == rec_0474 (related 40)
+[12F9]     GUARD active_actor == Bronko.talk (related 40)
 [12FE]     ENDIF
 [12FF]     SAY "Commander , There's nobody here ..."  '[voice 5]
 [1313]     SAY "I'll look around , Commander ... Use the phone to call me ..."  '[voice 2]
@@ -437,12 +437,12 @@
 [1393]     SAY "..."  '[skip 3]
 [139D]     rec_043C |= 0x2
 [13A2]     POKE [0x12F0] = 0
-[13A6]     END PRESENTATION rec_0474
+[13A6]     END PRESENTATION Bronko.talk
   END
 [13A9]   BLOCK (exit -> @15F5)
 [13AD]     AWAIT presentation
 [13AE]     GUARD rec_0452 == 2684
-[13B3]     GUARD active_actor == rec_0474 (related 40)
+[13B3]     GUARD active_actor == Bronko.talk (related 40)
 [13B8]     ENDIF
 [13B9]     IF-BLOCK (exit -> @142E)
 [13BC]       GUARD NOT rec_1088 == 2684
@@ -451,7 +451,7 @@
 [13E7]       SAY "kkkkKrouik..."
 [13F1]       SAY "He's having auditory difficulties , Commander . He's too far away ... We ought to get closer to planet Erazor..."
 [1421]       SAY "..."  '[skip 1]
-[142B]       END PRESENTATION rec_0474
+[142B]       END PRESENTATION Bronko.talk
     END
 [142E]     IF-BLOCK (exit -> @15F5)
 [1431]       GUARD rec_1088 == 2684
@@ -480,14 +480,14 @@
 [15BA]       SAY "See you soon , Commander ..."
 [15CE]       SAY "Bronko is so brave , isn't he ? ..."
 [15E8]       SAY "..."  '[skip 1]
-[15F2]       END PRESENTATION rec_0474
+[15F2]       END PRESENTATION Bronko.talk
     END
   END
 [15F5]   BLOCK (exit -> @1723)
 [15F9]     AWAIT gameflag_252A
 [15FA]     GUARD rec_1088 == 2684
 [15FF]     GUARD rec_0452 == 2684
-[1604]     GUARD active_actor == rec_0474 (related 40)
+[1604]     GUARD active_actor == Bronko.talk (related 40)
 [1609]     ENDIF
 [160A]     IF-BLOCK (exit -> @167B)
 [160D]       GUARD NOT bronk4 == 1082
@@ -496,7 +496,7 @@
 [163A]       SAY "Use the phone to contact me ..."  '[voice 2]
 [1650]       SAY "He's right , Commander . You'll get him spotted ! ..."
 [166E]       SAY "..."  '[skip 1]
-[1678]       END PRESENTATION rec_0474
+[1678]       END PRESENTATION Bronko.talk
     END
 [167B]     IF-BLOCK (exit -> @1723)
 [167E]       GUARD bronk4 == 1082
@@ -513,14 +513,14 @@
 [1712]         vari = 1
 [1719]         rec_043C &= !0x2
 [171F]         CLEAR concept_alt
-[1720]         END PRESENTATION rec_0474
+[1720]         END PRESENTATION Bronko.talk
       END
     END
   END
 [1723]   BLOCK (exit -> @1879)
 [1727]     AWAIT gameflag_274F
 [1728]     GUARD bronk4 == 1082
-[172D]     GUARD active_actor == rec_0474 (related 40)
+[172D]     GUARD active_actor == Bronko.talk (related 40)
 [1732]     ENDIF
 [1733]     SAY "Phew ... I'm happy to be back ..."  '[voice 5]
 [174B]     SAY "I'm happy to see you back , Mister Bronko ... I was so anxious about you ..."
@@ -532,7 +532,7 @@
 [17B1]       rec_131A = 65535
 [17B6]       POKE [0x187A] = 1
 [17BA]       POKE [0x1724] = 0
-[17BE]       END PRESENTATION rec_0474
+[17BE]       END PRESENTATION Bronko.talk
     END
 [17C1]     IF-BLOCK (exit -> @1842)
 [17C4]       GUARD rec_0548 == 0
@@ -545,11 +545,11 @@
     END
 [1842]     SAY "That Mister Bronko... What a character"
 [1856]     SAY "Well , I'll just get back to my cooking , Commander ..."  '[skip 1]
-[1876]     END PRESENTATION rec_0474
+[1876]     END PRESENTATION Bronko.talk
   END
 [1879]   GOTO @1936
 [187D]   AWAIT gameflag_274F
-[187E]   START PRESENTATION rec_0474 (related 40)
+[187E]   START PRESENTATION Bronko.talk (related 40)
 [1883]   ENDIF
 [1884]   SAY "Everything's under control , Commander ..."  '[voice 5]
 [1898]   IF-BLOCK (exit -> @1919)
@@ -562,9 +562,9 @@
 [1914]     rec_103C |= 0x2
   END
 [1919]   SAY "I better get back to the kitchen , Commander..."  '[voice 4, skip 1]
-[1933]   END PRESENTATION rec_0474
+[1933]   END PRESENTATION Bronko.talk
 [1936]   GOTO @1973
 [193A]   AWAIT gameflag_274F
-[193B]   START PRESENTATION rec_027C (related 40)
+[193B]   START PRESENTATION receiver.talk (related 40)
 [1940]   state[2] = 43695
 [1944] ?? invalid opcode 13
