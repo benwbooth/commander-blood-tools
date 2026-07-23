@@ -1302,9 +1302,22 @@ impl EngineState {
         // 252/110, y negated), the decoded cursor law on the wrist segment, and the
         // game's own texture — fingertip anchored at the cursor.
         {
+            // POSE per the decoded selector contexts: 6 = choice-box hover,
+            // 4 = presentation active (a line is playing), 1 = rest.
+            let sel = if !self.console_box.is_empty()
+                && self.console_box_click(cx as u16, cy as u16).is_some()
+            {
+                6
+            } else if !self.dialogue.is_empty() && !self.dialogue_finished() {
+                4
+            } else {
+                1
+            };
             let mesh = self
                 .hand_mesh
                 .get_or_insert_with(crate::manu3_hand::HandMesh::load);
+            mesh.set_pose(sel);
+            mesh.tick_pose();
             let gp = crate::palette::game_screen_palette();
             for i in 128..=255usize {
                 self.scene_palette[i] = gp[i];
