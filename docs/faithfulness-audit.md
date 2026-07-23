@@ -249,3 +249,20 @@ everywhere.** Priority = how visible/audible + how confidently fixable.
 - **Mouse lock (Wayland)**: KDE/XWayland ignores X confine grabs — lock = hidden cursor +
   centre-warp (XWayland promotes to a Wayland pointer lock) + drawn virtual cursor; Right Shift
   releases.
+
+## FABRICATION FOUND + REMOVED (commit 1010) — trust only real captures
+The pyramid/orb "console" band composited over the intro montage was INVENTED by a prior agent.
+GROUND TRUTH via re/tools/capture_real_game.sh (the actual BLOODPRG.EXE under DOSBox-X headless):
+the real intro is MINDSCAPE logo -> Microfolie's logo -> a ship-over-planet space cinematic, with
+NO pyramid field and NO eye-orb anywhere. The `accuracy/captures/frame_*.png` frames that showed
+pyramids+orb are NOT real-game captures (port output / fabrication) and must NOT be used as an
+oracle. The trustworthy real captures are the boot_*.png produced by capture_real_game.sh.
+Removed: overlay_console_pyramids(), the intro_pyramid gating field, and the harvested-from-fake
+console_band.bin. Regression: intro_montage_has_no_fabricated_console_band.
+
+## SCRIPT1 console tutorial gating (commit 1011)
+SCRIPT1's 9 functions are console-driven: menbr/men1-5 = MENU-button daily menus, ho1/hon = HONK
+button (hon = 'Welcome aboard the ARK, Commander. I'm HONK…'), BOB1 = crew intro. The port
+auto-played the whole stream (the topic gate only ran for n==2, and even its help*/honk/talk name
+match doesn't fit SCRIPT1). Now: only the scripted HONK welcome auto-plays, then holds at a topic
+menu (HONK/MENU/TALK); segment boundaries make a MENU click show ONE daily menu.
