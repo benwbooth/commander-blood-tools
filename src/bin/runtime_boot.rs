@@ -2715,6 +2715,18 @@ fn main() {
         println!("wrote manu3_ds.bin (64KB live data segment)");
         return;
     }
+    if std::env::var("INDEXDUMP").is_ok() {
+        // Dump the hub screen as RAW VGA INDICES + the DAC — lets the port compare
+        // content (indices) and palette state (DAC) separately.
+        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        let _ = rt.run(rt.cpu.steps + 2_000_000);
+        std::fs::write(out.join("hub_indices.bin"), rt.screen_indices()).unwrap();
+        std::fs::write(out.join("hub_dac.bin"), rt.dac).unwrap();
+        let g = 0x0e84u16;
+        let fr = rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
+        println!("INDEXDUMP done (ring frame {fr})");
+        return;
+    }
     if std::env::var("HANDGRID").is_ok() {
         // Dense hand-pose capture: resume the hub state, keep the view parked (all grid
         // points sit inside the steering dead zone), and dump a frame with the REAL 3D hand

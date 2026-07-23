@@ -1229,8 +1229,17 @@ impl EngineState {
             self.draw_choice_box(&labels, None);
         }
         if !self.console_box.is_empty() {
-            let labels = self.console_box.clone();
-            self.draw_choice_box(&labels, None);
+            // The TOP-LEVEL console menu (HONK/TELEPHONE/CRYOBOX/MENU/OPTION) is
+            // BAKED INTO the panorama frames (verified: TB.BIG frame 45 == the live
+            // hub screen at 95%, gold menu window included; hover = palette swaps
+            // 0x7B..0x7F via apply_menu_palette). Only CONTEXTUAL boxes (contacts,
+            // confirmations...) are live-drawn gold boxes.
+            let is_baked_menu = self.console_box
+                == ["HONK", "TELEPHONE", "CRYOBOX", "MENU", "OPTION"];
+            if !is_baked_menu {
+                let labels = self.console_box.clone();
+                self.draw_choice_box(&labels, None);
+            }
         }
         self.draw_hand_cursor();
     }
