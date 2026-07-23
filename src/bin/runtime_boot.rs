@@ -2715,6 +2715,26 @@ fn main() {
         println!("wrote manu3_ds.bin (64KB live data segment)");
         return;
     }
+    if std::env::var("REVEALDUMP").is_ok() {
+        // Subtitle-reveal cadence ground truth: resume the conversation state and dump
+        // one screen per interpreter frame while a line reveals — per-frame PPMs +
+        // raw indices let the port match reveal rate, glyph colors, and settle style.
+        rt.load_state(std::path::Path::new("accuracy/conv_partial.state")).unwrap();
+        let g = 0x0e84u16;
+        let frame = |rt: &Runtime| {
+            rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8)
+        };
+        let _ = frame;
+        // Click the orb region to advance a line, then capture densely.
+        for i in 0..90 {
+            let _ = rt.run(rt.cpu.steps + 400_000);
+            rt.write_ppm(&out.join(format!("rv_{i:03}.ppm"))).unwrap();
+            std::fs::write(out.join(format!("rv_{i:03}.idx")), rt.screen_indices()).unwrap();
+        }
+        std::fs::write(out.join("rv_dac.bin"), rt.dac).unwrap();
+        println!("REVEALDUMP done");
+        return;
+    }
     if std::env::var("INDEXDUMP").is_ok() {
         // Dump the hub screen as RAW VGA INDICES + the DAC — lets the port compare
         // content (indices) and palette state (DAC) separately.

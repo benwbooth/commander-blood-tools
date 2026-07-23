@@ -370,6 +370,11 @@ pub struct EngineState {
     /// contextual gold box over the panorama): its item labels, or empty = closed. The last
     /// item is always CANCEL. `console_box_kind` = which console row opened it.
     pub console_box: Vec<String>,
+    /// When set, the hand is NOT software-rasterized into the 320x200 framebuffer;
+    /// instead its triangles are exported here each frame for the GPU presenter
+    /// (window-resolution rendering with per-pixel texel sampling).
+    pub gpu_hand: Option<Vec<[[f32; 5]; 3]>>,
+    pub gpu_hand_enabled: bool,
     pub console_box_kind: usize,
     /// The console OPTION 3D-pyramid menu (`manu3.xdb` overlay). Its 12-item dispatch
     /// structure is decoded statically from manu3.xdb (`[0x2306]` table) and its
@@ -579,6 +584,8 @@ impl EngineState {
             menu_submenu_active: false,
             option_box_active: false,
             console_box: Vec::new(),
+            gpu_hand: None,
+            gpu_hand_enabled: false,
             console_box_kind: 0,
             option_active: false,
             option_angle: 0,
@@ -1331,6 +1338,10 @@ impl EngineState {
             for i in 128..=255usize {
                 self.scene_palette[i] = gp[i];
             }
+            if self.gpu_hand_enabled {
+                self.gpu_hand = Some(mesh.triangles(cx, cy));
+                return;
+            }
             mesh.draw(
                 &mut self.framebuffer,
                 ENGINE_SCREEN_WIDTH,
@@ -1371,6 +1382,10 @@ impl EngineState {
         let gp = crate::palette::game_screen_palette();
         for i in 128..=255usize {
             self.scene_palette[i] = gp[i];
+        }
+        if self.gpu_hand_enabled {
+            self.gpu_hand = Some(mesh.triangles(cx, cy));
+            return;
         }
         mesh.draw(
             &mut self.framebuffer,

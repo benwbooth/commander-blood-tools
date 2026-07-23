@@ -748,8 +748,8 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
         }
     };
 
-    let (conn, screen_num) =
-        x11rb::connect(None).map_err(|e| anyhow::anyhow!("X11 connect: {e}"))?;
+    let (conn, screen_num) = x11rb::xcb_ffi::XCBConnection::connect(None)
+        .map_err(|e| anyhow::anyhow!("X11 connect: {e}"))?;
     let screen = &conn.setup().roots[screen_num];
     // Source is the 320x200 engine framebuffer; the window is larger and resizable,
     // with the framebuffer scaled to fit while preserving the 320:200 (8:5) aspect.
@@ -818,6 +818,35 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     // Conservative X11 request-size cap (safe even without the big-requests extension);
     // put_image is chunked into row-strips under this.
     let max_req = 262_144usize;
+    // GPU presentation (wgpu over the same X11 window): the 320x200 frame as a
+    // nearest-scaled quad + the 3D hand as real triangles at window resolution.
+    // CB_SOFT=1 forces the software PutImage path.
+    let mut gpu = if std::env::var("CB_SOFT").is_err() {
+        let raw = conn.get_raw_xcb_connection();
+        match unsafe {
+            commander_blood_tools::gpu::GpuPresenter::new(
+                raw,
+                screen_num as i32,
+                win,
+                win_w as u32,
+                win_h as u32,
+                commander_blood_tools::manu3_hand::hand_texture().0,
+                commander_blood_tools::manu3_hand::hand_texture().1 as u32,
+            )
+        } {
+            Ok(p) => {
+                eprintln!("[gpu] wgpu presenter active (hand at window resolution)");
+                Some(p)
+            }
+            Err(e) => {
+                eprintln!("[gpu] unavailable ({e}); software presentation");
+                None
+            }
+        }
+    } else {
+        None
+    };
+    engine.gpu_hand_enabled = gpu.is_some();
     loop {
         // Aspect-preserving fit: largest integer scale of 320x200 that fits the window,
         // centered (letterboxed). Used for both drawing and mouse-coord mapping.
@@ -1473,6 +1502,9 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         win_w = c.width;
                         win_h = c.height;
                         image = vec![0u8; win_w as usize * win_h as usize * 4];
+                        if let Some(g) = gpu.as_mut() {
+                            g.resize(win_w as u32, win_h as u32);
+                        }
                     }
                 }
                 Event::DestroyNotify(_) => return Ok(()),
@@ -1725,56 +1757,73 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
         }
         let _ = &chatter;
         let _ = &chatter_done_line;
-        // Clear the whole window (letterbox borders + a full erase so nothing from the
-        // previous frame can bleed through), then scale the framebuffer in.
-        for b in image.iter_mut() {
-            *b = 0;
-        }
-        let stride = win_w as usize * 4;
-        for sy in 0..src_h {
-            let src_row = sy * src_w;
-            for row in 0..scale {
-                let dy = off_y + sy * scale + row;
-                if dy >= win_h as usize {
-                    break;
-                }
-                let mut di = dy * stride + off_x * 4;
-                for sx in 0..src_w {
-                    let c = engine.scene_palette[engine.framebuffer[src_row + sx] as usize];
-                    for _ in 0..scale {
-                        if di + 2 < image.len() {
-                            image[di] = c[2];
-                            image[di + 1] = c[1];
-                            image[di + 2] = c[0];
+        if let Some(g) = gpu.as_mut() {
+            // GPU path: background quad + the exported hand triangles at window
+            // resolution. Falls back to software on surface errors (e.g. lost swapchain).
+            let tris: Vec<commander_blood_tools::gpu::HandTri> = engine
+                .gpu_hand
+                .take()
+                .unwrap_or_default()
+                .into_iter()
+                .map(commander_blood_tools::gpu::HandTri)
+                .collect();
+            if let Err(e) = g.present(&engine.framebuffer, &engine.scene_palette, &tris) {
+                eprintln!("[gpu] present failed ({e}); reverting to software");
+                gpu = None;
+                engine.gpu_hand_enabled = false;
+            }
+        } else {
+            // Clear the whole window (letterbox borders + a full erase so nothing from the
+            // previous frame can bleed through), then scale the framebuffer in.
+            for b in image.iter_mut() {
+                *b = 0;
+            }
+            let stride = win_w as usize * 4;
+            for sy in 0..src_h {
+                let src_row = sy * src_w;
+                for row in 0..scale {
+                    let dy = off_y + sy * scale + row;
+                    if dy >= win_h as usize {
+                        break;
+                    }
+                    let mut di = dy * stride + off_x * 4;
+                    for sx in 0..src_w {
+                        let c = engine.scene_palette[engine.framebuffer[src_row + sx] as usize];
+                        for _ in 0..scale {
+                            if di + 2 < image.len() {
+                                image[di] = c[2];
+                                image[di + 1] = c[1];
+                                image[di + 2] = c[0];
+                            }
+                            di += 4;
                         }
-                        di += 4;
                     }
                 }
             }
-        }
-        // The game draws its OWN cursor (the pointing hand — engine.draw_hand_at_mouse),
-        // exactly like the original: no host-drawn cursor overlay at all.
-        // put_image is one request; chunk by row-strips so a large window stays under
-        // the server's maximum request size.
-        let row_bytes = win_w as usize * 4;
-        let max_rows = (max_req.saturating_sub(64) / row_bytes.max(1)).max(1);
-        let mut y = 0usize;
-        while y < win_h as usize {
-            let rows = max_rows.min(win_h as usize - y);
-            let start = y * row_bytes;
-            conn.put_image(
-                ImageFormat::Z_PIXMAP,
-                win,
-                gc,
-                win_w,
-                rows as u16,
-                0,
-                y as i16,
-                0,
-                screen.root_depth,
-                &image[start..start + rows * row_bytes],
-            )?;
-            y += rows;
+            // The game draws its OWN cursor (the pointing hand — engine.draw_hand_at_mouse),
+            // exactly like the original: no host-drawn cursor overlay at all.
+            // put_image is one request; chunk by row-strips so a large window stays under
+            // the server's maximum request size.
+            let row_bytes = win_w as usize * 4;
+            let max_rows = (max_req.saturating_sub(64) / row_bytes.max(1)).max(1);
+            let mut y = 0usize;
+            while y < win_h as usize {
+                let rows = max_rows.min(win_h as usize - y);
+                let start = y * row_bytes;
+                conn.put_image(
+                    ImageFormat::Z_PIXMAP,
+                    win,
+                    gc,
+                    win_w,
+                    rows as u16,
+                    0,
+                    y as i16,
+                    0,
+                    screen.root_depth,
+                    &image[start..start + rows * row_bytes],
+                )?;
+                y += rows;
+            }
         }
         conn.flush()?;
         std::thread::sleep(Duration::from_millis(66));

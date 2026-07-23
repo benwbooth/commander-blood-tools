@@ -41,6 +41,11 @@ const TRIG: &[u8] = include_bytes!("../accuracy/manu3/trig_tables.bin");
 /// The 8 pose-animation sequences (phased 8-byte tween groups, exact 0x1DF spec).
 const POSES: &[u8] = include_bytes!("../accuracy/manu3/hand_poses.bin");
 
+/// The hand's texture bytes + row width (for GPU upload).
+pub fn hand_texture() -> (&'static [u8], usize) {
+    (TEX, TEX_W)
+}
+
 #[inline]
 fn rd_parent(state: &[u8], at: usize) -> u16 {
     u16::from_le_bytes([state[at - STATE_BASE], state[at - STATE_BASE + 1]])
@@ -288,6 +293,38 @@ impl HandMesh {
         }
     }
 
+    /// The hand's textured triangles for GPU rendering: same compose + cursor-centred
+    /// projection as draw(), emitted as screen-space (x, y, depth, u, v) vertices
+    /// (u/v in texel units — the game's Q8 coords / 256). Backface-culled like the
+    /// software path; depth in game units for the z-buffer.
+    pub fn triangles(&self, cx: i32, cy: i32) -> Vec<[[f32; 5]; 3]> {
+        let pts = self.debug_project(cx, cy);
+        let mut out = Vec::with_capacity(self.faces.len());
+        for fi in 0..self.faces.len() {
+            let [a, b, c] = self.faces[fi];
+            let pa = pts[a as usize];
+            let pb = pts[b as usize];
+            let pc = pts[c as usize];
+            let area = (pb.0 - pa.0) * (pc.1 - pa.1) - (pb.1 - pa.1) * (pc.0 - pa.0);
+            if area <= 0.0 {
+                continue;
+            }
+            let uv = |i: usize| {
+                // self.uvs holds TEXEL coordinates (0..255 / 0..rows) directly —
+                // the same raw values the software fill interpolates and clamps.
+                let t = self.uvs[i];
+                [t[0] as f32, t[1] as f32]
+            };
+            let (ua, ub, uc) = (uv(a as usize), uv(b as usize), uv(c as usize));
+            out.push([
+                [pa.0, pa.1, pa.2, ua[0], ua[1]],
+                [pb.0, pb.1, pb.2, ub[0], ub[1]],
+                [pc.0, pc.1, pc.2, uc[0], uc[1]],
+            ]);
+        }
+        out
+    }
+
     /// Debug helper: the projected point cloud (screen x, y, depth) for a cursor.
     pub fn debug_project(&self, cx: i32, cy: i32) -> Vec<(f32, f32, f32)> {
         let nodes = self.compose(cx, cy);
@@ -322,6 +359,11 @@ impl HandMesh {
                 }
                 vi += 1;
             }
+        }
+        // Aliases resolve to their source's projected point (as in draw()).
+        for &src in &self.alias_src {
+            let p = pts.get(src as usize).copied().unwrap_or((-4096.0, -4096.0, 1.0));
+            pts.push(p);
         }
         pts
     }

@@ -35,6 +35,7 @@
             libxkbcommon
             wayland
             libGL
+            vulkan-loader
             alsa-lib
           ];
         in
@@ -52,6 +53,8 @@
               p7zip
               pkg-config
               alsa-lib
+              libxcb
+              vulkan-tools
               (python3.withPackages (ps: with ps; [ capstone pillow numpy ]))
               ripgrep
               rust-analyzer
@@ -67,7 +70,7 @@
               export FFMPEG="${pkgs.ffmpeg}/bin/ffmpeg"
               export FFPROBE="${pkgs.ffmpeg}/bin/ffprobe"
               export SEVENZIP="${pkgs.p7zip}/bin/7z"
-              export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath graphicsLibs}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+              export LD_LIBRARY_PATH="/run/opengl-driver/lib:${pkgs.lib.makeLibraryPath graphicsLibs}''${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
             '';
           };
         }
