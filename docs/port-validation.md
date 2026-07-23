@@ -108,12 +108,16 @@ be PIXEL-COMPARED against the interpreter oracle. Status:
 | menus | **FIXED (hub) + verified pipeline** | the top-level console menu is BAKED into the TB.BIG panorama frames (port frame 45 == live hub screen: 93.2% full / 95.4% left-half raw-index match; residue = live overlays CANCEL/orb). The port's floating text double-draw REMOVED; hover stays palette-swap (0x7B..0x7F). Contextual sub-boxes remain live-drawn gold boxes (capture-verified pattern) |
 
 ## OPEN ITEM: manu3 per-face texture segment (seam faces)
-The span setup (0xE89..0xEB3) computes each face's texture SEGMENT ([edge+0x56] = fs:[4] +
-a per-face component from [0x622]) — the seam/edge faces (the alias-UV faces, v 57..62) sample a
-DIFFERENT texture page than the main skin (rows 0..41 at the fs:[4]-derived base). Undecoded:
-the exact fold of [0x622] into the segment. INTERIM in the port: out-of-range rows clamp to row
-41 (edge material) — no confetti, slight palm banding vs the oracle's smooth blend. Decode task:
-resolve [0x622]'s format + the segment formula, re-bank the seam texture page, remove the clamp.
+The span setup (0xE89..0xED0) is now READ: segment = fs:[4] + (high byte of [0x622])<<4, and
+the in-page V accumulator starts at ((low byte of [0x622])<<8 + step/2) — i.e. effective row =
+(v>>8)+(v&0xFF) IF [0x622] is the raw mesh v and fs:[4] is the ds:0x6400 texture base.
+**TRIED AND REFUTED (dead end)**: folding the mesh v that way lands the seam faces (v 1480..1520
+-> rows 205..245) in bytes that a 246-row TEXDUMP shows to be PANORAMA data — rendered confetti,
+worse than the clamp. So at fill time either fs:[4] points to a DIFFERENT buffer for these faces
+or [0x622] holds a transformed v. NEXT APPROACH: an interpreter watch on the span-setup reads —
+log the actual (fs, fs:[4], [0x622]) per face during one live hand frame; that resolves both
+unknowns directly. INTERIM in the port: out-of-range rows clamp to row 41 (edge material) — no
+confetti, slight palm banding vs the oracle's smooth blend.
 
 ## WHOLE-PLAYTHROUGH GATE (src/bin/playthrough.rs) — PASSES
 One continuous EngineState run, boot -> ending, every stage asserted: title, intro montage,

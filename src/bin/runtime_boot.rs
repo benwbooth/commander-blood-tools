@@ -2988,10 +2988,13 @@ fn main() {
         // manu3_ds.bin dump shows noise in rows 40..63 — was it mid-load?).
         rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
         let _ = rt.run(rt.cpu.steps + 2_000_000);
-        // manu3 ds runtime segment = 0x17A3 (labels); texture at ds:0x6400, 64 rows.
+        // manu3 ds runtime segment = 0x17A3 (labels); texture at ds:0x6400. The seam
+        // faces' folded rows ((v>>8)+(v&0xFF), span-setup 0xE89..0xED0) reach row 245,
+        // so bank 246 rows (the fill's addressable window from the texture base).
         let seg = 0x17A3u16;
-        let mut out_bytes = Vec::with_capacity(64 * 256);
-        for off in 0x6400u32..(0x6400 + 64 * 256) {
+        const ROWS: u32 = 246;
+        let mut out_bytes = Vec::with_capacity((ROWS * 256) as usize);
+        for off in 0x6400u32..(0x6400 + ROWS * 256) {
             out_bytes.push(rt.m.read8(seg, off));
         }
         std::fs::write(out.join("hand_tex_live.bin"), &out_bytes).unwrap();
