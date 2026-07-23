@@ -113,11 +113,13 @@ From decompiled/SCRIPT2.bas + COD operand reads (assembly-first):
   begging (@0BD3/0C40/0CA7); vbio>0 acknowledges 'You did get BIONIUM' (@0570/058E).
   Cyberspace play increments vbio — THE story gate.
 - **rec_0722 == 65535** gates Bob's no-BIONIUM begging block (@0BCA).
-- Driver chain for the outer ring, in order: start 1860 (Scruter Jo) -> his cyberspace
-  explanation -> enter the cyber world (the port: visit_world 'cyber'; the oracle:
-  the cyberspace entry dispatch — to trace) -> BIOXX touches raise vbio -> Bob's
-  blocks unlock -> nav destinations activate (entity flags 0x15..0x1F) -> planets ->
-  SCRIPT3/4/5 -> the Bigbang-concert ending (SCRIPT5, fin.hnm — already wired).
+- Driver chain for the outer ring, in order: start 1860 (Scruter Jo — EXECUTED, the
+  script2_scruter_jo test locks his cyberspace block) -> his world binds via
+  **SETCHAR slot 4 = "scrut"** (@004E, the 0xCC opcode — the entry citation) ->
+  enter the cyber world (port: visit_world through the SETCHAR binding; tested by
+  cyberspace_traversal + the playthrough gate) -> BIOXX touches raise vbio -> Bob's
+  vbio==0/1/2 blocks unlock -> nav destinations activate (entity flags 0x15..0x1F)
+  -> planets -> SCRIPT3/4/5 -> the Bigbang-concert ending (fin.hnm — wired).
 Each arrow is one dual-run scenario + any needed decode of its dispatch site.
 
 ## CAMPAIGN LOG
