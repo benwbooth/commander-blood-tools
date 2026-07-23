@@ -680,6 +680,9 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 if let Some((rec, rel)) = first_actor {
                     m.start_actor_presentation(rec, rel);
                 }
+                // Arriving at the scripted location satisfies the opening block's
+                // location guards (SCRIPT2: current_location = Pterra).
+                m.satisfy_opening_location_guards();
                 let (lines, _profile) = vm_collect(&mut m, &map);
                 if !lines.is_empty() {
                     engine.set_speech_dialogue(lines);

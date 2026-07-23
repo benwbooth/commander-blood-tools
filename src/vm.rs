@@ -3490,6 +3490,51 @@ impl VmMachine {
         self.presentation_active = true;
     }
 
+    /// ARRIVAL: satisfy the opening block's record-equality guards (the travel
+    /// system's writes). SCRIPT2's first block guards `rec_0F4E == 3488` — the
+    /// current-location variable vs the DEB offset of `Pterra`; arriving at the
+    /// scripted encounter location is exactly `rec[loc_var] = location`. Scans the
+    /// first block (up to its first A6 line) for wildcard-family equality guards
+    /// and writes their operands.
+    pub fn satisfy_opening_location_guards(&mut self) {
+        let mut pc = 0usize;
+        // Enter the first A9-opened block.
+        if self.u8_at(pc) != 0xA9 || self.u8_at(pc + 1) & 1 == 0 {
+            return;
+        }
+        pc += 4;
+        let mut writes: Vec<(u16, u16)> = Vec::new();
+        for _ in 0..16 {
+            let op = self.u8_at(pc);
+            match op {
+                0xCE | 0xD0 | 0xD1 => pc += 1,
+                0xC4 => {
+                    pc += 1;
+                    if self.u8_at(pc) == 0xA1 {
+                        pc += 1;
+                    }
+                    pc += 4;
+                }
+                0xAD | 0xAF | 0xB2 | 0xB3 | 0xBA | 0xBB | 0xBC => {
+                    pc += 1;
+                    if self.u8_at(pc) == 0xA1 {
+                        // negated guard: skip, do not satisfy
+                        pc += 5;
+                        continue;
+                    }
+                    let off = self.u8_at(pc) as u16 | (self.u8_at(pc + 1) as u16) << 8;
+                    let val = self.u8_at(pc + 2) as u16 | (self.u8_at(pc + 3) as u16) << 8;
+                    writes.push((off, val));
+                    pc += 4;
+                }
+                _ => break, // A1/A6/anything else: end of the guard prologue
+            }
+        }
+        for (off, val) in writes {
+            self.rec_write(off, val);
+        }
+    }
+
     /// Serialize the machine state as a DOS `blood.sav` (the layout the game's
     /// save path @0x1C3F writes): u16 current profile, 0x200 bytes of the state
     /// word array (gs:0x6ADE), 0x60 bytes of the character slots (gs:0x6CDE),

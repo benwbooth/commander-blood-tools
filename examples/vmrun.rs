@@ -19,6 +19,7 @@ fn main() {
     if std::env::var("VMFLAGS").is_ok() {
         m.flag_252a = true;
         m.flag_274f = true;
+        m.satisfy_opening_location_guards();
     }
     // Start a specific actor's presentation: VMACTOR=<record_offset>,<related>
     if let Ok(spec) = std::env::var("VMACTOR") {
