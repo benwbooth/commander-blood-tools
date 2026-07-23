@@ -111,6 +111,15 @@ transcription of the textured fill into manu3_hand (replacing flat shading). ARC
 - World-candidate labels: the box now carries the location's REAL character name (the nav
   destination label for the heading) instead of the generic TALK.
 
+- MONTAGE RECONCILIATION (closed as analysis): three intros observed — DOSBox (full truth):
+  logos -> cinematic -> CRYO -> cliptoot montage + crew presentations (blood.dat-internal reel)
+  -> tutorial; INTERPRETER: same until CRYO then straight to the tutorial console (its known
+  blood.dat presentation gap drops the montage — documented limitation, not game behavior);
+  PORT: logos -> cinematic -> CRYO -> cliptoot + credits -> tutorial (the DESCRIPT-driven core,
+  matching DOSBox through cliptoot). The DELTA: the crew-presentation reel between cliptoot and
+  the tutorial — its enumeration (blood.dat-internal, no file opens, no DESCRIPT record found)
+  remains THE open intro item, folded into the ext/overlay consumer-trace work.
+
 ## Active fix queue (from the matrix, user-reported first)
 1. [x] Host crosshair removed; hand = the only cursor, all screens (this pass).
 2. [x] Hand hotspot: oracle frames confirm fingertip = mouse position (arm extends down-left); the BRIDGEPROBE-derived atlas anchors encode this. Pose model (nearest-capture) remains APPROX vs the real 3D render.
