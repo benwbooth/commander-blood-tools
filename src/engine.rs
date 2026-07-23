@@ -3208,18 +3208,23 @@ impl EngineState {
     /// the newest one in the reveal-edge colour (0xFE) — the game's per-character
     /// reveal. Non-visible characters aren't drawn yet.
     fn draw_subtitle_revealed(&mut self, text: &str, visible: usize) {
-        // Static TEXT lines (menu/list content — dialogue_is_speech false) use the THIN
-        // proportional renderer in WHITE at the same origin, fully shown (no reveal):
-        // ORACLE frame click_02: "Today's fare:" white lowercase thin, vs "WELCOME
-        // ABOARD" green caps bold for speech.
-        if !self
-            .dialogue_is_speech
-            .get(self.dialogue_cursor)
-            .copied()
-            .unwrap_or(true)
-        {
+        // The REAL subtitle model (TUTORIAL4 oracle calibration + live frames): while a line
+        // REVEALS, the revealed characters draw in the BOLD console font with the green
+        // family (0xFF bright / 0xFE newest, the 0x3630 renderer — 'WELCOME ABOARD' frame);
+        // once COMPLETE the line redraws in the THIN proportional font at index 0xE0, white
+        // ('Today's fare:' frame). Rows 8/18 on the console (pitch 10), same origin in scenes.
+        let total: usize = text
+            .split('\n')
+            .enumerate()
+            .map(|(i, l)| l.chars().count() + usize::from(i > 0))
+            .sum();
+        let fully = visible >= total;
+        let on_console = self.panorama.is_some() && self.scene_hnm.is_none();
+        let pitch = if on_console { 10 } else { crate::font::GAME_FONT_LINE_HEIGHT };
+        if fully {
+            // Settled: thin white (0xE0 — the game's settled-text index).
             use crate::font::game_font_advance;
-            self.scene_palette[0xF9] = [255, 255, 255];
+            self.scene_palette[0xE0] = [255, 255, 255];
             let mut y = 8usize;
             for line in text.split('\n') {
                 let mut x = 10usize;
@@ -3232,45 +3237,22 @@ impl EngineState {
                         ch.encode_utf8(&mut buf),
                         x,
                         y,
-                        0xF9,
+                        0xE0,
                     );
                     x += game_font_advance(ch);
                 }
-                y += crate::font::GAME_FONT_LINE_HEIGHT;
+                y += pitch;
             }
             return;
         }
-        // The REAL subtitle renderer (BLOODPRG @0x3630): the fixed-width 8x8 console font
-        // (tables DS:0x70FA/0x71AA = BoldConsoleFont) drawn in the game palette's GREEN family —
-        // settled text 0xFD (dark green), the newest revealed char 0xFE (mid green), and the
-        // whole line 0xFF (bright green) once fully revealed. The port previously used the
-        // proportional dialogue font in forced white — both unfaithful (user-reported).
-        use crate::font::GAME_FONT_LINE_HEIGHT;
-        let total: usize = text
-            .split('\n')
-            .enumerate()
-            .map(|(i, l)| l.chars().count() + usize::from(i > 0))
-            .sum();
-        let fully = visible >= total;
-        let color_for = |shown: usize| -> u8 {
-            if fully {
-                0xFF
-            } else if shown + 1 == visible {
-                0xFE
-            } else {
-                0xFD
-            }
-        };
-        // Console lines observed live at rows 8/18 (pitch 10); scene subtitles at the same
-        // origin with the font row pitch.
-        let on_console = self.panorama.is_some() && self.scene_hnm.is_none();
-        let pitch = if on_console { 10 } else { GAME_FONT_LINE_HEIGHT };
+        // Revealing: bold console font, green family (0xFF revealed, 0xFE newest char).
+        let color_for = |shown: usize| -> u8 { if shown + 1 == visible { 0xFE } else { 0xFF } };
         if let Some(bold) = self.bold_font.take() {
             let mut shown = 0usize;
             let mut y = 8usize;
             'outer: for (li, line) in text.split('\n').enumerate() {
                 if li > 0 {
-                    shown += 1; // the 0x0D separator counts toward the reveal position
+                    shown += 1;
                     y += pitch;
                 }
                 let mut x = 10usize;
@@ -3295,7 +3277,7 @@ impl EngineState {
             self.bold_font = Some(bold);
             return;
         }
-        // Fallback without a BLOODPRG.EXE to load the real font from: the proportional face.
+        // No bold font available: thin fallback in the same colors.
         use crate::font::game_font_advance;
         let mut shown = 0usize;
         let mut y = 8usize;
@@ -3324,6 +3306,7 @@ impl EngineState {
             }
         }
     }
+
 
     /// Render the current dialogue line's frame into the framebuffer: clear, then
     /// draw the reconstructed subtitle text. (The talk-HNM scene background layer
@@ -4945,11 +4928,11 @@ mod tests {
     fn draw_subtitle_renders_text_into_scene_band() {
         let mut e = EngineState::new();
         e.draw_subtitle("HELLO COMMANDER", 0xFD);
-        // Text draws at y=8 (the subtitle band); a fully-shown line renders in the
-        // fully-revealed colour 0xFF (the asm reveal @0x3630's bright green).
+        // Text draws at y=8 (the subtitle band); a fully-shown line SETTLES to the thin
+        // white renderer at index 0xE0 (oracle: 'Today's fare:' frame + TUTORIAL4 calibration).
         let band: usize = (8..16)
             .flat_map(|y| (0..ENGINE_SCREEN_WIDTH).map(move |x| y * ENGINE_SCREEN_WIDTH + x))
-            .filter(|&i| e.framebuffer[i] == 0xFF)
+            .filter(|&i| e.framebuffer[i] == 0xE0)
             .count();
         assert!(
             band > 20,
@@ -5028,11 +5011,11 @@ mod tests {
         for _ in 0..400 {
             e.step(MouseInput::default());
         }
-        // Reveal colours (asm 0x3630): settled 0xFD, newest 0xFE, fully-revealed 0xFF.
+        // Text pixels: revealing (0xFE/0xFF green-bold) or settled (0xE0 white-thin).
         let lit = e
             .framebuffer
             .iter()
-            .filter(|&&p| p == 0xFD || p == 0xFE || p == 0xFF)
+            .filter(|&&p| p == 0xE0 || p == 0xFE || p == 0xFF)
             .count();
         assert!(
             lit > 20,
@@ -5320,7 +5303,7 @@ mod tests {
         e.draw_subtitle(&assembled, 0xFD);
         let w = ENGINE_SCREEN_WIDTH;
         let rows_with_text = (0..30)
-            .filter(|&r| e.framebuffer[r * w..(r + 1) * w].iter().any(|&p| p == 0xFF))
+            .filter(|&r| e.framebuffer[r * w..(r + 1) * w].iter().any(|&p| p == 0xE0))
             .count();
         assert!(rows_with_text > 8, "text occupies multiple wrapped rows (rows={rows_with_text})");
     }

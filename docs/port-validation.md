@@ -28,7 +28,7 @@ evidence in the row. Re-audit pass 1: 2026-07-22..23.
 | bridge.rs | bridge steering/stations | ASM | 0x9656 state machine decompiled; BRIDGEPROBE replays |
 | font.rs GAME_FONT | proportional dialogue font | ASM | byte-identical to EXE tables 0x14C22/0x14CD2/0x14D28 (test) |
 | font.rs BoldConsoleFont | subtitle/console font | ASM | tables 0x1451A/0x145CA; subtitle renderer 0x3630 uses it (decoded) |
-| engine.rs subtitle draw | reveal + colors + styles | **ASM+ORACLE** | TWO renderers, both pixel-verified live: speech = green caps bold reveal (0x3630, 'WELCOME ABOARD' frame); plain text = white thin static (0x31C8, 'Today's fare:' frame); origin y≈8 confirmed for both; discriminator = speaker object (A6 operand: 2162=menu vs character records) |
+| engine.rs subtitle draw | reveal + colors + phases | **ASM+ORACLE** | CORRECTED model (TUTORIAL4 calibration: settled=0xE0, revealing=0xFD..0xFF): while a line reveals it draws BOLD console font in the greens ('WELCOME ABOARD' mid-reveal frame); when complete it settles to THIN proportional white 0xE0 ('Today's fare:' frame). Phase-based, NOT per-speaker; rows 8/18 |
 | engine.rs chatter | honk burble | ASM | 0xB898: tb.snd clip 7+rand(0..9), 4-tick throttle |
 | palette.rs | baked game palette | DATA | extracted from file 0x12F78 |
 | snd.rs / audio.rs | SND banks + playback | DATA | voices/clips play; clip-index mapping decoded (0x661E) |
