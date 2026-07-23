@@ -48,7 +48,7 @@ evidence in the row. Re-audit pass 1: 2026-07-22..23.
 | engine.rs world visit | on-planet screens | DATA+APPROX | rooms/objects from decoded data; click=talk + room-step wiring is an interpretation. Settle: on-planet input handler in asm |
 | engine.rs nav view | star chart + list | CAPTURE+**APPROX**(steer) | CHART.FD bg + tablo2 toggle 0x886C verified; the compass steer's dead-zone (8px) and rate (dx/20) are UNVERIFIED constants — the cited ~0x102/0x216 needs a proper aligned decode of the ship FSM (0xAFA0 segment) |
 | save.rs | port save format | n/a (port-own) | DOS interop via vm dos_save |
-| progress.rs / entity.rs | progression FSM | DATA(partial) | entity records decoded; completion rule (all visited → ending) is an interpretation |
+| progress.rs / entity.rs | progression FSM | DATA(partial) | entity records decoded; the REAL ending trigger is SCRIPT5's Bigbang-concert block (GUARD rec_103A==Bigbang && rec_1340==concert && active_actor==Migrator.talk → lpm*sc1 reels → LOADSTR fin.hnm — now wired via the VM LoadString path); all-visited remains only as a driver fallback |
 | recomp/* | interpreter runtime | oracle | separate: runs the real EXE for cross-checks |
 
 ## Active fix queue (from the matrix, user-reported first)
@@ -59,3 +59,5 @@ evidence in the row. Re-audit pass 1: 2026-07-22..23.
 5. [ ] On-planet input handler decode to replace the interpretation.
 6. [ ] ext.rs record semantics via the consumer load path.
 7. [ ] Nav compass steer constants (dead-zone/rate) from the ship FSM — currently invented.
+8. [ ] A8 LOADSTR scene reels: wired (SCRIPT5 finale films); verify other scripts' LOADSTR uses (explo3.hnm on SCRIPT2's third warning etc.) play at the right beats.
+9. [ ] DOSBox interactive capture: injected clicks don't reach the game (window focus / SDL mouse capture) — fix with xdotool windowactivate + click-in-window before injection; needed for the real OPTION screen + hand hotspot.

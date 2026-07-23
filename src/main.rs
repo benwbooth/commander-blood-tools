@@ -463,11 +463,27 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
      -> (Vec<(String, Option<std::path::PathBuf>)>, Option<i16>) {
         let mut lines = Vec::new();
         let mut profile = None;
+        // A8 LOADSTR drives the scene backdrop for the FOLLOWING lines (decoded from
+        // SCRIPT5's finale: LOADSTR lpm6sc1.hnm / SAY ... reels). "fin.hnm" = the
+        // finale film itself — the script's own ENDING trigger (the Bigbang-concert
+        // block) — signalled to the driver as profile -100.
+        let mut scene_override: Option<std::path::PathBuf> = None;
         for ev in m.run_frame() {
             match ev {
                 commander_blood_tools::vm::VmEvent::Text { offset } => {
-                    if let Some(l) = map.get(&offset) {
-                        lines.push(l.clone());
+                    if let Some((text, scene)) = map.get(&offset) {
+                        lines.push((
+                            text.clone(),
+                            scene_override.clone().or_else(|| scene.clone()),
+                        ));
+                    }
+                }
+                commander_blood_tools::vm::VmEvent::LoadString(name) => {
+                    let lower = name.to_lowercase();
+                    if lower == "fin.hnm" {
+                        profile = Some(-100); // ending sentinel
+                    } else if lower.ends_with(".hnm") {
+                        scene_override = resolve_scene_hnm(assets, &lower);
                     }
                 }
                 commander_blood_tools::vm::VmEvent::ProfileRequest(p) => profile = Some(p),
@@ -948,7 +964,11 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                 }
                                 m.concept = 0;
                             }
-                            if let Some(p) = profile {
+                            if profile == Some(-100) {
+                                *script_vm.borrow_mut() = None;
+                                engine.start_ending();
+                                music.play(&format!("{assets}/mu/credits.voc"));
+                            } else if let Some(p) = profile {
                                 let next = (p.max(0) as u32) + 1;
                                 *script_vm.borrow_mut() = None;
                                 current_script.set(0);
@@ -1388,7 +1408,12 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     }
                 }
             }
-            if let Some(p) = profile {
+            if profile == Some(-100) {
+                // The script's own ENDING (SCRIPT5's Bigbang-concert finale: fin.hnm).
+                *script_vm.borrow_mut() = None;
+                engine.start_ending();
+                music.play(&format!("{assets}/mu/credits.voc"));
+            } else if let Some(p) = profile {
                 // The script's own D2 handoff: profile p -> SCRIPT{p+1} (profile 1 = SCRIPT2).
                 let next = (p.max(0) as u32) + 1;
                 *script_vm.borrow_mut() = None;
