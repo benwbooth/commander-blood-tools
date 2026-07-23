@@ -712,3 +712,5 @@ DS:0x27C7,list_widget_hovered_row,"row under the cursor +1 (0=none): ay=[0xA2C]-
 0x00b0d1,list_anchor_world_candidates,"mov [0xAC6],0x50 — the WORLD/entity candidate list anchors at centre-X 80 (inside ship_click_commit, with alt-mode flags [0xADC]/[0xADD]: narrow min-width 0x37, bp-init 10)"
 0xF419,scrut_exam_record_table,scrut.xdb ds:0xC069 111x0x14 entries; +0x06=script record offset (exam result sinks; groups of 6/subject)
 0xF6C7,scrut_exam_rec_scr,scrut.xdb table entry whose +6 record = 0x1276 (scr - the Honk planet gate)
+0xD526,descript_des_name_a,'descript.des' filename string (a)
+0xD679,descript_des_name_b,'descript.des' filename string (b) ds:0x259

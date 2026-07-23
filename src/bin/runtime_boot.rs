@@ -2936,6 +2936,13 @@ fn main() {
             }
         }
         let g = 0x0e84u16;
+        // EXECWATCHLIN works during scenarios too: comma-separated FILE offsets.
+        if let Ok(w) = std::env::var("EXECWATCHLIN") {
+            for tok in w.split(',') {
+                let file = u32::from_str_radix(tok.trim().trim_start_matches("0x"), 16).unwrap();
+                rt.cpu.exec_watch_linear.push(0x1a20 + file.saturating_sub(0x600));
+            }
+        }
         let w16 = |rt: &Runtime, a: u32| {
             rt.m.read8(g, a) as u32 | ((rt.m.read8(g, a + 1) as u32) << 8)
         };
@@ -3072,6 +3079,21 @@ fn main() {
             step += 1;
         }
         rec_dump(&rt, "end");
+        for &(lin, first, count) in &rt.cpu.exec_hits_linear {
+            println!("EXEC hit linear {lin:#07x} (file {:#07x}): first@{first} count={count}",
+                lin - 0x1a20 + 0x600);
+        }
+        for &lin in &rt.cpu.exec_watch_linear {
+            if !rt.cpu.exec_hits_linear.iter().any(|h| h.0 == lin) {
+                println!("EXEC never: file {:#07x}", lin - 0x1a20 + 0x600);
+            }
+        }
+        // FILELOG: every int21 open/create issued during the scenario (step-stamped).
+        if std::env::var("FILELOG").is_ok() {
+            for (at, path) in &rt.opened_files {
+                println!("FILE @ {at}: {path}");
+            }
+        }
         std::fs::write(out.join("vs_dac.bin"), rt.dac).unwrap();
         println!("VERIFYSCRIPT done: {step} steps");
         if !rt.m.addr_hits.is_empty() {

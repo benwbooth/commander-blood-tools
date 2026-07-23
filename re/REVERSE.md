@@ -5379,6 +5379,24 @@ credit divergence and the montage gap are ONE limitation with ONE fix: implement
 blood.dat presentation dispatch in the interpreter (a tooling feature, not a port
 defect — the port's credit + montage are capture-verified). The two ledger items merge.
 
+### DESCRIPT.DES FORMAT CRACKED (the presentation descriptor bank)
+`descript.des` = u16 count (145) + 18-byte directory entries {16B asciiz name, u16
+record offset}, then per-record: u16 total length + TAGGED FIELDS. Directory covers
+EVERY named presentation: items (bionium, cred...), planets (Corpo, Pterra,
+Venusia...), locations (bar, prison, factory...), characters (Scruter_Jo,
+Bob_Morlock, Bigbang...), and the boot credit ("present" — the name held in char
+slot 0 at the hub!). Field kinds decoded from present/Corpo/Bigbang/Scruter_Jo:
+0x01=end, 0x03 <face 1..4> <lbm> = the world-room LBM faces (2kkult1f/d/g/b),
+0x05 <asciiz> = THE LOCATION CAPTION ("planet Corpo" — the green header's source,
+closing that open question), 0x06 <hnm> = approach video, 0x07 <param> <hnm> =
+per-dialogue-line clips (scr01..scr22 for Scruter_Jo), 0x09/0x0A/0x0B = character
+video trio (main + cd/cg companions), 0x0D <u16 delay> <asciiz> = CREDIT/TEXT cue
+("CRYO Interactive Entertainment 1995", "Commander BLOOD  V 1.0" — presenter (b)'s
+cues), 0x0E=spr, 0x11=snd, 0x12=voc. The presentation dispatch the interpreter lacks
+= walking these fields and routing each kind to its presenter (the string-sink
+family are the text-kind loaders). SETCHAR binds a character's DESCRIPT name into a
+slot; the engine resolves it through this directory.
+
 ### scr writer FOUND STATICALLY: the scrutinizer's examination-record table
 `scrut.xdb` data (ds base = file 0x33B0 via cs:[0x33A5] delta 0x33B) holds a
 111-entry, stride-0x14 table at ds:0xC069 (file 0xF419) whose +0x06 word is a SCRIPT
