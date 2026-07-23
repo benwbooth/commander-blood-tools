@@ -44,7 +44,7 @@ evidence in the row. Re-audit pass 1: 2026-07-22..23.
 | engine.rs TV | broadcast channels | DATA | 7 self-identified Sequence records; chained clips+music+cues |
 | engine.rs telephone/cryobox | console screens | DATA+CAPTURE | bappel/character sprites; oracle-observed flows |
 | engine.rs cyberspace | tunnel minigame | **APPROX** | presentation from real assets; goal decoded from SCRIPT2 text (BIOXX/BIONIUM) but the interaction logic is a stand-in. Settle: the cyber .ext consumer + input handler |
-| engine.rs OPTION menu | 3D pyramid menu | **APPROX** | see ship3d pyramid render; item glyphs await manu3 sprite decode |
+| engine.rs OPTION menu | choice box | **ORACLE** | savestate resume-probe (ring-corrected clicks — the console mouse-x is RING space, the reason earlier probes never dispatched): OPTION opens the measured gold choice box containing CANCEL; the invented 3D-pyramid OPTION screen is UNROUTED. MENU's {EXPLANATIONS, GAME} box same mechanism |
 | engine.rs world visit | on-planet screens | DATA+APPROX | rooms/objects from decoded data; click=talk + room-step wiring is an interpretation. Settle: on-planet input handler in asm |
 | engine.rs nav view | star chart + list | CAPTURE+**APPROX**(steer) | CHART.FD bg + tablo2 toggle 0x886C verified; the compass steer's dead-zone (8px) and rate (dx/20) are UNVERIFIED constants — the cited ~0x102/0x216 needs a proper aligned decode of the ship FSM (0xAFA0 segment) |
 | save.rs | port save format | n/a (port-own) | DOS interop via vm dos_save |
@@ -77,12 +77,10 @@ evidence in the row. Re-audit pass 1: 2026-07-22..23.
 ## Active fix queue (from the matrix, user-reported first)
 1. [x] Host crosshair removed; hand = the only cursor, all screens (this pass).
 2. [x] Hand hotspot: oracle frames confirm fingertip = mouse position (arm extends down-left); the BRIDGEPROBE-derived atlas anchors encode this. Pose model (nearest-capture) remains APPROX vs the real 3D render.
-3. [ ] OPTION/TELEPHONE/CRYOBOX screen truth: BLOCKED on the interpreter's scene-coordinator bug
-   (the tutorial loops its demos; row clicks only advance content — verified with the tutorial
-   cadence + idle settle; no asset loads follow the clicks). The DOSBox path is blocked by SDL
-   synthetic-input rejection. Fixing the scene coordinator (STATEDUMP passive-lock 0x5E58=0x0E2B,
-   see REVERSE.md) unblocks BOTH this and the credit divergence — it is the highest-leverage
-   remaining RE target.
+3. [x] OPTION truth SETTLED via savestate resume-probe (RESUMEPROBE, ring-space mouse-x): the
+   choice box with CANCEL; pyramid screen unrouted. The earlier "blocked" analysis was wrong on
+   two counts (the savestate existed; the mouse-x model). TELEPHONE/CRYOBOX hub screens: probe
+   the same way (rows 103/118) — queued.
 4. [ ] Cyberspace interaction (BIOXX touch loop) from the cyber consumer.
 5. [ ] On-planet input handler decode to replace the interpretation.
 6. [ ] ext.rs record semantics via the consumer load path.

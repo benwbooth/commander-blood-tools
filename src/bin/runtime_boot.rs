@@ -2377,6 +2377,43 @@ fn main() {
     // clicking each topic (reloading the savestate to isolate each) and reading the
     // resulting current-menu offset gs:0x6772. Gives the ground-truth navigation the
     // clean-port conversation VM must reproduce, without a full static VM decode.
+    if let Ok(spec) = std::env::var("RESUMEPROBE") {
+        // Resume the clean interactive SCRIPT2 state and click screen positions with
+        // RING-space mouse x (ring = screen_x + frame*8 - 160, the console's mouse model —
+        // the reason plain CLICKAT never dispatched). Spec: "sx,sy;sx,sy;..." with a long
+        // dwell + capture after each.
+        let g = 0x0e84u16;
+        let frame = |rt: &Runtime| rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
+        let statepath = std::path::Path::new("accuracy/script2.state");
+        rt.load_state(statepath).unwrap();
+        let before = rt.opened_files.len();
+        for (i, pt) in spec.split(';').enumerate() {
+            // "m<sx>,<sy>" = move/hover only; "<sx>,<sy>" = click.
+            let (mv, pt) = match pt.strip_prefix('m') {
+                Some(rest) => (true, rest),
+                None => (false, pt),
+            };
+            let (a, b) = pt.split_once(',').unwrap();
+            let (sx, sy): (u16, u16) = (a.trim().parse().unwrap(), b.trim().parse().unwrap());
+            let fr = frame(&rt);
+            let ring = (sx as i32 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+            rt.set_mouse_pos(ring, sy);
+            let _ = rt.run(rt.cpu.steps + 500_000);
+            if !mv {
+                rt.mouse_press(0);
+                let _ = rt.run(rt.cpu.steps + 300_000);
+                rt.mouse_release(0);
+            }
+            let _ = rt.run(rt.cpu.steps + 12_000_000);
+            rt.write_ppm(&out.join(format!("rp_{i:02}_{sx}_{sy}.ppm"))).unwrap();
+            println!("rp {i} ({sx},{sy}) ring {ring} frame {fr}: files:");
+            for (_, p) in rt.opened_files.iter().skip(before) {
+                println!("    {p}");
+            }
+        }
+        println!("RESUMEPROBE done");
+        return;
+    }
     if std::env::var("MENUTREE").is_ok() {
         let g = 0x0e84u16;
         let cur_menu = |rt: &Runtime| rt.m.read8(g, 0x6772) as u16 | ((rt.m.read8(g, 0x6773) as u16) << 8);

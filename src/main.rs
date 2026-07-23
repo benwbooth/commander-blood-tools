@@ -1003,6 +1003,10 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         }
                     }
                 }
+                Event::ButtonPress(b) if engine.bridge_active && engine.option_box_active && b.detail == 1 => {
+                    // The OPTION choice box: CANCEL (its only hub item) closes it.
+                    engine.option_box_active = false;
+                }
                 Event::ButtonPress(b) if engine.bridge_active && engine.menu_submenu_active && b.detail == 1 => {
                     match engine.menu_submenu_click(mx, my) {
                         Some(0) => {
@@ -1060,11 +1064,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                             engine.cryobox_active = true;
                         }
                         Some(3) => engine.menu_submenu_active = true, // MENU -> submenu
-                        Some(4) => {
-                            engine.bridge.release_menu();
-                            engine.bridge_active = false;
-                            engine.option_active = true; // OPTION -> 3D pyramid menu
-                        }
+                        Some(4) => engine.option_box_active = true, // OPTION -> choice box (real)
                         _ => {}
                     }
                 }
@@ -1185,7 +1185,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                 1 => engine.phone_active = true,
                                 2 => engine.cryobox_active = true,
                                 3 => engine.menu_submenu_active = true, // {EXPLANATIONS, GAME}
-                                4 => engine.option_active = true,
+                                4 => engine.option_box_active = true,   // choice box (real)
                                 _ => {}
                             }
                         }

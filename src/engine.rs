@@ -360,6 +360,9 @@ pub struct EngineState {
     /// Whether the console MENU option's submenu ({EXPLANATIONS, GAME}) is showing — the
     /// game's main menu, decoded by driving the emulator (MENU opens this two-item submenu).
     pub menu_submenu_active: bool,
+    /// The OPTION choice box (over the panorama) is open — the REAL OPTION interaction
+    /// (savestate-verified); replaces the invented 3D-pyramid OPTION screen.
+    pub option_box_active: bool,
     /// The console OPTION 3D-pyramid menu (`manu3.xdb` overlay). Its 12-item dispatch
     /// structure is decoded statically from manu3.xdb (`[0x2306]` table) and its
     /// camera/rotation/tween/dispatch logic is the ported [`crate::manu3`]; it reuses the
@@ -555,6 +558,7 @@ impl EngineState {
             console_font: Vec::new(),
             bridge_active: false,
             menu_submenu_active: false,
+            option_box_active: false,
             option_active: false,
             option_angle: 0,
             option_item: 0,
@@ -1044,6 +1048,9 @@ impl EngineState {
     /// opens these two items): EXPLANATIONS (the tutorial/help) and GAME (play). Drawn over
     /// the top menu rows, matching the observed golden-menu overlay.
     pub const MENU_SUBMENU: [&'static str; 2] = ["EXPLANATIONS", "GAME"];
+    /// The OPTION choice box's items at the hub — REAL-GAME-VERIFIED (savestate resume-probe
+    /// rp_option: clicking OPTION opens the measured gold choice box containing CANCEL).
+    pub const OPTION_BOX: [&'static str; 1] = ["CANCEL"];
 
     /// Map a click to a MENU-submenu item (0 = EXPLANATIONS, 1 = GAME) when the
     /// submenu is showing. The submenu is a gold CHOICE BOX (the game's universal
@@ -1182,6 +1189,10 @@ impl EngineState {
         // the cursor sits over it, as the live game composites.
         if self.menu_submenu_active {
             let labels: Vec<String> = Self::MENU_SUBMENU.iter().map(|s| s.to_string()).collect();
+            self.draw_choice_box(&labels, None);
+        }
+        if self.option_box_active {
+            let labels: Vec<String> = Self::OPTION_BOX.iter().map(|s| s.to_string()).collect();
             self.draw_choice_box(&labels, None);
         }
         self.draw_hand_cursor();
