@@ -750,13 +750,15 @@ impl EngineState {
         self.intro_cues = Vec::new();
         self.intro_music = Vec::new();
         self.intro_pyramid = Vec::new();
-        for (name, cues, music) in order {
+        for (i, (name, cues, music)) in order.into_iter().enumerate() {
             let path = sq.join(&name);
             if path.exists() {
-                // REAL-GAME-VERIFIED (DOSBox-X capture of BLOODPRG with the game args,
-                // scratchpad realgame/game_95s..130s): the crew MONTAGE plays on the pyramid
-                // console + eye-orb band; the logo/ship reel (mind.hnm) plays full-screen.
-                let showcase = music.is_some() && !cues.is_empty();
+                // REAL-GAME-VERIFIED (DOSBox-X game_95s..130s; dlg_05..dlg_11; interpreter
+                // bd_226M..bd_290M): the credit cinematic / crew MONTAGE (clip 1) plays ON
+                // the pyramid-console + eye-orb band; the logo/ship reel (clip 0,
+                // mind.hnm) plays full-screen. Explicit per-clip — not inferred from
+                // music/cue presence.
+                let showcase = i == 1;
                 self.intro_hnms.push(path);
                 self.intro_cues.push(cues);
                 self.intro_music.push(music);
@@ -2381,10 +2383,11 @@ impl EngineState {
     /// advances one clip frame per stepped game frame, so a cue displays from `tick`
     /// frames in until the next cue supersedes it (calibratable against the oracle).
     const INTRO_CREDIT_FRAMES_PER_TICK: usize = 1;
-    /// Top row of the FIRST credit line. Real-game-measured (DOSBox-X captures game_95s/110s):
-    /// credit line 1 sits at row ~69 (line 2 at ~79) — over the viewscreen, above the console
-    /// band — for both one- and two-line credits.
-    const INTRO_CREDIT_BASELINE_Y: usize = 69;
+    /// Top row of the FIRST credit line. Native-resolution ground truth (dlg_05, a real
+    /// 320x200 capture of the credit beat): line 1 top y=82, line 2 y=92 (pitch 10),
+    /// centred on x=160, over the character video above the console band. (The earlier
+    /// ~69 figure came from scaled DOSBox window captures.)
+    const INTRO_CREDIT_BASELINE_Y: usize = 82;
     /// Top row of the LAST TV broadcast-cue line (the lower letterbox band).
     const TV_CUE_BASELINE_Y: usize = 178;
     /// Reserved palette index forced to white for the credit glyphs (mirrors the
@@ -3458,7 +3461,8 @@ impl EngineState {
             .map(|(i, l)| l.chars().count() + usize::from(i > 0))
             .sum();
         let fully = visible >= total;
-        let on_console = self.panorama.is_some() && self.scene_hnm.is_none();
+        let on_console =
+            self.panorama.is_some() && self.scene_hnm.is_none() && !self.console_band_dialogue;
         let pitch = if on_console { 10 } else { crate::font::GAME_FONT_LINE_HEIGHT };
         // CONSOLE-BAND PRESENTATION subtitles (the boot/tutorial screen: character
         // video atop the pyramid deck): WHITE (console-bank index 0xEF=239, one of the
@@ -3467,7 +3471,7 @@ impl EngineState {
         // 239-rows at y 110..117 / 118..125 with centred extents; dlg_05..dlg_11 the
         // same). The green top-left reveal belongs to the CONSOLE text mode; scene
         // close-ups keep their top-row draw (the OCR's third known layout).
-        if !on_console && self.console_band_dialogue {
+        if self.console_band_dialogue {
             use crate::font::game_font_advance;
             let mut shown = 0usize;
             let mut y = 110usize;
@@ -3600,23 +3604,12 @@ impl EngineState {
             self.scene_hnm = Some(hnm);
             self.scene_frame += 1;
             self.present_scene_buffer();
-        } else if self.panorama.is_some() {
-            // No talk-HNM (e.g. the on-ship console tutorial, HONK's food menu):
-            // the dialogue happens AT THE SHIP CONSOLE in the real game, so
-            // composite the real bridge panorama behind the subtitle text —
-            // and the TOPIC MENU when this dialogue offers one (the concept-menu
-            // conversation system, e.g. HONK's TALK/ONE..NINE).
-            self.render_bridge_background();
-            if !self.topic_menu.is_empty() {
-                let labels: Vec<String> =
-                    self.topic_menu.iter().map(|(l, _)| l.clone()).collect();
-                self.draw_list_menu(&labels, self.topic_selected);
-            }
-            self.scene_buffer.copy_from_slice(&self.framebuffer);
         } else if self.console_band_dialogue {
-            // No talk-HNM active on the tutorial console: the viewscreen shows STATIC
+            // PRESENTATION beat without a talk-HNM: the viewscreen shows STATIC
             // (interpreter ground truth, intro_215M — binary black/white noise in the
-            // console bank, rows 0..140), not black.
+            // console bank, rows 0..140), NOT the bridge panorama — the presentation
+            // screen replaces the hub view even though a panorama is loaded (the
+            // windowed driver keeps the bridge assets resident throughout).
             for p in self.framebuffer.iter_mut() {
                 *p = 0;
             }
@@ -3630,6 +3623,19 @@ impl EngineState {
                         if v & 1 == 0 { 224 } else { 239 };
                 }
             }
+        } else if self.panorama.is_some() {
+            // No talk-HNM (e.g. the on-ship console tutorial, HONK's food menu):
+            // the dialogue happens AT THE SHIP CONSOLE in the real game, so
+            // composite the real bridge panorama behind the subtitle text —
+            // and the TOPIC MENU when this dialogue offers one (the concept-menu
+            // conversation system, e.g. HONK's TALK/ONE..NINE).
+            self.render_bridge_background();
+            if !self.topic_menu.is_empty() {
+                let labels: Vec<String> =
+                    self.topic_menu.iter().map(|(l, _)| l.clone()).collect();
+                self.draw_list_menu(&labels, self.topic_selected);
+            }
+            self.scene_buffer.copy_from_slice(&self.framebuffer);
         } else {
             for p in self.framebuffer.iter_mut() {
                 *p = 0;

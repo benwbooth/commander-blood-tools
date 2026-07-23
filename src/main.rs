@@ -804,7 +804,8 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 | EventMask::BUTTON_PRESS
                 | EventMask::BUTTON_RELEASE
                 | EventMask::KEY_PRESS
-                | EventMask::STRUCTURE_NOTIFY,
+                | EventMask::STRUCTURE_NOTIFY
+                | EventMask::VISIBILITY_CHANGE,
         ),
     )?;
     conn.change_property8(
@@ -830,6 +831,11 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     // continuously warp the pointer back to the window centre, accumulating the relative
     // deltas into a VIRTUAL cursor that we draw ourselves and feed to the engine.
     let mut pointer_locked = false;
+    // FULLY-OBSCURED windows must not present through the FIFO swapchain: the
+    // compositor stops consuming frames, get_current_texture() blocks the whole
+    // event loop, and KWin kills the now-unresponsive client. Track X visibility
+    // and skip GPU presents while nothing of the window is visible.
+    let mut win_visible = true;
     let (mut vcx, mut vcy): (i32, i32) = (win_w as i32 / 2, win_h as i32 / 2);
     // Raw relative motion accumulated this frame while locked — fed to the engine as ring-space
     // deltas (the original's bridge steering tracks the mouse in the 1440-px ring, so rotation
@@ -1562,6 +1568,10 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 }
                 Event::ButtonRelease(b) if b.detail == 1 => buttons = 0,
                 // Window resized: track the new size and re-alloc the image buffer.
+                Event::VisibilityNotify(v) => {
+                    win_visible =
+                        v.state != x11rb::protocol::xproto::Visibility::FULLY_OBSCURED;
+                }
                 Event::ConfigureNotify(c) => {
                     if c.width > 0 && c.height > 0 && (c.width != win_w || c.height != win_h) {
                         win_w = c.width;
@@ -1584,7 +1594,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
         // per PIT-timed second in the interpreter) -> 46 ms per tick.
         let tick_due = last_tick.elapsed() >= Duration::from_millis(46);
         if !tick_due {
-            if let Some(g) = gpu.as_mut() {
+            if let (Some(g), true) = (gpu.as_mut(), win_visible) {
                 let alpha =
                     (last_tick.elapsed().as_secs_f32() / 0.046).clamp(0.0, 1.0);
                 engine.refresh_gpu_hand(mx, my, alpha);
@@ -1874,7 +1884,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
         }
         let _ = &chatter;
         let _ = &chatter_done_line;
-        if let Some(g) = gpu.as_mut() {
+        if let (Some(g), true) = (gpu.as_mut(), win_visible) {
             // GPU path: background quad + the exported hand triangles at window
             // resolution. Falls back to software on surface errors (e.g. lost swapchain).
             let tris: Vec<commander_blood_tools::gpu::HandTri> = engine
