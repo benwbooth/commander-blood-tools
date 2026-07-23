@@ -5478,6 +5478,26 @@ arrival did NOT fire even deep into SCRIPT2's dialogue era, so the arrival needs
 specific player action the blind driver misses (or the interception really is
 travel-gated and travel needs the nav flow); (c) the driver STALLS at round ~882
 ("That won't do any good") — it needs concept-menu-aware clicking to progress.
+WALK FIX LANDED (commit 4f43657) — FULL-STREAM DECOMPILE + THE ARRIVAL MECHANISM:
+SCRIPT2.bas 972->3636 lines, SCRIPT3 570->3647, walk reaches the final byte, the
+round-trip test holds over the FULL streams. Three faithful corrections (all from
+vm_token_advance 0x62B6): per-mode zero-length => zero-word-terminated; A9 (0x04,
+0xFF) switches to query mode in BOTH forms (the GOTO arm missed it = the 0x2F7F
+desync); OPCODE_DESC extended to the engine's full 0x60-entry reach (it reads the
+debug string beyond the 0x34 real entries as table data — load-bearing OOB, scripts
+use op 0xE4). RECOVERED: the entire forbidden-zone interception suite (SS==1..5
+SCRUT radio variants: HYDRAULIC JACK / TUNG STEN / STAINLESS STEEL CASING with
+countdowns + Honk color commentary), the lose menu, the briefing.
+THE ARRIVAL TRIGGER, END TO END (bytecode + file bytes): block @272F ships ENABLED
+(A9 flags byte 0x01 IN THE COD; POKE gates = self-modified A9 flag bytes) -> arms
+state[3]=10, state[4]=200 once at SCRIPT2 start, self-disables -> @2744 (also
+enabled) GUARDs state[3]==0 -> C3 queues Scruter_K.talk rec 0x6FC and POKEs
+[0x2759]=1, enabling the @275C AWAIT-presentation arrival block (shipped DISABLED,
+flags 0x00). The SS randomizer (@2763.. empty SAYs with skip) picks the radio
+variant. state[] countdowns tick on presentation BEATS, not wall time — the idle
+hub never fires it; ~10 beats after SCRIPT2 entry the interception queues.
+PORT WORK UNLOCKED: implement OP_C3 (queue-presentation) + the beat-driven state[]
+countdown in the port VM — the full bytecode is now visible to it.
 NEXT TASKS (frontier):
 - [ ] vm::walk coverage — DIAGNOSED PRECISELY: SCRIPT2.bas ends at 0x2F83 of a
       0x9882-byte COD (31% coverage; tail 84% nonzero real content; the very next
