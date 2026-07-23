@@ -437,6 +437,10 @@ pub struct EngineState {
     /// Per-line resolved talk-HNM asset path (the speaker's animation for each
     /// dialogue line), loaded automatically as playback advances.
     dialogue_scene_paths: Vec<Option<std::path::PathBuf>>,
+    /// Per-line render style: true = character SPEECH (green bold reveal, the 0x3630
+    /// renderer); false = static TEXT (white thin proportional, the 0x31C8 renderer —
+    /// the MENU's "Today's fare:" style). ORACLE-verified: both live on the console.
+    dialogue_is_speech: Vec<bool>,
     /// Per-line resolved speaker voice bank (`sn/<name>.snd`), parallel to
     /// [`EngineState::dialogue`].
     dialogue_voice_banks: Vec<Option<std::path::PathBuf>>,
@@ -565,6 +569,7 @@ impl EngineState {
             phone_active: false,
             dialogue: Vec::new(),
             dialogue_texts: Vec::new(),
+            dialogue_is_speech: Vec::new(),
             dialogue_cursor: 0,
             intro_pyramid: Vec::new(),
             console_band_dialogue: false,
@@ -1573,6 +1578,12 @@ impl EngineState {
         self.autoplay_end = end;
     }
 
+    /// Per-line render styles (parallel to the queued lines): true = character speech
+    /// (green bold reveal), false = static text (white thin — menu/list content).
+    pub fn set_dialogue_styles(&mut self, styles: Vec<bool>) {
+        self.dialogue_is_speech = styles;
+    }
+
     /// Record the dialogue's function-segment start lines so a topic click plays only that one
     /// segment (not everything up to the next topic). Does NOT change the play position — unlike
     /// [`Self::set_dialogue_segments`], which also arms sequential beat-play.
@@ -2424,6 +2435,7 @@ impl EngineState {
             .map(|offset| LineState { offset, actor_offset: None, location_offset: None })
             .collect();
         self.dialogue_texts = lines.iter().map(|(t, _)| t.clone()).collect();
+        self.dialogue_is_speech = vec![true; self.dialogue_texts.len()];
         self.dialogue_scene_paths = lines.into_iter().map(|(_, p)| p).collect();
         self.dialogue_cursor = 0;
         self.dialogue_timer = 0;
@@ -3196,6 +3208,38 @@ impl EngineState {
     /// the newest one in the reveal-edge colour (0xFE) — the game's per-character
     /// reveal. Non-visible characters aren't drawn yet.
     fn draw_subtitle_revealed(&mut self, text: &str, visible: usize) {
+        // Static TEXT lines (menu/list content — dialogue_is_speech false) use the THIN
+        // proportional renderer in WHITE at the same origin, fully shown (no reveal):
+        // ORACLE frame click_02: "Today's fare:" white lowercase thin, vs "WELCOME
+        // ABOARD" green caps bold for speech.
+        if !self
+            .dialogue_is_speech
+            .get(self.dialogue_cursor)
+            .copied()
+            .unwrap_or(true)
+        {
+            use crate::font::game_font_advance;
+            self.scene_palette[0xF9] = [255, 255, 255];
+            let mut y = 8usize;
+            for line in text.split('\n') {
+                let mut x = 10usize;
+                for ch in line.chars() {
+                    let mut buf = [0u8; 4];
+                    draw_text_indexed(
+                        &mut self.framebuffer,
+                        ENGINE_SCREEN_WIDTH,
+                        ENGINE_SCREEN_HEIGHT,
+                        ch.encode_utf8(&mut buf),
+                        x,
+                        y,
+                        0xF9,
+                    );
+                    x += game_font_advance(ch);
+                }
+                y += crate::font::GAME_FONT_LINE_HEIGHT;
+            }
+            return;
+        }
         // The REAL subtitle renderer (BLOODPRG @0x3630): the fixed-width 8x8 console font
         // (tables DS:0x70FA/0x71AA = BoldConsoleFont) drawn in the game palette's GREEN family —
         // settled text 0xFD (dark green), the newest revealed char 0xFE (mid green), and the

@@ -451,16 +451,26 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     let script_vm: std::cell::RefCell<Option<commander_blood_tools::vm::VmMachine>> =
         std::cell::RefCell::new(None);
     let vm_lines: std::cell::RefCell<
-        std::collections::HashMap<usize, (String, Option<std::path::PathBuf>)>,
+        std::collections::HashMap<usize, (String, Option<std::path::PathBuf>, bool)>,
     > = std::cell::RefCell::new(std::collections::HashMap::new());
     // Concept word -> DIC offset (A3 operands are DIC word offsets).
     let dic_word_offset: std::cell::RefCell<std::collections::HashMap<String, u16>> =
         std::cell::RefCell::new(std::collections::HashMap::new());
+    // Install a VM-emitted line set (text+scene+style) into the engine.
+    let set_vm_dialogue = |engine: &mut EngineState,
+                           lines: Vec<(String, Option<std::path::PathBuf>, bool)>| {
+        let styles: Vec<bool> = lines.iter().map(|(_, _, sp)| *sp).collect();
+        engine.set_speech_dialogue(lines.into_iter().map(|(t, p, _)| (t, p)).collect());
+        engine.set_dialogue_styles(styles);
+    };
     // Collect a VM frame's output: dialogue lines (mapped through vm_lines) and
     // any D2 profile handoff.
     let vm_collect = |m: &mut commander_blood_tools::vm::VmMachine,
-                      map: &std::collections::HashMap<usize, (String, Option<std::path::PathBuf>)>|
-     -> (Vec<(String, Option<std::path::PathBuf>)>, Option<i16>) {
+                      map: &std::collections::HashMap<
+        usize,
+        (String, Option<std::path::PathBuf>, bool),
+    >|
+     -> (Vec<(String, Option<std::path::PathBuf>, bool)>, Option<i16>) {
         let mut lines = Vec::new();
         let mut profile = None;
         // A8 LOADSTR drives the scene backdrop for the FOLLOWING lines (decoded from
@@ -471,10 +481,11 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
         for ev in m.run_frame() {
             match ev {
                 commander_blood_tools::vm::VmEvent::Text { offset } => {
-                    if let Some((text, scene)) = map.get(&offset) {
+                    if let Some((text, scene, speech)) = map.get(&offset) {
                         lines.push((
                             text.clone(),
                             scene_override.clone().or_else(|| scene.clone()),
+                            *speech,
                         ));
                     }
                 }
@@ -551,13 +562,16 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                             .background_hnm
                             .as_ref()
                             .and_then(|h| resolve_scene_hnm(assets, h));
-                        map.insert(e.offset, (e.text.clone(), scene));
+                        // Character speech (actor resolves) = green bold reveal; plain
+                        // script text (the MENU lists) = white thin static (oracle-verified).
+                        let speech = e.actor_record.is_some();
+                        map.insert(e.offset, (e.text.clone(), scene, speech));
                     }
                     let mut m = commander_blood_tools::vm::VmMachine::new();
                     m.load_cod(&cod);
                     m.load_var(&var);
                     m.start_actor_presentation(1428, 40);
-                    let lines: Vec<(String, Option<std::path::PathBuf>)> = m
+                    let lines: Vec<(String, Option<std::path::PathBuf>, bool)> = m
                         .run_frame()
                         .into_iter()
                         .filter_map(|ev| match ev {
@@ -568,7 +582,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         })
                         .collect();
                     if !lines.is_empty() {
-                        engine.set_speech_dialogue(lines);
+                        set_vm_dialogue(engine, lines);
                     }
                     engine.set_topic_menu(Vec::new());
                     *script_vm.borrow_mut() = Some(m);
@@ -675,7 +689,8 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                             .background_hnm
                             .as_ref()
                             .and_then(|h| resolve_scene_hnm(assets, h));
-                        map.insert(e.offset, (e.text.clone(), scene));
+                        let speech = e.actor_record.is_some();
+                        map.insert(e.offset, (e.text.clone(), scene, speech));
                     }
                 }
                 let mut m = commander_blood_tools::vm::VmMachine::new();
@@ -701,7 +716,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 m.satisfy_opening_location_guards();
                 let (lines, _profile) = vm_collect(&mut m, &map);
                 if !lines.is_empty() {
-                    engine.set_speech_dialogue(lines);
+                    set_vm_dialogue(engine, lines);
                     if let Ok(dic_raw) = std::fs::read(format!("{iso}/SCRIPT{n}.DIC")) {
                         let dict = commander_blood_tools::script::parse_dictionary(&dic_raw);
                         *dic_word_offset.borrow_mut() = dict
@@ -941,8 +956,11 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     if let Some(w) = word {
                         let off = dic_word_offset.borrow().get(w).copied();
                         if let Some(off) = off {
-                            let mut new_lines: Vec<(String, Option<std::path::PathBuf>)> =
-                                Vec::new();
+                            let mut new_lines: Vec<(
+                                String,
+                                Option<std::path::PathBuf>,
+                                bool,
+                            )> = Vec::new();
                             let mut profile: Option<i16> = None;
                             if let Some(m) = script_vm.borrow_mut().as_mut() {
                                 m.concept = off;
@@ -974,7 +992,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                 current_script.set(0);
                                 load_script(&mut engine, &mut music, next);
                             } else if !new_lines.is_empty() {
-                                engine.set_speech_dialogue(new_lines);
+                                set_vm_dialogue(&mut engine, new_lines);
                             }
                         }
                     }
@@ -1119,8 +1137,11 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     if script_vm.borrow().is_some() {
                         if let Some(row) = engine.console_menu_click(mx, my) {
                             vm_handled = true;
-                            let mut new_lines: Vec<(String, Option<std::path::PathBuf>)> =
-                                Vec::new();
+                            let mut new_lines: Vec<(
+                                String,
+                                Option<std::path::PathBuf>,
+                                bool,
+                            )> = Vec::new();
                             {
                                 let mut vm = script_vm.borrow_mut();
                                 let m = vm.as_mut().unwrap();
@@ -1148,7 +1169,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                 }
                             }
                             if !new_lines.is_empty() {
-                                engine.set_speech_dialogue(new_lines);
+                                set_vm_dialogue(&mut engine, new_lines);
                             }
                             match row {
                                 1 => engine.phone_active = true,
@@ -1191,7 +1212,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                     engine.progress.visit(&format!("SCRIPT{next}"));
                                     load_script(&mut engine, &mut music, next);
                                 } else if !new_lines.is_empty() {
-                                    engine.set_speech_dialogue(new_lines);
+                                    set_vm_dialogue(&mut engine, new_lines);
                                 }
                             }
                         }
@@ -1390,7 +1411,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
         // profile handoff may fire (the tutorial->SCRIPT2 chain), or nothing happens
         // (the console idles awaiting a click, exactly as the game does).
         if !engine.on_ship && !engine.intro_active() && engine.dialogue_finished() {
-            let mut new_lines: Vec<(String, Option<std::path::PathBuf>)> = Vec::new();
+            let mut new_lines: Vec<(String, Option<std::path::PathBuf>, bool)> = Vec::new();
             let mut profile: Option<i16> = None;
             if let Some(m) = script_vm.borrow_mut().as_mut() {
                 let map = vm_lines.borrow();
@@ -1420,7 +1441,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 current_script.set(0);
                 load_script(&mut engine, &mut music, next);
             } else if !new_lines.is_empty() {
-                engine.set_speech_dialogue(new_lines);
+                set_vm_dialogue(&mut engine, new_lines);
             }
         }
         // Playable loop: a nav-view click commits a destination → load its dialogue and
