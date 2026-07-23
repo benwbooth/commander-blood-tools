@@ -2382,8 +2382,13 @@ fn main() {
         // scanning memory for the file's head bytes, then dump the relocated DATA segment
         // (init-filled: real face/vertex tables) for offline mesh extraction.
         rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
-        // Let several frames render so the per-frame vertex/face work buffers are filled.
-        let _ = rt.run(rt.cpu.steps + 3_000_000);
+        // Replicate the probe conditions that visibly render the hand: set a ring-space
+        // mouse position and run enough frames (the hand draw follows mouse activity).
+        let gseg = 0x0e84u16;
+        let fr = rt.m.read8(gseg, 0x2795) as u16 | ((rt.m.read8(gseg, 0x2796) as u16) << 8);
+        let ring = (230i32 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+        rt.set_mouse_pos(ring, 103);
+        let _ = rt.run(rt.cpu.steps + 12_000_000);
         let head = std::fs::read("output/_tmp_dat/manu3.xdb").unwrap();
         let sig = &head[0..16];
         let mut found = None;
