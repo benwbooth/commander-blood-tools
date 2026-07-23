@@ -51,6 +51,18 @@ evidence in the row. Re-audit pass 1: 2026-07-22..23.
 | progress.rs / entity.rs | progression FSM | DATA(partial) | entity records decoded; the REAL ending trigger is SCRIPT5's Bigbang-concert block (GUARD rec_103A==Bigbang && rec_1340==concert && active_actor==Migrator.talk → lpm*sc1 reels → LOADSTR fin.hnm — now wired via the VM LoadString path); all-visited remains only as a driver fallback |
 | recomp/* | interpreter runtime | oracle | separate: runs the real EXE for cross-checks |
 
+## DUAL-RUN DIFFERENTIAL HARNESS (the verification capability)
+The port and the REAL game execute the SAME interaction scenario side-by-side:
+- oracle side: runtime_boot VERIFYSCRIPT=<scenario.tsv> (resume hub, per-line actions
+  move/click/key/wait with ring-corrected coords, settled frame per step -> boot_frames/vs_*)
+- port side: verify_port <scenario.tsv> (same actions vs EngineState -> boot_frames/vp_*)
+- scoring: tools/verify_compare.py -> accuracy/comparisons/verify/{scorecard.tsv, sheet.png}
+Scenarios are TSVs under accuracy/scenarios/ — every new screen/interaction gets one; every
+divergence is a scored, visually-reproducible work item. FIRST RESULT (hub_tour): initial
+28.03 mean / 43.6% close exposed (a) the port harness steering while the oracle hub is
+script-locked and (b) the missing live CANCEL overlay; after fixes: 2.22 mean / 95.6% close
+across all 9 steps.
+
 ## CAMPAIGN LOG
 - PASS 1 (2026-07-23): timebase 21.6fps (FRAMERATE probe) fixed; GPU hand visibility = sorted
   painter (the game's rule); BOOT PRESENTER bug caught by the introseq differential — the port

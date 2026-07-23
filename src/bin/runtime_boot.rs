@@ -2885,6 +2885,63 @@ fn main() {
         println!("REVEALDUMP done");
         return;
     }
+    if let Ok(scenario) = std::env::var("VERIFYSCRIPT") {
+        // DUAL-RUN DIFFERENTIAL, oracle side: execute a scenario file against the
+        // REAL game (resume the hub state, then per line: an action + settle), and
+        // write one settled frame (PPM + raw indices) per step into boot_frames/vs_*.
+        // The port runs the same scenario via `verify_port`; tools/verify_compare.py
+        // scores every step. Scenario line format (TSV):
+        //   move <x> <y> | click <x> <y> | key <scancode> | wait <frames>
+        // Coordinates are SCREEN coords; the ring correction is applied here.
+        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        let g = 0x0e84u16;
+        let frame = |rt: &Runtime| {
+            rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8)
+        };
+        let text = std::fs::read_to_string(&scenario).expect("scenario file");
+        let settle = 1_500_000u64;
+        let mut step = 0usize;
+        for line in text.lines() {
+            let toks: Vec<&str> = line.split_whitespace().collect();
+            if toks.is_empty() || toks[0].starts_with('#') {
+                continue;
+            }
+            match toks[0] {
+                "move" => {
+                    let (sx, sy): (i32, u16) = (toks[1].parse().unwrap(), toks[2].parse().unwrap());
+                    let ring = (sx + frame(&rt) as i32 * 8 - 160).rem_euclid(1440) as u16;
+                    rt.set_mouse_pos(ring, sy);
+                }
+                "click" => {
+                    let (sx, sy): (i32, u16) = (toks[1].parse().unwrap(), toks[2].parse().unwrap());
+                    let ring = (sx + frame(&rt) as i32 * 8 - 160).rem_euclid(1440) as u16;
+                    rt.set_mouse_pos(ring, sy);
+                    let _ = rt.run(rt.cpu.steps + 400_000);
+                    rt.mouse_press(0);
+                    let _ = rt.run(rt.cpu.steps + 300_000);
+                    rt.mouse_release(0);
+                }
+                "key" => {
+                    let sc: u8 = toks[1].parse().unwrap();
+                    rt.inject_key(sc, 0);
+                    let _ = rt.run(rt.cpu.steps + 200_000);
+                    rt.inject_key(sc | 0x80, 0);
+                }
+                "wait" => {
+                    let frames: u64 = toks[1].parse().unwrap();
+                    let _ = rt.run(rt.cpu.steps + frames * 1_850_000);
+                }
+                _ => {}
+            }
+            let _ = rt.run(rt.cpu.steps + settle);
+            rt.write_ppm(&out.join(format!("vs_{step:03}.ppm"))).unwrap();
+            std::fs::write(out.join(format!("vs_{step:03}.idx")), rt.screen_indices()).unwrap();
+            step += 1;
+        }
+        std::fs::write(out.join("vs_dac.bin"), rt.dac).unwrap();
+        println!("VERIFYSCRIPT done: {step} steps");
+        return;
+    }
     if std::env::var("FRAMERATE").is_ok() {
         // Measure the REAL main-loop frame rate: count subtitle-pump gate reads /
         // frame-counter increments per emulated second at the hub. The frame counter

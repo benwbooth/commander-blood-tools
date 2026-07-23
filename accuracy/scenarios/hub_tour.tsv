@@ -1,0 +1,10 @@
+# The hub tour: idle, hover each console row, hover the orb, click the orb.
+move 160 100
+move 230 88
+move 230 103
+move 230 118
+move 230 133
+move 230 148
+move 125 118
+click 125 118
+wait 30

@@ -1260,6 +1260,10 @@ impl EngineState {
             if !is_baked_menu {
                 let labels = self.console_box.clone();
                 self.draw_choice_box(&labels, None);
+            } else {
+                // The live CANCEL label over the hub presentation (oracle: gray
+                // 0xE8 console text at (73,95); the abort control's caption).
+                self.draw_console_text("CANCEL", 73, 95, 0xE8);
             }
         }
         self.draw_hand_cursor();
