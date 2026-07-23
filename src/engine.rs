@@ -383,6 +383,9 @@ pub struct EngineState {
     /// Fast-refresh mode: recompute the GPU hand for a new cursor WITHOUT advancing
     /// pose tweens (the presenter runs at display refresh; tweens tick at game rate).
     hand_fast_refresh: bool,
+    /// Whether the LAST game tick's screen drew the hand — the display-rate refresh
+    /// must never draw a hand on screens that don't (title/intro/TV/films...).
+    hand_on_screen: bool,
     pub console_box_kind: usize,
     /// The console OPTION 3D-pyramid menu (`manu3.xdb` overlay). Its 12-item dispatch
     /// structure is decoded statically from manu3.xdb (`[0x2306]` table) and its
@@ -597,6 +600,7 @@ impl EngineState {
             gpu_stars: None,
             gpu_bg_colorkey: false,
             hand_fast_refresh: false,
+            hand_on_screen: false,
             console_box_kind: 0,
             option_active: false,
             option_angle: 0,
@@ -1322,6 +1326,7 @@ impl EngineState {
     /// blocks never touch >127) and the sprite blits remapped. No-op without an
     /// atlas.
     fn draw_hand_at_mouse(&mut self) {
+        self.hand_on_screen = true;
         let (cx, cy) = (self.mouse.x as i32, self.mouse.y as i32);
         // THE REAL 3D HAND: manu3's skeletal mesh (16 live segments, 110+32 verts,
         // 216 textured faces) rendered with the transcribed matrix build (game trig
@@ -1414,7 +1419,7 @@ impl EngineState {
     /// Recompute the GPU hand for the current cursor at DISPLAY refresh rate —
     /// geometry follows the mouse every present; pose tweens stay at game rate.
     pub fn refresh_gpu_hand(&mut self, mx: u16, my: u16) {
-        if !self.gpu_hand_enabled {
+        if !self.gpu_hand_enabled || !self.hand_on_screen {
             return;
         }
         self.mouse.x = mx;
@@ -3626,6 +3631,7 @@ impl EngineState {
         // black pixels of other screens).
         self.gpu_stars = None;
         self.gpu_bg_colorkey = false;
+        self.hand_on_screen = false;
         // Title art (BLOOD.LBM) shows first when armed, until dismissed.
         if self.title_screen.is_some() {
             self.render_title();

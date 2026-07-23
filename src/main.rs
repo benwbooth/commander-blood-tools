@@ -1538,6 +1538,9 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     engine.gpu_hand_enabled = false;
                 }
             }
+            // Flush queued X requests (pointer warps, the Right-Shift unlock's
+            // ungrab/cursor restore) — the fast path otherwise never sends them.
+            conn.flush()?;
             std::thread::sleep(Duration::from_millis(8));
             continue;
         }
