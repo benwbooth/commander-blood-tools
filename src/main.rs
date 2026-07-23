@@ -1024,6 +1024,26 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         _ => {}
                     }
                 }
+                // On a visited world-location screen, clicking the world's ENTITY
+                // (the decoded .ext object marker — the location's inhabitant)
+                // engages that location's dialogue: walk up and talk. The heading
+                // that picked the world picks the same destination script.
+                Event::ButtonPress(b)
+                    if engine.world_location_active() && b.detail == 1 =>
+                {
+                    if engine.world_object_click(mx, my).is_some() {
+                        let heading = engine.compass_angle;
+                        let dest = (heading as u32 * 3 / 180).clamp(0, 2) + 3;
+                        engine.leave_world();
+                        engine.progress.visit(&format!("SCRIPT{dest}"));
+                        load_script(&mut engine, &mut music, dest);
+                        engine.on_ship = false;
+                    } else {
+                        // Elsewhere on the ground: step to the next room (movement
+                        // along the world's node paths — the .ext payload's walks).
+                        engine.cycle_world_room(1);
+                    }
+                }
                 // On the TV screen, left/right buttons change channel (must precede the
                 // generic nav-button handlers below).
                 Event::ButtonPress(b) if engine.tv_active && (b.detail == 1 || b.detail == 3) => {

@@ -2682,6 +2682,16 @@ impl EngineState {
         visit.objects.len()
     }
 
+    /// Hit-test a click against the visited world's decoded `.ext` OBJECT markers
+    /// (the world's entities, e.g. the initial id=1/type=4 inhabitant at its
+    /// world-specific position). Returns the object index within ~14px.
+    pub fn world_object_click(&self, x: u16, y: u16) -> Option<usize> {
+        let visit = self.world_location.as_ref()?;
+        visit.objects.iter().position(|&(ox, oy)| {
+            (ox as i32 - x as i32).abs() <= 14 && (oy as i32 - y as i32).abs() <= 14
+        })
+    }
+
     /// Cycle to another room of the currently-visited world (`delta` = +1/-1), decoding
     /// its background. No-op if no world is being visited.
     pub fn cycle_world_room(&mut self, delta: i32) {
