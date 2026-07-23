@@ -2381,6 +2381,11 @@ fn main() {
         // Dump the LIVE ui-region table (32 x 32B descending from ds:0x65F2) at the hub.
         rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
         let g = 0x0e84u16;
+        if std::env::var("UNPIN").is_ok() {
+            let v = rt.m.read8(g, 0x2793);
+            rt.m.write8(g, 0x2793, v & !4);
+            let _ = rt.run(rt.cpu.steps + 8_000_000);
+        }
         for rid in (0..=0x1Fu32).rev() {
             let base = 0x65F2 - (0x1F - rid) * 0x20;
             let flag = rt.m.read8(g, base);
