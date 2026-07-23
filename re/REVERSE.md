@@ -5446,6 +5446,21 @@ FURTHER NARROWING (poke experiments, new poke/pokel/VERIFYSTATE scenario tooling
   does NOT start the presentation: consumer 0x5C64 sits in a teardown tail (falls in
   from 0x5BF0 after lcall 0xA9A:0x73D) that neither hub CANCEL nor center clicks
   reach. Its true entry (a jump from where?) is the missing link.
+BREAKTHROUGH (TUTORIAL4 rerun, round 1165+): the auto-driver reached DEEPER than the
+old hub state — a fresh accuracy/milestone_script2.state now sits at BOB'S MISSION
+BRIEFING: giant-eye close-up, "You will need to win strange creatures to your
+cause...", topic menu {BYE_BYE, BLACK_HOLE, BIG_BANG, BOB_MORLOCK, KANARY, MISSION,
+CORPO, GOOD_OL_BOB} (frame banked: accuracy/captures/mission_briefing_eye.ppm,
+untracked). The transition-era file loads include SCRUTER.SPR + BAPPEL.SPR + frigo.fd
+alongside script2.* — the arrival presentation PREPARES right at the profile switch.
+Resume THIS state (VERIFYSTATE=accuracy/milestone_script2.state) and drive the
+BLACK_HOLE/MISSION topics to continue the story naturally. (Note: the executed
+TUTORIAL4 copy lives under the BRIDGEPROBE gate and lacks the reached2/TUTORIAL_HOLD
+logic — the milestone re-fired every round; invocation = BRIDGEPROBE=1 TUTORIAL4=1.)
+KNOWN-STALE TEST (pre-existing, confirmed at dbe66d3): oracle_suite's
+engine-console-render fails vs the Jul-21 console_rest.ppm reference (mean 5.1 vs
+1.0) — the console-row-surface fix changed rendering; the reference needs a fresh
+BRIDGEPROBE regeneration + re-verification, NOT a threshold bump.
 NEXT TASKS (frontier):
 - [ ] Find what jumps into the 0x5BF0/0x5C26 teardown (xref segment-level; or exec
       trace during the TUTORIAL Izwalito queue, where the C3->C4 chain provably runs)
