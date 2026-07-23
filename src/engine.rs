@@ -1363,16 +1363,12 @@ impl EngineState {
                 }
             }
         }
-        // The engaged CRYOBOX row RE-LABELS to red "CONTACT" (oracle vs_003, the
-        // cryobox_enter dual-run): the baked CRYOBOX glyphs vanish (their dedicated
-        // DAC entry drops to the window gold) and CONTACT draws in pure red.
-        if self.bridge.engaged_row == Some(2) {
-            let g = crate::bridge::MENU_ROW_IDLE_DAC;
-            self.scene_palette[crate::bridge::MENU_ROW_DAC_BASE + 2] =
-                [g[0] << 2 | g[0] >> 4, g[1] << 2 | g[1] >> 4, g[2] << 2 | g[2] >> 4];
-            self.scene_palette[0xED] = [255, 0, 0];
-            self.draw_console_text("CONTACT", 202, 115, 0xED);
-        }
+        // NOTE: an earlier capture reading claimed the engaged CRYOBOX row
+        // re-labels to "CONTACT" — REFUTED by the assembly and the data: no such
+        // label exists anywhere in the game files, and the engaged-row code
+        // (console_menu_hit_test 0x8613) does a pure DAC swap of the BAKED label.
+        // The red text in the capture was the baked CRYOBOX glyphs in red,
+        // misread at capture scale. The DAC model (apply_menu_palette) stands.
         if self.save_ui_active {
             // The SAVE-SLOT UI, oracle-measured (vs_011, the live save flow): a grey
             // name bar (index 0xE8) at x63..137, y39..48; the typed name in WHITE

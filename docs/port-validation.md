@@ -87,7 +87,7 @@ re-derived from the code that produces them. Each row names the RE task.
 | BOB_TOPICS label list | engine.rs BOB_TOPICS const | RESOLVED: Bob's topics now come from his prompt line's 0xFFFF-carried menu words (vm_collect out.2 -> engine.bob_topics; render + hit-test use the live list); the captured list remains only as the no-VM fallback |
 | console-row -> actor-record map (HONK 2220 / BOB 132) | main.rs row dispatch | the click-dispatch code: which record each console row's hit-test starts (station-record / 0x5816 dispatch) — verify the operands are read from the decoded tables, not assumed |
 | completion-hold bright-green timing | engine.rs draw_subtitle_revealed | ASM-CONFIRMED: the hold timers ([0xB31]=[0xACA]>>2 per char, [0xB35]=[0xACA]<<2 end-hold, [0x67BB] flag) read directly at 0x9480..0x94E0; the menu words then reveal word-at-a-time (0x7358 +2 stepping) |
-| CONTACT re-label / red engaged row | engine.rs, bridge.rs | the engaged-row DAC is ASM (0x8613); the CONTACT text substitution needs its source routine |
+| CONTACT re-label / red engaged row | engine.rs, bridge.rs | RESOLVED AS A CAPTURE MISREAD: no CONTACT label exists in any game file, and 0x8613's engaged path is a pure DAC swap of the baked label — the red capture text was CRYOBOX in red. The re-label overdraw is REMOVED; the ASM DAC model stands |
 
 NOTE: capture-measured constants may stand in TEMPORARILY only while their row here
 is APPROX and names the routine to decode. They are not evidence of correctness.
