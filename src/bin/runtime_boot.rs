@@ -499,6 +499,87 @@ fn main() {
             return;
         }
 
+        if std::env::var("REVEALTRACE").is_ok() {
+            // Sample DURING tutorial progress: alternate a single advance-click with
+            // dense 100k-step sampling windows, so line reveals land inside sampling.
+            let mut last = (0usize, 0usize, 0usize);
+            for round in 0..1400usize {
+                if round % 120 == 60 {
+                    // one advance click at the orb region (ring-corrected)
+                    let fr = rt.m.read8(g, 0x2795) as u16
+                        | ((rt.m.read8(g, 0x2796) as u16) << 8);
+                    let ring = ((125i32 + fr as i32 * 8 - 160).rem_euclid(1440)) as u16;
+                    rt.set_mouse_pos(ring, 118);
+                    let _ = rt.run(rt.cpu.steps + 200_000);
+                    rt.mouse_press(0);
+                    let _ = rt.run(rt.cpu.steps + 200_000);
+                    rt.mouse_release(0);
+                }
+                let _ = rt.run(rt.cpu.steps + 100_000);
+                let idx = rt.screen_indices();
+                let mut revealing = 0usize;
+                let mut settled = 0usize;
+                let mut other_text = 0usize;
+                for y in 0..30usize {
+                    for x in 0..320usize {
+                        match idx[y * 320 + x] {
+                            0xFD..=0xFF => revealing += 1,
+                            0xE0 => settled += 1,
+                            0xEE | 0xEF => other_text += 1,
+                            _ => {}
+                        }
+                    }
+                }
+                if (revealing, settled, other_text) != last {
+                    println!(
+                        "round {round:5} steps {:>12}: revealing {revealing:5} settled {settled:5} other {other_text:4}",
+                        rt.cpu.steps
+                    );
+                    last = (revealing, settled, other_text);
+                }
+            }
+            println!("REVEALTRACE done");
+            return;
+        }
+        if std::env::var("REVEALTRACE_OLD").is_ok() {
+            // SUBTITLE-CADENCE ground truth: boot to the tutorial and log, every
+            // 100k steps, the subtitle band's pixel classes — revealing glyphs
+            // (indices 0xFD..0xFF, the green console font) vs settled text (0xE0)
+            // — plus the audio-chatter write count. The log yields the reveal
+            // rate (chars/frame), the reveal->settle transition, and the honk
+            // cadence, all measured from the real game.
+            let mut last = (0usize, 0usize);
+            let mut printed = 0usize;
+            for round in 0..6000usize {
+                let _ = rt.run(rt.cpu.steps + 100_000);
+                let idx = rt.screen_indices();
+                let mut revealing = 0usize;
+                let mut settled = 0usize;
+                for y in 0..30usize {
+                    for x in 0..320usize {
+                        match idx[y * 320 + x] {
+                            0xFD..=0xFF => revealing += 1,
+                            0xE0 => settled += 1,
+                            _ => {}
+                        }
+                    }
+                }
+                if (revealing, settled) != last {
+                    println!(
+                        "round {round:5} steps {:>12}: revealing {revealing:5} settled {settled:5}",
+                        rt.cpu.steps
+                    );
+                    last = (revealing, settled);
+                    printed += 1;
+                    if printed > 400 {
+                        break;
+                    }
+                }
+            }
+            println!("REVEALTRACE done");
+            return;
+        }
+
         // TUTORIAL4: screen-OCR instruction follower. The game's subtitle glyphs
         // write reserved indices >= 0xFD; OCR the top rows of screen_indices()
         // against the game's own font bitmaps to read the live line, then click
@@ -957,6 +1038,45 @@ fn main() {
                 }
             }
             println!("TEXTBAND done");
+            return;
+        }
+
+        if std::env::var("REVEALTRACE").is_ok() {
+            // SUBTITLE-CADENCE ground truth: boot to the tutorial and log, every
+            // 100k steps, the subtitle band's pixel classes — revealing glyphs
+            // (indices 0xFD..0xFF, the green console font) vs settled text (0xE0)
+            // — plus the audio-chatter write count. The log yields the reveal
+            // rate (chars/frame), the reveal->settle transition, and the honk
+            // cadence, all measured from the real game.
+            let mut last = (0usize, 0usize);
+            let mut printed = 0usize;
+            for round in 0..6000usize {
+                let _ = rt.run(rt.cpu.steps + 100_000);
+                let idx = rt.screen_indices();
+                let mut revealing = 0usize;
+                let mut settled = 0usize;
+                for y in 0..30usize {
+                    for x in 0..320usize {
+                        match idx[y * 320 + x] {
+                            0xFD..=0xFF => revealing += 1,
+                            0xE0 => settled += 1,
+                            _ => {}
+                        }
+                    }
+                }
+                if (revealing, settled) != last {
+                    println!(
+                        "round {round:5} steps {:>12}: revealing {revealing:5} settled {settled:5}",
+                        rt.cpu.steps
+                    );
+                    last = (revealing, settled);
+                    printed += 1;
+                    if printed > 400 {
+                        break;
+                    }
+                }
+            }
+            println!("REVEALTRACE done");
             return;
         }
 
@@ -2719,20 +2839,82 @@ fn main() {
         // Subtitle-reveal cadence ground truth: resume the conversation state and dump
         // one screen per interpreter frame while a line reveals — per-frame PPMs +
         // raw indices let the port match reveal rate, glyph colors, and settle style.
-        rt.load_state(std::path::Path::new("accuracy/conv_partial.state")).unwrap();
+        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
         let g = 0x0e84u16;
         let frame = |rt: &Runtime| {
             rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8)
         };
         let _ = frame;
-        // Click the orb region to advance a line, then capture densely.
-        for i in 0..90 {
-            let _ = rt.run(rt.cpu.steps + 400_000);
+        // Click the orb (ring-corrected x; the hub presentation's click-to-advance
+        // region) to start the next line, then capture one shot per ~frame.
+        let fr = rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
+        let ring = (125i32 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+        rt.set_mouse_pos(ring, 118);
+        let _ = rt.run(rt.cpu.steps + 500_000);
+        rt.mouse_press(0);
+        let _ = rt.run(rt.cpu.steps + 300_000);
+        rt.mouse_release(0);
+        for i in 0..160 {
+            let _ = rt.run(rt.cpu.steps + 300_000);
             rt.write_ppm(&out.join(format!("rv_{i:03}.ppm"))).unwrap();
             std::fs::write(out.join(format!("rv_{i:03}.idx")), rt.screen_indices()).unwrap();
         }
         std::fs::write(out.join("rv_dac.bin"), rt.dac).unwrap();
         println!("REVEALDUMP done");
+        return;
+    }
+    if std::env::var("SELECTORWATCH").is_ok() {
+        // POSE-SELECTOR ground truth: resume the hub, perform scripted interactions
+        // (idle, move, menu hover, orb hover, click, steer to the edge), sampling the
+        // manu3 call arg frame at ds:0xAB4 ({cursor dword, selector word}) — logs which
+        // selector the REAL game passes in each interaction context.
+        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        let g = 0x0e84u16;
+        let rd16 = |rt: &Runtime, off: u32| {
+            rt.m.read8(g, off) as u16 | ((rt.m.read8(g, off + 1) as u16) << 8)
+        };
+        let frame = |rt: &Runtime| rd16(rt, 0x2795);
+        let fr = frame(&rt);
+        let ring = |sx: i32| ((sx + fr as i32 * 8 - 160).rem_euclid(1440)) as u16;
+        let scenarios: [(&str, u16, u16, bool); 6] = [
+            ("idle centre", ring(160), 100, false),
+            ("orb hover", ring(125), 118, false),
+            ("orb click", ring(125), 118, true),
+            ("menu hover (HONK row)", ring(230), 88, false),
+            ("menu click (HONK row)", ring(230), 88, true),
+            ("edge steer (right)", ring(316), 100, false),
+        ];
+        for (name, mx, my, click) in scenarios {
+            rt.set_mouse_pos(mx, my);
+            let mut seen: Vec<(u16, u32)> = Vec::new();
+            for _ in 0..40 {
+                let _ = rt.run(rt.cpu.steps + 100_000);
+                let sel = rd16(&rt, 0xA32) & 0x1F;
+                let cur = rd16(&rt, 0xAB4);
+                let _ = cur;
+                if let Some(e) = seen.iter_mut().find(|e| e.0 == sel) {
+                    e.1 += 1;
+                } else {
+                    seen.push((sel, 1));
+                }
+            }
+            if click {
+                rt.mouse_press(0);
+                let _ = rt.run(rt.cpu.steps + 300_000);
+                rt.mouse_release(0);
+                for _ in 0..40 {
+                    let _ = rt.run(rt.cpu.steps + 100_000);
+                    let sel = rd16(&rt, 0xA32) & 0x1F;
+                    if let Some(e) = seen.iter_mut().find(|e| e.0 == sel) {
+                        e.1 += 1;
+                    } else {
+                        seen.push((sel, 1));
+                    }
+                }
+            }
+            println!("{name}: selectors {seen:?} (frame {})", frame(&rt));
+        }
+        println!("SELECTORWATCH done");
         return;
     }
     if std::env::var("INDEXDUMP").is_ok() {
