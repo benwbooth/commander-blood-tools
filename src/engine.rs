@@ -1487,7 +1487,10 @@ impl EngineState {
     /// this y regardless of item count (measured: 1 item → top y=95, 2 items →
     /// tops 89/100 whose centre is 94.5; both anchor the tops-centre at ~95).
     const CHOICE_BOX_TOPS_CENTER_Y: usize = 95;
-    const CHOICE_BOX_PITCH: usize = 12;
+    // Row pitch 11: the two-row telephone box (tops 89/100, choice_box_bob_morlock.ppm)
+    // AND the six-row OPTION submenu (tops 67..122 step 11, dual-run vs_004) both
+    // measure 11 — with tops centred on y=95 (top_y(6) = 95-28 = 67 exact).
+    const CHOICE_BOX_PITCH: usize = 11;
 
     /// The top y of the first choice-box row for a box of `rows` items (vertical
     /// centring around [`Self::CHOICE_BOX_TOPS_CENTER_Y`]).
@@ -2051,25 +2054,29 @@ impl EngineState {
         self.scene_frame += 1;
     }
 
-    /// Composite the REAL console band (pyramid field + eye-orb) over the intro montage.
-    /// Harvested pixel-wise from DOSBox-X captures of the real BLOODPRG.EXE (the band rows are
-    /// byte-identical across capture times — static art). Format: [top_row, n_colors,
-    /// n*3 RGB, 320*(200-top_row) indices]. Colours install at palette 0x80.. (scene HNM `pl`
-    /// blocks only cover indices 1..127, so the slots never collide).
+    /// Composite the REAL console band (pyramid field + eye-orb) — interpreter ground
+    /// truth (BOOTIDX bd_00290M, byte-identical across every dialogue beat): raw VGA
+    /// indices for rows 140..200, entirely within the console bank 224..255. The bank's
+    /// DAC (grey ramp 224..239 + text greens 253..255) is installed verbatim; HNM `pl`
+    /// palette blocks only ever cover indices 1..127, so the bank never collides with
+    /// the character video above the band.
     fn overlay_console_band(&mut self) {
-        const BAND: &[u8] = include_bytes!("../accuracy/captures/console_band.bin");
-        let top = BAND[0] as usize;
-        let n = BAND[1] as usize;
-        let pal = &BAND[2..2 + n * 3];
-        let map = &BAND[2 + n * 3..];
-        for i in 0..n {
-            self.scene_palette[0x80 + i] = [pal[i * 3], pal[i * 3 + 1], pal[i * 3 + 2]];
+        const BAND_TOP: usize = 140;
+        const BAND: &[u8] = include_bytes!("../accuracy/captures/console_band.idx");
+        const BAND_DAC: &[u8] = include_bytes!("../accuracy/captures/console_band.dac");
+        for i in 224..=255usize {
+            let d = &BAND_DAC[i * 3..i * 3 + 3];
+            self.scene_palette[i] = [
+                ((d[0] as u16 * 255) / 63) as u8,
+                ((d[1] as u16 * 255) / 63) as u8,
+                ((d[2] as u16 * 255) / 63) as u8,
+            ];
         }
-        for (k, &ci) in map.iter().enumerate() {
+        for (k, &ci) in BAND.iter().enumerate() {
             let x = k % ENGINE_SCREEN_WIDTH;
-            let y = top + k / ENGINE_SCREEN_WIDTH;
+            let y = BAND_TOP + k / ENGINE_SCREEN_WIDTH;
             if y < ENGINE_SCREEN_HEIGHT {
-                self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] = (0x80 + ci as usize) as u8;
+                self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] = ci;
             }
         }
     }
@@ -2079,17 +2086,19 @@ impl EngineState {
     /// oracle-verified empty-nav state) or the destination list once granted.
     fn render_viewscreen_console(&mut self) {
         self.scene_palette = crate::palette::game_screen_palette();
-        // Upper viewscreen: STATIC (deterministic LCG noise in the gray ramp), rows 0..99.
+        // Upper viewscreen: STATIC — binary black/white noise filling everything above
+        // the console band (oracle intro_215M: rows 0..140 are ~54% black (224) /
+        // ~46% white (239), only stray greys — the console bank's extremes).
         for p in self.framebuffer.iter_mut() {
             *p = 0;
         }
-        for y in 0..99usize {
+        for y in 0..140usize {
             for x in 0..ENGINE_SCREEN_WIDTH {
                 self.viewscreen_noise =
                     self.viewscreen_noise.wrapping_mul(1103515245).wrapping_add(12345);
                 let v = (self.viewscreen_noise >> 16) as u8;
-                // Gray ramp 16..31 in the baked palette family
-                self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] = 16 + (v & 0x0F);
+                self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] =
+                    if v & 1 == 0 { 224 } else { 239 };
             }
         }
         self.overlay_console_band();
@@ -2710,6 +2719,12 @@ impl EngineState {
         } else {
             false
         }
+    }
+
+    /// 1-based page number of the current dialogue line — the green console digit the
+    /// real presentation screen shows top-left (oracle bd_218M..bd_290M, index 254).
+    pub fn dialogue_page_number(&self) -> usize {
+        self.dialogue_cursor + 1
     }
 
     /// The current dialogue line's reconstructed subtitle text, if non-empty.
@@ -3445,6 +3460,44 @@ impl EngineState {
         let fully = visible >= total;
         let on_console = self.panorama.is_some() && self.scene_hnm.is_none();
         let pitch = if on_console { 10 } else { crate::font::GAME_FONT_LINE_HEIGHT };
+        // CONSOLE-BAND PRESENTATION subtitles (the boot/tutorial screen: character
+        // video atop the pyramid deck): WHITE (console-bank index 0xEF=239, one of the
+        // OCR's known subtitle indices), CENTRED on x=160, first line at y=110 with
+        // 8-px pitch — interpreter ground truth (BOOTIDX bd_218M/bd_290M measure the
+        // 239-rows at y 110..117 / 118..125 with centred extents; dlg_05..dlg_11 the
+        // same). The green top-left reveal belongs to the CONSOLE text mode; scene
+        // close-ups keep their top-row draw (the OCR's third known layout).
+        if !on_console && self.console_band_dialogue {
+            use crate::font::game_font_advance;
+            let mut shown = 0usize;
+            let mut y = 110usize;
+            for (li, line) in text.split('\n').enumerate() {
+                if li > 0 {
+                    shown += 1;
+                    y += 8;
+                }
+                let width: usize = line.chars().map(game_font_advance).sum();
+                let mut x = 160usize.saturating_sub(width / 2);
+                for ch in line.chars() {
+                    if shown >= visible && !fully {
+                        return;
+                    }
+                    let mut buf = [0u8; 4];
+                    draw_text_indexed(
+                        &mut self.framebuffer,
+                        ENGINE_SCREEN_WIDTH,
+                        ENGINE_SCREEN_HEIGHT,
+                        ch.encode_utf8(&mut buf),
+                        x,
+                        y,
+                        239,
+                    );
+                    x += game_font_advance(ch);
+                    shown += 1;
+                }
+            }
+            return;
+        }
         if fully {
             // Settled: thin white (0xE0 — the game's settled-text index).
             use crate::font::game_font_advance;
@@ -3562,17 +3615,19 @@ impl EngineState {
             self.scene_buffer.copy_from_slice(&self.framebuffer);
         } else if self.console_band_dialogue {
             // No talk-HNM active on the tutorial console: the viewscreen shows STATIC
-            // (interpreter ground truth, intro_215M — the untuned viewscreen), not black.
+            // (interpreter ground truth, intro_215M — binary black/white noise in the
+            // console bank, rows 0..140), not black.
             for p in self.framebuffer.iter_mut() {
                 *p = 0;
             }
             self.scene_palette = crate::palette::game_screen_palette();
-            for y in 0..99usize {
+            for y in 0..140usize {
                 for x in 0..ENGINE_SCREEN_WIDTH {
                     self.viewscreen_noise =
                         self.viewscreen_noise.wrapping_mul(1103515245).wrapping_add(12345);
                     let v = (self.viewscreen_noise >> 16) as u8;
-                    self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] = 16 + (v & 0x0F);
+                    self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] =
+                        if v & 1 == 0 { 224 } else { 239 };
                 }
             }
         } else {
@@ -3585,6 +3640,21 @@ impl EngineState {
         // console + eye-orb band composited over the bottom — same band as the intro montage.
         if self.console_band_dialogue {
             self.overlay_console_band();
+            // The green PAGE DIGIT (oracle bd_218M..bd_290M: a console-font digit at
+            // (6,15), index 254 — present on every presentation beat).
+            let page = self.dialogue_page_number();
+            if let Some(bold) = self.bold_font.take() {
+                bold.draw(
+                    &mut self.framebuffer,
+                    ENGINE_SCREEN_WIDTH,
+                    ENGINE_SCREEN_HEIGHT,
+                    &page.to_string(),
+                    6,
+                    15,
+                    254,
+                );
+                self.bold_font = Some(bold);
+            }
         }
         // Subtitle text layer over the scene, revealed one character at a time (the
         // game's reveal @0x93F8–0x94B8: `gs:0x5E58` advances one char whenever the
@@ -4578,8 +4648,9 @@ mod tests {
     }
 
     /// REAL-GAME-VERIFIED composite (DOSBox-X captures of BLOODPRG with game args,
-    /// game_95s..130s): the crew MONTAGE plays on the pyramid-console + eye-orb band (static
-    /// rows ~99..200, harvested pixel-wise into console_band.bin), while the logo/ship reel
+    /// game_95s..130s; band re-grounded from the interpreter's BOOTIDX indices): the crew
+    /// MONTAGE plays on the pyramid-console + eye-orb band (static rows 140..200, console
+    /// bank 224..255 — accuracy/captures/console_band.idx), while the logo/ship reel
     /// plays full-screen. Guards both directions of the earlier confusion.
     #[test]
     fn intro_montage_plays_on_the_real_console_band() {
@@ -4599,9 +4670,9 @@ mod tests {
             e.render_intro_frame();
         }
         let band_px = |e: &EngineState| {
-            e.framebuffer[ENGINE_SCREEN_WIDTH * 100..]
+            e.framebuffer[ENGINE_SCREEN_WIDTH * 140..]
                 .iter()
-                .filter(|&&p| (0x80..0xA0).contains(&p))
+                .filter(|&&p| p >= 224)
                 .count()
         };
         assert!(band_px(&e) < 2000, "the logo reel plays full-screen (no console band)");

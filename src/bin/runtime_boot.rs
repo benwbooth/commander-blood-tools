@@ -3041,6 +3041,24 @@ fn main() {
         println!("SELECTORWATCH done");
         return;
     }
+    if let Ok(spec) = std::env::var("BOOTIDX") {
+        // Cold-boot to a step target and dump RAW VGA INDICES + DAC (+ ppm) — the
+        // ground truth for the boot-dialogue screen (character porthole + pyramid
+        // deck + eye-orb + subtitle). Spec: comma-separated M-step targets.
+        let mut targets: Vec<u64> = spec
+            .split(',')
+            .filter_map(|s| s.trim().parse().ok())
+            .collect();
+        targets.sort_unstable();
+        for m in targets {
+            let _ = rt.run(m * 1_000_000);
+            std::fs::write(out.join(format!("bd_{m:05}M.idx")), rt.screen_indices()).unwrap();
+            std::fs::write(out.join(format!("bd_{m:05}M.dac")), rt.dac).unwrap();
+            rt.write_ppm(&out.join(format!("bd_{m:05}M.ppm"))).unwrap();
+            println!("BOOTIDX {m}M done");
+        }
+        return;
+    }
     if std::env::var("INDEXDUMP").is_ok() {
         // Dump the hub screen as RAW VGA INDICES + the DAC — lets the port compare
         // content (indices) and palette state (DAC) separately.

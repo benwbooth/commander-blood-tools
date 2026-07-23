@@ -136,8 +136,6 @@ fn main() {
 
     // Save as RGB using the game palette range the hand indices live in: reuse the
     // gp[] palette install the engine does — approximate with a grayscale if absent.
-    let gp = std::fs::read("accuracy/captures/console_band.bin").ok();
-    let _ = gp;
     let mut rgb = vec![0u8; 320 * 200 * 3];
     // Simple: show indices as intensity ramp (shape is what matters here).
     for (i, &p) in fb.iter().enumerate() {
