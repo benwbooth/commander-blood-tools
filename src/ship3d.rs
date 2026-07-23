@@ -1756,6 +1756,29 @@ pub fn render_ship_3d_point_cloud(
     Ship3dPointCloudRender { buffer, plotted }
 }
 
+/// The same starfield as [`render_ship_3d_point_cloud`], but returning the plotted
+/// points (screen x, y, depth shade) for a GPU point renderer — identical projection,
+/// viewport clip, depth-shade, and write-once cell rule.
+pub fn ship_3d_point_cloud_points(
+    points: &[Ship3dProjectionPoint],
+    origin: Ship3dProjectionOrigin,
+    matrix: Ship3dProjectionMatrix,
+    viewport: Ship3dProjectionViewport,
+) -> Vec<(u16, u16, u8)> {
+    let mut buffer = vec![0u8; SHIP_3D_PROJECTION_SCREEN_WIDTH * SHIP_3D_PROJECTION_SCREEN_HEIGHT];
+    let mut out = Vec::new();
+    for &point in points {
+        let Some(projected) = project_ship_3d_point(point, origin, matrix) else {
+            continue;
+        };
+        if plot_ship_3d_projected_point(&mut buffer, viewport, projected).is_some() {
+            let shade = ship_3d_projected_point_shade(projected.depth);
+            out.push((projected.x, projected.y, shade));
+        }
+    }
+    out
+}
+
 /// The ship-nav HUD band occupies the bottom rows of the 320x200 frame (below the
 /// scene band that ends at row 0xA5=165), where the engine draws the grey
 /// pyramid-nav grid + central eye-orb. See re/REVERSE.md.

@@ -1,0 +1,83 @@
+warning: Git tree '/home/ben/src/commander-blood-tools' is dirty
+warning: fields `local_palette`, `captured_at`, `anchor`, `width`, `height`, and `indices` are never read
+   --> src/engine.rs:164:5
+    |
+161 | struct HandSprite {
+    |        ---------- fields in this struct
+...
+164 |     local_palette: Option<Vec<[u8; 3]>>,
+    |     ^^^^^^^^^^^^^
+...
+167 |     captured_at: (i32, i32),
+    |     ^^^^^^^^^^^
+168 |     /// Cursor hotspot offset into the sprite (cursor - anchor = top-left).
+169 |     anchor: (i32, i32),
+    |     ^^^^^^
+170 |     width: usize,
+    |     ^^^^^
+171 |     height: usize,
+    |     ^^^^^^
+172 |     /// Palette-index pixels, 0 = transparent.
+173 |     indices: Vec<u8>,
+    |     ^^^^^^^
+    |
+    = note: `HandSprite` has a derived impl for the trait `Clone`, but this is intentionally ignored during dead code analysis
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+(gate clicked @ 224900000)
+--- REAL-GAME BOOT/INTRO TIMELINE (step: event), to 500000000 steps ---
+  @    296974  OPEN   D:\blood.sav
+  @    299524  OPEN   blood.dat
+  @    324058  OPEN   tb.big
+  @    324279  OPEN   blood.sav
+  @    340361  AUDIO  play 1B @ 6410Hz  <== sound starts
+  @    357727  OPEN   CARTE.SPR
+  @ 204190309  OPEN   chart.fd
+  @ 204588094  OPEN   script1.cod
+  @ 204592121  OPEN   script1.bas
+  @ 204596279  OPEN   script1.var
+  @ 204600568  OPEN   script1.dic
+  @ 204605000  OPEN   script1.deb
+  @ 206872381  OPEN   btv.spr
+  @ 210468686  AUDIO  play 3207B @ 11111Hz  <== sound starts
+  @ 215616644  OPEN   descript.des
+  @ 215639114  AUDIO  play 6442B @ 11111Hz  <== sound starts
+  @ 220280146  AUDIO  play 9936B @ 11111Hz  <== sound starts
+  @ 220764231  AUDIO  play 6442B @ 11111Hz  <== sound starts
+  @ 225403130  AUDIO  play 9936B @ 11111Hz  <== sound starts
+  @ 232559158  AUDIO  play 16384B @ 11111Hz  <== sound starts
+  @ 244356778  AUDIO  play 6442B @ 11111Hz  <== sound starts
+  @ 248997381  AUDIO  play 9942B @ 11111Hz  <== sound starts
+  @ 256158344  AUDIO  play 16384B @ 11111Hz  <== sound starts
+  @ 267955384  AUDIO  play 6442B @ 11111Hz  <== sound starts
+  @ 272596583  AUDIO  play 9942B @ 11111Hz  <== sound starts
+  @ 279755435  AUDIO  play 16384B @ 11111Hz  <== sound starts
+  @ 291552376  AUDIO  play 6442B @ 11111Hz  <== sound starts
+  @ 296193670  AUDIO  play 9942B @ 11111Hz  <== sound starts
+  @ 303353733  AUDIO  play 16384B @ 11111Hz  <== sound starts
+  @ 315150950  AUDIO  play 6442B @ 11111Hz  <== sound starts
+  @ 319791017  AUDIO  play 9942B @ 11111Hz  <== sound starts
+  @ 326949894  AUDIO  play 16384B @ 11111Hz  <== sound starts
+  @ 338747228  AUDIO  play 6442B @ 11111Hz  <== sound starts
+  @ 343388134  AUDIO  play 9942B @ 11111Hz  <== sound starts
+  @ 350547327  AUDIO  play 16384B @ 11111Hz  <== sound starts
+  @ 362344357  AUDIO  play 6442B @ 11111Hz  <== sound starts
+  @ 366986736  AUDIO  play 9942B @ 11111Hz  <== sound starts
+  @ 374145875  AUDIO  play 16384B @ 11111Hz  <== sound starts
+  @ 385942998  AUDIO  play 6442B @ 11111Hz  <== sound starts
+  @ 390584022  AUDIO  play 9942B @ 11111Hz  <== sound starts
+  @ 397743448  AUDIO  play 6442B @ 11111Hz  <== sound starts
+  @ 402381940  AUDIO  play 9942B @ 11111Hz  <== sound starts
+  @ 409543284  AUDIO  play 16384B @ 11111Hz  <== sound starts
+  @ 421340598  AUDIO  play 6442B @ 11111Hz  <== sound starts
+  @ 425981484  AUDIO  play 9942B @ 11111Hz  <== sound starts
+  @ 433140685  AUDIO  play 16384B @ 11111Hz  <== sound starts
+  @ 444937705  AUDIO  play 6442B @ 11111Hz  <== sound starts
+  @ 449578943  AUDIO  play 9942B @ 11111Hz  <== sound starts
+  @ 456739271  AUDIO  play 16384B @ 11111Hz  <== sound starts
+  @ 468536938  AUDIO  play 6442B @ 11111Hz  <== sound starts
+  @ 473177457  AUDIO  play 9942B @ 11111Hz  <== sound starts
+  @ 480337985  AUDIO  play 16384B @ 11111Hz  <== sound starts
+  @ 492135924  AUDIO  play 6442B @ 11111Hz  <== sound starts
+  @ 496777792  AUDIO  play 9942B @ 11111Hz  <== sound starts
+total audio-play events: 41

@@ -1767,7 +1767,15 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 .into_iter()
                 .map(commander_blood_tools::gpu::HandTri)
                 .collect();
-            if let Err(e) = g.present(&engine.framebuffer, &engine.scene_palette, &tris) {
+            let stars = engine.gpu_stars.take().unwrap_or_default();
+            let colorkey = std::mem::take(&mut engine.gpu_bg_colorkey);
+            if let Err(e) = g.present(
+                &engine.framebuffer,
+                &engine.scene_palette,
+                &tris,
+                &stars,
+                colorkey,
+            ) {
                 eprintln!("[gpu] present failed ({e}); reverting to software");
                 gpu = None;
                 engine.gpu_hand_enabled = false;

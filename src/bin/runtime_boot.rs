@@ -96,8 +96,30 @@ fn main() {
         // against ("what asset loads / audio starts, and when"). Frames every 1M steps for the eye.
         let limit: u64 = std::env::var("STEPS").ok().and_then(|s| s.parse().ok()).unwrap_or(40_000_000);
         let mut next_shot = 0u64;
+        // DISMISS_AT=<steps>: inject one Enter there (dismiss the title so the
+        // tutorial's scripted sequence plays hands-off — the event-order oracle).
+        let dismiss: Option<u64> = std::env::var("DISMISS_AT").ok().and_then(|v| v.parse().ok());
+        let mut dismissed = false;
         while rt.cpu.steps < limit {
-            let target = next_shot.min(limit);
+            let mut target = next_shot.min(limit);
+            if let (Some(d), false) = (dismiss, dismissed) {
+                if rt.cpu.steps < d {
+                    target = target.min(d);
+                } else {
+                    // Click through the WAIT COMMANDER / montage gate (a click, not a
+                    // key, arms the game) — three spaced clicks, NO Esc (Esc cancels
+                    // the guidance narration we want to trace).
+                    for _ in 0..3 {
+                        rt.set_mouse_pos(160, 100);
+                        rt.mouse_press(0);
+                        let _ = rt.run(rt.cpu.steps + 300_000);
+                        rt.mouse_release(0);
+                        let _ = rt.run(rt.cpu.steps + 2_000_000);
+                    }
+                    dismissed = true;
+                    eprintln!("(gate clicked @ {})", rt.cpu.steps);
+                }
+            }
             let _ = rt.run(target);
             if rt.cpu.steps >= next_shot {
                 let m = rt.cpu.steps / 1_000_000;

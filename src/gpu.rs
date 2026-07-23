@@ -27,6 +27,10 @@ pub struct GpuPresenter {
     quad_vbuf: wgpu::Buffer,
     hand_vbuf: wgpu::Buffer,
     hand_vcap: usize,
+    star_pipeline: wgpu::RenderPipeline,
+    star_bind: wgpu::BindGroup,
+    star_vbuf: wgpu::Buffer,
+    star_vcap: usize,
     depth: wgpu::TextureView,
 }
 
@@ -44,6 +48,22 @@ fn vs(@location(0) p: vec2<f32>, @location(1) uv: vec2<f32>) -> VOut {
 @fragment
 fn fs(in: VOut) -> @location(0) vec4<f32> {
     return textureSample(tex, samp, in.uv);
+}
+"#;
+
+const STAR_SHADER: &str = r#"
+struct VOut { @builtin(position) pos: vec4<f32>, @location(0) @interpolate(flat) shade: u32 };
+@vertex
+fn vs(@location(0) p: vec2<f32>, @location(1) shade: u32) -> VOut {
+    var o: VOut;
+    o.pos = vec4<f32>(p, 0.999, 1.0);
+    o.shade = shade;
+    return o;
+}
+@group(0) @binding(0) var pal: texture_2d<f32>;
+@fragment
+fn fs(in: VOut) -> @location(0) vec4<f32> {
+    return textureLoad(pal, vec2<i32>(i32(in.shade), 0), 0);
 }
 "#;
 
@@ -249,7 +269,11 @@ impl GpuPresenter {
                 module: &bg_shader,
                 entry_point: Some("fs"),
                 compilation_options: Default::default(),
-                targets: &[Some(format.into())],
+                targets: &[Some(wgpu::ColorTargetState {
+                    format,
+                    blend: Some(wgpu::BlendState::ALPHA_BLENDING),
+                    write_mask: wgpu::ColorWrites::ALL,
+                })],
             }),
             primitive: Default::default(),
             // Shares the pass's depth attachment; never tests or writes it.
@@ -395,6 +419,78 @@ impl GpuPresenter {
             cache: None,
         });
 
+        // Starfield: 1-game-pixel quads at subpixel positions, palette-shaded, drawn
+        // under the (colour-keyed) panorama.
+        let star_shader = device.create_shader_module(wgpu::ShaderModuleDescriptor {
+            label: Some("stars"),
+            source: wgpu::ShaderSource::Wgsl(STAR_SHADER.into()),
+        });
+        let star_layout = device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+            label: None,
+            entries: &[wgpu::BindGroupLayoutEntry {
+                binding: 0,
+                visibility: wgpu::ShaderStages::FRAGMENT,
+                ty: wgpu::BindingType::Texture {
+                    multisampled: false,
+                    view_dimension: wgpu::TextureViewDimension::D2,
+                    sample_type: wgpu::TextureSampleType::Float { filterable: false },
+                },
+                count: None,
+            }],
+        });
+        let star_bind = device.create_bind_group(&wgpu::BindGroupDescriptor {
+            label: None,
+            layout: &star_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::TextureView(
+                    &pal_tex.create_view(&Default::default()),
+                ),
+            }],
+        });
+        let star_pl = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+            label: None,
+            bind_group_layouts: &[&star_layout],
+            push_constant_ranges: &[],
+        });
+        let star_pipeline = device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+            label: Some("stars"),
+            layout: Some(&star_pl),
+            vertex: wgpu::VertexState {
+                module: &star_shader,
+                entry_point: Some("vs"),
+                compilation_options: Default::default(),
+                buffers: &[wgpu::VertexBufferLayout {
+                    array_stride: 12,
+                    step_mode: wgpu::VertexStepMode::Vertex,
+                    attributes: &wgpu::vertex_attr_array![0 => Float32x2, 1 => Uint32],
+                }],
+            },
+            fragment: Some(wgpu::FragmentState {
+                module: &star_shader,
+                entry_point: Some("fs"),
+                compilation_options: Default::default(),
+                targets: &[Some(format.into())],
+            }),
+            primitive: Default::default(),
+            depth_stencil: Some(wgpu::DepthStencilState {
+                format: wgpu::TextureFormat::Depth32Float,
+                depth_write_enabled: false,
+                depth_compare: wgpu::CompareFunction::Always,
+                stencil: Default::default(),
+                bias: Default::default(),
+            }),
+            multisample: Default::default(),
+            multiview: None,
+            cache: None,
+        });
+        let star_vcap = 4096 * 6;
+        let star_vbuf = device.create_buffer(&wgpu::BufferDescriptor {
+            label: Some("stars"),
+            size: (star_vcap * 12) as u64,
+            usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
+            mapped_at_creation: false,
+        });
         let quad_vbuf = device.create_buffer(&wgpu::BufferDescriptor {
             label: Some("quad"),
             size: 6 * 16,
@@ -423,6 +519,10 @@ impl GpuPresenter {
             quad_vbuf,
             hand_vbuf,
             hand_vcap,
+            star_pipeline,
+            star_bind,
+            star_vbuf,
+            star_vcap,
             depth,
         })
     }
@@ -456,13 +556,16 @@ impl GpuPresenter {
         indices: &[u8],
         palette: &[[u8; 3]; 256],
         tris: &[HandTri],
+        stars: &[(u16, u16, u8)],
+        colorkey: bool,
     ) -> anyhow::Result<()> {
-        // Background texel upload.
+        // Background texel upload; with a colour key, index 0 becomes transparent
+        // (the bridge windows) so the GPU stars show through from behind.
         let mut rgba = vec![0u8; 320 * 200 * 4];
         for (i, &p) in indices.iter().take(320 * 200).enumerate() {
             let c = palette[p as usize];
             rgba[i * 4..i * 4 + 3].copy_from_slice(&c);
-            rgba[i * 4 + 3] = 255;
+            rgba[i * 4 + 3] = if colorkey && p == 0 { 0 } else { 255 };
         }
         self.queue.write_texture(
             wgpu::TexelCopyTextureInfo {
@@ -538,6 +641,27 @@ impl GpuPresenter {
                 .write_buffer(&self.hand_vbuf, 0, bytemuck_cast(&verts[..vcount]));
         }
 
+        // Star quads: one game pixel each, at the game's projected positions.
+        let mut star_verts: Vec<[f32; 3]> = Vec::new();
+        for &(sx, sy, shade) in stars {
+            let x0 = ox + sx as f32 * scale;
+            let y0 = oy + sy as f32 * scale;
+            let (x1, y1) = (x0 + scale, y0 + scale);
+            let a = to_ndc(x0, y0);
+            let b = to_ndc(x1, y0);
+            let c = to_ndc(x0, y1);
+            let d = to_ndc(x1, y1);
+            let sh = f32::from_bits(shade as u32);
+            for v in [a, b, c, b, d, c] {
+                star_verts.push([v[0], v[1], sh]);
+            }
+        }
+        let star_count = star_verts.len().min(self.star_vcap);
+        if star_count > 0 {
+            self.queue
+                .write_buffer(&self.star_vbuf, 0, bytemuck_cast(&star_verts[..star_count]));
+        }
+
         let frame = self.surface.get_current_texture()?;
         let view = frame.texture.create_view(&Default::default());
         let mut enc = self.device.create_command_encoder(&Default::default());
@@ -564,6 +688,12 @@ impl GpuPresenter {
                 timestamp_writes: None,
                 occlusion_query_set: None,
             });
+            if star_count > 0 {
+                rp.set_pipeline(&self.star_pipeline);
+                rp.set_bind_group(0, &self.star_bind, &[]);
+                rp.set_vertex_buffer(0, self.star_vbuf.slice(..));
+                rp.draw(0..star_count as u32, 0..1);
+            }
             rp.set_pipeline(&self.bg_pipeline);
             rp.set_bind_group(0, &self.bg_bind, &[]);
             rp.set_vertex_buffer(0, self.quad_vbuf.slice(..));

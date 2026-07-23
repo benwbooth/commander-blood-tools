@@ -375,6 +375,11 @@ pub struct EngineState {
     /// (window-resolution rendering with per-pixel texel sampling).
     pub gpu_hand: Option<Vec<[[f32; 5]; 3]>>,
     pub gpu_hand_enabled: bool,
+    /// GPU starfield export: plotted star points (x, y, palette shade) for the frame;
+    /// when set, the bridge background's colour-0 pixels are a colour key (windows)
+    /// and the GPU draws the stars behind at window resolution.
+    pub gpu_stars: Option<Vec<(u16, u16, u8)>>,
+    pub gpu_bg_colorkey: bool,
     pub console_box_kind: usize,
     /// The console OPTION 3D-pyramid menu (`manu3.xdb` overlay). Its 12-item dispatch
     /// structure is decoded statically from manu3.xdb (`[0x2306]` table) and its
@@ -586,6 +591,8 @@ impl EngineState {
             console_box: Vec::new(),
             gpu_hand: None,
             gpu_hand_enabled: false,
+            gpu_stars: None,
+            gpu_bg_colorkey: false,
             console_box_kind: 0,
             option_active: false,
             option_angle: 0,
@@ -1766,7 +1773,19 @@ impl EngineState {
             top: 0,
             bottom: ENGINE_SCREEN_HEIGHT as u16,
         };
-        if let Some(render) = render_ship_3d_starfield(&mut prng, angles, origin, viewport) {
+        if self.gpu_hand_enabled {
+            // GPU path: the stars render at window resolution behind the panorama
+            // (colour-0 keyed windows); the 320x200 fb keeps only the panorama.
+            self.framebuffer.iter_mut().for_each(|p| *p = 0);
+            let pts = crate::ship3d::randomize_ship_3d_point_cloud(&mut prng);
+            if let Some(matrix) =
+                crate::ship3d::build_ship_3d_projection_matrix(&crate::ship3d::SHIP_3D_ANGLE_TABLE, angles)
+            {
+                self.gpu_stars =
+                    Some(crate::ship3d::ship_3d_point_cloud_points(&pts, origin, matrix, viewport));
+            }
+            self.gpu_bg_colorkey = true;
+        } else if let Some(render) = render_ship_3d_starfield(&mut prng, angles, origin, viewport) {
             self.framebuffer.copy_from_slice(&render.buffer);
         } else {
             self.framebuffer.iter_mut().for_each(|p| *p = 0);
