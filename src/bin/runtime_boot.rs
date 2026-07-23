@@ -986,6 +986,39 @@ fn main() {
                                 "accuracy/milestone_{tag}.state"
                             )))
                             .unwrap();
+                            if marker == "script2" && !reached2 && std::env::var("TUTORIAL_HOLD").is_ok() {
+                                // NATURAL-TRANSITION PROBE: no stabilization clicks;
+                                // step forward printing the subtitle + travel flags to
+                                // catch the engine-queued arrival as it happens.
+                                reached2 = true;
+                                let g2 = 0x0e84u16;
+                                for holdstep in 0..60 {
+                                    let _ = rt.run(rt.cpu.steps + 8_000_000);
+                                    let text: String = (0..120u32)
+                                        .map(|i| rt.m.read8(g2, 0xe18 + i))
+                                        .take_while(|&b| b != 0)
+                                        .map(|b| if (0x20..0x7f).contains(&b) { b as char } else { ' ' })
+                                        .collect();
+                                    let f24f3 = rt.m.read8(g2, 0x24f3);
+                                    let f27d8 = rt.m.read8(g2, 0x27d8);
+                                    let f252a = rt.m.read8(g2, 0x252a);
+                                    let slot4: String = (0..8u32)
+                                        .map(|i| rt.m.read8(g2, 0x6cde + 0x40 + i))
+                                        .take_while(|&b| b != 0)
+                                        .map(|b| b as char)
+                                        .collect();
+                                    println!(
+                                        "HOLD {holdstep}: 24f3={f24f3:02x} 27d8={f27d8:02x} 252a={f252a:02x} slot4='{slot4}' say='{}'",
+                                        text.trim()
+                                    );
+                                    if holdstep % 10 == 9 {
+                                        rt.write_ppm(&out.join(format!("hold_{holdstep:02}.ppm"))).unwrap();
+                                    }
+                                }
+                                rt.save_state(std::path::Path::new("accuracy/arrival_probe.state")).unwrap();
+                                println!("arrival_probe.state written");
+                                continue;
+                            }
                             if marker == "script2" && !reached2 {
                                 reached2 = true;
                                 // Run forward past the console-rebuild transition so
