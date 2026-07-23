@@ -38,8 +38,6 @@ const TEX: &[u8] = include_bytes!("../accuracy/manu3/hand_tex.bin");
 const TEX_W: usize = 256;
 /// The game's own sin/cos tables (ds:0x26, 1024 entries x {cos:i16, sin:i16}, Q14).
 const TRIG: &[u8] = include_bytes!("../accuracy/manu3/trig_tables.bin");
-/// The 8 pose-animation sequences (phased 8-byte tween groups, exact 0x1DF spec).
-const POSES: &[u8] = include_bytes!("../accuracy/manu3/hand_poses.bin");
 
 /// The hand's texture bytes + row width (for GPU upload).
 pub fn hand_texture() -> (&'static [u8], usize) {
@@ -474,31 +472,26 @@ pub struct PosePlayer {
 }
 
 impl PosePlayer {
-    pub fn new(seq_index: usize) -> Option<PosePlayer> {
-        let n = u16::from_le_bytes([POSES[0], POSES[1]]) as usize;
-        if seq_index >= n {
-            return None;
-        }
-        let mut at = 2;
+    /// Look up the sequence for a SELECTOR through the game's own dispatch table
+    /// (0x181 decoded: table base = ds:[0x2306] = 0x2974; sequence = base +
+    /// table[(selector & 0x1F) * 2]; groups run until a count==0 terminator).
+    /// 17 distinct sequences, one per selector 0..0x10; higher selectors alias
+    /// selector 0's no-op.
+    pub fn new(selector: usize) -> Option<PosePlayer> {
+        let rd16 = |at: usize| u16::from_le_bytes([DS[at], DS[at + 1]]);
+        let base = rd16(0x2306) as usize;
+        let off = rd16(base + (selector & 0x1F) * 2) as usize;
+        let mut at = base + off;
         let mut seq = Vec::new();
-        for i in 0..n {
-            let cnt = u16::from_le_bytes([POSES[at], POSES[at + 1]]) as usize;
-            at += 2;
-            if i == seq_index {
-                for g in 0..cnt {
-                    let base = at + g * 8;
-                    seq.push([
-                        u16::from_le_bytes([POSES[base], POSES[base + 1]]),
-                        u16::from_le_bytes([POSES[base + 2], POSES[base + 3]]),
-                        u16::from_le_bytes([POSES[base + 4], POSES[base + 5]]),
-                        u16::from_le_bytes([POSES[base + 6], POSES[base + 7]]),
-                    ]);
-                }
-                return Some(PosePlayer { seq, cursor: 0, phase: 0, active: Vec::new() });
+        loop {
+            let g = [rd16(at), rd16(at + 2), rd16(at + 4), rd16(at + 6)];
+            seq.push(g);
+            if g[0] & 0xFF == 0 || seq.len() > 512 {
+                break;
             }
-            at += cnt * 8;
+            at += 8;
         }
-        None
+        Some(PosePlayer { seq, cursor: 0, phase: 0, active: Vec::new() })
     }
 
     /// One frame: construct due groups (phase match), step active tweens; writes go

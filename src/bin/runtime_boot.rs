@@ -106,11 +106,11 @@ fn main() {
                 if rt.cpu.steps < d {
                     target = target.min(d);
                 } else {
-                    // Click through the WAIT COMMANDER / montage gate (a click, not a
-                    // key, arms the game) — three spaced clicks, NO Esc (Esc cancels
-                    // the guidance narration we want to trace).
+                    // Click the EYE-ORB in the bottom band (screen ~(160,170)) — the
+                    // attract frames all show it; it is the "commander arrives" target.
+                    // NO Esc (Esc cancels the narration we want to trace).
                     for _ in 0..3 {
-                        rt.set_mouse_pos(160, 100);
+                        rt.set_mouse_pos(160, 170);
                         rt.mouse_press(0);
                         let _ = rt.run(rt.cpu.steps + 300_000);
                         rt.mouse_release(0);
