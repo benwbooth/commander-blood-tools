@@ -72,6 +72,20 @@ fn parse_dictionary(dic: &[u8]) -> HashMap<u16, String> {
     words
 }
 
+/// Public wrapper: DEB symbol names for ALL kinds (objects, sequences, …) keyed
+/// by offset — used by the script decompiler to label record references.
+pub fn deb_actor_name_map(deb: &[u8]) -> HashMap<u16, String> {
+    let mut names = HashMap::new();
+    for r in deb.chunks_exact(20) {
+        let nl = r[..16].iter().position(|&b| b == 0).unwrap_or(16);
+        let offset = u16::from_le_bytes([r[16], r[17]]);
+        if !r[..nl].is_empty() {
+            names.insert(offset, String::from_utf8_lossy(&r[..nl]).into_owned());
+        }
+    }
+    names
+}
+
 /// Parse a `SCRIPTn.DEB` symbol table: object records (`kind==1`) mapping an
 /// object's byte offset to its name (the speaker's `actor_offset` indexes this).
 fn parse_deb_object_names(deb: &[u8]) -> HashMap<u16, String> {

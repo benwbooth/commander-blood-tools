@@ -9,18 +9,26 @@ fn main() {
     let dic_raw = std::fs::read(format!("output/_tmp_iso/SCRIPT{n}.DIC")).unwrap();
     let dic = commander_blood_tools::script::parse_dictionary(&dic_raw);
     let mut m = VmMachine::new();
+    m.load_cod(&cod);
     m.load_var(&var);
     m.concept = concept;
     if std::env::var("VMPRES").is_ok() {
         m.presentation_busy = true;
         m.presentation_active = true;
     }
+    // Start a specific actor's presentation: VMACTOR=<record_offset>,<related>
+    if let Ok(spec) = std::env::var("VMACTOR") {
+        let parts: Vec<u16> = spec.split(',').filter_map(|p| p.parse().ok()).collect();
+        if parts.len() == 2 {
+            m.start_actor_presentation(parts[0], parts[1]);
+        }
+    }
     // trace mode: step-by-step with pc log
     if std::env::var("VMTRACE").is_ok() {
         for i in 0..60 {
             let pc = m.pc;
-            let op = cod.get(pc).copied().unwrap_or(0xFF);
-            let alive = m.step(&cod);
+            let op = m.cod.get(pc).copied().unwrap_or(0xFF);
+            let alive = m.step();
             println!("step {i}: pc={pc} op={op:#04x} -> pc={} stack={:?} q={} alive={alive}", m.pc, m.stack, m.query);
             if !alive { break; }
         }
@@ -28,7 +36,7 @@ fn main() {
     }
     let mut total = 0;
     for frame in 0..500 {
-        let evs = m.run(&cod, 10_000);
+        let evs = m.run_frame();
         for e in &evs {
             match e {
                 VmEvent::Text { offset } => {
@@ -53,7 +61,6 @@ fn main() {
             total += 1;
             if total > 40 { println!("... (truncated)"); return; }
         }
-        if m.halted() { println!("[halted after frame {frame}]"); break; }
-        if evs.is_empty() && !m.halted() { println!("[yield, no events, frame {frame}]"); if frame > 3 { break; } }
+        if evs.is_empty() { println!("[no events, frame {frame}]"); if frame > 3 { break; } }
     }
 }

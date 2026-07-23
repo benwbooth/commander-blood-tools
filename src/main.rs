@@ -92,6 +92,31 @@ fn run() -> anyhow::Result<()> {
             );
             Ok(())
         }
+        Some("decompile-scripts") => {
+            // Static decompilation of every SCRIPTn.COD into a readable BASIC-like
+            // listing (decompiled/SCRIPTn.bas) using the faithfully-decoded VM
+            // semantics — the human-readable form of the game's script logic.
+            let iso_dir = args
+                .next()
+                .ok_or_else(|| anyhow::anyhow!("usage: decompile-scripts <iso-dir> [out-dir]"))?;
+            let out_dir = args.next().unwrap_or_else(|| "decompiled".to_string());
+            std::fs::create_dir_all(&out_dir)?;
+            for n in 1..=5u32 {
+                let cod = match std::fs::read(format!("{iso_dir}/SCRIPT{n}.COD")) {
+                    Ok(d) => d,
+                    Err(_) => continue,
+                };
+                let dic_raw = std::fs::read(format!("{iso_dir}/SCRIPT{n}.DIC"))?;
+                let dic = commander_blood_tools::script::parse_dictionary(&dic_raw);
+                let deb = std::fs::read(format!("{iso_dir}/SCRIPT{n}.DEB")).unwrap_or_default();
+                let names = commander_blood_tools::engine::deb_actor_name_map(&deb);
+                let listing = commander_blood_tools::vm::decompile_script(&cod, &dic, &names);
+                let out = format!("{out_dir}/SCRIPT{n}.bas");
+                std::fs::write(&out, &listing)?;
+                println!("wrote {out} ({} lines)", listing.lines().count());
+            }
+            Ok(())
+        }
         Some("inspect-descript") => {
             let path = args
                 .next()

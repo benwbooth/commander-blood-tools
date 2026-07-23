@@ -3414,6 +3414,9 @@ pub struct VmMachine {
     pub wildcard: u16,
     /// `gs:0x6782` — recorded by 0xBC writes.
     pub reg_6782: u16,
+    /// The actor record whose presentation is ACTIVE (the C4 primary record,
+    /// `DS:0x675E`/handler @0x5816 state) — C4 query blocks pass only for it.
+    pub active_actor: Option<u16>,
     /// Pending profile request (`gs:0x6780`), -1 = none.
     pub pending_profile: i16,
     /// Yield flag (`gs:0x67B4`) — 0xAA/0xAC end the frame.
@@ -3425,6 +3428,10 @@ pub struct VmMachine {
     pub rng: u32,
     /// Events raised since the last drain.
     pub events: Vec<VmEvent>,
+    /// The machine's WORKING COPY of the COD — the game self-modifies the stream
+    /// (accepted A6 lines clear their active bit @0x668D), which is how the flow
+    /// advances across frames. Loaded via [`Self::load_cod`].
+    pub cod: Vec<u8>,
     halted: bool,
 }
 
@@ -3447,12 +3454,14 @@ impl Default for VmMachine {
             reg_6770: 0,
             wildcard: 0,
             reg_6782: 0,
+            active_actor: None,
             pending_profile: -1,
             yielded: false,
             global_aa6: 0,
             global_aaa: 0,
             rng: 0x1234_5678,
             events: Vec::new(),
+            cod: Vec::new(),
             halted: false,
         }
     }
@@ -3465,6 +3474,25 @@ impl VmMachine {
 
     pub fn halted(&self) -> bool {
         self.halted
+    }
+
+    /// Driver hook: a console click / event starts an actor's presentation —
+    /// the C4 query blocks for that actor then run (the game's click dispatch
+    /// writes the C4 primary record @DS:0x675E; handler @0x5816).
+    pub fn start_actor_presentation(&mut self, record_offset: u16, related: u16) {
+        self.rec_write(record_offset, 0xC4);
+        self.rec_write(record_offset + 2, related);
+        self.active_actor = Some(record_offset);
+        self.presentation_busy = true;
+        self.presentation_active = true;
+    }
+
+    /// Load the script bytecode into the machine's working copy (the game
+    /// self-modifies accepted lines' active bits in this stream).
+    pub fn load_cod(&mut self, cod: &[u8]) {
+        self.cod = cod.to_vec();
+        self.pc = 0;
+        self.halted = false;
     }
 
     /// Initialize the line-record/object table from the script's VAR file — the
@@ -3484,19 +3512,19 @@ impl VmMachine {
         if n == 0 { 0 } else { ((self.rng >> 16) as u16) % n }
     }
 
-    fn u8_at(&self, cod: &[u8], at: usize) -> u8 {
-        cod.get(at).copied().unwrap_or(0xFF)
+    fn u8_at(&self, at: usize) -> u8 {
+        self.cod.get(at).copied().unwrap_or(0xFF)
     }
 
-    fn lodsb(&mut self, cod: &[u8]) -> u8 {
-        let v = self.u8_at(cod, self.pc);
+    fn lodsb(&mut self) -> u8 {
+        let v = self.u8_at(self.pc);
         self.pc += 1;
         v
     }
 
-    fn lodsw(&mut self, cod: &[u8]) -> u16 {
-        let lo = self.lodsb(cod) as u16;
-        let hi = self.lodsb(cod) as u16;
+    fn lodsw(&mut self) -> u16 {
+        let lo = self.lodsb() as u16;
+        let hi = self.lodsb() as u16;
         lo | (hi << 8)
     }
 
@@ -3518,14 +3546,13 @@ impl VmMachine {
         self.query = false;
     }
 
-    /// Execute ONE opcode. Returns false when the stream ends (0xFF terminator,
-    /// invalid opcode, or running off the end).
-    pub fn step(&mut self, cod: &[u8]) -> bool {
-        if self.halted || self.pc >= cod.len() {
+    /// Execute ONE opcode against the loaded stream. Returns false at stream end.
+    pub fn step(&mut self) -> bool {
+        if self.halted || self.pc >= self.cod.len() {
             self.halted = true;
             return false;
         }
-        let op = self.lodsb(cod);
+        let op = self.lodsb();
         if op == 0xFF || !(OP_MIN..=OP_MAX).contains(&op) {
             self.halted = true;
             return false;
@@ -3534,7 +3561,7 @@ impl VmMachine {
             // 0xA0 PUSH (0x6559): query=1; push the operand (resume position).
             0xA0 => {
                 self.query = true;
-                let v = self.lodsw(cod);
+                let v = self.lodsw();
                 self.stack.push(v);
             }
             // 0xA1 POP (0x6572): query=0; pop unless empty.
@@ -3544,7 +3571,7 @@ impl VmMachine {
             }
             // 0xA2 (0x6588): random(n); branch when the roll != 0.
             0xA2 => {
-                let n = self.lodsw(cod);
+                let n = self.lodsw();
                 if self.rand(n) != 0 {
                     self.branch();
                 }
@@ -3554,11 +3581,11 @@ impl VmMachine {
             // (or exit if flipped); mismatch -> exit (or run if flipped).
             0xA3 => {
                 let mut flipped = false;
-                if self.u8_at(cod, self.pc) == 0xA1 {
+                if self.u8_at(self.pc) == 0xA1 {
                     self.pc += 1;
                     flipped = true;
                 }
-                let operand = self.lodsw(cod);
+                let operand = self.lodsw();
                 let sel = if self.concept_alt_active { self.concept_alt } else { self.concept };
                 if sel == 0 {
                     self.branch();
@@ -3572,20 +3599,20 @@ impl VmMachine {
             }
             // 0xA4 JUMP (0x65DB): PC = operand.
             0xA4 => {
-                let t = self.lodsw(cod);
+                let t = self.lodsw();
                 self.pc = t as usize;
             }
             // 0xA5 (0x65EB): query -> branch when state[idx]!=0 (1-byte form);
             // else write state[idx] = word (3-byte form). Variable length!
             0xA5 => {
-                let idx = self.lodsb(cod) as i8 as i32;
+                let idx = self.lodsb() as i8 as i32;
                 let slot = (idx as usize) & 0xFF;
                 if self.query {
                     if self.state[slot] != 0 {
                         self.branch();
                     }
                 } else {
-                    let v = self.lodsw(cod);
+                    let v = self.lodsw();
                     self.state[slot] = v;
                 }
             }
@@ -3595,25 +3622,33 @@ impl VmMachine {
             // the length table — the loop's gs:0x67AB counter @0x5632).
             0xA6 => {
                 let start = self.pc - 1;
-                match decode_text(cod, start, cod.len()) {
+                match decode_text(&self.cod, start, self.cod.len()) {
                     Some((VmToken::Text { offset, flags_b4, flags_b5, .. }, next)) => {
                         if text_flags_are_active(flags_b5) {
                             self.events.push(VmEvent::Text { offset });
+                            // The game's self-modifying ACCEPT (@0x668D): clear the
+                            // line's active bit in the stream unless b4 preserves it —
+                            // this is how played lines stop repeating across frames.
+                            let nb5 = text_flags_after_accept(flags_b4, flags_b5);
+                            if let Some(b) = self.cod.get_mut(offset + 5) {
+                                *b = nb5;
+                            }
                         }
                         self.pc = next;
                         if let Some(skip) = text_conditional_skip_count(flags_b4, flags_b5) {
                             for _ in 0..skip {
-                                let op2 = self.u8_at(cod, self.pc);
+                                let op2 = self.u8_at(self.pc);
                                 if op2 == 0xFF || !(OP_MIN..=OP_MAX).contains(&op2) {
                                     break;
                                 }
                                 if op2 == OP_TEXT {
-                                    match decode_text(cod, self.pc, cod.len()) {
+                                    match decode_text(&self.cod, self.pc, self.cod.len()) {
                                         Some((_, n2)) => self.pc = n2,
                                         None => break,
                                     }
                                 } else {
-                                    self.pc += token_len_at(cod, self.pc, op2, self.query);
+                                    let l = token_len_at(&self.cod, self.pc, op2, self.query);
+                                    self.pc += l;
                                 }
                             }
                         }
@@ -3625,19 +3660,24 @@ impl VmMachine {
             }
             // 0xA7 (0x67BA): set 0x6770 while a presentation is active.
             0xA7 => {
-                let v = self.lodsw(cod);
+                let v = self.lodsw();
                 if self.presentation_active {
                     self.reg_6770 = v;
                 }
             }
             // 0xA8 (0x67C8): copy the NUL-terminated string operand.
             0xA8 => {
+                // The operand is zero-WORD-terminated (word-aligned, matching the
+                // scanner's scan_zero_word — an odd-length string gets a pad byte).
                 let start = self.pc;
-                while self.pc < cod.len() && cod[self.pc] != 0 {
-                    self.pc += 1;
-                }
-                let text = String::from_utf8_lossy(&cod[start..self.pc]).into_owned();
-                self.pc += 1;
+                let end = scan_zero_word(&self.cod, start, self.cod.len());
+                let nul = self.cod[start..end]
+                    .iter()
+                    .position(|&b| b == 0)
+                    .map(|p| start + p)
+                    .unwrap_or(end);
+                let text = String::from_utf8_lossy(&self.cod[start..nul]).into_owned();
+                self.pc = end;
                 self.events.push(VmEvent::LoadString(text));
             }
             // 0xA9 (0x6830): bit0 CLEAR -> jump to the operand word. bit0 SET ->
@@ -3645,14 +3685,14 @@ impl VmMachine {
             // handler writes gs:0x6820[0]=operand and stack-ptr=2): the top-level
             // wait/conditional block opener.
             0xA9 => {
-                let flags = self.lodsb(cod);
+                let flags = self.lodsb();
                 if flags & 1 == 0 {
-                    let t = self.u8_at(cod, self.pc) as usize
-                        | (self.u8_at(cod, self.pc + 1) as usize) << 8;
+                    let t = self.u8_at(self.pc) as usize
+                        | (self.u8_at(self.pc + 1) as usize) << 8;
                     self.pc = t;
                 } else {
                     self.query = true;
-                    let v = self.lodsw(cod);
+                    let v = self.lodsw();
                     self.stack.clear();
                     self.stack.push(v);
                 }
@@ -3664,8 +3704,8 @@ impl VmMachine {
             // 0xAB (0x684C): poke byte -> models as a records16-space write when
             // in range; the game pokes an absolute DS address.
             0xAB => {
-                let val = self.lodsb(cod);
-                let addr = self.lodsw(cod);
+                let val = self.lodsb();
+                let addr = self.lodsw();
                 let base = 0x6CDE_u16;
                 if (base..base + 0x60).contains(&addr) {
                     self.records16[(addr - base) as usize] = val;
@@ -3675,12 +3715,12 @@ impl VmMachine {
             // polarity/flip); set: OR bits in, or AND them out with inline 0xA1.
             0xAE | 0xB0 => {
                 let mut flipped = false;
-                if self.u8_at(cod, self.pc) == 0xA1 {
+                if self.u8_at(self.pc) == 0xA1 {
                     self.pc += 1;
                     flipped = true;
                 }
-                let off = self.lodsw(cod);
-                let mask = self.lodsw(cod);
+                let off = self.lodsw();
+                let mask = self.lodsw();
                 if self.query {
                     let set = self.rec_read(off) & mask != 0;
                     if set != flipped {
@@ -3702,12 +3742,12 @@ impl VmMachine {
             // compare/write with the 0x674E wildcard -> 0xFFFF substitution.
             0xAD | 0xAF | 0xB2 | 0xB3 | 0xBA | 0xBB | 0xBC => {
                 let mut flipped = false;
-                if self.u8_at(cod, self.pc) == 0xA1 {
+                if self.u8_at(self.pc) == 0xA1 {
                     self.pc += 1;
                     flipped = true;
                 }
-                let off = self.lodsw(cod);
-                let mut val = self.lodsw(cod);
+                let off = self.lodsw();
+                let mut val = self.lodsw();
                 if val == self.wildcard {
                     val = 0xFFFF;
                 }
@@ -3726,10 +3766,10 @@ impl VmMachine {
             // The 0x6863 family (B1/B4/B5/B6/BE/BF/C0): record[off] OP operand,
             // operators 0xF0..0xF5 compare (query) / 0xF5 set 0xF6 add 0xF7 sub.
             0xB1 | 0xB4 | 0xB5 | 0xB6 | 0xBE | 0xBF | 0xC0 => {
-                let off = self.lodsw(cod);
-                let operator = self.lodsb(cod);
-                let marker = self.lodsb(cod);
-                let mut operand = self.lodsw(cod);
+                let off = self.lodsw();
+                let operator = self.lodsb();
+                let marker = self.lodsb();
+                let mut operand = self.lodsw();
                 if marker == 0xC0 || marker == 0xC2 {
                     operand = self.rec_read(operand);
                 }
@@ -3758,11 +3798,11 @@ impl VmMachine {
             }
             // 0xB7 (0x6AA7): record byte field op (offset + byte value).
             0xB7 => {
-                if self.u8_at(cod, self.pc) == 0xA1 {
+                if self.u8_at(self.pc) == 0xA1 {
                     self.pc += 1;
                 }
-                let off = self.lodsw(cod);
-                let val = self.lodsb(cod) as u16;
+                let off = self.lodsw();
+                let val = self.lodsb() as u16;
                 if self.query {
                     if self.rec_read(off) != val {
                         self.branch();
@@ -3773,9 +3813,9 @@ impl VmMachine {
             }
             // 0xB8/0xB9/0xBD (0x6B06): 2-word record pair compare/write.
             0xB8 | 0xB9 | 0xBD => {
-                let off = self.lodsw(cod);
-                let v1 = self.lodsw(cod);
-                let v2 = self.lodsw(cod);
+                let off = self.lodsw();
+                let v1 = self.lodsw();
+                let v2 = self.lodsw();
                 if self.query {
                     if self.rec_read(off) != v1 || self.rec_read(off + 2) != v2 {
                         self.branch();
@@ -3785,20 +3825,39 @@ impl VmMachine {
                     self.rec_write(off + 2, v2);
                 }
             }
-            // 0xC4 ACTOR (0x6C7E): presentation actor reference.
+            // 0xC4 ACTOR (0x6C7E). QUERY: pass iff rec[off] is typed 0xC4, its
+            // related word matches, and the containing record is active — i.e.
+            // "is THIS actor's presentation the active one?" (the block-actor
+            // gate). SET: start the presentation (write the C4 record). The
+            // driver activates an actor via [`Self::start_actor_presentation`].
             0xC4 => {
-                let start = self.pc - 1;
-                let off = self.u8_at(cod, self.pc) as usize
-                    | (self.u8_at(cod, self.pc + 1) as usize) << 8;
-                self.events.push(VmEvent::Actor { offset: off });
-                self.pc = start + token_len_at(cod, start, op, self.query);
+                let mut flipped = false;
+                if self.u8_at(self.pc) == 0xA1 {
+                    self.pc += 1;
+                    flipped = true;
+                }
+                let off = self.lodsw();
+                let related = self.lodsw();
+                if self.query {
+                    let pass = self.rec_read(off) == 0xC4
+                        && self.rec_read(off + 2) == related
+                        && self.active_actor == Some(off);
+                    if pass == flipped {
+                        self.branch();
+                    }
+                } else {
+                    self.rec_write(off, 0xC4);
+                    self.rec_write(off + 2, related);
+                    self.active_actor = Some(off);
+                    self.events.push(VmEvent::Actor { offset: off as usize });
+                }
             }
             // 0xCA (0x64E5): tag/value compare vs global 0xAA6.
             // f1: continue if value > global; f2: continue if value < global;
             // else: continue if equal — branch otherwise.
             0xCA => {
-                let tag = self.lodsw(cod) as u8;
-                let val = self.lodsw(cod) as i16;
+                let tag = self.lodsw() as u8;
+                let val = self.lodsw() as i16;
                 let g = self.global_aa6;
                 let cont = match tag {
                     0xF1 => val > g,
@@ -3811,9 +3870,9 @@ impl VmMachine {
             }
             // 0xCB (0x6510): byte compare vs global 0xAAA (companion of 0xCA).
             0xCB => {
-                let tag = self.lodsb(cod);
-                let _skip = self.lodsb(cod);
-                let val = self.lodsw(cod);
+                let tag = self.lodsb();
+                let _skip = self.lodsb();
+                let val = self.lodsw();
                 let bh = (val >> 8) as u8;
                 let cont = if tag == 0xF1 { bh == self.global_aaa } else { true };
                 if !cont {
@@ -3822,8 +3881,8 @@ impl VmMachine {
             }
             // 0xCC (0x64CE): records16[(op1-1)*16] = op2 (byte pair write).
             0xCC => {
-                let idx = self.lodsb(cod).wrapping_sub(1) as usize;
-                let val = self.lodsb(cod);
+                let idx = self.lodsb().wrapping_sub(1) as usize;
+                let val = self.lodsb();
                 let at = idx * 16;
                 if at + 1 < self.records16.len() {
                     self.records16[at] = val;
@@ -3845,6 +3904,16 @@ impl VmMachine {
                     self.branch();
                 }
             }
+            // 0xC9 (0x6FB9): clear the record field — ends the actor's
+            // presentation (each block clears its actor record when done).
+            0xC9 => {
+                let off = self.lodsw();
+                self.rec_write(off, 0);
+                if self.active_actor == Some(off) {
+                    self.active_actor = None;
+                    self.presentation_busy = false;
+                }
+            }
             // 0xCF (0x64C0): clear the alternate-concept state.
             0xCF => {
                 self.concept_alt_active = false;
@@ -3852,7 +3921,7 @@ impl VmMachine {
             }
             // 0xD2 (0x64B8): pending profile = operand-1.
             0xD2 => {
-                let v = self.lodsb(cod) as i8 as i16 - 1;
+                let v = self.lodsb() as i8 as i16 - 1;
                 self.pending_profile = v;
                 self.events.push(VmEvent::ProfileRequest(v));
             }
@@ -3860,21 +3929,33 @@ impl VmMachine {
             // consume operands per the game's own length table and continue.
             other => {
                 let start = self.pc - 1;
-                self.pc = start + token_len_at(cod, start, other, self.query);
+                let l = token_len_at(&self.cod, start, other, self.query);
+                self.pc = start + l;
             }
         }
         true
     }
 
     /// Run until yield (0xAA/0xAC), halt, or `max_steps`. Returns the events raised.
-    pub fn run(&mut self, cod: &[u8], max_steps: usize) -> Vec<VmEvent> {
+    pub fn run(&mut self, max_steps: usize) -> Vec<VmEvent> {
         self.yielded = false;
         for _ in 0..max_steps {
-            if self.yielded || !self.step(cod) {
+            if self.yielded || !self.step() {
                 break;
             }
         }
         std::mem::take(&mut self.events)
+    }
+
+    /// Run ONE FRAME the way the exec loop does (@0x55F5): restart at the top of
+    /// the script (AA/AC yields end the frame with NO resume; the self-modified
+    /// active bits advance the flow), run until yield or stream end.
+    pub fn run_frame(&mut self) -> Vec<VmEvent> {
+        self.pc = 0;
+        self.stack.clear();
+        self.query = false;
+        self.halted = false;
+        self.run(1_000_000)
     }
 }
 
@@ -3897,6 +3978,322 @@ fn token_len_at(cod: &[u8], pos: usize, op: u8, query: bool) -> usize {
     }
 }
 
+
+// ============================================================================
+// DECOMPILER — static translation of the COD bytecode into a readable BASIC-
+// like listing, using the faithfully-decoded opcode semantics (VmMachine above).
+// The output is the authoritative human-readable form of each script: blocks,
+// guards, dialogue, presentation control — with file offsets for cross-reference.
+// ============================================================================
+
+/// Decompile a COD script to a readable listing. `dic` resolves text/concepts,
+/// `actor_names` (DEB-derived) resolves record offsets to object names.
+pub fn decompile_script(
+    cod: &[u8],
+    dic: &std::collections::HashMap<u16, String>,
+    actor_names: &std::collections::HashMap<u16, String>,
+) -> String {
+    let mut out = String::new();
+    let mut pc = 0usize;
+    let mut query = false;
+    // Open blocks: (end_offset, kind). Closed when pc reaches end_offset.
+    let mut blocks: Vec<usize> = Vec::new();
+    let name_of = |off: usize| -> String {
+        actor_names
+            .get(&(off as u16))
+            .cloned()
+            .unwrap_or_else(|| format!("rec_{off:04X}"))
+    };
+    let word_of = |w: u16| -> String {
+        dic.get(&w).cloned().unwrap_or_else(|| format!("word_{w}"))
+    };
+    while pc < cod.len() {
+        while blocks.last().is_some_and(|&e| pc >= e) {
+            blocks.pop();
+            let ind = "  ".repeat(blocks.len() + 1);
+            out.push_str(&format!("{ind}END\n"));
+        }
+        let ind = "  ".repeat(blocks.len() + 1);
+        let op = cod[pc];
+        if op == 0xFF {
+            out.push_str(&format!("[{pc:04X}] END OF SCRIPT\n"));
+            break;
+        }
+        if !(OP_MIN..=OP_MAX).contains(&op) {
+            out.push_str(&format!("[{pc:04X}] ?? invalid opcode {op:02X}\n"));
+            break;
+        }
+        let start = pc;
+        let line: String;
+        match op {
+            0xA9 => {
+                let flags = cod.get(pc + 1).copied().unwrap_or(0);
+                let target = read_u16(cod, pc + 2).unwrap_or(0) as usize;
+                if flags & 1 != 0 {
+                    line = format!("BLOCK (exit -> @{target:04X})");
+                    blocks.push(target);
+                    query = true;
+                    pc += 4;
+                } else {
+                    line = format!("GOTO @{target:04X}");
+                    pc += 4;
+                }
+            }
+            0xA0 => {
+                let target = read_u16(cod, pc + 1).unwrap_or(0) as usize;
+                line = format!("IF-BLOCK (exit -> @{target:04X})");
+                blocks.push(target);
+                query = true;
+                pc += 3;
+            }
+            0xA1 => {
+                line = "ENDIF".into();
+                query = false;
+                pc += 1;
+            }
+            0xA2 => {
+                let n = read_u16(cod, pc + 1).unwrap_or(0);
+                line = format!("GUARD random({n}) == 0");
+                pc += 3;
+            }
+            0xA3 => {
+                let mut p = pc + 1;
+                let mut neg = "";
+                if cod.get(p) == Some(&0xA1) {
+                    neg = "NOT ";
+                    p += 1;
+                }
+                let wordoff = read_u16(cod, p).unwrap_or(0);
+                line = format!("GUARD {neg}concept == \"{}\"", word_of(wordoff));
+                pc = p + 2;
+            }
+            0xA4 => {
+                let t = read_u16(cod, pc + 1).unwrap_or(0);
+                line = format!("GOTO @{t:04X}");
+                pc += 3;
+            }
+            0xA5 => {
+                let idx = cod.get(pc + 1).copied().unwrap_or(0) as i8;
+                if query {
+                    line = format!("GUARD state[{idx}] == 0");
+                    pc += 2;
+                } else {
+                    let v = read_u16(cod, pc + 2).unwrap_or(0);
+                    line = format!("state[{idx}] = {v}");
+                    pc += 4;
+                }
+            }
+            OP_TEXT => {
+                match decode_text(cod, pc, cod.len()) {
+                    Some((VmToken::Text { flags_b4, flags_b5, voice_selector, word_offsets, .. }, next)) => {
+                        let text: String = word_offsets
+                            .iter()
+                            .map(|w| word_of(*w))
+                            .collect::<Vec<_>>()
+                            .join(" ");
+                        let mut attrs = Vec::new();
+                        if !text_flags_are_active(flags_b5) {
+                            attrs.push("inactive".to_string());
+                        }
+                        if voice_selector != 0xFF {
+                            attrs.push(format!("voice {voice_selector}"));
+                        }
+                        if let Some(sk) = text_conditional_skip_count(flags_b4, flags_b5) {
+                            attrs.push(format!("skip {sk}"));
+                        }
+                        if flags_b4 & TEXT_PRESERVE_ACTIVE_FLAG != 0 {
+                            attrs.push("repeatable".to_string());
+                        }
+                        let attr = if attrs.is_empty() {
+                            String::new()
+                        } else {
+                            format!("  '[{}]", attrs.join(", "))
+                        };
+                        line = format!("SAY \"{}\"{}", text.replace('\n', " / "), attr);
+                        pc = next;
+                    }
+                    _ => {
+                        line = "?? bad A6".into();
+                        pc += 1;
+                    }
+                }
+            }
+            0xA7 => {
+                let v = read_u16(cod, pc + 1).unwrap_or(0);
+                line = format!("IF presentation THEN reg6770 = {v}");
+                pc += 3;
+            }
+            0xA8 => {
+                let end = scan_zero_word(cod, pc + 1, cod.len());
+                let nul = cod[pc + 1..end]
+                    .iter()
+                    .position(|&b| b == 0)
+                    .map(|p| pc + 1 + p)
+                    .unwrap_or(end);
+                line = format!("LOADSTR \"{}\"", String::from_utf8_lossy(&cod[pc + 1..nul]));
+                pc = end;
+            }
+            0xAA | 0xAC => {
+                line = "YIELD".into();
+                pc += 1;
+            }
+            0xAB => {
+                let v = cod.get(pc + 1).copied().unwrap_or(0);
+                let addr = read_u16(cod, pc + 2).unwrap_or(0);
+                line = format!("POKE [{addr:#06X}] = {v}");
+                pc += 4;
+            }
+            0xC4 => {
+                let mut p = pc + 1;
+                let mut neg = "";
+                if cod.get(p) == Some(&0xA1) {
+                    neg = "NOT ";
+                    p += 1;
+                }
+                let recoff = read_u16(cod, p).unwrap_or(0);
+                let related = read_u16(cod, p + 2).unwrap_or(0);
+                if query {
+                    line = format!("GUARD {neg}active_actor == {} (related {related})", name_of(recoff as usize));
+                } else {
+                    line = format!("START PRESENTATION {} (related {related})", name_of(recoff as usize));
+                }
+                pc = p + 4;
+            }
+            0xC9 => {
+                let off = read_u16(cod, pc + 1).unwrap_or(0);
+                line = format!("END PRESENTATION {}", name_of(off as usize));
+                pc += 3;
+            }
+            0xCE => {
+                line = "AWAIT presentation".into();
+                pc += 1;
+            }
+            0xD0 => {
+                line = "AWAIT gameflag_252A".into();
+                pc += 1;
+            }
+            0xD1 => {
+                line = "AWAIT gameflag_274F".into();
+                pc += 1;
+            }
+            0xCF => {
+                line = "CLEAR concept_alt".into();
+                pc += 1;
+            }
+            0xD2 => {
+                let v = cod.get(pc + 1).copied().unwrap_or(0) as i8 as i16 - 1;
+                line = format!("RUN PROFILE {v}");
+                pc += 2;
+            }
+            0xB1 | 0xB4 | 0xB5 | 0xB6 | 0xBE | 0xBF | 0xC0 => {
+                let off = read_u16(cod, pc + 1).unwrap_or(0);
+                let operator = cod.get(pc + 3).copied().unwrap_or(0);
+                let marker = cod.get(pc + 4).copied().unwrap_or(0);
+                let operand = read_u16(cod, pc + 5).unwrap_or(0);
+                let rhs = if marker == 0xC0 || marker == 0xC2 {
+                    format!("{}.value", name_of(operand as usize))
+                } else {
+                    format!("{operand}")
+                };
+                let lhs = name_of(off as usize);
+                line = if query {
+                    let cmp = match operator {
+                        0xF0 => "!=",
+                        0xF1 => "<",
+                        0xF2 => ">",
+                        0xF3 => "<=",
+                        0xF4 => ">=",
+                        _ => "==",
+                    };
+                    format!("GUARD {lhs} {cmp} {rhs}")
+                } else {
+                    match operator {
+                        0xF6 => format!("{lhs} += {rhs}"),
+                        0xF7 => format!("{lhs} -= {rhs}"),
+                        _ => format!("{lhs} = {rhs}"),
+                    }
+                };
+                pc += 7;
+            }
+            0xAD | 0xAF | 0xB2 | 0xB3 | 0xBA | 0xBB | 0xBC => {
+                let mut p = pc + 1;
+                let mut neg = "";
+                if cod.get(p) == Some(&0xA1) {
+                    neg = "NOT ";
+                    p += 1;
+                }
+                let off = read_u16(cod, p).unwrap_or(0);
+                let val = read_u16(cod, p + 2).unwrap_or(0);
+                line = if query {
+                    format!("GUARD {neg}{} == {val}", name_of(off as usize))
+                } else {
+                    format!("{} = {val}", name_of(off as usize))
+                };
+                pc = p + 4;
+            }
+            0xAE | 0xB0 => {
+                let mut p = pc + 1;
+                let mut clr = false;
+                if cod.get(p) == Some(&0xA1) {
+                    clr = true;
+                    p += 1;
+                }
+                let off = read_u16(cod, p).unwrap_or(0);
+                let mask = read_u16(cod, p + 2).unwrap_or(0);
+                line = if query {
+                    if clr {
+                        format!("GUARD ({} & {mask:#X}) == 0", name_of(off as usize))
+                    } else {
+                        format!("GUARD ({} & {mask:#X}) != 0", name_of(off as usize))
+                    }
+                } else if clr {
+                    format!("{} &= !{mask:#X}", name_of(off as usize))
+                } else {
+                    format!("{} |= {mask:#X}", name_of(off as usize))
+                };
+                pc = p + 4;
+            }
+            0xB8 | 0xB9 | 0xBD => {
+                let off = read_u16(cod, pc + 1).unwrap_or(0);
+                let v1 = read_u16(cod, pc + 3).unwrap_or(0);
+                let v2 = read_u16(cod, pc + 5).unwrap_or(0);
+                line = if query {
+                    format!("GUARD {}.pair == ({v1}, {v2})", name_of(off as usize))
+                } else {
+                    format!("{}.pair = ({v1}, {v2})", name_of(off as usize))
+                };
+                pc += 7;
+            }
+            0xCC => {
+                let idx = cod.get(pc + 1).copied().unwrap_or(0);
+                let end = scan_zero_word(cod, pc + 2, cod.len());
+                let nul = cod[pc + 2..end]
+                    .iter()
+                    .position(|&b| b == 0)
+                    .map(|p| pc + 2 + p)
+                    .unwrap_or(end);
+                line = format!(
+                    "SETCHAR slot {idx} = \"{}\"",
+                    String::from_utf8_lossy(&cod[pc + 2..nul])
+                );
+                pc = end;
+            }
+            other => {
+                let l = token_len_at(cod, pc, other, query);
+                let bytes: Vec<String> = cod[pc..(pc + l).min(cod.len())]
+                    .iter()
+                    .map(|b| format!("{b:02X}"))
+                    .collect();
+                line = format!("OP_{other:02X} {}", bytes.join(" "));
+                pc += l;
+            }
+        }
+        out.push_str(&format!("[{start:04X}] {ind}{line}\n"));
+        let _ = start;
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     /// The FAITHFUL VM (ported opcode-by-opcode from the dispatch table @0x142D0)
@@ -3913,34 +4310,45 @@ mod tests {
         let var = std::fs::read("output/_tmp_iso/SCRIPT1.VAR").unwrap();
         // Gates closed: the whole script skips — no dialogue plays unprompted.
         let mut idle = VmMachine::new();
+        idle.load_cod(&cod);
         idle.load_var(&var);
-        let evs = idle.run(&cod, 100_000);
+        let evs = idle.run(100_000);
         assert!(
             !evs.iter().any(|e| matches!(e, VmEvent::Text { .. })),
             "no presentation -> no dialogue (got {evs:?})"
         );
-        // Presentation active: the real tutorial content flows.
+        // Starting the TUTORIAL actor's presentation (record 1428) plays ONLY the
+        // guidance block; starting HONK's (record 2148, the HONK button click)
+        // plays ONLY the welcome — the game's real block-actor gating.
         let mut m = VmMachine::new();
+        m.load_cod(&cod);
         m.load_var(&var);
-        m.presentation_busy = true;
-        m.presentation_active = true;
-        let mut texts: Vec<usize> = Vec::new();
-        for _ in 0..50 {
-            for e in m.run(&cod, 100_000) {
-                if let VmEvent::Text { offset } = e {
-                    texts.push(offset);
-                }
-            }
-            if m.halted() {
-                break;
-            }
-        }
-        // The ho1 tutorial line and HONK's welcome both execute, in order.
-        let found_button = texts.iter().position(|&o| o == 1134);
-        let welcome = texts.iter().position(|&o| o == 1576);
-        assert!(found_button.is_some(), "the 'You found the right button' line runs");
-        assert!(welcome.is_some(), "HONK's 'Welcome aboard the ARK' line runs");
-        assert!(found_button < welcome, "tutorial guidance precedes the welcome");
+        m.start_actor_presentation(1428, 40);
+        let texts = |evs: Vec<VmEvent>| -> Vec<usize> {
+            evs.into_iter()
+                .filter_map(|e| match e {
+                    VmEvent::Text { offset } => Some(offset),
+                    _ => None,
+                })
+                .collect()
+        };
+        let t1 = texts(m.run_frame());
+        assert!(t1.contains(&1134), "'You found the right button' plays for actor 1428");
+        assert!(!t1.contains(&1576), "HONK's welcome does NOT play for actor 1428");
+        assert!(!t1.contains(&16), "the daily menu does NOT play for actor 1428");
+        // The player clicks HONK: his welcome block runs.
+        m.start_actor_presentation(2148, 40);
+        let t2 = texts(m.run_frame());
+        assert!(t2.contains(&1576), "HONK's welcome plays for his presentation");
+        // A MENU click on a fresh machine plays the daily menu, once.
+        let mut menu = VmMachine::new();
+        menu.load_cod(&cod);
+        menu.load_var(&var);
+        menu.start_actor_presentation(2220, 40);
+        let t3 = texts(menu.run_frame());
+        assert!(t3.contains(&16), "the daily menu plays for the MENU actor");
+        let t4 = texts(menu.run_frame());
+        assert!(t4.is_empty(), "the presentation ended (C9) — nothing repeats unprompted");
     }
 
     use super::*;
