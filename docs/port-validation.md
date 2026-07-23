@@ -57,7 +57,9 @@ evidence in the row. Re-audit pass 1: 2026-07-22..23.
   button routing. The 180-300s auto-chaining crew scenes in the no-input DOSBox run are the
   EXTENDED INTRO REEL (blood.dat-internal presentations — Bronko, Honk-in-iris, machine rooms,
   helmeted alien), not SCRIPT1 dialogue; the port's intro (mind+cliptoot) is a SHORT subset.
-  Open: what enumerates the full reel (DESCRIPT presentation records? attract sequence?).
+  Open: what enumerates the full reel — NOT the characters' pe/aa* idle HNMs (those are short
+  10-13 frame dialogue talk-head idles, checked); the reel scenes exist only inside blood.dat
+  (no file opens during the reel per INTROTRACE). Needs the blood.dat internal directory decode.
 
 ## Active fix queue (from the matrix, user-reported first)
 1. [x] Host crosshair removed; hand = the only cursor, all screens (this pass).
