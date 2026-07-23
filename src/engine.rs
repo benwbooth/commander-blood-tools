@@ -1644,7 +1644,11 @@ impl EngineState {
             let prev = mesh.snapshot_state();
             mesh.tick_pose();
             let gp = crate::palette::game_screen_palette();
-            for i in 128..=255usize {
+            // The hand's texture occupies ONLY indices 202..=251 (the skin ramp —
+            // verified over the whole seg4 texture). Installing all of 128..=255
+            // clobbered scene palettes whose images own 128..201 (the world rooms:
+            // the cyan-cast defect found by the planet reference bank).
+            for i in 202..=251usize {
                 self.scene_palette[i] = gp[i];
             }
             if self.gpu_hand_enabled {
@@ -1692,7 +1696,8 @@ impl EngineState {
         let prev = mesh.snapshot_state();
         mesh.tick_pose();
         let gp = crate::palette::game_screen_palette();
-        for i in 128..=255usize {
+        // Hand skin ramp only (202..=251) — see draw_hand_at_mouse.
+        for i in 202..=251usize {
             self.scene_palette[i] = gp[i];
         }
         if self.gpu_hand_enabled {
