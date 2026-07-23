@@ -51,6 +51,14 @@ evidence in the row. Re-audit pass 1: 2026-07-22..23.
 | progress.rs / entity.rs | progression FSM | DATA(partial) | entity records decoded; the REAL ending trigger is SCRIPT5's Bigbang-concert block (GUARD rec_103A==Bigbang && rec_1340==concert && active_actor==Migrator.talk → lpm*sc1 reels → LOADSTR fin.hnm — now wired via the VM LoadString path); all-visited remains only as a driver fallback |
 | recomp/* | interpreter runtime | oracle | separate: runs the real EXE for cross-checks |
 
+## Findings log (evidence for open rows)
+- SCRIPT1 contains ZERO script-driven presentation starts (C4 SET ops: S2=3, S3=3, S4=9, S5=2,
+  S1=0) — its presentations are runtime-dispatched (console clicks), confirming the port's
+  button routing. The 180-300s auto-chaining crew scenes in the no-input DOSBox run are the
+  EXTENDED INTRO REEL (blood.dat-internal presentations — Bronko, Honk-in-iris, machine rooms,
+  helmeted alien), not SCRIPT1 dialogue; the port's intro (mind+cliptoot) is a SHORT subset.
+  Open: what enumerates the full reel (DESCRIPT presentation records? attract sequence?).
+
 ## Active fix queue (from the matrix, user-reported first)
 1. [x] Host crosshair removed; hand = the only cursor, all screens (this pass).
 2. [ ] Hand tracking feel: sprite anchored at the exact hotspot vs the real game (verify against a capture with the DOS mouse at a known position).
