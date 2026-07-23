@@ -98,8 +98,11 @@ evidence in the row. Re-audit pass 1: 2026-07-22..23.
    choice box with CANCEL; pyramid screen unrouted. The earlier "blocked" analysis was wrong on
    two counts (the savestate existed; the mouse-x model). TELEPHONE/CRYOBOX probed: both open
    choice boxes too (universal interaction) — ported (row -> box -> item -> screen).
-4. [ ] Cyberspace interaction (BIOXX touch loop) from the cyber consumer.
-5. [ ] On-planet input handler decode to replace the interpretation.
+4./5. [CONVERGED] Cyberspace + on-planet interaction are the SAME system: the cyber worlds are
+   standard .ext worlds (initial entity id=1 kind=4 at a screen position, like every planet;
+   fd/1cyber1*.lbm are their rooms). Both rows resolve with ONE trace: the EXE's world/entity
+   runtime (entity_object_populate 0x40D0 + the entity click dispatch through entity_draw
+   0x9240's hit path). Single documented target for the next deep session.
 6. [ ] ext.rs record semantics via the consumer load path.
 7. [x] Nav compass steer REMOVED (the chart view is static in the real game — CHART.FD fixed
    image + target-list selection; the mouse-steered compass with dead-zone 8/rate dx/20 was an
