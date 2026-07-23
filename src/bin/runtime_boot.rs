@@ -2388,6 +2388,16 @@ fn main() {
         rt.load_state(statepath).unwrap();
         let before = rt.opened_files.len();
         for (i, pt) in spec.split(';').enumerate() {
+            // "c0,0" = clear the menu-engaged flag [0x2793]&4 (diagnostic disengage).
+            if let Some(rest) = pt.strip_prefix('c') {
+                let _ = rest;
+                let v = rt.m.read8(g, 0x2793);
+                rt.m.write8(g, 0x2793, v & !4);
+                let _ = rt.run(rt.cpu.steps + 2_000_000);
+                rt.write_ppm(&out.join(format!("rp_{i:02}_clear.ppm"))).unwrap();
+                println!("rp {i} cleared menu-engaged (0x2793={:#04x})", rt.m.read8(g, 0x2793));
+                continue;
+            }
             // "m<sx>,<sy>" = move/hover only; "r<ringx>,<sy>" = park at ABSOLUTE ring x
             // (steers the view there); "<sx>,<sy>" = click at screen coords.
             let (mode, pt) = match (pt.strip_prefix('m'), pt.strip_prefix('r')) {
