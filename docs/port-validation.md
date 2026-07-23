@@ -122,7 +122,10 @@ evidence in the row. Re-audit pass 1: 2026-07-22..23.
    fd/1cyber1*.lbm are their rooms). Both rows resolve with ONE trace: the EXE's world/entity
    runtime (entity_object_populate 0x40D0 + the entity click dispatch through entity_draw
    0x9240's hit path). Single documented target for the next deep session.
-6. [ ] ext.rs record semantics via the consumer load path.
+6. [ ] ext.rs record semantics via the consumer load path. NEGATIVE RESULT banked: walk-group
+   counts do NOT correlate with room counts (VENUSIA 109 groups/3 rooms) — the payload runs are
+   not per-room strips; per-node outlines or paths remain the candidates. Consumer trace stands
+   as the only path.
 7. [x] Nav compass steer REMOVED (the chart view is static in the real game — CHART.FD fixed
    image + target-list selection; the mouse-steered compass with dead-zone 8/rate dx/20 was an
    invention). compass_angle survives only as the explicit key-cycled world-target selector.
