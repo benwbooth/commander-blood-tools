@@ -65,6 +65,14 @@ script-locked and (b) the missing live CANCEL overlay; after fixes: 2.22 mean / 
 across all 9 steps.
 
 ## CAMPAIGN LOG
+- PASS 4 (2026-07-23, the consultation storyline): honk_remember -> REMEMBER surfaces the
+  CONSULTATION entry menu (= the decoded BAS entry menu verbatim); consultation ->
+  {TALK, THERAPY}; therapy -> the PSYCHOTHERAPY session with the 12-topic menu (= the
+  BAS concept-menu decode, previously pixel-verified); therapy_ego -> PARITY: the EGO
+  beat follows the already-wired interaction law (white engaged highlight, persistent
+  menu, concept dispatch). The consultation storyline is traversable SIX LEVELS deep in
+  both the oracle and the port via identical clicks; every level's labels came from
+  decoded data with oracle captures as proof.
 - PASS 3b (honk_talk2): the TALK concept advances to Honk's FULL conversation — 'YES,
   COMMANDER?' + an 11-topic in-window menu {BYE_BYE, TALK, BLOOD, BOB_MORLOCK, HONK, ARK,
   MA, ORXX, OLGA, BIG_BANG, BLACK_HOLES} (rec_08B8=2902 queues the presenter per @11E9;
