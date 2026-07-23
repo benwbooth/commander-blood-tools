@@ -1284,6 +1284,57 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                                 true,
                                             )];
                                         }
+                                    } else if label == "therapy" {
+                                        // THERAPY -> the PSYCHOTHERAPY session
+                                        // (oracle therapy scenario: 'A FREE
+                                        // PSYCHOTHERAPY SESSION... ONCE IN A
+                                        // LIFETIME OFFER') with the decoded
+                                        // 12-topic menu (concept_menu BAS decode,
+                                        // captured list as fallback).
+                                        engine.bridge.engaged_row = Some(0);
+                                        let mut labels: Vec<String> = std::fs::read(
+                                            format!("{iso}/SCRIPT2.BAS"),
+                                        )
+                                        .ok()
+                                        .and_then(|bas| {
+                                            let dic = std::fs::read(format!(
+                                                "{iso}/SCRIPT2.DIC"
+                                            ))
+                                            .ok()?;
+                                            let menus = commander_blood_tools::concept_menu::decode_menus(&bas, &dic, 4);
+                                            commander_blood_tools::concept_menu::find_menu_containing(
+                                                &menus,
+                                                &["ego", "libido", "why"],
+                                            )
+                                            .map(|menu| {
+                                                menu.labels
+                                                    .iter()
+                                                    .map(|l| l.to_uppercase())
+                                                    .collect()
+                                            })
+                                        })
+                                        .unwrap_or_default();
+                                        if labels.is_empty() {
+                                            labels = [
+                                                "TALK", "EGO", "SUPER_EGO",
+                                                "UNDER_EGO", "END_OF_MONTH",
+                                                "LIBIDO", "WHO", "WHERE", "WHEN",
+                                                "WHAT", "HOW", "WHY",
+                                            ]
+                                            .iter()
+                                            .map(|s| s.to_string())
+                                            .collect();
+                                        }
+                                        engine.console_box = labels;
+                                        engine.console_box_kind = 3;
+                                        engine.console_box_selected = None;
+                                        if new_lines.is_empty() {
+                                            new_lines = vec![(
+                                                "A free psychotherapy session ...  \nThat's a once in a lifetime offer ,  \nCommander .".into(),
+                                                None,
+                                                true,
+                                            )];
+                                        }
                                     } else if label != "bye_bye" {
                                         // Deep topics keep the conversation menu OPEN
                                         // with the engaged topic highlighted (oracle
