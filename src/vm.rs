@@ -8590,6 +8590,56 @@ mod tests {
         }
     }
 
+    /// THE FRONTIER'S FIRST ARROW (story-progression map): Scruter_Jo.talk =
+    /// record 1860 (C4 operand @0005, read from the COD) — his presentation plays
+    /// the CYBERSPACE explanation from the bytecode ('These SCRUT robots use a
+    /// psychic structure based on CYBERSPACE...' @02FD, 'you go get BIONIUM in
+    /// CYBERSPACE of SCRUTER JO' @038C, the BIOXX->Mantas->BIONIUM loop @04B5..).
+    #[test]
+    fn script2_scruter_jo_presenter_plays_the_cyberspace_block() {
+        let Some(iso) = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter()
+            .find(|d| std::path::Path::new(d).join("SCRIPT2.COD").is_file())
+        else {
+            return;
+        };
+        let cod = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.COD")).unwrap();
+        let var = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.VAR")).unwrap_or_default();
+        let mut m = VmMachine::new();
+        m.load_cod(&cod);
+        m.load_var(&var);
+        m.presentation_busy = true;
+        m.presentation_active = true;
+        m.flag_252a = true;
+        m.flag_274f = true;
+        m.start_actor_presentation(1860, 40);
+        m.satisfy_opening_location_guards();
+        let mut offsets = Vec::new();
+        for _ in 0..400 {
+            for ev in m.run_frame() {
+                if let VmEvent::Text { offset } = ev {
+                    offsets.push(offset);
+                }
+            }
+            if m.halted() {
+                break;
+            }
+        }
+        assert!(
+            !offsets.is_empty(),
+            "Scruter Jo's presenter (1860) emits lines"
+        );
+        // His cyberspace-explanation block: the @02FD/@038C region lines appear.
+        let hits = offsets
+            .iter()
+            .filter(|&&o| (0x2D0..0x600).contains(&o))
+            .count();
+        assert!(
+            hits > 0,
+            "the cyberspace-explanation region (0x2FD..0x38C..) plays (got {offsets:x?})"
+        );
+    }
+
     /// ORACLE-LOCKED: the SCRIPT1 boot presenter is HONK (2148, related 40) — the live
     /// game's OCR'd tutorial sequence (tut4_replay.log) plays the [061D] Honk.talk
     /// block at boot: WELCOME ABOARD -> phone -> Cap'n Bob ... -> CLICK ON CRYOBOX.
