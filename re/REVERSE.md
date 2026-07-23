@@ -5390,7 +5390,11 @@ chain AND the steering/orb scenario both write ZERO — scr is neither a convers
 nor a station-entry counter. FOURTH negative: the full 400M-step boot
 (BOOTWRITEWATCH 0x795F6) writes zero — AND exposed that the object block RELOCATES per
 profile load (boot era seg 0x7838 vs savestate 0x8681), so fixed-address watches only
-cover one era. REFINED TRACE: a pointer-relative watch (re-resolve [0x6724] on each
-profile load, re-arm block+0x1276) — small tooling addition; then the examination
-screen's oracle route. Also banked: gs:0x6728 = the DIC segment far ptr (the text assembler's word
+cover one era. REFINED TRACE EXECUTED (BOOTWRITEWATCH=rec:0x1276,
+900M steps): the block pointer arms ONCE (7838:0000 @ ~210M, shot-interval granularity)
+and NEVER relocates through 900M — an un-driven boot never leaves SCRIPT1's block, and
+zero writes land. FIFTH result, and the closing one for passive tracing: scr's writer
+requires DRIVEN story events. The trace MERGES with the oracle story drive — arm
+WRITEWATCHLIN=0x795F6 on every deep scenario (Scruter wake / examination / cyberspace)
+until the writer fires. Also banked: gs:0x6728 = the DIC segment far ptr (the text assembler's word
 source), confirming the record/dictionary pointer pair layout.
