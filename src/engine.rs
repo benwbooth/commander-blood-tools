@@ -3520,7 +3520,14 @@ impl EngineState {
         // mouse-push steering. Relative cursor motion feeds the ring-space
         // anchor exactly as the original's warped hardware cursor accumulates.
         if self.bridge_active {
-            self.bridge.move_mouse(motion.0, motion.1);
+            // STEERING LOCK (decoded: [0x2793] bit2, set at presentation start 0x593A,
+            // cleared at UI close 0x1544 / presentation teardown 0x59C0 — script-owned):
+            // while dialogue content is live the bridge does not rotate; it frees when
+            // the presentation ends. Savestate-verified (the pinned hub freed on clear).
+            let presentation_live = !self.dialogue.is_empty() && !self.dialogue_finished();
+            if !presentation_live {
+                self.bridge.move_mouse(motion.0, motion.1);
+            }
             self.render_bridge();
             self.countdown = self.countdown.saturating_sub(1);
             self.frame += 1;
