@@ -5316,3 +5316,13 @@ NEXT RE TASK: find the vertical list renderer (candidates: the readers of [0x27D
 the click hit-test that maps rows to concepts, or the 0x2B97 box-open completion path
 0x7C7E -> vm_segment_call_wrapper 0x8C96). Until then the port's vertical-list
 constants stay APPROX (docs/port-validation.md).
+
+### Vertical-list renderer: NARROWED to the manu3.xdb console overlay
+The string-draw primitive 0x299:0x5DE has exactly ONE caller in the main EXE (the
+inline menu renderer 0x72A8), and the [0x27D3] readers are all its own word-reveal
+stepping (the menu words reveal word-at-a-time — another decoded detail). Therefore
+the VERTICAL topic list (the hub presentation's stacked grey rows) is drawn by the
+CONSOLE OVERLAY (manu3.xdb) — consistent with the established finding that the hub
+console's glyph drawing lives in the overlay. NEXT: locate the overlay's list draw
+(dis_xdb sweep for a loop stepping y by a constant with a text call), plus its row
+hit-test (the same code likely feeds the click dispatch's row index).
