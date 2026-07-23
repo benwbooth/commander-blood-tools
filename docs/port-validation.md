@@ -151,9 +151,11 @@ transcription of the textured fill into manu3_hand (replacing flat shading). ARC
    counts do NOT correlate with room counts (VENUSIA 109 groups/3 rooms) — the payload runs are
    not per-room strips; per-node outlines or paths remain the candidates. Consumer trace stands
    as the only path.
-6b. Entity stepper: watch infra CONFIRMED (Machine.watch_addr linear write-watch exists); the
-   watch needs a game state with a MOVING entity — gated on story progression past the current
-   savestates (a full-playthrough savestate at a location visit unlocks it). Plan complete.
+6b. Entity stepper: watch infra CONFIRMED; PLAYTO driver built + run — CONFIRMED the hub
+   presentation persists through 60 orb-advances (frees only when the script flow EXITS, per the
+   0x59C0 teardown decode) => the location savestate needs the CONVERSATION-EXIT step (the
+   bye_bye topic through the concept menu) — the TUTORIAL4-OCR driver pattern extends to this;
+   single remaining gate for both gated items.
 7. [x] Nav compass steer REMOVED (the chart view is static in the real game — CHART.FD fixed
    image + target-list selection; the mouse-steered compass with dead-zone 8/rate dx/20 was an
    invention). compass_angle survives only as the explicit key-cycled world-target selector.
