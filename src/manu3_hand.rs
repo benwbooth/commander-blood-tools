@@ -14,7 +14,7 @@
 //! Affine texturing (the xdb's span engine) is a documented follow-up; the mesh,
 //! motion law, transform math, and palette here are the game's own.
 
-const MESH: &[u8] = include_bytes!("../accuracy/manu3/hand_mesh_uv.bin");
+const MESH: &[u8] = include_bytes!("../accuracy/manu3/hand_skeletal.bin");
 /// The hand's 256-wide texture (palette-index rows) lifted from the live data segment.
 const TEX: &[u8] = include_bytes!("../accuracy/manu3/hand_tex.bin");
 const TEX_W: usize = 256;
@@ -71,70 +71,104 @@ fn build_matrix(a1: i32, a2: i32, a3: i32) -> [i32; 9] {
 }
 
 pub struct HandMesh {
+    /// 16 skeleton segments: {vert_count, T (Q8 dwords), angles (raw table offsets)}.
+    segs: Vec<(u16, [i32; 3], [i16; 3])>,
     verts: Vec<[i16; 3]>,
     uvs: Vec<[i16; 2]>,
+    /// index >= verts.len(): alias — resolves to `alias_src`.
+    alias_src: Vec<u16>,
     faces: Vec<[u16; 3]>,
 }
 
 impl HandMesh {
     pub fn load() -> HandMesh {
-        let nv = u16::from_le_bytes([MESH[0], MESH[1]]) as usize;
-        let nf = u16::from_le_bytes([MESH[2], MESH[3]]) as usize;
+        let rd16 = |at: usize| u16::from_le_bytes([MESH[at], MESH[at + 1]]);
+        let rdi16 = |at: usize| i16::from_le_bytes([MESH[at], MESH[at + 1]]);
+        let rdi32 = |at: usize| {
+            i32::from_le_bytes([MESH[at], MESH[at + 1], MESH[at + 2], MESH[at + 3]])
+        };
+        let ns = rd16(0) as usize;
+        let nv = rd16(2) as usize;
+        let na = rd16(4) as usize;
+        let nf = rd16(6) as usize;
+        let mut at = 8;
+        let mut segs = Vec::with_capacity(ns);
+        for _ in 0..ns {
+            let cnt = rd16(at);
+            let t = [rdi32(at + 2), rdi32(at + 6), rdi32(at + 10)];
+            let a = [rdi16(at + 14), rdi16(at + 16), rdi16(at + 18)];
+            segs.push((cnt, t, a));
+            at += 20;
+        }
         let mut verts = Vec::with_capacity(nv);
-        let mut uvs = Vec::with_capacity(nv);
-        let mut at = 4;
+        let mut uvs = Vec::with_capacity(nv + na);
         for _ in 0..nv {
-            let x = i16::from_le_bytes([MESH[at], MESH[at + 1]]);
-            let y = i16::from_le_bytes([MESH[at + 2], MESH[at + 3]]);
-            let z = i16::from_le_bytes([MESH[at + 4], MESH[at + 5]]);
-            let u = i16::from_le_bytes([MESH[at + 6], MESH[at + 7]]);
-            let v = i16::from_le_bytes([MESH[at + 8], MESH[at + 9]]);
-            verts.push([x, y, z]);
-            uvs.push([u, v]);
+            verts.push([rdi16(at), rdi16(at + 2), rdi16(at + 4)]);
+            uvs.push([rdi16(at + 6), rdi16(at + 8)]);
             at += 10;
+        }
+        let mut alias_src = Vec::with_capacity(na);
+        for _ in 0..na {
+            alias_src.push(rd16(at));
+            uvs.push([rdi16(at + 2), rdi16(at + 4)]);
+            at += 6;
         }
         let mut faces = Vec::with_capacity(nf);
         for _ in 0..nf {
-            let a = u16::from_le_bytes([MESH[at], MESH[at + 1]]);
-            let b = u16::from_le_bytes([MESH[at + 2], MESH[at + 3]]);
-            let c = u16::from_le_bytes([MESH[at + 4], MESH[at + 5]]);
-            faces.push([a, b, c]);
+            faces.push([rd16(at), rd16(at + 2), rd16(at + 4)]);
             at += 6;
         }
-        HandMesh { verts, uvs, faces }
+        HandMesh { segs, verts, uvs, alias_src, faces }
     }
 
     /// Render the hand into an indexed framebuffer with the cursor at (cx, cy).
     /// Implements the decoded cursor law + Q15 transform + painter-sorted flat fill.
     pub fn draw(&self, fb: &mut [u8], w: usize, h: usize, cx: i32, cy: i32) {
-        // EXACT pose: the live state record's raw angle cells (0xFE78/0xFE24/0x210)
-        // displaced by the decoded cursor law — a1(+0x4E=cell 0x23E2) += (cy-100)*2,
-        // a2(+0x50=cell 0x23E4) += (cx-160)*2 (raw units, 4/table step).
-        let a1 = 0xFE78i32 + (cy - 100) * 2;
-        let a2 = 0xFE24i32 + (cx - 160) * 2;
-        let a3 = 0x210i32;
-        let m = build_matrix(a1, a2, a3);
-        let rot = |v: [i16; 3]| -> [f32; 3] {
-            let (x, y, z) = (v[0] as i32, v[1] as i32, v[2] as i32);
-            [
-                ((m[0] * x + m[1] * y + m[2] * z) >> 15) as f32,
-                ((m[3] * x + m[4] * y + m[5] * z) >> 15) as f32,
-                ((m[6] * x + m[7] * y + m[8] * z) >> 15) as f32,
-            ]
-        };
-        // Project: the hand sits below/right of the cursor with the fingertip at it
-        // (anchor from the live captures); depth base keeps the model on-screen.
-        let depth_base = 900.0f32;
-        let mut pts = Vec::with_capacity(self.verts.len());
-        for &v in &self.verts {
-            let [x, y, z] = rot(v);
-            let zz = z + depth_base;
-            let scale = 260.0 / zz.max(60.0);
-            pts.push((
-                cx as f32 + x * scale,
-                cy as f32 + y * scale,
-                zz,
-            ));
+        // SKELETAL ASSEMBLY (decoded): per segment, the exact matrix from ITS live
+        // angles; world = (m·v)>>15 + T>>8; the wrist segment (0) carries the cursor
+        // displacement per the decoded law ((cy-100)*2 / (cx-160)*2 raw units).
+        let mut pts: Vec<(f32, f32, f32)> = Vec::with_capacity(self.uvs.len());
+        let mut vi = 0usize;
+        for (si, &(cnt, t, a)) in self.segs.iter().enumerate() {
+            let (mut a1, mut a2, a3) = (a[0] as i32, a[1] as i32, a[2] as i32);
+            if si == 0 {
+                a1 += (cy - 100) * 2;
+                a2 += (cx - 160) * 2;
+            }
+            let m = build_matrix(a1, a2, a3);
+            for _ in 0..cnt {
+                if vi >= self.verts.len() {
+                    break;
+                }
+                let v = self.verts[vi];
+                let (x, y, z) = (v[0] as i32, v[1] as i32, v[2] as i32);
+                let wx = ((m[0] * x + m[1] * y + m[2] * z) >> 15) + (t[0] >> 8);
+                let wy = ((m[3] * x + m[4] * y + m[5] * z) >> 15) + (t[1] >> 8);
+                let wz = ((m[6] * x + m[7] * y + m[8] * z) >> 15) + (t[2] >> 8);
+                // Perspective (sar-8 family): project about the origin first; the
+                // fingertip anchors to the cursor after the pass (capture-verified).
+                let zz = (wz as f32).max(1000.0);
+                let scale = 4200.0 / zz;
+                pts.push((wx as f32 * scale, wy as f32 * scale, zz));
+                vi += 1;
+            }
+        }
+        // Aliases resolve to their source's projected point.
+        for &src in &self.alias_src {
+            let p = pts.get(src as usize).copied().unwrap_or((0.0, 0.0, 1.0));
+            pts.push(p);
+        }
+        // Anchor: the FINGERTIP (topmost projected point) lands at the cursor.
+        let (mut tipx, mut tipy) = (0.0f32, f32::MAX);
+        for &(x, y, _) in &pts {
+            if y < tipy {
+                tipy = y;
+                tipx = x;
+            }
+        }
+        for p in &mut pts {
+            p.0 += cx as f32 - tipx;
+            p.1 += cy as f32 - tipy;
         }
         // Painter sort: farthest first.
         let mut order: Vec<usize> = (0..self.faces.len()).collect();
@@ -248,8 +282,10 @@ mod tests {
     #[test]
     fn hand_mesh_loads_and_renders() {
         let m = HandMesh::load();
-        assert_eq!(m.verts.len(), 142);
+        assert_eq!(m.verts.len(), 110);
+        assert_eq!(m.alias_src.len(), 32);
         assert_eq!(m.faces.len(), 216);
+        assert_eq!(m.segs.len(), 16);
         let mut fb = vec![0u8; 320 * 200];
         m.draw(&mut fb, 320, 200, 160, 100);
         let lit = fb.iter().filter(|&&p| p != 0).count();
