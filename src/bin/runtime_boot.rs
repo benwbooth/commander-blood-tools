@@ -922,7 +922,8 @@ fn main() {
                         if round > 40 { break; }
                     }
                 }
-                let names = ["HONK", "TELEPHONE", "CRYOBOX", "MENU", "OPTION"];
+                let mut last_say = String::new();
+            let names = ["HONK", "TELEPHONE", "CRYOBOX", "MENU", "OPTION"];
                 let want = names.iter().position(|n| line.contains(n));
                 if let Some(row) = want {
                     // Obey the instruction, then WATCH what opens: capture the
@@ -972,6 +973,32 @@ fn main() {
                 let _ = rt.run(rt.cpu.steps + 400_000);
                 rt.mouse_release(0);
                 let _ = rt.run(rt.cpu.steps + 1_200_000);
+                // Story log: print the subtitle whenever it changes; pointer-
+                // relative scr watch re-armed per round (block relocates on loads).
+                {
+                    let g2 = 0x0e84u16;
+                    let text: String = (0..120u32)
+                        .map(|i| rt.m.read8(g2, 0xe18 + i))
+                        .take_while(|&b| b != 0)
+                        .map(|b| if (0x20..0x7f).contains(&b) { b as char } else { ' ' })
+                        .collect();
+                    let text = text.trim().to_string();
+                    if !text.is_empty() && text != last_say {
+                        println!("SAYLOG round {round}: {text}");
+                        last_say = text;
+                    }
+                    let w16g = |a: u32| {
+                        rt.m.read8(g2, a) as u32 | ((rt.m.read8(g2, a + 1) as u32) << 8)
+                    };
+                    let (boff, bseg) = (w16g(0x6724), w16g(0x6726));
+                    if bseg > 0 {
+                        let lin = bseg as usize * 16 + boff as usize + 0x1276;
+                        if rt.m.watch_addr != Some(lin) {
+                            println!("scr-watch re-armed: {bseg:04x}:{boff:04x} -> {lin:#x} @ round {round}");
+                            rt.m.watch_addr = Some(lin);
+                        }
+                    }
+                }
                 if rt.opened_files.len() > baseline {
                     let newest: Vec<String> = rt.opened_files[baseline..]
                         .iter().map(|(_, p)| p.clone()).collect();
