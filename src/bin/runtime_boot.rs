@@ -2377,6 +2377,135 @@ fn main() {
     // clicking each topic (reloading the savestate to isolate each) and reading the
     // resulting current-menu offset gs:0x6772. Gives the ground-truth navigation the
     // clean-port conversation VM must reproduce, without a full static VM decode.
+    if std::env::var("CONVDRIVER").is_ok() {
+        // OCR-driven conversation player: from the hub savestate, read the live
+        // subtitle/menu text with the game's own font; click bye_bye/goodbye topics
+        // when visible, else advance via the orb — until the presentation frees.
+        let g = 0x0e84u16;
+        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+            let read_font = |rt: &Runtime| -> Vec<(char, [u8; 8])> {
+                let mut out = Vec::new();
+                for code in 32u8..127 {
+                    let gi = rt.m.read8(g, 0x70fa + code as u32);
+                    if gi == 0xFF { continue; }
+                    let mut rows = [0u8; 8];
+                    for (i, r) in rows.iter_mut().enumerate() {
+                        *r = rt.m.read8(g, 0x71aa + gi as u32 * 8 + i as u32);
+                    }
+                    let lit: u32 = rows.iter().map(|r| r.count_ones()).sum();
+                    if lit >= 3 {
+                        out.push((code as char, rows));
+                    }
+                }
+                out.sort_by_key(|(_, rows)| {
+                    std::cmp::Reverse(rows.iter().map(|r| r.count_ones()).sum::<u32>())
+                });
+                out
+            };
+            let ocr = |idx: &[u8], font: &[(char, [u8; 8])]| -> String {
+                let lit = |px: u8| px == 0xE0 || px == 0xEE || px == 0xEF || px >= 0xFD;
+                let mut text = String::new();
+                // Dynamic alignment: subtitle rows differ per screen (console
+                // 8/18; scene close-ups draw 3 lines from the very top). Find
+                // aligned rows by trying each and keeping non-empty reads.
+                let mut row0 = 0usize;
+                while row0 < 40 {
+                    let mut line = String::new();
+                    let mut blanks = 0usize;
+                    let mut x = 0usize;
+                    while x < 313 {
+                        let mut got = None;
+                        for (ch, rows) in font {
+                            let mut ok = true;
+                            'cell: for gy in 0..8usize {
+                                for gx in 0..8usize {
+                                    let on = (rows[gy] >> (7 - gx)) & 1 == 1;
+                                    let px = idx
+                                        .get((row0 + gy) * 320 + x + gx)
+                                        .copied()
+                                        .unwrap_or(0);
+                                    if on != lit(px) {
+                                        ok = false;
+                                        break 'cell;
+                                    }
+                                }
+                            }
+                            if ok {
+                                got = Some(*ch);
+                                break;
+                            }
+                        }
+                        if let Some(ch) = got {
+                            if blanks >= 8 && !line.is_empty() {
+                                line.push(' ');
+                            }
+                            line.push(ch);
+                            blanks = 0;
+                            x += 8;
+                        } else {
+                            blanks += 1;
+                            x += 1;
+                        }
+                    }
+                    if line.chars().filter(|c| c.is_ascii_alphanumeric()).count() >= 3 {
+                        if !text.is_empty() {
+                            text.push(' ');
+                        }
+                        text.push_str(&line);
+                        row0 += 9; // next line
+                    } else {
+                        row0 += 1;
+                    }
+                }
+                text
+            };
+        let frame = |rt: &Runtime| rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
+        let presenting = |rt: &Runtime| rt.m.read8(g, 0x2793) & 4 != 0;
+        let font = read_font(&rt);
+        let mut clicked_rows: Vec<usize> = Vec::new();
+        for round in 0..120 {
+            if !presenting(&rt) {
+                println!("CONVDRIVER: presentation FREED at round {round}");
+                rt.save_state(std::path::Path::new("accuracy/hub_idle.state")).unwrap();
+                println!("hub_idle.state saved");
+                return;
+            }
+            // OCR the screen text.
+            let idx = rt.screen_indices();
+            let text = ocr(&idx, &font);
+            let lower = text.to_lowercase();
+            if round % 10 == 0 {
+                println!("round {round}: {}", &text.chars().take(70).collect::<String>());
+            }
+            // Menu visible? Try the goodbye rows (bye/adieu variants).
+            let fr = frame(&rt) as i32;
+            let click = |rt: &mut Runtime, sx: i32, sy: u16| {
+                let ring = (sx + fr * 8 - 160).rem_euclid(1440) as u16;
+                rt.set_mouse_pos(ring, sy);
+                let _ = rt.run(rt.cpu.steps + 300_000);
+                rt.mouse_press(0);
+                let _ = rt.run(rt.cpu.steps + 300_000);
+                rt.mouse_release(0);
+                let _ = rt.run(rt.cpu.steps + 3_000_000);
+            };
+            if lower.contains("bye") || lower.contains("adieu") || lower.contains("later") {
+                // Click each menu row once, prioritizing unclicked ones.
+                for row in 0..9 {
+                    if !clicked_rows.contains(&row) {
+                        clicked_rows.push(row);
+                        click(&mut rt, 200, (61 + 11 * row + 3) as u16);
+                        break;
+                    }
+                }
+            } else {
+                click(&mut rt, 125, 118); // advance
+            }
+            let _ = rt.run(rt.cpu.steps + 3_000_000);
+        }
+        println!("CONVDRIVER: 120 rounds without freeing; state saved for analysis");
+        rt.save_state(std::path::Path::new("accuracy/conv_partial.state")).unwrap();
+        return;
+    }
     if std::env::var("PLAYTO").is_ok() {
         // Play forward from the hub toward a LOCATION VISIT using the decoded grammar:
         // advance the presentation via the orb until idle, steer to the nav sector,
