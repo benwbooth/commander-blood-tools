@@ -388,6 +388,9 @@ pub struct EngineState {
     dialogue_texts: Vec<String>,
     /// Playback cursor into [`EngineState::dialogue`].
     dialogue_cursor: usize,
+    /// Which intro clips play ON the pyramid-console band (the crew montage does; the logo
+    /// reel and in-game cutscenes do not). Real-game-verified via DOSBox-X captures.
+    intro_pyramid: Vec<bool>,
     /// Auto-play stops when the cursor reaches this line (exclusive) — the SCRIPTED OPENING
     /// plays unprompted, then the dialogue HOLDS at the topic menu and further content is
     /// player-driven (a topic click plays its segment, then re-holds). `None` = play through.
@@ -545,6 +548,7 @@ impl EngineState {
             dialogue: Vec::new(),
             dialogue_texts: Vec::new(),
             dialogue_cursor: 0,
+            intro_pyramid: Vec::new(),
             autoplay_end: None,
             dialogue_segments: Vec::new(),
             line_min_hold: None,
@@ -667,12 +671,18 @@ impl EngineState {
         self.intro_hnms = Vec::new();
         self.intro_cues = Vec::new();
         self.intro_music = Vec::new();
+        self.intro_pyramid = Vec::new();
         for (name, cues, music) in order {
             let path = sq.join(&name);
             if path.exists() {
+                // REAL-GAME-VERIFIED (DOSBox-X capture of BLOODPRG with the game args,
+                // scratchpad realgame/game_95s..130s): the crew MONTAGE plays on the pyramid
+                // console + eye-orb band; the logo/ship reel (mind.hnm) plays full-screen.
+                let showcase = music.is_some() && !cues.is_empty();
                 self.intro_hnms.push(path);
                 self.intro_cues.push(cues);
                 self.intro_music.push(music);
+                self.intro_pyramid.push(showcase);
             }
         }
         self.intro_index = 0;
@@ -719,6 +729,7 @@ impl EngineState {
         self.intro_hnms = Vec::new();
         self.intro_cues = Vec::new();
         self.intro_music = Vec::new();
+        self.intro_pyramid = Vec::new();
         for (i, name) in record.sequence_hnms.iter().enumerate() {
             let path = sq.join(name);
             if path.exists() {
@@ -728,6 +739,8 @@ impl EngineState {
                     .push(if i == 0 { record.subtitles.clone() } else { Vec::new() });
                 self.intro_music
                     .push(if i == 0 { music.clone() } else { None });
+                // In-game cutscenes play FULL-SCREEN — the console band is intro-montage-only.
+                self.intro_pyramid.push(false);
             }
         }
         self.intro_index = 0;
@@ -921,7 +934,7 @@ impl EngineState {
                     lines.push(cur);
                 }
                 let first_y =
-                    Self::INTRO_CREDIT_BASELINE_Y.saturating_sub(10 * lines.len().saturating_sub(1));
+                    Self::TV_CUE_BASELINE_Y.saturating_sub(10 * lines.len().saturating_sub(1));
                 for (i, line) in lines.iter().enumerate() {
                     let width: usize = line.chars().map(crate::font::game_font_advance).sum();
                     let x = ENGINE_SCREEN_WIDTH.saturating_sub(width) / 2;
@@ -1771,6 +1784,29 @@ impl EngineState {
         self.scene_frame += 1;
     }
 
+    /// Composite the REAL console band (pyramid field + eye-orb) over the intro montage.
+    /// Harvested pixel-wise from DOSBox-X captures of the real BLOODPRG.EXE (the band rows are
+    /// byte-identical across capture times — static art). Format: [top_row, n_colors,
+    /// n*3 RGB, 320*(200-top_row) indices]. Colours install at palette 0x80.. (scene HNM `pl`
+    /// blocks only cover indices 1..127, so the slots never collide).
+    fn overlay_console_band(&mut self) {
+        const BAND: &[u8] = include_bytes!("../accuracy/captures/console_band.bin");
+        let top = BAND[0] as usize;
+        let n = BAND[1] as usize;
+        let pal = &BAND[2..2 + n * 3];
+        let map = &BAND[2 + n * 3..];
+        for i in 0..n {
+            self.scene_palette[0x80 + i] = [pal[i * 3], pal[i * 3 + 1], pal[i * 3 + 2]];
+        }
+        for (k, &ci) in map.iter().enumerate() {
+            let x = k % ENGINE_SCREEN_WIDTH;
+            let y = top + k / ENGINE_SCREEN_WIDTH;
+            if y < ENGINE_SCREEN_HEIGHT {
+                self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] = (0x80 + ci as usize) as u8;
+            }
+        }
+    }
+
     /// Load the game-ending finale cutscene (`sq/fin.hnm`, the "fin"/end video) — the
     /// bookend to the intro. Returns whether it loaded.
     pub fn load_ending(&mut self, assets: &Path) -> bool {
@@ -2017,12 +2053,15 @@ impl EngineState {
         let frame = self.scene_frame;
         self.scene_frame += 1;
         self.present_scene_buffer();
-        // The intro montage (cliptoot.hnm) plays FULL-SCREEN, exactly as the HNM decodes — no
-        // console overlay. (A prior agent composited a fabricated pyramid/orb "console" band over
-        // the bottom here; it is NOT in the original game — the real bridge console is the tb.big
-        // panorama, reached only after the intro. Removed.)
+        // REAL-GAME-VERIFIED (DOSBox-X, BLOODPRG with game args — realgame/game_95s..130s): the
+        // crew MONTAGE plays with the pyramid-console + eye-orb band composited over the bottom
+        // (the band is static across frames; harvested pixel-exact from those captures). The
+        // logo/ship reel and the in-game cutscenes play full-screen.
+        if self.intro_pyramid.get(self.intro_index).copied().unwrap_or(false) {
+            self.overlay_console_band();
+        }
         // Overlay this clip's active credit subtitle (the DESCRIPT `present` cues on the
-        // CRYO cinematic) centred in the lower letterbox, in the verified game font.
+        // CRYO cinematic), positioned as in the real captures (line rows ~69/79).
         self.draw_intro_credit(frame);
     }
 
@@ -2030,8 +2069,12 @@ impl EngineState {
     /// advances one clip frame per stepped game frame, so a cue displays from `tick`
     /// frames in until the next cue supersedes it (calibratable against the oracle).
     const INTRO_CREDIT_FRAMES_PER_TICK: usize = 1;
-    /// Baseline row for the credit text, inside the cinematic's lower black letterbox.
-    const INTRO_CREDIT_BASELINE_Y: usize = 178;
+    /// Top row of the FIRST credit line. Real-game-measured (DOSBox-X captures game_95s/110s):
+    /// credit line 1 sits at row ~69 (line 2 at ~79) — over the viewscreen, above the console
+    /// band — for both one- and two-line credits.
+    const INTRO_CREDIT_BASELINE_Y: usize = 69;
+    /// Top row of the LAST TV broadcast-cue line (the lower letterbox band).
+    const TV_CUE_BASELINE_Y: usize = 178;
     /// Reserved palette index forced to white for the credit glyphs (mirrors the
     /// dialogue reveal's reserved 0xFD/0xFE slots).
     const INTRO_CREDIT_COLOR_INDEX: u8 = 253;
@@ -2049,18 +2092,22 @@ impl EngineState {
         let Some(text) = active.map(|c| c.text.clone()) else {
             return;
         };
-        let width: usize = text.chars().map(crate::font::game_font_advance).sum();
-        let x = ENGINE_SCREEN_WIDTH.saturating_sub(width) / 2;
         self.scene_palette[Self::INTRO_CREDIT_COLOR_INDEX as usize] = [245, 245, 245];
-        draw_text_indexed(
-            &mut self.framebuffer,
-            ENGINE_SCREEN_WIDTH,
-            ENGINE_SCREEN_HEIGHT,
-            &text,
-            x,
-            Self::INTRO_CREDIT_BASELINE_Y,
-            Self::INTRO_CREDIT_COLOR_INDEX,
-        );
+        // Multi-line credits ("CRYO Interactive Entertainment" / "1995") draw centred,
+        // 10 rows apart, first line at the real-measured row 69.
+        for (i, line) in text.split(['\n', '\r']).filter(|l| !l.trim().is_empty()).enumerate() {
+            let width: usize = line.chars().map(crate::font::game_font_advance).sum();
+            let x = ENGINE_SCREEN_WIDTH.saturating_sub(width) / 2;
+            draw_text_indexed(
+                &mut self.framebuffer,
+                ENGINE_SCREEN_WIDTH,
+                ENGINE_SCREEN_HEIGHT,
+                line,
+                x,
+                Self::INTRO_CREDIT_BASELINE_Y + 10 * i,
+                Self::INTRO_CREDIT_COLOR_INDEX,
+            );
+        }
     }
 
     /// Load a dialogue script AND resolve each line's speaker to its talk-HNM asset
@@ -4114,11 +4161,12 @@ mod tests {
         std::fs::write("output/_tmp_intro_composite.ppm", buf).unwrap();
     }
 
-    /// The intro montage plays the HNM FULL-SCREEN with no fabricated console overlay: a
-    /// real-game capture (MINDSCAPE → Microfolie's → ship-over-planet cinematic) shows no
-    /// pyramid/orb band. Guards against re-introducing the invented console composite.
+    /// REAL-GAME-VERIFIED composite (DOSBox-X captures of BLOODPRG with game args,
+    /// game_95s..130s): the crew MONTAGE plays on the pyramid-console + eye-orb band (static
+    /// rows ~99..200, harvested pixel-wise into console_band.bin), while the logo/ship reel
+    /// plays full-screen. Guards both directions of the earlier confusion.
     #[test]
-    fn intro_montage_has_no_fabricated_console_band() {
+    fn intro_montage_plays_on_the_real_console_band() {
         let assets = ["output/_tmp_dat", "../output/_tmp_dat"]
             .iter()
             .map(Path::new)
@@ -4130,15 +4178,27 @@ mod tests {
         let Some(db) = db else { return };
         let mut e = EngineState::new();
         e.load_intro(assets, &db);
-        // Advance into the montage clip and render several frames.
-        for _ in 0..40 {
+        // Clip 0 = the logo/ship reel: full-screen, no band.
+        for _ in 0..10 {
             e.render_intro_frame();
         }
-        // No harvested-band palette slots (0x80..0x8F were the fabricated art) are used as a
-        // solid bottom console band — the frame is the decoded HNM plus at most the credit text.
-        let bottom = &e.framebuffer[ENGINE_SCREEN_WIDTH * 140..];
-        let band_px = bottom.iter().filter(|&&p| (0x80..0x90).contains(&p)).count();
-        assert!(band_px < 2000, "no fabricated console band in the montage ({band_px} px)");
+        let band_px = |e: &EngineState| {
+            e.framebuffer[ENGINE_SCREEN_WIDTH * 100..]
+                .iter()
+                .filter(|&&p| (0x80..0xA0).contains(&p))
+                .count()
+        };
+        assert!(band_px(&e) < 2000, "the logo reel plays full-screen (no console band)");
+        // Advance to the montage clip (index 1): the band composites over the bottom.
+        while e.intro_index() == 0 && e.intro_active() {
+            e.render_intro_frame();
+        }
+        e.render_intro_frame();
+        assert!(
+            band_px(&e) > 10_000,
+            "the crew montage plays on the console band ({} px)",
+            band_px(&e)
+        );
     }
 
     /// End-to-end regression: drive the full playable loop the way the real driver does

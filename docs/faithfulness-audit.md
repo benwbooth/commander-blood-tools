@@ -266,3 +266,17 @@ button (hon = 'Welcome aboard the ARK, Commander. I'm HONK…'), BOB1 = crew int
 auto-played the whole stream (the topic gate only ran for n==2, and even its help*/honk/talk name
 match doesn't fit SCRIPT1). Now: only the scripted HONK welcome auto-plays, then holds at a topic
 menu (HONK/MENU/TALK); segment boundaries make a MENU click show ONE daily menu.
+
+## CORRECTION (commit 1015) — the pyramids/orb ARE REAL; commit 1010's removal was WRONG
+New ground truth: DOSBox-X captures of BLOODPRG **with the game args** (`AMR S162227 EMS
+WRIC:\cblood\`, the args that skip the attract loop) reach the crew MONTAGE at ~95-130s and it
+plays ON the pyramid-console + eye-orb band, with the credits at rows ~69/79 (realgame/
+game_95s..130s in the session scratchpad; band rows ~99..200 byte-identical across capture times =
+static art). The earlier "no pyramids" conclusion came from a NO-ARGS capture that ended at 36s —
+BEFORE the montage begins (~90s): absence in a too-short capture, not absence in the game. The
+`accuracy/captures/frame_*.png` frames are hereby VINDICATED as real-game captures (their band
+matches the new native captures; their geometry mapping was 800x600-window based). Restored: the
+band composite over the montage (harvested from the new native captures), the intro_pyramid gating
+(logo reel + cutscenes stay full-screen), credit lines at the measured rows 69/79. Test:
+intro_montage_plays_on_the_real_console_band. LESSON: a negative from a truncated capture is not a
+negative; capture past the event before concluding.
