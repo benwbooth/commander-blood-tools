@@ -1,0 +1,9 @@
+# HONK row -> {TALK, REMEMBER, BYE_BYE} -> choose TALK -> the conversation beat.
+click 100 98
+wait 20
+click 230 88
+wait 30
+click 100 84
+wait 40
+wait 40
+wait 40

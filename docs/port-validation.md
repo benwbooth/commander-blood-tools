@@ -65,6 +65,12 @@ script-locked and (b) the missing live CANCEL overlay; after fixes: 2.22 mean / 
 across all 9 steps.
 
 ## CAMPAIGN LOG
+- PASS 3 (2026-07-23, deeper-story scenarios): cryobox_enter -> Bob's CONTACT screen decoded
+  + ported (talk-head video over the hub, real presenter 132, topics via concept dispatch,
+  in-window box style, CONTACT re-label); honk_talk -> the in-window concept box + the
+  bright-green completion hold + the real Honk presenter (2220); phone_deep -> PARITY PASS
+  (93.9% close, 3.46 mean): TELEPHONE stays engaged+CANCEL through orb clicks and waits at
+  this story point — the port's corrected model holds, first no-divergence scenario.
 - PASS 2 (2026-07-23, dual-run row scenarios): the oracle captures corrected FOUR console-row
   surfaces the port had wrong: HONK = "What do you want Commander?" + {TALK, REMEMBER, BYE_BYE}
   concept box (was: SCRIPT1 reload); TELEPHONE = engaged+CANCEL only (the contact-list box was an

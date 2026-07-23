@@ -1,0 +1,9 @@
+# CRYOBOX row -> {BOB_MORLOCK, CANCEL} box -> choose BOB_MORLOCK -> the screen beyond.
+click 100 98
+wait 20
+click 230 118
+wait 30
+click 100 89
+wait 40
+wait 40
+wait 40

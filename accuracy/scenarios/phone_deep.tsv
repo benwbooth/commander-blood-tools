@@ -1,0 +1,11 @@
+# TELEPHONE row engaged -> orb click -> long waits: does a call surface appear?
+click 100 98
+wait 20
+click 230 103
+wait 30
+click 125 118
+wait 40
+wait 40
+click 125 118
+wait 40
+wait 40
