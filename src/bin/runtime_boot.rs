@@ -2388,6 +2388,29 @@ fn main() {
         rt.load_state(statepath).unwrap();
         let before = rt.opened_files.len();
         for (i, pt) in spec.split(';').enumerate() {
+            // "e0,0" = press Escape; "b<sx>,<sy>" = RIGHT-click at screen coords.
+            if pt.starts_with('e') {
+                rt.inject_key(0x01, 0x1b);
+                let _ = rt.run(rt.cpu.steps + 3_000_000);
+                rt.write_ppm(&out.join(format!("rp_{i:02}_esc.ppm"))).unwrap();
+                println!("rp {i} ESC (0x2793={:#04x}, frame {})", rt.m.read8(g, 0x2793), frame(&rt));
+                continue;
+            }
+            if let Some(rest) = pt.strip_prefix('b') {
+                let (a, b) = rest.split_once(',').unwrap();
+                let (sx, sy): (u16, u16) = (a.trim().parse().unwrap(), b.trim().parse().unwrap());
+                let fr = frame(&rt);
+                let ring = (sx as i32 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+                rt.set_mouse_pos(ring, sy);
+                let _ = rt.run(rt.cpu.steps + 300_000);
+                rt.mouse_press(1);
+                let _ = rt.run(rt.cpu.steps + 300_000);
+                rt.mouse_release(1);
+                let _ = rt.run(rt.cpu.steps + 4_000_000);
+                rt.write_ppm(&out.join(format!("rp_{i:02}_rclick.ppm"))).unwrap();
+                println!("rp {i} RCLICK ({sx},{sy}) (0x2793={:#04x}, frame {})", rt.m.read8(g, 0x2793), frame(&rt));
+                continue;
+            }
             // "c0,0" = clear the menu-engaged flag [0x2793]&4 (diagnostic disengage).
             if let Some(rest) = pt.strip_prefix('c') {
                 let _ = rest;
