@@ -64,6 +64,17 @@ divergence is a scored, visually-reproducible work item. FIRST RESULT (hub_tour)
 script-locked and (b) the missing live CANCEL overlay; after fixes: 2.22 mean / 95.6% close
 across all 9 steps.
 
+## BITCODE ROUND TRIP (user directive, 2026-07-23): decode -> re-encode -> byte-compare
+vm::encode_token is the inverse of walk's decoding, from structured fields alone; the
+token_model_round_trips_every_script test walks all five SCRIPT*.CODs, re-encodes every
+structured token, and byte-compares against the original stream (contiguity asserted).
+RESULT: ZERO divergences — the token model is byte-correct wherever it decodes content.
+Byte-exact shares: S1 134/214, S2 1448/3271, S3 1376/3281, S4 888/1714, S5 797/1869;
+the remainder is LENGTH-ONLY (simple ops — A0/A2/A4/A5/A9/AB... — whose operands the
+token type does not yet carry, though VmMachine executes them with full ASM semantics).
+Raising the test's byte-exact floor (currently 40%) tracks completing those operand
+models — the road to a 100% round-trip compiler.
+
 ## ARCHITECTURE CORRECTION (user directive, 2026-07-23): NO hardcoded bytecode surfaces
 The conversation wiring briefly drifted into transcribing oracle-captured menu labels and
 trees into main.rs. CORRECTED: the menus are IN the bytecode — each 0xA6 line record
