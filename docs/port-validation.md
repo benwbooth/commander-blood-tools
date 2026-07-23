@@ -122,7 +122,9 @@ From decompiled/SCRIPT2.bas + COD operand reads (assembly-first):
   nav destinations activate (entity flags 0x15..0x1F — the FSM decoded+ported in
   progress.rs/entity.rs; ORACLE-side verification chains behind driving the oracle
   through cyberspace) -> planets = concepts 3/4/5 -> D2 profiles 2/3/4 (STRUCTURE-
-  LOCKED test @1269/@1284/@129F) -> SCRIPT3/4/5 in-world dual-runs (pending) ->
+  LOCKED test @1269/@1284/@129F; the gate scr=rec 0x1276 is READ-ONLY in SCRIPT2's
+  bytecode — its writer is runtime code or cross-script state, next trace: the
+  Scruter-examination counter hypothesis + the C4-kind runtime paths) -> SCRIPT3/4/5 in-world dual-runs (pending) ->
   the Bigbang-concert ending (fin.hnm trigger wired; dual-run pending).
 Each arrow is one dual-run scenario + any needed decode of its dispatch site.
 
