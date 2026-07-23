@@ -1666,6 +1666,14 @@ impl EngineState {
         Some(row)
     }
 
+    /// Fire a one-shot hand-pose event (decoded selectors: 0xB = UI close, 0xA =
+    /// screen transition) — the pose sequence plays once, then poses resume from state.
+    pub fn hand_pose_event(&mut self, sel: u16) {
+        if let Some(mesh) = self.hand_mesh.as_mut() {
+            mesh.set_pose(sel);
+        }
+    }
+
     /// Whether the current dialogue plays over the pyramid-console band (SCRIPT1 tutorial).
     pub fn set_console_band_dialogue(&mut self, on: bool) {
         self.console_band_dialogue = on;

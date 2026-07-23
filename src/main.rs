@@ -1028,11 +1028,13 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         }
                     } else {
                         engine.console_box.clear(); // click off the box closes it
+                        engine.hand_pose_event(0xB);
                     }
                 }
                 Event::ButtonPress(b) if engine.bridge_active && engine.option_box_active && b.detail == 1 => {
                     // The OPTION choice box: CANCEL (its only hub item) closes it.
                     engine.option_box_active = false;
+                    engine.hand_pose_event(0xB); // the decoded UI-close pose
                 }
                 Event::ButtonPress(b) if engine.bridge_active && engine.menu_submenu_active && b.detail == 1 => {
                     match engine.menu_submenu_click(mx, my) {
