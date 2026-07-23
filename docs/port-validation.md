@@ -113,11 +113,12 @@ The honk_talk dual-run (HONK row -> TALK) captured: (a) the {TALK, REMEMBER, BYE
 box renders IN-WINDOW — grey square-caps left-aligned at x=175 from y=83, pitch 11, NO
 backdrop (unlike the left contextual boxes) — ported (kind-3 draw + hit-test); (b) the
 just-completed console line HOLDS in BRIGHT GREEN (every char 0xFF) before the white
-settle — ported (the completion-hold phase in draw_subtitle_revealed); (c) the REAL
-first HONK line is 'COMMANDER, REMEMBER OL...' (revealing green) before 'WHAT DO YOU
-WANT COMMANDER?' — the windowed driver + verify_port still hardcode only the prompt
-line; wiring the full presenter block (SCRIPT1 actor 2148's lines via the VM) is the
-logged residual.
+settle — ported (the completion-hold phase in draw_subtitle_revealed); (c) WIRED: the hub
+HONK click now starts SCRIPT2's Honk.talk presenter (record 2220 rel 40 — the C4
+guards @0B04/0B87/11A8; the block's state-gated lines are exactly the oracle's
+'Commander, remember ol' Bob snoring in the Cryobox...' -> ... -> the prompt); the
+hardcoded prompt remains only as the no-VM fallback (verify_port still uses it —
+harness, not the game).
 
 ## RESOLVED: manu3 seam-face texture (was: per-face texture segment open item)
 Root cause found by a LIVE FS CAPTURE at the span setup (new SEAMFS probe, capture_ip

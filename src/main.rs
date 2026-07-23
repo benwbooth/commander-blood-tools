@@ -1225,10 +1225,42 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                             engine.console_box =
                                 vec!["TALK".into(), "REMEMBER".into(), "BYE_BYE".into()];
                             engine.console_box_kind = 3;
-                            set_vm_dialogue(
-                                &mut engine,
-                                vec![("What do you want Commander ?".into(), None, true)],
-                            );
+                            // THE REAL PRESENTER BLOCK: SCRIPT2's Honk.talk (record
+                            // 2220 rel 40 — C4 guards @0B04/0B87/11A8) emits the
+                            // state-gated lines the oracle plays ('Commander,
+                            // remember ol' Bob snoring in the Cryobox...' -> ... ->
+                            // 'What do you want Commander ?'). The hardcoded prompt
+                            // remains only as the no-VM fallback.
+                            let mut new_lines: Vec<(
+                                String,
+                                Option<std::path::PathBuf>,
+                                bool,
+                            )> = Vec::new();
+                            if current_script.get() == 2 {
+                                let mut vm = script_vm.borrow_mut();
+                                if let Some(m) = vm.as_mut() {
+                                    m.start_actor_presentation(2220, 40);
+                                    let map = vm_lines.borrow();
+                                    new_lines = m
+                                        .run_frame()
+                                        .into_iter()
+                                        .filter_map(|ev| match ev {
+                                            commander_blood_tools::vm::VmEvent::Text {
+                                                offset,
+                                            } => map.get(&offset).cloned(),
+                                            _ => None,
+                                        })
+                                        .collect();
+                                }
+                            }
+                            if new_lines.is_empty() {
+                                new_lines = vec![(
+                                    "What do you want Commander ?".into(),
+                                    None,
+                                    true,
+                                )];
+                            }
+                            set_vm_dialogue(&mut engine, new_lines);
                         }
                         Some(1) => {
                             engine.bridge.engaged_row = Some(1);
