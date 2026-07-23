@@ -2377,6 +2377,25 @@ fn main() {
     // clicking each topic (reloading the savestate to isolate each) and reading the
     // resulting current-menu offset gs:0x6772. Gives the ground-truth navigation the
     // clean-port conversation VM must reproduce, without a full static VM decode.
+    if std::env::var("REGIONDUMP").is_ok() {
+        // Dump the LIVE ui-region table (32 x 32B descending from ds:0x65F2) at the hub.
+        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        let g = 0x0e84u16;
+        for rid in (0..=0x1Fu32).rev() {
+            let base = 0x65F2 - (0x1F - rid) * 0x20;
+            let flag = rt.m.read8(g, base);
+            let mut f = [0i16; 7];
+            for (i, slot) in f.iter_mut().enumerate() {
+                *slot = (rt.m.read8(g, base + 1 + i as u32 * 2) as u16
+                    | (rt.m.read8(g, base + 2 + i as u32 * 2) as u16) << 8)
+                    as i16;
+            }
+            if flag != 0 || f.iter().any(|&v| v != 0) {
+                println!("region {rid:#04x}: flag={flag:#04x} fields={f:?}");
+            }
+        }
+        return;
+    }
     if std::env::var("CALLERWATCH").is_ok() {
         // Find WHO far-calls the manu3 overlay: resume the hub, single-step until CS
         // enters the manu3 code segment (0x166C), then read the far return address
