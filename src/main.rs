@@ -1068,12 +1068,34 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     }
                 }
                 // Bob's CONTACT screen: BYE_BYE (topic 0) returns to the bridge;
-                // other topics are conversation beats (script wiring pending —
-                // logged in port-validation.md).
+                // other topics route through the script VM's concept dispatch —
+                // set the topic's DIC word as m.concept and play the A3 block's
+                // lines (the same decoded mechanism as the conversation menus).
                 Event::ButtonPress(b) if engine.bob_contact_active && b.detail == 1 => {
-                    if engine.bob_topic_click(mx, my) == Some(0) {
-                        engine.bob_contact_active = false;
-                        engine.bridge_active = true;
+                    match engine.bob_topic_click(mx, my) {
+                        Some(0) => {
+                            engine.bob_contact_active = false;
+                            engine.bridge_active = true;
+                        }
+                        Some(row) => {
+                            let label = EngineState::BOB_TOPICS[row].to_lowercase();
+                            let off = dic_word_offset.borrow().get(&label).copied();
+                            if let Some(off) = off {
+                                let mut out = (Vec::new(), None);
+                                if let Some(m) = script_vm.borrow_mut().as_mut() {
+                                    m.concept = off;
+                                    let map = vm_lines.borrow();
+                                    out = vm_collect(m, &map);
+                                    m.concept = 0;
+                                }
+                                if !out.0.is_empty() {
+                                    engine.set_speech_dialogue(
+                                        out.0.into_iter().map(|(t, s, _)| (t, s)).collect(),
+                                    );
+                                }
+                            }
+                        }
+                        None => {}
                     }
                 }
                 Event::ButtonPress(b)
@@ -1101,10 +1123,42 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                     engine.bridge.release_menu();
                                     engine.bridge_active = false;
                                     engine.bob_contact_active = true;
-                                    engine.set_speech_dialogue(vec![(
-                                        "HONK! You worthless heap of wires... Are  \nyou working?".into(),
-                                        None,
-                                    )]);
+                                    // THE REAL PRESENTER: SCRIPT2's Bob_Morlock.talk
+                                    // (record 132 rel 40 — C4 guard @1C51) plays his
+                                    // state-gated greeting; the captured line is the
+                                    // no-VM fallback.
+                                    let mut lines: Vec<(
+                                        String,
+                                        Option<std::path::PathBuf>,
+                                        bool,
+                                    )> = Vec::new();
+                                    if current_script.get() == 2 {
+                                        let mut vm = script_vm.borrow_mut();
+                                        if let Some(m) = vm.as_mut() {
+                                            m.start_actor_presentation(132, 40);
+                                            let map = vm_lines.borrow();
+                                            lines = m
+                                                .run_frame()
+                                                .into_iter()
+                                                .filter_map(|ev| match ev {
+                                                    commander_blood_tools::vm::VmEvent::Text {
+                                                        offset,
+                                                    } => map.get(&offset).cloned(),
+                                                    _ => None,
+                                                })
+                                                .collect();
+                                        }
+                                    }
+                                    if lines.is_empty() {
+                                        lines = vec![(
+                                            "HONK! You worthless heap of wires... Are  \nyou working?".into(),
+                                            None,
+                                            true,
+                                        )];
+                                    }
+                                    engine.set_speech_dialogue(
+                                        lines.into_iter().map(|(t, s, _)| (t, s)).collect(),
+                                    );
                                     engine.load_bob_contact(Path::new(iso), Path::new(assets));
                                 }
                                 // The OPTION submenu {TEXT, MUSIC_OFF, SAVE, LOAD,
