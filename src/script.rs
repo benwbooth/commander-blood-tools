@@ -57,6 +57,10 @@ pub struct SpeechEvent {
     pub background_music: Option<String>,
     pub source: String,
     pub text: String,
+    /// Concept-menu labels embedded in the line record AFTER the 0xFFFF separator —
+    /// the game's own source for the menu shown with a prompt line (e.g. the HONK
+    /// prompt carries `0xFFFF talk remember bye_bye`). Empty for plain lines.
+    pub menu_labels: Vec<String>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize)]
@@ -261,7 +265,20 @@ pub fn parse_speech_events(
                 let Some(function) = function_for_offset(&functions, offset) else {
                     continue;
                 };
-                let Some(text) = assemble_dialogue_from_offsets(dictionary, &word_offsets) else {
+                // Concept-menu marker: a 0xFFFF offset splits the record into
+                // display words | menu words (the SAY's trailing `word_65535 talk
+                // remember bye_bye` in the decompiled listings) — the bytecode's
+                // own carrier for the menu shown with the line.
+                let marker = word_offsets.iter().position(|&o| o == 0xFFFF);
+                let (display, menu): (&[u16], &[u16]) = match marker {
+                    Some(p) => (&word_offsets[..p], &word_offsets[p + 1..]),
+                    None => (&word_offsets[..], &[]),
+                };
+                let menu_labels: Vec<String> = menu
+                    .iter()
+                    .filter_map(|o| dictionary.get(o).cloned())
+                    .collect();
+                let Some(text) = assemble_dialogue_from_offsets(dictionary, display) else {
                     continue;
                 };
                 let param0 = Some(voice_selector);
@@ -287,6 +304,7 @@ pub fn parse_speech_events(
                 };
 
                 events.push(SpeechEvent {
+                    menu_labels,
                     script: script.to_string(),
                     function_name: function.name.clone(),
                     offset,

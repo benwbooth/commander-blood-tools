@@ -503,6 +503,10 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     let vm_lines: std::cell::RefCell<
         std::collections::HashMap<usize, (String, Option<std::path::PathBuf>, bool)>,
     > = std::cell::RefCell::new(std::collections::HashMap::new());
+    // Line offset -> the concept-menu labels the LINE RECORD carries after its
+    // 0xFFFF separator (the bytecode's own menu source; script.rs menu_labels).
+    let vm_menus: std::cell::RefCell<std::collections::HashMap<usize, Vec<String>>> =
+        std::cell::RefCell::new(std::collections::HashMap::new());
     // Concept word -> DIC offset (A3 operands are DIC word offsets).
     let dic_word_offset: std::cell::RefCell<std::collections::HashMap<String, u16>> =
         std::cell::RefCell::new(std::collections::HashMap::new());
@@ -520,9 +524,10 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
         usize,
         (String, Option<std::path::PathBuf>, bool),
     >|
-     -> (Vec<(String, Option<std::path::PathBuf>, bool)>, Option<i16>) {
+     -> (Vec<(String, Option<std::path::PathBuf>, bool)>, Option<i16>, Option<Vec<String>>) {
         let mut lines = Vec::new();
         let mut profile = None;
+        let mut menu: Option<Vec<String>> = None;
         // A8 LOADSTR drives the scene backdrop for the FOLLOWING lines (decoded from
         // SCRIPT5's finale: LOADSTR lpm6sc1.hnm / SAY ... reels). "fin.hnm" = the
         // finale film itself — the script's own ENDING trigger (the Bigbang-concert
@@ -538,6 +543,9 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                             *speech,
                         ));
                     }
+                    if let Some(labels) = vm_menus.borrow().get(&offset) {
+                        menu = Some(labels.clone());
+                    }
                 }
                 commander_blood_tools::vm::VmEvent::LoadString(name) => {
                     let lower = name.to_lowercase();
@@ -551,7 +559,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 _ => {}
             }
         }
-        (lines, profile)
+        (lines, profile, menu)
     };
     let load_script = |engine: &mut EngineState, music: &mut Music, n: u32| {
         current_script.set(n);
@@ -612,6 +620,11 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         // script text (the MENU lists) = white thin static (oracle-verified).
                         let speech = e.actor_record.is_some();
                         map.insert(e.offset, (e.text.clone(), scene, speech));
+                        if !e.menu_labels.is_empty() {
+                            vm_menus
+                                .borrow_mut()
+                                .insert(e.offset, e.menu_labels.clone());
+                        }
                     }
                     let mut m = commander_blood_tools::vm::VmMachine::new();
                     m.load_cod(&cod);
@@ -744,6 +757,11 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                             .and_then(|h| resolve_scene_hnm(assets, h));
                         let speech = e.actor_record.is_some();
                         map.insert(e.offset, (e.text.clone(), scene, speech));
+                        if !e.menu_labels.is_empty() {
+                            vm_menus
+                                .borrow_mut()
+                                .insert(e.offset, e.menu_labels.clone());
+                        }
                     }
                 }
                 let mut m = commander_blood_tools::vm::VmMachine::new();
@@ -767,7 +785,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 // Arriving at the scripted location satisfies the opening block's
                 // location guards (SCRIPT2: current_location = Pterra).
                 m.satisfy_opening_location_guards();
-                let (lines, _profile) = vm_collect(&mut m, &map);
+                let (lines, _profile, _menu) = vm_collect(&mut m, &map);
                 if !lines.is_empty() {
                     set_vm_dialogue(engine, lines);
                     if let Ok(dic_raw) = std::fs::read(format!("{iso}/SCRIPT{n}.DIC")) {
@@ -1102,7 +1120,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                             let label = EngineState::BOB_TOPICS[row].to_lowercase();
                             let off = dic_word_offset.borrow().get(&label).copied();
                             if let Some(off) = off {
-                                let mut out = (Vec::new(), None);
+                                let mut out = (Vec::new(), None, None);
                                 if let Some(m) = script_vm.borrow_mut().as_mut() {
                                     m.concept = off;
                                     let map = vm_lines.borrow();
@@ -1183,11 +1201,14 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                     );
                                     engine.load_bob_contact(Path::new(iso), Path::new(assets));
                                 }
-                                // HONK's concept box (kind 3): route the clicked
-                                // topic through the VM concept dispatch; TALK
-                                // advances to Honk's FULL conversation (presenter
-                                // 2902 via rec_08B8 — oracle honk_talk2: 'YES,
-                                // COMMANDER?' + the 11-topic in-window menu).
+                                // The IN-WINDOW concept box (kind 3): fully
+                                // BYTECODE-DRIVEN. The clicked topic's DIC word
+                                // becomes m.concept; the VM's A3 dispatch plays the
+                                // script's own lines, and the NEXT menu is whatever
+                                // the emitted line records carry after their 0xFFFF
+                                // separator (script.rs menu_labels) — no hardcoded
+                                // trees or labels. A poked follow-up presentation
+                                // (e.g. talk -> rec_08B8) starts on the extra frame.
                                 3 => {
                                     engine.console_box_selected = Some(row);
                                     let label = box_labels
@@ -1202,144 +1223,41 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                         Option<std::path::PathBuf>,
                                         bool,
                                     )> = Vec::new();
-                                    {
+                                    let mut next_menu: Option<Vec<String>> = None;
+                                    if let Some(off) = off {
                                         let mut vm = script_vm.borrow_mut();
                                         if let Some(m) = vm.as_mut() {
-                                            if let Some(off) = off {
-                                                m.concept = off;
-                                                let map = vm_lines.borrow();
-                                                let out = vm_collect(m, &map);
-                                                new_lines = out.0;
-                                                m.concept = 0;
-                                            }
-                                            if label == "talk" {
-                                                m.start_actor_presentation(2902, 40);
-                                                let map = vm_lines.borrow();
-                                                for ev in m.run_frame() {
-                                                    if let commander_blood_tools::vm::VmEvent::Text { offset } = ev {
-                                                        if let Some(l) = map.get(&offset) {
-                                                            new_lines.push(l.clone());
-                                                        }
-                                                    }
-                                                }
+                                            m.concept = off;
+                                            let map = vm_lines.borrow();
+                                            let out = vm_collect(m, &map);
+                                            m.concept = 0;
+                                            new_lines = out.0;
+                                            next_menu = out.2;
+                                            if new_lines.is_empty() {
+                                                // A poked presentation starts on the
+                                                // following frame — collect it.
+                                                let out2 = vm_collect(m, &map);
+                                                new_lines = out2.0;
+                                                next_menu = next_menu.or(out2.2);
                                             }
                                         }
                                     }
-                                    if label == "talk" {
-                                        // Honk's full conversation menu (oracle
-                                        // honk_talk2 capture).
+                                    if label == "bye_bye" {
+                                        // The script's own conversation exit — box
+                                        // closed (already cleared above).
+                                    } else if let Some(labels) = next_menu {
+                                        // The bytecode's next menu, verbatim.
                                         engine.bridge.engaged_row = Some(0);
-                                        engine.console_box = [
-                                            "BYE_BYE", "TALK", "BLOOD", "BOB_MORLOCK",
-                                            "HONK", "ARK", "MA", "ORXX", "OLGA",
-                                            "BIG_BANG", "BLACK_HOLES",
-                                        ]
-                                        .iter()
-                                        .map(|s| s.to_string())
-                                        .collect();
-                                        engine.console_box_kind = 3;
-                                        engine.console_box_selected = None;
-                                        if new_lines.is_empty() {
-                                            new_lines = vec![(
-                                                "Yes , Commander ?".into(),
-                                                None,
-                                                true,
-                                            )];
-                                        }
-                                    } else if label == "remember" {
-                                        // REMEMBER surfaces the CONSULTATION entry
-                                        // menu (oracle honk_remember: SCRIPT2's BAS
-                                        // entry menu verbatim) — from the decoded
-                                        // BAS stack, captured list as fallback.
-                                        engine.bridge.engaged_row = Some(0);
-                                        let mut labels =
-                                            engine.current_bas_menu_labels();
-                                        if labels.is_empty() {
-                                            labels = [
-                                                "BYE_BYE", "OPTIMIZATION",
-                                                "CONSULTATION", "EXPLANATIONS",
-                                                "CALM_DOWN", "PLAY", "WIN", "LOSE",
-                                                "HELP",
-                                            ]
+                                        engine.console_box = labels
                                             .iter()
-                                            .map(|s| s.to_string())
+                                            .map(|l| l.to_uppercase())
                                             .collect();
-                                        }
-                                        engine.console_box = labels;
                                         engine.console_box_kind = 3;
                                         engine.console_box_selected = None;
-                                    } else if label == "consultation" {
-                                        // CONSULTATION -> {TALK, THERAPY} (oracle
-                                        // consultation scenario: 'WHAT KIND OF
-                                        // CONSULTATION DID YOU HAVE IN MIND?').
-                                        engine.bridge.engaged_row = Some(0);
-                                        engine.console_box =
-                                            vec!["TALK".into(), "THERAPY".into()];
-                                        engine.console_box_kind = 3;
-                                        engine.console_box_selected = None;
-                                        if new_lines.is_empty() {
-                                            new_lines = vec![(
-                                                "What kind of consultation did you  \nhave in mind , Commander ?".into(),
-                                                None,
-                                                true,
-                                            )];
-                                        }
-                                    } else if label == "therapy" {
-                                        // THERAPY -> the PSYCHOTHERAPY session
-                                        // (oracle therapy scenario: 'A FREE
-                                        // PSYCHOTHERAPY SESSION... ONCE IN A
-                                        // LIFETIME OFFER') with the decoded
-                                        // 12-topic menu (concept_menu BAS decode,
-                                        // captured list as fallback).
-                                        engine.bridge.engaged_row = Some(0);
-                                        let mut labels: Vec<String> = std::fs::read(
-                                            format!("{iso}/SCRIPT2.BAS"),
-                                        )
-                                        .ok()
-                                        .and_then(|bas| {
-                                            let dic = std::fs::read(format!(
-                                                "{iso}/SCRIPT2.DIC"
-                                            ))
-                                            .ok()?;
-                                            let menus = commander_blood_tools::concept_menu::decode_menus(&bas, &dic, 4);
-                                            commander_blood_tools::concept_menu::find_menu_containing(
-                                                &menus,
-                                                &["ego", "libido", "why"],
-                                            )
-                                            .map(|menu| {
-                                                menu.labels
-                                                    .iter()
-                                                    .map(|l| l.to_uppercase())
-                                                    .collect()
-                                            })
-                                        })
-                                        .unwrap_or_default();
-                                        if labels.is_empty() {
-                                            labels = [
-                                                "TALK", "EGO", "SUPER_EGO",
-                                                "UNDER_EGO", "END_OF_MONTH",
-                                                "LIBIDO", "WHO", "WHERE", "WHEN",
-                                                "WHAT", "HOW", "WHY",
-                                            ]
-                                            .iter()
-                                            .map(|s| s.to_string())
-                                            .collect();
-                                        }
-                                        engine.console_box = labels;
-                                        engine.console_box_kind = 3;
-                                        engine.console_box_selected = None;
-                                        if new_lines.is_empty() {
-                                            new_lines = vec![(
-                                                "A free psychotherapy session ...  \nThat's a once in a lifetime offer ,  \nCommander .".into(),
-                                                None,
-                                                true,
-                                            )];
-                                        }
-                                    } else if label != "bye_bye" {
-                                        // Deep topics keep the conversation menu OPEN
-                                        // with the engaged topic highlighted (oracle
-                                        // honk_blood: BLOOD renders white, the menu
-                                        // persists while the answer plays).
+                                    } else {
+                                        // No new menu: the current one persists with
+                                        // the engaged topic highlighted (oracle
+                                        // honk_blood law).
                                         engine.bridge.engaged_row = Some(0);
                                         engine.console_box = box_labels.clone();
                                         engine.console_box_kind = 3;
@@ -1463,9 +1381,6 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     match engine.bridge_press(mx, my) {
                         Some(0) => {
                             engine.bridge.engaged_row = Some(0);
-                            engine.console_box =
-                                vec!["TALK".into(), "REMEMBER".into(), "BYE_BYE".into()];
-                            engine.console_box_kind = 3;
                             // THE REAL PRESENTER BLOCK: SCRIPT2's Honk.talk (record
                             // 2220 rel 40 — C4 guards @0B04/0B87/11A8) emits the
                             // state-gated lines the oracle plays ('Commander,
@@ -1477,21 +1392,15 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                 Option<std::path::PathBuf>,
                                 bool,
                             )> = Vec::new();
+                            let mut honk_menu: Option<Vec<String>> = None;
                             if current_script.get() == 2 {
                                 let mut vm = script_vm.borrow_mut();
                                 if let Some(m) = vm.as_mut() {
                                     m.start_actor_presentation(2220, 40);
                                     let map = vm_lines.borrow();
-                                    new_lines = m
-                                        .run_frame()
-                                        .into_iter()
-                                        .filter_map(|ev| match ev {
-                                            commander_blood_tools::vm::VmEvent::Text {
-                                                offset,
-                                            } => map.get(&offset).cloned(),
-                                            _ => None,
-                                        })
-                                        .collect();
+                                    let out = vm_collect(m, &map);
+                                    new_lines = out.0;
+                                    honk_menu = out.2;
                                 }
                             }
                             if new_lines.is_empty() {
@@ -1501,6 +1410,22 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                     true,
                                 )];
                             }
+                            // The BOX comes from the emitted prompt line's own
+                            // carried menu (the bytecode's 0xFFFF-separated words);
+                            // the captured labels only when no VM is loaded.
+                            engine.console_box = honk_menu
+                                .unwrap_or_else(|| {
+                                    vec![
+                                        "TALK".into(),
+                                        "REMEMBER".into(),
+                                        "BYE_BYE".into(),
+                                    ]
+                                })
+                                .iter()
+                                .map(|l| l.to_uppercase())
+                                .collect();
+                            engine.console_box_kind = 3;
+                            engine.console_box_selected = None;
                             set_vm_dialogue(&mut engine, new_lines);
                         }
                         Some(1) => {
@@ -1700,14 +1625,14 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                             }
                             let off = dic_word_offset.borrow().get(&label).copied();
                             if let Some(off) = off {
-                                let mut out = (Vec::new(), None);
+                                let mut out = (Vec::new(), None, None);
                                 if let Some(m) = script_vm.borrow_mut().as_mut() {
                                     m.concept = off;
                                     let map = vm_lines.borrow();
                                     out = vm_collect(m, &map);
                                     m.concept = 0;
                                 }
-                                let (new_lines, profile) = out;
+                                let (new_lines, profile, _menu) = out;
                                 if let Some(p) = profile {
                                     let next = (p.max(0) as u32) + 1;
                                     *script_vm.borrow_mut() = None;

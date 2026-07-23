@@ -64,6 +64,18 @@ divergence is a scored, visually-reproducible work item. FIRST RESULT (hub_tour)
 script-locked and (b) the missing live CANCEL overlay; after fixes: 2.22 mean / 95.6% close
 across all 9 steps.
 
+## ARCHITECTURE CORRECTION (user directive, 2026-07-23): NO hardcoded bytecode surfaces
+The conversation wiring briefly drifted into transcribing oracle-captured menu labels and
+trees into main.rs. CORRECTED: the menus are IN the bytecode — each 0xA6 line record
+carries its concept menu after a 0xFFFF separator (the decompiled `SAY "... word_65535
+talk remember bye_bye"`). script.rs now splits the marker into (display text, menu_labels);
+vm_collect reports the emitted lines' carried menu; the kind-3 box + the HONK opener render
+WHATEVER the VM emits — the trees, labels, and follow-up presentations all come from
+executing the script (poked presentations start on the next frame). The oracle scenarios
+are VERIFICATION ONLY. Remaining literals: the console row -> actor record map (2220/132,
+the decoded click dispatch itself) and no-VM fallback labels. The Bob screen's topic
+render still reads BOB_TOPICS — converting it to the line-carried menu is the follow-up.
+
 ## CAMPAIGN LOG
 - PASS 5 (nav_probe, partial): post-CANCEL the ring STEERS under edge parks (three
   parks rotate the view ~57 frames — matching the port's presentation-lock release
