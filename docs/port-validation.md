@@ -104,6 +104,22 @@ are VERIFICATION ONLY. Remaining literals: the console row -> actor record map (
 the decoded click dispatch itself) and no-VM fallback labels. The Bob screen's topic
 render still reads BOB_TOPICS — converting it to the line-carried menu is the follow-up.
 
+## STORY-PROGRESSION MAP (bytecode-extracted, 2026-07-23) — the frontier's exact chain
+From decompiled/SCRIPT2.bas + COD operand reads (assembly-first):
+- **Scruter_Jo.talk = record 1860 rel 40** (C4 @0005) — his presentation explains
+  CYBERSPACE ('you go get BIONIUM in CYBERSPACE of SCRUTER JO', @038C) and the
+  BIOXX->Mantas->BIONIUM loop (@04B5..04C7).
+- **vbio** = the BIONIUM counter variable: guards vbio==0/1/2 branch Bob's cryobox
+  begging (@0BD3/0C40/0CA7); vbio>0 acknowledges 'You did get BIONIUM' (@0570/058E).
+  Cyberspace play increments vbio — THE story gate.
+- **rec_0722 == 65535** gates Bob's no-BIONIUM begging block (@0BCA).
+- Driver chain for the outer ring, in order: start 1860 (Scruter Jo) -> his cyberspace
+  explanation -> enter the cyber world (the port: visit_world 'cyber'; the oracle:
+  the cyberspace entry dispatch — to trace) -> BIOXX touches raise vbio -> Bob's
+  blocks unlock -> nav destinations activate (entity flags 0x15..0x1F) -> planets ->
+  SCRIPT3/4/5 -> the Bigbang-concert ending (SCRIPT5, fin.hnm — already wired).
+Each arrow is one dual-run scenario + any needed decode of its dispatch site.
+
 ## CAMPAIGN LOG
 - PASS 7 (story_deep, 27 steps — the longest chain): deep-topic answers play from the
   bytecode (ORXX: 'living guided missiles...') with the persistent-menu + highlight
