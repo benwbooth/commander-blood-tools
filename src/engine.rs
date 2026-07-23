@@ -380,9 +380,6 @@ pub struct EngineState {
     /// and the GPU draws the stars behind at window resolution.
     pub gpu_stars: Option<Vec<(u16, u16, u8)>>,
     pub gpu_bg_colorkey: bool,
-    /// Fast-refresh mode: recompute the GPU hand for a new cursor WITHOUT advancing
-    /// pose tweens (the presenter runs at display refresh; tweens tick at game rate).
-    hand_fast_refresh: bool,
     /// Whether the LAST game tick's screen drew the hand — the display-rate refresh
     /// must never draw a hand on screens that don't (title/intro/TV/films...).
     hand_on_screen: bool,
@@ -599,7 +596,6 @@ impl EngineState {
             gpu_hand_enabled: false,
             gpu_stars: None,
             gpu_bg_colorkey: false,
-            hand_fast_refresh: false,
             hand_on_screen: false,
             console_box_kind: 0,
             option_active: false,
@@ -1349,9 +1345,7 @@ impl EngineState {
                 .hand_mesh
                 .get_or_insert_with(crate::manu3_hand::HandMesh::load);
             mesh.set_pose(sel);
-            if !self.hand_fast_refresh {
-                mesh.tick_pose();
-            }
+            mesh.tick_pose();
             let gp = crate::palette::game_screen_palette();
             for i in 128..=255usize {
                 self.scene_palette[i] = gp[i];
@@ -1396,9 +1390,7 @@ impl EngineState {
             .hand_mesh
             .get_or_insert_with(crate::manu3_hand::HandMesh::load);
         mesh.set_pose(sel);
-        if !self.hand_fast_refresh {
-            mesh.tick_pose();
-        }
+        mesh.tick_pose();
         let gp = crate::palette::game_screen_palette();
         for i in 128..=255usize {
             self.scene_palette[i] = gp[i];
@@ -1416,21 +1408,20 @@ impl EngineState {
         );
     }
 
-    /// Recompute the GPU hand for the current cursor at DISPLAY refresh rate —
-    /// geometry follows the mouse every present; pose tweens stay at game rate.
+    /// Recompute the GPU hand for the current cursor at DISPLAY refresh rate.
+    /// PURE re-projection: the existing pose/skeleton state renders at the new
+    /// cursor — no pose selection, no tween advance, no engine state writes
+    /// (re-running the selection here alternated tick-pose vs rest between
+    /// presents = 60Hz pose flicker, and corrupted rotation detection).
     pub fn refresh_gpu_hand(&mut self, mx: u16, my: u16) {
         if !self.gpu_hand_enabled || !self.hand_on_screen {
             return;
         }
         self.mouse.x = mx;
         self.mouse.y = my;
-        self.hand_fast_refresh = true;
-        if self.bridge_active && self.on_ship {
-            self.draw_hand_cursor();
-        } else {
-            self.draw_hand_at_mouse();
+        if let Some(mesh) = self.hand_mesh.as_ref() {
+            self.gpu_hand = Some(mesh.triangles(mx as i32, my as i32));
         }
-        self.hand_fast_refresh = false;
     }
 
     /// Draw the nav destinations as a golden choice box over the console's left —
