@@ -91,6 +91,12 @@ evidence in the row. Re-audit pass 1: 2026-07-22..23.
   the viewscreen console (harvested band + static viewscreen per the oracle empty-nav state;
   destination choice box once granted); Esc -> bridge. Row closed to the evidence available.
 
+- REEL TIMELINE MAPPED (from the 230 frames): logos ~0-25M -> ship/planet cinematic ~25-144M ->
+  CRYO ~148-208M -> the STATIC VIEWSCREEN CONSOLE + tutorial voices from ~215M. The interpreter's
+  no-input flow goes straight to the tutorial on the static console; the DOSBox run's extended
+  crew scenes are the montage/presentations the interpreter renders differently — the two agree
+  on the console-tutorial destination. PORTED: the SCRIPT1 tutorial screen now shows STATIC in
+  the viewscreen between talk presentations (interpreter truth intro_215M), not black.
 - REEL ENUMERATED (evidence closed): 230 frames at 1M-step intervals across the ENTIRE intro
   (INTROTRACE STEPS=230000000; archived accuracy/reel/, regenerable). The reel sequence is now
   frame-enumerated ground truth; matching scene boundaries to assets + extending the port's

@@ -3472,6 +3472,21 @@ impl EngineState {
                 self.draw_list_menu(&labels, self.topic_selected);
             }
             self.scene_buffer.copy_from_slice(&self.framebuffer);
+        } else if self.console_band_dialogue {
+            // No talk-HNM active on the tutorial console: the viewscreen shows STATIC
+            // (interpreter ground truth, intro_215M — the untuned viewscreen), not black.
+            for p in self.framebuffer.iter_mut() {
+                *p = 0;
+            }
+            self.scene_palette = crate::palette::game_screen_palette();
+            for y in 0..99usize {
+                for x in 0..ENGINE_SCREEN_WIDTH {
+                    self.viewscreen_noise =
+                        self.viewscreen_noise.wrapping_mul(1103515245).wrapping_add(12345);
+                    let v = (self.viewscreen_noise >> 16) as u8;
+                    self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] = 16 + (v & 0x0F);
+                }
+            }
         } else {
             for p in self.framebuffer.iter_mut() {
                 *p = 0;
