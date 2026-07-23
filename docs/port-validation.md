@@ -46,7 +46,7 @@ evidence in the row. Re-audit pass 1: 2026-07-22..23.
 | engine.rs cyberspace | tunnel minigame | **APPROX** | presentation from real assets; goal decoded from SCRIPT2 text (BIOXX/BIONIUM) but the interaction logic is a stand-in. Settle: the cyber .ext consumer + input handler |
 | engine.rs OPTION menu | 3D pyramid menu | **APPROX** | see ship3d pyramid render; item glyphs await manu3 sprite decode |
 | engine.rs world visit | on-planet screens | DATA+APPROX | rooms/objects from decoded data; click=talk + room-step wiring is an interpretation. Settle: on-planet input handler in asm |
-| engine.rs nav view | star chart + list | CAPTURE+ASM | CHART.FD bg; tablo2 music toggle 0x886C; center-relative steer ~0x102/0x216 |
+| engine.rs nav view | star chart + list | CAPTURE+**APPROX**(steer) | CHART.FD bg + tablo2 toggle 0x886C verified; the compass steer's dead-zone (8px) and rate (dx/20) are UNVERIFIED constants — the cited ~0x102/0x216 needs a proper aligned decode of the ship FSM (0xAFA0 segment) |
 | save.rs | port save format | n/a (port-own) | DOS interop via vm dos_save |
 | progress.rs / entity.rs | progression FSM | DATA(partial) | entity records decoded; completion rule (all visited → ending) is an interpretation |
 | recomp/* | interpreter runtime | oracle | separate: runs the real EXE for cross-checks |
@@ -58,3 +58,4 @@ evidence in the row. Re-audit pass 1: 2026-07-22..23.
 4. [ ] Cyberspace interaction (BIOXX touch loop) from the cyber consumer.
 5. [ ] On-planet input handler decode to replace the interpretation.
 6. [ ] ext.rs record semantics via the consumer load path.
+7. [ ] Nav compass steer constants (dead-zone/rate) from the ship FSM — currently invented.
