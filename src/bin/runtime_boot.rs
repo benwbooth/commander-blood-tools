@@ -3582,15 +3582,42 @@ fn main() {
         return;
     }
 
+    let mut rec_watch: Option<u32> = None;
     if let Ok(w) = std::env::var("BOOTWRITEWATCH") {
-        let lin = usize::from_str_radix(w.trim_start_matches("0x"), 16).unwrap();
-        rt.m.watch_addr = Some(lin);
-        eprintln!("boot write-watch armed at linear {lin:#x}");
+        if let Some(recspec) = w.strip_prefix("rec:") {
+            // POINTER-RELATIVE record watch: re-resolve the object block ([0x6724]
+            // far ptr) each shot interval and re-arm block+offset — survives the
+            // per-profile block relocation.
+            rec_watch =
+                Some(u32::from_str_radix(recspec.trim_start_matches("0x"), 16).unwrap());
+            eprintln!("boot record-watch armed at block+{:#x}", rec_watch.unwrap());
+        } else {
+            let lin = usize::from_str_radix(w.trim_start_matches("0x"), 16).unwrap();
+            rt.m.watch_addr = Some(lin);
+            eprintln!("boot write-watch armed at linear {lin:#x}");
+        }
     }
     let mut next_shot = shot_every;
     let end = loop {
         match rt.run(next_shot.min(steps)) {
             RunEnd::StepBudget => {
+                if let Some(off) = rec_watch {
+                    let g = 0x0e84u16;
+                    let w16 = |rt: &Runtime, a: u32| {
+                        rt.m.read8(g, a) as u32 | ((rt.m.read8(g, a + 1) as u32) << 8)
+                    };
+                    let (blk_off, blk_seg) = (w16(&rt, 0x6724), w16(&rt, 0x6726));
+                    if blk_seg > 0 {
+                        let lin = blk_seg as usize * 16 + blk_off as usize + off as usize;
+                        if rt.m.watch_addr != Some(lin) {
+                            eprintln!(
+                                "record-watch re-armed: block {blk_seg:04x}:{blk_off:04x} -> lin {lin:#x} @ step {}",
+                                rt.cpu.steps
+                            );
+                            rt.m.watch_addr = Some(lin);
+                        }
+                    }
+                }
                 let mstep = rt.cpu.steps / 1_000_000;
                 rt.write_ppm(&out.join(format!("boot_{mstep:05}M.ppm"))).unwrap();
                 if rt.cpu.steps >= steps {
