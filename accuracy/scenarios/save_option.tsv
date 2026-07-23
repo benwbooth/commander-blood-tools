@@ -1,0 +1,25 @@
+# Drive the REAL game to write blood.sav — STATUS: reaches the save-slot UI (grey
+# name bar + CANCEL, vs_005..vs_014) but the name entry needs ASCII-carrying key
+# events: VERIFYSCRIPT's `key` injects scancode with ascii=0, which the name-entry
+# BIOS poll ignores. NEXT: extend the `key` command to pass the ASCII byte
+# (inject_key(sc, ascii)), type a name + Enter (0x1C), then blood.sav should land in
+# accuracy/cdrive/cblood/ (int21 0x3C/0x40 are implemented) for the bloodsav.rs
+# round-trip test.
+# Original flow: CANCEL the arrival presentation, open the
+# OPTION submenu, click SAVE (row 2 of TEXT/MUSIC_OFF/SAVE/LOAD/QUIT/CANCEL at pitch 11
+# from top 67, centred x=100).
+click 100 98
+wait 20
+move 230 148
+click 230 148
+wait 30
+click 100 89
+wait 60
+wait 60
+click 100 44
+wait 30
+key 30
+key 31
+key 28
+wait 60
+wait 60
