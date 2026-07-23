@@ -124,7 +124,11 @@ From decompiled/SCRIPT2.bas + COD operand reads (assembly-first):
   through cyberspace) -> planets = concepts 3/4/5 -> D2 profiles 2/3/4 (STRUCTURE-
   LOCKED test @1269/@1284/@129F; the gate scr=rec 0x1276 is READ-ONLY in SCRIPT2's
   bytecode — its writer is runtime code or cross-script state, next trace: the
-  Scruter-examination counter hypothesis + the C4-kind runtime paths) -> SCRIPT3/4/5 in-world dual-runs (pending) ->
+  Scruter-examination counter hypothesis + the C4-kind runtime paths) -> SCRIPT3/4/5 in-world dual-runs (port-side reference set BANKED:
+  accuracy/comparisons/planets/*.ppm via examples/planetbank — with two flagged
+  questions for the oracle pass: every world renders CYAN-DOMINANT (suspected
+  palette-bank defect in the world render path) and the green location header
+  needs oracle confirmation) ->
   the Bigbang-concert ending (fin.hnm trigger wired; dual-run pending).
 Each arrow is one dual-run scenario + any needed decode of its dispatch site.
 
