@@ -450,6 +450,11 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     // rotation/progression. Shared with the load_script closure via RefCell.
     let script_vm: std::cell::RefCell<Option<commander_blood_tools::vm::VmMachine>> =
         std::cell::RefCell::new(None);
+    // SCRIPT1 tutorial auto-chain (ORACLE-observed: the real tutorial plays Izwalito's
+    // guidance, then Honk's welcome, then the menu demo WITHOUT clicks — 'hon' at ~52M
+    // steps, menus at ~57M in no-dispatch probes). Remaining presenters to auto-start
+    // when the current content finishes; clicks then replay from idle.
+    let tutorial_chain: std::cell::RefCell<Vec<u16>> = std::cell::RefCell::new(Vec::new());
     let vm_lines: std::cell::RefCell<
         std::collections::HashMap<usize, (String, Option<std::path::PathBuf>, bool)>,
     > = std::cell::RefCell::new(std::collections::HashMap::new());
@@ -571,6 +576,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     m.load_cod(&cod);
                     m.load_var(&var);
                     m.start_actor_presentation(1428, 40);
+                    *tutorial_chain.borrow_mut() = vec![2220, 2148]; // popped: honk, then menu
                     let lines: Vec<(String, Option<std::path::PathBuf>, bool)> = m
                         .run_frame()
                         .into_iter()
@@ -1430,6 +1436,21 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                             profile = Some(p);
                         }
                         _ => {}
+                    }
+                }
+                // Tutorial auto-chain: current presenter done, nothing new — start the
+                // next one (Honk's welcome, then the menu demo), as the real game does.
+                if new_lines.is_empty() && profile.is_none() {
+                    let next = tutorial_chain.borrow_mut().pop();
+                    if let Some(actor) = next {
+                        m.start_actor_presentation(actor, 40);
+                        for ev in m.run_frame() {
+                            if let commander_blood_tools::vm::VmEvent::Text { offset } = ev {
+                                if let Some(l) = map.get(&offset) {
+                                    new_lines.push(l.clone());
+                                }
+                            }
+                        }
                     }
                 }
             }

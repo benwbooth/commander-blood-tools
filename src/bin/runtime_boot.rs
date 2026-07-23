@@ -184,6 +184,12 @@ fn main() {
             rt.mouse_release(0);
             next_input += 5_000_000;
         }
+        // Optional idle settle before the click sequence (IDLE=<steps>): lets any
+        // running presentation finish so clicks dispatch from the IDLE console.
+        if let Ok(idle) = std::env::var("IDLE") {
+            let extra: u64 = idle.parse().unwrap_or(40_000_000);
+            let _ = rt.run(rt.cpu.steps + extra);
+        }
         let before = rt.opened_files.len();
         for (i, pt) in spec.split(';').enumerate() {
             let (a, b) = pt.split_once(',').unwrap();
