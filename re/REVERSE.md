@@ -5511,6 +5511,18 @@ LIVE hub dynamics confirmed: state[3] observed mid-countdown (2) right after CAN
 remaining unknown is WHEN the record scan re-visits @2744 (needs the ambient record
 to actually END, and the scan pointer [0x6720] -> seg 0x80FE content does not match
 SCRIPT2.COD bytes — identify which buffer that far pointer really addresses).
+THE C3->C4 PROMOTER (0x5D37, in the record-walk update): when the walk meets a
+typed-C3 record: if its related word == gs:[0x674E] (the current special object,
+40 at the hub) -> [0x675A] = si (the interception becomes the ACTIVE record),
+gated `test [0x2793],1` (a presentation must be displaying), then plays SOUND 6
+(the radio-call beep, lcall 0xB1B:0x11D, [0xB39]=2 debounce); else (deferred /
+other object) -> [bp]=0xC4, [bp+4]=0 direct promotion. ORACLE STATUS: the QUEUE
+now FIRES in the driven oracle (cancel-cycles scenario: typed C3 lands at block+
+0x6FC, writer 067c:1BAB) and BYE_BYE cycles advance new dialogue ("Service with a
+smile" @0E21-family = the console responders) — but [0x675A] stays the ambient
+0x6C2, so the walk isn't reaching the queued entry yet; the remaining oracle
+question is what drives the record walk past it (likely needs [0x2793]&1 during
+the walk = an active display presentation when the C3 is met).
 NEXT TASKS (frontier):
 - [ ] vm::walk coverage — DIAGNOSED PRECISELY: SCRIPT2.bas ends at 0x2F83 of a
       0x9882-byte COD (31% coverage; tail 84% nonzero real content; the very next
