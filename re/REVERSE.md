@@ -5279,3 +5279,22 @@ text-draw that places each menu word (its x/pitch = the label geometry). Those r
 the capture-measured x=175 / top 39,83 / pitch 11 constants. Candidate: the box-list
 builder is the caller of 0x9450; the word draw is likely 0x299:0x6A0 again with the
 menu portion + an indented x. dis around the 0x9450 caller next.
+
+### FOUND: presentation box-OPEN animation table gs:0x2B97 (6 phases, assembly)
+The presentation setup (`screen_mode_update` 0x79E5) animates a box open by indexing an
+8-byte-record table at gs:0x2B97 with (phase-1): `si=0x2b97+phase*8`, reading
+{x=[si], y=[si+2], w=[si+4], h=[si+6]}, then drawing via 0x299:0xCDC (ax=0xE0 fill) and
+0x299:0xBB5 (ax=0xEF frame). Decoded (DS base file 0xD420, confirmed):
+  ph0 (155,67) 10x15 | ph1 (143,57) 34x35 | ph2 (120,51) 80x47 |
+  ph3 (76,43) 168x63 | ph4 (26,30) 268x89 | ph5 (0,10) 320x130
+The `cmp ax,6/jge` + `sub ax,6/cmp ax,3` guards select this table for phases 1..6 and a
+second full-screen path (bx=0,cx=0,dx=0x140,bp=0xc8, si=0x6011) for phases 7..9. So the
+box grows from a point to the 320x130 presentation frame over 6 ticks — the REAL open
+animation the port should play (the port currently pops the box instantly). Palette
+0xE0 (fill) / 0xEF (frame) — matches the ported box indices (now assembly-confirmed, not
+capture-guessed).
+
+REMAINING sub-task: the concept-menu ROW WORD draw (x + pitch of the selectable labels
+inside the opened box). Find the text-draw that renders the line record's 0xFFFF menu
+words as rows — its x/pitch replaces the capture-measured x=175 / pitch 11. Then the
+box-open table above drives the container.
