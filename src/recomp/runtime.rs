@@ -129,7 +129,7 @@ pub struct Runtime {
     prog_end: u16,
     alloc_next: u16,
     kbd_queue: VecDeque<(u8, u8)>, // (scancode, ascii) pending hardware events
-    bios_keys: VecDeque<(u8, u8)>, // decoded buffer served by int 16h
+    pub bios_keys: VecDeque<(u8, u8)>, // decoded buffer served by int 16h
     kbd_irq_pending: u32,          // int 9 deliveries owed (when the game hooked int 9)
     // int 33h mouse state. Coordinates are DOS-virtual: x 0..639 (2px granularity in mode 13h),
     // y 0..199.
@@ -2115,6 +2115,7 @@ impl Runtime {
             0x3c => {
                 // create/truncate
                 let path = self.read_asciiz(self.m.regs.ds, self.m.regs.dx());
+                self.opened_files.push((self.cpu.steps, format!("CREATE:{path}")));
                 match self.resolve(&path, true) {
                     Ok(p) => match std::fs::File::create(&p) {
                         Ok(f) => {

@@ -19,7 +19,7 @@ evidence in the row. Re-audit pass 1: 2026-07-22..23.
 | vm.rs `VmMachine` | script bytecode executor | **ASM** | every handler cited (dispatch 0x142D0; 0x6462/0x6830/0x65EB/0x6596/0x6588/0x6863/0x6946/0x6902/0x6B06/0x6AA7/0x64xx); flow verified vs live-oracle tutorial lines |
 | vm.rs `decompile_script` | listings generator | ASM | same semantics as VmMachine; listings complete for SCRIPT1-5 |
 | vm.rs walk/LineState | token scanner | ASM+DATA | descriptor table 0x6F18 transcribed; A6 layout decoded |
-| vm.rs dos_save | blood.sav I/O | **ASM** | save path 0x1C3F / load 0x1CBD; block order+sizes cited; round-trip test. Tail work-buffer block written empty (rebuilt state) |
+| vm.rs dos_save | DOS save I/O | **ASM + LIVE ROUND-TRIP** | save path 0x1C3F / load 0x1CBD; block order+sizes cited. LIVE (save_option scenario): the REAL game, driven through OPTION->SAVE typing 'ab' + Enter, WROTE game1.sav (5887 B, profile=1 at the post-tutorial hub) + blood.sav (= the 10x32 slot-name DIRECTORY, slot 1 named 'ab'); both banked (accuracy/cdrive/cblood) and parsed by bloodsav.rs. Full slot-UI decode in re/REVERSE.md (edit state [0x2734]/[0x273B]/[0xB15], lowercase+digit filter, Enter commit 0x1DD8 -> int21 3C00 with slot filename) |
 | bas_vm.rs / concept_menu.rs | conversation menus | DATA | 0xA3/0xA6 BAS blocks decoded; labels verified vs live captures (menu tree) |
 | script.rs | speech-event assembly | DATA | offsets match VM Text events exactly; actor talk-ref +58 verified vs DEB names |
 | descript.rs | DESCRIPT.DES records | DATA | drives intro/TV/music; verified against real-game behavior |

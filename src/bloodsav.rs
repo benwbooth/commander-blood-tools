@@ -1,5 +1,11 @@
-//! The DOS `blood.sav` save-file format — the byte-exact layout the original
-//! `BLOODPRG.EXE` reads and writes.
+//! The DOS save-file formats — the byte-exact layouts the original
+//! `BLOODPRG.EXE` reads and writes. LIVE-VERIFIED round trip (save_option scenario):
+//! the real game, driven through OPTION->SAVE with a typed name, wrote BOTH files and
+//! this module parses them:
+//! - `game<N>.sav` (slots 1..10): the state file described below (observed: 5887
+//!   bytes, profile=1 at the post-tutorial hub, 5277-byte runtime region).
+//! - `blood.sav`: the SLOT-NAME DIRECTORY — exactly ten 32-byte records
+//!   {15-char name, NUL, "game<N>.sav" + padding} (the typed name landed in slot 1).
 //!
 //! Decoded from the binary's save/load routines (`vm_state_save` @0x1C3F,
 //! `vm_state_load` @0x1CBD; see `re/REVERSE.md`). Both serialize the live VM

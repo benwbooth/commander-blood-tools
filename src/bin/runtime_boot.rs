@@ -2368,6 +2368,21 @@ fn main() {
         return;
     }
 
+    if let Ok(spec) = std::env::var("LINDUMP") {
+        // Dump LIVE bytes at a LINEAR address after resuming the hub state —
+        // for code sites whose file bytes are relocation-patched. Spec "<linhex>:<len>".
+        let parts: Vec<&str> = spec.split(':').collect();
+        let lin = usize::from_str_radix(parts[0].trim_start_matches("0x"), 16).unwrap();
+        let len: usize = parts[1].parse().unwrap();
+        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        let bytes = &rt.m.mem[lin..lin + len];
+        println!("LINDUMP {lin:#x}+{len}:");
+        for (i, ch) in bytes.chunks(16).enumerate() {
+            let hexs: Vec<String> = ch.iter().map(|b| format!("{b:02x}")).collect();
+            println!("  {:#07x}: {}", lin + i * 16, hexs.join(" "));
+        }
+        return;
+    }
     if let Ok(spec) = std::env::var("MEMDUMP") {
         // Dump N bytes at gs:<off> to a file after running to `steps`. Spec: "<offhex>:<len>:<path>".
         let parts: Vec<&str> = spec.split(':').collect();
@@ -2965,6 +2980,11 @@ fn main() {
         }
         std::fs::write(out.join("vs_dac.bin"), rt.dac).unwrap();
         println!("VERIFYSCRIPT done: {step} steps");
+        println!("  bios_keys pending: {}, [0xB15]={:#04x}, [0x2738]={:#04x}, [0x272E]={}",
+            rt.bios_keys.len(),
+            rt.m.mem[0xE840 + 0xB15],
+            rt.m.mem[0xE840 + 0x2738],
+            rt.m.mem[0xE840 + 0x272E] as u16 | ((rt.m.mem[0xE840 + 0x272F] as u16) << 8));
         for (st, f) in rt.opened_files.iter().rev().take(8) {
             println!("  opened @{st}: {f}");
         }

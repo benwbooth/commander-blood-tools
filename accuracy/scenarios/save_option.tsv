@@ -1,4 +1,7 @@
-# Drive the REAL game to write blood.sav — STATUS: reaches the save-slot UI (grey
+# Drive the REAL game to SAVE — VERIFIED WORKING END-TO-END: types 'ab' (lowercase
+# only — the edit filter rejects uppercase), Enter commits -> vm_state_save writes
+# game1.sav (the state) + blood.sav (the 10x32 slot-name directory) to the DOS cwd.
+# Banked copies: accuracy/cdrive/cblood/{game1,blood}.sav; parsed by src/bloodsav.rs — STATUS: reaches the save-slot UI (grey
 # name bar + CANCEL, vs_005..vs_014) but the name entry needs ASCII-carrying key
 # events. STATUS 2: ASCII keys (key <sc> <ascii>) + correctly-placed ring clicks on
 # the slot bar still don't commit — the slot UI's input path is NOT a hot int16 poll
