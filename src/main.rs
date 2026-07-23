@@ -2002,6 +2002,21 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 // Tutorial auto-chain: current presenter done, nothing new — start the
                 // next one (Honk's welcome, then the menu demo), as the real game does.
                 if new_lines.is_empty() && profile.is_none() {
+                    // A QUEUED presentation (OP_C3, e.g. the Scruter interception)
+                    // takes precedence: promote it to active, as the engine's scan
+                    // does when the current presentation ends.
+                    if let Some(off) = m.promote_queued_presentation() {
+                        for ev in m.run_frame() {
+                            if let commander_blood_tools::vm::VmEvent::Text { offset } = ev {
+                                if let Some(l) = map.get(&offset) {
+                                    new_lines.push(l.clone());
+                                }
+                            }
+                        }
+                        let _ = off;
+                    }
+                }
+                if new_lines.is_empty() && profile.is_none() {
                     let next = tutorial_chain.borrow_mut().pop();
                     if let Some(actor) = next {
                         m.start_actor_presentation(actor, 40);

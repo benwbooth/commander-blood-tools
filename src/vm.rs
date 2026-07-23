@@ -3679,6 +3679,27 @@ impl VmMachine {
         self.presentation_active = true;
     }
 
+    /// Promote a QUEUED presentation (a typed `{0xC3, related, 1}` record, the
+    /// OP_C3 request) to an ACTIVE one — the engine's scan does this when the
+    /// current presentation ends (the pending-slot protocol around 0x5C64).
+    /// Returns the started record offset, or None when nothing is queued or a
+    /// presentation is already busy.
+    pub fn promote_queued_presentation(&mut self) -> Option<u16> {
+        if self.presentation_busy {
+            return None;
+        }
+        let words = self.line_records.len();
+        for slot in 0..words.saturating_sub(2) {
+            if self.line_records[slot] == 0xC3 && self.line_records[slot + 2] == 1 {
+                let off = (slot * 2) as u16;
+                let related = self.line_records[slot + 1];
+                self.start_actor_presentation(off, related);
+                return Some(off);
+            }
+        }
+        None
+    }
+
     /// ARRIVAL: satisfy the opening block's record-equality guards (the travel
     /// system's writes). SCRIPT2's first block guards `rec_0F4E == 3488` — the
     /// current-location variable vs the DEB offset of `Pterra`; arriving at the
@@ -4710,6 +4731,14 @@ mod tests {
                 .any(|e| matches!(e, VmEvent::QueuePresentation { offset: 0x6FC })),
             "queue event emitted"
         );
+
+        // Idle promotion (the engine's scan): the queued request becomes the
+        // ACTIVE presentation — typed C4, active actor bound — and the arrival
+        // guard block's C4 check @275D then passes.
+        let started = m.promote_queued_presentation();
+        assert_eq!(started, Some(0x6FC), "the queued interception starts");
+        assert_eq!(m.rec_read(0x6FC), 0xC4, "record promoted to ACTIVE type");
+        assert_eq!(m.active_actor, Some(0x6FC));
     }
 
     #[test]
