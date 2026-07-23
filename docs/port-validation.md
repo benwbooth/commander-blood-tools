@@ -164,8 +164,11 @@ transcription of the textured fill into manu3_hand (replacing flat shading). ARC
    subtitle text (OCR empty across 120 rounds — consistent with the idle-console frames) and
    orb/row clicks neither surface a menu nor free the presentation => the conversation must be
    INITIATED by an input not yet decoded (the consultation-start trigger); conv_partial.state
-   banked. Next driver round: decode the consultation-start input (what the real player presses
-   at the hub to talk to Honk — candidate: the station records' HONK row while idle, or a key).
+   banked. ROUND 2: all golden-menu rows respond with boxes (per the earlier rp probes) but NONE change
+   presentation/FSM/files — the hub state's conversation surface is CANCEL-only; the consultation
+   content lives elsewhere in the story flow. The driver project's true scope = driving SCRIPT2's
+   STORY forward (the game's own progression events), the full-game-playthrough driver — the
+   final frontier item, pattern proven (tut16) but a dedicated multi-session effort.
 7. [x] Nav compass steer REMOVED (the chart view is static in the real game — CHART.FD fixed
    image + target-list selection; the mouse-steered compass with dead-zone 8/rate dx/20 was an
    invention). compass_angle survives only as the explicit key-cycled world-target selector.
