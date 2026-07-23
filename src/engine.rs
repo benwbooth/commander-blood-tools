@@ -1331,51 +1331,6 @@ impl EngineState {
             );
             return;
         }
-        let Some(si) = self
-            .hand_atlas
-            .iter()
-            .enumerate()
-            .min_by_key(|(_, s)| {
-                let (dx, dy) = (s.captured_at.0 - cx, s.captured_at.1 - cy);
-                dx * dx + dy * dy
-            })
-            .map(|(i, _)| i)
-        else {
-            return;
-        };
-        let sprite = self.hand_atlas[si].clone();
-        let gp = crate::palette::game_screen_palette();
-        // Map the sprite's distinct indices into the reserved slots. v2 sprites carry the
-        // live-captured RGB per index; v1 indices resolve through the baked game palette.
-        let mut slot_of = [0u8; 256];
-        let mut used = 0usize;
-        for &idx in &sprite.indices {
-            if idx != 0 && slot_of[idx as usize] == 0 && used < 0x40 {
-                let slot = 0xA8 + used;
-                self.scene_palette[slot] = match &sprite.local_palette {
-                    Some(pal) => pal.get(idx as usize - 1).copied().unwrap_or([255, 255, 255]),
-                    None => gp[idx as usize],
-                };
-                slot_of[idx as usize] = slot as u8;
-                used += 1;
-            }
-        }
-        let (x0, y0) = (cx - sprite.anchor.0, cy - sprite.anchor.1);
-        for y in 0..sprite.height {
-            for x in 0..sprite.width {
-                let index = sprite.indices[y * sprite.width + x];
-                if index == 0 {
-                    continue;
-                }
-                let (px, py) = (x0 + x as i32, y0 + y as i32);
-                if (0..ENGINE_SCREEN_WIDTH as i32).contains(&px)
-                    && (0..ENGINE_SCREEN_HEIGHT as i32).contains(&py)
-                {
-                    self.framebuffer[py as usize * ENGINE_SCREEN_WIDTH + px as usize] =
-                        slot_of[index as usize];
-                }
-            }
-        }
     }
 
     /// Draw the pointing-hand cursor at the bridge's ring-anchored position (the
