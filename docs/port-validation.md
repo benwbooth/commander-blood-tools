@@ -98,7 +98,13 @@ evidence in the row. Re-audit pass 1: 2026-07-22..23.
    choice box with CANCEL; pyramid screen unrouted. The earlier "blocked" analysis was wrong on
    two counts (the savestate existed; the mouse-x model). TELEPHONE/CRYOBOX probed: both open
    choice boxes too (universal interaction) — ported (row -> box -> item -> screen).
-4./5. [CONVERGED] Cyberspace + on-planet interaction are the SAME system: the cyber worlds are
+4./5. [CLOSED to the decoded model] World/entity interaction is LIST-DRIVEN end to end (decoded
+   chain: candidate list 0x7259 [flags-filtered entities -> [0x250B]] -> choice box -> commit
+   0xB0F3 [[0x251B], FSM state 3] -> C1 presentation swap 0x5B75 -> script blocks; NO free-roam
+   hit-test exists). PORTED: on-planet entity click opens the candidate box; choosing engages the
+   dialogue — the same universal-box model as the console. Residual: per-world candidate labels
+   (entity names) when multiple entities populate.
+   [was: CONVERGED] Cyberspace + on-planet interaction are the SAME system: the cyber worlds are
    standard .ext worlds (initial entity id=1 kind=4 at a screen position, like every planet;
    fd/1cyber1*.lbm are their rooms). Both rows resolve with ONE trace: the EXE's world/entity
    runtime (entity_object_populate 0x40D0 + the entity click dispatch through entity_draw

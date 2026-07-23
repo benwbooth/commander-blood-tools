@@ -1113,16 +1113,25 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 Event::ButtonPress(b)
                     if engine.world_location_active() && b.detail == 1 =>
                 {
-                    if engine.world_object_click(mx, my).is_some() {
-                        let heading = engine.compass_angle;
-                        let dest = (heading as u32 * 3 / 180).clamp(0, 2) + 3;
-                        engine.leave_world();
-                        engine.progress.visit(&format!("SCRIPT{dest}"));
-                        load_script(&mut engine, &mut music, dest);
-                        engine.on_ship = false;
+                    // LIST-DRIVEN interaction (decoded 0x7259: the world/entity selection is a
+                    // filtered candidate LIST, no free-roam hit-test): clicking an entity
+                    // marker opens the candidate box; choosing engages the location's
+                    // dialogue; CANCEL/elsewhere steps rooms.
+                    if let Some(row) = engine.console_box_click(mx, my) {
+                        let last = engine.console_box.len().saturating_sub(1);
+                        engine.console_box.clear();
+                        if row < last {
+                            let heading = engine.compass_angle;
+                            let dest = (heading as u32 * 3 / 180).clamp(0, 2) + 3;
+                            engine.leave_world();
+                            engine.progress.visit(&format!("SCRIPT{dest}"));
+                            load_script(&mut engine, &mut music, dest);
+                            engine.on_ship = false;
+                        }
+                    } else if engine.world_object_click(mx, my).is_some() {
+                        engine.console_box = vec!["TALK".into(), "CANCEL".into()];
+                        engine.console_box_kind = 10;
                     } else {
-                        // Elsewhere on the ground: step to the next room (movement
-                        // along the world's node paths — the .ext payload's walks).
                         engine.cycle_world_room(1);
                     }
                 }

@@ -3009,6 +3009,10 @@ impl EngineState {
             0xFE,
         );
         self.world_location = Some(visit);
+            if !self.console_box.is_empty() {
+            let labels = self.console_box.clone();
+            self.draw_choice_box(&labels, None);
+        }
     }
 
     fn render_nav_pyramid_sprites(&mut self) {
