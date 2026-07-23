@@ -74,6 +74,13 @@ evidence in the row. Re-audit pass 1: 2026-07-22..23.
   OPTION/TELEPHONE/CRYOBOX real screens can be captured. Port keeps the idle-dispatch gate
   (consistent with all observations).
 
+- NAV-flow probe state: the hub savestate is MENU-ENGAGED ([0x2793]&4 clamp) — ring-parking
+  cannot rotate the view (cursor dragged back per the decoded clamp); orb clicks don't disengage.
+  The nav sector (purple pyramids + orb, panorama f~95) and the gray pyramid+orb VIEWSCREEN
+  console (nav_screen_opened capture — the same band art as the intro, vindicating it as a real
+  in-game screen a third time) are reachable once disengage is found. Next diagnostic: clear
+  [0x2793]&4 in-probe ("c" step) to map the nav flow, then find the legitimate disengage input.
+
 ## Active fix queue (from the matrix, user-reported first)
 1. [x] Host crosshair removed; hand = the only cursor, all screens (this pass).
 2. [x] Hand hotspot: oracle frames confirm fingertip = mouse position (arm extends down-left); the BRIDGEPROBE-derived atlas anchors encode this. Pose model (nearest-capture) remains APPROX vs the real 3D render.

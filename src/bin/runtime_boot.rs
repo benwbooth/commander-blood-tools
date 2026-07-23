@@ -2388,15 +2388,22 @@ fn main() {
         rt.load_state(statepath).unwrap();
         let before = rt.opened_files.len();
         for (i, pt) in spec.split(';').enumerate() {
-            // "m<sx>,<sy>" = move/hover only; "<sx>,<sy>" = click.
-            let (mv, pt) = match pt.strip_prefix('m') {
-                Some(rest) => (true, rest),
-                None => (false, pt),
+            // "m<sx>,<sy>" = move/hover only; "r<ringx>,<sy>" = park at ABSOLUTE ring x
+            // (steers the view there); "<sx>,<sy>" = click at screen coords.
+            let (mode, pt) = match (pt.strip_prefix('m'), pt.strip_prefix('r')) {
+                (Some(rest), _) => (1u8, rest),
+                (_, Some(rest)) => (2u8, rest),
+                _ => (0, pt),
             };
+            let mv = mode != 0;
             let (a, b) = pt.split_once(',').unwrap();
             let (sx, sy): (u16, u16) = (a.trim().parse().unwrap(), b.trim().parse().unwrap());
             let fr = frame(&rt);
-            let ring = (sx as i32 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+            let ring = if mode == 2 {
+                sx % 1440
+            } else {
+                (sx as i32 + fr as i32 * 8 - 160).rem_euclid(1440) as u16
+            };
             rt.set_mouse_pos(ring, sy);
             let _ = rt.run(rt.cpu.steps + 500_000);
             if !mv {
