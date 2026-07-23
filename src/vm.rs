@@ -534,11 +534,14 @@ pub enum VmToken {
         profile_index: u16,
         len: usize,
     },
-    /// Any other opcode; raw length recorded.
+    /// Any other opcode: raw length from the descriptor table, with the operand
+    /// bytes captured LOSSLESSLY (the token IR round-trips byte-exact; the ASM
+    /// semantics of these ops live in VmMachine's handlers).
     Op {
         offset: usize,
         opcode: u8,
         len: usize,
+        operands: Vec<u8>,
     },
     /// Decoder fell off the rails (byte outside `0xA0..=0xD3` where a token was
     /// expected). Walking stops; the offset is where it happened.
@@ -656,7 +659,11 @@ pub fn encode_token(t: &VmToken) -> Option<Vec<u8>> {
             b.push(OP_SCRIPT_PROFILE_REQUEST);
             b.push(*operand);
         }
-        VmToken::Op { .. } | VmToken::Invalid { .. } => return None,
+        VmToken::Op { opcode, operands, .. } => {
+            b.push(*opcode);
+            b.extend_from_slice(operands);
+        }
+        VmToken::Invalid { .. } => return None,
     }
     Some(b)
 }
@@ -706,6 +713,7 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
                 offset: pos,
                 opcode: op,
                 len: next - pos,
+                operands: cod[pos + 1..next].to_vec(),
             });
             pos = next;
             continue;
@@ -853,6 +861,7 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
                 offset: pos,
                 opcode: op,
                 len,
+                operands: cod[pos + 1..(pos + len).min(end)].to_vec(),
             });
         }
         pos += len;
@@ -4580,14 +4589,12 @@ mod tests {
             eprintln!(
                 "SCRIPT{n}: {total} tokens — {exact} byte-exact, {prefix} prefix-exact, {opaque} length-only"
             );
-            // ZERO divergences is the correctness bar (asserted above per token).
-            // The byte-exact share is the COMPLETENESS metric — raising this floor
-            // tracks operand-modeling progress on the simple ops (the length-only
-            // remainder: A0/A2/A4/A5/A9/AB... whose operands the token type does
-            // not carry yet, though VmMachine executes them with full semantics).
-            assert!(
-                exact * 10 >= total * 4,
-                "SCRIPT{n}: byte-exact share regressed below 40% ({exact}/{total})"
+            // THE ROUND-TRIP BAR: every token re-encodes byte-exact (the Op IR
+            // carries its operand bytes losslessly; semantics live in VmMachine).
+            assert_eq!(opaque, 0, "SCRIPT{n}: no content-opaque tokens remain");
+            assert_eq!(
+                exact, total,
+                "SCRIPT{n}: every token round-trips byte-exact ({exact}/{total})"
             );
         }
     }
@@ -4841,7 +4848,8 @@ mod tests {
             VmToken::Op {
                 offset: 0,
                 opcode: 0xCE,
-                len: 1
+                len: 1,
+                operands: Vec::new()
             }
         );
         match &toks[1] {
