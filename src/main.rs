@@ -1011,6 +1011,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         let kind = engine.console_box_kind;
                         engine.console_box.clear();
                         if row < last {
+                            engine.hand_pose_event(7); // the decoded SELECTING pose
                             engine.hand_pose_event(0xA); // the decoded transition pose
                             match kind {
                                 1 => {
