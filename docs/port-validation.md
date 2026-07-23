@@ -66,6 +66,13 @@ evidence in the row. Re-audit pass 1: 2026-07-22..23.
   talk-HNM sets for Rotator (g_gar*), Maziok/Fifi (omp*), Outrageor (r_pri*). Their dialogue
   scenes were silently video-less. Extracted; scenes now resolve.
 
+- ORACLE console-dispatch nuance (open): with a presentation ACTIVE, golden-menu clicks appear to
+  ADVANCE the content (OPTION-row clicks stepped the menu text 'Today's fare:'→'PLASMA soup
+  HONK-style.') rather than dispatch; the HONK row click DID dispatch his welcome from the
+  earlier state. Need: idle-console probe (running) to see the resting state, then single-click
+  probes per row. The port currently always dispatches menu rows during dialogue — may need a
+  busy-gate (click-to-advance while presenting, dispatch when idle).
+
 ## Active fix queue (from the matrix, user-reported first)
 1. [x] Host crosshair removed; hand = the only cursor, all screens (this pass).
 2. [x] Hand hotspot: oracle frames confirm fingertip = mouse position (arm extends down-left); the BRIDGEPROBE-derived atlas anchors encode this. Pose model (nearest-capture) remains APPROX vs the real 3D render.
