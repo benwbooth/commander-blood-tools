@@ -567,15 +567,11 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 // plays its talk-HNMs over the pyramid-console + eye-orb band.
                 engine.set_console_band_dialogue(n == 1);
                 // The TOPIC MENU (the game's concept-menu conversation system).
-                // The topic LABELS are concept words populated per-context by the
-                // script; only SCRIPT2's numerology-consultation labels (TALK /
-                // ONE..NINE for its help* topics) are LIVE-VERIFIED (captured from
-                // the running game). For the location scripts (SCRIPT3/4/5) the
-                // real concept labels are RE-pending (a per-script label table —
-                // see re/REVERSE.md), so we do NOT fabricate them: those dialogues
-                // keep linear playback until the label source is decoded. Wiring
-                // help*→ONE..NINE for locations would be guesswork (SCRIPT3's help1
-                // is not the numerology "ONE").
+                // SCRIPT2's numerology labels (TALK / ONE..NINE) are LIVE-VERIFIED;
+                // the location scripts (SCRIPT3/4/5) get their REAL concept labels
+                // from the decoded .BAS menu stacks (bas_vm — SCRIPT3 LISTEN/INSIST/
+                // TREAT, SCRIPT4 PAINTING/CULTURE/YOLK, SCRIPT5 PEACE/WAR/...),
+                // wired below via sync_topic_menu_from_bas + bas_menu_click.
                 if n == 1 {
                     // SCRIPT1 = the console TUTORIAL, driven by the FAITHFUL VM:
                     // the tutorial guidance presenter (record 1428) starts as the
