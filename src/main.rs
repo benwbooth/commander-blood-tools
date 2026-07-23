@@ -1011,6 +1011,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         let kind = engine.console_box_kind;
                         engine.console_box.clear();
                         if row < last {
+                            engine.hand_pose_event(0xA); // the decoded transition pose
                             match kind {
                                 1 => {
                                     engine.bridge.release_menu();
@@ -1073,6 +1074,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         engine.bridge.release_menu();
                         engine.bridge_active = false;
                         engine.viewscreen_active = true;
+                        engine.hand_pose_event(0xA);
                         continue;
                     }
                     if let Some(i) = engine.bridge_nav_destination_click(mx, my) {
