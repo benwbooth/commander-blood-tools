@@ -2377,6 +2377,61 @@ fn main() {
     // clicking each topic (reloading the savestate to isolate each) and reading the
     // resulting current-menu offset gs:0x6772. Gives the ground-truth navigation the
     // clean-port conversation VM must reproduce, without a full static VM decode.
+    if std::env::var("PLAYTO").is_ok() {
+        // Play forward from the hub toward a LOCATION VISIT using the decoded grammar:
+        // advance the presentation via the orb until idle, steer to the nav sector,
+        // open the destination box, choose row 0, then run the travel — dumping frames
+        // and saving a location savestate at the end (unlocks the entity-stepper watch).
+        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        let g = 0x0e84u16;
+        let frame = |rt: &Runtime| rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
+        let presenting = |rt: &Runtime| rt.m.read8(g, 0x2793) & 4 != 0;
+        let click = |rt: &mut Runtime, sx: i32, sy: u16| {
+            let fr = frame(rt) as i32;
+            let ring = (sx + fr * 8 - 160).rem_euclid(1440) as u16;
+            rt.set_mouse_pos(ring, sy);
+            let _ = rt.run(rt.cpu.steps + 300_000);
+            rt.mouse_press(0);
+            let _ = rt.run(rt.cpu.steps + 300_000);
+            rt.mouse_release(0);
+            let _ = rt.run(rt.cpu.steps + 4_000_000);
+        };
+        // 1) advance the presentation to idle (max 60 orb clicks).
+        for i in 0..60 {
+            if !presenting(&rt) {
+                println!("idle after {i} advances @ {} steps", rt.cpu.steps);
+                break;
+            }
+            click(&mut rt, 125, 118);
+        }
+        rt.write_ppm(&out.join("pt_idle.ppm")).unwrap();
+        // 2) steer to the nav sector (park past it; trail lands ~95).
+        for _ in 0..6 {
+            rt.set_mouse_pos(880, 100);
+            let _ = rt.run(rt.cpu.steps + 3_000_000);
+        }
+        println!("steered to frame {}", frame(&rt));
+        rt.write_ppm(&out.join("pt_nav.ppm")).unwrap();
+        // 3) open the destination box via the nav orb, then choose row 0.
+        click(&mut rt, 105, 148);
+        rt.write_ppm(&out.join("pt_box.ppm")).unwrap();
+        click(&mut rt, 75, 97);
+        // 4) run the travel/arrival, dumping along the way.
+        for i in 0..8 {
+            let _ = rt.run(rt.cpu.steps + 10_000_000);
+            rt.write_ppm(&out.join(format!("pt_travel_{i}.ppm"))).unwrap();
+        }
+        rt.save_state(std::path::Path::new("accuracy/location_visit.state")).unwrap();
+        println!("PLAYTO done @ {} steps; location_visit.state saved", rt.cpu.steps);
+        // Opened files reveal what loaded (travel film? location assets?).
+        let mut seen = std::collections::HashSet::new();
+        for (step, path) in &rt.opened_files {
+            if seen.insert(path.clone()) && *step > 2_000_000_000 {
+                println!("  @{step} {path}");
+            }
+        }
+        return;
+    }
     if std::env::var("REGIONDUMP").is_ok() {
         // Dump the LIVE ui-region table (32 x 32B descending from ds:0x65F2) at the hub.
         rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
