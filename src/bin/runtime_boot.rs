@@ -2377,6 +2377,25 @@ fn main() {
     // clicking each topic (reloading the savestate to isolate each) and reading the
     // resulting current-menu offset gs:0x6772. Gives the ground-truth navigation the
     // clean-port conversation VM must reproduce, without a full static VM decode.
+    if std::env::var("HANDGRID").is_ok() {
+        // Dense hand-pose capture: resume the hub state, keep the view parked (all grid
+        // points sit inside the steering dead zone), and dump a frame with the REAL 3D hand
+        // at each grid position. Offline: modal-background diff -> sprite atlas.
+        let g = 0x0e84u16;
+        let frame = |rt: &Runtime| rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
+        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        let fr = frame(&rt);
+        for sy in (20..=190).step_by(34) {
+            for sx in (40..=280).step_by(40) {
+                let ring = (sx as i32 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+                rt.set_mouse_pos(ring, sy as u16);
+                let _ = rt.run(rt.cpu.steps + 2_000_000);
+                rt.write_ppm(&out.join(format!("hg_{sx}_{sy}.ppm"))).unwrap();
+            }
+        }
+        println!("HANDGRID done (frame {fr})");
+        return;
+    }
     if let Ok(spec) = std::env::var("RESUMEPROBE") {
         // Resume the clean interactive SCRIPT2 state and click screen positions with
         // RING-space mouse x (ring = screen_x + frame*8 - 160, the console's mouse model —

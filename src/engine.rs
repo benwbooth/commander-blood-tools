@@ -159,6 +159,9 @@ pub(crate) fn assemble_words(parts: &[String]) -> String {
 /// at a given cursor position (fingertip anchor = the cursor hotspot).
 #[derive(Clone)]
 struct HandSprite {
+    /// v2 sprites carry their own RGB palette (colors captured from the live frame);
+    /// v1 sprites' indices resolve through the baked game palette.
+    local_palette: Option<Vec<[u8; 3]>>,
     /// Cursor position this sprite was captured at (the renderer orients the
     /// hand by position); the nearest sprite is drawn.
     captured_at: (i32, i32),
@@ -1235,7 +1238,8 @@ impl EngineState {
         for entry in entries.flatten() {
             let name = entry.file_name().to_string_lossy().into_owned();
             let Some(pos) = name
-                .strip_prefix("hand_")
+                .strip_prefix("hand2_")
+                .or_else(|| name.strip_prefix("hand_"))
                 .and_then(|s| s.strip_suffix(".bin"))
                 .and_then(|s| s.split_once('_'))
                 .and_then(|(a, b)| Some((a.parse::<i32>().ok()?, b.parse::<i32>().ok()?)))
@@ -1251,12 +1255,20 @@ impl EngineState {
             if w <= 0 || h <= 0 || data.len() < 8 + (w * h) as usize {
                 continue;
             }
+            let body = 8 + (w * h) as usize;
+            // v2 (hand2_*.bin): a local-palette tail [ncolors, ncolors*3 RGB].
+            let local_palette = data.get(body).and_then(|&n| {
+                let n = n as usize;
+                let tail = data.get(body + 1..body + 1 + n * 3)?;
+                Some(tail.chunks_exact(3).map(|c| [c[0], c[1], c[2]]).collect::<Vec<_>>())
+            });
             self.hand_atlas.push(HandSprite {
+                local_palette,
                 captured_at: pos,
                 anchor: (anchor_x, anchor_y),
                 width: w as usize,
                 height: h as usize,
-                indices: data[8..8 + (w * h) as usize].to_vec(),
+                indices: data[8..body].to_vec(),
             });
         }
     }
@@ -1283,13 +1295,17 @@ impl EngineState {
         };
         let sprite = self.hand_atlas[si].clone();
         let gp = crate::palette::game_screen_palette();
-        // Map the sprite's distinct indices into the reserved slots.
+        // Map the sprite's distinct indices into the reserved slots. v2 sprites carry the
+        // live-captured RGB per index; v1 indices resolve through the baked game palette.
         let mut slot_of = [0u8; 256];
         let mut used = 0usize;
         for &idx in &sprite.indices {
-            if idx != 0 && slot_of[idx as usize] == 0 && used < 0x20 {
+            if idx != 0 && slot_of[idx as usize] == 0 && used < 0x40 {
                 let slot = 0xA8 + used;
-                self.scene_palette[slot] = gp[idx as usize];
+                self.scene_palette[slot] = match &sprite.local_palette {
+                    Some(pal) => pal.get(idx as usize - 1).copied().unwrap_or([255, 255, 255]),
+                    None => gp[idx as usize],
+                };
                 slot_of[idx as usize] = slot as u8;
                 used += 1;
             }
