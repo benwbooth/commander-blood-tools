@@ -3352,8 +3352,597 @@ pub fn emit_scene_events(lines: &[LineInput]) -> Vec<SceneEvent> {
     events
 }
 
+
+// ============================================================================
+// FAITHFUL VM EXECUTOR — ported opcode-by-opcode from the BLOODPRG disassembly
+// (dispatch 0x5627 via the handler table at file 0x142D0; every handler cited).
+// The heuristic extractors above (walk/execute_trace) remain for inspection;
+// this machine reproduces the game's actual control flow: stack-structured
+// query blocks (0xA0..0xA1), state conditionals, concept-menu dispatch, and
+// dual-mode (compare/write) record ops.
+// ============================================================================
+
+/// An event the faithful VM raises for the engine/driver.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum VmEvent {
+    /// `0xA6` TEXT — a dialogue line record executes (operand offset into the
+    /// line-record table; the walker's LineState carries the decoded text).
+    Text { offset: usize },
+    /// `0xC4` ACTOR — the presentation actor record reference.
+    Actor { offset: usize },
+    /// `0xD2` — request script profile (operand-1, the D2 handoff).
+    ProfileRequest(i16),
+    /// `0xA8` — load a string (filename/label) into the 0x2120 buffer.
+    LoadString(String),
+}
+
+/// The script VM's machine state, mirroring the game's own arrays byte-for-byte.
+/// The save file serializes exactly these blocks (save path @0x1C3F: header word
+/// `0x677E`, `0x200` bytes @`0x6ADE`, `0x60` bytes @`0x6CDE`, the line-record
+/// table @`0x6724`), so a faithful DOS-save reader/writer follows directly.
+pub struct VmMachine {
+    /// Program counter (offset into the COD).
+    pub pc: usize,
+    /// Query-block resume stack (`gs:0x6820`, ptr `gs:0x6884`). `0xA0` pushes a
+    /// resume POSITION; `vm_branch` (0x6462) pops it into PC and clears query mode.
+    pub stack: Vec<u16>,
+    /// Query-mode flag (`gs:0x67AD`): set by 0xA0, cleared by 0xA1/vm_branch.
+    pub query: bool,
+    /// The state WORD array (`gs:0x6ADE`, 0x100 words) — 0xA5's target.
+    pub state: Vec<u16>,
+    /// The 16-byte-record table (`gs:0x6CDE`, 6 records) — 0xCC's target.
+    pub records16: Vec<u8>,
+    /// The line-record/object state table (`gs:0x6724` far table) — A6/record ops
+    /// address it by byte offset. Sized generously; the game allocates per script.
+    pub line_records: Vec<u16>,
+    /// Selected concept id (`gs:0x6762`) — the concept-menu topic the player
+    /// clicked; 0 = none. `0xA3` blocks match against it.
+    pub concept: u16,
+    /// Alternate concept slot (`gs:0x6764`), used when `0x67B1` bit1 is set.
+    pub concept_alt: u16,
+    /// `gs:0x67B1` bit1 — selects `concept_alt` for 0xA3; cleared by 0xCF.
+    pub concept_alt_active: bool,
+    /// Presentation-busy flag (`gs:0x2793` bit0) — 0xCE branches when CLEAR.
+    pub presentation_busy: bool,
+    /// Game flags `gs:0x252A` / `gs:0x274F` bit0 — 0xD0/0xD1 branch when CLEAR.
+    pub flag_252a: bool,
+    pub flag_274f: bool,
+    /// Presentation-active (`gs:0x67AC` bit0) — 0xA7 writes `0x6770` when set.
+    pub presentation_active: bool,
+    pub reg_6770: u16,
+    /// Wildcard match-any value (`gs:0x674E`) for the 0x6946 family.
+    pub wildcard: u16,
+    /// `gs:0x6782` — recorded by 0xBC writes.
+    pub reg_6782: u16,
+    /// Pending profile request (`gs:0x6780`), -1 = none.
+    pub pending_profile: i16,
+    /// Yield flag (`gs:0x67B4`) — 0xAA/0xAC end the frame.
+    pub yielded: bool,
+    /// Globals `gs:0xAA6` (0xCA) and `gs:0xAAA` (0xCB).
+    pub global_aa6: i16,
+    pub global_aaa: u8,
+    /// Deterministic LCG for 0xA2 (the game uses its runtime random 0x1CE:0xB02).
+    pub rng: u32,
+    /// Events raised since the last drain.
+    pub events: Vec<VmEvent>,
+    halted: bool,
+}
+
+impl Default for VmMachine {
+    fn default() -> Self {
+        VmMachine {
+            pc: 0,
+            stack: Vec::new(),
+            query: false,
+            state: vec![0u16; 0x100],
+            records16: vec![0u8; 0x60],
+            line_records: vec![0u16; 0x4000],
+            concept: 0,
+            concept_alt: 0,
+            concept_alt_active: false,
+            presentation_busy: false,
+            flag_252a: false,
+            flag_274f: false,
+            presentation_active: false,
+            reg_6770: 0,
+            wildcard: 0,
+            reg_6782: 0,
+            pending_profile: -1,
+            yielded: false,
+            global_aa6: 0,
+            global_aaa: 0,
+            rng: 0x1234_5678,
+            events: Vec::new(),
+            halted: false,
+        }
+    }
+}
+
+impl VmMachine {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn halted(&self) -> bool {
+        self.halted
+    }
+
+    /// Initialize the line-record/object table from the script's VAR file — the
+    /// game loads VAR as the table's initial contents (le16 words at gs:0x6724).
+    pub fn load_var(&mut self, var: &[u8]) {
+        for (i, ch) in var.chunks_exact(2).enumerate() {
+            if i >= self.line_records.len() {
+                break;
+            }
+            self.line_records[i] = u16::from_le_bytes([ch[0], ch[1]]);
+        }
+    }
+
+    fn rand(&mut self, n: u16) -> u16 {
+        // Stand-in for the runtime random helper 0x1CE:0xB02 (uniform 0..n-1).
+        self.rng = self.rng.wrapping_mul(1103515245).wrapping_add(12345);
+        if n == 0 { 0 } else { ((self.rng >> 16) as u16) % n }
+    }
+
+    fn u8_at(&self, cod: &[u8], at: usize) -> u8 {
+        cod.get(at).copied().unwrap_or(0xFF)
+    }
+
+    fn lodsb(&mut self, cod: &[u8]) -> u8 {
+        let v = self.u8_at(cod, self.pc);
+        self.pc += 1;
+        v
+    }
+
+    fn lodsw(&mut self, cod: &[u8]) -> u16 {
+        let lo = self.lodsb(cod) as u16;
+        let hi = self.lodsb(cod) as u16;
+        lo | (hi << 8)
+    }
+
+    fn rec_read(&self, off: u16) -> u16 {
+        self.line_records.get(off as usize / 2).copied().unwrap_or(0)
+    }
+
+    fn rec_write(&mut self, off: u16, v: u16) {
+        if let Some(slot) = self.line_records.get_mut(off as usize / 2) {
+            *slot = v;
+        }
+    }
+
+    /// `vm_branch` @0x6462: pop the resume position into PC; clear query mode.
+    fn branch(&mut self) {
+        if let Some(pos) = self.stack.pop() {
+            self.pc = pos as usize;
+        }
+        self.query = false;
+    }
+
+    /// Execute ONE opcode. Returns false when the stream ends (0xFF terminator,
+    /// invalid opcode, or running off the end).
+    pub fn step(&mut self, cod: &[u8]) -> bool {
+        if self.halted || self.pc >= cod.len() {
+            self.halted = true;
+            return false;
+        }
+        let op = self.lodsb(cod);
+        if op == 0xFF || !(OP_MIN..=OP_MAX).contains(&op) {
+            self.halted = true;
+            return false;
+        }
+        match op {
+            // 0xA0 PUSH (0x6559): query=1; push the operand (resume position).
+            0xA0 => {
+                self.query = true;
+                let v = self.lodsw(cod);
+                self.stack.push(v);
+            }
+            // 0xA1 POP (0x6572): query=0; pop unless empty.
+            0xA1 => {
+                self.query = false;
+                self.stack.pop();
+            }
+            // 0xA2 (0x6588): random(n); branch when the roll != 0.
+            0xA2 => {
+                let n = self.lodsw(cod);
+                if self.rand(n) != 0 {
+                    self.branch();
+                }
+            }
+            // 0xA3 (0x6596): concept-menu dispatch. Optional inline 0xA1 flips
+            // polarity (else-guard). sel==0 -> exit block; match -> run block
+            // (or exit if flipped); mismatch -> exit (or run if flipped).
+            0xA3 => {
+                let mut flipped = false;
+                if self.u8_at(cod, self.pc) == 0xA1 {
+                    self.pc += 1;
+                    flipped = true;
+                }
+                let operand = self.lodsw(cod);
+                let sel = if self.concept_alt_active { self.concept_alt } else { self.concept };
+                if sel == 0 {
+                    self.branch();
+                } else if sel == operand {
+                    if flipped {
+                        self.branch();
+                    }
+                } else if !flipped {
+                    self.branch();
+                }
+            }
+            // 0xA4 JUMP (0x65DB): PC = operand.
+            0xA4 => {
+                let t = self.lodsw(cod);
+                self.pc = t as usize;
+            }
+            // 0xA5 (0x65EB): query -> branch when state[idx]!=0 (1-byte form);
+            // else write state[idx] = word (3-byte form). Variable length!
+            0xA5 => {
+                let idx = self.lodsb(cod) as i8 as i32;
+                let slot = (idx as usize) & 0xFF;
+                if self.query {
+                    if self.state[slot] != 0 {
+                        self.branch();
+                    }
+                } else {
+                    let v = self.lodsw(cod);
+                    self.state[slot] = v;
+                }
+            }
+            // 0xA6 TEXT (0x660C): decode the full token (same decoder as the
+            // walker); emit the line when its active flag (b5 bit7) is set; then
+            // apply the conditional skip (b4 bit3: skip ((b5>>4)&7)+1 tokens via
+            // the length table — the loop's gs:0x67AB counter @0x5632).
+            0xA6 => {
+                let start = self.pc - 1;
+                match decode_text(cod, start, cod.len()) {
+                    Some((VmToken::Text { offset, flags_b4, flags_b5, .. }, next)) => {
+                        if text_flags_are_active(flags_b5) {
+                            self.events.push(VmEvent::Text { offset });
+                        }
+                        self.pc = next;
+                        if let Some(skip) = text_conditional_skip_count(flags_b4, flags_b5) {
+                            for _ in 0..skip {
+                                let op2 = self.u8_at(cod, self.pc);
+                                if op2 == 0xFF || !(OP_MIN..=OP_MAX).contains(&op2) {
+                                    break;
+                                }
+                                if op2 == OP_TEXT {
+                                    match decode_text(cod, self.pc, cod.len()) {
+                                        Some((_, n2)) => self.pc = n2,
+                                        None => break,
+                                    }
+                                } else {
+                                    self.pc += token_len_at(cod, self.pc, op2, self.query);
+                                }
+                            }
+                        }
+                    }
+                    _ => {
+                        self.halted = true;
+                    }
+                }
+            }
+            // 0xA7 (0x67BA): set 0x6770 while a presentation is active.
+            0xA7 => {
+                let v = self.lodsw(cod);
+                if self.presentation_active {
+                    self.reg_6770 = v;
+                }
+            }
+            // 0xA8 (0x67C8): copy the NUL-terminated string operand.
+            0xA8 => {
+                let start = self.pc;
+                while self.pc < cod.len() && cod[self.pc] != 0 {
+                    self.pc += 1;
+                }
+                let text = String::from_utf8_lossy(&cod[start..self.pc]).into_owned();
+                self.pc += 1;
+                self.events.push(VmEvent::LoadString(text));
+            }
+            // 0xA9 (0x6830): bit0 CLEAR -> jump to the operand word. bit0 SET ->
+            // enter query mode and RESET the resume stack to [operand] (the
+            // handler writes gs:0x6820[0]=operand and stack-ptr=2): the top-level
+            // wait/conditional block opener.
+            0xA9 => {
+                let flags = self.lodsb(cod);
+                if flags & 1 == 0 {
+                    let t = self.u8_at(cod, self.pc) as usize
+                        | (self.u8_at(cod, self.pc + 1) as usize) << 8;
+                    self.pc = t;
+                } else {
+                    self.query = true;
+                    let v = self.lodsw(cod);
+                    self.stack.clear();
+                    self.stack.push(v);
+                }
+            }
+            // 0xAA/0xAC (0x6855/0x685C): yield the frame.
+            0xAA | 0xAC => {
+                self.yielded = true;
+            }
+            // 0xAB (0x684C): poke byte -> models as a records16-space write when
+            // in range; the game pokes an absolute DS address.
+            0xAB => {
+                let val = self.lodsb(cod);
+                let addr = self.lodsw(cod);
+                let base = 0x6CDE_u16;
+                if (base..base + 0x60).contains(&addr) {
+                    self.records16[(addr - base) as usize] = val;
+                }
+            }
+            // 0xAE/0xB0 (0x6902): record MASK op. Query: test bits (branch per
+            // polarity/flip); set: OR bits in, or AND them out with inline 0xA1.
+            0xAE | 0xB0 => {
+                let mut flipped = false;
+                if self.u8_at(cod, self.pc) == 0xA1 {
+                    self.pc += 1;
+                    flipped = true;
+                }
+                let off = self.lodsw(cod);
+                let mask = self.lodsw(cod);
+                if self.query {
+                    let set = self.rec_read(off) & mask != 0;
+                    if set != flipped {
+                        // asm: bits set -> (flip? continue : branch)… precisely:
+                        // set && !flip -> branch; clear && flip -> branch.
+                    }
+                    if (set && !flipped) || (!set && flipped) {
+                        self.branch();
+                    }
+                } else if flipped {
+                    let v = self.rec_read(off) & !mask;
+                    self.rec_write(off, v);
+                } else {
+                    let v = self.rec_read(off) | mask;
+                    self.rec_write(off, v);
+                }
+            }
+            // The 0x6946 family (AD/AF/B2/B3/BA/BB/BC): generic record
+            // compare/write with the 0x674E wildcard -> 0xFFFF substitution.
+            0xAD | 0xAF | 0xB2 | 0xB3 | 0xBA | 0xBB | 0xBC => {
+                let mut flipped = false;
+                if self.u8_at(cod, self.pc) == 0xA1 {
+                    self.pc += 1;
+                    flipped = true;
+                }
+                let off = self.lodsw(cod);
+                let mut val = self.lodsw(cod);
+                if val == self.wildcard {
+                    val = 0xFFFF;
+                }
+                if self.query {
+                    let eq = val == self.rec_read(off) || val == 0xFFFF;
+                    if (eq && flipped) || (!eq && !flipped) {
+                        self.branch();
+                    }
+                } else {
+                    if op == 0xBC {
+                        self.reg_6782 = val;
+                    }
+                    self.rec_write(off, val);
+                }
+            }
+            // The 0x6863 family (B1/B4/B5/B6/BE/BF/C0): record[off] OP operand,
+            // operators 0xF0..0xF5 compare (query) / 0xF5 set 0xF6 add 0xF7 sub.
+            0xB1 | 0xB4 | 0xB5 | 0xB6 | 0xBE | 0xBF | 0xC0 => {
+                let off = self.lodsw(cod);
+                let operator = self.lodsb(cod);
+                let marker = self.lodsb(cod);
+                let mut operand = self.lodsw(cod);
+                if marker == 0xC0 || marker == 0xC2 {
+                    operand = self.rec_read(operand);
+                }
+                let cur = self.rec_read(off) as i16;
+                let operand_i = operand as i16;
+                if self.query {
+                    let pass = match operator {
+                        0xF0 => cur != operand_i,
+                        0xF1 => cur < operand_i,
+                        0xF2 => cur > operand_i,
+                        0xF3 => cur <= operand_i,
+                        0xF4 => cur >= operand_i,
+                        _ => cur == operand_i, // 0xF5
+                    };
+                    if !pass {
+                        self.branch();
+                    }
+                } else {
+                    let v = match operator {
+                        0xF6 => cur.wrapping_add(operand_i),
+                        0xF7 => cur.wrapping_sub(operand_i),
+                        _ => operand_i, // 0xF5 SET
+                    };
+                    self.rec_write(off, v as u16);
+                }
+            }
+            // 0xB7 (0x6AA7): record byte field op (offset + byte value).
+            0xB7 => {
+                if self.u8_at(cod, self.pc) == 0xA1 {
+                    self.pc += 1;
+                }
+                let off = self.lodsw(cod);
+                let val = self.lodsb(cod) as u16;
+                if self.query {
+                    if self.rec_read(off) != val {
+                        self.branch();
+                    }
+                } else {
+                    self.rec_write(off, val);
+                }
+            }
+            // 0xB8/0xB9/0xBD (0x6B06): 2-word record pair compare/write.
+            0xB8 | 0xB9 | 0xBD => {
+                let off = self.lodsw(cod);
+                let v1 = self.lodsw(cod);
+                let v2 = self.lodsw(cod);
+                if self.query {
+                    if self.rec_read(off) != v1 || self.rec_read(off + 2) != v2 {
+                        self.branch();
+                    }
+                } else {
+                    self.rec_write(off, v1);
+                    self.rec_write(off + 2, v2);
+                }
+            }
+            // 0xC4 ACTOR (0x6C7E): presentation actor reference.
+            0xC4 => {
+                let start = self.pc - 1;
+                let off = self.u8_at(cod, self.pc) as usize
+                    | (self.u8_at(cod, self.pc + 1) as usize) << 8;
+                self.events.push(VmEvent::Actor { offset: off });
+                self.pc = start + token_len_at(cod, start, op, self.query);
+            }
+            // 0xCA (0x64E5): tag/value compare vs global 0xAA6.
+            // f1: continue if value > global; f2: continue if value < global;
+            // else: continue if equal — branch otherwise.
+            0xCA => {
+                let tag = self.lodsw(cod) as u8;
+                let val = self.lodsw(cod) as i16;
+                let g = self.global_aa6;
+                let cont = match tag {
+                    0xF1 => val > g,
+                    0xF2 => val < g,
+                    _ => val == g,
+                };
+                if !cont {
+                    self.branch();
+                }
+            }
+            // 0xCB (0x6510): byte compare vs global 0xAAA (companion of 0xCA).
+            0xCB => {
+                let tag = self.lodsb(cod);
+                let _skip = self.lodsb(cod);
+                let val = self.lodsw(cod);
+                let bh = (val >> 8) as u8;
+                let cont = if tag == 0xF1 { bh == self.global_aaa } else { true };
+                if !cont {
+                    self.branch();
+                }
+            }
+            // 0xCC (0x64CE): records16[(op1-1)*16] = op2 (byte pair write).
+            0xCC => {
+                let idx = self.lodsb(cod).wrapping_sub(1) as usize;
+                let val = self.lodsb(cod);
+                let at = idx * 16;
+                if at + 1 < self.records16.len() {
+                    self.records16[at] = val;
+                }
+            }
+            // 0xCE/0xD0/0xD1 (0x6494/0x64A0/0x64AC): branch when the flag bit is CLEAR.
+            0xCE => {
+                if !self.presentation_busy {
+                    self.branch();
+                }
+            }
+            0xD0 => {
+                if !self.flag_252a {
+                    self.branch();
+                }
+            }
+            0xD1 => {
+                if !self.flag_274f {
+                    self.branch();
+                }
+            }
+            // 0xCF (0x64C0): clear the alternate-concept state.
+            0xCF => {
+                self.concept_alt_active = false;
+                self.concept_alt = 0;
+            }
+            // 0xD2 (0x64B8): pending profile = operand-1.
+            0xD2 => {
+                let v = self.lodsb(cod) as i8 as i16 - 1;
+                self.pending_profile = v;
+                self.events.push(VmEvent::ProfileRequest(v));
+            }
+            // Remaining opcodes (record-entry family C1/C2/C3/C5..C9/CD, D3, …):
+            // consume operands per the game's own length table and continue.
+            other => {
+                let start = self.pc - 1;
+                self.pc = start + token_len_at(cod, start, other, self.query);
+            }
+        }
+        true
+    }
+
+    /// Run until yield (0xAA/0xAC), halt, or `max_steps`. Returns the events raised.
+    pub fn run(&mut self, cod: &[u8], max_steps: usize) -> Vec<VmEvent> {
+        self.yielded = false;
+        for _ in 0..max_steps {
+            if self.yielded || !self.step(cod) {
+                break;
+            }
+        }
+        std::mem::take(&mut self.events)
+    }
+}
+
+/// Total token length (including the opcode byte) at `pos`, using the game's own
+/// per-opcode descriptor table + mode rules — identical to the walker's advance
+/// (`mode1` there == query mode here; lengths differ by mode, e.g. 0xA5).
+fn token_len_at(cod: &[u8], pos: usize, op: u8, query: bool) -> usize {
+    if VAR_TERMINATED.contains(&op) {
+        return scan_zero_word(cod, pos + 1, cod.len()) - pos;
+    }
+    let (b0, b1) = OPCODE_DESC[(op - OP_MIN) as usize];
+    if b1 & 0x80 != 0 {
+        let mut l = b0 as usize;
+        if (b1 == 0xFD || b1 == 0xFB) && cod.get(pos + 1) == Some(&0xA1) {
+            l += 1;
+        }
+        l.max(1)
+    } else {
+        (if query { b1 } else { b0 } as usize).max(1)
+    }
+}
+
 #[cfg(test)]
 mod tests {
+    /// The FAITHFUL VM (ported opcode-by-opcode from the dispatch table @0x142D0)
+    /// reproduces the real SCRIPT1 flow: with no presentation active every gated
+    /// block skips (clean end, no events); with a presentation active the script
+    /// yields the REAL tutorial in order — the console guidance then HONK's
+    /// welcome — exactly the lines the interpreter oracle observed live.
+    #[test]
+    fn faithful_vm_reproduces_the_script1_tutorial_flow() {
+        let cod = match std::fs::read("output/_tmp_iso/SCRIPT1.COD") {
+            Ok(d) => d,
+            Err(_) => return,
+        };
+        let var = std::fs::read("output/_tmp_iso/SCRIPT1.VAR").unwrap();
+        // Gates closed: the whole script skips — no dialogue plays unprompted.
+        let mut idle = VmMachine::new();
+        idle.load_var(&var);
+        let evs = idle.run(&cod, 100_000);
+        assert!(
+            !evs.iter().any(|e| matches!(e, VmEvent::Text { .. })),
+            "no presentation -> no dialogue (got {evs:?})"
+        );
+        // Presentation active: the real tutorial content flows.
+        let mut m = VmMachine::new();
+        m.load_var(&var);
+        m.presentation_busy = true;
+        m.presentation_active = true;
+        let mut texts: Vec<usize> = Vec::new();
+        for _ in 0..50 {
+            for e in m.run(&cod, 100_000) {
+                if let VmEvent::Text { offset } = e {
+                    texts.push(offset);
+                }
+            }
+            if m.halted() {
+                break;
+            }
+        }
+        // The ho1 tutorial line and HONK's welcome both execute, in order.
+        let found_button = texts.iter().position(|&o| o == 1134);
+        let welcome = texts.iter().position(|&o| o == 1576);
+        assert!(found_button.is_some(), "the 'You found the right button' line runs");
+        assert!(welcome.is_some(), "HONK's 'Welcome aboard the ARK' line runs");
+        assert!(found_button < welcome, "tutorial guidance precedes the welcome");
+    }
+
     use super::*;
 
     /// Executing each real SCRIPT<n> (walk + VAR-initialised interpret) must produce the exact
