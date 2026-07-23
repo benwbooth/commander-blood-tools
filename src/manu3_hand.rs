@@ -371,6 +371,56 @@ impl PosePlayer {
     }
 }
 
+impl HandMesh {
+    /// Apply one pose-player frame to the live skeleton: tween cell writes land in
+    /// the segment records exactly as in the game (cell = 0x2394 + seg*0x5E + field;
+    /// fields 0x4E/0x50/0x52 = angles, 0x36/0x3A/0x3E = translation low words).
+    pub fn animate(&mut self, player: &mut PosePlayer) {
+        let segs = &mut self.segs;
+        player.step(&mut |cell, write| {
+            let rel = cell.wrapping_sub(0x2394) as usize;
+            let (si, field) = (rel / 0x5E, rel % 0x5E);
+            if si >= segs.len() {
+                return 0;
+            }
+            let (_, ref mut t, ref mut a) = segs[si];
+            let slot: Option<&mut i16> = match field {
+                0x4E => Some(&mut a[0]),
+                0x50 => Some(&mut a[1]),
+                0x52 => Some(&mut a[2]),
+                _ => None,
+            };
+            match (slot, write) {
+                (Some(sl), Some(v)) => {
+                    *sl = v;
+                    v
+                }
+                (Some(sl), None) => *sl,
+                (None, Some(v)) => {
+                    // Translation low-word writes (0x36/0x3A/0x3E).
+                    let ti = match field {
+                        0x36 => 0,
+                        0x3A => 1,
+                        0x3E => 2,
+                        _ => return 0,
+                    };
+                    t[ti] = (t[ti] & !0xFFFF) | (v as u16 as i32);
+                    v
+                }
+                (None, None) => {
+                    let ti = match field {
+                        0x36 => 0,
+                        0x3A => 1,
+                        0x3E => 2,
+                        _ => return 0,
+                    };
+                    t[ti] as i16
+                }
+            }
+        });
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -403,6 +453,29 @@ mod tests {
             }
         }
         assert!(animated, "at least one pose sequence animates cells");
+    }
+
+    /// Animating the mesh with a pose sequence changes the skeleton state and the
+    /// hand still renders — the pose pipeline is live end to end.
+    #[test]
+    fn pose_animates_the_skeleton() {
+        let mut m = HandMesh::load();
+        let before: Vec<_> = m.segs.iter().map(|s| s.2).collect();
+        for si in 1..8 {
+            if let Some(mut p) = PosePlayer::new(si) {
+                for _ in 0..600 {
+                    if p.done() {
+                        break;
+                    }
+                    m.animate(&mut p);
+                }
+            }
+        }
+        let after: Vec<_> = m.segs.iter().map(|s| s.2).collect();
+        assert_ne!(before, after, "pose sequences move the joints");
+        let mut fb = vec![0u8; 320 * 200];
+        m.draw(&mut fb, 320, 200, 160, 100);
+        assert!(fb.iter().any(|&p| p != 0), "the animated hand still renders");
     }
 
     #[test]
