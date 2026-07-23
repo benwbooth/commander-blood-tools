@@ -242,13 +242,23 @@ fn fill_triangle_tex(
     if area.abs() < 1e-3 {
         return;
     }
+    // Top-left fill convention (matches a span rasterizer's pixel ownership: a pixel
+    // belongs to exactly one triangle along shared edges, eliminating the ±1px seam
+    // that a naive >=0 test leaves — the sub-pixel edge residual).
+    let tl = |ex: f32, ey: f32| -> bool { ey < 0.0 || (ey == 0.0 && ex < 0.0) };
+    let e_ab = (b.0 - a.0, b.1 - a.1);
+    let e_bc = (c.0 - b.0, c.1 - b.1);
+    let e_ca = (a.0 - c.0, a.1 - c.1);
+    let bias0 = if tl(e_ab.0, e_ab.1) { 0.0 } else { -1e-4 };
+    let bias1 = if tl(e_bc.0, e_bc.1) { 0.0 } else { -1e-4 };
+    let bias2 = if tl(e_ca.0, e_ca.1) { 0.0 } else { -1e-4 };
     for y in miny..=maxy {
         for x in minx..=maxx {
             let (fx, fy) = (x as f32 + 0.5, y as f32 + 0.5);
             let w0 = ((b.0 - a.0) * (fy - a.1) - (b.1 - a.1) * (fx - a.0)) / area;
             let w1 = ((c.0 - b.0) * (fy - b.1) - (c.1 - b.1) * (fx - b.0)) / area;
             let w2 = 1.0 - w0 - w1;
-            if w0 >= 0.0 && w1 >= 0.0 && w2 >= 0.0 {
+            if w0 >= bias0 && w1 >= bias1 && w2 >= bias2 {
                 let u = (tb[0] as f32 * w0 + tc[0] as f32 * w1 + ta[0] as f32 * w2)
                     .clamp(0.0, 255.0) as usize;
                 let v = (tb[1] as f32 * w0 + tc[1] as f32 * w1 + ta[1] as f32 * w2)
