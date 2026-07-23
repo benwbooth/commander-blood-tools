@@ -606,7 +606,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     // Source is the 320x200 engine framebuffer; the window is larger and resizable,
     // with the framebuffer scaled to fit while preserving the 320:200 (8:5) aspect.
     let (src_w, src_h) = (ENGINE_SCREEN_WIDTH, ENGINE_SCREEN_HEIGHT);
-    let (mut win_w, mut win_h) = (960u16, 600u16); // 3x, aspect-correct
+    let (mut win_w, mut win_h) = (1920u16, 1200u16); // 6x, aspect-correct
     let win = conn.generate_id()?;
     conn.create_window(
         screen.root_depth,
