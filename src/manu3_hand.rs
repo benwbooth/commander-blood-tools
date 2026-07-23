@@ -186,7 +186,10 @@ impl HandMesh {
             p.0 += cx as f32 - tipx;
             p.1 += cy as f32 - tipy;
         }
-        // Painter sort: farthest first.
+        // Hidden surfaces resolve PER PIXEL by depth (a z-buffer computes the same
+        // visibility the game's depth-sorted span engine does; only sub-pixel edge
+        // stepping can differ). Painter order kept for deterministic iteration.
+        let mut zbuf = vec![f32::MAX; w * h];
         let mut order: Vec<usize> = (0..self.faces.len()).collect();
         order.sort_by(|&a, &b| {
             let za = self.face_depth(a, &pts);
@@ -209,7 +212,7 @@ impl HandMesh {
             let ta = self.uvs[a as usize];
             let tb = self.uvs[b as usize];
             let tc = self.uvs[c as usize];
-            fill_triangle_tex(fb, w, h, pa, pb, pc, ta, tb, tc);
+            fill_triangle_tex(fb, &mut zbuf, w, h, pa, pb, pc, ta, tb, tc);
         }
     }
 
@@ -221,6 +224,7 @@ impl HandMesh {
 
 fn fill_triangle_tex(
     fb: &mut [u8],
+    zbuf: &mut [f32],
     w: usize,
     h: usize,
     a: (f32, f32, f32),
@@ -249,11 +253,17 @@ fn fill_triangle_tex(
                     .clamp(0.0, 255.0) as usize;
                 let v = (tb[1] as f32 * w0 + tc[1] as f32 * w1 + ta[1] as f32 * w2)
                     .max(0.0) as usize;
+                let z = a.2 * w2 + b.2 * w0 + c.2 * w1;
+                let pi = y as usize * w + x as usize;
+                if z >= zbuf[pi] {
+                    continue;
+                }
                 let ti = v * TEX_W + u;
                 if ti < TEX.len() {
                     let texel = TEX[ti];
                     if texel != 0 {
-                        fb[y as usize * w + x as usize] = texel;
+                        zbuf[pi] = z;
+                        fb[pi] = texel;
                     }
                 }
             }
