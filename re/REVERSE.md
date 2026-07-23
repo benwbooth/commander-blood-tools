@@ -5326,3 +5326,15 @@ CONSOLE OVERLAY (manu3.xdb) — consistent with the established finding that the
 console's glyph drawing lives in the overlay. NEXT: locate the overlay's list draw
 (dis_xdb sweep for a loop stepping y by a constant with a text call), plus its row
 hit-test (the same code likely feeds the click dispatch's row index).
+
+### FOUND: THE UNIFIED VERTICAL-LIST WIDGET (0x8428) — pitch 11 is assembly-sourced
+`ship_3d_target_query_layout` is not nav-specific: it is THE list widget. Input si = a
+0xFFFF/0-terminated word-offset list (the SAME format as the concept-menu words);
+per-label widths measured via 0x299:0x13D into DS:0x2AB3; box min-width 0x64 (0x37 in
+the [0xADD] alt mode); **row pitch 11 = `add bp,0xB` @0x847A** — the capture-measured
+pitch now has its code source. And the save-slot substitution (`cmp ax,[0x2734]` ->
+si=0x273B) proves the SAVE-SLOT list, the NAV destination list, and the CONCEPT menus
+are all this one widget — matching the port's unified choice-box/list model.
+REMAINING: continue the disassembly past 0x8493 for the centered-rect X/Y placement
+(replaces the captured x=170/175 and top y values), and the mouse/query return (the
+row hit-test the click dispatch consumes).
