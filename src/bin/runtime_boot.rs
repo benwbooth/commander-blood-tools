@@ -2396,13 +2396,29 @@ fn main() {
             rt.mouse_release(0);
             let _ = rt.run(rt.cpu.steps + 4_000_000);
         };
-        // 1) advance the presentation to idle (max 60 orb clicks).
-        for i in 0..60 {
+        // 1) find the conversation EXIT: try each concept-menu row (x~200, y=61+11i,
+        // MENUTREE geometry) — the row that clears [0x2793]&4 is the goodbye topic.
+        let mut exited = false;
+        for row in 0..9 {
+            rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+            let my = 61 + 11 * row + 3;
+            click(&mut rt, 200, my as u16);
+            let _ = rt.run(rt.cpu.steps + 10_000_000);
             if !presenting(&rt) {
-                println!("idle after {i} advances @ {} steps", rt.cpu.steps);
+                println!("EXIT topic = row {row} (y{my}) — presentation freed");
+                exited = true;
                 break;
             }
-            click(&mut rt, 125, 118);
+        }
+        if !exited {
+            println!("no exit row freed the presentation; advancing anyway");
+            // fall back: advance clicks
+            for _ in 0..30 {
+                if !presenting(&rt) {
+                    break;
+                }
+                click(&mut rt, 125, 118);
+            }
         }
         rt.write_ppm(&out.join("pt_idle.ppm")).unwrap();
         // 2) steer to the nav sector (park past it; trail lands ~95).
