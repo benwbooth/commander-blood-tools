@@ -151,7 +151,11 @@ transcription of the textured fill into manu3_hand (replacing flat shading). ARC
    counts do NOT correlate with room counts (VENUSIA 109 groups/3 rooms) — the payload runs are
    not per-room strips; per-node outlines or paths remain the candidates. Consumer trace stands
    as the only path.
-6b. Entity stepper: watch infra CONFIRMED; PLAYTO driver built + run — CONFIRMED the hub
+6b. [RETIRED — misreading] Entity "stepper" does NOT exist: [bx+0xC/0xE] is dirty-rect
+   last-screen-position tracking (entity_draw compares camera-scaled coords, flags redraw),
+   not a movement target. Entities are STATIC at their .ext positions (the port draws them
+   there); only the camera moves. No porting work — the row is closed by correction.
+   [former note] PLAYTO driver built + run — CONFIRMED the hub
    presentation persists through 60 orb-advances (frees only when the script flow EXITS, per the
    0x59C0 teardown decode) => the location savestate needs the CONVERSATION-EXIT step (the
    bye_bye topic through the concept menu) — the TUTORIAL4-OCR driver pattern extends to this;
