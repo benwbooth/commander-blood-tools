@@ -1454,15 +1454,23 @@ impl EngineState {
         let line = self.topic_menu[row].1;
         self.set_dialogue_cursor(line);
         self.dialogue_timer = 0;
-        // Play only THIS topic's segment: auto-play runs to the next topic's first line (the
-        // nearest topic start after this one), then re-holds at the menu.
-        let next_start = self
+        // Play only THIS topic's SEGMENT, then re-hold. The boundary is the next
+        // function-segment start after this line if segment starts were supplied (so e.g. the
+        // MENU topic shows one daily menu, not every function up to the next topic); otherwise
+        // fall back to the next topic's first line.
+        let seg_end = self
+            .dialogue_segments
+            .iter()
+            .copied()
+            .filter(|&l| l > line)
+            .min();
+        let next_topic = self
             .topic_menu
             .iter()
             .map(|(_, l)| *l)
             .filter(|&l| l > line)
             .min();
-        self.autoplay_end = next_start;
+        self.autoplay_end = seg_end.or(next_topic);
         Some(row)
     }
 
@@ -1470,6 +1478,13 @@ impl EngineState {
     /// dialogue holds at the topic menu and topic clicks drive the rest.
     pub fn set_dialogue_autoplay_end(&mut self, end: Option<usize>) {
         self.autoplay_end = end;
+    }
+
+    /// Record the dialogue's function-segment start lines so a topic click plays only that one
+    /// segment (not everything up to the next topic). Does NOT change the play position — unlike
+    /// [`Self::set_dialogue_segments`], which also arms sequential beat-play.
+    pub fn set_segment_boundaries(&mut self, starts: Vec<usize>) {
+        self.dialogue_segments = starts;
     }
 
     /// Segment the dialogue at the given line starts (script-function beats): the first segment

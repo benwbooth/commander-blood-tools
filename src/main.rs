@@ -459,7 +459,55 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 // keep linear playback until the label source is decoded. Wiring
                 // help*→ONE..NINE for locations would be guesswork (SCRIPT3's help1
                 // is not the numerology "ONE").
-                if n == 2 {
+                if n == 1 {
+                    // SCRIPT1 = the console TUTORIAL. Its 9 functions are CONSOLE-driven, not a
+                    // monologue: menbr/men1-5 are the MENU button's daily menus, ho1/hon are the
+                    // HONK button ("Welcome aboard the ARK, Commander. I'm HONK…"), BOB1 is the
+                    // crew intro. Only the scripted HONK welcome (`hon`) plays at start; then the
+                    // dialogue HOLDS at a topic menu (HONK / MENU / crew) and the player drives
+                    // the rest. (Was: the whole 106-line stream auto-played — the user's
+                    // "Honk rattles off everything unprompted" bug. The topic detection targeted
+                    // help*/honk/talk names that SCRIPT1 doesn't use, so nothing ever gated.)
+                    let mut segs: Vec<(String, usize)> = Vec::new();
+                    let mut last = String::new();
+                    let mut li = 0usize;
+                    for e in bundle.speech_events.iter().filter(|e| !e.text.trim().is_empty()) {
+                        if e.function_name != last {
+                            last = e.function_name.clone();
+                            segs.push((last.clone(), li));
+                        }
+                        li += 1;
+                    }
+                    // Console topics from the real function groups (first line of each group);
+                    // one clickable label per console button, in a stable order.
+                    let mut topics: Vec<(String, usize)> = Vec::new();
+                    let mut seen: std::collections::HashSet<&str> = std::collections::HashSet::new();
+                    for (fnname, line) in &segs {
+                        let label = if fnname.starts_with("men") {
+                            "MENU"
+                        } else if fnname.starts_with("ho") {
+                            "HONK"
+                        } else {
+                            "TALK"
+                        };
+                        if seen.insert(label) {
+                            topics.push((label.to_string(), *line));
+                        }
+                    }
+                    // Segment boundaries = every function start, so a MENU click shows ONE daily
+                    // menu (not all six up to the next topic).
+                    engine.set_segment_boundaries(segs.iter().map(|(_, l)| *l).collect());
+                    // The scripted opening is HONK's welcome (`hon`): start there and hold after
+                    // its segment. If it isn't present, hold immediately (nothing auto-plays).
+                    let hon_idx = segs.iter().position(|(f, _)| f == "hon");
+                    if let Some(i) = hon_idx {
+                        engine.set_dialogue_cursor(segs[i].1);
+                        engine.set_dialogue_autoplay_end(segs.get(i + 1).map(|(_, l)| *l));
+                    } else {
+                        engine.set_dialogue_autoplay_end(Some(0));
+                    }
+                    engine.set_topic_menu(topics);
+                } else if n == 2 {
                     // The topic labels are DECODED from the real script, not guessed:
                     // SCRIPT2's help1..help9 are the numerology consultation, whose
                     // concept menu (VM opcode 0xA3 in SCRIPT2.BAS) is [talk, one..nine].
