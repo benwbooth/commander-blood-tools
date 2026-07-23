@@ -117,9 +117,13 @@ From decompiled/SCRIPT2.bas + COD operand reads (assembly-first):
   script2_scruter_jo test locks his cyberspace block) -> his world binds via
   **SETCHAR slot 4 = "scrut"** (@004E, the 0xCC opcode — the entry citation) ->
   enter the cyber world (port: visit_world through the SETCHAR binding; tested by
-  cyberspace_traversal + the playthrough gate) -> BIOXX touches raise vbio -> Bob's
-  vbio==0/1/2 blocks unlock -> nav destinations activate (entity flags 0x15..0x1F)
-  -> planets -> SCRIPT3/4/5 -> the Bigbang-concert ending (fin.hnm — wired).
+  cyberspace_traversal + the playthrough gate) -> BIOXX touches raise vbio (WIRED:
+  add_record(0x126C,1) on cyber arrival) -> Bob's vbio==0/1/2 blocks unlock ->
+  nav destinations activate (entity flags 0x15..0x1F — the FSM decoded+ported in
+  progress.rs/entity.rs; ORACLE-side verification chains behind driving the oracle
+  through cyberspace) -> planets = concepts 3/4/5 -> D2 profiles 2/3/4 (STRUCTURE-
+  LOCKED test @1269/@1284/@129F) -> SCRIPT3/4/5 in-world dual-runs (pending) ->
+  the Bigbang-concert ending (fin.hnm trigger wired; dual-run pending).
 Each arrow is one dual-run scenario + any needed decode of its dispatch site.
 
 ## CAMPAIGN LOG
