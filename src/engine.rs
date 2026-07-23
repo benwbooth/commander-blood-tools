@@ -3523,8 +3523,19 @@ impl EngineState {
             }
             return;
         }
-        // Revealing: bold console font, green family (0xFF revealed, 0xFE newest char).
-        let color_for = |shown: usize| -> u8 { if shown + 1 == visible { 0xFE } else { 0xFF } };
+        // Revealing: bold console font, green family — LIVE-MEASURED order (REVEALDUMP
+        // rv_093..rv_158, the HONK presentation revealing char-by-char): the NEWEST char
+        // draws 0xFF (129,255,105 brightest), the second-newest 0xFE (44,210,8), and all
+        // older revealed chars 0xFD (0,145,0).
+        let color_for = |shown: usize| -> u8 {
+            if shown + 1 == visible {
+                0xFF
+            } else if shown + 2 == visible {
+                0xFE
+            } else {
+                0xFD
+            }
+        };
         if let Some(bold) = self.bold_font.take() {
             let mut shown = 0usize;
             let mut y = 8usize;
@@ -3663,9 +3674,9 @@ impl EngineState {
         // game's reveal @0x93F8–0x94B8: `gs:0x5E58` advances one char whenever the
         // per-char timer `gs:0xB31 = step>>2` elapses). The subtitle colours are the GAME
         // palette's top entries — HNM `pl` blocks only ever cover indices 1..127, so the
-        // baked game palette's GREEN family persists: 0xFD (0,145,0) settled, 0xFE
-        // (44,210,8) newest char, 0xFF (129,255,105) fully-revealed line. Install them
-        // over whatever the scene palette holds (the scene can't own the top half).
+        // baked game palette's GREEN family persists. LIVE-MEASURED (REVEALDUMP): newest
+        // char 0xFF (129,255,105), second-newest 0xFE (44,210,8), older revealed chars
+        // 0xFD (0,145,0). Install them over whatever the scene palette holds.
         let gp = crate::palette::game_screen_palette();
         for i in [0xFD, 0xFE, 0xFF] {
             self.scene_palette[i] = gp[i];

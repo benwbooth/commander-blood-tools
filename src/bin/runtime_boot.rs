@@ -2858,28 +2858,39 @@ fn main() {
         return;
     }
     if std::env::var("REVEALDUMP").is_ok() {
-        // Subtitle-reveal cadence ground truth: resume the conversation state and dump
-        // one screen per interpreter frame while a line reveals — per-frame PPMs +
-        // raw indices let the port match reveal rate, glyph colors, and settle style.
+        // Subtitle-reveal cadence ground truth: resume the hub, CANCEL the running
+        // presentation, then click the HONK row — its actor presentation starts a
+        // FRESH line ('What do you want Commander ?'), which we capture EVERY frame
+        // (PPM + raw indices) so the port can match reveal rate, glyph colors, and
+        // settle style. SB playback state is logged per shot (the honk chatter).
         rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
         let g = 0x0e84u16;
-        let frame = |rt: &Runtime| {
+        // Ring x from the CURRENT frame at click time — the view can rotate after
+        // CANCEL, so a load-time frame maps clicks to the wrong screen x.
+        let frame_now = |rt: &Runtime| {
             rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8)
         };
-        let _ = frame;
-        // Click the orb (ring-corrected x; the hub presentation's click-to-advance
-        // region) to start the next line, then capture one shot per ~frame.
-        let fr = rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8);
-        let ring = (125i32 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
-        rt.set_mouse_pos(ring, 118);
-        let _ = rt.run(rt.cpu.steps + 500_000);
-        rt.mouse_press(0);
-        let _ = rt.run(rt.cpu.steps + 300_000);
-        rt.mouse_release(0);
-        for i in 0..160 {
+        let click = |rt: &mut Runtime, sx: i32, sy: u16| {
+            let ring =
+                ((sx + frame_now(rt) as i32 * 8 - 160).rem_euclid(1440)) as u16;
+            rt.set_mouse_pos(ring, sy);
+            let _ = rt.run(rt.cpu.steps + 400_000);
+            rt.mouse_press(0);
             let _ = rt.run(rt.cpu.steps + 300_000);
+            rt.mouse_release(0);
+        };
+        click(&mut rt, 100, 98); // CANCEL the arrival presentation (the real gate)
+        let _ = rt.run(rt.cpu.steps + 30_000_000); // full teardown (the scenario's wait 20)
+        // The HONK console row -> fresh presentation. NO settle after: capture starts
+        // at the click so the reveal is caught mid-flight.
+        click(&mut rt, 230, 88);
+        for i in 0..160 {
+            let _ = rt.run(rt.cpu.steps + 150_000);
             rt.write_ppm(&out.join(format!("rv_{i:03}.ppm"))).unwrap();
             std::fs::write(out.join(format!("rv_{i:03}.idx")), rt.screen_indices()).unwrap();
+        }
+        for &(step, len, rate) in &rt.sb_play_log {
+            println!("sb start: step {step} len {len} rate {rate}");
         }
         std::fs::write(out.join("rv_dac.bin"), rt.dac).unwrap();
         println!("REVEALDUMP done");
