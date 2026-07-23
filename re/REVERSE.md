@@ -5252,3 +5252,30 @@ RESIDUAL (harness, not game): injected scenario keys (bios_keys/kbd_queue) do no
 [0xB15] in the interpreter during the slot UI — the 0x1CE:0x39D fetch path's actual key
 source needs tracing in the emulator (file 0xC5D disassembles misaligned; find the real
 entry via the relocation map) before the live gameN.sav round-trip can complete.
+
+## CONCEPT/MENU BOX RENDER — RE IN PROGRESS (2026-07-23, assembly-first corrective)
+
+Correcting the capture-derived box constants (see docs/port-validation.md CAPTURE-DERIVED
+DEFECTS). Traced from the presentation display:
+
+- **Subtitle multi-line draw** (0x94E2..0x950F): calls the string renderer 0x299:0x6A0
+  (file 0x3630), then `repne scasb` for 0x0D and `add dx, 8` per line — SUBTITLE LINE
+  PITCH = 8, lines break on 0x0D. (Assembly-confirmed; the port's presentation pitch 8
+  is correct.)
+- **Box background fill** (0x9457..0x947B): iterates an 8-byte-record list at [bp]
+  ({count@+0, x@+2, y@+4, width@+6}), drawing each via the clipped span primitive
+  0x299:0xA2B (file 0x39BB, a horizontal-span/rect fill with clip bounds gs:0x5235/37/39/3B),
+  last row via 0x299:0xB23. So the in-window concept box DOES have a code-drawn
+  rectangular backdrop — the port's "no backdrop for kind-3" was a capture misread.
+- **Reveal/hold timers**: gs:0x5E58 char pointer, gs:0xB31 per-char timer (=gs:0xACA>>2),
+  gs:0xB35 end-hold (=gs:0xACA<<2), gs:0x5E65 phase, gs:0x67BB hold flag — matches the
+  ported reveal_frames_per_char / reveal_complete_hold_ticks.
+
+### NEXT RE TASK (unfinished): the MENU-WORD text draw + its x/top/pitch
+The box-fill records' source and the routine that draws the menu WORDS (the DIC words
+after the line record's 0xFFFF separator) as selectable rows are not yet located. Find:
+who builds the 8-byte rect list at [bp] (its x/y/width = the box geometry), and the
+text-draw that places each menu word (its x/pitch = the label geometry). Those replace
+the capture-measured x=175 / top 39,83 / pitch 11 constants. Candidate: the box-list
+builder is the caller of 0x9450; the word draw is likely 0x299:0x6A0 again with the
+menu portion + an indented x. dis around the 0x9450 caller next.
