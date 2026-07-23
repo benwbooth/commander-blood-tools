@@ -5379,7 +5379,10 @@ credit divergence and the montage gap are ONE limitation with ONE fix: implement
 blood.dat presentation dispatch in the interpreter (a tooling feature, not a port
 defect — the port's credit + montage are capture-verified). The two ledger items merge.
 
-### DESCRIPT.DES FORMAT CRACKED (the presentation descriptor bank)
+### DESCRIPT.DES re-derivation (CORRECTION: src/descript.rs already parses this)
+The port has had a full DESCRIPT parser (600-line src/descript.rs, 145 records, four
+record kinds, all field tags) since an earlier session — this pass RE-derived the
+grammar from raw dumps before rediscovering that. Genuinely new from this pass:
 `descript.des` = u16 count (145) + 18-byte directory entries {16B asciiz name, u16
 record offset}, then per-record: u16 total length + TAGGED FIELDS. Directory covers
 EVERY named presentation: items (bionium, cred...), planets (Corpo, Pterra,
@@ -5395,7 +5398,12 @@ video trio (main + cd/cg companions), 0x0D <u16 delay> <asciiz> = CREDIT/TEXT cu
 cues), 0x0E=spr, 0x11=snd, 0x12=voc. The presentation dispatch the interpreter lacks
 = walking these fields and routing each kind to its presenter (the string-sink
 family are the text-kind loaders). SETCHAR binds a character's DESCRIPT name into a
-slot; the engine resolves it through this directory.
+slot; the engine resolves it through this directory. NEW facts worth keeping from
+this pass: (1) the hub state's char slot 0 holds the DESCRIPT record NAME "present"
+— SETCHAR slots are DESCRIPT directory keys, tying the char-slot system to the
+descriptor bank; (2) the missing interpreter presentation dispatch = walking these
+already-parsed fields and routing per kind (the string-sink family are the text-kind
+presenters); the port-side parser gives the exact cue list the oracle should show.
 
 ### scr writer FOUND STATICALLY: the scrutinizer's examination-record table
 `scrut.xdb` data (ds base = file 0x33B0 via cs:[0x33A5] delta 0x33B) holds a
