@@ -1135,13 +1135,23 @@ impl EngineState {
         // left-aligned rows at x=175 from y=83, pitch 11 — inside the console
         // window, no backdrop (oracle honk_talk vs_005..007).
         if self.console_box_kind == 3 {
-            if !(165..=300).contains(&x) {
+            // The unified widget's hit-test at the right-side anchor 225: inside
+            // [x0, x0+w] with row = dy/11 (div bl,0x0B @0x8508).
+            let rows = self.console_box.len();
+            let widest = self
+                .console_box
+                .iter()
+                .map(|l| crate::font::square_caps_text_width(l))
+                .max()
+                .unwrap_or(0);
+            let w = widest + 0x14;
+            let x0 = 225usize.saturating_sub(w / 2) as u16;
+            if !(x0..=(x0 + w as u16)).contains(&x) {
                 return None;
             }
-            let top = if self.console_box.len() > 5 { 37 } else { 81 };
+            let top = Self::choice_box_top_y(rows) as i32 - 2;
             let row = (y as i32 - top) / 11;
-            return (row >= 0 && (row as usize) < self.console_box.len())
-                .then_some(row as usize);
+            return (row >= 0 && (row as usize) < rows).then_some(row as usize);
         }
         self.choice_box_row_at(x, y, self.console_box.len())
     }
@@ -1312,15 +1322,24 @@ impl EngineState {
                 == ["HONK", "TELEPHONE", "CRYOBOX", "MENU", "OPTION"];
             if !is_baked_menu {
                 if self.console_box_kind == 3 {
-                    // The IN-WINDOW concept box (oracle honk_talk vs_005..007):
-                    // grey square-caps rows left-aligned at x=175, pitch 11, drawn
-                    // INSIDE the console window with no backdrop. Short boxes start
-                    // at y=83; tall conversation menus (>5 rows) from y=39 (oracle
-                    // honk_talk2). The ENGAGED topic renders WHITE (honk_blood).
+                    // The IN-WINDOW concept list = THE SAME unified widget (0x8428)
+                    // with the right-side anchor 0xE1=225 (mov [0xAC6],0xE1 @0x89A6):
+                    // x0 = 225 - w/2 (w = widest+0x14), top = (200-h)/2 + 4 with
+                    // h = rows*11+8 — DERIVING the previously measured x~175 and the
+                    // y=39/83 split (11 rows -> 39, 3 rows -> 83, both exact).
+                    // Labels left-aligned at x0+4; the ENGAGED topic renders WHITE.
                     self.scene_palette[0xE8] = [150, 150, 150];
                     self.scene_palette[0xEF] = [255, 255, 255];
                     let labels = self.console_box.clone();
-                    let top = if labels.len() > 5 { 39 } else { 83 };
+                    let rows = labels.len();
+                    let widest = labels
+                        .iter()
+                        .map(|l| crate::font::square_caps_text_width(l))
+                        .max()
+                        .unwrap_or(0);
+                    let w = widest + 0x14;
+                    let x0 = 225usize.saturating_sub(w / 2);
+                    let top = Self::choice_box_top_y(rows);
                     for (i, label) in labels.iter().enumerate() {
                         let color =
                             if self.console_box_selected == Some(i) { 0xEF } else { 0xE8 };
@@ -1329,7 +1348,7 @@ impl EngineState {
                             ENGINE_SCREEN_WIDTH,
                             ENGINE_SCREEN_HEIGHT,
                             label,
-                            175,
+                            x0 + 4,
                             top + i * 11,
                             color,
                         );

@@ -82,7 +82,7 @@ re-derived from the code that produces them. Each row names the RE task.
 
 | Capture-derived constant | Where | RE task (find in the binary) |
 |---|---|---|
-| in-window concept box geometry (x=175, y=39/83 split, pitch 11) | engine.rs render_bridge kind-3 | PARTIALLY RESOLVED: the unified list widget (0x8428) is the vertical-list source — pitch 11 (add bp,0xB @0x847A), row hit dy/11+1 (@0x8508), box w=max+20 / y=(200-h)/2 / top+4 now drive the CHOICE BOX draw (ported). The kind-3 in-window x=175/left-aligned variant's anchor/mode flags ([0xAC6]/[0xADC]/[0xADD]) per-context values remain to trace |
+| in-window concept box geometry (x=175, y=39/83 split, pitch 11) | engine.rs render_bridge kind-3 | PARTIALLY RESOLVED: the unified list widget (0x8428) is the vertical-list source — pitch 11 (add bp,0xB @0x847A), row hit dy/11+1 (@0x8508), box w=max+20 / y=(200-h)/2 / top+4 now drive the CHOICE BOX draw (ported). RESOLVED: the anchors are code constants — hub 100 (@0x86D9), in-window 225 (@0x89A6, deriving x~175 and the y=39/83 split via the same law), alt 80 (@0xB0D1, context TBD). The kind-3 draw + hit-test now compute from the widget law |
 | Bob concept menu geometry (x=170, y=56, pitch 11) | engine.rs render_bob_contact | same render routine (the contact screen uses the same widget) |
 | BOB_TOPICS label list | engine.rs BOB_TOPICS const | must come from the LINE RECORD's 0xFFFF menu words (script.rs menu_labels) or the DEB/DIC the dispatch reads — NOT the captured screen |
 | console-row -> actor-record map (HONK 2220 / BOB 132) | main.rs row dispatch | the click-dispatch code: which record each console row's hit-test starts (station-record / 0x5816 dispatch) — verify the operands are read from the decoded tables, not assumed |
