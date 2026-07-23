@@ -51,6 +51,21 @@ evidence in the row. Re-audit pass 1: 2026-07-22..23.
 | progress.rs / entity.rs | progression FSM | DATA(partial) | entity records decoded; the REAL ending trigger is SCRIPT5's Bigbang-concert block (GUARD rec_103A==Bigbang && rec_1340==concert && active_actor==Migrator.talk → lpm*sc1 reels → LOADSTR fin.hnm — now wired via the VM LoadString path); all-visited remains only as a driver fallback |
 | recomp/* | interpreter runtime | oracle | separate: runs the real EXE for cross-checks |
 
+## RE-AUDIT (user-reported inaccuracies, 2026-07-23) — pixel-vs-oracle standard
+The user reports the LIVE port still diverges (hand deformed/miscolored, scripted events,
+subtitle animation/sounds, menus). Structural evidence is NOT sufficient: every visual row must
+be PIXEL-COMPARED against the interpreter oracle. Status:
+
+| Item | Status | Evidence |
+|---|---|---|
+| 3D hand geometry+placement | **FIXED, ORACLE-EXACT** | full re-decode: skeleton = node TREE (root 0x2274, parent ptr @+0, five finger chains), composed rows = parent*build(angles)>>15 (verified err<=3 vs every dumped node), T = parent_rows@L + T_parent (err 0), 0x270 build = product-to-sum closed forms, projection 0x549 re-read (X row +0x12/T36, Y row +0x1E/T3A negated), and the entry 0x0060 CURSOR-CENTRED projection: centres derived per frame so the FINGERTIP (vertex 34 via node 0x24AE) lands AT the cursor. HANDGRID oracle: real tip=cursor+(2,-3), port now (2,-3)/(2,-2); bboxes within 2px; px count ~97%. Engine now feeds the SCREEN cursor (bridge ring mouse was pinning the hand at the bottom = the visible "deformed tiny hand") |
+| hand colors | numerically matched | port hand RGB ramp == oracle ramp (off-by-one): verify LIVE-window palette state separately |
+| hand poses (selector sequences) | **UNVERIFIED** | rest = the dump state (oracle-exact); the tween sequences' selector mapping is a guess — needs per-selector oracle captures |
+| bridge panorama view mapping | **WRONG** | port bridge.frame 45 shows DIFFERENT panorama content than oracle ring frame 45 (console position, wavy/melted rendering). Needs the TB.BIG frame indexing + unpack re-check vs oracle frames |
+| scripted events (VM flow) | **UNVERIFIED vs oracle** | user reports incorrect; needs an oracle-vs-port event-sequence trace |
+| subtitle animation/sounds | **UNVERIFIED vs oracle** | user reports inaccurate; needs frame-by-frame oracle capture of a reveal |
+| menus | **UNVERIFIED vs oracle** | user reports inaccurate; needs box-geometry/font pixel diff vs oracle |
+
 ## WHOLE-PLAYTHROUGH GATE (src/bin/playthrough.rs) — PASSES
 One continuous EngineState run, boot -> ending, every stage asserted: title, intro montage,
 SCRIPT1 tutorial (VM-driven to the profile handoff), SCRIPT2 encounter, SCRIPT3/4/5 locations

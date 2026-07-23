@@ -1340,7 +1340,11 @@ impl EngineState {
         // The bridge's steering hand: the SAME real manu3 3D hand, at the ring-anchored
         // cursor position. POSE per the decoded selector rule (0x7809..0x782C):
         // rest=1; while the view rotates, 2 (cursor right half) / 3 (left half).
-        let (cx, cy) = (self.bridge.mouse_screen_x(), self.bridge.mouse_y);
+        // The manu3 entry receives the SCREEN cursor ([bp] x/y) and pins the
+        // fingertip to it via the cursor-derived projection centres — use the
+        // engine mouse directly (the bridge's ring-space mouse is for steering
+        // and console hit dispatch only).
+        let (cx, cy) = (self.mouse.x as i32, self.mouse.y as i32);
         let rotating = self.bridge.frame != self.prev_bridge_frame;
         self.prev_bridge_frame = self.bridge.frame;
         let sel = if self.bridge.seeking {
@@ -1364,7 +1368,7 @@ impl EngineState {
             ENGINE_SCREEN_WIDTH,
             ENGINE_SCREEN_HEIGHT,
             cx,
-            cy as i32,
+            cy,
         );
     }
 
@@ -3742,11 +3746,11 @@ mod tests {
         // Prime prev_pos so the render step sees zero cursor motion, then
         // reproduce the live probe's state exactly: view frame 55, cursor at
         // ring 320 (screen x 40), y 100 — the state the capture was taken in.
-        e.step(MouseInput { x: 160, y: 100, buttons: 0, ..Default::default() });
+        e.step(MouseInput { x: 40, y: 100, buttons: 0, ..Default::default() });
         e.bridge.frame = 55;
         e.bridge.ring_mouse_x = 320;
         e.bridge.mouse_y = 100;
-        e.step(MouseInput { x: 160, y: 100, buttons: 0, ..Default::default() });
+        e.step(MouseInput { x: 40, y: 100, buttons: 0, ..Default::default() });
         assert_eq!(e.bridge.frame, 55, "view must not drift during the render");
         assert_eq!(e.bridge.mouse_screen_x(), 40, "virtual cursor at the capture position");
 
