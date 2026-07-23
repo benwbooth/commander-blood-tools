@@ -1405,15 +1405,24 @@ impl EngineState {
     /// square-caps rows at x=170 from y=56 (pitch 11).
     fn render_bob_contact(&mut self) {
         // Bob's LIVE talk-head band (pe/aabob.hnm — the red face + mismatched eyes
-        // of the oracle capture) over black bars; FRIGO.FD is the static fallback
-        // when the video is missing. (The oracle frame also shows a dark-teal
-        // machinery border around the band — its palette source is a residual,
-        // logged in port-validation.md; frigo's own LBM palette clashes with the
-        // video's, so it is not the underlay.)
-        for p in self.framebuffer.iter_mut() {
-            *p = 0;
+        // of the oracle capture) drawn OVER THE HUB VIEW — the oracle border rows
+        // sample the purple bridge panorama ((10,180)=(85,77,186)): the contact is
+        // an overlay on the bridge screen, not a black screen. FRIGO.FD is the
+        // static fallback when the video is missing.
+        if self.panorama.is_some() {
+            self.render_bridge_background();
+        } else {
+            for p in self.framebuffer.iter_mut() {
+                *p = 0;
+            }
         }
         if let Some(hnm) = self.scene_hnm.take() {
+            // The video's palette (header + pl chunks, indices 1..127) must survive
+            // the bridge background's palette install — the face renders under ITS
+            // colours while the panorama border keeps the shared dark ramp.
+            for (i, c) in hnm.palette.iter().enumerate().take(128).skip(1) {
+                self.scene_palette[i] = *c;
+            }
             let idx = self.scene_frame % hnm.frame_count().max(1);
             hnm.decode_frame(idx, &mut self.scene_buffer, &mut self.scene_palette);
             self.scene_hnm = Some(hnm);
