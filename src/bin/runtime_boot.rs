@@ -2377,6 +2377,55 @@ fn main() {
     // clicking each topic (reloading the savestate to isolate each) and reading the
     // resulting current-menu offset gs:0x6772. Gives the ground-truth navigation the
     // clean-port conversation VM must reproduce, without a full static VM decode.
+    if std::env::var("XDBDUMP").is_ok() {
+        // Dump the RESIDENT manu3.xdb segment from the savestate: find the load segment by
+        // scanning memory for the file's head bytes, then dump the relocated DATA segment
+        // (init-filled: real face/vertex tables) for offline mesh extraction.
+        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        // Let several frames render so the per-frame vertex/face work buffers are filled.
+        let _ = rt.run(rt.cpu.steps + 3_000_000);
+        let head = std::fs::read("output/_tmp_dat/manu3.xdb").unwrap();
+        let sig = &head[0..16];
+        let mut found = None;
+        for seg in (0x1000u32..0xA000).step_by(1) {
+            let mut ok = true;
+            for (i, &b) in sig.iter().enumerate() {
+                if rt.m.read8(seg as u16, i as u32) != b {
+                    ok = false;
+                    break;
+                }
+            }
+            if ok {
+                found = Some(seg as u16);
+                break;
+            }
+        }
+        let Some(seg) = found else {
+            println!("XDBDUMP: manu3 signature not found in memory");
+            return;
+        };
+        let delta = 0x137u16; // cs:[0x1368]
+        let ds = seg + delta;
+        println!("XDBDUMP: manu3 code seg {seg:#06x}, data seg {ds:#06x}");
+        let mut data = Vec::with_capacity(0x10000);
+        for off in 0..0x10000u32 {
+            data.push(rt.m.read8(ds, off));
+        }
+        std::fs::write(out.join("manu3_ds.bin"), &data).unwrap();
+        // Also dump the DERIVED segments (ds:[2]/[4]/[6]) — the vertex pools/work areas
+        // may live there (the render code switches ds to fs:[2] mid-pipeline).
+        for cell in [2u32, 4, 6] {
+            let seg = rt.m.read8(ds, cell) as u16 | ((rt.m.read8(ds, cell + 1) as u16) << 8);
+            let mut sd = Vec::with_capacity(0x10000);
+            for off in 0..0x10000u32 {
+                sd.push(rt.m.read8(seg, off));
+            }
+            std::fs::write(out.join(format!("manu3_seg{cell}_{seg:04x}.bin")), &sd).unwrap();
+            println!("wrote seg[{cell}] = {seg:#06x}");
+        }
+        println!("wrote manu3_ds.bin (64KB live data segment)");
+        return;
+    }
     if std::env::var("HANDGRID").is_ok() {
         // Dense hand-pose capture: resume the hub state, keep the view parked (all grid
         // points sit inside the steering dead zone), and dump a frame with the REAL 3D hand
