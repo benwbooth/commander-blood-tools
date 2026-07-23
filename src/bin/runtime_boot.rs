@@ -2920,6 +2920,14 @@ fn main() {
         //   move <x> <y> | click <x> <y> | key <scancode> | wait <frames>
         // Coordinates are SCREEN coords; the ring correction is applied here.
         rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        // Optional write watch during the scenario (WRITEWATCHLIN=<linear hex>):
+        // reports every write to the address with the writer's cs:ip — the story
+        // event tracer (e.g. the scr record slot at block+0x1276).
+        if let Ok(w) = std::env::var("WRITEWATCHLIN") {
+            let lin = usize::from_str_radix(w.trim_start_matches("0x"), 16).unwrap();
+            rt.m.watch_addr = Some(lin);
+            eprintln!("write-watch armed at linear {lin:#x}");
+        }
         let g = 0x0e84u16;
         let frame = |rt: &Runtime| {
             rt.m.read8(g, 0x2795) as u16 | ((rt.m.read8(g, 0x2796) as u16) << 8)
@@ -2980,6 +2988,15 @@ fn main() {
         }
         std::fs::write(out.join("vs_dac.bin"), rt.dac).unwrap();
         println!("VERIFYSCRIPT done: {step} steps");
+        if !rt.m.addr_hits.is_empty() {
+            println!("  write-watch hits:");
+            let mut seen = std::collections::HashSet::new();
+            for &(v, cs, ip) in &rt.m.addr_hits {
+                if seen.insert((v, cs, ip)) {
+                    println!("    ={v:#04x} at {cs:04x}:{ip:04x}");
+                }
+            }
+        }
         println!("  bios_keys pending: {}, [0xB15]={:#04x}, [0x2738]={:#04x}, [0x272E]={}",
             rt.bios_keys.len(),
             rt.m.mem[0xE840 + 0xB15],
