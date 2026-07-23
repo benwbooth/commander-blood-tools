@@ -1003,6 +1003,33 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         }
                     }
                 }
+                Event::ButtonPress(b)
+                    if engine.bridge_active && !engine.console_box.is_empty() && b.detail == 1 =>
+                {
+                    if let Some(row) = engine.console_box_click(mx, my) {
+                        let last = engine.console_box.len() - 1;
+                        let kind = engine.console_box_kind;
+                        engine.console_box.clear();
+                        if row < last {
+                            match kind {
+                                1 => {
+                                    engine.bridge.release_menu();
+                                    engine.bridge_active = false;
+                                    engine.phone_active = true;
+                                    engine.phone_connect(row);
+                                }
+                                2 => {
+                                    engine.bridge.release_menu();
+                                    engine.bridge_active = false;
+                                    engine.cryobox_active = true;
+                                }
+                                _ => {}
+                            }
+                        }
+                    } else {
+                        engine.console_box.clear(); // click off the box closes it
+                    }
+                }
                 Event::ButtonPress(b) if engine.bridge_active && engine.option_box_active && b.detail == 1 => {
                     // The OPTION choice box: CANCEL (its only hub item) closes it.
                     engine.option_box_active = false;
@@ -1054,14 +1081,17 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                             engine.on_ship = false;
                         }
                         Some(1) => {
-                            engine.bridge.release_menu();
-                            engine.bridge_active = false;
-                            engine.phone_active = true;
+                            // TELEPHONE -> contact choice box (savestate-verified pattern).
+                            let mut items: Vec<String> =
+                                engine.phone_contact_labels().into_iter().take(6).collect();
+                            items.push("CANCEL".into());
+                            engine.console_box = items;
+                            engine.console_box_kind = 1;
                         }
                         Some(2) => {
-                            engine.bridge.release_menu();
-                            engine.bridge_active = false;
-                            engine.cryobox_active = true;
+                            // CRYOBOX -> {BOB_MORLOCK, CANCEL} (tutorial-oracle-verified).
+                            engine.console_box = vec!["BOB_MORLOCK".into(), "CANCEL".into()];
+                            engine.console_box_kind = 2;
                         }
                         Some(3) => engine.menu_submenu_active = true, // MENU -> submenu
                         Some(4) => engine.option_box_active = true, // OPTION -> choice box (real)

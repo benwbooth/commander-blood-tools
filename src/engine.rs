@@ -363,6 +363,11 @@ pub struct EngineState {
     /// The OPTION choice box (over the panorama) is open — the REAL OPTION interaction
     /// (savestate-verified); replaces the invented 3D-pyramid OPTION screen.
     pub option_box_active: bool,
+    /// The UNIVERSAL console choice box (savestate-verified: every golden-menu row opens a
+    /// contextual gold box over the panorama): its item labels, or empty = closed. The last
+    /// item is always CANCEL. `console_box_kind` = which console row opened it.
+    pub console_box: Vec<String>,
+    pub console_box_kind: usize,
     /// The console OPTION 3D-pyramid menu (`manu3.xdb` overlay). Its 12-item dispatch
     /// structure is decoded statically from manu3.xdb (`[0x2306]` table) and its
     /// camera/rotation/tween/dispatch logic is the ported [`crate::manu3`]; it reuses the
@@ -559,6 +564,8 @@ impl EngineState {
             bridge_active: false,
             menu_submenu_active: false,
             option_box_active: false,
+            console_box: Vec::new(),
+            console_box_kind: 0,
             option_active: false,
             option_angle: 0,
             option_item: 0,
@@ -1052,6 +1059,14 @@ impl EngineState {
     /// rp_option: clicking OPTION opens the measured gold choice box containing CANCEL).
     pub const OPTION_BOX: [&'static str; 1] = ["CANCEL"];
 
+    /// Map a click to a console-choice-box row while it is open, else None.
+    pub fn console_box_click(&self, x: u16, y: u16) -> Option<usize> {
+        if self.console_box.is_empty() {
+            return None;
+        }
+        self.choice_box_row_at(x, y, self.console_box.len())
+    }
+
     /// Map a click to a MENU-submenu item (0 = EXPLANATIONS, 1 = GAME) when the
     /// submenu is showing. The submenu is a gold CHOICE BOX (the game's universal
     /// console-choice widget), so hit-test its rows, not the golden menu.
@@ -1193,6 +1208,10 @@ impl EngineState {
         }
         if self.option_box_active {
             let labels: Vec<String> = Self::OPTION_BOX.iter().map(|s| s.to_string()).collect();
+            self.draw_choice_box(&labels, None);
+        }
+        if !self.console_box.is_empty() {
+            let labels = self.console_box.clone();
             self.draw_choice_box(&labels, None);
         }
         self.draw_hand_cursor();
@@ -1982,6 +2001,11 @@ impl EngineState {
     }
 
     /// The number of callable phone contacts loaded.
+    /// Contact names for the TELEPHONE choice box.
+    pub fn phone_contact_labels(&self) -> Vec<String> {
+        self.phone_contacts.iter().map(|(n, _)| n.clone()).collect()
+    }
+
     pub fn phone_contact_count(&self) -> usize {
         self.phone_contacts.len()
     }

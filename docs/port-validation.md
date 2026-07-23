@@ -42,7 +42,7 @@ evidence in the row. Re-audit pass 1: 2026-07-22..23.
 | engine.rs hand cursor | pointing-hand | CAPTURE(atlas)+**APPROX**(pose) | sprites harvested from live bridge captures; pose-by-nearest-capture approximates the real manu3 3D hand render. Now the ONLY cursor; REAL-CAPTURE rule: presentations draw NO cursor (montage/talk frames cursor-free) while interactive screens show the hand (oracle console frames) — hand removed from ending+TV, kept on nav/dialogue/phone/cryobox/option/world/cyber |
 | engine.rs intro flow | logos/montage/credits | CAPTURE+DATA | DESCRIPT present record + real-args DOSBox captures (rows 69/79 credits, band rows 99..200) |
 | engine.rs TV | broadcast channels | DATA | 7 self-identified Sequence records; chained clips+music+cues |
-| engine.rs telephone/cryobox | console screens | DATA+CAPTURE | bappel/character sprites; oracle-observed flows |
+| engine.rs telephone/cryobox | console screens | DATA+**ORACLE** | savestate probes: TELEPHONE/CRYOBOX rows open contextual gold CHOICE BOXES (the console's universal interaction; CRYOBOX = {BOB_MORLOCK, CANCEL} tutorial-verified) -> the port routes row -> box -> item -> screen (bappel call / cryo chamber) |
 | engine.rs cyberspace | tunnel minigame | **APPROX** | presentation from real assets; goal decoded from SCRIPT2 text (BIOXX/BIONIUM) but the interaction logic is a stand-in. Settle: the cyber .ext consumer + input handler |
 | engine.rs OPTION menu | choice box | **ORACLE** | savestate resume-probe (ring-corrected clicks — the console mouse-x is RING space, the reason earlier probes never dispatched): OPTION opens the measured gold choice box containing CANCEL; the invented 3D-pyramid OPTION screen is UNROUTED. MENU's {EXPLANATIONS, GAME} box same mechanism |
 | engine.rs world visit | on-planet screens | DATA+APPROX | rooms/objects from decoded data; click=talk + room-step wiring is an interpretation. Settle: on-planet input handler in asm |
@@ -79,8 +79,8 @@ evidence in the row. Re-audit pass 1: 2026-07-22..23.
 2. [x] Hand hotspot: oracle frames confirm fingertip = mouse position (arm extends down-left); the BRIDGEPROBE-derived atlas anchors encode this. Pose model (nearest-capture) remains APPROX vs the real 3D render.
 3. [x] OPTION truth SETTLED via savestate resume-probe (RESUMEPROBE, ring-space mouse-x): the
    choice box with CANCEL; pyramid screen unrouted. The earlier "blocked" analysis was wrong on
-   two counts (the savestate existed; the mouse-x model). TELEPHONE/CRYOBOX hub screens: probe
-   the same way (rows 103/118) — queued.
+   two counts (the savestate existed; the mouse-x model). TELEPHONE/CRYOBOX probed: both open
+   choice boxes too (universal interaction) — ported (row -> box -> item -> screen).
 4. [ ] Cyberspace interaction (BIOXX touch loop) from the cyber consumer.
 5. [ ] On-planet input handler decode to replace the interpretation.
 6. [ ] ext.rs record semantics via the consumer load path.
