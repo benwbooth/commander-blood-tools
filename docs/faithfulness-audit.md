@@ -280,3 +280,21 @@ band composite over the montage (harvested from the new native captures), the in
 (logo reel + cutscenes stay full-screen), credit lines at the measured rows 69/79. Test:
 intro_montage_plays_on_the_real_console_band. LESSON: a negative from a truncated capture is not a
 negative; capture past the event before concluding.
+
+## Faithful-VM passes (commits 1020-1026) — status closures
+- **VM executor + decompiler (1020/1021)**: every opcode ported from the dispatch table asm;
+  decompiled/SCRIPT1-5.bas are the readable source of the whole script logic.
+- **All dialogue VM-driven (1022/1023)**: SCRIPT1 console dispatch (Izwalito guidance -> HONK ->
+  CRYOBOX flag -> {EXPLANATIONS,GAME} concept -> RUN PROFILE 1) + SCRIPT2-5 hosts/concepts/
+  profile chains. Legacy stream playback = fallback only.
+- **DOS blood.sav CLOSED (1024)**: format = profile u16 + state[0x200] + slots[0x60] + VAR-sized
+  record table (@0x1C3F/0x1CBD). to_dos_save/apply_dos_save; F5 writes blooddos.sav; F9 imports.
+- **SCRIPT2 VAR phase CLOSED (1026)**: rec_0F4E = the current-location var; 3488 = Pterra's DEB
+  offset; arrival performs the location write (satisfy_opening_location_guards).
+- **Credit divergence CLOSED as emulator-side**: the real game (DOSBox capture game_95s) and the
+  port BOTH show the CRYO credit; only the interpreter-oracle runtime diverges (its bug, tracked
+  in the recomp notes — not a port fidelity issue).
+- **menu.talk (2220) trigger**: no immediate xrefs — the console button->actor dispatch is
+  DATA-driven (console/manu resource table, still unlocated). The port routes buttons via DEB
+  names (content-equivalent). Remaining open: that table, on-planet click semantics, C4
+  presentation-dispatch internals (0x5816 deep RE).
