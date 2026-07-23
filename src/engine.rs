@@ -2355,6 +2355,19 @@ impl EngineState {
         // tutorial) correctly falls back to the console panel.
         if let Some(Some(path)) = self.dialogue_scene_paths.get(self.dialogue_cursor).cloned() {
             self.load_scene_hnm(&path);
+            // FILM BEAT (decoded A8 @0x67F6..0x682F: LOADSTR queues the HNM as a film via
+            // ship-FSM state 7; the following empty SAY is its line-slot): an empty-text
+            // line with a scene holds for the film's FULL length so the reel plays out.
+            let empty = self
+                .dialogue_texts
+                .get(self.dialogue_cursor)
+                .is_some_and(|t| t.trim().is_empty());
+            if empty {
+                if let Some(h) = &self.scene_hnm {
+                    let frames = h.frame_count() as u32;
+                    self.line_min_hold = Some((self.dialogue_cursor, frames.max(1)));
+                }
+            }
         }
     }
 
