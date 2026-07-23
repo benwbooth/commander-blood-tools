@@ -88,6 +88,10 @@ the decoded click dispatch itself) and no-VM fallback labels. The Bob screen's t
 render still reads BOB_TOPICS — converting it to the line-carried menu is the follow-up.
 
 ## CAMPAIGN LOG
+- PASS 6 (story_cycle): a full conversation cycle live — psychotherapy in, topic
+  acknowledged ('YOU GOT IT...'), and the menu STACK POPS back to the consultation
+  entry menu: the bas_vm push/pop model verified against the running game. The
+  engaged-topic highlight persists across the pop (EXPLANATIONS white on return).
 - PASS 5 (nav_probe, partial): post-CANCEL the ring STEERS under edge parks (three
   parks rotate the view ~57 frames — matching the port's presentation-lock release
   law); the nav-sector orb interaction needs a frame-aimed park (the orb's screen

@@ -1,0 +1,24 @@
+# Complete a conversation cycle: therapy in, bye_bye out, then steer to nav and probe.
+click 100 98
+wait 20
+click 230 88
+wait 30
+click 100 84
+wait 30
+click 185 97
+wait 30
+click 200 81
+wait 30
+click 200 105
+wait 30
+click 185 39
+wait 30
+click 185 83
+wait 30
+move 316 100
+wait 60
+move 316 100
+wait 60
+click 125 118
+wait 40
+wait 40
