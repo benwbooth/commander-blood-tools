@@ -5479,8 +5479,17 @@ specific player action the blind driver misses (or the interception really is
 travel-gated and travel needs the nav flow); (c) the driver STALLS at round ~882
 ("That won't do any good") — it needs concept-menu-aware clicking to progress.
 NEXT TASKS (frontier):
-- [ ] vm::walk coverage: enumerate all COD records via DEB, diff against current
-      .bas, decompile the unreached records ("ways to lose", lullaby, briefing)
+- [ ] vm::walk coverage — DIAGNOSED PRECISELY: SCRIPT2.bas ends at 0x2F83 of a
+      0x9882-byte COD (31% coverage; tail 84% nonzero real content; the very next
+      bytes past the break parse cleanly as C3 FC 06 28 00 + A9/CE/C4 blocks). The
+      break is an operand-LENGTH desync around 0x2F7F ("state[4]=43937" misparse =
+      A5's mode-dependent length applied in the wrong mode; per-opcode table
+      DS:0x6F18 stores (mode0_len, mode1_len) pairs and the A-family CONTROL tokens
+      switch modes). FIX: track mode in vm::walk exactly as the engine does (read
+      the 0x6F18 semantics from the interpreter's fetch path), re-walk all five
+      scripts, regenerate .bas, extend the round-trip test over the FULL streams.
+      The missing story content (lose menu, lullaby, strange-creatures briefing,
+      KANARY concepts) lives in these unwalked two-thirds.
 - [ ] TUTORIAL4 driver: concept-menu-aware row clicks (OCR the in-window menu)
 - [ ] Find what jumps into the 0x5BF0/0x5C26 teardown (xref segment-level; or exec
       trace during the TUTORIAL Izwalito queue, where the C3->C4 chain provably runs)
