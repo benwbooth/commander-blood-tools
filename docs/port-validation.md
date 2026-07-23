@@ -105,6 +105,11 @@ the decoded click dispatch itself) and no-VM fallback labels. The Bob screen's t
 render still reads BOB_TOPICS — converting it to the line-carried menu is the follow-up.
 
 ## CAMPAIGN LOG
+- PASS 7 (story_deep, 27 steps — the longest chain): deep-topic answers play from the
+  bytecode (ORXX: 'living guided missiles...') with the persistent-menu + highlight
+  laws holding throughout; AND an interaction law confirmed — an OPEN conversation
+  holds input focus (console-row clicks mid-conversation stay in the conversation),
+  matching the port's box-takes-clicks-first dispatch. All content VM-sourced.
 - PASS 6 (story_cycle): a full conversation cycle live — psychotherapy in, topic
   acknowledged ('YOU GOT IT...'), and the menu STACK POPS back to the consultation
   entry menu: the bas_vm push/pop model verified against the running game. The

@@ -1,0 +1,28 @@
+# The deepest chain: conversations + contact + topics, then the nav probe.
+click 100 98
+wait 20
+click 230 88
+wait 30
+click 100 84
+wait 30
+click 185 97
+wait 30
+click 200 81
+wait 30
+click 200 105
+wait 30
+click 200 50
+wait 30
+click 185 39
+wait 30
+click 185 83
+wait 30
+click 230 118
+wait 30
+click 100 89
+wait 40
+click 200 113
+wait 40
+click 170 60
+wait 40
+wait 40
