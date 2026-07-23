@@ -82,11 +82,11 @@ re-derived from the code that produces them. Each row names the RE task.
 
 | Capture-derived constant | Where | RE task (find in the binary) |
 |---|---|---|
-| in-window concept box geometry (x=175, y=39/83 split, pitch 11) | engine.rs render_bridge kind-3 | the concept-menu RENDER routine (unlabeled): the presentation display code that draws the 0xA6 line record's 0xFFFF-separated menu words; extract x/top/pitch from its draw calls |
+| in-window concept box geometry (x=175, y=39/83 split, pitch 11) | engine.rs render_bridge kind-3 | PARTIALLY RESOLVED: the unified list widget (0x8428) is the vertical-list source — pitch 11 (add bp,0xB @0x847A), row hit dy/11+1 (@0x8508), box w=max+20 / y=(200-h)/2 / top+4 now drive the CHOICE BOX draw (ported). The kind-3 in-window x=175/left-aligned variant's anchor/mode flags ([0xAC6]/[0xADC]/[0xADD]) per-context values remain to trace |
 | Bob concept menu geometry (x=170, y=56, pitch 11) | engine.rs render_bob_contact | same render routine (the contact screen uses the same widget) |
 | BOB_TOPICS label list | engine.rs BOB_TOPICS const | must come from the LINE RECORD's 0xFFFF menu words (script.rs menu_labels) or the DEB/DIC the dispatch reads — NOT the captured screen |
 | console-row -> actor-record map (HONK 2220 / BOB 132) | main.rs row dispatch | the click-dispatch code: which record each console row's hit-test starts (station-record / 0x5816 dispatch) — verify the operands are read from the decoded tables, not assumed |
-| completion-hold bright-green timing | engine.rs draw_subtitle_revealed | already ASM (reveal_complete_hold_ticks @0x7378); the PHASE (all-0xFF hold) needs the render routine's colour-select code cited, not the capture |
+| completion-hold bright-green timing | engine.rs draw_subtitle_revealed | ASM-CONFIRMED: the hold timers ([0xB31]=[0xACA]>>2 per char, [0xB35]=[0xACA]<<2 end-hold, [0x67BB] flag) read directly at 0x9480..0x94E0; the menu words then reveal word-at-a-time (0x7358 +2 stepping) |
 | CONTACT re-label / red engaged row | engine.rs, bridge.rs | the engaged-row DAC is ASM (0x8613); the CONTACT text substitution needs its source routine |
 
 NOTE: capture-measured constants may stand in TEMPORARILY only while their row here

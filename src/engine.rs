@@ -1712,22 +1712,20 @@ impl EngineState {
     /// y=89, 11px pitch — the labels sit in the panorama's dark orb-socket region,
     /// so a black backdrop (index 0xE0, DAC 0,0,0) is filled behind them for
     /// legibility. `selected` re-renders one row in the brighter 0xEF white.
+    /// The list widget's centre-X anchor — the game's `[0xAC6]`, set per context
+    /// by the caller; the hub console boxes anchor at 100.
     const CHOICE_BOX_CENTER_X: usize = 100;
-    /// The choice box is VERTICALLY CENTERED: the centre of the row-tops sits on
-    /// this y regardless of item count (measured: 1 item → top y=95, 2 items →
-    /// tops 89/100 whose centre is 94.5; both anchor the tops-centre at ~95).
-    const CHOICE_BOX_TOPS_CENTER_Y: usize = 95;
-    // Row pitch 11: the two-row telephone box (tops 89/100, choice_box_bob_morlock.ppm)
-    // AND the six-row OPTION submenu (tops 67..122 step 11, dual-run vs_004) both
-    // measure 11 — with tops centred on y=95 (top_y(6) = 95-28 = 67 exact).
+    /// Row pitch 11 — ASSEMBLY: the unified list widget steps `add bp,0xB`
+    /// (0x847A) and hit-tests `row = dy/11 + 1` (`div bl,0x0B` @0x8508).
     const CHOICE_BOX_PITCH: usize = 11;
 
-    /// The top y of the first choice-box row for a box of `rows` items (vertical
-    /// centring around [`Self::CHOICE_BOX_TOPS_CENTER_Y`]).
+    /// The first row's top y, from the widget's ASSEMBLY layout (0x84A1..0x84C6):
+    /// box height h = rows*11 + 8, box y = (200 - h)/2 (screen-centred), text
+    /// top = box y + 4. (This DERIVES the previously capture-measured tops-centre
+    /// ~95: rows=2 -> h=30, y=85, top=89; rows=6 -> h=74, y=63, top=67 — exact.)
     fn choice_box_top_y(rows: usize) -> usize {
-        (Self::CHOICE_BOX_TOPS_CENTER_Y as i32
-            - ((rows.max(1) as i32 - 1) * Self::CHOICE_BOX_PITCH as i32 + 1) / 2)
-            .max(0) as usize
+        let h = rows.max(1) * Self::CHOICE_BOX_PITCH + 8;
+        (200usize.saturating_sub(h)) / 2 + 4
     }
 
     fn draw_choice_box(&mut self, labels: &[String], selected: Option<usize>) {
@@ -1746,14 +1744,16 @@ impl EngineState {
             .max()
             .unwrap_or(0);
         let text_top = Self::choice_box_top_y(rows);
-        // Black backdrop enclosing the centered text (3px padding each side); a
-        // 3px border index (0x15) then the fill (0xE0) — both DAC(0,0,0), from the
-        // prior live index-dump measurement (RGB can't distinguish them).
-        let half = widest / 2 + 4;
-        let x0 = Self::CHOICE_BOX_CENTER_X.saturating_sub(half);
-        let x1 = (Self::CHOICE_BOX_CENTER_X + half).min(ENGINE_SCREEN_WIDTH);
-        let y0 = text_top.saturating_sub(3);
-        let y1 = (text_top + rows * Self::CHOICE_BOX_PITCH + 3).min(ENGINE_SCREEN_HEIGHT);
+        // The box rect per the widget's ASSEMBLY layout (DS:0x2AAB @0x84A1..):
+        // w = widest_label + 0x14 (20), h = rows*11 + 8, x = anchor - w/2,
+        // y = (200 - h)/2; border index 0x15 then fill 0xE0 (both DAC 0,0,0 —
+        // from the live index dump; RGB can't distinguish them).
+        let w = widest + 0x14;
+        let h = rows * Self::CHOICE_BOX_PITCH + 8;
+        let x0 = Self::CHOICE_BOX_CENTER_X.saturating_sub(w / 2);
+        let x1 = (x0 + w).min(ENGINE_SCREEN_WIDTH);
+        let y0 = (200usize.saturating_sub(h)) / 2;
+        let y1 = (y0 + h).min(ENGINE_SCREEN_HEIGHT);
         for y in y0..y1 {
             for x in x0..x1 {
                 let edge = y < y0 + 3 || y + 3 >= y1 || x < x0 + 3 || x + 3 >= x1;
@@ -4363,9 +4363,13 @@ mod tests {
         if cap.len() != ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT * 3 {
             return;
         }
-        // One-row box lands at y=95 (not the two-row anchor 89).
-        assert_eq!(EngineState::choice_box_top_y(1), 95);
+        // The ASSEMBLY layout (0x84A1..: h=rows*11+8, y=(200-h)/2, top=y+4):
+        // rows=1 -> 94 (the capture's ink read 95 — the glyph's first ink row;
+        // 1px measurement ambiguity, assembly wins per the prime rule);
+        // rows=2 -> 89 and rows=6 -> 67 match the captures EXACTLY.
+        assert_eq!(EngineState::choice_box_top_y(1), 94);
         assert_eq!(EngineState::choice_box_top_y(2), 89);
+        assert_eq!(EngineState::choice_box_top_y(6), 67);
 
         let mut e = EngineState::new();
         e.draw_choice_box(&["CANCEL".to_string()], None);
