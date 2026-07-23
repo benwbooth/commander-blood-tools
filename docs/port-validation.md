@@ -65,6 +65,11 @@ script-locked and (b) the missing live CANCEL overlay; after fixes: 2.22 mean / 
 across all 9 steps.
 
 ## CAMPAIGN LOG
+- PASS 5 (nav_probe, partial): post-CANCEL the ring STEERS under edge parks (three
+  parks rotate the view ~57 frames — matching the port's presentation-lock release
+  law); the nav-sector orb interaction needs a frame-aimed park (the orb's screen
+  position at the arrived frame) — the next scenario's work. Steering-release parity
+  confirmed en route.
 - PASS 4 (2026-07-23, the consultation storyline): honk_remember -> REMEMBER surfaces the
   CONSULTATION entry menu (= the decoded BAS entry menu verbatim); consultation ->
   {TALK, THERAPY}; therapy -> the PSYCHOTHERAPY session with the 12-topic menu (= the
