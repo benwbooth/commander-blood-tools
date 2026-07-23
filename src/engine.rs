@@ -1591,14 +1591,18 @@ impl EngineState {
         // 252/110, y negated), the decoded cursor law on the wrist segment, and the
         // game's own texture — fingertip anchored at the cursor.
         {
-            // POSE: REST (1) in every non-bridge context — ORACLE hub_tour (vs_000..008):
-            // the hand keeps the same up-pointing pose while idle, hovering every console
-            // row, hovering AND clicking the orb; SELECTORWATCH reads a constant selector
-            // through hover/click/steer at the hub. (The earlier hover=6 / presentation=4
-            // mapping is not supported by any capture — the down-poke frames in the
-            // row scenarios are the STEERING grab poses 2/3 firing after CANCEL unlocks
-            // the ring, which draw_hand_cursor already models.)
-            let sel = 1;
+            // POSE — ASSEMBLY LAW (list widget 0x8522..0x8534): hovering INSIDE an
+            // OPEN list box sets selector 6 ([0xA32]=6); the press gate ([0xA3E])
+            // selects 7. Everywhere else: REST (1) — the hub_tour oracle confirmed
+            // rest over console rows/orb (no box open there), so the box-hover rule
+            // applies only while a box is actually open under the cursor.
+            let over_box = !self.console_box.is_empty()
+                && self.console_box_click(cx as u16, cy as u16).is_some();
+            let sel = if over_box {
+                if self.mouse.left_down() { 7 } else { 6 }
+            } else {
+                1
+            };
             let mesh = self
                 .hand_mesh
                 .get_or_insert_with(crate::manu3_hand::HandMesh::load);
