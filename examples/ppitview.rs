@@ -1,4 +1,4 @@
-//! Decode the ppit* (pupitre = console) HNMs with their true frame dims/origins.
+//! Decode the ppit* (pupitre = console) HNMs and report fb/palette liveness.
 
 use commander_blood_tools::hnm::HnmFile;
 use std::path::Path;
@@ -7,10 +7,10 @@ fn main() {
     for name in [
         "output/_tmp_dat/sq/ppit01.hnm",
         "output/_tmp_dat/sq/ppit02.hnm",
-        "output/_tmp_dat/ob/ppitbb01.hnm",
-        "output/_tmp_dat/ob/ppitbb02.hnm",
-        "output/_tmp_dat/ob/ppitbb03.hnm",
-        "output/_tmp_dat/ob/ejectorx.hnm",
+        "output/_tmp_dat/sq/ppitbb01.hnm",
+        "output/_tmp_dat/sq/ppitbb02.hnm",
+        "output/_tmp_dat/sq/ppitbb03.hnm",
+        "output/_tmp_dat/sq/ejectorx.hnm",
     ] {
         let Ok(h) = HnmFile::open(Path::new(name)) else {
             println!("{name}: missing");
@@ -18,12 +18,18 @@ fn main() {
         };
         let nf = h.frame_count();
         let dims = h.frame_dims(0);
-        println!("{name}: {nf} frames, dims {:?}, band_y {}", dims, h.band_y_origin());
         let mut fb = vec![0u8; 320 * 200];
-        let mut pal = [[0u8; 3]; 256];
+        // Header palette: these clips carry no per-frame `pl` chunks.
+        let mut pal = h.palette;
         for f in 0..nf.min(40) {
             h.decode_frame(f, &mut fb, &mut pal);
         }
+        let fbnz = fb.iter().filter(|&&p| p != 0).count();
+        let palnz = pal.iter().filter(|c| c.iter().any(|&v| v != 0)).count();
+        println!(
+            "{name}: {nf} frames, dims {dims:?}, band_y {} | fb nonzero {fbnz}, pal nonzero {palnz}",
+            h.band_y_origin()
+        );
         let mut rgb = vec![0u8; 320 * 200 * 3];
         for (i, &p) in fb.iter().enumerate() {
             rgb[i * 3..i * 3 + 3].copy_from_slice(&pal[p as usize]);
