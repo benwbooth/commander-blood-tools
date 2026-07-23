@@ -5367,3 +5367,14 @@ to the credit beat with an exec watch on 0x7612's linear address AND on the sink
 family's entries; find the computed dispatch site from the executed-neighbourhood
 log; then diff which selector value the interpreter derives vs what routes to (b).
 Note: this is ORACLE TOOLING only — the port's credit is capture-verified correct.
+
+### CREDIT-DIVERGENCE ROOT CAUSE UNIFIED: it IS the presentation gap
+EXECWATCHLIN through 230M steps: the ENTIRE string-sink family (0x7612 subtitle-arm,
+0x7629, 0x763E, 0x766F, 0x7684... — the DESCRIPT string-slot loaders, one per field
+kind) NEVER EXECUTES in the interpreter. The dispatcher that feeds them is the
+blood.dat PRESENTATION system — the interpreter's already-documented gap (it drops
+the montage/crew presentations and runs straight to the tutorial). The WAIT-COMMANDER
+static sink is what displays when the presentation record never loads its cue. So the
+credit divergence and the montage gap are ONE limitation with ONE fix: implement the
+blood.dat presentation dispatch in the interpreter (a tooling feature, not a port
+defect — the port's credit + montage are capture-verified). The two ledger items merge.
