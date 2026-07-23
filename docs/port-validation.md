@@ -66,12 +66,13 @@ evidence in the row. Re-audit pass 1: 2026-07-22..23.
   talk-HNM sets for Rotator (g_gar*), Maziok/Fifi (omp*), Outrageor (r_pri*). Their dialogue
   scenes were silently video-less. Extracted; scenes now resolve.
 
-- ORACLE console-dispatch nuance (open): with a presentation ACTIVE, golden-menu clicks appear to
-  ADVANCE the content (OPTION-row clicks stepped the menu text 'Today's fare:'→'PLASMA soup
-  HONK-style.') rather than dispatch; the HONK row click DID dispatch his welcome from the
-  earlier state. Need: idle-console probe (running) to see the resting state, then single-click
-  probes per row. The port currently always dispatches menu rows during dialogue — may need a
-  busy-gate (click-to-advance while presenting, dispatch when idle).
+- ORACLE console findings (settled where possible): the tutorial AUTO-CHAINS (hon ~52M steps,
+  menus ~57M, across fresh boots with no dispatching clicks) — ported as the tutorial_chain.
+  CLICKAT button injection does NOT dispatch console rows in the current harness (no file opens
+  after TELEPHONE/CRYOBOX clicks; frames unchanged) — the earlier session's tut4-7 probe DID get
+  dispatch (CRYOBOX -> {BOB_MORLOCK, CANCEL}); its click cadence needs recovering before the
+  OPTION/TELEPHONE/CRYOBOX real screens can be captured. Port keeps the idle-dispatch gate
+  (consistent with all observations).
 
 ## Active fix queue (from the matrix, user-reported first)
 1. [x] Host crosshair removed; hand = the only cursor, all screens (this pass).
