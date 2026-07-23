@@ -5338,3 +5338,20 @@ are all this one widget — matching the port's unified choice-box/list model.
 REMAINING: continue the disassembly past 0x8493 for the centered-rect X/Y placement
 (replaces the captured x=170/175 and top y values), and the mouse/query return (the
 row hit-test the click dispatch consumes).
+
+### LIST WIDGET COMPLETE: centering + row hit-test + THE POSE-6 LAW (0x84A1..0x8534)
+- Rect at DS:0x2AAB {x,y,w,h}: **w = max_label_width + 0x14 (20)**; **h = rows*11 + 8**;
+  **x = [0xAC6] − w/2** (anchor-centred; [0xAC6] = the per-context centre-X);
+  **y = (0xC8 − h)/2** (SCREEN-centred — derives the port's measured tops-centre ~95);
+  text top = box y + 4.
+- Row hit-test: inside [x, x+w] × [text_top, text_top+h−8]; **row = Δy/11 + 1**
+  (`div bl,0x0B` @0x8508) → [0x27C7].
+- **HAND POSE LAW (corrects the hub_tour-derived removal)**: hovering INSIDE an open
+  list box sets selector [0xA32]=6 (and 7 through the [0xA3E] press gate). The hub_tour
+  showed REST because no box was open under the cursor — pose 6 is the LIST-BOX hover,
+  not the console-row hover. The port should restore sel=6 gated on an open box hit
+  (and 7 on press) with THIS citation.
+PORT ACTIONS (queue): derive the choice-box draw from {anchor [0xAC6], w=max+20,
+y=(200−h)/2, top+4, pitch 11} replacing the measured constants; restore pose 6/7 on
+box hover/press; text colours 0xE8/0xEF and the backdrop remain as ported (0xE0 fill /
+0xEF frame per the box-open path).
