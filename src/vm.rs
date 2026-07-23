@@ -8649,6 +8649,45 @@ mod tests {
         );
     }
 
+    /// THE PLANETS' ENTRY ARROW, locked structurally: Honk's script-select block
+    /// (gated scr>5 — C0 record 0x1276 cmp>5 @1221) carries the A3 concept guards
+    /// "3"/"4"/"5" (DIC 0xB85..) each followed by its RUN PROFILE token
+    /// (@1269/@1284/@129F: D2 operands 3/4/5 -> profiles 2/3/4 = SCRIPT3/4/5) —
+    /// the same profile mechanism the port's nav dispatch drives.
+    #[test]
+    fn script2_script_select_dispatch_structure() {
+        let Some(iso) = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter()
+            .find(|d| std::path::Path::new(d).join("SCRIPT2.COD").is_file())
+        else {
+            return;
+        };
+        let cod = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.COD")).unwrap();
+        // The scr>5 gate: C0, record 0x1276, cmp-op 0xC1F2, value 5.
+        assert_eq!(&cod[0x1221..0x1228], &[0xC0, 0x76, 0x12, 0xF2, 0xC1, 0x05, 0x00]);
+        // Each concept guard is followed by its D2 profile run inside the block.
+        for (a3_off, d2_off, profile_operand) in
+            [(0x1257usize, 0x1269usize, 3u8), (0x1272, 0x1284, 4), (0x128D, 0x129F, 5)]
+        {
+            assert_eq!(cod[a3_off], 0xA3, "A3 concept guard at {a3_off:#x}");
+            assert_eq!(cod[d2_off], 0xD2, "D2 profile run at {d2_off:#x}");
+            assert_eq!(
+                cod[d2_off + 1],
+                profile_operand,
+                "profile operand at {d2_off:#x} (sign_extend(op)-1 = profile {})",
+                profile_operand - 1
+            );
+        }
+        // The A3 operands resolve to the DIC words "3"/"4"/"5".
+        let dic = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.DIC")).unwrap();
+        for (a3_off, word) in [(0x1257usize, b"3"), (0x1272, b"4"), (0x128D, b"5")] {
+            let opnd =
+                u16::from_le_bytes([cod[a3_off + 1], cod[a3_off + 2]]) as usize;
+            let end = dic[opnd..].iter().position(|&b| b == 0).unwrap() + opnd;
+            assert_eq!(&dic[opnd..end], word, "A3 @{a3_off:#x} word");
+        }
+    }
+
     /// ORACLE-LOCKED: the SCRIPT1 boot presenter is HONK (2148, related 40) — the live
     /// game's OCR'd tutorial sequence (tut4_replay.log) plays the [061D] Honk.talk
     /// block at boot: WELCOME ABOARD -> phone -> Cap'n Bob ... -> CLICK ON CRYOBOX.
