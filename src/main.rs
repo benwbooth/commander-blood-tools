@@ -394,6 +394,26 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
             Some((label, lines))
         };
     engine.set_nav_destinations((3..=5).filter_map(script_destination).collect());
+    // Per-world CANDIDATE LABELS (the decoded 0x7259 list = the location's flags-
+    // filtered entities = its CHARACTERS): the script's distinct DEB-resolved actor
+    // names, in speech order — the real names the candidate box offers.
+    let world_candidates: Vec<Vec<String>> = (3..=5u32)
+        .map(|n| {
+            let mut names: Vec<String> = Vec::new();
+            if let Some(bundle) = bundles.iter().find(|bu| bu.script == format!("SCRIPT{n}")) {
+                for e in &bundle.speech_events {
+                    if let Some(a) = &e.actor_record {
+                        let a = a.to_uppercase();
+                        if !names.contains(&a) {
+                            names.push(a);
+                        }
+                    }
+                }
+            }
+            names.truncate(7);
+            names
+        })
+        .collect();
     // The intro music is tied to a specific clip by the DESCRIPT data (the `present` record's
     // Music plays with its cliptoot.hnm cinematic, NOT the logo reel) — so we start each clip's
     // music when the clip BEGINS and keep the logos silent. Track the last clip we started music
@@ -1372,14 +1392,23 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                             engine.on_ship = false;
                         }
                     } else if engine.world_object_click(mx, my).is_some() {
-                        // Label the candidate with the location's REAL character (the same
-                        // name the nav destination list carries for this heading).
+                        // The candidate box = the location's CHARACTERS (the decoded
+                        // 0x7259 flags-filtered entity list): the script's distinct
+                        // DEB-resolved actor names, falling back to the heading's
+                        // host label when the bundle carries none.
                         let heading = engine.compass_angle;
                         let dest_idx = (heading as usize * 3 / 180).min(2);
-                        let label = engine
-                            .nav_destination_label(dest_idx)
-                            .unwrap_or_else(|| "TALK".into());
-                        engine.console_box = vec![label, "CANCEL".into()];
+                        let mut labels = world_candidates
+                            .get(dest_idx)
+                            .cloned()
+                            .unwrap_or_default();
+                        if labels.is_empty() {
+                            labels = vec![engine
+                                .nav_destination_label(dest_idx)
+                                .unwrap_or_else(|| "TALK".into())];
+                        }
+                        labels.push("CANCEL".into());
+                        engine.console_box = labels;
                         engine.console_box_kind = 10;
                     } else {
                         engine.cycle_world_room(1);
