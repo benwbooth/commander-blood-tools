@@ -876,6 +876,10 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     // continues while the physical mouse moves even with the cursor clamped at the screen edge).
     let (mut raw_dx, mut raw_dy): (i32, i32) = (0, 0);
     let (mut prev_mx, mut prev_my): (i32, i32) = (160, 100);
+    // State-countdown beat accumulator (the 0x8AA law): the game divides its
+    // 200Hz PIT chain by 25 ([0xB27] reload 0x19) -> ~8.01 beats/s, ticking the
+    // state array only while no presentation is active ([0x675A]==0).
+    let mut countdown_accum: f32 = 0.0;
     let mut last_tick = std::time::Instant::now();
     // A fully-transparent 1x1 cursor (core protocol, no extension): set as the window cursor
     // while locked so the pinned OS pointer is invisible and only our drawn cursor shows.
@@ -1961,6 +1965,18 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
             dy: step_dy,
         });
         (raw_dx, raw_dy) = (0, 0);
+        // STATE-COUNTDOWN BEAT (0x8AA): tick state[0..0x1E) at the game's divided
+        // rate while idle — expiring countdowns release GUARD state[i]==0 blocks
+        // (SCRIPT2 @2744 queues the Scruter interception this way).
+        countdown_accum += 8.011 / 70.0;
+        if countdown_accum >= 1.0 {
+            countdown_accum -= 1.0;
+            if engine.dialogue_finished() && !engine.intro_active() {
+                if let Some(m) = script_vm.borrow_mut().as_mut() {
+                    m.tick_state_countdowns();
+                }
+            }
+        }
         // SCRIPT1 VM continuation: when the engine finishes the queued lines, run the
         // next script frame — more lines may emit (multi-beat presentations), a D2
         // profile handoff may fire (the tutorial->SCRIPT2 chain), or nothing happens

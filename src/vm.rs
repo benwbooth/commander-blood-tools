@@ -3559,6 +3559,10 @@ pub enum VmEvent {
     ProfileRequest(i16),
     /// `0xA8` — load a string (filename/label) into the 0x2120 buffer.
     LoadString(String),
+    /// `0xC3` — a presentation QUEUED for the record (the typed `{0xC3, related,
+    /// 1}` request the engine's scan later promotes to a C4 start; handler
+    /// 0x6EEE). The story's travel/interception beats arm through this.
+    QueuePresentation { offset: usize },
 }
 
 /// The script VM's machine state, mirroring the game's own arrays byte-for-byte.
@@ -3804,6 +3808,21 @@ impl VmMachine {
         let lo = self.lodsb() as u16;
         let hi = self.lodsb() as u16;
         lo | (hi << 8)
+    }
+
+    /// One divided-timer beat of the state-array countdown — the engine's law at
+    /// 0x8AA (in the timer chain, gated there on no-active-presentation
+    /// gs:[0x675A]==0, divider gs:[0xB27]): entries state[0..0x1E) that are
+    /// POSITIVE (`or ax,ax; je` skips zero, `js` skips the negative class, so
+    /// the 0xFFFF init fill never ticks) decrement by one. The frontend calls
+    /// this on its beat while no presentation is active; expiring countdowns
+    /// release GUARD state[i]==0 blocks (e.g. SCRIPT2 @2744's interception C3).
+    pub fn tick_state_countdowns(&mut self) {
+        for slot in self.state[..0x1E].iter_mut() {
+            if *slot != 0 && (*slot as i16) > 0 {
+                *slot -= 1;
+            }
+        }
     }
 
     /// Increment a record variable — the runtime hook for world events that the
@@ -4110,6 +4129,31 @@ impl VmMachine {
                 } else {
                     self.rec_write(off, v1);
                     self.rec_write(off + 2, v2);
+                }
+            }
+            // 0xC3 QUEUE (0x6EEE). QUERY: pass iff rec[off] is typed 0xC3 with a
+            // matching related word (0xA1 prefix inverts). SET: unless the slot
+            // already holds an ACTIVE C4 presentation, write the typed queue
+            // record {0xC3, related, 1} — the pending-presentation request.
+            0xC3 => {
+                let mut flipped = false;
+                if self.u8_at(self.pc) == 0xA1 {
+                    self.pc += 1;
+                    flipped = true;
+                }
+                let off = self.lodsw();
+                let related = self.lodsw();
+                if self.query {
+                    let pass = self.rec_read(off) == 0xC3
+                        && self.rec_read(off + 2) == related;
+                    if pass == flipped {
+                        self.branch();
+                    }
+                } else if self.rec_read(off) != 0xC4 {
+                    self.rec_write(off, 0xC3);
+                    self.rec_write(off + 2, related);
+                    self.rec_write(off + 4, 1);
+                    self.events.push(VmEvent::QueuePresentation { offset: off as usize });
                 }
             }
             // 0xC4 ACTOR (0x6C7E). QUERY: pass iff rec[off] is typed 0xC4, its
@@ -4607,6 +4651,67 @@ mod tests {
     /// (`Op` tokens, known by length via the descriptor table) is reported and
     /// bounded. This is the "compiler matches the bitcode" guarantee: the token
     /// model round-trips the real data, not a transcription of it.
+    /// The interception arm/queue chain, executed from SCRIPT2's real bytes:
+    /// the shipped-enabled one-shot @272F arms state[3]=10/state[4]=200 (A9 gate
+    /// flag 0x01 IN THE FILE), the beat countdown (the 0x8AA law) expires
+    /// state[3], and the guard block @2744 then QUEUES Scruter_K's presentation
+    /// — a typed {0xC3, 40, 1} record at 0x6FC (handler 0x6EEE).
+    #[test]
+    fn script2_interception_arms_counts_down_and_queues() {
+        let Some(iso) = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter()
+            .find(|d| std::path::Path::new(d).join("SCRIPT2.COD").is_file())
+        else {
+            eprintln!("skipping: extracted SCRIPT2 files not available");
+            return;
+        };
+        let cod = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.COD")).unwrap();
+        // The gates ship in the file: @272F/@2744 enabled (A9 flags 0x01), the
+        // arrival block @2758 disabled (flags 0x00) until the queue enables it.
+        assert_eq!(&cod[0x272F..0x2734], &[0xA9, 0x01, 0x44, 0x27, 0xA1]);
+        assert_eq!(&cod[0x2744..0x2749], &[0xA9, 0x01, 0x58, 0x27, 0xA5]);
+        assert_eq!(&cod[0x2758..0x275C], &[0xA9, 0x00, 0xCF, 0x27]);
+        assert_eq!(&cod[0x274B..0x2750], &[0xC3, 0xFC, 0x06, 0x28, 0x00]);
+
+        let mut m = VmMachine::new();
+        m.load_cod(&cod);
+        let var = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.VAR")).unwrap();
+        m.load_var(&var);
+
+        // Run the one-shot arm block's body (@2734..@2744: the A5 writes).
+        m.pc = 0x2734;
+        m.query = false;
+        while m.pc < 0x2744 {
+            assert!(m.step(), "arm block must execute");
+        }
+        assert_eq!(m.state[3], 10, "state[3] armed to 10");
+        assert_eq!(m.state[4], 200, "state[4] armed to 200");
+
+        // Ten beats of the 0x8AA countdown law expire state[3].
+        for _ in 0..10 {
+            m.tick_state_countdowns();
+        }
+        assert_eq!(m.state[3], 0);
+        assert_eq!(m.state[4], 190, "state[4] mid-count (matches the live-oracle observation)");
+
+        // The guard block @2744: A9 enters query mode, A5 state[3]==0 falls
+        // through, the C3 queues the typed request, the POKEs re-gate.
+        m.pc = 0x2744;
+        m.events.clear();
+        while m.pc < 0x2758 {
+            assert!(m.step(), "guard block must execute");
+        }
+        assert_eq!(m.rec_read(0x6FC), 0xC3, "record 0x6FC typed as QUEUED");
+        assert_eq!(m.rec_read(0x6FE), 40, "related = object 40");
+        assert_eq!(m.rec_read(0x700), 1, "queue live-flag word");
+        assert!(
+            m.events
+                .iter()
+                .any(|e| matches!(e, VmEvent::QueuePresentation { offset: 0x6FC })),
+            "queue event emitted"
+        );
+    }
+
     #[test]
     fn token_model_round_trips_every_script() {
         let iso = ["output/_tmp_iso", "../output/_tmp_iso"]

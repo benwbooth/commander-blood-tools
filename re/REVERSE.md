@@ -5498,6 +5498,19 @@ variant. state[] countdowns tick on presentation BEATS, not wall time — the id
 hub never fires it; ~10 beats after SCRIPT2 entry the interception queues.
 PORT WORK UNLOCKED: implement OP_C3 (queue-presentation) + the beat-driven state[]
 countdown in the port VM — the full bytecode is now visible to it.
+STATE-COUNTDOWN LAW (assembly, 0x8AA in the timer chain): entries state[0..0x1E)
+decrement by 1 when positive (zero and negative-class values skipped: `or ax,ax; je`
++ `js`), on a DIVIDED timer tick (`dec gs:[0xB27]; jne skip` divider, then
+`inc gs:[0xB3B]` beat counter), GATED on gs:[0x675A]==0 — [0x675A] holds the ACTIVE
+presentation record offset (hub ambient = 0x6C2, which loops, keeping the gate shut
+almost always). A5 exec semantics (0x65EB): query mode = branch-if-state-nonzero
+(GUARD state[i]==0 falls through only at zero); set mode = state[i]=imm16. The state
+array (gs:0x6ADE, 0x100 words) initializes to 0xFFFF fill (0x53F6 rep stosd -1).
+LIVE hub dynamics confirmed: state[3] observed mid-countdown (2) right after CANCEL
+(gate briefly open), state[4]=190 (mid-count from 200); the interception queue's
+remaining unknown is WHEN the record scan re-visits @2744 (needs the ambient record
+to actually END, and the scan pointer [0x6720] -> seg 0x80FE content does not match
+SCRIPT2.COD bytes — identify which buffer that far pointer really addresses).
 NEXT TASKS (frontier):
 - [ ] vm::walk coverage — DIAGNOSED PRECISELY: SCRIPT2.bas ends at 0x2F83 of a
       0x9882-byte COD (31% coverage; tail 84% nonzero real content; the very next
