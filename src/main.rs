@@ -1268,6 +1268,22 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                         engine.console_box = labels;
                                         engine.console_box_kind = 3;
                                         engine.console_box_selected = None;
+                                    } else if label == "consultation" {
+                                        // CONSULTATION -> {TALK, THERAPY} (oracle
+                                        // consultation scenario: 'WHAT KIND OF
+                                        // CONSULTATION DID YOU HAVE IN MIND?').
+                                        engine.bridge.engaged_row = Some(0);
+                                        engine.console_box =
+                                            vec!["TALK".into(), "THERAPY".into()];
+                                        engine.console_box_kind = 3;
+                                        engine.console_box_selected = None;
+                                        if new_lines.is_empty() {
+                                            new_lines = vec![(
+                                                "What kind of consultation did you  \nhave in mind , Commander ?".into(),
+                                                None,
+                                                true,
+                                            )];
+                                        }
                                     } else if label != "bye_bye" {
                                         // Deep topics keep the conversation menu OPEN
                                         // with the engaged topic highlighted (oracle
