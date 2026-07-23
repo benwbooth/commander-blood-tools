@@ -383,6 +383,8 @@ pub struct EngineState {
     /// Whether the LAST game tick's screen drew the hand — the display-rate refresh
     /// must never draw a hand on screens that don't (title/intro/TV/films...).
     hand_on_screen: bool,
+    /// The skeleton state at the PREVIOUS tick (for between-tick pose interpolation).
+    hand_state_prev: Option<Vec<u8>>,
     pub console_box_kind: usize,
     /// The console OPTION 3D-pyramid menu (`manu3.xdb` overlay). Its 12-item dispatch
     /// structure is decoded statically from manu3.xdb (`[0x2306]` table) and its
@@ -597,6 +599,7 @@ impl EngineState {
             gpu_stars: None,
             gpu_bg_colorkey: false,
             hand_on_screen: false,
+            hand_state_prev: None,
             console_box_kind: 0,
             option_active: false,
             option_angle: 0,
@@ -1345,6 +1348,7 @@ impl EngineState {
                 .hand_mesh
                 .get_or_insert_with(crate::manu3_hand::HandMesh::load);
             mesh.set_pose(sel);
+            let prev = mesh.snapshot_state();
             mesh.tick_pose();
             let gp = crate::palette::game_screen_palette();
             for i in 128..=255usize {
@@ -1352,6 +1356,7 @@ impl EngineState {
             }
             if self.gpu_hand_enabled {
                 self.gpu_hand = Some(mesh.triangles(cx, cy));
+                self.hand_state_prev = Some(prev);
                 return;
             }
             mesh.draw(
@@ -1391,6 +1396,7 @@ impl EngineState {
             .hand_mesh
             .get_or_insert_with(crate::manu3_hand::HandMesh::load);
         mesh.set_pose(sel);
+        let prev = mesh.snapshot_state();
         mesh.tick_pose();
         let gp = crate::palette::game_screen_palette();
         for i in 128..=255usize {
@@ -1398,6 +1404,7 @@ impl EngineState {
         }
         if self.gpu_hand_enabled {
             self.gpu_hand = Some(mesh.triangles(cx, cy));
+            self.hand_state_prev = Some(prev);
             return;
         }
         mesh.draw(
@@ -1414,14 +1421,18 @@ impl EngineState {
     /// cursor — no pose selection, no tween advance, no engine state writes
     /// (re-running the selection here alternated tick-pose vs rest between
     /// presents = 60Hz pose flicker, and corrupted rotation detection).
-    pub fn refresh_gpu_hand(&mut self, mx: u16, my: u16) {
+    pub fn refresh_gpu_hand(&mut self, mx: u16, my: u16, alpha: f32) {
         if !self.gpu_hand_enabled || !self.hand_on_screen {
             return;
         }
         self.mouse.x = mx;
         self.mouse.y = my;
-        if let Some(mesh) = self.hand_mesh.as_ref() {
-            self.gpu_hand = Some(mesh.triangles(mx as i32, my as i32));
+        let prev = self.hand_state_prev.clone();
+        if let Some(mesh) = self.hand_mesh.as_mut() {
+            self.gpu_hand = Some(match prev {
+                Some(p) => mesh.triangles_lerp(mx as i32, my as i32, &p, alpha),
+                None => mesh.triangles(mx as i32, my as i32),
+            });
         }
     }
 

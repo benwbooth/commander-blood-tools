@@ -1520,7 +1520,9 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
         let tick_due = last_tick.elapsed() >= Duration::from_millis(66);
         if !tick_due {
             if let Some(g) = gpu.as_mut() {
-                engine.refresh_gpu_hand(mx, my);
+                let alpha =
+                    (last_tick.elapsed().as_secs_f32() / 0.066).clamp(0.0, 1.0);
+                engine.refresh_gpu_hand(mx, my, alpha);
                 let tris: Vec<commander_blood_tools::gpu::HandTri> = engine
                     .gpu_hand
                     .take()
@@ -1541,7 +1543,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
             // Flush queued X requests (pointer warps, the Right-Shift unlock's
             // ungrab/cursor restore) — the fast path otherwise never sends them.
             conn.flush()?;
-            std::thread::sleep(Duration::from_millis(8));
+            std::thread::sleep(Duration::from_millis(1));
             continue;
         }
         last_tick = std::time::Instant::now();
@@ -1884,7 +1886,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
             }
         }
         conn.flush()?;
-        std::thread::sleep(Duration::from_millis(2));
+        std::thread::sleep(Duration::from_millis(1));
         // Headless-safety: exit after a bounded run if no display consumer.
         frames_since_input += 1;
         if frames_since_input > 100_000 {

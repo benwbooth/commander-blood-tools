@@ -293,6 +293,52 @@ impl HandMesh {
         }
     }
 
+    /// Snapshot the mutable skeleton state (for between-tick interpolation).
+    pub fn snapshot_state(&self) -> Vec<u8> {
+        self.state.clone()
+    }
+
+    /// Like [`Self::triangles`], but with the animated skeleton cells (angles +
+    /// local positions of every node) LERPed between a previous snapshot and the
+    /// current state by `alpha` — smooth pose motion between game ticks. The
+    /// interpolation happens on the INPUT cells (i16 angles / i32 positions),
+    /// then the exact compose/projection runs unchanged.
+    pub fn triangles_lerp(
+        &mut self,
+        cx: i32,
+        cy: i32,
+        prev: &[u8],
+        alpha: f32,
+    ) -> Vec<[[f32; 5]; 3]> {
+        if prev.len() != self.state.len() || alpha >= 1.0 {
+            return self.triangles(cx, cy);
+        }
+        let cur = self.state.clone();
+        let a = alpha.clamp(0.0, 1.0);
+        for i in 0..16 {
+            let rec = (WRIST - STATE_BASE) + i * 0x5E;
+            for field in [0x4Eusize, 0x50, 0x52] {
+                let o = rec + field;
+                let pv = i16::from_le_bytes([prev[o], prev[o + 1]]) as f32;
+                let cv = i16::from_le_bytes([cur[o], cur[o + 1]]) as f32;
+                let v = (pv + (cv - pv) * a) as i16;
+                self.state[o..o + 2].copy_from_slice(&v.to_le_bytes());
+            }
+            for field in [0x42usize, 0x46, 0x4A] {
+                let o = rec + field;
+                let pv = i32::from_le_bytes([prev[o], prev[o + 1], prev[o + 2], prev[o + 3]])
+                    as f32;
+                let cv = i32::from_le_bytes([cur[o], cur[o + 1], cur[o + 2], cur[o + 3]])
+                    as f32;
+                let v = (pv + (cv - pv) * a) as i32;
+                self.state[o..o + 4].copy_from_slice(&v.to_le_bytes());
+            }
+        }
+        let tris = self.triangles(cx, cy);
+        self.state = cur;
+        tris
+    }
+
     /// The hand's textured triangles for GPU rendering: same compose + cursor-centred
     /// projection as draw(), emitted as screen-space (x, y, depth, u, v) vertices
     /// (u/v in texel units — the game's Q8 coords / 256). Backface-culled like the
