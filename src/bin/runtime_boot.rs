@@ -2377,6 +2377,41 @@ fn main() {
     // clicking each topic (reloading the savestate to isolate each) and reading the
     // resulting current-menu offset gs:0x6772. Gives the ground-truth navigation the
     // clean-port conversation VM must reproduce, without a full static VM decode.
+    if std::env::var("CALLERWATCH").is_ok() {
+        // Find WHO far-calls the manu3 overlay: resume the hub, single-step until CS
+        // enters the manu3 code segment (0x166C), then read the far return address
+        // (caller CS:IP) off the stack.
+        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        let gseg = 0x0e84u16;
+        let fr = rt.m.read8(gseg, 0x2795) as u16 | ((rt.m.read8(gseg, 0x2796) as u16) << 8);
+        let ring = (230i32 + fr as i32 * 8 - 160).rem_euclid(1440) as u16;
+        rt.set_mouse_pos(ring, 103);
+        let mut found = 0;
+        for _ in 0..30_000_000u64 {
+            let _ = rt.run(rt.cpu.steps + 1);
+            if rt.cpu.cs == 0x166C {
+                let ss = rt.m.regs.ss;
+                let sp = rt.m.regs.esp as u16;
+                let rip = rt.m.read8(ss, sp as u32) as u16
+                    | (rt.m.read8(ss, sp as u32 + 1) as u16) << 8;
+                let rcs = rt.m.read8(ss, sp as u32 + 2) as u16
+                    | (rt.m.read8(ss, sp as u32 + 3) as u16) << 8;
+                println!(
+                    "manu3 entered at ip={:#06x} from caller {:#06x}:{:#06x} (steps {})",
+                    rt.cpu.ip, rcs, rip, rt.cpu.steps
+                );
+                found += 1;
+                if found >= 4 {
+                    break;
+                }
+                let _ = rt.run(rt.cpu.steps + 200_000); // skip past this call
+            }
+        }
+        if found == 0 {
+            println!("CALLERWATCH: manu3 never entered in the window");
+        }
+        return;
+    }
     if std::env::var("XDBDUMP").is_ok() {
         // Dump the RESIDENT manu3.xdb segment from the savestate: find the load segment by
         // scanning memory for the file's head bytes, then dump the relocated DATA segment
