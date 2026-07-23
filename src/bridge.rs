@@ -97,6 +97,9 @@ pub const STATION_REST_FRAMES: [u16; 4] = [0, 45, 90, 135];
 /// menu code touch, as one struct.
 #[derive(Clone, Debug)]
 pub struct BridgeView {
+    /// The console row whose surface (choice box / engaged state) is open — its
+    /// label renders pure red (oracle capture: (255,0,0) while engaged).
+    pub engaged_row: Option<usize>,
     /// Current panorama frame, `DS:0x2795` (0..179).
     pub frame: u16,
     /// The mouse's position around the panorama ring (`DS:0x0A2A` before the
@@ -133,6 +136,7 @@ impl Default for BridgeView {
         stations[1].active = true;
         stations[2].active = true;
         BridgeView {
+            engaged_row: None,
             frame: MENU_REST_FRAME,
             ring_mouse_x: (MENU_REST_FRAME as i32) * RING_PX_PER_FRAME,
             mouse_y: 100,
@@ -343,6 +347,13 @@ impl BridgeView {
         }
         if let Some(row) = self.menu_row_under_cursor() {
             palette[MENU_ROW_DAC_BASE + row] = expand(MENU_ROW_HOVER_DAC);
+        }
+        // The ENGAGED row (its surface open) renders PURE RED — oracle capture:
+        // the row label reads (255,0,0) while its choice box / state is active.
+        if let Some(row) = self.engaged_row {
+            if row < MENU_ROW_COUNT {
+                palette[MENU_ROW_DAC_BASE + row] = [255, 0, 0];
+            }
         }
     }
 }

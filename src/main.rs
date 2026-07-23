@@ -1,5 +1,30 @@
 mod extract;
 
+/// The cook's daily-fare lines (the MENU row's presentation — oracle: white
+/// subtitle text, e.g. "Jellied URTIKAN with MURFFALO bone marrow"): the SCRIPT1
+/// dish block around offset 0x100.
+fn menu_dish_lines(iso: &str) -> Vec<String> {
+    let Ok(descript) = commander_blood_tools::descript::DescriptDb::parse_file(
+        &std::path::Path::new(iso).join("DESCRIPT.DES"),
+    ) else {
+        return Vec::new();
+    };
+    let hnm_music = descript.hnm_music_map();
+    let Ok(bundles) =
+        commander_blood_tools::script::parse_script_dir(iso, &descript, &hnm_music)
+    else {
+        return Vec::new();
+    };
+    let Some(b) = bundles.iter().find(|b| b.script == "SCRIPT1") else {
+        return Vec::new();
+    };
+    b.speech_events
+        .iter()
+        .filter(|e| (0x00F0..0x0150).contains(&e.offset) && !e.text.trim().is_empty())
+        .map(|e| e.text.clone())
+        .collect()
+}
+
 fn main() {
     if let Err(err) = run() {
         eprintln!("error: {err}");
@@ -1047,6 +1072,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         let last = engine.console_box.len() - 1;
                         let kind = engine.console_box_kind;
                         engine.console_box.clear();
+                        engine.bridge.engaged_row = None;
                         if row < last {
                             engine.hand_pose_event(7); // the decoded SELECTING pose
                             engine.hand_pose_event(0xA); // the decoded transition pose
@@ -1067,6 +1093,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         }
                     } else {
                         engine.console_box.clear(); // click off the box closes it
+                        engine.bridge.engaged_row = None;
                         engine.hand_pose_event(0xB);
                     }
                 }
@@ -1104,8 +1131,9 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 // (4) the 3D pyramid menu), while a hit on the eye-orb arms a
                 // station seek — the view auto-rotates there (no screen change).
                 Event::ButtonPress(b) if engine.bridge_active && b.detail == 1 => {
-                    // The hub presentation's CANCEL label takes the click first.
+                    // The hub presentation's / engaged row's CANCEL label first.
                     if engine.hub_cancel_click(mx, my) {
+                        engine.bridge.engaged_row = None;
                         continue;
                     }
                     // In the pyramid nav sector, the destination choice box takes
@@ -1127,28 +1155,53 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         engine.on_ship = false;
                         continue;
                     }
+                    // ROW SURFACES per the dual-run oracle captures (2026-07-23):
+                    // each engaged row turns RED; HONK opens the {TALK, REMEMBER,
+                    // BYE_BYE} concept menu with "WHAT DO YOU WANT COMMANDER?";
+                    // TELEPHONE arms with just CANCEL; CRYOBOX = {BOB_MORLOCK,
+                    // CANCEL}; MENU plays the cook's daily fare; OPTION = {TEXT,
+                    // MUSIC_OFF, SAVE, LOAD, QUIT, CANCEL}.
                     match engine.bridge_press(mx, my) {
                         Some(0) => {
-                            engine.bridge.release_menu();
-                            engine.bridge_active = false;
-                            load_script(&mut engine, &mut music, 1);
-                            engine.on_ship = false;
+                            engine.bridge.engaged_row = Some(0);
+                            engine.console_box =
+                                vec!["TALK".into(), "REMEMBER".into(), "BYE_BYE".into()];
+                            engine.console_box_kind = 3;
+                            set_vm_dialogue(
+                                &mut engine,
+                                vec![("What do you want Commander ?".into(), None, true)],
+                            );
                         }
                         Some(1) => {
-                            // TELEPHONE -> contact choice box (savestate-verified pattern).
-                            let mut items: Vec<String> =
-                                engine.phone_contact_labels().into_iter().take(6).collect();
-                            items.push("CANCEL".into());
-                            engine.console_box = items;
-                            engine.console_box_kind = 1;
+                            engine.bridge.engaged_row = Some(1);
                         }
                         Some(2) => {
-                            // CRYOBOX -> {BOB_MORLOCK, CANCEL} (tutorial-oracle-verified).
+                            engine.bridge.engaged_row = Some(2);
                             engine.console_box = vec!["BOB_MORLOCK".into(), "CANCEL".into()];
                             engine.console_box_kind = 2;
                         }
-                        Some(3) => engine.menu_submenu_active = true, // MENU -> submenu
-                        Some(4) => engine.option_box_active = true, // OPTION -> choice box (real)
+                        Some(3) => {
+                            engine.bridge.engaged_row = Some(3);
+                            let dishes = menu_dish_lines(iso);
+                            if !dishes.is_empty() {
+                                set_vm_dialogue(
+                                    &mut engine,
+                                    dishes.into_iter().map(|t| (t, None, false)).collect(),
+                                );
+                            }
+                        }
+                        Some(4) => {
+                            engine.bridge.engaged_row = Some(4);
+                            engine.console_box = vec![
+                                "TEXT".into(),
+                                "MUSIC_OFF".into(),
+                                "SAVE".into(),
+                                "LOAD".into(),
+                                "QUIT".into(),
+                                "CANCEL".into(),
+                            ];
+                            engine.console_box_kind = 4;
+                        }
                         _ => {}
                     }
                 }

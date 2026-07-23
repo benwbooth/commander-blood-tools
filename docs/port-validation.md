@@ -64,6 +64,16 @@ script-locked and (b) the missing live CANCEL overlay; after fixes: 2.22 mean / 
 across all 9 steps.
 
 ## CAMPAIGN LOG
+- PASS 2 (2026-07-23, dual-run row scenarios): the oracle captures corrected FOUR console-row
+  surfaces the port had wrong: HONK = "What do you want Commander?" + {TALK, REMEMBER, BYE_BYE}
+  concept box (was: SCRIPT1 reload); TELEPHONE = engaged+CANCEL only (the contact-list box was an
+  invention); MENU = the cook's daily fare as white subtitle text (was: {EXPLANATIONS, GAME}
+  submenu — a misplaced concept surface); OPTION = {TEXT, MUSIC_OFF, SAVE, LOAD, QUIT, CANCEL}
+  (was CANCEL-only from an exhausted state). Every ENGAGED row renders PURE RED (255,0,0) —
+  ported via the menu-row DAC. The oracle also confirmed: console rows are GATED while the
+  arrival presentation is live. Comparator now hand-masks (behavior scoring; the hand's phase is
+  covered by dedicated hand scenarios). Row scenarios: 3.5-4.7 mean hand-masked (from
+  vacuous-idle 1.4-3.4 pre-gate / 28 pre-fix hub).
 - PASS 1 (2026-07-23): timebase 21.6fps (FRAMERATE probe) fixed; GPU hand visibility = sorted
   painter (the game's rule); BOOT PRESENTER bug caught by the introseq differential — the port
   booted Izwalito's guidance (1428, the MENU>EXPLANATIONS replay block) instead of HONK (2148,

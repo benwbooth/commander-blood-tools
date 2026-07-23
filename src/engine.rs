@@ -1148,7 +1148,7 @@ impl EngineState {
     /// (rotating the view there) and returns `None`.
     /// A click on the hub presentation's CANCEL label (the abort control).
     pub fn hub_cancel_click(&mut self, x: u16, y: u16) -> bool {
-        if self.hub_presentation
+        if (self.hub_presentation || self.bridge.engaged_row.is_some())
             && (70..=134).contains(&x)
             && (90..=106).contains(&y)
         {
@@ -1279,10 +1279,12 @@ impl EngineState {
                 self.draw_choice_box(&labels, None);
             }
         }
-        if self.hub_presentation {
-            // The live CANCEL label over the hub presentation (oracle: gray 0xE8
-            // console text at (73,95); the abort control's caption). Persists after
-            // the lines finish — until CANCELed (the oracle hub idle state).
+        if (self.hub_presentation || self.bridge.engaged_row.is_some())
+            && self.console_box.is_empty()
+        {
+            // The live CANCEL label (oracle: gray 0xE8 console text at (73,95)) —
+            // shown during the hub presentation AND while a row is engaged WITHOUT
+            // its own choice box (an open box carries its own CANCEL row).
             self.draw_console_text("CANCEL", 73, 95, 0xE8);
         }
         self.draw_hand_cursor();
@@ -1485,7 +1487,7 @@ impl EngineState {
     /// this y regardless of item count (measured: 1 item → top y=95, 2 items →
     /// tops 89/100 whose centre is 94.5; both anchor the tops-centre at ~95).
     const CHOICE_BOX_TOPS_CENTER_Y: usize = 95;
-    const CHOICE_BOX_PITCH: usize = 11;
+    const CHOICE_BOX_PITCH: usize = 12;
 
     /// The top y of the first choice-box row for a box of `rows` items (vertical
     /// centring around [`Self::CHOICE_BOX_TOPS_CENTER_Y`]).

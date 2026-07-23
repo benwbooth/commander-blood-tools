@@ -59,19 +59,36 @@ fn main() {
                     // (the windowed game's dialogue_finished gate; oracle-confirmed:
                     // clicks during the live presentation are ignored).
                     match if e.hub_presentation { None } else { e.bridge_press(mx, my) } {
-                        Some(1) => {
-                            let mut items: Vec<String> =
-                                e.phone_contact_labels().into_iter().take(6).collect();
-                            items.push("CANCEL".into());
-                            e.console_box = items;
-                            e.console_box_kind = 1;
+                        Some(0) => {
+                            e.bridge.engaged_row = Some(0);
+                            e.console_box =
+                                vec!["TALK".into(), "REMEMBER".into(), "BYE_BYE".into()];
+                            e.console_box_kind = 3;
+                            e.set_speech_dialogue(vec![(
+                                "What do you want Commander ?".into(),
+                                None,
+                            )]);
+                            e.set_dialogue_styles(vec![true]);
                         }
+                        Some(1) => e.bridge.engaged_row = Some(1),
                         Some(2) => {
+                            e.bridge.engaged_row = Some(2);
                             e.console_box = vec!["BOB_MORLOCK".into(), "CANCEL".into()];
                             e.console_box_kind = 2;
                         }
-                        Some(3) => e.menu_submenu_active = true,
-                        Some(4) => e.option_box_active = true,
+                        Some(3) => e.bridge.engaged_row = Some(3),
+                        Some(4) => {
+                            e.bridge.engaged_row = Some(4);
+                            e.console_box = vec![
+                                "TEXT".into(),
+                                "MUSIC_OFF".into(),
+                                "SAVE".into(),
+                                "LOAD".into(),
+                                "QUIT".into(),
+                                "CANCEL".into(),
+                            ];
+                            e.console_box_kind = 4;
+                        }
                         _ => {}
                     }
                 }
