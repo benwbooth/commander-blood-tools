@@ -3479,13 +3479,12 @@ impl EngineState {
                 self.compass_angle =
                     (self.compass_angle as i32 + rate).rem_euclid(180) as u16;
             }
-            // Edge-triggered nav commit: a fresh left-click selects the destination at
-            // the current heading (the nav→dialogue transition hook a driver acts on).
-            let left = self.mouse.left_down();
-            if left && !self.prev_left_down {
-                self.nav_selection = Some(self.compass_angle);
-            }
-            self.prev_left_down = left;
+            // Destination selection is the decoded TARGET LIST only (layout + mouse
+            // hit-test @0x8428; DS:0x27E7 selection byte) — the port's earlier
+            // "click anywhere commits the compass heading" was an invention (random
+            // clicks teleported the player) and is removed. The list rows route via
+            // nav_destination_click; the compass angle only pans the view.
+            self.prev_left_down = self.mouse.left_down();
             // Advance the ship-3D camera-approach animation (the decoded [0x27DF]
             // phase FSM) so the camera pulls in / travels as the game does on entry.
             self.camera.step();
@@ -5232,22 +5231,17 @@ mod tests {
         assert_eq!(e.current_scene_index(), 1, "auto-chained to the next scene");
     }
 
+    /// The invented "click anywhere commits the compass heading" mechanic is REMOVED
+    /// (real selection = the decoded target list, hit-tested rows @0x8428). A bare
+    /// click on the nav view must select nothing.
     #[test]
-    fn nav_click_commits_a_destination_selection() {
+    fn nav_click_does_not_commit_a_heading() {
         let mut e = EngineState::new();
         e.on_ship = true;
-        // move to a heading, no click yet -> no selection
         e.step(MouseInput { x: 200, y: 100, buttons: 0, ..Default::default() });
         assert!(e.take_nav_selection().is_none());
-        // click at a heading -> selection committed at that compass angle
         e.step(MouseInput { x: 200, y: 100, buttons: 1, ..Default::default() });
-        let sel = e.take_nav_selection();
-        assert_eq!(sel, Some(e.compass_angle));
-        // taken once, cleared
-        assert!(e.take_nav_selection().is_none());
-        // holding the button (no new edge) does not re-commit
-        e.step(MouseInput { x: 200, y: 100, buttons: 1, ..Default::default() });
-        assert!(e.take_nav_selection().is_none());
+        assert!(e.take_nav_selection().is_none(), "bare nav clicks select nothing");
     }
 
     #[test]
