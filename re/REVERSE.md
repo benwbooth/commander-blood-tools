@@ -5461,7 +5461,27 @@ KNOWN-STALE TEST (pre-existing, confirmed at dbe66d3): oracle_suite's
 engine-console-render fails vs the Jul-21 console_rest.ppm reference (mean 5.1 vs
 1.0) — the console-row-surface fix changed rendering; the reference needs a fresh
 BRIDGEPROBE regeneration + re-verification, NOT a threshold bump.
+STORY-DRIVE RUN (3.86G steps, SAYLOG tooling): the auto-driver narrated the full arc
+live — tutorial (Welcome aboard the ARK / RED BUTTON / CRYOBOX) -> Bob's wake talk ->
+RUN PROFILE 1 (scr-watch RE-ARMED LIVE across the block relocation 7838->8681 —
+pointer-relative watch proven) -> SCRIPT2 era (secretive buzzard @0B15, the hub
+what-do-you-want) -> then content OUR DECOMPILER DOESN'T EMIT: "There's several ways
+to lose, Commander. Which do you choose?", Honk's lullaby (Night is falling / the
+moon is red / the wolf is howling), "Ouch...", "That won't do any good, Commander"
+— plus the earlier briefing's "win strange creatures to your cause" and menu words
+KANARY/GOOD_OL_BOB (KANARY present in SCRIPT2.DIC; the words absent from SCRIPT2.COD
+as adjacent DIC-offset pairs). CONSEQUENCES: (a) vm::walk has a COVERAGE GAP — the
+game plays records the .bas decompile never reaches; fixing the walk (enumerate ALL
+records from the DEB table, not just the reachable graph) is a PORT-FIDELITY task,
+not just tooling; (b) ZERO scr writes through the whole 3.86G-step drive — Scruter's
+arrival did NOT fire even deep into SCRIPT2's dialogue era, so the arrival needs a
+specific player action the blind driver misses (or the interception really is
+travel-gated and travel needs the nav flow); (c) the driver STALLS at round ~882
+("That won't do any good") — it needs concept-menu-aware clicking to progress.
 NEXT TASKS (frontier):
+- [ ] vm::walk coverage: enumerate all COD records via DEB, diff against current
+      .bas, decompile the unreached records ("ways to lose", lullaby, briefing)
+- [ ] TUTORIAL4 driver: concept-menu-aware row clicks (OCR the in-window menu)
 - [ ] Find what jumps into the 0x5BF0/0x5C26 teardown (xref segment-level; or exec
       trace during the TUTORIAL Izwalito queue, where the C3->C4 chain provably runs)
 - [ ] Rerun the tutorial flow with SAYDUMP-instrumented transition (no blind 8
