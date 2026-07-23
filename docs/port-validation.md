@@ -61,6 +61,11 @@ evidence in the row. Re-audit pass 1: 2026-07-22..23.
   10-13 frame dialogue talk-head idles, checked); the reel scenes exist only inside blood.dat
   (no file opens during the reel per INTROTRACE). Needs the blood.dat internal directory decode.
 
+- blood.dat directory format CONFIRMED (16-byte path + u32 size + u32 offset + pad, 974 entries):
+  60 files existed ONLY in the archive and were missing from the extracted assets — the complete
+  talk-HNM sets for Rotator (g_gar*), Maziok/Fifi (omp*), Outrageor (r_pri*). Their dialogue
+  scenes were silently video-less. Extracted; scenes now resolve.
+
 ## Active fix queue (from the matrix, user-reported first)
 1. [x] Host crosshair removed; hand = the only cursor, all screens (this pass).
 2. [ ] Hand tracking feel: sprite anchored at the exact hotspot vs the real game (verify against a capture with the DOS mouse at a known position).
