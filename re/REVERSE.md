@@ -5367,6 +5367,9 @@ to the credit beat with an exec watch on 0x7612's linear address AND on the sink
 family's entries; find the computed dispatch site from the executed-neighbourhood
 log; then diff which selector value the interpreter derives vs what routes to (b).
 Note: this is ORACLE TOOLING only — the port's credit is capture-verified correct.
+DOSBox real-game reference banked (untracked, accuracy/captures/
+realgame_cryo_credit_montage.png): the CRYO credit line rendering OVER the crab-alien
+montage beat with the pyramid band below — the 'present' record's cue #1 live.
 
 ### CREDIT-DIVERGENCE ROOT CAUSE UNIFIED: it IS the presentation gap
 EXECWATCHLIN through 230M steps: the ENTIRE string-sink family (0x7612 subtitle-arm,
