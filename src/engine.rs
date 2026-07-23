@@ -422,6 +422,13 @@ pub struct EngineState {
     console_band_dialogue: bool,
     /// The manu3 3D hand model (lazy-loaded).
     hand_mesh: Option<crate::manu3_hand::HandMesh>,
+    /// The VIEWSCREEN console (gray pyramid band + upper viewscreen): the real NAV screen
+    /// reached from the bridge's pyramid sector. With no granted destinations the viewscreen
+    /// shows STATIC (oracle: nav_screen_opened + navscr captures); with destinations the
+    /// destination content shows. Esc returns to the bridge.
+    pub viewscreen_active: bool,
+    /// Deterministic noise phase for the static.
+    viewscreen_noise: u32,
     /// Auto-play stops when the cursor reaches this line (exclusive) — the SCRIPTED OPENING
     /// plays unprompted, then the dialogue HOLDS at the topic menu and further content is
     /// player-driven (a topic click plays its segment, then re-holds). `None` = play through.
@@ -590,6 +597,8 @@ impl EngineState {
             intro_pyramid: Vec::new(),
             console_band_dialogue: false,
             hand_mesh: None,
+            viewscreen_active: false,
+            viewscreen_noise: 0x1234_5678,
             autoplay_end: None,
             dialogue_segments: Vec::new(),
             line_min_hold: None,
@@ -1708,6 +1717,15 @@ impl EngineState {
         (row >= 0 && (row as usize) < labels_len.min(12)).then_some(row as usize)
     }
 
+    /// Whether a click hits the nav-sector ORB (the pyramid-sector station orb) — the
+    /// oracle-verified way into the nav/viewscreen console. Orb near screen (105..145, 130..165)
+    /// when the pyramid sector (frames 72..107) is in view.
+    pub fn bridge_nav_orb_click(&self, x: u16, y: u16) -> bool {
+        (72..=107).contains(&self.bridge.frame)
+            && (95..=150).contains(&x)
+            && (125..=170).contains(&y)
+    }
+
     /// Map a click to a nav-sector destination row when the choice box is showing
     /// (bridge view in the pyramid sector with destinations set).
     pub fn bridge_nav_destination_click(&self, x: u16, y: u16) -> Option<usize> {
@@ -1968,6 +1986,37 @@ impl EngineState {
             if y < ENGINE_SCREEN_HEIGHT {
                 self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] = (0x80 + ci as usize) as u8;
             }
+        }
+    }
+
+    /// Render the VIEWSCREEN console: the pyramid band along the bottom (the real harvested
+    /// art) and the upper viewscreen showing STATIC when no destinations are granted (the
+    /// oracle-verified empty-nav state) or the destination list once granted.
+    fn render_viewscreen_console(&mut self) {
+        self.scene_palette = crate::palette::game_screen_palette();
+        // Upper viewscreen: STATIC (deterministic LCG noise in the gray ramp), rows 0..99.
+        for p in self.framebuffer.iter_mut() {
+            *p = 0;
+        }
+        for y in 0..99usize {
+            for x in 0..ENGINE_SCREEN_WIDTH {
+                self.viewscreen_noise =
+                    self.viewscreen_noise.wrapping_mul(1103515245).wrapping_add(12345);
+                let v = (self.viewscreen_noise >> 16) as u8;
+                // Gray ramp 16..31 in the baked palette family
+                self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] = 16 + (v & 0x0F);
+            }
+        }
+        self.overlay_console_band();
+        // Destinations granted: list them over the viewscreen (the tuned state).
+        if !self.nav_destinations.is_empty() {
+            let labels: Vec<String> = self
+                .nav_destinations
+                .iter()
+                .take(8)
+                .map(|(l, _)| l.clone())
+                .collect();
+            self.draw_choice_box(&labels, None);
         }
     }
 
@@ -3529,6 +3578,14 @@ impl EngineState {
                 self.bridge.move_mouse(motion.0, motion.1);
             }
             self.render_bridge();
+            self.countdown = self.countdown.saturating_sub(1);
+            self.frame += 1;
+            return;
+        }
+        // The VIEWSCREEN console (real nav screen): band + static/destination viewscreen.
+        if self.viewscreen_active {
+            self.render_viewscreen_console();
+            self.draw_hand_at_mouse();
             self.countdown = self.countdown.saturating_sub(1);
             self.frame += 1;
             return;

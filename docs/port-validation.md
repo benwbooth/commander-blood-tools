@@ -87,6 +87,10 @@ evidence in the row. Re-audit pass 1: 2026-07-22..23.
 - Intro-reel name-convention hypothesis (G_* = wide shots) ruled out: G_ prefix is Rotator's talk
   set only. Reel enumeration remains with the boot-time auto-presentation driver (deep RE).
 
+- VIEWSCREEN-CONSOLE CHAIN PORTED (this pass): pyramid-sector orb click with no destinations ->
+  the viewscreen console (harvested band + static viewscreen per the oracle empty-nav state;
+  destination choice box once granted); Esc -> bridge. Row closed to the evidence available.
+
 ## Active fix queue (from the matrix, user-reported first)
 1. [x] Host crosshair removed; hand = the only cursor, all screens (this pass).
 2. [x] Hand hotspot: oracle frames confirm fingertip = mouse position (arm extends down-left); the BRIDGEPROBE-derived atlas anchors encode this. Pose model (nearest-capture) remains APPROX vs the real 3D render.

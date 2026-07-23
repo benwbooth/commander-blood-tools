@@ -1065,6 +1065,14 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 Event::ButtonPress(b) if engine.bridge_active && b.detail == 1 => {
                     // In the pyramid nav sector, the destination choice box takes
                     // the click first (choose a location -> its dialogue).
+                    // The nav-sector orb with NO granted destinations opens the VIEWSCREEN
+                    // console (static — the oracle-verified empty-nav state).
+                    if engine.bridge_nav_orb_click(mx, my) && engine.nav_destination_count() == 0 {
+                        engine.bridge.release_menu();
+                        engine.bridge_active = false;
+                        engine.viewscreen_active = true;
+                        continue;
+                    }
                     if let Some(i) = engine.bridge_nav_destination_click(mx, my) {
                         let dest = 3 + i as u32;
                         engine.progress.visit(&format!("SCRIPT{dest}"));
@@ -1303,7 +1311,10 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 // Keyboard loop controls: Escape (keycode 9) returns to the nav view.
                 Event::KeyPress(k) if k.detail == 9 => {
                     // A visited world-location screen closes back to the nav view first.
-                    if engine.world_location_active() {
+                    if engine.viewscreen_active {
+                        engine.viewscreen_active = false;
+                        engine.bridge_active = true;
+                    } else if engine.world_location_active() {
                         engine.leave_world();
                     } else if engine.menu_submenu_active {
                         // Close the MENU submenu back to the top-level console menu.
