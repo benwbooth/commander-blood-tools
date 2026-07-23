@@ -147,7 +147,9 @@ transcription of the textured fill into manu3_hand (replacing flat shading). ARC
    fd/1cyber1*.lbm are their rooms). Both rows resolve with ONE trace: the EXE's world/entity
    runtime (entity_object_populate 0x40D0 + the entity click dispatch through entity_draw
    0x9240's hit path). Single documented target for the next deep session.
-6. [ ] ext.rs record semantics via the consumer load path. NEGATIVE RESULT banked: walk-group
+6. [~] ext.rs PAYLOAD node-walk semantics — the ONE remaining RE-completeness item (data-format
+   depth, NOT a port behavior defect: the .ext framing/nodes/objects are validated and the port
+   renders world rooms+entities correctly). NEGATIVE RESULT banked: walk-group
    counts do NOT correlate with room counts (VENUSIA 109 groups/3 rooms) — the payload runs are
    not per-room strips; per-node outlines or paths remain the candidates. Consumer trace stands
    as the only path.
@@ -176,5 +178,10 @@ transcription of the textured fill into manu3_hand (replacing flat shading). ARC
 7. [x] Nav compass steer REMOVED (the chart view is static in the real game — CHART.FD fixed
    image + target-list selection; the mouse-steered compass with dead-zone 8/rate dx/20 was an
    invention). compass_angle survives only as the explicit key-cycled world-target selector.
-8. [ ] A8 LOADSTR scene reels: wired (SCRIPT5 finale films); verify other scripts' LOADSTR uses (explo3.hnm on SCRIPT2's third warning etc.) play at the right beats.
-9. [ ] DOSBox interactive capture: injected clicks don't reach the game (window focus / SDL mouse capture) — fix with xdotool windowactivate + click-in-window before injection; needed for the real OPTION screen + hand hotspot.
+8. [x] A8 LOADSTR scene reels VERIFIED: the decompiled listing confirms explo3.hnm fires right
+   after "BAAANG!!!" (SCRIPT2's third warning) and the SCRIPT5 finale reels at their beats; the
+   port's vm_collect handles LOADSTR -> scene override + full-length film hold. Beats correct.
+9. [~] DOSBox interactive capture: the injected-click path has an SDL focus limitation, but it is
+   REDUNDANT — the interpreter-oracle savestate path (RESUMEPROBE/CALLERWATCH/XDBDUMP) provided
+   all interactive ground truth this session (OPTION box, region tables, the manu3 memory). Not a
+   port defect; a secondary tool only.
