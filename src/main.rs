@@ -1228,10 +1228,39 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         ),
                         Err(e) => eprintln!("save failed: {e}"),
                     }
+                    // Also write the DOS-format save (the real game's blood.sav layout,
+                    // decoded @0x1C3F): copy blooddos.sav over a DOS install's blood.sav
+                    // to carry the VM state into the original game.
+                    if let Some(m) = script_vm.borrow().as_ref() {
+                        let profile = current_script.get().saturating_sub(1) as u16;
+                        let bytes = m.to_dos_save(profile);
+                        if std::fs::write("blooddos.sav", &bytes).is_ok() {
+                            println!("saved blooddos.sav (DOS format, {} bytes)", bytes.len());
+                        }
+                    }
                 }
                 // F9 (keycode 75): load blood.sav and resume that saved state.
                 Event::KeyPress(k) if k.detail == 75 => {
                     use commander_blood_tools::save::{SaveScreen, SaveState};
+                    // A DOS-format save (from the original game, or blooddos.sav) loads
+                    // straight into the script VM: restore the arrays, re-select the
+                    // saved profile's script.
+                    let dos_bytes = std::fs::read("blooddos.sav")
+                        .ok()
+                        .filter(|_| SaveState::read(Path::new("blood.sav")).is_none());
+                    if let Some(bytes) = dos_bytes {
+                        let mut probe = commander_blood_tools::vm::VmMachine::new();
+                        if let Some(profile) = probe.apply_dos_save(&bytes) {
+                            let script = u32::from(profile) + 1;
+                            load_script(&mut engine, &mut music, script.clamp(1, 5));
+                            if let Some(m) = script_vm.borrow_mut().as_mut() {
+                                m.apply_dos_save(&bytes);
+                            }
+                            engine.on_ship = false;
+                            println!("loaded blooddos.sav (DOS format, script {script})");
+                            continue;
+                        }
+                    }
                     if let Some(save) = SaveState::read(Path::new("blood.sav")) {
                         // If the save was mid-dialogue, reload that location's script first
                         // so the resumed cursor lands on a real line; then apply the view.

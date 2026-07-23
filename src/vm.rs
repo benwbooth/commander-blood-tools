@@ -3426,6 +3426,8 @@ pub struct VmMachine {
     pub global_aaa: u8,
     /// Deterministic LCG for 0xA2 (the game uses its runtime random 0x1CE:0xB02).
     pub rng: u32,
+    /// Byte length of the loaded VAR file (= the line-record table's saved size).
+    pub var_len: usize,
     /// Events raised since the last drain.
     pub events: Vec<VmEvent>,
     /// The machine's WORKING COPY of the COD — the game self-modifies the stream
@@ -3460,6 +3462,7 @@ impl Default for VmMachine {
             global_aa6: 0,
             global_aaa: 0,
             rng: 0x1234_5678,
+            var_len: 0,
             events: Vec::new(),
             cod: Vec::new(),
             halted: false,
@@ -3487,6 +3490,50 @@ impl VmMachine {
         self.presentation_active = true;
     }
 
+    /// Serialize the machine state as a DOS `blood.sav` (the layout the game's
+    /// save path @0x1C3F writes): u16 current profile, 0x200 bytes of the state
+    /// word array (gs:0x6ADE), 0x60 bytes of the character slots (gs:0x6CDE),
+    /// then the line-record table at its VAR size (the resource's stored size).
+    /// (The game appends a presentation work-buffer block; the engine's runtime
+    /// state is rebuilt on load, so an empty tail is written.)
+    pub fn to_dos_save(&self, profile: u16) -> Vec<u8> {
+        let mut out = Vec::new();
+        out.extend_from_slice(&profile.to_le_bytes());
+        for w in self.state.iter().take(0x100) {
+            out.extend_from_slice(&w.to_le_bytes());
+        }
+        out.extend_from_slice(&self.records16[..0x60.min(self.records16.len())]);
+        let words = (self.var_len / 2).min(self.line_records.len());
+        for w in &self.line_records[..words] {
+            out.extend_from_slice(&w.to_le_bytes());
+        }
+        out
+    }
+
+    /// Load a DOS `blood.sav` (the read path @0x1CBD): restores the state array,
+    /// character slots, and line-record table; returns the saved profile word
+    /// (the script to re-select). Returns None if the file is too short.
+    pub fn apply_dos_save(&mut self, bytes: &[u8]) -> Option<u16> {
+        if bytes.len() < 2 + 0x200 + 0x60 {
+            return None;
+        }
+        let profile = u16::from_le_bytes([bytes[0], bytes[1]]);
+        let mut at = 2;
+        for i in 0..0x100 {
+            self.state[i] = u16::from_le_bytes([bytes[at], bytes[at + 1]]);
+            at += 2;
+        }
+        self.records16[..0x60].copy_from_slice(&bytes[at..at + 0x60]);
+        at += 0x60;
+        let rest = &bytes[at..];
+        let words = (rest.len() / 2).min(self.line_records.len());
+        for i in 0..words {
+            self.line_records[i] = u16::from_le_bytes([rest[i * 2], rest[i * 2 + 1]]);
+        }
+        self.var_len = words * 2;
+        Some(profile)
+    }
+
     /// Load the script bytecode into the machine's working copy (the game
     /// self-modifies accepted lines' active bits in this stream).
     pub fn load_cod(&mut self, cod: &[u8]) {
@@ -3498,6 +3545,7 @@ impl VmMachine {
     /// Initialize the line-record/object table from the script's VAR file — the
     /// game loads VAR as the table's initial contents (le16 words at gs:0x6724).
     pub fn load_var(&mut self, var: &[u8]) {
+        self.var_len = var.len();
         for (i, ch) in var.chunks_exact(2).enumerate() {
             if i >= self.line_records.len() {
                 break;
@@ -4296,6 +4344,26 @@ pub fn decompile_script(
 
 #[cfg(test)]
 mod tests {
+    /// DOS blood.sav round-trip: the save layout is exactly the VM's arrays
+    /// (@0x1C3F: profile word, 0x200 state, 0x60 slots, VAR-sized record table).
+    #[test]
+    fn dos_save_round_trips_the_vm_state() {
+        let mut m = VmMachine::new();
+        m.load_var(&vec![7u8; 0x180]);
+        m.state[3] = 0xBEEF;
+        m.records16[0x10..0x15].copy_from_slice(b"honk\0");
+        m.line_records[5] = 0x1234;
+        let bytes = m.to_dos_save(2);
+        assert_eq!(bytes.len(), 2 + 0x200 + 0x60 + 0x180);
+        let mut n = VmMachine::new();
+        let profile = n.apply_dos_save(&bytes);
+        assert_eq!(profile, Some(2));
+        assert_eq!(n.state[3], 0xBEEF);
+        assert_eq!(&n.records16[0x10..0x14], b"honk");
+        assert_eq!(n.line_records[5], 0x1234);
+        assert_eq!(n.var_len, 0x180);
+    }
+
     /// The FAITHFUL VM (ported opcode-by-opcode from the dispatch table @0x142D0)
     /// reproduces the real SCRIPT1 flow: with no presentation active every gated
     /// block skips (clean end, no events); with a presentation active the script
