@@ -3582,6 +3582,11 @@ fn main() {
         return;
     }
 
+    if let Ok(w) = std::env::var("BOOTWRITEWATCH") {
+        let lin = usize::from_str_radix(w.trim_start_matches("0x"), 16).unwrap();
+        rt.m.watch_addr = Some(lin);
+        eprintln!("boot write-watch armed at linear {lin:#x}");
+    }
     let mut next_shot = shot_every;
     let end = loop {
         match rt.run(next_shot.min(steps)) {
@@ -3597,6 +3602,15 @@ fn main() {
         }
     };
 
+    if !rt.m.addr_hits.is_empty() {
+        println!("boot write-watch hits:");
+        let mut seen = std::collections::HashSet::new();
+        for &(v, cs, ip) in &rt.m.addr_hits {
+            if seen.insert((v, cs, ip)) {
+                println!("  ={v:#04x} at {cs:04x}:{ip:04x}");
+            }
+        }
+    }
     let mstep = rt.cpu.steps / 1_000_000;
     rt.write_ppm(&out.join(format!("final_{mstep:05}M.ppm"))).unwrap();
     println!("=== end: {end:?} after {} steps (mode {:#04x}) ===", rt.cpu.steps, rt.vga_mode);
