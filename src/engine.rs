@@ -391,6 +391,9 @@ pub struct EngineState {
     /// Which intro clips play ON the pyramid-console band (the crew montage does; the logo
     /// reel and in-game cutscenes do not). Real-game-verified via DOSBox-X captures.
     intro_pyramid: Vec<bool>,
+    /// Composite the pyramid-console band under the current dialogue (the SCRIPT1 console
+    /// tutorial plays its talk-HNMs over the band — real-game-verified, tut_180s..300s).
+    console_band_dialogue: bool,
     /// Auto-play stops when the cursor reaches this line (exclusive) — the SCRIPTED OPENING
     /// plays unprompted, then the dialogue HOLDS at the topic menu and further content is
     /// player-driven (a topic click plays its segment, then re-holds). `None` = play through.
@@ -549,6 +552,7 @@ impl EngineState {
             dialogue_texts: Vec::new(),
             dialogue_cursor: 0,
             intro_pyramid: Vec::new(),
+            console_band_dialogue: false,
             autoplay_end: None,
             dialogue_segments: Vec::new(),
             line_min_hold: None,
@@ -1485,6 +1489,11 @@ impl EngineState {
             .min();
         self.autoplay_end = seg_end.or(next_topic);
         Some(row)
+    }
+
+    /// Whether the current dialogue plays over the pyramid-console band (SCRIPT1 tutorial).
+    pub fn set_console_band_dialogue(&mut self, on: bool) {
+        self.console_band_dialogue = on;
     }
 
     /// Gate auto-play at `end` (exclusive): the scripted opening plays unprompted, then the
@@ -3205,6 +3214,12 @@ impl EngineState {
             for p in self.framebuffer.iter_mut() {
                 *p = 0;
             }
+        }
+        // REAL-GAME-VERIFIED (DOSBox captures tut_180s..300s): the SCRIPT1 console-tutorial
+        // dialogue plays its talk-HNMs (Bronko, Honk, …) in the viewscreen with the pyramid
+        // console + eye-orb band composited over the bottom — same band as the intro montage.
+        if self.console_band_dialogue {
+            self.overlay_console_band();
         }
         // Subtitle text layer over the scene, revealed one character at a time (the
         // game's reveal @0x93F8–0x94B8: `gs:0x5E58` advances one char whenever the

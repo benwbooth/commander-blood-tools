@@ -449,6 +449,9 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 if !lines.is_empty() {
                     engine.set_speech_dialogue(lines);
                 }
+                // REAL-GAME-VERIFIED (tut_180s..300s captures): the SCRIPT1 console tutorial
+                // plays its talk-HNMs over the pyramid-console + eye-orb band.
+                engine.set_console_band_dialogue(n == 1);
                 // The TOPIC MENU (the game's concept-menu conversation system).
                 // The topic LABELS are concept words populated per-context by the
                 // script; only SCRIPT2's numerology-consultation labels (TALK /
