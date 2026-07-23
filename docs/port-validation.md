@@ -138,9 +138,13 @@ locked (script2_interception_arms_counts_down_and_queues): the shipped-enabled
 @272F one-shot arms state[3]=10 -> the 0x8AA beat countdown (200Hz/25, idle-gated)
 expires it -> @2744's OP_C3 queues the typed {0xC3,40,1} request at 0x6FC -> idle
 promotion starts the presentation (C4, active actor). The frontend beats the
-countdown and promotes queued requests. NEXT: render the interception presentation
-(SS-variant radio dialogue) end-to-end in the port + drive the same beats in the
-oracle for the dual-run; then the scan -> exam-table (scr) writes.
+countdown and promotes queued requests. THE INTERCEPTION NOW PLAYS through the
+port's frame loop (script2_interception_plays_through_the_frame_loop: SCRIPT2
+from load, frames + beats + serial queue promotion, SCRUT agent K's radio
+warning emits @2DF5 after the TV-commercial presentation drains) — with the
+0xAB POKE corrected to the COD self-modify the engine performs (0x684C).
+NEXT: the oracle-side drive of the same beats (what ends the ambient hub
+record) for the interception dual-run; then scan -> exam-table (scr).
 
 ## CAMPAIGN LOG
 - PASS 7 (story_deep, 27 steps — the longest chain): deep-topic answers play from the
