@@ -1134,7 +1134,11 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     // CRYOBOX/OPTION open their screens; CRYOBOX also wakes Cap'n Bob
                     // = the D1 game-flag gate for the BOB block).
                     let mut vm_handled = false;
-                    if script_vm.borrow().is_some() {
+                    // ORACLE-verified dispatch rule: while a presentation is PLAYING, a click
+                    // ADVANCES it (the option-row probe stepped the menu text); menu rows
+                    // DISPATCH only from the idle console (the HONK probe dispatched from
+                    // idle). Gate on dialogue_finished.
+                    if script_vm.borrow().is_some() && engine.dialogue_finished() {
                         if let Some(row) = engine.console_menu_click(mx, my) {
                             vm_handled = true;
                             let mut new_lines: Vec<(
