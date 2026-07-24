@@ -4022,7 +4022,22 @@ impl VmMachine {
             .map(|s| s.offset);
         // The gs:0x672c directory in DEB order (offset = +0x10, kind = +0x12).
         self.directory = syms.iter().map(|s| (s.offset, s.kind)).collect();
-        let mut offs: Vec<u16> = syms.into_iter().map(|s| s.offset).collect();
+        // ONLY kind-1 entries are objects. The directory walk shared by 0x624B /
+        // 0x604E / the 0x5816 scan continues while `+0x12 == 1` and STOPS at the
+        // first entry that is not, and measurement over the shipped DEBs shows the
+        // leading kind-1 prefix equals every kind-1 entry (SCRIPT1..5: 122/122,
+        // 122/122, 130/130, 136/136, 130/130) -- so filtering by kind reproduces
+        // the scanned set exactly. Keeping the non-object entries had two effects:
+        // the post-update scan visited ~219 extra records in SCRIPT2, and
+        // owner_object_offset could return a NON-OBJECT offset as the "largest
+        // below the key", mis-resolving the owner for the 0x6034 threshold lookup.
+        // The extract path already filtered this way (extract/script.rs); the live
+        // VM did not.
+        let mut offs: Vec<u16> = syms
+            .iter()
+            .filter(|s| s.kind == 1)
+            .map(|s| s.offset)
+            .collect();
         offs.sort_unstable();
         offs.dedup();
         self.object_offsets = offs;
@@ -7915,6 +7930,42 @@ mod tests {
         m.step();
         assert_eq!(m.pc, 0x99, "occupied destination -> branch");
         assert_eq!(m.rec_read_pub(owner + dest_fo), 0xBEEF);
+    }
+
+    #[test]
+    fn load_deb_objects_keeps_only_kind1_entries() {
+        // The directory walk (0x624B / 0x604E / the 0x5816 scan) continues while
+        // `+0x12 == 1` and stops at the first entry that is not, so non-kind-1
+        // records are NOT objects. Including them made the post-update scan visit
+        // extra records and, worse, let owner_object_offset return a non-object
+        // offset as the "largest below the key".
+        let mut deb = Vec::new();
+        let mut rec = |name: &str, off: u16, kind: u16| {
+            let mut r = [0u8; 20];
+            r[..name.len()].copy_from_slice(name.as_bytes());
+            r[16..18].copy_from_slice(&off.to_le_bytes());
+            r[18..20].copy_from_slice(&kind.to_le_bytes());
+            deb.extend_from_slice(&r);
+        };
+        rec("alpha", 0x0100, 1);
+        rec("beta", 0x0200, 1);
+        rec("notanobject", 0x0180, 7); // kind != 1: must be excluded
+        rec("gamma", 0x0300, 1);
+
+        let mut m = VmMachine::new();
+        m.load_deb_objects(&deb);
+        assert_eq!(
+            m.object_offsets,
+            vec![0x0100, 0x0200, 0x0300],
+            "only kind-1 entries are objects"
+        );
+        // The excluded 0x0180 would otherwise have been returned here, since it is
+        // the largest offset below 0x0200.
+        assert_eq!(
+            m.owner_object_offset(0x0200),
+            Some(0x0100),
+            "owner resolves to a real object, not the kind-7 record at 0x0180"
+        );
     }
 
     #[test]

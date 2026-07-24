@@ -279,7 +279,7 @@ count. The correct fix is to identify what `0x5710`/`0x73C2` are scanning and gi
 the port a separate scan-mode walker for those call sites only — not to alter the
 execution walker.
 
-## FUNCTION-AUDIT FINDING: the post-update scan iterates MORE objects than the game
+## FUNCTION-AUDIT FINDING (FIXED): the post-update scan iterated MORE objects than the game
 
 The scan at `0x5816` walks the `gs:0x672c` directory and — per the shared walk
 idiom (`0x624B`, `0x604E`) — CONTINUES ONLY WHILE the next entry's `+0x12 == 1`,
@@ -307,7 +307,16 @@ change scan order. Measuring the kind==1 prefix shows it is ASCENDING in all fiv
 scripts, so sorted order and directory order agree over the scanned range. The
 sort is also what makes the `0x6034` threshold lookup valid. No divergence there.
 
-FIX SHAPE (not applied — needs an ExecutionContext change): the scan should stop
+**FIXED 2026-07-24** in `VmMachine::load_deb_objects`, which now keeps only
+kind-1 entries. Measurement made this safe and exact: the leading kind-1 PREFIX
+equals EVERY kind-1 entry in all five scripts (122/122, 122/122, 130/130,
+136/136, 130/130), so a simple kind filter reproduces the scanned set precisely.
+The extract path already filtered this way; only the live VM did not. Beyond the
+scan extent this also repairs `owner_object_offset`, which could previously return
+a NON-OBJECT offset as the "largest below the key" and mis-resolve the owner for
+the `0x6034` threshold lookup. Test: `load_deb_objects_keeps_only_kind1_entries`.
+
+ORIGINAL FIX SHAPE (superseded by the simpler filter above): the scan should stop
 at the first non-kind-1 directory entry. `VmMachine` already carries `directory`
 as `(offset, kind)` pairs; `ExecutionContext` carries only offsets, so giving the
 scan the kind-terminated prefix means threading kinds through it. The threshold
