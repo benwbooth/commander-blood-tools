@@ -4124,13 +4124,18 @@ impl VmMachine {
             // handler writes gs:0x6820[0]=operand and stack-ptr=2): the top-level
             // wait/conditional block opener.
             0xA9 => {
+                // A9's descriptor is (0x04, 0xFF): the 0xFF sentinel switches
+                // into query mode UNCONDITIONALLY — in the GOTO form too (the
+                // same law the decompiler needed; the exec arm had the same
+                // omission, leaving stale mode across skipped regions and
+                // scrambling downstream guard evaluation in idle sweeps).
+                self.query = true;
                 let flags = self.lodsb();
                 if flags & 1 == 0 {
                     let t = self.u8_at(self.pc) as usize
                         | (self.u8_at(self.pc + 1) as usize) << 8;
                     self.pc = t;
                 } else {
-                    self.query = true;
                     let v = self.lodsw();
                     self.stack.clear();
                     self.stack.push(v);
@@ -5363,6 +5368,46 @@ mod tests {
             }
         }
         assert!(ack, "the BIONIUM acknowledgment plays in SCRIPT3");
+
+        // ACT TWO'S EXIT: the endgame gate (@6C90) — fish/fion/jerry (SCRIPT3
+        // DEB names at 0x13FC/0x1424/0x142C, each its own quest beat's
+        // product), the object placements the guards declare (rec_13C2==40
+        // aboard; rec_088A/rec_06DA at 4070), then the C3 queues JERRY KHAN
+        // (0x042C) -> the Oddland briefing ("Inspector JERRY KHAN onboard the
+        // SHARK... a black hole called ODDLAND") -> its poke arms the exit
+        // block whose C6 typed-record guard (rec 0x108E vs 0x1052) releases
+        // RUN PROFILE 3 -> SCRIPT4.
+        if let Some(actor) = m.active_actor {
+            m.rec_write(actor, 0);
+        }
+        m.active_actor = None;
+        m.presentation_busy = false;
+        m.resume_pos = None;
+        // Let the world's one-shots settle (e.g. @5C81 relocates the SPLATCH
+        // to 3278 and self-disables), THEN apply the quest's outcomes — the
+        // beats' own order (the SPLATCH teleport @5F4C returns it to 4070
+        // AFTER that one-shot has spent itself).
+        for _ in 0..3 {
+            let _ = m.run_frame();
+        }
+        m.rec_write(0x13FC, 1);
+        m.rec_write(0x1424, 1);
+        m.rec_write(0x142C, 1);
+        m.rec_write(0x13C2, 40);
+        m.rec_write(0x088A, 4070);
+        m.rec_write(0x06DA, 4070);
+        m.rec_write(0x108E, 0xC6);
+        m.rec_write(0x1090, 0x1052);
+        // OPEN (SCRIPT3's quest line): the endgame gate's guards (@6C90) each
+        // verify individually (the micro-pass from the block queues Jerry
+        // Khan), but the idle-sweep whack-a-mole shows SCRIPT3's world one-
+        // shots re-placing objects between writes — the drive needs the
+        // story's OWN beat order (the SPLATCH teleport, the fish/fion/jerry
+        // quests) exactly as SCRIPT2's stages were driven. That directed
+        // sequence is the next act-completion slice; the exit mechanics
+        // (Jerry Khan C3 0x042C -> Oddland briefing @6CD1 -> poke [0x6E08] ->
+        // C6 guard -> RUN PROFILE 3 @6E11) are decoded and recorded.
+        let _ = m;
     }
 
     /// THE WAKE CHAIN: Scruter Jo's presenter (1860) plays the scan intro, the
