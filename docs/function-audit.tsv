@@ -516,7 +516,7 @@ step_ship_3d_depth_scroll	src/ship3d.rs	820	fn		ASM	|| AUDIT 2026-07-24: 0xB75C 
 copy_ship_3d_plane_bands	src/ship3d.rs	853	fn		ASM	|| AUDIT 2026-07-24: verified against 0xB6DD: gate `test [0x252E],1`; byte_count from 0xB71C `add ax,0x23` then `mov dl,0x50; mul dl` -- an 8-BIT multiply, so the row count wraps at 256 exactly as the port models with a u8 add; first band src = 0xC000 + (0x1F40 - count) (0xB718..0xB72D) -> dest+0; second band src = 0xDF40 (0xB746) -> dest + (0x1F40 + (0x1F40 - count)) = DEST_BYTES(16000) - count (0xB742..0xB74E); both copy `count` bytes. BASE_ROWS 35=0x23 and DEST_BYTES 16000 confirmed
 step_ship_3d_interpolation_gate	src/ship3d.rs	895	fn		UNVERIFIED	
 layout_ship_3d_target_list	src/ship3d.rs	919	fn		ASM	|| AUDIT 2026-07-24: unified list widget 0x8438..0x84C6, every constant confirmed: default max width 0x64=100, extra width 0x37=55 (gated on [0xADD]), extra height 0xA=10, row step 0xB=11 (0x847A add bp,0xb), width padding 0x14=20 (0x84A1), height padding 8 (0x84A7), screen height 0xC8=200 (0x84B9). x = anchor[0xAC6] - width/2 (0x84AD shr/sub/neg), y = (200-height)/2. Width compare is UNSIGNED (0x8472 jb) matching the port u16 >=. Cross-confirms the choice-box 100/55 floors -- same widget
-hit_test_ship_3d_target_list	src/ship3d.rs	959	fn		UNVERIFIED	
+hit_test_ship_3d_target_list	src/ship3d.rs	959	fn		ASM	|| AUDIT 2026-07-24: verified against 0x84E6..0x8539: row origin = y + 4 (`add cx,4`), x bounds tested SIGNED (`jl`/`jg` at 0x84EE/0x84F4), row_offset negative rejected (`js`), hit height = height - 8 (`sub bp,8`) with a SIGNED `jge` reject, row = offset / 11 via UNSIGNED `div bl` then `inc al`; hover writes mode 6 to [0xA32] (0x851C) and, when the button bit [0xA3E]&1 is set (0x8522), mode 7 plus the selected row to [0x27E7] and the UI select sound lcall 0xB1B:0x11D. All four constants (insets 4/8, modes 6/7) confirmed. NOTE: still DORMANT -- verified correct but not yet reached in play (Tier 3 of the wiring plan)
 update_ship_3d_nav_choice_dispatch	src/ship3d.rs	1021	fn		UNVERIFIED	
 run_ship_3d_nav_choice_handler_0	src/ship3d.rs	1078	fn		INFRA?	
 run_ship_3d_nav_choice_handler_1	src/ship3d.rs	1095	fn		INFRA?	
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	                 
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	                  
