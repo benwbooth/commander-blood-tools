@@ -707,3 +707,26 @@ and drive a scenario that advances the Bigbang-concert FSM
 (`VERIFYSCRIPT=<scenario>` + `WRITEWATCHLIN=rec:0x103A`, which re-arms per shot),
 instead of a passive resume. Confirm arming by dumping the record before/after so
 a silent no-write is distinguishable from a mis-armed watch.
+
+### rec_103A — second, DRIVEN watch: also negative
+
+Followed the "better approach" above with the scenario driver rather than a
+passive resume:
+
+    VERIFYSCRIPT=accuracy/scenarios/story_deep.tsv WRITEWATCHLIN=rec:0x103A ./runtime_boot
+
+(note: `VERIFYSCRIPT` takes a PATH, not a bare scenario name — a bare name panics
+with "scenario file: NotFound".)
+
+The watch armed and re-armed on the live record block (`8681:0000 -> lin
+0x8784a`), the scenario ran its full 27 steps, and **no write to `rec_103A` was
+reported**. Combined with the passive-resume run above and the exhaustive STATIC
+refutation in docs/port-validation.md, the writer is now unobserved across:
+static search (no script opcode writes it), a passive 42M-step resume, and a
+driven deep-story scenario.
+
+Disposition: this is no longer "we have not looked". The all-visited fallback in
+`progress.rs` stands in for the ending trigger, and the remaining hypothesis is
+that the write happens only inside the SCRIPT5 Bigbang-concert FSM, which no
+scenario in accuracy/scenarios/ currently reaches. Reaching it — not more
+watching — is the actual next task.
