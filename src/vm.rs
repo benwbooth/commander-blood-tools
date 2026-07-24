@@ -3976,6 +3976,12 @@ impl VmMachine {
         self.line_records.get(off as usize / 2).copied().unwrap_or(0)
     }
 
+    /// Public record write for the drive layer (the click stand-in's
+    /// presentation end and test scaffolding).
+    pub fn rec_write_pub(&mut self, off: u16, v: u16) {
+        self.rec_write(off, v);
+    }
+
     fn rec_write(&mut self, off: u16, v: u16) {
         if let Some(slot) = self.line_records.get_mut(off as usize / 2) {
             *slot = v;
@@ -5199,6 +5205,41 @@ mod tests {
         assert!(
             joined.contains("scrut agent k"),
             "agent K's call plays from the same record the oracle showed"
+        );
+    }
+
+    /// The shared drive layer: engaging an actor BY NAME (the DEB symbol
+    /// table) plays their lines through the same frame policy both binaries
+    /// use — the matched-drive lane's dispatch core.
+    #[test]
+    fn vm_drive_engages_actors_by_name() {
+        let Some(iso) = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter()
+            .find(|d| std::path::Path::new(d).join("SCRIPT2.COD").is_file())
+        else {
+            eprintln!("skipping: extracted SCRIPT2 files not available");
+            return;
+        };
+        let cod = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.COD")).unwrap();
+        let var = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.VAR")).unwrap();
+        let dic = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.DIC")).unwrap();
+        let deb = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.DEB")).unwrap();
+        let mut d = crate::vm_drive::VmDrive::new(&cod, &var, &dic, &deb);
+        d.m.flag_252a = true;
+        d.m.flag_274f = true;
+        assert!(d.engage("Scruter_Jo"), "the DEB symbol resolves");
+        d.m.satisfy_opening_location_guards();
+        let mut lines: Vec<String> = Vec::new();
+        for _ in 0..40 {
+            lines.extend(d.frame());
+            if !lines.is_empty() {
+                break;
+            }
+        }
+        let joined = lines.join(" | ").to_lowercase();
+        assert!(
+            joined.contains("scanning stranger"),
+            "Scruter Jo's scan opener plays through the drive layer (got {joined})"
         );
     }
 
