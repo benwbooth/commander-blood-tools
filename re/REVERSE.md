@@ -5523,6 +5523,17 @@ smile" @0E21-family = the console responders) — but [0x675A] stays the ambient
 0x6C2, so the walk isn't reaching the queued entry yet; the remaining oracle
 question is what drives the record walk past it (likely needs [0x2793]&1 during
 the walk = an active display presentation when the C3 is met).
+THE STORY'S LOCATION SPINE (post-encounter, from the recovered bytecode): the
+story advances by LOCATION WRITES to rec_0F4E (the travel system's variable):
+3488 (SCRIPT2 start) -> 3380 (fled the forbidden zone: SCRUT cleanup @3046 +
+'fooled those dummies' -> the Corpo unlock @2F22, A-var gated) -> 3074 (queues
+Scruter_Mac 0x6B4 @3074: the CODED-MESSAGE radio 'Beep beep bop... It's coded'
+-> Honk decodes -> CO=1 chain @313C+). Each location visit + presentation beats
+= the next chapter; the port's travel implementation must write rec_0F4E per
+destination (the ARRIVAL helper's write class) and the beats follow from the
+bytecode alone. FULL ENCOUNTER ARC IN THE PORT: commit f387ad2 (resume model:
+bit4 anchor + post-yield continuation; the departure test plays arrival ->
+warnings -> FINAL WARNING -> departure radio from shipped bytes).
 NEXT TASKS (frontier):
 - [ ] vm::walk coverage — DIAGNOSED PRECISELY: SCRIPT2.bas ends at 0x2F83 of a
       0x9882-byte COD (31% coverage; tail 84% nonzero real content; the very next
