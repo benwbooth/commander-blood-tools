@@ -5544,6 +5544,23 @@ automatically ejected"). THE SCRIPT2->SCRIPT3 HANDOFF FOUND: the script's tail
 money/BIONIUM/decoder per rec guards) ending RUN PROFILE 2 -> SCRIPT3; its
 trigger guards (which location/beats queue it) are the next decode. Also seen:
 the deep Venusia shopping arc (Bug_Deluxe, CRED teleport, @9610 buy menu).
+MAJOR LEDGER CORRECTION — THE scr>5 GATE IS A CHEAT: the recovered bytecode
+@1229 says it plainly: `SAY "CHEAT MODE..."` before the script-select menu.
+Honk's scr>5 "3 4 5" chooser is a debug/cheat unlock, NOT the story's planet
+gate (the frontier map's arrow 4 was the cheat route). THE REAL STRUCTURE:
+- The profile graph is LINEAR: SCRIPT1 -> 1 (SCRIPT2, tutorial "game"/Bob wake)
+  -> 2 (SCRIPT3, the customs check @987C) -> 3 (SCRIPT4 @6E11) -> 4 (SCRIPT5
+  @419D). Planet scripts open with big unguarded INIT blocks (SCRIPT3 @0000
+  relocates the world: rec_0722=4070 etc.).
+- The customs check's guards are a CARGO MANIFEST: rec_0AF0&2 (an item flag),
+  C1==6 (a count of six — the exam-table groups-of-six suspect), rec_11B0==1298,
+  rec_0722==65535 (Scruter Jo aboard — the wake chain's write), rec_0332==65535
+  (object 0x31A aboard). Locations are per-object fields (obj+0x18): 65535 =
+  "aboard the ship"; teleports (plain assigns AND the CD transfer op) write them.
+- CD's engine SET also writes the moved object's location field (0x6A60: cx =
+  0xFFFF when the ship side is involved; es:[field11+obj] = cx) — the port's
+  marker-only model needs the location write added (ledgered with the container
+  graph).
 NEXT TASKS (frontier):
 - [ ] vm::walk coverage — DIAGNOSED PRECISELY: SCRIPT2.bas ends at 0x2F83 of a
       0x9882-byte COD (31% coverage; tail 84% nonzero real content; the very next
