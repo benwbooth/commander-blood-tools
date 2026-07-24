@@ -839,3 +839,23 @@ profile — the concert block is guarded by `rec_103A==4024 && rec_1340==<4060/4
 4108> && active_actor==Migrator`, so the scenario must reach a Migrator presentation
 after the jump. The harness can now get to the right profile; what it still lacks is
 a scripted route through that FSM.
+
+#### …but console clicks after the jump do NOT start a presentation
+
+Extended the composed probe to drive the five console rows after the switch, with
+the `rec_103A` watch armed. Result across all five rows plus 60M further steps:
+
+    PROFILEJUMP  after row 0..4: rec_103A=0x0000 busy0x67AC=0x00
+
+`gs:0x67AC` never leaves 0 — no presentation starts at all — and `rec_103A` stays
+`0x0000` with no write reported. So the freshly-switched profile is resident but
+its console is not responding to the hub's row coordinates; the jump does not
+re-establish whatever display/hit-region state those clicks need (the profile
+switch clears VM globals — see `vm_resource_profile_select` 0x53A0, which frees the
+old DS:0x6712 resources and clears state).
+
+Better approach: after `PROFILEJUMP`, re-drive the profile's own entry the way
+BRIDGEPROBE drives the boot profile (settle, find the console frame, then click),
+rather than reusing hub coordinates captured before the switch — or invoke the
+profile's opening presentation directly via a `0xC4`/`start_actor_presentation`
+poke instead of relying on the console UI.

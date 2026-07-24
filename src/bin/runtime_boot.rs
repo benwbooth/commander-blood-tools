@@ -530,7 +530,27 @@ fn main() {
                 let lin = bseg as usize * 16 + boff as usize + 0x103A;
                 rt.m.watch_addr = Some(lin);
                 println!("PROFILEJUMP rec_103A write-watch armed at lin {lin:#x}");
-                for _ in 0..8 {
+                // Merely being resident in the profile does not advance its FSM —
+                // the concert block wants a Migrator presentation. Drive the
+                // console rows the way the scenario driver does so presentations
+                // actually run in THIS profile while the watch is armed.
+                for row in 0..5u16 {
+                    let fr = w16(&rt, 0x2795) as i32;
+                    let sx = 230i32; // the console's row column
+                    let sy = 88 + row * 12;
+                    let ring = ((sx + fr * 8 - 160).rem_euclid(1440)) as u16;
+                    rt.set_mouse_pos(ring, sy);
+                    let _ = rt.run(rt.cpu.steps + 400_000);
+                    rt.mouse_press(0);
+                    let _ = rt.run(rt.cpu.steps + 300_000);
+                    rt.mouse_release(0);
+                    let _ = rt.run(rt.cpu.steps + 20_000_000);
+                    println!(
+                        "PROFILEJUMP  after row {row}: rec_103A={:#06x} busy0x67AC={:#04x}",
+                        rec103a(&rt), rt.m.read8(g, 0x67AC)
+                    );
+                }
+                for _ in 0..4 {
                     let _ = rt.run(rt.cpu.steps + 15_000_000);
                 }
                 println!("PROFILEJUMP rec_103A after watch = {:#06x} @ {} steps",
