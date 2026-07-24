@@ -3700,7 +3700,10 @@ impl Default for VmMachine {
             line_records: vec![0u16; 0x4000],
             resume_pos: None,
             menu_dispatch_pos: None,
-            prng_seed: 0,
+            // The oracle's deterministic CMOS seed (interp RTC seconds fixed
+            // at 0x27; the seeder mirrors the byte into both halves -> 0x2727).
+            // Matching it makes the port's variant rolls agree with the oracle.
+            prng_seed: 0x2727,
             prng_af0: 0,
             prng_af1: 0,
             prng_af2: 0,
