@@ -57,21 +57,21 @@ be oracle-re-verified before it is "fixed"; changing it blind regresses a pixel 
   active-bit availability makes the C4-WRITE and `0xC1` guards partially feasible (the
   guards read the same bits) — but with the same staleness caveat.
 
-## Remaining (23) — each to be oracle-re-verified or carefully implemented
+## Remaining (18) — each to be oracle-re-verified or carefully implemented
 
 - **Geometry, needs oracle re-check** (likely more false positives like the tall-mode):
-  choice-box x-band / min-width floor, in-window (kind-3) label centering, subtitle
-  multi-line pitch (capture shows pitch-10 for the credit beat — conflicts the finding),
-  palette 128–191 bank (runtime working buffer, not a static swap), nav-projection matrix
-  term negation order.
-- **Higher-risk VM guards** (need exact-operand disassembly; wrong ⇒ breaks dialogue):
-  C4 mode-0 write guards, `0xC1` line-record state (unhandled live), C4 mode-0 unconditional.
-- **Subtle / low visible impact:** B8 arche-reference cleanup, `0xA8` fin-flag +
-  presentation-request side effects, `0x6946` query nuance, bridge ring-cursor 8px snap,
-  hand seek-distance memo, thin-font unmapped-char skip, chatter re-roll determinism,
-  A6 per-line C4 gate.
-- **Rewrites:** nav destinations = flag-gated entity set (fabricated pyramid grid),
-  world-destination from clicked row (not stale steering angle), A6 reveal-busy
-  serialization handshake.
+  choice-box x-band / min-width floor (need label widths plumbed into the hit-test),
+  palette 128–191 bank (runtime working buffer, not a static swap).
+- **Infrastructure-gated VM guards** (need the runtime object-active-bit lifecycle;
+  the VAR loads initial bits but not their nav/transfer updates — wrong ⇒ breaks dialogue,
+  see the C4-query revert): C4 mode-0 write guards, `0xC1` line-record state (unhandled
+  live), C4 mode-0 unconditional/already-set check.
+- **Subtle / low visible impact / risk:** B8 arche-reference cleanup (needs arche offset),
+  `0xA8` fin-flag + presentation-request side effects (needs gs-flag model), `0x6946`
+  query nuance, bridge ring-cursor 8px snap (changes steering feel), chatter re-roll
+  determinism (separate PRNG), A6 per-line C4 gate.
+- **Rewrites:** nav destinations = flag-gated entity set (fabricated pyramid grid; needs
+  entity world coords + active bits), world-destination from clicked row (UNDECODED
+  on-planet click semantics), A6 reveal-busy serialization handshake (VM↔frontend).
 - **Infrastructure-blocked:** ending fires on all-visited (the `rec_103A` runtime write,
   documented separately in port-validation.md).
