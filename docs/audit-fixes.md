@@ -435,3 +435,25 @@ contradicted by this path at all.
 Deliberately unresolved: proving it needs a scenario that reaches nav voice, which
 is blocked behind the same wiring work. Recorded so the next attempt starts from
 the lead rather than repeating the search.
+
+## OPEN TASK — kind-10 choice box may be 10px shorter than the game's
+
+`0x8438` is the unified list widget. Its `[0xADD]&1` branch does TWO things, and
+the port models only one of them:
+
+    0x8442  mov bp, 0xa     <-- height seeded to 10   (NOT modelled)
+    0x8445  mov dx, 0x37    <-- width floor 55        (modelled)
+
+`bp` then accumulates `add bp,0xB` per row (`0x847A`) and `add bp,8` (`0x84A7`),
+so in that branch the box height is `rows*11 + 18`, whereas the port's
+`choice_box_top_y` computes `rows*11 + 8` for every kind. Since the top edge is
+`(200-h)/2`, a 10px height error moves the box 5px vertically.
+
+NOT changed yet, deliberately. In the default path `bp` is never initialised
+inside the routine -- it is pushed at `0x842E` and inherited from the CALLER -- so
+the port's implicit `bp = 0` for non-kind-10 boxes is an assumption I have not
+verified. Fixing only the kind-10 seed while that assumption is unchecked risks
+trading a known error for an unknown one.
+
+NEXT STEP: find the callers of `0x8428` and read what `bp` holds on entry for each
+box kind. Then either seed both paths from the caller or confirm 0 is right.

@@ -288,7 +288,7 @@ world_location_active	src/engine.rs	2983	fn		UNVERIFIED	/// Whether the world-lo
 nav_view_active	src/engine.rs	2990	fn		UNVERIFIED	/// Whether the plain nav star-map is the active view — on the ship with no overlay /// screen (bridge/comms/cyberspace/cryobox/alien/world-landing) open. This is the /// view that shows the choose-a-
 leave_world	src/engine.rs	3003	fn		UNVERIFIED	/// Close the world-location screen (back to nav).
 render_world_location	src/engine.rs	3009	fn		UNVERIFIED	/// Render the current world-location background (its decoded palette + pixels) with /// the world name + room index captioned, into the framebuffer.
-render_nav_pyramid_sprites	src/engine.rs	3078	fn		UNVERIFIED	
+render_nav_pyramid_sprites	src/engine.rs	3078	fn		ASM	|| AUDIT 2026-07-24: ASM-DERIVED against the nav projector 0x9B98 after removing the last fabricated quantities. Count and gate come from the granted-destination set (entities 0x15..0x1F, flags bit7); positions index the games own DS:0x4F09 table (ship3d::NAV_DESTINATION_POINTS, byte-verified vs file 0x12329 and live memory) rather than a fabricated 700-unit lateral spread; the compass pan now goes through the projection MATRIX (DS:0x2F6D) instead of being faked as a world-X offset. Regression test nav_destination_points_coincide_rather_than_fanning_out
 load_nav_chart	src/engine.rs	3155	fn		UNVERIFIED	/// Load the real navigation star-map background from `CHART.FD` (an IFF/PBM image /// under `iso`) — the game's own chart the ship-nav screen shows. Returns whether it /// loaded; when present, `rend
 set_nav_destinations	src/engine.rs	3177	fn		UNVERIFIED	
 nav_destination_label	src/engine.rs	3186	fn		UNVERIFIED	/// The number of nav destinations currently offered. /// The label of nav destination `i` (the location's character name), if present.
@@ -306,7 +306,7 @@ take_nav_selection	src/engine.rs	3596	fn		UNVERIFIED	/// Take the pending nav de
 poll_input	src/engine.rs	3602	fn	0x70E	ASM?	/// The mouse input poll (`0:0x70E`): store the frame's cursor state and, if the /// cursor moved since last frame, reset the idle timer; otherwise advance it.
 step	src/engine.rs	3617	fn	0x0FFB	ASM?	/// One iteration of the top-level dispatch loop (`0x0FFB`). Ordered to match the /// decoded engine: poll input → (reset render state) → (render subsystems) → /// on-ship gate → countdown. Rendering 
 mode_x_offset	src/engine.rs	3785	fn	0x299,0x498	ASM?	/// The game's mode-X screen address for pixel `(x, y)` — `(byte_offset, plane)` where /// `byte_offset = y*80 + x/4` and `plane = x & 3`, exactly as `graphics_plot_modex` /// (`0x299:0x498`) computes
-mode_x_to_linear	src/engine.rs	3792	fn		UNVERIFIED	/// Invert [`mode_x_offset`] back to the linear framebuffer index the engine uses: /// `byte_offset*4 + plane`. Equals `y*ENGINE_SCREEN_WIDTH + x`, proving the two layouts /// address the same pixel.
+mode_x_to_linear	src/engine.rs	3792	fn		ASM	/// Invert [`mode_x_offset`] back to the linear framebuffer index the engine uses: /// `byte_offset*4 + plane`. Equals `y*ENGINE_SCREEN_WIDTH + x`, proving the two layouts /// address the same pixel. || AUDIT 2026-07-24: ASM-VERIFIED against graphics_plot_modex at 0x3428, which establishes the mode-X layout as byte offset = y*80 + x/4 with plane = x&3. The port byte_offset*4 + plane is the exact inverse: (y*80 + x/4)*4 + (x&3) = y*320 + x, so the engine linear framebuffer indexes the same pixel the game planar addressing does
 EntityObject	src/entity.rs	26	struct		UNVERIFIED	
 populate	src/entity.rs	42	fn		UNVERIFIED	/// Populate an object as the decoded `entity_object_populate` routines do: flags = /// `(source & 0x04) | 0x83`, and `init_pos` backs up `pos`.
 is_active	src/entity.rs	53	fn		UNVERIFIED	/// Whether the object is active (`+0x00 & 0x80`).
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                            
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                             
