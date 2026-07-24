@@ -11,7 +11,7 @@ displays** and wins. So a subset of the 40 are FALSE POSITIVES — the port is a
 correct and the raw-assembly reading is the one that's off. Each geometry finding must
 be oracle-re-verified before it is "fixed"; changing it blind regresses a pixel match.
 
-## Fixed + committed (25) — assembly-cited, regression-tested, oracle-verified where visual
+## Fixed + committed (26) — assembly-cited, regression-tested, oracle-verified where visual
 
 | area | fix | severity |
 |---|---|---|
@@ -40,6 +40,7 @@ be oracle-re-verified before it is "fixed"; changing it blind regresses a pixel 
 | vm-records | `0xC4` mode-0 already-set/idempotence check (`cx==0xC4` + op2 selector-0x13 field) — same guard | MED |
 | audio | chatter burble roll uses the game's PRNG (`BloodPrng` @`0x1CE:0x0B02`) + re-draw-until-different (`0xB8AB..0xB8B7`), replacing a fabricated glibc LCG + increment-on-collision | LOW |
 | vm-dispatch | **live** `step()` now executes `0xC1` (`0x6B4C`): QUERY (resolved selector path + direct compare) + non-ship3d SET (`{0xC1, operand, 2}`); was an unhandled no-op | HIGH |
+| bridge-clicks | console choice-box hit-band = the DRAWN box `[x0,x1]` (`0x84EE..0x84F6`, shared `choice_box_geometry`), not a fixed `40..160`; fixes the anchor-80 world box (~20px off) and any label wider than 100px | MED |
 
 ## Verified FALSE POSITIVE for the PORT — finding correct for the assembly, wrong for the port's model (4)
 
@@ -86,11 +87,18 @@ reading them in the C4 SET guard faithful to the game's write/branch decision (t
 divergence is the C1-clear case, a separate subsystem the live VM does not run). The C4
 mode-0 write guard is now IMPLEMENTED on this basis (see the Fixed table).
 
-## Remaining (11) — each to be oracle-re-verified or carefully implemented
+## Remaining (10) — each to be oracle-re-verified or carefully implemented
 
-- **Geometry, needs oracle re-check** (likely more false positives like the tall-mode):
-  choice-box x-band / min-width floor (need label widths plumbed into the hit-test),
-  palette 128–191 bank (the fix hint of "restore baked bytes" is WRONG — it would make the HUB muddy and break its capture; the cyan IS correct for the hub. The real fix is per-screen palette loading via the 0x5251<->0x5b58 working-buffer flow — infrastructure).
+- **Geometry:** choice-box x-band — the CORE bug is FIXED for the console box (the
+  hit-band now equals the drawn box via the shared `choice_box_geometry`; decoded
+  `0x84A1..0x84F6`). RESIDUAL (minor): the 3 secondary hit-test callers of
+  `choice_box_row_at` (MENU submenu, on-bridge nav-destination chooser, telephone
+  contact list) still use the fixed `40..160`; making them share the geometry needs
+  each caller's box-kind confirmed (their `console_box_kind` consistency is unverified) —
+  best done with click-scenario oracle. Also OPEN: palette 128–191 bank (the "restore
+  baked bytes" hint is WRONG — it would make the HUB muddy and break its capture; the cyan
+  IS correct for the hub. The real fix is per-screen palette loading via the
+  `0x5251<->0x5b58` working-buffer flow — infrastructure).
 - **Infrastructure-gated VM guards** — the active-bit lifecycle is now DECODED (see
   above; runtime never sets a VAR-inactive object). RESOLVED on that basis: C4 mode-0
   write guards, the C4 mode-0 already-set check (both in the `0x6CC3..0x6D01` decision),

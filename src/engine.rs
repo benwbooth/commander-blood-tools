@@ -1145,7 +1145,29 @@ impl EngineState {
             let row = (y as i32 - top) / 11;
             return (row >= 0 && (row as usize) < rows).then_some(row as usize);
         }
-        self.choice_box_row_at(x, y, self.console_box.len())
+        // Non-kind-3 console box (telephone kind 2, cryobox kind 4, world kind
+        // 10): the clickable band is the drawn box extent [x0, x1] from the
+        // shared geometry (0x84EE..0x84F6), NOT the fixed 40..160 — that band
+        // mis-fit the anchor-80 world box and any label wider than 100px.
+        let rows = self.console_box.len().min(8);
+        let widest = self
+            .console_box
+            .iter()
+            .take(rows)
+            .map(|l| crate::font::square_caps_text_width(l))
+            .max()
+            .unwrap_or(0);
+        let (_anchor, x0, x1) = self.choice_box_geometry(widest);
+        let (xi, yi) = (x as usize, y as usize);
+        if xi < x0 || xi > x1 {
+            return None;
+        }
+        let top = Self::choice_box_top_y(rows);
+        if yi < top {
+            return None;
+        }
+        let row = (yi - top) / Self::CHOICE_BOX_PITCH;
+        (row < rows).then_some(row)
     }
 
     /// Map a click to a MENU-submenu item (0 = EXPLANATIONS, 1 = GAME) when the
@@ -1773,6 +1795,27 @@ impl EngineState {
         (200usize.saturating_sub(h)) / 2 + 4
     }
 
+    /// The choice box's `(anchor, x0, x1)` for a widest label pixel width, per the
+    /// widget layout at `0x84A1..0x84F6`: `w = widest.max(floor) + 0x14`, then
+    /// `x0 = anchor - w/2` (`0x84AD shr / 0x84AF sub [0xac6] / 0x84B3 neg`) and the
+    /// hit-test accepts `x0 <= mx <= x0+w` (`0x84EE..0x84F6`). The floor/anchor are
+    /// kind-dependent: the world/entity box (kind 10) floors 55 and anchors 80
+    /// (`0xB0D1`); every other box floors 100 and anchors 100 (`0xAC6=0x64`). Shared
+    /// by [`draw_choice_box`] and the console hit-test so the clickable band is
+    /// EXACTLY the drawn box — the fixed `40..160` band was only correct for a
+    /// centered box with labels ≤100px (it mis-fit the anchor-80 world box and any
+    /// wide-label box).
+    fn choice_box_geometry(&self, widest: usize) -> (usize, usize, usize) {
+        let (anchor, floor) = if self.console_box_kind == 10 {
+            (Self::CHOICE_BOX_ANCHOR_WORLD, 55usize)
+        } else {
+            (Self::CHOICE_BOX_CENTER_X, 100usize)
+        };
+        let w = widest.max(floor) + 0x14;
+        let x0 = anchor.saturating_sub(w / 2);
+        (anchor, x0, (x0 + w).min(ENGINE_SCREEN_WIDTH))
+    }
+
     fn draw_choice_box(&mut self, labels: &[String], selected: Option<usize>) {
         if labels.is_empty() {
             return;
@@ -1794,21 +1837,10 @@ impl EngineState {
         // y = (200 - h)/2; border index 0x15 then fill 0xE0 (both DAC 0,0,0 —
         // from the live index dump; RGB can't distinguish them).
         let h = rows * Self::CHOICE_BOX_PITCH + 8;
-        // The world candidate box (kind 10) anchors at 80 (0xB0D1); others at 100.
-        let anchor = if self.console_box_kind == 10 {
-            Self::CHOICE_BOX_ANCHOR_WORLD
-        } else {
-            Self::CHOICE_BOX_CENTER_X
-        };
-        // Min-width floor BEFORE +0x14 (0x8438/0x8445): the widest label floors to 100
-        // for the centered box ([0xadd]=0) / 55 for the world/tall box ([0xadd]=1), so
-        // short-label boxes render at min width. For the centered box this makes it span
-        // x0=40..x1=160 — matching the hit-test band exactly. Labels center on the anchor,
-        // so widening the border does not move the text (capture-safe).
-        let floor = if self.console_box_kind == 10 { 55 } else { 100 };
-        let w = widest.max(floor) + 0x14;
-        let x0 = anchor.saturating_sub(w / 2);
-        let x1 = (x0 + w).min(ENGINE_SCREEN_WIDTH);
+        // Box rect from the shared widget geometry (0x84A1..): the world box
+        // (kind 10) anchors 80 / floors 55, others anchor 100 / floor 100. The
+        // same helper drives the hit-test, so the click band == the drawn box.
+        let (anchor, x0, x1) = self.choice_box_geometry(widest);
         let y0 = (200usize.saturating_sub(h)) / 2;
         let y1 = (y0 + h).min(ENGINE_SCREEN_HEIGHT);
         for y in y0..y1 {
@@ -4314,6 +4346,45 @@ mod tests {
         assert!(count(0x15) > 100, "choice-box border (0x15) present: {}", count(0x15));
         assert!(count(0xE0) > 500, "choice-box gold fill (0xE0) present: {}", count(0xE0));
         assert!(count(0xE8) > 20, "choice-box text (0xE8) present: {}", count(0xE8));
+    }
+
+    #[test]
+    fn console_box_click_band_is_the_drawn_box_not_a_fixed_40_160() {
+        // The click band is the box's rendered extent [x0, x1] (0x84EE..0x84F6),
+        // shared with the draw via choice_box_geometry — not the old fixed
+        // 40..160 that only fit a centered box with labels <=100px.
+        let width_of =
+            |labels: &[String]| labels.iter().map(|l| crate::font::square_caps_text_width(l)).max().unwrap();
+
+        // Centered box (kind 2): narrow labels floor to 100 -> anchor 100, w 120,
+        // so the band is exactly 40..160 (no regression for the common case).
+        let mut e = EngineState::new();
+        e.console_box = vec!["CANCEL".to_string(), "MENU".to_string()];
+        e.console_box_kind = 2;
+        let (anchor, x0, x1) = e.choice_box_geometry(width_of(&e.console_box));
+        assert_eq!(anchor, 100, "centered box anchors at 100");
+        assert_eq!((x0, x1), (40, 160), "narrow centered box spans 40..160");
+        let y0 = EngineState::choice_box_top_y(2) as u16 + 2; // row 0
+        assert_eq!(e.console_box_click(100, y0), Some(0), "center hits row 0");
+        assert_eq!(e.console_box_click(39, y0), None, "just left of the box misses");
+        assert_eq!(e.console_box_click(161, y0), None, "just right of the box misses");
+
+        // World box (kind 10): anchors at 80, floors to 55 -> the band is shifted
+        // and narrower. x=130 sits inside the OLD fixed 40..160 band but OUTSIDE
+        // the real anchor-80 box, so it must NOT register (the bug being fixed).
+        let mut e = EngineState::new();
+        e.console_box = vec!["MARS".to_string()];
+        e.console_box_kind = 10;
+        let (anchor, _x0, x1) = e.choice_box_geometry(width_of(&e.console_box));
+        assert_eq!(anchor, 80, "world box anchors at 80");
+        assert!(x1 < 130, "world box right edge {x1} < 130");
+        let yb = EngineState::choice_box_top_y(1) as u16 + 2;
+        assert_eq!(
+            e.console_box_click(130, yb),
+            None,
+            "x=130 no longer wrongly hits the anchor-80 world box"
+        );
+        assert_eq!(e.console_box_click(80, yb), Some(0), "center of the world box hits");
     }
 
     /// Oracle: the telephone choice box renders its item text exactly where the
