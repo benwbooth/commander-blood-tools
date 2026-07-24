@@ -149,9 +149,9 @@ is_opcode	src/descript.rs	439	fn		UNVERIFIED
 MouseInput	src/engine.rs	19	struct		UNVERIFIED	
 left_down	src/engine.rs	35	fn		UNVERIFIED	
 right_down	src/engine.rs	38	fn		UNVERIFIED	
-parse_dictionary	src/engine.rs	56	fn		UNVERIFIED	/// Parse a `SCRIPTn.DIC` dictionary: NUL-terminated words keyed by their byte /// offset (a Text token's `word_offsets` index into this).
-deb_actor_name_map	src/engine.rs	77	fn		UNVERIFIED	/// Public wrapper: DEB symbol names for ALL kinds (objects, sequences, …) keyed /// by offset — used by the script decompiler to label record references.
-parse_deb_object_names	src/engine.rs	91	fn		UNVERIFIED	/// Parse a `SCRIPTn.DEB` symbol table: object records (`kind==1`) mapping an /// object's byte offset to its name (the speaker's `actor_offset` indexes this).
+parse_dictionary	src/engine.rs	56	fn		DATA	/// Parse a `SCRIPTn.DIC` dictionary: NUL-terminated words keyed by their byte /// offset (a Text token's `word_offsets` index into this). || AUDIT 2026-07-24: DATA-VERIFIED against the shipped SCRIPT*.DIC: NUL-separated words keyed by byte offset. 11686 words parse cleanly across the five files. FIXED during this audit: decoding switched from from_utf8_lossy to CP437 -- SCRIPT3.DIC contains glyc\x82rium ("glycerium" with e-acute), a DISPLAYED word that UTF-8 lossy turned into U+FFFD
+deb_actor_name_map	src/engine.rs	77	fn		DATA	/// Public wrapper: DEB symbol names for ALL kinds (objects, sequences, …) keyed /// by offset — used by the script decompiler to label record references. || AUDIT 2026-07-24: DATA-VERIFIED against the shipped SCRIPT*.DEB: 20-byte records, name[16] NUL-padded + offset u16 + kind u16. Every file divides EXACTLY by 20 (137/342/353/... records) and every name field is NUL-terminated with zero padding after it. FIXED: CP437 decode (SCRIPT1/2.DEB record 6 is porte_cl\x82s = "porte_cles" with e-acute)
+parse_deb_object_names	src/engine.rs	91	fn		DATA	/// Parse a `SCRIPTn.DEB` symbol table: object records (`kind==1`) mapping an /// object's byte offset to its name (the speaker's `actor_offset` indexes this). || AUDIT 2026-07-24: DATA-VERIFIED: same 20-byte layout, filtered to kind==1. Observed kind values across the five scripts are a small closed set {0,1,2,4,5}, consistent with a symbol-kind enum rather than arbitrary data
 collect_hnm_paths	src/engine.rs	106	fn		DATA?	/// Recursively collect `*.hnm` asset paths under `dir`, keyed by lowercase /// filename, so a DESCRIPT talk-HNM name resolves to its file.
 assemble_words	src/engine.rs	132	fn	0x66CD,0x6739	ASM?	/// Join dictionary words into the on-screen subtitle string with the game's decoded /// text-assembly rule (0xA6 handler @0x66CD–0x6739): a space between words unless the /// next begins with attachi
 HandSprite	src/engine.rs	161	struct		UNVERIFIED	
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                              
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                               
