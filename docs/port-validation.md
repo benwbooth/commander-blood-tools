@@ -514,7 +514,15 @@ NO rec_0F4E write (only a timer IRQ; the block relocated at ~210M as the attract
 cycled profiles). So observing the write needs driving the oracle to the specific
 location/scene-transition MOMENT — the interactive-oracle tooling (decode BLOODPRG's
 nav/story input handlers), not a bounded run. Both the static and the bounded-oracle
-shortcuts are now exhausted; only the full tooling build remains. This CORRECTS the intervening
+shortcuts are now exhausted; only the full tooling build remains.
+DIAGNOSTIC (a concrete first task of that build): the scenario-resume path's RECORD-
+BLOCK RESOLUTION is broken. RECDUMP on script2.state resolves gs:[0x6724] → 8681:0000
+and reads rec_0F4E/rec_0744/rec_0F82 = 0 but rec_103A/rec_1340 = 0x6F63/0x4E49 (ASCII
+"co"/"NI" — STRING data, not record fields). So that block is NOT the loaded SCRIPT2
+record table; the savestate/resume doesn't restore gs:[0x6724] to point at it. Fixing
+the record-block resolution in the resume path is the prerequisite that makes any
+record write-watch (rec_0F4E, rec_103A) meaningful — the concrete entry point for the
+interactive-oracle tooling. This CORRECTS the intervening
 "deferred-record port-side wiring, not blocked" framing: that was a hopeful detour,
 refuted by (2). WHAT IS DECODED and durable: 4024 = the "Bigbang" plot object;
 rec_103A = arche+0x16 = a VM-maintained "current plot object" field that the 0xB8
