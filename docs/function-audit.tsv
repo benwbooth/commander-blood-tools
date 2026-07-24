@@ -515,7 +515,7 @@ update_ship_3d_transition_state	src/ship3d.rs	800	fn		UNVERIFIED
 step_ship_3d_depth_scroll	src/ship3d.rs	820	fn		ASM	|| AUDIT 2026-07-24: 0xB75C verified line-by-line: open path clamps with SIGNED `jl` at 0xB774 to 0x41; both paths do AL-ONLY arithmetic (add al / sub al) leaving AH intact; close path uses `jns` on the AL result and zeroes the WHOLE word (xor ax,ax) on underflow. Port matches exactly incl. SHIP_3D_MAX_DEPTH_OFFSET=0x41
 copy_ship_3d_plane_bands	src/ship3d.rs	853	fn		UNVERIFIED	
 step_ship_3d_interpolation_gate	src/ship3d.rs	895	fn		UNVERIFIED	
-layout_ship_3d_target_list	src/ship3d.rs	919	fn		UNVERIFIED	
+layout_ship_3d_target_list	src/ship3d.rs	919	fn		ASM	|| AUDIT 2026-07-24: unified list widget 0x8438..0x84C6, every constant confirmed: default max width 0x64=100, extra width 0x37=55 (gated on [0xADD]), extra height 0xA=10, row step 0xB=11 (0x847A add bp,0xb), width padding 0x14=20 (0x84A1), height padding 8 (0x84A7), screen height 0xC8=200 (0x84B9). x = anchor[0xAC6] - width/2 (0x84AD shr/sub/neg), y = (200-height)/2. Width compare is UNSIGNED (0x8472 jb) matching the port u16 >=. Cross-confirms the choice-box 100/55 floors -- same widget
 hit_test_ship_3d_target_list	src/ship3d.rs	959	fn		UNVERIFIED	
 update_ship_3d_nav_choice_dispatch	src/ship3d.rs	1021	fn		UNVERIFIED	
 run_ship_3d_nav_choice_handler_0	src/ship3d.rs	1078	fn		INFRA?	
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	    
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	     
