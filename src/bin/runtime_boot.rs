@@ -284,6 +284,16 @@ fn main() {
             // manu3 data segment lands at 0x17A3; vertex buffers at data:0xE000+.
             rt.m.trace_range = Some(0x17a30 + 0xE000..0x17a30 + 0xF800);
         }
+        // NAVWRITE: who writes the nav-destination position table DS:0x4F09?
+        // The projector 0x9B98 reads 11 records of three i16 (stride 6) from there,
+        // but every baked entry is the SAME point (10200,12100,900) and the literal
+        // 0x4F09 is referenced ONLY by the projector — so if the destinations ever
+        // differ on screen, some routine must write the table through a POINTER.
+        // An execution watch cannot find that writer (there is no known code address
+        // to watch); a WRITE watch over the table itself names it directly.
+        if std::env::var("NAVWRITE").is_ok() {
+            rt.m.trace_range = Some(0xE840 + 0x4F09..0xE840 + 0x4F09 + 11 * 6);
+        }
         let mut next_input = 5_000_000u64;
         while rt.cpu.steps < 50_000_000 {
             let _ = rt.run(next_input);
@@ -310,6 +320,40 @@ fn main() {
             // try Esc to back out to the menu before the next probe
             rt.inject_key(0x01, 0x1b);
             let _ = rt.run(rt.cpu.steps + 3_000_000);
+        }
+        // NAVWRITE report has to live HERE: the MENUMAP probe returns before the
+        // shared reporting section further down, which is why arming the range
+        // alone produced no output.
+        if std::env::var("NAVWRITE").is_ok() {
+            let mut seen = std::collections::HashSet::new();
+            for &(addr, v, cs, ip) in rt.m.range_hits.iter() {
+                let off = addr - 0xE840 - 0x4F09;
+                if seen.insert((cs, ip)) {
+                    println!(
+                        "NAVWRITE {cs:04x}:{ip:04x} -> rec {} byte {} = {v:#04x}",
+                        off / 6,
+                        off % 6
+                    );
+                }
+                if seen.len() > 30 {
+                    break;
+                }
+            }
+            println!("NAVWRITE: {} total nonzero hits", rt.m.range_hits.len());
+            // POSITIVE CONTROL. A write watch that is pointed at the wrong linear
+            // address reports zero hits just as convincingly as a table nobody
+            // writes, so the negative result above is worthless on its own. Dump
+            // the watched bytes: if this really is DS:0x4F09 the 11 records must
+            // read (10200,12100,900) = (0x27D8, 0x2F44, 0x0384) each.
+            let base = 0xE840 + 0x4F09;
+            for rec in 0..11usize {
+                let w = |k: usize| {
+                    let a = base + rec * 6 + k * 2;
+                    u16::from_le_bytes([rt.m.mem[a], rt.m.mem[a + 1]])
+                };
+                println!("NAVTABLE rec {rec}: ({}, {}, {})", w(0), w(1), w(2));
+            }
+            rt.m.trace_range = None;
         }
         println!("MENUMAP done -> {}/menu_*.ppm", out.display());
         return;
@@ -2595,6 +2639,28 @@ fn main() {
                 if seen.len() > 20 { break; }
             }
             println!("vert init: {} total hits", rt.m.range_hits.len());
+        }
+        // NAVWRITE report: every distinct writer of DS:0x4F09..+66, with the record
+        // index and byte within the record, so a writer can be told apart from an
+        // incidental bulk clear. NOTE trace_range only logs NONZERO bytes, so a
+        // routine that only zeroes the table is invisible here — absence of hits is
+        // therefore weaker evidence than presence.
+        if std::env::var("NAVWRITE").is_ok() {
+            let mut seen = std::collections::HashSet::new();
+            for &(addr, v, cs, ip) in rt.m.range_hits.iter() {
+                let off = addr - 0xE840 - 0x4F09;
+                if seen.insert((cs, ip)) {
+                    println!(
+                        "NAVWRITE {cs:04x}:{ip:04x} -> rec {} byte {} = {v:#04x}",
+                        off / 6,
+                        off % 6
+                    );
+                }
+                if seen.len() > 30 {
+                    break;
+                }
+            }
+            println!("NAVWRITE: {} total nonzero hits", rt.m.range_hits.len());
         }
         // Dump manu3's live table heads + the face/vertex tables they point to
         // (the bank relocation fills these; statics in the file are stale).

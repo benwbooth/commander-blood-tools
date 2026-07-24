@@ -3517,8 +3517,18 @@ impl EngineState {
         //     destinations are granted.
         //   * positions come from DS:0x4F09, which is a STATIC table — 10 entries
         //     of three i16 at stride 6, every one (10200, 12100, 900). Verified
-        //     unwritten at runtime (the literal is referenced only by the
-        //     projector; three deep savestates still read the baked default).
+        //     unwritten at runtime by a WRITE WATCH over the table's linear range
+        //     (runtime_boot NAVWRITE): zero writes across a full MENUMAP run. That
+        //     watch carries a positive control — it dumps the watched bytes and
+        //     they read back as the baked points — so the zero-hit result is a
+        //     real negative, not a watch aimed at the wrong address.
+        //   * the projector loops ELEVEN times (0x2F77 seeded 0x0B at 0x9BB4,
+        //     DEC/JS at 0x9BBA, `add bx,6` at 0x9CF5) over a TEN-entry table, so
+        //     its last iteration reads DS:0x4F45 — the trig table — as if it were
+        //     a position. It pairs with entity 0x15, because the entity index
+        //     0x6212+((i+0x15)<<5) descends as bx ascends. Not reproduced here:
+        //     the draw is gated on the entity's active bit7, and no state reached
+        //     so far sets it.
         //   * the camera origin is DS:0x2F65 = (10000, 12000, 0), also baked.
         // The port therefore draws one marker per GRANTED destination (the
         // GameProgress set that stands in for the active-entity bits) instead of
