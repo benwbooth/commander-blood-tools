@@ -296,7 +296,8 @@ impl BridgeView {
             self.seeking = true;
             self.menu_engaged = true;
             self.seek_target_arc = MENU_REST_FRAME * 2;
-            self.seek_initial_frames = 0;
+            // The initial-distance memo [0x279d] is cleared only at seek COMPLETION
+            // (0x9676), not at arm — a seek re-armed mid-flight keeps the prior memo.
             return Some(self.selected_menu_item);
         }
         // Eye-orb / station click: while a menu item is engaged the whole
@@ -319,7 +320,7 @@ impl BridgeView {
             if inside && self.frame * 2 != record.target_arc {
                 self.seek_target_arc = record.target_arc;
                 self.seeking = true;
-                self.seek_initial_frames = 0;
+                // Memo cleared only at completion (0x9676), not at arm.
                 break;
             }
         }
