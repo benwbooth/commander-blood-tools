@@ -3955,6 +3955,58 @@ impl VmMachine {
         self.object_offsets.iter().rev().copied().find(|&o| o < off)
     }
 
+    /// The `0xC4` mode-0 (SET) write guard — the `0x6CC3..0x6D01` decision.
+    /// Returns `None` when the object table is unloaded (no `0x6034` threshold
+    /// mapping possible; the caller then preserves the legacy unconditional
+    /// write used by opcode-only test scaffolding, since the real game always
+    /// has the DEB loaded). Otherwise `Some(true)` = write the C4 state record,
+    /// `Some(false)` = `vm_branch` (skip to the else target).
+    ///
+    /// The real handler (`0x6C7E`) threshold-maps `op1` to its owning object
+    /// (`0x6034` -> `di`), then:
+    ///   - `test es:[di+2],1` — op1's object must be ACTIVE (bit0 of its +2
+    ///     flags word), else branch (`0x6CC3`/`0x6CC8`).
+    ///   - `test es:[op2+2],1` — op2's object must be ACTIVE, else branch
+    ///     (`0x6CCC`/`0x6CD1`).
+    ///   - `es:[di]==1` (op1-object kind 1) OR `es:[op2]==1` (op2-object kind 1)
+    ///     -> write (`0x6CD3`/`0x6CDB` -> `0x6D01`).
+    ///   - else fail if the op1 STATE record already holds `0xC4` (`cx`, read at
+    ///     `0x6C98` -> `0x6CE3`), or op2's selector-`0x13` field already holds
+    ///     `0xC4` (`0x6CE9..0x6CFF`).
+    ///
+    /// The active bits read here are VAR-initial and — verified 2026-07 by
+    /// enumerating every `or/and byte [reg+2],imm` site in BLOODPRG.EXE — are
+    /// NEVER SET at runtime; the sole runtime writer is `0x5B8D` in the C1
+    /// world-presentation ladder, which only CLEARS a kind-`0x20` object's bit.
+    /// So reading VAR-initial bits reproduces the game's write/branch decision
+    /// for the dialogue C4 flow (the C1-clear case is a separate subsystem the
+    /// live VM does not run and never activated an object the guard would gate).
+    fn c4_set_write_decision(&self, op1: u16, op2: u16) -> Option<bool> {
+        let di = self.owner_object_offset(op1)?;
+        if self.rec_read(di.wrapping_add(2)) & 1 == 0 {
+            return Some(false); // op1's object inactive
+        }
+        if self.rec_read(op2.wrapping_add(2)) & 1 == 0 {
+            return Some(false); // op2's object inactive
+        }
+        if self.rec_read(di) == 1 {
+            return Some(true); // op1-object kind 1
+        }
+        let op2_kind = self.rec_read(op2);
+        if op2_kind == 1 {
+            return Some(true); // op2-object kind 1
+        }
+        if self.rec_read(op1) == 0xC4 {
+            return Some(false); // op1 state record already C4
+        }
+        if let Some(fo) = vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, op2_kind) {
+            if self.rec_read(op2.wrapping_add(fo)) == 0xC4 {
+                return Some(false); // op2's selector-0x13 field already C4
+            }
+        }
+        Some(true)
+    }
+
     /// Insert an owner into the 16-slot special list (gs:0x6D3E, insert 0x5FF6).
     /// Returns false only if the list is full and the owner is not already present.
     fn special_slot_insert(&mut self, owner: u16) -> bool {
@@ -4630,10 +4682,19 @@ impl VmMachine {
                         self.branch();
                     }
                 } else {
-                    self.rec_write(off, 0xC4);
-                    self.rec_write(off + 2, related);
-                    self.active_actor = Some(off);
-                    self.events.push(VmEvent::Actor { offset: off as usize });
+                    // 0x6CC3..0x6D01 write guard: the game only writes the C4
+                    // state record when both operand objects are active and the
+                    // kind/already-set checks pass; otherwise it branches. None =
+                    // object table unloaded (opcode-only tests) -> legacy write.
+                    match self.c4_set_write_decision(off, related) {
+                        Some(false) => self.branch(),
+                        _ => {
+                            self.rec_write(off, 0xC4);
+                            self.rec_write(off + 2, related);
+                            self.active_actor = Some(off);
+                            self.events.push(VmEvent::Actor { offset: off as usize });
+                        }
+                    }
                 }
             }
             // 0xCA (0x64E5): tag/value compare vs global 0xAA6.
@@ -7217,6 +7278,91 @@ mod tests {
         m.step();
         assert_eq!(m.pc, 5, "matching record -> pass -> fall through past the 5-byte token");
         assert_eq!(m.stack.len(), 1, "no branch taken on a match");
+    }
+
+    #[test]
+    fn live_step_c4_set_write_guard() {
+        // The 0xC4 mode-0 write guard (0x6CC3..0x6D01): two objects at bases
+        // 0x10 and 0x80, both kind 2 and both active; a C4 SET op1=0x84 (owner
+        // 0x80 via the 0x6034 threshold lookup) op2=0x10.
+        fn armed() -> VmMachine {
+            let mut m = VmMachine::new();
+            m.object_offsets = vec![0x10, 0x80];
+            m.rec_write_pub(0x80, 2); // obj@0x80 kind 2
+            m.rec_write_pub(0x82, 1); // obj@0x80 active (bit0 of +2)
+            m.rec_write_pub(0x10, 2); // obj@0x10 kind 2
+            m.rec_write_pub(0x12, 1); // obj@0x10 active
+            m
+        }
+        let cod = [OP_ACTOR, 0x84, 0x00, 0x10, 0x00, 0xFF];
+
+        // (1) both objects active, neither kind 1, op1 record empty -> WRITE.
+        let mut m = armed();
+        m.load_cod(&cod);
+        m.query = false;
+        m.stack.push(0x99);
+        m.pc = 0;
+        m.step();
+        assert_eq!(m.rec_read_pub(0x84), 0xC4, "both active -> C4 state record written");
+        assert_eq!(m.rec_read_pub(0x86), 0x10, "related operand stored at +2");
+        assert_eq!(m.active_actor, Some(0x84));
+        assert_eq!(m.pc, 5, "no branch: fell through the 5-byte token");
+
+        // (2) op1's owning object inactive -> vm_branch, no write.
+        let mut m = armed();
+        m.rec_write_pub(0x82, 0); // obj@0x80 inactive
+        m.load_cod(&cod);
+        m.query = false;
+        m.stack.push(0x99);
+        m.pc = 0;
+        m.step();
+        assert_eq!(m.pc, 0x99, "op1 object inactive -> vm_branch (0x6CC8)");
+        assert_ne!(m.rec_read_pub(0x84), 0xC4, "no C4 record written on branch");
+        assert_eq!(m.active_actor, None);
+
+        // (3) op2's object inactive -> vm_branch.
+        let mut m = armed();
+        m.rec_write_pub(0x12, 0); // obj@0x10 inactive
+        m.load_cod(&cod);
+        m.query = false;
+        m.stack.push(0x99);
+        m.pc = 0;
+        m.step();
+        assert_eq!(m.pc, 0x99, "op2 object inactive -> vm_branch (0x6CD1)");
+        assert_eq!(m.active_actor, None);
+
+        // (4) op1 STATE record already 0xC4 (both active, kinds 2) -> vm_branch
+        // (the cx==0xC4 idempotence guard at 0x6CE3).
+        let mut m = armed();
+        m.rec_write_pub(0x84, 0xC4);
+        m.load_cod(&cod);
+        m.query = false;
+        m.stack.push(0x99);
+        m.pc = 0;
+        m.step();
+        assert_eq!(m.pc, 0x99, "already-set op1 record -> vm_branch");
+
+        // (5) op1's object kind 1 short-circuits to WRITE, ahead of the
+        // already-set check (order at 0x6CD3 -> 0x6D01 before 0x6CE3).
+        let mut m = armed();
+        m.rec_write_pub(0x80, 1); // obj@0x80 kind 1
+        m.rec_write_pub(0x84, 0xC4); // already-set would branch, but kind-1 wins
+        m.load_cod(&cod);
+        m.query = false;
+        m.pc = 0;
+        m.step();
+        assert_eq!(m.rec_read_pub(0x86), 0x10, "kind-1 object -> write despite already-set");
+        assert_eq!(m.active_actor, Some(0x84));
+
+        // (6) object table unloaded (opcode-only scaffolding) -> the guard is
+        // skipped and the legacy unconditional write is preserved.
+        let mut m = VmMachine::new();
+        m.load_cod(&cod);
+        m.query = false;
+        m.pc = 0;
+        m.step();
+        assert_eq!(m.rec_read_pub(0x84), 0xC4, "no DEB loaded -> unconditional write");
+        assert_eq!(m.active_actor, Some(0x84));
     }
 
     #[test]

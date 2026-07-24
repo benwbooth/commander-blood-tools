@@ -11,7 +11,7 @@ displays** and wins. So a subset of the 40 are FALSE POSITIVES — the port is a
 correct and the raw-assembly reading is the one that's off. Each geometry finding must
 be oracle-re-verified before it is "fixed"; changing it blind regresses a pixel match.
 
-## Fixed + committed (21) — assembly-cited, regression-tested, oracle-verified where visual
+## Fixed + committed (23) — assembly-cited, regression-tested, oracle-verified where visual
 
 | area | fix | severity |
 |---|---|---|
@@ -36,6 +36,8 @@ be oracle-re-verified before it is "fixed"; changing it blind regresses a pixel 
 | asset-decoders | unmapped subtitle chars skipped (no glyph/advance), not "?" | LOW |
 | menus | choice-box min-width floor (100/55); centered box now matches the 40..160 hit-band | LOW |
 | vm-records | `0xB8/B9/BD` SET invalidates the arche +0x16 dangling reference | MED |
+| vm-records | `0xC4` mode-0 (SET) write guard (`0x6CC3..0x6D01`): both operand objects active + kind/already-set checks, else branch (was unconditional write) | HIGH |
+| vm-records | `0xC4` mode-0 already-set/idempotence check (`cx==0xC4` + op2 selector-0x13 field) — same guard | MED |
 
 ## Verified FALSE POSITIVE for the PORT — finding correct for the assembly, wrong for the port's model (3)
 
@@ -51,23 +53,42 @@ be oracle-re-verified before it is "fixed"; changing it blind regresses a pixel 
   query on the owning object's active bit (`0x6CA4 test es:[di+2],1`). CORRECTION: the
   VAR *does* load initial object active bits (121/228 SCRIPT2 objects have `obj+2 bit0`
   set), so owner_active isn't uniformly false — my fix-#14 revert reasoning was partly
-  wrong. What's missing is the RUNTIME update of those bits on navigation/transfer, plus
-  `owner_object_offset` is a nearest-below approximation, not the `0x6034` threshold
-  lookup. Reverted to the safe working model `active_actor==Some(off)` because a stale
-  active-bit gate could misfire mid-game; re-applying the assembly gate needs the runtime
-  active-bit lifecycle modeled and verified in live play first. NOTE: this same VAR-initial
-  active-bit availability makes the C4-WRITE and `0xC1` guards partially feasible (the
-  guards read the same bits) — but with the same staleness caveat.
+  wrong. CORRECTION (2026-07): `owner_object_offset` (largest object offset strictly
+  below the key) is NOT an approximation — it is EXACTLY `0x6034` (which walks the
+  `0x672c` directory by `+0x10` threshold with `jbe` then backs up one, i.e. the largest
+  threshold strictly less than the key; verified including the equality edge). And the
+  runtime active-bit LIFECYCLE is now decoded (see below): the only runtime writer is
+  `0x5B8D` (a CLEAR in the C1 world path), so the C4-QUERY staleness fear was overstated.
+  The query gate is still left as `active_actor==Some(off)` only because the query answers
+  "is THIS actor's presentation the active one?" — a stronger condition than "object
+  active" that the single-presenter model already captures; the assembly's `es:[di+2]&1`
+  is necessary-but-not-sufficient, so the port's model is not wrong here.
 
-## Remaining (16) — each to be oracle-re-verified or carefully implemented
+### Active-bit lifecycle — DECODED (unblocks the C4-write/`0xC1` guards)
+
+The object "active" bit is `object_record[+2] bit0` (object records live in the
+`0x6724` segment; kind at `+0`, flags at `+2`). Enumerating every `or/and byte
+[reg+2],imm` site in BLOODPRG.EXE finds **exactly one** runtime writer: `0x5B8D`
+`and byte [bx+2],0xfe` in the C1 world/ship-presentation ladder (`record_type_ladder`
+`0x5B38`), which only CLEARS the bit of a kind-`0x20` linked object. There is **no**
+`or [reg+2],1` setter anywhere. So the runtime NEVER activates a VAR-inactive object —
+for the dialogue C4 flow the active bits are effectively VAR-initial static. This makes
+reading them in the C4 SET guard faithful to the game's write/branch decision (the sole
+divergence is the C1-clear case, a separate subsystem the live VM does not run). The C4
+mode-0 write guard is now IMPLEMENTED on this basis (see the Fixed table).
+
+## Remaining (14) — each to be oracle-re-verified or carefully implemented
 
 - **Geometry, needs oracle re-check** (likely more false positives like the tall-mode):
   choice-box x-band / min-width floor (need label widths plumbed into the hit-test),
   palette 128–191 bank (the fix hint of "restore baked bytes" is WRONG — it would make the HUB muddy and break its capture; the cyan IS correct for the hub. The real fix is per-screen palette loading via the 0x5251<->0x5b58 working-buffer flow — infrastructure).
-- **Infrastructure-gated VM guards** (need the runtime object-active-bit lifecycle;
-  the VAR loads initial bits but not their nav/transfer updates — wrong ⇒ breaks dialogue,
-  see the C4-query revert): C4 mode-0 write guards, `0xC1` line-record state (unhandled
-  live), C4 mode-0 unconditional/already-set check.
+- **Infrastructure-gated VM guards** — the active-bit lifecycle is now DECODED (see
+  above; runtime never sets a VAR-inactive object). RESOLVED on that basis: C4 mode-0
+  write guards and the C4 mode-0 already-set check (both now in the implemented
+  `0x6CC3..0x6D01` decision). STILL OPEN: `0xC1` line-record state — this is the whole C1
+  world/ship-presentation ladder (`0x5B38`, `record_type_ladder`), unhandled in the live
+  VM; it is the same subsystem that owns the sole runtime active-bit writer (`0x5B8D`).
+  Porting it is a self-contained next task, not an infrastructure blocker.
 - **Subtle / low visible impact / risk:** B8 arche-reference cleanup (needs arche offset),
   `0xA8` fin-flag + presentation-request side effects (needs gs-flag model), `0x6946`
   query nuance, bridge ring-cursor 8px snap (changes steering feel), chatter re-roll
