@@ -75,9 +75,23 @@ fn main() {
             "click" => {
                 mx = toks[1].parse().unwrap();
                 my = toks[2].parse().unwrap();
-                // Mirror the windowed dispatch: CANCEL label, then the decoded
-                // console-row rects, then the engine's own click paths.
-                if !e.hub_cancel_click(mx, my) {
+                // Mirror the windowed dispatch: CANCEL label, then an open
+                // concept box's rows (routed through the SHARED layer's
+                // concept dispatch — the labels are the game's own words),
+                // then the console-row rects, then the engine's click paths.
+                let mut handled = false;
+                if !e.console_box.is_empty() {
+                    if let Some(row) = e.console_box_click(mx, my) {
+                        if let Some(label) = e.console_box.get(row).cloned() {
+                            if let Some(d) = drive.as_mut() {
+                                d.concept(&label);
+                            }
+                            e.console_box_selected = Some(row);
+                            handled = true;
+                        }
+                    }
+                }
+                if !handled && !e.hub_cancel_click(mx, my) {
                     // The console rows only dispatch once the presentation is done
                     // (the windowed game's dialogue_finished gate; oracle-confirmed:
                     // clicks during the live presentation are ignored).
