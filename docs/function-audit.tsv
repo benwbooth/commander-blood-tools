@@ -568,7 +568,7 @@ resolve_ship_3d_c1_kind10_destination_record	src/ship3d.rs	2887	fn		UNVERIFIED
 write_ship_3d_c1_kind10_destination_slot	src/ship3d.rs	2901	fn		UNVERIFIED	
 run_ship_3d_navigation_trigger_prelude	src/ship3d.rs	2924	fn		INFRA?	
 draw_ship_3d_target_list	src/ship3d.rs	3006	fn		UNVERIFIED	
-select_ship_3d_target_record	src/ship3d.rs	3064	fn		UNVERIFIED	
+select_ship_3d_target_record	src/ship3d.rs	3064	fn		ASM	|| AUDIT 2026-07-24: verified END TO END against 0xB2BB..0xB34D: primary list DS:0x250B, and when its first word is -1 it switches to the FALLBACK list DS:0x2537 and sets [0x252C]=1 (0xB2CB..0xB2D7); phase bit0 (`test [0x252B],1`) runs the layout prepass with [0x27E6]=1/0 around lcall 0x71E:0xC48, clears [0xADB] (the animation tick) and does `inc [0x252B]`; phase bit1 gates. Tail: query -1 -> 0; else index the word list (`add ax,ax; add si,ax`); if the ENTRY is -1 set opening [0x252F]=1 and step [0x2531]=6; else `sub ax,4` (record header) and, when the fallback flag is set, return the CURRENT target [0x251B] instead. Constants confirmed: sentinel 0xFFFF, header 4, open step 6 -- note 6 here is DISTINCT from the transition open step 4 (0xB6A0) and the port correctly keeps them separate. Still DORMANT (Tier 3)
 ship_3d_plane_band_byte_count	src/ship3d.rs	3132	fn		ASM	|| AUDIT 2026-07-24: 0xB71C..0xB723: (depth + 0x23) then `mul dl` with dl=0x50 uses AL only, so the row count is 8-bit -- matching the port u8 wrapping add * 80
 ship_3d_scroll_value	src/ship3d.rs	3137	fn		UNVERIFIED	
 start_closing_transition	src/ship3d.rs	3147	fn		ASM	|| AUDIT 2026-07-24: 0xB6B8..0xB6C2: step [0x2531]=8, closing [0x2530]=1, armed [0x2533]=0 || WIRED 2026-07-24: now reached in play via EngineState::step_ship_3d_nav_state (called from step() while nav_view_active)
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	                  
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	                   
