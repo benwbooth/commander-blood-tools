@@ -6098,12 +6098,14 @@ mod tests {
         let mut menu = VmMachine::new();
         menu.load_cod(&cod);
         menu.load_var(&var);
-        // The boot's crew-aboard init: the daily menu is gated on CHEF BRONKO
-        // being aboard (@000A rec_0332 == 65535; 0x332-24 = object 0x31A —
-        // "Today CHEF BRONKO has laid on for you"). The engine writes crew
-        // locations at entity activation; the exact-compare law (0x6946: RHS
-        // == the special object substitutes 0xFFFF, then EXACT equality — no
-        // match-any) exposed this dependency, which the old wildcard bug hid.
+        // The daily menu is gated on CHEF BRONKO being aboard (@000A
+        // rec_0332 == 65535; object 0x31A — "Today CHEF BRONKO has laid on
+        // for you"). He boards through the STORY (SCRIPT2's "We teleported
+        // Bronko into the cryobox" beat, @1770-era) — a 300M-step boot watch
+        // shows NO engine-side init writes, so a fresh tutorial legitimately
+        // has no menu demo; the old expectation was an artifact of the
+        // match-any wildcard bug. The write below is the Bronko-teleport
+        // beat's product (the CD transfer's aboard value).
         menu.rec_write(0x0332, 0xFFFF);
         menu.start_actor_presentation(2220, 40);
         let t3 = texts(menu.run_frame());
