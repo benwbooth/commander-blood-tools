@@ -742,3 +742,39 @@ Note `gs:0x252A` (`0xD0`'s gate, still forced true at VM construction) is writte
 by `run_ship_3d_navigation_sequence_update` — so wiring that one function also
 retires a long-standing VM-flag approximation. The dormant list and the open
 audit items are the same problem viewed from two directions.
+
+### Wiring plan for the remaining 18 dormant ship-3D functions
+
+Established by inspecting each signature for whether its inputs can be sourced
+FAITHFULLY today. Wiring a function whose inputs must be invented is worse than
+leaving it dormant — it puts fabricated values on the live path.
+
+**TIER 1 — wireable now (self-contained; inputs are engine state or real input).**
+DONE: `update_ship_3d_transition_state` + `step_ship_3d_depth_scroll` +
+`run_ship_3d_procedural_update` (all three now driven by
+`EngineState::step_ship_3d_nav_state`).
+REMAINING: `run_ship_3d_temp_snd_setup`, `run_ship_3d_navigation_final_reset`
+(both single-state machines) — but note each is currently INERT: nothing consumes
+their effects yet, so wiring them changes no behaviour until a consumer exists.
+
+**TIER 2 — blocked on a MISSING ENGINE MODEL, not on other ship-3D code.**
+`copy_ship_3d_plane_bands`, `commit_ship_3d_global_clip_snapshot`,
+`commit_ship_3d_sprite_slot_dirty_geometry` all operate on the VGA PLANAR video
+segment (source pages `0xC000` / `0xDF40` inside a 64 KB segment) and a dirty-rect
+list. The engine models only a LINEAR `framebuffer: Vec<u8>` and has no planar
+page model at all. Wiring needs that model first — a real piece of engine work,
+and the reason the now-live depth sweep is still not visible.
+
+**TIER 3 — blocked on other DORMANT ship-3D code (a dependency chain).**
+`run_ship_3d_navigation_sequence_update` needs `interpolation_complete` (from
+`step_ship_3d_interpolation_gate`) and `query_selection` (from
+`select_ship_3d_target_record`); those in turn need layout snapshots and the
+target lists that `build_ship_3d_navigation_source_records` /
+`run_ship_3d_navigation_trigger_prelude` produce. The nav-choice handlers 0..4 all
+hang off `update_ship_3d_nav_choice_dispatch`, which needs
+`Ship3dNavChoiceGates`/`Input` assembled from live console state.
+
+ORDER THAT UNBLOCKS THE MOST: interpolation gate + target select -> sequence
+update (which also writes `gs:0x252A` and retires the `flag_252a` VM
+approximation) -> nav-choice dispatch -> handlers. The planar model (Tier 2) is
+independent and is what makes any of it VISIBLE.
