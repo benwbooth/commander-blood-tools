@@ -34,6 +34,12 @@ fn main() {
     if let Some(d) = drive.as_mut() {
         d.m.flag_252a = true;
         d.m.flag_274f = true;
+        // STATE SYNC: the oracle's exported record snapshot (blood.sav layout,
+        // the `dumprecords` scenario command) aligns the port's story state
+        // with the oracle's saved hub — the branch-divergence calibration.
+        if let Ok(snap) = std::fs::read("accuracy/hub_records.sav") {
+            let _ = d.m.apply_dos_save(&snap);
+        }
     }
     // The console rows' actors, by their DEB names (the row order the frames
     // bake: HONK, TELEPHONE, CRYOBOX, MENU, OPTION).

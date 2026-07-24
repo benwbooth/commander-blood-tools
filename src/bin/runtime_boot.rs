@@ -3132,6 +3132,29 @@ fn main() {
                     let _ = rt.run(rt.cpu.steps + frames * 1_850_000);
                     rt.mouse_release(0);
                 }
+                // dumprecords <path>: export the LIVE record state in the DOS
+                // blood.sav layout (profile, state array gs:0x6ADE, char slots
+                // gs:0x6CDE, line-record table) — the port's apply_dos_save
+                // consumes it directly: the state-sync plank of the
+                // matched-drive lane.
+                "dumprecords" => {
+                    let mut outb: Vec<u8> = Vec::new();
+                    outb.extend_from_slice(&1u16.to_le_bytes()); // profile 1 = SCRIPT2
+                    for i in 0..0x100u32 {
+                        outb.push(rt.m.read8(g, 0x6ade + i * 2));
+                        outb.push(rt.m.read8(g, 0x6ade + i * 2 + 1));
+                    }
+                    for i in 0..0x60u32 {
+                        outb.push(rt.m.read8(g, 0x6cde + i));
+                    }
+                    let (boff, bseg) = (w16(&rt, 0x6724), w16(&rt, 0x6726));
+                    let base = bseg as usize * 16 + boff as usize;
+                    for i in 0..0x1312usize {
+                        outb.push(rt.m.mem[base + i]);
+                    }
+                    std::fs::write(toks[1], &outb).unwrap();
+                    eprintln!("records dumped: {}", toks[1]);
+                }
                 // save <path>: write a savestate at this scenario point (the
                 // story-milestone banker).
                 "save" => {
