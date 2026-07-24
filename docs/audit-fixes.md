@@ -52,7 +52,21 @@ be oracle-re-verified before it is "fixed"; changing it blind regresses a pixel 
 | vm-records | **live** `0xC9` zeroes the whole 3-word record AND the `0xC4` reciprocal selector-`0x13` triple on the related object (`0x6FB9..0x6FF0`); the old 1-word clear left a stale `0xC4` that the new C4 write guard would refuse, wedging the actor out of later presentations | HIGH |
 | vm-flags | `gs:0x274F` gets the game's real lifecycle: baked initial value is **0** (file `0xFB6F`), set on cryobox-screen entry (`0x18C4`), cleared on exit (`0x1A48`) — was forced `true` at VM construction, leaving `0xD1`'s Cap'n Bob block open from boot | MED |
 
-## Verified FALSE POSITIVE for the PORT — finding correct for the assembly, wrong for the port's model (4)
+## Verified FALSE POSITIVE for the PORT — finding correct for the assembly, wrong for the port's model (5)
+
+- **palette 128–191 bank — ORACLE-REFUTED.** Dumped the live DAC buffer
+  `gs:0x5b58` (768 bytes) from three deep savestates (`milestone_script2`,
+  `location_visit`, `arrival_probe`) via `MEMDUMP=5b58:768` and diffed it against
+  the port's `GAME_SCREEN_PALETTE_DAC`: **0 differing bytes out of 576 in colors
+  0..191, and 0 out of 192 in colors 192..255** — byte-identical in all three.
+  So the port's baked palette IS what the real game has resident; the per-screen
+  loading machinery (fully decoded: staging `gs:0x5251` -> live `gs:0x5b58` at
+  `0x8166`, backup `gs:0x5851` at `0xB563`, all 192-colour copies) demonstrably
+  produces the same palette in every state that can be observed. The finding's
+  premise — that the port's 128–191 bank is wrong — is refuted. CAVEAT: all three
+  states are SCRIPT2-era, so this does not prove correctness for screens the
+  harness cannot yet reach; if a future state shows a differing palette, the
+  decoded machinery above is what to wire.
 
 - **`0x6946` query nuance (0xAD/AF/B2/B3/BA/BB/BC):** VERIFIED the port's query arm is
   an EXACT match for `0x6954..0x6983`: the special-object -> `0xFFFF` wildcard
@@ -97,7 +111,16 @@ reading them in the C4 SET guard faithful to the game's write/branch decision (t
 divergence is the C1-clear case, a separate subsystem the live VM does not run). The C4
 mode-0 write guard is now IMPLEMENTED on this basis (see the Fixed table).
 
-## Remaining (9) — each to be oracle-re-verified or carefully implemented
+## Remaining (1 sub-item) — `rec_103A`'s native writer
+
+ACCOUNTING NOTE, to avoid inflating the tally: the last ledger row was ONE finding
+covering TWO sub-items — the per-screen palette pipeline and the `rec_103A` writer.
+The palette sub-item is now ORACLE-REFUTED (see the false-positive section: the live
+DAC is byte-identical to the port's baked palette in three deep savestates), so the
+port needs no change there. `rec_103A` is still open, so this row is NOT closed.
+
+Everything below this note is HISTORICAL — the items were resolved earlier in the
+session and are kept for their decode trails.
 
 - **Geometry — choice-box x-band is now FULLY CLOSED:** all four hit-test callers
   (console box, MENU submenu, on-bridge nav-destination chooser, telephone contacts)
