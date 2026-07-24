@@ -7,13 +7,31 @@
 //! emulator gs:0x5B58): the first 128 entries match byte-for-byte; the upper half
 //! is only ever overwritten by a per-scene HNM palette.
 
-/// Raw 6-bit VGA DAC palette (256 * RGB, channels 0..=63), exactly as the game
-/// stores it. Provenance: BLOODPRG.EXE file 0x12F78.
-// The HUB-state DAC captured from the interpreter oracle at accuracy/script2.state
-// (INDEXDUMP probe -> accuracy/captures/hub_dac.bin). Verified: TB.BIG frame 45's raw
-// indices match the live hub screen at 95.5%; entries 128..191 (the manu3 hand / orb /
-// menu bank) are the values the game actually programs at the hub - the prior constant
-// froze a different state's bank there (the visible "miscolored hand/menu").
+/// Raw 6-bit VGA DAC palette (256 * RGB, channels 0..=63).
+///
+/// PROVENANCE IS SPLIT, and the old comment (`Provenance: BLOODPRG.EXE file 0x12F78`)
+/// was only half true — measured 2026-07-24:
+///
+/// * **Colours 0..127 — BINARY.** Byte-for-byte identical to the baked default at
+///   file `0x12F78`, and confirmed live: the running game's buffer at `gs:0x5B58`
+///   reads back the same values (probe `runtime_boot PALBANK`, which checks colours
+///   0..7 against the image as an address control before trusting anything else).
+/// * **Colours 128..191 — CAPTURED FROM A SAVESTATE, and conceptually wrong.** These
+///   192 bytes differ from the image, and appear in NO shipped file (searched raw,
+///   `*4`, and `*4|3` across the CD and install trees). They are not a constant at
+///   all: they are SCENE STATE. At the console the live bank reads all ZERO with no
+///   writer, so the values baked here were lifted from one particular state
+///   (`accuracy/script2.state`) and frozen as though global.
+///
+/// The upper half is fed by the per-scene HNM palette in the real game, which is why
+/// it is scene-dependent — and the port already parses those (`hnm::parse_palette_block`,
+/// and every scene load assigns `self.scene_palette = hnm.palette`). So this bank is
+/// mostly overwritten in practice; it is the DEFAULT that is wrong, and it shows
+/// wherever a surface is drawn before a scene palette lands.
+///
+/// FIX: colours 128..191 should come from the loaded scene, not from here. Until then
+/// this is an ACKNOWLEDGED APPROX for that range only — the lower half is sound.
+pub const GAME_SCREEN_PALETTE_DAC_LOWER_IS_BINARY: usize = 128;
 pub const GAME_SCREEN_PALETTE_DAC: [u8; 768] = [
     0, 0, 0, 36, 46, 11, 35, 37, 6, 34, 34, 14,
     30, 25, 11, 27, 21, 11, 28, 21, 16, 23, 19, 20,
@@ -102,6 +120,36 @@ pub fn game_screen_palette() -> [[u8; 3]; 256] {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Colours 0..127 are the game's own baked DAC at file 0x12F78 and must stay
+    /// byte-identical to the image. Colours 128..191 are NOT asserted here on purpose:
+    /// they were captured from one savestate, are absent from every shipped file, and
+    /// read all-zero in the live console state — they are scene data frozen into a
+    /// constant, tracked as an acknowledged APPROX.
+    #[test]
+    fn palette_lower_half_matches_the_baked_dac_in_the_image() {
+        let exe = match std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        {
+            Ok(b) => b,
+            Err(_) => return,
+        };
+        const BAKED: usize = 0x12F78;
+        let n = GAME_SCREEN_PALETTE_DAC_LOWER_IS_BINARY * 3;
+        assert_eq!(
+            &GAME_SCREEN_PALETTE_DAC[..n],
+            &exe[BAKED..BAKED + n],
+            "colours 0..127 must equal the baked DAC at file 0x12F78"
+        );
+        // And record the split as an executable fact: the upper bank DIFFERS from the
+        // image, so nobody can later ""fix"" the doc by claiming the whole table is baked.
+        assert_ne!(
+            &GAME_SCREEN_PALETTE_DAC[n..n + 192],
+            &exe[BAKED + n..BAKED + n + 192],
+            "colours 128..191 are known to differ — if this ever passes, the capture \
+             was replaced by real data and the APPROX note should be retired"
+        );
+    }
     #[test]
     fn palette_is_valid_dac_data() {
         assert!(GAME_SCREEN_PALETTE_DAC.iter().all(|&c| c <= 63), "6-bit DAC channels");

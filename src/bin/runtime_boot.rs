@@ -302,6 +302,15 @@ fn main() {
         if std::env::var("NAVENT").is_ok() {
             rt.m.trace_range = Some(0xE840 + 0x6212 + 0x2A0..0xE840 + 0x6212 + 0x400);
         }
+        // PALBANK: who writes DAC colours 128..191? The palette buffer is gs:0x5B58
+        // (uploaded whole by 0x2F90: start index 0, cx=0x300). Colours 0..127 of the
+        // port's constant match the baked EXE default at file 0x12F78 byte-for-byte,
+        // but 128..191 do NOT -- those 64 were captured from a savestate, and the
+        // bytes appear in no shipped file (searched raw, x4 and x4|3). So a writer
+        // fills them at runtime. Watch exactly that 192-byte span.
+        if std::env::var("PALBANK").is_ok() {
+            rt.m.trace_range = Some(0xE840 + 0x5B58 + 384..0xE840 + 0x5B58 + 576);
+        }
         let mut next_input = 5_000_000u64;
         while rt.cpu.steps < 50_000_000 {
             let _ = rt.run(next_input);
@@ -401,6 +410,44 @@ fn main() {
             }
             println!("\nNAVENTLOW: {nonzero_low}/21 low entities populated");
             println!("NAVENT: {} total nonzero hits", rt.m.range_hits.len());
+            rt.m.trace_range = None;
+        }
+        if std::env::var("PALBANK").is_ok() {
+            let mut seen = std::collections::HashSet::new();
+            for &(addr, v, cs, ip) in rt.m.range_hits.iter() {
+                let off = addr - 0xE840 - 0x5B58;
+                if seen.insert((cs, ip)) {
+                    println!(
+                        "PALBANK writer {cs:04x}:{ip:04x} -> colour {} channel {} = {v:#04x}",
+                        off / 3,
+                        off % 3
+                    );
+                }
+                if seen.len() > 20 {
+                    break;
+                }
+            }
+            // Positive control: dump the live bank so a null result cannot be
+            // confused with a watch aimed at the wrong address.
+            let base = 0xE840 + 0x5B58;
+            let live: Vec<String> = (128..136)
+                .map(|c| {
+                    let a = base + c * 3;
+                    format!("({},{},{})", rt.m.mem[a], rt.m.mem[a + 1], rt.m.mem[a + 2])
+                })
+                .collect();
+            println!("PALBANK live 128..135: {}", live.join(" "));
+            // ADDRESS CONTROL: colours 0..7 must equal the baked EXE default at file
+            // 0x12F78, which the port matches byte-for-byte for 0..127. If they do,
+            // gs:0x5B58 is right and the empty upper bank is a fact about the STATE.
+            let low: Vec<String> = (0..8)
+                .map(|c| {
+                    let a = base + c * 3;
+                    format!("({},{},{})", rt.m.mem[a], rt.m.mem[a + 1], rt.m.mem[a + 2])
+                })
+                .collect();
+            println!("PALBANK live 0..7:     {}", low.join(" "));
+            println!("PALBANK: {} nonzero writes", rt.m.range_hits.len());
             rt.m.trace_range = None;
         }
         println!("MENUMAP done -> {}/menu_*.ppm", out.display());
