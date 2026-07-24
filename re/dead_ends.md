@@ -730,3 +730,28 @@ Disposition: this is no longer "we have not looked". The all-visited fallback in
 that the write happens only inside the SCRIPT5 Bigbang-concert FSM, which no
 scenario in accuracy/scenarios/ currently reaches. Reaching it — not more
 watching — is the actual next task.
+
+### Why SCRIPT5 is unreachable: NO scenario triggers a profile load
+
+Checked with `FILELOG=1` over the deepest scenario
+(`accuracy/scenarios/story_deep.tsv`): the whole 27-step run opens exactly ONE
+file — `descript.des`. There is no `SCRIPT*.COD` / `SCRIPT*.VAR` open anywhere in
+the run.
+
+So every scenario in `accuracy/scenarios/` executes inside the ONE profile already
+resident at boot; none of them causes a script-profile switch. That is why
+`rec_103A`'s SCRIPT5 Bigbang-concert FSM has never been observed — it is
+unreachable by the current harness BY CONSTRUCTION, not by bad luck in the search.
+
+This also lines up with the earlier `GRANTWALK` result (540 rounds, `milestones=0`,
+nav anchors never populated): the harness can drive console/dialogue interaction
+but cannot advance the story far enough to grant a destination, travel, and load
+the next profile.
+
+Better approach (a harness feature, not a scenario file): give the driver a way to
+force a profile switch — the VM's `0xD2` opcode sets the pending profile
+(`vm_op_d2_script_profile_request` `0x64B8`: `DS:0x6780 = sign_extend(operand) - 1`)
+and `vm_resource_profile_select` (`0x53A0`) performs the load. A probe that pokes
+the pending-profile global and lets the main loop service it would reach SCRIPT5
+directly, at which point the `rec:0x103A` write-watch can finally be armed where
+the guard actually lives.
