@@ -479,3 +479,17 @@ blocked by tooling. This is a legitimate prime-rule state (assembly-derived mode
 oracle-verification pending), not an oracle-derived constant. The port PLAYS the
 whole game correctly; the open item is verification-tooling depth, not a port
 behavior gap.
+
+## DUAL-RUN ROW ACCURACY (fixed, commit c8ebe23)
+
+The verify_port harness had a real bug: the interception answer-promotion ran
+BEFORE row dispatch and fired on any non-box click, so row_menu/row_option
+scenarios spuriously played the interception ("message radio", "heeeere's
+honky") instead of their console-row content. FIXED — the phone-answer is the
+orb/red-button only (a click hitting neither a box NOR a console row); a row
+click engages the row without answering the phone. Results: row_honk matches the
+oracle 2/3 (was 0/3), honk_blood 3/3, row_menu plays the correct state-gated menu
+(Honk's "PLASMA soup HONK-style" — the NOT-Bronko-aboard branch @0776,
+byte-verified against the bytecode). Residual dual-run gaps are start-state
+(oracle savestate's accepted-beat bits vs port fresh-load) — a harness
+shared-start item, not a port fidelity gap.
