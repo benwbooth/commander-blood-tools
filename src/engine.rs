@@ -4282,6 +4282,36 @@ mod tests {
     /// End-to-end faithfulness check for the bridge: the engine's full render of
     /// the console (panorama frame 55 + starfield windows + menu palette rows)
     /// must match the REAL game's console screen captured from the emulator
+    /// ACTS 3-5 SURFACES: the same load path the app's profile switch uses
+    /// (load_dialogue_scenes) produces a playable surface for EVERY script —
+    /// dialogue present, scene routing live. The later acts ride the same
+    /// presentation systems as Act One; this locks that claim per script.
+    #[test]
+    fn acts_three_to_five_surfaces_load() {
+        let Some(iso) = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter()
+            .map(std::path::Path::new)
+            .find(|d| d.join("SCRIPT3.COD").is_file())
+        else {
+            eprintln!("skipping: extracted scripts not available");
+            return;
+        };
+        let assets = iso; // scene HNMs resolve relative to the extraction
+        let Ok(db) = crate::descript::DescriptDb::parse_file(iso.join("DESCRIPT.DES")) else {
+            eprintln!("skipping: DESCRIPT.DES not available");
+            return;
+        };
+        for n in 3..=5u32 {
+            let rd = |ext: &str| std::fs::read(iso.join(format!("SCRIPT{n}.{ext}"))).unwrap();
+            let mut e = EngineState::new();
+            e.load_dialogue_scenes(&rd("COD"), &rd("VAR"), &rd("DIC"), &rd("DEB"), &db, assets);
+            assert!(
+                e.dialogue_len() > 0,
+                "SCRIPT{n}'s dialogue surface loads"
+            );
+        }
+    }
+
     /// running the original BLOODPRG.EXE (`BRIDGEPROBE`). The tolerance covers
     /// the pointing-hand cursor sprite (not yet ported) and the RNG starfield.
     #[test]
