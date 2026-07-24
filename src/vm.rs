@@ -4543,6 +4543,11 @@ impl VmMachine {
                     // ship's 16-slot hold (gs:0x6D3E) tracks the cargo:
                     // insert on boarding (0x5FF6), remove on leaving (0x5FD8).
                     let dest = if op3 == 0x28 { 0xFFFF } else { op3 };
+                    // Kind-correct relink: the moved object's location field
+                    // offset comes from the engine's matrix (field 0x11 per
+                    // its kind word), not a kind-1 assumption.
+                    let kind = self.rec_read(op2);
+                    let loc = field_offset(kind, 0x11).unwrap_or(LOCATION_FIELD);
                     if dest == 0xFFFF {
                         if let Some(slot) = self
                             .ship_slots
@@ -4556,7 +4561,7 @@ impl VmMachine {
                     {
                         *slot = 0;
                     }
-                    self.rec_write(op2.wrapping_add(LOCATION_FIELD), dest);
+                    self.rec_write(op2.wrapping_add(loc), dest);
                     self.events.push(VmEvent::Transfer {
                         object: op2 as usize,
                         to: dest as usize,
