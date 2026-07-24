@@ -278,3 +278,38 @@ NOT changed blind: the port's `walk` is pinned by `walks_real_scripts_to_documen
 count. The correct fix is to identify what `0x5710`/`0x73C2` are scanning and give
 the port a separate scan-mode walker for those call sites only — not to alter the
 execution walker.
+
+## FUNCTION-AUDIT FINDING: the post-update scan iterates MORE objects than the game
+
+The scan at `0x5816` walks the `gs:0x672c` directory and — per the shared walk
+idiom (`0x624B`, `0x604E`) — CONTINUES ONLY WHILE the next entry's `+0x12 == 1`,
+stopping at the first entry whose kind is not 1.
+
+Measured against the shipped DEBs, that terminator matters a lot:
+
+| script | kind==1 prefix | total entries |
+|---|---|---|
+| SCRIPT1 | 122 | 136 |
+| SCRIPT2 | 122 | 341 |
+| SCRIPT3 | 130 | 352 |
+| SCRIPT4 | 136 | 243 |
+| SCRIPT5 | 130 | 243 |
+
+`load_deb_objects` / `ExecutionContext::from_object_offsets` keep EVERY symbol, so
+the port's `post_update_execution_state` loop iterates all 341 SCRIPT2 objects
+where the game visits 122. The extra ~219 are still gated on the active bit
+(`owner+2 & 1`), so they only take effect when active — but the VAR does load
+initial active bits for a large share of objects, so this is not obviously inert.
+
+CHECKED AND CLEARED (a suspicion that turned out wrong): the port SORTS
+`object_offsets` while the game walks the directory in file order, which would
+change scan order. Measuring the kind==1 prefix shows it is ASCENDING in all five
+scripts, so sorted order and directory order agree over the scanned range. The
+sort is also what makes the `0x6034` threshold lookup valid. No divergence there.
+
+FIX SHAPE (not applied — needs an ExecutionContext change): the scan should stop
+at the first non-kind-1 directory entry. `VmMachine` already carries `directory`
+as `(offset, kind)` pairs; `ExecutionContext` carries only offsets, so giving the
+scan the kind-terminated prefix means threading kinds through it. The threshold
+lookup must KEEP the full sorted list — the two uses need different views of the
+same table, which is exactly what the current single `object_offsets` conflates.
