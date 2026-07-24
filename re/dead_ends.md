@@ -623,3 +623,37 @@ Better approach: stop hunting coordinates. Instead determine HOW MANY of entitie
 flag words at `0x6212+((i+0x15)<<5)` from a savestate that has the nav view up),
 and what `0x299:0x133d` selects. That decides whether the port should draw one
 marker or several — and the current 28-point fabricated grid is wrong either way.
+
+## C1 nav-source SET, kind-2 gate — reads the SOURCE-LIST BUFFER, not an object bitset
+
+Tried: finish the C1 ship-3D nav-source SET path (`0x6C04..0x6C71`) after porting
+its source-list builder (`0x624B` -> `VmMachine::build_nav_source_list`).
+
+The path scans the built list; for each entry it branches on the entry object's
+kind:
+- **kind 1** (`0x6C36..0x6C46`): `bx = gs:[0x6736]; test es:[bx+2],2` — a clean
+  record-field test. PORTABLE.
+- **kind 2** (`0x6C2C..0x6C32`): `ax = gs:[0x6736]; call 0x6210; jb write`.
+
+Why the kind-2 gate cannot be ported as written: `0x6210` uses the CALLER's `si`
+as the bitset base (`add si, vm_field_offset(5,2)` then `si += index>>3`). In the
+ONLY call site (verified by scanning every near call to `0x6210` — there is
+exactly one, at `0x6C2F`), the C1 handler has already saved the VM's script `si`
+at `0x6B72` and repurposed `si` as the SOURCE-LIST READ POINTER (`mov si,0x6886`
+@`0x6C19`, advanced by `lodsw`). `field_offset(5,2) = 30`, so the gate reads
+`gs:[~0x68A6 + index/8]` — i.e. bytes INSIDE the `0x6886` source-list buffer,
+about 0x20 past its start, not a field of any object record.
+
+So the kind-2 gate tests whatever the list buffer happens to hold there. This
+reads as an original-game bug (`si` was presumably meant to be a record base such
+as the target `di` or the entry `bx`), or the buffer doubles as scratch that some
+earlier pass fills.
+
+Do NOT wire this gate against a GUESSED base — a wrong bitset base silently
+mis-gates presentations, and guessing is exactly what the prime rule forbids.
+
+Better approach: port the kind-1 branch (clean and portable), and leave the kind-2
+branch gated off until the live buffer contents at `gs:0x68A6` can be observed at
+the moment the C1 SET runs — which needs a state where a kind-0x10 nav target is
+being presented (the same populated-destination-entity state that the nav-marker
+APPROX is waiting on; see the DS:0x4F09 entry above).
