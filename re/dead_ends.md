@@ -624,7 +624,7 @@ flag words at `0x6212+((i+0x15)<<5)` from a savestate that has the nav view up),
 and what `0x299:0x133d` selects. That decides whether the port should draw one
 marker or several — and the current 28-point fabricated grid is wrong either way.
 
-## C1 nav-source SET, kind-2 gate — reads the SOURCE-LIST BUFFER, not an object bitset
+## C1 nav-source SET, kind-2 gate — bitset lives in the SOURCE-LIST BUFFER (CORRECTED)
 
 Tried: finish the C1 ship-3D nav-source SET path (`0x6C04..0x6C71`) after porting
 its source-list builder (`0x624B` -> `VmMachine::build_nav_source_list`).
@@ -657,3 +657,25 @@ branch gated off until the live buffer contents at `gs:0x68A6` can be observed a
 the moment the C1 SET runs — which needs a state where a kind-0x10 nav target is
 being presented (the same populated-destination-entity state that the nav-marker
 APPROX is waiting on; see the DS:0x4F09 entry above).
+
+**CORRECTION (same session) — the "original-game bug" reading above is RETRACTED.**
+An earlier session had already decoded this and modelled it DELIBERATELY:
+`ship3d::select_ship_3d_c1_source_record` treats the `0x6886` buffer as holding
+the `-1`-terminated ENTRY list at the front and the kind-2 BITSET in the bytes
+past it, indexed off the current source cursor. Its test
+`c1_source_selection_uses_current_source_cursor_for_kind2_bitset` writes
+`source_list_bytes[0x20]` / `[0x22]` — exactly the `si + field_offset(5,2) = si+30`
+region computed above. So the layout is INTENTIONAL: one buffer, entries then
+bitset. Nothing here is a bug, and the gate is already faithfully modelled in the
+tracer.
+
+What is actually open is much narrower than "unportable": the live
+`VmMachine::build_nav_source_list` returns only the ENTRY vector, so the live VM
+has no bytes for the trailing bitset region and nothing in the port writes them.
+The kind-1 branch is therefore ported (`VmMachine::c1_set_plan`) while kind-2
+entries are treated as never passing.
+
+Better approach: hand the live path the buffer as BYTES (entries + terminator +
+bitset region) instead of a `Vec<u16>`, reusing the already-validated
+`select_ship_3d_c1_source_record`; then identify what POPULATES those bitset
+bytes — that writer, not the gate, is the remaining unknown.

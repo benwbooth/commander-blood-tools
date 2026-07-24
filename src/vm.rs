@@ -4109,15 +4109,48 @@ impl VmMachine {
     /// frontend ship-3D runtime, absent in the live/dialogue context, so it
     /// falls through here to the simple write — which is exactly SCRIPT5's
     /// concert-FSM C1 sites (`C1 46 13 {..}` -> rec_1340 values).
-    fn c1_set_write_decision(&self, off: u16, _operand: u16) -> Option<bool> {
+    /// Where a `0xC1` mode-0 SET writes, if it writes at all.
+    /// `None` = object table unloaded (caller keeps the legacy no-op);
+    /// `Some(None)` = `vm_branch`; `Some(Some(dest))` = write `{0xC1, operand, 2}`
+    /// at `dest`.
+    ///
+    /// The owner (`0x6034`) must be ACTIVE (`0x6BCE`). Then the destination
+    /// depends on the owner's KIND (`0x6C04 cmp ax,0x10`):
+    /// * kind `0x10` — the NAV path (`0x6C0C..0x6C53`): build the source list
+    ///   (`0x624B`) rooted at the owner and scan it; an entry of kind 1 passes when
+    ///   `es:[operand+2] & 2` (`0x6C3B..0x6C44`). If some entry passes, the write
+    ///   goes to `owner + field_offset(0x13, 0x10)` — NOT to the operand record.
+    /// * anything else — the write goes to the operand record itself (`bp`).
+    ///
+    /// Either way the destination must be EMPTY (`0x6C55..0x6C5B`), else branch.
+    ///
+    /// NOT modelled: the source list's kind-2 entries, whose gate (`0x6210` at
+    /// `0x6C2F`) indexes off the caller's `si` — which at that one call site is the
+    /// SOURCE-LIST READ POINTER, so it tests bytes inside the list buffer rather
+    /// than an object field (see re/dead_ends.md). Those entries are treated as
+    /// never passing rather than wired against a guessed base.
+    fn c1_set_plan(&self, off: u16, operand: u16) -> Option<Option<u16>> {
         let owner = self.owner_object_offset(off)?;
         if self.rec_read(owner.wrapping_add(2)) & 1 == 0 {
-            return Some(false); // owner inactive (`0x6BCE` je)
+            return Some(None); // owner inactive (`0x6BCE` je)
         }
-        if self.rec_read(off) != 0 {
-            return Some(false); // record occupied (`0x6C59` jne)
+        let dest = if self.rec_read(owner) == 0x10 {
+            let passed = self.build_nav_source_list(owner).into_iter().any(|entry| {
+                // kind 1 (`0x6C36`): test bit1 of the operand record's +2.
+                self.rec_read(entry) == 1 && self.rec_read(operand.wrapping_add(2)) & 2 != 0
+            });
+            if !passed {
+                return Some(None);
+            }
+            let fo = vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, 0x10)?;
+            owner.wrapping_add(fo)
+        } else {
+            off
+        };
+        if self.rec_read(dest) != 0 {
+            return Some(None); // destination occupied (`0x6C59` jne)
         }
-        Some(true)
+        Some(Some(dest))
     }
 
     /// Build the ship-3D NAV SOURCE LIST (`ship_3d_navigation_source_list_build`
@@ -4802,13 +4835,13 @@ impl VmMachine {
                         self.branch();
                     }
                 } else {
-                    match self.c1_set_write_decision(off, operand) {
-                        Some(true) => {
-                            self.rec_write(off, 0xC1);
-                            self.rec_write(off + 2, operand);
-                            self.rec_write(off + 4, 2);
+                    match self.c1_set_plan(off, operand) {
+                        Some(Some(dest)) => {
+                            self.rec_write(dest, 0xC1);
+                            self.rec_write(dest.wrapping_add(2), operand);
+                            self.rec_write(dest.wrapping_add(4), 2);
                         }
-                        Some(false) => self.branch(),
+                        Some(None) => self.branch(),
                         None => {}
                     }
                 }
@@ -7750,6 +7783,66 @@ mod tests {
         m.step();
         assert_eq!(m.rec_read_pub(0x84), 0xC4, "no DEB loaded -> unconditional write");
         assert_eq!(m.active_actor, Some(0x84));
+    }
+
+    #[test]
+    fn c1_set_kind10_target_writes_the_selector13_destination() {
+        // 0x6C04..0x6C53: when the resolved OWNER is kind 0x10, the C1 SET does
+        // not write the operand record — it writes {0xC1, operand, 2} at
+        // owner + field_offset(0x13, 0x10), and only if a source-list entry
+        // passes its gate. The kind-1 gate is `es:[operand+2] & 2`.
+        let link = vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C2, 1).expect("kind 1 selector-0x11");
+        let dest_fo =
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, 0x10).expect("kind 0x10 sel-0x13");
+        let owner = 0x0080u16;
+        let operand = 0x0300u16;
+        let child = 0x0100u16;
+        let build = || {
+            let mut m = VmMachine::new();
+            m.object_offsets = vec![owner];
+            m.directory = vec![(child, 1), (0x9000, 0)];
+            m.rec_write_pub(owner, 0x10); // owner kind 0x10 -> the NAV path
+            m.rec_write_pub(owner + 2, 1); // owner active
+            m.rec_write_pub(child, 1); // source entry of kind 1
+            m.rec_write_pub(child + link, owner); // child's selector-0x11 -> owner
+            m
+        };
+        let cod = [0xC1, 0x84, 0x00, 0x00, 0x03, 0xFF]; // C1 off=0x84 operand=0x300
+
+        // Gate PASSES (operand record's +2 bit1 set) -> write at owner+sel13.
+        let mut m = build();
+        m.rec_write_pub(operand + 2, 2);
+        m.load_cod(&cod);
+        m.query = false;
+        m.stack.push(0x99);
+        m.pc = 0;
+        m.step();
+        assert_eq!(m.rec_read_pub(owner + dest_fo), 0xC1, "written at the selector-0x13 slot");
+        assert_eq!(m.rec_read_pub(owner + dest_fo + 2), operand);
+        assert_eq!(m.rec_read_pub(owner + dest_fo + 4), 2);
+        assert_eq!(m.rec_read_pub(0x84), 0, "the operand record itself is NOT written");
+
+        // Gate FAILS (bit1 clear) -> vm_branch, nothing written.
+        let mut m = build();
+        m.load_cod(&cod);
+        m.query = false;
+        m.stack.push(0x99);
+        m.pc = 0;
+        m.step();
+        assert_eq!(m.pc, 0x99, "no source entry passes -> branch");
+        assert_eq!(m.rec_read_pub(owner + dest_fo), 0);
+
+        // Destination already occupied -> branch (0x6C59).
+        let mut m = build();
+        m.rec_write_pub(operand + 2, 2);
+        m.rec_write_pub(owner + dest_fo, 0xBEEF);
+        m.load_cod(&cod);
+        m.query = false;
+        m.stack.push(0x99);
+        m.pc = 0;
+        m.step();
+        assert_eq!(m.pc, 0x99, "occupied destination -> branch");
+        assert_eq!(m.rec_read_pub(owner + dest_fo), 0xBEEF);
     }
 
     #[test]
