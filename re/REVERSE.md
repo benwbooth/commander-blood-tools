@@ -5561,6 +5561,16 @@ gate (the frontier map's arrow 4 was the cheat route). THE REAL STRUCTURE:
   0xFFFF when the ship side is involved; es:[field11+obj] = cx) — the port's
   marker-only model needs the location write added (ledgered with the container
   graph).
+THE MANIFEST IS THE MIDDLE GAME (mapped): C1 = the quest-stage counter 1..6
+(Morning_Oil's rescue @7177 -> ... -> the Croolis-prisoner/perfume chain with
+Scruter_Mac @7B3C = stage 6); rec_0AF0|=2 = the Izwal MEMBERS-GUILD/KORTEX
+invitation (@5734); the C1==6 continuation guards location 2534 (the spine
+deepens: 3488 -> 3380 -> 3074 -> 2534 -> ...). Completing SCRIPT2 = playing
+this quest line; the customs handoff then fires on the full manifest. NEXT: a
+port-side PLAYTHROUGH HARNESS (frames + beats + auto-answered menus +
+instructed location writes) that drives SCRIPT2 start-to-customs and asserts
+the RUN PROFILE handoff — the story integration test, then the same drive in
+the oracle for the dual-run.
 NEXT TASKS (frontier):
 - [ ] vm::walk coverage — DIAGNOSED PRECISELY: SCRIPT2.bas ends at 0x2F83 of a
       0x9882-byte COD (31% coverage; tail 84% nonzero real content; the very next
