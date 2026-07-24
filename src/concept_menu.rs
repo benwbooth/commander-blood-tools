@@ -30,21 +30,7 @@ pub struct ConceptMenu {
 
 /// Parse a `SCRIPTn.DIC` into {byte offset -> word}. Words are NUL-terminated.
 fn parse_dic(dic: &[u8]) -> HashMap<u16, String> {
-    let mut words = HashMap::new();
-    let mut pos = 0usize;
-    while pos < dic.len() {
-        let start = pos;
-        while pos < dic.len() && dic[pos] != 0 {
-            pos += 1;
-        }
-        if pos > start {
-            // CP437, not UTF-8 — see font::cp437_string. SCRIPT3.DIC's `glycérium`
-            // is a DISPLAYED word whose 0x82 is an invalid UTF-8 lead byte.
-            words.insert(start as u16, crate::font::cp437_string(&dic[start..pos]));
-        }
-        pos += 1;
-    }
-    words
+    crate::script::parse_dictionary(dic)
 }
 
 /// A dictionary word is a valid CONCEPT label if it is a single token (no spaces

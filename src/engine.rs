@@ -54,23 +54,10 @@ use std::path::Path;
 /// Parse a `SCRIPTn.DIC` dictionary: NUL-terminated words keyed by their byte
 /// offset (a Text token's `word_offsets` index into this).
 fn parse_dictionary(dic: &[u8]) -> HashMap<u16, String> {
-    let mut words = HashMap::new();
-    let mut pos = 0usize;
-    while pos < dic.len() {
-        let start = pos;
-        while pos < dic.len() && dic[pos] != 0 {
-            pos += 1;
-        }
-        if pos > start {
-            // CP437, not UTF-8: SCRIPT3.DIC contains `glyc\x82rium` = "glycérium",
-            // and 0x82 is an invalid UTF-8 lead byte, so from_utf8_lossy turned a
-            // DISPLAYED word into "glyc\u{fffd}rium". The game's own font maps 0x82
-            // to glyph 0x44 (DS:0x7802), so it genuinely draws the accent.
-            words.insert(start as u16, crate::font::cp437_string(&dic[start..pos]));
-        }
-        pos += 1;
-    }
-    words
+    // Single implementation in script.rs. This used to be one of FOUR byte-identical
+    // copies, which is precisely how the CP437 decode bug came to be fixed in one
+    // place and left wrong in the other three.
+    crate::script::parse_dictionary(dic)
 }
 
 /// Public wrapper: DEB symbol names for ALL kinds (objects, sequences, …) keyed

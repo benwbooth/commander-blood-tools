@@ -121,20 +121,7 @@ impl SequentialResponses {
 
 /// Parse a `SCRIPTn.DIC` into {offset -> word}.
 fn parse_dic_words(dic: &[u8]) -> std::collections::HashMap<u16, String> {
-    let mut w = std::collections::HashMap::new();
-    let mut p = 0usize;
-    while p < dic.len() {
-        let s = p;
-        while p < dic.len() && dic[p] != 0 {
-            p += 1;
-        }
-        if p > s {
-            // CP437, not UTF-8 — see font::cp437_string.
-            w.insert(s as u16, crate::font::cp437_string(&dic[s..p]));
-        }
-        p += 1;
-    }
-    w
+    crate::script::parse_dictionary(dic)
 }
 
 fn is_single_token(w: &str) -> bool {

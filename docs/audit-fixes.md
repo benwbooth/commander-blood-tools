@@ -615,3 +615,28 @@ Method note worth keeping: the productive move was not decoding anything new. It
 taking a defect found in one place and grepping for every other consumer of the same
 data shape. Three of the six were wrong; the correct handling had existed in the same
 codebase the whole time.
+
+## FIXED #47 — consolidated four byte-identical dictionary parsers into one
+
+`parse_dictionary` existed in FOUR copies (`engine.rs`, `script.rs`,
+`concept_menu.rs::parse_dic`, `bas_vm.rs::parse_dic_words`), all behaviourally
+identical. That duplication is not incidental — it is the mechanism by which the CP437
+defect (#43/#44) came to be fixed in one place and left wrong in three, and the same
+shape produced the `0xA6` word-list divergence (#46).
+
+The three copies now delegate to `script::parse_dictionary`, which is documented as
+the single implementation.
+
+### Two checks in the same sweep that CLEARED the code
+
+Recording these because a sweep that only reports defects gives a false picture of
+where the risk is:
+
+- **DEB record parsers** (7 sites, `chunks_exact(20)`): all filter `kind` correctly for
+  their purpose (`==1`, `1||5`, or an explicit match). The divergence that looked
+  suspicious — some guard against empty names, some do not — cannot bite: empty names
+  occur ONLY on `kind==0` header records (5, one per script), which every kind-filtered
+  parser excludes, and both parsers that see all kinds do guard.
+- **`start as u16` truncation** in the dictionary key: safe by the format, not by luck.
+  Word offsets are `u16` in the COD, so a DIC cannot exceed 64 KiB; the largest shipped
+  file is 24772 bytes.

@@ -110,6 +110,16 @@ pub fn parse_deb(data: &[u8]) -> Vec<DebSymbol> {
         .collect()
 }
 
+/// Parse a `SCRIPTn.DIC` into `{byte offset -> word}`. Words are NUL-separated and
+/// the offset is the key an `0xA6` record's word list refers to.
+///
+/// THE single implementation — `engine`, `concept_menu` and `bas_vm` all delegate
+/// here. There used to be four byte-identical copies, and that duplication is exactly
+/// how the CP437 decode defect got fixed in one and left wrong in three.
+///
+/// The `as u16` key is safe by the format: word offsets are stored as `u16` in the
+/// COD, which bounds a DIC to 64 KiB. Largest shipped file is SCRIPT2.DIC at 24772
+/// bytes.
 pub fn parse_dictionary(data: &[u8]) -> HashMap<u16, String> {
     let mut words = HashMap::new();
     let mut pos = 0usize;
