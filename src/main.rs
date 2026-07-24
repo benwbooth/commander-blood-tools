@@ -497,6 +497,11 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     // table at load (named variables are PER-SCRIPT: SCRIPT2's vbio is 0x126C,
     // SCRIPT3's is 0x13EE — a hardcoded offset silently misses across acts).
     let vbio_offset: std::cell::Cell<Option<u16>> = std::cell::Cell::new(None);
+    // The examination-completion variables (the scrutinizer overlay's manifest):
+    // 'secret' is set when the player completes an alien examination — the
+    // engine's overlay writes it; the port models the OUTCOME as a frontend
+    // hook (the vbio pattern), resolved per-script from the DEB.
+    let secret_offset: std::cell::Cell<Option<u16>> = std::cell::Cell::new(None);
     let script_vm: std::cell::RefCell<Option<commander_blood_tools::vm::VmMachine>> =
         std::cell::RefCell::new(None);
     // SCRIPT1 tutorial auto-chain (ORACLE-observed: the real tutorial plays Izwalito's
@@ -570,10 +575,17 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
         let r = |ext: &str| std::fs::read(format!("{iso}/SCRIPT{n}.{ext}"));
         if let (Ok(c), Ok(v), Ok(d), Ok(b)) = (r("COD"), r("VAR"), r("DIC"), r("DEB")) {
             // Resolve this script's vbio from its OWN DEB symbol table.
+            let names = commander_blood_tools::engine::deb_actor_name_map(&b);
             vbio_offset.set(
-                commander_blood_tools::engine::deb_actor_name_map(&b)
+                names
                     .iter()
                     .find(|(_, name)| name.eq_ignore_ascii_case("vbio"))
+                    .map(|(&off, _)| off),
+            );
+            secret_offset.set(
+                names
+                    .iter()
+                    .find(|(_, name)| name.eq_ignore_ascii_case("secret"))
                     .map(|(&off, _)| off),
             );
             // load_dialogue_scenes sets up the scene + the D2 chaining decision.
@@ -1860,9 +1872,20 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 // 'c' (keycode 54): toggle the alien-examination screen (plays the
                 // scrutinizer intro on entry).
                 Event::KeyPress(k) if k.detail == 54 => {
+                    let was = engine.alien_view_active;
                     engine.alien_view_active = !engine.alien_view_active;
                     if engine.alien_view_active {
                         engine.arm_alien_intro();
+                    } else if was {
+                        // Examination completed (view closed): the engine's
+                        // overlay sets 'secret' (the scrutinizer manifest) — the
+                        // port writes the OUTCOME through the loaded script's DEB
+                        // (faithful, per-script; the endgame gate reads it).
+                        if let (Some(off), Some(m)) =
+                            (secret_offset.get(), script_vm.borrow_mut().as_mut())
+                        {
+                            m.rec_write_pub(off, 1);
+                        }
                     }
                 }
                 // 't' (keycode 28): toggle the comms/TV screen.
