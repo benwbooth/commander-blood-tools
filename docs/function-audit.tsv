@@ -711,7 +711,7 @@ state_and_u16	src/vm.rs	1387	fn		UNVERIFIED
 pending_script_profile_dispatch_ready	src/vm.rs	1392	fn		UNVERIFIED	
 state_c_string_equals	src/vm.rs	1401	fn		UNVERIFIED	
 text_line_should_display	src/vm.rs	1413	fn		UNVERIFIED	
-text_presentation_record_is_active	src/vm.rs	1418	fn		UNVERIFIED	
+text_presentation_record_is_active	src/vm.rs	1418	fn		ASM	|| AUDIT 2026-07-24: A6 gate 0x6664..0x667C: the handler builds matrix index (0x13<<4)+1 -> TALK_FIELD 0x3A, reads es:[bx+di] with di = table base + line_index, and requires it to equal 0xC4 -- exactly state[line_index+TALK_FIELD] == OP_ACTOR
 text_runtime_gates_allow	src/vm.rs	1422	fn		UNVERIFIED	
 TextTokenRuntimeFlags	src/vm.rs	1435	struct		UNVERIFIED	
 flags_b5	src/vm.rs	1440	fn		UNVERIFIED	
@@ -720,11 +720,11 @@ mark_text_line_shown	src/vm.rs	1455	fn		UNVERIFIED
 SpecialObjectSlots	src/vm.rs	1465	struct		UNVERIFIED	
 remove	src/vm.rs	1470	fn		UNVERIFIED	
 insert	src/vm.rs	1479	fn		UNVERIFIED	
-actor_object_offset_from_record	src/vm.rs	1492	fn		UNVERIFIED	
+actor_object_offset_from_record	src/vm.rs	1492	fn		ASM	|| AUDIT 2026-07-24: exact inverse of text_presentation_record_offset: record = object + TALK_FIELD(0x3A), so object = record - 0x3A
 record_owner_object_offset	src/vm.rs	1496	fn		UNVERIFIED	
 apply_assign5_mode0	src/vm.rs	1500	fn		UNVERIFIED	
-record_owner_is_active	src/vm.rs	1527	fn		UNVERIFIED	
-actor_record_is_active	src/vm.rs	1536	fn		UNVERIFIED	
+record_owner_is_active	src/vm.rs	1527	fn		ASM	|| AUDIT 2026-07-24: the C4/C2 owner gate `test es:[di+2],1` (0x6CA4 / 0x6CC3 / 0x6E56) after the 0x6034 threshold lookup resolves the owning object -- bit0 of the owner record +2
+actor_record_is_active	src/vm.rs	1536	fn		ASM	|| AUDIT 2026-07-24: derives the object from a talk-field record by subtracting TALK_FIELD and tests the same +2 bit0 active flag
 actor_record_condition	src/vm.rs	1542	fn		UNVERIFIED	
 write_actor_record	src/vm.rs	1560	fn		UNVERIFIED	
 PresentationKind1Update	src/vm.rs	1567	enum		UNVERIFIED	
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	                      
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	                       
