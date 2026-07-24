@@ -1504,7 +1504,10 @@ pub fn build_ship_3d_projection_matrix(
                 .wrapping_mul(b_cos)
                 .wrapping_add(b_sin_c_sin.wrapping_mul(a_sin))
                 >> SHIP_3D_MATRIX_FIXED_SHIFT,
-            fixed_mul_shift_15(c_cos, a_sin).wrapping_neg(),
+            // NEG BEFORE the >>15 (0x2FB1 `neg eax; sar eax,0xf`): (-P)>>15, not
+            // -(P>>15). Arithmetic shift floors toward -inf, so the two differ by 1
+            // when P isn't a multiple of 32768.
+            c_cos.wrapping_mul(a_sin).wrapping_neg() >> SHIP_3D_MATRIX_FIXED_SHIFT,
             c_sin_b_cos
                 .wrapping_mul(a_sin)
                 .wrapping_sub(a_cos.wrapping_mul(b_sin))
