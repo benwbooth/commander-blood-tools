@@ -48,8 +48,9 @@ impl VmDrive {
         VmDrive { m, texts, words, symbols }
     }
 
-    /// One frontend frame: VM frame + the idle beat + idle promotion. Returns
-    /// the decoded lines the frame played.
+    /// One passive frame: VM frame + the idle beat. No promotion — queued
+    /// calls RING until an interaction takes them (the scenario's clicks
+    /// decide, as at the oracle's hub).
     pub fn frame(&mut self) -> Vec<String> {
         let mut lines = Vec::new();
         for ev in self.m.run_frame() {
@@ -61,6 +62,15 @@ impl VmDrive {
         }
         if !self.m.presentation_busy {
             self.m.tick_state_countdowns();
+        }
+        lines
+    }
+
+    /// The active idle frame: passive + take whatever is queued (the
+    /// playthrough drives' policy).
+    pub fn frame_idle(&mut self) -> Vec<String> {
+        let lines = self.frame();
+        if !self.m.presentation_busy {
             let _ = self.m.promote_queued_presentation();
         }
         lines

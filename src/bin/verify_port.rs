@@ -127,9 +127,13 @@ fn main() {
                 for _ in 0..frames {
                     step_engine(&mut e, mx, my, 0);
                 }
-                // The VM rides the waits through the shared drive layer.
+                // The VM rides the waits through the shared drive layer —
+                // several VM frames per scenario wait (the oracle's settle
+                // spans many engine ticks per step).
                 if let Some(d) = drive.as_mut() {
-                    transcript.extend(d.frame());
+                    for _ in 0..4 {
+                        transcript.extend(d.frame());
+                    }
                 }
             }
             _ => {}
