@@ -1941,9 +1941,10 @@ fn post_update_deferred_record_write(
         return None;
     }
 
-    let write_offset = if record_type == OP_RECORD_STATE_MIN as u16
-        || record_type == OP_RECORD_ENTRY_MIN as u16 + 1
-    {
+    // The handler compares the deferred type against 0xC1 and 0xC6 literally
+    // (0x5A0B `cmp cx,0xc1` / 0x5A11 `cmp cx,0xc6`). Spelling the second as
+    // `OP_RECORD_ENTRY_MIN + 1` obscured which opcode it means.
+    let write_offset = if record_type == OP_RECORD_STATE_MIN as u16 || record_type == 0xC6 {
         let arche_offset = context.named_object_offsets.arche?;
         let field_offset = vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, 0x10)?;
         let write_offset = arche_offset.wrapping_add(field_offset);
