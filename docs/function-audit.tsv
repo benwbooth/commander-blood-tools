@@ -679,8 +679,8 @@ ScriptProfileExecution	src/vm.rs	1080	struct		UNVERIFIED
 ExecutedTrace	src/vm.rs	1085	struct		UNVERIFIED	
 Ship3dC1RuntimeContext	src/vm.rs	1091	struct		UNVERIFIED	
 Ship3dC1PositionRuntime	src/vm.rs	1099	struct		UNVERIFIED	
-VmNamedObjectOffsets	src/vm.rs	1107	struct		UNVERIFIED	
-set	src/vm.rs	1119	fn		UNVERIFIED	
+VmNamedObjectOffsets	src/vm.rs	1107	struct		ASM	|| AUDIT 2026-07-24: startup scan 0x5486 decoded end to end; the eight ported names map to gs:0x674E/0x6750/0x6754/0x6756/0x6752/0x6758/0x6760/0x679C and cryobox is correctly omitted (the scan skips it)
+set	src/vm.rs	1119	fn		ASM	|| AUDIT 2026-07-24: startup scan 0x5486 decoded end to end; the eight ported names map to gs:0x674E/0x6750/0x6754/0x6756/0x6752/0x6758/0x6760/0x679C and cryobox is correctly omitted (the scan skips it)
 ExecutionContext	src/vm.rs	1175	struct		UNVERIFIED	
 from_object_offsets	src/vm.rs	1189	fn		UNVERIFIED	
 with_global_word_0aa6	src/vm.rs	1202	fn		UNVERIFIED	
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	                     
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	                      
