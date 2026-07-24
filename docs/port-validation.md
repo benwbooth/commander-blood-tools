@@ -146,8 +146,13 @@ port's frame loop (script2_interception_plays_through_the_frame_loop: SCRIPT2
 from load, frames + beats + serial queue promotion, SCRUT agent K's radio
 warning emits @2DF5 after the TV-commercial presentation drains) — with the
 0xAB POKE corrected to the COD self-modify the engine performs (0x684C).
-NEXT: the oracle-side drive of the same beats (what ends the ambient hub
-record) for the interception dual-run; then scan -> exam-table (scr).
+OP_CD (transfer/teleport) implemented as typed-record
+query + marker + event (687fc00); the container-graph relink (field 0x11 +
+special-slot list) is APPROX — the full inventory model is the replacing decode.
+The customs SCRIPT2->SCRIPT3 handoff is a late-game loop-back (needs SCRIPT4's
+rec_0332); the FIRST planet entry remains the scan gate (scr>5 via Honk's
+script-select). NEXT: the scan drive (wake Scruter_Jo -> quiz -> examinations
+writing the exam table) in both implementations; the interception dual-run.
 
 ## CAMPAIGN LOG
 - PASS 7 (story_deep, 27 steps — the longest chain): deep-topic answers play from the
