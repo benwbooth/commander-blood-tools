@@ -11,7 +11,7 @@ displays** and wins. So a subset of the 40 are FALSE POSITIVES — the port is a
 correct and the raw-assembly reading is the one that's off. Each geometry finding must
 be oracle-re-verified before it is "fixed"; changing it blind regresses a pixel match.
 
-## Fixed + committed (24) — assembly-cited, regression-tested, oracle-verified where visual
+## Fixed + committed (25) — assembly-cited, regression-tested, oracle-verified where visual
 
 | area | fix | severity |
 |---|---|---|
@@ -39,6 +39,7 @@ be oracle-re-verified before it is "fixed"; changing it blind regresses a pixel 
 | vm-records | `0xC4` mode-0 (SET) write guard (`0x6CC3..0x6D01`): both operand objects active + kind/already-set checks, else branch (was unconditional write) | HIGH |
 | vm-records | `0xC4` mode-0 already-set/idempotence check (`cx==0xC4` + op2 selector-0x13 field) — same guard | MED |
 | audio | chatter burble roll uses the game's PRNG (`BloodPrng` @`0x1CE:0x0B02`) + re-draw-until-different (`0xB8AB..0xB8B7`), replacing a fabricated glibc LCG + increment-on-collision | LOW |
+| vm-dispatch | **live** `step()` now executes `0xC1` (`0x6B4C`): QUERY (resolved selector path + direct compare) + non-ship3d SET (`{0xC1, operand, 2}`); was an unhandled no-op | HIGH |
 
 ## Verified FALSE POSITIVE for the PORT — finding correct for the assembly, wrong for the port's model (4)
 
@@ -85,18 +86,20 @@ reading them in the C4 SET guard faithful to the game's write/branch decision (t
 divergence is the C1-clear case, a separate subsystem the live VM does not run). The C4
 mode-0 write guard is now IMPLEMENTED on this basis (see the Fixed table).
 
-## Remaining (12) — each to be oracle-re-verified or carefully implemented
+## Remaining (11) — each to be oracle-re-verified or carefully implemented
 
 - **Geometry, needs oracle re-check** (likely more false positives like the tall-mode):
   choice-box x-band / min-width floor (need label widths plumbed into the hit-test),
   palette 128–191 bank (the fix hint of "restore baked bytes" is WRONG — it would make the HUB muddy and break its capture; the cyan IS correct for the hub. The real fix is per-screen palette loading via the 0x5251<->0x5b58 working-buffer flow — infrastructure).
 - **Infrastructure-gated VM guards** — the active-bit lifecycle is now DECODED (see
   above; runtime never sets a VAR-inactive object). RESOLVED on that basis: C4 mode-0
-  write guards and the C4 mode-0 already-set check (both now in the implemented
-  `0x6CC3..0x6D01` decision). STILL OPEN: `0xC1` line-record state — this is the whole C1
-  world/ship-presentation ladder (`0x5B38`, `record_type_ladder`), unhandled in the live
-  VM; it is the same subsystem that owns the sole runtime active-bit writer (`0x5B8D`).
-  Porting it is a self-contained next task, not an infrastructure blocker.
+  write guards, the C4 mode-0 already-set check (both in the `0x6CC3..0x6D01` decision),
+  and **`0xC1` line-record state — the live opcode is now handled** (`step()` executes the
+  QUERY resolved+direct paths and the non-ship3d mode-0 SET, `0x6B4C`). What remains of the
+  C1 story is only the ship-3D nav-source SET path (`write_c1_record_state_ship3d`) and the
+  frontend world-click that creates C1 records (`0xB272`) — both fold into the
+  nav-destination/ship-3D rewrite below, which needs the frontend ship-3D runtime, not the
+  VM opcode.
 - **Subtle / low visible impact / risk:** `0xA8` fin-flag + presentation-request side
   effects — DECODED (`0x67C8`): after the string copy the handler sets `gs:[0x67BD]=1`
   when the operand starts with `"fin."`, then (if `!(0x67AA&2)` and ship-active

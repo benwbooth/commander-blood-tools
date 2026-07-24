@@ -4007,6 +4007,63 @@ impl VmMachine {
         Some(true)
     }
 
+    /// The `0xC1` mode-1 (QUERY) decision — `0x6B4C`'s query path. `Some(true)` =
+    /// pass (no branch), `Some(false)` = branch, `None` = object table unloaded
+    /// (caller keeps the legacy no-op). Mirrors the tracer's already-validated
+    /// `record_state_mode1_condition`/`c1_record_state_resolved_mode1_condition`
+    /// but over the live state table.
+    fn c1_query_passes(&self, off: u16, operand: u16, inverted: bool) -> Option<bool> {
+        if self.object_offsets.is_empty() {
+            return None;
+        }
+        let record_type = self.rec_read(off);
+        // Resolved selector path for operand 1/2 (`0x6B8B..0x6BAC`): follow the
+        // owner's parent-link (selector-0x11) to a target, then compare the
+        // target's C1-destination (selector-0x13) slot to {0xC1, operand}.
+        if record_type != 0xC1 && (operand == 1 || operand == 2) {
+            if let Some(owner) = self.owner_object_offset(off) {
+                if let Some(parent_field) =
+                    vm_field_offset(ship3d::SHIP_3D_FIELD_SELECTOR_PARENT_LINK, operand)
+                {
+                    let target = self.rec_read(owner.wrapping_add(parent_field));
+                    let target_kind = self.rec_read(target);
+                    match vm_field_offset(ship3d::SHIP_3D_C1_DESTINATION_SELECTOR, target_kind) {
+                        Some(dest_field) if dest_field != 0 => {
+                            let slot = target.wrapping_add(dest_field);
+                            let matched = self.rec_read(slot) == 0xC1
+                                && self.rec_read(slot.wrapping_add(2)) == operand;
+                            return Some(matched != inverted);
+                        }
+                        // dest field absent/zero (`0x6BA4`): the mismatch path.
+                        _ => return Some(inverted),
+                    }
+                }
+            }
+        }
+        // Direct compare (`0x6BAC..0x6BBA`): {record==0xC1, stored==operand}.
+        // An empty record (type 0) simply fails the `cmp cx,0xC1`.
+        let matched = record_type == 0xC1 && self.rec_read(off.wrapping_add(2)) == operand;
+        Some(matched != inverted)
+    }
+
+    /// The `0xC1` mode-0 (SET) decision — the non-ship-3D path of `0x6B4C` /
+    /// tracer `write_c1_record_state_mode0`. `Some(true)` = write `{0xC1,
+    /// operand, 2}`, `Some(false)` = branch, `None` = object table unloaded.
+    /// The ship-3D nav-source path (`write_c1_record_state_ship3d`) needs the
+    /// frontend ship-3D runtime, absent in the live/dialogue context, so it
+    /// falls through here to the simple write — which is exactly SCRIPT5's
+    /// concert-FSM C1 sites (`C1 46 13 {..}` -> rec_1340 values).
+    fn c1_set_write_decision(&self, off: u16, _operand: u16) -> Option<bool> {
+        let owner = self.owner_object_offset(off)?;
+        if self.rec_read(owner.wrapping_add(2)) & 1 == 0 {
+            return Some(false); // owner inactive (`0x6BCE` je)
+        }
+        if self.rec_read(off) != 0 {
+            return Some(false); // record occupied (`0x6C59` jne)
+        }
+        Some(true)
+    }
+
     /// Insert an owner into the 16-slot special list (gs:0x6D3E, insert 0x5FF6).
     /// Returns false only if the list is full and the owner is not already present.
     fn special_slot_insert(&mut self, owner: u16) -> bool {
@@ -4576,6 +4633,38 @@ impl VmMachine {
             // matching related word (0xA1 prefix inverts). SET: unless the slot
             // already holds an ACTIVE C4 presentation, write the typed queue
             // record {0xC3, related, 1} — the pending-presentation request.
+            // 0xC1 RECORD-STATE (0x6B4C). Was an unhandled no-op live (the
+            // catch-all only consumed operands). QUERY: the resolved selector
+            // path for operand 1/2, else the direct {0xC1, operand} compare;
+            // branch on fail. SET: owner-active + empty record -> write
+            // {0xC1, operand, 2}. The ship-3D nav-source SET path needs the
+            // frontend runtime (absent in the dialogue context), so the simple
+            // write applies — covering SCRIPT5's concert-FSM C1 sites. None
+            // (object table unloaded) keeps the legacy no-op for opcode tests.
+            0xC1 => {
+                let mut flipped = false;
+                if self.u8_at(self.pc) == 0xA1 {
+                    self.pc += 1;
+                    flipped = true;
+                }
+                let off = self.lodsw();
+                let operand = self.lodsw();
+                if self.query {
+                    if self.c1_query_passes(off, operand, flipped) == Some(false) {
+                        self.branch();
+                    }
+                } else {
+                    match self.c1_set_write_decision(off, operand) {
+                        Some(true) => {
+                            self.rec_write(off, 0xC1);
+                            self.rec_write(off + 2, operand);
+                            self.rec_write(off + 4, 2);
+                        }
+                        Some(false) => self.branch(),
+                        None => {}
+                    }
+                }
+            }
             0xC3 => {
                 let mut flipped = false;
                 if self.u8_at(self.pc) == 0xA1 {
@@ -7363,6 +7452,86 @@ mod tests {
         m.step();
         assert_eq!(m.rec_read_pub(0x84), 0xC4, "no DEB loaded -> unconditional write");
         assert_eq!(m.active_actor, Some(0x84));
+    }
+
+    #[test]
+    fn live_step_c1_record_state_was_a_no_op() {
+        // 0xC1 (0x6B4C) — the non-ship3d path. Object @0x80 active; a C1
+        // op1=0x84 (owner 0x80) operand=0x30 (not 1/2, so the direct compare /
+        // simple write applies — the resolved selector path needs operand 1/2).
+        fn armed() -> VmMachine {
+            let mut m = VmMachine::new();
+            m.object_offsets = vec![0x10, 0x80];
+            m.rec_write_pub(0x80, 2); // obj@0x80 kind 2
+            m.rec_write_pub(0x82, 1); // obj@0x80 active
+            m
+        }
+        let cod = [0xC1, 0x84, 0x00, 0x30, 0x00, 0xFF];
+
+        // (1) SET: owner active + empty record -> write {0xC1, operand, 2}.
+        let mut m = armed();
+        m.load_cod(&cod);
+        m.query = false;
+        m.stack.push(0x99);
+        m.pc = 0;
+        m.step();
+        assert_eq!(m.rec_read_pub(0x84), 0xC1, "C1 state record written (was a no-op)");
+        assert_eq!(m.rec_read_pub(0x86), 0x30, "operand stored at +2");
+        assert_eq!(m.rec_read_pub(0x88), 2, "+4 = 2");
+        assert_eq!(m.pc, 5, "no branch on a successful write");
+
+        // (2) SET: owner inactive -> vm_branch, no write (0x6BCE).
+        let mut m = armed();
+        m.rec_write_pub(0x82, 0);
+        m.load_cod(&cod);
+        m.query = false;
+        m.stack.push(0x99);
+        m.pc = 0;
+        m.step();
+        assert_eq!(m.pc, 0x99, "owner inactive -> branch");
+        assert_ne!(m.rec_read_pub(0x84), 0xC1, "no write on branch");
+
+        // (3) SET: record already occupied -> vm_branch (0x6C59).
+        let mut m = armed();
+        m.rec_write_pub(0x84, 0x00C6); // non-zero record
+        m.load_cod(&cod);
+        m.query = false;
+        m.stack.push(0x99);
+        m.pc = 0;
+        m.step();
+        assert_eq!(m.pc, 0x99, "occupied record -> branch");
+        assert_eq!(m.rec_read_pub(0x84), 0x00C6, "occupied record left intact");
+
+        // (4) QUERY: matching {0xC1, operand} -> pass (no branch).
+        let mut m = armed();
+        m.rec_write_pub(0x84, 0xC1);
+        m.rec_write_pub(0x86, 0x30);
+        m.load_cod(&cod);
+        m.query = true;
+        m.stack.push(0x99);
+        m.pc = 0;
+        m.step();
+        assert_eq!(m.pc, 5, "matching C1 query -> fall through");
+        assert_eq!(m.stack.len(), 1, "no branch on a match");
+
+        // (5) QUERY: empty record, non-inverted -> vm_branch (cmp cx,0xC1 fails).
+        let mut m = armed();
+        m.load_cod(&cod);
+        m.query = true;
+        m.stack.push(0x99);
+        m.pc = 0;
+        m.step();
+        assert_eq!(m.pc, 0x99, "empty record query -> branch");
+
+        // (6) object table unloaded -> legacy no-op (neither write nor branch).
+        let mut m = VmMachine::new();
+        m.load_cod(&cod);
+        m.query = false;
+        m.stack.push(0x99);
+        m.pc = 0;
+        m.step();
+        assert_eq!(m.rec_read_pub(0x84), 0, "no DEB loaded -> C1 stays a no-op");
+        assert_eq!(m.pc, 5, "no branch when the object table is unloaded");
     }
 
     #[test]
