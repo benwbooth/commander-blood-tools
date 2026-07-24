@@ -4154,9 +4154,21 @@ each frame by `ship_3d_object_sprite_project` @0x9B98 from the ENTITY TABLE:
 - Gate: `test [si],0x80` — only ACTIVE entities (bit 0x80 set) become anchors;
   inactive → skipped (no destination). At the console ALL of 0x15..0x1F are
   zero/inactive (dumped live), which is why the nav viewscreen is empty/static.
-- Position: the entity's world coords (di=0x4F01 scratch, minus camera 0x2F65/
-  67/69) run through the projection matrix at 0x2F95 → screen x = dot>>7 /depth
-  +0xA0(160), screen y = +0x64(100) (project_x/y_center).
+- Position: **CORRECTED 2026-07-24 — these are NOT the entity's world coords.**
+  The 8 bytes copied into the 0x4F01 scratch at 0x9BC2..0x9BCC come from `[bx]`,
+  and bx walks the STATIC table at DS:0x4F09 (`mov bx,0x4f09` @0x9BA5, `add bx,6`
+  @0x9CF5). The entity pointer si is not even computed until 0x9BD1, AFTER the
+  copy — so it cannot be the source. The entity contributes only three things:
+  the active-bit GATE (`test [si],0x80`), the sprite far-pointer at [si+4], and
+  the extents at [si+0xC]/[si+0xE].
+  The scratch copy is then camera-relative (minus 0x2F65/67/69) and run through
+  the projection matrix at 0x2F95 → screen x = dot>>7 /depth +0xA0(160),
+  screen y = +0x64(100).
+  CONSEQUENCE: DS:0x4F09 holds TEN records (not 11) and every one is the SAME
+  point (10200,12100,900), verified byte-for-byte in the image and in live memory,
+  and a validated write watch (runtime_boot NAVWRITE, with a positive control)
+  records ZERO writes to it. So active destinations COINCIDE on screen; there is
+  no per-destination position to grant.
 - So NAV DESTINATIONS = the active entities 0x15..0x1F, positioned by their
   entity-record world coords. They ACTIVATE via story progression (the entity
   flag state machine — the `[0x6212]` +0x00 bit0/1/7 transitions in

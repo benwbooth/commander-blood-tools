@@ -916,3 +916,34 @@ kind-10 width floor and height seed — and it sits in the UI string table besid
 Now pinned by `option_box_label_is_the_games_own_string`, which reads the NUL-terminated
 string out of the shipped image and also asserts `file_offset - 0xD420 == ds_offset`, so
 the two recorded addresses cannot drift apart.
+
+## PROVENANCE — `SQUARE_CAPS_GLYPHS` is 25 glyphs HARVESTED FROM CAPTURES
+
+The largest remaining prime-rule violation in the port. `font.rs` states it plainly:
+"The glyph bitmaps are HARVESTED from live-game index captures". Twenty-five letters
+of a font, sourced from screenshots rather than from the binary — and letters that were
+never harvested silently fall back to a DIFFERENT face (`game_font_glyph`), so the
+rendered text is a blend of two typefaces.
+
+The RE position is known and is NOT that the data is unfindable: `re/REVERSE.md`
+records that the box/list text is a PRE-BUILT RLE overlay at `gs:0x175`, unpacked by
+the panorama unpacker (writer `043b:01da` reading `ds:si=0e84:0175`), and that the
+generator builds the whole box — border, fill and glyphs — into that stream ONCE at
+box-open time. That is why a per-frame watch for `0xE8` writes misses it.
+
+NEXT STEP (recorded concretely so it is actionable): arm a write watch on the
+`gs:0x175` stream region BEFORE the box-open click, not after — the same
+positive-control discipline the NAVWRITE probe used. The generator output is the real
+glyph source; harvested cells should be replaced by whatever it emits, and the
+two-typeface fallback removed.
+
+Until then this row stands as an ACKNOWLEDGED APPROX with a located routine, which is
+what the prime rule requires of a stand-in — not as "verified".
+
+### Corrected in the same pass
+
+`square_caps_text_width` justified its centring with a capture measurement
+("BOB_MORLOCK" and "CANCEL" both centring on x≈100). The centring is binary-derived:
+`x0 = anchor - w/2` at `0x84AD..0x84B3` with the anchor in `[0xAC6]`. Both labels
+share an axis because both boxes share that anchor. The capture confirms the code; it
+was never the source. Comment rewritten to cite the instructions.

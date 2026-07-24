@@ -488,9 +488,14 @@ fn square_cap_width(rows: &[u16; 8]) -> usize {
 }
 
 /// Rendered pixel width of a square-caps string (sum of per-glyph advances minus
-/// the trailing inter-glyph gap). Used to horizontally CENTER choice-box labels,
-/// which the real game centers on a common axis (measured: "BOB_MORLOCK" and
-/// "CANCEL" both center on x≈100 in `choice_box_bob_morlock.ppm`).
+/// the trailing inter-glyph gap). Used to horizontally CENTER choice-box labels.
+///
+/// The centring is BINARY-DERIVED, not measured: the list widget computes
+/// `x0 = anchor - w/2` at `0x84AD..0x84B3` (`shr dx,1` / `sub dx,[0xAC6]` / `neg dx`)
+/// where `w` is this measured width plus `0x14`. The capture that used to be cited
+/// here ("BOB_MORLOCK" and "CANCEL" both centring on x≈100 in
+/// `choice_box_bob_morlock.ppm`) is a CONFIRMATION of that code, not its source —
+/// both labels share an axis because both boxes share the `[0xAC6]` anchor.
 pub fn square_caps_text_width(text: &str) -> usize {
     let mut w = 0usize;
     for ch in text.chars() {
