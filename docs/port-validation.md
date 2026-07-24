@@ -496,10 +496,18 @@ per the prime rule the refutation is recorded rather than implemented on:
   DIFFERENT engine field-write path, not the C9_RELATED deferred drain. (Had this
   been implemented on the hypothesis it would have been a fabrication; the field
   math caught it — verification working as the prime rule intends.)
-- STILL OPEN: which field-write path sets arche+0x16 to the Bigbang identity. The
-  deferred-record mechanism below is real and the port genuinely lacks its setter,
-  but it is NOT established to be rec_103A's writer. Next: identify the writer of
-  the arche+0x16 field (a different selector than C9_RELATED).
+- STILL OPEN: which write path sets arche+0x16 to the Bigbang identity. ALSO
+  REFUTED: it is not a standard field-selector write either — no selector in the
+  field matrix (0x6D60) maps to offset 0x16 for arche's kind (kind-1 offsets are
+  0x02/0x04/0x06/0x08/0x10/0x20, never 0x16). So rec_103A = arche+0x16 is written by
+  a DIRECT structural store (a routine that handles the arche object with a hardcoded
+  +0x16, or a {type,related,aux} record-entry triple whose related word lands at
+  +0x16), OR the record base at the write site is not arche. The deferred-record
+  mechanism below is real and the port genuinely lacks its setter, but it is NOT
+  established to be rec_103A's writer. Next concrete task: search BLOODPRG for a
+  store to the arche object at +0x14/+0x16 (a direct structural write), which needs
+  the runtime arche pointer or a routine-level trace — this is where the trail
+  currently ends, honestly.
 
 SCRIPT5's Bigbang-concert ending is gated on `rec_103A==4024` (the concert FSM's
 every edge — see the progression FSM row). rec_103A was investigated by THREE
