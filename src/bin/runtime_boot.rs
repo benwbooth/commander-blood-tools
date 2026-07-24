@@ -532,7 +532,7 @@ fn main() {
                 // per-frame cursor warp (it decays back to centre), so instead
                 // read the live [0xA2A]/[0xA2C] the hit-tests actually compare and
                 // nudge toward the target with move_mouse_rel until it converges.
-                for _ in 0..10 {
+                for _ in 0..40 {
                     let cur_x = rt.m.read8(g, 0x0A2A) as i32
                         | ((rt.m.read8(g, 0x0A2B) as i32) << 8);
                     let cur_y = rt.m.read8(g, 0x0A2C) as i32
@@ -554,10 +554,20 @@ fn main() {
                     let p = (0x12 - (d.abs() / 4) / 2).max(1);
                     let target_y = if menu_row >= 0 { t + menu_row * p } else { sy as i32 };
                     let ey = target_y - cur_y;
-                    if ey.abs() <= 2 {
+                    // The cursor stays CENTRED (screen 160) because x motion steers.
+                    // The menu box only covers the centre while
+                    // left = 177-8d <= 160 <= right = 287-8d, i.e. frame 48..60.
+                    // Outside that window the box has scrolled off the cursor and no
+                    // press can hit, however well y is aimed.
+                    let in_window = menu_row < 0 || (48..=60).contains(&live_fr);
+                    if ey.abs() <= 2 && in_window {
                         break;
                     }
-                    rt.move_mouse_rel(0, ey.clamp(-32, 32));
+                    if ey.abs() > 2 {
+                        rt.move_mouse_rel(0, ey.clamp(-32, 32));
+                    } else {
+                        let _ = rt.run(rt.cpu.steps + 1_000_000); // wait for the box to scroll back
+                    }
                     let _ = rt.run(rt.cpu.steps + 700_000);
                 }
                 // THE measurement that decides the coordinate-space question:

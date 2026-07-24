@@ -1089,3 +1089,31 @@ at press time (implemented) or first neutralise steering.
 BANKED THIS THREAD: `Runtime::move_mouse_rel` + the int33 deferred-motion fidelity
 fix (both improve every click-driving probe), a working `PROFILEJUMP`, the
 `rec_103A` write-watch, busy-gate diagnostics, and the measurement trail.
+
+#### STOP: the bridge cursor/steering loop is self-reinforcing — hand off here
+
+Final attempt gated the press on the frame window where the menu box actually
+covers the centred cursor (`left = 177-8d <= 160 <= right = 287-8d`, i.e. frame
+48..60). It never fired: the view parked at frame 64 and stayed there for all 40
+iterations, because `[0xA2A]` had drifted to 287 and an off-centre cursor steers
+the view continuously toward itself — a self-reinforcing loop with no neutral
+point the probe can reach by y-only motion.
+
+This is the honest end of the thread. Successive attempts each fixed a real
+sub-problem (geometry staleness, poll latency, warp decay, injection model, frame
+drift, the click window) and each uncovered another coupled one. Nothing here is
+mysterious any more, but the remaining work is a proper INPUT MODEL for the
+bridge, not further probe patching:
+
+  * decide the comparison space of `[0xA2A]` by WATCHING the compare at
+    `0x8656`/`0x8663` and dumping both operands (do this FIRST — every attempt that
+    inferred the space instead of measuring it failed);
+  * then drive steering the way a player does: aim the cursor, let the view catch
+    up, and press only when the box is under the cursor — which needs the steering
+    loop modelled, not fought.
+
+What this thread BANKED and is worth keeping: `Runtime::move_mouse_rel`, the int33
+deferred-motion fidelity fix (injected motion now applies at the position read, as
+on real hardware), a working `PROFILEJUMP` profile switch, the `rec_103A`
+write-watch, busy-gate diagnostics, and this measurement trail. One menu click DID
+register (`[0x2A19]=5`), proving the path works end to end.
