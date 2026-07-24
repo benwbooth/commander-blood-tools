@@ -48,3 +48,13 @@ Concretely:
 - Tests: `nix develop --command cargo test --release --lib` must stay green;
   every decoded behavior gets a regression test encoding the REAL behavior.
 - Never declare the port finished; report status against the validation matrix.
+- **KEEP GOING.** Reporting "N open, not finished" is a status line, NOT a stopping
+  point. While any row of the matrix (or `docs/audit-fixes.md`) is open, keep
+  working it autonomously — pick the next item, decode it, fix it, test it, commit.
+  Do not hold for direction, do not ask which item to take, do not restate the
+  tally instead of working. "This needs a new subsystem built" is a description of
+  the next task, not a blocker: build it. The only legitimate pause is a genuinely
+  destructive or irreversible action needing consent.
+  - Corollary: if an item's blocker is real, that blocker becomes the task
+    (build the runtime, wire the setter, stand up the pipeline) — record the
+    decode in `re/labels.csv`/`re/dead_ends.md` and keep moving.
