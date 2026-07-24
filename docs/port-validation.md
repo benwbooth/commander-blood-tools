@@ -146,6 +146,11 @@ port's frame loop (script2_interception_plays_through_the_frame_loop: SCRIPT2
 from load, frames + beats + serial queue promotion, SCRUT agent K's radio
 warning emits @2DF5 after the TV-commercial presentation drains) — with the
 0xAB POKE corrected to the COD self-modify the engine performs (0x684C).
+**THE SCRIPT2->SCRIPT3 HANDOFF RUNS IN THE PORT (66a45a8)**: the directed
+drive plays stages 5/6, the gift, the verified cargo manifest, the customs
+boarding and confiscations, and RUN PROFILE (pending profile 2 = SCRIPT3) —
+end to end from shipped bytes, hard-asserted. The unlocking fix: the AE/B0
+mask-guard polarity was inverted (every satisfied mask guard was skipped).
 OP_CD (transfer/teleport) implemented as typed-record
 query + marker + event (687fc00); the container-graph relink (field 0x11 +
 special-slot list) is APPROX — the full inventory model is the replacing decode.
