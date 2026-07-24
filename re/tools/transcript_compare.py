@@ -18,6 +18,14 @@ def load(path):
 
 oracle = load(sys.argv[1])
 port = load(sys.argv[2])
+# The oracle resumes a frozen savestate whose subtitle buffer still holds
+# SCRIPT1's last line ("...out for the count..."); it is a start-state
+# artifact, not driven content. Drop known pre-state lines from BOTH so the
+# score reflects the beats the scenario actually drives (calibration: the
+# real fix is a shared fresh boot, banked; this scores driven content now).
+PRESTATE = {"the old turkey's out for the count..."}
+oracle = [l for l in oracle if l not in PRESTATE]
+port = [l for l in port if l not in PRESTATE]
 oset, pset = set(oracle), set(port)
 inter = oset & pset
 print(f"oracle {len(oset)} lines, port {len(pset)} lines, matched {len(inter)}")
