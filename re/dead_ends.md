@@ -920,3 +920,32 @@ MENU row's EXPLANATIONS/GAME submenu is the obvious candidate: "GAME" plausibly 
 the transition that runs the game-start init). Driving that, not poking flags, is
 what turns the VM on; then the existing PROFILEJUMP + rec-watch tooling should work
 as designed.
+
+#### GAMESTART probe: presentations DO start without `0x27E0` — qualify the previous claim
+
+Observed (frame 55, delta 10, computed golden-menu box x=97..207 top=84 pitch=17):
+
+    GAMESTART after MENU click:         [0x27E0]=0x00 [0x2A19]=0x0000
+    GAMESTART after EXPLANATIONS click: [0x27E0]=0x00 [0x67AC]=0x01
+    GAMESTART after GAME click:         [0x27E0]=0x00 [0x67AC]=0x01
+
+Two facts, stated as observations only:
+1. The MENU click did NOT register — `gs:0x2A19` (the menu's row+1, written by the
+   hit path at `0x86B2`) stayed 0, so the computed box geometry missed at this
+   frame. The submenu clicks therefore landed on something else.
+2. A click at x=100 DID start a presentation — `gs:0x67AC` went to 1 — while
+   `gs:0x27E0` stayed 0 throughout.
+
+(2) QUALIFIES the previous entry: presentations can begin on this path WITHOUT
+`0x27E0` being set, so "no script opcodes execute per frame" is too strong a claim
+and is withdrawn as stated. What remains true and measured is only that `0x27E0`
+is never set on this path, and that `rec_103A` never changed in any run.
+
+Note to future sessions: this thread has now required four successive revisions of
+its mechanism claims (`0x4F09` "scratch", the C1 kind-2 "bug", the `cs:ip` VGA
+blit, "the switch clears `0x27E0`"). The lesson is to record MEASUREMENTS here and
+keep mechanism claims in labels.csv only once a second, independent observation
+agrees. Next concrete step is unglamorous: fix the golden-menu click geometry
+(verify against `menu_row_under_cursor` in src/bridge.rs, which is already
+oracle-validated) so MENU actually registers, before drawing any conclusion about
+what GAME does.

@@ -479,6 +479,56 @@ fn main() {
         // at all. HERE the game has been DRIVEN to the hub, so a profile is
         // resident and the gate can actually go idle. Poke DS:0x6780 (what 0xD2
         // does, 0x64B8) and let the loop dispatch via 0x53A0.
+        // GAMESTART: the console renders but gs:0x27E0 (the vm_run_wrapper gate) is
+        // never set on this path, so no script opcodes execute per frame. The
+        // player action that starts GAME mode should run the 0x0FC3 init. Drive the
+        // golden menu with its DECODED geometry (0x8613): box right = 0x11F -
+        // delta*8, width 0x6E; rows top = 0x48 + |delta|*1.25, pitch = 0x12 -
+        // |delta|/8, five rows (HONK, TELEPHONE, CRYOBOX, MENU, OPTION). Click MENU
+        // (row 3), then its submenu rows, reporting the gate after each.
+        if std::env::var("GAMESTART").is_ok() {
+            let (fr0, _, _) = state(&rt);
+            let delta = fr0 as i32 - 45;
+            let right = 0x11F - delta * 8;
+            let left = right - 0x6E;
+            let top = 0x48 + (delta.abs() as f32 * 1.25) as i32;
+            let pitch = 0x12 - delta.abs() / 8;
+            println!(
+                "GAMESTART frame={fr0} delta={delta} box x={left}..{right} top={top} pitch={pitch} \
+                 [0x27E0]={:#04x}",
+                rt.m.read8(g, 0x27E0)
+            );
+            let cx = (left + right) / 2;
+            let mut click_at = |rt: &mut Runtime, sx: i32, sy: i32| {
+                let fr = state(rt).0 as i32;
+                let ring = ((sx + fr * 8 - 160).rem_euclid(1440)) as u16;
+                rt.set_mouse_pos(ring, sy as u16);
+                let _ = rt.run(rt.cpu.steps + 600_000);
+                rt.mouse_press(0);
+                let _ = rt.run(rt.cpu.steps + 400_000);
+                rt.mouse_release(0);
+                let _ = rt.run(rt.cpu.steps + 15_000_000);
+            };
+            // MENU is row 3 of the golden menu.
+            click_at(&mut rt, cx, top + 3 * pitch);
+            println!("GAMESTART after MENU click: [0x27E0]={:#04x} [0x2A19]={:#06x}",
+                     rt.m.read8(g, 0x27E0), rt.m.read8(g, 0x2A19) as u16);
+            // The submenu {EXPLANATIONS, GAME} is the universal choice box; its
+            // rows are centred by row count (choice_box_top_y: (200-(n*11+8))/2+4).
+            let sub_top = (200 - (2 * 11 + 8)) / 2 + 4;
+            for (i, name) in ["EXPLANATIONS", "GAME"].iter().enumerate() {
+                click_at(&mut rt, 100, sub_top + i as i32 * 11);
+                println!("GAMESTART after {name} click: [0x27E0]={:#04x} [0x67AC]={:#04x}",
+                         rt.m.read8(g, 0x27E0), rt.m.read8(g, 0x67AC));
+                if rt.m.read8(g, 0x27E0) & 1 != 0 {
+                    println!("GAMESTART *** gameplay VM gate is now SET by '{name}' ***");
+                    break;
+                }
+            }
+            rt.write_ppm(&out.join("gamestart.ppm")).unwrap();
+            return;
+        }
+
         if let Ok(spec) = std::env::var("PROFILEJUMP") {
             let profile: i32 = spec.split(':').next().unwrap_or("4").parse().unwrap_or(4);
             let w16 = |rt: &Runtime, a: u32| {
