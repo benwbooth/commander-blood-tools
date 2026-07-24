@@ -148,7 +148,13 @@ warning emits @2DF5 after the TV-commercial presentation drains) — with the
 0xAB POKE corrected to the COD self-modify the engine performs (0x684C).
 **THE STORY PLAYS TO FIN.HNM IN THE PORT (b499bde)**: the single directed
 test spans all five scripts, four profile handoffs, and the Bigbang-concert
-ending — every beat from shipped bytes, hard-asserted. Remaining for FULL
+ending — every beat from shipped bytes, hard-asserted. THE MATCHED-DRIVE LANE'S SPEC (assessed): verify_port is the pre-VM-era
+screen harness (static frame-45 hub, HARDCODED box literals — a no-transcription
+violation to retire); the lane needs it rebuilt around the real VM loop
+(main.rs's script_vm wiring: load_script, vm_collect, beats, promotions,
+dispatch_concept) so the oracle's scenario files drive BOTH implementations'
+full stacks — then BloodPrng seed-matching makes rolls agree and
+tools/verify_compare.py scores line-and-screen parity per step. Remaining for FULL
 parity per this ledger: the oracle-side dual-runs of these beats (the
 interception drive exists; the rest follow the same scenario recipes), the
 container-graph refinement behind OP_CD, the frontend presentation surfaces
