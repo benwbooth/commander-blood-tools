@@ -24,7 +24,10 @@ pub fn subtitle_draw_glyph(ch: char) -> Option<GameFontGlyph> {
     if ch == ' ' {
         return None;
     }
-    game_font_glyph(ch).or_else(|| game_font_glyph('?'))
+    // An UNMAPPED char is skipped entirely (render_string 0x31CE: `xlatb; or al,al;
+    // js` -> no glyph, no advance), NOT shown as '?'. Space stays a 6px no-draw
+    // advance (handled above / in game_font_advance).
+    game_font_glyph(ch)
 }
 
 pub fn game_font_glyph(ch: char) -> Option<GameFontGlyph> {
@@ -44,10 +47,9 @@ pub fn game_font_advance(ch: char) -> usize {
     if ch == ' ' {
         return GAME_FONT_SPACE_ADVANCE;
     }
-    game_font_glyph(ch)
-        .or_else(|| game_font_glyph('?'))
-        .map(|glyph| glyph.advance)
-        .unwrap_or(GAME_FONT_SPACE_ADVANCE)
+    // Unmapped -> advance 0 (the char is skipped, no pen movement), not a '?' or
+    // space width — matches render_string's `js 0x31ce` skip.
+    game_font_glyph(ch).map(|glyph| glyph.advance).unwrap_or(0)
 }
 
 // Extracted from BLOODPRG.EXE:
