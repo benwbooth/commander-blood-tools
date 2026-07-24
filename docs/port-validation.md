@@ -511,6 +511,22 @@ oracle (decode BLOODPRG's nav/examination input handlers) or a runtime record-di
 snapshot at the concert — the same tooling frontier documented for rec_13C2 and the
 credit divergence.
 
+**STRUCTURAL REFRAME (grounded, verified via both DEBs).** rec_103A is NOT a foreign
+field — it is the same class the port ALREADY models. arche+0x16 is consistently the
+"current location/plot reference" field: arche @ 0xf38 in SCRIPT2 → arche+0x16 = 0xF4E
+= **rec_0F4E** (the location variable, driven by the port's `set_location`); arche @
+0x1024 in SCRIPT5 → arche+0x16 = 0x103A = **rec_103A**. So rec_103A is SCRIPT5's
+location/plot-reference field, the exact analogue of SCRIPT2's rec_0F4E. The gap is
+narrower than "unknown native writer": the port drives arche+0x16 on ARRIVAL
+(`set_location`, offset found by `location_var_offset`'s first-block wildcard-guard
+scan), but (a) `location_var_offset` returns None for SCRIPT5 (its first block is
+init-writes, not a wildcard guard, so the port never discovers 0x103A), and (b) the
+port doesn't model SCRIPT5 ADVANCING arche+0x16 through wedding-plot phases (4024
+Bigbang → …). A grounded port path therefore exists: teach the location-var discovery
+to find SCRIPT5's arche+0x16 and drive it through the plot phases — still gated on
+knowing the phase-transition triggers (the runtime-computed part), but now anchored to
+a MODELED mechanism (set_location) rather than a from-scratch native decode.
+
 --- (historical trail, superseded by the disposition above) ---
 
 **CORRECTION (supersedes this section's earlier "deferred-drain writes rec_103A"
