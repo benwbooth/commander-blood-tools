@@ -5534,6 +5534,16 @@ destination (the ARRIVAL helper's write class) and the beats follow from the
 bytecode alone. FULL ENCOUNTER ARC IN THE PORT: commit f387ad2 (resume model:
 bit4 anchor + post-yield continuation; the departure test plays arrival ->
 warnings -> FINAL WARNING -> departure radio from shipped bytes).
+ROUTE B LOCKED IN THE PORT (commit 71f69d2): set_location (the travel arrival
+write; location_var_offset discovers rec_0F4E from the opening wildcard guard —
+the AD-family arm was missing) + the flee test: location=3380 at start -> the
+district call takes the escape branch -> "We really fooled those dummies" ->
+THE CORPO UNLOCK plays ("Click on the planet Corpo. The Orxx will be
+automatically ejected"). THE SCRIPT2->SCRIPT3 HANDOFF FOUND: the script's tail
+(@96B4..@9881) is the SCRUT customs-check presentation (confiscates illegal
+money/BIONIUM/decoder per rec guards) ending RUN PROFILE 2 -> SCRIPT3; its
+trigger guards (which location/beats queue it) are the next decode. Also seen:
+the deep Venusia shopping arc (Bug_Deluxe, CRED teleport, @9610 buy menu).
 NEXT TASKS (frontier):
 - [ ] vm::walk coverage — DIAGNOSED PRECISELY: SCRIPT2.bas ends at 0x2F83 of a
       0x9882-byte COD (31% coverage; tail 84% nonzero real content; the very next
