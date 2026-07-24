@@ -175,8 +175,14 @@ pub const FIELD_OFFSETS: [[u8; 16]; 0x15] = [
 ];
 
 /// Field offset for a record kind, per the engine's matrix (None = absent).
+/// The kind word is a BIT-FLAG; the column is its lowest set bit (`bsf`,
+/// 0x6023 `bsf bx,bx`), NOT `kind & 0xF`. bsf(2)=1 -> the universal
+/// character location = obj+0x18 / talk = obj+0x3A.
 pub fn field_offset(kind: u16, field: u8) -> Option<u16> {
-    let k = (kind & 0xF) as usize;
+    if kind == 0 {
+        return None;
+    }
+    let k = kind.trailing_zeros() as usize;
     let f = field as usize;
     let off = *FIELD_OFFSETS.get(f)?.get(k)?;
     (off != 0).then_some(off as u16)
@@ -2044,9 +2050,8 @@ fn record_link_condition(
 ) -> Option<bool> {
     let record_type = state_u16(state, record_offset);
     let stored_related = state_u16(state, record_offset.wrapping_add(2));
-    if record_type == 0 && stored_related == 0 {
-        return None;
-    }
+    // Empty record -> matched=false -> branch (C3 query 0x6F2E je 0x6F5D ->
+    // 0x6462), not a fall-through. See record_entry_condition.
     let owner_active = record_owner_is_active(state, context, record_offset)?;
     let matched = owner_active
         && record_type == OP_RECORD_LINK as u16
@@ -2428,9 +2433,11 @@ fn record_entry_condition(
 ) -> Option<bool> {
     let record_type = state_u16(state, record_offset);
     let stored_related = state_u16(state, record_offset.wrapping_add(2));
-    if record_type == 0 && stored_related == 0 {
-        return None;
-    }
+    // An EMPTY record is not "no result" — the C5..C8 query handlers
+    // (0x6D18/0x6D80/0x6DCF/0x6F62) unconditionally compute matched and, on a
+    // non-match (which an empty record is), call vm_branch (0x6D4C je 0x6D7B ->
+    // 0x6462). So the guarded then-body must be SKIPPED before the record is
+    // written. The old early-return None fell through into the body.
     let matched = record_type == opcode as u16 && stored_related == operand;
     Some(if inverted { !matched } else { matched })
 }
@@ -4035,6 +4042,28 @@ impl VmMachine {
         }
     }
 
+    /// Byte-level record access (the record table is a little-endian word array).
+    /// Used by the 0xB7 single-bit flag handler.
+    fn rec_read_u8(&self, byte_off: u16) -> u8 {
+        let w = self.rec_read(byte_off & !1);
+        if byte_off & 1 == 0 {
+            (w & 0xFF) as u8
+        } else {
+            (w >> 8) as u8
+        }
+    }
+
+    fn rec_write_u8(&mut self, byte_off: u16, b: u8) {
+        let word_off = byte_off & !1;
+        let w = self.rec_read(word_off);
+        let next = if byte_off & 1 == 0 {
+            (w & 0xFF00) | b as u16
+        } else {
+            (w & 0x00FF) | ((b as u16) << 8)
+        };
+        self.rec_write(word_off, next);
+    }
+
     /// `vm_branch` @0x6462: pop the resume position into PC; clear query mode.
     fn branch(&mut self) {
         if let Some(pos) = self.stack.pop() {
@@ -4353,17 +4382,32 @@ impl VmMachine {
             }
             // 0xB7 (0x6AA7): record byte field op (offset + byte value).
             0xB7 => {
+                // 0x6AA7: single-bit flag get/set. Operands: base word + bit
+                // NUMBER (not a value). byte = base + (n>>3), mask = 0x80>>(n&7)
+                // (high-bit-first). Query isolates that one bit (0x6AD0: shl al,cl;
+                // shl al,1; jae); SET ORs it in (0x6AEB). The 0xA1 prefix inverts
+                // (test-clear / clear-bit). The old code compared/wrote the whole
+                // record word against the bit number — nonsense.
+                let mut flipped = false;
                 if self.u8_at(self.pc) == 0xA1 {
                     self.pc += 1;
+                    flipped = true;
                 }
                 let off = self.lodsw();
-                let val = self.lodsb() as u16;
+                let bit = self.lodsb();
+                let byte_off = bit_flag_byte_offset(off, bit);
+                let mask = bit_flag_mask(bit);
                 if self.query {
-                    if self.rec_read(off) != val {
+                    let set = self.rec_read_u8(byte_off) & mask != 0;
+                    // Non-inverted: bit SET continues, CLEAR branches to else
+                    // (the same SET+uninverted=continue polarity as 0x6946).
+                    if (set && flipped) || (!set && !flipped) {
                         self.branch();
                     }
                 } else {
-                    self.rec_write(off, val);
+                    let cur = self.rec_read_u8(byte_off);
+                    let next = if flipped { cur & !mask } else { cur | mask };
+                    self.rec_write_u8(byte_off, next);
                 }
             }
             // 0xB8/0xB9/0xBD (0x6B06): 2-word record pair compare/write.
@@ -5430,8 +5474,13 @@ mod tests {
                 );
             }
         }
-        assert_eq!(field_offset(1, 0x11), Some(24), "kind-1 location = LOCATION_FIELD");
-        assert_eq!(field_offset(1, 0x13), Some(58), "kind-1 talk = +58");
+        // Kind is a bit-flag; the column is bsf(kind). Kind 2 (character) is the
+        // common object: location = obj+0x18 (24), talk = obj+0x3A (58).
+        assert_eq!(field_offset(2, 0x11), Some(24), "kind-2 character location = obj+0x18");
+        assert_eq!(field_offset(2, 0x13), Some(58), "kind-2 character talk = obj+0x3A");
+        // kind-1 built-ins use column 0: location = obj+0x06.
+        assert_eq!(field_offset(1, 0x11), Some(6), "kind-1 location = obj+0x06 (bsf=0)");
+        assert_eq!(field_offset(0, 0x11), None, "kind 0 has no fields");
     }
 
     /// The shared drive layer: engaging an actor BY NAME (the DEB symbol
