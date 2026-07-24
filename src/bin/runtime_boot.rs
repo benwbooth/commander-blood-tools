@@ -2126,7 +2126,14 @@ fn main() {
             // Arm the watch on the gs:0x175 stream region FIRST, THEN open the
             // MENU submenu — so we catch the builder as it bakes the box.
             let gsbuf = 0x0e84usize * 16;
-            rt.m.watch = Some((0xE8, gsbuf + 0x100..gsbuf + 0x3000));
+            // VALUE watch (0xE8) vs RANGE watch: the previous version armed
+            // rt.m.watch on the literal colour byte 0xE8, which cannot work here --
+            // REVERSE.md's own finding is that the glyph bytes are RLE-ENCODED RUNS,
+            // not per-pixel 0xE8 stores. So the watch was looking for the one thing
+            // the data is not. trace_range logs EVERY nonzero write in the region,
+            // which is what actually catches the builder.
+            rt.m.trace_range = Some(gsbuf + 0x100..gsbuf + 0x3000);
+            rt.m.range_hits.clear();
             rt.m.watch_hits.clear();
             let (fr, _, _) = state(&rt);
             let delta = fr as i32 - 45;
@@ -2146,7 +2153,46 @@ fn main() {
                     println!("stream builder {cs:04x}:{ip:04x} -> gs:{:#06x} (ds:si={ds:04x}:{si:04x})", addr - gsbuf);
                 }
             }
+            println!("GLYPHSRC value-watch(0xE8) hits: {}", rt.m.watch_hits.len());
+            // The RANGE watch: any writer of the stream region, whatever the value.
+            let mut rseen = std::collections::HashSet::new();
+            for &(addr, v, cs, ip) in rt.m.range_hits.iter() {
+                if rseen.insert((cs, ip)) {
+                    println!(
+                        "GLYPHSTREAM writer {cs:04x}:{ip:04x} -> gs:{:#06x} = {v:#04x}",
+                        addr - gsbuf
+                    );
+                }
+                if rseen.len() > 24 {
+                    break;
+                }
+            }
+            println!(
+                "GLYPHSTREAM: {} nonzero writes from {} distinct writers",
+                rt.m.range_hits.len(),
+                rseen.len()
+            );
+            // POSITIVE CONTROL. "No writes at gs:0x175" is worthless unless the box
+            // actually OPENED. The list widget stores its rect at DS:0x2AAB
+            // (0x84A4 `mov [si+4],dx` / 0x84AA `mov [si+6],bp` with si=0x2AAB), so a
+            // plausible x/y/w/h there proves the widget ran this frame.
+            let ds0 = 0xE840usize;
+            let rect: Vec<u16> = (0..4)
+                .map(|i| {
+                    let a = ds0 + 0x2AAB + i * 2;
+                    u16::from_le_bytes([rt.m.mem[a], rt.m.mem[a + 1]])
+                })
+                .collect();
+            println!(
+                "GLYPHBOX rect @DS:0x2AAB x={} y={} w={} h={}  (widget ran = {})",
+                rect[0], rect[1], rect[2], rect[3],
+                rect[2] != 0 && rect[3] != 0
+            );
+            // And dump the claimed stream head, so its emptiness is a measurement.
+            let head: Vec<u8> = (0..16).map(|i| rt.m.mem[gsbuf + 0x175 + i]).collect();
+            println!("GLYPHSTREAM head gs:0x175 = {}", head.iter().map(|b| format!("{b:02x}")).collect::<Vec<_>>().join(" "));
             rt.m.watch = None;
+            rt.m.trace_range = None;
             println!("GLYPHSRC done");
             return;
         }

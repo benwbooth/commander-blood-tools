@@ -925,17 +925,32 @@ of a font, sourced from screenshots rather than from the binary — and letters 
 never harvested silently fall back to a DIFFERENT face (`game_font_glyph`), so the
 rendered text is a blend of two typefaces.
 
-The RE position is known and is NOT that the data is unfindable: `re/REVERSE.md`
-records that the box/list text is a PRE-BUILT RLE overlay at `gs:0x175`, unpacked by
-the panorama unpacker (writer `043b:01da` reading `ds:si=0e84:0175`), and that the
-generator builds the whole box — border, fill and glyphs — into that stream ONCE at
-box-open time. That is why a per-frame watch for `0xE8` writes misses it.
+THE RECORDED LEAD WAS WRONG — retracted 2026-07-24, one commit after I repeated it
+here. `re/REVERSE.md` said the box text is a "PRE-BUILT RLE overlay at `gs:0x175`".
+It is not. Dumping the live bytes at that address gives
+`41 4e 43 45 4c 00 41 52 45 5f 59 4f 55 5f 53 55` = `"ANCEL\0ARE_YOU_SU"` — one byte
+into `CANCEL` at `DS:0x0174`, followed by `ARE_YOU_SURE?` at `DS:0x017B`. `gs:0x175`
+is the UI STRING TABLE. The writer `043b:01da` reading `ds:si=0e84:0175` was reading
+the CANCEL LABEL, which is simply what a box-text drawer does.
 
-NEXT STEP (recorded concretely so it is actionable): arm a write watch on the
-`gs:0x175` stream region BEFORE the box-open click, not after — the same
-positive-control discipline the NAVWRITE probe used. The generator output is the real
-glyph source; harvested cells should be replaced by whatever it emits, and the
-two-typeface fallback removed.
+Two probe-design lessons came out of re-running it, both worth keeping:
+
+1. The old `GLYPHSRC` armed a VALUE watch on byte `0xE8`. REVERSE.md's own note says
+   the glyph bytes are RLE-encoded RUNS, not per-pixel `0xE8` stores — so the watch
+   was searching for the one value the data is not. It reported 0 hits, which read as
+   "nothing happens" rather than "wrong instrument". Switching to a RANGE watch
+   (every nonzero write) immediately produced 20000 writes from 25 writers.
+2. Those writers land in `gs:0x0A2A..0x0DB8` — the list widget's OWN variables
+   (`0xAC6` anchor, `0xAC8` draw pointer, `0xADD` extra-entry flag), all of which the
+   `0x8428` decode already accounts for. And the positive control shows why that is
+   not yet a finding: the widget rect at `DS:0x2AAB` reads `0,0,0,0`, so THE BOX
+   NEVER OPENED in that run. Any conclusion about where glyphs come from would have
+   been drawn from a run in which nothing was drawn.
+
+NEXT STEP: make the probe actually open a box first — assert the `DS:0x2AAB` rect is
+non-zero BEFORE trusting any watch output — then find the glyph source from a run
+that genuinely rendered one. The `gs:0x175` address should not be used as the anchor;
+it was never a stream.
 
 Until then this row stands as an ACKNOWLEDGED APPROX with a located routine, which is
 what the prime rule requires of a stand-in — not as "verified".

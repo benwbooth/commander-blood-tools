@@ -4134,7 +4134,15 @@ The port's save.rs is a port-native format; this is the byte-exact DOS layout.
   script speech-events) is the faithful stand-in until a granted-destination
   state is reached; the real anchor positions require driving the story to a
   planet-coordinates grant (recorded lead for #3).
-- SQUARE-CAPS GENERATOR (GLYPHSRC trace): the box/list text is a PRE-BUILT RLE
+- SQUARE-CAPS GENERATOR — **THE gs:0x175 LEAD IS WRONG. Retracted 2026-07-24.**
+  gs:0x175 is NOT an RLE glyph overlay. It is the UI STRING TABLE: dumping the
+  live bytes there gives `41 4e 43 45 4c 00 41 52 45 5f 59 4f 55 5f 53 55` =
+  "ANCEL\0ARE_YOU_SU" — i.e. one byte into `CANCEL` at DS:0x0174, followed by
+  `ARE_YOU_SURE?` at DS:0x017B, exactly as the static string table reads.
+  So writer 043b:01da reading ds:si=0e84:0175 was reading the CANCEL LABEL TEXT,
+  which is what a box-text drawer does. The inference that it was a pre-built RLE
+  stream was a misreading of a string-table read.
+  ORIGINAL (WRONG) TEXT: the box/list text is a PRE-BUILT RLE
   overlay at gs:0x175, unpacked by the panorama unpacker (writer 043b:01da
   reading ds:si=0e84:0175). The stream is built ONCE at box-open (before the
   per-frame unpack), so watching per-frame 0xE8 writes misses it — the glyph
