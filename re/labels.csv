@@ -723,3 +723,5 @@ DS:0x24F3,dialogue_scene_flags,bit3=travel-pending (set only by 0x5C64 imm 9)
 0x5B38,record_type_ladder,per-record type dispatch C1/C2/C3/C4 (was record_c1_ship3d_action; ladder confirmed)
 0x5D37,c3_promoter_branch,typed-C3: related==[0x674E] -> [0x675A]=si takeover + sound 6; else [bp]=0xC4
 0x77A0,pending_slot_c4_writer,writes 0xC4 into the pending slot (block+0x30) — undecoded context
+0x9FE4,croolis_rule_table,4-word entries {recA,recB,recC,action}: SCRIPT3 variable records + overlay handler offsets (vbio/secret rows) — the overlay rule engine
+0xA58C,scrut_rule_table,identical rule table in scrut.xdb (shared overlay template)
