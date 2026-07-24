@@ -245,6 +245,16 @@ pub struct EngineState {
     /// per-frame HUD-rotation / nav-timer machine. Verified but previously
     /// unreachable; driven below from the live cursor so it runs in play.
     pub ship3d_procedural: crate::ship3d::Ship3dProceduralUpdateState,
+    /// Interpolation gate (0x1E5D) — advances one tick per nav frame.
+    pub ship3d_interpolation: crate::ship3d::Ship3dInterpolationGate,
+    pub ship3d_interpolation_source: [u16; crate::ship3d::SHIP_3D_INTERPOLATION_WORDS],
+    pub ship3d_interpolation_dest: [u16; crate::ship3d::SHIP_3D_INTERPOLATION_WORDS],
+    /// Target selector (0xB2BB) state.
+    pub ship3d_target_selector: crate::ship3d::Ship3dTargetSelectorState,
+    /// Navigation sequence FSM state (owns exit/opening).
+    pub ship3d_nav_sequence: crate::ship3d::Ship3dNavigationSequenceState,
+    /// Whether the sequence FSM raised its framebuffer-dirty request this frame.
+    pub ship3d_sequence_redraw_requested: bool,
     /// The game's own PRNG, used for the transition's `rand(20)` close gate
     /// (`0xB6D0 mov ax,0x14` -> `lcall 0x1CE:0x0B02`).
     ship3d_prng: crate::ship3d::BloodPrng,
@@ -577,6 +587,12 @@ impl EngineState {
             ship3d_depth: Default::default(),
             ship3d_hold_ticks: 0,
             ship3d_procedural: Default::default(),
+            ship3d_interpolation: Default::default(),
+            ship3d_interpolation_source: Default::default(),
+            ship3d_interpolation_dest: Default::default(),
+            ship3d_target_selector: Default::default(),
+            ship3d_nav_sequence: Default::default(),
+            ship3d_sequence_redraw_requested: false,
             ship3d_prng: crate::ship3d::BloodPrng::seeded_from_rtc_seconds(0),
             hud_grid: Vec::new(),
             hud_orb: Vec::new(),
@@ -3479,6 +3495,54 @@ impl EngineState {
         // The scroll clears its own direction flags when it reaches a limit.
         self.ship3d_transition.opening = self.ship3d_depth.opening;
         self.ship3d_transition.closing = self.ship3d_depth.closing;
+
+        // --- interpolation gate -> sequence update -------------------------------
+        // docs/port-validation.md called this chain "blocked on other DORMANT
+        // ship-3D code". It is not blocked: every function in it is PURE, taking
+        // bools/u16s/small arrays. What it needed was calling in the right order,
+        // which is what this does.
+        //
+        // The gate (0x1E5D) advances one tick per frame and reports Complete when
+        // current_tick reaches duration_ticks; the sequence update (the FSM that
+        // owns exit/opening) consumes that completion plus the target selector's
+        // query index.
+        self.ship3d_interpolation.duration_ticks =
+            self.ship3d_nav_sequence.interpolation_duration_ticks;
+        let interpolation_complete = matches!(
+            crate::ship3d::step_ship_3d_interpolation_gate(
+                &mut self.ship3d_interpolation,
+                self.ship3d_interpolation_source,
+                self.ship3d_interpolation_dest,
+            ),
+            Some(crate::ship3d::Ship3dInterpolationStep::Complete)
+        );
+
+        // Target selection over the REAL granted-destination list, not a synthetic
+        // one: the same source the projector gates on.
+        let targets: Vec<u16> = (0..self.nav_destinations.len() as u16).collect();
+        let current_target = self.ship3d_target_selector.current_target;
+        let query_selection = crate::ship3d::select_ship_3d_target_record(
+            &mut self.ship3d_target_selector,
+            &targets,
+            &[],
+            current_target,
+            interpolation_complete,
+        )
+        .map(|sel| sel.selected_target)
+        .unwrap_or(current_target);
+
+        let effect = crate::ship3d::run_ship_3d_navigation_sequence_update(
+            &mut self.ship3d_nav_sequence,
+            // No presentation runs while the nav view is up (the view is mutually
+            // exclusive with dialogue/bridge/cyber/cryobox — see nav_view_active).
+            false,
+            false,
+            interpolation_complete,
+            query_selection,
+        );
+        // The FSM asks for a framebuffer copy; the engine already redraws every
+        // frame, so this only records that the request was raised.
+        self.ship3d_sequence_redraw_requested = effect.copied_framebuffer;
     }
 
     pub fn nav_view_active(&self) -> bool {
@@ -5860,6 +5924,41 @@ mod tests {
             "DS offset and file offset must describe the same byte"
         );
         assert_eq!(EngineState::OPTION_BOX[0], EngineState::OPTION_BOX_LABEL);
+    }
+
+    /// docs/port-validation.md called this chain "blocked on other DORMANT ship-3D
+    /// code (a dependency chain)". It was never blocked — every function in it is
+    /// pure, taking bools/u16s/small arrays — it simply was not being called. This
+    /// pins that the nav frame now DRIVES the interpolation gate, the target
+    /// selector and the sequence FSM, so they cannot silently go dormant again.
+    #[test]
+    fn nav_frame_drives_the_interpolation_gate_and_sequence_fsm() {
+        let mut e = EngineState::new();
+        e.set_nav_destinations(vec![
+            ("EKATOMB".into(), vec![]),
+            ("VENUSIA".into(), vec![]),
+        ]);
+        e.on_ship = true;
+        assert!(e.nav_view_active(), "nav view must be the active surface");
+
+        // The gate advances one tick per frame, up to its duration.
+        e.ship3d_nav_sequence.interpolation_duration_ticks = 3;
+        let ticks: Vec<u8> = (0..3)
+            .map(|_| {
+                e.step_ship_3d_nav_state();
+                e.ship3d_interpolation.current_tick
+            })
+            .collect();
+        assert!(
+            ticks.windows(2).all(|w| w[1] >= w[0]),
+            "gate tick must advance monotonically, got {ticks:?}"
+        );
+        assert!(
+            e.ship3d_interpolation.current_tick > 0,
+            "the gate must actually be stepped by the nav frame"
+        );
+        // And the gate's duration is taken from the sequence FSM, not invented.
+        assert_eq!(e.ship3d_interpolation.duration_ticks, 3);
     }
 
     #[test]

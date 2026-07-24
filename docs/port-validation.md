@@ -809,6 +809,30 @@ STILL genuinely needing engine work: `commit_ship_3d_global_clip_snapshot` and
 engine does not model. That is a smaller and better-defined task than "build a planar
 video model".
 
+**TIER 3 — "blocked on a dependency chain" was ALSO wrong. Corrected 2026-07-24.**
+
+Every function named below is PURE: it takes bools, `u16`s, slices of `u16` and small
+arrays, plus a `&mut` state struct. None of them needs a subsystem the engine lacks.
+"Blocked on a dependency chain" described a WIRING ORDER — some functions' outputs are
+other functions' inputs — as though it were an obstacle. It never prevented anything.
+
+DONE: `step_ship_3d_interpolation_gate` -> `select_ship_3d_target_record` ->
+`run_ship_3d_navigation_sequence_update` are now driven every nav frame from
+`step_ship_3d_nav_state`, with the gate's duration taken from the sequence FSM and the
+target list taken from the real granted destinations. Pinned by
+`nav_frame_drives_the_interpolation_gate_and_sequence_fsm`.
+
+THREE FOR THREE. Every "blocker" recorded in this document has now been audited and
+none was real: the `0x299:0x133d` sprite selector was already decoded and ported; the
+"missing planar model" was unnecessary because the copy runs in latch mode with all
+planes enabled; and this chain was pure functions that simply were not called. The
+lesson is procedural rather than technical — a blocker asserted in a document and never
+re-checked will be repeated as fact, and will steer work away from things that were
+available all along. Treat every remaining "blocked" claim here as unverified until
+someone resolves it against the binary.
+
+Original text follows for reference:
+
 **TIER 3 — blocked on other DORMANT ship-3D code (a dependency chain).**
 `run_ship_3d_navigation_sequence_update` needs `interpolation_complete` (from
 `step_ship_3d_interpolation_gate`) and `query_selection` (from
