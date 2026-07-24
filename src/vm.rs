@@ -3668,6 +3668,15 @@ pub struct VmMachine {
     pub flag_274f: bool,
     /// Presentation-active (`gs:0x67AC` bit0) — 0xA7 writes `0x6770` when set.
     pub presentation_active: bool,
+    /// `gs:0x67BD` — the FIN flag. The `0xA8` handler sets it (`0x67F0`) after
+    /// loading a string operand whose first four bytes are `"fin."`
+    /// (`0x67D8..0x67EE` compares `'f','i','n','.'` against the `0x2120`
+    /// buffer). Unconditional — it is NOT under the handler's later
+    /// presentation-request gate. The finale scripts load `fin.hnm` through
+    /// this opcode, so this flag is the engine's own "the ending was
+    /// requested" latch, alongside the [`VmEvent::LoadString`] the port
+    /// already emits.
+    pub fin_requested: bool,
     pub reg_6770: u16,
     /// Wildcard match-any value (`gs:0x674E`) for the 0x6946 family.
     pub wildcard: u16,
@@ -3730,6 +3739,7 @@ impl Default for VmMachine {
             flag_252a: false,
             flag_274f: false,
             presentation_active: false,
+            fin_requested: false,
             reg_6770: 0,
             wildcard: 0,
             reg_6782: 0,
@@ -4407,6 +4417,18 @@ impl VmMachine {
                     .unwrap_or(end);
                 let text = String::from_utf8_lossy(&self.cod[start..nul]).into_owned();
                 self.pc = end;
+                // 0x67D5..0x67F0: after the copy the handler compares the first
+                // four buffer bytes against 'f','i','n','.' and, on a match,
+                // latches gs:[0x67BD]=1 — the engine's FIN (finale) flag. Byte
+                // comparisons, so the match is case-SENSITIVE and prefix-only.
+                // (The handler's remaining side effect — the presentation
+                // request at 0x67F6 — is NOT modelled: its gate needs the
+                // frontend's ship-active gs:[0x24F3], and one of its writes
+                // (gs:[0xB3B]) collides with record data in the port's single
+                // -array state model. See docs/audit-fixes.md.)
+                if self.cod[start..nul].starts_with(b"fin.") {
+                    self.fin_requested = true;
+                }
                 self.events.push(VmEvent::LoadString(text));
             }
             // 0xA9 (0x6830): bit0 CLEAR -> jump to the operand word. bit0 SET ->
@@ -7452,6 +7474,41 @@ mod tests {
         m.step();
         assert_eq!(m.rec_read_pub(0x84), 0xC4, "no DEB loaded -> unconditional write");
         assert_eq!(m.active_actor, Some(0x84));
+    }
+
+    #[test]
+    fn a8_latches_the_fin_flag_for_finale_strings() {
+        // 0x67D8..0x67F0: the 0xA8 handler compares the loaded string's first
+        // four bytes to 'f','i','n','.' and latches gs:[0x67BD]=1 on a match.
+        let load = |s: &str| -> VmMachine {
+            let mut cod = vec![0xA8];
+            cod.extend_from_slice(s.as_bytes());
+            cod.push(0);
+            if cod.len() % 2 == 1 {
+                cod.push(0); // zero-WORD terminator alignment pad
+            }
+            cod.push(0);
+            cod.push(0);
+            let mut m = VmMachine::new();
+            m.load_cod(&cod);
+            m.pc = 0;
+            m.step();
+            m
+        };
+
+        let m = load("fin.hnm");
+        assert!(m.fin_requested, "fin.hnm latches the FIN flag");
+        assert!(
+            matches!(m.events.first(), Some(VmEvent::LoadString(s)) if s == "fin.hnm"),
+            "the LoadString event still carries the name"
+        );
+
+        // Prefix-only, byte-exact: neither a different name nor a different
+        // case matches the handler's four byte compares.
+        assert!(!load("cliptoot.hnm").fin_requested, "an ordinary name does not latch");
+        assert!(!load("FIN.HNM").fin_requested, "the compare is case-sensitive");
+        assert!(!load("fi").fin_requested, "a short string cannot match");
+        assert!(!load("affin.hnm").fin_requested, "the match is a PREFIX, not a substring");
     }
 
     #[test]

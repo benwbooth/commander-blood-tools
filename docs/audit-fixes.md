@@ -11,7 +11,7 @@ displays** and wins. So a subset of the 40 are FALSE POSITIVES — the port is a
 correct and the raw-assembly reading is the one that's off. Each geometry finding must
 be oracle-re-verified before it is "fixed"; changing it blind regresses a pixel match.
 
-## Fixed + committed (27) — assembly-cited, regression-tested, oracle-verified where visual
+## Fixed + committed (28) — assembly-cited, regression-tested, oracle-verified where visual
 
 | area | fix | severity |
 |---|---|---|
@@ -43,6 +43,7 @@ be oracle-re-verified before it is "fixed"; changing it blind regresses a pixel 
 | bridge-clicks | console choice-box hit-band = the DRAWN box `[x0,x1]` (`0x84EE..0x84F6`, shared `choice_box_geometry`), not a fixed `40..160`; fixes the anchor-80 world box (~20px off) and any label wider than 100px | MED |
 | bridge-clicks | ALL four choice-box hit-test callers share that geometry (console, MENU submenu, nav chooser, telephone) — band == drawn box by construction | MED |
 | bridge | ring cursor snaps to the 8-unit frame grid each tick (`0x97F6 and [0xa2a],0xfff8`, the `0x97E4` sync every steer/seek path falls into) | LOW |
+| vm-dispatch | `0xA8` latches the FIN flag `gs:[0x67BD]` on a `"fin."`-prefixed string (`0x67D8..0x67F0`, ungated) — the finale latch the port dropped | LOW |
 
 ## Verified FALSE POSITIVE for the PORT — finding correct for the assembly, wrong for the port's model (4)
 
@@ -110,13 +111,18 @@ mode-0 write guard is now IMPLEMENTED on this basis (see the Fixed table).
   frontend world-click that creates C1 records (`0xB272`) — both fold into the
   nav-destination/ship-3D rewrite below, which needs the frontend ship-3D runtime, not the
   VM opcode.
-- **Subtle / low visible impact / risk:** `0xA8` fin-flag + presentation-request side
-  effects — DECODED (`0x67C8`): after the string copy the handler sets `gs:[0x67BD]=1`
-  when the operand starts with `"fin."`, then (if `!(0x67AA&2)` and ship-active
-  `0x24F3&1`/`0x274F&1`) fires a presentation request (`0x6788=7`, `0x67AA|2`,
-  `0x1FB2=0`, `0x1FA3=0xFFFF`, `0xB3B=0`). CONFIRMED engine-coupled: those are
-  frontend/ship-presentation flags the live VM does not hold — the "gs-flag model" the
-  finding named. Not a VM-local drop-in. Two concrete blockers, both verified:
+- **`0xA8` side effects — the FIN-FLAG HALF IS FIXED; the presentation-request half is
+  not.** DECODED (`0x67C8`): after the string copy the handler sets `gs:[0x67BD]=1` when
+  the operand starts with `"fin."` (**DONE** — ungated and unconditional in the assembly,
+  `0x67BD` is far above the max VAR so it is alias-safe; now `VmMachine::fin_requested`),
+  then (if `!(0x67AA&2)` and ship-active `0x24F3&1`/`0x274F&1`) fires a presentation
+  request (`0x6788=7`, `0x67AA|2`, `0x1FB2=0`, `0x1FA3=0xFFFF`, `0xB3B=0`) — **STILL
+  OPEN**. Three concrete blockers, all verified:
+  (0) the gate's `gs:[0x274F]` operand is modelled as `flag_274f`, which the frontend
+  sets `true` at VM CONSTRUCTION (`main.rs:805`) — an approximation of the game's runtime
+  D1 flag. Since the gate is an OR, building on it would fire the request on the FIRST
+  `0xA8` of every script, far more often than the real game; fixing `flag_274f`'s model
+  is the prerequisite.
   (a) the FIRE GATE needs ship-active `gs:[0x24F3]&1`, which lives in the frontend
   (the VM holds only `flag_274f`), so a VM-only version would mis-fire; and
   (b) **the gs-offset ALIASING HAZARD below** makes the `0xB3B=0` write unsafe.
