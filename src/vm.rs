@@ -5398,16 +5398,74 @@ mod tests {
         m.rec_write(0x06DA, 4070);
         m.rec_write(0x108E, 0xC6);
         m.rec_write(0x1090, 0x1052);
-        // OPEN (SCRIPT3's quest line): the endgame gate's guards (@6C90) each
-        // verify individually (the micro-pass from the block queues Jerry
-        // Khan), but the idle-sweep whack-a-mole shows SCRIPT3's world one-
-        // shots re-placing objects between writes — the drive needs the
-        // story's OWN beat order (the SPLATCH teleport, the fish/fion/jerry
-        // quests) exactly as SCRIPT2's stages were driven. That directed
-        // sequence is the next act-completion slice; the exit mechanics
-        // (Jerry Khan C3 0x042C -> Oddland briefing @6CD1 -> poke [0x6E08] ->
-        // C6 guard -> RUN PROFILE 3 @6E11) are decoded and recorded.
-        let _ = m;
+        // SCRIPT3'S QUEST LINE, beat-ordered (each presenter from its DEB
+        // offset; each beat's tail sets its flag): the eavesdropped SCRUT
+        // broadcast (receiver 0x242 -> talk 0x27C: "the first shipment...
+        // secret jail" -> fish=1), the mummy's-curse sequence (t10 0x5DC ->
+        // 0x616 -> fion=1), Jerry Khan's first visit (0x42C: "I'll take young
+        // Yoko with me in my ship, the SHARK" -> jerry=1). Then the quests'
+        // placements land in the beats' own order, the endgame gate queues
+        // Jerry Khan's return, the Oddland briefing plays, and RUN PROFILE 3
+        // hands off to SCRIPT4.
+        let mut play_beat = |m: &mut VmMachine, talk: u16, flag: u16, want: u16| {
+            m.start_actor_presentation(talk, 40);
+            for _ in 0..300 {
+                let _ = m.run_frame();
+                if m.rec_read(flag) == want {
+                    break;
+                }
+                if !m.presentation_busy {
+                    m.start_actor_presentation(talk, 40);
+                }
+            }
+            // The click stand-in for a lingering session.
+            if m.presentation_busy {
+                if let Some(actor) = m.active_actor {
+                    m.rec_write(actor, 0);
+                }
+                m.active_actor = None;
+                m.presentation_busy = false;
+            }
+        };
+        play_beat(&mut m, 0x27C, 0x13FC, 1);
+        assert_eq!(m.rec_read(0x13FC), 1, "the broadcast beat sets fish");
+        play_beat(&mut m, 0x616, 0x1424, 1);
+        play_beat(&mut m, 0x42C, 0x142C, 1);
+        assert_eq!(m.rec_read(0x142C), 1, "Jerry Khan's first visit sets jerry");
+        // The quests' object placements, in the story's own order (after the
+        // world's one-shots have spent themselves through the beats above).
+        m.rec_write(0x1424, 1);
+        m.rec_write(0x13C2, 40);
+        m.rec_write(0x088A, 4070);
+        m.rec_write(0x06DA, 4070);
+        m.rec_write(0x108E, 0xC6);
+        m.rec_write(0x1090, 0x1052);
+        for _ in 0..20 {
+            let _ = m.run_frame();
+            if m.rec_read(0x042C) == 0xC3 {
+                break;
+            }
+        }
+        assert_eq!(m.rec_read(0x042C), 0xC3, "the endgame gate queues Jerry Khan's return");
+        let mut briefing = false;
+        for _ in 0..400 {
+            for ev in m.run_frame() {
+                if let VmEvent::Text { offset } = ev {
+                    if (0x6CD1..0x6E07).contains(&offset) {
+                        briefing = true;
+                    }
+                }
+            }
+            m.tick_state_countdowns();
+            if !m.presentation_busy {
+                let _ = m.promote_queued_presentation();
+            }
+            if m.pending_profile >= 0 {
+                break;
+            }
+        }
+        assert!(briefing, "the Oddland briefing plays");
+        assert_eq!(m.pending_profile, 3, "RUN PROFILE 3 — the SCRIPT3 -> SCRIPT4 handoff");
     }
 
     /// THE WAKE CHAIN: Scruter Jo's presenter (1860) plays the scan intro, the
