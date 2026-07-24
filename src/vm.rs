@@ -1764,10 +1764,17 @@ fn apply_assign5_mode0(
     value: u16,
 ) {
     let owner = record_owner_object_offset(context, field_offset);
+    // 0x6995: when the record ALREADY holds 0xFFFF the handler removes the owner
+    // from the special-slot list and then `jmp 0x69C2` -- straight to the store,
+    // with the RAW value. It does NOT fall through into the insert block below.
+    // Falling through would re-insert the owner and store 0xFFFF instead of the
+    // value the script asked for.
     if state_u16(state, field_offset) == 0xffff {
         if let Some(owner) = owner {
             special_slots.remove(owner);
         }
+        state_set_u16(state, field_offset, value);
+        return;
     }
 
     let mut stored = value;
@@ -4724,10 +4731,16 @@ impl VmMachine {
                         self.reg_6782 = raw;
                     }
                     let owner = self.owner_object_offset(off);
+                    // 0x6995..0x69A7: an existing 0xFFFF removes the owner and then
+                    // `jmp 0x69C2` -- store the RAW value and STOP. The insert block
+                    // below is skipped entirely; falling into it would re-insert the
+                    // owner and store 0xFFFF over the requested value.
                     if self.rec_read(off) == 0xFFFF {
                         if let Some(owner) = owner {
                             self.special_slot_remove(owner);
                         }
+                        self.rec_write(off, raw);
+                        return true;
                     }
                     let mut stored = raw;
                     let mut do_write = true;
@@ -7901,6 +7914,37 @@ mod tests {
         m.step();
         assert_eq!(m.pc, 0x99, "occupied destination -> branch");
         assert_eq!(m.rec_read_pub(owner + dest_fo), 0xBEEF);
+    }
+
+    #[test]
+    fn assign5_existing_ffff_removes_then_stores_raw_without_reinserting() {
+        // 0x6995..0x69A7: when the record ALREADY holds 0xFFFF the handler removes
+        // the owner from the special-slot list and jumps STRAIGHT to the store with
+        // the RAW value. The insert block is skipped. The old code fell through, so
+        // a wildcard/aboard value re-inserted the owner and wrote 0xFFFF over the
+        // value the script actually requested.
+        let owner = 0x0080u16;
+        let field = 0x0090u16;
+        let mut m = VmMachine::new();
+        m.object_offsets = vec![owner];
+        m.wildcard = 0x0555;
+        m.rec_write_pub(field, 0xFFFF); // the record already holds 0xFFFF
+        m.ship_slots[0] = owner; // and the owner is currently slotted
+        // 0xAD SET with a WILDCARD-equal value: the fall-through bug would have
+        // re-inserted and stored 0xFFFF; the handler stores the raw value.
+        m.load_cod(&[0xAD, 0x90, 0x00, 0x55, 0x05, 0xFF]);
+        m.query = false;
+        m.pc = 0;
+        m.step();
+        assert_eq!(
+            m.rec_read_pub(field),
+            0x0555,
+            "stores the RAW value after the 0xFFFF removal, not 0xFFFF"
+        );
+        assert!(
+            !m.ship_slots.contains(&owner),
+            "the owner was REMOVED and not re-inserted"
+        );
     }
 
     #[test]
