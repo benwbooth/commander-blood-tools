@@ -158,6 +158,9 @@ fn main() {
                     }
                 }
                 step_engine(&mut e, mx, my, 1);
+                if std::env::var("VPDEBUG").is_ok() {
+                    eprintln!("click ({mx},{my}) handled={handled} box={:?} kind={}", e.console_box, e.console_box_kind);
+                }
             }
             "key" => {}
             "wait" => {
