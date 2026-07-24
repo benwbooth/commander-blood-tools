@@ -649,29 +649,38 @@ byte-verified against the bytecode). Residual dual-run gaps are start-state
 (oracle savestate's accepted-beat bits vs port fresh-load) — a harness
 shared-start item, not a port fidelity gap.
 
-## APPROX — nav-destination marker spread (`engine.rs render_nav_pyramid_sprites`)
+## RESOLVED — nav-destination marker spread (`engine.rs render_nav_pyramid_sprites`)
 
-`NAV_MARKER_SPREAD_APPROX = 700` is the ONE fabricated quantity left in the nav
-star map. Everything else in that routine is now binary-derived: the marker COUNT
-and GATE come from the granted-destination set (the projector `0x9B98` draws only
-entities `0x15..0x1F` whose flags word has bit7 set), the world point is the real
-static table `DS:0x4F09` = (10200, 12100, 900), the camera origin is `DS:0x2F65` =
-(10000, 12000, 0), and the projection is the decoded shared math
-(`depth = dot>>15`, `scale = 0x100000/depth`, `screen = (dot>>7)/depth + 160/100`,
-sprite dims `*scale>>10`).
+`NAV_MARKER_SPREAD_APPROX = 700` is GONE. This row was the last fabricated
+quantity in the nav star map; the routine is now entirely binary-derived.
 
-Why an APPROX is needed: `DS:0x4F09` gives EVERY destination the SAME world point
-(verified static — the literal is referenced only by the projector, and three deep
-savestates plus live dumps all read the baked default), so the game's markers would
-coincide. The port fans them out so each granted destination stays separately
-visible and clickable.
+What resolved it was evidence that the APPROX was never going to be replaced by a
+"spreading" routine, because there is no such routine — the markers are SUPPOSED to
+coincide:
 
-ROUTINE THAT MUST REPLACE IT: whatever distinguishes the active entities on screen —
-the per-entity sprite selected by `lcall 0x299:0x133d` with `ax = idx+0x15`, and the
-draw offsets `[si+0xC]`/`[si+0xE]` taken from each entity's own descriptor. Decoding
-that needs a state where destination entities are actually populated; in every
-savestate available today all eleven records read ZERO (so the real routine draws
-nothing at all), which is why the spread cannot yet be verified.
+- `runtime_boot NAVWRITE`, a write watch over the table's linear range, records
+  ZERO writes across a full run. Crucially the probe carries a POSITIVE CONTROL: it
+  dumps the bytes it watches and they read back as the baked points, so the null
+  result is a real negative rather than a watch aimed at the wrong address.
+- The table is TEN records, not eleven as this document previously said. Offset 60
+  is already `DS:0x4F45`, the trig table. The projector loops eleven times over ten
+  entries, so its last read is an over-read that the entity active-bit gate
+  suppresses.
+
+So the port now indexes the game's own table (`ship3d::NAV_DESTINATION_POINTS`,
+byte-verified against file `0x12329` and live memory) and the markers coincide, as
+the data dictates. The fabricated compass "pan" that offset the world X went with
+it: panning now travels the matrix path the game uses, via the compass angle
+(`DS:0x2F6D`) fed to `build_ship_3d_projection_matrix`.
+
+Regression test: `nav_destination_points_coincide_rather_than_fanning_out` pins
+both ends — ten identical records, and identical pixels for one vs three granted
+destinations.
+
+STILL OPEN (moved out of this row, since it is not about the spread): the
+per-entity sprite selected by `lcall 0x299:0x133d` with `ax = idx+0x15` and the
+draw offsets `[si+0xC]`/`[si+0xE]` remain undecoded, and no state reached so far
+populates the destination entities' active bits.
 
 ## STRUCTURAL FINDING (2026-07-24): faithfully-ported ship-3D code that NEVER RUNS
 

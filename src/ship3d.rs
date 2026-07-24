@@ -127,6 +127,20 @@ pub const SHIP_3D_OBJECT_DEPTH_WRAP_BIAS: i32 = 0x0001_0000;
 pub const SHIP_3D_OBJECT_SCALE_NUMERATOR: u32 = 0x0010_0000;
 pub const SHIP_3D_OBJECT_SCALE_SHIFT: u8 = 10;
 pub const SHIP_3D_OBJECT_PROJECTED_SCALE_OFFSET: u16 = 0x2fbf;
+/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09`
+/// (file `0x12329`). TEN records of three `i16` at stride 6 — verified
+/// byte-for-byte against the shipped image and against live interpreter memory.
+///
+/// Every entry is the SAME point. That is the game's data, not a placeholder: a
+/// write watch over the table's linear range (`runtime_boot NAVWRITE`, which
+/// carries a positive control) records zero writes across a full run, and the
+/// literal `0x4F09` is referenced only by the projector at `0x9B98`. So the
+/// destinations genuinely COINCIDE on screen rather than being spread out.
+///
+/// The projector loops eleven times over these ten entries (see `0x9CF5`); the
+/// eleventh read lands in the trig table at `DS:0x4F45` and is gated off by the
+/// entity active bit, so it is not represented here.
+pub const NAV_DESTINATION_POINTS: [[i16; 3]; 10] = [[10200, 12100, 900]; 10];
 pub const SHIP_3D_GLOBAL_CLIP_SNAPSHOT_FLAG_OFFSET: u16 = 0x5249;
 pub const SHIP_3D_DIRTY_RECT_LIST_OFFSET: u16 = 0x6612;
 pub const SHIP_3D_DIRTY_RECT_SENTINEL: u16 = 0xffff;

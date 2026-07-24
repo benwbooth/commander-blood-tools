@@ -3494,15 +3494,17 @@ impl EngineState {
 
     fn render_nav_pyramid_sprites(&mut self) {
         use crate::ship3d::{
-            SHIP_3D_ANGLE_TABLE, Ship3dMatrixAngles, build_ship_3d_projection_matrix,
-            project_star_map_point,
+            NAV_DESTINATION_POINTS, SHIP_3D_ANGLE_TABLE, Ship3dMatrixAngles,
+            build_ship_3d_projection_matrix, project_star_map_point,
         };
         let Some(m) = build_ship_3d_projection_matrix(
             &SHIP_3D_ANGLE_TABLE,
             Ship3dMatrixAngles {
                 angle_2f71: 0,
-                projection_angle_2f6d: 0,
-                angle_2f6f: 10,
+                // The compass angle feeds the MATRIX (DS:0x2F6D), matching the
+                // sibling star-map renderer and the builder's own input at 0x990C.
+                projection_angle_2f6d: self.compass_angle % 180,
+                angle_2f6f: 0,
             },
         ) else {
             return;
@@ -3533,29 +3535,22 @@ impl EngineState {
         // The port therefore draws one marker per GRANTED destination (the
         // GameProgress set that stands in for the active-entity bits) instead of
         // the old fabricated 7x4 = 28-point grid.
-        const NAV_WORLD_POINT: [i32; 3] = [10200, 12100, 900]; // DS:0x4F09
         const NAV_CAMERA_ORIGIN: [i32; 3] = [10000, 12000, 0]; // DS:0x2F65
-        // APPROX — the ONE remaining fabricated quantity. The real table gives
-        // every destination the SAME world point, so the game's markers coincide;
-        // the port fans them out so each granted destination stays separately
-        // visible. Replacing this needs the routine that decides how the active
-        // entities differ on screen (the per-entity sprite chosen by
-        // `lcall 0x299:0x133d` with ax = idx+0x15). See docs/port-validation.md.
-        const NAV_MARKER_SPREAD_APPROX: i32 = 700;
         let origin = NAV_CAMERA_ORIGIN;
-        let pan = (self.compass_angle as i32 % 180 - 90) * 8;
         // Base pyramid dimension: the biggest CARTE pyramid frame (f4, 24px wide).
         let base_w = self.nav_pyramids[4].width.max(1) as u32;
         let count = self.nav_destinations.len();
         {
             for idx in 0..count as i32 {
-                // Fan the shared world point out around its own axis (APPROX above).
-                let lateral = (idx - (count as i32 - 1) / 2) * NAV_MARKER_SPREAD_APPROX;
-                let d = [
-                    NAV_WORLD_POINT[0] + lateral + pan,
-                    NAV_WORLD_POINT[1],
-                    NAV_WORLD_POINT[2],
-                ];
+                // Index the game's own table instead of inventing a position. The
+                // fabricated lateral fan-out and compass "pan" that used to sit here
+                // were the last APPROX quantities in this routine; both are gone.
+                // Panning now travels the same path the game uses — the projection
+                // MATRIX, built from the compass angle above (DS:0x2F6D) — rather
+                // than being faked as an offset to the world X.
+                let point = NAV_DESTINATION_POINTS
+                    [(idx as usize).min(NAV_DESTINATION_POINTS.len() - 1)];
+                let d = [point[0] as i32, point[1] as i32, point[2] as i32];
                 let Some((sx, sy, scale)) = project_star_map_point(d, origin, &m) else {
                     continue;
                 };
@@ -5671,6 +5666,43 @@ mod tests {
                 count_pyramid_pixels(&three),
                 empty_px,
                 "granted destinations must change what the star map draws"
+            );
+        }
+    }
+
+    /// The game's nav-position table gives every destination the SAME world point,
+    /// so the markers COINCIDE on screen. The port used to fan them out by a
+    /// fabricated 700-unit lateral spread purely so each granted destination stayed
+    /// separately visible; that invented positions the game does not have.
+    ///
+    /// This pins the real behaviour at both ends: the table is ten identical
+    /// records (DS:0x4F09, byte-verified), and adding destinations therefore does
+    /// NOT scatter the drawing — with one marker per destination stacked on one
+    /// point, three destinations paint exactly the pixels one does.
+    #[test]
+    fn nav_destination_points_coincide_rather_than_fanning_out() {
+        use crate::ship3d::NAV_DESTINATION_POINTS;
+        assert_eq!(NAV_DESTINATION_POINTS.len(), 10, "DS:0x4F09 holds TEN records");
+        assert!(
+            NAV_DESTINATION_POINTS.iter().all(|p| *p == [10200, 12100, 900]),
+            "every baked entry is the same point"
+        );
+
+        let render = |n: usize| -> Vec<u8> {
+            let mut e = EngineState::new();
+            e.set_nav_destinations(
+                (0..n).map(|i| (format!("D{i}"), vec![])).collect::<Vec<_>>(),
+            );
+            e.on_ship = true;
+            e.render_ship_view();
+            e.framebuffer.clone()
+        };
+        let one = render(1);
+        let three = render(3);
+        if !EngineState::new().nav_pyramids.is_empty() {
+            assert_eq!(
+                one, three,
+                "coincident world points must paint the same pixels regardless of count"
             );
         }
     }
