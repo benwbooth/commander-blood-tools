@@ -5709,12 +5709,22 @@ mod tests {
         play_beat(&mut m, 0x616, 0x1424, 1);
         play_beat(&mut m, 0x42C, 0x142C, 1);
         assert_eq!(m.rec_read(0x142C), 1, "Jerry Khan's first visit sets jerry");
-        // The quests' object placements, in the story's own order (after the
-        // world's one-shots have spent themselves through the beats above).
+        // THE SPLATCH TELEPORT (driven-beat replacement, staged): the beat is
+        // fully mapped — Amigo's session (obj 0x6C2, talk 0x6FC) behind
+        // rec_1088@3224 + evi(0x1428) + secret(0x1416); the teleport menu
+        // @5F19 (concept 0x0367) -> "SPLATCH TELEPORTED TO ARK" -> the CD
+        // moves splatch (0x1306) aboard and @5F53 writes rec_06DA=4070. The
+        // REVISIT-SKIP law surfaced here: accepted lines' [skip N] fires on
+        // revisits, jumping the session's END to expose deeper regions
+        // (@5ED9's skip opens @5EF2) — the port's revisit routing needs
+        // step-level tracing before the driven form lands; until then the
+        // placement stands cited to @5F53's own write.
+        m.rec_write(0x06DA, 4070);
+        // The remaining placements, in the story's own order (their beats are
+        // the same replacement pattern, one per window).
         m.rec_write(0x1424, 1);
         m.rec_write(0x13C2, 40);
         m.rec_write(0x088A, 4070);
-        m.rec_write(0x06DA, 4070);
         m.rec_write(0x108E, 0xC6);
         m.rec_write(0x1090, 0x1052);
         for _ in 0..20 {
