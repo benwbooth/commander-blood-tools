@@ -62,10 +62,11 @@ fn parse_dictionary(dic: &[u8]) -> HashMap<u16, String> {
             pos += 1;
         }
         if pos > start {
-            words.insert(
-                start as u16,
-                String::from_utf8_lossy(&dic[start..pos]).into_owned(),
-            );
+            // CP437, not UTF-8: SCRIPT3.DIC contains `glyc\x82rium` = "glycérium",
+            // and 0x82 is an invalid UTF-8 lead byte, so from_utf8_lossy turned a
+            // DISPLAYED word into "glyc\u{fffd}rium". The game's own font maps 0x82
+            // to glyph 0x44 (DS:0x7802), so it genuinely draws the accent.
+            words.insert(start as u16, crate::font::cp437_string(&dic[start..pos]));
         }
         pos += 1;
     }
@@ -80,7 +81,7 @@ pub fn deb_actor_name_map(deb: &[u8]) -> HashMap<u16, String> {
         let nl = r[..16].iter().position(|&b| b == 0).unwrap_or(16);
         let offset = u16::from_le_bytes([r[16], r[17]]);
         if !r[..nl].is_empty() {
-            names.insert(offset, String::from_utf8_lossy(&r[..nl]).into_owned());
+            names.insert(offset, crate::font::cp437_string(&r[..nl]));
         }
     }
     names
@@ -95,7 +96,8 @@ fn parse_deb_object_names(deb: &[u8]) -> HashMap<u16, String> {
         let offset = u16::from_le_bytes([r[16], r[17]]);
         let kind = u16::from_le_bytes([r[18], r[19]]);
         if kind == 1 {
-            names.insert(offset, String::from_utf8_lossy(&r[..nl]).into_owned());
+            // e.g. SCRIPT1.DEB record 6 is `porte_cl\x82s` = "porte_clés".
+            names.insert(offset, crate::font::cp437_string(&r[..nl]));
         }
     }
     names

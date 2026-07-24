@@ -492,3 +492,31 @@ theory: 49 frames, all 8x8, and the mapping covers exactly 0..48
 The regression test asserts the mark pattern read FROM THE BITMAPS rather than
 restating the constants — a test that repeated the mapping would have agreed with
 the bug. Verified it fails on the old ordering before restoring the fix.
+
+## FIXED #43 — the font's xlat table was truncated to 128, dropping every accent
+
+`GAME_FONT_CHAR_MAP` was `[u8; 128]`. The game's table at `DS:0x7802` (file
+`0x14C22`) is **176 bytes** — it runs to the advance table at `0x14CD2`. The 48
+missing entries are not padding; 14 of them are real characters the game draws:
+
+    0x81 ü   0x82 é   0x84 ä   0x85 à   0x87 ç   0x89 ë   0x8A è
+    0x8B ï   0x8D ì   0x94 ö   0x95 ò   0x97 ù   0xA8 ¿   0xAD ¡
+
+Two defects compounded. Even with the full table, nothing would have rendered,
+because game strings were decoded with `String::from_utf8_lossy` — and CP437 `0x82`
+is an invalid UTF-8 lead byte, so `é` became U+FFFD before reaching the font. Both
+are fixed: `cp437_string` for decoding, `cp437_byte` to index the table by CP437
+byte rather than Unicode scalar (`é` is U+00E9 = 233, past the table).
+
+Real data affected: `glycérium` in SCRIPT3.DIC — a DISPLAYED dictionary word, which
+rendered as `glyc<?>rium` — and `porte_clés` in SCRIPT1/2.DEB.
+
+WHY IT SURVIVED SO LONG (the part worth remembering): there was already a test named
+`glyphs_match_bloodprg_exe_byte_for_byte`, and it passed. It looped `33u8..127` —
+printable ASCII only — so it never looked at the range that was missing. A
+byte-for-byte name over an ASCII-only comparison. It now asserts
+`GAME_FONT_CHAR_MAP == exe[map..advances]` for the whole table, so the length itself
+is pinned and any future truncation fails immediately.
+
+This also corrects my own earlier campaign entry, which recorded the subtitle font as
+verified byte-for-byte at "128 + 86 + 688 bytes". The 128 was wrong; it is 176.

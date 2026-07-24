@@ -30,8 +30,48 @@ pub fn subtitle_draw_glyph(ch: char) -> Option<GameFontGlyph> {
     game_font_glyph(ch)
 }
 
+/// CP437 code for `ch`, restricted to the range the font table covers (`0x00..0xAF`).
+///
+/// The game's strings are CP437 bytes, and `GAME_FONT_CHAR_MAP` is indexed by that
+/// BYTE. A Unicode scalar cannot index it directly: `é` decodes to U+00E9 = 233,
+/// which is past the 176-entry table, so an accented character would look unmapped
+/// and be skipped. This maps back to the byte the table expects.
+pub fn cp437_byte(ch: char) -> Option<u8> {
+    if (ch as u32) < 0x80 {
+        return Some(ch as u8);
+    }
+    // Only 0x80..0xAF matters: the table ends at 0xB0, where CP437's box-drawing
+    // characters begin and the game has no glyphs.
+    (0x80u8..0xb0).find(|&b| cp437_char(b) == ch)
+}
+
+/// Decode game data (CP437) to a `String`. `String::from_utf8_lossy` is WRONG for
+/// these bytes: `0x82` is `é` in CP437 but an invalid UTF-8 lead byte, so it becomes
+/// U+FFFD and the character is lost before it ever reaches the font.
+pub fn cp437_string(bytes: &[u8]) -> String {
+    bytes.iter().map(|&b| cp437_char(b)).collect()
+}
+
+/// CP437 byte -> Unicode scalar. ASCII is identity; `0x80..0xAF` is the span the
+/// font has glyphs for; above that the game has no glyph, so it maps to U+FFFD and
+/// stays visible rather than silently vanishing.
+fn cp437_char(b: u8) -> char {
+    const HIGH: [char; 48] = [
+        'Ç', 'ü', 'é', 'â', 'ä', 'à', 'å', 'ç', 'ê', 'ë', 'è', 'ï', 'î', 'ì', 'Ä', 'Å',
+        'É', 'æ', 'Æ', 'ô', 'ö', 'ò', 'û', 'ù', 'ÿ', 'Ö', 'Ü', '¢', '£', '¥', '₧', 'ƒ',
+        'á', 'í', 'ó', 'ú', 'ñ', 'Ñ', 'ª', 'º', '¿', '⌐', '¬', '½', '¼', '¡', '«', '»',
+    ];
+    if b < 0x80 {
+        b as char
+    } else if b < 0xb0 {
+        HIGH[(b - 0x80) as usize]
+    } else {
+        '\u{fffd}'
+    }
+}
+
 pub fn game_font_glyph(ch: char) -> Option<GameFontGlyph> {
-    let code = ch as usize;
+    let code = cp437_byte(ch)? as usize;
     let idx = *GAME_FONT_CHAR_MAP.get(code)?;
     if idx == 0xff {
         return None;
@@ -57,7 +97,19 @@ pub fn game_font_advance(ch: char) -> usize {
 // - glyph advances: file offsets 0x14cd2..0x14d27
 // - 8-byte glyph rows: file offset 0x14d28
 #[rustfmt::skip]
-pub const GAME_FONT_CHAR_MAP: [u8; 128] = [
+/// ASCII/CP437 -> glyph-index translation, the game's own table at `DS:0x7802`
+/// (file `0x14C22`), used by `render_string` `0x31C8` via `xlatb`. `0xff` means
+/// SKIP the character (`or al,al; js` at `0x31DE`) -- no glyph AND no pen advance.
+///
+/// LENGTH IS 176 (`0xB0`), NOT 128. The table runs to the advance table at
+/// `0x14CD2`, and the entries past 128 are real: `0x82`->`é`, `0x84`->`ä`,
+/// `0x85`->`à`, `0x87`->`ç`, `0x94`->`ö`, and nine more. Truncating it at 128
+/// silently dropped every accented character the game can draw. Extent is pinned
+/// by the data itself: every one of the 176 entries is either `0xff` or a valid
+/// index into the 86 glyphs, with ZERO out-of-range values.
+///
+/// Index it by CP437 BYTE, not by Unicode scalar -- see [`cp437_byte`].
+pub const GAME_FONT_CHAR_MAP: [u8; 176] = [
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
     0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
     0xff, 0x1c, 0x24, 0xff, 0xff, 0xff, 0xff, 0x26, 0xff, 0xff, 0xff, 0x23, 0x25, 0x22, 0x1e, 0xff,
@@ -66,6 +118,9 @@ pub const GAME_FONT_CHAR_MAP: [u8; 128] = [
     0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0xff, 0xff, 0xff, 0xff, 0x21,
     0xff, 0x27, 0x28, 0x29, 0x2a, 0x2b, 0x2c, 0x2d, 0x2e, 0x2f, 0x30, 0x31, 0x32, 0x33, 0x34, 0x35,
     0x36, 0x37, 0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f, 0x40, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0x49, 0x44, 0xff, 0x41, 0x42, 0xff, 0x4b, 0xff, 0x43, 0x44, 0x45, 0xff, 0x46, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0x47, 0x48, 0xff, 0x4a, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x1b, 0xff, 0xff, 0xff, 0xff, 0x1d, 0xff, 0xff,
 ];
 
 #[rustfmt::skip]
@@ -237,6 +292,53 @@ mod tests {
             assert_eq!(g.advance as u8, exe[adv + idx], "glyph '{ch}' advance");
         }
         assert_eq!(checked, 73, "expected 73 printable non-space glyphs incl. lowercase");
+
+        // WHOLE-TABLE check. The loop above stops at 127, which is why this test
+        // passed for so long against a table truncated to 128 entries: the missing
+        // range was never looked at. The real table runs to the advance table at
+        // 0x14CD2, i.e. 176 bytes, and comparing all of it is what pins the length.
+        assert_eq!(GAME_FONT_CHAR_MAP.len(), adv - map, "table length = map..advances");
+        assert_eq!(
+            &GAME_FONT_CHAR_MAP[..],
+            &exe[map..adv],
+            "the FULL xlat table must match the image, not just its ASCII half"
+        );
+    }
+
+    /// The accented characters a 128-entry table silently dropped. Two defects
+    /// compounded here: the table was short, AND strings were decoded with
+    /// from_utf8_lossy, so CP437 0x82 became U+FFFD and would have been unmapped
+    /// even with the full table.
+    #[test]
+    fn accented_characters_render_because_the_table_is_176_long() {
+        for (ch, glyph) in [
+            ('ü', 0x49u8), ('é', 0x44), ('ä', 0x41), ('à', 0x42), ('ç', 0x4b),
+            ('ë', 0x43), ('è', 0x44), ('ï', 0x45), ('ì', 0x46), ('ö', 0x47),
+            ('ò', 0x48), ('ù', 0x4a), ('¿', 0x1b), ('¡', 0x1d),
+        ] {
+            let b = cp437_byte(ch).unwrap_or_else(|| panic!("{ch:?} has no CP437 byte"));
+            assert_eq!(GAME_FONT_CHAR_MAP[b as usize], glyph, "{ch:?} glyph index");
+            assert!(game_font_glyph(ch).is_some(), "{ch:?} must render");
+            assert!(game_font_advance(ch) > 0, "{ch:?} must advance the pen");
+        }
+        for ch in ['A', 'Z', 'a', 'z', '0', '9', '?', '!'] {
+            assert_eq!(cp437_byte(ch), Some(ch as u8), "ASCII round-trips unchanged");
+            assert!(game_font_glyph(ch).is_some(), "{ch:?} still renders");
+        }
+    }
+
+    /// Real bytes from the shipped data files.
+    #[test]
+    fn cp437_decode_beats_utf8_lossy_on_real_game_bytes() {
+        let porte_cles = b"porte_cl\x82s";           // SCRIPT1.DEB record 6
+        assert_eq!(cp437_string(porte_cles), "porte_clés");
+        assert_eq!(String::from_utf8_lossy(porte_cles), "porte_cl\u{fffd}s");
+        let glycerium = b"glyc\x82rium";              // SCRIPT3.DIC, a DISPLAYED word
+        assert_eq!(cp437_string(glycerium), "glycérium");
+        assert!(
+            cp437_string(glycerium).chars().all(|c| game_font_glyph(c).is_some()),
+            "every character of a decoded word must have a glyph"
+        );
     }
 
     #[test]
