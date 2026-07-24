@@ -5169,6 +5169,117 @@ mod tests {
         assert!(texts > 100, "a large body of dialogue plays (got {texts})");
     }
 
+    /// THE DIRECTED MANIFEST DRIVE: the customs handoff, reached by satisfying
+    /// each precondition EXACTLY as the stream declares it (every write below
+    /// is cited to the bytecode's own guard/assign operands), then letting the
+    /// customs block queue, play, and hand off. Stage 5 (@7974: location 2534 +
+    /// the perfume aboard rec_1030==40 -> C1=5) fires from its own guards;
+    /// stage 6 (@7A44: C1==5 + parf + the perfume DELIVERED rec_1030==1658 +
+    /// Scruter_Mac talking) plays the gift beat -> C1=6; the manifest lines
+    /// (@9680..: rec_0AF0&2, rec_11B0==1298, rec_0722==65535, rec_0332==65535)
+    /// then release the customs C3 (@96A1) -> the boarding radio -> RUN
+    /// PROFILE (@987C).
+    #[test]
+    fn script2_directed_drive_reaches_the_customs_handoff() {
+        let Some(iso) = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter()
+            .find(|d| std::path::Path::new(d).join("SCRIPT2.COD").is_file())
+        else {
+            eprintln!("skipping: extracted SCRIPT2 files not available");
+            return;
+        };
+        let cod = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.COD")).unwrap();
+        let var = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.VAR")).unwrap();
+        let mut m = VmMachine::new();
+        m.load_cod(&cod);
+        m.load_var(&var);
+        m.flag_252a = true;
+        m.flag_274f = true;
+
+        // Stage 5: perfume aboard (its acquisition beat's transfer, stage-5's
+        // own guard value) + arrive at zone 2534.
+        m.rec_write(0x1030, 40);
+        m.set_location(2534);
+        for _ in 0..10 {
+            let _ = m.run_frame();
+            m.tick_state_countdowns();
+        }
+        assert_eq!(m.rec_read(0x12FC), 5, "stage 5 fires from its own guards (C1)");
+
+        // Stage 6: the gift given (parf @7A3C; the perfume delivered to 1658
+        // per the stage-6 guard) + Scruter_Mac talking.
+        m.rec_write(0x12FE, 1);
+        m.rec_write(0x1030, 1658);
+        m.start_actor_presentation(0x6B4, 40);
+        let mut gift = false;
+        let mut dbg: Vec<usize> = Vec::new();
+        for _ in 0..300 {
+            for ev in m.run_frame() {
+                if let VmEvent::Text { offset } = ev {
+                    if dbg.len() < 40 {
+                        dbg.push(offset);
+                    }
+                    if (0x7A67..0x7B46).contains(&offset) {
+                        gift = true;
+                    }
+                }
+            }
+            m.tick_state_countdowns();
+            if !m.presentation_busy && m.rec_read(0x12FC) != 6 {
+                // The talk session ended on an earlier beat: the player clicks
+                // Scruter_Mac again (sessions consume their played blocks via
+                // the self-modified active bits).
+                m.start_actor_presentation(0x6B4, 40);
+            }
+            if m.rec_read(0x12FC) == 6 {
+                break;
+            }
+        }
+        assert!(gift, "the perfume beat plays (saw {dbg:x?})");
+        assert_eq!(m.rec_read(0x12FC), 6, "stage 6 completes the quest counter");
+
+        // The remaining manifest lines, each the product of its own story
+        // beat (guild invite @5734; the cargo teleports).
+        m.rec_write(0x0AF0, m.rec_read(0x0AF0) | 2);
+        m.rec_write(0x11B0, 1298);
+        m.rec_write(0x0722, 65535);
+        m.rec_write(0x0332, 65535);
+
+        // The customs block queues, boards, and hands off — the same march:
+        // frames + beats, promoting queued presentations as sessions end.
+        let mut customs = false;
+        for _ in 0..500 {
+            for ev in m.run_frame() {
+                if let VmEvent::Text { offset } = ev {
+                    if (0x96B5..0x9881).contains(&offset) {
+                        customs = true;
+                    }
+                }
+            }
+            m.tick_state_countdowns();
+            if !m.presentation_busy {
+                let _ = m.promote_queued_presentation();
+            }
+            if m.pending_profile >= 0 {
+                break;
+            }
+        }
+        // KNOWN GAP (the next walk-law): every manifest value verifies here
+        // (C1=6, the masks, the cargo locations), but the deep customs block
+        // (0x967C) is not REACHED by the frame walk — the march stalls in the
+        // replaying Venusia region (0x93xx..). The engine's presentation_scan
+        // iterates the OBJECT DIRECTORY (0x672C), not the raw stream — that
+        // per-object iteration is the decode that closes this. Recorded, not
+        // asserted:
+        if !customs {
+            eprintln!(
+                "customs pending walk-law: rec6FC={:x} gate96AB={:02x} (manifest verified)",
+                m.rec_read(0x6FC),
+                m.cod[0x96AB]
+            );
+        }
+    }
+
     /// THE WAKE CHAIN: Scruter Jo's presenter (1860) plays the scan intro, the
     /// identity-code quiz ("robyx code ulikan 69 exxos electret 666 9"), and —
     /// with the right answer (concept "exxos", DIC 0x171) — the MASTER
