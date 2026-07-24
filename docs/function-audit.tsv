@@ -513,7 +513,7 @@ default	src/ship3d.rs	759	fn		UNVERIFIED
 Ship3dNavigationTriggerEffect	src/ship3d.rs	781	struct		UNVERIFIED	
 update_ship_3d_transition_state	src/ship3d.rs	800	fn		UNVERIFIED	
 step_ship_3d_depth_scroll	src/ship3d.rs	820	fn		ASM	|| AUDIT 2026-07-24: 0xB75C verified line-by-line: open path clamps with SIGNED `jl` at 0xB774 to 0x41; both paths do AL-ONLY arithmetic (add al / sub al) leaving AH intact; close path uses `jns` on the AL result and zeroes the WHOLE word (xor ax,ax) on underflow. Port matches exactly incl. SHIP_3D_MAX_DEPTH_OFFSET=0x41
-copy_ship_3d_plane_bands	src/ship3d.rs	853	fn		UNVERIFIED	
+copy_ship_3d_plane_bands	src/ship3d.rs	853	fn		ASM	|| AUDIT 2026-07-24: verified against 0xB6DD: gate `test [0x252E],1`; byte_count from 0xB71C `add ax,0x23` then `mov dl,0x50; mul dl` -- an 8-BIT multiply, so the row count wraps at 256 exactly as the port models with a u8 add; first band src = 0xC000 + (0x1F40 - count) (0xB718..0xB72D) -> dest+0; second band src = 0xDF40 (0xB746) -> dest + (0x1F40 + (0x1F40 - count)) = DEST_BYTES(16000) - count (0xB742..0xB74E); both copy `count` bytes. BASE_ROWS 35=0x23 and DEST_BYTES 16000 confirmed
 step_ship_3d_interpolation_gate	src/ship3d.rs	895	fn		UNVERIFIED	
 layout_ship_3d_target_list	src/ship3d.rs	919	fn		ASM	|| AUDIT 2026-07-24: unified list widget 0x8438..0x84C6, every constant confirmed: default max width 0x64=100, extra width 0x37=55 (gated on [0xADD]), extra height 0xA=10, row step 0xB=11 (0x847A add bp,0xb), width padding 0x14=20 (0x84A1), height padding 8 (0x84A7), screen height 0xC8=200 (0x84B9). x = anchor[0xAC6] - width/2 (0x84AD shr/sub/neg), y = (200-height)/2. Width compare is UNSIGNED (0x8472 jb) matching the port u16 >=. Cross-confirms the choice-box 100/55 floors -- same widget
 hit_test_ship_3d_target_list	src/ship3d.rs	959	fn		UNVERIFIED	
@@ -569,7 +569,7 @@ write_ship_3d_c1_kind10_destination_slot	src/ship3d.rs	2901	fn		UNVERIFIED
 run_ship_3d_navigation_trigger_prelude	src/ship3d.rs	2924	fn		INFRA?	
 draw_ship_3d_target_list	src/ship3d.rs	3006	fn		UNVERIFIED	
 select_ship_3d_target_record	src/ship3d.rs	3064	fn		UNVERIFIED	
-ship_3d_plane_band_byte_count	src/ship3d.rs	3132	fn		UNVERIFIED	
+ship_3d_plane_band_byte_count	src/ship3d.rs	3132	fn		ASM	|| AUDIT 2026-07-24: 0xB71C..0xB723: (depth + 0x23) then `mul dl` with dl=0x50 uses AL only, so the row count is 8-bit -- matching the port u8 wrapping add * 80
 ship_3d_scroll_value	src/ship3d.rs	3137	fn		UNVERIFIED	
 start_closing_transition	src/ship3d.rs	3147	fn		UNVERIFIED	
 add_to_low_byte	src/ship3d.rs	3153	fn		ASM	|| AUDIT 2026-07-24: models the handlers AL-only add (0xB76D `add al,[0x2531]`) preserving the high byte
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	            
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	             
