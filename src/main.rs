@@ -2014,7 +2014,12 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
         // STATE-COUNTDOWN BEAT (0x8AA): tick state[0..0x1E) at the game's divided
         // rate while idle — expiring countdowns release GUARD state[i]==0 blocks
         // (SCRIPT2 @2744 queues the Scruter interception this way).
-        countdown_accum += 8.011 / 70.0;
+        // 8.011 Hz decrement (200.27 Hz PIT / 25, file 0x8AA/0x8BA). This line runs
+        // once per 46 ms game tick (~21.739/s), so the per-tick increment is
+        // 8.011 * 0.046, NOT /70 — the old /70 assumed a 70 Hz caller and fired the
+        // beat at 2.49 Hz, ~3.2x too slow (scripted GUARD state[i]==0 releases, e.g.
+        // the Scruter interception, arrived ~3x late).
+        countdown_accum += 8.011 * 0.046;
         if countdown_accum >= 1.0 {
             countdown_accum -= 1.0;
             if engine.dialogue_finished() && !engine.intro_active() {

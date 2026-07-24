@@ -1825,7 +1825,11 @@ impl EngineState {
             return None;
         }
         let rows = num_rows.min(8);
-        let top = Self::choice_box_top_y(rows) as i32 - 3;
+        // Hit origin == draw origin == the assembly's text_top = box_y+4
+        // (0x84E6 `add cx,4`; 0x84FB `sub ax,dx`; 0x8508 `div bl,0x0B`). The old
+        // `- 3` shifted the clickable band 3px ABOVE the drawn rows, so clicks near
+        // a row boundary selected the neighbour (audit: two independent findings).
+        let top = Self::choice_box_top_y(rows) as i32;
         let row = (y - top) / Self::CHOICE_BOX_PITCH as i32;
         (row >= 0 && (row as usize) < rows).then_some(row as usize)
     }
