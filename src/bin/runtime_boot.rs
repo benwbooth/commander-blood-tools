@@ -3088,7 +3088,28 @@ fn main() {
                 }
                 "wait" => {
                     let frames: u64 = toks[1].parse().unwrap();
-                    let _ = rt.run(rt.cpu.steps + frames * 1_850_000);
+                    // Fine-grained subtitle capture (the sampling calibration):
+                    // slice the wait and log every DISTINCT settled line, so
+                    // fast lines no longer flash between step boundaries.
+                    if std::env::var("SAYDUMP").is_ok() {
+                        let slices = (frames * 1_850_000 / 200_000).max(1);
+                        let mut last = String::new();
+                        for _ in 0..slices {
+                            let _ = rt.run(rt.cpu.steps + 200_000);
+                            let text: String = (0..160u32)
+                                .map(|i| rt.m.read8(g, 0xe18 + i))
+                                .take_while(|&b| b != 0)
+                                .map(|b| if (0x20..0x7f).contains(&b) { b as char } else { ' ' })
+                                .collect();
+                            let t = text.trim().to_string();
+                            if !t.is_empty() && t != last {
+                                println!("SAYFINE step {step}: {t}");
+                                last = t;
+                            }
+                        }
+                    } else {
+                        let _ = rt.run(rt.cpu.steps + frames * 1_850_000);
+                    }
                 }
                 // poke <gs-off-hex> <byte-hex>: write one byte into the engine's
                 // DS globals — oracle drive tooling (e.g. arm the pending-C4
