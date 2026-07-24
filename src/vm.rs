@@ -3949,12 +3949,6 @@ impl VmMachine {
         self.object_offsets.iter().rev().copied().find(|&o| o < off)
     }
 
-    /// Whether a record's owning object is active (owner+2 bit0). None = no table.
-    fn owner_active(&self, off: u16) -> Option<bool> {
-        let owner = self.owner_object_offset(off)?;
-        Some(self.rec_read_u8(owner.wrapping_add(2)) & 1 != 0)
-    }
-
     /// Insert an owner into the 16-slot special list (gs:0x6D3E, insert 0x5FF6).
     /// Returns false only if the list is full and the owner is not already present.
     fn special_slot_insert(&mut self, owner: u16) -> bool {
@@ -4600,18 +4594,19 @@ impl VmMachine {
                 let off = self.lodsw();
                 let related = self.lodsw();
                 if self.query {
-                    // 0x6C7E query: pass iff rec[off]==C4, related matches, and the
-                    // OWNING object is active (0x6CA4 test es:[di+2],1) — NOT "is this
-                    // the single primary presenter". active_actor==Some(off) wrongly
-                    // failed 'is character B present?' in multi-actor scenes. When the
-                    // DEB object table isn't loaded, fall back to the old check.
-                    let owner_ok = match self.owner_active(off) {
-                        Some(active) => active,
-                        None => self.active_actor == Some(off),
-                    };
+                    // 0x6C7E query: the assembly gates on the OWNING object's active
+                    // bit (0x6CA4 test es:[di+2],1). BUT the live port does not model
+                    // object active bits (start_actor_presentation sets the record, not
+                    // an obj+2 bit0; no live setter exists) and owner_object_offset is a
+                    // nearest-below approximation, not the 0x6034 threshold lookup. So
+                    // the working model here is active_actor==Some(off) (the single
+                    // presenter). Applying the assembly gate would fail EVERY C4 query
+                    // in live play and break gated dialogue — a finding correct for the
+                    // assembly but wrong for the port (verified via the missing
+                    // active-bit model; see docs/audit-fixes.md).
                     let pass = self.rec_read(off) == 0xC4
                         && self.rec_read(off + 2) == related
-                        && owner_ok;
+                        && self.active_actor == Some(off);
                     if pass == flipped {
                         self.branch();
                     }

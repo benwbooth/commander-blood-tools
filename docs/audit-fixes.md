@@ -24,18 +24,26 @@ be oracle-re-verified before it is "fixed"; changing it blind regresses a pixel 
 | input | state-countdown beat at 8.011 Hz (was 3.2× slow) | MED |
 | bridge-clicks | world-candidate box labels centered on their anchor | MED |
 | hand-cursor | wrist depth-reach gesture (T recomputed via `st16` L) | MED |
-| vm-presentation | owner-resolution primitive + C4 query owner-active gate | MED |
+| vm-presentation | owner-resolution primitive (object_offsets, enables 0x6946) | infra |
 | vm-records | `0x6946` SET special-slot bookkeeping + raw `0xBC` store | MED |
 | menus | concept/topic list menu row-count-centered (oracle-verified) | MED |
 | vm-records | `0x6863` SET leaves record unchanged for non-{F5,F6,F7} | LOW |
 | hnm-video | palette-block `count==0` is 0 entries, not 256 | LOW |
 | audio | chatter burble 4-tick throttle (was 5) | LOW |
 
-## Verified FALSE POSITIVE — oracle contradicts the finding, port already correct (1)
+## Verified FALSE POSITIVE for the PORT — finding correct for the assembly, wrong for the port's model (2)
 
 - **choice-box `[0xadd]=1` tall-mode (+10):** the `choice_box_bob_morlock.ppm` capture
   shows the 2-row box at y=89/100 = the current `+8` formula; `+18` would put it at 84
   and break the pixel match. No change. (`choice_box_top_y` comment records this.)
+- **C4 query owner-active gate:** the assembly gates the C4 query on the owning object's
+  active bit (`0x6CA4 test es:[di+2],1`). But the live port DOES NOT MODEL object active
+  bits (no live setter of `obj+2 bit0`; `start_actor_presentation` sets the record, not
+  an object flag), and `owner_object_offset` is a nearest-below approximation, not the
+  `0x6034` threshold lookup. Applying the gate failed every C4 query in live play (a
+  regression I introduced in fix #14 and reverted). The port's working model is
+  `active_actor==Some(off)`. Faithfully porting this needs the object-active-bit lifecycle
+  first — infrastructure, not a one-line guard.
 
 ## Remaining (23) — each to be oracle-re-verified or carefully implemented
 
