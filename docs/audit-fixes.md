@@ -381,3 +381,28 @@ STILL NOT PROVEN, deliberately: I have not yet traced which name string `si` poi
 at when `0x77A9` runs, nor confirmed it is the speaking record's name, so the exact
 selector -> filename relationship is open. That trace is the next task; the
 mechanism, though, is now located rather than inferred.
+
+#### Voice trace: how `0x77A9` is reached is STILL OPEN
+
+Attempted to close the last step (which name string `si` points at). Result is
+negative and recorded as such rather than guessed:
+
+- `0x77A9` has NO near callers (`e8` scan over the whole image) and NO near jumps
+  (`e9` scan).
+- It is not the fall-through of `fs_name_area_read` (`0x7788`), which `ret`s at
+  `0x77A8`.
+- Its segment-`0x4DA` offset is `0x2409`, and that word does appear once at
+  `0x7540` — but `0x7540` sits in a DATA blob (it disassembles as nonsense), and
+  `0x2409` is NOT present in the VM opcode handler table at file `0x142D0`. So the
+  hit is most likely coincidental, not a dispatch entry.
+
+Therefore the patcher is reached by a FAR call or through a computed/table
+dispatch that has not been identified. Until that caller is found, the binding
+"which record's name becomes `mu\<NAME>.voc`" is unproven, even though the
+mechanism itself is now certain.
+
+NEXT STEP (concrete): the harness can settle this directly rather than by static
+search — arm an execution watch on file `0x77A9` (the probe already supports
+`EXECWATCHLIN`, and `Cpu::exec_watch_dump_regs` added this session prints the live
+registers) and drive a spoken line. The dump gives both the caller (via the saved
+return address the watch already captures) and `si`, i.e. the exact name source.
