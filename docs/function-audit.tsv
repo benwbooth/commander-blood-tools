@@ -526,7 +526,7 @@ run_ship_3d_nav_choice_handler_4	src/ship3d.rs	1209	fn		INFRA?
 run_ship_3d_navigation_sequence_update	src/ship3d.rs	1287	fn		INFRA?	
 run_ship_3d_procedural_update	src/ship3d.rs	1348	fn		INFRA?	
 build_ship_3d_projection_matrix	src/ship3d.rs	1490	fn		ASM	|| AUDIT 2026-07-24: builder 0x9940..0x99DA verified term-by-term. The NEG ASYMMETRY is REAL and faithful: term[1] @0x995C-0x995F does `neg eax` THEN `sar eax,0xf` (negate before shift), while term[4] @0x99B4-0x99B8 does `sar eax,0xf` THEN `neg eax` (negate after). Only ONE `neg eax; sar eax,0xf` exists in the whole image (0x995C), confirming exactly one term negates before shifting. Validates both the earlier term[1] fix and leaving term[4] unchanged. All products are Q15 (imul + sar 0xf)
-project_ship_3d_point	src/ship3d.rs	1528	fn		UNVERIFIED	
+project_ship_3d_point	src/ship3d.rs	1528	fn		ASM	|| AUDIT 2026-07-24: verified against the point-cloud projector 0x9A34..0x9A7C and the sprite projector 0x9C43..0x9CA7: depth = dot(terms 6,7,8 at [bp+0x18/0x1C/0x20]) >> 15 with BOTH the je (==0) and js (<0) skips = the port depth<=0 -> None; screen x = dot(terms 0,1,2) >> 7 / depth + 0xA0(160); screen y = dot(terms 3,4,5) >> 7 / depth + 0x64(100). Constants 15/7/160/100 all confirmed
 plot_ship_3d_projected_point	src/ship3d.rs	1571	fn		UNVERIFIED	
 ship_3d_projected_point_shade	src/ship3d.rs	1595	fn		UNVERIFIED	
 ship_3d_projected_point_offset	src/ship3d.rs	1599	fn		UNVERIFIED	
@@ -577,9 +577,9 @@ circular_delta	src/ship3d.rs	3157	fn		UNVERIFIED
 wrap_ring_once	src/ship3d.rs	3171	fn		UNVERIFIED	
 matrix_pair_for_angle	src/ship3d.rs	3181	fn		UNVERIFIED	
 fixed_mul_shift_15	src/ship3d.rs	3189	fn		UNVERIFIED	
-projection_component	src/ship3d.rs	3193	fn		UNVERIFIED	
+projection_component	src/ship3d.rs	3193	fn		ASM	|| AUDIT 2026-07-24: the translation subtracts in 16 BITS then sign-extends: `sub word [di],ax` @0x9A3F-0x9A4A followed by `movsx eax,word [di]` @0x9A50 -- the port does signed_i16(p - o) as i32, matching the truncation-then-extend order
 projection_dot	src/ship3d.rs	3197	fn		UNVERIFIED	
-project_ship_3d_axis	src/ship3d.rs	3204	fn		UNVERIFIED	
+project_ship_3d_axis	src/ship3d.rs	3204	fn		ASM	|| AUDIT 2026-07-24: `cdq; idiv ecx` = SIGNED 32-bit divide, then a 16-bit `add ax,center` -- the port divides as i32 and adds the centre with wrapping u16
 scale_ship_3d_object_dimension	src/ship3d.rs	3209	fn		UNVERIFIED	
 ship_3d_rects_intersect	src/ship3d.rs	3213	fn		UNVERIFIED	
 checked_i16_div_i8_to_i8	src/ship3d.rs	3223	fn		UNVERIFIED	
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	      
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	       
