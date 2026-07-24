@@ -63,6 +63,9 @@ fn main() {
                 VmEvent::ProfileRequest(p) => println!("PROFILE {p}"),
                 VmEvent::LoadString(s) => println!("STR {s}"),
                 VmEvent::QueuePresentation { offset } => println!("QUEUE @{offset:#x}"),
+                VmEvent::Transfer { object, to, related } => {
+                    println!("TRANSFER obj @{object:#x} -> @{to:#x} (rel {related:#x})")
+                }
             }
             total += 1;
             if total > 40 { println!("... (truncated)"); return; }

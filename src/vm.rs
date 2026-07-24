@@ -3563,6 +3563,9 @@ pub enum VmEvent {
     /// 1}` request the engine's scan later promotes to a C4 start; handler
     /// 0x6EEE). The story's travel/interception beats arm through this.
     QueuePresentation { offset: usize },
+    /// `0xCD` — an object TRANSFER (teleport/confiscation; handler 0x69C7:
+    /// container field 0x11 relink + special-slot bookkeeping).
+    Transfer { object: usize, to: usize, related: usize },
 }
 
 /// The script VM's machine state, mirroring the game's own arrays byte-for-byte.
@@ -4366,6 +4369,41 @@ impl VmMachine {
                 self.concept_alt = 0;
                 // 0x64C0 also clears the resume state ([0x67B1]=0/[0x6764]=0).
                 self.resume_pos = None;
+            }
+            // 0xCD TRANSFER (0x69C7): the TELEPORT/confiscation op ("TELEPORT
+            // CRED", customs seizures). QUERY: match a typed-CD record
+            // {0xCD, op2, op3} at rec op1 (0xA1 inverts) — "was this transfer
+            // done?". SET: the object transfer — container field 0x11 relink +
+            // special-slot insert/remove when the ship (gs:[0x674E]) is either
+            // side; the port records the typed marker so story guards see the
+            // transfer, and emits an event for the frontend's inventory/world
+            // effects. Full container-graph modeling: ledgered APPROX.
+            0xCD => {
+                let mut flipped = false;
+                if self.u8_at(self.pc) == 0xA1 {
+                    self.pc += 1;
+                    flipped = true;
+                }
+                let op1 = self.lodsw();
+                let op2 = self.lodsw();
+                let op3 = self.lodsw();
+                if self.query {
+                    let pass = self.rec_read(op1) == 0xCD
+                        && self.rec_read(op1 + 2) == op2
+                        && self.rec_read(op1 + 4) == op3;
+                    if pass == flipped {
+                        self.branch();
+                    }
+                } else {
+                    self.rec_write(op1, 0xCD);
+                    self.rec_write(op1 + 2, op2);
+                    self.rec_write(op1 + 4, op3);
+                    self.events.push(VmEvent::Transfer {
+                        object: op1 as usize,
+                        to: op2 as usize,
+                        related: op3 as usize,
+                    });
+                }
             }
             // 0xD2 (0x64B8): pending profile = operand-1.
             0xD2 => {
