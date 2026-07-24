@@ -497,8 +497,14 @@ observation (the oracle, blocked interactively) to pin. The five refuted hypothe
    not the arche object; the sole write to arche+0x16 is the CLEAR-to-0 @0x6b44.
 5. A B8-family pair-write at 0x1038 (so second word = 0x103A) — NO. SCRIPT5 has no
    B8/B9/BD opcode targeting 0x1038.
+6. A derivable actor→scene mapping (set rec_103A from the active actor) — NO. The
+   SCRIPT5 guard co-occurrences give Bug_Deluxe→{2408,4024} and Yoko→{2930,4024}:
+   the SAME actor appears in different rec_103A phases, so the value is NOT a function
+   of the active actor. (Migrator→{4024} alone is clean, but a Migrator-only heuristic
+   models the concert outcome, not the mechanism, and would not set the other phases.)
 So the set is native, runtime-computed, from state (which object is active + its
-record layout) that static analysis cannot pin. This CORRECTS the intervening
+record layout + plot history) that static analysis cannot pin — SIX distinct
+approaches now refuted by direct checking. This CORRECTS the intervening
 "deferred-record port-side wiring, not blocked" framing: that was a hopeful detour,
 refuted by (2). WHAT IS DECODED and durable: 4024 = the "Bigbang" plot object;
 rec_103A = arche+0x16 = a VM-maintained "current plot object" field that the 0xB8
