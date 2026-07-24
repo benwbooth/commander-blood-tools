@@ -1278,9 +1278,16 @@ impl EngineState {
             '?' => Some(36),
             '!' => Some(37),
             '.' => Some(38),
-            ',' => Some(39),
-            ':' => Some(40),
-            ';' => Some(41),
+            // CORRECTED: these three were rotated (`,`/`:`/`;` at 39/40/41). Read
+            // off the bank's own 8x8 bitmaps: frame 39 has marks at rows 2 and 6
+            // with no descender = COLON; frame 40 adds a row-3 dot above a tailed
+            // mark = SEMICOLON; frame 41 is a single mark at rows 5-6 with the
+            // row-7 tail = COMMA. Corroborated independently by the BUILT-IN font's
+            // table at DS:0x7802, which orders '.'=30, ':'=31, ';'=32 consecutively
+            // — the same relative order, with ',' separated from them.
+            ':' => Some(39),
+            ';' => Some(40),
+            ',' => Some(41),
             '_' => Some(42),
             '+' => Some(43),
             '-' => Some(44),
@@ -5793,6 +5800,26 @@ mod tests {
         // HONK = H(7) O(14) N(13) K(10): the mapping must resolve uppercase letters.
         assert_eq!(EngineState::console_glyph_index('H'), Some(7));
         assert_eq!(EngineState::console_glyph_index('0'), Some(26));
+
+        // Punctuation ordering, checked against the BANK'S OWN BITMAPS rather than
+        // restated as constants -- `,` `:` `;` were rotated here, and a test that
+        // just repeats the mapping would have agreed with the bug.
+        //
+        // Distinguishing marks in the 8x8 cells: a COLON has an upper dot (row 2)
+        // and no row-7 descender; a COMMA has no upper dot and DOES tail into row 7;
+        // a SEMICOLON has both.
+        let ink = |g: usize, row: usize| -> bool {
+            let f = &e.console_font[g];
+            (0..f.width as usize).any(|c| f.indices[row * f.width as usize + c] != 0)
+        };
+        for (ch, upper_dot, tail) in [(':', true, false), (',', false, true), (';', true, true)] {
+            let g = EngineState::console_glyph_index(ch).expect("punctuation maps");
+            assert_eq!(ink(g, 2) || ink(g, 3), upper_dot, "{ch:?} upper dot (frame {g})");
+            assert_eq!(ink(g, 7), tail, "{ch:?} descender tail (frame {g})");
+        }
+        // '.' is the one with neither.
+        let dot = EngineState::console_glyph_index('.').unwrap();
+        assert!(!ink(dot, 2) && !ink(dot, 3) && !ink(dot, 7), "'.' has no dot above and no tail");
         if e.panorama.is_none() { return; }
         e.bridge_active = true;
         e.step(MouseInput { x: 160, y: 100, buttons: 0, ..Default::default() });

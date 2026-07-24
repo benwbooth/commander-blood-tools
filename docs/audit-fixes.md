@@ -461,3 +461,34 @@ Fix: `choice_box_top_y_seeded(rows, seed)` with `choice_box_text_top(&self)` pic
 the seed from `console_box_kind`, used by BOTH the draw and the hit-test so they
 cannot drift apart. Regression test asserts the 5px offset for kind 10 and no change
 for other kinds.
+
+## FIXED #42 — HONKF console font had `,` `:` `;` rotated
+
+`console_glyph_index` mapped `,`=39, `:`=40, `;`=41. The bank's own 8x8 bitmaps say
+otherwise: **39 = `:`, 40 = `;`, 41 = `,`**.
+
+Read off the glyph cells, the three are told apart by two marks — an upper dot
+(row 2/3) and a descender tail (row 7):
+
+| frame | upper dot | tail | glyph |
+|-------|-----------|------|-------|
+| 38    | no        | no   | `.`   |
+| 39    | yes       | no   | `:`   |
+| 40    | yes       | yes  | `;`   |
+| 41    | no        | yes  | `,`   |
+
+Corroborated independently by the BUILT-IN font's translation table at `DS:0x7802`,
+decoded earlier in this campaign, which orders `'.'=30, ':'=31, ';'=32`
+consecutively with `','` separated at 37 — the same relative order.
+
+How it was found: the routine is `#[allow(dead_code)]` with no runtime callers, and
+the suspicion was that its mapping was INVENTED (the filename `honkf.spr` lives in
+an alphabetical table of character-sprite names — `hanz`, `izwalito`, `jerry` — so
+it looked like entity art, not a font). Checking the asset refuted the fabrication
+theory: 49 frames, all 8x8, and the mapping covers exactly 0..48
+(26 letters + 10 digits + 13 punctuation). Rendering the bank then confirmed
+`0..25 = A..Z` and `26..35 = 0..9` exactly as mapped, and caught the rotated trio.
+
+The regression test asserts the mark pattern read FROM THE BITMAPS rather than
+restating the constants — a test that repeated the mapping would have agreed with
+the bug. Verified it fails on the old ordering before restoring the fix.
