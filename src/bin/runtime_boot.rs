@@ -528,12 +528,22 @@ fn main() {
                 // per frame and copies int33 state into [0xA2A]/[0xA2C]) so the
                 // injection lands, then RE-ASSERT the position right before the
                 // press so the per-frame cursor warp has not yet decayed it.
-                // Single injection, then wait long enough for BOTH the per-frame
-                // poll (0xD0E) to latch it AND the 0x97FC rebase to convert the
-                // ring value into the screen-relative space the hit-tests compare
-                // (measured: at 700k the Y had landed but [0xA2A] still read the
-                // raw ring; re-asserting only reset it to raw again).
-                let _ = rt.run(rt.cpu.steps + 1_400_000);
+                // CLOSED-LOOP relative steering. Absolute injection fights the
+                // per-frame cursor warp (it decays back to centre), so instead
+                // read the live [0xA2A]/[0xA2C] the hit-tests actually compare and
+                // nudge toward the target with move_mouse_rel until it converges.
+                for _ in 0..10 {
+                    let cur_x = rt.m.read8(g, 0x0A2A) as i32
+                        | ((rt.m.read8(g, 0x0A2B) as i32) << 8);
+                    let cur_y = rt.m.read8(g, 0x0A2C) as i32
+                        | ((rt.m.read8(g, 0x0A2D) as i32) << 8);
+                    let (ex, ey) = (sx - cur_x, sy as i32 - cur_y);
+                    if ex.abs() <= 3 && ey.abs() <= 2 {
+                        break;
+                    }
+                    rt.move_mouse_rel(ex.clamp(-64, 64), ey.clamp(-32, 32));
+                    let _ = rt.run(rt.cpu.steps + 700_000);
+                }
                 // THE measurement that decides the coordinate-space question:
                 // what does the hit-test actually compare? [0xA2A] is rebased by
                 // 0x97FC each tick, so print the injected ring value alongside the

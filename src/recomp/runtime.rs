@@ -794,6 +794,28 @@ impl Runtime {
         }
     }
 
+    /// Nudge the virtual mouse by a RELATIVE delta, the way real hardware motion
+    /// reaches the game.
+    ///
+    /// Why this exists: the bridge accumulates cursor motion in RING space by
+    /// warping the hardware cursor every frame (`0x9722` re-centres it, and
+    /// `0x97FC` rebases `gs:0x2A2A` against `gs:0x27A7`). An ABSOLUTE
+    /// [`Self::set_mouse_pos`] therefore fights the warp: measurements show an
+    /// injected position lands only after the game's per-frame poll (`0xD0E`),
+    /// still reads as the RAW ring value for a tick, and has decayed back to
+    /// centre by ~1.4M steps. Feeding a delta instead is what the game is built to
+    /// consume — the same model the port uses in `BridgeView::move_mouse`
+    /// ("motion accumulates in ring space").
+    ///
+    /// Coordinates are DOS-virtual, matching `set_mouse_pos` (x 0..639, y 0..199).
+    pub fn move_mouse_rel(&mut self, dx: i32, dy: i32) {
+        self.mouse_x = (self.mouse_x as i32 + dx).clamp(0, 639) as u16;
+        self.mouse_y = (self.mouse_y as i32 + dy).clamp(0, 199) as u16;
+        if let Some((mask, _, _)) = self.mouse_handler {
+            self.mouse_pending |= mask & 0x01;
+        }
+    }
+
     /// Press a mouse button (0 = left, 1 = right) at the current position: bumps the
     /// int33 ax=5 press counter and flags the press event.
     pub fn mouse_press(&mut self, button: u16) {

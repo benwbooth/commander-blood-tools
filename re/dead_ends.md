@@ -1031,3 +1031,31 @@ Better approach: drive the cursor the way the PORT models it —
 space", which is what the warp is for. The runtime exposes no relative-motion entry
 today (`set_mouse_pos` / `mouse_press` / `mouse_release` / `mouse_event` only), so
 adding one is the actual unblock for menu-row clicking — not more timing tuning.
+
+#### Relative motion added — Y converges, X is pinned by the warp
+
+Added `Runtime::move_mouse_rel(dx, dy)` (src/recomp/runtime.rs) and drove the probe
+as a CLOSED LOOP: read the live `[0xA2A]`/`[0xA2C]` the hit-tests compare, nudge
+toward the target, repeat.
+
+Result — the model is right for one axis and blocked on the other:
+- **Y converges exactly**: requested 126 / 89 / 100 were all reached. Relative
+  motion is confirmed as the correct injection model (absolute never converged).
+- **X pins at 320** in every attempt. 320 is the centre of the DOS-virtual x range
+  (0..639): the game re-warps X every frame precisely so it can measure deltas
+  (`0x9722`), and the loop's 700k-step settle contains a re-warp that resets it, so
+  no accumulated X displacement survives to the hit-test.
+
+So the remaining problem is ORDERING, not model: a dx must be visible to the game's
+poll (`0xD0E`) BEFORE the next warp re-centres X. The probe cannot currently
+guarantee that interleaving.
+
+Better approach: make the runtime's int33 honour the warp semantics the game
+assumes — when the game sets the cursor (int 33h ax=4), remember that as the warp
+ORIGIN and report subsequent reads as origin + accumulated delta, instead of
+letting the warp overwrite the injected position. That is a runtime-fidelity fix in
+`src/recomp/runtime.rs` (the int33 ax=3/ax=4 path), not more probe tuning, and it
+would make every existing click-driving probe more faithful at the same time.
+
+THREAD ENDS HERE. Banked: `move_mouse_rel`, a working PROFILEJUMP, the rec_103A
+watch, busy-gate diagnostics, and the measurement trail above.
