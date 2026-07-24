@@ -252,6 +252,10 @@ pub struct EngineState {
     pub ship3d_depth: crate::ship3d::Ship3dDepthState,
     /// The nav view's hold counter (`gs:0x0B3B`), which the transition gate reads.
     pub ship3d_hold_ticks: u16,
+    /// Ship-3D PROCEDURAL update state (`run_ship_3d_procedural_update`): the
+    /// per-frame HUD-rotation / nav-timer machine. Verified but previously
+    /// unreachable; driven below from the live cursor so it runs in play.
+    pub ship3d_procedural: crate::ship3d::Ship3dProceduralUpdateState,
     /// The game's own PRNG, used for the transition's `rand(20)` close gate
     /// (`0xB6D0 mov ax,0x14` -> `lcall 0x1CE:0x0B02`).
     ship3d_prng: crate::ship3d::BloodPrng,
@@ -578,6 +582,7 @@ impl EngineState {
             ship3d_transition: Default::default(),
             ship3d_depth: Default::default(),
             ship3d_hold_ticks: 0,
+            ship3d_procedural: Default::default(),
             ship3d_prng: crate::ship3d::BloodPrng::seeded_from_rtc_seconds(0),
             hud_grid: Vec::new(),
             hud_orb: Vec::new(),
@@ -3377,6 +3382,14 @@ impl EngineState {
         self.ship3d_depth.opening = self.ship3d_transition.opening;
         self.ship3d_depth.closing = self.ship3d_transition.closing;
         step_ship_3d_depth_scroll(&mut self.ship3d_depth);
+        // The procedural HUD/nav-timer machine runs on the same frame tick. Feed
+        // it the REAL cursor and button state (it consumes them directly) and the
+        // same hold counter the transition gate reads -- no invented inputs.
+        self.ship3d_procedural.hold_ticks = self.ship3d_hold_ticks;
+        self.ship3d_procedural.mouse_x = self.mouse.x;
+        self.ship3d_procedural.mouse_y = self.mouse.y;
+        self.ship3d_procedural.mouse_button_state = self.mouse.buttons;
+        crate::ship3d::run_ship_3d_procedural_update(&mut self.ship3d_procedural);
         // The scroll clears its own direction flags when it reaches a limit.
         self.ship3d_transition.opening = self.ship3d_depth.opening;
         self.ship3d_transition.closing = self.ship3d_depth.closing;
@@ -5582,6 +5595,35 @@ mod tests {
             "never exceeds 0x41, got {}",
             e.ship3d_depth.depth_offset
         );
+    }
+
+    /// The procedural HUD machine must also RUN in play (it was verified but
+    /// unreachable). With the HUD-active flag set it rotates the angle toward
+    /// hold/2 and clears the flag on arrival — driven purely by the frame tick.
+    #[test]
+    fn nav_view_drives_the_ship3d_procedural_update() {
+        use crate::ship3d::SHIP_3D_PROCEDURAL_HUD_ACTIVE_FLAG;
+        let mut e = EngineState::new();
+        e.on_ship = true;
+        assert!(e.nav_view_active());
+        e.ship3d_procedural.hud_flags |= SHIP_3D_PROCEDURAL_HUD_ACTIVE_FLAG;
+        e.ship3d_procedural.angle = 40;
+
+        let start = e.ship3d_procedural.angle;
+        for _ in 0..64 {
+            e.step_ship_3d_nav_state();
+        }
+        // The machine ran: either the angle moved toward hold/2 or the flag
+        // cleared on arrival. Both are observable evidence it is reached.
+        let moved = e.ship3d_procedural.angle != start;
+        let cleared = e.ship3d_procedural.hud_flags & SHIP_3D_PROCEDURAL_HUD_ACTIVE_FLAG == 0;
+        assert!(
+            moved || cleared,
+            "procedural update never ran: angle {} flags {:#x}",
+            e.ship3d_procedural.angle, e.ship3d_procedural.hud_flags
+        );
+        // And the hold counter it reads is the same one the transition gate uses.
+        assert_eq!(e.ship3d_procedural.hold_ticks, e.ship3d_hold_ticks);
     }
 
     #[test]
