@@ -746,8 +746,8 @@ write_ship3d_record_state_slot	src/vm.rs	1946	fn		UNVERIFIED
 resolve_c1_record_state_ship3d_target	src/vm.rs	1956	fn		UNVERIFIED	
 write_c1_record_state_ship3d	src/vm.rs	2003	fn		UNVERIFIED	
 write_c1_record_state_mode0	src/vm.rs	2060	fn		UNVERIFIED	
-write_c2_record_state_direct	src/vm.rs	2084	fn		UNVERIFIED	
-clear_record_words	src/vm.rs	2131	fn		UNVERIFIED	
+write_c2_record_state_direct	src/vm.rs	2084	fn		ASM	|| AUDIT 2026-07-24: C2 SET verified against 0x6E78..0x6EE7: owner-active gate, target `+2 & 0x20`, special-slot insert (skip on full), 0xFFFF into the selector-0x11 field; then the presentation tail gated on [0x2793]&1 CLEAR and [0x67AA]&2 CLEAR -- kind 2 writes [0x1FB2]=0 and active line 0x27 (0x6EB4/0x6EBA), kind 0x400 additionally ORs 0x02 into [0x67AA] and uses active line 0x2B (0x6ED4..0x6EE0). The port reproduces that asymmetry (only kind 0x400 sets the busy flag). All six constants confirmed
+clear_record_words	src/vm.rs	2131	fn		ASM	|| AUDIT 2026-07-24: three zero words, matching the C9 handler's three `stosw` at 0x6FC7/0x6FCB/0x6FCC
 clear_record	src/vm.rs	2137	fn		UNVERIFIED	
 write_record_entry	src/vm.rs	2154	fn		UNVERIFIED	
 write_record_entry_mode0	src/vm.rs	2160	fn		UNVERIFIED	
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	                           
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	                            
