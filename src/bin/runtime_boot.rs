@@ -3101,6 +3101,25 @@ fn main() {
                     let lin = 0x0e84usize * 16 + off as usize;
                     rt.m.mem[lin] = val;
                 }
+                // drag <x1> <y1> <x2> <y2>: press at 1, glide to 2, release —
+                // the control-stick push gesture.
+                "drag" => {
+                    let (x1, y1): (i32, u16) = (toks[1].parse().unwrap(), toks[2].parse().unwrap());
+                    let (x2, y2): (i32, u16) = (toks[3].parse().unwrap(), toks[4].parse().unwrap());
+                    let ring1 = (x1 + frame(&rt) as i32 * 8 - 160).rem_euclid(1440) as u16;
+                    rt.set_mouse_pos(ring1, y1);
+                    let _ = rt.run(rt.cpu.steps + 400_000);
+                    rt.mouse_press(0);
+                    let _ = rt.run(rt.cpu.steps + 300_000);
+                    for i in 1..=8 {
+                        let xi = x1 + (x2 - x1) * i / 8;
+                        let yi = (y1 as i32 + (y2 as i32 - y1 as i32) * i / 8) as u16;
+                        let ring = (xi + frame(&rt) as i32 * 8 - 160).rem_euclid(1440) as u16;
+                        rt.set_mouse_pos(ring, yi);
+                        let _ = rt.run(rt.cpu.steps + 200_000);
+                    }
+                    rt.mouse_release(0);
+                }
                 // save <path>: write a savestate at this scenario point (the
                 // story-milestone banker).
                 "save" => {
