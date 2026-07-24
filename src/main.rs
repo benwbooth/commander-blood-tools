@@ -2159,9 +2159,16 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     load_script(&mut engine, &mut music, u32::from(profile) + 1);
                 }
                 None if !ending_started && engine.progress.all_visited() => {
-                    // Every free-choice location has been visited: play the ending finale,
-                    // with the credits music the binary itself names (`mu\credits.voc`,
-                    // string at file 0xE16B — the ending IS the credits sequence).
+                    // DRIVER FALLBACK (not the game's own trigger): the REAL ending fires
+                    // when SCRIPT5's Bigbang-concert block emits LoadString("fin.hnm") — see
+                    // the VmEvent::LoadString arm above. That block guards rec_103A==4024 &&
+                    // rec_1340==4108; rec_1340 is written by SCRIPT5's OP_C1 mode-0 sites
+                    // (C1 46 13 <val> → 4060/4084/4108, decoded), but the port's C1 write is
+                    // gated on the target's owner being active (line-record-table owner-state,
+                    // DATA(partial)), so a fresh headless run doesn't reach the concert state.
+                    // Until that gating + rec_103A's writer are fully driven, fall back to
+                    // "all free-choice locations visited" so the ending stays reachable in play.
+                    // Credits music is the binary's own `mu\credits.voc` (string at file 0xE16B).
                     ending_started = true;
                     voice = None;
                     voice_line = None;
