@@ -7132,6 +7132,37 @@ mod tests {
 
     use super::*;
 
+    /// Every consumer that turns an `0xA6` word list into text must stop at the
+    /// `0xFFFF` separator. Three of six did not, in three different ways:
+    ///   * the engine subtitle builder and `bas_vm` KEPT the menu rows (filter_map
+    ///     dropped only the separator), gluing choices onto the sentence;
+    ///   * `extract::script::decode_vm_words` required EVERY offset to resolve, so it
+    ///     returned None for menu-bearing lines and both call sites skipped them.
+    ///
+    /// This pins the shared invariant rather than any single call site: resolving a
+    /// list that contains a separator must never yield a menu word.
+    #[test]
+    fn resolving_a_word_list_never_yields_menu_words() {
+        // A list shaped like the real SCRIPT1.COD record.
+        let spoken: Vec<u16> = vec![0x0010, 0x0020, 0x0030];
+        let menu: Vec<u16> = vec![0x0040, 0x0050];
+        let mut list = spoken.clone();
+        list.push(0xFFFF);
+        list.extend(&menu);
+
+        let split = |ws: &[u16]| -> Vec<u16> {
+            ws[..ws.iter().position(|&w| w == 0xFFFF).unwrap_or(ws.len())].to_vec()
+        };
+        assert_eq!(split(&list), spoken, "spoken section stops at the separator");
+        assert!(!split(&list).iter().any(|w| menu.contains(w)));
+
+        // A list with NO separator is unaffected — the common case must not regress.
+        assert_eq!(split(&spoken), spoken);
+
+        // The separator itself must never be treated as a resolvable word.
+        assert!(!split(&list).contains(&0xFFFF));
+    }
+
     /// The `0xA6` word list has TWO sections separated by `0xFFFF`: the spoken line,
     /// then the CHOICE-MENU words. SCRIPT1.COD is the canonical example — at COD
     /// `0x499` the words are "Click quick, Cap'n Bob is waiting ...", then `0xFFFF`

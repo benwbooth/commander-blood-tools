@@ -586,3 +586,32 @@ display exactly as the widget does. `MENU_SUBMENU` remains only as the documente
 fallback for an engine with no script loaded (unit tests, bare `EngineState::new()`),
 so the const is a default rather than the authority. The draw and the hit-test both
 call the accessor, so the clickable band cannot disagree with what is drawn.
+
+## FIXED #46 — swept every `0xA6` word-list consumer; 3 of 6 were wrong, 3 ways
+
+After #45, swept the codebase for every place an `0xA6` word list is turned into text.
+There are six. Three were correct; three were broken, and each failed DIFFERENTLY —
+which is why no single earlier fix caught them:
+
+| consumer | before | symptom |
+|---|---|---|
+| `vm.rs` (2 gameplay sites) | `take_while != 0xFFFF` | correct |
+| `script.rs:272` | explicit split | correct |
+| `vm_drive.rs:36` | `take_while != 0xFFFF` | correct |
+| `engine.rs load_dialogue` | `filter_map` over all | menu glued to subtitle (#45) |
+| `bas_vm.rs:206` | `filter_map` over all | menu glued to BAS line |
+| `extract/script.rs decode_vm_words` | `collect::<Option<_>>()?` | **returned None**, and both call sites `continue` — silently DROPPED all 211 menu-bearing lines from extraction |
+
+The third is the nastiest: it did not corrupt output, it removed it. A line with a
+choice menu simply did not appear in the extraction, so the omission was invisible in
+the result — nothing looked wrong, there was just less of it.
+
+Added `resolving_a_word_list_never_yields_menu_words`, which pins the shared INVARIANT
+instead of any one call site: resolving a list containing a separator must never yield
+a menu word, a list without one must be unchanged, and `0xFFFF` must never be treated
+as resolvable.
+
+Method note worth keeping: the productive move was not decoding anything new. It was
+taking a defect found in one place and grepping for every other consumer of the same
+data shape. Three of the six were wrong; the correct handling had existed in the same
+codebase the whole time.

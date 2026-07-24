@@ -1716,7 +1716,16 @@ fn function_name_for_offset(functions: &[(usize, String)], offset: usize) -> &st
 }
 
 fn decode_vm_words(words: &HashMap<u16, String>, word_offsets: &[u16]) -> Option<Vec<String>> {
-    let decoded: Vec<String> = word_offsets
+    // Decode only the SPOKEN section. An 0xA6 word list may carry a choice menu after
+    // an 0xFFFF separator, and 0xFFFF is not a dictionary offset -- so requiring every
+    // entry to resolve made this return None for every menu-bearing line, and both
+    // call sites `continue` on None. That silently dropped 211 of the 3650 A6 lines
+    // across the five scripts from the extraction.
+    let spoken = &word_offsets[..word_offsets
+        .iter()
+        .position(|&w| w == 0xFFFF)
+        .unwrap_or(word_offsets.len())];
+    let decoded: Vec<String> = spoken
         .iter()
         .map(|offset| words.get(offset).cloned())
         .collect::<Option<_>>()?;

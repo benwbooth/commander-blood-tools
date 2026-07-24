@@ -202,8 +202,14 @@ impl BasMenuStack {
         let words = parse_dic_words(&self.dic);
         for tok in walk(&self.bas, bas_offset, self.bas.len()) {
             if let VmToken::Text { word_offsets, .. } = tok {
-                let parts: Vec<String> =
-                    word_offsets.iter().filter_map(|o| words.get(o).cloned()).collect();
+                // Stop at the 0xFFFF separator: the words after it are the CHOICE
+                // MENU, not part of the spoken line. filter_map dropped the separator
+                // silently (it is not a DIC key) while keeping the menu rows.
+                let parts: Vec<String> = word_offsets
+                    .iter()
+                    .take_while(|&&w| w != 0xFFFF)
+                    .filter_map(|o| words.get(o).cloned())
+                    .collect();
                 return Some(crate::engine::assemble_words(&parts));
             }
         }
