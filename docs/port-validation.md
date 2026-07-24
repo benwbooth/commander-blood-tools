@@ -672,3 +672,45 @@ draw offsets `[si+0xC]`/`[si+0xE]` taken from each entity's own descriptor. Deco
 that needs a state where destination entities are actually populated; in every
 savestate available today all eleven records read ZERO (so the real routine draws
 nothing at all), which is why the spread cannot yet be verified.
+
+## STRUCTURAL FINDING (2026-07-24): faithfully-ported ship-3D code that NEVER RUNS
+
+The function-audit campaign verified several ship-3D routines as EXACT against the
+binary (depth scroll vs `0xB75C`, transition state machine vs `0xB692`, plane-band
+copy vs `0xB6DD`, target-list layout vs `0x8438`, sprite slot position/extent vs
+`0x420D`/`0x42CD`, projection matrix vs `0x9940`, point + object projection vs
+`0x9A34`/`0x9B98`). Every one matched — and yet the nav screen is still wrong in
+play.
+
+The reason is not per-function inaccuracy. It is REACHABILITY:
+
+    ship3d.rs: 21 of 51 public functions have NO caller outside #[cfg(test)]
+
+Dormant set includes the whole navigation spine:
+`run_ship_3d_navigation_sequence_update`, `run_ship_3d_procedural_update`,
+`run_ship_3d_nav_choice_handler_0..4`, `update_ship_3d_nav_choice_dispatch`,
+`run_ship_3d_navigation_trigger_prelude`, `run_ship_3d_navigation_final_reset`,
+`run_ship_3d_temp_snd_setup`, `step_ship_3d_depth_scroll`,
+`step_ship_3d_interpolation_gate`, `update_ship_3d_transition_state`,
+`copy_ship_3d_plane_bands`, `hit_test_ship_3d_target_list`,
+`select_ship_3d_target_record`, `render_star_map_navview`,
+`commit_ship_3d_sprite_slot_dirty_geometry`, `commit_ship_3d_global_clip_snapshot`,
+`build_ship_3d_navigation_source_records`.
+
+So the subsystem is ported, unit-tested, and GREEN — because the tests call it
+directly — while the running game never executes any of it. That is why:
+- the nav view drew a fabricated pyramid grid instead of the real projector;
+- `flag_252a` has no runtime setter (its writer IS the nav sequence update);
+- the world-click -> C1 record chain is not wired.
+
+CONTEXT (so this is not overstated): most other dormant code is EXPECTED —
+`auto.rs` 60/75, `io_lift.rs` 12/12, `ptr_leaves_gen.rs` 2/2 are recompilation
+tooling with no runtime role. `vm.rs` is 4/35, i.e. essentially fully wired. The
+ship-3D concentration is the anomaly.
+
+CONSEQUENCE FOR THE CAMPAIGN: per-function auditing cannot surface this class of
+defect, because each function is individually correct. Any accuracy push must ALSO
+check reachability — a ledger row should not count as "verified" for gameplay
+purposes unless the function is actually reached in play. The single highest-value
+accuracy task in the port is therefore not another audit row: it is WIRING the
+ship-3D navigation spine into the engine's frame loop.
