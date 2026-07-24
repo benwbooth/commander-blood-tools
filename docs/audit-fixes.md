@@ -39,7 +39,14 @@ be oracle-re-verified before it is "fixed"; changing it blind regresses a pixel 
 | vm-records | `0xC4` mode-0 (SET) write guard (`0x6CC3..0x6D01`): both operand objects active + kind/already-set checks, else branch (was unconditional write) | HIGH |
 | vm-records | `0xC4` mode-0 already-set/idempotence check (`cx==0xC4` + op2 selector-0x13 field) — same guard | MED |
 
-## Verified FALSE POSITIVE for the PORT — finding correct for the assembly, wrong for the port's model (3)
+## Verified FALSE POSITIVE for the PORT — finding correct for the assembly, wrong for the port's model (4)
+
+- **`0x6946` query nuance (0xAD/AF/B2/B3/BA/BB/BC):** VERIFIED the port's query arm is
+  an EXACT match for `0x6954..0x6983`: the special-object -> `0xFFFF` wildcard
+  substitution (`raw==gs:[0x674e]`), the `val == rec_read(off)` compare (= `cmp ax,
+  es:[bx+di]`), and the four-way inversion branch `(eq && flipped) || (!eq && !flipped)`.
+  The match-anything-vs-aboard subtlety was already fixed (in-code note at the arm). No
+  change — the port is faithful here.
 
 - **subtitle console multi-line pitch (10 vs asm `add dx,8`):** the on-console 10px
   pitch is TUTORIAL4 oracle-calibrated (console rows measured at y=8/18 = pitch 10);
@@ -77,7 +84,7 @@ reading them in the C4 SET guard faithful to the game's write/branch decision (t
 divergence is the C1-clear case, a separate subsystem the live VM does not run). The C4
 mode-0 write guard is now IMPLEMENTED on this basis (see the Fixed table).
 
-## Remaining (14) — each to be oracle-re-verified or carefully implemented
+## Remaining (13) — each to be oracle-re-verified or carefully implemented
 
 - **Geometry, needs oracle re-check** (likely more false positives like the tall-mode):
   choice-box x-band / min-width floor (need label widths plumbed into the hit-test),
@@ -89,10 +96,14 @@ mode-0 write guard is now IMPLEMENTED on this basis (see the Fixed table).
   world/ship-presentation ladder (`0x5B38`, `record_type_ladder`), unhandled in the live
   VM; it is the same subsystem that owns the sole runtime active-bit writer (`0x5B8D`).
   Porting it is a self-contained next task, not an infrastructure blocker.
-- **Subtle / low visible impact / risk:** B8 arche-reference cleanup (needs arche offset),
-  `0xA8` fin-flag + presentation-request side effects (needs gs-flag model), `0x6946`
-  query nuance, bridge ring-cursor 8px snap (changes steering feel), chatter re-roll
-  determinism (separate PRNG), A6 per-line C4 gate.
+- **Subtle / low visible impact / risk:** `0xA8` fin-flag + presentation-request side
+  effects — DECODED (`0x67C8`): after the string copy the handler sets `gs:[0x67BD]=1`
+  when the operand starts with `"fin."`, then (if `!(0x67AA&2)` and ship-active
+  `0x24F3&1`/`0x274F&1`) fires a presentation request (`0x6788=7`, `0x67AA|2`,
+  `0x1FB2=0`, `0x1FA3=0xFFFF`, `0xB3B=0`). CONFIRMED engine-coupled: those are
+  frontend/ship-presentation flags the live VM does not hold — the "gs-flag model" the
+  finding named. Not a VM-local drop-in. Also: bridge ring-cursor 8px snap (changes
+  steering feel), chatter re-roll determinism (separate PRNG), A6 per-line C4 gate.
 - **Rewrites:** nav destinations = flag-gated entity set (fabricated pyramid grid; needs
   entity world coords + active bits), world-destination from clicked row (UNDECODED
   on-planet click semantics), A6 reveal-busy serialization handshake (VM↔frontend).
