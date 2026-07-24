@@ -138,7 +138,10 @@ locked (script2_interception_arms_counts_down_and_queues): the shipped-enabled
 @272F one-shot arms state[3]=10 -> the 0x8AA beat countdown (200Hz/25, idle-gated)
 expires it -> @2744's OP_C3 queues the typed {0xC3,40,1} request at 0x6FC -> idle
 promotion starts the presentation (C4, active actor). The frontend beats the
-countdown and promotes queued requests. THE INTERCEPTION NOW PLAYS through the
+countdown and promotes queued requests. THE FULL SCRUT ENCOUNTER ARC now plays in the port (f387ad2: resume model +
+departure test — arrival, repeat warnings, FINAL WARNING, departure radio, all
+from shipped bytes; two escape routes decoded: stay/reprieve vs flee via the
+rec_0F4E location write -> the Corpo unlock). THE INTERCEPTION NOW PLAYS through the
 port's frame loop (script2_interception_plays_through_the_frame_loop: SCRIPT2
 from load, frames + beats + serial queue promotion, SCRUT agent K's radio
 warning emits @2DF5 after the TV-commercial presentation drains) — with the
