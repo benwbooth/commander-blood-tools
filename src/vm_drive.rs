@@ -97,6 +97,11 @@ impl VmDrive {
         }
     }
 
+    /// Is a call queued (the interception's C3 at 0x6FC) awaiting the answer?
+    pub fn call_ringing(&self) -> bool {
+        self.m.rec_read_pub(0x6FC) == 0xC3
+    }
+
     /// The player's advance/cancel click on a lingering presentation.
     pub fn advance(&mut self) {
         if self.m.presentation_busy {

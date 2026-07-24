@@ -97,7 +97,21 @@ fn main() {
                         }
                     }
                 }
-                if !handled && !e.hub_cancel_click(mx, my) {
+                // The orb / red-button click answers a RINGING queued call (the
+                // interception): take it via the active idle policy. Any click
+                // not on a row/box/cancel is the player's "answer/advance".
+                let mut answered = false;
+                if !handled {
+                    if let Some(d) = drive.as_mut() {
+                        if d.call_ringing() || !d.m.presentation_busy {
+                            for _ in 0..8 {
+                                transcript.extend(d.frame_idle());
+                            }
+                            answered = true;
+                        }
+                    }
+                }
+                if !handled && !answered && !e.hub_cancel_click(mx, my) {
                     // The console rows only dispatch once the presentation is done
                     // (the windowed game's dialogue_finished gate; oracle-confirmed:
                     // clicks during the live presentation are ignored).

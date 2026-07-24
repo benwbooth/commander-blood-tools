@@ -4015,6 +4015,11 @@ impl VmMachine {
         self.line_records.get(off as usize / 2).copied().unwrap_or(0)
     }
 
+    /// Public record read for the drive layer.
+    pub fn rec_read_pub(&self, off: u16) -> u16 {
+        self.rec_read(off)
+    }
+
     /// Public record write for the drive layer (the click stand-in's
     /// presentation end and test scaffolding).
     pub fn rec_write_pub(&mut self, off: u16, v: u16) {
