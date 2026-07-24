@@ -575,16 +575,16 @@ start_closing_transition	src/ship3d.rs	3147	fn		ASM	|| AUDIT 2026-07-24: 0xB6B8.
 add_to_low_byte	src/ship3d.rs	3153	fn		ASM	|| AUDIT 2026-07-24: models the handlers AL-only add (0xB76D `add al,[0x2531]`) preserving the high byte || WIRED 2026-07-24: now reached in play via EngineState::step_ship_3d_nav_state (called from step() while nav_view_active)
 circular_delta	src/ship3d.rs	3157	fn		UNVERIFIED	
 wrap_ring_once	src/ship3d.rs	3171	fn		UNVERIFIED	
-matrix_pair_for_angle	src/ship3d.rs	3181	fn		UNVERIFIED	
-fixed_mul_shift_15	src/ship3d.rs	3189	fn		UNVERIFIED	
+matrix_pair_for_angle	src/ship3d.rs	3181	fn		ASM	|| AUDIT 2026-07-24: ASM-VERIFIED against 0x990C..0x991F: MOV DI,[0x2F6F] (angle) / SHL DI,2 -- stride 4 = one (cosine,sine) i16 pair, so the port indexing a [Ship3dAngleTableEntry] by raw angle is the same addressing; MOVSX sign-extends each to 32-bit (port i32::from on i16) and ADD EBX,EBX / ADD ECX,ECX is the *2 the port applies. The table itself was already verified byte-for-byte at DS:0x4F45
+fixed_mul_shift_15	src/ship3d.rs	3189	fn		ASM	|| AUDIT 2026-07-24: ASM-VERIFIED against the Q15 matrix rows 0x994D/0x9982/0x99A5/0x99DA: IMUL (signed, low 32 kept) then SAR EAX,0x0F. SHIP_3D_MATRIX_FIXED_SHIFT is 0x0f and Rust >> on i32 is arithmetic, matching SAR rather than SHR
 projection_component	src/ship3d.rs	3193	fn		ASM	|| AUDIT 2026-07-24: the translation subtracts in 16 BITS then sign-extends: `sub word [di],ax` @0x9A3F-0x9A4A followed by `movsx eax,word [di]` @0x9A50 -- the port does signed_i16(p - o) as i32, matching the truncation-then-extend order
-projection_dot	src/ship3d.rs	3197	fn		UNVERIFIED	
+projection_dot	src/ship3d.rs	3197	fn		ASM	|| AUDIT 2026-07-24: ASM-VERIFIED against 0x9BF9..0x9C1C (depth row) and 0x9C43..0x9C66 (screen-x row): three MOVSX+IMUL terms accumulated with ADD in 32-bit, which is exactly the port three-term wrapping sum
 project_ship_3d_axis	src/ship3d.rs	3204	fn		ASM	|| AUDIT 2026-07-24: `cdq; idiv ecx` = SIGNED 32-bit divide, then a 16-bit `add ax,center` -- the port divides as i32 and adds the centre with wrapping u16
-scale_ship_3d_object_dimension	src/ship3d.rs	3209	fn		UNVERIFIED	
+scale_ship_3d_object_dimension	src/ship3d.rs	3209	fn		ASM	|| AUDIT 2026-07-24: ASM-VERIFIED: the sprite w/h from the far pointer at [si+4] are each multiplied by the depth scale and SHRD 10, matching dim*depth_scale>>10 with SHIP_3D_OBJECT_SCALE_SHIFT=10
 ship_3d_rects_intersect	src/ship3d.rs	3213	fn		UNVERIFIED	
 checked_i16_div_i8_to_i8	src/ship3d.rs	3223	fn		ASM	|| AUDIT 2026-07-24: models `idiv bl` including its OVERFLOW FAULT: x86 raises #DE when the quotient does not fit in AL, and the port returns None via i8::try_from rather than truncating
 checked_u16_div_u8_to_u8	src/ship3d.rs	3231	fn		UNVERIFIED	
-signed_i16	src/ship3d.rs	3239	fn		UNVERIFIED	
+signed_i16	src/ship3d.rs	3239	fn		ASM	|| AUDIT 2026-07-24: ASM-VERIFIED as the MOVSX/CWDE reinterpretation used throughout the projector (0x9BF9, 0x9C05, 0x9C12): a raw 16-bit word read as signed, no clamping
 target_list_draw_x	src/ship3d.rs	3243	fn		UNVERIFIED	
 blocks_nav_choice	src/ship3d.rs	3248	fn		UNVERIFIED	
 hit_test_ship_3d_nav_choice	src/ship3d.rs	3258	fn		UNVERIFIED	
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                           
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                            
