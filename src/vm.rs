@@ -3738,6 +3738,11 @@ pub struct VmMachine {
     /// DEB offset of the built-in object `orxx` (the engine's `gs:0x6750`). The
     /// world-destination click writes its C1 record at `orxx + 0xA` (`0xB272`).
     pub orxx_offset: Option<u16>,
+    /// The `gs:0x672c` DIRECTORY as `(offset, kind)` pairs — the DEB's 20-byte
+    /// records, whose `+0x10` is the object offset and `+0x12` the entry kind.
+    /// The nav source-list builder (`0x624B`) walks it, continuing while the next
+    /// entry's `+0x12 == 1` and stopping at the first that is not.
+    pub directory: Vec<(u16, u16)>,
     /// `gs:0x251B` — the currently-presented world target (`ship_3d_current_target`).
     /// The click path only acts when the newly-selected target DIFFERS from this
     /// (`cmp ax,[0x251b]` @`0xB21A`).
@@ -3785,6 +3790,7 @@ impl Default for VmMachine {
             events: Vec::new(),
             cod: Vec::new(),
             object_offsets: Vec::new(),
+            directory: Vec::new(),
             arche_offset: None,
             orxx_offset: None,
             world_target: None,
@@ -3991,6 +3997,8 @@ impl VmMachine {
             .iter()
             .find(|s| s.name.eq_ignore_ascii_case("orxx"))
             .map(|s| s.offset);
+        // The gs:0x672c directory in DEB order (offset = +0x10, kind = +0x12).
+        self.directory = syms.iter().map(|s| (s.offset, s.kind)).collect();
         let mut offs: Vec<u16> = syms.into_iter().map(|s| s.offset).collect();
         offs.sort_unstable();
         offs.dedup();
@@ -4110,6 +4118,48 @@ impl VmMachine {
             return Some(false); // record occupied (`0x6C59` jne)
         }
         Some(true)
+    }
+
+    /// Build the ship-3D NAV SOURCE LIST (`ship_3d_navigation_source_list_build`
+    /// `0x624B`, output `DS:0x6886`), a faithful port: walk the `gs:0x672c`
+    /// directory; for each entry take its object offset (`+0x10`), read that
+    /// object's kind (`es:[bx]`) and its selector-`0x11` field offset. When the
+    /// field exists and the object's selector-`0x11` value EQUALS `target`, append
+    /// the object and RECURSE on it depth-first. The scan advances an entry at a
+    /// time and continues only while the next entry's `+0x12 == 1`, stopping at the
+    /// first that is not; the real routine then stores a `0xFFFF` terminator, which
+    /// the returned `Vec` represents by its length.
+    ///
+    /// This is pure record-table logic — directory plus `gs:0x6724` — so it needs
+    /// no frontend state, which is what makes the C1 nav-source path portable.
+    pub fn build_nav_source_list(&self, target: u16) -> Vec<u16> {
+        fn walk(m: &VmMachine, target: u16, out: &mut Vec<u16>, depth: usize) {
+            if depth > 32 {
+                return; // cycle guard; the game's data is a tree
+            }
+            for &(obj, entry_kind) in m.directory.iter() {
+                // The real loop tests the NEXT entry's +0x12 before continuing, so
+                // an entry whose kind is not 1 ends the scan.
+                if entry_kind != 1 {
+                    break;
+                }
+                let obj_kind = m.rec_read(obj);
+                let Some(fo) = vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C2, obj_kind) else {
+                    continue;
+                };
+                if fo == 0 {
+                    continue; // `or ax,ax; je` skips a missing selector-0x11 field
+                }
+                if m.rec_read(obj.wrapping_add(fo)) != target {
+                    continue;
+                }
+                out.push(obj);
+                walk(m, obj, out, depth + 1);
+            }
+        }
+        let mut out = Vec::new();
+        walk(self, target, &mut out, 0);
+        out
     }
 
     /// The WORLD-DESTINATION CLICK commit (`0xB20C..0xB27B`). The ship FSM's
@@ -7700,6 +7750,37 @@ mod tests {
         m.step();
         assert_eq!(m.rec_read_pub(0x84), 0xC4, "no DEB loaded -> unconditional write");
         assert_eq!(m.active_actor, Some(0x84));
+    }
+
+    #[test]
+    fn nav_source_list_is_depth_first_over_selector_11_children() {
+        // 0x624B: walk the gs:0x672c directory, append every object whose
+        // selector-0x11 field points at the target, and recurse depth-first.
+        let field = vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C2, 2).expect("kind 2 selector-0x11");
+        let mut m = VmMachine::new();
+        // Directory entries (offset, kind); kind 1 = a live entry, the scan stops
+        // at the first entry whose kind is not 1.
+        m.directory = vec![(0x100, 1), (0x200, 1), (0x300, 1), (0x400, 0)];
+        for obj in [0x100u16, 0x200, 0x300, 0x400] {
+            m.rec_write_pub(obj, 2); // every object is kind 2
+        }
+        // Tree: 0x100 -> parent TARGET; 0x200 -> parent 0x100; 0x300 -> parent TARGET.
+        const TARGET: u16 = 0x0080;
+        m.rec_write_pub(0x100 + field, TARGET);
+        m.rec_write_pub(0x200 + field, 0x100);
+        m.rec_write_pub(0x300 + field, TARGET);
+        // 0x400 also points at the target but is BEYOND the kind!=1 terminator.
+        m.rec_write_pub(0x400 + field, TARGET);
+
+        let list = m.build_nav_source_list(TARGET);
+        assert_eq!(
+            list,
+            vec![0x100, 0x200, 0x300],
+            "depth-first: 0x100 then its child 0x200, then 0x300; 0x400 is past the terminator"
+        );
+
+        // An unrelated target yields nothing.
+        assert!(m.build_nav_source_list(0x0999).is_empty());
     }
 
     #[test]
