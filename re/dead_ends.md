@@ -975,3 +975,27 @@ engineering, and it should be picked up fresh rather than pushed further here.
 What is BANKED and reusable: a working `PROFILEJUMP` (a real profile switch, which
 did not exist before), the `rec_103A` write-watch armed correctly in the switched
 profile, the busy-gate diagnostics, and the measurements above.
+
+#### Menu-click failure: three causes ELIMINATED by measurement
+
+| hypothesis | test | result |
+|---|---|---|
+| box geometry wrong | compared to validated `menu_row_under_cursor` | **matches exactly** (right 207, left 97, top 84, pitch 17, row-3 y 135) |
+| sub-frame button press | hold raised 400k -> 4,000,000 steps | **no change**, `[0x2A19]` still 0 |
+| `0x85E2` dispatch gated off | dumped all eight gates at the console | **all clear**: `0x1FB2/0x2736/0x2737/0x259B/0x0B13/0x67AC/0x2A19` = 0, `0xA3E` = 1; frame 55 is inside the `0x28..0x3C` window |
+
+Hand-walking `0x8613` with these numbers says the click SHOULD register: x 152 is in
+[97,207]; `y 135 - top 84 = 51`, `51 / pitch 17 = 3` < 5 rows; the click path then
+needs only `[0xA3E]&1`, which is set.
+
+Since it does not, the most likely remaining cause is a COORDINATE-SPACE mismatch in
+the probe's input injection: `click_at` writes `ring = sx + frame*8 - 160` into
+`[0xA2A]`, but `0x97FC` rebases `[0xA2A]` by `[0x27A7] = frame*8 - 0xA0` every tick,
+so the value the hit-test compares against 97..207 may be double-converted. Note the
+same helper's clicks DO reach other UI (they start presentations), so the injection
+is not simply broken — it is the menu's specific comparison space that needs
+checking. Verify by dumping `[0xA2A]`/`[0xA2C]` immediately before the hit-test
+rather than reasoning about it.
+
+THREAD CLOSED — this is the last entry. Three hypotheses eliminated by measurement
+is the useful residue; the fourth needs one dump, not another theory.

@@ -498,14 +498,28 @@ fn main() {
                  [0x27E0]={:#04x}",
                 rt.m.read8(g, 0x27E0)
             );
+            // nav_choice_dispatch (0x85E2) refuses to hit-test the golden menu
+            // unless ALL of these are clear: [0x1FB2]&1, [0x2736]|[0x2737]|
+            // [0x259B]|[0xB13], [0x67AC]&1, and [0x2A19] must be 0. Measure them
+            // instead of guessing which one blocks the click.
+            for (n, a) in [("0x1FB2", 0x1FB2u32), ("0x2736", 0x2736), ("0x2737", 0x2737),
+                           ("0x259B", 0x259B), ("0x0B13", 0x0B13), ("0x67AC", 0x67AC),
+                           ("0x2A19", 0x2A19), ("0xA3E", 0x0A3E)] {
+                print!("{n}={:#04x} ", rt.m.read8(g, a));
+            }
+            println!("<- 0x85E2 dispatch gates");
             let cx = (left + right) / 2;
             let mut click_at = |rt: &mut Runtime, sx: i32, sy: i32| {
                 let fr = state(rt).0 as i32;
                 let ring = ((sx + fr * 8 - 160).rem_euclid(1440)) as u16;
                 rt.set_mouse_pos(ring, sy as u16);
-                let _ = rt.run(rt.cpu.steps + 600_000);
+                // Settle so the cursor position is latched, then HOLD the button
+                // across several frames: the menu hit-test (0x8613) runs per frame
+                // and gates on [0xA3E]&1, so a sub-frame press can be missed
+                // entirely. 400k steps was very likely shorter than one frame.
+                let _ = rt.run(rt.cpu.steps + 2_000_000);
                 rt.mouse_press(0);
-                let _ = rt.run(rt.cpu.steps + 400_000);
+                let _ = rt.run(rt.cpu.steps + 4_000_000);
                 rt.mouse_release(0);
                 let _ = rt.run(rt.cpu.steps + 15_000_000);
             };
