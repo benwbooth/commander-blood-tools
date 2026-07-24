@@ -677,10 +677,24 @@ Regression test: `nav_destination_points_coincide_rather_than_fanning_out` pins
 both ends — ten identical records, and identical pixels for one vs three granted
 destinations.
 
-STILL OPEN (moved out of this row, since it is not about the spread): the
-per-entity sprite selected by `lcall 0x299:0x133d` with `ax = idx+0x15` and the
-draw offsets `[si+0xC]`/`[si+0xE]` remain undecoded, and no state reached so far
-populates the destination entities' active bits.
+CORRECTION — the "remaining blocker" here was a PHANTOM. This row previously said
+the per-entity sprite selected by `lcall 0x299:0x133d` and the draw offsets
+`[si+0xC]`/`[si+0xE]` "remain undecoded". Both are in fact decoded:
+
+- `0x299:0x133d` resolves to file `0x42CD`, whose label was already corrected to
+  `sprite_slot_set_extent`. It does not select a sprite at all — it takes
+  `ax` = entity id with `cx`/`dx` = the scaled dims computed at `0x9CB2..0x9CCC`,
+  and updates the slot's extent + dirty bits. It is ported exactly as
+  `ship3d::update_ship_3d_sprite_slot_extent`.
+- `[si+0xC]`/`[si+0xE]` are, per that same decode, the entity's sprite EXTENT (w/h).
+  The projector's `shr dx,1; sub bx,dx` at `0x9CDE..0x9CE3` is therefore just
+  CENTRING the sprite on the projected point — which is what the port's
+  `blit_sprite_frame_centered` does.
+
+So the nav projector is decoded end to end. The one genuine unknown left is which
+sprite ASSET each destination entity binds (the far pointer at `[si+4]` supplies its
+source dims), and no state reached so far populates the destination entities' active
+bits — that is a scenario-reachability problem, not an undecoded routine.
 
 ## STRUCTURAL FINDING (2026-07-24): faithfully-ported ship-3D code that NEVER RUNS
 
