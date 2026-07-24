@@ -34,7 +34,12 @@ be oracle-re-verified before it is "fixed"; changing it blind regresses a pixel 
 | ship3d | nav projection matrix term[1] negates before `>>15` (off-by-one) | LOW |
 | bridge | seek initial-distance memo cleared at completion, not at arm | LOW |
 
-## Verified FALSE POSITIVE for the PORT — finding correct for the assembly, wrong for the port's model (2)
+## Verified FALSE POSITIVE for the PORT — finding correct for the assembly, wrong for the port's model (3)
+
+- **subtitle console multi-line pitch (10 vs asm `add dx,8`):** the on-console 10px
+  pitch is TUTORIAL4 oracle-calibrated (console rows measured at y=8/18 = pitch 10);
+  the raw-assembly `add dx,8` disagrees with what the game displays here. No change.
+
 
 - **choice-box `[0xadd]=1` tall-mode (+10):** the `choice_box_bob_morlock.ppm` capture
   shows the 2-row box at y=89/100 = the current `+8` formula; `+18` would put it at 84
