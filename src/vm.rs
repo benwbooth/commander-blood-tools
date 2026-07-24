@@ -3591,6 +3591,12 @@ pub struct VmMachine {
     /// bit4 line is encountered; consumed by the exec loop's 0x5646 path):
     /// the next frame continues from this stream position instead of the top.
     pub resume_pos: Option<u16>,
+    /// The yielded menu's dispatch position (the engine's saved token position
+    /// [0x677C]): the concept click re-enters HERE — the region right after
+    /// the menu line, where its A3 concept blocks live — while the bit4 anchor
+    /// (the position after those blocks) is where flow lands when the region
+    /// completes.
+    pub menu_dispatch_pos: Option<u16>,
     /// Selected concept id (`gs:0x6762`) — the concept-menu topic the player
     /// clicked; 0 = none. `0xA3` blocks match against it.
     pub concept: u16,
@@ -3643,6 +3649,7 @@ impl Default for VmMachine {
             records16: vec![0u8; 0x60],
             line_records: vec![0u16; 0x4000],
             resume_pos: None,
+            menu_dispatch_pos: None,
             concept: 0,
             concept_alt: 0,
             concept_alt_active: false,
@@ -3714,6 +3721,16 @@ impl VmMachine {
     /// scripted encounter location is exactly `rec[loc_var] = location`. Scans the
     /// first block (up to its first A6 line) for wildcard-family equality guards
     /// and writes their operands.
+    /// The concept click: set the selected concept and re-enter at the
+    /// yielded menu's dispatch region (its own A3 blocks) — the engine's
+    /// saved-position path; earlier concept blocks never re-evaluate.
+    pub fn dispatch_concept(&mut self, concept: u16) {
+        self.concept = concept;
+        if let Some(p) = self.menu_dispatch_pos.take() {
+            self.resume_pos = Some(p);
+        }
+    }
+
     /// The travel system's arrival write: current-location variable = the
     /// destination's DEB offset (rec_0F4E in SCRIPT2 — guards compare it to
     /// 3488 start / 3380 fled / 3074 the coded-message zone; the story's
@@ -4009,10 +4026,18 @@ impl VmMachine {
             0xA6 => {
                 let start = self.pc - 1;
                 match decode_text(&self.cod, start, self.cod.len()) {
-                    Some((VmToken::Text { offset, flags_b4, flags_b5, loop_target, ref word_offsets, .. }, next)) => {
+                    Some((VmToken::Text { offset, line_index, flags_b4, flags_b5, loop_target, ref word_offsets, .. }, next)) => {
                         let has_menu = word_offsets.contains(&0xFFFF);
+                        // THE PRESENTATION GATE (0x6664..0x6678): the A6 play
+                        // path requires the ACTIVE record's field-0x13 slot to
+                        // be C4-typed — i.e. a presentation must actually be
+                        // running for dialogue to display; free-standing lines
+                        // outside presentations do not play (they idle for the
+                        // scan). The port's equivalent flag is presentation
+                        // busy.
+                        let _ = line_index;
                         let mut played = false;
-                        if text_flags_are_active(flags_b5) {
+                        if self.presentation_busy && text_flags_are_active(flags_b5) {
                             let gate_open = flags_b4 & 0x02 == 0 || self.rand(5) == 0;
                             if gate_open {
                                 played = true;
@@ -4021,6 +4046,7 @@ impl VmMachine {
                                 // and the concept click re-enters the stream.
                                 if has_menu {
                                     self.yielded = true;
+                                    self.menu_dispatch_pos = Some(next as u16);
                                 }
                                 // Post-yield continuation ([0x6764]/[0x6778]): if
                                 // the frame ends at this line (voice yield), the
@@ -5114,12 +5140,11 @@ mod tests {
                 let picks: Vec<u16> =
                     words.iter().copied().filter(|&w| w != bye && w != 0).collect();
                 if let Some(&p) = picks.iter().find(|w| preferred.contains(w)) {
-                    m.concept = p;
-                    m.resume_pos = None;
+                    m.dispatch_concept(p);
                 } else if !picks.is_empty() {
-                    m.concept = picks[menu_pick % picks.len()];
+                    let pick = picks[menu_pick % picks.len()];
                     menu_pick += 1;
-                    m.resume_pos = None;
+                    m.dispatch_concept(pick);
                 }
             }
             if m.promote_queued_presentation().is_some() {
@@ -5258,25 +5283,42 @@ mod tests {
             }
             m.tick_state_countdowns();
             if !m.presentation_busy {
-                let _ = m.promote_queued_presentation();
+                // The ambient queue keeps re-offering the TV commercial
+                // (rec 0xCC); the player ignores it and takes the CUSTOMS call
+                // (0x6FC) when it rings.
+                if let Some(started) = m.promote_queued_presentation() {
+                    if started != 0x6FC {
+                        if let Some(actor) = m.active_actor {
+                            m.rec_write(actor, 0);
+                        }
+                        m.active_actor = None;
+                        m.presentation_busy = false;
+                    }
+                }
             }
             if m.pending_profile >= 0 {
                 break;
             }
         }
-        // KNOWN GAP (the next walk-law): every manifest value verifies here
-        // (C1=6, the masks, the cargo locations), but the deep customs block
-        // (0x967C) is not REACHED by the frame walk — the march stalls in the
-        // replaying Venusia region (0x93xx..). The engine's presentation_scan
-        // iterates the OBJECT DIRECTORY (0x672C), not the raw stream — that
-        // per-object iteration is the decode that closes this. Recorded, not
-        // asserted:
-        if !customs {
-            eprintln!(
-                "customs pending walk-law: rec6FC={:x} gate96AB={:02x} (manifest verified)",
-                m.rec_read(0x6FC),
-                m.cod[0x96AB]
+        eprintln!(
+            "customs dbg: rec6FC={:x} gate96AB={:02x} profile={}",
+            m.rec_read(0x6FC),
+            m.cod[0x96AB],
+            m.pending_profile
+        );
+        // OPEN (the directory-iteration law): with the full manifest verified,
+        // the deep customs block (0x967C) still needs the engine's per-object
+        // directory scan (0x672C, 20-byte entries, presentation_scan) to be
+        // reached — the linear frame walk stalls earlier in the stream. That
+        // decode+port completes this assertion:
+        if customs {
+            assert!(
+                m.pending_profile >= 0,
+                "RUN PROFILE fires — the SCRIPT2 -> SCRIPT3 handoff (profile {})",
+                m.pending_profile
             );
+        } else {
+            eprintln!("customs handoff pending the directory-iteration law (manifest verified)");
         }
     }
 
@@ -5317,14 +5359,15 @@ mod tests {
             // The frontend's concept dispatch: set the concept and re-enter
             // from the stream top (the click path's record scan) so the A3
             // guard blocks evaluate it — the resume anchor yields to the click.
+            // The concept dispatch CONTINUES from after the menu line (the
+            // engine's saved position [0x6778]) — the menu's own A3 region
+            // evaluates the choice; earlier concept blocks never re-run.
             if !answered && offsets.iter().any(|&o| o == 0x0104) {
-                m.concept = 0x171; // "exxos"
-                m.resume_pos = None;
+                m.dispatch_concept(0x171); // "exxos"
                 answered = true;
             }
             if !chose_teleport && offsets.iter().any(|&o| o == 0x0261) {
-                m.concept = 0x2A8; // "teleport"
-                m.resume_pos = None;
+                m.dispatch_concept(0x2A8); // "teleport"
                 chose_teleport = true;
             }
             if m.rec_read(0x0722) == 65535 {
