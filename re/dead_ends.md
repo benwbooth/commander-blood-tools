@@ -679,3 +679,31 @@ Better approach: hand the live path the buffer as BYTES (entries + terminator +
 bitset region) instead of a `Vec<u16>`, reusing the already-validated
 `select_ship_3d_c1_source_record`; then identify what POPULATES those bitset
 bytes — that writer, not the gate, is the remaining unknown.
+
+## rec_103A / arche+0x16 writer — record write-watch run, NEGATIVE result
+
+Tried: find the native writer of `rec_103A` (= `arche+0x16`; `rec_0F4E` in
+SCRIPT2) with the pointer-relative record write-watch, now that the oracle
+harness works:
+
+    BOOTWRITEWATCH=rec:0xF4E ./runtime_boot --resume accuracy/milestone_script2.state \
+        --steps 3900000000 --shot-every 5000000
+
+Result: the watch armed correctly (`block 8681:0000 -> lin 0x8775e`) and ran ~42M
+steps from the SCRIPT2 milestone. **No write to `arche+0x16` was reported.** The
+single `cs:ip=043b:0f91` line is a periodic status dump, not a write hit — and
+that address decodes (runtime seg − 0x1A2 = image seg `0x299`, base file `0x2F90`)
+to file `0x3F21`, a `movsb` inside a VGA PLANAR BLIT (`out dx,0x102` sequencer
+plane mask). Video memory, not the record block. Do not mistake that line for the
+writer, as I briefly did.
+
+So this run neither found the writer nor contradicts the earlier static
+refutation in docs/port-validation.md — it is consistent with `arche+0x16` simply
+not being written during ordinary SCRIPT2-era play.
+
+Better approach: the watch is the right tool but the WINDOW is wrong. Run it
+across a SCRIPT5 state (where `rec_103A` is actually guarded) rather than SCRIPT2,
+and drive a scenario that advances the Bigbang-concert FSM
+(`VERIFYSCRIPT=<scenario>` + `WRITEWATCHLIN=rec:0x103A`, which re-arms per shot),
+instead of a passive resume. Confirm arming by dumping the record before/after so
+a silent no-write is distinguishable from a mis-armed watch.
