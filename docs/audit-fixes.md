@@ -640,3 +640,31 @@ where the risk is:
 - **`start as u16` truncation** in the dictionary key: safe by the format, not by luck.
   Word offsets are `u16` in the COD, so a DIC cannot exceed 64 KiB; the largest shipped
   file is 24772 bytes.
+
+## FINDING — the voice-clip index is a port invention (not yet removed)
+
+`vm.rs::text_selector_voice_clip_index` maps the A6 selector `b3` to a son.snd talk
+clip as `b3 - 1`. A byte search for every reference to `DS:0x1FAB` — where the handler
+stores the sign-extended `b3` — gives the complete picture:
+
+    0x668D   lodsb / cwde / mov gs:[0x1fab],ax     the ONE write of b3
+    ~0x1A64, 0xB460, 0xB529   mov word [0x1fab],0xffff   resets
+    0x11F2   mov ax,[0x1fab]; add ax,9             the ONE read -> line id gs:0x6788
+
+Exactly one reader, and it forms the active line/scene id (traced onward to the
+graphics dispatcher `0x9D10`, which has no audio call). Nothing indexes a sound table
+from `b3`.
+
+So: the son.snd BANK is the correct audio system for dialogue (loader `0xC005`, handle
+`DS:0x0C47` "voices/SFX") — that part of the port is right. Choosing a clip by
+`selector - 1` is the invented part.
+
+NOT REMOVED, deliberately. Deleting it silences dialogue with nothing to put in its
+place, which would trade a wrong-but-working surface for a missing one. The task is to
+find how son.snd clips are actually selected and swap the rule.
+
+Process note: while confirming this I first dismissed three of the five byte matches as
+false positives, having disassembled from the OPERAND byte rather than the instruction
+start. They are real — `mov word [0x1fab],0xffff` resets. Same mis-slicing that
+produced a spurious "32 mismatches" on the pyramid vertices earlier in this campaign;
+worth checking instruction boundaries before calling a match spurious.
