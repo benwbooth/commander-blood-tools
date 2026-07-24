@@ -44,14 +44,17 @@ be oracle-re-verified before it is "fixed"; changing it blind regresses a pixel 
 - **choice-box `[0xadd]=1` tall-mode (+10):** the `choice_box_bob_morlock.ppm` capture
   shows the 2-row box at y=89/100 = the current `+8` formula; `+18` would put it at 84
   and break the pixel match. No change. (`choice_box_top_y` comment records this.)
-- **C4 query owner-active gate:** the assembly gates the C4 query on the owning object's
-  active bit (`0x6CA4 test es:[di+2],1`). But the live port DOES NOT MODEL object active
-  bits (no live setter of `obj+2 bit0`; `start_actor_presentation` sets the record, not
-  an object flag), and `owner_object_offset` is a nearest-below approximation, not the
-  `0x6034` threshold lookup. Applying the gate failed every C4 query in live play (a
-  regression I introduced in fix #14 and reverted). The port's working model is
-  `active_actor==Some(off)`. Faithfully porting this needs the object-active-bit lifecycle
-  first — infrastructure, not a one-line guard.
+- **C4 query owner-active gate (staleness judgment call):** the assembly gates the C4
+  query on the owning object's active bit (`0x6CA4 test es:[di+2],1`). CORRECTION: the
+  VAR *does* load initial object active bits (121/228 SCRIPT2 objects have `obj+2 bit0`
+  set), so owner_active isn't uniformly false — my fix-#14 revert reasoning was partly
+  wrong. What's missing is the RUNTIME update of those bits on navigation/transfer, plus
+  `owner_object_offset` is a nearest-below approximation, not the `0x6034` threshold
+  lookup. Reverted to the safe working model `active_actor==Some(off)` because a stale
+  active-bit gate could misfire mid-game; re-applying the assembly gate needs the runtime
+  active-bit lifecycle modeled and verified in live play first. NOTE: this same VAR-initial
+  active-bit availability makes the C4-WRITE and `0xC1` guards partially feasible (the
+  guards read the same bits) — but with the same staleness caveat.
 
 ## Remaining (23) — each to be oracle-re-verified or carefully implemented
 
