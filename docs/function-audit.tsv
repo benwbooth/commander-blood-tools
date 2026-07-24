@@ -645,10 +645,10 @@ text_flags_after_accept	src/vm.rs	268	fn	0x668D,0x669B	ASM?	/// Port the accepte
 text_line_flags_offset	src/vm.rs	276	fn		ASM	|| AUDIT 2026-07-24: 0x665A `test word es:[di+2],0x8000` with di = table base + line_index, so the flags word is at line_index+2
 text_presentation_record_offset	src/vm.rs	280	fn		ASM	|| AUDIT 2026-07-24: A6 gate 0x6664 builds matrix index (0x13<<4)+1 = 0x131 and reads gs:[0x6D60+0x131] = 58 = TALK_FIELD 0x3A (verified against the shipped image)
 text_line_already_shown	src/vm.rs	284	fn		ASM	|| AUDIT 2026-07-24: same site: the tested mask IS 0x8000
-is_record_entry_opcode	src/vm.rs	288	fn		UNVERIFIED	
-is_record_state_opcode	src/vm.rs	292	fn		UNVERIFIED	
-is_global_compare_opcode	src/vm.rs	296	fn		UNVERIFIED	
-is_pair_record_opcode	src/vm.rs	300	fn		UNVERIFIED	
+is_record_entry_opcode	src/vm.rs	288	fn		ASM	|| AUDIT 2026-07-24: opcode range predicate over the C5..C8 entry family, whose members are confirmed by their own type-tag compares (C5 0x6D3F, C6 0x6DA7, C8 0x6F89)
+is_record_state_opcode	src/vm.rs	292	fn		ASM	|| AUDIT 2026-07-24: range predicate over the C1..C2 state family (handlers 0x6B4C and 0x6E34)
+is_global_compare_opcode	src/vm.rs	296	fn		ASM	|| AUDIT 2026-07-24: the 0xCA / 0xCB pair (handlers 0x64E5 and 0x6510)
+is_pair_record_opcode	src/vm.rs	300	fn		ASM	|| AUDIT 2026-07-24: the B8/B9/BD family sharing handler 0x6B06
 record_entry_stored_related_offset	src/vm.rs	307	fn		UNVERIFIED	
 script_profile_index_from_request_operand	src/vm.rs	313	fn	0x64B8,0x6780	ASM?	/// Port the `0xD2` handler at `BLOODPRG.EXE` file `0x64B8`: /// `lodsb; cbw; dec ax; mov gs:[0x6780], ax`.
 bit_flag_byte_offset	src/vm.rs	319	fn		ASM	/// `0xB7` addresses bits high-bit-first inside each byte: bit 0 is mask 0x80, /// bit 7 is mask 0x01, then bit 8 starts the next byte at mask 0x80. || AUDIT 2026-07-24: 0x6ABB..0x6AC6: lodsb bit index, cl=idx&7, ax=idx>>3, bx += ax — byte = base + (bit>>3)
@@ -671,7 +671,7 @@ PostUpdateActorRecordPair	src/vm.rs	1011	struct		UNVERIFIED
 PresentationHandoffEvent	src/vm.rs	1017	struct		UNVERIFIED	
 ExecutionHalt	src/vm.rs	1024	enum		UNVERIFIED	
 ExecutionTrace	src/vm.rs	1032	struct		UNVERIFIED	
-pending_script_profile	src/vm.rs	1042	fn		UNVERIFIED	
+pending_script_profile	src/vm.rs	1042	fn		ASM	|| AUDIT 2026-07-24: the D2 pending-profile cell DS:0x6780 written by 0x64B8 as sign_extend(operand)-1
 ScriptProfileProgram	src/vm.rs	1050	struct		UNVERIFIED	
 ScriptProfileRun	src/vm.rs	1058	struct		UNVERIFIED	
 ScriptProfileExecutionHalt	src/vm.rs	1065	enum		UNVERIFIED	
@@ -682,22 +682,22 @@ Ship3dC1PositionRuntime	src/vm.rs	1099	struct		UNVERIFIED
 VmNamedObjectOffsets	src/vm.rs	1107	struct		ASM	|| AUDIT 2026-07-24: startup scan 0x5486 decoded end to end; the eight ported names map to gs:0x674E/0x6750/0x6754/0x6756/0x6752/0x6758/0x6760/0x679C and cryobox is correctly omitted (the scan skips it)
 set	src/vm.rs	1119	fn		ASM	|| AUDIT 2026-07-24: startup scan 0x5486 decoded end to end; the eight ported names map to gs:0x674E/0x6750/0x6754/0x6756/0x6752/0x6758/0x6760/0x679C and cryobox is correctly omitted (the scan skips it)
 ExecutionContext	src/vm.rs	1175	struct		UNVERIFIED	
-from_object_offsets	src/vm.rs	1189	fn		UNVERIFIED	
-with_global_word_0aa6	src/vm.rs	1202	fn		UNVERIFIED	
-with_global_pair_0aaa_0aa8	src/vm.rs	1207	fn		UNVERIFIED	
-with_special_object_offset	src/vm.rs	1212	fn		UNVERIFIED	
-with_vm_named_object	src/vm.rs	1218	fn		UNVERIFIED	
-with_descript_entry_name	src/vm.rs	1226	fn		UNVERIFIED	
-with_bios_rtc	src/vm.rs	1240	fn		UNVERIFIED	
-with_text_line_display_gating	src/vm.rs	1246	fn		UNVERIFIED	
-with_text_presentation_record_gating	src/vm.rs	1251	fn		UNVERIFIED	
-with_strict_actor_record_branching	src/vm.rs	1256	fn		UNVERIFIED	
-with_ship_3d_c1_runtime	src/vm.rs	1261	fn		UNVERIFIED	
-with_ship_3d_c1_positions	src/vm.rs	1280	fn		UNVERIFIED	
-vm_named_object_offsets	src/vm.rs	1301	fn		UNVERIFIED	
-owner_object_offset	src/vm.rs	1305	fn		UNVERIFIED	
-remap_special_rhs	src/vm.rs	1313	fn		UNVERIFIED	
-is_special_rhs	src/vm.rs	1321	fn		UNVERIFIED	
+from_object_offsets	src/vm.rs	1189	fn		INFRA	|| AUDIT 2026-07-24: ExecutionContext builder -- port-side construction, no binary counterpart
+with_global_word_0aa6	src/vm.rs	1202	fn		INFRA	|| AUDIT 2026-07-24: ExecutionContext builder -- port-side construction, no binary counterpart
+with_global_pair_0aaa_0aa8	src/vm.rs	1207	fn		INFRA	|| AUDIT 2026-07-24: ExecutionContext builder -- port-side construction, no binary counterpart
+with_special_object_offset	src/vm.rs	1212	fn		INFRA	|| AUDIT 2026-07-24: ExecutionContext builder -- port-side construction, no binary counterpart
+with_vm_named_object	src/vm.rs	1218	fn		INFRA	|| AUDIT 2026-07-24: ExecutionContext builder -- port-side construction, no binary counterpart
+with_descript_entry_name	src/vm.rs	1226	fn		INFRA	|| AUDIT 2026-07-24: ExecutionContext builder -- port-side construction, no binary counterpart
+with_bios_rtc	src/vm.rs	1240	fn		INFRA	|| AUDIT 2026-07-24: ExecutionContext builder -- port-side construction, no binary counterpart
+with_text_line_display_gating	src/vm.rs	1246	fn		INFRA	|| AUDIT 2026-07-24: ExecutionContext builder -- port-side construction, no binary counterpart
+with_text_presentation_record_gating	src/vm.rs	1251	fn		INFRA	|| AUDIT 2026-07-24: ExecutionContext builder -- port-side construction, no binary counterpart
+with_strict_actor_record_branching	src/vm.rs	1256	fn		INFRA	|| AUDIT 2026-07-24: ExecutionContext builder -- port-side construction, no binary counterpart
+with_ship_3d_c1_runtime	src/vm.rs	1261	fn		INFRA	|| AUDIT 2026-07-24: ExecutionContext builder -- port-side construction, no binary counterpart
+with_ship_3d_c1_positions	src/vm.rs	1280	fn		INFRA	|| AUDIT 2026-07-24: ExecutionContext builder -- port-side construction, no binary counterpart
+vm_named_object_offsets	src/vm.rs	1301	fn		INFRA	|| AUDIT 2026-07-24: ExecutionContext accessor -- port-side construction, no binary counterpart
+owner_object_offset	src/vm.rs	1305	fn		ASM	|| AUDIT 2026-07-24: exactly vm_record_lookup_by_threshold 0x6034 -- walk the directory by +0x10 with `jbe`, then back up one entry, i.e. the largest threshold strictly below the key
+remap_special_rhs	src/vm.rs	1313	fn		ASM	|| AUDIT 2026-07-24: the 0x6946 wildcard substitution at 0x6964: an operand equal to gs:[0x674E] becomes 0xFFFF before the compare
+is_special_rhs	src/vm.rs	1321	fn		ASM	|| AUDIT 2026-07-24: same gs:[0x674E] test used by the 0x6946 SET path at 0x69A9 to decide the aboard/insert branch
 c2_descript_lookup_succeeds	src/vm.rs	1325	fn		UNVERIFIED	
 BranchOverride	src/vm.rs	1338	struct		UNVERIFIED	
 state_u16	src/vm.rs	1344	fn		INFRA	/// Read a u16 from `state` (the mutable VAR image) at byte address `addr`. || AUDIT 2026-07-24: little-endian u16 read over the state byte array -- accessor with no distinct binary counterpart
@@ -740,7 +740,7 @@ write_record_link	src/vm.rs	1837	fn		ASM	|| AUDIT 2026-07-24: C3 SET 0x6F4B..0x6
 write_record_link_mode0	src/vm.rs	1843	fn		ASM	|| AUDIT 2026-07-24: C3 SET guards 0x6F32..0x6F49, all three present and in order: owner active `test es:[di+2],1`, op2 object active `test es:[bx+2],1`, and FAIL when the target record already holds 0xC4 (`cmp ax,0xc4; je`)
 record_state_condition	src/vm.rs	1861	fn		UNVERIFIED	
 c1_record_state_resolved_mode1_condition	src/vm.rs	1895	fn		ASM	|| AUDIT 2026-07-24: C1 QUERY resolved path 0x6B8B..0x6BAC: for operand 1/2 it follows the owner's selector-0x11 parent link to a target, takes field_offset(0x13, target kind), treats a zero/absent field as the mismatch path (0x6BA4 `or ax,ax; je`), and otherwise compares the destination slot against {0xC1, operand} (0x6BB0/0x6BB6)
-ship3d_c1_source_records_from_bytes	src/vm.rs	1926	fn		UNVERIFIED	
+ship3d_c1_source_records_from_bytes	src/vm.rs	1926	fn		ASM	|| AUDIT 2026-07-24: decodes the 0x6886 source list into words up to the 0xFFFF terminator that 0x624B writes at 0x6289, matching the C1 SET scan at 0x6C1C (`lodsw; cmp ax,-1; je`). Requiring the sentinel mirrors the fact that the builder always terminates the list
 ship3d_record_state_slot	src/vm.rs	1938	fn		ASM	|| AUDIT 2026-07-24: reads the 3-word record triple {type, operand, aux} whose layout is confirmed by every C-range writer verified this session -- C1 {0xC1,operand,2} at 0x6C5D..0x6C6B, C3 {0xC3,related,1} at 0x6F4B..0x6F5B, C4 {0xC4,related,0} at 0x6D01..0x6D0B
 write_ship3d_record_state_slot	src/vm.rs	1946	fn		ASM	|| AUDIT 2026-07-24: writes that same 3-word triple in the handlers' order (type, operand, aux)
 resolve_c1_record_state_ship3d_target	src/vm.rs	1956	fn		UNVERIFIED	
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                  
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                   
