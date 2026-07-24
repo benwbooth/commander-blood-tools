@@ -350,3 +350,34 @@ warns about. The rows stay UNVERIFIED with this note. The open task is to find t
 routine that turns a line's selector into a played `son.snd` clip — a write-watch
 on `gs:0x0C47` (the son.snd handle) or on the SND bank table during a spoken line
 would locate it.
+
+### …and the ACTUAL voice mechanism, located: `mu\<NAME>.voc`
+
+Following the previous finding to its answer. `DS:0x0D2D` holds the TEMPLATE
+string `mu\xxxxxxxx.voc`, and `0x125A` writes `0x78` (`'x'`) back into it — i.e.
+the eight `x`s at `DS:0x0D30` are a patch field, not a literal name.
+
+The patcher is at `0x77A9`:
+- `di = 0x0D30` (the patch field);
+- `lodsb` from a NAME string, terminating on any byte `<= 0x20` or negative
+  (`0x77AD..0x77B3`);
+- UPPERCASES lowercase input (`cmp al,0x61; jb; and al,0xdf` at `0x77B5..0x77B9`);
+- compares each char against what is already there and, on any difference, sets
+  `gs:0x0BA1 = 1` — a "filename CHANGED" latch (`0x77BB..0x77C0`);
+- writes the char and loops; afterwards, if nothing changed, sets `gs:0x0BA0 |= 1`.
+
+So character speech is a PER-RECORD `.VOC` FILE named after the record
+(`mu\NAME.voc`), with a change-latch so an unchanged name can skip a reload. That
+is a completely different mechanism from indexing clips out of `son.snd`.
+
+CONSEQUENCE for `text_selector_voice_clip_index`: the port resolves speech as a
+one-based `son.snd` clip index derived from A6's `b3`. The `son.snd` bank is real
+and IS used — the chatter/burble path plays `7 + rand(10)` from `tb.snd` — but the
+located character-voice path builds a filename instead. The port's model therefore
+looks like the wrong mechanism for line speech, which is why those rows must stay
+UNVERIFIED.
+
+STILL NOT PROVEN, deliberately: I have not yet traced which name string `si` points
+at when `0x77A9` runs, nor confirmed it is the speaking record's name, so the exact
+selector -> filename relationship is open. That trace is the next task; the
+mechanism, though, is now located rather than inferred.
