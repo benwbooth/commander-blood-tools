@@ -17,7 +17,11 @@ pub fn parse_palette_block(data: &[u8], mut pos: usize, palette: &mut [[u8; 3]; 
             break;
         }
 
-        let n = if count == 0 { 256 } else { count as usize };
+        // count is the exact number of RGB triples (0x000A0E6 `mul bh` = count*3);
+        // the loop terminates only on the 0xFFFF word (checked above). count==0 is a
+        // 0-entry block, NOT 256 — the old special case over-read 770 bytes and could
+        // corrupt the palette / desync the chunk cursor on such a frame.
+        let n = count as usize;
         for i in 0..n {
             if pos + 2 >= data.len() {
                 return pos;

@@ -4372,10 +4372,15 @@ impl VmMachine {
                         self.branch();
                     }
                 } else {
+                    // Only F5 SET / F6 ADD / F7 SUB mutate; any OTHER operator
+                    // writes `cur` back UNCHANGED (0x68F6 `cmp ah,0xf5; jne 0x68fd`
+                    // skips the operand load, so es:[..] gets the value read at
+                    // entry). The old wildcard wrote the operand for F0..F4 too.
                     let v = match operator {
+                        0xF5 => operand_i, // SET
                         0xF6 => cur.wrapping_add(operand_i),
                         0xF7 => cur.wrapping_sub(operand_i),
-                        _ => operand_i, // 0xF5 SET
+                        _ => cur, // non-{F5,F6,F7}: leave the record unchanged
                     };
                     self.rec_write(off, v as u16);
                 }

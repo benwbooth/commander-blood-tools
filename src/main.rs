@@ -2288,9 +2288,11 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                 );
                             }
                         }
-                    } else {
-                        chatter_throttle -= 1;
                     }
+                    // 0x855 decrements [0xB2F] EVERY tick incl. the fire tick, so
+                    // reset-to-4 is a 4-tick period (fire@0 ->4, this tick ->3, +3
+                    // more), not 5. The old else-only decrement skipped the fire tick.
+                    chatter_throttle = chatter_throttle.saturating_sub(1);
                 } else {
                     chatter_throttle = 0;
                 }

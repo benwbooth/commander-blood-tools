@@ -1139,7 +1139,9 @@ impl EngineState {
             if !(x0..=(x0 + w as u16)).contains(&x) {
                 return None;
             }
-            let top = Self::choice_box_top_y(rows) as i32 - 2;
+            // Hit origin == draw origin == box_y+4 (0x84E6 add cx,4); no extra
+            // offset. The old `- 2` shifted the in-window concept-box band 2px up.
+            let top = Self::choice_box_top_y(rows) as i32;
             let row = (y as i32 - top) / 11;
             return (row >= 0 && (row as usize) < rows).then_some(row as usize);
         }
