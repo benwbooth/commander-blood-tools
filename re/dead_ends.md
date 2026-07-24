@@ -808,3 +808,34 @@ driving — and only then `PROFILEJUMP`. That requires composing the two probes
 (`PROFILEJUMP` currently returns early, before `BRIDGEPROBE`'s drive logic runs), or
 capturing a fresh savestate at a genuinely idle hub moment with all ten gate flags
 zero. Neither is a decode problem; both are harness plumbing.
+
+### RESOLVED (harness): the profile switch now WORKS — compose BRIDGEPROBE + PROFILEJUMP
+
+The two walls above are cleared by running the jump from the DRIVEN hub instead of
+a resume or an un-driven boot:
+
+    BRIDGEPROBE=1 PROFILEJUMP=4 ./runtime_boot
+
+    console reached: tb_frame=55 ... @ 50406766 steps
+    PROFILEJUMP[at-console] block 7838:0000 pending=65535 busy=[idle]
+    PROFILEJUMP poked pending profile = 4
+    PROFILEJUMP[after]      block 8090:0000 pending=65535 busy=[idle]
+    PROFILEJUMP rec_103A = 0x0000
+    PROFILEJUMP rec_103A write-watch armed at lin 0x8193a
+
+The block segment MOVES (`7838` -> `8090`) and the pending request is CONSUMED —
+the profile load actually happened. This works because `BRIDGEPROBE` drives boot to
+the hub (~50.4M steps), so a profile is resident AND the ten `0x109C` gate flags are
+idle; the standalone probe failed only because its entry points had one or the other
+but never both.
+
+`rec_103A` is therefore no longer unreachable: it now exists in its own profile and
+the watch arms on it. It read `0x0000` and stayed `0x0000` across a further 120M
+steps with no write reported — expected, since merely being resident in SCRIPT5 is
+not the same as advancing the Bigbang-concert FSM.
+
+Remaining (much narrower than before): drive story progression INSIDE the switched
+profile — the concert block is guarded by `rec_103A==4024 && rec_1340==<4060/4084/
+4108> && active_actor==Migrator`, so the scenario must reach a Migrator presentation
+after the jump. The harness can now get to the right profile; what it still lacks is
+a scripted route through that FSM.

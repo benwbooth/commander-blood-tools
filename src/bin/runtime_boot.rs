@@ -472,6 +472,72 @@ fn main() {
         let (fr, ang, st) = state(&rt);
         println!("console reached: tb_frame={fr} angle={ang:#x} station={st:#x} @ {} steps", rt.cpu.steps);
         rt.write_ppm(&out.join("bridge_00_console.ppm")).unwrap();
+        // BRIDGEPROBE + PROFILEJUMP composed: the standalone PROFILEJUMP probe
+        // returns before this drive logic runs, and BOTH of its other entry points
+        // fail — mid-story savestates resume inside a live presentation (busy gate
+        // 0x109C blocks the dispatch), while un-driven boot never loads a profile
+        // at all. HERE the game has been DRIVEN to the hub, so a profile is
+        // resident and the gate can actually go idle. Poke DS:0x6780 (what 0xD2
+        // does, 0x64B8) and let the loop dispatch via 0x53A0.
+        if let Ok(spec) = std::env::var("PROFILEJUMP") {
+            let profile: i32 = spec.split(':').next().unwrap_or("4").parse().unwrap_or(4);
+            let w16 = |rt: &Runtime, a: u32| {
+                rt.m.read8(g, a) as u32 | ((rt.m.read8(g, a + 1) as u32) << 8)
+            };
+            let busy: [(&str, u32); 10] = [
+                ("0x67AC", 0x67AC), ("0x24F3", 0x24F3), ("0x2751", 0x2751),
+                ("0x67B0", 0x67B0), ("0x5E64", 0x5E64), ("0x2565", 0x2565),
+                ("0x2736", 0x2736), ("0x2737", 0x2737), ("0x27DA", 0x27DA),
+                ("0x2792", 0x2792),
+            ];
+            let report = |rt: &Runtime, tag: &str| {
+                let set: Vec<String> = busy.iter()
+                    .filter(|(_, a)| rt.m.read8(g, *a) != 0)
+                    .map(|(n, a)| format!("{n}={:#04x}", rt.m.read8(g, *a)))
+                    .collect();
+                println!(
+                    "PROFILEJUMP[{tag}] block {:04x}:{:04x} pending={} busy=[{}] @ {} steps",
+                    w16(rt, 0x6726), w16(rt, 0x6724), w16(rt, 0x6780) as i32,
+                    if set.is_empty() { "idle".into() } else { set.join(",") }, rt.cpu.steps
+                );
+            };
+            report(&rt, "at-console");
+            rt.m.write8(g, 0x6780, profile as u8);
+            rt.m.write8(g, 0x6781, if profile < 0 { 0xff } else { 0 });
+            println!("PROFILEJUMP poked pending profile = {profile}");
+            for _ in 0..8 {
+                let _ = rt.run(rt.cpu.steps + 15_000_000);
+                if w16(&rt, 0x6780) as i32 != profile {
+                    break; // the loop consumed the request
+                }
+            }
+            report(&rt, "after");
+            // The switch landed (the block segment moved), so the guarded record
+            // finally exists in THIS profile. Read it, then arm a write-watch on
+            // block+0x103A and keep running: this is the only configuration in
+            // which the long-sought rec_103A writer can be caught.
+            let rec103a = |rt: &Runtime| -> u32 {
+                let (boff, bseg) = (w16(rt, 0x6724), w16(rt, 0x6726));
+                if bseg == 0 {
+                    return 0;
+                }
+                let a = boff + 0x103A;
+                rt.m.read8(bseg as u16, a) as u32 | ((rt.m.read8(bseg as u16, a + 1) as u32) << 8)
+            };
+            println!("PROFILEJUMP rec_103A = {:#06x}", rec103a(&rt));
+            let (boff, bseg) = (w16(&rt, 0x6724), w16(&rt, 0x6726));
+            if bseg > 0 {
+                let lin = bseg as usize * 16 + boff as usize + 0x103A;
+                rt.m.watch_addr = Some(lin);
+                println!("PROFILEJUMP rec_103A write-watch armed at lin {lin:#x}");
+                for _ in 0..8 {
+                    let _ = rt.run(rt.cpu.steps + 15_000_000);
+                }
+                println!("PROFILEJUMP rec_103A after watch = {:#06x} @ {} steps",
+                         rec103a(&rt), rt.cpu.steps);
+            }
+            return;
+        }
         // TEXTBAND: provoke tutorial text, then dump the top-band palette indices
         // (rows 0..24) + histogram — pins the subtitle glyphs' actual indices and
         // row offsets for the OCR.
