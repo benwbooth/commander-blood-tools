@@ -3587,6 +3587,12 @@ pub struct VmMachine {
     /// The line-record/object state table (`gs:0x6724` far table) — A6/record ops
     /// address it by byte offset. Sized generously; the game allocates per script.
     pub line_records: Vec<u16>,
+    /// BloodPrng state (cs:0xAEE seed word + 0xAF0/0xAF1/0xAF2 bytes; the
+    /// shipped image zeroes them, the boot seeds from CMOS RTC seconds).
+    pub prng_seed: u16,
+    pub prng_af0: u8,
+    pub prng_af1: u8,
+    pub prng_af2: u8,
     /// The A6 resume anchor (gs:[0x67B1]/[0x6778], armed at 0x6635 when a b4
     /// bit4 line is encountered; consumed by the exec loop's 0x5646 path):
     /// the next frame continues from this stream position instead of the top.
@@ -3650,6 +3656,10 @@ impl Default for VmMachine {
             line_records: vec![0u16; 0x4000],
             resume_pos: None,
             menu_dispatch_pos: None,
+            prng_seed: 0,
+            prng_af0: 0,
+            prng_af1: 0,
+            prng_af2: 0,
             concept: 0,
             concept_alt: 0,
             concept_alt_active: false,
@@ -3880,9 +3890,40 @@ impl VmMachine {
     }
 
     fn rand(&mut self, n: u16) -> u16 {
-        // Stand-in for the runtime random helper 0x1CE:0xB02 (uniform 0..n-1).
-        self.rng = self.rng.wrapping_mul(1103515245).wrapping_add(12345);
-        if n == 0 { 0 } else { ((self.rng >> 16) as u16) % n }
+        // THE ENGINE'S OWN PRNG (0x1CE:0xB02, file 0x2DE2), ported exactly:
+        // an 8-round rcr/rcl bit-interleave of the two state bytes into AX,
+        // XORed with the 16-bit seed (CMOS RTC seconds at boot; seeder file
+        // 0x2DD4: out 0x70,0 / in 0x71), then the counter feedback
+        // (af2 += 1; af1 = bh - af2; af0 = bl ^ rol(af2,1)) and
+        // modulo-by-repeated-subtraction when a bound is given.
+        let mut bl = self.prng_af0;
+        let mut bh = self.prng_af1;
+        let mut ax: u16 = 0;
+        let mut cf = false; // xor ax,ax clears CF
+        for _ in 0..8 {
+            let out = bl & 1 != 0; // rcr bl,1
+            bl = (bl >> 1) | if cf { 0x80 } else { 0 };
+            cf = out;
+            let out = ax & 0x8000 != 0; // rcl ax,1
+            ax = (ax << 1) | cf as u16;
+            cf = out;
+            let out = bh & 0x80 != 0; // rcl bh,1
+            bh = (bh << 1) | cf as u8;
+            cf = out;
+            let out = ax & 0x8000 != 0; // rcl ax,1
+            ax = (ax << 1) | cf as u16;
+            cf = out;
+        }
+        ax ^= self.prng_seed;
+        self.prng_af2 = self.prng_af2.wrapping_add(1);
+        self.prng_af1 = bh.wrapping_sub(self.prng_af2);
+        self.prng_af0 = bl ^ self.prng_af2.rotate_left(1);
+        if n != 0 {
+            while ax >= n {
+                ax -= n;
+            }
+        }
+        ax
     }
 
     fn u8_at(&self, at: usize) -> u8 {
