@@ -804,10 +804,26 @@ dest span 16000, hold-mode `0xA`; and the 8-bit `mul dl` truncation is correctly
 modelled as `(depth as u8).wrapping_add(35)`). It is not blocked — it is UNCALLED,
 which is the reachability problem, not a missing subsystem.
 
-STILL genuinely needing engine work: `commit_ship_3d_global_clip_snapshot` and
-`commit_ship_3d_sprite_slot_dirty_geometry` depend on the dirty-rect list, which the
-engine does not model. That is a smaller and better-defined task than "build a planar
-video model".
+STILL genuinely needing engine work — and unlike the three phantom blockers, THIS ONE
+IS REAL. `commit_ship_3d_global_clip_snapshot`, `commit_ship_3d_sprite_slot_dirty_geometry`
+and `collect_ship_3d_dirty_sprite_slot_render_commands` operate on SPRITE SLOTS
+(`Ship3dObjectSpriteDescriptor`) and a dirty-rect list. The live engine has neither: it
+composites directly into `framebuffer` every frame. This is a genuine structural gap,
+not a mislabelled one — I checked before claiming otherwise, having just been wrong
+three times in the other direction.
+
+It is well-bounded, though, because a WORKING REFERENCE already exists:
+`extract::render::compose_ship_3d_scene_indexed` runs the entire chain (project each
+anchor into its slot -> collect render commands against the dirty rects -> composite
+double-buffered). Porting that structure into the engine's frame loop is the task.
+
+PROGRESS: `render_nav_pyramid_sprites` now projects through
+`project_ship_3d_object_sprite` — the game's own projector at `0x9B98`, verified
+instruction-by-instruction — instead of the ad-hoc `project_star_map_point` helper.
+That brings the real visibility GATE (`test ax,0x80` @`0x9BE1`), the real dimension
+scaling and the real centring (`shr dx,1; sub bx,dx` @`0x9CDE`). Slot descriptors are
+therefore now live in the engine, which is the first half of what the dirty-rect
+functions need.
 
 **TIER 3 — "blocked on a dependency chain" was ALSO wrong. Corrected 2026-07-24.**
 

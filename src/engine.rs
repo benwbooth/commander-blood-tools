@@ -3644,8 +3644,10 @@ impl EngineState {
 
     fn render_nav_pyramid_sprites(&mut self) {
         use crate::ship3d::{
-            NAV_DESTINATION_POINTS, SHIP_3D_ANGLE_TABLE, Ship3dMatrixAngles,
-            build_ship_3d_projection_matrix, project_star_map_point,
+            NAV_DESTINATION_POINTS, SHIP_3D_ANGLE_TABLE, SHIP_3D_OBJECT_VISIBLE_FLAG,
+            Ship3dMatrixAngles, Ship3dObjectSpriteDescriptor, Ship3dProjectionOrigin,
+            Ship3dProjectionPoint, build_ship_3d_projection_matrix,
+            project_ship_3d_object_sprite,
         };
         let Some(m) = build_ship_3d_projection_matrix(
             &SHIP_3D_ANGLE_TABLE,
@@ -3700,19 +3702,46 @@ impl EngineState {
                 // than being faked as an offset to the world X.
                 let point = NAV_DESTINATION_POINTS
                     [(idx as usize).min(NAV_DESTINATION_POINTS.len() - 1)];
-                let d = [point[0] as i32, point[1] as i32, point[2] as i32];
-                let Some((sx, sy, scale)) = project_star_map_point(d, origin, &m) else {
+                // Project through the GAME'S OWN sprite projector (0x9B98), verified
+                // instruction-by-instruction, rather than the ad-hoc star-map helper.
+                // That brings three things the helper did not: the real visibility
+                // GATE (`test ax,0x80` @0x9BE1, modelled as the descriptor's
+                // SHIP_3D_OBJECT_VISIBLE_FLAG), the real dimension scaling
+                // (`dim * depth_scale >> 10`), and the real CENTRING
+                // (`shr dx,1; sub bx,dx` @0x9CDE, i.e. draw at screen - extent/2).
+                let mut slot = Ship3dObjectSpriteDescriptor {
+                    // A granted destination stands in for the entity's active bit,
+                    // which no reachable state sets (see the NAVENT probe).
+                    flags: SHIP_3D_OBJECT_VISIBLE_FLAG,
+                    source_width: base_w as u16,
+                    source_height: self.nav_pyramids[4].height.max(1) as u16,
+                    ..Default::default()
+                };
+                let anchor = Ship3dProjectionPoint {
+                    x: point[0] as u16,
+                    y: point[1] as u16,
+                    z: point[2] as u16,
+                };
+                let cam = Ship3dProjectionOrigin {
+                    x: origin[0] as u16,
+                    y: origin[1] as u16,
+                    z: origin[2] as u16,
+                };
+                let Some(proj) = project_ship_3d_object_sprite(anchor, cam, m, &mut slot) else {
                     continue;
                 };
+                let (sx, sy) = (
+                    signed_i16_engine(proj.projected.x) as i32,
+                    signed_i16_engine(proj.projected.y) as i32,
+                );
                 if !(0..ENGINE_SCREEN_WIDTH as i32).contains(&sx)
                     || !(0..ENGINE_SCREEN_HEIGHT as i32).contains(&sy)
                 {
                     continue;
                 }
-                // The sprite path's exact dimension scaling: `dim * depth_scale >> 10`
-                // with `depth_scale = 0x100000/depth` (== `scale` here), then the
-                // closest pre-scaled CARTE frame (f0..f5).
-                let sw = ((base_w.saturating_mul(scale as u32 & 0xFFFF)) >> 10).max(2) as i32;
+                // Scaled width from the projector itself, then the closest pre-scaled
+                // CARTE frame (f0..f5).
+                let sw = (proj.scaled_width as i32).max(2);
                 let fi = (0..6)
                     .min_by_key(|&i| (self.nav_pyramids[i].width as i32 - sw).abs())
                     .unwrap_or(4);
@@ -4481,6 +4510,12 @@ pub fn mode_x_offset(x: usize, y: usize) -> (usize, usize) {
 /// Invert [`mode_x_offset`] back to the linear framebuffer index the engine uses:
 /// `byte_offset*4 + plane`. Equals `y*ENGINE_SCREEN_WIDTH + x`, proving the two layouts
 /// address the same pixel.
+/// A projected screen coordinate read as signed, matching the projector's MOVSX
+/// treatment — an off-screen marker projects to a negative x/y, not a huge u16.
+fn signed_i16_engine(v: u16) -> i32 {
+    v as i16 as i32
+}
+
 pub fn mode_x_to_linear(byte_offset: usize, plane: usize) -> usize {
     byte_offset * 4 + plane
 }
@@ -5959,6 +5994,46 @@ mod tests {
         );
         // And the gate's duration is taken from the sequence FSM, not invented.
         assert_eq!(e.ship3d_interpolation.duration_ticks, 3);
+    }
+
+    /// The nav markers now go through the game's OWN sprite projector (0x9B98),
+    /// not the ad-hoc star-map helper. The observable consequence is that the
+    /// projector's VISIBILITY GATE is live: `project_ship_3d_object_sprite` returns
+    /// None when the descriptor lacks SHIP_3D_OBJECT_VISIBLE_FLAG, exactly as the
+    /// binary skips an entity whose flags word fails `test ax,0x80` at 0x9BE1.
+    #[test]
+    fn nav_markers_go_through_the_verified_projector_and_its_visibility_gate() {
+        use crate::ship3d::{
+            NAV_DESTINATION_POINTS, SHIP_3D_ANGLE_TABLE, SHIP_3D_OBJECT_VISIBLE_FLAG,
+            Ship3dMatrixAngles, Ship3dObjectSpriteDescriptor, Ship3dProjectionOrigin,
+            Ship3dProjectionPoint, build_ship_3d_projection_matrix,
+            project_ship_3d_object_sprite,
+        };
+        let m = build_ship_3d_projection_matrix(
+            &SHIP_3D_ANGLE_TABLE,
+            Ship3dMatrixAngles { angle_2f71: 0, projection_angle_2f6d: 0, angle_2f6f: 0 },
+        )
+        .expect("matrix builds");
+        let p = NAV_DESTINATION_POINTS[0];
+        let anchor = Ship3dProjectionPoint { x: p[0] as u16, y: p[1] as u16, z: p[2] as u16 };
+        let cam = Ship3dProjectionOrigin { x: 10000, y: 12000, z: 0 };
+
+        let mut visible = Ship3dObjectSpriteDescriptor {
+            flags: SHIP_3D_OBJECT_VISIBLE_FLAG,
+            source_width: 24,
+            source_height: 24,
+            ..Default::default()
+        };
+        assert!(
+            project_ship_3d_object_sprite(anchor, cam, m, &mut visible).is_some(),
+            "a visible destination must project"
+        );
+
+        let mut hidden = Ship3dObjectSpriteDescriptor { flags: 0, ..visible };
+        assert!(
+            project_ship_3d_object_sprite(anchor, cam, m, &mut hidden).is_none(),
+            "the 0x9BE1 active-bit gate must suppress an inactive entity"
+        );
     }
 
     #[test]
