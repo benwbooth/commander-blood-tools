@@ -11,7 +11,7 @@ displays** and wins. So a subset of the 40 are FALSE POSITIVES — the port is a
 correct and the raw-assembly reading is the one that's off. Each geometry finding must
 be oracle-re-verified before it is "fixed"; changing it blind regresses a pixel match.
 
-## Fixed + committed (16) — assembly-cited, regression-tested, oracle-verified where visual
+## Fixed + committed (18) — assembly-cited, regression-tested, oracle-verified where visual
 
 | area | fix | severity |
 |---|---|---|
@@ -30,6 +30,9 @@ be oracle-re-verified before it is "fixed"; changing it blind regresses a pixel 
 | vm-records | `0x6863` SET leaves record unchanged for non-{F5,F6,F7} | LOW |
 | hnm-video | palette-block `count==0` is 0 entries, not 256 | LOW |
 | audio | chatter burble 4-tick throttle (was 5) | LOW |
+| menus | in-window (kind-3) concept box centers each label (was left-align x0+4) | LOW |
+| ship3d | nav projection matrix term[1] negates before `>>15` (off-by-one) | LOW |
+| bridge | seek initial-distance memo cleared at completion, not at arm | LOW |
 
 ## Verified FALSE POSITIVE for the PORT — finding correct for the assembly, wrong for the port's model (2)
 
