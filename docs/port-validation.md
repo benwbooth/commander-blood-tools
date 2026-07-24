@@ -962,3 +962,24 @@ what the prime rule requires of a stand-in — not as "verified".
 `x0 = anchor - w/2` at `0x84AD..0x84B3` with the anchor in `[0xAC6]`. Both labels
 share an axis because both boxes share that anchor. The capture confirms the code; it
 was never the source. Comment rewritten to cite the instructions.
+
+## PROVENANCE SWEEP — COMPLETE (2026-07-24)
+
+Grepped the port for capture-sourced provenance language (`harvested`, `captured from`,
+`measured from`, `read off`). Four candidates, four DIFFERENT outcomes — which is the
+point worth recording, because "oracle-sourced" never once meant the same thing twice:
+
+| item | outcome |
+|---|---|
+| `SQUARE_CAPS_GLYPHS` | capture-sourced AND the real data was in the binary. Replaced: 48 glyphs from `DS:0x7442`, found by reading the font selector at `0x30CD`. One harvested glyph (`'4'`) had been mis-read; 23 letters had no cell at all and fell back to a different typeface. |
+| `GAME_SCREEN_PALETTE_DAC` 128..191 | capture-sourced AND conceptually wrong. Those 64 colours are SCENE STATE (fed by the per-scene HNM palette), frozen into a global constant. Absent from every shipped file; live bank reads all-zero. Documented as APPROX for that range; colours 0..127 verified against the image. |
+| `hand_atlas` | capture-sourced AND already superseded — and DEAD. Parsed and counted but never drawn; `manu3_hand::HandMesh` had already replaced it. Deleted. |
+| Bob contact layout | capture-MEASURED but fully DERIVABLE. `x=170`, `y=56`, pitch 11 all fall out of the widget geometry (`x0 = anchor - w/2` with anchor `0xE1` @`0x89A6`; `y = (200-(rows*11+8))/2 + 4`; `add bp,0xB` @`0x847A`). Now computed, with a test pinning the equivalence. |
+
+METHOD THAT WORKED, in one line: read the routine that CONSUMES the data and follow
+its pointers. The font fell out in minutes that way after two failed attempts at
+probing for it dynamically.
+
+REMAINING known capture-sourced item: `MENU_SUBMENU`/`BOB_TOPICS` literals survive only
+as no-VM fallbacks — both surfaces now take their rows from the executing script's
+`0xA6` menu words, so the constants are defaults rather than authorities.

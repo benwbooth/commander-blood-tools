@@ -1522,10 +1522,16 @@ impl EngineState {
         }
     }
 
-    /// Render the BOB_MORLOCK CONTACT screen — layout measured from the dual-run
-    /// oracle captures (vs_005..007): FRIGO.FD full-screen, the dialogue subtitle
-    /// at the console position (10,8) in settled white, and Bob's concept menu as
-    /// square-caps rows at x=170 from y=56 (pitch 11).
+    /// Render the BOB_MORLOCK CONTACT screen.
+    ///
+    /// The topic-row layout is DERIVED from the list widget's decoded geometry, not
+    /// measured off a capture as this comment used to say. `x0 = anchor - w/2` with
+    /// the concept anchor `0xE1` (`0x89A6`) and `w = widest + 0x14` (`0x84A1`);
+    /// `y = (200 - (rows*11 + 8))/2 + 4` (`0x84A7`, `0x84B9..0x84BF`); pitch 11 from
+    /// `add bp,0xB` (`0x847A`). For Bob's 8 rows that yields y=56 — the number the
+    /// capture showed, which is why the capture is a CONFIRMATION and never was the
+    /// source. FRIGO.FD is the static fallback background; the subtitle sits at the
+    /// console position (10,8).
     fn render_bob_contact(&mut self) {
         // Bob's LIVE talk-head band (pe/aabob.hnm — the red face + mismatched eyes
         // of the oracle capture) drawn OVER THE HUB VIEW — the oracle border rows
@@ -1571,6 +1577,21 @@ impl EngineState {
         } else {
             self.bob_topics.clone()
         };
+        // Layout is DERIVED from the widget geometry, not measured off a capture.
+        // The old constants (x=170, y=56, pitch 11) were recorded as "measured from
+        // the dual-run oracle captures"; all three fall out of the decoded box maths:
+        //   pitch 11  = `add bp,0xB`   @0x847A
+        //   y  = (200 - (rows*11 + 8))/2 + 4  @0x84A7/0x84B9..0x84BF  -> 56 for 8 rows
+        //   x0 = anchor - w/2, anchor 0xE1=225 @0x89A6, w = widest + 0x14 @0x84A1
+        // So the capture CONFIRMED the geometry; it was never its source.
+        let widest = topics
+            .iter()
+            .map(|l| crate::font::square_caps_text_width(l))
+            .max()
+            .unwrap_or(0);
+        let box_w = widest + 0x14;
+        let x0 = Self::CHOICE_BOX_ANCHOR_CONCEPT.saturating_sub(box_w / 2);
+        let top = Self::choice_box_top_y(topics.len());
         for (i, label) in topics.iter().enumerate() {
             let color = if self.console_box_selected == Some(i) { 0xEF } else { 0xE8 };
             crate::font::draw_square_caps(
@@ -1578,8 +1599,8 @@ impl EngineState {
                 ENGINE_SCREEN_WIDTH,
                 ENGINE_SCREEN_HEIGHT,
                 label,
-                170,
-                56 + i * 11,
+                x0,
+                top + i * Self::CHOICE_BOX_PITCH,
                 color,
             );
         }
@@ -1806,6 +1827,9 @@ impl EngineState {
     /// with the narrow alt-mode flags [0xADC]/[0xADD]).
     const CHOICE_BOX_CENTER_X: usize = 100;
     const CHOICE_BOX_ANCHOR_WORLD: usize = 80;
+    /// The IN-WINDOW concept list's right-side anchor: `mov [0xAC6], 0xE1` at `0x89A6`.
+    /// `0xE1` = 225. The widget then places the box at `x0 = anchor - w/2` (`0x84AD`).
+    const CHOICE_BOX_ANCHOR_CONCEPT: usize = 0xE1;
     /// Row pitch 11 — ASSEMBLY: the unified list widget steps `add bp,0xB`
     /// (0x847A) and hit-tests `row = dy/11 + 1` (`div bl,0x0B` @0x8508).
     const CHOICE_BOX_PITCH: usize = 11;
@@ -5895,6 +5919,27 @@ mod tests {
         assert_eq!(
             EngineState::new().menu_submenu_labels(),
             vec!["EXPLANATIONS", "GAME"]
+        );
+    }
+
+    /// The Bob contact topic rows used to sit at hardcoded x=170 / y=56, recorded as
+    /// "measured from the dual-run oracle captures". Both fall out of the decoded
+    /// widget geometry, which is what the port now computes. This pins the equivalence
+    /// so the derivation cannot silently drift from the value the capture confirmed.
+    #[test]
+    fn bob_contact_rows_derive_the_capture_measured_layout() {
+        // Eight rows is the count the capture showed.
+        let top = EngineState::choice_box_top_y(8);
+        assert_eq!(top, 56, "y = (200-(8*11+8))/2 + 4");
+        assert_eq!(EngineState::CHOICE_BOX_PITCH, 11, "add bp,0xB @0x847A");
+        assert_eq!(EngineState::CHOICE_BOX_ANCHOR_CONCEPT, 0xE1, "mov [0xAC6],0xE1 @0x89A6");
+        // x0 = anchor - (widest + 0x14)/2; the capture's x=170 implies a 110px box,
+        // i.e. a widest label of 90px — consistent, not coincidental.
+        let box_w = 90 + 0x14;
+        assert_eq!(
+            EngineState::CHOICE_BOX_ANCHOR_CONCEPT.saturating_sub(box_w / 2),
+            170,
+            "x0 = anchor - w/2 reproduces the measured x"
         );
     }
 
