@@ -1144,3 +1144,28 @@ fact that x motion also steers (the box slides LEFT as the frame rises, since
 `right = 287 - 8*delta`), then press. Cursor and box CONVERGE, so a modest rightward
 nudge should suffice — a closed loop on the measured `bx` versus the measured edges,
 both of which this watch now exposes directly.
+
+#### FINAL: stopping the bridge-click work — what is proven vs what is not
+
+PROVEN by direct measurement (all reusable):
+- the menu box geometry this analysis derives is EXACTLY what the game computes
+  (`ax=0xCF`=207 right, `ax=0x61`=97 left, `cx=0x0A`=delta 10) — geometry and units
+  are settled, and `bx` (the compared cursor x) IS `gs:[0xA2A]` per `0x8647`;
+- the cursor RESTS at x=40 at the console;
+- the click path CAN fire: one run registered `[0x2A19]=5`.
+
+NOT resolved: making that fire reproducibly. Across many runs the cursor ends at
+x=287 with the frame parked at 64 (box fled to 25..135) — including runs with NO x
+motion at all, so the drift is not simply caused by our nudges, and the single
+success depended on a transient this thread never isolated.
+
+Judgement: further probe tuning is CHURN. Each attempt fixed a real sub-problem and
+surfaced another coupled one; the honest read is that the bridge's cursor/steering
+relationship needs to be modelled properly (the port already has such a model in
+`BridgeView::update_view` + `move_mouse`, validated by BRIDGEPROBE) and the PROBE
+should drive that model rather than poke the runtime and hope. That is a design
+task, not a tuning task, and belongs in a fresh session.
+
+Anyone resuming: start from `MENUCMP=1`, which prints the game's own operands every
+frame. Watch `bx` and the edges live while experimenting — with that watch the whole
+problem is observable, which is what this thread lacked until the very end.

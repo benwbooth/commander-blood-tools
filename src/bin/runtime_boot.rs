@@ -540,59 +540,59 @@ fn main() {
                 // per frame and copies int33 state into [0xA2A]/[0xA2C]) so the
                 // injection lands, then RE-ASSERT the position right before the
                 // press so the per-frame cursor warp has not yet decayed it.
-                // CLOSED-LOOP relative steering. Absolute injection fights the
-                // per-frame cursor warp (it decays back to centre), so instead
-                // read the live [0xA2A]/[0xA2C] the hit-tests actually compare and
-                // nudge toward the target with move_mouse_rel until it converges.
-                for _ in 0..40 {
+                // CLOSED LOOP on the MEASURED quantities. 0x8647 shows the
+                // hit-test's bx IS gs:[0xA2A], and the MENUCMP dump confirmed the
+                // edges are `right = 0x11F - 8*delta`, `left = right - 0x6E` in the
+                // same space. The cursor RESTS at x=40 (left of the box), and x
+                // motion also steers (the box slides left as the frame rises), so
+                // cursor and box converge: nudge right until x is inside [left,
+                // right], settle y onto the target row, then press.
+                let mut nudged = false;
+                for _ in 0..60 {
                     let cur_x = rt.m.read8(g, 0x0A2A) as i32
                         | ((rt.m.read8(g, 0x0A2B) as i32) << 8);
                     let cur_y = rt.m.read8(g, 0x0A2C) as i32
                         | ((rt.m.read8(g, 0x0A2D) as i32) << 8);
-                    // X IS NOT A CURSOR AXIS on the bridge: relative x motion
-                    // STEERS the panorama (the cursor stays centred and the world
-                    // rotates), so chasing an x target both fails and drifts the
-                    // frame the menu box was computed for. Only Y is a real cursor
-                    // axis here. The menu is reachable because at the resting frame
-                    // its box already spans the screen centre.
-                    // X IS NOT A CURSOR AXIS here: relative x motion STEERS the
-                    // panorama, so the frame keeps drifting and the menu box moves
-                    // with it. Re-derive the target row's y from the LIVE frame on
-                    // every iteration instead of trusting a precomputed value.
-                    let _ = (sx, cur_x);
                     let live_fr = state(rt).0 as i32;
                     let d = live_fr - 45;
+                    let r = 0x11F - d * 8;
+                    let l = r - 0x6E;
                     let t = 0x48 + d.abs() + d.abs() / 4;
                     let p = (0x12 - (d.abs() / 4) / 2).max(1);
-                    let target_y = if menu_row >= 0 { t + menu_row * p } else { sy as i32 };
+                    // Empirical calibration: aiming y=135 registered [0x2A19]=5
+                    // (row index 4), so the observed rows sit one pitch lower than
+                    // t + row*p; subtract a pitch to land the requested row.
+                    let target_y = if menu_row >= 0 { t + menu_row * p - p } else { sy as i32 };
+                    let want_x = if menu_row >= 0 { (l + r) / 2 } else { sx };
+                    let _ = want_x;
                     let ey = target_y - cur_y;
-                    // The cursor stays CENTRED (screen 160) because x motion steers.
-                    // The menu box only covers the centre while
-                    // left = 177-8d <= 160 <= right = 287-8d, i.e. frame 48..60.
-                    // Outside that window the box has scrolled off the cursor and no
-                    // press can hit, however well y is aimed.
-                    let in_window = menu_row < 0 || (48..=60).contains(&live_fr);
-                    if ey.abs() <= 2 && in_window {
+                    let inside = cur_x >= l && cur_x <= r;
+                    if inside && ey.abs() <= 2 {
                         break;
                     }
+                    // X: nudge ONCE toward the box, then STOP. Chasing the centre
+                    // diverges — every rightward nudge steers the view, which slides
+                    // the box LEFT by 8 per frame, faster than the cursor closes
+                    // (measured: cursor ran to 287 while the box fled to 25..135).
+                    // A single small nudge lets cursor and box CONVERGE on their own.
+                    // NEVER move x. Measured: the ONLY run that ever registered a
+                    // menu hit ([0x2A19]=5) used y-only motion; every x nudge sends
+                    // the cursor to the 287/frame-64 attractor with the box fled to
+                    // 25..135. The cursor rests at x=40 and the box slides toward it
+                    // as the frame drifts, so leaving x alone is what lets them meet.
+                    let _ = (nudged, inside, l, r);
                     if ey.abs() > 2 {
                         rt.move_mouse_rel(0, ey.clamp(-32, 32));
-                    } else {
-                        let _ = rt.run(rt.cpu.steps + 1_000_000); // wait for the box to scroll back
                     }
                     let _ = rt.run(rt.cpu.steps + 700_000);
                 }
-                // THE measurement that decides the coordinate-space question:
-                // what does the hit-test actually compare? [0xA2A] is rebased by
-                // 0x97FC each tick, so print the injected ring value alongside the
-                // live [0xA2A]/[0xA2C] and the frame just before the press.
-                let live_x = rt.m.read8(g, 0x0A2A) as u32 | ((rt.m.read8(g, 0x0A2B) as u32) << 8);
-                let live_y = rt.m.read8(g, 0x0A2C) as u32 | ((rt.m.read8(g, 0x0A2D) as u32) << 8);
-                println!(
-                    "  click: want screen ({sx},{sy}) -> injected ring {ring}; \
-                     live [0xA2A]={live_x} [0xA2C]={live_y} frame={}",
-                    state(rt).0
-                );
+                {
+                    let cx2 = rt.m.read8(g, 0x0A2A) as i32
+                        | ((rt.m.read8(g, 0x0A2B) as i32) << 8);
+                    let fr2 = state(rt).0 as i32;
+                    let r2 = 0x11F - (fr2 - 45) * 8;
+                    println!("  press: x={cx2} box={}..{r2} frame={fr2}", r2 - 0x6E);
+                }
                 rt.mouse_press(0);
                 let _ = rt.run(rt.cpu.steps + 4_000_000);
                 rt.mouse_release(0);
