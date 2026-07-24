@@ -4254,7 +4254,13 @@ impl VmMachine {
                     val = 0xFFFF;
                 }
                 if self.query {
-                    let eq = val == self.rec_read(off) || val == 0xFFFF;
+                    // Handler 0x6946: an RHS equal to the SPECIAL OBJECT maps
+                    // to 0xFFFF (the aboard value) before the compare — it is
+                    // NOT a match-anything wildcard (the old `|| val==0xFFFF`
+                    // made every aboard-guard pass; the matched-drive lane's
+                    // first transcript diff caught it: the port played the
+                    // BIONIUM begging behind rec_0722==65535 with 3488).
+                    let eq = val == self.rec_read(off);
                     if (eq && flipped) || (!eq && !flipped) {
                         self.branch();
                     }
@@ -6092,6 +6098,13 @@ mod tests {
         let mut menu = VmMachine::new();
         menu.load_cod(&cod);
         menu.load_var(&var);
+        // The boot's crew-aboard init: the daily menu is gated on CHEF BRONKO
+        // being aboard (@000A rec_0332 == 65535; 0x332-24 = object 0x31A —
+        // "Today CHEF BRONKO has laid on for you"). The engine writes crew
+        // locations at entity activation; the exact-compare law (0x6946: RHS
+        // == the special object substitutes 0xFFFF, then EXACT equality — no
+        // match-any) exposed this dependency, which the old wildcard bug hid.
+        menu.rec_write(0x0332, 0xFFFF);
         menu.start_actor_presentation(2220, 40);
         let t3 = texts(menu.run_frame());
         assert!(t3.contains(&16), "the daily menu plays for the MENU actor");
