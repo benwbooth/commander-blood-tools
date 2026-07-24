@@ -1757,6 +1757,12 @@ impl EngineState {
     /// box height h = rows*11 + 8, box y = (200 - h)/2 (screen-centred), text
     /// top = box y + 4. (This DERIVES the previously capture-measured tops-centre
     /// ~95: rows=2 -> h=30, y=85, top=89; rows=6 -> h=74, y=63, top=67 — exact.)
+    ///
+    /// AUDIT NOTE: the accuracy audit proposed a "[0xadd]=1 tall-mode" (+10 -> h =
+    /// rows*11 + 18). VERIFIED FALSE POSITIVE against the oracle: choice_box_bob_
+    /// morlock.ppm shows the 2-row telephone box at y=89/100 (= the +8 formula);
+    /// +18 would put it at 84 and break the pixel match. The port is already
+    /// correct; the raw-assembly reading disagreed with what the game displays.
     fn choice_box_top_y(rows: usize) -> usize {
         let h = rows.max(1) * Self::CHOICE_BOX_PITCH + 8;
         (200usize.saturating_sub(h)) / 2 + 4
