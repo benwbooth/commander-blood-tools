@@ -2472,6 +2472,97 @@ fn main() {
         }
         return;
     }
+    // PROFILEJUMP=<profile>[:<settle_M>[:<run_M>]] — force a SCRIPT-PROFILE SWITCH.
+    //
+    // Why this exists: FILELOG over the deepest scenario shows the whole run opens
+    // exactly one file (descript.des) and never a SCRIPT*.COD/VAR, i.e. every
+    // scenario executes inside the ONE profile resident at boot. That makes the
+    // later profiles (notably SCRIPT5, which owns the rec_103A Bigbang-concert
+    // guard) unreachable by scenario driving alone.
+    //
+    // The VM's own mechanism: 0xD2 (`vm_op_d2_script_profile_request` @0x64B8)
+    // stores the PENDING profile at DS:0x6780 as sign_extend(operand) - 1, and the
+    // main loop dispatches it through `vm_resource_profile_select` (0x53A0) once
+    // every subsystem is idle (`main_loop_busy_gate` @0x109C ORs ten flags). So
+    // poking DS:0x6780 and letting the loop run reproduces exactly what a 0xD2 in
+    // the script would do — no fabricated state.
+    //
+    // Reports the record block (the far pointer at gs:0x6724) and rec_103A before
+    // and after; a CHANGED block segment is the switch actually happening.
+    if let Ok(spec) = std::env::var("PROFILEJUMP") {
+        let parts: Vec<&str> = spec.split(':').collect();
+        let profile: i32 = parts[0].parse().unwrap_or(4);
+        let settle: u64 = parts.get(1).and_then(|s| s.parse().ok()).unwrap_or(60) * 1_000_000;
+        let run_more: u64 = parts.get(2).and_then(|s| s.parse().ok()).unwrap_or(60) * 1_000_000;
+        let g = 0x0e84u16;
+        let w16 = |rt: &Runtime, a: u32| rt.m.read8(g, a) as u32 | ((rt.m.read8(g, a + 1) as u32) << 8);
+        let rec = |rt: &Runtime, off: u32| -> u32 {
+            let (boff, bseg) = (w16(rt, 0x6724), w16(rt, 0x6726));
+            if bseg == 0 {
+                return 0;
+            }
+            let a = boff + off;
+            rt.m.read8(bseg as u16, a) as u32 | ((rt.m.read8(bseg as u16, a + 1) as u32) << 8)
+        };
+        let _ = rt.run(rt.cpu.steps + settle);
+        println!(
+            "PROFILEJUMP before: block {:04x}:{:04x} pending[0x6780]={} rec_103A={:#06x} @ {} steps",
+            w16(&rt, 0x6726), w16(&rt, 0x6724), w16(&rt, 0x6780) as i32, rec(&rt, 0x103A), rt.cpu.steps
+        );
+        // The busy gate defers the load while a presentation is up
+        // (gs:0x67AC) or text is revealing (gs:0x5E64), which is exactly the
+        // state a mid-story savestate resumes into. Dismiss it the way a player
+        // would — click to advance — until both go idle, so the dispatch can run.
+        for attempt in 0..12 {
+            if rt.m.read8(g, 0x67AC) == 0 && rt.m.read8(g, 0x5E64) == 0 {
+                println!("PROFILEJUMP presentation idle after {attempt} dismiss click(s)");
+                break;
+            }
+            let frame = w16(&rt, 0x2795) as i32;
+            let ring = ((100 + frame * 8 - 160).rem_euclid(1440)) as u16;
+            rt.set_mouse_pos(ring, 98);
+            let _ = rt.run(rt.cpu.steps + 400_000);
+            rt.mouse_press(0);
+            let _ = rt.run(rt.cpu.steps + 300_000);
+            rt.mouse_release(0);
+            let _ = rt.run(rt.cpu.steps + 12_000_000);
+        }
+        // 0x64B8's store: DS:0x6780 = the pending profile index.
+        rt.m.write8(g, 0x6780, profile as u8);
+        rt.m.write8(g, 0x6781, if profile < 0 { 0xff } else { 0 });
+        println!("PROFILEJUMP poked pending profile = {profile}");
+        // The dispatch is deferred while ANY of the ten subsystem-active flags in
+        // `main_loop_busy_gate` (0x109C) is set, so report them: whichever is
+        // non-zero is what blocks the switch.
+        let busy: [(&str, u32); 10] = [
+            ("0x67AC presentation", 0x67AC),
+            ("0x24F3 ship", 0x24F3),
+            ("0x2751 gateB", 0x2751),
+            ("0x67B0", 0x67B0),
+            ("0x5E64 text", 0x5E64),
+            ("0x2565", 0x2565),
+            ("0x2736 navL", 0x2736),
+            ("0x2737 navR", 0x2737),
+            ("0x27DA", 0x27DA),
+            ("0x2792", 0x2792),
+        ];
+        let set: Vec<String> = busy
+            .iter()
+            .filter(|(_, a)| rt.m.read8(g, *a) != 0)
+            .map(|(n, a)| format!("{n}={:#04x}", rt.m.read8(g, *a)))
+            .collect();
+        println!(
+            "PROFILEJUMP busy-gate flags SET: {}",
+            if set.is_empty() { "(none — dispatch should fire)".into() } else { set.join(", ") }
+        );
+        let _ = rt.run(rt.cpu.steps + run_more);
+        println!(
+            "PROFILEJUMP after:  block {:04x}:{:04x} pending[0x6780]={} rec_103A={:#06x} @ {} steps",
+            w16(&rt, 0x6726), w16(&rt, 0x6724), w16(&rt, 0x6780) as i32, rec(&rt, 0x103A), rt.cpu.steps
+        );
+        return;
+    }
+
     if let Ok(spec) = std::env::var("MEMDUMP") {
         // Dump N bytes at gs:<off> to a file after running to `steps`. Spec: "<offhex>:<len>:<path>".
         let parts: Vec<&str> = spec.split(':').collect();

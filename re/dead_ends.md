@@ -755,3 +755,29 @@ and `vm_resource_profile_select` (`0x53A0`) performs the load. A probe that poke
 the pending-profile global and lets the main loop service it would reach SCRIPT5
 directly, at which point the `rec:0x103A` write-watch can finally be armed where
 the guard actually lives.
+
+### PROFILEJUMP probe built — switch still blocked by a stuck presentation
+
+Implemented the harness feature proposed above: `PROFILEJUMP=<profile>[:settle_M[:run_M]]`
+in `runtime_boot`. It reproduces what a script's `0xD2` does — poke the pending
+profile at `DS:0x6780` (`0x64B8` stores `sign_extend(operand)-1`) and let the main
+loop dispatch it via `vm_resource_profile_select` (`0x53A0`) — then reports the
+record block (`gs:0x6724` far ptr) and `rec_103A` before/after. A CHANGED block
+segment is the switch actually happening.
+
+Result from `--resume accuracy/milestone_script2.state`:
+- the poke lands (`pending[0x6780]` goes `65535` -> `4`),
+- but after 120M further steps the block is UNCHANGED (`8681:0000`) and the
+  pending value is STILL `4` — the loop never serviced it.
+
+The probe now reports why, and the answer is exact: `main_loop_busy_gate`
+(`0x109C`) defers the dispatch while any of ten subsystem flags is set, and two
+are stuck — **`gs:0x67AC` (presentation active) = 1 and `gs:0x5E64` (text) = 1**.
+The mid-story savestates resume INTO a live presentation. Twelve player-style
+dismiss clicks did not clear it (same wall `GRANTWALK` hit).
+
+So the remaining blocker is no longer "reach SCRIPT5" — it is "end the resumed
+presentation". Better approach: rather than clicking, drive the presentation to its
+own teardown (the `0xC9` clear / the `0x5816` scan's kind-1 end path), or capture a
+savestate at a genuinely idle hub moment where all ten gate flags are already zero,
+then `PROFILEJUMP` from there.
