@@ -322,10 +322,10 @@ links_are_valid	src/ext.rs	94	fn		UNVERIFIED	/// Whether every node reference is
 ExtObject	src/ext.rs	108	struct		UNVERIFIED	
 objects	src/ext.rs	119	fn		UNVERIFIED	/// Parse the object records (10-byte `[id, type, reserved, x, y]`) starting at /// [`Self::next_section`] from `data`, returning the non-empty (any field set) ones.
 parse_ext	src/ext.rs	153	fn		UNVERIFIED	/// Parse the framing of an `.ext` world body. Returns `None` if it isn't a world file. /// The first-section record count is body byte 8; records are 3 bytes each and the /// section is expected to e
-GameFontGlyph	src/font.rs	12	struct		UNVERIFIED	
-subtitle_draw_glyph	src/font.rs	23	fn	0x31D7	ASM?	/// The glyph to blit for a subtitle character. Unknown glyphs fall back to '?' /// so garbage is visible, BUT a space (' ') draws NOTHING (returns None) — the /// game's `render_string` (BLOODPRG.EXE
-game_font_glyph	src/font.rs	30	fn		UNVERIFIED	
-game_font_advance	src/font.rs	43	fn		UNVERIFIED	
+GameFontGlyph	src/font.rs	12	struct		DATA	|| AUDIT DATA-VERIFIED 2026-07-24 BYTE-FOR-BYTE against the shipped image: the port's GAME_FONT_CHAR_MAP equals the xlatb table at DS:0x7802 (all 128 ASCII entries; the port's 0xFF skip marker corresponds to the game's bit7-set = `js` skip at 0x31DE), GAME_FONT_WIDTHS equals the 86 width bytes at DS:0x78B2, and GAME_FONT_GLYPHS equals all 688 bitmap bytes at DS:0x7908 (86 glyphs x 8 rows). ZERO mismatches in all three tables. Space is special-cased before the xlat (0x31D3, di += 6), which subtitle_draw_glyph mirrors
+subtitle_draw_glyph	src/font.rs	23	fn	0x31D7	DATA	/// The glyph to blit for a subtitle character. Unknown glyphs fall back to '?' /// so garbage is visible, BUT a space (' ') draws NOTHING (returns None) — the /// game's `render_string` (BLOODPRG.EXE || AUDIT DATA-VERIFIED 2026-07-24 BYTE-FOR-BYTE against the shipped image: the port's GAME_FONT_CHAR_MAP equals the xlatb table at DS:0x7802 (all 128 ASCII entries; the port's 0xFF skip marker corresponds to the game's bit7-set = `js` skip at 0x31DE), GAME_FONT_WIDTHS equals the 86 width bytes at DS:0x78B2, and GAME_FONT_GLYPHS equals all 688 bitmap bytes at DS:0x7908 (86 glyphs x 8 rows). ZERO mismatches in all three tables. Space is special-cased before the xlat (0x31D3, di += 6), which subtitle_draw_glyph mirrors
+game_font_glyph	src/font.rs	30	fn		DATA	|| AUDIT DATA-VERIFIED 2026-07-24 BYTE-FOR-BYTE against the shipped image: the port's GAME_FONT_CHAR_MAP equals the xlatb table at DS:0x7802 (all 128 ASCII entries; the port's 0xFF skip marker corresponds to the game's bit7-set = `js` skip at 0x31DE), GAME_FONT_WIDTHS equals the 86 width bytes at DS:0x78B2, and GAME_FONT_GLYPHS equals all 688 bitmap bytes at DS:0x7908 (86 glyphs x 8 rows). ZERO mismatches in all three tables. Space is special-cased before the xlat (0x31D3, di += 6), which subtitle_draw_glyph mirrors
+game_font_advance	src/font.rs	43	fn		DATA	|| AUDIT DATA-VERIFIED 2026-07-24 BYTE-FOR-BYTE against the shipped image: the port's GAME_FONT_CHAR_MAP equals the xlatb table at DS:0x7802 (all 128 ASCII entries; the port's 0xFF skip marker corresponds to the game's bit7-set = `js` skip at 0x31DE), GAME_FONT_WIDTHS equals the 86 width bytes at DS:0x78B2, and GAME_FONT_GLYPHS equals all 688 bitmap bytes at DS:0x7908 (86 glyphs x 8 rows). ZERO mismatches in all three tables. Space is special-cased before the xlat (0x31D3, di += 6), which subtitle_draw_glyph mirrors
 draw_text_indexed	src/font.rs	171	fn		UNVERIFIED	/// Draw `text` into a `width`-stride indexed framebuffer at (`x`,`y`) in `color` /// using the game font (spaces advance without drawing). Clipped; returns end x.
 HandTri	src/gpu.rs	14	struct		INFRA?	
 GpuPresenter	src/gpu.rs	16	struct		INFRA?	
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                      
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                       
