@@ -171,11 +171,13 @@ fn concept_menu_text_matches_live_game_capture() {
         eprintln!("concept-menu oracle skipped: no concept_menu.ppm");
         return;
     };
-    // The real concept list. Rows 0..=10 are glyph-count-verified against the
-    // capture; the trailing "44" row (indented) is excluded from the compare.
+    // The real concept list (12 rows: TALK..WHY). The menu is row-count-CENTERED,
+    // so all 12 must be rendered for the band to top at y=34 (choice_box_top_y(12));
+    // the compare region below covers rows 0..=10, glyph-verified against the capture
+    // (the 12th row WHY at y~155 and the trailing indented "44" are outside it).
     let labels: Vec<String> = [
         "TALK", "EGO", "SUPER_EGO", "UNDER_EGO", "END_OF_MONTH", "LIBIDO", "WHO", "WHERE", "WHEN",
-        "WHAT", "HOW",
+        "WHAT", "HOW", "WHY",
     ]
     .iter()
     .map(|s| s.to_string())

@@ -1847,6 +1847,12 @@ impl EngineState {
     pub fn draw_list_menu(&mut self, labels: &[String], selected: Option<usize>) {
         const TEXT: u8 = 0xE8;
         const TEXT_SELECTED: u8 = 0xEF;
+        // The row band is VERTICALLY CENTERED by row count (the list widget:
+        // box_y=(200-(rows*11+8))/2, text_top=box_y+4 = choice_box_top_y). The
+        // fixed y=34 only matched 12-row menus (concept_menu.ppm); a 7-row submenu
+        // belongs at 61, a 4-row at 78. x stays 170 (the capture-matched left edge).
+        let rows = labels.len().min(12);
+        let top = Self::choice_box_top_y(rows);
         for (i, label) in labels.iter().take(12).enumerate() {
             let color = if selected == Some(i) { TEXT_SELECTED } else { TEXT };
             crate::font::draw_square_caps(
@@ -1854,11 +1860,8 @@ impl EngineState {
                 ENGINE_SCREEN_WIDTH,
                 ENGINE_SCREEN_HEIGHT,
                 label,
-                // Measured from `concept_menu.ppm`: first row top y=34, x=170,
-                // 11px pitch (rows 34,45,56,…). Validated by re-extracting the
-                // stored 'T'/'A' glyphs at exactly these coordinates.
                 170,
-                34 + i * 11,
+                top + i * 11,
                 color,
             );
         }
@@ -2066,9 +2069,12 @@ impl EngineState {
         if !(170..=245).contains(&(x as i32)) {
             return None;
         }
-        // Rows start at y=34 with an 11px pitch (measured from concept_menu.ppm).
-        let row = (y as i32 - 34) / 11;
-        (row >= 0 && (row as usize) < labels_len.min(12)).then_some(row as usize)
+        // Row band vertically centered by row count (matches draw_list_menu /
+        // choice_box_top_y): text_top = (200-(rows*11+8))/2 + 4, 11px pitch.
+        let rows = labels_len.min(12);
+        let top = Self::choice_box_top_y(rows) as i32;
+        let row = (y as i32 - top) / 11;
+        (row >= 0 && (row as usize) < rows).then_some(row as usize)
     }
 
     /// Whether a click hits the nav-sector ORB (the pyramid-sector station orb) — the
@@ -4461,7 +4467,9 @@ mod tests {
         // Feed a topic menu and render it over a blank frame via the public draw.
         let labels = vec!["TALK".to_string(), "ONE".to_string(), "TWO".to_string()];
         e.draw_list_menu(&labels, Some(1));
-        // Row 0 (TALK) glyphs at y 34.., row 1 (ONE, selected) at y 45.. bright.
+        // Row band is row-count-CENTERED (choice_box_top_y): a 3-row menu tops at
+        // (200-(3*11+8))/2+4 = 83, so row 0 (TALK) at y 83.., row 1 (ONE) at y 94..
+        // (the fixed y=34 only held for a 12-row menu — the capture case).
         let count_in = |idx: u8, y0: usize, y1: usize| {
             let mut n = 0;
             for y in y0..y1 {
@@ -4474,8 +4482,8 @@ mod tests {
             n
         };
         // Unselected rows use 0xE8; the selected row uses the bright 0xEF.
-        assert!(count_in(0xE8, 33, 43) > 10, "TALK row in square-caps 0xE8");
-        assert!(count_in(0xEF, 44, 54) > 6, "selected ONE row in bright 0xEF");
+        assert!(count_in(0xE8, 82, 92) > 10, "TALK row (centered top=83) in square-caps 0xE8");
+        assert!(count_in(0xEF, 93, 103) > 6, "selected ONE row (y=94) in bright 0xEF");
     }
 
     #[test]
@@ -4702,7 +4710,8 @@ mod tests {
         assert_eq!(e.dialogue_cursor(), 3, "auto-play holds on the last opening line");
         assert!(!e.dialogue_finished(), "the held dialogue is not finished");
         // Clicking the TALK topic (row 0) plays its segment only, then re-holds.
-        let row = e.topic_menu_click(200, 40);
+        // A 2-row menu centers with its top row at y=89 (choice_box_top_y(2)).
+        let row = e.topic_menu_click(200, 90);
         assert_eq!(row, Some(0));
         for _ in 0..600 {
             e.step(MouseInput::default());
