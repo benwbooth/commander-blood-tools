@@ -560,3 +560,31 @@ anchor; park tolerance ±2 ≠ exact; the original capture's provenance is unrec
 Better approach: a `parkx <frame>` exact-frame command (park then single-frame edge
 nudges), THEN re-verify the engine console render against a fresh matched capture —
 and record capture provenance (scenario file) next to every reference PPM.
+
+## gs:0x252A (0xD0's gate) — do NOT map it to `engine.viewscreen_active`
+
+Tried: wiring the port's `flag_252a` (currently forced `true` at VM construction,
+`main.rs`) to a frontend screen flag, mirroring the successful `gs:0x274F`
+cryobox-lifecycle fix.
+
+What the binary says: `gs:0x252A` is a SCREEN-STATE flag for the ship-3D
+navigation sequence — set to 1 at `0xB3F5` (the entry path that also sets
+`[0x1FA7]=0x23`, `[0x1FA3]=0xFFFF` and loads the sequence screen `si=0xDD7` with
+palette refresh `[0x5B53]=1`), cleared at `0xB4CF` and at `0xB29A` (the back/exit
+path that also sets `[0x24F3]=0x11`). Baked initial value is 0 (file `0xF94A`),
+so the game boots with `0xD0`'s gate CLEAR.
+
+Why the mapping fails: `engine.viewscreen_active` is NOT that screen. It is the
+narrow EMPTY-NAV special case — `main.rs` only sets it when
+`bridge_nav_orb_click(..) && engine.nav_destination_count() == 0`, i.e. the
+oracle-verified static console shown when no destinations are granted. Binding
+`flag_252a` to it would leave `0xD0`-gated blocks closed during all normal
+navigation and open only in the empty-nav corner case — worse than today's
+always-true approximation.
+
+Better approach: `flag_252a` follows the real ship-3D navigation SEQUENCE state,
+which the port does not model yet — it is part of the open ship-3D runtime work
+(together with `gs:0x24F3`, the nav-destination entity set, and the world-click
+C1 record creation at `0xB272`). Wire it when that runtime exists, then also
+enable the `gs:[0x252A]=0` / `gs:[0x2531]=6` writes in the `0xC9` handler
+(`0x6FE2`/`0x6FE8`), which are deliberately left unmodelled for the same reason.
