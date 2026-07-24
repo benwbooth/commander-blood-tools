@@ -1793,7 +1793,6 @@ impl EngineState {
         // w = widest_label + 0x14 (20), h = rows*11 + 8, x = anchor - w/2,
         // y = (200 - h)/2; border index 0x15 then fill 0xE0 (both DAC 0,0,0 —
         // from the live index dump; RGB can't distinguish them).
-        let w = widest + 0x14;
         let h = rows * Self::CHOICE_BOX_PITCH + 8;
         // The world candidate box (kind 10) anchors at 80 (0xB0D1); others at 100.
         let anchor = if self.console_box_kind == 10 {
@@ -1801,6 +1800,13 @@ impl EngineState {
         } else {
             Self::CHOICE_BOX_CENTER_X
         };
+        // Min-width floor BEFORE +0x14 (0x8438/0x8445): the widest label floors to 100
+        // for the centered box ([0xadd]=0) / 55 for the world/tall box ([0xadd]=1), so
+        // short-label boxes render at min width. For the centered box this makes it span
+        // x0=40..x1=160 — matching the hit-test band exactly. Labels center on the anchor,
+        // so widening the border does not move the text (capture-safe).
+        let floor = if self.console_box_kind == 10 { 55 } else { 100 };
+        let w = widest.max(floor) + 0x14;
         let x0 = anchor.saturating_sub(w / 2);
         let x1 = (x0 + w).min(ENGINE_SCREEN_WIDTH);
         let y0 = (200usize.saturating_sub(h)) / 2;
