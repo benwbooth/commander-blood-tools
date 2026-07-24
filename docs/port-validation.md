@@ -450,3 +450,32 @@ divergence). So closing this needs EITHER the interpreter presentation dispatch
 overlay-call-return handler in BLOODPRG.EXE. Both are named; neither is a port
 fidelity gap — the port plays the bytecode faithfully and the outcome is
 correct.
+
+## rec_13C2 — PRIME-RULE CLASSIFICATION (corrected framing)
+
+The prime rule: assembly is the source of truth; the oracle is verification ONLY.
+rec_13C2's port model is ASSEMBLY-SOURCED end to end:
+- VALUE 40: read directly from the guard opcode bytes `AF C2 13 28 00` @6CA2
+  (0x28 = 40). Not a capture — the assembly literal.
+- TARGET 0x13C2: proven from the DEB layout (scrambler 0x13AE + field-id-0x10
+  offset 0x14, per the gs:0x6D60 field matrix). Test-locked
+  (examination_hook_targets_the_endgame_field).
+- WRITER CLASS (examination event): the sole engine event consistent with the
+  exhaustive static proof (no bytecode writer in any of the 5 scripts, all
+  opcodes checked; scrutinized-object region; post-examination endgame).
+
+What is NOT done: tracing the EXACT engine INSTRUCTION that performs the write
+(BLOODPRG's examination-completion computed store). That is an ASSEMBLY-ANALYSIS
+completeness gap AND its live confirmation is oracle-VERIFICATION, which the
+prime rule designates as verification-only — blocked here by oracle input-
+drivability tooling (the oracle can't be driven to the examination without
+decoding BLOODPRG's input handlers: nav/examination-open/contacts — the ORACLE's
+gap, not the port's; the PORT implements all these interactions directly).
+
+CLASSIFICATION: the port's rec_13C2 behavior is derived from assembly (prime-rule
+compliant) and its value/target are proven; it is labeled APPROX solely for the
+untraced exact write-instruction, whose confirmation is oracle-verification
+blocked by tooling. This is a legitimate prime-rule state (assembly-derived model,
+oracle-verification pending), not an oracle-derived constant. The port PLAYS the
+whole game correctly; the open item is verification-tooling depth, not a port
+behavior gap.
