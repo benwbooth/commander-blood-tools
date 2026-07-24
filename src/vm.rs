@@ -5343,6 +5343,26 @@ mod tests {
         assert_eq!(m.rec_read(0x13EE), 3, "vbio (SCRIPT3's 0x13EE) arrives at 3");
         let slot4: Vec<u8> = m.records16[3 * 16..3 * 16 + 6].to_vec();
         assert_eq!(&slot4[..5], b"venus", "char slot 4 binds its DESCRIPT name");
+
+        // ACT TWO'S FIRST BEAT: Scruter Jo's SCRIPT3 talk (rec 0x081C per the
+        // C4 @00CD) — with vbio pre-set to 3 by the init, the BIONIUM
+        // acknowledgment region (@02C5..) plays: "Good work... You did get
+        // BIONIUM..." — Act Two opens post-success, from shipped bytes.
+        m.start_actor_presentation(0x081C, 40);
+        let mut ack = false;
+        for _ in 0..60 {
+            for ev in m.run_frame() {
+                if let VmEvent::Text { offset } = ev {
+                    if (0x02C5..0x0406).contains(&offset) {
+                        ack = true;
+                    }
+                }
+            }
+            if ack {
+                break;
+            }
+        }
+        assert!(ack, "the BIONIUM acknowledgment plays in SCRIPT3");
     }
 
     /// THE WAKE CHAIN: Scruter Jo's presenter (1860) plays the scan intro, the
