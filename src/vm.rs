@@ -3943,26 +3943,36 @@ impl VmMachine {
                     self.state[slot] = v;
                 }
             }
-            // 0xA6 TEXT (0x660C): decode the full token (same decoder as the
-            // walker); emit the line when its active flag (b5 bit7) is set; then
-            // apply the conditional skip (b4 bit3: skip ((b5>>4)&7)+1 tokens via
-            // the length table — the loop's gs:0x67AB counter @0x5632).
+            // 0xA6 TEXT (0x660C): emit the line when active (b5 bit7) AND the
+            // random accept-gate passes (b4 bit1 -> vm_condition_5 @0x6680, jae
+            // = fail). The conditional skip (b4 bit3, ((b5>>4)&7)+1 tokens,
+            // gs:0x67AB) is armed on every encounter, but a line that PLAYS
+            // clears it (the exec loop's yield-2 path @0x5661) — so a played
+            // line's follow-up token (the SS variant assignment @2763..)
+            // EXECUTES while skipped/gate-failed lines consume theirs. That
+            // asymmetry IS the SS randomizer.
             0xA6 => {
                 let start = self.pc - 1;
                 match decode_text(&self.cod, start, self.cod.len()) {
                     Some((VmToken::Text { offset, flags_b4, flags_b5, .. }, next)) => {
+                        let mut played = false;
                         if text_flags_are_active(flags_b5) {
-                            self.events.push(VmEvent::Text { offset });
-                            // The game's self-modifying ACCEPT (@0x668D): clear the
-                            // line's active bit in the stream unless b4 preserves it —
-                            // this is how played lines stop repeating across frames.
-                            let nb5 = text_flags_after_accept(flags_b4, flags_b5);
-                            if let Some(b) = self.cod.get_mut(offset + 5) {
-                                *b = nb5;
+                            let gate_open = flags_b4 & 0x02 == 0 || self.rand(5) == 0;
+                            if gate_open {
+                                played = true;
+                                self.events.push(VmEvent::Text { offset });
+                                // Self-modifying ACCEPT (@0x668D): clear the active
+                                // bit unless b4 bit0 preserves it.
+                                let nb5 = text_flags_after_accept(flags_b4, flags_b5);
+                                if let Some(b) = self.cod.get_mut(offset + 5) {
+                                    *b = nb5;
+                                }
                             }
                         }
                         self.pc = next;
-                        if let Some(skip) = text_conditional_skip_count(flags_b4, flags_b5) {
+                        if played {
+                            // Yield-2: the armed skip clears; the next token runs.
+                        } else if let Some(skip) = text_conditional_skip_count(flags_b4, flags_b5) {
                             for _ in 0..skip {
                                 let op2 = self.u8_at(self.pc);
                                 if op2 == 0xFF || !(OP_MIN..=OP_MAX).contains(&op2) {
@@ -4235,14 +4245,26 @@ impl VmMachine {
                     self.branch();
                 }
             }
-            // 0xCC (0x64CE): records16[(op1-1)*16] = op2 (byte pair write).
+            // 0xCC SETCHAR (0x64CE): bp = 0x6CDE+(op1-1)*16, then copy the
+            // NUL-terminated NAME into the 16-byte character slot (lodsb/[bp++]
+            // loop), then one pad-byte `inc si` — the DESCRIPT record-name
+            // binding (slot0="present", slot4="scrut"). The old two-byte model
+            // left pc INSIDE the name, executing its bytes as opcodes (masked
+            // before the skip-law fix because the skip always jumped the token).
             0xCC => {
                 let idx = self.lodsb().wrapping_sub(1) as usize;
-                let val = self.lodsb();
-                let at = idx * 16;
-                if at + 1 < self.records16.len() {
-                    self.records16[at] = val;
+                let mut at = idx.wrapping_mul(16);
+                loop {
+                    let b = self.lodsb();
+                    if let Some(slot) = self.records16.get_mut(at) {
+                        *slot = b;
+                    }
+                    at += 1;
+                    if b == 0 {
+                        break;
+                    }
                 }
+                self.pc += 1; // the engine's trailing `inc si` pad skip
             }
             // 0xCE/0xD0/0xD1 (0x6494/0x64A0/0x64AC): branch when the flag bit is CLEAR.
             0xCE => {
