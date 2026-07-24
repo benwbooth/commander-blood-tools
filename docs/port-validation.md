@@ -504,10 +504,19 @@ per the prime rule the refutation is recorded rather than implemented on:
   +0x16, or a {type,related,aux} record-entry triple whose related word lands at
   +0x16), OR the record base at the write site is not arche. The deferred-record
   mechanism below is real and the port genuinely lacks its setter, but it is NOT
-  established to be rec_103A's writer. Next concrete task: search BLOODPRG for a
-  store to the arche object at +0x14/+0x16 (a direct structural write), which needs
-  the runtime arche pointer or a routine-level trace — this is where the trail
-  currently ends, honestly.
+  established to be rec_103A's writer.
+- LOCATED (this pass): arche+0x16 IS manipulated by the VM opcode handlers. The
+  0xB8/0xB9/0xBD handler (`vm_op_b8_record_readwrite` @0x6b06), after its 2-word
+  pair write, computes `vm_record_lookup_by_threshold` (0x6034) and, if the result
+  matches arche+0x16, CLEARS it (`mov es:[di+0x16],0` @0x6b44, di=gs:[0x6752]=arche).
+  So rec_103A is a VM-maintained "current plot/scene object" field, cleared by the
+  B8 family. The SET to a plot-identity (Bigbang=4024 etc.) is NOT a SCRIPT5 opcode
+  (none of the twelve 4024-writes target 0x1038/0x103A) but NATIVE presentation-
+  maintenance tied to the 0x6034 record-lookup. So the trail ends honestly here: no
+  longer "computed write with no signature" but a LOCATED VM-internal field whose SET
+  path is a bounded native RE task (decode 0x6034 + the presentation set-site). The
+  port's B8-family handler (`is_pair_record_opcode`) does the pair write but NOT the
+  arche+0x16 side-effect: a concrete divergence to close once the set-site is decoded.
 
 SCRIPT5's Bigbang-concert ending is gated on `rec_103A==4024` (the concert FSM's
 every edge — see the progression FSM row). rec_103A was investigated by THREE
