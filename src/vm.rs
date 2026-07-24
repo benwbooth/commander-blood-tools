@@ -5789,9 +5789,14 @@ mod tests {
         m.rec_write(0x13FC, 1);
         m.rec_write(0x1424, 1);
         m.rec_write(0x142C, 1);
+        // rec_13C2 = 40: the EXAMINATION OUTCOME (now modeled in the frontend
+        // hook, main.rs — the examined object's related field; APPROX cited to
+        // 5 static findings + the exam-completion computed write). Here it
+        // stands for "the player examined the alien before the endgame."
         m.rec_write(0x13C2, 40);
         m.rec_write(0x088A, 4070);
         m.rec_write(0x06DA, 4070);
+        // The C6 endgame-exit record {C6, 0x1052} (the RUN PROFILE 3 guard).
         m.rec_write(0x108E, 0xC6);
         m.rec_write(0x1090, 0x1052);
         // SCRIPT3'S QUEST LINE, beat-ordered (each presenter from its DEB

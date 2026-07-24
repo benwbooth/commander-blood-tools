@@ -502,6 +502,9 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     // engine's overlay writes it; the port models the OUTCOME as a frontend
     // hook (the vbio pattern), resolved per-script from the DEB.
     let secret_offset: std::cell::Cell<Option<u16>> = std::cell::Cell::new(None);
+    // The scrutinized object (scrambler) whose related field the examination
+    // activates (APPROX for the endgame's rec_13C2==40 guard; see the hook).
+    let examined_obj_offset: std::cell::Cell<Option<u16>> = std::cell::Cell::new(None);
     let script_vm: std::cell::RefCell<Option<commander_blood_tools::vm::VmMachine>> =
         std::cell::RefCell::new(None);
     // SCRIPT1 tutorial auto-chain (ORACLE-observed: the real tutorial plays Izwalito's
@@ -586,6 +589,12 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 names
                     .iter()
                     .find(|(_, name)| name.eq_ignore_ascii_case("secret"))
+                    .map(|(&off, _)| off),
+            );
+            examined_obj_offset.set(
+                names
+                    .iter()
+                    .find(|(_, name)| name.eq_ignore_ascii_case("scrambler"))
                     .map(|(&off, _)| off),
             );
             // load_dialogue_scenes sets up the scene + the D2 chaining decision.
@@ -1881,10 +1890,24 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         // overlay sets 'secret' (the scrutinizer manifest) — the
                         // port writes the OUTCOME through the loaded script's DEB
                         // (faithful, per-script; the endgame gate reads it).
-                        if let (Some(off), Some(m)) =
-                            (secret_offset.get(), script_vm.borrow_mut().as_mut())
-                        {
-                            m.rec_write_pub(off, 1);
+                        if let Some(m) = script_vm.borrow_mut().as_mut() {
+                            // secret = 1 (evidenced: =0 script resets + aligned
+                            // overlay-list membership).
+                            if let Some(off) = secret_offset.get() {
+                                m.rec_write_pub(off, 1);
+                            }
+                            // The examined object's related field = 40 (APPROX,
+                            // consistent with 5 static findings: no script
+                            // writer anywhere; scrambler(DEB)+0x14 = field-id
+                            // 0x10 of the scrutinized-region object; gates the
+                            // post-examination endgame; examination is the sole
+                            // plausible engine event; 40 = related-active). The
+                            // replacing routine is BLOODPRG's examination-
+                            // completion computed write. Resolved via the DEB
+                            // (scrambler + 0x14) — no transcribed constant.
+                            if let Some(m2) = examined_obj_offset.get() {
+                                m.rec_write_pub(m2.wrapping_add(0x14), 40);
+                            }
                         }
                     }
                 }
