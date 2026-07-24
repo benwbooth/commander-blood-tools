@@ -1335,12 +1335,17 @@ impl EngineState {
                     for (i, label) in labels.iter().enumerate() {
                         let color =
                             if self.console_box_selected == Some(i) { 0xEF } else { 0xE8 };
+                        // Each label is CENTERED in the box (0x855C/0x8555:
+                        // label_x = x0 + 10 + (widest - width)/2), not left-aligned
+                        // at x0+4; short labels indent to center on the anchor.
+                        let width = crate::font::square_caps_text_width(label);
+                        let lx = x0 + 10 + widest.saturating_sub(width) / 2;
                         crate::font::draw_square_caps(
                             &mut self.framebuffer,
                             ENGINE_SCREEN_WIDTH,
                             ENGINE_SCREEN_HEIGHT,
                             label,
-                            x0 + 4,
+                            lx,
                             top + i * 11,
                             color,
                         );
