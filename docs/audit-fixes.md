@@ -106,7 +106,22 @@ mode-0 write guard is now IMPLEMENTED on this basis (see the Fixed table).
   `console_box_kind`/labels in the same frame, so they agree whatever the box's
   anchor/width. Verified: `console_box_click_band_is_the_drawn_box_not_a_fixed_40_160`
   plus the existing nav/telephone click tests stay green.
-- **Palette 128–191 bank (infra):** the "restore baked bytes" hint is WRONG — it would
+- **Palette 128–191 bank — the FLOW IS NOW FULLY DECODED; what remains is wiring +
+  per-screen verification.** Three buffers, every transfer 192 colors (0..191), so the
+  192..255 console/text bank is never touched by per-screen loading — which is precisely
+  why this finding is the 128–191 bank:
+  * `gs:0x5251` — per-screen STAGING, filled from the master by the panorama frame
+    loader (`0x981B`) when `gs:[0x5B53]&1`;
+  * `gs:0x5b58` — the LIVE 768-byte DAC buffer, uploaded by `0x16A7` -> `0x2F90`;
+  * `gs:0x5851` — a 576-byte BACKUP (saved at `0xB563`, restored via `0x1FA1`).
+  The loader is `0x8166..0x816F` (`si=0x5251, di=0x5b58, cx=0x90 rep movsd`), run on
+  entry to the ship/nav state right after `mov [0x24F3],1`. `0xB426` sets
+  `[0x5B53]=1`/`[0x5B57]=1` on ship-3D sequence entry.
+  PORT GAP: `src/tbbig.rs` renders from a STATIC `GAME_SCREEN_PALETTE_DAC` and models
+  none of the three buffers nor the refresh flag. Wiring it needs each screen's staging
+  source identified and the hub capture re-verified (the current cyan IS correct there),
+  which is why this stays open rather than being patched blind.
+  The original "restore baked bytes" hint is WRONG — it would
   make the HUB muddy and break its capture; the cyan IS correct for the hub. The real fix
   is per-screen palette loading via the `0x5251<->0x5b58` working-buffer flow.
 - **Infrastructure-gated VM guards** — the active-bit lifecycle is now DECODED (see
