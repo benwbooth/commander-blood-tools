@@ -780,13 +780,34 @@ REMAINING: `run_ship_3d_temp_snd_setup`, `run_ship_3d_navigation_final_reset`
 (both single-state machines) — but note each is currently INERT: nothing consumes
 their effects yet, so wiring them changes no behaviour until a consumer exists.
 
-**TIER 2 — blocked on a MISSING ENGINE MODEL, not on other ship-3D code.**
-`copy_ship_3d_plane_bands`, `commit_ship_3d_global_clip_snapshot`,
-`commit_ship_3d_sprite_slot_dirty_geometry` all operate on the VGA PLANAR video
-segment (source pages `0xC000` / `0xDF40` inside a 64 KB segment) and a dirty-rect
-list. The engine models only a LINEAR `framebuffer: Vec<u8>` and has no planar
-page model at all. Wiring needs that model first — a real piece of engine work,
-and the reason the now-live depth sweep is still not visible.
+**TIER 2 — the "missing planar model" blocker was OVERSTATED. Corrected 2026-07-24.**
+
+This row claimed `copy_ship_3d_plane_bands` and friends need a VGA planar page model
+the engine lacks, and that building it was "a real piece of engine work". Reading
+`0xB6DD` end to end says otherwise.
+
+The routine sets the sequencer map mask to `0x0F` (`out 0x3C4, ax=0x0F02` at `0xB70E`
+— ALL FOUR planes enabled) and then puts the graphics controller into WRITE MODE 1
+(`out 0x3CE, 5`; read `0x3CF`; `and al,0xFC; or al,1` at `0xB732..0xB73C`), which is
+LATCH-COPY mode. In that mode a single `movsb` moves all four planes at once. The
+planar layout is therefore a BANDWIDTH technique here, not a visual one: the copy is
+exactly equivalent to a linear `memcpy` of 4x the byte count, and produces
+pixel-identical output in a linear framebuffer.
+
+So no planar page model is required to make this faithful. What the caller needs is
+only the linear expansion — 80 bytes/row/plane is 320 px/row, and the band is
+`(depth + 0x23)` rows.
+
+`copy_ship_3d_plane_bands` itself is ASM-VERIFIED against `0xB6DD` (every constant
+independently re-derived: `0x50`=80, `0x1F40`=8000, `0x23`=35, `0xC000`, `0xDF40`,
+dest span 16000, hold-mode `0xA`; and the 8-bit `mul dl` truncation is correctly
+modelled as `(depth as u8).wrapping_add(35)`). It is not blocked — it is UNCALLED,
+which is the reachability problem, not a missing subsystem.
+
+STILL genuinely needing engine work: `commit_ship_3d_global_clip_snapshot` and
+`commit_ship_3d_sprite_slot_dirty_geometry` depend on the dirty-rect list, which the
+engine does not model. That is a smaller and better-defined task than "build a planar
+video model".
 
 **TIER 3 — blocked on other DORMANT ship-3D code (a dependency chain).**
 `run_ship_3d_navigation_sequence_update` needs `interpolation_complete` (from
@@ -799,8 +820,8 @@ hang off `update_ship_3d_nav_choice_dispatch`, which needs
 
 ORDER THAT UNBLOCKS THE MOST: interpolation gate + target select -> sequence
 update (which also writes `gs:0x252A` and retires the `flag_252a` VM
-approximation) -> nav-choice dispatch -> handlers. The planar model (Tier 2) is
-independent and is what makes any of it VISIBLE.
+approximation) -> nav-choice dispatch -> handlers. Tier 2 is independent; with the
+planar blocker retired, what remains there is the DIRTY-RECT list, not a video model.
 
 ## PROVENANCE — `MENU_SUBMENU` is still a transcribed literal
 
