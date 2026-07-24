@@ -3955,6 +3955,29 @@ impl VmMachine {
         Some(self.rec_read_u8(owner.wrapping_add(2)) & 1 != 0)
     }
 
+    /// Insert an owner into the 16-slot special list (gs:0x6D3E, insert 0x5FF6).
+    /// Returns false only if the list is full and the owner is not already present.
+    fn special_slot_insert(&mut self, owner: u16) -> bool {
+        if self.ship_slots.contains(&owner) {
+            return true;
+        }
+        if let Some(slot) = self.ship_slots.iter_mut().find(|s| **s == 0) {
+            *slot = owner;
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Remove an owner from the special-slot list (remove 0x5FD8).
+    fn special_slot_remove(&mut self, owner: u16) {
+        for s in self.ship_slots.iter_mut() {
+            if *s == owner {
+                *s = 0;
+            }
+        }
+    }
+
     pub fn load_cod(&mut self, cod: &[u8]) {
         self.cod = cod.to_vec();
         self.pc = 0;
@@ -4354,10 +4377,7 @@ impl VmMachine {
                     flipped = true;
                 }
                 let off = self.lodsw();
-                let mut val = self.lodsw();
-                if val == self.wildcard {
-                    val = 0xFFFF;
-                }
+                let raw = self.lodsw();
                 if self.query {
                     // Handler 0x6946: an RHS equal to the SPECIAL OBJECT maps
                     // to 0xFFFF (the aboard value) before the compare — it is
@@ -4365,15 +4385,44 @@ impl VmMachine {
                     // made every aboard-guard pass; the matched-drive lane's
                     // first transcript diff caught it: the port played the
                     // BIONIUM begging behind rec_0722==65535 with 3488).
+                    let val = if raw == self.wildcard { 0xFFFF } else { raw };
                     let eq = val == self.rec_read(off);
                     if (eq && flipped) || (!eq && !flipped) {
                         self.branch();
                     }
                 } else {
+                    // SET (0x6985): 0xBC stores the RAW value to gs:0x6782 (0x6989),
+                    // then special-slot bookkeeping on the record's OWNER object
+                    // (insert 0x5FF6 / remove 0x5FD8): current record == 0xFFFF removes
+                    // the owner; a value that is aboard (0xFFFF or the special object)
+                    // inserts the owner and SKIPS the write if the 16-slot list is
+                    // full, else stores 0xFFFF; otherwise stores the RAW value. The old
+                    // code stored the substituted val and did no slot bookkeeping.
                     if op == 0xBC {
-                        self.reg_6782 = val;
+                        self.reg_6782 = raw;
                     }
-                    self.rec_write(off, val);
+                    let owner = self.owner_object_offset(off);
+                    if self.rec_read(off) == 0xFFFF {
+                        if let Some(owner) = owner {
+                            self.special_slot_remove(owner);
+                        }
+                    }
+                    let mut stored = raw;
+                    let mut do_write = true;
+                    if raw == 0xFFFF || raw == self.wildcard {
+                        if let Some(owner) = owner {
+                            if self.special_slot_insert(owner) {
+                                stored = 0xFFFF;
+                            } else {
+                                do_write = false; // slot list full: skip the write
+                            }
+                        } else {
+                            stored = 0xFFFF;
+                        }
+                    }
+                    if do_write {
+                        self.rec_write(off, stored);
+                    }
                 }
             }
             // The 0x6863 family (B1/B4/B5/B6/BE/BF/C0): record[off] OP operand,
