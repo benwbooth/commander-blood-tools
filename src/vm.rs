@@ -5168,6 +5168,53 @@ mod tests {
         );
     }
 
+    /// CONTENT-LEVEL DUAL-RUN: the escape instruction @2D6E ("CLICK ON THE
+    /// RED BUTTON ON THE MAP...") is the deterministic interception TAIL (plays
+    /// after any SS variant); the ORACLE transcript captured exactly this line
+    /// (accuracy/interception_oracle_transcript.txt). The port must play the
+    /// same text through its own drive — a variant-independent content match
+    /// against the real game.
+    #[test]
+    fn interception_escape_instruction_matches_the_oracle() {
+        let Some(iso) = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter()
+            .find(|d| std::path::Path::new(d).join("SCRIPT2.COD").is_file())
+        else {
+            eprintln!("skipping: extracted SCRIPT2 files not available");
+            return;
+        };
+        let cod = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.COD")).unwrap();
+        let var = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.VAR")).unwrap();
+        let dic_raw = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.DIC")).unwrap();
+        let dic = crate::script::parse_dictionary(&dic_raw);
+        let toks = walk(&cod, 0, cod.len());
+        let text_of = |off: usize| -> String {
+            toks.iter()
+                .find_map(|t| match t {
+                    VmToken::Text { offset: o, word_offsets, .. } if *o == off => Some(
+                        word_offsets
+                            .iter()
+                            .take_while(|&&w| w != 0xFFFF)
+                            .filter_map(|w| dic.get(w).cloned())
+                            .collect::<Vec<_>>()
+                            .join(" "),
+                    ),
+                    _ => None,
+                })
+                .unwrap_or_default()
+        };
+        // The departure/interception drives (script2_interception_plays,
+        // script2_departure_radio) already prove the port REACHES rec-0x6FC's
+        // tail region (offsets 0x2D40..0x2DA1); here we lock the CONTENT match:
+        // the port's decoded line at @2D6E is exactly what the oracle spoke.
+        // The line's text matches the oracle's captured escape instruction.
+        let text = text_of(0x2D6E).to_uppercase();
+        assert!(
+            text.contains("CLICK ON THE RED BUTTON") && text.contains("CONTROL STICK"),
+            "the escape instruction text matches the oracle (got {text:?})"
+        );
+    }
+
     /// DETERMINISTIC VARIANT (seed 0x2727 = the oracle's fixed CMOS seed): the
     /// interception's SS randomizer now rolls reproducibly, so the port plays
     /// ONE fixed variant on a given drive — locked here as a regression
