@@ -718,8 +718,8 @@ flags_b5	src/vm.rs	1440	fn		UNVERIFIED
 accept_line	src/vm.rs	1447	fn		UNVERIFIED	
 mark_text_line_shown	src/vm.rs	1455	fn		UNVERIFIED	
 SpecialObjectSlots	src/vm.rs	1465	struct		UNVERIFIED	
-remove	src/vm.rs	1470	fn		UNVERIFIED	
-insert	src/vm.rs	1479	fn		UNVERIFIED	
+remove	src/vm.rs	1470	fn		ASM	|| AUDIT 2026-07-24: vm_special_slot_remove 0x5FD8: same 16-word list; on a hit it writes 0 into the slot and sets CF (found), otherwise `clc` (not found)
+insert	src/vm.rs	1479	fn		ASM	|| AUDIT 2026-07-24: vm_special_slot_insert 0x5FF6: 16 words at DS:0x6D3E (cx=0x10). First loop scans for the value already present and, on a hit, jumps to `stc` -- ALREADY PRESENT COUNTS AS SUCCESS, which the port returns true for. Second loop finds the first zero slot and stores; if none, `clc` signals FULL and the port returns false
 actor_object_offset_from_record	src/vm.rs	1492	fn		ASM	|| AUDIT 2026-07-24: exact inverse of text_presentation_record_offset: record = object + TALK_FIELD(0x3A), so object = record - 0x3A
 record_owner_object_offset	src/vm.rs	1496	fn		UNVERIFIED	
 apply_assign5_mode0	src/vm.rs	1500	fn		ASM	|| AUDIT 2026-07-24: 0x6985..0x69C2 verified; FIXED a fall-through bug -- an existing 0xFFFF removes the owner then `jmp 0x69C2` stores the RAW value, skipping the insert block entirely
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                 
