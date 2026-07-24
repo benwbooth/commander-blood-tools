@@ -4454,6 +4454,60 @@ impl VmMachine {
                     self.events.push(VmEvent::QueuePresentation { offset: off as usize });
                 }
             }
+            // 0xC5..0xC8 record-entry family (0x6D18/0x6D80/0x6DCF/0x6F62). These
+            // were ENTIRELY UNHANDLED in the live step() (they fell to the no-op
+            // catch-all): C5..C8 queries never branched, so "has this happened?"
+            // guards always ran their then-body, and C5..C8 writes never landed.
+            // QUERY: matched = rec[off]==op && rec[off+2]==operand; an empty record
+            // is a non-match and BRANCHES (0x6D4C je -> 0x6462 vm_branch). SET
+            // (mode0): a guarded write of {op, related, 0}; on guard failure the
+            // handler branches (else path).
+            0xC5 | 0xC6 | 0xC7 | 0xC8 => {
+                let mut flipped = false;
+                if self.u8_at(self.pc) == 0xA1 {
+                    self.pc += 1;
+                    flipped = true;
+                }
+                let off = self.lodsw();
+                let operand = self.lodsw();
+                if self.query {
+                    let matched =
+                        self.rec_read(off) == op as u16 && self.rec_read(off + 2) == operand;
+                    let pass = if flipped { !matched } else { matched };
+                    if !pass {
+                        self.branch();
+                    }
+                } else {
+                    // Per-opcode guards (write_record_entry_mode0 / 0x6D18..):
+                    //  C5: operand active (+2 bit0) && rec[operand]==0x200 && rec[off]==0
+                    //  C6: unconditional
+                    //  C7: operand active && (rec[off]==0 || rec[off]==C4)
+                    //  C8: rec[off]==0  (writes related=0)
+                    let wrote = match op {
+                        0xC5 => {
+                            self.rec_read_u8(operand.wrapping_add(2)) & 1 != 0
+                                && self.rec_read(operand) == 0x0200
+                                && self.rec_read(off) == 0
+                        }
+                        0xC6 => true,
+                        0xC7 => {
+                            let rt = self.rec_read(off);
+                            self.rec_read_u8(operand.wrapping_add(2)) & 1 != 0
+                                && (rt == 0 || rt == OP_ACTOR as u16)
+                        }
+                        0xC8 => self.rec_read(off) == 0,
+                        _ => false,
+                    };
+                    if wrote {
+                        let related = if op == 0xC8 { 0 } else { operand };
+                        self.rec_write(off, op as u16);
+                        self.rec_write(off.wrapping_add(2), related);
+                        self.rec_write(off.wrapping_add(4), 0);
+                    } else {
+                        self.branch();
+                    }
+                }
+            }
             // 0xC4 ACTOR (0x6C7E). QUERY: pass iff rec[off] is typed 0xC4, its
             // related word matches, and the containing record is active — i.e.
             // "is THIS actor's presentation the active one?" (the block-actor
@@ -7018,6 +7072,50 @@ mod tests {
                 len: 6
             }
         );
+    }
+
+    /// The LIVE interpreter (step) must actually EXECUTE C5..C8 — they used to
+    /// fall to the no-op catch-all (queries never branched, writes vanished).
+    #[test]
+    fn live_step_executes_c5_c8_record_entries() {
+        // C6 write (unconditional): rec[0x20] <- {C6, 0x0044, 0}.
+        let mut m = VmMachine::new();
+        m.load_cod(&[0xC6, 0x20, 0x00, 0x44, 0x00, 0xFF]);
+        m.query = false;
+        m.pc = 0;
+        m.step();
+        assert_eq!(m.rec_read_pub(0x20), 0xC6, "C6 write lands (was a no-op)");
+        assert_eq!(m.rec_read_pub(0x22), 0x0044);
+
+        // C8 write: {C8, 0, 0} only into an empty record.
+        let mut m = VmMachine::new();
+        m.load_cod(&[0xC8, 0x30, 0x00, 0x00, 0x00, 0xFF]);
+        m.query = false;
+        m.pc = 0;
+        m.step();
+        assert_eq!(m.rec_read_pub(0x30), 0xC8, "C8 writes an empty record");
+
+        // QUERY on an empty record: non-match -> BRANCH to the else target
+        // (was: fall through into the guarded body).
+        let mut m = VmMachine::new();
+        m.load_cod(&[0xC6, 0x40, 0x00, 0x44, 0x00, 0xFF]);
+        m.query = true;
+        m.stack.push(0x99);
+        m.pc = 0;
+        m.step();
+        assert_eq!(m.pc, 0x99, "empty record -> query fails -> branch to else");
+
+        // QUERY on a matching record: pass -> fall through (no branch).
+        let mut m = VmMachine::new();
+        m.rec_write_pub(0x40, 0xC6);
+        m.rec_write_pub(0x42, 0x0044);
+        m.load_cod(&[0xC6, 0x40, 0x00, 0x44, 0x00, 0xFF]);
+        m.query = true;
+        m.stack.push(0x99);
+        m.pc = 0;
+        m.step();
+        assert_eq!(m.pc, 5, "matching record -> pass -> fall through past the 5-byte token");
+        assert_eq!(m.stack.len(), 1, "no branch taken on a match");
     }
 
     #[test]
