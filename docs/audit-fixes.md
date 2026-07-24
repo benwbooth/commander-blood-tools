@@ -11,7 +11,7 @@ displays** and wins. So a subset of the 40 are FALSE POSITIVES — the port is a
 correct and the raw-assembly reading is the one that's off. Each geometry finding must
 be oracle-re-verified before it is "fixed"; changing it blind regresses a pixel match.
 
-## Fixed + committed (20) — assembly-cited, regression-tested, oracle-verified where visual
+## Fixed + committed (21) — assembly-cited, regression-tested, oracle-verified where visual
 
 | area | fix | severity |
 |---|---|---|
@@ -35,6 +35,7 @@ be oracle-re-verified before it is "fixed"; changing it blind regresses a pixel 
 | bridge | seek initial-distance memo cleared at completion, not at arm | LOW |
 | asset-decoders | unmapped subtitle chars skipped (no glyph/advance), not "?" | LOW |
 | menus | choice-box min-width floor (100/55); centered box now matches the 40..160 hit-band | LOW |
+| vm-records | `0xB8/B9/BD` SET invalidates the arche +0x16 dangling reference | MED |
 
 ## Verified FALSE POSITIVE for the PORT — finding correct for the assembly, wrong for the port's model (3)
 
@@ -58,7 +59,7 @@ be oracle-re-verified before it is "fixed"; changing it blind regresses a pixel 
   active-bit availability makes the C4-WRITE and `0xC1` guards partially feasible (the
   guards read the same bits) — but with the same staleness caveat.
 
-## Remaining (17) — each to be oracle-re-verified or carefully implemented
+## Remaining (16) — each to be oracle-re-verified or carefully implemented
 
 - **Geometry, needs oracle re-check** (likely more false positives like the tall-mode):
   choice-box x-band / min-width floor (need label widths plumbed into the hit-test),
