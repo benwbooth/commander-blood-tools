@@ -116,7 +116,27 @@ mode-0 write guard is now IMPLEMENTED on this basis (see the Fixed table).
   `0x24F3&1`/`0x274F&1`) fires a presentation request (`0x6788=7`, `0x67AA|2`,
   `0x1FB2=0`, `0x1FA3=0xFFFF`, `0xB3B=0`). CONFIRMED engine-coupled: those are
   frontend/ship-presentation flags the live VM does not hold — the "gs-flag model" the
-  finding named. Not a VM-local drop-in.
+  finding named. Not a VM-local drop-in. Two concrete blockers, both verified:
+  (a) the FIRE GATE needs ship-active `gs:[0x24F3]&1`, which lives in the frontend
+  (the VM holds only `flag_274f`), so a VM-only version would mis-fire; and
+  (b) **the gs-offset ALIASING HAZARD below** makes the `0xB3B=0` write unsafe.
+
+### gs-flag ALIASING HAZARD in the port's single-array state model (verified 2026-07)
+
+The port keeps ONE array (`line_records` live / `state` in the tracer) that serves both
+the VAR record table AND the gs-relative engine flags — the tracer already relies on this
+(`state_u8(state, 0x67AA)`, `0x24F3`, `0x2751`, `0x1FB2`). In the REAL game these are two
+DIFFERENT segments: records live behind the far pointer at `gs:0x6724`, while `0x67AA`
+etc. are DS offsets, so they can never collide. In the port they share an index space, so
+a gs flag only stays safe while its offset is ABOVE the loaded VAR length.
+
+Measured VAR sizes: SCRIPT1 `0x123A`, SCRIPT2 `0x1312`, SCRIPT3 `0x144E`, SCRIPT4
+`0x1534`, SCRIPT5 `0x1390` — max `0x1534`. So:
+- SAFE (above every VAR): `0x1FA3`, `0x1FB2`, `0x24F3`, `0x2751`, `0x6788`, `0x67AA`,
+  `0x67BD` — the flags the tracer already models.
+- **UNSAFE**: `gs:[0xB3B]` (= 2875) sits INSIDE every VAR, so modelling A8's `0xB3B=0`
+  as a state write would silently corrupt a real record. Any future gs-flag modelling
+  must check the offset against `var_len` first (or move engine flags to their own map).
 - **A6 per-line C4 gate** — DECODED (`0x6647..0x6683`): the play gate is FIVE conditions
   — (1) b5 bit7 active, (2) not `0x5E64||0x67B0` busy, (3) line record `+2` bit15 (already
   shown) clear, (4) the line record's selector-`0x13` field (`matrix[0x131]`) `== 0xC4`,
