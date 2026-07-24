@@ -5279,6 +5279,37 @@ mod tests {
         assert_eq!(a, b, "the variant is deterministic (same seed -> same roll)");
     }
 
+    /// The examination model targets the RIGHT field: the frontend hook writes
+    /// scrambler(DEB)+0x14, which must equal 0x13C2 — the exact record the
+    /// SCRIPT3 endgame gate guards (== 40). Locks the APPROX model's targeting
+    /// (the value-source is APPROX; the TARGET is proven from the DEB layout).
+    #[test]
+    fn examination_hook_targets_the_endgame_field() {
+        let Some(iso) = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter()
+            .find(|d| std::path::Path::new(d).join("SCRIPT3.DEB").is_file())
+        else {
+            eprintln!("skipping: SCRIPT3.DEB not available");
+            return;
+        };
+        let deb = std::fs::read(std::path::Path::new(iso).join("SCRIPT3.DEB")).unwrap();
+        let names = crate::engine::deb_actor_name_map(&deb);
+        let scrambler = names
+            .iter()
+            .find(|(_, n)| n.eq_ignore_ascii_case("scrambler"))
+            .map(|(&o, _)| o)
+            .expect("scrambler in SCRIPT3.DEB");
+        assert_eq!(scrambler, 0x13AE, "scrambler's DEB offset");
+        assert_eq!(
+            scrambler.wrapping_add(0x14),
+            0x13C2,
+            "the examination hook's target = the endgame's rec_13C2 guard"
+        );
+        // And the endgame gate reads exactly 0x13C2 (AF guard @6CA2).
+        let cod = std::fs::read(std::path::Path::new(iso).join("SCRIPT3.COD")).unwrap();
+        assert_eq!(&cod[0x6CA2..0x6CA5], &[0xAF, 0xC2, 0x13], "the AF guard reads 0x13C2");
+    }
+
     /// THE FIRST LINE-LEVEL DUAL-RUN: the ORACLE (the real game under the
     /// interpreter, red-button scenario) settled on two distinctive lines
     /// during the interception answer — Honk's 1010 gloss and the escape
