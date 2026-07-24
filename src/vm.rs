@@ -3584,6 +3584,10 @@ pub struct VmMachine {
     /// The line-record/object state table (`gs:0x6724` far table) — A6/record ops
     /// address it by byte offset. Sized generously; the game allocates per script.
     pub line_records: Vec<u16>,
+    /// The A6 resume anchor (gs:[0x67B1]/[0x6778], armed at 0x6635 when a b4
+    /// bit4 line is encountered; consumed by the exec loop's 0x5646 path):
+    /// the next frame continues from this stream position instead of the top.
+    pub resume_pos: Option<u16>,
     /// Selected concept id (`gs:0x6762`) — the concept-menu topic the player
     /// clicked; 0 = none. `0xA3` blocks match against it.
     pub concept: u16,
@@ -3635,6 +3639,7 @@ impl Default for VmMachine {
             state: vec![0u16; 0x100],
             records16: vec![0u8; 0x60],
             line_records: vec![0u16; 0x4000],
+            resume_pos: None,
             concept: 0,
             concept_alt: 0,
             concept_alt_active: false,
@@ -3924,10 +3929,12 @@ impl VmMachine {
                     self.branch();
                 }
             }
-            // 0xA4 JUMP (0x65DB): PC = operand.
+            // 0xA4 JUMP (0x65DB): PC = operand; clears the resume state
+            // (gs:[0x67B1]=0, gs:[0x6764]=0).
             0xA4 => {
                 let t = self.lodsw();
                 self.pc = t as usize;
+                self.resume_pos = None;
             }
             // 0xA5 (0x65EB): query -> branch when state[idx]!=0 (1-byte form);
             // else write state[idx] = word (3-byte form). Variable length!
@@ -3954,12 +3961,19 @@ impl VmMachine {
             0xA6 => {
                 let start = self.pc - 1;
                 match decode_text(&self.cod, start, self.cod.len()) {
-                    Some((VmToken::Text { offset, flags_b4, flags_b5, .. }, next)) => {
+                    Some((VmToken::Text { offset, flags_b4, flags_b5, loop_target, .. }, next)) => {
                         let mut played = false;
                         if text_flags_are_active(flags_b5) {
                             let gate_open = flags_b4 & 0x02 == 0 || self.rand(5) == 0;
                             if gate_open {
                                 played = true;
+                                // Post-yield continuation ([0x6764]/[0x6778]): if
+                                // the frame ends at this line (voice yield), the
+                                // next frame resumes AFTER it — the one-shot
+                                // tails behind yielding lines (e.g. the pokes
+                                // after @2F54's "stop") depend on this. A bit4
+                                // anchor (below) overrides with its own target.
+                                self.resume_pos = Some(next as u16);
                                 self.events.push(VmEvent::Text { offset });
                                 // Self-modifying ACCEPT (@0x668D): clear the active
                                 // bit unless b4 bit0 preserves it.
@@ -3970,6 +3984,13 @@ impl VmMachine {
                             }
                         }
                         self.pc = next;
+                        // b4 bit4: the resume ANCHOR (0x6635, armed on encounter
+                        // regardless of the play outcome) — overrides the played-
+                        // line continuation with the token's leading target word
+                        // (e.g. @0104's 0x0227).
+                        if let Some(t) = loop_target {
+                            self.resume_pos = Some(t);
+                        }
                         if played {
                             // Yield-2: the armed skip clears; the next token runs.
                         } else if let Some(skip) = text_conditional_skip_count(flags_b4, flags_b5) {
@@ -4290,12 +4311,16 @@ impl VmMachine {
                 if self.active_actor == Some(off) {
                     self.active_actor = None;
                     self.presentation_busy = false;
+                    // Presentation over: the resume anchor dies with it.
+                    self.resume_pos = None;
                 }
             }
             // 0xCF (0x64C0): clear the alternate-concept state.
             0xCF => {
                 self.concept_alt_active = false;
                 self.concept_alt = 0;
+                // 0x64C0 also clears the resume state ([0x67B1]=0/[0x6764]=0).
+                self.resume_pos = None;
             }
             // 0xD2 (0x64B8): pending profile = operand-1.
             0xD2 => {
@@ -4329,7 +4354,9 @@ impl VmMachine {
     /// the script (AA/AC yields end the frame with NO resume; the self-modified
     /// active bits advance the flow), run until yield or stream end.
     pub fn run_frame(&mut self) -> Vec<VmEvent> {
-        self.pc = 0;
+        // The exec loop's resume path (0x5646): continue from the armed anchor;
+        // otherwise from the stream top.
+        self.pc = self.resume_pos.take().map(|p| p as usize).unwrap_or(0);
         self.stack.clear();
         self.query = false;
         self.halted = false;
@@ -4778,6 +4805,111 @@ mod tests {
         assert!(
             text_offsets.iter().any(|&o| (0x27DA..0x3070).contains(&o)),
             "radio-warning dialogue emits (got offsets {text_offsets:x?})"
+        );
+    }
+
+    /// THE DEPARTURE BEAT: after the interception, state[4] (armed 200 by the
+    /// same one-shot) expires -> @2F7F re-queues Scruter_K for the called-away
+    /// radio ("SWEAR ... INSULT ... You're lucky we've been called to another
+    /// sector", @2F9E..@3021) — reachable now that the exec loop models the A6
+    /// resume anchor (gs:[0x67B1]/[0x6778]).
+    #[test]
+    fn script2_departure_radio_plays_after_state4_expires() {
+        let Some(iso) = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter()
+            .find(|d| std::path::Path::new(d).join("SCRIPT2.COD").is_file())
+        else {
+            eprintln!("skipping: extracted SCRIPT2 files not available");
+            return;
+        };
+        let cod = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.COD")).unwrap();
+        let var = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.VAR")).unwrap();
+        let mut m = VmMachine::new();
+        m.load_cod(&cod);
+        m.load_var(&var);
+
+        // Phase 1: the interception queues, promotes, and plays to a natural
+        // end (its self-disabling POKEs run) — the frontend loop model.
+        let mut guard = 0;
+        loop {
+            let evs = m.run_frame();
+            let queued = evs
+                .iter()
+                .any(|e| matches!(e, VmEvent::QueuePresentation { offset: 0x6FC }));
+            m.tick_state_countdowns();
+            if queued {
+                break;
+            }
+            guard += 1;
+            assert!(guard < 100, "interception queues");
+        }
+        // Serially drain queued presentations until 0x6FC plays and ends.
+        let mut done = false;
+        for _ in 0..12 {
+            let Some(started) = m.promote_queued_presentation() else {
+                let _ = m.run_frame();
+                continue;
+            };
+            for _ in 0..300 {
+                let _ = m.run_frame();
+                if !m.presentation_busy {
+                    break;
+                }
+            }
+            if started == 0x6FC && !m.presentation_busy {
+                done = true;
+                break;
+            }
+            if m.presentation_busy {
+                if let Some(actor) = m.active_actor {
+                    m.rec_write(actor, 0);
+                }
+                m.active_actor = None;
+                m.presentation_busy = false;
+            }
+        }
+        assert!(done, "the interception plays to a natural end");
+
+        // Phase 2: outlast the SCRUTs. Repeat warnings drain; the district-
+        // director beat's FINAL WARNING sets kill (rec 0x12C6); the shared tail
+        // (@2F44..@2F71) pokes the departure gate; state[4] expiry queues the
+        // called-away radio (@2F7F -> @2F97..). Collect EVERY text offset the
+        // drains play and assert the departure lines appear.
+        let mut offsets: Vec<usize> = Vec::new();
+        for _ in 0..600 {
+            m.tick_state_countdowns();
+            for ev in m.run_frame() {
+                if let VmEvent::Text { offset } = ev {
+                    offsets.push(offset);
+                }
+            }
+            if m.promote_queued_presentation().is_some() {
+                for _ in 0..300 {
+                    for ev in m.run_frame() {
+                        if let VmEvent::Text { offset } = ev {
+                            offsets.push(offset);
+                        }
+                    }
+                    if !m.presentation_busy {
+                        break;
+                    }
+                }
+                if m.presentation_busy {
+                    if let Some(actor) = m.active_actor {
+                        m.rec_write(actor, 0);
+                    }
+                    m.active_actor = None;
+                    m.presentation_busy = false;
+                }
+            }
+            if offsets.iter().any(|&o| (0x2F97..0x3070).contains(&o)) {
+                break;
+            }
+        }
+        assert_eq!(m.rec_read(0x12C6), 1, "FINAL WARNING set kill along the way");
+        assert!(
+            offsets.iter().any(|&o| (0x2F97..0x3070).contains(&o)),
+            "departure radio emits (got {offsets:x?})"
         );
     }
 
