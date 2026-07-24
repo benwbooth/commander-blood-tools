@@ -3711,6 +3711,51 @@ impl VmMachine {
     /// scripted encounter location is exactly `rec[loc_var] = location`. Scans the
     /// first block (up to its first A6 line) for wildcard-family equality guards
     /// and writes their operands.
+    /// The travel system's arrival write: current-location variable = the
+    /// destination's DEB offset (rec_0F4E in SCRIPT2 — guards compare it to
+    /// 3488 start / 3380 fled / 3074 the coded-message zone; the story's
+    /// location spine). The variable's offset is discovered the same way
+    /// [`Self::satisfy_opening_location_guards`] finds it: the opening block's
+    /// wildcard equality guard names it.
+    pub fn set_location(&mut self, dest_deb_offset: u16) {
+        if let Some(var) = self.location_var_offset() {
+            self.rec_write(var, dest_deb_offset);
+        }
+    }
+
+    /// The current-location variable's record offset, from the opening block's
+    /// wildcard-family equality guard (SCRIPT2: 0x0F4E).
+    pub fn location_var_offset(&self) -> Option<u16> {
+        let mut pc = 0usize;
+        if self.u8_at(pc) != 0xA9 || self.u8_at(pc + 1) & 1 == 0 {
+            return None;
+        }
+        pc += 4;
+        for _ in 0..16 {
+            let op = self.u8_at(pc);
+            match op {
+                0xCE | 0xD0 | 0xD1 => pc += 1,
+                0xC4 => {
+                    pc += 1;
+                    if self.u8_at(pc) == 0xA1 {
+                        pc += 1;
+                    }
+                    pc += 4;
+                }
+                0xAD | 0xAF | 0xB2 | 0xB3 | 0xBA | 0xBB | 0xBC | 0xB1 | 0xB4
+                | 0xB5 | 0xB6 | 0xBE | 0xBF | 0xC0 => {
+                    // The wildcard equality guard (SCRIPT2 @000A: AF 4E 0F A0 0D
+                    // = rec_0F4E == 3488): its record operand IS the location
+                    // variable.
+                    let off = self.u8_at(pc + 1) as u16 | (self.u8_at(pc + 2) as u16) << 8;
+                    return Some(off);
+                }
+                _ => return None,
+            }
+        }
+        None
+    }
+
     pub fn satisfy_opening_location_guards(&mut self) {
         let mut pc = 0usize;
         // Enter the first A9-opened block.
@@ -4910,6 +4955,71 @@ mod tests {
         assert!(
             offsets.iter().any(|&o| (0x2F97..0x3070).contains(&o)),
             "departure radio emits (got {offsets:x?})"
+        );
+    }
+
+    /// ROUTE (B), THE FLEE: after the FINAL WARNING, the travel arrival write
+    /// (set_location(3380) — the fled zone's DEB offset) makes the next radio
+    /// play the escape confirmation ("We really fooled those dummies" @2EDF)
+    /// and the CORPO UNLOCK instruction ("Click on the planet Corpo. The Orxx
+    /// will be automatically ejected" @2F22) — the planet arc's gateway.
+    #[test]
+    fn script2_flee_route_unlocks_corpo() {
+        let Some(iso) = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter()
+            .find(|d| std::path::Path::new(d).join("SCRIPT2.COD").is_file())
+        else {
+            eprintln!("skipping: extracted SCRIPT2 files not available");
+            return;
+        };
+        let cod = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.COD")).unwrap();
+        let var = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.VAR")).unwrap();
+        let mut m = VmMachine::new();
+        m.load_cod(&cod);
+        m.load_var(&var);
+        assert_eq!(m.location_var_offset(), Some(0x0F4E), "the location variable is discovered");
+
+        // The player flees immediately — the travel write lands before the
+        // SCRUTs' calls, so the district one-shot branches on the fled zone.
+        m.set_location(3380);
+        let mut offsets: Vec<usize> = Vec::new();
+        for _ in 0..600 {
+            m.tick_state_countdowns();
+            for ev in m.run_frame() {
+                if let VmEvent::Text { offset } = ev {
+                    offsets.push(offset);
+                }
+            }
+            if m.promote_queued_presentation().is_some() {
+                for _ in 0..300 {
+                    for ev in m.run_frame() {
+                        if let VmEvent::Text { offset } = ev {
+                            offsets.push(offset);
+                        }
+                    }
+                    if !m.presentation_busy {
+                        break;
+                    }
+                }
+                if m.presentation_busy {
+                    if let Some(actor) = m.active_actor {
+                        m.rec_write(actor, 0);
+                    }
+                    m.active_actor = None;
+                    m.presentation_busy = false;
+                }
+            }
+            if offsets.iter().any(|&o| (0x2E77..0x2F44).contains(&o)) {
+                break;
+            }
+        }
+        assert!(
+            offsets.iter().any(|&o| (0x2E77..0x2F44).contains(&o)),
+            "the escape-confirmation beat plays (got {offsets:x?})"
+        );
+        assert!(
+            offsets.iter().any(|&o| (0x2F22..0x2F44).contains(&o)),
+            "the Corpo unlock instruction plays (got {offsets:x?})"
         );
     }
 
