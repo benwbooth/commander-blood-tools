@@ -588,3 +588,38 @@ which the port does not model yet — it is part of the open ship-3D runtime wor
 C1 record creation at `0xB272`). Wire it when that runtime exists, then also
 enable the `gs:[0x252A]=0` / `gs:[0x2531]=6` writes in the `0xC9` handler
 (`0x6FE2`/`0x6FE8`), which are deliberately left unmodelled for the same reason.
+
+## DS:0x4F09 nav-destination "world coords" — the premise is WRONG; the table is STATIC
+
+Tried (this session): capture per-destination world coordinates for the nav
+projector `0x9B98`, to replace the fabricated 7x4 pyramid grid in the port's
+`render_nav_pyramid_sprites`.
+
+Evidence gathered, all negative for the "runtime-written coords" hypothesis:
+- The literal `0x4F09` is referenced **exactly once** in BLOODPRG.EXE — by the
+  projector itself (`mov bx,0x4f09` @`0x9BA5`). No direct writer exists.
+- Baked image: 10 entries x 3 int16 (stride 6, `add bx,6` @`0x9CF5`), ALL equal
+  to `(10200, 12100, 900)`; the trig table starts at `+0x3C`, so the projector's
+  ELEVENTH read over-reads into it and yields `(16384, 0, 16374)`.
+- Live at boot (`re/tools/dump_dosbox_mem.py`, and `NAVPROBE` in the interpreter):
+  defaults, camera `gs:0x2F65 = (10000,12000,0)` = its baked value.
+- `NAVPROBE` driven into the bridge PYRAMID SECTOR (frame 75): still defaults.
+- `GRANTWALK` — 540+ rounds of console interaction: `anchors empty`, `milestones=0`.
+- **`MEMDUMP` from three deep savestates** — `location_visit` (2.34e9 steps),
+  `arrival_probe` (2.49e9), `milestone_script2` (3.86e9): **10/10 entries still
+  the default**.
+
+Conclusion: `DS:0x4F09` is a STATIC CONSTANT table, never written at runtime.
+There are no per-destination world coordinates to recover, so the audit finding's
+premise ("needs entity world coords") is wrong. Every active entity in `0x15..0x1F`
+projects from the SAME world point, offset `(200, 100, 900)` from the camera —
+which means the on-screen distinction between destinations cannot come from this
+table. It must come from the ACTIVE GATE (`test [si],0x80`) plus the per-entity
+sprite selected by `lcall 0x299:0x133d` with `ax = idx+0x15`, i.e. plausibly only
+one/few entities are active at a time rather than a grid of many.
+
+Better approach: stop hunting coordinates. Instead determine HOW MANY of entities
+`0x15..0x1F` are active simultaneously on the real nav screen (dump the 11 entity
+flag words at `0x6212+((i+0x15)<<5)` from a savestate that has the nav view up),
+and what `0x299:0x133d` selects. That decides whether the port should draw one
+marker or several — and the current 28-point fabricated grid is wrong either way.

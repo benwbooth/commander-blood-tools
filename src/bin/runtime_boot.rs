@@ -1941,6 +1941,33 @@ fn main() {
         // capture + OCR: are real destinations offered now? (The core
         // choose-a-location gameplay loop's ground truth.)
         if std::env::var("NAVPROBE").is_ok() {
+            // The nav-destination projector (0x9B98) reads its positions from
+            // DS:0x4F09 — 10 entries of three int16 (x,y,z), stride 6 — and the
+            // camera origin from DS:0x2F65. Both sit at their BAKED defaults
+            // ((10200,12100,900) / (10000,12000,0)) until the game is in ACTIVE
+            // navigation, so dumping them here (mid-probe, once the nav view is
+            // up) is what captures the REAL destination coordinates. The port's
+            // render_nav_pyramid_sprites currently fabricates a 7x4 grid instead.
+            let dump_nav = |rt: &Runtime, tag: &str| {
+                let g = 0x0e84u16;
+                let rd = |off: u32| -> i16 {
+                    u16::from_le_bytes([rt.m.read8(g, off), rt.m.read8(g, off + 1)]) as i16
+                };
+                let cam = (rd(0x2F65), rd(0x2F67), rd(0x2F69));
+                println!("NAVTABLE[{tag}] camera_2F65={cam:?}");
+                for i in 0..11u32 {
+                    let o = 0x4F09 + i * 6;
+                    println!(
+                        "NAVTABLE[{tag}]  [{i:2}] +0x{:02X} = ({}, {}, {}){}",
+                        i * 6,
+                        rd(o),
+                        rd(o + 2),
+                        rd(o + 4),
+                        if i == 10 { "   <-- 11th read over-reads into the trig table" } else { "" }
+                    );
+                }
+            };
+            dump_nav(&rt, "boot");
             for stop in 0..6 {
                 let (fr, _, _) = state(&rt);
                 let target = ((fr as u32 * 8 + 280) % 1440) as u16;
@@ -1958,8 +1985,10 @@ fn main() {
                     // In the pyramid sector: linger, click the orb, capture.
                     let _ = rt.run(rt.cpu.steps + 10_000_000);
                     rt.write_ppm(&out.join(format!("nav_sector_f{fr2}.ppm"))).unwrap();
+                    dump_nav(&rt, "pyramid_sector");
                     break;
                 }
+                dump_nav(&rt, &format!("stop{stop}"));
             }
             println!("NAVPROBE done");
             return;
