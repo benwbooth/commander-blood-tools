@@ -729,7 +729,7 @@ actor_record_condition	src/vm.rs	1542	fn		ASM	|| AUDIT 2026-07-24: C4 QUERY 0x6C
 write_actor_record	src/vm.rs	1560	fn		ASM	|| AUDIT 2026-07-24: C4 SET write 0x6D01..0x6D0B: es:[bp]=0xC4, es:[bp+2]=related, es:[bp+4]=0
 PresentationKind1Update	src/vm.rs	1567	enum		UNVERIFIED	
 post_update_kind1_presentation_state	src/vm.rs	1574	fn		ASM	|| AUDIT 2026-07-24: presentation-start block 0x58D4..0x5940 verified statement-by-statement -- C4 type test, related +2 bit5 -> setne gs:[0x67AF], already-active early-out on gs:[0x67AC]&1, then the sixteen-store start sequence in the SAME ORDER (0x5B55=1, 0x0A32=1, 0x67AC=1, then zeroing 0x6782/0x6784/0x6776/0x67F8/0x2A19/0x67BA/0x27D7/0x67BC/0x67BB/0x679A, 0x67B7=1, [0x2793]|=4, related+3 |= 0x80). All sixteen constant addresses confirmed
-post_update_kind2_presentation_handoff_target	src/vm.rs	1627	fn		UNVERIFIED	
+post_update_kind2_presentation_handoff_target	src/vm.rs	1627	fn		ASM	|| AUDIT 2026-07-24: kind-2 branch 0x584C..0x58A5 verified in order -- presentation ACTIVE required (gs:0x67AC&1), then gs:0x1FB2 / gs:0x27D7 / gs:0x67B7 must all be CLEAR; the primary C4 record at gs:0x675E must be typed 0xC4 (0x586C/0x5871); the scanned record must be 0xC4 with its +2 equal to the special object gs:0x674E (0x5878/0x5881); the owner's +2 already-shown bit 0x8000 must be clear (0x588C); then field_offset(selector 2, owner kind) indexes the handoff target and `or bx,bx; je` requires it non-zero (0x5893..0x58A3). Constants 0x675E and selector 0x02 confirmed
 post_update_deferred_record_write	src/vm.rs	1664	fn		UNVERIFIED	
 post_update_actor_record_pair	src/vm.rs	1705	fn		UNVERIFIED	
 post_update_actor_records_for_active_objects	src/vm.rs	1739	fn		UNVERIFIED	
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	                             
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	                              
