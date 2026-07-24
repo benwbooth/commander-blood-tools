@@ -509,6 +509,7 @@ fn main() {
             }
             println!("<- 0x85E2 dispatch gates");
             let cx = (left + right) / 2;
+            let _ = (left, right, top, pitch, cx); // recomputed per click below
             let mut click_at = |rt: &mut Runtime, sx: i32, sy: i32| {
                 let fr = state(rt).0 as i32;
                 let ring = ((sx + fr * 8 - 160).rem_euclid(1440)) as u16;
@@ -517,14 +518,61 @@ fn main() {
                 // across several frames: the menu hit-test (0x8613) runs per frame
                 // and gates on [0xA3E]&1, so a sub-frame press can be missed
                 // entirely. 400k steps was very likely shorter than one frame.
-                let _ = rt.run(rt.cpu.steps + 2_000_000);
+                // Press ALMOST IMMEDIATELY: the game re-warps the hardware cursor
+                // every frame to accumulate relative motion (0x9722), so an
+                // absolute set_mouse_pos decays back toward centre within a couple
+                // of frames — measured: an injected (232,126) read back as
+                // [0xA2A]=160 [0xA2C]=100 after 2M steps. Keep the gap short enough
+                // that the hit-test samples the position we asked for.
+                // Two-phase: let the game POLL the mouse (poll_mouse 0xD0E runs
+                // per frame and copies int33 state into [0xA2A]/[0xA2C]) so the
+                // injection lands, then RE-ASSERT the position right before the
+                // press so the per-frame cursor warp has not yet decayed it.
+                // Single injection, then wait long enough for BOTH the per-frame
+                // poll (0xD0E) to latch it AND the 0x97FC rebase to convert the
+                // ring value into the screen-relative space the hit-tests compare
+                // (measured: at 700k the Y had landed but [0xA2A] still read the
+                // raw ring; re-asserting only reset it to raw again).
+                let _ = rt.run(rt.cpu.steps + 1_400_000);
+                // THE measurement that decides the coordinate-space question:
+                // what does the hit-test actually compare? [0xA2A] is rebased by
+                // 0x97FC each tick, so print the injected ring value alongside the
+                // live [0xA2A]/[0xA2C] and the frame just before the press.
+                let live_x = rt.m.read8(g, 0x0A2A) as u32 | ((rt.m.read8(g, 0x0A2B) as u32) << 8);
+                let live_y = rt.m.read8(g, 0x0A2C) as u32 | ((rt.m.read8(g, 0x0A2D) as u32) << 8);
+                println!(
+                    "  click: want screen ({sx},{sy}) -> injected ring {ring}; \
+                     live [0xA2A]={live_x} [0xA2C]={live_y} frame={}",
+                    state(rt).0
+                );
                 rt.mouse_press(0);
                 let _ = rt.run(rt.cpu.steps + 4_000_000);
                 rt.mouse_release(0);
                 let _ = rt.run(rt.cpu.steps + 15_000_000);
             };
-            // MENU is row 3 of the golden menu.
-            click_at(&mut rt, cx, top + 3 * pitch);
+            // Moving the mouse STEERS the panorama, so the frame at click time is
+            // not the frame the box was computed for (measured: 55 -> 48 -> 45).
+            // Park the cursor at the view centre, let the view settle, THEN
+            // recompute the box at the settled frame and click that row.
+            let menu_row_click = |rt: &mut Runtime, row: i32| {
+                // Park at screen centre so steering comes to rest.
+                for _ in 0..3 {
+                    let fr = state(rt).0 as i32;
+                    let ring = ((160 + fr * 8 - 160).rem_euclid(1440)) as u16;
+                    rt.set_mouse_pos(ring, 100);
+                    let _ = rt.run(rt.cpu.steps + 8_000_000);
+                }
+                let fr = state(rt).0 as i32;
+                let d = fr - 45;
+                let r = 0x11F - d * 8;
+                let l = r - 0x6E;
+                let t = 0x48 + d.abs() + d.abs() / 4;
+                let p = 0x12 - (d.abs() / 4) / 2;
+                let (sx, sy) = ((l + r) / 2, t + row * p.max(1));
+                println!("  settled frame={fr} box x={l}..{r} top={t} pitch={p} -> click ({sx},{sy})");
+                click_at(rt, sx, sy);
+            };
+            menu_row_click(&mut rt, 3);
             println!("GAMESTART after MENU click: [0x27E0]={:#04x} [0x2A19]={:#06x}",
                      rt.m.read8(g, 0x27E0), rt.m.read8(g, 0x2A19) as u16);
             // The submenu {EXPLANATIONS, GAME} is the universal choice box; its

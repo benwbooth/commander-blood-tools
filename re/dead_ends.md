@@ -999,3 +999,35 @@ rather than reasoning about it.
 
 THREAD CLOSED — this is the last entry. Three hypotheses eliminated by measurement
 is the useful residue; the fourth needs one dump, not another theory.
+
+#### Input-injection timing/space measurements (the useful residue)
+
+Sequence of measurements from the GAMESTART probe, all at the console:
+
+1. **The frame DRIFTS while positioning.** Injecting a click moved the panorama
+   55 -> 48 -> 45, so a box computed before the move is stale. Fix: park the cursor
+   at centre, let the view settle, THEN compute the box at the settled frame
+   (45 -> box x 177..287, top 72, pitch 18, MENU row 3 at y=126).
+2. **`[0xA2A]` updates only after the game POLLS** (`poll_mouse` 0xD0E, per frame).
+   At 120k steps after injection the live value was still the PREVIOUS click's.
+3. **During that window `[0xA2A]` holds the RAW RING value**, not the screen-relative
+   value the hit-tests compare — `0x97FC` rebases it a tick later (injected ring 432
+   read back as 432; at frame 45 the rebase would give 432-200 = 232).
+4. **By ~1.4M steps the position has DECAYED back to centre** (160,100): the game
+   re-warps the hardware cursor every frame to accumulate relative motion (0x9722),
+   so an absolute position does not persist. Re-asserting only restores the raw ring
+   value, restarting (3).
+
+So there is a narrow window in which the position has landed but has not yet been
+rebased, and by the time it is rebased it has decayed. Absolute injection fights the
+warp by design.
+
+5. **`Runtime::set_mouse_pos` takes DOS-VIRTUAL coords** (`x 0..639`, "screen column
+   `sx` is `sx*2`") — a third space, distinct from both screen (0..319) and ring
+   (0..1440). Every probe in this file passes ring values into it.
+
+Better approach: drive the cursor the way the PORT models it —
+`BridgeView::move_mouse` feeds RELATIVE dx/dy because "motion accumulates in ring
+space", which is what the warp is for. The runtime exposes no relative-motion entry
+today (`set_mouse_pos` / `mouse_press` / `mouse_release` / `mouse_event` only), so
+adding one is the actual unblock for menu-row clicking — not more timing tuning.
