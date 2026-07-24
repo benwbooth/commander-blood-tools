@@ -478,10 +478,12 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     let mut chatter: Option<commander_blood_tools::audio::MusicPlayer> = None;
     let mut chatter_done_line: Option<usize> = None;
     // Chatter burble state (decoded @0xB898): 4-tick throttle ([0xB2F]), last random pick
-    // ([0xC4D], never repeated back-to-back), and a simple LCG for the roll.
+    // ([0xC4D], never repeated back-to-back), and the game's OWN PRNG for the roll — the
+    // handler draws via `lcall 0x1CE:0x0B02` (the BloodPrng), not a libc-style LCG. Seeded
+    // from a fixed value for reproducibility, matching the starfield_seed convention.
     let mut chatter_throttle: u32 = 0;
     let mut chatter_prev: Option<u32> = None;
-    let mut chatter_seed: u32 = 0x1234_5678;
+    let mut chatter_prng = commander_blood_tools::ship3d::BloodPrng::seeded_from_rtc_seconds(0);
 
     // Load SCRIPT<n>'s dialogue into the engine (the destination's scene) and start
     // that scene's background music, as the game does per location.
@@ -2272,11 +2274,12 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     if chatter_throttle == 0 {
                         chatter_throttle = 4; // [0xB2F] = 4 tick throttle
                         if let Some(bank) = &tb_snd {
-                            // random 0..9, != previous (the asm re-rolls until different)
-                            chatter_seed = chatter_seed.wrapping_mul(1103515245).wrapping_add(12345);
-                            let mut pick = (chatter_seed >> 16) % 10;
-                            if Some(pick) == chatter_prev {
-                                pick = (pick + 1) % 10;
+                            // @0xB8AB: ax=rand(10) via the BloodPrng; @0xB8B3-B8B7
+                            // `cmp ax,[0xC4D]; je 0xB8AB` RE-DRAWS a fresh value until
+                            // it differs from the previous pick (not an increment).
+                            let mut pick = chatter_prng.next(10) as u32;
+                            while Some(pick) == chatter_prev {
+                                pick = chatter_prng.next(10) as u32;
                             }
                             chatter_prev = Some(pick);
                             if let Some(clip) =

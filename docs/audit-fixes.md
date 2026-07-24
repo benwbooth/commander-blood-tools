@@ -11,7 +11,7 @@ displays** and wins. So a subset of the 40 are FALSE POSITIVES — the port is a
 correct and the raw-assembly reading is the one that's off. Each geometry finding must
 be oracle-re-verified before it is "fixed"; changing it blind regresses a pixel match.
 
-## Fixed + committed (23) — assembly-cited, regression-tested, oracle-verified where visual
+## Fixed + committed (24) — assembly-cited, regression-tested, oracle-verified where visual
 
 | area | fix | severity |
 |---|---|---|
@@ -38,6 +38,7 @@ be oracle-re-verified before it is "fixed"; changing it blind regresses a pixel 
 | vm-records | `0xB8/B9/BD` SET invalidates the arche +0x16 dangling reference | MED |
 | vm-records | `0xC4` mode-0 (SET) write guard (`0x6CC3..0x6D01`): both operand objects active + kind/already-set checks, else branch (was unconditional write) | HIGH |
 | vm-records | `0xC4` mode-0 already-set/idempotence check (`cx==0xC4` + op2 selector-0x13 field) — same guard | MED |
+| audio | chatter burble roll uses the game's PRNG (`BloodPrng` @`0x1CE:0x0B02`) + re-draw-until-different (`0xB8AB..0xB8B7`), replacing a fabricated glibc LCG + increment-on-collision | LOW |
 
 ## Verified FALSE POSITIVE for the PORT — finding correct for the assembly, wrong for the port's model (4)
 
@@ -84,7 +85,7 @@ reading them in the C4 SET guard faithful to the game's write/branch decision (t
 divergence is the C1-clear case, a separate subsystem the live VM does not run). The C4
 mode-0 write guard is now IMPLEMENTED on this basis (see the Fixed table).
 
-## Remaining (13) — each to be oracle-re-verified or carefully implemented
+## Remaining (12) — each to be oracle-re-verified or carefully implemented
 
 - **Geometry, needs oracle re-check** (likely more false positives like the tall-mode):
   choice-box x-band / min-width floor (need label widths plumbed into the hit-test),
@@ -113,8 +114,7 @@ mode-0 write guard is now IMPLEMENTED on this basis (see the Fixed table).
   playthrough harnesses currently pass on the approximation. Coupled to the
   presentation-record lifecycle (same subsystem as C1), not a safe drop-in. (The port
   DOES already model the tracer-path per-line gate behind `with_text_presentation_record_gating`.)
-- **Also low/subjective:** bridge ring-cursor 8px snap (changes steering feel),
-  chatter re-roll determinism (separate PRNG).
+- **Also low/subjective:** bridge ring-cursor 8px snap (changes steering feel).
 - **Rewrites:** nav destinations = flag-gated entity set (fabricated pyramid grid; needs
   entity world coords + active bits), world-destination from clicked row (UNDECODED
   on-planet click semantics), A6 reveal-busy serialization handshake (VM↔frontend).
