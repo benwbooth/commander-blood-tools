@@ -4165,12 +4165,13 @@ impl VmMachine {
                 let off = self.lodsw();
                 let mask = self.lodsw();
                 if self.query {
+                    // 0x691F..0x6934: bits SET + uninverted -> CONTINUE;
+                    // SET + inverted -> branch; CLEAR + uninverted -> branch;
+                    // CLEAR + inverted -> continue. (The old polarity was
+                    // inverted — it skipped every satisfied mask guard,
+                    // including the customs manifest's.)
                     let set = self.rec_read(off) & mask != 0;
-                    if set != flipped {
-                        // asm: bits set -> (flip? continue : branch)… precisely:
-                        // set && !flip -> branch; clear && flip -> branch.
-                    }
-                    if (set && !flipped) || (!set && flipped) {
+                    if set == flipped {
                         self.branch();
                     }
                 } else if flipped {
@@ -5312,20 +5313,11 @@ mod tests {
             m.cod[0x96AB],
             m.pending_profile
         );
-        // OPEN (the directory-iteration law): with the full manifest verified,
-        // the deep customs block (0x967C) still needs the engine's per-object
-        // directory scan (0x672C, 20-byte entries, presentation_scan) to be
-        // reached — the linear frame walk stalls earlier in the stream. That
-        // decode+port completes this assertion:
-        if customs {
-            assert!(
-                m.pending_profile >= 0,
-                "RUN PROFILE fires — the SCRIPT2 -> SCRIPT3 handoff (profile {})",
-                m.pending_profile
-            );
-        } else {
-            eprintln!("customs handoff pending the directory-iteration law (manifest verified)");
-        }
+        assert!(customs, "the customs boarding radio plays");
+        assert_eq!(
+            m.pending_profile, 2,
+            "RUN PROFILE fires — the SCRIPT2 -> SCRIPT3 handoff"
+        );
     }
 
     /// THE WAKE CHAIN: Scruter Jo's presenter (1860) plays the scan intro, the
