@@ -146,6 +146,15 @@ port's frame loop (script2_interception_plays_through_the_frame_loop: SCRIPT2
 from load, frames + beats + serial queue promotion, SCRUT agent K's radio
 warning emits @2DF5 after the TV-commercial presentation drains) — with the
 0xAB POKE corrected to the COD self-modify the engine performs (0x684C).
+**THE STORY PLAYS TO FIN.HNM IN THE PORT (b499bde)**: the single directed
+test spans all five scripts, four profile handoffs, and the Bigbang-concert
+ending — every beat from shipped bytes, hard-asserted. Remaining for FULL
+parity per this ledger: the oracle-side dual-runs of these beats (the
+interception drive exists; the rest follow the same scenario recipes), the
+container-graph refinement behind OP_CD, the frontend presentation surfaces
+for Acts 3-5 (the VM plays them; the screens render via the existing
+presentation systems), and the per-act placement writes' replacement by their
+own driven beats (each is cited to its stream operands today).
 **THE SCRIPT2->SCRIPT3 HANDOFF RUNS IN THE PORT (66a45a8)**: the directed
 drive plays stages 5/6, the gift, the verified cargo manifest, the customs
 boarding and confiscations, and RUN PROFILE (pending profile 2 = SCRIPT3) —
