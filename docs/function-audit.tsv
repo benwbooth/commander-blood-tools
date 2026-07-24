@@ -654,8 +654,8 @@ script_profile_index_from_request_operand	src/vm.rs	313	fn	0x64B8,0x6780	ASM?	//
 bit_flag_byte_offset	src/vm.rs	319	fn		ASM	/// `0xB7` addresses bits high-bit-first inside each byte: bit 0 is mask 0x80, /// bit 7 is mask 0x01, then bit 8 starts the next byte at mask 0x80. || AUDIT 2026-07-24: 0x6ABB..0x6AC6: lodsb bit index, cl=idx&7, ax=idx>>3, bx += ax — byte = base + (bit>>3)
 bit_flag_mask	src/vm.rs	323	fn		ASM	|| AUDIT 2026-07-24: query 0x6AD3 `shl al,cl; shl al,1` puts original bit (7-(idx&7)) into CF; set 0x6AEB `neg cl; dec cl; and cl,7; mov al,1; shl al,cl` = 1<<((7-cl)&7) = 0x80>>(idx&7). HIGH-BIT-FIRST confirmed on BOTH paths
 vm_field_offset	src/vm.rs	327	fn		ASM	|| AUDIT 2026-07-24: matrix at gs:0x6D60 indexed selector*16 + bsf(kind); proven by the A6 gate building (0x13<<4)+1 for kind 2 (bsf=1) and reading 58 = TALK_FIELD
-reveal_complete_hold_ticks	src/vm.rs	338	fn	0x94D4,0x94DD,0x0ACA,0x67BB	ASM?	/// Port the reveal-complete hold timer at `BLOODPRG.EXE` `0x94D4..0x94DD`: /// `b35 = gs:[0x0ACA] << 2; gs:[0x67BB] = 1`.
-text_speed_step_from_setting	src/vm.rs	347	fn	0x1B29,0x1B3D,0x0ACA,0xB31,0x94BA	ASM?	/// Port the text-speed init at `BLOODPRG.EXE` `0x1B29..0x1B3D`: the config text-speed /// setting index is doubled (`add ax,ax`), setting 4 is special-cased (`cmp ax,8; /// add ax,4`), then `gs:[0x0A
+reveal_complete_hold_ticks	src/vm.rs	338	fn	0x94D4,0x94DD,0x0ACA,0x67BB	ASM	/// Port the reveal-complete hold timer at `BLOODPRG.EXE` `0x94D4..0x94DD`: /// `b35 = gs:[0x0ACA] << 2; gs:[0x67BB] = 1`.
+text_speed_step_from_setting	src/vm.rs	347	fn	0x1B29,0x1B3D,0x0ACA,0xB31,0x94BA	ASM	/// Port the text-speed init at `BLOODPRG.EXE` `0x1B29..0x1B3D`: the config text-speed /// setting index is doubled (`add ax,ax`), setting 4 is special-cased (`cmp ax,8; /// add ax,4`), then `gs:[0x0A
 reveal_frames_per_char	src/vm.rs	359	fn	0xB31,0x94BA	ASM?	/// Frames per revealed character for a text-speed step: the reveal loop resets the /// per-character countdown `gs:[0xB31] = step >> 2` (see `REVERSE.md` @0x94BA); a /// zero countdown reveals a char
 record_end_hold_ticks	src/vm.rs	365	fn	0x7378,0x738C,0x27CF,0x0ACA,0x67BB	ASM?	/// Port the record-end hold timer at `BLOODPRG.EXE` `0x7378..0x738C`: /// `b35 = gs:[0x27CF] * (gs:[0x0ACA] >> 1) + 6; gs:[0x67BB] = 1`.
 scan_zero_word	src/vm.rs	380	fn	0x6293,0x0000	ASM?	/// Replicates helper `0x6293`: from `start`, scan byte-by-byte until a `0x0000` /// word, skip it, then skip one extra byte if it is also zero. Returns the /// offset just past the terminator.
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	                
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	                 
