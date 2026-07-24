@@ -643,6 +643,31 @@ pub enum VmToken {
     Invalid { offset: usize, byte: u8 },
 }
 
+impl VmToken {
+    /// The token's byte offset in the COD stream (every variant records it).
+    /// With the stream in hand this also yields the raw opcode byte —
+    /// `cod[token.offset()]` — which is how the live-coverage test checks that
+    /// no opcode the shipped scripts use is silently swallowed by `step()`.
+    pub fn offset(&self) -> usize {
+        match self {
+            VmToken::Text { offset, .. }
+            | VmToken::Actor { offset, .. }
+            | VmToken::RecordLink { offset, .. }
+            | VmToken::RecordEntry { offset, .. }
+            | VmToken::RecordClear { offset, .. }
+            | VmToken::BitFlag { offset, .. }
+            | VmToken::RecordState { offset, .. }
+            | VmToken::GlobalWordCompare { offset, .. }
+            | VmToken::GlobalPairCompare { offset, .. }
+            | VmToken::PairRecord { offset, .. }
+            | VmToken::RecordTriple { offset, .. }
+            | VmToken::ScriptProfileRequest { offset, .. }
+            | VmToken::Op { offset, .. }
+            | VmToken::Invalid { offset, .. } => *offset,
+        }
+    }
+}
+
 /// RE-ENCODE a decoded token back to its byte form — the inverse of [`walk`]'s
 /// decoding, from the STRUCTURED FIELDS ONLY (no source peeking). Returns `None`
 /// for content-opaque tokens (`Op`, `Invalid`), whose bytes the model knows only
@@ -6938,6 +6963,77 @@ mod tests {
         if checked > 0 {
             assert_eq!(checked, 5, "expected all 5 scripts present when any is");
         }
+    }
+
+    /// Every opcode the SHIPPED scripts actually use must be executed by the live
+    /// `step()`, not silently swallowed by its catch-all. This is the standing
+    /// guard for the class of bug that hid `0xC1`, `0xC2` and `C5..C8`: each had a
+    /// real handler in BLOODPRG.EXE and a tracer implementation, but live they
+    /// only consumed operands, so their record writes/branches never happened.
+    /// `0xD3` is the one legitimate exception — its entry in the binary's own
+    /// handler table (file `0x142D0`) is NULL, so the game has no handler either.
+    #[test]
+    fn every_shipped_opcode_is_executed_live_not_swallowed() {
+        // Opcodes with a real arm in step() (kept in sync with the match).
+        const EXECUTED: &[u8] = &[
+            0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD,
+            0xAE, 0xAF, 0xB0, 0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB6, 0xB7, 0xB8, 0xB9, 0xBA, 0xBB,
+            0xBC, 0xBD, 0xBE, 0xBF, 0xC0, 0xC1, 0xC2, 0xC3, 0xC4, 0xC5, 0xC6, 0xC7, 0xC8, 0xC9,
+            0xCA, 0xCB, 0xCC, 0xCD, 0xCE, 0xCF, 0xD0, 0xD1, 0xD2,
+        ];
+        // 0xD3: NULL entry in the binary's handler table -> no game handler.
+        const NO_HANDLER_IN_THE_GAME_EITHER: &[u8] = &[0xD3];
+
+        let mut seen: std::collections::BTreeSet<u8> = Default::default();
+        let mut checked = 0;
+        for name in [
+            "SCRIPT1.COD",
+            "SCRIPT2.COD",
+            "SCRIPT3.COD",
+            "SCRIPT4.COD",
+            "SCRIPT5.COD",
+        ] {
+            let cod = match std::fs::read(format!("output/_tmp_iso/{name}"))
+                .or_else(|_| std::fs::read(format!("../output/_tmp_iso/{name}")))
+            {
+                Ok(b) => b,
+                Err(_) => continue,
+            };
+            checked += 1;
+            for t in walk(&cod, 0, cod.len()) {
+                if let Some(&op) = cod.get(t.offset()) {
+                    if (OP_MIN..=OP_MAX).contains(&op) {
+                        seen.insert(op);
+                    }
+                }
+            }
+        }
+        if checked == 0 {
+            return; // scripts not extracted in this checkout
+        }
+        let swallowed: Vec<String> = seen
+            .iter()
+            .copied()
+            .filter(|op| !EXECUTED.contains(op) && !NO_HANDLER_IN_THE_GAME_EITHER.contains(op))
+            .map(|op| format!("0x{op:02X}"))
+            .collect();
+        assert!(
+            swallowed.is_empty(),
+            "opcodes used by the shipped scripts but NOT executed by live step(): {swallowed:?}"
+        );
+        // The guard is only meaningful if the corpus really exercises the opcodes
+        // this session repaired — each was a silent no-op in live play before.
+        // The shipped corpus uses 32 of the 51 implemented opcodes; `0xD3` never
+        // appears at all, so its NULL handler entry is moot in practice.
+        for op in [0xC1u8, 0xC2, 0xC6, 0xC9] {
+            assert!(
+                seen.contains(&op),
+                "0x{op:02X} should appear in the shipped scripts (its live fix matters); \
+                 corpus uses: {:?}",
+                seen.iter().map(|o| format!("{o:02X}")).collect::<Vec<_>>()
+            );
+        }
+        assert!(!seen.contains(&0xD3), "0xD3 is unused by the shipped scripts");
     }
 
     #[test]
