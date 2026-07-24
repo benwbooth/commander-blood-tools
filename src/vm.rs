@@ -5828,16 +5828,13 @@ mod tests {
         play_beat(&mut m, 0x616, 0x1424, 1);
         play_beat(&mut m, 0x42C, 0x142C, 1);
         assert_eq!(m.rec_read(0x142C), 1, "Jerry Khan's first visit sets jerry");
-        // THE SPLATCH TELEPORT (driven-beat replacement, staged): the beat is
-        // fully mapped — Amigo's session (obj 0x6C2, talk 0x6FC) behind
-        // rec_1088@3224 + evi(0x1428) + secret(0x1416); the teleport menu
-        // @5F19 (concept 0x0367) -> "SPLATCH TELEPORTED TO ARK" -> the CD
-        // moves splatch (0x1306) aboard and @5F53 writes rec_06DA=4070. The
-        // REVISIT-SKIP law surfaced here: accepted lines' [skip N] fires on
-        // revisits, jumping the session's END to expose deeper regions
-        // (@5ED9's skip opens @5EF2) — the port's revisit routing needs
-        // step-level tracing before the driven form lands; until then the
-        // placement stands cited to @5F53's own write.
+        // THE SPLATCH TELEPORT: fully mapped (Amigo talk 0x6FC behind
+        // rec_1088@3224 + evi + secret; teleport menu @5F19 concept 0x0367 ->
+        // CD splatch aboard + rec_06DA=4070 @5F53). secret is now MODELED (the
+        // examination hook, commit 3d25168) — the ONE remaining piece is the
+        // revisit-skip DRIVE-ORDER to reach @5F19 (the trace confirmed the skip
+        // routes @5ED9->@5EF2, but the knock-sequence that surfaces the teleport
+        // menu isn't pinned). Placement cited to @5F53's own write meanwhile.
         m.rec_write(0x06DA, 4070);
         // THE TINA BURNER TELEPORT, driven (Migrator's beat @44C6, talk
         // 0x474): "TELEPORT TINA BURNER TO AIRPORT" (concept 0x367) plays
