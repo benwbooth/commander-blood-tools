@@ -148,7 +148,12 @@ warning emits @2DF5 after the TV-commercial presentation drains) — with the
 0xAB POKE corrected to the COD self-modify the engine performs (0x684C).
 **THE STORY PLAYS TO FIN.HNM IN THE PORT (b499bde)**: the single directed
 test spans all five scripts, four profile handoffs, and the Bigbang-concert
-ending — every beat from shipped bytes, hard-asserted. THE MATCHED-DRIVE LANE'S SPEC (assessed): verify_port is the pre-VM-era
+ending — every beat from shipped bytes, hard-asserted. VmDrive ADOPTION DISPOSITION: main.rs's script_vm wiring is what VmDrive was
+EXTRACTED from — the policies are identical by construction (vm_collect = the
+frame loop; the concept-click path = dispatch_concept; the idle promotion =
+frame_idle). Full adoption (24 borrow sites) is DEDUPLICATION HYGIENE with no
+fidelity delta; deferred as such, not as a parity gap.
+THE MATCHED-DRIVE LANE'S SPEC (assessed): verify_port is the pre-VM-era
 screen harness (static frame-45 hub, HARDCODED box literals — a no-transcription
 violation to retire); the lane needs it rebuilt around the real VM loop
 (main.rs's script_vm wiring: load_script, vm_collect, beats, promotions,
