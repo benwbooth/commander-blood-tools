@@ -637,8 +637,8 @@ exit_query	src/vm.rs	166	fn	0x67ad	ASM?	/// Opcode `0xA1` POP — exit query mod
 apply_operator	src/vm.rs	176	fn	0x6863	ASM?	/// Apply a compound state operator (the decoded `0x6863`-family operator byte, in /// `ah`) to `state[op1]` with `op2`. In query mode the operator is a **comparison** /// (`0xF0`ne/`0xF1`lt/`0xF2`gt/
 record_op	src/vm.rs	203	fn	0x674e,0x6946	ASM?	/// A 2-word record opcode (`0xB8` family): in query mode compare the operands /// `(a, b)` against the record's current `(cur_a, cur_b)` — match falls through, else /// branch; in set mode the operan
 text_selector_active_line_id	src/vm.rs	233	fn	0x1FAB,0x6788	ASM?	/// Port the TEXT handler's `b3` selector bridge: /// `cbw; mov gs:[0x1FAB],ax`, then `mov ax,[0x1FAB]; add ax,9; mov [0x6788],ax`.
-text_selector_voice_clip_index	src/vm.rs	242	fn		UNVERIFIED	/// Resolve a TEXT `b3` selector to the actor's zero-based `son.snd` talk clip. /// /// Current evidence: `0x00` and `0xFF` are subtitle/no-voice channels, while /// `1..=talk_clip_count` are one-base
-text_selector_requests_voice	src/vm.rs	251	fn		UNVERIFIED	
+text_selector_voice_clip_index	src/vm.rs	242	fn		UNVERIFIED	/// Resolve a TEXT `b3` selector to the actor's zero-based `son.snd` talk clip. /// /// Current evidence: `0x00` and `0xFF` are subtitle/no-voice channels, while /// `1..=talk_clip_count` are one-base || AUDIT 2026-07-24: DELIBERATELY LEFT UNVERIFIED. The doc comment says "current evidence" -- the 0x00/0xFF = no-voice and 1..n = one-based clip mapping is an inference from observed data, not a transcription of a located routine. No handler has been found that performs this selector -> son.snd clip resolution, so it must not be marked ASM. Finding that routine is the open task
+text_selector_requests_voice	src/vm.rs	251	fn		UNVERIFIED	|| AUDIT 2026-07-24: DELIBERATELY LEFT UNVERIFIED. The doc comment says "current evidence" -- the 0x00/0xFF = no-voice and 1..n = one-based clip mapping is an inference from observed data, not a transcription of a located routine. No handler has been found that performs this selector -> son.snd clip resolution, so it must not be marked ASM. Finding that routine is the open task
 text_flags_are_active	src/vm.rs	255	fn		ASM	|| AUDIT 2026-07-24: 0x6647 `or cx,cx; jns` — cx is the b4b5 word, so the tested bit15 IS b5 bit7 (0x80)
 text_conditional_skip_count	src/vm.rs	261	fn	0x661E,0x662C,0x67AB	ASM?	/// Port the A6 handler's conditional-skip count at file `0x661E..0x662C`: /// `b4 & 0x08` stores `((b5 >> 4) & 7) + 1` in `gs:0x67AB`.
 text_flags_after_accept	src/vm.rs	268	fn	0x668D,0x669B	ASM?	/// Port the accepted-line self-modifying write in the A6 handler at file /// `0x668D..0x669B`: `b4 & 1` preserves the token's active bit, otherwise the /// handler clears bit7 of `b5` in the COD stre
@@ -649,7 +649,7 @@ is_record_entry_opcode	src/vm.rs	288	fn		ASM	|| AUDIT 2026-07-24: opcode range p
 is_record_state_opcode	src/vm.rs	292	fn		ASM	|| AUDIT 2026-07-24: range predicate over the C1..C2 state family (handlers 0x6B4C and 0x6E34)
 is_global_compare_opcode	src/vm.rs	296	fn		ASM	|| AUDIT 2026-07-24: the 0xCA / 0xCB pair (handlers 0x64E5 and 0x6510)
 is_pair_record_opcode	src/vm.rs	300	fn		ASM	|| AUDIT 2026-07-24: the B8/B9/BD family sharing handler 0x6B06
-record_entry_stored_related_offset	src/vm.rs	307	fn		UNVERIFIED	
+record_entry_stored_related_offset	src/vm.rs	307	fn		ASM	|| AUDIT 2026-07-24: C8 SET 0x6F9A..0x6FAC -- the record must be EMPTY (`or bx,bx; jne` branches otherwise), and the write then stores es:[bp+2]=bx where bx is PROVEN ZERO by that same guard. So C8 stores 0 rather than the operand, which is exactly what this helper models. Same derived-value idiom as the 0x5DAA `not ax` sentinel
 script_profile_index_from_request_operand	src/vm.rs	313	fn	0x64B8,0x6780	ASM?	/// Port the `0xD2` handler at `BLOODPRG.EXE` file `0x64B8`: /// `lodsb; cbw; dec ax; mov gs:[0x6780], ax`.
 bit_flag_byte_offset	src/vm.rs	319	fn		ASM	/// `0xB7` addresses bits high-bit-first inside each byte: bit 0 is mask 0x80, /// bit 7 is mask 0x01, then bit 8 starts the next byte at mask 0x80. || AUDIT 2026-07-24: 0x6ABB..0x6AC6: lodsb bit index, cl=idx&7, ax=idx>>3, bx += ax — byte = base + (bit>>3)
 bit_flag_mask	src/vm.rs	323	fn		ASM	|| AUDIT 2026-07-24: query 0x6AD3 `shl al,cl; shl al,1` puts original bit (7-(idx&7)) into CF; set 0x6AEB `neg cl; dec cl; and cl,7; mov al,1; shl al,cl` = 1<<((7-cl)&7) = 0x80>>(idx&7). HIGH-BIT-FIRST confirmed on BOTH paths
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                   
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                    
