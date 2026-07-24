@@ -249,3 +249,32 @@ one of those paths and needs tracing.
 
 Until that writer is identified, kind-2 entries are treated as never passing.
 Wiring them against a guessed source would silently mis-gate presentations.
+
+## FUNCTION-AUDIT FINDING: `vm_token_advance` has a second MODE the port omits
+
+`walk` / `token_len_at` model `vm_token_advance` (`0x62B6`) faithfully for the
+EXECUTION path — verified line by line:
+- entry = `table[0x6F18 + (op-0xA0)*2]`, two bytes per opcode;
+- `[bp+1]` bit7 set = sentinel: `0xFF` sets mode 1, `0xFE` clears it, `0xFD`
+  consumes an optional `0xA1`, each then using length `[bp+0]`;
+- otherwise length = `[bp + gs:[0x67AD]]`, i.e. `b0` in mode 0 and `b1` in mode 1
+  (`0x62CD..0x62D4`) — exactly the port's `if mode1 { b1 } else { b0 }`;
+- a resolved length of ZERO falls into the variable-length path at `0x631A`, where
+  `0xA6` skips 5 bytes then scans words to `0x0000` and everything else calls
+  `vm_token_special` (`0x6293`) — matching `decode_text` and `scan_zero_word`.
+
+**The gap:** at `0x6307`, BEFORE any of the above resolves a length,
+`test gs:[0x67B2],1` jumps straight to the variable-length path. So when that flag
+is set, EVERY token is treated as zero-word-terminated regardless of its table
+length. The port has no equivalent.
+
+The flag is real, not dead: baked 0, cleared at VM init (`0x55F9`), and SET to 1 at
+`0x5710` and `0x73C2` — both of which immediately walk a stream (`0x73C2` loads
+`gs:0x6724` + `gs:0x6720`). So the game has a SECOND token-walking mode used by
+those scanners, distinct from execution.
+
+NOT changed blind: the port's `walk` is pinned by `walks_real_scripts_to_documented_token_counts`
+(214/3271/3281/1714/1869 tokens), and forcing the alternate mode would change every
+count. The correct fix is to identify what `0x5710`/`0x73C2` are scanning and give
+the port a separate scan-mode walker for those call sites only — not to alter the
+execution walker.
