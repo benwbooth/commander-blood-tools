@@ -1169,3 +1169,29 @@ task, not a tuning task, and belongs in a fresh session.
 Anyone resuming: start from `MENUCMP=1`, which prints the game's own operands every
 frame. Watch `bx` and the edges live while experimenting — with that watch the whole
 problem is observable, which is what this thread lacked until the very end.
+
+## Nav-destination entities 0x15..0x1F are never populated on the console path (2026-07-24)
+
+TRIED: watching for the ACTIVE bit that gates the nav star map. The projector
+`0x9B98` draws entity id `0x15..0x1F` only when its flags word has bit7 set
+(`test ax,0x80` @`0x9BE1`). Added `runtime_boot NAVENT`, a write watch over the
+records at `gs:0x6212 + (id<<5)` (ids 0x15..0x1F span `0x64B2..0x65F2`).
+
+RESULT: zero writes, and all eleven records read `0x0000` — not merely missing the
+active bit, entirely unpopulated.
+
+WHY THIS ONE IS TRUSTWORTHY: an all-zero region is exactly what a watch aimed at
+unallocated memory looks like, so the probe also dumps the LOW entity ids. Entities
+`0x02 = 0x0085` and `0x04 = 0x0080` come back populated, both with bit 0x80 SET.
+That proves three things at once: the table base `0x6212 + (id<<5)` is right, the
+active bit really is the gate, and the empty `0x15..0x1F` is a fact about the STATE
+rather than an artifact of the probe.
+
+BETTER APPROACH: stop looking for a decode error in the projector — there isn't one
+(it is verified end to end). The question is a SCENARIO one: find a state in which
+destinations have been granted. The console-menu skip path used by MENUMAP never
+grants any. Candidates: a savestate taken after the plot grants a destination, or
+driving the VM far enough that the script writes those records.
+
+DO NOT re-derive the projector from captures because "the star map draws nothing" —
+drawing nothing is the CORRECT behaviour for this state.

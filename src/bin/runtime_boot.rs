@@ -294,6 +294,14 @@ fn main() {
         if std::env::var("NAVWRITE").is_ok() {
             rt.m.trace_range = Some(0xE840 + 0x4F09..0xE840 + 0x4F09 + 11 * 6);
         }
+        // NAVENT: who sets the ACTIVE bit on the nav-destination entities? The
+        // projector 0x9B98 draws entity id 0x15..0x1F only when its flags word has
+        // bit7 (`test ax,0x80` @0x9BE1), and no state reached so far has any of them
+        // set — which is why the star map draws nothing. Entity records live at
+        // gs:0x6212 + (id<<5), 32 bytes each, so ids 0x15..0x1F span 0x64B2..0x65F2.
+        if std::env::var("NAVENT").is_ok() {
+            rt.m.trace_range = Some(0xE840 + 0x6212 + 0x2A0..0xE840 + 0x6212 + 0x400);
+        }
         let mut next_input = 5_000_000u64;
         while rt.cpu.steps < 50_000_000 {
             let _ = rt.run(next_input);
@@ -353,6 +361,46 @@ fn main() {
                 };
                 println!("NAVTABLE rec {rec}: ({}, {}, {})", w(0), w(1), w(2));
             }
+            rt.m.trace_range = None;
+        }
+        if std::env::var("NAVENT").is_ok() {
+            let mut seen = std::collections::HashSet::new();
+            for &(addr, v, cs, ip) in rt.m.range_hits.iter() {
+                let off = addr - 0xE840 - 0x6212;
+                let (id, field) = (off / 32, off % 32);
+                if seen.insert((cs, ip, id, field)) {
+                    println!(
+                        "NAVENT {cs:04x}:{ip:04x} -> entity {id:#04x} field +{field:#04x} = {v:#04x}{}",
+                        if field == 0 && v & 0x80 != 0 { "  <== ACTIVE BIT SET" } else { "" }
+                    );
+                }
+                if seen.len() > 40 {
+                    break;
+                }
+            }
+            // Positive control, same reasoning as NAVWRITE: show the live flags so a
+            // null result cannot be confused with a mis-aimed watch.
+            for id in 0x15..=0x1fusize {
+                let a = 0xE840 + 0x6212 + id * 32;
+                let flags = u16::from_le_bytes([rt.m.mem[a], rt.m.mem[a + 1]]);
+                print!("NAVENTFLAGS {id:#04x}={flags:#06x} ");
+            }
+            println!();
+            // STRONGER CONTROL. All-zero destination records look identical to a
+            // watch aimed at unallocated memory, so dump the LOW entity ids too:
+            // if 0x00..0x14 are populated, the table base is proven right and the
+            // empty 0x15..0x1F is a real fact about the game state.
+            let mut nonzero_low = 0;
+            for id in 0..0x15usize {
+                let a = 0xE840 + 0x6212 + id * 32;
+                let flags = u16::from_le_bytes([rt.m.mem[a], rt.m.mem[a + 1]]);
+                if flags != 0 {
+                    nonzero_low += 1;
+                    print!("NAVENTLOW {id:#04x}={flags:#06x} ");
+                }
+            }
+            println!("\nNAVENTLOW: {nonzero_low}/21 low entities populated");
+            println!("NAVENT: {} total nonzero hits", rt.m.range_hits.len());
             rt.m.trace_range = None;
         }
         println!("MENUMAP done -> {}/menu_*.ppm", out.display());
