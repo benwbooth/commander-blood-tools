@@ -116,7 +116,18 @@ mode-0 write guard is now IMPLEMENTED on this basis (see the Fixed table).
   DOES already model the tracer-path per-line gate behind `with_text_presentation_record_gating`.)
 - **Also low/subjective:** bridge ring-cursor 8px snap (changes steering feel).
 - **Rewrites:** nav destinations = flag-gated entity set (fabricated pyramid grid; needs
-  entity world coords + active bits), world-destination from clicked row (UNDECODED
-  on-planet click semantics), A6 reveal-busy serialization handshake (VM↔frontend).
+  entity world coords + active bits); A6 reveal-busy serialization handshake (VM↔frontend).
+- **World-destination click — DECODED (no longer "undecoded on-planet click"):** the ship
+  FSM (`0xAFA0`) calls `ship_3d_target_record_select` (`0xB2BB`) each frame, which scans
+  the target list `DS:0x250B` (fallback `DS:0x2537`) and hit-tests the mouse against the
+  projected target layout via `lcall 0x71E:0xC48` (gated by `0x27E6`, layout `DS:0x2AAB`/
+  `DS:0x2545`). Its return is the selected target record: `0` = none, `-1` = back/exit
+  (`0x24F3=0x11`), else a target. On a NEW target (`!= gs:0x251B`, `0xB21A`) it writes
+  `gs:0x251B = target` (`0xB224`) and CREATES a C1 record `{0xC1, target, 0}` at
+  `[0x6750]+0xa` (`0xB272`) — which the C1 ladder (`0x5B38`) then presents. So the
+  world-click and the C1 subsystem are ONE mechanism: click a projected world target ->
+  C1 record -> C1 presents it. Porting is thus part of the C1/ship-3D subsystem session,
+  not a separate undecoded task. The remaining unknown is only the exact mouse->row
+  rectangle math inside `0x71E:0xC48`.
 - **Infrastructure-blocked:** ending fires on all-visited (the `rec_103A` runtime write,
   documented separately in port-validation.md).
