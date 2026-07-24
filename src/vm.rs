@@ -4872,11 +4872,44 @@ impl VmMachine {
                     self.branch();
                 }
             }
-            // 0xC9 (0x6FB9): clear the record field — ends the actor's
-            // presentation (each block clears its actor record when done).
+            // 0xC9 (0x6FB9): clear the record — ends the actor's presentation
+            // (each block clears its actor record when done). The handler zeroes
+            // the WHOLE 3-word record (`stosw` x3 at 0x6FC7/0x6FCB/0x6FCC), not
+            // just the type word, and when the cleared record was a `0xC4` actor
+            // entry it ALSO zeroes the reciprocal triple on the related object —
+            // its selector-`0x13` field (`0x6FD3..0x6FF0`). Leaving that stale
+            // matters: the C4 mode-0 write guard (`0x6CE9..0x6CFF`) refuses a new
+            // presentation when the related object's selector-`0x13` field still
+            // reads `0xC4`, so a half-cleared record would wedge the actor out of
+            // every later presentation.
             0xC9 => {
                 let off = self.lodsw();
+                let old_type = self.rec_read(off);
+                // The related record offset lives at +2 — read BEFORE clearing.
+                let related = self.rec_read(off.wrapping_add(2));
                 self.rec_write(off, 0);
+                self.rec_write(off.wrapping_add(2), 0);
+                self.rec_write(off.wrapping_add(4), 0);
+                if old_type == 0xC4 {
+                    // 0x6FD4..0x6FDE: field_offset(0x13, kind-of-related) added to
+                    // the related record, then three zero words.
+                    let related_kind = self.rec_read(related);
+                    if let Some(fo) =
+                        vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, related_kind)
+                    {
+                        let at = related.wrapping_add(fo);
+                        self.rec_write(at, 0);
+                        self.rec_write(at.wrapping_add(2), 0);
+                        self.rec_write(at.wrapping_add(4), 0);
+                    }
+                    // 0x6FE2/0x6FE8 also write gs:[0x252A]=0 and gs:[0x2531]=6.
+                    // NOT modelled: `flag_252a` is currently forced true at VM
+                    // construction because the port has no runtime SETTER for it
+                    // (the game's writers are the ship-3D navigation sequence,
+                    // 0xB54A/0xB3F5/0xB4CF/0xB29A). Clearing it here without that
+                    // setter would permanently close every 0xD0-gated block after
+                    // the first presentation ends. See docs/audit-fixes.md.
+                }
                 if self.active_actor == Some(off) {
                     self.active_actor = None;
                     self.presentation_busy = false;
@@ -7474,6 +7507,57 @@ mod tests {
         m.step();
         assert_eq!(m.rec_read_pub(0x84), 0xC4, "no DEB loaded -> unconditional write");
         assert_eq!(m.active_actor, Some(0x84));
+    }
+
+    #[test]
+    fn c9_clears_the_whole_record_and_the_c4_reciprocal() {
+        // 0x6FB9: 0xC9 zeroes the 3-word record, and for a 0xC4 entry also the
+        // related object's selector-0x13 triple. Objects at 0x10 (kind 2) and
+        // 0x80 (kind 2), both active; the actor record is 0x84 (owner 0x80).
+        let field = vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, 2)
+            .expect("kind 2 selector-0x13 field");
+        let mut m = VmMachine::new();
+        m.object_offsets = vec![0x10, 0x80];
+        m.rec_write_pub(0x80, 2);
+        m.rec_write_pub(0x82, 1);
+        m.rec_write_pub(0x10, 2);
+        m.rec_write_pub(0x12, 1);
+        // A live C4 presentation: record {0xC4, related=0x10, 2} plus the
+        // reciprocal 0xC4 on the related object's selector-0x13 field.
+        m.rec_write_pub(0x84, 0xC4);
+        m.rec_write_pub(0x86, 0x10);
+        m.rec_write_pub(0x88, 2);
+        let recip = 0x10u16.wrapping_add(field);
+        m.rec_write_pub(recip, 0xC4);
+        m.rec_write_pub(recip.wrapping_add(2), 0x84);
+        m.active_actor = Some(0x84);
+
+        m.load_cod(&[0xC9, 0x84, 0x00, 0xFF]);
+        m.query = false;
+        m.pc = 0;
+        m.step();
+
+        assert_eq!(m.rec_read_pub(0x84), 0, "type word cleared");
+        assert_eq!(m.rec_read_pub(0x86), 0, "+2 cleared (was only +0 before)");
+        assert_eq!(m.rec_read_pub(0x88), 0, "+4 cleared");
+        assert_eq!(m.rec_read_pub(recip), 0, "the related object's C4 reciprocal cleared");
+        assert_eq!(m.rec_read_pub(recip.wrapping_add(2)), 0, "reciprocal +2 cleared");
+        assert_eq!(m.active_actor, None, "the presentation ended");
+
+        // The point of the reciprocal clear: a LATER C4 SET for that actor must
+        // pass the write guard. With the stale 0xC4 left behind (the old
+        // behaviour) the guard at 0x6CE9..0x6CFF would branch instead of writing.
+        m.load_cod(&[OP_ACTOR, 0x84, 0x00, 0x10, 0x00, 0xFF]);
+        m.query = false;
+        m.stack.push(0x99);
+        m.pc = 0;
+        m.step();
+        assert_eq!(
+            m.rec_read_pub(0x84),
+            0xC4,
+            "the actor can present again after a clean 0xC9 (no wedged reciprocal)"
+        );
+        assert_eq!(m.pc, 5, "no branch: the write guard passed");
     }
 
     #[test]
