@@ -487,6 +487,18 @@ fn main() {
         // |delta|/8, five rows (HONK, TELEPHONE, CRYOBOX, MENU, OPTION). Click MENU
         // (row 3), then its submenu rows, reporting the gate after each.
         if std::env::var("GAMESTART").is_ok() {
+            // Arm the menu hit-test compare so we MEASURE the coordinate space
+            // instead of inferring it: at 0x8656 the game does `cmp bx, ax` with
+            // bx = the cursor x it actually uses and ax = the box's right edge it
+            // computed; 0x8663 is the left-edge compare. file -> linear is
+            // 0x1a20 + (file - 0x600).
+            if std::env::var("MENUCMP").is_ok() {
+                for f in [0x8656u32, 0x8663] {
+                    rt.cpu.exec_watch_linear.push(0x1a20 + f - 0x600);
+                }
+                rt.cpu.exec_watch_dump_regs = true;
+                eprintln!("MENUCMP armed at 0x8656/0x8663");
+            }
             let (fr0, _, _) = state(&rt);
             let delta = fr0 as i32 - 45;
             let right = 0x11F - delta * 8;

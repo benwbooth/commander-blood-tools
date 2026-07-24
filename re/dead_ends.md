@@ -1117,3 +1117,30 @@ deferred-motion fidelity fix (injected motion now applies at the position read, 
 on real hardware), a working `PROFILEJUMP` profile switch, the `rec_103A`
 write-watch, busy-gate diagnostics, and this measurement trail. One menu click DID
 register (`[0x2A19]=5`), proving the path works end to end.
+
+#### MEASURED at last: geometry was always right; the CURSOR RESTS AT x=40
+
+Armed the game's own hit-test compare (`MENUCMP=1` -> exec-watch with register dump
+at `0x8656`/`0x8663`) and read both operands directly:
+
+    EXECREGS lin=0x09a76 ax=0x00cf bx=0x0028 cx=0x000a   <- cmp bx, RIGHT edge
+    EXECREGS lin=0x09a83 ax=0x0061 bx=0x0028 cx=0x000a   <- cmp bx, LEFT  edge
+
+Decoding: `cx=0x0A`=10 is the frame delta (frame 55), `ax=0xCF`=207 is the right
+edge and `ax=0x61`=97 the left — i.e. the game computes EXACTLY the box this
+analysis predicted (97..207 at delta 10). **The geometry was never the problem, and
+the units question is settled: the box edges and `bx` are in the same space, the one
+we were computing in.**
+
+The real answer is `bx = 0x28` = **40**: at the console the cursor RESTS at screen
+x=40, well left of the box. Every failed click was aimed correctly at a box the
+cursor was simply never inside. (The 320 / 287 values printed earlier were the state
+AFTER our own `move_mouse_rel` calls had disturbed it, not the resting state — which
+is why they misled the analysis.)
+
+So the remaining task is now a plain control problem with all constants known:
+move the cursor from x=40 rightwards into [left, right] while accounting for the
+fact that x motion also steers (the box slides LEFT as the frame rises, since
+`right = 287 - 8*delta`), then press. Cursor and box CONVERGE, so a modest rightward
+nudge should suffice — a closed loop on the measured `bx` versus the measured edges,
+both of which this watch now exposes directly.

@@ -53,6 +53,11 @@ pub struct Cpu {
     /// which cs:ip decomposition reaches it — resolves segment-relocation ambiguity that a
     /// plain (cs,ip) watch can miss. Each hit records (linear, first_step, count).
     pub exec_watch_linear: Vec<u32>,
+    /// When set, every `exec_watch_linear` hit prints the live registers. The
+    /// bridge's menu hit-test compares `bx` (the cursor x it actually uses) with
+    /// `ax` (the box edge it computed) at `0x8656`/`0x8663`, so dumping both
+    /// settles the coordinate-space question directly instead of inferring it.
+    pub exec_watch_dump_regs: bool,
     pub exec_hits_linear: Vec<(u32, u64, u64)>,
     /// Diagnostic SI trace: when execution reaches this (cs, ip), record `si` and the
     /// byte at `ds:si` — used to trace the BAS conversation VM's program counter as it
@@ -294,6 +299,7 @@ impl Cpu {
             exec_watch: Vec::new(),
             exec_hits: Vec::new(),
             exec_watch_linear: Vec::new(),
+            exec_watch_dump_regs: false,
             exec_hits_linear: Vec::new(),
         }
     }
@@ -321,6 +327,14 @@ impl Cpu {
             if !self.exec_watch_linear.is_empty() {
                 let lin = (self.cs as u32) * 16 + self.ip as u32;
                 if self.exec_watch_linear.contains(&lin) {
+                    if self.exec_watch_dump_regs {
+                        eprintln!(
+                            "EXECREGS lin={lin:#07x} ax={:#06x} bx={:#06x} cx={:#06x} dx={:#06x} \
+                             si={:#06x} di={:#06x} @ {} steps",
+                            m.regs.ax(), m.regs.bx(), m.regs.cx(), m.regs.dx(),
+                            m.regs.si(), m.regs.di(), self.steps
+                        );
+                    }
                     let step = self.steps;
                     match self.exec_hits_linear.iter_mut().find(|h| h.0 == lin) {
                         Some(h) => h.2 += 1,
