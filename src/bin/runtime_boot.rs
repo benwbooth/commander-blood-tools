@@ -3101,6 +3101,12 @@ fn main() {
                     let lin = 0x0e84usize * 16 + off as usize;
                     rt.m.mem[lin] = val;
                 }
+                // save <path>: write a savestate at this scenario point (the
+                // story-milestone banker).
+                "save" => {
+                    rt.save_state(std::path::Path::new(toks[1])).unwrap();
+                    eprintln!("state saved: {}", toks[1]);
+                }
                 // pokel <lin-hex> <byte-hex>: write one byte at a LINEAR address
                 // (for structures outside the DS globals, e.g. the record block).
                 "pokel" => {
