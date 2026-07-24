@@ -781,3 +781,30 @@ presentation". Better approach: rather than clicking, drive the presentation to 
 own teardown (the `0xC9` clear / the `0x5816` scan's kind-1 end path), or capture a
 savestate at a genuinely idle hub moment where all ten gate flags are already zero,
 then `PROFILEJUMP` from there.
+
+### PROFILEJUMP tried from three entry points — all blocked
+
+| entry point | block @ jump | busy-gate | outcome |
+|---|---|---|---|
+| `--resume milestone_script2.state` | `8681:0000` | `0x67AC=1, 0x5E64=1` | pending stays 4, no switch |
+| boot, 70M steps, no resume | `0000:0000` | none set | still pre-game — NO profile ever loaded, so nothing to switch |
+| `--resume menu_toplevel.state` | `8681:0000` | `0x67AC=1, 0x5E64=1` | pending stays 4, no switch |
+
+Two distinct walls, both now identified:
+1. **Every mid-story savestate resumes INTO a live presentation** (`0x67AC` +
+   `0x5E64` set), and 12 player-style dismiss clicks do not clear it. The busy gate
+   `0x109C` therefore defers the profile dispatch forever.
+2. **From boot the gate IS clear, but no profile has loaded at all**
+   (`gs:0x6724` far pointer is `0000:0000`) — 70M un-driven steps leave the game in
+   the intro/attract, so there is nothing to switch FROM.
+
+Note `rec_103A` reads `0x6f63` in the SCRIPT2-era states, consistent with
+docs/port-validation.md's point that `0x103A` is an unrelated SCRIPT2 object there —
+the guard only means something in SCRIPT5.
+
+Better approach (needs a capability the harness lacks today): drive from boot to the
+hub the way `BRIDGEPROBE` does — it reaches the console at ~50.4M steps WITH input
+driving — and only then `PROFILEJUMP`. That requires composing the two probes
+(`PROFILEJUMP` currently returns early, before `BRIDGEPROBE`'s drive logic runs), or
+capturing a fresh savestate at a genuinely idle hub moment with all ten gate flags
+zero. Neither is a decode problem; both are harness plumbing.
