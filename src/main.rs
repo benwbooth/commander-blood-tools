@@ -493,6 +493,10 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     // plays exactly the lines the game's own bytecode emits — console button clicks
     // start actor presentations, and the script's self-modifying state drives
     // rotation/progression. Shared with the load_script closure via RefCell.
+    // The CURRENT script's vbio record offset, resolved from its DEB symbol
+    // table at load (named variables are PER-SCRIPT: SCRIPT2's vbio is 0x126C,
+    // SCRIPT3's is 0x13EE — a hardcoded offset silently misses across acts).
+    let vbio_offset: std::cell::Cell<Option<u16>> = std::cell::Cell::new(None);
     let script_vm: std::cell::RefCell<Option<commander_blood_tools::vm::VmMachine>> =
         std::cell::RefCell::new(None);
     // SCRIPT1 tutorial auto-chain (ORACLE-observed: the real tutorial plays Izwalito's
@@ -565,6 +569,13 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
         current_script.set(n);
         let r = |ext: &str| std::fs::read(format!("{iso}/SCRIPT{n}.{ext}"));
         if let (Ok(c), Ok(v), Ok(d), Ok(b)) = (r("COD"), r("VAR"), r("DIC"), r("DEB")) {
+            // Resolve this script's vbio from its OWN DEB symbol table.
+            vbio_offset.set(
+                commander_blood_tools::engine::deb_actor_name_map(&b)
+                    .iter()
+                    .find(|(_, name)| name.eq_ignore_ascii_case("vbio"))
+                    .map(|(&off, _)| off),
+            );
             // load_dialogue_scenes sets up the scene + the D2 chaining decision.
             engine.load_dialogue_scenes(&c, &v, &d, &b, &descript, Path::new(assets));
             // Load the script's decoded concept-menu stack (the game's gs:0x6772 menu
@@ -2061,8 +2072,11 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
             // Bob's cryobox blocks branch on vbio==0/1/2 and acknowledge vbio>0) —
             // then return to the bridge hub.
             if let Some(m) = script_vm.borrow_mut().as_mut() {
-                // vbio = record 0x126C (the C0 guard operands @0570/@0616/@0BD3).
-                m.add_record(0x126C, 1);
+                // vbio, resolved from the LOADED script's DEB (per-script:
+                // 0x126C in SCRIPT2, 0x13EE in SCRIPT3).
+                if let Some(off) = vbio_offset.get() {
+                    m.add_record(off, 1);
+                }
             }
             engine.cyber_active = false;
             engine.bridge_active = true;
