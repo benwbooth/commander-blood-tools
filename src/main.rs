@@ -1565,16 +1565,6 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 Event::ButtonPress(b) if engine.phone_active && b.detail == 3 => {
                     engine.phone_cycle_contact(1);
                 }
-                // On the OPTION 3D-pyramid menu: a left click selects the item row under
-                // the cursor; the right button cycles the selection.
-                Event::ButtonPress(b) if engine.option_active && b.detail == 1 => {
-                    if let Some(i) = engine.option_item_click(mx, my) {
-                        engine.option_cycle(i as i32 - engine.option_item() as i32);
-                    }
-                }
-                Event::ButtonPress(b) if engine.option_active && b.detail == 3 => {
-                    engine.option_cycle(1);
-                }
                 // On the nav star-map, a left click on a destination in the
                 // choose-a-location list visits it (loads SCRIPT<3+i> — that location's
                 // character dialogue with its scene music).
@@ -1750,7 +1740,6 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         engine.cyber_active = false;
                         engine.cryobox_active = false;
                         engine.phone_active = false;
-                        engine.option_active = false;
                         // Esc from a screen returns to the bridge hub.
                         engine.bridge_active = true;
                     }
