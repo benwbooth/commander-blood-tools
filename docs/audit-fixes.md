@@ -436,24 +436,28 @@ Deliberately unresolved: proving it needs a scenario that reaches nav voice, whi
 is blocked behind the same wiring work. Recorded so the next attempt starts from
 the lead rather than repeating the search.
 
-## OPEN TASK — kind-10 choice box may be 10px shorter than the game's
+## FIXED #41 — kind-10 choice box was 10px short (5px misplaced)
 
-`0x8438` is the unified list widget. Its `[0xADD]&1` branch does TWO things, and
-the port models only one of them:
+`0x8438` is the unified list widget. Its `[0xADD]&1` branch does TWO things and the
+port modelled only one:
 
-    0x8442  mov bp, 0xa     <-- height seeded to 10   (NOT modelled)
-    0x8445  mov dx, 0x37    <-- width floor 55        (modelled)
+    0x8436  xor bp, bp      <-- default height seed 0    (port was right)
+    0x8442  mov bp, 0xa     <-- kind-10 height seed 10   (port was MISSING this)
+    0x8445  mov dx, 0x37    <-- kind-10 width floor 55   (port had this)
 
-`bp` then accumulates `add bp,0xB` per row (`0x847A`) and `add bp,8` (`0x84A7`),
-so in that branch the box height is `rows*11 + 18`, whereas the port's
-`choice_box_top_y` computes `rows*11 + 8` for every kind. Since the top edge is
-`(200-h)/2`, a 10px height error moves the box 5px vertically.
+`bp` accumulates `add bp,0xB` per row (`0x847A`) then `add bp,8` (`0x84A7`), and the
+box is centred at `(200-h)/2` (`0x84B9..0x84BF`). So the kind-10 (world/entity) box
+is `rows*11 + 18` tall, not `rows*11 + 8`, and sat **5px too low** — along with its
+clickable rows, since the hit-test shares the origin.
 
-NOT changed yet, deliberately. In the default path `bp` is never initialised
-inside the routine -- it is pushed at `0x842E` and inherited from the CALLER -- so
-the port's implicit `bp = 0` for non-kind-10 boxes is an assumption I have not
-verified. Fixing only the kind-10 seed while that assumption is unchecked risks
-trading a known error for an unknown one.
+This was logged as an open task with the note that fixing only the kind-10 seed was
+unsafe while the default seed was unverified — the default `bp` looked like it was
+inherited from the caller (pushed at `0x842E`, no visible init). That was wrong: the
+init is the two bytes `33 ed` at `0x8436`, between `push si` and `mov dx,0x64`, which
+the first read had skipped over. `xor bp,bp` confirms the port's implicit 0, which
+made the kind-10 fix safe.
 
-NEXT STEP: find the callers of `0x8428` and read what `bp` holds on entry for each
-box kind. Then either seed both paths from the caller or confirm 0 is right.
+Fix: `choice_box_top_y_seeded(rows, seed)` with `choice_box_text_top(&self)` picking
+the seed from `console_box_kind`, used by BOTH the draw and the hit-test so they
+cannot drift apart. Regression test asserts the 5px offset for kind 10 and no change
+for other kinds.

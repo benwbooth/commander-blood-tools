@@ -1184,7 +1184,7 @@ impl EngineState {
         if xi < x0 || xi > x1 {
             return None;
         }
-        let top = Self::choice_box_top_y(rows);
+        let top = self.choice_box_text_top(rows);
         if yi < top {
             return None;
         }
@@ -1817,9 +1817,32 @@ impl EngineState {
     /// morlock.ppm shows the 2-row telephone box at y=89/100 (= the +8 formula);
     /// +18 would put it at 84 and break the pixel match. The port is already
     /// correct; the raw-assembly reading disagreed with what the game displays.
-    fn choice_box_top_y(rows: usize) -> usize {
-        let h = rows.max(1) * Self::CHOICE_BOX_PITCH + 8;
+    /// Text-top of the choice box for a row count, given the widget's HEIGHT SEED.
+    ///
+    /// The seed is the `bp` the list widget starts accumulating from. `0x8436`
+    /// does `xor bp, bp` (seed 0), but the `[0xADD]&1` branch immediately
+    /// overrides it with `mov bp, 0xa` at `0x8442` — the same branch that sets the
+    /// narrower width floor at `0x8445`. Height is then `bp + rows*11` (`add bp,0xB`
+    /// at `0x847A`) `+ 8` (`0x84A7`), and the box is centred at `(200-h)/2`
+    /// (`0x84B9..0x84BF`), so a wrong seed shifts the box by half the error.
+    fn choice_box_top_y_seeded(rows: usize, height_seed: usize) -> usize {
+        let h = height_seed + rows.max(1) * Self::CHOICE_BOX_PITCH + 8;
         (200usize.saturating_sub(h)) / 2 + 4
+    }
+
+    /// Default-path top (`bp = 0` from `xor bp,bp` at `0x8436`).
+    fn choice_box_top_y(rows: usize) -> usize {
+        Self::choice_box_top_y_seeded(rows, 0)
+    }
+
+    /// Kind-aware top: the world/entity box (kind 10) is the `[0xADD]&1` branch,
+    /// which seeds the height 10 higher.
+    fn choice_box_text_top(&self, rows: usize) -> usize {
+        Self::choice_box_top_y_seeded(rows, self.choice_box_height_seed())
+    }
+
+    fn choice_box_height_seed(&self) -> usize {
+        if self.console_box_kind == 10 { 0xa } else { 0 }
     }
 
     /// The choice box's `(anchor, x0, x1)` for a widest label pixel width, per the
@@ -1858,7 +1881,7 @@ impl EngineState {
             .map(|l| crate::font::square_caps_text_width(l))
             .max()
             .unwrap_or(0);
-        let text_top = Self::choice_box_top_y(rows);
+        let text_top = self.choice_box_text_top(rows);
         // The box rect per the widget's ASSEMBLY layout (DS:0x2AAB @0x84A1..):
         // w = widest_label + 0x14 (20), h = rows*11 + 8, x = anchor - w/2,
         // y = (200 - h)/2; border index 0x15 then fill 0xE0 (both DAC 0,0,0 —
@@ -1913,8 +1936,11 @@ impl EngineState {
             return None;
         }
         // Hit origin == draw origin == the assembly's text_top = box_y+4
-        // (0x84E6 `add cx,4`; 0x84FB `sub ax,dx`; 0x8508 `div bl,0x0B`).
-        let top = Self::choice_box_top_y(rows);
+        // (0x84E6 `add cx,4`; 0x84FB `sub ax,dx`; 0x8508 `div bl,0x0B`). Kind-aware
+        // for the same reason the x-extent is: the kind-10 branch seeds the box
+        // height 10 higher (`mov bp,0xa` @0x8442), so a kind-blind top would put
+        // the clickable rows 5px off the drawn ones.
+        let top = self.choice_box_text_top(rows);
         if yi < top {
             return None;
         }
@@ -4591,6 +4617,27 @@ mod tests {
         // rows=1 -> 94 (the capture's ink read 95 — the glyph's first ink row;
         // 1px measurement ambiguity, assembly wins per the prime rule);
         // rows=2 -> 89 and rows=6 -> 67 match the captures EXACTLY.
+        // The kind-10 (world/entity) box is the `[0xADD]&1` branch, which seeds the
+        // height 10 higher (`mov bp,0xa` @0x8442) alongside the narrower width
+        // floor. Height enters as `(200-h)/2`, so the box sits 5px HIGHER than the
+        // default-kind box with the same row count -- the port used to draw both at
+        // the same y, putting the kind-10 box 5px low and its click rows with it.
+        let mut world = EngineState::new();
+        world.console_box_kind = 10;
+        let mut other = EngineState::new();
+        other.console_box_kind = 2;
+        for rows in 1..=6usize {
+            assert_eq!(
+                other.choice_box_text_top(rows),
+                EngineState::choice_box_top_y(rows),
+                "non-kind-10 boxes keep the xor bp,bp seed of 0"
+            );
+            assert_eq!(
+                EngineState::choice_box_top_y(rows) - world.choice_box_text_top(rows),
+                5,
+                "kind-10 seeds bp=10, so (200-h)/2 lifts the box by 5px"
+            );
+        }
         assert_eq!(EngineState::choice_box_top_y(1), 94);
         assert_eq!(EngineState::choice_box_top_y(2), 89);
         assert_eq!(EngineState::choice_box_top_y(6), 67);
