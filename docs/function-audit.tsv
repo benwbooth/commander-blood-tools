@@ -545,7 +545,7 @@ render_star_map_navview_panned	src/ship3d.rs	2102	fn		UNVERIFIED
 render_ship_3d_pyramid_hud	src/ship3d.rs	2167	fn		UNVERIFIED	
 render_ship_3d_starfield	src/ship3d.rs	2232	fn	0x200	ASM?	/// Render a complete ship-3D starfield background from real game data: randomize /// the point cloud from `prng`, build the camera matrix from `angles` using the /// recovered [`SHIP_3D_ANGLE_TABLE`]
 project_ship_3d_object_sprite	src/ship3d.rs	2245	fn		ASM	|| AUDIT 2026-07-24: verified against the nav-destination projector 0x9B98: visible gate `test ax,0x80` @0x9BE1; depth = dot(terms 6,7,8) >> 15 with `je` skip on zero @0x9C23 and the NEGATIVE-DEPTH BIAS `add ecx,0x10000` @0x9C29 (only when js); depth_scale = 0x8000000>>7 = 0x100000 divided UNSIGNED (`div ecx` @0x9C3D) matching the port u32; screen x/y = dot>>7 / depth + 0xA0/0x64; sprite dims scaled `shrd ax,dx,0xa` = >>10. All four constants (0x80 / 0x10000 / 0x100000 / 10) confirmed. Port adds a benign extra zero-check after the bias that the handler lacks (unreachable unless raw depth == -0x10000)
-update_ship_3d_sprite_slot_position	src/ship3d.rs	2316	fn		UNVERIFIED	
+update_ship_3d_sprite_slot_position	src/ship3d.rs	2316	fn		ASM	|| AUDIT 2026-07-24: verified against 0x420D (the sprite-slot position setter, reached as lcall 0x299:0x127D from 0x9CEF): `test al,0x81` gate = ACTIVE_MASK 0x0081; independent x/y compares against entity fields +0x08 and +0x0A, each setting the dirty bit via `or al,2` = DIRTY_FLAG 0x0002 and storing the new value; flags written back once. Also CORRECTED the labels.csv entry, which had this routine as entity_flag_set_if_field8_mismatch
 update_ship_3d_sprite_slot_extent	src/ship3d.rs	2342	fn		UNVERIFIED	
 commit_ship_3d_sprite_slot_dirty_geometry	src/ship3d.rs	2374	fn		UNVERIFIED	
 commit_ship_3d_global_clip_snapshot	src/ship3d.rs	2395	fn		UNVERIFIED	
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	          
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	           
