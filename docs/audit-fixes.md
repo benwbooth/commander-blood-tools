@@ -322,3 +322,31 @@ as `(offset, kind)` pairs; `ExecutionContext` carries only offsets, so giving th
 scan the kind-terminated prefix means threading kinds through it. The threshold
 lookup must KEEP the full sorted list — the two uses need different views of the
 same table, which is exactly what the current single `object_offsets` conflates.
+
+## FUNCTION-AUDIT FINDING: the b3 -> voice-clip mapping has NO located binary support
+
+`text_selector_voice_clip_index` / `text_selector_requests_voice` encode the rule
+"`0x00` and `0xFF` are no-voice; `1..N` select a one-based `son.snd` talk clip".
+Their own doc comment calls this "current evidence" — i.e. an inference. Two
+searches now argue against it having a binary basis, at least on the obvious paths:
+
+1. **The selector has exactly ONE consumer.** `gs:0x1FAB` (written from A6's `b3`
+   at `0x668F`) is read at exactly one site in the image — `0x11F2`, which computes
+   `+9 -> gs:0x6788`, the ACTIVE LINE ID that this session verified. No site reads
+   it as a clip index.
+2. **Both clip-play call sites are the chatter path.** `snd_play_clip` (`0xB8CD`)
+   has exactly two near callers, `0xB895` and `0xB8C0`, and both sit inside the
+   burble/chatter routine, selecting `7 + rand(10)` from `tb.snd`. Neither consults
+   the selector.
+
+NOT over-claimed: this does not prove the port is wrong. Voice could be reached by
+a far call, through the SND bank loader (`0xC005`), or driven from the active line
+id rather than the raw selector. What it does establish is that the mapping is
+UNVERIFIED and the two most likely routes do not implement it.
+
+WHY THIS MATTERS: this is content-shaped behaviour (which voice line plays) derived
+from inference rather than from the binary, which is exactly what the prime rule
+warns about. The rows stay UNVERIFIED with this note. The open task is to find the
+routine that turns a line's selector into a played `son.snd` clip — a write-watch
+on `gs:0x0C47` (the son.snd handle) or on the SND bank table during a spoken line
+would locate it.
