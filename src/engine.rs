@@ -3714,68 +3714,19 @@ impl EngineState {
             }
             return;
         }
-        // Completion HOLD phase (oracle honk_talk vs_005..007: the just-completed
-        // line holds in BRIGHT GREEN — every char 0xFF — before the white settle).
-        let per_char = u32::from(crate::vm::reveal_frames_per_char(self.text_speed_step)).max(1);
-        let hold = u32::from(crate::vm::reveal_complete_hold_ticks(self.text_speed_step));
-        let holding = fully
-            && self.dialogue_timer < total as u32 * per_char + hold;
-        if holding {
-            if let Some(bold) = self.bold_font.take() {
-                let mut y = 8usize;
-                for line in text.split('\n') {
-                    let mut x = 10usize;
-                    for ch in line.chars() {
-                        let mut buf = [0u8; 4];
-                        bold.draw(
-                            &mut self.framebuffer,
-                            ENGINE_SCREEN_WIDTH,
-                            ENGINE_SCREEN_HEIGHT,
-                            ch.encode_utf8(&mut buf),
-                            x,
-                            y,
-                            0xFF,
-                        );
-                        x += crate::font::BoldConsoleFont::ADVANCE;
-                    }
-                    y += pitch;
-                }
-                self.bold_font = Some(bold);
-                return;
-            }
-        }
-        if fully {
-            // Settled: thin white (0xE0 — the game's settled-text index).
-            use crate::font::game_font_advance;
-            self.scene_palette[0xE0] = [255, 255, 255];
-            let mut y = 8usize;
-            for line in text.split('\n') {
-                let mut x = 10usize;
-                for ch in line.chars() {
-                    let mut buf = [0u8; 4];
-                    draw_text_indexed(
-                        &mut self.framebuffer,
-                        ENGINE_SCREEN_WIDTH,
-                        ENGINE_SCREEN_HEIGHT,
-                        ch.encode_utf8(&mut buf),
-                        x,
-                        y,
-                        0xE0,
-                    );
-                    x += game_font_advance(ch);
-                }
-                y += pitch;
-            }
-            return;
-        }
-        // Revealing: bold console font, green family — LIVE-MEASURED order (REVEALDUMP
-        // rv_093..rv_158, the HONK presentation revealing char-by-char): the NEWEST char
-        // draws 0xFF (129,255,105 brightest), the second-newest 0xFE (44,210,8), and all
-        // older revealed chars 0xFD (0,145,0).
+        // BOLD console font, green family, EVERY frame. The 0x3630 renderer never
+        // switches to a thin/white font and never colors a whole line uniformly:
+        // audit found the old `holding` (whole-line 0xFF) and settled (thin white
+        // 0xE0) branches were INVENTED. Color is purely distance from the reveal
+        // pointer si: the char AT the pointer = 0xFF (@0x369C), one back = 0xFE
+        // (@0x369E dec ah), >=2 back = 0xFD (@0x36A4). When the line is fully
+        // revealed the pump parks the pointer past the terminator (@0x94A0, the inc
+        // suppressed), so every real character settles to the darker 0xFD green.
+        let reveal_pointer = if fully { total + 2 } else { visible };
         let color_for = |shown: usize| -> u8 {
-            if shown + 1 == visible {
+            if shown + 1 == reveal_pointer {
                 0xFF
-            } else if shown + 2 == visible {
+            } else if shown + 2 == reveal_pointer {
                 0xFE
             } else {
                 0xFD
@@ -5580,11 +5531,12 @@ mod tests {
     fn draw_subtitle_renders_text_into_scene_band() {
         let mut e = EngineState::new();
         e.draw_subtitle("HELLO COMMANDER", 0xFD);
-        // Text draws at y=8 (the subtitle band); a fully-shown line SETTLES to the thin
-        // white renderer at index 0xE0 (oracle: 'Today's fare:' frame + TUTORIAL4 calibration).
+        // Text draws at y=8 (the subtitle band); a fully-shown line SETTLES in the BOLD
+        // console font at the darker green 0xFD (0x3630 never switches to a thin/white
+        // font — the old 0xE0 white settle was invented; audit-corrected).
         let band: usize = (8..16)
             .flat_map(|y| (0..ENGINE_SCREEN_WIDTH).map(move |x| y * ENGINE_SCREEN_WIDTH + x))
-            .filter(|&i| e.framebuffer[i] == 0xE0)
+            .filter(|&i| e.framebuffer[i] == 0xFD)
             .count();
         assert!(
             band > 20,
@@ -5663,11 +5615,12 @@ mod tests {
         for _ in 0..400 {
             e.step(MouseInput::default());
         }
-        // Text pixels: revealing (0xFE/0xFF green-bold) or settled (0xE0 white-thin).
+        // Text pixels: bold green console font throughout — 0xFD settled / 0xFE / 0xFF
+        // newest (no white 0xE0 settle; audit-corrected).
         let lit = e
             .framebuffer
             .iter()
-            .filter(|&&p| p == 0xE0 || p == 0xFE || p == 0xFF)
+            .filter(|&&p| p == 0xFD || p == 0xFE || p == 0xFF)
             .count();
         assert!(
             lit > 20,
@@ -5955,7 +5908,7 @@ mod tests {
         e.draw_subtitle(&assembled, 0xFD);
         let w = ENGINE_SCREEN_WIDTH;
         let rows_with_text = (0..30)
-            .filter(|&r| e.framebuffer[r * w..(r + 1) * w].iter().any(|&p| p == 0xE0))
+            .filter(|&r| e.framebuffer[r * w..(r + 1) * w].iter().any(|&p| p == 0xFD))
             .count();
         assert!(rows_with_text > 8, "text occupies multiple wrapped rows (rows={rows_with_text})");
     }
