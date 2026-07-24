@@ -525,11 +525,31 @@ fn main() {
                 rt.m.read8(bseg as u16, a) as u32 | ((rt.m.read8(bseg as u16, a + 1) as u32) << 8)
             };
             println!("PROFILEJUMP rec_103A = {:#06x}", rec103a(&rt));
+            // Why does nothing run in the new profile? vm_run_wrapper (0x55A4) is
+            // gated on [0x27E0]&1, and vm_exec_loop on VM-active [0x67A8]&1; the
+            // five per-profile resource far-pointers live at DS:0x6712..0x671C.
+            println!(
+                "PROFILEJUMP gates: [0x27E0]={:#04x} [0x67A8]={:#04x} [0x67AD]={:#04x} \
+                 res[0x6712]={:04x}:{:04x} res[0x6716]={:04x}:{:04x}",
+                rt.m.read8(g, 0x27E0), rt.m.read8(g, 0x67A8), rt.m.read8(g, 0x67AD),
+                w16(&rt, 0x6714), w16(&rt, 0x6712), w16(&rt, 0x6718), w16(&rt, 0x6716)
+            );
             let (boff, bseg) = (w16(&rt, 0x6724), w16(&rt, 0x6726));
             if bseg > 0 {
                 let lin = bseg as usize * 16 + boff as usize + 0x103A;
                 rt.m.watch_addr = Some(lin);
                 println!("PROFILEJUMP rec_103A write-watch armed at lin {lin:#x}");
+            // The switch leaves the PER-FRAME GAMEPLAY GATE clear: [0x27E0]&1
+            // gates vm_run_wrapper (0x55A4), which IS the VM's per-frame
+            // execution, and the ONLY setter in the binary is 0x0FC3 — part of the
+            // one-shot GAME-START sequence, not the profile-switch path (0x53A0
+            // clears VM globals). So a poked mid-game switch leaves the new
+            // profile's script never executing. Re-set the gate the way game start
+            // does and see whether the profile comes alive.
+            if std::env::var("PROFILEJUMP_RUNGATE").is_ok() {
+                rt.m.write8(g, 0x27E0, 1);
+                println!("PROFILEJUMP re-set [0x27E0]=1 (the 0x0FC3 game-start gate)");
+            }
                 // Merely being resident in the profile does not advance its FSM —
                 // the concert block wants a Migrator presentation. Drive the
                 // console rows the way the scenario driver does so presentations

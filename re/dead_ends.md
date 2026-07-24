@@ -859,3 +859,33 @@ BRIDGEPROBE drives the boot profile (settle, find the console frame, then click)
 rather than reusing hub coordinates captured before the switch — or invoke the
 profile's opening presentation directly via a `0xC4`/`start_actor_presentation`
 poke instead of relying on the console UI.
+
+#### Post-switch the profile is RESIDENT but INERT — and the run-gate alone doesn't revive it
+
+Diagnostics added to the composed probe, measured right after a successful jump
+(`block 7838 -> 8090`, pending consumed):
+
+    [0x27E0]=0x00  [0x67A8]=0x01  [0x67AD]=0x00
+    res[0x6712] ids 0x56 0x57 0x58 0x59   <- the five per-profile resource ids DID update
+
+Two solid facts:
+1. The switch itself genuinely worked — `vm_resource_profile_select` (`0x53A0`)
+   copied the new profile's five resource ids from `FS:0x11F4+AX*10`.
+2. `gs:0x27E0` is CLEAR afterwards. That flag gates `vm_run_wrapper` (`0x55A4`),
+   which IS the VM's per-frame execution, so the new profile's script never runs.
+   Its ONLY setter in the whole binary is `0x0FC3`, inside the one-shot GAME-START
+   sequence (`[0x2793]=1`, `[0x27D9]=1`, back-buffer init …) — NOT the
+   profile-switch path, which clears VM globals.
+
+TESTED and NEGATIVE: re-setting `[0x27E0]=1` by hand after the jump
+(`PROFILEJUMP_RUNGATE=1`) does NOT revive the profile — `gs:0x67AC` stays 0 across
+five console rows and 60M further steps, and `rec_103A` stays `0x0000`. So the
+run-gate is necessary-looking but not sufficient; more of the game-start init
+around `0x0FC3` (resource resolution `0x55D9`, display/back-buffer setup, the
+`0x2793`/`0x27D9` flags) is required before a switched profile executes.
+
+Better approach: stop poking individual flags. Either (a) trace what the REAL game
+does between `0x53A0` and the first executed opcode of the new profile — there must
+be a re-entry that re-establishes the run state — or (b) reach SCRIPT5 the way the
+game does, by story progression, which needs destination granting (itself blocked;
+see the GRANTWALK entry).
