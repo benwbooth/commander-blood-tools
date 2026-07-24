@@ -725,3 +725,4 @@ DS:0x24F3,dialogue_scene_flags,bit3=travel-pending (set only by 0x5C64 imm 9)
 0x77A0,pending_slot_c4_writer,writes 0xC4 into the pending slot (block+0x30) — undecoded context
 0x9FE4,croolis_var_lists,zero-terminated lists of SCRIPT3 record offsets (vbio/secret groups); walker reached via pointer structure (base ds:0x6CF4 unreferenced directly)
 0xA58C,scrut_var_lists,identical variable-list table in scrut.xdb (shared overlay template)
+0x146C,croolis_method_motion,shared object method (3 objects): keyframe/path integrator (cs:[bp+0xDBB] -> pos [si+0x4E/0x50/0x54]); NOT the variable writer
