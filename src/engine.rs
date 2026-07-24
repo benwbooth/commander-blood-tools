@@ -1801,7 +1801,11 @@ impl EngineState {
         for (i, label) in labels.iter().take(rows).enumerate() {
             let color = if selected == Some(i) { TEXT_SELECTED } else { TEXT };
             let width = crate::font::square_caps_text_width(label);
-            let lx = Self::CHOICE_BOX_CENTER_X.saturating_sub(width / 2);
+            // Labels center on the BOX ANCHOR, not a fixed 100 (0x857D sub bx,[bp] /
+            // 0x8580 shr / 0x8582 add: label_x = x0+10+(widest-width)/2 = anchor-w/2).
+            // For the world/entity list (kind 10) the anchor is 80 (0xB0D1); centering
+            // on 100 drew those labels 20px right of their own box.
+            let lx = anchor.saturating_sub(width / 2);
             crate::font::draw_square_caps(
                 &mut self.framebuffer,
                 ENGINE_SCREEN_WIDTH,

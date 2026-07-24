@@ -202,10 +202,20 @@ impl HandMesh {
                     rows[r * 3 + c] = acc >> 15;
                 }
             }
-            let t = if at == WRIST {
-                read_t(at)
-            } else {
-                let l = [self.st32(at + 0x42), self.st32(at + 0x46), self.st32(at + 0x4A)];
+            // T recomputed EVERY frame for ALL nodes incl. the wrist (0x270 runs
+            // node0 too): L is read as the SIGN-EXTENDED 16-bit low word (movsx16
+            // @0x041a/0x041f/0x0424), NOT a full 32-bit dword. The old code read L
+            // via st32 and had to freeze the wrist's T to a stored constant because
+            // its authored Lx/Ly have nonzero high words; st16 gives the right low
+            // words (8/-27/125 at rest -> the same stored T) AND tracks the pose
+            // tweens (seq 5/13/16 push wrist Lz -> a ~20% depth reach/recoil the
+            // frozen-T port dropped).
+            let t = {
+                let l = [
+                    self.st16(at + 0x42) as i64,
+                    self.st16(at + 0x46) as i64,
+                    self.st16(at + 0x4A) as i64,
+                ];
                 let mut t = [0i64; 3];
                 for r in 0..3 {
                     t[r] = prow[r * 3] * l[0] + prow[r * 3 + 1] * l[1] + prow[r * 3 + 2] * l[2]
