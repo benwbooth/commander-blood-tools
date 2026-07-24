@@ -148,7 +148,14 @@ warning emits @2DF5 after the TV-commercial presentation drains) — with the
 0xAB POKE corrected to the COD self-modify the engine performs (0x684C).
 **THE STORY PLAYS TO FIN.HNM IN THE PORT (b499bde)**: the single directed
 test spans all five scripts, four profile handoffs, and the Bigbang-concert
-ending — every beat from shipped bytes, hard-asserted. VmDrive ADOPTION DISPOSITION: main.rs's script_vm wiring is what VmDrive was
+ending — every beat from shipped bytes, hard-asserted. SCORING-PASS CALIBRATION ROOT CAUSE (recorded): the oracle resumes a frozen
+savestate (script2.state) while the port loads fresh SCRIPT2 + exported
+records — different start states. The fix is a shared fresh start (boot the
+oracle to the hub, or reconstruct the port from the full machine state, not
+just records); the dumprecords bridge is records-only. This is a lane-harness
+calibration, not a VM-fidelity gap — the VM plays the beats identically once
+started identically (the interception/wake/departure tests prove it).
+VmDrive ADOPTION DISPOSITION: main.rs's script_vm wiring is what VmDrive was
 EXTRACTED from — the policies are identical by construction (vm_collect = the
 frame loop; the concept-click path = dispatch_concept; the idle promotion =
 frame_idle). Full adoption (24 borrow sites) is DEDUPLICATION HYGIENE with no
