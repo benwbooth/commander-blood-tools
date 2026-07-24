@@ -4009,12 +4009,19 @@ impl VmMachine {
             0xA6 => {
                 let start = self.pc - 1;
                 match decode_text(&self.cod, start, self.cod.len()) {
-                    Some((VmToken::Text { offset, flags_b4, flags_b5, loop_target, .. }, next)) => {
+                    Some((VmToken::Text { offset, flags_b4, flags_b5, loop_target, ref word_offsets, .. }, next)) => {
+                        let has_menu = word_offsets.contains(&0xFFFF);
                         let mut played = false;
                         if text_flags_are_active(flags_b5) {
                             let gate_open = flags_b4 & 0x02 == 0 || self.rand(5) == 0;
                             if gate_open {
                                 played = true;
+                                // A menu line (0xFFFF-separated concept words)
+                                // WAITS for the player: the frame yields here
+                                // and the concept click re-enters the stream.
+                                if has_menu {
+                                    self.yielded = true;
+                                }
                                 // Post-yield continuation ([0x6764]/[0x6778]): if
                                 // the frame ends at this line (voice yield), the
                                 // next frame resumes AFTER it — the one-shot
@@ -4994,6 +5001,70 @@ mod tests {
             offsets.iter().any(|&o| (0x2F97..0x3070).contains(&o)),
             "departure radio emits (got {offsets:x?})"
         );
+    }
+
+    /// THE WAKE CHAIN: Scruter Jo's presenter (1860) plays the scan intro, the
+    /// identity-code quiz ("robyx code ulikan 69 exxos electret 666 9"), and —
+    /// with the right answer (concept "exxos", DIC 0x171) — the MASTER
+    /// acknowledgment, then the teleport choice (concept "teleport", 0x2A8)
+    /// sends him to the cryobox and sets rec_0722 = 65535 (@02AA), the flag the
+    /// customs guards and Bob's cryobox blocks read. Every beat from shipped
+    /// bytes.
+    #[test]
+    fn script2_scruter_quiz_and_teleport_chain() {
+        let Some(iso) = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter()
+            .find(|d| std::path::Path::new(d).join("SCRIPT2.COD").is_file())
+        else {
+            eprintln!("skipping: extracted SCRIPT2 files not available");
+            return;
+        };
+        let cod = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.COD")).unwrap();
+        let var = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.VAR")).unwrap();
+        let mut m = VmMachine::new();
+        m.load_cod(&cod);
+        m.load_var(&var);
+        m.flag_252a = true;
+        m.start_actor_presentation(1860, 40);
+        m.satisfy_opening_location_guards();
+
+        let mut offsets: Vec<usize> = Vec::new();
+        let mut answered = false;
+        let mut chose_teleport = false;
+        for _ in 0..200 {
+            for ev in m.run_frame() {
+                if let VmEvent::Text { offset } = ev {
+                    offsets.push(offset);
+                }
+            }
+            // The frontend's concept dispatch: set the concept and re-enter
+            // from the stream top (the click path's record scan) so the A3
+            // guard blocks evaluate it — the resume anchor yields to the click.
+            if !answered && offsets.iter().any(|&o| o == 0x0104) {
+                m.concept = 0x171; // "exxos"
+                m.resume_pos = None;
+                answered = true;
+            }
+            if !chose_teleport && offsets.iter().any(|&o| o == 0x0261) {
+                m.concept = 0x2A8; // "teleport"
+                m.resume_pos = None;
+                chose_teleport = true;
+            }
+            if m.rec_read(0x0722) == 65535 {
+                break;
+            }
+        }
+        assert!(answered, "the identity-code quiz menu appeared");
+        assert!(
+            offsets.iter().any(|&o| (0x0131..0x01BE).contains(&o)),
+            "the EXXOS acknowledgment plays (got {offsets:x?})"
+        );
+        assert!(chose_teleport, "the teleport choice appeared");
+        assert!(
+            offsets.iter().any(|&o| (0x0298..0x02B3).contains(&o)),
+            "the TELEPORT beat plays (got {offsets:x?})"
+        );
+        assert_eq!(m.rec_read(0x0722), 65535, "Scruter Jo is aboard (rec_0722)");
     }
 
     /// ROUTE (B), THE FLEE: after the FINAL WARNING, the travel arrival write
