@@ -97,13 +97,17 @@ fn main() {
                         }
                     }
                 }
-                // The orb / red-button click answers a RINGING queued call (the
-                // interception): take it via the active idle policy. Any click
-                // not on a row/box/cancel is the player's "answer/advance".
+                // A click that hits neither a concept box NOR a console row is
+                // the ORB / red-button — the phone-answer gesture. ONLY that
+                // promotes a ringing queued call (the interception); a row
+                // click engages the row, it does NOT answer the phone (the old
+                // logic promoted on every non-box click, so row scenarios
+                // spuriously played the interception — a dual-run divergence).
+                let hits_row = !e.hub_presentation && e.bridge_press(mx, my).is_some();
                 let mut answered = false;
-                if !handled {
+                if !handled && !hits_row && !e.hub_cancel_click(mx, my) {
                     if let Some(d) = drive.as_mut() {
-                        if d.call_ringing() || !d.m.presentation_busy {
+                        if d.call_ringing() {
                             for _ in 0..8 {
                                 transcript.extend(d.frame_idle());
                             }

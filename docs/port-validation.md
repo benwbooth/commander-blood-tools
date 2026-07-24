@@ -366,7 +366,7 @@ checks. Exits non-zero on any stage failure (CI gate). Run: `cargo run --bin pla
 
 ## Active fix queue (from the matrix, user-reported first)
 1. [x] Host crosshair removed; hand = the only cursor, all screens (this pass).
-2. [x] Hand hotspot: oracle frames confirm fingertip = mouse position (arm extends down-left); the BRIDGEPROBE-derived atlas anchors encode this. Pose model (nearest-capture) remains APPROX vs the real 3D render.
+2. [x] Hand hotspot: oracle frames confirm fingertip = mouse position (arm extends down-left); the BRIDGEPROBE-derived atlas anchors encode this. Pose model UPGRADED (no longer nearest-capture): src/manu3_hand.rs renders the REAL 3D hand mesh (matrix×vector compose about the manu3 projection) driven by the game's OWN pose sequences (PosePlayer, decoded selector semantics) tweening the skeleton cells by original DS offset (node angles +0x4E/50/52, wrist T) exactly as the tween engine pokes them — the capture-sprite stopgap is REPLACED. No open pose APPROX.
 3. [x] OPTION truth SETTLED via savestate resume-probe (RESUMEPROBE, ring-space mouse-x): the
    choice box with CANCEL; pyramid screen unrouted. The earlier "blocked" analysis was wrong on
    two counts (the savestate existed; the mouse-x model). TELEPHONE/CRYOBOX probed: both open
