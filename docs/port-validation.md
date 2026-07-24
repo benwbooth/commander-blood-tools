@@ -714,3 +714,31 @@ check reachability — a ledger row should not count as "verified" for gameplay
 purposes unless the function is actually reached in play. The single highest-value
 accuracy task in the port is therefore not another audit row: it is WIRING the
 ship-3D navigation spine into the engine's frame loop.
+
+### Refinement (same day): dormant ship-3D functions classified
+
+After wiring the transition/depth pair the count is 19, and they are NOT all
+equivalent — classified so the remaining work is not overstated:
+
+**SUPERSEDED (1)** — a wired variant already exists, so the dormant one is an
+older/alternate form and needs no wiring:
+- `render_star_map_navview` (wired siblings: `render_star_map_navview_projected`,
+  `render_star_map_navview_panned`)
+
+**GENUINELY UNWIRED (18)** — no engine analogue at all; these are missing
+behaviour, not duplicates:
+`run_ship_3d_navigation_sequence_update`, `run_ship_3d_procedural_update`,
+`update_ship_3d_nav_choice_dispatch`, `run_ship_3d_nav_choice_handler_0..4`,
+`run_ship_3d_navigation_trigger_prelude`, `run_ship_3d_navigation_final_reset`,
+`run_ship_3d_temp_snd_setup`, `build_ship_3d_navigation_source_records`,
+`select_ship_3d_target_record`, `hit_test_ship_3d_target_list`,
+`step_ship_3d_interpolation_gate`, `copy_ship_3d_plane_bands`,
+`commit_ship_3d_sprite_slot_dirty_geometry`, `commit_ship_3d_global_clip_snapshot`
+
+WIRED so far (2): `update_ship_3d_transition_state` + `step_ship_3d_depth_scroll`,
+now driven per frame by `EngineState::step_ship_3d_nav_state`.
+
+Note `gs:0x252A` (`0xD0`'s gate, still forced true at VM construction) is written
+by `run_ship_3d_navigation_sequence_update` — so wiring that one function also
+retires a long-standing VM-flag approximation. The dormant list and the open
+audit items are the same problem viewed from two directions.
