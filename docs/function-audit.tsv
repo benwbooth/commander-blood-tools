@@ -512,7 +512,7 @@ Ship3dNavigationTriggerState	src/ship3d.rs	740	struct		UNVERIFIED
 default	src/ship3d.rs	759	fn		UNVERIFIED	
 Ship3dNavigationTriggerEffect	src/ship3d.rs	781	struct		UNVERIFIED	
 update_ship_3d_transition_state	src/ship3d.rs	800	fn		UNVERIFIED	
-step_ship_3d_depth_scroll	src/ship3d.rs	820	fn		UNVERIFIED	
+step_ship_3d_depth_scroll	src/ship3d.rs	820	fn		ASM	|| AUDIT 2026-07-24: 0xB75C verified line-by-line: open path clamps with SIGNED `jl` at 0xB774 to 0x41; both paths do AL-ONLY arithmetic (add al / sub al) leaving AH intact; close path uses `jns` on the AL result and zeroes the WHOLE word (xor ax,ax) on underflow. Port matches exactly incl. SHIP_3D_MAX_DEPTH_OFFSET=0x41
 copy_ship_3d_plane_bands	src/ship3d.rs	853	fn		UNVERIFIED	
 step_ship_3d_interpolation_gate	src/ship3d.rs	895	fn		UNVERIFIED	
 layout_ship_3d_target_list	src/ship3d.rs	919	fn		UNVERIFIED	
@@ -572,7 +572,7 @@ select_ship_3d_target_record	src/ship3d.rs	3064	fn		UNVERIFIED
 ship_3d_plane_band_byte_count	src/ship3d.rs	3132	fn		UNVERIFIED	
 ship_3d_scroll_value	src/ship3d.rs	3137	fn		UNVERIFIED	
 start_closing_transition	src/ship3d.rs	3147	fn		UNVERIFIED	
-add_to_low_byte	src/ship3d.rs	3153	fn		UNVERIFIED	
+add_to_low_byte	src/ship3d.rs	3153	fn		ASM	|| AUDIT 2026-07-24: models the handlers AL-only add (0xB76D `add al,[0x2531]`) preserving the high byte
 circular_delta	src/ship3d.rs	3157	fn		UNVERIFIED	
 wrap_ring_once	src/ship3d.rs	3171	fn		UNVERIFIED	
 matrix_pair_for_angle	src/ship3d.rs	3181	fn		UNVERIFIED	
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	   
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	    
