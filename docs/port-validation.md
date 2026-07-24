@@ -480,7 +480,38 @@ oracle-verification pending), not an oracle-derived constant. The port PLAYS the
 whole game correctly; the open item is verification-tooling depth, not a port
 behavior gap.
 
-## rec_103A / rec_13C2 writer — DEFERRED-RECORD mechanism decoded, but the deferred-drain hypothesis for rec_103A is REFUTED by field arithmetic (self-correction)
+## rec_103A / rec_13C2 writer — EXHAUSTIVE static refutation; the SET is a runtime-computed native write (needs runtime observation)
+
+**FINAL DISPOSITION for this item.** After a full static investigation, EVERY
+concrete writer hypothesis has been refuted by direct checking — so rec_103A's set
+to a plot-identity has NO static-decodable signature and requires runtime
+observation (the oracle, blocked interactively) to pin. The five refuted hypotheses:
+1. A SCRIPT5 bytecode opcode — NO. All 0x103A occurrences in SCRIPT5.COD are
+   `AF`-prefixed 0x6946-family GUARD reads; no literal/6946-write, no OP_C1/CD.
+2. The 0x5816 deferred-record drain — NO. It lands on arche+0x1C/+0x1E (field
+   arithmetic), not arche+0x16 (= rec_103A).
+3. A field-matrix selector write — NO. No selector maps to offset 0x16 for arche's
+   kind (kind-1 offsets: 0x02/0x04/0x06/0x08/0x10/0x20).
+4. A direct `mov [reg+0x16]` store — NO. The only two such sites in BLOODPRG write
+   32-byte ENTITY records (entity_object_table @0x6212, "+0x14/+0x16 init backups"),
+   not the arche object; the sole write to arche+0x16 is the CLEAR-to-0 @0x6b44.
+5. A B8-family pair-write at 0x1038 (so second word = 0x103A) — NO. SCRIPT5 has no
+   B8/B9/BD opcode targeting 0x1038.
+So the set is native, runtime-computed, from state (which object is active + its
+record layout) that static analysis cannot pin. This CORRECTS the intervening
+"deferred-record port-side wiring, not blocked" framing: that was a hopeful detour,
+refuted by (2). WHAT IS DECODED and durable: 4024 = the "Bigbang" plot object;
+rec_103A = arche+0x16 = a VM-maintained "current plot object" field that the 0xB8
+handler CLEARS via the 0x6034 lookup match. The honest state matches rec_13C2:
+assembly-derived model of the OUTCOME (the port plays correctly via the documented
+all-visited fallback), with the exact engine SET-instruction pending runtime
+verification — a legitimate prime-rule state (assembly-sourced, oracle-verification
+tooling-blocked), NOT an incremental static gap. Reaching it needs the interactive
+oracle (decode BLOODPRG's nav/examination input handlers) or a runtime record-directory
+snapshot at the concert — the same tooling frontier documented for rec_13C2 and the
+credit divergence.
+
+--- (historical trail, superseded by the disposition above) ---
 
 **CORRECTION (supersedes this section's earlier "deferred-drain writes rec_103A"
 claim).** DEB decode + field-offset arithmetic falsified the clean hypothesis, and
