@@ -57,7 +57,7 @@ fn resolve_runtime_backgrounds(
     let mut object_names: HashMap<u16, String> = HashMap::new();
     for record in deb.chunks_exact(20) {
         let name_len = record[..16].iter().position(|&b| b == 0).unwrap_or(16);
-        let name = String::from_utf8_lossy(&record[..name_len]).to_string();
+        let name = commander_blood_tools::font::cp437_string(&record[..name_len]);
         let offset = u16::from_le_bytes([record[16], record[17]]);
         let kind = u16::from_le_bytes([record[18], record[19]]);
         if kind == 1 {
@@ -1516,7 +1516,7 @@ fn parse_deb_object_names(deb: &[u8]) -> HashMap<u16, String> {
     let mut object_names = HashMap::new();
     for record in deb.chunks_exact(20) {
         let name_len = record[..16].iter().position(|&b| b == 0).unwrap_or(16);
-        let name = String::from_utf8_lossy(&record[..name_len]).to_string();
+        let name = commander_blood_tools::font::cp437_string(&record[..name_len]);
         let offset = u16::from_le_bytes([record[16], record[17]]);
         let kind = u16::from_le_bytes([record[18], record[19]]);
         if kind == 1 {
@@ -1541,9 +1541,9 @@ fn vm_execution_context_from_deb(
         if name_len == 0 {
             continue;
         }
-        let name = String::from_utf8_lossy(&record[..name_len]);
+        let name = commander_blood_tools::font::cp437_string(&record[..name_len]);
         let offset = u16::from_le_bytes([record[16], record[17]]);
-        context = context.with_vm_named_object(name.as_ref(), offset);
+        context = context.with_vm_named_object(name.as_str(), offset);
     }
     context
 }
@@ -2458,7 +2458,7 @@ pub(super) fn parse_script_symbols(
 
     for record in deb.chunks_exact(20) {
         let name_len = record[..16].iter().position(|&b| b == 0).unwrap_or(16);
-        let name = String::from_utf8_lossy(&record[..name_len]).to_string();
+        let name = commander_blood_tools::font::cp437_string(&record[..name_len]);
         let offset = u16::from_le_bytes([record[16], record[17]]);
         let kind = u16::from_le_bytes([record[18], record[19]]);
         match kind {
@@ -4081,7 +4081,7 @@ pub(super) fn parse_script_dictionary(path: &Path) -> Result<HashMap<u16, String
         if pos > start {
             words.insert(
                 start as u16,
-                String::from_utf8_lossy(&data[start..pos]).to_string(),
+                commander_blood_tools::font::cp437_string(&data[start..pos]),
             );
         }
         pos += 1;

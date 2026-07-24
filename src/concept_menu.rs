@@ -38,7 +38,9 @@ fn parse_dic(dic: &[u8]) -> HashMap<u16, String> {
             pos += 1;
         }
         if pos > start {
-            words.insert(start as u16, String::from_utf8_lossy(&dic[start..pos]).into_owned());
+            // CP437, not UTF-8 — see font::cp437_string. SCRIPT3.DIC's `glycérium`
+            // is a DISPLAYED word whose 0x82 is an invalid UTF-8 lead byte.
+            words.insert(start as u16, crate::font::cp437_string(&dic[start..pos]));
         }
         pos += 1;
     }

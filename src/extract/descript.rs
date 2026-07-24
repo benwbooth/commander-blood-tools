@@ -329,7 +329,7 @@ pub(super) fn parse_descript(path: &Path) -> Result<DescriptDb, Box<dyn Error>> 
             .iter()
             .position(|&b| b == 0)
             .unwrap_or(16);
-        let name = String::from_utf8_lossy(&data[table_pos..table_pos + name_len]).to_string();
+        let name = commander_blood_tools::font::cp437_string(&data[table_pos..table_pos + name_len]);
         let ptr = u16::from_le_bytes([data[table_pos + 16], data[table_pos + 17]]) as usize;
         if ptr == 0 || ptr + 2 > data.len() {
             continue;
@@ -437,7 +437,7 @@ pub(super) fn read_des_cstr(data: &[u8], pos: &mut usize, end: usize) -> String 
     while *pos < end && data[*pos] != 0 {
         *pos += 1;
     }
-    let text = String::from_utf8_lossy(&data[start..*pos])
+    let text = commander_blood_tools::font::cp437_string(&data[start..*pos])
         .replace('\r', "\n")
         .trim_end()
         .to_string();
@@ -460,7 +460,7 @@ pub(super) fn read_des_media(data: &[u8], pos: &mut usize, end: usize, ext: &str
         i += 1;
     }
     *pos = media_end;
-    String::from_utf8_lossy(&data[start..media_end]).to_string()
+    commander_blood_tools::font::cp437_string(&data[start..media_end])
 }
 
 pub(super) fn is_des_opcode(byte: u8) -> bool {

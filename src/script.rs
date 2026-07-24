@@ -102,7 +102,7 @@ pub fn parse_deb(data: &[u8]) -> Vec<DebSymbol> {
                 return None;
             }
             Some(DebSymbol {
-                name: String::from_utf8_lossy(&record[..name_len]).to_string(),
+                name: crate::font::cp437_string(&record[..name_len]),
                 offset: u16::from_le_bytes([record[16], record[17]]),
                 kind: u16::from_le_bytes([record[18], record[19]]),
             })
@@ -121,7 +121,7 @@ pub fn parse_dictionary(data: &[u8]) -> HashMap<u16, String> {
         if pos > start {
             words.insert(
                 start as u16,
-                String::from_utf8_lossy(&data[start..pos]).to_string(),
+                crate::font::cp437_string(&data[start..pos]),
             );
         }
         pos += 1;

@@ -520,3 +520,39 @@ is pinned and any future truncation fails immediately.
 
 This also corrects my own earlier campaign entry, which recorded the subtitle font as
 verified byte-for-byte at "128 + 86 + 688 bytes". The 128 was wrong; it is 176.
+
+## FIXED #44 — the CP437 decode bug was duplicated across 14 more sites
+
+Fix #43 corrected the DIC/DEB decoders in `engine.rs`. The same parsers are
+DUPLICATED elsewhere, carrying the identical bug:
+
+- `concept_menu.rs` and `bas_vm.rs` — each re-parse the dictionary, and both feed
+  DISPLAYED menu text. `glycérium` was corrupted on these paths too.
+- `script.rs`, `extract/script.rs` (5 sites) — DEB symbol names.
+- `descript.rs::decode_text`, `extract/descript.rs` (3 sites) — DESCRIPT text.
+
+All now use `font::cp437_string`. The DESCRIPT ones are a NO-OP on shipped data
+(measured: 1227 text runs in DESCRIPT.DES, none with high bytes) and are changed for
+consistency, not because they were producing wrong output — recorded that way rather
+than claimed as fixes.
+
+DELIBERATELY NOT CHANGED: ffmpeg stderr in `extract/hnm.rs` and `extract/character.rs`,
+and the debug needles in `bin/blood.rs`. Those are genuinely UTF-8 tool output, not
+game data; converting them would be cargo-culting the fix.
+
+### A measurement that was wrong twice before it was right
+
+Checking whether COD inline strings (subtitle text) contain accents, the first scan
+reported **94 of 130** strings with high bytes — which would have made this a much
+bigger finding. It was an extraction artifact: the regex began runs at a preceding
+BYTECODE byte that happened to fall in 0x80..0xAF, producing "strings" like
+`¿aarche10.hnm` where `0xA8` is the opcode before the `aarche10.hnm` operand.
+
+Bounding runs by NUL on both sides did NOT fix it (93/93) — the opcode sits directly
+after the previous string's terminator. Only requiring an ASCII first byte and
+counting INTERIOR high bytes gave the real answer: **0 of 5**. COD strings contain no
+accents at all.
+
+Worth keeping because the wrong number was the plausible one: a French-developed game
+"obviously" has accented dialogue, and 94/130 confirmed the expectation. The correct
+answer was zero.

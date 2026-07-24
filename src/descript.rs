@@ -395,7 +395,10 @@ impl DescriptDb {
 }
 
 fn decode_text(bytes: &[u8]) -> String {
-    String::from_utf8_lossy(bytes)
+    // CP437 like every other game string. This is a NO-OP on the shipped
+    // DESCRIPT.DES (measured: 1227 text runs, none with high bytes), but it removes
+    // the latent bug class rather than leaving one decoder inconsistent with the rest.
+    crate::font::cp437_string(bytes)
         .replace('\r', "\n")
         .trim_end()
         .to_string()

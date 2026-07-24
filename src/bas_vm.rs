@@ -129,7 +129,8 @@ fn parse_dic_words(dic: &[u8]) -> std::collections::HashMap<u16, String> {
             p += 1;
         }
         if p > s {
-            w.insert(s as u16, String::from_utf8_lossy(&dic[s..p]).into_owned());
+            // CP437, not UTF-8 — see font::cp437_string.
+            w.insert(s as u16, crate::font::cp437_string(&dic[s..p]));
         }
         p += 1;
     }
