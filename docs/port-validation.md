@@ -480,7 +480,7 @@ oracle-verification pending), not an oracle-derived constant. The port PLAYS the
 whole game correctly; the open item is verification-tooling depth, not a port
 behavior gap.
 
-## rec_103A joins rec_13C2 as the same class — WRITER FAMILY LOCALIZED (static, prime-rule)
+## rec_103A / rec_13C2 writer DECODED — a DEFERRED-RECORD write; port-side wiring gap (NOT infrastructure-blocked)
 
 SCRIPT5's Bigbang-concert ending is gated on `rec_103A==4024` (the concert FSM's
 every edge — see the progression FSM row). rec_103A is now proven the SAME class
@@ -498,15 +498,30 @@ as rec_13C2 by THREE independent static/data methods, no oracle involved:
    in BLOODPRG.EXE; likewise rec_13C2's 0x13C2 (`C2 13`). The tool is sound (the
    record-table base 0x6724 is found at image 0xB269). So BOTH records are written
    only through COMPUTED addressing (record-base register + field offset).
-WRITER FAMILY: the computed record-maintenance scans — the post-VM presentation
-scan **0x5816** (`vm_post_exec_record_update`) walks the 0x672c directory and
-writes records via pointer arithmetic (`ds:[bp]`, `[eax+esi]`, `si=[di+0x10]`,
-`bp=si+vm_field_offset(0x13)`), exactly the computed form that leaves no immediate
-signature. Pinning the precise store that sets rec_103A=4024 / rec_13C2=40 requires
-either the runtime record-directory contents (oracle, blocked past SCRIPT3) or a
-full decompile of the 0x5816 maintenance family's field semantics — both
-multi-session, neither incremental, neither a port-fidelity gap. This is the ONE
-root the all-visited ending fallback stands in for.
+WRITER MECHANISM — DECODED, and it is NOT infrastructure-blocked (corrects the
+earlier "needs oracle / full decompile" framing). The post-VM scan **0x5816**
+(`vm_post_exec_record_update`) DRAINS a DEFERRED RECORD (gs:0x6768 type / 0x676a
+related / 0x676c aux) and writes `{type, related, aux}` into the active record's
+field-0x13 (`bp = active_record + vm_field_offset(0x13, kind)` @0x5a33) — or the
+arche object's field (gs:0x6752) for the C1/C6 case @0x5a20. The deferred record is
+SET not by a core VM opcode but by the INTERACTIVE HANDLERS, all decodable static
+code: e.g. `nav_choice_handler_3` @0x8848 does `[0x676a] = [0x6756]` (deferred
+related = the *menu* object's record-IDENTITY) and `[0x6768] = 0xC3`; more setters
+at 0x87BD/0x7EF0/0x7FF1/0x8242 (nav/console/dialogue). So a record's guarded value
+(a record-identity like 4024) is produced by an interactive choice → deferred
+{type, related=identity} → post-exec scan writes it into the record. THE PORT-SIDE
+GAP: the port DRAINS the deferred record (`post_update_deferred_record_write`) but
+has NO live SETTER — the only writes to the deferred slots are the drain-to-0
+(vm.rs:1919-1921) and test fixtures (7490-7530). The port routes nav/console/dialogue
+interactions through its own engine layer (VmDrive engage/concept), which never sets
+the VM deferred-record slots the way 0x8848 et al. do. So the post-exec drain never
+fires in live play and reference records (rec_103A, and likely rec_13C2 via the
+examination handler) never receive their identities. THIS IS A DECODABLE PORT-SIDE
+WIRING TASK, not an oracle/infrastructure block: wire the port's interaction handlers
+to set gs:0x6768/0x676a (matching 0x8848/0x87BD/0x7EF0…), then the existing drain
+produces the writes. Remaining to pin per-record: which specific handler the concert
+(Migrator) and examination interactions invoke, and the exact related identity each
+sets. The all-visited ending fallback stands in until this wiring lands.
 
 ## DUAL-RUN ROW ACCURACY (fixed, commit c8ebe23)
 
