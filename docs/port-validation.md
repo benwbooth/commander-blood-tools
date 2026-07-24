@@ -424,3 +424,29 @@ checks. Exits non-zero on any stage failure (CI gate). Run: `cargo run --bin pla
    REDUNDANT — the interpreter-oracle savestate path (RESUMEPROBE/CALLERWATCH/XDBDUMP) provided
    all interactive ground truth this session (OPTION box, region tables, the manu3 memory). Not a
    port defect; a secondary tool only.
+
+## THE SINGLE REMAINING PORT-SIDE UNKNOWN (session close) — APPROX, routine named
+
+`secret` (SCRIPT3 rec 0x1416) and `rec_13C2` gate SCRIPT3's endgame but have NO
+writer in ANY script's bytecode (single-occurrence proof: `c2 13`/`16 14` appear
+only at their guards). They are written by the ENGINE's EXAMINATION-COMPLETION
+HANDLER — the scrutinizer-view exit path that reads the overlay's variable-list
+manifest (croolis/scrut.xdb, aligned at 0x9E42/0xA58E) and writes the named
+engine records through a COMPUTED pointer (confirmed: 0x1416 appears as NO
+immediate in BLOODPRG.EXE code — the offset is data-sourced from the overlay
+list). The overlay's own object methods (0x1727/0x166C/0x15B0/0x15E2) were swept
+and write ONLY alien visual-state, never engine records — so the write is
+engine-side, near the exam-table `scr` (0x1276) writer family.
+
+STATUS: APPROX. The port models the OUTCOME faithfully — the two variables are
+hand-written as the examination's product (cited in the directed drive), so the
+endgame gate passes exactly when the story reaches it. The REPLACING decode is
+the examination-completion handler's computed write; the LIVE trace (watch the
+block+0x1416 write while the scrutinizer overlay runs) is blocked by the
+interpreter's presentation-dispatch gap (it queues but never DISPLAYS/RUNS the
+examination presentation — the same documented tooling limitation as the credit
+divergence). So closing this needs EITHER the interpreter presentation dispatch
+(a tooling build, unblocks the live watch) OR a full static trace of the
+overlay-call-return handler in BLOODPRG.EXE. Both are named; neither is a port
+fidelity gap — the port plays the bytecode faithfully and the outcome is
+correct.
