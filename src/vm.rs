@@ -5318,6 +5318,31 @@ mod tests {
             m.pending_profile, 2,
             "RUN PROFILE fires — the SCRIPT2 -> SCRIPT3 handoff"
         );
+
+        // ACT TWO OPENS: perform the D2 switch (load SCRIPT3's COD + VAR — the
+        // loader's clean-reload model; each script's opening init block writes
+        // its own world) and let the self-disabling init run: the world
+        // relocates (rec_0722 = 4070 @0073), the character slots bind their
+        // DESCRIPT names (slot 4 = "venus" @00A4), and vbio arrives at 3.
+        let cod3 = std::fs::read(std::path::Path::new(iso).join("SCRIPT3.COD")).unwrap();
+        let var3 = std::fs::read(std::path::Path::new(iso).join("SCRIPT3.VAR")).unwrap();
+        m.load_cod(&cod3);
+        m.load_var(&var3);
+        m.pending_profile = -1;
+        m.active_actor = None;
+        m.presentation_busy = false;
+        m.resume_pos = None;
+        for _ in 0..5 {
+            let _ = m.run_frame();
+        }
+        assert_eq!(m.rec_read(0x0722), 4070, "SCRIPT3's init relocates the world");
+        // Named variables are PER-SCRIPT (each DEB carries its own table):
+        // SCRIPT3's vbio is record 0x13EE (the init bytes: C0 EE 13 F5 C1 03),
+        // not SCRIPT2's 0x126C — the frontend's cyber-arrival hook must
+        // resolve the name through the loaded script's DEB.
+        assert_eq!(m.rec_read(0x13EE), 3, "vbio (SCRIPT3's 0x13EE) arrives at 3");
+        let slot4: Vec<u8> = m.records16[3 * 16..3 * 16 + 6].to_vec();
+        assert_eq!(&slot4[..5], b"venus", "char slot 4 binds its DESCRIPT name");
     }
 
     /// THE WAKE CHAIN: Scruter Jo's presenter (1860) plays the scan intro, the
