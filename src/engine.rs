@@ -46,7 +46,10 @@ use crate::ship3d::{
     BloodPrng, Ship3dMatrixAngles, Ship3dProjectionOrigin, Ship3dProjectionViewport,
     render_ship_3d_starfield,
 };
-use crate::sprite::{SpriteFrameImage, blit_sprite_frame_centered, decode_sprite_bank_indices};
+use crate::sprite::{
+    SpriteFrameImage, blit_sprite_frame_at, blit_sprite_frame_centered,
+    decode_sprite_bank_indices,
+};
 use crate::vm::{LineState, VmToken, execute_trace, walk};
 use std::collections::HashMap;
 use std::path::Path;
@@ -255,6 +258,14 @@ pub struct EngineState {
     pub ship3d_nav_sequence: crate::ship3d::Ship3dNavigationSequenceState,
     /// Whether the sequence FSM raised its framebuffer-dirty request this frame.
     pub ship3d_sequence_redraw_requested: bool,
+    /// Nav-marker SPRITE SLOTS, persistent across frames so the dirty tracking in
+    /// `update_ship_3d_sprite_slot_position` is meaningful (it raises the dirty flag
+    /// only when a slot actually MOVES).
+    pub ship3d_nav_slots: Vec<crate::ship3d::Ship3dObjectSpriteDescriptor>,
+    /// The dirty-rect list the render-command collector filters against.
+    pub ship3d_dirty_rects: crate::ship3d::Ship3dDirtyRectList,
+    /// Set once the global clip snapshot has been armed for the frame.
+    pub ship3d_clip_snapshot_armed: bool,
     /// The game's own PRNG, used for the transition's `rand(20)` close gate
     /// (`0xB6D0 mov ax,0x14` -> `lcall 0x1CE:0x0B02`).
     ship3d_prng: crate::ship3d::BloodPrng,
@@ -593,6 +604,9 @@ impl EngineState {
             ship3d_target_selector: Default::default(),
             ship3d_nav_sequence: Default::default(),
             ship3d_sequence_redraw_requested: false,
+            ship3d_nav_slots: Vec::new(),
+            ship3d_dirty_rects: Default::default(),
+            ship3d_clip_snapshot_armed: false,
             ship3d_prng: crate::ship3d::BloodPrng::seeded_from_rtc_seconds(0),
             hud_grid: Vec::new(),
             hud_orb: Vec::new(),
@@ -3645,8 +3659,10 @@ impl EngineState {
     fn render_nav_pyramid_sprites(&mut self) {
         use crate::ship3d::{
             NAV_DESTINATION_POINTS, SHIP_3D_ANGLE_TABLE, SHIP_3D_OBJECT_VISIBLE_FLAG,
-            Ship3dMatrixAngles, Ship3dObjectSpriteDescriptor, Ship3dProjectionOrigin,
-            Ship3dProjectionPoint, build_ship_3d_projection_matrix,
+            SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG, Ship3dMatrixAngles, Ship3dProjectionOrigin,
+            Ship3dProjectionPoint, Ship3dProjectionViewport, build_ship_3d_projection_matrix,
+            collect_ship_3d_dirty_sprite_slot_render_commands,
+            commit_ship_3d_global_clip_snapshot, commit_ship_3d_sprite_slot_dirty_geometry,
             project_ship_3d_object_sprite,
         };
         let Some(m) = build_ship_3d_projection_matrix(
@@ -3692,72 +3708,87 @@ impl EngineState {
         // Base pyramid dimension: the biggest CARTE pyramid frame (f4, 24px wide).
         let base_w = self.nav_pyramids[4].width.max(1) as u32;
         let count = self.nav_destinations.len();
-        {
-            for idx in 0..count as i32 {
-                // Index the game's own table instead of inventing a position. The
-                // fabricated lateral fan-out and compass "pan" that used to sit here
-                // were the last APPROX quantities in this routine; both are gone.
-                // Panning now travels the same path the game uses — the projection
-                // MATRIX, built from the compass angle above (DS:0x2F6D) — rather
-                // than being faked as an offset to the world X.
-                let point = NAV_DESTINATION_POINTS
-                    [(idx as usize).min(NAV_DESTINATION_POINTS.len() - 1)];
-                // Project through the GAME'S OWN sprite projector (0x9B98), verified
-                // instruction-by-instruction, rather than the ad-hoc star-map helper.
-                // That brings three things the helper did not: the real visibility
-                // GATE (`test ax,0x80` @0x9BE1, modelled as the descriptor's
-                // SHIP_3D_OBJECT_VISIBLE_FLAG), the real dimension scaling
-                // (`dim * depth_scale >> 10`), and the real CENTRING
-                // (`shr dx,1; sub bx,dx` @0x9CDE, i.e. draw at screen - extent/2).
-                let mut slot = Ship3dObjectSpriteDescriptor {
-                    // A granted destination stands in for the entity's active bit,
-                    // which no reachable state sets (see the NAVENT probe).
-                    flags: SHIP_3D_OBJECT_VISIBLE_FLAG,
-                    source_width: base_w as u16,
-                    source_height: self.nav_pyramids[4].height.max(1) as u16,
-                    ..Default::default()
-                };
-                let anchor = Ship3dProjectionPoint {
-                    x: point[0] as u16,
-                    y: point[1] as u16,
-                    z: point[2] as u16,
-                };
-                let cam = Ship3dProjectionOrigin {
-                    x: origin[0] as u16,
-                    y: origin[1] as u16,
-                    z: origin[2] as u16,
-                };
-                let Some(proj) = project_ship_3d_object_sprite(anchor, cam, m, &mut slot) else {
-                    continue;
-                };
-                let (sx, sy) = (
-                    signed_i16_engine(proj.projected.x) as i32,
-                    signed_i16_engine(proj.projected.y) as i32,
-                );
-                if !(0..ENGINE_SCREEN_WIDTH as i32).contains(&sx)
-                    || !(0..ENGINE_SCREEN_HEIGHT as i32).contains(&sy)
-                {
-                    continue;
-                }
-                // Scaled width from the projector itself, then the closest pre-scaled
-                // CARTE frame (f0..f5).
-                let sw = (proj.scaled_width as i32).max(2);
-                let fi = (0..6)
-                    .min_by_key(|&i| (self.nav_pyramids[i].width as i32 - sw).abs())
-                    .unwrap_or(4);
-                let frame = self.nav_pyramids[fi].clone();
-                let fh = frame.height as i32;
-                blit_sprite_frame_centered(
-                    &mut self.framebuffer,
-                    ENGINE_SCREEN_WIDTH,
-                    ENGINE_SCREEN_HEIGHT,
-                    &frame,
-                    sx,
-                    sy,
-                );
-                let _ = fh;
-            }
+        let src_h = self.nav_pyramids[4].height.max(1) as u16;
+
+        // --- sprite slots -------------------------------------------------------
+        // Slots are PERSISTENT across frames on purpose: update_ship_3d_sprite_slot_position
+        // raises the dirty flag only when a slot actually MOVES, so a fresh slot every
+        // frame would make the dirty tracking meaningless.
+        self.ship3d_nav_slots.resize_with(count, Default::default);
+        for slot in self.ship3d_nav_slots.iter_mut() {
+            // ACTIVE (0x01) | VISIBLE (0x80). The collector requires ACTIVE; the
+            // projector's gate and the position updater's mask want VISIBLE.
+            slot.flags |= SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG | SHIP_3D_OBJECT_VISIBLE_FLAG;
+            slot.source_width = base_w as u16;
+            slot.source_height = src_h;
         }
+        let cam = Ship3dProjectionOrigin {
+            x: origin[0] as u16,
+            y: origin[1] as u16,
+            z: origin[2] as u16,
+        };
+        for idx in 0..count {
+            let point = NAV_DESTINATION_POINTS[idx.min(NAV_DESTINATION_POINTS.len() - 1)];
+            let anchor = Ship3dProjectionPoint {
+                x: point[0] as u16,
+                y: point[1] as u16,
+                z: point[2] as u16,
+            };
+            // The game's own projector (0x9B98), verified instruction-by-instruction:
+            // real visibility gate (test ax,0x80 @0x9BE1), real scaling
+            // (dim*depth_scale>>10) and real centring (shr dx,1; sub bx,dx @0x9CDE).
+            let _ = project_ship_3d_object_sprite(anchor, cam, m, &mut self.ship3d_nav_slots[idx]);
+        }
+
+        // --- dirty rects + render commands --------------------------------------
+        // The global clip snapshot seeds the dirty list from the view clip; the
+        // collector then emits one command per (slot, intersecting rect) pair,
+        // walking slots in REVERSE and clearing each slot's dirty flag as it goes.
+        self.ship3d_clip_snapshot_armed = true;
+        let clip = Ship3dProjectionViewport {
+            left: 0,
+            top: 0,
+            right: ENGINE_SCREEN_WIDTH as u16,
+            bottom: ENGINE_SCREEN_HEIGHT as u16,
+        };
+        commit_ship_3d_global_clip_snapshot(
+            &mut self.ship3d_dirty_rects,
+            &mut self.ship3d_clip_snapshot_armed,
+            clip,
+        );
+        for slot in self.ship3d_nav_slots.iter_mut() {
+            commit_ship_3d_sprite_slot_dirty_geometry(slot);
+        }
+        let commands = if count == 0 {
+            Vec::new()
+        } else {
+            collect_ship_3d_dirty_sprite_slot_render_commands(
+                &mut self.ship3d_nav_slots,
+                &self.ship3d_dirty_rects,
+                0,
+                count - 1,
+            )
+        };
+
+        for cmd in &commands {
+            let slot = self.ship3d_nav_slots[cmd.slot_index];
+            let sw = (slot.extent_width as i32).max(2);
+            let fi = (0..6)
+                .min_by_key(|&i| (self.nav_pyramids[i].width as i32 - sw).abs())
+                .unwrap_or(4);
+            let frame = self.nav_pyramids[fi].clone();
+            // draw_x/draw_y are already the TOP-LEFT (screen - extent/2 at 0x9CDE),
+            // so blit at that corner rather than re-centring.
+            blit_sprite_frame_at(
+                &mut self.framebuffer,
+                ENGINE_SCREEN_WIDTH,
+                ENGINE_SCREEN_HEIGHT,
+                &frame,
+                signed_i16_engine(slot.draw_x),
+                signed_i16_engine(slot.draw_y),
+            );
+        }
+
         // The eye-orb (BORXX, real art) at the view centre.
         if let Some(orb) = self.hud_orb.first().cloned() {
             blit_sprite_frame_centered(
@@ -6001,6 +6032,65 @@ mod tests {
     /// projector's VISIBILITY GATE is live: `project_ship_3d_object_sprite` returns
     /// None when the descriptor lacks SHIP_3D_OBJECT_VISIBLE_FLAG, exactly as the
     /// binary skips an entity whose flags word fails `test ax,0x80` at 0x9BE1.
+    /// The nav frame now runs the real dirty-rect chain: global clip snapshot ->
+    /// per-slot dirty geometry commit -> render-command collection. These three were
+    /// the LAST genuinely-blocked ship-3D functions (the other three "blockers" in
+    /// port-validation.md turned out to be fiction; this one was real, because the
+    /// engine had no sprite-slot model at all).
+    #[test]
+    fn nav_frame_runs_the_dirty_rect_render_command_chain() {
+        // The sprite path needs the real CARTE art (nav_pyramids >= 6); without it the
+        // engine takes the drawn fallback and there are no slots to check.
+        let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("CARTE.SPR").is_file());
+        let Some(iso) = iso else { return };
+        let carte = std::fs::read(iso.join("CARTE.SPR")).unwrap();
+        let borxx = std::fs::read(iso.join("BORXX.SPR")).unwrap_or_default();
+
+        let mut e = EngineState::new();
+        e.load_nav_sprites(&carte, &borxx);
+        if e.nav_pyramids.len() < 6 {
+            return;
+        }
+        e.set_nav_destinations(vec![
+            ("EKATOMB".into(), vec![]),
+            ("VENUSIA".into(), vec![]),
+        ]);
+        e.on_ship = true;
+        e.render_ship_view();
+
+        assert_eq!(e.ship3d_nav_slots.len(), 2, "one persistent slot per destination");
+        assert!(
+            !e.ship3d_dirty_rects.rects.is_empty(),
+            "the clip snapshot must seed the dirty-rect list"
+        );
+        for slot in &e.ship3d_nav_slots {
+            assert!(
+                slot.flags & crate::ship3d::SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG != 0,
+                "slots must carry the ACTIVE flag the collector filters on"
+            );
+            // The collector clears DIRTY on every slot it walks, so after a frame no
+            // slot may still be marked dirty.
+            assert_eq!(
+                slot.flags & crate::ship3d::SHIP_3D_SPRITE_SLOT_DIRTY_FLAG,
+                0,
+                "the collector must clear each slot's dirty flag"
+            );
+            assert!(slot.extent_width > 0, "projection must set the slot extent");
+        }
+
+        // Slots persist across frames — that is what makes dirty tracking meaningful.
+        let before = e.ship3d_nav_slots.clone();
+        e.render_ship_view();
+        assert_eq!(
+            e.ship3d_nav_slots.len(),
+            before.len(),
+            "slots are reused, not rebuilt per frame"
+        );
+    }
+
     #[test]
     fn nav_markers_go_through_the_verified_projector_and_its_visibility_gate() {
         use crate::ship3d::{

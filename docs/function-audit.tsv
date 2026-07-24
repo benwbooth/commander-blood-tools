@@ -547,9 +547,9 @@ render_ship_3d_starfield	src/ship3d.rs	2232	fn	0x200	ASM?	/// Render a complete 
 project_ship_3d_object_sprite	src/ship3d.rs	2245	fn		ASM	|| AUDIT 2026-07-24: verified against the nav-destination projector 0x9B98: visible gate `test ax,0x80` @0x9BE1; depth = dot(terms 6,7,8) >> 15 with `je` skip on zero @0x9C23 and the NEGATIVE-DEPTH BIAS `add ecx,0x10000` @0x9C29 (only when js); depth_scale = 0x8000000>>7 = 0x100000 divided UNSIGNED (`div ecx` @0x9C3D) matching the port u32; screen x/y = dot>>7 / depth + 0xA0/0x64; sprite dims scaled `shrd ax,dx,0xa` = >>10. All four constants (0x80 / 0x10000 / 0x100000 / 10) confirmed. Port adds a benign extra zero-check after the bias that the handler lacks (unreachable unless raw depth == -0x10000)
 update_ship_3d_sprite_slot_position	src/ship3d.rs	2316	fn		ASM	|| AUDIT 2026-07-24: verified against 0x420D (the sprite-slot position setter, reached as lcall 0x299:0x127D from 0x9CEF): `test al,0x81` gate = ACTIVE_MASK 0x0081; independent x/y compares against entity fields +0x08 and +0x0A, each setting the dirty bit via `or al,2` = DIRTY_FLAG 0x0002 and storing the new value; flags written back once. Also CORRECTED the labels.csv entry, which had this routine as entity_flag_set_if_field8_mismatch
 update_ship_3d_sprite_slot_extent	src/ship3d.rs	2342	fn		ASM	|| AUDIT 2026-07-24: verified against 0x42CD (lcall 0x299:0x133D from 0x9CD6): active gate `test al,0x81`; scaled==source path uses `btr ax,4` so the EXTENT-CHANGED bit (0x10) is cleared and dirty set ONLY when it had been set; otherwise `or al,0x12` sets dirty|extent-changed and stores the extent at +0xC/+0xE. Constant 0x0010 confirmed. labels.csv corrected (was entity_step_pinned)
-commit_ship_3d_sprite_slot_dirty_geometry	src/ship3d.rs	2374	fn		UNVERIFIED	
-commit_ship_3d_global_clip_snapshot	src/ship3d.rs	2395	fn		UNVERIFIED	
-collect_ship_3d_dirty_sprite_slot_render_commands	src/ship3d.rs	2417	fn		UNVERIFIED	
+commit_ship_3d_sprite_slot_dirty_geometry	src/ship3d.rs	2374	fn		ASM	|| AUDIT 2026-07-24: WIRED into the live nav frame, run per slot before command collection
+commit_ship_3d_global_clip_snapshot	src/ship3d.rs	2395	fn		ASM	|| AUDIT 2026-07-24: WIRED 2026-07-24 into the live nav frame: seeds the dirty-rect list from the view clip once armed. Previously unreachable because the engine had no sprite-slot/dirty-rect model at all
+collect_ship_3d_dirty_sprite_slot_render_commands	src/ship3d.rs	2417	fn		ASM	|| AUDIT 2026-07-24: WIRED into the live nav frame. Walks slots in REVERSE, requires SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG, emits one command per intersecting dirty rect and CLEARS each slot dirty flag -- all four behaviours pinned by nav_frame_runs_the_dirty_rect_render_command_chain
 run_ship_3d_temp_snd_setup	src/ship3d.rs	2462	fn		INFRA?	
 run_ship_3d_navigation_final_reset	src/ship3d.rs	2508	fn		INFRA?	
 Ship3dCameraApproach	src/ship3d.rs	2583	struct		UNVERIFIED	
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                                
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                                 
