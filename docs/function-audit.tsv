@@ -177,8 +177,8 @@ render_tv	src/engine.rs	956	fn		DATA?	/// Render the comms/TV screen: play the c
 tv_channel_count	src/engine.rs	1042	fn		UNVERIFIED	/// Number of loaded TV channels.
 switch_tv_channel	src/engine.rs	1051	fn		UNVERIFIED	/// Switch the TV channel by `delta` (wrapping), restarting the broadcast.
 load_bridge	src/engine.rs	1067	fn		UNVERIFIED	/// Load the real ship bridge: the `TB.BIG` 360° panorama archive (the whole /// bridge as 180 pre-rendered frames — see [`crate::tbbig`]). `iso` is the CD /// root directory. Without it the bridge ca
-console_box_click	src/engine.rs	1102	fn		UNVERIFIED	/// Map a click to a console-choice-box row while it is open, else None.
-menu_submenu_click	src/engine.rs	1112	fn		UNVERIFIED	/// Map a click to a MENU-submenu item (0 = EXPLANATIONS, 1 = GAME) when the /// submenu is showing. The submenu is a gold CHOICE BOX (the game's universal /// console-choice widget), so hit-test its 
+console_box_click	src/engine.rs	1102	fn		ASM	/// Map a click to a console-choice-box row while it is open, else None. || AUDIT 2026-07-24: routes the non-kind-3 path through choice_box_geometry (verified above); the kind-3 in-window list uses anchor 225 (0x89A6 `mov [0xAC6],0xE1`) with the same w = widest + 0x14 and row pitch 11
+menu_submenu_click	src/engine.rs	1112	fn		ASM	/// Map a click to a MENU-submenu item (0 = EXPLANATIONS, 1 = GAME) when the /// submenu is showing. The submenu is a gold CHOICE BOX (the game's universal /// console-choice widget), so hit-test its  || AUDIT 2026-07-24: delegates to choice_box_row_at with the submenu labels, so it inherits the verified widget geometry
 point_virtual_cursor	src/engine.rs	1122	fn		UNVERIFIED	/// Aim the bridge's virtual ring-space cursor at an absolute screen point — /// the inverse of the game's `screen = ring - (frame*8 - 160)` rebase — so /// absolute click coordinates can be tested wi
 console_menu_click	src/engine.rs	1134	fn	0x8613	ASM?	/// Map a click to a ship-console menu option index (0 = HONK … 4 = OPTION) /// using the decoded golden-menu hit math (`0x8613`): the menu is only /// clickable while its panorama sector is in view, 
 bridge_press	src/engine.rs	1145	fn		UNVERIFIED	/// A left-button press on the bridge at absolute screen `(x, y)`: runs the /// decoded click paths — a golden-menu row selects that console function /// (returned as 0 = HONK … 4 = OPTION, with the v
@@ -192,9 +192,9 @@ draw_hand_at_mouse	src/engine.rs	1327	fn		ORACLE?	/// Draw the pointing-hand cur
 draw_hand_cursor	src/engine.rs	1376	fn		ORACLE?	/// Draw the pointing-hand cursor at the bridge's ring-anchored position (the /// steering cursor), using the atlas sprite captured nearest to it (the real /// renderer varies the hand's orientation w
 refresh_gpu_hand	src/engine.rs	1424	fn		UNVERIFIED	/// Recompute the GPU hand for the current cursor at DISPLAY refresh rate. /// PURE re-projection: the existing pose/skeleton state renders at the new /// cursor — no pose selection, no tween advance,
 draw_choice_box_labels	src/engine.rs	1444	fn		ORACLE?	/// Draw the nav destinations as a golden choice box over the console's left — /// the game's captured interaction pattern (a rounded gold-bordered box with /// gold console-font rows, see accuracy/ca
-choice_box_top_y	src/engine.rs	1469	fn		UNVERIFIED	/// The top y of the first choice-box row for a box of `rows` items (vertical /// centring around [`Self::CHOICE_BOX_TOPS_CENTER_Y`]).
+choice_box_top_y	src/engine.rs	1469	fn		ASM	/// The top y of the first choice-box row for a box of `rows` items (vertical /// centring around [`Self::CHOICE_BOX_TOPS_CENTER_Y`]). || AUDIT 2026-07-24: box height h = rows*11 + 8 and box y = (200-h)/2 with text top = y+4, derived at 0x84A1..0x84C6 (`add bp,0xb` per row, `add bp,8`, `sub bp,0xc8; neg; shr 1`, `add cx,4`)
 draw_choice_box	src/engine.rs	1475	fn		UNVERIFIED	
-choice_box_row_at	src/engine.rs	1526	fn		UNVERIFIED	/// Hit-test a click against the console choice box (see [`draw_choice_box`]): /// the box centers on x=100 with its first row band from the box top (y=86) /// at an 11px pitch. Shared by the telephon
+choice_box_row_at	src/engine.rs	1526	fn		ASM	/// Hit-test a click against the console choice box (see [`draw_choice_box`]): /// the box centers on x=100 with its first row band from the box top (y=86) /// at an 11px pitch. Shared by the telephon || AUDIT 2026-07-24: same widget: hit origin = box_y + 4 (0x84E6 `add cx,4`), rows divided by 11 (0x8508 `div bl` with bl=0x0B), and the x band now comes from choice_box_geometry so it equals the DRAWN box -- the fix made this session
 draw_list_menu	src/engine.rs	1541	fn		UNVERIFIED	/// Draw a LIST MENU — the game's blue square-capitals vertical list (topic /// menus in dialogue, destinations at nav, contacts): entries at the /// measured geometry (x 170, rows from y 34 at 11 px 
 set_topic_menu	src/engine.rs	1562	fn		UNVERIFIED	/// Set the dialogue topic menu: (label, first line index) per topic.
 load_bas_menus	src/engine.rs	1571	fn	0x6772	ASM?	/// Load the conversation script's decoded concept-menu stack (the game's /// `gs:0x6772` menu system, [`crate::bas_vm`]) from its `.BAS`/`.DIC`. Seeds at /// the entry menu; `current_bas_menu_labels`
@@ -215,9 +215,9 @@ set_segment_boundaries	src/engine.rs	1720	fn		UNVERIFIED	/// Record the dialogue
 set_dialogue_segments	src/engine.rs	1727	fn		UNVERIFIED	/// Segment the dialogue at the given line starts (script-function beats): the first segment /// (the scripted opening) auto-plays, then the dialogue holds; each call to /// [`Self::play_next_dialogue
 hold_current_line_at_least	src/engine.rs	1737	fn		UNVERIFIED	/// Play the next unplayed dialogue segment (a concept-menu interaction advances the /// conversation one beat), then re-hold at the menu. Returns false when exhausted. /// Driver hook: the current li
 play_next_dialogue_segment	src/engine.rs	1741	fn		UNVERIFIED	
-list_menu_click	src/engine.rs	1759	fn		UNVERIFIED	/// Map a click to a list-menu row (the measured geometry above).
+list_menu_click	src/engine.rs	1759	fn		ASM	/// Map a click to a list-menu row (the measured geometry above). || AUDIT 2026-07-24: row-count-centred list rows at choice_box_top_y(rows), the box_y+4 / pitch-11 layout confirmed at 0x84A1..0x84C6
 bridge_nav_orb_click	src/engine.rs	1771	fn		ORACLE?	/// Whether a click hits the nav-sector ORB (the pyramid-sector station orb) — the /// oracle-verified way into the nav/viewscreen console. Orb near screen (105..145, 130..165) /// when the pyramid se
-bridge_nav_destination_click	src/engine.rs	1779	fn		UNVERIFIED	/// Map a click to a nav-sector destination row when the choice box is showing /// (bridge view in the pyramid sector with destinations set).
+bridge_nav_destination_click	src/engine.rs	1779	fn		ASM	/// Map a click to a nav-sector destination row when the choice box is showing /// (bridge view in the pyramid sector with destinations set). || AUDIT 2026-07-24: delegates to choice_box_row_at with the nav destination labels; frame gate 72..107 is the pyramid sector
 render_bridge_background	src/engine.rs	1792	fn	0x954A	ASM?	/// Composite the bridge view into the framebuffer: window starfield, then the /// current TB.BIG panorama frame with colour-0 transparency, then the game /// palette + the golden menu's dynamic DAC r
 load_cyberspace	src/engine.rs	1846	fn		DATA?	/// Load the cyberspace hyperspace-tunnel animations (`sq/hyper_*.hnm`), sorted so /// segments advance in order. The screen renders once `cyber_active` is set.
 start_cyberspace	src/engine.rs	1867	fn		UNVERIFIED	/// Begin (or restart) a cyberspace traversal from the first segment.
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                    
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                     
