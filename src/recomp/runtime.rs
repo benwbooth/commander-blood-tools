@@ -135,6 +135,16 @@ pub struct Runtime {
     // y 0..199.
     pub(crate) mouse_x: u16,
     pub(crate) mouse_y: u16,
+    /// PENDING relative motion, applied at the next position READ (int 33h ax=3).
+    ///
+    /// The bridge re-centres the hardware cursor every frame (`0x9722` issues an
+    /// int 33h ax=4 warp) and derives motion from `read - warp_origin`. Applying an
+    /// injected delta immediately therefore loses it: the next warp overwrites the
+    /// position before the game reads it. Deferring to the read reproduces what
+    /// real hardware does — physical motion happens BETWEEN the warp and the read —
+    /// so injected motion survives the warp instead of racing it.
+    /// Transient by design: not serialized with savestates.
+    mouse_rel_pending: (i32, i32),
     pub(crate) mouse_buttons: u16,
     mouse_presses: [(u16, u16, u16); 2],  // per button: count, last x, last y
     mouse_releases: [(u16, u16, u16); 2],
@@ -557,6 +567,7 @@ impl Runtime {
             bios_keys: VecDeque::new(),
             kbd_irq_pending: 0,
             mouse_x: 320,
+            mouse_rel_pending: (0, 0),
             mouse_y: 100,
             mouse_buttons: 0,
             mouse_presses: [(0, 0, 0); 2],
@@ -809,8 +820,8 @@ impl Runtime {
     ///
     /// Coordinates are DOS-virtual, matching `set_mouse_pos` (x 0..639, y 0..199).
     pub fn move_mouse_rel(&mut self, dx: i32, dy: i32) {
-        self.mouse_x = (self.mouse_x as i32 + dx).clamp(0, 639) as u16;
-        self.mouse_y = (self.mouse_y as i32 + dy).clamp(0, 199) as u16;
+        self.mouse_rel_pending.0 += dx;
+        self.mouse_rel_pending.1 += dy;
         if let Some((mask, _, _)) = self.mouse_handler {
             self.mouse_pending |= mask & 0x01;
         }
@@ -1655,6 +1666,15 @@ impl Runtime {
             0x0001 => self.mouse_shown += 1,
             0x0002 => self.mouse_shown -= 1,
             0x0003 => {
+                // Apply any injected motion HERE: on real hardware the movement
+                // happened between the game's warp (ax=4) and this read, which is
+                // exactly the delta the bridge's steering measures.
+                if self.mouse_rel_pending != (0, 0) {
+                    let (dx, dy) = self.mouse_rel_pending;
+                    self.mouse_x = (self.mouse_x as i32 + dx).clamp(0, 639) as u16;
+                    self.mouse_y = (self.mouse_y as i32 + dy).clamp(0, 199) as u16;
+                    self.mouse_rel_pending = (0, 0);
+                }
                 self.m.regs.set_bx(self.mouse_buttons);
                 self.m.regs.set_cx(self.mouse_x);
                 self.m.regs.set_dx(self.mouse_y);

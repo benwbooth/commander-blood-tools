@@ -1059,3 +1059,33 @@ would make every existing click-driving probe more faithful at the same time.
 
 THREAD ENDS HERE. Banked: `move_mouse_rel`, a working PROFILEJUMP, the rec_103A
 watch, busy-gate diagnostics, and the measurement trail above.
+
+#### Menu click DID register once — plumbing works, targeting not yet reproducible
+
+With (a) the int33 deferred-motion fix and (b) Y-ONLY relative steering, one run
+produced **`[0x2A19]=0x0005`** — the golden-menu hit path actually fired for the
+first time. That is the input-plumbing unblock: clicks CAN register.
+
+It is not yet reproducible, and the reason is an unresolved UNIT question:
+
+- `[0xA2A]` reads 320 at rest, which is the centre of the DOS-VIRTUAL x range
+  (0..639) — i.e. screen 160.
+- The `0x8613` box bounds computed from the decode are SCREEN units
+  (e.g. 177..287 at frame 45, 97..207 at frame 55).
+- 320 lies outside 177..287, yet the click registered; and a later run with
+  `[0xA2A]=287` at frame 64 (box 25..135) did NOT register.
+
+So the comparison space of `[0xA2A]` versus the box constants is still unsettled —
+one of the two is not in the units this analysis assumes. Resolve that FIRST
+(dump `[0xA2A]` together with the box bounds the game itself computes, by watching
+the compare at `0x8656`/`0x8663`) before any further targeting work; every attempt
+above that guessed the space failed.
+
+Also measured: the frame never truly settles at the console — an off-centre cursor
+steers continuously (55 -> 45 -> 64 across runs), so the box moves under the
+cursor. Any reliable menu click must either re-derive the row from the live frame
+at press time (implemented) or first neutralise steering.
+
+BANKED THIS THREAD: `Runtime::move_mouse_rel` + the int33 deferred-motion fidelity
+fix (both improve every click-driving probe), a working `PROFILEJUMP`, the
+`rec_103A` write-watch, busy-gate diagnostics, and the measurement trail.

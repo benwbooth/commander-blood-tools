@@ -510,7 +510,7 @@ fn main() {
             println!("<- 0x85E2 dispatch gates");
             let cx = (left + right) / 2;
             let _ = (left, right, top, pitch, cx); // recomputed per click below
-            let mut click_at = |rt: &mut Runtime, sx: i32, sy: i32| {
+            let mut click_at = |rt: &mut Runtime, sx: i32, sy: i32, menu_row: i32| {
                 let fr = state(rt).0 as i32;
                 let ring = ((sx + fr * 8 - 160).rem_euclid(1440)) as u16;
                 rt.set_mouse_pos(ring, sy as u16);
@@ -537,11 +537,27 @@ fn main() {
                         | ((rt.m.read8(g, 0x0A2B) as i32) << 8);
                     let cur_y = rt.m.read8(g, 0x0A2C) as i32
                         | ((rt.m.read8(g, 0x0A2D) as i32) << 8);
-                    let (ex, ey) = (sx - cur_x, sy as i32 - cur_y);
-                    if ex.abs() <= 3 && ey.abs() <= 2 {
+                    // X IS NOT A CURSOR AXIS on the bridge: relative x motion
+                    // STEERS the panorama (the cursor stays centred and the world
+                    // rotates), so chasing an x target both fails and drifts the
+                    // frame the menu box was computed for. Only Y is a real cursor
+                    // axis here. The menu is reachable because at the resting frame
+                    // its box already spans the screen centre.
+                    // X IS NOT A CURSOR AXIS here: relative x motion STEERS the
+                    // panorama, so the frame keeps drifting and the menu box moves
+                    // with it. Re-derive the target row's y from the LIVE frame on
+                    // every iteration instead of trusting a precomputed value.
+                    let _ = (sx, cur_x);
+                    let live_fr = state(rt).0 as i32;
+                    let d = live_fr - 45;
+                    let t = 0x48 + d.abs() + d.abs() / 4;
+                    let p = (0x12 - (d.abs() / 4) / 2).max(1);
+                    let target_y = if menu_row >= 0 { t + menu_row * p } else { sy as i32 };
+                    let ey = target_y - cur_y;
+                    if ey.abs() <= 2 {
                         break;
                     }
-                    rt.move_mouse_rel(ex.clamp(-64, 64), ey.clamp(-32, 32));
+                    rt.move_mouse_rel(0, ey.clamp(-32, 32));
                     let _ = rt.run(rt.cpu.steps + 700_000);
                 }
                 // THE measurement that decides the coordinate-space question:
@@ -565,13 +581,12 @@ fn main() {
             // Park the cursor at the view centre, let the view settle, THEN
             // recompute the box at the settled frame and click that row.
             let menu_row_click = |rt: &mut Runtime, row: i32| {
-                // Park at screen centre so steering comes to rest.
-                for _ in 0..3 {
-                    let fr = state(rt).0 as i32;
-                    let ring = ((160 + fr * 8 - 160).rem_euclid(1440)) as u16;
-                    rt.set_mouse_pos(ring, 100);
-                    let _ = rt.run(rt.cpu.steps + 8_000_000);
-                }
+                // Do NOT reposition in x — that steers. But DO let the view settle
+                // first: the frame drifts (55 -> 45) after the console is reached,
+                // and the menu box geometry depends on it, so computing the row y
+                // from a pre-settle frame lands on the wrong row (measured: aiming
+                // MENU at frame 55 registered [0x2A19]=5, i.e. OPTION, at frame 45).
+                let _ = rt.run(rt.cpu.steps + 25_000_000);
                 let fr = state(rt).0 as i32;
                 let d = fr - 45;
                 let r = 0x11F - d * 8;
@@ -580,7 +595,7 @@ fn main() {
                 let p = 0x12 - (d.abs() / 4) / 2;
                 let (sx, sy) = ((l + r) / 2, t + row * p.max(1));
                 println!("  settled frame={fr} box x={l}..{r} top={t} pitch={p} -> click ({sx},{sy})");
-                click_at(rt, sx, sy);
+                click_at(rt, sx, sy, row);
             };
             menu_row_click(&mut rt, 3);
             println!("GAMESTART after MENU click: [0x27E0]={:#04x} [0x2A19]={:#06x}",
@@ -589,7 +604,7 @@ fn main() {
             // rows are centred by row count (choice_box_top_y: (200-(n*11+8))/2+4).
             let sub_top = (200 - (2 * 11 + 8)) / 2 + 4;
             for (i, name) in ["EXPLANATIONS", "GAME"].iter().enumerate() {
-                click_at(&mut rt, 100, sub_top + i as i32 * 11);
+                click_at(&mut rt, 100, sub_top + i as i32 * 11, -1);
                 println!("GAMESTART after {name} click: [0x27E0]={:#04x} [0x67AC]={:#04x}",
                          rt.m.read8(g, 0x27E0), rt.m.read8(g, 0x67AC));
                 if rt.m.read8(g, 0x27E0) & 1 != 0 {
