@@ -720,3 +720,6 @@ DS:0x27C7,list_widget_hovered_row,"row under the cursor +1 (0=none): ay=[0xA2C]-
 0x9F67,travel_activate_b,sibling teardown travel activation
 0x549A,c4_pending_slot_fill,kind-1 object: [0x674E]=obj+0x10; pending slot [0x675E]=+8
 DS:0x24F3,dialogue_scene_flags,bit3=travel-pending (set only by 0x5C64 imm 9)
+0x5B38,record_type_ladder,per-record type dispatch C1/C2/C3/C4 (was record_c1_ship3d_action; ladder confirmed)
+0x5D37,c3_promoter_branch,typed-C3: related==[0x674E] -> [0x675A]=si takeover + sound 6; else [bp]=0xC4
+0x77A0,pending_slot_c4_writer,writes 0xC4 into the pending slot (block+0x30) — undecoded context
