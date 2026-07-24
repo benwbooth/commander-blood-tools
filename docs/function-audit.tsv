@@ -299,7 +299,7 @@ render_ship_view	src/engine.rs	3220	fn		UNVERIFIED	/// Render the on-ship nav vi
 targeted_world_name	src/engine.rs	3381	fn		UNVERIFIED	"/// The name of the world the nav compass currently targets (for ""visit this /// destination"" input)."
 targeted_world_index	src/engine.rs	3388	fn		UNVERIFIED	/// The index into [`Self::nav_world_labels`] the compass heading currently targets: /// the heading (0..180°) maps across the decoded primary worlds, so panning the ship /// sweeps through the real n
 draw_subtitle	src/engine.rs	3397	fn		DATA?	/// Draw a subtitle line into the framebuffer at the game's subtitle reveal /// position (scene band, `SUBTITLE_X`/`SUBTITLE_Y` = 10/8) using the game font. /// The scene band's talk-HNM background co
-draw_subtitle_revealed	src/engine.rs	3406	fn		UNVERIFIED	/// Draw the pre-wrapped subtitle with only the first `visible` characters shown, /// the newest one in the reveal-edge colour (0xFE) — the game's per-character /// reveal. Non-visible characters aren
+draw_subtitle_revealed	src/engine.rs	3406	fn		ASM	/// Draw the pre-wrapped subtitle with only the first `visible` characters shown, /// the newest one in the reveal-edge colour (0xFE) — the game's per-character /// reveal. Non-visible characters aren || AUDIT 2026-07-24: renderer 0x3630 verified: colour is purely distance from the reveal pointer -- 0xFF AT the pointer (0x369C), 0xFE one back (0x369E dec ah), 0xFD two or more back (0x36A4). No thin/white/0xE0 "settled" branch exists; the fully-revealed case parks the pointer past the terminator (0x94A0) so all characters land on 0xFD. Stale header comment claiming a thin-0xE0 redraw CORRECTED 2026-07-24
 render_dialogue_frame	src/engine.rs	3510	fn		DATA?	/// Render the current dialogue line's frame into the framebuffer: clear, then /// draw the reconstructed subtitle text. (The talk-HNM scene background layer /// composites behind this once the HNM de
 first_scene_hnm_stem	src/engine.rs	3584	fn		DATA?	/// Lowercase file stem of the first resolved talk-HNM in the loaded dialogue, so a /// driver can look its background music up via `DescriptDb::hnm_music_map`.
 take_nav_selection	src/engine.rs	3596	fn		UNVERIFIED	/// Take the pending nav destination selection (the compass heading the player /// clicked in the nav view), clearing it. A driver polls this each frame to load /// the selected destination's dialogue
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	        
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	         

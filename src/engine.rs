@@ -3788,11 +3788,19 @@ impl EngineState {
     /// the newest one in the reveal-edge colour (0xFE) — the game's per-character
     /// reveal. Non-visible characters aren't drawn yet.
     fn draw_subtitle_revealed(&mut self, text: &str, visible: usize) {
-        // The REAL subtitle model (TUTORIAL4 oracle calibration + live frames): while a line
-        // REVEALS, the revealed characters draw in the BOLD console font with the green
-        // family (0xFF bright / 0xFE newest, the 0x3630 renderer — 'WELCOME ABOARD' frame);
-        // once COMPLETE the line redraws in the THIN proportional font at index 0xE0, white
-        // ('Today's fare:' frame). Rows 8/18 on the console (pitch 10), same origin in scenes.
+        // The REAL subtitle model (renderer 0x3630, verified): the line draws in the
+        // BOLD console font in the GREEN family THROUGHOUT — there is no second,
+        // "settled" appearance. Colour is purely distance from the reveal pointer
+        // (0xFF at the pointer, 0xFE one back, 0xFD beyond), and when the line is
+        // fully revealed the pump parks the pointer past the terminator so every
+        // character settles to 0xFD. Rows 8/18 on the console (pitch 10), same
+        // origin in scenes.
+        //
+        // CORRECTED 2026-07-24: this header previously claimed a completed line
+        // "redraws in the THIN proportional font at index 0xE0, white". That was an
+        // INVENTION (no such branch exists in 0x3630) and the code implementing it
+        // was removed earlier in this session; the comment had been left behind and
+        // contradicted the function below it.
         let total: usize = text
             .split('\n')
             .enumerate()
