@@ -504,7 +504,17 @@ observation (the oracle, blocked interactively) to pin. The five refuted hypothe
    models the concert outcome, not the mechanism, and would not set the other phases.)
 So the set is native, runtime-computed, from state (which object is active + its
 record layout + plot history) that static analysis cannot pin — SIX distinct
-approaches now refuted by direct checking. This CORRECTS the intervening
+approaches now refuted by direct checking.
+BOUNDED ORACLE ATTEMPTS also fail (confirming the tooling frontier, not a quick win):
+since arche+0x16 = rec_0F4E in SCRIPT2 (same native writer as SCRIPT5's rec_103A),
+watching rec_0F4E should catch it — but (a) the hub_tour scenario on script2.state
+writes rec_0F4E zero times (it reads 0 there; passive hover triggers no location
+write), and (b) a 250M-step boot run with the pointer-relative BOOTWRITEWATCH caught
+NO rec_0F4E write (only a timer IRQ; the block relocated at ~210M as the attract
+cycled profiles). So observing the write needs driving the oracle to the specific
+location/scene-transition MOMENT — the interactive-oracle tooling (decode BLOODPRG's
+nav/story input handlers), not a bounded run. Both the static and the bounded-oracle
+shortcuts are now exhausted; only the full tooling build remains. This CORRECTS the intervening
 "deferred-record port-side wiring, not blocked" framing: that was a hopeful detour,
 refuted by (2). WHAT IS DECODED and durable: 4024 = the "Bigbang" plot object;
 rec_103A = arche+0x16 = a VM-maintained "current plot object" field that the 0xB8
