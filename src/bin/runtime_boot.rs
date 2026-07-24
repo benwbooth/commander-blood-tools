@@ -3120,6 +3120,18 @@ fn main() {
                     }
                     rt.mouse_release(0);
                 }
+                // hold <x> <y> <frames>: press and HOLD for N frames, then
+                // release — the sustained-press gesture (control stick).
+                "hold" => {
+                    let (sx, sy): (i32, u16) = (toks[1].parse().unwrap(), toks[2].parse().unwrap());
+                    let frames: u64 = toks[3].parse().unwrap();
+                    let ring = (sx + frame(&rt) as i32 * 8 - 160).rem_euclid(1440) as u16;
+                    rt.set_mouse_pos(ring, sy);
+                    let _ = rt.run(rt.cpu.steps + 400_000);
+                    rt.mouse_press(0);
+                    let _ = rt.run(rt.cpu.steps + frames * 1_850_000);
+                    rt.mouse_release(0);
+                }
                 // save <path>: write a savestate at this scenario point (the
                 // story-milestone banker).
                 "save" => {
