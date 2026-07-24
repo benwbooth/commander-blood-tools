@@ -146,25 +146,6 @@ pub(crate) fn assemble_words(parts: &[String]) -> String {
     out
 }
 
-
-/// One captured pointing-hand sprite: the live game's 3D hand renderer output
-/// at a given cursor position (fingertip anchor = the cursor hotspot).
-#[derive(Clone)]
-struct HandSprite {
-    /// v2 sprites carry their own RGB palette (colors captured from the live frame);
-    /// v1 sprites' indices resolve through the baked game palette.
-    local_palette: Option<Vec<[u8; 3]>>,
-    /// Cursor position this sprite was captured at (the renderer orients the
-    /// hand by position); the nearest sprite is drawn.
-    captured_at: (i32, i32),
-    /// Cursor hotspot offset into the sprite (cursor - anchor = top-left).
-    anchor: (i32, i32),
-    width: usize,
-    height: usize,
-    /// Palette-index pixels, 0 = transparent.
-    indices: Vec<u8>,
-}
-
 /// A world being visited from the nav map: its decoded `fd/` rooms (paths, decoded
 /// lazily) with the currently-shown room. Rooms are the world's floor/view-angle
 /// backgrounds; cycling walks through them.
@@ -357,9 +338,6 @@ pub struct EngineState {
     /// The real ship bridge: the TB.BIG 360° panorama ([`crate::tbbig`]) whose
     /// frames ARE the console/menu/nav-room/Orxx views (golden menu text baked in).
     panorama: Option<crate::tbbig::BridgePanorama>,
-    /// Pointing-hand cursor sprites captured from the REAL renderer (see
-    /// [`EngineState::load_hand_atlas`]); empty = no hand drawn.
-    hand_atlas: Vec<HandSprite>,
     /// The BOLD console subtitle font from the user's BLOODPRG.EXE (the face
     /// the game uses for ALL on-console text); None until loaded.
     bold_font: Option<crate::font::BoldConsoleFont>,
@@ -638,7 +616,6 @@ impl EngineState {
             cryobox_active: false,
             cyber_segment: 0,
             panorama: None,
-            hand_atlas: Vec::new(),
             bold_font: None,
             topic_menu: Vec::new(),
             topic_selected: None,
@@ -1677,49 +1654,6 @@ impl EngineState {
     /// affine texture mapping, decoded in re/REVERSE.md) is still to be ported;
     /// until then the port composites the genuine renderer's output.
     /// How many pointing-hand sprites the atlas holds (0 = none loaded).
-    pub fn hand_atlas_len(&self) -> usize {
-        self.hand_atlas.len()
-    }
-
-    pub fn load_hand_atlas(&mut self, dir: &Path) {
-        let Ok(entries) = std::fs::read_dir(dir) else { return };
-        for entry in entries.flatten() {
-            let name = entry.file_name().to_string_lossy().into_owned();
-            let Some(pos) = name
-                .strip_prefix("hand2_")
-                .or_else(|| name.strip_prefix("hand_"))
-                .and_then(|s| s.strip_suffix(".bin"))
-                .and_then(|s| s.split_once('_'))
-                .and_then(|(a, b)| Some((a.parse::<i32>().ok()?, b.parse::<i32>().ok()?)))
-            else {
-                continue;
-            };
-            let Ok(data) = std::fs::read(entry.path()) else { continue };
-            if data.len() < 8 {
-                continue;
-            }
-            let word = |at: usize| i16::from_le_bytes([data[at], data[at + 1]]) as i32;
-            let (anchor_x, anchor_y, w, h) = (word(0), word(2), word(4), word(6));
-            if w <= 0 || h <= 0 || data.len() < 8 + (w * h) as usize {
-                continue;
-            }
-            let body = 8 + (w * h) as usize;
-            // v2 (hand2_*.bin): a local-palette tail [ncolors, ncolors*3 RGB].
-            let local_palette = data.get(body).and_then(|&n| {
-                let n = n as usize;
-                let tail = data.get(body + 1..body + 1 + n * 3)?;
-                Some(tail.chunks_exact(3).map(|c| [c[0], c[1], c[2]]).collect::<Vec<_>>())
-            });
-            self.hand_atlas.push(HandSprite {
-                local_palette,
-                captured_at: pos,
-                anchor: (anchor_x, anchor_y),
-                width: w as usize,
-                height: h as usize,
-                indices: data[8..body].to_vec(),
-            });
-        }
-    }
 
     /// Draw the pointing-hand cursor — the game's ONLY cursor — at the current
     /// mouse position on any screen. The atlas indices are bridge-capture palette
@@ -4606,12 +4540,9 @@ mod tests {
         let mut e = EngineState::new();
         e.load_bridge(iso);
         if e.panorama.is_none() { return; }
-        // The captured-hand atlas, when present, must land the hand where the live
-        // game drew it (tightening the diff, not loosening it).
-        for dir in ["accuracy/captures/bridge/hand", "../accuracy/captures/bridge/hand"] {
-            e.load_hand_atlas(Path::new(dir));
-            if !e.hand_atlas.is_empty() { break; }
-        }
+        // NOTE: the capture-sprite hand atlas that used to be loaded here is gone.
+        // It was never drawn -- the faithful hand is manu3_hand::HandMesh, decoded from
+        // manu3.xdb's own mesh and cursor law.
         e.bridge_active = true;
         // Prime prev_pos so the render step sees zero cursor motion, then
         // reproduce the live probe's state exactly: view frame 55, cursor at

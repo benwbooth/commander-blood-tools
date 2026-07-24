@@ -101,16 +101,10 @@ fn representative_oracle_suite() {
         }
     }
 
-    // 2. Full engine console render (panorama + hand atlas + menu DAC) vs live.
+    // 2. Full engine console render (panorama + hand + menu DAC) vs live.
     if let Some(live) = capture("console_rest.ppm") {
         let mut e = EngineState::new();
         e.load_bridge(iso);
-        for dir in ["accuracy/captures/bridge/hand", "../accuracy/captures/bridge/hand"] {
-            e.load_hand_atlas(Path::new(dir));
-            if e.hand_atlas_len() > 0 {
-                break;
-            }
-        }
         e.bridge_active = true;
         e.step(MouseInput { x: 160, y: 100, buttons: 0, ..Default::default() });
         e.bridge.frame = 55;
@@ -123,13 +117,13 @@ fn representative_oracle_suite() {
             .iter()
             .flat_map(|&i| e.scene_palette[i as usize])
             .collect();
-        // The panorama-only match (no hand) is ~2.5 (panorama-console-f55); with
-        // the hand ATLAS loaded the port draws the pointing-hand cursor, a
-        // documented not-pixel-perfect sprite (sub-pixel position + palette),
-        // which adds ~2.6 of delta — so the WITH-hand tolerance must be HIGHER,
-        // not lower (the old 1.0 was inverted). Without the atlas the port draws
-        // no hand where the oracle has one: a large, expected miss.
-        let threshold = if e.hand_atlas_len() == 0 { 8.0 } else { 6.0 };
+        // The capture-sprite hand atlas this used to load was DEAD -- it was parsed
+        // but never drawn (no HandSprite field was ever read), so both branches of
+        // the old threshold measured the same render. The faithful hand is
+        // manu3_hand::HandMesh, decoded from manu3.xdb's mesh and cursor law. The
+        // panorama-only match is ~2.5; 8.0 is the no-hand tolerance that branch
+        // actually exercised.
+        let threshold = 8.0;
         results.push(Scenario { name: "engine-console-render", mean_abs: mean_abs(&rgb, &live), threshold });
     }
 
