@@ -801,3 +801,45 @@ ORDER THAT UNBLOCKS THE MOST: interpolation gate + target select -> sequence
 update (which also writes `gs:0x252A` and retires the `flag_252a` VM
 approximation) -> nav-choice dispatch -> handlers. The planar model (Tier 2) is
 independent and is what makes any of it VISIBLE.
+
+## PROVENANCE — `MENU_SUBMENU` is still a transcribed literal
+
+`EngineState::MENU_SUBMENU = ["EXPLANATIONS", "GAME"]` is a content-bearing literal
+in Rust source, which the prime rule classes as a defect. The words are in the
+game's data:
+
+    SCRIPT1.DIC  0x02FC  'explanations'
+    SCRIPT1.DIC  0x0309  'game'
+    SCRIPT1.DIC  0x030E  'GAME'
+
+and the console list widget `0x8428` consumes a 0/0xFFFF-terminated list of WORD
+OFFSETS (`lodsw` at `0x8451`, measured via `lcall 0x299:0x13d` at `0x846C`), never
+literals. So the correct shape is: find the routine that builds THIS list, take its
+offsets, resolve them through the loaded DIC.
+
+ROUTINE THAT MUST REPLACE IT: one of the eight near-callers of `0x8428`
+(`0x875E`, `0x8786`, `0x87EF`, `0x881D`, `0x8886`, `0x88BA`, `0x89C1`, `0x89F7`) —
+identify which builds the two-row MENU submenu and read the word-offset list it
+passes in `si`.
+
+Note the DIC has `explanations`/`game` in LOWERCASE with a separate uppercase `GAME`.
+The port renders both rows uppercase, so whether the widget upper-cases for display or
+the list points at different entries is itself unresolved — and is a reason not to
+guess the offsets.
+
+### RESOLVED in the same pass — `OPTION_BOX`
+
+`OPTION_BOX = ["CANCEL"]` was justified in-source by an ORACLE CAPTURE: "REAL-GAME-
+VERIFIED (savestate resume-probe rp_option: clicking OPTION opens the measured gold
+choice box containing CANCEL)". That is the prime rule inverted — a capture may only
+confirm a decoded value, never be its source.
+
+The string is real game data: `DS:0x0174`, file `0x0D594`, already recorded in
+`bloodprg.rs` as the symbol `ship_3d_target_extra_label`. It is the EXTRA row the list
+widget appends under the `[0x0ADD]` gate at `0x843B` — the same branch that carries the
+kind-10 width floor and height seed — and it sits in the UI string table beside
+`UNKNOWN`, `ARE_YOU_SURE?`, `YES`, `PAUSE`, `LOADING`.
+
+Now pinned by `option_box_label_is_the_games_own_string`, which reads the NUL-terminated
+string out of the shipped image and also asserts `file_offset - 0xD420 == ds_offset`, so
+the two recorded addresses cannot drift apart.

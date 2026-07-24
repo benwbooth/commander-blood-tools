@@ -1135,10 +1135,33 @@ impl EngineState {
     /// The console MENU option's submenu, decoded by driving the real game (clicking MENU
     /// opens these two items): EXPLANATIONS (the tutorial/help) and GAME (play). Drawn over
     /// the top menu rows, matching the observed golden-menu overlay.
+    /// MENU submenu rows.
+    ///
+    /// PROVENANCE DEFECT — these are still transcribed literals. The words exist in
+    /// the game's own data: `SCRIPT1.DIC` holds `explanations` at offset `0x02FC` and
+    /// `game` at `0x0309` (also `GAME` at `0x030E`), and the console list widget
+    /// `0x8428` takes a 0/0xFFFF-terminated list of WORD OFFSETS, not literals. The
+    /// remaining task is to find the routine that builds THIS list so the offsets come
+    /// from the script rather than from here. Tracked in docs/port-validation.md.
     pub const MENU_SUBMENU: [&'static str; 2] = ["EXPLANATIONS", "GAME"];
-    /// The OPTION choice box's items at the hub — REAL-GAME-VERIFIED (savestate resume-probe
-    /// rp_option: clicking OPTION opens the measured gold choice box containing CANCEL).
-    pub const OPTION_BOX: [&'static str; 1] = ["CANCEL"];
+
+    /// The OPTION choice box's single row.
+    ///
+    /// This is the game's own string, not a transcription: `DS:0x0174` (file
+    /// `0x0D594`), the symbol already recorded as `ship_3d_target_extra_label` — the
+    /// EXTRA row the list widget appends, gated by `[0x0ADD]` at `0x843B`, which is
+    /// the same branch that sets the kind-10 width floor and height seed. It sits in
+    /// the UI string table alongside `UNKNOWN`, `ARE_YOU_SURE?`, `YES` and `PAUSE`.
+    ///
+    /// Pinned to the image by `option_box_label_is_the_games_own_string`. It was
+    /// previously justified by an ORACLE CAPTURE ("resume-probe rp_option: the
+    /// measured gold choice box containing CANCEL"), which is exactly backwards under
+    /// the prime rule — the capture may only confirm the decoded value, never source it.
+    pub const OPTION_BOX: [&'static str; 1] = [Self::OPTION_BOX_LABEL];
+    /// `DS:0x0174` / file `0x0D594`, NUL-terminated.
+    pub const OPTION_BOX_LABEL: &'static str = "CANCEL";
+    pub const OPTION_BOX_LABEL_DS_OFFSET: u16 = 0x0174;
+    pub const OPTION_BOX_LABEL_FILE_OFFSET: usize = 0x0d594;
 
     /// Map a click to a console-choice-box row while it is open, else None.
     pub fn console_box_click(&self, x: u16, y: u16) -> Option<usize> {
@@ -5735,6 +5758,34 @@ mod tests {
     /// records (DS:0x4F09, byte-verified), and adding destinations therefore does
     /// NOT scatter the drawing — with one marker per destination stacked on one
     /// point, three destinations paint exactly the pixels one does.
+    /// The OPTION row is the game's own string at DS:0x0174 (file 0x0D594), not a
+    /// label read off a screenshot. Reads it straight out of the shipped image, so
+    /// the constant cannot drift from the binary it claims to come from.
+    #[test]
+    fn option_box_label_is_the_games_own_string() {
+        let exe = match std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        {
+            Ok(b) => b,
+            Err(_) => return,
+        };
+        let start = EngineState::OPTION_BOX_LABEL_FILE_OFFSET;
+        let end = start + exe[start..].iter().position(|&b| b == 0).expect("NUL-terminated");
+        assert_eq!(
+            std::str::from_utf8(&exe[start..end]).unwrap(),
+            EngineState::OPTION_BOX_LABEL,
+            "OPTION row must equal the string at DS:0x0174"
+        );
+        // DS base is file 0xD420, so the recorded DS offset must agree with the file
+        // offset -- this is what catches one of the two being edited alone.
+        assert_eq!(
+            start - 0xD420,
+            EngineState::OPTION_BOX_LABEL_DS_OFFSET as usize,
+            "DS offset and file offset must describe the same byte"
+        );
+        assert_eq!(EngineState::OPTION_BOX[0], EngineState::OPTION_BOX_LABEL);
+    }
+
     #[test]
     fn nav_destination_points_coincide_rather_than_fanning_out() {
         use crate::ship3d::NAV_DESTINATION_POINTS;
