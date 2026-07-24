@@ -89,16 +89,16 @@ mode-0 write guard is now IMPLEMENTED on this basis (see the Fixed table).
 
 ## Remaining (10) — each to be oracle-re-verified or carefully implemented
 
-- **Geometry:** choice-box x-band — the CORE bug is FIXED for the console box (the
-  hit-band now equals the drawn box via the shared `choice_box_geometry`; decoded
-  `0x84A1..0x84F6`). RESIDUAL (minor): the 3 secondary hit-test callers of
-  `choice_box_row_at` (MENU submenu, on-bridge nav-destination chooser, telephone
-  contact list) still use the fixed `40..160`; making them share the geometry needs
-  each caller's box-kind confirmed (their `console_box_kind` consistency is unverified) —
-  best done with click-scenario oracle. Also OPEN: palette 128–191 bank (the "restore
-  baked bytes" hint is WRONG — it would make the HUB muddy and break its capture; the cyan
-  IS correct for the hub. The real fix is per-screen palette loading via the
-  `0x5251<->0x5b58` working-buffer flow — infrastructure).
+- **Geometry — choice-box x-band is now FULLY CLOSED:** all four hit-test callers
+  (console box, MENU submenu, on-bridge nav-destination chooser, telephone contacts)
+  route through the shared `choice_box_geometry` (decoded `0x84A1..0x84F6`), so each
+  click band equals its drawn box by construction — the draw and hit-test read the same
+  `console_box_kind`/labels in the same frame, so they agree whatever the box's
+  anchor/width. Verified: `console_box_click_band_is_the_drawn_box_not_a_fixed_40_160`
+  plus the existing nav/telephone click tests stay green.
+- **Palette 128–191 bank (infra):** the "restore baked bytes" hint is WRONG — it would
+  make the HUB muddy and break its capture; the cyan IS correct for the hub. The real fix
+  is per-screen palette loading via the `0x5251<->0x5b58` working-buffer flow.
 - **Infrastructure-gated VM guards** — the active-bit lifecycle is now DECODED (see
   above; runtime never sets a VAR-inactive object). RESOLVED on that basis: C4 mode-0
   write guards, the C4 mode-0 already-set check (both in the `0x6CC3..0x6D01` decision),

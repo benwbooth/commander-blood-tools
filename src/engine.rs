@@ -1177,7 +1177,12 @@ impl EngineState {
         if !self.menu_submenu_active {
             return None;
         }
-        self.choice_box_row_at(x, y, Self::MENU_SUBMENU.len())
+        self.choice_box_row_at(
+            x,
+            y,
+            Self::MENU_SUBMENU.len(),
+            Self::choice_box_widest(&Self::MENU_SUBMENU),
+        )
     }
 
     /// Aim the bridge's virtual ring-space cursor at an absolute screen point —
@@ -1874,19 +1879,36 @@ impl EngineState {
     /// at an 11px pitch. Shared by the telephone contact list, the MENU submenu,
     /// and the nav-destination chooser — all the same rendered widget, so the
     /// click math is derived from the same measured geometry as the draw.
-    fn choice_box_row_at(&self, x: u16, y: u16, num_rows: usize) -> Option<usize> {
-        let (x, y) = (x as i32, y as i32);
-        if !(40..=160).contains(&x) {
+    fn choice_box_row_at(&self, x: u16, y: u16, num_rows: usize, widest: usize) -> Option<usize> {
+        let rows = num_rows.min(8);
+        // The clickable band is the DRAWN box extent [x0, x1] from the shared
+        // geometry (0x84EE..0x84F6) — the same helper draw_choice_box uses, so
+        // the band tracks the box's kind/anchor/width instead of a fixed 40..160
+        // (which mis-fit the anchor-80 world/nav box and any wide-label box).
+        let (_anchor, x0, x1) = self.choice_box_geometry(widest);
+        let (xi, yi) = (x as usize, y as usize);
+        if xi < x0 || xi > x1 {
             return None;
         }
-        let rows = num_rows.min(8);
         // Hit origin == draw origin == the assembly's text_top = box_y+4
-        // (0x84E6 `add cx,4`; 0x84FB `sub ax,dx`; 0x8508 `div bl,0x0B`). The old
-        // `- 3` shifted the clickable band 3px ABOVE the drawn rows, so clicks near
-        // a row boundary selected the neighbour (audit: two independent findings).
-        let top = Self::choice_box_top_y(rows) as i32;
-        let row = (y - top) / Self::CHOICE_BOX_PITCH as i32;
-        (row >= 0 && (row as usize) < rows).then_some(row as usize)
+        // (0x84E6 `add cx,4`; 0x84FB `sub ax,dx`; 0x8508 `div bl,0x0B`).
+        let top = Self::choice_box_top_y(rows);
+        if yi < top {
+            return None;
+        }
+        let row = (yi - top) / Self::CHOICE_BOX_PITCH;
+        (row < rows).then_some(row)
+    }
+
+    /// The widest square-caps label pixel width over `labels` (capped at 8 rows,
+    /// the box's own limit) — the `widest` the box geometry keys on.
+    fn choice_box_widest<S: AsRef<str>>(labels: &[S]) -> usize {
+        labels
+            .iter()
+            .take(8)
+            .map(|l| crate::font::square_caps_text_width(l.as_ref()))
+            .max()
+            .unwrap_or(0)
     }
 
     /// Draw a LIST MENU — the game's blue square-capitals vertical list (topic
@@ -2141,7 +2163,14 @@ impl EngineState {
         if !(72..=107).contains(&self.bridge.frame) || self.nav_destinations.is_empty() {
             return None;
         }
-        self.choice_box_row_at(x, y, self.nav_destinations.len())
+        let widest = self
+            .nav_destinations
+            .iter()
+            .take(8)
+            .map(|(l, _)| crate::font::square_caps_text_width(l))
+            .max()
+            .unwrap_or(0);
+        self.choice_box_row_at(x, y, self.nav_destinations.len(), widest)
     }
 
     /// Composite the bridge view into the framebuffer: window starfield, then the
@@ -2490,7 +2519,17 @@ impl EngineState {
         // vertically centred for that total. Hit-test the same total, but only a
         // contact row selects a call — the trailing CANCEL row backs out.
         let contacts = self.phone_contacts.len().min(7);
-        let row = self.choice_box_row_at(x, y, contacts + 1)?;
+        // widest over the SAME labels the dialling render draws: the first 7
+        // contact names plus the trailing CANCEL row.
+        let widest = self
+            .phone_contacts
+            .iter()
+            .take(7)
+            .map(|(n, _)| crate::font::square_caps_text_width(n))
+            .chain(std::iter::once(crate::font::square_caps_text_width("CANCEL")))
+            .max()
+            .unwrap_or(0);
+        let row = self.choice_box_row_at(x, y, contacts + 1, widest)?;
         (row < contacts).then_some(row)
     }
 
