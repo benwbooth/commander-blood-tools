@@ -261,6 +261,59 @@ pub fn draw_text_indexed(
 mod tests {
     use super::*;
 
+    /// The square-caps face is IN THE BINARY — it was never "a face that exists in no
+    /// file". `0x30CD` selects it with `AX == 0`: xlat `DS:0x7362`, widths `DS:0x7412`,
+    /// bitmaps `DS:0x7442` at a 20-byte stride (8 rows of big-endian u16 + 4 zero
+    /// bytes). This asserts the shipped tables against the image byte-for-byte.
+    #[test]
+    fn square_caps_face_matches_the_binary_tables() {
+        let exe = match std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        {
+            Ok(b) => b,
+            Err(_) => return,
+        };
+        const DS: usize = 0xD420;
+        const XLAT: usize = DS + 0x7362;
+        const WIDTHS: usize = DS + 0x7412;
+        const GLYPHS: usize = DS + 0x7442;
+        const STRIDE: usize = 20;
+
+        assert_eq!(&SQUARE_CAPS_CHAR_MAP[..], &exe[XLAT..WIDTHS], "xlat table");
+        assert_eq!(
+            &SQUARE_CAPS_WIDTHS[..],
+            &exe[WIDTHS..WIDTHS + SQUARE_CAPS_WIDTHS.len()],
+            "width table"
+        );
+        for (gi, (_, rows)) in SQUARE_CAPS_GLYPHS.iter().enumerate() {
+            let base = GLYPHS + gi * STRIDE;
+            for (r, &row) in rows.iter().enumerate() {
+                let want = u16::from_be_bytes([exe[base + r * 2], exe[base + r * 2 + 1]]);
+                assert_eq!(row, want, "glyph {gi} row {r}");
+            }
+        }
+
+        // The xlat FOLDS CASE and carries space itself — the port must not re-add
+        // either, which it used to do by hand.
+        assert_eq!(square_caps_glyph_index('a'), square_caps_glyph_index('A'));
+        assert_eq!(square_caps_glyph_index(' '), Some(47));
+
+        // The advance heuristic the port used to derive (rightmost column + 1 + 2)
+        // reproduces the real width table exactly — recorded because it means the old
+        // widths were right even though their SOURCE was wrong.
+        for (gi, (_, rows)) in SQUARE_CAPS_GLYPHS.iter().enumerate() {
+            let derived = rows
+                .iter()
+                .filter(|&&r| r != 0)
+                .map(|&r| 15 - r.trailing_zeros() as usize)
+                .max()
+                .map(|c| c + 1 + 2);
+            if let Some(dv) = derived {
+                assert_eq!(dv, SQUARE_CAPS_WIDTHS[gi] as usize, "advance for glyph {gi}");
+            }
+        }
+    }
+
     /// The extracted glyphs must match `BLOODPRG.EXE` byte-for-byte (rows @0x14D28,
     /// advances @0x14CD2, ASCII→index map @0x14C22) — this is what makes the subtitle
     /// font verified-by-construction against the game (no gameplay needed). Skips if the
@@ -429,90 +482,152 @@ impl BoldConsoleFont {
 }
 
 /// The SQUARE-CAPITALS face used by the game's list menus and choice boxes
-/// (index-0xE8 text). The glyph bitmaps are HARVESTED from live-game index
-/// captures (numseries/choice-box dumps; each row's word is known, so cells
-/// segment exactly) — the face exists in no file (it is emitted by a runtime
-/// RLE builder, see re/REVERSE.md). Letters not yet harvested fall back to
-/// [`game_font_glyph`]. Harvested glyphs use a PROPORTIONAL advance (glyph width
-/// + 2px, see [`square_cap_width`]); the constant below is the fallback pitch for
-/// unharvested characters drawn in the thin game font.
-pub const SQUARE_CAPS_ADVANCE: usize = 10;
-/// Advance for a space between square-caps words (narrow-glyph-sized gap).
-pub const SQUARE_CAPS_SPACE_ADVANCE: usize = 6;
-pub const SQUARE_CAPS_GLYPHS: [(char, [u16; 8]); 25] = [
-    ('A', [0x7F00, 0x8100, 0x8100, 0x8100, 0x8100, 0xBF00, 0x8100, 0x8100]),
-    ('B', [0xFE00, 0x0200, 0x8200, 0xBF00, 0x8100, 0x8100, 0x8100, 0xFF00]),
-    ('C', [0xFE00, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0xFF00]),
-    ('D', [0xFE00, 0x0300, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0xFF00]),
-    ('E', [0xFF00, 0x8000, 0x8000, 0xBF00, 0x8000, 0x8000, 0x8000, 0xFF00]),
-    ('F', [0xFF00, 0x8000, 0x8000, 0xBF00, 0x8000, 0x8000, 0x8000, 0x8000]),
-    ('G', [0xFE00, 0x8000, 0x8000, 0x8000, 0x8000, 0x8100, 0x8100, 0xFF00]),
-    ('H', [0x8100, 0x8100, 0x8100, 0x8100, 0xBF00, 0x8100, 0x8100, 0x8100]),
+/// (index-0xE8 text).
+///
+/// EXTRACTED FROM THE BINARY, not harvested from captures. The face is the game's
+/// SECOND font, selected by `AX == 0` in the text-measure routine at `0x30CD`:
+///
+/// ```text
+///   AX == 0 -> xlat DS:0x7362, widths DS:0x7412   <- this face
+///   AX != 0 -> xlat DS:0x7802, widths DS:0x78B2   <- the thin built-in font
+/// ```
+///
+/// Layout, derived from those two pointers: a 176-entry CP437 xlat at `DS:0x7362`
+/// (same size as the built-in font's), 48 width bytes at `DS:0x7412`, then the glyph
+/// bitmaps at `DS:0x7442` (file `0x14862`) with a **20-byte stride** — 8 rows of
+/// `u16` BIG-ENDIAN followed by 4 zero bytes.
+///
+/// This replaces 25 glyphs that were previously HARVESTED FROM SCREENSHOTS. Of those
+/// 25, twenty-four matched these bytes exactly; `'4'` did NOT, i.e. the harvest had
+/// silently mis-read one glyph. The other 23 letters had no harvested cell at all and
+/// fell back to the thin built-in font, so menu text rendered in two typefaces at
+/// once. All 48 are now present.
+pub const SQUARE_CAPS_GLYPHS: [(char, [u16; 8]); 48] = [
+    ('A', [0x7f00, 0x8100, 0x8100, 0x8100, 0x8100, 0xbf00, 0x8100, 0x8100]),
+    ('B', [0xfe00, 0x0200, 0x8200, 0xbf00, 0x8100, 0x8100, 0x8100, 0xff00]),
+    ('C', [0xfe00, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0xff00]),
+    ('D', [0xfe00, 0x0300, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0xff00]),
+    ('E', [0xff00, 0x8000, 0x8000, 0xbf00, 0x8000, 0x8000, 0x8000, 0xff00]),
+    ('F', [0xff00, 0x8000, 0x8000, 0xbf00, 0x8000, 0x8000, 0x8000, 0x8000]),
+    ('G', [0xfe00, 0x8000, 0x8000, 0x8000, 0x8000, 0x8100, 0x8100, 0xff00]),
+    ('H', [0x8100, 0x8100, 0x8100, 0x8100, 0xbf00, 0x8100, 0x8100, 0x8100]),
     ('I', [0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000]),
-    ('K', [0x8200, 0x8200, 0x8200, 0x8200, 0xBE00, 0x8100, 0x8100, 0x8100]),
-    ('L', [0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0xFF00]),
-    ('M', [0xF780, 0x8880, 0x8880, 0x8080, 0x8080, 0x8080, 0x8080, 0x8080]),
-    ('N', [0xFE00, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100]),
-    ('O', [0x7E00, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x7E00]),
-    ('P', [0xFF00, 0x8100, 0x8100, 0x8100, 0x8100, 0xBF00, 0x8000, 0x8000]),
-    ('R', [0xFF00, 0x8100, 0x8100, 0x8100, 0x8100, 0xBE00, 0x8100, 0x8100]),
-    ('S', [0xFF00, 0x8000, 0x8000, 0xFF00, 0x0100, 0x0100, 0x0100, 0xFF00]),
-    ('T', [0xFF00, 0x0000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000]),
-    ('U', [0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0xFF00]),
-    ('V', [0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8200, 0xFC00]),
+    ('J', [0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x0100, 0x8100, 0xff00]),
+    ('K', [0x8200, 0x8200, 0x8200, 0x8200, 0xbe00, 0x8100, 0x8100, 0x8100]),
+    ('L', [0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0xff00]),
+    ('M', [0xf780, 0x8880, 0x8880, 0x8080, 0x8080, 0x8080, 0x8080, 0x8080]),
+    ('N', [0xfe00, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100]),
+    ('O', [0x7e00, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x7e00]),
+    ('P', [0xff00, 0x8100, 0x8100, 0x8100, 0x8100, 0xbf00, 0x8000, 0x8000]),
+    ('Q', [0xff00, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0xfd00, 0x0100]),
+    ('R', [0xff00, 0x8100, 0x8100, 0x8100, 0x8100, 0xbe00, 0x8100, 0x8100]),
+    ('S', [0xff00, 0x8000, 0x8000, 0xff00, 0x0100, 0x0100, 0x0100, 0xff00]),
+    ('T', [0xff00, 0x0000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000, 0x1000]),
+    ('U', [0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0xff00]),
+    ('V', [0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8200, 0xfc00]),
     ('W', [0x8080, 0x8080, 0x8080, 0x8080, 0x8080, 0x8880, 0x8880, 0x7700]),
-    ('X', [0x8100, 0x8100, 0x8100, 0x7E00, 0x8100, 0x8100, 0x8100, 0x8100]),
-    ('Y', [0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0xFF00, 0x0400, 0x0400]),
-    // Harvested from the psychotherapy concept menu (`accuracy/captures/bridge/
-    // concept_menu.ppm`): `_` is a 4px baseline bar (SUPER_EGO / END_OF_MONTH word
-    // separator); `4` is the digit in the trailing "44" concept row.
-    ('_', [0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0xF000]),
-    ('4', [0x8100, 0x8100, 0x8100, 0x0100, 0x3F00, 0x0100, 0x0100, 0x0100]),
+    ('X', [0x8100, 0x8100, 0x8100, 0x7e00, 0x8100, 0x8100, 0x8100, 0x8100]),
+    ('Y', [0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0xff00, 0x0400, 0x0400]),
+    ('Z', [0xff00, 0x0100, 0x0100, 0x7e00, 0x8000, 0x8000, 0x8000, 0xff00]),
+    ('0', [0x7e00, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x8100, 0x7e00]),
+    ('1', [0x4000, 0xc000, 0x4000, 0x4000, 0x4000, 0x4000, 0x4000, 0x4000]),
+    ('2', [0x7e00, 0x8100, 0x0100, 0x0100, 0x7e00, 0x8000, 0x8000, 0xff00]),
+    ('3', [0xfe00, 0x0100, 0x0100, 0x1e00, 0x0100, 0x0100, 0x0100, 0xfe00]),
+    ('4', [0x8000, 0x8000, 0x8000, 0x8400, 0x8400, 0xff00, 0x0400, 0x0400]),
+    ('5', [0xff00, 0x8000, 0x8000, 0xfe00, 0x0100, 0x0100, 0x0100, 0xfe00]),
+    ('6', [0x7e00, 0x8000, 0x8000, 0xfe00, 0x8100, 0x8100, 0x8100, 0x7e00]),
+    ('7', [0xff00, 0x0100, 0x0100, 0x0200, 0x0200, 0x0200, 0x0200, 0x0200]),
+    ('8', [0x7e00, 0x8100, 0x8100, 0x7e00, 0x8100, 0x8100, 0x8100, 0x7e00]),
+    ('9', [0x7e00, 0x8100, 0x8100, 0x8100, 0x7f00, 0x0100, 0x0100, 0x7e00]),
+    ('?', [0xff00, 0x8100, 0x0100, 0x0100, 0x0f00, 0x0800, 0x0000, 0x0800]),
+    ('!', [0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x8000, 0x0000, 0x8000]),
+    ('.', [0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x8000]),
+    (':', [0x0000, 0x0000, 0x0000, 0x8000, 0x0000, 0x0000, 0x0000, 0x8000]),
+    (';', [0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x8000, 0x0000, 0x8000]),
+    ('_', [0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0xf000]),
+    ('-', [0x0000, 0x0000, 0x0000, 0x0000, 0xfe00, 0x0000, 0x0000, 0x0000]),
+    ('+', [0x0000, 0x1000, 0x1000, 0x1000, 0xfe00, 0x1000, 0x1000, 0x1000]),
+    ('"', [0xa000, 0xa000, 0xa000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000]),
+    (',', [0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x8000]),
+    ('\'', [0x8000, 0x8000, 0x8000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000]),
+    (' ', [0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000]),
 ];
+
+/// Per-glyph advances at `DS:0x7412` (file `0x14832`), indexed by glyph.
+///
+/// The old code derived the advance from the bitmap as `rightmost_set_column + 1 + 2`.
+/// That heuristic is CORRECT — it reproduces this table exactly for every glyph
+/// (`'A'`=10, `'I'`=3, `'M'`=11) — but the table is the game's own data, so the port
+/// now reads it instead of re-deriving it.
+pub const SQUARE_CAPS_WIDTHS: [u8; 48] = [
+    0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x03, 0x0a, 0x0a, 0x0a, 0x0b, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0b, 0x0a, 0x0a, 0x0a, 0x0a, 0x04, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x0a, 0x03, 0x03, 0x03, 0x03, 0x06, 0x09, 0x09, 0x05, 0x03, 0x03, 0x01,
+];
+
+/// CP437 -> square-caps glyph index, `DS:0x7362` (file `0x14782`). `0xff` = no glyph.
+pub const SQUARE_CAPS_CHAR_MAP: [u8; 176] = [
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0x2f, 0x25, 0x2c, 0xff, 0xff, 0xff, 0xff, 0x2e, 0xff, 0xff, 0xff, 0x2b, 0x2d, 0x2a, 0x26, 0xff,
+    0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, 0x27, 0x28, 0xff, 0xff, 0xff, 0x24,
+    0xff, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e,
+    0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0xff, 0xff, 0xff, 0xff, 0x29,
+    0xff, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e,
+    0x0f, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0x14, 0x04, 0xff, 0x00, 0x00, 0xff, 0x02, 0xff, 0x04, 0x04, 0x08, 0xff, 0x08, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0x0e, 0x0e, 0xff, 0x14, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+];
+
 
 /// Pixel width of a square-caps glyph = (rightmost set column + 1). The real
 /// face is PROPORTIONAL: the horizontal advance is this width + a 2px gap
 /// (measured from `concept_menu.ppm`: 'I' width 1 → advance 3, most letters
 /// width 8 → advance 10, 'W' width 9 → advance 11, '_' width 4 → advance 6).
-fn square_cap_width(rows: &[u16; 8]) -> usize {
-    let mut max_col = 0;
-    for &row in rows {
-        if row != 0 {
-            let col = 15 - row.trailing_zeros() as usize;
-            if col > max_col {
-                max_col = col;
-            }
-        }
+/// Square-caps glyph index for a character, via the game's own xlat at `DS:0x7362`.
+///
+/// The table FOLDS CASE itself (`'a'` and `'A'` both map to glyph 0) and maps space to
+/// glyph 47, so the port does no upper-casing or space special-casing of its own —
+/// both used to be hand-rolled here and both are in the data.
+pub fn square_caps_glyph_index(ch: char) -> Option<u8> {
+    let code = cp437_byte(ch)? as usize;
+    match SQUARE_CAPS_CHAR_MAP.get(code).copied() {
+        Some(0xff) | None => None,
+        Some(gi) => Some(gi),
     }
-    max_col + 1
 }
 
-/// Rendered pixel width of a square-caps string (sum of per-glyph advances minus
-/// the trailing inter-glyph gap). Used to horizontally CENTER choice-box labels.
+pub fn square_caps_glyph(ch: char) -> Option<[u16; 8]> {
+    let gi = square_caps_glyph_index(ch)? as usize;
+    SQUARE_CAPS_GLYPHS.get(gi).map(|(_, rows)| *rows)
+}
+
+/// This glyph's advance, from the game's width table at `DS:0x7412`.
+pub fn square_caps_advance(ch: char) -> usize {
+    square_caps_glyph_index(ch)
+        .and_then(|gi| SQUARE_CAPS_WIDTHS.get(gi as usize).copied())
+        .unwrap_or(0) as usize
+}
+
+/// Rendered pixel width of a square-caps string.
 ///
-/// The centring is BINARY-DERIVED, not measured: the list widget computes
-/// `x0 = anchor - w/2` at `0x84AD..0x84B3` (`shr dx,1` / `sub dx,[0xAC6]` / `neg dx`)
-/// where `w` is this measured width plus `0x14`. The capture that used to be cited
-/// here ("BOB_MORLOCK" and "CANCEL" both centring on x≈100 in
-/// `choice_box_bob_morlock.ppm`) is a CONFIRMATION of that code, not its source —
-/// both labels share an axis because both boxes share the `[0xAC6]` anchor.
+/// This is the measure routine at `0x30CD` transcribed: `lodsb` / `xlatb` /
+/// `add dl, [di+glyph]` accumulating each glyph's width, then `sub ax, 2` at `0x30FE`
+/// for the trailing inter-glyph gap.
+///
+/// The centring it feeds is binary-derived too: the list widget computes
+/// `x0 = anchor - w/2` at `0x84AD..0x84B3` with the anchor in `[0xAC6]`.
 pub fn square_caps_text_width(text: &str) -> usize {
-    let mut w = 0usize;
-    for ch in text.chars() {
-        let up = ch.to_ascii_uppercase();
-        w += if let Some((_, rows)) = SQUARE_CAPS_GLYPHS.iter().find(|(c, _)| *c == up) {
-            square_cap_width(rows) + 2
-        } else if up == ' ' {
-            SQUARE_CAPS_SPACE_ADVANCE
-        } else {
-            SQUARE_CAPS_ADVANCE
-        };
-    }
-    w.saturating_sub(2)
+    text.chars()
+        .map(square_caps_advance)
+        .sum::<usize>()
+        .saturating_sub(2)
 }
 
 /// Draw square-capitals text (list menus / choice boxes) at (x, y) in `color`.
-/// Unharvested letters use the thin game font as a stand-in.
+///
+/// Every glyph now comes from the binary table, so there is no longer a fallback into
+/// the thin built-in font — menu text used to render in two typefaces because only 25
+/// of the 48 glyphs had been harvested.
 pub fn draw_square_caps(
     fb: &mut [u8],
     fb_width: usize,
@@ -524,8 +639,7 @@ pub fn draw_square_caps(
 ) {
     let mut pen = x;
     for ch in text.chars() {
-        let up = ch.to_ascii_uppercase();
-        if let Some((_, rows)) = SQUARE_CAPS_GLYPHS.iter().find(|(c, _)| *c == up) {
+        if let Some(rows) = square_caps_glyph(ch) {
             for (gy, row) in rows.iter().enumerate() {
                 for gx in 0..16 {
                     if row & (0x8000u16 >> gx) != 0 {
@@ -536,17 +650,7 @@ pub fn draw_square_caps(
                     }
                 }
             }
-            // Proportional advance: this glyph's pixel width + a 2px gap.
-            pen += square_cap_width(rows) + 2;
-            continue;
-        } else if up == ' ' {
-            // Word space (not present in the concept labels, which use `_`): a
-            // gap comparable to a narrow glyph cell.
-            pen += SQUARE_CAPS_SPACE_ADVANCE;
-            continue;
-        } else {
-            draw_text_indexed(fb, fb_width, fb_height, &up.to_string(), pen, y, color);
         }
-        pen += SQUARE_CAPS_ADVANCE;
+        pen += square_caps_advance(ch);
     }
 }
