@@ -482,7 +482,7 @@ Ship3dNavigationSequenceState	src/ship3d.rs	367	struct		UNVERIFIED
 Ship3dNavigationSequenceEffect	src/ship3d.rs	376	struct		UNVERIFIED	
 Ship3dProceduralUpdateState	src/ship3d.rs	389	struct		UNVERIFIED	
 Ship3dProceduralUpdateEffect	src/ship3d.rs	405	struct		UNVERIFIED	
-Ship3dAngleTableEntry	src/ship3d.rs	417	struct		UNVERIFIED	
+Ship3dAngleTableEntry	src/ship3d.rs	417	struct		DATA	|| AUDIT 2026-07-24: the (i16 cosine, i16 sine) pair layout matches the 4-byte stride of DS:0x4F45
 Ship3dMatrixAngles	src/ship3d.rs	468	struct		UNVERIFIED	
 Ship3dProjectionMatrix	src/ship3d.rs	475	struct		UNVERIFIED	
 Ship3dProjectionPoint	src/ship3d.rs	480	struct		UNVERIFIED	
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                       
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                        
