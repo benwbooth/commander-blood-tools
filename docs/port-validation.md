@@ -480,11 +480,30 @@ oracle-verification pending), not an oracle-derived constant. The port PLAYS the
 whole game correctly; the open item is verification-tooling depth, not a port
 behavior gap.
 
-## rec_103A / rec_13C2 writer DECODED — a DEFERRED-RECORD write; port-side wiring gap (NOT infrastructure-blocked)
+## rec_103A / rec_13C2 writer — DEFERRED-RECORD mechanism decoded, but the deferred-drain hypothesis for rec_103A is REFUTED by field arithmetic (self-correction)
+
+**CORRECTION (supersedes this section's earlier "deferred-drain writes rec_103A"
+claim).** DEB decode + field-offset arithmetic falsified the clean hypothesis, and
+per the prime rule the refutation is recorded rather than implemented on:
+- CONFIRMED: **4024 = the "Bigbang" DEB object** (kind 1) — so `rec_103A==4024`
+  means the plot-reference points at Bigbang (the wedding-concert entity). And
+  **rec_103A (0x103A) sits inside the `arche` object** (arche @ 0x1024 → rec_103A =
+  arche + 0x16).
+- REFUTED: rec_103A is NOT the deferred-drain target. The 0x5816 deferred write
+  lands on `arche + vm_field_offset(C9_RELATED=0x13, kind) [+2 related]`, whose
+  values for arche are 0x102E (kind 1) / 0x1042 (kind 0x10) / 0x1030 (kind 0x200) —
+  NONE equal 0x103A. So the arche+0x16 field that IS rec_103A is written by a
+  DIFFERENT engine field-write path, not the C9_RELATED deferred drain. (Had this
+  been implemented on the hypothesis it would have been a fabrication; the field
+  math caught it — verification working as the prime rule intends.)
+- STILL OPEN: which field-write path sets arche+0x16 to the Bigbang identity. The
+  deferred-record mechanism below is real and the port genuinely lacks its setter,
+  but it is NOT established to be rec_103A's writer. Next: identify the writer of
+  the arche+0x16 field (a different selector than C9_RELATED).
 
 SCRIPT5's Bigbang-concert ending is gated on `rec_103A==4024` (the concert FSM's
-every edge — see the progression FSM row). rec_103A is now proven the SAME class
-as rec_13C2 by THREE independent static/data methods, no oracle involved:
+every edge — see the progression FSM row). rec_103A was investigated by THREE
+independent static/data methods, no oracle involved:
 1. SCRIPT analysis: NO bytecode writer in any of the 5 scripts — all 29 rec_103A
    occurrences are GUARD reads (0x6946-family query mode); no literal assign, no
    OP_C1/C0 (all 6 SCRIPT5 C1 sites target 0x1346=rec_1340), no OP_CD (targets
