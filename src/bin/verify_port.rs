@@ -21,28 +21,23 @@ fn main() {
     // first plank. The decoded BAS menu stack replaces the old hardcoded box
     // literals (a no-transcription retirement).
     let rd = |ext: &str| std::fs::read(format!("output/_tmp_iso/SCRIPT2.{ext}"));
-    let mut vm = commander_blood_tools::vm::VmMachine::new();
     let mut transcript: Vec<String> = Vec::new();
-    let mut vm_texts: std::collections::HashMap<usize, String> = Default::default();
-    if let (Ok(cod), Ok(var), Ok(dic_raw)) = (rd("COD"), rd("VAR"), rd("DIC")) {
-        vm.load_cod(&cod);
-        vm.load_var(&var);
-        let dic = commander_blood_tools::script::parse_dictionary(&dic_raw);
-        for t in commander_blood_tools::vm::walk(&cod, 0, cod.len()) {
-            if let commander_blood_tools::vm::VmToken::Text { offset, word_offsets, .. } = t {
-                let text: String = word_offsets
-                    .iter()
-                    .take_while(|&&w| w != 0xFFFF)
-                    .filter_map(|w| dic.get(w).cloned())
-                    .collect::<Vec<_>>()
-                    .join(" ");
-                vm_texts.insert(offset, text);
+    let mut drive = match (rd("COD"), rd("VAR"), rd("DIC"), rd("DEB")) {
+        (Ok(cod), Ok(var), Ok(dic), Ok(deb)) => {
+            if let Ok(bas) = rd("BAS") {
+                e.load_bas_menus(&bas, &dic);
             }
+            Some(commander_blood_tools::vm_drive::VmDrive::new(&cod, &var, &dic, &deb))
         }
-        if let (Ok(bas), Ok(d)) = (rd("BAS"), rd("DIC")) {
-            e.load_bas_menus(&bas, &d);
-        }
+        _ => None,
+    };
+    if let Some(d) = drive.as_mut() {
+        d.m.flag_252a = true;
+        d.m.flag_274f = true;
     }
+    // The console rows' actors, by their DEB names (the row order the frames
+    // bake: HONK, TELEPHONE, CRYOBOX, MENU, OPTION).
+    let row_actor = ["Honk", "", "", "menu", ""];
     e.on_ship = true;
     e.bridge_active = true;
     // The hub state: ring frame 45 (the oracle's script2.state view), menu baked.
@@ -87,16 +82,17 @@ fn main() {
                     // (the windowed game's dialogue_finished gate; oracle-confirmed:
                     // clicks during the live presentation are ignored).
                     match if e.hub_presentation { None } else { e.bridge_press(mx, my) } {
-                        Some(0) => {
-                            e.bridge.engaged_row = Some(0);
-                            // The decoded BAS entry menu (the game's own concept
-                            // stack), not a transcription.
+                        Some(row) if row == 0 || row == 3 => {
+                            e.bridge.engaged_row = Some(row);
+                            // Engage the row's actor through the SHARED drive
+                            // layer — the same dispatch the app performs.
+                            if let Some(d) = drive.as_mut() {
+                                if !row_actor[row].is_empty() {
+                                    d.engage(row_actor[row]);
+                                }
+                            }
                             let labels = e.current_bas_menu_labels();
-                            e.console_box = if labels.is_empty() {
-                                Vec::new()
-                            } else {
-                                labels
-                            };
+                            e.console_box = labels;
                             e.console_box_kind = 3;
                         }
                         Some(1) => e.bridge.engaged_row = Some(1),
@@ -131,15 +127,10 @@ fn main() {
                 for _ in 0..frames {
                     step_engine(&mut e, mx, my, 0);
                 }
-                // The VM rides the waits: frames + beats, transcripting lines.
-                for ev in vm.run_frame() {
-                    if let commander_blood_tools::vm::VmEvent::Text { offset } = ev {
-                        if let Some(t) = vm_texts.get(&offset) {
-                            transcript.push(t.clone());
-                        }
-                    }
+                // The VM rides the waits through the shared drive layer.
+                if let Some(d) = drive.as_mut() {
+                    transcript.extend(d.frame());
                 }
-                vm.tick_state_countdowns();
             }
             _ => {}
         }
