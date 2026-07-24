@@ -639,12 +639,12 @@ record_op	src/vm.rs	203	fn	0x674e,0x6946	ASM?	/// A 2-word record opcode (`0xB8`
 text_selector_active_line_id	src/vm.rs	233	fn	0x1FAB,0x6788	ASM?	/// Port the TEXT handler's `b3` selector bridge: /// `cbw; mov gs:[0x1FAB],ax`, then `mov ax,[0x1FAB]; add ax,9; mov [0x6788],ax`.
 text_selector_voice_clip_index	src/vm.rs	242	fn		UNVERIFIED	/// Resolve a TEXT `b3` selector to the actor's zero-based `son.snd` talk clip. /// /// Current evidence: `0x00` and `0xFF` are subtitle/no-voice channels, while /// `1..=talk_clip_count` are one-base
 text_selector_requests_voice	src/vm.rs	251	fn		UNVERIFIED	
-text_flags_are_active	src/vm.rs	255	fn		UNVERIFIED	
+text_flags_are_active	src/vm.rs	255	fn		ASM	|| AUDIT 2026-07-24: 0x6647 `or cx,cx; jns` — cx is the b4b5 word, so the tested bit15 IS b5 bit7 (0x80)
 text_conditional_skip_count	src/vm.rs	261	fn	0x661E,0x662C,0x67AB	ASM?	/// Port the A6 handler's conditional-skip count at file `0x661E..0x662C`: /// `b4 & 0x08` stores `((b5 >> 4) & 7) + 1` in `gs:0x67AB`.
 text_flags_after_accept	src/vm.rs	268	fn	0x668D,0x669B	ASM?	/// Port the accepted-line self-modifying write in the A6 handler at file /// `0x668D..0x669B`: `b4 & 1` preserves the token's active bit, otherwise the /// handler clears bit7 of `b5` in the COD stre
-text_line_flags_offset	src/vm.rs	276	fn		UNVERIFIED	
-text_presentation_record_offset	src/vm.rs	280	fn		UNVERIFIED	
-text_line_already_shown	src/vm.rs	284	fn		UNVERIFIED	
+text_line_flags_offset	src/vm.rs	276	fn		ASM	|| AUDIT 2026-07-24: 0x665A `test word es:[di+2],0x8000` with di = table base + line_index, so the flags word is at line_index+2
+text_presentation_record_offset	src/vm.rs	280	fn		ASM	|| AUDIT 2026-07-24: A6 gate 0x6664 builds matrix index (0x13<<4)+1 = 0x131 and reads gs:[0x6D60+0x131] = 58 = TALK_FIELD 0x3A (verified against the shipped image)
+text_line_already_shown	src/vm.rs	284	fn		ASM	|| AUDIT 2026-07-24: same site: the tested mask IS 0x8000
 is_record_entry_opcode	src/vm.rs	288	fn		UNVERIFIED	
 is_record_state_opcode	src/vm.rs	292	fn		UNVERIFIED	
 is_global_compare_opcode	src/vm.rs	296	fn		UNVERIFIED	
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	 
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	  
