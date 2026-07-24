@@ -242,6 +242,19 @@ pub struct EngineState {
     /// Deterministic PRNG seed for the starfield point cloud (the engine seeds
     /// from CMOS RTC seconds at runtime; fixed here for reproducibility).
     pub starfield_seed: u8,
+    /// Ship-3D view TRANSITION + DEPTH state (`DS:0x2533/0x252F/0x2530/0x2531`
+    /// and `DS:0x2527`). These drive the nav view's open/close sweep. The state
+    /// machine (`update_ship_3d_transition_state` vs `0xB692`) and the scroll step
+    /// (`step_ship_3d_depth_scroll` vs `0xB75C`) were both audit-verified EXACT,
+    /// but had NO caller outside tests — the ported subsystem never ran. Wired
+    /// here so the game actually executes it.
+    pub ship3d_transition: crate::ship3d::Ship3dTransitionState,
+    pub ship3d_depth: crate::ship3d::Ship3dDepthState,
+    /// The nav view's hold counter (`gs:0x0B3B`), which the transition gate reads.
+    pub ship3d_hold_ticks: u16,
+    /// The game's own PRNG, used for the transition's `rand(20)` close gate
+    /// (`0xB6D0 mov ax,0x14` -> `lcall 0x1CE:0x0B02`).
+    ship3d_prng: crate::ship3d::BloodPrng,
     /// Decoded ship-nav HUD sprite banks: BCARTE perspective grid frames.
     hud_grid: Vec<SpriteFrameImage>,
     /// Decoded ship-nav HUD orb sprite frames (BORXX).
@@ -562,6 +575,10 @@ impl EngineState {
             nav_selection: None,
             prev_left_down: false,
             starfield_seed: 17,
+            ship3d_transition: Default::default(),
+            ship3d_depth: Default::default(),
+            ship3d_hold_ticks: 0,
+            ship3d_prng: crate::ship3d::BloodPrng::seeded_from_rtc_seconds(0),
             hud_grid: Vec::new(),
             hud_orb: Vec::new(),
             nav_world_labels: crate::levels::primary_worlds().map(|e| e.stem).collect(),
@@ -3340,6 +3357,31 @@ impl EngineState {
     /// Whether the plain nav star-map is the active view — on the ship with no overlay
     /// screen (bridge/comms/cyberspace/cryobox/alien/world-landing) open. This is the
     /// view that shows the choose-a-location destination list.
+    /// Drive the ship-3D view's TRANSITION + DEPTH state machine for one frame —
+    /// the game's `0xB692` (transition) followed by `0xB75C` (depth scroll), both
+    /// audit-verified exact against the binary but previously unreachable in play.
+    ///
+    /// The hold counter (`gs:0x0B3B`) advances while the nav view is up; once it
+    /// passes 120 the view arms and OPENS with step 4, and thereafter a `rand(20)`
+    /// draw that comes up ZERO closes it with step 8 — the modulus is the
+    /// handler's own (`0xB6D0 mov ax,0x14`), taken from the game's PRNG.
+    pub fn step_ship_3d_nav_state(&mut self) {
+        use crate::ship3d::{step_ship_3d_depth_scroll, update_ship_3d_transition_state};
+        self.ship3d_hold_ticks = self.ship3d_hold_ticks.saturating_add(1);
+        self.ship3d_transition.hold_ticks = self.ship3d_hold_ticks;
+        let close_gate = self.ship3d_prng.next(20) == 0;
+        update_ship_3d_transition_state(&mut self.ship3d_transition, close_gate);
+        // The transition writes the shared step/direction cells the scroll reads
+        // (DS:0x2531 step, DS:0x252F opening, DS:0x2530 closing).
+        self.ship3d_depth.depth_step = self.ship3d_transition.depth_step;
+        self.ship3d_depth.opening = self.ship3d_transition.opening;
+        self.ship3d_depth.closing = self.ship3d_transition.closing;
+        step_ship_3d_depth_scroll(&mut self.ship3d_depth);
+        // The scroll clears its own direction flags when it reaches a limit.
+        self.ship3d_transition.opening = self.ship3d_depth.opening;
+        self.ship3d_transition.closing = self.ship3d_depth.closing;
+    }
+
     pub fn nav_view_active(&self) -> bool {
         self.on_ship
             && !self.bridge_active
@@ -4085,6 +4127,12 @@ impl EngineState {
     /// this faithful control-flow skeleton; for now it advances input + bookkeeping
     /// so the loop is drivable and testable headlessly.
     pub fn step(&mut self, input: MouseInput) {
+
+        // Ship-3D nav view: drive the transition/depth state machine (0xB692 +
+        // 0xB75C). Previously this ported, verified subsystem never ran.
+        if self.nav_view_active() {
+            self.step_ship_3d_nav_state();
+        }
         // This frame's relative cursor motion — the bridge steering consumes deltas in RING
         // space, mirroring the original (driver h-range = the 1440-px ring, not the screen).
         // Prefer the frontend's RAW deltas (pointer-locked capture: rotation continues while the
@@ -5494,6 +5542,48 @@ mod tests {
     /// Oracle-confirmed: with no destinations granted, all eleven entity records
     /// read zero in every reachable savestate, so the real routine draws nothing.
     /// This pins the port to that gate, replacing the old fabricated 7x4 grid.
+    /// The ship-3D transition + depth state machine must actually RUN in play.
+    /// Both routines were audit-verified exact against 0xB692 / 0xB75C but had no
+    /// caller outside tests, so the nav view never swept open. This pins the
+    /// wiring: with the nav view up, the hold counter passes 120, the view arms
+    /// and opens with step 4, and the depth offset climbs toward 0x41.
+    #[test]
+    fn nav_view_drives_the_ship3d_transition_and_depth_state() {
+        let mut e = EngineState::new();
+        e.on_ship = true; // nav view active: no overlay screens open
+        assert!(e.nav_view_active(), "test precondition: the nav view is up");
+        assert_eq!(e.ship3d_depth.depth_offset, 0, "starts closed");
+
+        // Before the 120-tick threshold the view must NOT arm.
+        for _ in 0..100 {
+            e.step_ship_3d_nav_state();
+        }
+        assert!(!e.ship3d_transition.transition_armed, "not armed before 120 ticks");
+        assert_eq!(e.ship3d_depth.depth_offset, 0, "no sweep before arming");
+
+        // Past the threshold it arms, opens with step 4 (0xB6A0), and sweeps.
+        for _ in 0..40 {
+            e.step_ship_3d_nav_state();
+        }
+        assert!(e.ship3d_transition.transition_armed, "armed once hold > 120");
+        assert_eq!(e.ship3d_transition.depth_step, 4, "open step is 4 (0xB6A0)");
+        assert!(
+            e.ship3d_depth.depth_offset > 0,
+            "the depth sweep advanced, got {}",
+            e.ship3d_depth.depth_offset
+        );
+
+        // It clamps at the maximum rather than overshooting (0xB776).
+        for _ in 0..400 {
+            e.step_ship_3d_nav_state();
+        }
+        assert!(
+            e.ship3d_depth.depth_offset <= crate::ship3d::SHIP_3D_MAX_DEPTH_OFFSET,
+            "never exceeds 0x41, got {}",
+            e.ship3d_depth.depth_offset
+        );
+    }
+
     #[test]
     fn nav_markers_are_gated_on_granted_destinations() {
         let count_pyramid_pixels = |e: &EngineState| -> usize {
