@@ -5270,8 +5270,17 @@ mod tests {
         m.rec_write(0x0722, 65535);
         m.rec_write(0x0332, 65535);
 
-        // The customs block queues, boards, and hands off — the same march:
-        // frames + beats, promoting queued presentations as sessions end.
+        // The customs block queues on an idle sweep (the free-block walk with
+        // no presentation running), then the player takes the call and the
+        // boarding plays to the handoff.
+        for _ in 0..20 {
+            let _ = m.run_frame();
+            m.tick_state_countdowns();
+            if m.rec_read(0x6FC) == 0xC3 {
+                break;
+            }
+        }
+        assert_eq!(m.rec_read(0x6FC), 0xC3, "the customs C3 queues on the idle sweep");
         let mut customs = false;
         for _ in 0..500 {
             for ev in m.run_frame() {
@@ -5283,9 +5292,6 @@ mod tests {
             }
             m.tick_state_countdowns();
             if !m.presentation_busy {
-                // The ambient queue keeps re-offering the TV commercial
-                // (rec 0xCC); the player ignores it and takes the CUSTOMS call
-                // (0x6FC) when it rings.
                 if let Some(started) = m.promote_queued_presentation() {
                     if started != 0x6FC {
                         if let Some(actor) = m.active_actor {
