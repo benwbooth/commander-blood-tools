@@ -11,7 +11,7 @@ displays** and wins. So a subset of the 40 are FALSE POSITIVES — the port is a
 correct and the raw-assembly reading is the one that's off. Each geometry finding must
 be oracle-re-verified before it is "fixed"; changing it blind regresses a pixel match.
 
-## Fixed + committed (32) — assembly-cited, regression-tested, oracle-verified where visual
+## Fixed + committed (33) — assembly-cited, regression-tested, oracle-verified where visual
 
 | area | fix | severity |
 |---|---|---|
@@ -42,6 +42,7 @@ be oracle-re-verified before it is "fixed"; changing it blind regresses a pixel 
 | vm-dispatch | **live** `step()` now executes `0xC1` (`0x6B4C`): QUERY (resolved selector path + direct compare) + non-ship3d SET (`{0xC1, operand, 2}`); was an unhandled no-op | HIGH |
 | bridge-clicks | console choice-box hit-band = the DRAWN box `[x0,x1]` (`0x84EE..0x84F6`, shared `choice_box_geometry`), not a fixed `40..160`; fixes the anchor-80 world box (~20px off) and any label wider than 100px | MED |
 | bridge-clicks | ALL four choice-box hit-test callers share that geometry (console, MENU submenu, nav chooser, telephone) — band == drawn box by construction | MED |
+| ship3d | world-click commit decoded + implemented (`VmMachine::world_click_select`, `0xB20C..0xB27B`): new target -> `gs:0x251B` + C1 record `{0xC1,target,0}` at `orxx+0xA`; same-target and back-row cases match the FSM | HIGH |
 | ship3d | nav destinations = one marker per GRANTED destination, gated like the projector's `test [si],0x80` over entities `0x15..0x1F`, from the real baked world point `DS:0x4F09` (10200,12100,900) and camera `DS:0x2F65` (10000,12000,0) — replaces the fabricated 7x4=28-point grid; one APPROX left (marker spread) | HIGH |
 | bridge | ring cursor snaps to the 8-unit frame grid each tick (`0x97F6 and [0xa2a],0xfff8`, the `0x97E4` sync every steer/seek path falls into) | LOW |
 | vm-dispatch | `0xA8` latches the FIN flag `gs:[0x67BD]` on a `"fin."`-prefixed string (`0x67D8..0x67F0`, ungated) — the finale latch the port dropped | LOW |
@@ -160,7 +161,17 @@ Measured VAR sizes: SCRIPT1 `0x123A`, SCRIPT2 `0x1312`, SCRIPT3 `0x144E`, SCRIPT
 
 - **Rewrites:** nav destinations = flag-gated entity set (fabricated pyramid grid; needs
   entity world coords + active bits); A6 reveal-busy serialization handshake (VM↔frontend).
-- **World-destination click — DECODED (no longer "undecoded on-planet click"):** the ship
+- **World-destination click — DECODED and IMPLEMENTED at the VM layer.** The commit
+  path is now `VmMachine::world_click_select` (tested: new target writes the C1 record
+  at `orxx+0xA`, the current target is not rewritten, the back row `-1` clears the
+  target and writes nothing). It has a real consumer: the live `0xC1` QUERY added this
+  session lets scripts test that record. REMAINING (frontend binding only): the port's
+  nav click yields a destination INDEX (`nav_destination_click` -> `SCRIPT3+i`), not the
+  target's RECORD OFFSET, and the index->record mapping lives in the destination entity
+  set `0x15..0x1F` — which is zeroed in every observable savestate (see dead_ends.md).
+  Passing a made-up offset would be exactly the fabrication the prime rule forbids, so
+  the binding waits on a state where those entities are populated.
+  Original decode: the ship
   FSM (`0xAFA0`) calls `ship_3d_target_record_select` (`0xB2BB`) each frame, which scans
   the target list `DS:0x250B` (fallback `DS:0x2537`) and hit-tests the mouse against the
   projected target layout via `lcall 0x71E:0xC48` (gated by `0x27E6`, layout `DS:0x2AAB`/

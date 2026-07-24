@@ -3735,6 +3735,13 @@ pub struct VmMachine {
     /// The `arche` object offset (gs:0x6752), from the .DEB. Its +0x16 field holds a
     /// dangling owning-object reference that the 0xB8 family invalidates.
     pub arche_offset: Option<u16>,
+    /// DEB offset of the built-in object `orxx` (the engine's `gs:0x6750`). The
+    /// world-destination click writes its C1 record at `orxx + 0xA` (`0xB272`).
+    pub orxx_offset: Option<u16>,
+    /// `gs:0x251B` — the currently-presented world target (`ship_3d_current_target`).
+    /// The click path only acts when the newly-selected target DIFFERS from this
+    /// (`cmp ax,[0x251b]` @`0xB21A`).
+    pub world_target: Option<u16>,
     halted: bool,
 }
 
@@ -3779,6 +3786,8 @@ impl Default for VmMachine {
             cod: Vec::new(),
             object_offsets: Vec::new(),
             arche_offset: None,
+            orxx_offset: None,
+            world_target: None,
             halted: false,
         }
     }
@@ -3978,6 +3987,10 @@ impl VmMachine {
             .iter()
             .find(|s| s.name.eq_ignore_ascii_case("arche"))
             .map(|s| s.offset);
+        self.orxx_offset = syms
+            .iter()
+            .find(|s| s.name.eq_ignore_ascii_case("orxx"))
+            .map(|s| s.offset);
         let mut offs: Vec<u16> = syms.into_iter().map(|s| s.offset).collect();
         offs.sort_unstable();
         offs.dedup();
@@ -4097,6 +4110,44 @@ impl VmMachine {
             return Some(false); // record occupied (`0x6C59` jne)
         }
         Some(true)
+    }
+
+    /// The WORLD-DESTINATION CLICK commit (`0xB20C..0xB27B`). The ship FSM's
+    /// per-frame hit-test (`ship_3d_target_record_select` `0xB2BB`) returns the
+    /// clicked target record; this is what the FSM then does with it:
+    ///
+    /// * `0` — nothing hit: no change (returns `false`).
+    /// * `0xFFFF` — the back/exit row (`0xB288`): clears the current target and
+    ///   returns `false`; the caller leaves the world view (`[0x24F3]=0x11`).
+    /// * a target equal to `gs:0x251B` (`cmp ax,[0x251b]` @`0xB21A`): already
+    ///   presented, so the record is NOT rewritten (returns `false`).
+    /// * any other target: `gs:0x251B = target` (`0xB224`) and a C1 record
+    ///   `{0xC1, target, 0}` is written at `[0x6750] + 0xA` (`0xB267..0xB27B`),
+    ///   where `gs:0x6750` is the built-in object `orxx`. The C1 ladder
+    ///   (`record_type_ladder` `0x5B38`) presents that record on a later frame.
+    ///
+    /// Returns whether a new C1 presentation record was created.
+    pub fn world_click_select(&mut self, target: u16) -> bool {
+        if target == 0 {
+            return false;
+        }
+        if target == 0xFFFF {
+            // Back/exit: the FSM drops the current target (0xB288 path).
+            self.world_target = None;
+            return false;
+        }
+        if self.world_target == Some(target) {
+            return false; // already the presented target
+        }
+        self.world_target = Some(target);
+        let Some(orxx) = self.orxx_offset else {
+            return false; // DEB not loaded: no record slot to write
+        };
+        let at = orxx.wrapping_add(0xA);
+        self.rec_write(at, 0xC1);
+        self.rec_write(at.wrapping_add(2), target);
+        self.rec_write(at.wrapping_add(4), 0);
+        true
     }
 
     /// Insert an owner into the 16-slot special list (gs:0x6D3E, insert 0x5FF6).
@@ -7649,6 +7700,41 @@ mod tests {
         m.step();
         assert_eq!(m.rec_read_pub(0x84), 0xC4, "no DEB loaded -> unconditional write");
         assert_eq!(m.active_actor, Some(0x84));
+    }
+
+    #[test]
+    fn world_click_creates_the_c1_presentation_record() {
+        // 0xB20C..0xB27B: a NEW world target sets gs:0x251B and writes
+        // {0xC1, target, 0} at orxx+0xA (gs:0x6750 = the built-in object orxx).
+        let orxx = 0x0200u16;
+        let slot = orxx + 0xA;
+        let mut m = VmMachine::new();
+        m.orxx_offset = Some(orxx);
+
+        assert!(!m.world_click_select(0), "nothing hit -> no record");
+        assert_eq!(m.rec_read_pub(slot), 0);
+
+        assert!(m.world_click_select(0x0140), "a new target creates the C1 record");
+        assert_eq!(m.rec_read_pub(slot), 0xC1, "record typed C1");
+        assert_eq!(m.rec_read_pub(slot + 2), 0x0140, "target stored at +2");
+        assert_eq!(m.rec_read_pub(slot + 4), 0, "+4 cleared");
+        assert_eq!(m.world_target, Some(0x0140), "gs:0x251B updated");
+
+        // Re-clicking the SAME target must not rewrite (cmp ax,[0x251b] @0xB21A).
+        m.rec_write_pub(slot, 0xBEEF);
+        assert!(!m.world_click_select(0x0140), "same target -> no rewrite");
+        assert_eq!(m.rec_read_pub(slot), 0xBEEF, "record untouched for the current target");
+
+        // A DIFFERENT target does rewrite.
+        assert!(m.world_click_select(0x0180));
+        assert_eq!(m.rec_read_pub(slot), 0xC1);
+        assert_eq!(m.rec_read_pub(slot + 2), 0x0180);
+
+        // The back/exit row (-1) drops the target and writes nothing (0xB288).
+        m.rec_write_pub(slot, 0xBEEF);
+        assert!(!m.world_click_select(0xFFFF), "back row creates no record");
+        assert_eq!(m.world_target, None, "current target cleared on exit");
+        assert_eq!(m.rec_read_pub(slot), 0xBEEF);
     }
 
     #[test]
