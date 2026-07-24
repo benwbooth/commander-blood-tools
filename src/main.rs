@@ -801,8 +801,20 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 let mut m = commander_blood_tools::vm::VmMachine::new();
                 m.load_cod(&cod);
                 m.load_var(&var);
+                // gs:0x252A (ship-3D sequence active) — the shipped image bakes
+                // DS:0x252A = 0, so the game starts with 0xD0's gate CLEAR too.
+                // Left forced here because the port has no runtime setter for it
+                // yet: the game's writer is the ship-3D navigation sequence
+                // update, which is part of the still-open ship-3D runtime work.
+                // Clearing it without that setter would permanently close every
+                // 0xD0-gated block. See docs/audit-fixes.md.
                 m.flag_252a = true;
-                m.flag_274f = true;
+                // gs:0x274F starts CLEAR: the shipped image bakes DS:0x274F = 0
+                // (file 0xFB6F). The game's only writers are the screen-entry set
+                // at 0x18C4 and the leave-mode clear at 0x1A48, so this flag is
+                // "the cryobox screen is up" — driven below from the CRYOBOX
+                // console row and its exit, NOT forced on at construction (which
+                // left 0xD1's Cap'n Bob block open from boot).
                 let first_actor = commander_blood_tools::vm::walk(&cod, 0, cod.len())
                     .into_iter()
                     .find_map(|t| match t {
@@ -1740,6 +1752,15 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         engine.alien_view_active = false;
                         engine.tv_active = false;
                         engine.cyber_active = false;
+                        if engine.cryobox_active {
+                            // Leaving the cryobox screen clears gs:0x274F, as the
+                            // game's leave-mode path does (`0x1A48 mov byte
+                            // [0x274f],0`) — so Cap'n Bob's 0xD1-gated block closes
+                            // again instead of staying open for the rest of the run.
+                            if let Some(m) = script_vm.borrow_mut().as_mut() {
+                                m.flag_274f = false;
+                            }
+                        }
                         engine.cryobox_active = false;
                         engine.phone_active = false;
                         // Esc from a screen returns to the bridge hub.
