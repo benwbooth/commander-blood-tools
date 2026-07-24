@@ -3698,6 +3698,9 @@ pub struct VmMachine {
     /// lookup over gs:0x672c). Empty until [`Self::load_deb_objects`]; owner-gated
     /// opcodes (C4/0x6946/B8) degrade gracefully when empty.
     pub object_offsets: Vec<u16>,
+    /// The `arche` object offset (gs:0x6752), from the .DEB. Its +0x16 field holds a
+    /// dangling owning-object reference that the 0xB8 family invalidates.
+    pub arche_offset: Option<u16>,
     halted: bool,
 }
 
@@ -3740,6 +3743,7 @@ impl Default for VmMachine {
             events: Vec::new(),
             cod: Vec::new(),
             object_offsets: Vec::new(),
+            arche_offset: None,
             halted: false,
         }
     }
@@ -3934,10 +3938,12 @@ impl VmMachine {
     /// self-modifies accepted lines' active bits in this stream).
     /// Populate the DEB object-offset table (ascending) for owner resolution.
     pub fn load_deb_objects(&mut self, deb: &[u8]) {
-        let mut offs: Vec<u16> = crate::script::parse_deb(deb)
-            .into_iter()
-            .map(|s| s.offset)
-            .collect();
+        let syms = crate::script::parse_deb(deb);
+        self.arche_offset = syms
+            .iter()
+            .find(|s| s.name.eq_ignore_ascii_case("arche"))
+            .map(|s| s.offset);
+        let mut offs: Vec<u16> = syms.into_iter().map(|s| s.offset).collect();
         offs.sort_unstable();
         offs.dedup();
         self.object_offsets = offs;
@@ -4499,6 +4505,19 @@ impl VmMachine {
                 } else {
                     self.rec_write(off, v1);
                     self.rec_write(off + 2, v2);
+                    // Post-write cleanup (0x6B34-0x6B44): if the record just
+                    // overwritten is owned by the object arche's +0x16 field
+                    // references, invalidate that dangling reference (arche+0x16=0),
+                    // so the character-display maintenance off arche doesn't act on a
+                    // stale record.
+                    if let Some(arche) = self.arche_offset {
+                        let a16 = arche.wrapping_add(0x16);
+                        if let Some(owner) = self.owner_object_offset(off) {
+                            if self.rec_read(a16) == owner {
+                                self.rec_write(a16, 0);
+                            }
+                        }
+                    }
                 }
             }
             // 0xC3 QUEUE (0x6EEE). QUERY: pass iff rec[off] is typed 0xC3 with a
