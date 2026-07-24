@@ -725,8 +725,8 @@ record_owner_object_offset	src/vm.rs	1496	fn		UNVERIFIED
 apply_assign5_mode0	src/vm.rs	1500	fn		UNVERIFIED	
 record_owner_is_active	src/vm.rs	1527	fn		ASM	|| AUDIT 2026-07-24: the C4/C2 owner gate `test es:[di+2],1` (0x6CA4 / 0x6CC3 / 0x6E56) after the 0x6034 threshold lookup resolves the owning object -- bit0 of the owner record +2
 actor_record_is_active	src/vm.rs	1536	fn		ASM	|| AUDIT 2026-07-24: derives the object from a talk-field record by subtracting TALK_FIELD and tests the same +2 bit0 active flag
-actor_record_condition	src/vm.rs	1542	fn		UNVERIFIED	
-write_actor_record	src/vm.rs	1560	fn		UNVERIFIED	
+actor_record_condition	src/vm.rs	1542	fn		ASM	|| AUDIT 2026-07-24: C4 QUERY 0x6CA4..0x6CB5, same three conditions in the same order: owner active (`test es:[di+2],1`), record type == 0xC4 (`cmp cx,0xc4`), stored related == the operand (`cmp ax,es:[bp+2]`), with 0xA1 inverting. NOTE the `!strict && type==0 && related==0 -> None` escape is a PORT-side unresolved-record convention (flagged by strict_actor_record_branching), not present in the handler
+write_actor_record	src/vm.rs	1560	fn		ASM	|| AUDIT 2026-07-24: C4 SET write 0x6D01..0x6D0B: es:[bp]=0xC4, es:[bp+2]=related, es:[bp+4]=0
 PresentationKind1Update	src/vm.rs	1567	enum		UNVERIFIED	
 post_update_kind1_presentation_state	src/vm.rs	1574	fn		UNVERIFIED	
 post_update_kind2_presentation_handoff_target	src/vm.rs	1627	fn		UNVERIFIED	
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	                       
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	                        
