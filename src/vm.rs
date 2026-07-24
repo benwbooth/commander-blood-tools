@@ -5720,11 +5720,40 @@ mod tests {
         // step-level tracing before the driven form lands; until then the
         // placement stands cited to @5F53's own write.
         m.rec_write(0x06DA, 4070);
-        // The remaining placements, in the story's own order (their beats are
-        // the same replacement pattern, one per window).
+        // THE TINA BURNER TELEPORT, driven (Migrator's beat @44C6, talk
+        // 0x474): "TELEPORT TINA BURNER TO AIRPORT" (concept 0x367) plays
+        // "TELEPORTING TINA BURNER" and the beat's tail writes rec_088A=4070
+        // (@4629) — another hand-placement replaced by its own beat.
+        m.start_actor_presentation(0x474, 40);
+        let mut tina = false;
+        for _ in 0..300 {
+            for ev in m.run_frame() {
+                if let VmEvent::Text { offset } = ev {
+                    if offset == 0x45DD {
+                        m.dispatch_concept(0x367);
+                    }
+                }
+            }
+            if m.rec_read(0x088A) == 4070 {
+                tina = true;
+                break;
+            }
+            if !m.presentation_busy {
+                m.start_actor_presentation(0x474, 40);
+            }
+        }
+        assert!(tina, "the Tina Burner teleport beat writes rec_088A");
+        if m.presentation_busy {
+            if let Some(actor) = m.active_actor {
+                m.rec_write(actor, 0);
+            }
+            m.active_actor = None;
+            m.presentation_busy = false;
+        }
+        // The remaining placements (their beats follow the same pattern, one
+        // per window).
         m.rec_write(0x1424, 1);
         m.rec_write(0x13C2, 40);
-        m.rec_write(0x088A, 4070);
         m.rec_write(0x108E, 0xC6);
         m.rec_write(0x1090, 0x1052);
         for _ in 0..20 {
