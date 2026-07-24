@@ -5441,11 +5441,27 @@ pub fn decompile_script(
             OP_TEXT => {
                 match decode_text(cod, pc, cod.len()) {
                     Some((VmToken::Text { flags_b4, flags_b5, voice_selector, word_offsets, .. }, next)) => {
-                        let text: String = word_offsets
+                        // The word list has TWO sections split by 0xFFFF: the spoken
+                        // line, then the CHOICE-MENU words (SCRIPT1.COD @0x4A7 is the
+                        // canonical example -- "Click quick, Cap'n Bob is waiting ..."
+                        // then explanations/game). Joining the whole list ran the menu
+                        // into the sentence and printed the separator as `word_65535`,
+                        // because 0xFFFF is not a DIC offset. The gameplay consumers
+                        // already `take_while(|w| w != 0xFFFF)`; the disassembler did not.
+                        let sep = word_offsets.iter().position(|&w| w == 0xFFFF);
+                        let spoken = &word_offsets[..sep.unwrap_or(word_offsets.len())];
+                        let text: String = spoken
                             .iter()
                             .map(|w| word_of(*w))
                             .collect::<Vec<_>>()
                             .join(" ");
+                        let menu: Option<String> = sep.map(|i| {
+                            word_offsets[i + 1..]
+                                .iter()
+                                .map(|w| word_of(*w))
+                                .collect::<Vec<_>>()
+                                .join(" | ")
+                        });
                         let mut attrs = Vec::new();
                         if !text_flags_are_active(flags_b5) {
                             attrs.push("inactive".to_string());
@@ -5464,7 +5480,18 @@ pub fn decompile_script(
                         } else {
                             format!("  '[{}]", attrs.join(", "))
                         };
-                        line = format!("SAY \"{}\"{}", text.replace('\n', " / "), attr);
+                        // Surface the choice menu as its own clause instead of letting
+                        // it masquerade as part of the spoken line.
+                        let menu_part = match menu {
+                            Some(m) if !m.is_empty() => format!("  MENU[{m}]"),
+                            _ => String::new(),
+                        };
+                        line = format!(
+                            "SAY \"{}\"{}{}",
+                            text.replace('\n', " / "),
+                            menu_part,
+                            attr
+                        );
                         pc = next;
                     }
                     _ => {
@@ -7104,6 +7131,67 @@ mod tests {
     }
 
     use super::*;
+
+    /// The `0xA6` word list has TWO sections separated by `0xFFFF`: the spoken line,
+    /// then the CHOICE-MENU words. SCRIPT1.COD is the canonical example — at COD
+    /// `0x499` the words are "Click quick, Cap'n Bob is waiting ...", then `0xFFFF`
+    /// at `0x4A7`, then `explanations` (DIC `0x02FC`) and `game` (DIC `0x0309`),
+    /// terminated by `0x0000`.
+    ///
+    /// The disassembler used to join the WHOLE list, which both ran the menu into the
+    /// sentence and printed the separator as `word_65535` (0xFFFF is not a DIC
+    /// offset). This pins the split against the real shipped files.
+    #[test]
+    fn a6_word_list_splits_the_spoken_line_from_the_choice_menu() {
+        let dir = ["accuracy/cblood_install/cblood", "../accuracy/cblood_install/cblood"]
+            .iter()
+            .map(std::path::Path::new)
+            .find(|p| p.join("SCRIPT1.COD").is_file());
+        let Some(dir) = dir else { return };
+        let cod = std::fs::read(dir.join("SCRIPT1.COD")).unwrap();
+        let dic = std::fs::read(dir.join("SCRIPT1.DIC")).unwrap();
+        let word = |o: u16| -> String {
+            let o = o as usize;
+            let end = dic[o..].iter().position(|&b| b == 0).map(|n| o + n).unwrap_or(dic.len());
+            crate::font::cp437_string(&dic[o..end])
+        };
+
+        // Find the A6 record whose list contains the separator followed by the two
+        // known menu words -- located by DECODING, not by a hardcoded token offset.
+        let mut found = None;
+        for pos in 0..cod.len().saturating_sub(6) {
+            if cod[pos] != OP_TEXT {
+                continue;
+            }
+            if let Some((VmToken::Text { word_offsets, .. }, _)) = decode_text(&cod, pos, cod.len())
+            {
+                if let Some(i) = word_offsets.iter().position(|&w| w == 0xFFFF) {
+                    if word_offsets[i + 1..] == [0x02FC, 0x0309] {
+                        found = Some(word_offsets.clone());
+                        break;
+                    }
+                }
+            }
+        }
+        let words = found.expect("the explanations/game menu record must decode");
+        let sep = words.iter().position(|&w| w == 0xFFFF).unwrap();
+
+        let spoken: Vec<String> = words[..sep].iter().map(|&w| word(w)).collect();
+        assert_eq!(spoken, ["Click", "quick,", "Cap'n", "Bob", "is", "waiting", "..."]);
+
+        let menu: Vec<String> = words[sep + 1..].iter().map(|&w| word(w)).collect();
+        assert_eq!(menu, ["explanations", "game"]);
+
+        // The menu words must NOT leak into the spoken line, and the separator must
+        // never be resolved as a word.
+        assert!(!spoken.iter().any(|w| w == "explanations" || w == "game"));
+        assert!(!spoken.iter().any(|w| w.starts_with("word_")));
+
+        // This is where EngineState::MENU_SUBMENU's content actually comes from --
+        // the port's constant is these two DIC words, upper-cased.
+        let upper: Vec<String> = menu.iter().map(|w| w.to_uppercase()).collect();
+        assert_eq!(upper, ["EXPLANATIONS", "GAME"]);
+    }
 
     /// Executing each real SCRIPT<n> (walk + VAR-initialised interpret) must produce the exact
     /// number of dialogue LINE STATES recovered by RE - the text-line count per script. Extends

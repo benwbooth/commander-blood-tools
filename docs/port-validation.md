@@ -817,15 +817,27 @@ OFFSETS (`lodsw` at `0x8451`, measured via `lcall 0x299:0x13d` at `0x846C`), nev
 literals. So the correct shape is: find the routine that builds THIS list, take its
 offsets, resolve them through the loaded DIC.
 
-ROUTINE THAT MUST REPLACE IT: one of the eight near-callers of `0x8428`
-(`0x875E`, `0x8786`, `0x87EF`, `0x881D`, `0x8886`, `0x88BA`, `0x89C1`, `0x89F7`) —
-identify which builds the two-row MENU submenu and read the word-offset list it
-passes in `si`.
+PROVENANCE NOW ESTABLISHED (content), WIRING STILL OPEN. The list is not built by a
+caller of `0x8428` at all — it is script data, exactly as the prime rule describes.
+`SCRIPT1.COD` holds an `0xA6` TEXT record whose word list is:
 
-Note the DIC has `explanations`/`game` in LOWERCASE with a separate uppercase `GAME`.
-The port renders both rows uppercase, so whether the widget upper-cases for display or
-the list points at different entries is itself unresolved — and is a reason not to
-guess the offsets.
+    0x0499   "Click" "quick," "Cap'n" "Bob" "is" "waiting" "..."   <- spoken line
+    0x04A7   0xFFFF                                                <- separator
+    0x04A9   explanations (DIC 0x02FC), game (DIC 0x0309)          <- the MENU rows
+    0x04AD   0x0000                                                <- terminator
+
+So `MENU_SUBMENU`'s content is confirmed to BE these two DIC words, upper-cased —
+pinned by `vm::tests::a6_word_list_splits_the_spoken_line_from_the_choice_menu`,
+which locates the record by DECODING rather than by a hardcoded offset.
+
+What remains is wiring, not identification: the engine should take these rows from the
+executing VM's `0xA6` record (the split already exists at `vm.rs` ~6245) instead of
+from a `const`. Until it does, the constant is right by measurement but wrong by
+construction — it would not follow the data if a different script were loaded.
+
+The lowercase/uppercase question is answered too: the DIC entries ARE lowercase
+(`explanations`, `game`) and the separate uppercase `GAME` at `0x030E` is a different
+word the list does not point at, so the widget upper-cases for display.
 
 ### RESOLVED in the same pass — `OPTION_BOX`
 
