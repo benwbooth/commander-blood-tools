@@ -11,7 +11,7 @@ displays** and wins. So a subset of the 40 are FALSE POSITIVES — the port is a
 correct and the raw-assembly reading is the one that's off. Each geometry finding must
 be oracle-re-verified before it is "fixed"; changing it blind regresses a pixel match.
 
-## Fixed + committed (26) — assembly-cited, regression-tested, oracle-verified where visual
+## Fixed + committed (27) — assembly-cited, regression-tested, oracle-verified where visual
 
 | area | fix | severity |
 |---|---|---|
@@ -41,6 +41,8 @@ be oracle-re-verified before it is "fixed"; changing it blind regresses a pixel 
 | audio | chatter burble roll uses the game's PRNG (`BloodPrng` @`0x1CE:0x0B02`) + re-draw-until-different (`0xB8AB..0xB8B7`), replacing a fabricated glibc LCG + increment-on-collision | LOW |
 | vm-dispatch | **live** `step()` now executes `0xC1` (`0x6B4C`): QUERY (resolved selector path + direct compare) + non-ship3d SET (`{0xC1, operand, 2}`); was an unhandled no-op | HIGH |
 | bridge-clicks | console choice-box hit-band = the DRAWN box `[x0,x1]` (`0x84EE..0x84F6`, shared `choice_box_geometry`), not a fixed `40..160`; fixes the anchor-80 world box (~20px off) and any label wider than 100px | MED |
+| bridge-clicks | ALL four choice-box hit-test callers share that geometry (console, MENU submenu, nav chooser, telephone) — band == drawn box by construction | MED |
+| bridge | ring cursor snaps to the 8-unit frame grid each tick (`0x97F6 and [0xa2a],0xfff8`, the `0x97E4` sync every steer/seek path falls into) | LOW |
 
 ## Verified FALSE POSITIVE for the PORT — finding correct for the assembly, wrong for the port's model (4)
 
@@ -87,7 +89,7 @@ reading them in the C4 SET guard faithful to the game's write/branch decision (t
 divergence is the C1-clear case, a separate subsystem the live VM does not run). The C4
 mode-0 write guard is now IMPLEMENTED on this basis (see the Fixed table).
 
-## Remaining (10) — each to be oracle-re-verified or carefully implemented
+## Remaining (9) — each to be oracle-re-verified or carefully implemented
 
 - **Geometry — choice-box x-band is now FULLY CLOSED:** all four hit-test callers
   (console box, MENU submenu, on-bridge nav-destination chooser, telephone contacts)
@@ -125,7 +127,7 @@ mode-0 write guard is now IMPLEMENTED on this basis (see the Fixed table).
   playthrough harnesses currently pass on the approximation. Coupled to the
   presentation-record lifecycle (same subsystem as C1), not a safe drop-in. (The port
   DOES already model the tracer-path per-line gate behind `with_text_presentation_record_gating`.)
-- **Also low/subjective:** bridge ring-cursor 8px snap (changes steering feel).
+
 - **Rewrites:** nav destinations = flag-gated entity set (fabricated pyramid grid; needs
   entity world coords + active bits); A6 reveal-busy serialization handshake (VM↔frontend).
 - **World-destination click — DECODED (no longer "undecoded on-planet click"):** the ship

@@ -183,7 +183,21 @@ impl BridgeView {
     /// One tick of the view state machine (`0x9656..0x97E3`). Returns true if
     /// the frame changed (the original's carry flag, telling the caller to
     /// redraw the panorama).
+    ///
+    /// Every path through the steer/seek update FALLS INTO the frame->yaw sync
+    /// at `0x97E4`, which snaps the ring cursor to an 8-unit boundary
+    /// (`0x97F6 and word [0xa2a],0xfff8`) before the screen rebase — 8 ring
+    /// units = one whole panorama frame (2°), so the stored cursor is always
+    /// frame-aligned. [`update_view_steer`] is the `0x9656..0x97E3` body; this
+    /// wrapper applies the sync's snap the way the fall-through does.
     pub fn update_view(&mut self) -> bool {
+        let changed = self.update_view_steer();
+        // 0x97F6: `and [0xa2a],0xfff8` — clear the low 3 bits of the ring x.
+        self.ring_mouse_x &= !(RING_PX_PER_FRAME - 1);
+        changed
+    }
+
+    fn update_view_steer(&mut self) -> bool {
         let arc_view = self.frame as i32 * 2;
         let arc_mouse = wrap(self.ring_mouse_x, ANGLE_UNITS_PER_REVOLUTION as i32) / 4;
 
@@ -380,6 +394,32 @@ mod tests {
             assert_eq!(
                 view.frame, expected_frame,
                 "cursor at ring {ring} from frame {from_frame}"
+            );
+        }
+    }
+
+    #[test]
+    fn ring_cursor_snaps_to_the_frame_grid() {
+        // 0x97F6 `and word [0xa2a],0xfff8`: the frame->yaw sync every steer/seek
+        // tick falls into clears the ring x's low 3 bits, so the stored cursor
+        // is always on an 8-unit (one-panorama-frame) boundary.
+        for start in [45 * 8 + 3, 45 * 8 + 7, 2, 639] {
+            let mut view = BridgeView {
+                frame: 45,
+                ring_mouse_x: start,
+                ..BridgeView::default()
+            };
+            view.update_view();
+            assert_eq!(
+                view.ring_mouse_x % RING_PX_PER_FRAME,
+                0,
+                "ring x {} snapped to the 8-unit grid, got {}",
+                start,
+                view.ring_mouse_x
+            );
+            assert!(
+                view.ring_mouse_x <= start,
+                "the snap rounds DOWN (an AND mask), never up"
             );
         }
     }
