@@ -480,6 +480,34 @@ oracle-verification pending), not an oracle-derived constant. The port PLAYS the
 whole game correctly; the open item is verification-tooling depth, not a port
 behavior gap.
 
+## rec_103A joins rec_13C2 as the same class — WRITER FAMILY LOCALIZED (static, prime-rule)
+
+SCRIPT5's Bigbang-concert ending is gated on `rec_103A==4024` (the concert FSM's
+every edge — see the progression FSM row). rec_103A is now proven the SAME class
+as rec_13C2 by THREE independent static/data methods, no oracle involved:
+1. SCRIPT analysis: NO bytecode writer in any of the 5 scripts — all 29 rec_103A
+   occurrences are GUARD reads (0x6946-family query mode); no literal assign, no
+   OP_C1/C0 (all 6 SCRIPT5 C1 sites target 0x1346=rec_1340), no OP_CD (targets
+   0x12DC/0x127C/0x10E4), not the init block.
+2. DATA: rec_103A's initial SCRIPT5.VAR value is 0, not 4024 — so it is genuinely
+   runtime-written, not static table data. (4024 is a record-IDENTITY constant
+   present at OTHER VAR slots 0xFF0/0x1008/0x1020 and literally assigned to
+   rec_07B2/rec_025A.)
+3. STATIC DISASSEMBLY: the offset 0x103A (`3A 10`) and its absolute gs address
+   0x775E (`5E 77` — rec_103A = gs:[0x6724+0x103A]) appear as NO immediate anywhere
+   in BLOODPRG.EXE; likewise rec_13C2's 0x13C2 (`C2 13`). The tool is sound (the
+   record-table base 0x6724 is found at image 0xB269). So BOTH records are written
+   only through COMPUTED addressing (record-base register + field offset).
+WRITER FAMILY: the computed record-maintenance scans — the post-VM presentation
+scan **0x5816** (`vm_post_exec_record_update`) walks the 0x672c directory and
+writes records via pointer arithmetic (`ds:[bp]`, `[eax+esi]`, `si=[di+0x10]`,
+`bp=si+vm_field_offset(0x13)`), exactly the computed form that leaves no immediate
+signature. Pinning the precise store that sets rec_103A=4024 / rec_13C2=40 requires
+either the runtime record-directory contents (oracle, blocked past SCRIPT3) or a
+full decompile of the 0x5816 maintenance family's field semantics — both
+multi-session, neither incremental, neither a port-fidelity gap. This is the ONE
+root the all-visited ending fallback stands in for.
+
 ## DUAL-RUN ROW ACCURACY (fixed, commit c8ebe23)
 
 The verify_port harness had a real bug: the interception answer-promotion ran
