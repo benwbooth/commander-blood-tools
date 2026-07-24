@@ -648,3 +648,27 @@ oracle 2/3 (was 0/3), honk_blood 3/3, row_menu plays the correct state-gated men
 byte-verified against the bytecode). Residual dual-run gaps are start-state
 (oracle savestate's accepted-beat bits vs port fresh-load) — a harness
 shared-start item, not a port fidelity gap.
+
+## APPROX — nav-destination marker spread (`engine.rs render_nav_pyramid_sprites`)
+
+`NAV_MARKER_SPREAD_APPROX = 700` is the ONE fabricated quantity left in the nav
+star map. Everything else in that routine is now binary-derived: the marker COUNT
+and GATE come from the granted-destination set (the projector `0x9B98` draws only
+entities `0x15..0x1F` whose flags word has bit7 set), the world point is the real
+static table `DS:0x4F09` = (10200, 12100, 900), the camera origin is `DS:0x2F65` =
+(10000, 12000, 0), and the projection is the decoded shared math
+(`depth = dot>>15`, `scale = 0x100000/depth`, `screen = (dot>>7)/depth + 160/100`,
+sprite dims `*scale>>10`).
+
+Why an APPROX is needed: `DS:0x4F09` gives EVERY destination the SAME world point
+(verified static — the literal is referenced only by the projector, and three deep
+savestates plus live dumps all read the baked default), so the game's markers would
+coincide. The port fans them out so each granted destination stays separately
+visible and clickable.
+
+ROUTINE THAT MUST REPLACE IT: whatever distinguishes the active entities on screen —
+the per-entity sprite selected by `lcall 0x299:0x133d` with `ax = idx+0x15`, and the
+draw offsets `[si+0xC]`/`[si+0xE]` taken from each entity's own descriptor. Decoding
+that needs a state where destination entities are actually populated; in every
+savestate available today all eleven records read ZERO (so the real routine draws
+nothing at all), which is why the spread cannot yet be verified.

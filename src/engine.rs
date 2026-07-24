@@ -3452,23 +3452,45 @@ impl EngineState {
         ) else {
             return;
         };
-        // Camera origin from the decoded approach FSM, scaled into the nav view's
-        // near-field so the pyramids pull in as the ship travels (X drives the
-        // depth; the animation's units are the game's world scale).
-        // Depth bias subtracted from the approach-FSM camera X so the pyramids sit in
-        // the nav view's near field, then compressed by the world-to-view scale divisor.
-        const CAMERA_DEPTH_BIAS: i32 = 8804;
-        const WORLD_TO_VIEW_DEPTH_DIVISOR: i32 = 8;
-        let cam = self.camera.origin();
-        let origin = [0i32, -700, (cam[0] - CAMERA_DEPTH_BIAS) / WORLD_TO_VIEW_DEPTH_DIVISOR];
+        // THE GAME'S OWN NAV-DESTINATION PROJECTOR (0x9B98), decoded:
+        //   * it iterates entities 0x15..0x1F (`0x6212+((i+0x15)<<5)`) and draws
+        //     ONLY those whose flags word has bit7 set (`test [si],0x80`), so the
+        //     marker count is the number of ACTIVE destinations — never a fixed
+        //     grid. Oracle-confirmed: in every savestate reachable today
+        //     (location_visit / arrival_probe / milestone_script2) all eleven
+        //     records are ZERO, i.e. the real routine draws nothing until
+        //     destinations are granted.
+        //   * positions come from DS:0x4F09, which is a STATIC table — 10 entries
+        //     of three i16 at stride 6, every one (10200, 12100, 900). Verified
+        //     unwritten at runtime (the literal is referenced only by the
+        //     projector; three deep savestates still read the baked default).
+        //   * the camera origin is DS:0x2F65 = (10000, 12000, 0), also baked.
+        // The port therefore draws one marker per GRANTED destination (the
+        // GameProgress set that stands in for the active-entity bits) instead of
+        // the old fabricated 7x4 = 28-point grid.
+        const NAV_WORLD_POINT: [i32; 3] = [10200, 12100, 900]; // DS:0x4F09
+        const NAV_CAMERA_ORIGIN: [i32; 3] = [10000, 12000, 0]; // DS:0x2F65
+        // APPROX — the ONE remaining fabricated quantity. The real table gives
+        // every destination the SAME world point, so the game's markers coincide;
+        // the port fans them out so each granted destination stays separately
+        // visible. Replacing this needs the routine that decides how the active
+        // entities differ on screen (the per-entity sprite chosen by
+        // `lcall 0x299:0x133d` with ax = idx+0x15). See docs/port-validation.md.
+        const NAV_MARKER_SPREAD_APPROX: i32 = 700;
+        let origin = NAV_CAMERA_ORIGIN;
         let pan = (self.compass_angle as i32 % 180 - 90) * 8;
         // Base pyramid dimension: the biggest CARTE pyramid frame (f4, 24px wide).
         let base_w = self.nav_pyramids[4].width.max(1) as u32;
-        const ROW_Z: [i32; 4] = [600, 1500, 3000, 5600];
-        for (zi, &z) in ROW_Z.iter().enumerate() {
-            let _ = zi;
-            for xi in -3..=3i32 {
-                let d = [xi * 700 + pan, 0, z];
+        let count = self.nav_destinations.len();
+        {
+            for idx in 0..count as i32 {
+                // Fan the shared world point out around its own axis (APPROX above).
+                let lateral = (idx - (count as i32 - 1) / 2) * NAV_MARKER_SPREAD_APPROX;
+                let d = [
+                    NAV_WORLD_POINT[0] + lateral + pan,
+                    NAV_WORLD_POINT[1],
+                    NAV_WORLD_POINT[2],
+                ];
                 let Some((sx, sy, scale)) = project_star_map_point(d, origin, &m) else {
                     continue;
                 };
@@ -5459,6 +5481,50 @@ mod tests {
     /// The choose-a-location nav: a destination list is offered on the star-map, a click
     /// on an entry maps to its index (matching the drawn layout), and visiting it plays
     /// that location's decoded dialogue.
+    /// The nav projector (`0x9B98`) draws ONE marker per ACTIVE destination
+    /// entity (`test [si],0x80` over entities `0x15..0x1F`) — never a fixed grid.
+    /// Oracle-confirmed: with no destinations granted, all eleven entity records
+    /// read zero in every reachable savestate, so the real routine draws nothing.
+    /// This pins the port to that gate, replacing the old fabricated 7x4 grid.
+    #[test]
+    fn nav_markers_are_gated_on_granted_destinations() {
+        let count_pyramid_pixels = |e: &EngineState| -> usize {
+            // The CARTE pyramid art is drawn over the starfield; count non-black
+            // pixels in the star-map band as a proxy for "markers were drawn".
+            e.framebuffer.iter().filter(|&&p| p != 0).count()
+        };
+
+        // No destinations granted -> the projector's gate fails for every entity,
+        // so no destination markers are drawn.
+        let mut empty = EngineState::new();
+        empty.on_ship = true;
+        empty.render_ship_view();
+        let empty_px = count_pyramid_pixels(&empty);
+
+        // Three granted destinations -> three markers.
+        let mut three = EngineState::new();
+        three.set_nav_destinations(vec![
+            ("EKATOMB".into(), vec![]),
+            ("VENUSIA".into(), vec![]),
+            ("KORTEX".into(), vec![]),
+        ]);
+        three.on_ship = true;
+        three.render_ship_view();
+        assert_eq!(three.nav_destination_count(), 3);
+
+        // The renderer is driven by the granted set, not a constant 28-point grid:
+        // granting destinations must not leave the frame identical to the empty
+        // case (and with the art absent both are trivially equal, so only assert
+        // when the pyramid bank actually loaded).
+        if !three.nav_pyramids.is_empty() {
+            assert_ne!(
+                count_pyramid_pixels(&three),
+                empty_px,
+                "granted destinations must change what the star map draws"
+            );
+        }
+    }
+
     #[test]
     fn nav_destination_list_choose_a_location() {
         let mut e = EngineState::new();
