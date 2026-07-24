@@ -949,3 +949,29 @@ agrees. Next concrete step is unglamorous: fix the golden-menu click geometry
 (verify against `menu_row_under_cursor` in src/bridge.rs, which is already
 oracle-validated) so MENU actually registers, before drawing any conclusion about
 what GAME does.
+
+#### …and the click geometry was NOT the bug — thread concluded
+
+Checked the probe's computed box against the oracle-validated
+`BridgeView::menu_row_under_cursor` (src/bridge.rs, which replays the BRIDGEPROBE
+observations). They agree EXACTLY at frame 55 / skew 10:
+
+| quantity | probe | bridge.rs (validated) |
+|---|---|---|
+| right | `0x11F - 10*8` = 207 | `287 - delta*8` = 207 |
+| left  | `207 - 0x6E` = 97 | `right - 110` = 97 |
+| top   | `72 + 10*1.25` = 84 | `72 + skew + skew/4` = 84 |
+| pitch | `18 - 10/8` = 17 | `18 - (skew/4)/2` = 17 |
+| MENU row 3 y | 135 | 135 |
+
+So the geometry is right and the missed click has some OTHER cause — the remaining
+candidates are the dispatch gates in `nav_choice_dispatch` (`0x85E2` requires
+`[0x1FB2]&1` clear, `[0x2736]`/`[0x2737]`/`[0x259B]`/`[0xB13]` all zero and
+`[0x67AC]&1` clear) or button-hold timing versus the per-frame hit-test.
+
+CONCLUDING THIS THREAD. It has consumed many probe runs and produced four retracted
+mechanism claims; the remaining work is harness input-plumbing, not reverse
+engineering, and it should be picked up fresh rather than pushed further here.
+What is BANKED and reusable: a working `PROFILEJUMP` (a real profile switch, which
+did not exist before), the `rec_103A` write-watch armed correctly in the switched
+profile, the busy-gate diagnostics, and the measurements above.
