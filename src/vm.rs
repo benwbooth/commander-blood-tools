@@ -5750,9 +5750,11 @@ mod tests {
             m.active_actor = None;
             m.presentation_busy = false;
         }
-        // The remaining placements (their beats follow the same pattern, one
-        // per window).
-        m.rec_write(0x1424, 1);
+        // fion (0x1424) is ALREADY driven above (the t10 mummy's-curse beat,
+        // play_beat 0x616) — the redundant hand-write is dropped. rec_13C2==40
+        // has NO writer in SCRIPT3.COD (VAR-init 722; the ==40 related-value
+        // pattern) and no object-activation site — a cross-script/engine
+        // related field; cited, not yet beat-driven.
         m.rec_write(0x13C2, 40);
         m.rec_write(0x108E, 0xC6);
         m.rec_write(0x1090, 0x1052);
