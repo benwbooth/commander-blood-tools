@@ -2168,8 +2168,10 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     // DATA(partial)), so a fresh headless run doesn't reach the concert state.
                     // rec_103A is written by NO script instruction (engine-maintained, the
                     // rec_13C2 class — its exact write-instruction is infrastructure-blocked).
-                    // Until the C1 gating + rec_103A's engine writer are driven, fall back to
-                    // "all free-choice locations visited" so the ending stays reachable in play.
+                    // SINGLE ROOT: every rec_1340-advancing C1 write lives inside a block guarded
+                    // by rec_103A==4024 (concert FSM = a chain gated on it), so the whole chain
+                    // can't advance until the engine sets rec_103A. Fall back to "all free-choice
+                    // locations visited" so the ending stays reachable in play.
                     // Credits music is the binary's own `mu\credits.voc` (string at file 0xE16B).
                     ending_started = true;
                     voice = None;
