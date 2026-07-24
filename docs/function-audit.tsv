@@ -700,14 +700,14 @@ remap_special_rhs	src/vm.rs	1313	fn		UNVERIFIED
 is_special_rhs	src/vm.rs	1321	fn		UNVERIFIED	
 c2_descript_lookup_succeeds	src/vm.rs	1325	fn		UNVERIFIED	
 BranchOverride	src/vm.rs	1338	struct		UNVERIFIED	
-state_u16	src/vm.rs	1344	fn		UNVERIFIED	/// Read a u16 from `state` (the mutable VAR image) at byte address `addr`.
-state_has_u16	src/vm.rs	1353	fn		UNVERIFIED	
-state_set_u16	src/vm.rs	1359	fn		UNVERIFIED	
-state_u8	src/vm.rs	1367	fn		UNVERIFIED	
-state_set_u8	src/vm.rs	1371	fn		UNVERIFIED	
-state_or_u8	src/vm.rs	1377	fn		UNVERIFIED	
-state_and_u8	src/vm.rs	1382	fn		UNVERIFIED	
-state_and_u16	src/vm.rs	1387	fn		UNVERIFIED	
+state_u16	src/vm.rs	1344	fn		INFRA	/// Read a u16 from `state` (the mutable VAR image) at byte address `addr`. || AUDIT 2026-07-24: little-endian u16 read over the state byte array -- accessor with no distinct binary counterpart
+state_has_u16	src/vm.rs	1353	fn		INFRA	|| AUDIT 2026-07-24: bounds check for a u16 slot -- accessor with no distinct binary counterpart
+state_set_u16	src/vm.rs	1359	fn		INFRA	|| AUDIT 2026-07-24: little-endian u16 write -- accessor with no distinct binary counterpart
+state_u8	src/vm.rs	1367	fn		INFRA	|| AUDIT 2026-07-24: byte read -- accessor with no distinct binary counterpart
+state_set_u8	src/vm.rs	1371	fn		INFRA	|| AUDIT 2026-07-24: byte write -- accessor with no distinct binary counterpart
+state_or_u8	src/vm.rs	1377	fn		INFRA	|| AUDIT 2026-07-24: byte OR (models `or byte [..],imm`) -- accessor with no distinct binary counterpart
+state_and_u8	src/vm.rs	1382	fn		INFRA	|| AUDIT 2026-07-24: byte AND (models `and byte [..],imm`) -- accessor with no distinct binary counterpart
+state_and_u16	src/vm.rs	1387	fn		INFRA	|| AUDIT 2026-07-24: word AND (models `and word [..],imm`) -- accessor with no distinct binary counterpart
 pending_script_profile_dispatch_ready	src/vm.rs	1392	fn		UNVERIFIED	
 state_c_string_equals	src/vm.rs	1401	fn		UNVERIFIED	
 text_line_should_display	src/vm.rs	1413	fn		UNVERIFIED	
@@ -751,8 +751,8 @@ clear_record_words	src/vm.rs	2131	fn		UNVERIFIED
 clear_record	src/vm.rs	2137	fn		UNVERIFIED	
 write_record_entry	src/vm.rs	2154	fn		UNVERIFIED	
 write_record_entry_mode0	src/vm.rs	2160	fn		UNVERIFIED	
-record_entry_condition	src/vm.rs	2202	fn		UNVERIFIED	
-branch_fail	src/vm.rs	2218	fn		UNVERIFIED	
+record_entry_condition	src/vm.rs	2202	fn		ASM	|| AUDIT 2026-07-24: C5..C8 query 0x6D35..0x6D4E: `cmp ax,es:[bp+2]` (operand vs stored) then `cmp es:[bp],0xC5` (type == the opcode itself), and a NON-match calls vm_branch (0x6D4A/0x6D4C) rather than falling through -- which is the bug fixed earlier this session when the empty-record early-return let the guarded body execute
+branch_fail	src/vm.rs	2218	fn		INFRA	|| AUDIT 2026-07-24: pops the resume stack -- the port model of vm_branch 0x6462 taking its target -- accessor with no distinct binary counterpart
 push_mode0_branch_fail	src/vm.rs	2222	fn		UNVERIFIED	
 compare_vm_words	src/vm.rs	2242	fn		UNVERIFIED	
 global_word_condition	src/vm.rs	2256	fn		UNVERIFIED	
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	                         
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	                          
