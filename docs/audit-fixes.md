@@ -102,8 +102,19 @@ mode-0 write guard is now IMPLEMENTED on this basis (see the Fixed table).
   `0x24F3&1`/`0x274F&1`) fires a presentation request (`0x6788=7`, `0x67AA|2`,
   `0x1FB2=0`, `0x1FA3=0xFFFF`, `0xB3B=0`). CONFIRMED engine-coupled: those are
   frontend/ship-presentation flags the live VM does not hold — the "gs-flag model" the
-  finding named. Not a VM-local drop-in. Also: bridge ring-cursor 8px snap (changes
-  steering feel), chatter re-roll determinism (separate PRNG), A6 per-line C4 gate.
+  finding named. Not a VM-local drop-in.
+- **A6 per-line C4 gate** — DECODED (`0x6647..0x6683`): the play gate is FIVE conditions
+  — (1) b5 bit7 active, (2) not `0x5E64||0x67B0` busy, (3) line record `+2` bit15 (already
+  shown) clear, (4) the line record's selector-`0x13` field (`matrix[0x131]`) `== 0xC4`,
+  (5) `vm_condition_5` (`0x6339`) random. The live port models #1 and #5 faithfully and
+  approximates #2+#4 with the GLOBAL `presentation_busy` flag. Tightening #4 to a real
+  per-line record check is SUBTRACTIVE (skips lines) and needs the presentation-start C4
+  field set by the `0x5816` scan — so it risks MISSING dialogue, and the dialogue
+  playthrough harnesses currently pass on the approximation. Coupled to the
+  presentation-record lifecycle (same subsystem as C1), not a safe drop-in. (The port
+  DOES already model the tracer-path per-line gate behind `with_text_presentation_record_gating`.)
+- **Also low/subjective:** bridge ring-cursor 8px snap (changes steering feel),
+  chatter re-roll determinism (separate PRNG).
 - **Rewrites:** nav destinations = flag-gated entity set (fabricated pyramid grid; needs
   entity world coords + active bits), world-destination from clicked row (UNDECODED
   on-planet click semantics), A6 reveal-busy serialization handshake (VM↔frontend).
