@@ -2166,7 +2166,9 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     // (C1 46 13 <val> → 4060/4084/4108, decoded), but the port's C1 write is
                     // gated on the target's owner being active (line-record-table owner-state,
                     // DATA(partial)), so a fresh headless run doesn't reach the concert state.
-                    // Until that gating + rec_103A's writer are fully driven, fall back to
+                    // rec_103A is written by NO script instruction (engine-maintained, the
+                    // rec_13C2 class — its exact write-instruction is infrastructure-blocked).
+                    // Until the C1 gating + rec_103A's engine writer are driven, fall back to
                     // "all free-choice locations visited" so the ending stays reachable in play.
                     // Credits music is the binary's own `mu\credits.voc` (string at file 0xE16B).
                     ending_started = true;
