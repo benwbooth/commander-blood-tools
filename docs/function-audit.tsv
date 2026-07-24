@@ -630,8 +630,8 @@ frame_pixels	src/tbbig.rs	213	fn		UNVERIFIED	/// Convenience: decode a frame sta
 panorama_frame_for_angle	src/tbbig.rs	222	fn	0x0A2A,0x97E7	ASM?	/// Map a bridge view angle (DS:0x0A2A units, 1440/revolution) to its panorama /// frame index, the inverse of `0x97E7`'s `frame * 8 - 0xA0` relation.
 media_stem	src/util.rs	1	fn		UNVERIFIED	
 safe_file_stem	src/util.rs	14	fn		UNVERIFIED	
-QuerySetMode	src/vm.rs	144	struct		UNVERIFIED	
-RecordOpResult	src/vm.rs	151	enum		UNVERIFIED	
+QuerySetMode	src/vm.rs	144	struct		ASM	|| AUDIT 2026-07-24: operator table verified against 0x6893..0x68FD: query setne/setl/setg/setle/setge/sete (SIGNED), set F5 mov / F6 add / F7 sub; FIXED unsigned->signed compare
+RecordOpResult	src/vm.rs	151	enum		ASM	|| AUDIT 2026-07-24: query match/branch + set write shape matches the 0xB8-family handler 0x6B06 and the 0x6946 wildcard path
 enter_query	src/vm.rs	162	fn	0x67ad	ASM?	/// Opcode `0xA0` PUSH — enter query mode (`gs:0x67ad = 1`).
 exit_query	src/vm.rs	166	fn	0x67ad	ASM?	/// Opcode `0xA1` POP — exit query mode (`gs:0x67ad = 0`).
 apply_operator	src/vm.rs	176	fn	0x6863	ASM?	/// Apply a compound state operator (the decoded `0x6863`-family operator byte, in /// `ah`) to `state[op1]` with `op2`. In query mode the operator is a **comparison** /// (`0xF0`ne/`0xF1`lt/`0xF2`gt/
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	 

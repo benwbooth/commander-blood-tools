@@ -271,13 +271,21 @@ impl QuerySetMode {
     /// `Err(matched)` for a query (`matched == true` → continue, false → `vm_branch`).
     pub fn apply_operator(&self, operator: u8, cur: u16, op2: u16) -> Result<u16, bool> {
         if self.query {
+            // The handler's compares are SIGNED: 0x689A `setne`, 0x68BE `setl`,
+            // 0x68CA `setg`, 0x68A6 `setle`, 0x68B2 `setge`, 0x68D6 `sete`. The
+            // ordered four are the SIGNED forms (setl/setg/setle/setge), not the
+            // unsigned setb/seta/setbe/setae, so record words must be compared as
+            // i16. This matters constantly: the aboard/wildcard sentinel 0xFFFF is
+            // -1 signed but 65535 unsigned, so an unsigned compare inverts every
+            // ordered test against it (and against any value >= 0x8000).
+            let (a, b) = (cur as i16, op2 as i16);
             let matched = match operator {
-                0xF0 => cur != op2,
-                0xF1 => cur < op2,
-                0xF2 => cur > op2,
-                0xF3 => cur <= op2,
-                0xF4 => cur >= op2,
-                0xF5 => cur == op2,
+                0xF0 => a != b,
+                0xF1 => a < b,
+                0xF2 => a > b,
+                0xF3 => a <= b,
+                0xF4 => a >= b,
+                0xF5 => a == b,
                 _ => false,
             };
             Err(matched)
@@ -7197,6 +7205,27 @@ mod tests {
             );
         }
         assert!(!seen.contains(&0xD3), "0xD3 is unused by the shipped scripts");
+    }
+
+    #[test]
+    fn state_operators_compare_signed_like_setl_setg() {
+        // 0x6893..0x68D9 uses the SIGNED set-condition family (setl/setg/setle/
+        // setge), not the unsigned setb/seta/setbe/setae. The distinction is not
+        // academic: 0xFFFF is the aboard/wildcard sentinel and is -1 signed but
+        // 65535 unsigned, so an unsigned compare inverts every ordered test
+        // against it.
+        let q = QuerySetMode { query: true };
+        // 0xFFFF (-1) is LESS than 1, not greater.
+        assert_eq!(q.apply_operator(0xF1, 0xFFFF, 1), Err(true), "0xFFFF < 1 signed");
+        assert_eq!(q.apply_operator(0xF2, 0xFFFF, 1), Err(false), "0xFFFF is NOT > 1");
+        assert_eq!(q.apply_operator(0xF3, 0xFFFF, 1), Err(true), "0xFFFF <= 1");
+        assert_eq!(q.apply_operator(0xF4, 0xFFFF, 1), Err(false), "0xFFFF is NOT >= 1");
+        // 0x8000 (-32768) is the extreme negative.
+        assert_eq!(q.apply_operator(0xF1, 0x8000, 0), Err(true), "0x8000 < 0 signed");
+        assert_eq!(q.apply_operator(0xF2, 0x7FFF, 0x8000), Err(true), "0x7FFF > 0x8000 signed");
+        // Equality/inequality are sign-agnostic and unchanged.
+        assert_eq!(q.apply_operator(0xF5, 0xFFFF, 0xFFFF), Err(true));
+        assert_eq!(q.apply_operator(0xF0, 0xFFFF, 0xFFFF), Err(false));
     }
 
     #[test]
