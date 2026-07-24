@@ -496,9 +496,11 @@ fn main() {
                     .map(|(n, a)| format!("{n}={:#04x}", rt.m.read8(g, *a)))
                     .collect();
                 println!(
-                    "PROFILEJUMP[{tag}] block {:04x}:{:04x} pending={} busy=[{}] @ {} steps",
+                    "PROFILEJUMP[{tag}] block {:04x}:{:04x} pending={} busy=[{}] \
+                     [0x27E0]={:#04x} [0x67A8]={:#04x} @ {} steps",
                     w16(rt, 0x6726), w16(rt, 0x6724), w16(rt, 0x6780) as i32,
-                    if set.is_empty() { "idle".into() } else { set.join(",") }, rt.cpu.steps
+                    if set.is_empty() { "idle".into() } else { set.join(",") },
+                    rt.m.read8(g, 0x27E0), rt.m.read8(g, 0x67A8), rt.cpu.steps
                 );
             };
             report(&rt, "at-console");

@@ -889,3 +889,34 @@ does between `0x53A0` and the first executed opcode of the new profile — there
 be a re-entry that re-establishes the run state — or (b) reach SCRIPT5 the way the
 game does, by story progression, which needs destination granting (itself blocked;
 see the GRANTWALK entry).
+
+#### CORRECTION: `0x27E0` was never SET in this run — the switch does not clear it
+
+Measuring the gates at the console *before* poking (not just after) shows:
+
+    PROFILEJUMP[at-console] block 7838:0000 ... [0x27E0]=0x00 [0x67A8]=0x01
+    PROFILEJUMP[after]      block 8090:0000 ... [0x27E0]=0x00 [0x67A8]=0x01
+
+`gs:0x27E0` is ALREADY clear at the console. **Retracting the previous claim that
+`vm_resource_profile_select` clears it** — the flag was never set in this run at
+all, so the profile switch is not what turned it off.
+
+The real consequence is bigger and explains every negative above: the driven-boot
+"console reached" state has never executed the game-start sequence at `0x0FC3`, so
+`vm_run_wrapper` (`0x55A4`) — the VM's per-frame script execution — has NEVER been
+enabled on this path. A profile IS resident and the console DOES render, but no
+script opcodes are being executed per frame. That is why `gs:0x67AC` never leaves 0,
+why console clicks start no presentation, and why `rec_103A` never changes —
+regardless of any profile switch.
+
+So the blocker was never "reach SCRIPT5". It is: **the interpreter-oracle boot path
+reaches a rendered console without entering gameplay VM execution.** Everything
+built on top of it (PROFILEJUMP, the rec watch) is sound but was running in a state
+where scripts never execute.
+
+Better approach: find what the real boot does between the console appearing and
+`0x0FC3` running — i.e. what the player action is that starts GAME mode (the console
+MENU row's EXPLANATIONS/GAME submenu is the obvious candidate: "GAME" plausibly IS
+the transition that runs the game-start init). Driving that, not poking flags, is
+what turns the VM on; then the existing PROFILEJUMP + rec-watch tooling should work
+as designed.
