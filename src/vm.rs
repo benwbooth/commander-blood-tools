@@ -4405,9 +4405,16 @@ impl VmMachine {
                     self.rec_write(op1, 0xCD);
                     self.rec_write(op1 + 2, op2);
                     self.rec_write(op1 + 4, op3);
+                    // The transfer's location write (0x6A6B: the moved object's
+                    // field-0x11/location word gets the destination; 0xFFFF
+                    // when it boards the SHIP's special list, 0x6A60): the
+                    // story guards read exactly this (rec_0722 == 65535 =
+                    // Scruter Jo aboard; the customs manifest lines).
+                    let dest = if op3 == 0x28 { 0xFFFF } else { op3 };
+                    self.rec_write(op2.wrapping_add(LOCATION_FIELD), dest);
                     self.events.push(VmEvent::Transfer {
-                        object: op1 as usize,
-                        to: op2 as usize,
+                        object: op2 as usize,
+                        to: dest as usize,
                         related: op3 as usize,
                     });
                 }
