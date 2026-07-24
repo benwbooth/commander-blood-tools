@@ -15,6 +15,34 @@ fn main() {
     let mut e = EngineState::new();
     e.load_bridge(iso);
     e.load_console_font(iso);
+    // The VM rides along: the same SCRIPT2 machine the app drives, so the
+    // scenario produces a LINE TRANSCRIPT (vp_transcript.txt) for line-level
+    // comparison against the oracle's SAYDUMP — the matched-drive lane's
+    // first plank. The decoded BAS menu stack replaces the old hardcoded box
+    // literals (a no-transcription retirement).
+    let rd = |ext: &str| std::fs::read(format!("output/_tmp_iso/SCRIPT2.{ext}"));
+    let mut vm = commander_blood_tools::vm::VmMachine::new();
+    let mut transcript: Vec<String> = Vec::new();
+    let mut vm_texts: std::collections::HashMap<usize, String> = Default::default();
+    if let (Ok(cod), Ok(var), Ok(dic_raw)) = (rd("COD"), rd("VAR"), rd("DIC")) {
+        vm.load_cod(&cod);
+        vm.load_var(&var);
+        let dic = commander_blood_tools::script::parse_dictionary(&dic_raw);
+        for t in commander_blood_tools::vm::walk(&cod, 0, cod.len()) {
+            if let commander_blood_tools::vm::VmToken::Text { offset, word_offsets, .. } = t {
+                let text: String = word_offsets
+                    .iter()
+                    .take_while(|&&w| w != 0xFFFF)
+                    .filter_map(|w| dic.get(w).cloned())
+                    .collect::<Vec<_>>()
+                    .join(" ");
+                vm_texts.insert(offset, text);
+            }
+        }
+        if let (Ok(bas), Ok(d)) = (rd("BAS"), rd("DIC")) {
+            e.load_bas_menus(&bas, &d);
+        }
+    }
     e.on_ship = true;
     e.bridge_active = true;
     // The hub state: ring frame 45 (the oracle's script2.state view), menu baked.
@@ -61,19 +89,22 @@ fn main() {
                     match if e.hub_presentation { None } else { e.bridge_press(mx, my) } {
                         Some(0) => {
                             e.bridge.engaged_row = Some(0);
-                            e.console_box =
-                                vec!["TALK".into(), "REMEMBER".into(), "BYE_BYE".into()];
+                            // The decoded BAS entry menu (the game's own concept
+                            // stack), not a transcription.
+                            let labels = e.current_bas_menu_labels();
+                            e.console_box = if labels.is_empty() {
+                                Vec::new()
+                            } else {
+                                labels
+                            };
                             e.console_box_kind = 3;
-                            e.set_speech_dialogue(vec![(
-                                "What do you want Commander ?".into(),
-                                None,
-                            )]);
-                            e.set_dialogue_styles(vec![true]);
                         }
                         Some(1) => e.bridge.engaged_row = Some(1),
                         Some(2) => {
                             e.bridge.engaged_row = Some(2);
-                            e.console_box = vec!["BOB_MORLOCK".into(), "CANCEL".into()];
+                            // The cryobox candidate box comes from the VM's
+                            // crew state in the app; headless, leave it to the
+                            // engine's own population.
                             e.console_box_kind = 2;
                         }
                         Some(3) => e.bridge.engaged_row = Some(3),
@@ -100,6 +131,15 @@ fn main() {
                 for _ in 0..frames {
                     step_engine(&mut e, mx, my, 0);
                 }
+                // The VM rides the waits: frames + beats, transcripting lines.
+                for ev in vm.run_frame() {
+                    if let commander_blood_tools::vm::VmEvent::Text { offset } = ev {
+                        if let Some(t) = vm_texts.get(&offset) {
+                            transcript.push(t.clone());
+                        }
+                    }
+                }
+                vm.tick_state_countdowns();
             }
             _ => {}
         }
@@ -111,5 +151,10 @@ fn main() {
         std::fs::write(out.join(format!("vp_{step:03}.ppm")), ppm).unwrap();
         step += 1;
     }
-    println!("verify_port done: {step} steps");
+    std::fs::write(
+        out.join("vp_transcript.txt"),
+        transcript.join("\n"),
+    )
+    .unwrap();
+    println!("verify_port done: {step} steps, {} transcript lines", transcript.len());
 }
