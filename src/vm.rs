@@ -3702,6 +3702,12 @@ pub struct VmMachine {
     /// requested" latch, alongside the [`VmEvent::LoadString`] the port
     /// already emits.
     pub fin_requested: bool,
+    /// `gs:0x67AA` bit1 — the PRESENTATION-REQUEST latch. `0xA8` (`0x67F6`) and
+    /// `0xC2` (`0x6EA7`) both refuse to raise a request while it is set, and the
+    /// presentation teardown clears it (`and byte [0x67aa],0xfc` at `0x59C6`,
+    /// `0x1A7C`, …). Modelling the latch WITHOUT that clear would suppress every
+    /// later request, so the `0xC9` presentation end clears it here.
+    pub presentation_request_pending: bool,
     pub reg_6770: u16,
     /// Wildcard match-any value (`gs:0x674E`) for the 0x6946 family.
     pub wildcard: u16,
@@ -3777,6 +3783,7 @@ impl Default for VmMachine {
             flag_274f: false,
             presentation_active: false,
             fin_requested: false,
+            presentation_request_pending: false,
             reg_6770: 0,
             wildcard: 0,
             reg_6782: 0,
@@ -4588,6 +4595,23 @@ impl VmMachine {
                 if self.cod[start..nul].starts_with(b"fin.") {
                     self.fin_requested = true;
                 }
+                // 0x67F6..0x682F — the PRESENTATION REQUEST. Gate: the latch
+                // gs:0x67AA bit1 must be CLEAR, and either ship-active
+                // gs:[0x24F3]&1 OR gs:[0x274F]&1. The `0x24F3` operand lives in
+                // the frontend, so only `flag_274f` is tested here; because the
+                // gate is an OR that makes the port UNDER-fire (never spuriously).
+                // Effects: active line = 7, latch set, gs:0x1FB2 cleared,
+                // gs:0x1FA3 = 0xFFFF. All of those offsets sit ABOVE the largest
+                // VAR (0x1534) so they are alias-safe as state writes.
+                // NOT applied: the handler's `gs:[0xB3B] = 0`, because 0xB3B lies
+                // INSIDE every VAR and would corrupt a real record in the port's
+                // single-array model (see docs/audit-fixes.md).
+                if !self.presentation_request_pending && self.flag_274f {
+                    self.presentation_request_pending = true;
+                    self.rec_write(VM_ACTIVE_LINE, 7);
+                    self.rec_write_u8(0x1FB2, 0);
+                    self.rec_write(0x1FA3, 0xFFFF);
+                }
                 self.events.push(VmEvent::LoadString(text));
             }
             // 0xA9 (0x6830): bit0 CLEAR -> jump to the operand word. bit0 SET ->
@@ -5120,6 +5144,11 @@ impl VmMachine {
                     self.presentation_busy = false;
                     // Presentation over: the resume anchor dies with it.
                     self.resume_pos = None;
+                    // The teardown also clears gs:0x67AA bits0-1 (`and [0x67aa],
+                    // 0xfc` @0x59C6/0x1A7C), releasing the request latch so a
+                    // LATER 0xA8/0xC2 can raise a new presentation request.
+                    // Without this the latch would suppress every later request.
+                    self.presentation_request_pending = false;
                 }
             }
             // 0xCF (0x64C0): clear the alternate-concept state.
@@ -7977,6 +8006,57 @@ mod tests {
         m.pc = 0;
         m.step();
         assert_eq!(m.pc, 0x99, "inactive owner -> query branches");
+    }
+
+    #[test]
+    fn a8_raises_the_presentation_request_once_until_teardown() {
+        // 0x67F6..0x682F: gated on the gs:0x67AA bit1 latch being CLEAR and
+        // (ship-active gs:0x24F3 | gs:0x274F). Only flag_274f is modelled, so the
+        // port UNDER-fires (the gate is an OR) — never spuriously.
+        let load = |m: &mut VmMachine, s: &str| {
+            let mut cod = vec![0xA8];
+            cod.extend_from_slice(s.as_bytes());
+            cod.push(0);
+            if cod.len() % 2 == 1 {
+                cod.push(0);
+            }
+            cod.push(0);
+            cod.push(0);
+            m.load_cod(&cod);
+            m.pc = 0;
+            m.step();
+        };
+
+        // Gate CLOSED (flag_274f false, the boot state): no request.
+        let mut m = VmMachine::new();
+        load(&mut m, "cliptoot.hnm");
+        assert!(!m.presentation_request_pending, "no request while the gate is closed");
+        assert_eq!(m.rec_read_pub(0x6788), 0, "active line untouched");
+
+        // Gate OPEN: the request fires — active line 7, latch set, 0x1FA3 = 0xFFFF.
+        let mut m = VmMachine::new();
+        m.flag_274f = true;
+        load(&mut m, "cliptoot.hnm");
+        assert!(m.presentation_request_pending, "request raised");
+        assert_eq!(m.rec_read_pub(0x6788), 7, "active line = 7");
+        assert_eq!(m.rec_read_pub(0x1FA3), 0xFFFF);
+
+        // A SECOND 0xA8 must NOT re-raise while the latch is set: clear the
+        // active line and confirm it is not rewritten.
+        m.rec_write_pub(0x6788, 0);
+        load(&mut m, "other.hnm");
+        assert_eq!(m.rec_read_pub(0x6788), 0, "latch suppresses the repeat request");
+
+        // The presentation teardown (0xC9) releases the latch, so a later 0xA8
+        // can request again — without this the latch would suppress them forever.
+        m.active_actor = Some(0x84);
+        m.load_cod(&[0xC9, 0x84, 0x00, 0xFF]);
+        m.query = false;
+        m.pc = 0;
+        m.step();
+        assert!(!m.presentation_request_pending, "teardown clears the latch");
+        load(&mut m, "again.hnm");
+        assert_eq!(m.rec_read_pub(0x6788), 7, "a new request can be raised after teardown");
     }
 
     #[test]
