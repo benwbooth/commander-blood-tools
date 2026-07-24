@@ -5168,6 +5168,70 @@ mod tests {
         );
     }
 
+    /// DETERMINISTIC VARIANT (seed 0x2727 = the oracle's fixed CMOS seed): the
+    /// interception's SS randomizer now rolls reproducibly, so the port plays
+    /// ONE fixed variant on a given drive — locked here as a regression
+    /// fixture (the deep-recipe lane's port-side determinism).
+    #[test]
+    fn interception_variant_is_deterministic() {
+        let Some(iso) = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter()
+            .find(|d| std::path::Path::new(d).join("SCRIPT2.COD").is_file())
+        else {
+            eprintln!("skipping: extracted SCRIPT2 files not available");
+            return;
+        };
+        let cod = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.COD")).unwrap();
+        let var = std::fs::read(std::path::Path::new(iso).join("SCRIPT2.VAR")).unwrap();
+        let play = || -> Vec<usize> {
+            let mut m = VmMachine::new();
+            m.load_cod(&cod);
+            m.load_var(&var);
+            assert_eq!(m.prng_seed, 0x2727, "the oracle's deterministic seed");
+            for _ in 0..80 {
+                let evs = m.run_frame();
+                m.tick_state_countdowns();
+                if evs.iter().any(|e| matches!(e, VmEvent::QueuePresentation { offset: 0x6FC })) {
+                    break;
+                }
+            }
+            let mut offs = Vec::new();
+            for _ in 0..12 {
+                let Some(started) = m.promote_queued_presentation() else {
+                    let _ = m.run_frame();
+                    continue;
+                };
+                for _ in 0..200 {
+                    for ev in m.run_frame() {
+                        if let VmEvent::Text { offset } = ev {
+                            if started == 0x6FC {
+                                offs.push(offset);
+                            }
+                        }
+                    }
+                    if !m.presentation_busy {
+                        break;
+                    }
+                }
+                if started == 0x6FC && !m.presentation_busy {
+                    break;
+                }
+                if m.presentation_busy {
+                    if let Some(a) = m.active_actor {
+                        m.rec_write(a, 0);
+                    }
+                    m.active_actor = None;
+                    m.presentation_busy = false;
+                }
+            }
+            offs
+        };
+        let a = play();
+        let b = play();
+        assert!(!a.is_empty(), "the interception plays");
+        assert_eq!(a, b, "the variant is deterministic (same seed -> same roll)");
+    }
+
     /// THE FIRST LINE-LEVEL DUAL-RUN: the ORACLE (the real game under the
     /// interpreter, red-button scenario) settled on two distinctive lines
     /// during the interception answer — Honk's 1010 gloss and the escape
