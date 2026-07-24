@@ -5828,14 +5828,55 @@ mod tests {
         play_beat(&mut m, 0x616, 0x1424, 1);
         play_beat(&mut m, 0x42C, 0x142C, 1);
         assert_eq!(m.rec_read(0x142C), 1, "Jerry Khan's first visit sets jerry");
-        // THE SPLATCH TELEPORT: fully mapped (Amigo talk 0x6FC behind
-        // rec_1088@3224 + evi + secret; teleport menu @5F19 concept 0x0367 ->
-        // CD splatch aboard + rec_06DA=4070 @5F53). secret is now MODELED (the
-        // examination hook, commit 3d25168) — the ONE remaining piece is the
-        // revisit-skip DRIVE-ORDER to reach @5F19 (the trace confirmed the skip
-        // routes @5ED9->@5EF2, but the knock-sequence that surfaces the teleport
-        // menu isn't pinned). Placement cited to @5F53's own write meanwhile.
-        m.rec_write(0x06DA, 4070);
+        // THE SPLATCH TELEPORT, DRIVEN in the story's own order: Amigo
+        // (talk 0x6FC) behind rec_1088@3224 + evi. The KEY is the EXAMINATION
+        // BETWEEN VISITS — session 0 plays the password conv (@5EB7's voice
+        // line clears its skip so @5ECD's secret=0 runs, correctly), THEN the
+        // examination sets secret=1 (the alien-view hook's outcome), THEN
+        // session 1 reaches @5EF2 (secret==1) -> the teleport menu @5F19
+        // (concept 0x0367) -> the CD moves splatch aboard + @5F53 writes
+        // rec_06DA=4070. No hand-write — the beat drives from shipped bytes.
+        m.rec_write(0x1088, 3224);
+        m.rec_write(0x1428, 1); // evi (a shallower beat's product)
+        m.start_actor_presentation(0x6FC, 40); // first visit
+        for _ in 0..120 {
+            let _ = m.run_frame();
+            if !m.presentation_busy {
+                break;
+            }
+        }
+        if let Some(a) = m.active_actor {
+            m.rec_write(a, 0);
+        }
+        m.active_actor = None;
+        m.presentation_busy = false;
+        m.rec_write(0x1416, 1); // THE EXAMINATION (the alien-view hook) sets secret
+        m.start_actor_presentation(0x6FC, 40); // second visit
+        let mut splatched = false;
+        for _ in 0..120 {
+            for ev in m.run_frame() {
+                if let VmEvent::Text { offset } = ev {
+                    if offset == 0x5F19 {
+                        m.dispatch_concept(0x0367); // "teleport"
+                    }
+                }
+            }
+            if m.rec_read(0x06DA) == 4070 {
+                splatched = true;
+                break;
+            }
+            if !m.presentation_busy {
+                break;
+            }
+        }
+        assert!(splatched, "the SPLATCH teleport beat drives (examination-between-visits order)");
+        if m.presentation_busy {
+            if let Some(a) = m.active_actor {
+                m.rec_write(a, 0);
+            }
+            m.active_actor = None;
+            m.presentation_busy = false;
+        }
         // THE TINA BURNER TELEPORT, driven (Migrator's beat @44C6, talk
         // 0x474): "TELEPORT TINA BURNER TO AIRPORT" (concept 0x367) plays
         // "TELEPORTING TINA BURNER" and the beat's tail writes rec_088A=4070
