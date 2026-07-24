@@ -513,6 +513,11 @@ pub struct EngineState {
     dialogue_voice_banks: Vec<Option<std::path::PathBuf>>,
     /// The A6 voice-selector byte per text-token offset (for the current script).
     voice_by_offset: HashMap<usize, u8>,
+    /// Choice-menu rows per `0xA6` line offset — the words AFTER the `0xFFFF`
+    /// separator in the record's word list. This is where a console choice box's
+    /// labels come from in the real game (SCRIPT1.COD `0x4A9` = the MENU submenu's
+    /// `explanations` / `game`), rather than from a literal in this file.
+    menu_by_offset: HashMap<usize, Vec<String>>,
     /// The next scene/profile index this script's D2 handoff requests (the
     /// scene-to-scene dispatch target), or `None` if the script has no successor.
     pending_profile: Option<u16>,
@@ -673,6 +678,7 @@ impl EngineState {
             dialogue_scene_paths: Vec::new(),
             dialogue_voice_banks: Vec::new(),
             voice_by_offset: HashMap::new(),
+            menu_by_offset: HashMap::new(),
             pending_profile: None,
             scene_queue: Vec::new(),
             scene_queue_idx: 0,
@@ -1145,6 +1151,21 @@ impl EngineState {
     /// from the script rather than from here. Tracked in docs/port-validation.md.
     pub const MENU_SUBMENU: [&'static str; 2] = ["EXPLANATIONS", "GAME"];
 
+    /// The MENU submenu's rows, taken from the LOADED SCRIPT when one is present.
+    ///
+    /// The real source is an `0xA6` record's word list after its `0xFFFF` separator
+    /// (SCRIPT1.COD `0x4A9` -> DIC `explanations` / `game`); the widget upper-cases
+    /// for display, which is why the DIC entries are lowercase. Falls back to
+    /// [`Self::MENU_SUBMENU`] only when no script is loaded (unit tests, bare
+    /// `EngineState::new()`), so the const is a default rather than the authority.
+    pub fn menu_submenu_labels(&self) -> Vec<String> {
+        self.menu_by_offset
+            .iter()
+            .min_by_key(|(off, _)| **off)
+            .map(|(_, rows)| rows.iter().map(|r| r.to_uppercase()).collect())
+            .unwrap_or_else(|| Self::MENU_SUBMENU.iter().map(|s| s.to_string()).collect())
+    }
+
     /// The OPTION choice box's single row.
     ///
     /// This is the game's own string, not a transcription: `DS:0x0174` (file
@@ -1224,12 +1245,11 @@ impl EngineState {
         if !self.menu_submenu_active {
             return None;
         }
-        self.choice_box_row_at(
-            x,
-            y,
-            Self::MENU_SUBMENU.len(),
-            Self::choice_box_widest(&Self::MENU_SUBMENU),
-        )
+        // Same rows the draw uses, so the clickable band tracks the SCRIPT's labels
+        // rather than a const that may not match what is on screen.
+        let labels = self.menu_submenu_labels();
+        let refs: Vec<&str> = labels.iter().map(|s| s.as_str()).collect();
+        self.choice_box_row_at(x, y, refs.len(), Self::choice_box_widest(&refs))
     }
 
     /// Aim the bridge's virtual ring-space cursor at an absolute screen point —
@@ -1378,7 +1398,7 @@ impl EngineState {
         // game's universal console-choice widget) — draw it before the hand so
         // the cursor sits over it, as the live game composites.
         if self.menu_submenu_active {
-            let labels: Vec<String> = Self::MENU_SUBMENU.iter().map(|s| s.to_string()).collect();
+            let labels = self.menu_submenu_labels();
             self.draw_choice_box(&labels, None);
         }
         if self.option_box_active {
@@ -2999,6 +3019,7 @@ impl EngineState {
         let words = parse_dictionary(dic);
         let mut text_by_offset: HashMap<usize, String> = HashMap::new();
         self.voice_by_offset.clear();
+        self.menu_by_offset.clear();
         for tok in walk(cod, 0, cod.len()) {
             if let VmToken::Text {
                 offset,
@@ -3007,12 +3028,32 @@ impl EngineState {
                 ..
             } = tok
             {
-                let parts: Vec<String> = word_offsets
+                // The word list is TWO sections split by 0xFFFF: the spoken line,
+                // then the CHOICE-MENU rows. `filter_map` silently dropped the
+                // separator (0xFFFF is not a DIC key) but KEPT the menu words after
+                // it, so 211 of the 3650 A6 lines across the five scripts rendered
+                // their choices appended to the subtitle -- e.g. SCRIPT1.COD's
+                // "Click quick, Cap'n Bob is waiting ..." came out with
+                // "explanations game" glued on the end.
+                let sep = word_offsets.iter().position(|&w| w == 0xFFFF);
+                let spoken = &word_offsets[..sep.unwrap_or(word_offsets.len())];
+                let parts: Vec<String> = spoken
                     .iter()
                     .filter_map(|o| words.get(o).cloned())
                     .collect();
                 if !parts.is_empty() {
                     text_by_offset.insert(offset, assemble_words(&parts));
+                }
+                // Keep the menu rows as the line's own data, so a choice box can be
+                // sourced from the SCRIPT rather than from a const in this file.
+                if let Some(i) = sep {
+                    let rows: Vec<String> = word_offsets[i + 1..]
+                        .iter()
+                        .filter_map(|o| words.get(o).cloned())
+                        .collect();
+                    if !rows.is_empty() {
+                        self.menu_by_offset.insert(offset, rows);
+                    }
                 }
                 self.voice_by_offset.insert(offset, voice_selector);
             }
@@ -5761,6 +5802,54 @@ mod tests {
     /// The OPTION row is the game's own string at DS:0x0174 (file 0x0D594), not a
     /// label read off a screenshot. Reads it straight out of the shipped image, so
     /// the constant cannot drift from the binary it claims to come from.
+    /// 211 of the 3650 `0xA6` lines across the five scripts carry a CHOICE MENU after
+    /// an `0xFFFF` separator. The subtitle builder used `filter_map` over the whole
+    /// word list, which silently dropped the separator (not a DIC key) but KEPT the
+    /// menu rows, gluing them onto the spoken line.
+    #[test]
+    fn choice_menu_rows_do_not_leak_into_the_spoken_subtitle() {
+        let dir = ["accuracy/cblood_install/cblood", "../accuracy/cblood_install/cblood"]
+            .iter()
+            .map(Path::new)
+            .find(|p| p.join("SCRIPT1.COD").is_file());
+        let Some(dir) = dir else { return };
+        let cod = std::fs::read(dir.join("SCRIPT1.COD")).unwrap();
+        let dic = std::fs::read(dir.join("SCRIPT1.DIC")).unwrap();
+        let var = std::fs::read(dir.join("SCRIPT1.VAR")).unwrap_or_default();
+
+        let mut e = EngineState::new();
+        e.load_dialogue(&cod, &var, &dic);
+
+        // No subtitle may contain the menu rows of its own line.
+        for (i, line) in e.dialogue.iter().enumerate() {
+            if let Some(rows) = e.menu_by_offset.get(&line.offset) {
+                let text = e.dialogue_texts[i].clone();
+                for row in rows {
+                    assert!(
+                        !text.split_whitespace().any(|w| w.eq_ignore_ascii_case(row)),
+                        "menu row {row:?} leaked into subtitle {text:?}"
+                    );
+                }
+            }
+        }
+
+        // The canonical record: spoken line ends at "...", menu is explanations/game.
+        let (_, rows) = e
+            .menu_by_offset
+            .iter()
+            .min_by_key(|(o, _)| **o)
+            .expect("SCRIPT1 has a choice-menu line");
+        assert_eq!(rows, &vec!["explanations".to_string(), "game".to_string()]);
+
+        // And the submenu now comes from the SCRIPT, not the const.
+        assert_eq!(e.menu_submenu_labels(), vec!["EXPLANATIONS", "GAME"]);
+        // With no script loaded the const is the documented fallback.
+        assert_eq!(
+            EngineState::new().menu_submenu_labels(),
+            vec!["EXPLANATIONS", "GAME"]
+        );
+    }
+
     #[test]
     fn option_box_label_is_the_games_own_string() {
         let exe = match std::fs::read("re/bin/BLOODPRG.EXE")

@@ -556,3 +556,33 @@ accents at all.
 Worth keeping because the wrong number was the plausible one: a French-developed game
 "obviously" has accented dialogue, and 94/130 confirmed the expectation. The correct
 answer was zero.
+
+## FIXED #45 — choice-menu rows were being spoken as part of the subtitle
+
+An `0xA6` record's word list has TWO sections split by `0xFFFF`: the spoken line, then
+the CHOICE-MENU rows. `load_dialogue` built subtitle text with `filter_map` over the
+WHOLE list. `0xFFFF` is not a DIC key so the separator vanished silently — but the menu
+rows after it were kept and glued onto the sentence.
+
+Measured blast radius: **211 of the 3650 `0xA6` lines** across the five scripts carry a
+menu, so every one of them rendered a corrupted subtitle. SCRIPT1.COD's line came out as
+
+    Click quick, Cap'n Bob is waiting... explanations game
+
+instead of ending at `...`.
+
+This is the same defect found minutes earlier in the script disassembler (#44's
+follow-on), which is what prompted looking for it on the gameplay path. Two of the
+three VM consumers already did `take_while(|w| w != 0xFFFF)`; the disassembler and the
+engine's subtitle builder did not. The lesson is that the correct handling existed in
+the codebase and simply had not been applied uniformly — worth grepping for the other
+`word_offsets` consumers whenever this record type changes.
+
+### MENU_SUBMENU provenance closed
+
+The menu rows are now retained per line offset (`menu_by_offset`) and
+`menu_submenu_labels()` sources the submenu from the LOADED SCRIPT, upper-casing for
+display exactly as the widget does. `MENU_SUBMENU` remains only as the documented
+fallback for an engine with no script loaded (unit tests, bare `EngineState::new()`),
+so the const is a default rather than the authority. The draw and the hit-test both
+call the accessor, so the clickable band cannot disagree with what is drawn.
