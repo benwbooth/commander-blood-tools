@@ -3587,6 +3587,11 @@ pub struct VmMachine {
     /// The line-record/object state table (`gs:0x6724` far table) — A6/record ops
     /// address it by byte offset. Sized generously; the game allocates per script.
     pub line_records: Vec<u16>,
+    /// The ship's cargo hold — the 16-word special-slot list at gs:0x6D3E
+    /// (insert 0x5FF6 fills a matching-or-zero slot; remove 0x5FD8 zeroes a
+    /// match; SCRIPT inits rep-stosw it clear). Objects teleported aboard live
+    /// here; the customs confiscations empty it.
+    pub ship_slots: [u16; 16],
     /// BloodPrng state (cs:0xAEE seed word + 0xAF0/0xAF1/0xAF2 bytes; the
     /// shipped image zeroes them, the boot seeds from CMOS RTC seconds).
     pub prng_seed: u16,
@@ -3660,6 +3665,7 @@ impl Default for VmMachine {
             prng_af0: 0,
             prng_af1: 0,
             prng_af2: 0,
+            ship_slots: [0u16; 16],
             concept: 0,
             concept_alt: 0,
             concept_alt_active: false,
@@ -4482,8 +4488,23 @@ impl VmMachine {
                     // field-0x11/location word gets the destination; 0xFFFF
                     // when it boards the SHIP's special list, 0x6A60): the
                     // story guards read exactly this (rec_0722 == 65535 =
-                    // Scruter Jo aboard; the customs manifest lines).
+                    // Scruter Jo aboard; the customs manifest lines). The
+                    // ship's 16-slot hold (gs:0x6D3E) tracks the cargo:
+                    // insert on boarding (0x5FF6), remove on leaving (0x5FD8).
                     let dest = if op3 == 0x28 { 0xFFFF } else { op3 };
+                    if dest == 0xFFFF {
+                        if let Some(slot) = self
+                            .ship_slots
+                            .iter_mut()
+                            .find(|s| **s == op2 || **s == 0)
+                        {
+                            *slot = op2;
+                        }
+                    } else if let Some(slot) =
+                        self.ship_slots.iter_mut().find(|s| **s == op2)
+                    {
+                        *slot = 0;
+                    }
                     self.rec_write(op2.wrapping_add(LOCATION_FIELD), dest);
                     self.events.push(VmEvent::Transfer {
                         object: op2 as usize,
