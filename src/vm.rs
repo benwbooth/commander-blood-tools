@@ -3693,6 +3693,11 @@ pub struct VmMachine {
     /// (accepted A6 lines clear their active bit @0x668D), which is how the flow
     /// advances across frames. Loaded via [`Self::load_cod`].
     pub cod: Vec<u8>,
+    /// DEB object record offsets, ascending (from the script's .DEB). The OWNER of
+    /// a record is the nearest object at or below its offset (0x6034 threshold
+    /// lookup over gs:0x672c). Empty until [`Self::load_deb_objects`]; owner-gated
+    /// opcodes (C4/0x6946/B8) degrade gracefully when empty.
+    pub object_offsets: Vec<u16>,
     halted: bool,
 }
 
@@ -3734,6 +3739,7 @@ impl Default for VmMachine {
             var_len: 0,
             events: Vec::new(),
             cod: Vec::new(),
+            object_offsets: Vec::new(),
             halted: false,
         }
     }
@@ -3926,6 +3932,29 @@ impl VmMachine {
 
     /// Load the script bytecode into the machine's working copy (the game
     /// self-modifies accepted lines' active bits in this stream).
+    /// Populate the DEB object-offset table (ascending) for owner resolution.
+    pub fn load_deb_objects(&mut self, deb: &[u8]) {
+        let mut offs: Vec<u16> = crate::script::parse_deb(deb)
+            .into_iter()
+            .map(|s| s.offset)
+            .collect();
+        offs.sort_unstable();
+        offs.dedup();
+        self.object_offsets = offs;
+    }
+
+    /// The owning object of a record: the nearest DEB object STRICTLY below `off`
+    /// (the 0x6034 threshold lookup's port model). None when the table is unloaded.
+    fn owner_object_offset(&self, off: u16) -> Option<u16> {
+        self.object_offsets.iter().rev().copied().find(|&o| o < off)
+    }
+
+    /// Whether a record's owning object is active (owner+2 bit0). None = no table.
+    fn owner_active(&self, off: u16) -> Option<bool> {
+        let owner = self.owner_object_offset(off)?;
+        Some(self.rec_read_u8(owner.wrapping_add(2)) & 1 != 0)
+    }
+
     pub fn load_cod(&mut self, cod: &[u8]) {
         self.cod = cod.to_vec();
         self.pc = 0;
@@ -4522,9 +4551,18 @@ impl VmMachine {
                 let off = self.lodsw();
                 let related = self.lodsw();
                 if self.query {
+                    // 0x6C7E query: pass iff rec[off]==C4, related matches, and the
+                    // OWNING object is active (0x6CA4 test es:[di+2],1) — NOT "is this
+                    // the single primary presenter". active_actor==Some(off) wrongly
+                    // failed 'is character B present?' in multi-actor scenes. When the
+                    // DEB object table isn't loaded, fall back to the old check.
+                    let owner_ok = match self.owner_active(off) {
+                        Some(active) => active,
+                        None => self.active_actor == Some(off),
+                    };
                     let pass = self.rec_read(off) == 0xC4
                         && self.rec_read(off + 2) == related
-                        && self.active_actor == Some(off);
+                        && owner_ok;
                     if pass == flipped {
                         self.branch();
                     }

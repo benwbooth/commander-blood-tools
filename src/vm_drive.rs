@@ -26,6 +26,7 @@ impl VmDrive {
         let mut m = VmMachine::new();
         m.load_cod(cod);
         m.load_var(var);
+        m.load_deb_objects(deb); // owner resolution for the C4/0x6946/B8 guards
         let dic = crate::script::parse_dictionary(dic_raw);
         let mut texts = HashMap::new();
         for t in crate::vm::walk(cod, 0, cod.len()) {
