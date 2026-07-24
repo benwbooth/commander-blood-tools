@@ -4687,6 +4687,52 @@ impl VmMachine {
                     }
                 }
             }
+            // 0xC2 (0x6E34) — was an unhandled no-op live (the catch-all only
+            // consumed operands); the tracer had it as `write_c2_record_state_direct`.
+            // QUERY (0x6E56..0x6E76): the owning object of op1 must be ACTIVE
+            // (`test es:[di+2],1` on the 0x6034 lookup), the record's +2 must equal
+            // op2, and its type must be 0xC2; branch when that fails (0xA1 inverts).
+            // SET (0x6E78..0x6E98): owner active, then op2's OWN record must have
+            // `+2 & 0x20`, then insert it into the special-slot list (0x5FF6) and
+            // write 0xFFFF into its selector-0x11 field. NOTE the asymmetry: every
+            // SET failure path jumps to the RET at 0x6EEC, never to vm_branch —
+            // a failed C2 write does NOT branch.
+            0xC2 => {
+                let mut flipped = false;
+                if self.u8_at(self.pc) == 0xA1 {
+                    self.pc += 1;
+                    flipped = true;
+                }
+                let off = self.lodsw();
+                let operand = self.lodsw();
+                // Object table unloaded (opcode-only scaffolding): keep the legacy
+                // no-op, as the C1/C4 arms do.
+                if let Some(owner) = self.owner_object_offset(off) {
+                    let owner_active = self.rec_read(owner.wrapping_add(2)) & 1 != 0;
+                    if self.query {
+                        let pass = owner_active
+                            && self.rec_read(off.wrapping_add(2)) == operand
+                            && self.rec_read(off) == 0xC2;
+                        if pass == flipped {
+                            self.branch();
+                        }
+                    } else if owner_active
+                        && self.rec_read(operand.wrapping_add(2)) & 0x20 != 0
+                        && self.special_slot_insert(operand)
+                    {
+                        let kind = self.rec_read(operand);
+                        if let Some(fo) = vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C2, kind) {
+                            self.rec_write(operand.wrapping_add(fo), 0xFFFF);
+                        }
+                        // 0x6E9F..: the handler then raises a presentation request
+                        // (kind 2 -> gs:[0x6788]=0x27; kind 0x400 -> DESCRIPT lookup
+                        // then gs:[0x67AA]|=2, gs:[0x6788]=0x2B), gated on
+                        // gs:[0x2793]&1 and gs:[0x67AA]&2. NOT modelled: the same
+                        // engine active-line/presentation-request plumbing the 0xA8
+                        // request half needs. See docs/audit-fixes.md.
+                    }
+                }
+            }
             0xC3 => {
                 let mut flipped = false;
                 if self.u8_at(self.pc) == 0xA1 {
@@ -7507,6 +7553,74 @@ mod tests {
         m.step();
         assert_eq!(m.rec_read_pub(0x84), 0xC4, "no DEB loaded -> unconditional write");
         assert_eq!(m.active_actor, Some(0x84));
+    }
+
+    #[test]
+    fn live_step_c2_record_state_was_a_no_op() {
+        // 0xC2 (0x6E34). Owner object @0x80 (active); the record operand is
+        // 0x84; the target operand is 0x10, whose own record must carry +2 bit5
+        // (0x20) for the SET to take.
+        let cod = [0xC2, 0x84, 0x00, 0x10, 0x00, 0xFF];
+        fn armed() -> VmMachine {
+            let mut m = VmMachine::new();
+            m.object_offsets = vec![0x10, 0x80];
+            m.rec_write_pub(0x80, 2);
+            m.rec_write_pub(0x82, 1); // owner active
+            m.rec_write_pub(0x10, 2); // target kind 2
+            m.rec_write_pub(0x12, 0x20); // target +2 bit5 set
+            m
+        }
+        let field =
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C2, 2).expect("kind 2 selector-0x11 field");
+
+        // SET: all gates pass -> 0xFFFF into the target's selector-0x11 field,
+        // and the target joins the special-slot list.
+        let mut m = armed();
+        m.load_cod(&cod);
+        m.query = false;
+        m.pc = 0;
+        m.step();
+        assert_eq!(
+            m.rec_read_pub(0x10u16.wrapping_add(field)),
+            0xFFFF,
+            "selector-0x11 field written (was a no-op)"
+        );
+        assert!(m.ship_slots.contains(&0x10), "target inserted into the special slots");
+
+        // SET with the 0x20 bit clear: no write — and crucially NO BRANCH (every
+        // SET failure path in 0x6E78.. jumps to the RET at 0x6EEC).
+        let mut m = armed();
+        m.rec_write_pub(0x12, 0);
+        m.load_cod(&cod);
+        m.query = false;
+        m.stack.push(0x99);
+        m.pc = 0;
+        m.step();
+        assert_eq!(m.rec_read_pub(0x10u16.wrapping_add(field)), 0, "no write");
+        assert_eq!(m.pc, 5, "a failed C2 SET does NOT branch");
+
+        // QUERY: matching {0xC2, operand} on an active owner -> pass.
+        let mut m = armed();
+        m.rec_write_pub(0x84, 0xC2);
+        m.rec_write_pub(0x86, 0x10);
+        m.load_cod(&cod);
+        m.query = true;
+        m.stack.push(0x99);
+        m.pc = 0;
+        m.step();
+        assert_eq!(m.pc, 5, "matching C2 query falls through");
+
+        // QUERY with the owner INACTIVE -> branch (0x6E56 je).
+        let mut m = armed();
+        m.rec_write_pub(0x84, 0xC2);
+        m.rec_write_pub(0x86, 0x10);
+        m.rec_write_pub(0x82, 0);
+        m.load_cod(&cod);
+        m.query = true;
+        m.stack.push(0x99);
+        m.pc = 0;
+        m.step();
+        assert_eq!(m.pc, 0x99, "inactive owner -> query branches");
     }
 
     #[test]

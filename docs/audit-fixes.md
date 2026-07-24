@@ -11,7 +11,7 @@ displays** and wins. So a subset of the 40 are FALSE POSITIVES — the port is a
 correct and the raw-assembly reading is the one that's off. Each geometry finding must
 be oracle-re-verified before it is "fixed"; changing it blind regresses a pixel match.
 
-## Fixed + committed (30) — assembly-cited, regression-tested, oracle-verified where visual
+## Fixed + committed (31) — assembly-cited, regression-tested, oracle-verified where visual
 
 | area | fix | severity |
 |---|---|---|
@@ -44,6 +44,7 @@ be oracle-re-verified before it is "fixed"; changing it blind regresses a pixel 
 | bridge-clicks | ALL four choice-box hit-test callers share that geometry (console, MENU submenu, nav chooser, telephone) — band == drawn box by construction | MED |
 | bridge | ring cursor snaps to the 8-unit frame grid each tick (`0x97F6 and [0xa2a],0xfff8`, the `0x97E4` sync every steer/seek path falls into) | LOW |
 | vm-dispatch | `0xA8` latches the FIN flag `gs:[0x67BD]` on a `"fin."`-prefixed string (`0x67D8..0x67F0`, ungated) — the finale latch the port dropped | LOW |
+| vm-dispatch | **live** `step()` now executes `0xC2` (`0x6E34`): QUERY owner-active + typed match, SET slot-insert + selector-`0x11` `0xFFFF` write (and its no-branch-on-failure asymmetry); was an unhandled no-op | HIGH |
 | vm-records | **live** `0xC9` zeroes the whole 3-word record AND the `0xC4` reciprocal selector-`0x13` triple on the related object (`0x6FB9..0x6FF0`); the old 1-word clear left a stale `0xC4` that the new C4 write guard would refuse, wedging the actor out of later presentations | HIGH |
 | vm-flags | `gs:0x274F` gets the game's real lifecycle: baked initial value is **0** (file `0xFB6F`), set on cryobox-screen entry (`0x18C4`), cleared on exit (`0x1A48`) — was forced `true` at VM construction, leaving `0xD1`'s Cap'n Bob block open from boot | MED |
 
