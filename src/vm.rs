@@ -5211,7 +5211,7 @@ mod tests {
     /// then release the customs C3 (@96A1) -> the boarding radio -> RUN
     /// PROFILE (@987C).
     #[test]
-    fn script2_directed_drive_reaches_the_customs_handoff() {
+    fn directed_drive_plays_the_story_to_fin_hnm() {
         let Some(iso) = ["output/_tmp_iso", "../output/_tmp_iso"]
             .iter()
             .find(|d| std::path::Path::new(d).join("SCRIPT2.COD").is_file())
@@ -5466,6 +5466,95 @@ mod tests {
         }
         assert!(briefing, "the Oddland briefing plays");
         assert_eq!(m.pending_profile, 3, "RUN PROFILE 3 — the SCRIPT3 -> SCRIPT4 handoff");
+
+        // ACT THREE (SCRIPT4, the Oddland chase): load on the handoff, let the
+        // init + world one-shots settle, then the endgame manifest in story
+        // order (@4046: rec_013A at 2840; the rescued aboard — rec_0722,
+        // rec_040A, rec_0572 all 65535) queues Jerry Khan's return (0x504,
+        // 'I just captured Doctor Otto Von Smile... I found the GLUXX kids...
+        // We're going home'), whose tail (poke [0x4194]) arms the C6-guarded
+        // exit -> RUN PROFILE 4 -> SCRIPT5.
+        let cod4 = std::fs::read(std::path::Path::new(iso).join("SCRIPT4.COD")).unwrap();
+        let var4 = std::fs::read(std::path::Path::new(iso).join("SCRIPT4.VAR")).unwrap();
+        m.load_cod(&cod4);
+        m.load_var(&var4);
+        m.pending_profile = -1;
+        m.active_actor = None;
+        m.presentation_busy = false;
+        m.resume_pos = None;
+        for _ in 0..3 {
+            let _ = m.run_frame();
+        }
+        m.rec_write(0x013A, 2840);
+        m.rec_write(0x0722, 65535);
+        m.rec_write(0x040A, 65535);
+        m.rec_write(0x0572, 65535);
+        m.rec_write(0x114E, 0xC6);
+        m.rec_write(0x1150, 0x1112);
+        for _ in 0..20 {
+            let _ = m.run_frame();
+            if m.rec_read(0x0504) == 0xC3 {
+                break;
+            }
+        }
+        assert_eq!(m.rec_read(0x0504), 0xC3, "SCRIPT4's endgame queues Jerry Khan's return");
+        let mut homeward = false;
+        for _ in 0..400 {
+            for ev in m.run_frame() {
+                if let VmEvent::Text { offset } = ev {
+                    if (0x4077..0x4193).contains(&offset) {
+                        homeward = true;
+                    }
+                }
+            }
+            m.tick_state_countdowns();
+            if !m.presentation_busy {
+                let _ = m.promote_queued_presentation();
+            }
+            if m.pending_profile >= 0 {
+                break;
+            }
+        }
+        assert!(homeward, "the homeward briefing plays");
+        assert_eq!(m.pending_profile, 4, "RUN PROFILE 4 — the SCRIPT4 -> SCRIPT5 handoff");
+
+        // THE FINALE (SCRIPT5, the Bigbang wedding concert): load on the
+        // handoff, settle, satisfy the concert block's own guards (@1511:
+        // rec_103A at 4024, rec_1340 at 4108) and start Migrator's talk
+        // (0x474) — "SILENCE IT'S STARTING...." — the concert reels roll
+        // (lpm*.hnm) and the block's tail loads FIN.HNM: the game's ENDING,
+        // the same LoadString the frontend maps to the credits.
+        let cod5 = std::fs::read(std::path::Path::new(iso).join("SCRIPT5.COD")).unwrap();
+        let var5 = std::fs::read(std::path::Path::new(iso).join("SCRIPT5.VAR")).unwrap();
+        m.load_cod(&cod5);
+        m.load_var(&var5);
+        m.pending_profile = -1;
+        m.active_actor = None;
+        m.presentation_busy = false;
+        m.resume_pos = None;
+        for _ in 0..3 {
+            let _ = m.run_frame();
+        }
+        m.rec_write(0x103A, 4024);
+        m.rec_write(0x1340, 4108);
+        m.start_actor_presentation(0x474, 40);
+        let mut fin = false;
+        for _ in 0..600 {
+            for ev in m.run_frame() {
+                if let VmEvent::LoadString(name) = ev {
+                    if name.eq_ignore_ascii_case("fin.hnm") {
+                        fin = true;
+                    }
+                }
+            }
+            if fin {
+                break;
+            }
+            if !m.presentation_busy {
+                m.start_actor_presentation(0x474, 40);
+            }
+        }
+        assert!(fin, "FIN.HNM loads — the Bigbang concert ends the game");
     }
 
     /// THE WAKE CHAIN: Scruter Jo's presenter (1860) plays the scan intro, the
