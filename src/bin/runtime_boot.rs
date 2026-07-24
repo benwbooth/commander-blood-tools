@@ -3392,6 +3392,13 @@ fn main() {
                 let file = u32::from_str_radix(tok.trim().trim_start_matches("0x"), 16).unwrap();
                 rt.cpu.exec_watch_linear.push(0x1a20 + file.saturating_sub(0x600));
             }
+            // EXECREGS=1 also dumps the live registers at each hit -- needed when
+            // the QUESTION is "what were the arguments", e.g. which name string si
+            // points at when the mu\<NAME>.voc patcher at 0x77A9 runs.
+            if std::env::var("EXECREGS").is_ok() {
+                rt.cpu.exec_watch_dump_regs = true;
+                eprintln!("EXECREGS: register dump enabled at every exec-watch hit");
+            }
         }
         let w16 = |rt: &Runtime, a: u32| {
             rt.m.read8(g, a) as u32 | ((rt.m.read8(g, a + 1) as u32) << 8)

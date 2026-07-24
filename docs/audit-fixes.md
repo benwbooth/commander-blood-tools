@@ -406,3 +406,32 @@ search — arm an execution watch on file `0x77A9` (the probe already supports
 `EXECWATCHLIN`, and `Cpu::exec_watch_dump_regs` added this session prints the live
 registers) and drive a spoken line. The dump gives both the caller (via the saved
 return address the watch already captures) and `si`, i.e. the exact name source.
+
+#### Voice trace, dynamic attempt: watch armed, ZERO hits (and sound was ON)
+
+Ran the recorded next step rather than leaving it as advice. Added `EXECREGS=1` to
+the scenario exec-watch so hits dump live registers, then armed file `0x77A9` over
+`accuracy/scenarios/story_deep.tsv`:
+
+    VERIFYSCRIPT=...story_deep.tsv EXECWATCHLIN=0x77A9 EXECREGS=1 -> 0 hits
+
+The watch itself is proven functional: the same address formula
+(`0x1a20 + file - 0x600`) produced hits earlier for the menu compare at
+`0x8656`/`0x8663`. So the patcher genuinely never executed.
+
+Hypothesis TESTED AND REJECTED: that the interpreter had sound disabled, which
+would make `snd_play_clip`'s `test gs:[0xADE],1` skip the audio paths. Dumping
+`gs:0x0ADE` from the SCRIPT2 milestone gives 1 — sound is ENABLED.
+
+REMAINING LEAD (hypothesis, not proven): the concrete filename `mu\tablo2.voc`
+sits at `DS:0x0D3D` right beside the template, and labels.csv ties `DS:0x0BA3`
+(`voc_tablo2_active`) to NAVIGATION-CHOICE HANDLER 4 — which is one of the 18
+functions this session measured as DORMANT. If this VOC machinery belongs to the
+nav/tablo2 flow rather than to ordinary character speech, zero hits is exactly
+what a dormant nav subsystem would produce, and the two findings are the same
+problem again. That would ALSO mean the port's `son.snd` clip model is not
+contradicted by this path at all.
+
+Deliberately unresolved: proving it needs a scenario that reaches nav voice, which
+is blocked behind the same wiring work. Recorded so the next attempt starts from
+the lead rather than repeating the search.
