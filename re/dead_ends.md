@@ -1268,4 +1268,11 @@ the montage and the band PERSISTS underneath — so it is drawn ONCE, before the
 film starts. Look in the intro setup path (the code that runs between the boot
 logos and the first montage frame), not in the film and not in the asset files.
 
+CONFIRMED by finding that path: `montage_frame_setup` at 0x7AC3 remaps the whole
+320x200 screen through tint table DS:0x6011 and then draws only a (0,0,*,140)
+region — the film area. The per-frame work provably never touches rows 140..200,
+exactly as the frame sizes implied. So the band is drawn earlier still, by
+whatever runs before the first call to this routine. (Bonus: this is the consumer
+of the SECOND tint table, whose users were previously unknown.)
+
 SESSION: the engine.rs capture-provenance sweep.

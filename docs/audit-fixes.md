@@ -2407,3 +2407,33 @@ FOUR TOOLS THIS SESSION have needed their first output disbelieved (DS/file pair
 quoted instructions, labels.csv, this). The pattern is stable enough to state as a
 rule: a new checker's first run is a test OF THE CHECKER. Only once it survives a
 positive control and a known-good counter-example does its output mean anything.
+
+## FIX #71 — following the sharpened question found the second tint table's consumer
+
+The band hypothesis (#70) predicted the game repaints only the top rows during the
+montage and leaves the band alone. Following that into the intro path confirmed it
+and turned up something else:
+
+```text
+  0x7AC3  bx=0 cx=0 dx=0x140 bp=0xC8 si=DS:0x6011
+  0x7AD1  lcall 0x299:0x40E     remap the WHOLE 320x200 screen through table 0x6011
+  0x7AD6  ax=0 bp=0x8C cx=0
+  0x7ADE  lcall 0x299:0xCDC     draw a (0,0,*,140) region — the FILM area only
+  0x7AE3  swap [0x5221]/[0x5229]  page flip
+```
+
+Two things fall out.
+
+**The prediction held.** The per-frame work provably never touches rows 140..200,
+which is why the band persists. The frame-size evidence and the code now agree.
+
+**`DS:0x6011` has a consumer.** Earlier this session `0x45C8` was decoded as
+selecting between two adjacent 256-byte tint tables, `0x5F11` and `0x6011`, with
+the choice stored at `gs:0x524B` — but only `0x5F11`'s users were known (the info
+panel, the choice box). `0x6011` is the montage's: every cinematic frame is
+presented through a FULL-SCREEN remap.
+
+That last part is a port gap in its own right, separate from the band: the port
+plays the montage untinted and pastes a captured band over it. The correct shape
+is a full-screen remap through the second table, with the film drawn into the top
+140 rows and the band left standing from before.
