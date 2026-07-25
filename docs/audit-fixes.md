@@ -4619,3 +4619,37 @@ carried. Both now cite the divide they reproduce, which also brings them under
 The remaining ASM-without-citation rows are a real queue, not a bug: each needs
 either a citation written or a status corrected. Counted rather than fixed in
 bulk, because deciding which of the two applies is the work.
+
+## #142 — writing one of the 91 missing citations
+
+#141 counted 91 rows settled `ASM` with no cited address. Working the first showed
+what the queue actually contains.
+
+`update_ship_3d_transition_state` had NO doc comment at all — settled as verified
+against the assembly, with nothing recorded about which assembly. Its three
+constants (`SHIP_3D_TRANSITION_OPEN_STEP` 4, `CLOSE_STEP` 8,
+`OPEN_TIMER_THRESHOLD` 120) sat undocumented at the top of the file with a dozen
+others.
+
+`labels.csv` already knew the routine — `0x00B692,ship_3d_transition_state_update`
+— which is what `re/tools/whatis.py` exists to surface (#129). Reading it:
+
+```text
+  0xB692  test byte [0x2533],1     ARMED?
+  0xB699  cmp word [0xb3b],0x78    not armed: hold timer vs 120
+  0xB69E  jbe 0xb6dc               at or below -> nothing happens
+  0xB6A0  mov byte [0x2531],4      open step
+  0xB6B1  cmp word [0xb3b],0       armed: timer exhausted?
+  0xB6B8  mov byte [0x2531],8      close step -- twice the open rate
+  0xB6C2  mov byte [0x2533],0      disarmed
+```
+
+Every constant confirmed, and two details the port's bare numbers did not state:
+closing steps at twice the opening rate, and `jbe` means the transition arms only
+when the timer is ABOVE 120, not at it.
+
+Cited instructions verified: 117 -> 127. The queue: 91 -> 90.
+
+That ratio is the honest measure of this work. One row costs a routine read, and
+the value is not the settled count — it is that "step 4" now says WHY it is 4 and
+where to look when it turns out to be wrong.

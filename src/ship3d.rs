@@ -1,8 +1,14 @@
 use crate::vm;
 
 pub const SHIP_3D_MAX_DEPTH_OFFSET: u16 = 0x41;
+/// `mov byte [0x2531],4` @`0xB6A0` — the OPEN step, written once the hold timer
+/// passes the threshold below.
 pub const SHIP_3D_TRANSITION_OPEN_STEP: u8 = 4;
+/// `mov byte [0x2531],8` @`0xB6B8` — the CLOSE step, written when the timer
+/// reaches zero while armed. Closing steps twice as fast as opening.
 pub const SHIP_3D_TRANSITION_CLOSE_STEP: u8 = 8;
+/// `cmp word [0xb3b],0x78` @`0xB699` — 120 ticks. `jbe` falls through, so the
+/// transition arms only once the timer is ABOVE it, not at it.
 pub const SHIP_3D_TRANSITION_OPEN_TIMER_THRESHOLD: u16 = 120;
 pub const SHIP_3D_PLANE_ROW_BYTES: usize = 80;
 pub const SHIP_3D_PLANE_PAGE_BYTES: usize = 8000;
@@ -839,6 +845,24 @@ pub struct Ship3dNavigationTriggerEffect {
     pub requested_closing: bool,
 }
 
+/// The ship-3D transition updater, `ship_3d_transition_state_update` @`0xB692`:
+///
+/// ```text
+///   0xB692  test byte [0x2533],1     ARMED?
+///   0xB699  cmp word [0xb3b],0x78    not armed: the hold timer vs 120
+///   0xB69E  jbe 0xb6dc               at or below -> nothing happens
+///   0xB6A0  mov byte [0x2531],4      open step
+///   0xB6A5  mov byte [0x252f],1      opening flag
+///   0xB6AA  mov byte [0x2533],1      now armed
+///   0xB6B1  cmp word [0xb3b],0       armed: timer exhausted?
+///   0xB6B8  mov byte [0x2531],8      close step -- twice the open rate
+///   0xB6BD  mov byte [0x2530],1      closing flag
+///   0xB6C2  mov byte [0x2533],0      disarmed
+/// ```
+///
+/// `DS:0x2533` is the armed latch, `0x2531` the step, `0x252F`/`0x2530` the
+/// opening/closing flags, `0x0B3B` the hold timer. This function had NO doc and
+/// was settled ASM regardless — one of the 91 such rows counted in #141.
 pub fn update_ship_3d_transition_state(state: &mut Ship3dTransitionState, random_gate_zero: bool) {
     if !state.transition_armed {
         if state.hold_ticks > SHIP_3D_TRANSITION_OPEN_TIMER_THRESHOLD {

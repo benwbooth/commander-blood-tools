@@ -818,338 +818,338 @@ parse_script_dir	src/script.rs	411	fn		UNVERIFIED
 object_name_map	src/script.rs	450	fn		UNVERIFIED	
 find_file_recursive	src/script.rs	458	fn		UNVERIFIED	
 SHIP_3D_MAX_DEPTH_OFFSET	src/ship3d.rs	3	const		UNVERIFIED	
-SHIP_3D_TRANSITION_OPEN_STEP	src/ship3d.rs	4	const		UNVERIFIED	
-SHIP_3D_TRANSITION_CLOSE_STEP	src/ship3d.rs	5	const		UNVERIFIED	
-SHIP_3D_TRANSITION_OPEN_TIMER_THRESHOLD	src/ship3d.rs	6	const		UNVERIFIED	
-SHIP_3D_PLANE_ROW_BYTES	src/ship3d.rs	7	const		UNVERIFIED	
-SHIP_3D_PLANE_PAGE_BYTES	src/ship3d.rs	8	const		UNVERIFIED	
-SHIP_3D_PLANE_BASE_ROWS	src/ship3d.rs	9	const		UNVERIFIED	
-SHIP_3D_PLANE_SOURCE_PAGE0_OFFSET	src/ship3d.rs	10	const		UNVERIFIED	
-SHIP_3D_PLANE_SOURCE_PAGE1_OFFSET	src/ship3d.rs	11	const		UNVERIFIED	
-SHIP_3D_PLANE_DEST_BYTES	src/ship3d.rs	12	const		UNVERIFIED	
-SHIP_3D_SCROLL_MODE_HOLD	src/ship3d.rs	13	const		UNVERIFIED	
-SHIP_3D_TARGET_EXIT_SENTINEL	src/ship3d.rs	14	const		UNVERIFIED	
-SHIP_3D_TARGET_RECORD_HEADER_BYTES	src/ship3d.rs	15	const		UNVERIFIED	
-SHIP_3D_TARGET_OPEN_STEP	src/ship3d.rs	16	const		UNVERIFIED	
-SHIP_3D_INTERPOLATION_WORDS	src/ship3d.rs	17	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_DEFAULT_MAX_WIDTH	src/ship3d.rs	18	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_EXTRA_WIDTH	src/ship3d.rs	19	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_WIDTH_PADDING	src/ship3d.rs	20	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_ROW_STEP	src/ship3d.rs	21	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_EXTRA_HEIGHT	src/ship3d.rs	22	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_HEIGHT_PADDING	src/ship3d.rs	23	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_SCREEN_HEIGHT	src/ship3d.rs	24	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN	src/ship3d.rs	25	const		UNVERIFIED	
-SHIP_3D_TARGET_HIT_TEST_TOP_INSET	src/ship3d.rs	26	const		UNVERIFIED	
-SHIP_3D_TARGET_HIT_TEST_BOTTOM_INSET	src/ship3d.rs	27	const		UNVERIFIED	
-SHIP_3D_TARGET_HOVER_PRESENTATION_MODE	src/ship3d.rs	28	const		UNVERIFIED	
-SHIP_3D_TARGET_ACTIVE_PRESENTATION_MODE	src/ship3d.rs	29	const		UNVERIFIED	
-SHIP_3D_TARGET_IDLE_PRESENTATION_MODE	src/ship3d.rs	30	const		UNVERIFIED	
-SHIP_3D_TARGET_DRAW_X_INSET	src/ship3d.rs	31	const		UNVERIFIED	
-SHIP_3D_TARGET_DEFAULT_TEXT_COLOR	src/ship3d.rs	32	const		UNVERIFIED	
-SHIP_3D_TARGET_HOVER_TEXT_COLOR	src/ship3d.rs	33	const		UNVERIFIED	
-SHIP_3D_TARGET_ACTIVE_TEXT_COLOR	src/ship3d.rs	34	const		UNVERIFIED	
-SHIP_3D_TARGET_EXTRA_LABEL_OFFSET	src/ship3d.rs	35	const		UNVERIFIED	
-SHIP_3D_TARGET_ALIAS_LABEL_OFFSET	src/ship3d.rs	36	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_MIN_GATE	src/ship3d.rs	37	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_MAX_GATE	src/ship3d.rs	38	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_AXIS_BIAS	src/ship3d.rs	39	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_RIGHT_BASE	src/ship3d.rs	40	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_X_WIDTH	src/ship3d.rs	41	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_Y_BASE	src/ship3d.rs	42	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_ROW_HEIGHT_BASE	src/ship3d.rs	43	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_COUNT	src/ship3d.rs	44	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_PALETTE_FIRST	src/ship3d.rs	45	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_PRESENTATION_MODE	src/ship3d.rs	46	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_HUD_SELECT_FLAGS	src/ship3d.rs	47	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_DISPATCH_BLOCK_FLAG	src/ship3d.rs	48	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_HOLD_TICKS	src/ship3d.rs	49	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_HANDLER_PHASE	src/ship3d.rs	50	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_TARGET_Y_BASE	src/ship3d.rs	51	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_TARGET_Y_STEP	src/ship3d.rs	52	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_LAYOUT_CENTER_X	src/ship3d.rs	53	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_INTERPOLATION_DURATION	src/ship3d.rs	54	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_SELECT_SOUND	src/ship3d.rs	55	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_RECORD_LINK_TYPE	src/ship3d.rs	56	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_TARGET_LIST_FLAG	src/ship3d.rs	57	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_PHASE_INTERPOLATING	src/ship3d.rs	58	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_RADIO_SND_PATH_OFFSET	src/ship3d.rs	59	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_HANDLER4_TARGET_LIST_OFFSET	src/ship3d.rs	60	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_HANDLER4_TOGGLE_OFF_TARGET_LIST_OFFSET	src/ship3d.rs	61	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_HANDLER4_TOGGLE_ON_TARGET_LIST_OFFSET	src/ship3d.rs	62	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_TABLO2_VOC_PATH_OFFSET	src/ship3d.rs	63	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_SOUND_GATE_SUPPRESS_TARGETS	src/ship3d.rs	64	const		UNVERIFIED	
-SHIP_3D_NAVIGATION_INTERPOLATION_DURATION	src/ship3d.rs	65	const		UNVERIFIED	
-SHIP_3D_NAVIGATION_DEFERRED_RECORD_TYPE	src/ship3d.rs	66	const		UNVERIFIED	
-SHIP_3D_NAVIGATION_RECORD_KIND_CANDIDATE	src/ship3d.rs	67	const		UNVERIFIED	
-SHIP_3D_NAVIGATION_RECORD_ACTIVE_FLAG	src/ship3d.rs	68	const		UNVERIFIED	
-SHIP_3D_NAVIGATION_CURRENT_TARGET_MATCH_ANY_FLAG	src/ship3d.rs	69	const		UNVERIFIED	
-SHIP_3D_NAVIGATION_REDIRECT_COUNTER_FLAG	src/ship3d.rs	70	const		UNVERIFIED	
-SHIP_3D_NAVIGATION_TARGET_LIST_FLAG	src/ship3d.rs	71	const		UNVERIFIED	
-SHIP_3D_NAVIGATION_LAYOUT_TARGET_LIST_OFFSET	src/ship3d.rs	72	const		UNVERIFIED	
-SHIP_3D_NAVIGATION_SCENE_BAND_TOP	src/ship3d.rs	73	const		UNVERIFIED	
-SHIP_3D_NAVIGATION_RENDER_CLIP_BOTTOM	src/ship3d.rs	74	const		UNVERIFIED	
-SHIP_3D_NAVIGATION_RENDER_CLIP_RESTORED_BOTTOM	src/ship3d.rs	75	const		UNVERIFIED	
-SHIP_3D_NAVIGATION_TRIGGER_CLOSE_STEP	src/ship3d.rs	76	const		UNVERIFIED	
-SHIP_3D_PROCEDURAL_HUD_ACTIVE_FLAG	src/ship3d.rs	77	const		UNVERIFIED	
-SHIP_3D_PROCEDURAL_TARGET_LIST_FLAG	src/ship3d.rs	78	const		UNVERIFIED	
-SHIP_3D_PROCEDURAL_HALF_TURN	src/ship3d.rs	79	const		UNVERIFIED	
-SHIP_3D_PROCEDURAL_FULL_TURN	src/ship3d.rs	80	const		UNVERIFIED	
-SHIP_3D_PROCEDURAL_MOUSE_RING	src/ship3d.rs	81	const		UNVERIFIED	
-SHIP_3D_PROCEDURAL_MOUSE_CENTER_X	src/ship3d.rs	82	const		UNVERIFIED	
-SHIP_3D_PROCEDURAL_MOUSE_ALIGN_MASK	src/ship3d.rs	83	const		UNVERIFIED	
-SHIP_3D_PROCEDURAL_CLOSE_ANGLE_THRESHOLD	src/ship3d.rs	84	const		UNVERIFIED	
-SHIP_3D_PROCEDURAL_TARGET_LIST_THRESHOLD	src/ship3d.rs	85	const		UNVERIFIED	
-SHIP_3D_PROCEDURAL_TARGET_LIST_STEP	src/ship3d.rs	86	const		UNVERIFIED	
-SHIP_3D_PROCEDURAL_AUTO_ROTATE_STEP	src/ship3d.rs	87	const		UNVERIFIED	
-SHIP_3D_PROCEDURAL_ROTATION_OFFSET_BIAS	src/ship3d.rs	88	const		UNVERIFIED	
-SHIP_3D_MATRIX_ANGLE_TABLE_OFFSET	src/ship3d.rs	89	const		UNVERIFIED	
-SHIP_3D_MATRIX_ANGLE_A_OFFSET	src/ship3d.rs	90	const		UNVERIFIED	
-SHIP_3D_MATRIX_PROJECTION_ANGLE_OFFSET	src/ship3d.rs	91	const		UNVERIFIED	
-SHIP_3D_MATRIX_ANGLE_C_OFFSET	src/ship3d.rs	92	const		UNVERIFIED	
-SHIP_3D_MATRIX_TEMP_OFFSET	src/ship3d.rs	93	const		UNVERIFIED	
-SHIP_3D_PROJECTION_MATRIX_OFFSET	src/ship3d.rs	94	const		UNVERIFIED	
-SHIP_3D_MATRIX_FIXED_SHIFT	src/ship3d.rs	95	const		UNVERIFIED	
-SHIP_3D_PROJECTION_CAMERA_X_OFFSET	src/ship3d.rs	96	const		UNVERIFIED	
-SHIP_3D_PROJECTION_CAMERA_Y_OFFSET	src/ship3d.rs	97	const		UNVERIFIED	
-SHIP_3D_PROJECTION_CAMERA_Z_OFFSET	src/ship3d.rs	98	const		UNVERIFIED	
-SHIP_3D_POINT_CLOUD_COUNT	src/ship3d.rs	99	const		UNVERIFIED	
-SHIP_3D_POINT_BUFFER_OFFSET	src/ship3d.rs	100	const		UNVERIFIED	
-SHIP_3D_PROJECTION_WORK_VECTOR_OFFSET	src/ship3d.rs	101	const		UNVERIFIED	
-SHIP_3D_PROJECTED_X_OFFSET	src/ship3d.rs	102	const		UNVERIFIED	
-SHIP_3D_PROJECTED_Y_OFFSET	src/ship3d.rs	103	const		UNVERIFIED	
-SHIP_3D_PROJECTED_DEPTH_OFFSET	src/ship3d.rs	104	const		UNVERIFIED	
-SHIP_3D_PROJECTION_VIEWPORT_LEFT_OFFSET	src/ship3d.rs	105	const		UNVERIFIED	
-SHIP_3D_PROJECTION_VIEWPORT_RIGHT_OFFSET	src/ship3d.rs	106	const		UNVERIFIED	
-SHIP_3D_PROJECTION_VIEWPORT_TOP_OFFSET	src/ship3d.rs	107	const		UNVERIFIED	
-SHIP_3D_PROJECTION_VIEWPORT_BOTTOM_OFFSET	src/ship3d.rs	108	const		UNVERIFIED	
-SHIP_3D_PROJECTION_SCREEN_CENTER_X	src/ship3d.rs	109	const		UNVERIFIED	
-SHIP_3D_PROJECTION_SCREEN_CENTER_Y	src/ship3d.rs	110	const		UNVERIFIED	
-SHIP_3D_PROJECTION_SCREEN_WIDTH	src/ship3d.rs	111	const		UNVERIFIED	
-SHIP_3D_PROJECTION_AXIS_SHIFT	src/ship3d.rs	112	const		UNVERIFIED	
-SHIP_3D_PROJECTION_SHADE_SHIFT	src/ship3d.rs	113	const		UNVERIFIED	
-SHIP_3D_PROJECTION_SHADE_BASE	src/ship3d.rs	114	const		UNVERIFIED	
-SHIP_3D_OBJECT_ANCHOR_OFFSET	src/ship3d.rs	115	const		UNVERIFIED	
-SHIP_3D_OBJECT_ANCHOR_COUNT	src/ship3d.rs	116	const		UNVERIFIED	
-SHIP_3D_OBJECT_ANCHOR_STRIDE	src/ship3d.rs	117	const		UNVERIFIED	
-SHIP_3D_OBJECT_DESCRIPTOR_BASE_OFFSET	src/ship3d.rs	118	const		UNVERIFIED	
-SHIP_3D_OBJECT_DESCRIPTOR_STRIDE	src/ship3d.rs	119	const		UNVERIFIED	
-SHIP_3D_OBJECT_DESCRIPTOR_INDEX_BIAS	src/ship3d.rs	120	const		UNVERIFIED	
-SHIP_3D_OBJECT_VISIBLE_FLAG	src/ship3d.rs	121	const		UNVERIFIED	
-SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG	src/ship3d.rs	122	const		UNVERIFIED	
-SHIP_3D_SPRITE_SLOT_ACTIVE_MASK	src/ship3d.rs	123	const		UNVERIFIED	
-SHIP_3D_SPRITE_SLOT_DIRTY_FLAG	src/ship3d.rs	124	const		UNVERIFIED	
-SHIP_3D_SPRITE_SLOT_EXTENT_CHANGED_FLAG	src/ship3d.rs	125	const		UNVERIFIED	
-SHIP_3D_OBJECT_DEPTH_WRAP_BIAS	src/ship3d.rs	126	const		UNVERIFIED	
-SHIP_3D_OBJECT_SCALE_NUMERATOR	src/ship3d.rs	127	const		UNVERIFIED	
-SHIP_3D_OBJECT_SCALE_SHIFT	src/ship3d.rs	128	const		UNVERIFIED	
-SHIP_3D_OBJECT_PROJECTED_SCALE_OFFSET	src/ship3d.rs	129	const		UNVERIFIED	
-NAV_DESTINATION_POINTS	src/ship3d.rs	143	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	DATA	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_GLOBAL_CLIP_SNAPSHOT_FLAG_OFFSET	src/ship3d.rs	144	const		UNVERIFIED	
-SHIP_3D_DIRTY_RECT_LIST_OFFSET	src/ship3d.rs	145	const		UNVERIFIED	
-SHIP_3D_DIRTY_RECT_SENTINEL	src/ship3d.rs	146	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_CALLBACK_TABLE_OFFSET	src/ship3d.rs	147	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_CALLBACK_OFFSETS	src/ship3d.rs	148	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_PATH_OFFSET	src/ship3d.rs	149	const		UNVERIFIED	
-SHIP_3D_TB_SND_PATH_OFFSET	src/ship3d.rs	150	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_PHASE_COUNT	src/ship3d.rs	151	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_SCENE_SELECTOR_SENTINEL	src/ship3d.rs	152	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_VIEWPORT_DESCRIPTOR	src/ship3d.rs	153	const		UNVERIFIED	
-SHIP_3D_FINAL_RESET_HUD_FLAGS	src/ship3d.rs	156	const		UNVERIFIED	
-SHIP_3D_FINAL_RESET_NAV_TIMER	src/ship3d.rs	157	const		UNVERIFIED	
-SHIP_3D_FINAL_RESET_SELECTOR_SENTINEL	src/ship3d.rs	158	const		UNVERIFIED	
-SHIP_3D_FINAL_RESET_ACTIVE_RECORD_SENTINEL	src/ship3d.rs	159	const		UNVERIFIED	
-SHIP_3D_FINAL_RESET_DIRTY_MARKER	src/ship3d.rs	160	const		UNVERIFIED	
-SHIP_3D_FINAL_RESET_SCROLL_MODE	src/ship3d.rs	161	const		UNVERIFIED	
-SHIP_3D_FINAL_RESET_STATUS_FLAG_MASK	src/ship3d.rs	162	const		UNVERIFIED	
-SHIP_3D_OBJECT_KIND_POSITION_DIRECT_8	src/ship3d.rs	163	const		UNVERIFIED	
-SHIP_3D_OBJECT_KIND_POSITION_DIRECT_10	src/ship3d.rs	164	const		UNVERIFIED	
-SHIP_3D_OBJECT_KIND_POSITION_DIRECT_40	src/ship3d.rs	165	const		UNVERIFIED	
-SHIP_3D_OBJECT_KIND_POSITION_KIND100	src/ship3d.rs	166	const		UNVERIFIED	
-SHIP_3D_OBJECT_KIND_POSITION_DIRECT_200	src/ship3d.rs	167	const		UNVERIFIED	
-SHIP_3D_FIELD_SELECTOR_POSITION	src/ship3d.rs	168	const		UNVERIFIED	
-SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MATCH	src/ship3d.rs	169	const		UNVERIFIED	
-SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MISMATCH	src/ship3d.rs	170	const		UNVERIFIED	
-SHIP_3D_FIELD_SELECTOR_KIND100_MATCH_WORD	src/ship3d.rs	171	const		UNVERIFIED	
-SHIP_3D_FIELD_SELECTOR_KIND100_RELATION_WORD	src/ship3d.rs	172	const		UNVERIFIED	
-SHIP_3D_FIELD_SELECTOR_PARENT_LINK	src/ship3d.rs	173	const		UNVERIFIED	
-SHIP_3D_SOURCE_BITSET_SELECTOR	src/ship3d.rs	174	const		UNVERIFIED	
-SHIP_3D_SOURCE_BITSET_KIND	src/ship3d.rs	175	const		UNVERIFIED	
-SHIP_3D_C1_SOURCE_KIND_OPERAND_FLAG	src/ship3d.rs	176	const		UNVERIFIED	
-SHIP_3D_C1_SOURCE_KIND_BITSET	src/ship3d.rs	177	const		UNVERIFIED	
-SHIP_3D_C1_SOURCE_OPERAND_STATE_FLAG	src/ship3d.rs	178	const		UNVERIFIED	
-SHIP_3D_C1_KIND10_RECORD_KIND	src/ship3d.rs	179	const		UNVERIFIED	
-SHIP_3D_C1_DESTINATION_SELECTOR	src/ship3d.rs	180	const		UNVERIFIED	
-SHIP_3D_C1_RECORD_STATE_OPCODE	src/ship3d.rs	181	const		UNVERIFIED	
-SHIP_3D_C1_RECORD_STATE_AUX_WORD	src/ship3d.rs	182	const		UNVERIFIED	
-Ship3dTransitionState	src/ship3d.rs	185	struct		UNVERIFIED	
-Ship3dDepthState	src/ship3d.rs	194	struct		UNVERIFIED	
-Ship3dPlaneBandCopy	src/ship3d.rs	202	struct		UNVERIFIED	
-Ship3dTargetSelectorState	src/ship3d.rs	213	struct		UNVERIFIED	
-Ship3dTargetSelection	src/ship3d.rs	223	struct		UNVERIFIED	
-Ship3dInterpolationGate	src/ship3d.rs	233	struct		UNVERIFIED	
-Ship3dInterpolationStep	src/ship3d.rs	239	enum		UNVERIFIED	
-Ship3dTargetListLayout	src/ship3d.rs	245	struct		UNVERIFIED	
-Ship3dTargetHitState	src/ship3d.rs	257	struct		UNVERIFIED	
-Ship3dTargetHitResult	src/ship3d.rs	265	struct		UNVERIFIED	
-Ship3dTargetTextSegment	src/ship3d.rs	275	enum		UNVERIFIED	
-Ship3dTargetDrawCommand	src/ship3d.rs	281	struct		UNVERIFIED	
-Ship3dTargetDrawResult	src/ship3d.rs	293	struct		UNVERIFIED	
-Ship3dNavChoiceState	src/ship3d.rs	299	struct		UNVERIFIED	
-Ship3dNavChoiceGates	src/ship3d.rs	314	struct		UNVERIFIED	
-Ship3dNavChoiceInput	src/ship3d.rs	324	struct		UNVERIFIED	
-Ship3dNavChoiceResult	src/ship3d.rs	333	struct		UNVERIFIED	
-Ship3dNavChoiceHandlerEffect	src/ship3d.rs	344	struct		UNVERIFIED	
-Ship3dNavChoiceHandler4State	src/ship3d.rs	363	struct		UNVERIFIED	
-Ship3dNavigationSequenceState	src/ship3d.rs	381	struct		UNVERIFIED	
-Ship3dNavigationSequenceEffect	src/ship3d.rs	390	struct		UNVERIFIED	
-Ship3dProceduralUpdateState	src/ship3d.rs	403	struct		UNVERIFIED	
-Ship3dProceduralUpdateEffect	src/ship3d.rs	419	struct		UNVERIFIED	
-Ship3dAngleTableEntry	src/ship3d.rs	431	struct		DATA	
-SHIP_3D_ANGLE_TABLE	src/ship3d.rs	443	const	0x4F45,0x4000,0x2F71	DATA	/// The recovered ship-3D rotation trig table at `DS:0x4F45` in BLOODPRG.EXE: /// 180 `(cosine, sine)` pairs, one per **2 degrees** (index 45 = 90°, 90 = 180°, /// wrapping at 180), stored at Q14 ampl
-fn	src/ship3d.rs	444	const		UNVERIFIED	
-Ship3dMatrixAngles	src/ship3d.rs	482	struct		UNVERIFIED	
-Ship3dProjectionMatrix	src/ship3d.rs	489	struct		UNVERIFIED	
-Ship3dProjectionPoint	src/ship3d.rs	494	struct		UNVERIFIED	
-Ship3dProjectionOrigin	src/ship3d.rs	501	struct		UNVERIFIED	
-Ship3dProjectedPoint	src/ship3d.rs	508	struct		UNVERIFIED	
-Ship3dProjectionViewport	src/ship3d.rs	515	struct		UNVERIFIED	
-Ship3dProjectedPixel	src/ship3d.rs	523	struct		UNVERIFIED	
-SHIP_3D_ENTITY_COUNT	src/ship3d.rs	532	const	0x6212,0x6612,0x9B98	ASM	/// The engine's entity table is 32 records of 32 bytes at `DS:0x6212`, bounded /// by the layout identity `0x6212 + 32*32 = 0x6612` (the dirty-rect list). The /// nav projector `0x9B98` drives the LA
-SHIP_3D_NAV_ENTITY_BASE	src/ship3d.rs	534	const	0x9B98	ASM	/// The entity id the nav projector's slot 0 maps to (`0x9B98`).
-SHIP_3D_ENTITY_TABLE	src/ship3d.rs	536	const	0x6212	ASM	/// `DS:0x6212` — the entity table's base, in DS-relative bytes.
-SHIP_3D_ENTITY_STRIDE	src/ship3d.rs	538	const	0x4316	ASM	/// Bytes per entity record (re-confirmed by the `rep movsd cx=8` copy at `0x4316`).
-ship_3d_nav_entity_for_slot	src/ship3d.rs	543	fn	0x6612	ASM	/// The entity id a nav projector slot writes to, and its record's DS offset. /// Slots beyond the eleven the projector drives return `None` rather than /// wrapping past the table (`0x6612`).
-Ship3dObjectSpriteDescriptor	src/ship3d.rs	552	struct		UNVERIFIED	
-Ship3dObjectSpriteProjection	src/ship3d.rs	572	struct		UNVERIFIED	
-Ship3dSpriteSlotUpdateEffect	src/ship3d.rs	582	struct		UNVERIFIED	
-Ship3dDirtyRectList	src/ship3d.rs	592	struct		UNVERIFIED	
-default	src/ship3d.rs	598	fn		UNVERIFIED	
-Ship3dDirtyRectSnapshotEffect	src/ship3d.rs	607	struct		UNVERIFIED	
-Ship3dSpriteSlotRenderCommand	src/ship3d.rs	615	struct		UNVERIFIED	
-Ship3dTempSndState	src/ship3d.rs	626	struct		UNVERIFIED	
-Ship3dTempSndEffect	src/ship3d.rs	641	struct		UNVERIFIED	
-Ship3dNavigationFinalResetState	src/ship3d.rs	661	struct		UNVERIFIED	
-default	src/ship3d.rs	688	fn		UNVERIFIED	
-Ship3dNavigationFinalResetEffect	src/ship3d.rs	718	struct		UNVERIFIED	
-Ship3dNavigationRuntimeRecord	src/ship3d.rs	735	struct		UNVERIFIED	
-Ship3dNavigationSourceEntry	src/ship3d.rs	745	struct		UNVERIFIED	
-Ship3dPositionRecord	src/ship3d.rs	751	struct		UNVERIFIED	
-Ship3dPositionField	src/ship3d.rs	762	struct		UNVERIFIED	
-Ship3dRecordStateSlot	src/ship3d.rs	769	struct		UNVERIFIED	
-Ship3dC1DestinationWrite	src/ship3d.rs	776	struct		UNVERIFIED	
-Ship3dNavigationTriggerState	src/ship3d.rs	782	struct		UNVERIFIED	
-default	src/ship3d.rs	801	fn		UNVERIFIED	
-Ship3dNavigationTriggerEffect	src/ship3d.rs	823	struct		UNVERIFIED	
-update_ship_3d_transition_state	src/ship3d.rs	842	fn		ASM	
-step_ship_3d_depth_scroll	src/ship3d.rs	862	fn		ORACLE	
-copy_ship_3d_plane_bands	src/ship3d.rs	895	fn		ASM	
-step_ship_3d_interpolation_gate	src/ship3d.rs	937	fn		ASM	
-layout_ship_3d_target_list	src/ship3d.rs	961	fn		ASM	
-hit_test_ship_3d_target_list	src/ship3d.rs	1001	fn		ASM	
-update_ship_3d_nav_choice_dispatch	src/ship3d.rs	1063	fn		ASM	
-run_ship_3d_nav_choice_handler_0	src/ship3d.rs	1134	fn	0x8713,0x86F1,0x8704,0x2A19,0xF29,0x77E0,0x872C,0x87BD,0x884	ASM	/// NAV-CHOICE HANDLER 0 — file `0x8713`, entry 0 of the dispatch table. /// /// The dispatcher (`0x86F1..0x8704`) takes the committed choice `[0x2A19]`, /// makes it 0-based and doubles it, then `cal
-run_ship_3d_nav_choice_handler_1	src/ship3d.rs	1170	fn	0x872C,0x8735,0x2565,0x876A,0x8741,0xADB,0x8748,0xFFFF,0x875	ASM	/// NAV-CHOICE HANDLER 1 — file `0x872C` (`nav_choice_handler_1`), entry 1 of the /// dispatch table described on [`run_ship_3d_nav_choice_handler_0`]. Verified /// against the disassembly step by ste
-run_ship_3d_nav_choice_handler_2	src/ship3d.rs	1245	fn	0x87BD,0x87BE,0x2565,0x87FB,0x87C5,0x6D3E,0x2B13,0x87CB,0x87	ASM	/// NAV-CHOICE HANDLER 2 — file `0x87BD`, entry 2 of the dispatch table /// (see [`run_ship_3d_nav_choice_handler_0`]). Verified against the disassembly: /// /// ```text ///   0x87BE  test byte [0x256
-run_ship_3d_nav_choice_handler_3	src/ship3d.rs	1309	fn	0x8848,0x2565,0x884F,0x6756,0x8852,0x676A,0x8855,0x6768,0x88	ASM	/// NAV-CHOICE HANDLER 3 — file `0x8848`, entry 3 of the dispatch table /// (see [`run_ship_3d_nav_choice_handler_0`]). The shortest of the five, verified /// whole: /// /// ```text ///   0x8848  test
-run_ship_3d_nav_choice_handler_4	src/ship3d.rs	1351	fn	0x886C,0x8874,0x2565,0x889C,0x887B,0xADB,0x8880,0x27E6,0x842	ASM	/// NAV-CHOICE HANDLER 4 — file `0x886C`, entry 4 of the dispatch table /// (see [`run_ship_3d_nav_choice_handler_0`]). The largest of the five, and /// verified end to end: /// /// ```text ///   0x88
-run_ship_3d_navigation_sequence_update	src/ship3d.rs	1429	fn		INFRA?	
-run_ship_3d_procedural_update	src/ship3d.rs	1490	fn		INFRA?	
-build_ship_3d_projection_matrix	src/ship3d.rs	1632	fn		ASM	
-project_ship_3d_point	src/ship3d.rs	1673	fn		ASM	
-plot_ship_3d_projected_point	src/ship3d.rs	1716	fn		ASM	
-ship_3d_projected_point_shade	src/ship3d.rs	1740	fn		ASM	
-ship_3d_projected_point_offset	src/ship3d.rs	1744	fn		ASM	
-SHIP_3D_POINT_CLOUD_LEN	src/ship3d.rs	1753	const	0x9B67,0x3E8,0x9B6A,0x2FC1,0x9B71,0xFFFF	ASM	/// Number of 3D point-cloud records the starfield background is built from: /// `ship_3d_point_cloud_randomize` (`0x9B67`) does `mov cx,0x3E8` (`0x9B6A`) and /// `mov di,0x2FC1` (`0x9B71`), then fill
-SHIP_3D_POINT_CLOUD_COUNT_IMMEDIATE	src/ship3d.rs	1756	const	0x3e8,0x9B6A,0x9B6B	ASM	/// File offset of that `mov cx,imm`'s operand — `mov cx,0x3e8` sits at `0x9B6A` /// (`b9 e8 03`), so the count word is at `0x9B6B`.
-SHIP_3D_POINT_CLOUD_BASE_IMMEDIATE	src/ship3d.rs	1758	const	0x2FC1	ASM	/// ...and of the `mov di,imm` naming the record base (`DS:0x2FC1`).
-SHIP_3D_POINT_CLOUD_BASE_DS	src/ship3d.rs	1760	const	0x2fc1,0x9B71	ASM	/// The record base itself, the operand of `mov di,0x2fc1` @`0x9B71`.
-BloodPrng	src/ship3d.rs	1773	struct	0x01CE,0x0B02,0x0AEE,0x0AF0,0x0AF1,0x0AF2	ASM?	/// The engine's pseudo-random generator (`far 0x01CE:0x0B02` in BLOODPRG.EXE). /// /// Called as `rng(ax = modulus)` and returns `value % modulus` (for /// `modulus == 0` it returns the raw 16-bit va
-default	src/ship3d.rs	1786	fn		UNVERIFIED	/// The static (unseeded) state from the shipped BLOODPRG.EXE image.
-seeded_from_rtc_seconds	src/ship3d.rs	1801	fn	0x2DD3,0xAEE	ORACLE	/// Seed as the DOS routine at `0x2DD3` does: it reads the CMOS RTC seconds /// byte (`out 0x70 / in 0x71`) and writes it into both halves of the XOR /// seed word (`mov ah,al; mov cs:[0xAEE],ax`), le
-next	src/ship3d.rs	1812	fn	0x01CE,0x0B02	ORACLE	/// Advance the generator and return the next value in `0..modulus` (or the raw 16-bit word /// when `modulus == 0`). Faithful port of the generator at `0x01CE:0x0B02`.
-randomize_ship_3d_point_cloud	src/ship3d.rs	1863	fn	0x9B67,0xFFFF	ASM	/// Populate the ship-3D starfield point cloud (`ship_3d_point_cloud_randomize` /// at `0x9B67`). Each of the [`SHIP_3D_POINT_CLOUD_LEN`] records gets random /// `x`/`y`/`z` words from [`BloodPrng::ne
-SHIP_3D_PROJECTION_SCREEN_HEIGHT	src/ship3d.rs	1875	const		UNVERIFIED	/// Height of the ship-3D point-cloud depth/color buffer in rows. The DOS pixel /// helper computes `y * 320 + x` into the active page; 200 native rows cover it.
-Ship3dPointCloudRender	src/ship3d.rs	1880	struct		UNVERIFIED	/// One plotted starfield pixel and, alongside the returned count, the whole /// depth-shaded buffer produced by [`render_ship_3d_point_cloud`].
-render_ship_3d_point_cloud	src/ship3d.rs	1907	fn	0x9A10,0x9A1D,0x2F77,0x3E8,0x9A23,0x2FC1,0x9A31,0x2F95,0x9A2	ASM	/// Render the full ship-3D starfield background: the batch loop at `0x9A10`, /// checked against the disassembly: /// /// ```text ///   0x9A1D  mov word [0x2F77],0x3E8    the loop count — 1000, the c
-ship_3d_point_cloud_points	src/ship3d.rs	1929	fn		ASM	/// The same starfield as [`render_ship_3d_point_cloud`], but returning the plotted /// points (screen x, y, depth shade) for a GPU point renderer — identical projection, /// viewport clip, depth-shad
-SHIP_3D_HUD_BAND_TOP	src/ship3d.rs	1952	const		UNVERIFIED	/// The ship-nav HUD band occupies the bottom rows of the 320x200 frame (below the /// scene band that ends at row 0xA5=165), where the engine draws the grey /// pyramid-nav grid + central eye-orb. Se
-SHIP_3D_HUD_PYRAMID_VERTICES	src/ship3d.rs	2115	const	0xB079,0x5D98,0x131B8,0x5491,0x2795,0x279B,0x2793,0x9656,0xB	DATA	/// The recovered ship-nav HUD pyramid geometry: 32 3D vertices (X,Y,Z, signed /// fixed-point) copied by `ship_3d_hud_init` (BLOODPRG.EXE @0xB079) from DS:0x5D98 /// (file 0x131B8) into the HUD worki
-render_star_map_navview	src/ship3d.rs	2166	fn	0x9656,0xB193	ASM?	/// Render the pyramid-nav HUD grid into the bottom band of an indexed 320x200 /// framebuffer (the band the exporter otherwise leaves BLACK in dialogue mode). /// Draws a perspective grid of grey pyr
-project_star_map_point	src/ship3d.rs	2179	fn	0x9BBA	ASM?	/// As [`render_star_map_navview`], but pans the pyramid field horizontally by /// `compass_angle` (0..179) so the view rotates with the ship's heading (mouse /// steering) — the interactive nav behav
-render_star_map_navview_projected	src/ship3d.rs	2204	fn	0x9BBA	ASM?	/// Projection-accurate star-map nav view: a receding grid of star-system pyramids /// projected with the game's decoded projection ([`project_star_map_point`]) plus the /// central eye-orb — the syst
-W	src/ship3d.rs	2205	const		UNVERIFIED	
-H	src/ship3d.rs	2206	const		UNVERIFIED	
-render_star_map_navview_panned	src/ship3d.rs	2269	fn		UNVERIFIED	
-W	src/ship3d.rs	2276	const		UNVERIFIED	
-H	src/ship3d.rs	2277	const		UNVERIFIED	
-render_ship_3d_pyramid_hud	src/ship3d.rs	2334	fn		UNVERIFIED	
-W	src/ship3d.rs	2335	const		UNVERIFIED	
-H	src/ship3d.rs	2336	const		UNVERIFIED	
-render_ship_3d_starfield	src/ship3d.rs	2399	fn		UNVERIFIED	/// Render a complete ship-3D starfield background from real game data: randomize /// the point cloud from `prng`, build the camera matrix from `angles` using the /// recovered [`SHIP_3D_ANGLE_TABLE`]
-project_ship_3d_object_sprite	src/ship3d.rs	2412	fn		ASM	
-update_ship_3d_sprite_slot_position	src/ship3d.rs	2483	fn		ASM	
-update_ship_3d_sprite_slot_extent	src/ship3d.rs	2509	fn		ASM	
-commit_ship_3d_sprite_slot_dirty_geometry	src/ship3d.rs	2541	fn		ASM	
-commit_ship_3d_global_clip_snapshot	src/ship3d.rs	2562	fn		ASM	
-collect_ship_3d_dirty_sprite_slot_render_commands	src/ship3d.rs	2584	fn		ASM	
-run_ship_3d_temp_snd_setup	src/ship3d.rs	2629	fn		INFRA?	
-run_ship_3d_navigation_final_reset	src/ship3d.rs	2675	fn		INFRA?	
-SHIP_INTRO_X_END	src/ship3d.rs	2741	const	0x27DF,0x8A6A,0x8B5A,0x2F65,0x2F71	ASM	/// The ship-3D camera-approach animation state, driven by phase counter `DS:0x27DF` /// (BLOODPRG.EXE `0x8A6A..0x8B5A`). The nav camera moves because this scripted FSM /// walks the camera origin `[0
-SHIP_INTRO_X_STEP	src/ship3d.rs	2742	const		UNVERIFIED	
-SHIP_INTRO_YAW_WRAP	src/ship3d.rs	2743	const		UNVERIFIED	
-SHIP_INTRO_Z_CRUISE	src/ship3d.rs	2744	const		UNVERIFIED	
-SHIP_INTRO_Z_ACCEL_STEP	src/ship3d.rs	2745	const		UNVERIFIED	
-SHIP_INTRO_X_RESET	src/ship3d.rs	2746	const		UNVERIFIED	
-SHIP_INTRO_Z_FINAL	src/ship3d.rs	2747	const		UNVERIFIED	
-Ship3dCameraApproach	src/ship3d.rs	2750	struct		UNVERIFIED	
-default	src/ship3d.rs	2768	fn		UNVERIFIED	
-step	src/ship3d.rs	2791	fn	0x8A6A,0x8B5A,0x8A76,0x2328,0x2F71,0x8AB3,0x8AE0,0x8B2B	ASM?	/// Advance one frame through the decoded phase machine (`0x8A6A..0x8B5A`): /// - **P1** (`0x8A76`): if `X >= 0x2328` (9000), `X -= 0x64`; the yaw ///   `[0x2F71]` decrements toward 0 (wrapping to 0xB
-origin	src/ship3d.rs	2829	fn		UNVERIFIED	/// The camera origin as a projection origin (for `project_star_map_point` etc.).
-build_ship_3d_navigation_source_records	src/ship3d.rs	2838	fn		UNVERIFIED	
-build_ship_3d_navigation_candidate_records	src/ship3d.rs	2854	fn		UNVERIFIED	
-resolve_ship_3d_position_field	src/ship3d.rs	2878	fn		UNVERIFIED	
-ship_3d_position_distance	src/ship3d.rs	2919	fn		UNVERIFIED	
-ship_3d_position_field_distance	src/ship3d.rs	2948	fn		ASM	
-ship_3d_binary_sqrt	src/ship3d.rs	2958	fn		ASM	
-ship_3d_object_table_bit_is_set	src/ship3d.rs	2997	fn		UNVERIFIED	
-select_ship_3d_c1_source_record	src/ship3d.rs	3016	fn	0x6886,0x6210	ASM?	/// `source_list_bytes` starts at the binary's `DS:0x6886` scratch list. Kind-2 /// tests use the post-`lodsw` cursor for the current source record as the bitset /// base before applying helper `0x621
-resolve_ship_3d_c1_kind10_destination_record	src/ship3d.rs	3054	fn		UNVERIFIED	
-write_ship_3d_c1_kind10_destination_slot	src/ship3d.rs	3068	fn		UNVERIFIED	
-run_ship_3d_navigation_trigger_prelude	src/ship3d.rs	3091	fn		INFRA?	
-draw_ship_3d_target_list	src/ship3d.rs	3173	fn		UNVERIFIED	
-select_ship_3d_target_record	src/ship3d.rs	3231	fn		ASM	
-ship_3d_plane_band_byte_count	src/ship3d.rs	3299	fn		ASM	
-ship_3d_scroll_value	src/ship3d.rs	3304	fn		ASM	
-start_closing_transition	src/ship3d.rs	3314	fn		ASM	
-add_to_low_byte	src/ship3d.rs	3320	fn		ORACLE	
-circular_delta	src/ship3d.rs	3324	fn		UNVERIFIED	
-wrap_ring_once	src/ship3d.rs	3338	fn		UNVERIFIED	
-matrix_pair_for_angle	src/ship3d.rs	3348	fn		ASM	
-fixed_mul_shift_15	src/ship3d.rs	3356	fn		ASM	
-projection_component	src/ship3d.rs	3363	fn	0x9A42,0x9A47,0x2F65,0x2F67	ASM	/// One component of the camera translation: `sub word [di],ax` at `0x9A42` (and /// `[di+2],ax` at `0x9A47`), with the origin loaded from `[0x2F65]`/`[0x2F67]` /// just before — a wrapping 16-bit SUB
-projection_dot	src/ship3d.rs	3367	fn		ASM	
-project_ship_3d_axis	src/ship3d.rs	3374	fn		ASM	
-scale_ship_3d_object_dimension	src/ship3d.rs	3379	fn		ASM	
-ship_3d_rects_intersect	src/ship3d.rs	3383	fn		UNVERIFIED	
-checked_i16_div_i8_to_i8	src/ship3d.rs	3393	fn		ASM	
-checked_u16_div_u8_to_u8	src/ship3d.rs	3401	fn		UNVERIFIED	
-signed_i16	src/ship3d.rs	3409	fn		ASM	
-target_list_draw_x	src/ship3d.rs	3413	fn		UNVERIFIED	
-blocks_nav_choice	src/ship3d.rs	3418	fn		UNVERIFIED	
-hit_test_ship_3d_nav_choice	src/ship3d.rs	3428	fn		UNVERIFIED	
-adjust_nav_choice_target_records	src/ship3d.rs	3469	fn	0x8748,0x8754,0xFFFF,0x8749	ASM	/// The `add ax,4` loop of nav-choice handler 1 (`0x8748..0x8754`): walk the word /// list, add the 4-byte record header to each entry, stop at the `0xFFFF` /// terminator (`cmp ax,-1 / je` @`0x8749`)
-rebuild_nav_choice_special_target_records	src/ship3d.rs	3483	fn	0x87CB,0x87DB,0x6D3E,0xFFFF	ASM	/// The rebuild loop of nav-choice handler 2 (`0x87CB..0x87DB`): walk the special /// slots at `DS:0x6D3E`, skip zeros (`or ax,ax / je`), stop at the `0xFFFF` /// sentinel after storing it, and otherw
-next_ship_3d_temp_snd_phase	src/ship3d.rs	3501	fn		UNVERIFIED	
-append_ship_3d_navigation_source_children	src/ship3d.rs	3510	fn		UNVERIFIED	
-find_ship_3d_navigation_record	src/ship3d.rs	3543	fn		UNVERIFIED	
-find_ship_3d_position_record	src/ship3d.rs	3553	fn		UNVERIFIED	
-find_ship_3d_position_field	src/ship3d.rs	3563	fn		UNVERIFIED	
-resolve_ship_3d_distance_position_field	src/ship3d.rs	3570	fn		UNVERIFIED	
-kind100_relation_word	src/ship3d.rs	3594	fn		UNVERIFIED	
-ship_3d_record_field	src/ship3d.rs	3604	fn		UNVERIFIED	
-binary_abs_word_diff	src/ship3d.rs	3608	fn		ASM	
-next_target_list_draw_color	src/ship3d.rs	3617	fn		UNVERIFIED	
+SHIP_3D_TRANSITION_OPEN_STEP	src/ship3d.rs	6	const	0x2531,0xB6A0	ASM	/// `mov byte [0x2531],4` @`0xB6A0` — the OPEN step, written once the hold timer /// passes the threshold below.
+SHIP_3D_TRANSITION_CLOSE_STEP	src/ship3d.rs	9	const	0x2531,0xB6B8	ASM	/// `mov byte [0x2531],8` @`0xB6B8` — the CLOSE step, written when the timer /// reaches zero while armed. Closing steps twice as fast as opening.
+SHIP_3D_TRANSITION_OPEN_TIMER_THRESHOLD	src/ship3d.rs	12	const	0xb3b,0xB699	ASM	/// `cmp word [0xb3b],0x78` @`0xB699` — 120 ticks. `jbe` falls through, so the /// transition arms only once the timer is ABOVE it, not at it.
+SHIP_3D_PLANE_ROW_BYTES	src/ship3d.rs	13	const		UNVERIFIED	
+SHIP_3D_PLANE_PAGE_BYTES	src/ship3d.rs	14	const		UNVERIFIED	
+SHIP_3D_PLANE_BASE_ROWS	src/ship3d.rs	15	const		UNVERIFIED	
+SHIP_3D_PLANE_SOURCE_PAGE0_OFFSET	src/ship3d.rs	16	const		UNVERIFIED	
+SHIP_3D_PLANE_SOURCE_PAGE1_OFFSET	src/ship3d.rs	17	const		UNVERIFIED	
+SHIP_3D_PLANE_DEST_BYTES	src/ship3d.rs	18	const		UNVERIFIED	
+SHIP_3D_SCROLL_MODE_HOLD	src/ship3d.rs	19	const		UNVERIFIED	
+SHIP_3D_TARGET_EXIT_SENTINEL	src/ship3d.rs	20	const		UNVERIFIED	
+SHIP_3D_TARGET_RECORD_HEADER_BYTES	src/ship3d.rs	21	const		UNVERIFIED	
+SHIP_3D_TARGET_OPEN_STEP	src/ship3d.rs	22	const		UNVERIFIED	
+SHIP_3D_INTERPOLATION_WORDS	src/ship3d.rs	23	const		UNVERIFIED	
+SHIP_3D_TARGET_LAYOUT_DEFAULT_MAX_WIDTH	src/ship3d.rs	24	const		UNVERIFIED	
+SHIP_3D_TARGET_LAYOUT_EXTRA_WIDTH	src/ship3d.rs	25	const		UNVERIFIED	
+SHIP_3D_TARGET_LAYOUT_WIDTH_PADDING	src/ship3d.rs	26	const		UNVERIFIED	
+SHIP_3D_TARGET_LAYOUT_ROW_STEP	src/ship3d.rs	27	const		UNVERIFIED	
+SHIP_3D_TARGET_LAYOUT_EXTRA_HEIGHT	src/ship3d.rs	28	const		UNVERIFIED	
+SHIP_3D_TARGET_LAYOUT_HEIGHT_PADDING	src/ship3d.rs	29	const		UNVERIFIED	
+SHIP_3D_TARGET_LAYOUT_SCREEN_HEIGHT	src/ship3d.rs	30	const		UNVERIFIED	
+SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN	src/ship3d.rs	31	const		UNVERIFIED	
+SHIP_3D_TARGET_HIT_TEST_TOP_INSET	src/ship3d.rs	32	const		UNVERIFIED	
+SHIP_3D_TARGET_HIT_TEST_BOTTOM_INSET	src/ship3d.rs	33	const		UNVERIFIED	
+SHIP_3D_TARGET_HOVER_PRESENTATION_MODE	src/ship3d.rs	34	const		UNVERIFIED	
+SHIP_3D_TARGET_ACTIVE_PRESENTATION_MODE	src/ship3d.rs	35	const		UNVERIFIED	
+SHIP_3D_TARGET_IDLE_PRESENTATION_MODE	src/ship3d.rs	36	const		UNVERIFIED	
+SHIP_3D_TARGET_DRAW_X_INSET	src/ship3d.rs	37	const		UNVERIFIED	
+SHIP_3D_TARGET_DEFAULT_TEXT_COLOR	src/ship3d.rs	38	const		UNVERIFIED	
+SHIP_3D_TARGET_HOVER_TEXT_COLOR	src/ship3d.rs	39	const		UNVERIFIED	
+SHIP_3D_TARGET_ACTIVE_TEXT_COLOR	src/ship3d.rs	40	const		UNVERIFIED	
+SHIP_3D_TARGET_EXTRA_LABEL_OFFSET	src/ship3d.rs	41	const		UNVERIFIED	
+SHIP_3D_TARGET_ALIAS_LABEL_OFFSET	src/ship3d.rs	42	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_MIN_GATE	src/ship3d.rs	43	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_MAX_GATE	src/ship3d.rs	44	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_AXIS_BIAS	src/ship3d.rs	45	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_RIGHT_BASE	src/ship3d.rs	46	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_X_WIDTH	src/ship3d.rs	47	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_Y_BASE	src/ship3d.rs	48	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_ROW_HEIGHT_BASE	src/ship3d.rs	49	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_COUNT	src/ship3d.rs	50	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_PALETTE_FIRST	src/ship3d.rs	51	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_PRESENTATION_MODE	src/ship3d.rs	52	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_HUD_SELECT_FLAGS	src/ship3d.rs	53	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_DISPATCH_BLOCK_FLAG	src/ship3d.rs	54	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_HOLD_TICKS	src/ship3d.rs	55	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_HANDLER_PHASE	src/ship3d.rs	56	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_TARGET_Y_BASE	src/ship3d.rs	57	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_TARGET_Y_STEP	src/ship3d.rs	58	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_LAYOUT_CENTER_X	src/ship3d.rs	59	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_INTERPOLATION_DURATION	src/ship3d.rs	60	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_SELECT_SOUND	src/ship3d.rs	61	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_RECORD_LINK_TYPE	src/ship3d.rs	62	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_TARGET_LIST_FLAG	src/ship3d.rs	63	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_PHASE_INTERPOLATING	src/ship3d.rs	64	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_RADIO_SND_PATH_OFFSET	src/ship3d.rs	65	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_HANDLER4_TARGET_LIST_OFFSET	src/ship3d.rs	66	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_HANDLER4_TOGGLE_OFF_TARGET_LIST_OFFSET	src/ship3d.rs	67	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_HANDLER4_TOGGLE_ON_TARGET_LIST_OFFSET	src/ship3d.rs	68	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_TABLO2_VOC_PATH_OFFSET	src/ship3d.rs	69	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_SOUND_GATE_SUPPRESS_TARGETS	src/ship3d.rs	70	const		UNVERIFIED	
+SHIP_3D_NAVIGATION_INTERPOLATION_DURATION	src/ship3d.rs	71	const		UNVERIFIED	
+SHIP_3D_NAVIGATION_DEFERRED_RECORD_TYPE	src/ship3d.rs	72	const		UNVERIFIED	
+SHIP_3D_NAVIGATION_RECORD_KIND_CANDIDATE	src/ship3d.rs	73	const		UNVERIFIED	
+SHIP_3D_NAVIGATION_RECORD_ACTIVE_FLAG	src/ship3d.rs	74	const		UNVERIFIED	
+SHIP_3D_NAVIGATION_CURRENT_TARGET_MATCH_ANY_FLAG	src/ship3d.rs	75	const		UNVERIFIED	
+SHIP_3D_NAVIGATION_REDIRECT_COUNTER_FLAG	src/ship3d.rs	76	const		UNVERIFIED	
+SHIP_3D_NAVIGATION_TARGET_LIST_FLAG	src/ship3d.rs	77	const		UNVERIFIED	
+SHIP_3D_NAVIGATION_LAYOUT_TARGET_LIST_OFFSET	src/ship3d.rs	78	const		UNVERIFIED	
+SHIP_3D_NAVIGATION_SCENE_BAND_TOP	src/ship3d.rs	79	const		UNVERIFIED	
+SHIP_3D_NAVIGATION_RENDER_CLIP_BOTTOM	src/ship3d.rs	80	const		UNVERIFIED	
+SHIP_3D_NAVIGATION_RENDER_CLIP_RESTORED_BOTTOM	src/ship3d.rs	81	const		UNVERIFIED	
+SHIP_3D_NAVIGATION_TRIGGER_CLOSE_STEP	src/ship3d.rs	82	const		UNVERIFIED	
+SHIP_3D_PROCEDURAL_HUD_ACTIVE_FLAG	src/ship3d.rs	83	const		UNVERIFIED	
+SHIP_3D_PROCEDURAL_TARGET_LIST_FLAG	src/ship3d.rs	84	const		UNVERIFIED	
+SHIP_3D_PROCEDURAL_HALF_TURN	src/ship3d.rs	85	const		UNVERIFIED	
+SHIP_3D_PROCEDURAL_FULL_TURN	src/ship3d.rs	86	const		UNVERIFIED	
+SHIP_3D_PROCEDURAL_MOUSE_RING	src/ship3d.rs	87	const		UNVERIFIED	
+SHIP_3D_PROCEDURAL_MOUSE_CENTER_X	src/ship3d.rs	88	const		UNVERIFIED	
+SHIP_3D_PROCEDURAL_MOUSE_ALIGN_MASK	src/ship3d.rs	89	const		UNVERIFIED	
+SHIP_3D_PROCEDURAL_CLOSE_ANGLE_THRESHOLD	src/ship3d.rs	90	const		UNVERIFIED	
+SHIP_3D_PROCEDURAL_TARGET_LIST_THRESHOLD	src/ship3d.rs	91	const		UNVERIFIED	
+SHIP_3D_PROCEDURAL_TARGET_LIST_STEP	src/ship3d.rs	92	const		UNVERIFIED	
+SHIP_3D_PROCEDURAL_AUTO_ROTATE_STEP	src/ship3d.rs	93	const		UNVERIFIED	
+SHIP_3D_PROCEDURAL_ROTATION_OFFSET_BIAS	src/ship3d.rs	94	const		UNVERIFIED	
+SHIP_3D_MATRIX_ANGLE_TABLE_OFFSET	src/ship3d.rs	95	const		UNVERIFIED	
+SHIP_3D_MATRIX_ANGLE_A_OFFSET	src/ship3d.rs	96	const		UNVERIFIED	
+SHIP_3D_MATRIX_PROJECTION_ANGLE_OFFSET	src/ship3d.rs	97	const		UNVERIFIED	
+SHIP_3D_MATRIX_ANGLE_C_OFFSET	src/ship3d.rs	98	const		UNVERIFIED	
+SHIP_3D_MATRIX_TEMP_OFFSET	src/ship3d.rs	99	const		UNVERIFIED	
+SHIP_3D_PROJECTION_MATRIX_OFFSET	src/ship3d.rs	100	const		UNVERIFIED	
+SHIP_3D_MATRIX_FIXED_SHIFT	src/ship3d.rs	101	const		UNVERIFIED	
+SHIP_3D_PROJECTION_CAMERA_X_OFFSET	src/ship3d.rs	102	const		UNVERIFIED	
+SHIP_3D_PROJECTION_CAMERA_Y_OFFSET	src/ship3d.rs	103	const		UNVERIFIED	
+SHIP_3D_PROJECTION_CAMERA_Z_OFFSET	src/ship3d.rs	104	const		UNVERIFIED	
+SHIP_3D_POINT_CLOUD_COUNT	src/ship3d.rs	105	const		UNVERIFIED	
+SHIP_3D_POINT_BUFFER_OFFSET	src/ship3d.rs	106	const		UNVERIFIED	
+SHIP_3D_PROJECTION_WORK_VECTOR_OFFSET	src/ship3d.rs	107	const		UNVERIFIED	
+SHIP_3D_PROJECTED_X_OFFSET	src/ship3d.rs	108	const		UNVERIFIED	
+SHIP_3D_PROJECTED_Y_OFFSET	src/ship3d.rs	109	const		UNVERIFIED	
+SHIP_3D_PROJECTED_DEPTH_OFFSET	src/ship3d.rs	110	const		UNVERIFIED	
+SHIP_3D_PROJECTION_VIEWPORT_LEFT_OFFSET	src/ship3d.rs	111	const		UNVERIFIED	
+SHIP_3D_PROJECTION_VIEWPORT_RIGHT_OFFSET	src/ship3d.rs	112	const		UNVERIFIED	
+SHIP_3D_PROJECTION_VIEWPORT_TOP_OFFSET	src/ship3d.rs	113	const		UNVERIFIED	
+SHIP_3D_PROJECTION_VIEWPORT_BOTTOM_OFFSET	src/ship3d.rs	114	const		UNVERIFIED	
+SHIP_3D_PROJECTION_SCREEN_CENTER_X	src/ship3d.rs	115	const		UNVERIFIED	
+SHIP_3D_PROJECTION_SCREEN_CENTER_Y	src/ship3d.rs	116	const		UNVERIFIED	
+SHIP_3D_PROJECTION_SCREEN_WIDTH	src/ship3d.rs	117	const		UNVERIFIED	
+SHIP_3D_PROJECTION_AXIS_SHIFT	src/ship3d.rs	118	const		UNVERIFIED	
+SHIP_3D_PROJECTION_SHADE_SHIFT	src/ship3d.rs	119	const		UNVERIFIED	
+SHIP_3D_PROJECTION_SHADE_BASE	src/ship3d.rs	120	const		UNVERIFIED	
+SHIP_3D_OBJECT_ANCHOR_OFFSET	src/ship3d.rs	121	const		UNVERIFIED	
+SHIP_3D_OBJECT_ANCHOR_COUNT	src/ship3d.rs	122	const		UNVERIFIED	
+SHIP_3D_OBJECT_ANCHOR_STRIDE	src/ship3d.rs	123	const		UNVERIFIED	
+SHIP_3D_OBJECT_DESCRIPTOR_BASE_OFFSET	src/ship3d.rs	124	const		UNVERIFIED	
+SHIP_3D_OBJECT_DESCRIPTOR_STRIDE	src/ship3d.rs	125	const		UNVERIFIED	
+SHIP_3D_OBJECT_DESCRIPTOR_INDEX_BIAS	src/ship3d.rs	126	const		UNVERIFIED	
+SHIP_3D_OBJECT_VISIBLE_FLAG	src/ship3d.rs	127	const		UNVERIFIED	
+SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG	src/ship3d.rs	128	const		UNVERIFIED	
+SHIP_3D_SPRITE_SLOT_ACTIVE_MASK	src/ship3d.rs	129	const		UNVERIFIED	
+SHIP_3D_SPRITE_SLOT_DIRTY_FLAG	src/ship3d.rs	130	const		UNVERIFIED	
+SHIP_3D_SPRITE_SLOT_EXTENT_CHANGED_FLAG	src/ship3d.rs	131	const		UNVERIFIED	
+SHIP_3D_OBJECT_DEPTH_WRAP_BIAS	src/ship3d.rs	132	const		UNVERIFIED	
+SHIP_3D_OBJECT_SCALE_NUMERATOR	src/ship3d.rs	133	const		UNVERIFIED	
+SHIP_3D_OBJECT_SCALE_SHIFT	src/ship3d.rs	134	const		UNVERIFIED	
+SHIP_3D_OBJECT_PROJECTED_SCALE_OFFSET	src/ship3d.rs	135	const		UNVERIFIED	
+NAV_DESTINATION_POINTS	src/ship3d.rs	149	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	DATA	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_GLOBAL_CLIP_SNAPSHOT_FLAG_OFFSET	src/ship3d.rs	150	const		UNVERIFIED	
+SHIP_3D_DIRTY_RECT_LIST_OFFSET	src/ship3d.rs	151	const		UNVERIFIED	
+SHIP_3D_DIRTY_RECT_SENTINEL	src/ship3d.rs	152	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_CALLBACK_TABLE_OFFSET	src/ship3d.rs	153	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_CALLBACK_OFFSETS	src/ship3d.rs	154	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_PATH_OFFSET	src/ship3d.rs	155	const		UNVERIFIED	
+SHIP_3D_TB_SND_PATH_OFFSET	src/ship3d.rs	156	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_PHASE_COUNT	src/ship3d.rs	157	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_SCENE_SELECTOR_SENTINEL	src/ship3d.rs	158	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_VIEWPORT_DESCRIPTOR	src/ship3d.rs	159	const		UNVERIFIED	
+SHIP_3D_FINAL_RESET_HUD_FLAGS	src/ship3d.rs	162	const		UNVERIFIED	
+SHIP_3D_FINAL_RESET_NAV_TIMER	src/ship3d.rs	163	const		UNVERIFIED	
+SHIP_3D_FINAL_RESET_SELECTOR_SENTINEL	src/ship3d.rs	164	const		UNVERIFIED	
+SHIP_3D_FINAL_RESET_ACTIVE_RECORD_SENTINEL	src/ship3d.rs	165	const		UNVERIFIED	
+SHIP_3D_FINAL_RESET_DIRTY_MARKER	src/ship3d.rs	166	const		UNVERIFIED	
+SHIP_3D_FINAL_RESET_SCROLL_MODE	src/ship3d.rs	167	const		UNVERIFIED	
+SHIP_3D_FINAL_RESET_STATUS_FLAG_MASK	src/ship3d.rs	168	const		UNVERIFIED	
+SHIP_3D_OBJECT_KIND_POSITION_DIRECT_8	src/ship3d.rs	169	const		UNVERIFIED	
+SHIP_3D_OBJECT_KIND_POSITION_DIRECT_10	src/ship3d.rs	170	const		UNVERIFIED	
+SHIP_3D_OBJECT_KIND_POSITION_DIRECT_40	src/ship3d.rs	171	const		UNVERIFIED	
+SHIP_3D_OBJECT_KIND_POSITION_KIND100	src/ship3d.rs	172	const		UNVERIFIED	
+SHIP_3D_OBJECT_KIND_POSITION_DIRECT_200	src/ship3d.rs	173	const		UNVERIFIED	
+SHIP_3D_FIELD_SELECTOR_POSITION	src/ship3d.rs	174	const		UNVERIFIED	
+SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MATCH	src/ship3d.rs	175	const		UNVERIFIED	
+SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MISMATCH	src/ship3d.rs	176	const		UNVERIFIED	
+SHIP_3D_FIELD_SELECTOR_KIND100_MATCH_WORD	src/ship3d.rs	177	const		UNVERIFIED	
+SHIP_3D_FIELD_SELECTOR_KIND100_RELATION_WORD	src/ship3d.rs	178	const		UNVERIFIED	
+SHIP_3D_FIELD_SELECTOR_PARENT_LINK	src/ship3d.rs	179	const		UNVERIFIED	
+SHIP_3D_SOURCE_BITSET_SELECTOR	src/ship3d.rs	180	const		UNVERIFIED	
+SHIP_3D_SOURCE_BITSET_KIND	src/ship3d.rs	181	const		UNVERIFIED	
+SHIP_3D_C1_SOURCE_KIND_OPERAND_FLAG	src/ship3d.rs	182	const		UNVERIFIED	
+SHIP_3D_C1_SOURCE_KIND_BITSET	src/ship3d.rs	183	const		UNVERIFIED	
+SHIP_3D_C1_SOURCE_OPERAND_STATE_FLAG	src/ship3d.rs	184	const		UNVERIFIED	
+SHIP_3D_C1_KIND10_RECORD_KIND	src/ship3d.rs	185	const		UNVERIFIED	
+SHIP_3D_C1_DESTINATION_SELECTOR	src/ship3d.rs	186	const		UNVERIFIED	
+SHIP_3D_C1_RECORD_STATE_OPCODE	src/ship3d.rs	187	const		UNVERIFIED	
+SHIP_3D_C1_RECORD_STATE_AUX_WORD	src/ship3d.rs	188	const		UNVERIFIED	
+Ship3dTransitionState	src/ship3d.rs	191	struct		UNVERIFIED	
+Ship3dDepthState	src/ship3d.rs	200	struct		UNVERIFIED	
+Ship3dPlaneBandCopy	src/ship3d.rs	208	struct		UNVERIFIED	
+Ship3dTargetSelectorState	src/ship3d.rs	219	struct		UNVERIFIED	
+Ship3dTargetSelection	src/ship3d.rs	229	struct		UNVERIFIED	
+Ship3dInterpolationGate	src/ship3d.rs	239	struct		UNVERIFIED	
+Ship3dInterpolationStep	src/ship3d.rs	245	enum		UNVERIFIED	
+Ship3dTargetListLayout	src/ship3d.rs	251	struct		UNVERIFIED	
+Ship3dTargetHitState	src/ship3d.rs	263	struct		UNVERIFIED	
+Ship3dTargetHitResult	src/ship3d.rs	271	struct		UNVERIFIED	
+Ship3dTargetTextSegment	src/ship3d.rs	281	enum		UNVERIFIED	
+Ship3dTargetDrawCommand	src/ship3d.rs	287	struct		UNVERIFIED	
+Ship3dTargetDrawResult	src/ship3d.rs	299	struct		UNVERIFIED	
+Ship3dNavChoiceState	src/ship3d.rs	305	struct		UNVERIFIED	
+Ship3dNavChoiceGates	src/ship3d.rs	320	struct		UNVERIFIED	
+Ship3dNavChoiceInput	src/ship3d.rs	330	struct		UNVERIFIED	
+Ship3dNavChoiceResult	src/ship3d.rs	339	struct		UNVERIFIED	
+Ship3dNavChoiceHandlerEffect	src/ship3d.rs	350	struct		UNVERIFIED	
+Ship3dNavChoiceHandler4State	src/ship3d.rs	369	struct		UNVERIFIED	
+Ship3dNavigationSequenceState	src/ship3d.rs	387	struct		UNVERIFIED	
+Ship3dNavigationSequenceEffect	src/ship3d.rs	396	struct		UNVERIFIED	
+Ship3dProceduralUpdateState	src/ship3d.rs	409	struct		UNVERIFIED	
+Ship3dProceduralUpdateEffect	src/ship3d.rs	425	struct		UNVERIFIED	
+Ship3dAngleTableEntry	src/ship3d.rs	437	struct		DATA	
+SHIP_3D_ANGLE_TABLE	src/ship3d.rs	449	const	0x4F45,0x4000,0x2F71	DATA	/// The recovered ship-3D rotation trig table at `DS:0x4F45` in BLOODPRG.EXE: /// 180 `(cosine, sine)` pairs, one per **2 degrees** (index 45 = 90°, 90 = 180°, /// wrapping at 180), stored at Q14 ampl
+fn	src/ship3d.rs	450	const		UNVERIFIED	
+Ship3dMatrixAngles	src/ship3d.rs	488	struct		UNVERIFIED	
+Ship3dProjectionMatrix	src/ship3d.rs	495	struct		UNVERIFIED	
+Ship3dProjectionPoint	src/ship3d.rs	500	struct		UNVERIFIED	
+Ship3dProjectionOrigin	src/ship3d.rs	507	struct		UNVERIFIED	
+Ship3dProjectedPoint	src/ship3d.rs	514	struct		UNVERIFIED	
+Ship3dProjectionViewport	src/ship3d.rs	521	struct		UNVERIFIED	
+Ship3dProjectedPixel	src/ship3d.rs	529	struct		UNVERIFIED	
+SHIP_3D_ENTITY_COUNT	src/ship3d.rs	538	const	0x6212,0x6612,0x9B98	ASM	/// The engine's entity table is 32 records of 32 bytes at `DS:0x6212`, bounded /// by the layout identity `0x6212 + 32*32 = 0x6612` (the dirty-rect list). The /// nav projector `0x9B98` drives the LA
+SHIP_3D_NAV_ENTITY_BASE	src/ship3d.rs	540	const	0x9B98	ASM	/// The entity id the nav projector's slot 0 maps to (`0x9B98`).
+SHIP_3D_ENTITY_TABLE	src/ship3d.rs	542	const	0x6212	ASM	/// `DS:0x6212` — the entity table's base, in DS-relative bytes.
+SHIP_3D_ENTITY_STRIDE	src/ship3d.rs	544	const	0x4316	ASM	/// Bytes per entity record (re-confirmed by the `rep movsd cx=8` copy at `0x4316`).
+ship_3d_nav_entity_for_slot	src/ship3d.rs	549	fn	0x6612	ASM	/// The entity id a nav projector slot writes to, and its record's DS offset. /// Slots beyond the eleven the projector drives return `None` rather than /// wrapping past the table (`0x6612`).
+Ship3dObjectSpriteDescriptor	src/ship3d.rs	558	struct		UNVERIFIED	
+Ship3dObjectSpriteProjection	src/ship3d.rs	578	struct		UNVERIFIED	
+Ship3dSpriteSlotUpdateEffect	src/ship3d.rs	588	struct		UNVERIFIED	
+Ship3dDirtyRectList	src/ship3d.rs	598	struct		UNVERIFIED	
+default	src/ship3d.rs	604	fn		UNVERIFIED	
+Ship3dDirtyRectSnapshotEffect	src/ship3d.rs	613	struct		UNVERIFIED	
+Ship3dSpriteSlotRenderCommand	src/ship3d.rs	621	struct		UNVERIFIED	
+Ship3dTempSndState	src/ship3d.rs	632	struct		UNVERIFIED	
+Ship3dTempSndEffect	src/ship3d.rs	647	struct		UNVERIFIED	
+Ship3dNavigationFinalResetState	src/ship3d.rs	667	struct		UNVERIFIED	
+default	src/ship3d.rs	694	fn		UNVERIFIED	
+Ship3dNavigationFinalResetEffect	src/ship3d.rs	724	struct		UNVERIFIED	
+Ship3dNavigationRuntimeRecord	src/ship3d.rs	741	struct		UNVERIFIED	
+Ship3dNavigationSourceEntry	src/ship3d.rs	751	struct		UNVERIFIED	
+Ship3dPositionRecord	src/ship3d.rs	757	struct		UNVERIFIED	
+Ship3dPositionField	src/ship3d.rs	768	struct		UNVERIFIED	
+Ship3dRecordStateSlot	src/ship3d.rs	775	struct		UNVERIFIED	
+Ship3dC1DestinationWrite	src/ship3d.rs	782	struct		UNVERIFIED	
+Ship3dNavigationTriggerState	src/ship3d.rs	788	struct		UNVERIFIED	
+default	src/ship3d.rs	807	fn		UNVERIFIED	
+Ship3dNavigationTriggerEffect	src/ship3d.rs	829	struct		UNVERIFIED	
+update_ship_3d_transition_state	src/ship3d.rs	866	fn	0xB692,0x2533,0xB699,0xb3b,0xB69E,0xb6dc,0xB6A0,0x2531,0xB6A	ASM	/// The ship-3D transition updater, `ship_3d_transition_state_update` @`0xB692`: /// /// ```text ///   0xB692  test byte [0x2533],1     ARMED? ///   0xB699  cmp word [0xb3b],0x78    not armed: the hol
+step_ship_3d_depth_scroll	src/ship3d.rs	886	fn		ORACLE	
+copy_ship_3d_plane_bands	src/ship3d.rs	919	fn		ASM	
+step_ship_3d_interpolation_gate	src/ship3d.rs	961	fn		ASM	
+layout_ship_3d_target_list	src/ship3d.rs	985	fn		ASM	
+hit_test_ship_3d_target_list	src/ship3d.rs	1025	fn		ASM	
+update_ship_3d_nav_choice_dispatch	src/ship3d.rs	1087	fn		ASM	
+run_ship_3d_nav_choice_handler_0	src/ship3d.rs	1158	fn	0x8713,0x86F1,0x8704,0x2A19,0xF29,0x77E0,0x872C,0x87BD,0x884	ASM	/// NAV-CHOICE HANDLER 0 — file `0x8713`, entry 0 of the dispatch table. /// /// The dispatcher (`0x86F1..0x8704`) takes the committed choice `[0x2A19]`, /// makes it 0-based and doubles it, then `cal
+run_ship_3d_nav_choice_handler_1	src/ship3d.rs	1194	fn	0x872C,0x8735,0x2565,0x876A,0x8741,0xADB,0x8748,0xFFFF,0x875	ASM	/// NAV-CHOICE HANDLER 1 — file `0x872C` (`nav_choice_handler_1`), entry 1 of the /// dispatch table described on [`run_ship_3d_nav_choice_handler_0`]. Verified /// against the disassembly step by ste
+run_ship_3d_nav_choice_handler_2	src/ship3d.rs	1269	fn	0x87BD,0x87BE,0x2565,0x87FB,0x87C5,0x6D3E,0x2B13,0x87CB,0x87	ASM	/// NAV-CHOICE HANDLER 2 — file `0x87BD`, entry 2 of the dispatch table /// (see [`run_ship_3d_nav_choice_handler_0`]). Verified against the disassembly: /// /// ```text ///   0x87BE  test byte [0x256
+run_ship_3d_nav_choice_handler_3	src/ship3d.rs	1333	fn	0x8848,0x2565,0x884F,0x6756,0x8852,0x676A,0x8855,0x6768,0x88	ASM	/// NAV-CHOICE HANDLER 3 — file `0x8848`, entry 3 of the dispatch table /// (see [`run_ship_3d_nav_choice_handler_0`]). The shortest of the five, verified /// whole: /// /// ```text ///   0x8848  test
+run_ship_3d_nav_choice_handler_4	src/ship3d.rs	1375	fn	0x886C,0x8874,0x2565,0x889C,0x887B,0xADB,0x8880,0x27E6,0x842	ASM	/// NAV-CHOICE HANDLER 4 — file `0x886C`, entry 4 of the dispatch table /// (see [`run_ship_3d_nav_choice_handler_0`]). The largest of the five, and /// verified end to end: /// /// ```text ///   0x88
+run_ship_3d_navigation_sequence_update	src/ship3d.rs	1453	fn		INFRA?	
+run_ship_3d_procedural_update	src/ship3d.rs	1514	fn		INFRA?	
+build_ship_3d_projection_matrix	src/ship3d.rs	1656	fn		ASM	
+project_ship_3d_point	src/ship3d.rs	1697	fn		ASM	
+plot_ship_3d_projected_point	src/ship3d.rs	1740	fn		ASM	
+ship_3d_projected_point_shade	src/ship3d.rs	1764	fn		ASM	
+ship_3d_projected_point_offset	src/ship3d.rs	1768	fn		ASM	
+SHIP_3D_POINT_CLOUD_LEN	src/ship3d.rs	1777	const	0x9B67,0x3E8,0x9B6A,0x2FC1,0x9B71,0xFFFF	ASM	/// Number of 3D point-cloud records the starfield background is built from: /// `ship_3d_point_cloud_randomize` (`0x9B67`) does `mov cx,0x3E8` (`0x9B6A`) and /// `mov di,0x2FC1` (`0x9B71`), then fill
+SHIP_3D_POINT_CLOUD_COUNT_IMMEDIATE	src/ship3d.rs	1780	const	0x3e8,0x9B6A,0x9B6B	ASM	/// File offset of that `mov cx,imm`'s operand — `mov cx,0x3e8` sits at `0x9B6A` /// (`b9 e8 03`), so the count word is at `0x9B6B`.
+SHIP_3D_POINT_CLOUD_BASE_IMMEDIATE	src/ship3d.rs	1782	const	0x2FC1	ASM	/// ...and of the `mov di,imm` naming the record base (`DS:0x2FC1`).
+SHIP_3D_POINT_CLOUD_BASE_DS	src/ship3d.rs	1784	const	0x2fc1,0x9B71	ASM	/// The record base itself, the operand of `mov di,0x2fc1` @`0x9B71`.
+BloodPrng	src/ship3d.rs	1797	struct	0x01CE,0x0B02,0x0AEE,0x0AF0,0x0AF1,0x0AF2	ASM?	/// The engine's pseudo-random generator (`far 0x01CE:0x0B02` in BLOODPRG.EXE). /// /// Called as `rng(ax = modulus)` and returns `value % modulus` (for /// `modulus == 0` it returns the raw 16-bit va
+default	src/ship3d.rs	1810	fn		UNVERIFIED	/// The static (unseeded) state from the shipped BLOODPRG.EXE image.
+seeded_from_rtc_seconds	src/ship3d.rs	1825	fn	0x2DD3,0xAEE	ORACLE	/// Seed as the DOS routine at `0x2DD3` does: it reads the CMOS RTC seconds /// byte (`out 0x70 / in 0x71`) and writes it into both halves of the XOR /// seed word (`mov ah,al; mov cs:[0xAEE],ax`), le
+next	src/ship3d.rs	1836	fn	0x01CE,0x0B02	ORACLE	/// Advance the generator and return the next value in `0..modulus` (or the raw 16-bit word /// when `modulus == 0`). Faithful port of the generator at `0x01CE:0x0B02`.
+randomize_ship_3d_point_cloud	src/ship3d.rs	1887	fn	0x9B67,0xFFFF	ASM	/// Populate the ship-3D starfield point cloud (`ship_3d_point_cloud_randomize` /// at `0x9B67`). Each of the [`SHIP_3D_POINT_CLOUD_LEN`] records gets random /// `x`/`y`/`z` words from [`BloodPrng::ne
+SHIP_3D_PROJECTION_SCREEN_HEIGHT	src/ship3d.rs	1899	const		UNVERIFIED	/// Height of the ship-3D point-cloud depth/color buffer in rows. The DOS pixel /// helper computes `y * 320 + x` into the active page; 200 native rows cover it.
+Ship3dPointCloudRender	src/ship3d.rs	1904	struct		UNVERIFIED	/// One plotted starfield pixel and, alongside the returned count, the whole /// depth-shaded buffer produced by [`render_ship_3d_point_cloud`].
+render_ship_3d_point_cloud	src/ship3d.rs	1931	fn	0x9A10,0x9A1D,0x2F77,0x3E8,0x9A23,0x2FC1,0x9A31,0x2F95,0x9A2	ASM	/// Render the full ship-3D starfield background: the batch loop at `0x9A10`, /// checked against the disassembly: /// /// ```text ///   0x9A1D  mov word [0x2F77],0x3E8    the loop count — 1000, the c
+ship_3d_point_cloud_points	src/ship3d.rs	1953	fn		ASM	/// The same starfield as [`render_ship_3d_point_cloud`], but returning the plotted /// points (screen x, y, depth shade) for a GPU point renderer — identical projection, /// viewport clip, depth-shad
+SHIP_3D_HUD_BAND_TOP	src/ship3d.rs	1976	const		UNVERIFIED	/// The ship-nav HUD band occupies the bottom rows of the 320x200 frame (below the /// scene band that ends at row 0xA5=165), where the engine draws the grey /// pyramid-nav grid + central eye-orb. Se
+SHIP_3D_HUD_PYRAMID_VERTICES	src/ship3d.rs	2139	const	0xB079,0x5D98,0x131B8,0x5491,0x2795,0x279B,0x2793,0x9656,0xB	DATA	/// The recovered ship-nav HUD pyramid geometry: 32 3D vertices (X,Y,Z, signed /// fixed-point) copied by `ship_3d_hud_init` (BLOODPRG.EXE @0xB079) from DS:0x5D98 /// (file 0x131B8) into the HUD worki
+render_star_map_navview	src/ship3d.rs	2190	fn	0x9656,0xB193	ASM?	/// Render the pyramid-nav HUD grid into the bottom band of an indexed 320x200 /// framebuffer (the band the exporter otherwise leaves BLACK in dialogue mode). /// Draws a perspective grid of grey pyr
+project_star_map_point	src/ship3d.rs	2203	fn	0x9BBA	ASM?	/// As [`render_star_map_navview`], but pans the pyramid field horizontally by /// `compass_angle` (0..179) so the view rotates with the ship's heading (mouse /// steering) — the interactive nav behav
+render_star_map_navview_projected	src/ship3d.rs	2228	fn	0x9BBA	ASM?	/// Projection-accurate star-map nav view: a receding grid of star-system pyramids /// projected with the game's decoded projection ([`project_star_map_point`]) plus the /// central eye-orb — the syst
+W	src/ship3d.rs	2229	const		UNVERIFIED	
+H	src/ship3d.rs	2230	const		UNVERIFIED	
+render_star_map_navview_panned	src/ship3d.rs	2293	fn		UNVERIFIED	
+W	src/ship3d.rs	2300	const		UNVERIFIED	
+H	src/ship3d.rs	2301	const		UNVERIFIED	
+render_ship_3d_pyramid_hud	src/ship3d.rs	2358	fn		UNVERIFIED	
+W	src/ship3d.rs	2359	const		UNVERIFIED	
+H	src/ship3d.rs	2360	const		UNVERIFIED	
+render_ship_3d_starfield	src/ship3d.rs	2423	fn		UNVERIFIED	/// Render a complete ship-3D starfield background from real game data: randomize /// the point cloud from `prng`, build the camera matrix from `angles` using the /// recovered [`SHIP_3D_ANGLE_TABLE`]
+project_ship_3d_object_sprite	src/ship3d.rs	2436	fn		ASM	
+update_ship_3d_sprite_slot_position	src/ship3d.rs	2507	fn		ASM	
+update_ship_3d_sprite_slot_extent	src/ship3d.rs	2533	fn		ASM	
+commit_ship_3d_sprite_slot_dirty_geometry	src/ship3d.rs	2565	fn		ASM	
+commit_ship_3d_global_clip_snapshot	src/ship3d.rs	2586	fn		ASM	
+collect_ship_3d_dirty_sprite_slot_render_commands	src/ship3d.rs	2608	fn		ASM	
+run_ship_3d_temp_snd_setup	src/ship3d.rs	2653	fn		INFRA?	
+run_ship_3d_navigation_final_reset	src/ship3d.rs	2699	fn		INFRA?	
+SHIP_INTRO_X_END	src/ship3d.rs	2765	const	0x27DF,0x8A6A,0x8B5A,0x2F65,0x2F71	ASM	/// The ship-3D camera-approach animation state, driven by phase counter `DS:0x27DF` /// (BLOODPRG.EXE `0x8A6A..0x8B5A`). The nav camera moves because this scripted FSM /// walks the camera origin `[0
+SHIP_INTRO_X_STEP	src/ship3d.rs	2766	const		UNVERIFIED	
+SHIP_INTRO_YAW_WRAP	src/ship3d.rs	2767	const		UNVERIFIED	
+SHIP_INTRO_Z_CRUISE	src/ship3d.rs	2768	const		UNVERIFIED	
+SHIP_INTRO_Z_ACCEL_STEP	src/ship3d.rs	2769	const		UNVERIFIED	
+SHIP_INTRO_X_RESET	src/ship3d.rs	2770	const		UNVERIFIED	
+SHIP_INTRO_Z_FINAL	src/ship3d.rs	2771	const		UNVERIFIED	
+Ship3dCameraApproach	src/ship3d.rs	2774	struct		UNVERIFIED	
+default	src/ship3d.rs	2792	fn		UNVERIFIED	
+step	src/ship3d.rs	2815	fn	0x8A6A,0x8B5A,0x8A76,0x2328,0x2F71,0x8AB3,0x8AE0,0x8B2B	ASM?	/// Advance one frame through the decoded phase machine (`0x8A6A..0x8B5A`): /// - **P1** (`0x8A76`): if `X >= 0x2328` (9000), `X -= 0x64`; the yaw ///   `[0x2F71]` decrements toward 0 (wrapping to 0xB
+origin	src/ship3d.rs	2853	fn		UNVERIFIED	/// The camera origin as a projection origin (for `project_star_map_point` etc.).
+build_ship_3d_navigation_source_records	src/ship3d.rs	2862	fn		UNVERIFIED	
+build_ship_3d_navigation_candidate_records	src/ship3d.rs	2878	fn		UNVERIFIED	
+resolve_ship_3d_position_field	src/ship3d.rs	2902	fn		UNVERIFIED	
+ship_3d_position_distance	src/ship3d.rs	2943	fn		UNVERIFIED	
+ship_3d_position_field_distance	src/ship3d.rs	2972	fn		ASM	
+ship_3d_binary_sqrt	src/ship3d.rs	2982	fn		ASM	
+ship_3d_object_table_bit_is_set	src/ship3d.rs	3021	fn		UNVERIFIED	
+select_ship_3d_c1_source_record	src/ship3d.rs	3040	fn	0x6886,0x6210	ASM?	/// `source_list_bytes` starts at the binary's `DS:0x6886` scratch list. Kind-2 /// tests use the post-`lodsw` cursor for the current source record as the bitset /// base before applying helper `0x621
+resolve_ship_3d_c1_kind10_destination_record	src/ship3d.rs	3078	fn		UNVERIFIED	
+write_ship_3d_c1_kind10_destination_slot	src/ship3d.rs	3092	fn		UNVERIFIED	
+run_ship_3d_navigation_trigger_prelude	src/ship3d.rs	3115	fn		INFRA?	
+draw_ship_3d_target_list	src/ship3d.rs	3197	fn		UNVERIFIED	
+select_ship_3d_target_record	src/ship3d.rs	3255	fn		ASM	
+ship_3d_plane_band_byte_count	src/ship3d.rs	3323	fn		ASM	
+ship_3d_scroll_value	src/ship3d.rs	3328	fn		ASM	
+start_closing_transition	src/ship3d.rs	3338	fn		ASM	
+add_to_low_byte	src/ship3d.rs	3344	fn		ORACLE	
+circular_delta	src/ship3d.rs	3348	fn		UNVERIFIED	
+wrap_ring_once	src/ship3d.rs	3362	fn		UNVERIFIED	
+matrix_pair_for_angle	src/ship3d.rs	3372	fn		ASM	
+fixed_mul_shift_15	src/ship3d.rs	3380	fn		ASM	
+projection_component	src/ship3d.rs	3387	fn	0x9A42,0x9A47,0x2F65,0x2F67	ASM	/// One component of the camera translation: `sub word [di],ax` at `0x9A42` (and /// `[di+2],ax` at `0x9A47`), with the origin loaded from `[0x2F65]`/`[0x2F67]` /// just before — a wrapping 16-bit SUB
+projection_dot	src/ship3d.rs	3391	fn		ASM	
+project_ship_3d_axis	src/ship3d.rs	3398	fn		ASM	
+scale_ship_3d_object_dimension	src/ship3d.rs	3403	fn		ASM	
+ship_3d_rects_intersect	src/ship3d.rs	3407	fn		UNVERIFIED	
+checked_i16_div_i8_to_i8	src/ship3d.rs	3417	fn		ASM	
+checked_u16_div_u8_to_u8	src/ship3d.rs	3425	fn		UNVERIFIED	
+signed_i16	src/ship3d.rs	3433	fn		ASM	
+target_list_draw_x	src/ship3d.rs	3437	fn		UNVERIFIED	
+blocks_nav_choice	src/ship3d.rs	3442	fn		UNVERIFIED	
+hit_test_ship_3d_nav_choice	src/ship3d.rs	3452	fn		UNVERIFIED	
+adjust_nav_choice_target_records	src/ship3d.rs	3493	fn	0x8748,0x8754,0xFFFF,0x8749	ASM	/// The `add ax,4` loop of nav-choice handler 1 (`0x8748..0x8754`): walk the word /// list, add the 4-byte record header to each entry, stop at the `0xFFFF` /// terminator (`cmp ax,-1 / je` @`0x8749`)
+rebuild_nav_choice_special_target_records	src/ship3d.rs	3507	fn	0x87CB,0x87DB,0x6D3E,0xFFFF	ASM	/// The rebuild loop of nav-choice handler 2 (`0x87CB..0x87DB`): walk the special /// slots at `DS:0x6D3E`, skip zeros (`or ax,ax / je`), stop at the `0xFFFF` /// sentinel after storing it, and otherw
+next_ship_3d_temp_snd_phase	src/ship3d.rs	3525	fn		UNVERIFIED	
+append_ship_3d_navigation_source_children	src/ship3d.rs	3534	fn		UNVERIFIED	
+find_ship_3d_navigation_record	src/ship3d.rs	3567	fn		UNVERIFIED	
+find_ship_3d_position_record	src/ship3d.rs	3577	fn		UNVERIFIED	
+find_ship_3d_position_field	src/ship3d.rs	3587	fn		UNVERIFIED	
+resolve_ship_3d_distance_position_field	src/ship3d.rs	3594	fn		UNVERIFIED	
+kind100_relation_word	src/ship3d.rs	3618	fn		UNVERIFIED	
+ship_3d_record_field	src/ship3d.rs	3628	fn		UNVERIFIED	
+binary_abs_word_diff	src/ship3d.rs	3632	fn		ASM	
+next_target_list_draw_color	src/ship3d.rs	3641	fn		UNVERIFIED	
 SND_CLIP_HEADER_LEN	src/snd.rs	6	const		UNVERIFIED	
 SND_PCM_FORMAT_TAG	src/snd.rs	7	const		UNVERIFIED	
 SndClip	src/snd.rs	10	struct		UNVERIFIED	
