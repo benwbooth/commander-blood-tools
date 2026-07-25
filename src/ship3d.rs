@@ -3272,6 +3272,28 @@ pub fn ship_3d_position_field_distance(
     ship_3d_binary_sqrt(squared)
 }
 
+/// Integer square root of a 32-bit value, `binary_u32_sqrt` @`0x2E33` — the
+/// helper `ship_3d_position_distance` (`0x60DD`) uses for object distances.
+///
+/// The estimate seeding is a ladder on the input's magnitude:
+///
+/// ```text
+///   0x2E3B  or dx,dx / je 0x2E4F      high == 0 ?
+///   0x2E3F  mov bx,0xfff              high != 0: estimate 0x0FFF
+///   0x2E42  or dh,dh / je 0x2E5C      ...unless the TOP byte is set
+///   0x2E46  mov bh,0xff               then 0xFFFF -- built by overwriting
+///                                     0x0FFF's high byte, not reloaded
+///   0x2E48  cmp dx,-2 / jae 0x2E6E    high >= 0xFFFE: return the input
+///   0x2E4F  or ax,ax / je 0x2E6E      zero: the root is the input
+///   0x2E53  mov bx,0xf                low only: estimate 0x000F
+///   0x2E56  or ah,ah / je 0x2E5C      ...or 0x00FF if the high byte is set
+/// ```
+///
+/// `cmp dx,-2 / jae` is an UNSIGNED compare against `0xFFFE`, so it means "the
+/// high word is at or above 0xFFFE" rather than anything about negatives — the
+/// case where the root would overflow a `u16`, answered by returning the input.
+///
+/// Cited here because it was settled ASM with no doc (#141's queue).
 pub fn ship_3d_binary_sqrt(value: u32) -> Option<u16> {
     let low = value as u16;
     let high = (value >> 16) as u16;

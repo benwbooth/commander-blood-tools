@@ -1113,45 +1113,45 @@ build_ship_3d_navigation_candidate_records	src/ship3d.rs	3171	fn		UNVERIFIED
 resolve_ship_3d_position_field	src/ship3d.rs	3195	fn		UNVERIFIED	
 ship_3d_position_distance	src/ship3d.rs	3236	fn		UNVERIFIED	
 ship_3d_position_field_distance	src/ship3d.rs	3265	fn		ASM	
-ship_3d_binary_sqrt	src/ship3d.rs	3275	fn		ASM	// Seed the estimate from the input's magnitude (leading-bit brackets, as the original does), // returning early for zero/tiny inputs whose root is the input itself. The brackets are bit // patterns, 
-ship_3d_object_table_bit_is_set	src/ship3d.rs	3314	fn		UNVERIFIED	
-select_ship_3d_c1_source_record	src/ship3d.rs	3333	fn	0x6886,0x6210	ASM?	/// `source_list_bytes` starts at the binary's `DS:0x6886` scratch list. Kind-2 /// tests use the post-`lodsw` cursor for the current source record as the bitset /// base before applying helper `0x621
-resolve_ship_3d_c1_kind10_destination_record	src/ship3d.rs	3371	fn		UNVERIFIED	
-write_ship_3d_c1_kind10_destination_slot	src/ship3d.rs	3385	fn		UNVERIFIED	
-run_ship_3d_navigation_trigger_prelude	src/ship3d.rs	3408	fn		INFRA?	
-draw_ship_3d_target_list	src/ship3d.rs	3490	fn		UNVERIFIED	
-select_ship_3d_target_record	src/ship3d.rs	3548	fn		ASM	
-ship_3d_plane_band_byte_count	src/ship3d.rs	3616	fn		ASM	
-ship_3d_scroll_value	src/ship3d.rs	3621	fn		ASM	
-start_closing_transition	src/ship3d.rs	3631	fn		ASM	
-add_to_low_byte	src/ship3d.rs	3637	fn		ORACLE	
-circular_delta	src/ship3d.rs	3641	fn		UNVERIFIED	
-wrap_ring_once	src/ship3d.rs	3655	fn		UNVERIFIED	
-matrix_pair_for_angle	src/ship3d.rs	3665	fn		ASM	
-fixed_mul_shift_15	src/ship3d.rs	3673	fn		ASM	
-projection_component	src/ship3d.rs	3680	fn	0x9A42,0x9A47,0x2F65,0x2F67	ASM	/// One component of the camera translation: `sub word [di],ax` at `0x9A42` (and /// `[di+2],ax` at `0x9A47`), with the origin loaded from `[0x2F65]`/`[0x2F67]` /// just before — a wrapping 16-bit SUB
-projection_dot	src/ship3d.rs	3684	fn		ASM	
-project_ship_3d_axis	src/ship3d.rs	3691	fn		ASM	
-scale_ship_3d_object_dimension	src/ship3d.rs	3696	fn		ASM	
-ship_3d_rects_intersect	src/ship3d.rs	3700	fn		UNVERIFIED	
-checked_i16_div_i8_to_i8	src/ship3d.rs	3710	fn		ASM	
-checked_u16_div_u8_to_u8	src/ship3d.rs	3718	fn		UNVERIFIED	
-signed_i16	src/ship3d.rs	3726	fn		ASM	
-target_list_draw_x	src/ship3d.rs	3730	fn		UNVERIFIED	
-blocks_nav_choice	src/ship3d.rs	3735	fn		UNVERIFIED	
-hit_test_ship_3d_nav_choice	src/ship3d.rs	3745	fn		UNVERIFIED	
-adjust_nav_choice_target_records	src/ship3d.rs	3786	fn	0x8748,0x8754,0xFFFF,0x8749	ASM	/// The `add ax,4` loop of nav-choice handler 1 (`0x8748..0x8754`): walk the word /// list, add the 4-byte record header to each entry, stop at the `0xFFFF` /// terminator (`cmp ax,-1 / je` @`0x8749`)
-rebuild_nav_choice_special_target_records	src/ship3d.rs	3800	fn	0x87CB,0x87DB,0x6D3E,0xFFFF	ASM	/// The rebuild loop of nav-choice handler 2 (`0x87CB..0x87DB`): walk the special /// slots at `DS:0x6D3E`, skip zeros (`or ax,ax / je`), stop at the `0xFFFF` /// sentinel after storing it, and otherw
-next_ship_3d_temp_snd_phase	src/ship3d.rs	3818	fn		UNVERIFIED	
-append_ship_3d_navigation_source_children	src/ship3d.rs	3827	fn		UNVERIFIED	
-find_ship_3d_navigation_record	src/ship3d.rs	3860	fn		UNVERIFIED	
-find_ship_3d_position_record	src/ship3d.rs	3870	fn		UNVERIFIED	
-find_ship_3d_position_field	src/ship3d.rs	3880	fn		UNVERIFIED	
-resolve_ship_3d_distance_position_field	src/ship3d.rs	3887	fn		UNVERIFIED	
-kind100_relation_word	src/ship3d.rs	3911	fn		UNVERIFIED	
-ship_3d_record_field	src/ship3d.rs	3921	fn		UNVERIFIED	
-binary_abs_word_diff	src/ship3d.rs	3925	fn		ASM	
-next_target_list_draw_color	src/ship3d.rs	3934	fn		UNVERIFIED	
+ship_3d_binary_sqrt	src/ship3d.rs	3297	fn	0x2E33,0x60DD,0x2E3B,0x2E4F,0x2E3F,0xfff,0x0FFF,0x2E42,0x2E5	ASM	/// Integer square root of a 32-bit value, `binary_u32_sqrt` @`0x2E33` — the /// helper `ship_3d_position_distance` (`0x60DD`) uses for object distances. /// /// The estimate seeding is a ladder on th
+ship_3d_object_table_bit_is_set	src/ship3d.rs	3336	fn		UNVERIFIED	
+select_ship_3d_c1_source_record	src/ship3d.rs	3355	fn	0x6886,0x6210	ASM?	/// `source_list_bytes` starts at the binary's `DS:0x6886` scratch list. Kind-2 /// tests use the post-`lodsw` cursor for the current source record as the bitset /// base before applying helper `0x621
+resolve_ship_3d_c1_kind10_destination_record	src/ship3d.rs	3393	fn		UNVERIFIED	
+write_ship_3d_c1_kind10_destination_slot	src/ship3d.rs	3407	fn		UNVERIFIED	
+run_ship_3d_navigation_trigger_prelude	src/ship3d.rs	3430	fn		INFRA?	
+draw_ship_3d_target_list	src/ship3d.rs	3512	fn		UNVERIFIED	
+select_ship_3d_target_record	src/ship3d.rs	3570	fn		ASM	
+ship_3d_plane_band_byte_count	src/ship3d.rs	3638	fn		ASM	
+ship_3d_scroll_value	src/ship3d.rs	3643	fn		ASM	
+start_closing_transition	src/ship3d.rs	3653	fn		ASM	
+add_to_low_byte	src/ship3d.rs	3659	fn		ORACLE	
+circular_delta	src/ship3d.rs	3663	fn		UNVERIFIED	
+wrap_ring_once	src/ship3d.rs	3677	fn		UNVERIFIED	
+matrix_pair_for_angle	src/ship3d.rs	3687	fn		ASM	
+fixed_mul_shift_15	src/ship3d.rs	3695	fn		ASM	
+projection_component	src/ship3d.rs	3702	fn	0x9A42,0x9A47,0x2F65,0x2F67	ASM	/// One component of the camera translation: `sub word [di],ax` at `0x9A42` (and /// `[di+2],ax` at `0x9A47`), with the origin loaded from `[0x2F65]`/`[0x2F67]` /// just before — a wrapping 16-bit SUB
+projection_dot	src/ship3d.rs	3706	fn		ASM	
+project_ship_3d_axis	src/ship3d.rs	3713	fn		ASM	
+scale_ship_3d_object_dimension	src/ship3d.rs	3718	fn		ASM	
+ship_3d_rects_intersect	src/ship3d.rs	3722	fn		UNVERIFIED	
+checked_i16_div_i8_to_i8	src/ship3d.rs	3732	fn		ASM	
+checked_u16_div_u8_to_u8	src/ship3d.rs	3740	fn		UNVERIFIED	
+signed_i16	src/ship3d.rs	3748	fn		ASM	
+target_list_draw_x	src/ship3d.rs	3752	fn		UNVERIFIED	
+blocks_nav_choice	src/ship3d.rs	3757	fn		UNVERIFIED	
+hit_test_ship_3d_nav_choice	src/ship3d.rs	3767	fn		UNVERIFIED	
+adjust_nav_choice_target_records	src/ship3d.rs	3808	fn	0x8748,0x8754,0xFFFF,0x8749	ASM	/// The `add ax,4` loop of nav-choice handler 1 (`0x8748..0x8754`): walk the word /// list, add the 4-byte record header to each entry, stop at the `0xFFFF` /// terminator (`cmp ax,-1 / je` @`0x8749`)
+rebuild_nav_choice_special_target_records	src/ship3d.rs	3822	fn	0x87CB,0x87DB,0x6D3E,0xFFFF	ASM	/// The rebuild loop of nav-choice handler 2 (`0x87CB..0x87DB`): walk the special /// slots at `DS:0x6D3E`, skip zeros (`or ax,ax / je`), stop at the `0xFFFF` /// sentinel after storing it, and otherw
+next_ship_3d_temp_snd_phase	src/ship3d.rs	3840	fn		UNVERIFIED	
+append_ship_3d_navigation_source_children	src/ship3d.rs	3849	fn		UNVERIFIED	
+find_ship_3d_navigation_record	src/ship3d.rs	3882	fn		UNVERIFIED	
+find_ship_3d_position_record	src/ship3d.rs	3892	fn		UNVERIFIED	
+find_ship_3d_position_field	src/ship3d.rs	3902	fn		UNVERIFIED	
+resolve_ship_3d_distance_position_field	src/ship3d.rs	3909	fn		UNVERIFIED	
+kind100_relation_word	src/ship3d.rs	3933	fn		UNVERIFIED	
+ship_3d_record_field	src/ship3d.rs	3943	fn		UNVERIFIED	
+binary_abs_word_diff	src/ship3d.rs	3947	fn		ASM	
+next_target_list_draw_color	src/ship3d.rs	3956	fn		UNVERIFIED	
 SND_CLIP_HEADER_LEN	src/snd.rs	6	const		UNVERIFIED	
 SND_PCM_FORMAT_TAG	src/snd.rs	7	const		UNVERIFIED	
 SndClip	src/snd.rs	10	struct		UNVERIFIED	

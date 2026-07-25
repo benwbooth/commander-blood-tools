@@ -5139,3 +5139,31 @@ the selection rule. Removing it is the obvious optimisation for a function that
 returns a list, and it would silently change which stars exist.
 
 The queue: 65 -> 63.
+
+## #160 — an unsigned compare against -2
+
+`ship_3d_binary_sqrt` — `binary_u32_sqrt` @`0x2E33`, the helper behind object
+distances — seeds its estimate from the input's magnitude:
+
+```text
+  0x2E3B  or dx,dx / je 0x2E4F      high == 0 ?
+  0x2E3F  mov bx,0xfff              high != 0: estimate 0x0FFF
+  0x2E42  or dh,dh / je 0x2E5C      ...unless the TOP byte is set
+  0x2E46  mov bh,0xff               then 0xFFFF
+  0x2E48  cmp dx,-2 / jae 0x2E6E    high >= 0xFFFE: return the input
+  0x2E53  mov bx,0xf                low only: 0x000F, or 0x00FF if ah is set
+```
+
+Two things worth having in writing.
+
+`mov bh,0xff` does not load `0xFFFF` — it OVERWRITES the high byte of the `0x0FFF`
+already in `bx`. The value is the same; the shape tells you the ladder is refining
+one estimate rather than choosing between four.
+
+And `cmp dx,-2 / jae` is an UNSIGNED compare, so it reads "the high word is at or
+above `0xFFFE`", not anything about negative numbers. That is the case where the
+root will not fit a `u16`, answered by returning the input — and `jae` rather than
+`jge` is the whole distinction. A port that reached for a signed comparison here
+would take the early exit almost never, and only for inputs it will not see.
+
+Cited instructions 209 -> 217; the queue 63 -> 62.
