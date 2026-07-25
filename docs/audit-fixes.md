@@ -1386,3 +1386,30 @@ handles the zero case DELIBERATELY (`0 => Some(record.kind_flags)`), so it is no
 accidentally reading a missing field. Whether that branch matches the binary is
 unverified; the check is to locate the site `kind100_relation_word` models and see
 whether it resolves selector 13 or 14.
+
+### Lead CLOSED — selector 14 is resolved against the OTHER record's kind
+
+Chased the `KIND100_RELATION_WORD = 14` lead to its site and it is **no defect**. At
+`0x60E3`:
+
+    mov ax,[si]      this record's kind
+    cmp ax,0x100     is it kind100?
+    jne …
+    mov bx,[di]      the OTHER record's kind      <-- the kind passed to the resolver
+    mov ax,0xE       selector 14
+    call 0x6023
+
+So selector 14 is resolved against the OTHER record's kind, not against `0x100`. The
+port matches exactly: `kind100_relation_word(other_record)` calls
+`vm_field_offset(14, other_record.kind_flags)`.
+
+My concern came from looking up selector 14 in COLUMN 8 (kind `0x100`) because the
+enclosing branch tests for kind100 — but the kind that reaches `bsf` is a different
+record's. The general lesson, now that the resolver is decoded: **the kind argument is
+not always the kind of the record being examined**, so reading a matrix cell requires
+knowing which record supplies the kind, not just which branch you are in.
+
+That is three leads this session that looked like defects and were not (`0x6034` under a
+different name, the `write_record_entry` family, this one), against several that were
+real. Recording the closures as carefully as the hits — a lead list that only accumulates
+is worse than useless.
