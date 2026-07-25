@@ -228,6 +228,133 @@ pub fn snd_voice_buffer_spans() -> [(u16, u16); 2] {
     ]
 }
 
+/// A voice is fed only while its state byte at `+6` is 3 (`cmp byte [bp+6],3`
+/// @`0xBB13`/`0xBB1B`).
+pub const SND_VOICE_STATE_ACTIVE: u8 = 3;
+
+/// Each voice buffer opens with a 6-byte header that mixing SKIPS:
+/// `les di,[bp] / add di,6` @`0xBB21`, matched on the source side by
+/// `mov si,0x7d06` @`0xBB00` (the streamed chunk's own header). It is also why
+/// voice B sits `0x4008` past voice A rather than `0x4000`.
+pub const SND_VOICE_HEADER_LEN: usize = 6;
+
+/// How many SOURCE bytes the half-rate loop consumed to write `written` samples.
+///
+/// Derived from the same parity rule as [`mix_unsigned_pcm_half_rate`]: `si`
+/// advances when the counter is even (`test cl,1 / jne` @`0xBB5D`), and the
+/// counter runs `count, count-1, ...` — so an even start consumes on the first
+/// step and an odd start does not.
+pub fn half_rate_source_consumed(count: u16, written: usize) -> usize {
+    if count % 2 == 0 {
+        written.div_ceil(2)
+    } else {
+        written / 2
+    }
+}
+
+/// One of the two ring buffers the streamer alternates between.
+#[derive(Debug, Clone)]
+pub struct SndVoice {
+    /// The voice's slice of the loaded sound (`[si]`/`[si+2]`, `0xBBEB`).
+    pub buffer: Vec<u8>,
+    /// The state byte at `+6`; 3 means "feed me" (`0xBB13`).
+    pub state: u8,
+}
+
+/// The streaming mixer as `0xBAE8..0xBB93` builds it: two voices over the loaded
+/// sound data, a half-rate flag read from that data's header, and chunks mixed
+/// into whichever voice is active at the device's play position.
+#[derive(Debug, Clone)]
+pub struct SndStream {
+    pub voices: [SndVoice; 2],
+    /// `gs:[0xBA2]`, set only by the header byte at `+4` (`0xBBFE`/`0xBC05`).
+    pub half_rate: bool,
+}
+
+impl SndStream {
+    /// `0xBBE4..0xBC2F`. The voices are the loaded data's two halves; neither is
+    /// silence-filled, because the game points them AT the file.
+    ///
+    /// A file shorter than `2 * 0x4008` yields correspondingly shorter buffers
+    /// rather than padding — padding would be a port invention, and the game
+    /// simply would not stream past what it loaded. `0xBC2F` clears voice B's
+    /// state; voice A's initial state is set elsewhere and is NOT decoded here,
+    /// so both start inactive.
+    pub fn from_sound_data(data: &[u8]) -> Self {
+        let slice_for = |(offset, len): (u16, u16)| {
+            let start = (offset as usize).min(data.len());
+            // The buffer spans its 6-byte header AND the `[si+4]` length of
+            // samples after it, because `0xBB24` mixes at `buffer + 6`.
+            let end = (start + SND_VOICE_HEADER_LEN + len as usize).min(data.len());
+            SndVoice { buffer: data[start..end].to_vec(), state: 0 }
+        };
+        let spans = snd_voice_buffer_spans();
+        Self {
+            voices: [slice_for(spans[0]), slice_for(spans[1])],
+            half_rate: snd_header_is_half_rate(data),
+        }
+    }
+
+    /// The voice in state 3, preferring the first — `0xBB0D` tests `0xB89` and
+    /// only falls through to `0xB91` via the `xchg` at `0xBB19`.
+    pub fn active_voice(&self) -> Option<usize> {
+        (0..2).find(|&i| self.voices[i].state == SND_VOICE_STATE_ACTIVE)
+    }
+
+    /// Mix one streamed chunk into the active voice at `position`, wrapping the
+    /// remainder (`0xBB21..0xBB76`, then `or bx,bx` for the second span).
+    ///
+    /// `0xBB0B add cx,cx` means a half-rate chunk covers TWICE the samples, so
+    /// the sample count is derived from the flag rather than from the chunk size
+    /// alone. Returns the destination samples written across both spans.
+    pub fn mix_chunk(&mut self, position: u16, chunk: &[u8]) -> Option<usize> {
+        let index = self.active_voice()?;
+        let half = self.half_rate;
+        // `[bp+4]` is the SAMPLE count, which excludes the header.
+        let len = self.voices[index]
+            .buffer
+            .len()
+            .saturating_sub(SND_VOICE_HEADER_LEN) as u16;
+        let samples = if half {
+            (chunk.len() as u16).saturating_mul(2) // 0xBB0B
+        } else {
+            chunk.len() as u16
+        };
+        let span = stream_mix_span(position, len, samples)?;
+
+        let mut written = 0usize;
+        let mut consumed = 0usize;
+        if span.count > 0 {
+            let start = SND_VOICE_HEADER_LEN + span.offset as usize; // 0xBB24 + 0xBB41
+            let end = (start + span.count as usize).min(self.voices[index].buffer.len());
+            let destination = &mut self.voices[index].buffer[start..end];
+            written = if half {
+                let n = mix_unsigned_pcm_half_rate(destination, chunk, span.count);
+                consumed = half_rate_source_consumed(span.count, n);
+                n
+            } else {
+                let n = mix_unsigned_pcm_average(destination, chunk);
+                consumed = n;
+                n
+            };
+        }
+        // 0xBB76 `or bx,bx`: the leftover continues at the buffer start, from
+        // where the source left off.
+        if span.remainder > 0 && consumed < chunk.len() {
+            let rest = &chunk[consumed..];
+            let take = (SND_VOICE_HEADER_LEN + span.remainder as usize)
+                .min(self.voices[index].buffer.len());
+            let destination = &mut self.voices[index].buffer[SND_VOICE_HEADER_LEN..take];
+            written += if half {
+                mix_unsigned_pcm_half_rate(destination, rest, span.remainder)
+            } else {
+                mix_unsigned_pcm_average(destination, rest)
+            };
+        }
+        Some(written)
+    }
+}
+
 /// Where a streamed chunk lands in a voice's ring buffer, `0xBB2E..0xBB4E`.
 ///
 /// The mixer is a STREAMER, which the prologue makes plain: `0xBAF7 mov ah,0x3F /
@@ -367,6 +494,66 @@ pub const SILENCE: u8 = 0x80;
 
 #[cfg(test)]
 mod tests {
+
+    /// `0xBAE8..0xBB93` end to end: two voices over the loaded data, fed only
+    /// while active, mixed into EXISTING sound rather than into silence.
+    #[test]
+    fn snd_stream_mixes_chunks_into_the_loaded_sound() {
+        // A file long enough for both voices, with a recognisable pattern.
+        let mut data = vec![0x40u8; 0x4008 + 0x4000];
+        data[4] = 0; // full rate
+        let mut stream = SndStream::from_sound_data(&data);
+        assert!(!stream.half_rate);
+        // Header plus samples: 0xBB24 mixes at buffer+6.
+        assert_eq!(stream.voices[0].buffer.len(), SND_VOICE_HEADER_LEN + 0x4000);
+        // The buffer holds the SOUND, not silence -- the point of 0xBBE7.
+        assert!(stream.voices[0].buffer[SND_VOICE_HEADER_LEN..].iter().all(|&b| b == 0x40));
+
+        // Nothing is fed while both voices are idle (0xBB1F jne 0xBB93).
+        assert_eq!(stream.mix_chunk(0x100, &[0xFF; 16]), None);
+
+        stream.voices[0].state = SND_VOICE_STATE_ACTIVE;
+        let before = stream.voices[0].buffer.clone();
+        let written = stream.mix_chunk(0x3F00, &[0xC0; 16]).expect("active voice");
+        assert_eq!(written, 16);
+        // offset = |0x3F00 - 0x4000| = 0x100, and each sample is the AVERAGE of
+        // the chunk and what was already there -- not a replacement.
+        let at = SND_VOICE_HEADER_LEN + 0x100;
+        assert_eq!(stream.voices[0].buffer[at], snd_mix_average(0xC0, 0x40));
+        assert_eq!(stream.voices[0].buffer[at + 16], before[at + 16], "past the span");
+        assert_eq!(stream.voices[0].buffer[at - 1], before[at - 1], "before the span");
+
+        // The second voice is untouched: only the active one is fed.
+        assert!(stream.voices[1].buffer[SND_VOICE_HEADER_LEN..].iter().all(|&b| b == 0x40));
+    }
+
+    /// The wrap span (`0xBB76`) and the half-rate source accounting.
+    #[test]
+    fn snd_stream_wraps_the_remainder_and_tracks_half_rate_consumption() {
+        // An even count consumes on the first step, an odd count holds.
+        assert_eq!(half_rate_source_consumed(6, 5), 3, "even start: ceil(5/2)");
+        assert_eq!(half_rate_source_consumed(5, 5), 2, "odd start: floor(5/2)");
+        // It must agree with what the mixer actually walks.
+        let src = [1u8, 2, 3, 4, 5, 6];
+        let mut dst = vec![SILENCE; 7];
+        let n = mix_unsigned_pcm_half_rate(&mut dst, &src, 8);
+        assert!(half_rate_source_consumed(8, n) <= src.len());
+
+        // A small position gives a large offset, so the chunk overruns and wraps.
+        let mut data = vec![0x80u8; 0x4008 + 0x4000];
+        data[4] = SND_HEADER_HALF_RATE_TIME_CONSTANT;
+        let mut stream = SndStream::from_sound_data(&data);
+        assert!(stream.half_rate, "the header selects it, not the port");
+        stream.voices[0].state = SND_VOICE_STATE_ACTIVE;
+        let written = stream.mix_chunk(0x10, &[0x00; 64]).expect("active");
+        // 64 source bytes at half rate cover 128 samples; the span at offset
+        // 0x3FF0 has only 0x10 of room, so the rest wraps to the start.
+        assert!(written > 0x10, "the wrap pass contributed: {written}");
+        assert_ne!(
+            stream.voices[0].buffer[SND_VOICE_HEADER_LEN], 0x80,
+            "the wrap wrote at the samples' start, past the header"
+        );
+    }
 
     /// `0xBBFE`/`0xBC05`: the half-rate flag is DATA -- a header byte, not a
     /// setting the port may choose.

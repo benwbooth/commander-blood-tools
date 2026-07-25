@@ -6247,3 +6247,37 @@ decoded averaging" (#198) to "that averaging model is invented" (#199) to "the
 buffer already holds sound and the rate is data" (#200). The remaining work for
 `audio.rs` is a structural rewrite — two `0x4000` ring buffers fed by a chunk
 streamer — not the one-line swap the row asked for when this began.
+
+## #201 — building the core the blocker said could not be verified
+
+The audio row's blocker was "this environment has no audio device, and an
+unverifiable change to the output path is exactly the kind this campaign should
+not make on faith." True about the OUTPUT PATH. It was never true about the rule,
+and treating the two as one thing is what kept the row shut for several sessions.
+
+`snd::SndStream` is the streaming mixer as `0xBAE8..0xBB93` builds it, with no
+device in it anywhere: two voices sliced from the loaded sound data, the half-rate
+flag read from that data's header, `active_voice` (state 3, first-preferred
+because `0xBB0D` tests `0xB89` and only reaches `0xB91` through the `xchg` at
+`0xBB19`), and `mix_chunk` composing `stream_mix_span` with the two mix loops and
+the `0xBB76` wrap pass. Every piece decoded in #198-#200 now sits behind one call
+that tests can drive.
+
+Writing the tests found a real omission rather than confirming what I had:
+`0xBB24 add di,6` mixes PAST a 6-byte header in each voice buffer, matched on the
+source side by `mov si,0x7d06` @`0xBB00`. I had mixed at `buffer + offset`. The
+test failed on an assertion about the buffer's CONTENT — the header byte I had
+planted at `data[4]` was inside voice A's buffer, which it should be, and the
+mixing should have skipped it. That also explains the `0x4008` stride that had
+looked like an arbitrary gap: 6 bytes of header, `0x4000` of samples, 2 spare.
+
+`half_rate_source_consumed` exists because the wrap pass has to know where the
+SOURCE left off, and at half rate that is not the number of samples written. It is
+derived from the same parity rule as the loop it accompanies, and tested against
+what the loop actually walks rather than against my arithmetic — the third
+expectation slip in this area (#198, #199) argued for checking it that way.
+
+What is left is genuinely the output path: `audio.rs` still drives cpal with three
+independent `MusicPlayer` streams. Feeding one `SndStream` instead is mechanical
+against a tested core. A device is needed to confirm it SOUNDS right; it is no
+longer needed to know it IS right.
