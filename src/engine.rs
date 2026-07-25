@@ -4109,6 +4109,11 @@ impl EngineState {
         // The port therefore draws one marker per GRANTED destination (the
         // GameProgress set that stands in for the active-entity bits) instead of
         // the old fabricated 7x4 = 28-point grid.
+        // DS:0x2F65, WIDENED: the game stores three WORDS there and the port
+        // holds i32, which is why a byte search of the image does not find this
+        // array (`tools/check_literal_tables.py` reports it ABSENT for that
+        // reason alone). `nav_camera_origin_matches_ds_2f65` reads the words back
+        // out of BLOODPRG.EXE and compares.
         const NAV_CAMERA_ORIGIN: [i32; 3] = [10000, 12000, 0]; // DS:0x2F65
         let origin = NAV_CAMERA_ORIGIN;
         // Base pyramid dimension: the biggest CARTE pyramid frame (f4, 24px wide).
@@ -5335,6 +5340,26 @@ pub fn mode_x_to_linear(byte_offset: usize, plane: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
+
+    /// `DS:0x2F65` holds the nav camera origin as three WORDS; the port widens
+    /// them to `i32`. Read them back rather than trusting the widening.
+    #[test]
+    fn nav_camera_origin_matches_ds_2f65() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        let at = 0xD420 + 0x2F65;
+        let words: Vec<i32> = (0..3)
+            .map(|i| i32::from(u16::from_le_bytes([exe[at + i * 2], exe[at + i * 2 + 1]])))
+            .collect();
+        assert_eq!(words, vec![10000, 12000, 0], "the camera origin moved");
+        // The fourth word is NOT part of the origin -- it is 16, and reading a
+        // fourth component would silently extend the vector.
+        let fourth = u16::from_le_bytes([exe[at + 6], exe[at + 7]]);
+        assert_eq!(fourth, 16, "the word after the origin is not what was decoded");
+    }
     use super::*;
 
     /// End-to-end faithfulness check for the bridge: the engine's full render of

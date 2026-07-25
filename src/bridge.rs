@@ -103,6 +103,12 @@ pub struct StationRecord {
 /// 180 over 360°) that is frames 0, 45, 90, 135 — helm, golden menu, pyramid nav
 /// room, organic Orxx. `station_rest_frames_match_the_static_record_table` reads
 /// those bytes back out of BLOODPRG.EXE.
+/// DERIVED, so `tools/check_literal_tables.py` reports it ABSENT and that is
+/// correct: the file stores ANGLES (`0x000, 0x05A, 0x0B4, 0x10E` = 0, 90, 180,
+/// 270 degrees) and these are those angles halved, because a panorama frame is
+/// 2 degrees. The stored bytes are checked by
+/// `station_rest_frames_match_the_static_record_table`; this array is the port's
+/// conversion of them, not a copy.
 pub const STATION_REST_FRAMES: [u16; 4] = [0, 45, 90, 135];
 
 /// `DS:0x2A1B` -> file offset of the station-record array (`0xD420 + 0x2A1B`).

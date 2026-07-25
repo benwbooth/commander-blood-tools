@@ -167,6 +167,21 @@ pub const SHIP_3D_TEMP_SND_PATH_OFFSET: u16 = 0x0d23;
 pub const SHIP_3D_TB_SND_PATH_OFFSET: u16 = 0x0cfc;
 pub const SHIP_3D_TEMP_SND_PHASE_COUNT: u8 = 3;
 pub const SHIP_3D_TEMP_SND_SCENE_SELECTOR_SENTINEL: u16 = 0xffff;
+/// UNEXPLAINED, and marked so rather than given a plausible story.
+///
+/// `tools/check_literal_tables.py` reports this ABSENT — these sixteen bytes are
+/// in no shipped image — and unlike the other absentees there is no known reason.
+/// `NAV_CAMERA_ORIGIN` is absent because the port WIDENS words to `i32`;
+/// `STATION_REST_FRAMES` because it HALVES stored angles; `GAME_SCREEN_PALETTE_DAC`
+/// because part of it is capture-sourced and already labelled APPROX. This one has
+/// no citation, no derivation and no doc before now.
+///
+/// What can be said from the values alone, and no more: `0x0140` is 320 and
+/// `0x00C8` is 200, so it reads as a full-screen viewport. WHERE the game builds
+/// it is undecoded — presumably assembled by consecutive stores rather than
+/// copied from a table, which is why no table exists to find. Finding that
+/// routine is the task; until then this array is unverified and should not be
+/// cited as if it were decoded.
 pub const SHIP_3D_TEMP_SND_VIEWPORT_DESCRIPTOR: [u16; 8] = [
     0x0000, 0x0001, 0x0004, 0x0000, 0x0140, 0x00c8, 0x0000, 0x0000,
 ];

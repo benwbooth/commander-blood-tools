@@ -7093,3 +7093,31 @@ future narrowing of the constant cannot hide behind a lucky sample.
 The lesson is the same one as #210's uniqueness check, arriving from the other
 side: where the candidate set is enumerable — 180 frames, 95 directory slots, 50
 world files — SWEEP IT. Sampling proves the sample.
+
+## #229 — four absences, four different reasons
+
+#228's checker left five ABSENT tables. Each turned out to be absent for its own
+reason, and only one of them was a defect:
+
+  * `EXT_WORLD_MAGIC` — a real bug, fixed in #228 (rejected 13 of 50 worlds).
+  * `NAV_CAMERA_ORIGIN` — WIDENED. The game stores three WORDS at `DS:0x2F65`;
+    the port holds `i32`, so the packed bytes never match. Reading the words back
+    confirms `[10000, 12000, 0]`, and the test also pins the word AFTER them
+    (16) so a fourth component cannot silently join the vector. Settled DATA.
+  * `STATION_REST_FRAMES` — DERIVED. The file stores ANGLES
+    (`0x000, 0x05A, 0x0B4, 0x10E`) and the port halves them, because a panorama
+    frame is 2 degrees. The stored bytes already have their own test; this array
+    is the conversion, not a copy. Doc now says so.
+  * `GAME_SCREEN_PALETTE_DAC` — known, already labelled APPROX for 128..191.
+  * `SHIP_3D_TEMP_SND_VIEWPORT_DESCRIPTOR` — GENUINELY UNEXPLAINED, and now
+    documented as such rather than given a plausible story. `0x0140` is 320 and
+    `0x00C8` is 200, so it reads as a full-screen viewport, and that is all the
+    values support. Where the game builds it is undecoded; it is presumably
+    assembled by consecutive stores, which is why no table exists to find.
+
+The useful shape here: "absent from the image" is a QUESTION, not a verdict. Three
+of the five had good answers that make the port's version verifiable in a
+different way, one was a bug, and one is honestly open. A checker that reported
+absence as failure would have produced four false alarms and buried the real one —
+which is why it prints ABSENT with a byte count and leaves the judgement to a
+reader.
