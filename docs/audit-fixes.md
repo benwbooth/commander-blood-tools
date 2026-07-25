@@ -6801,3 +6801,29 @@ command; four entries of this file are the price of not running it.
 `Ship3dTargetSelectorState` now documents each field's DS byte with the
 instruction that touches it, and marks `target_animation_tick` as claiming no
 address, because none was decoded.
+
+## #219 — 27 docs, 0 settled, and that is the correct outcome
+
+27 structs in `ship3d.rs` had no doc at all while sitting beside functions settled
+ASM: `Ship3dTransitionState` next to `update_ship_3d_transition_state`,
+`Ship3dProjectionMatrix` next to `build_ship_3d_projection_matrix`, and so on.
+Each is the parameter or result SHAPE of a cited routine and carries no rule of
+its own. An undocumented struct beside a cited function reads as unexamined when
+it is simply the function's shape, so each now says which routine it belongs to.
+
+I then tried to settle all 27 as ASM. `audit_settle` REFUSED every one: "ASM needs
+a cited address". The docs deliberately point at the function instead of restating
+its addresses — duplicating a citation onto the type would also trip
+`check_duplicate_rules.py`, which exists because two copies of a rule drift apart.
+
+That refusal is right and I am leaving it. Documentation is not verification.
+27 rows are now easier to understand and none of them is any better VERIFIED than
+this morning, so the ledger should say exactly that. Settling them would have
+bought 27 rows of apparent progress for zero evidence — the failure #216 was
+careful to avoid, arriving from a different direction.
+
+What would actually settle them: a test that exercises each shape through its
+routine against real game data, which is real work and is not done here.
+
+Real queue after this: 779 rows with neither a citation nor a data test, down from
+791 only because the inventory fix removed phantoms.

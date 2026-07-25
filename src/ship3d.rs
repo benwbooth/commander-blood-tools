@@ -198,6 +198,12 @@ pub const SHIP_3D_C1_DESTINATION_SELECTOR: u8 = 19;
 pub const SHIP_3D_C1_RECORD_STATE_OPCODE: u16 = vm::OP_RECORD_STATE_MIN as u16;
 pub const SHIP_3D_C1_RECORD_STATE_AUX_WORD: u16 = 2;
 
+/// Parameter/result shape for [`update_ship_3d_transition_state`].
+///
+/// The fields ARE that routine's decoded values; this type carries no rule
+/// of its own, so the binary citations live on the function rather than being
+/// restated here. Recorded because an undocumented struct beside a cited
+/// function reads as unexamined when it is simply the function's shape.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dTransitionState {
     pub hold_ticks: u16,
@@ -215,6 +221,12 @@ pub struct Ship3dDepthState {
     pub depth_step: u8,
 }
 
+/// Parameter/result shape for [`copy_ship_3d_plane_bands`].
+///
+/// The fields ARE that routine's decoded values; this type carries no rule
+/// of its own, so the binary citations live on the function rather than being
+/// restated here. Recorded because an undocumented struct beside a cited
+/// function reads as unexamined when it is simply the function's shape.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Ship3dPlaneBandCopy {
     pub row_count: usize,
@@ -252,6 +264,12 @@ pub struct Ship3dTargetSelectorState {
     pub depth_step: u8,
 }
 
+/// Parameter/result shape for [`select_ship_3d_target_record`].
+///
+/// The fields ARE that routine's decoded values; this type carries no rule
+/// of its own, so the binary citations live on the function rather than being
+/// restated here. Recorded because an undocumented struct beside a cited
+/// function reads as unexamined when it is simply the function's shape.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Ship3dTargetSelection {
     /// The chosen target's record value: a record offset, the retained current target, or the
@@ -262,6 +280,12 @@ pub struct Ship3dTargetSelection {
     pub phase_gate_blocked: bool,
 }
 
+/// Parameter/result shape for [`step_ship_3d_interpolation_gate`].
+///
+/// The fields ARE that routine's decoded values; this type carries no rule
+/// of its own, so the binary citations live on the function rather than being
+/// restated here. Recorded because an undocumented struct beside a cited
+/// function reads as unexamined when it is simply the function's shape.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dInterpolationGate {
     pub duration_ticks: u8,
@@ -274,6 +298,12 @@ pub enum Ship3dInterpolationStep {
     Complete,
 }
 
+/// Parameter/result shape for [`layout_ship_3d_target_list`].
+///
+/// The fields ARE that routine's decoded values; this type carries no rule
+/// of its own, so the binary citations live on the function rather than being
+/// restated here. Recorded because an undocumented struct beside a cited
+/// function reads as unexamined when it is simply the function's shape.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Ship3dTargetListLayout {
     pub x: u16,
@@ -286,6 +316,12 @@ pub struct Ship3dTargetListLayout {
     pub selector_mode_return: u16,
 }
 
+/// Parameter/result shape for [`hit_test_ship_3d_target_list`].
+///
+/// The fields ARE that routine's decoded values; this type carries no rule
+/// of its own, so the binary citations live on the function rather than being
+/// restated here. Recorded because an undocumented struct beside a cited
+/// function reads as unexamined when it is simply the function's shape.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dTargetHitState {
     pub hover_row: u8,
@@ -294,6 +330,12 @@ pub struct Ship3dTargetHitState {
     pub requested_presentation_state: u16,
 }
 
+/// Parameter/result shape for [`hit_test_ship_3d_target_list`].
+///
+/// The fields ARE that routine's decoded values; this type carries no rule
+/// of its own, so the binary citations live on the function rather than being
+/// restated here. Recorded because an undocumented struct beside a cited
+/// function reads as unexamined when it is simply the function's shape.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Ship3dTargetHitResult {
     pub inside: bool,
@@ -328,6 +370,12 @@ pub struct Ship3dTargetDrawResult {
     pub final_hover_counter: u8,
 }
 
+/// Parameter/result shape for [`update_ship_3d_nav_choice_dispatch`].
+///
+/// The fields ARE that routine's decoded values; this type carries no rule
+/// of its own, so the binary citations live on the function rather than being
+/// restated here. Recorded because an undocumented struct beside a cited
+/// function reads as unexamined when it is simply the function's shape.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dNavChoiceState {
     pub selected_choice: u16,
@@ -343,6 +391,12 @@ pub struct Ship3dNavChoiceState {
     pub interpolation_current_tick: u8,
 }
 
+/// Parameter/result shape for [`update_ship_3d_nav_choice_dispatch`].
+///
+/// The fields ARE that routine's decoded values; this type carries no rule
+/// of its own, so the binary citations live on the function rather than being
+/// restated here. Recorded because an undocumented struct beside a cited
+/// function reads as unexamined when it is simply the function's shape.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dNavChoiceGates {
     pub c2_presentation_gate: bool,
@@ -353,6 +407,12 @@ pub struct Ship3dNavChoiceGates {
     pub presentation_active: bool,
 }
 
+/// Parameter/result shape for [`update_ship_3d_nav_choice_dispatch`].
+///
+/// The fields ARE that routine's decoded values; this type carries no rule
+/// of its own, so the binary citations live on the function rather than being
+/// restated here. Recorded because an undocumented struct beside a cited
+/// function reads as unexamined when it is simply the function's shape.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Ship3dNavChoiceInput {
     pub gate_value: u16,
@@ -362,6 +422,12 @@ pub struct Ship3dNavChoiceInput {
     pub activate: bool,
 }
 
+/// Parameter/result shape for [`update_ship_3d_nav_choice_dispatch`].
+///
+/// The fields ARE that routine's decoded values; this type carries no rule
+/// of its own, so the binary citations live on the function rather than being
+/// restated here. Recorded because an undocumented struct beside a cited
+/// function reads as unexamined when it is simply the function's shape.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dNavChoiceResult {
     pub gated: bool,
@@ -373,6 +439,12 @@ pub struct Ship3dNavChoiceResult {
     pub play_select_sound: Option<u16>,
 }
 
+/// Parameter/result shape for [`run_ship_3d_nav_choice_handler_0`].
+///
+/// The fields ARE that routine's decoded values; this type carries no rule
+/// of its own, so the binary citations live on the function rather than being
+/// restated here. Recorded because an undocumented struct beside a cited
+/// function reads as unexamined when it is simply the function's shape.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dNavChoiceHandlerEffect {
     pub deferred_record_type: Option<u16>,
@@ -392,6 +464,12 @@ pub struct Ship3dNavChoiceHandlerEffect {
     pub set_input_gate_b: bool,
 }
 
+/// Parameter/result shape for [`run_ship_3d_nav_choice_handler_4`].
+///
+/// The fields ARE that routine's decoded values; this type carries no rule
+/// of its own, so the binary citations live on the function rather than being
+/// restated here. Recorded because an undocumented struct beside a cited
+/// function reads as unexamined when it is simply the function's shape.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dNavChoiceHandler4State {
     pub layout_rect_snapshot: [u16; SHIP_3D_INTERPOLATION_WORDS],
@@ -511,6 +589,12 @@ pub const SHIP_3D_ANGLE_TABLE: [Ship3dAngleTableEntry; 180] = {
     ]
 };
 
+/// Parameter/result shape for [`build_ship_3d_projection_matrix`].
+///
+/// The fields ARE that routine's decoded values; this type carries no rule
+/// of its own, so the binary citations live on the function rather than being
+/// restated here. Recorded because an undocumented struct beside a cited
+/// function reads as unexamined when it is simply the function's shape.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dMatrixAngles {
     pub angle_2f71: u16,
@@ -518,11 +602,23 @@ pub struct Ship3dMatrixAngles {
     pub angle_2f6f: u16,
 }
 
+/// Parameter/result shape for [`build_ship_3d_projection_matrix`].
+///
+/// The fields ARE that routine's decoded values; this type carries no rule
+/// of its own, so the binary citations live on the function rather than being
+/// restated here. Recorded because an undocumented struct beside a cited
+/// function reads as unexamined when it is simply the function's shape.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dProjectionMatrix {
     pub terms: [i32; 9],
 }
 
+/// Parameter/result shape for [`project_ship_3d_point`].
+///
+/// The fields ARE that routine's decoded values; this type carries no rule
+/// of its own, so the binary citations live on the function rather than being
+/// restated here. Recorded because an undocumented struct beside a cited
+/// function reads as unexamined when it is simply the function's shape.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dProjectionPoint {
     pub x: u16,
@@ -530,6 +626,12 @@ pub struct Ship3dProjectionPoint {
     pub z: u16,
 }
 
+/// Parameter/result shape for [`project_ship_3d_point`].
+///
+/// The fields ARE that routine's decoded values; this type carries no rule
+/// of its own, so the binary citations live on the function rather than being
+/// restated here. Recorded because an undocumented struct beside a cited
+/// function reads as unexamined when it is simply the function's shape.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dProjectionOrigin {
     pub x: u16,
@@ -537,6 +639,12 @@ pub struct Ship3dProjectionOrigin {
     pub z: u16,
 }
 
+/// Parameter/result shape for [`ship_3d_nav_entity_for_slot`].
+///
+/// The fields ARE that routine's decoded values; this type carries no rule
+/// of its own, so the binary citations live on the function rather than being
+/// restated here. Recorded because an undocumented struct beside a cited
+/// function reads as unexamined when it is simply the function's shape.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dProjectedPoint {
     pub x: u16,
@@ -544,6 +652,12 @@ pub struct Ship3dProjectedPoint {
     pub depth: u16,
 }
 
+/// Parameter/result shape for [`ship_3d_nav_entity_for_slot`].
+///
+/// The fields ARE that routine's decoded values; this type carries no rule
+/// of its own, so the binary citations live on the function rather than being
+/// restated here. Recorded because an undocumented struct beside a cited
+/// function reads as unexamined when it is simply the function's shape.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dProjectionViewport {
     pub left: u16,
@@ -552,6 +666,12 @@ pub struct Ship3dProjectionViewport {
     pub bottom: u16,
 }
 
+/// Parameter/result shape for [`plot_ship_3d_projected_point`].
+///
+/// The fields ARE that routine's decoded values; this type carries no rule
+/// of its own, so the binary citations live on the function rather than being
+/// restated here. Recorded because an undocumented struct beside a cited
+/// function reads as unexamined when it is simply the function's shape.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dProjectedPixel {
     pub offset: usize,
@@ -601,6 +721,12 @@ pub struct Ship3dObjectSpriteDescriptor {
     pub committed_extent_height: u16,
 }
 
+/// Parameter/result shape for [`ship_3d_nav_entity_for_slot`].
+///
+/// The fields ARE that routine's decoded values; this type carries no rule
+/// of its own, so the binary citations live on the function rather than being
+/// restated here. Recorded because an undocumented struct beside a cited
+/// function reads as unexamined when it is simply the function's shape.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dObjectSpriteProjection {
     pub projected: Ship3dProjectedPoint,
@@ -611,6 +737,12 @@ pub struct Ship3dObjectSpriteProjection {
     pub draw_y: u16,
 }
 
+/// Parameter/result shape for [`ship_3d_nav_entity_for_slot`].
+///
+/// The fields ARE that routine's decoded values; this type carries no rule
+/// of its own, so the binary citations live on the function rather than being
+/// restated here. Recorded because an undocumented struct beside a cited
+/// function reads as unexamined when it is simply the function's shape.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dSpriteSlotUpdateEffect {
     pub ran: bool,
@@ -621,6 +753,12 @@ pub struct Ship3dSpriteSlotUpdateEffect {
     pub committed_geometry: bool,
 }
 
+/// Parameter/result shape for [`ship_3d_nav_entity_for_slot`].
+///
+/// The fields ARE that routine's decoded values; this type carries no rule
+/// of its own, so the binary citations live on the function rather than being
+/// restated here. Recorded because an undocumented struct beside a cited
+/// function reads as unexamined when it is simply the function's shape.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Ship3dDirtyRectList {
     pub rects: Vec<Ship3dProjectionViewport>,
@@ -636,6 +774,12 @@ impl Default for Ship3dDirtyRectList {
     }
 }
 
+/// Parameter/result shape for [`commit_ship_3d_global_clip_snapshot`].
+///
+/// The fields ARE that routine's decoded values; this type carries no rule
+/// of its own, so the binary citations live on the function rather than being
+/// restated here. Recorded because an undocumented struct beside a cited
+/// function reads as unexamined when it is simply the function's shape.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dDirtyRectSnapshotEffect {
     pub ran: bool,
@@ -644,6 +788,12 @@ pub struct Ship3dDirtyRectSnapshotEffect {
     pub cleared_snapshot_flag: bool,
 }
 
+/// Parameter/result shape for [`collect_ship_3d_dirty_sprite_slot_render_commands`].
+///
+/// The fields ARE that routine's decoded values; this type carries no rule
+/// of its own, so the binary citations live on the function rather than being
+/// restated here. Recorded because an undocumented struct beside a cited
+/// function reads as unexamined when it is simply the function's shape.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Ship3dSpriteSlotRenderCommand {
     pub slot_index: usize,
@@ -791,6 +941,12 @@ pub struct Ship3dPositionRecord {
     pub kind100_relation_word: Option<u16>,
 }
 
+/// Parameter/result shape for [`ship_3d_position_field_distance`].
+///
+/// The fields ARE that routine's decoded values; this type carries no rule
+/// of its own, so the binary citations live on the function rather than being
+/// restated here. Recorded because an undocumented struct beside a cited
+/// function reads as unexamined when it is simply the function's shape.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dPositionField {
     pub offset: u16,
@@ -2128,6 +2284,12 @@ pub const SHIP_3D_PROJECTION_SCREEN_HEIGHT: usize = 200;
 
 /// One plotted starfield pixel and, alongside the returned count, the whole
 /// depth-shaded buffer produced by [`render_ship_3d_point_cloud`].
+/// Parameter/result shape for [`randomize_ship_3d_point_cloud`].
+///
+/// The fields ARE that routine's decoded values; this type carries no rule
+/// of its own, so the binary citations live on the function rather than being
+/// restated here. Recorded because an undocumented struct beside a cited
+/// function reads as unexamined when it is simply the function's shape.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Ship3dPointCloudRender {
     /// `320 * 200` depth-shaded buffer; `0` means "no point drawn here".
