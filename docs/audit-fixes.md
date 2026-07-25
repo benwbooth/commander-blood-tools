@@ -2145,3 +2145,30 @@ The control here needed care too: my first attempt perturbed rows whose comments
 the checker does not examine, so it reported 0 problems and proved nothing. The
 real control shifts a label whose comment OPENS with a quoted `mov` (caught: "the
 code is `push es`") and pushes another past the end of the image (caught).
+
+## FIX #63 — unicorn in the flake, and 13,000 FRESH vectors say the lifts are right
+
+`re/tools/README_oracle.md` had carried this for the whole campaign:
+
+> `pip install unicorn` (not yet in the nix flake — add it there to make this a
+> permanent test, or run in a venv as the PoC does).
+
+`python3Packages.unicorn` is in nixpkgs (2.1.4). Added. That was the whole
+blocker, and removing it changes what the recomp verification MEANS.
+
+Replaying the committed vectors proves each lift matches THOSE inputs. It cannot
+distinguish a correct lift from one that happens to agree on 200 fixed random
+states. Regenerating is a different claim — new random register/memory states run
+through the REAL DOS bytes under Unicorn, compared bit-exactly against the Rust.
+
+DONE, for the whole generic batch: **52 functions, 13,000 freshly generated
+vectors, every one bit-exact.** Not a replay; independent evidence.
+
+`re/tools/reverify_lifts.sh` makes it repeatable — it regenerates, replays, and
+restores the committed vectors so the tree stays clean (`--keep` to keep them).
+The committed corpus is deliberately left in place: it is already proven, and
+swapping 13,000 equally-valid random vectors would be a large diff with no gain.
+
+What this does NOT do is generate vectors for anything new — the batch is the
+functions the clean-lift pipeline already produces. But the pipeline can now be
+RUN, which is the difference between a documented blocker and a working tool.

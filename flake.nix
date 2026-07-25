@@ -55,7 +55,13 @@
               alsa-lib
               libxcb
               vulkan-tools
-              (python3.withPackages (ps: with ps; [ capstone pillow numpy ]))
+              # unicorn: the ORACLE for the recomp pipeline. re/tools/auto_oracle.py and
+              # gen_oracle_vectors.py run the REAL DOS code under it to produce the
+              # input->output vectors src/recomp's tests replay, so without it the
+              # bit-exactness checks cannot be REGENERATED (the committed vectors still
+              # replay fine). README_oracle.md called this out as "not yet in the nix
+              # flake -- add it there to make this a permanent test".
+              (python3.withPackages (ps: with ps; [ capstone pillow numpy unicorn ]))
               ripgrep
               rust-analyzer
               rustc

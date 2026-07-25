@@ -22,8 +22,12 @@ that one function's port are bit-exact.
   = that function is verified bit-exact vs the binary.
 
 ## Requires
-`pip install unicorn` (not yet in the nix flake — add it there to make this a permanent
-test, or run in a venv as the PoC does).
+`unicorn` IS in the nix flake now (`python3.withPackages [... unicorn]`), so the
+oracle can be regenerated inside `nix develop` with no venv. That matters because
+replaying the committed vectors only proves the lift matches THOSE inputs;
+`re/tools/reverify_lifts.sh` regenerates all 52 sets from fresh randomness and
+replays, which is independent evidence. Measured 2026-07-24: 13,000 fresh vectors
+across 52 functions, all bit-exact.
 
 ## IMPORTANT scope note (why per-function != whole-program)
 This verifies LEAF functions. It does NOT prove the whole port runs correctly, because the
