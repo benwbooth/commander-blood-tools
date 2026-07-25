@@ -1887,7 +1887,7 @@ verified line by line (phase bit `[0x2565]&1`, `Honk` from `[0x6754]`, record ty
 cited and labelled, awaiting the same treatment.
 
 **The ledger was counting shader source as port code.** `gpu.rs` holds WGSL in
-raw string literals, and the inventory regex счастливо matched `fn vs`, `fn fs`
+raw string literals, and the inventory regex happily matched `fn vs`, `fn fs`
 and `struct VOut` inside them — six phantom rows, three of them ambiguous enough
 that the settle tool refused to touch them. Raw strings are now skipped, and the
 denominator dropped from 1423 to 1414 items that are actually port code.
