@@ -660,7 +660,7 @@ reveal_frames_per_char	src/vm.rs	359	fn	0xB31,0x94BA	ASM?	/// Frames per reveale
 record_end_hold_ticks	src/vm.rs	365	fn	0x7378,0x738C,0x27CF,0x0ACA,0x67BB	ASM?	/// Port the record-end hold timer at `BLOODPRG.EXE` `0x7378..0x738C`: /// `b35 = gs:[0x27CF] * (gs:[0x0ACA] >> 1) + 6; gs:[0x67BB] = 1`.
 scan_zero_word	src/vm.rs	380	fn	0x6293,0x0000	ASM?	/// Replicates helper `0x6293`: from `start`, scan byte-by-byte until a `0x0000` /// word, skip it, then skip one extra byte if it is also zero. Returns the /// offset just past the terminator.
 VmToken	src/vm.rs	394	enum		UNVERIFIED	
-walk	src/vm.rs	550	fn		UNVERIFIED	/// Walk `cod[start..end]` in execution order, yielding tokens. Stops at `end`, /// at the `0xFF` end marker, or at the first byte that cannot be a token.
+walk	src/vm.rs	550	fn		ASM	/// Walk `cod[start..end]` in execution order, yielding tokens. Stops at `end`, /// at the `0xFF` end marker, or at the first byte that cannot be a token. || AUDIT 2026-07-24: ASM-VERIFIED against vm_token_advance 0x62B6 instruction by instruction: MOV BP,0x6F18 (the opcode table), LODSB, SUB AL,0xA0 (confirming OP_MIN=0xA0), CWDE, ADD AX,AX (2-byte entries), ADD BP,AX; then MOV AL,[bp+1] / OR AL,AL / JS routes b1-bit7 SENTINELS separately, while the normal path does MOV AL,gs:[0x67AD] (the mode flag) / ADD BP,AX / MOV AL,[bp] -- i.e. len = table[mode], exactly the ports `if mode1 { b1 } else { b0 }`. Sentinel 0xFF sets gs:[0x67AD]=1 and takes len=b0; 0xFE clears it. PLUS the table itself is DATA-VERIFIED: all 96 OPCODE_DESC entries (0xA0..0xFF) are byte-identical to DS:0x6F18 (file 0x14338), zero mismatches
 decode_text	src/vm.rs	749	fn		ASM	/// Decode an `0xA6` TEXT token starting at `pos`. Returns the token and the /// offset just past it, or `None` if malformed. || AUDIT 2026-07-24: A6 token layout verified against 0x660C: 0x6612 lodsw = b1b2 line index; 0x6615 saves si at b3 then 0x661A `inc si` SKIPS it; 0x661B lodsw = the b4b5 flags word; then IN ORDER 0x6630 `test cl,0x10` -> 0x6642 lodsw reads the loop-target word, and 0x669D `test cl,4` -> 0x66A2 `add si,2` skips the control word. The port reads loop_target before control_word, matching. Word list: the display assembler at 0x66DB stops on 0 (0x66DD) AND on -1 (0x66E1), but 0xFFFF is the MENU SEPARATOR inside the list, so tokenisation correctly ends only at 0x0000
 read_u16	src/vm.rs	803	fn		INFRA	|| AUDIT 2026-07-24: little-endian u16 read helper; no binary counterpart
 LineState	src/vm.rs	976	struct		UNVERIFIED	
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                                         
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                                          
