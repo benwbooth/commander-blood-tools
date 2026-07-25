@@ -3831,3 +3831,32 @@ recorded as one.
 Three captures now genuinely unread: `mission_briefing_eye.ppm`,
 `script2_first_frame.ppm`, and `nav_screen_opened.ppm` — the last needs comparing
 against the PRESENTATION screen, which is where it belongs.
+
+## #116 — the misread capture, read correctly: the viewscreen static now has a test
+
+`nav_screen_opened.ppm` is the VIEWSCREEN CONSOLE — binary static above, console
+band below — which is what #115 established after #114 mistook it for a bridge
+starfield. Pointed at the right screen, it is checkable, and the port renders
+exactly that shape in `render_viewscreen_console`.
+
+Not pixel-by-pixel: the static is generated noise, so two runs of the REAL GAME
+would not match each other. Asserting pixel identity would be wrong in principle,
+not merely brittle. What is deterministic is the distribution, and the capture
+confirms all of it:
+
+* **Two colours only** — the top two cover >99% of the region (the port emits
+  index 224 and 239, the console bank's extremes).
+* **The split** — 23315 dark to 19855 light is 54.0%/46.0%, matching the port's
+  documented "~54% black (224) / ~46% white (239)" from oracle intro_215M.
+* **Per-pixel noise** — mean run length 1.87px along a row, so it is noise rather
+  than blocks or a dithered pattern.
+* **The boundary** — static stops at the console band top (140).
+
+That last check failed on the first attempt, asserting zero white below the band.
+There are 483, because the band has bright content of its own. The distinction
+that matters is DENSITY: 46% white above against 2.5% below, so the assertion is
+now a ratio. A test that demanded zero would have been "correct" only until
+someone looked at the band.
+
+Four of the seven captures from #112 now have tests. Two remain unread
+(`mission_briefing_eye.ppm`, `script2_first_frame.ppm`).

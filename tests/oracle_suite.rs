@@ -314,6 +314,93 @@ fn console_band_is_panorama_frame_90_through_the_remap() {
     assert_eq!(differing, 0, "{differing} of 19200 bytes differ");
 }
 
+/// `nav_screen_opened.ppm` is the VIEWSCREEN CONSOLE: binary static above,
+/// console band below. Pointed at the right screen (audit-fixes #115), it is
+/// checkable — just not pixel-by-pixel, because the static is generated noise.
+///
+/// What IS deterministic: the two colours it alternates between, the proportion
+/// (`~54% index 224 / ~46% index 239`, per oracle intro_215M), and the row where
+/// static stops and the band begins. The capture agrees on all three: 23315 black
+/// to 19855 white across rows 0..134 is 54.0%/46.0%.
+///
+/// A pixel-exact assertion here would be wrong in principle — two runs of the real
+/// game do not match each other either.
+#[test]
+fn viewscreen_static_matches_the_captures_two_colour_distribution() {
+    let path = "accuracy/captures/bridge/nav_screen_opened.ppm";
+    let Some(live) = read_ppm(Path::new(path))
+        .or_else(|| read_ppm(Path::new(&format!("../{path}"))))
+    else {
+        eprintln!("skipped: no {path}");
+        return;
+    };
+
+    // The capture's static region: exactly two colours, in per-pixel noise.
+    let mut counts = std::collections::HashMap::new();
+    for y in 0..135usize {
+        for x in 0..ENGINE_SCREEN_WIDTH {
+            let o = (y * ENGINE_SCREEN_WIDTH + x) * 3;
+            *counts.entry([live[o], live[o + 1], live[o + 2]]).or_insert(0usize) += 1;
+        }
+    }
+    let mut ranked: Vec<_> = counts.into_iter().collect();
+    ranked.sort_by_key(|(_, n)| std::cmp::Reverse(*n));
+    let total: usize = ranked.iter().map(|(_, n)| *n).sum();
+    let (dark, dark_n) = ranked[0];
+    let (light, light_n) = ranked[1];
+    assert!(
+        dark_n + light_n > total * 99 / 100,
+        "the static must be TWO colours; top two cover {}/{total}",
+        dark_n + light_n
+    );
+    assert!(dark[0] < 40 && light[0] > 200, "one dark, one light: {dark:?} {light:?}");
+
+    // The split the port documents from oracle intro_215M: ~54/46.
+    let dark_pct = dark_n * 100 / (dark_n + light_n);
+    assert!(
+        (52..=56).contains(&dark_pct),
+        "expected ~54% dark, capture has {dark_pct}%"
+    );
+
+    // Per-pixel noise, not blocks: mean run length along a row is under 2.5px.
+    let y = 60usize;
+    let mut runs = 1usize;
+    for x in 1..ENGINE_SCREEN_WIDTH {
+        let a = (y * ENGINE_SCREEN_WIDTH + x) * 3;
+        let b = (y * ENGINE_SCREEN_WIDTH + x - 1) * 3;
+        if live[a..a + 3] != live[b..b + 3] {
+            runs += 1;
+        }
+    }
+    let mean_run = ENGINE_SCREEN_WIDTH as f64 / runs as f64;
+    assert!(mean_run < 2.5, "per-pixel noise expected, mean run {mean_run:.2}");
+
+    // And the static STOPS where the console band starts. Not "no white below" --
+    // the band has bright content of its own (483px, first attempt asserted zero
+    // and failed on it). What separates them is DENSITY: 46% of the static region
+    // is white, against 2.5% of the band.
+    let band_top = commander_blood_tools::tbbig::CONSOLE_BAND_TOP;
+    let white_frac = |y0: usize, y1: usize| -> f64 {
+        let n = (y0..y1)
+            .flat_map(|y| (0..ENGINE_SCREEN_WIDTH).map(move |x| (y, x)))
+            .filter(|&(y, x)| {
+                let o = (y * ENGINE_SCREEN_WIDTH + x) * 3;
+                live[o] > 200 && live[o + 1] > 200 && live[o + 2] > 200
+            })
+            .count();
+        n as f64 / ((y1 - y0) * ENGINE_SCREEN_WIDTH) as f64
+    };
+    let above = white_frac(0, 135);
+    let below = white_frac(band_top, 200);
+    assert!(
+        below < above / 5.0,
+        "static should not continue past the band top {band_top}: \
+         {:.1}% white above vs {:.1}% below",
+        above * 100.0,
+        below * 100.0
+    );
+}
+
 /// MISNAMED CAPTURE, kept as a measurement harness.
 ///
 /// `nav_screen_opened.ppm` is not the nav screen and not a bridge starfield. Its
