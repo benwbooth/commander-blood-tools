@@ -4823,3 +4823,31 @@ One behaviour change worth naming: with no archive loaded, `bridge_station()` is
 `None`, so both paths now decline where the old range check could pass on a stale
 frame number. Nav destinations without a bridge archive are not a state the game
 has.
+
+## #149 — the starfield's depth model is one `jne`
+
+Three more rows off #141's queue, all from the point plot at `0x9B04`.
+
+`ship_3d_projected_point_offset` computes `y*320 + x`. The game does it without a
+multiply:
+
+```text
+  0x9B25  mov di,bx      di = y
+  0x9B27  xchg bh,bl     bx = y << 8   (y * 256)
+  0x9B29  shl di,6       di = y * 64
+  0x9B2C  add di,bx      y*64 + y*256 = y * 320
+```
+
+`ship_3d_projected_point_shade` is `0xEF - (depth >> 12)`, built as `neg al` then
+`add al,0xef` — so it wraps in 8 bits exactly as the port's `wrapping_sub` does,
+which is the kind of agreement that is luck unless someone checks. `SHADE_BASE`
+239 and `SHADE_SHIFT` 12 are that `0xEF` and `0xC`.
+
+The detail worth having is in `plot_ship_3d_projected_point`, and it is one
+instruction: `mov al,es:[di] / or al,al / jne 0x9B44`. A point draws ONLY where
+the pixel is still empty, so the starfield keeps the FIRST point at each position
+rather than the last. There is no z-buffer in this path — that ordering rule IS
+the depth model, and a port that wrote unconditionally would look right in a still
+frame and wrong in motion.
+
+Cited instructions 149 -> 158; the queue 75 -> 73.

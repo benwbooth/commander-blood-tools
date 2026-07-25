@@ -1809,11 +1809,38 @@ pub fn plot_ship_3d_projected_point(
     *pixel = shade;
     Some(Ship3dProjectedPixel { offset, shade })
 }
+// The write is GATED on the pixel being empty (`0x9B30 mov al,es:[di] / or al,al /
+// jne 0x9B44`): a point only draws where nothing has drawn yet, so the starfield
+// keeps the FIRST point at each position rather than the last. That is the whole
+// depth model here -- there is no z-buffer, just this ordering rule.
 
+/// Depth shade for a plotted point: `0xEF - (depth >> 12)`, from the plot at
+/// `0x9B37`:
+///
+/// ```text
+///   0x9B37  mov ax,[bp+0x28]   the projected DEPTH
+///   0x9B3A  shr ax,0xc         >> 12
+///   0x9B3D  neg al
+///   0x9B3F  add al,0xef        0xEF - that
+/// ```
+///
+/// `neg` then `add` rather than a subtract, so the arithmetic wraps in 8 bits
+/// exactly as `wrapping_sub` does here. `SHIP_3D_PROJECTION_SHADE_BASE` is that
+/// `0xEF` (239) and `SHADE_SHIFT` that `0xC`.
 pub fn ship_3d_projected_point_shade(depth: u16) -> u8 {
     SHIP_3D_PROJECTION_SHADE_BASE.wrapping_sub((depth >> SHIP_3D_PROJECTION_SHADE_SHIFT) as u8)
 }
 
+/// Framebuffer offset for a projected point — `y*320 + x`, built by the plot at
+/// `0x9B25` without a multiply:
+///
+/// ```text
+///   0x9B25  mov di,bx      di = y
+///   0x9B27  xchg bh,bl     bx = y << 8   (y * 256)
+///   0x9B29  shl di,6       di = y * 64
+///   0x9B2C  add di,bx      y*64 + y*256 = y * 320
+///   0x9B2E  add di,ax      + x
+/// ```
 pub fn ship_3d_projected_point_offset(projected: Ship3dProjectedPoint) -> usize {
     usize::from(projected.y) * SHIP_3D_PROJECTION_SCREEN_WIDTH + usize::from(projected.x)
 }
