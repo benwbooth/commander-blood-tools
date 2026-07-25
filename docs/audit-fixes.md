@@ -3431,3 +3431,38 @@ failure mode it exists to prevent -- but it had no way to disambiguate, so three
 identically-named local constants were unsettleable no matter how well evidenced.
 
 Settled: 515 -> 522 of 2143.
+
+## #106 — two more evidence shapes, and the checker was reading the WRONG BINARY
+
+Working the remaining NEEDS-READING constants turned up two more mechanical
+shapes and one correctness bug in the checker itself.
+
+**A constant that names an operand's ADDRESS.** `*_IMMEDIATE` constants do not
+hold a value the game uses — they hold the file offset of one, so the port can
+read or patch it. `and bx,0xe` at `0x44B7` is `83 e3 0e`, so its imm8 lives at
+`0x44B9`; `mov di,0x2fc1` at `0x9B71` puts its operand at `0x9B72`. Verifying
+that means decoding the instruction that CONTAINS the offset. First attempt
+cleared three constants against PHANTOM instructions — `0x44B9` "matched" a
+`jcxz` at `0x44B8` because decoding from an arbitrary earlier byte
+resynchronises. Same disease as the misaligned label in #101, same cure: require
+the containing instruction's start to be a boundary independent anchors agree on.
+With that, `0x44B9` resolves to the real `and bx,0xe` and the phantoms are gone.
+
+**The SUM identity.** `WORLD_ART_TABLE_FILE_OFFSET = 0xFFE7` is `0xD420 + 0x2BC7`
+— the DS base plus a DS-relative offset, i.e. the file offset of `DS:0x2BC7`.
+The difference form (#105) covers table lengths; this covers address conversions.
+
+**The bug: overlay addresses resolved against BLOODPRG.EXE.** `croolis.rs`
+documents the alien OVERLAYS (`croolis.xdb`, `amer.xdb`, `scrut.xdb`), and
+`manu3.rs`/`manu3_hand.rs` likewise. Their cited offsets are into those overlays,
+so looking them up in the main image makes every match a coincidence and every
+miss meaningless: `ALIEN_POSITION_WRAP` cites method `0x999`, which is
+mid-instruction garbage in BLOODPRG.EXE. The checker now detects an
+overlay-documenting module header and skips the file, saying so.
+
+Nothing had been settled wrongly on that basis — the only two candidates from
+those files were cleared by the tautological rule removed in #103, and no
+`croolis.rs` row is settled at all. Verifying them needs `re/tools/dis_xdb.py`
+against the overlay, which is a task, not a blocker.
+
+Settled: 522 -> 528 of 2143.

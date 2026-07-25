@@ -1741,10 +1741,12 @@ pub fn ship_3d_projected_point_offset(projected: Ship3dProjectedPoint) -> usize 
 /// `rng(0xFFFF)` words. Checked against the image by
 /// `the_point_cloud_length_is_the_randomizers_own_immediate`.
 pub const SHIP_3D_POINT_CLOUD_LEN: usize = 1000;
-/// File offset of that `mov cx,imm`'s operand.
+/// File offset of that `mov cx,imm`'s operand — `mov cx,0x3e8` sits at `0x9B6A`
+/// (`b9 e8 03`), so the count word is at `0x9B6B`.
 pub const SHIP_3D_POINT_CLOUD_COUNT_IMMEDIATE: usize = 0x9B6B;
 /// ...and of the `mov di,imm` naming the record base (`DS:0x2FC1`).
 pub const SHIP_3D_POINT_CLOUD_BASE_IMMEDIATE: usize = 0x9B72;
+/// The record base itself, the operand of `mov di,0x2fc1` @`0x9B71`.
 pub const SHIP_3D_POINT_CLOUD_BASE_DS: u16 = 0x2FC1;
 
 /// The engine's pseudo-random generator (`far 0x01CE:0x0B02` in BLOODPRG.EXE).

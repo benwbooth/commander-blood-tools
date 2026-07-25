@@ -68,6 +68,54 @@ def parse_value(expr):
     return int(expr, 16) if expr.lower().startswith("0x") else int(expr)
 
 
+def is_real_boundary(mz, md, at):
+    """Do decodes entered further back agree that `at` starts an instruction?"""
+    agree = total = 0
+    for back in range(6, 34, 4):
+        anchor = max(0, at - back)
+        total += 1
+        starts = set()
+        for insn in md.disasm(mz.data[anchor : at + 16], anchor):
+            starts.add(insn.address)
+            if insn.address > at:
+                break
+        if at in starts:
+            agree += 1
+    return total and agree * 2 > total
+
+
+def is_operand_offset(mz, md, value):
+    """Is `value` the file offset of some instruction's IMMEDIATE operand?
+
+    A `*_IMMEDIATE` constant does not hold a value the game uses -- it holds the
+    ADDRESS of one, so the port can patch or read it. `and bx,0xe` at 0x44B7 is
+    `83 e3 0e`, so its imm8 lives at 0x44B9. Verifying that means decoding the
+    instruction that CONTAINS the offset, not looking for the offset as a number.
+    """
+    for back in range(1, 9):
+        start = value - back
+        if start < 0:
+            break
+        for insn in md.disasm(mz.data[start : start + 16], start):
+            if insn.address != start:
+                break
+            enc = getattr(insn, "encoding", None)
+            if enc and enc.imm_offset and insn.address + enc.imm_offset == value:
+                # Decoding from an arbitrary earlier byte resynchronises into
+                # PHANTOM instructions: 0x44B9 "matched" a jcxz at 0x44B8 when the
+                # real instruction is `and bx,0xe` at 0x44B7. Require the start to
+                # be a boundary independent anchors agree on, as
+                # check_opsize_mnemonics.py does.
+                if not is_real_boundary(mz, md, start):
+                    break
+                return (
+                    f"{insn.address:#07x}: {insn.mnemonic} {insn.op_str} "
+                    f"(imm at {value:#07x})"
+                )
+            break
+    return None
+
+
 def imm_values(imm):
     """The values an immediate can legitimately stand for.
 
@@ -121,6 +169,9 @@ def immediates_near(mz, md, addr):
     return out
 
 
+skipped_overlay = []
+
+
 def constants():
     """Yield (path, line, name, value, [addresses])."""
     for root, _, files in os.walk("src"):
@@ -129,6 +180,15 @@ def constants():
                 continue
             path = os.path.join(root, f)
             lines = open(path, encoding="utf-8", errors="replace").read().splitlines()
+            # A module documenting an OVERLAY (`croolis.xdb`, `amer.xdb`, ...)
+            # cites offsets into that overlay, not into BLOODPRG.EXE. Resolving
+            # them here would make every match a coincidence and every miss
+            # meaningless -- `ALIEN_POSITION_WRAP` cites method 0x999, which is
+            # mid-instruction garbage in the main image. Skip the file; verifying
+            # it needs re/tools/dis_xdb.py against the overlay itself.
+            if any(".xdb" in ln for ln in lines[:40] if ln.strip().startswith("//!")):
+                skipped_overlay.append(path)
+                continue
             doc = []
             in_tests = False
             for n, line in enumerate(lines, 1):
@@ -178,6 +238,12 @@ def main():
         # the value is arithmetic on two cited addresses and appears as an
         # immediate nowhere. `DIALOGUE_FONT_ASCII_MAP_LEN = 176` is exactly
         # 0x14CD2 - 0x14C22, which is how the 128-vs-176 truncation was settled.
+        # A `*_IMMEDIATE` constant names the file offset of an operand.
+        if not found and value >= 0x400 and value < len(mz.data):
+            hit = is_operand_offset(mz, md, value)
+            if hit:
+                found = True
+                layout[name] = hit
         if not found:
             for i, a in enumerate(addrs):
                 for b in addrs[i + 1:]:
@@ -185,12 +251,23 @@ def main():
                         found = True
                         layout[name] = (a, b)
                         break
+                    # The SUM form: DS base + DS-relative offset is the file
+                    # offset. `WORLD_ART_TABLE_FILE_OFFSET = 0xFFE7` is exactly
+                    # 0xD420 + 0x2BC7, the file offset of DS:0x2BC7.
+                    if value and a + b == value:
+                        found = True
+                        layout[name] = f"identity: {a:#07x} + {b:#07x}"
+                        break
                 if found:
                     break
         if found:
             if name in layout:
-                lo, hi = layout[name]
-                insn = f"layout identity: {max(lo,hi):#07x} - {min(lo,hi):#07x}"
+                v = layout[name]
+                insn = (
+                    v
+                    if isinstance(v, str)
+                    else f"layout identity: {max(v):#07x} - {min(v):#07x}"
+                )
             else:
                 insn = matching_insn(mz, md, a, value)
             ok.append((path, line, name, value, a, insn))
@@ -210,6 +287,12 @@ def main():
         where = ",".join(f"{a:#07x}" for a in addrs[:4])
         print(f"NEEDS-READING {path}:{line}: {name} = {value:#x} is not an "
               f"immediate at {where}")
+    if skipped_overlay:
+        print(
+            f"skipped {len(skipped_overlay)} overlay-documented file(s) "
+            f"({', '.join(os.path.basename(p) for p in skipped_overlay)}) -- their "
+            "addresses are offsets into .xdb overlays, not BLOODPRG.EXE"
+        )
     print(
         f"{len(ok) + len(bad)} cited integer constant(s); {len(ok)} DIRECTLY "
         f"encoded at a cited address, {len(bad)} need reading (dispatch indices, "
