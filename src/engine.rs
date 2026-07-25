@@ -1973,6 +1973,86 @@ impl EngineState {
         (anchor, x0, (x0 + w).min(ENGINE_SCREEN_WIDTH))
     }
 
+    /// The CONFIRM DIALOG (`0x14E6..0x1524`) — the game's `ARE_YOU_SURE?` box,
+    /// which the port did not implement at all.
+    ///
+    /// ```text
+    ///   0x14E6  bx=0x5A cx=0x50 dx=0x8C bp=0x28   the box rect (90,80,140,40)
+    ///   0x14F2  lcall 0x299:0xCDC                 draw it
+    ///   0x14F7  mov al,0xE8                       text colour
+    ///   0x14FE  si=0x17B "ARE_YOU_SURE?"          bx += 0x0A, dx = 0x58
+    ///   0x150C  si=0x189 "YES"                    bx += 0x14, dx += 0x11
+    ///   0x151A  si=0x18D "NO"                     bx += 0x3C
+    ///   0x1525  bp=0x2555 / 0x255D                the two hit regions
+    /// ```
+    ///
+    /// The draw positions and the hit rects agree independently: `YES` lands at
+    /// x=120 and its region is `(120, 105, 30, 10)`; `NO` lands at x=180 with
+    /// `(180, 105, 20, 10)`. Two separate tables describing the same layout is
+    /// about as good as static corroboration gets.
+    pub const CONFIRM_BOX: (usize, usize, usize, usize) = (90, 80, 140, 40);
+    pub const CONFIRM_TITLE_POS: (usize, usize) = (100, 88);
+    pub const CONFIRM_YES_REGION: (usize, usize, usize, usize) = (120, 105, 30, 10);
+    pub const CONFIRM_NO_REGION: (usize, usize, usize, usize) = (180, 105, 20, 10);
+    /// The game's own strings — `DS:0x17B`, `DS:0x189`, `DS:0x18D`.
+    pub const CONFIRM_TITLE: &'static str = "ARE_YOU_SURE?";
+    pub const CONFIRM_YES: &'static str = "YES";
+    pub const CONFIRM_NO: &'static str = "NO";
+    pub const CONFIRM_STRING_TABLE: [(u16, usize, &'static str); 3] = [
+        (0x017B, 0x0D59B, Self::CONFIRM_TITLE),
+        (0x0189, 0x0D5A9, Self::CONFIRM_YES),
+        (0x018D, 0x0D5AD, Self::CONFIRM_NO),
+    ];
+
+    /// Draw the confirm dialog. The box is the same tinted window every other
+    /// panel uses (`0x299:0xCDC` shares the blit family with `0x299:0x40E`).
+    pub fn draw_confirm_box(&mut self) {
+        let (bx, by, bw, bh) = Self::CONFIRM_BOX;
+        let table = self.location_panel_tint_table();
+        crate::sprite::remap_rect_indexed(
+            &mut self.framebuffer,
+            ENGINE_SCREEN_WIDTH,
+            ENGINE_SCREEN_HEIGHT,
+            &table,
+            bx as i32,
+            by as i32,
+            bw as i32,
+            bh as i32,
+        );
+        const TEXT: u8 = 0xE8; // mov al,0xE8 @0x14F7
+        for (text, (x, y)) in [
+            (Self::CONFIRM_TITLE, Self::CONFIRM_TITLE_POS),
+            (Self::CONFIRM_YES, (Self::CONFIRM_YES_REGION.0, Self::CONFIRM_YES_REGION.1)),
+            (Self::CONFIRM_NO, (Self::CONFIRM_NO_REGION.0, Self::CONFIRM_NO_REGION.1)),
+        ] {
+            draw_text_indexed(
+                &mut self.framebuffer,
+                ENGINE_SCREEN_WIDTH,
+                ENGINE_SCREEN_HEIGHT,
+                text,
+                x,
+                y,
+                TEXT,
+            );
+        }
+    }
+
+    /// Hit-test the confirm dialog: `Some(true)` = YES, `Some(false)` = NO.
+    /// The regions are `DS:0x2555`/`DS:0x255D`, tested inclusively like every
+    /// other region rect (`region_record_hittest` `0x8295`).
+    pub fn confirm_box_click(&self, x: i32, y: i32) -> Option<bool> {
+        let hit = |(rx, ry, rw, rh): (usize, usize, usize, usize)| {
+            x >= rx as i32 && x <= (rx + rw) as i32 && y >= ry as i32 && y <= (ry + rh) as i32
+        };
+        if hit(Self::CONFIRM_YES_REGION) {
+            Some(true)
+        } else if hit(Self::CONFIRM_NO_REGION) {
+            Some(false)
+        } else {
+            None
+        }
+    }
+
     /// The SAVE screen's rows: the ten slot names with the edit buffer swapped in
     /// for the row being renamed, plus the widget's own extra row. See the call
     /// site for the assembly (`0x1BAB`, `0x1BBD`, `0x8573`).
@@ -5102,6 +5182,68 @@ mod tests {
     /// of 0xE0, and item text in 0xE8 (see `re/REVERSE.md` "CHOICE BOX SPEC
     /// MEASURED"). This locks the widget to the decoded values so a regression
     /// (wrong index, missing border/fill) fails a test.
+    #[test]
+    fn the_confirm_dialog_matches_the_binary_and_its_own_hit_regions() {
+        // Strings pinned to the image, the same standard as OPTION_BOX_LABEL.
+        if let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        {
+            for (ds_off, file_off, text) in EngineState::CONFIRM_STRING_TABLE {
+                let end = file_off + exe[file_off..].iter().position(|&b| b == 0).unwrap();
+                assert_eq!(std::str::from_utf8(&exe[file_off..end]).unwrap(), text);
+                assert_eq!(file_off - 0xD420, ds_off as usize);
+            }
+            // The rect immediates at 0x14E6..0x14F1 and the two region records.
+            let imm16 = |at: usize| u16::from_le_bytes([exe[at], exe[at + 1]]) as usize;
+            assert_eq!(
+                (imm16(0x14E7), imm16(0x14EA), imm16(0x14ED), imm16(0x14F0)),
+                EngineState::CONFIRM_BOX
+            );
+            let region = |at: usize| {
+                (imm16(at), imm16(at + 2), imm16(at + 4), imm16(at + 6))
+            };
+            assert_eq!(region(0xD420 + 0x2555), EngineState::CONFIRM_YES_REGION);
+            assert_eq!(region(0xD420 + 0x255D), EngineState::CONFIRM_NO_REGION);
+        }
+        // The DRAW positions and the HIT regions are independent tables that must
+        // describe the same layout: title at box_x+0x0A / y=0x58, YES at +0x14 and
+        // +0x11, NO a further +0x3C along.
+        let (bx, _, _, _) = EngineState::CONFIRM_BOX;
+        assert_eq!(EngineState::CONFIRM_TITLE_POS, (bx + 0x0A, 0x58));
+        assert_eq!(
+            EngineState::CONFIRM_YES_REGION.0,
+            EngineState::CONFIRM_TITLE_POS.0 + 0x14
+        );
+        assert_eq!(
+            EngineState::CONFIRM_YES_REGION.1,
+            EngineState::CONFIRM_TITLE_POS.1 + 0x11
+        );
+        assert_eq!(
+            EngineState::CONFIRM_NO_REGION.0,
+            EngineState::CONFIRM_YES_REGION.0 + 0x3C
+        );
+
+        let mut e = EngineState::new();
+        for (i, entry) in e.scene_palette.iter_mut().enumerate() {
+            *entry = [i as u8, i as u8, i as u8];
+        }
+        e.framebuffer.fill(120);
+        e.draw_confirm_box();
+        // Scan the glyph BAND, not one row: a glyph's top row is often blank.
+        let painted = (88..96usize)
+            .flat_map(|y| (100..240usize).map(move |x| y * ENGINE_SCREEN_WIDTH + x))
+            .filter(|&i| e.framebuffer[i] == 0xE8)
+            .count();
+        assert!(painted > 20, "the title draws in 0xE8 ({painted} px)");
+        // Hit-testing, inclusive at both edges like 0x8295.
+        assert_eq!(e.confirm_box_click(120, 105), Some(true));
+        assert_eq!(e.confirm_box_click(150, 115), Some(true));
+        assert_eq!(e.confirm_box_click(180, 105), Some(false));
+        assert_eq!(e.confirm_box_click(200, 115), Some(false));
+        assert_eq!(e.confirm_box_click(151, 105), None, "the gap between them");
+        assert_eq!(e.confirm_box_click(120, 116), None);
+    }
+
     #[test]
     fn the_harvested_band_dac_was_a_duplicate_of_the_image_palette() {
         // Justifies dropping console_band.dac: over the range the band uses, the

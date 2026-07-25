@@ -2302,3 +2302,33 @@ leaving it as "harvested art":
 
 So the remaining work is to decode the console-band DRAW CALL rather than to
 search the assets, which is a better-posed task than the one this started as.
+
+## FIX #68 — the game has a confirm dialog; the port had none
+
+Chasing the console band's draw call turned up a different surface entirely: a
+`mov dx,0x8C` (y=140) search led to `0x14E6`, which is not the band but the
+`ARE_YOU_SURE?` CONFIRM DIALOG — decoded completely, and absent from the port:
+
+```text
+  0x14E6  bx=0x5A cx=0x50 dx=0x8C bp=0x28   the box rect (90,80,140,40)
+  0x14F2  lcall 0x299:0xCDC                 draw it
+  0x14F7  mov al,0xE8                       text colour
+  0x14FE  si=0x17B "ARE_YOU_SURE?"          bx += 0x0A, dx = 0x58   -> (100, 88)
+  0x150C  si=0x189 "YES"                    bx += 0x14, dx += 0x11  -> (120, 105)
+  0x151A  si=0x18D "NO"                     bx += 0x3C              -> (180, 105)
+  0x1525  bp=0x2555 / 0x255D                the two hit regions
+```
+
+THE CORROBORATION IS THE NICE PART. The draw positions are computed by successive
+adds on `bx`/`dx`; the hit regions are a separate pair of records at `DS:0x2555`
+and `DS:0x255D`. They agree exactly: `YES` draws at x=120 and its region is
+`(120, 105, 30, 10)`; `NO` draws at x=180 with `(180, 105, 20, 10)`. Two
+independent tables describing one layout — the test asserts the relationship
+rather than the numbers, so a wrong constant in either breaks it.
+
+Ported as `draw_confirm_box` / `confirm_box_click`, with the three strings pinned
+to their image bytes and the box rect read back from the `mov` immediates at
+`0x14E7..0x14F1`.
+
+The console band, meanwhile, is still open — but the search that missed it is
+recorded, and the ARE_YOU_SURE? box is a surface the port simply did not have.
