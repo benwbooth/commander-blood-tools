@@ -5029,3 +5029,30 @@ chrome and the other is its exclusion.
 The tool refusing to settle a row whose evidence sits somewhere else is the
 behaviour that made this visible, and it is worth keeping strict for exactly that
 reason.
+
+## #156 — the gate that runs when the bit is CLEAR
+
+`update_ship_3d_nav_choice_dispatch`, the dispatcher behind #109's handler table:
+
+```text
+  0x86F1  test byte [0x2793],8 / jne 0x8705   bit 3 SET -> return, do nothing
+  0x86F8  dec bx / add bx,bx                  choice -> zero-based, then *2
+  0x86FB  test byte [0x2565],1                the phase bit, NOT branched on
+  0x8700  call word cs:[bx+0xf29]             the per-row handler table
+```
+
+Two readings a port gets backwards.
+
+The gate is inverted. `jne` skips the dispatch when bit 3 is SET, so the
+dispatcher runs only while the bit is CLEAR. `0x86A4` — the click — ORs `0xC`
+into that same word, bits 2 AND 3, which is how a click both arms the surface and
+suppresses the dispatcher until the click is handled. Read as "run when set", the
+whole interaction inverts: the dispatcher would fire on the frames it is supposed
+to sit out.
+
+And `[0x2565]` is TESTED without a branch. The flags go to the HANDLER, which is
+why each `run_ship_3d_nav_choice_handler_*` opens by examining the phase itself
+rather than being called only when the phase is set — the dispatch is
+unconditional once the gate passes.
+
+Cited instructions 194 -> 198; the queue 68 -> 67.

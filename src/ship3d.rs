@@ -1187,6 +1187,31 @@ pub fn hit_test_ship_3d_target_list(
     })
 }
 
+/// The nav-choice DISPATCHER, `nav_choice_dispatch` @`0x86F1`:
+///
+/// ```text
+///   0x86F1  test byte [0x2793],8 / jne 0x8705   the HUD gate: bit 3 SET means
+///                                              do nothing and return
+///   0x86F8  dec bx / add bx,bx                  choice -> zero-based, then *2
+///   0x86FB  test byte [0x2565],1                the phase bit, passed to the
+///                                              handler rather than tested here
+///   0x8700  call word cs:[bx+0xf29]             the per-row handler table
+/// ```
+///
+/// The gate is INVERTED from the obvious reading: `jne` skips when bit 3 is set,
+/// so the dispatcher runs only while that bit is CLEAR. `0x86A4` (the click)
+/// ORs `0xC` into the same word — bits 2 and 3 — which is how a click arms the
+/// surface and suppresses the dispatcher until it is handled.
+///
+/// `[0x2565]` is TESTED here but not branched on: the flags land in the handler,
+/// which is why `run_ship_3d_nav_choice_handler_*` each begin by examining the
+/// phase rather than being called only when it is set.
+///
+/// The table at `CS:0x0F29` is file `0x8709` (segment `0x071E`, base `0x77E0`) —
+/// see `re/labels.csv` `nav_choice_subdispatch_table`, and audit-fixes #109/#129
+/// for how it was decoded twice under two names.
+///
+/// Cited here because it was settled ASM with no doc (#141's queue).
 pub fn update_ship_3d_nav_choice_dispatch(
     state: &mut Ship3dNavChoiceState,
     gates: Ship3dNavChoiceGates,
