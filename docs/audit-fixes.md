@@ -1078,3 +1078,24 @@ not a decode or scenario-scripting task.
 
 Recording it as a single named blocker so the next session does not rediscover it from
 either end.
+
+### Launch fix VALIDATED by capture — the driver now reaches the game
+
+Ran the repaired `drive_real_game.sh` end to end (Xvfb + DOSBox-X + xdotool, 25s boot,
+Escape, Return) and captured frames. The game reaches its title/nav screen — the
+`Commander BLOOD V 1.0` banner over the BCARTE perspective-grid pyramids and the BORXX
+eye-orb.
+
+That is the confirmation the fix needed. Before it, one drive was mounted and BLOODPRG
+was launched with no arguments, which loops the attract demo; the capture now shows a
+real game surface. Frames kept at `accuracy/captures/drive_validation/`.
+
+Note on a tempting misreading: the pyramids visible here are the STATIC BCARTE
+perspective grid, not per-destination markers. They do NOT contradict the `NAVENT`
+finding that destination entities `0x15..0x1F` are unpopulated — a granted destination
+would draw an ADDITIONAL marker via the `0x9B98` projector. Worth stating because
+"pyramids are on screen" looks at a glance like evidence against that finding.
+
+The capture path is now usable for the post-progression savestate that unblocks both the
+nav grant and the dialogue asset-table fill. Driving the game from this screen to a
+granted destination is the remaining work.
