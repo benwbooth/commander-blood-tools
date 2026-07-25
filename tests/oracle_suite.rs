@@ -501,6 +501,10 @@ fn identify_capture() {
 
 /// MISNAMED CAPTURE, kept as a measurement harness.
 ///
+/// The star-layer count this prints is now EXPLAINED (audit-fixes #182): of 1000
+/// points, 758 project, 64 land inside the viewport, and 33 survive the plot's
+/// first-write-wins gate. Sparse by construction, not a wiring failure.
+///
 /// `nav_screen_opened.ppm` is not the nav screen and not a bridge starfield. Its
 /// top 135 rows are two colours — black and white — in per-pixel noise (mean run
 /// 1.87px): the binary STATIC of the presentation/boot screen, with the console
@@ -554,11 +558,32 @@ fn nav_screen_render_distance() {
         let viewport = Ship3dProjectionViewport { left: 0, right: 320, top: 0, bottom: 200 };
         match render_ship_3d_starfield(&mut prng, angles, origin, viewport) {
             None => eprintln!("STAR LAYER: render_ship_3d_starfield returned None"),
-            Some(r) => eprintln!(
-                "STAR LAYER: {} non-zero of {}",
-                r.buffer.iter().filter(|&&p| p != 0).count(),
-                r.buffer.len()
-            ),
+            Some(r) => {
+                eprintln!(
+                    "STAR LAYER: {} non-zero of {}",
+                    r.buffer.iter().filter(|&&p| p != 0).count(),
+                    r.buffer.len()
+                );
+                // WHY so few? Count how the 1000 points are lost.
+                let pts = randomize_ship_3d_point_cloud(
+                    &mut commander_blood_tools::ship3d::BloodPrng::seeded_from_rtc_seconds(0),
+                );
+                let matrix = build_ship_3d_projection_matrix(&SHIP_3D_ANGLE_TABLE, angles).unwrap();
+                let (mut projected, mut plotted) = (0, 0);
+                for p in &pts {
+                    if let Some(pr) = project_ship_3d_point(*p, origin, matrix) {
+                        projected += 1;
+                        let mut buf = vec![0u8; 320 * 200];
+                        if plot_ship_3d_projected_point(&mut buf, viewport, pr).is_some() {
+                            plotted += 1;
+                        }
+                    }
+                }
+                eprintln!(
+                    "  of {} points: {projected} projected, {plotted} inside the viewport",
+                    pts.len()
+                );
+            }
         }
     }
     eprintln!("nav-screen mean_abs = {:.2}", mean_abs(&rgb, &live));

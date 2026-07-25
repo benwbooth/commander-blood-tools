@@ -5714,3 +5714,33 @@ The one remaining is `select_ship_3d_target_record`, whose routine I have not
 identified. Recorded as still open rather than given a plausible neighbouring
 address — the whole point of this queue was that an unjustified citation is worse
 than a missing one, and the last row is not the place to abandon that.
+
+## #182 — the 33 pixels, explained
+
+#115 withdrew a claimed bridge-starfield defect and left one number unexplained:
+the port's star layer plots 33 pixels of 64000. I recorded it as "unexplained
+rather than a defect", which was right and unfinished.
+
+Instrumenting the path accounts for all of it:
+
+    1000 points -> 758 project -> 64 inside the viewport -> 33 plotted
+
+The last step is the plot's first-write-wins gate (#149): 31 of the 64 land on
+pixels already taken. The field is sparse BY CONSTRUCTION — a cloud spread over
+the full `u16` space, viewed from `0x8000`, puts most points outside a 320x200
+window after the perspective divide.
+
+The second question was whether the port regenerates the cloud correctly.
+`ship_3d_point_cloud_randomize` (`0x9B67`) has EXACTLY ONE caller — the far call
+at `0x0FD3`, on a setup path that first sets `[0x27D9]=1`. The game randomizes
+ONCE; its starfield is stable for the session and does not twinkle.
+
+The port calls the randomizer every render. That looks wrong and is not:
+`starfield_seed` is a constant 17 and never mutated, so the same 1000 points come
+back each frame. Equivalent behaviour, opposite mechanism — and the note now says
+so, because "randomize every frame" invites either a caching optimisation or a
+per-frame seed, and the second would add shimmer the original never had.
+
+One real divergence, recorded rather than fixed: the game seeds from the RTC, so
+its star positions differ per session. The port's fixed seed makes them
+reproducible, which the oracle comparisons rely on.

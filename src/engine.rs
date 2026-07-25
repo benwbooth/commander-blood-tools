@@ -298,6 +298,22 @@ pub struct EngineState {
     prev_left_down: bool,
     /// Deterministic PRNG seed for the starfield point cloud (the engine seeds
     /// from CMOS RTC seconds at runtime; fixed here for reproducibility).
+    /// Seed for the ship-3D point cloud. CONSTANT, and deliberately so.
+    ///
+    /// The game randomizes the cloud ONCE: `ship_3d_point_cloud_randomize`
+    /// (`0x9B67`) has exactly one caller, the far call at `0x0FD3` on a setup path
+    /// that first sets `[0x27D9]=1`. Its starfield is therefore stable for the
+    /// session — it does not twinkle.
+    ///
+    /// This engine regenerates the cloud every render instead, which is
+    /// equivalent ONLY because this seed never changes: the same 1000 points come
+    /// back each frame. Making it vary per frame would look like a fix (the game
+    /// does seed from the RTC) and would introduce shimmer the original does not
+    /// have.
+    ///
+    /// The one real divergence: the game's RTC seed differs per session, so its
+    /// star positions vary between runs; this fixed seed makes them reproducible,
+    /// which the oracle comparisons depend on.
     pub starfield_seed: u8,
     /// Ship-3D view TRANSITION + DEPTH state (`DS:0x2533/0x252F/0x2530/0x2531`
     /// and `DS:0x2527`). These drive the nav view's open/close sweep. The state
