@@ -2359,6 +2359,14 @@ enum PresentationKind1Update {
     Stopped,
 }
 
+/// The kind-1 post-update: when the record holds an ACTIVE actor (`0xC4`), latch
+/// the related object's `0x20` flag, then arm the presentation — scene dirty,
+/// status word 1, active 1 — UNLESS it is already active, in which case nothing
+/// is armed and the existing presentation runs to completion.
+///
+/// The early return is what stops a second request restarting a playing
+/// presentation, and it is checked AFTER the `0x20` latch, so the flag is
+/// refreshed even when the arming is skipped.
 fn post_update_kind1_presentation_state(
     state: &mut [u8],
     record_offset: u16,
@@ -2694,12 +2702,25 @@ fn record_link_condition(
     Some(if inverted { !matched } else { matched })
 }
 
+/// The `0xC3` QUEUE write: type `0xC3`, the related offset at `+2`, and **1** at
+/// `+4` — where [`write_actor_record`]'s `0xC4` writes ZERO there. That third word
+/// is the difference between a queued presentation and an active one, which is
+/// why both writers set it explicitly rather than leaving it.
+///
+/// Handler `0x6EEE` (dispatch table `0x142D0`, the entry for `0xC3`).
 fn write_record_link(state: &mut [u8], record_offset: u16, related_record_offset: u16) {
     state_set_u16(state, record_offset, OP_RECORD_LINK as u16);
     state_set_u16(state, record_offset.wrapping_add(2), related_record_offset);
     state_set_u16(state, record_offset.wrapping_add(4), 1);
 }
 
+/// The `0xC3` SET guard: the write happens only when the owner is ACTIVE, the
+/// related object is active (bit 0 at `+2`), and the slot does not already hold an
+/// active `0xC4` presentation.
+///
+/// The last condition is the important one — a queue request must not overwrite a
+/// presentation that is already playing, so `0xC3` declines rather than replacing.
+/// `None` when no owner resolves, which the caller treats as "cannot decide".
 fn write_record_link_mode0(
     state: &mut [u8],
     context: &ExecutionContext,
