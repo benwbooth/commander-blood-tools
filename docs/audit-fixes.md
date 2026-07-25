@@ -4113,7 +4113,7 @@ it, so no linear decode from earlier aligns to it. Requiring consensus condemns
 every indirect-jump target, which is a large share of the addresses worth citing.
 
 **Attempt 3, flag only an instruction that STRADDLES the address.** That is the
-真 signal — `lcall` at `0xB140` spans `0xB143` — but scanning back byte by byte,
+true signal — `lcall` at `0xB140` spans `0xB143` — but scanning back byte by byte,
 some misaligned decode straddles almost any address by construction. 82 "wrong".
 
 Consensus over-trusts and straddle-anywhere over-flags. Alignment is not decidable
