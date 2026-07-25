@@ -1191,6 +1191,67 @@ mod tests {
         }
     }
 
+    /// The TEXT MEASURE routine against its lift (`func_30cd`).
+    ///
+    /// `0x30CD` picks a face from `AX` — 0 selects the square-caps xlat/widths at
+    /// `DS:0x7362`/`0x7412`, anything else the game font at `0x7802`/`0x78B2` —
+    /// then accumulates each glyph's width (`xlatb` / `add dl,gs:[eax+edi]` /
+    /// `adc dh,0`) and subtracts 2 for the trailing gap. `font::square_caps_text_width`
+    /// is the native twin, and every menu's centring depends on it.
+    #[test]
+    fn native_square_caps_width_matches_the_lifted_measure() {
+        let Some(exe) = load_exe_image() else { return };
+        const GS: u16 = 0x2600;
+        const STR_DS: u32 = 0x0400; // scratch, clear of the font tables
+        // The two square-caps tables, from the image (DS base 0xD420).
+        const XLAT_DS: u32 = 0x7362;
+        const WIDTHS_DS: u32 = 0x7412;
+
+        let measure = |text: &str| -> u16 {
+            let mut m = Machine::new();
+            m.regs.ds = GS;
+            m.regs.gs = GS;
+            m.regs.ss = GS; // `[bp]`/string ops: keep every segment on the arena
+            m.regs.set_sp(0xFF00);
+            for (i, b) in exe[0xD420 + XLAT_DS as usize..0xD420 + XLAT_DS as usize + 176]
+                .iter()
+                .enumerate()
+            {
+                m.write8(GS, XLAT_DS + i as u32, *b);
+            }
+            for (i, b) in exe[0xD420 + WIDTHS_DS as usize..0xD420 + WIDTHS_DS as usize + 48]
+                .iter()
+                .enumerate()
+            {
+                m.write8(GS, WIDTHS_DS + i as u32, *b);
+            }
+            for (i, b) in text.bytes().enumerate() {
+                m.write8(GS, STR_DS + i as u32, b);
+            }
+            m.write8(GS, STR_DS + text.len() as u32, 0);
+            m.regs.set_ax(0); // the square-caps face
+            m.regs.set_si(STR_DS as u16);
+            let sp = m.regs.sp() as u32;
+            m.write16(m.regs.ss, sp, 0x0000);
+            m.write16(m.regs.ss, sp.wrapping_add(2), 0x0020);
+            super::auto::func_30cd(&mut m);
+            m.regs.ax()
+        };
+
+        // Real labels: the words the menus actually measure.
+        for text in [
+            "TALK", "CANCEL", "BOB_MORLOCK", "EGO", "LIBIDO", "REMEMBER", "BYE_BYE",
+            "ONE", "PLANET", "W", "I", "AB",
+        ] {
+            let lifted = measure(text);
+            let native = crate::font::square_caps_text_width(text) as u16;
+            assert_eq!(
+                lifted, native,
+                "{text:?}: lift {lifted} vs native {native}"
+            );
+        }
+    }
+
     /// The SPECIAL-SLOT pair against their lifts (`func_5ff6` / `func_5fd8`).
     ///
     /// Sixteen words at `DS:0x6D3E`. The sweep drives both implementations through

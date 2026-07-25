@@ -662,7 +662,15 @@ pub fn square_caps_advance(ch: char) -> usize {
 ///
 /// This is the measure routine at `0x30CD` transcribed: `lodsb` / `xlatb` /
 /// `add dl, [di+glyph]` accumulating each glyph's width, then `sub ax, 2` at `0x30FE`
-/// for the trailing inter-glyph gap.
+/// for the trailing inter-glyph gap. Verified against the lifted `func_30cd` over
+/// the real menu vocabulary (`native_square_caps_width_matches_the_lifted_measure`).
+///
+/// ONE KNOWN DIVERGENCE, latent: for a character the xlat maps to `0xFF` the
+/// original does NOT skip — it indexes the 48-entry width table with `0xFF` and
+/// adds whatever byte lies there (inside the glyph rows at `DS:0x7442`). The port
+/// contributes 0 instead. Every label the game measures comes from its own DIC or
+/// the built-in strings, all of which map, so the case does not arise in play;
+/// recorded because "the port adds 0" is a choice, not the original's behaviour.
 ///
 /// The centring it feeds is binary-derived too: the list widget computes
 /// `x0 = anchor - w/2` at `0x84AD..0x84B3` with the anchor in `[0xAC6]`.

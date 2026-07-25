@@ -631,8 +631,8 @@ SQUARE_CAPS_WIDTHS	src/font.rs	616	const	0x7412,0x14832	DATA	/// Per-glyph advan
 SQUARE_CAPS_CHAR_MAP	src/font.rs	621	const	0x7362,0x14782	DATA	/// CP437 -> square-caps glyph index, `DS:0x7362` (file `0x14782`). `0xff` = no glyph.
 square_caps_glyph_index	src/font.rs	641	fn	0x7362	ASM?	/// Square-caps glyph index for a character, via the game's own xlat at `DS:0x7362`. /// /// The table FOLDS CASE itself (`'a'` and `'A'` both map to glyph 0) and maps space to /// glyph 47, so the po
 square_caps_glyph	src/font.rs	649	fn		UNVERIFIED	
-square_caps_advance	src/font.rs	655	fn	0x7412	ASM?	/// This glyph's advance, from the game's width table at `DS:0x7412`.
-square_caps_text_width	src/font.rs	669	fn	0x30CD,0x30FE,0x84AD,0x84B3	ASM?	/// Rendered pixel width of a square-caps string. /// /// This is the measure routine at `0x30CD` transcribed: `lodsb` / `xlatb` / /// `add dl, [di+glyph]` accumulating each glyph's width, then `sub a
+square_caps_advance	src/font.rs	655	fn	0x7412	ORACLE	/// This glyph's advance, from the game's width table at `DS:0x7412`.
+square_caps_text_width	src/font.rs	669	fn	0x30CD,0x30FE,0x84AD,0x84B3	ORACLE	/// Rendered pixel width of a square-caps string. /// /// This is the measure routine at `0x30CD` transcribed: `lodsb` / `xlatb` / /// `add dl, [di+glyph]` accumulating each glyph's width, then `sub a
 draw_square_caps	src/font.rs	681	fn		UNVERIFIED	/// Draw square-capitals text (list menus / choice boxes) at (x, y) in `color`. /// /// Every glyph now comes from the binary table, so there is no longer a fallback into /// the thin built-in font — 
 HandTri	src/gpu.rs	14	struct		INFRA	
 GpuPresenter	src/gpu.rs	16	struct		INFRA	

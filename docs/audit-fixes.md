@@ -2742,3 +2742,27 @@ touched. Setting `ss = gs` fixed it.
 That is a property of the ORIGINAL worth knowing: this list is reached through the
 stack segment, so any harness that runs these routines must have SS pointing at
 the data segment, as the game does.
+
+## FIX #83 — the text measure, and a latent divergence recorded rather than papered over
+
+Third twin differential. `0x30CD` measures a string: pick a face from `AX` (0 =
+square caps at `DS:0x7362`/`0x7412`, else the game font at `0x7802`/`0x78B2`),
+accumulate each glyph's width via `xlatb` / `add dl,gs:[eax+edi]` / `adc dh,0`,
+subtract 2 for the trailing gap. Every menu's centring depends on the answer.
+
+Native and lifted agree across the real menu vocabulary — `TALK`, `CANCEL`,
+`BOB_MORLOCK`, `EGO`, `LIBIDO`, `REMEMBER`, `BYE_BYE`, single letters, the widest
+and narrowest glyphs. Two rows to `ORACLE`.
+
+THE DIVERGENCE I FOUND WHILE READING IT, and did not fix. For a character whose
+xlat entry is `0xFF`, the original does NOT skip: it indexes the 48-entry width
+table with `0xFF` and adds whatever byte lies at `DS:0x7412 + 0xFF` — which is
+inside the GLYPH ROWS at `0x7442`. The port contributes 0.
+
+Every label the game measures comes from its own DIC or the built-in strings, and
+all of those map, so the case cannot arise in play. Reproducing it would mean
+importing a garbage read for no observable gain. But "the port adds 0" is a
+CHOICE, not the original's behaviour, and the difference is now written where the
+function is rather than left for someone to rediscover as a mystery. That is the
+same standard as the special-slot removal (#82) — state the divergence, say why it
+is latent, and let the next reader decide.
