@@ -4469,3 +4469,21 @@ path rather than a patch, and the primitive is already decoded and settled —
 `snd_mix_average`'s test walks all 65536 input pairs, modelling the `add`/`rcr`
 pair independently and comparing, which is verification against the instruction
 rather than against itself.
+
+## #136 — the settle tool counted no-ops as progress
+
+#135 settled `snd_mix_average` and `mix_unsigned_pcm_average`, the tool said
+"settled 2 row(s)", and the ledger total did not move. Both were ALREADY `ASM`.
+
+`audit_settle.py` reported every row it TOUCHED rather than every row it CHANGED,
+so re-settling an already-settled row printed exactly like settling a new one. On
+a campaign that reports progress by this number, a tool that cannot distinguish
+"I verified something" from "I re-stated something" is quietly corrosive: the
+transcript shows movement, the ledger shows none, and only a recount catches it.
+
+Now it separates them — `settled 0 row(s) as ASM; 2 already ASM`.
+
+Noticed only because the total was RE-READ after the settle instead of assumed,
+which is the same habit #133 was about. Two counting mistakes in one session, both
+from trusting a number instead of recomputing it, and both cheap to catch the
+moment the recount became routine.

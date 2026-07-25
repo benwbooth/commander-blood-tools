@@ -35,7 +35,7 @@ def main():
         fields, rows = reader.fieldnames, list(reader)
 
     counts = Counter((r["item"], r["file"]) for r in rows)
-    changed, refused, missing = [], [], set(wanted)
+    changed, unchanged, refused, missing = [], [], [], set(wanted)
     for r in rows:
         # `file:line:item` disambiguates a name that appears more than once in a
         # file -- local constants inside different functions share names (three
@@ -60,6 +60,13 @@ def main():
         if not r["origin"] and status == "ASM":
             refused.append(f"{r['item']}  {r['file']}  (ASM needs a cited address)")
             continue
+        if r["status"] == status:
+            # Already at this status. Reporting it as "settled" makes a no-op look
+            # like progress, which over a long campaign inflates the sense of
+            # movement -- two rows were re-settled in #135 and the ledger total did
+            # not move, because nothing had changed.
+            unchanged.append(f"{r['item']}  {r['file']}:{r['line']}")
+            continue
         r["status"] = status
         changed.append(f"{r['item']}  {r['file']}:{r['line']}")
 
@@ -68,7 +75,8 @@ def main():
         writer.writeheader()
         writer.writerows(rows)
 
-    print(f"settled {len(changed)} row(s) as {status}")
+    print(f"settled {len(changed)} row(s) as {status}"
+          + (f"; {len(unchanged)} already {status}" if unchanged else ""))
     for line in changed:
         print(f"  {line}")
     for line in refused:
