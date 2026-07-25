@@ -3741,6 +3741,14 @@ fn matrix_pair_for_angle(angle_table: &[Ship3dAngleTableEntry], angle: u16) -> O
     ))
 }
 
+/// The Q15 fixed-point multiply the matrix code uses: `imul` then
+/// `sar eax,0xf` — e.g. `0x9957 imul eax,[si+0x14]` / `0x995F sar eax,0xf` in
+/// `matrix3d_mul_fixed` (`0x994D`).
+///
+/// `sar`, not `shr`: an ARITHMETIC shift, so a negative product keeps its sign
+/// rather than becoming a large positive. Rust's `>>` on `i32` is arithmetic, so
+/// this matches — but only because the argument is typed `i32`; the same
+/// expression on `u32` would be the wrong instruction.
 fn fixed_mul_shift_15(lhs: i32, rhs: i32) -> i32 {
     lhs.wrapping_mul(rhs) >> SHIP_3D_MATRIX_FIXED_SHIFT
 }
@@ -3752,6 +3760,11 @@ fn projection_component(point_component: u16, origin_component: u16) -> i32 {
     i32::from(signed_i16(point_component.wrapping_sub(origin_component)))
 }
 
+/// The three-term dot product of the projection, accumulated in 32 bits WITHOUT
+/// an intermediate shift — `0x9A50..0x9A66`: `imul eax,[bp+0x18]` / `mov ecx,eax`
+/// / `imul eax,[bp+0x1c]` / `add ecx,eax`. The Q15 shift happens once on the
+/// result (see [`fixed_mul_shift_15`]), not per term; shifting per term would
+/// lose the low bits of each product before they are summed.
 fn projection_dot(components: [i32; 3], terms: [i32; 3]) -> i32 {
     components[0]
         .wrapping_mul(terms[0])

@@ -5222,3 +5222,24 @@ whose entire justification is a CPU width, invisible in Rust, and undocumented
 until now. The name says what it does; nothing said why anyone would want it.
 
 The queue: 61 -> 58.
+
+## #163 — `sar`, not `shr`, and the shift that happens once
+
+Two more helpers, both about arithmetic that Rust makes look automatic.
+
+`fixed_mul_shift_15` is the Q15 multiply: `imul` then `sar eax,0xf`
+(`0x9957`/`0x995F` in `matrix3d_mul_fixed` @`0x994D`). The instruction is `sar`,
+an ARITHMETIC shift, so a negative product keeps its sign instead of becoming a
+large positive. Rust's `>>` on `i32` is arithmetic and matches — but only because
+the argument is typed `i32`. The same expression over `u32` compiles to the wrong
+instruction and stays silent about it, which makes the TYPE the load-bearing part
+of a one-line function.
+
+`projection_dot` accumulates three products in 32 bits with NO intermediate
+shift — `imul eax,[bp+0x18]` / `mov ecx,eax` / `imul eax,[bp+0x1c]` / `add ecx,eax`
+at `0x9A50..0x9A66`. The Q15 shift happens once, on the result. Shifting per term,
+which is what a naive "multiply in fixed point" helper does, discards the low bits
+of each product before they are summed.
+
+Neither is a bug in the port; both are decisions the port makes correctly and
+records nowhere. The queue: 58 -> 56.
