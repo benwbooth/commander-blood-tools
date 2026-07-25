@@ -6323,15 +6323,15 @@ They sit in a 95-slot table of 16-byte NUL-padded filenames at `FS:0x0c04` (file
 `0xCDF4`) — the game's file manifest, the same 16-byte name-record shape as the
 world-art table settled in #191.
 
-`levels::LEVEL_DIRECTORY` is 54 of those slots, copied into Rust source. That is a
-content-bearing literal, and it is also a PREFIX: 41 entries missing, including
-26 `.ext` worlds and the whole of script3/4/5 (slots 76..90). The frontend loads
+`levels::LEVEL_DIRECTORY` is 53 of those slots, copied into Rust source. That is a
+content-bearing literal, and it is also a PREFIX: 42 entries missing, including
+further `.ext` worlds and the whole of script3/4/5 (slots 76..90). The frontend loads
 `SCRIPT3..5` by name already, so the port has been reaching for resources its own
 directory does not list.
 
 `parse_level_directory` reads the table from the image; `level_entry_from_image`
 resolves any slot. The transcription check was a real test rather than a
-formality — it could have found a copying error in any of 54 rows, and found none,
+formality — it could have found a copying error in any of 53 rows, and found none,
 which is worth knowing precisely because I would not have assumed it.
 
 One boundary kept explicit: the table stores FILENAMES ONLY. `LevelKind` is the
@@ -6406,7 +6406,7 @@ drift from the code, and neither can a careless constant edit.
 Worth noting what this hunt has produced. It began as "map the driver's vector
 slots so `audio.rs` can be migrated" and has so far yielded: the shipped drivers
 and their ABI (#202), the 95-slot file manifest and the discovery that the port's
-directory was a transcribed 54-entry prefix (#203), a coverage hole in the
+directory was a transcribed 53-entry prefix (#203), a coverage hole in the
 citation guard that hid a third of the tree (#204), and now the descriptor table.
 None of those were the goal. The goal is still open — but "follow the thing you
 cannot yet explain" has been worth more than the answer would have been.
@@ -6453,3 +6453,28 @@ cpal callback has no DMA controller to interrogate. The port must derive an
 equivalent cursor from its own output clock. That is a design question about the
 host, not a decoding question about the game, and it is the first time this row's
 remaining work has been outside the binary.
+
+## #207 — the count I wrote down was wrong, twice, in three places
+
+#203 reported the resource directory as "54 of 95 slots transcribed, 41 missing".
+Counting the literal's `index:` fields: it holds 53 entries (0..=52), so 42 are
+missing. Both figures in #203 and in `docs/port-validation.md` were wrong.
+
+Worse, the test I wrote to pin the finding asserted
+`names[54] == "forest.ext"` with the comment "the first slot the literal omits".
+The ASSERTION was true — slot 54 really is `forest.ext` — and the COMMENT was
+false, because the first omitted slot is 53 (`erazor3.ext`). A true assertion with
+a wrong explanation is the worst shape available: it passes forever and teaches
+the next reader something incorrect.
+
+Fixed by asserting the things that were actually claimed:
+
+    assert_eq!(LEVEL_DIRECTORY.len(), 53, "the literal's size, checked not assumed");
+    assert_eq!(names[53], "erazor3.ext", "the first slot the literal omits");
+    assert_eq!(names.len() - LEVEL_DIRECTORY.len(), 42, "entries never transcribed");
+
+Now the count cannot drift from the literal, because the literal's own length is
+asserted rather than eyeballed. That is what #203 should have done in the first
+place: I derived "54" by reading a printed list instead of counting the source of
+truth, which is the same failure as the stale ledger figures corrected earlier in
+this campaign — a number restated from a previous glance rather than recomputed.

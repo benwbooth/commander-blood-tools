@@ -439,15 +439,15 @@ own FILE MANIFEST: a 95-slot table of 16-byte NUL-padded filenames at `FS:0x0c04
 (`dnsdb.drv`), which is why no immediate search ever found a reference to those
 strings — the code indexes the table, it does not point at the names.
 
-`levels::LEVEL_DIRECTORY` is 54 of those 95 slots, hand-copied into Rust source.
+`levels::LEVEL_DIRECTORY` is 53 of those 95 slots, hand-copied into Rust source.
 Two separate problems, both now measured rather than suspected:
 
 1. It is a CONTENT-BEARING LITERAL restating game data — the defect class
    `CLAUDE.md` names first. `parse_level_directory` now reads the table from the
    image, and `level_directory_literal_matches_the_image` holds the literal to
-   those bytes. The transcription turned out to be CORRECT for all 54 (a real
+   those bytes. The transcription turned out to be CORRECT for all 53 (a real
    check that could have failed, not a formality).
-2. It is INCOMPLETE by 41 entries: 26 further `.ext` worlds AND the entire
+2. It is INCOMPLETE by 42 entries: further `.ext` worlds AND the entire
    script3/4/5 file sets (slots 76..90). The frontend already loads `SCRIPT3..5`
    by name, so the port has been reaching for resources its own directory does
    not list. `level_entry_from_image` reads any slot, tested at 76, 86 and 94.

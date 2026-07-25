@@ -500,7 +500,10 @@ mod tests {
         // Every slot the literal DOES cover keeps agreeing (belt and braces with
         // level_directory_literal_matches_the_image).
         assert_eq!(names[1], "nosound.drv");
-        assert_eq!(names[54], "forest.ext", "the first slot the literal omits");
+        // The literal holds indices 0..=52, so 53 is the first omitted slot.
+        assert_eq!(LEVEL_DIRECTORY.len(), 53, "the literal's size, checked not assumed");
+        assert_eq!(names[53], "erazor3.ext", "the first slot the literal omits");
+        assert_eq!(names.len() - LEVEL_DIRECTORY.len(), 42, "entries never transcribed");
     }
 
     /// The transcribed [`LEVEL_DIRECTORY`] against the bytes it was copied from.
