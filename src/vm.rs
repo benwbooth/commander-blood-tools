@@ -189,6 +189,20 @@ pub fn field_offset(kind: u16, field: u8) -> Option<u16> {
 }
 
 pub const OP_MIN: u8 = 0xA0;
+/// Upper bound of the TOKEN-VALIDITY range, not of dispatch — the two differ and the
+/// distinction is easy to lose.
+///
+/// * TOKENS: `OPCODE_DESC` at `DS:0x6F18` has 96 entries covering `0xA0..=0xFF`, and
+///   `vm_token_advance` (`0x62B6`) indexes it for EVERY byte it walks. So a byte in this
+///   range is a token whose length the walker can compute.
+/// * DISPATCH: the handler table at `DS:0x6EB0` is only 104 bytes — 52 entries, i.e.
+///   `0xA0..0xD3` — and the `0xD3` slot is NULL. `vm_dispatch` (`0x5627`) therefore
+///   EXECUTES only `0xA0..=0xD2`. The extent is pinned by a layout identity:
+///   `0x6EB0 + 104 = 0x6F18`, exactly where `OPCODE_DESC` begins.
+///
+/// So opcodes `0xD3..=0xFE` have LENGTHS but no HANDLERS: the walker must skip them,
+/// and nothing should execute them. Do not "correct" this bound to `0xD2` — that would
+/// make the walker treat data tokens as invalid and desync the stream.
 pub const OP_MAX: u8 = 0xFE;
 pub const OP_TEXT: u8 = 0xA6;
 pub const OP_BIT_FLAG: u8 = 0xB7;
