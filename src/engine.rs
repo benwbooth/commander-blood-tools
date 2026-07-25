@@ -1911,11 +1911,11 @@ impl EngineState {
     /// by the caller: hub console boxes 100 (@0x86D9), in-window lists 225
     /// (@0x89A6), the WORLD/entity candidate list 80 (@0xB0D1, ship_click_commit,
     /// with the narrow alt-mode flags [0xADC]/[0xADD]).
-    const CHOICE_BOX_CENTER_X: usize = 100;
+    pub const CHOICE_BOX_CENTER_X: usize = 100;
     const CHOICE_BOX_ANCHOR_WORLD: usize = 80;
     /// The IN-WINDOW concept list's right-side anchor: `mov [0xAC6], 0xE1` at `0x89A6`.
     /// `0xE1` = 225. The widget then places the box at `x0 = anchor - w/2` (`0x84AD`).
-    const CHOICE_BOX_ANCHOR_CONCEPT: usize = 0xE1;
+    pub const CHOICE_BOX_ANCHOR_CONCEPT: usize = 0xE1;
     /// Row pitch 11 — ASSEMBLY: the unified list widget steps `add bp,0xB`
     /// (0x847A) and hit-tests `row = dy/11 + 1` (`div bl,0x0B` @0x8508).
     const CHOICE_BOX_PITCH: usize = 11;

@@ -3734,3 +3734,30 @@ line.
 Five captures remain unread (`mission_briefing_eye`, `nav_screen_opened`,
 `post2_menu_choice`, `script2_first_frame`, `console_band.idx`). Each is a screen
 the port renders and nothing checks — the same condition that hid this one.
+
+## #113 — reading three more of the unread captures, and guarding a headline decode
+
+Continuing #112's list. Three of the seven now have tests:
+
+* **`post2_menu_choice.ppm`** verifies the CHOICE BOX anchor. Its single text row
+  spans x 73..130, centre 101 — the decoded `0x64` (`mov [0xAC6],0x64` @`0x86D9`),
+  not the concept list's `0xE1`. The two anchors are 125px apart, so the check
+  cannot pass with the wrong one. Only the centre is taken from the image.
+* **`honk_talk_menu.ppm`** and **`psychotherapy_topics.ppm`** were done in #112.
+
+* **`console_band.idx`** is the important one. The claim that the intro montage's
+  console band IS `TB.BIG` frame 90 rows 140..200 pushed through the console-bank
+  remap — that the band was never separate art — is a headline decode, and it had
+  been proven ONCE, BY HAND. No test read `console_band.idx`. Changing the frame
+  index or the remap builder would have gone unnoticed, which is exactly how the
+  list-menu centring error survived. The proof now runs every time: all 19200
+  bytes, zero differing.
+
+That is the pattern worth naming. A decode that was verified once and then left
+unguarded is indistinguishable, later, from a decode that was never verified —
+and the more impressive the finding, the less likely anyone re-checks it.
+
+Still unread: `mission_briefing_eye.ppm`, `nav_screen_opened.ppm`,
+`script2_first_frame.ppm`. The nav screen resisted a clean geometric check (it is
+a detailed starfield, so row-transition heuristics find edges everywhere rather
+than a band boundary); it needs a real render comparison, not a measurement.

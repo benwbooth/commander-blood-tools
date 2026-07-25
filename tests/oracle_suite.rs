@@ -221,6 +221,99 @@ fn list_widget_left_edge_matches_the_formula_in_two_captures() {
     assert!(checked > 0, "neither capture was readable");
 }
 
+/// The CHOICE BOX is centred on `x = 0x64` (`mov [0xAC6],0x64` @`0x86D9`), a
+/// different anchor from the concept list's `0xE1` — and `post2_menu_choice.ppm`
+/// shows it. That capture sat unread in the tree.
+///
+/// Only the text row's horizontal CENTRE is taken from the image, so the capture
+/// verifies the decoded anchor rather than supplying it. The two anchors are 125px
+/// apart, so this cannot pass with the wrong one.
+#[test]
+fn choice_box_is_centred_on_the_decoded_anchor() {
+    let path = "accuracy/captures/dialogue/post2_menu_choice.ppm";
+    let Some(px) = read_ppm(Path::new(path))
+        .or_else(|| read_ppm(Path::new(&format!("../{path}"))))
+    else {
+        eprintln!("skipped: no {path}");
+        return;
+    };
+    let is_grey = |o: usize| {
+        let (r, g, b) = (px[o] as i32, px[o + 1] as i32, px[o + 2] as i32);
+        (r - 138).abs() < 45
+            && (g - 138).abs() < 45
+            && (b - 138).abs() < 45
+            && (r.max(g).max(b) - r.min(g).min(b)) < 25
+    };
+    let (mut lo, mut hi) = (usize::MAX, 0usize);
+    for y in 0..200 {
+        for x in 0..ENGINE_SCREEN_WIDTH {
+            if is_grey((y * ENGINE_SCREEN_WIDTH + x) * 3) {
+                lo = lo.min(x);
+                hi = hi.max(x);
+            }
+        }
+    }
+    assert_ne!(lo, usize::MAX, "no text found in {path}");
+    let centre = (lo + hi) / 2;
+    let anchor = EngineState::CHOICE_BOX_CENTER_X;
+    assert!(
+        centre.abs_diff(anchor) <= 3,
+        "text spans x {lo}..{hi} (centre {centre}); the decoded choice-box anchor \
+         is {anchor}, and the concept anchor {} is far away",
+        EngineState::CHOICE_BOX_ANCHOR_CONCEPT
+    );
+}
+
+/// The intro montage's console band IS `TB.BIG` frame 90, rows 140..200, pushed
+/// through the console-bank remap — byte for byte, all 19200 of them.
+///
+/// That identification is a headline decode (the band was never separate art),
+/// and it was proven ONCE, by hand, with nothing guarding it since:
+/// `console_band.idx` sat in the tree unread by any test. Change the frame index
+/// or the remap builder and nothing would notice. This is that proof, run every
+/// time — the same condition that let the list-menu centring error survive
+/// (audit-fixes #111, #112).
+#[test]
+fn console_band_is_panorama_frame_90_through_the_remap() {
+    let Some(iso) = iso_dir() else {
+        eprintln!("skipped: no CD data");
+        return;
+    };
+    let harvested = ["accuracy/captures/console_band.idx", "../accuracy/captures/console_band.idx"]
+        .into_iter()
+        .find_map(|p| std::fs::read(p).ok());
+    let Some(harvested) = harvested else {
+        eprintln!("skipped: no console_band.idx");
+        return;
+    };
+
+    let pan = BridgePanorama::parse(std::fs::read(iso.join("TB.BIG")).unwrap()).unwrap();
+    let frame = pan
+        .frame_pixels(commander_blood_tools::tbbig::CONSOLE_BAND_FRAME)
+        .expect("frame 90 decodes");
+    let table = commander_blood_tools::palette::build_console_bank_remap_table(
+        &commander_blood_tools::palette::GAME_SCREEN_PALETTE_DAC,
+    );
+
+    let top = commander_blood_tools::tbbig::CONSOLE_BAND_TOP;
+    let height = commander_blood_tools::tbbig::CONSOLE_BAND_HEIGHT;
+    let composed: Vec<u8> = (top..top + height)
+        .flat_map(|y| {
+            (0..ENGINE_SCREEN_WIDTH).map(move |x| (y * ENGINE_SCREEN_WIDTH + x))
+        })
+        .map(|i| table[frame[i] as usize])
+        .collect();
+
+    assert_eq!(composed.len(), 19200, "60 rows of 320");
+    assert_eq!(harvested.len(), composed.len(), "harvested band size");
+    let differing = composed
+        .iter()
+        .zip(harvested.iter())
+        .filter(|(a, b)| a != b)
+        .count();
+    assert_eq!(differing, 0, "{differing} of 19200 bytes differ");
+}
+
 /// Diagnostic for the concept-menu divergence: prints where each mask actually
 /// sits, so a failing IoU says WHICH WAY it is wrong instead of just how much.
 /// Run with `cargo test --test oracle_suite -- --ignored concept_menu_masks`.
