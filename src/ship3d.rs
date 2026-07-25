@@ -4316,6 +4316,82 @@ fn next_target_list_draw_color(state: &mut Ship3dTargetHitState, activate: bool)
 #[cfg(test)]
 mod tests {
 
+    /// THE DIRTY-RECT COLLECTOR'S CONTRACT, `0x9B98`'s consumer
+    /// (`collect_ship_3d_dirty_sprite_slot_render_commands`).
+    ///
+    /// Four decoded rules, each of which fails silently if broken:
+    ///
+    ///   * a command is emitted ONLY where the slot rect really intersects the
+    ///     dirty rect — the filter's whole purpose;
+    ///   * `dispatch_index` is `(flags >> 1) & 7` and `destination_remap_mode` is
+    ///     `(flags >> 8) & 3`, so they are 3- and 2-bit fields. A wrong mask
+    ///     produces an out-of-range dispatch index, which is the sprite version of
+    ///     #224's handler-table overrun;
+    ///   * an INACTIVE slot emits nothing;
+    ///   * every slot in range has its DIRTY flag cleared, active or not — the
+    ///     clear sits outside the active branch, which is easy to "tidy" inward.
+    ///
+    /// NOT GROUNDS FOR SETTLING, and deliberately so: this drives synthetic slots,
+    /// not game data, so it verifies the port against the decoded rules rather
+    /// than against the original. Per #219 the ledger rows stay as they are.
+    #[test]
+    fn the_dirty_rect_collector_honours_its_filter_and_field_widths() {
+        let dirty = Ship3dDirtyRectList {
+            rects: vec![
+                Ship3dProjectionViewport { left: 50, top: 50, right: 100, bottom: 100 },
+                Ship3dProjectionViewport { left: 200, top: 20, right: 260, bottom: 60 },
+            ],
+            sentinel: SHIP_3D_DIRTY_RECT_SENTINEL,
+        };
+
+        let mut emitted = 0usize;
+        for seed in 0..400u16 {
+            let flags = seed.wrapping_mul(2477) | (seed & 1);
+            let mut slots = vec![Ship3dObjectSpriteDescriptor {
+                flags,
+                draw_x: (seed.wrapping_mul(13)) % 300,
+                draw_y: (seed.wrapping_mul(7)) % 190,
+                extent_width: 8 + (seed % 40),
+                extent_height: 8 + (seed % 30),
+                ..Default::default()
+            }];
+            let commands =
+                collect_ship_3d_dirty_sprite_slot_render_commands(&mut slots, &dirty, 0, 0);
+
+            if flags & SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG == 0 {
+                assert!(commands.is_empty(), "an inactive slot emitted {} command(s)", commands.len());
+            }
+            for command in &commands {
+                assert!(
+                    ship_3d_rects_intersect(command.slot_rect, command.dirty_rect),
+                    "emitted a command for rects that do not intersect"
+                );
+                assert!(command.dispatch_index <= 7, "dispatch index is a 3-bit field");
+                assert!(
+                    command.destination_remap_mode <= 3,
+                    "remap mode is a 2-bit field"
+                );
+                emitted += 1;
+            }
+            // The dirty flag is cleared for EVERY slot walked, active or not.
+            assert_eq!(
+                slots[0].flags & SHIP_3D_SPRITE_SLOT_DIRTY_FLAG,
+                0,
+                "the dirty flag survived the pass (seed {seed})"
+            );
+        }
+        assert!(emitted > 20, "only {emitted} commands; the sweep proves little");
+
+        // An empty rect list and an inverted range both produce nothing.
+        let mut slots = vec![Ship3dObjectSpriteDescriptor {
+            flags: SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG,
+            ..Default::default()
+        }];
+        let empty = Ship3dDirtyRectList { rects: Vec::new(), sentinel: SHIP_3D_DIRTY_RECT_SENTINEL };
+        assert!(collect_ship_3d_dirty_sprite_slot_render_commands(&mut slots, &empty, 0, 0).is_empty());
+        assert!(collect_ship_3d_dirty_sprite_slot_render_commands(&mut slots, &dirty, 5, 0).is_empty());
+    }
+
     /// THE DISPATCH FSM CANNOT SELECT A HANDLER THAT DOES NOT EXIST.
     ///
     /// `update_ship_3d_nav_choice_dispatch` (`0x0F29`'s caller) hit-tests a mouse

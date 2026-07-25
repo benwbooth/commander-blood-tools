@@ -6976,3 +6976,31 @@ Removing the hit-test's `choice >= COUNT` guard produces `hovered choice 6 is
 outside 1..=5`; restoring it passes. The guard is real and now pinned.
 
 `Ship3dNavChoiceState`, `Gates`, `Input` and `Result` settled TESTED.
+
+## #225 — a perturbation that perturbed nothing
+
+The dirty-rect collector's contract is now pinned: a command is emitted only where
+the rects genuinely intersect; `dispatch_index` and `destination_remap_mode` stay
+inside their 3- and 2-bit fields (a wrong mask is the sprite version of #224's
+handler-table overrun); an inactive slot emits nothing; and EVERY slot walked has
+its dirty flag cleared, active or not — the clear sits outside the active branch,
+which is exactly the kind of line a later tidy-up moves inward.
+
+The process note is the useful part. My first attempt to prove the dirty-flag
+assertion had teeth only re-indented the statement, leaving it in the same scope.
+The test passed, and I nearly recorded that as "the assertion is real". Rust does
+not care about indentation; I had perturbed the formatting, not the behaviour.
+
+The real perturbation moves the clear INSIDE `if flags & ACTIVE != 0`, so inactive
+slots keep their dirty flag. That fails with "the dirty flag survived the pass
+(seed 2)". Restoring it passes.
+
+Worth stating as a rule, since this is the sixth or seventh time I have tested a
+test in this campaign: a perturbation must change what the program DOES. Moving
+whitespace, renaming a local, or reordering independent statements proves only
+that the test is insensitive to things it should be insensitive to.
+
+NOT SETTLED, deliberately, and this is the third such refusal (#219, #223's
+threshold, now this). The test drives synthetic slots rather than game data, so it
+verifies the port against the decoded rules — a regression test, which CLAUDE.md
+asks for — but not against the original. The ledger rows stay UNVERIFIED.
