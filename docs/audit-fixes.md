@@ -5592,3 +5592,30 @@ Both functions now carry `0x668D` individually. Putting the address only on the
 is the function, and a citation one scope up is invisible to it.
 
 The queue: 31 -> 29.
+
+## #177 — `0xA1` is a family-wide prefix, not a `0xC4` quirk
+
+The `0xC4` actor family, from the handler at `0x6C7E`:
+
+```text
+  0x6C86  mov al,[si] / cmp al,0xa1 / jne   the 0xA1 PREFIX...
+  0x6C8C  inc dl / inc si                   ...sets the INVERT flag
+  0x6C92  call 0x6034                       resolve the record's owner
+  0x6C98  mov cx,es:[bp]                    the record's TYPE word
+  0x6C9C  test byte gs:[0x67ad],1 / je      query or set
+```
+
+A query matches on THREE conditions together: the owner active, the type word
+`0xC4`, and the stored related offset equal to the operand. Any one failing is a
+miss, and `0xA1` before the opcode inverts the whole result.
+
+That prefix is not specific to `0xC4`. The same `cmp al,0xa1 / inc dl / inc si`
+opens `0x6D18` and `0x6F62` — it is a family-wide modifier, which is why the port
+threads `inverted` through several handlers rather than special-casing one. Worth
+recording as a shared fact rather than three coincidences.
+
+`write_actor_record` writes ZERO at `+4` every time rather than leaving what was
+there, which is what keeps a freshly written record distinguishable from one
+carrying state from a previous use.
+
+The queue: 25 -> 24. Cited instructions: 254 -> 261.

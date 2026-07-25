@@ -2295,12 +2295,34 @@ fn record_owner_is_active(
         .map(|owner| state_u8(state, owner.wrapping_add(2)) & 1 != 0)
 }
 
+/// Whether an actor record's OBJECT is active — bit 0 at `object + 2`, reached by
+/// subtracting `TALK_FIELD` from the record. Unknown resolves to FALSE here (not
+/// `None`): a record whose object cannot be found is not an active actor.
 fn actor_record_is_active(state: &[u8], record_offset: u16) -> bool {
     actor_object_offset_from_record(record_offset)
         .map(|actor| state_u8(state, actor.wrapping_add(2)) & 1 != 0)
         .unwrap_or(false)
 }
 
+/// The `0xC4` QUERY condition, from the handler at `0x6C7E`:
+///
+/// ```text
+///   0x6C86  mov al,[si] / cmp al,0xa1 / jne   the 0xA1 PREFIX...
+///   0x6C8C  inc dl / inc si                   ...sets the INVERT flag
+///   0x6C8F  lodsw / mov bp,ax                 the record offset
+///   0x6C92  call 0x6034                       resolve its owner
+///   0x6C97  lodsw                             the related offset
+///   0x6C98  mov cx,es:[bp]                    the record's TYPE word
+///   0x6C9C  test byte gs:[0x67ad],1 / je      query or set
+/// ```
+///
+/// A match needs all three: the owner active, the type word `0xC4`, and the
+/// stored related offset equal to the operand. `0xA1` before the opcode inverts
+/// the result — the same prefix the `0x6D18` and `0x6F62` handlers read, so it is
+/// a family-wide modifier rather than something specific to `0xC4`.
+///
+/// The non-`strict` early `None` covers an EMPTY record (type and related both
+/// zero), which callers treat as "no opinion" rather than a failed match.
 fn actor_record_condition(
     state: &[u8],
     record_offset: u16,
@@ -2319,6 +2341,10 @@ fn actor_record_condition(
     Some(if inverted { !matched } else { matched })
 }
 
+/// The `0xC4` SET write: type `0xC4`, the related offset at `+2`, and ZERO at
+/// `+4`. The third word is written every time — it is not left as found — which is
+/// what makes a freshly written actor record distinguishable from one carrying
+/// state from a previous use.
 fn write_actor_record(state: &mut [u8], record_offset: u16, related_record_offset: u16) {
     state_set_u16(state, record_offset, OP_ACTOR as u16);
     state_set_u16(state, record_offset.wrapping_add(2), related_record_offset);
