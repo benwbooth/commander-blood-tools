@@ -406,7 +406,8 @@ pub const DLG_LINE_ASSET_NONE: u16 = 0xFFFF;
 /// So the active line is mostly set natively; the script selector accounts for a single
 /// path. Do not read this function as "how the line id is determined".
 ///
-/// `0x668D` stores `b3` SIGN-EXTENDED at `DS:0x1FAB` (`lodsb; cwde`), and `0x11F2`
+/// `0x668D` stores `b3` SIGN-EXTENDED at `DS:0x1FAB` (`lodsb; cbw` -- one byte at
+/// `0x668E`, so AL into AX; `re/tools/dis.py` prints it `cwde`), and `0x11F2`
 /// reads it and adds 9 to form `gs:0x6788`. The sign extension is load-bearing —
 /// `0xFF` becomes `-1`, not `255`.
 pub fn dlg_line_id_for_selector(selector: u8) -> i16 {
@@ -7897,7 +7898,7 @@ mod tests {
     /// rather than being re-derived when someone wires it up.
     #[test]
     fn dlg_line_asset_chain_matches_the_decoded_arithmetic() {
-        // line_id = sign_extend(b3) + 9   (0x668D lodsb/cwde, 0x11F5 add ax,9).
+        // line_id = sign_extend(b3) + 9   (0x668D lodsb/cbw, 0x11F5 add ax,9).
         // Sign extension is load-bearing: 0xFF is -1, not 255.
         assert_eq!(dlg_line_id_for_selector(0x00), 9);
         assert_eq!(dlg_line_id_for_selector(0x01), 10);

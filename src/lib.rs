@@ -196,6 +196,42 @@ mod cited_instruction_tests {
 }
 
 #[cfg(test)]
+mod opsize_mnemonic_tests {
+    /// `cbw` and `cwde` are the SAME opcode (0x98) at different operand sizes, and
+    /// capstone prints both as `cwde` in 16-bit mode. They are not interchangeable:
+    /// after `lodsb`, `cbw` overwrites AH while `cwde` leaves it holding caller
+    /// state. The encoded length settles which one a citation means — 1 byte is
+    /// `cbw`, `66 98` is a real `cwde` — and the same check catches a citation
+    /// anchored mid-instruction, which is how a phantom `cdq` (really the 0x99
+    /// inside `lcall 0x299:0x0ecb`) sat in labels.csv.
+    #[test]
+    fn cited_convert_mnemonics_match_the_encoded_operand_size() {
+        let script = std::path::Path::new("re/tools/check_opsize_mnemonics.py");
+        if !script.exists() || !std::path::Path::new("re/bin/BLOODPRG.EXE").exists() {
+            return;
+        }
+        let out = match std::process::Command::new("python3").arg(script).output() {
+            Ok(o) => o,
+            Err(_) => return,
+        };
+        let text = String::from_utf8_lossy(&out.stdout);
+        if text.trim().is_empty() {
+            return;
+        }
+        assert!(out.status.success(), "convert-mnemonic citations wrong:\n{text}");
+        // The sweep must still be resolving citations to bytes; a regex that
+        // stopped matching would pass forever. One of them (0x379B `66 98`) is a
+        // GENUINE cwde, so this cannot be satisfied by rewriting every site.
+        let checked: usize = text
+            .split_whitespace()
+            .next()
+            .and_then(|n| n.parse().ok())
+            .unwrap_or(0);
+        assert!(checked >= 8, "expected resolved convert citations, got: {text}");
+    }
+}
+
+#[cfg(test)]
 mod offset_pair_tests {
     /// Every `DS:0xNNNN` the port documents alongside a `file 0xNNNNN` must agree
     /// with the DS base (file `0xD420`). A drifted pair is invisible to ordinary

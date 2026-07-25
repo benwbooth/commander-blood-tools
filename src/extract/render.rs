@@ -1034,7 +1034,11 @@ pub(super) fn subtitle_draw_glyph(ch: char) -> Option<GameFontGlyph> {
     commander_blood_tools::font::subtitle_draw_glyph(ch)
 }
 
-pub(super) fn game_font_glyph(ch: char) -> Option<GameFontGlyph> {
+// Used only by this file's tests; the runtime path calls `font::game_font_glyph`
+// directly. Kept as a #[cfg(test)] shim rather than a `pub(super)` alias so an
+// unused non-test copy cannot drift back in.
+#[cfg(test)]
+fn game_font_glyph(ch: char) -> Option<GameFontGlyph> {
     commander_blood_tools::font::game_font_glyph(ch)
 }
 
@@ -1077,9 +1081,9 @@ pub(super) fn apply_reserved_subtitle_palette(pal: &mut [[u8; 3]; 256]) {
     pal[SUBTITLE_COLOR_REVEALED as usize] = SUBTITLE_RGB;
     pal[SUBTITLE_COLOR_REVEAL_EDGE as usize] = SUBTITLE_RGB;
 }
-// Space advance: the game's glyph blitter (BLOODPRG.EXE render_string @0x31D7)
-// advances a 0x20 space by 6 pixels (`add di, 6`), not a full glyph cell.
-pub(super) const GAME_FONT_SPACE_ADVANCE: usize = 6;
+// The space advance (`add di,6` at 0x31D7) lives in `font::GAME_FONT_SPACE_ADVANCE`.
+// A second copy here was unused and unwatched -- the duplication class that hid the
+// 128-vs-176 font truncation (audit-fixes #97).
 
 
 #[cfg(test)]

@@ -3225,3 +3225,46 @@ wrong citation, which is the guard punishing accuracy.
 Profile operands are 1..5, so the sign extension is a no-op in play. The reading
 still has to be right, and a tool that renders one instruction as another is worth
 knowing about before it costs someone an afternoon.
+
+## #101 — the quirk had already spread: 7 wrong mnemonics and a phantom instruction
+
+Knowing capstone renames `cbw`→`cwde` (#100) raised the obvious question: how many
+notes had already copied the tool's spelling instead of the architecture? Sweeping
+for it found EIGHT sites — but the interesting one was not a mnemonic at all.
+
+`re/tools/check_opsize_mnemonics.py` settles each citation from the bytes, because
+the two mnemonics are the same opcode at different operand sizes and the tell is
+INSTRUCTION LENGTH: a bare `0x98` is one byte (`cbw`), a prefixed `66 98` is two
+(a real `cwde`). Seven citations (six in `labels.csv`, two doc lines in `vm.rs`)
+called a one-byte `0x98` `cwde` and were corrected. Crucially the sweep also
+CLEARED `0x379B`, which really is `66 98` — a genuine 32-bit `cwde` feeding
+`mov ebx,eax`. The check discriminates; it does not blanket-rewrite.
+
+The eighth was worse than a spelling error. The row
+
+    0x00B142,audio_helper_b6dd,"audio helper: cdq; call 0xb6dd..."
+
+cites an address that is not an instruction boundary at all. `0xB142` is INSIDE
+`9a cb 0e 99 02` = `lcall 0x299:0x0ecb` at `0xB140` — the `cdq` was the `0x99`
+byte of the far call's SEGMENT `0x299`. The real stream is `0xB145 pop ds /
+0xB146 push cs / 0xB147 call 0xb6dd`: the push-cs-then-near-call idiom for
+entering `ship_3d_plane_band_copy`, which ends in `RETF`. Nothing audio about it.
+A label anchored mid-instruction is more dangerous than a wrong mnemonic, because
+every other claim it makes about the routine is suspect too.
+
+Finding that required fixing the checker first. Walking forward from a misaligned
+address makes capstone resynchronize into a phantom stream, so the tool now
+requires BOUNDARY CONSENSUS — the instruction must also appear when decoding from
+several earlier anchors. x86 is self-synchronizing, so a correctly aligned entry
+decodes the far call as one 5-byte instruction and the phantom `cdq` vanishes.
+Misalignment is reported as its own class.
+
+One more iteration was needed for the same reason as #100's alias table: the first
+tightened run flagged the `vm.rs` line that DOCUMENTS the trap ("`dis.py` prints it
+`cwde`"). A guard that punishes the note warning the next reader is worse than no
+guard, so lines describing tool output are exempt.
+
+Registered as a lib test. Also removed the dead `GAME_FONT_SPACE_ADVANCE` copy in
+`extract/render.rs` (`font.rs` owns that rule and its `0x31D7` citation) and made
+the file's `game_font_glyph` alias `#[cfg(test)]`, so an unwatched non-test copy
+cannot drift back in — the duplication class from #97.
