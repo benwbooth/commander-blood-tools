@@ -1325,6 +1325,17 @@ pub const LOCATION_PANEL_ROW_PITCH: i32 = 0x0A;
 pub const LOCATION_PANEL_NAME_GAP: i32 = 6;
 pub const LOCATION_PANEL_HEADER_COLOR: u8 = 0xEE;
 pub const LOCATION_PANEL_ROW_COLOR: u8 = 0xFE;
+/// The panel's window rect `(x, y, w, h)` — `DS:0x2780`, a STATIC constant: a
+/// whole-image search for every store form to `0x2780` finds no writer, and the
+/// only references are the two `mov si/di,0x2780` at `0x9114`/`0x9203` plus the
+/// draw at `0x9142`.
+pub const LOCATION_PANEL_BOX: [u16; 4] = [0x64, 0x14, 0xA0, 0x46];
+/// `ax = 0xFFCE` at `0x90ED`, negated on entry to the table builder (`0x22F1`).
+pub const LOCATION_PANEL_TINT_PERCENT: u16 = 50;
+/// `[0xADA] = 8` (`0x903E`) — the zoom-open/shut interpolation step count.
+pub const LOCATION_PANEL_ZOOM_STEPS: u8 = 8;
+/// The zoom SOURCE rect seeded at `0x9029`: a 4x4 square at the cursor.
+pub const LOCATION_PANEL_CURSOR_RECT_SIZE: u16 = 4;
 
 /// One drawn row of the destination info panel.
 #[derive(Clone, Debug, PartialEq, Eq)]

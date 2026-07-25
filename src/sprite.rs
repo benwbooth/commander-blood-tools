@@ -144,6 +144,46 @@ fn decode_rle_frame(frame: &[u8], height: usize) -> Option<Vec<u8>> {
     Some(pixels)
 }
 
+/// The game's TINT-RECT primitive — the inner loop of the blit reached as
+/// `0x299:0x40E` (`0x3407..0x341D`):
+///
+/// ```text
+///   0x3407  bx = si                    the 256-byte remap table
+///   0x3413  al = es:[di]               read the pixel ALREADY on screen
+///   0x3416  xlatb                      al = table[al]
+///   0x3417  stosb                      write it back
+///   0x340B  bp = 0x140 - dx            row stride 320 minus the rect width
+/// ```
+///
+/// It is not a sprite blit: nothing is copied in. Each pixel of the rect is
+/// replaced by `table[pixel]`, which is how the game draws translucent windows —
+/// see [`crate::palette::build_palette_blend_remap_table`] for the table. Writes
+/// are clipped to the framebuffer, matching `0x33B2..0x33F4`.
+pub fn remap_rect_indexed(
+    fb: &mut [u8],
+    fb_width: usize,
+    fb_height: usize,
+    table: &[u8; 256],
+    x: i32,
+    y: i32,
+    width: i32,
+    height: i32,
+) {
+    if width <= 0 || height <= 0 {
+        return; // 0x33A6..0x33B0: zero/negative extent is rejected outright
+    }
+    let x0 = x.max(0) as usize;
+    let y0 = y.max(0) as usize;
+    let x1 = (x + width).clamp(0, fb_width as i32) as usize;
+    let y1 = (y + height).clamp(0, fb_height as i32) as usize;
+    for row in y0..y1 {
+        let base = row * fb_width;
+        for px in fb[base + x0.min(x1)..base + x1].iter_mut() {
+            *px = table[*px as usize];
+        }
+    }
+}
+
 /// Blit a decoded sprite frame into a `width`-stride indexed framebuffer, centred
 /// at `(cx, cy)`, skipping transparent index 0.
 /// Blit a frame using its authored draw offset: the frame's top-left is placed at

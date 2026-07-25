@@ -3762,6 +3762,59 @@ impl EngineState {
         }
     }
 
+    /// The destination info panel's WINDOW: the rect at `DS:0x2780` remapped
+    /// through a 50%-toward-black tint table (`0x90ED..0x90F9` builds it,
+    /// `0x9142..0x9156` draws it), then the panel's text rows on top.
+    ///
+    /// The rect and the row layout are the routine's own immediates — see
+    /// [`crate::vm::LOCATION_PANEL_BOX`] and [`crate::vm::VmMachine::location_panel_rows`].
+    /// The tint table is computed from the LIVE palette each time, as the game
+    /// does; the port keeps its palette in 8-bit RGB, so it is converted back to
+    /// the 6-bit DAC units the builder's distance threshold is expressed in.
+    pub fn render_location_info_panel(&mut self, rows: &[crate::vm::LocationPanelRow]) {
+        let mut dac = [[0u8; 3]; 256];
+        for (i, entry) in dac.iter_mut().enumerate() {
+            for k in 0..3 {
+                entry[k] = (self.scene_palette[i][k] as u16 * 63 / 255) as u8;
+            }
+        }
+        let mut table = [0u8; 256];
+        for (i, entry) in table.iter_mut().enumerate() {
+            *entry = i as u8; // unmatched entries keep their previous value
+        }
+        crate::palette::build_palette_blend_remap_table(
+            &dac,
+            crate::vm::LOCATION_PANEL_TINT_PERCENT,
+            [0, 0, 0],
+            &mut table,
+        );
+        let [bx, by, bw, bh] = crate::vm::LOCATION_PANEL_BOX;
+        crate::sprite::remap_rect_indexed(
+            &mut self.framebuffer,
+            ENGINE_SCREEN_WIDTH,
+            ENGINE_SCREEN_HEIGHT,
+            &table,
+            bx as i32,
+            by as i32,
+            bw as i32,
+            bh as i32,
+        );
+        for row in rows {
+            if row.x < 0 || row.y < 0 {
+                continue;
+            }
+            draw_text_indexed(
+                &mut self.framebuffer,
+                ENGINE_SCREEN_WIDTH,
+                ENGINE_SCREEN_HEIGHT,
+                &row.text,
+                row.x as usize,
+                row.y as usize,
+                row.color,
+            );
+        }
+    }
+
     /// Load the real navigation star-map background from `CHART.FD` (an IFF/PBM image
     /// under `iso`) — the game's own chart the ship-nav screen shows. Returns whether it
     /// loaded; when present, `render_ship_view` draws it instead of the procedural
@@ -5968,6 +6021,49 @@ mod tests {
             "DS offset and file offset must describe the same byte"
         );
         assert_eq!(EngineState::OPTION_BOX[0], EngineState::OPTION_BOX_LABEL);
+    }
+
+    #[test]
+    fn the_info_panel_tints_its_rect_and_draws_its_rows() {
+        use crate::vm::{LocationPanelRow, LOCATION_PANEL_BOX};
+        let mut e = EngineState::new();
+        // A palette where every index has a distinct grey, so the 50% tint
+        // resolves to a DIFFERENT index and the remap is observable.
+        for (i, entry) in e.scene_palette.iter_mut().enumerate() {
+            let v = (i as u16 * 255 / 255) as u8;
+            *entry = [v, v, v];
+        }
+        e.framebuffer.fill(200);
+        let rows = vec![LocationPanelRow {
+            x: 0x6E,
+            y: 0x19,
+            color: 0xEE,
+            text: "PLANET: ".into(),
+        }];
+        e.render_location_info_panel(&rows);
+
+        let [bx, by, bw, bh] = LOCATION_PANEL_BOX.map(usize::from);
+        // Outside the rect: untouched.
+        assert_eq!(e.framebuffer[(by - 1) * ENGINE_SCREEN_WIDTH + bx], 200);
+        assert_eq!(e.framebuffer[by * ENGINE_SCREEN_WIDTH + bx - 1], 200);
+        assert_eq!(
+            e.framebuffer[(by + bh) * ENGINE_SCREEN_WIDTH + bx],
+            200,
+            "the rect is [y, y+h), so the row at y+h is outside"
+        );
+        // Inside, away from the text: DARKENED, not cleared.
+        let inside = e.framebuffer[(by + bh - 2) * ENGINE_SCREEN_WIDTH + bx + bw - 2];
+        assert!(
+            inside < 200 && inside > 0,
+            "50% toward black must land on a darker palette index, got {inside}"
+        );
+        // The header row drew in its own colour.
+        assert!(
+            e.framebuffer[0x19 * ENGINE_SCREEN_WIDTH..0x21 * ENGINE_SCREEN_WIDTH]
+                .iter()
+                .any(|&p| p == 0xEE),
+            "the header row must appear in colour 0xEE"
+        );
     }
 
     /// docs/port-validation.md called this chain "blocked on other DORMANT ship-3D

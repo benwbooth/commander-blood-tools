@@ -107,6 +107,78 @@ pub const GAME_SCREEN_PALETTE_DAC: [u8; 768] = [
     60, 0, 0, 0, 36, 0, 11, 52, 2, 32, 63, 26,
 ];
 
+/// Seed distance of the nearest-colour search (`mov word [bp+6],0xBB8` @`0x234F`).
+/// A source colour with no palette entry within this squared distance leaves its
+/// table byte UNCHANGED (`js 0x23B0` skips the store).
+pub const PALETTE_BLEND_MAX_DISTANCE: u16 = 0x0BB8;
+
+/// The game's TINT REMAP TABLE builder — routine `0x22E0`, far-called as
+/// `0x1CE:0x0000`. Every translucent/tinted overlay in the game goes through it:
+/// build a 256-entry LUT that maps each palette index to the nearest palette
+/// entry AFTER blending it `percent`% toward a target colour, then remap the
+/// pixels already on screen through that LUT.
+///
+/// ```text
+///   0x22F1  neg ax                       the caller passes the NEGATED percent
+///   0x22F5  push (pct*bx)/100            the target's three components, prescaled
+///   0x22FD  push (pct*cx)/100
+///   0x2304  push (pct*dx)/100
+///   0x230D  push -(pct-100)              = 100-pct, the SOURCE weight
+///   0x2322  each source component: src*(100-pct)/100 + prescaled target
+///   0x234A  best = 0xFFFF, dist = 0xBB8
+///   0x2354  scan all 256 entries of the live palette at DS:0x5251
+///   0x2390  cmp bx,best / ja skip        <= wins, so TIES TAKE THE LATER index
+///   0x23A9  or ax,ax / js                no match -> leave the byte UNCHANGED
+/// ```
+///
+/// The destination-fill call sites pick between two adjacent 256-byte tables,
+/// `DS:0x5F11` and `DS:0x6011` (`0x45C8`, selection stored at `gs:0x524B`).
+/// The destination info panel builds table `0x5F11` with `ax=0xFFCE` (= 50) and
+/// `bx=cx=dx=0` (`0x90ED..0x90F9`) — its window is a 50% darkening of whatever
+/// is already on screen, not an opaque box.
+///
+/// `palette` is the LIVE palette (`DS:0x5251`), in the same 6-bit DAC units the
+/// routine compares in. `table` is modified in place so that unmatched entries
+/// keep their previous value, exactly as the assembly does.
+pub fn build_palette_blend_remap_table(
+    palette: &[[u8; 3]; 256],
+    percent: u16,
+    target: [u16; 3],
+    table: &mut [u8; 256],
+) {
+    let source_weight = 100u16.wrapping_sub(percent);
+    let scaled_target = [
+        percent.wrapping_mul(target[0]) / 100,
+        percent.wrapping_mul(target[1]) / 100,
+        percent.wrapping_mul(target[2]) / 100,
+    ];
+    for (index, entry) in table.iter_mut().enumerate() {
+        let mut blended = [0u16; 3];
+        for k in 0..3 {
+            blended[k] = (palette[index][k] as u16)
+                .wrapping_mul(source_weight)
+                .wrapping_div(100)
+                .wrapping_add(scaled_target[k]);
+        }
+        let mut best_distance = PALETTE_BLEND_MAX_DISTANCE;
+        let mut best: Option<u8> = None;
+        for (candidate, rgb) in palette.iter().enumerate() {
+            let mut distance = 0u16;
+            for k in 0..3 {
+                let delta = blended[k].abs_diff(rgb[k] as u16);
+                distance = distance.wrapping_add(delta.wrapping_mul(delta));
+            }
+            if distance <= best_distance {
+                best_distance = distance;
+                best = Some(candidate as u8);
+            }
+        }
+        if let Some(found) = best {
+            *entry = found;
+        }
+    }
+}
+
 /// The game-screen palette expanded to 8-bit RGB for the engine framebuffer,
 /// scaling each 6-bit DAC channel to full range (v * 255 / 63).
 pub fn game_screen_palette() -> [[u8; 3]; 256] {
@@ -128,6 +200,49 @@ pub fn game_screen_palette() -> [[u8; 3]; 256] {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_tint_table_halves_a_grey_ramp_and_leaves_unmatched_entries_alone() {
+        // The panel's own arguments: 50% toward black (0x90ED: ax=0xFFCE -> 50,
+        // bx=cx=dx=0).
+        let mut palette = [[0u8; 3]; 256];
+        for (i, entry) in palette.iter_mut().enumerate() {
+            let v = (i % 64) as u8;
+            *entry = [v, v, v];
+        }
+        let mut table = [0xAAu8; 256];
+        build_palette_blend_remap_table(&palette, 50, [0, 0, 0], &mut table);
+        // Index 40 is (40,40,40); halved it is (20,20,20), and the search picks the
+        // LAST entry at that value (`ja` skips only a STRICTLY greater distance),
+        // so the winner is the highest index whose colour is (20,20,20).
+        let want = (0..256usize)
+            .filter(|&i| palette[i] == [20, 20, 20])
+            .next_back()
+            .expect("the ramp repeats");
+        assert_eq!(table[40] as usize, want);
+        assert_eq!(table[0] as usize, {
+            let black = (0..256usize).filter(|&i| palette[i] == [0, 0, 0]).next_back();
+            black.unwrap()
+        });
+
+        // A palette with one colour so far from everything that no entry lands
+        // within 0xBB8 leaves that table byte untouched.
+        let mut sparse = [[0u8; 3]; 256];
+        sparse[1] = [63, 63, 63];
+        let mut table = [0x77u8; 256];
+        build_palette_blend_remap_table(&sparse, 0, [0, 0, 0], &mut table);
+        assert_eq!(
+            table[1], 1,
+            "0% blend keeps a colour where it is (distance 0 to itself)"
+        );
+        let mut far = [[0u8; 3]; 256];
+        far[0] = [0, 0, 0];
+        far[1] = [63, 63, 63];
+        let mut table = [0x77u8; 256];
+        build_palette_blend_remap_table(&far, 100, [63, 63, 63], &mut table);
+        // Every entry blends to white, which IS in the palette, so all match.
+        assert!(table.iter().all(|&b| b == 1));
+    }
 
     /// Colours 0..127 are the game's own baked DAC at file 0x12F78 and must stay
     /// byte-identical to the image. Colours 128..191 are NOT asserted here on purpose:
