@@ -60,6 +60,17 @@ pub const ANGLE_UNITS_PER_REVOLUTION: u16 = 0x5A0;
 /// station (observed via `BRIDGEPROBE`; verified pixel-close to the emulator
 /// capture `accuracy/captures/bridge/console_rest.ppm`).
 pub const CONSOLE_REST_FRAME: usize = 55;
+/// The panorama frame whose BOTTOM 60 ROWS are the intro montage's console band.
+///
+/// Proven by construction: frame 90's rows 140..200, pushed through the
+/// console-bank remap table (`palette::build_console_bank_remap_table`), equal the
+/// harvested `console_band.idx` in ALL 19200 bytes. So the band was never a
+/// separate asset — it is this panorama frame, colour-reduced by the montage's
+/// full-screen remap (`0x7AC3`).
+pub const CONSOLE_BAND_FRAME: usize = 90;
+/// The band's screen origin and height (rows 140..200).
+pub const CONSOLE_BAND_TOP: usize = 140;
+pub const CONSOLE_BAND_HEIGHT: usize = 60;
 
 /// One frame's directory entry, exactly as stored at `index * 8` from the start
 /// of `TB.BIG`: little-endian `{offset, size}` into the archive file.

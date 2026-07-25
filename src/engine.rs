@@ -2761,18 +2761,41 @@ impl EngineState {
         );
     }
 
+    /// Overlay the intro montage's console band — FROM THE REAL ASSET.
+    ///
+    /// The band is `TB.BIG` panorama frame [`CONSOLE_BAND_FRAME`], rows 140..200,
+    /// pushed through the console-bank remap table the montage applies to the whole
+    /// screen (`0x7AC3` -> `DS:0x6011`). Proven: that composition equals the
+    /// previously harvested `console_band.idx` in ALL 19200 bytes, which is what
+    /// finally identified the source — the band was never separate art, it is the
+    /// bridge panorama colour-reduced.
+    ///
+    /// Earlier attempts missed it because they compared the panorama's RAW indices
+    /// (`0..~75`) against the band's POST-REMAP indices (`224..=239`) and concluded
+    /// the ranges were disjoint. The transform was exactly what made them differ.
     fn overlay_console_band(&mut self) {
-        const BAND_TOP: usize = 140;
-        const BAND: &[u8] = include_bytes!("../accuracy/captures/console_band.idx");
+        use crate::tbbig::{CONSOLE_BAND_FRAME, CONSOLE_BAND_HEIGHT, CONSOLE_BAND_TOP};
         let dac = crate::palette::game_screen_palette();
         for i in 224..=255usize {
             self.scene_palette[i] = dac[i];
         }
-        for (k, &ci) in BAND.iter().enumerate() {
-            let x = k % ENGINE_SCREEN_WIDTH;
-            let y = BAND_TOP + k / ENGINE_SCREEN_WIDTH;
-            if y < ENGINE_SCREEN_HEIGHT {
-                self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] = ci;
+        let Some(pan) = self.panorama.as_ref() else {
+            return; // no bridge archive loaded (headless tests)
+        };
+        let Some(px) = pan.frame_pixels(CONSOLE_BAND_FRAME) else {
+            return;
+        };
+        if px.len() < (CONSOLE_BAND_TOP + CONSOLE_BAND_HEIGHT) * ENGINE_SCREEN_WIDTH {
+            return;
+        }
+        let table = crate::palette::build_console_bank_remap_table(
+            &crate::palette::GAME_SCREEN_PALETTE_DAC,
+        );
+        for row in 0..CONSOLE_BAND_HEIGHT {
+            let y = CONSOLE_BAND_TOP + row;
+            for x in 0..ENGINE_SCREEN_WIDTH {
+                let src = px[y * ENGINE_SCREEN_WIDTH + x];
+                self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] = table[src as usize];
             }
         }
     }
@@ -5421,6 +5444,45 @@ mod tests {
         let once = e.framebuffer.clone();
         e.apply_console_bank_remap();
         assert_eq!(e.framebuffer, once);
+    }
+
+    #[test]
+    fn the_console_band_is_the_panorama_frame_remapped() {
+        // THE identification: TB.BIG frame 90's rows 140..200, pushed through the
+        // console-bank table, equal the harvested capture in every byte. The
+        // capture survives only as this fixture; the engine composes from the asset.
+        let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter()
+            .map(std::path::Path::new)
+            .find(|p| p.join("TB.BIG").exists());
+        let Some(iso) = iso else { return };
+        let Some(pan) = crate::tbbig::BridgePanorama::parse(
+            std::fs::read(iso.join("TB.BIG")).unwrap(),
+        ) else {
+            return;
+        };
+        let px = pan
+            .frame_pixels(crate::tbbig::CONSOLE_BAND_FRAME)
+            .expect("the band frame decodes");
+        let table = crate::palette::build_console_bank_remap_table(
+            &crate::palette::GAME_SCREEN_PALETTE_DAC,
+        );
+        let composed: Vec<u8> = px[crate::tbbig::CONSOLE_BAND_TOP * ENGINE_SCREEN_WIDTH
+            ..(crate::tbbig::CONSOLE_BAND_TOP + crate::tbbig::CONSOLE_BAND_HEIGHT)
+                * ENGINE_SCREEN_WIDTH]
+            .iter()
+            .map(|&p| table[p as usize])
+            .collect();
+        let captured: &[u8] = include_bytes!("../accuracy/captures/console_band.idx");
+        assert_eq!(
+            composed.len(),
+            captured.len(),
+            "the band is 320x60"
+        );
+        assert!(
+            composed == captured,
+            "the real asset must reproduce the capture byte-for-byte"
+        );
     }
 
     #[test]
