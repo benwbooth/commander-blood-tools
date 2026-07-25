@@ -2332,3 +2332,43 @@ to their image bytes and the box rect read back from the `mov` immediates at
 
 The console band, meanwhile, is still open — but the search that missed it is
 recorded, and the ARE_YOU_SURE? box is a surface the port simply did not have.
+
+## FIX #69 — sweeping the UI STRING TABLE for surfaces the port never knew about
+
+The confirm dialog (#68) was found by accident, searching the binary rather than
+the port. This does it deliberately: `re/tools/check_ui_strings.py` takes every
+string in the UI table (`DS:0x100..`) and asks whether any `mov reg,imm` in the
+image carries its offset — i.e. whether a draw site can reach it.
+
+21 strings. The answer splits three ways:
+
+**DEAD — five strings no code references at all:** `ABSENTE`, `GO`, `ON`, `OFF`,
+`REC`. Shipped but unreachable. Worth recording precisely because they look like
+obvious features to implement — a `REC` indicator, an `ON`/`OFF` toggle — and
+implementing any of them would be inventing a surface the game does not have.
+(`ABSENTE`'s pair `PRESENTE` IS referenced, once, at `0xB7C9`, stored as a far
+pointer beside the audio flags.)
+
+**LIVE and already ported:** the four status-panel headers, `CANCEL`,
+`ARE_YOU_SURE?`/`YES`/`NO`, the filenames.
+
+**LIVE and MISSING — three of them:**
+
+```text
+  0x16BC  si=0x159 "LOADING"  ax=0x82 bx=0x60  dl=0xEF   lcall 0x299:0xD6
+  0x1ABB  si=0x166 "PAUSE"    bx=0x87 dx=0x60  al=0xE8   lcall 0x299:0x498
+  0x1B58  si=0x161 "LAST"     -> DS:0x270D, [0x2734], jmp vm_state_save
+```
+
+The first two are centred status overlays, both on the y=96 band. The third is
+better than a label: it is the QUICKSAVE. The game copies the literal `LAST` into
+the slot-name buffer, points the save flow's `[0x2734]` at it — the same global
+the interactive rename uses (FIX #66) — and jumps straight into `vm_state_save`
+with no prompt. The port had no quicksave at all.
+
+All three ported, with the positions, colours and buffer address read back from
+the `mov` immediates.
+
+METHOD NOTE: this is the second time a sweep of the BINARY's own tables found
+something the port's documentation could not have suggested. A ledger of what the
+port HAS will never list what it LACKS; only the game's own data will.

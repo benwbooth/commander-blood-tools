@@ -1973,6 +1973,67 @@ impl EngineState {
         (anchor, x0, (x0 + w).min(ENGINE_SCREEN_WIDTH))
     }
 
+    /// The two centred STATUS OVERLAYS, and the quicksave slot name — three UI
+    /// strings the port never drew. Found by sweeping the game's UI string table
+    /// for live draw sites (`re/tools/check_ui_strings.py`) rather than by
+    /// looking at the port, which cannot report a screen it never had.
+    ///
+    /// ```text
+    ///   0x16BC  si=0x159 "LOADING"  ax=0x82 bx=0x60  dl=0xEF  lcall 0x299:0xD6
+    ///   0x1ABB  si=0x166 "PAUSE"    bx=0x87 dx=0x60  al=0xE8  lcall 0x299:0x498
+    /// ```
+    ///
+    /// Both land on y=96 — the screen's vertical centre band.
+    pub const LOADING_TEXT: &'static str = "LOADING";
+    pub const LOADING_POS: (usize, usize) = (0x82, 0x60);
+    pub const LOADING_COLOR: u8 = 0xEF;
+    pub const PAUSE_TEXT: &'static str = "PAUSE";
+    pub const PAUSE_POS: (usize, usize) = (0x87, 0x60);
+    pub const PAUSE_COLOR: u8 = 0xE8;
+
+    /// The QUICKSAVE slot name (`0x1B58`): the game copies the literal `LAST` into
+    /// the slot-name buffer at `DS:0x270D`, points the save flow's `[0x2734]` at
+    /// it, clears `[0x2739]` and jumps STRAIGHT into `vm_state_save` (`0x1C3F`) —
+    /// a save with no rename prompt. The port had no quicksave at all.
+    pub const QUICKSAVE_SLOT_NAME: &'static str = "LAST";
+    pub const QUICKSAVE_NAME_BUFFER_DS: u16 = 0x270D;
+
+    /// Draw one of the centred status overlays at its own decoded position.
+    pub fn draw_status_overlay(&mut self, loading: bool) {
+        let (text, (x, y), color) = if loading {
+            (Self::LOADING_TEXT, Self::LOADING_POS, Self::LOADING_COLOR)
+        } else {
+            (Self::PAUSE_TEXT, Self::PAUSE_POS, Self::PAUSE_COLOR)
+        };
+        draw_text_indexed(
+            &mut self.framebuffer,
+            ENGINE_SCREEN_WIDTH,
+            ENGINE_SCREEN_HEIGHT,
+            text,
+            x,
+            y,
+            color,
+        );
+    }
+
+    /// The rows a QUICKSAVE produces: the slot list with `LAST` written into the
+    /// target slot, matching `0x1B58`'s copy into `DS:0x270D`.
+    pub fn quicksave(&mut self, slot: usize) {
+        let slot = slot.min(Self::SAVE_SLOT_ROWS - 1);
+        if self.save_slots.len() < Self::SAVE_SLOT_ROWS {
+            self.save_slots.resize(
+                Self::SAVE_SLOT_ROWS,
+                crate::bloodsav::SaveSlot {
+                    name: String::new(),
+                    file: String::new(),
+                },
+            );
+        }
+        self.save_slots[slot].name = Self::QUICKSAVE_SLOT_NAME.to_string();
+        self.save_ui_slot = slot;
+        self.save_ui_name = Self::QUICKSAVE_SLOT_NAME.to_string();
+    }
+
     /// The CONFIRM DIALOG (`0x14E6..0x1524`) — the game's `ARE_YOU_SURE?` box,
     /// which the port did not implement at all.
     ///
@@ -5182,6 +5243,56 @@ mod tests {
     /// of 0xE0, and item text in 0xE8 (see `re/REVERSE.md` "CHOICE BOX SPEC
     /// MEASURED"). This locks the widget to the decoded values so a regression
     /// (wrong index, missing border/fill) fails a test.
+    #[test]
+    fn the_status_overlays_and_quicksave_come_from_the_binary() {
+        if let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        {
+            let imm16 = |at: usize| u16::from_le_bytes([exe[at], exe[at + 1]]) as usize;
+            let imm8 = |at: usize| exe[at];
+            let string_at = |ds: usize| {
+                let f = 0xD420 + ds;
+                let end = f + exe[f..].iter().position(|&b| b == 0).unwrap();
+                std::str::from_utf8(&exe[f..end]).unwrap().to_string()
+            };
+            // LOADING: si=0x159 @0x16BC, ax=0x82 @0x16BF, bx=0x60 @0x16C2, dl=0xEF @0x16C5.
+            assert_eq!(string_at(imm16(0x16BD)), EngineState::LOADING_TEXT);
+            assert_eq!((imm16(0x16C0), imm16(0x16C3)), EngineState::LOADING_POS);
+            assert_eq!(imm8(0x16C6), EngineState::LOADING_COLOR);
+            // PAUSE: si=0x166 @0x1ABB, bx=0x87 @0x1ABE, dx=0x60 @0x1AC1, al=0xE8 @0x1AC4.
+            assert_eq!(string_at(imm16(0x1ABC)), EngineState::PAUSE_TEXT);
+            assert_eq!((imm16(0x1ABF), imm16(0x1AC2)), EngineState::PAUSE_POS);
+            assert_eq!(imm8(0x1AC5), EngineState::PAUSE_COLOR);
+            // Quicksave: si=0x161 "LAST" @0x1B58, di=0x270D @0x1B5B.
+            assert_eq!(string_at(imm16(0x1B59)), EngineState::QUICKSAVE_SLOT_NAME);
+            assert_eq!(
+                imm16(0x1B5C),
+                EngineState::QUICKSAVE_NAME_BUFFER_DS as usize
+            );
+        }
+
+        let mut e = EngineState::new();
+        e.framebuffer.fill(0);
+        e.draw_status_overlay(true);
+        let painted = |e: &EngineState, color: u8, (x, y): (usize, usize)| {
+            (y..y + 8)
+                .flat_map(|yy| (x..x + 60).map(move |xx| yy * ENGINE_SCREEN_WIDTH + xx))
+                .filter(|&i| e.framebuffer[i] == color)
+                .count()
+        };
+        assert!(painted(&e, EngineState::LOADING_COLOR, EngineState::LOADING_POS) > 20);
+        e.framebuffer.fill(0);
+        e.draw_status_overlay(false);
+        assert!(painted(&e, EngineState::PAUSE_COLOR, EngineState::PAUSE_POS) > 15);
+
+        // Quicksave writes LAST into the slot, with no rename prompt.
+        let mut e = EngineState::new();
+        e.quicksave(2);
+        assert_eq!(e.save_slots[2].name, "LAST");
+        assert_eq!(e.save_ui_slot, 2);
+        assert!(!e.save_ui_active, "quicksave does not open the rename UI");
+    }
+
     #[test]
     fn the_confirm_dialog_matches_the_binary_and_its_own_hit_regions() {
         // Strings pinned to the image, the same standard as OPTION_BOX_LABEL.
