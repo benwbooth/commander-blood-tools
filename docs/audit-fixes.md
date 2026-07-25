@@ -7211,3 +7211,25 @@ nonsense opcode. Shifting `0x06f2` to `0x06f3` fails with "not `test byte
 Twelve rows settled ASM, including the segment itself. The block that was thirty
 bare numbers an hour ago is now twenty-two cited constants and a handful of
 genuinely undocumented ones.
+
+## #233 — five more addresses, and the eighth guard catch
+
+Five further `bloodprg.rs` DS constants now carry the instruction that touches
+them, each sourced from a decode already in the tree rather than from a fresh
+disassembly: the selector's zoom rect (`0xB305`) and query-mode byte (`0xB2E3`)
+from #192, the list widget's anchor (`0x84AD`) and hover row (`0x850C`) from the
+target-list decode, and the mouse-on-row bit (`0x858D`) from `engine.rs`.
+
+One was wrong and the guard said so: I cited `sub dx,[0xac6]` at `0x84AD`, but
+`0x84AD` is `shr dx,1` — the `sub` is two instructions further on. The doc I took
+it from says exactly that (`shr dx,1 / sub dx,[0xac6] / neg dx`); I quoted the
+part that mentioned the address I wanted rather than the part that starts at the
+address. Now cited as the sequence, with a note that the `sub` is not at the head.
+
+That is the EIGHTH time this guard has caught one of my own citations, and the
+second time (#213) it caught the specific error of quoting a sequence's middle. It
+is worth noting that the failure mode is stable: when I want to document address
+X's ROLE, I reach for the instruction that expresses the role, which is often not
+the instruction AT X. The guard's rule — an address pairs with the FIRST mnemonic
+of a run — is the correct discipline, and #204's extension is what makes it
+enforceable in prose docs at all.

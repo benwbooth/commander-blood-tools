@@ -201,6 +201,7 @@ pub const SHIP_3D_NAV_CHOICE_SOUND_GATE_DS_OFFSET: u16 = 0x0b13;
 pub const SHIP_3D_INTERPOLATION_DURATION_DS_OFFSET: u16 = 2778;
 pub const SHIP_3D_INTERPOLATION_TICK_DS_OFFSET: u16 = 0x0adb;
 pub const SHIP_3D_TARGET_EXTRA_LABEL_DS_OFFSET: u16 = 0x0174;
+/// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in).
 pub const SHIP_3D_TARGET_LAYOUT_CENTER_X_DS_OFFSET: u16 = 0x0ac6;
 pub const SHIP_3D_TARGET_LAYOUT_DRAW_PTR_DS_OFFSET: u16 = 0x0ac8;
 pub const SHIP_3D_TARGET_LAYOUT_PRESERVE_WIDTHS_DS_OFFSET: u16 = 2780;
@@ -209,10 +210,14 @@ pub const SHIP_3D_TARGET_MOUSE_X_DS_OFFSET: u16 = 0x0a2a;
 pub const SHIP_3D_TARGET_MOUSE_Y_DS_OFFSET: u16 = 0x0a2c;
 pub const SHIP_3D_TARGET_REQUESTED_PRESENTATION_DS_OFFSET: u16 = 0x0a32;
 pub const SHIP_3D_TARGET_PRESENTATION_STATE_DS_OFFSET: u16 = 0x0a34;
+/// The mouse-is-on-it bit the row colour depends on — `test byte gs:[0xa3e],1` @`0x858D`.
 pub const SHIP_3D_TARGET_ACTIVATE_FLAG_DS_OFFSET: u16 = 0x0a3e;
+/// The hovered row the draw compares against — `mov [0x27c7],al` @`0x850C`.
 pub const SHIP_3D_TARGET_HOVER_ROW_DS_OFFSET: u16 = 0x27c7;
+/// Set around the layout prepass call — `mov byte [0x27e6],1` @`0xB2E3`, cleared at `0xB2ED`.
 pub const SHIP_3D_TARGET_QUERY_MODE_DS_OFFSET: u16 = 0x27e6;
 pub const SHIP_3D_TARGET_SELECTION_DS_OFFSET: u16 = 0x27e7;
+/// The zoom/blit rect the selector hands the panel helper — `mov si,0x2aab` @`0xB305`.
 pub const SHIP_3D_TARGET_LAYOUT_RECT_DS_OFFSET: u16 = 0x2aab;
 pub const SHIP_3D_TARGET_WIDTH_TABLE_DS_OFFSET: u16 = 10931;
 pub const SHIP_3D_PRESENTATION_HOLD_TIMER_DS_OFFSET: u16 = 2875;
