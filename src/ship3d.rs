@@ -1315,10 +1315,29 @@ pub fn run_ship_3d_nav_choice_handler_3(
 }
 
 /// NAV-CHOICE HANDLER 4 — file `0x886C`, entry 4 of the dispatch table
-/// (see [`run_ship_3d_nav_choice_handler_0`]). The largest of the five: the
-/// target-list toggle (`DS:0x2567`/`0x2569` between `DS:0x2578` and `DS:0x2581`),
-/// the `mu\tablo2.voc` sound gate and the left/right/motion latches
-/// (`DS:0x2736`/`0x2737`/`0x2738`).
+/// (see [`run_ship_3d_nav_choice_handler_0`]). The largest of the five, and
+/// verified end to end:
+///
+/// ```text
+///   0x8874  test byte [0x2565],1 / je 0x889C   the handler PHASE bit
+///   0x887B  mov byte [0xADB],0                 reset the interpolation STEP
+///   0x8880  [0x27E6]=1 / call 0x8428           the query-only layout prepass
+///   0x889C  test byte [0x2565],2 / je 0x88B9   the INTERPOLATING phase
+///   0x88AA  lcall 0x8B:0xFAD / jae 0x8961      not complete -> exit
+///   0x88B4  mov byte [0x2565],0                phase cleared
+///   0x88BA  call 0x8428 / or ax,ax / js        a NEGATIVE selection exits
+///   0x88C3  dec al / jns   -> sel 0: [0x259B]=1, [0x259C]=1
+///   0x88D4  dec al / jns   -> sel 1: gated on [0xADE]&1, toggles [0xBA3]
+///   0x8923  dec al / jns   -> sel 2: [0x2738]=1, [0x2736]=1   (left)
+///   0x8933  dec al / jns   -> sel 3: [0x2738]=1, [0x2737]=1   (right)
+///   0x8943  dec al / jns   -> sel 4: [0xB13]=2, [0xA3E]=0, [0xA40]=0
+///   0x8956  [0x2A19]=0 / and byte [0x2793],0xFB    clear choice + HUD flag
+/// ```
+///
+/// The selection dispatch is a CHAIN OF `dec al / jns`, not a table — each branch
+/// tests whether the counter has gone negative yet, so the cases are consumed in
+/// order. The port's `match` on the low byte reproduces it exactly, including the
+/// fall-through for selections past 4.
 pub fn run_ship_3d_nav_choice_handler_4(
     state: &mut Ship3dNavChoiceState,
     handler_state: &mut Ship3dNavChoiceHandler4State,
