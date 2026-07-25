@@ -1233,3 +1233,24 @@ The port's `record_state_condition` reads its record words directly from
 `record_offset`. Whether those coincide depends on what `0x6034` returns for this input,
 which is not established here. Left as a specific open question rather than assumed
 equivalent.
+
+### Post-update `0xC6` branch — a scripted line trigger
+
+While tracing the post-update ladder for `post_update_execution_state`, decoded the
+`0xC6` branch at `0x5E22`. It is a small phase machine over `gs:0x2792` / `gs:0x2A7B` /
+`gs:0x278B`, and its second phase does something worth naming:
+
+    0x5E74  mov word gs:[0x6788], 0x2C
+
+That writes the ACTIVE LINE ID directly — the same variable the `0xA6` handler forms as
+`sign_extend(b3) + 9` and that `0x9D10` dispatches to scene/asset work. So a post-update
+step can TRIGGER a specific line without an `0xA6` token being executed, by setting the
+id the dispatcher reads.
+
+That matters for the port's model: the line id is not only an A6-derived value. Anything
+reproducing `gs:0x6788` faithfully has to account for native writers too, and this is
+one.
+
+Also corroborated here: `gs:0x1FB2`, which `vm.rs` models as `C2_PRESENTATION_GATE`, is
+tested at `0x5E7E` in this same ladder — the third independent site for that gate after
+`0x11FD` and `0x9D26`.
