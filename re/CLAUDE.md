@@ -32,6 +32,13 @@ Tools: `mzfile.py` (shared loader), `dis.py`, `search_bytes.py`, `xref.py`,
 Convert with `seg_offset.py`. labels.csv accepts `0xNNNNN`, `SEG:OFF`,
 `DS:0xNNNN`, `IMG:0xNNNN` in the addr column.
 
+- **DRV:0xNNNN** — an offset inside a SHIPPED SOUND DRIVER (`dnsdb.drv`,
+  `nosound.drv`), a second binary the game loads and calls through a far-pointer
+  vector table (`re/tools/drv_vectors.py`). It is a DIFFERENT ADDRESS SPACE: a
+  bare `0x0305` in the addr column would be read as a BLOODPRG.EXE offset and
+  decode unrelated bytes. The prefix exists because a driver label was first
+  added without one (2026-07-25) and would have done exactly that.
+
 ## Deviations from the generic `re` skill
 
 - **Disassembler = capstone** (CS_MODE_16), wrapped in `dis.py`, instead of a
