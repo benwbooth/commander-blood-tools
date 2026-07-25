@@ -5354,3 +5354,27 @@ port, and now that is a recorded decision rather than an accident waiting to be
 "fixed" with a `saturating` call.
 
 The queue: 52 -> 50. Cited instructions: 235 -> 239.
+
+## #168 — the opcode "families" are decode groups, not handler groups
+
+`is_record_entry_opcode`, `is_record_state_opcode` and `is_pair_record_opcode`
+read like three of a kind. Against the dispatch table they are not:
+
+```text
+  0xB8 0xB9 0xBD      -> 0x6B06                           ONE handler
+  0xC1 0xC2           -> 0x6B4C, 0x6E34                   two
+  0xC5 0xC6 0xC7 0xC8 -> 0x6D18, 0x6D80, 0x6DCF, 0x6F62   FOUR
+```
+
+Only the pair-record trio is a behavioural family. `C5..=C8` is four distinct
+handlers that happen to share an OPERAND LAYOUT — and that is all the token
+decoder needs, since it walks the stream deciding how many bytes to consume, not
+what they will do.
+
+The distinction is worth writing down because the code does not carry it. Three
+predicates in the same shape invite the reading that they mean the same kind of
+thing, and acting on that — merging the `C5..=C8` handlers, or splitting the
+pair-record trio — would break in opposite directions. The grouping criterion is
+invisible from the port and obvious from the table.
+
+The queue: 50 -> 48.

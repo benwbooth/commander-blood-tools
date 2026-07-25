@@ -503,6 +503,22 @@ pub fn text_line_already_shown(flag_word: u16) -> bool {
     flag_word & TEXT_LINE_ALREADY_SHOWN_FLAG != 0
 }
 
+/// The opcode-family predicates below group by TOKEN SHAPE, not by handler, and
+/// the dispatch table shows why that distinction is needed:
+///
+/// ```text
+///   0xB8 0xB9 0xBD  -> 0x6B06                    ONE handler: a true family
+///   0xC1 0xC2       -> 0x6B4C, 0x6E34            two handlers
+///   0xC5 0xC6 0xC7 0xC8 -> 0x6D18, 0x6D80,       FOUR handlers
+///                          0x6DCF, 0x6F62
+/// ```
+///
+/// Only the pair-record trio shares a handler. The `C5..=C8` range is four
+/// distinct behaviours that happen to share an OPERAND LAYOUT, which is all the
+/// token decoder needs — it walks the stream and must know how many bytes to
+/// consume, not what they will do. Reading these as behavioural families and
+/// merging their handlers would be wrong; reading them as decode-length groups is
+/// exactly right.
 pub fn is_record_entry_opcode(opcode: u8) -> bool {
     (OP_RECORD_ENTRY_MIN..=OP_RECORD_ENTRY_MAX).contains(&opcode)
 }
@@ -515,6 +531,9 @@ pub fn is_global_compare_opcode(opcode: u8) -> bool {
     opcode == OP_GLOBAL_WORD_COMPARE || opcode == OP_GLOBAL_PAIR_COMPARE
 }
 
+/// The one grouping that IS a handler family: `0xB8`, `0xB9` and `0xBD` all
+/// dispatch to `0x6B06` (dispatch table `0x142D0`), which is why they share the
+/// 2-word record behaviour rather than merely a token length.
 pub fn is_pair_record_opcode(opcode: u8) -> bool {
     matches!(
         opcode,
