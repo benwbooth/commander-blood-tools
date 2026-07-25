@@ -1364,3 +1364,25 @@ TWO RESULTS WORTH KEEPING:
 
 Kind 1 is the object kind and carries 13 of the 54 fields; kinds 5 and 6 carry only the
 universal flags word.
+
+### `vm_field_offset` decoded — the kind is a BITMASK (`bsf`)
+
+`0x6023` is `SHL AX,4` / **`BSF BX,BX`** / `ADD BX,AX` / `MOV AL,gs:[bx+0x6D60]`. Bit
+Scan Forward, so the kind is a BITMASK and the matrix column is the index of its lowest
+set bit — column *k* is kind value 2^k, not kind *k*. `vm.rs` models this exactly with
+`kind.trailing_zeros()`, and its `kind == 0 -> None` guard matches BSF leaving the
+destination undefined on a zero source.
+
+That corrects how my own field-space audit should be read: what I tabulated as
+"kind 8" is COLUMN 8, i.e. kind value `0x100` — which is why `SHIP_3D_OBJECT_KIND_POSITION_KIND100 = 256`
+lands there. It also dissolves a concern I raised one step earlier: `vm_field_offset(0x13, 0x10)`
+does not overflow into the next selector's row, because `0x10` means bit 4.
+
+OPEN LEAD, recorded rather than claimed. In column 8 the selectors resolve to
+`9->0x18, 10->0x1C, 12->0x14, 13->0x16`, and **`14 -> 0x00`** (undefined). The port's
+`SHIP_3D_FIELD_SELECTOR_KIND100_RELATION_WORD` is 14, while selector 13 is the one that
+has a real offset there — and 13 is exactly what `0x5ED9` uses. But `kind100_relation_word`
+handles the zero case DELIBERATELY (`0 => Some(record.kind_flags)`), so it is not
+accidentally reading a missing field. Whether that branch matches the binary is
+unverified; the check is to locate the site `kind100_relation_word` models and see
+whether it resolves selector 13 or 14.
