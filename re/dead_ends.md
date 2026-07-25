@@ -1284,7 +1284,7 @@ TRIED: sprite banks (no frame >= 200x40 exists) and the three `.FD` images
 
 SESSION: the engine.rs capture-provenance sweep.
 
-## `0x7259`'s FIRST candidate: what does `0x624B` leave in DI? (open, 2026-07-25)
+## `0x7259`'s FIRST candidate: what does `0x624B` leave in DI? (RESOLVED same day)
 
 `entity_candidate_list` (`0x7259`) does `mov ax,di` @`0x726F` and `jmp 0x727B`,
 so the object in DI is tested BEFORE the `DS:0x6886` list is walked. Decoding the
@@ -1306,3 +1306,17 @@ composite is deliberately absent until DI is decoded.
 
 Better approach next: read `0x624B` through its recursion to the `retf`, tracking
 DI across the recursive call, rather than inferring from the register-save list.
+
+RESOLVED by reading the recursion instead of the prologue: `0x6276 push di` /
+`0x6277 mov di,ax` / `call 0x624b` / `0x627D pop di`. DI is saved and restored
+AROUND the recursive call, so `0x624B` returns it unchanged and the "walk's last
+object" reading is dead. `first` is the caller's target.
+
+The lesson is the one this file exists for: I inferred from the ENTRY push list
+(`push ds/si/bx/ax`, no DI) that DI was unpreserved, when the save was local to
+the one instruction that clobbers it. A register-save list at the prologue is not
+the whole answer about a register's lifetime; the recursion site is.
+
+`VmMachine::destination_candidate_records` now composes the chain with
+`first = target`, and keeps `entity_candidate_list(first, source)` separate so the
+routine is still modelled exactly.

@@ -5430,6 +5430,22 @@ impl VmMachine {
         out
     }
 
+    /// The whole destination chain in one call: the source list `0x624B` builds,
+    /// filtered by `0x7259`, yielding the `RECORD+4` words the selector reads.
+    ///
+    /// `first = target` because `0x624B` PRESERVES DI across its recursion —
+    /// `0x6276 push di / mov di,ax / call 0x624b / 0x627D pop di` — so the DI that
+    /// `0x7259` tests first (`mov ax,di` @`0x726F`) is still the caller's target.
+    /// That was an open question (`re/dead_ends.md`) until the recursion site was
+    /// read; the entry push list (`ds/si/bx/ax`, no DI) had suggested otherwise.
+    ///
+    /// The target is therefore tested as a candidate in its own right, and is
+    /// normally rejected by the `arche` exclusion @`0x728B`.
+    pub fn destination_candidate_records(&self, target: u16) -> Vec<u16> {
+        let source = self.build_nav_source_list(target);
+        self.entity_candidate_list(target, &source)
+    }
+
     /// The WORLD-DESTINATION HIT-TEST, `ship_3d_target_record_select` (`0xB2BB`) —
     /// what produces the record [`Self::world_click_select`] commits.
     ///
@@ -10144,6 +10160,30 @@ mod tests {
         state_set_u16(&mut var, related, 1);
         assert_eq!(post_update_encounter_counter(&mut var, owner, related), None);
         assert_eq!(state_u16(&var, owner + 2), 0, "no bump -> no bit15 either");
+    }
+
+    /// `0x624B` preserves DI (`0x6276`/`0x627D`), so the composite roots the walk
+    /// at the target AND tests the target itself first.
+    #[test]
+    fn destination_candidates_test_the_target_itself_first() {
+        let mut m = VmMachine::new();
+        m.orxx_offset = Some(0x0200);
+        // No `arche` set, so the target is not excluded and must appear itself.
+        let target = 0x0140u16;
+        m.rec_write_pub(target, ENTITY_CANDIDATE_KIND_MASK);
+        m.rec_write_pub(target + 2, ENTITY_CANDIDATE_READY_BIT as u16);
+        assert_eq!(
+            m.destination_candidate_records(target),
+            vec![target + 4],
+            "DI survives 0x624B, so the target is candidate zero"
+        );
+
+        // With `arche` = the target, 0x728B drops it and the list is empty.
+        m.arche_offset = Some(target);
+        assert!(
+            m.destination_candidate_records(target).is_empty(),
+            "a location never offers itself"
+        );
     }
 
     /// `0x7259` builds what `0xB2BB` reads: an end-to-end check that a record

@@ -6016,3 +6016,35 @@ recursion. So DI is either the caller's target or the walk's last object, and th
 two differ observably: the second can emit a candidate twice. `entity_candidate_list`
 therefore takes `first` as a parameter and the composite is absent. The open
 question is in `re/dead_ends.md` with the approach that would settle it.
+
+## #194 — a prologue's push list is not a register's lifetime
+
+#193 left DI at `0x726F` undecoded and refused to build the composite around a
+guess. The evidence I had used was `0x624B`'s ENTRY push list — `push ds/si/bx/ax`,
+no DI — from which I inferred DI was unpreserved and might come back as the last
+object of the depth-first walk.
+
+That inference was wrong, and reading twenty more instructions settled it:
+
+```text
+  0x6276  push di          <- saved HERE, not at the prologue
+  0x6277  mov di,ax
+  0x627A  call 0x624b      the recursion
+  0x627D  pop di           <- restored
+```
+
+The save is local to the one instruction that clobbers DI. So `0x624B` returns DI
+unchanged, `0x7259` tests the CALLER'S TARGET first, and the "emitted twice"
+hazard that justified withholding the composite does not exist.
+
+`destination_candidate_records(target)` now composes the chain, with a test
+pinning both halves of the consequence: the target appears as candidate zero when
+it passes the filter, and vanishes when it IS `arche` (`0x728B`).
+
+The generalisable mistake: a routine's prologue push list answers "what does the
+caller get back" only when the register is untouched elsewhere. For a register a
+routine deliberately reassigns — a recursion root, a loop cursor — the save is
+usually AT the reassignment, and the prologue says nothing. Read the clobber site.
+
+Kept in `re/dead_ends.md` as RESOLVED rather than deleted: the wrong inference is
+the reusable part.
