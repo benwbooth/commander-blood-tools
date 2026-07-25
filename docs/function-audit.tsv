@@ -714,8 +714,8 @@ text_line_should_display	src/vm.rs	1413	fn		ASM	|| AUDIT 2026-07-24: ASM-VERIFIE
 text_presentation_record_is_active	src/vm.rs	1418	fn		ASM	|| AUDIT 2026-07-24: A6 gate 0x6664..0x667C: the handler builds matrix index (0x13<<4)+1 -> TALK_FIELD 0x3A, reads es:[bx+di] with di = table base + line_index, and requires it to equal 0xC4 -- exactly state[line_index+TALK_FIELD] == OP_ACTOR
 text_runtime_gates_allow	src/vm.rs	1422	fn		ASM	|| AUDIT 2026-07-24: ASM-VERIFIED as the conjunction of the handler two runtime gates, both of which skip to 0x67A0 on failure: the presentation-record check (0x6678 cmp 0xC4) and the line-display check (0x665A already-shown)
 TextTokenRuntimeFlags	src/vm.rs	1435	struct		UNVERIFIED	
-flags_b5	src/vm.rs	1440	fn		UNVERIFIED	
-accept_line	src/vm.rs	1447	fn		UNVERIFIED	
+flags_b5	src/vm.rs	1440	fn		ASM	|| AUDIT 2026-07-24: ASM-VERIFIED as the READ side of that model: returns the memo when present, else the original token byte -- equivalent to re-reading a COD byte the handler may have modified. SWEPT FOR BYPASS: the memo is consulted at exactly two live sites (the two execution walks), and BOTH pass the effective value into text_runtime_gates_allow AND accept_line. No path reads the raw token b5 for a gating decision, so a line accepted once cannot re-display -- which is the behaviour the self-modification exists to produce
+accept_line	src/vm.rs	1447	fn		ASM	|| AUDIT 2026-07-24: ASM-VERIFIED as the port MODEL of a SELF-MODIFYING write. The handler at 0x6693..0x6698 does TEST CL,1 / AND byte [si+1],0x7F -- it clears b5 bit7 IN THE COD STREAM so an accepted line cannot re-display. The port cannot mutate the script bytes, so it memos the new b5 in flags_b5_by_offset keyed by token offset. The value written comes from text_flags_after_accept, itself verified against those same instructions
 mark_text_line_shown	src/vm.rs	1455	fn		ASM	|| AUDIT 2026-07-24: ASM-CONSISTENT with the 0x8000 flag at record+2 verified above; the handler sets it on the accept path so a line does not re-display
 SpecialObjectSlots	src/vm.rs	1465	struct		UNVERIFIED	
 remove	src/vm.rs	1470	fn		ASM	|| AUDIT 2026-07-24: vm_special_slot_remove 0x5FD8: same 16-word list; on a hit it writes 0 into the slot and sets CF (found), otherwise `clc` (not found)
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                                           
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                                            
