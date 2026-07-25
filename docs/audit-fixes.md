@@ -5056,3 +5056,37 @@ rather than being called only when the phase is set — the dispatch is
 unconditional once the gate passes.
 
 Cited instructions 194 -> 198; the queue 68 -> 67.
+
+## #157 — the guard caught me writing an instruction x86 cannot encode
+
+`project_ship_3d_point` (from `ship_3d_point_cloud_project` @`0x9A10`) translates
+by the camera origin and dots with the matrix's third row:
+
+```text
+  0x9A31  mov bp,0x2f95                      the matrix built at 0x98B9
+  0x9A3F  mov ax,[0x2f65] / sub [di],ax      translate by the ORIGIN
+  0x9A44  mov ax,[0x2f67] / sub [di+2],ax
+  0x9A4A  mov ax,[0x2f69] / sub [di+4],ax
+  0x9A50  movsx eax,[di] / imul eax,[bp+0x18]   DEPTH first: the third row
+```
+
+The matrix is nine 32-bit terms, so `[bp+0x18]` is term 6 — the depth row is
+`terms[6..=8]`, which is why the port computes depth from those and not the first
+row. The translate is a plain 16-bit `sub` BEFORE any widening, so a point far
+from the origin wraps rather than saturating, and the `movsx` then sign-extends
+whatever that left.
+
+My first version of this doc wrote the translate as
+
+    0x9A3F  sub [di],[0x2f65]
+
+which is wrong twice over: the mnemonic at `0x9A3F` is `mov`, and `sub mem,mem` is
+not an encodable x86 instruction at all. `check_cited_instructions.py` flagged all
+three lines immediately.
+
+That is the fifth time this session a guard has caught my own citation rather than
+someone else's (#100, #101, #141, #147, this). The value of a guard that runs on
+every commit is not that it catches the careless — it is that it catches the
+person who has just spent an hour in the disassembly and is confident.
+
+Cited instructions 198 -> 202; the queue 67 -> 66.

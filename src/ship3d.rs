@@ -1841,6 +1841,26 @@ pub fn build_ship_3d_projection_matrix(
     })
 }
 
+/// Project one point through the camera, from `ship_3d_point_cloud_project`
+/// @`0x9A10` (the body at `0x9A30`):
+///
+/// ```text
+///   0x9A31  mov bp,0x2f95              the matrix built at 0x98B9
+///   0x9A34  lodsd / mov [di],eax       copy the point's words
+///   0x9A3F  mov ax,[0x2f65] / sub [di],ax      translate by the camera ORIGIN
+///   0x9A44  mov ax,[0x2f67] / sub [di+2],ax
+///   0x9A4A  mov ax,[0x2f69] / sub [di+4],ax
+///   0x9A50  movsx eax,[di] / imul eax,[bp+0x18]   DEPTH first: dot with the
+///   0x9A5C  movsx eax,[di+2] / imul eax,[bp+0x1c]  matrix's third row
+/// ```
+///
+/// The matrix is nine 32-bit terms, so `[bp+0x18]` is term 6 — the depth row is
+/// `terms[6..=8]`, which is why the port's projection computes depth from those
+/// three and not from the first row. The translate is a plain 16-bit `sub` before
+/// any widening, so a point far from the origin WRAPS rather than saturating;
+/// `movsx` then sign-extends whatever that left.
+///
+/// Cited here because it was settled ASM with no doc (#141's queue).
 pub fn project_ship_3d_point(
     point: Ship3dProjectionPoint,
     origin: Ship3dProjectionOrigin,
