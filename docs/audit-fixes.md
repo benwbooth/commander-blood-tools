@@ -2107,3 +2107,41 @@ byte-for-byte image test (`GAME_FONT_*`, `SQUARE_CAPS_*`, `NAV_DESTINATION_POINT
 The lesson generalises past this project: a coverage metric that silently drops
 items is worse than no metric, because it reports progress on the part it can see.
 Both defects here made the ledger look BETTER than reality.
+
+## FIX #62 — validating the RE knowledge base itself
+
+`re/labels.csv` is what every future decode session reads first, so an error there
+propagates into work that never re-derives the claim. Nothing validated it.
+`re/tools/check_labels.py` now does, three ways: every flat address is inside the
+image, every code address decodes, and where a comment quotes an instruction the
+mnemonic matches.
+
+RESULT: 553 code labels and 227 data labels, 0 problems. The knowledge base is
+clean.
+
+THE TOOL WAS WRONG FOUR TIMES BEFORE IT WAS RIGHT, which is now a pattern worth
+naming explicitly, because it has held for three tools in a row:
+
+* `0x0006EC,startup_fail_or_main,"jmp target after early init"` — flagged because
+  the comment's first word is `jmp`. It describes the address as a jump TARGET.
+* `0x014C22,font_ascii_map` — flagged as "does not decode". It is a font TABLE;
+  data does not decode.
+* Then, extending the check to instructions quoted INLINE, 17 more "problems",
+  every single one English prose: comments say "gs:[0x523B] and the clip",
+  "[0x250B] or its fallback". `and`, `or`, `not`, `sub`, `add`, `test`, `in` and
+  `int` are ordinary words as well as mnemonics. Requiring BACKTICKS around the
+  instruction fixed it — at the cost of dropping from 17 candidate claims to 3
+  real ones.
+
+Zero of the 21 initial "findings" were real. THE PATTERN: prose is not a
+machine-readable format, and a checker over prose reports its own grammar
+mistakes as defects in the subject. Every one of these tools (the DS/file sweep,
+the instruction sweep, this one) produced a first run that was entirely false
+positives. The discipline that makes them useful anyway is refusing to act on a
+finding until the tool is verified — and building a POSITIVE CONTROL, which is
+what separates "0 problems" from "checking nothing".
+
+The control here needed care too: my first attempt perturbed rows whose comments
+the checker does not examine, so it reported 0 problems and proved nothing. The
+real control shifts a label whose comment OPENS with a quoted `mov` (caught: "the
+code is `push es`") and pushes another past the end of the image (caught).
