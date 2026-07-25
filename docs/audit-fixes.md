@@ -5167,3 +5167,31 @@ root will not fit a `u16`, answered by returning the input — and `jae` rather 
 would take the early exit almost never, and only for inputs it will not see.
 
 Cited instructions 209 -> 217; the queue 63 -> 62.
+
+## #161 — two coordinates, two different field selectors
+
+`ship_3d_position_field_distance` is `sqrt(dx^2 + dy^2)` and takes its coordinates
+as arguments. `ship_3d_position_distance` @`0x60DD`, the routine it comes from,
+spends most of its length deciding WHERE those coordinates live:
+
+```text
+  0x60E5  cmp ax,0x100 / jne 0x6114   the first object must be kind 0x100
+  0x60EA  mov bx,[di]                 the second object's kind
+  0x60EC  mov ax,0xe / call 0x6023    vm_field_offset(selector 0xE, that kind)
+  0x60F4  mov dx,[bx+di]              read the field it resolved to
+  0x60F6  mov bx,0x100 / mov ax,0xc / call 0x6023   selector 0xC for kind 0x100
+```
+
+The two coordinates come from DIFFERENT selectors — `0xC` for the kind-`0x100`
+object and `0xE` for the other — each resolved per kind through `vm_field_offset`
+(`0x6023`, the `BSF`-column resolver whose kind argument is a BITMASK, not an
+index). Kind `0x100` is `vm::LOCATION_KIND_BLACK_HOLE`, the same bit the status
+header tests, which is a connection nothing in either file previously made.
+
+The port splits this cleanly: resolution belongs to the VM's field machinery, and
+this function does the arithmetic. That is a reasonable division and it left the
+selector pair undocumented on both sides — the VM knows how to resolve a selector,
+this knows how to measure a distance, and only the routine knows that distance
+means `0xC` against `0xE`.
+
+Cited instructions 217 -> 222; the queue 62 -> 61.

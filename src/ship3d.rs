@@ -3262,6 +3262,30 @@ pub fn ship_3d_position_distance(
     ship_3d_position_field_distance(first_field, second_field)
 }
 
+/// Euclidean distance between two object POSITION FIELDS —
+/// `ship_3d_position_distance` @`0x60DD`.
+///
+/// The routine's interesting half is how it FINDS the coordinates, which this
+/// function takes as already-resolved inputs:
+///
+/// ```text
+///   0x60E5  cmp ax,0x100 / jne 0x6114   the first object must be kind 0x100
+///   0x60EA  mov bx,[di]                 the second object's kind
+///   0x60EC  mov ax,0xe / call 0x6023    vm_field_offset(selector 0xE, that kind)
+///   0x60F4  mov dx,[bx+di]              read the field it resolved to
+///   0x60F6  mov bx,0x100 / mov ax,0xc / call 0x6023   selector 0xC for kind 0x100
+/// ```
+///
+/// So the two coordinates come from DIFFERENT selectors — `0xC` for the kind-`0x100`
+/// object, `0xE` for the other — resolved per kind through `vm_field_offset`
+/// (`0x6023`, the `BSF`-column resolver). Kind `0x100` is
+/// `vm::LOCATION_KIND_BLACK_HOLE`, the same bit the status header tests.
+///
+/// The arithmetic here is `sqrt(dx^2 + dy^2)` over ABSOLUTE differences, with the
+/// squares accumulated in 32 bits before [`ship_3d_binary_sqrt`] — which is why
+/// that function takes a `u32` and not a pair of words.
+///
+/// Cited here because it was settled ASM with no doc (#141's queue).
 pub fn ship_3d_position_field_distance(
     first: Ship3dPositionField,
     second: Ship3dPositionField,
