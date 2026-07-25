@@ -2983,6 +2983,15 @@ fn write_c1_record_state_mode0(
     Some(true)
 }
 
+/// The `0xC2` SET path (handler `0x6E34`): three gates, all of which must pass
+/// before anything is written.
+///
+/// Owner active; the TARGET's `0x20` flag set (not the owner's — a different
+/// object's bit decides whether this write is allowed); and a free special slot.
+/// The slot insert is the third gate rather than a side effect: when the 16-slot
+/// array is FULL the write is declined outright, so a saturated slot list stops
+/// new `0xC2` state instead of silently dropping the bookkeeping (the caller
+/// contract #175 records on `insert`).
 fn write_c2_record_state_direct(
     state: &mut [u8],
     context: &ExecutionContext,
@@ -3079,6 +3088,18 @@ fn write_record_entry(state: &mut [u8], opcode: u8, record_offset: u16, stored_r
     state_set_u16(state, record_offset.wrapping_add(4), 0);
 }
 
+/// The `0xC5..=0xC8` SET paths, which share a WRITER but not a guard —
+/// `write_record_entry` is common, the conditions are per opcode:
+///
+/// * `0xC5` (handler `0x6D18`) demands the operand object be active, its type
+///   word be exactly `0x0200`, and the destination record be EMPTY.
+/// * `0xC6` (`0x6D80`) writes unconditionally.
+/// * `0xC8` (`0x6F62`) writes only into an empty record, and stores ZERO as the
+///   related word rather than the operand (#171).
+///
+/// So four opcodes that decode identically behave differently on write, which is
+/// the concrete reason [`is_record_entry_opcode`]'s range is a token-shape group
+/// and not a behavioural family (#168).
 fn write_record_entry_mode0(
     state: &mut [u8],
     opcode: u8,

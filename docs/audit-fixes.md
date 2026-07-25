@@ -5619,3 +5619,28 @@ there, which is what keeps a freshly written record distinguishable from one
 carrying state from a previous use.
 
 The queue: 25 -> 24. Cited instructions: 254 -> 261.
+
+## #178 — four opcodes that decode alike and write differently
+
+`write_record_entry_mode0` is where #168's claim becomes concrete. `0xC5..=0xC8`
+share a token layout and a writer, and their SET guards are entirely different:
+
+* `0xC5` (`0x6D18`) demands the operand object be active, its type word be exactly
+  `0x0200`, and the destination record be EMPTY.
+* `0xC6` (`0x6D80`) writes unconditionally.
+* `0xC8` (`0x6F62`) writes only into an empty record, and stores ZERO rather than
+  the operand (#171).
+
+So the range that looked like a family in the port's predicate is four behaviours
+sharing a decode length. Anyone unifying their guards — the obvious tidy, since
+they already share `write_record_entry` — would give `0xC6` conditions it does not
+have and `0xC8` an operand it must not store.
+
+`write_c2_record_state_direct` (`0x6E34`) has three gates, and two are worth
+naming. The `0x20` flag it tests belongs to the TARGET, not the owner — a
+different object's bit decides whether this write is allowed. And the special-slot
+insert is a GATE, not a side effect: a full 16-slot array declines the write
+outright, which is the caller contract #175 recorded on `insert` being honoured
+here.
+
+The queue: 20 -> 18.
