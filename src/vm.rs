@@ -5434,6 +5434,31 @@ impl VmMachine {
         out
     }
 
+    /// The destination rows the game actually offers: each candidate's RECORD and
+    /// the NAME stored inside it.
+    ///
+    /// Rows come from [`Self::destination_candidate_records`] rooted at `arche`,
+    /// which is where `0xB0EA` roots it. The name needs no lookup table: a list
+    /// entry is `RECORD+4` (`add ax,4` @`0x7292`) and
+    /// [`Self::object_inline_name`] reads from `object+4`, so the stored entry IS
+    /// the string pointer. Record and name are two views of one word — which is
+    /// the internal check on this whole chain, since a wrong `+4` anywhere would
+    /// make the names garbage rather than merely shift a record.
+    ///
+    /// Empty when no DEB is loaded (no records, hence no candidates).
+    pub fn destination_rows(&self) -> Vec<(u16, String)> {
+        let Some(arche) = self.arche_offset else {
+            return Vec::new();
+        };
+        self.destination_candidate_records(arche)
+            .into_iter()
+            .map(|entry| {
+                let record = entry.wrapping_sub(SHIP_3D_TARGET_NAME_TO_RECORD);
+                (record, self.object_inline_name(record))
+            })
+            .collect()
+    }
+
     /// The SHIP-3D CLICK COMMIT's initial target, `ship_click_commit`
     /// (`0xB0DC..0xB111`) — the caller that roots the whole destination chain.
     ///
@@ -10210,6 +10235,34 @@ mod tests {
         state_set_u16(&mut var, related, 1);
         assert_eq!(post_update_encounter_counter(&mut var, owner, related), None);
         assert_eq!(state_u16(&var, owner + 2), 0, "no bump -> no bit15 either");
+    }
+
+    /// A destination row's RECORD and NAME are two views of one word: the list
+    /// stores `RECORD+4` and `object_inline_name` reads from `object+4`.
+    #[test]
+    fn destination_rows_name_each_candidate_from_its_own_record() {
+        let mut m = VmMachine::new();
+        let arche = 0x0400u16;
+        m.arche_offset = Some(arche);
+        // No DEB -> no candidates -> no rows, rather than a fabricated list.
+        assert!(m.destination_rows().is_empty());
+        m.arche_offset = None;
+        assert!(m.destination_rows().is_empty(), "no arche, no rows");
+
+        // The record/name coincidence, checked directly: write a name at
+        // record+4 and confirm that address is exactly what the list would store.
+        let mut m2 = VmMachine::new();
+        let record = 0x0140u16;
+        for (i, b) in b"KORTEX".iter().enumerate() {
+            m2.rec_write_u8_pub(record + 4 + i as u16, *b);
+        }
+        m2.rec_write_u8_pub(record + 4 + 6, 0);
+        assert_eq!(m2.object_inline_name(record), "KORTEX");
+        assert_eq!(
+            record.wrapping_add(SHIP_3D_TARGET_NAME_TO_RECORD),
+            record + 4,
+            "the stored entry IS the string pointer"
+        );
     }
 
     /// `0xB0DC..0xB111`: which record the ship-3D click actually commits, and why

@@ -6112,3 +6112,30 @@ CHOICE only, because the commit is no longer the open part. Wiring the choice
 means driving world entry from `destination_candidate_records` rows instead of a
 heading, which needs the DEB-loaded field matrix at runtime -- the next task on
 this thread, and a real one rather than a blocker.
+
+## #197 — the name was in the record all along
+
+#196 wired the commit and left the CHOICE approximate: the port picked a world by
+`compass_angle` arithmetic. Closing that looked like it needed a name->world
+mapping. It needed nothing.
+
+A candidate list entry is `RECORD+4` (`add ax,4` @`0x7292`). `object_inline_name`
+reads from `object+4`. So the word the list stores IS the string pointer — record
+and name are two views of one value, and `destination_rows` returns both by
+subtracting and re-adding the same 4.
+
+That coincidence is also the strongest internal check this chain has. A wrong `+4`
+anywhere along it would not merely shift a record by four bytes; it would make
+every destination name read as garbage, because the same offset feeds the string
+walk. The names coming out legible is evidence for the whole `+4`/`-4` reading.
+
+`main.rs` now enters the world its chosen row names and commits that row's record.
+`compass_angle` survives only as the no-DEB fallback, where there are no records to
+offer at all — and `engine.rs` had already recorded that the angle merely pans the
+view, so it was never the game's chooser. That note sat in the tree while the
+frontend used the angle to choose anyway; the port contradicted its own decode.
+
+REMAINING APPROX, stated narrowly: the port CYCLES the destination row on the
+world-entry key rather than hit-testing a pointer, because no pointer selection is
+decoded for this screen yet. The rows, their order, their names and the committed
+record are all the game's; only which one the cursor lands on is not.

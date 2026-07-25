@@ -705,18 +705,19 @@ VIEWPORT_W	src/lib.rs	57	const		UNVERIFIED	/// No decoded rule may be implemente
 VIEWPORT_H	src/lib.rs	58	const		UNVERIFIED	/// No decoded rule may be implemented under the SAME NAME in two files. /// /// `subtitle_draw_glyph` existed in both `font.rs` and `extract/render.rs`, and /// the second copy still had a 128-entry 
 HNM_FPS	src/lib.rs	59	const		UNVERIFIED	/// No decoded rule may be implemented under the SAME NAME in two files. /// /// `subtitle_draw_glyph` existed in both `font.rs` and `extract/render.rs`, and /// the second copy still had a 128-entry 
 menu_dish_lines	src/main.rs	6	fn	0x100	ORACLE?	"/// The cook's daily-fare lines (the MENU row's presentation — oracle: white /// subtitle text, e.g. ""Jellied URTIKAN with MURFFALO bone marrow""): the SCRIPT1 /// dish block around offset 0x100."
-main	src/main.rs	28	fn		INFRA	
-default_data_dir	src/main.rs	39	fn		DATA?	/// Locate a directory that holds the game data (`DESCRIPT.DES` + `SCRIPT1.COD`). /// Checked in order: the `CBLOOD_DATA` env var, then the usual extracted-ISO /// locations in this tree. Used so a ba
-resolve_scene_hnm	src/main.rs	55	fn		DATA?	/// Resolve a dialogue-scene HNM by name across the asset subdirs. Location backgrounds /// live in `pl/` (e.g. `pterra10.hnm`), cutscenes in `sq/`, character talk-heads in `pe/`, /// objects in `ob/`
-run	src/main.rs	65	fn		INFRA	// Bare `cargo run` (no subcommand): launch the live game window using the // auto-detected data directory. Set CBLOOD_DATA to override the location. // Static decompilation of every SCRIPTn.COD into 
-VmInspection	src/main.rs	92	struct		INFRA	
-run_engine_play	src/main.rs	226	fn		INFRA	/// Headless real-time engine driver: run the runnable engine (`EngineState`) over a /// script's dialogue scene flow and encode each stepped frame to an MP4 — the /// engine playing the game, produce
-text_speed_setting_for_step	src/main.rs	304	fn		INFRA?	/// Real-time windowed backend: present the runnable engine in a live X11 window and /// drive it with real mouse input (position steers the ship-nav compass; left button /// toggles the on-ship view 
-run_engine_window	src/main.rs	310	fn	0x12E,0x137,0x13E,0x14B,0x259D,0xFFFF,0x2567,0x8871,0x0174	INFRA	// Parse every script's FULL decoded dialogue (all characters' speech events, ~3400 // lines) so the engine can play the whole content, not just execute_trace's single // linear branch. // The real st
-refresh_nav_chart	src/main.rs	468	fn	0x604E,0x721A	ASM?	// The RECORD-DRIVEN chart (0x604E -> 0x721A). Refreshed whenever the VM // changes, since the in-play bit it filters on is story state: a world only // appears on the chart once the game has put it i
-Music	src/main.rs	542	struct		INFRA	// Scene music: the game plays each location's background music (.voc). Decoded // with our own VOC parser and played through cpal (cross-platform, in-process) — // best-effort, the engine stays silen
-play	src/main.rs	544	fn		INFRA	
-stop	src/main.rs	553	fn		INFRA	
+commit_world_destination	src/main.rs	44	fn	0xB0DC,0xB0EA,0x6752,0xB0FB,0xB20C,0x5B38	ASM?	/// Run the game's own destination COMMIT when the port enters a world. /// /// `ship_click_commit` (`0xB0DC`) roots the candidate chain at `arche` /// (`0xB0EA mov di,[0x6752]`), picks the first cand
+main	src/main.rs	62	fn		INFRA	
+default_data_dir	src/main.rs	73	fn		DATA?	/// Locate a directory that holds the game data (`DESCRIPT.DES` + `SCRIPT1.COD`). /// Checked in order: the `CBLOOD_DATA` env var, then the usual extracted-ISO /// locations in this tree. Used so a ba
+resolve_scene_hnm	src/main.rs	89	fn		DATA?	/// Resolve a dialogue-scene HNM by name across the asset subdirs. Location backgrounds /// live in `pl/` (e.g. `pterra10.hnm`), cutscenes in `sq/`, character talk-heads in `pe/`, /// objects in `ob/`
+run	src/main.rs	99	fn		INFRA	// Bare `cargo run` (no subcommand): launch the live game window using the // auto-detected data directory. Set CBLOOD_DATA to override the location. // Static decompilation of every SCRIPTn.COD into 
+VmInspection	src/main.rs	126	struct		INFRA	
+run_engine_play	src/main.rs	260	fn		INFRA	/// Headless real-time engine driver: run the runnable engine (`EngineState`) over a /// script's dialogue scene flow and encode each stepped frame to an MP4 — the /// engine playing the game, produce
+text_speed_setting_for_step	src/main.rs	338	fn		INFRA?	/// Real-time windowed backend: present the runnable engine in a live X11 window and /// drive it with real mouse input (position steers the ship-nav compass; left button /// toggles the on-ship view 
+run_engine_window	src/main.rs	344	fn	0x12E,0x137,0x13E,0x14B,0x259D,0xFFFF,0x2567,0x8871,0x0174	INFRA	// Parse every script's FULL decoded dialogue (all characters' speech events, ~3400 // lines) so the engine can play the whole content, not just execute_trace's single // linear branch. // The real st
+refresh_nav_chart	src/main.rs	502	fn	0x604E,0x721A	ASM?	// The RECORD-DRIVEN chart (0x604E -> 0x721A). Refreshed whenever the VM // changes, since the in-play bit it filters on is story state: a world only // appears on the chart once the game has put it i
+Music	src/main.rs	576	struct		INFRA	// Scene music: the game plays each location's background music (.voc). Decoded // with our own VOC parser and played through cpal (cross-platform, in-process) — // best-effort, the engine stays silen
+play	src/main.rs	578	fn		INFRA	
+stop	src/main.rs	587	fn		INFRA	
 menu_item_index	src/manu3.rs	18	fn	0x000,0x181	ASM?	/// The menu-item column index from the caller's input word (`[bp+4] & 0x1F`, method /// entry `0x000`/`0x181`) — 0..31 selects one of up to 32 menu items.
 MENU_ROW_BIAS	src/manu3.rs	23	const		UNVERIFIED	/// The amount added to a menu row (placed in the high byte of the derived coordinate word). /// The screen row derived from the caller's input word: shift right by 4, then bias the row /// (the high 
 menu_screen_row	src/manu3.rs	27	fn		UNVERIFIED	/// The screen row derived from the caller's input word: shift right by 4, then bias the row /// (the high byte) by [`MENU_ROW_BIAS`].
@@ -1513,36 +1514,37 @@ nav_chart_hit_box	src/vm.rs	5328	fn	0x92BF,0x92D3,0x92FC	ORACLE	/// The picker's
 nav_chart_arche_context	src/vm.rs	5334	fn	0x92DF	ASM	/// The word the black-hole endpoint rule compares against: `es:[arche+0x22]` /// (`0x92DF`). Zero when no DEB is loaded.
 world_click_select	src/vm.rs	5361	fn	0xB20C,0xB27B,0xB2BB,0xFFFF,0xB288,0x252f,0x24F3,0x27D8,0x25	ASM	/// The WORLD-DESTINATION CLICK commit (`0xB20C..0xB27B`). The ship FSM's /// per-frame hit-test (`ship_3d_target_record_select` `0xB2BB`) returns the /// clicked target record; this is what the FSM t
 entity_candidate_list	src/vm.rs	5411	fn	0x7259,0x7266,0x624b,0x6886,0x7269,0x726c,0x250b,0x726f,0x62	ASM	/// The DESTINATION LIST BUILDER, `entity_candidate_list` (`0x7259`) — the /// writer whose output [`Self::ship_3d_target_record_select`] reads. /// /// ```text ///   0x7266  call 0x624b              
-ship_click_initial_target	src/vm.rs	5468	fn	0xB0DC,0xB111,0xB0E6,0x6724,0xB0EA,0x6752,0xB0EE,0x4da,0x1eb	ASM	/// The SHIP-3D CLICK COMMIT's initial target, `ship_click_commit` /// (`0xB0DC..0xB111`) — the caller that roots the whole destination chain. /// /// ```text ///   0xB0E6  les di,[0x6724]          es
-destination_candidate_records	src/vm.rs	5494	fn	0x624B,0x7259,0x6276,0x624b,0x627D,0x726F,0x728B	ASM	/// The whole destination chain in one call: the source list `0x624B` builds, /// filtered by `0x7259`, yielding the `RECORD+4` words the selector reads. /// /// `first = target` because `0x624B` PRES
-ship_3d_target_record_select	src/vm.rs	5539	fn	0xB2BB,0x71E,0xC48,0x8428,0xB2C3,0x250b,0xB2C6,0x6726,0xB2CB	ASM	/// The WORLD-DESTINATION HIT-TEST, `ship_3d_target_record_select` (`0xB2BB`) — /// what produces the record [`Self::world_click_select`] commits. /// /// It is NOT a spatial hit-test on the nav chart
-special_slot_insert_pub	src/vm.rs	5570	fn	0x6D3E,0x5FF6	INFRA	/// Insert an owner into the 16-slot special list (gs:0x6D3E, insert 0x5FF6). /// Returns false only if the list is full and the owner is not already present. /// Test hooks for the recomp differentia
-special_slot_remove_pub	src/vm.rs	5573	fn		INFRA	
-ship_slots_pub	src/vm.rs	5576	fn		INFRA	
-ship_contact_menu_words	src/vm.rs	5603	fn	0x87BD,0x0F29,0x8709,0x0FDD,0x87C5,0x6D3E,0x87C8,0x2B13,0x87	DATA	/// The console CONTACT MENU, built the way the row-2 handler builds it. /// /// `0x87BD` (bridge console row 2, reached through the per-row handler table /// at `CS:0x0F29` -> file `0x8709`, entry 2 
-special_slot_insert	src/vm.rs	5618	fn	0x5FF6,0x6D3E,0x5FFE,0x601F,0x600E,0x601C	ORACLE	/// Insert an owner into the special-slot list — `vm_special_slot_insert` /// `0x5FF6`: scan the 16 words at `DS:0x6D3E` for the owner and return CF set /// if already present (`0x5FFE..0x601F`); othe
-special_slot_remove	src/vm.rs	5644	fn	0x5FD8,0x5FDA,0x6D3E,0x5FE0,0x5FED,0x5FEA	ORACLE	/// Remove an owner from the special-slot list — `vm_special_slot_remove` /// `0x5FD8`, exactly: /// /// ```text ///   0x5FDA  bp=0x6D3E  cx=0x10        the 16-word list ///   0x5FE0  cmp ax,[bp] / je
-load_cod	src/vm.rs	5654	fn		UNVERIFIED	
-load_var	src/vm.rs	5662	fn	0x6724	ASM?	/// Initialize the line-record/object table from the script's VAR file — the /// game loads VAR as the table's initial contents (le16 words at gs:0x6724).
-rand	src/vm.rs	5672	fn	0x1CE,0xB02,0x2DE2,0x2DD4	ASM?	// THE ENGINE'S OWN PRNG (0x1CE:0xB02, file 0x2DE2), ported exactly: // an 8-round rcr/rcl bit-interleave of the two state bytes into AX, // XORed with the 16-bit seed (CMOS RTC seconds at boot; seede
-u8_at	src/vm.rs	5709	fn		UNVERIFIED	
-lodsb	src/vm.rs	5713	fn		UNVERIFIED	
-lodsw	src/vm.rs	5719	fn		UNVERIFIED	
-tick_state_countdowns	src/vm.rs	5732	fn	0x8AA,0x675A,0xB27,0xFFFF	ASM?	/// One divided-timer beat of the state-array countdown — the engine's law at /// 0x8AA (in the timer chain, gated there on no-active-presentation /// gs:[0x675A]==0, divider gs:[0xB27]): entries stat
-add_record	src/vm.rs	5744	fn	0x126C	ASM?	/// Increment a record variable — the runtime hook for world events that the /// scripts observe (e.g. BIONIUM collection: SCRIPT2's `vbio` record, whose /// C0 guards read record 0x126C — operand rea
-rec_read	src/vm.rs	5749	fn		UNVERIFIED	
-rec_read_pub	src/vm.rs	5754	fn		INFRA	/// Public record read for the drive layer.
-rec_write_u8_pub	src/vm.rs	5762	fn		INFRA	/// Public record write for the drive layer (the click stand-in's /// presentation end and test scaffolding). /// Byte-level record write, for tests that need to place an inline name at /// `record+4`
-rec_write_pub	src/vm.rs	5766	fn		INFRA	
-rec_write	src/vm.rs	5770	fn		UNVERIFIED	
-rec_read_u8	src/vm.rs	5778	fn		UNVERIFIED	/// Byte-level record access (the record table is a little-endian word array). /// Used by the 0xB7 single-bit flag handler.
-rec_write_u8	src/vm.rs	5787	fn		UNVERIFIED	
-branch	src/vm.rs	5799	fn	0x6462	ASM?	/// `vm_branch` @0x6462: pop the resume position into PC; clear query mode.
-step	src/vm.rs	5807	fn	0x6559,0x6572,0x6588,0x6596,0x65DB,0x67B1,0x6764,0x65EB,0x66	ASM?	/// Execute ONE opcode against the loaded stream. Returns false at stream end. // 0xA0 PUSH (0x6559): query=1; push the operand (resume position). // 0xA1 POP (0x6572): query=0; pop unless empty. // 0
-run	src/vm.rs	6637	fn		UNVERIFIED	/// Run until yield (0xAA/0xAC), halt, or `max_steps`. Returns the events raised.
-run_frame	src/vm.rs	6650	fn	0x55F5	ASM?	/// Run ONE FRAME the way the exec loop does (@0x55F5): restart at the top of /// the script (AA/AC yields end the frame with NO resume; the self-modified /// active bits advance the flow), run until 
-token_len_at	src/vm.rs	6664	fn	0x6293	ASM?	/// Total token length (including the opcode byte) at `pos`, using the game's own /// per-opcode descriptor table + mode rules — identical to the walker's advance /// (`mode1` there == query mode here
-decompile_script	src/vm.rs	6693	fn	0x62DD,0x2F7F	ASM?	/// Decompile a COD script to a readable listing. `dic` resolves text/concepts, /// `actor_names` (DEB-derived) resolves record offsets to object names. // Open blocks: (end_offset, kind). Closed when
+destination_rows	src/vm.rs	5449	fn	0xB0EA,0x7292	ASM	/// The destination rows the game actually offers: each candidate's RECORD and /// the NAME stored inside it. /// /// Rows come from [`Self::destination_candidate_records`] rooted at `arche`, /// whic
+ship_click_initial_target	src/vm.rs	5493	fn	0xB0DC,0xB111,0xB0E6,0x6724,0xB0EA,0x6752,0xB0EE,0x4da,0x1eb	ASM	/// The SHIP-3D CLICK COMMIT's initial target, `ship_click_commit` /// (`0xB0DC..0xB111`) — the caller that roots the whole destination chain. /// /// ```text ///   0xB0E6  les di,[0x6724]          es
+destination_candidate_records	src/vm.rs	5519	fn	0x624B,0x7259,0x6276,0x624b,0x627D,0x726F,0x728B	ASM	/// The whole destination chain in one call: the source list `0x624B` builds, /// filtered by `0x7259`, yielding the `RECORD+4` words the selector reads. /// /// `first = target` because `0x624B` PRES
+ship_3d_target_record_select	src/vm.rs	5564	fn	0xB2BB,0x71E,0xC48,0x8428,0xB2C3,0x250b,0xB2C6,0x6726,0xB2CB	ASM	/// The WORLD-DESTINATION HIT-TEST, `ship_3d_target_record_select` (`0xB2BB`) — /// what produces the record [`Self::world_click_select`] commits. /// /// It is NOT a spatial hit-test on the nav chart
+special_slot_insert_pub	src/vm.rs	5595	fn	0x6D3E,0x5FF6	INFRA	/// Insert an owner into the 16-slot special list (gs:0x6D3E, insert 0x5FF6). /// Returns false only if the list is full and the owner is not already present. /// Test hooks for the recomp differentia
+special_slot_remove_pub	src/vm.rs	5598	fn		INFRA	
+ship_slots_pub	src/vm.rs	5601	fn		INFRA	
+ship_contact_menu_words	src/vm.rs	5628	fn	0x87BD,0x0F29,0x8709,0x0FDD,0x87C5,0x6D3E,0x87C8,0x2B13,0x87	DATA	/// The console CONTACT MENU, built the way the row-2 handler builds it. /// /// `0x87BD` (bridge console row 2, reached through the per-row handler table /// at `CS:0x0F29` -> file `0x8709`, entry 2 
+special_slot_insert	src/vm.rs	5643	fn	0x5FF6,0x6D3E,0x5FFE,0x601F,0x600E,0x601C	ORACLE	/// Insert an owner into the special-slot list — `vm_special_slot_insert` /// `0x5FF6`: scan the 16 words at `DS:0x6D3E` for the owner and return CF set /// if already present (`0x5FFE..0x601F`); othe
+special_slot_remove	src/vm.rs	5669	fn	0x5FD8,0x5FDA,0x6D3E,0x5FE0,0x5FED,0x5FEA	ORACLE	/// Remove an owner from the special-slot list — `vm_special_slot_remove` /// `0x5FD8`, exactly: /// /// ```text ///   0x5FDA  bp=0x6D3E  cx=0x10        the 16-word list ///   0x5FE0  cmp ax,[bp] / je
+load_cod	src/vm.rs	5679	fn		UNVERIFIED	
+load_var	src/vm.rs	5687	fn	0x6724	ASM?	/// Initialize the line-record/object table from the script's VAR file — the /// game loads VAR as the table's initial contents (le16 words at gs:0x6724).
+rand	src/vm.rs	5697	fn	0x1CE,0xB02,0x2DE2,0x2DD4	ASM?	// THE ENGINE'S OWN PRNG (0x1CE:0xB02, file 0x2DE2), ported exactly: // an 8-round rcr/rcl bit-interleave of the two state bytes into AX, // XORed with the 16-bit seed (CMOS RTC seconds at boot; seede
+u8_at	src/vm.rs	5734	fn		UNVERIFIED	
+lodsb	src/vm.rs	5738	fn		UNVERIFIED	
+lodsw	src/vm.rs	5744	fn		UNVERIFIED	
+tick_state_countdowns	src/vm.rs	5757	fn	0x8AA,0x675A,0xB27,0xFFFF	ASM?	/// One divided-timer beat of the state-array countdown — the engine's law at /// 0x8AA (in the timer chain, gated there on no-active-presentation /// gs:[0x675A]==0, divider gs:[0xB27]): entries stat
+add_record	src/vm.rs	5769	fn	0x126C	ASM?	/// Increment a record variable — the runtime hook for world events that the /// scripts observe (e.g. BIONIUM collection: SCRIPT2's `vbio` record, whose /// C0 guards read record 0x126C — operand rea
+rec_read	src/vm.rs	5774	fn		UNVERIFIED	
+rec_read_pub	src/vm.rs	5779	fn		INFRA	/// Public record read for the drive layer.
+rec_write_u8_pub	src/vm.rs	5787	fn		INFRA	/// Public record write for the drive layer (the click stand-in's /// presentation end and test scaffolding). /// Byte-level record write, for tests that need to place an inline name at /// `record+4`
+rec_write_pub	src/vm.rs	5791	fn		INFRA	
+rec_write	src/vm.rs	5795	fn		UNVERIFIED	
+rec_read_u8	src/vm.rs	5803	fn		UNVERIFIED	/// Byte-level record access (the record table is a little-endian word array). /// Used by the 0xB7 single-bit flag handler.
+rec_write_u8	src/vm.rs	5812	fn		UNVERIFIED	
+branch	src/vm.rs	5824	fn	0x6462	ASM?	/// `vm_branch` @0x6462: pop the resume position into PC; clear query mode.
+step	src/vm.rs	5832	fn	0x6559,0x6572,0x6588,0x6596,0x65DB,0x67B1,0x6764,0x65EB,0x66	ASM?	/// Execute ONE opcode against the loaded stream. Returns false at stream end. // 0xA0 PUSH (0x6559): query=1; push the operand (resume position). // 0xA1 POP (0x6572): query=0; pop unless empty. // 0
+run	src/vm.rs	6662	fn		UNVERIFIED	/// Run until yield (0xAA/0xAC), halt, or `max_steps`. Returns the events raised.
+run_frame	src/vm.rs	6675	fn	0x55F5	ASM?	/// Run ONE FRAME the way the exec loop does (@0x55F5): restart at the top of /// the script (AA/AC yields end the frame with NO resume; the self-modified /// active bits advance the flow), run until 
+token_len_at	src/vm.rs	6689	fn	0x6293	ASM?	/// Total token length (including the opcode byte) at `pos`, using the game's own /// per-opcode descriptor table + mode rules — identical to the walker's advance /// (`mode1` there == query mode here
+decompile_script	src/vm.rs	6718	fn	0x62DD,0x2F7F	ASM?	/// Decompile a COD script to a readable listing. `dic` resolves text/concepts, /// `actor_names` (DEB-derived) resolves record offsets to object names. // Open blocks: (end_offset, kind). Closed when
 VmDrive	src/vm_drive.rs	13	struct	0xFFFF	ASM?	/// Text-offset -> decoded display line (through the DIC, menu words /// stripped at the 0xFFFF separator). /// DIC word -> offset, for concept dispatch by label. /// The DEB symbol table: name -> obj
 new	src/vm_drive.rs	25	fn		UNVERIFIED	
 frame	src/vm_drive.rs	55	fn		ORACLE?	/// One passive frame: VM frame + the idle beat. No promotion — queued /// calls RING until an interaction takes them (the scenario's clicks /// decide, as at the oracle's hub).

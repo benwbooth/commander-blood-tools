@@ -43,10 +43,19 @@ fn menu_dish_lines(iso: &str) -> Vec<String> {
 /// candidate list offered. This wires the commit, not the choice.
 fn commit_world_destination(
     script_vm: &std::cell::RefCell<Option<commander_blood_tools::vm::VmMachine>>,
+    chosen: Option<u16>,
 ) {
     let mut borrow = script_vm.borrow_mut();
     let Some(machine) = borrow.as_mut() else { return };
-    let Some(target) = machine.ship_click_initial_target() else { return };
+    // A row the player picked commits that record (the selector's job, `0xB33D`);
+    // with no row, the commit derives its own target the way `0xB0DC` does.
+    let target = match chosen {
+        Some(record) => record,
+        None => match machine.ship_click_initial_target() {
+            Some(t) => t,
+            None => return,
+        },
+    };
     machine.world_click_select(target);
 }
 
@@ -627,6 +636,9 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     // The scrutinized object (scrambler) whose related field the examination
     // activates (APPROX for the endgame's rec_13C2==40 guard; see the hook).
     let examined_obj_offset: std::cell::Cell<Option<u16>> = std::cell::Cell::new(None);
+    // Which destination row the world-entry key last took (the game keeps a
+    // selection cursor; the port cycles it, since it has no pointer on this screen).
+    let mut destination_row = 0usize;
     let script_vm: std::cell::RefCell<Option<commander_blood_tools::vm::VmMachine>> =
         std::cell::RefCell::new(None);
     // SCRIPT1 tutorial auto-chain (ORACLE-observed: the real tutorial plays Izwalito's
@@ -1995,16 +2007,37 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     if engine.world_location_active() {
                         engine.cycle_world_room(1);
                     } else if { engine.compass_angle = (engine.compass_angle + 45) % 180; true } {
-                        let world = match engine.targeted_world_name() {
-                            Some(w) => w,
-                            None => continue,
+                        // DESTINATION CHOICE from the game's own candidate list
+                        // (`0x7259` over `0x624B`, rooted at `arche` per `0xB0EA`),
+                        // each row named by the object's inline name -- which is the
+                        // very pointer the list stores. The compass heading is used
+                        // only when no DEB is loaded, where there are no records to
+                        // offer; `engine.rs` already notes the angle merely pans the
+                        // view, so it was never the game's chooser.
+                        let rows = script_vm
+                            .borrow()
+                            .as_ref()
+                            .map(|m| m.destination_rows())
+                            .unwrap_or_default();
+                        let chosen_name;
+                        let mut chosen_record = None;
+                        let world = if rows.is_empty() {
+                            match engine.targeted_world_name() {
+                                Some(w) => w,
+                                None => continue,
+                            }
+                        } else {
+                            destination_row = (destination_row + 1) % rows.len();
+                            chosen_record = Some(rows[destination_row].0);
+                            chosen_name = rows[destination_row].1.to_lowercase();
+                            chosen_name.as_str()
                         };
                         if engine.visit_world(world, Path::new(assets)) {
                             // Overlay the world's decoded .ext object positions (from the ISO).
                             if let Ok(ext) = std::fs::read(format!("{iso}/{}.EXT", world.to_uppercase())) {
                                 engine.set_world_ext(&ext);
                             }
-                            commit_world_destination(&script_vm);
+                            commit_world_destination(&script_vm, chosen_record);
                         }
                     }
                 }
