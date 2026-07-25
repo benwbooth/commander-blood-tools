@@ -4516,3 +4516,29 @@ have left behind.
 Settled `world_click_select` as ASM (decoded and tested), and recorded the wiring
 gap in `docs/port-validation.md` rather than leaving it implied by an unrouted
 function.
+
+## #138 — naming the blocker instead of bridging it
+
+Wiring #137's world-destination commit stopped at a decision worth recording. The
+VM's `world_click_select` takes a target RECORD. The frontend's destination path
+has a world NAME, chosen by `compass_angle * n / 180` — arithmetic over
+`nav_world_labels`, where the game hit-tests a nav-chart object.
+
+The obvious bridge is to match the name against `object_inline_name` over
+`build_nav_chart_list()`. It would work, and it would be a rule the game does not
+have: the original never needs a name->record mapping, because it commits the
+object the player CLICKED. Adding one to make the pieces fit is the fabrication
+the prime rule names, and it would be harder to spot later than a hardcoded
+string, because it would look like plumbing.
+
+So the row in `docs/port-validation.md` now records the blocker exactly, and the
+fact that every piece of the REAL route already exists: `build_nav_chart_list`
+(`0x721A`), `nav_chart_object_click`/`nav_chart_pick` (`0x92A3`),
+`world_click_select`, `object_inline_name` — and `nav_chart_click` is already
+wired, to the info panel. The task is routing the destination COMMIT through that
+click, which changes which surface selects a world, and is a frontend change worth
+doing deliberately with an oracle comparison rather than squeezed in behind a
+name-matching helper.
+
+Stopping at "here is the blocker" is the right outcome when the alternative is
+inventing the missing piece.
