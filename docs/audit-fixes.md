@@ -1807,3 +1807,43 @@ rather than a hole in the port: the in-play bit `0x604E` gates on is state the
 story sets as you play. The test asserts both halves — one object for SCRIPT5,
 none for the others — so a future change that quietly starts charting everything
 will fail.
+
+## FIX #54 — the panel is IN THE GAME: the nav view is now record-driven
+
+The last entry ended with the panel computed but not shown, blocked on the port's
+nav destinations being `(label, dialogue-lines)` pairs from scripts with no
+object offset to hand it. That model is replaced.
+
+`NavChartObject` carries what the game's chart entry actually is — the record
+offset (what `gs:0x27BF` holds once selected), the inline name, the kind, the
+marker and the artwork id — built from `build_nav_chart_list`. The nav view draws
+each name AT ITS OWN MARKER, which is where the picker hit-tests it, so what you
+see and what you can click are the same thing by construction. `nav_chart_marker`
+lives in the VM precisely so the drawn position and the clickable position cannot
+drift: one function, applying the black-hole two-endpoint rule once.
+
+The click path now follows the game's: `nav_chart_click` hit-tests
+(`0x92A3`), opens the panel on a hit (`0x9022` -> the `0x2788` FSM), and treats a
+click while the panel is up as the mouse coming back on — the `0x912E` edge that
+closes it. `render_nav_info_panel_frame` is the dispatcher: zooming states draw
+the interpolated rect, `Open` draws the panel. `main.rs` refreshes the chart each
+nav frame, because the in-play bit `0x604E` filters on is STORY state.
+
+DRIVEN END TO END on the real chart (`examples/navpanel.rs`, SCRIPT5 + CHART.FD):
+one chart object (`Oddland`, kind `0x100`, marker `(132,34)`, art 72), a click at
+the marker opens the panel, the zoom runs, and the open frame carries
+`BLACK HOLE: ` at `(110,25)`, `Oddland` at `(200,25)` and `LIFE SUPPORT:` at
+`(110,35)`. The name's x falls out of the drawn-width rule, and `200 + 7 glyphs`
+lands just inside the box's right edge at 260 — a layout that would not close if
+the width rule were wrong.
+
+ONE PROPERTY WORTH ASSERTING, because it would regress silently: the window is
+TRANSLUCENT. Measured on the real chart, 25 distinct colours survive inside the
+panel against 37 outside — the nebula still shows through, darkened. About a
+quarter of the pixels bottom out at black because the chart's palette holds
+nothing darker, which is the algorithm's real output rather than a flattened box.
+The test now fails if the rect ever collapses to a solid fill.
+
+The old script-derived destination list is kept as the stand-in for the case the
+chart list is empty — which, per FIX #53, is the shipped answer for SCRIPT1..4 at
+boot.

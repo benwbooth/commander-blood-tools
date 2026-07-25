@@ -393,6 +393,36 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
             Some((label, lines))
         };
     engine.set_nav_destinations((3..=5).filter_map(script_destination).collect());
+    // The RECORD-DRIVEN chart (0x604E -> 0x721A). Refreshed whenever the VM
+    // changes, since the in-play bit it filters on is story state: a world only
+    // appears on the chart once the game has put it in play. When the list is
+    // empty the script-derived destination list above stays as the stand-in.
+    fn refresh_nav_chart(
+        engine: &mut commander_blood_tools::engine::EngineState,
+        vm: Option<&commander_blood_tools::vm::VmMachine>,
+    ) {
+        use commander_blood_tools::engine::NavChartObject;
+        let Some(m) = vm else {
+            engine.set_nav_chart_objects(Vec::new());
+            return;
+        };
+        let context = m.nav_chart_arche_context();
+        let objects = m
+            .build_nav_chart_list()
+            .into_iter()
+            .map(|object| {
+                let name = m.object_inline_name(object);
+                NavChartObject {
+                    object,
+                    kind: m.rec_read_pub(object),
+                    marker: m.nav_chart_marker(object, context),
+                    art_id: commander_blood_tools::levels::world_art_resource_id(&name),
+                    name,
+                }
+            })
+            .collect();
+        engine.set_nav_chart_objects(objects);
+    }
     // Per-world CANDIDATE LABELS (the decoded 0x7259 list = the location's flags-
     // filtered entities = its CHARACTERS): the script's distinct DEB-resolved actor
     // names, in speech order — the real names the candidate box offers.
@@ -1576,6 +1606,28 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 Event::ButtonPress(b) if engine.phone_active && b.detail == 3 => {
                     engine.phone_cycle_contact(1);
                 }
+                // On the nav star-map with the RECORD-DRIVEN chart up, a left
+                // click goes through the game's own path: hit-test the markers
+                // (0x92A3), and a hit opens the destination info panel on that
+                // object (0x9022 -> the 0x2788 FSM). A click while the panel is up
+                // is what re-enables the mouse, which closes it (0x912E).
+                Event::ButtonPress(b)
+                    if b.detail == 1
+                        && engine.nav_view_active()
+                        && !engine.nav_chart_objects().is_empty() =>
+                {
+                    let here = script_vm
+                        .borrow()
+                        .as_ref()
+                        .and_then(|m| m.arche_offset.map(|a| m.rec_read_pub(a + 0x16)))
+                        .unwrap_or(0);
+                    let vm = script_vm.borrow();
+                    engine.nav_chart_click(mx as i32, my as i32, here, |object| {
+                        vm.as_ref()
+                            .map(|m| m.location_panel_rows(object))
+                            .unwrap_or_default()
+                    });
+                }
                 // On the nav star-map, a left click on a destination in the
                 // choose-a-location list visits it (loads SCRIPT<3+i> — that location's
                 // character dialogue with its scene music).
@@ -2023,6 +2075,15 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
             }
         }
         (prev_mx, prev_my) = (mx as i32, my as i32);
+        // Refresh the record-driven chart before the nav frame renders: the
+        // in-play bit 0x604E filters on is STORY state, so the chart's contents
+        // change as the game progresses rather than once at load.
+        if engine.on_ship
+            && engine.location_panel.state
+                == commander_blood_tools::engine::LocationPanelState::Idle
+        {
+            refresh_nav_chart(&mut engine, script_vm.borrow().as_ref());
+        }
         engine.step(MouseInput {
             x: mx,
             y: my,

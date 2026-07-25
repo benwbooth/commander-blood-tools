@@ -190,6 +190,34 @@ struct TvProgram {
     music: Option<String>,
 }
 
+/// One entry of the nav chart's visible-object list (`DS:0x2AD3`, built by
+/// `0x604E` -> `0x721A`): a real object record, its display name (`record+4`),
+/// its kind and the marker the picker hit-tests (`+0x18`/`+0x1A`, or `+0x1C`/
+/// `+0x1E` for a black hole's far end).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct NavChartObject {
+    /// The record offset — what `gs:0x27BF` holds once selected.
+    pub object: u16,
+    pub name: String,
+    pub kind: u16,
+    pub marker: (i32, i32),
+    /// The artwork resource id from `DS:0x2BC7`, when the name is in that table.
+    pub art_id: Option<u16>,
+}
+
+impl NavChartObject {
+    /// The picker's per-kind hit box (`0x92BF`, `0x92D3`, `0x92FC`).
+    pub fn hit_box(&self) -> (i32, i32) {
+        if self.kind & crate::vm::LOCATION_KIND_BLACK_HOLE != 0 {
+            crate::vm::NAV_PICK_BOX_BLACK_HOLE
+        } else if self.kind & crate::vm::LOCATION_KIND_SHIP != 0 {
+            crate::vm::NAV_PICK_BOX_SHIP
+        } else {
+            crate::vm::NAV_PICK_BOX_DEFAULT
+        }
+    }
+}
+
 /// The destination info panel's state word, `gs:0x2788`. The dispatcher at
 /// `0x9083` reads it as a bitfield: bit0 = zooming open, bit1 = zooming shut,
 /// zero = open and drawn. There is no separate "idle" value in the original —
@@ -314,6 +342,11 @@ pub struct EngineState {
     /// character's decoded dialogue). Empty = the plain compass-steer nav.
     #[allow(clippy::type_complexity)]
     nav_destinations: Vec<(String, Vec<(String, Option<std::path::PathBuf>)>)>,
+    /// The RECORD-DRIVEN chart list (`DS:0x2AD3`). Empty until the VM supplies it.
+    nav_chart_objects: Vec<NavChartObject>,
+    /// The info panel's text rows, captured when it opens so the draw does not
+    /// need the VM every frame.
+    location_panel_rows: Vec<crate::vm::LocationPanelRow>,
     /// The destination info panel's zoom FSM (`gs:0x2788`/`gs:0x2789`/`gs:0x27BF`).
     pub location_panel: LocationInfoPanel,
     /// `gs:0xA3E` bit0 as the panel sees it: the selection commit turns the mouse
@@ -637,6 +670,8 @@ impl EngineState {
             nav_pyramids: Vec::new(),
             nav_chart: None,
             nav_destinations: Vec::new(),
+            nav_chart_objects: Vec::new(),
+            location_panel_rows: Vec::new(),
             location_panel: LocationInfoPanel::default(),
             location_panel_mouse_enabled: true,
             camera: crate::ship3d::Ship3dCameraApproach::default(),
@@ -3820,7 +3855,7 @@ impl EngineState {
     ///
     /// Only draws in [`LocationPanelState::Open`]; the zooming states draw the
     /// interpolated rect instead ([`Self::step_location_info_panel`]).
-    pub fn render_location_info_panel(&mut self, rows: &[crate::vm::LocationPanelRow]) {
+    pub fn location_panel_tint_table(&self) -> [u8; 256] {
         let mut dac = [[0u8; 3]; 256];
         for (i, entry) in dac.iter_mut().enumerate() {
             for k in 0..3 {
@@ -3837,6 +3872,11 @@ impl EngineState {
             [0, 0, 0],
             &mut table,
         );
+        table
+    }
+
+    pub fn render_location_info_panel(&mut self, rows: &[crate::vm::LocationPanelRow]) {
+        let table = self.location_panel_tint_table();
         let [bx, by, bw, bh] = crate::vm::LOCATION_PANEL_BOX;
         crate::sprite::remap_rect_indexed(
             &mut self.framebuffer,
@@ -3861,6 +3901,73 @@ impl EngineState {
                 row.y as usize,
                 row.color,
             );
+        }
+    }
+
+    /// A left click while the nav chart is up, routed the way the game routes it
+    /// (`0x8FB0..0x8FBE` then `0x8FF4`):
+    ///
+    /// * panel already up -> the click is what re-enables the mouse, which is the
+    ///   `0x912E` edge that starts the close. Returns `false` (nothing selected).
+    /// * otherwise hit-test the chart markers (`0x92A3`); a hit opens the panel
+    ///   on that object with its rows, and returns `true`.
+    ///
+    /// `rows` come from the VM because only it can walk the roster; the engine
+    /// keeps them for the duration of the panel.
+    pub fn nav_chart_click(
+        &mut self,
+        x: i32,
+        y: i32,
+        current_location: u16,
+        rows_for: impl FnOnce(u16) -> Vec<crate::vm::LocationPanelRow>,
+    ) -> bool {
+        if self.location_panel.state != LocationPanelState::Idle {
+            self.location_panel_mouse_enabled = true;
+            self.close_location_info_panel();
+            return false;
+        }
+        let Some(hit) = self.nav_chart_object_click(x, y).map(|o| o.object) else {
+            return false;
+        };
+        if !self.open_location_info_panel(hit, current_location, (x, y)) {
+            return false;
+        }
+        self.location_panel_rows = rows_for(hit);
+        true
+    }
+
+    /// Advance and draw the info panel for one nav frame. Call after the chart
+    /// background is drawn; returns whether anything was drawn.
+    ///
+    /// Mirrors the dispatcher at `0x9083`: the zooming states draw only the
+    /// interpolated rect (tinted, since that is what `0x8B:0xFAD` hands to
+    /// `0x299:0x40E`), and the open state draws the panel proper.
+    pub fn render_nav_info_panel_frame(&mut self) -> bool {
+        match self.location_panel.state {
+            LocationPanelState::Idle => false,
+            LocationPanelState::Open => {
+                let rows = std::mem::take(&mut self.location_panel_rows);
+                self.render_location_info_panel(&rows);
+                self.location_panel_rows = rows;
+                true
+            }
+            _ => {
+                let Some(rect) = self.step_location_info_panel() else {
+                    return false;
+                };
+                let table = self.location_panel_tint_table();
+                crate::sprite::remap_rect_indexed(
+                    &mut self.framebuffer,
+                    ENGINE_SCREEN_WIDTH,
+                    ENGINE_SCREEN_HEIGHT,
+                    &table,
+                    rect[0] as i32,
+                    rect[1] as i32,
+                    rect[2] as i32,
+                    rect[3] as i32,
+                );
+                true
+            }
         }
     }
 
@@ -4041,6 +4148,34 @@ impl EngineState {
         self.nav_destinations = dests;
     }
 
+    /// Set the RECORD-DRIVEN chart objects — the game's own nav chart, built by
+    /// `0x604E` -> `0x721A` and mirrored by [`crate::vm::VmMachine::build_nav_chart_list`].
+    ///
+    /// This is what the destination list is supposed to be: object records with
+    /// kinds, marker positions and artwork ids, not `(label, dialogue)` pairs
+    /// derived from scripts. When it is non-empty the nav uses it for hit-testing
+    /// and for the info panel; when it is empty (which is the shipped `.VAR`
+    /// answer for SCRIPT1..4, whose in-play bits the story has not set yet) the
+    /// script-derived list stays as the port's stand-in.
+    pub fn set_nav_chart_objects(&mut self, objects: Vec<NavChartObject>) {
+        self.nav_chart_objects = objects;
+    }
+
+    pub fn nav_chart_objects(&self) -> &[NavChartObject] {
+        &self.nav_chart_objects
+    }
+
+    /// Hit-test a click against the chart markers, exactly as `0x92A3` does:
+    /// the box starts 2px up-left of the marker, its size comes from the object's
+    /// kind, and BOTH bounds are inclusive. Returns the first hit in list order.
+    pub fn nav_chart_object_click(&self, x: i32, y: i32) -> Option<&NavChartObject> {
+        self.nav_chart_objects.iter().find(|o| {
+            let (w, h) = o.hit_box();
+            let (x0, y0) = (o.marker.0 - 2, o.marker.1 - 2);
+            x >= x0 && x <= x0 + w && y >= y0 && y <= y0 + h
+        })
+    }
+
     /// The number of nav destinations currently offered.
     /// The label of nav destination `i` (the location's character name), if present.
     pub fn nav_destination_label(&self, i: usize) -> Option<String> {
@@ -4093,6 +4228,33 @@ impl EngineState {
                     if let Some(px) = self.framebuffer.get_mut(row + cursor_x) {
                         *px = CURSOR_COLOR;
                     }
+                }
+                // RECORD-DRIVEN chart markers, when the VM has supplied the real
+                // list (0x604E -> 0x721A): each object's name is drawn AT ITS OWN
+                // marker (`+0x18`/`+0x1A`), which is where the picker hit-tests
+                // it — so what you see and what you can click are the same thing.
+                if !self.nav_chart_objects.is_empty() {
+                    let markers: Vec<(String, (i32, i32))> = self
+                        .nav_chart_objects
+                        .iter()
+                        .map(|o| (o.name.clone(), o.marker))
+                        .collect();
+                    for (name, (mx, my)) in markers {
+                        if mx < 0 || my < 0 {
+                            continue;
+                        }
+                        draw_text_indexed(
+                            &mut self.framebuffer,
+                            ENGINE_SCREEN_WIDTH,
+                            ENGINE_SCREEN_HEIGHT,
+                            &name,
+                            mx as usize,
+                            my as usize,
+                            CURSOR_COLOR,
+                        );
+                    }
+                    self.render_nav_info_panel_frame();
+                    return;
                 }
                 // Choose-a-location destination list (each character's location), clickable
                 // — the game's list-box nav. Falls back to the compass-target label.
@@ -6217,6 +6379,82 @@ mod tests {
     }
 
     #[test]
+    fn a_chart_click_opens_the_panel_and_the_next_click_closes_it() {
+        use crate::vm::{LocationPanelRow, LOCATION_PANEL_BOX, LOCATION_PANEL_ZOOM_STEPS};
+        const ODDLAND: u16 = 0x0F98;
+        const HERE: u16 = 0x0200;
+        let mut e = EngineState::new();
+        // A real chart entry, shaped like the one SCRIPT5's .VAR produces.
+        e.set_nav_chart_objects(vec![NavChartObject {
+            object: ODDLAND,
+            name: "Oddland".into(),
+            kind: crate::vm::LOCATION_KIND_BLACK_HOLE,
+            marker: (132, 34),
+            art_id: crate::levels::world_art_resource_id("Oddland"),
+        }]);
+        assert_eq!(e.nav_chart_objects()[0].art_id, Some(72));
+        assert_eq!(
+            e.nav_chart_objects()[0].hit_box(),
+            crate::vm::NAV_PICK_BOX_BLACK_HOLE
+        );
+
+        // 0x92A3's box: 2px up-left of the marker, both bounds inclusive.
+        assert!(e.nav_chart_object_click(130, 32).is_some());
+        assert!(e.nav_chart_object_click(130 + 0x13, 32 + 0x0C).is_some());
+        assert!(e.nav_chart_object_click(130 + 0x13 + 1, 32).is_none());
+        assert!(e.nav_chart_object_click(0, 0).is_none());
+
+        let rows = || {
+            vec![LocationPanelRow {
+                x: 0x6E,
+                y: 0x19,
+                color: 0xEE,
+                text: "BLACK HOLE: Oddland".into(),
+            }]
+        };
+        // A miss selects nothing and leaves the panel closed.
+        assert!(!e.nav_chart_click(0, 0, HERE, |_| rows()));
+        assert_eq!(e.location_panel.state, LocationPanelState::Idle);
+
+        // A hit opens it on that object.
+        assert!(e.nav_chart_click(133, 35, HERE, |_| rows()));
+        assert_eq!(e.location_panel.object, ODDLAND);
+        assert_eq!(e.location_panel.state, LocationPanelState::ZoomingOpen);
+
+        // Frames: the zoom draws a tinted rect, then the panel proper.
+        e.framebuffer.fill(200);
+        for (i, entry) in e.scene_palette.iter_mut().enumerate() {
+            *entry = [i as u8, i as u8, i as u8];
+        }
+        for _ in 0..LOCATION_PANEL_ZOOM_STEPS {
+            assert!(e.render_nav_info_panel_frame(), "one drawn rect per zoom step");
+        }
+        // The step AFTER the last one is where the gate reports Complete
+        // (`stc` at 0x1EB9 -> the caller's `jae` falls through), so that frame
+        // draws no rect and the panel becomes Open for the frame after it.
+        assert!(!e.render_nav_info_panel_frame());
+        assert_eq!(e.location_panel.state, LocationPanelState::Open);
+        assert!(e.render_nav_info_panel_frame());
+        let [bx, by, _, _] = LOCATION_PANEL_BOX.map(usize::from);
+        assert!(
+            e.framebuffer[(by + 6) * ENGINE_SCREEN_WIDTH + bx..]
+                .iter()
+                .take(200)
+                .any(|&p| p == 0xEE),
+            "the panel's own row must be on screen once it is Open"
+        );
+
+        // The next click is what re-enables the mouse (0x912E) -> close.
+        assert!(!e.nav_chart_click(133, 35, HERE, |_| rows()));
+        assert_eq!(e.location_panel.state, LocationPanelState::ZoomingShut);
+        for _ in 0..LOCATION_PANEL_ZOOM_STEPS + 1 {
+            e.render_nav_info_panel_frame();
+        }
+        assert_eq!(e.location_panel.state, LocationPanelState::Idle);
+        assert!(!e.render_nav_info_panel_frame(), "idle draws nothing");
+    }
+
+    #[test]
     fn nav_slots_carry_their_entity_ids_and_answer_the_hover_gate() {
         use crate::ship3d::{ship_3d_nav_entity_for_slot, SHIP_3D_ENTITY_COUNT};
         // 0x9B98: slot i is entity 0x15 + i, and the table stops at 32 entities.
@@ -6361,6 +6599,27 @@ mod tests {
         assert!(
             inside < 200 && inside > 0,
             "50% toward black must land on a darker palette index, got {inside}"
+        );
+        // The window is TRANSLUCENT, not an opaque box: remapping a varied
+        // background must leave more than one colour behind. (Driven on the real
+        // CHART.FD by examples/navpanel.rs: 25 distinct colours survive inside
+        // the panel against 37 outside.)
+        for (i, entry) in e.scene_palette.iter_mut().enumerate() {
+            let v = (i % 64) as u8;
+            *entry = [v * 4, v * 2, v];
+        }
+        for (i, px) in e.framebuffer.iter_mut().enumerate() {
+            *px = (i % 251) as u8;
+        }
+        e.render_location_info_panel(&[]);
+        let distinct: std::collections::HashSet<u8> = (by + 1..by + bh - 1)
+            .flat_map(|y| (bx + 1..bx + bw - 1).map(move |x| (x, y)))
+            .map(|(x, y)| e.framebuffer[y * ENGINE_SCREEN_WIDTH + x])
+            .collect();
+        assert!(
+            distinct.len() > 8,
+            "the tint must preserve structure, not flatten the rect: {} colours",
+            distinct.len()
         );
         // The header row drew in its own colour.
         assert!(

@@ -158,171 +158,179 @@ assemble_words	src/engine.rs	124	fn	0x66CD,0x6739	ASM?	/// Join dictionary words
 WorldVisit	src/engine.rs	152	struct		UNVERIFIED	/// A world being visited from the nav map: its decoded `fd/` rooms (paths, decoded /// lazily) with the currently-shown room. Rooms are the world's floor/view-angle /// backgrounds; cycling walks thr
 civil_from_days	src/engine.rs	170	fn	0x0FFB	ASM?	/// Per-frame engine state — the subset of the `DS`/`gs` globals the main loop /// (`0x0FFB`) touches, plus the indexed framebuffer the render subsystems fill. /// Days-since-Unix-epoch → (year, month
 TvProgram	src/engine.rs	186	struct		DATA?	"/// One TV broadcast program: a DESCRIPT Sequence record that self-identifies as a channel /// (its subtitles announce ""…watching…""), played as its chained HNM clips + music + /// tick-timed subtitle "
-LocationPanelState	src/engine.rs	200	enum		UNVERIFIED	
-LocationInfoPanel	src/engine.rs	215	struct		UNVERIFIED	
-entity_draw_scale	src/engine.rs	226	fn	0x2789,0x9240	ASM	/// `bh = (3 * [0x2789]) / 2 + 1` — the entity draw's scale at `0x9240`.
-EngineState	src/engine.rs	231	struct		UNVERIFIED	
-default	src/engine.rs	600	fn		UNVERIFIED	
-new	src/engine.rs	606	fn		UNVERIFIED	
-load_scene_hnm	src/engine.rs	740	fn		DATA?	/// Load a talk-HNM / scene-background HNM for the dialogue scene band, decoded /// behind the subtitle by [`EngineState::render_dialogue_frame`].
-present_scene_buffer	src/engine.rs	761	fn	0x1fa7	ASM?	/// Present the decoded scene buffer on the display framebuffer at the clip's /// letterbox origin (`scene_band_y`): band clips land on rows 0x23..0xA5 with /// black bars above/below, full-screen cli
-load_intro	src/engine.rs	796	fn		DATA?	/// Queue the startup intro-video sequence to play before the game proper — the /// first thing the real game shows. `assets` is the DAT root; missing files are /// skipped. `sq/mind.hnm` is the boot-
-intro_active	src/engine.rs	858	fn		UNVERIFIED	/// True while the startup intro sequence is still playing.
-intro_index	src/engine.rs	864	fn		UNVERIFIED	/// Index of the intro clip currently playing (0 = logo reel, 1 = credit cinematic, …). /// The frontend watches this for changes to start each clip's music at the right moment.
-intro_clip_music	src/engine.rs	870	fn		DATA?	/// The background-music stem to start WITH the current intro clip, if any (the logo reel /// returns `None` — it is silent; the credit cinematic returns the DESCRIPT `present` music).
-start_descript_cutscene	src/engine.rs	883	fn		DATA?	/// Start a DESCRIPT **Sequence** cutscene faithfully from its OWN record data — its HNM(s) /// (`sequence_hnms`), music (`music`), and tick-timed `subtitles` — reusing the intro playback /// path (`i
-skip_intro	src/engine.rs	918	fn		UNVERIFIED	/// Skip the rest of the boot intro immediately (the real game lets a click/key skip /// straight to the game). Ends intro playback so the driver can hand off to gameplay.
-load_alien_view	src/engine.rs	926	fn		DATA?	/// Load an alien-examination screen's pre-rendered rotation views (the /// `pe/<stem>_a..d.hnm` set, e.g. `scrut` → Scruter Jo). Any that open are kept /// in rotation order; the screen renders once 
-load_tv_programs	src/engine.rs	947	fn		DATA?	"/// Load the TV PROGRAMMING from the DESCRIPT data: every Sequence record whose own subtitles /// announce it as broadcast content. The records self-identify decisively: ///   `hatetv` ""YOU ARE WATCHI"
-tv_music	src/engine.rs	1003	fn		UNVERIFIED	/// The current TV channel's broadcast music (from its record), for the driver to play while /// the channel is on — e.g. `hatetv.voc` / `balise.voc`. `None` on the legacy raw channels.
-load_tv_channels	src/engine.rs	1016	fn		DATA?	"/// Load the comms ""Hate TV"" screen: the broadcast-channel HNMs named `<prefix>*` /// under `sq/` (e.g. `tv` → tvgren*/tvred*), sorted so steering cycles channels /// in a stable order. The screen ren"
-render_tv	src/engine.rs	1043	fn		DATA?	/// Render the comms/TV screen: play the current broadcast channel looped. A driver /// changes `tv_channel` (via `switch_tv_channel`) on left/right steer to flip /// channels — the interactive part o
-tv_channel_count	src/engine.rs	1129	fn		UNVERIFIED	/// Number of loaded TV channels.
-switch_tv_channel	src/engine.rs	1138	fn		UNVERIFIED	/// Switch the TV channel by `delta` (wrapping), restarting the broadcast.
-load_bridge	src/engine.rs	1154	fn		UNVERIFIED	/// Load the real ship bridge: the `TB.BIG` 360° panorama archive (the whole /// bridge as 180 pre-rendered frames — see [`crate::tbbig`]). `iso` is the CD /// root directory. Without it the bridge ca
-menu_submenu_labels	src/engine.rs	1200	fn	0xFFFF,0x4A9	ASM?	/// The MENU submenu's rows, taken from the LOADED SCRIPT when one is present. /// /// The real source is an `0xA6` record's word list after its `0xFFFF` separator /// (SCRIPT1.COD `0x4A9` -> DIC `exp
-console_box_click	src/engine.rs	1227	fn		ASM	/// Map a click to a console-choice-box row while it is open, else None.
-menu_submenu_click	src/engine.rs	1283	fn		ASM	/// Map a click to a MENU-submenu item (0 = EXPLANATIONS, 1 = GAME) when the /// submenu is showing. The submenu is a gold CHOICE BOX (the game's universal /// console-choice widget), so hit-test its 
-point_virtual_cursor	src/engine.rs	1297	fn		UNVERIFIED	/// Aim the bridge's virtual ring-space cursor at an absolute screen point — /// the inverse of the game's `screen = ring - (frame*8 - 160)` rebase — so /// absolute click coordinates can be tested wi
-console_menu_click	src/engine.rs	1309	fn	0x8613	ASM?	/// Map a click to a ship-console menu option index (0 = HONK … 4 = OPTION) /// using the decoded golden-menu hit math (`0x8613`): the menu is only /// clickable while its panorama sector is in view, 
-hub_cancel_click	src/engine.rs	1321	fn		UNVERIFIED	/// A left-button press on the bridge at absolute screen `(x, y)`: runs the /// decoded click paths — a golden-menu row selects that console function /// (returned as 0 = HONK … 4 = OPTION, with the v
-bridge_press	src/engine.rs	1333	fn		UNVERIFIED	
-load_console_font	src/engine.rs	1341	fn		DATA	/// Load the ship-console UI font from `HONKF.SPR` (49 8×8 glyphs: A–Z, 0–9, /// punctuation) — the game draws its console menu labels with it. Returns whether it /// loaded.
-console_glyph_index	src/engine.rs	1358	fn		DATA	
-draw_console_text	src/engine.rs	1390	fn		INFRA	
-render_bridge	src/engine.rs	1424	fn	0x954A	ASM?	/// Render the real ship bridge: the current TB.BIG panorama frame composited /// over the window starfield, with the golden menu's five palette rows /// programmed for hover highlighting — the decomp
-load_bob_contact	src/engine.rs	1550	fn		ORACLE?	/// Load the BOB_MORLOCK contact screen: Bob's talk-head video (pe/aabob.hnm, /// the oracle's red-face eye close-up) as the live scene, with FRIGO.FD (the /// cryo chamber the real game also file-ope
-render_bob_contact	src/engine.rs	1580	fn	0x89A6,0x84A1,0x84A7,0x84B9,0x84BF,0x847A	ORACLE?	/// Render the BOB_MORLOCK CONTACT screen. /// /// The topic-row layout is DERIVED from the list widget's decoded geometry, not /// measured off a capture as this comment used to say. `x0 = anchor - w
-bob_topic_click	src/engine.rs	1678	fn		UNVERIFIED	/// Hit-test a click against Bob's concept menu rows (x 165..300, rows from /// y=56 at pitch 11). Returns the topic index.
-save_ui_key	src/engine.rs	1694	fn	0x1DD8	ASM?	/// Feed a typed character to the save-slot name entry — the DOS original's edit /// law (0x1DD8): digits and lowercase letters append (max 14), backspace (8) /// deletes, Enter (13) with a non-empty 
-draw_hand_at_mouse	src/engine.rs	1730	fn		ORACLE?	/// Load the pointing-hand capture atlas: sprites of the REAL game's 3D hand /// renderer output, captured per cursor position from the emulator running /// the original (runtime_boot `BRIDGEPROBE HAN
-draw_hand_cursor	src/engine.rs	1784	fn		ORACLE?	/// Draw the pointing-hand cursor at the bridge's ring-anchored position (the /// steering cursor), using the atlas sprite captured nearest to it (the real /// renderer varies the hand's orientation w
-refresh_gpu_hand	src/engine.rs	1833	fn		UNVERIFIED	/// Recompute the GPU hand for the current cursor at DISPLAY refresh rate. /// PURE re-projection: the existing pose/skeleton state renders at the new /// cursor — no pose selection, no tween advance,
-draw_choice_box_labels	src/engine.rs	1853	fn		ORACLE?	/// Draw the nav destinations as a golden choice box over the console's left — /// the game's captured interaction pattern (a rounded gold-bordered box with /// gold console-font rows, see accuracy/ca
-choice_box_top_y_seeded	src/engine.rs	1900	fn	0x84A1,0x84C6,0xadd	ORACLE?	/// The first row's top y, from the widget's ASSEMBLY layout (0x84A1..0x84C6): /// box height h = rows*11 + 8, box y = (200 - h)/2 (screen-centred), text /// top = box y + 4. (This DERIVES the previou
-choice_box_top_y	src/engine.rs	1906	fn	0x8436	ASM	/// Default-path top (`bp = 0` from `xor bp,bp` at `0x8436`).
-choice_box_text_top	src/engine.rs	1912	fn	0xADD	ASM?	/// Kind-aware top: the world/entity box (kind 10) is the `[0xADD]&1` branch, /// which seeds the height 10 higher.
-choice_box_height_seed	src/engine.rs	1916	fn		UNVERIFIED	
-choice_box_geometry	src/engine.rs	1930	fn	0x84A1,0x84F6,0x84AD,0x84AF,0xac6,0x84B3,0x84EE	ASM?	/// The choice box's `(anchor, x0, x1)` for a widest label pixel width, per the /// widget layout at `0x84A1..0x84F6`: `w = widest.max(floor) + 0x14`, then /// `x0 = anchor - w/2` (`0x84AD shr / 0x84A
-draw_choice_box	src/engine.rs	1941	fn		UNVERIFIED	
-choice_box_row_at	src/engine.rs	1999	fn		ASM	/// Hit-test a click against the console choice box (see [`draw_choice_box`]): /// the box centers on x=100 with its first row band from the box top (y=86) /// at an 11px pitch. Shared by the telephon
-choice_box_widest	src/engine.rs	2025	fn		UNVERIFIED	/// The widest square-caps label pixel width over `labels` (capped at 8 rows, /// the box's own limit) — the `widest` the box geometry keys on.
-draw_list_menu	src/engine.rs	2038	fn		UNVERIFIED	/// Draw a LIST MENU — the game's blue square-capitals vertical list (topic /// menus in dialogue, destinations at nav, contacts): entries at the /// measured geometry (x 170, rows from y 34 at 11 px 
-set_topic_menu	src/engine.rs	2062	fn		UNVERIFIED	/// Set the dialogue topic menu: (label, first line index) per topic.
-load_bas_menus	src/engine.rs	2071	fn	0x6772	ASM?	/// Load the conversation script's decoded concept-menu stack (the game's /// `gs:0x6772` menu system, [`crate::bas_vm`]) from its `.BAS`/`.DIC`. Seeds at /// the entry menu; `current_bas_menu_labels`
-current_bas_menu_labels	src/engine.rs	2079	fn		UNVERIFIED	/// The current BAS concept menu's topic labels (uppercased, as the square-caps /// menu renders them). Empty if no `.BAS` menus are loaded. Enter/back-out /// navigation is driven via [`crate::bas_vm
-bas_menu_interact	src/engine.rs	2091	fn		UNVERIFIED	/// The complete per-beat concept-menu interaction: a click on `row` either pops /// (talk/bye_bye — back out) returning `None`, or advances the current menu's /// sequential response monologue and re
-bas_menu_click	src/engine.rs	2109	fn		UNVERIFIED	/// Handle a screen click on the displayed BAS concept menu: map (x,y) to a topic /// row (the list-menu geometry) and run [`Self::bas_menu_interact`]. Returns the /// response subtitle (empty string 
-sync_topic_menu_from_bas	src/engine.rs	2119	fn		UNVERIFIED	/// Sync the displayed topic menu to the current BAS concept menu, so the decoded /// menus actually RENDER (via [`draw_list_menu`]/the topic-menu widget). Each row /// carries its topic index; a clic
-bas_start_responses	src/engine.rs	2130	fn		UNVERIFIED	/// Begin the current BAS menu's response monologue (its `0xA6` responses), reset /// to the start. Called when a conversation menu becomes active.
-bas_advance_response	src/engine.rs	2137	fn		UNVERIFIED	/// Advance to the next response of the active menu (the already-shown gating), /// returning its `0xA6` BAS offset for the dialogue renderer. `None` when the /// monologue is exhausted or no menu is 
-bas_topic_click	src/engine.rs	2146	fn		UNVERIFIED	/// Handle a click on `row` of the current BAS concept menu. Back-out topics /// (`talk`/`bye_bye`) POP to the parent menu — verified against the running /// game (MENUTREE: fear/anger menu `talk` → t
-topic_labels	src/engine.rs	2160	fn		UNVERIFIED	/// The current topic-menu labels (for drivers that route clicks themselves).
-topic_menu_click	src/engine.rs	2166	fn		UNVERIFIED	/// A click while the topic menu is showing: selects the topic and jumps the /// dialogue to its first line. Returns the selected topic index.
-hand_pose_event	src/engine.rs	2194	fn		UNVERIFIED	/// Fire a one-shot hand-pose event (decoded selectors: 0xB = UI close, 0xA = /// screen transition) — the pose sequence plays once, then poses resume from state.
-set_console_band_dialogue	src/engine.rs	2201	fn		UNVERIFIED	/// Whether the current dialogue plays over the pyramid-console band (SCRIPT1 tutorial).
-set_dialogue_autoplay_end	src/engine.rs	2207	fn		UNVERIFIED	/// Gate auto-play at `end` (exclusive): the scripted opening plays unprompted, then the /// dialogue holds at the topic menu and topic clicks drive the rest.
-set_dialogue_styles	src/engine.rs	2213	fn		UNVERIFIED	/// Per-line render styles (parallel to the queued lines): true = character speech /// (green bold reveal), false = static text (white thin — menu/list content).
-set_segment_boundaries	src/engine.rs	2220	fn		UNVERIFIED	/// Record the dialogue's function-segment start lines so a topic click plays only that one /// segment (not everything up to the next topic). Does NOT change the play position — unlike /// [`Self::se
-set_dialogue_segments	src/engine.rs	2227	fn		UNVERIFIED	/// Segment the dialogue at the given line starts (script-function beats): the first segment /// (the scripted opening) auto-plays, then the dialogue holds; each call to /// [`Self::play_next_dialogue
-hold_current_line_at_least	src/engine.rs	2237	fn		UNVERIFIED	/// Play the next unplayed dialogue segment (a concept-menu interaction advances the /// conversation one beat), then re-hold at the menu. Returns false when exhausted. /// Driver hook: the current li
-play_next_dialogue_segment	src/engine.rs	2241	fn		UNVERIFIED	
-list_menu_click	src/engine.rs	2259	fn		ASM	/// Map a click to a list-menu row (the measured geometry above).
-bridge_nav_orb_click	src/engine.rs	2274	fn		ORACLE?	/// Whether a click hits the nav-sector ORB (the pyramid-sector station orb) — the /// oracle-verified way into the nav/viewscreen console. Orb near screen (105..145, 130..165) /// when the pyramid se
-bridge_nav_destination_click	src/engine.rs	2282	fn		ASM	/// Map a click to a nav-sector destination row when the choice box is showing /// (bridge view in the pyramid sector with destinations set).
-render_bridge_background	src/engine.rs	2302	fn	0x954A	ASM?	/// Composite the bridge view into the framebuffer: window starfield, then the /// current TB.BIG panorama frame with colour-0 transparency, then the game /// palette + the golden menu's dynamic DAC r
-load_cyberspace	src/engine.rs	2356	fn		DATA?	/// Load the cyberspace hyperspace-tunnel animations (`sq/hyper_*.hnm`), sorted so /// segments advance in order. The screen renders once `cyber_active` is set.
-start_cyberspace	src/engine.rs	2377	fn		UNVERIFIED	/// Begin (or restart) a cyberspace traversal from the first segment.
-cyber_progress	src/engine.rs	2385	fn		UNVERIFIED	/// The cyberspace traversal progress: (current segment, total segments).
-render_cyberspace	src/engine.rs	2397	fn		DATA?	/// Render the cyberspace hyperspace-traversal mini-game: fly through the real /// `hyper_*.hnm` warp segments toward the destination, steering the on-course reticle /// with the mouse; each completed
-load_cryobox	src/engine.rs	2454	fn		DATA?	/// Load the cryo-chamber scene (`sq/cryorad.hnm`) shown by the console's CRYOBOX /// option — the ship's cryo-pod bay (its palette is the HNM's own header palette).
-render_cryobox	src/engine.rs	2460	fn		UNVERIFIED	/// Render the CRYOBOX cryo-chamber, looping its frames.
-overlay_console_band	src/engine.rs	2478	fn		DATA?	/// Composite the REAL console band (pyramid field + eye-orb) — interpreter ground /// truth (BOOTIDX bd_00290M, byte-identical across every dialogue beat): raw VGA /// indices for rows 140..200, enti
-render_viewscreen_console	src/engine.rs	2502	fn		ORACLE?	/// Render the VIEWSCREEN console: the pyramid band along the bottom (the real harvested /// art) and the upper viewscreen showing STATIC when no destinations are granted (the /// oracle-verified empt
-load_ending	src/engine.rs	2534	fn		DATA?	"/// Load the game-ending finale cutscene (`sq/fin.hnm`, the ""fin""/end video) — the /// bookend to the intro. Returns whether it loaded."
-start_ending	src/engine.rs	2540	fn		UNVERIFIED	/// Start the ending finale from its first frame (call when the game is completed).
-ending_finished	src/engine.rs	2546	fn		UNVERIFIED	/// Whether the ending finale has played through all its frames.
-render_ending	src/engine.rs	2554	fn		UNVERIFIED	/// Render the ending finale, advancing one frame per call and holding on the last.
-load_telephone	src/engine.rs	2587	fn		DATA?	/// Load the video-phone call screen (console TELEPHONE option): the call widget /// (`BAPPEL.SPR`, from `iso`) and every callable crew's talk-head HNM (`pe/aa*.hnm`, /// from `assets`). Returns wheth
-phone_contact_labels	src/engine.rs	2606	fn		UNVERIFIED	/// The number of callable phone contacts loaded. /// Contact names for the TELEPHONE choice box.
-phone_contact_count	src/engine.rs	2610	fn		UNVERIFIED	
-phone_contact_name	src/engine.rs	2615	fn		UNVERIFIED	/// The display name of the currently selected/dialled contact.
-phone_connected	src/engine.rs	2620	fn		UNVERIFIED	/// Whether the call is connected (showing the talk-head video feed).
-phone_cycle_contact	src/engine.rs	2625	fn		UNVERIFIED	/// Cycle the dialled contact (`dir` +1/−1), while dialling (a no-op once connected).
-phone_contact_click	src/engine.rs	2634	fn		UNVERIFIED	/// Map a click to a contact-list row (dialling state), matching the drawn layout.
-phone_connect	src/engine.rs	2657	fn		UNVERIFIED	/// Connect the call to `index` (switch to the video-feed state). Invalid index = no-op.
-phone_hangup	src/engine.rs	2668	fn		UNVERIFIED	/// Hang up a connected call, returning to the dialling state.
-render_telephone	src/engine.rs	2675	fn		DATA?	/// Render the video-phone. Dialling: the console-palette backdrop, the animated /// `BAPPEL` call widget, and the crew contact list in the console font (the dialled /// row highlighted). Connected: t
-arm_alien_intro	src/engine.rs	2706	fn		UNVERIFIED	/// Arm the scrutinizer-apparatus intro to play from its first frame the next time /// the examination screen renders (call when opening the screen).
-render_alien_view	src/engine.rs	2717	fn		UNVERIFIED	/// Render the alien-examination screen: the mouse pan (delta from centre, /// smoothed + clamped like the decoded camera at `re/REVERSE.md`) selects one of /// the pre-rendered rotation views, whose 
-render_intro_frame	src/engine.rs	2764	fn		UNVERIFIED	/// Render one frame of the current intro clip full-screen; when a clip's frames are /// exhausted, advance to the next; when the sequence ends, deactivate the intro so /// the main loop takes over.
-draw_intro_credit	src/engine.rs	2822	fn		UNVERIFIED	/// Draw the credit subtitle active at intro clip `frame` (if any) centred in the /// lower letterbox. The active cue is the last one whose `tick` has been reached.
-load_dialogue_scenes	src/engine.rs	2854	fn		DATA?	/// Load a dialogue script AND resolve each line's speaker to its talk-HNM asset /// (actor `0xC4` offset → DEB object name → DESCRIPT record → talk HNM → file in /// `asset_dir`), so playback automat
-dialogue_cursor	src/engine.rs	2899	fn		UNVERIFIED	/// Current dialogue playback cursor (line index), for drivers that react to line /// changes (e.g. per-line voice playback).
-set_dialogue_cursor	src/engine.rs	2905	fn		UNVERIFIED	/// Set the dialogue playback cursor (clamped to the loaded dialogue), used when /// restoring a save so playback resumes at the saved line.
-capture_save	src/engine.rs	2916	fn		ORACLE?	/// Capture the resumable game state into a [`crate::save::SaveState`] (the port's own /// save). `script` is the current location/dialogue script number the driver loaded /// (0 = none, on the nav) —
-restore_save	src/engine.rs	2948	fn		UNVERIFIED	/// Restore the engine-side view and settings from a save. The driver must (re)load /// `save.script`'s dialogue BEFORE calling this so the dialogue cursor lands on a valid /// line; screen selection,
-subtitle_reveal_progress	src/engine.rs	2982	fn	0x5E58,0x94BA	ASM?	/// How many subtitle characters are currently revealed on the active line (the /// game's reveal pointer `gs:0x5E58`), and the line's total character count. A /// driver plays the `tb.snd` chatter (c
-current_voice	src/engine.rs	2999	fn	0xCFB,0x66AF,0x94CF	ASM?	/// The current line's speaker SND bank path + its `b3` selector. /// /// NO LONGER DRIVES AUDIO. The per-line voice clip this used to feed was removed: /// the game plays a random burble (`prng(10)+7
-load_current_scene	src/engine.rs	3010	fn		DATA?	/// Load the talk-HNM resolved for the current dialogue line (if any).
-load_dialogue	src/engine.rs	3039	fn	0x108E	ASM?	/// Load a dialogue script (`SCRIPTn.COD` + `.VAR`): run the VM trace and queue /// its reached dialogue lines for frame-stepped playback. Each [`EngineState:: /// step`] advances the playback timer; 
-set_speech_dialogue	src/engine.rs	3100	fn		DATA?	/// Play dialogue directly from the port's decoded speech events — the FULL per-script, /// per-character content (every character's lines, with each line's background scene), /// instead of `execute_
-current_dialogue	src/engine.rs	3130	fn		UNVERIFIED	/// The dialogue line currently being presented, if a script is loaded.
-pending_next_scene	src/engine.rs	3137	fn		UNVERIFIED	/// The next scene/profile the loaded script's D2 handoff dispatches to (for /// scene-to-scene chaining), or `None` if this is a terminal scene. The driver /// loads that profile's script when the cu
-dialogue_finished	src/engine.rs	3143	fn		UNVERIFIED	/// Whether dialogue playback has reached the final line (the point at which the /// D2 handoff to [`EngineState::pending_next_scene`] would fire).
-queue_scenes	src/engine.rs	3150	fn		UNVERIFIED	/// Queue a sequence of scene scripts `(cod, var, dic)` and start the first, so /// the engine auto-advances scene-to-scene as each finishes (the scene flow the /// D2 handoff drives). Returns the num
-current_scene_index	src/engine.rs	3161	fn		UNVERIFIED	/// The index of the scene currently playing in the queue.
-advance_scene_if_finished	src/engine.rs	3167	fn		UNVERIFIED	/// If the current dialogue has finished and another scene is queued, advance to /// it (loading its script). Returns true if it advanced.
-dialogue_page_number	src/engine.rs	3180	fn		ORACLE?	/// 1-based page number of the current dialogue line — the green console digit the /// real presentation screen shows top-left (oracle bd_218M..bd_290M, index 254).
-current_subtitle	src/engine.rs	3185	fn		UNVERIFIED	/// The current dialogue line's reconstructed subtitle text, if non-empty.
-dialogue_len	src/engine.rs	3193	fn		UNVERIFIED	/// Number of dialogue lines the loaded script reached.
-current_line_hold	src/engine.rs	3204	fn	0xB31,0x94BA,0xB35	ASM?	/// Advance the dialogue playback: after `dialogue_hold_frames`, step to the next /// reached line (stops at the last line). /// Hold for the current line, using the game's decoded subtitle timing: th
-in_dialogue	src/engine.rs	3225	fn		UNVERIFIED	/// Whether a dialogue scene is currently the active view (playing, with no overlay /// screen / nav / intro / ending on top) — so a driver can route clicks to advance it.
-skip_dialogue_line	src/engine.rs	3242	fn		UNVERIFIED	/// Manually advance the dialogue on a click (as the real game does): if the current /// line is still revealing, snap it fully revealed; otherwise move to the next line. /// Returns `false` when alre
-advance_dialogue	src/engine.rs	3271	fn		UNVERIFIED	
-load_hud_sprites	src/engine.rs	3307	fn		UNVERIFIED	/// Load the ship-nav HUD sprite banks (BCARTE grid frames + BORXX orb) from /// their raw `.spr` bytes so [`EngineState::render_ship_view`] composites the /// accurate sprite HUD over the starfield.
-load_nav_sprites	src/engine.rs	3316	fn	0x4BAA	ASM?	/// Load the star-map nav sprites: `CARTE.SPR` holds the game's actual destination /// pyramid frames at six pre-scaled sizes (f0..f5) plus the selection reticle /// (f6); `BORXX.SPR` the eye-orb fram
-nav_world_label_sample	src/engine.rs	3331	fn	0x9BBA,0x100000	ASM?	/// Draw the star-map destination pyramids with the game's real components: the /// ground-plane grid of destinations is projected point-by-point with /// `project_star_map_point` (the decoded 0x9BBA 
-load_title	src/engine.rs	3339	fn		DATA?	/// Load + arm the title screen from `BLOOD.LBM` under `iso`: decode the planar ILBM /// title art and downscale it aspect-correctly (e.g. 640×480 → 320×200, nearest, /// keeping the full image) into 
-title_active	src/engine.rs	3364	fn		UNVERIFIED	/// Whether the title screen is armed/showing.
-dismiss_title	src/engine.rs	3369	fn		UNVERIFIED	/// Dismiss the title screen (advance to the intro/game).
-render_title	src/engine.rs	3374	fn		UNVERIFIED	/// Render the downscaled title art into the framebuffer.
-visit_world	src/engine.rs	3385	fn		UNVERIFIED	/// Visit a world by name: collect all its decoded `fd/` rooms (floor/view-angle /// backgrounds the world maps to) from `assets`, show the first, and enable cycling. /// Returns whether any room was 
-set_world_ext	src/engine.rs	3434	fn		UNVERIFIED	/// Supply the visited world's `.ext` bytes so its decoded object positions are marked /// on the location screen. Parses the objects via [`crate::ext`] and stores their /// `(x, y)`. No-op if no worl
-world_object_click	src/engine.rs	3448	fn		UNVERIFIED	/// Hit-test a click against the visited world's decoded `.ext` OBJECT markers /// (the world's entities, e.g. the initial id=1/type=4 inhabitant at its /// world-specific position). Returns the objec
-cycle_world_room	src/engine.rs	3457	fn		UNVERIFIED	/// Cycle to another room of the currently-visited world (`delta` = +1/-1), decoding /// its background. No-op if no world is being visited.
-world_room_position	src/engine.rs	3474	fn		UNVERIFIED	/// The visited world's room count + current index (for HUD/tests), if active.
-world_location_active	src/engine.rs	3479	fn		UNVERIFIED	/// Whether the world-location landing screen is active.
-step_ship_3d_nav_state	src/engine.rs	3494	fn	0xB692,0xB75C	ASM?	/// Whether the plain nav star-map is the active view — on the ship with no overlay /// screen (bridge/comms/cyberspace/cryobox/alien/world-landing) open. This is the /// view that shows the choose-a-
-nav_view_active	src/engine.rs	3567	fn		UNVERIFIED	
-leave_world	src/engine.rs	3579	fn		UNVERIFIED	/// Close the world-location screen (back to nav).
-render_world_location	src/engine.rs	3585	fn		UNVERIFIED	/// Render the current world-location background (its decoded palette + pixels) with /// the world name + room index captioned, into the framebuffer.
-render_nav_pyramid_sprites	src/engine.rs	3664	fn		ASM	
-render_location_info_panel	src/engine.rs	3823	fn	0x2780,0x90ED,0x90F9,0x9142,0x9156	ASM	/// The destination info panel's WINDOW: the rect at `DS:0x2780` remapped /// through a 50%-toward-black tint table (`0x90ED..0x90F9` builds it, /// `0x9142..0x9156` draws it), then the panel's text r
-assign_nav_slot_entity_ids	src/engine.rs	3871	fn	0x6212,0x9B98	ASM	/// Give each nav sprite slot the ENTITY id the projector writes it into: /// `0x6212 + ((i + 0x15) << 5)` at `0x9B98`, so slot `i` is entity `0x15 + i`. /// Without this a slot is anonymous and canno
-nav_hover_status_active	src/engine.rs	3892	fn	0x82E8,0x65F2,0x6212,0x830A,0x8315	ASM	/// The HOVER status panel's trigger (`nav_state_gate` `0x82E8`): the gate /// reads `si = 0x65F2` — ENTITY `0x1F`'s record, the LAST of the 32 at /// `DS:0x6212` — requires its state bit0, and hit-te
-open_location_info_panel	src/engine.rs	3928	fn	0x8FF4,0x905B,0x9029,0x2AAB,0x9039,0xADB,0xADA,0x9043,0x2788	ASM	/// OPEN the destination info panel — the selection commit at /// `0x8FF4..0x905B`, minus the parts that belong to the DOS input layer: /// /// ```text ///   0x9029  [0x2AAB] = {mouse x, mouse y, 4, 4
-close_location_info_panel	src/engine.rs	3947	fn	0x912E,0x922A,0x278C,0x2788,0xADB,0x2789	ASM	/// Ask the panel to close — the `0x912E` edge, where the mouse being enabled /// again puts the FSM into state 2 (`0x922A`: `[0x278C]=0`, `[0x2788]=2`, /// `[0xADB]=0`, `inc [0x2789]`).
-step_location_info_panel	src/engine.rs	3965	fn	0x90FF,0x9120,0x2789,0x91F1,0x9228	ASM	/// Advance the panel one frame and return the rect to draw, if any. /// /// * `ZoomingOpen` (`0x90FF..0x9120`): `inc [0x2789]`, interpolate the cursor ///   rect toward the panel rect, and on complet
-load_nav_chart	src/engine.rs	4015	fn		UNVERIFIED	/// Load the real navigation star-map background from `CHART.FD` (an IFF/PBM image /// under `iso`) — the game's own chart the ship-nav screen shows. Returns whether it /// loaded; when present, `rend
-set_nav_destinations	src/engine.rs	4037	fn		UNVERIFIED	
-nav_destination_label	src/engine.rs	4046	fn		UNVERIFIED	/// The number of nav destinations currently offered. /// The label of nav destination `i` (the location's character name), if present.
-nav_destination_count	src/engine.rs	4050	fn		UNVERIFIED	
-nav_destination_click	src/engine.rs	4055	fn		UNVERIFIED	/// Map a click on the nav chart to a destination index, matching the list layout.
-visit_nav_destination	src/engine.rs	4069	fn		UNVERIFIED	/// Visit the chosen nav destination — play that character's decoded dialogue. Returns /// whether the index was valid.
-render_ship_view	src/engine.rs	4080	fn		UNVERIFIED	/// Render the on-ship nav view. With the real chart (`CHART.FD`) loaded this draws /// that star-map background (nebula + destinations + console) and a heading cursor; /// otherwise it falls back to 
-targeted_world_name	src/engine.rs	4241	fn		UNVERIFIED	"/// The name of the world the nav compass currently targets (for ""visit this /// destination"" input)."
-targeted_world_index	src/engine.rs	4248	fn		UNVERIFIED	/// The index into [`Self::nav_world_labels`] the compass heading currently targets: /// the heading (0..180°) maps across the decoded primary worlds, so panning the ship /// sweeps through the real n
-draw_subtitle	src/engine.rs	4257	fn		DATA?	/// Draw a subtitle line into the framebuffer at the game's subtitle reveal /// position (scene band, `SUBTITLE_X`/`SUBTITLE_Y` = 10/8) using the game font. /// The scene band's talk-HNM background co
-draw_subtitle_revealed	src/engine.rs	4266	fn		ASM	/// Draw the pre-wrapped subtitle with only the first `visible` characters shown, /// the newest one in the reveal-edge colour (0xFE) — the game's per-character /// reveal. Non-visible characters aren
-render_dialogue_frame	src/engine.rs	4409	fn		DATA?	/// Render the current dialogue line's frame into the framebuffer: clear, then /// draw the reconstructed subtitle text. (The talk-HNM scene background layer /// composites behind this once the HNM de
-first_scene_hnm_stem	src/engine.rs	4530	fn		DATA?	/// Lowercase file stem of the first resolved talk-HNM in the loaded dialogue, so a /// driver can look its background music up via `DescriptDb::hnm_music_map`.
-take_nav_selection	src/engine.rs	4542	fn		UNVERIFIED	/// Take the pending nav destination selection (the compass heading the player /// clicked in the nav view), clearing it. A driver polls this each frame to load /// the selected destination's dialogue
-poll_input	src/engine.rs	4548	fn	0x70E	ASM?	/// The mouse input poll (`0:0x70E`): store the frame's cursor state and, if the /// cursor moved since last frame, reset the idle timer; otherwise advance it.
-step	src/engine.rs	4563	fn	0x0FFB	ASM?	/// One iteration of the top-level dispatch loop (`0x0FFB`). Ordered to match the /// decoded engine: poll input → (reset render state) → (render subsystems) → /// on-ship gate → countdown. Rendering 
-mode_x_offset	src/engine.rs	4743	fn	0x299,0x498	ASM?	/// The game's mode-X screen address for pixel `(x, y)` — `(byte_offset, plane)` where /// `byte_offset = y*80 + x/4` and `plane = x & 3`, exactly as `graphics_plot_modex` /// (`0x299:0x498`) computes
-signed_i16_engine	src/engine.rs	4752	fn		UNVERIFIED	/// Invert [`mode_x_offset`] back to the linear framebuffer index the engine uses: /// `byte_offset*4 + plane`. Equals `y*ENGINE_SCREEN_WIDTH + x`, proving the two layouts /// address the same pixel. 
-mode_x_to_linear	src/engine.rs	4756	fn		ASM	
+NavChartObject	src/engine.rs	198	struct		UNVERIFIED	
+hit_box	src/engine.rs	210	fn	0x92BF,0x92D3,0x92FC	ASM	/// The picker's per-kind hit box (`0x92BF`, `0x92D3`, `0x92FC`).
+LocationPanelState	src/engine.rs	228	enum		UNVERIFIED	
+LocationInfoPanel	src/engine.rs	243	struct		UNVERIFIED	
+entity_draw_scale	src/engine.rs	254	fn	0x2789,0x9240	ASM	/// `bh = (3 * [0x2789]) / 2 + 1` — the entity draw's scale at `0x9240`.
+EngineState	src/engine.rs	259	struct		UNVERIFIED	
+default	src/engine.rs	633	fn		UNVERIFIED	
+new	src/engine.rs	639	fn		UNVERIFIED	
+load_scene_hnm	src/engine.rs	775	fn		DATA?	/// Load a talk-HNM / scene-background HNM for the dialogue scene band, decoded /// behind the subtitle by [`EngineState::render_dialogue_frame`].
+present_scene_buffer	src/engine.rs	796	fn	0x1fa7	ASM?	/// Present the decoded scene buffer on the display framebuffer at the clip's /// letterbox origin (`scene_band_y`): band clips land on rows 0x23..0xA5 with /// black bars above/below, full-screen cli
+load_intro	src/engine.rs	831	fn		DATA?	/// Queue the startup intro-video sequence to play before the game proper — the /// first thing the real game shows. `assets` is the DAT root; missing files are /// skipped. `sq/mind.hnm` is the boot-
+intro_active	src/engine.rs	893	fn		UNVERIFIED	/// True while the startup intro sequence is still playing.
+intro_index	src/engine.rs	899	fn		UNVERIFIED	/// Index of the intro clip currently playing (0 = logo reel, 1 = credit cinematic, …). /// The frontend watches this for changes to start each clip's music at the right moment.
+intro_clip_music	src/engine.rs	905	fn		DATA?	/// The background-music stem to start WITH the current intro clip, if any (the logo reel /// returns `None` — it is silent; the credit cinematic returns the DESCRIPT `present` music).
+start_descript_cutscene	src/engine.rs	918	fn		DATA?	/// Start a DESCRIPT **Sequence** cutscene faithfully from its OWN record data — its HNM(s) /// (`sequence_hnms`), music (`music`), and tick-timed `subtitles` — reusing the intro playback /// path (`i
+skip_intro	src/engine.rs	953	fn		UNVERIFIED	/// Skip the rest of the boot intro immediately (the real game lets a click/key skip /// straight to the game). Ends intro playback so the driver can hand off to gameplay.
+load_alien_view	src/engine.rs	961	fn		DATA?	/// Load an alien-examination screen's pre-rendered rotation views (the /// `pe/<stem>_a..d.hnm` set, e.g. `scrut` → Scruter Jo). Any that open are kept /// in rotation order; the screen renders once 
+load_tv_programs	src/engine.rs	982	fn		DATA?	"/// Load the TV PROGRAMMING from the DESCRIPT data: every Sequence record whose own subtitles /// announce it as broadcast content. The records self-identify decisively: ///   `hatetv` ""YOU ARE WATCHI"
+tv_music	src/engine.rs	1038	fn		UNVERIFIED	/// The current TV channel's broadcast music (from its record), for the driver to play while /// the channel is on — e.g. `hatetv.voc` / `balise.voc`. `None` on the legacy raw channels.
+load_tv_channels	src/engine.rs	1051	fn		DATA?	"/// Load the comms ""Hate TV"" screen: the broadcast-channel HNMs named `<prefix>*` /// under `sq/` (e.g. `tv` → tvgren*/tvred*), sorted so steering cycles channels /// in a stable order. The screen ren"
+render_tv	src/engine.rs	1078	fn		DATA?	/// Render the comms/TV screen: play the current broadcast channel looped. A driver /// changes `tv_channel` (via `switch_tv_channel`) on left/right steer to flip /// channels — the interactive part o
+tv_channel_count	src/engine.rs	1164	fn		UNVERIFIED	/// Number of loaded TV channels.
+switch_tv_channel	src/engine.rs	1173	fn		UNVERIFIED	/// Switch the TV channel by `delta` (wrapping), restarting the broadcast.
+load_bridge	src/engine.rs	1189	fn		UNVERIFIED	/// Load the real ship bridge: the `TB.BIG` 360° panorama archive (the whole /// bridge as 180 pre-rendered frames — see [`crate::tbbig`]). `iso` is the CD /// root directory. Without it the bridge ca
+menu_submenu_labels	src/engine.rs	1235	fn	0xFFFF,0x4A9	ASM?	/// The MENU submenu's rows, taken from the LOADED SCRIPT when one is present. /// /// The real source is an `0xA6` record's word list after its `0xFFFF` separator /// (SCRIPT1.COD `0x4A9` -> DIC `exp
+console_box_click	src/engine.rs	1262	fn		ASM	/// Map a click to a console-choice-box row while it is open, else None.
+menu_submenu_click	src/engine.rs	1318	fn		ASM	/// Map a click to a MENU-submenu item (0 = EXPLANATIONS, 1 = GAME) when the /// submenu is showing. The submenu is a gold CHOICE BOX (the game's universal /// console-choice widget), so hit-test its 
+point_virtual_cursor	src/engine.rs	1332	fn		UNVERIFIED	/// Aim the bridge's virtual ring-space cursor at an absolute screen point — /// the inverse of the game's `screen = ring - (frame*8 - 160)` rebase — so /// absolute click coordinates can be tested wi
+console_menu_click	src/engine.rs	1344	fn	0x8613	ASM?	/// Map a click to a ship-console menu option index (0 = HONK … 4 = OPTION) /// using the decoded golden-menu hit math (`0x8613`): the menu is only /// clickable while its panorama sector is in view, 
+hub_cancel_click	src/engine.rs	1356	fn		UNVERIFIED	/// A left-button press on the bridge at absolute screen `(x, y)`: runs the /// decoded click paths — a golden-menu row selects that console function /// (returned as 0 = HONK … 4 = OPTION, with the v
+bridge_press	src/engine.rs	1368	fn		UNVERIFIED	
+load_console_font	src/engine.rs	1376	fn		DATA	/// Load the ship-console UI font from `HONKF.SPR` (49 8×8 glyphs: A–Z, 0–9, /// punctuation) — the game draws its console menu labels with it. Returns whether it /// loaded.
+console_glyph_index	src/engine.rs	1393	fn		DATA	
+draw_console_text	src/engine.rs	1425	fn		INFRA	
+render_bridge	src/engine.rs	1459	fn	0x954A	ASM?	/// Render the real ship bridge: the current TB.BIG panorama frame composited /// over the window starfield, with the golden menu's five palette rows /// programmed for hover highlighting — the decomp
+load_bob_contact	src/engine.rs	1585	fn		ORACLE?	/// Load the BOB_MORLOCK contact screen: Bob's talk-head video (pe/aabob.hnm, /// the oracle's red-face eye close-up) as the live scene, with FRIGO.FD (the /// cryo chamber the real game also file-ope
+render_bob_contact	src/engine.rs	1615	fn	0x89A6,0x84A1,0x84A7,0x84B9,0x84BF,0x847A	ORACLE?	/// Render the BOB_MORLOCK CONTACT screen. /// /// The topic-row layout is DERIVED from the list widget's decoded geometry, not /// measured off a capture as this comment used to say. `x0 = anchor - w
+bob_topic_click	src/engine.rs	1713	fn		UNVERIFIED	/// Hit-test a click against Bob's concept menu rows (x 165..300, rows from /// y=56 at pitch 11). Returns the topic index.
+save_ui_key	src/engine.rs	1729	fn	0x1DD8	ASM?	/// Feed a typed character to the save-slot name entry — the DOS original's edit /// law (0x1DD8): digits and lowercase letters append (max 14), backspace (8) /// deletes, Enter (13) with a non-empty 
+draw_hand_at_mouse	src/engine.rs	1765	fn		ORACLE?	/// Load the pointing-hand capture atlas: sprites of the REAL game's 3D hand /// renderer output, captured per cursor position from the emulator running /// the original (runtime_boot `BRIDGEPROBE HAN
+draw_hand_cursor	src/engine.rs	1819	fn		ORACLE?	/// Draw the pointing-hand cursor at the bridge's ring-anchored position (the /// steering cursor), using the atlas sprite captured nearest to it (the real /// renderer varies the hand's orientation w
+refresh_gpu_hand	src/engine.rs	1868	fn		UNVERIFIED	/// Recompute the GPU hand for the current cursor at DISPLAY refresh rate. /// PURE re-projection: the existing pose/skeleton state renders at the new /// cursor — no pose selection, no tween advance,
+draw_choice_box_labels	src/engine.rs	1888	fn		ORACLE?	/// Draw the nav destinations as a golden choice box over the console's left — /// the game's captured interaction pattern (a rounded gold-bordered box with /// gold console-font rows, see accuracy/ca
+choice_box_top_y_seeded	src/engine.rs	1935	fn	0x84A1,0x84C6,0xadd	ORACLE?	/// The first row's top y, from the widget's ASSEMBLY layout (0x84A1..0x84C6): /// box height h = rows*11 + 8, box y = (200 - h)/2 (screen-centred), text /// top = box y + 4. (This DERIVES the previou
+choice_box_top_y	src/engine.rs	1941	fn	0x8436	ASM	/// Default-path top (`bp = 0` from `xor bp,bp` at `0x8436`).
+choice_box_text_top	src/engine.rs	1947	fn	0xADD	ASM?	/// Kind-aware top: the world/entity box (kind 10) is the `[0xADD]&1` branch, /// which seeds the height 10 higher.
+choice_box_height_seed	src/engine.rs	1951	fn		UNVERIFIED	
+choice_box_geometry	src/engine.rs	1965	fn	0x84A1,0x84F6,0x84AD,0x84AF,0xac6,0x84B3,0x84EE	ASM?	/// The choice box's `(anchor, x0, x1)` for a widest label pixel width, per the /// widget layout at `0x84A1..0x84F6`: `w = widest.max(floor) + 0x14`, then /// `x0 = anchor - w/2` (`0x84AD shr / 0x84A
+draw_choice_box	src/engine.rs	1976	fn		UNVERIFIED	
+choice_box_row_at	src/engine.rs	2034	fn		ASM	/// Hit-test a click against the console choice box (see [`draw_choice_box`]): /// the box centers on x=100 with its first row band from the box top (y=86) /// at an 11px pitch. Shared by the telephon
+choice_box_widest	src/engine.rs	2060	fn		UNVERIFIED	/// The widest square-caps label pixel width over `labels` (capped at 8 rows, /// the box's own limit) — the `widest` the box geometry keys on.
+draw_list_menu	src/engine.rs	2073	fn		UNVERIFIED	/// Draw a LIST MENU — the game's blue square-capitals vertical list (topic /// menus in dialogue, destinations at nav, contacts): entries at the /// measured geometry (x 170, rows from y 34 at 11 px 
+set_topic_menu	src/engine.rs	2097	fn		UNVERIFIED	/// Set the dialogue topic menu: (label, first line index) per topic.
+load_bas_menus	src/engine.rs	2106	fn	0x6772	ASM?	/// Load the conversation script's decoded concept-menu stack (the game's /// `gs:0x6772` menu system, [`crate::bas_vm`]) from its `.BAS`/`.DIC`. Seeds at /// the entry menu; `current_bas_menu_labels`
+current_bas_menu_labels	src/engine.rs	2114	fn		UNVERIFIED	/// The current BAS concept menu's topic labels (uppercased, as the square-caps /// menu renders them). Empty if no `.BAS` menus are loaded. Enter/back-out /// navigation is driven via [`crate::bas_vm
+bas_menu_interact	src/engine.rs	2126	fn		UNVERIFIED	/// The complete per-beat concept-menu interaction: a click on `row` either pops /// (talk/bye_bye — back out) returning `None`, or advances the current menu's /// sequential response monologue and re
+bas_menu_click	src/engine.rs	2144	fn		UNVERIFIED	/// Handle a screen click on the displayed BAS concept menu: map (x,y) to a topic /// row (the list-menu geometry) and run [`Self::bas_menu_interact`]. Returns the /// response subtitle (empty string 
+sync_topic_menu_from_bas	src/engine.rs	2154	fn		UNVERIFIED	/// Sync the displayed topic menu to the current BAS concept menu, so the decoded /// menus actually RENDER (via [`draw_list_menu`]/the topic-menu widget). Each row /// carries its topic index; a clic
+bas_start_responses	src/engine.rs	2165	fn		UNVERIFIED	/// Begin the current BAS menu's response monologue (its `0xA6` responses), reset /// to the start. Called when a conversation menu becomes active.
+bas_advance_response	src/engine.rs	2172	fn		UNVERIFIED	/// Advance to the next response of the active menu (the already-shown gating), /// returning its `0xA6` BAS offset for the dialogue renderer. `None` when the /// monologue is exhausted or no menu is 
+bas_topic_click	src/engine.rs	2181	fn		UNVERIFIED	/// Handle a click on `row` of the current BAS concept menu. Back-out topics /// (`talk`/`bye_bye`) POP to the parent menu — verified against the running /// game (MENUTREE: fear/anger menu `talk` → t
+topic_labels	src/engine.rs	2195	fn		UNVERIFIED	/// The current topic-menu labels (for drivers that route clicks themselves).
+topic_menu_click	src/engine.rs	2201	fn		UNVERIFIED	/// A click while the topic menu is showing: selects the topic and jumps the /// dialogue to its first line. Returns the selected topic index.
+hand_pose_event	src/engine.rs	2229	fn		UNVERIFIED	/// Fire a one-shot hand-pose event (decoded selectors: 0xB = UI close, 0xA = /// screen transition) — the pose sequence plays once, then poses resume from state.
+set_console_band_dialogue	src/engine.rs	2236	fn		UNVERIFIED	/// Whether the current dialogue plays over the pyramid-console band (SCRIPT1 tutorial).
+set_dialogue_autoplay_end	src/engine.rs	2242	fn		UNVERIFIED	/// Gate auto-play at `end` (exclusive): the scripted opening plays unprompted, then the /// dialogue holds at the topic menu and topic clicks drive the rest.
+set_dialogue_styles	src/engine.rs	2248	fn		UNVERIFIED	/// Per-line render styles (parallel to the queued lines): true = character speech /// (green bold reveal), false = static text (white thin — menu/list content).
+set_segment_boundaries	src/engine.rs	2255	fn		UNVERIFIED	/// Record the dialogue's function-segment start lines so a topic click plays only that one /// segment (not everything up to the next topic). Does NOT change the play position — unlike /// [`Self::se
+set_dialogue_segments	src/engine.rs	2262	fn		UNVERIFIED	/// Segment the dialogue at the given line starts (script-function beats): the first segment /// (the scripted opening) auto-plays, then the dialogue holds; each call to /// [`Self::play_next_dialogue
+hold_current_line_at_least	src/engine.rs	2272	fn		UNVERIFIED	/// Play the next unplayed dialogue segment (a concept-menu interaction advances the /// conversation one beat), then re-hold at the menu. Returns false when exhausted. /// Driver hook: the current li
+play_next_dialogue_segment	src/engine.rs	2276	fn		UNVERIFIED	
+list_menu_click	src/engine.rs	2294	fn		ASM	/// Map a click to a list-menu row (the measured geometry above).
+bridge_nav_orb_click	src/engine.rs	2309	fn		ORACLE?	/// Whether a click hits the nav-sector ORB (the pyramid-sector station orb) — the /// oracle-verified way into the nav/viewscreen console. Orb near screen (105..145, 130..165) /// when the pyramid se
+bridge_nav_destination_click	src/engine.rs	2317	fn		ASM	/// Map a click to a nav-sector destination row when the choice box is showing /// (bridge view in the pyramid sector with destinations set).
+render_bridge_background	src/engine.rs	2337	fn	0x954A	ASM?	/// Composite the bridge view into the framebuffer: window starfield, then the /// current TB.BIG panorama frame with colour-0 transparency, then the game /// palette + the golden menu's dynamic DAC r
+load_cyberspace	src/engine.rs	2391	fn		DATA?	/// Load the cyberspace hyperspace-tunnel animations (`sq/hyper_*.hnm`), sorted so /// segments advance in order. The screen renders once `cyber_active` is set.
+start_cyberspace	src/engine.rs	2412	fn		UNVERIFIED	/// Begin (or restart) a cyberspace traversal from the first segment.
+cyber_progress	src/engine.rs	2420	fn		UNVERIFIED	/// The cyberspace traversal progress: (current segment, total segments).
+render_cyberspace	src/engine.rs	2432	fn		DATA?	/// Render the cyberspace hyperspace-traversal mini-game: fly through the real /// `hyper_*.hnm` warp segments toward the destination, steering the on-course reticle /// with the mouse; each completed
+load_cryobox	src/engine.rs	2489	fn		DATA?	/// Load the cryo-chamber scene (`sq/cryorad.hnm`) shown by the console's CRYOBOX /// option — the ship's cryo-pod bay (its palette is the HNM's own header palette).
+render_cryobox	src/engine.rs	2495	fn		UNVERIFIED	/// Render the CRYOBOX cryo-chamber, looping its frames.
+overlay_console_band	src/engine.rs	2513	fn		DATA?	/// Composite the REAL console band (pyramid field + eye-orb) — interpreter ground /// truth (BOOTIDX bd_00290M, byte-identical across every dialogue beat): raw VGA /// indices for rows 140..200, enti
+render_viewscreen_console	src/engine.rs	2537	fn		ORACLE?	/// Render the VIEWSCREEN console: the pyramid band along the bottom (the real harvested /// art) and the upper viewscreen showing STATIC when no destinations are granted (the /// oracle-verified empt
+load_ending	src/engine.rs	2569	fn		DATA?	"/// Load the game-ending finale cutscene (`sq/fin.hnm`, the ""fin""/end video) — the /// bookend to the intro. Returns whether it loaded."
+start_ending	src/engine.rs	2575	fn		UNVERIFIED	/// Start the ending finale from its first frame (call when the game is completed).
+ending_finished	src/engine.rs	2581	fn		UNVERIFIED	/// Whether the ending finale has played through all its frames.
+render_ending	src/engine.rs	2589	fn		UNVERIFIED	/// Render the ending finale, advancing one frame per call and holding on the last.
+load_telephone	src/engine.rs	2622	fn		DATA?	/// Load the video-phone call screen (console TELEPHONE option): the call widget /// (`BAPPEL.SPR`, from `iso`) and every callable crew's talk-head HNM (`pe/aa*.hnm`, /// from `assets`). Returns wheth
+phone_contact_labels	src/engine.rs	2641	fn		UNVERIFIED	/// The number of callable phone contacts loaded. /// Contact names for the TELEPHONE choice box.
+phone_contact_count	src/engine.rs	2645	fn		UNVERIFIED	
+phone_contact_name	src/engine.rs	2650	fn		UNVERIFIED	/// The display name of the currently selected/dialled contact.
+phone_connected	src/engine.rs	2655	fn		UNVERIFIED	/// Whether the call is connected (showing the talk-head video feed).
+phone_cycle_contact	src/engine.rs	2660	fn		UNVERIFIED	/// Cycle the dialled contact (`dir` +1/−1), while dialling (a no-op once connected).
+phone_contact_click	src/engine.rs	2669	fn		UNVERIFIED	/// Map a click to a contact-list row (dialling state), matching the drawn layout.
+phone_connect	src/engine.rs	2692	fn		UNVERIFIED	/// Connect the call to `index` (switch to the video-feed state). Invalid index = no-op.
+phone_hangup	src/engine.rs	2703	fn		UNVERIFIED	/// Hang up a connected call, returning to the dialling state.
+render_telephone	src/engine.rs	2710	fn		DATA?	/// Render the video-phone. Dialling: the console-palette backdrop, the animated /// `BAPPEL` call widget, and the crew contact list in the console font (the dialled /// row highlighted). Connected: t
+arm_alien_intro	src/engine.rs	2741	fn		UNVERIFIED	/// Arm the scrutinizer-apparatus intro to play from its first frame the next time /// the examination screen renders (call when opening the screen).
+render_alien_view	src/engine.rs	2752	fn		UNVERIFIED	/// Render the alien-examination screen: the mouse pan (delta from centre, /// smoothed + clamped like the decoded camera at `re/REVERSE.md`) selects one of /// the pre-rendered rotation views, whose 
+render_intro_frame	src/engine.rs	2799	fn		UNVERIFIED	/// Render one frame of the current intro clip full-screen; when a clip's frames are /// exhausted, advance to the next; when the sequence ends, deactivate the intro so /// the main loop takes over.
+draw_intro_credit	src/engine.rs	2857	fn		UNVERIFIED	/// Draw the credit subtitle active at intro clip `frame` (if any) centred in the /// lower letterbox. The active cue is the last one whose `tick` has been reached.
+load_dialogue_scenes	src/engine.rs	2889	fn		DATA?	/// Load a dialogue script AND resolve each line's speaker to its talk-HNM asset /// (actor `0xC4` offset → DEB object name → DESCRIPT record → talk HNM → file in /// `asset_dir`), so playback automat
+dialogue_cursor	src/engine.rs	2934	fn		UNVERIFIED	/// Current dialogue playback cursor (line index), for drivers that react to line /// changes (e.g. per-line voice playback).
+set_dialogue_cursor	src/engine.rs	2940	fn		UNVERIFIED	/// Set the dialogue playback cursor (clamped to the loaded dialogue), used when /// restoring a save so playback resumes at the saved line.
+capture_save	src/engine.rs	2951	fn		ORACLE?	/// Capture the resumable game state into a [`crate::save::SaveState`] (the port's own /// save). `script` is the current location/dialogue script number the driver loaded /// (0 = none, on the nav) —
+restore_save	src/engine.rs	2983	fn		UNVERIFIED	/// Restore the engine-side view and settings from a save. The driver must (re)load /// `save.script`'s dialogue BEFORE calling this so the dialogue cursor lands on a valid /// line; screen selection,
+subtitle_reveal_progress	src/engine.rs	3017	fn	0x5E58,0x94BA	ASM?	/// How many subtitle characters are currently revealed on the active line (the /// game's reveal pointer `gs:0x5E58`), and the line's total character count. A /// driver plays the `tb.snd` chatter (c
+current_voice	src/engine.rs	3034	fn	0xCFB,0x66AF,0x94CF	ASM?	/// The current line's speaker SND bank path + its `b3` selector. /// /// NO LONGER DRIVES AUDIO. The per-line voice clip this used to feed was removed: /// the game plays a random burble (`prng(10)+7
+load_current_scene	src/engine.rs	3045	fn		DATA?	/// Load the talk-HNM resolved for the current dialogue line (if any).
+load_dialogue	src/engine.rs	3074	fn	0x108E	ASM?	/// Load a dialogue script (`SCRIPTn.COD` + `.VAR`): run the VM trace and queue /// its reached dialogue lines for frame-stepped playback. Each [`EngineState:: /// step`] advances the playback timer; 
+set_speech_dialogue	src/engine.rs	3135	fn		DATA?	/// Play dialogue directly from the port's decoded speech events — the FULL per-script, /// per-character content (every character's lines, with each line's background scene), /// instead of `execute_
+current_dialogue	src/engine.rs	3165	fn		UNVERIFIED	/// The dialogue line currently being presented, if a script is loaded.
+pending_next_scene	src/engine.rs	3172	fn		UNVERIFIED	/// The next scene/profile the loaded script's D2 handoff dispatches to (for /// scene-to-scene chaining), or `None` if this is a terminal scene. The driver /// loads that profile's script when the cu
+dialogue_finished	src/engine.rs	3178	fn		UNVERIFIED	/// Whether dialogue playback has reached the final line (the point at which the /// D2 handoff to [`EngineState::pending_next_scene`] would fire).
+queue_scenes	src/engine.rs	3185	fn		UNVERIFIED	/// Queue a sequence of scene scripts `(cod, var, dic)` and start the first, so /// the engine auto-advances scene-to-scene as each finishes (the scene flow the /// D2 handoff drives). Returns the num
+current_scene_index	src/engine.rs	3196	fn		UNVERIFIED	/// The index of the scene currently playing in the queue.
+advance_scene_if_finished	src/engine.rs	3202	fn		UNVERIFIED	/// If the current dialogue has finished and another scene is queued, advance to /// it (loading its script). Returns true if it advanced.
+dialogue_page_number	src/engine.rs	3215	fn		ORACLE?	/// 1-based page number of the current dialogue line — the green console digit the /// real presentation screen shows top-left (oracle bd_218M..bd_290M, index 254).
+current_subtitle	src/engine.rs	3220	fn		UNVERIFIED	/// The current dialogue line's reconstructed subtitle text, if non-empty.
+dialogue_len	src/engine.rs	3228	fn		UNVERIFIED	/// Number of dialogue lines the loaded script reached.
+current_line_hold	src/engine.rs	3239	fn	0xB31,0x94BA,0xB35	ASM?	/// Advance the dialogue playback: after `dialogue_hold_frames`, step to the next /// reached line (stops at the last line). /// Hold for the current line, using the game's decoded subtitle timing: th
+in_dialogue	src/engine.rs	3260	fn		UNVERIFIED	/// Whether a dialogue scene is currently the active view (playing, with no overlay /// screen / nav / intro / ending on top) — so a driver can route clicks to advance it.
+skip_dialogue_line	src/engine.rs	3277	fn		UNVERIFIED	/// Manually advance the dialogue on a click (as the real game does): if the current /// line is still revealing, snap it fully revealed; otherwise move to the next line. /// Returns `false` when alre
+advance_dialogue	src/engine.rs	3306	fn		UNVERIFIED	
+load_hud_sprites	src/engine.rs	3342	fn		UNVERIFIED	/// Load the ship-nav HUD sprite banks (BCARTE grid frames + BORXX orb) from /// their raw `.spr` bytes so [`EngineState::render_ship_view`] composites the /// accurate sprite HUD over the starfield.
+load_nav_sprites	src/engine.rs	3351	fn	0x4BAA	ASM?	/// Load the star-map nav sprites: `CARTE.SPR` holds the game's actual destination /// pyramid frames at six pre-scaled sizes (f0..f5) plus the selection reticle /// (f6); `BORXX.SPR` the eye-orb fram
+nav_world_label_sample	src/engine.rs	3366	fn	0x9BBA,0x100000	ASM?	/// Draw the star-map destination pyramids with the game's real components: the /// ground-plane grid of destinations is projected point-by-point with /// `project_star_map_point` (the decoded 0x9BBA 
+load_title	src/engine.rs	3374	fn		DATA?	/// Load + arm the title screen from `BLOOD.LBM` under `iso`: decode the planar ILBM /// title art and downscale it aspect-correctly (e.g. 640×480 → 320×200, nearest, /// keeping the full image) into 
+title_active	src/engine.rs	3399	fn		UNVERIFIED	/// Whether the title screen is armed/showing.
+dismiss_title	src/engine.rs	3404	fn		UNVERIFIED	/// Dismiss the title screen (advance to the intro/game).
+render_title	src/engine.rs	3409	fn		UNVERIFIED	/// Render the downscaled title art into the framebuffer.
+visit_world	src/engine.rs	3420	fn		UNVERIFIED	/// Visit a world by name: collect all its decoded `fd/` rooms (floor/view-angle /// backgrounds the world maps to) from `assets`, show the first, and enable cycling. /// Returns whether any room was 
+set_world_ext	src/engine.rs	3469	fn		UNVERIFIED	/// Supply the visited world's `.ext` bytes so its decoded object positions are marked /// on the location screen. Parses the objects via [`crate::ext`] and stores their /// `(x, y)`. No-op if no worl
+world_object_click	src/engine.rs	3483	fn		UNVERIFIED	/// Hit-test a click against the visited world's decoded `.ext` OBJECT markers /// (the world's entities, e.g. the initial id=1/type=4 inhabitant at its /// world-specific position). Returns the objec
+cycle_world_room	src/engine.rs	3492	fn		UNVERIFIED	/// Cycle to another room of the currently-visited world (`delta` = +1/-1), decoding /// its background. No-op if no world is being visited.
+world_room_position	src/engine.rs	3509	fn		UNVERIFIED	/// The visited world's room count + current index (for HUD/tests), if active.
+world_location_active	src/engine.rs	3514	fn		UNVERIFIED	/// Whether the world-location landing screen is active.
+step_ship_3d_nav_state	src/engine.rs	3529	fn	0xB692,0xB75C	ASM?	/// Whether the plain nav star-map is the active view — on the ship with no overlay /// screen (bridge/comms/cyberspace/cryobox/alien/world-landing) open. This is the /// view that shows the choose-a-
+nav_view_active	src/engine.rs	3602	fn		UNVERIFIED	
+leave_world	src/engine.rs	3614	fn		UNVERIFIED	/// Close the world-location screen (back to nav).
+render_world_location	src/engine.rs	3620	fn		UNVERIFIED	/// Render the current world-location background (its decoded palette + pixels) with /// the world name + room index captioned, into the framebuffer.
+render_nav_pyramid_sprites	src/engine.rs	3699	fn		ASM	
+location_panel_tint_table	src/engine.rs	3858	fn	0x2780,0x90ED,0x90F9,0x9142,0x9156	ASM	/// The destination info panel's WINDOW: the rect at `DS:0x2780` remapped /// through a 50%-toward-black tint table (`0x90ED..0x90F9` builds it, /// `0x9142..0x9156` draws it), then the panel's text r
+render_location_info_panel	src/engine.rs	3878	fn		ASM	
+nav_chart_click	src/engine.rs	3917	fn	0x8FB0,0x8FBE,0x8FF4,0x912E,0x92A3	ASM	/// A left click while the nav chart is up, routed the way the game routes it /// (`0x8FB0..0x8FBE` then `0x8FF4`): /// /// * panel already up -> the click is what re-enables the mouse, which is the /
+render_nav_info_panel_frame	src/engine.rs	3945	fn	0x9083,0xFAD,0x299,0x40E	ASM	/// Advance and draw the info panel for one nav frame. Call after the chart /// background is drawn; returns whether anything was drawn. /// /// Mirrors the dispatcher at `0x9083`: the zooming states 
+assign_nav_slot_entity_ids	src/engine.rs	3978	fn	0x6212,0x9B98	ASM	/// Give each nav sprite slot the ENTITY id the projector writes it into: /// `0x6212 + ((i + 0x15) << 5)` at `0x9B98`, so slot `i` is entity `0x15 + i`. /// Without this a slot is anonymous and canno
+nav_hover_status_active	src/engine.rs	3999	fn	0x82E8,0x65F2,0x6212,0x830A,0x8315	ASM	/// The HOVER status panel's trigger (`nav_state_gate` `0x82E8`): the gate /// reads `si = 0x65F2` — ENTITY `0x1F`'s record, the LAST of the 32 at /// `DS:0x6212` — requires its state bit0, and hit-te
+open_location_info_panel	src/engine.rs	4035	fn	0x8FF4,0x905B,0x9029,0x2AAB,0x9039,0xADB,0xADA,0x9043,0x2788	ASM	/// OPEN the destination info panel — the selection commit at /// `0x8FF4..0x905B`, minus the parts that belong to the DOS input layer: /// /// ```text ///   0x9029  [0x2AAB] = {mouse x, mouse y, 4, 4
+close_location_info_panel	src/engine.rs	4054	fn	0x912E,0x922A,0x278C,0x2788,0xADB,0x2789	ASM	/// Ask the panel to close — the `0x912E` edge, where the mouse being enabled /// again puts the FSM into state 2 (`0x922A`: `[0x278C]=0`, `[0x2788]=2`, /// `[0xADB]=0`, `inc [0x2789]`).
+step_location_info_panel	src/engine.rs	4072	fn	0x90FF,0x9120,0x2789,0x91F1,0x9228	ASM	/// Advance the panel one frame and return the rect to draw, if any. /// /// * `ZoomingOpen` (`0x90FF..0x9120`): `inc [0x2789]`, interpolate the cursor ///   rect toward the panel rect, and on complet
+load_nav_chart	src/engine.rs	4122	fn		UNVERIFIED	/// Load the real navigation star-map background from `CHART.FD` (an IFF/PBM image /// under `iso`) — the game's own chart the ship-nav screen shows. Returns whether it /// loaded; when present, `rend
+set_nav_destinations	src/engine.rs	4144	fn		UNVERIFIED	
+set_nav_chart_objects	src/engine.rs	4160	fn	0x604E,0x721A	ASM	/// Set the RECORD-DRIVEN chart objects — the game's own nav chart, built by /// `0x604E` -> `0x721A` and mirrored by [`crate::vm::VmMachine::build_nav_chart_list`]. /// /// This is what the destinati
+nav_chart_objects	src/engine.rs	4164	fn		UNVERIFIED	
+nav_chart_object_click	src/engine.rs	4171	fn	0x92A3	ASM	/// Hit-test a click against the chart markers, exactly as `0x92A3` does: /// the box starts 2px up-left of the marker, its size comes from the object's /// kind, and BOTH bounds are inclusive. Return
+nav_destination_label	src/engine.rs	4181	fn		UNVERIFIED	/// The number of nav destinations currently offered. /// The label of nav destination `i` (the location's character name), if present.
+nav_destination_count	src/engine.rs	4185	fn		UNVERIFIED	
+nav_destination_click	src/engine.rs	4190	fn		UNVERIFIED	/// Map a click on the nav chart to a destination index, matching the list layout.
+visit_nav_destination	src/engine.rs	4204	fn		UNVERIFIED	/// Visit the chosen nav destination — play that character's decoded dialogue. Returns /// whether the index was valid.
+render_ship_view	src/engine.rs	4215	fn		UNVERIFIED	/// Render the on-ship nav view. With the real chart (`CHART.FD`) loaded this draws /// that star-map background (nebula + destinations + console) and a heading cursor; /// otherwise it falls back to 
+targeted_world_name	src/engine.rs	4403	fn		UNVERIFIED	"/// The name of the world the nav compass currently targets (for ""visit this /// destination"" input)."
+targeted_world_index	src/engine.rs	4410	fn		UNVERIFIED	/// The index into [`Self::nav_world_labels`] the compass heading currently targets: /// the heading (0..180°) maps across the decoded primary worlds, so panning the ship /// sweeps through the real n
+draw_subtitle	src/engine.rs	4419	fn		DATA?	/// Draw a subtitle line into the framebuffer at the game's subtitle reveal /// position (scene band, `SUBTITLE_X`/`SUBTITLE_Y` = 10/8) using the game font. /// The scene band's talk-HNM background co
+draw_subtitle_revealed	src/engine.rs	4428	fn		ASM	/// Draw the pre-wrapped subtitle with only the first `visible` characters shown, /// the newest one in the reveal-edge colour (0xFE) — the game's per-character /// reveal. Non-visible characters aren
+render_dialogue_frame	src/engine.rs	4571	fn		DATA?	/// Render the current dialogue line's frame into the framebuffer: clear, then /// draw the reconstructed subtitle text. (The talk-HNM scene background layer /// composites behind this once the HNM de
+first_scene_hnm_stem	src/engine.rs	4692	fn		DATA?	/// Lowercase file stem of the first resolved talk-HNM in the loaded dialogue, so a /// driver can look its background music up via `DescriptDb::hnm_music_map`.
+take_nav_selection	src/engine.rs	4704	fn		UNVERIFIED	/// Take the pending nav destination selection (the compass heading the player /// clicked in the nav view), clearing it. A driver polls this each frame to load /// the selected destination's dialogue
+poll_input	src/engine.rs	4710	fn	0x70E	ASM?	/// The mouse input poll (`0:0x70E`): store the frame's cursor state and, if the /// cursor moved since last frame, reset the idle timer; otherwise advance it.
+step	src/engine.rs	4725	fn	0x0FFB	ASM?	/// One iteration of the top-level dispatch loop (`0x0FFB`). Ordered to match the /// decoded engine: poll input → (reset render state) → (render subsystems) → /// on-ship gate → countdown. Rendering 
+mode_x_offset	src/engine.rs	4905	fn	0x299,0x498	ASM?	/// The game's mode-X screen address for pixel `(x, y)` — `(byte_offset, plane)` where /// `byte_offset = y*80 + x/4` and `plane = x & 3`, exactly as `graphics_plot_modex` /// (`0x299:0x498`) computes
+signed_i16_engine	src/engine.rs	4914	fn		UNVERIFIED	/// Invert [`mode_x_offset`] back to the linear framebuffer index the engine uses: /// `byte_offset*4 + plane`. Equals `y*ENGINE_SCREEN_WIDTH + x`, proving the two layouts /// address the same pixel. 
+mode_x_to_linear	src/engine.rs	4918	fn		ASM	
 EntityObject	src/entity.rs	26	struct		UNVERIFIED	
 populate	src/entity.rs	42	fn		UNVERIFIED	/// Populate an object as the decoded `entity_object_populate` routines do: flags = /// `(source & 0x04) | 0x83`, and `init_pos` backs up `pos`.
 is_active	src/entity.rs	53	fn		UNVERIFIED	/// Whether the object is active (`+0x00 & 0x80`).
@@ -404,9 +412,10 @@ run	src/main.rs	65	fn		INFRA?
 VmInspection	src/main.rs	92	struct		INFRA?	
 run_engine_play	src/main.rs	226	fn		INFRA?	/// Headless real-time engine driver: run the runnable engine (`EngineState`) over a /// script's dialogue scene flow and encode each stepped frame to an MP4 — the /// engine playing the game, produce
 run_engine_window	src/main.rs	301	fn		INFRA?	/// Real-time windowed backend: present the runnable engine in a live X11 window and /// drive it with real mouse input (position steers the ship-nav compass; left button /// toggles the on-ship view 
-Music	src/main.rs	444	struct		INFRA?	
-play	src/main.rs	446	fn		INFRA?	
-stop	src/main.rs	455	fn		INFRA?	
+refresh_nav_chart	src/main.rs	400	fn		INFRA?	
+Music	src/main.rs	474	struct		INFRA?	
+play	src/main.rs	476	fn		INFRA?	
+stop	src/main.rs	485	fn		INFRA?	
 menu_item_index	src/manu3.rs	18	fn	0x0000,0x181	ASM?	//! `manu3.xdb` overlay logic — the ship's 3D pyramid-menu interface. //! //! Distinct from the alien overlays (no shared PRNG); its entry (`0x0000`) takes the //! caller's input params (mouse coords:
 menu_screen_row	src/manu3.rs	27	fn		UNVERIFIED	/// The screen row derived from the caller's input word: shift right by 4, then bias the row /// (the high byte) by [`MENU_ROW_BIAS`].
 menu_item_handler	src/manu3.rs	36	fn	0x181,0x2306	ASM?	/// Resolve a selected menu item to its handler offset (method `0x181`): the item index /// (word-scaled) reads an entry from the offset table located at `base`, and the /// handler is `base + table[i
@@ -833,29 +842,32 @@ location_panel_rows	src/vm.rs	4711	fn	0x9137,0x91EC,0x27BF,0x9022	ASM	/// The DE
 build_active_object_list	src/vm.rs	4764	fn	0x604E,0x6A16,0x672C,0x6068,0x6070,0x6073	ASM	/// The ACTIVE-OBJECT candidate list (`table_672c_process` `0x604E`, output /// `DS:0x6A16`): walk the 20-byte directory at `gs:0x672C` while `+0x12 == 1` /// and keep every object whose flag word has
 build_nav_chart_list	src/vm.rs	4791	fn	0x721A,0x2AD3,0x27C1,0x7226,0x604E,0x7233,0x7238	ASM	/// The NAV CHART's visible-object list (`0x721A`, output `DS:0x2AD3`, count /// returned in `ax` and stored at `[0x27C1]`): the active-object list above, /// filtered to the chart-visible KINDS. /// 
 nav_chart_pick	src/vm.rs	4822	fn	0x92A3,0x9339,0x2AD3,0x27C1	ASM	/// The NAV-CHART OBJECT PICKER (`0x92A3..0x9339`) — what the info panel's /// selection commit calls to turn a cursor position into an object. /// /// It walks the chart's visible-object list (`DS:0x
-world_click_select	src/vm.rs	4860	fn	0xB20C,0xB27B,0xB2BB,0xFFFF,0xB288	ASM?	/// The WORLD-DESTINATION CLICK commit (`0xB20C..0xB27B`). The ship FSM's /// per-frame hit-test (`ship_3d_target_record_select` `0xB2BB`) returns the /// clicked target record; this is what the FSM t
-special_slot_insert	src/vm.rs	4885	fn	0x6D3E,0x5FF6	ASM?	/// Insert an owner into the 16-slot special list (gs:0x6D3E, insert 0x5FF6). /// Returns false only if the list is full and the owner is not already present.
-special_slot_remove	src/vm.rs	4898	fn	0x5FD8	ASM?	/// Remove an owner from the special-slot list (remove 0x5FD8).
-load_cod	src/vm.rs	4906	fn		UNVERIFIED	
-load_var	src/vm.rs	4914	fn	0x6724	ASM?	/// Initialize the line-record/object table from the script's VAR file — the /// game loads VAR as the table's initial contents (le16 words at gs:0x6724).
-rand	src/vm.rs	4924	fn		UNVERIFIED	
-u8_at	src/vm.rs	4961	fn		UNVERIFIED	
-lodsb	src/vm.rs	4965	fn		UNVERIFIED	
-lodsw	src/vm.rs	4971	fn		UNVERIFIED	
-tick_state_countdowns	src/vm.rs	4984	fn	0x8AA,0x675A,0xB27,0xFFFF	ASM?	/// One divided-timer beat of the state-array countdown — the engine's law at /// 0x8AA (in the timer chain, gated there on no-active-presentation /// gs:[0x675A]==0, divider gs:[0xB27]): entries stat
-add_record	src/vm.rs	4996	fn	0x126C	ASM?	/// Increment a record variable — the runtime hook for world events that the /// scripts observe (e.g. BIONIUM collection: SCRIPT2's `vbio` record, whose /// C0 guards read record 0x126C — operand rea
-rec_read	src/vm.rs	5001	fn		UNVERIFIED	
-rec_read_pub	src/vm.rs	5006	fn		UNVERIFIED	/// Public record read for the drive layer.
-rec_write_pub	src/vm.rs	5012	fn		UNVERIFIED	/// Public record write for the drive layer (the click stand-in's /// presentation end and test scaffolding).
-rec_write	src/vm.rs	5016	fn		UNVERIFIED	
-rec_read_u8	src/vm.rs	5024	fn		UNVERIFIED	/// Byte-level record access (the record table is a little-endian word array). /// Used by the 0xB7 single-bit flag handler.
-rec_write_u8	src/vm.rs	5033	fn		UNVERIFIED	
-branch	src/vm.rs	5045	fn	0x6462	ASM?	/// `vm_branch` @0x6462: pop the resume position into PC; clear query mode.
-step	src/vm.rs	5053	fn		UNVERIFIED	/// Execute ONE opcode against the loaded stream. Returns false at stream end.
-run	src/vm.rs	5887	fn		UNVERIFIED	/// Run until yield (0xAA/0xAC), halt, or `max_steps`. Returns the events raised.
-run_frame	src/vm.rs	5900	fn	0x55F5	ASM?	/// Run ONE FRAME the way the exec loop does (@0x55F5): restart at the top of /// the script (AA/AC yields end the frame with NO resume; the self-modified /// active bits advance the flow), run until 
-token_len_at	src/vm.rs	5914	fn		DATA?	/// Total token length (including the opcode byte) at `pos`, using the game's own /// per-opcode descriptor table + mode rules — identical to the walker's advance /// (`mode1` there == query mode here
-decompile_script	src/vm.rs	5943	fn		UNVERIFIED	/// Decompile a COD script to a readable listing. `dic` resolves text/concepts, /// `actor_names` (DEB-derived) resolves record offsets to object names.
+nav_chart_marker	src/vm.rs	4838	fn	0x92DF,0x92F2	ASM	/// The chart marker the picker hit-tests and the chart draws: `+0x18`/`+0x1A`, /// or the SECOND endpoint at `+0x1C`/`+0x1E` when the object is a black hole /// whose `+0x14` differs from `arche+0x22
+nav_chart_hit_box	src/vm.rs	4852	fn	0x92BF,0x92D3,0x92FC	ASM	/// The picker's per-kind hit box (`0x92BF`, `0x92D3`, `0x92FC`).
+nav_chart_arche_context	src/vm.rs	4865	fn	0x92DF	ASM	/// The word the black-hole endpoint rule compares against: `es:[arche+0x22]` /// (`0x92DF`). Zero when no DEB is loaded.
+world_click_select	src/vm.rs	4886	fn	0xB20C,0xB27B,0xB2BB,0xFFFF,0xB288	ASM?	/// The WORLD-DESTINATION CLICK commit (`0xB20C..0xB27B`). The ship FSM's /// per-frame hit-test (`ship_3d_target_record_select` `0xB2BB`) returns the /// clicked target record; this is what the FSM t
+special_slot_insert	src/vm.rs	4911	fn	0x6D3E,0x5FF6	ASM?	/// Insert an owner into the 16-slot special list (gs:0x6D3E, insert 0x5FF6). /// Returns false only if the list is full and the owner is not already present.
+special_slot_remove	src/vm.rs	4924	fn	0x5FD8	ASM?	/// Remove an owner from the special-slot list (remove 0x5FD8).
+load_cod	src/vm.rs	4932	fn		UNVERIFIED	
+load_var	src/vm.rs	4940	fn	0x6724	ASM?	/// Initialize the line-record/object table from the script's VAR file — the /// game loads VAR as the table's initial contents (le16 words at gs:0x6724).
+rand	src/vm.rs	4950	fn		UNVERIFIED	
+u8_at	src/vm.rs	4987	fn		UNVERIFIED	
+lodsb	src/vm.rs	4991	fn		UNVERIFIED	
+lodsw	src/vm.rs	4997	fn		UNVERIFIED	
+tick_state_countdowns	src/vm.rs	5010	fn	0x8AA,0x675A,0xB27,0xFFFF	ASM?	/// One divided-timer beat of the state-array countdown — the engine's law at /// 0x8AA (in the timer chain, gated there on no-active-presentation /// gs:[0x675A]==0, divider gs:[0xB27]): entries stat
+add_record	src/vm.rs	5022	fn	0x126C	ASM?	/// Increment a record variable — the runtime hook for world events that the /// scripts observe (e.g. BIONIUM collection: SCRIPT2's `vbio` record, whose /// C0 guards read record 0x126C — operand rea
+rec_read	src/vm.rs	5027	fn		UNVERIFIED	
+rec_read_pub	src/vm.rs	5032	fn		UNVERIFIED	/// Public record read for the drive layer.
+rec_write_pub	src/vm.rs	5038	fn		UNVERIFIED	/// Public record write for the drive layer (the click stand-in's /// presentation end and test scaffolding).
+rec_write	src/vm.rs	5042	fn		UNVERIFIED	
+rec_read_u8	src/vm.rs	5050	fn		UNVERIFIED	/// Byte-level record access (the record table is a little-endian word array). /// Used by the 0xB7 single-bit flag handler.
+rec_write_u8	src/vm.rs	5059	fn		UNVERIFIED	
+branch	src/vm.rs	5071	fn	0x6462	ASM?	/// `vm_branch` @0x6462: pop the resume position into PC; clear query mode.
+step	src/vm.rs	5079	fn		UNVERIFIED	/// Execute ONE opcode against the loaded stream. Returns false at stream end.
+run	src/vm.rs	5913	fn		UNVERIFIED	/// Run until yield (0xAA/0xAC), halt, or `max_steps`. Returns the events raised.
+run_frame	src/vm.rs	5926	fn	0x55F5	ASM?	/// Run ONE FRAME the way the exec loop does (@0x55F5): restart at the top of /// the script (AA/AC yields end the frame with NO resume; the self-modified /// active bits advance the flow), run until 
+token_len_at	src/vm.rs	5940	fn		DATA?	/// Total token length (including the opcode byte) at `pos`, using the game's own /// per-opcode descriptor table + mode rules — identical to the walker's advance /// (`mode1` there == query mode here
+decompile_script	src/vm.rs	5969	fn		UNVERIFIED	/// Decompile a COD script to a readable listing. `dic` resolves text/concepts, /// `actor_names` (DEB-derived) resolves record offsets to object names.
 VmDrive	src/vm_drive.rs	13	struct		UNVERIFIED	
 new	src/vm_drive.rs	25	fn		UNVERIFIED	
 frame	src/vm_drive.rs	55	fn		ORACLE?	/// One passive frame: VM frame + the idle beat. No promotion — queued /// calls RING until an interaction takes them (the scenario's clicks /// decide, as at the oracle's hub).

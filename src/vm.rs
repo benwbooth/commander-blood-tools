@@ -4821,25 +4821,51 @@ impl VmMachine {
     /// branch compares against.
     pub fn nav_chart_pick(&self, list: &[u16], mouse: (i32, i32), arche_context: u16) -> Option<u16> {
         for &object in list {
-            let kind = self.rec_read(object);
-            let mut position = object.wrapping_add(NAV_PICK_POSITION_FIELD);
-            let (w, h) = if kind & LOCATION_KIND_BLACK_HOLE != 0 {
-                if self.rec_read(object.wrapping_add(0x14)) != arche_context {
-                    position = position.wrapping_add(4); // the second endpoint
-                }
-                NAV_PICK_BOX_BLACK_HOLE
-            } else if kind & LOCATION_KIND_SHIP != 0 {
-                NAV_PICK_BOX_SHIP
-            } else {
-                NAV_PICK_BOX_DEFAULT
-            };
-            let x0 = self.rec_read(position) as i32 - 2;
-            let y0 = self.rec_read(position.wrapping_add(2)) as i32 - 2;
+            let (w, h) = self.nav_chart_hit_box(object);
+            let (x, y) = self.nav_chart_marker(object, arche_context);
+            let (x0, y0) = (x - 2, y - 2);
             if mouse.0 >= x0 && mouse.0 <= x0 + w && mouse.1 >= y0 && mouse.1 <= y0 + h {
                 return Some(object);
             }
         }
         None
+    }
+
+    /// The chart marker the picker hit-tests and the chart draws: `+0x18`/`+0x1A`,
+    /// or the SECOND endpoint at `+0x1C`/`+0x1E` when the object is a black hole
+    /// whose `+0x14` differs from `arche+0x22` (`0x92DF..0x92F2`). Kept here so
+    /// the drawn marker and the clickable one cannot drift apart.
+    pub fn nav_chart_marker(&self, object: u16, arche_context: u16) -> (i32, i32) {
+        let mut position = object.wrapping_add(NAV_PICK_POSITION_FIELD);
+        if self.rec_read(object) & LOCATION_KIND_BLACK_HOLE != 0
+            && self.rec_read(object.wrapping_add(0x14)) != arche_context
+        {
+            position = position.wrapping_add(4);
+        }
+        (
+            self.rec_read(position) as i32,
+            self.rec_read(position.wrapping_add(2)) as i32,
+        )
+    }
+
+    /// The picker's per-kind hit box (`0x92BF`, `0x92D3`, `0x92FC`).
+    pub fn nav_chart_hit_box(&self, object: u16) -> (i32, i32) {
+        let kind = self.rec_read(object);
+        if kind & LOCATION_KIND_BLACK_HOLE != 0 {
+            NAV_PICK_BOX_BLACK_HOLE
+        } else if kind & LOCATION_KIND_SHIP != 0 {
+            NAV_PICK_BOX_SHIP
+        } else {
+            NAV_PICK_BOX_DEFAULT
+        }
+    }
+
+    /// The word the black-hole endpoint rule compares against: `es:[arche+0x22]`
+    /// (`0x92DF`). Zero when no DEB is loaded.
+    pub fn nav_chart_arche_context(&self) -> u16 {
+        self.arche_offset
+            .map(|arche| self.rec_read(arche.wrapping_add(0x22)))
+            .unwrap_or(0)
     }
 
     /// The WORLD-DESTINATION CLICK commit (`0xB20C..0xB27B`). The ship FSM's
