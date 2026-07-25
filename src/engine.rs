@@ -2578,6 +2578,19 @@ impl EngineState {
 
     /// Map a click to a nav-sector destination row when the choice box is showing
     /// (bridge view in the pyramid sector with destinations set).
+    /// The station the current panorama frame belongs to, read from its header.
+    /// `None` when no archive is loaded (headless tests).
+    ///
+    /// `TB.BIG`'s per-frame headers carry the station, which is why this asks the
+    /// data rather than testing a frame range — see
+    /// [`Self::bridge_nav_destination_click`] for what that fixed.
+    pub fn bridge_station(&self) -> Option<u16> {
+        self.panorama
+            .as_ref()?
+            .frame_header(self.bridge.frame as usize)
+            .map(|h| h.station)
+    }
+
     /// Map a click to a nav-destination row, while the view is at the PYRAMID
     /// NAVIGATION ROOM.
     ///
@@ -2590,15 +2603,6 @@ impl EngineState {
     ///
     /// The row hit-test itself is [`Self::choice_box_row_at`], the widget's
     /// `row = dy/11 + 1` (`div bl,0x0B` @`0x8508`).
-    /// The station the current panorama frame belongs to, read from its header.
-    /// `None` when no archive is loaded (headless tests).
-    pub fn bridge_station(&self) -> Option<u16> {
-        self.panorama
-            .as_ref()?
-            .frame_header(self.bridge.frame as usize)
-            .map(|h| h.station)
-    }
-
     pub fn bridge_nav_destination_click(&self, x: u16, y: u16) -> Option<usize> {
         if self.bridge_station() != Some(NAV_ROOM_STATION) || self.nav_destinations.is_empty() {
             return None;

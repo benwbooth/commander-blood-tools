@@ -5522,3 +5522,28 @@ Also extended `classify_plumbing.py` to private functions — it only scanned
 unsettled set no longer contains any), but the restriction was arbitrary.
 
 The queue: 41 -> 40.
+
+## #174 — I inserted a function between a doc and the thing it documented
+
+`bridge_nav_destination_click` was still in the uncited queue despite #148 giving
+it a full doc with a citation. The doc was there; it was attached to the wrong
+function.
+
+#148 added the `bridge_station` helper and placed it BETWEEN the existing doc
+comment and the function that doc described. Rust attaches a doc to whatever item
+follows it, so `bridge_station` inherited the click handler's documentation, the
+click handler was left bare, and the two texts ran together mid-sentence:
+
+    /// `row = dy/11 + 1` (`div bl,0x0B` @`0x8508`).
+    /// The station the current panorama frame belongs to, read from its header.
+    pub fn bridge_station(&self) -> Option<u16> {
+
+Reordered so each doc precedes its own function. `bridge_nav_destination_click`
+now carries `0x8508` and `bridge_station` has a doc of its own.
+
+This is the same failure mode as #141's blank-line problem and #119's note
+adopting the next constant — three instances now of documentation attaching to the
+wrong item, each introduced by an edit that was correct about everything except
+placement. The ledger caught all three, which is an argument for its origin column
+being derived from the source rather than maintained by hand: a hand-kept citation
+would have stayed with the function and hidden the mistake.
