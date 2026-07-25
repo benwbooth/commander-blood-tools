@@ -7540,6 +7540,49 @@ mod tests {
     }
 
     #[test]
+    /// Both baked geometry tables must equal the image. `NAV_DESTINATION_POINTS`
+    /// holding ten IDENTICAL points looks like a placeholder bug and is not: the
+    /// shipped table really is ten copies of `(10200, 12100, 900)`, which is why
+    /// the destination layout is the runtime-gated piece of the nav render.
+    #[test]
+    fn baked_geometry_tables_match_the_image() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        const DS_BASE: usize = 0xD420;
+        let read_triples = |base: usize, n: usize| -> Vec<[i16; 3]> {
+            (0..n)
+                .map(|i| {
+                    let at = base + i * 6;
+                    let w = |k: usize| i16::from_le_bytes([exe[at + k * 2], exe[at + k * 2 + 1]]);
+                    [w(0), w(1), w(2)]
+                })
+                .collect()
+        };
+        // DS:0x4F09 (nav points) and DS:0x5D98 (HUD pyramid vertices).
+        assert_eq!(
+            read_triples(DS_BASE + 0x4F09, NAV_DESTINATION_POINTS.len()),
+            NAV_DESTINATION_POINTS.to_vec()
+        );
+        assert_eq!(
+            read_triples(DS_BASE + 0x5D98, SHIP_3D_HUD_PYRAMID_VERTICES.len()),
+            SHIP_3D_HUD_PYRAMID_VERTICES.to_vec()
+        );
+        // The nav table closes exactly on the angle table at DS:0x4F45, which is
+        // what bounds its ten entries.
+        assert_eq!(0x4F09 + NAV_DESTINATION_POINTS.len() * 6, 0x4F45);
+        // And the vertices are the SAME BYTES as palette colours 192..255 — a
+        // deliberate overlay the campaign already resolved, re-pinned here so a
+        // change to either constant surfaces the alias instead of hiding it.
+        let vert_base = DS_BASE + 0x5D98;
+        assert_eq!(
+            &exe[vert_base..vert_base + 192],
+            &crate::palette::GAME_SCREEN_PALETTE_DAC[576..768]
+        );
+    }
+
     fn randomize_point_cloud_fills_all_records_and_consumes_three_rng_calls_each() {
         let mut prng = BloodPrng::default();
         let points = randomize_ship_3d_point_cloud(&mut prng);

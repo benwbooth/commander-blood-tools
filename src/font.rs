@@ -427,6 +427,39 @@ mod tests {
         assert!(fb2.iter().all(|&p| p == 0));
         assert_eq!(after, GAME_FONT_SPACE_ADVANCE);
     }
+
+    /// The BAKED glyph bitmaps and advances must equal the image, not merely be
+    /// self-consistent: these are what every text surface draws. `GAME_FONT_CHAR_MAP`
+    /// is covered by `bloodprg`'s extractor test; these two were not covered at all.
+    #[test]
+    fn game_font_glyphs_and_widths_match_the_image() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        // DS:0x78B2 -> file 0x14CD2 (advances), DS:0x7908 -> file 0x14D28 (rows);
+        // both are `render_string`'s own operands (0x31E3, 0x31EB).
+        const ADVANCES: usize = 0x14CD2;
+        const GLYPHS: usize = 0x14D28;
+        assert_eq!(
+            &exe[ADVANCES..ADVANCES + GAME_FONT_WIDTHS.len()],
+            GAME_FONT_WIDTHS.as_slice(),
+            "advance table drifted from the image"
+        );
+        for (i, rows) in GAME_FONT_GLYPHS.iter().enumerate() {
+            let at = GLYPHS + i * GAME_FONT_HEIGHT;
+            assert_eq!(
+                &exe[at..at + GAME_FONT_HEIGHT],
+                rows.as_slice(),
+                "glyph {i} drifted from the image"
+            );
+        }
+        // The three tables chain: map ends where advances begin, advances where
+        // the rows begin.
+        assert_eq!(0x14C22 + GAME_FONT_CHAR_MAP.len(), ADVANCES);
+        assert_eq!(ADVANCES + GAME_FONT_WIDTHS.len(), GLYPHS);
+    }
 }
 
 /// The BOLD console/tutorial subtitle font, loaded from the user's

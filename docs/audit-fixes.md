@@ -2042,3 +2042,38 @@ TWO THINGS WORTH KEEPING FROM BUILDING IT:
 
 POSITIVE CONTROL: shifting one cited address by 1 (`0x91CE` -> `0x91CF`) fails
 with `doc says 0x091cf is 'test', disassembly says 'add'`.
+
+## FIX #60 — the baked tables that nothing compared to the image
+
+Twelve constants in the port are TABLES COPIED OUT OF THE BINARY and say so in
+their docs. Checking which had an image-comparison test:
+
+| table | had one |
+|---|---|
+| `GAME_FONT_CHAR_MAP`, `SQUARE_CAPS_*`, `OPCODE_DESC`, `FIELD_OFFSETS` | yes |
+| `GAME_FONT_GLYPHS`, `GAME_FONT_WIDTHS` | **no** |
+| `NAV_DESTINATION_POINTS`, `SHIP_3D_HUD_PYRAMID_VERTICES` | **no** |
+
+The two font ones are the actual glyph bitmaps and advances — what every text
+surface in the game draws — and nothing checked them against `0x14CD2`/`0x14D28`.
+They match; they are now asserted to, along with the three-table chain identity.
+
+`NAV_DESTINATION_POINTS` deserves its own note, because it looks like a bug:
+
+    pub const NAV_DESTINATION_POINTS: [[i16; 3]; 10] = [[10200, 12100, 900]; 10];
+
+Ten IDENTICAL points reads as a placeholder someone forgot to fill in. It is not
+— the shipped table at `DS:0x4F09` really is ten copies of `(10200, 12100, 900)`,
+verified against the image. That is corroboration for the standing note that the
+destination LAYOUT is the runtime-gated piece of the nav render: the baked table
+cannot spread the markers because every entry is the same point, so the game must
+write real positions at runtime. Worth having the test say so, since the next
+reader will have the same suspicion I did.
+
+The vertex test also re-pins the palette alias resolved earlier in the campaign
+(`DS:0x5D98`'s 192 bytes ARE `GAME_SCREEN_PALETTE_DAC[576..768]`), so a change to
+either constant surfaces the overlay rather than silently breaking the other.
+
+POSITIVE CONTROLS: perturbing one glyph advance fails two font tests; perturbing
+one nav point fails the geometry test and the existing engine test that asserts
+the points coincide.
