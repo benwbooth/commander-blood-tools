@@ -651,9 +651,10 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     // The scrutinized object (scrambler) whose related field the examination
     // activates (APPROX for the endgame's rec_13C2==40 guard; see the hook).
     let examined_obj_offset: std::cell::Cell<Option<u16>> = std::cell::Cell::new(None);
-    // Which destination row the world-entry key last took (the game keeps a
-    // selection cursor; the port cycles it, since it has no pointer on this screen).
-    let mut destination_row = 0usize;
+    // The destination RECORDS currently offered by the open list widget, in row
+    // order. Empty when the box is closed. Replaces the key-cycled cursor: the
+    // game selects a row by clicking it (`0x8428`), and the port now does too.
+    let mut destination_rows_open: Vec<u16> = Vec::new();
     let script_vm: std::cell::RefCell<Option<commander_blood_tools::vm::VmMachine>> =
         std::cell::RefCell::new(None);
     // SCRIPT1 tutorial auto-chain (ORACLE-observed: the real tutorial plays Izwalito's
@@ -1747,6 +1748,43 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                 Event::ButtonPress(b) if engine.phone_active && b.detail == 3 => {
                     engine.phone_cycle_contact(1);
                 }
+                // The DESTINATION LIST, when it is open: the unified widget's row
+                // hit-test picks the row, `world_click_select` commits that row's
+                // record, and the last row is the widget's CANCEL. Placed before
+                // the chart handlers so an open box takes the click, which is the
+                // game's own precedence (`0xB2DC`: while the list is up the FSM
+                // stays in it).
+                Event::ButtonPress(b)
+                    if b.detail == 1
+                        && !destination_rows_open.is_empty()
+                        && !engine.console_box.is_empty() =>
+                {
+                    if let Some(row) = engine.console_box_click(mx, my) {
+                        let last = engine.console_box.len().saturating_sub(1);
+                        engine.console_box.clear();
+                        let picked = destination_rows_open.get(row).copied();
+                        let names: Vec<String> = script_vm
+                            .borrow()
+                            .as_ref()
+                            .map(|m| m.destination_rows().into_iter().map(|(_, n)| n).collect())
+                            .unwrap_or_default();
+                        destination_rows_open.clear();
+                        if row < last {
+                            if let (Some(record), Some(name)) = (picked, names.get(row)) {
+                                let world = name.to_lowercase();
+                                if engine.visit_world(&world, Path::new(assets)) {
+                                    if let Ok(ext) = std::fs::read(format!(
+                                        "{iso}/{}.EXT",
+                                        world.to_uppercase()
+                                    )) {
+                                        engine.set_world_ext(&ext);
+                                    }
+                                    commit_world_destination(&script_vm, Some(record));
+                                }
+                            }
+                        }
+                    }
+                }
                 // On the nav star-map with the RECORD-DRIVEN chart up, a left
                 // click goes through the game's own path: hit-test the markers
                 // (0x92A3), and a hit opens the destination info panel on that
@@ -2034,25 +2072,37 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                             .as_ref()
                             .map(|m| m.destination_rows())
                             .unwrap_or_default();
-                        let chosen_name;
-                        let mut chosen_record = None;
-                        let world = if rows.is_empty() {
-                            match engine.targeted_world_name() {
-                                Some(w) => w,
-                                None => continue,
+                        // With a DEB loaded, the destinations go through the game's
+                        // own list widget (`0x8428`), whose row hit-test the port
+                        // already implements (`console_box_click`, `div bl,0x0B`
+                        // @`0x8508`). Opening the box here and selecting by CLICK
+                        // replaces the key-cycled cursor that stood in for it.
+                        if !rows.is_empty() {
+                            let mut labels: Vec<String> =
+                                rows.iter().map(|(_, name)| name.to_uppercase()).collect();
+                            // The widget's shared trailing CANCEL, read from the
+                            // binary (DS:0x0174) as option_menu_labels' last entry.
+                            if let Some(cancel) = option_menu_labels.last() {
+                                labels.push(cancel.clone());
                             }
-                        } else {
-                            destination_row = (destination_row + 1) % rows.len();
-                            chosen_record = Some(rows[destination_row].0);
-                            chosen_name = rows[destination_row].1.to_lowercase();
-                            chosen_name.as_str()
+                            engine.console_box = labels;
+                            engine.console_box_kind = 10;
+                            destination_rows_open = rows.iter().map(|(r, _)| *r).collect();
+                            continue;
+                        }
+                        let world = match engine.targeted_world_name() {
+                            Some(w) => w,
+                            None => continue,
                         };
                         if engine.visit_world(world, Path::new(assets)) {
                             // Overlay the world's decoded .ext object positions (from the ISO).
                             if let Ok(ext) = std::fs::read(format!("{iso}/{}.EXT", world.to_uppercase())) {
                                 engine.set_world_ext(&ext);
                             }
-                            commit_world_destination(&script_vm, chosen_record);
+                            // This branch is the NO-DEB fallback (no candidate
+                            // rows exist), so the commit derives its own target
+                            // the way `0xB0DC` does rather than being handed one.
+                            commit_world_destination(&script_vm, None);
                         }
                     }
                 }

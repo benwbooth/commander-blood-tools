@@ -6592,3 +6592,30 @@ the overlay; it is reached through a base register).
 argument is pleasing: `mov ax,[bx]` encodes as `8b 07`, a ModRM with mod=00, which
 carries NO displacement byte. A field at any other offset would need one. The
 ABSENCE of the byte is the zero, and the test asserts the two-byte encoding.
+
+## #212 — the hit-test was already ported, just not used here
+
+The world-destination row cursor was the last APPROX on that row: the port cycled
+rows on a keypress "because no pointer selection is decoded for this screen".
+
+That was wrong, and the evidence was already in the tree. The destination list
+goes through the SAME unified widget as every other menu (`0x8428`, established
+back in #192), and `engine::console_box_click` has implemented that widget's row
+hit-test — `div bl,0x0B` @`0x8508` — for the concept and contact boxes all along.
+Nothing needed decoding. The existing decode needed USING.
+
+The world-entry key now opens the box (rows from `destination_rows`, trailing
+CANCEL read from `DS:0x0174` rather than written as a literal) and a click selects
+a row, committing that row's record through `world_click_select`. The click arm
+sits before the chart handlers because an open list takes precedence in the game
+too — `0xB2DC` keeps the FSM inside the list while it is up.
+
+The row is now ASM end to end: rows, order, names, hit-test, committed record and
+cancel label all come from the game.
+
+The recurring shape, third time this campaign: a gap described as "not decoded"
+turned out to be "decoded elsewhere and not wired" (#196's commit, #197's names,
+now the hit-test). The cost each time was not decoding effort but a wrong
+description of the blocker, which then justified an invention -- key-cycling here,
+`compass_angle` in #197. It is worth checking what the port ALREADY knows before
+concluding the binary has not been read.
