@@ -760,7 +760,7 @@ GameProgress	src/progress.rs	18	struct		UNVERIFIED
 new	src/progress.rs	24	fn		UNVERIFIED	/// An empty progression.
 find	src/progress.rs	28	fn		UNVERIFIED	
 register	src/progress.rs	35	fn		UNVERIFIED	"/// Register a trackable location/crew member (idempotent). It is populated as the /// decoded `entity_object_populate` does — active with STATE0 set = ""not yet visited"". /// `group` is the object's d"
-visit	src/progress.rs	44	fn	0x41d1	ASM?	/// Mark a location/crew visited — the decoded state advance (`0x41d1`: clears STATE0, /// sets STATE1). Returns whether it was newly visited (was unvisited before).
+visit	src/progress.rs	44	fn	0x41d1	ASM	/// Mark a location/crew visited — the decoded state advance (`0x41d1`: clears STATE0, /// sets STATE1). Returns whether it was newly visited (was unvisited before).
 has_visited	src/progress.rs	62	fn		UNVERIFIED	/// Whether a location/crew has been visited (its decoded STATE0 was cleared).
 total	src/progress.rs	69	fn		UNVERIFIED	/// The number of registered trackable entities.
 visited_count	src/progress.rs	74	fn		UNVERIFIED	/// The number that have been visited.
@@ -1251,261 +1251,262 @@ reveal_complete_hold_ticks	src/vm.rs	537	fn	0x94D4,0x94DD,0x0ACA,0x67BB	ASM	/// 
 text_speed_step_from_setting	src/vm.rs	546	fn	0x1B29,0x1B3D,0x0ACA,0xB31,0x94BA	ASM	/// Port the text-speed init at `BLOODPRG.EXE` `0x1B29..0x1B3D`: the config text-speed /// setting index is doubled (`add ax,ax`), setting 4 is special-cased (`cmp ax,8; /// add ax,4`), then `gs:[0x0A
 reveal_frames_per_char	src/vm.rs	558	fn	0xB31,0x94BA	ASM?	/// Frames per revealed character for a text-speed step: the reveal loop resets the /// per-character countdown `gs:[0xB31] = step >> 2` (see `REVERSE.md` @0x94BA); a /// zero countdown reveals a char
 record_end_hold_ticks	src/vm.rs	564	fn	0x7378,0x738C,0x27CF,0x0ACA,0x67BB	ASM?	/// Port the record-end hold timer at `BLOODPRG.EXE` `0x7378..0x738C`: /// `b35 = gs:[0x27CF] * (gs:[0x0ACA] >> 1) + 6; gs:[0x67BB] = 1`.
-scan_zero_word	src/vm.rs	578	fn	0x6293,0x0000	ASM?	/// Opcodes whose descriptor length is 0 (other than `0xA6`): the VM advances /// past them with helper `0x6293`, which scans byte-by-byte for a `0x0000` word /// terminator and skips it (plus one mor
-VmToken	src/vm.rs	592	enum		UNVERIFIED	
-offset	src/vm.rs	754	fn		UNVERIFIED	/// The token's byte offset in the COD stream (every variant records it). /// With the stream in hand this also yields the raw opcode byte — /// `cod[token.offset()]` — which is how the live-coverage 
-encode_token	src/vm.rs	780	fn		UNVERIFIED	/// RE-ENCODE a decoded token back to its byte form — the inverse of [`walk`]'s /// decoding, from the STRUCTURED FIELDS ONLY (no source peeking). Returns `None` /// for content-opaque tokens (`Op`, `
-walk	src/vm.rs	896	fn		ASM	/// Walk `cod[start..end]` in execution order, yielding tokens. Stops at `end`, /// at the `0xFF` end marker, or at the first byte that cannot be a token.
-decode_text	src/vm.rs	1119	fn		ASM	/// Decode an `0xA6` TEXT token starting at `pos`. Returns the token and the /// offset just past it, or `None` if malformed.
-read_u16	src/vm.rs	1173	fn		INFRA	
-ASSIGN_7	src/vm.rs	1251	const		UNVERIFIED	
-BITMASK_5	src/vm.rs	1252	const		UNVERIFIED	
-ASSIGN_5	src/vm.rs	1253	const		UNVERIFIED	
-TALK_FIELD	src/vm.rs	1261	const	0x6664,0x131,0x6D60	ASM?	/// The talk/presentation-record field: selector `0x13`, **kind slot 1**. /// /// Unlike [`LOCATION_FIELD`] this is not a port assumption — the BINARY hardcodes the /// kind too. `0x6664` computes `ax
-LOCATION_FIELD	src/vm.rs	1280	const	0x6D60	ASM?	/// The speaker's location field: `vm_field_offset(0x11, kind)` for **kind 1**. /// /// ASSUMPTION, made explicit (matrix row for selector `0x11` at `gs:0x6D60`): /// /// ```text ///   kind:   0     1
-SPECIAL_OBJECT_SLOT_COUNT	src/vm.rs	1281	const		UNVERIFIED	
-VM_FIELD_OFFSET_SELECTOR_PRESENTATION_HANDOFF	src/vm.rs	1282	const		UNVERIFIED	
-VM_FIELD_OFFSET_SELECTOR_C2	src/vm.rs	1283	const		UNVERIFIED	
-VM_FIELD_OFFSET_SELECTOR_C9_RELATED	src/vm.rs	1284	const		UNVERIFIED	
-VM_FIELD_OFFSET_SELECTOR_ENCOUNTER	src/vm.rs	1289	const	0x5DCE,0x5DF6,0x83DF,0x91DB	ASM?	/// Selector `0x08` — the ENCOUNTER COUNTER. `FIELD_OFFSETS[8]` is non-zero in /// exactly one column (`0x36` at column 1 = kind 2), so this is a kind-2 field. /// Written by `post_update_encounter_co
-OBJECT_FLAG_PAIR_SEEN	src/vm.rs	1292	const	0x8000,0x5DD2,0x5DFA	ASM?	/// Bit 15 of an object's `+2` flag word, set alongside the encounter-counter /// bump (`or word [si+2],0x8000` @ `0x5DD2`/`0x5DFA`).
-OBJECT_FLAG_ACTIVE	src/vm.rs	1295	const	0x91D4,0x83D9	ASM?	/// Bit 0 of an object's `+2` flag word — the ACTIVE bit, the second condition of /// both list filters (`test word [si+2],1` @ `0x91D4`, `test byte [si+2],1` @ `0x83D9`).
-ARCHE_LOCATION_FIELD	src/vm.rs	1299	const	0x8365,0x6752,0x6B44	ASM?	/// `arche+0x16` — the CURRENT LOCATION object (`mov bp,fs:[si+0x16]` @ `0x8365` /// with `si = gs:[0x6752] = arche`; the same word `0x6B44` clears).
-LOCATION_KIND_SHIP	src/vm.rs	1301	const	0x836C,0x8376	ASM?	/// Location kinds the status header distinguishes (`0x836C`, `0x8376`).
-LOCATION_KIND_BLACK_HOLE	src/vm.rs	1302	const		UNVERIFIED	
-STATUS_HEADER_PLANET	src/vm.rs	1307	const	0xD420	ASM?	/// The status block's headers, the game's OWN strings from BLOODPRG's UI string /// table — not transcriptions. `STATUS_STRING_TABLE` pins each to its image byte /// (DS base = file `0xD420`), the sa
-STATUS_HEADER_SHIP	src/vm.rs	1308	const		UNVERIFIED	
-STATUS_HEADER_BLACK_HOLE	src/vm.rs	1309	const		UNVERIFIED	
-STATUS_LIFE_SUPPORT	src/vm.rs	1310	const		UNVERIFIED	
-STATUS_STRING_TABLE	src/vm.rs	1313	const	0x12E,0x137,0x13E,0x14B,0x839F	ASM?	/// `(DS offset, file offset, string)` for each — `0x12E`/`0x137`/`0x13E` are the /// three `mov si,imm` headers and `0x14B` the roster caption at `0x839F`.
-LOCATION_PANEL_X	src/vm.rs	1322	const	0x9137,0x91EC	ASM?	/// Layout of the DESTINATION INFO PANEL drawn by `0x9137..0x91EC`. Every value is /// an immediate in that routine; see [`VmMachine::location_panel_rows`].
-LOCATION_PANEL_Y	src/vm.rs	1323	const		UNVERIFIED	
-LOCATION_PANEL_ROW_PITCH	src/vm.rs	1324	const		UNVERIFIED	
-LOCATION_PANEL_NAME_GAP	src/vm.rs	1325	const		UNVERIFIED	
-LOCATION_PANEL_HEADER_COLOR	src/vm.rs	1326	const		UNVERIFIED	
-LOCATION_PANEL_ROW_COLOR	src/vm.rs	1327	const		UNVERIFIED	
-LOCATION_PANEL_BOX	src/vm.rs	1332	const	0x2780,0x9114,0x9203,0x9142	ASM?	/// The panel's window rect `(x, y, w, h)` — `DS:0x2780`, a STATIC constant: a /// whole-image search for every store form to `0x2780` finds no writer, and the /// only references are the two `mov si/
-LOCATION_PANEL_TINT_PERCENT	src/vm.rs	1334	const	0xFFCE,0x90ED,0x22F1	ASM?	/// `ax = 0xFFCE` at `0x90ED`, negated on entry to the table builder (`0x22F1`).
-LOCATION_PANEL_ZOOM_STEPS	src/vm.rs	1336	const	0xADA,0x903E	ASM?	/// `[0xADA] = 8` (`0x903E`) — the zoom-open/shut interpolation step count.
-LOCATION_PANEL_CURSOR_RECT_SIZE	src/vm.rs	1338	const	0x9029	ASM?	/// The zoom SOURCE rect seeded at `0x9029`: a 4x4 square at the cursor.
-NAV_PICK_POSITION_FIELD	src/vm.rs	1343	const	0x92BC	ASM?	/// The chart marker's position field — selector `0x0B`, whose matrix row is /// `0x18` for kinds 8 and `0x10` (`FIELD_OFFSETS[0x0B]`). Read as `x` at `+0x18` /// and `y` at `+0x1A` by the picker at `
-OBJECT_FLAG_IN_PLAY	src/vm.rs	1347	const	0x6073,0x6C3B,0x7259	ASM?	/// Bit 1 of an object's `+2` flag word — the gate `0x6073` applies when building /// the active-object list, and the same bit the `0xC1` nav path (`0x6C3B`) and /// the entity candidate list (`0x7259
-NAV_CHART_KIND_MASK	src/vm.rs	1350	const	0x118,0x723D,0x100	ASM?	/// The kinds the nav chart draws: `test bx,0x118` at `0x723D` — kind `0x08`, /// kind `0x10` (a SHIP) and kind `0x100` (a BLACK HOLE).
-NAV_PICK_BOX_DEFAULT	src/vm.rs	1352	const	0x92BF,0x92D3,0x92FC	ASM?	/// Hit-box sizes, per kind (`0x92BF`, `0x92D3`, `0x92FC`).
-NAV_PICK_BOX_BLACK_HOLE	src/vm.rs	1353	const		UNVERIFIED	
-NAV_PICK_BOX_SHIP	src/vm.rs	1354	const		UNVERIFIED	
-LocationPanelRow	src/vm.rs	1358	struct		UNVERIFIED	
-C2_ACTIVE_LINE_KIND2	src/vm.rs	1364	const		UNVERIFIED	
-C2_ACTIVE_LINE_KIND400	src/vm.rs	1365	const		UNVERIFIED	
-VM_UI_FLAGS	src/vm.rs	1366	const		UNVERIFIED	
-C2_PRESENTATION_GATE	src/vm.rs	1367	const		UNVERIFIED	
-C2_PRESENTATION_FLAGS	src/vm.rs	1368	const		UNVERIFIED	
-C2_PRESENTATION_BUSY_FLAG	src/vm.rs	1369	const		UNVERIFIED	
-VM_ACTIVE_LINE	src/vm.rs	1370	const		UNVERIFIED	
-C9_PRESENTATION_GATE_A	src/vm.rs	1371	const		UNVERIFIED	
-C9_PRESENTATION_GATE_B	src/vm.rs	1372	const		UNVERIFIED	
-C4_POST_UPDATE_SENTINEL	src/vm.rs	1373	const		UNVERIFIED	
-VM_PENDING_RESOURCE_PROFILE	src/vm.rs	1374	const		UNVERIFIED	
-VM_PRESENTATION_PRIMARY_C4_RECORD	src/vm.rs	1375	const		UNVERIFIED	
-VM_PRESENTATION_ACTIVE	src/vm.rs	1376	const		UNVERIFIED	
-VM_PRESENTATION_RELATED_FLAG20	src/vm.rs	1377	const		UNVERIFIED	
-VM_PRESENTATION_DEFER_A	src/vm.rs	1378	const		UNVERIFIED	
-VM_PRESENTATION_LOOP_FLAG	src/vm.rs	1379	const		UNVERIFIED	
-VM_PRESENTATION_PAIR_WRITE_DISABLED	src/vm.rs	1380	const		UNVERIFIED	
-VM_PRESENTATION_START_LOCK	src/vm.rs	1381	const		UNVERIFIED	
-VM_PRESENTATION_TEXT_WAIT	src/vm.rs	1382	const		UNVERIFIED	
-VM_PRESENTATION_HOLD_COMPLETE	src/vm.rs	1383	const		UNVERIFIED	
-VM_PRESENTATION_HOLD_READY	src/vm.rs	1384	const		UNVERIFIED	
-VM_PRESENTATION_WORD_BUFFER	src/vm.rs	1385	const		UNVERIFIED	
-VM_PRESENTATION_STATUS_WORD	src/vm.rs	1386	const		UNVERIFIED	
-VM_PRESENTATION_ACTIVE_RECORD	src/vm.rs	1387	const		UNVERIFIED	
-VM_PRESENTATION_DEFERRED_RECORD_TYPE	src/vm.rs	1388	const		UNVERIFIED	
-VM_PRESENTATION_DEFERRED_RECORD_RELATED	src/vm.rs	1389	const		UNVERIFIED	
-VM_PRESENTATION_DEFERRED_RECORD_AUX	src/vm.rs	1390	const		UNVERIFIED	
-VM_PRESENTATION_SIGNAL_SLOT	src/vm.rs	1391	const		UNVERIFIED	
-VM_PRESENTATION_SCENE_DIRTY	src/vm.rs	1392	const		UNVERIFIED	
-VM_PRESENTATION_INPUT_GATE_A	src/vm.rs	1393	const		UNVERIFIED	
-VM_PRESENTATION_INPUT_GATE_B	src/vm.rs	1394	const		UNVERIFIED	
-VM_PRESENTATION_INPUT_GATE_C	src/vm.rs	1395	const		UNVERIFIED	
-VM_PRESENTATION_INPUT_GATE_D	src/vm.rs	1396	const		UNVERIFIED	
-VM_PRESENTATION_INPUT_GATE_E	src/vm.rs	1397	const		UNVERIFIED	
-VM_PRESENTATION_INPUT_GATE_F	src/vm.rs	1398	const		UNVERIFIED	
-VM_PRESENTATION_HANDOFF_GATE	src/vm.rs	1399	const		UNVERIFIED	
-VM_PRESENTATION_INPUT_GATE_G	src/vm.rs	1400	const		UNVERIFIED	
-VM_PRESENTATION_INPUT_GATE_H	src/vm.rs	1401	const		UNVERIFIED	
-VM_PRESENTATION_INPUT_GATE_I	src/vm.rs	1402	const		UNVERIFIED	
-VM_PRESENTATION_DESCRIPTOR_PENDING	src/vm.rs	1403	const		UNVERIFIED	
-VM_BRANCH_A	src/vm.rs	1404	const		UNVERIFIED	
-VM_BRANCH_B	src/vm.rs	1405	const		UNVERIFIED	
-VM_PC_SAVED	src/vm.rs	1406	const		UNVERIFIED	
-MAIN_PENDING_PROFILE_IDLE_GATES	src/vm.rs	1408	const		UNVERIFIED	
-VM_FIELD_OFFSET_TABLE	src/vm.rs	1424	const	0x6023,0x6D60,0x14180,0x142CF	ORACLE	/// Field-offset lookup table used by helper `0x6023`: /// `gs:[0x6D60 + selector * 16 + bsf(kind)]`. /// Transcribed from `BLOODPRG.EXE` file `0x14180..0x142CF`.
-LineState	src/vm.rs	1450	struct		UNVERIFIED	
-BranchEvent	src/vm.rs	1460	struct		UNVERIFIED	
-ScriptProfileRequestEvent	src/vm.rs	1471	struct		UNVERIFIED	
-PostUpdateTrace	src/vm.rs	1478	struct		UNVERIFIED	
-PostUpdateActorRecordPair	src/vm.rs	1489	struct		UNVERIFIED	
-PresentationHandoffEvent	src/vm.rs	1495	struct		UNVERIFIED	
-ExecutionHalt	src/vm.rs	1502	enum		UNVERIFIED	
-ExecutionTrace	src/vm.rs	1510	struct		UNVERIFIED	
-pending_script_profile	src/vm.rs	1520	fn		ASM	
-ScriptProfileProgram	src/vm.rs	1528	struct		UNVERIFIED	
-ScriptProfileRun	src/vm.rs	1536	struct		UNVERIFIED	
-ScriptProfileExecutionHalt	src/vm.rs	1543	enum		UNVERIFIED	
-ScriptProfileExecution	src/vm.rs	1558	struct		UNVERIFIED	
-ExecutedTrace	src/vm.rs	1563	struct		UNVERIFIED	
-Ship3dC1RuntimeContext	src/vm.rs	1569	struct		UNVERIFIED	
-Ship3dC1PositionRuntime	src/vm.rs	1577	struct		UNVERIFIED	
-VmNamedObjectOffsets	src/vm.rs	1585	struct		ASM	
-set	src/vm.rs	1597	fn		ASM	
-ExecutionContext	src/vm.rs	1653	struct		UNVERIFIED	
-from_object_offsets	src/vm.rs	1667	fn		INFRA	
-with_global_word_0aa6	src/vm.rs	1680	fn		INFRA	
-with_global_pair_0aaa_0aa8	src/vm.rs	1685	fn		INFRA	
-with_special_object_offset	src/vm.rs	1690	fn		INFRA	
-with_vm_named_object	src/vm.rs	1696	fn		INFRA	
-with_descript_entry_name	src/vm.rs	1704	fn		INFRA	
-with_bios_rtc	src/vm.rs	1718	fn		INFRA	
-with_text_line_display_gating	src/vm.rs	1724	fn		INFRA	
-with_text_presentation_record_gating	src/vm.rs	1729	fn		INFRA	
-with_strict_actor_record_branching	src/vm.rs	1734	fn		INFRA	
-with_ship_3d_c1_runtime	src/vm.rs	1739	fn		INFRA	
-with_ship_3d_c1_positions	src/vm.rs	1758	fn		INFRA	
-vm_named_object_offsets	src/vm.rs	1779	fn		INFRA	
-owner_object_offset	src/vm.rs	1783	fn		ASM	
-remap_special_rhs	src/vm.rs	1791	fn		ASM	
-is_special_rhs	src/vm.rs	1799	fn		ASM	
-c2_descript_lookup_succeeds	src/vm.rs	1803	fn		UNVERIFIED	
-BranchOverride	src/vm.rs	1816	struct		UNVERIFIED	
-state_u16	src/vm.rs	1822	fn		INFRA	/// Read a u16 from `state` (the mutable VAR image) at byte address `addr`.
-state_has_u16	src/vm.rs	1831	fn		INFRA	
-state_set_u16	src/vm.rs	1837	fn		INFRA	
-state_u8	src/vm.rs	1845	fn		INFRA	
-state_set_u8	src/vm.rs	1849	fn		INFRA	
-state_or_u8	src/vm.rs	1855	fn		INFRA	
-state_and_u8	src/vm.rs	1860	fn		INFRA	
-state_and_u16	src/vm.rs	1865	fn		INFRA	
-pending_script_profile_dispatch_ready	src/vm.rs	1870	fn		UNVERIFIED	
-state_c_string_equals	src/vm.rs	1879	fn		UNVERIFIED	
-text_line_should_display	src/vm.rs	1891	fn		ASM	
-text_presentation_record_is_active	src/vm.rs	1896	fn		ASM	
-text_runtime_gates_allow	src/vm.rs	1900	fn		ASM	
-TextTokenRuntimeFlags	src/vm.rs	1913	struct		UNVERIFIED	
-flags_b5	src/vm.rs	1918	fn		ASM	
-accept_line	src/vm.rs	1925	fn		ASM	
-mark_text_line_shown	src/vm.rs	1933	fn		ASM	
-SpecialObjectSlots	src/vm.rs	1943	struct		UNVERIFIED	
-remove	src/vm.rs	1948	fn		ASM	
-insert	src/vm.rs	1957	fn		ASM	
-actor_object_offset_from_record	src/vm.rs	1970	fn		ASM	
-record_owner_object_offset	src/vm.rs	1974	fn		ASM	
-apply_assign5_mode0	src/vm.rs	1978	fn		ASM	
-record_owner_is_active	src/vm.rs	2012	fn		ASM	
-actor_record_is_active	src/vm.rs	2021	fn		ASM	
-actor_record_condition	src/vm.rs	2027	fn		ASM	
-write_actor_record	src/vm.rs	2045	fn		ASM	
-PresentationKind1Update	src/vm.rs	2052	enum		UNVERIFIED	
-post_update_kind1_presentation_state	src/vm.rs	2059	fn		ASM	
-post_update_kind2_presentation_handoff_target	src/vm.rs	2112	fn		ASM	
-post_update_deferred_record_write	src/vm.rs	2149	fn		ASM	
-post_update_encounter_counter	src/vm.rs	2223	fn	0x5D8F,0x5DB0,0x5E06,0x5DB4,0x5DE3	ASM	/// The ENCOUNTER COUNTER step of the post-update actor-pair ladder /// (`vm_post_update_c4_pair` `0x5D8F`, block `0x5DB0..0x5E06`), run between the /// processed-marker write and the related-record `
-post_update_actor_record_pair	src/vm.rs	2258	fn		ASM	
-post_update_actor_records_for_active_objects	src/vm.rs	2294	fn		UNVERIFIED	
-post_update_execution_state	src/vm.rs	2305	fn		UNVERIFIED	
-append_post_update_trace	src/vm.rs	2357	fn		UNVERIFIED	
-record_link_condition	src/vm.rs	2376	fn		ASM	
-write_record_link	src/vm.rs	2394	fn		ASM	
-write_record_link_mode0	src/vm.rs	2400	fn		ASM	
-record_state_condition	src/vm.rs	2418	fn		UNVERIFIED	
-c1_record_state_resolved_mode1_condition	src/vm.rs	2452	fn		ASM	
-ship3d_c1_source_records_from_bytes	src/vm.rs	2483	fn		ASM	
-ship3d_record_state_slot	src/vm.rs	2495	fn		ASM	
-write_ship3d_record_state_slot	src/vm.rs	2503	fn		ASM	
-resolve_c1_record_state_ship3d_target	src/vm.rs	2513	fn		UNVERIFIED	
-write_c1_record_state_ship3d	src/vm.rs	2560	fn		UNVERIFIED	
-write_c1_record_state_mode0	src/vm.rs	2617	fn		ASM	
-write_c2_record_state_direct	src/vm.rs	2641	fn		ASM	
-clear_record_words	src/vm.rs	2688	fn		ASM	
-clear_record	src/vm.rs	2694	fn		ASM	
-write_record_entry	src/vm.rs	2711	fn		ASM	
-write_record_entry_mode0	src/vm.rs	2717	fn		ASM	
-record_entry_condition	src/vm.rs	2759	fn		ASM	
-branch_fail	src/vm.rs	2777	fn		INFRA	
-push_mode0_branch_fail	src/vm.rs	2781	fn		UNVERIFIED	
-compare_vm_words	src/vm.rs	2801	fn		UNVERIFIED	
-global_word_condition	src/vm.rs	2815	fn		UNVERIFIED	
-global_pair_condition	src/vm.rs	2825	fn		UNVERIFIED	
-interpret_line_states	src/vm.rs	2845	fn		UNVERIFIED	/// Walk `cod`, executing assignment opcodes against a copy of `var` (the initial /// state image), and return the resolved scene state at every `0xA6` line.
-interpret_line_states_with_context	src/vm.rs	2849	fn		UNVERIFIED	
-execute_trace	src/vm.rs	3040	fn		UNVERIFIED	/// Execute the subset of VM control flow that has been tied to concrete handler /// code. This follows A0/A1 condition blocks and direct A4/A9 jumps, while still /// using the same bounded state mode
-execute_trace_with_context	src/vm.rs	3044	fn		UNVERIFIED	
-execute_trace_with_overrides	src/vm.rs	3055	fn		UNVERIFIED	/// Execute a concrete VM path, optionally forcing selected condition outcomes. /// Overrides are keyed by conditional opcode offset and are applied only after a /// real condition has been decoded at
-execute_trace_with_overrides_and_context	src/vm.rs	3063	fn		UNVERIFIED	
-execute_trace_from_offset	src/vm.rs	3078	fn		UNVERIFIED	/// Execute a concrete VM path starting at an arbitrary COD `start` offset instead /// of the script entry (0). Used to reach dialogue in named functions that the /// main control flow never calls (ev
-execute_trace_state_with_overrides_and_context	src/vm.rs	3089	fn		UNVERIFIED	
-STEP_LIMIT_MULTIPLIER	src/vm.rs	3096	const		UNVERIFIED	
-execute_script_profile_sequence	src/vm.rs	3703	fn		UNVERIFIED	
-SceneEvent	src/vm.rs	3793	enum		UNVERIFIED	
-LineInput	src/vm.rs	3839	struct		UNVERIFIED	
-emit_scene_events	src/vm.rs	3856	fn		UNVERIFIED	/// Turn an ordered sequence of decoded dialogue lines into a presentation event /// stream, emitting background/music/speaker changes only on transition and a /// trailing `Clear`.
-VmEvent	src/vm.rs	3934	enum		UNVERIFIED	
-VmMachine	src/vm.rs	3957	struct	0x1C3F,0x677E,0x200,0x6ADE,0x6CDE,0x6724	ASM?	/// The script VM's machine state, mirroring the game's own arrays byte-for-byte. /// The save file serializes exactly these blocks (save path @0x1C3F: header word /// `0x677E`, `0x200` bytes @`0x6ADE
-default	src/vm.rs	4076	fn		UNVERIFIED	
-new	src/vm.rs	4127	fn		UNVERIFIED	
-halted	src/vm.rs	4131	fn		UNVERIFIED	
-start_actor_presentation	src/vm.rs	4138	fn	0x675E,0x5816	ASM?	/// Driver hook: a console click / event starts an actor's presentation — /// the C4 query blocks for that actor then run (the game's click dispatch /// writes the C4 primary record @DS:0x675E; handle
-promote_queued_presentation	src/vm.rs	4151	fn	0x5C64	ASM?	/// Promote a QUEUED presentation (a typed `{0xC3, related, 1}` record, the /// OP_C3 request) to an ACTIVE one — the engine's scan does this when the /// current presentation ends (the pending-slot p
-dispatch_concept	src/vm.rs	4176	fn		UNVERIFIED	/// ARRIVAL: satisfy the opening block's record-equality guards (the travel /// system's writes). SCRIPT2's first block guards `rec_0F4E == 3488` — the /// current-location variable vs the DEB offset 
-set_location	src/vm.rs	4189	fn		UNVERIFIED	/// The travel system's arrival write: current-location variable = the /// destination's DEB offset (rec_0F4E in SCRIPT2 — guards compare it to /// 3488 start / 3380 fled / 3074 the coded-message zone
-location_var_offset	src/vm.rs	4197	fn	0x0F4E	ASM?	/// The current-location variable's record offset, from the opening block's /// wildcard-family equality guard (SCRIPT2: 0x0F4E).
-satisfy_opening_location_guards	src/vm.rs	4228	fn		UNVERIFIED	
-to_dos_save	src/vm.rs	4273	fn	0x1C3F,0x200,0x6ADE,0x6CDE	ASM?	/// Serialize the machine state as a DOS `blood.sav` (the layout the game's /// save path @0x1C3F writes): u16 current profile, 0x200 bytes of the state /// word array (gs:0x6ADE), 0x60 bytes of the c
-apply_dos_save	src/vm.rs	4290	fn	0x1CBD	ASM?	/// Load a DOS `blood.sav` (the read path @0x1CBD): restores the state array, /// character slots, and line-record table; returns the saved profile word /// (the script to re-select). Returns None if 
-load_deb_objects	src/vm.rs	4314	fn		UNVERIFIED	/// Load the script bytecode into the machine's working copy (the game /// self-modifies accepted lines' active bits in this stream). /// Populate the DEB object-offset table (ascending) for owner res
-owner_object_offset	src/vm.rs	4354	fn	0x6034	ASM?	/// The owning object of a record: the nearest DEB object STRICTLY below `off` /// (the 0x6034 threshold lookup's port model). None when the table is unloaded.
-c4_set_write_decision	src/vm.rs	4384	fn	0x6CC3,0x6D01,0x6034	ASM?	/// The `0xC4` mode-0 (SET) write guard — the `0x6CC3..0x6D01` decision. /// Returns `None` when the object table is unloaded (no `0x6034` threshold /// mapping possible; the caller then preserves the
-c1_query_passes	src/vm.rs	4415	fn	0x6B4C	ASM?	/// The `0xC1` mode-1 (QUERY) decision — `0x6B4C`'s query path. `Some(true)` = /// pass (no branch), `Some(false)` = branch, `None` = object table unloaded /// (caller keeps the legacy no-op). Mirrors
-c1_set_plan	src/vm.rs	4476	fn	0x6B4C	ASM?	/// The `0xC1` mode-0 (SET) decision — the non-ship-3D path of `0x6B4C` / /// tracer `write_c1_record_state_mode0`. `Some(true)` = write `{0xC1, /// operand, 2}`, `Some(false)` = branch, `None` = obje
-build_nav_source_list	src/vm.rs	4512	fn	0x624B,0x6886,0x672c	ASM?	/// Build the ship-3D NAV SOURCE LIST (`ship_3d_navigation_source_list_build` /// `0x624B`, output `DS:0x6886`), a faithful port: walk the `gs:0x672c` /// directory; for each entry take its object off
-walk_selector11_children	src/vm.rs	4515	fn		UNVERIFIED	
-source_list_entry_is_listable	src/vm.rs	4563	fn	0x91C3,0x91CE,0x91D4,0x91DB	ASM	/// The DRAW-TIME filter both source-list consumers apply, ported verbatim /// from `vm_source_list_draw_loop` `0x91C3`: /// /// ```text ///   0x91CE  test word [si],2       the object's kind has bit 
-source_list_display_rows	src/vm.rs	4583	fn	0x91C3,0x299,0x202	ASM	/// The rows a source-list panel actually DRAWS (`0x91C3` `0x299:0x202` per /// survivor, `add dx,0xA` between rows): `build_nav_source_list` filtered by /// [`Self::source_list_entry_is_listable`].
-source_list_text_rows	src/vm.rs	4604	fn	0x83C0,0x83F8,0x83C7,0x6758,0x83E5	ASM	/// The same list as TEXT (`0x83C0..0x83F8`, the `PLANET:`/`SHIP:`/`BLACK /// HOLE:` status block's `LIFE SUPPORT:` roster), which adds a FOURTH /// condition the drawn panel does not have: /// /// ``
-object_inline_name	src/vm.rs	4631	fn	0x8389,0x83EA,0x299,0x202,0x91E1	ASM	/// An object's INLINE NAME: the NUL-terminated string at `record+4`. /// /// Both status-list consumers read it that way — `mov si,bp / add si,4 / /// lodsb` at `0x8389` and `0x83EA`, and `add si,4` 
-location_status_block	src/vm.rs	4664	fn	0x82E8,0x8347,0x8420,0xE18,0x835C,0x6752,0x8365,0x8369,0x12E	ASM	/// The location STATUS BLOCK the nav hover composes (`nav_state_gate` /// `0x82E8`, composer `0x8347..0x8420`), as the lines the real routine writes /// CR-separated into the text buffer at `0xE18`: 
-location_panel_rows	src/vm.rs	4711	fn	0x9137,0x91EC,0x27BF,0x9022	ASM	/// The DESTINATION INFO PANEL's drawn rows (`0x9137..0x91EC`) — the other /// consumer of the same roster, this one a real on-screen panel rather than /// the subtitle-buffer block [`Self::location_s
-build_active_object_list	src/vm.rs	4764	fn	0x604E,0x6A16,0x672C,0x6068,0x6070,0x6073	ORACLE	/// The ACTIVE-OBJECT candidate list (`table_672c_process` `0x604E`, output /// `DS:0x6A16`): walk the 20-byte directory at `gs:0x672C` while `+0x12 == 1` /// and keep every object whose flag word has
-build_nav_chart_list	src/vm.rs	4791	fn	0x721A,0x2AD3,0x27C1,0x7226,0x604E,0x7233,0x7238	ORACLE	/// The NAV CHART's visible-object list (`0x721A`, output `DS:0x2AD3`, count /// returned in `ax` and stored at `[0x27C1]`): the active-object list above, /// filtered to the chart-visible KINDS. /// 
-nav_chart_pick	src/vm.rs	4822	fn	0x92A3,0x9339,0x2AD3,0x27C1	ORACLE	/// The NAV-CHART OBJECT PICKER (`0x92A3..0x9339`) — what the info panel's /// selection commit calls to turn a cursor position into an object. /// /// It walks the chart's visible-object list (`DS:0x
-nav_chart_marker	src/vm.rs	4838	fn	0x92DF,0x92F2	ORACLE	/// The chart marker the picker hit-tests and the chart draws: `+0x18`/`+0x1A`, /// or the SECOND endpoint at `+0x1C`/`+0x1E` when the object is a black hole /// whose `+0x14` differs from `arche+0x22
-nav_chart_hit_box	src/vm.rs	4852	fn	0x92BF,0x92D3,0x92FC	ORACLE	/// The picker's per-kind hit box (`0x92BF`, `0x92D3`, `0x92FC`).
-nav_chart_arche_context	src/vm.rs	4865	fn	0x92DF	ASM	/// The word the black-hole endpoint rule compares against: `es:[arche+0x22]` /// (`0x92DF`). Zero when no DEB is loaded.
-world_click_select	src/vm.rs	4886	fn	0xB20C,0xB27B,0xB2BB,0xFFFF,0xB288	ASM?	/// The WORLD-DESTINATION CLICK commit (`0xB20C..0xB27B`). The ship FSM's /// per-frame hit-test (`ship_3d_target_record_select` `0xB2BB`) returns the /// clicked target record; this is what the FSM t
-special_slot_insert_pub	src/vm.rs	4912	fn	0x6D3E,0x5FF6	ASM?	/// Insert an owner into the 16-slot special list (gs:0x6D3E, insert 0x5FF6). /// Returns false only if the list is full and the owner is not already present. /// Test hooks for the recomp differentia
-special_slot_remove_pub	src/vm.rs	4915	fn		UNVERIFIED	
-ship_slots_pub	src/vm.rs	4918	fn		UNVERIFIED	
-special_slot_insert	src/vm.rs	4926	fn	0x5FF6,0x6D3E,0x5FFE,0x601F,0x600E,0x601C	ORACLE	/// Insert an owner into the special-slot list — `vm_special_slot_insert` /// `0x5FF6`: scan the 16 words at `DS:0x6D3E` for the owner and return CF set /// if already present (`0x5FFE..0x601F`); othe
-special_slot_remove	src/vm.rs	4952	fn	0x5FD8,0x5FDA,0x6D3E,0x5FE0,0x5FED,0x5FEA	ORACLE	/// Remove an owner from the special-slot list — `vm_special_slot_remove` /// `0x5FD8`, exactly: /// /// ```text ///   0x5FDA  bp=0x6D3E  cx=0x10        the 16-word list ///   0x5FE0  cmp ax,[bp] / je
-load_cod	src/vm.rs	4962	fn		UNVERIFIED	
-load_var	src/vm.rs	4970	fn	0x6724	ASM?	/// Initialize the line-record/object table from the script's VAR file — the /// game loads VAR as the table's initial contents (le16 words at gs:0x6724).
-rand	src/vm.rs	4980	fn		UNVERIFIED	
-u8_at	src/vm.rs	5017	fn		UNVERIFIED	
-lodsb	src/vm.rs	5021	fn		UNVERIFIED	
-lodsw	src/vm.rs	5027	fn		UNVERIFIED	
-tick_state_countdowns	src/vm.rs	5040	fn	0x8AA,0x675A,0xB27,0xFFFF	ASM?	/// One divided-timer beat of the state-array countdown — the engine's law at /// 0x8AA (in the timer chain, gated there on no-active-presentation /// gs:[0x675A]==0, divider gs:[0xB27]): entries stat
-add_record	src/vm.rs	5052	fn	0x126C	ASM?	/// Increment a record variable — the runtime hook for world events that the /// scripts observe (e.g. BIONIUM collection: SCRIPT2's `vbio` record, whose /// C0 guards read record 0x126C — operand rea
-rec_read	src/vm.rs	5057	fn		UNVERIFIED	
-rec_read_pub	src/vm.rs	5062	fn		UNVERIFIED	/// Public record read for the drive layer.
-rec_write_pub	src/vm.rs	5068	fn		UNVERIFIED	/// Public record write for the drive layer (the click stand-in's /// presentation end and test scaffolding).
-rec_write	src/vm.rs	5072	fn		UNVERIFIED	
-rec_read_u8	src/vm.rs	5080	fn		UNVERIFIED	/// Byte-level record access (the record table is a little-endian word array). /// Used by the 0xB7 single-bit flag handler.
-rec_write_u8	src/vm.rs	5089	fn		UNVERIFIED	
-branch	src/vm.rs	5101	fn	0x6462	ASM?	/// `vm_branch` @0x6462: pop the resume position into PC; clear query mode.
-step	src/vm.rs	5109	fn		UNVERIFIED	/// Execute ONE opcode against the loaded stream. Returns false at stream end.
-run	src/vm.rs	5943	fn		UNVERIFIED	/// Run until yield (0xAA/0xAC), halt, or `max_steps`. Returns the events raised.
-run_frame	src/vm.rs	5956	fn	0x55F5	ASM?	/// Run ONE FRAME the way the exec loop does (@0x55F5): restart at the top of /// the script (AA/AC yields end the frame with NO resume; the self-modified /// active bits advance the flow), run until 
-token_len_at	src/vm.rs	5970	fn		DATA?	/// Total token length (including the opcode byte) at `pos`, using the game's own /// per-opcode descriptor table + mode rules — identical to the walker's advance /// (`mode1` there == query mode here
-decompile_script	src/vm.rs	5999	fn		UNVERIFIED	/// Decompile a COD script to a readable listing. `dic` resolves text/concepts, /// `actor_names` (DEB-derived) resolves record offsets to object names.
+scan_zero_word_pub	src/vm.rs	579	fn	0x6293,0x0000	ASM?	/// Opcodes whose descriptor length is 0 (other than `0xA6`): the VM advances /// past them with helper `0x6293`, which scans byte-by-byte for a `0x0000` word /// terminator and skips it (plus one mor
+scan_zero_word	src/vm.rs	583	fn		ORACLE	
+VmToken	src/vm.rs	597	enum		UNVERIFIED	
+offset	src/vm.rs	759	fn		UNVERIFIED	/// The token's byte offset in the COD stream (every variant records it). /// With the stream in hand this also yields the raw opcode byte — /// `cod[token.offset()]` — which is how the live-coverage 
+encode_token	src/vm.rs	785	fn		UNVERIFIED	/// RE-ENCODE a decoded token back to its byte form — the inverse of [`walk`]'s /// decoding, from the STRUCTURED FIELDS ONLY (no source peeking). Returns `None` /// for content-opaque tokens (`Op`, `
+walk	src/vm.rs	901	fn		ASM	/// Walk `cod[start..end]` in execution order, yielding tokens. Stops at `end`, /// at the `0xFF` end marker, or at the first byte that cannot be a token.
+decode_text	src/vm.rs	1124	fn		ASM	/// Decode an `0xA6` TEXT token starting at `pos`. Returns the token and the /// offset just past it, or `None` if malformed.
+read_u16	src/vm.rs	1178	fn		INFRA	
+ASSIGN_7	src/vm.rs	1256	const		UNVERIFIED	
+BITMASK_5	src/vm.rs	1257	const		UNVERIFIED	
+ASSIGN_5	src/vm.rs	1258	const		UNVERIFIED	
+TALK_FIELD	src/vm.rs	1266	const	0x6664,0x131,0x6D60	ASM?	/// The talk/presentation-record field: selector `0x13`, **kind slot 1**. /// /// Unlike [`LOCATION_FIELD`] this is not a port assumption — the BINARY hardcodes the /// kind too. `0x6664` computes `ax
+LOCATION_FIELD	src/vm.rs	1285	const	0x6D60	ASM?	/// The speaker's location field: `vm_field_offset(0x11, kind)` for **kind 1**. /// /// ASSUMPTION, made explicit (matrix row for selector `0x11` at `gs:0x6D60`): /// /// ```text ///   kind:   0     1
+SPECIAL_OBJECT_SLOT_COUNT	src/vm.rs	1286	const		UNVERIFIED	
+VM_FIELD_OFFSET_SELECTOR_PRESENTATION_HANDOFF	src/vm.rs	1287	const		UNVERIFIED	
+VM_FIELD_OFFSET_SELECTOR_C2	src/vm.rs	1288	const		UNVERIFIED	
+VM_FIELD_OFFSET_SELECTOR_C9_RELATED	src/vm.rs	1289	const		UNVERIFIED	
+VM_FIELD_OFFSET_SELECTOR_ENCOUNTER	src/vm.rs	1294	const	0x5DCE,0x5DF6,0x83DF,0x91DB	ASM?	/// Selector `0x08` — the ENCOUNTER COUNTER. `FIELD_OFFSETS[8]` is non-zero in /// exactly one column (`0x36` at column 1 = kind 2), so this is a kind-2 field. /// Written by `post_update_encounter_co
+OBJECT_FLAG_PAIR_SEEN	src/vm.rs	1297	const	0x8000,0x5DD2,0x5DFA	ASM?	/// Bit 15 of an object's `+2` flag word, set alongside the encounter-counter /// bump (`or word [si+2],0x8000` @ `0x5DD2`/`0x5DFA`).
+OBJECT_FLAG_ACTIVE	src/vm.rs	1300	const	0x91D4,0x83D9	ASM?	/// Bit 0 of an object's `+2` flag word — the ACTIVE bit, the second condition of /// both list filters (`test word [si+2],1` @ `0x91D4`, `test byte [si+2],1` @ `0x83D9`).
+ARCHE_LOCATION_FIELD	src/vm.rs	1304	const	0x8365,0x6752,0x6B44	ASM?	/// `arche+0x16` — the CURRENT LOCATION object (`mov bp,fs:[si+0x16]` @ `0x8365` /// with `si = gs:[0x6752] = arche`; the same word `0x6B44` clears).
+LOCATION_KIND_SHIP	src/vm.rs	1306	const	0x836C,0x8376	ASM?	/// Location kinds the status header distinguishes (`0x836C`, `0x8376`).
+LOCATION_KIND_BLACK_HOLE	src/vm.rs	1307	const		UNVERIFIED	
+STATUS_HEADER_PLANET	src/vm.rs	1312	const	0xD420	ASM?	/// The status block's headers, the game's OWN strings from BLOODPRG's UI string /// table — not transcriptions. `STATUS_STRING_TABLE` pins each to its image byte /// (DS base = file `0xD420`), the sa
+STATUS_HEADER_SHIP	src/vm.rs	1313	const		UNVERIFIED	
+STATUS_HEADER_BLACK_HOLE	src/vm.rs	1314	const		UNVERIFIED	
+STATUS_LIFE_SUPPORT	src/vm.rs	1315	const		UNVERIFIED	
+STATUS_STRING_TABLE	src/vm.rs	1318	const	0x12E,0x137,0x13E,0x14B,0x839F	ASM?	/// `(DS offset, file offset, string)` for each — `0x12E`/`0x137`/`0x13E` are the /// three `mov si,imm` headers and `0x14B` the roster caption at `0x839F`.
+LOCATION_PANEL_X	src/vm.rs	1327	const	0x9137,0x91EC	ASM?	/// Layout of the DESTINATION INFO PANEL drawn by `0x9137..0x91EC`. Every value is /// an immediate in that routine; see [`VmMachine::location_panel_rows`].
+LOCATION_PANEL_Y	src/vm.rs	1328	const		UNVERIFIED	
+LOCATION_PANEL_ROW_PITCH	src/vm.rs	1329	const		UNVERIFIED	
+LOCATION_PANEL_NAME_GAP	src/vm.rs	1330	const		UNVERIFIED	
+LOCATION_PANEL_HEADER_COLOR	src/vm.rs	1331	const		UNVERIFIED	
+LOCATION_PANEL_ROW_COLOR	src/vm.rs	1332	const		UNVERIFIED	
+LOCATION_PANEL_BOX	src/vm.rs	1337	const	0x2780,0x9114,0x9203,0x9142	ASM?	/// The panel's window rect `(x, y, w, h)` — `DS:0x2780`, a STATIC constant: a /// whole-image search for every store form to `0x2780` finds no writer, and the /// only references are the two `mov si/
+LOCATION_PANEL_TINT_PERCENT	src/vm.rs	1339	const	0xFFCE,0x90ED,0x22F1	ASM?	/// `ax = 0xFFCE` at `0x90ED`, negated on entry to the table builder (`0x22F1`).
+LOCATION_PANEL_ZOOM_STEPS	src/vm.rs	1341	const	0xADA,0x903E	ASM?	/// `[0xADA] = 8` (`0x903E`) — the zoom-open/shut interpolation step count.
+LOCATION_PANEL_CURSOR_RECT_SIZE	src/vm.rs	1343	const	0x9029	ASM?	/// The zoom SOURCE rect seeded at `0x9029`: a 4x4 square at the cursor.
+NAV_PICK_POSITION_FIELD	src/vm.rs	1348	const	0x92BC	ASM?	/// The chart marker's position field — selector `0x0B`, whose matrix row is /// `0x18` for kinds 8 and `0x10` (`FIELD_OFFSETS[0x0B]`). Read as `x` at `+0x18` /// and `y` at `+0x1A` by the picker at `
+OBJECT_FLAG_IN_PLAY	src/vm.rs	1352	const	0x6073,0x6C3B,0x7259	ASM?	/// Bit 1 of an object's `+2` flag word — the gate `0x6073` applies when building /// the active-object list, and the same bit the `0xC1` nav path (`0x6C3B`) and /// the entity candidate list (`0x7259
+NAV_CHART_KIND_MASK	src/vm.rs	1355	const	0x118,0x723D,0x100	ASM?	/// The kinds the nav chart draws: `test bx,0x118` at `0x723D` — kind `0x08`, /// kind `0x10` (a SHIP) and kind `0x100` (a BLACK HOLE).
+NAV_PICK_BOX_DEFAULT	src/vm.rs	1357	const	0x92BF,0x92D3,0x92FC	ASM?	/// Hit-box sizes, per kind (`0x92BF`, `0x92D3`, `0x92FC`).
+NAV_PICK_BOX_BLACK_HOLE	src/vm.rs	1358	const		UNVERIFIED	
+NAV_PICK_BOX_SHIP	src/vm.rs	1359	const		UNVERIFIED	
+LocationPanelRow	src/vm.rs	1363	struct		UNVERIFIED	
+C2_ACTIVE_LINE_KIND2	src/vm.rs	1369	const		UNVERIFIED	
+C2_ACTIVE_LINE_KIND400	src/vm.rs	1370	const		UNVERIFIED	
+VM_UI_FLAGS	src/vm.rs	1371	const		UNVERIFIED	
+C2_PRESENTATION_GATE	src/vm.rs	1372	const		UNVERIFIED	
+C2_PRESENTATION_FLAGS	src/vm.rs	1373	const		UNVERIFIED	
+C2_PRESENTATION_BUSY_FLAG	src/vm.rs	1374	const		UNVERIFIED	
+VM_ACTIVE_LINE	src/vm.rs	1375	const		UNVERIFIED	
+C9_PRESENTATION_GATE_A	src/vm.rs	1376	const		UNVERIFIED	
+C9_PRESENTATION_GATE_B	src/vm.rs	1377	const		UNVERIFIED	
+C4_POST_UPDATE_SENTINEL	src/vm.rs	1378	const		UNVERIFIED	
+VM_PENDING_RESOURCE_PROFILE	src/vm.rs	1379	const		UNVERIFIED	
+VM_PRESENTATION_PRIMARY_C4_RECORD	src/vm.rs	1380	const		UNVERIFIED	
+VM_PRESENTATION_ACTIVE	src/vm.rs	1381	const		UNVERIFIED	
+VM_PRESENTATION_RELATED_FLAG20	src/vm.rs	1382	const		UNVERIFIED	
+VM_PRESENTATION_DEFER_A	src/vm.rs	1383	const		UNVERIFIED	
+VM_PRESENTATION_LOOP_FLAG	src/vm.rs	1384	const		UNVERIFIED	
+VM_PRESENTATION_PAIR_WRITE_DISABLED	src/vm.rs	1385	const		UNVERIFIED	
+VM_PRESENTATION_START_LOCK	src/vm.rs	1386	const		UNVERIFIED	
+VM_PRESENTATION_TEXT_WAIT	src/vm.rs	1387	const		UNVERIFIED	
+VM_PRESENTATION_HOLD_COMPLETE	src/vm.rs	1388	const		UNVERIFIED	
+VM_PRESENTATION_HOLD_READY	src/vm.rs	1389	const		UNVERIFIED	
+VM_PRESENTATION_WORD_BUFFER	src/vm.rs	1390	const		UNVERIFIED	
+VM_PRESENTATION_STATUS_WORD	src/vm.rs	1391	const		UNVERIFIED	
+VM_PRESENTATION_ACTIVE_RECORD	src/vm.rs	1392	const		UNVERIFIED	
+VM_PRESENTATION_DEFERRED_RECORD_TYPE	src/vm.rs	1393	const		UNVERIFIED	
+VM_PRESENTATION_DEFERRED_RECORD_RELATED	src/vm.rs	1394	const		UNVERIFIED	
+VM_PRESENTATION_DEFERRED_RECORD_AUX	src/vm.rs	1395	const		UNVERIFIED	
+VM_PRESENTATION_SIGNAL_SLOT	src/vm.rs	1396	const		UNVERIFIED	
+VM_PRESENTATION_SCENE_DIRTY	src/vm.rs	1397	const		UNVERIFIED	
+VM_PRESENTATION_INPUT_GATE_A	src/vm.rs	1398	const		UNVERIFIED	
+VM_PRESENTATION_INPUT_GATE_B	src/vm.rs	1399	const		UNVERIFIED	
+VM_PRESENTATION_INPUT_GATE_C	src/vm.rs	1400	const		UNVERIFIED	
+VM_PRESENTATION_INPUT_GATE_D	src/vm.rs	1401	const		UNVERIFIED	
+VM_PRESENTATION_INPUT_GATE_E	src/vm.rs	1402	const		UNVERIFIED	
+VM_PRESENTATION_INPUT_GATE_F	src/vm.rs	1403	const		UNVERIFIED	
+VM_PRESENTATION_HANDOFF_GATE	src/vm.rs	1404	const		UNVERIFIED	
+VM_PRESENTATION_INPUT_GATE_G	src/vm.rs	1405	const		UNVERIFIED	
+VM_PRESENTATION_INPUT_GATE_H	src/vm.rs	1406	const		UNVERIFIED	
+VM_PRESENTATION_INPUT_GATE_I	src/vm.rs	1407	const		UNVERIFIED	
+VM_PRESENTATION_DESCRIPTOR_PENDING	src/vm.rs	1408	const		UNVERIFIED	
+VM_BRANCH_A	src/vm.rs	1409	const		UNVERIFIED	
+VM_BRANCH_B	src/vm.rs	1410	const		UNVERIFIED	
+VM_PC_SAVED	src/vm.rs	1411	const		UNVERIFIED	
+MAIN_PENDING_PROFILE_IDLE_GATES	src/vm.rs	1413	const		UNVERIFIED	
+VM_FIELD_OFFSET_TABLE	src/vm.rs	1429	const	0x6023,0x6D60,0x14180,0x142CF	ORACLE	/// Field-offset lookup table used by helper `0x6023`: /// `gs:[0x6D60 + selector * 16 + bsf(kind)]`. /// Transcribed from `BLOODPRG.EXE` file `0x14180..0x142CF`.
+LineState	src/vm.rs	1455	struct		UNVERIFIED	
+BranchEvent	src/vm.rs	1465	struct		UNVERIFIED	
+ScriptProfileRequestEvent	src/vm.rs	1476	struct		UNVERIFIED	
+PostUpdateTrace	src/vm.rs	1483	struct		UNVERIFIED	
+PostUpdateActorRecordPair	src/vm.rs	1494	struct		UNVERIFIED	
+PresentationHandoffEvent	src/vm.rs	1500	struct		UNVERIFIED	
+ExecutionHalt	src/vm.rs	1507	enum		UNVERIFIED	
+ExecutionTrace	src/vm.rs	1515	struct		UNVERIFIED	
+pending_script_profile	src/vm.rs	1525	fn		ASM	
+ScriptProfileProgram	src/vm.rs	1533	struct		UNVERIFIED	
+ScriptProfileRun	src/vm.rs	1541	struct		UNVERIFIED	
+ScriptProfileExecutionHalt	src/vm.rs	1548	enum		UNVERIFIED	
+ScriptProfileExecution	src/vm.rs	1563	struct		UNVERIFIED	
+ExecutedTrace	src/vm.rs	1568	struct		UNVERIFIED	
+Ship3dC1RuntimeContext	src/vm.rs	1574	struct		UNVERIFIED	
+Ship3dC1PositionRuntime	src/vm.rs	1582	struct		UNVERIFIED	
+VmNamedObjectOffsets	src/vm.rs	1590	struct		ASM	
+set	src/vm.rs	1602	fn		ASM	
+ExecutionContext	src/vm.rs	1658	struct		UNVERIFIED	
+from_object_offsets	src/vm.rs	1672	fn		INFRA	
+with_global_word_0aa6	src/vm.rs	1685	fn		INFRA	
+with_global_pair_0aaa_0aa8	src/vm.rs	1690	fn		INFRA	
+with_special_object_offset	src/vm.rs	1695	fn		INFRA	
+with_vm_named_object	src/vm.rs	1701	fn		INFRA	
+with_descript_entry_name	src/vm.rs	1709	fn		INFRA	
+with_bios_rtc	src/vm.rs	1723	fn		INFRA	
+with_text_line_display_gating	src/vm.rs	1729	fn		INFRA	
+with_text_presentation_record_gating	src/vm.rs	1734	fn		INFRA	
+with_strict_actor_record_branching	src/vm.rs	1739	fn		INFRA	
+with_ship_3d_c1_runtime	src/vm.rs	1744	fn		INFRA	
+with_ship_3d_c1_positions	src/vm.rs	1763	fn		INFRA	
+vm_named_object_offsets	src/vm.rs	1784	fn		INFRA	
+owner_object_offset	src/vm.rs	1788	fn		ASM	
+remap_special_rhs	src/vm.rs	1796	fn		ASM	
+is_special_rhs	src/vm.rs	1804	fn		ASM	
+c2_descript_lookup_succeeds	src/vm.rs	1808	fn		UNVERIFIED	
+BranchOverride	src/vm.rs	1821	struct		UNVERIFIED	
+state_u16	src/vm.rs	1827	fn		INFRA	/// Read a u16 from `state` (the mutable VAR image) at byte address `addr`.
+state_has_u16	src/vm.rs	1836	fn		INFRA	
+state_set_u16	src/vm.rs	1842	fn		INFRA	
+state_u8	src/vm.rs	1850	fn		INFRA	
+state_set_u8	src/vm.rs	1854	fn		INFRA	
+state_or_u8	src/vm.rs	1860	fn		INFRA	
+state_and_u8	src/vm.rs	1865	fn		INFRA	
+state_and_u16	src/vm.rs	1870	fn		INFRA	
+pending_script_profile_dispatch_ready	src/vm.rs	1875	fn		UNVERIFIED	
+state_c_string_equals	src/vm.rs	1884	fn		UNVERIFIED	
+text_line_should_display	src/vm.rs	1896	fn		ASM	
+text_presentation_record_is_active	src/vm.rs	1901	fn		ASM	
+text_runtime_gates_allow	src/vm.rs	1905	fn		ASM	
+TextTokenRuntimeFlags	src/vm.rs	1918	struct		UNVERIFIED	
+flags_b5	src/vm.rs	1923	fn		ASM	
+accept_line	src/vm.rs	1930	fn		ASM	
+mark_text_line_shown	src/vm.rs	1938	fn		ASM	
+SpecialObjectSlots	src/vm.rs	1948	struct		UNVERIFIED	
+remove	src/vm.rs	1953	fn		ASM	
+insert	src/vm.rs	1962	fn		ASM	
+actor_object_offset_from_record	src/vm.rs	1975	fn		ASM	
+record_owner_object_offset	src/vm.rs	1979	fn		ASM	
+apply_assign5_mode0	src/vm.rs	1983	fn		ASM	
+record_owner_is_active	src/vm.rs	2017	fn		ASM	
+actor_record_is_active	src/vm.rs	2026	fn		ASM	
+actor_record_condition	src/vm.rs	2032	fn		ASM	
+write_actor_record	src/vm.rs	2050	fn		ASM	
+PresentationKind1Update	src/vm.rs	2057	enum		UNVERIFIED	
+post_update_kind1_presentation_state	src/vm.rs	2064	fn		ASM	
+post_update_kind2_presentation_handoff_target	src/vm.rs	2117	fn		ASM	
+post_update_deferred_record_write	src/vm.rs	2154	fn		ASM	
+post_update_encounter_counter	src/vm.rs	2228	fn	0x5D8F,0x5DB0,0x5E06,0x5DB4,0x5DE3	ASM	/// The ENCOUNTER COUNTER step of the post-update actor-pair ladder /// (`vm_post_update_c4_pair` `0x5D8F`, block `0x5DB0..0x5E06`), run between the /// processed-marker write and the related-record `
+post_update_actor_record_pair	src/vm.rs	2263	fn		ASM	
+post_update_actor_records_for_active_objects	src/vm.rs	2299	fn		UNVERIFIED	
+post_update_execution_state	src/vm.rs	2310	fn		UNVERIFIED	
+append_post_update_trace	src/vm.rs	2362	fn		UNVERIFIED	
+record_link_condition	src/vm.rs	2381	fn		ASM	
+write_record_link	src/vm.rs	2399	fn		ASM	
+write_record_link_mode0	src/vm.rs	2405	fn		ASM	
+record_state_condition	src/vm.rs	2423	fn		UNVERIFIED	
+c1_record_state_resolved_mode1_condition	src/vm.rs	2457	fn		ASM	
+ship3d_c1_source_records_from_bytes	src/vm.rs	2488	fn		ASM	
+ship3d_record_state_slot	src/vm.rs	2500	fn		ASM	
+write_ship3d_record_state_slot	src/vm.rs	2508	fn		ASM	
+resolve_c1_record_state_ship3d_target	src/vm.rs	2518	fn		UNVERIFIED	
+write_c1_record_state_ship3d	src/vm.rs	2565	fn		UNVERIFIED	
+write_c1_record_state_mode0	src/vm.rs	2622	fn		ASM	
+write_c2_record_state_direct	src/vm.rs	2646	fn		ASM	
+clear_record_words	src/vm.rs	2693	fn		ASM	
+clear_record	src/vm.rs	2699	fn		ASM	
+write_record_entry	src/vm.rs	2716	fn		ASM	
+write_record_entry_mode0	src/vm.rs	2722	fn		ASM	
+record_entry_condition	src/vm.rs	2764	fn		ASM	
+branch_fail	src/vm.rs	2782	fn		INFRA	
+push_mode0_branch_fail	src/vm.rs	2786	fn		UNVERIFIED	
+compare_vm_words	src/vm.rs	2806	fn		UNVERIFIED	
+global_word_condition	src/vm.rs	2820	fn		UNVERIFIED	
+global_pair_condition	src/vm.rs	2830	fn		UNVERIFIED	
+interpret_line_states	src/vm.rs	2850	fn		UNVERIFIED	/// Walk `cod`, executing assignment opcodes against a copy of `var` (the initial /// state image), and return the resolved scene state at every `0xA6` line.
+interpret_line_states_with_context	src/vm.rs	2854	fn		UNVERIFIED	
+execute_trace	src/vm.rs	3045	fn		UNVERIFIED	/// Execute the subset of VM control flow that has been tied to concrete handler /// code. This follows A0/A1 condition blocks and direct A4/A9 jumps, while still /// using the same bounded state mode
+execute_trace_with_context	src/vm.rs	3049	fn		UNVERIFIED	
+execute_trace_with_overrides	src/vm.rs	3060	fn		UNVERIFIED	/// Execute a concrete VM path, optionally forcing selected condition outcomes. /// Overrides are keyed by conditional opcode offset and are applied only after a /// real condition has been decoded at
+execute_trace_with_overrides_and_context	src/vm.rs	3068	fn		UNVERIFIED	
+execute_trace_from_offset	src/vm.rs	3083	fn		UNVERIFIED	/// Execute a concrete VM path starting at an arbitrary COD `start` offset instead /// of the script entry (0). Used to reach dialogue in named functions that the /// main control flow never calls (ev
+execute_trace_state_with_overrides_and_context	src/vm.rs	3094	fn		UNVERIFIED	
+STEP_LIMIT_MULTIPLIER	src/vm.rs	3101	const		UNVERIFIED	
+execute_script_profile_sequence	src/vm.rs	3708	fn		UNVERIFIED	
+SceneEvent	src/vm.rs	3798	enum		UNVERIFIED	
+LineInput	src/vm.rs	3844	struct		UNVERIFIED	
+emit_scene_events	src/vm.rs	3861	fn		UNVERIFIED	/// Turn an ordered sequence of decoded dialogue lines into a presentation event /// stream, emitting background/music/speaker changes only on transition and a /// trailing `Clear`.
+VmEvent	src/vm.rs	3939	enum		UNVERIFIED	
+VmMachine	src/vm.rs	3962	struct	0x1C3F,0x677E,0x200,0x6ADE,0x6CDE,0x6724	ASM?	/// The script VM's machine state, mirroring the game's own arrays byte-for-byte. /// The save file serializes exactly these blocks (save path @0x1C3F: header word /// `0x677E`, `0x200` bytes @`0x6ADE
+default	src/vm.rs	4081	fn		UNVERIFIED	
+new	src/vm.rs	4132	fn		UNVERIFIED	
+halted	src/vm.rs	4136	fn		UNVERIFIED	
+start_actor_presentation	src/vm.rs	4143	fn	0x675E,0x5816	ASM?	/// Driver hook: a console click / event starts an actor's presentation — /// the C4 query blocks for that actor then run (the game's click dispatch /// writes the C4 primary record @DS:0x675E; handle
+promote_queued_presentation	src/vm.rs	4156	fn	0x5C64	ASM?	/// Promote a QUEUED presentation (a typed `{0xC3, related, 1}` record, the /// OP_C3 request) to an ACTIVE one — the engine's scan does this when the /// current presentation ends (the pending-slot p
+dispatch_concept	src/vm.rs	4181	fn		UNVERIFIED	/// ARRIVAL: satisfy the opening block's record-equality guards (the travel /// system's writes). SCRIPT2's first block guards `rec_0F4E == 3488` — the /// current-location variable vs the DEB offset 
+set_location	src/vm.rs	4194	fn		UNVERIFIED	/// The travel system's arrival write: current-location variable = the /// destination's DEB offset (rec_0F4E in SCRIPT2 — guards compare it to /// 3488 start / 3380 fled / 3074 the coded-message zone
+location_var_offset	src/vm.rs	4202	fn	0x0F4E	ASM?	/// The current-location variable's record offset, from the opening block's /// wildcard-family equality guard (SCRIPT2: 0x0F4E).
+satisfy_opening_location_guards	src/vm.rs	4233	fn		UNVERIFIED	
+to_dos_save	src/vm.rs	4278	fn	0x1C3F,0x200,0x6ADE,0x6CDE	ASM?	/// Serialize the machine state as a DOS `blood.sav` (the layout the game's /// save path @0x1C3F writes): u16 current profile, 0x200 bytes of the state /// word array (gs:0x6ADE), 0x60 bytes of the c
+apply_dos_save	src/vm.rs	4295	fn	0x1CBD	ASM?	/// Load a DOS `blood.sav` (the read path @0x1CBD): restores the state array, /// character slots, and line-record table; returns the saved profile word /// (the script to re-select). Returns None if 
+load_deb_objects	src/vm.rs	4319	fn		UNVERIFIED	/// Load the script bytecode into the machine's working copy (the game /// self-modifies accepted lines' active bits in this stream). /// Populate the DEB object-offset table (ascending) for owner res
+owner_object_offset	src/vm.rs	4359	fn	0x6034	ASM?	/// The owning object of a record: the nearest DEB object STRICTLY below `off` /// (the 0x6034 threshold lookup's port model). None when the table is unloaded.
+c4_set_write_decision	src/vm.rs	4389	fn	0x6CC3,0x6D01,0x6034	ASM?	/// The `0xC4` mode-0 (SET) write guard — the `0x6CC3..0x6D01` decision. /// Returns `None` when the object table is unloaded (no `0x6034` threshold /// mapping possible; the caller then preserves the
+c1_query_passes	src/vm.rs	4420	fn	0x6B4C	ASM?	/// The `0xC1` mode-1 (QUERY) decision — `0x6B4C`'s query path. `Some(true)` = /// pass (no branch), `Some(false)` = branch, `None` = object table unloaded /// (caller keeps the legacy no-op). Mirrors
+c1_set_plan	src/vm.rs	4481	fn	0x6B4C	ASM?	/// The `0xC1` mode-0 (SET) decision — the non-ship-3D path of `0x6B4C` / /// tracer `write_c1_record_state_mode0`. `Some(true)` = write `{0xC1, /// operand, 2}`, `Some(false)` = branch, `None` = obje
+build_nav_source_list	src/vm.rs	4517	fn	0x624B,0x6886,0x672c	ASM?	/// Build the ship-3D NAV SOURCE LIST (`ship_3d_navigation_source_list_build` /// `0x624B`, output `DS:0x6886`), a faithful port: walk the `gs:0x672c` /// directory; for each entry take its object off
+walk_selector11_children	src/vm.rs	4520	fn		UNVERIFIED	
+source_list_entry_is_listable	src/vm.rs	4568	fn	0x91C3,0x91CE,0x91D4,0x91DB	ASM	/// The DRAW-TIME filter both source-list consumers apply, ported verbatim /// from `vm_source_list_draw_loop` `0x91C3`: /// /// ```text ///   0x91CE  test word [si],2       the object's kind has bit 
+source_list_display_rows	src/vm.rs	4588	fn	0x91C3,0x299,0x202	ASM	/// The rows a source-list panel actually DRAWS (`0x91C3` `0x299:0x202` per /// survivor, `add dx,0xA` between rows): `build_nav_source_list` filtered by /// [`Self::source_list_entry_is_listable`].
+source_list_text_rows	src/vm.rs	4609	fn	0x83C0,0x83F8,0x83C7,0x6758,0x83E5	ASM	/// The same list as TEXT (`0x83C0..0x83F8`, the `PLANET:`/`SHIP:`/`BLACK /// HOLE:` status block's `LIFE SUPPORT:` roster), which adds a FOURTH /// condition the drawn panel does not have: /// /// ``
+object_inline_name	src/vm.rs	4636	fn	0x8389,0x83EA,0x299,0x202,0x91E1	ASM	/// An object's INLINE NAME: the NUL-terminated string at `record+4`. /// /// Both status-list consumers read it that way — `mov si,bp / add si,4 / /// lodsb` at `0x8389` and `0x83EA`, and `add si,4` 
+location_status_block	src/vm.rs	4669	fn	0x82E8,0x8347,0x8420,0xE18,0x835C,0x6752,0x8365,0x8369,0x12E	ASM	/// The location STATUS BLOCK the nav hover composes (`nav_state_gate` /// `0x82E8`, composer `0x8347..0x8420`), as the lines the real routine writes /// CR-separated into the text buffer at `0xE18`: 
+location_panel_rows	src/vm.rs	4716	fn	0x9137,0x91EC,0x27BF,0x9022	ASM	/// The DESTINATION INFO PANEL's drawn rows (`0x9137..0x91EC`) — the other /// consumer of the same roster, this one a real on-screen panel rather than /// the subtitle-buffer block [`Self::location_s
+build_active_object_list	src/vm.rs	4769	fn	0x604E,0x6A16,0x672C,0x6068,0x6070,0x6073	ORACLE	/// The ACTIVE-OBJECT candidate list (`table_672c_process` `0x604E`, output /// `DS:0x6A16`): walk the 20-byte directory at `gs:0x672C` while `+0x12 == 1` /// and keep every object whose flag word has
+build_nav_chart_list	src/vm.rs	4796	fn	0x721A,0x2AD3,0x27C1,0x7226,0x604E,0x7233,0x7238	ORACLE	/// The NAV CHART's visible-object list (`0x721A`, output `DS:0x2AD3`, count /// returned in `ax` and stored at `[0x27C1]`): the active-object list above, /// filtered to the chart-visible KINDS. /// 
+nav_chart_pick	src/vm.rs	4827	fn	0x92A3,0x9339,0x2AD3,0x27C1	ORACLE	/// The NAV-CHART OBJECT PICKER (`0x92A3..0x9339`) — what the info panel's /// selection commit calls to turn a cursor position into an object. /// /// It walks the chart's visible-object list (`DS:0x
+nav_chart_marker	src/vm.rs	4843	fn	0x92DF,0x92F2	ORACLE	/// The chart marker the picker hit-tests and the chart draws: `+0x18`/`+0x1A`, /// or the SECOND endpoint at `+0x1C`/`+0x1E` when the object is a black hole /// whose `+0x14` differs from `arche+0x22
+nav_chart_hit_box	src/vm.rs	4857	fn	0x92BF,0x92D3,0x92FC	ORACLE	/// The picker's per-kind hit box (`0x92BF`, `0x92D3`, `0x92FC`).
+nav_chart_arche_context	src/vm.rs	4870	fn	0x92DF	ASM	/// The word the black-hole endpoint rule compares against: `es:[arche+0x22]` /// (`0x92DF`). Zero when no DEB is loaded.
+world_click_select	src/vm.rs	4891	fn	0xB20C,0xB27B,0xB2BB,0xFFFF,0xB288	ASM?	/// The WORLD-DESTINATION CLICK commit (`0xB20C..0xB27B`). The ship FSM's /// per-frame hit-test (`ship_3d_target_record_select` `0xB2BB`) returns the /// clicked target record; this is what the FSM t
+special_slot_insert_pub	src/vm.rs	4917	fn	0x6D3E,0x5FF6	ASM?	/// Insert an owner into the 16-slot special list (gs:0x6D3E, insert 0x5FF6). /// Returns false only if the list is full and the owner is not already present. /// Test hooks for the recomp differentia
+special_slot_remove_pub	src/vm.rs	4920	fn		UNVERIFIED	
+ship_slots_pub	src/vm.rs	4923	fn		UNVERIFIED	
+special_slot_insert	src/vm.rs	4931	fn	0x5FF6,0x6D3E,0x5FFE,0x601F,0x600E,0x601C	ORACLE	/// Insert an owner into the special-slot list — `vm_special_slot_insert` /// `0x5FF6`: scan the 16 words at `DS:0x6D3E` for the owner and return CF set /// if already present (`0x5FFE..0x601F`); othe
+special_slot_remove	src/vm.rs	4957	fn	0x5FD8,0x5FDA,0x6D3E,0x5FE0,0x5FED,0x5FEA	ORACLE	/// Remove an owner from the special-slot list — `vm_special_slot_remove` /// `0x5FD8`, exactly: /// /// ```text ///   0x5FDA  bp=0x6D3E  cx=0x10        the 16-word list ///   0x5FE0  cmp ax,[bp] / je
+load_cod	src/vm.rs	4967	fn		UNVERIFIED	
+load_var	src/vm.rs	4975	fn	0x6724	ASM?	/// Initialize the line-record/object table from the script's VAR file — the /// game loads VAR as the table's initial contents (le16 words at gs:0x6724).
+rand	src/vm.rs	4985	fn		UNVERIFIED	
+u8_at	src/vm.rs	5022	fn		UNVERIFIED	
+lodsb	src/vm.rs	5026	fn		UNVERIFIED	
+lodsw	src/vm.rs	5032	fn		UNVERIFIED	
+tick_state_countdowns	src/vm.rs	5045	fn	0x8AA,0x675A,0xB27,0xFFFF	ASM?	/// One divided-timer beat of the state-array countdown — the engine's law at /// 0x8AA (in the timer chain, gated there on no-active-presentation /// gs:[0x675A]==0, divider gs:[0xB27]): entries stat
+add_record	src/vm.rs	5057	fn	0x126C	ASM?	/// Increment a record variable — the runtime hook for world events that the /// scripts observe (e.g. BIONIUM collection: SCRIPT2's `vbio` record, whose /// C0 guards read record 0x126C — operand rea
+rec_read	src/vm.rs	5062	fn		UNVERIFIED	
+rec_read_pub	src/vm.rs	5067	fn		UNVERIFIED	/// Public record read for the drive layer.
+rec_write_pub	src/vm.rs	5073	fn		UNVERIFIED	/// Public record write for the drive layer (the click stand-in's /// presentation end and test scaffolding).
+rec_write	src/vm.rs	5077	fn		UNVERIFIED	
+rec_read_u8	src/vm.rs	5085	fn		UNVERIFIED	/// Byte-level record access (the record table is a little-endian word array). /// Used by the 0xB7 single-bit flag handler.
+rec_write_u8	src/vm.rs	5094	fn		UNVERIFIED	
+branch	src/vm.rs	5106	fn	0x6462	ASM?	/// `vm_branch` @0x6462: pop the resume position into PC; clear query mode.
+step	src/vm.rs	5114	fn		UNVERIFIED	/// Execute ONE opcode against the loaded stream. Returns false at stream end.
+run	src/vm.rs	5948	fn		UNVERIFIED	/// Run until yield (0xAA/0xAC), halt, or `max_steps`. Returns the events raised.
+run_frame	src/vm.rs	5961	fn	0x55F5	ASM?	/// Run ONE FRAME the way the exec loop does (@0x55F5): restart at the top of /// the script (AA/AC yields end the frame with NO resume; the self-modified /// active bits advance the flow), run until 
+token_len_at	src/vm.rs	5975	fn		DATA?	/// Total token length (including the opcode byte) at `pos`, using the game's own /// per-opcode descriptor table + mode rules — identical to the walker's advance /// (`mode1` there == query mode here
+decompile_script	src/vm.rs	6004	fn		UNVERIFIED	/// Decompile a COD script to a readable listing. `dic` resolves text/concepts, /// `actor_names` (DEB-derived) resolves record offsets to object names.
 VmDrive	src/vm_drive.rs	13	struct		UNVERIFIED	
 new	src/vm_drive.rs	25	fn		UNVERIFIED	
 frame	src/vm_drive.rs	55	fn		ORACLE?	/// One passive frame: VM frame + the idle beat. No promotion — queued /// calls RING until an interaction takes them (the scenario's clicks /// decide, as at the oracle's hub).

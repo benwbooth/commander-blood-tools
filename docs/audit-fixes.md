@@ -2964,3 +2964,34 @@ effectively as a missing one: I decoded `0x22E0` from scratch this session (FIX
 #73's chain) while a verified lift of it sat in the tree. The cheap check I did
 not do was "is this address lifted?" — by ADDRESS, which is stable, rather than by
 what anything calls it.
+
+## FIX #91 — the twin worklist, mechanised
+
+FIX #90's lesson — a lift can hide under a wrong name, so match by ADDRESS — is
+now a tool. `tools/check_liftable_twins.py` collects every `fn func_<hex>` across
+the recomp modules and cross-references them against the audit ledger's origin
+column, reporting which port items cite an address that already has oracle-verified
+ground truth beside it.
+
+Standing: 75 lifted addresses, 26 port items citing one — 12 already
+differentialled, 14 candidates left. Those 14 need no decoding and no captures;
+the ground truth is already in the tree.
+
+Took one of them: `scan_zero_word` against `func_6293`, the length-0 opcode
+advance. `0x6293` scans BYTE by byte for a word equal to AX, skips it, and skips
+one more byte when its low half matches too — the byte-wise step matters, since a
+word-wise scan would miss a terminator at an odd offset. Six streams including
+that odd-offset case; they agree. Row to `ORACLE`.
+
+A FIFTH HARNESS TRAP, and the same shape as the others. The first run diverged on
+a stream ENDING in the terminator: the lift advanced one further than the native.
+Cause — I wrote a zero guard word past the end of the buffer in memory so a
+runaway scan would stop, and the lift dutifully consumed it under the
+"skip one more zero" rule, while the native saw a slice that simply ended. Both
+were behaving correctly on the inputs they were given; the inputs differed.
+Appending the guard to the native's slice aligned them.
+
+That is now five for five: every differential failure this session has been the
+harness, never the port. Worth holding onto as a prior — but not as a certainty,
+since the special-slot divergence (#82) was found by READING the disassembly, not
+by a failing test.

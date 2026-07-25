@@ -575,6 +575,11 @@ pub fn record_end_hold_ticks(record_units: u16, text_speed_step: u16) -> u16 {
 /// Replicates helper `0x6293`: from `start`, scan byte-by-byte until a `0x0000`
 /// word, skip it, then skip one extra byte if it is also zero. Returns the
 /// offset just past the terminator.
+/// Test hook for the recomp differential (`native_zero_word_scan_matches_the_lift`).
+pub fn scan_zero_word_pub(cod: &[u8], start: usize, end: usize) -> usize {
+    scan_zero_word(cod, start, end)
+}
+
 fn scan_zero_word(cod: &[u8], start: usize, end: usize) -> usize {
     let mut p = start;
     while p + 1 < end && !(cod[p] == 0 && cod[p + 1] == 0) {

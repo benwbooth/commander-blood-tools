@@ -116,6 +116,65 @@ mod tests {
         );
     }
 
+    /// The LENGTH-0 OPCODE SCAN against its lift (`func_6293`).
+    ///
+    /// `0x6293` advances SI to the next word equal to AX, byte by byte, then skips
+    /// the terminator and one MORE byte when its low half also matches:
+    ///
+    /// ```text
+    ///   0x6293  cmp ax,[si] / je        found?
+    ///   0x6297  inc si / jmp            no — advance ONE BYTE, not one word
+    ///   0x629A  add si,2                skip the terminator
+    ///   0x629D  cmp al,[si] / jne       and one more byte if it matches too
+    /// ```
+    ///
+    /// `vm::scan_zero_word` is the native twin, specialised to AX=0 — the only
+    /// value the VM calls it with (opcodes `A8 AC CC D3`). The byte-wise advance
+    /// matters: a word-wise scan would miss a terminator at an odd offset.
+    #[test]
+    fn native_zero_word_scan_matches_the_lift() {
+        const GS: u16 = 0x3000;
+        const SS: u16 = 0x4000;
+        const BUF: u32 = 0x1000;
+
+        let streams: [&[u8]; 6] = [
+            &[0x11, 0x22, 0x00, 0x00, 0x33],
+            &[0x00, 0x00, 0x44],
+            &[0x11, 0x00, 0x00, 0x00, 0x55], // the extra-zero skip
+            &[0x11, 0x22, 0x33, 0x00, 0x00, 0x00, 0x00],
+            &[0x01, 0x00, 0x00, 0x02], // terminator at an ODD offset
+            &[0xAA, 0xBB, 0xCC, 0x00, 0x00],
+        ];
+        for bytes in streams {
+            let mut m = Machine::new();
+            m.regs.gs = GS;
+            m.regs.ds = GS;
+            m.regs.es = GS;
+            m.regs.ss = SS;
+            m.regs.set_sp(0x0800);
+            for (i, b) in bytes.iter().enumerate() {
+                m.write8(GS, BUF + i as u32, *b);
+            }
+            // A guard word past the end so a runaway scan terminates — and the
+            // NATIVE side must see the same bytes, or the "skip one more zero"
+            // rule diverges at a stream ending in the terminator (the lift sees
+            // the guard, a truncated slice does not).
+            m.write16(GS, BUF + bytes.len() as u32, 0);
+            let mut with_guard = bytes.to_vec();
+            with_guard.extend_from_slice(&[0, 0]);
+            m.regs.set_ax(0);
+            m.regs.set_si(BUF as u16);
+            super::func_6293(&mut m);
+            let lifted = m.regs.si() as u32 - BUF;
+
+            let native = crate::vm::scan_zero_word_pub(&with_guard, 0, with_guard.len());
+            assert_eq!(
+                lifted as usize, native,
+                "{bytes:?}: lift advanced to {lifted}, native to {native}"
+            );
+        }
+    }
+
     /// The PORT'S TINT-TABLE BUILDER against the same lift.
     ///
     /// `palette::build_console_bank_remap_table` runs `func_242d` directly, but
