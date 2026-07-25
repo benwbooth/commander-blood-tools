@@ -4187,3 +4187,40 @@ ledger item. Duplication that hides inside a function body needs a different
 instrument, and I do not have one.
 
 Settled: 573 -> 574 of 2160.
+
+## #127 — a dead rule defended by its own test, carrying a refutation that never reached it
+
+#126's lesson — a decoded rule can be implemented twice, with the LIVE copy wrong
+— generalises into something detectable. `tools/check_unrouted_rules.py` finds
+`pub fn`s with a binary citation and NO runtime caller, counting callers only
+outside `#[cfg(test)]`, because a rule exercised solely by its own tests is
+verified against itself and connected to nothing.
+
+45 cited functions have no runtime caller. Working the first, `record_op` (cited
+`0x674e`, `0x6946`), found the inverse of #126.
+
+Its doc says the `gs:0x674e` wildcard "makes an operand match anything", and its
+body is `wildcard == Some(op) || op == cur`. The LIVE arm for that handler family
+(`0xAD/0xAF/0xB2/0xB3/0xBA/0xBB/0xBC`) says otherwise, in a comment recording how
+the truth was found:
+
+    an RHS equal to the SPECIAL OBJECT maps to 0xFFFF (the aboard value) before
+    the compare — it is NOT a match-anything wildcard (the old `|| val==0xFFFF`
+    made every aboard-guard pass; the matched-drive lane's first transcript diff
+    caught it)
+
+So the live path was corrected and the dead copy kept the refuted rule — with a
+test asserting it: `record_op((7,9),(123,9),Some(7)) == QueryMatched`, wildcard 7
+matching 123. Anyone wiring the "already tested" function up would have
+reintroduced the bug a transcript diff once caught, and the test would have
+agreed with them.
+
+Removed: the function, the `RecordOpResult` enum, and the test, with a note where
+they were saying why and naming the authority. A correction that reaches one
+implementation and not its twin leaves the twin looking verified.
+
+I damaged the file on the first attempt — the cut spanned `impl QuerySetMode`
+and deleted `enter_query`/`exit_query`/`apply_operator` with it. `cargo build`
+caught it immediately, `git checkout -- src/vm.rs` restored it, and the second
+attempt worked line by line. Worth noting only because the recovery was cheap
+precisely because the work was committed first.
