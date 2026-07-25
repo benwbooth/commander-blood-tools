@@ -82,6 +82,11 @@ def prose(text):
 # transcribed-menu shape CLAUDE.md calls out: conversation menus must come from the
 # 0xA6 line records' 0xFFFF-separated word lists, executed by the VM.
 LABEL = re.compile(r'"([A-Z][A-Z0-9_]{2,})"')
+# SHORT UI STRINGS. The prose test needs 12+ characters and sentence shape, so
+# `"PLANET: "`, `"SHIP: "`, `"BLACK HOLE: "` and `"LIFE SUPPORT:"` -- four headers
+# transcribed out of DS:0x12E..0x14B into vm.rs -- were invisible to it. A short
+# ALL-CAPS string ending in a colon is a label the game draws, not a diagnostic.
+UI_LABEL = re.compile(r'^[A-Z][A-Z ]{2,20}:\s?$')
 VEC_OPEN = re.compile(r"vec!\[")
 
 # Sites known to be open, each tracked in docs/port-validation.md. Listed so the
@@ -162,6 +167,12 @@ def main():
                         or DESCRIPTIVE.search(lit)
                         or TECHNICAL.search(lit)
                     ):
+                        continue
+                    if UI_LABEL.match(lit):
+                        problems.append(
+                            f"{path}:{n}: UI label in source: \"{lit}\" -- the game "
+                            "draws it from its own DS strings"
+                        )
                         continue
                     if prose(lit):
                         problems.append(

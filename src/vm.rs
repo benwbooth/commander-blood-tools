@@ -1332,20 +1332,34 @@ pub const ARCHE_LOCATION_FIELD: u16 = 0x16;
 pub const LOCATION_KIND_SHIP: u16 = 0x10;
 pub const LOCATION_KIND_BLACK_HOLE: u16 = 0x100;
 
-/// The status block's headers, the game's OWN strings from BLOODPRG's UI string
-/// table — not transcriptions. `STATUS_STRING_TABLE` pins each to its image byte
-/// (DS base = file `0xD420`), the same way `OPTION_BOX_LABEL` is pinned.
-pub const STATUS_HEADER_PLANET: &str = "PLANET: ";
-pub const STATUS_HEADER_SHIP: &str = "SHIP: ";
-pub const STATUS_HEADER_BLACK_HOLE: &str = "BLACK HOLE: ";
-pub const STATUS_LIFE_SUPPORT: &str = "LIFE SUPPORT:";
-/// `(DS offset, file offset, string)` for each — `0x12E`/`0x137`/`0x13E` are the
-/// three `mov si,imm` headers and `0x14B` the roster caption at `0x839F`.
-pub const STATUS_STRING_TABLE: [(u16, usize, &str); 4] = [
-    (0x012E, 0x0D54E, STATUS_HEADER_PLANET),
-    (0x0137, 0x0D557, STATUS_HEADER_SHIP),
-    (0x013E, 0x0D55E, STATUS_HEADER_BLACK_HOLE),
-    (0x014B, 0x0D56B, STATUS_LIFE_SUPPORT),
+/// The status panel's four headers, supplied by the caller from the GAME'S OWN
+/// strings (`bloodprg::location_status_headers` reads `DS:0x12E`, `0x137`,
+/// `0x13E`, `0x14B`). They used to be four `&str` literals here — transcribed
+/// text, short enough that the content guard's prose test could not see them.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StatusHeaders {
+    /// `mov si,0x12E` @`0x8369`.
+    pub planet: String,
+    /// `mov si,0x137` @`0x836C`'s branch.
+    pub ship: String,
+    /// `mov si,0x13E` @`0x8376`'s branch.
+    pub black_hole: String,
+    /// `mov si,0x14B` @`0x839F`.
+    pub life_support: String,
+}
+/// `(DS offset, file offset)` for each header — `0x12E`/`0x137`/`0x13E` are the
+/// three `mov si,imm` constants and `0x14B` the roster caption at `0x839F`.
+///
+/// The strings themselves are NOT here. They used to be, pinned to these bytes by
+/// a test — a verified transcription, which is far better than a loose literal and
+/// still a copy: it breaks against a differing build instead of following it. The
+/// port now READS them (`bloodprg::location_status_headers`), and this table
+/// remains as the address evidence.
+pub const STATUS_STRING_TABLE: [(u16, usize); 4] = [
+    (0x012E, 0x0D54E),
+    (0x0137, 0x0D557),
+    (0x013E, 0x0D55E),
+    (0x014B, 0x0D56B),
 ];
 
 /// Layout of the DESTINATION INFO PANEL drawn by `0x9137..0x91EC`. Every value is
@@ -4732,21 +4746,21 @@ impl VmMachine {
     /// `DS:0x65F2+8`, so this is the nav chart's HOVER panel.
     ///
     /// Returns `None` when `arche` is unknown (no DEB loaded).
-    pub fn location_status_block(&self) -> Option<Vec<String>> {
+    pub fn location_status_block(&self, headers: &StatusHeaders) -> Option<Vec<String>> {
         let arche = self.arche_offset?;
         let location = self.rec_read(arche.wrapping_add(ARCHE_LOCATION_FIELD));
         let kind = self.rec_read(location);
         // 0x836C then 0x8376: the black-hole test runs SECOND and overwrites, so
         // it wins when a kind somehow satisfies both.
         let header = if kind & LOCATION_KIND_BLACK_HOLE != 0 {
-            STATUS_HEADER_BLACK_HOLE
+            &headers.black_hole
         } else if kind == LOCATION_KIND_SHIP {
-            STATUS_HEADER_SHIP
+            &headers.ship
         } else {
-            STATUS_HEADER_PLANET
+            &headers.planet
         };
         let mut lines = vec![format!("{header}{}", self.object_inline_name(location))];
-        lines.push(STATUS_LIFE_SUPPORT.to_string());
+        lines.push(headers.life_support.clone());
         let ark = self.ark_offset.unwrap_or(0);
         for entry in self.source_list_text_rows(location, ark) {
             lines.push(self.object_inline_name(entry));
@@ -4779,20 +4793,24 @@ impl VmMachine {
     /// Note the header test order differs from the hover composer's: here `0x10`
     /// is a BIT TEST (`test es:[di],0x10`), not the `cmp ax,0x10` equality at
     /// `0x836C`. Both are ported as written.
-    pub fn location_panel_rows(&self, object: u16) -> Vec<LocationPanelRow> {
+    pub fn location_panel_rows(
+        &self,
+        object: u16,
+        headers: &StatusHeaders,
+    ) -> Vec<LocationPanelRow> {
         let kind = self.rec_read(object);
         let header = if kind & LOCATION_KIND_BLACK_HOLE != 0 {
-            STATUS_HEADER_BLACK_HOLE
+            &headers.black_hole
         } else if kind & LOCATION_KIND_SHIP != 0 {
-            STATUS_HEADER_SHIP
+            &headers.ship
         } else {
-            STATUS_HEADER_PLANET
+            &headers.planet
         };
         let mut rows = vec![LocationPanelRow {
             x: LOCATION_PANEL_X,
             y: LOCATION_PANEL_Y,
             color: LOCATION_PANEL_HEADER_COLOR,
-            text: header.to_string(),
+            text: header.clone(),
         }];
         rows.push(LocationPanelRow {
             // 0x9188: the pen restarts from the header's REPORTED width, which
@@ -4808,7 +4826,7 @@ impl VmMachine {
             x: LOCATION_PANEL_X,
             y: LOCATION_PANEL_Y + LOCATION_PANEL_ROW_PITCH,
             color: LOCATION_PANEL_HEADER_COLOR,
-            text: STATUS_LIFE_SUPPORT.to_string(),
+            text: headers.life_support.clone(),
         });
         for (i, entry) in self.source_list_display_rows(object).into_iter().enumerate() {
             rows.push(LocationPanelRow {
@@ -6441,6 +6459,22 @@ pub fn decompile_script(
 
 #[cfg(test)]
 mod tests {
+
+    /// The status headers READ FROM THE SHIPPED BINARY, so these tests compare
+    /// against the game's strings rather than against literals restated here.
+    fn test_status_headers() -> StatusHeaders {
+        let b = ["re/bin/BLOODPRG.EXE", "../re/bin/BLOODPRG.EXE"]
+            .iter()
+            .find_map(|p| crate::bloodprg::BloodPrg::parse_file(p).ok())
+            .expect("BLOODPRG.EXE for the status headers");
+        let h = b.location_status_headers();
+        StatusHeaders {
+            planet: h[0].clone(),
+            ship: h[1].clone(),
+            black_hole: h[2].clone(),
+            life_support: h[3].clone(),
+        }
+    }
 
     /// The `0x6863` ladder recognises exactly `0xF0..=0xF5`. `0x6891` clears al
     /// BEFORE the ladder, every arm is an explicit `cmp ah,0xFn`, and an
@@ -9134,28 +9168,33 @@ mod tests {
 
     #[test]
     fn the_status_headers_are_the_games_own_strings() {
-        // Same standard as OPTION_BOX_LABEL: each header is pinned to its byte in
-        // the image, and the DS offset must agree with the file offset.
-        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE").or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        // The strings are READ from the image now, so this checks the two things
+        // that remain checkable: the addresses describe the same bytes, and the
+        // read returns what is actually there.
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
         else {
             return;
         };
-        for (ds_off, file_off, text) in STATUS_STRING_TABLE {
+        let headers = test_status_headers();
+        let read = [
+            headers.planet,
+            headers.ship,
+            headers.black_hole,
+            headers.life_support,
+        ];
+        for ((ds_off, file_off), text) in STATUS_STRING_TABLE.iter().zip(read.iter()) {
+            assert_eq!(
+                *file_off - 0xD420,
+                *ds_off as usize,
+                "DS offset and file offset must describe the same byte"
+            );
             let end = file_off
-                + exe[file_off..]
+                + exe[*file_off..]
                     .iter()
                     .position(|&b| b == 0)
                     .expect("NUL-terminated");
-            assert_eq!(
-                std::str::from_utf8(&exe[file_off..end]).unwrap(),
-                text,
-                "the string at file {file_off:#x} must be the ported constant"
-            );
-            assert_eq!(
-                file_off - 0xD420,
-                ds_off as usize,
-                "DS offset and file offset must describe the same byte"
-            );
+            assert_eq!(std::str::from_utf8(&exe[*file_off..end]).unwrap(), text);
         }
     }
 
@@ -9199,7 +9238,7 @@ mod tests {
 
         // Kind 0 -> the default header.
         assert_eq!(
-            m.location_status_block().unwrap(),
+            m.location_status_block(&test_status_headers()).unwrap(),
             vec![
                 "PLANET: Oddland".to_string(),
                 "LIFE SUPPORT:".to_string(),
@@ -9208,19 +9247,25 @@ mod tests {
         );
         // 0x836C: kind 0x10 -> SHIP:, 0x8376: bit 0x100 -> BLACK HOLE:.
         m.rec_write_pub(LOCATION, LOCATION_KIND_SHIP);
-        assert_eq!(m.location_status_block().unwrap()[0], "SHIP: Oddland");
+        assert_eq!(
+            m.location_status_block(&test_status_headers()).unwrap()[0],
+            "SHIP: Oddland"
+        );
         m.rec_write_pub(LOCATION, LOCATION_KIND_BLACK_HOLE);
-        assert_eq!(m.location_status_block().unwrap()[0], "BLACK HOLE: Oddland");
+        assert_eq!(
+            m.location_status_block(&test_status_headers()).unwrap()[0],
+            "BLACK HOLE: Oddland"
+        );
 
         // Not yet encountered -> the roster is empty, header and caption remain.
         m.rec_write_pub(HOST + counter, 0);
         assert_eq!(
-            m.location_status_block().unwrap(),
+            m.location_status_block(&test_status_headers()).unwrap(),
             vec!["BLACK HOLE: Oddland".to_string(), "LIFE SUPPORT:".to_string()]
         );
 
         // With no DEB loaded there is no arche, so no panel at all.
-        assert!(VmMachine::new().location_status_block().is_none());
+        assert!(VmMachine::new().location_status_block(&test_status_headers()).is_none());
     }
 
     #[test]
@@ -9252,8 +9297,8 @@ mod tests {
         m.rec_write_pub(HOST + parent, PLACE);
         m.rec_write_pub(HOST + counter, 1);
 
-        let rows = m.location_panel_rows(PLACE);
-        let header_w = crate::font::game_font_drawn_width(STATUS_HEADER_PLANET) as i32;
+        let rows = m.location_panel_rows(PLACE, &test_status_headers());
+        let header_w = crate::font::game_font_drawn_width(&test_status_headers().planet) as i32;
         assert_eq!(
             rows,
             vec![
@@ -9272,8 +9317,8 @@ mod tests {
         // 0x916D is a BIT test here (the hover composer's 0x836C is an equality),
         // so a kind carrying 0x10 among other bits still reads as SHIP.
         m.rec_write_pub(PLACE, LOCATION_KIND_SHIP | 0x40);
-        assert_eq!(m.location_panel_rows(PLACE)[0].text, "SHIP: ");
-        assert_eq!(m.location_status_block(), None, "no arche -> no hover block");
+        assert_eq!(m.location_panel_rows(PLACE, &test_status_headers())[0].text, "SHIP: ");
+        assert_eq!(m.location_status_block(&test_status_headers()), None, "no arche -> no hover block");
     }
 
     #[test]

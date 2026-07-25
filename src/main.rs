@@ -342,6 +342,31 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     ) {
         engine.load_nav_sprites(&carte, &borxx);
     }
+    // The nav panel's status headers, the game's own strings at DS:0x12E/0x137/
+    // 0x13E/0x14B ("PLANET: ", "SHIP: ", "BLACK HOLE: ", "LIFE SUPPORT:").
+    let status_headers = [
+        format!("{iso}/BLOODPRG.EXE"),
+        format!("{assets}/BLOODPRG.EXE"),
+        "re/bin/BLOODPRG.EXE".to_string(),
+    ]
+    .iter()
+    .find_map(|path| commander_blood_tools::bloodprg::BloodPrg::parse_file(path).ok())
+    .map(|b| {
+        let h = b.location_status_headers();
+        commander_blood_tools::vm::StatusHeaders {
+            planet: h.first().cloned().unwrap_or_default(),
+            ship: h.get(1).cloned().unwrap_or_default(),
+            black_hole: h.get(2).cloned().unwrap_or_default(),
+            life_support: h.get(3).cloned().unwrap_or_default(),
+        }
+    })
+    .unwrap_or(commander_blood_tools::vm::StatusHeaders {
+        planet: String::new(),
+        ship: String::new(),
+        black_hole: String::new(),
+        life_support: String::new(),
+    });
+
     // The TEXT-SPEED submenu's labels, the game's own list at DS:0x259D.
     let text_speed_labels: Vec<String> = [
         format!("{iso}/BLOODPRG.EXE"),
@@ -1688,7 +1713,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     let vm = script_vm.borrow();
                     engine.nav_chart_click(mx as i32, my as i32, here, |object| {
                         vm.as_ref()
-                            .map(|m| m.location_panel_rows(object))
+                            .map(|m| m.location_panel_rows(object, &status_headers))
                             .unwrap_or_default()
                     });
                 }

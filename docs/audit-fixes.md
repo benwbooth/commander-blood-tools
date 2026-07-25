@@ -4542,3 +4542,33 @@ name-matching helper.
 
 Stopping at "here is the blocker" is the right outcome when the alternative is
 inventing the missing piece.
+
+## #139 — four UI strings the content guard could not see
+
+`location_status_block` built its text from four `&str` constants in `vm.rs`:
+`"PLANET: "`, `"SHIP: "`, `"BLACK HOLE: "`, `"LIFE SUPPORT:"`. They are the
+game's headers at `DS:0x12E`, `0x137`, `0x13E`, `0x14B` — the `mov si,imm`
+constants in `0x8369..0x839F`.
+
+`check_content_literals.py` never flagged them. Its string scan needs 12+
+characters and its prose test needs sentence shape, so a short ALL-CAPS label
+slipped under both. The guard now recognises that shape — and it is worth being
+precise about what it caught, because the previous state was better than "a
+hardcoded string":
+
+`STATUS_STRING_TABLE` paired each literal with its DS offset AND its file offset,
+and a test compared the literal to the image bytes and checked the two offsets
+described the same byte. These were VERIFIED TRANSCRIPTIONS. That is a real
+standard, and the guard cannot see it, which is why the flag needed reading rather
+than obeying.
+
+Still changed, for one reason: a pinned copy BREAKS against a differing build
+where a read FOLLOWS it. `bloodprg::location_status_headers` reads the four
+strings, `StatusHeaders` carries them, and `location_status_block` /
+`location_panel_rows` take them as an argument — so the frontend supplies the
+game's own text and `vm.rs` holds no copy. `STATUS_STRING_TABLE` survives as the
+address evidence, minus the strings.
+
+The threading reached further than expected: `location_panel_rows` shares the
+headers, so the example and `main.rs` both needed the real source wired in. That
+is the cost of removing a copy — and the reason a copy is tempting.

@@ -40,6 +40,14 @@ pub const OPTION_MENU_POINTER_LIST_DS: u16 = 0x2567;
 pub const LIST_WIDGET_CANCEL_LABEL_DS: u16 = 0x0174;
 /// `MUSIC_ON`, the toggle face the pointer list omits.
 pub const MUSIC_ON_LABEL_DS: u16 = 0x2578;
+/// `mov si,0x12E` @`0x8369` — "PLANET: ".
+pub const STATUS_HEADER_PLANET_DS: u16 = 0x012E;
+/// `mov si,0x137` @`0x836C`'s branch — "SHIP: ".
+pub const STATUS_HEADER_SHIP_DS: u16 = 0x0137;
+/// `mov si,0x13E` @`0x8376`'s branch — "BLACK HOLE: ".
+pub const STATUS_HEADER_BLACK_HOLE_DS: u16 = 0x013E;
+/// `mov si,0x14B` @`0x839F` — "LIFE SUPPORT:".
+pub const STATUS_LIFE_SUPPORT_DS: u16 = 0x014B;
 /// The TEXT-SPEED submenu's pointer list.
 pub const TEXT_SPEED_POINTER_LIST_DS: u16 = 0x259D;
 /// The text-speed step the IMAGE SHIPS at `DS:0x0ACA` (file `0x0DEEA`) — 2, which
@@ -897,6 +905,22 @@ impl BloodPrg {
     /// `VERY FAST`, `FAST`, `MEDIUM`, `SLOW`, `VERY SLOW`.
     pub fn text_speed_labels(&self) -> Vec<String> {
         self.ds_pointer_list_strings(TEXT_SPEED_POINTER_LIST_DS)
+    }
+
+    /// The nav-chart hover panel's status headers, read from the game's strings:
+    /// `DS:0x12E` `PLANET: `, `0x137` `SHIP: `, `0x13E` `BLACK HOLE: `, `0x14B`
+    /// `LIFE SUPPORT:` — the four `mov si,...` constants in `0x8369..0x839F`.
+    /// Returned in that order.
+    pub fn location_status_headers(&self) -> Vec<String> {
+        [
+            STATUS_HEADER_PLANET_DS,
+            STATUS_HEADER_SHIP_DS,
+            STATUS_HEADER_BLACK_HOLE_DS,
+            STATUS_LIFE_SUPPORT_DS,
+        ]
+        .iter()
+        .filter_map(|&off| self.ds_c_string(off))
+        .collect()
     }
 
     /// The list widget's shared trailing entry (`DS:0x0174`).
@@ -3065,6 +3089,22 @@ mod tests {
     /// preselected row round-trips: setting -> step -> setting. The port used to
     /// CYCLE the step on click instead of opening this list, which could never
     /// show which speed was active.
+    /// The status headers are the GAME'S strings, not four literals in vm.rs. They
+    /// were transcribed there ("PLANET: ", "SHIP: ", ...), short enough that
+    /// check_content_literals.py's prose test could not see them.
+    #[test]
+    fn location_status_headers_come_from_the_ds_strings() {
+        let Some(binary) = fixture() else {
+            eprintln!("skipping: BLOODPRG.EXE not available");
+            return;
+        };
+        assert_eq!(
+            binary.location_status_headers(),
+            vec!["PLANET: ", "SHIP: ", "BLACK HOLE: ", "LIFE SUPPORT:"]
+        );
+        assert_eq!(binary.ds_to_file(STATUS_HEADER_PLANET_DS), 0x0D54E);
+    }
+
     #[test]
     fn text_speed_submenu_rows_map_one_to_one_onto_settings() {
         let Some(binary) = fixture() else {
