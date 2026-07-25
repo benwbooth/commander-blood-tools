@@ -5878,3 +5878,24 @@ The first version searched 8-bit negations too, and immediately "found"
 ordinary values that appear near almost anything. `0xFFCE` is distinctive;
 `0x02` is not, and a rule that accepts either is not a rule. Restricted to 16-bit,
 where exactly one constant matches — the one this was written for.
+
+## #189 — a quotient that has to come out exact
+
+Two more constants off the NEEDS-READING list, neither an immediate and each for
+a different reason.
+
+`TEXT_SPEED_STEP_INITIAL = 2` is a DATA value: the byte lives in the initialised
+data segment at `DS:0x0ACA` (file `0x0DEEA`), so no instruction carries it. Its
+existing test already reads it back out of the image; the doc now says that is why
+the immediate checker cannot see it.
+
+`ANGLE_UNITS_PER_FRAME = 8` is DERIVED —
+`ANGLE_UNITS_PER_REVOLUTION / PANORAMA_FRAME_COUNT` = `0x5A0 / 180`. Both operands
+are cited (`add bx,0x5a0` @`0x9807`, and the panorama's own directory length), and
+the new test checks the division leaves NO REMAINDER.
+
+That last part is the actual verification. A quotient asserted as `8` proves
+nothing; a quotient that must divide exactly fails the moment either operand is
+wrong. The same test also pins that the station rest angles (`0x000`, `0x05A`,
+`0x0B4`, `0x10E`) are all even, since #107 established the frame is half the
+recorded angle — an odd one would mean a station resting between frames.

@@ -52,6 +52,10 @@ pub const STATUS_LIFE_SUPPORT_DS: u16 = 0x014B;
 pub const TEXT_SPEED_POINTER_LIST_DS: u16 = 0x259D;
 /// The text-speed step the IMAGE SHIPS at `DS:0x0ACA` (file `0x0DEEA`) — 2, which
 /// is what `vm::text_speed_step_from_setting` gives for setting 1, `FAST`.
+///
+/// A DATA value, not an immediate: the byte is in the initialised data segment,
+/// so no instruction carries it. `text_speed_labels_and_steps_match_the_binary`
+/// reads it back out of the image and checks it against the setting map.
 pub const TEXT_SPEED_STEP_INITIAL: u16 = 2;
 /// `DS:0x0ACA` — the divisor in the dialogue updater's reveal rate.
 pub const TEXT_SPEED_STEP_DS: u16 = 0x0ACA;

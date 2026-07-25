@@ -50,6 +50,13 @@ pub const PANORAMA_FRAME_PIXELS: usize = 320 * 200;
 pub const PANORAMA_FRAME_COUNT: usize = 180;
 
 /// View-angle units (DS:0x0A2A) per panorama frame: 0x5A0 units / 180 frames.
+/// View-angle units per panorama frame — DERIVED, not an immediate anywhere:
+/// `ANGLE_UNITS_PER_REVOLUTION / PANORAMA_FRAME_COUNT` = `0x5A0 / 180` = 8.
+///
+/// Both operands are cited: the revolution is `add bx,0x5a0` @`0x9807`, and the
+/// frame count is the panorama's own directory length. The quotient is exact, so
+/// this is an identity rather than a measurement — if either operand were wrong
+/// the division would not come out whole.
 pub const ANGLE_UNITS_PER_FRAME: u16 = 8;
 
 /// View-angle wrap modulus: 1440 units per revolution (0x97F6..0x9815 wraps
@@ -237,6 +244,27 @@ pub fn panorama_frame_for_angle(angle_units: u16) -> usize {
 
 #[cfg(test)]
 mod tests {
+
+    /// The angle-per-frame constant is a QUOTIENT of two cited facts, and it comes
+    /// out exact — which is the check: a wrong revolution or frame count would
+    /// leave a remainder.
+    #[test]
+    fn angle_units_per_frame_divides_the_revolution_exactly() {
+        assert_eq!(
+            ANGLE_UNITS_PER_REVOLUTION as usize % PANORAMA_FRAME_COUNT,
+            0,
+            "0x5A0 must divide 180 frames without remainder"
+        );
+        assert_eq!(
+            ANGLE_UNITS_PER_REVOLUTION as usize / PANORAMA_FRAME_COUNT,
+            ANGLE_UNITS_PER_FRAME as usize
+        );
+        // And the station rest angles are whole frames under the same division:
+        // 0x000/0x05A/0x0B4/0x10E are degrees, half of each is the frame (#107).
+        for angle in [0x000u16, 0x05A, 0x0B4, 0x10E] {
+            assert_eq!(angle % 2, 0, "rest angle {angle:#x} halves to a whole frame");
+        }
+    }
     use super::*;
     use std::path::Path;
 

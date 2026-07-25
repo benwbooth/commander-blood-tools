@@ -60,196 +60,196 @@ STATUS_HEADER_SHIP_DS	src/bloodprg.rs	46	const	0x137,0x836C	ASM?	"/// `mov si,0x
 STATUS_HEADER_BLACK_HOLE_DS	src/bloodprg.rs	48	const	0x13E,0x8376	ASM?	"/// `mov si,0x13E` @`0x8376`'s branch — ""BLACK HOLE: ""."
 STATUS_LIFE_SUPPORT_DS	src/bloodprg.rs	50	const	0x14B,0x839F	ASM?	"/// `mov si,0x14B` @`0x839F` — ""LIFE SUPPORT:""."
 TEXT_SPEED_POINTER_LIST_DS	src/bloodprg.rs	52	const	0x0ACA,0x0DEEA,0x1B29,0x1B3D,0x44B3,0x1592,0x4522,0x2F90,0x2	ASM?	/// The TEXT-SPEED submenu's pointer list. /// The text-speed step the IMAGE SHIPS at `DS:0x0ACA` (file `0x0DEEA`) — 2, which /// is what `vm::text_speed_step_from_setting` gives for setting 1, `FAST`
-TEXT_SPEED_STEP_INITIAL	src/bloodprg.rs	55	const	0x0ACA,0x0DEEA	ASM?	/// The text-speed step the IMAGE SHIPS at `DS:0x0ACA` (file `0x0DEEA`) — 2, which /// is what `vm::text_speed_step_from_setting` gives for setting 1, `FAST`.
-TEXT_SPEED_STEP_DS	src/bloodprg.rs	57	const	0x0ACA	ASM?	/// `DS:0x0ACA` — the divisor in the dialogue updater's reveal rate.
-DIALOGUE_FONT_GLYPH_HEIGHT	src/bloodprg.rs	70	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-SND_ENTRY_SEGMENT	src/bloodprg.rs	71	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-SND_ENTRY_OFFSET	src/bloodprg.rs	72	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-SND_BANK_LOAD_SEGMENT	src/bloodprg.rs	73	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-SND_BANK_LOAD_OFFSET	src/bloodprg.rs	74	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_SEGMENT	src/bloodprg.rs	75	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_VGA_DAC_PALETTE_LOAD_OFFSET	src/bloodprg.rs	76	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET	src/bloodprg.rs	77	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_FIXED_8X8_TEXT_OFFSET	src/bloodprg.rs	78	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_FONT_STRING_WIDTH_OFFSET	src/bloodprg.rs	79	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_UI_TEXT_OFFSET	src/bloodprg.rs	80	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_STRING_OFFSET	src/bloodprg.rs	81	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_FRAMEBUFFER_RECT_REMAP_OFFSET	src/bloodprg.rs	82	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_PLANAR_UI_TEXT_OFFSET	src/bloodprg.rs	83	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_PLANAR_DIALOGUE_TEXT_OFFSET	src/bloodprg.rs	84	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_SUBTITLE_REVEAL_OFFSET	src/bloodprg.rs	85	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_SMALL_TEXT_OFFSET	src/bloodprg.rs	86	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_PLANAR_HORIZONTAL_LINE_OFFSET	src/bloodprg.rs	87	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_PLANAR_VERTICAL_LINE_OFFSET	src/bloodprg.rs	88	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_RECT_OUTLINE_OFFSET	src/bloodprg.rs	89	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_DITHER_RECT_FILL_OFFSET	src/bloodprg.rs	90	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_RECT_FILL_OFFSET	src/bloodprg.rs	91	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_SCENE_BAND_FILL_OFFSET	src/bloodprg.rs	92	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_SECONDARY_BAND_FILL_OFFSET	src/bloodprg.rs	93	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_FRAMEBUFFER_COPY_OFFSET	src/bloodprg.rs	94	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_SECONDARY_FRAMEBUFFER_COPY_OFFSET	src/bloodprg.rs	95	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_VGA_PLANAR_TO_LINEAR_COPY_OFFSET	src/bloodprg.rs	96	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_PLANAR_COPY_OFFSET	src/bloodprg.rs	97	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_RESOURCE_FILE_LOAD_OFFSET	src/bloodprg.rs	98	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_SPRITE_SLOT_LOAD_OFFSET	src/bloodprg.rs	99	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_SPRITE_SLOT_STATE_OFFSET	src/bloodprg.rs	100	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_SPRITE_SLOT_RESOURCE_LOAD_OFFSET	src/bloodprg.rs	101	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_SPRITE_SLOT_POSITION_OFFSET	src/bloodprg.rs	102	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_SPRITE_SLOT_RANGE_DIRTY_OFFSET	src/bloodprg.rs	103	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_SPRITE_SLOT_EXTENT_OFFSET	src/bloodprg.rs	104	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_SPRITE_SLOT_COMMIT_RANGE_OFFSET	src/bloodprg.rs	105	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_SPRITE_SLOT_DIRTY_RANGE_RENDER_OFFSET	src/bloodprg.rs	106	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_SPRITE_BLITTER_TABLE_OFFSET	src/bloodprg.rs	107	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_SPRITE_BLITTER_TABLE_FILE_OFFSET	src/bloodprg.rs	108	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_SPRITE_BLITTER_ENTRY_COUNT	src/bloodprg.rs	117	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E	ASM	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_SPRITE_BLITTER_INDEX_MASK_IMMEDIATE	src/bloodprg.rs	119	const	0x44B7	ASM	/// File offset of the `and bx,imm8` operand that bounds the index (`0x44B7`).
-RENDER_SPRITE_BLIT_RAW_TRANSPARENT_OFFSET	src/bloodprg.rs	120	const		UNVERIFIED	
-RENDER_SPRITE_BLIT_RLE_TRANSPARENT_OFFSET	src/bloodprg.rs	121	const		UNVERIFIED	
-RENDER_SPRITE_BLIT_RAW_OPAQUE_OFFSET	src/bloodprg.rs	122	const		UNVERIFIED	
-RENDER_SPRITE_BLIT_RLE_OPAQUE_OFFSET	src/bloodprg.rs	123	const		UNVERIFIED	
-RENDER_SPRITE_BLIT_SCALED_TRANSPARENT_OFFSET	src/bloodprg.rs	124	const		UNVERIFIED	
-RENDER_SPRITE_BLIT_NOOP_5_OFFSET	src/bloodprg.rs	125	const		UNVERIFIED	
-RENDER_SPRITE_BLIT_NOOP_6_OFFSET	src/bloodprg.rs	126	const		UNVERIFIED	
-RENDER_SPRITE_BLIT_NOOP_7_OFFSET	src/bloodprg.rs	127	const		UNVERIFIED	
-RENDER_DIRTY_RECTS_COPY_OFFSET	src/bloodprg.rs	128	const		UNVERIFIED	
-NAV_CODE_SEGMENT	src/bloodprg.rs	129	const		UNVERIFIED	
-NAV_ACTOR_SUBDISPATCH_TABLE_FILE_OFFSET	src/bloodprg.rs	130	const		UNVERIFIED	
-NAV_ACTOR_SUBDISPATCH_ENTRY_COUNT	src/bloodprg.rs	131	const		UNVERIFIED	
-NAV_CHOICE_SUBDISPATCH_TABLE_FILE_OFFSET	src/bloodprg.rs	132	const		UNVERIFIED	
-NAV_CHOICE_SUBDISPATCH_ENTRY_COUNT	src/bloodprg.rs	133	const		UNVERIFIED	
-SHIP_3D_INTERPOLATION_GATE_SEGMENT	src/bloodprg.rs	134	const		UNVERIFIED	
-SHIP_3D_INTERPOLATION_GATE_OFFSET	src/bloodprg.rs	135	const		UNVERIFIED	
-SHIP_3D_TARGET_QUERY_LAYOUT_SEGMENT	src/bloodprg.rs	136	const		UNVERIFIED	
-SHIP_3D_TARGET_QUERY_LAYOUT_OFFSET	src/bloodprg.rs	137	const		UNVERIFIED	
-SHIP_PRESENTATION_SEGMENT	src/bloodprg.rs	138	const		UNVERIFIED	
-SHIP_PRESENTATION_ENTRY_OFFSET	src/bloodprg.rs	139	const		UNVERIFIED	
-SHIP_3D_HUD_INIT_OFFSET	src/bloodprg.rs	140	const		UNVERIFIED	
-SHIP_3D_ALT_FRAMEBUFFER_BAND_COPY_CALL_OFFSET	src/bloodprg.rs	141	const		UNVERIFIED	
-SHIP_3D_TARGET_RECORD_SELECT_OFFSET	src/bloodprg.rs	142	const		UNVERIFIED	
-SHIP_3D_NAVIGATION_UPDATE_OFFSET	src/bloodprg.rs	143	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_SETUP_OFFSET	src/bloodprg.rs	144	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_LOAD_CALL_OFFSET	src/bloodprg.rs	145	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_RESTORE_CALL_OFFSET	src/bloodprg.rs	146	const		UNVERIFIED	
-SHIP_3D_TRANSITION_STATE_OFFSET	src/bloodprg.rs	147	const		UNVERIFIED	
-SHIP_3D_PLANE_BAND_COPY_OFFSET	src/bloodprg.rs	148	const		UNVERIFIED	
-SHIP_3D_DEPTH_SCROLL_STEP_OFFSET	src/bloodprg.rs	149	const		UNVERIFIED	
-SHIP_3D_TARGET_LIST_DS_OFFSET	src/bloodprg.rs	150	const		UNVERIFIED	
-SHIP_3D_CURRENT_TARGET_DS_OFFSET	src/bloodprg.rs	151	const		UNVERIFIED	
-SHIP_3D_SEQUENCE_ACTIVE_DS_OFFSET	src/bloodprg.rs	152	const		UNVERIFIED	
-SHIP_3D_TARGET_SELECT_PHASE_DS_OFFSET	src/bloodprg.rs	153	const		UNVERIFIED	
-SHIP_3D_TARGET_FALLBACK_DS_OFFSET	src/bloodprg.rs	154	const		UNVERIFIED	
-SHIP_3D_HUD_FLAG_DS_OFFSET	src/bloodprg.rs	155	const		UNVERIFIED	
-SHIP_3D_DEPTH_OFFSET_DS_OFFSET	src/bloodprg.rs	156	const		UNVERIFIED	
-SHIP_3D_PLANE_COPY_ENABLE_DS_OFFSET	src/bloodprg.rs	157	const		UNVERIFIED	
-SHIP_3D_OPENING_FLAG_DS_OFFSET	src/bloodprg.rs	158	const		UNVERIFIED	
-SHIP_3D_CLOSING_FLAG_DS_OFFSET	src/bloodprg.rs	159	const		UNVERIFIED	
-SHIP_3D_DEPTH_STEP_DS_OFFSET	src/bloodprg.rs	160	const		UNVERIFIED	
-SHIP_3D_EXIT_PENDING_DS_OFFSET	src/bloodprg.rs	161	const		UNVERIFIED	
-SHIP_3D_TRANSITION_ARMED_DS_OFFSET	src/bloodprg.rs	162	const		UNVERIFIED	
-SHIP_3D_FALLBACK_TARGET_TABLE_DS_OFFSET	src/bloodprg.rs	163	const		UNVERIFIED	
-SHIP_3D_NAVIGATION_TRIGGER_DS_OFFSET	src/bloodprg.rs	164	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_SELECTED_DS_OFFSET	src/bloodprg.rs	165	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_GATE_DS_OFFSET	src/bloodprg.rs	166	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_HOLD_TIMER_DS_OFFSET	src/bloodprg.rs	167	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_PHASE_DS_OFFSET	src/bloodprg.rs	168	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_TARGET_Y_DS_OFFSET	src/bloodprg.rs	169	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_LEFT_GATE_DS_OFFSET	src/bloodprg.rs	170	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_RIGHT_GATE_DS_OFFSET	src/bloodprg.rs	171	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_MENU_GATE_DS_OFFSET	src/bloodprg.rs	172	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_SOUND_GATE_DS_OFFSET	src/bloodprg.rs	173	const		UNVERIFIED	
-SHIP_3D_INTERPOLATION_DURATION_DS_OFFSET	src/bloodprg.rs	174	const		UNVERIFIED	
-SHIP_3D_INTERPOLATION_TICK_DS_OFFSET	src/bloodprg.rs	175	const		UNVERIFIED	
-SHIP_3D_TARGET_EXTRA_LABEL_DS_OFFSET	src/bloodprg.rs	176	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_CENTER_X_DS_OFFSET	src/bloodprg.rs	177	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_DRAW_PTR_DS_OFFSET	src/bloodprg.rs	178	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_PRESERVE_WIDTHS_DS_OFFSET	src/bloodprg.rs	179	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_EXTRA_ENTRY_DS_OFFSET	src/bloodprg.rs	180	const		UNVERIFIED	
-SHIP_3D_TARGET_MOUSE_X_DS_OFFSET	src/bloodprg.rs	181	const		UNVERIFIED	
-SHIP_3D_TARGET_MOUSE_Y_DS_OFFSET	src/bloodprg.rs	182	const		UNVERIFIED	
-SHIP_3D_TARGET_REQUESTED_PRESENTATION_DS_OFFSET	src/bloodprg.rs	183	const		UNVERIFIED	
-SHIP_3D_TARGET_PRESENTATION_STATE_DS_OFFSET	src/bloodprg.rs	184	const		UNVERIFIED	
-SHIP_3D_TARGET_ACTIVATE_FLAG_DS_OFFSET	src/bloodprg.rs	185	const		UNVERIFIED	
-SHIP_3D_TARGET_HOVER_ROW_DS_OFFSET	src/bloodprg.rs	186	const		UNVERIFIED	
-SHIP_3D_TARGET_QUERY_MODE_DS_OFFSET	src/bloodprg.rs	187	const		UNVERIFIED	
-SHIP_3D_TARGET_SELECTION_DS_OFFSET	src/bloodprg.rs	188	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_RECT_DS_OFFSET	src/bloodprg.rs	189	const		UNVERIFIED	
-SHIP_3D_TARGET_WIDTH_TABLE_DS_OFFSET	src/bloodprg.rs	190	const		UNVERIFIED	
-SHIP_3D_PRESENTATION_HOLD_TIMER_DS_OFFSET	src/bloodprg.rs	191	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_TRIGGER_DS_OFFSET	src/bloodprg.rs	192	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_PHASE_DS_OFFSET	src/bloodprg.rs	193	const		UNVERIFIED	
-SHIP_3D_PLANAR_FRAMEBUFFER_PTR_DS_OFFSET	src/bloodprg.rs	194	const		UNVERIFIED	
-SHIP_3D_SCROLL_MODE_DS_OFFSET	src/bloodprg.rs	195	const		UNVERIFIED	
-SHIP_3D_SCROLL_VALUE_DS_OFFSET	src/bloodprg.rs	196	const		UNVERIFIED	
-SND_ENTRY_FAR_CALL	src/bloodprg.rs	198	const		UNVERIFIED	
-SND_BANK_LOAD_FAR_CALL	src/bloodprg.rs	205	const		UNVERIFIED	
-FAR_CALL_OPCODE	src/bloodprg.rs	212	const		UNVERIFIED	
-REGISTER_SOURCE_SCAN_BACK	src/bloodprg.rs	213	const		UNVERIFIED	
-DS_STRING_SCAN_MAX	src/bloodprg.rs	214	const		UNVERIFIED	
-RENDER_FAR_CALL_SEGMENT_BYTES	src/bloodprg.rs	215	const		UNVERIFIED	
-MzHeader	src/bloodprg.rs	219	struct		UNVERIFIED	
-header_size	src/bloodprg.rs	234	fn		UNVERIFIED	
-image_total	src/bloodprg.rs	238	fn		UNVERIFIED	
-load_size	src/bloodprg.rs	246	fn		UNVERIFIED	
-MzSummary	src/bloodprg.rs	252	struct		UNVERIFIED	
-BinarySymbol	src/bloodprg.rs	263	struct		UNVERIFIED	
-OpcodeDescriptor	src/bloodprg.rs	274	struct		UNVERIFIED	
-OpcodeHandler	src/bloodprg.rs	281	struct		UNVERIFIED	
-VmOpcodeSpec	src/bloodprg.rs	288	struct		UNVERIFIED	
-DialogueFontTables	src/bloodprg.rs	303	struct		UNVERIFIED	
-SubdispatchEntry	src/bloodprg.rs	313	struct		UNVERIFIED	
-SpriteBlitterDispatchEntry	src/bloodprg.rs	320	struct		UNVERIFIED	
-ScriptResourceProfileSlot	src/bloodprg.rs	329	struct		UNVERIFIED	
-ScriptResourceProfile	src/bloodprg.rs	336	struct		UNVERIFIED	
-BloodPrgInspection	src/bloodprg.rs	344	struct		UNVERIFIED	
-SndEntryCallSite	src/bloodprg.rs	363	struct		UNVERIFIED	
-SndBankLoadCallSite	src/bloodprg.rs	377	struct		UNVERIFIED	
-RenderCallSite	src/bloodprg.rs	398	struct		UNVERIFIED	
-BloodPrg	src/bloodprg.rs	413	struct		UNVERIFIED	
-parse_file	src/bloodprg.rs	419	fn		UNVERIFIED	
-parse	src/bloodprg.rs	425	fn		UNVERIFIED	
-summary	src/bloodprg.rs	455	fn		UNVERIFIED	
-image_bytes	src/bloodprg.rs	470	fn		INFRA	/// The raw image bytes, so a test can read an INSTRUCTION back and check a /// constant against the immediate the code actually uses.
-segoff_to_file	src/bloodprg.rs	474	fn		UNVERIFIED	
-ds_to_file	src/bloodprg.rs	478	fn		UNVERIFIED	
-fs_to_file	src/bloodprg.rs	482	fn		UNVERIFIED	
-opcode_handlers	src/bloodprg.rs	486	fn		UNVERIFIED	
-opcode_descriptors	src/bloodprg.rs	506	fn		UNVERIFIED	
-vm_opcode_specs	src/bloodprg.rs	523	fn		UNVERIFIED	
-script_resource_profiles	src/bloodprg.rs	560	fn	0x11F4,0x0D3E4,0x53A0,0x000A,0x6712	ASM	/// The five SCRIPT resource profiles at `FS:0x11F4` (file `0x0D3E4`), the /// table `vm_resource_profile_select` (`0x53A0`) indexes: `mov si,0x11F4 / /// mov dx,0x000A / mul dx` picks the row, then `
-dialogue_font_tables	src/bloodprg.rs	594	fn	0x31C8,0x7802,0x14C22,0x78B2,0x14CD2,0x78b2,0x7908,0x14D28	ASM	/// The DIALOGUE FONT's three chained tables, at the offsets `render_string` /// (`0x31C8`) loads them from as immediates: the ASCII->glyph map /// `DS:0x7802` = file `0x14C22` (`mov bx,0x7802`), the 
-nav_actor_subdispatch_handlers	src/bloodprg.rs	632	fn		UNVERIFIED	
-nav_choice_subdispatch_handlers	src/bloodprg.rs	640	fn		UNVERIFIED	
-snd_entry_call_sites	src/bloodprg.rs	648	fn		UNVERIFIED	
-snd_bank_load_call_sites	src/bloodprg.rs	674	fn		UNVERIFIED	
-render_call_sites	src/bloodprg.rs	713	fn		UNVERIFIED	
-sprite_blitter_dispatch_entries	src/bloodprg.rs	747	fn	0x1592,0x4522,0x44BA	ASM	/// The sprite-blitter dispatch table at `CS:0x1592` (file `0x4522`), reached /// by `mov bx,cs:[bx+0x1592]` at `0x44BA` after `shr bx,1 / and bx,0x0E` /// bounds the index to its eight word entries.
-inspect	src/bloodprg.rs	769	fn		UNVERIFIED	
-subdispatch_entries	src/bloodprg.rs	789	fn		UNVERIFIED	
-slice	src/bloodprg.rs	810	fn		UNVERIFIED	
-find_ax_source_before	src/bloodprg.rs	819	fn		UNVERIFIED	
-find_si_source_before	src/bloodprg.rs	851	fn		UNVERIFIED	
-ds_c_string	src/bloodprg.rs	879	fn		UNVERIFIED	
-option_menu_labels	src/bloodprg.rs	906	fn	0x886C,0x8709,0x2567,0x8428,0xFFFF,0x2573,0x2581,0x258B,0x25	DATA	/// The bridge OPTION menu's labels, read from the game's own string table. /// /// Console row 4's handler (`0x886C`, reached through the per-row table at /// file `0x8709`) does `mov si,0x2567` and 
-text_speed_labels	src/bloodprg.rs	912	fn	0x259D	DATA	/// The OPTION menu's TEXT-SPEED submenu labels (`DS:0x259D`): /// `VERY FAST`, `FAST`, `MEDIUM`, `SLOW`, `VERY SLOW`.
-location_status_headers	src/bloodprg.rs	920	fn	0x12E,0x137,0x13E,0x14B,0x8369,0x839F	DATA	/// The nav-chart hover panel's status headers, read from the game's strings: /// `DS:0x12E` `PLANET: `, `0x137` `SHIP: `, `0x13E` `BLACK HOLE: `, `0x14B` /// `LIFE SUPPORT:` — the four `mov si,...` c
-list_widget_cancel_label	src/bloodprg.rs	933	fn	0x0174	DATA	/// The list widget's shared trailing entry (`DS:0x0174`).
-music_on_label	src/bloodprg.rs	939	fn	0x2578	DATA	/// The alternate face of the music toggle (`DS:0x2578`), which the pointer /// list does not name.
-ds_pointer_list_strings	src/bloodprg.rs	944	fn	0xFFFF	ASM?	/// Walk a `0xFFFF`-terminated list of DS string pointers.
-resource_name	src/bloodprg.rs	961	fn		UNVERIFIED	
-file_to_known_segoff	src/bloodprg.rs	974	fn		UNVERIFIED	
-u16_at	src/bloodprg.rs	985	fn		UNVERIFIED	
-OpcodeMetadata	src/bloodprg.rs	993	struct		UNVERIFIED	
-opcode_metadata	src/bloodprg.rs	1000	fn		UNVERIFIED	
-KNOWN_CODE_SEGMENTS	src/bloodprg.rs	1139	const		UNVERIFIED	
-snd_entry_call_note	src/bloodprg.rs	1150	fn		UNVERIFIED	
-snd_bank_load_mode	src/bloodprg.rs	1166	fn		UNVERIFIED	
-snd_bank_load_call_note	src/bloodprg.rs	1175	fn		UNVERIFIED	
-render_target_name	src/bloodprg.rs	1188	fn		UNVERIFIED	
-render_call_site_note	src/bloodprg.rs	1226	fn		UNVERIFIED	
-sprite_blitter_name	src/bloodprg.rs	1403	fn		UNVERIFIED	
-sprite_blitter_note	src/bloodprg.rs	1417	fn		UNVERIFIED	
-KNOWN_SYMBOLS	src/bloodprg.rs	1445	const		UNVERIFIED	
-PRESENTATION_3D_MARKERS	src/bloodprg.rs	2510	const		UNVERIFIED	
+TEXT_SPEED_STEP_INITIAL	src/bloodprg.rs	59	const	0x0ACA,0x0DEEA	DATA	/// The text-speed step the IMAGE SHIPS at `DS:0x0ACA` (file `0x0DEEA`) — 2, which /// is what `vm::text_speed_step_from_setting` gives for setting 1, `FAST`. /// /// A DATA value, not an immediate: t
+TEXT_SPEED_STEP_DS	src/bloodprg.rs	61	const	0x0ACA	ASM?	/// `DS:0x0ACA` — the divisor in the dialogue updater's reveal rate.
+DIALOGUE_FONT_GLYPH_HEIGHT	src/bloodprg.rs	74	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+SND_ENTRY_SEGMENT	src/bloodprg.rs	75	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+SND_ENTRY_OFFSET	src/bloodprg.rs	76	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+SND_BANK_LOAD_SEGMENT	src/bloodprg.rs	77	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+SND_BANK_LOAD_OFFSET	src/bloodprg.rs	78	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_SEGMENT	src/bloodprg.rs	79	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_VGA_DAC_PALETTE_LOAD_OFFSET	src/bloodprg.rs	80	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET	src/bloodprg.rs	81	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_FIXED_8X8_TEXT_OFFSET	src/bloodprg.rs	82	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_FONT_STRING_WIDTH_OFFSET	src/bloodprg.rs	83	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_UI_TEXT_OFFSET	src/bloodprg.rs	84	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_STRING_OFFSET	src/bloodprg.rs	85	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_FRAMEBUFFER_RECT_REMAP_OFFSET	src/bloodprg.rs	86	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_PLANAR_UI_TEXT_OFFSET	src/bloodprg.rs	87	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_PLANAR_DIALOGUE_TEXT_OFFSET	src/bloodprg.rs	88	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_SUBTITLE_REVEAL_OFFSET	src/bloodprg.rs	89	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_SMALL_TEXT_OFFSET	src/bloodprg.rs	90	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_PLANAR_HORIZONTAL_LINE_OFFSET	src/bloodprg.rs	91	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_PLANAR_VERTICAL_LINE_OFFSET	src/bloodprg.rs	92	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_RECT_OUTLINE_OFFSET	src/bloodprg.rs	93	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_DITHER_RECT_FILL_OFFSET	src/bloodprg.rs	94	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_RECT_FILL_OFFSET	src/bloodprg.rs	95	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_SCENE_BAND_FILL_OFFSET	src/bloodprg.rs	96	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_SECONDARY_BAND_FILL_OFFSET	src/bloodprg.rs	97	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_FRAMEBUFFER_COPY_OFFSET	src/bloodprg.rs	98	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_SECONDARY_FRAMEBUFFER_COPY_OFFSET	src/bloodprg.rs	99	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_VGA_PLANAR_TO_LINEAR_COPY_OFFSET	src/bloodprg.rs	100	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_PLANAR_COPY_OFFSET	src/bloodprg.rs	101	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_RESOURCE_FILE_LOAD_OFFSET	src/bloodprg.rs	102	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_SPRITE_SLOT_LOAD_OFFSET	src/bloodprg.rs	103	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_SPRITE_SLOT_STATE_OFFSET	src/bloodprg.rs	104	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_SPRITE_SLOT_RESOURCE_LOAD_OFFSET	src/bloodprg.rs	105	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_SPRITE_SLOT_POSITION_OFFSET	src/bloodprg.rs	106	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_SPRITE_SLOT_RANGE_DIRTY_OFFSET	src/bloodprg.rs	107	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_SPRITE_SLOT_EXTENT_OFFSET	src/bloodprg.rs	108	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_SPRITE_SLOT_COMMIT_RANGE_OFFSET	src/bloodprg.rs	109	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_SPRITE_SLOT_DIRTY_RANGE_RENDER_OFFSET	src/bloodprg.rs	110	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_SPRITE_BLITTER_TABLE_OFFSET	src/bloodprg.rs	111	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_SPRITE_BLITTER_TABLE_FILE_OFFSET	src/bloodprg.rs	112	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E,0x44B7	ASM?	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_SPRITE_BLITTER_ENTRY_COUNT	src/bloodprg.rs	121	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E	ASM	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_SPRITE_BLITTER_INDEX_MASK_IMMEDIATE	src/bloodprg.rs	123	const	0x44B7	ASM	/// File offset of the `and bx,imm8` operand that bounds the index (`0x44B7`).
+RENDER_SPRITE_BLIT_RAW_TRANSPARENT_OFFSET	src/bloodprg.rs	124	const		UNVERIFIED	
+RENDER_SPRITE_BLIT_RLE_TRANSPARENT_OFFSET	src/bloodprg.rs	125	const		UNVERIFIED	
+RENDER_SPRITE_BLIT_RAW_OPAQUE_OFFSET	src/bloodprg.rs	126	const		UNVERIFIED	
+RENDER_SPRITE_BLIT_RLE_OPAQUE_OFFSET	src/bloodprg.rs	127	const		UNVERIFIED	
+RENDER_SPRITE_BLIT_SCALED_TRANSPARENT_OFFSET	src/bloodprg.rs	128	const		UNVERIFIED	
+RENDER_SPRITE_BLIT_NOOP_5_OFFSET	src/bloodprg.rs	129	const		UNVERIFIED	
+RENDER_SPRITE_BLIT_NOOP_6_OFFSET	src/bloodprg.rs	130	const		UNVERIFIED	
+RENDER_SPRITE_BLIT_NOOP_7_OFFSET	src/bloodprg.rs	131	const		UNVERIFIED	
+RENDER_DIRTY_RECTS_COPY_OFFSET	src/bloodprg.rs	132	const		UNVERIFIED	
+NAV_CODE_SEGMENT	src/bloodprg.rs	133	const		UNVERIFIED	
+NAV_ACTOR_SUBDISPATCH_TABLE_FILE_OFFSET	src/bloodprg.rs	134	const		UNVERIFIED	
+NAV_ACTOR_SUBDISPATCH_ENTRY_COUNT	src/bloodprg.rs	135	const		UNVERIFIED	
+NAV_CHOICE_SUBDISPATCH_TABLE_FILE_OFFSET	src/bloodprg.rs	136	const		UNVERIFIED	
+NAV_CHOICE_SUBDISPATCH_ENTRY_COUNT	src/bloodprg.rs	137	const		UNVERIFIED	
+SHIP_3D_INTERPOLATION_GATE_SEGMENT	src/bloodprg.rs	138	const		UNVERIFIED	
+SHIP_3D_INTERPOLATION_GATE_OFFSET	src/bloodprg.rs	139	const		UNVERIFIED	
+SHIP_3D_TARGET_QUERY_LAYOUT_SEGMENT	src/bloodprg.rs	140	const		UNVERIFIED	
+SHIP_3D_TARGET_QUERY_LAYOUT_OFFSET	src/bloodprg.rs	141	const		UNVERIFIED	
+SHIP_PRESENTATION_SEGMENT	src/bloodprg.rs	142	const		UNVERIFIED	
+SHIP_PRESENTATION_ENTRY_OFFSET	src/bloodprg.rs	143	const		UNVERIFIED	
+SHIP_3D_HUD_INIT_OFFSET	src/bloodprg.rs	144	const		UNVERIFIED	
+SHIP_3D_ALT_FRAMEBUFFER_BAND_COPY_CALL_OFFSET	src/bloodprg.rs	145	const		UNVERIFIED	
+SHIP_3D_TARGET_RECORD_SELECT_OFFSET	src/bloodprg.rs	146	const		UNVERIFIED	
+SHIP_3D_NAVIGATION_UPDATE_OFFSET	src/bloodprg.rs	147	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_SETUP_OFFSET	src/bloodprg.rs	148	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_LOAD_CALL_OFFSET	src/bloodprg.rs	149	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_RESTORE_CALL_OFFSET	src/bloodprg.rs	150	const		UNVERIFIED	
+SHIP_3D_TRANSITION_STATE_OFFSET	src/bloodprg.rs	151	const		UNVERIFIED	
+SHIP_3D_PLANE_BAND_COPY_OFFSET	src/bloodprg.rs	152	const		UNVERIFIED	
+SHIP_3D_DEPTH_SCROLL_STEP_OFFSET	src/bloodprg.rs	153	const		UNVERIFIED	
+SHIP_3D_TARGET_LIST_DS_OFFSET	src/bloodprg.rs	154	const		UNVERIFIED	
+SHIP_3D_CURRENT_TARGET_DS_OFFSET	src/bloodprg.rs	155	const		UNVERIFIED	
+SHIP_3D_SEQUENCE_ACTIVE_DS_OFFSET	src/bloodprg.rs	156	const		UNVERIFIED	
+SHIP_3D_TARGET_SELECT_PHASE_DS_OFFSET	src/bloodprg.rs	157	const		UNVERIFIED	
+SHIP_3D_TARGET_FALLBACK_DS_OFFSET	src/bloodprg.rs	158	const		UNVERIFIED	
+SHIP_3D_HUD_FLAG_DS_OFFSET	src/bloodprg.rs	159	const		UNVERIFIED	
+SHIP_3D_DEPTH_OFFSET_DS_OFFSET	src/bloodprg.rs	160	const		UNVERIFIED	
+SHIP_3D_PLANE_COPY_ENABLE_DS_OFFSET	src/bloodprg.rs	161	const		UNVERIFIED	
+SHIP_3D_OPENING_FLAG_DS_OFFSET	src/bloodprg.rs	162	const		UNVERIFIED	
+SHIP_3D_CLOSING_FLAG_DS_OFFSET	src/bloodprg.rs	163	const		UNVERIFIED	
+SHIP_3D_DEPTH_STEP_DS_OFFSET	src/bloodprg.rs	164	const		UNVERIFIED	
+SHIP_3D_EXIT_PENDING_DS_OFFSET	src/bloodprg.rs	165	const		UNVERIFIED	
+SHIP_3D_TRANSITION_ARMED_DS_OFFSET	src/bloodprg.rs	166	const		UNVERIFIED	
+SHIP_3D_FALLBACK_TARGET_TABLE_DS_OFFSET	src/bloodprg.rs	167	const		UNVERIFIED	
+SHIP_3D_NAVIGATION_TRIGGER_DS_OFFSET	src/bloodprg.rs	168	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_SELECTED_DS_OFFSET	src/bloodprg.rs	169	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_GATE_DS_OFFSET	src/bloodprg.rs	170	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_HOLD_TIMER_DS_OFFSET	src/bloodprg.rs	171	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_PHASE_DS_OFFSET	src/bloodprg.rs	172	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_TARGET_Y_DS_OFFSET	src/bloodprg.rs	173	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_LEFT_GATE_DS_OFFSET	src/bloodprg.rs	174	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_RIGHT_GATE_DS_OFFSET	src/bloodprg.rs	175	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_MENU_GATE_DS_OFFSET	src/bloodprg.rs	176	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_SOUND_GATE_DS_OFFSET	src/bloodprg.rs	177	const		UNVERIFIED	
+SHIP_3D_INTERPOLATION_DURATION_DS_OFFSET	src/bloodprg.rs	178	const		UNVERIFIED	
+SHIP_3D_INTERPOLATION_TICK_DS_OFFSET	src/bloodprg.rs	179	const		UNVERIFIED	
+SHIP_3D_TARGET_EXTRA_LABEL_DS_OFFSET	src/bloodprg.rs	180	const		UNVERIFIED	
+SHIP_3D_TARGET_LAYOUT_CENTER_X_DS_OFFSET	src/bloodprg.rs	181	const		UNVERIFIED	
+SHIP_3D_TARGET_LAYOUT_DRAW_PTR_DS_OFFSET	src/bloodprg.rs	182	const		UNVERIFIED	
+SHIP_3D_TARGET_LAYOUT_PRESERVE_WIDTHS_DS_OFFSET	src/bloodprg.rs	183	const		UNVERIFIED	
+SHIP_3D_TARGET_LAYOUT_EXTRA_ENTRY_DS_OFFSET	src/bloodprg.rs	184	const		UNVERIFIED	
+SHIP_3D_TARGET_MOUSE_X_DS_OFFSET	src/bloodprg.rs	185	const		UNVERIFIED	
+SHIP_3D_TARGET_MOUSE_Y_DS_OFFSET	src/bloodprg.rs	186	const		UNVERIFIED	
+SHIP_3D_TARGET_REQUESTED_PRESENTATION_DS_OFFSET	src/bloodprg.rs	187	const		UNVERIFIED	
+SHIP_3D_TARGET_PRESENTATION_STATE_DS_OFFSET	src/bloodprg.rs	188	const		UNVERIFIED	
+SHIP_3D_TARGET_ACTIVATE_FLAG_DS_OFFSET	src/bloodprg.rs	189	const		UNVERIFIED	
+SHIP_3D_TARGET_HOVER_ROW_DS_OFFSET	src/bloodprg.rs	190	const		UNVERIFIED	
+SHIP_3D_TARGET_QUERY_MODE_DS_OFFSET	src/bloodprg.rs	191	const		UNVERIFIED	
+SHIP_3D_TARGET_SELECTION_DS_OFFSET	src/bloodprg.rs	192	const		UNVERIFIED	
+SHIP_3D_TARGET_LAYOUT_RECT_DS_OFFSET	src/bloodprg.rs	193	const		UNVERIFIED	
+SHIP_3D_TARGET_WIDTH_TABLE_DS_OFFSET	src/bloodprg.rs	194	const		UNVERIFIED	
+SHIP_3D_PRESENTATION_HOLD_TIMER_DS_OFFSET	src/bloodprg.rs	195	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_TRIGGER_DS_OFFSET	src/bloodprg.rs	196	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_PHASE_DS_OFFSET	src/bloodprg.rs	197	const		UNVERIFIED	
+SHIP_3D_PLANAR_FRAMEBUFFER_PTR_DS_OFFSET	src/bloodprg.rs	198	const		UNVERIFIED	
+SHIP_3D_SCROLL_MODE_DS_OFFSET	src/bloodprg.rs	199	const		UNVERIFIED	
+SHIP_3D_SCROLL_VALUE_DS_OFFSET	src/bloodprg.rs	200	const		UNVERIFIED	
+SND_ENTRY_FAR_CALL	src/bloodprg.rs	202	const		UNVERIFIED	
+SND_BANK_LOAD_FAR_CALL	src/bloodprg.rs	209	const		UNVERIFIED	
+FAR_CALL_OPCODE	src/bloodprg.rs	216	const		UNVERIFIED	
+REGISTER_SOURCE_SCAN_BACK	src/bloodprg.rs	217	const		UNVERIFIED	
+DS_STRING_SCAN_MAX	src/bloodprg.rs	218	const		UNVERIFIED	
+RENDER_FAR_CALL_SEGMENT_BYTES	src/bloodprg.rs	219	const		UNVERIFIED	
+MzHeader	src/bloodprg.rs	223	struct		UNVERIFIED	
+header_size	src/bloodprg.rs	238	fn		UNVERIFIED	
+image_total	src/bloodprg.rs	242	fn		UNVERIFIED	
+load_size	src/bloodprg.rs	250	fn		UNVERIFIED	
+MzSummary	src/bloodprg.rs	256	struct		UNVERIFIED	
+BinarySymbol	src/bloodprg.rs	267	struct		UNVERIFIED	
+OpcodeDescriptor	src/bloodprg.rs	278	struct		UNVERIFIED	
+OpcodeHandler	src/bloodprg.rs	285	struct		UNVERIFIED	
+VmOpcodeSpec	src/bloodprg.rs	292	struct		UNVERIFIED	
+DialogueFontTables	src/bloodprg.rs	307	struct		UNVERIFIED	
+SubdispatchEntry	src/bloodprg.rs	317	struct		UNVERIFIED	
+SpriteBlitterDispatchEntry	src/bloodprg.rs	324	struct		UNVERIFIED	
+ScriptResourceProfileSlot	src/bloodprg.rs	333	struct		UNVERIFIED	
+ScriptResourceProfile	src/bloodprg.rs	340	struct		UNVERIFIED	
+BloodPrgInspection	src/bloodprg.rs	348	struct		UNVERIFIED	
+SndEntryCallSite	src/bloodprg.rs	367	struct		UNVERIFIED	
+SndBankLoadCallSite	src/bloodprg.rs	381	struct		UNVERIFIED	
+RenderCallSite	src/bloodprg.rs	402	struct		UNVERIFIED	
+BloodPrg	src/bloodprg.rs	417	struct		UNVERIFIED	
+parse_file	src/bloodprg.rs	423	fn		UNVERIFIED	
+parse	src/bloodprg.rs	429	fn		UNVERIFIED	
+summary	src/bloodprg.rs	459	fn		UNVERIFIED	
+image_bytes	src/bloodprg.rs	474	fn		INFRA	/// The raw image bytes, so a test can read an INSTRUCTION back and check a /// constant against the immediate the code actually uses.
+segoff_to_file	src/bloodprg.rs	478	fn		UNVERIFIED	
+ds_to_file	src/bloodprg.rs	482	fn		UNVERIFIED	
+fs_to_file	src/bloodprg.rs	486	fn		UNVERIFIED	
+opcode_handlers	src/bloodprg.rs	490	fn		UNVERIFIED	
+opcode_descriptors	src/bloodprg.rs	510	fn		UNVERIFIED	
+vm_opcode_specs	src/bloodprg.rs	527	fn		UNVERIFIED	
+script_resource_profiles	src/bloodprg.rs	564	fn	0x11F4,0x0D3E4,0x53A0,0x000A,0x6712	ASM	/// The five SCRIPT resource profiles at `FS:0x11F4` (file `0x0D3E4`), the /// table `vm_resource_profile_select` (`0x53A0`) indexes: `mov si,0x11F4 / /// mov dx,0x000A / mul dx` picks the row, then `
+dialogue_font_tables	src/bloodprg.rs	598	fn	0x31C8,0x7802,0x14C22,0x78B2,0x14CD2,0x78b2,0x7908,0x14D28	ASM	/// The DIALOGUE FONT's three chained tables, at the offsets `render_string` /// (`0x31C8`) loads them from as immediates: the ASCII->glyph map /// `DS:0x7802` = file `0x14C22` (`mov bx,0x7802`), the 
+nav_actor_subdispatch_handlers	src/bloodprg.rs	636	fn		UNVERIFIED	
+nav_choice_subdispatch_handlers	src/bloodprg.rs	644	fn		UNVERIFIED	
+snd_entry_call_sites	src/bloodprg.rs	652	fn		UNVERIFIED	
+snd_bank_load_call_sites	src/bloodprg.rs	678	fn		UNVERIFIED	
+render_call_sites	src/bloodprg.rs	717	fn		UNVERIFIED	
+sprite_blitter_dispatch_entries	src/bloodprg.rs	751	fn	0x1592,0x4522,0x44BA	ASM	/// The sprite-blitter dispatch table at `CS:0x1592` (file `0x4522`), reached /// by `mov bx,cs:[bx+0x1592]` at `0x44BA` after `shr bx,1 / and bx,0x0E` /// bounds the index to its eight word entries.
+inspect	src/bloodprg.rs	773	fn		UNVERIFIED	
+subdispatch_entries	src/bloodprg.rs	793	fn		UNVERIFIED	
+slice	src/bloodprg.rs	814	fn		UNVERIFIED	
+find_ax_source_before	src/bloodprg.rs	823	fn		UNVERIFIED	
+find_si_source_before	src/bloodprg.rs	855	fn		UNVERIFIED	
+ds_c_string	src/bloodprg.rs	883	fn		UNVERIFIED	
+option_menu_labels	src/bloodprg.rs	910	fn	0x886C,0x8709,0x2567,0x8428,0xFFFF,0x2573,0x2581,0x258B,0x25	DATA	/// The bridge OPTION menu's labels, read from the game's own string table. /// /// Console row 4's handler (`0x886C`, reached through the per-row table at /// file `0x8709`) does `mov si,0x2567` and 
+text_speed_labels	src/bloodprg.rs	916	fn	0x259D	DATA	/// The OPTION menu's TEXT-SPEED submenu labels (`DS:0x259D`): /// `VERY FAST`, `FAST`, `MEDIUM`, `SLOW`, `VERY SLOW`.
+location_status_headers	src/bloodprg.rs	924	fn	0x12E,0x137,0x13E,0x14B,0x8369,0x839F	DATA	/// The nav-chart hover panel's status headers, read from the game's strings: /// `DS:0x12E` `PLANET: `, `0x137` `SHIP: `, `0x13E` `BLACK HOLE: `, `0x14B` /// `LIFE SUPPORT:` — the four `mov si,...` c
+list_widget_cancel_label	src/bloodprg.rs	937	fn	0x0174	DATA	/// The list widget's shared trailing entry (`DS:0x0174`).
+music_on_label	src/bloodprg.rs	943	fn	0x2578	DATA	/// The alternate face of the music toggle (`DS:0x2578`), which the pointer /// list does not name.
+ds_pointer_list_strings	src/bloodprg.rs	948	fn	0xFFFF	ASM?	/// Walk a `0xFFFF`-terminated list of DS string pointers.
+resource_name	src/bloodprg.rs	965	fn		UNVERIFIED	
+file_to_known_segoff	src/bloodprg.rs	978	fn		UNVERIFIED	
+u16_at	src/bloodprg.rs	989	fn		UNVERIFIED	
+OpcodeMetadata	src/bloodprg.rs	997	struct		UNVERIFIED	
+opcode_metadata	src/bloodprg.rs	1004	fn		UNVERIFIED	
+KNOWN_CODE_SEGMENTS	src/bloodprg.rs	1143	const		UNVERIFIED	
+snd_entry_call_note	src/bloodprg.rs	1154	fn		UNVERIFIED	
+snd_bank_load_mode	src/bloodprg.rs	1170	fn		UNVERIFIED	
+snd_bank_load_call_note	src/bloodprg.rs	1179	fn		UNVERIFIED	
+render_target_name	src/bloodprg.rs	1192	fn		UNVERIFIED	
+render_call_site_note	src/bloodprg.rs	1230	fn		UNVERIFIED	
+sprite_blitter_name	src/bloodprg.rs	1407	fn		UNVERIFIED	
+sprite_blitter_note	src/bloodprg.rs	1421	fn		UNVERIFIED	
+KNOWN_SYMBOLS	src/bloodprg.rs	1449	const		UNVERIFIED	
+PRESENTATION_3D_MARKERS	src/bloodprg.rs	2514	const		UNVERIFIED	
 BloodSave	src/bloodsav.rs	48	struct	0x6780,0xFFFF,0x6ADE,0x6CDE,0x6724,0xABC	ASM?	/// The fixed-layout portion of a `blood.sav` file, plus the trailing runtime /// region (object block + work buffer, whose split depends on the loaded /// profile's live object-table size). /// Curre
 SaveSlot	src/bloodsav.rs	73	struct	0x2734,0x1BAB,0x25ED,0x273B,0x1BBD,0x8573	ASM?	/// One row of the SLOT-NAME DIRECTORY (`blood.sav`): a 32-byte record holding a /// 15-character name padded with spaces, a NUL, then the slot's filename /// (`game<N>.sav`) padded with NULs. Ten of 
 SLOT_RECORD_LEN	src/bloodsav.rs	81	const	0x1BAB,0x2734,0x1BBD,0x273B	ASM?	/// Bytes per directory record, and the record count. /// Parse `blood.sav`, the slot-name directory the save flow renames through /// (`0x1BAB` points `[0x2734]` at a record, `0x1BBD` copies it to `D
@@ -1180,23 +1180,23 @@ remap_rect_indexed_clipped	src/sprite.rs	249	fn	0x33A6,0x33F4,0x33AC,0x33B4,0x52
 blit_sprite_frame_at	src/sprite.rs	317	fn		UNVERIFIED	/// Blit a decoded sprite frame into a `width`-stride indexed framebuffer, centred /// at `(cx, cy)`, skipping transparent index 0. /// Blit a frame using its authored draw offset: the frame's top-lef
 blit_sprite_frame_centered	src/sprite.rs	340	fn		UNVERIFIED	
 PANORAMA_FRAME_PIXELS	src/tbbig.rs	47	const	0x2D50,0xFA00	ASM?	/// Width * height of one panorama frame — the unpacker at `0x2D50` decodes /// exactly this many pixels (`ebp` starts at 0xFA00) regardless of content.
-PANORAMA_FRAME_COUNT	src/tbbig.rs	50	const	0x0A2A,0x5A0,0x97F6,0x9815,0x7AC3	ASM?	/// Full revolution = 180 frames at 2° per frame (matches the ship-3D angle table). /// View-angle units (DS:0x0A2A) per panorama frame: 0x5A0 units / 180 frames. /// View-angle wrap modulus: 1440 uni
-ANGLE_UNITS_PER_FRAME	src/tbbig.rs	53	const	0x0A2A,0x5A0	ASM?	/// View-angle units (DS:0x0A2A) per panorama frame: 0x5A0 units / 180 frames.
-ANGLE_UNITS_PER_REVOLUTION	src/tbbig.rs	57	const	0x97F6,0x9815,0x0A2A	ASM	/// View-angle wrap modulus: 1440 units per revolution (0x97F6..0x9815 wraps /// DS:0x0A2A into this range).
-CONSOLE_REST_FRAME	src/tbbig.rs	62	const	0x7AC3	ORACLE?	/// The panorama frame the live game rests on at the interactive console /// station (observed via `BRIDGEPROBE`; verified pixel-close to the emulator /// capture `accuracy/captures/bridge/console_res
-CONSOLE_BAND_FRAME	src/tbbig.rs	70	const	0x7AC3	ASM?	/// The panorama frame whose BOTTOM 60 ROWS are the intro montage's console band. /// /// Proven by construction: frame 90's rows 140..200, pushed through the /// console-bank remap table (`palette::b
-CONSOLE_BAND_TOP	src/tbbig.rs	72	const		UNVERIFIED	/// The band's screen origin and height (rows 140..200). /// One frame's directory entry, exactly as stored at `index * 8` from the start /// of `TB.BIG`: little-endian `{offset, size}` into the archi
-CONSOLE_BAND_HEIGHT	src/tbbig.rs	73	const		UNVERIFIED	/// One frame's directory entry, exactly as stored at `index * 8` from the start /// of `TB.BIG`: little-endian `{offset, size}` into the archive file.
-PanoramaDirEntry	src/tbbig.rs	78	struct		UNVERIFIED	/// One frame's directory entry, exactly as stored at `index * 8` from the start /// of `TB.BIG`: little-endian `{offset, size}` into the archive file.
-PanoramaFrameHeader	src/tbbig.rs	91	struct	0x8269,0x981B,0x2A1B,0xFFFF	ASM?	/// The 10-byte header at the start of each frame chunk. The first 8 bytes are /// the **eye-orb's clickable rectangle `{x, y, w, h}`** in this frame (field /// order proven by the hit test at `0x8269
-BridgePanorama	src/tbbig.rs	104	struct		UNVERIFIED	/// The parsed `TB.BIG` archive: the raw file plus its decoded directory.
-parse	src/tbbig.rs	115	fn	0x5A0,0x981B	ASM?	/// Parse the archive. The directory is the contiguous run of /// `{offset, size}` pairs from file start; its length is implied by the /// first frame's offset (0x5A0 = 180 entries in the shipped file
-frame_count	src/tbbig.rs	139	fn		UNVERIFIED	
-chunk	src/tbbig.rs	144	fn		UNVERIFIED	/// The raw chunk bytes of one frame (header + RLE stream).
-frame_header	src/tbbig.rs	150	fn		UNVERIFIED	
-unpack_frame_over	src/tbbig.rs	174	fn	0x2D50,0x5B57	ASM?	/// Unpack one frame over `screen` (a 320x200 palette-index buffer), /// mirroring `0x2D50` exactly. `transparent` selects the DS:0x5B57 bit-0 /// variant: when set, colour 0 skips (the underlying pix
-frame_pixels	src/tbbig.rs	224	fn		UNVERIFIED	/// Convenience: decode a frame standalone onto black (opaque variant).
-panorama_frame_for_angle	src/tbbig.rs	233	fn	0x0A2A,0x97E7	ASM?	/// Map a bridge view angle (DS:0x0A2A units, 1440/revolution) to its panorama /// frame index, the inverse of `0x97E7`'s `frame * 8 - 0xA0` relation.
+PANORAMA_FRAME_COUNT	src/tbbig.rs	50	const	0x0A2A,0x5A0,0x5a0,0x9807,0x97F6,0x9815,0x7AC3	ASM?	/// Full revolution = 180 frames at 2° per frame (matches the ship-3D angle table). /// View-angle units (DS:0x0A2A) per panorama frame: 0x5A0 units / 180 frames. /// View-angle units per panorama fra
+ANGLE_UNITS_PER_FRAME	src/tbbig.rs	60	const	0x0A2A,0x5A0,0x5a0,0x9807	DATA	/// View-angle units (DS:0x0A2A) per panorama frame: 0x5A0 units / 180 frames. /// View-angle units per panorama frame — DERIVED, not an immediate anywhere: /// `ANGLE_UNITS_PER_REVOLUTION / PANORAMA_
+ANGLE_UNITS_PER_REVOLUTION	src/tbbig.rs	64	const	0x97F6,0x9815,0x0A2A	ASM	/// View-angle wrap modulus: 1440 units per revolution (0x97F6..0x9815 wraps /// DS:0x0A2A into this range).
+CONSOLE_REST_FRAME	src/tbbig.rs	69	const	0x7AC3	ORACLE?	/// The panorama frame the live game rests on at the interactive console /// station (observed via `BRIDGEPROBE`; verified pixel-close to the emulator /// capture `accuracy/captures/bridge/console_res
+CONSOLE_BAND_FRAME	src/tbbig.rs	77	const	0x7AC3	ASM?	/// The panorama frame whose BOTTOM 60 ROWS are the intro montage's console band. /// /// Proven by construction: frame 90's rows 140..200, pushed through the /// console-bank remap table (`palette::b
+CONSOLE_BAND_TOP	src/tbbig.rs	79	const		UNVERIFIED	/// The band's screen origin and height (rows 140..200). /// One frame's directory entry, exactly as stored at `index * 8` from the start /// of `TB.BIG`: little-endian `{offset, size}` into the archi
+CONSOLE_BAND_HEIGHT	src/tbbig.rs	80	const		UNVERIFIED	/// One frame's directory entry, exactly as stored at `index * 8` from the start /// of `TB.BIG`: little-endian `{offset, size}` into the archive file.
+PanoramaDirEntry	src/tbbig.rs	85	struct		UNVERIFIED	/// One frame's directory entry, exactly as stored at `index * 8` from the start /// of `TB.BIG`: little-endian `{offset, size}` into the archive file.
+PanoramaFrameHeader	src/tbbig.rs	98	struct	0x8269,0x981B,0x2A1B,0xFFFF	ASM?	/// The 10-byte header at the start of each frame chunk. The first 8 bytes are /// the **eye-orb's clickable rectangle `{x, y, w, h}`** in this frame (field /// order proven by the hit test at `0x8269
+BridgePanorama	src/tbbig.rs	111	struct		UNVERIFIED	/// The parsed `TB.BIG` archive: the raw file plus its decoded directory.
+parse	src/tbbig.rs	122	fn	0x5A0,0x981B	ASM?	/// Parse the archive. The directory is the contiguous run of /// `{offset, size}` pairs from file start; its length is implied by the /// first frame's offset (0x5A0 = 180 entries in the shipped file
+frame_count	src/tbbig.rs	146	fn		UNVERIFIED	
+chunk	src/tbbig.rs	151	fn		UNVERIFIED	/// The raw chunk bytes of one frame (header + RLE stream).
+frame_header	src/tbbig.rs	157	fn		UNVERIFIED	
+unpack_frame_over	src/tbbig.rs	181	fn	0x2D50,0x5B57	ASM?	/// Unpack one frame over `screen` (a 320x200 palette-index buffer), /// mirroring `0x2D50` exactly. `transparent` selects the DS:0x5B57 bit-0 /// variant: when set, colour 0 skips (the underlying pix
+frame_pixels	src/tbbig.rs	231	fn		UNVERIFIED	/// Convenience: decode a frame standalone onto black (opaque variant).
+panorama_frame_for_angle	src/tbbig.rs	240	fn	0x0A2A,0x97E7	ASM?	/// Map a bridge view angle (DS:0x0A2A units, 1440/revolution) to its panorama /// frame index, the inverse of `0x97E7`'s `frame * 8 - 0xA0` relation.
 media_stem	src/util.rs	1	fn		UNVERIFIED	
 safe_file_stem	src/util.rs	14	fn		UNVERIFIED	
 OPCODE_DESC	src/vm.rs	47	const	0x14338,0x6F18,0x62B6,0x2F60	DATA	/// Per-opcode descriptor bytes for opcodes `0xA0..=0xD3`, transcribed from /// `BLOODPRG.EXE` file offset 0x14338 (`DS:0x6F18`). `(len_mode0, byte1)` where /// `byte1` is either `len_mode1` or a mode
