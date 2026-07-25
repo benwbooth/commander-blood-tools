@@ -926,3 +926,17 @@ Corroboration from a site I did not touch: `0xB7` (bit-flag) also has `b1 = 0xFD
 its decode ALREADY read `let clear = cod.get(pos+1) == Some(&0xA1)` with no mode gate.
 It was consistent all along — the fix makes the record opcodes match a neighbour that
 was already right, which is a stronger argument than matching the disassembly alone.
+
+### #48 sweep closed — no other site gates the prefix skip
+
+Checked every `Some(&0xA1)` occurrence in `vm.rs` (12 sites). After the fix, none gates
+the PREFIX SKIP on mode.
+
+The `mode1` conditions that remain (`vm.rs` ~2687-2757 and ~3069-3080) are a different
+thing and are correct: they select WHICH OPCODE FORM applies in each mode
+(`if !mode1 && ASSIGN_5.contains(&op)`, etc.), and inside each branch the prefix is
+handled unconditionally (`let clear = cod.get(p) == Some(&0xA1); if clear { p += 1; }`).
+
+That mirrors the handler exactly: mode selects behaviour at `0x6C9C`, while the prefix
+skip at `0x6C8E` happens regardless. Distinguishing the two uses of `mode1` is the whole
+point — one is dispatch, the other was a bug.
