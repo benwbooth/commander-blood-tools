@@ -2643,6 +2643,30 @@ pub fn update_ship_3d_sprite_slot_position(
     effect
 }
 
+/// Update a sprite slot's extent, `sprite_slot_extent_update` @`0x42CD`. The
+/// sibling of [`update_ship_3d_sprite_slot_position`], and a good deal subtler:
+///
+/// ```text
+///   0x42D2  shl ax,5 / mov bx,0x6212 / add bx,ax   slot = 0x6212 + id*32
+///   0x42DD  test al,0x81 / je                      the same ACTIVE mask
+///   0x42E1  lds si,[bp+4]                          the SOURCE dimensions
+///   0x42E4  cmp cx,[si]   / jne 0x42F7             width  vs source
+///   0x42E8  cmp dx,[si+2] / jne 0x42F7             height vs source
+///   0x42ED  btr ax,4                               matches: CLEAR extent-changed
+///   0x42F1  jae 0x430D                             ...and if it was ALREADY
+///   0x42F3  or al,2                                   clear, do nothing
+///   0x42F7  cmp cx,gs:[bx+0xc] / cmp dx,gs:[bx+0xe]  differs: vs the slot extent
+///   0x4303  or al,0x12                             set extent-changed AND dirty
+///   0x4305  mov gs:[bx+0xc],cx / gs:[bx+0xe],dx
+/// ```
+///
+/// `btr` is bit-test-and-RESET: it clears bit 4 and leaves the OLD bit in CF, so
+/// the `jae` right after means "the flag was already clear, nothing to report".
+/// Clearing the flag is itself a change worth marking dirty, which is why the
+/// matching branch can still set bit 1. And `0x12` is the two flags at once —
+/// `EXTENT_CHANGED | DIRTY` — not a third flag.
+///
+/// Cited here because it was settled ASM with no doc (#141's queue).
 pub fn update_ship_3d_sprite_slot_extent(
     descriptor: &mut Ship3dObjectSpriteDescriptor,
     width: u16,

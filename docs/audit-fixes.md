@@ -4881,3 +4881,32 @@ defeat the dirty-rect list the renderer walks at `DS:0x6612`. The screen would
 still be correct; only the reason for the dirty list would be gone.
 
 Cited instructions 158 -> 165; the queue 73 -> 72.
+
+## #151 — `btr` puts the old bit in the carry, and the port knew
+
+`update_ship_3d_sprite_slot_extent` (`0x42CD`), the sibling of #150's position
+update, and the subtlest of the queue so far:
+
+```text
+  0x42E1  lds si,[bp+4]                   the SOURCE dimensions
+  0x42E4  cmp cx,[si] / cmp dx,[si+2]     width/height vs source
+  0x42ED  btr ax,4                        matches: CLEAR extent-changed
+  0x42F1  jae 0x430D                      ...and if it was ALREADY clear, stop
+  0x42F3  or al,2                         otherwise mark dirty
+  0x42F7  cmp cx,gs:[bx+0xc] / gs:[bx+0xe]   differs: vs the slot's own extent
+  0x4303  or al,0x12                      extent-changed AND dirty, together
+```
+
+`btr` is bit-test-and-RESET: it clears bit 4 and leaves the OLD value in CF, so
+the `jae` immediately after reads "the flag was already clear". That single
+instruction encodes a conditional the port spells out as
+`if flags & EXTENT_CHANGED != 0`, and it is the reason CLEARING the flag still
+counts as a change worth dirtying. `0x12` is the two flags at once, not a third
+flag — which is exactly the kind of constant that gets mis-transcribed as
+`EXTENT_CHANGED = 0x12`.
+
+The port had all of it right. Cited instructions 165 -> 176; the queue 72 -> 71.
+
+Ten rows in, not one has been WRONG. What they lacked was any record that their
+odd shapes — a divide before a multiply, a compare before a write, a bit-test
+whose carry is the condition — were transcriptions rather than choices.
