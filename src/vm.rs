@@ -3029,6 +3029,15 @@ fn clear_record_words(state: &mut [u8], record_offset: u16) {
     state_set_u16(state, record_offset.wrapping_add(4), 0);
 }
 
+/// The `0xC9` CLEAR (handler `0x6FB9`): zero the record, and if it held an ACTOR
+/// (`0xC4`), follow the link and clear the related object's corresponding field
+/// too, then reset the presentation gates.
+///
+/// The cascade is the part worth stating: clearing an actor record is not a local
+/// operation. It resolves the related object's KIND, asks `vm_field_offset` for
+/// the matching field, and clears that as well — so a `0xC9` on one record can
+/// empty a slot in a different object. Returns the related offset it followed, or
+/// `None` when the record was not an actor and nothing cascaded.
 fn clear_record(state: &mut [u8], record_offset: u16) -> Option<u16> {
     let old_type = state_u16(state, record_offset);
     let old_related = state_u16(state, record_offset.wrapping_add(2));
@@ -3046,6 +3055,13 @@ fn clear_record(state: &mut [u8], record_offset: u16) -> Option<u16> {
     Some(old_related)
 }
 
+/// The `0xC5..=0xC8` entry write: the OPCODE itself as the type word, the related
+/// value at `+2`, zero at `+4`.
+///
+/// The type word is the opcode, not a fixed constant — which is why these four
+/// share one writer while `0xC1`/`0xC3`/`0xC4` each have their own. What the
+/// related value should BE differs per opcode, and that is
+/// [`record_entry_stored_related_offset`]'s job (`0xC8` stores zero; see #171).
 fn write_record_entry(state: &mut [u8], opcode: u8, record_offset: u16, stored_related: u16) {
     state_set_u16(state, record_offset, opcode as u16);
     state_set_u16(state, record_offset.wrapping_add(2), stored_related);
