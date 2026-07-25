@@ -1337,6 +1337,15 @@ pub const LOCATION_PANEL_ZOOM_STEPS: u8 = 8;
 /// The zoom SOURCE rect seeded at `0x9029`: a 4x4 square at the cursor.
 pub const LOCATION_PANEL_CURSOR_RECT_SIZE: u16 = 4;
 
+/// The chart marker's position field — selector `0x0B`, whose matrix row is
+/// `0x18` for kinds 8 and `0x10` (`FIELD_OFFSETS[0x0B]`). Read as `x` at `+0x18`
+/// and `y` at `+0x1A` by the picker at `0x92BC`.
+pub const NAV_PICK_POSITION_FIELD: u16 = 0x18;
+/// Hit-box sizes, per kind (`0x92BF`, `0x92D3`, `0x92FC`).
+pub const NAV_PICK_BOX_DEFAULT: (i32, i32) = (0x0C, 0x0B);
+pub const NAV_PICK_BOX_BLACK_HOLE: (i32, i32) = (0x13, 0x0C);
+pub const NAV_PICK_BOX_SHIP: (i32, i32) = (0x15, 0x0A);
+
 /// One drawn row of the destination info panel.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LocationPanelRow {
@@ -4732,6 +4741,53 @@ impl VmMachine {
             });
         }
         rows
+    }
+
+    /// The NAV-CHART OBJECT PICKER (`0x92A3..0x9339`) — what the info panel's
+    /// selection commit calls to turn a cursor position into an object.
+    ///
+    /// It walks the chart's visible-object list (`DS:0x2AD3`, `[0x27C1]` entries)
+    /// and hit-tests each marker against a box whose SIZE depends on the object's
+    /// kind, with the marker position read from the object's selector-`0x0B`
+    /// field (`FIELD_OFFSETS[0x0B]` = `0x18` for kinds 8 and `0x10`):
+    ///
+    /// ```text
+    ///   0x92BF  default            w,h = 0x0C, 0x0B
+    ///   0x92CB  kind & 0x100       w,h = 0x13, 0x0C   a BLACK HOLE
+    ///   0x92DF    bx = es:[arche+0x22]
+    ///   0x92E9    cmp bx,es:[obj+0x14] / jne -> di += 4
+    ///                              ...so a black hole has TWO chart positions,
+    ///                              +0x18/+0x1A and +0x1C/+0x1E, and which one it
+    ///                              shows depends on that comparison
+    ///   0x92F4  kind & 0x10        w,h = 0x15, 0x0A   a SHIP
+    ///   0x9308  x0 = pos.x - 2, hit when x0 <= mx <= x0 + w   (jb/ja: INCLUSIVE)
+    ///   0x931A  y0 = pos.y - 2, hit when y0 <= my <= y0 + h
+    /// ```
+    ///
+    /// Returns the FIRST object hit in list order, or `None` (`xor ax,ax` at
+    /// `0x9337`). `arche_context` is `es:[arche+0x22]`, the word the black-hole
+    /// branch compares against.
+    pub fn nav_chart_pick(&self, list: &[u16], mouse: (i32, i32), arche_context: u16) -> Option<u16> {
+        for &object in list {
+            let kind = self.rec_read(object);
+            let mut position = object.wrapping_add(NAV_PICK_POSITION_FIELD);
+            let (w, h) = if kind & LOCATION_KIND_BLACK_HOLE != 0 {
+                if self.rec_read(object.wrapping_add(0x14)) != arche_context {
+                    position = position.wrapping_add(4); // the second endpoint
+                }
+                NAV_PICK_BOX_BLACK_HOLE
+            } else if kind & LOCATION_KIND_SHIP != 0 {
+                NAV_PICK_BOX_SHIP
+            } else {
+                NAV_PICK_BOX_DEFAULT
+            };
+            let x0 = self.rec_read(position) as i32 - 2;
+            let y0 = self.rec_read(position.wrapping_add(2)) as i32 - 2;
+            if mouse.0 >= x0 && mouse.0 <= x0 + w && mouse.1 >= y0 && mouse.1 <= y0 + h {
+                return Some(object);
+            }
+        }
+        None
     }
 
     /// The WORLD-DESTINATION CLICK commit (`0xB20C..0xB27B`). The ship FSM's
@@ -8962,6 +9018,58 @@ mod tests {
         m.rec_write_pub(PLACE, LOCATION_KIND_SHIP | 0x40);
         assert_eq!(m.location_panel_rows(PLACE)[0].text, "SHIP: ");
         assert_eq!(m.location_status_block(), None, "no arche -> no hover block");
+    }
+
+    #[test]
+    fn the_nav_picker_sizes_its_hit_box_by_kind_and_takes_the_first_hit() {
+        const PLANET: u16 = 0x0100;
+        const SHIP: u16 = 0x0200;
+        const HOLE: u16 = 0x0300;
+        let mut m = VmMachine::new();
+        for (obj, kind, x, y) in [
+            (PLANET, 0u16, 50u16, 60u16),
+            (SHIP, LOCATION_KIND_SHIP, 100, 60),
+            (HOLE, LOCATION_KIND_BLACK_HOLE, 150, 60),
+        ] {
+            m.rec_write_pub(obj, kind);
+            m.rec_write_pub(obj + NAV_PICK_POSITION_FIELD, x);
+            m.rec_write_pub(obj + NAV_PICK_POSITION_FIELD + 2, y);
+        }
+        // The black hole's SECOND endpoint, used when obj+0x14 != arche+0x22.
+        m.rec_write_pub(HOLE + 0x14, 7);
+        m.rec_write_pub(HOLE + NAV_PICK_POSITION_FIELD + 4, 250);
+        m.rec_write_pub(HOLE + NAV_PICK_POSITION_FIELD + 6, 90);
+        let list = [PLANET, SHIP, HOLE];
+
+        // 0x9308/0x931A: the box starts 2 px up-left of the marker and BOTH
+        // bounds are inclusive (jb/ja skip only strictly outside).
+        assert_eq!(m.nav_chart_pick(&list, (48, 58), 7), Some(PLANET));
+        assert_eq!(
+            m.nav_chart_pick(&list, (48 + NAV_PICK_BOX_DEFAULT.0, 58), 7),
+            Some(PLANET),
+            "the far edge is inside"
+        );
+        assert_eq!(
+            m.nav_chart_pick(&list, (48 + NAV_PICK_BOX_DEFAULT.0 + 1, 58), 7),
+            None
+        );
+        // A ship's box is wider and shorter than a planet's.
+        assert_eq!(
+            m.nav_chart_pick(&list, (98 + NAV_PICK_BOX_SHIP.0, 58), 7),
+            Some(SHIP)
+        );
+        assert_eq!(
+            m.nav_chart_pick(&list, (98, 58 + NAV_PICK_BOX_SHIP.1 + 1), 7),
+            None
+        );
+        // Black hole: with the context word MATCHING it sits at +0x18...
+        assert_eq!(m.nav_chart_pick(&list, (148, 58), 7), Some(HOLE));
+        // ...and with it differing, at the +0x1C endpoint instead.
+        assert_eq!(m.nav_chart_pick(&list, (148, 58), 9), None);
+        assert_eq!(m.nav_chart_pick(&list, (248, 88), 9), Some(HOLE));
+        // Nothing under the cursor -> 0x9337's `xor ax,ax`.
+        assert_eq!(m.nav_chart_pick(&list, (5, 5), 7), None);
+        assert_eq!(m.nav_chart_pick(&[], (48, 58), 7), None);
     }
 
     #[test]
