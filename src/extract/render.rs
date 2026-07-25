@@ -114,37 +114,11 @@ pub(super) fn copy_dirty_rects_secondary_to_primary_indexed(
     copied
 }
 
-pub(super) fn remap_rect_indexed_clipped(
-    fb: &mut [u8],
-    table: &[u8; 256],
-    x: isize,
-    y: isize,
-    width: isize,
-    height: isize,
-    clip: (usize, usize, usize, usize),
-) {
-    if width <= 0 || height <= 0 || fb.len() < VIEWPORT_W * VIEWPORT_H {
-        return;
-    }
-
-    let (clip_left, clip_right, clip_top, clip_bottom) = clip;
-    let x0 = x.max(clip_left as isize).max(0) as usize;
-    let y0 = y.max(clip_top as isize).max(0) as usize;
-    let x1 = (x + width)
-        .min(clip_right as isize)
-        .min(VIEWPORT_W as isize)
-        .max(x0 as isize) as usize;
-    let y1 = (y + height)
-        .min(clip_bottom as isize)
-        .min(VIEWPORT_H as isize)
-        .max(y0 as isize) as usize;
-
-    for row in y0..y1 {
-        for px in &mut fb[row * VIEWPORT_W + x0..row * VIEWPORT_W + x1] {
-            *px = table[*px as usize];
-        }
-    }
-}
+// The remap primitive lives in `sprite::remap_rect_indexed_clipped`. A second
+// copy here clipped the VERTICAL extent against `clip_bottom` -- the sensible
+// reading, and not what `0x33E6` does (it compares against `DS:0x5237`, the
+// RIGHT bound). It was dead, so the divergence never fired; it is deleted
+// rather than corrected so there is one implementation to keep honest.
 
 pub(super) fn copy_vga_planar_to_linear_indexed(dst: &mut [u8], planes: &[u8]) {
     let len = VIEWPORT_W * VIEWPORT_H;
@@ -1541,21 +1515,36 @@ mod tests {
         fb[(SCENE_TOP + 1) * VIEWPORT_W + 319] = 13;
         fb[(SCENE_TOP + 2) * VIEWPORT_W + 318] = 14;
 
-        remap_rect_indexed_clipped(
+        // This test used to run against a local copy of the primitive and assert
+        // that `clip_bottom` ended the rect. It does not: `0x33E6` clips the
+        // vertical extent against `DS:0x5237`, the RIGHT bound. The copy is gone
+        // and the expectation is corrected -- row SCENE_TOP+2 IS remapped.
+        commander_blood_tools::sprite::remap_rect_indexed_clipped(
             &mut fb,
+            VIEWPORT_W,
+            VIEWPORT_H,
             &table,
             318,
-            SCENE_TOP as isize,
+            SCENE_TOP as i32,
             8,
             8,
-            (0, VIEWPORT_W, SCENE_TOP, SCENE_TOP + 2),
+            commander_blood_tools::sprite::ClipWindow {
+                left: 0,
+                right: VIEWPORT_W as i32,
+                top: SCENE_TOP as i32,
+                bottom: (SCENE_TOP + 2) as i32,
+            },
         );
 
+        // The pixel already on screen indexes the table (read es:[di]; xlatb; stosb).
         assert_eq!(fb[SCENE_TOP * VIEWPORT_W + 318], 245);
         assert_eq!(fb[SCENE_TOP * VIEWPORT_W + 319], 244);
         assert_eq!(fb[(SCENE_TOP + 1) * VIEWPORT_W + 318], 243);
         assert_eq!(fb[(SCENE_TOP + 1) * VIEWPORT_W + 319], 242);
-        assert_eq!(fb[(SCENE_TOP + 2) * VIEWPORT_W + 318], 14);
+        // Past `bottom`, and remapped anyway -- the quirk, not an oversight.
+        assert_eq!(fb[(SCENE_TOP + 2) * VIEWPORT_W + 318], 241);
+        // Horizontal clipping is ordinary: the rect is cut at the right bound.
+        assert_eq!(fb[SCENE_TOP * VIEWPORT_W + 317], 0);
     }
 
     #[test]

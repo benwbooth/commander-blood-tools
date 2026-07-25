@@ -157,8 +157,10 @@ fn decode_rle_frame(frame: &[u8], height: usize) -> Option<Vec<u8>> {
 ///
 /// It is not a sprite blit: nothing is copied in. Each pixel of the rect is
 /// replaced by `table[pixel]`, which is how the game draws translucent windows —
-/// see [`crate::palette::build_palette_blend_remap_table`] for the table. Writes
-/// are clipped to the framebuffer, matching `0x33B2..0x33F4`.
+/// see [`crate::palette::build_palette_blend_remap_table`] for the table.
+///
+/// Clipping is against the CLIP-WINDOW globals, not the framebuffer — see
+/// [`remap_rect_indexed_clipped`], which carries the ladder and its quirk.
 pub fn remap_rect_indexed(
     fb: &mut [u8],
     fb_width: usize,
@@ -169,17 +171,138 @@ pub fn remap_rect_indexed(
     width: i32,
     height: i32,
 ) {
+    // The UI paths that tint boxes run with the clip window open to the whole
+    // screen (`DS:0x5235..0x523B` = 0,320,0,200). Passing that explicitly keeps
+    // the window a stated input rather than an assumption baked into the loop.
+    remap_rect_indexed_clipped(
+        fb,
+        fb_width,
+        fb_height,
+        table,
+        x,
+        y,
+        width,
+        height,
+        ClipWindow::full_screen(fb_width, fb_height),
+    );
+}
+
+/// The clip window the blit family reads from `DS:0x5235..0x523B`
+/// (`re/labels.csv`: `render_yclip_lo`/`render_yclip_hi`; the point plot at
+/// `0x9B04` shows the clean four-bound form).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct ClipWindow {
+    /// `DS:0x5235`
+    pub left: i32,
+    /// `DS:0x5237`
+    pub right: i32,
+    /// `DS:0x5239`
+    pub top: i32,
+    /// `DS:0x523B` — read by `0x9B04` and the string row draw at `0x3437`, but
+    /// NOT by the remap ladder; see [`remap_rect_indexed_clipped`].
+    pub bottom: i32,
+}
+
+impl ClipWindow {
+    pub fn full_screen(fb_width: usize, fb_height: usize) -> Self {
+        Self {
+            left: 0,
+            right: fb_width as i32,
+            top: 0,
+            bottom: fb_height as i32,
+        }
+    }
+}
+
+/// The remap primitive's clip ladder, `0x33A6..0x33F4`, transcribed:
+///
+/// ```text
+///   0x33A6  or dx,dx / je,js         width  <= 0 -> return
+///   0x33AC  or bp,bp / je,js         height <= 0 -> return
+///   0x33B4  ax = x - [0x5235]        vs clip LEFT
+///   0x33B8  jns                      in range: skip the adjust
+///   0x33BA  add dx,ax                off the left: shrink width by the overshoot,
+///   0x33C0  mov bx,[0x5235]          then pull x to the left bound
+///   0x33C6  ax = x + width - [0x5237]  vs clip RIGHT, shrink width
+///   0x33D6  ax = y - [0x5239]        vs clip TOP, shrink height, pull y down
+///   0x33E8  ax = y + height - [0x5237]  <-- the RIGHT bound again
+/// ```
+///
+/// That last line is not a transcription slip. The vertical extent is clipped
+/// against `DS:0x5237`, the HORIZONTAL right bound, where every other clip ladder
+/// in the binary uses `DS:0x523B` for the bottom (`0x9B04` compares y against
+/// `0x5239`/`0x523B`; the string row draw at `0x3437` guards with
+/// `cmp dx,gs:[0x523B]`). It is a bug in the original, and it survived because
+/// `right` (320) exceeds `bottom` (200) on a full-screen window, so the vertical
+/// clamp never fires for a rect that fits on screen — which is every rect the game
+/// actually asks it to tint.
+///
+/// Reproducing it matters anyway: under a LETTERBOX window the game still honours
+/// the top bound (`0x33E2` pulls y down to `[0x5239]`) while leaving the bottom
+/// effectively open, so a tall rect tints past the letterbox floor. A port that
+/// "fixed" this by clamping to `bottom` would draw a shorter box than the game.
+///
+/// The one deliberate divergence is memory safety: the game computes `y*320+x`
+/// and writes without bounding against the buffer end, so the quirk lets it run
+/// past the visible page. Writes here stop at the framebuffer.
+#[allow(clippy::too_many_arguments)]
+pub fn remap_rect_indexed_clipped(
+    fb: &mut [u8],
+    fb_width: usize,
+    fb_height: usize,
+    table: &[u8; 256],
+    x: i32,
+    y: i32,
+    width: i32,
+    height: i32,
+    clip: ClipWindow,
+) {
+    let (mut x, mut y, mut width, mut height) = (x, y, width, height);
     if width <= 0 || height <= 0 {
         return; // 0x33A6..0x33B0: zero/negative extent is rejected outright
     }
+
+    let over = x - clip.left; // 0x33B4
+    if over < 0 {
+        width += over; // 0x33BA add dx,ax
+        if width <= 0 {
+            return; // 0x33BC js / 0x33BE je -> 0x341F
+        }
+        x = clip.left; // 0x33C0
+    }
+    let over = x + width - clip.right; // 0x33C4..0x33C8
+    if over >= 0 {
+        width -= over; // 0x33CE sub dx,ax
+        if width <= 0 {
+            return; // 0x33D0 js / 0x33D2 je
+        }
+    }
+    let over = y - clip.top; // 0x33D4..0x33D6
+    if over < 0 {
+        height += over; // 0x33DC add bp,ax
+        if height <= 0 {
+            return; // 0x33DE js / 0x33E0 je
+        }
+        y = clip.top; // 0x33E2 mov cx,[0x5239]
+    }
+    // 0x33E6..0x33EA — `sub ax,[0x5237]`, the RIGHT bound. See the note above.
+    let over = y + height - clip.right;
+    if over >= 0 {
+        height -= over; // 0x33F0 sub bp,ax
+        if height <= 0 {
+            return; // 0x33F2 js / 0x33F4 je
+        }
+    }
+
+    // 0x33FA..0x3405: di = y*256 + y*64 + x. Bounded here, unbounded in the game.
     let x0 = x.max(0) as usize;
+    let x1 = ((x + width).max(0) as usize).min(fb_width);
     let y0 = y.max(0) as usize;
-    let x1 = (x + width).clamp(0, fb_width as i32) as usize;
-    let y1 = (y + height).clamp(0, fb_height as i32) as usize;
+    let y1 = ((y + height).max(0) as usize).min(fb_height);
     for row in y0..y1 {
         let base = row * fb_width;
         for px in fb[base + x0.min(x1)..base + x1].iter_mut() {
-            *px = table[*px as usize];
+            *px = table[*px as usize]; // 0x3413 lodsb-free: read es:[di], xlatb, stosb
         }
     }
 }
@@ -382,5 +505,51 @@ mod tests {
         assert_eq!(fb[0 * 4 + 1], 5); // (1,0)
         assert_eq!(fb[1 * 4 + 0], 5); // (0,1)
         assert_eq!(fb[0], 0); // transparent skipped
+    }
+
+    /// The remap ladder clips its VERTICAL extent against `DS:0x5237`, the
+    /// horizontal right bound (`0x33E6..0x33EA`), where every other clip ladder in
+    /// the binary uses `DS:0x523B`. Under a letterbox window the game therefore
+    /// honours the TOP bound and leaves the bottom effectively open. This encodes
+    /// that asymmetry: a "fixed" implementation clamping to `bottom` would stop at
+    /// row 120 and fail the second assertion.
+    #[test]
+    fn remap_clips_vertically_against_the_right_bound_not_the_bottom() {
+        const W: usize = 320;
+        const H: usize = 200;
+        let table = {
+            let mut t = [0u8; 256];
+            t[1] = 2; // any pixel of 1 becomes 2, so tinting is observable
+            t
+        };
+        let letterbox = ClipWindow { left: 0, right: 320, top: 40, bottom: 120 };
+
+        let mut fb = vec![1u8; W * H];
+        remap_rect_indexed_clipped(&mut fb, W, H, &table, 0, 0, 8, 190, letterbox);
+
+        // TOP is honoured: 0x33D4 shrinks the height and 0x33E2 pulls y to 40.
+        assert_eq!(fb[39 * W], 1, "row above the clip top must be untouched");
+        assert_eq!(fb[40 * W], 2, "row at the clip top must be tinted");
+
+        // BOTTOM is not: the rect runs past row 120 because the ladder compared
+        // against `right` (320), which y+height never reaches.
+        assert_eq!(fb[121 * W], 2, "the letterbox floor does NOT clip the remap");
+        assert_eq!(fb[189 * W], 2, "the rect tints to its full requested height");
+
+        // The bound that DOES fire is `right`. y+height > 320 is clamped, so a rect
+        // starting at the clip top can only extend to row 320-40 = 280 -> off-screen
+        // here, which is why the bug is invisible at 320x200.
+        let mut tall = vec![1u8; W * H];
+        remap_rect_indexed_clipped(&mut tall, W, H, &table, 0, 0, 8, 400, letterbox);
+        assert_eq!(tall[199 * W], 2, "clamped by `right`=320, not by `bottom`");
+
+        // Horizontal clipping is ordinary: left and right both apply.
+        let window = ClipWindow { left: 10, right: 20, top: 0, bottom: 200 };
+        let mut side = vec![1u8; W * H];
+        remap_rect_indexed_clipped(&mut side, W, H, &table, 0, 0, 320, 1, window);
+        assert_eq!(side[9], 1, "left of the clip window is untouched");
+        assert_eq!(side[10], 2, "the left bound is inclusive");
+        assert_eq!(side[19], 2, "up to the right bound is tinted");
+        assert_eq!(side[20], 1, "the right bound is exclusive");
     }
 }
