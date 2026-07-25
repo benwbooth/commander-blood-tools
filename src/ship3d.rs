@@ -10,9 +10,13 @@ pub const SHIP_3D_TRANSITION_CLOSE_STEP: u8 = 8;
 /// `cmp word [0xb3b],0x78` @`0xB699` — 120 ticks. `jbe` falls through, so the
 /// transition arms only once the timer is ABOVE it, not at it.
 pub const SHIP_3D_TRANSITION_OPEN_TIMER_THRESHOLD: u16 = 120;
+/// `dl = 0x50` @`0xB721`, the row stride the band copy multiplies by.
 pub const SHIP_3D_PLANE_ROW_BYTES: usize = 80;
 pub const SHIP_3D_PLANE_PAGE_BYTES: usize = 8000;
+/// `add ax,0x23` @`0xB71E` — 35 rows added to the depth offset before the
+/// multiply, so a zero depth still copies 35 rows.
 pub const SHIP_3D_PLANE_BASE_ROWS: usize = 35;
+/// `mov si,0xc000` @`0xB718` — the source page the copy reads from.
 pub const SHIP_3D_PLANE_SOURCE_PAGE0_OFFSET: usize = 0xc000;
 pub const SHIP_3D_PLANE_SOURCE_PAGE1_OFFSET: usize = 0xdf40;
 pub const SHIP_3D_PLANE_DEST_BYTES: usize = SHIP_3D_PLANE_PAGE_BYTES * 2;
@@ -916,6 +920,29 @@ pub fn step_ship_3d_depth_scroll(state: &mut Ship3dDepthState) {
     };
 }
 
+/// The planar band copy, `ship_3d_plane_band_copy` @`0xB6DD`:
+///
+/// ```text
+///   0xB6E5  test byte [0x252e],1     the copy-enabled gate
+///   0xB6EC  mov bx,[0x2527]          the depth offset
+///   0xB6F0  cmp word [0x524d],0xa    scroll mode 10 SKIPS the scroll update
+///   0xB6F7  ax = bx+bx / cmp ax,0x64 / jle / mov ax,0x64   clamp 2*depth to 100
+///   0xB703  sub ax,0x64 / neg ax / mov [0x524f],ax         store 100 - that
+///   0xB70B  mov dx,0x3c4 / mov ax,0xf02 / out dx,ax        map mask = all 4 planes
+///   0xB712  les di,[0x5219]          destination
+///   0xB718  mov si,0xc000            SOURCE PAGE 0
+///   0xB71C  ax = bx+0x23 / dl=0x50 / mul dl                (depth + 35) * 80
+/// ```
+///
+/// So the band is `(depth_offset + SHIP_3D_PLANE_BASE_ROWS) *
+/// SHIP_3D_PLANE_ROW_BYTES` bytes — 35 rows of 80 — from
+/// `SHIP_3D_PLANE_SOURCE_PAGE0_OFFSET`, which is where those three constants come
+/// from. `0x524F` holds `100 - min(2*depth, 100)`, and scroll mode `0xA` leaves it
+/// untouched.
+///
+/// Cited here because this function was settled ASM with no doc (#141's queue);
+/// `re/labels.csv` already named the routine, from the mis-anchored-label fix in
+/// #101.
 pub fn copy_ship_3d_plane_bands(
     dest: &mut [u8],
     video_segment: &[u8],

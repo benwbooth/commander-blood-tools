@@ -4653,3 +4653,35 @@ Cited instructions verified: 117 -> 127. The queue: 91 -> 90.
 That ratio is the honest measure of this work. One row costs a routine read, and
 the value is not the settled count — it is that "step 4" now says WHY it is 4 and
 where to look when it turns out to be wrong.
+
+## #143 — the band copy, and where three magic numbers came from
+
+Second row off #141's queue. `copy_ship_3d_plane_bands` was settled ASM with no
+doc, and three constants it depends on sat bare at the top of `ship3d.rs`:
+`SHIP_3D_PLANE_ROW_BYTES` 80, `SHIP_3D_PLANE_BASE_ROWS` 35,
+`SHIP_3D_PLANE_SOURCE_PAGE0_OFFSET` `0xC000`.
+
+`labels.csv` named the routine already — `0x00B6DD ship_3d_plane_band_copy` — and
+it is the same routine whose CALL SITE #101 corrected, where a mis-anchored label
+had read the `0x99` of `lcall 0x299:0x0ecb` as a `cdq`. Reading it:
+
+```text
+  0xB6E5  test byte [0x252e],1     the copy-enabled gate
+  0xB6F0  cmp word [0x524d],0xa    scroll mode 10 SKIPS the scroll update
+  0xB6F7  ax = bx+bx / cmp ax,0x64 / jle / mov ax,0x64   clamp 2*depth to 100
+  0xB703  sub ax,0x64 / neg ax / mov [0x524f],ax         store 100 - that
+  0xB70B  mov dx,0x3c4 / mov ax,0xf02 / out dx,ax        map mask = all 4 planes
+  0xB718  mov si,0xc000            SOURCE PAGE 0
+  0xB71C  ax = bx+0x23 / dl=0x50 / mul dl                (depth + 35) * 80
+```
+
+All three constants are in that one multiply and load: `0x23` is 35, `0x50` is 80,
+`0xC000` is the page. The port's `ship_3d_plane_band_byte_count` computes
+`(depth + 35) * 80` and now says why.
+
+Cited instructions 127 -> 134; the queue 90 -> 89.
+
+Two rows in, the pattern of this queue is clear: these are not unverified
+functions. They are verified functions whose verification was never written down,
+and the routine is usually already in `labels.csv` — the cost is a read, not a
+decode.
