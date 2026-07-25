@@ -1283,3 +1283,26 @@ TRIED: sprite banks (no frame >= 200x40 exists) and the three `.FD` images
 (0% in-bank raw; 81-96% differing even after remapping). Both sound.
 
 SESSION: the engine.rs capture-provenance sweep.
+
+## `0x7259`'s FIRST candidate: what does `0x624B` leave in DI? (open, 2026-07-25)
+
+`entity_candidate_list` (`0x7259`) does `mov ax,di` @`0x726F` and `jmp 0x727B`,
+so the object in DI is tested BEFORE the `DS:0x6886` list is walked. Decoding the
+filter and the `RECORD+4` emit did not settle where that DI comes from.
+
+Tried: reading `0x624B`'s prologue and its label. It pushes `ds/si/bx/ax` and NOT
+`di`, and it RECURSES "with di = that object" — so DI may come back as the last
+object the depth-first walk touched rather than the caller's target. Both readings
+are consistent with the bytes I have read.
+
+Why it matters: a composite `destination_candidate_records(target)` would have to
+pick one. If DI is the caller's target, the location's own record is tested first
+(and rejected by the `arche` exclusion). If DI is the walk's last object, an extra
+candidate can be emitted TWICE — once from DI, once from the list.
+
+NOT guessed. `VmMachine::entity_candidate_list` takes `first` as an explicit
+parameter, so the port models the routine exactly and the caller supplies DI. The
+composite is deliberately absent until DI is decoded.
+
+Better approach next: read `0x624B` through its recursion to the `retf`, tracking
+DI across the recursive call, rather than inferring from the register-save list.

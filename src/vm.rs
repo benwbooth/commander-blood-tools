@@ -1499,6 +1499,12 @@ pub const NAV_PICK_POSITION_FIELD: u16 = 0x18;
 /// earlier. Emitted as `add ax,4` when a menu is built (`0x87D5`) and undone as
 /// `sub ax,4` when a row is selected (`0xB33D`) — one constant, both directions.
 pub const SHIP_3D_TARGET_NAME_TO_RECORD: u16 = 4;
+
+/// The entity-candidate filter (`0x7259`): an object joins the destination list
+/// only if its flags word has any of `0x98` (`test bx,0x98` @`0x727E`).
+pub const ENTITY_CANDIDATE_KIND_MASK: u16 = 0x98;
+/// ... and bit 1 of the BYTE at `+2` is set (`test byte es:[di+2],2` @`0x7284`).
+pub const ENTITY_CANDIDATE_READY_BIT: u8 = 2;
 /// The picker's box test for one marker (`0x9308..0x932B`): the box starts two
 /// pixels up-left of the marker and BOTH bounds are inclusive (`jb`/`ja` skip only
 /// strictly outside). The single copy of that rule — `nav_chart_pick` walks record
@@ -5369,6 +5375,59 @@ impl VmMachine {
         self.rec_write(at.wrapping_add(2), target);
         self.rec_write(at.wrapping_add(4), 0);
         true
+    }
+
+    /// The DESTINATION LIST BUILDER, `entity_candidate_list` (`0x7259`) — the
+    /// writer whose output [`Self::ship_3d_target_record_select`] reads.
+    ///
+    /// ```text
+    ///   0x7266  call 0x624b              build the source list at gs:0x6886
+    ///   0x7269  mov si,0x6886            ... and walk it
+    ///   0x726c  mov bp,0x250b            emitting into the target list
+    ///   0x726f  mov ax,di                the object 0x624B left in DI is tested FIRST
+    ///   0x727b  mov bx,es:[di]           the flags word
+    ///   0x727e  test bx,0x98   / je      kind must be 0x08, 0x10 (SHIP) or 0x80
+    ///   0x7284  test es:[di+2],2 / je    and the +2 byte's bit 1 must be set
+    ///   0x728b  cmp di,gs:[0x6752] / je  and it must not be `arche` -- the location itself
+    ///   0x7292  add ax,4                 emit RECORD+4: a pointer to the inline NAME
+    ///   0x7295  mov [bp],ax / add bp,2
+    ///   0x729d  mov word [bp],0xffff     terminate
+    /// ```
+    ///
+    /// `add ax,4` @`0x7292` is the INDEPENDENT confirmation of the `sub ax,4`
+    /// @`0xB33D` decode: reader and writer were disassembled separately and agree
+    /// that a list entry is `RECORD+4`. Neither reading rests on the other.
+    ///
+    /// The exclusion at `0x728B` is `arche` (`gs:0x6752`, the built-in object for
+    /// the current location), so a location never offers itself as a destination.
+    ///
+    /// `first` is the object `0x624B` leaves in DI, which is tested BEFORE the
+    /// list is walked (`jmp 0x727B` @`0x7271` enters at the test). Returns the
+    /// emitted `RECORD+4` words without the terminator.
+    pub fn entity_candidate_list(&self, first: u16, source: &[u16]) -> Vec<u16> {
+        let mut out = Vec::new();
+        let mut object = first;
+        let mut index = 0usize;
+        loop {
+            let flags = self.rec_read(object);
+            let ready = self.rec_read(object.wrapping_add(2)) as u8;
+            if flags & ENTITY_CANDIDATE_KIND_MASK != 0
+                && ready & ENTITY_CANDIDATE_READY_BIT != 0
+                && Some(object) != self.arche_offset
+            {
+                out.push(object.wrapping_add(SHIP_3D_TARGET_NAME_TO_RECORD));
+            }
+            // 0x7273: fetch the next source word. The game reads a buffer that
+            // always carries its 0xFFFF terminator; a slice that simply ends is
+            // the same stopping condition.
+            let Some(&next) = source.get(index) else { break };
+            index += 1;
+            if next == 0xFFFF {
+                break;
+            }
+            object = next;
+        }
+        out
     }
 
     /// The WORLD-DESTINATION HIT-TEST, `ship_3d_target_record_select` (`0xB2BB`) —
@@ -10085,6 +10144,38 @@ mod tests {
         state_set_u16(&mut var, related, 1);
         assert_eq!(post_update_encounter_counter(&mut var, owner, related), None);
         assert_eq!(state_u16(&var, owner + 2), 0, "no bump -> no bit15 either");
+    }
+
+    /// `0x7259` builds what `0xB2BB` reads: an end-to-end check that a record
+    /// surviving the filter can be selected back OUT as the same record.
+    #[test]
+    fn entity_candidate_list_and_target_select_are_inverses() {
+        let mut m = VmMachine::new();
+        m.orxx_offset = Some(0x0200);
+        m.arche_offset = Some(0x0400);
+
+        // Three objects: one passes, one fails the kind mask, one fails the +2 bit.
+        let pass = 0x0140u16;
+        let bad_kind = 0x0180u16;
+        let not_ready = 0x01C0u16;
+        m.rec_write_pub(pass, ENTITY_CANDIDATE_KIND_MASK);
+        m.rec_write_pub(pass + 2, ENTITY_CANDIDATE_READY_BIT as u16);
+        m.rec_write_pub(bad_kind, 0x0001);
+        m.rec_write_pub(bad_kind + 2, ENTITY_CANDIDATE_READY_BIT as u16);
+        m.rec_write_pub(not_ready, ENTITY_CANDIDATE_KIND_MASK);
+        m.rec_write_pub(not_ready + 2, 0);
+        // `arche` passes the flag tests but is excluded by 0x728B.
+        let arche = 0x0400u16;
+        m.rec_write_pub(arche, ENTITY_CANDIDATE_KIND_MASK);
+        m.rec_write_pub(arche + 2, ENTITY_CANDIDATE_READY_BIT as u16);
+
+        let list = m.entity_candidate_list(pass, &[bad_kind, not_ready, arche, 0xFFFF]);
+        assert_eq!(list, vec![pass + 4], "only the passing object, stored as RECORD+4");
+
+        // And the reader turns that entry back into the record the commit takes.
+        let fallback = [0xFFFFu16];
+        assert_eq!(m.ship_3d_target_record_select(&list, &fallback, 0), pass);
+        assert!(m.world_click_select(pass), "the round trip commits a C1 record");
     }
 
     /// `0xB2BB`: the row->record conversion, and the fallback rule that makes the

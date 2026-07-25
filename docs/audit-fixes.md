@@ -5983,3 +5983,36 @@ Two corrections fell out of reading the surrounding code:
 Still open, and now precisely: the frontend route. `main.rs` reaches a world via
 `targeted_world_name()`/`visit_world`, so no C1 record is written at runtime. The
 port now has every decoded piece of the real path.
+
+## #193 — the writer confirms the reader
+
+#192 decoded `sub ax,4` @`0xB33D` as the name->record mapping. That reading rested
+on one instruction, so the useful next step was to find the code that WRITES the
+list and see whether it agrees.
+
+`entity_candidate_list` (`0x7259`) does, and it was disassembled without reference
+to `0xB2BB`:
+
+  * `test bx,0x98` @`0x727E` — the kind mask (0x08, 0x10 SHIP, 0x80);
+  * `test byte es:[di+2],2` @`0x7284` — a readiness bit;
+  * `cmp di,gs:[0x6752]` @`0x728B` — exclude `arche`, so a location never offers
+    itself as a destination;
+  * `add ax,4` @`0x7292` — emit `RECORD+4`;
+  * `mov word [bp],0xffff` @`0x729D` — terminate.
+
+Writer and reader agree that a list entry is `RECORD+4`, from opposite directions.
+That is worth more than either decode alone: neither rests on the other, so the
+`+4`/`-4` pair is now confirmed by two independent instruction streams (three,
+counting `0x87D5`, which builds the contact menu the same way).
+
+Ported with a round-trip test — build the list, select a row, commit the C1 record
+— so the port checks the composition, not just the halves.
+
+WHAT I DID NOT DO, and why it is recorded rather than done: a single
+`destination_candidate_records(target)` composite would be the natural API, but
+`0x7259` tests the object in DI BEFORE walking the list (`mov ax,di` @`0x726F`,
+`jmp 0x727B`), and `0x624B` neither saves DI nor obviously restores it across its
+recursion. So DI is either the caller's target or the walk's last object, and the
+two differ observably: the second can emit a candidate twice. `entity_candidate_list`
+therefore takes `first` as a parameter and the composite is absent. The open
+question is in `re/dead_ends.md` with the approach that would settle it.
