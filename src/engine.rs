@@ -5799,11 +5799,16 @@ mod tests {
         assert!(e.current_bas_menu_labels().iter().any(|l| l == "OPTIMIZATION"), "popped to parent");
     }
 
-    /// Oracle: the LIST MENU (dialogue topics / nav destinations) renders the
-    /// square-capitals face at index 0xE8 at the measured geometry (x 175, rows
-    /// from y 45, 11 px pitch). Locks the widget + face to the harvested values.
+    /// The LIST MENU renders the square-capitals face in the widget's own colours
+    /// and row band: `mov al,0xE8` (`0x8565`) unselected, `0xEF` selected
+    /// (`0x858B`), rows vertically centred by count with an 11px pitch
+    /// (`add bp,0xB` @`0x847A`).
+    ///
+    /// Renamed from `..._at_measured_geometry`, which framed a capture as the
+    /// specification — and whose "x 175" no longer described anything, since
+    /// labels centre on the widget anchor rather than sitting flush.
     #[test]
-    fn list_menu_renders_square_caps_at_measured_geometry() {
+    fn list_menu_renders_square_caps_in_the_widgets_colours_and_band() {
         let mut e = EngineState::new();
         // Feed a topic menu and render it over a blank frame via the public draw.
         let labels = vec!["TALK".to_string(), "ONE".to_string(), "TWO".to_string()];
