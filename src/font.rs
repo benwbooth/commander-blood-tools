@@ -3,6 +3,14 @@
 //! @0x14D28) plus the subtitle/text draw. Lib-accessible copy of the historically-
 //! verified font in `src/extract/render.rs` (unify in a later pass).
 
+/// Glyph width in pixels — 8, because a glyph ROW IS ONE BYTE.
+///
+/// Not an immediate anywhere; it is the row table's layout. The rows start at
+/// `0x14D28` and run `DIALOGUE_FONT_GLYPH_COUNT * GAME_FONT_HEIGHT` = 86 * 8 =
+/// 688 bytes, ending at `0x14FD8` where a differently-shaped table begins. One
+/// byte per row, eight bits, eight pixels.
+///
+/// `game_font_row_table_is_one_byte_per_row` checks that extent against the image.
 pub const GAME_FONT_WIDTH: usize = 8;
 pub const GAME_FONT_HEIGHT: usize = 8;
 pub const GAME_FONT_LINE_HEIGHT: usize = 8;
@@ -280,6 +288,34 @@ pub fn draw_text_indexed(
 
 #[cfg(test)]
 mod tests {
+
+    /// The font's row table is exactly `glyphs * height` BYTES, which is what
+    /// makes the glyph 8 pixels wide: one byte per row. Checked against the image
+    /// rather than restated, so a wrong glyph count or height fails here.
+    #[test]
+    fn game_font_row_table_is_one_byte_per_row() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        let rows = 0x14D28usize;
+        let count = crate::bloodprg::DIALOGUE_FONT_GLYPH_COUNT;
+        let end = rows + count * GAME_FONT_HEIGHT;
+        assert_eq!(end, 0x14FD8, "86 glyphs x 8 rows x 1 byte");
+        assert!(end < exe.len());
+
+        // A row is one byte, so the width is its bit count.
+        assert_eq!(GAME_FONT_WIDTH, 8);
+        assert_eq!(GAME_FONT_WIDTH, u8::BITS as usize);
+
+        // The last glyph's rows are real bitmap data, not padding: at least one
+        // row set and at least one clear, which zero-fill past the table would
+        // fail.
+        let last = &exe[end - GAME_FONT_HEIGHT..end];
+        assert!(last.iter().any(|&b| b != 0), "last glyph has ink");
+        assert!(last.iter().any(|&b| b == 0), "and blank rows");
+    }
     use super::*;
 
     /// The square-caps face is IN THE BINARY — it was never "a face that exists in no

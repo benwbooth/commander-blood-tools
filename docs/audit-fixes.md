@@ -5899,3 +5899,22 @@ nothing; a quotient that must divide exactly fails the moment either operand is
 wrong. The same test also pins that the station rest angles (`0x000`, `0x05A`,
 `0x0B4`, `0x10E`) are all even, since #107 established the frame is half the
 recorded angle — an odd one would mean a station resting between frames.
+
+## #190 — the width is the byte
+
+`GAME_FONT_WIDTH = 8` is not an immediate anywhere, and asking why settles it: a
+glyph ROW IS ONE BYTE, so the width is that byte's bit count.
+
+The row table starts at `0x14D28` and runs `86 * 8` = 688 bytes, ending exactly at
+`0x14FD8` where a differently-shaped table begins. The last eight bytes are a real
+glyph bitmap (`00 7c 82 82 7e 02 7c 00`, recognisably an 'a'), not padding.
+
+The test checks the extent against the image and asserts the last glyph has both
+ink and blank rows — a zero-filled tail past a mis-sized table would fail that,
+which is the failure mode a pure length check would miss.
+
+Same shape as `DIALOGUE_FONT_ASCII_MAP_LEN` (#105): the font's constants are
+LAYOUT, and layout is checkable by arithmetic on addresses the tree already knows.
+That is now four font constants pinned to the image rather than to each other —
+which matters because a self-consistent font is exactly what hid the 128-vs-176
+truncation for a whole campaign.
