@@ -6946,3 +6946,33 @@ measured property of the game rather than a guard on the test itself.
 projection cluster — matrix, angles, point, projected point, origin, viewport,
 pixel — is now seven shapes verified through three decoded stages, from one table
 proven byte-exact against the binary.
+
+## #224 — the FSM's version of "never write outside the viewport"
+
+The nav-choice cluster is a dispatch FSM, so #221-#223's geometric invariants do
+not apply. The equivalent question is: can the machine ever select a handler that
+does not exist? The committed choice becomes an index into the FIVE-entry table at
+`CS:0x0F29`; past the end it reads a garbage far pointer and calls it. Nothing in a
+return value would show that.
+
+The test sweeps axis, mouse position and gate value, and asserts three decoded
+rules: a blocking gate reports `gated` and never selects; a `gate_value` outside
+`40..=60` never selects; and every hovered, dispatched and highlighted value lands
+inside its real range — choices in `1..=5`, palette indices inside the choice bank
+at `0x7B`.
+
+TWO CORRECTIONS TO MY OWN TEST before it said anything:
+
+  * it scored ZERO selections at first. The box is anchored at
+    `SHIP_3D_NAV_CHOICE_AXIS_BIAS` (45) and I swept `axis` from 0 with a step of
+    23, so the sweep never entered the hit box. A sweep that misses its target
+    passes every assertion vacuously — the coverage floor caught it, which is the
+    second time in three entries that floor has earned its place.
+  * `selected_choice` is only written when `input.activate` is set (`0x86F1`'s
+    commit path), and I had swept with `activate: false`. The hover path and the
+    commit path are different branches and I was testing neither.
+
+Removing the hit-test's `choice >= COUNT` guard produces `hovered choice 6 is
+outside 1..=5`; restoring it passes. The guard is real and now pinned.
+
+`Ship3dNavChoiceState`, `Gates`, `Input` and `Result` settled TESTED.

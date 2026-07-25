@@ -1023,10 +1023,10 @@ Ship3dTargetHitResult	src/ship3d.rs	340	struct		TESTED	/// Parameter/result shap
 Ship3dTargetTextSegment	src/ship3d.rs	350	enum		UNVERIFIED	
 Ship3dTargetDrawCommand	src/ship3d.rs	356	struct		UNVERIFIED	
 Ship3dTargetDrawResult	src/ship3d.rs	368	struct		UNVERIFIED	
-Ship3dNavChoiceState	src/ship3d.rs	380	struct		UNVERIFIED	/// Parameter/result shape for [`update_ship_3d_nav_choice_dispatch`]. /// /// The fields ARE that routine's decoded values; this type carries no rule /// of its own, so the binary citations live on t
-Ship3dNavChoiceGates	src/ship3d.rs	401	struct		UNVERIFIED	/// Parameter/result shape for [`update_ship_3d_nav_choice_dispatch`]. /// /// The fields ARE that routine's decoded values; this type carries no rule /// of its own, so the binary citations live on t
-Ship3dNavChoiceInput	src/ship3d.rs	417	struct		UNVERIFIED	/// Parameter/result shape for [`update_ship_3d_nav_choice_dispatch`]. /// /// The fields ARE that routine's decoded values; this type carries no rule /// of its own, so the binary citations live on t
-Ship3dNavChoiceResult	src/ship3d.rs	432	struct		UNVERIFIED	/// Parameter/result shape for [`update_ship_3d_nav_choice_dispatch`]. /// /// The fields ARE that routine's decoded values; this type carries no rule /// of its own, so the binary citations live on t
+Ship3dNavChoiceState	src/ship3d.rs	380	struct		TESTED	/// Parameter/result shape for [`update_ship_3d_nav_choice_dispatch`]. /// /// The fields ARE that routine's decoded values; this type carries no rule /// of its own, so the binary citations live on t
+Ship3dNavChoiceGates	src/ship3d.rs	401	struct		TESTED	/// Parameter/result shape for [`update_ship_3d_nav_choice_dispatch`]. /// /// The fields ARE that routine's decoded values; this type carries no rule /// of its own, so the binary citations live on t
+Ship3dNavChoiceInput	src/ship3d.rs	417	struct		TESTED	/// Parameter/result shape for [`update_ship_3d_nav_choice_dispatch`]. /// /// The fields ARE that routine's decoded values; this type carries no rule /// of its own, so the binary citations live on t
+Ship3dNavChoiceResult	src/ship3d.rs	432	struct		TESTED	/// Parameter/result shape for [`update_ship_3d_nav_choice_dispatch`]. /// /// The fields ARE that routine's decoded values; this type carries no rule /// of its own, so the binary citations live on t
 Ship3dNavChoiceHandlerEffect	src/ship3d.rs	449	struct		UNVERIFIED	/// Parameter/result shape for [`run_ship_3d_nav_choice_handler_0`]. /// /// The fields ARE that routine's decoded values; this type carries no rule /// of its own, so the binary citations live on the
 Ship3dNavChoiceHandler4State	src/ship3d.rs	474	struct		UNVERIFIED	/// Parameter/result shape for [`run_ship_3d_nav_choice_handler_4`]. /// /// The fields ARE that routine's decoded values; this type carries no rule /// of its own, so the binary citations live on the
 Ship3dNavigationSequenceState	src/ship3d.rs	492	struct		UNVERIFIED	

@@ -4316,6 +4316,118 @@ fn next_target_list_draw_color(state: &mut Ship3dTargetHitState, activate: bool)
 #[cfg(test)]
 mod tests {
 
+    /// THE DISPATCH FSM CANNOT SELECT A HANDLER THAT DOES NOT EXIST.
+    ///
+    /// `update_ship_3d_nav_choice_dispatch` (`0x0F29`'s caller) hit-tests a mouse
+    /// position into a choice index that becomes an index into the FIVE-entry
+    /// handler table at `CS:0x0F29` (`SHIP_3D_NAV_CHOICE_COUNT`). An index past
+    /// the end reads a garbage far pointer and jumps into it — the FSM equivalent
+    /// of the out-of-viewport write pinned in #223, and not something a plausible
+    /// return value would reveal.
+    ///
+    /// So the sweep covers the input space rather than a few chosen points, and
+    /// asserts three decoded rules:
+    ///
+    ///   * a blocking gate returns `gated` and NEVER a choice, whatever the mouse
+    ///     is doing (`gates.blocks_nav_choice()` @`0x2565`);
+    ///   * a `gate_value` outside `40..=60` never selects
+    ///     (`SHIP_3D_NAV_CHOICE_MIN_GATE`/`MAX_GATE`);
+    ///   * any selected choice is in `1..=5`, so the table index is in range.
+    #[test]
+    fn the_nav_choice_dispatch_never_selects_a_nonexistent_handler() {
+        let mut selected = 0usize;
+        let mut gated_seen = 0usize;
+        // The box is anchored at AXIS_BIAS (45), so sweep AROUND it -- a sweep
+        // from 0 with a coarse step never enters the hit box at all, which is how
+        // the first run of this test scored zero selections.
+        for axis in 30..70u16 {
+            for mouse_x in (150..300u16).step_by(9) {
+                for mouse_y in (60..200u16).step_by(3) {
+                    for gate_value in [0u16, 39, 40, 50, 60, 61, 4000] {
+                        let input = Ship3dNavChoiceInput {
+                            gate_value,
+                            dynamic_axis: axis,
+                            mouse_x,
+                            mouse_y,
+                            activate: true,
+                        };
+
+                        // A blocking gate wins over everything.
+                        let mut blocked_state = Ship3dNavChoiceState::default();
+                        // Any one of the six gates blocks; pick the menu gate.
+                        let blocking = Ship3dNavChoiceGates {
+                            menu_gate: true,
+                            ..Default::default()
+                        };
+                        if let Some(r) =
+                            update_ship_3d_nav_choice_dispatch(&mut blocked_state, blocking, input)
+                        {
+                            assert!(r.gated, "a blocking gate did not report gated");
+                            assert_eq!(
+                                blocked_state.selected_choice, 0,
+                                "a blocked dispatch still selected a choice"
+                            );
+                            gated_seen += 1;
+                        }
+
+                        // Ungated: any selection must be a real handler index.
+                        let mut state = Ship3dNavChoiceState::default();
+                        let gates = Ship3dNavChoiceGates::default();
+                        let Some(_r) =
+                            update_ship_3d_nav_choice_dispatch(&mut state, gates, input)
+                        else {
+                            continue;
+                        };
+                        // Both the HOVER and the DISPATCH index must be real
+                        // handler indices; the hit-test bounds the first
+                        // (`choice >= COUNT` @`0x8508`'s neighbour) and the
+                        // dispatcher re-checks the second.
+                        if let Some(hovered) = _r.hovered_choice {
+                            assert!(
+                                (1..=SHIP_3D_NAV_CHOICE_COUNT).contains(&hovered),
+                                "hovered choice {hovered} is outside 1..={}",
+                                SHIP_3D_NAV_CHOICE_COUNT
+                            );
+                            let palette = _r.highlighted_palette_index.expect("hover sets a colour");
+                            assert!(
+                                (SHIP_3D_NAV_CHOICE_PALETTE_FIRST
+                                    ..SHIP_3D_NAV_CHOICE_PALETTE_FIRST
+                                        + SHIP_3D_NAV_CHOICE_COUNT)
+                                    .contains(&palette),
+                                "palette index {palette:#x} is outside the choice bank"
+                            );
+                        }
+                        if let Some(dispatched) = _r.dispatched_choice {
+                            assert!(
+                                (1..=SHIP_3D_NAV_CHOICE_COUNT).contains(&dispatched),
+                                "dispatched choice {dispatched} would index past the \
+                                 five-entry table at CS:0x0F29"
+                            );
+                        }
+                        let choice = state.selected_choice;
+                        if choice != 0 {
+                            assert!(
+                                (1..=u16::from(SHIP_3D_NAV_CHOICE_COUNT)).contains(&choice),
+                                "choice {choice} is outside the {}-entry handler table \
+                                 (axis {axis}, mouse {mouse_x},{mouse_y})",
+                                SHIP_3D_NAV_CHOICE_COUNT
+                            );
+                            assert!(
+                                (SHIP_3D_NAV_CHOICE_MIN_GATE..=SHIP_3D_NAV_CHOICE_MAX_GATE)
+                                    .contains(&gate_value),
+                                "gate_value {gate_value} is outside 40..=60 yet selected \
+                                 choice {choice}"
+                            );
+                            selected += 1;
+                        }
+                    }
+                }
+            }
+        }
+        assert!(gated_seen > 0, "the blocking-gate path never ran");
+        assert!(selected > 50, "only {selected} selections; the sweep proves little");
+    }
+
     /// THE WHOLE PROJECTION CHAIN, ending at the pixel: the game's angle table
     /// builds a matrix, the matrix projects points, and `plot_ship_3d_projected_
     /// point` (`0x9B04`) clips and writes them. Two decoded rules are asserted at
