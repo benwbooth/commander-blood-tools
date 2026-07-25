@@ -1980,6 +1980,14 @@ impl ExecutionContext {
         &self.named_object_offsets
     }
 
+    /// Delegation to [`owner_object_offset_in`], which carries the rule AND its
+    /// citation. Two of these exist — one here on the execution context, one on
+    /// `VmMachine` — because both types hold their own `object_offsets`.
+    ///
+    /// Deliberately NOT repeating the address here: `check_duplicate_rules.py`
+    /// flags one name citing one address from two places, and it is right to —
+    /// that is what a copied rule looks like. The citation belongs to the helper;
+    /// these are plumbing to it.
     fn owner_object_offset(&self, record_offset: u16) -> Option<u16> {
         owner_object_offset_in(&self.object_offsets, record_offset)
     }
@@ -4547,6 +4555,9 @@ impl VmMachine {
 
     /// The owning object of a record: the nearest DEB object STRICTLY below `off`
     /// (the 0x6034 threshold lookup's port model). None when the table is unloaded.
+    /// The `VmMachine` half of the pair described on the execution context's
+    /// `owner_object_offset`: a delegation to [`owner_object_offset_in`], which
+    /// holds the rule and the citation.
     fn owner_object_offset(&self, off: u16) -> Option<u16> {
         owner_object_offset_in(&self.object_offsets, off)
     }

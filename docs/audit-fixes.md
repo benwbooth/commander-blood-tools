@@ -5494,3 +5494,31 @@ length, not aligned, which is exactly the sort of assumption that makes a table
 look shorter than it is.
 
 The queue: 43 -> 41.
+
+## #173 — the guard was right about my own documentation
+
+`owner_object_offset` exists twice in `vm.rs` — once on the execution context,
+once on `VmMachine` — because both types hold their own `object_offsets`. Both
+are one-line delegations to `owner_object_offset_in`, which carries the `0x6034`
+rule. They are plumbing, and the recurring "STILL ambiguous" warning from
+`audit_inventory.py` was about exactly that pair.
+
+Settled both as INFRA (using the `file:line:item` form #133 added, which is what
+made them settleable at all). Then `check_duplicate_rules.py` FAILED the build:
+
+    49 addresses cited by more than one port function
+
+because I had written `0x6034` into BOTH docs. One name, one address, two
+implementations — which is precisely the signal that guard exists to raise, and it
+could not know the two are delegations rather than copies.
+
+The fix is not to weaken the guard. It is that a delegation should not carry the
+citation at all: the address belongs to the helper holding the rule, and repeating
+it on both wrappers manufactures the appearance of a duplicated decode. Removed
+from both, with a note saying why.
+
+Also extended `classify_plumbing.py` to private functions — it only scanned
+`pub fn`, so these two were invisible to it. That found nothing new today (the
+unsettled set no longer contains any), but the restriction was arbitrary.
+
+The queue: 41 -> 40.
