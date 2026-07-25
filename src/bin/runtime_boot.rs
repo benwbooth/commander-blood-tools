@@ -3198,12 +3198,37 @@ fn main() {
     // table of 0xFFFF/16-aligned ids there, the watch is mis-aimed rather than the
     // table unwritten -- the distinction that made NAVWRITE and PALBANK trustworthy.
     if std::env::var("DLGTABLE").is_ok() {
-        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        // DLGTABLE_BOOT=1 skips the savestate so the watch is armed BEFORE any script
+        // load. The hub state has already run the fill, which is why driving input
+        // inside it never catches a writer -- the table is populated once at load and
+        // is not rewritten per line.
+        if std::env::var("DLGTABLE_BOOT").is_err() {
+            rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        }
         let ds0 = 0xE840usize;
         let base = ds0 + 0x1FB5;
-        rt.m.trace_range = Some(base..base + 0x100);
+        // NARROWED to the 4-byte table proper: 24 entries * 4 = 0x60. The earlier
+        // 0x100 window also covered the 26-byte RECORD array those +0 pointers address
+        // (which starts around DS:0x2069), so its hits were record writes, not table
+        // writes -- offset 181 is DS:0x206A, well past the table.
+        rt.m.trace_range = Some(base..base + 0x60);
         rt.m.range_hits.clear();
-        let _ = rt.run(rt.cpu.steps + 20_000_000);
+        // Idling never refills the table -- it is already populated in this savestate,
+        // which is why the first run saw zero writes. Drive input so a scene change
+        // occurs and the fill runs again: advance the conversation by clicking the orb
+        // area, several rounds, checking for writers as we go.
+        for round in 0..12 {
+            rt.set_mouse_pos(160, 100);
+            let _ = rt.run(rt.cpu.steps + 1_500_000);
+            rt.mouse_press(0);
+            let _ = rt.run(rt.cpu.steps + 400_000);
+            rt.mouse_release(0);
+            let _ = rt.run(rt.cpu.steps + 3_000_000);
+            if !rt.m.range_hits.is_empty() {
+                println!("DLGTABLE: first write seen at round {round}");
+                break;
+            }
+        }
 
         let word = |rt: &Runtime, a: usize| u16::from_le_bytes([rt.m.mem[a], rt.m.mem[a + 1]]);
         println!("DLGTABLE entries (line_id: id @ +2), b3=0 is line_id 9:");

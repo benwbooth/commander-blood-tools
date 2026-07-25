@@ -1017,3 +1017,32 @@ It also closes the arithmetic question definitively: `0x0DD7` = 3543 is not divi
 is a real instruction sequence writing a real field, but it is not what populated this
 field in this state. Two writers, one field — which is precisely the situation that made
 the static-only reading confident and wrong.
+
+### DLGTABLE probe — instrument validated, fill bounded to a script load
+
+Three runs, each narrowing the question:
+
+1. **Hub savestate, idle** — 0 writes, table already fully populated (24/24 entries).
+   So the fill is not per-line.
+2. **Hub savestate, 12 rounds of driven clicks** — still 0 writes. So it is not
+   per-line-advance either; the table is written once and left alone for the whole
+   conversation.
+3. **From BOOT (`DLGTABLE_BOOT=1`), watch armed before any load** — with a wide
+   `0x100` window this caught writers `0b13:029e` and `0370:048b`, but at offset 181
+   (`DS:0x206A`), which is past the 4-byte table and inside the 26-byte RECORD ARRAY
+   those `+0` pointers address. Narrowing to the table proper (`0x60` = 24 entries)
+   gives 0 writes.
+
+THE INSTRUMENT IS VALIDATED by that third run: the wide window demonstrably catches
+writes when they occur, so the narrow window's zero is a real negative rather than a
+watch pointed at the wrong address. That is the same control discipline as NAVWRITE and
+PALBANK, arrived at here by accident — the too-wide range turned out to be the proof
+that the probe works.
+
+CONCLUSION: the 4-byte table is filled during a SCRIPT/SCENE LOAD that neither the boot
+driving nor the in-conversation driving reaches. It is populated in the hub savestate,
+so the fill happens somewhere between boot and that state.
+
+NEXT STEP, precisely: drive a LOCATION CHANGE (nav -> visit a world) under
+`DLGTABLE_BOOT`, since that loads a new script and must re-run the fill. This is
+scenario construction, not decoding — exactly what the previous entry predicted.
