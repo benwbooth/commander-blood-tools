@@ -1470,3 +1470,34 @@ plus the post-update ladder:
 Implementing the filter without the increment would empty the list, which is why these
 land together or not at all. Recorded here rather than attempted at the end of a long
 session, because it changes what surfaces show and wants its own verification pass.
+
+## LAYOUT IDENTITIES — every verified table closes exactly on its neighbour
+
+Applied the `base + size == next table` check to every table verified in this campaign.
+All seven checkable identities are EXACT:
+
+    nav points   0x4F09 + 10*6   = 0x4F45  == angle table
+    sqcaps xlat  0x7362 + 176    = 0x7412  == sqcaps widths
+    sqcaps width 0x7412 + 48     = 0x7442  == sqcaps glyphs
+    sqcaps glyph 0x7442 + 48*20  = 0x7802  == BUILT-IN font xlat
+    builtin xlat 0x7802 + 176    = 0x78B2  == builtin widths
+    builtin widt 0x78B2 + 86     = 0x7908  == builtin glyphs
+    point cloud  0x2FC1 + 1000*8 = 0x4F01  == projector scratch
+
+WHY THIS MATTERS: it independently confirms three of today's contested corrections, each
+of which was originally established by a DIFFERENT method:
+
+* The nav table is **10** records, not the 11 our label claimed — because `10*6` lands
+  exactly on the angle table. (Originally found by dumping the image and live memory.)
+* The square-caps glyph stride is **20**, not 16 — because `48*20` lands exactly on the
+  built-in font's xlat. (Originally found by trial after a 1-of-25 match failure.)
+* The built-in xlat is **176** entries, not 128 — because 176 lands exactly on its widths
+  table. (Originally found by noticing where the advance table starts.)
+
+Three findings, three methods, and now one arithmetic cross-check agreeing with all of
+them. A wrong stride or count would break the chain visibly, which is exactly what my
+16-byte guess did before I corrected it.
+
+WORTH ADOPTING: for any newly-decoded table, compute `base + count*stride` and check it
+against the next known address before trusting the stride. It is nearly free and it
+catches the error class that cost the most time today.
