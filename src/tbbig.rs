@@ -74,6 +74,13 @@ pub const CONSOLE_REST_FRAME: usize = 55;
 /// harvested `console_band.idx` in ALL 19200 bytes. So the band was never a
 /// separate asset — it is this panorama frame, colour-reduced by the montage's
 /// full-screen remap (`0x7AC3`).
+///
+/// AND IT IS UNIQUE. `the_console_band_is_the_panorama_frame_remapped` now
+/// searches all 180 frames the same way and asserts that EXACTLY ONE reproduces
+/// the band. That is the difference between an index read off a capture and one
+/// determined by the archive: given the band, the data leaves no other choice.
+/// The constant is therefore DATA, not an oracle measurement — the capture is the
+/// target of the search, never the source of the number.
 pub const CONSOLE_BAND_FRAME: usize = 90;
 /// The band's screen origin and height (rows 140..200).
 pub const CONSOLE_BAND_TOP: usize = 140;

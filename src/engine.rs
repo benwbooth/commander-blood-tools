@@ -5620,6 +5620,31 @@ mod tests {
             composed == captured,
             "the real asset must reproduce the capture byte-for-byte"
         );
+
+        // UNIQUENESS: frame 90 is not merely A match, it is THE match. Searching
+        // all 180 frames the same way, exactly one reproduces the band. That is
+        // what makes CONSOLE_BAND_FRAME a value DERIVED from the archive rather
+        // than an index read off a capture -- given the band, the data picks the
+        // frame, and no other choice is available.
+        let matches: Vec<usize> = (0..pan.frame_count())
+            .filter(|&f| {
+                pan.frame_pixels(f).is_some_and(|px| {
+                    px.len() == crate::tbbig::PANORAMA_FRAME_PIXELS
+                        && px[crate::tbbig::CONSOLE_BAND_TOP * ENGINE_SCREEN_WIDTH
+                            ..(crate::tbbig::CONSOLE_BAND_TOP
+                                + crate::tbbig::CONSOLE_BAND_HEIGHT)
+                                * ENGINE_SCREEN_WIDTH]
+                            .iter()
+                            .map(|&p| table[p as usize])
+                            .eq(captured.iter().copied())
+                })
+            })
+            .collect();
+        assert_eq!(
+            matches,
+            vec![crate::tbbig::CONSOLE_BAND_FRAME],
+            "exactly one panorama frame reproduces the band"
+        );
     }
 
     #[test]

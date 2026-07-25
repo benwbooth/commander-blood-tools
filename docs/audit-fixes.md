@@ -6541,3 +6541,25 @@ The useful distinction this drew: a capture can support a test WITHOUT becoming
 the source of the behaviour, provided the assertion is about something the decoded
 path produces independently. "Some decoded frame opens with a flat band" is that
 shape. "The band is 40 rows tall because the capture says so" is not.
+
+## #210 — the difference between a match and the match
+
+`CONSOLE_BAND_FRAME = 90` was the last constant carrying an oracle flavour. Its
+doc already claimed proof by construction: frame 90's rows 140..200, through the
+console-bank remap, equal the harvested `console_band.idx` in all 19200 bytes.
+
+That is a strong claim and the test really did check it — but only for frame 90.
+Nothing established that 90 was the ONLY frame satisfying it, and without that the
+index is still something someone identified and then confirmed, rather than
+something the archive determines.
+
+The test now searches all 180 frames the same way and asserts the match set is
+exactly `[90]`. It is. That closes the gap: given the band, the data leaves no
+other choice, so the capture is the TARGET of a search and never the source of the
+number. Settled DATA.
+
+The general shape is worth naming, because several constants in this tree have the
+same structure: verifying that a chosen value works is weaker than verifying that
+no other value would. The first is consistent with a lucky guess; the second is
+not. Where the candidate space is small and enumerable — 180 frames, 95 directory
+slots, 52 opcodes — the stronger test costs a loop.
