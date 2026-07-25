@@ -2172,3 +2172,40 @@ swapping 13,000 equally-valid random vectors would be a large diff with no gain.
 What this does NOT do is generate vectors for anything new — the batch is the
 functions the clean-lift pipeline already produces. But the pipeline can now be
 RUN, which is the difference between a documented blocker and a working tool.
+
+## FIX #64 — the console choice box was PAINTED; the game TINTS it
+
+Sweeping `engine.rs`'s unverified rows, `draw_choice_box` had well-cited geometry
+(`0x84A1`, `0x847A`, `0x8508`, `0x857D`, the three anchors) and four colours that
+were not cited at all:
+
+    const BORDER: u8 = 0x15;   // "from the live index dump"
+    const FILL: u8 = 0xE0;     // "measured from choice_box_bob_morlock.ppm"
+
+Following the prime rule — find the code that produces the surface — the widget
+does no such thing. At `0x84D8` it loads `si = [0xAC8]` (`0x5F11`, the
+50%-toward-black remap table built by `0x22E0`) and calls `0x299:0x40E`: the same
+TRANSLUCENT-WINDOW primitive the destination info panel uses, decoded earlier this
+session. There is no border/fill pair anywhere in the routine. The `[0x27E6]&1`
+branch at `0x84CD` is a query-only early return, not an alternate draw.
+
+So the console's choice box darkens whatever it covers. The port painted flat
+black over it.
+
+WHY THE CAPTURE WASN'T MISREAD — it was OVER-GENERALISED. The measured box sits
+over the panorama's dark orb socket, where a 50% tint really does resolve to index
+`0xE0` for most pixels. The porter recorded what was there. The error was
+concluding that the box IS `0xE0`, rather than that `0xE0` is what a tint produces
+HERE. Over any lighter surface the two diverge completely. The rewritten test
+makes exactly that distinction: it does NOT assert `0xE0` disappears (it doesn't),
+it asserts the region stays VARIED, which a flat fill cannot be and a tint always
+is.
+
+The label colours turned out to be in the assembly after all, and the port was
+missing one: `mov al,0xE8` (`0x8565`) unselected, `mov al,0xEF` (`0x858B`)
+selected, and `mov al,0xFE` (`0x8595`) for the selected row WHILE THE MOUSE IS
+ENABLED (`test byte gs:[0xA3E],1`). The port had the first two and no notion of
+the third.
+
+The old test was named `choice_box_matches_the_measured_spec`. That name was the
+tell: under the prime rule there is no such thing as a measured spec.

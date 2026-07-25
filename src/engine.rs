@@ -1977,10 +1977,14 @@ impl EngineState {
         if labels.is_empty() {
             return;
         }
-        const BORDER: u8 = 0x15;
-        const FILL: u8 = 0xE0;
+        // ASSEMBLY-SOURCED (these were capture-measured, and the box was wrong):
+        //   0x8565  mov al,0xE8                 unselected row
+        //   0x858B  mov al,0xEF                 the selected row...
+        //   0x8595  mov al,0xFE                 ...but 0xFE while the mouse is ON
+        //                                        (`test byte gs:[0xA3E],1` @0x858D)
         const TEXT: u8 = 0xE8;
         const TEXT_SELECTED: u8 = 0xEF;
+        const TEXT_SELECTED_MOUSE: u8 = 0xFE;
         let rows = labels.len().min(8);
         let widest = labels
             .iter()
@@ -1991,8 +1995,7 @@ impl EngineState {
         let text_top = self.choice_box_text_top(rows);
         // The box rect per the widget's ASSEMBLY layout (DS:0x2AAB @0x84A1..):
         // w = widest_label + 0x14 (20), h = rows*11 + 8, x = anchor - w/2,
-        // y = (200 - h)/2; border index 0x15 then fill 0xE0 (both DAC 0,0,0 —
-        // from the live index dump; RGB can't distinguish them).
+        // y = (200 - h)/2.
         let h = rows * Self::CHOICE_BOX_PITCH + 8;
         // Box rect from the shared widget geometry (0x84A1..): the world box
         // (kind 10) anchors 80 / floors 55, others anchor 100 / floor 100. The
@@ -2000,14 +2003,34 @@ impl EngineState {
         let (anchor, x0, x1) = self.choice_box_geometry(widest);
         let y0 = (200usize.saturating_sub(h)) / 2;
         let y1 = (y0 + h).min(ENGINE_SCREEN_HEIGHT);
-        for y in y0..y1 {
-            for x in x0..x1 {
-                let edge = y < y0 + 3 || y + 3 >= y1 || x < x0 + 3 || x + 3 >= x1;
-                self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] = if edge { BORDER } else { FILL };
-            }
-        }
+        // THE BOX IS NOT PAINTED, IT IS TINTED. `0x84D8` loads `si = [0xAC8]` — the
+        // 50%-toward-black remap table — and calls `0x299:0x40E` with the rect it
+        // just computed, the same translucent-window primitive the destination
+        // info panel uses. The port previously filled a border index 0x15 and a
+        // fill index 0xE0, both measured off a capture where the box sits over the
+        // panorama's dark orb socket, so a darkened background reads as flat black.
+        // Over any lighter surface the two disagree completely.
+        let table = self.location_panel_tint_table();
+        crate::sprite::remap_rect_indexed(
+            &mut self.framebuffer,
+            ENGINE_SCREEN_WIDTH,
+            ENGINE_SCREEN_HEIGHT,
+            &table,
+            x0 as i32,
+            y0 as i32,
+            (x1 - x0) as i32,
+            (y1 - y0) as i32,
+        );
         for (i, label) in labels.iter().take(rows).enumerate() {
-            let color = if selected == Some(i) { TEXT_SELECTED } else { TEXT };
+            let color = if selected == Some(i) {
+                if self.location_panel_mouse_enabled {
+                    TEXT_SELECTED_MOUSE
+                } else {
+                    TEXT_SELECTED
+                }
+            } else {
+                TEXT
+            };
             let width = crate::font::square_caps_text_width(label);
             // Labels center on the BOX ANCHOR, not a fixed 100 (0x857D sub bx,[bp] /
             // 0x8580 shr / 0x8582 add: label_x = x0+10+(widest-width)/2 = anchor-w/2).
@@ -5034,7 +5057,7 @@ mod tests {
     /// MEASURED"). This locks the widget to the decoded values so a regression
     /// (wrong index, missing border/fill) fails a test.
     #[test]
-    fn choice_box_matches_the_measured_spec() {
+    fn choice_box_is_a_tint_of_the_panorama_not_a_painted_box() {
         let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
             .iter().map(Path::new).find(|p| p.join("TB.BIG").exists());
         let Some(iso) = iso else { return };
@@ -5046,8 +5069,10 @@ mod tests {
         e.bridge_active = true;
         e.menu_submenu_active = true;
         e.step(MouseInput { x: 160, y: 100, buttons: 0, ..Default::default() });
-        // The measured spec: border 0x15, fill 0xE0, text 0xE8. Count each in the
-        // box region (x 63.., y 88..~120) — all three must be present.
+        // The box is a TINT of whatever it covers (0x84D8: si=[0xAC8], the
+        // 50%-toward-black table, into 0x299:0x40E) — not a painted border+fill.
+        // So the assertion is that the region got DARKER and stayed VARIED, and
+        // that the label colour the assembly loads (0x8565: mov al,0xE8) is there.
         let count = |idx: u8| {
             let mut n = 0;
             for y in 88..122usize {
@@ -5059,9 +5084,24 @@ mod tests {
             }
             n
         };
-        assert!(count(0x15) > 100, "choice-box border (0x15) present: {}", count(0x15));
-        assert!(count(0xE0) > 500, "choice-box gold fill (0xE0) present: {}", count(0xE0));
         assert!(count(0xE8) > 20, "choice-box text (0xE8) present: {}", count(0xE8));
+        // A painted box would flatten the region to one or two indices; a tint
+        // preserves the panorama's structure underneath.
+        let distinct: std::collections::HashSet<u8> = (92..118usize)
+            .flat_map(|y| (70..168usize).map(move |x| (x, y)))
+            .map(|(x, y)| e.framebuffer[y * ENGINE_SCREEN_WIDTH + x])
+            .collect();
+        assert!(
+            distinct.len() > 4,
+            "the box must TINT the panorama, not flatten it: {} indices",
+            distinct.len()
+        );
+        // NOT asserted: that index 0xE0 disappears. It does not, and that is the
+        // point — over the panorama's dark orb socket the 50% tint genuinely
+        // resolves to 0xE0 for most pixels, which is why a capture of THIS box in
+        // THIS place looked like a flat 0xE0 fill and got recorded as one. The
+        // capture was not misread; it was over-generalised. Only the varied-not-
+        // flattened check above can tell the two apart.
     }
 
     #[test]
