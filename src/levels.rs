@@ -38,6 +38,19 @@ pub enum LevelKind {
 /// Cited, not just derived: `resource_name_table_access` (`0x3FC7`) does
 /// `mov dx,0xc04` @`0x3FD4` with `ds = fs`.
 pub const LEVEL_DIRECTORY_FILE_OFFSET: usize = 0xCDF4;
+/// The resource loader's READ CHUNK SIZE: `mov cx,0x7d00` @`0x4041`, the count
+/// for the `int 21h`/`AH=3Fh` read at `0x4049`, repeated until the size taken
+/// from the FindFirst record (`es:[bx+0x1a]` @`0x3FF4`) is exhausted
+/// (`sub ebp,eax` @`0x404D`).
+///
+/// COINCIDENCE, NOT A RELATIONSHIP: the audio streamer reads its source from
+/// `DS:0x7D06` (`mov si,0x7d06` @`0xBB00`), which is numerically this value plus
+/// the 6-byte header. One is a byte COUNT, the other a DS OFFSET, and nothing
+/// decoded so far connects them. Recorded here so the equality is visible without
+/// being asserted — matching numbers have twice been the start of a wrong
+/// inference in this project (audit-fixes #114, #194).
+pub const RESOURCE_READ_CHUNK: u16 = 0x7D00;
+
 /// One directory slot: a 16-byte NUL-padded filename, the same record shape as
 /// the world-art table's name field ([`WORLD_ART_RECORD`]).
 ///
@@ -379,6 +392,23 @@ pub fn parse_world_art_table(exe: &[u8]) -> Vec<(String, u16)> {
 
 #[cfg(test)]
 mod tests {
+
+    /// `0x4041 mov cx,0x7d00` — the read chunk size, checked as BYTES in the
+    /// image so a doc edit cannot drift from the instruction.
+    #[test]
+    fn resource_read_chunk_matches_the_loader_instruction() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        // b9 imm16 = mov cx,imm16
+        assert_eq!(exe[0x4041], 0xB9, "0x4041 is not a mov cx,imm16");
+        let imm = u16::from_le_bytes([exe[0x4042], exe[0x4043]]);
+        assert_eq!(imm, RESOURCE_READ_CHUNK);
+        // And the read that consumes it really is AH=3Fh.
+        assert_eq!(&exe[0x4046..0x404B], &[0xB8, 0x00, 0x3F, 0xCD, 0x21]);
+    }
 
     /// The image carries resources the transcribed literal never had — including
     /// the whole script3/4/5 sets the frontend already loads by name.
