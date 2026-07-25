@@ -369,6 +369,56 @@ pub fn text_selector_voice_clip_index(selector: u8, talk_clip_count: usize) -> O
     }
 }
 
+/// Per-line asset table base, `DS:0x1FB5` (`0x9D6A`).
+pub const DLG_LINE_ASSET_TABLE_DS: u16 = 0x1FB5;
+/// The table's entry stride: 4 bytes (`shl bx,2` at `0x9D67`, and the fill's
+/// `stosw` + `add di,2` at `0x7694`).
+pub const DLG_LINE_ASSET_ENTRY_STRIDE: u16 = 4;
+/// The asset id sits at `entry + 2` (`mov si,[bx+2]`, `0x9D6E`).
+pub const DLG_LINE_ASSET_ID_OFFSET: u16 = 2;
+/// `line_id = sign_extend(b3) + 9` (`0x11F5`).
+pub const DLG_LINE_ID_BIAS: i16 = 9;
+/// Stride of the name table the asset id offsets into (`shl ax,4`, `0x768E`).
+pub const DLG_ASSET_NAME_STRIDE: u16 = 16;
+/// `0xFFFF` = no asset for this line (`cmp si,-1`, `0x9D71`).
+pub const DLG_LINE_ASSET_NONE: u16 = 0xFFFF;
+
+/// The line id an `0xA6` selector maps to: `sign_extend(b3) + 9`.
+///
+/// `0x668D` stores `b3` SIGN-EXTENDED at `DS:0x1FAB` (`lodsb; cwde`), and `0x11F2`
+/// reads it and adds 9 to form `gs:0x6788`. The sign extension is load-bearing —
+/// `0xFF` becomes `-1`, not `255`.
+pub fn dlg_line_id_for_selector(selector: u8) -> i16 {
+    i16::from(selector as i8) + DLG_LINE_ID_BIAS
+}
+
+/// DS offset of the ASSET ID word for a line id: `0x1FB5 + line_id*4 + 2`.
+///
+/// Returns `None` for a negative line id, which the dispatcher rejects outright
+/// (`or ax,ax; js` at `0x9D20`).
+pub fn dlg_line_asset_id_ds_offset(line_id: i16) -> Option<u16> {
+    if line_id < 0 {
+        return None;
+    }
+    Some(
+        DLG_LINE_ASSET_TABLE_DS
+            + (line_id as u16) * DLG_LINE_ASSET_ENTRY_STRIDE
+            + DLG_LINE_ASSET_ID_OFFSET,
+    )
+}
+
+/// The value the fill at `0x7684` stores for one source byte.
+///
+/// Negative bytes pass through sign-extended (so `0xFF` becomes `0xFFFF`, the exact
+/// "no asset" sentinel the reader tests); otherwise the stored value is
+/// `(byte - 1) * 16`, a BYTE OFFSET into a 16-byte-stride name table — not an ordinal.
+pub fn dlg_line_asset_id_from_source_byte(byte: u8) -> u16 {
+    if (byte as i8) < 0 {
+        return i16::from(byte as i8) as u16;
+    }
+    (u16::from(byte).wrapping_sub(1)).wrapping_mul(DLG_ASSET_NAME_STRIDE)
+}
+
 pub fn text_selector_requests_voice(selector: u8) -> bool {
     selector != TEXT_SELECTOR_NONE && selector != TEXT_SELECTOR_SILENT
 }
@@ -7148,6 +7198,53 @@ mod tests {
     }
 
     use super::*;
+
+    /// The decoded A6 `b3` -> per-line asset chain, as an executable specification.
+    /// Landed ahead of the data path so the arithmetic is pinned to the binary now
+    /// rather than being re-derived when someone wires it up.
+    #[test]
+    fn dlg_line_asset_chain_matches_the_decoded_arithmetic() {
+        // line_id = sign_extend(b3) + 9   (0x668D lodsb/cwde, 0x11F5 add ax,9).
+        // Sign extension is load-bearing: 0xFF is -1, not 255.
+        assert_eq!(dlg_line_id_for_selector(0x00), 9);
+        assert_eq!(dlg_line_id_for_selector(0x01), 10);
+        assert_eq!(dlg_line_id_for_selector(0xFF), 8, "0xFF sign-extends to -1");
+        assert_eq!(dlg_line_id_for_selector(0x80), -119, "0x80 is -128");
+
+        // The b3 = 0 entry must land at 0x1FB5 + 0x26 -- the exact address the fill
+        // cursor is seeded to at 0x7447 (`mov bx,0x1FB5; add bx,0x26`). This is the
+        // corroboration that fixes the table base and the +2 field offset together.
+        assert_eq!(
+            dlg_line_asset_id_ds_offset(dlg_line_id_for_selector(0)),
+            Some(DLG_LINE_ASSET_TABLE_DS + 0x26)
+        );
+        // Entries step by the 4-byte stride.
+        let a = dlg_line_asset_id_ds_offset(9).unwrap();
+        let b = dlg_line_asset_id_ds_offset(10).unwrap();
+        assert_eq!(b - a, DLG_LINE_ASSET_ENTRY_STRIDE);
+        // A negative line id is rejected, as 0x9D20's `or ax,ax; js` does.
+        assert_eq!(dlg_line_asset_id_ds_offset(-1), None);
+
+        // Fill values (0x7684): negatives pass through sign-extended, and 0xFF must
+        // produce EXACTLY the sentinel the reader tests at 0x9D71.
+        assert_eq!(dlg_line_asset_id_from_source_byte(0xFF), DLG_LINE_ASSET_NONE);
+        assert_eq!(dlg_line_asset_id_from_source_byte(0xFE), 0xFFFE);
+        // Non-negatives become (byte-1)*16 -- a NAME-TABLE BYTE OFFSET, not an ordinal.
+        assert_eq!(dlg_line_asset_id_from_source_byte(1), 0);
+        assert_eq!(dlg_line_asset_id_from_source_byte(2), 16);
+        assert_eq!(dlg_line_asset_id_from_source_byte(5), 64);
+        // Every non-negative result is name-table aligned.
+        for b in 1..=0x7Fu8 {
+            assert_eq!(dlg_line_asset_id_from_source_byte(b) % DLG_ASSET_NAME_STRIDE, 0);
+        }
+
+        // And the contrast that matters: the port's ordinal rule is a different
+        // FUNCTION, not an off-by-one. b3=5 is name offset 64, never index 4.
+        assert_ne!(
+            dlg_line_asset_id_from_source_byte(5) as usize,
+            text_selector_voice_clip_index(5, 16).unwrap_or(usize::MAX)
+        );
+    }
 
     /// Every consumer that turns an `0xA6` word list into text must stop at the
     /// `0xFFFF` separator. Three of six did not, in three different ways:
