@@ -3797,3 +3797,37 @@ path is connected, at which point it becomes a real comparison. Recorded in
 docs/port-validation.md as OPEN.
 
 Two captures remain unread: `mission_briefing_eye.ppm`, `script2_first_frame.ppm`.
+
+## #115 — WITHDRAWING #114: that capture is static, not stars
+
+#114 is wrong and is withdrawn. It claimed the bridge's windows should show a
+starfield and render black in the port, at mean_abs 102 against
+`nav_screen_opened.ppm`. The capture is not a bridge starfield.
+
+Its top 135 rows hold exactly two colours — black (23315px) and white (19855px) —
+in per-pixel noise, mean run length 1.87px across a row. That is the binary STATIC
+of the presentation/boot screen, with the console band below it. The screen was
+never the bridge.
+
+The measurement that should have stopped me was in the same output: the port's
+star layer plots **33 pixels**, and a 1000-point cloud plots at most ~1000. The
+capture has 19855 white pixels. Nothing that renders 1000 points can produce that
+image, so "the starfield is not wired up" could not explain the difference — the
+arithmetic ruled it out before the conclusion was written. I read a dense white
+field, recognised it as sky, and stopped.
+
+What the episode actually shows is a filename doing the work of evidence.
+`nav_screen_opened.ppm` sits in `captures/bridge/`, so three successive setups
+were tried against it — nav view, nav view stepped 180 ticks, bridge at frame 90 —
+each treated as "my setup is wrong" rather than "this may not be that screen." The
+first check should have been WHAT THE IMAGE IS: two colours and a run length would
+have said "static, rows 0..140" in one command.
+
+Corrected: the port-validation row is withdrawn, and the test's doc says what the
+capture is. The star layer's 33 pixels remain unexplained AS SUCH — that may or
+may not be a real gap, but nothing here is evidence either way, and it is not
+recorded as one.
+
+Three captures now genuinely unread: `mission_briefing_eye.ppm`,
+`script2_first_frame.ppm`, and `nav_screen_opened.ppm` — the last needs comparing
+against the PRESENTATION screen, which is where it belongs.

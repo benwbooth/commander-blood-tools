@@ -314,21 +314,19 @@ fn console_band_is_panorama_frame_90_through_the_remap() {
     assert_eq!(differing, 0, "{differing} of 19200 bytes differ");
 }
 
-/// OPEN DIVERGENCE, measured: the bridge's windows are BLACK in the port and full
-/// of stars in the live game.
+/// MISNAMED CAPTURE, kept as a measurement harness.
 ///
-/// `nav_screen_opened.ppm` (in captures/BRIDGE/) is the bridge at the nav station:
-/// a dense white starfield fills the top ~135 rows, with the console band below.
-/// `render_bridge_background` composites in that order — starfield first, then the
-/// panorama with colour 0 transparent so the windows show through — but the port's
-/// render has black where the stars should be, so the star layer is producing
-/// nothing on this path (`render_ship_3d_starfield` returning `None`, or the GPU
-/// branch being the only one that populates it).
+/// `nav_screen_opened.ppm` is not the nav screen and not a bridge starfield. Its
+/// top 135 rows are two colours — black and white — in per-pixel noise (mean run
+/// 1.87px): the binary STATIC of the presentation/boot screen, with the console
+/// band below. An earlier version of this test read the dense white as stars and
+/// concluded the bridge windows render black; the port's star layer plots 33
+/// pixels because 1000 points plot at most ~1000, while the capture has 19855
+/// white pixels. No point cloud makes that image (audit-fixes #115).
 ///
-/// mean_abs 102 against the capture. Deliberately NOT asserted with a tolerance:
-/// a threshold picked to accommodate this would encode the bug. Left `#[ignore]`
-/// as a measurement until the star path is fixed, then it becomes a real
-/// comparison. See docs/port-validation.md.
+/// Left `#[ignore]` because it still measures something useful — the distance
+/// between a chosen port state and a capture, with a star-layer pixel count — but
+/// it is NOT evidence about the bridge until pointed at a capture of the bridge.
 #[test]
 #[ignore]
 fn nav_screen_render_distance() {
@@ -358,6 +356,26 @@ fn nav_screen_render_distance() {
         .iter()
         .flat_map(|&i| e.scene_palette[i as usize])
         .collect();
+    // Is the STAR LAYER itself producing anything at the bridge's parameters?
+    {
+        use commander_blood_tools::ship3d::*;
+        let mut prng = commander_blood_tools::ship3d::BloodPrng::seeded_from_rtc_seconds(0);
+        let angles = Ship3dMatrixAngles {
+            angle_2f71: 0,
+            projection_angle_2f6d: 90 % 180,
+            angle_2f6f: 0,
+        };
+        let origin = Ship3dProjectionOrigin { x: 0x8000, y: 0x8000, z: 0x8000 };
+        let viewport = Ship3dProjectionViewport { left: 0, right: 320, top: 0, bottom: 200 };
+        match render_ship_3d_starfield(&mut prng, angles, origin, viewport) {
+            None => eprintln!("STAR LAYER: render_ship_3d_starfield returned None"),
+            Some(r) => eprintln!(
+                "STAR LAYER: {} non-zero of {}",
+                r.buffer.iter().filter(|&&p| p != 0).count(),
+                r.buffer.len()
+            ),
+        }
+    }
     eprintln!("nav-screen mean_abs = {:.2}", mean_abs(&rgb, &live));
     let nonzero = e.framebuffer.iter().filter(|&&i| i != 0).count();
     eprintln!("port framebuffer non-zero pixels: {nonzero} / 64000");
