@@ -4061,3 +4061,31 @@ the failure it would catch, not for its coverage.
 `SHIP_3D_ANGLE_TABLE` settled as DATA on the strength of its test: 180
 `(cosine, sine)` Q14 pairs at `DS:0x4F45`, compared byte-for-byte against the
 shipped image. Ledger: 570 -> 571 of 2160.
+
+## #123 — "320x200" contains "0x200"
+
+`SHIP_3D_HUD_BAND_TOP` sat in the ledger as ASM? with origin `0x200`. Its doc
+cites no such address. What it says is "the bottom rows of the **320x200** frame"
+— and `320x200` contains the substring `0x200`, which every address regex in the
+tree was happily harvesting as a citation.
+
+Seventeen ledger rows cited `0x200`; only two of those citations are real. Eleven
+rows were provisionally ASM? on the strength of a screen dimension — rows that
+look evidenced and are not, which is worse than UNVERIFIED because the provisional
+status invites settling them.
+
+Fixed in six tools at once (`audit_inventory.py`, `check_cited_immediates.py`,
+`check_duplicate_rules.py`, `check_liftable_twins.py`, `check_opcode_handlers.py`,
+`check_opsize_mnemonics.py`) with a negative lookbehind: an address must not be
+preceded by an alphanumeric. 167 dimension strings across the source were feeding
+this.
+
+One row was ALREADY SETTLED with `0x200` as its only origin — `Vga` in
+`src/recomp/machine.rs`, status ORACLE. Checked rather than assumed: its ORACLE
+status comes from the recomp differential suite (37 tests, replaying the oracle
+corpus and diffing against unicorn), not from any citation. The phantom origin was
+incidental to it, and the status stands. No other settled row depended on one.
+
+The general shape is worth keeping in mind for anything that harvests structure
+from prose: the pattern was not wrong about what it matched, it was wrong about
+what that match MEANT. `0x200` really is in the text.

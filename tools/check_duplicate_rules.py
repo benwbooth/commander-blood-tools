@@ -41,7 +41,11 @@ def main():
 
     by_addr = collections.defaultdict(list)
     for r in rows:
-        m = re.search(r"0x([0-9A-Fa-f]{3,6})", r["origin"])
+# NOT preceded by an alphanumeric: "320x200" contains the substring "0x200",
+# so a plain `0x[0-9A-Fa-f]{3,6}` harvested a PHANTOM citation from every
+# screen-dimension string in a doc. 11 ledger rows were provisionally ASM?
+# on that basis alone -- evidenced-looking rows with no evidence.
+        m = re.search(r"(?<![0-9A-Za-z])0x([0-9A-Fa-f]{3,6})", r["origin"])
         if m:
             by_addr[int(m.group(1), 16)].append((r["item"], r["file"], r["status"]))
 

@@ -49,7 +49,11 @@ MNEMONICS = re.compile(r"\b(cbw|cwde|cwd|cdq)\b", re.I)
 ABOUT_THE_TOOL = re.compile(
     r"(prints?|renders?|capstone|dis\.py|TOOLING TRAP|shows? it|mnemonic)", re.I
 )
-ADDR = re.compile(r"0x([0-9A-Fa-f]{4,6})")
+# NOT preceded by an alphanumeric: "320x200" contains the substring "0x200",
+# so a plain `0x[0-9A-Fa-f]{3,6}` harvested a PHANTOM citation from every
+# screen-dimension string in a doc. 11 ledger rows were provisionally ASM?
+# on that basis alone -- evidenced-looking rows with no evidence.
+ADDR = re.compile(r"(?<![0-9A-Za-z])0x([0-9A-Fa-f]{4,6})")
 # How far past the cited address the instruction may sit. Citations name the
 # routine or the neighbouring instruction, not the 0x98 itself.
 WINDOW = 48

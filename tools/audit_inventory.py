@@ -40,7 +40,11 @@ import csv
 SRC = "src"
 OUT = "docs/function-audit.tsv"
 
-ADDR = re.compile(r"0x[0-9A-Fa-f]{3,6}")
+# NOT preceded by an alphanumeric: "320x200" contains the substring "0x200", so a
+# plain pattern harvested a PHANTOM citation from every screen-dimension string in
+# a doc, and 11 rows were provisionally ASM? on that basis alone -- rows that look
+# evidenced and are not.
+ADDR = re.compile(r"(?<![0-9A-Za-z])0x[0-9A-Fa-f]{3,6}")
 TEST_NAMES = set()
 
 # Statuses the heuristics below can produce. Anything else in an existing ledger

@@ -44,7 +44,11 @@ OPCONST = re.compile(r"^\s*(?:pub\s+)?const\s+(OP_[A-Z0-9_]+)\s*:\s*u8\s*=\s*(0x
 # `0xCE`'s citation of the game-flag words [0x2793]/[0x252a] look like a wrong
 # handler claim -- the doc never claimed they were handlers.
 HANDLER_CITE = re.compile(r"[Hh]andlers?\s+((?:0x[0-9A-Fa-f]{3,6}[/, ]*)+)")
-ADDR = re.compile(r"0x([0-9A-Fa-f]{3,6})")
+# NOT preceded by an alphanumeric: "320x200" contains the substring "0x200",
+# so a plain `0x[0-9A-Fa-f]{3,6}` harvested a PHANTOM citation from every
+# screen-dimension string in a doc. 11 ledger rows were provisionally ASM?
+# on that basis alone -- evidenced-looking rows with no evidence.
+ADDR = re.compile(r"(?<![0-9A-Za-z])0x([0-9A-Fa-f]{3,6})")
 
 
 def handler_for(mz, opcode):

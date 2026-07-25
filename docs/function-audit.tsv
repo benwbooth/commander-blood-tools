@@ -363,7 +363,7 @@ parse_deb_object_names	src/engine.rs	82	fn		DATA	/// Parse a `SCRIPTn.DEB` symbo
 collect_hnm_paths	src/engine.rs	98	fn		DATA?	/// Recursively collect `*.hnm` asset paths under `dir`, keyed by lowercase /// filename, so a DESCRIPT talk-HNM name resolves to its file.
 assemble_words	src/engine.rs	124	fn	0x66CD,0x6739	ASM?	/// Join dictionary words into the on-screen subtitle string with the game's decoded /// text-assembly rule (0xA6 handler @0x66CD–0x6739): a space between words unless the /// next begins with attachi
 WorldVisit	src/engine.rs	152	struct		UNVERIFIED	/// A world being visited from the nav map: its decoded `fd/` rooms (paths, decoded /// lazily) with the currently-shown room. Rooms are the world's floor/view-angle /// backgrounds; cycling walks thr
-ENGINE_SCREEN_WIDTH	src/engine.rs	163	const	0x200	ASM?	/// Screen dimensions of the engine framebuffer (VGA mode 13h / mode-X, 320x200).
+ENGINE_SCREEN_WIDTH	src/engine.rs	163	const		UNVERIFIED	/// Screen dimensions of the engine framebuffer (VGA mode 13h / mode-X, 320x200).
 ENGINE_SCREEN_HEIGHT	src/engine.rs	164	const		UNVERIFIED	
 civil_from_days	src/engine.rs	170	fn	0x0FFB	ASM?	/// Per-frame engine state — the subset of the `DS`/`gs` globals the main loop /// (`0x0FFB`) touches, plus the indexed framebuffer the render subsystems fill. /// Days-since-Unix-epoch → (year, month
 TvProgram	src/engine.rs	186	struct		DATA?	"/// One TV broadcast program: a DESCRIPT Sequence record that self-identifies as a channel /// (its subtitles announce ""…watching…""), played as its chained HNM clips + music + /// tick-timed subtitle "
@@ -512,7 +512,7 @@ arm_alien_intro	src/engine.rs	3018	fn		UNVERIFIED	/// Arm the scrutinizer-appara
 render_alien_view	src/engine.rs	3029	fn		UNVERIFIED	/// Render the alien-examination screen: the mouse pan (delta from centre, /// smoothed + clamped like the decoded camera at `re/REVERSE.md`) selects one of /// the pre-rendered rotation views, whose 
 render_intro_frame	src/engine.rs	3076	fn		UNVERIFIED	/// Render one frame of the current intro clip full-screen; when a clip's frames are /// exhausted, advance to the next; when the sequence ends, deactivate the intro so /// the main loop takes over.
 INTRO_CREDIT_FRAMES_PER_TICK	src/engine.rs	3128	const		ORACLE?	/// Frame index at which a credit cue's `tick` becomes active. The intro cinematic /// advances one clip frame per stepped game frame, so a cue displays from `tick` /// frames in until the next cue su
-INTRO_CREDIT_BASELINE_Y	src/engine.rs	3133	const	0x200	ORACLE?	/// Top row of the FIRST credit line. Native-resolution ground truth (dlg_05, a real /// 320x200 capture of the credit beat): line 1 top y=82, line 2 y=92 (pitch 10), /// centred on x=160, over the ch
+INTRO_CREDIT_BASELINE_Y	src/engine.rs	3133	const		ORACLE?	/// Top row of the FIRST credit line. Native-resolution ground truth (dlg_05, a real /// 320x200 capture of the credit beat): line 1 top y=82, line 2 y=92 (pitch 10), /// centred on x=160, over the ch
 TV_CUE_BASELINE_Y	src/engine.rs	3135	const		UNVERIFIED	/// Top row of the LAST TV broadcast-cue line (the lower letterbox band).
 INTRO_CREDIT_COLOR_INDEX	src/engine.rs	3138	const		UNVERIFIED	/// Reserved palette index forced to white for the credit glyphs (mirrors the /// dialogue reveal's reserved 0xFD/0xFE slots).
 draw_intro_credit	src/engine.rs	3142	fn		UNVERIFIED	/// Draw the credit subtitle active at intro clip `frame` (if any) centred in the /// lower letterbox. The active cue is the last one whose `tick` has been reached.
@@ -587,7 +587,7 @@ targeted_world_index	src/engine.rs	4695	fn		UNVERIFIED	/// The index into [`Self
 draw_subtitle	src/engine.rs	4704	fn		DATA?	/// Draw a subtitle line into the framebuffer at the game's subtitle reveal /// position (scene band, `SUBTITLE_X`/`SUBTITLE_Y` = 10/8) using the game font. /// The scene band's talk-HNM background co
 draw_subtitle_revealed	src/engine.rs	4713	fn		ASM	/// Draw the pre-wrapped subtitle with only the first `visible` characters shown, /// the newest one in the reveal-edge colour (0xFE) — the game's per-character /// reveal. Non-visible characters aren
 render_dialogue_frame	src/engine.rs	4856	fn		DATA?	/// Render the current dialogue line's frame into the framebuffer: clear, then /// draw the reconstructed subtitle text. (The talk-HNM scene background layer /// composites behind this once the HNM de
-BOX_OPEN_PHASES	src/engine.rs	4872	const	0x2B97,0x79E5,0x130	ASM?	// BOX-OPEN ANIMATION — the game's 6-phase zoom (table DS:0x2B97, driver // screen_mode_update 0x79E5): {x,y,w,h} growing from a point to the // full 320x130 presentation frame, 0xE0 fill with an 0xEF
+BOX_OPEN_PHASES	src/engine.rs	4872	const	0x2B97,0x79E5	ASM?	// BOX-OPEN ANIMATION — the game's 6-phase zoom (table DS:0x2B97, driver // screen_mode_update 0x79E5): {x,y,w,h} growing from a point to the // full 320x130 presentation frame, 0xE0 fill with an 0xEF
 first_scene_hnm_stem	src/engine.rs	4977	fn		DATA?	/// Lowercase file stem of the first resolved talk-HNM in the loaded dialogue, so a /// driver can look its background music up via `DescriptDb::hnm_music_map`.
 take_nav_selection	src/engine.rs	4989	fn		UNVERIFIED	/// Take the pending nav destination selection (the compass heading the player /// clicked in the nav view), clearing it. A driver polls this each frame to load /// the selected destination's dialogue
 poll_input	src/engine.rs	4995	fn	0x70E	ASM?	/// The mouse input poll (`0:0x70E`): store the frame's cursor state and, if the /// cursor moved since last frame, reset the idle timer; otherwise advance it.
@@ -649,11 +649,11 @@ square_caps_glyph	src/font.rs	649	fn		UNVERIFIED
 square_caps_advance	src/font.rs	655	fn	0x7412	ORACLE	/// This glyph's advance, from the game's width table at `DS:0x7412`.
 square_caps_text_width	src/font.rs	677	fn	0x30CD,0x30FE,0x7442,0x84AD,0x84B3,0xAC6	ORACLE	/// Rendered pixel width of a square-caps string. /// /// This is the measure routine at `0x30CD` transcribed: `lodsb` / `xlatb` / /// `add dl, [di+glyph]` accumulating each glyph's width, then `sub a
 draw_square_caps	src/font.rs	689	fn		UNVERIFIED	/// Draw square-capitals text (list menus / choice boxes) at (x, y) in `color`. /// /// Every glyph now comes from the binary table, so there is no longer a fallback into /// the thin built-in font — 
-HandTri	src/gpu.rs	14	struct	0x200	INFRA	/// One textured triangle of a 3D asset in 320x200 virtual-screen space. /// Vertex layout: x, y (virtual screen), depth (game units), u, v (texel coords).
+HandTri	src/gpu.rs	14	struct		INFRA	/// One textured triangle of a 3D asset in 320x200 virtual-screen space. /// Vertex layout: x, y (virtual screen), depth (game units), u, v (texel coords).
 GpuPresenter	src/gpu.rs	16	struct		INFRA	
 make_depth	src/gpu.rs	534	fn		INFRA	
 resize	src/gpu.rs	549	fn		INFRA	
-present	src/gpu.rs	558	fn	0x200	ASM?	/// Present one frame: the palettized 320x200 background integer-scaled with /// letterboxing, then the hand triangles at full window resolution.
+present	src/gpu.rs	558	fn		INFRA?	/// Present one frame: the palettized 320x200 background integer-scaled with /// letterboxing, then the hand triangles at full window resolution.
 bytemuck_cast	src/gpu.rs	726	fn		INFRA	/// Plain-old-data cast for tightly-packed [f32; N] slices.
 parse_palette_block	src/hnm.rs	10	fn		UNVERIFIED	
 HnmFile	src/hnm.rs	43	struct		UNVERIFIED	
@@ -765,7 +765,7 @@ GAME_SCREEN_PALETTE_DAC_LOWER_IS_BINARY	src/palette.rs	42	const	0x5B58,0x16A7,0x
 GAME_SCREEN_PALETTE_DAC	src/palette.rs	43	const		UNVERIFIED	
 PALETTE_BLEND_MAX_DISTANCE	src/palette.rs	113	const	0xBB8,0x234F,0x23B0	ASM	/// Seed distance of the nearest-colour search (`mov word [bp+6],0xBB8` @`0x234F`). /// A source colour with no palette entry within this squared distance leaves its /// table byte UNCHANGED (`js 0x23
 build_palette_blend_remap_table	src/palette.rs	143	fn	0x22E0,0x1CE,0x0000,0x22F1,0x22FC,0x22F5,0x2303,0x22FD,0x230	ORACLE	/// The game's TINT REMAP TABLE builder — routine `0x22E0`, far-called as /// `0x1CE:0x0000`. Every translucent/tinted overlay in the game goes through it: /// build a 256-entry LUT that maps each pal
-build_console_bank_remap_table	src/palette.rs	202	fn	0x6011,0x242D,0x1CE,0x014D,0x22E0,0x9622,0x5251,0x7AC3,0x200	ORACLE	/// The CONSOLE-BANK remap table (`DS:0x6011`) — built by running the GAME'S OWN /// builder, not by reimplementing it. /// /// `0x242D` (far `0x1CE:0x014D`) is a SECOND table builder, distinct from t
+build_console_bank_remap_table	src/palette.rs	202	fn	0x6011,0x242D,0x1CE,0x014D,0x22E0,0x9622,0x5251,0x7AC3	ORACLE	/// The CONSOLE-BANK remap table (`DS:0x6011`) — built by running the GAME'S OWN /// builder, not by reimplementing it. /// /// `0x242D` (far `0x1CE:0x014D`) is a SECOND table builder, distinct from t
 GS	src/palette.rs	204	const		UNVERIFIED	
 PAL_DS	src/palette.rs	205	const		UNVERIFIED	
 TABLE_DS	src/palette.rs	206	const		UNVERIFIED	
@@ -1067,9 +1067,9 @@ SHIP_3D_PROJECTION_SCREEN_HEIGHT	src/ship3d.rs	1865	const		UNVERIFIED	/// Height
 Ship3dPointCloudRender	src/ship3d.rs	1870	struct		UNVERIFIED	/// One plotted starfield pixel and, alongside the returned count, the whole /// depth-shaded buffer produced by [`render_ship_3d_point_cloud`].
 render_ship_3d_point_cloud	src/ship3d.rs	1897	fn	0x9A10,0x9A1D,0x2F77,0x3E8,0x9A23,0x2FC1,0x9A31,0x2F95,0x9A2	ASM	/// Render the full ship-3D starfield background: the batch loop at `0x9A10`, /// checked against the disassembly: /// /// ```text ///   0x9A1D  mov word [0x2F77],0x3E8    the loop count — 1000, the c
 ship_3d_point_cloud_points	src/ship3d.rs	1919	fn		ASM	/// The same starfield as [`render_ship_3d_point_cloud`], but returning the plotted /// points (screen x, y, depth shade) for a GPU point renderer — identical projection, /// viewport clip, depth-shad
-SHIP_3D_HUD_BAND_TOP	src/ship3d.rs	1942	const	0x200	ASM?	/// The ship-nav HUD band occupies the bottom rows of the 320x200 frame (below the /// scene band that ends at row 0xA5=165), where the engine draws the grey /// pyramid-nav grid + central eye-orb. Se
+SHIP_3D_HUD_BAND_TOP	src/ship3d.rs	1942	const		UNVERIFIED	/// The ship-nav HUD band occupies the bottom rows of the 320x200 frame (below the /// scene band that ends at row 0xA5=165), where the engine draws the grey /// pyramid-nav grid + central eye-orb. Se
 SHIP_3D_HUD_PYRAMID_VERTICES	src/ship3d.rs	2105	const	0xB079,0x5D98,0x131B8,0x5491,0x2795,0x279B,0x2793,0x9656,0xB	DATA	/// The recovered ship-nav HUD pyramid geometry: 32 3D vertices (X,Y,Z, signed /// fixed-point) copied by `ship_3d_hud_init` (BLOODPRG.EXE @0xB079) from DS:0x5D98 /// (file 0x131B8) into the HUD worki
-render_star_map_navview	src/ship3d.rs	2156	fn	0x200,0x9656,0xB193	ASM?	/// Render the pyramid-nav HUD grid into the bottom band of an indexed 320x200 /// framebuffer (the band the exporter otherwise leaves BLACK in dialogue mode). /// Draws a perspective grid of grey pyr
+render_star_map_navview	src/ship3d.rs	2156	fn	0x9656,0xB193	ASM?	/// Render the pyramid-nav HUD grid into the bottom band of an indexed 320x200 /// framebuffer (the band the exporter otherwise leaves BLACK in dialogue mode). /// Draws a perspective grid of grey pyr
 project_star_map_point	src/ship3d.rs	2169	fn	0x9BBA	ASM?	/// As [`render_star_map_navview`], but pans the pyramid field horizontally by /// `compass_angle` (0..179) so the view rotates with the ship's heading (mouse /// steering) — the interactive nav behav
 render_star_map_navview_projected	src/ship3d.rs	2194	fn	0x9BBA	ASM?	/// Projection-accurate star-map nav view: a receding grid of star-system pyramids /// projected with the game's decoded projection ([`project_star_map_point`]) plus the /// central eye-orb — the syst
 W	src/ship3d.rs	2195	const		UNVERIFIED	
@@ -1080,7 +1080,7 @@ H	src/ship3d.rs	2267	const		UNVERIFIED
 render_ship_3d_pyramid_hud	src/ship3d.rs	2324	fn		UNVERIFIED	
 W	src/ship3d.rs	2325	const		UNVERIFIED	
 H	src/ship3d.rs	2326	const		UNVERIFIED	
-render_ship_3d_starfield	src/ship3d.rs	2389	fn	0x200	ASM?	/// Render a complete ship-3D starfield background from real game data: randomize /// the point cloud from `prng`, build the camera matrix from `angles` using the /// recovered [`SHIP_3D_ANGLE_TABLE`]
+render_ship_3d_starfield	src/ship3d.rs	2389	fn		UNVERIFIED	/// Render a complete ship-3D starfield background from real game data: randomize /// the point cloud from `prng`, build the camera matrix from `angles` using the /// recovered [`SHIP_3D_ANGLE_TABLE`]
 project_ship_3d_object_sprite	src/ship3d.rs	2402	fn		ASM	
 update_ship_3d_sprite_slot_position	src/ship3d.rs	2473	fn		ASM	
 update_ship_3d_sprite_slot_extent	src/ship3d.rs	2499	fn		ASM	
@@ -1169,7 +1169,7 @@ full_screen	src/sprite.rs	207	fn		UNVERIFIED
 remap_rect_indexed_clipped	src/sprite.rs	249	fn	0x33A6,0x33F4,0x33AC,0x33B4,0x5235,0x33B8,0x33BA,0x33C0,0x33	ASM	/// The remap primitive's clip ladder, `0x33A6..0x33F4`, transcribed: /// /// ```text ///   0x33A6  or dx,dx / je,js         width  <= 0 -> return ///   0x33AC  or bp,bp / je,js         height <= 0 ->
 blit_sprite_frame_at	src/sprite.rs	317	fn		UNVERIFIED	/// Blit a decoded sprite frame into a `width`-stride indexed framebuffer, centred /// at `(cx, cy)`, skipping transparent index 0. /// Blit a frame using its authored draw offset: the frame's top-lef
 blit_sprite_frame_centered	src/sprite.rs	340	fn		UNVERIFIED	
-PANORAMA_FRAME_PIXELS	src/tbbig.rs	47	const	0x0F68,0x00D3,0x0AC4,0x981B,0x2A1B,0x2D50,0x1CE,0x0A70,0x200	ASM?	"//! `TB.BIG` — the ship-bridge *panorama* archive (""tableau de bord"" = dashboard). //! //! The bridge of the Ark is not a set of separate screens: it is one pre-rendered //! 360° panorama of 180 full-"
+PANORAMA_FRAME_PIXELS	src/tbbig.rs	47	const	0x0F68,0x00D3,0x0AC4,0x981B,0x2A1B,0x2D50,0x1CE,0x0A70,0x5B5	ASM?	"//! `TB.BIG` — the ship-bridge *panorama* archive (""tableau de bord"" = dashboard). //! //! The bridge of the Ark is not a set of separate screens: it is one pre-rendered //! 360° panorama of 180 full-"
 PANORAMA_FRAME_COUNT	src/tbbig.rs	50	const		UNVERIFIED	/// Full revolution = 180 frames at 2° per frame (matches the ship-3D angle table).
 ANGLE_UNITS_PER_FRAME	src/tbbig.rs	53	const	0x0A2A,0x5A0	ASM?	/// View-angle units (DS:0x0A2A) per panorama frame: 0x5A0 units / 180 frames.
 ANGLE_UNITS_PER_REVOLUTION	src/tbbig.rs	57	const	0x97F6,0x9815,0x0A2A	ASM	/// View-angle wrap modulus: 1440 units per revolution (0x97F6..0x9815 wraps /// DS:0x0A2A into this range).
@@ -1184,7 +1184,7 @@ parse	src/tbbig.rs	115	fn	0x5A0,0x981B	ASM?	/// Parse the archive. The directory
 frame_count	src/tbbig.rs	139	fn		UNVERIFIED	
 chunk	src/tbbig.rs	144	fn		UNVERIFIED	/// The raw chunk bytes of one frame (header + RLE stream).
 frame_header	src/tbbig.rs	150	fn		UNVERIFIED	
-unpack_frame_over	src/tbbig.rs	174	fn	0x200,0x2D50,0x5B57	ASM?	/// Unpack one frame over `screen` (a 320x200 palette-index buffer), /// mirroring `0x2D50` exactly. `transparent` selects the DS:0x5B57 bit-0 /// variant: when set, colour 0 skips (the underlying pix
+unpack_frame_over	src/tbbig.rs	174	fn	0x2D50,0x5B57	ASM?	/// Unpack one frame over `screen` (a 320x200 palette-index buffer), /// mirroring `0x2D50` exactly. `transparent` selects the DS:0x5B57 bit-0 /// variant: when set, colour 0 skips (the underlying pix
 frame_pixels	src/tbbig.rs	224	fn		UNVERIFIED	/// Convenience: decode a frame standalone onto black (opaque variant).
 panorama_frame_for_angle	src/tbbig.rs	233	fn	0x0A2A,0x97E7	ASM?	/// Map a bridge view angle (DS:0x0A2A units, 1440/revolution) to its panorama /// frame index, the inverse of `0x97E7`'s `frame * 8 - 0xA0` relation.
 media_stem	src/util.rs	1	fn		UNVERIFIED	
@@ -1706,7 +1706,7 @@ blit_scaled_transparent_sprite_indexed	src/extract/render.rs	413	fn		UNVERIFIED
 blit_ship_3d_sprite_slot_command_indexed	src/extract/render.rs	482	fn		UNVERIFIED	
 Ship3dDirtySpriteRenderResult	src/extract/render.rs	546	struct		UNVERIFIED	
 render_ship_3d_dirty_sprite_commands_indexed	src/extract/render.rs	553	fn		UNVERIFIED	
-compose_ship_3d_scene_indexed	src/extract/render.rs	604	fn	0x200	ASM?	/// Compose a complete ship-3D view frame from the individually-tested pipeline /// stages: start from the `render_ship_3d_starfield` background, project each /// object's 3D anchor into its slot desc
+compose_ship_3d_scene_indexed	src/extract/render.rs	604	fn		DATA?	/// Compose a complete ship-3D view frame from the individually-tested pipeline /// stages: start from the `render_ship_3d_starfield` background, project each /// object's 3D anchor into its slot desc
 decode_rle_sprite_pixels	src/extract/render.rs	649	fn		UNVERIFIED	
 blit_raw_sprite_indexed	src/extract/render.rs	685	fn		UNVERIFIED	
 ship_3d_destination_remap_table	src/extract/render.rs	756	fn		UNVERIFIED	
@@ -1726,7 +1726,7 @@ draw_game_glyph_indexed_clipped	src/extract/render.rs	946	fn		UNVERIFIED
 draw_game_glyph_rgb_clipped	src/extract/render.rs	969	fn		UNVERIFIED	
 subtitle_draw_glyph	src/extract/render.rs	1007	fn		UNVERIFIED	
 game_font_advance	src/extract/render.rs	1019	fn		UNVERIFIED	
-SCENE_TOP	src/extract/render.rs	1027	const	0x5239,0x523B,0x2793,0x130	ASM?	// Dialogue scene layout, RE'd from BLOODPRG.EXE. The scene is composited in the // framebuffer band `gs:0x5239..0x523B` with black bars / HUD outside. The // letterbox mode (gs:0x2793 & 8) uses rows 
+SCENE_TOP	src/extract/render.rs	1027	const	0x5239,0x523B,0x2793	ASM?	// Dialogue scene layout, RE'd from BLOODPRG.EXE. The scene is composited in the // framebuffer band `gs:0x5239..0x523B` with black bars / HUD outside. The // letterbox mode (gs:0x2793 & 8) uses rows 
 SCENE_BOTTOM	src/extract/render.rs	1028	const		UNVERIFIED	
 SUBTITLE_X	src/extract/render.rs	1033	const	0x94EE,0x5E5C,0x5E5E	ASM?	// BLOODPRG.EXE's reveal renderer is called from 0x94EE with BX=[0x5E5C] and // DX=[0x5E5E]. The initialized words at those DS offsets are 10 and 8; each // CR-delimited subtitle line advances DX by 8
 SUBTITLE_Y	src/extract/render.rs	1034	const		UNVERIFIED	
@@ -2044,7 +2044,7 @@ div32	src/recomp/machine.rs	920	fn		ORACLE?	/// 32-bit unsigned/signed `DIV`/`ID
 idiv32	src/recomp/machine.rs	932	fn		ORACLE	
 cwd	src/recomp/machine.rs	947	fn		ORACLE	/// `CWD` (DX = sign of AX) / `CDQ` (EDX = sign of EAX). No flags.
 cdq	src/recomp/machine.rs	950	fn		ORACLE	
-Vga	src/recomp/machine.rs	959	struct	0x200	ORACLE	/// VGA video memory with plane semantics (256 KB as 4 × 64 KB planes). The game runs mode 13h /// UNCHAINED (Mode-X-style planar 320x200): CPU writes at A000:off go to the planes selected by /// the 
+Vga	src/recomp/machine.rs	959	struct		ORACLE	/// VGA video memory with plane semantics (256 KB as 4 × 64 KB planes). The game runs mode 13h /// UNCHAINED (Mode-X-style planar 320x200): CPU writes at A000:off go to the planes selected by /// the 
 default	src/recomp/machine.rs	976	fn		ORACLE	
 write	src/recomp/machine.rs	995	fn		ORACLE	
 read	src/recomp/machine.rs	1061	fn		ORACLE	
@@ -2130,8 +2130,8 @@ tick_sb_playback	src/recomp/runtime.rs	1946	fn		UNVERIFIED	/// Advance the model
 ems_unmap	src/recomp/runtime.rs	1967	fn		UNVERIFIED	/// Write a mapped physical EMS page back to its logical store before remapping.
 int21	src/recomp/runtime.rs	1975	fn		UNVERIFIED	
 find_next_into_dta	src/recomp/runtime.rs	2423	fn		UNVERIFIED	/// Emit the next FindFirst/FindNext match into the DTA, or error 18 (no more files).
-screenshot_rgb	src/recomp/runtime.rs	2454	fn	0x200	ASM?	// ---------------- introspection ---------------- /// 320x200 RGB screenshot through the DAC (6-bit scaled like the decoders). Composites the /// VGA planes exactly as the CRT would: chain-4 (stock 1
-screen_indices	src/recomp/runtime.rs	2482	fn	0x200	ASM?	/// 320x200 palette-INDEX screenshot (same CRTC compositing as /// [`Runtime::screenshot_rgb`], without the DAC) — for pixel-identity diffs.
+screenshot_rgb	src/recomp/runtime.rs	2454	fn		UNVERIFIED	// ---------------- introspection ---------------- /// 320x200 RGB screenshot through the DAC (6-bit scaled like the decoders). Composites the /// VGA planes exactly as the CRT would: chain-4 (stock 1
+screen_indices	src/recomp/runtime.rs	2482	fn		UNVERIFIED	/// 320x200 palette-INDEX screenshot (same CRTC compositing as /// [`Runtime::screenshot_rgb`], without the DAC) — for pixel-identity diffs.
 write_ppm	src/recomp/runtime.rs	2505	fn		UNVERIFIED	
 text_screen	src/recomp/runtime.rs	2512	fn		UNVERIFIED	/// Text-mode screen contents (mode 3) for early-boot error messages.
 debug_state	src/recomp/runtime.rs	2530	fn		UNVERIFIED	/// One-line machine state summary for boot triage.
@@ -2148,7 +2148,7 @@ AudioOut	src/bin/blood.rs	626	struct		UNVERIFIED	/// Live audio: a ring buffer t
 start	src/bin/blood.rs	633	fn		UNVERIFIED	
 run_window	src/bin/blood.rs	678	fn		INFRA	
 main	src/bin/blood.rs	838	fn		INFRA	
-dump	src/bin/export_screens.rs	17	fn	0x200	ASM?	/// Write the engine's current 320x200 indexed framebuffer, resolved through its scene /// palette, as a binary PPM (P6) image.
+dump	src/bin/export_screens.rs	17	fn		UNVERIFIED	/// Write the engine's current 320x200 indexed framebuffer, resolved through its scene /// palette, as a binary PPM (P6) image.
 main	src/bin/export_screens.rs	32	fn		INFRA	
 main	src/bin/playthrough.rs	16	fn		INFRA	
 drive_script_to_profile	src/bin/playthrough.rs	112	fn		UNVERIFIED	/// Build a SCRIPT's VM, start the given actor presentations in turn, and confirm the /// script emits real dialogue and reaches its D2 profile handoff. Returns the profile.

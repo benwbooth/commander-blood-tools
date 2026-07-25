@@ -51,7 +51,11 @@ CONST = re.compile(
     r"^\s*(?:pub(?:\([^)]*\))?\s+)?const\s+([A-Z][A-Z0-9_]*)\s*:\s*"
     r"(u8|u16|u32|usize|i8|i16|i32|isize)\s*=\s*([^;]+);"
 )
-ADDR = re.compile(r"0x([0-9A-Fa-f]{3,6})")
+# NOT preceded by an alphanumeric: "320x200" contains the substring "0x200",
+# so a plain `0x[0-9A-Fa-f]{3,6}` harvested a PHANTOM citation from every
+# screen-dimension string in a doc. 11 ledger rows were provisionally ASM?
+# on that basis alone -- evidenced-looking rows with no evidence.
+ADDR = re.compile(r"(?<![0-9A-Za-z])0x([0-9A-Fa-f]{3,6})")
 INT = re.compile(r"^(0x[0-9A-Fa-f_]+|[0-9_]+)$")
 # Only file offsets inside the image are citable code addresses.
 LOW, HIGH = 0x400, 0x160000
