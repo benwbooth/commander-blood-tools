@@ -1142,8 +1142,8 @@ clips	src/snd.rs	111	fn		UNVERIFIED
 snd_sample_rate	src/snd.rs	116	fn		UNVERIFIED	
 parse_voc_pcm	src/snd.rs	129	fn		UNVERIFIED	/// Parse a Creative VOC file (the game's `mu/*.voc` music) into its unsigned 8-bit /// mono PCM samples + sample rate. Handles block type 1 (sound data: u24 length, /// time-constant byte, codec byte
 MAGIC	src/snd.rs	130	const		UNVERIFIED	
-snd_mix_average	src/snd.rs	171	fn	0xBB6D,0xBB74	ASM?	/// Mix one unsigned 8-bit SND sample into another. /// /// This ports BLOODPRG.EXE `0xBB6D..0xBB74`: `lodsb; add al,es:[di]; /// rcr al,1; stosb`. The add carry becomes bit 7 during the rotate, which
-mix_unsigned_pcm_average	src/snd.rs	175	fn		UNVERIFIED	
+snd_mix_average	src/snd.rs	171	fn	0xBB6D,0xBB74	ASM	/// Mix one unsigned 8-bit SND sample into another. /// /// This ports BLOODPRG.EXE `0xBB6D..0xBB74`: `lodsb; add al,es:[di]; /// rcr al,1; stosb`. The add carry becomes bit 7 during the rotate, which
+mix_unsigned_pcm_average	src/snd.rs	178	fn	0xBB6D,0xBB74	ASM	/// The `rep`-style loop around [`snd_mix_average`] — `0xBB6D..0xBB74` runs /// `lodsb / add al,es:[di] / rcr al,1 / stosb` per sample, so mixing a buffer is /// that pair applied element-wise over th
 SpriteFrameImage	src/sprite.rs	13	struct		UNVERIFIED	
 bank_dispatch_index	src/sprite.rs	27	fn		UNVERIFIED	/// Frame dispatch index from the bank header flags: bit 2 selects RAW (0) vs RLE (3) frame /// decode for the whole bank (see the body for the cross-bank verification).
 decode_sprite_bank_indices	src/sprite.rs	42	fn		UNVERIFIED	/// Decode every frame of a `.spr` sprite bank to palette-index grids. The bank /// header is `[0]=flags, [2]=frame_count`, then a `frame_count`-entry table of /// u32 frame offsets (relative to +4). 

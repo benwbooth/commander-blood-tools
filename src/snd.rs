@@ -172,6 +172,9 @@ pub fn snd_mix_average(source: u8, destination: u8) -> u8 {
     ((source as u16 + destination as u16) / 2) as u8
 }
 
+/// The `rep`-style loop around [`snd_mix_average`] — `0xBB6D..0xBB74` runs
+/// `lodsb / add al,es:[di] / rcr al,1 / stosb` per sample, so mixing a buffer is
+/// that pair applied element-wise over the shorter of the two.
 pub fn mix_unsigned_pcm_average(destination: &mut [u8], source: &[u8]) -> usize {
     let len = destination.len().min(source.len());
     for idx in 0..len {
@@ -182,6 +185,33 @@ pub fn mix_unsigned_pcm_average(destination: &mut [u8], source: &[u8]) -> usize 
 
 #[cfg(test)]
 mod tests {
+
+    /// `add al,X / rcr al,1` versus the port's 16-bit average, over ALL 65536
+    /// input pairs.
+    ///
+    /// The doc argues they are equal because the add's CARRY becomes bit 7 during
+    /// the rotate. That reasoning is right, but it is reasoning — and the entity
+    /// draw scale (audit-fixes #93) was a case where 8-bit and 16-bit arithmetic
+    /// looked interchangeable and were not. Here the whole domain fits in a sweep,
+    /// so the claim can simply be checked.
+    #[test]
+    fn snd_mix_average_is_the_add_rcr_pair_over_every_input() {
+        for source in 0u16..=0xFF {
+            for destination in 0u16..=0xFF {
+                // add al,X : an 8-bit add whose carry-out is bit 8 of the sum.
+                let sum = source + destination;
+                let al = (sum & 0xFF) as u8;
+                let carry = (sum >> 8) & 1;
+                // rcr al,1 : carry rotates INTO bit 7, bit 0 rotates out.
+                let rotated = ((carry as u8) << 7) | (al >> 1);
+                assert_eq!(
+                    super::snd_mix_average(source as u8, destination as u8),
+                    rotated,
+                    "source {source} destination {destination}"
+                );
+            }
+        }
+    }
     use super::*;
 
     fn collect(root: &str, ext: &str) -> Vec<std::path::PathBuf> {

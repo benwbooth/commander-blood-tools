@@ -3038,3 +3038,24 @@ differential but by construction: it RUNS `func_242d`, so its output is the
 game's code executing, not a reimplementation of it.
 
 Worklist: 15 differentialled, 11 candidates left.
+
+## FIX #94 — sweeping the widen-then-narrow pattern
+
+#93's divergence was an 8-bit computation the port did in 16. That is a CLASS, so
+I swept the tree for its signature — arithmetic widened to `u16` and narrowed back
+to `u8` — and found six sites. Four are port-side representation conversions (6-bit
+DAC to 8-bit RGB, which the game never performs at all) and one is test code.
+
+The sixth is real: `snd_mix_average`, porting `0xBB6D..0xBB74`'s
+`lodsb / add al,es:[di] / rcr al,1 / stosb`. Its doc ARGUES the 16-bit average is
+equivalent, because the add's carry becomes bit 7 during the rotate. The argument
+is correct — but #93 was a case where 8-bit and 16-bit arithmetic looked
+interchangeable and were not, so the argument is worth replacing with a check.
+
+The whole domain is 65536 pairs, so the sweep is exhaustive rather than sampled:
+for every `(source, destination)`, the port's result equals a faithful
+`add`-then-`rcr` simulation. Now checked, not reasoned.
+
+The distinction matters for what the ledger MEANS. "The doc explains why this is
+equivalent" and "every input has been tried" look similar in a code review and are
+not the same claim.
