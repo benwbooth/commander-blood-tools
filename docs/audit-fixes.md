@@ -4717,3 +4717,31 @@ future refactor "simplifying" it to `delta * tick / duration` would look like an
 improvement and would be wrong.
 
 Cited instructions 134 -> 141; the queue 89 -> 88.
+
+## #145 — mode-X, and why a two-line function needed a paragraph
+
+Fourth row off #141's queue. `mode_x_to_linear` is
+
+    byte_offset * 4 + plane
+
+with no doc, settled ASM. The forward mapping lives in the mode-X plot at `0x3428`
+(`graphics_plot_modex`, `SEG 0x299:0x498`), already in `labels.csv`:
+
+```text
+  0x3461  and cl,3     plane  = x & 3
+  0x3464  shr bx,2     column = x >> 2
+  0x3467  add ax,bx    + the row base, then `add di,ax`
+  0x346B  mov dx,0x3c4 / mov al,2 / out dx,al   select the map-mask register
+```
+
+So `offset = y*80 + (x>>2)`, `plane = x & 3`, and the port's expression is the
+inverse. The part worth writing down is WHY it works beyond a single row: the
+plane stride is 80 and `80 * 4 = 320`, so multiplying the whole offset by 4 scales
+the row base into place at the same time as the column. Read cold, `* 4 + plane`
+looks like it should only be valid within a row.
+
+Cited instructions 141 -> 145; the queue 88 -> 87.
+
+Four rows in, and the case for the queue is not the settled count. It is that
+`byte_offset * 4 + plane`, `delta / duration * tick`, and `(depth + 35) * 80` are
+all correct, all unexplained, and all one plausible-looking edit from being wrong.

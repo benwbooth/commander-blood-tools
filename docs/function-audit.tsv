@@ -599,7 +599,7 @@ poll_input	src/engine.rs	5005	fn	0x70E	ASM?	/// The mouse input poll (`0:0x70E`)
 step	src/engine.rs	5020	fn	0x0FFB	ASM?	/// One iteration of the top-level dispatch loop (`0x0FFB`). Ordered to match the /// decoded engine: poll input → (reset render state) → (render subsystems) → /// on-ship gate → countdown. Rendering 
 mode_x_offset	src/engine.rs	5200	fn	0x299,0x498	ASM?	/// The game's mode-X screen address for pixel `(x, y)` — `(byte_offset, plane)` where /// `byte_offset = y*80 + x/4` and `plane = x & 3`, exactly as `graphics_plot_modex` /// (`0x299:0x498`) computes
 signed_i16_engine	src/engine.rs	5209	fn		UNVERIFIED	/// Invert [`mode_x_offset`] back to the linear framebuffer index the engine uses: /// `byte_offset*4 + plane`. Equals `y*ENGINE_SCREEN_WIDTH + x`, proving the two layouts /// address the same pixel. 
-mode_x_to_linear	src/engine.rs	5213	fn		ASM	
+mode_x_to_linear	src/engine.rs	5232	fn	0x3428,0x299,0x498,0x3461,0x3464,0x3467,0x346B,0x3c4	ASM	/// Invert the game's mode-X addressing: a `(plane byte offset, plane)` pair back /// to a linear framebuffer index. /// /// The forward mapping is in the mode-X plot at `0x3428` (`graphics_plot_modex
 ACTIVE	src/entity.rs	9	const		UNVERIFIED	/// `0x80` — the object is active (gates every state change).
 STATE0	src/entity.rs	11	const		UNVERIFIED	/// `0x01` — state bit 0 (advances to [`STATE1`]).
 STATE1	src/entity.rs	13	const		UNVERIFIED	/// `0x02` — state bit 1 (set when STATE0 advances).

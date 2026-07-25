@@ -5210,6 +5210,25 @@ fn signed_i16_engine(v: u16) -> i32 {
     v as i16 as i32
 }
 
+/// Invert the game's mode-X addressing: a `(plane byte offset, plane)` pair back
+/// to a linear framebuffer index.
+///
+/// The forward mapping is in the mode-X plot at `0x3428` (`graphics_plot_modex`,
+/// `SEG 0x299:0x498`):
+///
+/// ```text
+///   0x3461  and cl,3     plane  = x & 3
+///   0x3464  shr bx,2     column = x >> 2
+///   0x3467  add ax,bx    + the row base, then `add di,ax`
+///   0x346B  mov dx,0x3c4 / mov al,2 / out dx,al   select the map-mask register
+/// ```
+///
+/// So `offset = y*80 + (x>>2)` and `plane = x & 3`, and this returns
+/// `offset*4 + plane`. It works for the whole framebuffer, not just within a row,
+/// because the plane stride is 80 and `80 * 4 = 320` — the row base scales into
+/// place along with the column.
+///
+/// Cited here because it was settled ASM with no doc (#141's queue).
 pub fn mode_x_to_linear(byte_offset: usize, plane: usize) -> usize {
     byte_offset * 4 + plane
 }
