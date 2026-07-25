@@ -3993,3 +3993,34 @@ The coverage is still 18 of 568, and that is not a parser problem to solve by
 loosening it further — most label comments describe behaviour in prose rather than
 quoting an instruction, and prose is not checkable. The way that number rises is
 writing citations in quotable form, not teaching the checker to guess.
+
+## #121 — 27 rows that could never be settled by decoding anything
+
+The ledger's unsettled mass is 1340 rows with no citation and 191 with one. Those
+are not the same problem, and a third kind was hiding in the first: functions that
+encode NO decoded rule at all. `ship_slots_pub` returns a field. `rec_write_pub`
+delegates to `rec_write` with the same arguments. There is nothing in either to
+verify against the binary, so leaving them UNVERIFIED inflates the queue with work
+that cannot be done.
+
+`tools/classify_plumbing.py` finds them, and its test is deliberately strict
+because a one-line function absolutely CAN encode a rule — `entity_draw_scale` is
+`(3*scale >> 1) + 1`, decoded from a `mul`. A body qualifies only as a field read,
+a borrow/clone of one, or a delegation whose arguments are plain identifiers.
+Arithmetic, an index, a conditional or a constant disqualifies it.
+
+The first run returned 34, and two were wrong in an instructive way:
+
+    decode_frame           -> self.decode_frame_impl(idx, fb, pal, false)
+    decode_character_frame -> self.decode_frame_impl(idx, fb, pal, true)
+
+A boolean LITERAL matched the identifier pattern. Those two functions differ by a
+decoded MODE, not by nothing — the flag is the claim. `true`/`false`/`None` and
+SCREAMING_CASE constants are now rejected as arguments, taking the count to 27.
+
+Settled as INFRA: 543 -> 570 of 2160. Not decoded, and correctly so — the honest
+statement about a getter is that there is nothing to decode, which is different
+from "not yet verified" and should not sit in the same bucket.
+
+What remains in the queue is now closer to real work: 810 uncited functions plus
+the constants, structs and enums.
