@@ -6177,3 +6177,43 @@ decided by whoever initialises that buffer each frame — which is undecoded.
 would change EVERY sound's amplitude on the strength of that assumption. The next
 decode is the buffer's per-frame owner; the `lcall gs:[0xcf3]` @`0xBB28` is the
 lead.
+
+## #199 — following the lead undercut the row that named it
+
+#198 said the next decode was the mix buffer's per-frame owner, lead
+`lcall gs:[0xcf3]` @`0xBB28`. Following it produced something better than an
+answer to that question: evidence that the question's framing was wrong.
+
+Reading the prologue at `0xBAE8`:
+
+  * `0xBAF7  mov ah,0x3F / int 0x21` — a DOS file READ. This is a STREAMER.
+  * `0xBAFD  sub cx,6` — the chunk carries a 6-byte header.
+  * `0xBB0B  add cx,cx` — the half-rate flag DOUBLES the output sample count.
+  * `0xBB0D/0xBB10` — exactly TWO voice structs, `0xB89` and `0xB91`, and the one
+    in state 3 (`cmp byte [bp+6],3`) receives the chunk.
+  * `0xBB28..0xBB4E` — the write lands at an offset from the device's play
+    position, clamped to the buffer, remainder wrapping at `0xBB76`.
+
+That is a ring buffer fed by a file stream. It is not three simultaneous sources
+being averaged together, which is what `docs/port-validation.md` has described for
+this row — and what `mix_unsigned_pcm_sources` implements, complete with a silence
+pre-fill that no instruction here asks for.
+
+So the row's proposed FIX was wrong, not just unwired. Rewiring `audio.rs` to
+`mix_unsigned_pcm_sources` would have replaced one invented model (three cpal
+streams summed by the OS) with another (N sources averaged over silence), and the
+tests would have passed, because they test that function against itself.
+
+`mix_unsigned_pcm_average` remains correct: it is `0xBB6D` element-wise, and it is
+what a streamed chunk does to a buffer that already holds something.
+`mix_unsigned_pcm_sources` is now labelled as the generalisation it is.
+
+Ported instead: `stream_mix_span`, the ring-buffer arithmetic, tested including
+the wrap. Also `0xBB0B` independently confirms #198's half-rate loop from an
+unrelated instruction — one flag, two consequences, agreeing.
+
+Second test-expectation slip in this area (after #198's "6 slots"): I asserted a
+clamp using a position that does not overflow, because `offset = |position -
+length|` means a SMALL position gives a LARGE offset. Both slips were mine and
+both were caught by the assertion, which is the argument for writing the expected
+SEQUENCE out rather than a summary count.

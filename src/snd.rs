@@ -183,6 +183,70 @@ pub fn mix_unsigned_pcm_average(destination: &mut [u8], source: &[u8]) -> usize 
     len
 }
 
+/// Where a streamed chunk lands in a voice's ring buffer, `0xBB2E..0xBB4E`.
+///
+/// The mixer is a STREAMER, which the prologue makes plain: `0xBAF7 mov ah,0x3F /
+/// int 0x21` reads the next chunk from a file, `0xBAFD sub cx,6` drops a 6-byte
+/// header, and `0xBB0B add cx,cx` DOUBLES the output count when the half-rate flag
+/// `gs:[0xBA2]` is set — the same flag that picks the `0xBB5B` loop, so the two
+/// halves of that decode confirm each other from unrelated instructions.
+///
+/// It writes into whichever of exactly TWO voice structs is in state 3
+/// (`0xBB0D mov bp,0xb89`, `0xBB10 mov dx,0xb91`, `cmp byte [bp+6],3`), at an
+/// offset derived from the device's play position:
+///
+/// ```text
+///   0xBB28  lcall gs:[0xcf3]         AX = the play position
+///   0xBB2E  cmp ax,-1 / je           no position -> nothing to do
+///   0xBB33  sub ax,[bp+4] / jns / neg    offset = |position - length|
+///   0xBB3A  mov bx,cx                    BX carries the sample count
+///   0xBB3C  cmp ax,[bp+4] / jae          past the end -> it is ALL remainder
+///   0xBB41  add di,ax                    otherwise write at that offset
+///   0xBB43  sub ax,[bp+4] / neg ax       space = length - offset
+///   0xBB48  sub bx,ax / js               all of it fits...
+///   0xBB4C  mov cx,ax                    ... or clamp to the space and carry BX
+/// ```
+///
+/// `0xBB76 or bx,bx` then runs the leftover, so this is a ring buffer written in
+/// up to two spans. Returns the first span; `remainder` is what wraps.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct StreamMixSpan {
+    /// Where in the voice buffer this span starts (`add di,ax` @`0xBB41`).
+    pub offset: u16,
+    /// How many samples this span mixes (`cx` after the clamp @`0xBB4C`).
+    pub count: u16,
+    /// What is left for the wrap pass (`bx` at `0xBB76`).
+    pub remainder: u16,
+}
+
+/// `0xBB2E..0xBB4E`. `position` is the play cursor `gs:[0xcf3]` returns; `0xFFFF`
+/// (its `-1`) means the device gave none and nothing is mixed.
+pub fn stream_mix_span(position: u16, buffer_len: u16, samples: u16) -> Option<StreamMixSpan> {
+    if position == 0xFFFF {
+        return None; // 0xBB2E
+    }
+    if buffer_len == 0 {
+        return None; // no buffer to land in; the game always has one
+    }
+    // 0xBB33..0xBB38: the absolute difference, computed with a sign test and neg.
+    let offset = if position >= buffer_len {
+        position - buffer_len
+    } else {
+        buffer_len - position
+    };
+    if offset >= buffer_len {
+        // 0xBB3C `jae 0xBB76`: this pass writes nothing; it is all remainder.
+        return Some(StreamMixSpan { offset, count: 0, remainder: samples });
+    }
+    let space = buffer_len - offset; // 0xBB43..0xBB46
+    let count = samples.min(space); // 0xBB48/0xBB4C
+    Some(StreamMixSpan {
+        offset,
+        count,
+        remainder: samples.saturating_sub(space),
+    })
+}
+
 /// The HALF-RATE mix loop, `0xBB5B..0xBB69` — the variant the normal loop at
 /// `0xBB6D` is chosen against by `test byte gs:[0xba2],1` @`0xBB53`.
 ///
@@ -258,6 +322,31 @@ pub const SILENCE: u8 = 0x80;
 
 #[cfg(test)]
 mod tests {
+
+    /// `0xBB2E..0xBB4E`: the ring-buffer span, including the wrap remainder.
+    #[test]
+    fn stream_mix_span_clamps_to_the_buffer_and_carries_the_wrap() {
+        // -1 from gs:[0xcf3] means no play position (0xBB2E).
+        assert_eq!(stream_mix_span(0xFFFF, 0x400, 0x100), None);
+
+        // Everything fits: BX goes negative at 0xBB48, so nothing wraps.
+        let span = stream_mix_span(0x300, 0x400, 0x40).unwrap();
+        assert_eq!(span.offset, 0x100, "|position - length|");
+        assert_eq!(span.count, 0x40);
+        assert_eq!(span.remainder, 0, "js 0xBB4E -- all of it fits");
+
+        // More samples than space: cx is clamped and the rest wraps. Note the
+        // offset is |position - length|, so a SMALL position gives a LARGE offset
+        // and therefore little space -- the direction that overflows.
+        let span = stream_mix_span(0x40, 0x400, 0x100).unwrap();
+        assert_eq!(span.offset, 0x3C0, "|0x40 - 0x400|");
+        assert_eq!(span.count, 0x40, "clamped to length - offset (0xBB4C)");
+        assert_eq!(span.remainder, 0xC0, "bx = samples - space (0xBB48)");
+
+        // A position at or past the length gives offset 0 -- the full buffer.
+        let span = stream_mix_span(0x400, 0x400, 0x10).unwrap();
+        assert_eq!((span.offset, span.count, span.remainder), (0, 0x10, 0));
+    }
 
     /// `0xBB5B`: the source is consumed once per two output samples, and the
     /// counter's PARITY sets which sample is doubled first.
