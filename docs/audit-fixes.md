@@ -1524,3 +1524,39 @@ from `0xA0`.
 
 The entity identity is a nice bound too: 32 entities total is why the nav projector
 iterates the LAST ELEVEN (`0x15..0x1F`) rather than an arbitrary window.
+
+## CONFLICT — two verified constants read the SAME 192 bytes
+
+The layout-gap map turned this up and it needs resolving by someone who can test it:
+
+    palette buffer   DS:0x5B58  file 0x12F78  768 bytes -> ends 0x5E58
+    pyramid vertices DS:0x5D98  file 0x131B8  192 bytes -> ends 0x5E58
+
+`0x12F78 + 576 = 0x131B8`, so **palette colours 192..255 occupy exactly the bytes
+`SHIP_3D_HUD_PYRAMID_VERTICES` reads.** Verified numerically: the port's
+`GAME_SCREEN_PALETTE_DAC[576..768]` is byte-identical to the image at the vertex base,
+and those same bytes unpack as the port's 96 vertex `i16`s.
+
+BOTH CONSTANTS "VERIFY" against the image, because both faithfully copy the same bytes.
+That is exactly why a byte-for-byte check cannot settle this — it confirms the copy, not
+the interpretation. I marked both as verified earlier in this campaign on that basis.
+
+WHY IT IS NOT OBVIOUS WHICH IS WRONG:
+
+* As COLOURS they are coherent. All 192 bytes are ≤63 (valid 6-bit DAC), and colours
+  240..249 read as an ascending teal ramp — `(17,30,37) (19,32,39) (23,31,36) …` —
+  precisely the "teal DAC ramp 240..249" that `manu3_hand` independently documents for
+  the hand's flat shading.
+* As VERTICES they are also coherent: 32 `(x,y,z)` triples forming a plausible mesh, and
+  `re/tools/dump_dosbox_mem.py` uses this byte pattern as its DS ANCHOR to locate the
+  data segment in live memory — which works.
+
+RESOLVING IT needs a runtime observation, not more static reading: dump `gs:0x5B58+576`
+during a frame where the hand renders with its teal shading, and see whether the DAC
+range in use matches these bytes. If it does, the vertex table's base address is wrong.
+If the live bytes differ, the palette default is picking up vertex data the game
+overwrites before upload.
+
+Recorded as a CONFLICT rather than a bug because I cannot currently tell which side is
+mistaken, and today has repeatedly shown that the plausible reading is not reliably the
+right one.
