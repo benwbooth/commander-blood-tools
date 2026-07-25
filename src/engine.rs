@@ -3991,6 +3991,21 @@ impl EngineState {
         }
     }
 
+    /// Draw the nav-map destination pyramids through the game's own projector.
+    ///
+    /// `ship_3d_object_sprite_project` @`0x9B98` is the per-destination
+    /// projector (`mov bx,0x4f09` / `mov di,0x4f01` load its table pointers), and
+    /// the matrix it uses is built from the angle words at `DS:0x2F6D`/`0x2F6F` —
+    /// `0x990C` reads `[0x2f6f]`, `shl di,2` to index the table, and `movsx`es the
+    /// pair into 32-bit before doubling them to Q15, which is the same widening
+    /// `matrix_pair_for_angle` performs.
+    ///
+    /// That is why the compass angle is fed to `projection_angle_2f6d` here rather
+    /// than applied to the sprite positions afterwards: the heading IS a matrix
+    /// input in the original, so panning rotates the field through the projection
+    /// instead of sliding it.
+    ///
+    /// Cited here because it was settled ASM with no doc (#141's queue).
     fn render_nav_pyramid_sprites(&mut self) {
         use crate::ship3d::{
             NAV_DESTINATION_POINTS, SHIP_3D_ANGLE_TABLE, SHIP_3D_OBJECT_VISIBLE_FLAG,
