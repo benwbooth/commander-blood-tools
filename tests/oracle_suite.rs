@@ -314,6 +314,61 @@ fn console_band_is_panorama_frame_90_through_the_remap() {
     assert_eq!(differing, 0, "{differing} of 19200 bytes differ");
 }
 
+/// OPEN DIVERGENCE, measured: the bridge's windows are BLACK in the port and full
+/// of stars in the live game.
+///
+/// `nav_screen_opened.ppm` (in captures/BRIDGE/) is the bridge at the nav station:
+/// a dense white starfield fills the top ~135 rows, with the console band below.
+/// `render_bridge_background` composites in that order — starfield first, then the
+/// panorama with colour 0 transparent so the windows show through — but the port's
+/// render has black where the stars should be, so the star layer is producing
+/// nothing on this path (`render_ship_3d_starfield` returning `None`, or the GPU
+/// branch being the only one that populates it).
+///
+/// mean_abs 102 against the capture. Deliberately NOT asserted with a tolerance:
+/// a threshold picked to accommodate this would encode the bug. Left `#[ignore]`
+/// as a measurement until the star path is fixed, then it becomes a real
+/// comparison. See docs/port-validation.md.
+#[test]
+#[ignore]
+fn nav_screen_render_distance() {
+    let Some(iso) = iso_dir() else {
+        eprintln!("skipped: no CD data");
+        return;
+    };
+    let path = "accuracy/captures/bridge/nav_screen_opened.ppm";
+    let Some(live) = read_ppm(Path::new(path))
+        .or_else(|| read_ppm(Path::new(&format!("../{path}"))))
+    else {
+        eprintln!("skipped: no {path}");
+        return;
+    };
+    // The capture lives in captures/BRIDGE/ and shows a starfield behind the
+    // panorama with the console band below -- that is render_bridge_background,
+    // not the on_ship nav view (which draws CHART.FD). Compare the bridge at the
+    // pyramid NAV ROOM station: STATION_REST_FRAMES[2] = frame 90.
+    let mut e = EngineState::new();
+    e.load_bridge(iso);
+    e.bridge_active = true;
+    e.step(MouseInput { x: 160, y: 100, buttons: 0, ..Default::default() });
+    e.bridge.frame = commander_blood_tools::bridge::STATION_REST_FRAMES[2];
+    e.step(MouseInput { x: 160, y: 100, buttons: 0, ..Default::default() });
+    let rgb: Vec<u8> = e
+        .framebuffer
+        .iter()
+        .flat_map(|&i| e.scene_palette[i as usize])
+        .collect();
+    eprintln!("nav-screen mean_abs = {:.2}", mean_abs(&rgb, &live));
+    let nonzero = e.framebuffer.iter().filter(|&&i| i != 0).count();
+    eprintln!("port framebuffer non-zero pixels: {nonzero} / 64000");
+    // Dump the port's render so it can be inspected next to the capture.
+    if let Ok(dir) = std::env::var("NAV_DUMP_DIR") {
+        let mut ppm = format!("P6\n{ENGINE_SCREEN_WIDTH} 200\n255\n").into_bytes();
+        ppm.extend_from_slice(&rgb);
+        let _ = std::fs::write(std::path::Path::new(&dir).join("nav_port.ppm"), ppm);
+    }
+}
+
 /// Diagnostic for the concept-menu divergence: prints where each mask actually
 /// sits, so a failing IoU says WHICH WAY it is wrong instead of just how much.
 /// Run with `cargo test --test oracle_suite -- --ignored concept_menu_masks`.

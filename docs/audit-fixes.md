@@ -3761,3 +3761,39 @@ Still unread: `mission_briefing_eye.ppm`, `nav_screen_opened.ppm`,
 `script2_first_frame.ppm`. The nav screen resisted a clean geometric check (it is
 a detailed starfield, so row-transition heuristics find edges everywhere rather
 than a band boundary); it needs a real render comparison, not a measurement.
+
+## #114 — the bridge windows are black, and the capture that shows it had never been read
+
+`nav_screen_opened.ppm` is the fourth of #112's seven unread captures, and reading
+it took three attempts — two of which were my setup being wrong, not the port.
+
+First attempt: `on_ship` nav view, mean_abs 105. Rendering it as ASCII showed the
+port drawing full-screen `CHART.FD` while the capture showed a starfield over a
+console band. Second: stepping 180 ticks to let the ship-3D transition arm changed
+nothing at all. Third: the capture is in captures/**bridge**/, and the starfield
+belongs to `render_bridge_background` — so the screen is the BRIDGE at the nav
+station, not the `on_ship` nav view. Comparing against the bridge at
+`STATION_REST_FRAMES[2]` (frame 90, the pyramid nav room) dropped the non-zero
+pixel count from 63987 to 29541 and mean_abs to 102.
+
+Still far, and the ASCII says why: the port draws the panorama with BLACK windows
+where the live game shows stars. `render_bridge_background` composites in the
+right order — starfield first, then the panorama with colour 0 transparent so the
+windows show through — but the star layer contributes nothing on this path, so the
+transparent windows reveal black.
+
+This is a WIRING gap, not a decode gap, and that distinction is the useful part.
+The point cloud is fully decoded and settled: `SHIP_3D_POINT_CLOUD_LEN` = 1000
+(`mov cx,0x3e8` @`0x9B6A`), base `DS:0x2FC1` (`mov di,0x2fc1` @`0x9B71`),
+`randomize_ship_3d_point_cloud` at `0x9B67`, the projection and the depth shading.
+All of it exists. Something between it and `render_bridge_background`'s non-GPU
+branch does not connect — the same shape as `bas_vm::parse_menu_block` sitting
+unused while `main.rs` hardcoded the menus it could have built (#108).
+
+NOT asserted with a tolerance. A threshold chosen to accommodate mean_abs 102
+would encode the bug as the expected result, which is how a fabricated rule gets
+protected by its own test (#111). The measurement stays `#[ignore]` until the star
+path is connected, at which point it becomes a real comparison. Recorded in
+docs/port-validation.md as OPEN.
+
+Two captures remain unread: `mission_briefing_eye.ppm`, `script2_first_frame.ppm`.
