@@ -5459,3 +5459,38 @@ constraint the port's cleaner spelling drops: the compare-before-write (#150), t
 proof.
 
 The queue: 44 -> 43. Cited instructions: 246 -> 251.
+
+## #172 — the port was missing a built-in object, and nothing could have noticed
+
+`VmNamedObjectOffsets` resolves the engine's built-in objects by name. Checking
+whether that was faithful — the game might have used fixed indices — turned up
+better than a citation.
+
+The game DOES match by name: `0x5490` loads a name pointer, `lcall 0x1CE:0x2C4`
+compares, and on a match `mov gs:[0x674e],ax` @`0x549D` stores the object's
+`[si+0x10]` offset into that built-in's global. The names are packed
+NUL-terminated strings from `DS:0x67BE`:
+
+```text
+  0x67BE blood    0x67C4 orxx      0x67C9 Honk    0x67CE menu
+  0x67D3 arche    0x67D9 cryobox   0x67E1 Ark     0x67E5 Scruter_Jo
+  0x67F0 vbio
+```
+
+NINE names. The struct had EIGHT — **`cryobox` was missing**. An object the engine
+resolves and assigns a global was not resolved by the port at all.
+
+Nothing could have caught this. The struct is self-consistent, its `set` returns
+`false` for unknown names so nothing errored, and every test that used it passed:
+the absent field simply meant one built-in never got an offset. The gap was
+visible only by enumerating the GAME's table and comparing.
+
+Added, with a test that reads the table out of the image rather than restating it
+— so a tenth built-in in the data, or a ninth removed from the port, now fails.
+
+My first attempt at reading the table assumed a 6-byte stride and produced
+`'onk'`, `'nu'`, `'he'`, `'obox'` — mid-string tails. The entries are packed by
+length, not aligned, which is exactly the sort of assumption that makes a table
+look shorter than it is.
+
+The queue: 43 -> 41.

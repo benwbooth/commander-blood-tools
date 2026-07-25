@@ -1743,12 +1743,31 @@ struct Ship3dC1PositionRuntime {
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
+/// The built-in objects the engine resolves BY NAME, and their DEB offsets.
+///
+/// Matching by name is the game's own method, not a port convenience: `0x5490`
+/// loads `di` with a name pointer, compares (`lcall 0x1CE:0x2C4`), and on a match
+/// stores the object's `[si+0x10]` offset into that built-in's global —
+/// `mov gs:[0x674e],ax` @`0x549D` for `blood`. The names are packed
+/// NUL-terminated strings from `DS:0x67BE`:
+///
+/// ```text
+///   0x67BE blood    0x67C4 orxx      0x67C9 Honk    0x67CE menu
+///   0x67D3 arche    0x67D9 cryobox   0x67E1 Ark     0x67E5 Scruter_Jo
+///   0x67F0 vbio
+/// ```
+///
+/// NINE names. This struct carried EIGHT — `cryobox` was absent, so an object the
+/// engine resolves and gives a global was not resolved here at all. Added below;
+/// the gap was invisible because nothing enumerated the game's table.
 pub struct VmNamedObjectOffsets {
     pub blood: Option<u16>,
     pub orxx: Option<u16>,
     pub honk: Option<u16>,
     pub menu: Option<u16>,
     pub arche: Option<u16>,
+    /// `DS:0x67D9` — the sixth built-in, missing from this struct until #172.
+    pub cryobox: Option<u16>,
     pub ark: Option<u16>,
     pub scruter_jo: Option<u16>,
     pub vbio: Option<u16>,
@@ -1766,6 +1785,8 @@ impl VmNamedObjectOffsets {
             self.menu = Some(offset);
         } else if name.eq_ignore_ascii_case("arche") {
             self.arche = Some(offset);
+        } else if name.eq_ignore_ascii_case("cryobox") {
+            self.cryobox = Some(offset);
         } else if name.eq_ignore_ascii_case("Ark") {
             self.ark = Some(offset);
         } else if name.eq_ignore_ascii_case("Scruter_Jo") {
@@ -6531,6 +6552,49 @@ pub fn decompile_script(
 
 #[cfg(test)]
 mod tests {
+
+    /// The built-in objects are the game's OWN name table at `DS:0x67BE`, packed
+    /// NUL-terminated: blood, orxx, Honk, menu, arche, cryobox, Ark, Scruter_Jo,
+    /// vbio. NINE. This struct carried eight until #172 — `cryobox` was absent, so
+    /// an object the engine resolves and gives a global went unresolved here.
+    ///
+    /// Reads the table out of the image rather than restating it, so adding a
+    /// tenth built-in to the port without a matching name in the data (or missing
+    /// one that IS in the data) fails.
+    #[test]
+    fn named_object_table_matches_the_games_name_list() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        let start = 0xD420 + 0x67BE;
+        let mut names = Vec::new();
+        let mut at = start;
+        while names.len() < 9 {
+            let end = at + exe[at..].iter().position(|&b| b == 0).unwrap();
+            names.push(String::from_utf8_lossy(&exe[at..end]).to_ascii_lowercase());
+            at = end + 1;
+        }
+        assert_eq!(
+            names,
+            vec![
+                "blood", "orxx", "honk", "menu", "arche", "cryobox", "ark",
+                "scruter_jo", "vbio",
+            ],
+            "the game's built-in name table"
+        );
+
+        // Every name the table lists must be one this struct resolves.
+        let mut offsets = VmNamedObjectOffsets::default();
+        for (i, name) in names.iter().enumerate() {
+            assert!(
+                offsets.set(name, (i as u16 + 1) * 0x10),
+                "`{name}` is in the game's table but this struct does not resolve it"
+            );
+        }
+        assert_eq!(offsets.cryobox, Some(6 * 0x10), "cryobox resolved");
+    }
 
     /// The status headers READ FROM THE SHIPPED BINARY, so these tests compare
     /// against the game's strings rather than against literals restated here.
