@@ -4321,3 +4321,36 @@ merging requires deciding which name is right, and sometimes which READING is
 (`0x22E0` is both `abs_negate_gs_setup` and `palette_blend_remap_table_build`;
 only the second describes what the routine is for). Those get worked one at a
 time, because that is where the #128-style disagreements live.
+
+## #131 — corrections filed NEXT TO the claims they corrected
+
+Working the different-name duplicates found a worse pattern than duplication. At
+`0x22E0`, the long row opens
+
+    CORRECTED (was abs_negate_gs_setup, which only described the first four
+    instructions). THE TINT REMAP-TABLE BUILDER ...
+
+— and `abs_negate_gs_setup` was still in the file, unchanged, as its own row. The
+correction knew about the mistake; the mistake did not know about the correction.
+A reader who greps `0x22E0` and hits the wrong row learns that the routine is an
+"abs/negate helper", with nothing pointing onward.
+
+`0x183E` and `0x210E` are worse: whole chains kept as separate rows —
+`input_action_jump_table`, then `..._CORRECTION`, then
+`..._static_limit_CONFIRMED`; `input_action_dispatch`, then
+`..._UNRESOLVED` labelled "HONEST RETRACTION (2nd correction)". The retraction is
+admirably explicit and sits beside the claim it retracts, which cancels most of
+its value.
+
+Four chains merged, seven superseded rows folded in. The old readings are KEPT,
+labelled `SUPERSEDED READING \`name\``, because the history is genuinely useful —
+knowing that `0x22E0` looks like an abs/negate helper for four instructions is
+what stops the next reader repeating the error. What is not useful is that text
+standing alone under its own name.
+
+42 duplicate addresses remain. One is a genuine unresolved DISAGREEMENT rather
+than a stale name: `0x00813` is both `state_gate_b21` ("conditional gate on
+gs:[0xb21]&1") and `timer_isr_handler` ("game timer ISR, installed at cs:0x213 by
+install_timer_isr_hook 0x79c"). Those are not two descriptions of one thing; one
+of them is wrong, and deciding which needs the routine read. Left flagged rather
+than merged, because merging it would manufacture agreement.
