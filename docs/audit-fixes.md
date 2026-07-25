@@ -4796,3 +4796,30 @@ So the queue is 74 rows that genuinely say nothing about their basis, not 27. Th
 correction matters more than the count: I nearly recorded "most of these are just
 misplaced citations" as the character of the remaining work, on the strength of a
 measurement that was measuring its neighbours.
+
+## #148 — the nav sector was a literal range in two places
+
+`bridge_nav_destination_click` gated on `(72..=107).contains(&frame)` with no doc,
+and the same literal range appeared again in the render path. Two copies of one
+condition, neither saying what it meant.
+
+The range is not invented — `TB.BIG`'s frame headers carry a STATION per frame,
+and `tbbig`'s own test pins frames 72..=107 to station 2, the pyramid navigation
+room. So the numbers were right and derived; they were just spelled out instead of
+read.
+
+Both sites now ask the header: `bridge_station() == Some(NAV_ROOM_STATION)`. Three
+things improve. The gate follows the data if the archive ever disagrees. The
+condition says WHICH station rather than which frames. And the drawn surface and
+the clickable one share one expression, so they cannot drift apart — two copies of
+a frame range is exactly how a widget ends up clickable where it is not visible.
+
+The render site's comment also said the interaction pattern was "captured live
+from the real game". Reworded: the capture confirms the box's appearance, it does
+not source the behaviour. That phrasing was one `check_provenance.py` pattern away
+from being flagged, and it describes the prime rule backwards.
+
+One behaviour change worth naming: with no archive loaded, `bridge_station()` is
+`None`, so both paths now decline where the old range check could pass on a stale
+frame number. Nav destinations without a bridge archive are not a state the game
+has.

@@ -270,6 +270,10 @@ impl LocationInfoPanel {
     }
 }
 
+/// Station 2 of the bridge ring — the pyramid navigation room (`TB.BIG` frame
+/// headers; frames 72..=107 carry it).
+pub const NAV_ROOM_STATION: u16 = 2;
+
 pub struct EngineState {
     /// Frame counter (increments once per [`EngineState::step`]).
     pub frame: u64,
@@ -1488,10 +1492,13 @@ impl EngineState {
         self.compass_angle = self.bridge.frame;
         self.render_bridge_background();
         // In the pyramid nav sector, offer the choose-a-location destinations as
-        // a golden choice box over the console's left — the interaction pattern
-        // captured live from the real game (accuracy/captures/bridge/
-        // choice_box_bob_morlock.ppm: golden rounded box, gold text rows).
-        if (72..=107).contains(&self.bridge.frame) && !self.nav_destinations.is_empty() {
+        // a golden choice box over the console's left. The SECTOR comes from the
+        // panorama frame header (station 2), not from a frame range spelled out
+        // here — same gate as `bridge_nav_destination_click`, so the drawn surface
+        // and the clickable one cannot drift apart. (The box's appearance was
+        // confirmed against accuracy/captures/bridge/choice_box_bob_morlock.ppm;
+        // the capture verifies, it does not source.)
+        if self.bridge_station() == Some(NAV_ROOM_STATION) && !self.nav_destinations.is_empty() {
             self.draw_choice_box_labels();
         }
         // The MENU submenu ({EXPLANATIONS, GAME}) is a gold CHOICE BOX (the
@@ -2563,8 +2570,29 @@ impl EngineState {
 
     /// Map a click to a nav-sector destination row when the choice box is showing
     /// (bridge view in the pyramid sector with destinations set).
+    /// Map a click to a nav-destination row, while the view is at the PYRAMID
+    /// NAVIGATION ROOM.
+    ///
+    /// The station comes from the panorama's own frame header (`station == 2`),
+    /// not from a frame range written here: `TB.BIG` carries the station per
+    /// frame, and `tbbig`'s `panorama_stations_partition_the_ring` test pins
+    /// frames 72..=107 to station 2. Reading the header means the gate follows the
+    /// data if the archive ever says otherwise, and it names the condition —
+    /// `72..=107` said what, not why.
+    ///
+    /// The row hit-test itself is [`Self::choice_box_row_at`], the widget's
+    /// `row = dy/11 + 1` (`div bl,0x0B` @`0x8508`).
+    /// The station the current panorama frame belongs to, read from its header.
+    /// `None` when no archive is loaded (headless tests).
+    pub fn bridge_station(&self) -> Option<u16> {
+        self.panorama
+            .as_ref()?
+            .frame_header(self.bridge.frame as usize)
+            .map(|h| h.station)
+    }
+
     pub fn bridge_nav_destination_click(&self, x: u16, y: u16) -> Option<usize> {
-        if !(72..=107).contains(&self.bridge.frame) || self.nav_destinations.is_empty() {
+        if self.bridge_station() != Some(NAV_ROOM_STATION) || self.nav_destinations.is_empty() {
             return None;
         }
         let widest = self
