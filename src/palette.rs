@@ -179,6 +179,57 @@ pub fn build_palette_blend_remap_table(
     }
 }
 
+/// The CONSOLE-BANK remap table (`DS:0x6011`) — built by running the GAME'S OWN
+/// builder, not by reimplementing it.
+///
+/// `0x242D` (far `0x1CE:0x014D`) is a SECOND table builder, distinct from the
+/// blend builder `0x22E0`. It is called once, at `0x9622`, with `ax = 0xE0` and
+/// `bx = 0x6011`, and walks the live palette at `DS:0x5251` over 256 entries.
+/// The montage's per-frame setup (`0x7AC3`) then remaps the WHOLE 320x200 screen
+/// through the result before drawing the film into the top 140 rows.
+///
+/// What it produces, observed by executing it: every one of the 256 inputs maps
+/// into `224..=239` — the 16-colour CONSOLE BANK — with the bank mapping to
+/// itself. That is what explains the intro band's index range: during the montage
+/// the entire screen is reduced to that bank, so the console already on screen
+/// comes out in `224..=239` like everything else. The band was never separate art.
+///
+/// THE RULE IS NOT NEAREST-COLOUR. A squared-RGB nearest search over the bank
+/// reproduces only 68 of the 256 entries, so the obvious reimplementation is
+/// wrong. Rather than guess again, this runs `recomp::auto::func_242d`, which is
+/// lifted bit-exactly from the binary and oracle-verified — the port already had
+/// the function, it simply was not being used.
+pub fn build_console_bank_remap_table(palette_dac: &[u8; 768]) -> [u8; 256] {
+    use crate::recomp::{auto, machine::Machine};
+    const GS: u16 = 0x2600;
+    const PAL_DS: u32 = 0x5251;
+    const TABLE_DS: u32 = 0x6011;
+    const BANK_BASE: u16 = 0xE0;
+
+    let mut m = Machine::new();
+    m.regs.ds = GS;
+    m.regs.es = GS;
+    m.regs.gs = GS;
+    m.regs.ss = 0x9000;
+    m.regs.set_sp(0xFFF0);
+    let base = (GS as u32) * 16;
+    for (i, &b) in palette_dac.iter().enumerate() {
+        m.mem[(base + PAL_DS + i as u32) as usize] = b;
+    }
+    m.regs.set_ax(BANK_BASE);
+    m.regs.set_bx(TABLE_DS as u16);
+    let sp = m.regs.sp() as u32;
+    m.write16(m.regs.ss, sp, 0x0000);
+    m.write16(m.regs.ss, sp.wrapping_add(2), 0x0020);
+    auto::func_242d(&mut m);
+
+    let mut table = [0u8; 256];
+    for (i, entry) in table.iter_mut().enumerate() {
+        *entry = m.mem[(base + TABLE_DS + i as u32) as usize];
+    }
+    table
+}
+
 /// The game-screen palette expanded to 8-bit RGB for the engine framebuffer,
 /// scaling each 6-bit DAC channel to full range (v * 255 / 63).
 pub fn game_screen_palette() -> [[u8; 3]; 256] {
@@ -200,6 +251,52 @@ pub fn game_screen_palette() -> [[u8; 3]; 256] {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_console_bank_table_maps_everything_into_224_239() {
+        let table = build_console_bank_remap_table(&GAME_SCREEN_PALETTE_DAC);
+        // Every input lands in the 16-colour console bank...
+        assert!(
+            table.iter().all(|&b| (0xE0..=0xEF).contains(&b)),
+            "the montage remap must reduce the screen to the console bank"
+        );
+        let distinct: std::collections::BTreeSet<u8> = table.iter().copied().collect();
+        assert_eq!(distinct.len(), 16);
+        // ...and the bank maps to itself, so remapping twice is stable.
+        for i in 0xE0..=0xEFusize {
+            assert_eq!(table[i], i as u8, "bank entry {i:#x} must be fixed");
+        }
+        let twice: Vec<u8> = table.iter().map(|&b| table[b as usize]).collect();
+        assert_eq!(twice, table.to_vec(), "the remap is idempotent");
+
+        // AND the rule is not the obvious one: a squared-RGB nearest search over
+        // the bank reproduces only a quarter of the table. Pinned so nobody
+        // "simplifies" the call to func_242d into a nearest-colour loop.
+        let pal = |i: usize| {
+            [
+                GAME_SCREEN_PALETTE_DAC[i * 3] as i32,
+                GAME_SCREEN_PALETTE_DAC[i * 3 + 1] as i32,
+                GAME_SCREEN_PALETTE_DAC[i * 3 + 2] as i32,
+            ]
+        };
+        let agree = (0..256usize)
+            .filter(|&src| {
+                let c = pal(src);
+                let best = (0xE0..=0xEFusize)
+                    .min_by_key(|&cand| {
+                        let d = pal(cand);
+                        (0..3).map(|k| (c[k] - d[k]).pow(2)).sum::<i32>()
+                    })
+                    .unwrap() as u8;
+                best == table[src]
+            })
+            .count();
+        assert!(
+            agree < 128,
+            "nearest-colour agreed on {agree}/256 — if this ever passes, the rule \
+             changed and the comment in build_console_bank_remap_table is stale"
+        );
+    }
 
     #[test]
     fn the_tint_table_halves_a_grey_ramp_and_leaves_unmatched_entries_alone() {

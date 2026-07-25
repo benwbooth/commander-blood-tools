@@ -2466,3 +2466,31 @@ WHAT THIS CHANGES ABOUT THE BAND. It was "harvested art, source unknown", then
 "drawn once before the film", and now most likely "not drawn as art at all" — a
 side effect of the presentation remap. Three sessions of hypotheses, each one
 cheaper than the last because the eliminations were written down.
+
+## FIX #73 — the band is not art: the montage reduces the whole screen to 16 colours
+
+#72 left this as plausible. Settling it took executing the game's own builder
+rather than reasoning about it — `func_242d` is lifted bit-exactly in the port's
+recomp module and oracle-verified, so it can simply be RUN against the real
+palette and the answer observed.
+
+The result is unambiguous. `DS:0x6011` maps every one of the 256 palette indices
+into `224..=239` — the 16-colour CONSOLE BANK — with the bank fixed under the map
+(so the remap is idempotent). The montage's per-frame setup (`0x7AC3`) pushes the
+WHOLE 320x200 screen through it before drawing the film into the top 140 rows.
+
+**So the harvested console band was never art.** Its pixels are all in
+`224..=239` because during the montage EVERYTHING on screen is: the console
+already standing from the previous state comes out in the bank like the rest of
+the frame. The port's `include_bytes!` of a captured 320x60 band is a photograph
+of a colour-reduced console, not an asset the game contains.
+
+A WRONG TURN WORTH RECORDING. The obvious reimplementation — map each colour to
+the nearest bank entry by squared RGB distance — reproduces only 68 of the 256
+entries. I nearly wrote it as a "native" version of the routine. The port now
+calls `func_242d` itself, and the test asserts that nearest-colour DISAGREES, so
+anyone tempted to simplify the call into a loop fails immediately.
+
+`palette::build_console_bank_remap_table` exposes it. What remains for the band is
+frontend sequencing — having the console on screen before the montage so there is
+something to reduce — rather than any decode.
