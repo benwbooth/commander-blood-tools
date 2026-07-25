@@ -116,6 +116,38 @@ mod tests {
         );
     }
 
+    /// The ENTITY DRAW SCALE, swept over every input.
+    ///
+    /// `0x9240`'s scale is `mul bh` / `mov bh,al` / `shr bh,1` / `inc bh` — the
+    /// 16-bit product is TRUNCATED to a byte before the shift. Rather than run the
+    /// whole draw (it far-calls the blitter), this reproduces those four
+    /// instructions against `LocationInfoPanel::entity_draw_scale` for all 256
+    /// scale values, which is where the 8-bit truncation shows.
+    #[test]
+    fn entity_draw_scale_truncates_to_eight_bits_like_the_original() {
+        for scale in 0u8..=0xFF {
+            // mov al,3 / mul bh -> AX = 3*scale ; mov bh,al -> low byte only
+            let ax = 3u16 * u16::from(scale);
+            let bh = (ax & 0xFF) as u8;
+            let expected = (bh >> 1).wrapping_add(1);
+
+            let panel = crate::engine::LocationInfoPanel {
+                scale,
+                ..Default::default()
+            };
+            assert_eq!(
+                panel.entity_draw_scale(),
+                expected,
+                "scale {scale}: 16-bit arithmetic would give {}",
+                (3u16 * u16::from(scale) / 2 + 1) as u8
+            );
+        }
+        // The case that separates the two forms.
+        let panel = crate::engine::LocationInfoPanel { scale: 86, ..Default::default() };
+        assert_eq!(panel.entity_draw_scale(), 2);
+        assert_ne!(panel.entity_draw_scale(), (3u16 * 86 / 2 + 1) as u8);
+    }
+
     /// The LENGTH-0 OPCODE SCAN against its lift (`func_6293`).
     ///
     /// `0x6293` advances SI to the next word equal to AX, byte by byte, then skips

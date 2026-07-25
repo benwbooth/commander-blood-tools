@@ -250,9 +250,24 @@ pub struct LocationInfoPanel {
 }
 
 impl LocationInfoPanel {
-    /// `bh = (3 * [0x2789]) / 2 + 1` — the entity draw's scale at `0x9240`.
+    /// The entity draw's scale at `0x9240`, computed as the original does — in
+    /// EIGHT BITS:
+    ///
+    /// ```text
+    ///   0x9247  mov bh,[0x2789]
+    ///   0x924B  mov al,3 / mul bh     ax = 3 * scale (a 16-bit product)
+    ///   0x924F  mov bh,al             ...but only the LOW BYTE is kept
+    ///   0x9251  shr bh,1 / inc bh     then /2 and +1, on the byte
+    /// ```
+    ///
+    /// The truncation happens BEFORE the shift, so the port's old
+    /// `(3 * scale as u16 / 2 + 1) as u8` diverged once `3 * scale` passed 255:
+    /// at scale 86 the original gives 2 and the 16-bit form gives 130. The panel's
+    /// zoom counter never reaches 86 — it runs 0..8 — so this was latent, but the
+    /// faithful form costs nothing.
     pub fn entity_draw_scale(&self) -> u8 {
-        (3u16 * self.scale as u16 / 2 + 1) as u8
+        let product = 3u8.wrapping_mul(self.scale); // `mul bh` then `mov bh,al`
+        (product >> 1).wrapping_add(1)
     }
 }
 

@@ -3011,3 +3011,30 @@ cloud (`0x9B67`/`0x9A10`, FIX #79). The starfield now rests on checked code from
 the CMOS read to the plotted pixel.
 
 Worklist: 13 differentialled, 13 candidates left.
+
+## FIX #93 — an 8-bit truncation the port did in 16 bits
+
+`LocationInfoPanel::entity_draw_scale` reproduced `0x9240`'s zoom scale as
+`(3 * scale as u16 / 2 + 1) as u8`. The original is four instructions:
+
+```text
+  0x924B  mov al,3 / mul bh      ax = 3 * scale, a 16-bit product
+  0x924F  mov bh,al              ...but only the LOW BYTE survives
+  0x9251  shr bh,1 / inc bh      then /2 and +1, on the byte
+```
+
+The truncation happens BEFORE the shift. At scale 86 the original gives 2; the
+16-bit form gives 130. The panel's zoom counter runs 0..8, so this was latent —
+but the faithful form is no harder to write, and the sweep now covers all 256
+values with the divergent case called out by name.
+
+This is the SECOND divergence of exactly this kind, after the special-slot
+removal (#82): both latent, both cheap to fix, both found by reading the
+instructions rather than by any test failing. A differential over the reachable
+domain would have passed either one.
+
+`build_console_bank_remap_table` also settles to `ORACLE` here — not by
+differential but by construction: it RUNS `func_242d`, so its output is the
+game's code executing, not a reimplementation of it.
+
+Worklist: 15 differentialled, 11 candidates left.
