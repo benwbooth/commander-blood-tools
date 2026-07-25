@@ -3865,7 +3865,8 @@ fn project_ship_3d_axis(numerator: i32, depth: i32, center: u16) -> u16 {
     (quotient as u16).wrapping_add(center)
 }
 
-/// Scale an object's sprite dimension by its depth factor: a 32-bit multiply
+/// Scale an object's sprite dimension by its depth factor, as the object-sprite
+/// projector does at `0x9B98`: a 32-bit multiply
 /// followed by `>> SHIP_3D_OBJECT_SCALE_SHIFT`. Widening to 32 bits BEFORE the
 /// multiply is the point — the product of two words overflows 16 bits routinely,
 /// and the original keeps it in `eax` for exactly that reason.

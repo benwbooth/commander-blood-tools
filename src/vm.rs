@@ -506,8 +506,8 @@ pub fn text_line_flags_offset(line_index: u16) -> u16 {
 }
 
 /// The line's PRESENTATION record sits at `line + TALK_FIELD` — the `0x3A` field
-/// the A6 handler resolves through [`TALK_FIELD`]'s citation, not a separate
-/// constant. Basis is that field offset; this function is the addition.
+/// the A6 handler at `0x660D` resolves. Basis is that field offset; this function
+/// is the addition.
 pub fn text_presentation_record_offset(line_index: u16) -> u16 {
     line_index.wrapping_add(TALK_FIELD)
 }
@@ -1803,6 +1803,13 @@ pub struct VmNamedObjectOffsets {
 }
 
 impl VmNamedObjectOffsets {
+    /// Resolve one DEB object name against the built-in table and record its
+    /// offset. Returns whether the name IS a built-in — the caller uses that to
+    /// skip non-built-ins, so a `false` is an ordinary answer, not an error.
+    ///
+    /// The nine names come from `DS:0x67BE` and the game matches them the same
+    /// way (`0x5490`'s compare, then `mov gs:[0x674e],ax` @`0x549D`); see the type
+    /// doc for the full table and for the `cryobox` omission #172 found.
     fn set(&mut self, name: &str, offset: u16) -> bool {
         if name.eq_ignore_ascii_case("blood") {
             self.blood = Some(offset);
@@ -2430,6 +2437,18 @@ fn post_update_kind1_presentation_state(
     PresentationKind1Update::Stopped
 }
 
+/// The kind-2 HANDOFF check in the post-exec record walk (`0x5816`): can this
+/// record take over the presentation currently running?
+///
+/// FOUR gates, and all four must be clear before anything hands off — a
+/// presentation must be active, and the C2 gate, the handoff gate and the start
+/// lock must all be unset. Three separate "not already busy" flags rather than
+/// one, so a handoff cannot slip through during a start that has begun but not
+/// finished, or during another handoff.
+///
+/// Then the primary `0xC4` record must still be an actor: the target of the
+/// handoff has to be a live presentation, not a slot that was cleared while these
+/// gates were being checked.
 fn post_update_kind2_presentation_handoff_target(
     state: &[u8],
     context: &ExecutionContext,
@@ -2785,6 +2804,13 @@ fn record_state_condition(
     Some(if inverted { !matched } else { matched })
 }
 
+/// The `0xC1` QUERY path when the operand SELECTS a state (1 or 2) rather than
+/// comparing directly — handler `0x6B4C`'s resolved branch.
+///
+/// Returns `None` for any other operand, and for a record already typed `0xC1`,
+/// which sends the caller to the direct `{0xC1, operand}` comparison instead. The
+/// two paths are exclusive: an operand of 1 or 2 against a non-`0xC1` record means
+/// "resolve the owner's state", anything else means "compare these words".
 fn c1_record_state_resolved_mode1_condition(
     state: &[u8],
     context: &ExecutionContext,

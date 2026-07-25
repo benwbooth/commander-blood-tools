@@ -5692,3 +5692,25 @@ in the operator ladder (#126), a refuted rule in a dead function (#127), a wrong
 undocumented, and one plausible edit from being wrong — divide-before-multiply,
 compare-before-write, first-write-wins, `btr`'s carry, `sar` not `shr`, the
 sign-terminated list, the half-open clip, and the zero that is a proof.
+
+## #181 — the queue closes at one
+
+91 rows in #141, now **1**. The last several:
+
+* `post_update_kind2_presentation_handoff_target` (`0x5816`) gates a handoff on
+  FOUR flags — presentation active, plus the C2 gate, the handoff gate and the
+  start lock all clear. Three separate "not already busy" flags rather than one,
+  so a handoff cannot slip through a start that has begun but not finished, nor
+  through another handoff.
+* `c1_record_state_resolved_mode1_condition` (`0x6B4C`) and the direct comparison
+  are EXCLUSIVE: operand 1 or 2 against a non-`0xC1` record resolves the owner's
+  state, anything else compares words. Its `None` routes to the other path rather
+  than reporting failure.
+* `VmNamedObjectOffsets::set` returns whether the name is a built-in, so `false`
+  is an ordinary answer used to skip non-built-ins — not an error, which matters
+  because that return is exactly what hid `cryobox` (#172).
+
+The one remaining is `select_ship_3d_target_record`, whose routine I have not
+identified. Recorded as still open rather than given a plausible neighbouring
+address — the whole point of this queue was that an unjustified citation is worse
+than a missing one, and the last row is not the place to abandon that.
