@@ -298,6 +298,15 @@ fn run_engine_play(iso: &str, assets: &str, out: &str, script: &str) -> anyhow::
 /// toggles the on-ship view vs the dialogue scene). Uses raw X11 (x11rb) so it runs
 /// on any X server, including a virtual framebuffer (Xvfb) — the interactive
 /// presentation layer over the same `EngineState::step` loop `engine-play` uses.
+/// The setting index a text-speed STEP corresponds to — the inverse of
+/// `vm::text_speed_step_from_setting` (steps 1,2,3,4,7 for settings 0..4), used
+/// only to preselect the submenu row showing the current speed.
+fn text_speed_setting_for_step(step: u16) -> usize {
+    (0..5)
+        .find(|&i| commander_blood_tools::vm::text_speed_step_from_setting(i as u16) == step)
+        .unwrap_or(1)
+}
+
 fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()> {
     use commander_blood_tools::concept_menu;
     use commander_blood_tools::engine::{
@@ -333,6 +342,17 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     ) {
         engine.load_nav_sprites(&carte, &borxx);
     }
+    // The TEXT-SPEED submenu's labels, the game's own list at DS:0x259D.
+    let text_speed_labels: Vec<String> = [
+        format!("{iso}/BLOODPRG.EXE"),
+        format!("{assets}/BLOODPRG.EXE"),
+        "re/bin/BLOODPRG.EXE".to_string(),
+    ]
+    .iter()
+    .find_map(|path| commander_blood_tools::bloodprg::BloodPrg::parse_file(path).ok())
+    .map(|b| b.text_speed_labels())
+    .unwrap_or_default();
+
     // The OPTION menu's labels are the GAME'S string table, read out of the
     // executable: a 0xFFFF-terminated pointer list at DS:0x2567 (`mov si,0x2567`
     // @0x8871, the console row-4 handler) into NUL-terminated strings, plus the
@@ -1382,15 +1402,21 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                 // QUIT, CANCEL} — the decoded row surfaces.
                                 4 => match row {
                                     0 => {
-                                        // TEXT: cycle the decoded speed steps {1,2,3,4,7}.
-                                        engine.text_speed_step =
-                                            match engine.text_speed_step {
-                                                1 => 2,
-                                                2 => 3,
-                                                3 => 4,
-                                                4 => 7,
-                                                _ => 1,
-                                            };
+                                        // TEXT opens the SPEED SUBMENU; it does not
+                                        // cycle. The game's own list is at DS:0x259D
+                                        // (VERY FAST / FAST / MEDIUM / SLOW / VERY
+                                        // SLOW), and handler_4's selection 0 writes
+                                        // [0x259B]=1 and [0x259C]=1 -- the two bytes
+                                        // immediately before that list. Cycling on
+                                        // click skipped the surface entirely and
+                                        // could not show which speed is selected.
+                                        engine.console_box = text_speed_labels.clone();
+                                        engine.console_box_kind = 5;
+                                        engine.console_box_selected = Some(
+                                            text_speed_setting_for_step(
+                                                engine.text_speed_step,
+                                            ),
+                                        );
                                     }
                                     1 => music.stop(), // MUSIC_OFF
                                     2 => {
@@ -1420,6 +1446,16 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                     4 => return Ok(()), // QUIT
                                     _ => {}
                                 },
+                                // The TEXT-SPEED submenu: the row IS the setting
+                                // index, mapped by the decoded init at
+                                // 0x1B29..0x1B3D -- settings 0..4 give steps
+                                // 1,2,3,4,7 (VERY SLOW jumps, `cmp ax,8` @0x1B32).
+                                5 => {
+                                    engine.text_speed_step =
+                                        commander_blood_tools::vm::text_speed_step_from_setting(
+                                            row as u16,
+                                        );
+                                }
                                 _ => {}
                             }
                         }

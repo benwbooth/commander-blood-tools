@@ -3061,6 +3061,32 @@ mod tests {
     /// linear: `cmp ax,8` at 0x1B32 gives VERY SLOW an extra +4, so the steps are
     /// 1,2,3,4,7 rather than 1,2,3,4,5. The image ships step 2 at DS:0x0ACA, which
     /// is FAST -- so the shipped default is the second entry, not the middle one.
+    /// The submenu's five labels and the five settings line up one-to-one, and the
+    /// preselected row round-trips: setting -> step -> setting. The port used to
+    /// CYCLE the step on click instead of opening this list, which could never
+    /// show which speed was active.
+    #[test]
+    fn text_speed_submenu_rows_map_one_to_one_onto_settings() {
+        let Some(binary) = fixture() else {
+            eprintln!("skipping: BLOODPRG.EXE not available");
+            return;
+        };
+        let labels = binary.text_speed_labels();
+        assert_eq!(labels.len(), 5, "one row per setting");
+
+        let steps: Vec<u16> = (0..labels.len())
+            .map(|i| crate::vm::text_speed_step_from_setting(i as u16))
+            .collect();
+        assert_eq!(steps, vec![1, 2, 3, 4, 7]);
+
+        // Distinct steps, so a step identifies its row unambiguously -- which is
+        // what preselecting the current speed relies on.
+        let mut sorted = steps.clone();
+        sorted.sort_unstable();
+        sorted.dedup();
+        assert_eq!(sorted.len(), steps.len(), "no two settings share a step");
+    }
+
     #[test]
     fn text_speed_labels_and_steps_match_the_binary() {
         let Some(binary) = fixture() else {

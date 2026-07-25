@@ -4415,3 +4415,33 @@ Small, and worth fixing precisely because the ledger is the thing this campaign
 reports progress against. A denominator that moves when rows are DELETED is
 working correctly — removing a refuted implementation should shrink the queue —
 but only if the number is re-read rather than remembered.
+
+## #134 — TEXT opens a submenu; the port was cycling a value
+
+`text_speed_labels` was one of #128's UNWIRED rules — decoded from `DS:0x259D`
+(`VERY FAST`, `FAST`, `MEDIUM`, `SLOW`, `VERY SLOW`) and called by nothing. What
+the port did instead, on clicking TEXT in the OPTION menu:
+
+    engine.text_speed_step = match engine.text_speed_step {
+        1 => 2, 2 => 3, 3 => 4, 4 => 7, _ => 1,
+    };
+
+The cycle produces the right STEPS — those are the decoded values — while
+skipping the surface entirely. The game shows a five-row list and the player picks
+one; a click-to-cycle control cannot show which speed is currently selected, and
+reaching `VERY SLOW` from `VERY FAST` takes four clicks instead of one.
+
+Corroboration that TEXT opens a list rather than toggling: `handler_4`'s selection
+0 writes `[0x259B]=1` and `[0x259C]=1` — the two bytes immediately BEFORE the
+pointer list at `0x259D`. The flags and the list they gate are adjacent.
+
+TEXT now opens the submenu, built from the game's own labels, with the current
+speed preselected; the row index IS the setting, mapped by
+`vm::text_speed_step_from_setting` (the `0x1B29..0x1B3D` init, `VERY SLOW`
+jumping to 7 via `cmp ax,8`). The new test pins the one-to-one correspondence and
+that no two settings share a step — which is what preselecting the active row
+relies on.
+
+43 cited-but-unrouted rules remain, one fewer than before. The lesson from this
+one: a port can compute the right VALUES through the wrong INTERFACE, and a
+value-level test will never notice. Nothing about the cycle was numerically wrong.
