@@ -1099,3 +1099,32 @@ would draw an ADDITIONAL marker via the `0x9B98` projector. Worth stating becaus
 The capture path is now usable for the post-progression savestate that unblocks both the
 nav grant and the dialogue asset-table fill. Driving the game from this screen to a
 granted destination is the remaining work.
+
+### Save-slot discovery — `GAME1.SAV` was missing from the C: mount
+
+Chasing the post-progression savestate turned up a second concrete gap, separate from
+the launch defect.
+
+`blood.sav` is not a save; it is the SAVE-SLOT DIRECTORY — ten 32-byte records of
+`{name[16], filename[16]}`:
+
+    slot 0: name='ab'  file='game1.sav'
+    slot 1..9: unnamed, game2..game10.sav
+
+Slot 0 is a real saved game. The 5887-byte `game1.sav` exists in `accuracy/cdrive/cblood/`
+and `output/_tmp_iso/`, but was NOT in `accuracy/cblood_install/cblood/` — the directory
+mounted as C:, which is where the game's `WRIC:\cblood\` write path points and therefore
+where it looks for saves. So the game could LIST slot "ab" from `BLOOD.SAV` and then fail
+to open it.
+
+Copied it in (`GAME1.SAV`), which is additive — no existing file was replaced.
+
+STATE OF THIS TASK: the driver reaches the game, and a loadable save now exists in the
+right place. What remains is UI discovery — driving the title screen to the LOAD menu and
+selecting slot "ab". Escape/Return from the title returns to the title, so the load entry
+point has not been found yet, and each attempt costs a ~2 minute run. That is iterative
+exploration rather than analysis, and worth doing with a batch of candidate input
+sequences in one run rather than one guess per run.
+
+The value already banked is that this path was IMPOSSIBLE before: the launcher looped the
+attract demo and the save file was not where the game looks.
