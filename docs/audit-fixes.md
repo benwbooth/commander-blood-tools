@@ -4151,3 +4151,39 @@ The docs now quote the handlers, so `check_cited_instructions.py` covers them:
 gets better — write the citation in a form a checker can read, one row at a time.
 
 Settled: 571 -> 573 of 2160.
+
+## #126 — a decoded rule implemented twice, and the LIVE copy was the wrong one
+
+Verifying `apply_operator` (cited `0x6863`) turned up something better than a
+citation: the function is called from TESTS ONLY. All 19 references are in
+`vm.rs`, and the sole one outside the test module is its own definition. Seven
+opcodes dispatch to `0x6863` — `0xB1`, `0xB4`, `0xB5`, `0xB6`, `0xBE`, `0xBF`,
+`0xC0` — and the execution loop implements the family INLINE, with its own copy of
+the rule.
+
+The copies agreed on almost everything: the `0xC0`/`0xC2` marker making the
+operand indirect (`0x6877`/`0x687B`), signed compares, F5/F6/F7 mutating in set
+mode. They disagreed on the operator the ladder does not recognise:
+
+    0x6891  xor al,al                    <- al cleared BEFORE the ladder
+    0x6893  cmp ah,0xf0 / setne  ...     each arm is an explicit compare
+    0x68CF  cmp ah,0xf5 / sete
+    0x68DB  or al,al / jne 0x6900        zero -> fall through to vm_branch
+
+An unrecognised operator reaches `0x68DB` with al still zero, and zero BRANCHES.
+`apply_operator` returns `false` for those — correct. The inline copy ended its
+match with `_ => cur == operand_i`, folding every unknown operator into an
+equality test that can decline to branch. The correct implementation was the dead
+one; the live path had the defect, which is the worst arrangement of the two.
+
+Fixed by routing the arm through `apply_operator`, so there is one implementation
+and the tests cover the code that runs. The new test pins the ladder's fallthrough
+including `0xF6`/`0xF7` — SET-mode operators with no query-mode arm, where equal
+operands must NOT rescue them.
+
+`check_duplicate_rules.py` could not have caught this: it matches ledger items by
+cited address, and an inline `match` arm inside a 900-line exec function is not a
+ledger item. Duplication that hides inside a function body needs a different
+instrument, and I do not have one.
+
+Settled: 573 -> 574 of 2160.

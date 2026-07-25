@@ -1226,7 +1226,7 @@ QuerySetMode	src/vm.rs	274	struct	0x67ad,0x6946	ASM	/// The decoded VM query/set
 RecordOpResult	src/vm.rs	281	enum		ASM	/// The result of a record opcode under [`QuerySetMode`].
 enter_query	src/vm.rs	302	fn	0x6559,0x67ad,0x655F,0x6884,0x6565,0x656C,0x6820	ASM	/// Opcode `0xA0` PUSH — enter query mode. The handler is `0x6559` /// (dispatch-table entry for `0xA0`): /// /// ```text ///   0x6559  mov byte gs:[0x67ad],1     query mode ON ///   0x655F  mov ax,gs
 exit_query	src/vm.rs	317	fn	0x6572,0x67ad,0x6578,0x6884,0x657C,0x6587,0x6581	ASM	/// Opcode `0xA1` POP — exit query mode. Handler `0x6572`: /// /// ```text ///   0x6572  mov byte gs:[0x67ad],0     query mode OFF ///   0x6578  mov ax,gs:[0x6884] ///   0x657C  cmp ax,2 / je 0x6587  
-apply_operator	src/vm.rs	327	fn	0x6863	ASM?	/// Apply a compound state operator (the decoded `0x6863`-family operator byte, in /// `ah`) to `state[op1]` with `op2`. In query mode the operator is a **comparison** /// (`0xF0`ne/`0xF1`lt/`0xF2`gt/
+apply_operator	src/vm.rs	327	fn	0x6863	ASM	/// Apply a compound state operator (the decoded `0x6863`-family operator byte, in /// `ah`) to `state[op1]` with `op2`. In query mode the operator is a **comparison** /// (`0xF0`ne/`0xF1`lt/`0xF2`gt/
 record_op	src/vm.rs	362	fn	0x674e,0x6946	ASM?	/// A 2-word record opcode (`0xB8` family): in query mode compare the operands /// `(a, b)` against the record's current `(cur_a, cur_b)` — match falls through, else /// branch; in set mode the operan
 TEXT_SELECTOR_NONE	src/vm.rs	379	const		UNVERIFIED	
 TEXT_SELECTOR_SILENT	src/vm.rs	380	const		UNVERIFIED	
@@ -1526,10 +1526,10 @@ rec_read_u8	src/vm.rs	5205	fn		UNVERIFIED	/// Byte-level record access (the reco
 rec_write_u8	src/vm.rs	5214	fn		UNVERIFIED	
 branch	src/vm.rs	5226	fn	0x6462	ASM?	/// `vm_branch` @0x6462: pop the resume position into PC; clear query mode.
 step	src/vm.rs	5234	fn		UNVERIFIED	/// Execute ONE opcode against the loaded stream. Returns false at stream end.
-run	src/vm.rs	6068	fn		UNVERIFIED	/// Run until yield (0xAA/0xAC), halt, or `max_steps`. Returns the events raised.
-run_frame	src/vm.rs	6081	fn	0x55F5	ASM?	/// Run ONE FRAME the way the exec loop does (@0x55F5): restart at the top of /// the script (AA/AC yields end the frame with NO resume; the self-modified /// active bits advance the flow), run until 
-token_len_at	src/vm.rs	6095	fn		DATA?	/// Total token length (including the opcode byte) at `pos`, using the game's own /// per-opcode descriptor table + mode rules — identical to the walker's advance /// (`mode1` there == query mode here
-decompile_script	src/vm.rs	6124	fn		UNVERIFIED	// ============================================================================ // DECOMPILER — static translation of the COD bytecode into a readable BASIC- // like listing, using the faithfully-deco
+run	src/vm.rs	6064	fn		UNVERIFIED	/// Run until yield (0xAA/0xAC), halt, or `max_steps`. Returns the events raised.
+run_frame	src/vm.rs	6077	fn	0x55F5	ASM?	/// Run ONE FRAME the way the exec loop does (@0x55F5): restart at the top of /// the script (AA/AC yields end the frame with NO resume; the self-modified /// active bits advance the flow), run until 
+token_len_at	src/vm.rs	6091	fn		DATA?	/// Total token length (including the opcode byte) at `pos`, using the game's own /// per-opcode descriptor table + mode rules — identical to the walker's advance /// (`mode1` there == query mode here
+decompile_script	src/vm.rs	6120	fn		UNVERIFIED	// ============================================================================ // DECOMPILER — static translation of the COD bytecode into a readable BASIC- // like listing, using the faithfully-deco
 VmDrive	src/vm_drive.rs	13	struct		UNVERIFIED	
 new	src/vm_drive.rs	25	fn		UNVERIFIED	
 frame	src/vm_drive.rs	55	fn		ORACLE?	/// One passive frame: VM frame + the idle beat. No promotion — queued /// calls RING until an interaction takes them (the scenario's clicks /// decide, as at the oracle's hub).

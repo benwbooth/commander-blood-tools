@@ -5576,32 +5576,28 @@ impl VmMachine {
                 if marker == 0xC0 || marker == 0xC2 {
                     operand = self.rec_read(operand);
                 }
-                let cur = self.rec_read(off) as i16;
-                let operand_i = operand as i16;
-                if self.query {
-                    let pass = match operator {
-                        0xF0 => cur != operand_i,
-                        0xF1 => cur < operand_i,
-                        0xF2 => cur > operand_i,
-                        0xF3 => cur <= operand_i,
-                        0xF4 => cur >= operand_i,
-                        _ => cur == operand_i, // 0xF5
-                    };
-                    if !pass {
-                        self.branch();
+                // ONE implementation: `apply_operator`. This arm used to carry a
+                // second copy of the same decoded rule, and the copies disagreed
+                // on the operator the ladder does NOT recognise. `0x6891` is
+                // `xor al,al` before the ladder, every arm of which is an explicit
+                // `cmp ah,0xFn`; an unrecognised operator falls through to
+                // `0x68DB` with al STILL ZERO, and `or al,al / jne` makes zero
+                // mean BRANCH. The copy here ended its match with
+                // `_ => cur == operand_i`, folding every unknown operator into an
+                // equality test that can decline to branch. `apply_operator`
+                // returns `false` for them, which is the ladder.
+                let cur = self.rec_read(off);
+                let mode = QuerySetMode { query: self.query };
+                match mode.apply_operator(operator, cur, operand) {
+                    // Query: `Err(matched)` -- no match branches (0x68DF).
+                    Err(matched) => {
+                        if !matched {
+                            self.branch();
+                        }
                     }
-                } else {
-                    // Only F5 SET / F6 ADD / F7 SUB mutate; any OTHER operator
-                    // writes `cur` back UNCHANGED (0x68F6 `cmp ah,0xf5; jne 0x68fd`
-                    // skips the operand load, so es:[..] gets the value read at
-                    // entry). The old wildcard wrote the operand for F0..F4 too.
-                    let v = match operator {
-                        0xF5 => operand_i, // SET
-                        0xF6 => cur.wrapping_add(operand_i),
-                        0xF7 => cur.wrapping_sub(operand_i),
-                        _ => cur, // non-{F5,F6,F7}: leave the record unchanged
-                    };
-                    self.rec_write(off, v as u16);
+                    // Set: only F5/F6/F7 mutate; others write `cur` back unchanged
+                    // (0x68F6 `cmp ah,0xf5; jne 0x68fd` skips the operand load).
+                    Ok(v) => self.rec_write(off, v),
                 }
             }
             // 0xB7 (0x6AA7): record byte field op (offset + byte value).
@@ -6468,6 +6464,37 @@ pub fn decompile_script(
 
 #[cfg(test)]
 mod tests {
+
+    /// The `0x6863` ladder recognises exactly `0xF0..=0xF5`. `0x6891` clears al
+    /// BEFORE the ladder, every arm is an explicit `cmp ah,0xFn`, and an
+    /// unrecognised operator falls through to `0x68DB` with al still zero — where
+    /// `or al,al / jne` makes zero mean BRANCH.
+    ///
+    /// The executing arm used to end its match with `_ => cur == operand_i`,
+    /// folding every unknown operator into an equality test that can decline to
+    /// branch. `apply_operator` had it right and was called only by tests; this
+    /// pins the behaviour on the path the VM actually runs.
+    #[test]
+    fn unknown_query_operator_branches_like_the_ladder() {
+        let q = QuerySetMode { query: true };
+        // Recognised: equality matches, so no branch.
+        assert_eq!(q.apply_operator(0xF5, 7, 7), Err(true));
+        // NOT recognised — including 0xF6/0xF7, which are SET-mode operators and
+        // have no ladder arm in query mode. Equal operands must NOT rescue them.
+        for op in [0xF6u8, 0xF7, 0x00, 0x42, 0xEF, 0xFF] {
+            assert_eq!(
+                q.apply_operator(op, 7, 7),
+                Err(false),
+                "operator {op:#04x} is not in the ladder: al stays 0 -> branch"
+            );
+        }
+        // Set mode: only F5/F6/F7 mutate; anything else writes `cur` back.
+        let s = QuerySetMode { query: false };
+        assert_eq!(s.apply_operator(0xF5, 7, 3), Ok(3));
+        assert_eq!(s.apply_operator(0xF6, 7, 3), Ok(10));
+        assert_eq!(s.apply_operator(0xF7, 7, 3), Ok(4));
+        assert_eq!(s.apply_operator(0xF0, 7, 3), Ok(7), "unchanged");
+    }
 
     /// The contact menu is built from the SHIP-SLOT ARRAY, not from a fixed list:
     /// `0x87BD` skips empty slots (`or ax,ax / je`), stops at `0xFFFF`, and emits
