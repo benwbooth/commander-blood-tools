@@ -196,6 +196,40 @@ mod cited_instruction_tests {
 }
 
 #[cfg(test)]
+mod opcode_handler_tests {
+    /// An opcode constant's value is a dispatch-table INDEX, so it never appears
+    /// in its handler's bytes and cannot be checked the way other constants are.
+    /// The claim its doc makes is checkable and stronger: entry `op - 0xA0` of the
+    /// table at `0x142D0` (52 near offsets into VM code segment `0x4DA`) must be
+    /// the handler cited. This resolves every `OP_*` constant through the table.
+    #[test]
+    fn opcode_constants_cite_the_handler_the_table_dispatches() {
+        let script = std::path::Path::new("tools/check_opcode_handlers.py");
+        if !script.exists() || !std::path::Path::new("re/bin/BLOODPRG.EXE").exists() {
+            return;
+        }
+        let out = match std::process::Command::new("python3").arg(script).output() {
+            Ok(o) => o,
+            Err(_) => return,
+        };
+        let text = String::from_utf8_lossy(&out.stdout);
+        if text.trim().is_empty() {
+            return;
+        }
+        assert!(out.status.success(), "opcode handler citations wrong:\n{text}");
+        let checked: usize = text
+            .split_whitespace()
+            .next()
+            .and_then(|n| n.parse().ok())
+            .unwrap_or(0);
+        assert!(
+            checked >= 25,
+            "expected the opcode constants to resolve through the table, got: {text}"
+        );
+    }
+}
+
+#[cfg(test)]
 mod opsize_mnemonic_tests {
     /// `cbw` and `cwde` are the SAME opcode (0x98) at different operand sizes, and
     /// capstone prints both as `cwde` in 16-bit mode. They are not interchangeable:

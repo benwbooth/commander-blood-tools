@@ -3357,3 +3357,41 @@ not have:
   number matches something almost anywhere.
 
 Settled: 463 -> 487 of 2143.
+
+## #104 — opcode constants verified through the dispatch table, and 20 given the citation they lacked
+
+`check_cited_immediates.py` could only report the `OP_*` constants as NEEDS
+READING: an opcode's value is a table INDEX, so it appears nowhere in its
+handler's bytes. But the claim their docs make is checkable, and it is a stronger
+claim than an immediate match —
+
+    /// `0xA4` unconditional JUMP (PC = operand). Handler 0x65db.
+
+says entry `0xA4` of the VM dispatch table points at `0x65DB`. The table is at
+file `0x142D0` (`vm_opcode_handler_table_static`, copied to `GS:0x6EB0` at init):
+52 near offsets into VM code segment `0x4DA`, covering `0xA0..0xD3`, so
+`handler = 0x600 + 0x4DA*16 + table[op - 0xA0]`. `tools/check_opcode_handlers.py`
+resolves every constant that way.
+
+All 9 existing handler citations are correct. Twenty more constants cited no
+handler at all, so the table supplied one — decoded from the binary, not
+transcribed from anywhere — and each resolved to a handler ALREADY LABELLED in
+`re/labels.csv` under a matching name (`0xD2` → `vm_op_d2_script_profile_request`,
+`0xC4` → `vm_op_c4_actor`). Independent corroboration: the table and the labels
+were derived separately and agree. `0xB8`, `0xB9` and `0xBD` all dispatch to the
+same handler `0x6B06`, which is why they are the "pair record" family.
+
+Two checker bugs first, both of the same kind — reading more into a doc than it
+says:
+
+* Not clearing the doc run between constants let every constant inherit the GROUP
+  comment above the block, so 18 of them "cited" the same five addresses and all
+  18 looked wrong.
+* Treating every address in a doc as a handler claim flagged `0xCE`, whose doc
+  cites the game-flag words `[0x2793]`/`[0x252a]` — it never claimed those were
+  handlers. Only addresses introduced as "Handler 0x..." count now.
+
+`OP_MAX = 0xFE` is correctly outside the table's range: it is the TOKEN bound, not
+the dispatch bound — the distinction recorded in commit aa8a3b8.
+
+Registered as a lib test. Settled: 487 -> 515 of 2143.

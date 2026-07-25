@@ -188,6 +188,7 @@ pub fn field_offset(kind: u16, field: u8) -> Option<u16> {
     vm_field_offset(field, kind).filter(|off| *off != 0)
 }
 
+/// Handler 0x06559 (`vm_op_a0_push`) — dispatch table `0x142D0`, the entry for 0xA0.
 pub const OP_MIN: u8 = 0xA0;
 /// Upper bound of the TOKEN-VALIDITY range, not of dispatch — the two differ and the
 /// distinction is easy to lose.
@@ -204,21 +205,37 @@ pub const OP_MIN: u8 = 0xA0;
 /// and nothing should execute them. Do not "correct" this bound to `0xD2` — that would
 /// make the walker treat data tokens as invalid and desync the stream.
 pub const OP_MAX: u8 = 0xFE;
+/// Handler 0x0660c (`vm_op_a6_text`) — dispatch table `0x142D0`, the entry for 0xA6.
 pub const OP_TEXT: u8 = 0xA6;
+/// Handler 0x06aa7 (`vm_op_b7_record_op`) — dispatch table `0x142D0`, the entry for 0xB7.
 pub const OP_BIT_FLAG: u8 = 0xB7;
+/// Handler 0x06b06 (`vm_op_b8_record_readwrite`) — dispatch table `0x142D0`, the entry for 0xB8.
 pub const OP_PAIR_RECORD_A: u8 = 0xB8;
+/// Handler 0x06b06 (`vm_op_b8_record_readwrite`) — dispatch table `0x142D0`, the entry for 0xB9.
 pub const OP_PAIR_RECORD_B: u8 = 0xB9;
+/// Handler 0x06b06 (`vm_op_b8_record_readwrite`) — dispatch table `0x142D0`, the entry for 0xBD.
 pub const OP_PAIR_RECORD_C: u8 = 0xBD;
+/// Handler 0x06b4c (`vm_op_c1_record_state`) — dispatch table `0x142D0`, the entry for 0xC1.
 pub const OP_RECORD_STATE_MIN: u8 = 0xC1;
+/// Handler 0x06e34 (`vm_op_c2_record_full`) — dispatch table `0x142D0`, the entry for 0xC2.
 pub const OP_RECORD_STATE_MAX: u8 = 0xC2;
+/// Handler 0x06eee (`vm_op_c3_state_record`) — dispatch table `0x142D0`, the entry for 0xC3.
 pub const OP_RECORD_LINK: u8 = 0xC3;
+/// Handler 0x06c7e (`vm_op_c4_actor`) — dispatch table `0x142D0`, the entry for 0xC4.
 pub const OP_ACTOR: u8 = 0xC4;
+/// Handler 0x06d18 (`vm_op_c5_record_match`) — dispatch table `0x142D0`, the entry for 0xC5.
 pub const OP_RECORD_ENTRY_MIN: u8 = 0xC5;
+/// Handler 0x06f62 (`vm_op_c8_record_match`) — dispatch table `0x142D0`, the entry for 0xC8.
 pub const OP_RECORD_ENTRY_MAX: u8 = 0xC8;
+/// Handler 0x06fb9 (`vm_op_c9_clear_record`) — dispatch table `0x142D0`, the entry for 0xC9.
 pub const OP_RECORD_CLEAR: u8 = 0xC9;
+/// Handler 0x064e5 (`vm_op_ca_compare_var`) — dispatch table `0x142D0`, the entry for 0xCA.
 pub const OP_GLOBAL_WORD_COMPARE: u8 = 0xCA;
+/// Handler 0x06510 (`vm_op_cb_compare_byte`) — dispatch table `0x142D0`, the entry for 0xCB.
 pub const OP_GLOBAL_PAIR_COMPARE: u8 = 0xCB;
+/// Handler 0x069c7 (`vm_op_cd_state_gated`) — dispatch table `0x142D0`, the entry for 0xCD.
 pub const OP_RECORD_TRIPLE: u8 = 0xCD;
+/// Handler 0x064b8 (`vm_op_d2_script_profile_request`) — dispatch table `0x142D0`, the entry for 0xD2.
 pub const OP_SCRIPT_PROFILE_REQUEST: u8 = 0xD2;
 // Control-flow opcodes decoded from the handler table (file 0x142d0) this session; the
 // handler behaviors (labels.csv) confirm the record/compare constants above.
@@ -236,11 +253,14 @@ pub const OP_LOAD_STRING: u8 = 0xA8;
 pub const OP_COND_JUMP: u8 = 0xA9;
 /// `0xAA`/`0xAC` YIELD — set `gs:0x67b4`; the exec loop breaks the frame. Handlers 0x6855/0x685c.
 pub const OP_YIELD_A: u8 = 0xAA;
+/// Handler 0x0685c (`vm_op_ac_yield`) — dispatch table `0x142D0`, the entry for 0xAC.
 pub const OP_YIELD_B: u8 = 0xAC;
 /// `0xAB` poke a byte to `[address operand]` (set-variable). Handler 0x684c.
 pub const OP_POKE_BYTE: u8 = 0xAB;
 /// `0xCE`/`0xD0` conditional branch on game flags `[0x2793]`/`[0x252a]` via `vm_branch`.
+/// Handler 0x06494 (`vm_op_ce_cond_branch`) — dispatch table `0x142D0`, the entry for 0xCE.
 pub const OP_COND_BRANCH_PRESENTATION: u8 = 0xCE;
+/// Handler 0x064a0 (`vm_op_d0_cond_branch`) — dispatch table `0x142D0`, the entry for 0xD0.
 pub const OP_COND_BRANCH_GAMEFLAG: u8 = 0xD0;
 /// `0xCC` set a byte in the 16-byte-record table `gs:0x6cde`. Handler 0x64ce.
 pub const OP_SET_RECORD_BYTE: u8 = 0xCC;
