@@ -3513,3 +3513,53 @@ reads it — so it is a fixture, not a behaviour defect, and it is not one of th
 four station rest frames. Left as `ORACLE?` deliberately.
 
 Settled: 528 -> 533 of 2147.
+
+## #108 — game text hardcoded in the port: Bob's greeting, the console prompt, and two menus
+
+Widening the provenance guard to catch "the captured <noun>" as a noun phrase
+found a stale note in `main.rs` — the bridge comment still described the hand
+cursor as "the captured pointing-hand cursor" and told the reader to
+"regenerate with runtime_boot BRIDGEPROBE HANDATLAS" long after that atlas was
+deleted and the hand became `manu3_hand::HandMesh`, decoded from `manu3.xdb`.
+A stale note is not cosmetic here: it names the wrong SOURCE and hands the next
+reader a command to restore the wrong thing.
+
+The same sweep then found real defects. `main.rs` carried GAME TEXT:
+
+    "HONK! You worthless heap of wires... Are  \nyou working?"   // Bob's greeting
+    "What do you want Commander ?"                              // the console prompt
+    vec!["TALK", "REMEMBER", "BYE_BYE"]                          // the HONK menu
+
+each as a "no-VM fallback" for content SCRIPT2's bytecode already provides
+(Bob is record 132 rel 40). This is the defect the prime rule names outright, and
+the menu list is its worked example: conversation menus come from the `0xA6` line
+records' `0xFFFF`-separated word lists, executed by the VM, not from lists
+transcribed off the screen. All three are gone. If the VM yields nothing, the
+contact does not open and the box is empty — inventing a line is worse than
+showing none.
+
+`tools/check_content_literals.py` now guards the class, and building it was mostly
+learning to tell the port's own prose from the game's. The first run reported 102
+"findings", nearly all of them the `BinarySymbol` label table describing DS
+globals and match arms classifying addresses — documentation carried as data.
+Vocabulary heuristics helped and were the wrong instrument; what worked was
+STRUCTURAL exclusion: a `comment:`/`kind:`/`name:` field, and a match arm yielding
+a string, are documentation by construction. 102 -> 1, and the 1 was real.
+
+### Two label lists remain, and they are now tracked rather than silent
+
+    engine.console_box = vec!["BOB_MORLOCK".into(), "CANCEL".into()];       // row 2
+    vec!["TEXT", "MUSIC_OFF", "SAVE", "LOAD", "QUIT", "CANCEL"]             // OPTION
+
+These are NOT fallbacks — they run unconditionally. Every one is a DIC word in the
+game's own dictionary (`Bob_Morlock` in SCRIPT2/3/4/5.DIC, `music_off`, `save`,
+`load`, `text` across SCRIPT1..5.DIC), so the content lives in the data. The port
+even has the parser already — `bas_vm::parse_menu_block` walks a `0xA3` menu
+head's word list and its `0xA6` responses — and it is called from NOWHERE.
+
+Fixing them needs the menu record each console row opens, which is a decode, not a
+patch. Both are recorded in `docs/port-validation.md` as OPEN and carry an entry
+in the guard's `KNOWN_OPEN`, so the class cannot grow while they are unfixed: a
+NEW hardcoded label list fails the check. Verified the detector actually fires on
+them with the allowlist disabled — an allowlist that hides a detector that never
+worked would be worse than no guard.

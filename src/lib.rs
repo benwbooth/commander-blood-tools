@@ -196,6 +196,32 @@ mod cited_instruction_tests {
 }
 
 #[cfg(test)]
+mod content_literal_tests {
+    /// The prime rule names this defect outright: content that lives in the
+    /// game's data must be executed or parsed, never transcribed. A dialogue line
+    /// or menu label in a `.rs` file is text copied off the running game, and it
+    /// will not change when the data does. `main.rs` carried Bob's greeting and a
+    /// `talk / remember / bye_bye` label list as "no-VM fallbacks" for content
+    /// SCRIPT2's bytecode already provides.
+    #[test]
+    fn no_game_text_hardcoded_in_runtime_source() {
+        let script = std::path::Path::new("tools/check_content_literals.py");
+        if !script.exists() {
+            return;
+        }
+        let out = match std::process::Command::new("python3").arg(script).output() {
+            Ok(o) => o,
+            Err(_) => return,
+        };
+        let text = String::from_utf8_lossy(&out.stdout);
+        if text.trim().is_empty() {
+            return;
+        }
+        assert!(out.status.success(), "game text in the port's source:\n{text}");
+    }
+}
+
+#[cfg(test)]
 mod opcode_handler_tests {
     /// An opcode constant's value is a dispatch-table INDEX, so it never appears
     /// in its handler's bytes and cannot be checked the way other constants are.

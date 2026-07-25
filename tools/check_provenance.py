@@ -23,7 +23,13 @@ import sys
 
 PHRASES = re.compile(
     r"(measured from|measured off|harvested (?:from|pixel|per)|captured from|"
-    r"capture-matched|read off (?:a|the) (?:screenshot|capture)|oracle-measured)",
+    r"capture-matched|read off (?:a|the) (?:screenshot|capture)|oracle-measured|"
+    # "the captured X" / "the harvested X" as a NOUN PHRASE. `main.rs` described the
+    # hand cursor as "the captured pointing-hand cursor ... regenerate with
+    # runtime_boot BRIDGEPROBE HANDATLAS" long after that atlas was deleted and the
+    # hand became manu3_hand::HandMesh -- a stale note that tells the next reader
+    # the wrong SOURCE and hands them a command to restore it.
+    r"(?:the|a) (?:captured|harvested) [a-z-]+)",
     re.I,
 )
 # A claim is EXPLAINED when the same comment run also cites a binary address or

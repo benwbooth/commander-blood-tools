@@ -348,8 +348,10 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     engine.load_tv_channels(Path::new(assets), "tv");
     // The cyberspace hyperspace-tunnel screen: press 'y' to toggle.
     engine.load_cyberspace(Path::new(assets));
-    // The ship bridge: the TB.BIG panorama + the captured pointing-hand cursor
-    // (real-renderer output; regenerate with runtime_boot BRIDGEPROBE HANDATLAS).
+    // The ship bridge: the TB.BIG panorama. The pointing-hand cursor is NOT a
+    // capture -- it is `manu3_hand::HandMesh`, decoded from manu3.xdb's own mesh
+    // and cursor law. The capture-sprite atlas this comment used to describe was
+    // deleted (it was never drawn); do not regenerate it.
     engine.load_bridge(Path::new(iso));
     // The real navigation star-map background (CHART.FD) for the ship-nav view.
     engine.load_nav_chart(Path::new(iso));
@@ -1245,10 +1247,10 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                     engine.bridge.release_menu();
                                     engine.bridge_active = false;
                                     engine.bob_contact_active = true;
-                                    // THE REAL PRESENTER: SCRIPT2's Bob_Morlock.talk
+                                    // THE ONLY PRESENTER: SCRIPT2's Bob_Morlock.talk
                                     // (record 132 rel 40 — C4 guard @1C51) plays his
-                                    // state-gated greeting; the captured line is the
-                                    // no-VM fallback.
+                                    // state-gated greeting. There is no longer a
+                                    // fallback line; the captured one was removed.
                                     let mut lines: Vec<(
                                         String,
                                         Option<std::path::PathBuf>,
@@ -1273,16 +1275,22 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                         }
                                     }
                                     if lines.is_empty() {
-                                        lines = vec![(
-                                            "HONK! You worthless heap of wires... Are  \nyou working?".into(),
-                                            None,
-                                            true,
-                                        )];
+                                        // NO FALLBACK LINE. Every word Bob speaks
+                                        // lives in SCRIPT2's bytecode; a literal
+                                        // here was text transcribed off the running
+                                        // game, which is the defect the prime rule
+                                        // names outright. If the VM produced
+                                        // nothing, the contact does not open.
+                                        engine.bob_contact_active = false;
+                                    } else {
+                                        engine.set_speech_dialogue(
+                                            lines.into_iter().map(|(t, s, _)| (t, s)).collect(),
+                                        );
+                                        engine.load_bob_contact(
+                                            Path::new(iso),
+                                            Path::new(assets),
+                                        );
                                     }
-                                    engine.set_speech_dialogue(
-                                        lines.into_iter().map(|(t, s, _)| (t, s)).collect(),
-                                    );
-                                    engine.load_bob_contact(Path::new(iso), Path::new(assets));
                                 }
                                 // The IN-WINDOW concept box (kind 3): fully
                                 // BYTECODE-DRIVEN. The clicked topic's DIC word
@@ -1489,24 +1497,15 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                     honk_menu = out.2;
                                 }
                             }
-                            if new_lines.is_empty() {
-                                new_lines = vec![(
-                                    "What do you want Commander ?".into(),
-                                    None,
-                                    true,
-                                )];
-                            }
-                            // The BOX comes from the emitted prompt line's own
-                            // carried menu (the bytecode's 0xFFFF-separated words);
-                            // the captured labels only when no VM is loaded.
+                            // NO invented prompt line and NO invented labels. The
+                            // prompt and its menu both come from the emitted line
+                            // record's own 0xFFFF-separated word list, executed by
+                            // the VM -- the exact shape CLAUDE.md names as correct.
+                            // The words this used to hardcode (talk / remember /
+                            // bye_bye) are DIC entries in SCRIPT1..5.DIC; a copy
+                            // here is text transcribed off the screen.
                             engine.console_box = honk_menu
-                                .unwrap_or_else(|| {
-                                    vec![
-                                        "TALK".into(),
-                                        "REMEMBER".into(),
-                                        "BYE_BYE".into(),
-                                    ]
-                                })
+                                .unwrap_or_default()
                                 .iter()
                                 .map(|l| l.to_uppercase())
                                 .collect();
