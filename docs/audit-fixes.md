@@ -2437,3 +2437,32 @@ That last part is a port gap in its own right, separate from the band: the port
 plays the montage untinted and pastes a captured band over it. The correct shape
 is a full-screen remap through the second table, with the film drawn into the top
 140 rows and the band left standing from before.
+
+## FIX #72 — the montage's remap table has a second builder, and it reframes the band
+
+#71 found the montage remaps the whole screen through `DS:0x6011`. That table is
+all zeros in the image and never appears as a `mov di` destination for the tint
+builder `0x22E0` — which, taken alone, would mean the remap is a clear-to-black.
+That reading is tempting and would have been wrong; the real-game captures show
+the band VISIBLE during the montage.
+
+The resolution: **there is a SECOND builder.** All five calls to `0x1CE:0x0000`
+(`0x22E0`) target `0x5F11` with `ax=0xFFCE` — 50% toward black. `0x6011` is filled
+by `0x1CE:0x014D` (`0x242D`) at `0x9622`, with `ax=0xE0` and `bx=0x6011`. It walks
+the same live palette at `DS:0x5251` over 256 entries with a different rule.
+
+`0xE0` is 224 — the base of the 16-colour CONSOLE BANK the intro band's pixels all
+lie in. So the montage's full-screen remap plausibly maps the screen INTO that
+bank, which would explain the harvested band's index range without a separate art
+asset at all: the band is whatever was on screen, remapped.
+
+Stated as plausibly as the evidence supports — the parameter matches the bank base
+and the consumer matches the surface, but the builder's per-entry arithmetic is
+not yet read line by line. What makes that cheap: `func_242d` is ALREADY LIFTED
+BIT-EXACTLY in the port's recomp module and oracle-verified, so the port can
+execute it and observe the table rather than deriving it by hand.
+
+WHAT THIS CHANGES ABOUT THE BAND. It was "harvested art, source unknown", then
+"drawn once before the film", and now most likely "not drawn as art at all" — a
+side effect of the presentation remap. Three sessions of hypotheses, each one
+cheaper than the last because the eliminations were written down.
