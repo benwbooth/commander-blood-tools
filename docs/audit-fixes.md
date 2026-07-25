@@ -724,3 +724,40 @@ That reframes the open question precisely: `text_selector_voice_clip_index` is s
 known to be invented (b3 has exactly one reader and it forms the line id), but the
 replacement rule cannot be found by following the sound module further. It has to come
 from the DIALOGUE side -- find where a spoken line triggers a clip at all.
+
+## RESOLVED — the dialogue-voice rule is a RANDOM roll, and the port already has it
+
+The open question from the previous entries is answered. The trigger and the rule are
+both in the executable, and they connect:
+
+    0x66AF   mov byte gs:[0xCFB], 1     A6 accepts a line  -> SET the voice flag
+    0xB898   test byte [0xCFB], 1       the clip picker's GATE
+    0xB8AB   mov ax,0xA -> prng(10)     roll
+    0xB8B3   cmp [0xC4D] / je back      re-roll until different from the last
+    0xB8BC   add ax,7                   clip = roll + 7
+    0x94CF   mov byte [0xCFB], 0        reveal completes -> stop
+
+A byte search gives `DS:0xCFB` exactly ONE setter and ONE tester, so the linkage is not
+inferred. The game's dialogue voice is therefore a RANDOM burble clip (7..16) played
+while the line reveals, never repeating back to back — not a per-line or per-speaker
+selection.
+
+THE PORT ALREADY IMPLEMENTS THIS CORRECTLY. `main.rs` runs `chatter_prng.next(10)`,
+re-draws while equal to the previous pick, plays `bank.clip(7 + pick)` on a 4-tick
+throttle, and its comment already cites `0xB898`/`0xC4D`/`0xB2F`/`0x94CF`.
+
+WHAT IS WRONG is the SECOND, parallel path: `text_selector_voice_clip_index(b3, talk_count)`
+plays an additional per-speaker clip at line start. It is invented twice over — `b3` has
+a single reader that forms the line id, and its bound `talk_count` is
+`actor_record.talk_hnms.len()`, i.e. an audio clip index bounded by a count of talk
+VIDEOS.
+
+CORRECTION TO MY EARLIER NOTE: I previously declined to remove it on the grounds that
+"deleting it silences dialogue with nothing to replace it". That was wrong — the
+faithful chatter path runs independently, so the invented path is ADDITIVE. Removing it
+leaves the correct voice, not silence. Recorded rather than acted on in this pass
+because it touches four call sites across three modules and deserves its own change.
+
+One thread genuinely unresolved: per-speaker banks DO exist (`sn\xxxxxxxxxxxx` template
+at `DS:0x0D06`), so a bank may be chosen per speaker. But whichever bank is loaded, the
+only clip SELECTION logic in the executable is the random roll above.
