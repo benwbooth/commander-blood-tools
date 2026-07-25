@@ -29,61 +29,61 @@ push	src/bas_vm.rs	213	fn		UNVERIFIED	/// Enter the menu at `bas_offset` (push, 
 pop	src/bas_vm.rs	224	fn		UNVERIFIED	/// Back out of the current menu (pop). Never empties the stack — the entry /// menu always remains, matching the game (the top-level menu is never popped).
 is_back_topic	src/bas_vm.rs	234	fn		UNVERIFIED	/// Whether a topic label backs out of the menu (pops) rather than descending.
 depth	src/bas_vm.rs	239	fn		UNVERIFIED	/// Current stack depth (1 = at the entry menu).
-MzHeader	src/bloodprg.rs	175	struct		UNVERIFIED	
-header_size	src/bloodprg.rs	190	fn		UNVERIFIED	
-image_total	src/bloodprg.rs	194	fn		UNVERIFIED	
-load_size	src/bloodprg.rs	202	fn		UNVERIFIED	
-MzSummary	src/bloodprg.rs	208	struct		UNVERIFIED	
-BinarySymbol	src/bloodprg.rs	219	struct		UNVERIFIED	
-OpcodeDescriptor	src/bloodprg.rs	230	struct		UNVERIFIED	
-OpcodeHandler	src/bloodprg.rs	237	struct		UNVERIFIED	
-VmOpcodeSpec	src/bloodprg.rs	244	struct		UNVERIFIED	
-DialogueFontTables	src/bloodprg.rs	259	struct		UNVERIFIED	
-SubdispatchEntry	src/bloodprg.rs	269	struct		UNVERIFIED	
-SpriteBlitterDispatchEntry	src/bloodprg.rs	276	struct		UNVERIFIED	
-ScriptResourceProfileSlot	src/bloodprg.rs	285	struct		UNVERIFIED	
-ScriptResourceProfile	src/bloodprg.rs	292	struct		UNVERIFIED	
-BloodPrgInspection	src/bloodprg.rs	300	struct		UNVERIFIED	
-SndEntryCallSite	src/bloodprg.rs	319	struct		UNVERIFIED	
-SndBankLoadCallSite	src/bloodprg.rs	333	struct		UNVERIFIED	
-RenderCallSite	src/bloodprg.rs	354	struct		UNVERIFIED	
-BloodPrg	src/bloodprg.rs	369	struct		UNVERIFIED	
-parse_file	src/bloodprg.rs	375	fn		UNVERIFIED	
-parse	src/bloodprg.rs	381	fn		UNVERIFIED	
-summary	src/bloodprg.rs	411	fn		UNVERIFIED	
-image_bytes	src/bloodprg.rs	426	fn		UNVERIFIED	/// The raw image bytes, so a test can read an INSTRUCTION back and check a /// constant against the immediate the code actually uses.
-segoff_to_file	src/bloodprg.rs	430	fn		UNVERIFIED	
-ds_to_file	src/bloodprg.rs	434	fn		UNVERIFIED	
-fs_to_file	src/bloodprg.rs	438	fn		UNVERIFIED	
-opcode_handlers	src/bloodprg.rs	442	fn		UNVERIFIED	
-opcode_descriptors	src/bloodprg.rs	462	fn		UNVERIFIED	
-vm_opcode_specs	src/bloodprg.rs	479	fn		UNVERIFIED	
-script_resource_profiles	src/bloodprg.rs	512	fn		UNVERIFIED	
-dialogue_font_tables	src/bloodprg.rs	546	fn	0x31C8,0x7802,0x14C22,0x78B2,0x14CD2,0x78b2,0x7908,0x14D28	ASM	/// The DIALOGUE FONT's three chained tables, at the offsets `render_string` /// (`0x31C8`) loads them from as immediates: the ASCII->glyph map /// `DS:0x7802` = file `0x14C22` (`mov bx,0x7802`), the 
-nav_actor_subdispatch_handlers	src/bloodprg.rs	584	fn		UNVERIFIED	
-nav_choice_subdispatch_handlers	src/bloodprg.rs	592	fn		UNVERIFIED	
-snd_entry_call_sites	src/bloodprg.rs	600	fn		UNVERIFIED	
-snd_bank_load_call_sites	src/bloodprg.rs	626	fn		UNVERIFIED	
-render_call_sites	src/bloodprg.rs	665	fn		UNVERIFIED	
-sprite_blitter_dispatch_entries	src/bloodprg.rs	696	fn		UNVERIFIED	
-inspect	src/bloodprg.rs	718	fn		UNVERIFIED	
-subdispatch_entries	src/bloodprg.rs	738	fn		UNVERIFIED	
-slice	src/bloodprg.rs	759	fn		UNVERIFIED	
-find_ax_source_before	src/bloodprg.rs	768	fn		UNVERIFIED	
-find_si_source_before	src/bloodprg.rs	800	fn		UNVERIFIED	
-ds_c_string	src/bloodprg.rs	828	fn		UNVERIFIED	
-resource_name	src/bloodprg.rs	838	fn		UNVERIFIED	
-file_to_known_segoff	src/bloodprg.rs	851	fn		UNVERIFIED	
-u16_at	src/bloodprg.rs	862	fn		UNVERIFIED	
-OpcodeMetadata	src/bloodprg.rs	870	struct		UNVERIFIED	
-opcode_metadata	src/bloodprg.rs	877	fn		UNVERIFIED	
-snd_entry_call_note	src/bloodprg.rs	1027	fn		UNVERIFIED	
-snd_bank_load_mode	src/bloodprg.rs	1043	fn		UNVERIFIED	
-snd_bank_load_call_note	src/bloodprg.rs	1052	fn		UNVERIFIED	
-render_target_name	src/bloodprg.rs	1065	fn		UNVERIFIED	
-render_call_site_note	src/bloodprg.rs	1103	fn		UNVERIFIED	
-sprite_blitter_name	src/bloodprg.rs	1280	fn		UNVERIFIED	
-sprite_blitter_note	src/bloodprg.rs	1294	fn		UNVERIFIED	
+MzHeader	src/bloodprg.rs	185	struct		UNVERIFIED	
+header_size	src/bloodprg.rs	200	fn		UNVERIFIED	
+image_total	src/bloodprg.rs	204	fn		UNVERIFIED	
+load_size	src/bloodprg.rs	212	fn		UNVERIFIED	
+MzSummary	src/bloodprg.rs	218	struct		UNVERIFIED	
+BinarySymbol	src/bloodprg.rs	229	struct		UNVERIFIED	
+OpcodeDescriptor	src/bloodprg.rs	240	struct		UNVERIFIED	
+OpcodeHandler	src/bloodprg.rs	247	struct		UNVERIFIED	
+VmOpcodeSpec	src/bloodprg.rs	254	struct		UNVERIFIED	
+DialogueFontTables	src/bloodprg.rs	269	struct		UNVERIFIED	
+SubdispatchEntry	src/bloodprg.rs	279	struct		UNVERIFIED	
+SpriteBlitterDispatchEntry	src/bloodprg.rs	286	struct		UNVERIFIED	
+ScriptResourceProfileSlot	src/bloodprg.rs	295	struct		UNVERIFIED	
+ScriptResourceProfile	src/bloodprg.rs	302	struct		UNVERIFIED	
+BloodPrgInspection	src/bloodprg.rs	310	struct		UNVERIFIED	
+SndEntryCallSite	src/bloodprg.rs	329	struct		UNVERIFIED	
+SndBankLoadCallSite	src/bloodprg.rs	343	struct		UNVERIFIED	
+RenderCallSite	src/bloodprg.rs	364	struct		UNVERIFIED	
+BloodPrg	src/bloodprg.rs	379	struct		UNVERIFIED	
+parse_file	src/bloodprg.rs	385	fn		UNVERIFIED	
+parse	src/bloodprg.rs	391	fn		UNVERIFIED	
+summary	src/bloodprg.rs	421	fn		UNVERIFIED	
+image_bytes	src/bloodprg.rs	436	fn		UNVERIFIED	/// The raw image bytes, so a test can read an INSTRUCTION back and check a /// constant against the immediate the code actually uses.
+segoff_to_file	src/bloodprg.rs	440	fn		UNVERIFIED	
+ds_to_file	src/bloodprg.rs	444	fn		UNVERIFIED	
+fs_to_file	src/bloodprg.rs	448	fn		UNVERIFIED	
+opcode_handlers	src/bloodprg.rs	452	fn		UNVERIFIED	
+opcode_descriptors	src/bloodprg.rs	472	fn		UNVERIFIED	
+vm_opcode_specs	src/bloodprg.rs	489	fn		UNVERIFIED	
+script_resource_profiles	src/bloodprg.rs	526	fn	0x11F4,0x0D3E4,0x53A0,0x000A,0x6712	ASM	/// The five SCRIPT resource profiles at `FS:0x11F4` (file `0x0D3E4`), the /// table `vm_resource_profile_select` (`0x53A0`) indexes: `mov si,0x11F4 / /// mov dx,0x000A / mul dx` picks the row, then `
+dialogue_font_tables	src/bloodprg.rs	560	fn	0x31C8,0x7802,0x14C22,0x78B2,0x14CD2,0x78b2,0x7908,0x14D28	ASM	/// The DIALOGUE FONT's three chained tables, at the offsets `render_string` /// (`0x31C8`) loads them from as immediates: the ASCII->glyph map /// `DS:0x7802` = file `0x14C22` (`mov bx,0x7802`), the 
+nav_actor_subdispatch_handlers	src/bloodprg.rs	598	fn		UNVERIFIED	
+nav_choice_subdispatch_handlers	src/bloodprg.rs	606	fn		UNVERIFIED	
+snd_entry_call_sites	src/bloodprg.rs	614	fn		UNVERIFIED	
+snd_bank_load_call_sites	src/bloodprg.rs	640	fn		UNVERIFIED	
+render_call_sites	src/bloodprg.rs	679	fn		UNVERIFIED	
+sprite_blitter_dispatch_entries	src/bloodprg.rs	713	fn	0x1592,0x4522,0x44BA	ASM	/// The sprite-blitter dispatch table at `CS:0x1592` (file `0x4522`), reached /// by `mov bx,cs:[bx+0x1592]` at `0x44BA` after `shr bx,1 / and bx,0x0E` /// bounds the index to its eight word entries.
+inspect	src/bloodprg.rs	735	fn		UNVERIFIED	
+subdispatch_entries	src/bloodprg.rs	755	fn		UNVERIFIED	
+slice	src/bloodprg.rs	776	fn		UNVERIFIED	
+find_ax_source_before	src/bloodprg.rs	785	fn		UNVERIFIED	
+find_si_source_before	src/bloodprg.rs	817	fn		UNVERIFIED	
+ds_c_string	src/bloodprg.rs	845	fn		UNVERIFIED	
+resource_name	src/bloodprg.rs	855	fn		UNVERIFIED	
+file_to_known_segoff	src/bloodprg.rs	868	fn		UNVERIFIED	
+u16_at	src/bloodprg.rs	879	fn		UNVERIFIED	
+OpcodeMetadata	src/bloodprg.rs	887	struct		UNVERIFIED	
+opcode_metadata	src/bloodprg.rs	894	fn		UNVERIFIED	
+snd_entry_call_note	src/bloodprg.rs	1044	fn		UNVERIFIED	
+snd_bank_load_mode	src/bloodprg.rs	1060	fn		UNVERIFIED	
+snd_bank_load_call_note	src/bloodprg.rs	1069	fn		UNVERIFIED	
+render_target_name	src/bloodprg.rs	1082	fn		UNVERIFIED	
+render_call_site_note	src/bloodprg.rs	1120	fn		UNVERIFIED	
+sprite_blitter_name	src/bloodprg.rs	1297	fn		UNVERIFIED	
+sprite_blitter_note	src/bloodprg.rs	1311	fn		UNVERIFIED	
 BloodSave	src/bloodsav.rs	48	struct		UNVERIFIED	
 parse	src/bloodsav.rs	90	fn	0x1C3F,0x1C60,0x1C6A,0x1C75	ASM	/// Parse a save image in the field order `vm_state_save` (`0x1C3F`) writes: /// the 2-byte profile (`0x1C60`), 512 flag bytes (`0x1C6A`), 96 state bytes /// (`0x1C75`), then the two variable blocks a
 to_bytes	src/bloodsav.rs	113	fn	0x1C3F	ASM	/// Serialize back to the DOS byte layout (profile, flags, state, runtime). /// Byte-exact with [`BloodSave::parse`]'s input for the header; the runtime /// region round-trips verbatim. /// Re-seriali
@@ -557,76 +557,76 @@ project_ship_3d_point	src/ship3d.rs	1600	fn		ASM
 plot_ship_3d_projected_point	src/ship3d.rs	1643	fn		ASM	
 ship_3d_projected_point_shade	src/ship3d.rs	1667	fn		ASM	
 ship_3d_projected_point_offset	src/ship3d.rs	1671	fn		ASM	
-BloodPrng	src/ship3d.rs	1690	struct		UNVERIFIED	
-default	src/ship3d.rs	1703	fn		UNVERIFIED	/// The static (unseeded) state from the shipped BLOODPRG.EXE image.
-seeded_from_rtc_seconds	src/ship3d.rs	1718	fn	0x2DD3,0xAEE	ASM?	/// Seed as the DOS routine at `0x2DD3` does: it reads the CMOS RTC seconds /// byte (`out 0x70 / in 0x71`) and writes it into both halves of the XOR /// seed word (`mov ah,al; mov cs:[0xAEE],ax`), le
-next	src/ship3d.rs	1729	fn	0x01CE,0x0B02	ASM?	/// Advance the generator and return the next value in `0..modulus` (or the raw 16-bit word /// when `modulus == 0`). Faithful port of the generator at `0x01CE:0x0B02`.
-randomize_ship_3d_point_cloud	src/ship3d.rs	1780	fn	0x9B67,0xFFFF	ASM?	/// Populate the ship-3D starfield point cloud (`ship_3d_point_cloud_randomize` /// at `0x9B67`). Each of the [`SHIP_3D_POINT_CLOUD_LEN`] records gets random /// `x`/`y`/`z` words from [`BloodPrng::ne
-Ship3dPointCloudRender	src/ship3d.rs	1797	struct		UNVERIFIED	
-render_ship_3d_point_cloud	src/ship3d.rs	1812	fn	0x9A10	ASM?	/// Render the full ship-3D starfield background: the batch loop at `0x9A10`. /// Each point is translated by `origin`, projected through `matrix`, and /// depth-shaded into a `320 * 200` buffer, skip
-ship_3d_point_cloud_points	src/ship3d.rs	1834	fn		ASM	/// The same starfield as [`render_ship_3d_point_cloud`], but returning the plotted /// points (screen x, y, depth shade) for a GPU point renderer — identical projection, /// viewport clip, depth-shad
-render_star_map_navview	src/ship3d.rs	2071	fn	0x200	ASM?	/// Render the pyramid-nav HUD grid into the bottom band of an indexed 320x200 /// framebuffer (the band the exporter otherwise leaves BLACK in dialogue mode). /// Draws a perspective grid of grey pyr
-project_star_map_point	src/ship3d.rs	2084	fn	0x9BBA	ASM?	/// As [`render_star_map_navview`], but pans the pyramid field horizontally by /// `compass_angle` (0..179) so the view rotates with the ship's heading (mouse /// steering) — the interactive nav behav
-render_star_map_navview_projected	src/ship3d.rs	2109	fn	0x9BBA	ASM?	/// Projection-accurate star-map nav view: a receding grid of star-system pyramids /// projected with the game's decoded projection ([`project_star_map_point`]) plus the /// central eye-orb — the syst
-render_star_map_navview_panned	src/ship3d.rs	2174	fn		UNVERIFIED	
-render_ship_3d_pyramid_hud	src/ship3d.rs	2239	fn		UNVERIFIED	
-render_ship_3d_starfield	src/ship3d.rs	2304	fn	0x200	ASM?	/// Render a complete ship-3D starfield background from real game data: randomize /// the point cloud from `prng`, build the camera matrix from `angles` using the /// recovered [`SHIP_3D_ANGLE_TABLE`]
-project_ship_3d_object_sprite	src/ship3d.rs	2317	fn		ASM	
-update_ship_3d_sprite_slot_position	src/ship3d.rs	2388	fn		ASM	
-update_ship_3d_sprite_slot_extent	src/ship3d.rs	2414	fn		ASM	
-commit_ship_3d_sprite_slot_dirty_geometry	src/ship3d.rs	2446	fn		ASM	
-commit_ship_3d_global_clip_snapshot	src/ship3d.rs	2467	fn		ASM	
-collect_ship_3d_dirty_sprite_slot_render_commands	src/ship3d.rs	2489	fn		ASM	
-run_ship_3d_temp_snd_setup	src/ship3d.rs	2534	fn		INFRA?	
-run_ship_3d_navigation_final_reset	src/ship3d.rs	2580	fn		INFRA?	
-Ship3dCameraApproach	src/ship3d.rs	2655	struct		UNVERIFIED	
-default	src/ship3d.rs	2673	fn		UNVERIFIED	
-step	src/ship3d.rs	2696	fn	0x8A6A,0x8B5A,0x8A76,0x2328,0x2F71,0x8AB3,0x8AE0	ASM?	/// Advance one frame through the decoded phase machine (`0x8A6A..0x8B5A`): /// - **P1** (`0x8A76`): if `X >= 0x2328` (9000), `X -= 0x64`; the yaw ///   `[0x2F71]` decrements toward 0 (wrapping to 0xB
-origin	src/ship3d.rs	2734	fn		UNVERIFIED	/// The camera origin as a projection origin (for `project_star_map_point` etc.).
-build_ship_3d_navigation_source_records	src/ship3d.rs	2743	fn		UNVERIFIED	
-build_ship_3d_navigation_candidate_records	src/ship3d.rs	2759	fn		UNVERIFIED	
-resolve_ship_3d_position_field	src/ship3d.rs	2783	fn		UNVERIFIED	
-ship_3d_position_distance	src/ship3d.rs	2824	fn		UNVERIFIED	
-ship_3d_position_field_distance	src/ship3d.rs	2853	fn		ASM	
-ship_3d_binary_sqrt	src/ship3d.rs	2863	fn		ASM	
-ship_3d_object_table_bit_is_set	src/ship3d.rs	2902	fn		UNVERIFIED	
-select_ship_3d_c1_source_record	src/ship3d.rs	2921	fn	0x6886,0x6210	ASM?	/// `source_list_bytes` starts at the binary's `DS:0x6886` scratch list. Kind-2 /// tests use the post-`lodsw` cursor for the current source record as the bitset /// base before applying helper `0x621
-resolve_ship_3d_c1_kind10_destination_record	src/ship3d.rs	2959	fn		UNVERIFIED	
-write_ship_3d_c1_kind10_destination_slot	src/ship3d.rs	2973	fn		UNVERIFIED	
-run_ship_3d_navigation_trigger_prelude	src/ship3d.rs	2996	fn		INFRA?	
-draw_ship_3d_target_list	src/ship3d.rs	3078	fn		UNVERIFIED	
-select_ship_3d_target_record	src/ship3d.rs	3136	fn		ASM	
-ship_3d_plane_band_byte_count	src/ship3d.rs	3204	fn		ASM	
-ship_3d_scroll_value	src/ship3d.rs	3209	fn		ASM	
-start_closing_transition	src/ship3d.rs	3219	fn		ASM	
-add_to_low_byte	src/ship3d.rs	3225	fn		ASM	
-circular_delta	src/ship3d.rs	3229	fn		UNVERIFIED	
-wrap_ring_once	src/ship3d.rs	3243	fn		UNVERIFIED	
-matrix_pair_for_angle	src/ship3d.rs	3253	fn		ASM	
-fixed_mul_shift_15	src/ship3d.rs	3261	fn		ASM	
-projection_component	src/ship3d.rs	3265	fn		ASM	
-projection_dot	src/ship3d.rs	3269	fn		ASM	
-project_ship_3d_axis	src/ship3d.rs	3276	fn		ASM	
-scale_ship_3d_object_dimension	src/ship3d.rs	3281	fn		ASM	
-ship_3d_rects_intersect	src/ship3d.rs	3285	fn		UNVERIFIED	
-checked_i16_div_i8_to_i8	src/ship3d.rs	3295	fn		ASM	
-checked_u16_div_u8_to_u8	src/ship3d.rs	3303	fn		UNVERIFIED	
-signed_i16	src/ship3d.rs	3311	fn		ASM	
-target_list_draw_x	src/ship3d.rs	3315	fn		UNVERIFIED	
-blocks_nav_choice	src/ship3d.rs	3320	fn		UNVERIFIED	
-hit_test_ship_3d_nav_choice	src/ship3d.rs	3330	fn		UNVERIFIED	
-adjust_nav_choice_target_records	src/ship3d.rs	3368	fn		UNVERIFIED	
-rebuild_nav_choice_special_target_records	src/ship3d.rs	3377	fn		UNVERIFIED	
-next_ship_3d_temp_snd_phase	src/ship3d.rs	3395	fn		UNVERIFIED	
-append_ship_3d_navigation_source_children	src/ship3d.rs	3404	fn		UNVERIFIED	
-find_ship_3d_navigation_record	src/ship3d.rs	3437	fn		UNVERIFIED	
-find_ship_3d_position_record	src/ship3d.rs	3447	fn		UNVERIFIED	
-find_ship_3d_position_field	src/ship3d.rs	3457	fn		UNVERIFIED	
-resolve_ship_3d_distance_position_field	src/ship3d.rs	3464	fn		UNVERIFIED	
-kind100_relation_word	src/ship3d.rs	3488	fn		UNVERIFIED	
-ship_3d_record_field	src/ship3d.rs	3498	fn		UNVERIFIED	
-binary_abs_word_diff	src/ship3d.rs	3502	fn		ASM	
-next_target_list_draw_color	src/ship3d.rs	3511	fn		UNVERIFIED	
+BloodPrng	src/ship3d.rs	1698	struct		UNVERIFIED	
+default	src/ship3d.rs	1711	fn		UNVERIFIED	/// The static (unseeded) state from the shipped BLOODPRG.EXE image.
+seeded_from_rtc_seconds	src/ship3d.rs	1726	fn	0x2DD3,0xAEE	ASM?	/// Seed as the DOS routine at `0x2DD3` does: it reads the CMOS RTC seconds /// byte (`out 0x70 / in 0x71`) and writes it into both halves of the XOR /// seed word (`mov ah,al; mov cs:[0xAEE],ax`), le
+next	src/ship3d.rs	1737	fn	0x01CE,0x0B02	ASM?	/// Advance the generator and return the next value in `0..modulus` (or the raw 16-bit word /// when `modulus == 0`). Faithful port of the generator at `0x01CE:0x0B02`.
+randomize_ship_3d_point_cloud	src/ship3d.rs	1788	fn	0x9B67,0xFFFF	ASM	/// Populate the ship-3D starfield point cloud (`ship_3d_point_cloud_randomize` /// at `0x9B67`). Each of the [`SHIP_3D_POINT_CLOUD_LEN`] records gets random /// `x`/`y`/`z` words from [`BloodPrng::ne
+Ship3dPointCloudRender	src/ship3d.rs	1805	struct		UNVERIFIED	
+render_ship_3d_point_cloud	src/ship3d.rs	1820	fn	0x9A10	ASM?	/// Render the full ship-3D starfield background: the batch loop at `0x9A10`. /// Each point is translated by `origin`, projected through `matrix`, and /// depth-shaded into a `320 * 200` buffer, skip
+ship_3d_point_cloud_points	src/ship3d.rs	1842	fn		ASM	/// The same starfield as [`render_ship_3d_point_cloud`], but returning the plotted /// points (screen x, y, depth shade) for a GPU point renderer — identical projection, /// viewport clip, depth-shad
+render_star_map_navview	src/ship3d.rs	2079	fn	0x200	ASM?	/// Render the pyramid-nav HUD grid into the bottom band of an indexed 320x200 /// framebuffer (the band the exporter otherwise leaves BLACK in dialogue mode). /// Draws a perspective grid of grey pyr
+project_star_map_point	src/ship3d.rs	2092	fn	0x9BBA	ASM?	/// As [`render_star_map_navview`], but pans the pyramid field horizontally by /// `compass_angle` (0..179) so the view rotates with the ship's heading (mouse /// steering) — the interactive nav behav
+render_star_map_navview_projected	src/ship3d.rs	2117	fn	0x9BBA	ASM?	/// Projection-accurate star-map nav view: a receding grid of star-system pyramids /// projected with the game's decoded projection ([`project_star_map_point`]) plus the /// central eye-orb — the syst
+render_star_map_navview_panned	src/ship3d.rs	2182	fn		UNVERIFIED	
+render_ship_3d_pyramid_hud	src/ship3d.rs	2247	fn		UNVERIFIED	
+render_ship_3d_starfield	src/ship3d.rs	2312	fn	0x200	ASM?	/// Render a complete ship-3D starfield background from real game data: randomize /// the point cloud from `prng`, build the camera matrix from `angles` using the /// recovered [`SHIP_3D_ANGLE_TABLE`]
+project_ship_3d_object_sprite	src/ship3d.rs	2325	fn		ASM	
+update_ship_3d_sprite_slot_position	src/ship3d.rs	2396	fn		ASM	
+update_ship_3d_sprite_slot_extent	src/ship3d.rs	2422	fn		ASM	
+commit_ship_3d_sprite_slot_dirty_geometry	src/ship3d.rs	2454	fn		ASM	
+commit_ship_3d_global_clip_snapshot	src/ship3d.rs	2475	fn		ASM	
+collect_ship_3d_dirty_sprite_slot_render_commands	src/ship3d.rs	2497	fn		ASM	
+run_ship_3d_temp_snd_setup	src/ship3d.rs	2542	fn		INFRA?	
+run_ship_3d_navigation_final_reset	src/ship3d.rs	2588	fn		INFRA?	
+Ship3dCameraApproach	src/ship3d.rs	2663	struct		UNVERIFIED	
+default	src/ship3d.rs	2681	fn		UNVERIFIED	
+step	src/ship3d.rs	2704	fn	0x8A6A,0x8B5A,0x8A76,0x2328,0x2F71,0x8AB3,0x8AE0	ASM?	/// Advance one frame through the decoded phase machine (`0x8A6A..0x8B5A`): /// - **P1** (`0x8A76`): if `X >= 0x2328` (9000), `X -= 0x64`; the yaw ///   `[0x2F71]` decrements toward 0 (wrapping to 0xB
+origin	src/ship3d.rs	2742	fn		UNVERIFIED	/// The camera origin as a projection origin (for `project_star_map_point` etc.).
+build_ship_3d_navigation_source_records	src/ship3d.rs	2751	fn		UNVERIFIED	
+build_ship_3d_navigation_candidate_records	src/ship3d.rs	2767	fn		UNVERIFIED	
+resolve_ship_3d_position_field	src/ship3d.rs	2791	fn		UNVERIFIED	
+ship_3d_position_distance	src/ship3d.rs	2832	fn		UNVERIFIED	
+ship_3d_position_field_distance	src/ship3d.rs	2861	fn		ASM	
+ship_3d_binary_sqrt	src/ship3d.rs	2871	fn		ASM	
+ship_3d_object_table_bit_is_set	src/ship3d.rs	2910	fn		UNVERIFIED	
+select_ship_3d_c1_source_record	src/ship3d.rs	2929	fn	0x6886,0x6210	ASM?	/// `source_list_bytes` starts at the binary's `DS:0x6886` scratch list. Kind-2 /// tests use the post-`lodsw` cursor for the current source record as the bitset /// base before applying helper `0x621
+resolve_ship_3d_c1_kind10_destination_record	src/ship3d.rs	2967	fn		UNVERIFIED	
+write_ship_3d_c1_kind10_destination_slot	src/ship3d.rs	2981	fn		UNVERIFIED	
+run_ship_3d_navigation_trigger_prelude	src/ship3d.rs	3004	fn		INFRA?	
+draw_ship_3d_target_list	src/ship3d.rs	3086	fn		UNVERIFIED	
+select_ship_3d_target_record	src/ship3d.rs	3144	fn		ASM	
+ship_3d_plane_band_byte_count	src/ship3d.rs	3212	fn		ASM	
+ship_3d_scroll_value	src/ship3d.rs	3217	fn		ASM	
+start_closing_transition	src/ship3d.rs	3227	fn		ASM	
+add_to_low_byte	src/ship3d.rs	3233	fn		ASM	
+circular_delta	src/ship3d.rs	3237	fn		UNVERIFIED	
+wrap_ring_once	src/ship3d.rs	3251	fn		UNVERIFIED	
+matrix_pair_for_angle	src/ship3d.rs	3261	fn		ASM	
+fixed_mul_shift_15	src/ship3d.rs	3269	fn		ASM	
+projection_component	src/ship3d.rs	3273	fn		ASM	
+projection_dot	src/ship3d.rs	3277	fn		ASM	
+project_ship_3d_axis	src/ship3d.rs	3284	fn		ASM	
+scale_ship_3d_object_dimension	src/ship3d.rs	3289	fn		ASM	
+ship_3d_rects_intersect	src/ship3d.rs	3293	fn		UNVERIFIED	
+checked_i16_div_i8_to_i8	src/ship3d.rs	3303	fn		ASM	
+checked_u16_div_u8_to_u8	src/ship3d.rs	3311	fn		UNVERIFIED	
+signed_i16	src/ship3d.rs	3319	fn		ASM	
+target_list_draw_x	src/ship3d.rs	3323	fn		UNVERIFIED	
+blocks_nav_choice	src/ship3d.rs	3328	fn		UNVERIFIED	
+hit_test_ship_3d_nav_choice	src/ship3d.rs	3338	fn		UNVERIFIED	
+adjust_nav_choice_target_records	src/ship3d.rs	3376	fn		UNVERIFIED	
+rebuild_nav_choice_special_target_records	src/ship3d.rs	3385	fn		UNVERIFIED	
+next_ship_3d_temp_snd_phase	src/ship3d.rs	3403	fn		UNVERIFIED	
+append_ship_3d_navigation_source_children	src/ship3d.rs	3412	fn		UNVERIFIED	
+find_ship_3d_navigation_record	src/ship3d.rs	3445	fn		UNVERIFIED	
+find_ship_3d_position_record	src/ship3d.rs	3455	fn		UNVERIFIED	
+find_ship_3d_position_field	src/ship3d.rs	3465	fn		UNVERIFIED	
+resolve_ship_3d_distance_position_field	src/ship3d.rs	3472	fn		UNVERIFIED	
+kind100_relation_word	src/ship3d.rs	3496	fn		UNVERIFIED	
+ship_3d_record_field	src/ship3d.rs	3506	fn		UNVERIFIED	
+binary_abs_word_diff	src/ship3d.rs	3510	fn		ASM	
+next_target_list_draw_color	src/ship3d.rs	3519	fn		UNVERIFIED	
 SndClip	src/snd.rs	10	struct		UNVERIFIED	
 SndBank	src/snd.rs	20	struct		UNVERIFIED	
 read	src/snd.rs	26	fn		UNVERIFIED	

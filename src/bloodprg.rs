@@ -519,6 +519,10 @@ impl BloodPrg {
             .collect()
     }
 
+    /// The five SCRIPT resource profiles at `FS:0x11F4` (file `0x0D3E4`), the
+    /// table `vm_resource_profile_select` (`0x53A0`) indexes: `mov si,0x11F4 /
+    /// mov dx,0x000A / mul dx` picks the row, then `mov cx,5` copies that row's
+    /// five resource ids into `DS:0x6712`.
     pub fn script_resource_profiles(&self) -> Result<Vec<ScriptResourceProfile>> {
         let table_file_offset = self.fs_to_file(SCRIPT_RESOURCE_PROFILE_TABLE_FS_OFFSET);
         (0..SCRIPT_RESOURCE_PROFILE_COUNT)
@@ -703,6 +707,9 @@ impl BloodPrg {
             .collect()
     }
 
+    /// The sprite-blitter dispatch table at `CS:0x1592` (file `0x4522`), reached
+    /// by `mov bx,cs:[bx+0x1592]` at `0x44BA` after `shr bx,1 / and bx,0x0E`
+    /// bounds the index to its eight word entries.
     pub fn sprite_blitter_dispatch_entries(&self) -> Result<Vec<SpriteBlitterDispatchEntry>> {
         let bytes = self.slice(
             RENDER_SPRITE_BLITTER_TABLE_FILE_OFFSET,
