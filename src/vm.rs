@@ -2146,7 +2146,20 @@ struct TextTokenRuntimeFlags {
     flags_b5_by_offset: BTreeMap<usize, u8>,
 }
 
+/// The A6 handler MODIFIES ITS OWN BYTECODE: on accepting a line it clears bit 7
+/// of `b5` in the COD stream (`and byte [si+1],0x7F` after `0x668D`, unless
+/// `b4 & 1` preserves it), so a line that has played will not display again.
+///
+/// The port cannot write to the shipped script, so this side table holds the
+/// modified `b5` per stream offset and [`Self::flags_b5`] reads through it. Same
+/// observable behaviour, different mechanism — and worth stating, because the
+/// bytecode being self-modifying is not something a reader would assume, and a
+/// port that treats the stream as read-only WITHOUT this table replays every
+/// accepted line.
 impl TextTokenRuntimeFlags {
+    /// The effective `b5` at a stream offset: the accept-modified value if this
+    /// line has been accepted, else the byte as shipped. Stands in for re-reading
+    /// the COD byte the handler rewrites at `0x668D`.
     fn flags_b5(&self, offset: usize, original_flags_b5: u8) -> u8 {
         self.flags_b5_by_offset
             .get(&offset)
@@ -2154,6 +2167,9 @@ impl TextTokenRuntimeFlags {
             .unwrap_or(original_flags_b5)
     }
 
+    /// Record the accept-time `b5` rewrite for one stream offset — the port's
+    /// stand-in for the handler's self-modifying `and byte [si+1],0x7F` at
+    /// `0x668D`, which clears bit 7 unless `b4 & 1` preserves it.
     fn accept_line(&mut self, offset: usize, flags_b4: u8, effective_flags_b5: u8) {
         let next = text_flags_after_accept(flags_b4, effective_flags_b5);
         if next != effective_flags_b5 {

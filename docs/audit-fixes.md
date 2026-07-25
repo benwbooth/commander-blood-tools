@@ -5572,3 +5572,23 @@ handlers (`0x6B4C`/`0x6E34`, `0x64E5`/`0x6510`); `bit_flag_mask` is the mask for
 of the `shl`-into-carry test at `0x6AD3`.
 
 The queue: 40 -> 35.
+
+## #176 — the bytecode modifies itself, and the port keeps a side table
+
+`TextTokenRuntimeFlags` had no doc, and what it does is one of the more
+surprising facts in the VM: the A6 handler MODIFIES ITS OWN BYTECODE. On accepting
+a line it clears bit 7 of `b5` in the COD stream (`and byte [si+1],0x7F` after
+`0x668D`, unless `b4 & 1` preserves it), so a line that has played will not
+display again.
+
+The port cannot write to the shipped script, so this type holds the modified `b5`
+per stream offset and `flags_b5` reads through it. Same observable behaviour by a
+different mechanism — and worth writing down twice over. A reader will not assume
+the bytecode is self-modifying, and a port that treats the stream as read-only
+WITHOUT a side table replays every accepted line.
+
+Both functions now carry `0x668D` individually. Putting the address only on the
+`impl` block left both rows uncited, which is #155's lesson again: the ledger row
+is the function, and a citation one scope up is invisible to it.
+
+The queue: 31 -> 29.
