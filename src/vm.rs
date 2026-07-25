@@ -1230,7 +1230,32 @@ fn read_u16(cod: &[u8], at: usize) -> Option<u16> {
 const ASSIGN_7: [u8; 7] = [0xB1, 0xB4, 0xB5, 0xB6, 0xBE, 0xBF, 0xC0];
 const BITMASK_5: [u8; 2] = [0xAE, 0xB0];
 const ASSIGN_5: [u8; 7] = [0xAD, 0xAF, 0xB2, 0xB3, 0xBA, 0xBB, 0xBC];
+/// The talk/presentation-record field: selector `0x13`, **kind slot 1**.
+///
+/// Unlike [`LOCATION_FIELD`] this is not a port assumption — the BINARY hardcodes the
+/// kind too. `0x6664` computes `ax = 0x13<<4 + 1 = 0x131` and reads
+/// `gs:[bx+0x6D60]` at that fixed index, giving `0x3A` in the shipped image. The
+/// selector's other kinds hold different values (`kind0=0x08, kind4=0x1C, kind9=0x0A`),
+/// and the game never consults them here.
 const TALK_FIELD: u16 = 0x3A;
+/// The speaker's location field: `vm_field_offset(0x11, kind)` for **kind 1**.
+///
+/// ASSUMPTION, made explicit (matrix row for selector `0x11` at `gs:0x6D60`):
+///
+/// ```text
+///   kind:   0     1     2     3     4     7     9    10
+///   offset: 0x06  0x18  0x16  0x16  0x16  0x14  0x04  0x14
+/// ```
+///
+/// The value varies BY KIND, and the binary resolves it dynamically —
+/// `mov ax,0x11; call 0x6023` at `0x557C`, `0x5B77`, `0x61C3` and others. Hardcoding
+/// `0x18` is therefore only correct for kind-1 objects.
+///
+/// That holds for the actors this is applied to: `load_deb_objects` keeps only `kind == 1`
+/// entries (audit fix #40). But it is an assumption, not an identity, and applying this
+/// constant to any non-kind-1 record would silently read the wrong field.
+///
+/// Contrast [`TALK_FIELD`], where the BINARY itself hardcodes the kind-1 slot.
 const LOCATION_FIELD: u16 = 24;
 const SPECIAL_OBJECT_SLOT_COUNT: usize = 16;
 const VM_FIELD_OFFSET_SELECTOR_PRESENTATION_HANDOFF: u8 = 0x02;
