@@ -1191,6 +1191,64 @@ mod tests {
         }
     }
 
+    /// The DEPTH SCROLL against its lift (`func_b75c`), swept.
+    ///
+    /// `0xB75C` moves `[0x2527]` toward its limit by `[0x2531]`, gated on the
+    /// opening flag `[0x252F]` and the closing flag `[0x2530]`, clamping at `0x41`
+    /// and 0 and clearing the flag on arrival. `add al,[0x2531]` is a LOW-BYTE add
+    /// on a word, which is why the port has `add_to_low_byte` rather than a plain
+    /// addition — the sweep covers the values where that matters.
+    #[test]
+    fn native_depth_scroll_matches_the_lift() {
+        const GS: u16 = 0x2600;
+        const DEPTH: u32 = 0x2527;
+        const OPENING: u32 = 0x252F;
+        const CLOSING: u32 = 0x2530;
+        const STEP: u32 = 0x2531;
+
+        let mut cases = 0usize;
+        for depth in [0u16, 1, 0x20, 0x40, 0x41, 0x42, 0x100, 0x1FF] {
+            for step in [1u8, 4, 8, 0x40, 0xFF] {
+                for (opening, closing) in [(true, false), (false, true), (false, false)] {
+                    let mut m = Machine::new();
+                    m.regs.ds = GS;
+                    m.regs.gs = GS;
+                    m.regs.ss = GS;
+                    m.regs.set_sp(0xFF00);
+                    m.write16(GS, DEPTH, depth);
+                    m.write8(GS, OPENING, opening as u8);
+                    m.write8(GS, CLOSING, closing as u8);
+                    m.write8(GS, STEP, step);
+                    let sp = m.regs.sp() as u32;
+                    m.write16(m.regs.ss, sp, 0x0000);
+                    m.write16(m.regs.ss, sp.wrapping_add(2), 0x0020);
+                    super::auto::func_b75c(&mut m);
+
+                    let mut native = crate::ship3d::Ship3dDepthState {
+                        depth_offset: depth,
+                        depth_step: step,
+                        opening,
+                        closing,
+                        ..Default::default()
+                    };
+                    crate::ship3d::step_ship_3d_depth_scroll(&mut native);
+
+                    assert_eq!(
+                        (
+                            m.read16(GS, DEPTH),
+                            m.read8(GS, OPENING) & 1 != 0,
+                            m.read8(GS, CLOSING) & 1 != 0
+                        ),
+                        (native.depth_offset, native.opening, native.closing),
+                        "depth {depth:#x} step {step:#x} opening {opening} closing {closing}"
+                    );
+                    cases += 1;
+                }
+            }
+        }
+        assert_eq!(cases, 8 * 5 * 3);
+    }
+
     /// The SAVE-NAME EDIT LAW against its lift (`func_1dd8`).
     ///
     /// `0x1DD8` reads the key from `[0xB15]` and the current length from

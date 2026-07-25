@@ -1021,7 +1021,7 @@ Ship3dNavigationTriggerState	src/ship3d.rs	782	struct		UNVERIFIED
 default	src/ship3d.rs	801	fn		UNVERIFIED	
 Ship3dNavigationTriggerEffect	src/ship3d.rs	823	struct		UNVERIFIED	
 update_ship_3d_transition_state	src/ship3d.rs	842	fn		ASM	
-step_ship_3d_depth_scroll	src/ship3d.rs	862	fn		ASM	
+step_ship_3d_depth_scroll	src/ship3d.rs	862	fn		ORACLE	
 copy_ship_3d_plane_bands	src/ship3d.rs	895	fn		ASM	
 step_ship_3d_interpolation_gate	src/ship3d.rs	937	fn		ASM	
 layout_ship_3d_target_list	src/ship3d.rs	961	fn		ASM	
@@ -1101,7 +1101,7 @@ select_ship_3d_target_record	src/ship3d.rs	3219	fn		ASM
 ship_3d_plane_band_byte_count	src/ship3d.rs	3287	fn		ASM	
 ship_3d_scroll_value	src/ship3d.rs	3292	fn		ASM	
 start_closing_transition	src/ship3d.rs	3302	fn		ASM	
-add_to_low_byte	src/ship3d.rs	3308	fn		ASM	
+add_to_low_byte	src/ship3d.rs	3308	fn		ORACLE	
 circular_delta	src/ship3d.rs	3312	fn		UNVERIFIED	
 wrap_ring_once	src/ship3d.rs	3326	fn		UNVERIFIED	
 matrix_pair_for_angle	src/ship3d.rs	3336	fn		ASM	

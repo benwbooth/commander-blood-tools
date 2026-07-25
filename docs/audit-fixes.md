@@ -2822,3 +2822,40 @@ uppercase, the 14-character cap, and backspace. `save_ui_key` moves to `ORACLE`.
 
 Recorded at `DS:0x272E` in labels.csv so the next harness does not lose an hour to
 the same thing.
+
+## FIX #86 — the last twin, and what the six of them cost and bought
+
+`step_ship_3d_depth_scroll` against `func_b75c`, swept over 120 combinations of
+depth, step and the two direction flags — including the values where `add al,
+[0x2531]` being a LOW-BYTE add on a word actually shows (which is why the port has
+`add_to_low_byte` rather than a plain addition). They agree everywhere. Two rows
+to `ORACLE`.
+
+That completes the twin campaign FIX #80 opened. Six differentials, and the tally
+is worth stating because it argues for the technique:
+
+| twin | outcome |
+|---|---|
+| `BloodPrng::next` (`0x2DE2`) | agreed over 300 vectors — the engine's own PRNG had never been tied to the oracle at all |
+| `vm_field_offset` (`0x6023`) | agreed over the whole 336-cell matrix domain |
+| special slots (`0x5FF6`/`0x5FD8`) | **DIVERGED** — the port cleared every match and dropped the carry; fixed |
+| `square_caps_text_width` (`0x30CD`) | agreed on the real vocabulary; one latent divergence documented (unmapped chars) |
+| `entity::advance_state` (`0x41D1`) | agreed over all 256 flag values; a stale `0x420D` citation corrected on the way |
+| `step_ship_3d_depth_scroll` (`0xB75C`) | agreed over 120 combinations |
+
+One live defect, one latent divergence, one wrong citation, and four confirmations
+— from code that ALREADY had an oracle sitting beside it, unused. The premise
+holds: a lift's verification does not transfer to a native twin, and the cheapest
+verification available in this codebase is wherever ground truth already exists.
+
+THREE HARNESS TRAPS, all of which first looked like port defects:
+* `[bp]` operands default to **SS**, not DS (`0x5FF6`) — with a separate stack
+  segment the lift operates on a list nobody can see;
+* `EntityObject::populate` applies the ACTIVATION formula, so it cannot be used to
+  seed a raw flags value;
+* `0x1DD8` does not advance its own length — the caller re-scans the buffer, so a
+  harness driving the editor alone overwrites position 0 forever.
+
+The last of those is a genuine finding about the game, not just about testing: it
+explains the space-padded save buffer, why backspace writes `0x20`, and the
+`"ab             \0"` in the shipped `blood.sav`.
