@@ -1678,6 +1678,24 @@ pub struct ExecutionTrace {
 }
 
 impl ExecutionTrace {
+    /// The script profile a `0xD2` request left pending, or `None`.
+    ///
+    /// `gs:0x6780` is the request slot and `0xFFFF` means EMPTY:
+    ///
+    /// ```text
+    ///   0x108E  cmp word [0x6780],-1     nothing pending?
+    ///   0x10C5  mov ax,[0x6780]          take the request
+    ///   0x10D3  mov word [0x6780],0xffff and reset the slot
+    /// ```
+    ///
+    /// So it is a ONE-SHOT: the consumer writes the sentinel back, and a second
+    /// read before another `0xD2` sees nothing. This function's `filter` on
+    /// `0xFFFF` is that sentinel test; the port models the reset by taking the
+    /// request from an event list rather than a mutable cell, which is equivalent
+    /// as long as nothing replays the same event.
+    ///
+    /// `0x64B8` is the writer — see
+    /// [`script_profile_index_from_request_operand`] for its `cbw` subtlety.
     pub fn pending_script_profile(&self) -> Option<u16> {
         self.script_profile_requests
             .last()
