@@ -2510,3 +2510,37 @@ The captured band still overlays afterwards, and stays until the intro sequencin
 puts the console on screen ahead of the montage — but the presentation itself is
 now the game's, so the film area is banked exactly as the game banks it rather
 than played in full colour with a photograph pasted underneath.
+
+## FIX #75 — stale docs cleared, and one `accuracy/` blob shown to be game data
+
+Two pieces of housekeeping the band work exposed, both about provenance CLAIMS
+rather than code.
+
+**The hand-atlas comment described a deleted capture.** `draw_hand_at_mouse`
+carried 15 lines documenting `accuracy/captures/bridge/hand/hand_<x>_<y>.bin` —
+sprites harvested per cursor position from the emulator — as the port's hand
+source. That atlas was deleted a session ago; the port renders the real
+`manu3.xdb` skeletal mesh. The comment survived the deletion and would have sent
+the next reader looking for capture files as the source of truth. Replaced with
+what is actually true, including a note that the atlas is gone so the next person
+does not go looking.
+
+**`trig_tables.bin` is not a snapshot.** Four blobs live under `accuracy/manu3/`
+and are `include_bytes!`d, which reads as captured memory. Checked against the
+shipped `manu3.xdb`:
+
+| blob | provenance |
+|---|---|
+| `trig_tables.bin` (4100 B) | **all 4100 bytes are `manu3.xdb` at `0x1396`** — game data |
+| `manu3_seg4_1c94.bin` (64 KiB) | a segment dump whose first 17948 bytes are the xdb's texture |
+| `manu3_ds.bin`, `manu3_seg2_1b76.bin` (64 KiB each) | genuine segment dumps |
+
+So one of the four is the game's own file and is now documented and TESTED as
+such, pinned to its offset. The other three are honest runtime dumps and stay
+labelled that way — knowing which is which is the point, since "lives under
+accuracy/" had been carrying all four.
+
+Also: the port no longer `include_bytes!`s a capture at RUNTIME at all. The two
+console-band captures now appear only inside tests, as fixtures the composed-from-
+asset version is checked against — which is exactly the role the prime rule
+assigns an oracle.

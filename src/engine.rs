@@ -1746,22 +1746,14 @@ impl EngineState {
         None
     }
 
-    /// Load the pointing-hand capture atlas: sprites of the REAL game's 3D hand
-    /// renderer output, captured per cursor position from the emulator running
-    /// the original (runtime_boot `BRIDGEPROBE HANDATLAS`; files under
-    /// `accuracy/captures/bridge/hand/hand_<x>_<y>.bin` = {anchor_x, anchor_y,
-    /// w, h: i16, then w*h palette indices, 0 transparent}). This is interim
-    /// real-capture art: the hand's actual renderer (manu3.xdb skeletal mesh +
-    /// affine texture mapping, decoded in re/REVERSE.md) is still to be ported;
-    /// until then the port composites the genuine renderer's output.
-    /// How many pointing-hand sprites the atlas holds (0 = none loaded).
-
     /// Draw the pointing-hand cursor — the game's ONLY cursor — at the current
-    /// mouse position on any screen. The atlas indices are bridge-capture palette
-    /// indices; the bridge palette is the baked game palette, so each sprite's
-    /// colours install into reserved scene-palette slots (0xA8.., scene HNM `pl`
-    /// blocks never touch >127) and the sprite blits remapped. No-op without an
-    /// atlas.
+    /// mouse position on any screen.
+    ///
+    /// This documented a CAPTURE ATLAS (`accuracy/captures/bridge/hand/*.bin`,
+    /// harvested per cursor position from the emulator) that no longer exists: the
+    /// port renders the hand from `manu3.xdb`'s actual skeletal mesh, and the
+    /// atlas loader was deleted. The stale comment survived the deletion and would
+    /// have sent the next reader looking for capture files as the port's source.
     fn draw_hand_at_mouse(&mut self) {
         self.hand_on_screen = true;
         let (cx, cy) = (self.mouse.x as i32, self.mouse.y as i32);

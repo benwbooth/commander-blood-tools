@@ -43,7 +43,16 @@ const WRIST: usize = 0x2394;
 const TEX: &[u8] = include_bytes!("../accuracy/manu3/manu3_seg4_1c94.bin");
 const TEX_W: usize = 256;
 /// The game's own sin/cos tables (ds:0x26, 1024 entries x {cos:i16, sin:i16}, Q14).
+///
+/// PROVENANCE: not a memory snapshot despite living under `accuracy/`. All 4100
+/// bytes are `manu3.xdb` at offset [`TRIG_XDB_OFFSET`], byte for byte — the
+/// game's own data file, which the port already ships. Pinned by
+/// `trig_tables_are_manu3_xdb_bytes`, so the blob cannot drift from the asset it
+/// was taken from. (The two 64K `manu3_ds`/`manu3_seg2` blobs ARE segment dumps;
+/// `manu3_seg4` is a dump whose first 17948 bytes are the xdb's texture.)
 const TRIG: &[u8] = include_bytes!("../accuracy/manu3/trig_tables.bin");
+/// Where [`TRIG`] lives inside `manu3.xdb`.
+pub const TRIG_XDB_OFFSET: usize = 0x1396;
 
 /// The hand's texture bytes + row width (for GPU upload).
 pub fn hand_texture() -> (&'static [u8], usize) {
@@ -650,6 +659,24 @@ impl HandMesh {
 
 #[cfg(test)]
 mod tests {
+
+    /// The trig blob must be the GAME'S OWN BYTES: `manu3.xdb` at 0x1396. Skips
+    /// when the asset tree is absent.
+    #[test]
+    fn trig_tables_are_manu3_xdb_bytes() {
+        let xdb = ["export_check/_tmp_dat/manu3.xdb", "output/_tmp_iso/manu3.xdb",
+                   "../export_check/_tmp_dat/manu3.xdb"]
+            .iter()
+            .find_map(|p| std::fs::read(p).ok());
+        let Some(xdb) = xdb else { return };
+        let at = super::TRIG_XDB_OFFSET;
+        assert!(xdb.len() >= at + super::TRIG.len(), "xdb too short");
+        assert_eq!(
+            &xdb[at..at + super::TRIG.len()],
+            super::TRIG,
+            "the trig blob must equal manu3.xdb at {at:#x}"
+        );
+    }
     use super::*;
 
     /// The pose player runs sequence 0 to completion, writing plausible values
