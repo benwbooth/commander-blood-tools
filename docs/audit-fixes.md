@@ -4296,3 +4296,28 @@ The lesson is about accumulation. Every one of these was added by someone who
 looked at the binary and wrote down what they found, which is exactly the right
 instinct — and the knowledge base has no way to say "that address already has a
 name" unless something checks.
+
+## #130 — merging the nine addresses that carried the SAME NAME twice
+
+Of #129's 55 duplicate addresses, nine were unambiguous: one address, one name,
+two or more rows. `entity_object_populate`, `vm_field_offset`, `mouse_hit_test`,
+`screen_mode_update`, `ui_region_table_scan`, `vm_post_update_c4_pair`, and the
+three `nav_choice_handler_2/3/4` — the last of which I had given a THIRD name in
+#109 (`console_row2_contact_menu_build`).
+
+The tempting merge is "keep the longest comment", and it is wrong. `0x8269`'s
+shorter row records the FAMILY (`0x8269/0x8295`) and the gate (`[0xa3e]`); the
+longer one records the rect layout and the inside test. Neither contains the
+other. Every group was merged by UNION instead, each surviving row carrying every
+distinct comment with a marker saying so — 745 characters for `0x87BD`, holding
+the interpolation note, the dispatch-table entry, and the contact-menu decode
+together for the first time.
+
+Eleven rows removed, 55 duplicates down to 46, and no information discarded:
+checked afterwards that `0x87BD`'s merged row still contains all three sources.
+
+The remaining 46 are the harder kind — one address under DIFFERENT names, where
+merging requires deciding which name is right, and sometimes which READING is
+(`0x22E0` is both `abs_negate_gs_setup` and `palette_blend_remap_table_build`;
+only the second describes what the routine is for). Those get worked one at a
+time, because that is where the #128-style disagreements live.
