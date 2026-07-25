@@ -6770,3 +6770,34 @@ local helpers (`Music`, `VmInspection`, `Ev`, `ROWS`, `ClipInfo`, the `fn`
 phantoms, the `W`/`H` aliases). 2212 items, 817 settled — the percentage went
 DOWN, 37.1% to 36.9%, which is the honest direction when phantom rows leave a
 denominator that also held their settled siblings.
+
+## #218 — the fourth time: the answer was in another module
+
+#192 flagged `DS:0x252F` as unresolved. Its exact words: "`[0x252F]` has four
+setters (`0x9F40`, `0xB331`, `0xB4EA`, `0xB6A5`) and is not the back-row flag
+alone, so nothing broader is claimed for it here." Correct restraint at the time.
+
+Working the `ship3d.rs` struct queue found the answer sitting in the tree:
+`update_ship_3d_transition_state` (`0xB692`) already decodes `mov byte
+[0x252f],1` @`0xB6A5` as the TRANSITION OPENING flag, with `0x2530` closing,
+`0x2531` the step and `0x2533` the armed latch — one of the four setters #192
+listed, documented in a module I was not reading.
+
+So the back row's `[0x252F]=1` / `[0x2531]=6` @`0xB331` ARMS AN OPENING
+TRANSITION, and `0xB288` skips the world-view teardown because a transition is
+running. That is sharper than #192's "the back row suppresses the teardown", and
+it explains the otherwise arbitrary step 6 sitting between open's 4 and close's 8.
+
+FOURTH INSTANCE of the same pattern this campaign — after #196 (the commit),
+#197 (the names) and #212 (the hit-test). Each time something recorded as
+undecoded was decoded elsewhere in the port. The cost is never wasted decoding; it
+is a doc that says "unknown" while the knowledge exists, which then justifies
+either an invention or a needless investigation.
+
+`re/tools/whatis.py` exists precisely to prevent this — it searches labels, ledger
+AND source for an address. #192 did not run it on `0x252F`. Running it costs one
+command; four entries of this file are the price of not running it.
+
+`Ship3dTargetSelectorState` now documents each field's DS byte with the
+instruction that touches it, and marks `target_animation_tick` as claiming no
+address, because none was decoded.

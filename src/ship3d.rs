@@ -226,6 +226,22 @@ pub struct Ship3dPlaneBandCopy {
     pub new_scroll_value: Option<u16>,
 }
 
+/// The target selector's DS state, one field per byte the routines touch.
+///
+/// ```text
+///   current_target        DS:0x251B   cmp ax,[0x251b]      @0xB21A
+///   target_select_phase   DS:0x252B   test byte [0x252b],1 @0xB2DC  (bit 1 @0xB2FD)
+///   target_fallback       DS:0x252C   mov byte [0x252c],0  @0xB2BE
+///   opening               DS:0x252F   mov byte [0x252f],1  @0xB6A5
+///   depth_step            DS:0x2531   mov byte [0x2531],4  @0xB6A0
+/// ```
+///
+/// Grouping them in one struct is the PORT'S choice — the game keeps them as
+/// separate DS bytes — but each field models a specific byte, named here so the
+/// mapping is checkable rather than implied by the field names.
+///
+/// `target_animation_tick` is the exception and is marked as such: no address is
+/// claimed for it, because none was decoded.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dTargetSelectorState {
     pub current_target: u16,

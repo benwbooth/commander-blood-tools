@@ -5347,9 +5347,16 @@ impl VmMachine {
     ///   backwards: that site is `test byte [0x252f],1 / jne` around the
     ///   leave-the-world-view teardown (`[0x24F3]=0x11`, `[0x27D8]=0`), and the
     ///   selector SETS `[0x252F]` when the back row is picked (`0xB331`). So the
-    ///   back row SUPPRESSES that teardown rather than causing it. `[0x252F]` has
-    ///   four setters (`0x9F40`, `0xB331`, `0xB4EA`, `0xB6A5`) and is not the
-    ///   back-row flag alone, so nothing broader is claimed for it here.
+    ///   back row SUPPRESSES that teardown rather than causing it.
+    ///
+    ///   WHAT `[0x252F]` IS, resolved later from evidence already in the tree:
+    ///   the TRANSITION OPENING flag. `ship3d::update_ship_3d_transition_state`
+    ///   (`0xB692`) decodes `mov byte [0x252f],1` @`0xB6A5` as "opening", with
+    ///   `0x2530` closing, `0x2531` the step and `0x2533` the armed latch. So the
+    ///   back row's `[0x252F]=1` / `[0x2531]=6` @`0xB331`/`0xB336` ARMS AN OPENING
+    ///   TRANSITION, and `0xB288` skips the teardown because a transition is
+    ///   running — a sharper account than "the back row suppresses it", and it
+    ///   explains the step 6 sitting between open's 4 and close's 8.
     /// * a target equal to `gs:0x251B` (`cmp ax,[0x251b]` @`0xB21A`): already
     ///   presented, so the record is NOT rewritten (returns `false`).
     /// * any other target: `gs:0x251B = target` (`0xB224`) and a C1 record
