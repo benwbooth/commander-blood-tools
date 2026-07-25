@@ -985,6 +985,28 @@ pub fn copy_ship_3d_plane_bands(
     })
 }
 
+/// The four-word interpolation gate, `ship_3d_interpolation_gate` @`0x1E5D`
+/// (reached far as `0x008B:0x0FAD`):
+///
+/// ```text
+///   0x1E63  mov bl,[0xada]           the DURATION
+///   0x1E67  cmp bl,[0xadb] / je      duration == current tick -> complete
+///   0x1E6D  inc byte [0xadb]         advance the tick FIRST
+///   0x1E71  lodsw / sub ax,[di]      delta = source - dest
+///   0x1E74  idiv bl                  delta / duration   (SIGNED, 8-bit quotient)
+///   0x1E76  imul byte [0xadb]        * the tick
+///   0x1E7A  mov dx,[di] / add dx,ax  dest + that
+/// ```
+///
+/// The ORDER is load-bearing: the game divides and THEN multiplies, so each step
+/// carries the truncation of an 8-bit quotient. Multiplying first would give a
+/// different value for most non-exact divisions, and it is the shape a port
+/// naturally reaches for. `checked_i16_div_i8_to_i8` models `idiv bl` — AX by BL
+/// into an 8-bit AL — including the overflow the CPU would trap on.
+///
+/// `DS:0x0ADA` is the duration and `DS:0x0ADB` the current tick; both are already
+/// in `re/labels.csv`. Cited here because this was settled ASM with no doc
+/// (#141's queue).
 pub fn step_ship_3d_interpolation_gate(
     gate: &mut Ship3dInterpolationGate,
     source: [u16; SHIP_3D_INTERPOLATION_WORDS],

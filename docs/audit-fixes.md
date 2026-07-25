@@ -4685,3 +4685,35 @@ Two rows in, the pattern of this queue is clear: these are not unverified
 functions. They are verified functions whose verification was never written down,
 and the routine is usually already in `labels.csv` — the cost is a read, not a
 decode.
+
+## #144 — the interpolation gate divides before it multiplies
+
+Third row off #141's queue, and the first where the missing doc was hiding a
+detail worth stating rather than just an address.
+
+`step_ship_3d_interpolation_gate` had no doc. `labels.csv` had the routine —
+`0x001E5D ship_3d_interpolation_gate`, plus `DS:0x0ADA` (duration) and `DS:0x0ADB`
+(tick). Reading it:
+
+```text
+  0x1E63  mov bl,[0xada]           the DURATION
+  0x1E67  cmp bl,[0xadb] / je      duration == current tick -> complete
+  0x1E6D  inc byte [0xadb]         advance the tick FIRST
+  0x1E71  lodsw / sub ax,[di]      delta = source - dest
+  0x1E74  idiv bl                  delta / duration  (SIGNED, 8-bit quotient)
+  0x1E76  imul byte [0xadb]        * the tick
+  0x1E7A  mov dx,[di] / add dx,ax  dest + that
+```
+
+The ORDER matters. The game divides and then multiplies, so every step carries
+the truncation of an 8-bit quotient; multiplying first — the arrangement a port
+naturally reaches for, and the one that loses less precision — gives a different
+value for most non-exact divisions.
+
+The port already had it right, including `checked_i16_div_i8_to_i8` modelling
+`idiv bl` down to the overflow the CPU traps on. Nothing needed fixing; what was
+missing was any record that the order was a decision rather than an accident. A
+future refactor "simplifying" it to `delta * tick / duration` would look like an
+improvement and would be wrong.
+
+Cited instructions 134 -> 141; the queue 89 -> 88.
