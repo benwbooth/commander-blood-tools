@@ -701,3 +701,26 @@ confident but wrong reading:
 The tell in both cases was a decode that did not fit its context. Disassemble from a
 known boundary (a call target, or several candidate offsets until the stream
 stabilises) before trusting a short window.
+
+## STRUCTURAL — the audio trace ends at a driver boundary
+
+Continuing the hunt for the dialogue-voice selection rule, two results bound how far
+static tracing can go:
+
+* The remaining `DS:0x0BBF` reference at `0x000623` is a genuine coincidence:
+  `mov ax, 0xbbf; mov fs, ax` uses `0xBBF` as a SEGMENT. So the clip table has exactly
+  three real users -- the chatter lookup (`0xB8F8`), the player itself (`0xBA22`), and
+  the bank loader (`0xC041`). There is no separate dialogue lookup through it.
+* Every play site calls `lcall [0x0CDB]`, an INDIRECT far vector. Six reads, and a byte
+  search finds NO WRITER in the executable. The game ships `*MID` / `*SBP` / `*GRV`
+  driver patterns at `DS:0x023E`, so the vector is filled at runtime by an external
+  driver.
+
+So the chain from clip index to audible output leaves the executable. What the port
+must get right is the clip INDEX and the bank layout (`DS:0x0BBF`, `clip*4` ->
+{offset,len}) -- driver internals are out of scope by construction, not by neglect.
+
+That reframes the open question precisely: `text_selector_voice_clip_index` is still
+known to be invented (b3 has exactly one reader and it forms the line id), but the
+replacement rule cannot be found by following the sound module further. It has to come
+from the DIALOGUE side -- find where a spoken line triggers a clip at all.
