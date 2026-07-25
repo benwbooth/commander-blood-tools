@@ -1152,3 +1152,29 @@ Corollary for the remaining task: the driven inputs not advancing past the title
 evidence the launch is still broken. It means the title/intro sequence has its own
 advance condition that Escape, Return, space, F1 and clicks at five positions do not
 satisfy.
+
+### The intro SELF-ADVANCES — stop driving input at it
+
+A passive run (no input at all, shots at 25/65/105/145s) shows the sequence progressing
+on its own:
+
+    t025  boot / early
+    t065  CHANGED
+    t105  CHANGED
+    t145  CHANGED — orange landscape on the viewscreen, version banner GONE
+
+So the title/intro plays out over minutes above a PERSISTENT HUD: the BCARTE pyramid
+grid and BORXX orb stay put while the upper viewscreen changes scene. That also explains
+the earlier confusion — the pyramids never moving made the screen look static when it was
+not.
+
+CORRECTION TO MY OWN APPROACH: I spent three runs driving Escape/Return/space/F1 and
+clicks at five positions trying to advance past the title, and concluded the sequence
+"has an advance condition those inputs do not satisfy". The real answer is that it needs
+no input; it needed TIME. The inputs were not failing to satisfy a condition, they were
+irrelevant.
+
+REMAINING: a longer passive run should reach the playable hub, which is the capture the
+post-progression savestate needs. Wait, do not poke — and budget minutes per run, since
+the tool timeout has to exceed the sequence length (one attempt already died at 2 minutes
+against a 3.5 minute script).
