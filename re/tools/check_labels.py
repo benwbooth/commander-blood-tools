@@ -17,6 +17,7 @@ Run with PYTHONSAFEPATH=1 from the repo root.
 
 import csv
 import os
+import collections
 import re
 import sys
 
@@ -82,6 +83,7 @@ def main():
     code = data_rows = quoted = 0
     inline_checked = [0]
     problems = []
+    seen_rows = []
     for line_no, row in enumerate(rows, 1):
         if not row or not row[0] or row[0].startswith("#"):
             continue
@@ -103,6 +105,7 @@ def main():
             addr = int(addr_s, 16)
         except ValueError:
             continue
+        seen_rows.append((line_no, name, f"{addr:#07x}"))
         if addr >= len(data):
             problems.append(f"{line_no}: {name} {addr_s} outside the image")
             continue
@@ -142,12 +145,33 @@ def main():
                     f"{line_no}: {name} says {am} is `{mn}` but it is `{actual}`"
                 )
 
+    # Two rows for ONE address, under different names. `0x008709` had
+    # `nav_choice_subdispatch_table` and `console_row_handler_table`, added
+    # independently for the same table -- the second while re-deriving what the
+    # first already recorded (audit-fixes #128). A reader who finds one has no
+    # reason to look for the other.
+    by_addr = collections.defaultdict(list)
+    for line_no, name, addr_s in seen_rows:
+        by_addr[addr_s.lower()].append((line_no, name))
+    duplicates = []
+    for addr_s, rows in sorted(by_addr.items()):
+        if len(rows) > 1:
+            names = ", ".join(f"{n} (line {ln})" for ln, n in rows)
+            duplicates.append(f"{addr_s} has {len(rows)} rows: {names}")
+    # Reported, NOT failed. Some pairs record different facets of one address on
+    # purpose (`resource_name_table` / `..._extent`); others are genuine
+    # rediscovery, like the two names 0x008709 carried. 55 of these accumulated
+    # over the campaign and resolving them is its own task, so this counts them
+    # rather than blocking on them.
+    for d in duplicates:
+        print("DUPLICATE ADDRESS " + d)
+
     for p in problems:
         print("PROBLEM " + p)
     print(
         f"{code} code labels ({quoted} with a quoted opening instruction) and "
         f"{data_rows} data labels checked, {inline_checked[0]} inline address+mnemonic "
-        f"claims verified, {len(problems)} problems"
+        f"claims verified, {len(problems)} problems, {len(duplicates)} duplicate address(es)"
     )
     return 1 if problems else 0
 

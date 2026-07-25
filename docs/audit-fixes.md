@@ -4260,3 +4260,39 @@ against the shipped data for 630 of 640 objects.
 not left choosing between two plausible descriptions of the same six
 instructions. The instruction transcription was right in both; only the noun was
 wrong, and a noun is what tells you which of them to port.
+
+## #129 — "what do we already know about this address?", and 55 answers nobody could find
+
+#128's real cost was not the rediscovery, it was the ORDER: I searched the binary
+before searching the source, and `ship3d.rs` had already decoded the table.
+`re/tools/whatis.py` makes that one command — for an address it prints every
+`labels.csv` row naming or citing it, every ledger row whose origin includes it,
+and every source line mentioning it.
+
+Its first run, on `0x8709`, found a duplicate I had created: `labels.csv` carried
+BOTH `nav_choice_subdispatch_table` (the pre-existing row) and
+`console_row_handler_table` (mine, from #109) for the same table. Merged into one
+row holding the union — the entries, the `CS` segment `0x071E` that makes the file
+offset `0x8709`, the handlers, and the click setup at `0x86A4`.
+
+Then the obvious question: how many more? `check_labels.py` now groups rows by
+address, and the answer is **55**. Among them:
+
+    0x09b04  ship_3d_projected_point_plot / ship_3d_plot_point
+    0x142d0  vm_handler_table / vm_opcode_handler_table_static
+    0x0cdf4  resource_name_table / ..._full / ..._extent
+
+Not all are defects — the `resource_name_table` trio plausibly records different
+facets on purpose. But each means a reader who finds one row has no reason to look
+for the other, which is exactly how #128's two readings of `DS:0x2B13` coexisted:
+one called it target records, one called it a menu list, and neither knew about
+the other.
+
+Reported as its own category rather than as failures, because resolving 55 rows is
+a task and blocking the suite on them would just get the check disabled. 0
+problems, 55 duplicates, counted where they can be worked down.
+
+The lesson is about accumulation. Every one of these was added by someone who
+looked at the binary and wrote down what they found, which is exactly the right
+instinct — and the knowledge base has no way to say "that address already has a
+name" unless something checks.
