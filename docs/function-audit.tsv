@@ -721,7 +721,7 @@ SpecialObjectSlots	src/vm.rs	1465	struct		UNVERIFIED
 remove	src/vm.rs	1470	fn		ASM	|| AUDIT 2026-07-24: vm_special_slot_remove 0x5FD8: same 16-word list; on a hit it writes 0 into the slot and sets CF (found), otherwise `clc` (not found)
 insert	src/vm.rs	1479	fn		ASM	|| AUDIT 2026-07-24: vm_special_slot_insert 0x5FF6: 16 words at DS:0x6D3E (cx=0x10). First loop scans for the value already present and, on a hit, jumps to `stc` -- ALREADY PRESENT COUNTS AS SUCCESS, which the port returns true for. Second loop finds the first zero slot and stores; if none, `clc` signals FULL and the port returns false
 actor_object_offset_from_record	src/vm.rs	1492	fn		ASM	|| AUDIT 2026-07-24: exact inverse of text_presentation_record_offset: record = object + TALK_FIELD(0x3A), so object = record - 0x3A
-record_owner_object_offset	src/vm.rs	1496	fn		UNVERIFIED	
+record_owner_object_offset	src/vm.rs	1496	fn		ASM	|| AUDIT 2026-07-24: ASM-VERIFIED against vm_record_lookup_by_threshold 0x6034 -- the port implements it under a different NAME, which is why it looked missing. 0x6034 walks the 20-byte-stride object directory at gs:0x672C comparing field +0x10 (CMP AX,[si+0x10] / JBE), stops at the first entry >= the input, backs up one (SUB SI,0x14) and returns that entry +0x10. That is the greatest object base STRICTLY LESS THAN the input. ExecutionContext::owner_object_offset does exactly that: object_offsets.iter().rev().find(|o| *o < record_offset). Boundary matches too -- both are strict. Live table dumped via runtime_boot DLGTABLE: entries hold an object NAME at +0x00 (ab, ab, bl, Bo, Bu, Ul, po, Ev -- baby1/baby/blood/.../porte_cles) and ascending base offsets at +0x10 (0, 0x14, 0x28, 0x4A, 0x92, 0xDA, 0x122, 0x16A)
 apply_assign5_mode0	src/vm.rs	1500	fn		ASM	|| AUDIT 2026-07-24: 0x6985..0x69C2 verified; FIXED a fall-through bug -- an existing 0xFFFF removes the owner then `jmp 0x69C2` stores the RAW value, skipping the insert block entirely
 record_owner_is_active	src/vm.rs	1527	fn		ASM	|| AUDIT 2026-07-24: the C4/C2 owner gate `test es:[di+2],1` (0x6CA4 / 0x6CC3 / 0x6E56) after the 0x6034 threshold lookup resolves the owning object -- bit0 of the owner record +2
 actor_record_is_active	src/vm.rs	1536	fn		ASM	|| AUDIT 2026-07-24: derives the object from a talk-field record by subtracting TALK_FIELD and tests the same +2 bit0 active flag
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                                          
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                                           

@@ -3279,6 +3279,23 @@ fn main() {
             if seen.len() > 12 { break; }
         }
         println!("DLGTABLE: {} nonzero writes during the run", rt.m.range_hits.len());
+        // The gs:0x672C threshold table that vm_record_lookup_by_threshold (0x6034)
+        // walks: 20-byte stride, compared on field +0x10. The port has NO equivalent --
+        // record_state_condition reads the record directly -- so whether that is
+        // correct depends on what this lookup does to a record offset.
+        {
+            let far_off = u16::from_le_bytes([rt.m.mem[ds0 + 0x672C], rt.m.mem[ds0 + 0x672C + 1]]);
+            let far_seg = u16::from_le_bytes([rt.m.mem[ds0 + 0x672C + 2], rt.m.mem[ds0 + 0x672C + 3]]);
+            let tbl = (far_seg as usize) * 16 + far_off as usize;
+            println!("THRESHTBL far ptr {far_seg:04x}:{far_off:04x} -> linear {tbl:#07x}");
+            for i in 0..8usize {
+                let a = tbl + i * 0x14;
+                if a + 0x12 >= rt.m.mem.len() { break; }
+                let f10 = u16::from_le_bytes([rt.m.mem[a + 0x10], rt.m.mem[a + 0x11]]);
+                let f0 = u16::from_le_bytes([rt.m.mem[a], rt.m.mem[a + 1]]);
+                println!("  entry {i}: +0x00={f0:#06x}  +0x10={f10:#06x}");
+            }
+        }
         // Follow the asset id: it is a POINTER into a path template, so dump the live
         // string it addresses and the template head just before it.
         for &id in &[word(&rt, base + 9 * 4 + 2)] {
