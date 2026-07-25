@@ -250,7 +250,11 @@ mod tests {
     /// memory discovered) and assert the full output state — every register, every memory write,
     /// and (when `check_flags`) all six flags — matches the real binary. This is the fully
     /// automated path-B check: `lift.py` emits `f`, `auto_oracle.py` emits the vectors.
-    fn verify_generic(name: &str, f: fn(&mut Machine), check_flags: bool) {
+    /// Returns whether vectors were FOUND. A missing file used to `return` and let
+    /// the batch pass silently, so deleting or renaming a vector file would have
+    /// quietly dropped that function from verification while the test still
+    /// claimed to cover it. The batches now assert on the found count.
+    fn verify_generic(name: &str, f: fn(&mut Machine), check_flags: bool) -> bool {
         let raw =
             match std::fs::read_to_string(format!("re/tools/oracle_vectors/{name}_generic.json"))
                 .or_else(|_| {
@@ -259,7 +263,7 @@ mod tests {
                     ))
                 }) {
                 Ok(s) => s,
-                Err(_) => return,
+                Err(_) => return false,
             };
         let vecs: Vec<GenVec> = serde_json::from_str(&raw).unwrap();
         assert!(!vecs.is_empty());
@@ -290,6 +294,7 @@ mod tests {
                 assert_eq!(m.regs.of, v.flags.of, "{name} vec {i}: OF");
             }
         }
+        true
     }
 
     /// A deterministic-oracle vector: no `mem_in` (input memory IS the EXE image, loaded below).
@@ -317,12 +322,12 @@ mod tests {
     /// there is no read hook to corrupt 16-bit `retf`. Asserts regs_out + every memory write are
     /// bit-exact. This is the oracle that can verify pointer-/sentinel-driven and composed
     /// (retf-callee) functions the random-fuzz oracle cannot.
-    fn verify_det(name: &str, f: fn(&mut Machine), exe: &[u8]) {
+    fn verify_det(name: &str, f: fn(&mut Machine), exe: &[u8]) -> bool {
         let raw = match std::fs::read_to_string(format!("re/tools/oracle_vectors/{name}_det.json"))
             .or_else(|_| std::fs::read_to_string(format!("../re/tools/oracle_vectors/{name}_det.json")))
         {
             Ok(s) => s,
-            Err(_) => return,
+            Err(_) => return false,
         };
         let vecs: Vec<DetVec> = serde_json::from_str(&raw).unwrap();
         assert!(!vecs.is_empty(), "{name}: no det vectors");
@@ -355,6 +360,7 @@ mod tests {
                 assert_eq!(m.mem[*addr], *byte, "{name} det vec {i}: mem[{addr:#x}]");
             }
         }
+        true
     }
 
     /// One oracle vector of either kind (`flags` ignored — register/memory effects are the
@@ -523,7 +529,7 @@ mod tests {
         };
         let raw = match std::fs::read_to_string(format!("{dir}/diff_fuzz.json")) {
             Ok(s) => s,
-            Err(_) => return,
+            Err(_) => panic!("oracle vectors missing: this test verifies NOTHING without them"),
         };
         let vecs: Vec<DiffVec> = serde_json::from_str(&raw).unwrap();
         assert!(!vecs.is_empty());
@@ -723,15 +729,16 @@ mod tests {
             ("func_b75c", super::auto::func_b75c),
         ];
         let mut failures = Vec::new();
+        let mut unverified = Vec::new();
         for (name, f) in batch {
             let f = *f;
             let name = *name;
-            if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                 verify_generic(name, f, false)
-            }))
-            .is_err()
-            {
-                failures.push(name);
+            })) {
+                Err(_) => failures.push(name),
+                Ok(false) => unverified.push(name),
+                Ok(true) => {}
             }
         }
         assert!(
@@ -740,6 +747,16 @@ mod tests {
             failures.len(),
             batch.len(),
             failures
+        );
+        // A function with no vector file is NOT verified, and this test used to
+        // pass anyway. All-or-nothing: a checkout without the vectors skips the
+        // whole batch, but a batch that has some and is missing others is a hole.
+        assert!(
+            unverified.is_empty() || unverified.len() == batch.len(),
+            "{}/{} auto-lifts have NO oracle vectors and were silently skipped: {:?}",
+            unverified.len(),
+            batch.len(),
+            unverified
         );
     }
 
@@ -776,12 +793,15 @@ mod tests {
             ("func_792d", super::auto::func_792d),
         ];
         let mut failures = Vec::new();
+        let mut unverified = Vec::new();
         for (name, f) in batch {
             let (f, name) = (*f, *name);
-            if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| verify_det(name, f, &exe)))
-                .is_err()
-            {
-                failures.push(name);
+            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                verify_det(name, f, &exe)
+            })) {
+                Err(_) => failures.push(name),
+                Ok(false) => unverified.push(name),
+                Ok(true) => {}
             }
         }
         assert!(
@@ -790,6 +810,13 @@ mod tests {
             failures.len(),
             batch.len(),
             failures
+        );
+        assert!(
+            unverified.is_empty() || unverified.len() == batch.len(),
+            "{}/{} det auto-lifts have NO oracle vectors and were silently skipped: {:?}",
+            unverified.len(),
+            batch.len(),
+            unverified
         );
     }
 
@@ -807,7 +834,7 @@ mod tests {
             .or_else(|_| std::fs::read_to_string("../re/tools/oracle_vectors/func_a757.json"))
         {
             Ok(s) => s,
-            Err(_) => return,
+            Err(_) => panic!("oracle vectors missing: this test verifies NOTHING without them"),
         };
         const DS: u16 = 0x2000;
         for (i, v) in serde_json::from_str::<Vec<V>>(&raw)
@@ -847,7 +874,7 @@ mod tests {
             .or_else(|_| std::fs::read_to_string("../re/tools/oracle_vectors/func_a73e.json"))
         {
             Ok(s) => s,
-            Err(_) => return,
+            Err(_) => panic!("oracle vectors missing: this test verifies NOTHING without them"),
         };
         const DS: u16 = 0x2000;
         for (i, v) in serde_json::from_str::<Vec<V>>(&raw)
@@ -880,7 +907,7 @@ mod tests {
             .or_else(|_| std::fs::read_to_string("../re/tools/oracle_vectors/func_6023.json"))
         {
             Ok(s) => s,
-            Err(_) => return,
+            Err(_) => panic!("oracle vectors missing: this test verifies NOTHING without them"),
         };
         const GS: u16 = 0x3000;
         for (i, v) in serde_json::from_str::<Vec<V>>(&raw)
@@ -979,7 +1006,7 @@ mod tests {
             .or_else(|_| std::fs::read_to_string("../re/tools/oracle_vectors/func_533c.json"))
         {
             Ok(s) => s,
-            Err(_) => return,
+            Err(_) => panic!("oracle vectors missing: this test verifies NOTHING without them"),
         };
         const FS: u16 = 0x4000;
         let vecs: Vec<F533cVec> = serde_json::from_str(&raw).unwrap();
@@ -1028,7 +1055,7 @@ mod tests {
             .or_else(|_| std::fs::read_to_string("../re/tools/oracle_vectors/func_a734.json"))
         {
             Ok(s) => s,
-            Err(_) => return,
+            Err(_) => panic!("oracle vectors missing: this test verifies NOTHING without them"),
         };
         const DS: u16 = 0x2000;
         let vecs: Vec<A734Vec> = serde_json::from_str(&raw).unwrap();
@@ -1065,7 +1092,7 @@ mod tests {
             .or_else(|_| std::fs::read_to_string("../re/tools/oracle_vectors/func_a744.json"))
         {
             Ok(s) => s,
-            Err(_) => return,
+            Err(_) => panic!("oracle vectors missing: this test verifies NOTHING without them"),
         };
         const DS: u16 = 0x2000;
         let vecs: Vec<A744Vec> = serde_json::from_str(&raw).unwrap();
@@ -1094,7 +1121,7 @@ mod tests {
             .or_else(|_| std::fs::read_to_string("../re/tools/oracle_vectors/func_9f80.json"))
         {
             Ok(s) => s,
-            Err(_) => return,
+            Err(_) => panic!("oracle vectors missing: this test verifies NOTHING without them"),
         };
         const DS: u16 = 0x2000;
         let vecs: Vec<F9f80Vec> = serde_json::from_str(&raw).unwrap();
@@ -1142,7 +1169,7 @@ mod tests {
             .or_else(|_| std::fs::read_to_string("../re/tools/oracle_vectors/prng_2de2.json"))
         {
             Ok(s) => s,
-            Err(_) => return, // vectors not generated in this checkout
+            Err(_) => panic!("oracle vectors missing: this test verifies NOTHING without them"),
         };
         let vecs: Vec<PrngVec> = serde_json::from_str(&raw).unwrap();
         assert!(!vecs.is_empty());

@@ -1117,6 +1117,20 @@ pub fn update_ship_3d_nav_choice_dispatch(
     Some(result)
 }
 
+/// NAV-CHOICE HANDLER 0 — file `0x8713`, entry 0 of the dispatch table.
+///
+/// The dispatcher (`0x86F1..0x8704`) takes the committed choice `[0x2A19]`,
+/// makes it 0-based and doubles it, then `call word cs:[bx+0xF29]` — a five-entry
+/// near-offset table (`0F33 0F4C 0FDD 1068 108C`, CS base file `0x77E0`), so the
+/// handlers live at file `0x8713`, `0x872C`, `0x87BD`, `0x8848`, `0x886C`.
+///
+/// ```text
+///   0x8713  test byte [0x2565],1 / je      the handler PHASE bit
+///   0x871A  ax = [0x6754]                  the built-in object `Honk`
+///   0x871D  [0x676A] = ax                  the deferred record's related field
+///   0x8720  [0x6768] = 0xC3                ...and its type
+///   0x8726  [0x2565] = 0                   phase cleared
+/// ```
 pub fn run_ship_3d_nav_choice_handler_0(
     state: &mut Ship3dNavChoiceState,
     named_honk_object: u16,
@@ -1134,6 +1148,10 @@ pub fn run_ship_3d_nav_choice_handler_0(
     }
 }
 
+/// NAV-CHOICE HANDLER 1 — file `0x872C` (`nav_choice_handler_1`), entry 1 of the
+/// dispatch table described on [`run_ship_3d_nav_choice_handler_0`]: adjusts the
+/// target records, waits for the interpolation to complete, defers the C3 target
+/// and reloads `radio.snd`.
 pub fn run_ship_3d_nav_choice_handler_1(
     state: &mut Ship3dNavChoiceState,
     target_records: &mut [u16],
@@ -1182,6 +1200,8 @@ pub fn run_ship_3d_nav_choice_handler_1(
     Some(effect)
 }
 
+/// NAV-CHOICE HANDLER 2 — file `0x87BD`, entry 2 of the dispatch table
+/// (see [`run_ship_3d_nav_choice_handler_0`]).
 pub fn run_ship_3d_nav_choice_handler_2(
     state: &mut Ship3dNavChoiceState,
     special_slots: &[u16],
@@ -1230,6 +1250,8 @@ pub fn run_ship_3d_nav_choice_handler_2(
     Some(effect)
 }
 
+/// NAV-CHOICE HANDLER 3 — file `0x8848`, entry 3 of the dispatch table
+/// (see [`run_ship_3d_nav_choice_handler_0`]).
 pub fn run_ship_3d_nav_choice_handler_3(
     state: &mut Ship3dNavChoiceState,
     related_record: u16,
@@ -1248,6 +1270,11 @@ pub fn run_ship_3d_nav_choice_handler_3(
     }
 }
 
+/// NAV-CHOICE HANDLER 4 — file `0x886C`, entry 4 of the dispatch table
+/// (see [`run_ship_3d_nav_choice_handler_0`]). The largest of the five: the
+/// target-list toggle (`DS:0x2567`/`0x2569` between `DS:0x2578` and `DS:0x2581`),
+/// the `mu\tablo2.voc` sound gate and the left/right/motion latches
+/// (`DS:0x2736`/`0x2737`/`0x2738`).
 pub fn run_ship_3d_nav_choice_handler_4(
     state: &mut Ship3dNavChoiceState,
     handler_state: &mut Ship3dNavChoiceHandler4State,

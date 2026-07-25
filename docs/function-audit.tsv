@@ -3,7 +3,7 @@ MusicPlayer	src/audio.rs	12	struct		UNVERIFIED	/// Looping background-music play
 start	src/audio.rs	20	fn		UNVERIFIED	/// Start looping playback. Returns `None` when no output device is available /// (the engine stays silent — audio is never a hard dependency).
 start_once	src/audio.rs	26	fn		UNVERIFIED	/// Play once (voice clips): the stream goes silent at the end of the data and /// idles until dropped.
 start_inner	src/audio.rs	30	fn		UNVERIFIED	
-stop	src/audio.rs	88	fn		UNVERIFIED	
+stop	src/audio.rs	88	fn		INFRA	
 drop	src/audio.rs	95	fn		UNVERIFIED	
 pit_divisor_to_hz	src/audio.rs	107	fn	0x6c0,0x2e9c	ASM?	/// Convert a PIT frequency divisor (the value written to port 0x42) to the PC-speaker /// tone frequency in Hz, exactly as the hardware does: `1193182 / divisor`. The game's /// beep handler (`cmd_ha
 square_wave_pcm	src/audio.rs	118	fn		UNVERIFIED	/// Synthesize the PC-speaker beep as `secs` of unsigned-8-bit mono square wave at `hz` /// (sampled at `rate`) — the waveform the speaker gate produces. Returns the PCM buffer, /// playable through [
@@ -355,21 +355,12 @@ game_font_glyph	src/font.rs	73	fn		DATA
 game_font_advance	src/font.rs	86	fn		DATA	
 game_font_drawn_width	src/font.rs	109	fn	0x27CD,0x3192,0x27cd,0x3215,0x31D3,0x31D7	ASM	/// The width the string draw REPORTS in `gs:0x27CD` — which is NOT the pen /// distance. The draw entry (`0x3192`) zeroes the accumulator, and only the /// glyph path adds to it (`add word gs:[0x27cd
 draw_text_indexed	src/font.rs	249	fn		UNVERIFIED	/// Draw `text` into a `width`-stride indexed framebuffer at (`x`,`y`) in `color` /// using the game font (spaces advance without drawing). Clipped; returns end x.
-HandTri	src/gpu.rs	14	struct		INFRA?	
-GpuPresenter	src/gpu.rs	16	struct		INFRA?	
-VOut	src/gpu.rs	38	struct		INFRA?	
-vs	src/gpu.rs	40	fn		INFRA?	
-fs	src/gpu.rs	49	fn		INFRA?	
-VOut	src/gpu.rs	55	struct		INFRA?	
-vs	src/gpu.rs	57	fn		INFRA?	
-fs	src/gpu.rs	65	fn		INFRA?	
-VOut	src/gpu.rs	71	struct		INFRA?	
-vs	src/gpu.rs	77	fn		INFRA?	
-fs	src/gpu.rs	86	fn		INFRA?	
-make_depth	src/gpu.rs	534	fn		INFRA?	
-resize	src/gpu.rs	549	fn		INFRA?	
+HandTri	src/gpu.rs	14	struct		INFRA	
+GpuPresenter	src/gpu.rs	16	struct		INFRA	
+make_depth	src/gpu.rs	534	fn		INFRA	
+resize	src/gpu.rs	549	fn		INFRA	
 present	src/gpu.rs	558	fn	0x200	ASM?	/// Present one frame: the palettized 320x200 background integer-scaled with /// letterboxing, then the hand triangles at full window resolution.
-bytemuck_cast	src/gpu.rs	726	fn		INFRA?	/// Plain-old-data cast for tightly-packed [f32; N] slices.
+bytemuck_cast	src/gpu.rs	726	fn		INFRA	/// Plain-old-data cast for tightly-packed [f32; N] slices.
 parse_palette_block	src/hnm.rs	10	fn		UNVERIFIED	
 HnmFile	src/hnm.rs	43	struct		UNVERIFIED	
 open	src/hnm.rs	51	fn		UNVERIFIED	
@@ -405,17 +396,17 @@ WorldArtEntry	src/levels.rs	211	struct		UNVERIFIED
 world_art_resource_id	src/levels.rs	279	fn	0x1CE,0x2C4,0x5486	ASM	/// The artwork resource id for an object's inline NAME, matched the way the /// engine matches it (`0x1CE:0x2C4` is case-insensitive, like the built-in /// object-name scan at `0x5486`).
 parse_world_art_table	src/levels.rs	289	fn	0x90A7	ASM	/// Parse the table straight out of a `BLOODPRG.EXE` image, so a checkout with /// the binary never has to trust the transcription above. Stops at the first /// record whose name byte is zero (`cmp by
 menu_dish_lines	src/main.rs	6	fn	0x100	ORACLE?	"/// The cook's daily-fare lines (the MENU row's presentation — oracle: white /// subtitle text, e.g. ""Jellied URTIKAN with MURFFALO bone marrow""): the SCRIPT1 /// dish block around offset 0x100."
-main	src/main.rs	28	fn		INFRA?	
+main	src/main.rs	28	fn		INFRA	
 default_data_dir	src/main.rs	39	fn		DATA?	/// Locate a directory that holds the game data (`DESCRIPT.DES` + `SCRIPT1.COD`). /// Checked in order: the `CBLOOD_DATA` env var, then the usual extracted-ISO /// locations in this tree. Used so a ba
 resolve_scene_hnm	src/main.rs	55	fn		DATA?	/// Resolve a dialogue-scene HNM by name across the asset subdirs. Location backgrounds /// live in `pl/` (e.g. `pterra10.hnm`), cutscenes in `sq/`, character talk-heads in `pe/`, /// objects in `ob/`
-run	src/main.rs	65	fn		INFRA?	
-VmInspection	src/main.rs	92	struct		INFRA?	
-run_engine_play	src/main.rs	226	fn		INFRA?	/// Headless real-time engine driver: run the runnable engine (`EngineState`) over a /// script's dialogue scene flow and encode each stepped frame to an MP4 — the /// engine playing the game, produce
-run_engine_window	src/main.rs	301	fn		INFRA?	/// Real-time windowed backend: present the runnable engine in a live X11 window and /// drive it with real mouse input (position steers the ship-nav compass; left button /// toggles the on-ship view 
+run	src/main.rs	65	fn		INFRA	
+VmInspection	src/main.rs	92	struct		INFRA	
+run_engine_play	src/main.rs	226	fn		INFRA	/// Headless real-time engine driver: run the runnable engine (`EngineState`) over a /// script's dialogue scene flow and encode each stepped frame to an MP4 — the /// engine playing the game, produce
+run_engine_window	src/main.rs	301	fn		INFRA	/// Real-time windowed backend: present the runnable engine in a live X11 window and /// drive it with real mouse input (position steers the ship-nav compass; left button /// toggles the on-ship view 
 refresh_nav_chart	src/main.rs	400	fn		INFRA?	
-Music	src/main.rs	474	struct		INFRA?	
-play	src/main.rs	476	fn		INFRA?	
-stop	src/main.rs	485	fn		INFRA?	
+Music	src/main.rs	474	struct		INFRA	
+play	src/main.rs	476	fn		INFRA	
+stop	src/main.rs	485	fn		INFRA	
 menu_item_index	src/manu3.rs	18	fn	0x0000,0x181	ASM?	//! `manu3.xdb` overlay logic — the ship's 3D pyramid-menu interface. //! //! Distinct from the alien overlays (no shared PRNG); its entry (`0x0000`) takes the //! caller's input params (mouse coords:
 menu_screen_row	src/manu3.rs	27	fn		UNVERIFIED	/// The screen row derived from the caller's input word: shift right by 4, then bias the row /// (the high byte) by [`MENU_ROW_BIAS`].
 menu_item_handler	src/manu3.rs	36	fn	0x181,0x2306	ASM?	/// Resolve a selected menu item to its handler offset (method `0x181`): the item index /// (word-scaled) reads an entry from the offset table located at `base`, and the /// handler is `base + table[i
@@ -553,88 +544,88 @@ step_ship_3d_interpolation_gate	src/ship3d.rs	937	fn		ASM
 layout_ship_3d_target_list	src/ship3d.rs	961	fn		ASM	
 hit_test_ship_3d_target_list	src/ship3d.rs	1001	fn		ASM	
 update_ship_3d_nav_choice_dispatch	src/ship3d.rs	1063	fn		ASM	
-run_ship_3d_nav_choice_handler_0	src/ship3d.rs	1120	fn		INFRA?	
-run_ship_3d_nav_choice_handler_1	src/ship3d.rs	1137	fn		INFRA?	
-run_ship_3d_nav_choice_handler_2	src/ship3d.rs	1185	fn		INFRA?	
-run_ship_3d_nav_choice_handler_3	src/ship3d.rs	1233	fn		INFRA?	
-run_ship_3d_nav_choice_handler_4	src/ship3d.rs	1251	fn		INFRA?	
-run_ship_3d_navigation_sequence_update	src/ship3d.rs	1329	fn		INFRA?	
-run_ship_3d_procedural_update	src/ship3d.rs	1390	fn		INFRA?	
-build_ship_3d_projection_matrix	src/ship3d.rs	1532	fn		ASM	
-project_ship_3d_point	src/ship3d.rs	1573	fn		ASM	
-plot_ship_3d_projected_point	src/ship3d.rs	1616	fn		ASM	
-ship_3d_projected_point_shade	src/ship3d.rs	1640	fn		ASM	
-ship_3d_projected_point_offset	src/ship3d.rs	1644	fn		ASM	
-BloodPrng	src/ship3d.rs	1663	struct		UNVERIFIED	
-default	src/ship3d.rs	1676	fn		UNVERIFIED	/// The static (unseeded) state from the shipped BLOODPRG.EXE image.
-seeded_from_rtc_seconds	src/ship3d.rs	1691	fn	0x2DD3,0xAEE	ASM?	/// Seed as the DOS routine at `0x2DD3` does: it reads the CMOS RTC seconds /// byte (`out 0x70 / in 0x71`) and writes it into both halves of the XOR /// seed word (`mov ah,al; mov cs:[0xAEE],ax`), le
-next	src/ship3d.rs	1702	fn	0x01CE,0x0B02	ASM?	/// Advance the generator and return the next value in `0..modulus` (or the raw 16-bit word /// when `modulus == 0`). Faithful port of the generator at `0x01CE:0x0B02`.
-randomize_ship_3d_point_cloud	src/ship3d.rs	1753	fn	0x9B67,0xFFFF	ASM?	/// Populate the ship-3D starfield point cloud (`ship_3d_point_cloud_randomize` /// at `0x9B67`). Each of the [`SHIP_3D_POINT_CLOUD_LEN`] records gets random /// `x`/`y`/`z` words from [`BloodPrng::ne
-Ship3dPointCloudRender	src/ship3d.rs	1770	struct		UNVERIFIED	
-render_ship_3d_point_cloud	src/ship3d.rs	1785	fn	0x9A10	ASM?	/// Render the full ship-3D starfield background: the batch loop at `0x9A10`. /// Each point is translated by `origin`, projected through `matrix`, and /// depth-shaded into a `320 * 200` buffer, skip
-ship_3d_point_cloud_points	src/ship3d.rs	1807	fn		ASM	/// The same starfield as [`render_ship_3d_point_cloud`], but returning the plotted /// points (screen x, y, depth shade) for a GPU point renderer — identical projection, /// viewport clip, depth-shad
-render_star_map_navview	src/ship3d.rs	2044	fn	0x200	ASM?	/// Render the pyramid-nav HUD grid into the bottom band of an indexed 320x200 /// framebuffer (the band the exporter otherwise leaves BLACK in dialogue mode). /// Draws a perspective grid of grey pyr
-project_star_map_point	src/ship3d.rs	2057	fn	0x9BBA	ASM?	/// As [`render_star_map_navview`], but pans the pyramid field horizontally by /// `compass_angle` (0..179) so the view rotates with the ship's heading (mouse /// steering) — the interactive nav behav
-render_star_map_navview_projected	src/ship3d.rs	2082	fn	0x9BBA	ASM?	/// Projection-accurate star-map nav view: a receding grid of star-system pyramids /// projected with the game's decoded projection ([`project_star_map_point`]) plus the /// central eye-orb — the syst
-render_star_map_navview_panned	src/ship3d.rs	2147	fn		UNVERIFIED	
-render_ship_3d_pyramid_hud	src/ship3d.rs	2212	fn		UNVERIFIED	
-render_ship_3d_starfield	src/ship3d.rs	2277	fn	0x200	ASM?	/// Render a complete ship-3D starfield background from real game data: randomize /// the point cloud from `prng`, build the camera matrix from `angles` using the /// recovered [`SHIP_3D_ANGLE_TABLE`]
-project_ship_3d_object_sprite	src/ship3d.rs	2290	fn		ASM	
-update_ship_3d_sprite_slot_position	src/ship3d.rs	2361	fn		ASM	
-update_ship_3d_sprite_slot_extent	src/ship3d.rs	2387	fn		ASM	
-commit_ship_3d_sprite_slot_dirty_geometry	src/ship3d.rs	2419	fn		ASM	
-commit_ship_3d_global_clip_snapshot	src/ship3d.rs	2440	fn		ASM	
-collect_ship_3d_dirty_sprite_slot_render_commands	src/ship3d.rs	2462	fn		ASM	
-run_ship_3d_temp_snd_setup	src/ship3d.rs	2507	fn		INFRA?	
-run_ship_3d_navigation_final_reset	src/ship3d.rs	2553	fn		INFRA?	
-Ship3dCameraApproach	src/ship3d.rs	2628	struct		UNVERIFIED	
-default	src/ship3d.rs	2646	fn		UNVERIFIED	
-step	src/ship3d.rs	2669	fn	0x8A6A,0x8B5A,0x8A76,0x2328,0x2F71,0x8AB3,0x8AE0	ASM?	/// Advance one frame through the decoded phase machine (`0x8A6A..0x8B5A`): /// - **P1** (`0x8A76`): if `X >= 0x2328` (9000), `X -= 0x64`; the yaw ///   `[0x2F71]` decrements toward 0 (wrapping to 0xB
-origin	src/ship3d.rs	2707	fn		UNVERIFIED	/// The camera origin as a projection origin (for `project_star_map_point` etc.).
-build_ship_3d_navigation_source_records	src/ship3d.rs	2716	fn		UNVERIFIED	
-build_ship_3d_navigation_candidate_records	src/ship3d.rs	2732	fn		UNVERIFIED	
-resolve_ship_3d_position_field	src/ship3d.rs	2756	fn		UNVERIFIED	
-ship_3d_position_distance	src/ship3d.rs	2797	fn		UNVERIFIED	
-ship_3d_position_field_distance	src/ship3d.rs	2826	fn		ASM	
-ship_3d_binary_sqrt	src/ship3d.rs	2836	fn		ASM	
-ship_3d_object_table_bit_is_set	src/ship3d.rs	2875	fn		UNVERIFIED	
-select_ship_3d_c1_source_record	src/ship3d.rs	2894	fn	0x6886,0x6210	ASM?	/// `source_list_bytes` starts at the binary's `DS:0x6886` scratch list. Kind-2 /// tests use the post-`lodsw` cursor for the current source record as the bitset /// base before applying helper `0x621
-resolve_ship_3d_c1_kind10_destination_record	src/ship3d.rs	2932	fn		UNVERIFIED	
-write_ship_3d_c1_kind10_destination_slot	src/ship3d.rs	2946	fn		UNVERIFIED	
-run_ship_3d_navigation_trigger_prelude	src/ship3d.rs	2969	fn		INFRA?	
-draw_ship_3d_target_list	src/ship3d.rs	3051	fn		UNVERIFIED	
-select_ship_3d_target_record	src/ship3d.rs	3109	fn		ASM	
-ship_3d_plane_band_byte_count	src/ship3d.rs	3177	fn		ASM	
-ship_3d_scroll_value	src/ship3d.rs	3182	fn		ASM	
-start_closing_transition	src/ship3d.rs	3192	fn		ASM	
-add_to_low_byte	src/ship3d.rs	3198	fn		ASM	
-circular_delta	src/ship3d.rs	3202	fn		UNVERIFIED	
-wrap_ring_once	src/ship3d.rs	3216	fn		UNVERIFIED	
-matrix_pair_for_angle	src/ship3d.rs	3226	fn		ASM	
-fixed_mul_shift_15	src/ship3d.rs	3234	fn		ASM	
-projection_component	src/ship3d.rs	3238	fn		ASM	
-projection_dot	src/ship3d.rs	3242	fn		ASM	
-project_ship_3d_axis	src/ship3d.rs	3249	fn		ASM	
-scale_ship_3d_object_dimension	src/ship3d.rs	3254	fn		ASM	
-ship_3d_rects_intersect	src/ship3d.rs	3258	fn		UNVERIFIED	
-checked_i16_div_i8_to_i8	src/ship3d.rs	3268	fn		ASM	
-checked_u16_div_u8_to_u8	src/ship3d.rs	3276	fn		UNVERIFIED	
-signed_i16	src/ship3d.rs	3284	fn		ASM	
-target_list_draw_x	src/ship3d.rs	3288	fn		UNVERIFIED	
-blocks_nav_choice	src/ship3d.rs	3293	fn		UNVERIFIED	
-hit_test_ship_3d_nav_choice	src/ship3d.rs	3303	fn		UNVERIFIED	
-adjust_nav_choice_target_records	src/ship3d.rs	3341	fn		UNVERIFIED	
-rebuild_nav_choice_special_target_records	src/ship3d.rs	3350	fn		UNVERIFIED	
-next_ship_3d_temp_snd_phase	src/ship3d.rs	3368	fn		UNVERIFIED	
-append_ship_3d_navigation_source_children	src/ship3d.rs	3377	fn		UNVERIFIED	
-find_ship_3d_navigation_record	src/ship3d.rs	3410	fn		UNVERIFIED	
-find_ship_3d_position_record	src/ship3d.rs	3420	fn		UNVERIFIED	
-find_ship_3d_position_field	src/ship3d.rs	3430	fn		UNVERIFIED	
-resolve_ship_3d_distance_position_field	src/ship3d.rs	3437	fn		UNVERIFIED	
-kind100_relation_word	src/ship3d.rs	3461	fn		UNVERIFIED	
-ship_3d_record_field	src/ship3d.rs	3471	fn		UNVERIFIED	
-binary_abs_word_diff	src/ship3d.rs	3475	fn		ASM	
-next_target_list_draw_color	src/ship3d.rs	3484	fn		UNVERIFIED	
+run_ship_3d_nav_choice_handler_0	src/ship3d.rs	1134	fn	0x8713,0x86F1,0x8704,0x2A19,0xF29,0x77E0,0x872C,0x87BD,0x884	ASM	/// NAV-CHOICE HANDLER 0 — file `0x8713`, entry 0 of the dispatch table. /// /// The dispatcher (`0x86F1..0x8704`) takes the committed choice `[0x2A19]`, /// makes it 0-based and doubles it, then `cal
+run_ship_3d_nav_choice_handler_1	src/ship3d.rs	1155	fn	0x872C	ASM?	/// NAV-CHOICE HANDLER 1 — file `0x872C` (`nav_choice_handler_1`), entry 1 of the /// dispatch table described on [`run_ship_3d_nav_choice_handler_0`]: adjusts the /// target records, waits for the in
+run_ship_3d_nav_choice_handler_2	src/ship3d.rs	1205	fn	0x87BD	ASM?	/// NAV-CHOICE HANDLER 2 — file `0x87BD`, entry 2 of the dispatch table /// (see [`run_ship_3d_nav_choice_handler_0`]).
+run_ship_3d_nav_choice_handler_3	src/ship3d.rs	1255	fn	0x8848	ASM?	/// NAV-CHOICE HANDLER 3 — file `0x8848`, entry 3 of the dispatch table /// (see [`run_ship_3d_nav_choice_handler_0`]).
+run_ship_3d_nav_choice_handler_4	src/ship3d.rs	1278	fn	0x886C,0x2567,0x2569,0x2578,0x2581,0x2736,0x2737,0x2738	ASM?	/// NAV-CHOICE HANDLER 4 — file `0x886C`, entry 4 of the dispatch table /// (see [`run_ship_3d_nav_choice_handler_0`]). The largest of the five: the /// target-list toggle (`DS:0x2567`/`0x2569` betwee
+run_ship_3d_navigation_sequence_update	src/ship3d.rs	1356	fn		INFRA?	
+run_ship_3d_procedural_update	src/ship3d.rs	1417	fn		INFRA?	
+build_ship_3d_projection_matrix	src/ship3d.rs	1559	fn		ASM	
+project_ship_3d_point	src/ship3d.rs	1600	fn		ASM	
+plot_ship_3d_projected_point	src/ship3d.rs	1643	fn		ASM	
+ship_3d_projected_point_shade	src/ship3d.rs	1667	fn		ASM	
+ship_3d_projected_point_offset	src/ship3d.rs	1671	fn		ASM	
+BloodPrng	src/ship3d.rs	1690	struct		UNVERIFIED	
+default	src/ship3d.rs	1703	fn		UNVERIFIED	/// The static (unseeded) state from the shipped BLOODPRG.EXE image.
+seeded_from_rtc_seconds	src/ship3d.rs	1718	fn	0x2DD3,0xAEE	ASM?	/// Seed as the DOS routine at `0x2DD3` does: it reads the CMOS RTC seconds /// byte (`out 0x70 / in 0x71`) and writes it into both halves of the XOR /// seed word (`mov ah,al; mov cs:[0xAEE],ax`), le
+next	src/ship3d.rs	1729	fn	0x01CE,0x0B02	ASM?	/// Advance the generator and return the next value in `0..modulus` (or the raw 16-bit word /// when `modulus == 0`). Faithful port of the generator at `0x01CE:0x0B02`.
+randomize_ship_3d_point_cloud	src/ship3d.rs	1780	fn	0x9B67,0xFFFF	ASM?	/// Populate the ship-3D starfield point cloud (`ship_3d_point_cloud_randomize` /// at `0x9B67`). Each of the [`SHIP_3D_POINT_CLOUD_LEN`] records gets random /// `x`/`y`/`z` words from [`BloodPrng::ne
+Ship3dPointCloudRender	src/ship3d.rs	1797	struct		UNVERIFIED	
+render_ship_3d_point_cloud	src/ship3d.rs	1812	fn	0x9A10	ASM?	/// Render the full ship-3D starfield background: the batch loop at `0x9A10`. /// Each point is translated by `origin`, projected through `matrix`, and /// depth-shaded into a `320 * 200` buffer, skip
+ship_3d_point_cloud_points	src/ship3d.rs	1834	fn		ASM	/// The same starfield as [`render_ship_3d_point_cloud`], but returning the plotted /// points (screen x, y, depth shade) for a GPU point renderer — identical projection, /// viewport clip, depth-shad
+render_star_map_navview	src/ship3d.rs	2071	fn	0x200	ASM?	/// Render the pyramid-nav HUD grid into the bottom band of an indexed 320x200 /// framebuffer (the band the exporter otherwise leaves BLACK in dialogue mode). /// Draws a perspective grid of grey pyr
+project_star_map_point	src/ship3d.rs	2084	fn	0x9BBA	ASM?	/// As [`render_star_map_navview`], but pans the pyramid field horizontally by /// `compass_angle` (0..179) so the view rotates with the ship's heading (mouse /// steering) — the interactive nav behav
+render_star_map_navview_projected	src/ship3d.rs	2109	fn	0x9BBA	ASM?	/// Projection-accurate star-map nav view: a receding grid of star-system pyramids /// projected with the game's decoded projection ([`project_star_map_point`]) plus the /// central eye-orb — the syst
+render_star_map_navview_panned	src/ship3d.rs	2174	fn		UNVERIFIED	
+render_ship_3d_pyramid_hud	src/ship3d.rs	2239	fn		UNVERIFIED	
+render_ship_3d_starfield	src/ship3d.rs	2304	fn	0x200	ASM?	/// Render a complete ship-3D starfield background from real game data: randomize /// the point cloud from `prng`, build the camera matrix from `angles` using the /// recovered [`SHIP_3D_ANGLE_TABLE`]
+project_ship_3d_object_sprite	src/ship3d.rs	2317	fn		ASM	
+update_ship_3d_sprite_slot_position	src/ship3d.rs	2388	fn		ASM	
+update_ship_3d_sprite_slot_extent	src/ship3d.rs	2414	fn		ASM	
+commit_ship_3d_sprite_slot_dirty_geometry	src/ship3d.rs	2446	fn		ASM	
+commit_ship_3d_global_clip_snapshot	src/ship3d.rs	2467	fn		ASM	
+collect_ship_3d_dirty_sprite_slot_render_commands	src/ship3d.rs	2489	fn		ASM	
+run_ship_3d_temp_snd_setup	src/ship3d.rs	2534	fn		INFRA?	
+run_ship_3d_navigation_final_reset	src/ship3d.rs	2580	fn		INFRA?	
+Ship3dCameraApproach	src/ship3d.rs	2655	struct		UNVERIFIED	
+default	src/ship3d.rs	2673	fn		UNVERIFIED	
+step	src/ship3d.rs	2696	fn	0x8A6A,0x8B5A,0x8A76,0x2328,0x2F71,0x8AB3,0x8AE0	ASM?	/// Advance one frame through the decoded phase machine (`0x8A6A..0x8B5A`): /// - **P1** (`0x8A76`): if `X >= 0x2328` (9000), `X -= 0x64`; the yaw ///   `[0x2F71]` decrements toward 0 (wrapping to 0xB
+origin	src/ship3d.rs	2734	fn		UNVERIFIED	/// The camera origin as a projection origin (for `project_star_map_point` etc.).
+build_ship_3d_navigation_source_records	src/ship3d.rs	2743	fn		UNVERIFIED	
+build_ship_3d_navigation_candidate_records	src/ship3d.rs	2759	fn		UNVERIFIED	
+resolve_ship_3d_position_field	src/ship3d.rs	2783	fn		UNVERIFIED	
+ship_3d_position_distance	src/ship3d.rs	2824	fn		UNVERIFIED	
+ship_3d_position_field_distance	src/ship3d.rs	2853	fn		ASM	
+ship_3d_binary_sqrt	src/ship3d.rs	2863	fn		ASM	
+ship_3d_object_table_bit_is_set	src/ship3d.rs	2902	fn		UNVERIFIED	
+select_ship_3d_c1_source_record	src/ship3d.rs	2921	fn	0x6886,0x6210	ASM?	/// `source_list_bytes` starts at the binary's `DS:0x6886` scratch list. Kind-2 /// tests use the post-`lodsw` cursor for the current source record as the bitset /// base before applying helper `0x621
+resolve_ship_3d_c1_kind10_destination_record	src/ship3d.rs	2959	fn		UNVERIFIED	
+write_ship_3d_c1_kind10_destination_slot	src/ship3d.rs	2973	fn		UNVERIFIED	
+run_ship_3d_navigation_trigger_prelude	src/ship3d.rs	2996	fn		INFRA?	
+draw_ship_3d_target_list	src/ship3d.rs	3078	fn		UNVERIFIED	
+select_ship_3d_target_record	src/ship3d.rs	3136	fn		ASM	
+ship_3d_plane_band_byte_count	src/ship3d.rs	3204	fn		ASM	
+ship_3d_scroll_value	src/ship3d.rs	3209	fn		ASM	
+start_closing_transition	src/ship3d.rs	3219	fn		ASM	
+add_to_low_byte	src/ship3d.rs	3225	fn		ASM	
+circular_delta	src/ship3d.rs	3229	fn		UNVERIFIED	
+wrap_ring_once	src/ship3d.rs	3243	fn		UNVERIFIED	
+matrix_pair_for_angle	src/ship3d.rs	3253	fn		ASM	
+fixed_mul_shift_15	src/ship3d.rs	3261	fn		ASM	
+projection_component	src/ship3d.rs	3265	fn		ASM	
+projection_dot	src/ship3d.rs	3269	fn		ASM	
+project_ship_3d_axis	src/ship3d.rs	3276	fn		ASM	
+scale_ship_3d_object_dimension	src/ship3d.rs	3281	fn		ASM	
+ship_3d_rects_intersect	src/ship3d.rs	3285	fn		UNVERIFIED	
+checked_i16_div_i8_to_i8	src/ship3d.rs	3295	fn		ASM	
+checked_u16_div_u8_to_u8	src/ship3d.rs	3303	fn		UNVERIFIED	
+signed_i16	src/ship3d.rs	3311	fn		ASM	
+target_list_draw_x	src/ship3d.rs	3315	fn		UNVERIFIED	
+blocks_nav_choice	src/ship3d.rs	3320	fn		UNVERIFIED	
+hit_test_ship_3d_nav_choice	src/ship3d.rs	3330	fn		UNVERIFIED	
+adjust_nav_choice_target_records	src/ship3d.rs	3368	fn		UNVERIFIED	
+rebuild_nav_choice_special_target_records	src/ship3d.rs	3377	fn		UNVERIFIED	
+next_ship_3d_temp_snd_phase	src/ship3d.rs	3395	fn		UNVERIFIED	
+append_ship_3d_navigation_source_children	src/ship3d.rs	3404	fn		UNVERIFIED	
+find_ship_3d_navigation_record	src/ship3d.rs	3437	fn		UNVERIFIED	
+find_ship_3d_position_record	src/ship3d.rs	3447	fn		UNVERIFIED	
+find_ship_3d_position_field	src/ship3d.rs	3457	fn		UNVERIFIED	
+resolve_ship_3d_distance_position_field	src/ship3d.rs	3464	fn		UNVERIFIED	
+kind100_relation_word	src/ship3d.rs	3488	fn		UNVERIFIED	
+ship_3d_record_field	src/ship3d.rs	3498	fn		UNVERIFIED	
+binary_abs_word_diff	src/ship3d.rs	3502	fn		ASM	
+next_target_list_draw_color	src/ship3d.rs	3511	fn		UNVERIFIED	
 SndClip	src/snd.rs	10	struct		UNVERIFIED	
 SndBank	src/snd.rs	20	struct		UNVERIFIED	
 read	src/snd.rs	26	fn		UNVERIFIED	
@@ -877,7 +868,7 @@ concept	src/vm_drive.rs	92	fn		UNVERIFIED	/// A concept-menu click by label (the
 call_ringing	src/vm_drive.rs	102	fn	0x6FC	ASM?	/// Is a call queued (the interception's C3 at 0x6FC) awaiting the answer?
 advance	src/vm_drive.rs	107	fn		UNVERIFIED	/// The player's advance/cancel click on a lingering presentation.
 decode_snd_clips	src/extract/audio.rs	7	fn		UNVERIFIED	
-run_raw_pcm_to_ffmpeg	src/extract/audio.rs	42	fn		INFRA?	
+run_raw_pcm_to_ffmpeg	src/extract/audio.rs	42	fn		INFRA	
 CharacterContext	src/extract/character.rs	7	struct		UNVERIFIED	
 char_contents	src/extract/character.rs	158	fn		UNVERIFIED	
 lookup_character_context	src/extract/character.rs	162	fn		UNVERIFIED	
@@ -949,7 +940,7 @@ write_descript_manifest	src/extract/descript.rs	558	fn		UNVERIFIED
 write_verified_video_manifest	src/extract/descript.rs	591	fn		UNVERIFIED	
 write_character_manifest	src/extract/descript.rs	637	fn		UNVERIFIED	
 format_srt_time	src/extract/descript.rs	706	fn		UNVERIFIED	
-run_ffmpeg	src/extract/helpers.rs	7	fn		INFRA?	
+run_ffmpeg	src/extract/helpers.rs	7	fn		INFRA	
 scaled_video_filter	src/extract/helpers.rs	17	fn		UNVERIFIED	
 find_file_recursive	src/extract/helpers.rs	25	fn		UNVERIFIED	
 walk_files	src/extract/helpers.rs	44	fn		UNVERIFIED	
@@ -1111,81 +1102,81 @@ SubtitleChatterEvent	src/extract/subtitle_sfx.rs	56	struct		UNVERIFIED
 subtitle_chatter_events	src/extract/subtitle_sfx.rs	61	fn		UNVERIFIED	
 subtitle_reveal_char_count	src/extract/subtitle_sfx.rs	83	fn		UNVERIFIED	
 subtitle_sfx_clips	src/extract/subtitle_sfx.rs	87	fn		UNVERIFIED	
-func_149b	src/recomp/auto.rs	8	fn		UNVERIFIED	
-func_1fbc	src/recomp/auto.rs	91	fn		UNVERIFIED	
-func_242d	src/recomp/auto.rs	153	fn		UNVERIFIED	
-func_248b	src/recomp/auto.rs	333	fn		UNVERIFIED	
-func_25a4	src/recomp/auto.rs	395	fn		UNVERIFIED	
-func_2612	src/recomp/auto.rs	466	fn		UNVERIFIED	
-func_2e73	src/recomp/auto.rs	623	fn		UNVERIFIED	
-func_3066	src/recomp/auto.rs	965	fn		UNVERIFIED	
-func_30cd	src/recomp/auto.rs	1167	fn		UNVERIFIED	
-func_3106	src/recomp/auto.rs	1271	fn		UNVERIFIED	
-func_3192	src/recomp/auto.rs	1505	fn		UNVERIFIED	
-func_32ac	src/recomp/auto.rs	1753	fn		UNVERIFIED	
-func_3321	src/recomp/auto.rs	1965	fn		UNVERIFIED	
-func_339e	src/recomp/auto.rs	2172	fn		UNVERIFIED	
-func_3c6c	src/recomp/auto.rs	2431	fn		UNVERIFIED	
-func_3d7b	src/recomp/auto.rs	2869	fn		UNVERIFIED	
-func_3dbf	src/recomp/auto.rs	2976	fn		UNVERIFIED	
-func_414e	src/recomp/auto.rs	3083	fn		UNVERIFIED	
-func_41d1	src/recomp/auto.rs	3249	fn		UNVERIFIED	
-func_420d	src/recomp/auto.rs	3313	fn		UNVERIFIED	
-func_42cd	src/recomp/auto.rs	3398	fn		UNVERIFIED	
-func_509d	src/recomp/auto.rs	3513	fn		UNVERIFIED	
-func_5320	src/recomp/auto.rs	3925	fn		UNVERIFIED	
-func_533c	src/recomp/auto.rs	3974	fn		UNVERIFIED	
-func_577a	src/recomp/auto.rs	4004	fn		UNVERIFIED	
-func_5791	src/recomp/auto.rs	4063	fn		UNVERIFIED	
-func_5fd8	src/recomp/auto.rs	4211	fn		UNVERIFIED	
-func_5ff6	src/recomp/auto.rs	4275	fn		UNVERIFIED	
-func_6023	src/recomp/auto.rs	4363	fn		UNVERIFIED	
-func_78d0	src/recomp/auto.rs	4399	fn		UNVERIFIED	
-func_7cb4	src/recomp/auto.rs	4505	fn		UNVERIFIED	
-func_8269	src/recomp/auto.rs	4610	fn		UNVERIFIED	
-func_8295	src/recomp/auto.rs	4679	fn		UNVERIFIED	
-func_9510	src/recomp/auto.rs	4753	fn		UNVERIFIED	
-func_963f	src/recomp/auto.rs	4845	fn		UNVERIFIED	
-func_98b9	src/recomp/auto.rs	4899	fn		UNVERIFIED	
-func_9b04	src/recomp/auto.rs	5197	fn		UNVERIFIED	
-func_9f80	src/recomp/auto.rs	5303	fn		UNVERIFIED	
-func_a117	src/recomp/auto.rs	5335	fn		UNVERIFIED	
-func_a38e	src/recomp/auto.rs	5393	fn		UNVERIFIED	
-func_a3ad	src/recomp/auto.rs	5443	fn		UNVERIFIED	
-func_a3d0	src/recomp/auto.rs	5498	fn		UNVERIFIED	
-func_a40b	src/recomp/auto.rs	5576	fn		UNVERIFIED	
-func_a634	src/recomp/auto.rs	5603	fn		UNVERIFIED	
-func_a734	src/recomp/auto.rs	5639	fn		UNVERIFIED	
-func_a73e	src/recomp/auto.rs	5663	fn		UNVERIFIED	
-func_a744	src/recomp/auto.rs	5687	fn		UNVERIFIED	
-func_a757	src/recomp/auto.rs	5709	fn		UNVERIFIED	
-func_a7e6	src/recomp/auto.rs	5748	fn		UNVERIFIED	
-func_aabc	src/recomp/auto.rs	5791	fn		UNVERIFIED	
-func_ad96	src/recomp/auto.rs	5981	fn		UNVERIFIED	
-func_b75c	src/recomp/auto.rs	6029	fn		UNVERIFIED	
-func_1d94	src/recomp/auto.rs	6138	fn		UNVERIFIED	
-func_2de2	src/recomp/auto.rs	6265	fn		UNVERIFIED	
-func_4240	src/recomp/auto.rs	6378	fn		UNVERIFIED	
-func_43f7	src/recomp/auto.rs	6480	fn		UNVERIFIED	
-func_5afd	src/recomp/auto.rs	6646	fn		UNVERIFIED	
-func_604e	src/recomp/auto.rs	6768	fn		UNVERIFIED	
-func_92a3	src/recomp/auto.rs	6888	fn		UNVERIFIED	
-func_933a	src/recomp/auto.rs	7037	fn		UNVERIFIED	
-func_9364	src/recomp/auto.rs	7136	fn		UNVERIFIED	
-func_1e5d	src/recomp/auto.rs	7461	fn		UNVERIFIED	
-func_555b	src/recomp/auto.rs	7621	fn		UNVERIFIED	
-func_1dd8	src/recomp/auto.rs	7744	fn		UNVERIFIED	
-func_713d	src/recomp/auto.rs	7959	fn		UNVERIFIED	
-func_3b45	src/recomp/auto.rs	8166	fn		UNVERIFIED	
-func_8bab	src/recomp/auto.rs	8249	fn		UNVERIFIED	
-func_7ce8	src/recomp/auto.rs	8653	fn		UNVERIFIED	
-func_3b85	src/recomp/auto.rs	8889	fn		UNVERIFIED	
-func_82c3	src/recomp/auto.rs	9293	fn		UNVERIFIED	
-func_40d0	src/recomp/auto.rs	9368	fn		UNVERIFIED	
-func_9240	src/recomp/auto.rs	9543	fn		UNVERIFIED	
-func_726	src/recomp/auto.rs	9668	fn		UNVERIFIED	
-func_14ca	src/recomp/auto.rs	9877	fn		UNVERIFIED	
-func_792d	src/recomp/auto.rs	10053	fn		UNVERIFIED	
+func_149b	src/recomp/auto.rs	8	fn		ORACLE	
+func_1fbc	src/recomp/auto.rs	91	fn		ORACLE	
+func_242d	src/recomp/auto.rs	153	fn		ORACLE	
+func_248b	src/recomp/auto.rs	333	fn		ORACLE	
+func_25a4	src/recomp/auto.rs	395	fn		ORACLE	
+func_2612	src/recomp/auto.rs	466	fn		ORACLE	
+func_2e73	src/recomp/auto.rs	623	fn		ORACLE	
+func_3066	src/recomp/auto.rs	965	fn		ORACLE	
+func_30cd	src/recomp/auto.rs	1167	fn		ORACLE	
+func_3106	src/recomp/auto.rs	1271	fn		ORACLE	
+func_3192	src/recomp/auto.rs	1505	fn		ORACLE	
+func_32ac	src/recomp/auto.rs	1753	fn		ORACLE	
+func_3321	src/recomp/auto.rs	1965	fn		ORACLE	
+func_339e	src/recomp/auto.rs	2172	fn		ORACLE	
+func_3c6c	src/recomp/auto.rs	2431	fn		ORACLE	
+func_3d7b	src/recomp/auto.rs	2869	fn		ORACLE	
+func_3dbf	src/recomp/auto.rs	2976	fn		ORACLE	
+func_414e	src/recomp/auto.rs	3083	fn		ORACLE	
+func_41d1	src/recomp/auto.rs	3249	fn		ORACLE	
+func_420d	src/recomp/auto.rs	3313	fn		ORACLE	
+func_42cd	src/recomp/auto.rs	3398	fn		ORACLE	
+func_509d	src/recomp/auto.rs	3513	fn		ORACLE	
+func_5320	src/recomp/auto.rs	3925	fn		ORACLE	
+func_533c	src/recomp/auto.rs	3974	fn		ORACLE	
+func_577a	src/recomp/auto.rs	4004	fn		ORACLE	
+func_5791	src/recomp/auto.rs	4063	fn		ORACLE	
+func_5fd8	src/recomp/auto.rs	4211	fn		ORACLE	
+func_5ff6	src/recomp/auto.rs	4275	fn		ORACLE	
+func_6023	src/recomp/auto.rs	4363	fn		ORACLE	
+func_78d0	src/recomp/auto.rs	4399	fn		ORACLE	
+func_7cb4	src/recomp/auto.rs	4505	fn		ORACLE	
+func_8269	src/recomp/auto.rs	4610	fn		ORACLE	
+func_8295	src/recomp/auto.rs	4679	fn		ORACLE	
+func_9510	src/recomp/auto.rs	4753	fn		ORACLE	
+func_963f	src/recomp/auto.rs	4845	fn		ORACLE	
+func_98b9	src/recomp/auto.rs	4899	fn		ORACLE	
+func_9b04	src/recomp/auto.rs	5197	fn		ORACLE	
+func_9f80	src/recomp/auto.rs	5303	fn		ORACLE	
+func_a117	src/recomp/auto.rs	5335	fn		ORACLE	
+func_a38e	src/recomp/auto.rs	5393	fn		ORACLE	
+func_a3ad	src/recomp/auto.rs	5443	fn		ORACLE	
+func_a3d0	src/recomp/auto.rs	5498	fn		ORACLE	
+func_a40b	src/recomp/auto.rs	5576	fn		ORACLE	
+func_a634	src/recomp/auto.rs	5603	fn		ORACLE	
+func_a734	src/recomp/auto.rs	5639	fn		ORACLE	
+func_a73e	src/recomp/auto.rs	5663	fn		ORACLE	
+func_a744	src/recomp/auto.rs	5687	fn		ORACLE	
+func_a757	src/recomp/auto.rs	5709	fn		ORACLE	
+func_a7e6	src/recomp/auto.rs	5748	fn		ORACLE	
+func_aabc	src/recomp/auto.rs	5791	fn		ORACLE	
+func_ad96	src/recomp/auto.rs	5981	fn		ORACLE	
+func_b75c	src/recomp/auto.rs	6029	fn		ORACLE	
+func_1d94	src/recomp/auto.rs	6138	fn		ORACLE	
+func_2de2	src/recomp/auto.rs	6265	fn		ORACLE	
+func_4240	src/recomp/auto.rs	6378	fn		ORACLE	
+func_43f7	src/recomp/auto.rs	6480	fn		ORACLE	
+func_5afd	src/recomp/auto.rs	6646	fn		ORACLE	
+func_604e	src/recomp/auto.rs	6768	fn		ORACLE	
+func_92a3	src/recomp/auto.rs	6888	fn		ORACLE	
+func_933a	src/recomp/auto.rs	7037	fn		ORACLE	
+func_9364	src/recomp/auto.rs	7136	fn		ORACLE	
+func_1e5d	src/recomp/auto.rs	7461	fn		ORACLE	
+func_555b	src/recomp/auto.rs	7621	fn		ORACLE	
+func_1dd8	src/recomp/auto.rs	7744	fn		ORACLE	
+func_713d	src/recomp/auto.rs	7959	fn		ORACLE	
+func_3b45	src/recomp/auto.rs	8166	fn		ORACLE	
+func_8bab	src/recomp/auto.rs	8249	fn		ORACLE	
+func_7ce8	src/recomp/auto.rs	8653	fn		ORACLE	
+func_3b85	src/recomp/auto.rs	8889	fn		ORACLE	
+func_82c3	src/recomp/auto.rs	9293	fn		ORACLE	
+func_40d0	src/recomp/auto.rs	9368	fn		ORACLE	
+func_9240	src/recomp/auto.rs	9543	fn		ORACLE	
+func_726	src/recomp/auto.rs	9668	fn		ORACLE	
+func_14ca	src/recomp/auto.rs	9877	fn		ORACLE	
+func_792d	src/recomp/auto.rs	10053	fn		ORACLE	
 Exit	src/recomp/interp.rs	25	enum		ORACLE	
 Cpu	src/recomp/interp.rs	39	struct		ORACLE	/// Execution state that lives OUTSIDE [`Machine`]: the instruction pointer, the call depth used /// for depth-0 return exits, and the interrupt-enable flag (not modelled in `Regs` — the lifted /// co
 r16	src/recomp/interp.rs	70	fn		ORACLE	/// General register by 3-bit index, 16-bit view: AX CX DX BX SP BP SI DI.
@@ -1205,7 +1196,7 @@ flags_word	src/recomp/interp.rs	250	fn		ORACLE?	/// FLAGS word. Mirrors lift.py'
 set_flags_word	src/recomp/interp.rs	260	fn		ORACLE	
 Rm	src/recomp/interp.rs	272	enum		ORACLE	/// A decoded ModRM operand: register index or memory (segment resolved, offset already wrapped /// to 16 bits for 16-bit addressing forms).
 new	src/recomp/interp.rs	289	fn		ORACLE	
-run	src/recomp/interp.rs	308	fn		ORACLE	/// Run until an [`Exit`] or `max_steps` instructions.
+run	src/recomp/interp.rs	308	fn		UNVERIFIED	/// Run until an [`Exit`] or `max_steps` instructions.
 deliver_int	src/recomp/interp.rs	373	fn		ORACLE	/// Deliver an interrupt through the guest IVT (hardware IRQ or a re-dispatched `int`): /// push FLAGS (with IF), CS, IP; clear IF; jump to the vector. The handler's `iret` /// (or [`Self::emulate_ire
 emulate_iret	src/recomp/interp.rs	387	fn		ORACLE	/// Pop an interrupt frame: IP, CS, FLAGS (restoring IF). Used by the `iret` opcode and by /// the runtime to complete a natively-serviced interrupt.
 patch_frame_cf	src/recomp/interp.rs	399	fn		ORACLE	/// Patch the CF bit in the FLAGS word of the interrupt frame at SS:SP (frame = IP,CS,FLAGS). /// DOS returns success/failure in the CALLER's carry flag — the one `iret` restores.
@@ -1337,15 +1328,15 @@ write16	src/recomp/machine.rs	1256	fn		ORACLE
 read32	src/recomp/machine.rs	1262	fn		ORACLE	
 write32	src/recomp/machine.rs	1266	fn		ORACLE	
 prng_2de2	src/recomp/mod.rs	32	fn	0x2DE2,0x1CE,0x0B02,0xAEE,0xAF0,0xAF1,0xAF2	ASM?	/// `prng_2de2` — the game PRNG at file 0x2DE2 (far 0x1CE:0x0B02). /// /// Input: `AX` = modulus. State (in the code segment): `cs:0xAEE` seed_word (u16), `cs:0xAF0` a, /// `cs:0xAF1` b, `cs:0xAF2` co
-func_a734	src/recomp/mod.rs	88	fn	0xA734,0xD8C,0xD9A	ORACLE?	/// `func_a734` — file 0xA734: `add [DS:0xD8C],ax ; add [DS:0xD9A],ax ; clc ; ret`. /// Adds `AX` into the two word globals (with full ADD flags from the second add), then clears /// CF. `AX`/`DS` unc
-func_a744	src/recomp/mod.rs	101	fn	0xA744	ASM?	/// `func_a744` — file 0xA744: initialise three word globals to constants (no input, no flags).
-func_9f80	src/recomp/mod.rs	111	fn	0x9F80,0x1FB5	ORACLE?	/// `func_9f80` — file 0x9F80: `bx=0x1FB5; add bx,ax (x4); mov bx,[bx]; ret`. Computes the table /// address `0x1FB5 + 4*ax` (16-bit wrapping), reads the word there (DS-relative) into `BX`. /// Flags 
-func_533c	src/recomp/mod.rs	124	fn	0x533C	ORACLE?	/// `func_533c` — file 0x533C (resource_get_field4): `push bx; shl ax,3; mov bx,ax; /// mov eax,fs:[bx+4]; pop bx; retf`. Loads `EAX` from the dword at `fs:(ax*8 + 4)` — the +4 field /// of the resour
-func_a40b	src/recomp/mod.rs	132	fn	0xA40B,0xD5F	ORACLE?	/// `func_a40b` — file 0xA40B: `cmp gs:[0xD5F],0; je .end; cmp gs:[0xD5F],1; .end: ret`. A /// tri-state check of the byte at `gs:0xD5F`: leaves flags from `cmp(b,0)` if b==0, else from /// `cmp(b,1)`
-func_a634	src/recomp/mod.rs	143	fn	0xA634,0xB17	ORACLE?	/// `func_a634` — file 0xA634: `test byte [DS←GS:0xB17],1; ret` (with AX/DS saved+restored). /// Sets ZF from bit 0 of `gs:0xB17` (CF/OF cleared). No register/memory change. Oracle-verified /// (CF/OF
-func_a73e	src/recomp/mod.rs	149	fn	0xA73E,0xFFFF	ASM?	/// `func_a73e` — file 0xA73E: init 4 word globals to 0/0/0xFFFF/0xFFFF (no input, no flags).
-func_6023	src/recomp/mod.rs	162	fn	0x6023,0x6D60	ORACLE?	/// `func_6023` — file 0x6023: `push bx; shl ax,4; bsf bx,bx; add bx,ax; mov al,gs:[bx+0x6D60]; /// CBW; pop bx; ret`. Indexes a byte table at `gs:0x6D60` by `bsf(bx) + (ax<<4)`, sign-extends /// the 
-func_a757	src/recomp/mod.rs	177	fn	0xA757,0xA7E,0xD8E,0xD92,0xD8C,0xD90,0xD9A,0xDA0,0xD96,0x523	ORACLE?	/// `func_a757` — file 0xA757: a state reset. `ax=[0xA7E]; [0xD8E]=ax; [0xD92]=ax; xor ax,ax; /// [0xD8C]=[0xD90]=[0xD9A]=[0xDA0]=[0xD96]=0; ax=[0x5233]; [0xD98]=ax; retf`. Flags from the /// `xor ax,
+func_a734	src/recomp/mod.rs	88	fn	0xA734,0xD8C,0xD9A	ORACLE	/// `func_a734` — file 0xA734: `add [DS:0xD8C],ax ; add [DS:0xD9A],ax ; clc ; ret`. /// Adds `AX` into the two word globals (with full ADD flags from the second add), then clears /// CF. `AX`/`DS` unc
+func_a744	src/recomp/mod.rs	101	fn	0xA744	ORACLE	/// `func_a744` — file 0xA744: initialise three word globals to constants (no input, no flags).
+func_9f80	src/recomp/mod.rs	111	fn	0x9F80,0x1FB5	ORACLE	/// `func_9f80` — file 0x9F80: `bx=0x1FB5; add bx,ax (x4); mov bx,[bx]; ret`. Computes the table /// address `0x1FB5 + 4*ax` (16-bit wrapping), reads the word there (DS-relative) into `BX`. /// Flags 
+func_533c	src/recomp/mod.rs	124	fn	0x533C	ORACLE	/// `func_533c` — file 0x533C (resource_get_field4): `push bx; shl ax,3; mov bx,ax; /// mov eax,fs:[bx+4]; pop bx; retf`. Loads `EAX` from the dword at `fs:(ax*8 + 4)` — the +4 field /// of the resour
+func_a40b	src/recomp/mod.rs	132	fn	0xA40B,0xD5F	ORACLE	/// `func_a40b` — file 0xA40B: `cmp gs:[0xD5F],0; je .end; cmp gs:[0xD5F],1; .end: ret`. A /// tri-state check of the byte at `gs:0xD5F`: leaves flags from `cmp(b,0)` if b==0, else from /// `cmp(b,1)`
+func_a634	src/recomp/mod.rs	143	fn	0xA634,0xB17	ORACLE	/// `func_a634` — file 0xA634: `test byte [DS←GS:0xB17],1; ret` (with AX/DS saved+restored). /// Sets ZF from bit 0 of `gs:0xB17` (CF/OF cleared). No register/memory change. Oracle-verified /// (CF/OF
+func_a73e	src/recomp/mod.rs	149	fn	0xA73E,0xFFFF	ORACLE	/// `func_a73e` — file 0xA73E: init 4 word globals to 0/0/0xFFFF/0xFFFF (no input, no flags).
+func_6023	src/recomp/mod.rs	162	fn	0x6023,0x6D60	ORACLE	/// `func_6023` — file 0x6023: `push bx; shl ax,4; bsf bx,bx; add bx,ax; mov al,gs:[bx+0x6D60]; /// CBW; pop bx; ret`. Indexes a byte table at `gs:0x6D60` by `bsf(bx) + (ax<<4)`, sign-extends /// the 
+func_a757	src/recomp/mod.rs	177	fn	0xA757,0xA7E,0xD8E,0xD92,0xD8C,0xD90,0xD9A,0xDA0,0xD96,0x523	ORACLE	/// `func_a757` — file 0xA757: a state reset. `ax=[0xA7E]; [0xD8E]=ax; [0xD92]=ax; xor ax,ax; /// [0xD8C]=[0xD90]=[0xD9A]=[0xDA0]=[0xD96]=0; ax=[0x5233]; [0xD98]=ax; retf`. Flags from the /// `xor ax,
 func_6293	src/recomp/ptr_leaves.rs	16	fn	0x6293	ASM?	/// `func_6293` (`vm_token_special`, 0x6293): a byte-granular table search. Scan forward from /// ds:SI comparing the WORD at ds:SI to AX; on a match, advance SI past that word (`+2`) and, if /// the 
 func_22e0	src/recomp/ptr_leaves_gen.rs	8	fn		UNVERIFIED	
 func_a4ed	src/recomp/ptr_leaves_gen.rs	356	fn		UNVERIFIED	
@@ -1404,21 +1395,21 @@ debug_state	src/recomp/runtime.rs	2530	fn		UNVERIFIED	/// One-line machine state
 console_output	src/recomp/runtime.rs	2563	fn		UNVERIFIED	
 key_event	src/recomp/runtime.rs	2568	fn		UNVERIFIED	/// Push a key event (scancode, ascii) — M3 wires real input to this.
 make_runtime	src/bin/blood.rs	22	fn		UNVERIFIED	
-run_tick	src/bin/blood.rs	35	fn		INFRA?	/// One BIOS-tick (1/18.2 s) of emulated time, regardless of the guest's PIT rate. /// Returns false when the guest exited/faulted.
+run_tick	src/bin/blood.rs	35	fn		INFRA	/// One BIOS-tick (1/18.2 s) of emulated time, regardless of the guest's PIT rate. /// Returns false when the guest exited/faulted.
 scancode_ascii	src/bin/blood.rs	47	fn		UNVERIFIED	
-run_script	src/bin/blood.rs	95	fn		INFRA?	
+run_script	src/bin/blood.rs	95	fn		INFRA	
 write_wav	src/bin/blood.rs	606	fn		UNVERIFIED	/// Minimal 8-bit unsigned mono WAV writer for the SB PCM tap.
 AudioOut	src/bin/blood.rs	626	struct		UNVERIFIED	/// Live audio: a ring buffer the emulation fills from the SB PCM tap and a cpal stream /// drains with naive resampling. Absent an output device the game just runs silent.
 start	src/bin/blood.rs	633	fn		UNVERIFIED	
-run_window	src/bin/blood.rs	678	fn		INFRA?	
-main	src/bin/blood.rs	838	fn		UNVERIFIED	
+run_window	src/bin/blood.rs	678	fn		INFRA	
+main	src/bin/blood.rs	838	fn		INFRA	
 dump	src/bin/export_screens.rs	17	fn	0x200	ASM?	/// Write the engine's current 320x200 indexed framebuffer, resolved through its scene /// palette, as a binary PPM (P6) image.
-main	src/bin/export_screens.rs	32	fn		UNVERIFIED	
-main	src/bin/playthrough.rs	16	fn		UNVERIFIED	
+main	src/bin/export_screens.rs	32	fn		INFRA	
+main	src/bin/playthrough.rs	16	fn		INFRA	
 drive_script_to_profile	src/bin/playthrough.rs	112	fn		UNVERIFIED	/// Build a SCRIPT's VM, start the given actor presentations in turn, and confirm the /// script emits real dialogue and reaches its D2 profile handoff. Returns the profile.
 drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location script's dialogue through the engine to completion.
-main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
+main	src/bin/runtime_boot.rs	10	fn		INFRA	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	
-main	src/bin/verify_port.rs	9	fn		UNVERIFIED	
+main	src/bin/smoke.rs	14	fn		INFRA	
+main	src/bin/verify_port.rs	9	fn		INFRA	

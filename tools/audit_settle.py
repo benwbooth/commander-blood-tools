@@ -14,11 +14,19 @@ from collections import Counter
 
 LEDGER = "docs/function-audit.tsv"
 SETTLED = {"ASM", "ORACLE", "DATA", "INFRA", "TESTED"}
+# UNVERIFIED is allowed so a mis-settled row can be put BACK — settling the wrong
+# function is the failure mode this tool exists to prevent, and it needs an undo.
+ALLOWED = SETTLED | {"UNVERIFIED"}
 
 
 def main():
-    if len(sys.argv) < 3 or sys.argv[1] not in SETTLED:
-        print(f"usage: {sys.argv[0]} {{{'|'.join(sorted(SETTLED))}}} item [item...]")
+    if len(sys.argv) < 3 or sys.argv[1] not in ALLOWED:
+        print(
+            f"usage: {sys.argv[0]} {{{'|'.join(sorted(ALLOWED))}}} item|file:item [...]\n"
+            "  A bare NAME settles that name in EVERY file it appears in, which is\n"
+            "  rarely what you want for common names like `run` or `main` — qualify\n"
+            "  them as `src/gpu.rs:run` instead."
+        )
         return 2
     status, wanted = sys.argv[1], set(sys.argv[2:])
 
@@ -29,9 +37,11 @@ def main():
     counts = Counter((r["item"], r["file"]) for r in rows)
     changed, refused, missing = [], [], set(wanted)
     for r in rows:
-        if r["item"] not in wanted:
+        keys = {r["item"], f"{r['file']}:{r['item']}"}
+        hit = keys & wanted
+        if not hit:
             continue
-        missing.discard(r["item"])
+        missing -= keys
         if counts[(r["item"], r["file"])] > 1:
             refused.append(f"{r['item']}  {r['file']}  (name not unique in file)")
             continue

@@ -93,9 +93,21 @@ for root, _, files in os.walk(SRC):
         text = open(path, encoding="utf-8", errors="replace").read()
         lines = text.splitlines()
         in_tests = False
+        in_raw_string = False
         doc: list[str] = []
         for i, line in enumerate(lines, 1):
             stripped = line.strip()
+            # Raw string literals hold WGSL shader source whose `fn vs`/`struct
+            # VOut` the regex below happily counted as Rust items -- six phantom
+            # rows in gpu.rs alone, inflating the ledger's denominator with
+            # things that are not port code at all.
+            if not in_raw_string and 'r#"' in line:
+                in_raw_string = '"#' not in line.split('r#"', 1)[1]
+                continue
+            if in_raw_string:
+                if '"#' in line:
+                    in_raw_string = False
+                continue
             if stripped.startswith("#[cfg(test)]"):
                 in_tests = True
             if stripped.startswith("///") or stripped.startswith("//!"):

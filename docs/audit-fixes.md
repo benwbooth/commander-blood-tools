@@ -1847,3 +1847,56 @@ The test now fails if the rect ever collapses to a solid fill.
 The old script-derived destination list is kept as the stand-in for the case the
 chart list is empty — which, per FIX #53, is the shipped answer for SCRIPT1..4 at
 boot.
+
+## FIX #55 — a verification pass over the ledger, and what checking it properly turned up
+
+Working the ledger rather than the game this round. Four findings, in the order
+they mattered.
+
+**The recomp oracle really does cover all 75 auto-lifted functions — but I nearly
+reported that it didn't.** My first coverage scan looked for `{name}.json` and
+`{name}_det.json` and found 43 functions with no vectors, which would have meant
+`auto_lifted_batch_matches_oracle` verifying 32 of 75 while claiming all of them.
+The generic verifier reads `{name}_generic.json`. With the right suffix: 75/75,
+every one with non-empty vectors. Same lesson as the palette bytes — when a hand
+check contradicts a mechanical one, suspect the hand check.
+
+**The hole was real anyway, just latent.** Every vector loader did
+`Err(_) => return` on a missing file, so deleting or renaming one would drop that
+function from verification while the test still passed. Both batches now assert
+their coverage (all-or-nothing: a checkout without vectors skips the batch, a
+batch missing SOME is a failure), and the nine per-function tests panic outright.
+Positive control: moving `func_6023_generic.json` aside now fails with
+`1/52 auto-lifts have NO oracle vectors and were silently skipped`, where before
+it passed green.
+
+With that enforced, the 75 auto-lifted plus 9 hand-lifted functions are honestly
+ORACLE: bit-exact registers, memory writes and (for the generic batch) all six
+flags against Unicorn traces of the real code.
+
+**Five ported routines had no citation at all.** The `run_ship_3d_nav_choice_*`
+handlers carried no doc comment, which is a prime-rule defect independent of
+whether the code is right. The dispatcher at `0x86F1` gives all five addresses:
+it makes the committed choice 0-based, doubles it and does
+`call word cs:[bx+0xF29]` — a five-entry table (`0F33 0F4C 0FDD 1068 108C`) whose
+CS base is `0x8709 - 0xF29 = 0x77E0`, so the handlers are `0x8713`, `0x872C`,
+`0x87BD`, `0x8848`, `0x886C`. Entry 1 resolving to the already-labelled
+`nav_choice_handler_1` at `0x872C` is what confirms the base. Handler 0 then
+verified line by line (phase bit `[0x2565]&1`, `Honk` from `[0x6754]`, record type
+`0xC3` into `[0x6768]`, phase cleared) and is settled ASM; the other four are
+cited and labelled, awaiting the same treatment.
+
+**The ledger was counting shader source as port code.** `gpu.rs` holds WGSL in
+raw string literals, and the inventory regex счастливо matched `fn vs`, `fn fs`
+and `struct VOut` inside them — six phantom rows, three of them ambiguous enough
+that the settle tool refused to touch them. Raw strings are now skipped, and the
+denominator dropped from 1423 to 1414 items that are actually port code.
+
+**And one near-miss worth recording.** Settling the infra rows by bare NAME hit
+`run` in four unrelated files — `vm.rs`, `extract/mod.rs`, `recomp/interp.rs`,
+`recomp/runtime.rs` — none of which is plumbing. `audit_settle.py` now takes
+`file:item` and accepts `UNVERIFIED` as a status so a mis-settle can be undone,
+which is how those four got put back.
+
+Ledger after the pass: 1414 items, 404 settled (ORACLE 209, ASM 136, INFRA 49,
+DATA 10), 810 UNVERIFIED.
