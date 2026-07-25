@@ -196,6 +196,31 @@ mod cited_instruction_tests {
 }
 
 #[cfg(test)]
+mod claimed_test_tests {
+    /// A doc that names the test verifying it makes the strongest claim available
+    /// here — and a named test that DOES NOT EXIST is worse than no claim, because
+    /// the row reads as settled while nothing runs. This checks every such name
+    /// resolves, and reports whether the test opens anything the game shipped (a
+    /// `func_<hex>` lift counts: it IS the original instruction stream).
+    #[test]
+    fn every_doc_named_verifier_exists() {
+        let script = std::path::Path::new("tools/check_claimed_tests.py");
+        if !script.exists() {
+            return;
+        }
+        let out = match std::process::Command::new("python3").arg(script).output() {
+            Ok(o) => o,
+            Err(_) => return,
+        };
+        let text = String::from_utf8_lossy(&out.stdout);
+        if text.trim().is_empty() {
+            return;
+        }
+        assert!(out.status.success(), "doc names a test that does not exist:\n{text}");
+    }
+}
+
+#[cfg(test)]
 mod content_literal_tests {
     /// The prime rule names this defect outright: content that lives in the
     /// game's data must be executed or parsed, never transcribed. A dialogue line

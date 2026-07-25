@@ -4024,3 +4024,40 @@ from "not yet verified" and should not sit in the same bucket.
 
 What remains in the queue is now closer to real work: 810 uncited functions plus
 the constants, structs and enums.
+
+## #122 — checking the claims that name their own verifier
+
+The strongest provenance in this tree is a doc that names the test proving it:
+
+    /// Verified byte-exact against the binary by `tests::angle_table_matches_binary`.
+
+If the test is real. A named test that does not exist is worse than no claim at
+all — the row reads as settled and nothing runs. `tools/check_claimed_tests.py`
+resolves every such name and reports whether the test opens anything the game
+shipped.
+
+Result: 4 claims, all real, none missing, none self-referential. Two name tests
+that read BLOODPRG.EXE or an asset; two name `func_<hex>` LIFTS, which are the
+original instruction stream transliterated and oracle-verified — differentialling
+against one is stronger than any hand-written test, not weaker.
+
+Getting there took two wrong versions, and the pair is worth recording because
+they failed in OPPOSITE directions:
+
+* Case-insensitive throughout matched SCREAMING_CASE and reported the env var
+  `CBLOOD_DATA` as a missing test function.
+* Case-sensitive throughout then dropped every claim whose sentence begins
+  "Verified ...", and the count fell from 5 to 1 — a quieter failure, and the more
+  dangerous one, since a guard finding nothing looks like a guard finding no
+  problems.
+
+The keyword is matched case-insensitively and the captured NAME case-sensitively.
+Both halves needed their own rule.
+
+The denominator is only 4, so this guard's reach is small — most docs cite an
+ADDRESS rather than naming a test, which the other checkers cover. It exists for
+the failure it would catch, not for its coverage.
+
+`SHIP_3D_ANGLE_TABLE` settled as DATA on the strength of its test: 180
+`(cosine, sine)` Q14 pairs at `DS:0x4F45`, compared byte-for-byte against the
+shipped image. Ledger: 570 -> 571 of 2160.

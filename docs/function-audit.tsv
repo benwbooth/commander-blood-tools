@@ -1000,7 +1000,7 @@ Ship3dNavigationSequenceEffect	src/ship3d.rs	390	struct		UNVERIFIED
 Ship3dProceduralUpdateState	src/ship3d.rs	403	struct		UNVERIFIED	
 Ship3dProceduralUpdateEffect	src/ship3d.rs	419	struct		UNVERIFIED	
 Ship3dAngleTableEntry	src/ship3d.rs	431	struct		DATA	
-SHIP_3D_ANGLE_TABLE	src/ship3d.rs	443	const	0x4F45,0x4000,0x2F71	ASM?	/// The recovered ship-3D rotation trig table at `DS:0x4F45` in BLOODPRG.EXE: /// 180 `(cosine, sine)` pairs, one per **2 degrees** (index 45 = 90°, 90 = 180°, /// wrapping at 180), stored at Q14 ampl
+SHIP_3D_ANGLE_TABLE	src/ship3d.rs	443	const	0x4F45,0x4000,0x2F71	DATA	/// The recovered ship-3D rotation trig table at `DS:0x4F45` in BLOODPRG.EXE: /// 180 `(cosine, sine)` pairs, one per **2 degrees** (index 45 = 90°, 90 = 180°, /// wrapping at 180), stored at Q14 ampl
 fn	src/ship3d.rs	444	const		UNVERIFIED	
 Ship3dMatrixAngles	src/ship3d.rs	482	struct		UNVERIFIED	
 Ship3dProjectionMatrix	src/ship3d.rs	489	struct		UNVERIFIED	
