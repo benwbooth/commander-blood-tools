@@ -6857,3 +6857,34 @@ that the strict matcher was pointing at a real weakness.
 
 Three of the 27 are now TESTED on evidence. The remaining 24 need the same
 treatment, one cluster at a time.
+
+## #221 — a property that a long fixed-point chain cannot fake
+
+`build_ship_3d_projection_matrix` (`0x2F95`) folds three angle pairs into nine
+terms through a chain of `imul`/`sar 15`, including the deliberate
+`neg`-before-shift at `0x2FB1` that differs from negate-after by one unit. Nothing
+in that chain announces an error: a swapped term, a lost shift or a transposed
+pair still yields plausible-looking numbers, and a test comparing the port to
+itself would confirm whatever it does.
+
+But the result has to be a ROTATION, and a rotation's rows have unit length. In
+this fixed point that is `sum(t^2) ~= (1<<15)^2` per row, using the game's own
+`SHIP_3D_ANGLE_TABLE` (already verified against the binary by
+`angle_table_matches_binary`). The test sweeps the table rather than sampling one
+angle, because a term that only misbehaves when a sine is negative would survive a
+single favourable sample.
+
+It passes at every sampled angle, within 1.5% — the tolerance is for `sar`
+truncation, which loses up to a unit per multiply.
+
+THEN I TESTED THE TEST, which matters more here than usual, because a
+property-based assertion can be vacuous in ways an equality assertion cannot.
+Perturbing one term by 900 produced `row 1 has length^2 0.9458, not 1` and a
+failure; restoring it passed. The invariant has teeth.
+
+This is the strongest kind of check available for transcribed arithmetic: it
+verifies a structural property the ORIGINAL must satisfy, without needing a
+reference output to compare against. Worth reaching for wherever the port
+transcribes maths rather than table lookups.
+
+`Ship3dProjectionMatrix` and `Ship3dMatrixAngles` settled TESTED on that evidence.

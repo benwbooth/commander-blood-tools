@@ -4316,6 +4316,55 @@ fn next_target_list_draw_color(state: &mut Ship3dTargetHitState, activate: bool)
 #[cfg(test)]
 mod tests {
 
+    /// THE COMPOSED MATRIX MUST BE A ROTATION, checked with the game's own angle
+    /// table (`SHIP_3D_ANGLE_TABLE`, itself verified against the binary by
+    /// `angle_table_matches_binary`).
+    ///
+    /// `build_ship_3d_projection_matrix` (`0x2F95`) folds three angle pairs into
+    /// nine fixed-point terms through a long chain of `imul`/`sar 15` with one
+    /// deliberate `neg`-before-shift. Nothing in that chain announces an error: a
+    /// swapped term or a wrong shift still produces plausible numbers.
+    ///
+    /// A rotation matrix has a property those numbers must satisfy anyway — each
+    /// ROW has unit length. In this fixed point that is `sum(t^2) ~= (1<<15)^2`
+    /// per row, and a transposed pair or a lost shift breaks it immediately. The
+    /// tolerance is generous (1.5%) because every term is truncated by `sar`,
+    /// which loses up to one unit per multiply.
+    #[test]
+    fn the_projection_matrix_is_a_rotation_at_every_table_angle() {
+        const ONE: f64 = 32768.0;
+        let mut checked = 0usize;
+        // Sweep the table rather than one favourable angle: an error in a term
+        // that only bites when a sine is negative would survive a single sample.
+        for step in (0..180).step_by(7) {
+            let angles = Ship3dMatrixAngles {
+                angle_2f71: step,
+                projection_angle_2f6d: (step * 2) % 180,
+                angle_2f6f: (step * 3) % 180,
+            };
+            let Some(matrix): Option<Ship3dProjectionMatrix> =
+                build_ship_3d_projection_matrix(&SHIP_3D_ANGLE_TABLE, angles)
+            else {
+                continue;
+            };
+            for row in 0..3 {
+                let norm: f64 = (0..3)
+                    .map(|c| {
+                        let t = matrix.terms[row * 3 + c] as f64 / ONE;
+                        t * t
+                    })
+                    .sum();
+                assert!(
+                    (norm - 1.0).abs() < 0.015,
+                    "angle {step}: row {row} has length^2 {norm:.4}, not 1 -- the \
+                     composed matrix is not a rotation"
+                );
+                checked += 1;
+            }
+        }
+        assert!(checked >= 60, "the sweep covered {checked} rows");
+    }
+
     /// LAYOUT AND HIT-TEST DRIVEN BY REAL GAME TEXT: the labels come out of
     /// `BLOODPRG.EXE`'s own string table, are measured with the port's font, laid
     /// out by `layout_ship_3d_target_list` (`0x84A1`) and then hit-tested row by
