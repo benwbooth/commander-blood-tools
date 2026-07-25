@@ -183,8 +183,72 @@ pub fn mix_unsigned_pcm_average(destination: &mut [u8], source: &[u8]) -> usize 
     len
 }
 
+/// Mix several u8 PCM sources into one buffer with the game's rule, in order.
+///
+/// `0xBB6D`'s `lodsb / add al,es:[di] / rcr al,1 / stosb` averages ONE source into
+/// the destination, so mixing N sources is that applied N times — and the result
+/// is order-dependent by construction: an earlier source is halved again by every
+/// later mix, so the LAST source dominates. That is not a rounding artefact to be
+/// corrected into an equal-weight average; it is what the routine does.
+///
+/// The destination starts at `SILENCE` (0x80, the unsigned-PCM zero level) rather
+/// than 0, because 0 is full-negative and would drag every mix toward it.
+///
+/// Returns the number of samples written, which is the length of the LONGEST
+/// source — shorter sources stop contributing once exhausted, leaving the running
+/// mix to continue rather than truncating it.
+pub fn mix_unsigned_pcm_sources(sources: &[&[u8]], out: &mut [u8]) -> usize {
+    out.fill(SILENCE);
+    let mut written = 0usize;
+    for source in sources {
+        let len = source.len().min(out.len());
+        for idx in 0..len {
+            out[idx] = snd_mix_average(source[idx], out[idx]);
+        }
+        written = written.max(len);
+    }
+    written
+}
+
+/// The unsigned-PCM zero level: `0x80`, not `0`.
+pub const SILENCE: u8 = 0x80;
+
 #[cfg(test)]
 mod tests {
+
+    /// Mixing N sources is the one-source average applied N times, so the result
+    /// is ORDER-DEPENDENT: each earlier source is halved again by every later mix.
+    /// A port that "fixed" this into an equal-weight average would be quieter on
+    /// the first source and louder on the last than the game.
+    #[test]
+    fn mixing_several_sources_is_order_dependent_by_construction() {
+        use super::{SILENCE, mix_unsigned_pcm_sources, snd_mix_average};
+
+        let a = [0xFFu8; 4];
+        let b = [0x00u8; 4];
+        let mut ab = [0u8; 4];
+        let mut ba = [0u8; 4];
+        mix_unsigned_pcm_sources(&[&a, &b], &mut ab);
+        mix_unsigned_pcm_sources(&[&b, &a], &mut ba);
+        assert_ne!(ab, ba, "swapping the sources must change the result");
+
+        // And each step is exactly the decoded single-source average.
+        let step1 = snd_mix_average(a[0], SILENCE);
+        assert_eq!(ab[0], snd_mix_average(b[0], step1));
+
+        // A SHORTER source stops contributing without truncating the mix.
+        let short = [0xFFu8; 2];
+        let long = [0x40u8; 4];
+        let mut out = [0u8; 4];
+        let written = mix_unsigned_pcm_sources(&[&short, &long], &mut out);
+        assert_eq!(written, 4, "the longest source sets the length");
+        assert_eq!(out[3], snd_mix_average(long[3], SILENCE), "past the short source");
+
+        // Silence is 0x80: mixing nothing leaves the buffer at the zero level.
+        let mut empty = [0u8; 4];
+        assert_eq!(mix_unsigned_pcm_sources(&[], &mut empty), 0);
+        assert_eq!(empty, [SILENCE; 4]);
+    }
 
     /// `add al,X / rcr al,1` versus the port's 16-bit average, over ALL 65536
     /// input pairs.

@@ -5744,3 +5744,32 @@ per-frame seed, and the second would add shimmer the original never had.
 One real divergence, recorded rather than fixed: the game seeds from the RTC, so
 its star positions differ per session. The port's fixed seed makes them
 reproducible, which the oracle comparisons rely on.
+
+## #183 — mixing N sources, and stopping before the part I cannot verify
+
+#135 recorded that the game MIXES by averaging while the port runs three
+independent cpal streams the driver sums at full amplitude. The primitive was
+decoded; nothing used it.
+
+`mix_unsigned_pcm_sources` now applies it to N sources, and writing it settled two
+things that a naive mixer gets wrong:
+
+* **Order matters.** `0xBB6D` averages ONE source into the destination, so mixing
+  three is that applied three times — each earlier source halved again by every
+  later mix, the last dominating. That is not a rounding artefact to correct into
+  an equal-weight average; it is what the routine does, and the test asserts that
+  swapping two sources changes the result.
+* **Silence is `0x80`, not `0`.** Unsigned PCM's zero level is mid-scale; starting
+  the buffer at `0` would drag every mix toward full-negative.
+
+A shorter source stops contributing without truncating the mix, so the output
+length is the longest source.
+
+What I did NOT do: rewire `audio.rs`. That means replacing three cpal streams with
+one mixed stream, and this environment has no audio device — the change would be
+unverifiable here, and an unverifiable edit to the output path is precisely what
+this campaign should not make on faith. The port-validation row now says the rule
+is decoded and tested at both levels and names the remaining work as the rewiring.
+
+Same judgement as #138: implement what can be verified, state the blocker, do not
+bridge it to make the pieces appear connected.
