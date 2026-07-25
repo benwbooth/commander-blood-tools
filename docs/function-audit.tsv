@@ -270,20 +270,24 @@ MENU_ROW_DAC_BASE	src/bridge.rs	67	const	0x8697	ASM	/// The five menu rows' glyp
 MENU_ROW_IDLE_DAC	src/bridge.rs	70	const	0x8636,0x863F	ASM?	/// Idle row colour, 6-bit DAC (`0x8636..0x863F`: five entries of 16,12,0 — /// dark gold).
 MENU_ROW_HOVER_DAC	src/bridge.rs	72	const	0x869D,0x86A3	ASM?	/// Hovered row colour, 6-bit DAC (`0x869D..0x86A3`: 63,0,0 — bright red).
 StationRecord	src/bridge.rs	79	struct	0x2A1B	ASM?	/// One clickable record of the 6-entry table at `DS:0x2A1B` (0x18-byte stride). /// The four panorama stations' records get their orb rectangle refreshed from /// the loaded frame's chunk header; the
-STATION_REST_FRAMES	src/bridge.rs	94	const	0x2A1B,0x000,0x05A,0x0B4,0x10E	ASM?	/// Station rest frames observed in the live table (`BRIDGEPROBE` dump of /// `DS:0x2A1B` at the console: targets 0x000/0x05A/0x0B4/0x10E doubled): /// helm 0, golden menu 45, pyramid nav room 90, org
-BridgeView	src/bridge.rs	99	struct		UNVERIFIED	/// The decompiled bridge view state — the DS globals the steering, seek, and /// menu code touch, as one struct.
-default	src/bridge.rs	129	fn		UNVERIFIED	
-wrap	src/bridge.rs	153	fn		UNVERIFIED	
-ring_delta	src/bridge.rs	158	fn		UNVERIFIED	/// Shortest signed distance from `from` to `to` on a ring of `modulus`.
-mouse_screen_x	src/bridge.rs	169	fn	0x97FC	ASM?	/// The mouse cursor's screen-space x for the current view /// (`ring - (frame * 8 - 160)`, the `0x97FC` rebase).
-move_mouse	src/bridge.rs	178	fn		UNVERIFIED	/// Feed relative mouse motion (the port's stand-in for the original's /// warped hardware cursor: motion accumulates in ring space).
-update_view	src/bridge.rs	193	fn	0x9656,0x97E3,0x97E4,0x97F6,0xa2a,0xfff8	ASM?	/// One tick of the view state machine (`0x9656..0x97E3`). Returns true if /// the frame changed (the original's carry flag, telling the caller to /// redraw the panorama). /// /// Every path through 
-update_view_steer	src/bridge.rs	200	fn		UNVERIFIED	
-set_frame_orb_box	src/bridge.rs	266	fn	0x9860,0x9889	ASM?	/// Refresh the current frame's station record with its orb rectangle, as /// the frame loader does (`0x9860..0x9889`): all four boxes reset, then the /// loaded chunk's box stored on its own station'
-menu_row_under_cursor	src/bridge.rs	278	fn	0x8613,0x868D	ASM?	/// Menu row under the cursor, if the menu is in view and the cursor is /// inside the box — the hit math of `0x8613..0x868D`. Returns 0..=4 top to /// bottom (HONK, TELEPHONE, CRYOBOX, MENU, OPTION).
-click	src/bridge.rs	305	fn	0x86A4,0x86F1,0x7DC8,0x7DE6	ASM?	/// A mouse-button press on the bridge (`0x86A4..0x86F1` menu path, /// `0x7DC8..0x7DE6` orb path). Returns the newly selected menu item /// (1..=5) if a menu row was clicked.
-release_menu	src/bridge.rs	346	fn		UNVERIFIED	/// Release the engaged menu item (the selected screen was closed): clears /// the selection and the cursor clamp.
-apply_menu_palette	src/bridge.rs	355	fn	0x862B,0x86A3	ASM?	/// Program the five menu-row DAC entries (game palette indices /// 0x7B..0x7F): all idle, then the hovered row bright — the per-tick DAC /// writes of `0x862B..0x86A3`. Only touches the palette while
+STATION_REST_FRAMES	src/bridge.rs	106	const	0x2A1B,0xFE3B,0x7DAB,0x6D4,0x9642,0x985F,0xFFFFFF,0x000,0x05	DATA	/// Station rest frames, read from the STATIC station-record table in the image — /// not from a probe dump, which is what this used to cite. /// /// `DS:0x2A1B` (file `0xFE3B`) is an array of SIX 24-
+STATION_RECORD_TABLE_FILE_OFFSET	src/bridge.rs	109	const	0x2A1B,0xD420	DATA	/// `DS:0x2A1B` -> file offset of the station-record array (`0xD420 + 0x2A1B`).
+STATION_RECORD_COUNT	src/bridge.rs	111	const	0x7DA8	DATA	/// Six records (`mov cx,6` @`0x7DA8`).
+STATION_RECORD_STRIDE	src/bridge.rs	113	const	0x7E0E	DATA	/// 24 bytes each (`add bp,0x18` @`0x7E0E`).
+STATION_RECORD_REST_ANGLE_OFFSET	src/bridge.rs	115	const		DATA	/// Rest angle in degrees at `+0xA`; the panorama frame is half of it.
+BridgeView	src/bridge.rs	120	struct		UNVERIFIED	/// The decompiled bridge view state — the DS globals the steering, seek, and /// menu code touch, as one struct.
+default	src/bridge.rs	150	fn		UNVERIFIED	
+wrap	src/bridge.rs	174	fn		UNVERIFIED	
+ring_delta	src/bridge.rs	179	fn		UNVERIFIED	/// Shortest signed distance from `from` to `to` on a ring of `modulus`.
+mouse_screen_x	src/bridge.rs	190	fn	0x97FC	ASM?	/// The mouse cursor's screen-space x for the current view /// (`ring - (frame * 8 - 160)`, the `0x97FC` rebase).
+move_mouse	src/bridge.rs	199	fn		UNVERIFIED	/// Feed relative mouse motion (the port's stand-in for the original's /// warped hardware cursor: motion accumulates in ring space).
+update_view	src/bridge.rs	214	fn	0x9656,0x97E3,0x97E4,0x97F6,0xa2a,0xfff8	ASM?	/// One tick of the view state machine (`0x9656..0x97E3`). Returns true if /// the frame changed (the original's carry flag, telling the caller to /// redraw the panorama). /// /// Every path through 
+update_view_steer	src/bridge.rs	221	fn		UNVERIFIED	
+set_frame_orb_box	src/bridge.rs	287	fn	0x9860,0x9889	ASM?	/// Refresh the current frame's station record with its orb rectangle, as /// the frame loader does (`0x9860..0x9889`): all four boxes reset, then the /// loaded chunk's box stored on its own station'
+menu_row_under_cursor	src/bridge.rs	299	fn	0x8613,0x868D	ASM?	/// Menu row under the cursor, if the menu is in view and the cursor is /// inside the box — the hit math of `0x8613..0x868D`. Returns 0..=4 top to /// bottom (HONK, TELEPHONE, CRYOBOX, MENU, OPTION).
+click	src/bridge.rs	326	fn	0x86A4,0x86F1,0x7DC8,0x7DE6	ASM?	/// A mouse-button press on the bridge (`0x86A4..0x86F1` menu path, /// `0x7DC8..0x7DE6` orb path). Returns the newly selected menu item /// (1..=5) if a menu row was clicked.
+release_menu	src/bridge.rs	367	fn		UNVERIFIED	/// Release the engaged menu item (the selected screen was closed): clears /// the selection and the cursor clamp.
+apply_menu_palette	src/bridge.rs	376	fn	0x862B,0x86A3	ASM?	/// Program the five menu-row DAC entries (game palette indices /// 0x7B..0x7F): all idle, then the hovered row bright — the per-tick DAC /// writes of `0x862B..0x86A3`. Only touches the palette while
 ConceptMenu	src/concept_menu.rs	24	struct		UNVERIFIED	/// One decoded concept menu: the byte offset of its `0xA3` opcode in the `.BAS` /// image, and the ordered topic labels (as stored — lowercase; the square-caps /// menu font renders them uppercase).
 parse_dic	src/concept_menu.rs	32	fn		UNVERIFIED	/// Parse a `SCRIPTn.DIC` into {byte offset -> word}. Words are NUL-terminated.
 is_concept_label	src/concept_menu.rs	38	fn		UNVERIFIED	/// A dictionary word is a valid CONCEPT label if it is a single token (no spaces /// — sentence fragments in the script are multi-word) of a menu-plausible length.

@@ -88,10 +88,31 @@ pub struct StationRecord {
     pub orb_box: Option<[u16; 4]>,
 }
 
-/// Station rest frames observed in the live table (`BRIDGEPROBE` dump of
-/// `DS:0x2A1B` at the console: targets 0x000/0x05A/0x0B4/0x10E doubled):
-/// helm 0, golden menu 45, pyramid nav room 90, organic Orxx 135.
+/// Station rest frames, read from the STATIC station-record table in the image —
+/// not from a probe dump, which is what this used to cite.
+///
+/// `DS:0x2A1B` (file `0xFE3B`) is an array of SIX 24-byte records: the walker at
+/// `0x7DAB` is `mov bp,0x2A1B / mov cx,6 / ... / add bp,0x18 / loop`, dispatching
+/// each through `call word cs:[bx+0x6D4]`. `0x9642` clears the array the same way
+/// (`mov word [bp],0`, 6 iterations) and `0x985F` fills `+0xC..+0x1C` with
+/// `0xFFFFFFFF` — the orb box, four words, matching [`StationRecord::orb_box`].
+///
+/// Field `+0xA` is the rest ANGLE in degrees: records 0..5 hold
+/// `0x000, 0x05A, 0x0B4, 0x10E, 0, 0` in the file at `0xFE45`, `0xFE5D`, `0xFE75`,
+/// `0xFE8D`. At 2° per panorama frame ([`crate::tbbig::PANORAMA_FRAME_COUNT`] =
+/// 180 over 360°) that is frames 0, 45, 90, 135 — helm, golden menu, pyramid nav
+/// room, organic Orxx. `station_rest_frames_match_the_static_record_table` reads
+/// those bytes back out of BLOODPRG.EXE.
 pub const STATION_REST_FRAMES: [u16; 4] = [0, 45, 90, 135];
+
+/// `DS:0x2A1B` -> file offset of the station-record array (`0xD420 + 0x2A1B`).
+pub const STATION_RECORD_TABLE_FILE_OFFSET: usize = 0xFE3B;
+/// Six records (`mov cx,6` @`0x7DA8`).
+pub const STATION_RECORD_COUNT: usize = 6;
+/// 24 bytes each (`add bp,0x18` @`0x7E0E`).
+pub const STATION_RECORD_STRIDE: usize = 0x18;
+/// Rest angle in degrees at `+0xA`; the panorama frame is half of it.
+pub const STATION_RECORD_REST_ANGLE_OFFSET: usize = 0x0A;
 
 /// The decompiled bridge view state — the DS globals the steering, seek, and
 /// menu code touch, as one struct.
@@ -375,6 +396,42 @@ impl BridgeView {
 
 #[cfg(test)]
 mod tests {
+
+    /// The rest frames come from the game's own STATION-RECORD TABLE, so they are
+    /// checkable against the image rather than against a memory dump. Six 24-byte
+    /// records at file 0xFE3B (`DS:0x2A1B`); field +0xA is the rest angle in
+    /// degrees, and the panorama frame is half of it (2 degrees per frame).
+    #[test]
+    fn station_rest_frames_match_the_static_record_table() {
+        let Some(image) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+            .ok()
+        else {
+            eprintln!("skipping: BLOODPRG.EXE not available");
+            return;
+        };
+
+        let angle_at = |record: usize| -> u16 {
+            let at = STATION_RECORD_TABLE_FILE_OFFSET
+                + record * STATION_RECORD_STRIDE
+                + STATION_RECORD_REST_ANGLE_OFFSET;
+            u16::from_le_bytes([image[at], image[at + 1]])
+        };
+
+        // The four stations the bridge exposes, and the two unused trailing records.
+        assert_eq!(
+            (0..STATION_RECORD_COUNT).map(angle_at).collect::<Vec<_>>(),
+            vec![0x000, 0x05A, 0x0B4, 0x10E, 0, 0],
+            "station rest angles in the static image"
+        );
+        for (station, &frame) in STATION_REST_FRAMES.iter().enumerate() {
+            assert_eq!(
+                frame,
+                angle_at(station) / 2,
+                "station {station}: frame is half the recorded angle"
+            );
+        }
+    }
     use super::*;
 
     /// The three live BRIDGEPROBE observations, replayed through the ported

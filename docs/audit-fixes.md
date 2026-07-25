@@ -3466,3 +3466,50 @@ those files were cleared by the tautological rule removed in #103, and no
 against the overlay, which is a task, not a blocker.
 
 Settled: 522 -> 528 of 2143.
+
+## #107 — a "probe dump" constant that was static in the image all along
+
+`STATION_REST_FRAMES` cited its own provenance honestly and wrongly:
+
+    /// Station rest frames observed in the live table (`BRIDGEPROBE` dump of
+    /// `DS:0x2A1B` at the console: targets 0x000/0x05A/0x0B4/0x10E doubled)
+
+A runtime memory dump is better than a screenshot — it reads the game's own data
+rather than pixels — but it is still an observation standing in for the binary,
+and the prime rule wants the binary. So: is `DS:0x2A1B` static?
+
+The first look said no. `DS:0x2A1B` is file `0xD420 + 0x2A1B = 0xFE3B`, and those
+bytes are `0x0001, 0x0011, 0xFFFF, 0, 0...` — nothing like the probe's values.
+That looked like a table built at runtime, which would have made the dump the only
+available source.
+
+It was the wrong question. Cross-referencing the address found the walker at
+`0x7DAB`:
+
+    mov bp,0x2A1B / mov cx,6 / ... / add bp,0x18 / loop 0x7DAE
+
+— SIX records of 0x18 bytes, dispatched through `call word cs:[bx+0x6D4]`, with
+`0x9642` clearing the array the same way and `0x985F` filling `+0xC..+0x1C` with
+`0xFFFFFFFF` (four words: the orb box, matching `StationRecord::orb_box`). The
+rest angle is field `+0xA`, so the first dump had only covered record 0 — whose
+angle is 0. Reading `+0xA` across all six records gives
+
+    0x000, 0x05A, 0x0B4, 0x10E, 0, 0   at 0xFE45, 0xFE5D, 0xFE75, 0xFE8D
+
+exactly what the probe saw. The data was static the whole time; the dump was
+reading the file back to itself.
+
+The constant now cites the static table, the record layout is decoded into named
+constants (count, stride, field offset), and
+`station_rest_frames_match_the_static_record_table` reads the bytes out of
+BLOODPRG.EXE and checks that each frame is half its recorded angle (2° per
+panorama frame over 180 frames). `re/tools/ds_dump.py` was added to make "what is
+actually at this DS address" a one-liner, since that question is what separates a
+decoded constant from an observed one.
+
+`CONSOLE_REST_FRAME = 55` in `tbbig.rs` is the remaining constant of this kind
+(`observed via BRIDGEPROBE`). It is TEST-ONLY — nothing in the port's render path
+reads it — so it is a fixture, not a behaviour defect, and it is not one of the
+four station rest frames. Left as `ORACLE?` deliberately.
+
+Settled: 528 -> 533 of 2147.
