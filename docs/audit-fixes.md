@@ -1128,3 +1128,27 @@ sequences in one run rather than one guess per run.
 
 The value already banked is that this path was IMPOSSIBLE before: the launcher looped the
 attract demo and the save file was not where the game looks.
+
+### Launch fix — re-validated against a CONTROL, and the claim held
+
+I had called the fix validated on the strength of one capture showing a title screen with
+the pyramid grid. That was weak: an attract demo would also show an animated title with
+pyramids, and none of my driven inputs changed the screen state, which is exactly what an
+input-ignoring attract loop looks like. So I ran the control I should have run first —
+the OLD launch (one drive, no arguments) under identical conditions.
+
+They are plainly different:
+
+* **Broken launch** (`accuracy/captures/drive_validation/control_noargs_attract.png`) —
+  a spaceship over a planet: the intro cinematic / attract sequence.
+* **Fixed launch** (`.../fixed_launch_titlenav.png`) — the `Commander BLOOD V 1.0` title
+  over the BCARTE pyramid grid and the BORXX orb.
+
+So the fix does reach a further state and the original claim stands. Recording that the
+doubt was checked rather than argued away — the control cost one run and converted "this
+looks right" into "these are measurably different screens".
+
+Corollary for the remaining task: the driven inputs not advancing past the title is NOT
+evidence the launch is still broken. It means the title/intro sequence has its own
+advance condition that Escape, Return, space, F1 and clicks at five positions do not
+satisfy.
