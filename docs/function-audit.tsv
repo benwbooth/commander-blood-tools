@@ -527,9 +527,9 @@ run_ship_3d_navigation_sequence_update	src/ship3d.rs	1287	fn		INFRA?
 run_ship_3d_procedural_update	src/ship3d.rs	1348	fn		INFRA?	
 build_ship_3d_projection_matrix	src/ship3d.rs	1490	fn		ASM	|| AUDIT 2026-07-24: builder 0x9940..0x99DA verified term-by-term. The NEG ASYMMETRY is REAL and faithful: term[1] @0x995C-0x995F does `neg eax` THEN `sar eax,0xf` (negate before shift), while term[4] @0x99B4-0x99B8 does `sar eax,0xf` THEN `neg eax` (negate after). Only ONE `neg eax; sar eax,0xf` exists in the whole image (0x995C), confirming exactly one term negates before shifting. Validates both the earlier term[1] fix and leaving term[4] unchanged. All products are Q15 (imul + sar 0xf)
 project_ship_3d_point	src/ship3d.rs	1528	fn		ASM	|| AUDIT 2026-07-24: verified against the point-cloud projector 0x9A34..0x9A7C and the sprite projector 0x9C43..0x9CA7: depth = dot(terms 6,7,8 at [bp+0x18/0x1C/0x20]) >> 15 with BOTH the je (==0) and js (<0) skips = the port depth<=0 -> None; screen x = dot(terms 0,1,2) >> 7 / depth + 0xA0(160); screen y = dot(terms 3,4,5) >> 7 / depth + 0x64(100). Constants 15/7/160/100 all confirmed
-plot_ship_3d_projected_point	src/ship3d.rs	1571	fn		UNVERIFIED	
-ship_3d_projected_point_shade	src/ship3d.rs	1595	fn		UNVERIFIED	
-ship_3d_projected_point_offset	src/ship3d.rs	1599	fn		UNVERIFIED	
+plot_ship_3d_projected_point	src/ship3d.rs	1571	fn		ASM	|| AUDIT 2026-07-24: ASM-VERIFIED against the plot routine 0x9B04..0x9B41. Bounds are SIGNED compares (JL/JGE at 0x9B0E/0x9B14/0x9B1D/0x9B23 against the clip words DS:0x5235/0x5237/0x5239/0x523B), matching the ports signed_i16 tests. And the OCCLUSION rule is exact: MOV AL,es:[di] / OR AL,AL / JNE skip means a point is drawn ONLY where the destination pixel is still zero -- the port `if *pixel != 0 { return None }`. Called once per point by the 1000-iteration cloud loop at 0x9A1D (cx = 0x3E8, source DS:0x2FC1)
+ship_3d_projected_point_shade	src/ship3d.rs	1595	fn		ASM	|| AUDIT 2026-07-24: ASM-VERIFIED against 0x9B37..0x9B3F: MOV AX,[bp+0x28] (the depth) / SHR AX,0x0C / NEG AL / ADD AL,0xEF. That is 0xEF - (depth >> 12), confirming SHIP_3D_PROJECTION_SHADE_BASE = 239 and SHIP_3D_PROJECTION_SHADE_SHIFT = 12 from the instructions that produce them
+ship_3d_projected_point_offset	src/ship3d.rs	1599	fn		ASM	|| AUDIT 2026-07-24: ASM-VERIFIED against 0x9B25..0x9B2E: MOV DI,BX / XCHG BH,BL / SHL DI,6 / ADD DI,BX / ADD DI,AX -- the classic y*64 + y*256 = y*320 decomposition, then + x. Exactly the port y * SHIP_3D_PROJECTION_SCREEN_WIDTH + x
 BloodPrng	src/ship3d.rs	1618	struct		UNVERIFIED	
 default	src/ship3d.rs	1631	fn		UNVERIFIED	/// The static (unseeded) state from the shipped BLOODPRG.EXE image.
 seeded_from_rtc_seconds	src/ship3d.rs	1646	fn	0x2DD3,0xAEE	ASM?	/// Seed as the DOS routine at `0x2DD3` does: it reads the CMOS RTC seconds /// byte (`out 0x70 / in 0x71`) and writes it into both halves of the XOR /// seed word (`mov ah,al; mov cs:[0xAEE],ax`), le
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                                               
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                                                
