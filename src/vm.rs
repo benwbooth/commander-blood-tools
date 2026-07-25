@@ -4494,7 +4494,14 @@ impl VmMachine {
     /// This is pure record-table logic — directory plus `gs:0x6724` — so it needs
     /// no frontend state, which is what makes the C1 nav-source path portable.
     pub fn build_nav_source_list(&self, target: u16) -> Vec<u16> {
-        fn walk(m: &VmMachine, target: u16, out: &mut Vec<u16>, depth: usize) {
+        // Named for its selector so it does not collide with the token walker
+        // `walk` in this same file (the audit ledger keys rows by name+file).
+        fn walk_selector11_children(
+            m: &VmMachine,
+            target: u16,
+            out: &mut Vec<u16>,
+            depth: usize,
+        ) {
             if depth > 32 {
                 return; // cycle guard; the game's data is a tree
             }
@@ -4515,11 +4522,11 @@ impl VmMachine {
                     continue;
                 }
                 out.push(obj);
-                walk(m, obj, out, depth + 1);
+                walk_selector11_children(m, obj, out, depth + 1);
             }
         }
         let mut out = Vec::new();
-        walk(self, target, &mut out, 0);
+        walk_selector11_children(self, target, &mut out, 0);
         out
     }
 

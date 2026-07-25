@@ -1696,3 +1696,40 @@ from record state alone. NOT ported: the window CHROME — the blit at
 `0x299:0x40E` takes its source from `[0xAC8] = 0x5F11`, a handle whose resolution
 is undecoded. That is the next piece, and it is recorded at `0x339E` rather than
 guessed at.
+
+## FIX #51 — the audit ledger destroyed its own curation on every regeneration
+
+`CLAUDE.md` says to regenerate `docs/function-audit.tsv` after each verification
+pass. Doing that threw the pass away.
+
+`tools/audit_inventory.py` assigns each row a status from doc-comment
+HEURISTICS — it can only ever produce `ASM?`, `ORACLE?`, `DATA?`, `INFRA?` or
+`UNVERIFIED`. The settled statuses (`ASM`, `ORACLE`, `DATA`, `INFRA`) are what a
+human writes after checking a row against the disassembly. The script wrote a
+fresh file every run, so those 263 hand-verified rows reverted to guesses. I hit
+this by regenerating and watching `ASM 103 -> 0`, `ORACLE 126 -> 0`.
+
+The fix reads the previous ledger first and carries settled statuses forward,
+with three levels of identity because `(item, file)` is NOT a key:
+
+1. unique name in the file, both before and after -> carry it;
+2. name occurs more than once but the CITED ADDRESSES differ, and the origin is
+   unique on both sides -> carry by origin (this is what separates the token
+   walker `walk` from a nested helper);
+3. still indistinguishable (two `default` trait impls) but the file has the SAME
+   NUMBER of them -> carry BY POSITION.
+
+Anything that survives all three is DROPPED and printed, because crediting the
+wrong function is worse than losing a row. The run now reports every recovery
+path and every drop.
+
+Verified: regenerating from the committed ledger reproduces its exact settled
+counts (ASM 103, ORACLE 126, DATA 10, INFRA 24) and a second run is idempotent.
+One row is genuinely unresolvable — a second `owner_object_offset` in `src/vm.rs`
+that the old ledger never had a settled row for — and it is reported every run
+rather than silently guessed.
+
+Also renamed the nested `walk` inside `build_nav_source_list` to
+`walk_selector11_children`: it collided with the token walker in the same file,
+and level 2 could not separate them because neither carries an origin. Making the
+name unique is a better fix than teaching the tool to guess.
