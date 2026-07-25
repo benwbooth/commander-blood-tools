@@ -1191,6 +1191,85 @@ mod tests {
         }
     }
 
+    /// The NAV-CHART PICKER against its lift (`func_92a3`).
+    ///
+    /// This one checks a decode made THIS session by hand: `nav_chart_pick` was
+    /// written by reading `0x92A3` off the disassembly, so running it against the
+    /// lifted original is an independent check of that reading — per-kind hit
+    /// boxes, the `(x-2, y-2)` origin, inclusive bounds, first hit wins, and the
+    /// black hole's second endpoint when `obj+0x14` differs from `arche+0x22`.
+    #[test]
+    fn native_nav_chart_pick_matches_the_lift() {
+        const GS: u16 = 0x2600;
+        const LIST_DS: u32 = 0x2AD3;
+        const COUNT_DS: u32 = 0x27C1;
+        const MOUSE_X: u32 = 0x0A2A;
+        const MOUSE_Y: u32 = 0x0A2C;
+        const ARCHE_PTR: u32 = 0x6752;
+        const RECORDS: u32 = 0x6724; // far pointer to the record table
+        const ARCHE: u16 = 0x0040;
+        const PLANET: u16 = 0x0100;
+        const SHIP: u16 = 0x0200;
+        const HOLE: u16 = 0x0300;
+        const CONTEXT: u16 = 7;
+
+        // Build the record table once, in a segment the far pointer names.
+        let mut native = crate::vm::VmMachine::new();
+        for (obj, kind, x, y) in [
+            (PLANET, 0u16, 50u16, 60u16),
+            (SHIP, crate::vm::LOCATION_KIND_SHIP, 100, 60),
+            (HOLE, crate::vm::LOCATION_KIND_BLACK_HOLE, 150, 60),
+        ] {
+            native.rec_write_pub(obj, kind);
+            native.rec_write_pub(obj + crate::vm::NAV_PICK_POSITION_FIELD, x);
+            native.rec_write_pub(obj + crate::vm::NAV_PICK_POSITION_FIELD + 2, y);
+        }
+        native.rec_write_pub(HOLE + 0x14, CONTEXT);
+        native.rec_write_pub(HOLE + crate::vm::NAV_PICK_POSITION_FIELD + 4, 250);
+        native.rec_write_pub(HOLE + crate::vm::NAV_PICK_POSITION_FIELD + 6, 90);
+        let list = [PLANET, SHIP, HOLE];
+
+        let probes = [
+            (48i32, 58i32), (60, 66), (61, 58), (98, 58), (120, 58), (98, 70),
+            (148, 58), (163, 64), (164, 58), (5, 5), (250, 90), (52, 62),
+        ];
+        for (mx, my) in probes {
+            let mut m = Machine::new();
+            m.regs.ds = GS;
+            m.regs.gs = GS;
+            m.regs.es = GS;
+            m.regs.ss = GS;
+            m.regs.set_sp(0xFF00);
+            // records: a far pointer at gs:0x6724 -> the same segment, offset 0
+            m.write16(GS, RECORDS, 0);
+            m.write16(GS, RECORDS + 2, GS);
+            for (i, obj) in list.iter().enumerate() {
+                m.write16(GS, LIST_DS + (i as u32) * 2, *obj);
+            }
+            m.write16(GS, LIST_DS + (list.len() as u32) * 2, 0xFFFF);
+            m.write16(GS, COUNT_DS, list.len() as u16);
+            m.write16(GS, MOUSE_X, mx as u16);
+            m.write16(GS, MOUSE_Y, my as u16);
+            m.write16(GS, ARCHE_PTR, ARCHE);
+            m.write16(GS, u32::from(ARCHE) + 0x22, CONTEXT);
+            for obj in list {
+                for off in (0..0x24u32).step_by(2) {
+                    m.write16(GS, u32::from(obj) + off, native.rec_read_pub(obj + off as u16));
+                }
+            }
+            let sp = m.regs.sp() as u32;
+            m.write16(m.regs.ss, sp, 0x0000);
+            m.write16(m.regs.ss, sp.wrapping_add(2), 0x0020);
+            super::auto::func_92a3(&mut m);
+            let lifted = m.regs.ax();
+            let ours = native.nav_chart_pick(&list, (mx, my), CONTEXT).unwrap_or(0);
+            assert_eq!(
+                lifted, ours,
+                "mouse ({mx},{my}): lift {lifted:#06x} vs native {ours:#06x}"
+            );
+        }
+    }
+
     /// The DEPTH SCROLL against its lift (`func_b75c`), swept.
     ///
     /// `0xB75C` moves `[0x2527]` toward its limit by `[0x2531]`, gated on the

@@ -2859,3 +2859,27 @@ THREE HARNESS TRAPS, all of which first looked like port defects:
 The last of those is a genuine finding about the game, not just about testing: it
 explains the space-padded save buffer, why backspace writes `0x20`, and the
 `"ab             \0"` in the shipped `blood.sav`.
+
+## FIX #87 — checking THIS session's own hand decode against the lift
+
+The twin campaign verified code written by earlier sessions. This turns the same
+instrument on work done today: `nav_chart_pick` was written by reading `0x92A3`
+off the disassembly during FIX #52, and `func_92a3` is an oracle-verified lift of
+the same routine. Running one against the other is an independent check of MY
+reading.
+
+Twelve probes — inside each marker, on the far edge, one pixel past it, in the
+gaps between markers, off-chart, and the black hole's second endpoint — and the
+hand decode matches everywhere. The per-kind hit boxes, the `(x-2, y-2)` origin,
+the inclusive bounds and first-hit-wins all hold.
+
+That is worth more than it looks. Every decode this session rests on my reading of
+a disassembly listing, and the sessions's own tally says that reading is fallible:
+four wrong instruction citations (#59, #79), a dead end that had the right answer
+in it (#73), three harness traps mistaken for defects (#82, #84, #85). Where a
+lift exists, the decode can be CHECKED rather than trusted — and this one survived.
+
+Three rows to `ORACLE`. The remaining twins with lifts available are
+`confirm_box_click` (`0x8295`), `build_active_object_list` (`0x604E`) and
+`game_font_drawn_width` (`0x3192`) — all also decoded this session, all checkable
+the same way.
