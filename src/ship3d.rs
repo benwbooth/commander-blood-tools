@@ -31,10 +31,17 @@ pub const SHIP_3D_TARGET_LAYOUT_WIDTH_PADDING: u16 = 20;
 pub const SHIP_3D_TARGET_LAYOUT_ROW_STEP: u16 = 11;
 pub const SHIP_3D_TARGET_LAYOUT_EXTRA_HEIGHT: u16 = 10;
 pub const SHIP_3D_TARGET_LAYOUT_HEIGHT_PADDING: u16 = 8;
+/// `sub bp,0xc8` @`0x84B9` — the 200-row screen the box is centred in.
 pub const SHIP_3D_TARGET_LAYOUT_SCREEN_HEIGHT: u16 = 200;
 pub const SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN: u16 = 0xffff;
+/// `add cx,4` @`0x84E6` — the row origin's inset below the box top, shared by the
+/// hit-test and the draw.
 pub const SHIP_3D_TARGET_HIT_TEST_TOP_INSET: u16 = 4;
+/// `sub bp,8` @`0x84FF` — the hit area is `height - 8`, so the 8px of chrome the
+/// layout adds (`add bp,8` @`0x84A7`) is not clickable.
 pub const SHIP_3D_TARGET_HIT_TEST_BOTTOM_INSET: u16 = 8;
+/// `cmp word [0xa34],6` @`0x850F` — the HOVER presentation mode the hit-test
+/// requests when the cursor is over a row.
 pub const SHIP_3D_TARGET_HOVER_PRESENTATION_MODE: u16 = 6;
 pub const SHIP_3D_TARGET_ACTIVE_PRESENTATION_MODE: u16 = 7;
 pub const SHIP_3D_TARGET_IDLE_PRESENTATION_MODE: u16 = 1;

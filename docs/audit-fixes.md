@@ -5004,3 +5004,28 @@ drifting off the drawn one — the same failure #148 removed by making the nav
 sector's draw and click share one expression.
 
 Cited instructions 187 -> 194; the queue 69 -> 68.
+
+## #155 — citing the constant, not just the function that uses it
+
+#154 documented `hit_test_ship_3d_target_list` and the settle tool immediately
+REFUSED `SHIP_3D_TARGET_HIT_TEST_TOP_INSET`: "ASM needs a cited address". Correct
+— the citation had gone on the FUNCTION, and the constant is its own ledger row
+with its own evidence requirement.
+
+That distinction is not bookkeeping. A constant used in one place today gets used
+in three tomorrow, and the reader who finds it at its definition sees `= 4` with
+nothing attached. Four now carry their own instruction:
+
+    SHIP_3D_TARGET_LAYOUT_SCREEN_HEIGHT  200  sub bp,0xc8  @0x84B9
+    SHIP_3D_TARGET_HIT_TEST_TOP_INSET      4  add cx,4     @0x84E6
+    SHIP_3D_TARGET_HIT_TEST_BOTTOM_INSET   8  sub bp,8     @0x84FF
+    SHIP_3D_TARGET_HOVER_PRESENTATION_MODE 6  cmp [0xa34],6 @0x850F
+
+The pairing is the useful part: `add bp,8` in the layout and `sub bp,8` in the hit
+test are the same 8, which is why the box is drawn larger than it is clickable.
+Documented apart, they are two magic eights; documented together, one is the
+chrome and the other is its exclusion.
+
+The tool refusing to settle a row whose evidence sits somewhere else is the
+behaviour that made this visible, and it is worth keeping strict for exactly that
+reason.

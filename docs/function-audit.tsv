@@ -824,334 +824,334 @@ SHIP_3D_TRANSITION_OPEN_STEP	src/ship3d.rs	6	const	0x2531,0xB6A0	ASM	/// `mov by
 SHIP_3D_TRANSITION_CLOSE_STEP	src/ship3d.rs	9	const	0x2531,0xB6B8	ASM	/// `mov byte [0x2531],8` @`0xB6B8` — the CLOSE step, written when the timer /// reaches zero while armed. Closing steps twice as fast as opening.
 SHIP_3D_TRANSITION_OPEN_TIMER_THRESHOLD	src/ship3d.rs	12	const	0xb3b,0xB699	ASM	/// `cmp word [0xb3b],0x78` @`0xB699` — 120 ticks. `jbe` falls through, so the /// transition arms only once the timer is ABOVE it, not at it.
 SHIP_3D_PLANE_ROW_BYTES	src/ship3d.rs	14	const	0xB721	ASM	/// `dl = 0x50` @`0xB721`, the row stride the band copy multiplies by.
-SHIP_3D_PLANE_PAGE_BYTES	src/ship3d.rs	15	const	0xB71E,0xc000,0xB718	ASM?	/// `add ax,0x23` @`0xB71E` — 35 rows added to the depth offset before the /// multiply, so a zero depth still copies 35 rows. /// `mov si,0xc000` @`0xB718` — the source page the copy reads from.
+SHIP_3D_PLANE_PAGE_BYTES	src/ship3d.rs	15	const	0xB71E,0xc000,0xB718,0x84B9,0x84E6,0x84FF,0x84A7,0xa34,0x850	ASM?	/// `add ax,0x23` @`0xB71E` — 35 rows added to the depth offset before the /// multiply, so a zero depth still copies 35 rows. /// `mov si,0xc000` @`0xB718` — the source page the copy reads from. /// 
 SHIP_3D_PLANE_BASE_ROWS	src/ship3d.rs	18	const	0xB71E	ASM	/// `add ax,0x23` @`0xB71E` — 35 rows added to the depth offset before the /// multiply, so a zero depth still copies 35 rows.
 SHIP_3D_PLANE_SOURCE_PAGE0_OFFSET	src/ship3d.rs	20	const	0xc000,0xB718	ASM	/// `mov si,0xc000` @`0xB718` — the source page the copy reads from.
-SHIP_3D_PLANE_SOURCE_PAGE1_OFFSET	src/ship3d.rs	21	const		UNVERIFIED	
-SHIP_3D_PLANE_DEST_BYTES	src/ship3d.rs	22	const		UNVERIFIED	
-SHIP_3D_SCROLL_MODE_HOLD	src/ship3d.rs	23	const		UNVERIFIED	
-SHIP_3D_TARGET_EXIT_SENTINEL	src/ship3d.rs	24	const		UNVERIFIED	
-SHIP_3D_TARGET_RECORD_HEADER_BYTES	src/ship3d.rs	25	const		UNVERIFIED	
-SHIP_3D_TARGET_OPEN_STEP	src/ship3d.rs	26	const		UNVERIFIED	
-SHIP_3D_INTERPOLATION_WORDS	src/ship3d.rs	27	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_DEFAULT_MAX_WIDTH	src/ship3d.rs	28	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_EXTRA_WIDTH	src/ship3d.rs	29	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_WIDTH_PADDING	src/ship3d.rs	30	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_ROW_STEP	src/ship3d.rs	31	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_EXTRA_HEIGHT	src/ship3d.rs	32	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_HEIGHT_PADDING	src/ship3d.rs	33	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_SCREEN_HEIGHT	src/ship3d.rs	34	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN	src/ship3d.rs	35	const		UNVERIFIED	
-SHIP_3D_TARGET_HIT_TEST_TOP_INSET	src/ship3d.rs	36	const		UNVERIFIED	
-SHIP_3D_TARGET_HIT_TEST_BOTTOM_INSET	src/ship3d.rs	37	const		UNVERIFIED	
-SHIP_3D_TARGET_HOVER_PRESENTATION_MODE	src/ship3d.rs	38	const		UNVERIFIED	
-SHIP_3D_TARGET_ACTIVE_PRESENTATION_MODE	src/ship3d.rs	39	const		UNVERIFIED	
-SHIP_3D_TARGET_IDLE_PRESENTATION_MODE	src/ship3d.rs	40	const		UNVERIFIED	
-SHIP_3D_TARGET_DRAW_X_INSET	src/ship3d.rs	41	const		UNVERIFIED	
-SHIP_3D_TARGET_DEFAULT_TEXT_COLOR	src/ship3d.rs	42	const		UNVERIFIED	
-SHIP_3D_TARGET_HOVER_TEXT_COLOR	src/ship3d.rs	43	const		UNVERIFIED	
-SHIP_3D_TARGET_ACTIVE_TEXT_COLOR	src/ship3d.rs	44	const		UNVERIFIED	
-SHIP_3D_TARGET_EXTRA_LABEL_OFFSET	src/ship3d.rs	45	const		UNVERIFIED	
-SHIP_3D_TARGET_ALIAS_LABEL_OFFSET	src/ship3d.rs	46	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_MIN_GATE	src/ship3d.rs	47	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_MAX_GATE	src/ship3d.rs	48	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_AXIS_BIAS	src/ship3d.rs	49	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_RIGHT_BASE	src/ship3d.rs	50	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_X_WIDTH	src/ship3d.rs	51	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_Y_BASE	src/ship3d.rs	52	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_ROW_HEIGHT_BASE	src/ship3d.rs	53	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_COUNT	src/ship3d.rs	54	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_PALETTE_FIRST	src/ship3d.rs	55	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_PRESENTATION_MODE	src/ship3d.rs	56	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_HUD_SELECT_FLAGS	src/ship3d.rs	57	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_DISPATCH_BLOCK_FLAG	src/ship3d.rs	58	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_HOLD_TICKS	src/ship3d.rs	59	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_HANDLER_PHASE	src/ship3d.rs	60	const	0x4F09	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09`
-SHIP_3D_NAV_CHOICE_TARGET_Y_BASE	src/ship3d.rs	61	const	0x4F09,0x12329	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified
-SHIP_3D_NAV_CHOICE_TARGET_Y_STEP	src/ship3d.rs	62	const	0x4F09,0x12329	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_NAV_CHOICE_LAYOUT_CENTER_X	src/ship3d.rs	63	const	0x4F09,0x12329	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_NAV_CHOICE_INTERPOLATION_DURATION	src/ship3d.rs	64	const	0x4F09,0x12329	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_NAV_CHOICE_SELECT_SOUND	src/ship3d.rs	65	const	0x4F09,0x12329	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_NAV_CHOICE_RECORD_LINK_TYPE	src/ship3d.rs	66	const	0x4F09,0x12329	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_NAV_CHOICE_TARGET_LIST_FLAG	src/ship3d.rs	67	const	0x4F09,0x12329,0x9B98	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_NAV_CHOICE_PHASE_INTERPOLATING	src/ship3d.rs	68	const	0x4F09,0x12329,0x9B98	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_NAV_CHOICE_RADIO_SND_PATH_OFFSET	src/ship3d.rs	69	const	0x4F09,0x12329,0x9B98	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_NAV_CHOICE_HANDLER4_TARGET_LIST_OFFSET	src/ship3d.rs	70	const	0x4F09,0x12329,0x9B98,0x9CF5	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_NAV_CHOICE_HANDLER4_TOGGLE_OFF_TARGET_LIST_OFFSET	src/ship3d.rs	71	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_NAV_CHOICE_HANDLER4_TOGGLE_ON_TARGET_LIST_OFFSET	src/ship3d.rs	72	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_NAV_CHOICE_TABLO2_VOC_PATH_OFFSET	src/ship3d.rs	73	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_NAV_CHOICE_SOUND_GATE_SUPPRESS_TARGETS	src/ship3d.rs	74	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_NAVIGATION_INTERPOLATION_DURATION	src/ship3d.rs	75	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_NAVIGATION_DEFERRED_RECORD_TYPE	src/ship3d.rs	76	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_NAVIGATION_RECORD_KIND_CANDIDATE	src/ship3d.rs	77	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_NAVIGATION_RECORD_ACTIVE_FLAG	src/ship3d.rs	78	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_NAVIGATION_CURRENT_TARGET_MATCH_ANY_FLAG	src/ship3d.rs	79	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_NAVIGATION_REDIRECT_COUNTER_FLAG	src/ship3d.rs	80	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_NAVIGATION_TARGET_LIST_FLAG	src/ship3d.rs	81	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_NAVIGATION_LAYOUT_TARGET_LIST_OFFSET	src/ship3d.rs	82	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_NAVIGATION_SCENE_BAND_TOP	src/ship3d.rs	83	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_NAVIGATION_RENDER_CLIP_BOTTOM	src/ship3d.rs	84	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_NAVIGATION_RENDER_CLIP_RESTORED_BOTTOM	src/ship3d.rs	85	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_NAVIGATION_TRIGGER_CLOSE_STEP	src/ship3d.rs	86	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROCEDURAL_HUD_ACTIVE_FLAG	src/ship3d.rs	87	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROCEDURAL_TARGET_LIST_FLAG	src/ship3d.rs	88	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROCEDURAL_HALF_TURN	src/ship3d.rs	89	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROCEDURAL_FULL_TURN	src/ship3d.rs	90	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROCEDURAL_MOUSE_RING	src/ship3d.rs	91	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROCEDURAL_MOUSE_CENTER_X	src/ship3d.rs	92	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROCEDURAL_MOUSE_ALIGN_MASK	src/ship3d.rs	93	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROCEDURAL_CLOSE_ANGLE_THRESHOLD	src/ship3d.rs	94	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROCEDURAL_TARGET_LIST_THRESHOLD	src/ship3d.rs	95	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROCEDURAL_TARGET_LIST_STEP	src/ship3d.rs	96	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROCEDURAL_AUTO_ROTATE_STEP	src/ship3d.rs	97	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROCEDURAL_ROTATION_OFFSET_BIAS	src/ship3d.rs	98	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_MATRIX_ANGLE_TABLE_OFFSET	src/ship3d.rs	99	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_MATRIX_ANGLE_A_OFFSET	src/ship3d.rs	100	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_MATRIX_PROJECTION_ANGLE_OFFSET	src/ship3d.rs	101	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_MATRIX_ANGLE_C_OFFSET	src/ship3d.rs	102	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_MATRIX_TEMP_OFFSET	src/ship3d.rs	103	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROJECTION_MATRIX_OFFSET	src/ship3d.rs	104	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_MATRIX_FIXED_SHIFT	src/ship3d.rs	105	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROJECTION_CAMERA_X_OFFSET	src/ship3d.rs	106	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROJECTION_CAMERA_Y_OFFSET	src/ship3d.rs	107	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROJECTION_CAMERA_Z_OFFSET	src/ship3d.rs	108	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_POINT_CLOUD_COUNT	src/ship3d.rs	109	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_POINT_BUFFER_OFFSET	src/ship3d.rs	110	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROJECTION_WORK_VECTOR_OFFSET	src/ship3d.rs	111	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROJECTED_X_OFFSET	src/ship3d.rs	112	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROJECTED_Y_OFFSET	src/ship3d.rs	113	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROJECTED_DEPTH_OFFSET	src/ship3d.rs	114	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROJECTION_VIEWPORT_LEFT_OFFSET	src/ship3d.rs	115	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROJECTION_VIEWPORT_RIGHT_OFFSET	src/ship3d.rs	116	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROJECTION_VIEWPORT_TOP_OFFSET	src/ship3d.rs	117	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROJECTION_VIEWPORT_BOTTOM_OFFSET	src/ship3d.rs	118	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROJECTION_SCREEN_CENTER_X	src/ship3d.rs	119	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROJECTION_SCREEN_CENTER_Y	src/ship3d.rs	120	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROJECTION_SCREEN_WIDTH	src/ship3d.rs	121	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROJECTION_AXIS_SHIFT	src/ship3d.rs	122	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROJECTION_SHADE_SHIFT	src/ship3d.rs	123	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_PROJECTION_SHADE_BASE	src/ship3d.rs	124	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_OBJECT_ANCHOR_OFFSET	src/ship3d.rs	125	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_OBJECT_ANCHOR_COUNT	src/ship3d.rs	126	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_OBJECT_ANCHOR_STRIDE	src/ship3d.rs	127	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_OBJECT_DESCRIPTOR_BASE_OFFSET	src/ship3d.rs	128	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_OBJECT_DESCRIPTOR_STRIDE	src/ship3d.rs	129	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_OBJECT_DESCRIPTOR_INDEX_BIAS	src/ship3d.rs	130	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_OBJECT_VISIBLE_FLAG	src/ship3d.rs	131	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG	src/ship3d.rs	132	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_SPRITE_SLOT_ACTIVE_MASK	src/ship3d.rs	133	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_SPRITE_SLOT_DIRTY_FLAG	src/ship3d.rs	134	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_SPRITE_SLOT_EXTENT_CHANGED_FLAG	src/ship3d.rs	135	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_OBJECT_DEPTH_WRAP_BIAS	src/ship3d.rs	136	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_OBJECT_SCALE_NUMERATOR	src/ship3d.rs	137	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_OBJECT_SCALE_SHIFT	src/ship3d.rs	138	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_OBJECT_PROJECTED_SCALE_OFFSET	src/ship3d.rs	139	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-NAV_DESTINATION_POINTS	src/ship3d.rs	153	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	DATA	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
-SHIP_3D_GLOBAL_CLIP_SNAPSHOT_FLAG_OFFSET	src/ship3d.rs	154	const		UNVERIFIED	
-SHIP_3D_DIRTY_RECT_LIST_OFFSET	src/ship3d.rs	155	const		UNVERIFIED	
-SHIP_3D_DIRTY_RECT_SENTINEL	src/ship3d.rs	156	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_CALLBACK_TABLE_OFFSET	src/ship3d.rs	157	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_CALLBACK_OFFSETS	src/ship3d.rs	158	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_PATH_OFFSET	src/ship3d.rs	159	const		UNVERIFIED	
-SHIP_3D_TB_SND_PATH_OFFSET	src/ship3d.rs	160	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_PHASE_COUNT	src/ship3d.rs	161	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_SCENE_SELECTOR_SENTINEL	src/ship3d.rs	162	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_VIEWPORT_DESCRIPTOR	src/ship3d.rs	163	const		UNVERIFIED	
-SHIP_3D_FINAL_RESET_HUD_FLAGS	src/ship3d.rs	166	const		UNVERIFIED	
-SHIP_3D_FINAL_RESET_NAV_TIMER	src/ship3d.rs	167	const		UNVERIFIED	
-SHIP_3D_FINAL_RESET_SELECTOR_SENTINEL	src/ship3d.rs	168	const		UNVERIFIED	
-SHIP_3D_FINAL_RESET_ACTIVE_RECORD_SENTINEL	src/ship3d.rs	169	const		UNVERIFIED	
-SHIP_3D_FINAL_RESET_DIRTY_MARKER	src/ship3d.rs	170	const		UNVERIFIED	
-SHIP_3D_FINAL_RESET_SCROLL_MODE	src/ship3d.rs	171	const		UNVERIFIED	
-SHIP_3D_FINAL_RESET_STATUS_FLAG_MASK	src/ship3d.rs	172	const		UNVERIFIED	
-SHIP_3D_OBJECT_KIND_POSITION_DIRECT_8	src/ship3d.rs	173	const		UNVERIFIED	
-SHIP_3D_OBJECT_KIND_POSITION_DIRECT_10	src/ship3d.rs	174	const		UNVERIFIED	
-SHIP_3D_OBJECT_KIND_POSITION_DIRECT_40	src/ship3d.rs	175	const		UNVERIFIED	
-SHIP_3D_OBJECT_KIND_POSITION_KIND100	src/ship3d.rs	176	const		UNVERIFIED	
-SHIP_3D_OBJECT_KIND_POSITION_DIRECT_200	src/ship3d.rs	177	const		UNVERIFIED	
-SHIP_3D_FIELD_SELECTOR_POSITION	src/ship3d.rs	178	const		UNVERIFIED	
-SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MATCH	src/ship3d.rs	179	const		UNVERIFIED	
-SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MISMATCH	src/ship3d.rs	180	const		UNVERIFIED	
-SHIP_3D_FIELD_SELECTOR_KIND100_MATCH_WORD	src/ship3d.rs	181	const		UNVERIFIED	
-SHIP_3D_FIELD_SELECTOR_KIND100_RELATION_WORD	src/ship3d.rs	182	const		UNVERIFIED	
-SHIP_3D_FIELD_SELECTOR_PARENT_LINK	src/ship3d.rs	183	const		UNVERIFIED	
-SHIP_3D_SOURCE_BITSET_SELECTOR	src/ship3d.rs	184	const		UNVERIFIED	
-SHIP_3D_SOURCE_BITSET_KIND	src/ship3d.rs	185	const		UNVERIFIED	
-SHIP_3D_C1_SOURCE_KIND_OPERAND_FLAG	src/ship3d.rs	186	const		UNVERIFIED	
-SHIP_3D_C1_SOURCE_KIND_BITSET	src/ship3d.rs	187	const		UNVERIFIED	
-SHIP_3D_C1_SOURCE_OPERAND_STATE_FLAG	src/ship3d.rs	188	const		UNVERIFIED	
-SHIP_3D_C1_KIND10_RECORD_KIND	src/ship3d.rs	189	const		UNVERIFIED	
-SHIP_3D_C1_DESTINATION_SELECTOR	src/ship3d.rs	190	const		UNVERIFIED	
-SHIP_3D_C1_RECORD_STATE_OPCODE	src/ship3d.rs	191	const		UNVERIFIED	
-SHIP_3D_C1_RECORD_STATE_AUX_WORD	src/ship3d.rs	192	const		UNVERIFIED	
-Ship3dTransitionState	src/ship3d.rs	195	struct		UNVERIFIED	
-Ship3dDepthState	src/ship3d.rs	204	struct		UNVERIFIED	
-Ship3dPlaneBandCopy	src/ship3d.rs	212	struct		UNVERIFIED	
-Ship3dTargetSelectorState	src/ship3d.rs	223	struct		UNVERIFIED	
-Ship3dTargetSelection	src/ship3d.rs	233	struct		UNVERIFIED	/// The chosen target's record value: a record offset, the retained current target, or the /// exit sentinel.
-Ship3dInterpolationGate	src/ship3d.rs	243	struct		UNVERIFIED	
-Ship3dInterpolationStep	src/ship3d.rs	249	enum		UNVERIFIED	
-Ship3dTargetListLayout	src/ship3d.rs	255	struct		UNVERIFIED	
-Ship3dTargetHitState	src/ship3d.rs	267	struct		UNVERIFIED	
-Ship3dTargetHitResult	src/ship3d.rs	275	struct		UNVERIFIED	
-Ship3dTargetTextSegment	src/ship3d.rs	285	enum		UNVERIFIED	
-Ship3dTargetDrawCommand	src/ship3d.rs	291	struct		UNVERIFIED	
-Ship3dTargetDrawResult	src/ship3d.rs	303	struct		UNVERIFIED	
-Ship3dNavChoiceState	src/ship3d.rs	309	struct		UNVERIFIED	
-Ship3dNavChoiceGates	src/ship3d.rs	324	struct		UNVERIFIED	
-Ship3dNavChoiceInput	src/ship3d.rs	334	struct		UNVERIFIED	
-Ship3dNavChoiceResult	src/ship3d.rs	343	struct		UNVERIFIED	
-Ship3dNavChoiceHandlerEffect	src/ship3d.rs	354	struct		UNVERIFIED	
-Ship3dNavChoiceHandler4State	src/ship3d.rs	373	struct		UNVERIFIED	
-Ship3dNavigationSequenceState	src/ship3d.rs	391	struct		UNVERIFIED	
-Ship3dNavigationSequenceEffect	src/ship3d.rs	400	struct		UNVERIFIED	
-Ship3dProceduralUpdateState	src/ship3d.rs	413	struct		UNVERIFIED	
-Ship3dProceduralUpdateEffect	src/ship3d.rs	429	struct		UNVERIFIED	
-Ship3dAngleTableEntry	src/ship3d.rs	441	struct		DATA	
-SHIP_3D_ANGLE_TABLE	src/ship3d.rs	453	const	0x4F45,0x4000,0x2F71	DATA	/// The recovered ship-3D rotation trig table at `DS:0x4F45` in BLOODPRG.EXE: /// 180 `(cosine, sine)` pairs, one per **2 degrees** (index 45 = 90°, 90 = 180°, /// wrapping at 180), stored at Q14 ampl
-fn	src/ship3d.rs	454	const		UNVERIFIED	
-Ship3dMatrixAngles	src/ship3d.rs	492	struct		UNVERIFIED	
-Ship3dProjectionMatrix	src/ship3d.rs	499	struct		UNVERIFIED	
-Ship3dProjectionPoint	src/ship3d.rs	504	struct		UNVERIFIED	
-Ship3dProjectionOrigin	src/ship3d.rs	511	struct		UNVERIFIED	
-Ship3dProjectedPoint	src/ship3d.rs	518	struct		UNVERIFIED	
-Ship3dProjectionViewport	src/ship3d.rs	525	struct		UNVERIFIED	
-Ship3dProjectedPixel	src/ship3d.rs	533	struct		UNVERIFIED	
-SHIP_3D_ENTITY_COUNT	src/ship3d.rs	542	const	0x6212,0x6612,0x9B98	ASM	/// The engine's entity table is 32 records of 32 bytes at `DS:0x6212`, bounded /// by the layout identity `0x6212 + 32*32 = 0x6612` (the dirty-rect list). The /// nav projector `0x9B98` drives the LA
-SHIP_3D_NAV_ENTITY_BASE	src/ship3d.rs	544	const	0x9B98	ASM	/// The entity id the nav projector's slot 0 maps to (`0x9B98`).
-SHIP_3D_ENTITY_TABLE	src/ship3d.rs	546	const	0x6212	ASM	/// `DS:0x6212` — the entity table's base, in DS-relative bytes.
-SHIP_3D_ENTITY_STRIDE	src/ship3d.rs	548	const	0x4316	ASM	/// Bytes per entity record (re-confirmed by the `rep movsd cx=8` copy at `0x4316`).
-ship_3d_nav_entity_for_slot	src/ship3d.rs	553	fn	0x6612	ASM	/// The entity id a nav projector slot writes to, and its record's DS offset. /// Slots beyond the eleven the projector drives return `None` rather than /// wrapping past the table (`0x6612`).
-Ship3dObjectSpriteDescriptor	src/ship3d.rs	562	struct	0x6212,0x65F2	ASM?	/// The entity id this slot writes into (`0x6212 + (id << 5)`), so a slot can /// be addressed the way the rest of the engine addresses entities — the /// hover status panel, for one, reads ENTITY `0x
-Ship3dObjectSpriteProjection	src/ship3d.rs	582	struct		UNVERIFIED	
-Ship3dSpriteSlotUpdateEffect	src/ship3d.rs	592	struct		UNVERIFIED	
-Ship3dDirtyRectList	src/ship3d.rs	602	struct		UNVERIFIED	
-default	src/ship3d.rs	608	fn		UNVERIFIED	
-Ship3dDirtyRectSnapshotEffect	src/ship3d.rs	617	struct		UNVERIFIED	
-Ship3dSpriteSlotRenderCommand	src/ship3d.rs	625	struct		UNVERIFIED	
-Ship3dTempSndState	src/ship3d.rs	636	struct		UNVERIFIED	
-Ship3dTempSndEffect	src/ship3d.rs	651	struct		UNVERIFIED	
-Ship3dNavigationFinalResetState	src/ship3d.rs	671	struct		UNVERIFIED	
-default	src/ship3d.rs	698	fn		UNVERIFIED	
-Ship3dNavigationFinalResetEffect	src/ship3d.rs	728	struct		UNVERIFIED	
-Ship3dNavigationRuntimeRecord	src/ship3d.rs	745	struct		UNVERIFIED	
-Ship3dNavigationSourceEntry	src/ship3d.rs	755	struct		UNVERIFIED	
-Ship3dPositionRecord	src/ship3d.rs	761	struct	0xffff	ASM?	/// Selector-0x11 parent/reference link. `None` represents the binary's /// `0xffff` sentinel, which falls back to the named arche object.
-Ship3dPositionField	src/ship3d.rs	772	struct		UNVERIFIED	
-Ship3dRecordStateSlot	src/ship3d.rs	779	struct		UNVERIFIED	
-Ship3dC1DestinationWrite	src/ship3d.rs	786	struct		UNVERIFIED	
-Ship3dNavigationTriggerState	src/ship3d.rs	792	struct		UNVERIFIED	
-default	src/ship3d.rs	811	fn		UNVERIFIED	
-Ship3dNavigationTriggerEffect	src/ship3d.rs	833	struct		UNVERIFIED	
-update_ship_3d_transition_state	src/ship3d.rs	870	fn	0xB692,0x2533,0xB699,0xb3b,0xB69E,0xb6dc,0xB6A0,0x2531,0xB6A	ASM	/// The ship-3D transition updater, `ship_3d_transition_state_update` @`0xB692`: /// /// ```text ///   0xB692  test byte [0x2533],1     ARMED? ///   0xB699  cmp word [0xb3b],0x78    not armed: the hol
-step_ship_3d_depth_scroll	src/ship3d.rs	890	fn		ORACLE	
-copy_ship_3d_plane_bands	src/ship3d.rs	946	fn	0xB6DD,0xB6E5,0x252e,0xB6EC,0x2527,0xB6F0,0x524d,0xB6F7,0xB7	ASM	/// The planar band copy, `ship_3d_plane_band_copy` @`0xB6DD`: /// /// ```text ///   0xB6E5  test byte [0x252e],1     the copy-enabled gate ///   0xB6EC  mov bx,[0x2527]          the depth offset /// 
-step_ship_3d_interpolation_gate	src/ship3d.rs	1010	fn	0x1E5D,0x008B,0x0FAD,0x1E63,0xada,0x1E67,0xadb,0x1E6D,0x1E71	ASM	/// The four-word interpolation gate, `ship_3d_interpolation_gate` @`0x1E5D` /// (reached far as `0x008B:0x0FAD`): /// /// ```text ///   0x1E63  mov bl,[0xada]           the DURATION ///   0x1E67  cmp
-layout_ship_3d_target_list	src/ship3d.rs	1055	fn	0x84A1,0x84C6,0x8428,0x84A4,0x84A7,0x84AA,0x84AD,0xac6,0x84B	ASM	/// The unified list widget's box layout, `0x84A1..0x84C6` inside /// `list_widget_layout_unified` (`0x8428`) — the same widget the OPTION menu, the /// contact menu and the concept list all enter: //
-hit_test_ship_3d_target_list	src/ship3d.rs	1121	fn	0x84F6,0x850C,0x84E6,0x84F8,0xa2c,0x84FD,0x853B,0x84FF,0x850	ASM	/// The list widget's row hit-test, `0x84F6..0x850C`: /// /// ```text ///   0x84E6  add cx,4                       the row origin is box_y + 4 ///   0x84F8  mov ax,[0xa2c] / sub ax,dx     dy = mouse_y
-update_ship_3d_nav_choice_dispatch	src/ship3d.rs	1183	fn		ASM	
-run_ship_3d_nav_choice_handler_0	src/ship3d.rs	1254	fn	0x8713,0x86F1,0x8704,0x2A19,0xF29,0x77E0,0x872C,0x87BD,0x884	ASM	/// NAV-CHOICE HANDLER 0 — file `0x8713`, entry 0 of the dispatch table. /// /// The dispatcher (`0x86F1..0x8704`) takes the committed choice `[0x2A19]`, /// makes it 0-based and doubles it, then `cal
-run_ship_3d_nav_choice_handler_1	src/ship3d.rs	1290	fn	0x872C,0x8735,0x2565,0x876A,0x8741,0xADB,0x8748,0xFFFF,0x875	ASM	/// NAV-CHOICE HANDLER 1 — file `0x872C` (`nav_choice_handler_1`), entry 1 of the /// dispatch table described on [`run_ship_3d_nav_choice_handler_0`]. Verified /// against the disassembly step by ste
-run_ship_3d_nav_choice_handler_2	src/ship3d.rs	1365	fn	0x87BD,0x87BE,0x2565,0x87FB,0x87C5,0x6D3E,0x2B13,0x87CB,0x87	ASM	/// NAV-CHOICE HANDLER 2 — file `0x87BD`, entry 2 of the dispatch table /// (see [`run_ship_3d_nav_choice_handler_0`]). Verified against the disassembly: /// /// ```text ///   0x87BE  test byte [0x256
-run_ship_3d_nav_choice_handler_3	src/ship3d.rs	1429	fn	0x8848,0x2565,0x884F,0x6756,0x8852,0x676A,0x8855,0x6768,0x88	ASM	/// NAV-CHOICE HANDLER 3 — file `0x8848`, entry 3 of the dispatch table /// (see [`run_ship_3d_nav_choice_handler_0`]). The shortest of the five, verified /// whole: /// /// ```text ///   0x8848  test
-run_ship_3d_nav_choice_handler_4	src/ship3d.rs	1471	fn	0x886C,0x8874,0x2565,0x889C,0x887B,0xADB,0x8880,0x27E6,0x842	ASM	/// NAV-CHOICE HANDLER 4 — file `0x886C`, entry 4 of the dispatch table /// (see [`run_ship_3d_nav_choice_handler_0`]). The largest of the five, and /// verified end to end: /// /// ```text ///   0x88
-run_ship_3d_navigation_sequence_update	src/ship3d.rs	1549	fn		INFRA?	
-run_ship_3d_procedural_update	src/ship3d.rs	1610	fn		INFRA?	
-build_ship_3d_projection_matrix	src/ship3d.rs	1771	fn	0x98B9,0x98CB,0x4f45,0x98CE,0x2f7d,0x98D1,0x2f71,0x2F95,0x9A	ASM	/// Build the 3x3 fixed-point projection matrix, `ship_3d_projection_matrix_build` /// @`0x98B9`: /// /// ```text ///   0x98CB  mov bp,0x4f45      the ANGLE TABLE -- SHIP_3D_ANGLE_TABLE's address /// 
-project_ship_3d_point	src/ship3d.rs	1812	fn		ASM	
-plot_ship_3d_projected_point	src/ship3d.rs	1855	fn		ASM	
-ship_3d_projected_point_shade	src/ship3d.rs	1896	fn	0x9B37,0x9B3A,0x9B3D,0x9B3F	ASM	/// Depth shade for a plotted point: `0xEF - (depth >> 12)`, from the plot at /// `0x9B37`: /// /// ```text ///   0x9B37  mov ax,[bp+0x28]   the projected DEPTH ///   0x9B3A  shr ax,0xc         >> 12 
-ship_3d_projected_point_offset	src/ship3d.rs	1910	fn	0x9B25,0x9B27,0x9B29,0x9B2C,0x9B2E	ASM	/// Framebuffer offset for a projected point — `y*320 + x`, built by the plot at /// `0x9B25` without a multiply: /// /// ```text ///   0x9B25  mov di,bx      di = y ///   0x9B27  xchg bh,bl     bx = 
-SHIP_3D_POINT_CLOUD_LEN	src/ship3d.rs	1919	const	0x9B67,0x3E8,0x9B6A,0x2FC1,0x9B71,0xFFFF	ASM	/// Number of 3D point-cloud records the starfield background is built from: /// `ship_3d_point_cloud_randomize` (`0x9B67`) does `mov cx,0x3E8` (`0x9B6A`) and /// `mov di,0x2FC1` (`0x9B71`), then fill
-SHIP_3D_POINT_CLOUD_COUNT_IMMEDIATE	src/ship3d.rs	1922	const	0x3e8,0x9B6A,0x9B6B	ASM	/// File offset of that `mov cx,imm`'s operand — `mov cx,0x3e8` sits at `0x9B6A` /// (`b9 e8 03`), so the count word is at `0x9B6B`.
-SHIP_3D_POINT_CLOUD_BASE_IMMEDIATE	src/ship3d.rs	1924	const	0x2FC1	ASM	/// ...and of the `mov di,imm` naming the record base (`DS:0x2FC1`).
-SHIP_3D_POINT_CLOUD_BASE_DS	src/ship3d.rs	1926	const	0x2fc1,0x9B71	ASM	/// The record base itself, the operand of `mov di,0x2fc1` @`0x9B71`.
-BloodPrng	src/ship3d.rs	1939	struct	0x01CE,0x0B02,0x0AEE,0x0AF0,0x0AF1,0x0AF2	ASM?	/// The engine's pseudo-random generator (`far 0x01CE:0x0B02` in BLOODPRG.EXE). /// /// Called as `rng(ax = modulus)` and returns `value % modulus` (for /// `modulus == 0` it returns the raw 16-bit va
-default	src/ship3d.rs	1952	fn		UNVERIFIED	/// The static (unseeded) state from the shipped BLOODPRG.EXE image.
-seeded_from_rtc_seconds	src/ship3d.rs	1967	fn	0x2DD3,0xAEE	ORACLE	/// Seed as the DOS routine at `0x2DD3` does: it reads the CMOS RTC seconds /// byte (`out 0x70 / in 0x71`) and writes it into both halves of the XOR /// seed word (`mov ah,al; mov cs:[0xAEE],ax`), le
-next	src/ship3d.rs	1978	fn	0x01CE,0x0B02	ORACLE	/// Advance the generator and return the next value in `0..modulus` (or the raw 16-bit word /// when `modulus == 0`). Faithful port of the generator at `0x01CE:0x0B02`.
-randomize_ship_3d_point_cloud	src/ship3d.rs	2029	fn	0x9B67,0xFFFF	ASM	/// Populate the ship-3D starfield point cloud (`ship_3d_point_cloud_randomize` /// at `0x9B67`). Each of the [`SHIP_3D_POINT_CLOUD_LEN`] records gets random /// `x`/`y`/`z` words from [`BloodPrng::ne
-SHIP_3D_PROJECTION_SCREEN_HEIGHT	src/ship3d.rs	2041	const		UNVERIFIED	/// Height of the ship-3D point-cloud depth/color buffer in rows. The DOS pixel /// helper computes `y * 320 + x` into the active page; 200 native rows cover it. /// One plotted starfield pixel and, a
-Ship3dPointCloudRender	src/ship3d.rs	2046	struct		UNVERIFIED	"/// One plotted starfield pixel and, alongside the returned count, the whole /// depth-shaded buffer produced by [`render_ship_3d_point_cloud`]. /// `320 * 200` depth-shaded buffer; `0` means ""no poin"
-render_ship_3d_point_cloud	src/ship3d.rs	2073	fn	0x9A10,0x9A1D,0x2F77,0x3E8,0x9A23,0x2FC1,0x9A31,0x2F95,0x9A2	ASM	/// Render the full ship-3D starfield background: the batch loop at `0x9A10`, /// checked against the disassembly: /// /// ```text ///   0x9A1D  mov word [0x2F77],0x3E8    the loop count — 1000, the c
-ship_3d_point_cloud_points	src/ship3d.rs	2095	fn		ASM	/// The same starfield as [`render_ship_3d_point_cloud`], but returning the plotted /// points (screen x, y, depth shade) for a GPU point renderer — identical projection, /// viewport clip, depth-shad
-SHIP_3D_HUD_BAND_TOP	src/ship3d.rs	2118	const	0xB079,0x5D98,0x131B8,0x5491,0x2795,0x279B,0x2793,0x9656,0xB	ASM?	/// The ship-nav HUD band occupies the bottom rows of the 320x200 frame (below the /// scene band that ends at row 0xA5=165), where the engine draws the grey /// pyramid-nav grid + central eye-orb. Se
-SHIP_3D_HUD_PYRAMID_VERTICES	src/ship3d.rs	2281	const	0xB079,0x5D98,0x131B8,0x5491,0x2795,0x279B,0x2793,0x9656,0xB	DATA	/// The recovered ship-nav HUD pyramid geometry: 32 3D vertices (X,Y,Z, signed /// fixed-point) copied by `ship_3d_hud_init` (BLOODPRG.EXE @0xB079) from DS:0x5D98 /// (file 0x131B8) into the HUD worki
-render_star_map_navview	src/ship3d.rs	2332	fn	0x9656,0xB193	ASM?	/// Render the pyramid-nav HUD grid into the bottom band of an indexed 320x200 /// framebuffer (the band the exporter otherwise leaves BLACK in dialogue mode). /// Draws a perspective grid of grey pyr
-project_star_map_point	src/ship3d.rs	2345	fn	0x9BBA	ASM?	/// As [`render_star_map_navview`], but pans the pyramid field horizontally by /// `compass_angle` (0..179) so the view rotates with the ship's heading (mouse /// steering) — the interactive nav behav
-render_star_map_navview_projected	src/ship3d.rs	2370	fn	0x9BBA	ASM?	/// Projection-accurate star-map nav view: a receding grid of star-system pyramids /// projected with the game's decoded projection ([`project_star_map_point`]) plus the /// central eye-orb — the syst
-W	src/ship3d.rs	2371	const		UNVERIFIED	// Camera pitched down over a ground plane of star systems; heading pans in x.
-H	src/ship3d.rs	2372	const		UNVERIFIED	// Camera pitched down over a ground plane of star systems; heading pans in x.
-render_star_map_navview_panned	src/ship3d.rs	2435	fn		UNVERIFIED	// Fill one pyramid: a triangle (apex up) with a lit left face + shadowed right // face for a simple 3D look, centred at (cx, base_y) with half-width hw + height h. // left of centre = lit face, right
-W	src/ship3d.rs	2442	const		UNVERIFIED	
-H	src/ship3d.rs	2443	const		UNVERIFIED	
-render_ship_3d_pyramid_hud	src/ship3d.rs	2500	fn		UNVERIFIED	// Bresenham line, clipped to the HUD band. // Perspective grid: rows recede toward a vanishing point up-centre; nearer // (lower) rows have larger, wider-spaced pyramids. // pyramid = two slanted edg
-W	src/ship3d.rs	2501	const		UNVERIFIED	
-H	src/ship3d.rs	2502	const		UNVERIFIED	
-render_ship_3d_starfield	src/ship3d.rs	2565	fn		UNVERIFIED	/// Render a complete ship-3D starfield background from real game data: randomize /// the point cloud from `prng`, build the camera matrix from `angles` using the /// recovered [`SHIP_3D_ANGLE_TABLE`]
-project_ship_3d_object_sprite	src/ship3d.rs	2578	fn		ASM	
-update_ship_3d_sprite_slot_position	src/ship3d.rs	2667	fn	0x420D,0x4210,0x6212,0x421D,0x4221,0x422D,0x6612	ASM	/// Update a sprite slot's screen position, `sprite_slot_position_update` /// @`0x420D`: /// /// ```text ///   0x4210  shl ax,5 / mov bx,0x6212 / add bx,ax   slot = 0x6212 + id*32 ///   0x421D  test a
-update_ship_3d_sprite_slot_extent	src/ship3d.rs	2717	fn	0x42CD,0x42D2,0x6212,0x42DD,0x42E1,0x42E4,0x42F7,0x42E8,0x42	ASM	/// Update a sprite slot's extent, `sprite_slot_extent_update` @`0x42CD`. The /// sibling of [`update_ship_3d_sprite_slot_position`], and a good deal subtler: /// /// ```text ///   0x42D2  shl ax,5 / 
-commit_ship_3d_sprite_slot_dirty_geometry	src/ship3d.rs	2772	fn	0x43F7,0x6212,0x4412,0x5249,0x4435,0x441D,0x5235,0x4423,0x52	ASM	/// Commit one slot's current geometry into its previous-geometry fields — the /// BODY of `sprite_slot_commit_dirty_range` @`0x43F7`. /// /// SCOPE, stated because the addresses do not match one-to-o
-commit_ship_3d_global_clip_snapshot	src/ship3d.rs	2793	fn		ASM	
-collect_ship_3d_dirty_sprite_slot_render_commands	src/ship3d.rs	2815	fn		ASM	
-run_ship_3d_temp_snd_setup	src/ship3d.rs	2860	fn		INFRA?	
-run_ship_3d_navigation_final_reset	src/ship3d.rs	2906	fn		INFRA?	
-SHIP_INTRO_X_END	src/ship3d.rs	2972	const	0x27DF,0x8A6A,0x8B5A,0x2F65,0x2F71	ASM	/// The ship-3D camera-approach animation state, driven by phase counter `DS:0x27DF` /// (BLOODPRG.EXE `0x8A6A..0x8B5A`). The nav camera moves because this scripted FSM /// walks the camera origin `[0
-SHIP_INTRO_X_STEP	src/ship3d.rs	2973	const	0x27DF,0x2F65,0x2F67,0x2F69,0x2F6B,0x2F71	ASM?	/// Phase counter (`DS:0x27DF`): 1 = pull-in X, 2 = accelerate Z, 3 = reset, /// 4 = hold, then done. /// Camera origin words `DS:0x2F65/0x2F67/0x2F69`. /// Z acceleration accumulator `DS:0x2F6B` (add
-SHIP_INTRO_YAW_WRAP	src/ship3d.rs	2974	const	0x27DF,0x2F65,0x2F67,0x2F69,0x2F6B,0x2F71	ASM?	/// Phase counter (`DS:0x27DF`): 1 = pull-in X, 2 = accelerate Z, 3 = reset, /// 4 = hold, then done. /// Camera origin words `DS:0x2F65/0x2F67/0x2F69`. /// Z acceleration accumulator `DS:0x2F6B` (add
-SHIP_INTRO_Z_CRUISE	src/ship3d.rs	2975	const	0x27DF,0x2F65,0x2F67,0x2F69,0x2F6B,0x2F71	ASM?	/// Phase counter (`DS:0x27DF`): 1 = pull-in X, 2 = accelerate Z, 3 = reset, /// 4 = hold, then done. /// Camera origin words `DS:0x2F65/0x2F67/0x2F69`. /// Z acceleration accumulator `DS:0x2F6B` (add
-SHIP_INTRO_Z_ACCEL_STEP	src/ship3d.rs	2976	const	0x27DF,0x2F65,0x2F67,0x2F69,0x2F6B,0x2F71	ASM?	/// Phase counter (`DS:0x27DF`): 1 = pull-in X, 2 = accelerate Z, 3 = reset, /// 4 = hold, then done. /// Camera origin words `DS:0x2F65/0x2F67/0x2F69`. /// Z acceleration accumulator `DS:0x2F6B` (add
-SHIP_INTRO_X_RESET	src/ship3d.rs	2977	const	0x27DF,0x2F65,0x2F67,0x2F69,0x2F6B,0x2F71	ASM?	/// Phase counter (`DS:0x27DF`): 1 = pull-in X, 2 = accelerate Z, 3 = reset, /// 4 = hold, then done. /// Camera origin words `DS:0x2F65/0x2F67/0x2F69`. /// Z acceleration accumulator `DS:0x2F6B` (add
-SHIP_INTRO_Z_FINAL	src/ship3d.rs	2978	const	0x27DF,0x2F65,0x2F67,0x2F69,0x2F6B,0x2F71	ASM?	/// Phase counter (`DS:0x27DF`): 1 = pull-in X, 2 = accelerate Z, 3 = reset, /// 4 = hold, then done. /// Camera origin words `DS:0x2F65/0x2F67/0x2F69`. /// Z acceleration accumulator `DS:0x2F6B` (add
-Ship3dCameraApproach	src/ship3d.rs	2981	struct	0x27DF,0x2F65,0x2F67,0x2F69,0x2F6B,0x2F71	ASM?	/// Phase counter (`DS:0x27DF`): 1 = pull-in X, 2 = accelerate Z, 3 = reset, /// 4 = hold, then done. /// Camera origin words `DS:0x2F65/0x2F67/0x2F69`. /// Z acceleration accumulator `DS:0x2F6B` (add
-default	src/ship3d.rs	2999	fn	0x8AF2,0x8AFE	ASM?	// Phase-3 reset immediates (`0x8AF2..0x8AFE`): the approach's start state.
-step	src/ship3d.rs	3022	fn	0x8A6A,0x8B5A,0x8A76,0x2328,0x2F71,0x8AB3,0x8AE0,0x8B2B	ASM?	/// Advance one frame through the decoded phase machine (`0x8A6A..0x8B5A`): /// - **P1** (`0x8A76`): if `X >= 0x2328` (9000), `X -= 0x64`; the yaw ///   `[0x2F71]` decrements toward 0 (wrapping to 0xB
-origin	src/ship3d.rs	3060	fn		UNVERIFIED	/// The camera origin as a projection origin (for `project_star_map_point` etc.).
-build_ship_3d_navigation_source_records	src/ship3d.rs	3069	fn		UNVERIFIED	
-build_ship_3d_navigation_candidate_records	src/ship3d.rs	3085	fn		UNVERIFIED	
-resolve_ship_3d_position_field	src/ship3d.rs	3109	fn		UNVERIFIED	
-ship_3d_position_distance	src/ship3d.rs	3150	fn		UNVERIFIED	
-ship_3d_position_field_distance	src/ship3d.rs	3179	fn		ASM	
-ship_3d_binary_sqrt	src/ship3d.rs	3189	fn		ASM	// Seed the estimate from the input's magnitude (leading-bit brackets, as the original does), // returning early for zero/tiny inputs whose root is the input itself. The brackets are bit // patterns, 
-ship_3d_object_table_bit_is_set	src/ship3d.rs	3228	fn		UNVERIFIED	
-select_ship_3d_c1_source_record	src/ship3d.rs	3247	fn	0x6886,0x6210	ASM?	/// `source_list_bytes` starts at the binary's `DS:0x6886` scratch list. Kind-2 /// tests use the post-`lodsw` cursor for the current source record as the bitset /// base before applying helper `0x621
-resolve_ship_3d_c1_kind10_destination_record	src/ship3d.rs	3285	fn		UNVERIFIED	
-write_ship_3d_c1_kind10_destination_slot	src/ship3d.rs	3299	fn		UNVERIFIED	
-run_ship_3d_navigation_trigger_prelude	src/ship3d.rs	3322	fn		INFRA?	
-draw_ship_3d_target_list	src/ship3d.rs	3404	fn		UNVERIFIED	
-select_ship_3d_target_record	src/ship3d.rs	3462	fn		ASM	
-ship_3d_plane_band_byte_count	src/ship3d.rs	3530	fn		ASM	
-ship_3d_scroll_value	src/ship3d.rs	3535	fn		ASM	
-start_closing_transition	src/ship3d.rs	3545	fn		ASM	
-add_to_low_byte	src/ship3d.rs	3551	fn		ORACLE	
-circular_delta	src/ship3d.rs	3555	fn		UNVERIFIED	
-wrap_ring_once	src/ship3d.rs	3569	fn		UNVERIFIED	
-matrix_pair_for_angle	src/ship3d.rs	3579	fn		ASM	
-fixed_mul_shift_15	src/ship3d.rs	3587	fn		ASM	
-projection_component	src/ship3d.rs	3594	fn	0x9A42,0x9A47,0x2F65,0x2F67	ASM	/// One component of the camera translation: `sub word [di],ax` at `0x9A42` (and /// `[di+2],ax` at `0x9A47`), with the origin loaded from `[0x2F65]`/`[0x2F67]` /// just before — a wrapping 16-bit SUB
-projection_dot	src/ship3d.rs	3598	fn		ASM	
-project_ship_3d_axis	src/ship3d.rs	3605	fn		ASM	
-scale_ship_3d_object_dimension	src/ship3d.rs	3610	fn		ASM	
-ship_3d_rects_intersect	src/ship3d.rs	3614	fn		UNVERIFIED	
-checked_i16_div_i8_to_i8	src/ship3d.rs	3624	fn		ASM	
-checked_u16_div_u8_to_u8	src/ship3d.rs	3632	fn		UNVERIFIED	
-signed_i16	src/ship3d.rs	3640	fn		ASM	
-target_list_draw_x	src/ship3d.rs	3644	fn		UNVERIFIED	
-blocks_nav_choice	src/ship3d.rs	3649	fn		UNVERIFIED	
-hit_test_ship_3d_nav_choice	src/ship3d.rs	3659	fn		UNVERIFIED	
-adjust_nav_choice_target_records	src/ship3d.rs	3700	fn	0x8748,0x8754,0xFFFF,0x8749	ASM	/// The `add ax,4` loop of nav-choice handler 1 (`0x8748..0x8754`): walk the word /// list, add the 4-byte record header to each entry, stop at the `0xFFFF` /// terminator (`cmp ax,-1 / je` @`0x8749`)
-rebuild_nav_choice_special_target_records	src/ship3d.rs	3714	fn	0x87CB,0x87DB,0x6D3E,0xFFFF	ASM	/// The rebuild loop of nav-choice handler 2 (`0x87CB..0x87DB`): walk the special /// slots at `DS:0x6D3E`, skip zeros (`or ax,ax / je`), stop at the `0xFFFF` /// sentinel after storing it, and otherw
-next_ship_3d_temp_snd_phase	src/ship3d.rs	3732	fn		UNVERIFIED	
-append_ship_3d_navigation_source_children	src/ship3d.rs	3741	fn		UNVERIFIED	
-find_ship_3d_navigation_record	src/ship3d.rs	3774	fn		UNVERIFIED	
-find_ship_3d_position_record	src/ship3d.rs	3784	fn		UNVERIFIED	
-find_ship_3d_position_field	src/ship3d.rs	3794	fn		UNVERIFIED	
-resolve_ship_3d_distance_position_field	src/ship3d.rs	3801	fn		UNVERIFIED	
-kind100_relation_word	src/ship3d.rs	3825	fn		UNVERIFIED	
-ship_3d_record_field	src/ship3d.rs	3835	fn		UNVERIFIED	
-binary_abs_word_diff	src/ship3d.rs	3839	fn		ASM	
-next_target_list_draw_color	src/ship3d.rs	3848	fn		UNVERIFIED	
+SHIP_3D_PLANE_SOURCE_PAGE1_OFFSET	src/ship3d.rs	21	const	0x84B9,0x84E6,0x84FF,0x84A7,0xa34,0x850F	ASM?	/// `sub bp,0xc8` @`0x84B9` — the 200-row screen the box is centred in. /// `add cx,4` @`0x84E6` — the row origin's inset below the box top, shared by the /// hit-test and the draw. /// `sub bp,8` @`0
+SHIP_3D_PLANE_DEST_BYTES	src/ship3d.rs	22	const	0x84B9,0x84E6,0x84FF,0x84A7,0xa34,0x850F	ASM?	/// `sub bp,0xc8` @`0x84B9` — the 200-row screen the box is centred in. /// `add cx,4` @`0x84E6` — the row origin's inset below the box top, shared by the /// hit-test and the draw. /// `sub bp,8` @`0
+SHIP_3D_SCROLL_MODE_HOLD	src/ship3d.rs	23	const	0x84B9,0x84E6,0x84FF,0x84A7,0xa34,0x850F	ASM?	/// `sub bp,0xc8` @`0x84B9` — the 200-row screen the box is centred in. /// `add cx,4` @`0x84E6` — the row origin's inset below the box top, shared by the /// hit-test and the draw. /// `sub bp,8` @`0
+SHIP_3D_TARGET_EXIT_SENTINEL	src/ship3d.rs	24	const	0x84B9,0x84E6,0x84FF,0x84A7,0xa34,0x850F	ASM?	/// `sub bp,0xc8` @`0x84B9` — the 200-row screen the box is centred in. /// `add cx,4` @`0x84E6` — the row origin's inset below the box top, shared by the /// hit-test and the draw. /// `sub bp,8` @`0
+SHIP_3D_TARGET_RECORD_HEADER_BYTES	src/ship3d.rs	25	const	0x84B9,0x84E6,0x84FF,0x84A7,0xa34,0x850F	ASM?	/// `sub bp,0xc8` @`0x84B9` — the 200-row screen the box is centred in. /// `add cx,4` @`0x84E6` — the row origin's inset below the box top, shared by the /// hit-test and the draw. /// `sub bp,8` @`0
+SHIP_3D_TARGET_OPEN_STEP	src/ship3d.rs	26	const	0x84B9,0x84E6,0x84FF,0x84A7,0xa34,0x850F	ASM?	/// `sub bp,0xc8` @`0x84B9` — the 200-row screen the box is centred in. /// `add cx,4` @`0x84E6` — the row origin's inset below the box top, shared by the /// hit-test and the draw. /// `sub bp,8` @`0
+SHIP_3D_INTERPOLATION_WORDS	src/ship3d.rs	27	const	0x84B9,0x84E6,0x84FF,0x84A7,0xa34,0x850F	ASM?	/// `sub bp,0xc8` @`0x84B9` — the 200-row screen the box is centred in. /// `add cx,4` @`0x84E6` — the row origin's inset below the box top, shared by the /// hit-test and the draw. /// `sub bp,8` @`0
+SHIP_3D_TARGET_LAYOUT_DEFAULT_MAX_WIDTH	src/ship3d.rs	28	const	0x84B9,0x84E6,0x84FF,0x84A7,0xa34,0x850F	ASM?	/// `sub bp,0xc8` @`0x84B9` — the 200-row screen the box is centred in. /// `add cx,4` @`0x84E6` — the row origin's inset below the box top, shared by the /// hit-test and the draw. /// `sub bp,8` @`0
+SHIP_3D_TARGET_LAYOUT_EXTRA_WIDTH	src/ship3d.rs	29	const	0x84B9,0x84E6,0x84FF,0x84A7,0xa34,0x850F	ASM?	/// `sub bp,0xc8` @`0x84B9` — the 200-row screen the box is centred in. /// `add cx,4` @`0x84E6` — the row origin's inset below the box top, shared by the /// hit-test and the draw. /// `sub bp,8` @`0
+SHIP_3D_TARGET_LAYOUT_WIDTH_PADDING	src/ship3d.rs	30	const	0x84B9,0x84E6,0x84FF,0x84A7,0xa34,0x850F	ASM?	/// `sub bp,0xc8` @`0x84B9` — the 200-row screen the box is centred in. /// `add cx,4` @`0x84E6` — the row origin's inset below the box top, shared by the /// hit-test and the draw. /// `sub bp,8` @`0
+SHIP_3D_TARGET_LAYOUT_ROW_STEP	src/ship3d.rs	31	const	0x84B9,0x84E6,0x84FF,0x84A7,0xa34,0x850F	ASM?	/// `sub bp,0xc8` @`0x84B9` — the 200-row screen the box is centred in. /// `add cx,4` @`0x84E6` — the row origin's inset below the box top, shared by the /// hit-test and the draw. /// `sub bp,8` @`0
+SHIP_3D_TARGET_LAYOUT_EXTRA_HEIGHT	src/ship3d.rs	32	const	0x84B9,0x84E6,0x84FF,0x84A7,0xa34,0x850F	ASM?	/// `sub bp,0xc8` @`0x84B9` — the 200-row screen the box is centred in. /// `add cx,4` @`0x84E6` — the row origin's inset below the box top, shared by the /// hit-test and the draw. /// `sub bp,8` @`0
+SHIP_3D_TARGET_LAYOUT_HEIGHT_PADDING	src/ship3d.rs	33	const	0x84B9,0x84E6,0x84FF,0x84A7,0xa34,0x850F	ASM?	/// `sub bp,0xc8` @`0x84B9` — the 200-row screen the box is centred in. /// `add cx,4` @`0x84E6` — the row origin's inset below the box top, shared by the /// hit-test and the draw. /// `sub bp,8` @`0
+SHIP_3D_TARGET_LAYOUT_SCREEN_HEIGHT	src/ship3d.rs	35	const	0x84B9	ASM	/// `sub bp,0xc8` @`0x84B9` — the 200-row screen the box is centred in.
+SHIP_3D_TARGET_LAYOUT_SELECTOR_RETURN	src/ship3d.rs	36	const	0x84E6,0x84FF,0x84A7,0xa34,0x850F	ASM?	/// `add cx,4` @`0x84E6` — the row origin's inset below the box top, shared by the /// hit-test and the draw. /// `sub bp,8` @`0x84FF` — the hit area is `height - 8`, so the 8px of chrome the /// layo
+SHIP_3D_TARGET_HIT_TEST_TOP_INSET	src/ship3d.rs	39	const	0x84E6	ASM	/// `add cx,4` @`0x84E6` — the row origin's inset below the box top, shared by the /// hit-test and the draw.
+SHIP_3D_TARGET_HIT_TEST_BOTTOM_INSET	src/ship3d.rs	42	const	0x84FF,0x84A7	ASM	/// `sub bp,8` @`0x84FF` — the hit area is `height - 8`, so the 8px of chrome the /// layout adds (`add bp,8` @`0x84A7`) is not clickable.
+SHIP_3D_TARGET_HOVER_PRESENTATION_MODE	src/ship3d.rs	45	const	0xa34,0x850F	ASM	/// `cmp word [0xa34],6` @`0x850F` — the HOVER presentation mode the hit-test /// requests when the cursor is over a row.
+SHIP_3D_TARGET_ACTIVE_PRESENTATION_MODE	src/ship3d.rs	46	const		UNVERIFIED	
+SHIP_3D_TARGET_IDLE_PRESENTATION_MODE	src/ship3d.rs	47	const		UNVERIFIED	
+SHIP_3D_TARGET_DRAW_X_INSET	src/ship3d.rs	48	const		UNVERIFIED	
+SHIP_3D_TARGET_DEFAULT_TEXT_COLOR	src/ship3d.rs	49	const		UNVERIFIED	
+SHIP_3D_TARGET_HOVER_TEXT_COLOR	src/ship3d.rs	50	const		UNVERIFIED	
+SHIP_3D_TARGET_ACTIVE_TEXT_COLOR	src/ship3d.rs	51	const		UNVERIFIED	
+SHIP_3D_TARGET_EXTRA_LABEL_OFFSET	src/ship3d.rs	52	const		UNVERIFIED	
+SHIP_3D_TARGET_ALIAS_LABEL_OFFSET	src/ship3d.rs	53	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_MIN_GATE	src/ship3d.rs	54	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_MAX_GATE	src/ship3d.rs	55	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_AXIS_BIAS	src/ship3d.rs	56	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_RIGHT_BASE	src/ship3d.rs	57	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_X_WIDTH	src/ship3d.rs	58	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_Y_BASE	src/ship3d.rs	59	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_ROW_HEIGHT_BASE	src/ship3d.rs	60	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_COUNT	src/ship3d.rs	61	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_PALETTE_FIRST	src/ship3d.rs	62	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_PRESENTATION_MODE	src/ship3d.rs	63	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_HUD_SELECT_FLAGS	src/ship3d.rs	64	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_DISPATCH_BLOCK_FLAG	src/ship3d.rs	65	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_HOLD_TICKS	src/ship3d.rs	66	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_HANDLER_PHASE	src/ship3d.rs	67	const	0x4F09	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09`
+SHIP_3D_NAV_CHOICE_TARGET_Y_BASE	src/ship3d.rs	68	const	0x4F09,0x12329	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified
+SHIP_3D_NAV_CHOICE_TARGET_Y_STEP	src/ship3d.rs	69	const	0x4F09,0x12329	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_NAV_CHOICE_LAYOUT_CENTER_X	src/ship3d.rs	70	const	0x4F09,0x12329	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_NAV_CHOICE_INTERPOLATION_DURATION	src/ship3d.rs	71	const	0x4F09,0x12329	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_NAV_CHOICE_SELECT_SOUND	src/ship3d.rs	72	const	0x4F09,0x12329	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_NAV_CHOICE_RECORD_LINK_TYPE	src/ship3d.rs	73	const	0x4F09,0x12329	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_NAV_CHOICE_TARGET_LIST_FLAG	src/ship3d.rs	74	const	0x4F09,0x12329,0x9B98	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_NAV_CHOICE_PHASE_INTERPOLATING	src/ship3d.rs	75	const	0x4F09,0x12329,0x9B98	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_NAV_CHOICE_RADIO_SND_PATH_OFFSET	src/ship3d.rs	76	const	0x4F09,0x12329,0x9B98	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_NAV_CHOICE_HANDLER4_TARGET_LIST_OFFSET	src/ship3d.rs	77	const	0x4F09,0x12329,0x9B98,0x9CF5	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_NAV_CHOICE_HANDLER4_TOGGLE_OFF_TARGET_LIST_OFFSET	src/ship3d.rs	78	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_NAV_CHOICE_HANDLER4_TOGGLE_ON_TARGET_LIST_OFFSET	src/ship3d.rs	79	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_NAV_CHOICE_TABLO2_VOC_PATH_OFFSET	src/ship3d.rs	80	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_NAV_CHOICE_SOUND_GATE_SUPPRESS_TARGETS	src/ship3d.rs	81	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_NAVIGATION_INTERPOLATION_DURATION	src/ship3d.rs	82	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_NAVIGATION_DEFERRED_RECORD_TYPE	src/ship3d.rs	83	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_NAVIGATION_RECORD_KIND_CANDIDATE	src/ship3d.rs	84	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_NAVIGATION_RECORD_ACTIVE_FLAG	src/ship3d.rs	85	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_NAVIGATION_CURRENT_TARGET_MATCH_ANY_FLAG	src/ship3d.rs	86	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_NAVIGATION_REDIRECT_COUNTER_FLAG	src/ship3d.rs	87	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_NAVIGATION_TARGET_LIST_FLAG	src/ship3d.rs	88	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_NAVIGATION_LAYOUT_TARGET_LIST_OFFSET	src/ship3d.rs	89	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_NAVIGATION_SCENE_BAND_TOP	src/ship3d.rs	90	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_NAVIGATION_RENDER_CLIP_BOTTOM	src/ship3d.rs	91	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_NAVIGATION_RENDER_CLIP_RESTORED_BOTTOM	src/ship3d.rs	92	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_NAVIGATION_TRIGGER_CLOSE_STEP	src/ship3d.rs	93	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROCEDURAL_HUD_ACTIVE_FLAG	src/ship3d.rs	94	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROCEDURAL_TARGET_LIST_FLAG	src/ship3d.rs	95	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROCEDURAL_HALF_TURN	src/ship3d.rs	96	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROCEDURAL_FULL_TURN	src/ship3d.rs	97	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROCEDURAL_MOUSE_RING	src/ship3d.rs	98	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROCEDURAL_MOUSE_CENTER_X	src/ship3d.rs	99	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROCEDURAL_MOUSE_ALIGN_MASK	src/ship3d.rs	100	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROCEDURAL_CLOSE_ANGLE_THRESHOLD	src/ship3d.rs	101	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROCEDURAL_TARGET_LIST_THRESHOLD	src/ship3d.rs	102	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROCEDURAL_TARGET_LIST_STEP	src/ship3d.rs	103	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROCEDURAL_AUTO_ROTATE_STEP	src/ship3d.rs	104	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROCEDURAL_ROTATION_OFFSET_BIAS	src/ship3d.rs	105	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_MATRIX_ANGLE_TABLE_OFFSET	src/ship3d.rs	106	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_MATRIX_ANGLE_A_OFFSET	src/ship3d.rs	107	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_MATRIX_PROJECTION_ANGLE_OFFSET	src/ship3d.rs	108	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_MATRIX_ANGLE_C_OFFSET	src/ship3d.rs	109	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_MATRIX_TEMP_OFFSET	src/ship3d.rs	110	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROJECTION_MATRIX_OFFSET	src/ship3d.rs	111	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_MATRIX_FIXED_SHIFT	src/ship3d.rs	112	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROJECTION_CAMERA_X_OFFSET	src/ship3d.rs	113	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROJECTION_CAMERA_Y_OFFSET	src/ship3d.rs	114	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROJECTION_CAMERA_Z_OFFSET	src/ship3d.rs	115	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_POINT_CLOUD_COUNT	src/ship3d.rs	116	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_POINT_BUFFER_OFFSET	src/ship3d.rs	117	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROJECTION_WORK_VECTOR_OFFSET	src/ship3d.rs	118	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROJECTED_X_OFFSET	src/ship3d.rs	119	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROJECTED_Y_OFFSET	src/ship3d.rs	120	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROJECTED_DEPTH_OFFSET	src/ship3d.rs	121	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROJECTION_VIEWPORT_LEFT_OFFSET	src/ship3d.rs	122	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROJECTION_VIEWPORT_RIGHT_OFFSET	src/ship3d.rs	123	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROJECTION_VIEWPORT_TOP_OFFSET	src/ship3d.rs	124	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROJECTION_VIEWPORT_BOTTOM_OFFSET	src/ship3d.rs	125	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROJECTION_SCREEN_CENTER_X	src/ship3d.rs	126	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROJECTION_SCREEN_CENTER_Y	src/ship3d.rs	127	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROJECTION_SCREEN_WIDTH	src/ship3d.rs	128	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROJECTION_AXIS_SHIFT	src/ship3d.rs	129	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROJECTION_SHADE_SHIFT	src/ship3d.rs	130	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_PROJECTION_SHADE_BASE	src/ship3d.rs	131	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_OBJECT_ANCHOR_OFFSET	src/ship3d.rs	132	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_OBJECT_ANCHOR_COUNT	src/ship3d.rs	133	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_OBJECT_ANCHOR_STRIDE	src/ship3d.rs	134	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_OBJECT_DESCRIPTOR_BASE_OFFSET	src/ship3d.rs	135	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_OBJECT_DESCRIPTOR_STRIDE	src/ship3d.rs	136	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_OBJECT_DESCRIPTOR_INDEX_BIAS	src/ship3d.rs	137	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_OBJECT_VISIBLE_FLAG	src/ship3d.rs	138	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG	src/ship3d.rs	139	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_SPRITE_SLOT_ACTIVE_MASK	src/ship3d.rs	140	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_SPRITE_SLOT_DIRTY_FLAG	src/ship3d.rs	141	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_SPRITE_SLOT_EXTENT_CHANGED_FLAG	src/ship3d.rs	142	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_OBJECT_DEPTH_WRAP_BIAS	src/ship3d.rs	143	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_OBJECT_SCALE_NUMERATOR	src/ship3d.rs	144	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_OBJECT_SCALE_SHIFT	src/ship3d.rs	145	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_OBJECT_PROJECTED_SCALE_OFFSET	src/ship3d.rs	146	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	ASM?	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+NAV_DESTINATION_POINTS	src/ship3d.rs	160	const	0x4F09,0x12329,0x9B98,0x9CF5,0x4F45	DATA	/// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09` /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified /// byte-for-byte against the shipped image and 
+SHIP_3D_GLOBAL_CLIP_SNAPSHOT_FLAG_OFFSET	src/ship3d.rs	161	const		UNVERIFIED	
+SHIP_3D_DIRTY_RECT_LIST_OFFSET	src/ship3d.rs	162	const		UNVERIFIED	
+SHIP_3D_DIRTY_RECT_SENTINEL	src/ship3d.rs	163	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_CALLBACK_TABLE_OFFSET	src/ship3d.rs	164	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_CALLBACK_OFFSETS	src/ship3d.rs	165	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_PATH_OFFSET	src/ship3d.rs	166	const		UNVERIFIED	
+SHIP_3D_TB_SND_PATH_OFFSET	src/ship3d.rs	167	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_PHASE_COUNT	src/ship3d.rs	168	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_SCENE_SELECTOR_SENTINEL	src/ship3d.rs	169	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_VIEWPORT_DESCRIPTOR	src/ship3d.rs	170	const		UNVERIFIED	
+SHIP_3D_FINAL_RESET_HUD_FLAGS	src/ship3d.rs	173	const		UNVERIFIED	
+SHIP_3D_FINAL_RESET_NAV_TIMER	src/ship3d.rs	174	const		UNVERIFIED	
+SHIP_3D_FINAL_RESET_SELECTOR_SENTINEL	src/ship3d.rs	175	const		UNVERIFIED	
+SHIP_3D_FINAL_RESET_ACTIVE_RECORD_SENTINEL	src/ship3d.rs	176	const		UNVERIFIED	
+SHIP_3D_FINAL_RESET_DIRTY_MARKER	src/ship3d.rs	177	const		UNVERIFIED	
+SHIP_3D_FINAL_RESET_SCROLL_MODE	src/ship3d.rs	178	const		UNVERIFIED	
+SHIP_3D_FINAL_RESET_STATUS_FLAG_MASK	src/ship3d.rs	179	const		UNVERIFIED	
+SHIP_3D_OBJECT_KIND_POSITION_DIRECT_8	src/ship3d.rs	180	const		UNVERIFIED	
+SHIP_3D_OBJECT_KIND_POSITION_DIRECT_10	src/ship3d.rs	181	const		UNVERIFIED	
+SHIP_3D_OBJECT_KIND_POSITION_DIRECT_40	src/ship3d.rs	182	const		UNVERIFIED	
+SHIP_3D_OBJECT_KIND_POSITION_KIND100	src/ship3d.rs	183	const		UNVERIFIED	
+SHIP_3D_OBJECT_KIND_POSITION_DIRECT_200	src/ship3d.rs	184	const		UNVERIFIED	
+SHIP_3D_FIELD_SELECTOR_POSITION	src/ship3d.rs	185	const		UNVERIFIED	
+SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MATCH	src/ship3d.rs	186	const		UNVERIFIED	
+SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MISMATCH	src/ship3d.rs	187	const		UNVERIFIED	
+SHIP_3D_FIELD_SELECTOR_KIND100_MATCH_WORD	src/ship3d.rs	188	const		UNVERIFIED	
+SHIP_3D_FIELD_SELECTOR_KIND100_RELATION_WORD	src/ship3d.rs	189	const		UNVERIFIED	
+SHIP_3D_FIELD_SELECTOR_PARENT_LINK	src/ship3d.rs	190	const		UNVERIFIED	
+SHIP_3D_SOURCE_BITSET_SELECTOR	src/ship3d.rs	191	const		UNVERIFIED	
+SHIP_3D_SOURCE_BITSET_KIND	src/ship3d.rs	192	const		UNVERIFIED	
+SHIP_3D_C1_SOURCE_KIND_OPERAND_FLAG	src/ship3d.rs	193	const		UNVERIFIED	
+SHIP_3D_C1_SOURCE_KIND_BITSET	src/ship3d.rs	194	const		UNVERIFIED	
+SHIP_3D_C1_SOURCE_OPERAND_STATE_FLAG	src/ship3d.rs	195	const		UNVERIFIED	
+SHIP_3D_C1_KIND10_RECORD_KIND	src/ship3d.rs	196	const		UNVERIFIED	
+SHIP_3D_C1_DESTINATION_SELECTOR	src/ship3d.rs	197	const		UNVERIFIED	
+SHIP_3D_C1_RECORD_STATE_OPCODE	src/ship3d.rs	198	const		UNVERIFIED	
+SHIP_3D_C1_RECORD_STATE_AUX_WORD	src/ship3d.rs	199	const		UNVERIFIED	
+Ship3dTransitionState	src/ship3d.rs	202	struct		UNVERIFIED	
+Ship3dDepthState	src/ship3d.rs	211	struct		UNVERIFIED	
+Ship3dPlaneBandCopy	src/ship3d.rs	219	struct		UNVERIFIED	
+Ship3dTargetSelectorState	src/ship3d.rs	230	struct		UNVERIFIED	
+Ship3dTargetSelection	src/ship3d.rs	240	struct		UNVERIFIED	/// The chosen target's record value: a record offset, the retained current target, or the /// exit sentinel.
+Ship3dInterpolationGate	src/ship3d.rs	250	struct		UNVERIFIED	
+Ship3dInterpolationStep	src/ship3d.rs	256	enum		UNVERIFIED	
+Ship3dTargetListLayout	src/ship3d.rs	262	struct		UNVERIFIED	
+Ship3dTargetHitState	src/ship3d.rs	274	struct		UNVERIFIED	
+Ship3dTargetHitResult	src/ship3d.rs	282	struct		UNVERIFIED	
+Ship3dTargetTextSegment	src/ship3d.rs	292	enum		UNVERIFIED	
+Ship3dTargetDrawCommand	src/ship3d.rs	298	struct		UNVERIFIED	
+Ship3dTargetDrawResult	src/ship3d.rs	310	struct		UNVERIFIED	
+Ship3dNavChoiceState	src/ship3d.rs	316	struct		UNVERIFIED	
+Ship3dNavChoiceGates	src/ship3d.rs	331	struct		UNVERIFIED	
+Ship3dNavChoiceInput	src/ship3d.rs	341	struct		UNVERIFIED	
+Ship3dNavChoiceResult	src/ship3d.rs	350	struct		UNVERIFIED	
+Ship3dNavChoiceHandlerEffect	src/ship3d.rs	361	struct		UNVERIFIED	
+Ship3dNavChoiceHandler4State	src/ship3d.rs	380	struct		UNVERIFIED	
+Ship3dNavigationSequenceState	src/ship3d.rs	398	struct		UNVERIFIED	
+Ship3dNavigationSequenceEffect	src/ship3d.rs	407	struct		UNVERIFIED	
+Ship3dProceduralUpdateState	src/ship3d.rs	420	struct		UNVERIFIED	
+Ship3dProceduralUpdateEffect	src/ship3d.rs	436	struct		UNVERIFIED	
+Ship3dAngleTableEntry	src/ship3d.rs	448	struct		DATA	
+SHIP_3D_ANGLE_TABLE	src/ship3d.rs	460	const	0x4F45,0x4000,0x2F71	DATA	/// The recovered ship-3D rotation trig table at `DS:0x4F45` in BLOODPRG.EXE: /// 180 `(cosine, sine)` pairs, one per **2 degrees** (index 45 = 90°, 90 = 180°, /// wrapping at 180), stored at Q14 ampl
+fn	src/ship3d.rs	461	const		UNVERIFIED	
+Ship3dMatrixAngles	src/ship3d.rs	499	struct		UNVERIFIED	
+Ship3dProjectionMatrix	src/ship3d.rs	506	struct		UNVERIFIED	
+Ship3dProjectionPoint	src/ship3d.rs	511	struct		UNVERIFIED	
+Ship3dProjectionOrigin	src/ship3d.rs	518	struct		UNVERIFIED	
+Ship3dProjectedPoint	src/ship3d.rs	525	struct		UNVERIFIED	
+Ship3dProjectionViewport	src/ship3d.rs	532	struct		UNVERIFIED	
+Ship3dProjectedPixel	src/ship3d.rs	540	struct		UNVERIFIED	
+SHIP_3D_ENTITY_COUNT	src/ship3d.rs	549	const	0x6212,0x6612,0x9B98	ASM	/// The engine's entity table is 32 records of 32 bytes at `DS:0x6212`, bounded /// by the layout identity `0x6212 + 32*32 = 0x6612` (the dirty-rect list). The /// nav projector `0x9B98` drives the LA
+SHIP_3D_NAV_ENTITY_BASE	src/ship3d.rs	551	const	0x9B98	ASM	/// The entity id the nav projector's slot 0 maps to (`0x9B98`).
+SHIP_3D_ENTITY_TABLE	src/ship3d.rs	553	const	0x6212	ASM	/// `DS:0x6212` — the entity table's base, in DS-relative bytes.
+SHIP_3D_ENTITY_STRIDE	src/ship3d.rs	555	const	0x4316	ASM	/// Bytes per entity record (re-confirmed by the `rep movsd cx=8` copy at `0x4316`).
+ship_3d_nav_entity_for_slot	src/ship3d.rs	560	fn	0x6612	ASM	/// The entity id a nav projector slot writes to, and its record's DS offset. /// Slots beyond the eleven the projector drives return `None` rather than /// wrapping past the table (`0x6612`).
+Ship3dObjectSpriteDescriptor	src/ship3d.rs	569	struct	0x6212,0x65F2	ASM?	/// The entity id this slot writes into (`0x6212 + (id << 5)`), so a slot can /// be addressed the way the rest of the engine addresses entities — the /// hover status panel, for one, reads ENTITY `0x
+Ship3dObjectSpriteProjection	src/ship3d.rs	589	struct		UNVERIFIED	
+Ship3dSpriteSlotUpdateEffect	src/ship3d.rs	599	struct		UNVERIFIED	
+Ship3dDirtyRectList	src/ship3d.rs	609	struct		UNVERIFIED	
+default	src/ship3d.rs	615	fn		UNVERIFIED	
+Ship3dDirtyRectSnapshotEffect	src/ship3d.rs	624	struct		UNVERIFIED	
+Ship3dSpriteSlotRenderCommand	src/ship3d.rs	632	struct		UNVERIFIED	
+Ship3dTempSndState	src/ship3d.rs	643	struct		UNVERIFIED	
+Ship3dTempSndEffect	src/ship3d.rs	658	struct		UNVERIFIED	
+Ship3dNavigationFinalResetState	src/ship3d.rs	678	struct		UNVERIFIED	
+default	src/ship3d.rs	705	fn		UNVERIFIED	
+Ship3dNavigationFinalResetEffect	src/ship3d.rs	735	struct		UNVERIFIED	
+Ship3dNavigationRuntimeRecord	src/ship3d.rs	752	struct		UNVERIFIED	
+Ship3dNavigationSourceEntry	src/ship3d.rs	762	struct		UNVERIFIED	
+Ship3dPositionRecord	src/ship3d.rs	768	struct	0xffff	ASM?	/// Selector-0x11 parent/reference link. `None` represents the binary's /// `0xffff` sentinel, which falls back to the named arche object.
+Ship3dPositionField	src/ship3d.rs	779	struct		UNVERIFIED	
+Ship3dRecordStateSlot	src/ship3d.rs	786	struct		UNVERIFIED	
+Ship3dC1DestinationWrite	src/ship3d.rs	793	struct		UNVERIFIED	
+Ship3dNavigationTriggerState	src/ship3d.rs	799	struct		UNVERIFIED	
+default	src/ship3d.rs	818	fn		UNVERIFIED	
+Ship3dNavigationTriggerEffect	src/ship3d.rs	840	struct		UNVERIFIED	
+update_ship_3d_transition_state	src/ship3d.rs	877	fn	0xB692,0x2533,0xB699,0xb3b,0xB69E,0xb6dc,0xB6A0,0x2531,0xB6A	ASM	/// The ship-3D transition updater, `ship_3d_transition_state_update` @`0xB692`: /// /// ```text ///   0xB692  test byte [0x2533],1     ARMED? ///   0xB699  cmp word [0xb3b],0x78    not armed: the hol
+step_ship_3d_depth_scroll	src/ship3d.rs	897	fn		ORACLE	
+copy_ship_3d_plane_bands	src/ship3d.rs	953	fn	0xB6DD,0xB6E5,0x252e,0xB6EC,0x2527,0xB6F0,0x524d,0xB6F7,0xB7	ASM	/// The planar band copy, `ship_3d_plane_band_copy` @`0xB6DD`: /// /// ```text ///   0xB6E5  test byte [0x252e],1     the copy-enabled gate ///   0xB6EC  mov bx,[0x2527]          the depth offset /// 
+step_ship_3d_interpolation_gate	src/ship3d.rs	1017	fn	0x1E5D,0x008B,0x0FAD,0x1E63,0xada,0x1E67,0xadb,0x1E6D,0x1E71	ASM	/// The four-word interpolation gate, `ship_3d_interpolation_gate` @`0x1E5D` /// (reached far as `0x008B:0x0FAD`): /// /// ```text ///   0x1E63  mov bl,[0xada]           the DURATION ///   0x1E67  cmp
+layout_ship_3d_target_list	src/ship3d.rs	1062	fn	0x84A1,0x84C6,0x8428,0x84A4,0x84A7,0x84AA,0x84AD,0xac6,0x84B	ASM	/// The unified list widget's box layout, `0x84A1..0x84C6` inside /// `list_widget_layout_unified` (`0x8428`) — the same widget the OPTION menu, the /// contact menu and the concept list all enter: //
+hit_test_ship_3d_target_list	src/ship3d.rs	1128	fn	0x84F6,0x850C,0x84E6,0x84F8,0xa2c,0x84FD,0x853B,0x84FF,0x850	ASM	/// The list widget's row hit-test, `0x84F6..0x850C`: /// /// ```text ///   0x84E6  add cx,4                       the row origin is box_y + 4 ///   0x84F8  mov ax,[0xa2c] / sub ax,dx     dy = mouse_y
+update_ship_3d_nav_choice_dispatch	src/ship3d.rs	1190	fn		ASM	
+run_ship_3d_nav_choice_handler_0	src/ship3d.rs	1261	fn	0x8713,0x86F1,0x8704,0x2A19,0xF29,0x77E0,0x872C,0x87BD,0x884	ASM	/// NAV-CHOICE HANDLER 0 — file `0x8713`, entry 0 of the dispatch table. /// /// The dispatcher (`0x86F1..0x8704`) takes the committed choice `[0x2A19]`, /// makes it 0-based and doubles it, then `cal
+run_ship_3d_nav_choice_handler_1	src/ship3d.rs	1297	fn	0x872C,0x8735,0x2565,0x876A,0x8741,0xADB,0x8748,0xFFFF,0x875	ASM	/// NAV-CHOICE HANDLER 1 — file `0x872C` (`nav_choice_handler_1`), entry 1 of the /// dispatch table described on [`run_ship_3d_nav_choice_handler_0`]. Verified /// against the disassembly step by ste
+run_ship_3d_nav_choice_handler_2	src/ship3d.rs	1372	fn	0x87BD,0x87BE,0x2565,0x87FB,0x87C5,0x6D3E,0x2B13,0x87CB,0x87	ASM	/// NAV-CHOICE HANDLER 2 — file `0x87BD`, entry 2 of the dispatch table /// (see [`run_ship_3d_nav_choice_handler_0`]). Verified against the disassembly: /// /// ```text ///   0x87BE  test byte [0x256
+run_ship_3d_nav_choice_handler_3	src/ship3d.rs	1436	fn	0x8848,0x2565,0x884F,0x6756,0x8852,0x676A,0x8855,0x6768,0x88	ASM	/// NAV-CHOICE HANDLER 3 — file `0x8848`, entry 3 of the dispatch table /// (see [`run_ship_3d_nav_choice_handler_0`]). The shortest of the five, verified /// whole: /// /// ```text ///   0x8848  test
+run_ship_3d_nav_choice_handler_4	src/ship3d.rs	1478	fn	0x886C,0x8874,0x2565,0x889C,0x887B,0xADB,0x8880,0x27E6,0x842	ASM	/// NAV-CHOICE HANDLER 4 — file `0x886C`, entry 4 of the dispatch table /// (see [`run_ship_3d_nav_choice_handler_0`]). The largest of the five, and /// verified end to end: /// /// ```text ///   0x88
+run_ship_3d_navigation_sequence_update	src/ship3d.rs	1556	fn		INFRA?	
+run_ship_3d_procedural_update	src/ship3d.rs	1617	fn		INFRA?	
+build_ship_3d_projection_matrix	src/ship3d.rs	1778	fn	0x98B9,0x98CB,0x4f45,0x98CE,0x2f7d,0x98D1,0x2f71,0x2F95,0x9A	ASM	/// Build the 3x3 fixed-point projection matrix, `ship_3d_projection_matrix_build` /// @`0x98B9`: /// /// ```text ///   0x98CB  mov bp,0x4f45      the ANGLE TABLE -- SHIP_3D_ANGLE_TABLE's address /// 
+project_ship_3d_point	src/ship3d.rs	1819	fn		ASM	
+plot_ship_3d_projected_point	src/ship3d.rs	1862	fn		ASM	
+ship_3d_projected_point_shade	src/ship3d.rs	1903	fn	0x9B37,0x9B3A,0x9B3D,0x9B3F	ASM	/// Depth shade for a plotted point: `0xEF - (depth >> 12)`, from the plot at /// `0x9B37`: /// /// ```text ///   0x9B37  mov ax,[bp+0x28]   the projected DEPTH ///   0x9B3A  shr ax,0xc         >> 12 
+ship_3d_projected_point_offset	src/ship3d.rs	1917	fn	0x9B25,0x9B27,0x9B29,0x9B2C,0x9B2E	ASM	/// Framebuffer offset for a projected point — `y*320 + x`, built by the plot at /// `0x9B25` without a multiply: /// /// ```text ///   0x9B25  mov di,bx      di = y ///   0x9B27  xchg bh,bl     bx = 
+SHIP_3D_POINT_CLOUD_LEN	src/ship3d.rs	1926	const	0x9B67,0x3E8,0x9B6A,0x2FC1,0x9B71,0xFFFF	ASM	/// Number of 3D point-cloud records the starfield background is built from: /// `ship_3d_point_cloud_randomize` (`0x9B67`) does `mov cx,0x3E8` (`0x9B6A`) and /// `mov di,0x2FC1` (`0x9B71`), then fill
+SHIP_3D_POINT_CLOUD_COUNT_IMMEDIATE	src/ship3d.rs	1929	const	0x3e8,0x9B6A,0x9B6B	ASM	/// File offset of that `mov cx,imm`'s operand — `mov cx,0x3e8` sits at `0x9B6A` /// (`b9 e8 03`), so the count word is at `0x9B6B`.
+SHIP_3D_POINT_CLOUD_BASE_IMMEDIATE	src/ship3d.rs	1931	const	0x2FC1	ASM	/// ...and of the `mov di,imm` naming the record base (`DS:0x2FC1`).
+SHIP_3D_POINT_CLOUD_BASE_DS	src/ship3d.rs	1933	const	0x2fc1,0x9B71	ASM	/// The record base itself, the operand of `mov di,0x2fc1` @`0x9B71`.
+BloodPrng	src/ship3d.rs	1946	struct	0x01CE,0x0B02,0x0AEE,0x0AF0,0x0AF1,0x0AF2	ASM?	/// The engine's pseudo-random generator (`far 0x01CE:0x0B02` in BLOODPRG.EXE). /// /// Called as `rng(ax = modulus)` and returns `value % modulus` (for /// `modulus == 0` it returns the raw 16-bit va
+default	src/ship3d.rs	1959	fn		UNVERIFIED	/// The static (unseeded) state from the shipped BLOODPRG.EXE image.
+seeded_from_rtc_seconds	src/ship3d.rs	1974	fn	0x2DD3,0xAEE	ORACLE	/// Seed as the DOS routine at `0x2DD3` does: it reads the CMOS RTC seconds /// byte (`out 0x70 / in 0x71`) and writes it into both halves of the XOR /// seed word (`mov ah,al; mov cs:[0xAEE],ax`), le
+next	src/ship3d.rs	1985	fn	0x01CE,0x0B02	ORACLE	/// Advance the generator and return the next value in `0..modulus` (or the raw 16-bit word /// when `modulus == 0`). Faithful port of the generator at `0x01CE:0x0B02`.
+randomize_ship_3d_point_cloud	src/ship3d.rs	2036	fn	0x9B67,0xFFFF	ASM	/// Populate the ship-3D starfield point cloud (`ship_3d_point_cloud_randomize` /// at `0x9B67`). Each of the [`SHIP_3D_POINT_CLOUD_LEN`] records gets random /// `x`/`y`/`z` words from [`BloodPrng::ne
+SHIP_3D_PROJECTION_SCREEN_HEIGHT	src/ship3d.rs	2048	const		UNVERIFIED	/// Height of the ship-3D point-cloud depth/color buffer in rows. The DOS pixel /// helper computes `y * 320 + x` into the active page; 200 native rows cover it. /// One plotted starfield pixel and, a
+Ship3dPointCloudRender	src/ship3d.rs	2053	struct		UNVERIFIED	"/// One plotted starfield pixel and, alongside the returned count, the whole /// depth-shaded buffer produced by [`render_ship_3d_point_cloud`]. /// `320 * 200` depth-shaded buffer; `0` means ""no poin"
+render_ship_3d_point_cloud	src/ship3d.rs	2080	fn	0x9A10,0x9A1D,0x2F77,0x3E8,0x9A23,0x2FC1,0x9A31,0x2F95,0x9A2	ASM	/// Render the full ship-3D starfield background: the batch loop at `0x9A10`, /// checked against the disassembly: /// /// ```text ///   0x9A1D  mov word [0x2F77],0x3E8    the loop count — 1000, the c
+ship_3d_point_cloud_points	src/ship3d.rs	2102	fn		ASM	/// The same starfield as [`render_ship_3d_point_cloud`], but returning the plotted /// points (screen x, y, depth shade) for a GPU point renderer — identical projection, /// viewport clip, depth-shad
+SHIP_3D_HUD_BAND_TOP	src/ship3d.rs	2125	const	0xB079,0x5D98,0x131B8,0x5491,0x2795,0x279B,0x2793,0x9656,0xB	ASM?	/// The ship-nav HUD band occupies the bottom rows of the 320x200 frame (below the /// scene band that ends at row 0xA5=165), where the engine draws the grey /// pyramid-nav grid + central eye-orb. Se
+SHIP_3D_HUD_PYRAMID_VERTICES	src/ship3d.rs	2288	const	0xB079,0x5D98,0x131B8,0x5491,0x2795,0x279B,0x2793,0x9656,0xB	DATA	/// The recovered ship-nav HUD pyramid geometry: 32 3D vertices (X,Y,Z, signed /// fixed-point) copied by `ship_3d_hud_init` (BLOODPRG.EXE @0xB079) from DS:0x5D98 /// (file 0x131B8) into the HUD worki
+render_star_map_navview	src/ship3d.rs	2339	fn	0x9656,0xB193	ASM?	/// Render the pyramid-nav HUD grid into the bottom band of an indexed 320x200 /// framebuffer (the band the exporter otherwise leaves BLACK in dialogue mode). /// Draws a perspective grid of grey pyr
+project_star_map_point	src/ship3d.rs	2352	fn	0x9BBA	ASM?	/// As [`render_star_map_navview`], but pans the pyramid field horizontally by /// `compass_angle` (0..179) so the view rotates with the ship's heading (mouse /// steering) — the interactive nav behav
+render_star_map_navview_projected	src/ship3d.rs	2377	fn	0x9BBA	ASM?	/// Projection-accurate star-map nav view: a receding grid of star-system pyramids /// projected with the game's decoded projection ([`project_star_map_point`]) plus the /// central eye-orb — the syst
+W	src/ship3d.rs	2378	const		UNVERIFIED	// Camera pitched down over a ground plane of star systems; heading pans in x.
+H	src/ship3d.rs	2379	const		UNVERIFIED	// Camera pitched down over a ground plane of star systems; heading pans in x.
+render_star_map_navview_panned	src/ship3d.rs	2442	fn		UNVERIFIED	// Fill one pyramid: a triangle (apex up) with a lit left face + shadowed right // face for a simple 3D look, centred at (cx, base_y) with half-width hw + height h. // left of centre = lit face, right
+W	src/ship3d.rs	2449	const		UNVERIFIED	
+H	src/ship3d.rs	2450	const		UNVERIFIED	
+render_ship_3d_pyramid_hud	src/ship3d.rs	2507	fn		UNVERIFIED	// Bresenham line, clipped to the HUD band. // Perspective grid: rows recede toward a vanishing point up-centre; nearer // (lower) rows have larger, wider-spaced pyramids. // pyramid = two slanted edg
+W	src/ship3d.rs	2508	const		UNVERIFIED	
+H	src/ship3d.rs	2509	const		UNVERIFIED	
+render_ship_3d_starfield	src/ship3d.rs	2572	fn		UNVERIFIED	/// Render a complete ship-3D starfield background from real game data: randomize /// the point cloud from `prng`, build the camera matrix from `angles` using the /// recovered [`SHIP_3D_ANGLE_TABLE`]
+project_ship_3d_object_sprite	src/ship3d.rs	2585	fn		ASM	
+update_ship_3d_sprite_slot_position	src/ship3d.rs	2674	fn	0x420D,0x4210,0x6212,0x421D,0x4221,0x422D,0x6612	ASM	/// Update a sprite slot's screen position, `sprite_slot_position_update` /// @`0x420D`: /// /// ```text ///   0x4210  shl ax,5 / mov bx,0x6212 / add bx,ax   slot = 0x6212 + id*32 ///   0x421D  test a
+update_ship_3d_sprite_slot_extent	src/ship3d.rs	2724	fn	0x42CD,0x42D2,0x6212,0x42DD,0x42E1,0x42E4,0x42F7,0x42E8,0x42	ASM	/// Update a sprite slot's extent, `sprite_slot_extent_update` @`0x42CD`. The /// sibling of [`update_ship_3d_sprite_slot_position`], and a good deal subtler: /// /// ```text ///   0x42D2  shl ax,5 / 
+commit_ship_3d_sprite_slot_dirty_geometry	src/ship3d.rs	2779	fn	0x43F7,0x6212,0x4412,0x5249,0x4435,0x441D,0x5235,0x4423,0x52	ASM	/// Commit one slot's current geometry into its previous-geometry fields — the /// BODY of `sprite_slot_commit_dirty_range` @`0x43F7`. /// /// SCOPE, stated because the addresses do not match one-to-o
+commit_ship_3d_global_clip_snapshot	src/ship3d.rs	2800	fn		ASM	
+collect_ship_3d_dirty_sprite_slot_render_commands	src/ship3d.rs	2822	fn		ASM	
+run_ship_3d_temp_snd_setup	src/ship3d.rs	2867	fn		INFRA?	
+run_ship_3d_navigation_final_reset	src/ship3d.rs	2913	fn		INFRA?	
+SHIP_INTRO_X_END	src/ship3d.rs	2979	const	0x27DF,0x8A6A,0x8B5A,0x2F65,0x2F71	ASM	/// The ship-3D camera-approach animation state, driven by phase counter `DS:0x27DF` /// (BLOODPRG.EXE `0x8A6A..0x8B5A`). The nav camera moves because this scripted FSM /// walks the camera origin `[0
+SHIP_INTRO_X_STEP	src/ship3d.rs	2980	const	0x27DF,0x2F65,0x2F67,0x2F69,0x2F6B,0x2F71	ASM?	/// Phase counter (`DS:0x27DF`): 1 = pull-in X, 2 = accelerate Z, 3 = reset, /// 4 = hold, then done. /// Camera origin words `DS:0x2F65/0x2F67/0x2F69`. /// Z acceleration accumulator `DS:0x2F6B` (add
+SHIP_INTRO_YAW_WRAP	src/ship3d.rs	2981	const	0x27DF,0x2F65,0x2F67,0x2F69,0x2F6B,0x2F71	ASM?	/// Phase counter (`DS:0x27DF`): 1 = pull-in X, 2 = accelerate Z, 3 = reset, /// 4 = hold, then done. /// Camera origin words `DS:0x2F65/0x2F67/0x2F69`. /// Z acceleration accumulator `DS:0x2F6B` (add
+SHIP_INTRO_Z_CRUISE	src/ship3d.rs	2982	const	0x27DF,0x2F65,0x2F67,0x2F69,0x2F6B,0x2F71	ASM?	/// Phase counter (`DS:0x27DF`): 1 = pull-in X, 2 = accelerate Z, 3 = reset, /// 4 = hold, then done. /// Camera origin words `DS:0x2F65/0x2F67/0x2F69`. /// Z acceleration accumulator `DS:0x2F6B` (add
+SHIP_INTRO_Z_ACCEL_STEP	src/ship3d.rs	2983	const	0x27DF,0x2F65,0x2F67,0x2F69,0x2F6B,0x2F71	ASM?	/// Phase counter (`DS:0x27DF`): 1 = pull-in X, 2 = accelerate Z, 3 = reset, /// 4 = hold, then done. /// Camera origin words `DS:0x2F65/0x2F67/0x2F69`. /// Z acceleration accumulator `DS:0x2F6B` (add
+SHIP_INTRO_X_RESET	src/ship3d.rs	2984	const	0x27DF,0x2F65,0x2F67,0x2F69,0x2F6B,0x2F71	ASM?	/// Phase counter (`DS:0x27DF`): 1 = pull-in X, 2 = accelerate Z, 3 = reset, /// 4 = hold, then done. /// Camera origin words `DS:0x2F65/0x2F67/0x2F69`. /// Z acceleration accumulator `DS:0x2F6B` (add
+SHIP_INTRO_Z_FINAL	src/ship3d.rs	2985	const	0x27DF,0x2F65,0x2F67,0x2F69,0x2F6B,0x2F71	ASM?	/// Phase counter (`DS:0x27DF`): 1 = pull-in X, 2 = accelerate Z, 3 = reset, /// 4 = hold, then done. /// Camera origin words `DS:0x2F65/0x2F67/0x2F69`. /// Z acceleration accumulator `DS:0x2F6B` (add
+Ship3dCameraApproach	src/ship3d.rs	2988	struct	0x27DF,0x2F65,0x2F67,0x2F69,0x2F6B,0x2F71	ASM?	/// Phase counter (`DS:0x27DF`): 1 = pull-in X, 2 = accelerate Z, 3 = reset, /// 4 = hold, then done. /// Camera origin words `DS:0x2F65/0x2F67/0x2F69`. /// Z acceleration accumulator `DS:0x2F6B` (add
+default	src/ship3d.rs	3006	fn	0x8AF2,0x8AFE	ASM?	// Phase-3 reset immediates (`0x8AF2..0x8AFE`): the approach's start state.
+step	src/ship3d.rs	3029	fn	0x8A6A,0x8B5A,0x8A76,0x2328,0x2F71,0x8AB3,0x8AE0,0x8B2B	ASM?	/// Advance one frame through the decoded phase machine (`0x8A6A..0x8B5A`): /// - **P1** (`0x8A76`): if `X >= 0x2328` (9000), `X -= 0x64`; the yaw ///   `[0x2F71]` decrements toward 0 (wrapping to 0xB
+origin	src/ship3d.rs	3067	fn		UNVERIFIED	/// The camera origin as a projection origin (for `project_star_map_point` etc.).
+build_ship_3d_navigation_source_records	src/ship3d.rs	3076	fn		UNVERIFIED	
+build_ship_3d_navigation_candidate_records	src/ship3d.rs	3092	fn		UNVERIFIED	
+resolve_ship_3d_position_field	src/ship3d.rs	3116	fn		UNVERIFIED	
+ship_3d_position_distance	src/ship3d.rs	3157	fn		UNVERIFIED	
+ship_3d_position_field_distance	src/ship3d.rs	3186	fn		ASM	
+ship_3d_binary_sqrt	src/ship3d.rs	3196	fn		ASM	// Seed the estimate from the input's magnitude (leading-bit brackets, as the original does), // returning early for zero/tiny inputs whose root is the input itself. The brackets are bit // patterns, 
+ship_3d_object_table_bit_is_set	src/ship3d.rs	3235	fn		UNVERIFIED	
+select_ship_3d_c1_source_record	src/ship3d.rs	3254	fn	0x6886,0x6210	ASM?	/// `source_list_bytes` starts at the binary's `DS:0x6886` scratch list. Kind-2 /// tests use the post-`lodsw` cursor for the current source record as the bitset /// base before applying helper `0x621
+resolve_ship_3d_c1_kind10_destination_record	src/ship3d.rs	3292	fn		UNVERIFIED	
+write_ship_3d_c1_kind10_destination_slot	src/ship3d.rs	3306	fn		UNVERIFIED	
+run_ship_3d_navigation_trigger_prelude	src/ship3d.rs	3329	fn		INFRA?	
+draw_ship_3d_target_list	src/ship3d.rs	3411	fn		UNVERIFIED	
+select_ship_3d_target_record	src/ship3d.rs	3469	fn		ASM	
+ship_3d_plane_band_byte_count	src/ship3d.rs	3537	fn		ASM	
+ship_3d_scroll_value	src/ship3d.rs	3542	fn		ASM	
+start_closing_transition	src/ship3d.rs	3552	fn		ASM	
+add_to_low_byte	src/ship3d.rs	3558	fn		ORACLE	
+circular_delta	src/ship3d.rs	3562	fn		UNVERIFIED	
+wrap_ring_once	src/ship3d.rs	3576	fn		UNVERIFIED	
+matrix_pair_for_angle	src/ship3d.rs	3586	fn		ASM	
+fixed_mul_shift_15	src/ship3d.rs	3594	fn		ASM	
+projection_component	src/ship3d.rs	3601	fn	0x9A42,0x9A47,0x2F65,0x2F67	ASM	/// One component of the camera translation: `sub word [di],ax` at `0x9A42` (and /// `[di+2],ax` at `0x9A47`), with the origin loaded from `[0x2F65]`/`[0x2F67]` /// just before — a wrapping 16-bit SUB
+projection_dot	src/ship3d.rs	3605	fn		ASM	
+project_ship_3d_axis	src/ship3d.rs	3612	fn		ASM	
+scale_ship_3d_object_dimension	src/ship3d.rs	3617	fn		ASM	
+ship_3d_rects_intersect	src/ship3d.rs	3621	fn		UNVERIFIED	
+checked_i16_div_i8_to_i8	src/ship3d.rs	3631	fn		ASM	
+checked_u16_div_u8_to_u8	src/ship3d.rs	3639	fn		UNVERIFIED	
+signed_i16	src/ship3d.rs	3647	fn		ASM	
+target_list_draw_x	src/ship3d.rs	3651	fn		UNVERIFIED	
+blocks_nav_choice	src/ship3d.rs	3656	fn		UNVERIFIED	
+hit_test_ship_3d_nav_choice	src/ship3d.rs	3666	fn		UNVERIFIED	
+adjust_nav_choice_target_records	src/ship3d.rs	3707	fn	0x8748,0x8754,0xFFFF,0x8749	ASM	/// The `add ax,4` loop of nav-choice handler 1 (`0x8748..0x8754`): walk the word /// list, add the 4-byte record header to each entry, stop at the `0xFFFF` /// terminator (`cmp ax,-1 / je` @`0x8749`)
+rebuild_nav_choice_special_target_records	src/ship3d.rs	3721	fn	0x87CB,0x87DB,0x6D3E,0xFFFF	ASM	/// The rebuild loop of nav-choice handler 2 (`0x87CB..0x87DB`): walk the special /// slots at `DS:0x6D3E`, skip zeros (`or ax,ax / je`), stop at the `0xFFFF` /// sentinel after storing it, and otherw
+next_ship_3d_temp_snd_phase	src/ship3d.rs	3739	fn		UNVERIFIED	
+append_ship_3d_navigation_source_children	src/ship3d.rs	3748	fn		UNVERIFIED	
+find_ship_3d_navigation_record	src/ship3d.rs	3781	fn		UNVERIFIED	
+find_ship_3d_position_record	src/ship3d.rs	3791	fn		UNVERIFIED	
+find_ship_3d_position_field	src/ship3d.rs	3801	fn		UNVERIFIED	
+resolve_ship_3d_distance_position_field	src/ship3d.rs	3808	fn		UNVERIFIED	
+kind100_relation_word	src/ship3d.rs	3832	fn		UNVERIFIED	
+ship_3d_record_field	src/ship3d.rs	3842	fn		UNVERIFIED	
+binary_abs_word_diff	src/ship3d.rs	3846	fn		ASM	
+next_target_list_draw_color	src/ship3d.rs	3855	fn		UNVERIFIED	
 SND_CLIP_HEADER_LEN	src/snd.rs	6	const		UNVERIFIED	
 SND_PCM_FORMAT_TAG	src/snd.rs	7	const		UNVERIFIED	
 SndClip	src/snd.rs	10	struct		UNVERIFIED	
