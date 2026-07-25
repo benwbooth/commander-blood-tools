@@ -34,9 +34,16 @@ pub enum LevelKind {
 /// primary `.ext` worlds, 37+ the script2 set + more worlds/sub-levels.
 /// The resource directory's file offset (`FS:0x0c04`; `FS_SEGMENT` `0x0bbf`
 /// gives base `0x600 + 0xBBF*16` = `0xC1F0`, so the table starts at `0xCDF4`).
+///
+/// Cited, not just derived: `resource_name_table_access` (`0x3FC7`) does
+/// `mov dx,0xc04` @`0x3FD4` with `ds = fs`.
 pub const LEVEL_DIRECTORY_FILE_OFFSET: usize = 0xCDF4;
 /// One directory slot: a 16-byte NUL-padded filename, the same record shape as
 /// the world-art table's name field ([`WORLD_ART_RECORD`]).
+///
+/// The stride is the resolver's own arithmetic: `shl ax,4` @`0x3FD9` then
+/// `add dx,ax` @`0x3FDC` turns a resource ID into its filename address. So 16 is
+/// read off an instruction rather than inferred from the data's alignment.
 pub const LEVEL_DIRECTORY_SLOT: usize = 16;
 
 /// Read the resource directory OUT OF THE IMAGE rather than trusting the

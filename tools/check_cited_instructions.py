@@ -48,6 +48,47 @@ ALIAS = {
 }
 DOC = re.compile(r"^\s*(?:///|//!)?\s*(0x[0-9A-Fa-f]{4,5})\s+([a-z]{2,7})\b")
 
+# The INLINE prose form, which the dump pattern above never saw:
+#
+#     /// `shl ax,4` @`0x3FD9` turns a resource ID into its filename address
+#
+# Most citations written in prose use it, and until 2026-07-25 NONE of them were
+# checked -- a deliberately corrupted mnemonic (`shr` for `shl`) was reported
+# clean, which is how the gap was found. The backtick-quoted instruction may carry
+# operands; only the leading mnemonic is compared, exactly as for the dump form.
+# Two prose shapes this must NOT misread, both found by the rule's own first run
+# (five reports, five checker bugs, zero doc errors):
+#
+#   `mov si,0x137` @`0x836C`'s branch   -- 0x836C is the TEST guarding the branch;
+#                                          the mov is elsewhere. The possessive is
+#                                          the tell: the address is the subject.
+#   (`mov al,es:[di]` / `or al,al` / `jne` @`0x9B30`)
+#                                       -- the address anchors the FIRST item of a
+#                                          `/`-separated run, not the last.
+INLINE = re.compile(r"@\s*`?(0x[0-9A-Fa-f]{4,5})`?('s)?")
+# A run of backticked instructions, optionally `/`-separated, ending just before
+# the `@`. Group 1 of the FIRST item is the mnemonic the address refers to.
+RUN = re.compile(r"((?:`[a-z][^`]*`\s*/\s*)*`[a-z][^`]*`)\s*$")
+FIRST_MNEMONIC = re.compile(r"`([a-z]{2,7})")
+
+
+def citations(text):
+    """(address, mnemonic) pairs a doc line claims, in either form."""
+    found = []
+    m = DOC.match(text)
+    if m:
+        found.append((m.group(1), m.group(2)))
+    for hit in INLINE.finditer(text):
+        if hit.group(2):
+            continue  # possessive: the address is the subject, not the location
+        run = RUN.search(text[: hit.start()])
+        if not run:
+            continue
+        mn = FIRST_MNEMONIC.search(run.group(1))
+        if mn:
+            found.append((hit.group(1), mn.group(1)))
+    return found
+
 # Modules documenting a .xdb OVERLAY cite offsets into that overlay, whose runtime
 # cs maps 1:1 to file offsets. Checking them against BLOODPRG.EXE compares
 # unrelated bytes -- a correct citation to manu3.xdb 0x283 (`mov bx,0xffc`) was
@@ -88,32 +129,31 @@ def main():
                 st = ln.strip()
                 if not (st.startswith("///") or st.startswith("//!")):
                     continue
-                m = DOC.match(st)
-                if not m:
-                    continue
-                claimed = m.group(2).lower()
-                if claimed not in MNEMONICS:
-                    skipped += 1
-                    continue
-                addr = int(m.group(1), 16)
-                if addr >= len(image):
-                    bad += 1
-                    print(f"OUT OF RANGE {path}:{i}: {addr:#x}")
-                    continue
-                got = next(md.disasm(image[addr:addr + 16], addr), None)
-                actual = got.mnemonic if got else "<undecodable>"
-                want = ALIAS.get(claimed, claimed)
-                actual_norm = ALIAS.get(actual, actual)
-                checked += 1
-                if actual_norm != want and not (
-                    # capstone prints far call/jmp as lcall/ljmp
-                    want in ("call", "jmp") and actual_norm in ("lcall", "ljmp")
-                ):
-                    bad += 1
-                    print(
-                        f"MISMATCH {path}:{i}: doc says {addr:#07x} is `{claimed}`, "
-                        f"disassembly says `{actual}`"
-                    )
+                for addr_text, claimed_raw in citations(st):
+                    claimed = claimed_raw.lower()
+                    if claimed not in MNEMONICS:
+                        skipped += 1
+                        continue
+                    addr = int(addr_text, 16)
+                    if addr >= len(image):
+                        bad += 1
+                        print(f"OUT OF RANGE {path}:{i}: {addr:#x}")
+                        continue
+                    got = next(md.disasm(image[addr:addr + 16], addr), None)
+                    actual = got.mnemonic if got else "<undecodable>"
+                    want = ALIAS.get(claimed, claimed)
+                    actual_norm = ALIAS.get(actual, actual)
+                    checked += 1
+                    if actual_norm != want and not (
+                        # capstone prints far call/jmp as lcall/ljmp
+                        want in ("call", "jmp") and actual_norm in ("lcall", "ljmp")
+                    ):
+                        bad += 1
+                        print(
+                            f"MISMATCH {path}:{i}: doc says {addr:#07x} is `{claimed}`, "
+                            f"disassembly says `{actual}`"
+                        )
+
     print(f"{checked} cited instructions verified, {skipped} non-mnemonic lines skipped, {bad} wrong")
     return 1 if bad else 0
 

@@ -6343,3 +6343,38 @@ The driver-slot mapping that started this is still open. It is now the only thin
 between the tested `SndStream` and the `audio.rs` migration, and the lead is
 unchanged: find the code that reads a `.drv` by directory index and follow where
 it stores the far pointers.
+
+## #204 — the guard was checking a third of what it appeared to
+
+Adding two citations to `levels.rs` produced no change in
+`check_cited_instructions.py`'s count. That should have been impossible, so I
+corrupted one deliberately — `shr` for `shl` — and the guard still reported clean.
+
+Its pattern only ever matched the DUMP form, a doc line beginning with an address:
+
+```text
+///   0x3FD9  shl ax,4
+```
+
+Every citation written in PROSE — `` `shl ax,4` @`0x3FD9` ``, which is how most of
+this session's are written — was invisible to it. The reassuring "0 wrong" covered
+321 citations while the tree held 389.
+
+Extending it found five mismatches, and all five were bugs in MY NEW RULE rather
+than errors in the docs. Two prose shapes it misread:
+
+  * ``mov si,0x137` @`0x836C`'s branch` — `0x836C` is the `cmp` that GUARDS the
+    branch; the `mov` is at `0x8373`. The possessive is the tell: the address is
+    the sentence's subject, not the quoted instruction's location.
+  * ``mov al,es:[di]` / `or al,al` / `jne` @`0x9B30`` — the address anchors the
+    FIRST item of a `/`-separated run. The regex had taken the last.
+
+Both are now handled explicitly, and the corrupted-mnemonic test that exposed the
+gap is the acceptance test for the fix: it is reported, then clean again once
+restored.
+
+68 previously unchecked citations are now verified, all correct. The finding is
+not that the docs were wrong — it is that a guard reporting "0 wrong" had been
+silently ignoring most of its input, which is the same failure as the truncated
+test greps that once hid a failing oracle test for an unknown number of sessions.
+A guard's coverage needs testing as much as its verdict does.
