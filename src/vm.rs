@@ -505,6 +505,9 @@ pub fn text_line_flags_offset(line_index: u16) -> u16 {
     line_index.wrapping_add(2)
 }
 
+/// The line's PRESENTATION record sits at `line + TALK_FIELD` — the `0x3A` field
+/// the A6 handler resolves through [`TALK_FIELD`]'s citation, not a separate
+/// constant. Basis is that field offset; this function is the addition.
 pub fn text_presentation_record_offset(line_index: u16) -> u16 {
     line_index.wrapping_add(TALK_FIELD)
 }
@@ -537,10 +540,15 @@ pub fn is_record_entry_opcode(opcode: u8) -> bool {
     (OP_RECORD_ENTRY_MIN..=OP_RECORD_ENTRY_MAX).contains(&opcode)
 }
 
+/// `0xC1..=0xC2`. NOT a handler family — they dispatch to `0x6B4C` and `0x6E34`
+/// separately (see the note above [`is_record_entry_opcode`]); the range is a
+/// token-shape group for the decoder.
 pub fn is_record_state_opcode(opcode: u8) -> bool {
     (OP_RECORD_STATE_MIN..=OP_RECORD_STATE_MAX).contains(&opcode)
 }
 
+/// `0xCA` and `0xCB`, which dispatch to `0x64E5` and `0x6510` — again two
+/// handlers, grouped here by operand layout rather than behaviour.
 pub fn is_global_compare_opcode(opcode: u8) -> bool {
     opcode == OP_GLOBAL_WORD_COMPARE || opcode == OP_GLOBAL_PAIR_COMPARE
 }
@@ -617,6 +625,9 @@ pub fn bit_flag_byte_offset(base_offset: u16, bit_index: u8) -> u16 {
     base_offset.wrapping_add((bit_index >> 3) as u16)
 }
 
+/// `0x80 >> (bit & 7)` — the mask form of the `shl al,cl / shl al,1 / jae`
+/// sequence at `0x6AD3`, which is why bit 0 is the HIGH bit. See
+/// [`bit_flag_byte_offset`] for the full derivation.
 pub fn bit_flag_mask(bit_index: u8) -> u8 {
     0x80u8 >> (bit_index & 7)
 }

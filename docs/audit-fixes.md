@@ -5547,3 +5547,28 @@ wrong item, each introduced by an edit that was correct about everything except
 placement. The ledger caught all three, which is an argument for its origin column
 being derived from the source rather than maintained by hand: a hand-kept citation
 would have stayed with the function and hidden the mistake.
+
+## #175 — six helpers whose basis is a trap the CPU takes
+
+Six small functions documented, and two are worth naming.
+
+`checked_i16_div_i8_to_i8` models `idiv bl` — AX by an 8-bit divisor, quotient in
+AL. Its `Option` is not defensive programming: it covers the two cases the CPU
+TRAPS on, a zero divisor and a quotient too large for AL. The port stops where the
+game would fault, instead of continuing with a wrapped number. That is a decision
+about what to do at a boundary the game never crosses, and reading the signature
+alone it looks like ordinary caution.
+
+`signed_i16` exists because the game's coordinate and clip tests are `jl`/`jge`.
+A point behind the camera is simultaneously a large unsigned number and a small
+negative one, and only the second is correct — so port comparisons must route
+through this rather than comparing `u16`s. A one-line cast whose absence would be
+invisible in review and wrong on screen.
+
+The other four are derivations from already-cited facts: the presentation record
+offset is `line + TALK_FIELD`; `is_record_state_opcode` and
+`is_global_compare_opcode` are token-shape groups over opcodes with SEPARATE
+handlers (`0x6B4C`/`0x6E34`, `0x64E5`/`0x6510`); `bit_flag_mask` is the mask form
+of the `shl`-into-carry test at `0x6AD3`.
+
+The queue: 40 -> 35.

@@ -3883,6 +3883,11 @@ fn ship_3d_rects_intersect(
         && signed_i16(slot_rect.bottom) > signed_i16(dirty_rect.top)
 }
 
+/// `idiv bl` modelled: AX divided by an 8-bit divisor, quotient in AL. The
+/// `Option` covers the two cases the CPU TRAPS on — a zero divisor, and a
+/// quotient too large for 8 bits — rather than wrapping them, so the port stops
+/// where the game would fault instead of continuing with a different number.
+/// Used by the interpolation gate at `0x1E74`.
 fn checked_i16_div_i8_to_i8(dividend: i16, divisor: i8) -> Option<i8> {
     if divisor == 0 {
         return None;
@@ -3899,6 +3904,10 @@ fn checked_u16_div_u8_to_u8(dividend: u16, divisor: u8) -> Option<u8> {
     u8::try_from(quotient).ok()
 }
 
+/// Reinterpret a stored word as SIGNED. The game's coordinate and clip tests are
+/// `jl`/`jge` (e.g. the plot's bounds at `0x9B0A`), so port comparisons must go
+/// through this rather than comparing `u16`s — a value behind the camera is a
+/// large unsigned number and a small negative one, and only the second is right.
 fn signed_i16(value: u16) -> i16 {
     value as i16
 }
