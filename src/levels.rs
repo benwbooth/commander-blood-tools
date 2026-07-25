@@ -32,6 +32,65 @@ pub enum LevelKind {
 /// The decoded resource directory (`FS:0x0c04`), `index` = resource ID = table
 /// position. IDs 0..21 are engine sprites/drivers/the script1 set/buffers, 22..36 the
 /// primary `.ext` worlds, 37+ the script2 set + more worlds/sub-levels.
+/// The resource directory's file offset (`FS:0x0c04`; `FS_SEGMENT` `0x0bbf`
+/// gives base `0x600 + 0xBBF*16` = `0xC1F0`, so the table starts at `0xCDF4`).
+pub const LEVEL_DIRECTORY_FILE_OFFSET: usize = 0xCDF4;
+/// One directory slot: a 16-byte NUL-padded filename, the same record shape as
+/// the world-art table's name field ([`WORLD_ART_RECORD`]).
+pub const LEVEL_DIRECTORY_SLOT: usize = 16;
+
+/// Read the resource directory OUT OF THE IMAGE rather than trusting the
+/// transcription below.
+///
+/// [`LEVEL_DIRECTORY`] is a hand-copied prefix of this table, which makes it a
+/// content-bearing literal — the defect class `CLAUDE.md` names first. It stays
+/// for now because callers index it by resource ID, but
+/// `level_directory_literal_matches_the_image` holds it to the bytes, and the
+/// image has MORE entries than the literal does.
+///
+/// Slots are read until one is not a NUL-padded printable name, which is how the
+/// table ends in the image.
+pub fn parse_level_directory(image: &[u8]) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut at = LEVEL_DIRECTORY_FILE_OFFSET;
+    while at + LEVEL_DIRECTORY_SLOT <= image.len() {
+        let slot = &image[at..at + LEVEL_DIRECTORY_SLOT];
+        let Some(end) = slot.iter().position(|&b| b == 0) else {
+            break;
+        };
+        if end == 0
+            || !slot[..end].iter().all(|b| b.is_ascii_graphic())
+            || !slot[end..].iter().all(|&b| b == 0)
+        {
+            break;
+        }
+        out.push(String::from_utf8_lossy(&slot[..end]).into_owned());
+        at += LEVEL_DIRECTORY_SLOT;
+    }
+    out
+}
+
+/// One directory entry read from the IMAGE, with the kind inferred from the
+/// filename's extension.
+///
+/// The kind inference is the PORT'S classification, not a field the table
+/// carries — the game's table is filenames only. It is stated here so the
+/// distinction stays visible: the NAMES are game data, the KINDS are ours.
+pub fn level_entry_from_image(image: &[u8], index: u16) -> Option<(String, LevelKind)> {
+    let names = parse_level_directory(image);
+    let name = names.get(index as usize)?.clone();
+    let kind = if name.ends_with(".ext") {
+        LevelKind::World
+    } else if name.ends_with(".spr") {
+        LevelKind::Sprite
+    } else if name.starts_with("script") {
+        LevelKind::Script
+    } else {
+        LevelKind::Resource
+    };
+    Some((name, kind))
+}
+
 pub const LEVEL_DIRECTORY: &[LevelEntry] = &[
     LevelEntry { index: 0, stem: "fupcom", kind: LevelKind::Sprite },
     LevelEntry { index: 1, stem: "nosound.drv", kind: LevelKind::Resource },
@@ -313,6 +372,69 @@ pub fn parse_world_art_table(exe: &[u8]) -> Vec<(String, u16)> {
 
 #[cfg(test)]
 mod tests {
+
+    /// The image carries resources the transcribed literal never had — including
+    /// the whole script3/4/5 sets the frontend already loads by name.
+    #[test]
+    fn level_directory_image_has_entries_the_literal_lacks() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        let names = parse_level_directory(&exe);
+        assert_eq!(names.len(), 95, "the shipped directory has 95 slots");
+        assert!(
+            names.len() > LEVEL_DIRECTORY.len(),
+            "the literal is a PREFIX, not the table"
+        );
+
+        // The literal stops at 54; these are real slots past it.
+        assert_eq!(
+            level_entry_from_image(&exe, 76),
+            Some(("script3.cod".to_string(), LevelKind::Script))
+        );
+        assert_eq!(
+            level_entry_from_image(&exe, 86),
+            Some(("script5.cod".to_string(), LevelKind::Script))
+        );
+        assert_eq!(
+            level_entry_from_image(&exe, 94),
+            Some(("ondoya.ext".to_string(), LevelKind::World))
+        );
+        assert_eq!(level_entry_from_image(&exe, 95), None, "past the table");
+
+        // Every slot the literal DOES cover keeps agreeing (belt and braces with
+        // level_directory_literal_matches_the_image).
+        assert_eq!(names[1], "nosound.drv");
+        assert_eq!(names[54], "forest.ext", "the first slot the literal omits");
+    }
+
+    /// The transcribed [`LEVEL_DIRECTORY`] against the bytes it was copied from.
+    /// A literal that restates game data is only as good as the copy.
+    #[test]
+    fn level_directory_literal_matches_the_image() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        let names = parse_level_directory(&exe);
+        assert!(names.len() >= LEVEL_DIRECTORY.len(), "image has at least the literal");
+
+        for entry in LEVEL_DIRECTORY {
+            let actual = &names[entry.index as usize];
+            // The literal stores some names stem-only ("fupcom" for "fupcom.spr").
+            let agrees = actual == entry.stem
+                || actual.split('.').next() == Some(entry.stem)
+                || actual.starts_with(entry.stem);
+            assert!(
+                agrees,
+                "slot {} is {actual:?} in the image but {:?} in the literal",
+                entry.index, entry.stem
+            );
+        }
+    }
 
     /// The world-art record stride is `16-byte name + 3 words` = 22. Checked by
     /// walking the table at the claimed stride and requiring every record to start

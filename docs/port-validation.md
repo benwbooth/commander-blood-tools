@@ -431,6 +431,35 @@ checks. Exits non-zero on any stage failure (CI gate). Run: `cargo run --bin pla
    all interactive ground truth this session (OPTION box, region tables, the manu3 memory). Not a
    port defect; a secondary tool only.
 
+## RESOURCE DIRECTORY — a transcribed literal, and it is a PREFIX (2026-07-25)
+
+Chasing the `.drv` loader (to map the driver vector slots) turned up the game's
+own FILE MANIFEST: a 95-slot table of 16-byte NUL-padded filenames at `FS:0x0c04`
+= file `0xCDF4`. The driver names are slots 1 (`nosound.drv`) and 25
+(`dnsdb.drv`), which is why no immediate search ever found a reference to those
+strings — the code indexes the table, it does not point at the names.
+
+`levels::LEVEL_DIRECTORY` is 54 of those 95 slots, hand-copied into Rust source.
+Two separate problems, both now measured rather than suspected:
+
+1. It is a CONTENT-BEARING LITERAL restating game data — the defect class
+   `CLAUDE.md` names first. `parse_level_directory` now reads the table from the
+   image, and `level_directory_literal_matches_the_image` holds the literal to
+   those bytes. The transcription turned out to be CORRECT for all 54 (a real
+   check that could have failed, not a formality).
+2. It is INCOMPLETE by 41 entries: 26 further `.ext` worlds AND the entire
+   script3/4/5 file sets (slots 76..90). The frontend already loads `SCRIPT3..5`
+   by name, so the port has been reaching for resources its own directory does
+   not list. `level_entry_from_image` reads any slot, tested at 76, 86 and 94.
+
+STATUS: the parse and the pin are done; the literal still exists because callers
+index it by resource ID. Replacing it means routing `entry()` through the image,
+which is a small refactor with two call sites -- both inside `levels.rs`.
+
+NOTE ON KINDS: the table stores FILENAMES ONLY. `LevelKind` is the port's own
+classification by extension, and `level_entry_from_image` says so in its doc. The
+names are the game's; the kinds are ours.
+
 ## THE SINGLE REMAINING PORT-SIDE UNKNOWN (session close) — APPROX, routine named
 
 `secret` (SCRIPT3 rec 0x1416) and `rec_13C2` gate SCRIPT3's endgame but have NO

@@ -6311,3 +6311,35 @@ wired into the live audio path — the same class of defect as the destination
 `compass_angle` arithmetic that #197 removed, and worse for being unhearable here.
 So the gate is named rather than stepped over: decode `0xBB9D` and the position
 call, then migrate.
+
+## #203 — hunting a driver pointer, found a transcribed manifest
+
+The task was to map the sound driver's vector slots, which needed the `.drv`
+loader. Neither `nosound.drv` nor `dnsdb.drv` is referenced by any immediate in
+the executable, and that absence was the clue: the code does not POINT at those
+strings, it INDEXES them.
+
+They sit in a 95-slot table of 16-byte NUL-padded filenames at `FS:0x0c04` (file
+`0xCDF4`) — the game's file manifest, the same 16-byte name-record shape as the
+world-art table settled in #191.
+
+`levels::LEVEL_DIRECTORY` is 54 of those slots, copied into Rust source. That is a
+content-bearing literal, and it is also a PREFIX: 41 entries missing, including
+26 `.ext` worlds and the whole of script3/4/5 (slots 76..90). The frontend loads
+`SCRIPT3..5` by name already, so the port has been reaching for resources its own
+directory does not list.
+
+`parse_level_directory` reads the table from the image; `level_entry_from_image`
+resolves any slot. The transcription check was a real test rather than a
+formality — it could have found a copying error in any of 54 rows, and found none,
+which is worth knowing precisely because I would not have assumed it.
+
+One boundary kept explicit: the table stores FILENAMES ONLY. `LevelKind` is the
+port's classification by extension, not a field the game carries, and
+`level_entry_from_image` says so where a reader would otherwise assume the kinds
+were decoded too.
+
+The driver-slot mapping that started this is still open. It is now the only thing
+between the tested `SndStream` and the `audio.rs` migration, and the lead is
+unchanged: find the code that reads a `.drv` by directory index and follow where
+it stores the far pointers.
