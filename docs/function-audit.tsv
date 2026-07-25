@@ -1172,7 +1172,7 @@ panorama_frame_for_angle	src/tbbig.rs	233	fn	0x0A2A,0x97E7	ASM?	/// Map a bridge
 media_stem	src/util.rs	1	fn		UNVERIFIED	
 safe_file_stem	src/util.rs	14	fn		UNVERIFIED	
 OPCODE_DESC	src/vm.rs	47	const	0x14338,0x6F18	DATA	/// Per-opcode descriptor bytes for opcodes `0xA0..=0xD3`, transcribed from /// `BLOODPRG.EXE` file offset 0x14338 (`DS:0x6F18`). `(len_mode0, byte1)` where /// `byte1` is either `len_mode1` or a mode
-FIELD_OFFSETS	src/vm.rs	153	const	0x6D60,0x14180	DATA	/// The engine's per-kind FIELD-OFFSET MATRIX (gs:0x6D60, file 0x14180), /// byte-exact: `FIELD_OFFSETS[field][kind]` = the byte offset of that field in /// a record of that kind (0 = the kind lacks t
+FIELD_OFFSETS	src/vm.rs	153	const	0x6D60,0x14180	ORACLE	/// The engine's per-kind FIELD-OFFSET MATRIX (gs:0x6D60, file 0x14180), /// byte-exact: `FIELD_OFFSETS[field][kind]` = the byte offset of that field in /// a record of that kind (0 = the kind lacks t
 field_offset	src/vm.rs	181	fn	0x6023	ASM?	/// Field offset for a record kind, per the engine's matrix (None = absent). /// The kind word is a BIT-FLAG; the column is its lowest set bit (`bsf`, /// 0x6023 `bsf bx,bx`), NOT `kind & 0xF`. bsf(2)
 OP_MIN	src/vm.rs	191	const		UNVERIFIED	
 OP_MAX	src/vm.rs	206	const	0x6F18,0x62B6	ASM?	/// Upper bound of the TOKEN-VALIDITY range, not of dispatch — the two differ and the /// distinction is easy to lose. /// /// * TOKENS: `OPCODE_DESC` at `DS:0x6F18` has 96 entries covering `0xA0..=0x
@@ -1246,7 +1246,7 @@ record_entry_stored_related_offset	src/vm.rs	506	fn		ASM
 script_profile_index_from_request_operand	src/vm.rs	512	fn	0x64B8,0x6780	ASM?	/// Port the `0xD2` handler at `BLOODPRG.EXE` file `0x64B8`: /// `lodsb; cbw; dec ax; mov gs:[0x6780], ax`.
 bit_flag_byte_offset	src/vm.rs	518	fn		ASM	/// `0xB7` addresses bits high-bit-first inside each byte: bit 0 is mask 0x80, /// bit 7 is mask 0x01, then bit 8 starts the next byte at mask 0x80.
 bit_flag_mask	src/vm.rs	522	fn		ASM	
-vm_field_offset	src/vm.rs	526	fn		ASM	
+vm_field_offset	src/vm.rs	526	fn		ORACLE	
 reveal_complete_hold_ticks	src/vm.rs	537	fn	0x94D4,0x94DD,0x0ACA,0x67BB	ASM	/// Port the reveal-complete hold timer at `BLOODPRG.EXE` `0x94D4..0x94DD`: /// `b35 = gs:[0x0ACA] << 2; gs:[0x67BB] = 1`.
 text_speed_step_from_setting	src/vm.rs	546	fn	0x1B29,0x1B3D,0x0ACA,0xB31,0x94BA	ASM	/// Port the text-speed init at `BLOODPRG.EXE` `0x1B29..0x1B3D`: the config text-speed /// setting index is doubled (`add ax,ax`), setting 4 is special-cased (`cmp ax,8; /// add ax,4`), then `gs:[0x0A
 reveal_frames_per_char	src/vm.rs	558	fn	0xB31,0x94BA	ASM?	/// Frames per revealed character for a text-speed step: the reveal loop resets the /// per-character countdown `gs:[0xB31] = step >> 2` (see `REVERSE.md` @0x94BA); a /// zero countdown reveals a char
@@ -1339,7 +1339,7 @@ VM_BRANCH_A	src/vm.rs	1404	const		UNVERIFIED
 VM_BRANCH_B	src/vm.rs	1405	const		UNVERIFIED	
 VM_PC_SAVED	src/vm.rs	1406	const		UNVERIFIED	
 MAIN_PENDING_PROFILE_IDLE_GATES	src/vm.rs	1408	const		UNVERIFIED	
-VM_FIELD_OFFSET_TABLE	src/vm.rs	1424	const	0x6023,0x6D60,0x14180,0x142CF	ASM?	/// Field-offset lookup table used by helper `0x6023`: /// `gs:[0x6D60 + selector * 16 + bsf(kind)]`. /// Transcribed from `BLOODPRG.EXE` file `0x14180..0x142CF`.
+VM_FIELD_OFFSET_TABLE	src/vm.rs	1424	const	0x6023,0x6D60,0x14180,0x142CF	ORACLE	/// Field-offset lookup table used by helper `0x6023`: /// `gs:[0x6D60 + selector * 16 + bsf(kind)]`. /// Transcribed from `BLOODPRG.EXE` file `0x14180..0x142CF`.
 LineState	src/vm.rs	1450	struct		UNVERIFIED	
 BranchEvent	src/vm.rs	1460	struct		UNVERIFIED	
 ScriptProfileRequestEvent	src/vm.rs	1471	struct		UNVERIFIED	

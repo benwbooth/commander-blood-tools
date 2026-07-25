@@ -2688,3 +2688,29 @@ ever drift the suite says so.
 Generalises: wherever the port has BOTH a lifted function and a native
 reimplementation, the lift's verification does not transfer. `recomp` holds 84
 oracle-verified lifts; any of them with a native twin deserves the same treatment.
+
+## FIX #81 — the field-offset resolver, swept against its own lift
+
+Acting on #80's generalisation: where the port has BOTH a lifted function and a
+native reimplementation, the lift's verification does not transfer. Twenty-one
+port items cite a lifted address; this takes the one that matters most.
+
+`vm_field_offset` is the resolver every selector lookup in the VM goes through —
+`shl ax,4`, `bsf bx,bx`, `mov al,gs:[bx+0x6D60]`. Its lift `func_6023` is
+oracle-verified; the native version was `ASM?`, an address cited and nothing
+checked. A divergence there would mis-resolve a record field, which is the
+quietest way this port could go wrong: no crash, no visual tell, just the wrong
+word read for the rest of the run.
+
+The new differential sweeps the WHOLE REAL DOMAIN — every selector row of the
+matrix against every single-bit kind, 336 combinations — running the lift in the
+recomp Machine with the matrix seeded from the image, and requiring the native
+result to match each time. It also asserts the port's baked `FIELD_OFFSETS` IS the
+image's bytes.
+
+They agree everywhere. Three rows move to `ORACLE`.
+
+Remaining twins worth the same treatment, from the same scan: `special_slot_insert`
+/`special_slot_remove` (`0x5FF6`/`0x5FD8`), `square_caps_text_width` (`0x30CD`),
+`entity::advance_state` and `toggle` (`0x41D1`/`0x420D`), `save_ui_key` (`0x1DD8`),
+`step_ship_3d_nav_state` (`0xB75C`).

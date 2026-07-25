@@ -1191,6 +1191,60 @@ mod tests {
         }
     }
 
+    /// The FIELD-OFFSET RESOLVER has a native twin too, and it is the one every
+    /// selector lookup in the VM goes through.
+    ///
+    /// `func_6023` is the lift, oracle-verified; `vm::vm_field_offset` is a
+    /// hand-written reimplementation of the same three instructions (`shl ax,4`,
+    /// `bsf bx,bx`, `mov al,gs:[bx+0x6D60]`). Sweep the whole real domain — every
+    /// selector row of the matrix against every single-bit kind — and require they
+    /// agree. A divergence here would mis-resolve a record field, which is the
+    /// quietest possible way for the port to go wrong.
+    #[test]
+    fn native_field_offset_matches_the_lifted_resolver() {
+        let Some(exe) = load_exe_image() else { return };
+        const GS: u16 = 0x2600;
+        const MATRIX_DS: u32 = 0x6D60;
+        const MATRIX_FILE: usize = 0x14180;
+        let rows = crate::vm::FIELD_OFFSETS.len();
+
+        let mut checked = 0usize;
+        for selector in 0..rows as u8 {
+            for bit in 0..16u32 {
+                let kind: u16 = 1 << bit;
+                let mut m = Machine::new();
+                m.regs.ds = GS;
+                m.regs.gs = GS;
+                m.regs.ss = 0x9000;
+                m.regs.set_sp(0xFFF0);
+                // The matrix as the game holds it, straight from the image.
+                let base = (GS as u32) * 16 + MATRIX_DS;
+                for i in 0..rows * 16 {
+                    m.mem[(base + i as u32) as usize] = exe[MATRIX_FILE + i];
+                }
+                m.regs.set_ax(u16::from(selector));
+                m.regs.set_bx(kind);
+                let sp = m.regs.sp() as u32;
+                m.write16(m.regs.ss, sp, 0x0000);
+                m.write16(m.regs.ss, sp.wrapping_add(2), 0x0020);
+                super::auto::func_6023(&mut m);
+                let lifted = m.regs.eax as u16;
+                let native = crate::vm::vm_field_offset(selector, kind).unwrap_or(0);
+                assert_eq!(
+                    lifted, native,
+                    "selector {selector:#x} kind {kind:#x}: lift {lifted:#x} vs native {native:#x}"
+                );
+                checked += 1;
+            }
+        }
+        assert_eq!(checked, rows * 16, "the whole matrix domain was swept");
+        // And the port's baked matrix must BE the image's bytes.
+        assert_eq!(
+            crate::vm::FIELD_OFFSETS.as_flattened(),
+            &exe[MATRIX_FILE..MATRIX_FILE + rows * 16]
+        );
+    }
+
     /// The PORT'S NATIVE PRNG must agree with the oracle too.
     ///
     /// `prng_2de2_matches_oracle_vectors` checks the LIFTED function; `ship3d`'s
