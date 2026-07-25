@@ -7121,3 +7121,30 @@ different way, one was a bug, and one is honestly open. A checker that reported
 absence as failure would have produced four false alarms and buried the real one —
 which is why it prints ABSENT with a byte count and leaves the judgement to a
 reader.
+
+## #230 — checking a table you cannot search for
+
+`check_literal_tables.py` skipped anything under 8 bytes, because a short byte
+sequence matches somewhere in a 86KB image by chance. That floor also made the
+tool blind to the very case that inspired it: `SHIP_3D_TEMP_SND_CALLBACK_OFFSETS`
+is SIX bytes, and #227 verified it by hand.
+
+The fix is to stop searching and start looking. If a scalar constant within a few
+lines holds a plausible DS offset, check the bytes AT that address. A six-byte
+match at one specific address is strong where a six-byte match anywhere is
+meaningless — the address is the extra evidence that replaces length.
+
+Running it reproduces #227's manual result: `SHIP_3D_TEMP_SND_CALLBACK_OFFSETS`
+confirmed at `0x0DEEC`, the address `SHIP_3D_TEMP_SND_CALLBACK_TABLE_OFFSET`
+names. That the new rule independently arrives at a known-good answer is the
+validation — a new checker's first run is a test of the checker, and this one had
+a right answer waiting for it.
+
+Eleven tables remain unverifiable by either route: too short to search, with no
+address constant beside them. That is an honest residue rather than a queue —
+nothing about them is wrong, there is simply no evidence available from the images
+alone, and saying so beats leaving them in a "skipped" count that reads like
+neglect.
+
+The tool's docstring now describes all three outcomes, including that ABSENT is a
+question (four good reasons, one real defect) rather than a failure.
