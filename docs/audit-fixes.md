@@ -2577,3 +2577,34 @@ it as explained. Placing the claim in an isolated comment inside a function body
 fires as intended. A control that passes can mean the guard is broken OR that the
 control was wrong; distinguishing those is the same discipline as the four tools
 that needed their first output disbelieved.
+
+## FIX #77 — the self-referential assertion, guarded
+
+The second class-wide guard, on the shape that hid the font truncation:
+
+    let ascii_map = slice(MAP_OFFSET, DIALOGUE_FONT_ASCII_MAP_LEN);   // 128
+    assert_eq!(font.ascii_map.len(), DIALOGUE_FONT_ASCII_MAP_LEN);    // always true
+
+The real table is 176 entries. The extractor read 128 — dropping every accented
+character — and the test agreed with itself for a whole campaign. Seven such
+assertions were re-grounded (#56, #57); `tools/check_selfref_asserts.py` now runs
+as a test so an eighth cannot appear unnoticed.
+
+TWO REFINEMENTS THE FIRST RUN FORCED, both cases of the tool being wrong rather
+than the code:
+
+* It flagged four `len() == W` assertions that were really `len() == W * H`. The
+  regex stopped at the first constant of a product. A dimensional identity ("the
+  framebuffer is width times height") is not an extent claim about game data;
+  the RHS must now be a SINGLE constant.
+* It flagged `bloodsav`'s synthetic round-trip, whose constants ARE grounded — in
+  a sibling test that reads them back from the writer's `mov cx,imm` immediates.
+  Grounding is now searched file-wide, since evidence in another test is still
+  evidence.
+
+Standing at 7 assertions, 0 ungrounded. POSITIVE CONTROL: an isolated
+`len() == CONST` in a file with no independent evidence fires; removing it clears.
+
+That is five checkers now running as tests — DS/file pairs, quoted instructions,
+labels.csv, capture provenance, and this. Every one of them was wrong on its first
+run, and every one now guards a class that produced a real defect this session.

@@ -59,6 +59,41 @@ pub const VIEWPORT_H: usize = 200;
 pub const HNM_FPS: u32 = 15;
 
 #[cfg(test)]
+mod selfref_assert_tests {
+    /// No test may pin a length against ONLY the constant that produced it.
+    ///
+    /// This is the shape that hid the font truncation for a whole campaign: the
+    /// extractor sliced 128 entries with `DIALOGUE_FONT_ASCII_MAP_LEN`, the test
+    /// asserted `len() == DIALOGUE_FONT_ASCII_MAP_LEN`, and both agreed while the
+    /// real table was 176 — dropping every accented character the game can draw.
+    /// Seven assertions of that shape were re-grounded against layout identities,
+    /// code immediates or the data's own bounds; this stops an eighth appearing.
+    ///
+    /// A `len() == CONST` is cleared by independent evidence ANYWHERE in its file
+    /// (an image read, an identity, a `mov` immediate) — sibling tests count, which
+    /// is how `bloodsav` pins its header sizes.
+    #[test]
+    fn length_assertions_are_grounded_in_something_independent() {
+        let script = std::path::Path::new("tools/check_selfref_asserts.py");
+        if !script.exists() {
+            return;
+        }
+        let out = match std::process::Command::new("python3").arg(script).output() {
+            Ok(o) => o,
+            Err(_) => return,
+        };
+        let text = String::from_utf8_lossy(&out.stdout);
+        assert!(out.status.success(), "ungrounded length assertions:\n{text}");
+        let n: usize = text
+            .split_whitespace()
+            .next()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(0);
+        assert!(n >= 5, "expected the sweep to find assertions, got: {text}");
+    }
+}
+
+#[cfg(test)]
 mod provenance_tests {
     /// THE PRIME RULE, enforced: no runtime comment may say a value was measured
     /// off a capture without either citing the binary address that replaced it or
