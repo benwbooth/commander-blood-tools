@@ -1873,13 +1873,25 @@ pub struct Ship3dPointCloudRender {
     pub plotted: usize,
 }
 
-/// Render the full ship-3D starfield background: the batch loop at `0x9A10`.
-/// Each point is translated by `origin`, projected through `matrix`, and
-/// depth-shaded into a `320 * 200` buffer, skipping points at non-positive
-/// depth and cells already claimed by a nearer point (the DOS helper only
-/// writes empty depth-buffer pixels). This drives the existing
-/// [`project_ship_3d_point`] / [`plot_ship_3d_projected_point`] primitives over
-/// the whole cloud instead of a single point.
+/// Render the full ship-3D starfield background: the batch loop at `0x9A10`,
+/// checked against the disassembly:
+///
+/// ```text
+///   0x9A1D  mov word [0x2F77],0x3E8    the loop count — 1000, the cloud's length
+///   0x9A23  mov si,0x2FC1              the point-cloud records
+///   0x9A31  mov bp,0x2F95              the projection matrix
+///   0x9A2D  mov es,[0x5223]            the render target
+///   0x9A34  copy 8 bytes of the record into the work slot at 0x4F01
+///   0x9A42  sub word [di],ax           translate by the camera ORIGIN (loaded
+///   0x9A47  sub word [di+2],ax         from 0x2F65/0x2F67 at 0x9A3F/0x9A44)
+/// ```
+///
+/// The translation is a SUBTRACTION, which `projection_component`'s
+/// `point.wrapping_sub(origin)` reproduces — and `DS:0x2F65` is the same camera
+/// origin the nav renderer cites as `(10000, 12000, 0)`. Each translated point
+/// then goes through [`project_ship_3d_point`] and
+/// [`plot_ship_3d_projected_point`], skipping non-positive depth and cells a
+/// nearer point already claimed (the DOS helper only writes empty pixels).
 pub fn render_ship_3d_point_cloud(
     points: &[Ship3dProjectionPoint],
     origin: Ship3dProjectionOrigin,
@@ -3333,6 +3345,9 @@ fn fixed_mul_shift_15(lhs: i32, rhs: i32) -> i32 {
     lhs.wrapping_mul(rhs) >> SHIP_3D_MATRIX_FIXED_SHIFT
 }
 
+/// One component of the camera translation: `sub word [di],ax` at `0x9A42` (and
+/// `[di+2],ax` at `0x9A47`), with the origin loaded from `[0x2F65]`/`[0x2F67]`
+/// just before — a wrapping 16-bit SUBTRACT, sign-extended for the dot product.
 fn projection_component(point_component: u16, origin_component: u16) -> i32 {
     i32::from(signed_i16(point_component.wrapping_sub(origin_component)))
 }

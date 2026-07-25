@@ -2636,3 +2636,33 @@ rebuild loop would run off the end of the slot array if no sentinel appeared, th
 port returns `None`. It refuses to invent a list instead of reading past the array.
 
 Nine ship3d rows settled as ASM across this and the previous pass.
+
+## FIX #79 — the citation guard caught me making the same mistake it was built for
+
+Verifying `render_ship_3d_point_cloud` against `0x9A10` — the starfield batch loop
+— went cleanly: count `0x3E8` at `0x9A1D`, cloud at `0x2FC1`, matrix at `0x2F95`,
+target segment from `[0x5223]`, and a per-point camera translation whose SUBTRACT
+`projection_component` reproduces exactly. `DS:0x2F65` is the same camera origin
+the nav renderer already cites as `(10000, 12000, 0)`.
+
+Then the suite went red. `check_cited_instructions.py` (FIX #59):
+
+    MISMATCH src/ship3d.rs:1885: doc says 0x09a3f is `sub`, disassembly says `mov`
+    MISMATCH src/ship3d.rs:1886: doc says 0x09a44 is `sub`, disassembly says `mov`
+
+I had written `0x9A3F  sub word [di],[0x2F65]`. The real sequence is
+
+    0x9A3F  mov ax,[0x2F65]
+    0x9A42  sub word [di],ax
+
+— the address of the block that computes the value, not of the instruction named.
+That is EXACTLY the error FIX #59 was built to catch, made again, in new work,
+within minutes of writing the guard's own justification.
+
+Two things follow. The guard earns its place: this would have shipped as a wrong
+citation that a future reader would have followed to the wrong instruction. And
+the error class is evidently not something care alone prevents — I knew about it,
+had just written it up, and still made it. That is the argument for turning each
+found defect into a check rather than into a resolution to be careful.
+
+Rows settled: `render_ship_3d_point_cloud` and `projection_component`.
