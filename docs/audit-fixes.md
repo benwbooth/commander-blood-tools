@@ -5301,3 +5301,30 @@ positional list, where it was read as a filename and raised
 And `check_cited_instructions.py` caught this doc claiming `0x4495` is `shr` when
 it is `mov bx,bp` (the `shr` is at `0x4497`) — the sixth time this session it has
 corrected my own citation rather than someone else's.
+
+## #166 — two dwords, not four words, and a bound the port added
+
+`commit_ship_3d_global_clip_snapshot` (`0x4412`) copies the four clip bounds as
+TWO dwords:
+
+```text
+  0x441D  mov eax,[0x5235] / stosd   left+right as ONE dword
+  0x4423  mov eax,[0x5239] / stosd   top+bottom as one more
+  0x4429  mov word [di],0xffff       terminate
+  0x442D  mov word [0x5249],0        and CLEAR the flag
+```
+
+`DS:0x5235..0x523B` are contiguous, so left/right and top/bottom each pair into a
+single 32-bit move — which is why the port reads them as pairs rather than four
+separate words. And the flag is ONE-SHOT: the clear at `0x442D` is what stops
+every subsequent frame becoming a full-window redraw. Dropping it produces output
+that looks perfect and defeats the dirty list entirely.
+
+`matrix_pair_for_angle` doubles each table entry because `0x990C` does
+(`movsx` then `add ebx,ebx`), turning the Q14 table into Q15 terms. Its `None` for
+an out-of-range angle is NOT the game's behaviour — the game indexes after a
+modulus and would read past the table — and saying so matters, because an
+undocumented `Option` reads as "the original had a failure case here" when it is
+the port declining to reproduce an out-of-bounds read.
+
+The queue: 54 -> 52.

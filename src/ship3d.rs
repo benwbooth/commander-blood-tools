@@ -2876,6 +2876,27 @@ pub fn commit_ship_3d_sprite_slot_dirty_geometry(
     effect
 }
 
+/// The clip-SNAPSHOT branch of `sprite_slot_commit_dirty_range` @`0x4412`:
+///
+/// ```text
+///   0x4412  test word [0x5249],1 / je 0x4435   the snapshot flag
+///   0x441D  mov eax,[0x5235] / stosd           left+right as ONE dword
+///   0x4423  mov eax,[0x5239] / stosd           top+bottom as one more
+///   0x4429  mov word [di],0xffff               terminate
+///   0x442D  mov word [0x5249],0                and CLEAR the flag
+/// ```
+///
+/// The four clip bounds are copied as TWO dwords, not four words, because
+/// `DS:0x5235..0x523B` are contiguous — left/right and top/bottom each pair into
+/// one 32-bit move. That is why the port reads them as pairs.
+///
+/// The flag is one-shot: set it, and the next commit replaces the whole
+/// per-slot dirty list with a single full-window rect and clears the flag. Losing
+/// the clear would make every subsequent frame a full-screen redraw, which looks
+/// correct and is the bug the dirty list exists to avoid.
+///
+/// Cited here because it was settled ASM with no doc (#141's queue); #152 records
+/// why the surrounding range walk is not ported.
 pub fn commit_ship_3d_global_clip_snapshot(
     dirty_rects: &mut Ship3dDirtyRectList,
     snapshot_armed: &mut bool,
@@ -3755,6 +3776,17 @@ fn wrap_ring_once(value: i32, modulus: u16) -> u16 {
     }
 }
 
+/// Fetch a `(cosine, sine)` pair from the angle table and widen it to Q15.
+///
+/// The doubling is the game's: `0x990C` reads the angle word, `shl di,2` scales it
+/// to the table's 4-byte stride, `movsx` widens each entry to 32 bits, and
+/// `add ebx,ebx` / `add ecx,ecx` doubles them — so a Q14 table entry becomes a Q15
+/// term for the matrix build. The port's `* 2` is that add, and the table itself
+/// is `SHIP_3D_ANGLE_TABLE`, byte-exact against `DS:0x4F45`.
+///
+/// Returning `None` for an out-of-range angle is the port's own bound: the table
+/// has 180 entries and the game indexes it after a modulus, so an unmasked angle
+/// would read past it rather than wrapping.
 fn matrix_pair_for_angle(angle_table: &[Ship3dAngleTableEntry], angle: u16) -> Option<(i32, i32)> {
     let entry = *angle_table.get(usize::from(angle))?;
     Some((
