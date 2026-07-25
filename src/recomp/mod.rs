@@ -1703,6 +1703,25 @@ mod tests {
                 "{text:?}: lift {lifted} vs native {native}"
             );
         }
+
+        // THE EMPTY STRING diverges, and the divergence is deliberate. `0x30FE`
+        // is `sub ax,2` on a zero accumulator, which WRAPS to 0xFFFE — and the
+        // widget's max-width compare at `0x8472` is `jb`, UNSIGNED, so 0xFFFE
+        // would win and produce a 65534-wide box. The game never measures an
+        // empty label: unused save slots hold FIFTEEN SPACES, not "", and a space
+        // maps to glyph 47 with a real width.
+        assert_eq!(measure(""), 0xFFFE, "the original wraps");
+        assert_eq!(
+            crate::font::square_caps_text_width("") as u16,
+            0,
+            "the port saturates instead — safe only because nothing passes it \"\""
+        );
+        // A blank slot as the DIRECTORY holds it measures like any other string.
+        assert_eq!(
+            measure("               "),
+            crate::font::square_caps_text_width("               ") as u16,
+            "fifteen spaces: the real blank-slot label"
+        );
     }
 
     /// The SPECIAL-SLOT pair against their lifts (`func_5ff6` / `func_5fd8`).

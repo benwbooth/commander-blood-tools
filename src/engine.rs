@@ -2127,15 +2127,28 @@ impl EngineState {
     /// site for the assembly (`0x1BAB`, `0x1BBD`, `0x8573`).
     pub fn draw_save_ui_rows(&mut self) {
         let editing = self.save_ui_slot.min(Self::SAVE_SLOT_ROWS - 1);
+        // PAD as the directory does. `blood.sav`'s records hold FIFTEEN SPACES for
+        // an unused slot, not an empty string, and the game measures that padded
+        // text: `square_caps_text_width("")` would be `sub ax,2` on zero, which
+        // wraps to 0xFFFE, and the widget's max-width compare (`jb` @`0x8472`) is
+        // UNSIGNED — so an empty label would win and blow the box out to 65534
+        // wide. The game never hits it because it never has an empty label; the
+        // port must not manufacture one by trimming.
         let mut rows: Vec<String> = (0..Self::SAVE_SLOT_ROWS)
             .map(|i| {
-                self.save_slots
+                let name = self
+                    .save_slots
                     .get(i)
                     .map(|s: &crate::bloodsav::SaveSlot| s.name.clone())
-                    .unwrap_or_default()
+                    .unwrap_or_default();
+                format!("{name:<width$}", width = crate::bloodsav::SLOT_NAME_LEN - 1)
             })
             .collect();
-        rows[editing] = self.save_ui_name.clone();
+        rows[editing] = format!(
+            "{:<width$}",
+            self.save_ui_name,
+            width = crate::bloodsav::SLOT_NAME_LEN - 1
+        );
         rows.push(Self::OPTION_BOX_LABEL.to_string());
         self.draw_choice_box(&rows, Some(editing));
     }

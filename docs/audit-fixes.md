@@ -3059,3 +3059,35 @@ for every `(source, destination)`, the port's result equals a faithful
 The distinction matters for what the ledger MEANS. "The doc explains why this is
 equivalent" and "every input has been tried" look similar in a code review and are
 not the same claim.
+
+## FIX #95 — the port manufactured a label the game never has
+
+Sweeping for `saturating_*` in code that cites an address turned up
+`square_caps_text_width`'s `.saturating_sub(2)`. The original is `sub ax,2` at
+`0x30FE`, which WRAPS: an empty string measures `0xFFFE`, not 0. The lift confirms
+it.
+
+That looked like a trivial fidelity fix until the consumer decided otherwise. The
+widget's max-width compare at `0x8472` is `cmp ax,dx / jb` — **unsigned**. So a
+`0xFFFE` measurement would win the max and produce a box 65534 wide. The game
+plainly does not do that, which means the game NEVER MEASURES AN EMPTY LABEL.
+
+It does not, because unused save slots in `blood.sav` hold FIFTEEN SPACES, not an
+empty string, and a space maps to glyph 47 with a real width. The empty case
+cannot arise.
+
+THE PORT MANUFACTURED IT. `parse_slot_directory` trims trailing spaces — reasonable
+for a name — and FIX #66's `draw_save_ui_rows` then passed those trimmed strings
+to the widget, so blank slots became `""`. The port's `saturating_sub` returned 0
+and hid it. Two port-side choices, each defensible alone, combining into an input
+the original never produces.
+
+Fixed at the cause: the save rows are padded to the record width, as the directory
+holds them. `square_caps_text_width` keeps saturating — with an unsigned return
+type, wrapping would hand the widget a 65534 that the game's SIGNED-free unsigned
+compare would honour. The divergence is documented at both the measure and the
+differential, with the reason it is safe.
+
+WHAT THIS SAYS ABOUT THE METHOD. The differential found the divergence; only
+reading the CONSUMER showed which side was wrong. A test that had simply asserted
+"port matches lift" here would have pushed a 65534-wide box into the renderer.
