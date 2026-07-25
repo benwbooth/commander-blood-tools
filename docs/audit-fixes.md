@@ -787,3 +787,38 @@ records while the game resolves an asset id through a RUNTIME-POPULATED table; t
 are different data paths, so shifting the index by one without knowing what fills
 `DS:0x1FB5` would be swapping one unverified rule for another. What is now available is
 the real mechanism to implement against, and the specific arithmetic to check it with.
+
+## MECHANISM — the complete A6 `b3` chain (consolidated)
+
+Four successive corrections were needed to get this right; consolidating it so nobody
+re-derives it from scratch. Every hop is an instruction address, not an inference:
+
+    A6 b3
+      -> 0x668D  LODSB / CWDE / mov gs:[0x1FAB],ax      store sign-extended
+      -> 0x11F2  mov ax,[0x1FAB]; add ax,9              LINE ID -> gs:0x6788
+      -> 0x9D65  mov bx,ax; shl bx,2; add bx,0x1FB5     entry = table + line_id*4
+      -> 0x9D6E  mov si,[bx+2]                          ASSET ID (0xFFFF = none)
+      -> 0x9D76  cmp si,[0x1FA3]                        skip reload if unchanged
+      -> 0x9D80  unpack: 0x5B53/0x5B57 gates, [0x5229], lcall 0x1ce:0x91d
+
+The table is FILLED by the per-line record parser at `0x766F`, which fans one source
+record into three places — a name to `DS:0x24C6`, the asset id through cursor
+`DS:0x1FAF`, and a 26-byte record through cursor `DS:0x1FAD`. The asset id is stored as
+`(byte-1)*16`, or sign-extended unchanged when negative (`0xFF` -> the `0xFFFF`
+sentinel the reader tests).
+
+Two independent corroborations that this is right rather than merely coherent:
+
+* The cursor is seeded (`0x7447`) at `0x1FB5 + 0x26`, which is exactly `entry+2` for
+  `b3 = 0` — precisely where the reader looks.
+* The fill's negative passthrough produces exactly the sentinel the reader compares
+  against. Neither fact was assumed from the other.
+
+The `*16` identifies the id as a byte offset into a 16-byte-stride NAME table (the
+stride of the sprite filename table at `DS:0x0669`), which connects to the 18-byte
+by-name index at `0x7444`: ids become names, names resolve through that directory.
+
+WHY THIS MATTERS for the port: `vm::text_selector_voice_clip_index` computes `b3 - 1`
+as an ordinal. The game uses `b3` to INDEX A RUNTIME TABLE whose values are name-table
+offsets. Those are not the same kind of thing, which is why no adjustment of the
+arithmetic would have made the port faithful.
