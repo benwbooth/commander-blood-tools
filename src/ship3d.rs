@@ -1672,9 +1672,17 @@ pub fn ship_3d_projected_point_offset(projected: Ship3dProjectedPoint) -> usize 
     usize::from(projected.y) * SHIP_3D_PROJECTION_SCREEN_WIDTH + usize::from(projected.x)
 }
 
-/// Number of 3D point-cloud records the starfield background is built from.
-/// The DOS randomizer loops `cx = 0x3E8` records at `DS:0x2FC1`.
+/// Number of 3D point-cloud records the starfield background is built from:
+/// `ship_3d_point_cloud_randomize` (`0x9B67`) does `mov cx,0x3E8` (`0x9B6A`) and
+/// `mov di,0x2FC1` (`0x9B71`), then fills each record with three
+/// `rng(0xFFFF)` words. Checked against the image by
+/// `the_point_cloud_length_is_the_randomizers_own_immediate`.
 pub const SHIP_3D_POINT_CLOUD_LEN: usize = 1000;
+/// File offset of that `mov cx,imm`'s operand.
+pub const SHIP_3D_POINT_CLOUD_COUNT_IMMEDIATE: usize = 0x9B6B;
+/// ...and of the `mov di,imm` naming the record base (`DS:0x2FC1`).
+pub const SHIP_3D_POINT_CLOUD_BASE_IMMEDIATE: usize = 0x9B72;
+pub const SHIP_3D_POINT_CLOUD_BASE_DS: u16 = 0x2FC1;
 
 /// The engine's pseudo-random generator (`far 0x01CE:0x0B02` in BLOODPRG.EXE).
 ///
@@ -7535,7 +7543,24 @@ mod tests {
     fn randomize_point_cloud_fills_all_records_and_consumes_three_rng_calls_each() {
         let mut prng = BloodPrng::default();
         let points = randomize_ship_3d_point_cloud(&mut prng);
+        // Not `len() == THE_CONSTANT` (unfalsifiable — the builder used it): the
+        // count and the record base are the randomizer's own immediates.
         assert_eq!(points.len(), SHIP_3D_POINT_CLOUD_LEN);
+        if let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        {
+            let imm16 = |at: usize| u16::from_le_bytes([exe[at], exe[at + 1]]) as usize;
+            assert_eq!(
+                imm16(SHIP_3D_POINT_CLOUD_COUNT_IMMEDIATE),
+                SHIP_3D_POINT_CLOUD_LEN,
+                "mov cx,imm at 0x9B6A"
+            );
+            assert_eq!(
+                imm16(SHIP_3D_POINT_CLOUD_BASE_IMMEDIATE),
+                SHIP_3D_POINT_CLOUD_BASE_DS as usize,
+                "mov di,imm at 0x9B71"
+            );
+        }
         // Each x/y/z came from next(0xffff), so all are strictly below 0xffff.
         for point in &points {
             assert!(point.x < 0xffff && point.y < 0xffff && point.z < 0xffff);

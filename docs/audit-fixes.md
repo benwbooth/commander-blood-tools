@@ -1941,3 +1941,28 @@ A sweep found seven more `X.len() == CONST` assertions of the same shape
 (`bloodprg.rs` x2, `bloodsav.rs` x4, `ship3d.rs` x1). They are recorded here as
 the next ones to re-ground; the font was taken first because it is the one every
 text surface depends on.
+
+## FIX #57 — the remaining unfalsifiable length assertions, re-grounded
+
+FIX #56 listed seven `X.len() == CONST` assertions of the shape that hid the font
+truncation. The save-file pair went with #56; the other three are done here, each
+now tied to something that can disagree:
+
+| constant | was | now |
+|---|---|---|
+| `SHIP_3D_POINT_CLOUD_LEN` 1000 | `points.len() == THE_CONST` | the randomizer's own `mov cx,0x3E8` at `0x9B6A`, plus `mov di,0x2FC1` for the record base |
+| `RENDER_SPRITE_BLITTER_ENTRY_COUNT` 8 | same shape | the dispatcher's `and bx,0x0E` at `0x44B7` — the index is masked to eight even word slots — plus the table's ninth word being zero |
+| `SCRIPT_RESOURCE_PROFILE_*` | same shape | `mov si,0x11F4`, `mov dx,0x000A`, `mov cx,5` at `0x53CC/0x53CF/0x53D8`, and the count bounded by the DATA (rows 0..4 populated, the sixth all zeros) |
+
+A cross-check fell out of the blitter one: `CS:0x1592` -> file `0x4522` puts that
+table's segment base at `0x2F90`, which is segment `0x299` — the same code segment
+as the string draw (`0x299:0x202`) and the tint blit (`0x299:0x40E`) decoded
+earlier this session. Three independent decodes agreeing on one segment base is
+the kind of corroboration a single byte comparison cannot give.
+
+POSITIVE CONTROLS, all three at once: setting slots to 6, blitter entries to 7 and
+the point cloud to 999 fails exactly three tests, one per constant. Before this
+change all three perturbations passed.
+
+Remaining from the #56 sweep: none. The `X.len() == CONST` shape is gone from the
+tree except where the length is checked against something independent as well.

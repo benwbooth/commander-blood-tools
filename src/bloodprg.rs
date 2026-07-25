@@ -72,7 +72,17 @@ pub const RENDER_SPRITE_SLOT_COMMIT_RANGE_OFFSET: u16 = 5223;
 pub const RENDER_SPRITE_SLOT_DIRTY_RANGE_RENDER_OFFSET: u16 = 5345;
 pub const RENDER_SPRITE_BLITTER_TABLE_OFFSET: u16 = 0x1592;
 pub const RENDER_SPRITE_BLITTER_TABLE_FILE_OFFSET: usize = 0x004522;
+/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does
+/// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the
+/// index is masked to the even values `0..=0x0E` — eight words. The table's own
+/// bytes agree (entries 0..7 non-zero, the ninth zero).
+///
+/// `CS:0x1592` -> file `0x4522` puts the table's segment base at `0x2F90`, which
+/// is segment `0x299` — the same code segment as the string draw (`0x299:0x202`)
+/// and the tint blit (`0x299:0x40E`).
 pub const RENDER_SPRITE_BLITTER_ENTRY_COUNT: usize = 8;
+/// File offset of the `and bx,imm8` operand that bounds the index (`0x44B7`).
+pub const RENDER_SPRITE_BLITTER_INDEX_MASK_IMMEDIATE: usize = 0x44B9;
 pub const RENDER_SPRITE_BLIT_RAW_TRANSPARENT_OFFSET: u16 = 0x15a6;
 pub const RENDER_SPRITE_BLIT_RLE_TRANSPARENT_OFFSET: u16 = 0x172c;
 pub const RENDER_SPRITE_BLIT_RAW_OPAQUE_OFFSET: u16 = 0x1c18;
@@ -2983,6 +2993,30 @@ mod tests {
             .expect("script resource profiles");
 
         assert_eq!(profiles.len(), SCRIPT_RESOURCE_PROFILE_COUNT);
+        // Ground the shape in `vm_resource_profile_select` (0x53A0), which reaches
+        // the table as `mov si,0x11F4 / mov dx,0x000A / mul dx / ... / mov cx,5`:
+        //   0x53CC  the FS table offset      0x11F4
+        //   0x53CF  the row STRIDE           0x000A
+        //   0x53D8  the SLOTS per profile    5
+        let raw = binary.image_bytes();
+        let imm16 = |at: usize| u16::from_le_bytes([raw[at], raw[at + 1]]) as usize;
+        assert_eq!(imm16(0x53CC), SCRIPT_RESOURCE_PROFILE_TABLE_FS_OFFSET as usize);
+        assert_eq!(imm16(0x53CF), SCRIPT_RESOURCE_PROFILE_STRIDE);
+        assert_eq!(imm16(0x53D8), SCRIPT_RESOURCE_PROFILE_SLOT_COUNT);
+        // The COUNT is bounded by the DATA, not by code: rows 0..4 hold ascending
+        // resource ids and the sixth row is all zeros.
+        let row = |i: usize| {
+            &raw[SCRIPT_RESOURCE_PROFILE_TABLE_FILE_OFFSET + i * SCRIPT_RESOURCE_PROFILE_STRIDE
+                ..SCRIPT_RESOURCE_PROFILE_TABLE_FILE_OFFSET
+                    + (i + 1) * SCRIPT_RESOURCE_PROFILE_STRIDE]
+        };
+        for i in 0..SCRIPT_RESOURCE_PROFILE_COUNT {
+            assert!(row(i).iter().any(|&b| b != 0), "profile {i} must be populated");
+        }
+        assert!(
+            row(SCRIPT_RESOURCE_PROFILE_COUNT).iter().all(|&b| b == 0),
+            "the row past the last profile must be empty"
+        );
         for (idx, profile) in profiles.iter().enumerate() {
             let script_number = idx + 1;
             assert_eq!(profile.profile_index, idx as u8);
@@ -3929,6 +3963,24 @@ mod tests {
         ];
 
         assert_eq!(entries.len(), RENDER_SPRITE_BLITTER_ENTRY_COUNT);
+        // The COUNT is not a free constant: `and bx,0x0E` at 0x44B7 masks the
+        // word index to eight entries, and the table's ninth word is zero.
+        let raw = binary.image_bytes();
+        let mask = raw[RENDER_SPRITE_BLITTER_INDEX_MASK_IMMEDIATE] as usize;
+        assert_eq!(
+            mask / 2 + 1,
+            RENDER_SPRITE_BLITTER_ENTRY_COUNT,
+            "the dispatcher's index mask ({mask:#x}) must bound the table"
+        );
+        assert!(
+            entries.iter().all(|e| e.handler_offset != 0),
+            "every reachable entry is a real handler offset"
+        );
+        let ninth = u16::from_le_bytes([
+            raw[RENDER_SPRITE_BLITTER_TABLE_FILE_OFFSET + 16],
+            raw[RENDER_SPRITE_BLITTER_TABLE_FILE_OFFSET + 17],
+        ]);
+        assert_eq!(ninth, 0, "the word past the last reachable entry is zero");
         for (entry, (mode, handler_offset, handler_file_offset, name)) in
             entries.iter().zip(expected)
         {
