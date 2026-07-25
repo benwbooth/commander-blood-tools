@@ -357,6 +357,29 @@ impl SndStream {
         (0..2).find(|&i| self.voices[i].state == SND_VOICE_STATE_ACTIVE)
     }
 
+    /// The PORT'S equivalent of the DMA current count — explicitly not a decode.
+    ///
+    /// The game asks the 8237 how many bytes are left in the transfer
+    /// ([`SND_DRIVER_VECTOR_POSITION`], `DRV:0x01CA`), a number that counts DOWN
+    /// as playback advances. A cpal callback has no such register, so the port
+    /// derives the same quantity from how many samples it has actually emitted:
+    /// `remaining = length - (played mod length)`.
+    ///
+    /// This is HOST PLUMBING standing in for hardware the port does not have. It
+    /// is written to produce the value `stream_mix_span` already expects rather
+    /// than to model the chip — the arithmetic downstream of it IS decoded, and
+    /// keeping the substitution to this one function is what stops the invention
+    /// from spreading into the mixing rules.
+    pub fn dma_remaining_equivalent(&self, voice: usize, played: usize) -> u16 {
+        let len = self.voices.get(voice).map_or(0, |v| {
+            v.buffer.len().saturating_sub(SND_VOICE_HEADER_LEN)
+        });
+        if len == 0 {
+            return 0;
+        }
+        (len - (played % len)) as u16
+    }
+
     /// Mix one streamed chunk into the active voice at `position`, wrapping the
     /// remainder (`0xBB21..0xBB76`, then `or bx,bx` for the second span).
     ///
@@ -550,6 +573,36 @@ pub const SILENCE: u8 = 0x80;
 
 #[cfg(test)]
 mod tests {
+
+    /// The host cursor must feed `stream_mix_span` values that walk the buffer
+    /// forward and wrap — the behaviour the DMA count produces on real hardware.
+    #[test]
+    fn the_host_cursor_walks_the_buffer_like_a_dma_countdown() {
+        let mut data = vec![0x80u8; SND_VOICE_BUFFER_STRIDE as usize * 2];
+        data[4] = 0; // full rate
+        let mut stream = SndStream::from_sound_data(&data);
+        stream.voices[0].state = SND_VOICE_STATE_ACTIVE;
+        let len = stream.voices[0].buffer.len() - SND_VOICE_HEADER_LEN;
+
+        // A fresh cursor reports the whole buffer remaining, which maps to
+        // offset 0 -- playback has not started.
+        let full = stream.dma_remaining_equivalent(0, 0);
+        assert_eq!(full as usize, len);
+        assert_eq!(stream_mix_span(full, len as u16, 16).unwrap().offset, 0);
+
+        // As samples are emitted the remaining count falls and the write offset
+        // advances by the same amount.
+        for played in [1usize, 100, 0x1000, len - 1] {
+            let remaining = stream.dma_remaining_equivalent(0, played);
+            let span = stream_mix_span(remaining, len as u16, 16).unwrap();
+            assert_eq!(span.offset as usize, played, "offset tracks played count");
+        }
+
+        // And it wraps: one full buffer of playback is back to the start.
+        assert_eq!(stream.dma_remaining_equivalent(0, len) as usize, len);
+        // An unknown voice has no cursor rather than a panic.
+        assert_eq!(stream.dma_remaining_equivalent(9, 10), 0);
+    }
 
     /// The slot table is STATIC DATA: nine far pointers at `DS:0x0CD3` whose
     /// offsets are `0x100 + 3k`. Read from the image, so the vector mapping is
