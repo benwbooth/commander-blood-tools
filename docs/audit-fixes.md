@@ -4224,3 +4224,39 @@ and deleted `enter_query`/`exit_query`/`apply_operator` with it. `cargo build`
 caught it immediately, `git checkout -- src/vm.rs` restored it, and the second
 attempt worked line by line. Worth noting only because the recovery was cheap
 precisely because the work was committed first.
+
+## #128 — two decodes of one routine, disagreeing about what it BUILDS
+
+Triaging the 45 unrouted rules split them by whether their cited address appears
+elsewhere in the tree: cited once or twice means UNWIRED (a decoded feature the
+port does not use — `text_speed_labels`, `parse_world_art_table`,
+`mix_unsigned_pcm_average`), cited many times means DUPLICATED (a live copy
+exists somewhere).
+
+That surfaced something about #109. The console row-handler table I decoded there
+— `cs:[bx+0xF29]` in segment `0x071E`, file `0x8709`, entries giving `0x8713`,
+`0x872C`, `0x87BD`, `0x8848`, `0x886C` — was ALREADY decoded in `ship3d.rs` as
+`run_ship_3d_nav_choice_handler_0..4`, all five settled ASM. My values agree
+exactly with theirs, which is real corroboration between two independent readings.
+It also means #109 rediscovered a table the port already had, because I searched
+the binary and not the source.
+
+The two readings disagreed on one thing, and the disagreement was worth having.
+`handler_2` describes the loop as copying "special slots -> target records" and
+`add ax,4` as storing "slot + header". I read `DS:0x2B13` as a menu word list and
+`+4` as the object's inline NAME. Both cannot be right.
+
+The consumer settles it. `0x87DF`, immediately after the loop, is
+
+    mov si,0x2b13 / call 0x8428
+
+— the same `list_widget_layout_unified` the OPTION menu enters with `si=0x2567`,
+whose entries are POINTERS TO NUL-TERMINATED STRINGS (`DS:0x2573` `TEXT`,
+`0x2581` `MUSIC_OFF`). So `0x2B13`'s entries are pointers as well, and `record+4`
+is the inline name — the reading `object_inline_name` already implements, checked
+against the shipped data for 630 of 640 objects.
+
+`handler_2`'s doc is corrected and now names its consumer, so the next reader is
+not left choosing between two plausible descriptions of the same six
+instructions. The instruction transcription was right in both; only the noun was
+wrong, and a noun is what tells you which of them to port.

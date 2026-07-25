@@ -1220,16 +1220,26 @@ pub fn run_ship_3d_nav_choice_handler_1(
 ///
 /// ```text
 ///   0x87BE  test byte [0x2565],1 / je 0x87FB   the handler PHASE bit
-///   0x87C5  si=0x6D3E  di=0x2B13               special slots -> target records
+///   0x87C5  si=0x6D3E  di=0x2B13               special slots -> the MENU WORD LIST
 ///   0x87CB  lodsw / or ax,ax / je              SKIP zero slots
 ///   0x87D0  cmp ax,-1 / je 0x87DB              the 0xFFFF sentinel: store, stop
-///   0x87D5  add ax,4 / stosw                   otherwise store slot + header
+///   0x87D5  add ax,4 / stosw                   otherwise store RECORD+4
 ///   0x87E4  mov byte [0xADB],0                 reset the interpolation STEP
 ///   0x87E9  [0x27E6]=1 / call 0x8428 / =0      the query-only layout prepass
 ///   0x87F7  inc byte [0x2565]                  advance the phase
 /// ```
 ///
 /// Where handler 1 adjusts the EXISTING list in place, this one REBUILDS it from
+/// WHAT `DS:0x2B13` IS, settled by its consumer rather than by its name: `0x87DF`
+/// (immediately after this loop) does `mov si,0x2b13` and `call 0x8428` — the same
+/// `list_widget_layout_unified` the OPTION menu enters with `si=0x2567`. That list
+/// holds POINTERS TO NUL-TERMINATED STRINGS (`DS:0x2573` `TEXT`, `0x2581`
+/// `MUSIC_OFF`, ...), so these entries are pointers too, and `record+4` is the
+/// object's INLINE NAME — not a header skip. This doc previously called the
+/// destination "target records", which described the wrong thing; `0x71E3` is a
+/// second consumer, walking it with `cmp ax,-1` against `gs:[0x6754]`.
+/// `VmMachine::ship_contact_menu_words` ports the same loop for the frontend.
+///
 /// the special-slot array at `DS:0x6D3E` — the 16-word block `0x53FF` clears with
 /// `cx=0x10`, matching the port's `SPECIAL_OBJECT_SLOT_COUNT`.
 pub fn run_ship_3d_nav_choice_handler_2(
