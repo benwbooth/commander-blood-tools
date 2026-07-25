@@ -236,6 +236,15 @@ pub const SND_VOICE_STATE_ACTIVE: u8 = 3;
 /// `les di,[bp] / add di,6` @`0xBB21`, matched on the source side by
 /// `mov si,0x7d06` @`0xBB00` (the streamed chunk's own header). It is also why
 /// voice B sits `0x4008` past voice A rather than `0x4000`.
+///
+/// CONFIRMED FROM THE OTHER BINARY. The sound driver ships separately
+/// (`dnsdb.drv`); its vector 6 (`0x0305`) takes a voice struct in `si`, reads the
+/// buffer from `[si]` and the length from `[si+4]` — the same layout the host
+/// fills at `0xBBEB`/`0xBBF0` — and terminates it with
+/// `mov byte es:[bx+di+6],0` at driver offset `0x336`, i.e. at buffer + 6 +
+/// length. Two independently compiled programs agree on the 6, which is stronger
+/// evidence than either alone and is pinned by
+/// `the_driver_binary_confirms_the_voice_header_length`.
 pub const SND_VOICE_HEADER_LEN: usize = 6;
 
 /// How many SOURCE bytes the half-rate loop consumed to write `written` samples.
@@ -494,6 +503,34 @@ pub const SILENCE: u8 = 0x80;
 
 #[cfg(test)]
 mod tests {
+
+    /// The `+6` voice header, checked against the SHIPPED DRIVER rather than
+    /// against `BLOODPRG.EXE` — `dnsdb.drv` vector 6 terminates a voice buffer at
+    /// `buffer + 6 + length` (`mov byte es:[bx+di+6],0` @ driver `0x336`).
+    #[test]
+    fn the_driver_binary_confirms_the_voice_header_length() {
+        let mut path = std::path::PathBuf::from("output/_tmp_dat/dnsdb.drv");
+        if !path.exists() {
+            path = std::path::PathBuf::from("../output/_tmp_dat/dnsdb.drv");
+        }
+        let Ok(drv) = std::fs::read(&path) else { return };
+
+        // The driver opens with its entry-vector table: E9 rel16 near jumps.
+        assert_eq!(drv[0], 0xE9, "the driver starts with its vector table");
+
+        // `26 c6 41 06 00` = mov byte ptr es:[bx+di+6],0 -- the 0x06 IS the
+        // header length, written by code that never saw BLOODPRG.EXE's source.
+        let terminator = &drv[0x336..0x33B];
+        assert_eq!(
+            terminator,
+            &[0x26, 0xC6, 0x41, 0x06, 0x00],
+            "driver 0x336 is not the expected buffer terminator"
+        );
+        assert_eq!(
+            terminator[3] as usize, SND_VOICE_HEADER_LEN,
+            "the driver's displacement must equal the port's header length"
+        );
+    }
 
     /// The streaming core against REAL game data: a clip out of the shipped
     /// `sn/tb.snd` bank, mixed into a buffer the same way `0xBB6D` does.

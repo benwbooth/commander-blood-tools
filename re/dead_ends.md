@@ -1320,3 +1320,38 @@ the whole answer about a register's lifetime; the recursion site is.
 `VmMachine::destination_candidate_records` now composes the chain with
 `first = target`, and keeps `entity_candidate_list(first, source)` separate so the
 routine is still modelled exactly.
+
+## "The SND driver is statically unresolvable" (sessions 001-002) — CORRECTED 2026-07-25
+
+The original entry said `lcall [0xcdf]` in `snd_driver_call` (`0xBB9D`) points at a
+registered far function pointer that cannot be resolved statically. That is true
+OF `BLOODPRG.EXE`, and it was treated for many sessions as if the code were gone.
+
+It is not gone. The drivers SHIP WITH THE GAME: `dnsdb.drv` (2734 bytes, Sound
+Blaster) and `nosound.drv` (285 bytes, the null driver). Both open with a
+fixed-order vector table of `E9 rel16` near jumps — the driver ABI — decoded by the
+new `re/tools/drv_vectors.py`:
+
+  * `nosound.drv`: 8 vectors, ALL jumping to one shared stub at `0x11C`. A null
+    driver is the perfect control: it shows the table's length without any
+    behaviour to disentangle.
+  * `dnsdb.drv`: 9 `E9` entries, nine distinct targets.
+
+`dnsdb` vector 6 (`0x0305`) reads a voice struct from `si` exactly as the host
+lays it out at `0xBBEB`/`0xBBF0` — `les di,[si]` for the buffer, `[si+4]` for the
+length — and terminates it with `mov byte es:[bx+di+6],0` at driver `0x336`. Two
+independently compiled programs agreeing on that `6` is better evidence for the
+voice header than either binary alone, and it is now a regression test.
+
+WHAT IS STILL OPEN, and it is a mapping rather than a mystery: which vector each
+host slot (`gs:0x0CDB`, `0x0CDF`, `0x0CF3`) holds. The slots are 4-byte far
+pointers, so `0xCDB`->0, `0xCDF`->1, `0xCF3`->6 by stride — but NO fill site turns
+up under an immediate search for `0xcdb`, only `lcall` users, so the host must
+populate them through a register base. Inferring the mapping from the stride alone
+would be a guess; vector 6 already turned out to be a buffer QUEUE rather than the
+position query `0xBB28` expects, which is exactly the kind of error the guess
+would have baked in.
+
+Better approach next: find the loader that reads the `.drv` and writes the slots
+(look for the file open/read of `*.drv` and follow the destination register),
+rather than matching stride arithmetic to a table.
