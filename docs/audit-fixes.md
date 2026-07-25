@@ -3890,3 +3890,37 @@ be missed. Widen those before concluding a capture has no source.
 
 Reproducing either capture needs the composite pipeline — VM state, scene, and
 overlays together — which is the scenario harness's territory, not a frame diff.
+
+## #118 — verifying overlay constants against the overlays, instead of skipping them
+
+#106 stopped the checker resolving `croolis.rs`/`manu3.rs`/`manu3_hand.rs`
+addresses against BLOODPRG.EXE, because those modules document `.xdb` OVERLAYS and
+a lookup in the main image is meaningless in both directions. That was correct and
+incomplete: it made those constants unverifiable rather than wrongly verified. The
+blocker was the task.
+
+The overlays are raw 386 images whose runtime `cs` maps 1:1 to file offsets
+(`re/tools/dis_xdb.py`), so every check already written — immediates, shift counts,
+operand offsets, layout identities — works unchanged on the right bytes. The
+checker now loads `croolis.xdb`/`amer.xdb`/`scrut.xdb` for `croolis.rs` and
+`manu3.xdb` for the two hand modules.
+
+Immediate result: `ALIEN_POSITION_WRAP = 0x4000` VERIFIES. Its doc cites "method
+`0x999`", which in BLOODPRG.EXE decodes to mid-instruction garbage — that mismatch
+is what made it look suspect. In croolis.xdb, `0x99F` is `mov di,0x4000`, six bytes
+into the cited method. Settled.
+
+The other three overlay constants turn out to have CITATION problems rather than
+value problems, and one of them was mine:
+
+* `MENU_ANGLE_MASK = 0x0FFC`'s doc says "`0xFFC` = a 10-bit angle scaled x4". The
+  address regex read the constant's own value as an address and then reported
+  "not an immediate at 0x0FFC" — the tautology from #103, this time on the INPUT
+  side. Numbers equal to the constant's value are no longer treated as addresses.
+* `STATE_BASE = 0x2274` cites `ds[0x2274..0x2974]` — data offsets, not code.
+* `ALIEN_COLONY_FRAME_GATE = 7` cites `0xB72`, which is data in croolis.xdb.
+
+None is a wrong constant; all three want a citation naming the instruction that
+uses them. That is a real, small task rather than an unverifiable class.
+
+Settled: 540 -> 541 of 2156.

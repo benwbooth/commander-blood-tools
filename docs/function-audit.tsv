@@ -55,192 +55,196 @@ DIALOGUE_FONT_GLYPH_COUNT	src/bloodprg.rs	35	const		UNVERIFIED
 OPTION_MENU_POINTER_LIST_DS	src/bloodprg.rs	38	const	0x2567,0x8871	DATA	/// `mov si,0x2567` @`0x8871` — the OPTION menu's pointer list.
 LIST_WIDGET_CANCEL_LABEL_DS	src/bloodprg.rs	40	const		DATA	/// The list widget's shared trailing entry, `ship_3d_target_extra_label`.
 MUSIC_ON_LABEL_DS	src/bloodprg.rs	42	const		DATA	/// `MUSIC_ON`, the toggle face the pointer list omits.
-DIALOGUE_FONT_GLYPH_HEIGHT	src/bloodprg.rs	43	const		UNVERIFIED	
-SND_ENTRY_SEGMENT	src/bloodprg.rs	44	const		UNVERIFIED	
-SND_ENTRY_OFFSET	src/bloodprg.rs	45	const		UNVERIFIED	
-SND_BANK_LOAD_SEGMENT	src/bloodprg.rs	46	const		UNVERIFIED	
-SND_BANK_LOAD_OFFSET	src/bloodprg.rs	47	const		UNVERIFIED	
-RENDER_SEGMENT	src/bloodprg.rs	48	const		UNVERIFIED	
-RENDER_VGA_DAC_PALETTE_LOAD_OFFSET	src/bloodprg.rs	49	const		UNVERIFIED	
-RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET	src/bloodprg.rs	50	const		UNVERIFIED	
-RENDER_FIXED_8X8_TEXT_OFFSET	src/bloodprg.rs	51	const		UNVERIFIED	
-RENDER_FONT_STRING_WIDTH_OFFSET	src/bloodprg.rs	52	const		UNVERIFIED	
-RENDER_UI_TEXT_OFFSET	src/bloodprg.rs	53	const		UNVERIFIED	
-RENDER_STRING_OFFSET	src/bloodprg.rs	54	const		UNVERIFIED	
-RENDER_FRAMEBUFFER_RECT_REMAP_OFFSET	src/bloodprg.rs	55	const		UNVERIFIED	
-RENDER_PLANAR_UI_TEXT_OFFSET	src/bloodprg.rs	56	const		UNVERIFIED	
-RENDER_PLANAR_DIALOGUE_TEXT_OFFSET	src/bloodprg.rs	57	const		UNVERIFIED	
-RENDER_SUBTITLE_REVEAL_OFFSET	src/bloodprg.rs	58	const		UNVERIFIED	
-RENDER_SMALL_TEXT_OFFSET	src/bloodprg.rs	59	const		UNVERIFIED	
-RENDER_PLANAR_HORIZONTAL_LINE_OFFSET	src/bloodprg.rs	60	const		UNVERIFIED	
-RENDER_PLANAR_VERTICAL_LINE_OFFSET	src/bloodprg.rs	61	const		UNVERIFIED	
-RENDER_RECT_OUTLINE_OFFSET	src/bloodprg.rs	62	const		UNVERIFIED	
-RENDER_DITHER_RECT_FILL_OFFSET	src/bloodprg.rs	63	const		UNVERIFIED	
-RENDER_RECT_FILL_OFFSET	src/bloodprg.rs	64	const		UNVERIFIED	
-RENDER_SCENE_BAND_FILL_OFFSET	src/bloodprg.rs	65	const		UNVERIFIED	
-RENDER_SECONDARY_BAND_FILL_OFFSET	src/bloodprg.rs	66	const		UNVERIFIED	
-RENDER_FRAMEBUFFER_COPY_OFFSET	src/bloodprg.rs	67	const		UNVERIFIED	
-RENDER_SECONDARY_FRAMEBUFFER_COPY_OFFSET	src/bloodprg.rs	68	const		UNVERIFIED	
-RENDER_VGA_PLANAR_TO_LINEAR_COPY_OFFSET	src/bloodprg.rs	69	const		UNVERIFIED	
-RENDER_PLANAR_COPY_OFFSET	src/bloodprg.rs	70	const		UNVERIFIED	
-RENDER_RESOURCE_FILE_LOAD_OFFSET	src/bloodprg.rs	71	const		UNVERIFIED	
-RENDER_SPRITE_SLOT_LOAD_OFFSET	src/bloodprg.rs	72	const		UNVERIFIED	
-RENDER_SPRITE_SLOT_STATE_OFFSET	src/bloodprg.rs	73	const		UNVERIFIED	
-RENDER_SPRITE_SLOT_RESOURCE_LOAD_OFFSET	src/bloodprg.rs	74	const		UNVERIFIED	
-RENDER_SPRITE_SLOT_POSITION_OFFSET	src/bloodprg.rs	75	const		UNVERIFIED	
-RENDER_SPRITE_SLOT_RANGE_DIRTY_OFFSET	src/bloodprg.rs	76	const		UNVERIFIED	
-RENDER_SPRITE_SLOT_EXTENT_OFFSET	src/bloodprg.rs	77	const		UNVERIFIED	
-RENDER_SPRITE_SLOT_COMMIT_RANGE_OFFSET	src/bloodprg.rs	78	const		UNVERIFIED	
-RENDER_SPRITE_SLOT_DIRTY_RANGE_RENDER_OFFSET	src/bloodprg.rs	79	const		UNVERIFIED	
-RENDER_SPRITE_BLITTER_TABLE_OFFSET	src/bloodprg.rs	80	const		UNVERIFIED	
-RENDER_SPRITE_BLITTER_TABLE_FILE_OFFSET	src/bloodprg.rs	81	const		UNVERIFIED	
-RENDER_SPRITE_BLITTER_ENTRY_COUNT	src/bloodprg.rs	90	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E	ASM	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_SPRITE_BLITTER_INDEX_MASK_IMMEDIATE	src/bloodprg.rs	92	const	0x44B7	ASM	/// File offset of the `and bx,imm8` operand that bounds the index (`0x44B7`).
-RENDER_SPRITE_BLIT_RAW_TRANSPARENT_OFFSET	src/bloodprg.rs	93	const		UNVERIFIED	
-RENDER_SPRITE_BLIT_RLE_TRANSPARENT_OFFSET	src/bloodprg.rs	94	const		UNVERIFIED	
-RENDER_SPRITE_BLIT_RAW_OPAQUE_OFFSET	src/bloodprg.rs	95	const		UNVERIFIED	
-RENDER_SPRITE_BLIT_RLE_OPAQUE_OFFSET	src/bloodprg.rs	96	const		UNVERIFIED	
-RENDER_SPRITE_BLIT_SCALED_TRANSPARENT_OFFSET	src/bloodprg.rs	97	const		UNVERIFIED	
-RENDER_SPRITE_BLIT_NOOP_5_OFFSET	src/bloodprg.rs	98	const		UNVERIFIED	
-RENDER_SPRITE_BLIT_NOOP_6_OFFSET	src/bloodprg.rs	99	const		UNVERIFIED	
-RENDER_SPRITE_BLIT_NOOP_7_OFFSET	src/bloodprg.rs	100	const		UNVERIFIED	
-RENDER_DIRTY_RECTS_COPY_OFFSET	src/bloodprg.rs	101	const		UNVERIFIED	
-NAV_CODE_SEGMENT	src/bloodprg.rs	102	const		UNVERIFIED	
-NAV_ACTOR_SUBDISPATCH_TABLE_FILE_OFFSET	src/bloodprg.rs	103	const		UNVERIFIED	
-NAV_ACTOR_SUBDISPATCH_ENTRY_COUNT	src/bloodprg.rs	104	const		UNVERIFIED	
-NAV_CHOICE_SUBDISPATCH_TABLE_FILE_OFFSET	src/bloodprg.rs	105	const		UNVERIFIED	
-NAV_CHOICE_SUBDISPATCH_ENTRY_COUNT	src/bloodprg.rs	106	const		UNVERIFIED	
-SHIP_3D_INTERPOLATION_GATE_SEGMENT	src/bloodprg.rs	107	const		UNVERIFIED	
-SHIP_3D_INTERPOLATION_GATE_OFFSET	src/bloodprg.rs	108	const		UNVERIFIED	
-SHIP_3D_TARGET_QUERY_LAYOUT_SEGMENT	src/bloodprg.rs	109	const		UNVERIFIED	
-SHIP_3D_TARGET_QUERY_LAYOUT_OFFSET	src/bloodprg.rs	110	const		UNVERIFIED	
-SHIP_PRESENTATION_SEGMENT	src/bloodprg.rs	111	const		UNVERIFIED	
-SHIP_PRESENTATION_ENTRY_OFFSET	src/bloodprg.rs	112	const		UNVERIFIED	
-SHIP_3D_HUD_INIT_OFFSET	src/bloodprg.rs	113	const		UNVERIFIED	
-SHIP_3D_ALT_FRAMEBUFFER_BAND_COPY_CALL_OFFSET	src/bloodprg.rs	114	const		UNVERIFIED	
-SHIP_3D_TARGET_RECORD_SELECT_OFFSET	src/bloodprg.rs	115	const		UNVERIFIED	
-SHIP_3D_NAVIGATION_UPDATE_OFFSET	src/bloodprg.rs	116	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_SETUP_OFFSET	src/bloodprg.rs	117	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_LOAD_CALL_OFFSET	src/bloodprg.rs	118	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_RESTORE_CALL_OFFSET	src/bloodprg.rs	119	const		UNVERIFIED	
-SHIP_3D_TRANSITION_STATE_OFFSET	src/bloodprg.rs	120	const		UNVERIFIED	
-SHIP_3D_PLANE_BAND_COPY_OFFSET	src/bloodprg.rs	121	const		UNVERIFIED	
-SHIP_3D_DEPTH_SCROLL_STEP_OFFSET	src/bloodprg.rs	122	const		UNVERIFIED	
-SHIP_3D_TARGET_LIST_DS_OFFSET	src/bloodprg.rs	123	const		UNVERIFIED	
-SHIP_3D_CURRENT_TARGET_DS_OFFSET	src/bloodprg.rs	124	const		UNVERIFIED	
-SHIP_3D_SEQUENCE_ACTIVE_DS_OFFSET	src/bloodprg.rs	125	const		UNVERIFIED	
-SHIP_3D_TARGET_SELECT_PHASE_DS_OFFSET	src/bloodprg.rs	126	const		UNVERIFIED	
-SHIP_3D_TARGET_FALLBACK_DS_OFFSET	src/bloodprg.rs	127	const		UNVERIFIED	
-SHIP_3D_HUD_FLAG_DS_OFFSET	src/bloodprg.rs	128	const		UNVERIFIED	
-SHIP_3D_DEPTH_OFFSET_DS_OFFSET	src/bloodprg.rs	129	const		UNVERIFIED	
-SHIP_3D_PLANE_COPY_ENABLE_DS_OFFSET	src/bloodprg.rs	130	const		UNVERIFIED	
-SHIP_3D_OPENING_FLAG_DS_OFFSET	src/bloodprg.rs	131	const		UNVERIFIED	
-SHIP_3D_CLOSING_FLAG_DS_OFFSET	src/bloodprg.rs	132	const		UNVERIFIED	
-SHIP_3D_DEPTH_STEP_DS_OFFSET	src/bloodprg.rs	133	const		UNVERIFIED	
-SHIP_3D_EXIT_PENDING_DS_OFFSET	src/bloodprg.rs	134	const		UNVERIFIED	
-SHIP_3D_TRANSITION_ARMED_DS_OFFSET	src/bloodprg.rs	135	const		UNVERIFIED	
-SHIP_3D_FALLBACK_TARGET_TABLE_DS_OFFSET	src/bloodprg.rs	136	const		UNVERIFIED	
-SHIP_3D_NAVIGATION_TRIGGER_DS_OFFSET	src/bloodprg.rs	137	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_SELECTED_DS_OFFSET	src/bloodprg.rs	138	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_GATE_DS_OFFSET	src/bloodprg.rs	139	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_HOLD_TIMER_DS_OFFSET	src/bloodprg.rs	140	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_PHASE_DS_OFFSET	src/bloodprg.rs	141	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_TARGET_Y_DS_OFFSET	src/bloodprg.rs	142	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_LEFT_GATE_DS_OFFSET	src/bloodprg.rs	143	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_RIGHT_GATE_DS_OFFSET	src/bloodprg.rs	144	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_MENU_GATE_DS_OFFSET	src/bloodprg.rs	145	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_SOUND_GATE_DS_OFFSET	src/bloodprg.rs	146	const		UNVERIFIED	
-SHIP_3D_INTERPOLATION_DURATION_DS_OFFSET	src/bloodprg.rs	147	const		UNVERIFIED	
-SHIP_3D_INTERPOLATION_TICK_DS_OFFSET	src/bloodprg.rs	148	const		UNVERIFIED	
-SHIP_3D_TARGET_EXTRA_LABEL_DS_OFFSET	src/bloodprg.rs	149	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_CENTER_X_DS_OFFSET	src/bloodprg.rs	150	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_DRAW_PTR_DS_OFFSET	src/bloodprg.rs	151	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_PRESERVE_WIDTHS_DS_OFFSET	src/bloodprg.rs	152	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_EXTRA_ENTRY_DS_OFFSET	src/bloodprg.rs	153	const		UNVERIFIED	
-SHIP_3D_TARGET_MOUSE_X_DS_OFFSET	src/bloodprg.rs	154	const		UNVERIFIED	
-SHIP_3D_TARGET_MOUSE_Y_DS_OFFSET	src/bloodprg.rs	155	const		UNVERIFIED	
-SHIP_3D_TARGET_REQUESTED_PRESENTATION_DS_OFFSET	src/bloodprg.rs	156	const		UNVERIFIED	
-SHIP_3D_TARGET_PRESENTATION_STATE_DS_OFFSET	src/bloodprg.rs	157	const		UNVERIFIED	
-SHIP_3D_TARGET_ACTIVATE_FLAG_DS_OFFSET	src/bloodprg.rs	158	const		UNVERIFIED	
-SHIP_3D_TARGET_HOVER_ROW_DS_OFFSET	src/bloodprg.rs	159	const		UNVERIFIED	
-SHIP_3D_TARGET_QUERY_MODE_DS_OFFSET	src/bloodprg.rs	160	const		UNVERIFIED	
-SHIP_3D_TARGET_SELECTION_DS_OFFSET	src/bloodprg.rs	161	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_RECT_DS_OFFSET	src/bloodprg.rs	162	const		UNVERIFIED	
-SHIP_3D_TARGET_WIDTH_TABLE_DS_OFFSET	src/bloodprg.rs	163	const		UNVERIFIED	
-SHIP_3D_PRESENTATION_HOLD_TIMER_DS_OFFSET	src/bloodprg.rs	164	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_TRIGGER_DS_OFFSET	src/bloodprg.rs	165	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_PHASE_DS_OFFSET	src/bloodprg.rs	166	const		UNVERIFIED	
-SHIP_3D_PLANAR_FRAMEBUFFER_PTR_DS_OFFSET	src/bloodprg.rs	167	const		UNVERIFIED	
-SHIP_3D_SCROLL_MODE_DS_OFFSET	src/bloodprg.rs	168	const		UNVERIFIED	
-SHIP_3D_SCROLL_VALUE_DS_OFFSET	src/bloodprg.rs	169	const		UNVERIFIED	
-SND_ENTRY_FAR_CALL	src/bloodprg.rs	171	const		UNVERIFIED	
-SND_BANK_LOAD_FAR_CALL	src/bloodprg.rs	178	const		UNVERIFIED	
-FAR_CALL_OPCODE	src/bloodprg.rs	185	const		UNVERIFIED	
-REGISTER_SOURCE_SCAN_BACK	src/bloodprg.rs	186	const		UNVERIFIED	
-DS_STRING_SCAN_MAX	src/bloodprg.rs	187	const		UNVERIFIED	
-RENDER_FAR_CALL_SEGMENT_BYTES	src/bloodprg.rs	188	const		UNVERIFIED	
-MzHeader	src/bloodprg.rs	192	struct		UNVERIFIED	
-header_size	src/bloodprg.rs	207	fn		UNVERIFIED	
-image_total	src/bloodprg.rs	211	fn		UNVERIFIED	
-load_size	src/bloodprg.rs	219	fn		UNVERIFIED	
-MzSummary	src/bloodprg.rs	225	struct		UNVERIFIED	
-BinarySymbol	src/bloodprg.rs	236	struct		UNVERIFIED	
-OpcodeDescriptor	src/bloodprg.rs	247	struct		UNVERIFIED	
-OpcodeHandler	src/bloodprg.rs	254	struct		UNVERIFIED	
-VmOpcodeSpec	src/bloodprg.rs	261	struct		UNVERIFIED	
-DialogueFontTables	src/bloodprg.rs	276	struct		UNVERIFIED	
-SubdispatchEntry	src/bloodprg.rs	286	struct		UNVERIFIED	
-SpriteBlitterDispatchEntry	src/bloodprg.rs	293	struct		UNVERIFIED	
-ScriptResourceProfileSlot	src/bloodprg.rs	302	struct		UNVERIFIED	
-ScriptResourceProfile	src/bloodprg.rs	309	struct		UNVERIFIED	
-BloodPrgInspection	src/bloodprg.rs	317	struct		UNVERIFIED	
-SndEntryCallSite	src/bloodprg.rs	336	struct		UNVERIFIED	
-SndBankLoadCallSite	src/bloodprg.rs	350	struct		UNVERIFIED	
-RenderCallSite	src/bloodprg.rs	371	struct		UNVERIFIED	
-BloodPrg	src/bloodprg.rs	386	struct		UNVERIFIED	
-parse_file	src/bloodprg.rs	392	fn		UNVERIFIED	
-parse	src/bloodprg.rs	398	fn		UNVERIFIED	
-summary	src/bloodprg.rs	428	fn		UNVERIFIED	
-image_bytes	src/bloodprg.rs	443	fn		UNVERIFIED	/// The raw image bytes, so a test can read an INSTRUCTION back and check a /// constant against the immediate the code actually uses.
-segoff_to_file	src/bloodprg.rs	447	fn		UNVERIFIED	
-ds_to_file	src/bloodprg.rs	451	fn		UNVERIFIED	
-fs_to_file	src/bloodprg.rs	455	fn		UNVERIFIED	
-opcode_handlers	src/bloodprg.rs	459	fn		UNVERIFIED	
-opcode_descriptors	src/bloodprg.rs	479	fn		UNVERIFIED	
-vm_opcode_specs	src/bloodprg.rs	496	fn		UNVERIFIED	
-script_resource_profiles	src/bloodprg.rs	533	fn	0x11F4,0x0D3E4,0x53A0,0x000A,0x6712	ASM	/// The five SCRIPT resource profiles at `FS:0x11F4` (file `0x0D3E4`), the /// table `vm_resource_profile_select` (`0x53A0`) indexes: `mov si,0x11F4 / /// mov dx,0x000A / mul dx` picks the row, then `
-dialogue_font_tables	src/bloodprg.rs	567	fn	0x31C8,0x7802,0x14C22,0x78B2,0x14CD2,0x78b2,0x7908,0x14D28	ASM	/// The DIALOGUE FONT's three chained tables, at the offsets `render_string` /// (`0x31C8`) loads them from as immediates: the ASCII->glyph map /// `DS:0x7802` = file `0x14C22` (`mov bx,0x7802`), the 
-nav_actor_subdispatch_handlers	src/bloodprg.rs	605	fn		UNVERIFIED	
-nav_choice_subdispatch_handlers	src/bloodprg.rs	613	fn		UNVERIFIED	
-snd_entry_call_sites	src/bloodprg.rs	621	fn		UNVERIFIED	
-snd_bank_load_call_sites	src/bloodprg.rs	647	fn		UNVERIFIED	
-render_call_sites	src/bloodprg.rs	686	fn		UNVERIFIED	
-sprite_blitter_dispatch_entries	src/bloodprg.rs	720	fn	0x1592,0x4522,0x44BA	ASM	/// The sprite-blitter dispatch table at `CS:0x1592` (file `0x4522`), reached /// by `mov bx,cs:[bx+0x1592]` at `0x44BA` after `shr bx,1 / and bx,0x0E` /// bounds the index to its eight word entries.
-inspect	src/bloodprg.rs	742	fn		UNVERIFIED	
-subdispatch_entries	src/bloodprg.rs	762	fn		UNVERIFIED	
-slice	src/bloodprg.rs	783	fn		UNVERIFIED	
-find_ax_source_before	src/bloodprg.rs	792	fn		UNVERIFIED	
-find_si_source_before	src/bloodprg.rs	824	fn		UNVERIFIED	
-ds_c_string	src/bloodprg.rs	852	fn		UNVERIFIED	
-option_menu_labels	src/bloodprg.rs	879	fn	0x886C,0x8709,0x2567,0x8428,0xFFFF,0x2573,0x2581,0x258B,0x25	DATA	/// The bridge OPTION menu's labels, read from the game's own string table. /// /// Console row 4's handler (`0x886C`, reached through the per-row table at /// file `0x8709`) does `mov si,0x2567` and 
-list_widget_cancel_label	src/bloodprg.rs	884	fn	0x0174	DATA	/// The list widget's shared trailing entry (`DS:0x0174`).
-music_on_label	src/bloodprg.rs	890	fn	0x2578	DATA	/// The alternate face of the music toggle (`DS:0x2578`), which the pointer /// list does not name.
-ds_pointer_list_strings	src/bloodprg.rs	895	fn	0xFFFF	ASM?	/// Walk a `0xFFFF`-terminated list of DS string pointers.
-resource_name	src/bloodprg.rs	912	fn		UNVERIFIED	
-file_to_known_segoff	src/bloodprg.rs	925	fn		UNVERIFIED	
-u16_at	src/bloodprg.rs	936	fn		UNVERIFIED	
-OpcodeMetadata	src/bloodprg.rs	944	struct		UNVERIFIED	
-opcode_metadata	src/bloodprg.rs	951	fn		UNVERIFIED	
-KNOWN_CODE_SEGMENTS	src/bloodprg.rs	1090	const		UNVERIFIED	
-snd_entry_call_note	src/bloodprg.rs	1101	fn		UNVERIFIED	
-snd_bank_load_mode	src/bloodprg.rs	1117	fn		UNVERIFIED	
-snd_bank_load_call_note	src/bloodprg.rs	1126	fn		UNVERIFIED	
-render_target_name	src/bloodprg.rs	1139	fn		UNVERIFIED	
-render_call_site_note	src/bloodprg.rs	1177	fn		UNVERIFIED	
-sprite_blitter_name	src/bloodprg.rs	1354	fn		UNVERIFIED	
-sprite_blitter_note	src/bloodprg.rs	1368	fn		UNVERIFIED	
-KNOWN_SYMBOLS	src/bloodprg.rs	1396	const		UNVERIFIED	
-PRESENTATION_3D_MARKERS	src/bloodprg.rs	2461	const		UNVERIFIED	
+TEXT_SPEED_POINTER_LIST_DS	src/bloodprg.rs	44	const		UNVERIFIED	/// The TEXT-SPEED submenu's pointer list.
+TEXT_SPEED_STEP_INITIAL	src/bloodprg.rs	47	const	0x0ACA,0x0DEEA	ASM?	/// The text-speed step the IMAGE SHIPS at `DS:0x0ACA` (file `0x0DEEA`) — 2, which /// is what `vm::text_speed_step_from_setting` gives for setting 1, `FAST`.
+TEXT_SPEED_STEP_DS	src/bloodprg.rs	49	const	0x0ACA	ASM?	/// `DS:0x0ACA` — the divisor in the dialogue updater's reveal rate.
+DIALOGUE_FONT_GLYPH_HEIGHT	src/bloodprg.rs	56	const	0x1B29,0x1B3D	ASM?	// The index -> step mapping is NOT duplicated here. `vm::text_speed_step_from_setting` // already transcribes 0x1B29..0x1B3D (including the `cmp ax,8` special case that makes // VERY SLOW 7 rather th
+SND_ENTRY_SEGMENT	src/bloodprg.rs	57	const		UNVERIFIED	
+SND_ENTRY_OFFSET	src/bloodprg.rs	58	const		UNVERIFIED	
+SND_BANK_LOAD_SEGMENT	src/bloodprg.rs	59	const		UNVERIFIED	
+SND_BANK_LOAD_OFFSET	src/bloodprg.rs	60	const		UNVERIFIED	
+RENDER_SEGMENT	src/bloodprg.rs	61	const		UNVERIFIED	
+RENDER_VGA_DAC_PALETTE_LOAD_OFFSET	src/bloodprg.rs	62	const		UNVERIFIED	
+RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET	src/bloodprg.rs	63	const		UNVERIFIED	
+RENDER_FIXED_8X8_TEXT_OFFSET	src/bloodprg.rs	64	const		UNVERIFIED	
+RENDER_FONT_STRING_WIDTH_OFFSET	src/bloodprg.rs	65	const		UNVERIFIED	
+RENDER_UI_TEXT_OFFSET	src/bloodprg.rs	66	const		UNVERIFIED	
+RENDER_STRING_OFFSET	src/bloodprg.rs	67	const		UNVERIFIED	
+RENDER_FRAMEBUFFER_RECT_REMAP_OFFSET	src/bloodprg.rs	68	const		UNVERIFIED	
+RENDER_PLANAR_UI_TEXT_OFFSET	src/bloodprg.rs	69	const		UNVERIFIED	
+RENDER_PLANAR_DIALOGUE_TEXT_OFFSET	src/bloodprg.rs	70	const		UNVERIFIED	
+RENDER_SUBTITLE_REVEAL_OFFSET	src/bloodprg.rs	71	const		UNVERIFIED	
+RENDER_SMALL_TEXT_OFFSET	src/bloodprg.rs	72	const		UNVERIFIED	
+RENDER_PLANAR_HORIZONTAL_LINE_OFFSET	src/bloodprg.rs	73	const		UNVERIFIED	
+RENDER_PLANAR_VERTICAL_LINE_OFFSET	src/bloodprg.rs	74	const		UNVERIFIED	
+RENDER_RECT_OUTLINE_OFFSET	src/bloodprg.rs	75	const		UNVERIFIED	
+RENDER_DITHER_RECT_FILL_OFFSET	src/bloodprg.rs	76	const		UNVERIFIED	
+RENDER_RECT_FILL_OFFSET	src/bloodprg.rs	77	const		UNVERIFIED	
+RENDER_SCENE_BAND_FILL_OFFSET	src/bloodprg.rs	78	const		UNVERIFIED	
+RENDER_SECONDARY_BAND_FILL_OFFSET	src/bloodprg.rs	79	const		UNVERIFIED	
+RENDER_FRAMEBUFFER_COPY_OFFSET	src/bloodprg.rs	80	const		UNVERIFIED	
+RENDER_SECONDARY_FRAMEBUFFER_COPY_OFFSET	src/bloodprg.rs	81	const		UNVERIFIED	
+RENDER_VGA_PLANAR_TO_LINEAR_COPY_OFFSET	src/bloodprg.rs	82	const		UNVERIFIED	
+RENDER_PLANAR_COPY_OFFSET	src/bloodprg.rs	83	const		UNVERIFIED	
+RENDER_RESOURCE_FILE_LOAD_OFFSET	src/bloodprg.rs	84	const		UNVERIFIED	
+RENDER_SPRITE_SLOT_LOAD_OFFSET	src/bloodprg.rs	85	const		UNVERIFIED	
+RENDER_SPRITE_SLOT_STATE_OFFSET	src/bloodprg.rs	86	const		UNVERIFIED	
+RENDER_SPRITE_SLOT_RESOURCE_LOAD_OFFSET	src/bloodprg.rs	87	const		UNVERIFIED	
+RENDER_SPRITE_SLOT_POSITION_OFFSET	src/bloodprg.rs	88	const		UNVERIFIED	
+RENDER_SPRITE_SLOT_RANGE_DIRTY_OFFSET	src/bloodprg.rs	89	const		UNVERIFIED	
+RENDER_SPRITE_SLOT_EXTENT_OFFSET	src/bloodprg.rs	90	const		UNVERIFIED	
+RENDER_SPRITE_SLOT_COMMIT_RANGE_OFFSET	src/bloodprg.rs	91	const		UNVERIFIED	
+RENDER_SPRITE_SLOT_DIRTY_RANGE_RENDER_OFFSET	src/bloodprg.rs	92	const		UNVERIFIED	
+RENDER_SPRITE_BLITTER_TABLE_OFFSET	src/bloodprg.rs	93	const		UNVERIFIED	
+RENDER_SPRITE_BLITTER_TABLE_FILE_OFFSET	src/bloodprg.rs	94	const		UNVERIFIED	
+RENDER_SPRITE_BLITTER_ENTRY_COUNT	src/bloodprg.rs	103	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E	ASM	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_SPRITE_BLITTER_INDEX_MASK_IMMEDIATE	src/bloodprg.rs	105	const	0x44B7	ASM	/// File offset of the `and bx,imm8` operand that bounds the index (`0x44B7`).
+RENDER_SPRITE_BLIT_RAW_TRANSPARENT_OFFSET	src/bloodprg.rs	106	const		UNVERIFIED	
+RENDER_SPRITE_BLIT_RLE_TRANSPARENT_OFFSET	src/bloodprg.rs	107	const		UNVERIFIED	
+RENDER_SPRITE_BLIT_RAW_OPAQUE_OFFSET	src/bloodprg.rs	108	const		UNVERIFIED	
+RENDER_SPRITE_BLIT_RLE_OPAQUE_OFFSET	src/bloodprg.rs	109	const		UNVERIFIED	
+RENDER_SPRITE_BLIT_SCALED_TRANSPARENT_OFFSET	src/bloodprg.rs	110	const		UNVERIFIED	
+RENDER_SPRITE_BLIT_NOOP_5_OFFSET	src/bloodprg.rs	111	const		UNVERIFIED	
+RENDER_SPRITE_BLIT_NOOP_6_OFFSET	src/bloodprg.rs	112	const		UNVERIFIED	
+RENDER_SPRITE_BLIT_NOOP_7_OFFSET	src/bloodprg.rs	113	const		UNVERIFIED	
+RENDER_DIRTY_RECTS_COPY_OFFSET	src/bloodprg.rs	114	const		UNVERIFIED	
+NAV_CODE_SEGMENT	src/bloodprg.rs	115	const		UNVERIFIED	
+NAV_ACTOR_SUBDISPATCH_TABLE_FILE_OFFSET	src/bloodprg.rs	116	const		UNVERIFIED	
+NAV_ACTOR_SUBDISPATCH_ENTRY_COUNT	src/bloodprg.rs	117	const		UNVERIFIED	
+NAV_CHOICE_SUBDISPATCH_TABLE_FILE_OFFSET	src/bloodprg.rs	118	const		UNVERIFIED	
+NAV_CHOICE_SUBDISPATCH_ENTRY_COUNT	src/bloodprg.rs	119	const		UNVERIFIED	
+SHIP_3D_INTERPOLATION_GATE_SEGMENT	src/bloodprg.rs	120	const		UNVERIFIED	
+SHIP_3D_INTERPOLATION_GATE_OFFSET	src/bloodprg.rs	121	const		UNVERIFIED	
+SHIP_3D_TARGET_QUERY_LAYOUT_SEGMENT	src/bloodprg.rs	122	const		UNVERIFIED	
+SHIP_3D_TARGET_QUERY_LAYOUT_OFFSET	src/bloodprg.rs	123	const		UNVERIFIED	
+SHIP_PRESENTATION_SEGMENT	src/bloodprg.rs	124	const		UNVERIFIED	
+SHIP_PRESENTATION_ENTRY_OFFSET	src/bloodprg.rs	125	const		UNVERIFIED	
+SHIP_3D_HUD_INIT_OFFSET	src/bloodprg.rs	126	const		UNVERIFIED	
+SHIP_3D_ALT_FRAMEBUFFER_BAND_COPY_CALL_OFFSET	src/bloodprg.rs	127	const		UNVERIFIED	
+SHIP_3D_TARGET_RECORD_SELECT_OFFSET	src/bloodprg.rs	128	const		UNVERIFIED	
+SHIP_3D_NAVIGATION_UPDATE_OFFSET	src/bloodprg.rs	129	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_SETUP_OFFSET	src/bloodprg.rs	130	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_LOAD_CALL_OFFSET	src/bloodprg.rs	131	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_RESTORE_CALL_OFFSET	src/bloodprg.rs	132	const		UNVERIFIED	
+SHIP_3D_TRANSITION_STATE_OFFSET	src/bloodprg.rs	133	const		UNVERIFIED	
+SHIP_3D_PLANE_BAND_COPY_OFFSET	src/bloodprg.rs	134	const		UNVERIFIED	
+SHIP_3D_DEPTH_SCROLL_STEP_OFFSET	src/bloodprg.rs	135	const		UNVERIFIED	
+SHIP_3D_TARGET_LIST_DS_OFFSET	src/bloodprg.rs	136	const		UNVERIFIED	
+SHIP_3D_CURRENT_TARGET_DS_OFFSET	src/bloodprg.rs	137	const		UNVERIFIED	
+SHIP_3D_SEQUENCE_ACTIVE_DS_OFFSET	src/bloodprg.rs	138	const		UNVERIFIED	
+SHIP_3D_TARGET_SELECT_PHASE_DS_OFFSET	src/bloodprg.rs	139	const		UNVERIFIED	
+SHIP_3D_TARGET_FALLBACK_DS_OFFSET	src/bloodprg.rs	140	const		UNVERIFIED	
+SHIP_3D_HUD_FLAG_DS_OFFSET	src/bloodprg.rs	141	const		UNVERIFIED	
+SHIP_3D_DEPTH_OFFSET_DS_OFFSET	src/bloodprg.rs	142	const		UNVERIFIED	
+SHIP_3D_PLANE_COPY_ENABLE_DS_OFFSET	src/bloodprg.rs	143	const		UNVERIFIED	
+SHIP_3D_OPENING_FLAG_DS_OFFSET	src/bloodprg.rs	144	const		UNVERIFIED	
+SHIP_3D_CLOSING_FLAG_DS_OFFSET	src/bloodprg.rs	145	const		UNVERIFIED	
+SHIP_3D_DEPTH_STEP_DS_OFFSET	src/bloodprg.rs	146	const		UNVERIFIED	
+SHIP_3D_EXIT_PENDING_DS_OFFSET	src/bloodprg.rs	147	const		UNVERIFIED	
+SHIP_3D_TRANSITION_ARMED_DS_OFFSET	src/bloodprg.rs	148	const		UNVERIFIED	
+SHIP_3D_FALLBACK_TARGET_TABLE_DS_OFFSET	src/bloodprg.rs	149	const		UNVERIFIED	
+SHIP_3D_NAVIGATION_TRIGGER_DS_OFFSET	src/bloodprg.rs	150	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_SELECTED_DS_OFFSET	src/bloodprg.rs	151	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_GATE_DS_OFFSET	src/bloodprg.rs	152	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_HOLD_TIMER_DS_OFFSET	src/bloodprg.rs	153	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_PHASE_DS_OFFSET	src/bloodprg.rs	154	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_TARGET_Y_DS_OFFSET	src/bloodprg.rs	155	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_LEFT_GATE_DS_OFFSET	src/bloodprg.rs	156	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_RIGHT_GATE_DS_OFFSET	src/bloodprg.rs	157	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_MENU_GATE_DS_OFFSET	src/bloodprg.rs	158	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_SOUND_GATE_DS_OFFSET	src/bloodprg.rs	159	const		UNVERIFIED	
+SHIP_3D_INTERPOLATION_DURATION_DS_OFFSET	src/bloodprg.rs	160	const		UNVERIFIED	
+SHIP_3D_INTERPOLATION_TICK_DS_OFFSET	src/bloodprg.rs	161	const		UNVERIFIED	
+SHIP_3D_TARGET_EXTRA_LABEL_DS_OFFSET	src/bloodprg.rs	162	const		UNVERIFIED	
+SHIP_3D_TARGET_LAYOUT_CENTER_X_DS_OFFSET	src/bloodprg.rs	163	const		UNVERIFIED	
+SHIP_3D_TARGET_LAYOUT_DRAW_PTR_DS_OFFSET	src/bloodprg.rs	164	const		UNVERIFIED	
+SHIP_3D_TARGET_LAYOUT_PRESERVE_WIDTHS_DS_OFFSET	src/bloodprg.rs	165	const		UNVERIFIED	
+SHIP_3D_TARGET_LAYOUT_EXTRA_ENTRY_DS_OFFSET	src/bloodprg.rs	166	const		UNVERIFIED	
+SHIP_3D_TARGET_MOUSE_X_DS_OFFSET	src/bloodprg.rs	167	const		UNVERIFIED	
+SHIP_3D_TARGET_MOUSE_Y_DS_OFFSET	src/bloodprg.rs	168	const		UNVERIFIED	
+SHIP_3D_TARGET_REQUESTED_PRESENTATION_DS_OFFSET	src/bloodprg.rs	169	const		UNVERIFIED	
+SHIP_3D_TARGET_PRESENTATION_STATE_DS_OFFSET	src/bloodprg.rs	170	const		UNVERIFIED	
+SHIP_3D_TARGET_ACTIVATE_FLAG_DS_OFFSET	src/bloodprg.rs	171	const		UNVERIFIED	
+SHIP_3D_TARGET_HOVER_ROW_DS_OFFSET	src/bloodprg.rs	172	const		UNVERIFIED	
+SHIP_3D_TARGET_QUERY_MODE_DS_OFFSET	src/bloodprg.rs	173	const		UNVERIFIED	
+SHIP_3D_TARGET_SELECTION_DS_OFFSET	src/bloodprg.rs	174	const		UNVERIFIED	
+SHIP_3D_TARGET_LAYOUT_RECT_DS_OFFSET	src/bloodprg.rs	175	const		UNVERIFIED	
+SHIP_3D_TARGET_WIDTH_TABLE_DS_OFFSET	src/bloodprg.rs	176	const		UNVERIFIED	
+SHIP_3D_PRESENTATION_HOLD_TIMER_DS_OFFSET	src/bloodprg.rs	177	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_TRIGGER_DS_OFFSET	src/bloodprg.rs	178	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_PHASE_DS_OFFSET	src/bloodprg.rs	179	const		UNVERIFIED	
+SHIP_3D_PLANAR_FRAMEBUFFER_PTR_DS_OFFSET	src/bloodprg.rs	180	const		UNVERIFIED	
+SHIP_3D_SCROLL_MODE_DS_OFFSET	src/bloodprg.rs	181	const		UNVERIFIED	
+SHIP_3D_SCROLL_VALUE_DS_OFFSET	src/bloodprg.rs	182	const		UNVERIFIED	
+SND_ENTRY_FAR_CALL	src/bloodprg.rs	184	const		UNVERIFIED	
+SND_BANK_LOAD_FAR_CALL	src/bloodprg.rs	191	const		UNVERIFIED	
+FAR_CALL_OPCODE	src/bloodprg.rs	198	const		UNVERIFIED	
+REGISTER_SOURCE_SCAN_BACK	src/bloodprg.rs	199	const		UNVERIFIED	
+DS_STRING_SCAN_MAX	src/bloodprg.rs	200	const		UNVERIFIED	
+RENDER_FAR_CALL_SEGMENT_BYTES	src/bloodprg.rs	201	const		UNVERIFIED	
+MzHeader	src/bloodprg.rs	205	struct		UNVERIFIED	
+header_size	src/bloodprg.rs	220	fn		UNVERIFIED	
+image_total	src/bloodprg.rs	224	fn		UNVERIFIED	
+load_size	src/bloodprg.rs	232	fn		UNVERIFIED	
+MzSummary	src/bloodprg.rs	238	struct		UNVERIFIED	
+BinarySymbol	src/bloodprg.rs	249	struct		UNVERIFIED	
+OpcodeDescriptor	src/bloodprg.rs	260	struct		UNVERIFIED	
+OpcodeHandler	src/bloodprg.rs	267	struct		UNVERIFIED	
+VmOpcodeSpec	src/bloodprg.rs	274	struct		UNVERIFIED	
+DialogueFontTables	src/bloodprg.rs	289	struct		UNVERIFIED	
+SubdispatchEntry	src/bloodprg.rs	299	struct		UNVERIFIED	
+SpriteBlitterDispatchEntry	src/bloodprg.rs	306	struct		UNVERIFIED	
+ScriptResourceProfileSlot	src/bloodprg.rs	315	struct		UNVERIFIED	
+ScriptResourceProfile	src/bloodprg.rs	322	struct		UNVERIFIED	
+BloodPrgInspection	src/bloodprg.rs	330	struct		UNVERIFIED	
+SndEntryCallSite	src/bloodprg.rs	349	struct		UNVERIFIED	
+SndBankLoadCallSite	src/bloodprg.rs	363	struct		UNVERIFIED	
+RenderCallSite	src/bloodprg.rs	384	struct		UNVERIFIED	
+BloodPrg	src/bloodprg.rs	399	struct		UNVERIFIED	
+parse_file	src/bloodprg.rs	405	fn		UNVERIFIED	
+parse	src/bloodprg.rs	411	fn		UNVERIFIED	
+summary	src/bloodprg.rs	441	fn		UNVERIFIED	
+image_bytes	src/bloodprg.rs	456	fn		UNVERIFIED	/// The raw image bytes, so a test can read an INSTRUCTION back and check a /// constant against the immediate the code actually uses.
+segoff_to_file	src/bloodprg.rs	460	fn		UNVERIFIED	
+ds_to_file	src/bloodprg.rs	464	fn		UNVERIFIED	
+fs_to_file	src/bloodprg.rs	468	fn		UNVERIFIED	
+opcode_handlers	src/bloodprg.rs	472	fn		UNVERIFIED	
+opcode_descriptors	src/bloodprg.rs	492	fn		UNVERIFIED	
+vm_opcode_specs	src/bloodprg.rs	509	fn		UNVERIFIED	
+script_resource_profiles	src/bloodprg.rs	546	fn	0x11F4,0x0D3E4,0x53A0,0x000A,0x6712	ASM	/// The five SCRIPT resource profiles at `FS:0x11F4` (file `0x0D3E4`), the /// table `vm_resource_profile_select` (`0x53A0`) indexes: `mov si,0x11F4 / /// mov dx,0x000A / mul dx` picks the row, then `
+dialogue_font_tables	src/bloodprg.rs	580	fn	0x31C8,0x7802,0x14C22,0x78B2,0x14CD2,0x78b2,0x7908,0x14D28	ASM	/// The DIALOGUE FONT's three chained tables, at the offsets `render_string` /// (`0x31C8`) loads them from as immediates: the ASCII->glyph map /// `DS:0x7802` = file `0x14C22` (`mov bx,0x7802`), the 
+nav_actor_subdispatch_handlers	src/bloodprg.rs	618	fn		UNVERIFIED	
+nav_choice_subdispatch_handlers	src/bloodprg.rs	626	fn		UNVERIFIED	
+snd_entry_call_sites	src/bloodprg.rs	634	fn		UNVERIFIED	
+snd_bank_load_call_sites	src/bloodprg.rs	660	fn		UNVERIFIED	
+render_call_sites	src/bloodprg.rs	699	fn		UNVERIFIED	
+sprite_blitter_dispatch_entries	src/bloodprg.rs	733	fn	0x1592,0x4522,0x44BA	ASM	/// The sprite-blitter dispatch table at `CS:0x1592` (file `0x4522`), reached /// by `mov bx,cs:[bx+0x1592]` at `0x44BA` after `shr bx,1 / and bx,0x0E` /// bounds the index to its eight word entries.
+inspect	src/bloodprg.rs	755	fn		UNVERIFIED	
+subdispatch_entries	src/bloodprg.rs	775	fn		UNVERIFIED	
+slice	src/bloodprg.rs	796	fn		UNVERIFIED	
+find_ax_source_before	src/bloodprg.rs	805	fn		UNVERIFIED	
+find_si_source_before	src/bloodprg.rs	837	fn		UNVERIFIED	
+ds_c_string	src/bloodprg.rs	865	fn		UNVERIFIED	
+option_menu_labels	src/bloodprg.rs	892	fn	0x886C,0x8709,0x2567,0x8428,0xFFFF,0x2573,0x2581,0x258B,0x25	DATA	/// The bridge OPTION menu's labels, read from the game's own string table. /// /// Console row 4's handler (`0x886C`, reached through the per-row table at /// file `0x8709`) does `mov si,0x2567` and 
+text_speed_labels	src/bloodprg.rs	898	fn	0x259D	ASM?	/// The OPTION menu's TEXT-SPEED submenu labels (`DS:0x259D`): /// `VERY FAST`, `FAST`, `MEDIUM`, `SLOW`, `VERY SLOW`.
+list_widget_cancel_label	src/bloodprg.rs	903	fn	0x0174	DATA	/// The list widget's shared trailing entry (`DS:0x0174`).
+music_on_label	src/bloodprg.rs	909	fn	0x2578	DATA	/// The alternate face of the music toggle (`DS:0x2578`), which the pointer /// list does not name.
+ds_pointer_list_strings	src/bloodprg.rs	914	fn	0xFFFF	ASM?	/// Walk a `0xFFFF`-terminated list of DS string pointers.
+resource_name	src/bloodprg.rs	931	fn		UNVERIFIED	
+file_to_known_segoff	src/bloodprg.rs	944	fn		UNVERIFIED	
+u16_at	src/bloodprg.rs	955	fn		UNVERIFIED	
+OpcodeMetadata	src/bloodprg.rs	963	struct		UNVERIFIED	
+opcode_metadata	src/bloodprg.rs	970	fn		UNVERIFIED	
+KNOWN_CODE_SEGMENTS	src/bloodprg.rs	1109	const		UNVERIFIED	
+snd_entry_call_note	src/bloodprg.rs	1120	fn		UNVERIFIED	
+snd_bank_load_mode	src/bloodprg.rs	1136	fn		UNVERIFIED	
+snd_bank_load_call_note	src/bloodprg.rs	1145	fn		UNVERIFIED	
+render_target_name	src/bloodprg.rs	1158	fn		UNVERIFIED	
+render_call_site_note	src/bloodprg.rs	1196	fn		UNVERIFIED	
+sprite_blitter_name	src/bloodprg.rs	1373	fn		UNVERIFIED	
+sprite_blitter_note	src/bloodprg.rs	1387	fn		UNVERIFIED	
+KNOWN_SYMBOLS	src/bloodprg.rs	1415	const		UNVERIFIED	
+PRESENTATION_3D_MARKERS	src/bloodprg.rs	2480	const		UNVERIFIED	
 BloodSave	src/bloodsav.rs	48	struct	0x1C3F,0x1CBD,0x677E,0x6ADE,0x6CDE,0x6724,0xABC,0x1C63,0x1CE	ASM?	//! The DOS save-file formats — the byte-exact layouts the original //! `BLOODPRG.EXE` reads and writes. LIVE-VERIFIED round trip (save_option scenario): //! the real game, driven through OPTION->SAVE
 SaveSlot	src/bloodsav.rs	73	struct	0x2734,0x1BAB,0x25ED,0x273B,0x1BBD,0x8573	ASM?	/// One row of the SLOT-NAME DIRECTORY (`blood.sav`): a 32-byte record holding a /// 15-character name padded with spaces, a NUL, then the slot's filename /// (`game<N>.sav`) padded with NULs. Ten of 
 SLOT_RECORD_LEN	src/bloodsav.rs	81	const		UNVERIFIED	/// Bytes per directory record, and the record count.
@@ -305,7 +309,7 @@ AlienMethod	src/croolis.rs	34	enum	0x103A,0x1D27,0x16A4,0x12DE,0x999,0x36A,0xA30
 from_vtable_offset	src/croolis.rs	47	fn	0x103A	ASM?	/// Resolve a vtable index (`[di+0x34]`) to its method, mirroring the `fs:0x103A` /// table entries.
 AlienObject	src/croolis.rs	60	struct	0x105C	ASM?	/// A `croolis` object's animation state (the 0x5E-byte record's behaviour fields): /// `+0x36` state flag, `+0x38` timer (init 0x32), `+0x3C` animation accumulator, plus /// its PRNG seed word (`fs:[
 ALIEN_TRANSFORM_NEUTRAL	src/croolis.rs	83	const		UNVERIFIED	/// The neutral transform value the initializer writes to `+0x12`/`+0x22`/`+0x32`.
-ALIEN_POSITION_WRAP	src/croolis.rs	87	const	0x4000,0x999	ASM?	/// The half-extent of the object-space toroidal wrap (`0x4000`); positions wrap into /// `[-0x4000, 0x4000)` relative to the wrap origin (method `0x999`).
+ALIEN_POSITION_WRAP	src/croolis.rs	87	const	0x4000,0x999	ASM	/// The half-extent of the object-space toroidal wrap (`0x4000`); positions wrap into /// `[-0x4000, 0x4000)` relative to the wrap origin (method `0x999`).
 POSITION_WRAP_MASK	src/croolis.rs	91	const		UNVERIFIED	/// Low-15-bit mask used while folding a position into the toroidal play-space (a bit mask, so /// hexadecimal is the natural form).
 ALIEN_STATE_TIMER_RELOAD	src/croolis.rs	94	const		UNVERIFIED	/// Timer reload (in frames) when a new animation state is chosen.
 ALIEN_ANIM_STEP	src/croolis.rs	96	const		UNVERIFIED	/// Animation-accumulator step added per state change.
@@ -455,142 +459,142 @@ choice_box_widest	src/engine.rs	2267	fn		UNVERIFIED	/// The widest square-caps l
 draw_list_menu	src/engine.rs	2290	fn	0x847A,0x8565,0x858B,0x84AD,0x857D,0x8582	ASM?	/// Draw a LIST MENU — the game's blue square-capitals vertical list (topic /// menus in dialogue, destinations at nav, contacts). Same widget as /// [`Self::draw_choice_box`], so the same ASSEMBLY la
 TEXT	src/engine.rs	2293	const	0x8565,0x858B	ASM	// Same row colours as the choice box: `mov al,0xE8` @0x8565 unselected, // `mov al,0xEF` @0x858B selected.
 TEXT_SELECTED	src/engine.rs	2295	const	0x858B	ASM	// `mov al,0xEF` @0x858B — the selected row.
-set_topic_menu	src/engine.rs	2324	fn		UNVERIFIED	/// Set the dialogue topic menu: (label, first line index) per topic.
-load_bas_menus	src/engine.rs	2333	fn	0x6772	ASM?	/// Load the conversation script's decoded concept-menu stack (the game's /// `gs:0x6772` menu system, [`crate::bas_vm`]) from its `.BAS`/`.DIC`. Seeds at /// the entry menu; `current_bas_menu_labels`
-current_bas_menu_labels	src/engine.rs	2341	fn		UNVERIFIED	/// The current BAS concept menu's topic labels (uppercased, as the square-caps /// menu renders them). Empty if no `.BAS` menus are loaded. Enter/back-out /// navigation is driven via [`crate::bas_vm
-bas_menu_interact	src/engine.rs	2353	fn		UNVERIFIED	/// The complete per-beat concept-menu interaction: a click on `row` either pops /// (talk/bye_bye — back out) returning `None`, or advances the current menu's /// sequential response monologue and re
-bas_menu_click	src/engine.rs	2371	fn		UNVERIFIED	/// Handle a screen click on the displayed BAS concept menu: map (x,y) to a topic /// row (the list-menu geometry) and run [`Self::bas_menu_interact`]. Returns the /// response subtitle (empty string 
-sync_topic_menu_from_bas	src/engine.rs	2381	fn		UNVERIFIED	/// Sync the displayed topic menu to the current BAS concept menu, so the decoded /// menus actually RENDER (via [`draw_list_menu`]/the topic-menu widget). Each row /// carries its topic index; a clic
-bas_start_responses	src/engine.rs	2392	fn		UNVERIFIED	/// Begin the current BAS menu's response monologue (its `0xA6` responses), reset /// to the start. Called when a conversation menu becomes active.
-bas_advance_response	src/engine.rs	2399	fn		UNVERIFIED	/// Advance to the next response of the active menu (the already-shown gating), /// returning its `0xA6` BAS offset for the dialogue renderer. `None` when the /// monologue is exhausted or no menu is 
-bas_topic_click	src/engine.rs	2408	fn		UNVERIFIED	/// Handle a click on `row` of the current BAS concept menu. Back-out topics /// (`talk`/`bye_bye`) POP to the parent menu — verified against the running /// game (MENUTREE: fear/anger menu `talk` → t
-topic_labels	src/engine.rs	2422	fn		UNVERIFIED	/// The current topic-menu labels (for drivers that route clicks themselves).
-topic_menu_click	src/engine.rs	2428	fn		UNVERIFIED	/// A click while the topic menu is showing: selects the topic and jumps the /// dialogue to its first line. Returns the selected topic index.
-hand_pose_event	src/engine.rs	2456	fn		UNVERIFIED	/// Fire a one-shot hand-pose event (decoded selectors: 0xB = UI close, 0xA = /// screen transition) — the pose sequence plays once, then poses resume from state.
-set_console_band_dialogue	src/engine.rs	2463	fn		UNVERIFIED	/// Whether the current dialogue plays over the pyramid-console band (SCRIPT1 tutorial).
-set_dialogue_autoplay_end	src/engine.rs	2469	fn		UNVERIFIED	/// Gate auto-play at `end` (exclusive): the scripted opening plays unprompted, then the /// dialogue holds at the topic menu and topic clicks drive the rest.
-set_dialogue_styles	src/engine.rs	2475	fn		UNVERIFIED	/// Per-line render styles (parallel to the queued lines): true = character speech /// (green bold reveal), false = static text (white thin — menu/list content).
-set_segment_boundaries	src/engine.rs	2482	fn		UNVERIFIED	/// Record the dialogue's function-segment start lines so a topic click plays only that one /// segment (not everything up to the next topic). Does NOT change the play position — unlike /// [`Self::se
-set_dialogue_segments	src/engine.rs	2489	fn		UNVERIFIED	/// Segment the dialogue at the given line starts (script-function beats): the first segment /// (the scripted opening) auto-plays, then the dialogue holds; each call to /// [`Self::play_next_dialogue
-hold_current_line_at_least	src/engine.rs	2499	fn		UNVERIFIED	/// Play the next unplayed dialogue segment (a concept-menu interaction advances the /// conversation one beat), then re-hold at the menu. Returns false when exhausted. /// Driver hook: the current li
-play_next_dialogue_segment	src/engine.rs	2503	fn		UNVERIFIED	
-list_menu_click	src/engine.rs	2521	fn		ASM	/// Map a click to a list-menu row (the measured geometry above).
-bridge_nav_orb_click	src/engine.rs	2536	fn		ORACLE?	/// Whether a click hits the nav-sector ORB (the pyramid-sector station orb) — the /// oracle-verified way into the nav/viewscreen console. Orb near screen (105..145, 130..165) /// when the pyramid se
-bridge_nav_destination_click	src/engine.rs	2544	fn		ASM	/// Map a click to a nav-sector destination row when the choice box is showing /// (bridge view in the pyramid sector with destinations set).
-render_bridge_background	src/engine.rs	2564	fn	0x954A	ASM?	/// Composite the bridge view into the framebuffer: window starfield, then the /// current TB.BIG panorama frame with colour-0 transparency, then the game /// palette + the golden menu's dynamic DAC r
-load_cyberspace	src/engine.rs	2618	fn		DATA?	/// Load the cyberspace hyperspace-tunnel animations (`sq/hyper_*.hnm`), sorted so /// segments advance in order. The screen renders once `cyber_active` is set.
-start_cyberspace	src/engine.rs	2639	fn		UNVERIFIED	/// Begin (or restart) a cyberspace traversal from the first segment.
-cyber_progress	src/engine.rs	2647	fn		UNVERIFIED	/// The cyberspace traversal progress: (current segment, total segments).
-render_cyberspace	src/engine.rs	2659	fn		DATA?	/// Render the cyberspace hyperspace-traversal mini-game: fly through the real /// `hyper_*.hnm` warp segments toward the destination, steering the on-course reticle /// with the mouse; each completed
-RETICLE	src/engine.rs	2684	const		UNVERIFIED	// HUD overlay: a course reticle (steered) + a journey progress bar.
-BAR	src/engine.rs	2685	const		UNVERIFIED	
-load_cryobox	src/engine.rs	2716	fn		DATA?	/// Load the cryo-chamber scene (`sq/cryorad.hnm`) shown by the console's CRYOBOX /// option — the ship's cryo-pod bay (its palette is the HNM's own header palette).
-render_cryobox	src/engine.rs	2722	fn		UNVERIFIED	/// Render the CRYOBOX cryo-chamber, looping its frames.
-apply_console_bank_remap	src/engine.rs	2739	fn	0x7AC3,0x6011,0x299,0x40E	ASM	/// The montage's full-screen colour reduction at `0x7AC3` (`si=DS:0x6011`, /// `lcall 0x299:0x40E` over `(0, 0, 320, 200)`), through the table the game's /// own builder produces — see /// [`crate::p
-overlay_console_band	src/engine.rs	2771	fn	0x7AC3,0x6011	ASM	/// Overlay the intro montage's console band — FROM THE REAL ASSET. /// /// The band is `TB.BIG` panorama frame [`CONSOLE_BAND_FRAME`], rows 140..200, /// pushed through the console-bank remap table t
-render_viewscreen_console	src/engine.rs	2802	fn		UNVERIFIED	/// Render the VIEWSCREEN console: the band along the bottom — composed from /// `TB.BIG` frame 90 through the console-bank remap, see /// [`Self::overlay_console_band`] — and the upper viewscreen sho
-load_ending	src/engine.rs	2834	fn		DATA?	"/// Load the game-ending finale cutscene (`sq/fin.hnm`, the ""fin""/end video) — the /// bookend to the intro. Returns whether it loaded."
-start_ending	src/engine.rs	2840	fn		UNVERIFIED	/// Start the ending finale from its first frame (call when the game is completed).
-ending_finished	src/engine.rs	2846	fn		UNVERIFIED	/// Whether the ending finale has played through all its frames.
-render_ending	src/engine.rs	2854	fn		UNVERIFIED	/// Render the ending finale, advancing one frame per call and holding on the last.
-PHONE_CONTACTS	src/engine.rs	2872	const		DATA?	/// The video-phone's callable crew: display name + their talk-head HNM basename /// (`pe/aa*.hnm`). These are the crew whose full-colour idle-head animations exist and /// decode cleanly; the phone s
-load_telephone	src/engine.rs	2887	fn		DATA?	/// Load the video-phone call screen (console TELEPHONE option): the call widget /// (`BAPPEL.SPR`, from `iso`) and every callable crew's talk-head HNM (`pe/aa*.hnm`, /// from `assets`). Returns wheth
-phone_contact_labels	src/engine.rs	2906	fn		UNVERIFIED	/// The number of callable phone contacts loaded. /// Contact names for the TELEPHONE choice box.
-phone_contact_count	src/engine.rs	2910	fn		UNVERIFIED	
-phone_contact_name	src/engine.rs	2915	fn		UNVERIFIED	/// The display name of the currently selected/dialled contact.
-phone_connected	src/engine.rs	2920	fn		UNVERIFIED	/// Whether the call is connected (showing the talk-head video feed).
-phone_cycle_contact	src/engine.rs	2925	fn		UNVERIFIED	/// Cycle the dialled contact (`dir` +1/−1), while dialling (a no-op once connected).
-phone_contact_click	src/engine.rs	2934	fn		UNVERIFIED	/// Map a click to a contact-list row (dialling state), matching the drawn layout.
-phone_connect	src/engine.rs	2957	fn		UNVERIFIED	/// Connect the call to `index` (switch to the video-feed state). Invalid index = no-op.
-phone_hangup	src/engine.rs	2968	fn		UNVERIFIED	/// Hang up a connected call, returning to the dialling state.
-render_telephone	src/engine.rs	2975	fn		DATA?	/// Render the video-phone. Dialling: the console-palette backdrop, the animated /// `BAPPEL` call widget, and the crew contact list in the console font (the dialled /// row highlighted). Connected: t
-arm_alien_intro	src/engine.rs	3006	fn		UNVERIFIED	/// Arm the scrutinizer-apparatus intro to play from its first frame the next time /// the examination screen renders (call when opening the screen).
-render_alien_view	src/engine.rs	3017	fn		UNVERIFIED	/// Render the alien-examination screen: the mouse pan (delta from centre, /// smoothed + clamped like the decoded camera at `re/REVERSE.md`) selects one of /// the pre-rendered rotation views, whose 
-render_intro_frame	src/engine.rs	3064	fn		UNVERIFIED	/// Render one frame of the current intro clip full-screen; when a clip's frames are /// exhausted, advance to the next; when the sequence ends, deactivate the intro so /// the main loop takes over.
-INTRO_CREDIT_FRAMES_PER_TICK	src/engine.rs	3116	const		ORACLE?	/// Frame index at which a credit cue's `tick` becomes active. The intro cinematic /// advances one clip frame per stepped game frame, so a cue displays from `tick` /// frames in until the next cue su
-INTRO_CREDIT_BASELINE_Y	src/engine.rs	3121	const	0x200	ORACLE?	/// Top row of the FIRST credit line. Native-resolution ground truth (dlg_05, a real /// 320x200 capture of the credit beat): line 1 top y=82, line 2 y=92 (pitch 10), /// centred on x=160, over the ch
-TV_CUE_BASELINE_Y	src/engine.rs	3123	const		UNVERIFIED	/// Top row of the LAST TV broadcast-cue line (the lower letterbox band).
-INTRO_CREDIT_COLOR_INDEX	src/engine.rs	3126	const		UNVERIFIED	/// Reserved palette index forced to white for the credit glyphs (mirrors the /// dialogue reveal's reserved 0xFD/0xFE slots).
-draw_intro_credit	src/engine.rs	3130	fn		UNVERIFIED	/// Draw the credit subtitle active at intro clip `frame` (if any) centred in the /// lower letterbox. The active cue is the last one whose `tick` has been reached.
-load_dialogue_scenes	src/engine.rs	3162	fn		DATA?	/// Load a dialogue script AND resolve each line's speaker to its talk-HNM asset /// (actor `0xC4` offset → DEB object name → DESCRIPT record → talk HNM → file in /// `asset_dir`), so playback automat
-dialogue_cursor	src/engine.rs	3207	fn		UNVERIFIED	/// Current dialogue playback cursor (line index), for drivers that react to line /// changes (e.g. per-line voice playback).
-set_dialogue_cursor	src/engine.rs	3213	fn		UNVERIFIED	/// Set the dialogue playback cursor (clamped to the loaded dialogue), used when /// restoring a save so playback resumes at the saved line.
-capture_save	src/engine.rs	3224	fn		ORACLE?	/// Capture the resumable game state into a [`crate::save::SaveState`] (the port's own /// save). `script` is the current location/dialogue script number the driver loaded /// (0 = none, on the nav) —
-restore_save	src/engine.rs	3256	fn		UNVERIFIED	/// Restore the engine-side view and settings from a save. The driver must (re)load /// `save.script`'s dialogue BEFORE calling this so the dialogue cursor lands on a valid /// line; screen selection,
-subtitle_reveal_progress	src/engine.rs	3290	fn	0x5E58,0x94BA	ASM?	/// How many subtitle characters are currently revealed on the active line (the /// game's reveal pointer `gs:0x5E58`), and the line's total character count. A /// driver plays the `tb.snd` chatter (c
-current_voice	src/engine.rs	3307	fn	0xCFB,0x66AF,0x94CF	ASM?	/// The current line's speaker SND bank path + its `b3` selector. /// /// NO LONGER DRIVES AUDIO. The per-line voice clip this used to feed was removed: /// the game plays a random burble (`prng(10)+7
-load_current_scene	src/engine.rs	3318	fn		DATA?	/// Load the talk-HNM resolved for the current dialogue line (if any).
-load_dialogue	src/engine.rs	3347	fn	0x108E	ASM?	/// Load a dialogue script (`SCRIPTn.COD` + `.VAR`): run the VM trace and queue /// its reached dialogue lines for frame-stepped playback. Each [`EngineState:: /// step`] advances the playback timer; 
-set_speech_dialogue	src/engine.rs	3408	fn		DATA?	/// Play dialogue directly from the port's decoded speech events — the FULL per-script, /// per-character content (every character's lines, with each line's background scene), /// instead of `execute_
-current_dialogue	src/engine.rs	3438	fn		UNVERIFIED	/// The dialogue line currently being presented, if a script is loaded.
-pending_next_scene	src/engine.rs	3445	fn		UNVERIFIED	/// The next scene/profile the loaded script's D2 handoff dispatches to (for /// scene-to-scene chaining), or `None` if this is a terminal scene. The driver /// loads that profile's script when the cu
-dialogue_finished	src/engine.rs	3451	fn		UNVERIFIED	/// Whether dialogue playback has reached the final line (the point at which the /// D2 handoff to [`EngineState::pending_next_scene`] would fire).
-queue_scenes	src/engine.rs	3458	fn		UNVERIFIED	/// Queue a sequence of scene scripts `(cod, var, dic)` and start the first, so /// the engine auto-advances scene-to-scene as each finishes (the scene flow the /// D2 handoff drives). Returns the num
-current_scene_index	src/engine.rs	3469	fn		UNVERIFIED	/// The index of the scene currently playing in the queue.
-advance_scene_if_finished	src/engine.rs	3475	fn		UNVERIFIED	/// If the current dialogue has finished and another scene is queued, advance to /// it (loading its script). Returns true if it advanced.
-dialogue_page_number	src/engine.rs	3488	fn		ORACLE?	/// 1-based page number of the current dialogue line — the green console digit the /// real presentation screen shows top-left (oracle bd_218M..bd_290M, index 254).
-current_subtitle	src/engine.rs	3493	fn		UNVERIFIED	/// The current dialogue line's reconstructed subtitle text, if non-empty.
-dialogue_len	src/engine.rs	3501	fn		UNVERIFIED	/// Number of dialogue lines the loaded script reached.
-current_line_hold	src/engine.rs	3512	fn	0xB31,0x94BA,0xB35,0x94D4	ASM?	/// Advance the dialogue playback: after `dialogue_hold_frames`, step to the next /// reached line (stops at the last line). /// Hold for the current line, using the game's decoded subtitle timing: th
-in_dialogue	src/engine.rs	3533	fn		UNVERIFIED	/// Whether a dialogue scene is currently the active view (playing, with no overlay /// screen / nav / intro / ending on top) — so a driver can route clicks to advance it.
-skip_dialogue_line	src/engine.rs	3550	fn		UNVERIFIED	/// Manually advance the dialogue on a click (as the real game does): if the current /// line is still revealing, snap it fully revealed; otherwise move to the next line. /// Returns `false` when alre
-advance_dialogue	src/engine.rs	3579	fn		UNVERIFIED	
-load_hud_sprites	src/engine.rs	3615	fn		UNVERIFIED	/// Load the ship-nav HUD sprite banks (BCARTE grid frames + BORXX orb) from /// their raw `.spr` bytes so [`EngineState::render_ship_view`] composites the /// accurate sprite HUD over the starfield.
-load_nav_sprites	src/engine.rs	3624	fn	0x4BAA	ASM?	/// Load the star-map nav sprites: `CARTE.SPR` holds the game's actual destination /// pyramid frames at six pre-scaled sizes (f0..f5) plus the selection reticle /// (f6); `BORXX.SPR` the eye-orb fram
-nav_world_label_sample	src/engine.rs	3639	fn	0x9BBA,0x100000,0x4F09	ASM?	/// Draw the star-map destination pyramids with the game's real components: the /// ground-plane grid of destinations is projected point-by-point with /// `project_star_map_point` (the decoded 0x9BBA 
-load_title	src/engine.rs	3647	fn		DATA?	/// Load + arm the title screen from `BLOOD.LBM` under `iso`: decode the planar ILBM /// title art and downscale it aspect-correctly (e.g. 640×480 → 320×200, nearest, /// keeping the full image) into 
-title_active	src/engine.rs	3672	fn		UNVERIFIED	/// Whether the title screen is armed/showing.
-dismiss_title	src/engine.rs	3677	fn		UNVERIFIED	/// Dismiss the title screen (advance to the intro/game).
-render_title	src/engine.rs	3682	fn		UNVERIFIED	/// Render the downscaled title art into the framebuffer.
-visit_world	src/engine.rs	3693	fn		UNVERIFIED	/// Visit a world by name: collect all its decoded `fd/` rooms (floor/view-angle /// backgrounds the world maps to) from `assets`, show the first, and enable cycling. /// Returns whether any room was 
-set_world_ext	src/engine.rs	3742	fn		UNVERIFIED	/// Supply the visited world's `.ext` bytes so its decoded object positions are marked /// on the location screen. Parses the objects via [`crate::ext`] and stores their /// `(x, y)`. No-op if no worl
-world_object_click	src/engine.rs	3756	fn		UNVERIFIED	/// Hit-test a click against the visited world's decoded `.ext` OBJECT markers /// (the world's entities, e.g. the initial id=1/type=4 inhabitant at its /// world-specific position). Returns the objec
-cycle_world_room	src/engine.rs	3765	fn		UNVERIFIED	/// Cycle to another room of the currently-visited world (`delta` = +1/-1), decoding /// its background. No-op if no world is being visited.
-world_room_position	src/engine.rs	3782	fn		UNVERIFIED	/// The visited world's room count + current index (for HUD/tests), if active.
-world_location_active	src/engine.rs	3787	fn		UNVERIFIED	/// Whether the world-location landing screen is active.
-step_ship_3d_nav_state	src/engine.rs	3802	fn	0xB692,0xB75C,0x0B3B,0xB6D0	ASM?	/// Whether the plain nav star-map is the active view — on the ship with no overlay /// screen (bridge/comms/cyberspace/cryobox/alien/world-landing) open. This is the /// view that shows the choose-a-
-nav_view_active	src/engine.rs	3875	fn		UNVERIFIED	
-leave_world	src/engine.rs	3887	fn		UNVERIFIED	/// Close the world-location screen (back to nav).
-render_world_location	src/engine.rs	3893	fn		UNVERIFIED	/// Render the current world-location background (its decoded palette + pixels) with /// the world name + room index captioned, into the framebuffer.
-render_nav_pyramid_sprites	src/engine.rs	3972	fn		ASM	
-NAV_CAMERA_ORIGIN	src/engine.rs	4019	const	0x9B98,0x6212,0x4F09,0x2F77,0x9BB4,0x9BBA,0x9CF5,0x4F45,0x2F	ORACLE?	// THE GAME'S OWN NAV-DESTINATION PROJECTOR (0x9B98), decoded: //   * it iterates entities 0x15..0x1F (`0x6212+((i+0x15)<<5)`) and draws //     ONLY those whose flags word has bit7 set (`test [si],0x8
-location_panel_tint_table	src/engine.rs	4131	fn	0x2780,0x90ED,0x90F9,0x9142,0x9156	ASM	/// The destination info panel's WINDOW: the rect at `DS:0x2780` remapped /// through a 50%-toward-black tint table (`0x90ED..0x90F9` builds it, /// `0x9142..0x9156` draws it), then the panel's text r
-render_location_info_panel	src/engine.rs	4151	fn		ASM	
-nav_chart_click	src/engine.rs	4190	fn	0x8FB0,0x8FBE,0x8FF4,0x912E,0x92A3	ASM	/// A left click while the nav chart is up, routed the way the game routes it /// (`0x8FB0..0x8FBE` then `0x8FF4`): /// /// * panel already up -> the click is what re-enables the mouse, which is the /
-render_nav_info_panel_frame	src/engine.rs	4218	fn	0x9083,0xFAD,0x299,0x40E	ASM	/// Advance and draw the info panel for one nav frame. Call after the chart /// background is drawn; returns whether anything was drawn. /// /// Mirrors the dispatcher at `0x9083`: the zooming states 
-assign_nav_slot_entity_ids	src/engine.rs	4251	fn	0x6212,0x9B98	ASM	/// Give each nav sprite slot the ENTITY id the projector writes it into: /// `0x6212 + ((i + 0x15) << 5)` at `0x9B98`, so slot `i` is entity `0x15 + i`. /// Without this a slot is anonymous and canno
-nav_hover_status_active	src/engine.rs	4272	fn	0x82E8,0x65F2,0x6212,0x830A,0x8315,0x8318,0x8328,0x420D,0x42	ASM	/// The HOVER status panel's trigger (`nav_state_gate` `0x82E8`): the gate /// reads `si = 0x65F2` — ENTITY `0x1F`'s record, the LAST of the 32 at /// `DS:0x6212` — requires its state bit0, and hit-te
-open_location_info_panel	src/engine.rs	4308	fn	0x8FF4,0x905B,0x9029,0x2AAB,0x9039,0xADB,0xADA,0x9043,0x2788	ASM	/// OPEN the destination info panel — the selection commit at /// `0x8FF4..0x905B`, minus the parts that belong to the DOS input layer: /// /// ```text ///   0x9029  [0x2AAB] = {mouse x, mouse y, 4, 4
-close_location_info_panel	src/engine.rs	4327	fn	0x912E,0x922A,0x278C,0x2788,0xADB,0x2789	ASM	/// Ask the panel to close — the `0x912E` edge, where the mouse being enabled /// again puts the FSM into state 2 (`0x922A`: `[0x278C]=0`, `[0x2788]=2`, /// `[0xADB]=0`, `inc [0x2789]`).
-step_location_info_panel	src/engine.rs	4345	fn	0x90FF,0x9120,0x2789,0x91F1,0x9228,0x27BF,0xFAD	ASM	/// Advance the panel one frame and return the rect to draw, if any. /// /// * `ZoomingOpen` (`0x90FF..0x9120`): `inc [0x2789]`, interpolate the cursor ///   rect toward the panel rect, and on complet
-load_nav_chart	src/engine.rs	4395	fn		UNVERIFIED	/// Load the real navigation star-map background from `CHART.FD` (an IFF/PBM image /// under `iso`) — the game's own chart the ship-nav screen shows. Returns whether it /// loaded; when present, `rend
-NAV_DEST_X	src/engine.rs	4408	const		UNVERIFIED	/// Layout of the choose-a-location destination list drawn on the nav chart.
-NAV_DEST_Y	src/engine.rs	4409	const		UNVERIFIED	
-NAV_DEST_PITCH	src/engine.rs	4410	const		UNVERIFIED	
-NAV_DEST_W	src/engine.rs	4411	const		UNVERIFIED	
-set_nav_destinations	src/engine.rs	4417	fn		UNVERIFIED	/// Set the choose-a-location destination list for the nav (each entry: a label and /// that character's decoded dialogue lines). The nav then shows them as a clickable /// list; clicking one plays th
-set_nav_chart_objects	src/engine.rs	4433	fn	0x604E,0x721A	ASM	/// Set the RECORD-DRIVEN chart objects — the game's own nav chart, built by /// `0x604E` -> `0x721A` and mirrored by [`crate::vm::VmMachine::build_nav_chart_list`]. /// /// This is what the destinati
-nav_chart_objects	src/engine.rs	4437	fn		UNVERIFIED	
-nav_chart_object_click	src/engine.rs	4444	fn	0x92A3	ASM	/// Hit-test a click against the chart markers, exactly as `0x92A3` does: /// the box starts 2px up-left of the marker, its size comes from the object's /// kind, and BOTH bounds are inclusive. Return
-nav_destination_label	src/engine.rs	4454	fn		UNVERIFIED	/// The number of nav destinations currently offered. /// The label of nav destination `i` (the location's character name), if present.
-nav_destination_count	src/engine.rs	4458	fn		UNVERIFIED	
-nav_destination_click	src/engine.rs	4463	fn		UNVERIFIED	/// Map a click on the nav chart to a destination index, matching the list layout.
-visit_nav_destination	src/engine.rs	4477	fn		UNVERIFIED	/// Visit the chosen nav destination — play that character's decoded dialogue. Returns /// whether the index was valid.
-render_ship_view	src/engine.rs	4488	fn		UNVERIFIED	/// Render the on-ship nav view. With the real chart (`CHART.FD`) loaded this draws /// that star-map background (nebula + destinations + console) and a heading cursor; /// otherwise it falls back to 
-CURSOR_COLOR	src/engine.rs	4496	const		UNVERIFIED	// Heading cursor: a reserved-colour tick along the chart's top, swept by // the compass angle, so steering has visible feedback over the static chart.
-targeted_world_name	src/engine.rs	4676	fn		UNVERIFIED	"/// The name of the world the nav compass currently targets (for ""visit this /// destination"" input)."
-targeted_world_index	src/engine.rs	4683	fn		UNVERIFIED	/// The index into [`Self::nav_world_labels`] the compass heading currently targets: /// the heading (0..180°) maps across the decoded primary worlds, so panning the ship /// sweeps through the real n
-draw_subtitle	src/engine.rs	4692	fn		DATA?	/// Draw a subtitle line into the framebuffer at the game's subtitle reveal /// position (scene band, `SUBTITLE_X`/`SUBTITLE_Y` = 10/8) using the game font. /// The scene band's talk-HNM background co
-draw_subtitle_revealed	src/engine.rs	4701	fn		ASM	/// Draw the pre-wrapped subtitle with only the first `visible` characters shown, /// the newest one in the reveal-edge colour (0xFE) — the game's per-character /// reveal. Non-visible characters aren
-render_dialogue_frame	src/engine.rs	4844	fn		DATA?	/// Render the current dialogue line's frame into the framebuffer: clear, then /// draw the reconstructed subtitle text. (The talk-HNM scene background layer /// composites behind this once the HNM de
-BOX_OPEN_PHASES	src/engine.rs	4860	const	0x2B97,0x79E5,0x130	ASM?	// BOX-OPEN ANIMATION — the game's 6-phase zoom (table DS:0x2B97, driver // screen_mode_update 0x79E5): {x,y,w,h} growing from a point to the // full 320x130 presentation frame, 0xE0 fill with an 0xEF
-first_scene_hnm_stem	src/engine.rs	4965	fn		DATA?	/// Lowercase file stem of the first resolved talk-HNM in the loaded dialogue, so a /// driver can look its background music up via `DescriptDb::hnm_music_map`.
-take_nav_selection	src/engine.rs	4977	fn		UNVERIFIED	/// Take the pending nav destination selection (the compass heading the player /// clicked in the nav view), clearing it. A driver polls this each frame to load /// the selected destination's dialogue
-poll_input	src/engine.rs	4983	fn	0x70E	ASM?	/// The mouse input poll (`0:0x70E`): store the frame's cursor state and, if the /// cursor moved since last frame, reset the idle timer; otherwise advance it.
-step	src/engine.rs	4998	fn	0x0FFB	ASM?	/// One iteration of the top-level dispatch loop (`0x0FFB`). Ordered to match the /// decoded engine: poll input → (reset render state) → (render subsystems) → /// on-ship gate → countdown. Rendering 
-mode_x_offset	src/engine.rs	5178	fn	0x299,0x498	ASM?	/// The game's mode-X screen address for pixel `(x, y)` — `(byte_offset, plane)` where /// `byte_offset = y*80 + x/4` and `plane = x & 3`, exactly as `graphics_plot_modex` /// (`0x299:0x498`) computes
-signed_i16_engine	src/engine.rs	5187	fn		UNVERIFIED	/// Invert [`mode_x_offset`] back to the linear framebuffer index the engine uses: /// `byte_offset*4 + plane`. Equals `y*ENGINE_SCREEN_WIDTH + x`, proving the two layouts /// address the same pixel. 
-mode_x_to_linear	src/engine.rs	5191	fn		ASM	
+set_topic_menu	src/engine.rs	2336	fn		UNVERIFIED	/// Set the dialogue topic menu: (label, first line index) per topic.
+load_bas_menus	src/engine.rs	2345	fn	0x6772	ASM?	/// Load the conversation script's decoded concept-menu stack (the game's /// `gs:0x6772` menu system, [`crate::bas_vm`]) from its `.BAS`/`.DIC`. Seeds at /// the entry menu; `current_bas_menu_labels`
+current_bas_menu_labels	src/engine.rs	2353	fn		UNVERIFIED	/// The current BAS concept menu's topic labels (uppercased, as the square-caps /// menu renders them). Empty if no `.BAS` menus are loaded. Enter/back-out /// navigation is driven via [`crate::bas_vm
+bas_menu_interact	src/engine.rs	2365	fn		UNVERIFIED	/// The complete per-beat concept-menu interaction: a click on `row` either pops /// (talk/bye_bye — back out) returning `None`, or advances the current menu's /// sequential response monologue and re
+bas_menu_click	src/engine.rs	2383	fn		UNVERIFIED	/// Handle a screen click on the displayed BAS concept menu: map (x,y) to a topic /// row (the list-menu geometry) and run [`Self::bas_menu_interact`]. Returns the /// response subtitle (empty string 
+sync_topic_menu_from_bas	src/engine.rs	2393	fn		UNVERIFIED	/// Sync the displayed topic menu to the current BAS concept menu, so the decoded /// menus actually RENDER (via [`draw_list_menu`]/the topic-menu widget). Each row /// carries its topic index; a clic
+bas_start_responses	src/engine.rs	2404	fn		UNVERIFIED	/// Begin the current BAS menu's response monologue (its `0xA6` responses), reset /// to the start. Called when a conversation menu becomes active.
+bas_advance_response	src/engine.rs	2411	fn		UNVERIFIED	/// Advance to the next response of the active menu (the already-shown gating), /// returning its `0xA6` BAS offset for the dialogue renderer. `None` when the /// monologue is exhausted or no menu is 
+bas_topic_click	src/engine.rs	2420	fn		UNVERIFIED	/// Handle a click on `row` of the current BAS concept menu. Back-out topics /// (`talk`/`bye_bye`) POP to the parent menu — verified against the running /// game (MENUTREE: fear/anger menu `talk` → t
+topic_labels	src/engine.rs	2434	fn		UNVERIFIED	/// The current topic-menu labels (for drivers that route clicks themselves).
+topic_menu_click	src/engine.rs	2440	fn		UNVERIFIED	/// A click while the topic menu is showing: selects the topic and jumps the /// dialogue to its first line. Returns the selected topic index.
+hand_pose_event	src/engine.rs	2468	fn		UNVERIFIED	/// Fire a one-shot hand-pose event (decoded selectors: 0xB = UI close, 0xA = /// screen transition) — the pose sequence plays once, then poses resume from state.
+set_console_band_dialogue	src/engine.rs	2475	fn		UNVERIFIED	/// Whether the current dialogue plays over the pyramid-console band (SCRIPT1 tutorial).
+set_dialogue_autoplay_end	src/engine.rs	2481	fn		UNVERIFIED	/// Gate auto-play at `end` (exclusive): the scripted opening plays unprompted, then the /// dialogue holds at the topic menu and topic clicks drive the rest.
+set_dialogue_styles	src/engine.rs	2487	fn		UNVERIFIED	/// Per-line render styles (parallel to the queued lines): true = character speech /// (green bold reveal), false = static text (white thin — menu/list content).
+set_segment_boundaries	src/engine.rs	2494	fn		UNVERIFIED	/// Record the dialogue's function-segment start lines so a topic click plays only that one /// segment (not everything up to the next topic). Does NOT change the play position — unlike /// [`Self::se
+set_dialogue_segments	src/engine.rs	2501	fn		UNVERIFIED	/// Segment the dialogue at the given line starts (script-function beats): the first segment /// (the scripted opening) auto-plays, then the dialogue holds; each call to /// [`Self::play_next_dialogue
+hold_current_line_at_least	src/engine.rs	2511	fn		UNVERIFIED	/// Play the next unplayed dialogue segment (a concept-menu interaction advances the /// conversation one beat), then re-hold at the menu. Returns false when exhausted. /// Driver hook: the current li
+play_next_dialogue_segment	src/engine.rs	2515	fn		UNVERIFIED	
+list_menu_click	src/engine.rs	2533	fn		ASM	/// Map a click to a list-menu row (the measured geometry above).
+bridge_nav_orb_click	src/engine.rs	2548	fn		ORACLE?	/// Whether a click hits the nav-sector ORB (the pyramid-sector station orb) — the /// oracle-verified way into the nav/viewscreen console. Orb near screen (105..145, 130..165) /// when the pyramid se
+bridge_nav_destination_click	src/engine.rs	2556	fn		ASM	/// Map a click to a nav-sector destination row when the choice box is showing /// (bridge view in the pyramid sector with destinations set).
+render_bridge_background	src/engine.rs	2576	fn	0x954A	ASM?	/// Composite the bridge view into the framebuffer: window starfield, then the /// current TB.BIG panorama frame with colour-0 transparency, then the game /// palette + the golden menu's dynamic DAC r
+load_cyberspace	src/engine.rs	2630	fn		DATA?	/// Load the cyberspace hyperspace-tunnel animations (`sq/hyper_*.hnm`), sorted so /// segments advance in order. The screen renders once `cyber_active` is set.
+start_cyberspace	src/engine.rs	2651	fn		UNVERIFIED	/// Begin (or restart) a cyberspace traversal from the first segment.
+cyber_progress	src/engine.rs	2659	fn		UNVERIFIED	/// The cyberspace traversal progress: (current segment, total segments).
+render_cyberspace	src/engine.rs	2671	fn		DATA?	/// Render the cyberspace hyperspace-traversal mini-game: fly through the real /// `hyper_*.hnm` warp segments toward the destination, steering the on-course reticle /// with the mouse; each completed
+RETICLE	src/engine.rs	2696	const		UNVERIFIED	// HUD overlay: a course reticle (steered) + a journey progress bar.
+BAR	src/engine.rs	2697	const		UNVERIFIED	
+load_cryobox	src/engine.rs	2728	fn		DATA?	/// Load the cryo-chamber scene (`sq/cryorad.hnm`) shown by the console's CRYOBOX /// option — the ship's cryo-pod bay (its palette is the HNM's own header palette).
+render_cryobox	src/engine.rs	2734	fn		UNVERIFIED	/// Render the CRYOBOX cryo-chamber, looping its frames.
+apply_console_bank_remap	src/engine.rs	2751	fn	0x7AC3,0x6011,0x299,0x40E	ASM	/// The montage's full-screen colour reduction at `0x7AC3` (`si=DS:0x6011`, /// `lcall 0x299:0x40E` over `(0, 0, 320, 200)`), through the table the game's /// own builder produces — see /// [`crate::p
+overlay_console_band	src/engine.rs	2783	fn	0x7AC3,0x6011	ASM	/// Overlay the intro montage's console band — FROM THE REAL ASSET. /// /// The band is `TB.BIG` panorama frame [`CONSOLE_BAND_FRAME`], rows 140..200, /// pushed through the console-bank remap table t
+render_viewscreen_console	src/engine.rs	2814	fn		UNVERIFIED	/// Render the VIEWSCREEN console: the band along the bottom — composed from /// `TB.BIG` frame 90 through the console-bank remap, see /// [`Self::overlay_console_band`] — and the upper viewscreen sho
+load_ending	src/engine.rs	2846	fn		DATA?	"/// Load the game-ending finale cutscene (`sq/fin.hnm`, the ""fin""/end video) — the /// bookend to the intro. Returns whether it loaded."
+start_ending	src/engine.rs	2852	fn		UNVERIFIED	/// Start the ending finale from its first frame (call when the game is completed).
+ending_finished	src/engine.rs	2858	fn		UNVERIFIED	/// Whether the ending finale has played through all its frames.
+render_ending	src/engine.rs	2866	fn		UNVERIFIED	/// Render the ending finale, advancing one frame per call and holding on the last.
+PHONE_CONTACTS	src/engine.rs	2884	const		DATA?	/// The video-phone's callable crew: display name + their talk-head HNM basename /// (`pe/aa*.hnm`). These are the crew whose full-colour idle-head animations exist and /// decode cleanly; the phone s
+load_telephone	src/engine.rs	2899	fn		DATA?	/// Load the video-phone call screen (console TELEPHONE option): the call widget /// (`BAPPEL.SPR`, from `iso`) and every callable crew's talk-head HNM (`pe/aa*.hnm`, /// from `assets`). Returns wheth
+phone_contact_labels	src/engine.rs	2918	fn		UNVERIFIED	/// The number of callable phone contacts loaded. /// Contact names for the TELEPHONE choice box.
+phone_contact_count	src/engine.rs	2922	fn		UNVERIFIED	
+phone_contact_name	src/engine.rs	2927	fn		UNVERIFIED	/// The display name of the currently selected/dialled contact.
+phone_connected	src/engine.rs	2932	fn		UNVERIFIED	/// Whether the call is connected (showing the talk-head video feed).
+phone_cycle_contact	src/engine.rs	2937	fn		UNVERIFIED	/// Cycle the dialled contact (`dir` +1/−1), while dialling (a no-op once connected).
+phone_contact_click	src/engine.rs	2946	fn		UNVERIFIED	/// Map a click to a contact-list row (dialling state), matching the drawn layout.
+phone_connect	src/engine.rs	2969	fn		UNVERIFIED	/// Connect the call to `index` (switch to the video-feed state). Invalid index = no-op.
+phone_hangup	src/engine.rs	2980	fn		UNVERIFIED	/// Hang up a connected call, returning to the dialling state.
+render_telephone	src/engine.rs	2987	fn		DATA?	/// Render the video-phone. Dialling: the console-palette backdrop, the animated /// `BAPPEL` call widget, and the crew contact list in the console font (the dialled /// row highlighted). Connected: t
+arm_alien_intro	src/engine.rs	3018	fn		UNVERIFIED	/// Arm the scrutinizer-apparatus intro to play from its first frame the next time /// the examination screen renders (call when opening the screen).
+render_alien_view	src/engine.rs	3029	fn		UNVERIFIED	/// Render the alien-examination screen: the mouse pan (delta from centre, /// smoothed + clamped like the decoded camera at `re/REVERSE.md`) selects one of /// the pre-rendered rotation views, whose 
+render_intro_frame	src/engine.rs	3076	fn		UNVERIFIED	/// Render one frame of the current intro clip full-screen; when a clip's frames are /// exhausted, advance to the next; when the sequence ends, deactivate the intro so /// the main loop takes over.
+INTRO_CREDIT_FRAMES_PER_TICK	src/engine.rs	3128	const		ORACLE?	/// Frame index at which a credit cue's `tick` becomes active. The intro cinematic /// advances one clip frame per stepped game frame, so a cue displays from `tick` /// frames in until the next cue su
+INTRO_CREDIT_BASELINE_Y	src/engine.rs	3133	const	0x200	ORACLE?	/// Top row of the FIRST credit line. Native-resolution ground truth (dlg_05, a real /// 320x200 capture of the credit beat): line 1 top y=82, line 2 y=92 (pitch 10), /// centred on x=160, over the ch
+TV_CUE_BASELINE_Y	src/engine.rs	3135	const		UNVERIFIED	/// Top row of the LAST TV broadcast-cue line (the lower letterbox band).
+INTRO_CREDIT_COLOR_INDEX	src/engine.rs	3138	const		UNVERIFIED	/// Reserved palette index forced to white for the credit glyphs (mirrors the /// dialogue reveal's reserved 0xFD/0xFE slots).
+draw_intro_credit	src/engine.rs	3142	fn		UNVERIFIED	/// Draw the credit subtitle active at intro clip `frame` (if any) centred in the /// lower letterbox. The active cue is the last one whose `tick` has been reached.
+load_dialogue_scenes	src/engine.rs	3174	fn		DATA?	/// Load a dialogue script AND resolve each line's speaker to its talk-HNM asset /// (actor `0xC4` offset → DEB object name → DESCRIPT record → talk HNM → file in /// `asset_dir`), so playback automat
+dialogue_cursor	src/engine.rs	3219	fn		UNVERIFIED	/// Current dialogue playback cursor (line index), for drivers that react to line /// changes (e.g. per-line voice playback).
+set_dialogue_cursor	src/engine.rs	3225	fn		UNVERIFIED	/// Set the dialogue playback cursor (clamped to the loaded dialogue), used when /// restoring a save so playback resumes at the saved line.
+capture_save	src/engine.rs	3236	fn		ORACLE?	/// Capture the resumable game state into a [`crate::save::SaveState`] (the port's own /// save). `script` is the current location/dialogue script number the driver loaded /// (0 = none, on the nav) —
+restore_save	src/engine.rs	3268	fn		UNVERIFIED	/// Restore the engine-side view and settings from a save. The driver must (re)load /// `save.script`'s dialogue BEFORE calling this so the dialogue cursor lands on a valid /// line; screen selection,
+subtitle_reveal_progress	src/engine.rs	3302	fn	0x5E58,0x94BA	ASM?	/// How many subtitle characters are currently revealed on the active line (the /// game's reveal pointer `gs:0x5E58`), and the line's total character count. A /// driver plays the `tb.snd` chatter (c
+current_voice	src/engine.rs	3319	fn	0xCFB,0x66AF,0x94CF	ASM?	/// The current line's speaker SND bank path + its `b3` selector. /// /// NO LONGER DRIVES AUDIO. The per-line voice clip this used to feed was removed: /// the game plays a random burble (`prng(10)+7
+load_current_scene	src/engine.rs	3330	fn		DATA?	/// Load the talk-HNM resolved for the current dialogue line (if any).
+load_dialogue	src/engine.rs	3359	fn	0x108E	ASM?	/// Load a dialogue script (`SCRIPTn.COD` + `.VAR`): run the VM trace and queue /// its reached dialogue lines for frame-stepped playback. Each [`EngineState:: /// step`] advances the playback timer; 
+set_speech_dialogue	src/engine.rs	3420	fn		DATA?	/// Play dialogue directly from the port's decoded speech events — the FULL per-script, /// per-character content (every character's lines, with each line's background scene), /// instead of `execute_
+current_dialogue	src/engine.rs	3450	fn		UNVERIFIED	/// The dialogue line currently being presented, if a script is loaded.
+pending_next_scene	src/engine.rs	3457	fn		UNVERIFIED	/// The next scene/profile the loaded script's D2 handoff dispatches to (for /// scene-to-scene chaining), or `None` if this is a terminal scene. The driver /// loads that profile's script when the cu
+dialogue_finished	src/engine.rs	3463	fn		UNVERIFIED	/// Whether dialogue playback has reached the final line (the point at which the /// D2 handoff to [`EngineState::pending_next_scene`] would fire).
+queue_scenes	src/engine.rs	3470	fn		UNVERIFIED	/// Queue a sequence of scene scripts `(cod, var, dic)` and start the first, so /// the engine auto-advances scene-to-scene as each finishes (the scene flow the /// D2 handoff drives). Returns the num
+current_scene_index	src/engine.rs	3481	fn		UNVERIFIED	/// The index of the scene currently playing in the queue.
+advance_scene_if_finished	src/engine.rs	3487	fn		UNVERIFIED	/// If the current dialogue has finished and another scene is queued, advance to /// it (loading its script). Returns true if it advanced.
+dialogue_page_number	src/engine.rs	3500	fn		ORACLE?	/// 1-based page number of the current dialogue line — the green console digit the /// real presentation screen shows top-left (oracle bd_218M..bd_290M, index 254).
+current_subtitle	src/engine.rs	3505	fn		UNVERIFIED	/// The current dialogue line's reconstructed subtitle text, if non-empty.
+dialogue_len	src/engine.rs	3513	fn		UNVERIFIED	/// Number of dialogue lines the loaded script reached.
+current_line_hold	src/engine.rs	3524	fn	0xB31,0x94BA,0xB35,0x94D4	ASM?	/// Advance the dialogue playback: after `dialogue_hold_frames`, step to the next /// reached line (stops at the last line). /// Hold for the current line, using the game's decoded subtitle timing: th
+in_dialogue	src/engine.rs	3545	fn		UNVERIFIED	/// Whether a dialogue scene is currently the active view (playing, with no overlay /// screen / nav / intro / ending on top) — so a driver can route clicks to advance it.
+skip_dialogue_line	src/engine.rs	3562	fn		UNVERIFIED	/// Manually advance the dialogue on a click (as the real game does): if the current /// line is still revealing, snap it fully revealed; otherwise move to the next line. /// Returns `false` when alre
+advance_dialogue	src/engine.rs	3591	fn		UNVERIFIED	
+load_hud_sprites	src/engine.rs	3627	fn		UNVERIFIED	/// Load the ship-nav HUD sprite banks (BCARTE grid frames + BORXX orb) from /// their raw `.spr` bytes so [`EngineState::render_ship_view`] composites the /// accurate sprite HUD over the starfield.
+load_nav_sprites	src/engine.rs	3636	fn	0x4BAA	ASM?	/// Load the star-map nav sprites: `CARTE.SPR` holds the game's actual destination /// pyramid frames at six pre-scaled sizes (f0..f5) plus the selection reticle /// (f6); `BORXX.SPR` the eye-orb fram
+nav_world_label_sample	src/engine.rs	3651	fn	0x9BBA,0x100000,0x4F09	ASM?	/// Draw the star-map destination pyramids with the game's real components: the /// ground-plane grid of destinations is projected point-by-point with /// `project_star_map_point` (the decoded 0x9BBA 
+load_title	src/engine.rs	3659	fn		DATA?	/// Load + arm the title screen from `BLOOD.LBM` under `iso`: decode the planar ILBM /// title art and downscale it aspect-correctly (e.g. 640×480 → 320×200, nearest, /// keeping the full image) into 
+title_active	src/engine.rs	3684	fn		UNVERIFIED	/// Whether the title screen is armed/showing.
+dismiss_title	src/engine.rs	3689	fn		UNVERIFIED	/// Dismiss the title screen (advance to the intro/game).
+render_title	src/engine.rs	3694	fn		UNVERIFIED	/// Render the downscaled title art into the framebuffer.
+visit_world	src/engine.rs	3705	fn		UNVERIFIED	/// Visit a world by name: collect all its decoded `fd/` rooms (floor/view-angle /// backgrounds the world maps to) from `assets`, show the first, and enable cycling. /// Returns whether any room was 
+set_world_ext	src/engine.rs	3754	fn		UNVERIFIED	/// Supply the visited world's `.ext` bytes so its decoded object positions are marked /// on the location screen. Parses the objects via [`crate::ext`] and stores their /// `(x, y)`. No-op if no worl
+world_object_click	src/engine.rs	3768	fn		UNVERIFIED	/// Hit-test a click against the visited world's decoded `.ext` OBJECT markers /// (the world's entities, e.g. the initial id=1/type=4 inhabitant at its /// world-specific position). Returns the objec
+cycle_world_room	src/engine.rs	3777	fn		UNVERIFIED	/// Cycle to another room of the currently-visited world (`delta` = +1/-1), decoding /// its background. No-op if no world is being visited.
+world_room_position	src/engine.rs	3794	fn		UNVERIFIED	/// The visited world's room count + current index (for HUD/tests), if active.
+world_location_active	src/engine.rs	3799	fn		UNVERIFIED	/// Whether the world-location landing screen is active.
+step_ship_3d_nav_state	src/engine.rs	3814	fn	0xB692,0xB75C,0x0B3B,0xB6D0	ASM?	/// Whether the plain nav star-map is the active view — on the ship with no overlay /// screen (bridge/comms/cyberspace/cryobox/alien/world-landing) open. This is the /// view that shows the choose-a-
+nav_view_active	src/engine.rs	3887	fn		UNVERIFIED	
+leave_world	src/engine.rs	3899	fn		UNVERIFIED	/// Close the world-location screen (back to nav).
+render_world_location	src/engine.rs	3905	fn		UNVERIFIED	/// Render the current world-location background (its decoded palette + pixels) with /// the world name + room index captioned, into the framebuffer.
+render_nav_pyramid_sprites	src/engine.rs	3984	fn		ASM	
+NAV_CAMERA_ORIGIN	src/engine.rs	4031	const	0x9B98,0x6212,0x4F09,0x2F77,0x9BB4,0x9BBA,0x9CF5,0x4F45,0x2F	ORACLE?	// THE GAME'S OWN NAV-DESTINATION PROJECTOR (0x9B98), decoded: //   * it iterates entities 0x15..0x1F (`0x6212+((i+0x15)<<5)`) and draws //     ONLY those whose flags word has bit7 set (`test [si],0x8
+location_panel_tint_table	src/engine.rs	4143	fn	0x2780,0x90ED,0x90F9,0x9142,0x9156	ASM	/// The destination info panel's WINDOW: the rect at `DS:0x2780` remapped /// through a 50%-toward-black tint table (`0x90ED..0x90F9` builds it, /// `0x9142..0x9156` draws it), then the panel's text r
+render_location_info_panel	src/engine.rs	4163	fn		ASM	
+nav_chart_click	src/engine.rs	4202	fn	0x8FB0,0x8FBE,0x8FF4,0x912E,0x92A3	ASM	/// A left click while the nav chart is up, routed the way the game routes it /// (`0x8FB0..0x8FBE` then `0x8FF4`): /// /// * panel already up -> the click is what re-enables the mouse, which is the /
+render_nav_info_panel_frame	src/engine.rs	4230	fn	0x9083,0xFAD,0x299,0x40E	ASM	/// Advance and draw the info panel for one nav frame. Call after the chart /// background is drawn; returns whether anything was drawn. /// /// Mirrors the dispatcher at `0x9083`: the zooming states 
+assign_nav_slot_entity_ids	src/engine.rs	4263	fn	0x6212,0x9B98	ASM	/// Give each nav sprite slot the ENTITY id the projector writes it into: /// `0x6212 + ((i + 0x15) << 5)` at `0x9B98`, so slot `i` is entity `0x15 + i`. /// Without this a slot is anonymous and canno
+nav_hover_status_active	src/engine.rs	4284	fn	0x82E8,0x65F2,0x6212,0x830A,0x8315,0x8318,0x8328,0x420D,0x42	ASM	/// The HOVER status panel's trigger (`nav_state_gate` `0x82E8`): the gate /// reads `si = 0x65F2` — ENTITY `0x1F`'s record, the LAST of the 32 at /// `DS:0x6212` — requires its state bit0, and hit-te
+open_location_info_panel	src/engine.rs	4320	fn	0x8FF4,0x905B,0x9029,0x2AAB,0x9039,0xADB,0xADA,0x9043,0x2788	ASM	/// OPEN the destination info panel — the selection commit at /// `0x8FF4..0x905B`, minus the parts that belong to the DOS input layer: /// /// ```text ///   0x9029  [0x2AAB] = {mouse x, mouse y, 4, 4
+close_location_info_panel	src/engine.rs	4339	fn	0x912E,0x922A,0x278C,0x2788,0xADB,0x2789	ASM	/// Ask the panel to close — the `0x912E` edge, where the mouse being enabled /// again puts the FSM into state 2 (`0x922A`: `[0x278C]=0`, `[0x2788]=2`, /// `[0xADB]=0`, `inc [0x2789]`).
+step_location_info_panel	src/engine.rs	4357	fn	0x90FF,0x9120,0x2789,0x91F1,0x9228,0x27BF,0xFAD	ASM	/// Advance the panel one frame and return the rect to draw, if any. /// /// * `ZoomingOpen` (`0x90FF..0x9120`): `inc [0x2789]`, interpolate the cursor ///   rect toward the panel rect, and on complet
+load_nav_chart	src/engine.rs	4407	fn		UNVERIFIED	/// Load the real navigation star-map background from `CHART.FD` (an IFF/PBM image /// under `iso`) — the game's own chart the ship-nav screen shows. Returns whether it /// loaded; when present, `rend
+NAV_DEST_X	src/engine.rs	4420	const		UNVERIFIED	/// Layout of the choose-a-location destination list drawn on the nav chart.
+NAV_DEST_Y	src/engine.rs	4421	const		UNVERIFIED	
+NAV_DEST_PITCH	src/engine.rs	4422	const		UNVERIFIED	
+NAV_DEST_W	src/engine.rs	4423	const		UNVERIFIED	
+set_nav_destinations	src/engine.rs	4429	fn		UNVERIFIED	/// Set the choose-a-location destination list for the nav (each entry: a label and /// that character's decoded dialogue lines). The nav then shows them as a clickable /// list; clicking one plays th
+set_nav_chart_objects	src/engine.rs	4445	fn	0x604E,0x721A	ASM	/// Set the RECORD-DRIVEN chart objects — the game's own nav chart, built by /// `0x604E` -> `0x721A` and mirrored by [`crate::vm::VmMachine::build_nav_chart_list`]. /// /// This is what the destinati
+nav_chart_objects	src/engine.rs	4449	fn		UNVERIFIED	
+nav_chart_object_click	src/engine.rs	4456	fn	0x92A3	ASM	/// Hit-test a click against the chart markers, exactly as `0x92A3` does: /// the box starts 2px up-left of the marker, its size comes from the object's /// kind, and BOTH bounds are inclusive. Return
+nav_destination_label	src/engine.rs	4466	fn		UNVERIFIED	/// The number of nav destinations currently offered. /// The label of nav destination `i` (the location's character name), if present.
+nav_destination_count	src/engine.rs	4470	fn		UNVERIFIED	
+nav_destination_click	src/engine.rs	4475	fn		UNVERIFIED	/// Map a click on the nav chart to a destination index, matching the list layout.
+visit_nav_destination	src/engine.rs	4489	fn		UNVERIFIED	/// Visit the chosen nav destination — play that character's decoded dialogue. Returns /// whether the index was valid.
+render_ship_view	src/engine.rs	4500	fn		UNVERIFIED	/// Render the on-ship nav view. With the real chart (`CHART.FD`) loaded this draws /// that star-map background (nebula + destinations + console) and a heading cursor; /// otherwise it falls back to 
+CURSOR_COLOR	src/engine.rs	4508	const		UNVERIFIED	// Heading cursor: a reserved-colour tick along the chart's top, swept by // the compass angle, so steering has visible feedback over the static chart.
+targeted_world_name	src/engine.rs	4688	fn		UNVERIFIED	"/// The name of the world the nav compass currently targets (for ""visit this /// destination"" input)."
+targeted_world_index	src/engine.rs	4695	fn		UNVERIFIED	/// The index into [`Self::nav_world_labels`] the compass heading currently targets: /// the heading (0..180°) maps across the decoded primary worlds, so panning the ship /// sweeps through the real n
+draw_subtitle	src/engine.rs	4704	fn		DATA?	/// Draw a subtitle line into the framebuffer at the game's subtitle reveal /// position (scene band, `SUBTITLE_X`/`SUBTITLE_Y` = 10/8) using the game font. /// The scene band's talk-HNM background co
+draw_subtitle_revealed	src/engine.rs	4713	fn		ASM	/// Draw the pre-wrapped subtitle with only the first `visible` characters shown, /// the newest one in the reveal-edge colour (0xFE) — the game's per-character /// reveal. Non-visible characters aren
+render_dialogue_frame	src/engine.rs	4856	fn		DATA?	/// Render the current dialogue line's frame into the framebuffer: clear, then /// draw the reconstructed subtitle text. (The talk-HNM scene background layer /// composites behind this once the HNM de
+BOX_OPEN_PHASES	src/engine.rs	4872	const	0x2B97,0x79E5,0x130	ASM?	// BOX-OPEN ANIMATION — the game's 6-phase zoom (table DS:0x2B97, driver // screen_mode_update 0x79E5): {x,y,w,h} growing from a point to the // full 320x130 presentation frame, 0xE0 fill with an 0xEF
+first_scene_hnm_stem	src/engine.rs	4977	fn		DATA?	/// Lowercase file stem of the first resolved talk-HNM in the loaded dialogue, so a /// driver can look its background music up via `DescriptDb::hnm_music_map`.
+take_nav_selection	src/engine.rs	4989	fn		UNVERIFIED	/// Take the pending nav destination selection (the compass heading the player /// clicked in the nav view), clearing it. A driver polls this each frame to load /// the selected destination's dialogue
+poll_input	src/engine.rs	4995	fn	0x70E	ASM?	/// The mouse input poll (`0:0x70E`): store the frame's cursor state and, if the /// cursor moved since last frame, reset the idle timer; otherwise advance it.
+step	src/engine.rs	5010	fn	0x0FFB	ASM?	/// One iteration of the top-level dispatch loop (`0x0FFB`). Ordered to match the /// decoded engine: poll input → (reset render state) → (render subsystems) → /// on-ship gate → countdown. Rendering 
+mode_x_offset	src/engine.rs	5190	fn	0x299,0x498	ASM?	/// The game's mode-X screen address for pixel `(x, y)` — `(byte_offset, plane)` where /// `byte_offset = y*80 + x/4` and `plane = x & 3`, exactly as `graphics_plot_modex` /// (`0x299:0x498`) computes
+signed_i16_engine	src/engine.rs	5199	fn		UNVERIFIED	/// Invert [`mode_x_offset`] back to the linear framebuffer index the engine uses: /// `byte_offset*4 + plane`. Equals `y*ENGINE_SCREEN_WIDTH + x`, proving the two layouts /// address the same pixel. 
+mode_x_to_linear	src/engine.rs	5203	fn		ASM	
 ACTIVE	src/entity.rs	9	const		UNVERIFIED	/// `0x80` — the object is active (gates every state change).
 STATE0	src/entity.rs	11	const		UNVERIFIED	/// `0x01` — state bit 0 (advances to [`STATE1`]).
 STATE1	src/entity.rs	13	const		UNVERIFIED	/// `0x02` — state bit 1 (set when STATE0 advances).
@@ -1648,29 +1652,29 @@ OUTPUT_SCALE	src/extract/mod.rs	15	const		UNVERIFIED
 OUTPUT_W	src/extract/mod.rs	16	const		UNVERIFIED	
 OUTPUT_H	src/extract/mod.rs	17	const		UNVERIFIED	
 HNM_FPS	src/extract/mod.rs	18	const		UNVERIFIED	
-DEFAULT_SUBTITLE_TEXT_SPEED_STEP	src/extract/mod.rs	23	const	0x0ACA	ASM?	// The exported videos use the default/mid text-speed step observed in the // binary-derived notes. `subtitle_reveal_chars_per_second` maps this through the // dialogue updater formula (`4 * frame_rat
-SILENT_SUBTITLE_SR	src/extract/mod.rs	32	const		DATA?	"// A voiceless dialogue line (0xA6 b3==0xFF: radio-receiver / narrator / menu text // the player still saw on-screen, with no son.snd voice clip — see re/REVERSE.md // ""voice clip-index"") is rendered "
-SCRIPT_OBJECT_TALK_FIELD	src/extract/mod.rs	33	const		UNVERIFIED	
-SCRIPT_OBJECT_LOCATION_FIELD	src/extract/mod.rs	34	const		UNVERIFIED	
-INTRO_SEQUENCE	src/extract/mod.rs	40	const	0x5C90	ASM?	// The fixed leading entries of BLOODPRG.EXE's boot cutscene path table // (0x10-byte records at file offset ~0x5C90: `sq\mind.HNM`, `sq\the_star.HNM`). // These play at startup before the main loop; 
-subtitle_reveal_chars_per_second	src/extract/mod.rs	42	fn		UNVERIFIED	
-default_subtitle_reveal_chars_per_second	src/extract/mod.rs	49	fn		UNVERIFIED	
-run	src/extract/mod.rs	53	fn		UNVERIFIED	
-write_bloodprg_snd_call_sites_manifest	src/extract/mod.rs	1099	fn		UNVERIFIED	
-write_bloodprg_render_call_sites_manifest	src/extract/mod.rs	1131	fn		UNVERIFIED	
-write_bloodprg_sprite_blitter_manifest	src/extract/mod.rs	1165	fn		UNVERIFIED	
-SpriteFrameTableManifestRow	src/extract/mod.rs	1189	struct		UNVERIFIED	
-write_sprite_bank_preview_pgm	src/extract/mod.rs	1208	fn		UNVERIFIED	/// Write decoded `.spr` frames as a horizontal grayscale montage in binary PGM /// (P5) format — each pixel's palette index shown as a gray level. No ffmpeg or /// palette needed; this is an index-vi
-parse_sprite_frame_tables_manifest	src/extract/mod.rs	1235	fn		UNVERIFIED	
-parse_sprite_frame_header	src/extract/mod.rs	1313	fn		UNVERIFIED	
-write_sprite_frame_tables_manifest	src/extract/mod.rs	1326	fn		UNVERIFIED	
-format_u16_hex	src/extract/mod.rs	1357	fn		UNVERIFIED	
-format_usize_hex	src/extract/mod.rs	1363	fn		UNVERIFIED	
-format_u16_dec	src/extract/mod.rs	1369	fn		UNVERIFIED	
-format_u8_dec	src/extract/mod.rs	1373	fn		UNVERIFIED	
-format_usize_dec	src/extract/mod.rs	1377	fn		UNVERIFIED	
-format_i16_dec	src/extract/mod.rs	1381	fn		UNVERIFIED	
-script_background_music	src/extract/mod.rs	1403	fn		DATA?	/// The background-music stem for a `SCRIPTn`'s first scene, resolved via the same /// script-context + DESCRIPT location→music path the video pipeline uses (the music map /// is keyed by scene/locati
+DEFAULT_SUBTITLE_TEXT_SPEED_STEP	src/extract/mod.rs	26	const	0x0ACA,0x0DEEA,0x1B29,0x1B3D	ASM?	"// The text-speed step the GAME SHIPS: `DS:0x0ACA` holds 2 in the image (file // 0x0DEEA), which is what the OPTION menu's FAST entry selects. This was 5 -- // ""the default/mid step observed in the bi"
+SILENT_SUBTITLE_SR	src/extract/mod.rs	36	const		DATA?	"// A voiceless dialogue line (0xA6 b3==0xFF: radio-receiver / narrator / menu text // the player still saw on-screen, with no son.snd voice clip — see re/REVERSE.md // ""voice clip-index"") is rendered "
+SCRIPT_OBJECT_TALK_FIELD	src/extract/mod.rs	37	const		UNVERIFIED	
+SCRIPT_OBJECT_LOCATION_FIELD	src/extract/mod.rs	38	const		UNVERIFIED	
+INTRO_SEQUENCE	src/extract/mod.rs	44	const	0x5C90	ASM?	// The fixed leading entries of BLOODPRG.EXE's boot cutscene path table // (0x10-byte records at file offset ~0x5C90: `sq\mind.HNM`, `sq\the_star.HNM`). // These play at startup before the main loop; 
+subtitle_reveal_chars_per_second	src/extract/mod.rs	46	fn		UNVERIFIED	
+default_subtitle_reveal_chars_per_second	src/extract/mod.rs	53	fn		UNVERIFIED	
+run	src/extract/mod.rs	57	fn		UNVERIFIED	
+write_bloodprg_snd_call_sites_manifest	src/extract/mod.rs	1103	fn		UNVERIFIED	
+write_bloodprg_render_call_sites_manifest	src/extract/mod.rs	1135	fn		UNVERIFIED	
+write_bloodprg_sprite_blitter_manifest	src/extract/mod.rs	1169	fn		UNVERIFIED	
+SpriteFrameTableManifestRow	src/extract/mod.rs	1193	struct		UNVERIFIED	
+write_sprite_bank_preview_pgm	src/extract/mod.rs	1212	fn		UNVERIFIED	/// Write decoded `.spr` frames as a horizontal grayscale montage in binary PGM /// (P5) format — each pixel's palette index shown as a gray level. No ffmpeg or /// palette needed; this is an index-vi
+parse_sprite_frame_tables_manifest	src/extract/mod.rs	1239	fn		UNVERIFIED	
+parse_sprite_frame_header	src/extract/mod.rs	1317	fn		UNVERIFIED	
+write_sprite_frame_tables_manifest	src/extract/mod.rs	1330	fn		UNVERIFIED	
+format_u16_hex	src/extract/mod.rs	1361	fn		UNVERIFIED	
+format_usize_hex	src/extract/mod.rs	1367	fn		UNVERIFIED	
+format_u16_dec	src/extract/mod.rs	1373	fn		UNVERIFIED	
+format_u8_dec	src/extract/mod.rs	1377	fn		UNVERIFIED	
+format_usize_dec	src/extract/mod.rs	1381	fn		UNVERIFIED	
+format_i16_dec	src/extract/mod.rs	1385	fn		UNVERIFIED	
+script_background_music	src/extract/mod.rs	1407	fn		DATA?	/// The background-music stem for a `SCRIPTn`'s first scene, resolved via the same /// script-context + DESCRIPT location→music path the video pipeline uses (the music map /// is keyed by scene/locati
 fb_to_rgb	src/extract/render.rs	15	fn		UNVERIFIED	
 fill_rect_indexed_clipped	src/extract/render.rs	24	fn		UNVERIFIED	
 fill_band_indexed	src/extract/render.rs	54	fn		UNVERIFIED	

@@ -171,6 +171,38 @@ def immediates_near(mz, md, addr):
 
 skipped_overlay = []
 
+# A module documenting an OVERLAY cites offsets into that overlay. The overlays
+# are raw 386 images whose runtime cs maps 1:1 to file offsets (re/tools/dis_xdb.py),
+# so the same immediate/shift/identity checks work -- they just need the right
+# bytes. Skipping these files entirely (the earlier behaviour) left every constant
+# in them permanently unverifiable.
+OVERLAY_FOR = {
+    "croolis.rs": ["croolis.xdb", "amer.xdb", "scrut.xdb"],
+    "manu3.rs": ["manu3.xdb"],
+    "manu3_hand.rs": ["manu3.xdb"],
+}
+OVERLAY_DIRS = [
+    os.path.join("output", "_tmp_dat"),
+    os.path.join("export_check", "_tmp_dat"),
+]
+
+
+class RawImage:
+    """Minimal stand-in for MZ: an overlay is its own address space."""
+
+    def __init__(self, data):
+        self.data = data
+
+
+def load_overlays(names):
+    """First readable overlay image among `names`, or None."""
+    for name in names:
+        for d in OVERLAY_DIRS:
+            path = os.path.join(d, name)
+            if os.path.exists(path):
+                return name, RawImage(open(path, "rb").read())
+    return None, None
+
 
 def constants():
     """Yield (path, line, name, value, [addresses])."""
@@ -186,9 +218,13 @@ def constants():
             # meaningless -- `ALIEN_POSITION_WRAP` cites method 0x999, which is
             # mid-instruction garbage in the main image. Skip the file; verifying
             # it needs re/tools/dis_xdb.py against the overlay itself.
-            if any(".xdb" in ln for ln in lines[:40] if ln.strip().startswith("//!")):
-                skipped_overlay.append(path)
-                continue
+            overlay_names = OVERLAY_FOR.get(f)
+            overlay_name, overlay_img = (None, None)
+            if overlay_names:
+                overlay_name, overlay_img = load_overlays(overlay_names)
+                if overlay_img is None:
+                    skipped_overlay.append(path)
+                    continue
             doc = []
             in_tests = False
             for n, line in enumerate(lines, 1):
@@ -201,13 +237,18 @@ def constants():
                 m = CONST.match(line)
                 if m and not in_tests:
                     value = parse_value(m.group(3))
+                    # A number equal to the constant's OWN VALUE is the value
+                    # restated, not an address -- `MENU_ANGLE_MASK = 0x0FFC` whose
+                    # doc says "`0xFFC` = a 10-bit angle" was being reported as
+                    # "not an immediate at 0x0FFC". Same tautology the removed
+                    # value==address rule had on the output side.
                     addrs = [
                         int(a, 16)
                         for a in ADDR.findall(" ".join(doc))
-                        if LOW <= int(a, 16) < HIGH
+                        if LOW <= int(a, 16) < HIGH and int(a, 16) != value
                     ]
                     if value is not None and addrs:
-                        yield path, n, m.group(1), value, addrs
+                        yield path, n, m.group(1), value, addrs, overlay_img, overlay_name
                 # Attributes sit between a doc and its item (see audit-fixes #102).
                 if st and not st.startswith("//") and not st.startswith("#["):
                     doc = []
@@ -220,10 +261,15 @@ def main():
     md.detail = True
 
     ok, bad, layout = [], [], {}
-    for path, line, name, value, addrs in constants():
+    overlay_checked = 0
+    for path, line, name, value, addrs, overlay_img, overlay_name in constants():
+        # Overlay-documented modules resolve against their own image.
+        img = overlay_img if overlay_img is not None else mz
+        if overlay_img is not None:
+            overlay_checked += 1
         found = False
         for a in addrs:
-            if a + 8 >= len(mz.data):
+            if a + 8 >= len(img.data):
                 continue
             # NO "value == the cited address" rule. It looks like it recognises a
             # table-base constant, but what it actually matches is the constant's
@@ -231,7 +277,7 @@ def main():
             # 0xFFFF` cleared itself because the doc calls 0xFFFF a sentinel. That
             # is the self-referential shape check_selfref_asserts.py exists for.
             # Real evidence for a table base is a `mov si,0x6212` in the code.
-            if value in immediates_near(mz, md, a):
+            if value in immediates_near(img, md, a):
                 found = True
                 break
         # LAYOUT IDENTITY: a table's length is the distance to the next table, so
@@ -239,8 +285,8 @@ def main():
         # immediate nowhere. `DIALOGUE_FONT_ASCII_MAP_LEN = 176` is exactly
         # 0x14CD2 - 0x14C22, which is how the 128-vs-176 truncation was settled.
         # A `*_IMMEDIATE` constant names the file offset of an operand.
-        if not found and value >= 0x400 and value < len(mz.data):
-            hit = is_operand_offset(mz, md, value)
+        if not found and value >= 0x400 and value < len(img.data):
+            hit = is_operand_offset(img, md, value)
             if hit:
                 found = True
                 layout[name] = hit
@@ -269,7 +315,7 @@ def main():
                     else f"layout identity: {max(v):#07x} - {min(v):#07x}"
                 )
             else:
-                insn = matching_insn(mz, md, a, value)
+                insn = matching_insn(img, md, a, value)
             ok.append((path, line, name, value, a, insn))
         else:
             bad.append((path, line, name, value, addrs))
@@ -287,11 +333,16 @@ def main():
         where = ",".join(f"{a:#07x}" for a in addrs[:4])
         print(f"NEEDS-READING {path}:{line}: {name} = {value:#x} is not an "
               f"immediate at {where}")
+    if overlay_checked:
+        print(
+            f"{overlay_checked} constant(s) resolved against .xdb OVERLAY images "
+            "rather than BLOODPRG.EXE"
+        )
     if skipped_overlay:
         print(
             f"skipped {len(skipped_overlay)} overlay-documented file(s) "
-            f"({', '.join(os.path.basename(p) for p in skipped_overlay)}) -- their "
-            "addresses are offsets into .xdb overlays, not BLOODPRG.EXE"
+            f"({', '.join(os.path.basename(p) for p in skipped_overlay)}) -- no "
+            "overlay image found under output/_tmp_dat"
         )
     print(
         f"{len(ok) + len(bad)} cited integer constant(s); {len(ok)} DIRECTLY "
