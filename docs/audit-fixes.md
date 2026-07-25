@@ -4745,3 +4745,27 @@ Cited instructions 141 -> 145; the queue 88 -> 87.
 Four rows in, and the case for the queue is not the settled count. It is that
 `byte_offset * 4 + plane`, `delta / duration * tick`, and `(depth + 35) * 80` are
 all correct, all unexplained, and all one plausible-looking edit from being wrong.
+
+## #146 — the info panel is a tint, like everything else in this UI
+
+Fifth row off #141's queue. `render_location_info_panel` had no doc. Reading
+`0x9137..0x91EC`:
+
+```text
+  0x9142  mov bx,[0x2780] / cx,[0x2782] / dx,[0x2784] / bp,[0x2786]
+                                   the window rect (x, y, w, h)
+  0x9152  mov si,[0xac8]           the remap table
+  0x9156  lcall 0x299:0x40e        THE TINT BLIT
+  0x915B  mov bx,0x6e              text x = LOCATION_PANEL_X
+```
+
+The panel background is not painted — it goes through `0x299:0x40E`, the same
+tint primitive as the choice box (`list_widget_box_is_a_tint` in `labels.csv`) and
+the confirm dialog. That is why the port remaps a rect here instead of filling
+one, and it is the third surface traced to that one call.
+
+Cited instructions 145 -> 149; the queue 87 -> 86.
+
+Five rows in, `0x299:0x40E` has now appeared in the citation for the choice box,
+the confirm dialog and this panel. A reader who meets any one of them cold would
+reasonably assume a filled rectangle; the routine says otherwise every time.

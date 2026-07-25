@@ -4170,6 +4170,24 @@ impl EngineState {
         table
     }
 
+    /// Draw the destination INFO PANEL — `0x9137..0x91EC`:
+    ///
+    /// ```text
+    ///   0x9142  mov bx,[0x2780] / cx,[0x2782] / dx,[0x2784] / bp,[0x2786]
+    ///                                    the window rect (x, y, w, h)
+    ///   0x9152  mov si,[0xac8]           the remap table
+    ///   0x9156  lcall 0x299:0x40e        THE TINT BLIT -- the panel is not
+    ///                                    painted, it is a tint of what is there
+    ///   0x915B  mov bx,0x6e              text x = LOCATION_PANEL_X
+    /// ```
+    ///
+    /// So the panel background goes through the same `0x299:0x40E` primitive as
+    /// the choice box (`sprite::remap_rect_indexed`), which is why this function
+    /// remaps a rect rather than filling one. `LOCATION_PANEL_BOX` is the rect at
+    /// `DS:0x2780`, static in the image.
+    ///
+    /// Cited here because it was settled ASM with no doc (#141's queue); the rows
+    /// it draws come from `vm::location_panel_rows`, which cites the same routine.
     pub fn render_location_info_panel(&mut self, rows: &[crate::vm::LocationPanelRow]) {
         let table = self.location_panel_tint_table();
         let [bx, by, bw, bh] = crate::vm::LOCATION_PANEL_BOX;
