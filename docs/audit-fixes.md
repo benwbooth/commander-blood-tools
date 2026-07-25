@@ -1332,3 +1332,35 @@ post-updated is currently unmodelled.
 Note they are all single-kind (three for kind 1, one for kind 8). A selector defined for
 one kind looks like a rare special case in the matrix and is exactly the sort of thing a
 port written from the common paths would omit.
+
+## FIELD SPACE — full matrix audit by kind (54 defined pairs)
+
+Audited `gs:0x6D60` column-by-column instead of by code path, since the four missed
+selectors were all single-kind. The complete field space:
+
+    kind  0:  6 fields   0x00->0x02 0x01->0x04 0x0E->0x20 0x11->0x06 0x13->0x08 0x14->0x10
+    kind  1: 13 fields   0x00->0x02 0x01->0x16 0x02->0x1A 0x03->0x32 0x04->0x34 0x05->0x1E
+                         0x07->0x38 0x08->0x36 0x0E->0x44 0x0F->0x46 0x10->0x14 0x11->0x18 0x13->0x3A
+    kind  2:  6   kind 3: 5   kind 4: 6   kind 5: 1   kind 6: 1
+    kind  7:  3   kind 8: 5   kind 9: 5   kind 10: 3
+
+54 defined `(selector, kind)` pairs over kinds 0..10.
+
+TWO RESULTS WORTH KEEPING:
+
+1. **`selector 0x00 -> offset 0x02` for EVERY kind.** That is the flags/active word. So
+   the port's `state_u8(owner + 2) & 1` active test is not a kind-1 assumption at all —
+   it is invariant across the entire matrix. That distinguishes it sharply from
+   `LOCATION_FIELD`, which genuinely varies by kind (`0x06/0x18/0x16/0x14/0x04`) and
+   where the hardcode IS an assumption. Two superficially identical hardcoded offsets,
+   one safe by the data and one safe only by context.
+
+2. **The matrix defines 21 selector slots; the code calls only 12 by immediate.**
+   Selectors `0x00, 0x01, 0x03, 0x04, 0x06, 0x07, 0x10, 0x12, 0x14` never appear as
+   `mov ax,imm; call 0x6023`. They are reached with a register-loaded selector, or their
+   fields are addressed directly by offset. Enumerating the immediate call sites
+   therefore UNDERSTATES the field space — which is worth knowing before treating "12
+   selectors" as the complete set.
+
+Kind 1 is the object kind and carries 13 of the 54 fields; kinds 5 and 6 carry only the
+universal flags word.
