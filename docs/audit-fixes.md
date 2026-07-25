@@ -5116,3 +5116,26 @@ survives when two project to the same pixel. Walking up instead of down is a
 change no test would catch and the wrong sprite would win.
 
 Cited instructions 202 -> 209; the queue 66 -> 65.
+
+## #159 — a point list that must still write the buffer
+
+Two more rows off #141's queue.
+
+`menu_submenu_click` delegates to `choice_box_row_at`, so its basis is the widget
+hit-test cited in #154 — `div bl,0x0B` @`0x8508`, rows stepped by `add bp,0xB`,
+the 4px origin inset at `0x84E6`. Its labels come from the same source the DRAW
+uses, which is what stops the clickable band describing a menu the screen is not
+showing.
+
+`ship_3d_point_cloud_points` returns the starfield as a POINT LIST for the GPU
+path rather than a rendered buffer — and it still allocates and writes the buffer.
+That looks like waste and is not: the plot's first-write-wins gate (#149) means
+whether a point is EMITTED depends on what earlier points already wrote. Testing
+coordinates alone would emit points the game discards, and the divergence appears
+only where the field is dense — which is where a starfield is interesting.
+
+So the buffer is not an implementation detail of the rendering path; it is part of
+the selection rule. Removing it is the obvious optimisation for a function that
+returns a list, and it would silently change which stars exist.
+
+The queue: 65 -> 63.

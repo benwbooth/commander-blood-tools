@@ -2144,6 +2144,19 @@ pub fn render_ship_3d_point_cloud(
 /// The same starfield as [`render_ship_3d_point_cloud`], but returning the plotted
 /// points (screen x, y, depth shade) for a GPU point renderer — identical projection,
 /// viewport clip, depth-shade, and write-once cell rule.
+/// The starfield as a POINT LIST rather than a rendered buffer — the same
+/// projection and plot the game runs (`ship_3d_point_cloud_project` @`0x9A10`
+/// into the plot at `0x9B04`), reporting the points that survived instead of the
+/// pixels they wrote.
+///
+/// It still allocates and writes the buffer, because it must: the plot's
+/// first-write-wins gate (`mov al,es:[di]` / `or al,al` / `jne` @`0x9B30`, see
+/// #149) means whether a point is emitted depends on what earlier points already
+/// wrote. Testing coordinates alone and skipping the buffer would emit points the
+/// game discards, and the difference only shows where the field is dense.
+///
+/// Used by the GPU path, which draws these points at window resolution instead of
+/// into the 320x200 framebuffer.
 pub fn ship_3d_point_cloud_points(
     points: &[Ship3dProjectionPoint],
     origin: Ship3dProjectionOrigin,

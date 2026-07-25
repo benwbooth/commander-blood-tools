@@ -1345,6 +1345,14 @@ impl EngineState {
     /// Map a click to a MENU-submenu item (0 = EXPLANATIONS, 1 = GAME) when the
     /// submenu is showing. The submenu is a gold CHOICE BOX (the game's universal
     /// console-choice widget), so hit-test its rows, not the golden menu.
+    /// Map a click to a MENU-submenu item. The rows come from the SCRIPT's own
+    /// labels, and the hit-test is [`Self::choice_box_row_at`] — the widget's
+    /// `row = dy/11 + 1` (`div bl,0x0B` @`0x8508`) over rows stepped by
+    /// `add bp,0xB` (@`0x847A`), with the 4px origin inset at `0x84E6`.
+    ///
+    /// The labels come from the same source the DRAW uses rather than a constant
+    /// list, so the clickable band cannot describe a menu the screen is not
+    /// showing.
     pub fn menu_submenu_click(&self, x: u16, y: u16) -> Option<usize> {
         if !self.menu_submenu_active {
             return None;
