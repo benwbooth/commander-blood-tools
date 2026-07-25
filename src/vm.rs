@@ -509,6 +509,13 @@ pub fn record_entry_stored_related_offset(opcode: u8, operand: u16) -> u16 {
 
 /// Port the `0xD2` handler at `BLOODPRG.EXE` file `0x64B8`:
 /// `lodsb; cbw; dec ax; mov gs:[0x6780], ax`.
+///
+/// `cbw` is correct despite `re/tools/dis.py` printing `cwde` there: capstone
+/// renders opcode `0x98` that way even in 16-bit mode, and without a `0x66`
+/// prefix it sign-extends AL into AX. The distinction matters here — `cwde` would
+/// leave AH holding whatever the dispatcher left, making the stored value depend
+/// on caller state rather than on the operand. Profile operands are 1..5, so the
+/// sign extension is a no-op in play; the reading still has to be right.
 pub fn script_profile_index_from_request_operand(operand: u8) -> u16 {
     ((operand as i8 as i16) - 1) as u16
 }

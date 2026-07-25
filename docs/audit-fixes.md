@@ -3197,3 +3197,31 @@ Fourth duplication this session, and the second whose two copies sat in one file
 Each guard has needed widening once it met a case its author had not pictured —
 which is an argument for building them from real defects rather than from
 imagination.
+
+## FIX #100 — the disassembler prints `cwde` where the CPU does `cbw`
+
+Verifying the `0xD2` handler (`0x64B8`: `lodsb / cbw / dec ax / mov gs:[0x6780],ax`)
+against the port's `(operand as i8 as i16) - 1` produced an apparent contradiction:
+`re/tools/dis.py` shows the middle instruction as `cwde`, not `cbw`, and the two
+are NOT interchangeable here.
+
+* `cbw` sign-extends AL into AX — so the stored word is the operand, sign-extended,
+  minus one. That is what the port computes.
+* `cwde` sign-extends AX into EAX and leaves AX's low half alone — so after
+  `lodsb`, AH still holds whatever the dispatcher left, and the stored value would
+  depend on CALLER STATE rather than on the operand at all.
+
+The port is right. Opcode `0x98` in 16-bit mode with no `0x66` prefix IS `cbw`;
+capstone simply prints it as `cwde` in every mode. Confirmed directly: capstone
+renders the byte identically under `CS_MODE_16` and `CS_MODE_32`.
+
+Two consequences, both now handled. `re/tools/dis.py`'s header records the quirk
+(and its sibling, `0x99` printing as `cdq` where it is `cwd`), because a listing
+that says `cwde` will otherwise mislead anyone reading it. And
+`check_cited_instructions.py` treats the pairs as equivalent — without that, a
+comment quoting the ARCHITECTURALLY CORRECT `cbw` would have been reported as a
+wrong citation, which is the guard punishing accuracy.
+
+Profile operands are 1..5, so the sign extension is a no-op in play. The reading
+still has to be right, and a tool that renders one instruction as another is worth
+knowing about before it costs someone an afternoon.

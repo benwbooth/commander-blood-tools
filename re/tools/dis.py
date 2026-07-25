@@ -6,6 +6,12 @@ Usage:
     python3 re/tools/dis.py SEG:OFF [n_insns]
     python3 re/tools/dis.py --img <image_off_hex> [n_insns]
 
+CAPSTONE MNEMONIC QUIRK, worth knowing before trusting a listing: opcode `0x98`
+prints as `cwde` in CS_MODE_16, but without a 0x66 prefix it is architecturally
+CBW (sign-extend AL into AX, leaving the high half of EAX alone). Likewise `0x99`
+prints as `cdq` where it is CWD. The port's `0x64B8` D2 handler quotes `cbw`
+correctly even though this tool shows `cwde`.
+
 Decodes in 16-bit mode (CS_MODE_16); capstone honours the 0x66/0x67
 operand/address-size prefixes the 386 code uses. Addresses are shown as file
 offsets so they can be fed straight back in. Labels from labels.csv are shown

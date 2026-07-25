@@ -37,9 +37,14 @@ MNEMONICS = {
     "loop", "int", "bsf", "btr", "rep", "sete", "setb", "xchg", "nop", "in", "out",
 }
 # Aliases capstone prints differently from how a comment might spell them.
+#
+# `cbw`/`cwde` and `cwd`/`cdq` are the important pair: capstone prints opcode 0x98
+# as `cwde` even in CS_MODE_16, where without a 0x66 prefix it IS `cbw`. A comment
+# quoting the architecturally correct `cbw` would otherwise be reported as wrong.
 ALIAS = {
     "jz": "je", "jnz": "jne", "jc": "jb", "jnc": "jae", "sal": "shl",
     "lcall": "lcall", "call": "call",
+    "cbw": "cwde", "cwd": "cdq",
 }
 DOC = re.compile(r"^\s*(?:///|//!)?\s*(0x[0-9A-Fa-f]{4,5})\s+([a-z]{2,7})\b")
 
