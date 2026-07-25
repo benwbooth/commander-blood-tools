@@ -3959,3 +3959,37 @@ BLOODPRG.EXE is an `or`. Two guards had the same blind spot; the second only
 surfaced when a citation finally existed to trip it.
 
 Settled: 541 -> 543 of 2156.
+
+## #120 — auditing the guards themselves, and re-learning a lesson the tool had already written down
+
+#119 ended on a hazard worth acting on: a guard over an empty set passes forever,
+and looks healthy precisely because nothing exercises it. So every checker was run
+and its DENOMINATOR read:
+
+    cited_immediates     95 constants        cited_instructions  109 instructions
+    content_literals    367 literals         offset_pairs         21 pairs
+    opcode_handlers      29 constants        provenance           11 claims
+    selfref_asserts       7 assertions       opsize_mnemonics     11 conversions
+    object_inline_names 640 objects          labels              568 + 238 rows
+
+All live. But one number was off: `check_labels.py` verified only **9 of 568**
+code labels, because it matched instruction-then-address (`` `mov ax,1` @0x1234 ``)
+while `labels.csv` mostly writes address-first — its own comment gives
+"0x91DB cmp word [si+0x36],0" as an example of a form it was not checking.
+
+Adding that order found five "problems" on the first run. Four claimed `and`, and
+their addresses were DS data offsets. They were prose: "DS:0x2578 and the ...".
+The file's existing comment says this outright — "`and`, `or`, `not`, `sub`,
+`add`, `test`, `in` and `int` are all ordinary words as well as mnemonics, so
+prose adjacency proves nothing" — and I had relaxed the backtick requirement
+anyway, reasoning that a preceding address anchors the mnemonic. It does not. The
+address does not make the next word an opcode; the BACKTICKS are what mark a
+quote, which is why they were required in the first place.
+
+With backticks required in both orders: 9 inline claims verified, up from 7, zero
+problems. A modest gain, honestly obtained.
+
+The coverage is still 18 of 568, and that is not a parser problem to solve by
+loosening it further — most label comments describe behaviour in prose rather than
+quoting an instruction, and prose is not checkable. The way that number rises is
+writing citations in quotable form, not teaching the checker to guess.

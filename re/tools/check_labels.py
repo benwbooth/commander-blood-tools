@@ -54,6 +54,20 @@ LEAD = re.compile(
 # `in` and `int` are all ordinary words as well as mnemonics, so prose adjacency
 # proves nothing.
 INLINE = re.compile(r"`([a-z]{2,6})\s[^`]*`\s*@?\s*(0x[0-9A-Fa-f]{4,5})")
+# The OTHER order, which this file uses at least as often: the address first, then
+# the instruction -- "0x91DB cmp word [si+0x36],0", "the walker at 0x7DAB is
+# `mov bp,0x2A1B`". Only 9 of 568 code labels were being checked because the
+# instruction-then-address form is the rarer one.
+#
+# The mnemonic MUST still be backticked. Dropping that -- on the theory that a
+# preceding address anchors it well enough -- reproduced precisely the false
+# positives this file already warned about: four of five first-run "problems" were
+# `and` in prose ("DS:0x2578 and the ..."), against DATA addresses that are not
+# instructions at all. The address does not make the next word an opcode; the
+# backticks are what mark a QUOTE.
+INLINE_ADDR_FIRST = re.compile(
+    r"(0x[0-9A-Fa-f]{4,5})\s+(?:is\s+)?`([a-z]{2,6})\s[^`]*`"
+)
 DATA_HINT = re.compile(
     r"\b(table|map|buffer|array|list|string|glyph|palette|record|font|data|vertices|"
     r"advances|offsets|entries)\b",
@@ -108,8 +122,12 @@ def main():
                     f"{line_no}: {name} {addr_s} comment opens with `{want}` "
                     f"but the code is `{got} {insn.op_str}`"
                 )
-        # Inline "<addr> <mnemonic>" claims anywhere in the comment.
-        for mn, am in INLINE.findall(comment.lower()):
+        # Inline claims anywhere in the comment, in BOTH orders.
+        inline_claims = [(mn, am) for mn, am in INLINE.findall(comment.lower())]
+        inline_claims += [
+            (mn, am) for am, mn in INLINE_ADDR_FIRST.findall(comment.lower())
+        ]
+        for mn, am in inline_claims:
             if mn not in MNEMONICS:
                 continue
             a = int(am, 16)
