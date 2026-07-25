@@ -2231,10 +2231,19 @@ impl SpecialObjectSlots {
     }
 }
 
+/// The object an ACTOR record belongs to: the record sits at `object + TALK_FIELD`
+/// (`0x3A`), so this subtracts. The `Option` guards a record below `0x3A`, which
+/// cannot be an actor record — the game never forms one, so this is the port
+/// declining to compute a nonsense offset rather than a case the original handles.
 fn actor_object_offset_from_record(record_offset: u16) -> Option<u16> {
     record_offset.checked_sub(TALK_FIELD)
 }
 
+/// The object that OWNS an arbitrary record — [`owner_object_offset_in`]'s
+/// scan-then-step-back, which holds the rule and its citation. Distinct from
+/// [`actor_object_offset_from_record`]: that one knows the record is an actor's
+/// and subtracts a fixed field, this one searches because the record could be any
+/// of the object's.
 fn record_owner_object_offset(context: &ExecutionContext, record_offset: u16) -> Option<u16> {
     context.owner_object_offset(record_offset)
 }
@@ -2273,6 +2282,10 @@ fn apply_assign5_mode0(
     state_set_u16(state, field_offset, stored);
 }
 
+/// Whether a record's owning object is ACTIVE — bit 0 of the object's byte at
+/// `+2`, the same flag `0x6073` tests (`test byte fs:[bx+2],2` reads bit 1 of the
+/// pair; bit 0 is the active half). `None` when no owner resolves, which the
+/// callers treat as "cannot decide" rather than "inactive".
 fn record_owner_is_active(
     state: &[u8],
     context: &ExecutionContext,
