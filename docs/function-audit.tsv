@@ -1501,7 +1501,7 @@ nav_chart_pick	src/vm.rs	4893	fn	0x92A3,0x9339,0x2AD3,0x27C1,0x92BF,0x92CB,0x100
 nav_chart_marker	src/vm.rs	4907	fn	0x92DF,0x92F2	ORACLE	/// The chart marker the picker hit-tests and the chart draws: `+0x18`/`+0x1A`, /// or the SECOND endpoint at `+0x1C`/`+0x1E` when the object is a black hole /// whose `+0x14` differs from `arche+0x22
 nav_chart_hit_box	src/vm.rs	4921	fn	0x92BF,0x92D3,0x92FC	ORACLE	/// The picker's per-kind hit box for a record (`0x92BF`, `0x92D3`, `0x92FC`).
 nav_chart_arche_context	src/vm.rs	4927	fn	0x92DF	ASM	/// The word the black-hole endpoint rule compares against: `es:[arche+0x22]` /// (`0x92DF`). Zero when no DEB is loaded.
-world_click_select	src/vm.rs	4948	fn	0xB20C,0xB27B,0xB2BB,0xFFFF,0xB288,0x24F3,0x251B,0x251b,0xB2	ASM?	/// The WORLD-DESTINATION CLICK commit (`0xB20C..0xB27B`). The ship FSM's /// per-frame hit-test (`ship_3d_target_record_select` `0xB2BB`) returns the /// clicked target record; this is what the FSM t
+world_click_select	src/vm.rs	4948	fn	0xB20C,0xB27B,0xB2BB,0xFFFF,0xB288,0x24F3,0x251B,0x251b,0xB2	ASM	/// The WORLD-DESTINATION CLICK commit (`0xB20C..0xB27B`). The ship FSM's /// per-frame hit-test (`ship_3d_target_record_select` `0xB2BB`) returns the /// clicked target record; this is what the FSM t
 special_slot_insert_pub	src/vm.rs	4974	fn	0x6D3E,0x5FF6	INFRA	/// Insert an owner into the 16-slot special list (gs:0x6D3E, insert 0x5FF6). /// Returns false only if the list is full and the owner is not already present. /// Test hooks for the recomp differentia
 special_slot_remove_pub	src/vm.rs	4977	fn		INFRA	
 ship_slots_pub	src/vm.rs	4980	fn		INFRA	

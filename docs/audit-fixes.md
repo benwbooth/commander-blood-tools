@@ -4487,3 +4487,32 @@ Noticed only because the total was RE-READ after the settle instead of assumed,
 which is the same habit #133 was about. Two counting mistakes in one session, both
 from trusting a number instead of recomputing it, and both cheap to catch the
 moment the recount became routine.
+
+## #137 — the world appears, but the game's record of it never gets written
+
+`world_click_select` is the third unrouted rule in a row, and the clearest case of
+the pattern. It ports `0xB20C..0xB27B` completely — nothing hit returns false; the
+`0xFFFF` back row clears the target; a target ALREADY equal to `gs:0x251B` is not
+rewritten (`cmp ax,[0x251b]` @`0xB21A`); anything else sets `gs:0x251B` and writes
+a C1 record `{0xC1, target, 0}` at `[0x6750]+0xA`, the built-in object `orxx`,
+which the C1 ladder at `0x5B38` presents on a later frame.
+
+`world_target` — the field standing for `gs:0x251B` — is touched by that function
+and its two tests, and by nothing else in the tree. `main.rs` selects a
+destination by calling `engine.visit_world(...)` directly.
+
+So the OUTCOME is right: the world appears. The MECHANISM is absent: no C1 record
+is written, so the VM's presentation ladder never runs for that target, and any
+script logic gated on that record cannot fire. This is invisible to any test of
+"does the world load", which is exactly why it survived — the surface works.
+
+Three consecutive findings of the same shape (#134 cycling instead of opening the
+submenu, #135 stacking streams instead of mixing, this) suggest it is the dominant
+remaining defect class: the port reaching a plausible end state by a route the
+game does not take. A value test cannot see it, a screenshot cannot see it, and it
+only shows up when something downstream depends on the STATE the real route would
+have left behind.
+
+Settled `world_click_select` as ASM (decoded and tested), and recorded the wiring
+gap in `docs/port-validation.md` rather than leaving it implied by an unrouted
+function.
