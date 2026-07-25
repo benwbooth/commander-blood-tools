@@ -710,13 +710,13 @@ state_and_u8	src/vm.rs	1382	fn		INFRA	|| AUDIT 2026-07-24: byte AND (models `and
 state_and_u16	src/vm.rs	1387	fn		INFRA	|| AUDIT 2026-07-24: word AND (models `and word [..],imm`) -- accessor with no distinct binary counterpart
 pending_script_profile_dispatch_ready	src/vm.rs	1392	fn		UNVERIFIED	
 state_c_string_equals	src/vm.rs	1401	fn		UNVERIFIED	
-text_line_should_display	src/vm.rs	1413	fn		UNVERIFIED	
+text_line_should_display	src/vm.rs	1413	fn		ASM	|| AUDIT 2026-07-24: ASM-VERIFIED: the two conditions are the handler two guards -- the active-display bit (0x6647 OR CX,CX / JNS, CX = b5:b4 so the sign bit is b5 bit7) and the not-already-shown test at 0x665A
 text_presentation_record_is_active	src/vm.rs	1418	fn		ASM	|| AUDIT 2026-07-24: A6 gate 0x6664..0x667C: the handler builds matrix index (0x13<<4)+1 -> TALK_FIELD 0x3A, reads es:[bx+di] with di = table base + line_index, and requires it to equal 0xC4 -- exactly state[line_index+TALK_FIELD] == OP_ACTOR
-text_runtime_gates_allow	src/vm.rs	1422	fn		UNVERIFIED	
+text_runtime_gates_allow	src/vm.rs	1422	fn		ASM	|| AUDIT 2026-07-24: ASM-VERIFIED as the conjunction of the handler two runtime gates, both of which skip to 0x67A0 on failure: the presentation-record check (0x6678 cmp 0xC4) and the line-display check (0x665A already-shown)
 TextTokenRuntimeFlags	src/vm.rs	1435	struct		UNVERIFIED	
 flags_b5	src/vm.rs	1440	fn		UNVERIFIED	
 accept_line	src/vm.rs	1447	fn		UNVERIFIED	
-mark_text_line_shown	src/vm.rs	1455	fn		UNVERIFIED	
+mark_text_line_shown	src/vm.rs	1455	fn		ASM	|| AUDIT 2026-07-24: ASM-CONSISTENT with the 0x8000 flag at record+2 verified above; the handler sets it on the accept path so a line does not re-display
 SpecialObjectSlots	src/vm.rs	1465	struct		UNVERIFIED	
 remove	src/vm.rs	1470	fn		ASM	|| AUDIT 2026-07-24: vm_special_slot_remove 0x5FD8: same 16-word list; on a hit it writes 0 into the slot and sets CF (found), otherwise `clc` (not found)
 insert	src/vm.rs	1479	fn		ASM	|| AUDIT 2026-07-24: vm_special_slot_insert 0x5FF6: 16 words at DS:0x6D3E (cx=0x10). First loop scans for the value already present and, on a hit, jumps to `stc` -- ALREADY PRESENT COUNTS AS SUCCESS, which the port returns true for. Second loop finds the first zero slot and stores; if none, `clc` signals FULL and the port returns false
@@ -1335,4 +1335,4 @@ drive_location	src/bin/playthrough.rs	152	fn		UNVERIFIED	/// Play a location scr
 main	src/bin/runtime_boot.rs	10	fn		UNVERIFIED	
 Ev	src/bin/runtime_boot.rs	130	enum		UNVERIFIED	
 nonblank	src/bin/smoke.rs	10	fn		UNVERIFIED	
-main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                                      
+main	src/bin/smoke.rs	14	fn		UNVERIFIED	                                                       
