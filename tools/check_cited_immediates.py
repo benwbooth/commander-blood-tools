@@ -274,6 +274,43 @@ def constants():
     return
 
 
+def grounded_by_data_test():
+    """Constant names asserted inside a test that reads real game data.
+
+    Deliberately narrow: the test body must both mention the constant AND open
+    something the game shipped. A test comparing the port to itself grounds
+    nothing, which is the distinction `check_selfref_asserts.py` exists for.
+    """
+    import re as _re
+
+    real = _re.compile(
+        r"(BLOODPRG\.EXE|\.xdb|TB\.BIG|\.DIC|\.BAS|\.BIG|\.SPR|\.HNM|\.snd|"
+        r"_tmp_dat|_tmp_iso|captures?/)",
+        _re.I,
+    )
+    names = set()
+    for root, _, files in os.walk("src"):
+        for f in sorted(files):
+            if not f.endswith(".rs"):
+                continue
+            text = open(os.path.join(root, f), encoding="utf-8", errors="replace").read()
+            for m in _re.finditer(r"\bfn\s+[a-z_][a-z0-9_]*\s*\(\s*\)\s*\{", text):
+                start = m.end()
+                depth, i = 1, start
+                while i < len(text) and depth:
+                    if text[i] == "{":
+                        depth += 1
+                    elif text[i] == "}":
+                        depth -= 1
+                    i += 1
+                body = text[start:i]
+                if not real.search(body):
+                    continue
+                for name in _re.findall(r"\b([A-Z][A-Z0-9_]{3,})\b", body):
+                    names.add(name)
+    return names
+
+
 def main():
     mz = MZ()
     md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_16)
@@ -353,10 +390,26 @@ def main():
             print(f"  {name:<44} {value:#06x}  {insn}{weak}")
         print()
 
+    # A constant a DATA TEST grounds is not "needing reading": something already
+    # reads it out of the game's own bytes. Before this split, TALK_FIELD and
+    # LOCATION_FIELD sat in the NEEDS-READING list while
+    # `field_matrix_entries_match_the_constants` was asserting both against the
+    # image -- so the list mixed settled work with open work and hid the latter.
+    # Same failure shape as the citation guard's coverage gap (audit-fixes #204).
+    grounded_names = grounded_by_data_test()
+    grounded = [b for b in bad if b[2] in grounded_names]
+    bad = [b for b in bad if b[2] not in grounded_names]
+
     for path, line, name, value, addrs in bad:
         where = ",".join(f"{a:#07x}" for a in addrs[:4])
         print(f"NEEDS-READING {path}:{line}: {name} = {value:#x} is not an "
               f"immediate at {where}")
+    if grounded:
+        print(
+            f"{len(grounded)} constant(s) are not immediates but ARE asserted "
+            "against real game data by a test: "
+            + ", ".join(sorted({b[2] for b in grounded}))
+        )
     if overlay_checked:
         print(
             f"{overlay_checked} constant(s) resolved against .xdb OVERLAY images "
@@ -369,9 +422,9 @@ def main():
             "overlay image found under output/_tmp_dat"
         )
     print(
-        f"{len(ok) + len(bad)} cited integer constant(s); {len(ok)} DIRECTLY "
-        f"encoded at a cited address, {len(bad)} need reading (dispatch indices, "
-        "derived values, wrong citations)"
+        f"{len(ok) + len(bad) + len(grounded)} cited integer constant(s); {len(ok)} DIRECTLY "
+        f"encoded at a cited address, {len(grounded)} grounded by a data test, "
+        f"{len(bad)} need reading (dispatch indices, derived values, wrong citations)"
     )
     return 0
 

@@ -6563,3 +6563,32 @@ same structure: verifying that a chosen value works is weaker than verifying tha
 no other value would. The first is consistent with a lucky guess; the second is
 not. Where the candidate space is small and enumerable — 180 frames, 95 directory
 slots, 52 opcodes — the stronger test costs a loop.
+
+## #211 — a list that mixes settled with open hides the open
+
+`check_cited_immediates.py` reported "27 need reading". Two of them were
+`TALK_FIELD` and `LOCATION_FIELD`, which `field_matrix_entries_match_the_constants`
+has been asserting against the image all along — reading both out of the matrix at
+`DS:0x6D60`. They were never open. They were in the list because the checker knew
+only one kind of grounding: "is this value an immediate at a cited address?"
+
+That is the #204 failure in a different costume. A queue that mixes settled work
+with open work does not just overstate the total; it hides the real items among
+plausible-looking noise, and the noise never shrinks so nobody looks.
+
+The checker now separates them. A constant counts as GROUNDED when a test both
+mentions it and opens something the game shipped — deliberately narrow, because a
+test comparing the port to itself grounds nothing (`check_selfref_asserts.py`'s
+whole subject). Result: 100 directly encoded, 11 grounded by a data test, 18
+needing reading.
+
+Of those 18, seventeen are `OP_*` dispatch indices, which
+`check_opcode_handlers.py` validates against the real table at `0x142D0` — grounded
+by a DIFFERENT guard, and worth stating rather than leaving to look unresolved.
+The eighteenth is `STATE_BASE`, a documented non-citation (#no literal exists in
+the overlay; it is reached through a base register).
+
+`RESOURCE_DESCRIPTOR_SEGMENT = 0` came off the list on its own merit, and the
+argument is pleasing: `mov ax,[bx]` encodes as `8b 07`, a ModRM with mod=00, which
+carries NO displacement byte. A field at any other offset would need one. The
+ABSENCE of the byte is the zero, and the test asserts the two-byte encoding.

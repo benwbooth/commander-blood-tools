@@ -47,6 +47,12 @@ pub const LEVEL_DIRECTORY_FILE_OFFSET: usize = 0xCDF4;
 pub const RESOURCE_DESCRIPTOR_STRIDE: u16 = 8;
 /// Descriptor `+0`: the SEGMENT the resource was loaded at (`mov ax,[bx]` /
 /// `mov ds,ax` @`0x51B7`).
+///
+/// The offset cannot be an immediate anywhere, and that is the proof rather than
+/// the problem: `mov ax,[bx]` encodes as `8b 07`, a ModRM with mod=00, which
+/// carries NO displacement byte. A field at any other offset would need one. So
+/// the absence of the byte IS the zero, checked by
+/// `resource_descriptor_layout_matches_the_loader`.
 pub const RESOURCE_DESCRIPTOR_SEGMENT: u16 = 0;
 /// Descriptor `+2`: flags. `test word [bx+2],3` @`0x51AC` asks "already
 /// resident?"; the loader then sets bit 1 with `or word [bx+2],2` @`0x51B3` and
@@ -528,6 +534,12 @@ mod tests {
         assert_eq!(&exe[0x51AC..0x51B1], &[0xF7, 0x47, 0x02, 0x03, 0x00]);
         assert_eq!(exe[0x51AE] as u16, RESOURCE_DESCRIPTOR_FLAGS);
         assert_eq!(exe[0x51AF] as u16, RESOURCE_FLAG_RESIDENT);
+        // 8b 07 = mov ax,[bx] -- ModRM mod=00, so NO displacement byte follows.
+        // That absence is what makes the segment field offset 0; any other offset
+        // would encode a displacement.
+        assert_eq!(&exe[0x51B7..0x51B9], &[0x8B, 0x07]);
+        assert_eq!(RESOURCE_DESCRIPTOR_SEGMENT, 0, "mod=00 carries no displacement");
+
         // 83 4f 02 02 = or word [bx+2],2
         assert_eq!(&exe[0x51B3..0x51B7], &[0x83, 0x4F, 0x02, 0x02]);
         assert_eq!(exe[0x51B6] as u16, RESOURCE_FLAG_IN_USE);
