@@ -5773,3 +5773,25 @@ is decoded and tested at both levels and names the remaining work as the rewirin
 
 Same judgement as #138: implement what can be verified, state the blocker, do not
 bridge it to make the pieces appear connected.
+
+## #185 — twelve handlers, twenty-eight names
+
+The `vm_op_*` labels were the largest remaining duplicate cluster: twelve
+addresses carrying two or three names each, twenty-eight rows for twelve
+routines. `0x6B06` alone had `vm_pair_record_6b06`, `vm_op_b8_record_compare` and
+`vm_op_b8_record_readwrite`.
+
+They are not disagreements — each name is the same handler described at a
+different stage of understanding. `..._compare` is what `0xB8` does in QUERY mode;
+`..._readwrite` is what it does across both modes, which is the fuller reading and
+the one kept. `vm_pair_record_6b06` puts the address in the name, which is what
+you write before you know what the routine is for.
+
+Merged by union, keeping the name from the longest comment (the fullest decode)
+and folding the others in as `ALSO RECORDED as`. Twenty rows removed; the
+duplicate count falls 28 -> 16, and 55 -> 16 since the check was written in #129.
+
+Checked afterwards that `check_opcode_handlers.py` still resolves all 29 opcode
+constants through the dispatch table — the merge touched the labels, not the
+citations, and that is the guard which would notice if a handler address had been
+lost.
