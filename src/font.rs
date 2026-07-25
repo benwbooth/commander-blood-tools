@@ -92,6 +92,27 @@ pub fn game_font_advance(ch: char) -> usize {
     game_font_glyph(ch).map(|glyph| glyph.advance).unwrap_or(0)
 }
 
+/// The width the string draw REPORTS in `gs:0x27CD` — which is NOT the pen
+/// distance. The draw entry (`0x3192`) zeroes the accumulator, and only the
+/// glyph path adds to it (`add word gs:[0x27cd],ax` @ `0x3215`, `ax` = that
+/// glyph's advance). The two other paths both skip it:
+///
+/// ```text
+///   0x31D3  cmp al,0x20 / jne         a SPACE does `add di,6` and jumps back
+///   0x31D7  add di,6 / jmp 0x31CE     -- pen moves, accumulator does NOT
+///   0x31DE  or al,al / js 0x31CE      an unmapped byte is skipped entirely
+/// ```
+///
+/// So a trailing space contributes nothing here even though it moves the pen.
+/// Callers that lay out from this width — `location_panel_rows`, which places
+/// the location name at `x + width + 6` (`0x9188`) — depend on that.
+pub fn game_font_drawn_width(text: &str) -> usize {
+    text.chars()
+        .filter(|&ch| ch != ' ')
+        .map(|ch| game_font_glyph(ch).map(|g| g.advance).unwrap_or(0))
+        .sum()
+}
+
 // Extracted from BLOODPRG.EXE:
 // - ASCII to glyph index map: file offset 0x14c22
 // - glyph advances: file offsets 0x14cd2..0x14d27

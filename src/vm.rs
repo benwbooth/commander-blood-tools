@@ -1316,6 +1316,24 @@ pub const STATUS_STRING_TABLE: [(u16, usize, &str); 4] = [
     (0x013E, 0x0D55E, STATUS_HEADER_BLACK_HOLE),
     (0x014B, 0x0D56B, STATUS_LIFE_SUPPORT),
 ];
+
+/// Layout of the DESTINATION INFO PANEL drawn by `0x9137..0x91EC`. Every value is
+/// an immediate in that routine; see [`VmMachine::location_panel_rows`].
+pub const LOCATION_PANEL_X: i32 = 0x6E;
+pub const LOCATION_PANEL_Y: i32 = 0x19;
+pub const LOCATION_PANEL_ROW_PITCH: i32 = 0x0A;
+pub const LOCATION_PANEL_NAME_GAP: i32 = 6;
+pub const LOCATION_PANEL_HEADER_COLOR: u8 = 0xEE;
+pub const LOCATION_PANEL_ROW_COLOR: u8 = 0xFE;
+
+/// One drawn row of the destination info panel.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LocationPanelRow {
+    pub x: i32,
+    pub y: i32,
+    pub color: u8,
+    pub text: String,
+}
 const C2_ACTIVE_LINE_KIND2: u16 = 0x27;
 const C2_ACTIVE_LINE_KIND400: u16 = 0x2B;
 const VM_UI_FLAGS: u16 = 0x2793;
@@ -4629,6 +4647,73 @@ impl VmMachine {
             lines.push(self.object_inline_name(entry));
         }
         Some(lines)
+    }
+
+    /// The DESTINATION INFO PANEL's drawn rows (`0x9137..0x91EC`) — the other
+    /// consumer of the same roster, this one a real on-screen panel rather than
+    /// the subtitle-buffer block [`Self::location_status_block`] composes.
+    ///
+    /// The object it describes is `gs:0x27BF`, set by the selection commit at
+    /// `0x9022` — which explicitly REFUSES the object you are already at
+    /// (`cmp ax,es:[arche+0x16] / je` @ `0x901D`), so the panel always describes
+    /// somewhere else.
+    ///
+    /// ```text
+    ///   0x915B  bx=0x6E  dx=0x19  si=0x12E        x=110, y=25, "PLANET: "
+    ///   0x916D  test es:[di],0x10  -> si=0x137    "SHIP: "
+    ///   0x9177  test es:[di],0x100 -> si=0x13E    "BLACK HOLE: "
+    ///   0x9181  al=0xEE / draw                    header colour 0xEE
+    ///   0x9188  bx += [0x27CD] / add bx,6         the name follows the header
+    ///   0x9192  si=di+4 / draw                    the object's inline name
+    ///   0x919F  si=0x14B / bx=0x6E / add dx,0xA   "LIFE SUPPORT:" at y=35
+    ///   0x91AD  add dx,0xA                        first roster row at y=45
+    ///   0x91C0  ax=0xFE                           row colour 0xFE
+    ///   0x91E9  add dx,0xA                        pitch 10 per row
+    /// ```
+    ///
+    /// Note the header test order differs from the hover composer's: here `0x10`
+    /// is a BIT TEST (`test es:[di],0x10`), not the `cmp ax,0x10` equality at
+    /// `0x836C`. Both are ported as written.
+    pub fn location_panel_rows(&self, object: u16) -> Vec<LocationPanelRow> {
+        let kind = self.rec_read(object);
+        let header = if kind & LOCATION_KIND_BLACK_HOLE != 0 {
+            STATUS_HEADER_BLACK_HOLE
+        } else if kind & LOCATION_KIND_SHIP != 0 {
+            STATUS_HEADER_SHIP
+        } else {
+            STATUS_HEADER_PLANET
+        };
+        let mut rows = vec![LocationPanelRow {
+            x: LOCATION_PANEL_X,
+            y: LOCATION_PANEL_Y,
+            color: LOCATION_PANEL_HEADER_COLOR,
+            text: header.to_string(),
+        }];
+        rows.push(LocationPanelRow {
+            // 0x9188: the pen restarts from the header's REPORTED width, which
+            // excludes spaces — see font::game_font_drawn_width.
+            x: LOCATION_PANEL_X
+                + crate::font::game_font_drawn_width(header) as i32
+                + LOCATION_PANEL_NAME_GAP,
+            y: LOCATION_PANEL_Y,
+            color: LOCATION_PANEL_HEADER_COLOR,
+            text: self.object_inline_name(object),
+        });
+        rows.push(LocationPanelRow {
+            x: LOCATION_PANEL_X,
+            y: LOCATION_PANEL_Y + LOCATION_PANEL_ROW_PITCH,
+            color: LOCATION_PANEL_HEADER_COLOR,
+            text: STATUS_LIFE_SUPPORT.to_string(),
+        });
+        for (i, entry) in self.source_list_display_rows(object).into_iter().enumerate() {
+            rows.push(LocationPanelRow {
+                x: LOCATION_PANEL_X,
+                y: LOCATION_PANEL_Y + LOCATION_PANEL_ROW_PITCH * (2 + i as i32),
+                color: LOCATION_PANEL_ROW_COLOR,
+                text: self.object_inline_name(entry),
+            });
+        }
+        rows
     }
 
     /// The WORLD-DESTINATION CLICK commit (`0xB20C..0xB27B`). The ship FSM's
@@ -8806,6 +8891,73 @@ mod tests {
 
         // With no DEB loaded there is no arche, so no panel at all.
         assert!(VmMachine::new().location_status_block().is_none());
+    }
+
+    #[test]
+    fn the_info_panel_lays_rows_out_at_the_drawn_immediates() {
+        let parent = vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C2, 2).expect("kind 2 selector-0x11");
+        let counter =
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_ENCOUNTER, 2).expect("kind 2 selector-8");
+        const PLACE: u16 = 0x0080;
+        const HOST: u16 = 0x0100;
+
+        let mut m = VmMachine::new();
+        m.directory = vec![(HOST, 1)];
+        let put_name = |m: &mut VmMachine, obj: u16, name: &str| {
+            for (i, b) in name.bytes().chain(std::iter::once(0)).enumerate() {
+                let off = obj + 4 + i as u16;
+                let w = m.rec_read_pub(off & !1);
+                let next = if off & 1 == 0 {
+                    (w & 0xFF00) | b as u16
+                } else {
+                    (w & 0x00FF) | ((b as u16) << 8)
+                };
+                m.rec_write_pub(off & !1, next);
+            }
+        };
+        put_name(&mut m, PLACE, "Oddland");
+        put_name(&mut m, HOST, "Bob");
+        m.rec_write_pub(HOST, 2);
+        m.rec_write_pub(HOST + 2, OBJECT_FLAG_ACTIVE);
+        m.rec_write_pub(HOST + parent, PLACE);
+        m.rec_write_pub(HOST + counter, 1);
+
+        let rows = m.location_panel_rows(PLACE);
+        let header_w = crate::font::game_font_drawn_width(STATUS_HEADER_PLANET) as i32;
+        assert_eq!(
+            rows,
+            vec![
+                LocationPanelRow { x: 0x6E, y: 0x19, color: 0xEE, text: "PLANET: ".into() },
+                LocationPanelRow {
+                    x: 0x6E + header_w + 6,
+                    y: 0x19,
+                    color: 0xEE,
+                    text: "Oddland".into()
+                },
+                LocationPanelRow { x: 0x6E, y: 0x23, color: 0xEE, text: "LIFE SUPPORT:".into() },
+                LocationPanelRow { x: 0x6E, y: 0x2D, color: 0xFE, text: "Bob".into() },
+            ]
+        );
+
+        // 0x916D is a BIT test here (the hover composer's 0x836C is an equality),
+        // so a kind carrying 0x10 among other bits still reads as SHIP.
+        m.rec_write_pub(PLACE, LOCATION_KIND_SHIP | 0x40);
+        assert_eq!(m.location_panel_rows(PLACE)[0].text, "SHIP: ");
+        assert_eq!(m.location_status_block(), None, "no arche -> no hover block");
+    }
+
+    #[test]
+    fn the_drawn_width_excludes_spaces_the_way_the_accumulator_does() {
+        // 0x31D7: a space does `add di,6` and jumps back WITHOUT touching 0x27CD.
+        use crate::font::{game_font_advance, game_font_drawn_width};
+        let pen: usize = "PLANET: ".chars().map(game_font_advance).sum();
+        let reported = game_font_drawn_width("PLANET: ");
+        assert_eq!(
+            pen - reported,
+            crate::font::GAME_FONT_SPACE_ADVANCE,
+            "exactly the trailing space separates pen distance from reported width"
+        );
+        assert_eq!(game_font_drawn_width("  "), 0);
     }
 
     #[test]

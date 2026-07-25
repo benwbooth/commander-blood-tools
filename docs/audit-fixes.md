@@ -1649,3 +1649,50 @@ regression tests, but the port's nav view does not yet DRAW it (the port's
 `render_ship_view` has its own destination list). Wiring the panel into the nav
 frame — including its `DS:0x65F2` hover rect — is the next step, and it is a
 frontend task now, not an RE one.
+
+## FIX #50 — the destination info panel: the second consumer, decoded end to end
+
+The roster has two consumers. #49 ported the text-buffer one; this is the DRAWN
+one (`0x9137..0x91EC`), and tracing its caller turned it into a complete screen.
+
+THE SELECTION COMMIT (`0x8FF4..0x905B`) picks the object, and it explicitly
+refuses the one you are standing on:
+
+    0x9016  bx = [0x6752] (arche) + 0x16      the CURRENT LOCATION
+    0x901D  cmp ax,es:[bx] / je               same place -> no panel
+    0x9022  [0x27BF] = ax                     otherwise, THIS is the panel's object
+
+so the panel always describes somewhere else. It then seeds a 4x4 rect at the
+cursor (`[0x2AAB] = {mouse x, mouse y, 4, 4}`), sets 8 interpolation steps,
+`[0x2788]=1`, `[0x2789]=0`, and DISABLES the mouse (`[0xA3E]=0`).
+
+THE FSM is three states on `[0x2788]`: 1 = zoom open (interpolate the cursor rect
+toward the panel rect each frame, `CF` set when done -> state 0), 0 = open and
+drawn (re-enabling the mouse starts the close), 2 = zoom shut, ending with
+`[0x27BF]=0`. The interpolator is `0x8B:0xFAD` — already decoded and ported as
+`step_ship_3d_interpolation_gate` — and it DRAWS the interpolated rect rather
+than storing it, which is why nothing ever writes the rect back.
+
+THE GEOMETRY is all static, and I checked that rather than assuming it: a
+byte-search for every store form to `0x2780` finds NO writer anywhere in the
+image — the only references are the two `mov si/di,0x2780` in this routine and
+the draw. So the panel rect is a constant, `(100, 20, 160, 70)`, and the text
+layout sits inside it exactly: header at `(110, 25)`, `LIFE SUPPORT:` at
+`(110, 35)`, roster rows from `(110, 45)` at pitch 10 — five rows before the box
+ends at y=90. Header/name in colour `0xEE`, rows in `0xFE`.
+
+A DETAIL THAT WOULD HAVE BEEN WRONG BY GUESSING. The name is placed at
+`x + [0x27CD] + 6`, where `0x27CD` is "the width of the string just drawn". It is
+NOT the pen distance: the draw entry `0x3192` zeroes it, and only the glyph path
+adds to it (`0x3215`). The SPACE path does `add di,6 / jmp` — pen moves,
+accumulator untouched — and unmapped bytes are skipped entirely. Since every
+header ends in a space ("PLANET: "), summing advances the obvious way would put
+the name 6px too far right on every panel. Ported as
+`font::game_font_drawn_width` with a test that pins the difference to exactly one
+space advance.
+
+PORTED: `VmMachine::location_panel_rows` returns the positioned, coloured rows
+from record state alone. NOT ported: the window CHROME — the blit at
+`0x299:0x40E` takes its source from `[0xAC8] = 0x5F11`, a handle whose resolution
+is undecoded. That is the next piece, and it is recorded at `0x339E` rather than
+guessed at.
