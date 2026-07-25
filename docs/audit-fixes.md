@@ -2914,3 +2914,28 @@ would hit the same wall.
 That is the fourth harness trap this session that turned into a finding about the
 ORIGINAL rather than about testing — after `[bp]` defaulting to SS, `populate`'s
 activation formula, and the save editor's re-scanned length.
+
+## FIX #89 — every decode this session that had a lift is now checked against it
+
+The self-check sweep is complete. Four routines decoded by hand this session,
+each with an oracle-verified lift sitting beside it, each now differentialled:
+
+| decode | lift | result |
+|---|---|---|
+| `nav_chart_pick` (FIX #52) | `func_92a3` | matches over 12 probes incl. edges and the black hole's second endpoint |
+| `game_font_drawn_width` (#59) | `func_3192` | matches on every measured string; exposed the clip-cell correction |
+| `build_active_object_list` (#53) | `func_604e` | matches, including the STOP at the first non-kind-1 entry |
+| `confirm_box_click` (#68) | `func_8295` | matches over 11 cursor positions incl. both inclusive edges |
+
+Nothing diverged. Four hand decodes, all correct — which is worth stating in the
+same breath as the session's error tally (four wrong instruction citations, one
+dead end containing the right answer, four harness traps), because it says the
+errors cluster in the CITATIONS and the HARNESSES rather than in the logic. Where
+the port reproduces behaviour, the readings held; where I wrote down an address or
+built a test rig, they did not.
+
+That suggests the cheapest remaining safeguards are the ones already built — the
+instruction-citation guard catches the first class automatically, and the harness
+traps are now documented at the globals they concern (`DS:0x272E`, `DS:0x5239`).
+
+Twelve rows moved to `ORACLE` across the twin and self-check campaigns.

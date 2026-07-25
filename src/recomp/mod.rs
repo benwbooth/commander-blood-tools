@@ -1191,6 +1191,135 @@ mod tests {
         }
     }
 
+    /// The REGION HIT-TEST against its lift (`func_8295`).
+    ///
+    /// `0x8295` is the shared console hit-test: gated on `[0xA3E]&1`, it takes a
+    /// region record in BP as `{x, y, w, h}` and reports CF set when the cursor
+    /// `[0xA2A]`/`[0xA2C]` is inside — INCLUSIVE at both edges (`jl`/`jg` skip
+    /// only strictly outside). `confirm_box_click` was written against that shape
+    /// in FIX #68 using the dialog's own two region records.
+    #[test]
+    fn native_confirm_regions_match_the_lifted_hit_test() {
+        const GS: u16 = 0x2600;
+        const MOUSE_X: u32 = 0x0A2A;
+        const MOUSE_Y: u32 = 0x0A2C;
+        const ENABLE: u32 = 0x0A3E;
+        const REGION_AT: u32 = 0x3100;
+
+        let hit = |rect: (usize, usize, usize, usize), mx: i32, my: i32| -> bool {
+            let mut m = Machine::new();
+            m.regs.ds = GS;
+            m.regs.gs = GS;
+            m.regs.ss = GS;
+            m.regs.set_sp(0xFF00);
+            m.write8(GS, ENABLE, 1);
+            m.write16(GS, MOUSE_X, mx as u16);
+            m.write16(GS, MOUSE_Y, my as u16);
+            m.write16(GS, REGION_AT, rect.0 as u16);
+            m.write16(GS, REGION_AT + 2, rect.1 as u16);
+            m.write16(GS, REGION_AT + 4, rect.2 as u16);
+            m.write16(GS, REGION_AT + 6, rect.3 as u16);
+            m.regs.set_bp(REGION_AT as u16);
+            let sp = m.regs.sp() as u32;
+            m.write16(m.regs.ss, sp, 0x0000);
+            m.write16(m.regs.ss, sp.wrapping_add(2), 0x0020);
+            super::auto::func_8295(&mut m);
+            m.regs.cf
+        };
+
+        let yes = crate::engine::EngineState::CONFIRM_YES_REGION;
+        let no = crate::engine::EngineState::CONFIRM_NO_REGION;
+        let e = crate::engine::EngineState::new();
+        for (mx, my) in [
+            (120i32, 105i32), (150, 115), (151, 105), (119, 105), (120, 116),
+            (180, 105), (200, 115), (201, 105), (179, 110), (0, 0), (160, 110),
+        ] {
+            let lift_yes = hit(yes, mx, my);
+            let lift_no = hit(no, mx, my);
+            let expected = if lift_yes {
+                Some(true)
+            } else if lift_no {
+                Some(false)
+            } else {
+                None
+            };
+            assert_eq!(
+                e.confirm_box_click(mx, my),
+                expected,
+                "cursor ({mx},{my}): lift yes={lift_yes} no={lift_no}"
+            );
+        }
+    }
+
+    /// The ACTIVE-OBJECT LIST against its lift (`func_604e`).
+    ///
+    /// `0x604E` walks the 20-byte directory at `gs:0x672C` while each entry's
+    /// `+0x12` is 1 — it STOPS at the first that is not, rather than skipping —
+    /// keeps every object whose `fs:[obj+2]` has bit 1, and writes the survivors
+    /// to `DS:0x6A16` with a `0xFFFF` terminator. Decoded by hand in FIX #53; this
+    /// checks that reading.
+    #[test]
+    fn native_active_object_list_matches_the_lift() {
+        const GS: u16 = 0x2600;
+        const FS: u16 = 0x2600; // records in the same arena
+        const DIR_PTR: u32 = 0x672C;
+        const REC_PTR: u32 = 0x6724;
+        const OUT: u32 = 0x6A16;
+        const DIR_AT: u32 = 0x3000;
+
+        // (object offset, entry kind, flags) — the third entry ends the scan, so
+        // the fourth must not appear even though it qualifies.
+        let entries: [(u16, u16, u16); 5] = [
+            (0x0100, 1, 0x0002),
+            (0x0200, 1, 0x0000),
+            (0x0300, 1, 0x0002),
+            (0x0400, 0, 0x0002),
+            (0x0500, 1, 0x0002),
+        ];
+
+        let mut m = Machine::new();
+        m.regs.ds = GS;
+        m.regs.gs = GS;
+        m.regs.es = GS;
+        m.regs.ss = GS;
+        m.regs.set_sp(0xFF00);
+        m.write16(GS, DIR_PTR, DIR_AT as u16);
+        m.write16(GS, DIR_PTR + 2, GS);
+        m.write16(GS, REC_PTR, 0);
+        m.write16(GS, REC_PTR + 2, FS);
+        for (i, (obj, kind, flags)) in entries.iter().enumerate() {
+            let base = DIR_AT + (i as u32) * 20;
+            m.write16(GS, base + 0x10, *obj);
+            m.write16(GS, base + 0x12, *kind);
+            m.write16(FS, u32::from(*obj) + 2, *flags);
+        }
+        let sp = m.regs.sp() as u32;
+        m.write16(m.regs.ss, sp, 0x0000);
+        m.write16(m.regs.ss, sp.wrapping_add(2), 0x0020);
+        super::auto::func_604e(&mut m);
+
+        let mut lifted = Vec::new();
+        for i in 0..8u32 {
+            let v = m.read16(GS, OUT + i * 2);
+            if v == 0xFFFF {
+                break;
+            }
+            lifted.push(v);
+        }
+
+        let mut native = crate::vm::VmMachine::new();
+        native.directory = entries.iter().map(|(o, k, _)| (*o, *k)).collect();
+        for (obj, _, flags) in entries {
+            native.rec_write_pub(obj + 2, flags);
+        }
+        assert_eq!(
+            lifted,
+            native.build_active_object_list(),
+            "the directory walk diverged"
+        );
+        assert_eq!(lifted, vec![0x0100, 0x0300], "stops at the kind!=1 entry");
+    }
+
     /// The DRAWN-WIDTH accumulator against its lift (`func_3192`).
     ///
     /// FIX #59 established that `gs:0x27CD` counts GLYPH advances only — the space
