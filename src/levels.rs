@@ -286,13 +286,27 @@ pub fn world_resource_id(stem: &str) -> Option<u8> {
         .map(|e| e.index)
 }
 
-/// The 8-byte header every `.ext` world file begins with — verified identical across the
-/// planet worlds (venusia/eden/magnus/black/kortex/pterra/…) AND the cyberspace levels
-/// (cyber/cyber2/cyber3). So cyberspace is a world in the same format as the planets, not
-/// a special minigame data blob; decoding the world format decodes all of them.
-pub const EXT_WORLD_MAGIC: [u8; 8] = [0x02, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x81];
+/// The invariant head of a `.ext` world file, MEASURED ACROSS ALL 50 SHIPPED
+/// WORLDS rather than sampled.
+///
+/// The previous constant here was the full eight bytes
+/// `02 00 00 01 00 00 00 81`, described as "verified identical across the planet
+/// worlds AND the cyberspace levels". That claim was false and the code built on
+/// it rejected 13 of the 50 shipped worlds: byte 7 is `0x81` in 37 files, `0x80`
+/// in 10, `0x84` in one and `0x8B` in another, and one file has `0x02` at byte 3
+/// where the rest have `0x01`. The test that "verified" it named eight worlds by
+/// hand, all of which happen to sit in the 37 (audit-fixes #228).
+///
+/// What every file does share is the first three bytes. That is a weak signature,
+/// and it is stated as one: THE GAME NEVER SNIFFS THESE BYTES. It loads a world by
+/// resource ID through `resource_load_by_id` (`0x3FC7`), so there is no decoded
+/// validation rule to port. [`is_ext_world`] is a PORT-SIDE test helper, not a
+/// transcription, and the varying bytes are left undescribed because nothing has
+/// decoded what they mean.
+pub const EXT_WORLD_MAGIC: [u8; 3] = [0x02, 0x00, 0x00];
 
-/// Whether `data` is a `.ext` world file (begins with [`EXT_WORLD_MAGIC`]).
+/// Whether `data` looks like a `.ext` world file. A port-side heuristic — see
+/// [`EXT_WORLD_MAGIC`] for why there is no game rule to copy here.
 pub fn is_ext_world(data: &[u8]) -> bool {
     data.len() >= EXT_WORLD_MAGIC.len() && data[..EXT_WORLD_MAGIC.len()] == EXT_WORLD_MAGIC
 }
@@ -854,13 +868,24 @@ mod tests {
         let dir = ["output/_tmp_iso", "../output/_tmp_iso"]
             .iter().map(std::path::Path::new).find(|p| p.exists());
         let Some(dir) = dir else { return };
+        // SWEEP every shipped world, do not sample. The eight names this test
+        // used to list all sat in the 37 files whose eighth byte is 0x81, which
+        // is exactly why the old constant's failure on the other 13 went unseen.
         let mut checked = 0;
-        for name in ["VENUSIA", "EDEN", "MAGNUS", "BLACK", "KORTEX", "PTERRA", "CYBER", "CYBER2"] {
-            let p = dir.join(format!("{name}.EXT"));
+        for entry in std::fs::read_dir(dir).expect("the world directory reads") {
+            let p = entry.expect("a directory entry").path();
+            if p.extension().and_then(|e| e.to_str()) != Some("EXT") {
+                continue;
+            }
             let Ok(data) = std::fs::read(&p) else { continue };
-            assert!(is_ext_world(&data), "{name}.EXT begins with the shared world magic");
+            assert!(
+                is_ext_world(&data),
+                "{} is not recognised as a world file",
+                p.display()
+            );
             checked += 1;
         }
+        assert!(checked >= 40, "only {checked} worlds swept; the set is ~50");
         // A non-world byte string is rejected.
         assert!(!is_ext_world(b"not a world file"));
         let _ = checked;

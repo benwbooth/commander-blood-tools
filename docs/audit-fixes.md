@@ -7053,3 +7053,43 @@ hex literals sitting next to an address constant is usually not two facts. It is
 one fact and its location, and the location makes the array checkable. This tree
 has more such pairs — `check_offset_pairs.py` already validates 21 DS/file pairs,
 and the same idea applies to any table whose base the port already knows.
+
+## #228 — a new checker's first run found a real bug in its first minute
+
+`tools/check_literal_tables.py` generalises #227: pack every `const NAME: [T; N]`
+in the port little-endian and look for those bytes in the shipped images. A table
+that IS in the image can be read instead of trusted; one that is ABSENT wants a
+reason.
+
+Ten tables qualified. Five are in `BLOODPRG.EXE` at unique offsets — the two font
+tables at `0x14C22`/`0x14CD2` (matching `GAME_FONT_WIDTH`'s existing citation), the
+two SQUARE_CAPS tables, and `LOCATION_PANEL_BOX`. Five are absent.
+
+One of those five was a genuine defect. `EXT_WORLD_MAGIC` was eight bytes,
+`02 00 00 01 00 00 00 81`, with a doc claiming it was "verified identical across
+the planet worlds AND the cyberspace levels". Measuring all 50 shipped `.EXT`
+files:
+
+```text
+   0200000100000081  x37      <- the transcribed value
+   0200000100000080  x10
+   0200000200000000  x1
+   0200000100000084  x1
+   020000010000008b  x1
+```
+
+`is_ext_world` therefore REJECTED 13 of 50 shipped worlds. The test that
+"verified" the claim named eight worlds by hand — and all eight sit inside the 37.
+The sample chose the evidence that confirmed it.
+
+Fixed on both axes. The constant is now the three bytes every file actually
+shares, documented as a WEAK signature and as a PORT-SIDE HEURISTIC: the game
+never sniffs these bytes, it loads worlds by resource ID through
+`resource_load_by_id` (`0x3FC7`), so there is no decoded rule to copy and the
+varying bytes are left undescribed because nothing has decoded what they mean.
+The test now sweeps the directory and asserts it saw at least 40 files, so a
+future narrowing of the constant cannot hide behind a lucky sample.
+
+The lesson is the same one as #210's uniqueness check, arriving from the other
+side: where the candidate set is enumerable — 180 frames, 95 directory slots, 50
+world files — SWEEP IT. Sampling proves the sample.
