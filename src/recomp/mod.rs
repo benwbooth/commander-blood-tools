@@ -1191,6 +1191,47 @@ mod tests {
         }
     }
 
+    /// The ENTITY STATE-ADVANCE against its lift (`func_41d1`).
+    ///
+    /// `0x41D1` reads the flags word of entity `AX` at `gs:[0x6212 + id<<5]`, and
+    /// when bit7 (ACTIVE) and bit0 (STATE0) are both set clears bit0 and sets
+    /// bit1 — then stores the word back UNCONDITIONALLY, even on the paths that
+    /// changed nothing. Swept over every 8-bit flag value.
+    #[test]
+    fn native_entity_advance_state_matches_the_lift() {
+        const GS: u16 = 0x2600;
+        const TABLE_DS: u32 = 0x6212;
+        const ID: u16 = 3;
+        let addr = TABLE_DS + u32::from(ID) * 32;
+
+        for flags in 0u16..=0xFF {
+            let mut m = Machine::new();
+            m.regs.ds = GS;
+            m.regs.gs = GS;
+            m.regs.ss = GS;
+            m.regs.set_sp(0xFF00);
+            m.write16(GS, addr, flags);
+            m.regs.set_ax(ID);
+            let sp = m.regs.sp() as u32;
+            m.write16(m.regs.ss, sp, 0x0000);
+            m.write16(m.regs.ss, sp.wrapping_add(2), 0x0020);
+            super::auto::func_41d1(&mut m);
+            let lifted = m.read16(GS, addr);
+
+            // NOT `populate(flags, ..)` — that applies the ACTIVATION formula
+            // (`([si]&4)|0x83` at 0x40D0) rather than storing the word, so a raw
+            // 0x0000 came back as 0x0082. Set the flags directly.
+            let mut e = crate::entity::EntityObject::populate(0, (0, 0), 0, (0, 0));
+            e.flags = flags;
+            e.advance_state();
+            assert_eq!(
+                lifted, e.flags,
+                "flags {flags:#06x}: lift {lifted:#06x} vs native {:#06x}",
+                e.flags
+            );
+        }
+    }
+
     /// The TEXT MEASURE routine against its lift (`func_30cd`).
     ///
     /// `0x30CD` picks a face from `AX` — 0 selects the square-caps xlat/widths at

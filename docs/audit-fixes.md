@@ -2766,3 +2766,31 @@ CHOICE, not the original's behaviour, and the difference is now written where th
 function is rather than left for someone to rediscover as a mystery. That is the
 same standard as the special-slot removal (#82) — state the divergence, say why it
 is latent, and let the next reader decide.
+
+## FIX #84 — the entity pair: a stale citation and an exhaustive sweep
+
+Fourth twin differential, and it found a citation pointing at the wrong routine.
+
+`EntityObject::toggle` cited `0x420D` as the toggle family. `re/labels.csv`
+CORRECTED `0x420D` long ago to `sprite_slot_set_draw_position` — the nav
+projector's `AX=id, BX=x, CX=y` setter, which is not a toggle at all. The
+correction never reached the port. Repointed at `0x428C` and its siblings, with
+the actual sequence quoted (`or al,al / jns`, `xor al,0x40`, `test al,1 / je`,
+`or al,2`) and the detail that the state-advance test happens AFTER the toggle —
+which the port already had right.
+
+`advance_state` is now swept EXHAUSTIVELY against `func_41d1`: all 256 flag
+values, comparing the stored word. They agree everywhere, including the paths
+where the original stores an unchanged word back.
+
+A HARNESS BUG WORTH RECORDING. The first run failed on input `0x0000` with
+"lift 0x0000 vs native 0x0082". The port was fine; my harness built the entity
+with `EntityObject::populate(flags, ..)`, and `populate` applies the ACTIVATION
+formula `([si]&4)|0x83` from `0x40D0` rather than storing the word. So the test
+was comparing "advance the state of a freshly activated entity" against "advance
+the state of a raw one". Setting `flags` directly fixed it.
+
+That is the fourth harness-side failure this session mistaken for a port defect at
+first sight — after the DS/file pairing, the labels prose, and the `[bp]`-defaults-
+to-SS trap in #82. The reflex to check the harness before the subject is worth
+more than any individual finding.

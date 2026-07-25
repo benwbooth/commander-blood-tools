@@ -62,8 +62,24 @@ impl EntityObject {
         }
     }
 
-    /// The decoded toggle-family behaviour (`0x420d`/`0x428c`): only when active, toggle
-    /// `mask`, and if STATE0 is set also set STATE1 (the shared state-advance side effect).
+    /// The decoded toggle-family behaviour (`0x428C`, and its siblings `0x4270`,
+    /// `0x42AB`, ...): only when active, toggle `mask`, then if STATE0 is set —
+    /// tested AFTER the toggle, as the original does — also set STATE1.
+    ///
+    /// ```text
+    ///   0x4299  or al,al / jns          inactive -> skip, and do not even store
+    ///   0x429D  xor al,0x40             the family member's own bit
+    ///   0x429F  test al,1 / je          the shared state-advance...
+    ///   0x42A3  or al,2                 ...only when STATE0 survived the toggle
+    /// ```
+    ///
+    /// THE CITATION USED TO SAY `0x420D`, which is not a toggle at all:
+    /// `re/labels.csv` corrected it to `sprite_slot_set_draw_position` (the nav
+    /// projector's `AX=id, BX=x, CX=y` setter). The correction never reached here.
+    ///
+    /// The original toggles a LOW-BYTE bit (`xor al`); this takes an arbitrary
+    /// `mask`, which is a port generalisation — no caller in the game sets a high
+    /// bit this way.
     pub fn toggle(&mut self, mask: u16) {
         if !self.is_active() {
             return;

@@ -590,9 +590,9 @@ INIT	src/entity.rs	21	const		UNVERIFIED	/// The initial flags an object is popul
 EntityObject	src/entity.rs	26	struct		UNVERIFIED	
 populate	src/entity.rs	42	fn		UNVERIFIED	/// Populate an object as the decoded `entity_object_populate` routines do: flags = /// `(source & 0x04) | 0x83`, and `init_pos` backs up `pos`.
 is_active	src/entity.rs	53	fn		UNVERIFIED	/// Whether the object is active (`+0x00 & 0x80`).
-advance_state	src/entity.rs	59	fn	0x41d1	ASM?	/// The decoded state advance (`0x41d1`): only when active and STATE0 is set, clear /// STATE0 and set STATE1.
-toggle	src/entity.rs	67	fn	0x420d,0x428c	ASM?	/// The decoded toggle-family behaviour (`0x420d`/`0x428c`): only when active, toggle /// `mask`, and if STATE0 is set also set STATE1 (the shared state-advance side effect).
-reset_position	src/entity.rs	78	fn		UNVERIFIED	/// Reset the object's position to its populated initial backup (`+0x14/+0x16`).
+advance_state	src/entity.rs	59	fn	0x41d1	ORACLE	/// The decoded state advance (`0x41d1`): only when active and STATE0 is set, clear /// STATE0 and set STATE1.
+toggle	src/entity.rs	83	fn	0x428C,0x4270,0x42AB,0x4299,0x429D,0x429F	ASM	/// The decoded toggle-family behaviour (`0x428C`, and its siblings `0x4270`, /// `0x42AB`, ...): only when active, toggle `mask`, then if STATE0 is set — /// tested AFTER the toggle, as the original 
+reset_position	src/entity.rs	94	fn		UNVERIFIED	/// Reset the object's position to its populated initial backup (`+0x14/+0x16`).
 ExtWorld	src/ext.rs	23	struct		UNVERIFIED	
 ascending_triple_records	src/ext.rs	39	fn		UNVERIFIED	/// The records that are strictly-ascending index triples (`a<b<c`). In some worlds /// (venusia 79%, ekatomb3 71%) these dominate — consistent with triangle-mesh face /// connectivity there — but in 
 ascending_triple_percent	src/ext.rs	49	fn		UNVERIFIED	/// The fraction (0..100) of records that are strictly-ascending triples — the /// diagnostic that varies per world (venusia ~79%, magnus ~0%).
@@ -632,8 +632,8 @@ SQUARE_CAPS_CHAR_MAP	src/font.rs	621	const	0x7362,0x14782	DATA	/// CP437 -> squa
 square_caps_glyph_index	src/font.rs	641	fn	0x7362	ASM?	/// Square-caps glyph index for a character, via the game's own xlat at `DS:0x7362`. /// /// The table FOLDS CASE itself (`'a'` and `'A'` both map to glyph 0) and maps space to /// glyph 47, so the po
 square_caps_glyph	src/font.rs	649	fn		UNVERIFIED	
 square_caps_advance	src/font.rs	655	fn	0x7412	ORACLE	/// This glyph's advance, from the game's width table at `DS:0x7412`.
-square_caps_text_width	src/font.rs	669	fn	0x30CD,0x30FE,0x84AD,0x84B3	ORACLE	/// Rendered pixel width of a square-caps string. /// /// This is the measure routine at `0x30CD` transcribed: `lodsb` / `xlatb` / /// `add dl, [di+glyph]` accumulating each glyph's width, then `sub a
-draw_square_caps	src/font.rs	681	fn		UNVERIFIED	/// Draw square-capitals text (list menus / choice boxes) at (x, y) in `color`. /// /// Every glyph now comes from the binary table, so there is no longer a fallback into /// the thin built-in font — 
+square_caps_text_width	src/font.rs	677	fn	0x30CD,0x30FE	ORACLE	/// Rendered pixel width of a square-caps string. /// /// This is the measure routine at `0x30CD` transcribed: `lodsb` / `xlatb` / /// `add dl, [di+glyph]` accumulating each glyph's width, then `sub a
+draw_square_caps	src/font.rs	689	fn		UNVERIFIED	/// Draw square-capitals text (list menus / choice boxes) at (x, y) in `color`. /// /// Every glyph now comes from the binary table, so there is no longer a fallback into /// the thin built-in font — 
 HandTri	src/gpu.rs	14	struct		INFRA	
 GpuPresenter	src/gpu.rs	16	struct		INFRA	
 make_depth	src/gpu.rs	534	fn		INFRA	
