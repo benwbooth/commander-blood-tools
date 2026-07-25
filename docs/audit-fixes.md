@@ -3395,3 +3395,39 @@ says:
 the dispatch bound — the distinction recorded in commit aa8a3b8.
 
 Registered as a lib test. Settled: 487 -> 515 of 2143.
+
+## #105 — layout identities are evidence too, and one ledger "improvement" was measured and reverted
+
+`DIALOGUE_FONT_ASCII_MAP_LEN = 176` appears as an immediate nowhere, because it is
+not one: the map runs from `0x14C22` to the advance table at `0x14CD2`, and
+`0x14CD2 - 0x14C22 = 0xB0`. That LAYOUT IDENTITY is how the 128-vs-176 truncation
+was settled in the first place, and it is mechanical, so
+`check_cited_immediates.py` now recognises a value that equals the distance
+between two addresses the same doc cites.
+
+Two ledger blind spots, one fixed and one rejected after measuring it:
+
+* **Plain `//` comments were not read as evidence.** Only `///` and `//!` counted,
+  so a constant declared inside a function body -- where a doc comment on a local
+  item is unidiomatic -- could never carry an origin. The three `TEXT = 0xE8`
+  colour constants in `engine.rs` are each documented with a `//` citation
+  (`mov al,0xE8` @`0x14F7` and @`0x8565`), all three verified against the
+  disassembly, and none of them settleable. Fixed: 334 -> 367 rows with an origin.
+
+* **Letting a doc run carry across consecutive items was NOT kept.** It looked
+  like a large win -- 367 -> 594 rows with an origin -- and the motivation was
+  real: `const TEXT` and `const TEXT_SELECTED` share one comment block. But
+  sampling the result showed most of the gain was BLEED. A long run of
+  `pub const` lines in `bloodprg.rs` handed the font map's "176, NOT 128" doc to
+  `RENDER_SPRITE_BLIT_RAW_OPAQUE_OFFSET` and `SHIP_3D_TRANSITION_STATE_OFFSET`,
+  which have nothing to do with it. An origin asserts that a row IS evidenced, so
+  a false one is worse than a missing one: it makes a row look settleable and
+  invites settling it on someone else's citation. Reverted; the grouped constants
+  got their own comments instead, which is the honest fix and costs three lines.
+
+`audit_settle.py` also grew a `file:line:item` form. It correctly refuses to
+settle a name that is not unique in its file -- settling the wrong function is the
+failure mode it exists to prevent -- but it had no way to disambiguate, so three
+identically-named local constants were unsettleable no matter how well evidenced.
+
+Settled: 515 -> 522 of 2143.

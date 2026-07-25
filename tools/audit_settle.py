@@ -37,13 +37,25 @@ def main():
     counts = Counter((r["item"], r["file"]) for r in rows)
     changed, refused, missing = [], [], set(wanted)
     for r in rows:
-        keys = {r["item"], f"{r['file']}:{r['item']}"}
+        # `file:line:item` disambiguates a name that appears more than once in a
+        # file -- local constants inside different functions share names (three
+        # `TEXT` colour constants in engine.rs), and without a line-qualified form
+        # they were unsettleable no matter how well evidenced.
+        keys = {
+            r["item"],
+            f"{r['file']}:{r['item']}",
+            f"{r['file']}:{r['line']}:{r['item']}",
+        }
         hit = keys & wanted
         if not hit:
             continue
         missing -= keys
-        if counts[(r["item"], r["file"])] > 1:
-            refused.append(f"{r['item']}  {r['file']}  (name not unique in file)")
+        line_qualified = f"{r['file']}:{r['line']}:{r['item']}" in wanted
+        if counts[(r["item"], r["file"])] > 1 and not line_qualified:
+            refused.append(
+                f"{r['item']}  {r['file']}  (name not unique in file -- qualify as "
+                f"{r['file']}:{r['line']}:{r['item']})"
+            )
             continue
         if not r["origin"] and status == "ASM":
             refused.append(f"{r['item']}  {r['file']}  (ASM needs a cited address)")

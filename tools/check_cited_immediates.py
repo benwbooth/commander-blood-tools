@@ -159,7 +159,7 @@ def main():
     md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_16)
     md.detail = True
 
-    ok, bad = [], []
+    ok, bad, layout = [], [], {}
     for path, line, name, value, addrs in constants():
         found = False
         for a in addrs:
@@ -174,8 +174,26 @@ def main():
             if value in immediates_near(mz, md, a):
                 found = True
                 break
+        # LAYOUT IDENTITY: a table's length is the distance to the next table, so
+        # the value is arithmetic on two cited addresses and appears as an
+        # immediate nowhere. `DIALOGUE_FONT_ASCII_MAP_LEN = 176` is exactly
+        # 0x14CD2 - 0x14C22, which is how the 128-vs-176 truncation was settled.
+        if not found:
+            for i, a in enumerate(addrs):
+                for b in addrs[i + 1:]:
+                    if value and abs(a - b) == value:
+                        found = True
+                        layout[name] = (a, b)
+                        break
+                if found:
+                    break
         if found:
-            ok.append((path, line, name, value, a, matching_insn(mz, md, a, value)))
+            if name in layout:
+                lo, hi = layout[name]
+                insn = f"layout identity: {max(lo,hi):#07x} - {min(lo,hi):#07x}"
+            else:
+                insn = matching_insn(mz, md, a, value)
+            ok.append((path, line, name, value, a, insn))
         else:
             bad.append((path, line, name, value, addrs))
 

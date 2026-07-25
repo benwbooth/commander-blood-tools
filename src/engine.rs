@@ -2087,7 +2087,9 @@ impl EngineState {
             bw as i32,
             bh as i32,
         );
-        const TEXT: u8 = 0xE8; // mov al,0xE8 @0x14F7
+        // Text index 0xE8 — `mov al,0xE8` @0x14F7, feeding the string draw at
+        // `0x299:0xBB5`.
+        const TEXT: u8 = 0xE8;
         for (text, (x, y)) in [
             (Self::CONFIRM_TITLE, Self::CONFIRM_TITLE_POS),
             (Self::CONFIRM_YES, (Self::CONFIRM_YES_REGION.0, Self::CONFIRM_YES_REGION.1)),
@@ -2162,7 +2164,10 @@ impl EngineState {
         //   0x8595  mov al,0xFE                 ...but 0xFE while the mouse is ON
         //                                        (`test byte gs:[0xA3E],1` @0x858D)
         const TEXT: u8 = 0xE8;
+        // `mov al,0xEF` @0x858B — the selected row.
         const TEXT_SELECTED: u8 = 0xEF;
+        // `mov al,0xFE` @0x8595 — selected AND the mouse is on it
+        // (`test byte gs:[0xA3E],1` @0x858D).
         const TEXT_SELECTED_MOUSE: u8 = 0xFE;
         let rows = labels.len().min(8);
         let widest = labels
@@ -2283,7 +2288,10 @@ impl EngineState {
     /// it applied to all of them. Labels of different widths belong at different
     /// x, and flush-left is the wrong SHAPE regardless of the constant.
     pub fn draw_list_menu(&mut self, labels: &[String], selected: Option<usize>) {
+        // Same row colours as the choice box: `mov al,0xE8` @0x8565 unselected,
+        // `mov al,0xEF` @0x858B selected.
         const TEXT: u8 = 0xE8;
+        // `mov al,0xEF` @0x858B — the selected row.
         const TEXT_SELECTED: u8 = 0xEF;
         let rows = labels.len().min(12);
         let top = Self::choice_box_top_y(rows);

@@ -134,7 +134,16 @@ for root, _, files in os.walk(SRC):
                     in_tests = False
                     test_depth = None
                     # fall through: this line may itself declare an item
-            if stripped.startswith("///") or stripped.startswith("//!"):
+            # `//` counts too, not just `///`. Constants inside a function body are
+            # documented with plain comments (a doc comment on a local item is
+            # unidiomatic), so restricting to `///` left every in-function constant
+            # with no origin and therefore permanently unsettleable -- the same
+            # blind spot as attributes breaking the association.
+            if (
+                stripped.startswith("///")
+                or stripped.startswith("//!")
+                or stripped.startswith("//")
+            ):
                 doc.append(stripped)
                 continue
             m = re.match(
@@ -189,6 +198,14 @@ for root, _, files in os.walk(SRC):
                     "evidence": doctext[:200],
                 }
             )
+            # Cleared after every item. Letting a doc run carry across CONSECUTIVE
+            # items (so a group comment could cover `const TEXT` /
+            # `const TEXT_SELECTED`) looked like a recall win -- 367 -> 594 rows
+            # with an origin -- but most of that was bleed: a long run of
+            # `pub const` lines in bloodprg.rs handed the font map's "176, NOT 128"
+            # doc to unrelated sprite and ship-3D offsets. An origin asserts the row
+            # IS evidenced, so a false one is worse than a missing one. Grouped
+            # constants get their own comment instead.
             doc = []
 
 # Carry forward hand-upgraded statuses, but only onto rows the key identifies
