@@ -1372,6 +1372,15 @@ const ASSIGN_5: [u8; 7] = [0xAD, 0xAF, 0xB2, 0xB3, 0xBA, 0xBB, 0xBC];
 /// `gs:[bx+0x6D60]` at that fixed index, giving `0x3A` in the shipped image. The
 /// selector's other kinds hold different values (`kind0=0x08, kind4=0x1C, kind9=0x0A`),
 /// and the game never consults them here.
+/// The TALK field offset — matrix entry `[selector 0x13][column 1]` at
+/// `DS:0x6D60`, not an immediate anywhere.
+///
+/// `0x6664` computes the address directly rather than going through the `BSF`
+/// resolver: `mov ax,0x13` / `shl ax,4` (selector * 16) / `inc ax` (column 1) /
+/// `mov al,gs:[bx+0x6d60]`. Column 1 is kind bit 1, i.e. kind 2 — the code knows
+/// the kind here, so it hardcodes the column instead of resolving it.
+///
+/// Pinned to the image by `field_matrix_entries_match_the_constants`.
 const TALK_FIELD: u16 = 0x3A;
 /// The speaker's location field: `vm_field_offset(0x11, kind)` for **kind 1**.
 ///
@@ -1391,6 +1400,10 @@ const TALK_FIELD: u16 = 0x3A;
 /// constant to any non-kind-1 record would silently read the wrong field.
 ///
 /// Contrast [`TALK_FIELD`], where the BINARY itself hardcodes the kind-1 slot.
+/// The LOCATION field offset — matrix entry `[selector 6][column 2]` (and
+/// `[9][8]`) at `DS:0x6D60`, read through `vm_field_offset` (`0x6023`).
+///
+/// Pinned to the image by `field_matrix_entries_match_the_constants`.
 const LOCATION_FIELD: u16 = 24;
 const SPECIAL_OBJECT_SLOT_COUNT: usize = 16;
 const VM_FIELD_OFFSET_SELECTOR_PRESENTATION_HANDOFF: u8 = 0x02;
@@ -6808,6 +6821,36 @@ pub fn decompile_script(
 
 #[cfg(test)]
 mod tests {
+
+    /// `TALK_FIELD` and `LOCATION_FIELD` are ENTRIES IN THE FIELD MATRIX at
+    /// `DS:0x6D60`, not immediates — which is why the immediate checker reports
+    /// them as needing reading. `0x6664` fetches the first with
+    /// `mov ax,0x13 / shl ax,4 / inc ax / mov al,gs:[bx+0x6d60]`, i.e.
+    /// `matrix[0x13][1]`.
+    ///
+    /// Reads the matrix out of the image rather than restating it, so a constant
+    /// that drifts from the table fails here.
+    #[test]
+    fn field_matrix_entries_match_the_constants() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        let base = 0xD420 + 0x6D60;
+        let at = |selector: usize, column: usize| exe[base + selector * 16 + column] as u16;
+
+        assert_eq!(at(0x13, 1), TALK_FIELD, "matrix[0x13][1] is the talk field");
+        assert_eq!(at(6, 2), LOCATION_FIELD, "matrix[6][2] is the location field");
+        assert_eq!(at(9, 8), LOCATION_FIELD, "and the kind-8 column agrees");
+
+        // Selector 0 is uniform 0x02 across its live columns -- a field every kind
+        // shares. If that ever differs per column, code treating it as one value
+        // needs revisiting.
+        for column in 0..11 {
+            assert_eq!(at(0, column), 2, "selector 0 column {column}");
+        }
+    }
 
     /// The built-in objects are the game's OWN name table at `DS:0x67BE`, packed
     /// NUL-terminated: blood, orxx, Honk, menu, arche, cryobox, Ark, Scruter_Jo,

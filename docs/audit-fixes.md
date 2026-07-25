@@ -5823,3 +5823,33 @@ only judgement is which NAME leads. A "keep the better one" merge would have
 discarded a true statement in this row and I would not have noticed.
 
 `check_opcode_handlers.py` still resolves all 29 opcode constants afterwards.
+
+## #187 — two constants that live in a table, not an instruction
+
+`TALK_FIELD = 0x3A` and `LOCATION_FIELD = 0x18` were both NEEDS-READING, and both
+for the same reason: they are ENTRIES IN THE FIELD MATRIX at `DS:0x6D60`, so no
+instruction carries them as an immediate.
+
+`LOCATION_FIELD` sits at `[selector 6][column 2]` (and `[9][8]`), reached through
+`vm_field_offset` (`0x6023`). `TALK_FIELD` is `[0x13][1]`, and `0x6664` fetches it
+WITHOUT the resolver:
+
+```text
+  0x6664  mov ax,0x13          selector 19
+  0x6667  shl ax,4             * 16
+  0x666A  inc ax               column 1
+  0x666D  mov al,gs:[bx+0x6d60]
+```
+
+Column 1 is kind bit 1 — kind 2. The code knows the kind at that point, so it
+hardcodes the column instead of resolving it, which is why the constant looked
+uncited: the citation was right and pointed at a table read.
+
+`field_matrix_entries_match_the_constants` now reads the matrix out of the image
+and pins both, plus the observation that selector 0 is uniform `0x02` across its
+live columns — a field every kind shares, which is worth a failing test if it ever
+stops being true.
+
+Both settled DATA. That is the fourth structural class the immediate checker
+cannot see, after dispatch indices, shift counts and layout identities: a value
+fetched from a data table by an indexed read.
