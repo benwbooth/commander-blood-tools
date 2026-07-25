@@ -2794,3 +2794,31 @@ That is the fourth harness-side failure this session mistaken for a port defect 
 first sight — after the DS/file pairing, the labels prose, and the `[bp]`-defaults-
 to-SS trap in #82. The reflex to check the harness before the subject is worth
 more than any individual finding.
+
+## FIX #85 — the save-name editor does not track its own length
+
+Fifth twin differential. `0x1DD8` is the edit law: Enter commits unless the length
+is zero, digits and lowercase only, fourteen characters, backspace steps back and
+writes a SPACE. The port's `save_ui_key` matches it — verified key by key against
+`func_1dd8`, comparing the committed name after each keystroke.
+
+WHAT THE FIRST RUN EXPOSED, and it is a property of the ORIGINAL rather than a
+harness slip this time. The lift reported `"b"` where the port had `"ab"`: the
+second character had overwritten the first. `0x1DD8` reads the current length from
+`[0x272E]` and stores at `[bx+si]` — but never advances it. A whole-image search
+for writers finds exactly two: `mov word [0x272E],0` at `0x1BF3`, and an `inc` at
+`0x1C05` inside a loop that SCANS the buffer counting characters up to a NUL or a
+space.
+
+So the editor does not maintain its own cursor. The surrounding flow re-derives it
+from the buffer contents between keystrokes, which is why the buffer is
+space-padded rather than NUL-terminated — a space is both "no character here" and
+"stop counting". That also explains the shipped `blood.sav` reading
+`"ab             \0"`, and why backspace writes `0x20` instead of truncating: it
+IS the deletion, because the rescan then stops one character earlier.
+
+The harness now models that rescan, and the two agree across typing, rejected
+uppercase, the 14-character cap, and backspace. `save_ui_key` moves to `ORACLE`.
+
+Recorded at `DS:0x272E` in labels.csv so the next harness does not lose an hour to
+the same thing.

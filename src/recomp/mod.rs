@@ -1191,6 +1191,84 @@ mod tests {
         }
     }
 
+    /// The SAVE-NAME EDIT LAW against its lift (`func_1dd8`).
+    ///
+    /// `0x1DD8` reads the key from `[0xB15]` and the current length from
+    /// `[0x272E]`, editing the 16-byte buffer at `DS:0x273B`:
+    ///
+    /// ```text
+    ///   0x1DED  cmp al,0x0D            ENTER: commit unless the length is 0
+    ///   0x1E02  cmp al,0x30 / 0x39     digits...
+    ///   0x1E0A  cmp al,0x61 / 0x7A     ...and lowercase only
+    ///   0x1E12  cmp bl,0x0E / je       fourteen characters, then no more
+    ///   0x1E1B  cmp al,8               BACKSPACE: `dec bx` then write a SPACE
+    /// ```
+    ///
+    /// The port keeps a `String` and `pop()`s; the original keeps a fixed buffer
+    /// and writes `0x20` over the deleted character. Both give the same NAME —
+    /// the directory records are space-padded, which is why the shipped
+    /// `blood.sav` reads `"ab             \0"` — but the buffer contents differ,
+    /// so this compares what the game would COMMIT: the buffer trimmed.
+    #[test]
+    fn native_save_ui_edit_matches_the_lifted_law() {
+        const GS: u16 = 0x2600;
+        const BUF_DS: u32 = 0x273B;
+        const KEY_DS: u32 = 0x0B15;
+        const LEN_DS: u32 = 0x272E;
+
+        // Drive the lift key by key, keeping its buffer and length in memory.
+        let mut m = Machine::new();
+        m.regs.ds = GS;
+        m.regs.gs = GS;
+        m.regs.es = GS;
+        m.regs.ss = GS;
+        m.regs.set_sp(0xFF00);
+        for i in 0..16u32 {
+            m.write8(GS, BUF_DS + i, b' ');
+        }
+        m.write16(GS, LEN_DS, 0);
+        m.write16(GS, 0x2734, 0x2900); // a slot record to commit into
+
+        let mut e = crate::engine::EngineState::new();
+        e.save_ui_active = true;
+
+        let keys: Vec<u8> = b"ab9zQ\x08cd".iter().copied().chain([8u8, b'x']).collect();
+        for key in keys {
+            m.write8(GS, KEY_DS, key);
+            let sp = m.regs.sp() as u32;
+            m.write16(m.regs.ss, sp, 0x0000);
+            m.write16(m.regs.ss, sp.wrapping_add(2), 0x0020);
+            super::auto::func_1dd8(&mut m);
+            e.save_ui_key(key);
+            // `0x1DD8` does NOT advance `[0x272E]` — the ONLY writers in the whole
+            // image are `mov word [0x272E],0` at `0x1BF3` and the `inc` at
+            // `0x1C05` inside a scan that counts buffer characters up to a NUL or
+            // a SPACE. So the length is re-derived by the surrounding flow, not by
+            // the edit routine, and a harness that calls the edit alone would keep
+            // overwriting position 0 — which is exactly what the first run showed.
+            let mut len = 0u16;
+            for i in 0..16u32 {
+                let b = m.read8(GS, BUF_DS + i);
+                if b == 0 || b == b' ' {
+                    break;
+                }
+                len += 1;
+            }
+            m.write16(GS, LEN_DS, len);
+
+            let lifted: String = (0..14u32)
+                .map(|i| m.read8(GS, BUF_DS + i) as char)
+                .collect::<String>()
+                .trim_end()
+                .to_string();
+            assert_eq!(
+                lifted, e.save_ui_name,
+                "after key {key:#04x}: lift {lifted:?} vs native {:?}",
+                e.save_ui_name
+            );
+        }
+    }
+
     /// The ENTITY STATE-ADVANCE against its lift (`func_41d1`).
     ///
     /// `0x41D1` reads the flags word of entity `AX` at `gs:[0x6212 + id<<5]`, and
