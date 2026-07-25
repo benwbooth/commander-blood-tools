@@ -2003,6 +2003,11 @@ impl ExecutionContext {
         owner_object_offset_in(&self.object_offsets, record_offset)
     }
 
+    /// The `0x6946` family's RHS substitution: an operand equal to the SPECIAL
+    /// OBJECT (`gs:0x674E`) becomes `0xFFFF` before the compare. It is a
+    /// substitution, NOT a match-anything wildcard — the reading `record_op`
+    /// carried and #127 deleted, after a transcript diff showed match-anything
+    /// made every aboard-guard pass.
     fn remap_special_rhs(&self, value: u16) -> u16 {
         if self.special_object_offset == Some(value) {
             0xffff
@@ -2011,6 +2016,11 @@ impl ExecutionContext {
         }
     }
 
+    /// Whether an operand IS the special object, i.e. whether
+    /// [`Self::remap_special_rhs`] would substitute it. Separate from the remap
+    /// because the SET path needs to know (the slot bookkeeping at `0x5FF6`/
+    /// `0x5FD8` keys off it) while the QUERY path only needs the substituted
+    /// value.
     fn is_special_rhs(&self, value: u16) -> bool {
         self.special_object_offset == Some(value)
     }
@@ -2103,11 +2113,18 @@ fn state_c_string_equals(state: &[u8], addr: u16, expected: &[u8]) -> bool {
     &state[start..end] == expected && state[end] == 0
 }
 
+/// The A6 display gate, both halves of it: the line is ACTIVE (`or cx,cx / jns`
+/// @`0x6647`) and NOT already shown (`test word es:[di+2],0x8000` @`0x665A`).
+/// Both failures take the same exit, which is why one predicate covers them.
 fn text_line_should_display(state: &[u8], line_index: u16, flags_b5: u8) -> bool {
     text_flags_are_active(flags_b5)
         && !text_line_already_shown(state_u16(state, text_line_flags_offset(line_index)))
 }
 
+/// Whether the line's presentation record holds an ACTIVE actor — the record at
+/// `line + TALK_FIELD` typed `0xC4` (`OP_ACTOR`, whose handler is `0x6C7E`). The
+/// comparison is against the OPCODE value because that is what the record's type
+/// word stores.
 fn text_presentation_record_is_active(state: &[u8], line_index: u16) -> bool {
     state_u16(state, text_presentation_record_offset(line_index)) == OP_ACTOR as u16
 }
