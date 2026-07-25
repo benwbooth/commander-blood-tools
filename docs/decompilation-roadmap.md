@@ -13,6 +13,70 @@ the first vertical slice: it exercises the asset formats, dialogue VM,
 presentation events, renderer, and audio mixer without needing the whole
 interactive game loop first.
 
+## Session addendum — 2026-07-24 (read this before trusting a "verified" row)
+
+A long audit session. The headline is not the row count, which barely moved: it is
+**what kind of defect the ledger cannot see.** Every real problem found ran between or
+beneath rows, not in them.
+
+### Fixes landed
+
+* **#43/#44 CP437** — the font's xlat table was truncated to 128 entries when the game's
+  is 176, silently dropping 14 accented glyphs; strings were decoded as UTF-8 so `é`
+  became U+FFFD before reaching the font. Fixed, plus 14 duplicated decode sites.
+* **#45/#46 `0xA6` word lists** — a record's word list is TWO sections split by `0xFFFF`
+  (spoken line, then choice menu). Six consumers; three were wrong in three different
+  ways, one of which silently DROPPED 211 of 3650 lines from extraction.
+* **#47** — four byte-identical `parse_dictionary` copies folded into one.
+* **#48** — the inline `0xA1` prefix skip was gated on mode; the handler consumes it
+  unconditionally, and the gate disagreed with the decoder's own length accounting.
+* **#41/#42** — kind-10 choice box 10px short; HONK font punctuation rotated.
+* **Provenance** — the square-caps face was HARVESTED FROM SCREENSHOTS; the real 48-glyph
+  table is in the binary at `DS:0x7442` (20-byte stride). One harvested glyph was wrong
+  and 23 letters fell back to a different typeface.
+* **Tooling** — two of three copies of the DOSBox launch still ran the attract demo;
+  `GAME1.SAV` was missing from the drive the game reads.
+
+### Three "blockers" in this document were fiction
+
+The `0x299:0x133d` sprite selector was already decoded AND ported; the "missing VGA
+planar model" is unnecessary because the copy runs in latch mode with all planes enabled;
+"Tier 3 blocked on a dependency chain" was pure functions nobody called. All three are
+now wired or retired. **Treat any remaining "blocked" claim here as unverified.**
+
+### Methods that worked, in order of yield
+
+1. **Enumerate every site**, never reason from one. This corrected the line id (29
+   writers, one from `b3`), the decoder mode flag (7 writers, 2 modelled), and the
+   record-write family (3 distinct third-words).
+2. **Layout identities** — `base + count*stride == next known table`. All nine checked
+   are exact, and they independently confirmed three corrections each originally found by
+   a different method.
+3. **Write watches WITH a positive control.** A null result is worthless without one.
+4. **Read the routine that CONSUMES the data** and follow its pointers — this found the
+   font in minutes after two failed sessions of probing.
+
+### What the ledger cannot express
+
+`byte-for-byte verification confirms a COPY, not an INTERPRETATION.` Palette colours
+192..255 and the pyramid vertices are the SAME 192 bytes, both "verified", and both
+correct — the game aliases them deliberately. Conversely `LOCATION_FIELD` and
+`TALK_FIELD` are both hardcoded offsets that match the image, but one is a matrix
+invariant and the other an assumption that holds only for kind-1 objects.
+
+### Open, with specifics
+
+* **One blocker with two faces**: no reachable savestate performs a script load, so the
+  nav destination grant and the dialogue asset-table fill are unreachable together. Needs
+  a savestate captured by a human playing the game. The launcher and save file are now
+  fixed so that is possible.
+* **Selector `0x08` gates LIST MEMBERSHIP** — the post-update ladder increments a
+  per-record counter and the draw loop skips zero-counter objects. The port models
+  neither half. Both must land together.
+* Four field selectors unmodelled (`0x05, 0x08, 0x0D, 0x0F`), all single-kind.
+* `text_selector_voice_clip_index` models a rule the binary does not contain; the real
+  dialogue voice is `prng(10)+7` re-rolled, which `main.rs` already implements correctly.
+
 ## Current Completion Status
 
 **Honest reassessment (2026-07-21):** earlier status text here overclaimed. The
