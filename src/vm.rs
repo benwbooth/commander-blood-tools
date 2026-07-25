@@ -179,13 +179,13 @@ pub const FIELD_OFFSETS: [[u8; 16]; 0x15] = [
 /// 0x6023 `bsf bx,bx`), NOT `kind & 0xF`. bsf(2)=1 -> the universal
 /// character location = obj+0x18 / talk = obj+0x3A.
 pub fn field_offset(kind: u16, field: u8) -> Option<u16> {
-    if kind == 0 {
-        return None;
-    }
-    let k = kind.trailing_zeros() as usize;
-    let f = field as usize;
-    let off = *FIELD_OFFSETS.get(f)?.get(k)?;
-    (off != 0).then_some(off as u16)
+    // ONE resolver, not two. This used to index `FIELD_OFFSETS` itself — a second
+    // copy of `vm_field_offset`'s `bsf`-column lookup, differing only in treating
+    // a zero cell as `None` rather than `Some(0)`. Both readings are usable (the
+    // original returns AX=0 and callers do `or ax,ax / je`), but two
+    // implementations of one table lookup can drift, and only one of them was
+    // swept against the lifted `func_6023`. Delegating means both are.
+    vm_field_offset(field, kind).filter(|off| *off != 0)
 }
 
 pub const OP_MIN: u8 = 0xA0;
@@ -1346,6 +1346,19 @@ pub const LOCATION_PANEL_CURSOR_RECT_SIZE: u16 = 4;
 /// `0x18` for kinds 8 and `0x10` (`FIELD_OFFSETS[0x0B]`). Read as `x` at `+0x18`
 /// and `y` at `+0x1A` by the picker at `0x92BC`.
 pub const NAV_PICK_POSITION_FIELD: u16 = 0x18;
+/// The nav picker's hit box for a KIND (`0x92BF` default, `0x92D3` black hole,
+/// `0x92FC` ship). The single copy of that ladder — `NavChartObject::hit_box` and
+/// `VmMachine::nav_chart_hit_box` both call here.
+pub fn nav_chart_hit_box_for_kind(kind: u16) -> (i32, i32) {
+    if kind & LOCATION_KIND_BLACK_HOLE != 0 {
+        NAV_PICK_BOX_BLACK_HOLE
+    } else if kind & LOCATION_KIND_SHIP != 0 {
+        NAV_PICK_BOX_SHIP
+    } else {
+        NAV_PICK_BOX_DEFAULT
+    }
+}
+
 /// Bit 1 of an object's `+2` flag word — the gate `0x6073` applies when building
 /// the active-object list, and the same bit the `0xC1` nav path (`0x6C3B`) and
 /// the entity candidate list (`0x7259`) test.
@@ -4853,16 +4866,9 @@ impl VmMachine {
         )
     }
 
-    /// The picker's per-kind hit box (`0x92BF`, `0x92D3`, `0x92FC`).
+    /// The picker's per-kind hit box for a record (`0x92BF`, `0x92D3`, `0x92FC`).
     pub fn nav_chart_hit_box(&self, object: u16) -> (i32, i32) {
-        let kind = self.rec_read(object);
-        if kind & LOCATION_KIND_BLACK_HOLE != 0 {
-            NAV_PICK_BOX_BLACK_HOLE
-        } else if kind & LOCATION_KIND_SHIP != 0 {
-            NAV_PICK_BOX_SHIP
-        } else {
-            NAV_PICK_BOX_DEFAULT
-        }
+        nav_chart_hit_box_for_kind(self.rec_read(object))
     }
 
     /// The word the black-hole endpoint rule compares against: `es:[arche+0x22]`

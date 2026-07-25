@@ -3091,3 +3091,26 @@ differential, with the reason it is safe.
 WHAT THIS SAYS ABOUT THE METHOD. The differential found the divergence; only
 reading the CONSUMER showed which side was wrong. A test that had simply asserted
 "port matches lift" here would have pushed a 65534-wide box into the renderer.
+
+## FIX #96 — two rules, two copies each: deduplicated so verification transfers
+
+The twin worklist's leftovers turned out to be duplicates rather than candidates,
+and duplicates are how a verified rule stops covering the code that uses it.
+
+**Two field-offset resolvers.** `vm_field_offset` (swept against `func_6023` over
+the whole matrix domain, FIX #81) and `field_offset` — a second `bsf`-column
+lookup differing only in returning `None` for a zero cell rather than `Some(0)`.
+Both readings are usable, since the original returns `AX=0` and callers do
+`or ax,ax / je`, but only one had been verified. `field_offset` now delegates and
+keeps its `None`-on-zero contract as a filter.
+
+**Two per-kind hit-box ladders.** `VmMachine::nav_chart_hit_box` (used by the
+picker verified against `func_92a3`, FIX #87) and `NavChartObject::hit_box` (used
+by the engine's click routing) each spelled out the same three kind tests. A box
+that stopped matching the hit-test using it would misroute clicks with nothing
+failing. Both now call one `nav_chart_hit_box_for_kind`.
+
+Neither pair had actually drifted — checked before collapsing them. The point is
+that verification attaches to a FUNCTION, and a second copy of the rule is outside
+it by construction. Three rows inherit `ORACLE` by delegation rather than by a new
+test, which is the cheapest verification there is.

@@ -207,14 +207,13 @@ pub struct NavChartObject {
 
 impl NavChartObject {
     /// The picker's per-kind hit box (`0x92BF`, `0x92D3`, `0x92FC`).
+    ///
+    /// Delegates rather than repeating the kind ladder: `VmMachine::nav_chart_hit_box`
+    /// is the same three tests, and it is the one swept against the lifted
+    /// `func_92a3`. Two copies of one rule is how a per-kind box quietly stops
+    /// matching the hit-test that uses it.
     pub fn hit_box(&self) -> (i32, i32) {
-        if self.kind & crate::vm::LOCATION_KIND_BLACK_HOLE != 0 {
-            crate::vm::NAV_PICK_BOX_BLACK_HOLE
-        } else if self.kind & crate::vm::LOCATION_KIND_SHIP != 0 {
-            crate::vm::NAV_PICK_BOX_SHIP
-        } else {
-            crate::vm::NAV_PICK_BOX_DEFAULT
-        }
+        crate::vm::nav_chart_hit_box_for_kind(self.kind)
     }
 }
 
