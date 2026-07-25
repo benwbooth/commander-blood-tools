@@ -5938,3 +5938,48 @@ words as part of the next name.
 Settled DATA. The NEEDS-READING list is now down to constants whose basis is
 genuinely elsewhere — a capture-observed frame (`CONSOLE_BAND_FRAME`), a data-
 segment base with no code reference (`STATE_BASE`, #119), and the opcode family.
+
+## #192 — the mapping I said the game did not have is a `sub`
+
+`docs/port-validation.md` justified leaving the world-destination commit unwired
+with this reasoning: the VM commit takes a target RECORD, the frontend has only a
+world NAME, and "the game never needs a name->record mapping because it commits
+the object the player CLICKED; inventing one in the port would be a fabricated
+rule."
+
+The premise was wrong, and the function that disproves it was the LAST uncited-ASM
+row in the ledger — `select_ship_3d_target_record`. Disassembling `0xB2BB`:
+
+  * the world-destination hit-test is not spatial. It is the unified list widget
+    (`0x71E:0xC48` -> `list_widget_layout_unified` `0x8428`), the same one the
+    OPTION and contact menus enter;
+  * its word list `DS:0x250B` holds `RECORD+4` pointers — pointers to the name
+    INSIDE each record;
+  * `sub ax,4` @`0xB33D` converts the selected row back to the record.
+
+So there IS a name->record mapping. It is subtraction, and it is the exact inverse
+of the `add ax,4` @`0x87D5` that builds such a list in the first place (already
+ported, as `ship_contact_menu_words`). One constant, both directions.
+
+The fallback branch is what makes the reading certain rather than plausible. When
+`DS:0x250B` is empty the widget is pointed at `DS:0x2537` with `es = ds`, so the
+names are DS-relative and NOT inside records — and the code then throws the
+subtraction away, returning `[0x251B]`, the current target. The author knew `sub 4`
+is only meaningful for record-backed names. Because `world_click_select` rejects a
+target equal to the current one, the consequence is a behavioural rule worth
+stating: THE FALLBACK LIST CAN NEVER COMMIT A NEW DESTINATION.
+
+Two corrections fell out of reading the surrounding code:
+
+1. `world_click_select`'s doc said the back row "leaves the world view
+   (`[0x24F3]=0x11`)". `0xB288` is `test byte [0x252f],1 / jne` AROUND that
+   teardown, and the selector SETS `[0x252F]` when the back row is picked
+   (`0xB331`). The back row SUPPRESSES the teardown. The doc had the branch
+   polarity inverted.
+2. `[0x252F]` has four setters, so it is not "the back-row flag". The corrected
+   doc states the polarity at the one site it verified and claims nothing wider —
+   the failure mode of #114 was exactly this kind of extrapolation.
+
+Still open, and now precisely: the frontend route. `main.rs` reaches a world via
+`targeted_world_name()`/`visit_world`, so no C1 record is written at runtime. The
+port now has every decoded piece of the real path.

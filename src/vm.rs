@@ -1494,6 +1494,11 @@ pub const LOCATION_PANEL_CURSOR_RECT_SIZE: u16 = 4;
 /// `0x18` for kinds 8 and `0x10` (`FIELD_OFFSETS[0x0B]`). Read as `x` at `+0x18`
 /// and `y` at `+0x1A` by the picker at `0x92BC`.
 pub const NAV_PICK_POSITION_FIELD: u16 = 0x18;
+
+/// A menu entry points at the record's INLINE NAME; the record is four bytes
+/// earlier. Emitted as `add ax,4` when a menu is built (`0x87D5`) and undone as
+/// `sub ax,4` when a row is selected (`0xB33D`) — one constant, both directions.
+pub const SHIP_3D_TARGET_NAME_TO_RECORD: u16 = 4;
 /// The picker's box test for one marker (`0x9308..0x932B`): the box starts two
 /// pixels up-left of the marker and BOTH bounds are inclusive (`jb`/`ja` skip only
 /// strictly outside). The single copy of that rule — `nav_chart_pick` walks record
@@ -5327,8 +5332,14 @@ impl VmMachine {
     /// clicked target record; this is what the FSM then does with it:
     ///
     /// * `0` — nothing hit: no change (returns `false`).
-    /// * `0xFFFF` — the back/exit row (`0xB288`): clears the current target and
-    ///   returns `false`; the caller leaves the world view (`[0x24F3]=0x11`).
+    /// * `0xFFFF` — the back/exit row: clears the current target and returns
+    ///   `false`. NOTE the polarity at `0xB288`, which this doc previously had
+    ///   backwards: that site is `test byte [0x252f],1 / jne` around the
+    ///   leave-the-world-view teardown (`[0x24F3]=0x11`, `[0x27D8]=0`), and the
+    ///   selector SETS `[0x252F]` when the back row is picked (`0xB331`). So the
+    ///   back row SUPPRESSES that teardown rather than causing it. `[0x252F]` has
+    ///   four setters (`0x9F40`, `0xB331`, `0xB4EA`, `0xB6A5`) and is not the
+    ///   back-row flag alone, so nothing broader is claimed for it here.
     /// * a target equal to `gs:0x251B` (`cmp ax,[0x251b]` @`0xB21A`): already
     ///   presented, so the record is NOT rewritten (returns `false`).
     /// * any other target: `gs:0x251B = target` (`0xB224`) and a C1 record
@@ -5358,6 +5369,74 @@ impl VmMachine {
         self.rec_write(at.wrapping_add(2), target);
         self.rec_write(at.wrapping_add(4), 0);
         true
+    }
+
+    /// The WORLD-DESTINATION HIT-TEST, `ship_3d_target_record_select` (`0xB2BB`) —
+    /// what produces the record [`Self::world_click_select`] commits.
+    ///
+    /// It is NOT a spatial hit-test on the nav chart. It is the unified list
+    /// widget (`0x71E:0xC48` -> `list_widget_layout_unified` `0x8428`, the same
+    /// widget the OPTION and contact menus enter), and the row it returns is
+    /// turned into a record by ARITHMETIC:
+    ///
+    /// ```text
+    ///   0xB2C3  mov si,0x250b            the primary target word list
+    ///   0xB2C6  mov es,[0x6726]          ... whose entries point into the RECORD segment
+    ///   0xB2CB  cmp word [si],-1         primary list EMPTY?
+    ///   0xB2D0  mov ax,ds / mov es,ax      -> names are DS-relative instead
+    ///   0xB2D4  mov si,0x2537              -> the inline fallback table
+    ///   0xB2D7  mov byte [0x252c],1        -> and remember that we fell back
+    ///   0xB318  lcall 0x71e:0xc48        the widget; AX = selected ROW
+    ///   0xB31D  cmp ax,-1 / xor ax,ax    no selection -> 0 (nothing hit)
+    ///   0xB326  add ax,ax / add si,ax    row -> word index
+    ///   0xB32A  mov ax,[si]              the entry: a pointer to an INLINE NAME
+    ///   0xB32C  cmp ax,-1 / je           the terminator row IS the back row: AX stays 0xFFFF
+    ///   0xB33D  sub ax,4                 NAME -> RECORD
+    ///   0xB340  test byte [0x252c],1     but on the FALLBACK list...
+    ///   0xB347  mov ax,[0x251b]          ... return the CURRENT target instead
+    /// ```
+    ///
+    /// `sub ax,4` at `0xB33D` is the exact inverse of the `add ax,4` the contact
+    /// menu applies when it emits `RECORD+4` ([`Self::ship_contact_menu_words`]
+    /// @`0x87D5`): a menu entry is a pointer to the name INSIDE the record, so
+    /// backing up four bytes lands on the record itself. This is the name->record
+    /// mapping `docs/port-validation.md` previously said the game did not have —
+    /// it has one, and it is subtraction, not a table.
+    ///
+    /// The fallback override is the proof of that reading. When the primary list
+    /// is empty the widget is fed DS-relative names (`es = ds`), which are NOT
+    /// inside records, so `sub 4` would be meaningless — and the code discards it,
+    /// returning `[0x251B]`, the current target. Since [`Self::world_click_select`]
+    /// rejects a target equal to the current one, THE FALLBACK LIST CAN NEVER
+    /// COMMIT A NEW DESTINATION. That is a behavioural rule, not an accident.
+    ///
+    /// Returns AX verbatim: `0` nothing, `0xFFFF` the back row, else the record.
+    pub fn ship_3d_target_record_select(
+        &self,
+        primary: &[u16],
+        fallback: &[u16],
+        selected_row: u16,
+    ) -> u16 {
+        // 0xB2CB: a first word of 0xFFFF means the primary list is empty. An empty
+        // slice is the same condition — the game reads a fixed buffer that always
+        // has at least the terminator.
+        let use_fallback = primary.first().copied().unwrap_or(0xFFFF) == 0xFFFF;
+        let list = if use_fallback { fallback } else { primary };
+
+        if selected_row == 0xFFFF {
+            return 0; // 0xB31D..0xB324: the widget reported no selection
+        }
+        // 0xB326..0xB32A. Past the end reads the terminator, which is the back row.
+        let entry = list.get(selected_row as usize).copied().unwrap_or(0xFFFF);
+        if entry == 0xFFFF {
+            return 0xFFFF; // 0xB32F: AX is still -1 when the entry is the terminator
+        }
+        let record = entry.wrapping_sub(SHIP_3D_TARGET_NAME_TO_RECORD); // 0xB33D
+        if use_fallback {
+            // 0xB340..0xB347: a DS name has no record; keep the current target.
+            return self.world_target.unwrap_or(0);
+        }
+        record
     }
 
     /// Insert an owner into the 16-slot special list (gs:0x6D3E, insert 0x5FF6).
@@ -10006,6 +10085,34 @@ mod tests {
         state_set_u16(&mut var, related, 1);
         assert_eq!(post_update_encounter_counter(&mut var, owner, related), None);
         assert_eq!(state_u16(&var, owner + 2), 0, "no bump -> no bit15 either");
+    }
+
+    /// `0xB2BB`: the row->record conversion, and the fallback rule that makes the
+    /// inline table unable to commit anything.
+    #[test]
+    fn ship_3d_target_select_maps_name_pointers_back_to_records() {
+        let mut m = VmMachine::new();
+        m.orxx_offset = Some(0x0200);
+        // Entries are RECORD+4 (the form `0x87D5` emits), terminated by 0xFFFF.
+        let primary = [0x0144u16, 0x0184, 0xFFFF];
+        let fallback = [0x2600u16, 0xFFFF];
+
+        assert_eq!(m.ship_3d_target_record_select(&primary, &fallback, 0), 0x0140);
+        assert_eq!(m.ship_3d_target_record_select(&primary, &fallback, 1), 0x0180);
+        // The terminator row is the back row, and so is anything past the end.
+        assert_eq!(m.ship_3d_target_record_select(&primary, &fallback, 2), 0xFFFF);
+        assert_eq!(m.ship_3d_target_record_select(&primary, &fallback, 9), 0xFFFF);
+        // 0xB31D: the widget's "no selection" is 0xFFFF and yields 0, NOT the back row.
+        assert_eq!(m.ship_3d_target_record_select(&primary, &fallback, 0xFFFF), 0);
+
+        // Primary empty -> the DS fallback list, whose names are not in records:
+        // the selection is discarded for the CURRENT target (0xB347).
+        let empty = [0xFFFFu16];
+        m.world_target = Some(0x0300);
+        assert_eq!(m.ship_3d_target_record_select(&empty, &fallback, 0), 0x0300);
+        // ... and world_click_select rejects the current target, so the fallback
+        // list can never commit a new destination.
+        assert!(!m.world_click_select(0x0300), "fallback selection is inert");
     }
 
     #[test]
