@@ -448,6 +448,41 @@ fn main() {
                 .collect();
             println!("PALBANK live 0..7:     {}", low.join(" "));
             println!("PALBANK: {} nonzero writes", rt.m.range_hits.len());
+            // CONFLICT PROBE: palette colours 192..255 (buffer + 576) occupy the same
+            // FILE bytes as the pyramid vertex table (DS:0x5D98). Dump the LIVE bytes
+            // there and compare with the image: if they differ, the game overwrites that
+            // range and the file bytes belong to the vertex table; if they match, the
+            // two genuinely alias.
+            {
+                let exe = std::fs::read("re/bin/BLOODPRG.EXE")
+                    .or_else(|_| std::fs::read("output/_tmp_iso/BLOODPRG.EXE"))
+                    .unwrap_or_default();
+                let vtx_file = 0x131B8usize;
+                let live_base = base + 576;
+                let mut same = 0usize;
+                for i in 0..192usize {
+                    if !exe.is_empty() && rt.m.mem[live_base + i] == exe[vtx_file + i] {
+                        same += 1;
+                    }
+                }
+                println!("PALCONFLICT live gs:0x5B58+576 vs image vertex bytes: {same}/192 match");
+                let live: Vec<String> = (0..8)
+                    .map(|c| {
+                        let a = live_base + c * 3;
+                        format!("({},{},{})", rt.m.mem[a], rt.m.mem[a + 1], rt.m.mem[a + 2])
+                    })
+                    .collect();
+                println!("PALCONFLICT live colours 192..199: {}", live.join(" "));
+                if !exe.is_empty() {
+                    let img: Vec<String> = (0..8)
+                        .map(|c| {
+                            let a = vtx_file + c * 3;
+                            format!("({},{},{})", exe[a], exe[a + 1], exe[a + 2])
+                        })
+                        .collect();
+                    println!("PALCONFLICT image bytes  192..199: {}", img.join(" "));
+                }
+            }
             rt.m.trace_range = None;
         }
         println!("MENUMAP done -> {}/menu_*.ppm", out.display());

@@ -1557,6 +1557,22 @@ range in use matches these bytes. If it does, the vertex table's base address is
 If the live bytes differ, the palette default is picking up vertex data the game
 overwrites before upload.
 
-Recorded as a CONFLICT rather than a bug because I cannot currently tell which side is
-mistaken, and today has repeatedly shown that the plausible reading is not reliably the
-right one.
+RESOLVED BY PROBE — the alias is REAL and neither constant is wrong.
+
+Dumped `gs:0x5B58+576` live: **192/192 bytes match the image**, so the game does not
+overwrite that range. And the two readings are simply different groupings of one stream:
+
+    bytes:  00 00 00 | 09 03 0C | 08 03 0B ...
+    as i16: 0, 2304, 3075, …          -> the port's vertices
+    as RGB: (0,0,0), (9,3,12), …      -> the port's colours
+
+Grouped by 2 they are the vertex table; grouped by 3 they are palette colours. The game
+uses BOTH: `0x2F90` uploads all 768 bytes to the DAC (`cx=0x300`), and the HUD projector
+reads `DS:0x5D98` as vertices. So the original deliberately overlays a vertex table on
+the palette's upper range, and both port constants are correct.
+
+WHAT I ALMOST GOT WRONG: while checking, I hand-grouped the bytes as `00 00 | 09 03 |
+0C 08` and concluded the port's vertices did not match the file — because I split the
+stream on the wrong boundary. Two automated comparisons had already said they matched.
+The lesson is the mirror of the earlier stride mistakes: when a hand-check contradicts a
+mechanical one, suspect the hand-check first.
