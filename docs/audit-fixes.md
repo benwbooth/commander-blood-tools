@@ -668,3 +668,36 @@ false positives, having disassembled from the OPERAND byte rather than the instr
 start. They are real — `mov word [0x1fab],0xffff` resets. Same mis-slicing that
 produced a spurious "32 mismatches" on the pyramid vertices earlier in this campaign;
 worth checking instruction boundaries before calling a match spurious.
+
+## TRACE — son.snd clip selection: chatter found, dialogue path still open
+
+Chasing how son.snd clips are chosen (to replace the invented `selector - 1` rule):
+
+    0x00B9DE  snd_clip_player     AX = clip index; table DS:0x0BBF indexed by clip*4
+    0x00B8E8  lookup              shl ax,2; add to DS:0x0BBF; read {offset,len}
+    0x00B8AB  CHATTER picker      mov ax,0xA -> prng(10); re-roll while == DS:0x0C4D;
+                                  then clip = value + 7
+
+So this caller is the AMBIENT CHATTER picker — a random clip in 7..16 that never
+repeats consecutively — which the port already models correctly in `main.rs`. It is
+NOT the dialogue-line voice path, so the `selector - 1` question is still open.
+
+Also settled on the way: `0x2DE2` IS the PRNG (`0x01CE:0x0B02`), not the "hash or
+auxiliary PRNG" the label hedged at. Every call site passes a modulus in AX (5 at
+`0x6339`, 10 at `0x8B8AB`, the VM's `0xA2` at `0x6588`), and the port already ships a
+faithful `BloodPrng::next` for that exact address.
+
+### Two mis-slicing incidents in one trace
+
+Both times, disassembling from a byte that was not an instruction boundary produced a
+confident but wrong reading:
+
+1. Starting at `0xB8AC` gave `or al,[bx+si]`, hiding `mov ax,0xA` — which is the
+   ARGUMENT to the PRNG call. Without it the call looks like it *returns* the clip
+   index rather than taking a modulus, and the whole routine reads as a selector.
+2. Earlier, starting at operand bytes made three real `mov word [0x1fab],0xffff`
+   resets look like `stosw; pop ds` false positives.
+
+The tell in both cases was a decode that did not fit its context. Disassemble from a
+known boundary (a call target, or several candidate offsets until the stream
+stabilises) before trusting a short window.
