@@ -13,11 +13,21 @@
 //!
 //! | field        | size            | source (game global) | meaning |
 //! |--------------|-----------------|----------------------|---------|
-//! | `profile`    | 2 bytes (u16 LE)| `[0x6780]`           | current script profile index (which SCRIPT set was active) |
+//! | `profile`    | 2 bytes (u16 LE)| `[0x677E]` (see below)| current script profile index (which SCRIPT set was active) |
 //! | `flags`      | 512 bytes       | `[0x6ADE]`           | the global flag/progression block (persistent world state) |
 //! | `state`      | 96 bytes        | `[0x6CDE]`           | a secondary state block |
 //! | `object_block` | variable      | far `[0x6724]`       | the runtime VM object/state table |
 //! | `work_buffer`  | variable      | far `[0xABC]`        | the object work buffer |
+//!
+//! SAVE AND LOAD USE DIFFERENT GLOBALS FOR THE PROFILE, deliberately. The writer
+//! at `0x1C63` does `mov cx,2 / mov dx,0x677E` — `vm_resource_profile_index`, the
+//! profile CURRENTLY selected. The reader at `0x1CEB` does `mov cx,2 / mov
+//! dx,0x6780` — `vm_pending_resource_profile`, the slot the `0xD2` opcode posts a
+//! REQUEST into. So loading a save does not switch script sets itself: it posts
+//! the saved profile as pending, and the main loop's normal dispatch
+//! (`0x108E` -> `0x10C5`) performs the switch on the next pass. (This module's
+//! table previously named `[0x6780]` for both, which reads as a symmetric field
+//! and misses the mechanism.)
 //!
 //! On load the game reads the profile first, reloads that script set, then reads
 //! the four state blocks and rebuilds its derived pointers. The two variable
@@ -47,6 +57,23 @@ pub struct BloodSave {
     /// object-table length; kept opaque here (see module docs).
     pub runtime: Vec<u8>,
 }
+
+/// The DS globals the writer streams from (`0x1C63`, `0x1C6D`, `0x1C72`) and,
+/// for the profile, the DIFFERENT one the reader streams into (`0x1CEB`).
+pub const SAVE_PROFILE_SOURCE_DS: u16 = 0x677E;
+pub const LOAD_PROFILE_DEST_DS: u16 = 0x6780;
+pub const FLAGS_SOURCE_DS: u16 = 0x6ADE;
+pub const STATE_SOURCE_DS: u16 = 0x6CDE;
+/// File offsets of the three `int 21h` AH=0x40 write calls' `mov cx,imm` in
+/// `vm_state_save`, so the sizes below can be checked against the code itself.
+/// Note the third pair is emitted `mov dx` FIRST then `mov cx` (`0x1C72`/`0x1C75`),
+/// where the first two are `mov cx` then `mov dx` — so the size immediate sits at
+/// `0x1C76`, not where the earlier spacing would suggest.
+pub const SAVE_WRITE_SIZE_IMMEDIATES: [(usize, usize); 3] = [
+    (0x1C61, PROFILE_SIZE),
+    (0x1C6B, FLAGS_SIZE),
+    (0x1C76, STATE_SIZE),
+];
 
 /// Byte offset/size constants of the fixed header (all little-endian).
 pub const PROFILE_SIZE: usize = 2;
@@ -161,9 +188,48 @@ mod tests {
             return;
         };
         let save = BloodSave::parse(&data).expect("real blood.sav parses");
-        assert_eq!(save.flags.len(), FLAGS_SIZE);
-        assert_eq!(save.state.len(), STATE_SIZE);
+        // Falsifiable against the REAL file: the fixed header plus the opaque
+        // runtime region must account for every byte, and the header is the three
+        // sizes the writer's `mov cx,imm` immediates carry.
+        assert_eq!(
+            PROFILE_SIZE + save.flags.len() + save.state.len() + save.runtime.len(),
+            data.len(),
+            "the parse must consume the whole file"
+        );
+        assert_eq!(HEADER_SIZE, 610);
+        assert!(
+            save.runtime.len() > HEADER_SIZE,
+            "the variable region dwarfs the header in a real save ({} bytes)",
+            save.runtime.len()
+        );
         // The profile is a small index or the 0xFFFF sentinel.
         assert!(save.profile <= 16 || save.profile == 0xFFFF);
+    }
+
+    /// The header sizes are not free constants: they are the `mov cx,imm` values
+    /// of the three `int 21h` AH=0x40 writes in `vm_state_save` (`0x1C3F`), and
+    /// the globals they stream from are the `mov dx,imm` right beside them.
+    #[test]
+    fn the_header_sizes_are_the_writers_own_immediates() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        let imm16 = |at: usize| u16::from_le_bytes([exe[at], exe[at + 1]]) as usize;
+        for (at, want) in SAVE_WRITE_SIZE_IMMEDIATES {
+            assert_eq!(imm16(at), want, "mov cx,imm at {at:#x}");
+        }
+        // ...and the source/destination globals, including the deliberate
+        // asymmetry: the writer takes the CURRENT profile, the reader posts it as
+        // PENDING for the main loop to dispatch.
+        assert_eq!(imm16(0x1C64), SAVE_PROFILE_SOURCE_DS as usize, "save mov dx");
+        assert_eq!(imm16(0x1C6E), FLAGS_SOURCE_DS as usize, "flags mov dx");
+        assert_eq!(imm16(0x1C73), STATE_SOURCE_DS as usize, "state mov dx");
+        assert_eq!(imm16(0x1CEC), LOAD_PROFILE_DEST_DS as usize, "load mov dx");
+        assert_ne!(
+            SAVE_PROFILE_SOURCE_DS, LOAD_PROFILE_DEST_DS,
+            "if these ever match, the mechanism note in the module docs is wrong"
+        );
     }
 }
