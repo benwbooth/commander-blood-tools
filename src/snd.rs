@@ -495,6 +495,65 @@ pub const SILENCE: u8 = 0x80;
 #[cfg(test)]
 mod tests {
 
+    /// The streaming core against REAL game data: a clip out of the shipped
+    /// `sn/tb.snd` bank, mixed into a buffer the same way `0xBB6D` does.
+    ///
+    /// This is the check the port's own fixtures cannot give — the bytes are the
+    /// game's, so the header rule and the mix are exercised on real content
+    /// rather than on a pattern chosen to make them pass.
+    #[test]
+    fn snd_stream_mixes_a_real_clip_from_the_shipped_bank() {
+        let mut path = std::path::PathBuf::from("output/_tmp_dat/sn/tb.snd");
+        if !path.exists() {
+            path = std::path::PathBuf::from("../output/_tmp_dat/sn/tb.snd");
+        }
+        let Ok(bank) = SndBank::read(&path) else { return };
+        let Some(clip) = (0..bank.clip_count()).find_map(|i| bank.clip(i)) else {
+            return;
+        };
+        let pcm = &clip.pcm;
+        assert!(!pcm.is_empty(), "the shipped bank has audible clips");
+        // The half-rate constant IS a time constant: it must agree with the rate
+        // formula this module already decoded, from a different routine.
+        assert_eq!(
+            snd_sample_rate(SND_HEADER_HALF_RATE_TIME_CONSTANT),
+            22222,
+            "0xD3 -> 1000000/(256-211)"
+        );
+
+        // Unsigned 8-bit PCM: real speech sits around the 0x80 midpoint rather
+        // than pinned at an extreme, which is what the mix arithmetic assumes.
+        let mean = pcm.iter().map(|&b| b as u32).sum::<u32>() / pcm.len() as u32;
+        assert!(
+            (0x40..=0xC0).contains(&mean),
+            "clip mean {mean:#x} is not centred like u8 PCM"
+        );
+
+        // Mix the real clip into a real buffer and check the decoded rule holds
+        // sample by sample: every output is the average of chunk and original.
+        let buffer_len = SND_VOICE_HEADER_LEN + 0x4000;
+        let mut data = vec![0u8; SND_VOICE_BUFFER_STRIDE as usize + buffer_len];
+        for (i, slot) in data.iter_mut().enumerate() {
+            *slot = (i % 251) as u8; // a non-uniform bed, so averaging is visible
+        }
+        data[4] = 0; // full rate, so one source byte per output sample
+        let mut stream = SndStream::from_sound_data(&data);
+        let before = stream.voices[0].buffer.clone();
+        stream.voices[0].state = SND_VOICE_STATE_ACTIVE;
+
+        let take = pcm.len().min(0x200);
+        let written = stream.mix_chunk(0x3F00, &pcm[..take]).expect("active voice");
+        assert_eq!(written, take);
+        let at = SND_VOICE_HEADER_LEN + 0x100; // |0x3F00 - 0x4000|
+        for k in 0..take {
+            assert_eq!(
+                stream.voices[0].buffer[at + k],
+                snd_mix_average(pcm[k], before[at + k]),
+                "sample {k} is not the decoded average"
+            );
+        }
+    }
+
     /// `0xBAE8..0xBB93` end to end: two voices over the loaded data, fed only
     /// while active, mixed into EXISTING sound rather than into silence.
     #[test]

@@ -6281,3 +6281,33 @@ What is left is genuinely the output path: `audio.rs` still drives cpal with thr
 independent `MusicPlayer` streams. Feeding one `SndStream` instead is mechanical
 against a tested core. A device is needed to confirm it SOUNDS right; it is no
 longer needed to know it IS right.
+
+## #202 — checking the core against the game's own bytes, and finding the real gate
+
+The obvious next move was to migrate `audio.rs` onto `SndStream`. Two things
+came out of preparing that, and the second changed the plan.
+
+First, the core is now exercised on REAL GAME DATA rather than on fixtures.
+`snd_stream_mixes_a_real_clip_from_the_shipped_bank` pulls a clip out of the
+shipped `sn/tb.snd`, mixes it into a non-uniform bed, and asserts SAMPLE BY SAMPLE
+that each output equals `snd_mix_average(clip_byte, original_byte)`. A test over
+bytes I chose can only show the code does what I think; over the game's bytes it
+shows the rule survives real content. It also checks the clip mean sits near the
+`0x80` midpoint, which is the assumption the whole averaging model rests on.
+
+It closed a loop too: `SND_HEADER_HALF_RATE_TIME_CONSTANT` (`0xD3`, from `0xBBFE`)
+must agree with `snd_sample_rate`, decoded earlier from a different routine, and
+it does — `1000000/(256-211)` = 22222 Hz. Two independent decodes, one number.
+
+Second, and the reason `audio.rs` is still not migrated: the port already parses
+the bank and plays clips, so the sources DO belong in this path — but playing
+through `SndStream` needs the DOUBLE-BUFFER SWITCH rule. When does the driver flip
+voice A to voice B, and what advances the position `gs:[0xcf3]` returns? That is
+driver-side (`snd_driver_call` `0xBB9D`, the indirect `lcall gs:[0xcdb]` and
+`gs:[0xa4a]`) and undecoded.
+
+Writing a switch policy that sounds plausible would be a fabricated timing rule
+wired into the live audio path — the same class of defect as the destination
+`compass_angle` arithmetic that #197 removed, and worse for being unhearable here.
+So the gate is named rather than stepped over: decode `0xBB9D` and the position
+call, then migrate.
