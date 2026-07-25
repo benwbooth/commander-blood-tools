@@ -1501,3 +1501,26 @@ them. A wrong stride or count would break the chain visibly, which is exactly wh
 WORTH ADOPTING: for any newly-decoded table, compute `base + count*stride` and check it
 against the next known address before trusting the stride. It is nearly free and it
 catches the error class that cost the most time today.
+
+### Layout identities keep paying — three more, and a new VM fact
+
+Extending the `base + size == next` check into the VM's data region:
+
+    entity table  0x6212 + 32*32 = 0x6612  == dirty-rect list   -> exactly 32 entities
+    field matrix  0x6D60 + 336   = 0x6EB0  == handler table     -> exactly 0x15 selectors
+    handler table 0x6EB0 + 104   = 0x6F18  == OPCODE_DESC       -> exactly 52 entries
+
+The third is a new fact about the VM. The handler table is indexed by
+`(opcode-0xA0)*2`, so 52 entries covers opcodes `0xA0..0xD3` — and the `0xD3` entry is
+NULL, making `0xD2` the highest dispatched opcode (its handler offset `0x1118`
+corresponds to `0x64B8`, the script-profile request, which is indeed the highest
+handler in our labels).
+
+So: **the VM executes only `0xA0..0xD2`, while `OPCODE_DESC` describes 96 opcodes
+`0xA0..0xFF`.** The extra 45 entries exist purely so the token walker can compute
+LENGTHS for non-executable data tokens. Those two tables have different jobs and
+different extents, which is easy to conflate since they are adjacent and both indexed
+from `0xA0`.
+
+The entity identity is a nice bound too: 32 entities total is why the nav projector
+iterates the LAST ELEVEN (`0x15..0x1F`) rather than an arbitrary window.
