@@ -5243,3 +5243,31 @@ of each product before they are summed.
 
 Neither is a bug in the port; both are decisions the port makes correctly and
 records nowhere. The queue: 58 -> 56.
+
+## #164 — the perspective divide, and what `cdq` is doing there
+
+`project_ship_3d_axis` is `numerator / depth + center`. The routine at
+`0x9AD9..0x9AE2`:
+
+```text
+  0x9AD9  sar eax,7      pre-scale the dotted numerator
+  0x9ADD  cdq            sign-extend into edx:eax
+  0x9ADF  idiv ecx       divide by the DEPTH
+  0x9AE2  add ax,0x64    + the screen centre (100)
+```
+
+`cdq` is not bookkeeping. `idiv` divides `edx:eax`, so without the sign extension
+a negative numerator divides as an enormous positive and the point lands off
+screen instead of on the other side of centre. In Rust the sign comes free from
+the `i32` type — which means the correctness rests on the SIGNATURE, and a
+plausible refactor to `u32` would change the behaviour without touching a single
+operator. (Same hazard as `sar` vs `shr` in #163, one type away.)
+
+The `+ 0x64` comes AFTER the divide, so the projection yields an offset from
+centre, not an absolute coordinate.
+
+`scale_ship_3d_object_dimension` widens to 32 bits BEFORE multiplying, because the
+product of two words overflows 16 bits routinely — the original keeps it in `eax`
+for that reason, and the port's `u32::from` on both operands is that, not caution.
+
+The queue: 56 -> 55.

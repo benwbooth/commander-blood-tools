@@ -3772,11 +3772,31 @@ fn projection_dot(components: [i32; 3], terms: [i32; 3]) -> i32 {
         .wrapping_add(components[2].wrapping_mul(terms[2]))
 }
 
+/// The perspective divide, `0x9AD9..0x9AE2`:
+///
+/// ```text
+///   0x9AD9  sar eax,7      pre-scale the dotted numerator
+///   0x9ADD  cdq            sign-extend into edx:eax
+///   0x9ADF  idiv ecx       divide by the DEPTH
+///   0x9AE2  add ax,0x64    + the screen centre (100)
+/// ```
+///
+/// `idiv` is signed and `cdq` is what makes it so — without the sign extension a
+/// negative numerator would divide as a huge positive. The `sar eax,7` before it
+/// is a pre-scale that keeps precision through the divide, and it is arithmetic
+/// for the same reason.
+///
+/// The `+ 0x64` is the screen CENTRE, added after the divide, so the projection
+/// produces an offset from centre rather than an absolute coordinate.
 fn project_ship_3d_axis(numerator: i32, depth: i32, center: u16) -> u16 {
     let quotient = numerator / depth;
     (quotient as u16).wrapping_add(center)
 }
 
+/// Scale an object's sprite dimension by its depth factor: a 32-bit multiply
+/// followed by `>> SHIP_3D_OBJECT_SCALE_SHIFT`. Widening to 32 bits BEFORE the
+/// multiply is the point — the product of two words overflows 16 bits routinely,
+/// and the original keeps it in `eax` for exactly that reason.
 fn scale_ship_3d_object_dimension(dimension: u16, depth_scale: u16) -> u16 {
     (u32::from(dimension).wrapping_mul(u32::from(depth_scale)) >> SHIP_3D_OBJECT_SCALE_SHIFT) as u16
 }

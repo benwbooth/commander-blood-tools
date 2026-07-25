@@ -1131,27 +1131,27 @@ matrix_pair_for_angle	src/ship3d.rs	3736	fn		ASM
 fixed_mul_shift_15	src/ship3d.rs	3752	fn	0x9957,0x995F,0x994D	ASM	/// The Q15 fixed-point multiply the matrix code uses: `imul` then /// `sar eax,0xf` — e.g. `0x9957 imul eax,[si+0x14]` / `0x995F sar eax,0xf` in /// `matrix3d_mul_fixed` (`0x994D`). /// /// `sar`, no
 projection_component	src/ship3d.rs	3759	fn	0x9A42,0x9A47,0x2F65,0x2F67	ASM	/// One component of the camera translation: `sub word [di],ax` at `0x9A42` (and /// `[di+2],ax` at `0x9A47`), with the origin loaded from `[0x2F65]`/`[0x2F67]` /// just before — a wrapping 16-bit SUB
 projection_dot	src/ship3d.rs	3768	fn	0x9A50,0x9A66	ASM	/// The three-term dot product of the projection, accumulated in 32 bits WITHOUT /// an intermediate shift — `0x9A50..0x9A66`: `imul eax,[bp+0x18]` / `mov ecx,eax` /// / `imul eax,[bp+0x1c]` / `add ec
-project_ship_3d_axis	src/ship3d.rs	3775	fn		ASM	
-scale_ship_3d_object_dimension	src/ship3d.rs	3780	fn		ASM	
-ship_3d_rects_intersect	src/ship3d.rs	3784	fn		UNVERIFIED	
-checked_i16_div_i8_to_i8	src/ship3d.rs	3794	fn		ASM	
-checked_u16_div_u8_to_u8	src/ship3d.rs	3802	fn		UNVERIFIED	
-signed_i16	src/ship3d.rs	3810	fn		ASM	
-target_list_draw_x	src/ship3d.rs	3814	fn		UNVERIFIED	
-blocks_nav_choice	src/ship3d.rs	3819	fn		UNVERIFIED	
-hit_test_ship_3d_nav_choice	src/ship3d.rs	3829	fn		UNVERIFIED	
-adjust_nav_choice_target_records	src/ship3d.rs	3870	fn	0x8748,0x8754,0xFFFF,0x8749	ASM	/// The `add ax,4` loop of nav-choice handler 1 (`0x8748..0x8754`): walk the word /// list, add the 4-byte record header to each entry, stop at the `0xFFFF` /// terminator (`cmp ax,-1 / je` @`0x8749`)
-rebuild_nav_choice_special_target_records	src/ship3d.rs	3884	fn	0x87CB,0x87DB,0x6D3E,0xFFFF	ASM	/// The rebuild loop of nav-choice handler 2 (`0x87CB..0x87DB`): walk the special /// slots at `DS:0x6D3E`, skip zeros (`or ax,ax / je`), stop at the `0xFFFF` /// sentinel after storing it, and otherw
-next_ship_3d_temp_snd_phase	src/ship3d.rs	3902	fn		UNVERIFIED	
-append_ship_3d_navigation_source_children	src/ship3d.rs	3911	fn		UNVERIFIED	
-find_ship_3d_navigation_record	src/ship3d.rs	3944	fn		UNVERIFIED	
-find_ship_3d_position_record	src/ship3d.rs	3954	fn		UNVERIFIED	
-find_ship_3d_position_field	src/ship3d.rs	3964	fn		UNVERIFIED	
-resolve_ship_3d_distance_position_field	src/ship3d.rs	3971	fn		UNVERIFIED	
-kind100_relation_word	src/ship3d.rs	3995	fn		UNVERIFIED	
-ship_3d_record_field	src/ship3d.rs	4005	fn		UNVERIFIED	
-binary_abs_word_diff	src/ship3d.rs	4009	fn		ASM	
-next_target_list_draw_color	src/ship3d.rs	4018	fn		UNVERIFIED	
+project_ship_3d_axis	src/ship3d.rs	3791	fn	0x9AD9,0x9AE2,0x9ADD,0x9ADF	ASM	/// The perspective divide, `0x9AD9..0x9AE2`: /// /// ```text ///   0x9AD9  sar eax,7      pre-scale the dotted numerator ///   0x9ADD  cdq            sign-extend into edx:eax ///   0x9ADF  idiv ecx  
+scale_ship_3d_object_dimension	src/ship3d.rs	3800	fn		ASM	/// Scale an object's sprite dimension by its depth factor: a 32-bit multiply /// followed by `>> SHIP_3D_OBJECT_SCALE_SHIFT`. Widening to 32 bits BEFORE the /// multiply is the point — the product of
+ship_3d_rects_intersect	src/ship3d.rs	3804	fn		UNVERIFIED	
+checked_i16_div_i8_to_i8	src/ship3d.rs	3814	fn		ASM	
+checked_u16_div_u8_to_u8	src/ship3d.rs	3822	fn		UNVERIFIED	
+signed_i16	src/ship3d.rs	3830	fn		ASM	
+target_list_draw_x	src/ship3d.rs	3834	fn		UNVERIFIED	
+blocks_nav_choice	src/ship3d.rs	3839	fn		UNVERIFIED	
+hit_test_ship_3d_nav_choice	src/ship3d.rs	3849	fn		UNVERIFIED	
+adjust_nav_choice_target_records	src/ship3d.rs	3890	fn	0x8748,0x8754,0xFFFF,0x8749	ASM	/// The `add ax,4` loop of nav-choice handler 1 (`0x8748..0x8754`): walk the word /// list, add the 4-byte record header to each entry, stop at the `0xFFFF` /// terminator (`cmp ax,-1 / je` @`0x8749`)
+rebuild_nav_choice_special_target_records	src/ship3d.rs	3904	fn	0x87CB,0x87DB,0x6D3E,0xFFFF	ASM	/// The rebuild loop of nav-choice handler 2 (`0x87CB..0x87DB`): walk the special /// slots at `DS:0x6D3E`, skip zeros (`or ax,ax / je`), stop at the `0xFFFF` /// sentinel after storing it, and otherw
+next_ship_3d_temp_snd_phase	src/ship3d.rs	3922	fn		UNVERIFIED	
+append_ship_3d_navigation_source_children	src/ship3d.rs	3931	fn		UNVERIFIED	
+find_ship_3d_navigation_record	src/ship3d.rs	3964	fn		UNVERIFIED	
+find_ship_3d_position_record	src/ship3d.rs	3974	fn		UNVERIFIED	
+find_ship_3d_position_field	src/ship3d.rs	3984	fn		UNVERIFIED	
+resolve_ship_3d_distance_position_field	src/ship3d.rs	3991	fn		UNVERIFIED	
+kind100_relation_word	src/ship3d.rs	4015	fn		UNVERIFIED	
+ship_3d_record_field	src/ship3d.rs	4025	fn		UNVERIFIED	
+binary_abs_word_diff	src/ship3d.rs	4029	fn		ASM	
+next_target_list_draw_color	src/ship3d.rs	4038	fn		UNVERIFIED	
 SND_CLIP_HEADER_LEN	src/snd.rs	6	const		UNVERIFIED	
 SND_PCM_FORMAT_TAG	src/snd.rs	7	const		UNVERIFIED	
 SndClip	src/snd.rs	10	struct		UNVERIFIED	
