@@ -1576,3 +1576,76 @@ WHAT I ALMOST GOT WRONG: while checking, I hand-grouped the bytes as `00 00 | 09
 stream on the wrong boundary. Two automated comparisons had already said they matched.
 The lesson is the mirror of the earlier stride mistakes: when a hand-check contradicts a
 mechanical one, suspect the hand-check first.
+
+## FIX #49 — the selector-8 ENCOUNTER COUNTER, both halves, plus the panel it feeds
+
+The previous session left this as the one item explicitly deferred: "implementing
+it needs both halves — the post-update increment AND the list filter — since
+adding only the increment writes state nothing reads, and adding only the filter
+would exclude everything." Both are in now, and so is the consumer they feed.
+
+FIRST, A CORRECTION TO THE EARLIER DECODE. The notes called selector 8 a KIND-1
+field. It is not. The matrix row is
+
+    FIELD_OFFSETS[8] = 00 36 00 00 ...
+
+and `vm_field_offset` (`0x6023`) resolves the column with **BSF**, so column *k*
+is the kind whose LOWEST SET BIT is *k* — column 1 is kind VALUE 2, not kind 1.
+Reading the column index as a kind value is what produced the error. Both readers
+settle it independently: `0x83D4` gates on `cmp word [si],2` and `0x91CE` on
+`test word [si],2`. So the counter is a **kind-2 field at +0x36**, and the same
+correction applies to the LOCATION field the roster reads (`+0x18` =
+`FIELD_OFFSETS[0x11][1]`, also kind 2).
+
+That also explains what the ladder is doing. `0x5DB0..0x5E06` is symmetric over
+the pair: whichever partner is kind 1, the OTHER partner's counter is bumped,
+resolved against THAT partner's kind. Since only kind 2 has the field, the
+mechanism is "a kind-2 object was paired with a kind-1 object" — an ENCOUNTER.
+Ported as `post_update_encounter_counter`, called from
+`post_update_actor_record_pair` between the processed-marker write (`0x5DAC`) and
+the `0xC4` write (`0x5E09`), exactly where the real ladder runs it.
+
+THE FILTERS (`source_list_display_rows`, `source_list_text_rows`). Both consumers
+walk the SAME list the port already built faithfully; the filtering lives at the
+consumer, once per row. The drawn panel applies three tests (kind bit 1, ACTIVE
+bit, counter non-zero); the text roster applies a fourth — `cmp [si+0x18],bx`
+with `bx = gs:0x6758` = the built-in object `Ark` — which DROPS objects aboard
+your own ship. So the roster answers "who else is here", not "who is here".
+
+THE SURFACE. Tracing the text consumer's caller turned it into a screen rather
+than an abstraction: entry `0x82E8` gates on three flags and then HIT-TESTS the
+mouse against the widget rect at `DS:0x65F2+8`. It is the nav chart's HOVER
+PANEL, composing a CR-separated block at `0xE18`:
+
+    <PLANET: |SHIP: |BLACK HOLE: ><location name>
+    LIFE SUPPORT:
+    <roster, one name per line>
+
+Ported whole as `VmMachine::location_status_block`. The four UI strings are the
+game's own bytes, pinned to the image at `DS:0x12E/0x137/0x13E/0x14B` by
+`the_status_headers_are_the_games_own_strings` — the same standard as
+`OPTION_BOX_LABEL`, not transcriptions.
+
+TWO THINGS FOUND ON THE WAY:
+
+1. **An object's name is stored INLINE at record+4.** Both consumers copy from
+   `si+4`, which only makes sense if `+4` is text. Checked against shipped data
+   (`re/tools/check_object_inline_names.py`): 630 of 640 kind-1 objects across
+   SCRIPT1..5 hold exactly their DEB name there. The ten exceptions are `blood`
+   and `orxx` in each script — the two built-ins whose record bytes the engine
+   reuses for other purposes (`orxx+0xA` is the C1 presentation slot). The port
+   no longer needs the DEB symbol table to label a row: `object_inline_name`
+   reads what the game reads.
+
+2. **The composer's `UNKNOWN` fallback is DEAD CODE.** `0x83FD` is an
+   unconditional `jmp 0x840E` over it; a whole-image relative-branch scan
+   (`re/tools/find_jump_target.py 0x83FF`, new tool) finds ZERO branches to
+   `0x83FF`, and `mov si,0x16C` occurs exactly once — inside the block itself.
+   The shipped game never prints it. Recorded so nobody ports a string the
+   original cannot display.
+
+WHAT IS STILL OPEN. `location_status_block` is a faithful VM-side routine with
+regression tests, but the port's nav view does not yet DRAW it (the port's
+`render_ship_view` has its own destination list). Wiring the panel into the nav
+frame — including its `DS:0x65F2` hover rect — is the next step, and it is a
+frontend task now, not an RE one.

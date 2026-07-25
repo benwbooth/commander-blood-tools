@@ -1282,6 +1282,40 @@ const SPECIAL_OBJECT_SLOT_COUNT: usize = 16;
 const VM_FIELD_OFFSET_SELECTOR_PRESENTATION_HANDOFF: u8 = 0x02;
 const VM_FIELD_OFFSET_SELECTOR_C2: u8 = 0x11;
 const VM_FIELD_OFFSET_SELECTOR_C9_RELATED: u8 = 0x13;
+/// Selector `0x08` — the ENCOUNTER COUNTER. `FIELD_OFFSETS[8]` is non-zero in
+/// exactly one column (`0x36` at column 1 = kind 2), so this is a kind-2 field.
+/// Written by `post_update_encounter_counter` (`0x5DCE`/`0x5DF6`); read as the
+/// third condition of both object-list filters (`0x83DF`, `0x91DB`).
+const VM_FIELD_OFFSET_SELECTOR_ENCOUNTER: u8 = 0x08;
+/// Bit 15 of an object's `+2` flag word, set alongside the encounter-counter
+/// bump (`or word [si+2],0x8000` @ `0x5DD2`/`0x5DFA`).
+pub const OBJECT_FLAG_PAIR_SEEN: u16 = 0x8000;
+/// Bit 0 of an object's `+2` flag word — the ACTIVE bit, the second condition of
+/// both list filters (`test word [si+2],1` @ `0x91D4`, `test byte [si+2],1` @ `0x83D9`).
+pub const OBJECT_FLAG_ACTIVE: u16 = 0x0001;
+
+/// `arche+0x16` — the CURRENT LOCATION object (`mov bp,fs:[si+0x16]` @ `0x8365`
+/// with `si = gs:[0x6752] = arche`; the same word `0x6B44` clears).
+pub const ARCHE_LOCATION_FIELD: u16 = 0x16;
+/// Location kinds the status header distinguishes (`0x836C`, `0x8376`).
+pub const LOCATION_KIND_SHIP: u16 = 0x10;
+pub const LOCATION_KIND_BLACK_HOLE: u16 = 0x100;
+
+/// The status block's headers, the game's OWN strings from BLOODPRG's UI string
+/// table — not transcriptions. `STATUS_STRING_TABLE` pins each to its image byte
+/// (DS base = file `0xD420`), the same way `OPTION_BOX_LABEL` is pinned.
+pub const STATUS_HEADER_PLANET: &str = "PLANET: ";
+pub const STATUS_HEADER_SHIP: &str = "SHIP: ";
+pub const STATUS_HEADER_BLACK_HOLE: &str = "BLACK HOLE: ";
+pub const STATUS_LIFE_SUPPORT: &str = "LIFE SUPPORT:";
+/// `(DS offset, file offset, string)` for each — `0x12E`/`0x137`/`0x13E` are the
+/// three `mov si,imm` headers and `0x14B` the roster caption at `0x839F`.
+pub const STATUS_STRING_TABLE: [(u16, usize, &str); 4] = [
+    (0x012E, 0x0D54E, STATUS_HEADER_PLANET),
+    (0x0137, 0x0D557, STATUS_HEADER_SHIP),
+    (0x013E, 0x0D55E, STATUS_HEADER_BLACK_HOLE),
+    (0x014B, 0x0D56B, STATUS_LIFE_SUPPORT),
+];
 const C2_ACTIVE_LINE_KIND2: u16 = 0x27;
 const C2_ACTIVE_LINE_KIND400: u16 = 0x2B;
 const VM_UI_FLAGS: u16 = 0x2793;
@@ -1399,6 +1433,10 @@ pub struct ScriptProfileRequestEvent {
 pub struct PostUpdateTrace {
     pub actor_record_pairs: Vec<PostUpdateActorRecordPair>,
     pub presentation_handoffs: Vec<PresentationHandoffEvent>,
+    /// Objects whose selector-`0x08` ENCOUNTER COUNTER the post-update ladder
+    /// incremented this pass (`0x5DCE` / `0x5DF6`). See
+    /// `post_update_encounter_counter`.
+    pub encounter_counter_bumps: Vec<u16>,
     pub pending_script_profile_dispatch_ready: bool,
 }
 
@@ -2105,11 +2143,78 @@ fn post_update_deferred_record_write(
     Some(write_offset)
 }
 
+/// The ENCOUNTER COUNTER step of the post-update actor-pair ladder
+/// (`vm_post_update_c4_pair` `0x5D8F`, block `0x5DB0..0x5E06`), run between the
+/// processed-marker write and the related-record `0xC4` write.
+///
+/// The block is symmetric over the pair `si` = owner object, `di` = related
+/// object (`ds:[bp+2]`):
+///
+/// ```text
+///   0x5DB4  mov ax,[si] / cmp ax,1 / jne 0x5DE3   owner kind == 1?
+///   0x5DC2    mov bx,[di]                          resolve against the RELATED kind
+///   0x5DC4    ax=8 / call 0x6023 / or ax,ax / je   selector 8 -> field offset
+///   0x5DCE    inc word [eax+edi]                   the RELATED object's counter
+///   0x5DD2    or word [si+2],0x8000
+///   0x5DE3  mov ax,[di] / cmp ax,1 / jne 0x5E09   related kind == 1?
+///   0x5DEA    mov bx,[si]                          resolve against the OWNER kind
+///   0x5DF6    inc word [eax+esi]                   the OWNER object's counter
+///   0x5DFA    or word [si+2],0x8000
+/// ```
+///
+/// So whichever partner is kind `1`, the OTHER partner's counter is bumped — and
+/// the bump resolves selector `0x08` against THAT other partner's kind. Selector
+/// `0x08` is non-zero in exactly one column of the field matrix
+/// (`FIELD_OFFSETS[8]` = `[0, 0x36, 0, ...]`), and `vm_field_offset`'s `bsf`
+/// makes column 1 the kind whose lowest set bit is bit 1 — i.e. **kind 2, offset
+/// `0x36`**. The counter is therefore a KIND-2 field, incremented when a kind-2
+/// object is paired with a kind-1 object. (An earlier note in `re/labels.csv`
+/// called it a kind-1 field by reading the column index as a kind value; the
+/// resolver's `bsf` says otherwise, and both readers agree — `0x83D4` gates on
+/// `cmp [si],2` and `0x91CE` on `test [si],2`.)
+///
+/// Returns the object whose counter was incremented, which the real code also
+/// stores in `gs:0x6798` before rescanning the COD (`0x739B`).
+fn post_update_encounter_counter(
+    state: &mut [u8],
+    owner_offset: u16,
+    related_offset: u16,
+) -> Option<u16> {
+    let owner_kind = state_u16(state, owner_offset);
+    let related_kind = state_u16(state, related_offset);
+    // 0x5DB4 / 0x5DE3: the kind-1 partner names the OTHER as the counter holder.
+    // The `je 0x5DE3` on a zero offset means the first branch FALLS INTO the
+    // second when the related object has no counter field, so both are tried.
+    let target = if owner_kind == 1
+        && vm_field_offset(VM_FIELD_OFFSET_SELECTOR_ENCOUNTER, related_kind).is_some_and(|o| o != 0)
+    {
+        related_offset
+    } else if related_kind == 1 {
+        owner_offset
+    } else {
+        return None;
+    };
+    let field = vm_field_offset(VM_FIELD_OFFSET_SELECTOR_ENCOUNTER, state_u16(state, target))?;
+    if field == 0 {
+        return None; // `or ax,ax / je` — the kind has no counter field
+    }
+    let counter = target.wrapping_add(field);
+    state_set_u16(state, counter, state_u16(state, counter).wrapping_add(1));
+    // 0x5DD2 / 0x5DFA: bit15 of the OWNER's +2 in BOTH branches.
+    let flags = state_u16(state, owner_offset.wrapping_add(2));
+    state_set_u16(
+        state,
+        owner_offset.wrapping_add(2),
+        flags | OBJECT_FLAG_PAIR_SEEN,
+    );
+    Some(target)
+}
+
 fn post_update_actor_record_pair(
     state: &mut [u8],
     owner_offset: u16,
     record_offset: u16,
-) -> Option<u16> {
+) -> Option<(u16, Option<u16>)> {
     if state_u16(state, record_offset) != OP_ACTOR as u16
         || state_u16(state, record_offset.wrapping_add(4)) != 0
         || state_u8(state, VM_PRESENTATION_PAIR_WRITE_DISABLED) & 1 != 0
@@ -2124,6 +2229,8 @@ fn post_update_actor_record_pair(
     );
 
     let related_offset = state_u16(state, record_offset.wrapping_add(2));
+    // 0x5DB0..0x5E06 — the encounter counter, before the 0x5E09 C4 write.
+    let counter_bump = post_update_encounter_counter(state, owner_offset, related_offset);
     let related_kind = state_u16(state, related_offset);
     let related_field = related_offset.wrapping_add(vm_field_offset(
         VM_FIELD_OFFSET_SELECTOR_C9_RELATED,
@@ -2136,7 +2243,7 @@ fn post_update_actor_record_pair(
         related_field.wrapping_add(4),
         C4_POST_UPDATE_SENTINEL,
     );
-    Some(related_field)
+    Some((related_field, counter_bump))
 }
 
 fn post_update_actor_records_for_active_objects(
@@ -2183,7 +2290,7 @@ fn post_update_execution_state(state: &mut [u8], context: &ExecutionContext) -> 
             post_update_kind1_presentation_state(state, record_offset);
             post_update_deferred_record_write(state, context, record_offset);
         }
-        if let Some(related_record_offset) =
+        if let Some((related_record_offset, counter_bump)) =
             post_update_actor_record_pair(state, owner_offset, record_offset)
         {
             post_update
@@ -2192,6 +2299,9 @@ fn post_update_execution_state(state: &mut [u8], context: &ExecutionContext) -> 
                     record_offset,
                     related_record_offset,
                 });
+            if let Some(bumped) = counter_bump {
+                post_update.encounter_counter_bumps.push(bumped);
+            }
         }
     }
     post_update.pending_script_profile_dispatch_ready =
@@ -3900,6 +4010,11 @@ pub struct VmMachine {
     /// DEB offset of the built-in object `orxx` (the engine's `gs:0x6750`). The
     /// world-destination click writes its C1 record at `orxx + 0xA` (`0xB272`).
     pub orxx_offset: Option<u16>,
+    /// DEB offset of the built-in object `Ark` — your ship (the engine's
+    /// `gs:0x6758`, filled by the startup name scan `0x5486` from the built-in
+    /// name table `DS:0x67BE`). The status roster excludes objects whose location
+    /// is the Ark (`cmp [si+0x18],bx` @ `0x83E5`).
+    pub ark_offset: Option<u16>,
     /// The `gs:0x672c` DIRECTORY as `(offset, kind)` pairs — the DEB's 20-byte
     /// records, whose `+0x10` is the object offset and `+0x12` the entry kind.
     /// The nav source-list builder (`0x624B`) walks it, continuing while the next
@@ -3956,6 +4071,7 @@ impl Default for VmMachine {
             directory: Vec::new(),
             arche_offset: None,
             orxx_offset: None,
+            ark_offset: None,
             world_target: None,
             halted: false,
         }
@@ -4159,6 +4275,11 @@ impl VmMachine {
         self.orxx_offset = syms
             .iter()
             .find(|s| s.name.eq_ignore_ascii_case("orxx"))
+            .map(|s| s.offset);
+        // 0x5486's built-in name scan, `Ark` slot -> gs:0x6758.
+        self.ark_offset = syms
+            .iter()
+            .find(|s| s.name.eq_ignore_ascii_case("Ark"))
             .map(|s| s.offset);
         // The gs:0x672c directory in DEB order (offset = +0x10, kind = +0x12).
         self.directory = syms.iter().map(|s| (s.offset, s.kind)).collect();
@@ -4371,6 +4492,143 @@ impl VmMachine {
         let mut out = Vec::new();
         walk(self, target, &mut out, 0);
         out
+    }
+
+    /// The DRAW-TIME filter both source-list consumers apply, ported verbatim
+    /// from `vm_source_list_draw_loop` `0x91C3`:
+    ///
+    /// ```text
+    ///   0x91CE  test word [si],2       the object's kind has bit 1 (kind 2)
+    ///   0x91D4  test word [si+2],1     the ACTIVE bit
+    ///   0x91DB  cmp  word [si+0x36],0  the selector-8 ENCOUNTER COUNTER, non-zero
+    /// ```
+    ///
+    /// The builder (`build_nav_source_list`) is unfiltered — the game filters at
+    /// the consumer, once per drawn row. The counter comes from
+    /// `post_update_encounter_counter`, so an object appears in a list only after
+    /// the post-update ladder has paired it with a kind-1 object at least once:
+    /// **the list shows what the player has already met.**
+    fn source_list_entry_is_listable(&self, entry: u16) -> bool {
+        let kind = self.rec_read(entry);
+        if kind & 2 == 0 {
+            return false;
+        }
+        if self.rec_read(entry.wrapping_add(2)) & OBJECT_FLAG_ACTIVE == 0 {
+            return false;
+        }
+        let Some(counter_field) = vm_field_offset(VM_FIELD_OFFSET_SELECTOR_ENCOUNTER, kind) else {
+            return false;
+        };
+        if counter_field == 0 {
+            return false;
+        }
+        self.rec_read(entry.wrapping_add(counter_field)) != 0
+    }
+
+    /// The rows a source-list panel actually DRAWS (`0x91C3` `0x299:0x202` per
+    /// survivor, `add dx,0xA` between rows): `build_nav_source_list` filtered by
+    /// [`Self::source_list_entry_is_listable`].
+    pub fn source_list_display_rows(&self, target: u16) -> Vec<u16> {
+        self.build_nav_source_list(target)
+            .into_iter()
+            .filter(|&entry| self.source_list_entry_is_listable(entry))
+            .collect()
+    }
+
+    /// The same list as TEXT (`0x83C0..0x83F8`, the `PLANET:`/`SHIP:`/`BLACK
+    /// HOLE:` status block's `LIFE SUPPORT:` roster), which adds a FOURTH
+    /// condition the drawn panel does not have:
+    ///
+    /// ```text
+    ///   0x83C7  mov bx,gs:[0x6758]     the built-in object `Ark`
+    ///   0x83E5  cmp word [si+0x18],bx / je skip
+    /// ```
+    ///
+    /// `+0x18` is selector `0x11` for kind 2 (`FIELD_OFFSETS[0x11][1]`), the
+    /// LOCATION field — so an object whose location IS the Ark is dropped: the
+    /// roster names who is present at the location, excluding your own ship's
+    /// complement. `0x83D4` also compares the kind EXACTLY (`cmp word [si],2`)
+    /// where the drawn panel bit-tests it.
+    pub fn source_list_text_rows(&self, target: u16, ark_object: u16) -> Vec<u16> {
+        self.build_nav_source_list(target)
+            .into_iter()
+            .filter(|&entry| {
+                if self.rec_read(entry) != 2 {
+                    return false; // `cmp word [si],2` — exact, not a bit test
+                }
+                if !self.source_list_entry_is_listable(entry) {
+                    return false;
+                }
+                let Some(location_field) = vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C2, 2) else {
+                    return false;
+                };
+                self.rec_read(entry.wrapping_add(location_field)) != ark_object
+            })
+            .collect()
+    }
+
+    /// An object's INLINE NAME: the NUL-terminated string at `record+4`.
+    ///
+    /// Both status-list consumers read it that way — `mov si,bp / add si,4 /
+    /// lodsb` at `0x8389` and `0x83EA`, and `add si,4` before the `0x299:0x202`
+    /// draw at `0x91E1`. Checked against the shipped data by
+    /// `re/tools/check_object_inline_names.py`: 630 of the 640 kind-1 objects
+    /// across SCRIPT1..5 hold exactly their DEB name at `+4`. The ten that do not
+    /// are `blood` and `orxx` in each script — the two built-ins whose records the
+    /// engine reuses for other fields (`orxx+0xA` is the C1 presentation slot).
+    pub fn object_inline_name(&self, object: u16) -> String {
+        let base = object.wrapping_add(4);
+        let mut bytes = Vec::new();
+        for i in 0..64u16 {
+            let b = self.rec_read_u8(base.wrapping_add(i));
+            if b == 0 {
+                break;
+            }
+            bytes.push(b);
+        }
+        crate::font::cp437_string(&bytes)
+    }
+
+    /// The location STATUS BLOCK the nav hover composes (`nav_state_gate`
+    /// `0x82E8`, composer `0x8347..0x8420`), as the lines the real routine writes
+    /// CR-separated into the text buffer at `0xE18`:
+    ///
+    /// ```text
+    ///   0x835C  si = gs:[0x6752]           the built-in object `arche`
+    ///   0x8365  bp = fs:[si+0x16]          -> the CURRENT LOCATION object
+    ///   0x8369  si = 0x12E                 "PLANET: "
+    ///   0x836C  cmp word fs:[bp],0x10  -> si = 0x137   "SHIP: "
+    ///   0x8376  test word fs:[bp],0x100 -> si = 0x13E  "BLACK HOLE: "
+    ///   0x8381  copy that header, then the location's inline name, then CR
+    ///   0x839F  si = 0x14B                 "LIFE SUPPORT:"  + CR
+    ///   0x83B6  bp = 0x6886 / lcall 0x4DA:0xEAB (the 0x624B source-list build)
+    ///   0x83CC  the roster loop -> source_list_text_rows
+    /// ```
+    ///
+    /// The `0x8318` entry gate is a mouse hit-test against the widget rect at
+    /// `DS:0x65F2+8`, so this is the nav chart's HOVER panel.
+    ///
+    /// Returns `None` when `arche` is unknown (no DEB loaded).
+    pub fn location_status_block(&self) -> Option<Vec<String>> {
+        let arche = self.arche_offset?;
+        let location = self.rec_read(arche.wrapping_add(ARCHE_LOCATION_FIELD));
+        let kind = self.rec_read(location);
+        // 0x836C then 0x8376: the black-hole test runs SECOND and overwrites, so
+        // it wins when a kind somehow satisfies both.
+        let header = if kind & LOCATION_KIND_BLACK_HOLE != 0 {
+            STATUS_HEADER_BLACK_HOLE
+        } else if kind == LOCATION_KIND_SHIP {
+            STATUS_HEADER_SHIP
+        } else {
+            STATUS_HEADER_PLANET
+        };
+        let mut lines = vec![format!("{header}{}", self.object_inline_name(location))];
+        lines.push(STATUS_LIFE_SUPPORT.to_string());
+        let ark = self.ark_offset.unwrap_or(0);
+        for entry in self.source_list_text_rows(location, ark) {
+            lines.push(self.object_inline_name(entry));
+        }
+        Some(lines)
     }
 
     /// The WORLD-DESTINATION CLICK commit (`0xB20C..0xB27B`). The ship FSM's
@@ -8389,6 +8647,251 @@ mod tests {
     }
 
     #[test]
+    fn source_list_rows_need_kind_active_and_a_non_zero_encounter_counter() {
+        // 0x91C3's three draw-time filters over the SAME list the builder makes.
+        let parent = vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C2, 2).expect("kind 2 selector-0x11");
+        let counter =
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_ENCOUNTER, 2).expect("kind 2 selector-8");
+        assert_eq!(counter, 0x36, "FIELD_OFFSETS[8][1] — the counter is kind 2");
+        assert!(
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_ENCOUNTER, 1).is_some_and(|o| o == 0),
+            "selector 8 has NO kind-1 field; the counter lives on the kind-2 partner"
+        );
+
+        const TARGET: u16 = 0x0080;
+        let mut m = VmMachine::new();
+        m.directory = vec![(0x100, 1), (0x200, 1), (0x300, 1), (0x400, 1)];
+        for obj in [0x100u16, 0x200, 0x300, 0x400] {
+            m.rec_write_pub(obj, 2);
+            m.rec_write_pub(obj + parent, TARGET);
+            m.rec_write_pub(obj + 2, OBJECT_FLAG_ACTIVE);
+            m.rec_write_pub(obj + counter, 1);
+        }
+        // 0x200 fails the kind test, 0x300 the ACTIVE bit, 0x400 the counter.
+        m.rec_write_pub(0x200, 1);
+        m.rec_write_pub(0x200 + parent, 0); // kind 1 resolves selector 0x11 elsewhere
+        m.rec_write_pub(0x300 + 2, 0);
+        m.rec_write_pub(0x400 + counter, 0);
+
+        assert_eq!(
+            m.build_nav_source_list(TARGET),
+            vec![0x100, 0x300, 0x400],
+            "the BUILDER is unfiltered (0x200 drops out only because kind 1 reparents it)"
+        );
+        assert_eq!(
+            m.source_list_display_rows(TARGET),
+            vec![0x100],
+            "only the object that is kind 2, ACTIVE and already encountered draws a row"
+        );
+    }
+
+    #[test]
+    fn the_status_roster_also_drops_objects_whose_location_is_the_ark() {
+        // 0x83DF..0x83E8: the LIFE SUPPORT: roster adds `cmp [si+0x18],bx / je`
+        // with bx = gs:0x6758 (the built-in object Ark).
+        let parent = vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C2, 2).expect("kind 2 selector-0x11");
+        assert_eq!(
+            parent, 0x18,
+            "FIELD_OFFSETS[0x11][1] — the +0x18 the filter reads"
+        );
+        let counter =
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_ENCOUNTER, 2).expect("kind 2 selector-8");
+
+        const TARGET: u16 = 0x0080;
+        const ARK: u16 = 0x0080; // the roster's location IS the Ark in this fixture
+        let mut m = VmMachine::new();
+        m.directory = vec![(0x100, 1), (0x200, 1)];
+        for obj in [0x100u16, 0x200] {
+            m.rec_write_pub(obj, 2);
+            m.rec_write_pub(obj + 2, OBJECT_FLAG_ACTIVE);
+            m.rec_write_pub(obj + counter, 3);
+        }
+        m.rec_write_pub(0x100 + parent, TARGET);
+        m.rec_write_pub(0x200 + parent, TARGET);
+
+        // Drawn panel: both rows. Text roster with bx == TARGET: neither, because
+        // each object's location field equals bx.
+        assert_eq!(m.source_list_display_rows(TARGET), vec![0x100, 0x200]);
+        assert!(m.source_list_text_rows(TARGET, ARK).is_empty());
+        // With the Ark elsewhere, the roster keeps both.
+        assert_eq!(m.source_list_text_rows(TARGET, 0x0999), vec![0x100, 0x200]);
+    }
+
+    #[test]
+    fn the_status_headers_are_the_games_own_strings() {
+        // Same standard as OPTION_BOX_LABEL: each header is pinned to its byte in
+        // the image, and the DS offset must agree with the file offset.
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE").or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        for (ds_off, file_off, text) in STATUS_STRING_TABLE {
+            let end = file_off
+                + exe[file_off..]
+                    .iter()
+                    .position(|&b| b == 0)
+                    .expect("NUL-terminated");
+            assert_eq!(
+                std::str::from_utf8(&exe[file_off..end]).unwrap(),
+                text,
+                "the string at file {file_off:#x} must be the ported constant"
+            );
+            assert_eq!(
+                file_off - 0xD420,
+                ds_off as usize,
+                "DS offset and file offset must describe the same byte"
+            );
+        }
+    }
+
+    #[test]
+    fn the_status_block_reads_the_header_kind_and_the_inline_names() {
+        // 0x8365..0x83F8 composed from record state alone.
+        let parent = vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C2, 2).expect("kind 2 selector-0x11");
+        let counter =
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_ENCOUNTER, 2).expect("kind 2 selector-8");
+        const ARCHE: u16 = 0x0020;
+        const LOCATION: u16 = 0x0080;
+        const HOST: u16 = 0x0100;
+
+        let mut m = VmMachine::new();
+        m.arche_offset = Some(ARCHE);
+        m.ark_offset = Some(0x0400);
+        m.directory = vec![(HOST, 1)];
+        m.rec_write_pub(ARCHE + ARCHE_LOCATION_FIELD, LOCATION);
+        // Inline names at +4 (the check_object_inline_names.py layout).
+        let put_name = |m: &mut VmMachine, obj: u16, name: &str| {
+            for (i, b) in name.bytes().chain(std::iter::once(0)).enumerate() {
+                let off = obj + 4 + i as u16;
+                let w = m.rec_read_pub(off & !1);
+                let next = if off & 1 == 0 {
+                    (w & 0xFF00) | b as u16
+                } else {
+                    (w & 0x00FF) | ((b as u16) << 8)
+                };
+                m.rec_write_pub(off & !1, next);
+            }
+        };
+        put_name(&mut m, LOCATION, "Oddland");
+        put_name(&mut m, HOST, "Bob_Morlock");
+        assert_eq!(m.object_inline_name(LOCATION), "Oddland");
+
+        // The host is a kind-2, ACTIVE, already-encountered object at the location.
+        m.rec_write_pub(HOST, 2);
+        m.rec_write_pub(HOST + 2, OBJECT_FLAG_ACTIVE);
+        m.rec_write_pub(HOST + parent, LOCATION);
+        m.rec_write_pub(HOST + counter, 1);
+
+        // Kind 0 -> the default header.
+        assert_eq!(
+            m.location_status_block().unwrap(),
+            vec![
+                "PLANET: Oddland".to_string(),
+                "LIFE SUPPORT:".to_string(),
+                "Bob_Morlock".to_string()
+            ]
+        );
+        // 0x836C: kind 0x10 -> SHIP:, 0x8376: bit 0x100 -> BLACK HOLE:.
+        m.rec_write_pub(LOCATION, LOCATION_KIND_SHIP);
+        assert_eq!(m.location_status_block().unwrap()[0], "SHIP: Oddland");
+        m.rec_write_pub(LOCATION, LOCATION_KIND_BLACK_HOLE);
+        assert_eq!(m.location_status_block().unwrap()[0], "BLACK HOLE: Oddland");
+
+        // Not yet encountered -> the roster is empty, header and caption remain.
+        m.rec_write_pub(HOST + counter, 0);
+        assert_eq!(
+            m.location_status_block().unwrap(),
+            vec!["BLACK HOLE: Oddland".to_string(), "LIFE SUPPORT:".to_string()]
+        );
+
+        // With no DEB loaded there is no arche, so no panel at all.
+        assert!(VmMachine::new().location_status_block().is_none());
+    }
+
+    #[test]
+    fn real_deb_objects_carry_their_name_inline_at_plus_four() {
+        // The layout object_inline_name depends on, against the SHIPPED data.
+        let Ok(deb) = std::fs::read("output/_tmp_iso/SCRIPT2.DEB") else {
+            return;
+        };
+        let Ok(var) = std::fs::read("output/_tmp_iso/SCRIPT2.VAR") else {
+            return;
+        };
+        let mut m = VmMachine::new();
+        m.load_var(&var);
+        m.load_deb_objects(&deb);
+        assert!(m.ark_offset.is_some(), "SCRIPT2.DEB names the built-in Ark");
+        let syms = crate::script::parse_deb(&deb);
+        let named: Vec<_> = syms.iter().filter(|s| s.kind == 1).collect();
+        let matching = named
+            .iter()
+            .filter(|s| m.object_inline_name(s.offset).eq_ignore_ascii_case(&s.name))
+            .count();
+        assert_eq!(
+            (named.len(), matching),
+            (122, 120),
+            "every kind-1 object but the two built-ins blood/orxx holds its name at +4"
+        );
+        assert_eq!(m.object_inline_name(0x004A), "Bob_Morlock");
+    }
+
+    #[test]
+    fn the_post_update_ladder_bumps_the_kind2_partners_encounter_counter() {
+        // 0x5DB0..0x5E06: whichever partner is kind 1, the OTHER partner's
+        // selector-8 counter is incremented and bit15 of the OWNER's +2 is set.
+        let counter =
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_ENCOUNTER, 2).expect("kind 2 selector-8");
+
+        // Branch 1 (0x5DB4): owner kind 1, related kind 2 -> the RELATED is bumped.
+        let owner = 0x0100u16;
+        let related = 0x0200u16;
+        let mut var = vec![0; 0x0300];
+        state_set_u16(&mut var, owner, 1);
+        state_set_u16(&mut var, related, 2);
+        assert_eq!(
+            post_update_encounter_counter(&mut var, owner, related),
+            Some(related)
+        );
+        assert_eq!(state_u16(&var, related + counter), 1);
+        assert_eq!(state_u16(&var, owner + 2), OBJECT_FLAG_PAIR_SEEN);
+        // It COUNTS: a second pairing increments again rather than saturating.
+        post_update_encounter_counter(&mut var, owner, related);
+        assert_eq!(state_u16(&var, related + counter), 2);
+
+        // Branch 2 (0x5DE3): owner kind 2, related kind 1 -> the OWNER is bumped,
+        // and bit15 still lands on the OWNER's +2 (both branches write [si+2]).
+        let mut var = vec![0; 0x0300];
+        state_set_u16(&mut var, owner, 2);
+        state_set_u16(&mut var, related, 1);
+        assert_eq!(
+            post_update_encounter_counter(&mut var, owner, related),
+            Some(owner)
+        );
+        assert_eq!(state_u16(&var, owner + counter), 1);
+        assert_eq!(
+            state_u16(&var, owner + 2) & OBJECT_FLAG_PAIR_SEEN,
+            OBJECT_FLAG_PAIR_SEEN
+        );
+
+        // Neither partner kind 1 -> nothing at all (the 0x5DE8 jne to 0x5E09).
+        let mut var = vec![0; 0x0300];
+        state_set_u16(&mut var, owner, 2);
+        state_set_u16(&mut var, related, 2);
+        assert_eq!(post_update_encounter_counter(&mut var, owner, related), None);
+        assert_eq!(state_u16(&var, owner + counter), 0);
+        assert_eq!(state_u16(&var, related + counter), 0);
+        assert_eq!(state_u16(&var, owner + 2), 0);
+
+        // BOTH kind 1 -> branch 1 finds no counter field and falls into branch 2,
+        // which finds none either (0x5DCC je 0x5DE3, then 0x5DF4 je 0x5E09).
+        let mut var = vec![0; 0x0300];
+        state_set_u16(&mut var, owner, 1);
+        state_set_u16(&mut var, related, 1);
+        assert_eq!(post_update_encounter_counter(&mut var, owner, related), None);
+        assert_eq!(state_u16(&var, owner + 2), 0, "no bump -> no bit15 either");
+    }
+
+    #[test]
     fn world_click_creates_the_c1_presentation_record() {
         // 0xB20C..0xB27B: a NEW world target sets gs:0x251B and writes
         // {0xC1, target, 0} at orxx+0xA (gs:0x6750 = the built-in object orxx).
@@ -8983,9 +9486,11 @@ mod tests {
         state_set_u16(&mut var, related, 2);
         write_actor_record(&mut var, record, related);
 
+        // Both partners are kind 2, so the 0x5DB4/0x5DE3 kind-1 tests both fail
+        // and no encounter counter is bumped.
         assert_eq!(
             post_update_actor_record_pair(&mut var, owner, record),
-            Some(related_field)
+            Some((related_field, None))
         );
         assert_eq!(
             state_u16(&var, record.wrapping_add(4)),

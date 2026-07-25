@@ -19,7 +19,8 @@ fn main() {
     e.load_tv_channels(assets, "tv");
     e.load_cyberspace(assets);
     e.load_bridge(iso);
-    e.load_hand_atlas(Path::new("accuracy/captures/bridge/hand"));
+    // (The capture-sprite hand atlas loader is gone: the hand is rendered from
+    // the real manu3 mesh — src/manu3_hand.rs — so there is nothing to load.)
     e.load_nav_chart(iso);
     e.load_console_font(iso);
     e.load_cryobox(assets);
