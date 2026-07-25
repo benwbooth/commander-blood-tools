@@ -555,6 +555,24 @@ pub fn is_pair_record_opcode(opcode: u8) -> bool {
     )
 }
 
+/// What the record-entry family stores in the RELATED word — `0` for `0xC8`, the
+/// operand otherwise.
+///
+/// The zero is not a literal in the original. `0xC8`'s handler (`0x6F62`) reaches
+/// its set path only through a guard that proves the register is zero:
+///
+/// ```text
+///   0x6F9A  mov bx,es:[bp]        the record's first word
+///   0x6F9E  or bx,bx / jne 0x6FB4 NON-empty -> vm_branch instead of writing
+///   0x6FA2  mov word es:[bp],0xc8 write the type
+///   0x6FA8  mov es:[bp+2],bx      ...and BX, which the guard just proved is 0
+///   0x6FAC  mov word es:[bp+4],0
+/// ```
+///
+/// So `0xC8` writes an empty record and nothing else: it only fires on a slot that
+/// was already zero, and the related word it stores is that same zero. Writing the
+/// operand there — which every sibling opcode does — would be the natural
+/// generalisation and would put a value in a field the game guarantees empty.
 pub fn record_entry_stored_related_offset(opcode: u8, operand: u16) -> u16 {
     if opcode == 0xC8 { 0 } else { operand }
 }

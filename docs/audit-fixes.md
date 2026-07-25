@@ -5428,3 +5428,34 @@ Worth the distinction: a stated convention invites "surely this should be
 instead. The mask and the shift direction are one fact.
 
 The queue: 45 -> 44. Cited instructions: 239 -> 246.
+
+## #171 — the zero that is a register, not a literal
+
+`record_entry_stored_related_offset` returns `0` for opcode `0xC8` and the operand
+for everything else. The port states the exception; the handler explains it.
+
+`0xC8` (`0x6F62`) reaches its set path only through a guard:
+
+```text
+  0x6F9A  mov bx,es:[bp]        the record's first word
+  0x6F9E  or bx,bx / jne 0x6FB4 NON-empty -> vm_branch instead of writing
+  0x6FA2  mov word es:[bp],0xc8 write the type
+  0x6FA8  mov es:[bp+2],bx      ...and BX, which the guard just proved is 0
+  0x6FAC  mov word es:[bp+4],0
+```
+
+The related word is not written as a constant — it is written from `bx`, which
+reached that line only because `or bx,bx` found it zero. The value and the guard
+are the same fact.
+
+So `0xC8` writes an EMPTY record: it fires only on an already-empty slot, and
+stores that emptiness back. Writing the operand there instead — which is what
+every sibling opcode does, and what a reader unifying the family would reach for —
+would put a value in a field the game guarantees empty.
+
+That is the fourth time in this queue where the original's shape encodes a
+constraint the port's cleaner spelling drops: the compare-before-write (#150), the
+`btr` carry (#151), the sign-terminated list (#165), and now a zero that is a
+proof.
+
+The queue: 44 -> 43. Cited instructions: 246 -> 251.
