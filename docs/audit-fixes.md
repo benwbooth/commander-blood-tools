@@ -5090,3 +5090,29 @@ every commit is not that it catches the careless — it is that it catches the
 person who has just spent an hour in the disassembly and is confident.
 
 Cited instructions 198 -> 202; the queue 67 -> 66.
+
+## #158 — the nav destinations start at entity 0x15, and the loop runs backwards
+
+`project_ship_3d_object_sprite`, from `ship_3d_object_sprite_project` @`0x9B98`:
+
+```text
+  0x9BBA  dec word [0x2f77]              the object counter, walked DOWN
+  0x9BBE  js 0x9CFB                      negative -> done
+  0x9BD1  mov ax,[0x2f77]
+  0x9BD4  add ax,0x15                    + SHIP_3D_NAV_ENTITY_BASE
+  0x9BD7  shl ax,5                       * 32, the entity stride
+  0x9BDA  add ax,0x6212                  + SHIP_3D_ENTITY_TABLE
+```
+
+Two facts a port needs and neither is visible from the port's own code.
+
+The nav destinations do NOT occupy entity slots `0..n`. They start at `0x15`,
+sharing the entity table with whatever holds the low slots — so an off-by-`0x15`
+does not fail loudly, it writes over other objects.
+
+And the counter is decremented BEFORE use, so the loop indexes `n-1..0`. Combined
+with the plot's first-write-wins rule (#149), the ORDER decides which destination
+survives when two project to the same pixel. Walking up instead of down is a
+change no test would catch and the wrong sprite would win.
+
+Cited instructions 202 -> 209; the queue 66 -> 65.

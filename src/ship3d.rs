@@ -2627,6 +2627,27 @@ pub fn render_ship_3d_starfield(
     ))
 }
 
+/// Project one nav-destination object to a sprite slot, from
+/// `ship_3d_object_sprite_project` @`0x9B98`:
+///
+/// ```text
+///   0x9BBA  dec word [0x2f77]              the object counter, walked DOWN
+///   0x9BBE  js 0x9CFB                      negative -> the loop is done
+///   0x9BC2  mov eax,[bx] / mov [di],eax    copy the object's coordinates
+///   0x9BD1  mov ax,[0x2f77]
+///   0x9BD4  add ax,0x15                    + SHIP_3D_NAV_ENTITY_BASE
+///   0x9BD7  shl ax,5                       * 32, the entity stride
+///   0x9BDA  add ax,0x6212                  + SHIP_3D_ENTITY_TABLE
+/// ```
+///
+/// So the nav destinations do not occupy entity slots `0..n` — they start at
+/// entity `0x15`, and the counter is decremented BEFORE use, so it indexes
+/// `n-1..0`. Both matter for a port: sharing the entity table means an
+/// off-by-`0x15` writes over whatever occupies the low slots, and walking up
+/// instead of down reverses which destination lands in which slot when two
+/// project to the same place (see the first-write-wins plot in #149).
+///
+/// Cited here because it was settled ASM with no doc (#141's queue).
 pub fn project_ship_3d_object_sprite(
     anchor: Ship3dProjectionPoint,
     origin: Ship3dProjectionOrigin,
