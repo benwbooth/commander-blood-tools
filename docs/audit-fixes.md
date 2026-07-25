@@ -1780,3 +1780,30 @@ The table is also proof that this could not have been guessed: `Oddland` is
 `trou.ext`, `Bonus` is `forest.ext`, `Troma` is `glacia.ext`, and `Trashlando`
 shares `kortex.ext` with `Kortex`. Any mapping inferred from asset names would
 have been wrong for a quarter of the worlds.
+
+## FIX #53 — the nav chart's object list, and what the shipped data says through it
+
+The panel needed a SELECTION; the selection needs a LIST. Both are decoded now,
+so the whole chart chain runs on records instead of script-derived labels:
+
+    directory gs:0x672C
+      -> 0x604E   keep kind-1 entries whose object has flag bit1 (IN PLAY)
+      -> 0x721A   keep kinds with `test bx,0x118` = 0x08 | 0x10 | 0x100
+      -> 0x92A3   hit-test each marker at +0x18/+0x1A, box sized by kind
+      -> 0x9022   the selection, which opens the info panel
+
+`0x118` is exactly the three kinds the picker sizes boxes for, which is a nice
+cross-check: the filter and the hit-test agree on what a chart object is.
+
+RUNNING IT ON THE SHIPPED DATA, which is the part worth recording. SCRIPT5's
+initial `.VAR` charts exactly ONE object: `Oddland`, kind `0x100` — a BLACK HOLE
+— at marker `(132, 34)`, whose artwork resolves through `DS:0x2BC7` to id 72 =
+`trou.ext`. "Trou" is French for hole. The kind, the name and the asset all agree
+on the same fact from three independent tables, which is about as good as
+static verification gets.
+
+SCRIPT1..4 chart NOTHING from their initial `.VAR`, and that is the DATA's answer
+rather than a hole in the port: the in-play bit `0x604E` gates on is state the
+story sets as you play. The test asserts both halves — one object for SCRIPT5,
+none for the others — so a future change that quietly starts charting everything
+will fail.

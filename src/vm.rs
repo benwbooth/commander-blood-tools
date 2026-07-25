@@ -1341,6 +1341,13 @@ pub const LOCATION_PANEL_CURSOR_RECT_SIZE: u16 = 4;
 /// `0x18` for kinds 8 and `0x10` (`FIELD_OFFSETS[0x0B]`). Read as `x` at `+0x18`
 /// and `y` at `+0x1A` by the picker at `0x92BC`.
 pub const NAV_PICK_POSITION_FIELD: u16 = 0x18;
+/// Bit 1 of an object's `+2` flag word — the gate `0x6073` applies when building
+/// the active-object list, and the same bit the `0xC1` nav path (`0x6C3B`) and
+/// the entity candidate list (`0x7259`) test.
+pub const OBJECT_FLAG_IN_PLAY: u16 = 0x0002;
+/// The kinds the nav chart draws: `test bx,0x118` at `0x723D` — kind `0x08`,
+/// kind `0x10` (a SHIP) and kind `0x100` (a BLACK HOLE).
+pub const NAV_CHART_KIND_MASK: u16 = 0x0118;
 /// Hit-box sizes, per kind (`0x92BF`, `0x92D3`, `0x92FC`).
 pub const NAV_PICK_BOX_DEFAULT: (i32, i32) = (0x0C, 0x0B);
 pub const NAV_PICK_BOX_BLACK_HOLE: (i32, i32) = (0x13, 0x0C);
@@ -4741,6 +4748,51 @@ impl VmMachine {
             });
         }
         rows
+    }
+
+    /// The ACTIVE-OBJECT candidate list (`table_672c_process` `0x604E`, output
+    /// `DS:0x6A16`): walk the 20-byte directory at `gs:0x672C` while `+0x12 == 1`
+    /// and keep every object whose flag word has bit 1 set.
+    ///
+    /// ```text
+    ///   0x6068  ax = [si+0x12] / cmp ax,1 / jne     stop at the first non-kind-1
+    ///   0x6070  bx = [si+0x10]                      the object offset
+    ///   0x6073  test byte fs:[bx+2],2 / je          bit1 of the object's flags
+    ///   0x607C  stosw                               keep it
+    ///   0x6082  the list is 0xFFFF-terminated
+    /// ```
+    pub fn build_active_object_list(&self) -> Vec<u16> {
+        let mut out = Vec::new();
+        for &(object, entry_kind) in self.directory.iter() {
+            if entry_kind != 1 {
+                break; // 0x606E: the scan stops, it does not skip
+            }
+            if self.rec_read(object.wrapping_add(2)) & OBJECT_FLAG_IN_PLAY != 0 {
+                out.push(object);
+            }
+        }
+        out
+    }
+
+    /// The NAV CHART's visible-object list (`0x721A`, output `DS:0x2AD3`, count
+    /// returned in `ax` and stored at `[0x27C1]`): the active-object list above,
+    /// filtered to the chart-visible KINDS.
+    ///
+    /// ```text
+    ///   0x7226  call 0x604E                     build the candidate list
+    ///   0x7233  ax = [si] / or ax,ax / js       walk it, stop at the terminator
+    ///   0x7238  bx = es:[eax+edi]               the object's KIND word
+    ///   0x723D  test bx,0x118 / je              keep only kinds 8, 0x10, 0x100
+    ///   0x7243  store, bp += 2, cx++
+    /// ```
+    ///
+    /// `0x118` is exactly the three kinds the chart draws and the picker sizes
+    /// boxes for: `0x08`, `0x10` (a SHIP) and `0x100` (a BLACK HOLE).
+    pub fn build_nav_chart_list(&self) -> Vec<u16> {
+        self.build_active_object_list()
+            .into_iter()
+            .filter(|&object| self.rec_read(object) & NAV_CHART_KIND_MASK != 0)
+            .collect()
     }
 
     /// The NAV-CHART OBJECT PICKER (`0x92A3..0x9339`) — what the info panel's
@@ -9018,6 +9070,97 @@ mod tests {
         m.rec_write_pub(PLACE, LOCATION_KIND_SHIP | 0x40);
         assert_eq!(m.location_panel_rows(PLACE)[0].text, "SHIP: ");
         assert_eq!(m.location_status_block(), None, "no arche -> no hover block");
+    }
+
+    #[test]
+    fn the_chart_list_keeps_in_play_objects_of_the_three_chart_kinds() {
+        let mut m = VmMachine::new();
+        // 0x606E stops the scan at the first non-kind-1 DIRECTORY entry, so an
+        // eligible object past it never reaches the chart.
+        m.directory = vec![
+            (0x100, 1),
+            (0x200, 1),
+            (0x300, 1),
+            (0x400, 1),
+            (0x500, 1),
+            (0x600, 0),
+            (0x700, 1),
+        ];
+        for (obj, kind, flags) in [
+            (0x100u16, LOCATION_KIND_SHIP, OBJECT_FLAG_IN_PLAY),
+            (0x200, LOCATION_KIND_BLACK_HOLE, OBJECT_FLAG_IN_PLAY),
+            (0x300, 0x08, OBJECT_FLAG_IN_PLAY),
+            (0x400, 2, OBJECT_FLAG_IN_PLAY), // a character: not a chart kind
+            (0x500, LOCATION_KIND_SHIP, 0),  // right kind, not in play
+            (0x700, LOCATION_KIND_SHIP, OBJECT_FLAG_IN_PLAY), // past the stop
+        ] {
+            m.rec_write_pub(obj, kind);
+            m.rec_write_pub(obj + 2, flags);
+        }
+        assert_eq!(
+            m.build_active_object_list(),
+            vec![0x100, 0x200, 0x300, 0x400],
+            "0x6073 keeps every in-play object regardless of kind"
+        );
+        assert_eq!(
+            m.build_nav_chart_list(),
+            vec![0x100, 0x200, 0x300],
+            "0x723D's `test bx,0x118` then keeps only the three chart kinds"
+        );
+        assert_eq!(NAV_CHART_KIND_MASK, 0x08 | LOCATION_KIND_SHIP | LOCATION_KIND_BLACK_HOLE);
+    }
+
+    #[test]
+    fn the_real_scripts_chart_list_resolves_oddland_as_the_black_hole() {
+        // The whole chain against SHIPPED data: directory -> 0x604E active list
+        // -> 0x721A kind filter -> inline name -> DS:0x2BC7 artwork id.
+        let Ok(var) = std::fs::read("output/_tmp_iso/SCRIPT5.VAR") else {
+            return;
+        };
+        let Ok(deb) = std::fs::read("output/_tmp_iso/SCRIPT5.DEB") else {
+            return;
+        };
+        let mut m = VmMachine::new();
+        m.load_var(&var);
+        m.load_deb_objects(&deb);
+
+        let chart = m.build_nav_chart_list();
+        assert_eq!(chart.len(), 1, "SCRIPT5's INITIAL state charts one object");
+        let object = chart[0];
+        assert_eq!(m.rec_read(object), LOCATION_KIND_BLACK_HOLE);
+        assert_eq!(m.object_inline_name(object), "Oddland");
+        assert_eq!(
+            crate::levels::world_art_resource_id("Oddland"),
+            Some(72),
+            "trou.ext — 'hole', which is what a black hole's artwork should be"
+        );
+        // The marker the picker hit-tests, straight out of the record.
+        let x = m.rec_read(object + NAV_PICK_POSITION_FIELD) as i32;
+        let y = m.rec_read(object + NAV_PICK_POSITION_FIELD + 2) as i32;
+        assert_eq!((x, y), (132, 34));
+        let arche_context = m
+            .arche_offset
+            .map(|a| m.rec_read(a + 0x22))
+            .unwrap_or_default();
+        assert_eq!(m.nav_chart_pick(&chart, (x + 2, y + 2), arche_context), Some(object));
+        assert_eq!(m.nav_chart_pick(&chart, (0, 0), arche_context), None);
+
+        // The other scripts chart NOTHING from their initial .VAR: the in-play
+        // bit (0x6073) is runtime state the story sets, so an empty chart at boot
+        // is the data's answer, not a gap in the port.
+        for n in 1..=4 {
+            let (Ok(var), Ok(deb)) = (
+                std::fs::read(format!("output/_tmp_iso/SCRIPT{n}.VAR")),
+                std::fs::read(format!("output/_tmp_iso/SCRIPT{n}.DEB")),
+            ) else {
+                continue;
+            };
+            let mut m = VmMachine::new();
+            m.load_var(&var);
+            m.load_deb_objects(&deb);
+            assert!(m.build_active_object_list().len() >= 2);
+            assert!(m.build_nav_chart_list().is_empty(), "SCRIPT{n}");
+        }
     }
 
     #[test]
