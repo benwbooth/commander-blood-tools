@@ -4124,3 +4124,30 @@ check stands on its own (109 verified, 0 wrong); the alignment guessing is gone.
 A guard that cannot distinguish its target from ordinary correct code is worse
 than no guard, because its noise trains the reader to skip it — and this one would
 have flagged the jump-table decode that #109 got RIGHT.
+
+## #125 — verifying two rows by reading the handlers, and citing code instead of a flag
+
+`enter_query`/`exit_query` cited `gs:0x67ad` — the query-mode FLAG. That is a data
+global, so disassembling file offset `0x67AD` shows unrelated code, and the row
+could not be verified from what it cited. The verification is the HANDLER, which
+the dispatch table names: `0xA0` -> `0x6559`, `0xA1` -> `0x6572`.
+
+    0x6559  mov byte gs:[0x67ad],1        query ON
+    0x655F  mov ax,gs:[0x6884]            stack pointer
+    0x6565  add ax,2 / mov gs:[0x6884],ax POST-increment
+    0x656C  lodsw / mov [bp+0x6820],ax    operand into the slot it vacated
+
+    0x6572  mov byte gs:[0x67ad],0        query OFF
+    0x657C  cmp ax,2 / je 0x6587          pointer at the base: DO NOT pop
+    0x6581  sub word gs:[0x6884],2
+
+Both port arms match, including the guard: `0xA1` uses `Vec::pop()`, whose no-op
+on an empty stack IS the `cmp ax,2` behaviour rather than an approximation of it.
+Worth checking rather than assuming — an implementation that decremented
+unconditionally would underflow exactly where the game refuses to.
+
+The docs now quote the handlers, so `check_cited_instructions.py` covers them:
+109 -> 117 verified. That is the concrete way the label-coverage problem from #120
+gets better — write the citation in a form a checker can read, one row at a time.
+
+Settled: 571 -> 573 of 2160.

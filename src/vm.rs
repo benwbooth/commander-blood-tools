@@ -288,11 +288,32 @@ pub enum RecordOpResult {
 }
 
 impl QuerySetMode {
-    /// Opcode `0xA0` PUSH — enter query mode (`gs:0x67ad = 1`).
+    /// Opcode `0xA0` PUSH — enter query mode. The handler is `0x6559`
+    /// (dispatch-table entry for `0xA0`):
+    ///
+    /// ```text
+    ///   0x6559  mov byte gs:[0x67ad],1     query mode ON
+    ///   0x655F  mov ax,gs:[0x6884]         the stack pointer
+    ///   0x6565  add ax,2 / mov gs:[0x6884],ax   POST-increment
+    ///   0x656C  lodsw / mov [bp+0x6820],ax      operand -> the slot it vacated
+    /// ```
+    ///
+    /// This helper is only the flag half; the push is in the `0xA0` execution arm.
     pub fn enter_query(&mut self) {
         self.query = true;
     }
-    /// Opcode `0xA1` POP — exit query mode (`gs:0x67ad = 0`).
+    /// Opcode `0xA1` POP — exit query mode. Handler `0x6572`:
+    ///
+    /// ```text
+    ///   0x6572  mov byte gs:[0x67ad],0     query mode OFF
+    ///   0x6578  mov ax,gs:[0x6884]
+    ///   0x657C  cmp ax,2 / je 0x6587       pointer already at the base: DO NOT pop
+    ///   0x6581  sub word gs:[0x6884],2
+    /// ```
+    ///
+    /// The `cmp ax,2` guard is why the execution arm uses `Vec::pop()`, whose
+    /// no-op on an empty stack is the same behaviour rather than an approximation
+    /// of it.
     pub fn exit_query(&mut self) {
         self.query = false;
     }
