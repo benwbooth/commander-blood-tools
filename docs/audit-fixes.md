@@ -997,3 +997,23 @@ of the stored value. The executable specification in `vm.rs` still encodes
 `dlg_line_asset_id_from_source_byte` as `(byte-1)*16` — that function faithfully
 describes the instructions at `0x7684`, so it stays, but it must NOT be read as "this is
 what the table contains".
+
+### The asset id resolved — a pointer into an `fd\` name-slot array
+
+Following the falsified value to its target settles what `+2` actually holds.
+
+`DS:0x0DC7` is `fd\` followed by consecutive 13-byte NAME SLOTS (12 placeholder chars +
+NUL): slot 0 at `0x0DCA`, slot 1 at `0x0DD7`, stride 13. The slots still read
+`xxxxxxxxxxxx` in the hub savestate — unpatched, exactly like `mu\xxxxxxxx.voc` before
+`0x77A9` writes a name into it.
+
+So the per-line asset id is a POINTER to one of those slots, and the line's asset is an
+`fd` file — the location BACKGROUNDS (chart.fd, frigo.fd, orx.fd). That fits the
+consumer: `0x9D10` raises the palette gates and unpacks, which is background work, and
+it is why the whole chain sits on the graphics path rather than the audio one.
+
+It also closes the arithmetic question definitively: `0x0DD7` = 3543 is not divisible by
+16, so this value CANNOT have been produced by the `(byte-1)*16` at `0x7684`. That fill
+is a real instruction sequence writing a real field, but it is not what populated this
+field in this state. Two writers, one field — which is precisely the situation that made
+the static-only reading confident and wrong.

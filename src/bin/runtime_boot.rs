@@ -3234,6 +3234,28 @@ fn main() {
             if seen.len() > 12 { break; }
         }
         println!("DLGTABLE: {} nonzero writes during the run", rt.m.range_hits.len());
+        // Follow the asset id: it is a POINTER into a path template, so dump the live
+        // string it addresses and the template head just before it.
+        for &id in &[word(&rt, base + 9 * 4 + 2)] {
+            if id != 0xFFFF && (id as usize) < 0xF000 {
+                let a = ds0 + id as usize;
+                let txt: String = (0..24)
+                    .map(|i| {
+                        let b = rt.m.mem[a + i];
+                        if (32..127).contains(&b) { b as char } else { '.' }
+                    })
+                    .collect();
+                println!("DLGTABLE asset id {id:#06x} -> DS:{id:#06x} = {txt:?}");
+                let h = ds0 + (id as usize).saturating_sub(16);
+                let head: String = (0..32)
+                    .map(|i| {
+                        let b = rt.m.mem[h + i];
+                        if (32..127).contains(&b) { b as char } else { '.' }
+                    })
+                    .collect();
+                println!("DLGTABLE template head DS:{:#06x} = {head:?}", id.saturating_sub(16));
+            }
+        }
         rt.m.trace_range = None;
         return;
     }
