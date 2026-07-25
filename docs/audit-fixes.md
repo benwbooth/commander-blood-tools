@@ -1444,3 +1444,29 @@ That upgrades the selector-`0x08` gap from "a field we do not track" to a behavi
 divergence with a visible surface. Implementing it needs both halves — the post-update
 increment AND the list filter — since adding only the increment writes state nothing
 reads, and adding only the filter would exclude everything.
+
+### The list filter is a THREE-condition chain, and the port has the builder not the filter
+
+`0x91C3` walks the source list at `gs:0x6886` — the same list `0x624B` builds and the
+port mirrors as `VmMachine::build_nav_source_list` — and applies three tests before
+drawing each entry:
+
+    test word [si],   2     the object's kind must have bit 1
+    test word [si+2], 1     the ACTIVE bit
+    cmp  word [si+0x36], 0  the selector-8 SEEN COUNTER, must be non-zero
+
+Only survivors are drawn (`lcall 0x299:0x202`, `add dx,0xA` per row).
+
+So the earlier framing needs refining: the port is not missing "a filter on lists". It has
+the BUILDER and the builder is faithful. What is missing is the draw-time chain, and
+specifically its third condition — the counter — which no port code maintains or tests.
+
+That also locates the fix precisely. Both halves belong on the CONSUMER side of the list
+plus the post-update ladder:
+
+1. post-update (`0x5DB0..0x5DFA`) increments the partner's counter,
+2. the consumer applies all three tests before including an entry.
+
+Implementing the filter without the increment would empty the list, which is why these
+land together or not at all. Recorded here rather than attempted at the end of a long
+session, because it changes what surfaces show and wants its own verification pass.
