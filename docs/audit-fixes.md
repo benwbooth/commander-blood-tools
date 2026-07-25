@@ -4445,3 +4445,27 @@ relies on.
 43 cited-but-unrouted rules remain, one fewer than before. The lesson from this
 one: a port can compute the right VALUES through the wrong INTERFACE, and a
 value-level test will never notice. Nothing about the cycle was numerically wrong.
+
+## #135 — the port does not mix, it stacks
+
+`mix_unsigned_pcm_average` was another unwired rule. Chasing its callers first
+fixed a tool: `re/tools/find_near_callers.py` opened `bin/BLOODPRG.EXE` as a bare
+relative path, so it only ran from inside `re/` and raised FileNotFoundError from
+the repo root — where CLAUDE.md says tools are run. It uses the shared loader now.
+
+With that working, `0xBB6D` has NO near callers, which is the right answer: it is
+a fragment inside the SND player, not a callable routine —
+`lodsb / add al,es:[di] / rcr al,1 / stosb`, where the add's carry becomes bit 7
+during the rotate, giving `floor((src+dst)/2)`.
+
+The gap is what the port does instead. It runs THREE independent `MusicPlayer`
+streams — music, voice, chatter — and lets the audio backend sum them. So two
+simultaneous sounds play at FULL amplitude and can clip, where the game halves
+each and cannot. That is audible, not cosmetic, and it is the same shape as #134:
+the port produces a plausible result through an interface the game does not have.
+
+Recorded in `docs/port-validation.md` as OPEN. Closing it needs a mixing output
+path rather than a patch, and the primitive is already decoded and settled —
+`snd_mix_average`'s test walks all 65536 input pairs, modelling the `add`/`rcr`
+pair independently and comparing, which is verification against the instruction
+rather than against itself.

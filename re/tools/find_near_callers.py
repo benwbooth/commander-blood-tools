@@ -6,11 +6,21 @@ site+3+rel16 (mod 64K within the segment). We search the whole image and keep
 matches whose 16-bit wraparound lands on the target; callers in other segments
 are impossible for E8, so any hit in a plausible code range is a real caller.
 
-Usage: python3 tools/find_near_callers.py 0x981b [more offsets...]
+Usage: python3 re/tools/find_near_callers.py 0x981b [more offsets...]
+
+Run from the REPO ROOT, like every other tool here. This used to open
+`bin/BLOODPRG.EXE` as a bare relative path, so it worked only when invoked from
+inside `re/` and raised FileNotFoundError everywhere else -- including from the
+root, which is where CLAUDE.md says tools are run.
 """
+import os
 import sys
 
-data = open('bin/BLOODPRG.EXE', 'rb').read()
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from mzfile import MZ
+
+data = MZ().data
 
 for arg in sys.argv[1:]:
     target = int(arg, 16)
