@@ -1413,3 +1413,34 @@ That is three leads this session that looked like defects and were not (`0x6034`
 different name, the `write_record_entry` family, this one), against several that were
 real. Recording the closures as carefully as the hits — a lead list that only accumulates
 is worse than useless.
+
+## MECHANISM — the selector-8 counter gates list membership
+
+Traced the unmodelled selector `0x08` end to end. It is not bookkeeping; it decides what
+the player sees.
+
+WRITE (post-update ladder, `0x5DB0..0x5DFA`), symmetric over the C4 pair:
+
+    di = ds:[bp+2]                       the related record
+    if [si] kind == 1:  bx = [di];  sel 8 -> off;  inc word [eax+edi]   (the OTHER's counter)
+    else if [di] kind == 1: bx = [si];  sel 8 -> off;  inc word [eax+esi]
+    both branches: or word [si+2], 0x8000
+
+Whichever partner is kind 1, the OTHER partner's counter is incremented. For kind 1 the
+selector-8 offset is `0x36`.
+
+READ — two sites, both gating on NON-ZERO:
+
+    0x83DF   cmp word [si+0x36],0 / je skip   then cmp [si+0x18],bx / je skip
+             (+0x18 is the selector-0x11 LOCATION field for kind 1)
+    0x91DB   cmp word [si+0x36],0 / je next   else add si,4; lcall 0x299:0x202 (draw);
+             add dx,0xA  -- one list ROW per included object
+
+So the counter is a "has this object been encountered" flag, and LIST MEMBERSHIP depends
+on it. The port models neither the increment nor the filter, so any list it builds from
+objects is unfiltered where the game filters.
+
+That upgrades the selector-`0x08` gap from "a field we do not track" to a behavioural
+divergence with a visible surface. Implementing it needs both halves — the post-update
+increment AND the list filter — since adding only the increment writes state nothing
+reads, and adding only the filter would exclude everything.
