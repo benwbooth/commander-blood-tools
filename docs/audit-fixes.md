@@ -1178,3 +1178,30 @@ REMAINING: a longer passive run should reach the playable hub, which is the capt
 post-progression savestate needs. Wait, do not poke — and budget minutes per run, since
 the tool timeout has to exceed the sequence length (one attempt already died at 2 minutes
 against a 3.5 minute script).
+
+### Capture thread — state after six minutes passive, and where it stops
+
+A six-minute passive run (shots each minute) shows the viewscreen changing at EVERY
+sample — six distinct frames, ending on a character in a panelled room. The BCARTE
+pyramid HUD and BORXX orb persist throughout. No interactive console menu appears.
+
+WHAT IS ESTABLISHED:
+
+* The launch fix is real, confirmed against a control (no-args reaches a different
+  screen entirely — a spaceship over a planet).
+* `GAME1.SAV` is now present in the C: mount, where the game looks for it.
+* The sequence self-advances and does not need input to progress between scenes.
+
+WHAT IS NOT: reaching a state with granted destinations. Six minutes of scene changes
+never produced a console menu, so either the intro is longer than that, or it waits for
+an input whose timing/position I have not found, or this is a demo loop that the
+arguments start differently but never exits.
+
+STOPPING THIS THREAD HERE. Distinguishing those three requires knowing the game — what
+to click and when — which is play-testing, not analysis, and each hypothesis costs a
+multi-minute run. The infrastructure work is done and banked; the remaining step needs
+someone who can drive the game deliberately, or a savestate captured by a human playing
+it.
+
+Frames under `accuracy/captures/drive_validation/` document each stage so the next
+attempt starts from evidence rather than repeating these runs.
