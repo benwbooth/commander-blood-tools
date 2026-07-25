@@ -3114,3 +3114,31 @@ Neither pair had actually drifted — checked before collapsing them. The point 
 that verification attaches to a FUNCTION, and a second copy of the rule is outside
 it by construction. Three rows inherit `ORACLE` by delegation rather than by a new
 test, which is the cheapest verification there is.
+
+## FIX #97 — a second copy of the font, carrying three already-fixed defects
+
+Sweeping for addresses cited by more than one port FUNCTION turned up
+`subtitle_draw_glyph` defined in BOTH `src/font.rs` and `src/extract/render.rs`.
+The extraction module had its own private copy of the glyph struct, the lookup,
+the advance and ALL THREE FONT TABLES — and that copy still carried three defects
+the shared one had fixed:
+
+* `GAME_FONT_CHAR_MAP` truncated to **128 entries** (the real table is 176 — the
+  same truncation as FIX #56, in a third place), so every accented character was
+  unmapped;
+* indexed by `ch as usize`, a UNICODE SCALAR, where the table is indexed by CP437
+  BYTE — so `é` (U+00E9 = 233) fell past the end even at 176 entries;
+* unmapped characters fell back to `'?'`, where `render_string` (`0x31CE`:
+  `xlatb / or al,al / js`) skips them with NO glyph and NO advance.
+
+So the extraction/QA path rendered `?` where the game renders nothing, and mangled
+accents twice over. Deleted — 115 lines of duplicated tables and accessors — and
+delegated to `crate::font`.
+
+Its test asserted the `'?'` fallback as correct behaviour, so it had been LOCKING
+the defect in. Rewritten against `0x31CE`, plus an assertion that `é` now maps.
+
+THE PATTERN, third instance this session: `bloodprg.rs` had the 128-truncation
+(#56), `font.rs` had it before that, and `extract/render.rs` had it still. One
+decode, three copies, fixed one at a time over three separate passes because
+nothing connected them. The address-collision sweep is what finally connected them.
