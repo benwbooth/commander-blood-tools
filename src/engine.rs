@@ -1998,7 +1998,8 @@ impl EngineState {
     pub const QUICKSAVE_SLOT_NAME: &'static str = "LAST";
     pub const QUICKSAVE_NAME_BUFFER_DS: u16 = 0x270D;
 
-    /// Draw one of the centred status overlays at its own decoded position.
+    /// Draw one of the centred status overlays at its own decoded position:
+    /// `LOADING` from `0x16BC` and `PAUSE` from `0x1ABB`.
     pub fn draw_status_overlay(&mut self, loading: bool) {
         let (text, (x, y), color) = if loading {
             (Self::LOADING_TEXT, Self::LOADING_POS, Self::LOADING_COLOR)
@@ -2703,40 +2704,7 @@ impl EngineState {
         self.cryobox_scene = Some(hnm);
     }
 
-    /// Composite the REAL console band (pyramid field + eye-orb) — interpreter ground
-    /// truth (BOOTIDX bd_00290M, byte-identical across every dialogue beat): raw VGA
-    /// indices for rows 140..200, entirely within the console bank 224..255. The bank's
-    /// DAC (grey ramp 224..239 + text greens 253..255) is installed verbatim; HNM `pl`
-    /// palette blocks only ever cover indices 1..127, so the bank never collides with
-    /// the character video above the band.
-    /// Overlay the intro montage's console band.
-    ///
-    /// THE PALETTE HALF IS NO LONGER A CAPTURE. `console_band.dac`'s entries
-    /// 224..255 are byte-identical to the port's own `GAME_SCREEN_PALETTE_DAC`
-    /// over the same range (0 of 96 bytes differ, checked against the shipped
-    /// file), so the harvested DAC was a duplicate of a constant already sourced
-    /// from the image at `0x12F78`. Uses the constant.
-    ///
-    /// THE INDEX HALF IS STILL A CAPTURE, and is the open item. What is known,
-    /// with three hypotheses eliminated:
-    ///
-    /// * the band uses exactly SIXTEEN indices, `224..=239` — a dedicated console
-    ///   bank;
-    /// * NOT a slice of the bridge panorama: `TB.BIG`'s frames draw in `0..~75`, a
-    ///   disjoint range, every frame differing in 100% of bytes;
-    /// * NOT findable by byte statistics over the shipped `.SPR`/`.EXT` files —
-    ///   they are compressed, and a dozen unrelated files show ~50% of their bytes
-    ///   in the `224..239` window by chance;
-    /// * NOT baked into the montage film. `cliptoot.hnm` frame 0 IS full-screen
-    ///   320x200, which made it the obvious candidate — but its rows 140..200
-    ///   decode to a single index, 0. The film leaves the band region blank.
-    ///
-    /// What that last one buys is a sharper question. Every frame after 0 is
-    /// 320x130, so during the montage the game repaints only the top 130 rows and
-    /// the band simply PERSISTS underneath. It is therefore drawn ONCE, before the
-    /// film starts — in the intro setup path, not per frame. That is where to look
-    /// next, rather than in the film or the assets.
-    /// The montage's full-screen colour reduction (`0x7AC3`: `si=DS:0x6011`,
+    /// The montage's full-screen colour reduction at `0x7AC3` (`si=DS:0x6011`,
     /// `lcall 0x299:0x40E` over `(0, 0, 320, 200)`), through the table the game's
     /// own builder produces — see
     /// [`crate::palette::build_console_bank_remap_table`]. Idempotent, as the

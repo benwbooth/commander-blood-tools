@@ -82,8 +82,9 @@ pub const SLOT_RECORD_LEN: usize = 32;
 pub const SLOT_NAME_LEN: usize = 16;
 pub const SLOT_COUNT: usize = 10;
 
-/// Parse `blood.sav`, the slot-name directory. Returns `None` unless the image is
-/// exactly the ten records the format defines.
+/// Parse `blood.sav`, the slot-name directory the save flow renames through
+/// (`0x1BAB` points `[0x2734]` at a record, `0x1BBD` copies it to `DS:0x273B`).
+/// Returns `None` unless the image is exactly the ten records the format defines.
 pub fn parse_slot_directory(data: &[u8]) -> Option<Vec<SaveSlot>> {
     if data.len() != SLOT_COUNT * SLOT_RECORD_LEN {
         return None;
