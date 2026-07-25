@@ -159,6 +159,68 @@ fn representative_oracle_suite() {
 /// (x=170, first row y=34, 11px pitch), the PROPORTIONAL advance (glyph width +
 /// 2px), and the glyph shapes all match the original — the whole word "LIBIDO"
 /// (with two 1px-wide 'I's) only lands correctly if the advance is proportional.
+/// The list widget's left edge is a FORMULA, and two independent captures agree
+/// with it at two different values.
+///
+/// `lx = anchor - (widest + 20)/2 + 10`, with the concept anchor `0xE1` = 225
+/// (`mov [0xAC6],0xE1` @`0x89A6`). Nothing is imported from the captures except
+/// two MEASUREMENTS — where the text starts, and how wide the widest row is — so
+/// this verifies the decode rather than copying a layout out of it:
+///
+///   * `psychotherapy_topics.ppm`: widest row spans 111px, text starts at x=170.
+///   * `honk_talk_menu.ppm`:       widest row spans 105px, text starts at x=173.
+///
+/// A centring implementation cannot satisfy both: it puts only the widest row at
+/// the formula's x and every other row further right (audit-fixes #111). These
+/// two files sat in the tree with no test reading them.
+#[test]
+fn list_widget_left_edge_matches_the_formula_in_two_captures() {
+    // (path, expected leading x). The spans are measured, not asserted.
+    let cases = [
+        ("accuracy/captures/bridge/psychotherapy_topics.ppm", 170usize),
+        ("accuracy/captures/dialogue/honk_talk_menu.ppm", 173usize),
+    ];
+    let mut checked = 0;
+    for (path, expect_x) in cases {
+        let Some(px) = read_ppm(Path::new(path)).or_else(|| read_ppm(Path::new(&format!("../{path}")))) else {
+            eprintln!("skipped: no {path}");
+            continue;
+        };
+        let is_grey = |o: usize| {
+            let (r, g, b) = (px[o] as i32, px[o + 1] as i32, px[o + 2] as i32);
+            (r - 138).abs() < 45
+                && (g - 138).abs() < 45
+                && (b - 138).abs() < 45
+                && (r.max(g).max(b) - r.min(g).min(b)) < 25
+        };
+        // Per-row extents of the text mask, right half of the screen only.
+        let mut lead = usize::MAX;
+        let mut widest_span = 0usize;
+        for y in 0..200 {
+            let xs: Vec<usize> = (150..ENGINE_SCREEN_WIDTH)
+                .filter(|&x| is_grey((y * ENGINE_SCREEN_WIDTH + x) * 3))
+                .collect();
+            if xs.len() < 4 {
+                continue; // not a text row
+            }
+            lead = lead.min(xs[0]);
+            widest_span = widest_span.max(xs[xs.len() - 1] - xs[0] + 1);
+        }
+        assert_ne!(lead, usize::MAX, "{path}: found no text rows");
+        assert_eq!(lead, expect_x, "{path}: measured left edge");
+
+        // The mask spans one pixel more than the advance-summed width.
+        let widest = widest_span - 1;
+        let predicted = 0xE1usize - (widest + 20) / 2 + 10;
+        assert_eq!(
+            predicted, lead,
+            "{path}: formula from anchor 0xE1 and widest {widest} predicts {predicted},              capture shows {lead}"
+        );
+        checked += 1;
+    }
+    assert!(checked > 0, "neither capture was readable");
+}
+
 /// Diagnostic for the concept-menu divergence: prints where each mask actually
 /// sits, so a failing IoU says WHICH WAY it is wrong instead of just how much.
 /// Run with `cargo test --test oracle_suite -- --ignored concept_menu_masks`.

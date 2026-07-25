@@ -3703,3 +3703,34 @@ left edge at the formula's x. Which widget `0x857D` centres is recorded as open.
 
 The diagnostic that settled it (`concept_menu_mask_bounds`, `#[ignore]`) stays in
 the tree: an IoU number says how wrong, and this says WHICH WAY.
+
+## #112 — seven captures nothing read, and the formula confirmed at two values
+
+The concept-menu error survived because nothing compared the port against that
+screen until the comparison was written. So: how much captured ground truth is in
+the tree with no test reading it? Seven files —
+
+    console_band.idx      honk_talk_menu.ppm      mission_briefing_eye.ppm
+    nav_screen_opened.ppm post2_menu_choice.ppm   psychotherapy_topics.ppm
+    script2_first_frame.ppm
+
+Two are menu screens, and measuring them settles #111 independently:
+
+    psychotherapy_topics.ppm   12 rows @ 11px pitch   text starts x=170   widest span 111px
+    honk_talk_menu.ppm         10 rows @ 11px pitch   text starts x=173   widest span 105px
+
+Two DIFFERENT left edges, and the decoded formula predicts both:
+`anchor 0xE1 - (widest+20)/2 + 10` gives 170 for widest 110 and 173 for widest
+104. A centring implementation cannot satisfy either — it places only the widest
+row at that x. The new test imports nothing from the captures except two
+measurements (where text starts, how wide the widest row is), so it verifies the
+decode instead of copying a layout out of it.
+
+`tools/run_tests.sh` now runs the whole suite with `--no-fail-fast` and prints
+every binary's result plus a total. The truncated-grep habit that hid the
+concept-menu failure cannot repeat: 635 tests across 10 binaries, stated as one
+line.
+
+Five captures remain unread (`mission_briefing_eye`, `nav_screen_opened`,
+`post2_menu_choice`, `script2_first_frame`, `console_band.idx`). Each is a screen
+the port renders and nothing checks — the same condition that hid this one.
