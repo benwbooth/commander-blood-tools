@@ -5795,3 +5795,31 @@ Checked afterwards that `check_opcode_handlers.py` still resolves all 29 opcode
 constants through the dispatch table — the merge touched the labels, not the
 citations, and that is the guard which would notice if a handler address had been
 lost.
+
+## #186 — zero duplicate addresses, and one that was two halves
+
+The duplicate-address count is **0**, from 55 when the check was written in #129.
+
+The last sixteen merged by union. One deserved a closer look first: `0x0B591`
+carried `ship_3d_temp_snd_setup` ("temporary sn\3D.snd path") and
+`alien_overlay_cycle` ("the {amer, croolis, scrut}.xdb overlay CYCLE"). Those read
+as a genuine disagreement — different subsystems entirely.
+
+They are both right. Reading the data settles it:
+
+```text
+  DS:0x0ACC -> 0x0087 'amer.xdb'   0x0090 'croolis.xdb'   0x009C 'scrut.xdb'
+  DS:0x0D23 -> 'sn\3D.snd'
+  0xB5B5    inc ah / cmp ah,3 / jne / xor ah,ah    [0x0AE5] cycles 0..2
+  0xB5DC    lcall 0xB1B:0x855                      the SND bank load
+```
+
+One routine cycles the alien overlay AND swaps the SND bank. Each label described
+a different half, and neither author was wrong — which is exactly the case that
+looks most like a conflict and is not.
+
+Union merging is what made this safe to do in bulk: it keeps every claim, so the
+only judgement is which NAME leads. A "keep the better one" merge would have
+discarded a true statement in this row and I would not have noticed.
+
+`check_opcode_handlers.py` still resolves all 29 opcode constants afterwards.
