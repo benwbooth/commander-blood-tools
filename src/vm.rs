@@ -470,6 +470,13 @@ pub fn text_selector_requests_voice(selector: u8) -> bool {
     selector != TEXT_SELECTOR_NONE && selector != TEXT_SELECTOR_SILENT
 }
 
+/// The A6 handler's ACTIVE-DISPLAY test, `or cx,cx / jns 0x67A0` @`0x6647`.
+///
+/// `cx` holds `b4` in `cl` and `b5` in `ch` (read together by `lodsw` @`0x661B`),
+/// so bit 15 of that word IS bit 7 of `b5` — the game tests the flag by checking
+/// the SIGN of the pair rather than masking. `jns` skips the whole display path,
+/// so a clear bit means "not shown", which is why this predicate is phrased
+/// positively.
 pub fn text_flags_are_active(flags_b5: u8) -> bool {
     flags_b5 & TEXT_ACTIVE_DISPLAY_FLAG != 0
 }
@@ -491,6 +498,9 @@ pub fn text_flags_after_accept(flags_b4: u8, flags_b5: u8) -> u8 {
     }
 }
 
+/// The line record's FLAGS WORD sits at `+2`: `test word es:[di+2],0x8000`
+/// @`0x665A`, where `di` is the line record the handler resolved at `0x6613`
+/// (`les di,gs:[0x6724]` then `add di,ax` with the line index).
 pub fn text_line_flags_offset(line_index: u16) -> u16 {
     line_index.wrapping_add(2)
 }
@@ -499,6 +509,10 @@ pub fn text_presentation_record_offset(line_index: u16) -> u16 {
     line_index.wrapping_add(TALK_FIELD)
 }
 
+/// The ALREADY-SHOWN bit, `0x8000` of the flags word — the mask in
+/// `test word es:[di+2],0x8000` @`0x665A`. A set bit takes `jne 0x67A0`, the same
+/// exit the inactive case uses, so a line already displayed is skipped exactly as
+/// an inactive one is.
 pub fn text_line_already_shown(flag_word: u16) -> bool {
     flag_word & TEXT_LINE_ALREADY_SHOWN_FLAG != 0
 }

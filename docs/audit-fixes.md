@@ -5378,3 +5378,26 @@ pair-record trio — would break in opposite directions. The grouping criterion 
 invisible from the port and obvious from the table.
 
 The queue: 50 -> 48.
+
+## #169 — the active flag is tested as a sign
+
+Three A6-handler helpers, all resolved by two instructions in `0x660C`'s body.
+
+`text_flags_are_active` checks `b5 & 0x80`. The game does not mask: `lodsw`
+@`0x661B` reads `b4` and `b5` together into `cx`, so bit 7 of `b5` is bit 15 of
+the pair, and the test is `or cx,cx / jns 0x67A0` @`0x6647` — the SIGN of the
+word. Same predicate, and the shape explains why the port's parameter is `b5`
+alone while the original never separates them.
+
+`text_line_flags_offset` and `text_line_already_shown` both come from
+`test word es:[di+2],0x8000` @`0x665A`: the flags word is at line record `+2`, and
+`0x8000` is the already-shown bit. `di` is the record the handler resolved at
+`0x6613` (`les di,gs:[0x6724]`, then `add di,ax` with the line index).
+
+The detail worth keeping is where those two branches GO. `jns` on the active test
+and `jne` on the already-shown test both jump to `0x67A0` — the same exit. A line
+that is inactive and a line already displayed are not distinguished downstream;
+they leave by one door. A port that gave them separate paths would be adding a
+distinction the game does not make, and would look more careful for it.
+
+The queue: 48 -> 45.
