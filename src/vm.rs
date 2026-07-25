@@ -2938,6 +2938,16 @@ fn write_c1_record_state_ship3d(
     }
 }
 
+/// The `0xC1` SET path (handler `0x6B4C`): write `{0xC1, operand, 2}` into an
+/// EMPTY record whose owner is active.
+///
+/// The third word is `2` here, against `0xC3`'s `1` and `0xC4`'s `0` — three
+/// record types distinguished by that slot, which is why every writer sets it.
+///
+/// Order matters: the owner-active check comes first, the ship-3D source path
+/// gets a chance next, and only then does the empty-record test run. A record
+/// that is NOT empty returns `false` rather than being overwritten — the same
+/// refusal `0xC3` makes, so a state request never displaces existing state.
 fn write_c1_record_state_mode0(
     state: &mut [u8],
     context: &ExecutionContext,
@@ -3009,6 +3019,10 @@ fn write_c2_record_state_direct(
     true
 }
 
+/// Zero all THREE words of a record — type, related, and the third slot that
+/// distinguishes `0xC1`/`0xC3`/`0xC4` (2/1/0). Clearing only the type would leave
+/// a record that reads as empty to a type test and still carries its old related
+/// offset, which the `0xC8` guard (#171) would then see as non-empty.
 fn clear_record_words(state: &mut [u8], record_offset: u16) {
     state_set_u16(state, record_offset, 0);
     state_set_u16(state, record_offset.wrapping_add(2), 0);
