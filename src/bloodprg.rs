@@ -61,6 +61,12 @@ pub const TEXT_SPEED_STEP_DS: u16 = 0x0ACA;
 // VERY SLOW 7 rather than 5), and a second copy is exactly the twin that
 // tools/check_duplicate_rules.py exists to catch -- this one was written before
 // noticing the original, and the test-name collision is what surfaced it.
+//
+// (Kept away from the next item deliberately: a comment directly above a const is
+// that const's documentation as far as audit_inventory.py is concerned, and this
+// note gave DIALOGUE_FONT_GLYPH_HEIGHT an origin of 0x1B29/0x1B3D -- text-speed
+// addresses attributed to a font constant.)
+
 pub const DIALOGUE_FONT_GLYPH_HEIGHT: usize = 8;
 pub const SND_ENTRY_SEGMENT: u16 = 0x0b1b;
 pub const SND_ENTRY_OFFSET: u16 = 0x011d;

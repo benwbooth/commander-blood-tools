@@ -2233,11 +2233,18 @@ impl EngineState {
         }
     }
 
-    /// Hit-test a click against the console choice box (see [`draw_choice_box`]):
-    /// the box centers on x=100 with its first row band from the box top (y=86)
-    /// at an 11px pitch. Shared by the telephone contact list, the MENU submenu,
-    /// and the nav-destination chooser — all the same rendered widget, so the
-    /// click math is derived from the same measured geometry as the draw.
+    /// Hit-test a click against the console choice box (see [`draw_choice_box`]).
+    ///
+    /// The geometry is DECODED, not measured: the box centres on
+    /// [`Self::CHOICE_BOX_CENTER_X`] (`mov word [0xAC6],0x64` @`0x86D9`), the rows
+    /// step 11px (`add bp,0xB` @`0x847A`), and the widget's own hit-test is
+    /// `row = dy/11 + 1` (`div bl,0x0B` @`0x8508`) — this reproduces that divide.
+    /// Shared by the telephone contact list, the MENU submenu and the
+    /// nav-destination chooser, which are the same rendered widget.
+    ///
+    /// The doc used to say "the same measured geometry as the draw", which
+    /// undercut its own ASM status: the values were decoded, the wording was left
+    /// over from when they were not.
     fn choice_box_row_at(&self, x: u16, y: u16, num_rows: usize, widest: usize) -> Option<usize> {
         let rows = num_rows.min(8);
         // The clickable band is the DRAWN box extent [x0, x1] from the shared
@@ -2529,7 +2536,10 @@ impl EngineState {
         true
     }
 
-    /// Map a click to a list-menu row (the measured geometry above).
+    /// Map a click to a list-menu row, using the widget's own hit-test rather
+    /// than measured geometry: `row = dy/11 + 1` (`div bl,0x0B` @`0x8508`), the
+    /// same divide [`Self::choice_box_row_at`] reproduces, over rows stepped by
+    /// `add bp,0xB` (@`0x847A`).
     pub fn list_menu_click(labels_len: usize, x: u16, y: u16) -> Option<usize> {
         if !(170..=245).contains(&(x as i32)) {
             return None;

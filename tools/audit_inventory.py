@@ -161,7 +161,15 @@ for root, _, files in os.walk(SRC):
                 # `#[inline]`). Clearing the doc here stripped those items of their
                 # origin, so a fully cited function could never be settled -- the
                 # same shape as constants being left out of the ledger entirely.
-                if stripped and not stripped.startswith("//") and not stripped.startswith("#["):
+                # A BLANK LINE ends the run. Only a non-empty, non-comment line
+                # used to clear it, so a note separated from the next item by a
+                # blank line still attached to it -- #119's twin note sat above
+                # DIALOGUE_FONT_GLYPH_HEIGHT and gave a font constant an origin of
+                # 0x1B29/0x1B3D, the text-speed addresses. Rust doc comments must
+                # be adjacent to their item, so nothing legitimate is lost.
+                if not stripped:
+                    doc = []
+                elif not stripped.startswith("//") and not stripped.startswith("#["):
                     doc = []
                 continue
             kind, name = m.group(1), m.group(2)

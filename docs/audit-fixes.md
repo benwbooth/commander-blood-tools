@@ -4589,3 +4589,33 @@ So the guard is live and the tree is clean of that class. Worth the extra minute
 of the three counting or coverage mistakes this session (#133's stale figure,
 #136's no-op settles, #122's case-sensitivity collapse), two showed up as a number
 that looked fine, and the third as a guard quietly matching nothing.
+
+## #141 — a note attached itself to the next constant, and 93 ASM rows cite nothing
+
+Two findings, both about the ledger believing things nobody claimed.
+
+**A comment adopted the item below it.** `DIALOGUE_FONT_GLYPH_HEIGHT` carried
+origin `0x1B29,0x1B3D` — the TEXT-SPEED addresses. Those come from #119's note
+about not duplicating the step mapping, which sits above it. Moving the note away
+did not help: `audit_inventory.py` only ended a comment run on a non-empty,
+non-comment line, so a BLANK LINE did not separate them. Now it does, and nothing
+legitimate is lost because Rust doc comments must be adjacent to their item. Three
+rows lost phantom origins, this one included.
+
+**93 rows are settled ASM with no cited address.** `ASM` means verified against
+the assembly, so an ASM row whose ledger origin is empty is asserting something
+the ledger cannot show. (`DATA`, `INFRA` and `ORACLE` legitimately have none —
+they are verified against game files, are plumbing, or are differentialled.)
+
+Sampling them found the sharper version of the problem: `choice_box_row_at` and
+`list_menu_click` were settled ASM while their own docs said the geometry was
+"the same measured geometry as the draw". The VALUES are decoded — the box centre
+is `mov word [0xAC6],0x64` @`0x86D9`, the pitch is `add bp,0xB` @`0x847A`, and the
+widget's hit-test is `row = dy/11 + 1` (`div bl,0x0B` @`0x8508`) — but the wording
+was left over from when they were not, and it undercut the status the rows
+carried. Both now cite the divide they reproduce, which also brings them under
+`check_cited_instructions.py`.
+
+The remaining ASM-without-citation rows are a real queue, not a bug: each needs
+either a citation written or a status corrected. Counted rather than fixed in
+bulk, because deciding which of the two applies is the work.
