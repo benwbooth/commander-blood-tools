@@ -183,6 +183,51 @@ pub fn mix_unsigned_pcm_average(destination: &mut [u8], source: &[u8]) -> usize 
     len
 }
 
+/// The two voice buffers the streamer alternates between, `0xBBE4..0xBC2F`.
+///
+/// ```text
+///   0xBBE7  les di,[0xbb7]              the loaded sound data
+///   0xBBEB  mov [si],di / [si+2],es     voice A points AT IT
+///   0xBBF0  mov word [si+4],0x4000      length 16384
+///   0xBC1E  add di,0x4008               voice B starts one buffer + 8 later
+///   0xBC2F  mov byte [si+6],0           and starts NOT in state 3
+/// ```
+///
+/// This answers what a voice buffer holds before the stream mixes into it, which
+/// `docs/port-validation.md` had open: the LOADED SOUND DATA. Nothing fills it
+/// with silence — `les di,[0xbb7]` is the file, and the two voices are its two
+/// halves. So a lone sound is not halved toward `0x80`; the mix at `0xBB6D`
+/// averages the incoming chunk with sound already there.
+pub const SND_VOICE_BUFFER_LEN: u16 = 0x4000;
+/// Voice B begins `0x4008` past voice A (`add di,0x4008` @`0xBC1E`) — the buffer
+/// length plus the 8 bytes of gap the header occupies.
+pub const SND_VOICE_BUFFER_STRIDE: u16 = 0x4008;
+/// `cmp byte es:[di+4],0xd3` @`0xBBFE`: the sound file's header byte at `+4`, and
+/// the ONLY thing that sets the half-rate flag `gs:[0xBA2]` (`0xBC05`).
+///
+/// As a Sound Blaster time constant, `0xD3` is `1000000/(256-211)` = 22222 Hz —
+/// the rate that needs decimating to reach the device. The port must read this
+/// from the data, never assume it: it is exactly the kind of content-bearing
+/// value CLAUDE.md forbids hardcoding a decision about.
+pub const SND_HEADER_HALF_RATE_TIME_CONSTANT: u8 = 0xD3;
+
+/// Does this sound's header select the half-rate mix loop? `0xBBFE`/`0xBC05`.
+///
+/// `header` is the file's leading bytes; the byte at `+4` decides. A header too
+/// short to contain it selects full rate, since the compare cannot match.
+pub fn snd_header_is_half_rate(header: &[u8]) -> bool {
+    header.get(4).copied() == Some(SND_HEADER_HALF_RATE_TIME_CONSTANT)
+}
+
+/// The two voices' `(offset, length)` within the loaded sound data, `0xBBE4`
+/// and `0xBC1E`..`0xBC2A`.
+pub fn snd_voice_buffer_spans() -> [(u16, u16); 2] {
+    [
+        (0, SND_VOICE_BUFFER_LEN),
+        (SND_VOICE_BUFFER_STRIDE, SND_VOICE_BUFFER_LEN),
+    ]
+}
+
 /// Where a streamed chunk lands in a voice's ring buffer, `0xBB2E..0xBB4E`.
 ///
 /// The mixer is a STREAMER, which the prologue makes plain: `0xBAF7 mov ah,0x3F /
@@ -322,6 +367,33 @@ pub const SILENCE: u8 = 0x80;
 
 #[cfg(test)]
 mod tests {
+
+    /// `0xBBFE`/`0xBC05`: the half-rate flag is DATA -- a header byte, not a
+    /// setting the port may choose.
+    #[test]
+    fn half_rate_comes_from_the_sound_headers_time_constant() {
+        let mut header = [0u8; 6];
+        assert!(!snd_header_is_half_rate(&header), "0 is not 0xD3");
+        header[4] = SND_HEADER_HALF_RATE_TIME_CONSTANT;
+        assert!(snd_header_is_half_rate(&header));
+        // A neighbouring byte must not trigger it -- the compare is at +4 only.
+        let mut other = [0u8; 6];
+        other[3] = SND_HEADER_HALF_RATE_TIME_CONSTANT;
+        other[5] = SND_HEADER_HALF_RATE_TIME_CONSTANT;
+        assert!(!snd_header_is_half_rate(&other));
+        // Too short to hold the byte -> full rate, not a panic.
+        assert!(!snd_header_is_half_rate(&[0xD3, 0xD3]));
+
+        // The two voices are the loaded data's two halves (0xBBF0/0xBC1E).
+        let spans = snd_voice_buffer_spans();
+        assert_eq!(spans[0], (0, 0x4000));
+        assert_eq!(spans[1], (0x4008, 0x4000));
+        assert_eq!(
+            spans[1].0 - spans[0].1,
+            8,
+            "the 8-byte gap between them is the header"
+        );
+    }
 
     /// `0xBB2E..0xBB4E`: the ring-buffer span, including the wrap remainder.
     #[test]

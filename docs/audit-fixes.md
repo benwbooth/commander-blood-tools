@@ -6217,3 +6217,33 @@ clamp using a position that does not overflow, because `offset = |position -
 length|` means a SMALL position gives a LARGE offset. Both slips were mine and
 both were caught by the assertion, which is the argument for writing the expected
 SEQUENCE out rather than a summary count.
+
+## #200 — the buffer holds the sound, and the rate is in the file
+
+#199 left one question: what fills a voice buffer before the stream mixes into it,
+since that decides whether a lone sound is halved toward silence. `0xBBE4..0xBC2F`
+answers it, and adds something better.
+
+The answer: THE LOADED SOUND DATA. `les di,[0xbb7]` points voice A straight at the
+file, length `0x4000`; voice B starts `0x4008` later. The two voices are the data's
+two halves with the 8-byte header between them, and nothing writes silence
+anywhere. So a lone sound is not attenuated — `0xBB6D` averages an incoming chunk
+with sound that is already there. `mix_unsigned_pcm_sources`'s silence pre-fill was
+invented, as #199 suspected; this is the instruction-level proof.
+
+The better finding is four bytes away. `0xBBFE cmp byte es:[di+4],0xd3` /
+`0xBC05 mov byte [0xba2],1`: THE HALF-RATE FLAG IS READ FROM THE SOUND FILE'S
+HEADER. `0xD3` is the Sound Blaster time constant for 22222 Hz
+(`1000000/(256-211)`), so the file itself declares the rate that needs decimating.
+
+That matters beyond audio. The port could have "fixed" playback rate by picking a
+constant that sounded right, and it would have been a content-bearing literal
+standing in for a byte the game reads out of its own data — the defect class
+CLAUDE.md names first. Ported as `snd_header_is_half_rate`, which reads the byte,
+with a test that a value at `+3` or `+5` does NOT trigger it.
+
+Three sessions on this row have now inverted its premise twice: from "wire the
+decoded averaging" (#198) to "that averaging model is invented" (#199) to "the
+buffer already holds sound and the rate is data" (#200). The remaining work for
+`audio.rs` is a structural rewrite — two `0x4000` ring buffers fed by a chunk
+streamer — not the one-line swap the row asked for when this began.
