@@ -1365,7 +1365,10 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                     }
                                     1 => music.stop(), // MUSIC_OFF
                                     2 => {
-                                        // SAVE: the oracle-measured slot-name UI.
+                                        // SAVE: the slot list with the edit
+                                        // buffer swapped into the renamed row
+                                        // (0x1BAB/0x1BBD/0x8573), not a
+                                        // separate screen.
                                         engine.save_ui_active = true;
                                         engine.save_ui_name.clear();
                                     }

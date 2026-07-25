@@ -59,6 +59,40 @@ pub const VIEWPORT_H: usize = 200;
 pub const HNM_FPS: u32 = 15;
 
 #[cfg(test)]
+mod provenance_tests {
+    /// THE PRIME RULE, enforced: no runtime comment may say a value was measured
+    /// off a capture without either citing the binary address that replaced it or
+    /// saying it no longer applies. This session found three DEFECTS of that shape
+    /// (the choice box's colours, the list menu's x, the save UI's layout) and
+    /// three STALE NOTES left by their fixes — the class is common enough to
+    /// deserve a guard rather than another grep.
+    ///
+    /// The oracle harness (`src/bin/runtime_boot.rs`) is exempt: measuring the
+    /// real game is what it is for.
+    #[test]
+    fn no_unexplained_capture_provenance_in_runtime_code() {
+        let script = std::path::Path::new("tools/check_provenance.py");
+        if !script.exists() {
+            return;
+        }
+        let out = match std::process::Command::new("python3").arg(script).output() {
+            Ok(o) => o,
+            Err(_) => return,
+        };
+        let text = String::from_utf8_lossy(&out.stdout);
+        assert!(out.status.success(), "capture-sourced claims:\n{text}");
+        // The sweep must still be FINDING claims — a regex that stops matching
+        // would pass forever.
+        let n: usize = text
+            .split_whitespace()
+            .next()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(0);
+        assert!(n >= 5, "expected the sweep to find claims, got: {text}");
+    }
+}
+
+#[cfg(test)]
 mod cited_instruction_tests {
     /// Every `0xNNNN  <mnemonic>` a doc comment QUOTES from the binary must
     /// actually decode to that mnemonic. A wrong address in a comment is worse

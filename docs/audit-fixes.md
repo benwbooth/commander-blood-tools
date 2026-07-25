@@ -2544,3 +2544,36 @@ Also: the port no longer `include_bytes!`s a capture at RUNTIME at all. The two
 console-band captures now appear only inside tests, as fixtures the composed-from-
 asset version is checked against — which is exactly the role the prime rule
 assigns an oracle.
+
+## FIX #76 — the prime rule, enforced by a test
+
+Six items this session were the same shape: a comment claiming a value came from a
+capture. Three were DEFECTS (the choice box's colours, the list menu's `x`, the
+save UI's whole layout) and three were STALE NOTES left behind by the fixes (the
+hand atlas, the square-caps advances, the viewscreen band). That is frequent
+enough to deserve a guard rather than another grep, so `tools/check_provenance.py`
+is now a test.
+
+THE RULE IT ENFORCES: no comment in RUNTIME code may say a value was measured off
+a capture unless the same comment run either cites a binary address — the routine
+that replaced it — or says it no longer applies. That is exactly the shape the
+prime rule allows: "was measured, now derived, here is the routine."
+
+Two exemptions, both principled:
+* TEST code. Comparing rendered output against a capture is what the oracle is
+  FOR; the rule constrains where behaviour comes from, not what a test checks.
+* `src/bin/runtime_boot.rs`, the oracle harness. Measuring the real game is its
+  entire job.
+
+Standing at 9 claims in runtime code, 0 unexplained. The test also asserts the
+sweep still FINDS claims, so a regex that quietly stops matching cannot pass
+forever.
+
+POSITIVE CONTROL, and it took two tries — worth recording because the first
+attempt was a bad control, not a bad tool. Injecting the claim as a `///` line
+directly above `draw_status_overlay` did NOT fire: it merged into that function's
+existing doc run, which cites `0x16BC` and `0x1ABB`, so the checker correctly read
+it as explained. Placing the claim in an isolated comment inside a function body
+fires as intended. A control that passes can mean the guard is broken OR that the
+control was wrong; distinguishing those is the same discipline as the four tools
+that needed their first output disbelieved.

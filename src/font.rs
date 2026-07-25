@@ -633,10 +633,6 @@ pub const SQUARE_CAPS_CHAR_MAP: [u8; 176] = [
 ];
 
 
-/// Pixel width of a square-caps glyph = (rightmost set column + 1). The real
-/// face is PROPORTIONAL: the horizontal advance is this width + a 2px gap
-/// (measured from `concept_menu.ppm`: 'I' width 1 → advance 3, most letters
-/// width 8 → advance 10, 'W' width 9 → advance 11, '_' width 4 → advance 6).
 /// Square-caps glyph index for a character, via the game's own xlat at `DS:0x7362`.
 ///
 /// The table FOLDS CASE itself (`'a'` and `'A'` both map to glyph 0) and maps space to

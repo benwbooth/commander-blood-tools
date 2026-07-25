@@ -2760,9 +2760,10 @@ impl EngineState {
         }
     }
 
-    /// Render the VIEWSCREEN console: the pyramid band along the bottom (the real harvested
-    /// art) and the upper viewscreen showing STATIC when no destinations are granted (the
-    /// oracle-verified empty-nav state) or the destination list once granted.
+    /// Render the VIEWSCREEN console: the band along the bottom — composed from
+    /// `TB.BIG` frame 90 through the console-bank remap, see
+    /// [`Self::overlay_console_band`] — and the upper viewscreen showing STATIC
+    /// when no destinations are granted, or the destination list once granted.
     fn render_viewscreen_console(&mut self) {
         self.scene_palette = crate::palette::game_screen_palette();
         // Upper viewscreen: STATIC — binary black/white noise filling everything above
