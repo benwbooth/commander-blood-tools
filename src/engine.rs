@@ -2736,6 +2736,31 @@ impl EngineState {
     /// the band simply PERSISTS underneath. It is therefore drawn ONCE, before the
     /// film starts — in the intro setup path, not per frame. That is where to look
     /// next, rather than in the film or the assets.
+    /// The montage's full-screen colour reduction (`0x7AC3`: `si=DS:0x6011`,
+    /// `lcall 0x299:0x40E` over `(0, 0, 320, 200)`), through the table the game's
+    /// own builder produces — see
+    /// [`crate::palette::build_console_bank_remap_table`]. Idempotent, as the
+    /// table's fixed points guarantee.
+    pub fn apply_console_bank_remap(&mut self) {
+        let mut dac = [0u8; 768];
+        for i in 0..256 {
+            for k in 0..3 {
+                dac[i * 3 + k] = (self.scene_palette[i][k] as u16 * 63 / 255) as u8;
+            }
+        }
+        let table = crate::palette::build_console_bank_remap_table(&dac);
+        crate::sprite::remap_rect_indexed(
+            &mut self.framebuffer,
+            ENGINE_SCREEN_WIDTH,
+            ENGINE_SCREEN_HEIGHT,
+            &table,
+            0,
+            0,
+            ENGINE_SCREEN_WIDTH as i32,
+            ENGINE_SCREEN_HEIGHT as i32,
+        );
+    }
+
     fn overlay_console_band(&mut self) {
         const BAND_TOP: usize = 140;
         const BAND: &[u8] = include_bytes!("../accuracy/captures/console_band.idx");
@@ -3046,11 +3071,19 @@ impl EngineState {
         let frame = self.scene_frame;
         self.scene_frame += 1;
         self.present_scene_buffer();
-        // REAL-GAME-VERIFIED (DOSBox-X, BLOODPRG with game args — realgame/game_95s..130s): the
-        // crew MONTAGE plays with the pyramid-console + eye-orb band composited over the bottom
-        // (the band is static across frames; harvested pixel-exact from those captures). The
-        // logo/ship reel and the in-game cutscenes play full-screen.
+        // THE MONTAGE IS PRESENTED THROUGH A FULL-SCREEN REMAP, not by pasting a
+        // band. `montage_frame_setup` (`0x7AC3`) pushes the whole 320x200 screen
+        // through the CONSOLE-BANK table `DS:0x6011` and then draws the film into
+        // the top 140 rows, so rows 140..200 keep whatever stood there — reduced
+        // to the same 16 colours as everything else. That is why the captured band
+        // is entirely `224..=239`: during the montage the WHOLE FRAME is.
+        //
+        // The port keeps `overlay_console_band` only until the intro sequencing
+        // puts the console on screen ahead of the montage; the remap itself is
+        // faithful now and runs first, so the film area is banked exactly as the
+        // game banks it.
         if self.intro_pyramid.get(self.intro_index).copied().unwrap_or(false) {
+            self.apply_console_bank_remap();
             self.overlay_console_band();
         }
         // Overlay this clip's active credit subtitle (the DESCRIPT `present` cues on the
@@ -5364,6 +5397,30 @@ mod tests {
         assert_eq!(e.confirm_box_click(200, 115), Some(false));
         assert_eq!(e.confirm_box_click(151, 105), None, "the gap between them");
         assert_eq!(e.confirm_box_click(120, 116), None);
+    }
+
+    #[test]
+    fn the_montage_remap_banks_the_whole_screen() {
+        // 0x7AC3 remaps (0,0,320,200) through DS:0x6011 before the film is drawn,
+        // so every pixel of a montage frame is in the console bank.
+        let mut e = EngineState::new();
+        e.scene_palette = crate::palette::game_screen_palette();
+        for (i, px) in e.framebuffer.iter_mut().enumerate() {
+            *px = (i % 251) as u8; // a spread of indices, most outside the bank
+        }
+        assert!(
+            e.framebuffer.iter().any(|&p| !(0xE0..=0xEF).contains(&p)),
+            "the fixture must start outside the bank"
+        );
+        e.apply_console_bank_remap();
+        assert!(
+            e.framebuffer.iter().all(|&p| (0xE0..=0xEF).contains(&p)),
+            "after the remap every pixel is in 224..=239"
+        );
+        // Idempotent, as the table's fixed points require.
+        let once = e.framebuffer.clone();
+        e.apply_console_bank_remap();
+        assert_eq!(e.framebuffer, once);
     }
 
     #[test]

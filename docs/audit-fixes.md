@@ -2494,3 +2494,19 @@ anyone tempted to simplify the call into a loop fails immediately.
 `palette::build_console_bank_remap_table` exposes it. What remains for the band is
 frontend sequencing — having the console on screen before the montage so there is
 something to reduce — rather than any decode.
+
+## FIX #74 — the montage now presents through the game's remap
+
+With `DS:0x6011`'s contents settled (#73), the montage's presentation is portable.
+`0x7AC3` pushes the whole 320x200 screen through the console-bank table before
+drawing the film into the top 140 rows; `EngineState::apply_console_bank_remap`
+does exactly that, using the table the game's own builder produces.
+
+The test asserts the property that makes it recognisable: start with a spread of
+indices mostly OUTSIDE the bank, remap, and every pixel is in `224..=239` — and a
+second remap changes nothing, since the bank is fixed under the map.
+
+The captured band still overlays afterwards, and stays until the intro sequencing
+puts the console on screen ahead of the montage — but the presentation itself is
+now the game's, so the film area is banked exactly as the game banks it rather
+than played in full colour with a photograph pasted underneath.
