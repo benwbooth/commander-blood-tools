@@ -1472,6 +1472,18 @@ pub const LOCATION_PANEL_ROW_COLOR: u8 = 0xFE;
 /// draw at `0x9142`.
 pub const LOCATION_PANEL_BOX: [u16; 4] = [0x64, 0x14, 0xA0, 0x46];
 /// `ax = 0xFFCE` at `0x90ED`, negated on entry to the table builder (`0x22F1`).
+/// The panel's tint strength, as a PERCENTAGE — and it appears in the binary as
+/// its two's complement, which is why no `0x32` immediate exists:
+///
+/// ```text
+///   0x90ED  mov ax,0xffce        the caller passes -50
+///   0x22F1  neg ax               the blend builder negates it -> 50
+///   0x22F5  mul bx / mov bx,0x64 / div bx   ... * component / 100
+/// ```
+///
+/// `0x64` is the 100 it divides by, so `ax` really is a percentage. The caller
+/// passing the NEGATIVE and the builder negating on entry means a search for the
+/// value finds nothing at either address on its own.
 pub const LOCATION_PANEL_TINT_PERCENT: u16 = 50;
 /// `[0xADA] = 8` (`0x903E`) — the zoom-open/shut interpolation step count.
 pub const LOCATION_PANEL_ZOOM_STEPS: u8 = 8;

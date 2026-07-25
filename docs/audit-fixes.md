@@ -5853,3 +5853,28 @@ stops being true.
 Both settled DATA. That is the fourth structural class the immediate checker
 cannot see, after dispatch indices, shift counts and layout identities: a value
 fetched from a data table by an indexed read.
+
+## #188 — a constant stored as its own negative
+
+`LOCATION_PANEL_TINT_PERCENT = 50` had no `0x32` anywhere near its citations. It
+is there as `0xFFCE`:
+
+```text
+  0x90ED  mov ax,0xffce        the caller passes -50
+  0x22F1  neg ax               the blend builder negates on entry -> 50
+  0x22F5  mul bx / mov bx,0x64 / div bx   ... * component / 100
+```
+
+`0x64` is the 100 it divides by, confirming `ax` is a percentage. Neither address
+holds the value on its own: the caller has the negative, the builder makes it
+positive, and a search for 50 finds nothing at either.
+
+`check_cited_immediates.py` now looks for the two's complement — the fifth
+structural class it handles, after shift counts, operand addresses, layout
+identities and sums.
+
+The first version searched 8-bit negations too, and immediately "found"
+`OP_MAX` (`0xFE` negates to `0x02`) and `TALK_FIELD` (`0x3A` -> `0xC6`). Both are
+ordinary values that appear near almost anything. `0xFFCE` is distinctive;
+`0x02` is not, and a rule that accepts either is not a rule. Restricted to 16-bit,
+where exactly one constant matches — the one this was written for.

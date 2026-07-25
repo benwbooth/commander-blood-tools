@@ -120,6 +120,21 @@ def is_operand_offset(mz, md, value):
     return None
 
 
+def negated_values(imm):
+    """A constant can appear as its TWO'S COMPLEMENT.
+
+    `LOCATION_PANEL_TINT_PERCENT` is 50, and the binary holds `mov ax,0xffce`
+    (-50) at 0x90ED because the blend builder negates on entry (`neg ax` @0x22F1).
+    Searching for 50 finds nothing at either address; searching for -50 finds it.
+
+    ONLY the 16-bit form. Negating in 8 bits turns small constants into other small
+    constants -- `OP_MAX` 0xFE becomes 0x02, `TALK_FIELD` 0x3A becomes 0xC6 -- and
+    both then "matched" the first ordinary immediate nearby. 0xFFCE is distinctive;
+    0x02 is not.
+    """
+    return {(-imm) & 0xFFFF}
+
+
 def imm_values(imm):
     """The values an immediate can legitimately stand for.
 
@@ -281,8 +296,13 @@ def main():
             # 0xFFFF` cleared itself because the doc calls 0xFFFF a sentinel. That
             # is the self-referential shape check_selfref_asserts.py exists for.
             # Real evidence for a table base is a `mov si,0x6212` in the code.
-            if value in immediates_near(img, md, a):
+            near = immediates_near(img, md, a)
+            if value in near:
                 found = True
+                break
+            if negated_values(value) & near:
+                found = True
+                layout[name] = f"present NEGATED (two's complement) near {a:#07x}"
                 break
         # LAYOUT IDENTITY: a table's length is the distance to the next table, so
         # the value is arithmetic on two cited addresses and appears as an
