@@ -16,11 +16,15 @@ const OUTPUT_SCALE: usize = 3;
 const OUTPUT_W: usize = VIEWPORT_W * OUTPUT_SCALE;
 const OUTPUT_H: usize = VIEWPORT_H * OUTPUT_SCALE;
 const HNM_FPS: u32 = 15;
-// The exported videos use the default/mid text-speed step observed in the
-// binary-derived notes. `subtitle_reveal_chars_per_second` maps this through the
-// dialogue updater formula (`4 * frame_rate / gs:0x0ACA`), keeping subtitle
-// reveal drawing and line-complete chatter on the same timing source.
-const DEFAULT_SUBTITLE_TEXT_SPEED_STEP: u16 = 5;
+// The text-speed step the GAME SHIPS: `DS:0x0ACA` holds 2 in the image (file
+// 0x0DEEA), which is what the OPTION menu's FAST entry selects. This was 5 --
+// "the default/mid step observed in the binary-derived notes" -- and 5 is not a
+// value the menu can produce at all: the writer at 0x1B29..0x1B3D maps the five
+// labels (VERY FAST/FAST/MEDIUM/SLOW/VERY SLOW) to steps 1, 2, 3, 4, 7. Since
+// `subtitle_reveal_chars_per_second` divides by this (`4 * frame_rate / step`),
+// the exports revealed subtitles at 2/5 of the real rate.
+const DEFAULT_SUBTITLE_TEXT_SPEED_STEP: u16 =
+    commander_blood_tools::bloodprg::TEXT_SPEED_STEP_INITIAL;
 // A voiceless dialogue line (0xA6 b3==0xFF: radio-receiver / narrator / menu text
 // the player still saw on-screen, with no son.snd voice clip — see re/REVERSE.md
 // "voice clip-index") is rendered subtitle-only: its text over the scene

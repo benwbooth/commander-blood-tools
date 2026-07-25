@@ -40,6 +40,19 @@ pub const OPTION_MENU_POINTER_LIST_DS: u16 = 0x2567;
 pub const LIST_WIDGET_CANCEL_LABEL_DS: u16 = 0x0174;
 /// `MUSIC_ON`, the toggle face the pointer list omits.
 pub const MUSIC_ON_LABEL_DS: u16 = 0x2578;
+/// The TEXT-SPEED submenu's pointer list.
+pub const TEXT_SPEED_POINTER_LIST_DS: u16 = 0x259D;
+/// The text-speed step the IMAGE SHIPS at `DS:0x0ACA` (file `0x0DEEA`) — 2, which
+/// is what `vm::text_speed_step_from_setting` gives for setting 1, `FAST`.
+pub const TEXT_SPEED_STEP_INITIAL: u16 = 2;
+/// `DS:0x0ACA` — the divisor in the dialogue updater's reveal rate.
+pub const TEXT_SPEED_STEP_DS: u16 = 0x0ACA;
+
+// The index -> step mapping is NOT duplicated here. `vm::text_speed_step_from_setting`
+// already transcribes 0x1B29..0x1B3D (including the `cmp ax,8` special case that makes
+// VERY SLOW 7 rather than 5), and a second copy is exactly the twin that
+// tools/check_duplicate_rules.py exists to catch -- this one was written before
+// noticing the original, and the test-name collision is what surfaced it.
 pub const DIALOGUE_FONT_GLYPH_HEIGHT: usize = 8;
 pub const SND_ENTRY_SEGMENT: u16 = 0x0b1b;
 pub const SND_ENTRY_OFFSET: u16 = 0x011d;
@@ -878,6 +891,12 @@ impl BloodPrg {
     /// [`Self::list_widget_cancel_label`] reads it.
     pub fn option_menu_labels(&self) -> Vec<String> {
         self.ds_pointer_list_strings(OPTION_MENU_POINTER_LIST_DS)
+    }
+
+    /// The OPTION menu's TEXT-SPEED submenu labels (`DS:0x259D`):
+    /// `VERY FAST`, `FAST`, `MEDIUM`, `SLOW`, `VERY SLOW`.
+    pub fn text_speed_labels(&self) -> Vec<String> {
+        self.ds_pointer_list_strings(TEXT_SPEED_POINTER_LIST_DS)
     }
 
     /// The list widget's shared trailing entry (`DS:0x0174`).
@@ -3036,6 +3055,42 @@ mod tests {
         // The strings sit where the pointers say, immediately after the list.
         assert_eq!(binary.ds_to_file(OPTION_MENU_POINTER_LIST_DS), 0x0F987);
         assert_eq!(binary.ds_to_file(0x2573), 0x0F993);
+    }
+
+    /// The five text-speed labels and the steps they select. The mapping is NOT
+    /// linear: `cmp ax,8` at 0x1B32 gives VERY SLOW an extra +4, so the steps are
+    /// 1,2,3,4,7 rather than 1,2,3,4,5. The image ships step 2 at DS:0x0ACA, which
+    /// is FAST -- so the shipped default is the second entry, not the middle one.
+    #[test]
+    fn text_speed_labels_and_steps_match_the_binary() {
+        let Some(binary) = fixture() else {
+            eprintln!("skipping: BLOODPRG.EXE not available");
+            return;
+        };
+        assert_eq!(
+            binary.text_speed_labels(),
+            vec!["VERY FAST", "FAST", "MEDIUM", "SLOW", "VERY SLOW"]
+        );
+
+        // The step mapping lives in vm.rs; this checks the LABELS line up with it.
+        let steps: Vec<u16> = (0..5)
+            .map(crate::vm::text_speed_step_from_setting)
+            .collect();
+        assert_eq!(steps, vec![1, 2, 3, 4, 7], "VERY SLOW jumps -- 0x1B32");
+
+        // The shipped value of the global the steps are written into.
+        let at = binary.ds_to_file(TEXT_SPEED_STEP_DS);
+        let shipped = u16::from_le_bytes([
+            binary.image_bytes()[at],
+            binary.image_bytes()[at + 1],
+        ]);
+        assert_eq!(at, 0x0DEEA);
+        assert_eq!(shipped, TEXT_SPEED_STEP_INITIAL);
+        assert_eq!(
+            shipped,
+            crate::vm::text_speed_step_from_setting(1),
+            "the shipped default is FAST, the second entry -- not the middle one"
+        );
     }
 
     #[test]

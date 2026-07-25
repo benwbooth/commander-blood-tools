@@ -159,6 +159,72 @@ fn representative_oracle_suite() {
 /// (x=170, first row y=34, 11px pitch), the PROPORTIONAL advance (glyph width +
 /// 2px), and the glyph shapes all match the original — the whole word "LIBIDO"
 /// (with two 1px-wide 'I's) only lands correctly if the advance is proportional.
+/// Diagnostic for the concept-menu divergence: prints where each mask actually
+/// sits, so a failing IoU says WHICH WAY it is wrong instead of just how much.
+/// Run with `cargo test --test oracle_suite -- --ignored concept_menu_masks`.
+#[test]
+#[ignore]
+fn concept_menu_mask_bounds() {
+    let Some(cap) = capture("concept_menu.ppm") else {
+        eprintln!("skipped: no concept_menu.ppm");
+        return;
+    };
+    let labels: Vec<String> = [
+        "TALK", "EGO", "SUPER_EGO", "UNDER_EGO", "END_OF_MONTH", "LIBIDO", "WHO", "WHERE", "WHEN",
+        "WHAT", "HOW", "WHY",
+    ]
+    .iter()
+    .map(|s| s.to_string())
+    .collect();
+    let mut e = EngineState::new();
+    e.draw_list_menu(&labels, None);
+
+    let is_grey = |r: u8, g: u8, b: u8| {
+        let (r, g, b) = (r as i32, g as i32, b as i32);
+        (r - 138).abs() < 45
+            && (g - 138).abs() < 45
+            && (b - 138).abs() < 45
+            && (r.max(g).max(b) - r.min(g).min(b)) < 25
+    };
+    let mut bounds = |name: &str, f: &dyn Fn(usize, usize) -> bool| {
+        let (mut x0, mut x1, mut y0, mut y1, mut n) = (9999usize, 0usize, 9999usize, 0usize, 0u32);
+        for y in 0..200 {
+            for x in 0..ENGINE_SCREEN_WIDTH {
+                if f(x, y) {
+                    x0 = x0.min(x);
+                    x1 = x1.max(x);
+                    y0 = y0.min(y);
+                    y1 = y1.max(y);
+                    n += 1;
+                }
+            }
+        }
+        eprintln!("{name}: x {x0}..{x1}  y {y0}..{y1}  pixels {n}");
+    };
+    // Per-ROW leading x: identical bounding boxes with poor overlap means the rows
+    // are placed differently inside the same band -- centred vs flush-left.
+    for row in 0..12 {
+        let y0 = 34 + row * 11;
+        let lead = |f: &dyn Fn(usize, usize) -> bool| {
+            (0..ENGINE_SCREEN_WIDTH)
+                .find(|&x| (y0..y0 + 9).any(|y| y < 200 && f(x, y)))
+                .map(|x| x as i32)
+                .unwrap_or(-1)
+        };
+        let p = lead(&|x, y| e.framebuffer[y * ENGINE_SCREEN_WIDTH + x] == 0xE8);
+        let l = lead(&|x, y| {
+            let o = (y * ENGINE_SCREEN_WIDTH + x) * 3;
+            is_grey(cap[o], cap[o + 1], cap[o + 2])
+        });
+        eprintln!("row {row:2} y{y0:3}: port x={p:4}  live x={l:4}  {}", labels[row]);
+    }
+    bounds("port ", &|x, y| e.framebuffer[y * ENGINE_SCREEN_WIDTH + x] == 0xE8);
+    bounds("live ", &|x, y| {
+        let o = (y * ENGINE_SCREEN_WIDTH + x) * 3;
+        is_grey(cap[o], cap[o + 1], cap[o + 2])
+    });
+}
+
 #[test]
 fn concept_menu_text_matches_live_game_capture() {
     let Some(cap) = capture("concept_menu.ppm") else {

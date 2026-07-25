@@ -3645,3 +3645,61 @@ data, so any new hardcoded label list fails the check outright.
 One more list is visible and not yet wired: `DS:0x259D` points at a text-speed
 submenu (`VERY FAST`, ...). Recorded in `docs/port-validation.md` rather than
 left as a surprise.
+
+## #111 — a wrong subtitle speed, and an oracle failure my own grep had been hiding
+
+### The text-speed step
+
+`DEFAULT_SUBTITLE_TEXT_SPEED_STEP = 5`, documented as "the default/mid step
+observed in the binary-derived notes". Both halves of that are wrong. The image
+ships `DS:0x0ACA = 2` (file `0x0DEEA`), and 5 is not a value the game can produce
+at all: the writer at `0x1B29..0x1B3D` maps the five OPTION labels through
+
+    add ax,ax / cmp ax,8 / (add ax,4) / shr ax,1 / inc ax
+
+giving steps 1, 2, 3, 4, **7** — `VERY SLOW` jumps because of that `cmp ax,8`.
+The shipped default of 2 is FAST, the second entry, not the middle one. Since
+`subtitle_reveal_chars_per_second` divides by the step, exported subtitles
+revealed at 2/5 of the real rate.
+
+Two extract tests pinned the old timings. They are synthetic (text `"abc"`, a
+fabricated clip), so updating them is legitimate — but one of them hardcoded
+`1.25` where its SIBLING assertion was already written derivationally
+(`2.0 + 2.0/rate`). The hardcoded one silently encoded the wrong constant, so it
+is now derived too.
+
+While decoding this I wrote `bloodprg::text_speed_step_for_index` — and
+`vm::text_speed_step_from_setting` already existed, transcribing the same
+addresses including the `cmp ax,8` case. A twin, of exactly the kind
+`check_duplicate_rules.py` guards, created by me. Deleted; the test-name collision
+is what surfaced it.
+
+### The list menu does NOT centre its labels
+
+Running the suite to completion exposed `concept_menu_text_matches_live_game_capture`
+failing at IoU 0.183 — and it was failing BEFORE this session's changes. My own
+`grep -E "^test result" | head -3` had been cutting off before `oracle_suite`
+printed, so "93 integration green" was a claim about the first three test
+binaries, not the suite. Corrected here rather than quietly.
+
+The failure is real and it indicts an earlier "fix". The port centred each label
+per `0x857D` (`sub bx,[bp] / shr bx,1 / add bx,cx`), replacing a flush `x = 170`
+that had been capture-measured. The behaviour was right and the constant was
+wrong — but the fix changed the behaviour too. Measured per row against
+`concept_menu.ppm`:
+
+    row  0 TALK          port x=206   live x=170
+    row  4 END_OF_MONTH  port x=170   live x=170
+    row 10 HOW           port x=211   live x=170
+
+Both masks span x 170..280 identically with 1405 vs 1379 pixels — correct band,
+wrong placement inside it, which is precisely the IoU-0.18 signature. The list is
+flush-left; only the widest label happened to match.
+
+Now `lx = x0 + 10`, DERIVED from the concept anchor `0xE1` (@`0x89A6`) and the
+widest label — which evaluates to 170 here, so the hardcoded constant did not come
+back. The lib test that asserted centring is replaced by one asserting a shared
+left edge at the formula's x. Which widget `0x857D` centres is recorded as open.
+
+The diagnostic that settled it (`concept_menu_mask_bounds`, `#[ignore]`) stays in
+the tree: an IoU number says how wrong, and this says WHICH WAY.

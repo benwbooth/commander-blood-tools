@@ -135,7 +135,15 @@ mod tests {
     fn chatter_events_fire_after_reveal_completes() {
         let events = subtitle_chatter_events(&[cue(10, "abc"), cue(20, "a\nb"), cue(30, "   ")]);
         assert_eq!(events.len(), 2);
-        assert!((events[0].start_time - 1.25).abs() < f64::EPSILON);
+        // Derived, not pinned: cue frame 10 -> 1.0s, plus "abc" (3 chars) at the
+        // shipped reveal rate. It was hardcoded 1.25, which silently encoded the
+        // old text-speed step 5; the sibling assertion below was already written
+        // this way.
+        assert!(
+            (events[0].start_time - (1.0 + 3.0 / default_subtitle_reveal_chars_per_second()))
+                .abs()
+                < f64::EPSILON
+        );
         assert!(
             (events[1].start_time - (2.0 + 2.0 / default_subtitle_reveal_chars_per_second())).abs()
                 < f64::EPSILON

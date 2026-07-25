@@ -2306,8 +2306,20 @@ impl EngineState {
         let x0 = anchor.saturating_sub((widest + 20) / 2);
         for (i, label) in labels.iter().take(12).enumerate() {
             let color = if selected == Some(i) { TEXT_SELECTED } else { TEXT };
-            let width = crate::font::square_caps_text_width(label);
-            let lx = x0 + 10 + widest.saturating_sub(width) / 2;
+            // FLUSH-LEFT, not centred. `0x857D` (`sub bx,[bp] / shr bx,1 /
+            // add bx,cx`) is a centring computation, and the port applied it here
+            // — but the live game does not centre THIS list: every row of the
+            // concept menu starts at the same x, measured per row against
+            // `concept_menu.ppm` (see `concept_menu_mask_bounds`). Both masks span
+            // x 170..280 identically while overlapping at IoU 0.18, which is what
+            // per-row misplacement inside a correct band looks like.
+            //
+            // The left edge stays DERIVED — `x0 + 10` from the anchor `0xE1` and
+            // the widest label — so this is not a return to the hardcoded x=170
+            // that #97 removed; 170 is what the formula yields here. Which widget
+            // `0x857D` does centre is an open question, recorded in
+            // docs/port-validation.md.
+            let lx = x0 + 10;
             crate::font::draw_square_caps(
                 &mut self.framebuffer,
                 ENGINE_SCREEN_WIDTH,
@@ -5537,11 +5549,22 @@ mod tests {
         assert_eq!(EngineState::OPTION_BOX_LABEL, "CANCEL");
     }
 
+    /// The list menu draws every label at the SAME x, and that x is derived —
+    /// `x0 + 10` with `x0 = anchor - (widest+20)/2` from the concept anchor `0xE1`
+    /// @`0x89A6`.
+    ///
+    /// This replaces a test that asserted the opposite. The port briefly centred
+    /// each label using `0x857D` (`sub bx,[bp] / shr bx,1 / add bx,cx`), and the
+    /// test agreed with it — but `concept_menu.ppm` shows the real game putting
+    /// all eleven measured rows at x=170. Both masks span x 170..280 identically
+    /// while overlapping at IoU 0.18, which is exactly what correct BAND geometry
+    /// with wrong per-row placement looks like; `concept_menu_mask_bounds`
+    /// (ignored, `--nocapture`) prints the per-row comparison.
+    ///
+    /// Note what did NOT come back: the hardcoded `x = 170` that #97 removed. 170
+    /// is what the formula produces for this label set.
     #[test]
-    fn list_menu_labels_centre_on_the_anchor_instead_of_flush_left() {
-        // 0x857D..0x8582: label_x = x0 + 10 + (widest - width)/2, with
-        // x0 = anchor - (widest+20)/2. A flush-left draw puts every label at the
-        // same x; the widget puts NARROWER labels further right.
+    fn list_menu_labels_are_flush_left_at_the_derived_x() {
         let mut e = EngineState::new();
         let labels: Vec<String> = vec!["BOB_MORLOCK".into(), "EGO".into()];
         e.framebuffer.fill(0);
@@ -5555,16 +5578,18 @@ mod tests {
         };
         let wide = first_x(0).expect("wide label drew");
         let narrow = first_x(1).expect("narrow label drew");
-        assert!(
-            narrow > wide,
-            "the narrower label must sit further right (widget centring), \
-             got wide={wide} narrow={narrow}"
-        );
-        // And the offset is the formula's, not an arbitrary inset: the two differ
-        // by (widest - width)/2.
-        let w0 = crate::font::square_caps_text_width(&labels[0]);
-        let w1 = crate::font::square_caps_text_width(&labels[1]);
-        assert_eq!(narrow - wide, (w0 - w1) / 2);
+        assert_eq!(narrow, wide, "every row shares one left edge");
+
+        // ...and that edge is the formula's, not an inset someone measured.
+        let widest = labels
+            .iter()
+            .map(|l| crate::font::square_caps_text_width(l))
+            .max()
+            .unwrap();
+        let expected = EngineState::CHOICE_BOX_ANCHOR_CONCEPT
+            .saturating_sub((widest + 20) / 2)
+            + 10;
+        assert_eq!(wide, expected);
     }
 
     #[test]

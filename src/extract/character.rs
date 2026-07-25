@@ -1559,8 +1559,15 @@ mod tests {
         assert_eq!(rows[1][1], "SCRIPT2 run 1");
         assert_eq!(rows[1][2], "0");
         assert_eq!(rows[1][3], "0.000000");
-        assert_eq!(rows[1][6], "0.250000");
-        assert_eq!(rows[1][7], "1.583333");
+        // Reveal time for "abc" (3 chars) at the SHIPPED text-speed step: the
+        // game initialises DS:0x0ACA to 2, giving 4*15/2 = 30 chars/sec, so
+        // 3/30 = 0.1s. This was 0.25s while the port used step 5 -- a value the
+        // OPTION menu cannot even select (audit-fixes #111).
+        assert_eq!(rows[1][6], "0.100000");
+        // ...and the segment END is reveal + the decoded line-complete hold:
+        // `reveal_complete_hold_ticks(2)` = 2<<2 = 8 ticks at 15fps = 0.5333s,
+        // so 0.1 + 0.5333 = 0.6333. (At the old step 5 it was 0.25 + 20/15.)
+        assert_eq!(rows[1][7], "0.633333");
         assert_eq!(rows[1][8], "0x000a");
         assert_eq!(rows[1][9], "3");
         assert_eq!(rows[1][10], "true");
