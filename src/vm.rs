@@ -955,7 +955,11 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
                 len,
             });
         } else if is_record_state_opcode(op) {
-            let inverted = mode1 && cod.get(pos + 1) == Some(&0xA1);
+            // The handler consumes this prefix UNCONDITIONALLY: 0x6C86 `cmp al,0xA1` /
+            // 0x6C8E `inc si` runs BEFORE the mode test at 0x6C9C, so the byte is
+            // skipped whatever the mode. Gating the skip on mode1 would leave the
+            // byte in the operand stream in mode 0 and shift every later read by one.
+            let inverted = cod.get(pos + 1) == Some(&0xA1);
             let operand_pos = pos + 1 + usize::from(inverted);
             let record_offset = read_u16(cod, operand_pos).unwrap_or(0);
             let operand = read_u16(cod, operand_pos + 2).unwrap_or(0);
@@ -1004,7 +1008,11 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
                 len,
             });
         } else if op == OP_RECORD_LINK {
-            let inverted = mode1 && cod.get(pos + 1) == Some(&0xA1);
+            // The handler consumes this prefix UNCONDITIONALLY: 0x6C86 `cmp al,0xA1` /
+            // 0x6C8E `inc si` runs BEFORE the mode test at 0x6C9C, so the byte is
+            // skipped whatever the mode. Gating the skip on mode1 would leave the
+            // byte in the operand stream in mode 0 and shift every later read by one.
+            let inverted = cod.get(pos + 1) == Some(&0xA1);
             let operand_pos = pos + 1 + usize::from(inverted);
             let record_offset = read_u16(cod, operand_pos).unwrap_or(0);
             let related_record_offset = read_u16(cod, operand_pos + 2).unwrap_or(0);
@@ -1016,7 +1024,11 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
                 len,
             });
         } else if is_record_entry_opcode(op) {
-            let inverted = mode1 && cod.get(pos + 1) == Some(&0xA1);
+            // The handler consumes this prefix UNCONDITIONALLY: 0x6C86 `cmp al,0xA1` /
+            // 0x6C8E `inc si` runs BEFORE the mode test at 0x6C9C, so the byte is
+            // skipped whatever the mode. Gating the skip on mode1 would leave the
+            // byte in the operand stream in mode 0 and shift every later read by one.
+            let inverted = cod.get(pos + 1) == Some(&0xA1);
             let operand_pos = pos + 1 + usize::from(inverted);
             let record_offset = read_u16(cod, operand_pos).unwrap_or(0);
             let operand = read_u16(cod, operand_pos + 2).unwrap_or(0);
@@ -1031,7 +1043,11 @@ pub fn walk(cod: &[u8], start: usize, end: usize) -> Vec<VmToken> {
                 len,
             });
         } else if op == OP_ACTOR {
-            let inverted = mode1 && cod.get(pos + 1) == Some(&0xA1);
+            // The handler consumes this prefix UNCONDITIONALLY: 0x6C86 `cmp al,0xA1` /
+            // 0x6C8E `inc si` runs BEFORE the mode test at 0x6C9C, so the byte is
+            // skipped whatever the mode. Gating the skip on mode1 would leave the
+            // byte in the operand stream in mode 0 and shift every later read by one.
+            let inverted = cod.get(pos + 1) == Some(&0xA1);
             let operand_pos = pos + 1 + usize::from(inverted);
             let record_offset = read_u16(cod, operand_pos).unwrap_or(0);
             let related_record_offset = read_u16(cod, operand_pos + 2).unwrap_or(0);
@@ -2644,7 +2660,11 @@ pub fn interpret_line_states_with_context(
         let (b0, b1) = OPCODE_DESC[(op - OP_MIN) as usize];
 
         if op == OP_ACTOR {
-            let inverted = mode1 && cod.get(pos + 1) == Some(&0xA1);
+            // The handler consumes this prefix UNCONDITIONALLY: 0x6C86 `cmp al,0xA1` /
+            // 0x6C8E `inc si` runs BEFORE the mode test at 0x6C9C, so the byte is
+            // skipped whatever the mode. Gating the skip on mode1 would leave the
+            // byte in the operand stream in mode 0 and shift every later read by one.
+            let inverted = cod.get(pos + 1) == Some(&0xA1);
             let operand_pos = pos + 1 + usize::from(inverted);
             if let Some(record_offset) = read_u16(cod, operand_pos) {
                 if let Some(actor_offset) = actor_object_offset_from_record(record_offset) {
@@ -7198,6 +7218,58 @@ mod tests {
     }
 
     use super::*;
+
+    /// The inline `0xA1` prefix is consumed REGARDLESS OF MODE.
+    ///
+    /// `0x6C86` does `cmp al,0xA1` and `0x6C8E` does `inc si` — both BEFORE the mode
+    /// test at `0x6C9C`, so the byte is skipped whatever the mode. The decoder used to
+    /// gate that skip on `mode1` for `0xC1..0xC4` while leaving `0xCD` ungated.
+    ///
+    /// That gate also disagreed with the decoder's OWN length accounting, which already
+    /// added 1 for the prefix unconditionally (`l += 1` in the `0xFD | 0xFB` arm). A
+    /// token whose `len` counted the prefix but whose operand read did not skip it is
+    /// internally inconsistent — the operands come from one byte earlier than `len`
+    /// claims.
+    ///
+    /// Measured unreachable on shipped data before changing anything: across all five
+    /// SCRIPT*.COD, no affected opcode (0xC1, 0xC2, 0xC3, 0xC4, 0xCD) is ever followed
+    /// by 0xA1. So the alignment is provably behaviour-neutral on real scripts.
+    #[test]
+    fn a1_prefix_is_consumed_and_agrees_with_the_length_accounting() {
+        // 0xC4 (actor) with the prefix, then a recognisable operand pair.
+        let cod = vec![OP_ACTOR, 0xA1, 0x34, 0x12, 0x78, 0x56, 0x00, 0x00];
+        let toks = walk(&cod, 0, cod.len());
+        let tok = toks.first().expect("one token decoded");
+        match tok {
+            VmToken::Actor {
+                record_offset,
+                related_record_offset,
+                inverted,
+                len,
+                ..
+            } => {
+                assert!(inverted, "the 0xA1 prefix must be recognised");
+                // The operands must be read AFTER the prefix byte, not at it.
+                assert_eq!(*record_offset, 0x1234, "first operand read past the prefix");
+                assert_eq!(*related_record_offset, 0x5678, "second operand");
+                // And len must cover opcode + prefix + both operands, so that the next
+                // token starts in the right place.
+                assert!(*len >= 6, "len {len} must span the prefix and both operands");
+            }
+            other => panic!("expected an Actor token, got {other:?}"),
+        }
+
+        // Without the prefix the operands sit one byte earlier — the control case that
+        // proves the skip is driven by the byte and not applied blindly.
+        let plain = vec![OP_ACTOR, 0x34, 0x12, 0x78, 0x56, 0x00, 0x00];
+        match walk(&plain, 0, plain.len()).first().expect("token") {
+            VmToken::Actor { record_offset, inverted, .. } => {
+                assert!(!inverted);
+                assert_eq!(*record_offset, 0x1234);
+            }
+            other => panic!("expected an Actor token, got {other:?}"),
+        }
+    }
 
     /// The decoded A6 `b3` -> per-line asset chain, as an executable specification.
     /// Landed ahead of the data path so the arithmetic is pinned to the binary now

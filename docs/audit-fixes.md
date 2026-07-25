@@ -881,3 +881,28 @@ STATIC finding that DAC colours 128..191 differ from the baked image and are sce
 state. Two independent lines of evidence, one from a visual defect and one from a byte
 comparison, agreeing on where the scene bank starts. Noted in `palette.rs` so the APPROX
 there is not read as a lone guess.
+
+## FIXED #48 — the inline `0xA1` prefix skip was gated on mode; the binary is unconditional
+
+`0x6C86` does `cmp al,0xA1` and `0x6C8E` does `inc si` — both BEFORE the mode test at
+`0x6C9C`. The handler consumes the prefix whatever the mode. The decoder gated that skip
+on `mode1` for `0xC1..0xC4`, while leaving `0xCD` ungated — internally inconsistent
+before you even compare it to the binary.
+
+Worse, it disagreed with the decoder's OWN length accounting. The `0xFD | 0xFB` arm
+already did `if cod.get(pos+1) == Some(&0xA1) { l += 1 }`, unconditionally. So in mode 0
+a token's `len` counted the prefix while its operand read did not skip it: the operands
+came from one byte earlier than `len` claimed, and the next token would start correctly
+while this one held shifted data.
+
+MEASURED BEFORE CHANGING. Across all five `SCRIPT*.COD`, no affected opcode (`0xC1`,
+`0xC2`, `0xC3`, `0xC4`, `0xCD`) is EVER followed by `0xA1` — 0 occurrences. An earlier
+count of 18 was against `0xB0`/`0xCE`, where those bytes are operands, not prefixes. So
+this is a latent inconsistency, not a live corruption, and the alignment is provably
+behaviour-neutral on shipped scripts.
+
+Fixed by dropping the `mode1 &&` gate at all five sites, which simultaneously matches
+the binary, matches the length accounting, and makes the five sites agree with each
+other. The regression test checks the operands are read PAST the prefix, that `len`
+spans it, and includes a no-prefix control so the skip is driven by the byte rather than
+applied blindly. Confirmed it fails on the old gated behaviour before restoring.
