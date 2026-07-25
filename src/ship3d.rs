@@ -7539,7 +7539,6 @@ mod tests {
         let _ = prng.next(0);
     }
 
-    #[test]
     /// Both baked geometry tables must equal the image. `NAV_DESTINATION_POINTS`
     /// holding ten IDENTICAL points looks like a placeholder bug and is not: the
     /// shipped table really is ten copies of `(10200, 12100, 900)`, which is why
@@ -7583,6 +7582,7 @@ mod tests {
         );
     }
 
+    #[test]
     fn randomize_point_cloud_fills_all_records_and_consumes_three_rng_calls_each() {
         let mut prng = BloodPrng::default();
         let points = randomize_ship_3d_point_cloud(&mut prng);

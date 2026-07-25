@@ -2209,3 +2209,34 @@ the third.
 
 The old test was named `choice_box_matches_the_measured_spec`. That name was the
 tell: under the prime rule there is no such thing as a measured spec.
+
+## FIX #65 — the list menu drew every label flush left; the widget centres them
+
+Continuing the `engine.rs` sweep along the same seam as FIX #64. `draw_list_menu`
+put every label at a fixed `x = 170`, documented as "the capture-matched left
+edge".
+
+The widget centres each label on its anchor: `label_x = x0 + 10 +
+(widest - width)/2` with `x0 = anchor - (widest+20)/2` (`0x84AD`,
+`0x857D..0x8582`) — the same math `draw_choice_box` already implements, since it
+is the same widget. `170` is what that formula produces for the ~105px label in
+the capture. Frozen as a constant, it made narrow labels wrong by half their
+width difference: `EGO` (28px) belongs 38px right of `BOB_MORLOCK` (105px), and
+the port drew them at the same x.
+
+The SHAPE is the defect, not the number. A flush-left list cannot be right for
+more than one label width, so no choice of constant fixes it. The test asserts
+the shape directly — the narrower label sits further right, by exactly
+`(widest - width)/2` — rather than checking either label against a measured
+position.
+
+Same lesson as #64, from the other direction: #64 was a capture generalised past
+where it held; this is a DERIVED value frozen as though it were a constant. Both
+look like "we matched the capture", and both are only right in the one frame that
+was measured.
+
+ALSO FIXED, found while running the suite: my FIX #60 insertion had swallowed the
+`#[test]` attribute of `randomize_point_cloud_fills_all_records_and_consumes_
+three_rng_calls_each`, so that test silently stopped running, and left a stray
+duplicate attribute above the new one. Both repaired; rustc's
+`duplicate_macro_attributes` warning is what surfaced it.

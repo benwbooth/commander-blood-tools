@@ -2090,26 +2090,43 @@ impl EngineState {
     }
 
     /// Draw a LIST MENU — the game's blue square-capitals vertical list (topic
-    /// menus in dialogue, destinations at nav, contacts): entries at the
-    /// measured geometry (x 170, rows from y 34 at 11 px pitch, text index
-    /// 0xE8 over the scene). `selected` brightens one row.
+    /// menus in dialogue, destinations at nav, contacts). Same widget as
+    /// [`Self::draw_choice_box`], so the same ASSEMBLY layout: rows vertically
+    /// centred by count (`box_y = (200 - (rows*11+8))/2`, `text_top = box_y+4`),
+    /// 11px pitch (`add bp,0xB` @`0x847A`), text index `0xE8` (`mov al,0xE8`
+    /// @`0x8565`) with the selected row in `0xEF` (@`0x858B`).
+    ///
+    /// Each label is CENTRED on the widget's anchor — `label_x = x0 + 10 +
+    /// (widest - width)/2` with `x0 = anchor - (widest+20)/2` (`0x84AD`,
+    /// `0x857D..0x8582`). The port previously drew every label flush at a fixed
+    /// `x = 170`, "the capture-matched left edge": that is the value the formula
+    /// happens to produce for the ~105px label in the capture, frozen as though
+    /// it applied to all of them. Labels of different widths belong at different
+    /// x, and flush-left is the wrong SHAPE regardless of the constant.
     pub fn draw_list_menu(&mut self, labels: &[String], selected: Option<usize>) {
         const TEXT: u8 = 0xE8;
         const TEXT_SELECTED: u8 = 0xEF;
-        // The row band is VERTICALLY CENTERED by row count (the list widget:
-        // box_y=(200-(rows*11+8))/2, text_top=box_y+4 = choice_box_top_y). The
-        // fixed y=34 only matched 12-row menus (concept_menu.ppm); a 7-row submenu
-        // belongs at 61, a 4-row at 78. x stays 170 (the capture-matched left edge).
         let rows = labels.len().min(12);
         let top = Self::choice_box_top_y(rows);
+        let widest = labels
+            .iter()
+            .take(rows)
+            .map(|l| crate::font::square_caps_text_width(l))
+            .max()
+            .unwrap_or(0);
+        // The in-window concept list's anchor (`mov [0xAC6],0xE1` @`0x89A6`).
+        let anchor = Self::CHOICE_BOX_ANCHOR_CONCEPT;
+        let x0 = anchor.saturating_sub((widest + 20) / 2);
         for (i, label) in labels.iter().take(12).enumerate() {
             let color = if selected == Some(i) { TEXT_SELECTED } else { TEXT };
+            let width = crate::font::square_caps_text_width(label);
+            let lx = x0 + 10 + widest.saturating_sub(width) / 2;
             crate::font::draw_square_caps(
                 &mut self.framebuffer,
                 ENGINE_SCREEN_WIDTH,
                 ENGINE_SCREEN_HEIGHT,
                 label,
-                170,
+                lx,
                 top + i * 11,
                 color,
             );
@@ -5056,6 +5073,36 @@ mod tests {
     /// of 0xE0, and item text in 0xE8 (see `re/REVERSE.md` "CHOICE BOX SPEC
     /// MEASURED"). This locks the widget to the decoded values so a regression
     /// (wrong index, missing border/fill) fails a test.
+    #[test]
+    fn list_menu_labels_centre_on_the_anchor_instead_of_flush_left() {
+        // 0x857D..0x8582: label_x = x0 + 10 + (widest - width)/2, with
+        // x0 = anchor - (widest+20)/2. A flush-left draw puts every label at the
+        // same x; the widget puts NARROWER labels further right.
+        let mut e = EngineState::new();
+        let labels: Vec<String> = vec!["BOB_MORLOCK".into(), "EGO".into()];
+        e.framebuffer.fill(0);
+        e.draw_list_menu(&labels, None);
+        let first_x = |row: usize| -> Option<usize> {
+            let top = EngineState::choice_box_top_y(labels.len()) + row * 11;
+            (top..top + 8).find_map(|y| {
+                (0..ENGINE_SCREEN_WIDTH)
+                    .find(|&x| e.framebuffer[y * ENGINE_SCREEN_WIDTH + x] != 0)
+            })
+        };
+        let wide = first_x(0).expect("wide label drew");
+        let narrow = first_x(1).expect("narrow label drew");
+        assert!(
+            narrow > wide,
+            "the narrower label must sit further right (widget centring), \
+             got wide={wide} narrow={narrow}"
+        );
+        // And the offset is the formula's, not an arbitrary inset: the two differ
+        // by (widest - width)/2.
+        let w0 = crate::font::square_caps_text_width(&labels[0]);
+        let w1 = crate::font::square_caps_text_width(&labels[1]);
+        assert_eq!(narrow - wide, (w0 - w1) / 2);
+    }
+
     #[test]
     fn choice_box_is_a_tint_of_the_panorama_not_a_painted_box() {
         let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
