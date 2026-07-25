@@ -228,6 +228,53 @@ pub fn snd_voice_buffer_spans() -> [(u16, u16); 2] {
     ]
 }
 
+/// The host's SOUND-DRIVER VECTOR SLOTS: nine far pointers at `DS:0x0CD3`, four
+/// bytes apart, whose offsets are `0x100 + 3k` and whose segments the loader
+/// fills in.
+///
+/// They are STATIC IN THE IMAGE, which is why no code ever loads their addresses
+/// and why an immediate search for `0xcdb` finds only `lcall` users. The `3k`
+/// spacing is the giveaway: a `.drv` opens with a table of `E9 rel16` near jumps
+/// (3 bytes each), and the driver is loaded COM-style at offset `0x100`. So slot
+/// k is vector k.
+///
+/// This CORRECTS the stride guess recorded in `re/dead_ends.md`, which put the
+/// table at `0x0CDB` and made `0xCDF` vector 1 and `0xCF3` vector 6. The table
+/// starts eight bytes earlier: `0xCDF` is VECTOR 3 and `0xCF3` is VECTOR 8.
+pub const SND_DRIVER_VECTOR_SLOTS: u16 = 0x0CD3;
+/// A `.drv` is loaded at offset `0x100` in its segment, COM-style.
+pub const SND_DRIVER_LOAD_OFFSET: u16 = 0x100;
+/// Each vector-table entry is one `E9 rel16` near jump.
+pub const SND_DRIVER_VECTOR_STRIDE: u16 = 3;
+/// `lcall [0xcdf]` in `snd_driver_call` (`0xBB9D`) — vector 3.
+pub const SND_DRIVER_VECTOR_SERVICE: usize = 3;
+/// `lcall gs:[0xcf3]` @`0xBB28` — vector 8, which in `dnsdb.drv` (`DRV:0x01CA`)
+/// reads the 8237 DMA controller's CURRENT COUNT:
+///
+/// ```text
+///   DRV:0x01CC  mov dl,cs:[0x49d]     the DMA channel
+///   DRV:0x01D3  add dx,dx / inc dx    port = channel*2 + 1 (current-count)
+///   DRV:0x01D6  in al,dx / mov ah,al / in al,dx / xchg al,ah
+/// ```
+///
+/// So the "position" is the DMA's REMAINING count, and it counts DOWN. That is
+/// what `sub ax,[bp+4] / neg ax` @`0xBB33` is for: `length - remaining` is how
+/// far playback has got, i.e. the write offset. [`stream_mix_span`] takes the
+/// absolute difference for exactly this reason.
+pub const SND_DRIVER_VECTOR_POSITION: usize = 8;
+
+/// The `DS` offset of vector `k`'s far-pointer slot — `DS:0x0CD3 + 4k`, the
+/// static table read at file `0xE0F3`, whose `lcall` users are `0xBB28`
+/// (position, k=8) and `0xBBA6` (service, k=3).
+pub fn snd_driver_vector_slot(k: usize) -> u16 {
+    SND_DRIVER_VECTOR_SLOTS + (k as u16) * 4
+}
+
+/// The in-segment offset vector `k` jumps from (`0x100 + 3k`).
+pub fn snd_driver_vector_offset(k: usize) -> u16 {
+    SND_DRIVER_LOAD_OFFSET + (k as u16) * SND_DRIVER_VECTOR_STRIDE
+}
+
 /// A voice is fed only while its state byte at `+6` is 3 (`cmp byte [bp+6],3`
 /// @`0xBB13`/`0xBB1B`).
 pub const SND_VOICE_STATE_ACTIVE: u8 = 3;
@@ -503,6 +550,52 @@ pub const SILENCE: u8 = 0x80;
 
 #[cfg(test)]
 mod tests {
+
+    /// The slot table is STATIC DATA: nine far pointers at `DS:0x0CD3` whose
+    /// offsets are `0x100 + 3k`. Read from the image, so the vector mapping is
+    /// evidence rather than the stride arithmetic that got it wrong.
+    #[test]
+    fn driver_vector_slots_are_static_far_pointers_to_the_drv_table() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        const DS_BASE: usize = 0xD420;
+        for k in 0..9usize {
+            let at = DS_BASE + snd_driver_vector_slot(k) as usize;
+            let offset = u16::from_le_bytes([exe[at], exe[at + 1]]);
+            let segment = u16::from_le_bytes([exe[at + 2], exe[at + 3]]);
+            assert_eq!(offset, snd_driver_vector_offset(k), "slot {k} offset");
+            assert_eq!(segment, 0, "slot {k} segment is filled in at load");
+        }
+        // The two slots the sound path actually calls.
+        assert_eq!(snd_driver_vector_slot(SND_DRIVER_VECTOR_SERVICE), 0x0CDF);
+        assert_eq!(snd_driver_vector_slot(SND_DRIVER_VECTOR_POSITION), 0x0CF3);
+
+        // And the shipped driver really has a vector there: its table is E9
+        // near jumps, so file offset 3k must start one.
+        let mut drv = std::path::PathBuf::from("output/_tmp_dat/dnsdb.drv");
+        if !drv.exists() {
+            drv = std::path::PathBuf::from("../output/_tmp_dat/dnsdb.drv");
+        }
+        if let Ok(image) = std::fs::read(&drv) {
+            for k in 0..9usize {
+                assert_eq!(
+                    image[k * SND_DRIVER_VECTOR_STRIDE as usize],
+                    0xE9,
+                    "driver vector {k} is not a near jump"
+                );
+            }
+            // Vector 8 is the DMA position read: pushf/cli then port I/O.
+            let target = {
+                let at = SND_DRIVER_VECTOR_POSITION * 3;
+                let rel = i16::from_le_bytes([image[at + 1], image[at + 2]]);
+                (at as i32 + 3 + rel as i32) as usize
+            };
+            assert_eq!(&image[target..target + 2], &[0x9C, 0xFA], "pushf/cli");
+        }
+    }
 
     /// The `+6` voice header, checked against the SHIPPED DRIVER rather than
     /// against `BLOODPRG.EXE` — `dnsdb.drv` vector 6 terminates a voice buffer at

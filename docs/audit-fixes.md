@@ -6414,3 +6414,42 @@ cannot yet explain" has been worth more than the answer would have been.
 Next link: an ID's descriptor gives the loaded SEGMENT, so the driver's far
 pointers are that segment plus its vector offsets. What remains is finding where
 the host writes `gs:0x0CDB`/`0x0CDF`/`0x0CF3` from it.
+
+## #206 — "no write site" meant there is no write
+
+The driver-slot mapping had been open for four entries. Every attempt to find the
+code that fills `gs:0x0CDB`/`0x0CDF`/`0x0CF3` failed: an immediate search turns up
+only `lcall` users, and no register ever loads those addresses.
+
+That absence was the answer. The slots are STATIC DATA. Reading
+`DS:0x0CD0..0x0D00` out of the image shows nine far pointers, four bytes apart,
+offsets `0x100, 0x103, ... 0x118`, segments zero (filled at load time). Nothing
+writes them because they are already correct in the file.
+
+The `3` spacing identifies them beyond doubt: a `.drv` opens with `E9 rel16` near
+jumps, three bytes each, and the driver loads COM-style at `0x100`. Slot k is
+vector k.
+
+THE STRIDE GUESS IN #202 WAS WRONG, and this is why it was not wired in. It put
+the table at `0x0CDB`, making `0xCDF` vector 1 and `0xCF3` vector 6. The table
+starts eight bytes earlier: `0xCDF` is vector 3 and `0xCF3` is VECTOR 8. Vector 6
+had already turned out to be a buffer-queue routine — so the guess would have
+attributed the position query to code that queues buffers, and every later
+inference would have been built on it.
+
+Vector 8 (`DRV:0x01CA`) settles what "position" means: it reads the 8237 DMA
+controller's current-count register — `dl = cs:[0x49d]` (the channel),
+`dx = channel*2 + 1`, two `in`s and an `xchg`. The value is the REMAINING count
+and it counts DOWN. That retroactively explains `sub ax,[bp+4] / neg ax`
+@`0xBB33`: `length - remaining` is how far playback has got. `stream_mix_span`
+already took the absolute difference, transcribed without knowing why; now the
+doc says why.
+
+Pinned by a test that reads BOTH binaries — the slot offsets from `BLOODPRG.EXE`,
+the `E9` vectors and vector 8's `pushf/cli` prologue from `dnsdb.drv`.
+
+WHAT THIS LEAVES for `audio.rs`, and it is honestly a different kind of problem: a
+cpal callback has no DMA controller to interrogate. The port must derive an
+equivalent cursor from its own output clock. That is a design question about the
+host, not a decoding question about the game, and it is the first time this row's
+remaining work has been outside the binary.

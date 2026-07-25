@@ -1352,6 +1352,25 @@ would be a guess; vector 6 already turned out to be a buffer QUEUE rather than t
 position query `0xBB28` expects, which is exactly the kind of error the guess
 would have baked in.
 
-Better approach next: find the loader that reads the `.drv` and writes the slots
-(look for the file open/read of `*.drv` and follow the destination register),
-rather than matching stride arithmetic to a table.
+RESOLVED 2026-07-25, and the stride guess above was WRONG in a way worth keeping.
+
+Nothing writes the slots because they are STATIC DATA in the image. Reading
+`DS:0x0CD0..0x0D00` directly shows nine far pointers, four bytes apart, with
+offsets `0x100, 0x103, ... 0x118` and zero segments (filled at load). The `3`
+spacing is the tell: a `.drv` opens with `E9 rel16` near jumps, and the driver
+loads COM-style at `0x100`, so slot k is vector k.
+
+The table starts at `DS:0x0CD3`, EIGHT BYTES EARLIER than the guess above. That
+guess made `0xCDF` vector 1 and `0xCF3` vector 6; they are actually VECTOR 3 and
+VECTOR 8. Had the stride inference been wired in, `snd_driver_call` would have
+been attributed to the wrong driver entry and the position query to a buffer-queue
+routine — which is exactly what vector 6 turned out to be.
+
+`dnsdb.drv` vector 8 (`DRV:0x01CA`) settles what the position IS: it reads the
+8237 DMA controller's current-count register (`dl = cs:[0x49d]` the channel,
+`dx = channel*2 + 1`, two `in`s and an `xchg`). So the value counts DOWN, and
+`sub ax,[bp+4] / neg ax` @`0xBB33` converts remaining-count into played-offset.
+
+The lesson for the file: "no write site exists" was treated as "the write is
+hidden". It meant there is no write. Data that is correct in the image needs no
+code, and searching for the code that fills it can run forever.
