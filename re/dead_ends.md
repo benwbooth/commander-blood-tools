@@ -1243,36 +1243,43 @@ This is the same duplication defect that produced the `parse_dictionary` diverge
 consumers, three wrong). When a sequence is copied, fixing one copy is the START of the
 job.
 
-## Console band (intro montage, rows 140..200, indices 224..239) — three eliminated
+## Console band (intro montage) — SOLVED, and the first "dead end" was WRONG
 
-TRIED: treating the band as a slice of the bridge panorama `TB.BIG`.
-WHY IT FAILED: the panorama's frames draw in indices `0..~75`; the band uses
-`224..=239`. Disjoint ranges, and every panorama frame differs from the band in
-100% of bytes. (The port already renders that panorama pixel-exactly, so this
-would have been a two-line fix had it held.)
+RESOLVED: the band is bridge-panorama frame 90's rows 140..200, pushed through the
+console-bank remap table `DS:0x6011`. That composition equals the harvested
+`console_band.idx` in ALL 19200 bytes. It was never separate art.
 
-TRIED: finding the source asset by byte statistics — counting bytes in the
-`224..239` window across the shipped `.SPR`/`.EXT` files.
-WHY IT FAILED: they are compressed. A dozen unrelated files (RGB.SPR, TINA.SPR,
-YOKO.SPR...) show 45-52% of their bytes in that window by chance. No signal.
+**READ THIS BEFORE TRUSTING AN ELIMINATION IN THIS FILE.** The entry that stood
+here first was:
 
-TRIED: assuming the band is baked into the montage film. `cliptoot.hnm` frame 0
-is full-screen 320x200 while every later frame is 320x130, which makes "frame 0
-paints the band, the rest update the picture" the obvious reading.
-WHY IT FAILED: frame 0's rows 140..200 decode to a SINGLE index, 0. The film
-leaves the band region blank.
+> TRIED: treating the band as a slice of the bridge panorama `TB.BIG`.
+> WHY IT FAILED: the panorama's frames draw in indices `0..~75`; the band uses
+> `224..=239`. Disjoint ranges, and every panorama frame differs in 100% of bytes.
 
-BETTER APPROACH: that last result sharpens the question rather than closing it.
-Since frames after 0 are 320x130, the game repaints only the top 130 rows during
-the montage and the band PERSISTS underneath — so it is drawn ONCE, before the
-film starts. Look in the intro setup path (the code that runs between the boot
-logos and the first montage frame), not in the film and not in the asset files.
+That was the CORRECT ANSWER, recorded as refuted. The comparison was raw panorama
+indices against POST-REMAP band indices — and the remap was precisely what made
+them differ. Every later search was doomed by it, because the right answer had
+already been crossed off. The elimination looked rigorous (byte-exact comparison,
+100% mismatch, disjoint ranges) and rigour on the wrong comparison is still wrong.
 
-CONFIRMED by finding that path: `montage_frame_setup` at 0x7AC3 remaps the whole
-320x200 screen through tint table DS:0x6011 and then draws only a (0,0,*,140)
-region — the film area. The per-frame work provably never touches rows 140..200,
-exactly as the frame sizes implied. So the band is drawn earlier still, by
-whatever runs before the first call to this routine. (Bonus: this is the consumer
-of the SECOND tint table, whose users were previously unknown.)
+WHAT WOULD HAVE CAUGHT IT: asking what TRANSFORM sits between the two things being
+compared before concluding they are unrelated. Here a full-screen colour reduction
+did, so the source art need not be in the band's colour range at all — which also
+invalidates the two searches below, both of which filtered candidates by their
+in-bank byte fraction.
+
+The other attempts, kept for the record but note they inherited the same flaw:
+
+TRIED: byte statistics over the shipped `.SPR`/`.EXT` files, counting bytes in the
+`224..239` window. FAILED: they are compressed, and a dozen unrelated files show
+45-52% in that window by chance. (Also the wrong colour space, as above.)
+
+TRIED: the band baked into the montage film. `cliptoot.hnm` frame 0 is 320x200
+while every later frame is 320x130. FAILED: frame 0's rows 140..200 decode to a
+single index, 0 — the film leaves the region blank. (This one is sound, and it is
+what led to `montage_frame_setup` at 0x7AC3 and thence to the remap.)
+
+TRIED: sprite banks (no frame >= 200x40 exists) and the three `.FD` images
+(0% in-bank raw; 81-96% differing even after remapping). Both sound.
 
 SESSION: the engine.rs capture-provenance sweep.
