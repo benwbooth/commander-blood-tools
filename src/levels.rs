@@ -38,6 +38,30 @@ pub enum LevelKind {
 /// Cited, not just derived: `resource_name_table_access` (`0x3FC7`) does
 /// `mov dx,0xc04` @`0x3FD4` with `ds = fs`.
 pub const LEVEL_DIRECTORY_FILE_OFFSET: usize = 0xCDF4;
+/// The RESOURCE DESCRIPTOR table's stride: `shl bx,3` @`0x51A5` turns a resource
+/// ID into a descriptor offset, so records are 8 bytes and the table is based at
+/// `FS:0x0000` (no base is added to `bx`).
+///
+/// The name table sits at `FS:0x0C04` in the same segment, which is consistent:
+/// 95 descriptors occupy `0x2F8` bytes, comfortably below `0xC04`.
+pub const RESOURCE_DESCRIPTOR_STRIDE: u16 = 8;
+/// Descriptor `+0`: the SEGMENT the resource was loaded at (`mov ax,[bx]` /
+/// `mov ds,ax` @`0x51B7`).
+pub const RESOURCE_DESCRIPTOR_SEGMENT: u16 = 0;
+/// Descriptor `+2`: flags. `test word [bx+2],3` @`0x51AC` asks "already
+/// resident?"; the loader then sets bit 1 with `or word [bx+2],2` @`0x51B3` and
+/// returns 1 without re-reading the file.
+pub const RESOURCE_DESCRIPTOR_FLAGS: u16 = 2;
+/// The residency mask tested at `0x51AC`.
+pub const RESOURCE_FLAG_RESIDENT: u16 = 3;
+/// The bit the loader sets on a cache hit (`0x51B3`).
+pub const RESOURCE_FLAG_IN_USE: u16 = 2;
+
+/// A resource ID's descriptor offset within the `FS` segment (`0x51A5`).
+pub fn resource_descriptor_offset(id: u16) -> u16 {
+    id.wrapping_mul(RESOURCE_DESCRIPTOR_STRIDE)
+}
+
 /// The resource loader's READ CHUNK SIZE: `mov cx,0x7d00` @`0x4041`, the count
 /// for the `int 21h`/`AH=3Fh` read at `0x4049`, repeated until the size taken
 /// from the FindFirst record (`es:[bx+0x1a]` @`0x3FF4`) is exhausted
@@ -392,6 +416,38 @@ pub fn parse_world_art_table(exe: &[u8]) -> Vec<(String, u16)> {
 
 #[cfg(test)]
 mod tests {
+
+    /// `0x51A5`/`0x51AC`/`0x51B3`: the descriptor stride and the residency test,
+    /// checked as instruction BYTES so the constants cannot drift.
+    #[test]
+    fn resource_descriptor_layout_matches_the_loader() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        // c1 e3 03 = shl bx,3 -- the stride is 1 << 3.
+        assert_eq!(&exe[0x51A5..0x51A8], &[0xC1, 0xE3, 0x03]);
+        assert_eq!(1u16 << exe[0x51A7], RESOURCE_DESCRIPTOR_STRIDE);
+        // f7 47 02 03 00 = test word [bx+2],3 -- offset AND mask in one check.
+        assert_eq!(&exe[0x51AC..0x51B1], &[0xF7, 0x47, 0x02, 0x03, 0x00]);
+        assert_eq!(exe[0x51AE] as u16, RESOURCE_DESCRIPTOR_FLAGS);
+        assert_eq!(exe[0x51AF] as u16, RESOURCE_FLAG_RESIDENT);
+        // 83 4f 02 02 = or word [bx+2],2
+        assert_eq!(&exe[0x51B3..0x51B7], &[0x83, 0x4F, 0x02, 0x02]);
+        assert_eq!(exe[0x51B6] as u16, RESOURCE_FLAG_IN_USE);
+
+        // The two tables coexist: 95 descriptors end well before the names.
+        let names = parse_level_directory(&exe);
+        assert_eq!(names.len(), 95);
+        assert!(
+            resource_descriptor_offset(names.len() as u16) < 0xC04,
+            "descriptors must not reach the name table at FS:0x0C04"
+        );
+        // The drivers are addressable by ID through both tables.
+        assert_eq!(names[1], "nosound.drv");
+        assert_eq!(resource_descriptor_offset(1), 8);
+    }
 
     /// `0x4041 mov cx,0x7d00` — the read chunk size, checked as BYTES in the
     /// image so a doc edit cannot drift from the instruction.

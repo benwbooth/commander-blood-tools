@@ -6378,3 +6378,39 @@ not that the docs were wrong — it is that a guard reporting "0 wrong" had been
 silently ignoring most of its input, which is the same failure as the truncated
 test greps that once hid a failing oracle test for an unknown number of sessions.
 A guard's coverage needs testing as much as its verdict does.
+
+## #205 — the second table, and why the driver hunt keeps paying
+
+Following `lcall 0x4B9:0` (file `0x5190`), the loader's post-read hook, produced
+the RESOURCE DESCRIPTOR table — the companion to the filename table found in #203.
+
+`shl bx,3` @`0x51A5` turns a resource ID into a descriptor offset with NO base
+added, so the records are 8 bytes based at `FS:0x0000`. Two fields decode
+immediately:
+
+  * `+0` the SEGMENT the resource loaded at (`mov ax,[bx] / mov ds,ax` @`0x51B7`);
+  * `+2` flags — `test word [bx+2],3` @`0x51AC` asks "already resident?", and on a
+    hit the loader sets bit 1 (`or word [bx+2],2` @`0x51B3`) and returns without
+    re-reading the file.
+
+The two tables are consistent with each other, which is a check rather than a
+restatement: 95 descriptors occupy `0x2F8` bytes and the name table starts at
+`FS:0x0C04`, so they cannot overlap. The test asserts that relationship instead of
+taking it on faith.
+
+Every constant here is pinned to INSTRUCTION BYTES rather than to a doc: the test
+reads `c1 e3 03` and derives the stride as `1 << exe[0x51A7]`, reads
+`f7 47 02 03 00` and takes the offset and mask out of it. A doc rewrite cannot
+drift from the code, and neither can a careless constant edit.
+
+Worth noting what this hunt has produced. It began as "map the driver's vector
+slots so `audio.rs` can be migrated" and has so far yielded: the shipped drivers
+and their ABI (#202), the 95-slot file manifest and the discovery that the port's
+directory was a transcribed 54-entry prefix (#203), a coverage hole in the
+citation guard that hid a third of the tree (#204), and now the descriptor table.
+None of those were the goal. The goal is still open — but "follow the thing you
+cannot yet explain" has been worth more than the answer would have been.
+
+Next link: an ID's descriptor gives the loaded SEGMENT, so the driver's far
+pointers are that segment plus its vector offsets. What remains is finding where
+the host writes `gs:0x0CDB`/`0x0CDF`/`0x0CF3` from it.
