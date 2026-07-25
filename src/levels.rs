@@ -339,6 +339,25 @@ mod tests {
         }
         assert_eq!(checked, LEVEL_DIRECTORY.len());
         assert_eq!(checked, 53, "expected 53 resource entries");
+        // The TABLE is larger than the port's directory and its extent is fixed by
+        // a layout identity: 0xCDF4 + 95*16 = 0xD3E4, exactly the script-profile
+        // table. So there are 95 records (ids 0..94), which is also the highest id
+        // the world-art table uses (94 = ondoya.ext). The port's 53 entries are the
+        // subset it needs, not the whole table -- worth pinning so the two numbers
+        // are never confused.
+        const NAME_TABLE: usize = 0xCDF4;
+        const NAME_COUNT: usize = 95;
+        assert_eq!(NAME_TABLE + NAME_COUNT * 16, 0x0D3E4);
+        let highest_art = WORLD_ART_DIRECTORY
+            .iter()
+            .map(|e| e.resource_id)
+            .max()
+            .unwrap();
+        assert_eq!(highest_art as usize, NAME_COUNT - 1);
+        assert!(
+            LEVEL_DIRECTORY.iter().all(|e| (e.index as usize) < NAME_COUNT),
+            "every ported entry indexes inside the table"
+        );
     }
 
     #[test]

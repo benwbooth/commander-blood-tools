@@ -2372,3 +2372,38 @@ the `mov` immediates.
 METHOD NOTE: this is the second time a sweep of the BINARY's own tables found
 something the port's documentation could not have suggested. A ledger of what the
 port HAS will never list what it LACKS; only the game's own data will.
+
+## FIX #70 — the resource sweep that could NOT work, and why that is worth knowing
+
+Applied the UI-string method one level up: which of the 95 shipped resources can
+be proven reachable? Two results, one good and one instructive.
+
+**The good one is an extent.** The resource-name table's size was never pinned.
+It is a layout identity: `0xCDF4 + 95*16 = 0xD3E4`, exactly the script-profile
+table — so 95 records, ids `0..94`. Corroborated independently: 94 (`ondoya.ext`)
+is the highest id the world-art table uses. My first run walked past the end and
+happily reported `id 99 'minimum !'` and `id 122 'CANCEL'` as resources, which is
+the profile rows and the UI string table being read as filename records. Now
+pinned in `levels.rs` too, alongside the note that the port's `LEVEL_DIRECTORY`
+holds 53 of the 95 — the subset it needs, not the whole table.
+
+**The instructive one: the sweep reported 13 "unreferenced" resources, and the
+list is not trustworthy.** Id 16 is `borxx.spr` — the EYE ORB the nav HUD draws
+every frame. It appears in no profile row, no world-art record and no
+`mov ax,16`, and it is obviously live.
+
+WHY THE METHOD TRANSFERS TO STRINGS BUT NOT TO RESOURCES: a draw site must load a
+string's DS offset as an IMMEDIATE — there is nowhere else for the offset to come
+from, so absence of an immediate proves absence of a draw. Resource ids arrive in
+`AX` from DATA: the `.ext` object records feed `entity_object_populate` (`0x40D0`)
+with ids the executable never mentions. Absence of an immediate proves nothing.
+
+So the tool now says what it can prove — reachability — and states plainly that
+its zero-hit list means "route unknown", with `borxx.spr` named in the source as
+the counter-example. Publishing that list as "dead resources" would have invited
+someone to delete or skip live content.
+
+FOUR TOOLS THIS SESSION have needed their first output disbelieved (DS/file pairs,
+quoted instructions, labels.csv, this). The pattern is stable enough to state as a
+rule: a new checker's first run is a test OF THE CHECKER. Only once it survives a
+positive control and a known-good counter-example does its output mean anything.
