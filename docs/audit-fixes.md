@@ -3169,3 +3169,31 @@ DS/file offset pairs, quoted instructions, `labels.csv` validity, capture
 provenance, self-referential assertions, and duplicated rules. The through-line is
 that every one of them encodes a mistake I made or found, so the next pass cannot
 repeat it silently.
+
+## FIX #99 — the owner lookup, verified and de-duplicated
+
+`owner_object_offset` against `vm_record_lookup_by_threshold` `0x6034`:
+
+```text
+  0x603B  cmp ax,[si+0x10] / jbe    advance while the entry offset is BELOW ax
+  0x6040  add si,0x14
+  0x6045  sub si,0x14               step BACK one entry
+  0x6048  mov ax,[si+0x10]          and return ITS object offset
+```
+
+The port's `.rev().find(|o| o < off)` is the same answer over an ascending list.
+ONE DELIBERATE DIFFERENCE, now written down: when `off` is at or below the FIRST
+entry, the original's `sub si,0x14` steps in front of the table and returns
+whatever lies there. The port returns `None` rather than reproducing an
+out-of-bounds read.
+
+AND IT WAS WRITTEN TWICE — identical bodies in `ExecutionContext` and in
+`VmMachine`, both in `src/vm.rs`. The duplicate-rule guard (#98) missed it because
+it compared names ACROSS FILES, and Rust allows one name per impl block. The
+same-file case is now in scope and noted in the tool's source; both call one
+`owner_object_offset_in`.
+
+Fourth duplication this session, and the second whose two copies sat in one file.
+Each guard has needed widening once it met a case its author had not pictured —
+which is an argument for building them from real defects rather than from
+imagination.

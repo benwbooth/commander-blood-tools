@@ -1359,6 +1359,24 @@ pub fn nav_chart_marker_contains(
     mouse.0 >= x0 && mouse.0 <= x0 + hit_box.0 && mouse.1 >= y0 && mouse.1 <= y0 + hit_box.1
 }
 
+/// The owner lookup — `vm_record_lookup_by_threshold` `0x6034`:
+///
+/// ```text
+///   0x603B  cmp ax,[si+0x10] / jbe    advance while the entry offset is BELOW ax
+///   0x6040  add si,0x14
+///   0x6045  sub si,0x14               step BACK one entry
+///   0x6048  mov ax,[si+0x10]          and return ITS object offset
+/// ```
+///
+/// So: the last directory entry whose offset is strictly less than `off`, over a
+/// list the loader keeps ascending. One difference, deliberate — when `off` is at
+/// or below the FIRST entry the original's `sub si,0x14` steps in front of the
+/// table and returns whatever lies there; the port returns `None` rather than
+/// reproducing an out-of-bounds read.
+pub fn owner_object_offset_in(object_offsets: &[u16], off: u16) -> Option<u16> {
+    object_offsets.iter().rev().copied().find(|&o| o < off)
+}
+
 /// The nav picker's hit box for a KIND (`0x92BF` default, `0x92D3` black hole,
 /// `0x92FC` ship). The single copy of that ladder — `NavChartObject::hit_box` and
 /// `VmMachine::nav_chart_hit_box` both call here.
@@ -1812,11 +1830,7 @@ impl ExecutionContext {
     }
 
     fn owner_object_offset(&self, record_offset: u16) -> Option<u16> {
-        self.object_offsets
-            .iter()
-            .rev()
-            .copied()
-            .find(|offset| *offset < record_offset)
+        owner_object_offset_in(&self.object_offsets, record_offset)
     }
 
     fn remap_special_rhs(&self, value: u16) -> u16 {
@@ -4383,7 +4397,7 @@ impl VmMachine {
     /// The owning object of a record: the nearest DEB object STRICTLY below `off`
     /// (the 0x6034 threshold lookup's port model). None when the table is unloaded.
     fn owner_object_offset(&self, off: u16) -> Option<u16> {
-        self.object_offsets.iter().rev().copied().find(|&o| o < off)
+        owner_object_offset_in(&self.object_offsets, off)
     }
 
     /// The `0xC4` mode-0 (SET) write guard — the `0x6CC3..0x6D01` decision.

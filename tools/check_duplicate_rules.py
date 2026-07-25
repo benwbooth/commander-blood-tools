@@ -46,7 +46,11 @@ def main():
             by_addr[int(m.group(1), 16)].append((r["item"], r["file"], r["status"]))
 
     clusters = {a: v for a, v in by_addr.items() if len(v) > 1}
-    # The strongest signal: one NAME implemented in two files.
+    # The strongest signal: one NAME implemented twice for one address. Two files
+    # is the obvious case; the SAME file also counts, because Rust allows one name
+    # per impl block and `owner_object_offset` was written out twice that way — in
+    # `ExecutionContext` and in `VmMachine`, identical bodies, invisible to a
+    # cross-file check.
     same_name = []
     for addr, items in clusters.items():
         names = collections.Counter(i[0] for i in items)
@@ -62,7 +66,7 @@ def main():
             print(f"      {item:<42} {path:<24} {status}")
 
     if same_name:
-        print("\nDUPLICATE NAMES — the same function in two files:")
+        print("\nDUPLICATE NAMES — one name implemented twice for one address:")
         for addr, name, files in sorted(same_name):
             print(f"  {addr:#07x}  {name}  in {', '.join(files)}")
         return 1
