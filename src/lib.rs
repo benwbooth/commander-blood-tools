@@ -57,3 +57,39 @@ pub mod vm;
 pub const VIEWPORT_W: usize = 320;
 pub const VIEWPORT_H: usize = 200;
 pub const HNM_FPS: u32 = 15;
+
+#[cfg(test)]
+mod offset_pair_tests {
+    /// Every `DS:0xNNNN` the port documents alongside a `file 0xNNNNN` must agree
+    /// with the DS base (file `0xD420`). A drifted pair is invisible to ordinary
+    /// tests because each half is individually plausible — which is why
+    /// `OPTION_BOX_LABEL` carries a hand-written assertion for exactly this. This
+    /// runs the same check over the whole tree via `tools/check_offset_pairs.py`,
+    /// so a new constant cannot quietly reintroduce the class.
+    ///
+    /// Skips when python or the source tree is unavailable (a packaged build).
+    #[test]
+    fn documented_ds_and_file_offsets_agree() {
+        let script = std::path::Path::new("tools/check_offset_pairs.py");
+        if !script.exists() {
+            return;
+        }
+        let out = match std::process::Command::new("python3").arg(script).output() {
+            Ok(o) => o,
+            Err(_) => return,
+        };
+        let text = String::from_utf8_lossy(&out.stdout);
+        assert!(
+            out.status.success(),
+            "DS/file offset pairs disagree:\n{text}"
+        );
+        // The checker must actually be finding pairs — a regex that silently stops
+        // matching would "pass" forever.
+        let checked: usize = text
+            .split_whitespace()
+            .next()
+            .and_then(|n| n.parse().ok())
+            .unwrap_or(0);
+        assert!(checked >= 15, "expected the sweep to find pairs, got: {text}");
+    }
+}

@@ -1966,3 +1966,41 @@ change all three perturbations passed.
 
 Remaining from the #56 sweep: none. The `X.len() == CONST` shape is gone from the
 tree except where the length is checked against something independent as well.
+
+## FIX #58 — a tree-wide DS/file offset sweep, and four false alarms on the way
+
+`OPTION_BOX_LABEL` carries a hand-written assertion that its DS offset and its
+file offset describe the same byte (`file == 0xD420 + ds`). Nothing checked that
+for any other constant, and a drifted pair is invisible to ordinary tests because
+each half is individually plausible. `tools/check_offset_pairs.py` now does it for
+the whole tree, wired in as a test.
+
+RESULT: 17 pairs, all consistent. No defect in this class.
+
+WHAT IT COST TO GET A TRUSTWORTHY ANSWER is the part worth recording, because the
+tool reported FOUR mismatches before it reported the true one (zero):
+
+1. Pairing by POSITION with an 80-char window matched one item's DS offset against
+   the NEXT item's file offset — `"bitmaps at file 0x145CA = DS:0x71AA, map at
+   file 0x1451A = DS:0x70FA"` paired `0x71AA` with `0x1451A`. Both halves of both
+   pairs were correct.
+2. Tightening the separator killed the false alarms but dropped coverage from 17
+   pairs to 7 — precision bought with recall.
+3. Pairing by SET correspondence instead (does each file offset have a DS partner
+   anywhere in the block?) restored coverage, and then flagged `FS:0x11F4
+   (file 0x0D3E4)`: a file offset under a DIFFERENT segment base, which cannot
+   pair with a DS offset at all.
+4. And `file 0x006BEA..0x006C04` — a CODE address, truncated to `0x006BE` by a
+   `{4,5}` hex limit.
+
+The rule that resolves both is one line: a file offset BELOW the DS base is not
+DS-relative, full stop. That subsumes the segment-prefix special case, since code
+addresses rarely carry one.
+
+Every one of those four would have been reported as a port defect by a less
+careful pass. The discipline that caught them is the same one from the palette
+bytes and the recomp vector scan: verify the tool before believing the finding.
+
+POSITIVE CONTROL: drifting `OPTION_BOX_LABEL_FILE_OFFSET` by 2 now fails the sweep
+with the exact pair named. The test also asserts the sweep still FINDS at least 15
+pairs, so a regex that silently stops matching cannot pass forever.
