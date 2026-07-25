@@ -6827,3 +6827,33 @@ routine against real game data, which is real work and is not done here.
 
 Real queue after this: 779 rows with neither a citation nor a data test, down from
 791 only because the inventory fix removed phantoms.
+
+## #220 — the test #219 said was missing
+
+#219 documented 27 shape structs and settled none, noting that what would settle
+them is "a test that exercises each shape through its routine against real game
+data". This is that test for the target-list cluster.
+
+`real_game_labels_lay_out_and_hit_test_back_to_their_own_rows` takes the OPTION
+menu's labels OUT OF `BLOODPRG.EXE`'s string table, measures them with the port's
+font, lays them out with `layout_ship_3d_target_list` (`0x84A1`), and hit-tests
+each row's own centre with `hit_test_ship_3d_target_list` (`0x84E6`). Every row
+must come back as itself; a point left of the box and a point above the first row
+must hit nothing, which are the `>= layout.x` and `row_offset >= 0` gates.
+
+It found nothing wrong, and that is a real result rather than a formality: layout
+and hit-test are separate transcriptions of separate routines, and a disagreement
+between them — an off-by-one inset, a wrong row pitch — would have shown up as a
+row hit-testing to its neighbour. They agree on the game's own label widths.
+
+A note on how the last two rows got settled. The suggester saw only
+`Ship3dTargetHitState` at first, because the other two types were never NAMED in
+the test — `layout` was an inferred binding and the result was consumed as
+`hit.is_some()`. The fix was to make the test genuinely use them (`let layout:
+Ship3dTargetListLayout`, and destructure the result to assert `hit.inside`,
+`hit.hover_row`, `hit.activated`) rather than to loosen the matcher. Asserting on
+the result instead of its Option-ness is a better test anyway, which is the tell
+that the strict matcher was pointing at a real weakness.
+
+Three of the 27 are now TESTED on evidence. The remaining 24 need the same
+treatment, one cluster at a time.

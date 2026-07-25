@@ -1017,9 +1017,9 @@ Ship3dTargetSelectorState	src/ship3d.rs	258	struct	0x251B,0x251b,0xB21A,0x252B,0
 Ship3dTargetSelection	src/ship3d.rs	274	struct		UNVERIFIED	/// Parameter/result shape for [`select_ship_3d_target_record`]. /// /// The fields ARE that routine's decoded values; this type carries no rule /// of its own, so the binary citations live on the fun
 Ship3dInterpolationGate	src/ship3d.rs	290	struct		UNVERIFIED	/// Parameter/result shape for [`step_ship_3d_interpolation_gate`]. /// /// The fields ARE that routine's decoded values; this type carries no rule /// of its own, so the binary citations live on the 
 Ship3dInterpolationStep	src/ship3d.rs	296	enum		UNVERIFIED	
-Ship3dTargetListLayout	src/ship3d.rs	308	struct		UNVERIFIED	/// Parameter/result shape for [`layout_ship_3d_target_list`]. /// /// The fields ARE that routine's decoded values; this type carries no rule /// of its own, so the binary citations live on the funct
-Ship3dTargetHitState	src/ship3d.rs	326	struct		UNVERIFIED	/// Parameter/result shape for [`hit_test_ship_3d_target_list`]. /// /// The fields ARE that routine's decoded values; this type carries no rule /// of its own, so the binary citations live on the fun
-Ship3dTargetHitResult	src/ship3d.rs	340	struct		UNVERIFIED	/// Parameter/result shape for [`hit_test_ship_3d_target_list`]. /// /// The fields ARE that routine's decoded values; this type carries no rule /// of its own, so the binary citations live on the fun
+Ship3dTargetListLayout	src/ship3d.rs	308	struct		TESTED	/// Parameter/result shape for [`layout_ship_3d_target_list`]. /// /// The fields ARE that routine's decoded values; this type carries no rule /// of its own, so the binary citations live on the funct
+Ship3dTargetHitState	src/ship3d.rs	326	struct		TESTED	/// Parameter/result shape for [`hit_test_ship_3d_target_list`]. /// /// The fields ARE that routine's decoded values; this type carries no rule /// of its own, so the binary citations live on the fun
+Ship3dTargetHitResult	src/ship3d.rs	340	struct		TESTED	/// Parameter/result shape for [`hit_test_ship_3d_target_list`]. /// /// The fields ARE that routine's decoded values; this type carries no rule /// of its own, so the binary citations live on the fun
 Ship3dTargetTextSegment	src/ship3d.rs	350	enum		UNVERIFIED	
 Ship3dTargetDrawCommand	src/ship3d.rs	356	struct		UNVERIFIED	
 Ship3dTargetDrawResult	src/ship3d.rs	368	struct		UNVERIFIED	

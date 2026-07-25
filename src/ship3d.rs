@@ -4315,6 +4315,62 @@ fn next_target_list_draw_color(state: &mut Ship3dTargetHitState, activate: bool)
 
 #[cfg(test)]
 mod tests {
+
+    /// LAYOUT AND HIT-TEST DRIVEN BY REAL GAME TEXT: the labels come out of
+    /// `BLOODPRG.EXE`'s own string table, are measured with the port's font, laid
+    /// out by `layout_ship_3d_target_list` (`0x84A1`) and then hit-tested row by
+    /// row by `hit_test_ship_3d_target_list` (`0x84E6`).
+    ///
+    /// This is the round trip the shapes needed (audit-fixes #219 documented them
+    /// but settled none, because documentation is not verification): every row's
+    /// own centre must hit-test back to that row, and a point outside the box must
+    /// hit nothing.
+    #[test]
+    fn real_game_labels_lay_out_and_hit_test_back_to_their_own_rows() {
+        let binary = ["re/bin/BLOODPRG.EXE", "../re/bin/BLOODPRG.EXE"]
+            .iter()
+            .find_map(|p| crate::bloodprg::BloodPrg::parse_file(p).ok());
+        let Some(binary) = binary else { return };
+        let labels = binary.option_menu_labels();
+        assert!(labels.len() >= 2, "the game's OPTION menu has rows");
+
+        let widths: Vec<u16> = labels
+            .iter()
+            .map(|l| crate::font::square_caps_text_width(l) as u16)
+            .collect();
+        let layout: Ship3dTargetListLayout = layout_ship_3d_target_list(&widths, 0xE1, false);
+        assert!(layout.width > 0 && layout.height > 0);
+
+        // Each row's vertical centre, at the box's horizontal middle.
+        let x = layout.x.wrapping_add(layout.width / 2);
+        let top = layout.y.wrapping_add(SHIP_3D_TARGET_HIT_TEST_TOP_INSET);
+        for row in 0..labels.len() {
+            let y = top + (row as u16) * SHIP_3D_TARGET_LAYOUT_ROW_STEP + 1;
+            let mut state = Ship3dTargetHitState::default();
+            let hit: Ship3dTargetHitResult =
+                hit_test_ship_3d_target_list(&mut state, layout, x, y, false)
+                    .unwrap_or_else(|| panic!("row {row} at y={y} produced no result"));
+            assert!(hit.inside, "row {row} reports outside the box");
+            assert_eq!(
+                hit.hover_row as usize,
+                row + 1,
+                "row {row} hit-tested to hover_row {} (rows are 1-based @0x84F6)",
+                hit.hover_row
+            );
+            assert_eq!(hit.hover_row, state.hover_row, "result and state agree");
+            assert!(!hit.activated, "no activation without the click flag");
+        }
+
+        // Left of the box hits nothing -- the `>= layout.x` gate.
+        let mut outside = Ship3dTargetHitState::default();
+        hit_test_ship_3d_target_list(&mut outside, layout, layout.x.wrapping_sub(4), top, false);
+        assert_eq!(outside.hover_row, 0, "outside the box selects no row");
+
+        // Above the first row hits nothing -- the row_offset >= 0 gate.
+        let mut above = Ship3dTargetHitState::default();
+        hit_test_ship_3d_target_list(&mut above, layout, x, layout.y, false);
+        assert_eq!(above.hover_row, 0, "above the first row selects no row");
+    }
     use super::*;
 
     #[test]
