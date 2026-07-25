@@ -4316,6 +4316,49 @@ fn next_target_list_draw_color(state: &mut Ship3dTargetHitState, activate: bool)
 #[cfg(test)]
 mod tests {
 
+    /// THE TEMP-SND CALLBACK TABLE IS DATA, and it is in the image.
+    ///
+    /// `SHIP_3D_TEMP_SND_CALLBACK_TABLE_OFFSET` is `DS:0x0ACC`, so the three
+    /// offsets the port carries as a literal array can be read straight out of
+    /// `BLOODPRG.EXE` rather than trusted. They are, and the word after them is
+    /// zero — which independently confirms the phase COUNT is 3 rather than the
+    /// array simply being as long as someone transcribed.
+    #[test]
+    fn the_temp_snd_callback_offsets_are_the_images_own_words() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        const DS_BASE: usize = 0xD420;
+        let at = DS_BASE + SHIP_3D_TEMP_SND_CALLBACK_TABLE_OFFSET as usize;
+
+        for (index, expected) in SHIP_3D_TEMP_SND_CALLBACK_OFFSETS.iter().enumerate() {
+            let word = u16::from_le_bytes([exe[at + index * 2], exe[at + index * 2 + 1]]);
+            assert_eq!(
+                word, *expected,
+                "callback {index} is {word:#06x} in the image, {expected:#06x} in the port"
+            );
+        }
+
+        // The entry PAST the table is zero: the count is the data's, not a
+        // transcription choice.
+        let n = SHIP_3D_TEMP_SND_CALLBACK_OFFSETS.len();
+        let past = u16::from_le_bytes([exe[at + n * 2], exe[at + n * 2 + 1]]);
+        assert_eq!(past, 0, "the table does not end where the port says it does");
+        assert_eq!(
+            n as u8, SHIP_3D_TEMP_SND_PHASE_COUNT,
+            "the phase count and the table length disagree"
+        );
+
+        // The offsets are strictly increasing, as consecutive entry points must
+        // be -- a transposed pair would still pass a set comparison.
+        assert!(
+            SHIP_3D_TEMP_SND_CALLBACK_OFFSETS.windows(2).all(|w| w[0] < w[1]),
+            "callback offsets are not in ascending order"
+        );
+    }
+
     /// TWO ROUTINES MUST AGREE ABOUT THE ENTITY TABLE.
     ///
     /// `ship_3d_nav_entity_for_slot` builds an entity's record address as

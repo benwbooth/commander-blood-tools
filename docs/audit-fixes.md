@@ -7030,3 +7030,26 @@ ledger itself was always right. The lesson is not "be careful"; it is that the
 count must come from the ledger every time it is stated, and a settle tool's
 per-call output is not a running total. When the numbers next looked odd
 (834 -> 832 after ADDING a test), the discrepancy was mine, not the ledger's.
+
+## #227 — a literal array that turned out to be readable
+
+`SHIP_3D_TEMP_SND_CALLBACK_OFFSETS = [0x0087, 0x0090, 0x009c]` sat in the port as
+a plain array beside `SHIP_3D_TEMP_SND_CALLBACK_TABLE_OFFSET = 0x0acc`. The second
+constant is the FIRST one's address: `DS:0x0ACC` is where the game keeps that
+table, so the array never needed to be trusted — it can be read.
+
+It matches, word for word. Two further things fall out of reading rather than
+transcribing:
+
+  * the word PAST the table is zero, which confirms the count is 3 because the
+    DATA says so, not because three entries were transcribed;
+  * the offsets ascend, which a set comparison would not catch — a transposed pair
+    would map phase 1 to phase 2's callback and still "match".
+
+Settled DATA, all three constants.
+
+The general point, and the reason to look at neighbouring constants: an array of
+hex literals sitting next to an address constant is usually not two facts. It is
+one fact and its location, and the location makes the array checkable. This tree
+has more such pairs — `check_offset_pairs.py` already validates 21 DS/file pairs,
+and the same idea applies to any table whose base the port already knows.
