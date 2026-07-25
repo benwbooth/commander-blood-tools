@@ -2717,14 +2717,25 @@ impl EngineState {
     /// file), so the harvested DAC was a duplicate of a constant already sourced
     /// from the image at `0x12F78`. Uses the constant.
     ///
-    /// THE INDEX HALF IS STILL A CAPTURE, and is the open item. What is now known
-    /// about it: the band uses exactly SIXTEEN indices, `224..=239` — a dedicated
-    /// console bank — and it is NOT a slice of the bridge panorama, whose frames
-    /// draw in `0..~75`, a disjoint range. So the source is an asset rendered in
-    /// the 224+ bank rather than `TB.BIG`. Raw byte statistics over the shipped
-    /// `.SPR`/`.EXT` files do not identify it (they are compressed; a dozen files
-    /// show ~50% of bytes in that window by chance), so the next step is decoding
-    /// the console-band draw call rather than searching the assets.
+    /// THE INDEX HALF IS STILL A CAPTURE, and is the open item. What is known,
+    /// with three hypotheses eliminated:
+    ///
+    /// * the band uses exactly SIXTEEN indices, `224..=239` — a dedicated console
+    ///   bank;
+    /// * NOT a slice of the bridge panorama: `TB.BIG`'s frames draw in `0..~75`, a
+    ///   disjoint range, every frame differing in 100% of bytes;
+    /// * NOT findable by byte statistics over the shipped `.SPR`/`.EXT` files —
+    ///   they are compressed, and a dozen unrelated files show ~50% of their bytes
+    ///   in the `224..239` window by chance;
+    /// * NOT baked into the montage film. `cliptoot.hnm` frame 0 IS full-screen
+    ///   320x200, which made it the obvious candidate — but its rows 140..200
+    ///   decode to a single index, 0. The film leaves the band region blank.
+    ///
+    /// What that last one buys is a sharper question. Every frame after 0 is
+    /// 320x130, so during the montage the game repaints only the top 130 rows and
+    /// the band simply PERSISTS underneath. It is therefore drawn ONCE, before the
+    /// film starts — in the intro setup path, not per frame. That is where to look
+    /// next, rather than in the film or the assets.
     fn overlay_console_band(&mut self) {
         const BAND_TOP: usize = 140;
         const BAND: &[u8] = include_bytes!("../accuracy/captures/console_band.idx");

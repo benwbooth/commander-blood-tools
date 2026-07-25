@@ -1242,3 +1242,30 @@ This is the same duplication defect that produced the `parse_dictionary` diverge
 (four copies, one fixed, three left wrong) and the `0xA6` word-list divergence (six
 consumers, three wrong). When a sequence is copied, fixing one copy is the START of the
 job.
+
+## Console band (intro montage, rows 140..200, indices 224..239) — three eliminated
+
+TRIED: treating the band as a slice of the bridge panorama `TB.BIG`.
+WHY IT FAILED: the panorama's frames draw in indices `0..~75`; the band uses
+`224..=239`. Disjoint ranges, and every panorama frame differs from the band in
+100% of bytes. (The port already renders that panorama pixel-exactly, so this
+would have been a two-line fix had it held.)
+
+TRIED: finding the source asset by byte statistics — counting bytes in the
+`224..239` window across the shipped `.SPR`/`.EXT` files.
+WHY IT FAILED: they are compressed. A dozen unrelated files (RGB.SPR, TINA.SPR,
+YOKO.SPR...) show 45-52% of their bytes in that window by chance. No signal.
+
+TRIED: assuming the band is baked into the montage film. `cliptoot.hnm` frame 0
+is full-screen 320x200 while every later frame is 320x130, which makes "frame 0
+paints the band, the rest update the picture" the obvious reading.
+WHY IT FAILED: frame 0's rows 140..200 decode to a SINGLE index, 0. The film
+leaves the band region blank.
+
+BETTER APPROACH: that last result sharpens the question rather than closing it.
+Since frames after 0 are 320x130, the game repaints only the top 130 rows during
+the montage and the band PERSISTS underneath — so it is drawn ONCE, before the
+film starts. Look in the intro setup path (the code that runs between the boot
+logos and the first montage frame), not in the film and not in the asset files.
+
+SESSION: the engine.rs capture-provenance sweep.
