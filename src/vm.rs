@@ -385,6 +385,13 @@ pub const DLG_LINE_ASSET_NONE: u16 = 0xFFFF;
 
 /// The line id an `0xA6` selector maps to: `sign_extend(b3) + 9`.
 ///
+/// SCOPE: this is ONE of 29 writers of `gs:0x6788`. A byte search for every
+/// `mov [0x6788], …` encoding finds 29 sites — this one, four register writes, and 24
+/// IMMEDIATE writes of fixed ids (a `0x27..0x2C` cluster, the low ids `0x01`-`0x07`,
+/// and `0xFFFF` resets) issued by native code, e.g. `0x5E74` in the post-update ladder.
+/// So the active line is mostly set natively; the script selector accounts for a single
+/// path. Do not read this function as "how the line id is determined".
+///
 /// `0x668D` stores `b3` SIGN-EXTENDED at `DS:0x1FAB` (`lodsb; cwde`), and `0x11F2`
 /// reads it and adds 9 to form `gs:0x6788`. The sign extension is load-bearing —
 /// `0xFF` becomes `-1`, not `255`.

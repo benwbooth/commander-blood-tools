@@ -1254,3 +1254,29 @@ one.
 Also corroborated here: `gs:0x1FB2`, which `vm.rs` models as `C2_PRESENTATION_GATE`, is
 tested at `0x5E7E` in this same ladder — the third independent site for that gate after
 `0x11FD` and `0x9D26`.
+
+## SCOPE CORRECTION — the line id has 29 writers, only ONE from `b3`
+
+Enumerated every write to `gs:0x6788` (the active line id) by byte-searching all the
+`mov [0x6788], …` encodings. There are **29**:
+
+* `0x11F8` — `mov [0x6788], ax` after `[0x1FAB] + 9`. **The only `b3`-derived writer.**
+* 4 register writes (`0x1209`, `0x1242`, `0x1ECF`, `0xB00F`).
+* 24 IMMEDIATE writes of specific ids: a contiguous cluster `0x27, 0x28, 0x29, 0x2A,
+  0x2B, 0x2C` (repeated across `0x1887`–`0x1A42`, `0x5C99`–`0x5FC1`, `0x68xx`–`0x6Exx`,
+  `0xB0xx`), the low ids `0x01, 0x02, 0x03, 0x06, 0x07`, and `0xFFFF` resets.
+
+So the line id is PREDOMINANTLY set by native code triggering hardcoded lines — the
+`0x27..0x2C` cluster looks like a block of system/UI lines — and only once from the
+script's `0xA6` selector.
+
+WHY THIS MATTERS, and it corrects my own framing from earlier today. I traced `b3` →
+`+9` → line id → `0x9D10` → asset table and described that as "the chain", then said
+`b3` "has exactly one reader". The reader claim is still true (`DS:0x1FAB` is read once).
+But I let it imply the line id is a function of `b3`, and it is not: `b3` accounts for
+1 of 29 writers. A port that models only the `b3` path reproduces one twenty-ninth of
+what sets this variable.
+
+The executable specification in `vm.rs` (`dlg_line_id_for_selector` etc.) is still
+correct for the path it describes. It just describes far less of the mechanism than the
+name suggests, and that is now recorded at the function.
