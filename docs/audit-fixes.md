@@ -3142,3 +3142,30 @@ THE PATTERN, third instance this session: `bloodprg.rs` had the 128-truncation
 (#56), `font.rs` had it before that, and `extract/render.rs` had it still. One
 decode, three copies, fixed one at a time over three separate passes because
 nothing connected them. The address-collision sweep is what finally connected them.
+
+## FIX #98 — the duplicate-rule sweep, made permanent
+
+Three duplications found this session, all the same shape: a decoded rule
+implemented twice, with verification attached to one copy.
+
+* `subtitle_draw_glyph` in `font.rs` and `extract/render.rs` — the second with a
+  128-entry map, Unicode indexing and a `'?'` fallback (#97);
+* two field-offset resolvers, one swept against `func_6023` (#96);
+* two per-kind hit-box ladders (#96) and, here, two marker BOX TESTS — the VM
+  picker's and the engine's click routing, each spelling out `(x-2, y-2)` with
+  inclusive bounds. Collapsed into `nav_chart_marker_contains`, so the routing
+  cannot drift from the hit-test verified against `func_92a3`.
+
+`tools/check_duplicate_rules.py` now runs as a test. It clusters ledger rows by
+cited address and FAILS on the strongest signal — the same function name in two
+files — while reporting weaker collisions for judgement, since a routine and its
+helper legitimately share an address.
+
+Positive control: adding a second `subtitle_draw_glyph` in another module fails
+with both files named.
+
+That is six guards now, each built from a defect this session actually produced:
+DS/file offset pairs, quoted instructions, `labels.csv` validity, capture
+provenance, self-referential assertions, and duplicated rules. The through-line is
+that every one of them encodes a mistake I made or found, so the next pass cannot
+repeat it silently.

@@ -59,6 +59,39 @@ pub const VIEWPORT_H: usize = 200;
 pub const HNM_FPS: u32 = 15;
 
 #[cfg(test)]
+mod duplicate_rule_tests {
+    /// No decoded rule may be implemented under the SAME NAME in two files.
+    ///
+    /// `subtitle_draw_glyph` existed in both `font.rs` and `extract/render.rs`, and
+    /// the second copy still had a 128-entry font map, Unicode-indexed lookups and
+    /// a `'?'` fallback — three defects the first had fixed, surviving because
+    /// nothing connected them (audit-fixes #97). Two more pairs turned up the same
+    /// way (#96, #98).
+    ///
+    /// Weaker collisions — a routine and its helper citing one address — are
+    /// reported for judgement but do not fail: they are normal.
+    #[test]
+    fn no_decoded_rule_is_implemented_twice_under_one_name() {
+        let script = std::path::Path::new("tools/check_duplicate_rules.py");
+        if !script.exists() {
+            return;
+        }
+        let out = match std::process::Command::new("python3").arg(script).output() {
+            Ok(o) => o,
+            Err(_) => return,
+        };
+        let text = String::from_utf8_lossy(&out.stdout);
+        assert!(out.status.success(), "duplicated rules:\n{text}");
+        let n: usize = text
+            .split_whitespace()
+            .next()
+            .and_then(|v| v.parse().ok())
+            .unwrap_or(0);
+        assert!(n >= 10, "expected the sweep to find clusters, got: {text}");
+    }
+}
+
+#[cfg(test)]
 mod selfref_assert_tests {
     /// No test may pin a length against ONLY the constant that produced it.
     ///

@@ -1346,6 +1346,19 @@ pub const LOCATION_PANEL_CURSOR_RECT_SIZE: u16 = 4;
 /// `0x18` for kinds 8 and `0x10` (`FIELD_OFFSETS[0x0B]`). Read as `x` at `+0x18`
 /// and `y` at `+0x1A` by the picker at `0x92BC`.
 pub const NAV_PICK_POSITION_FIELD: u16 = 0x18;
+/// The picker's box test for one marker (`0x9308..0x932B`): the box starts two
+/// pixels up-left of the marker and BOTH bounds are inclusive (`jb`/`ja` skip only
+/// strictly outside). The single copy of that rule — `nav_chart_pick` walks record
+/// offsets and the engine walks `NavChartObject`s, but both ask here.
+pub fn nav_chart_marker_contains(
+    marker: (i32, i32),
+    hit_box: (i32, i32),
+    mouse: (i32, i32),
+) -> bool {
+    let (x0, y0) = (marker.0 - 2, marker.1 - 2);
+    mouse.0 >= x0 && mouse.0 <= x0 + hit_box.0 && mouse.1 >= y0 && mouse.1 <= y0 + hit_box.1
+}
+
 /// The nav picker's hit box for a KIND (`0x92BF` default, `0x92D3` black hole,
 /// `0x92FC` ship). The single copy of that ladder — `NavChartObject::hit_box` and
 /// `VmMachine::nav_chart_hit_box` both call here.
@@ -4838,15 +4851,13 @@ impl VmMachine {
     /// `0x9337`). `arche_context` is `es:[arche+0x22]`, the word the black-hole
     /// branch compares against.
     pub fn nav_chart_pick(&self, list: &[u16], mouse: (i32, i32), arche_context: u16) -> Option<u16> {
-        for &object in list {
-            let (w, h) = self.nav_chart_hit_box(object);
-            let (x, y) = self.nav_chart_marker(object, arche_context);
-            let (x0, y0) = (x - 2, y - 2);
-            if mouse.0 >= x0 && mouse.0 <= x0 + w && mouse.1 >= y0 && mouse.1 <= y0 + h {
-                return Some(object);
-            }
-        }
-        None
+        list.iter().copied().find(|&object| {
+            nav_chart_marker_contains(
+                self.nav_chart_marker(object, arche_context),
+                self.nav_chart_hit_box(object),
+                mouse,
+            )
+        })
     }
 
     /// The chart marker the picker hit-tests and the chart draws: `+0x18`/`+0x1A`,

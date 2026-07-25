@@ -4434,11 +4434,11 @@ impl EngineState {
     /// the box starts 2px up-left of the marker, its size comes from the object's
     /// kind, and BOTH bounds are inclusive. Returns the first hit in list order.
     pub fn nav_chart_object_click(&self, x: i32, y: i32) -> Option<&NavChartObject> {
-        self.nav_chart_objects.iter().find(|o| {
-            let (w, h) = o.hit_box();
-            let (x0, y0) = (o.marker.0 - 2, o.marker.1 - 2);
-            x >= x0 && x <= x0 + w && y >= y0 && y <= y0 + h
-        })
+        // The same box rule the VM picker uses — one copy, so the engine's click
+        // routing cannot drift from the hit-test verified against `func_92a3`.
+        self.nav_chart_objects
+            .iter()
+            .find(|o| crate::vm::nav_chart_marker_contains(o.marker, o.hit_box(), (x, y)))
     }
 
     /// The number of nav destinations currently offered.

@@ -390,3 +390,4 @@ mod tests {
         assert_eq!(obj.anim, anim_before.wrapping_add(ALIEN_ANIM_STEP));
     }
 }
+
