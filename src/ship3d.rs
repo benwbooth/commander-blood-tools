@@ -1149,9 +1149,24 @@ pub fn run_ship_3d_nav_choice_handler_0(
 }
 
 /// NAV-CHOICE HANDLER 1 — file `0x872C` (`nav_choice_handler_1`), entry 1 of the
-/// dispatch table described on [`run_ship_3d_nav_choice_handler_0`]: adjusts the
-/// target records, waits for the interpolation to complete, defers the C3 target
-/// and reloads `radio.snd`.
+/// dispatch table described on [`run_ship_3d_nav_choice_handler_0`]. Verified
+/// against the disassembly step by step:
+///
+/// ```text
+///   0x8735  test byte [0x2565],1 / je 0x876A   the handler PHASE bit
+///   0x8741  mov byte [0xADB],0                 reset the interpolation STEP
+///   0x8748  walk the word list, `add ax,4` per entry until the 0xFFFF terminator
+///   0x8758  mov byte [0x27E6],1                arm the widget's QUERY-ONLY flag
+///   0x875E  call 0x8428                        the layout prepass
+///   0x8761  mov byte [0x27E6],0                disarm
+///   0x8766  inc byte [0x2565]                  advance the phase
+///   0x876A  test byte [0x2565],2 / je          the INTERPOLATING phase
+/// ```
+///
+/// `adjust_nav_choice_target_records` is the `add ax,4` loop; the `[0x27E6]`
+/// bracket is the query-only flag whose early return was decoded independently at
+/// `0x84CD`/`0x85D3` while establishing that the choice box is a tint — the two
+/// readings corroborate each other.
 pub fn run_ship_3d_nav_choice_handler_1(
     state: &mut Ship3dNavChoiceState,
     target_records: &mut [u16],
@@ -3373,6 +3388,9 @@ fn hit_test_ship_3d_nav_choice(
     Some(Some(choice))
 }
 
+/// The `add ax,4` loop of nav-choice handler 1 (`0x8748..0x8754`): walk the word
+/// list, add the 4-byte record header to each entry, stop at the `0xFFFF`
+/// terminator (`cmp ax,-1 / je` @`0x8749`).
 fn adjust_nav_choice_target_records(target_records: &mut [u16]) {
     for target_record in target_records {
         if *target_record == SHIP_3D_TARGET_EXIT_SENTINEL {
