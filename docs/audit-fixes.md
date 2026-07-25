@@ -906,3 +906,23 @@ the binary, matches the length accounting, and makes the five sites agree with e
 other. The regression test checks the operands are read PAST the prefix, that `len`
 spans it, and includes a no-prefix control so the skip is driven by the byte rather than
 applied blindly. Confirmed it fails on the old gated behaviour before restoring.
+
+### #48 follow-up — verified the fix cannot desync
+
+Dropping the `mode1` gate makes the operand read skip a byte it previously did not, so
+the obvious risk is introducing the opposite inconsistency: an opcode whose `len` does
+NOT account for the prefix while its operand read now skips it. That would desync the
+walk.
+
+Checked against `OPCODE_DESC` rather than assumed. The `l += 1` adjustment fires only
+for `b1 ∈ {0xFD, 0xFB}`, and every opcode touched has `b1 = 0xFD`:
+
+    0xC1 b0=0x05 b1=0xFD    0xC2 b0=0x05 b1=0xFD    0xC3 b0=0x05 b1=0xFD
+    0xC4 b0=0x05 b1=0xFD    0xCD b0=0x07 b1=0xFD
+
+So `len` and `operand_pos` now respond to the prefix for exactly the same opcode set.
+
+Corroboration from a site I did not touch: `0xB7` (bit-flag) also has `b1 = 0xFD`, and
+its decode ALREADY read `let clear = cod.get(pos+1) == Some(&0xA1)` with no mode gate.
+It was consistent all along — the fix makes the record opcodes match a neighbour that
+was already right, which is a stronger argument than matching the disassembly alone.
