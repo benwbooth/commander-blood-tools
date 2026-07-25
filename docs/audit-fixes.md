@@ -6619,3 +6619,35 @@ now the hit-test). The cost each time was not decoding effort but a wrong
 description of the blocker, which then justified an invention -- key-cycling here,
 `compass_angle` in #197. It is worth checking what the port ALREADY knows before
 concluding the binary has not been read.
+
+## #213 — layered mixing, and two claims the tests refuted
+
+`mix_unsigned_pcm_sources` mixes every source over a silence pre-fill, which
+#199/#200 showed the game never does. The two code paths into a voice buffer are:
+
+  * the loader OVERWRITES it — `int 21h`/`AH=3Fh` @`0x4049` reads the file
+    straight in;
+  * the streamer AVERAGES into it — `lodsb / add al,es:[di] / rcr al,1` @`0xBB6D`.
+
+So the first sound in a buffer is unattenuated and later ones layer in.
+`mix_unsigned_pcm_layered` implements that, and the silence-prefill version is now
+explicitly the wrong shape for playback.
+
+TWO CLAIMS I WROTE WERE FALSE, and the tests caught both:
+
+1. "Order matters: averaging is not associative, so the FIRST source dominates."
+   Wrong twice over. `(s + d) / 2` is SYMMETRIC, so with exactly two sources order
+   changes nothing — the assertion failed immediately. And the weights run the
+   other way: after three sources they are `c/2 + b/4 + a/4`, so the MOST RECENTLY
+   mixed source dominates. The first source is merely unattenuated at the start,
+   which is a different property from dominating.
+
+2. The citation `` `add al,es:[di] / rcr al,1` @`0xBB6D` `` — `0xBB6D` is `lodsb`;
+   the `add` is at `0xBB6E`. Caught by the guard extended in #204, which pairs an
+   address with the FIRST mnemonic of a `/`-separated run. That extension has now
+   caught an error in the same session it was written, on a citation I wrote
+   while explaining the very instruction.
+
+The test now asserts the corrected structure: two sources symmetric, three
+order-dependent, and each output equal to the explicit fold
+`avg(c, avg(b, a))` — which pins the weights rather than describing them.

@@ -541,6 +541,51 @@ pub fn mix_unsigned_pcm_half_rate(destination: &mut [u8], source: &[u8], count: 
     written
 }
 
+/// LAYERED mixing — the shape the game actually produces, as distinct from
+/// [`mix_unsigned_pcm_sources`]'s silence pre-fill.
+///
+/// There are two code paths into a voice buffer, and they differ:
+///
+///   * the loader OVERWRITES it (`int 21h`/`AH=3Fh` @`0x4049`, reading the file
+///     straight into the buffer);
+///   * the streamer AVERAGES into it (`lodsb / add al,es:[di] / rcr al,1`
+///     @`0xBB6D`, the `add` itself being at `0xBB6E`).
+///
+/// So the first sound in a buffer plays at FULL amplitude and each later one is
+/// averaged with what is already there. Mixing everything over silence — which
+/// `mix_unsigned_pcm_sources` does — halves even a lone sound, and #199/#200
+/// established that the game never pre-fills silence at all.
+///
+/// WEIGHTS, stated correctly because I first got them backwards. The first source
+/// is written WHOLE — it is unattenuated, which is the point of the overwrite —
+/// but every later average halves everything accumulated so far. After three
+/// sources the weights are `c/2 + b/4 + a/4`: the MOST RECENTLY mixed source
+/// dominates, not the first.
+///
+/// Order is therefore significant for three or more sources, and NOT for two:
+/// `(s + d) / 2` is symmetric, so swapping a pair changes nothing. A test
+/// asserting order-dependence on two sources fails, which is how the error above
+/// was found.
+pub fn mix_unsigned_pcm_layered(sources: &[&[u8]], out: &mut [u8]) -> usize {
+    out.fill(SILENCE);
+    let Some((first, rest)) = sources.split_first() else {
+        return 0;
+    };
+    // The loader's overwrite, for the source that owns the buffer.
+    let head = first.len().min(out.len());
+    out[..head].copy_from_slice(&first[..head]);
+    let mut written = head;
+    // Every later source is the streamer's average.
+    for source in rest {
+        let len = source.len().min(out.len());
+        for idx in 0..len {
+            out[idx] = snd_mix_average(source[idx], out[idx]);
+        }
+        written = written.max(len);
+    }
+    written
+}
+
 /// Mix several u8 PCM sources into one buffer with the game's rule, in order.
 ///
 /// `0xBB6D`'s `lodsb / add al,es:[di] / rcr al,1 / stosb` averages ONE source into
@@ -573,6 +618,55 @@ pub const SILENCE: u8 = 0x80;
 
 #[cfg(test)]
 mod tests {
+
+    /// `0x4049` overwrites, `0xBB6D` averages: a lone sound is NOT attenuated,
+    /// and layering is order-dependent.
+    #[test]
+    fn layered_mixing_keeps_the_first_source_whole() {
+        let a = [0x00u8, 0x40, 0xFF, 0x80];
+        let b = [0xFFu8, 0xC0, 0x00, 0x80];
+
+        // One source: untouched. mix_unsigned_pcm_sources would halve it.
+        let mut out = vec![0u8; 4];
+        assert_eq!(mix_unsigned_pcm_layered(&[&a], &mut out), 4);
+        assert_eq!(out, a, "a lone sound plays at full amplitude");
+        let mut over_silence = vec![0u8; 4];
+        mix_unsigned_pcm_sources(&[&a], &mut over_silence);
+        assert_ne!(over_silence, a, "the silence pre-fill DOES attenuate it");
+
+        // Two sources: the second averages into the first.
+        let mut out2 = vec![0u8; 4];
+        mix_unsigned_pcm_layered(&[&a, &b], &mut out2);
+        for i in 0..4 {
+            assert_eq!(out2[i], snd_mix_average(b[i], a[i]), "sample {i}");
+        }
+
+        // TWO sources are order-INDEPENDENT: (s+d)/2 is symmetric.
+        let mut swapped = vec![0u8; 4];
+        mix_unsigned_pcm_layered(&[&b, &a], &mut swapped);
+        assert_eq!(out2, swapped, "averaging a pair is symmetric");
+
+        // THREE make order matter, and the LAST mixed source dominates:
+        // c/2 + b/4 + a/4, not the other way round.
+        let c = [0x10u8, 0x20, 0x30, 0x40];
+        let mut abc = vec![0u8; 4];
+        let mut cba = vec![0u8; 4];
+        mix_unsigned_pcm_layered(&[&a, &b, &c], &mut abc);
+        mix_unsigned_pcm_layered(&[&c, &b, &a], &mut cba);
+        assert_ne!(abc, cba, "three sources are order-dependent");
+        for i in 0..4 {
+            assert_eq!(
+                abc[i],
+                snd_mix_average(c[i], snd_mix_average(b[i], a[i])),
+                "sample {i} is the layered fold, last source weighted 1/2"
+            );
+        }
+
+        // No sources at all is silence, not a panic.
+        let mut empty = vec![0u8; 4];
+        assert_eq!(mix_unsigned_pcm_layered(&[], &mut empty), 0);
+        assert_eq!(empty, vec![SILENCE; 4]);
+    }
 
     /// The host cursor must feed `stream_mix_span` values that walk the buffer
     /// forward and wrap — the behaviour the DMA count produces on real hardware.
