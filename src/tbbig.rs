@@ -245,6 +245,49 @@ pub fn panorama_frame_for_angle(angle_units: u16) -> usize {
 #[cfg(test)]
 mod tests {
 
+    /// A CAPTURE CHECK, in the only direction the prime rule allows: the port
+    /// decodes `TB.BIG` from the game's own archive, and the capture is used to
+    /// confirm the output — never to derive it.
+    ///
+    /// `accuracy/captures/bridge/script2_first_frame.ppm` measures as 320x200 with
+    /// its top 40 rows a single colour. Nothing in the decode says "40": the
+    /// panorama is full-screen ([`PANORAMA_FRAME_PIXELS`]) and that band is the
+    /// frame's own CONTENT. So the falsifiable claim is about the archive: some
+    /// decoded frame must open with a long run of one index.
+    #[test]
+    fn some_panorama_frame_opens_with_a_flat_band_like_the_capture() {
+        let mut path = std::path::PathBuf::from("accuracy/cdrive/cblood/TB.BIG");
+        if !path.exists() {
+            path = std::path::PathBuf::from("../accuracy/cdrive/cblood/TB.BIG");
+        }
+        let Ok(bytes) = std::fs::read(&path) else { return };
+        let Some(archive) = BridgePanorama::parse(bytes) else { return };
+        assert!(archive.frame_count() > 0);
+
+        // How many leading rows are a single palette index, per frame.
+        let flat_rows = |pixels: &[u8]| -> usize {
+            let first = pixels[0];
+            (0..200)
+                .take_while(|y| pixels[y * 320..(y + 1) * 320].iter().all(|&p| p == first))
+                .count()
+        };
+
+        let mut best = 0usize;
+        for frame in 0..archive.frame_count() {
+            if let Some(pixels) = archive.frame_pixels(frame) {
+                if pixels.len() == PANORAMA_FRAME_PIXELS {
+                    best = best.max(flat_rows(&pixels));
+                }
+            }
+        }
+        assert!(
+            best >= 40,
+            "no decoded frame opens with 40+ uniform rows (best {best}); the \
+             capture shows the real game does, so the decoder or the archive \
+             index is wrong"
+        );
+    }
+
     /// The angle-per-frame constant is a QUOTIENT of two cited facts, and it comes
     /// out exact — which is the check: a wrong revolution or frame count would
     /// leave a remainder.

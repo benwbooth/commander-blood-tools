@@ -472,6 +472,31 @@ NOTE ON KINDS: the table stores FILENAMES ONLY. `LevelKind` is the port's own
 classification by extension, and `level_entry_from_image` says so in its doc. The
 names are the game's; the kinds are ours.
 
+## THE TWO UNREAD CAPTURES — measured, and one now verified (2026-07-25)
+
+Both were listed as "needing composite reproduction". They are measured now
+(`re/tools/ppm_stats.py`, written for this so the numbers are reproducible rather
+than impressions -- the #114 failure was reasoning from a capture's APPEARANCE):
+
+* `bridge/script2_first_frame.ppm` — 320x200, 50 colours, mean horizontal run
+  4.58px, and rows 0..39 are a SINGLE colour (`#080014`), which is also 42.2% of
+  the frame. Nothing in the decode says "40": the panorama is full-screen
+  (`PANORAMA_FRAME_PIXELS`), so that band is the frame's own CONTENT, not
+  geometry. That makes it a falsifiable claim ABOUT THE ARCHIVE, and
+  `some_panorama_frame_opens_with_a_flat_band_like_the_capture` now checks it:
+  the port decodes `TB.BIG` from the game's file and some frame does open with
+  40+ uniform rows. Direction preserved -- the decode produces the pixels, the
+  capture only confirms them. STILL OPEN: matching the SPECIFIC frame index plus
+  scene palette and console overlay, which is the full composite.
+
+* `mission_briefing_eye.ppm` — 320x200, 173 colours, mean run 2.45px, no flat
+  bands and no letterboxing. Those are the statistics of a DITHERED FULL-SCREEN
+  VIDEO FRAME, i.e. an HNM still, not a UI surface. Reproducing it means
+  identifying which DESCRIPT record names that clip and decoding the frame; the
+  port already has the HNM decoder, so this is an identification task rather than
+  a decoding one. NOT attempted here, and deliberately not guessed at from the
+  imagery.
+
 ## THE SINGLE REMAINING PORT-SIDE UNKNOWN (session close) — APPROX, routine named
 
 `secret` (SCRIPT3 rec 0x1416) and `rec_13C2` gate SCRIPT3's endgame but have NO

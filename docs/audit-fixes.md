@@ -6513,3 +6513,31 @@ Process note: the count would not have been caught by review. It surfaced becaus
 a test asserted a specific number against changed global state — the same reason
 #207's mis-stated count surfaced only when something asserted the literal's own
 length. Numbers in this project need asserting, not writing down.
+
+## #209 — measuring the last two captures, and verifying one in the right direction
+
+Two captures had sat unread behind "needs composite reproduction". Measured with a
+new `re/tools/ppm_stats.py` — written so the numbers are reproducible, because
+#114's withdrawn claim came from reasoning about how a capture LOOKED:
+
+`script2_first_frame.ppm`: 50 colours, mean run 4.58px, and rows 0..39 exactly one
+colour. The tempting move is to add a 40-row constant to the port. That would be
+deriving geometry from a capture, which the prime rule forbids — and it would also
+be WRONG, because the panorama is full-screen and nothing draws a band there. The
+40 rows are the frame's own content.
+
+Which turns it into a claim about the ARCHIVE, testable in the allowed direction:
+decode `TB.BIG` with the port's decoder and ask whether any frame opens with 40+
+uniform rows. One does. The pixels come from the game's file through decoded code;
+the capture only confirms them.
+
+`mission_briefing_eye.ppm`: 173 colours, mean run 2.45px, no flat band anywhere.
+Those are the statistics of a dithered full-screen VIDEO frame, not a UI surface —
+so it is an HNM still, and reproducing it is an IDENTIFICATION task (which
+DESCRIPT record names the clip) rather than a decoding one, since the port already
+has the HNM decoder. Left open rather than guessed at.
+
+The useful distinction this drew: a capture can support a test WITHOUT becoming
+the source of the behaviour, provided the assertion is about something the decoded
+path produces independently. "Some decoded frame opens with a flat band" is that
+shape. "The band is 40 rows tall because the capture says so" is not.
