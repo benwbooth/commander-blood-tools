@@ -1505,6 +1505,10 @@ pub const SHIP_3D_TARGET_NAME_TO_RECORD: u16 = 4;
 pub const ENTITY_CANDIDATE_KIND_MASK: u16 = 0x98;
 /// ... and bit 1 of the BYTE at `+2` is set (`test byte es:[di+2],2` @`0x7284`).
 pub const ENTITY_CANDIDATE_READY_BIT: u8 = 2;
+
+/// `test word es:[eax],0x140` @`0xB0FB` — the location-kind test that decides
+/// whether the click commits the first CANDIDATE or the location OBJECT.
+pub const SHIP_CLICK_LOCATION_KIND_MASK: u16 = 0x140;
 /// The picker's box test for one marker (`0x9308..0x932B`): the box starts two
 /// pixels up-left of the marker and BOTH bounds are inclusive (`jb`/`ja` skip only
 /// strictly outside). The single copy of that rule — `nav_chart_pick` walks record
@@ -5428,6 +5432,52 @@ impl VmMachine {
             object = next;
         }
         out
+    }
+
+    /// The SHIP-3D CLICK COMMIT's initial target, `ship_click_commit`
+    /// (`0xB0DC..0xB111`) — the caller that roots the whole destination chain.
+    ///
+    /// ```text
+    ///   0xB0E6  les di,[0x6724]          es = the record segment
+    ///   0xB0EA  mov di,[0x6752]          DI = `arche` -- the list is rooted HERE
+    ///   0xB0EE  lcall 0x4da:0x1eb9       build the candidate list (0x7259)
+    ///   0xB0F3  mov ax,es:[di+0x16]      AX = the location the arche points at
+    ///   0xB0F7  mov di,[0x250b]          DI = the list's FIRST entry (RECORD+4)
+    ///   0xB0FB  test word es:[eax],0x140 the location's kind...
+    ///   0xB101  jne 0xB10D               ... has it: keep the first candidate
+    ///   0xB103  mov di,ax                ... lacks it: take the location itself
+    ///   0xB105  lcall 0x4da:0x1eb9       and REBUILD the list rooted at it
+    ///   0xB10A  add di,4
+    ///   0xB10D  mov [0x251b],di
+    ///   0xB111  sub word [0x251b],4      both paths land on a RECORD
+    /// ```
+    ///
+    /// Two things this settles that guesswork would have got wrong:
+    ///
+    /// * the chain's root is `arche` (`gs:0x6752`), read from `0xB0EA` and not
+    ///   inferred — which also means the `arche` exclusion @`0x728B` fires on
+    ///   EVERY call from this path, so the root never appears in its own list;
+    /// * the `add di,4` @`0xB10A` exists only to cancel the shared `sub 4`
+    ///   @`0xB111`. The branch that takes the location object commits it whole,
+    ///   while the branch that takes a list entry strips the `+4`. One `sub`
+    ///   serves both because one branch pre-compensates.
+    ///
+    /// Returns the word `[0x251B]` receives. An empty candidate list leaves the
+    /// terminator in `[0x250B]`, so the first branch yields `0xFFFF - 4`; that is
+    /// the game's arithmetic, reproduced rather than smoothed over.
+    pub fn ship_click_initial_target(&self) -> Option<u16> {
+        let arche = self.arche_offset?;
+        let candidates = self.destination_candidate_records(arche); // 0xB0EE
+        let location = self.rec_read(arche.wrapping_add(ARCHE_LOCATION_FIELD)); // 0xB0F3
+        // 0xB0F7 reads [0x250B] BEFORE the branch, so it is the arche list's head.
+        let head = candidates.first().copied().unwrap_or(0xFFFF);
+        if self.rec_read(location) & SHIP_CLICK_LOCATION_KIND_MASK != 0 {
+            Some(head.wrapping_sub(SHIP_3D_TARGET_NAME_TO_RECORD)) // 0xB10D/0xB111
+        } else {
+            // 0xB103..0xB10A: re-root the list, then commit the location itself.
+            let _ = self.destination_candidate_records(location);
+            Some(location)
+        }
     }
 
     /// The whole destination chain in one call: the source list `0x624B` builds,
@@ -10160,6 +10210,41 @@ mod tests {
         state_set_u16(&mut var, related, 1);
         assert_eq!(post_update_encounter_counter(&mut var, owner, related), None);
         assert_eq!(state_u16(&var, owner + 2), 0, "no bump -> no bit15 either");
+    }
+
+    /// `0xB0DC..0xB111`: which record the ship-3D click actually commits, and why
+    /// one `sub 4` serves both branches.
+    #[test]
+    fn ship_click_commits_candidate_or_location_by_kind() {
+        let mut m = VmMachine::new();
+        m.orxx_offset = Some(0x0200);
+        let arche = 0x0400u16;
+        let location = 0x0500u16;
+        m.arche_offset = Some(arche);
+        m.rec_write_pub(arche + ARCHE_LOCATION_FIELD, location);
+
+        // No candidate is reachable from arche (the source list needs the loaded
+        // field matrix), so [0x250B] holds only the terminator -- which is itself
+        // a decoded case: 0xB0F7 reads 0xFFFF and 0xB111 subtracts 4 from it.
+        m.rec_write_pub(location, SHIP_CLICK_LOCATION_KIND_MASK);
+        assert_eq!(
+            m.ship_click_initial_target(),
+            Some(0xFFFBu16),
+            "empty list -> the terminator, minus the name offset (0xB0F7/0xB111)"
+        );
+
+        // Kind LACKS it -> commit the location object itself, NOT minus 4:
+        // 0xB10A's `add di,4` pre-compensates for the shared `sub 4` @0xB111.
+        m.rec_write_pub(location, 0x0001);
+        assert_eq!(
+            m.ship_click_initial_target(),
+            Some(location),
+            "the location commits whole"
+        );
+
+        // No arche loaded -> no target at all (les/mov di,[0x6752] has nothing).
+        m.arche_offset = None;
+        assert_eq!(m.ship_click_initial_target(), None);
     }
 
     /// `0x624B` preserves DI (`0x6276`/`0x627D`), so the composite roots the walk

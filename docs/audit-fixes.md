@@ -6048,3 +6048,41 @@ usually AT the reassignment, and the prologue says nothing. Read the clobber sit
 
 Kept in `re/dead_ends.md` as RESOLVED rather than deleted: the wrong inference is
 the reusable part.
+
+## #195 — the caller names the root, so the port does not have to guess it
+
+The destination chain was complete but rootless: `destination_candidate_records`
+takes a target, and nothing in the port knew which one the game passes. The
+obvious guess was `arche`. Guessing was unnecessary — the caller says so.
+
+`0x7259` has no near callers; it is entered far as `0x4DA:0x1EB9`. Searching for
+that far-call encoding found exactly two sites, `0xB0EE` and `0xB105`, both inside
+`ship_click_commit`, and `0xB0EA` is `mov di,[0x6752]` — `arche`, read from the
+instruction rather than assumed.
+
+The rest of the routine decodes cleanly and settles the commit:
+
+  * `0xB0F3  mov ax,es:[di+0x16]` — the location the arche points at;
+  * `0xB0F7  mov di,[0x250b]` — the candidate list's head, read BEFORE the branch;
+  * `0xB0FB  test word es:[eax],0x140` — the location's kind chooses:
+      kind HAS it  -> commit the first CANDIDATE;
+      kind LACKS it -> commit the LOCATION object, re-rooting the list at it.
+
+Two details worth stating because they look like mistakes until they are read
+carefully:
+
+1. `add di,4` @`0xB10A` has no meaning of its own. It pre-compensates for the
+   `sub word [0x251b],4` @`0xB111` that both branches share, so the location
+   branch commits its object whole while the candidate branch strips the `+4`.
+   One `sub`, two meanings, because one branch pays it forward.
+2. Because DI is `arche` on entry, the `arche` exclusion @`0x728B` fires on EVERY
+   call from this path. The root can never appear in its own candidate list. That
+   is not a special case in the filter; it is what the filter is for.
+
+The empty-list case is ported as arithmetic, not smoothed: `[0x250B]` holds the
+terminator, `0xB0F7` loads `0xFFFF`, `0xB111` subtracts 4, and the port yields
+`0xFFFB`. The test asserts that value rather than a tidier `None`.
+
+One guard catch along the way: the test called `selector_field_offset`, which does
+not exist. Cheap because it was a compile error — but it is the same class as the
+citation slips, an API recalled rather than checked.
