@@ -4389,3 +4389,29 @@ disagreeing about what it builds), #131 (corrections filed beside their claims),
 and now this. The knowledge base does not converge on its own — every one of these
 was written by someone who read the binary correctly and stopped at a different
 depth.
+
+## #133 — seven more shallow/deep merges, and a stale number I kept repeating
+
+The pattern #132 named is mechanically findable: one address, two names, the
+shorter comment describing a prologue or a single facet. Seven remained —
+`input_action_xlat_table`, `clipped_blit_w8_a`, `gfx_draw_mode_d`,
+`vm_bit_set_test_6aa7`, `vm_helper_604e`, `vm_text_helper_6886`, and
+`ship_3d_target_query_layout`, the last shadowing `list_widget_layout_unified`,
+the widget BOTH the OPTION menu and the contact menu enter (#110, #128).
+
+Merged keeping the deeper name, the narrow reading retained and labelled. The
+wording is "NARROWER EARLIER READING", not "superseded": `0x0173e`'s pair is a
+table NAME plus a MEASURED BOUND, complementary rather than one replacing the
+other, and calling that superseded would misdescribe it. 34 duplicates remain.
+
+### The count
+
+Deleting `record_op` and `RecordOpResult` in #127 removed two ledger rows, one of
+them settled, taking the ledger from 2160/574 to **2158/573**. Four subsequent
+reports quoted the old figure, because the number was carried forward instead of
+re-read after a commit that changed it.
+
+Small, and worth fixing precisely because the ledger is the thing this campaign
+reports progress against. A denominator that moves when rows are DELETED is
+working correctly — removing a refuted implementation should shrink the queue —
+but only if the number is re-read rather than remembered.
