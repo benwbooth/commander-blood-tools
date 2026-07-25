@@ -86,12 +86,10 @@ VEC_OPEN = re.compile(r"vec!\[")
 
 # Sites known to be open, each tracked in docs/port-validation.md. Listed so the
 # CLASS cannot grow silently while these are unfixed -- a new one fails the check.
-KNOWN_OPEN = {
-    # BOB_MORLOCK / CANCEL is FIXED -- the contact menu now comes from the ship-slot
-    # array via `VmMachine::ship_contact_menu_words` (0x87BD). Entry removed so it
-    # cannot come back.
-    ("src/main.rs", "MUSIC_OFF"),
-}
+# Empty: both label lists that lived here are now read from the game's own data --
+# the contact menu from the ship-slot array (0x87BD) and the OPTION menu from the
+# DS:0x2567 pointer list (0x8871). A NEW hardcoded list fails the check outright.
+KNOWN_OPEN = set()
 
 
 def label_lists():

@@ -33,6 +33,13 @@ pub const DIALOGUE_FONT_GLYPHS_FILE_OFFSET: usize = 0x14d28;
 /// fixed in `font.rs` earlier in the campaign and left standing here.
 pub const DIALOGUE_FONT_ASCII_MAP_LEN: usize = 176;
 pub const DIALOGUE_FONT_GLYPH_COUNT: usize = 86;
+
+/// `mov si,0x2567` @`0x8871` — the OPTION menu's pointer list.
+pub const OPTION_MENU_POINTER_LIST_DS: u16 = 0x2567;
+/// The list widget's shared trailing entry, `ship_3d_target_extra_label`.
+pub const LIST_WIDGET_CANCEL_LABEL_DS: u16 = 0x0174;
+/// `MUSIC_ON`, the toggle face the pointer list omits.
+pub const MUSIC_ON_LABEL_DS: u16 = 0x2578;
 pub const DIALOGUE_FONT_GLYPH_HEIGHT: usize = 8;
 pub const SND_ENTRY_SEGMENT: u16 = 0x0b1b;
 pub const SND_ENTRY_OFFSET: u16 = 0x011d;
@@ -850,6 +857,56 @@ impl BloodPrg {
             .take(DS_STRING_SCAN_MAX)
             .position(|byte| *byte == 0)?;
         std::str::from_utf8(&bytes[..nul]).ok().map(str::to_owned)
+    }
+
+    /// The bridge OPTION menu's labels, read from the game's own string table.
+    ///
+    /// Console row 4's handler (`0x886C`, reached through the per-row table at
+    /// file `0x8709`) does `mov si,0x2567` and calls the list widget at `0x8428`.
+    /// `DS:0x2567` is a `0xFFFF`-terminated list of DS pointers to NUL-terminated
+    /// labels — `TEXT`, `MUSIC_OFF`, `SAVE`, `LOAD`, `QUIT` at `DS:0x2573`,
+    /// `0x2581`, `0x258B`, `0x2590`, `0x2595`.
+    ///
+    /// `MUSIC_ON` sits at `DS:0x2578`, BETWEEN `TEXT` and `MUSIC_OFF` and absent
+    /// from the pointer list: it is the toggle's other face, swapped in by state
+    /// rather than listed. Returning the list as stored keeps this function a
+    /// straight read of the table; the swap belongs to whoever knows the music
+    /// state.
+    ///
+    /// `CANCEL` is NOT in this list either — it is the shared extra entry at
+    /// `DS:0x0174` (`ship_3d_target_extra_label`), which the list widget appends.
+    /// [`Self::list_widget_cancel_label`] reads it.
+    pub fn option_menu_labels(&self) -> Vec<String> {
+        self.ds_pointer_list_strings(OPTION_MENU_POINTER_LIST_DS)
+    }
+
+    /// The list widget's shared trailing entry (`DS:0x0174`).
+    pub fn list_widget_cancel_label(&self) -> Option<String> {
+        self.ds_c_string(LIST_WIDGET_CANCEL_LABEL_DS)
+    }
+
+    /// The alternate face of the music toggle (`DS:0x2578`), which the pointer
+    /// list does not name.
+    pub fn music_on_label(&self) -> Option<String> {
+        self.ds_c_string(MUSIC_ON_LABEL_DS)
+    }
+
+    /// Walk a `0xFFFF`-terminated list of DS string pointers.
+    fn ds_pointer_list_strings(&self, list_ds: u16) -> Vec<String> {
+        let mut out = Vec::new();
+        let mut at = self.ds_to_file(list_ds);
+        while at + 1 < self.data.len() {
+            let ptr = u16::from_le_bytes([self.data[at], self.data[at + 1]]);
+            if ptr == 0xFFFF {
+                break; // the list terminator
+            }
+            match self.ds_c_string(ptr) {
+                Some(text) if !text.is_empty() => out.push(text),
+                _ => break,
+            }
+            at += 2;
+        }
+        out
     }
 
     fn resource_name(&self, resource_id: u16) -> Result<String> {
@@ -2955,6 +3012,30 @@ mod tests {
             }
         }
         None
+    }
+
+    /// The OPTION menu's labels are the game's own string table, not a list in
+    /// our source: a 0xFFFF-terminated pointer list at DS:0x2567 (`mov si,0x2567`
+    /// @0x8871) into NUL-terminated strings. MUSIC_ON and CANCEL are deliberately
+    /// NOT in it -- the first is the toggle's other face at DS:0x2578, the second
+    /// the widget's shared trailing entry at DS:0x0174.
+    #[test]
+    fn option_menu_labels_come_from_the_ds_string_table() {
+        let Some(binary) = fixture() else {
+            eprintln!("skipping: BLOODPRG.EXE not available");
+            return;
+        };
+        assert_eq!(
+            binary.option_menu_labels(),
+            vec!["TEXT", "MUSIC_OFF", "SAVE", "LOAD", "QUIT"],
+            "five labels, terminated by 0xFFFF"
+        );
+        assert_eq!(binary.music_on_label().as_deref(), Some("MUSIC_ON"));
+        assert_eq!(binary.list_widget_cancel_label().as_deref(), Some("CANCEL"));
+
+        // The strings sit where the pointers say, immediately after the list.
+        assert_eq!(binary.ds_to_file(OPTION_MENU_POINTER_LIST_DS), 0x0F987);
+        assert_eq!(binary.ds_to_file(0x2573), 0x0F993);
     }
 
     #[test]

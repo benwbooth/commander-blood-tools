@@ -52,188 +52,195 @@ DIALOGUE_FONT_ADVANCES_FILE_OFFSET	src/bloodprg.rs	26	const		UNVERIFIED
 DIALOGUE_FONT_GLYPHS_FILE_OFFSET	src/bloodprg.rs	27	const		UNVERIFIED	
 DIALOGUE_FONT_ASCII_MAP_LEN	src/bloodprg.rs	34	const	0x14C22,0x14CD2	ASM	/// 176 (`0xB0`), NOT 128. The map runs from `0x14C22` to the advance table at /// `0x14CD2`, and the 48 entries past 128 are REAL: 14 of them are live glyph /// indices (`0x82`->`é`, `0x84`->`ä`, `0x
 DIALOGUE_FONT_GLYPH_COUNT	src/bloodprg.rs	35	const		UNVERIFIED	
-DIALOGUE_FONT_GLYPH_HEIGHT	src/bloodprg.rs	36	const		UNVERIFIED	
-SND_ENTRY_SEGMENT	src/bloodprg.rs	37	const		UNVERIFIED	
-SND_ENTRY_OFFSET	src/bloodprg.rs	38	const		UNVERIFIED	
-SND_BANK_LOAD_SEGMENT	src/bloodprg.rs	39	const		UNVERIFIED	
-SND_BANK_LOAD_OFFSET	src/bloodprg.rs	40	const		UNVERIFIED	
-RENDER_SEGMENT	src/bloodprg.rs	41	const		UNVERIFIED	
-RENDER_VGA_DAC_PALETTE_LOAD_OFFSET	src/bloodprg.rs	42	const		UNVERIFIED	
-RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET	src/bloodprg.rs	43	const		UNVERIFIED	
-RENDER_FIXED_8X8_TEXT_OFFSET	src/bloodprg.rs	44	const		UNVERIFIED	
-RENDER_FONT_STRING_WIDTH_OFFSET	src/bloodprg.rs	45	const		UNVERIFIED	
-RENDER_UI_TEXT_OFFSET	src/bloodprg.rs	46	const		UNVERIFIED	
-RENDER_STRING_OFFSET	src/bloodprg.rs	47	const		UNVERIFIED	
-RENDER_FRAMEBUFFER_RECT_REMAP_OFFSET	src/bloodprg.rs	48	const		UNVERIFIED	
-RENDER_PLANAR_UI_TEXT_OFFSET	src/bloodprg.rs	49	const		UNVERIFIED	
-RENDER_PLANAR_DIALOGUE_TEXT_OFFSET	src/bloodprg.rs	50	const		UNVERIFIED	
-RENDER_SUBTITLE_REVEAL_OFFSET	src/bloodprg.rs	51	const		UNVERIFIED	
-RENDER_SMALL_TEXT_OFFSET	src/bloodprg.rs	52	const		UNVERIFIED	
-RENDER_PLANAR_HORIZONTAL_LINE_OFFSET	src/bloodprg.rs	53	const		UNVERIFIED	
-RENDER_PLANAR_VERTICAL_LINE_OFFSET	src/bloodprg.rs	54	const		UNVERIFIED	
-RENDER_RECT_OUTLINE_OFFSET	src/bloodprg.rs	55	const		UNVERIFIED	
-RENDER_DITHER_RECT_FILL_OFFSET	src/bloodprg.rs	56	const		UNVERIFIED	
-RENDER_RECT_FILL_OFFSET	src/bloodprg.rs	57	const		UNVERIFIED	
-RENDER_SCENE_BAND_FILL_OFFSET	src/bloodprg.rs	58	const		UNVERIFIED	
-RENDER_SECONDARY_BAND_FILL_OFFSET	src/bloodprg.rs	59	const		UNVERIFIED	
-RENDER_FRAMEBUFFER_COPY_OFFSET	src/bloodprg.rs	60	const		UNVERIFIED	
-RENDER_SECONDARY_FRAMEBUFFER_COPY_OFFSET	src/bloodprg.rs	61	const		UNVERIFIED	
-RENDER_VGA_PLANAR_TO_LINEAR_COPY_OFFSET	src/bloodprg.rs	62	const		UNVERIFIED	
-RENDER_PLANAR_COPY_OFFSET	src/bloodprg.rs	63	const		UNVERIFIED	
-RENDER_RESOURCE_FILE_LOAD_OFFSET	src/bloodprg.rs	64	const		UNVERIFIED	
-RENDER_SPRITE_SLOT_LOAD_OFFSET	src/bloodprg.rs	65	const		UNVERIFIED	
-RENDER_SPRITE_SLOT_STATE_OFFSET	src/bloodprg.rs	66	const		UNVERIFIED	
-RENDER_SPRITE_SLOT_RESOURCE_LOAD_OFFSET	src/bloodprg.rs	67	const		UNVERIFIED	
-RENDER_SPRITE_SLOT_POSITION_OFFSET	src/bloodprg.rs	68	const		UNVERIFIED	
-RENDER_SPRITE_SLOT_RANGE_DIRTY_OFFSET	src/bloodprg.rs	69	const		UNVERIFIED	
-RENDER_SPRITE_SLOT_EXTENT_OFFSET	src/bloodprg.rs	70	const		UNVERIFIED	
-RENDER_SPRITE_SLOT_COMMIT_RANGE_OFFSET	src/bloodprg.rs	71	const		UNVERIFIED	
-RENDER_SPRITE_SLOT_DIRTY_RANGE_RENDER_OFFSET	src/bloodprg.rs	72	const		UNVERIFIED	
-RENDER_SPRITE_BLITTER_TABLE_OFFSET	src/bloodprg.rs	73	const		UNVERIFIED	
-RENDER_SPRITE_BLITTER_TABLE_FILE_OFFSET	src/bloodprg.rs	74	const		UNVERIFIED	
-RENDER_SPRITE_BLITTER_ENTRY_COUNT	src/bloodprg.rs	83	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E	ASM	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
-RENDER_SPRITE_BLITTER_INDEX_MASK_IMMEDIATE	src/bloodprg.rs	85	const	0x44B7	ASM	/// File offset of the `and bx,imm8` operand that bounds the index (`0x44B7`).
-RENDER_SPRITE_BLIT_RAW_TRANSPARENT_OFFSET	src/bloodprg.rs	86	const		UNVERIFIED	
-RENDER_SPRITE_BLIT_RLE_TRANSPARENT_OFFSET	src/bloodprg.rs	87	const		UNVERIFIED	
-RENDER_SPRITE_BLIT_RAW_OPAQUE_OFFSET	src/bloodprg.rs	88	const		UNVERIFIED	
-RENDER_SPRITE_BLIT_RLE_OPAQUE_OFFSET	src/bloodprg.rs	89	const		UNVERIFIED	
-RENDER_SPRITE_BLIT_SCALED_TRANSPARENT_OFFSET	src/bloodprg.rs	90	const		UNVERIFIED	
-RENDER_SPRITE_BLIT_NOOP_5_OFFSET	src/bloodprg.rs	91	const		UNVERIFIED	
-RENDER_SPRITE_BLIT_NOOP_6_OFFSET	src/bloodprg.rs	92	const		UNVERIFIED	
-RENDER_SPRITE_BLIT_NOOP_7_OFFSET	src/bloodprg.rs	93	const		UNVERIFIED	
-RENDER_DIRTY_RECTS_COPY_OFFSET	src/bloodprg.rs	94	const		UNVERIFIED	
-NAV_CODE_SEGMENT	src/bloodprg.rs	95	const		UNVERIFIED	
-NAV_ACTOR_SUBDISPATCH_TABLE_FILE_OFFSET	src/bloodprg.rs	96	const		UNVERIFIED	
-NAV_ACTOR_SUBDISPATCH_ENTRY_COUNT	src/bloodprg.rs	97	const		UNVERIFIED	
-NAV_CHOICE_SUBDISPATCH_TABLE_FILE_OFFSET	src/bloodprg.rs	98	const		UNVERIFIED	
-NAV_CHOICE_SUBDISPATCH_ENTRY_COUNT	src/bloodprg.rs	99	const		UNVERIFIED	
-SHIP_3D_INTERPOLATION_GATE_SEGMENT	src/bloodprg.rs	100	const		UNVERIFIED	
-SHIP_3D_INTERPOLATION_GATE_OFFSET	src/bloodprg.rs	101	const		UNVERIFIED	
-SHIP_3D_TARGET_QUERY_LAYOUT_SEGMENT	src/bloodprg.rs	102	const		UNVERIFIED	
-SHIP_3D_TARGET_QUERY_LAYOUT_OFFSET	src/bloodprg.rs	103	const		UNVERIFIED	
-SHIP_PRESENTATION_SEGMENT	src/bloodprg.rs	104	const		UNVERIFIED	
-SHIP_PRESENTATION_ENTRY_OFFSET	src/bloodprg.rs	105	const		UNVERIFIED	
-SHIP_3D_HUD_INIT_OFFSET	src/bloodprg.rs	106	const		UNVERIFIED	
-SHIP_3D_ALT_FRAMEBUFFER_BAND_COPY_CALL_OFFSET	src/bloodprg.rs	107	const		UNVERIFIED	
-SHIP_3D_TARGET_RECORD_SELECT_OFFSET	src/bloodprg.rs	108	const		UNVERIFIED	
-SHIP_3D_NAVIGATION_UPDATE_OFFSET	src/bloodprg.rs	109	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_SETUP_OFFSET	src/bloodprg.rs	110	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_LOAD_CALL_OFFSET	src/bloodprg.rs	111	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_RESTORE_CALL_OFFSET	src/bloodprg.rs	112	const		UNVERIFIED	
-SHIP_3D_TRANSITION_STATE_OFFSET	src/bloodprg.rs	113	const		UNVERIFIED	
-SHIP_3D_PLANE_BAND_COPY_OFFSET	src/bloodprg.rs	114	const		UNVERIFIED	
-SHIP_3D_DEPTH_SCROLL_STEP_OFFSET	src/bloodprg.rs	115	const		UNVERIFIED	
-SHIP_3D_TARGET_LIST_DS_OFFSET	src/bloodprg.rs	116	const		UNVERIFIED	
-SHIP_3D_CURRENT_TARGET_DS_OFFSET	src/bloodprg.rs	117	const		UNVERIFIED	
-SHIP_3D_SEQUENCE_ACTIVE_DS_OFFSET	src/bloodprg.rs	118	const		UNVERIFIED	
-SHIP_3D_TARGET_SELECT_PHASE_DS_OFFSET	src/bloodprg.rs	119	const		UNVERIFIED	
-SHIP_3D_TARGET_FALLBACK_DS_OFFSET	src/bloodprg.rs	120	const		UNVERIFIED	
-SHIP_3D_HUD_FLAG_DS_OFFSET	src/bloodprg.rs	121	const		UNVERIFIED	
-SHIP_3D_DEPTH_OFFSET_DS_OFFSET	src/bloodprg.rs	122	const		UNVERIFIED	
-SHIP_3D_PLANE_COPY_ENABLE_DS_OFFSET	src/bloodprg.rs	123	const		UNVERIFIED	
-SHIP_3D_OPENING_FLAG_DS_OFFSET	src/bloodprg.rs	124	const		UNVERIFIED	
-SHIP_3D_CLOSING_FLAG_DS_OFFSET	src/bloodprg.rs	125	const		UNVERIFIED	
-SHIP_3D_DEPTH_STEP_DS_OFFSET	src/bloodprg.rs	126	const		UNVERIFIED	
-SHIP_3D_EXIT_PENDING_DS_OFFSET	src/bloodprg.rs	127	const		UNVERIFIED	
-SHIP_3D_TRANSITION_ARMED_DS_OFFSET	src/bloodprg.rs	128	const		UNVERIFIED	
-SHIP_3D_FALLBACK_TARGET_TABLE_DS_OFFSET	src/bloodprg.rs	129	const		UNVERIFIED	
-SHIP_3D_NAVIGATION_TRIGGER_DS_OFFSET	src/bloodprg.rs	130	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_SELECTED_DS_OFFSET	src/bloodprg.rs	131	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_GATE_DS_OFFSET	src/bloodprg.rs	132	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_HOLD_TIMER_DS_OFFSET	src/bloodprg.rs	133	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_PHASE_DS_OFFSET	src/bloodprg.rs	134	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_TARGET_Y_DS_OFFSET	src/bloodprg.rs	135	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_LEFT_GATE_DS_OFFSET	src/bloodprg.rs	136	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_RIGHT_GATE_DS_OFFSET	src/bloodprg.rs	137	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_MENU_GATE_DS_OFFSET	src/bloodprg.rs	138	const		UNVERIFIED	
-SHIP_3D_NAV_CHOICE_SOUND_GATE_DS_OFFSET	src/bloodprg.rs	139	const		UNVERIFIED	
-SHIP_3D_INTERPOLATION_DURATION_DS_OFFSET	src/bloodprg.rs	140	const		UNVERIFIED	
-SHIP_3D_INTERPOLATION_TICK_DS_OFFSET	src/bloodprg.rs	141	const		UNVERIFIED	
-SHIP_3D_TARGET_EXTRA_LABEL_DS_OFFSET	src/bloodprg.rs	142	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_CENTER_X_DS_OFFSET	src/bloodprg.rs	143	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_DRAW_PTR_DS_OFFSET	src/bloodprg.rs	144	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_PRESERVE_WIDTHS_DS_OFFSET	src/bloodprg.rs	145	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_EXTRA_ENTRY_DS_OFFSET	src/bloodprg.rs	146	const		UNVERIFIED	
-SHIP_3D_TARGET_MOUSE_X_DS_OFFSET	src/bloodprg.rs	147	const		UNVERIFIED	
-SHIP_3D_TARGET_MOUSE_Y_DS_OFFSET	src/bloodprg.rs	148	const		UNVERIFIED	
-SHIP_3D_TARGET_REQUESTED_PRESENTATION_DS_OFFSET	src/bloodprg.rs	149	const		UNVERIFIED	
-SHIP_3D_TARGET_PRESENTATION_STATE_DS_OFFSET	src/bloodprg.rs	150	const		UNVERIFIED	
-SHIP_3D_TARGET_ACTIVATE_FLAG_DS_OFFSET	src/bloodprg.rs	151	const		UNVERIFIED	
-SHIP_3D_TARGET_HOVER_ROW_DS_OFFSET	src/bloodprg.rs	152	const		UNVERIFIED	
-SHIP_3D_TARGET_QUERY_MODE_DS_OFFSET	src/bloodprg.rs	153	const		UNVERIFIED	
-SHIP_3D_TARGET_SELECTION_DS_OFFSET	src/bloodprg.rs	154	const		UNVERIFIED	
-SHIP_3D_TARGET_LAYOUT_RECT_DS_OFFSET	src/bloodprg.rs	155	const		UNVERIFIED	
-SHIP_3D_TARGET_WIDTH_TABLE_DS_OFFSET	src/bloodprg.rs	156	const		UNVERIFIED	
-SHIP_3D_PRESENTATION_HOLD_TIMER_DS_OFFSET	src/bloodprg.rs	157	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_TRIGGER_DS_OFFSET	src/bloodprg.rs	158	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_PHASE_DS_OFFSET	src/bloodprg.rs	159	const		UNVERIFIED	
-SHIP_3D_PLANAR_FRAMEBUFFER_PTR_DS_OFFSET	src/bloodprg.rs	160	const		UNVERIFIED	
-SHIP_3D_SCROLL_MODE_DS_OFFSET	src/bloodprg.rs	161	const		UNVERIFIED	
-SHIP_3D_SCROLL_VALUE_DS_OFFSET	src/bloodprg.rs	162	const		UNVERIFIED	
-SND_ENTRY_FAR_CALL	src/bloodprg.rs	164	const		UNVERIFIED	
-SND_BANK_LOAD_FAR_CALL	src/bloodprg.rs	171	const		UNVERIFIED	
-FAR_CALL_OPCODE	src/bloodprg.rs	178	const		UNVERIFIED	
-REGISTER_SOURCE_SCAN_BACK	src/bloodprg.rs	179	const		UNVERIFIED	
-DS_STRING_SCAN_MAX	src/bloodprg.rs	180	const		UNVERIFIED	
-RENDER_FAR_CALL_SEGMENT_BYTES	src/bloodprg.rs	181	const		UNVERIFIED	
-MzHeader	src/bloodprg.rs	185	struct		UNVERIFIED	
-header_size	src/bloodprg.rs	200	fn		UNVERIFIED	
-image_total	src/bloodprg.rs	204	fn		UNVERIFIED	
-load_size	src/bloodprg.rs	212	fn		UNVERIFIED	
-MzSummary	src/bloodprg.rs	218	struct		UNVERIFIED	
-BinarySymbol	src/bloodprg.rs	229	struct		UNVERIFIED	
-OpcodeDescriptor	src/bloodprg.rs	240	struct		UNVERIFIED	
-OpcodeHandler	src/bloodprg.rs	247	struct		UNVERIFIED	
-VmOpcodeSpec	src/bloodprg.rs	254	struct		UNVERIFIED	
-DialogueFontTables	src/bloodprg.rs	269	struct		UNVERIFIED	
-SubdispatchEntry	src/bloodprg.rs	279	struct		UNVERIFIED	
-SpriteBlitterDispatchEntry	src/bloodprg.rs	286	struct		UNVERIFIED	
-ScriptResourceProfileSlot	src/bloodprg.rs	295	struct		UNVERIFIED	
-ScriptResourceProfile	src/bloodprg.rs	302	struct		UNVERIFIED	
-BloodPrgInspection	src/bloodprg.rs	310	struct		UNVERIFIED	
-SndEntryCallSite	src/bloodprg.rs	329	struct		UNVERIFIED	
-SndBankLoadCallSite	src/bloodprg.rs	343	struct		UNVERIFIED	
-RenderCallSite	src/bloodprg.rs	364	struct		UNVERIFIED	
-BloodPrg	src/bloodprg.rs	379	struct		UNVERIFIED	
-parse_file	src/bloodprg.rs	385	fn		UNVERIFIED	
-parse	src/bloodprg.rs	391	fn		UNVERIFIED	
-summary	src/bloodprg.rs	421	fn		UNVERIFIED	
-image_bytes	src/bloodprg.rs	436	fn		UNVERIFIED	/// The raw image bytes, so a test can read an INSTRUCTION back and check a /// constant against the immediate the code actually uses.
-segoff_to_file	src/bloodprg.rs	440	fn		UNVERIFIED	
-ds_to_file	src/bloodprg.rs	444	fn		UNVERIFIED	
-fs_to_file	src/bloodprg.rs	448	fn		UNVERIFIED	
-opcode_handlers	src/bloodprg.rs	452	fn		UNVERIFIED	
-opcode_descriptors	src/bloodprg.rs	472	fn		UNVERIFIED	
-vm_opcode_specs	src/bloodprg.rs	489	fn		UNVERIFIED	
-script_resource_profiles	src/bloodprg.rs	526	fn	0x11F4,0x0D3E4,0x53A0,0x000A,0x6712	ASM	/// The five SCRIPT resource profiles at `FS:0x11F4` (file `0x0D3E4`), the /// table `vm_resource_profile_select` (`0x53A0`) indexes: `mov si,0x11F4 / /// mov dx,0x000A / mul dx` picks the row, then `
-dialogue_font_tables	src/bloodprg.rs	560	fn	0x31C8,0x7802,0x14C22,0x78B2,0x14CD2,0x78b2,0x7908,0x14D28	ASM	/// The DIALOGUE FONT's three chained tables, at the offsets `render_string` /// (`0x31C8`) loads them from as immediates: the ASCII->glyph map /// `DS:0x7802` = file `0x14C22` (`mov bx,0x7802`), the 
-nav_actor_subdispatch_handlers	src/bloodprg.rs	598	fn		UNVERIFIED	
-nav_choice_subdispatch_handlers	src/bloodprg.rs	606	fn		UNVERIFIED	
-snd_entry_call_sites	src/bloodprg.rs	614	fn		UNVERIFIED	
-snd_bank_load_call_sites	src/bloodprg.rs	640	fn		UNVERIFIED	
-render_call_sites	src/bloodprg.rs	679	fn		UNVERIFIED	
-sprite_blitter_dispatch_entries	src/bloodprg.rs	713	fn	0x1592,0x4522,0x44BA	ASM	/// The sprite-blitter dispatch table at `CS:0x1592` (file `0x4522`), reached /// by `mov bx,cs:[bx+0x1592]` at `0x44BA` after `shr bx,1 / and bx,0x0E` /// bounds the index to its eight word entries.
-inspect	src/bloodprg.rs	735	fn		UNVERIFIED	
-subdispatch_entries	src/bloodprg.rs	755	fn		UNVERIFIED	
-slice	src/bloodprg.rs	776	fn		UNVERIFIED	
-find_ax_source_before	src/bloodprg.rs	785	fn		UNVERIFIED	
-find_si_source_before	src/bloodprg.rs	817	fn		UNVERIFIED	
-ds_c_string	src/bloodprg.rs	845	fn		UNVERIFIED	
-resource_name	src/bloodprg.rs	855	fn		UNVERIFIED	
-file_to_known_segoff	src/bloodprg.rs	868	fn		UNVERIFIED	
-u16_at	src/bloodprg.rs	879	fn		UNVERIFIED	
-OpcodeMetadata	src/bloodprg.rs	887	struct		UNVERIFIED	
-opcode_metadata	src/bloodprg.rs	894	fn		UNVERIFIED	
-KNOWN_CODE_SEGMENTS	src/bloodprg.rs	1033	const		UNVERIFIED	
-snd_entry_call_note	src/bloodprg.rs	1044	fn		UNVERIFIED	
-snd_bank_load_mode	src/bloodprg.rs	1060	fn		UNVERIFIED	
-snd_bank_load_call_note	src/bloodprg.rs	1069	fn		UNVERIFIED	
-render_target_name	src/bloodprg.rs	1082	fn		UNVERIFIED	
-render_call_site_note	src/bloodprg.rs	1120	fn		UNVERIFIED	
-sprite_blitter_name	src/bloodprg.rs	1297	fn		UNVERIFIED	
-sprite_blitter_note	src/bloodprg.rs	1311	fn		UNVERIFIED	
-KNOWN_SYMBOLS	src/bloodprg.rs	1339	const		UNVERIFIED	
-PRESENTATION_3D_MARKERS	src/bloodprg.rs	2404	const		UNVERIFIED	
+OPTION_MENU_POINTER_LIST_DS	src/bloodprg.rs	38	const	0x2567,0x8871	DATA	/// `mov si,0x2567` @`0x8871` — the OPTION menu's pointer list.
+LIST_WIDGET_CANCEL_LABEL_DS	src/bloodprg.rs	40	const		DATA	/// The list widget's shared trailing entry, `ship_3d_target_extra_label`.
+MUSIC_ON_LABEL_DS	src/bloodprg.rs	42	const		DATA	/// `MUSIC_ON`, the toggle face the pointer list omits.
+DIALOGUE_FONT_GLYPH_HEIGHT	src/bloodprg.rs	43	const		UNVERIFIED	
+SND_ENTRY_SEGMENT	src/bloodprg.rs	44	const		UNVERIFIED	
+SND_ENTRY_OFFSET	src/bloodprg.rs	45	const		UNVERIFIED	
+SND_BANK_LOAD_SEGMENT	src/bloodprg.rs	46	const		UNVERIFIED	
+SND_BANK_LOAD_OFFSET	src/bloodprg.rs	47	const		UNVERIFIED	
+RENDER_SEGMENT	src/bloodprg.rs	48	const		UNVERIFIED	
+RENDER_VGA_DAC_PALETTE_LOAD_OFFSET	src/bloodprg.rs	49	const		UNVERIFIED	
+RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET	src/bloodprg.rs	50	const		UNVERIFIED	
+RENDER_FIXED_8X8_TEXT_OFFSET	src/bloodprg.rs	51	const		UNVERIFIED	
+RENDER_FONT_STRING_WIDTH_OFFSET	src/bloodprg.rs	52	const		UNVERIFIED	
+RENDER_UI_TEXT_OFFSET	src/bloodprg.rs	53	const		UNVERIFIED	
+RENDER_STRING_OFFSET	src/bloodprg.rs	54	const		UNVERIFIED	
+RENDER_FRAMEBUFFER_RECT_REMAP_OFFSET	src/bloodprg.rs	55	const		UNVERIFIED	
+RENDER_PLANAR_UI_TEXT_OFFSET	src/bloodprg.rs	56	const		UNVERIFIED	
+RENDER_PLANAR_DIALOGUE_TEXT_OFFSET	src/bloodprg.rs	57	const		UNVERIFIED	
+RENDER_SUBTITLE_REVEAL_OFFSET	src/bloodprg.rs	58	const		UNVERIFIED	
+RENDER_SMALL_TEXT_OFFSET	src/bloodprg.rs	59	const		UNVERIFIED	
+RENDER_PLANAR_HORIZONTAL_LINE_OFFSET	src/bloodprg.rs	60	const		UNVERIFIED	
+RENDER_PLANAR_VERTICAL_LINE_OFFSET	src/bloodprg.rs	61	const		UNVERIFIED	
+RENDER_RECT_OUTLINE_OFFSET	src/bloodprg.rs	62	const		UNVERIFIED	
+RENDER_DITHER_RECT_FILL_OFFSET	src/bloodprg.rs	63	const		UNVERIFIED	
+RENDER_RECT_FILL_OFFSET	src/bloodprg.rs	64	const		UNVERIFIED	
+RENDER_SCENE_BAND_FILL_OFFSET	src/bloodprg.rs	65	const		UNVERIFIED	
+RENDER_SECONDARY_BAND_FILL_OFFSET	src/bloodprg.rs	66	const		UNVERIFIED	
+RENDER_FRAMEBUFFER_COPY_OFFSET	src/bloodprg.rs	67	const		UNVERIFIED	
+RENDER_SECONDARY_FRAMEBUFFER_COPY_OFFSET	src/bloodprg.rs	68	const		UNVERIFIED	
+RENDER_VGA_PLANAR_TO_LINEAR_COPY_OFFSET	src/bloodprg.rs	69	const		UNVERIFIED	
+RENDER_PLANAR_COPY_OFFSET	src/bloodprg.rs	70	const		UNVERIFIED	
+RENDER_RESOURCE_FILE_LOAD_OFFSET	src/bloodprg.rs	71	const		UNVERIFIED	
+RENDER_SPRITE_SLOT_LOAD_OFFSET	src/bloodprg.rs	72	const		UNVERIFIED	
+RENDER_SPRITE_SLOT_STATE_OFFSET	src/bloodprg.rs	73	const		UNVERIFIED	
+RENDER_SPRITE_SLOT_RESOURCE_LOAD_OFFSET	src/bloodprg.rs	74	const		UNVERIFIED	
+RENDER_SPRITE_SLOT_POSITION_OFFSET	src/bloodprg.rs	75	const		UNVERIFIED	
+RENDER_SPRITE_SLOT_RANGE_DIRTY_OFFSET	src/bloodprg.rs	76	const		UNVERIFIED	
+RENDER_SPRITE_SLOT_EXTENT_OFFSET	src/bloodprg.rs	77	const		UNVERIFIED	
+RENDER_SPRITE_SLOT_COMMIT_RANGE_OFFSET	src/bloodprg.rs	78	const		UNVERIFIED	
+RENDER_SPRITE_SLOT_DIRTY_RANGE_RENDER_OFFSET	src/bloodprg.rs	79	const		UNVERIFIED	
+RENDER_SPRITE_BLITTER_TABLE_OFFSET	src/bloodprg.rs	80	const		UNVERIFIED	
+RENDER_SPRITE_BLITTER_TABLE_FILE_OFFSET	src/bloodprg.rs	81	const		UNVERIFIED	
+RENDER_SPRITE_BLITTER_ENTRY_COUNT	src/bloodprg.rs	90	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E	ASM	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
+RENDER_SPRITE_BLITTER_INDEX_MASK_IMMEDIATE	src/bloodprg.rs	92	const	0x44B7	ASM	/// File offset of the `and bx,imm8` operand that bounds the index (`0x44B7`).
+RENDER_SPRITE_BLIT_RAW_TRANSPARENT_OFFSET	src/bloodprg.rs	93	const		UNVERIFIED	
+RENDER_SPRITE_BLIT_RLE_TRANSPARENT_OFFSET	src/bloodprg.rs	94	const		UNVERIFIED	
+RENDER_SPRITE_BLIT_RAW_OPAQUE_OFFSET	src/bloodprg.rs	95	const		UNVERIFIED	
+RENDER_SPRITE_BLIT_RLE_OPAQUE_OFFSET	src/bloodprg.rs	96	const		UNVERIFIED	
+RENDER_SPRITE_BLIT_SCALED_TRANSPARENT_OFFSET	src/bloodprg.rs	97	const		UNVERIFIED	
+RENDER_SPRITE_BLIT_NOOP_5_OFFSET	src/bloodprg.rs	98	const		UNVERIFIED	
+RENDER_SPRITE_BLIT_NOOP_6_OFFSET	src/bloodprg.rs	99	const		UNVERIFIED	
+RENDER_SPRITE_BLIT_NOOP_7_OFFSET	src/bloodprg.rs	100	const		UNVERIFIED	
+RENDER_DIRTY_RECTS_COPY_OFFSET	src/bloodprg.rs	101	const		UNVERIFIED	
+NAV_CODE_SEGMENT	src/bloodprg.rs	102	const		UNVERIFIED	
+NAV_ACTOR_SUBDISPATCH_TABLE_FILE_OFFSET	src/bloodprg.rs	103	const		UNVERIFIED	
+NAV_ACTOR_SUBDISPATCH_ENTRY_COUNT	src/bloodprg.rs	104	const		UNVERIFIED	
+NAV_CHOICE_SUBDISPATCH_TABLE_FILE_OFFSET	src/bloodprg.rs	105	const		UNVERIFIED	
+NAV_CHOICE_SUBDISPATCH_ENTRY_COUNT	src/bloodprg.rs	106	const		UNVERIFIED	
+SHIP_3D_INTERPOLATION_GATE_SEGMENT	src/bloodprg.rs	107	const		UNVERIFIED	
+SHIP_3D_INTERPOLATION_GATE_OFFSET	src/bloodprg.rs	108	const		UNVERIFIED	
+SHIP_3D_TARGET_QUERY_LAYOUT_SEGMENT	src/bloodprg.rs	109	const		UNVERIFIED	
+SHIP_3D_TARGET_QUERY_LAYOUT_OFFSET	src/bloodprg.rs	110	const		UNVERIFIED	
+SHIP_PRESENTATION_SEGMENT	src/bloodprg.rs	111	const		UNVERIFIED	
+SHIP_PRESENTATION_ENTRY_OFFSET	src/bloodprg.rs	112	const		UNVERIFIED	
+SHIP_3D_HUD_INIT_OFFSET	src/bloodprg.rs	113	const		UNVERIFIED	
+SHIP_3D_ALT_FRAMEBUFFER_BAND_COPY_CALL_OFFSET	src/bloodprg.rs	114	const		UNVERIFIED	
+SHIP_3D_TARGET_RECORD_SELECT_OFFSET	src/bloodprg.rs	115	const		UNVERIFIED	
+SHIP_3D_NAVIGATION_UPDATE_OFFSET	src/bloodprg.rs	116	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_SETUP_OFFSET	src/bloodprg.rs	117	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_LOAD_CALL_OFFSET	src/bloodprg.rs	118	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_RESTORE_CALL_OFFSET	src/bloodprg.rs	119	const		UNVERIFIED	
+SHIP_3D_TRANSITION_STATE_OFFSET	src/bloodprg.rs	120	const		UNVERIFIED	
+SHIP_3D_PLANE_BAND_COPY_OFFSET	src/bloodprg.rs	121	const		UNVERIFIED	
+SHIP_3D_DEPTH_SCROLL_STEP_OFFSET	src/bloodprg.rs	122	const		UNVERIFIED	
+SHIP_3D_TARGET_LIST_DS_OFFSET	src/bloodprg.rs	123	const		UNVERIFIED	
+SHIP_3D_CURRENT_TARGET_DS_OFFSET	src/bloodprg.rs	124	const		UNVERIFIED	
+SHIP_3D_SEQUENCE_ACTIVE_DS_OFFSET	src/bloodprg.rs	125	const		UNVERIFIED	
+SHIP_3D_TARGET_SELECT_PHASE_DS_OFFSET	src/bloodprg.rs	126	const		UNVERIFIED	
+SHIP_3D_TARGET_FALLBACK_DS_OFFSET	src/bloodprg.rs	127	const		UNVERIFIED	
+SHIP_3D_HUD_FLAG_DS_OFFSET	src/bloodprg.rs	128	const		UNVERIFIED	
+SHIP_3D_DEPTH_OFFSET_DS_OFFSET	src/bloodprg.rs	129	const		UNVERIFIED	
+SHIP_3D_PLANE_COPY_ENABLE_DS_OFFSET	src/bloodprg.rs	130	const		UNVERIFIED	
+SHIP_3D_OPENING_FLAG_DS_OFFSET	src/bloodprg.rs	131	const		UNVERIFIED	
+SHIP_3D_CLOSING_FLAG_DS_OFFSET	src/bloodprg.rs	132	const		UNVERIFIED	
+SHIP_3D_DEPTH_STEP_DS_OFFSET	src/bloodprg.rs	133	const		UNVERIFIED	
+SHIP_3D_EXIT_PENDING_DS_OFFSET	src/bloodprg.rs	134	const		UNVERIFIED	
+SHIP_3D_TRANSITION_ARMED_DS_OFFSET	src/bloodprg.rs	135	const		UNVERIFIED	
+SHIP_3D_FALLBACK_TARGET_TABLE_DS_OFFSET	src/bloodprg.rs	136	const		UNVERIFIED	
+SHIP_3D_NAVIGATION_TRIGGER_DS_OFFSET	src/bloodprg.rs	137	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_SELECTED_DS_OFFSET	src/bloodprg.rs	138	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_GATE_DS_OFFSET	src/bloodprg.rs	139	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_HOLD_TIMER_DS_OFFSET	src/bloodprg.rs	140	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_PHASE_DS_OFFSET	src/bloodprg.rs	141	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_TARGET_Y_DS_OFFSET	src/bloodprg.rs	142	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_LEFT_GATE_DS_OFFSET	src/bloodprg.rs	143	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_RIGHT_GATE_DS_OFFSET	src/bloodprg.rs	144	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_MENU_GATE_DS_OFFSET	src/bloodprg.rs	145	const		UNVERIFIED	
+SHIP_3D_NAV_CHOICE_SOUND_GATE_DS_OFFSET	src/bloodprg.rs	146	const		UNVERIFIED	
+SHIP_3D_INTERPOLATION_DURATION_DS_OFFSET	src/bloodprg.rs	147	const		UNVERIFIED	
+SHIP_3D_INTERPOLATION_TICK_DS_OFFSET	src/bloodprg.rs	148	const		UNVERIFIED	
+SHIP_3D_TARGET_EXTRA_LABEL_DS_OFFSET	src/bloodprg.rs	149	const		UNVERIFIED	
+SHIP_3D_TARGET_LAYOUT_CENTER_X_DS_OFFSET	src/bloodprg.rs	150	const		UNVERIFIED	
+SHIP_3D_TARGET_LAYOUT_DRAW_PTR_DS_OFFSET	src/bloodprg.rs	151	const		UNVERIFIED	
+SHIP_3D_TARGET_LAYOUT_PRESERVE_WIDTHS_DS_OFFSET	src/bloodprg.rs	152	const		UNVERIFIED	
+SHIP_3D_TARGET_LAYOUT_EXTRA_ENTRY_DS_OFFSET	src/bloodprg.rs	153	const		UNVERIFIED	
+SHIP_3D_TARGET_MOUSE_X_DS_OFFSET	src/bloodprg.rs	154	const		UNVERIFIED	
+SHIP_3D_TARGET_MOUSE_Y_DS_OFFSET	src/bloodprg.rs	155	const		UNVERIFIED	
+SHIP_3D_TARGET_REQUESTED_PRESENTATION_DS_OFFSET	src/bloodprg.rs	156	const		UNVERIFIED	
+SHIP_3D_TARGET_PRESENTATION_STATE_DS_OFFSET	src/bloodprg.rs	157	const		UNVERIFIED	
+SHIP_3D_TARGET_ACTIVATE_FLAG_DS_OFFSET	src/bloodprg.rs	158	const		UNVERIFIED	
+SHIP_3D_TARGET_HOVER_ROW_DS_OFFSET	src/bloodprg.rs	159	const		UNVERIFIED	
+SHIP_3D_TARGET_QUERY_MODE_DS_OFFSET	src/bloodprg.rs	160	const		UNVERIFIED	
+SHIP_3D_TARGET_SELECTION_DS_OFFSET	src/bloodprg.rs	161	const		UNVERIFIED	
+SHIP_3D_TARGET_LAYOUT_RECT_DS_OFFSET	src/bloodprg.rs	162	const		UNVERIFIED	
+SHIP_3D_TARGET_WIDTH_TABLE_DS_OFFSET	src/bloodprg.rs	163	const		UNVERIFIED	
+SHIP_3D_PRESENTATION_HOLD_TIMER_DS_OFFSET	src/bloodprg.rs	164	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_TRIGGER_DS_OFFSET	src/bloodprg.rs	165	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_PHASE_DS_OFFSET	src/bloodprg.rs	166	const		UNVERIFIED	
+SHIP_3D_PLANAR_FRAMEBUFFER_PTR_DS_OFFSET	src/bloodprg.rs	167	const		UNVERIFIED	
+SHIP_3D_SCROLL_MODE_DS_OFFSET	src/bloodprg.rs	168	const		UNVERIFIED	
+SHIP_3D_SCROLL_VALUE_DS_OFFSET	src/bloodprg.rs	169	const		UNVERIFIED	
+SND_ENTRY_FAR_CALL	src/bloodprg.rs	171	const		UNVERIFIED	
+SND_BANK_LOAD_FAR_CALL	src/bloodprg.rs	178	const		UNVERIFIED	
+FAR_CALL_OPCODE	src/bloodprg.rs	185	const		UNVERIFIED	
+REGISTER_SOURCE_SCAN_BACK	src/bloodprg.rs	186	const		UNVERIFIED	
+DS_STRING_SCAN_MAX	src/bloodprg.rs	187	const		UNVERIFIED	
+RENDER_FAR_CALL_SEGMENT_BYTES	src/bloodprg.rs	188	const		UNVERIFIED	
+MzHeader	src/bloodprg.rs	192	struct		UNVERIFIED	
+header_size	src/bloodprg.rs	207	fn		UNVERIFIED	
+image_total	src/bloodprg.rs	211	fn		UNVERIFIED	
+load_size	src/bloodprg.rs	219	fn		UNVERIFIED	
+MzSummary	src/bloodprg.rs	225	struct		UNVERIFIED	
+BinarySymbol	src/bloodprg.rs	236	struct		UNVERIFIED	
+OpcodeDescriptor	src/bloodprg.rs	247	struct		UNVERIFIED	
+OpcodeHandler	src/bloodprg.rs	254	struct		UNVERIFIED	
+VmOpcodeSpec	src/bloodprg.rs	261	struct		UNVERIFIED	
+DialogueFontTables	src/bloodprg.rs	276	struct		UNVERIFIED	
+SubdispatchEntry	src/bloodprg.rs	286	struct		UNVERIFIED	
+SpriteBlitterDispatchEntry	src/bloodprg.rs	293	struct		UNVERIFIED	
+ScriptResourceProfileSlot	src/bloodprg.rs	302	struct		UNVERIFIED	
+ScriptResourceProfile	src/bloodprg.rs	309	struct		UNVERIFIED	
+BloodPrgInspection	src/bloodprg.rs	317	struct		UNVERIFIED	
+SndEntryCallSite	src/bloodprg.rs	336	struct		UNVERIFIED	
+SndBankLoadCallSite	src/bloodprg.rs	350	struct		UNVERIFIED	
+RenderCallSite	src/bloodprg.rs	371	struct		UNVERIFIED	
+BloodPrg	src/bloodprg.rs	386	struct		UNVERIFIED	
+parse_file	src/bloodprg.rs	392	fn		UNVERIFIED	
+parse	src/bloodprg.rs	398	fn		UNVERIFIED	
+summary	src/bloodprg.rs	428	fn		UNVERIFIED	
+image_bytes	src/bloodprg.rs	443	fn		UNVERIFIED	/// The raw image bytes, so a test can read an INSTRUCTION back and check a /// constant against the immediate the code actually uses.
+segoff_to_file	src/bloodprg.rs	447	fn		UNVERIFIED	
+ds_to_file	src/bloodprg.rs	451	fn		UNVERIFIED	
+fs_to_file	src/bloodprg.rs	455	fn		UNVERIFIED	
+opcode_handlers	src/bloodprg.rs	459	fn		UNVERIFIED	
+opcode_descriptors	src/bloodprg.rs	479	fn		UNVERIFIED	
+vm_opcode_specs	src/bloodprg.rs	496	fn		UNVERIFIED	
+script_resource_profiles	src/bloodprg.rs	533	fn	0x11F4,0x0D3E4,0x53A0,0x000A,0x6712	ASM	/// The five SCRIPT resource profiles at `FS:0x11F4` (file `0x0D3E4`), the /// table `vm_resource_profile_select` (`0x53A0`) indexes: `mov si,0x11F4 / /// mov dx,0x000A / mul dx` picks the row, then `
+dialogue_font_tables	src/bloodprg.rs	567	fn	0x31C8,0x7802,0x14C22,0x78B2,0x14CD2,0x78b2,0x7908,0x14D28	ASM	/// The DIALOGUE FONT's three chained tables, at the offsets `render_string` /// (`0x31C8`) loads them from as immediates: the ASCII->glyph map /// `DS:0x7802` = file `0x14C22` (`mov bx,0x7802`), the 
+nav_actor_subdispatch_handlers	src/bloodprg.rs	605	fn		UNVERIFIED	
+nav_choice_subdispatch_handlers	src/bloodprg.rs	613	fn		UNVERIFIED	
+snd_entry_call_sites	src/bloodprg.rs	621	fn		UNVERIFIED	
+snd_bank_load_call_sites	src/bloodprg.rs	647	fn		UNVERIFIED	
+render_call_sites	src/bloodprg.rs	686	fn		UNVERIFIED	
+sprite_blitter_dispatch_entries	src/bloodprg.rs	720	fn	0x1592,0x4522,0x44BA	ASM	/// The sprite-blitter dispatch table at `CS:0x1592` (file `0x4522`), reached /// by `mov bx,cs:[bx+0x1592]` at `0x44BA` after `shr bx,1 / and bx,0x0E` /// bounds the index to its eight word entries.
+inspect	src/bloodprg.rs	742	fn		UNVERIFIED	
+subdispatch_entries	src/bloodprg.rs	762	fn		UNVERIFIED	
+slice	src/bloodprg.rs	783	fn		UNVERIFIED	
+find_ax_source_before	src/bloodprg.rs	792	fn		UNVERIFIED	
+find_si_source_before	src/bloodprg.rs	824	fn		UNVERIFIED	
+ds_c_string	src/bloodprg.rs	852	fn		UNVERIFIED	
+option_menu_labels	src/bloodprg.rs	879	fn	0x886C,0x8709,0x2567,0x8428,0xFFFF,0x2573,0x2581,0x258B,0x25	DATA	/// The bridge OPTION menu's labels, read from the game's own string table. /// /// Console row 4's handler (`0x886C`, reached through the per-row table at /// file `0x8709`) does `mov si,0x2567` and 
+list_widget_cancel_label	src/bloodprg.rs	884	fn	0x0174	DATA	/// The list widget's shared trailing entry (`DS:0x0174`).
+music_on_label	src/bloodprg.rs	890	fn	0x2578	DATA	/// The alternate face of the music toggle (`DS:0x2578`), which the pointer /// list does not name.
+ds_pointer_list_strings	src/bloodprg.rs	895	fn	0xFFFF	ASM?	/// Walk a `0xFFFF`-terminated list of DS string pointers.
+resource_name	src/bloodprg.rs	912	fn		UNVERIFIED	
+file_to_known_segoff	src/bloodprg.rs	925	fn		UNVERIFIED	
+u16_at	src/bloodprg.rs	936	fn		UNVERIFIED	
+OpcodeMetadata	src/bloodprg.rs	944	struct		UNVERIFIED	
+opcode_metadata	src/bloodprg.rs	951	fn		UNVERIFIED	
+KNOWN_CODE_SEGMENTS	src/bloodprg.rs	1090	const		UNVERIFIED	
+snd_entry_call_note	src/bloodprg.rs	1101	fn		UNVERIFIED	
+snd_bank_load_mode	src/bloodprg.rs	1117	fn		UNVERIFIED	
+snd_bank_load_call_note	src/bloodprg.rs	1126	fn		UNVERIFIED	
+render_target_name	src/bloodprg.rs	1139	fn		UNVERIFIED	
+render_call_site_note	src/bloodprg.rs	1177	fn		UNVERIFIED	
+sprite_blitter_name	src/bloodprg.rs	1354	fn		UNVERIFIED	
+sprite_blitter_note	src/bloodprg.rs	1368	fn		UNVERIFIED	
+KNOWN_SYMBOLS	src/bloodprg.rs	1396	const		UNVERIFIED	
+PRESENTATION_3D_MARKERS	src/bloodprg.rs	2461	const		UNVERIFIED	
 BloodSave	src/bloodsav.rs	48	struct	0x1C3F,0x1CBD,0x677E,0x6ADE,0x6CDE,0x6724,0xABC,0x1C63,0x1CE	ASM?	//! The DOS save-file formats — the byte-exact layouts the original //! `BLOODPRG.EXE` reads and writes. LIVE-VERIFIED round trip (save_option scenario): //! the real game, driven through OPTION->SAVE
 SaveSlot	src/bloodsav.rs	73	struct	0x2734,0x1BAB,0x25ED,0x273B,0x1BBD,0x8573	ASM?	/// One row of the SLOT-NAME DIRECTORY (`blood.sav`): a 32-byte record holding a /// 15-character name padded with spaces, a NUL, then the slot's filename /// (`game<N>.sav`) padded with NULs. Ten of 
 SLOT_RECORD_LEN	src/bloodsav.rs	81	const		UNVERIFIED	/// Bytes per directory record, and the record count.
@@ -694,10 +701,10 @@ run	src/main.rs	65	fn		INFRA
 VmInspection	src/main.rs	92	struct		INFRA	
 run_engine_play	src/main.rs	226	fn		INFRA	/// Headless real-time engine driver: run the runnable engine (`EngineState`) over a /// script's dialogue scene flow and encode each stepped frame to an MP4 — the /// engine playing the game, produce
 run_engine_window	src/main.rs	301	fn		INFRA	/// Real-time windowed backend: present the runnable engine in a live X11 window and /// drive it with real mouse input (position steers the ship-nav compass; left button /// toggles the on-ship view 
-refresh_nav_chart	src/main.rs	400	fn	0x604E,0x721A	ASM?	// The RECORD-DRIVEN chart (0x604E -> 0x721A). Refreshed whenever the VM // changes, since the in-play bit it filters on is story state: a world only // appears on the chart once the game has put it i
-Music	src/main.rs	474	struct		INFRA	// Scene music: the game plays each location's background music (.voc). Decoded // with our own VOC parser and played through cpal (cross-platform, in-process) — // best-effort, the engine stays silen
-play	src/main.rs	476	fn		INFRA	
-stop	src/main.rs	485	fn		INFRA	
+refresh_nav_chart	src/main.rs	423	fn	0x604E,0x721A	ASM?	// The RECORD-DRIVEN chart (0x604E -> 0x721A). Refreshed whenever the VM // changes, since the in-play bit it filters on is story state: a world only // appears on the chart once the game has put it i
+Music	src/main.rs	497	struct		INFRA	// Scene music: the game plays each location's background music (.voc). Decoded // with our own VOC parser and played through cpal (cross-platform, in-process) — // best-effort, the engine stays silen
+play	src/main.rs	499	fn		INFRA	
+stop	src/main.rs	508	fn		INFRA	
 menu_item_index	src/manu3.rs	18	fn	0x0000,0x181,0x1DF,0x19B,0x270,0x000	ASM?	//! `manu3.xdb` overlay logic — the ship's 3D pyramid-menu interface. //! //! Distinct from the alien overlays (no shared PRNG); its entry (`0x0000`) takes the //! caller's input params (mouse coords:
 MENU_ROW_BIAS	src/manu3.rs	23	const		UNVERIFIED	/// The amount added to a menu row (placed in the high byte of the derived coordinate word).
 menu_screen_row	src/manu3.rs	27	fn		UNVERIFIED	/// The screen row derived from the caller's input word: shift right by 4, then bias the row /// (the high byte) by [`MENU_ROW_BIAS`].
@@ -1495,28 +1502,30 @@ world_click_select	src/vm.rs	4950	fn	0xB20C,0xB27B,0xB2BB,0xFFFF,0xB288,0x24F3,0
 special_slot_insert_pub	src/vm.rs	4976	fn	0x6D3E,0x5FF6	ASM?	/// Insert an owner into the 16-slot special list (gs:0x6D3E, insert 0x5FF6). /// Returns false only if the list is full and the owner is not already present. /// Test hooks for the recomp differentia
 special_slot_remove_pub	src/vm.rs	4979	fn		UNVERIFIED	
 ship_slots_pub	src/vm.rs	4982	fn		UNVERIFIED	
-special_slot_insert	src/vm.rs	4990	fn	0x5FF6,0x6D3E,0x5FFE,0x601F,0x600E,0x601C	ORACLE	/// Insert an owner into the special-slot list — `vm_special_slot_insert` /// `0x5FF6`: scan the 16 words at `DS:0x6D3E` for the owner and return CF set /// if already present (`0x5FFE..0x601F`); othe
-special_slot_remove	src/vm.rs	5016	fn	0x5FD8,0x5FDA,0x6D3E,0x5FE0,0x5FED,0x5FEA	ORACLE	/// Remove an owner from the special-slot list — `vm_special_slot_remove` /// `0x5FD8`, exactly: /// /// ```text ///   0x5FDA  bp=0x6D3E  cx=0x10        the 16-word list ///   0x5FE0  cmp ax,[bp] / je
-load_cod	src/vm.rs	5026	fn		UNVERIFIED	
-load_var	src/vm.rs	5034	fn	0x6724	ASM?	/// Initialize the line-record/object table from the script's VAR file — the /// game loads VAR as the table's initial contents (le16 words at gs:0x6724).
-rand	src/vm.rs	5044	fn		UNVERIFIED	
-u8_at	src/vm.rs	5081	fn		UNVERIFIED	
-lodsb	src/vm.rs	5085	fn		UNVERIFIED	
-lodsw	src/vm.rs	5091	fn		UNVERIFIED	
-tick_state_countdowns	src/vm.rs	5104	fn	0x8AA,0x675A,0xB27,0xFFFF	ASM?	/// One divided-timer beat of the state-array countdown — the engine's law at /// 0x8AA (in the timer chain, gated there on no-active-presentation /// gs:[0x675A]==0, divider gs:[0xB27]): entries stat
-add_record	src/vm.rs	5116	fn	0x126C	ASM?	/// Increment a record variable — the runtime hook for world events that the /// scripts observe (e.g. BIONIUM collection: SCRIPT2's `vbio` record, whose /// C0 guards read record 0x126C — operand rea
-rec_read	src/vm.rs	5121	fn		UNVERIFIED	
-rec_read_pub	src/vm.rs	5126	fn		UNVERIFIED	/// Public record read for the drive layer.
-rec_write_pub	src/vm.rs	5132	fn		UNVERIFIED	/// Public record write for the drive layer (the click stand-in's /// presentation end and test scaffolding).
-rec_write	src/vm.rs	5136	fn		UNVERIFIED	
-rec_read_u8	src/vm.rs	5144	fn		UNVERIFIED	/// Byte-level record access (the record table is a little-endian word array). /// Used by the 0xB7 single-bit flag handler.
-rec_write_u8	src/vm.rs	5153	fn		UNVERIFIED	
-branch	src/vm.rs	5165	fn	0x6462	ASM?	/// `vm_branch` @0x6462: pop the resume position into PC; clear query mode.
-step	src/vm.rs	5173	fn		UNVERIFIED	/// Execute ONE opcode against the loaded stream. Returns false at stream end.
-run	src/vm.rs	6007	fn		UNVERIFIED	/// Run until yield (0xAA/0xAC), halt, or `max_steps`. Returns the events raised.
-run_frame	src/vm.rs	6020	fn	0x55F5	ASM?	/// Run ONE FRAME the way the exec loop does (@0x55F5): restart at the top of /// the script (AA/AC yields end the frame with NO resume; the self-modified /// active bits advance the flow), run until 
-token_len_at	src/vm.rs	6034	fn		DATA?	/// Total token length (including the opcode byte) at `pos`, using the game's own /// per-opcode descriptor table + mode rules — identical to the walker's advance /// (`mode1` there == query mode here
-decompile_script	src/vm.rs	6063	fn		UNVERIFIED	// ============================================================================ // DECOMPILER — static translation of the COD bytecode into a readable BASIC- // like listing, using the faithfully-deco
+ship_contact_menu_words	src/vm.rs	5009	fn	0x87BD,0x0F29,0x8709,0x0FDD,0x87C5,0x6D3E,0x87C8,0x2B13,0x87	DATA	/// The console CONTACT MENU, built the way the row-2 handler builds it. /// /// `0x87BD` (bridge console row 2, reached through the per-row handler table /// at `CS:0x0F29` -> file `0x8709`, entry 2 
+special_slot_insert	src/vm.rs	5024	fn	0x5FF6,0x6D3E,0x5FFE,0x601F,0x600E,0x601C	ORACLE	/// Insert an owner into the special-slot list — `vm_special_slot_insert` /// `0x5FF6`: scan the 16 words at `DS:0x6D3E` for the owner and return CF set /// if already present (`0x5FFE..0x601F`); othe
+special_slot_remove	src/vm.rs	5050	fn	0x5FD8,0x5FDA,0x6D3E,0x5FE0,0x5FED,0x5FEA	ORACLE	/// Remove an owner from the special-slot list — `vm_special_slot_remove` /// `0x5FD8`, exactly: /// /// ```text ///   0x5FDA  bp=0x6D3E  cx=0x10        the 16-word list ///   0x5FE0  cmp ax,[bp] / je
+load_cod	src/vm.rs	5060	fn		UNVERIFIED	
+load_var	src/vm.rs	5068	fn	0x6724	ASM?	/// Initialize the line-record/object table from the script's VAR file — the /// game loads VAR as the table's initial contents (le16 words at gs:0x6724).
+rand	src/vm.rs	5078	fn		UNVERIFIED	
+u8_at	src/vm.rs	5115	fn		UNVERIFIED	
+lodsb	src/vm.rs	5119	fn		UNVERIFIED	
+lodsw	src/vm.rs	5125	fn		UNVERIFIED	
+tick_state_countdowns	src/vm.rs	5138	fn	0x8AA,0x675A,0xB27,0xFFFF	ASM?	/// One divided-timer beat of the state-array countdown — the engine's law at /// 0x8AA (in the timer chain, gated there on no-active-presentation /// gs:[0x675A]==0, divider gs:[0xB27]): entries stat
+add_record	src/vm.rs	5150	fn	0x126C	ASM?	/// Increment a record variable — the runtime hook for world events that the /// scripts observe (e.g. BIONIUM collection: SCRIPT2's `vbio` record, whose /// C0 guards read record 0x126C — operand rea
+rec_read	src/vm.rs	5155	fn		UNVERIFIED	
+rec_read_pub	src/vm.rs	5160	fn		UNVERIFIED	/// Public record read for the drive layer.
+rec_write_u8_pub	src/vm.rs	5168	fn		UNVERIFIED	/// Public record write for the drive layer (the click stand-in's /// presentation end and test scaffolding). /// Byte-level record write, for tests that need to place an inline name at /// `record+4`
+rec_write_pub	src/vm.rs	5172	fn		UNVERIFIED	
+rec_write	src/vm.rs	5176	fn		UNVERIFIED	
+rec_read_u8	src/vm.rs	5184	fn		UNVERIFIED	/// Byte-level record access (the record table is a little-endian word array). /// Used by the 0xB7 single-bit flag handler.
+rec_write_u8	src/vm.rs	5193	fn		UNVERIFIED	
+branch	src/vm.rs	5205	fn	0x6462	ASM?	/// `vm_branch` @0x6462: pop the resume position into PC; clear query mode.
+step	src/vm.rs	5213	fn		UNVERIFIED	/// Execute ONE opcode against the loaded stream. Returns false at stream end.
+run	src/vm.rs	6047	fn		UNVERIFIED	/// Run until yield (0xAA/0xAC), halt, or `max_steps`. Returns the events raised.
+run_frame	src/vm.rs	6060	fn	0x55F5	ASM?	/// Run ONE FRAME the way the exec loop does (@0x55F5): restart at the top of /// the script (AA/AC yields end the frame with NO resume; the self-modified /// active bits advance the flow), run until 
+token_len_at	src/vm.rs	6074	fn		DATA?	/// Total token length (including the opcode byte) at `pos`, using the game's own /// per-opcode descriptor table + mode rules — identical to the walker's advance /// (`mode1` there == query mode here
+decompile_script	src/vm.rs	6103	fn		UNVERIFIED	// ============================================================================ // DECOMPILER — static translation of the COD bytecode into a readable BASIC- // like listing, using the faithfully-deco
 VmDrive	src/vm_drive.rs	13	struct		UNVERIFIED	
 new	src/vm_drive.rs	25	fn		UNVERIFIED	
 frame	src/vm_drive.rs	55	fn		ORACLE?	/// One passive frame: VM frame + the idle beat. No promotion — queued /// calls RING until an interaction takes them (the scenario's clicks /// decide, as at the oracle's hub).

@@ -3610,3 +3610,38 @@ from `record+4`.
 Removed from the guard's `KNOWN_OPEN`, so the hardcoded pair cannot return. The
 OPTION menu (`TEXT / MUSIC_OFF / SAVE / LOAD / QUIT / CANCEL`) is still open and
 still listed.
+
+## #110 — the OPTION menu was in the game's data too, and it is richer than the copy
+
+The second hardcoded label list is closed the same way as the first: by reading
+the game's own table.
+
+Console row 4's handler `0x886C` (same per-row table, entry 4 = `0x108C`) does
+`mov si,0x2567` and calls the list widget at `0x8428`. `DS:0x2567` (file
+`0x0F987`) is a `0xFFFF`-terminated list of DS pointers into NUL-terminated
+strings that sit immediately after it:
+
+    DS:0x2573 TEXT   0x2581 MUSIC_OFF   0x258B SAVE   0x2590 LOAD   0x2595 QUIT
+
+Reading the table instead of copying it turned up two things the transcribed
+version had flattened:
+
+* **`CANCEL` is not part of this menu.** It is `DS:0x0174`, the list widget's
+  SHARED trailing entry — already labelled `ship_3d_target_extra_label`, because
+  the ship-3D target list appends the same string. The port had it as a sixth
+  peer of `QUIT`, which hides that it belongs to the widget, not the menu.
+* **`MUSIC_ON` exists, at `DS:0x2578`** — between `TEXT` and `MUSIC_OFF`, and
+  deliberately ABSENT from the pointer list. It is the toggle's other face,
+  swapped in by state. A six-string copy of the menu can never show `MUSIC_ON`,
+  so the port's music toggle could only ever have rendered one way.
+
+`option_menu_labels` walks the pointer list, `list_widget_cancel_label` and
+`music_on_label` read the two strings the list omits, and the test checks all of
+it against the shipped binary. `main.rs` reads them once at startup.
+
+The guard's `KNOWN_OPEN` is now EMPTY: both lists that lived there are read from
+data, so any new hardcoded label list fails the check outright.
+
+One more list is visible and not yet wired: `DS:0x259D` points at a text-speed
+submenu (`VERY FAST`, ...). Recorded in `docs/port-validation.md` rather than
+left as a surprise.

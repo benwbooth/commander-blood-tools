@@ -333,6 +333,27 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     ) {
         engine.load_nav_sprites(&carte, &borxx);
     }
+    // The OPTION menu's labels are the GAME'S string table, read out of the
+    // executable: a 0xFFFF-terminated pointer list at DS:0x2567 (`mov si,0x2567`
+    // @0x8871, the console row-4 handler) into NUL-terminated strings, plus the
+    // list widget's shared trailing CANCEL at DS:0x0174. Read once here rather
+    // than written into this file -- see bloodprg::option_menu_labels.
+    let option_menu_labels: Vec<String> = [
+        format!("{iso}/BLOODPRG.EXE"),
+        format!("{assets}/BLOODPRG.EXE"),
+        "re/bin/BLOODPRG.EXE".to_string(),
+    ]
+    .iter()
+    .find_map(|path| {
+        commander_blood_tools::bloodprg::BloodPrg::parse_file(path).ok()
+    })
+    .map(|binary| {
+        let mut labels = binary.option_menu_labels();
+        labels.extend(binary.list_widget_cancel_label());
+        labels
+    })
+    .unwrap_or_default();
+
     // Boot straight into the intro logos + cutscene, exactly as the real game does
     // (MINDSCAPE → Microfolie's → intro cutscene → CRYO credit → crew showcase) — NOT a
     // static box-art title screen (the real game has none; `BLOOD.LBM` box art isn't part
@@ -1545,14 +1566,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         }
                         Some(4) => {
                             engine.bridge.engaged_row = Some(4);
-                            engine.console_box = vec![
-                                "TEXT".into(),
-                                "MUSIC_OFF".into(),
-                                "SAVE".into(),
-                                "LOAD".into(),
-                                "QUIT".into(),
-                                "CANCEL".into(),
-                            ];
+                            engine.console_box = option_menu_labels.clone();
                             engine.console_box_kind = 4;
                         }
                         _ => {}
