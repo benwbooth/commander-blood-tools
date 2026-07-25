@@ -2804,6 +2804,13 @@ fn c1_record_state_resolved_mode1_condition(
     Some(if inverted { !matched } else { matched })
 }
 
+/// Parse the ship-3D C1 source list — words up to and INCLUDING the `0xFFFF`
+/// sentinel (`SHIP_3D_TARGET_EXIT_SENTINEL`, the back/exit row).
+///
+/// Returns `None` when the sentinel never arrives, rather than the words read so
+/// far: an unterminated list means the bytes are not a source list, and treating
+/// a truncated read as a short list would hand the caller a plausible-looking
+/// result built from whatever followed in memory.
 fn ship3d_c1_source_records_from_bytes(source_list_bytes: &[u8]) -> Option<Vec<u16>> {
     let mut source_records = Vec::new();
     for chunk in source_list_bytes.chunks_exact(2) {
@@ -2816,6 +2823,10 @@ fn ship3d_c1_source_records_from_bytes(source_list_bytes: &[u8]) -> Option<Vec<u
     None
 }
 
+/// Read a record's three words as a ship-3D state slot — `{opcode, operand,
+/// aux}`, the same `+0`/`+2`/`+4` layout every record writer uses. The third word
+/// is the one carrying `2`/`1`/`0` for `0xC1`/`0xC3`/`0xC4`, so a slot round-trips
+/// through here without losing which kind it is.
 fn ship3d_record_state_slot(state: &[u8], record_offset: u16) -> ship3d::Ship3dRecordStateSlot {
     ship3d::Ship3dRecordStateSlot {
         opcode: state_u16(state, record_offset),
