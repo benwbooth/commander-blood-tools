@@ -6735,3 +6735,38 @@ are real.
 WHAT THIS LEAVES is the honest queue: 791 rows with neither a citation nor a data
 test. That is the number to work, and it is now findable because the noise is out
 of it — the same reason #211 mattered.
+
+## #217 — fixing the inventory, and the diff that caught me deleting evidence
+
+Working the real queue turned up two ledger rows that are not items at all: one
+literally named `fn`, and `W`/`H` repeated at three line numbers in `ship3d.rs`.
+
+  * `const fn e(...)` was parsed as a CONST named `fn`. The pattern took the first
+    keyword and then the next word, so every `const fn` in the tree became an
+    unsettleable row for an item that does not exist.
+  * `W`/`H` are FUNCTION-LOCAL aliases inside `render_star_map_navview_projected`
+    (`const W: isize = SHIP_3D_PROJECTION_SCREEN_WIDTH as isize`), making no
+    independent claim about the game.
+
+The fix for the second nearly cost more than it saved. "Function-local items are
+not port surface" is WRONG as stated: `engine.rs` has `const TEXT_SELECTED = 0xEF`
+inside a function carrying `mov al,0xEF` @`0x858B`, a SETTLED ASM row. The first
+cut deleted it, along with `TEXT_SELECTED_MOUSE`, `CREDIT_RECORD` and others —
+silently, because a smaller ledger looks like progress.
+
+What caught it was diffing the item SET before and after, not the counts. The
+counts moved from 2228 to 2197 and the percentage rose; nothing about those two
+numbers said "four settled rows and a decoded constant just vanished". Any change
+to the inventory needs the set diff, and now the entry says so.
+
+Refined twice more from the diff's evidence: keep a local whose DOC cites an
+address (`TEXT_SELECTED`), and keep one whose own DECLARATION carries a hex
+literal (`const PAL_DS: u32 = 0x5251`, a recomp-machine address with no doc at
+all). Erring toward keeping is deliberate — an extra row costs a slightly larger
+denominator, while a dropped decoded value leaves the ledger silently smaller.
+
+Final: 15 rows removed, 4 of them settled, and all fifteen confirmed by name to be
+local helpers (`Music`, `VmInspection`, `Ev`, `ROWS`, `ClipInfo`, the `fn`
+phantoms, the `W`/`H` aliases). 2212 items, 817 settled — the percentage went
+DOWN, 37.1% to 36.9%, which is the honest direction when phantom rows leave a
+denominator that also held their settled siblings.

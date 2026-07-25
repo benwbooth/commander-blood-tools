@@ -106,6 +106,9 @@ for root, _, files in os.walk(SRC):
         in_tests = False
         test_depth = None
         in_raw_string = False
+        # Brace depth INSIDE a function body, so local items can be skipped.
+        fn_body_depth = 0
+        pending_fn = False
         doc: list[str] = []
         for i, line in enumerate(lines, 1):
             stripped = line.strip()
@@ -150,9 +153,26 @@ for root, _, files in os.walk(SRC):
             ):
                 doc.append(stripped)
                 continue
+            # Track whether we are inside a fn body BEFORE matching items, so a
+            # local `const` is skipped and a following module-level one is not.
+            if fn_body_depth > 0:
+                fn_body_depth += line.count("{") - line.count("}")
+                if fn_body_depth <= 0:
+                    fn_body_depth = 0
+            elif pending_fn:
+                fn_body_depth += line.count("{") - line.count("}")
+                if fn_body_depth > 0:
+                    pending_fn = False
+                elif ";" in line:
+                    pending_fn = False  # a trait method signature, no body
+            # `const fn e(...)` is a FUNCTION named `e`, not a const named `fn`.
+            # The old pattern took the first keyword and then the next word, so
+            # every `const fn` in the tree became a row literally called `fn`
+            # (src/ship3d.rs:461 among them) -- an item that cannot be settled
+            # because it does not exist.
             m = re.match(
-                r"\s*(?:pub(?:\([^)]*\))?\s+)?(fn|struct|enum|const|static)\s+"
-                r"([A-Za-z0-9_]+)",
+                r"\s*(?:pub(?:\([^)]*\))?\s+)?(?:const\s+)?(?:unsafe\s+)?"
+                r"(fn|struct|enum|const|static)\s+([A-Za-z0-9_]+)",
                 line,
             )
             if not m:
@@ -173,6 +193,39 @@ for root, _, files in os.walk(SRC):
                     doc = []
                 continue
             kind, name = m.group(1), m.group(2)
+            # FUNCTION-LOCAL items are usually not port surface -- `render_star_
+            # map_navview_projected` declares `const W`/`const H` as aliases of
+            # already-settled screen constants, and three such pairs were separate
+            # ledger rows making no independent claim.
+            #
+            # BUT a local item WITH A CITATION does make one. `engine.rs`'s
+            # `const TEXT_SELECTED = 0xEF` sits inside a function and carries
+            # `mov al,0xEF` @0x858B; dropping it silently deleted a SETTLED ASM row
+            # from the ledger. The first cut of this rule did exactly that to
+            # TEXT_SELECTED, TEXT_SELECTED_MOUSE, CREDIT_RECORD, NAV_CAMERA_ORIGIN
+            # and others -- caught by diffing the item set before and after, which
+            # is the check any inventory change needs.
+            #
+            # So: skip a local only when NEITHER its doc NOR its own declaration
+            # carries a hex literal. `const PAL_DS: u32 = 0x5251` has no doc at all
+            # but is a decoded address driving the recomp machine; `const W: isize
+            # = SHIP_3D_PROJECTION_SCREEN_WIDTH as isize` is an alias and has no
+            # hex anywhere. Erring toward KEEPING is deliberate: an extra row costs
+            # a slightly larger denominator, while dropping a decoded value removes
+            # port surface from the ledger silently.
+            if (
+                fn_body_depth > 0
+                and kind != "fn"
+                and not ADDR.search(" ".join(doc))
+                and not re.search(r"0x[0-9A-Fa-f]+", line)
+            ):
+                continue
+            if kind == "fn":
+                # Arm body tracking; the brace may be on this line or the next.
+                pending_fn = True
+                fn_body_depth += line.count("{") - line.count("}")
+                if fn_body_depth > 0:
+                    pending_fn = False
             if in_tests or name.startswith("test_"):
                 doc = []
                 continue
