@@ -2995,3 +2995,19 @@ That is now five for five: every differential failure this session has been the
 harness, never the port. Worth holding onto as a prior — but not as a certainty,
 since the special-slot divergence (#82) was found by READING the disassembly, not
 by a failing test.
+
+## FIX #92 — the PRNG's seed, and the whole generator chain is now verified
+
+`BloodPrng::seeded_from_rtc_seconds` against `func_2dd3`. `0x2DD3` selects CMOS
+register 0 (`out 0x70,0`), reads the RTC SECONDS (`in al,0x71`), copies AL into AH
+and stores the word at `cs:0xAEE` — so the seed word is the seconds byte doubled
+into both halves. The port computes `seconds * 0x0101`; they agree, and the test
+derives the byte from whatever the runtime models rather than hardcoding it, so it
+follows the emulation if that changes.
+
+With this the ENTIRE generator chain is oracle-verified end to end: the seed
+(`0x2DD3`, here), the generator (`0x2DE2`, FIX #80) and its consumer the point
+cloud (`0x9B67`/`0x9A10`, FIX #79). The starfield now rests on checked code from
+the CMOS read to the plotted pixel.
+
+Worklist: 13 differentialled, 13 candidates left.

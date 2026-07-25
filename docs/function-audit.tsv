@@ -1045,7 +1045,7 @@ SHIP_3D_POINT_CLOUD_BASE_IMMEDIATE	src/ship3d.rs	1747	const	0x2FC1	ASM?	/// ...a
 SHIP_3D_POINT_CLOUD_BASE_DS	src/ship3d.rs	1748	const		UNVERIFIED	
 BloodPrng	src/ship3d.rs	1761	struct		UNVERIFIED	
 default	src/ship3d.rs	1774	fn		UNVERIFIED	/// The static (unseeded) state from the shipped BLOODPRG.EXE image.
-seeded_from_rtc_seconds	src/ship3d.rs	1789	fn	0x2DD3,0xAEE	ASM?	/// Seed as the DOS routine at `0x2DD3` does: it reads the CMOS RTC seconds /// byte (`out 0x70 / in 0x71`) and writes it into both halves of the XOR /// seed word (`mov ah,al; mov cs:[0xAEE],ax`), le
+seeded_from_rtc_seconds	src/ship3d.rs	1789	fn	0x2DD3,0xAEE	ORACLE	/// Seed as the DOS routine at `0x2DD3` does: it reads the CMOS RTC seconds /// byte (`out 0x70 / in 0x71`) and writes it into both halves of the XOR /// seed word (`mov ah,al; mov cs:[0xAEE],ax`), le
 next	src/ship3d.rs	1800	fn	0x01CE,0x0B02	ORACLE	/// Advance the generator and return the next value in `0..modulus` (or the raw 16-bit word /// when `modulus == 0`). Faithful port of the generator at `0x01CE:0x0B02`.
 randomize_ship_3d_point_cloud	src/ship3d.rs	1851	fn	0x9B67,0xFFFF	ASM	/// Populate the ship-3D starfield point cloud (`ship_3d_point_cloud_randomize` /// at `0x9B67`). Each of the [`SHIP_3D_POINT_CLOUD_LEN`] records gets random /// `x`/`y`/`z` words from [`BloodPrng::ne
 SHIP_3D_PROJECTION_SCREEN_HEIGHT	src/ship3d.rs	1863	const		UNVERIFIED	/// Height of the ship-3D point-cloud depth/color buffer in rows. The DOS pixel /// helper computes `y * 320 + x` into the active page; 200 native rows cover it.

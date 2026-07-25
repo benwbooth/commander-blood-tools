@@ -354,6 +354,35 @@ pub fn func_bff(rt: &mut Runtime) {
 
 #[cfg(test)]
 mod tests {
+
+    /// The PRNG SEEDING against its lift (`func_2dd3`).
+    ///
+    /// `0x2DD3` selects CMOS register 0 (`out 0x70,0`), reads the RTC SECONDS
+    /// (`in al,0x71`), copies AL into AH and stores the word at `cs:0xAEE` — so
+    /// the seed word is the seconds byte DOUBLED into both halves. The port's
+    /// `BloodPrng::seeded_from_rtc_seconds` takes the byte directly and computes
+    /// `seconds * 0x0101`; this checks the two agree, using the runtime's modelled
+    /// CMOS seconds (`0x27`).
+    #[test]
+    fn native_prng_seed_matches_the_lifted_rtc_read() {
+        let mut rt = test_runtime();
+        rt.m.regs.cs = 0x1000;
+        rt.m.regs.ss = 0x2000;
+        rt.m.regs.set_sp(0x0800);
+        super::func_2dd3(&mut rt);
+        let lifted = rt.m.read16(rt.m.regs.cs, 0xAEE);
+
+        // Whatever the runtime models as the seconds byte, the native must agree.
+        let seconds = (lifted & 0xFF) as u8;
+        assert_eq!(
+            lifted >> 8,
+            u16::from(seconds),
+            "0x2DDA `mov ah,al` doubles the byte into both halves"
+        );
+        let native = crate::ship3d::BloodPrng::seeded_from_rtc_seconds(seconds);
+        assert_eq!(native.seed_word, lifted, "seed word");
+        assert_eq!((native.a, native.b, native.counter), (0, 0, 0));
+    }
     use super::*;
     use std::path::PathBuf;
 
