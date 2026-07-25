@@ -965,3 +965,35 @@ that, the watch is mis-aimed rather than the table unwritten.
 
 That is a scenario problem (reaching a dialogue load under the probe), not a decode
 problem, which is why no further reading of the image will produce it.
+
+## CORRECTION — the probe falsified part of the asset-table decode
+
+Built the `DLGTABLE` probe specified in the previous entry (arm `trace_range` over
+`DS:0x1FB5`, load the hub savestate, dump the live table). It contradicted my own static
+reading, which is the point of building it.
+
+CONFIRMED by the live data:
+
+* The `+0` word steps by exactly `0x1A` (26) per entry — `0x2069, 0x207F, 0x2099,
+  0x20B3, ...`. That is a POINTER into the 26-byte record array walked by the second
+  cursor `DS:0x1FAD` (`add gs:[0x1FAD],0x1A` at `0x76A2`), exactly as the fill implies.
+* `0xFFFF` really is the "no asset" value: lines 0-7 hold it, lines 8-23 do not.
+
+FALSIFIED:
+
+* I recorded that `+2` is "a BYTE OFFSET into a 16-byte-stride NAME table", from the
+  fill's `dec ax; shl ax,4` at `0x768D..0x768E`. The live value is `0x0DD7`, which is
+  NOT 16-aligned. `DS:0x0DD7` lies inside an `fd\xxxxxxxxxxxx` PATH TEMPLATE — the
+  patchable name field, the same shape as `mu\xxxxxxxx.voc` at `DS:0x0D2C`.
+
+So in this state `+2` holds a POINTER to a filename field, not a scaled index. Either
+`0x7684` is not what populated it here, or its value is later replaced. The `*16`
+reading was an inference from one arithmetic site, and I extended it into a claim about
+what the field MEANS — the probe shows that extension was wrong.
+
+What survives: the table base, the 4-byte stride, the `+2` field position, the `0xFFFF`
+sentinel, and the `b3+9` indexing are all confirmed. What does not: the interpretation
+of the stored value. The executable specification in `vm.rs` still encodes
+`dlg_line_asset_id_from_source_byte` as `(byte-1)*16` — that function faithfully
+describes the instructions at `0x7684`, so it stays, but it must NOT be read as "this is
+what the table contains".

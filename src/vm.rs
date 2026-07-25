@@ -410,8 +410,15 @@ pub fn dlg_line_asset_id_ds_offset(line_id: i16) -> Option<u16> {
 /// The value the fill at `0x7684` stores for one source byte.
 ///
 /// Negative bytes pass through sign-extended (so `0xFF` becomes `0xFFFF`, the exact
-/// "no asset" sentinel the reader tests); otherwise the stored value is
-/// `(byte - 1) * 16`, a BYTE OFFSET into a 16-byte-stride name table — not an ordinal.
+/// "no asset" sentinel the reader tests); otherwise the stored value is `(byte - 1) * 16`.
+///
+/// CAVEAT, from the `DLGTABLE` probe: this describes the INSTRUCTIONS at `0x7684`, and
+/// nothing more. Do not read it as "this is what the table contains". In the hub
+/// savestate the live `+2` fields hold `0x0DD7`, which is not 16-aligned and points into
+/// an `fd\xxxxxxxxxxxx` path template's name field. So either another path populates the
+/// table in that state, or this value is later replaced. The earlier gloss calling the
+/// result "a byte offset into a 16-byte-stride name table" was an inference beyond the
+/// instructions and the probe falsified it.
 pub fn dlg_line_asset_id_from_source_byte(byte: u8) -> u16 {
     if (byte as i8) < 0 {
         return i16::from(byte as i8) as u16;

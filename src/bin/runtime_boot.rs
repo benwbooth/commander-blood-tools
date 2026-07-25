@@ -3188,6 +3188,56 @@ fn main() {
     // clicking each topic (reloading the savestate to isolate each) and reading the
     // resulting current-menu offset gs:0x6772. Gives the ground-truth navigation the
     // clean-port conversation VM must reproduce, without a full static VM decode.
+    // DLGTABLE: the per-line ASSET TABLE at DS:0x1FB5, decoded statically but with its
+    // FILL not statically reachable (0x766F has no near callers; DS:0x24C6 has exactly
+    // one reference, its own write). Load the hub savestate -- which has been through a
+    // dialogue -- and both dump the live table and watch for writers.
+    //
+    // POSITIVE CONTROL, known in advance from the decode: the b3=0 entry must sit at
+    // 0x1FB5 + 0x26 (line id 9, so 9*4 + 2). If the dumped bytes do not look like a
+    // table of 0xFFFF/16-aligned ids there, the watch is mis-aimed rather than the
+    // table unwritten -- the distinction that made NAVWRITE and PALBANK trustworthy.
+    if std::env::var("DLGTABLE").is_ok() {
+        rt.load_state(std::path::Path::new("accuracy/script2.state")).unwrap();
+        let ds0 = 0xE840usize;
+        let base = ds0 + 0x1FB5;
+        rt.m.trace_range = Some(base..base + 0x100);
+        rt.m.range_hits.clear();
+        let _ = rt.run(rt.cpu.steps + 20_000_000);
+
+        let word = |rt: &Runtime, a: usize| u16::from_le_bytes([rt.m.mem[a], rt.m.mem[a + 1]]);
+        println!("DLGTABLE entries (line_id: id @ +2), b3=0 is line_id 9:");
+        let mut nonzero = 0;
+        for line_id in 0..24usize {
+            let id = word(&rt, base + line_id * 4 + 2);
+            let other = word(&rt, base + line_id * 4);
+            if id != 0 || other != 0 {
+                nonzero += 1;
+            }
+            let tag = if line_id == 9 { "  <== b3=0 (0x1FB5+0x26)" } else { "" };
+            let kind = if id == 0xFFFF {
+                " none"
+            } else if id % 16 == 0 {
+                " 16-aligned"
+            } else {
+                " *** NOT 16-ALIGNED ***"
+            };
+            println!("  line {line_id:2}: +0={other:#06x} +2={id:#06x}{kind}{tag}");
+        }
+        println!("DLGTABLE: {nonzero}/24 entries non-zero");
+        let mut seen = std::collections::HashSet::new();
+        for &(addr, v, cs, ip) in rt.m.range_hits.iter() {
+            let off = addr - base;
+            if seen.insert((cs, ip)) {
+                println!("DLGTABLE writer {cs:04x}:{ip:04x} -> line {} byte {} = {v:#04x}", off / 4, off % 4);
+            }
+            if seen.len() > 12 { break; }
+        }
+        println!("DLGTABLE: {} nonzero writes during the run", rt.m.range_hits.len());
+        rt.m.trace_range = None;
+        return;
+    }
+
     if std::env::var("CONVDRIVER").is_ok() {
         // OCR-driven conversation player: from the hub savestate, read the live
         // subtitle/menu text with the game's own font; click bye_bye/goodbye topics
