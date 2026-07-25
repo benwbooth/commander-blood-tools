@@ -4316,6 +4316,91 @@ fn next_target_list_draw_color(state: &mut Ship3dTargetHitState, activate: bool)
 #[cfg(test)]
 mod tests {
 
+    /// THE WHOLE PROJECTION CHAIN, ending at the pixel: the game's angle table
+    /// builds a matrix, the matrix projects points, and `plot_ship_3d_projected_
+    /// point` (`0x9B04`) clips and writes them. Two decoded rules are asserted at
+    /// the end of it:
+    ///
+    ///   * a point outside the viewport writes NOTHING — not a wrapped pixel
+    ///     somewhere else, which is what a missing sign check would produce;
+    ///   * FIRST WRITE WINS (`mov al,es:[di] / or al,al / jne` @`0x9B30`), so a
+    ///     second point at the same offset is rejected and the first shade stands.
+    ///
+    /// Provenance is transitive, as in #222: no file is opened here, but
+    /// `SHIP_3D_ANGLE_TABLE` is verified byte-for-byte against `BLOODPRG.EXE` by
+    /// `angle_table_matches_binary`, so the numbers driving this ARE the game's.
+    #[test]
+    fn the_projection_chain_never_writes_outside_the_viewport() {
+        let viewport = Ship3dProjectionViewport {
+            left: 0,
+            top: 0,
+            right: SHIP_3D_PROJECTION_SCREEN_WIDTH as u16,
+            bottom: SHIP_3D_PROJECTION_SCREEN_HEIGHT as u16,
+        };
+        let origin = Ship3dProjectionOrigin { x: 0, y: 0, z: 0 };
+        let size = SHIP_3D_PROJECTION_SCREEN_WIDTH * SHIP_3D_PROJECTION_SCREEN_HEIGHT;
+
+        let mut plotted = 0usize;
+        for step in (0..180u16).step_by(2) {
+            let Some(matrix) = build_ship_3d_projection_matrix(
+                &SHIP_3D_ANGLE_TABLE,
+                Ship3dMatrixAngles {
+                    angle_2f71: step,
+                    projection_angle_2f6d: (step * 5) % 180,
+                    angle_2f6f: (step * 7) % 180,
+                },
+            ) else {
+                continue;
+            };
+            let mut buffer = vec![0u8; size];
+            for k in 0..64u16 {
+                let point = Ship3dProjectionPoint {
+                    x: k.wrapping_mul(97),
+                    y: k.wrapping_mul(53),
+                    z: k.wrapping_mul(31).wrapping_add(100),
+                };
+                let Some(projected) = project_ship_3d_point(point, origin, matrix) else {
+                    continue;
+                };
+                let before = buffer.clone();
+                match plot_ship_3d_projected_point(&mut buffer, viewport, projected) {
+                    Some(pixel) => {
+                        assert!(pixel.offset < size, "wrote past the buffer");
+                        assert!(
+                            (projected.x as usize) < SHIP_3D_PROJECTION_SCREEN_WIDTH
+                                && (projected.y as usize) < SHIP_3D_PROJECTION_SCREEN_HEIGHT,
+                            "accepted a point outside the viewport at ({}, {})",
+                            projected.x,
+                            projected.y
+                        );
+                        assert_eq!(
+                            pixel.offset,
+                            ship_3d_projected_point_offset(projected),
+                            "the written offset is not the point's own"
+                        );
+                        // FIRST WRITE WINS: replaying the same point changes nothing.
+                        let shade = buffer[pixel.offset];
+                        assert_eq!(
+                            plot_ship_3d_projected_point(&mut buffer, viewport, projected),
+                            None,
+                            "a second point at the same offset was accepted"
+                        );
+                        assert_eq!(buffer[pixel.offset], shade, "the first shade was overwritten");
+                        plotted += 1;
+                    }
+                    None => assert!(
+                        buffer == before,
+                        "a rejected point still modified the buffer -- a coordinate wrapped"
+                    ),
+                }
+            }
+        }
+        // A floor on COVERAGE, not a measurement: the assertions above are
+        // vacuous if almost nothing reaches the plot stage. 96 points got through
+        // at step 3, so the sweep was widened rather than the bar lowered.
+        assert!(plotted > 100, "only {plotted} points plotted; the sweep proves little");
+    }
+
     /// PROJECTED DEPTH CANNOT EXCEED THE DISTANCE, because the matrix row it is
     /// dotted with has unit length (#221). That is Cauchy-Schwarz, and it holds
     /// for the ORIGINAL too, so it checks the transcription rather than the port

@@ -6918,3 +6918,31 @@ file-opening heuristic would not have found it, and a future reader should know
 the chain rather than assume the tool covered it.
 
 `Ship3dProjectionPoint`, `Ship3dProjectedPoint`, `Ship3dProjectionOrigin` settled.
+
+## #223 — the chain to the pixel, and a threshold that was not a measurement
+
+The projection cluster now runs end to end in one test: the game's angle table
+builds a matrix (#221), the matrix projects points (#222), and
+`plot_ship_3d_projected_point` (`0x9B04`) clips and writes them. Two decoded rules
+are asserted where they finally bite:
+
+  * a rejected point writes NOTHING. The test snapshots the buffer and compares
+    after every `None`, which catches the specific bug a missing sign check causes
+    — a negative coordinate wrapping into a valid offset and drawing somewhere
+    else entirely.
+  * FIRST WRITE WINS (`mov al,es:[di] / or al,al / jne` @`0x9B30`). Replaying an
+    accepted point must be rejected and must leave the original shade. Deleting
+    that gate makes the test fail with "a second point at the same offset was
+    accepted"; restoring it passes.
+
+The first run failed on `only 96 points plotted; the sweep proves little` — my own
+coverage floor, not a defect. Every real assertion had passed. I widened the sweep
+(step 3 -> 2) rather than lowering the threshold, because the floor exists to stop
+the other assertions being vacuous, and moving it defeats its only purpose. The
+comment now says which it is, since a bare `assert!(plotted > 100)` reads like a
+measured property of the game rather than a guard on the test itself.
+
+`Ship3dProjectionViewport` and `Ship3dProjectedPixel` settled TESTED. The
+projection cluster — matrix, angles, point, projected point, origin, viewport,
+pixel — is now seven shapes verified through three decoded stages, from one table
+proven byte-exact against the binary.
