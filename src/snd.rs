@@ -183,6 +183,49 @@ pub fn mix_unsigned_pcm_average(destination: &mut [u8], source: &[u8]) -> usize 
     len
 }
 
+/// The HALF-RATE mix loop, `0xBB5B..0xBB69` — the variant the normal loop at
+/// `0xBB6D` is chosen against by `test byte gs:[0xba2],1` @`0xBB53`.
+///
+/// ```text
+///   0xBB5B  mov al,[si]        read WITHOUT advancing
+///   0xBB5D  test cl,1
+///   0xBB60  jne 0xBB63         counter ODD  -> do not advance
+///   0xBB62  inc si             counter EVEN -> advance
+///   0xBB63  add al,es:[di] / rcr al,1 / stosb    the same average as 0xBB6D
+///   0xBB69  loop 0xBB5B
+/// ```
+///
+/// So the source is consumed once per TWO output samples: the voice plays an
+/// octave down, at half its sample rate, mixed by the identical average. The
+/// distinction from `0xBB6D` is only the `si` advance — the mixing arithmetic is
+/// shared, which is why [`snd_mix_average`] serves both.
+///
+/// `count` is the loop counter CX, and its parity sets the phase: an even count
+/// advances on the first sample (`A,B,B,C,C…`), an odd count holds the first
+/// sample instead (`A,A,B,B…`). Both are half rate; the game's phase depends on
+/// where the buffer boundary falls, so the port reproduces the counter rather
+/// than picking one.
+///
+/// Returns the number of destination samples written.
+pub fn mix_unsigned_pcm_half_rate(destination: &mut [u8], source: &[u8], count: u16) -> usize {
+    let mut src = 0usize;
+    let mut counter = count;
+    let mut written = 0usize;
+    for slot in destination.iter_mut() {
+        if counter == 0 || src >= source.len() {
+            break; // `loop` exhausted, or the source ran out
+        }
+        let sample = source[src]; // 0xBB5B: read first
+        if counter & 1 == 0 {
+            src += 1; // 0xBB62: advance only on an EVEN counter
+        }
+        *slot = snd_mix_average(sample, *slot); // 0xBB63..0xBB68
+        written += 1;
+        counter -= 1; // the `loop` instruction's implicit dec
+    }
+    written
+}
+
 /// Mix several u8 PCM sources into one buffer with the game's rule, in order.
 ///
 /// `0xBB6D`'s `lodsb / add al,es:[di] / rcr al,1 / stosb` averages ONE source into
@@ -215,6 +258,45 @@ pub const SILENCE: u8 = 0x80;
 
 #[cfg(test)]
 mod tests {
+
+    /// `0xBB5B`: the source is consumed once per two output samples, and the
+    /// counter's PARITY sets which sample is doubled first.
+    #[test]
+    fn half_rate_mix_consumes_the_source_every_other_sample() {
+        // Silence destination, so each output is (source + 0x80)/2 and the
+        // SEQUENCE of source samples is what the assertion is about.
+        let expect = |src: &[u8], count: u16, n: usize| -> Vec<u8> {
+            let mut dst = vec![SILENCE; n];
+            mix_unsigned_pcm_half_rate(&mut dst, src, count);
+            dst
+        };
+        let src = [0x00u8, 0x40, 0xC0];
+        let mix = |s: u8| snd_mix_average(s, SILENCE);
+
+        // EVEN count: advance on the first sample -> A,B,B,C,C
+        assert_eq!(
+            expect(&src, 6, 5),
+            vec![mix(0x00), mix(0x40), mix(0x40), mix(0xC0), mix(0xC0)]
+        );
+        // ODD count: hold the first sample -> A,A,B,B,C
+        assert_eq!(
+            expect(&src, 5, 5),
+            vec![mix(0x00), mix(0x00), mix(0x40), mix(0x40), mix(0xC0)]
+        );
+
+        // It stops when the SOURCE runs out, not when the buffer does.
+        let mut dst = vec![SILENCE; 32];
+        let written = mix_unsigned_pcm_half_rate(&mut dst, &src, 32);
+        // 5, not 6: an EVEN counter advances on the very first sample, so the
+        // first source sample plays ONCE and only the rest are doubled
+        // (A,B,B,C,C). The odd-counter phase above is the one that doubles A.
+        assert_eq!(written, 5, "A,B,B,C,C -- the head is not doubled");
+        assert_eq!(dst[5..], vec![SILENCE; 27][..], "the rest is untouched");
+
+        // A zero counter writes nothing (`dec cx / je` before the body).
+        let mut dst2 = vec![SILENCE; 4];
+        assert_eq!(mix_unsigned_pcm_half_rate(&mut dst2, &src, 0), 0);
+    }
 
     /// Mixing N sources is the one-source average applied N times, so the result
     /// is ORDER-DEPENDENT: each earlier source is halved again by every later mix.

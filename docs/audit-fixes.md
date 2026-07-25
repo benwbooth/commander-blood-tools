@@ -6139,3 +6139,41 @@ REMAINING APPROX, stated narrowly: the port CYCLES the destination row on the
 world-entry key rather than hit-testing a pointer, because no pointer selection is
 decoded for this screen yet. The rows, their order, their names and the committed
 record are all the game's; only which one the cursor lands on is not.
+
+## #198 — two mix loops, and the one thing that still blocks the rewiring
+
+The audio row has stood as DECODED, NOT WIRED with the note that this environment
+has no audio device. Treating that as the task rather than the excuse: what can be
+verified without a device is the RULE, and reading `0xBB40..0xBB76` found a second
+one the port did not have.
+
+`0xBB53 test byte gs:[0xba2],1` selects between two mix loops. `0xBB6D` is the
+known one. `0xBB5B` differs in exactly one respect: it reads `[si]` WITHOUT a
+`lodsb` and does `inc si` only when the loop counter is even (`test cl,1 / jne`),
+so the source is consumed once per two output samples — the voice plays at half
+its sample rate, mixed by the identical average. Ported and tested on both counter
+phases, because the parity sets which sample doubles first (`A,B,B,C,C` for an
+even count, `A,A,B,B,C` for an odd one) and the game's phase depends on where the
+buffer boundary falls.
+
+Two things worth recording about the process:
+
+1. My first dump started at `0xBB40` and produced `xor ax,0xf803`, which does not
+   exist — re-anchoring from `0xBB10` shows `0xBB41: add di,ax`. The classic
+   self-synchronisation phantom, caught because the aligned decode disagreed. The
+   mix loops themselves appeared IDENTICALLY in both dumps, which is what made
+   them trustworthy.
+2. The test caught my own arithmetic, not the code's: I asserted 3 source samples
+   fill 6 slots, and it is 5. An even counter advances on the very FIRST sample,
+   so the head plays once and only the rest double. The passing assertion three
+   lines above already said `A,B,B,C,C`; I had written the count without reading
+   my own expected sequence.
+
+WHY THE LIVE PATH IS STILL NOT SWITCHED, stated exactly rather than as "no device":
+`0xBB21 les di,[bp] / add di,6` mixes into a buffer owned by a voice STRUCT, so
+whether a lone sound is halved toward silence or written at full amplitude is
+decided by whoever initialises that buffer each frame — which is undecoded.
+`mix_unsigned_pcm_sources` assumes a silence pre-fill. Switching `audio.rs` to it
+would change EVERY sound's amplitude on the strength of that assumption. The next
+decode is the buffer's per-frame owner; the `lcall gs:[0xcf3]` @`0xBB28` is the
+lead.
