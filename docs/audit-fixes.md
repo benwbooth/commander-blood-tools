@@ -4354,3 +4354,38 @@ gs:[0xb21]&1") and `timer_isr_handler` ("game timer ISR, installed at cs:0x213 b
 install_timer_isr_hook 0x79c"). Those are not two descriptions of one thing; one
 of them is wrong, and deciding which needs the routine read. Left flagged rather
 than merged, because merging it would manufacture agreement.
+
+## #132 — the one disagreement that was a real question, answered
+
+#131 left `0x00813` flagged rather than merged: `state_gate_b21` ("conditional
+gate on `gs:[0xb21]&1`") against `timer_isr_handler` ("game timer ISR, installed
+at `cs:0x213` by `install_timer_isr_hook 0x79c`"). Not two descriptions of one
+thing — one had to be wrong.
+
+Reading the installer settles it. `0x79C` is
+
+    mov ax,0x3508 / int 21      GET the IRQ0 (INT 08) vector
+    mov gs:[0xB1D],bx / gs:[0xB1F],es   save the ORIGINAL handler
+    mov ah,0x25 / mov bx,cs / mov ds,bx / mov dx,0x213 / int 21   SET the new one
+
+and with this segment based at file `0x600`, `CS:0x213` IS file `0x813`. It then
+reprograms the PIT (`out 0x43,0x36`; `out 0x40` with `0x1746`). The routine ends
+the two ways an ISR must: `0x92F` `pop ax / ljmp gs:[0xB1D]` chaining to the saved
+original, and `0x935` `mov al,0x20 / out 0x20,al / iret` sending EOI.
+
+So it is the timer ISR, and `state_gate_b21` described its FIRST INSTRUCTION —
+`test byte gs:[0xB21],1`, the gate choosing chain-vs-handle. Exactly the shape of
+`abs_negate_gs_setup` at `0x22E0` (four instructions of a table builder) and
+`ds_es_rebase_gs` at `0x242D` (a prologue). A shallow name is not a wrong
+observation; it is a correct observation mistaken for the answer, and it outranks
+the real answer whenever a reader hits it first.
+
+Merged with the evidence in the row and the old reading kept as SUPERSEDED. 41
+duplicates remain.
+
+That is three sessions' worth of the same lesson from different directions: #127
+(a dead rule keeping a refuted reading), #128 (two names for one routine
+disagreeing about what it builds), #131 (corrections filed beside their claims),
+and now this. The knowledge base does not converge on its own — every one of these
+was written by someone who read the binary correctly and stopped at a different
+depth.
