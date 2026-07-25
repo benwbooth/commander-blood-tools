@@ -4972,3 +4972,35 @@ Twelve rows in, this is the second time the queue has produced the citation for
 something an earlier fix had already established empirically (#143 did it for the
 band copy's constants). The queue is not only about undocumented code — it is
 where the evidence for things already believed turns out to have been sitting.
+
+## #154 — one-based rows, and a bound that is not the box height
+
+`hit_test_ship_3d_target_list`, the sibling of #153's layout:
+
+```text
+  0x84E6  add cx,4                       the row origin is box_y + 4
+  0x84F8  mov ax,[0xa2c] / sub ax,dx     dy = mouse_y - that origin
+  0x84FD  js 0x853B                      above the box: miss
+  0x84FF  sub bp,8 / cmp ax,bp / jge     below (height - 8): miss
+  0x8506  mov bl,0xb / div bl            row = dy / 11
+  0x850A  inc al                         ...+ 1, so rows are ONE-BASED
+  0x850C  mov [0x27c7],al                the hovered row
+```
+
+Three things a reimplementation gets wrong by default, all of which the port has
+right:
+
+* The bound is `height - 8`, not the height. The 8px of chrome that
+  [`layout_ship_3d_target_list`] ADDED (`add bp,8`) is not clickable, so the box
+  is deliberately larger than its hit area.
+* The row is ONE-BASED after `inc al`, so `0` means "no row" rather than "the
+  first row" — and `DS:0x27C7` holds that value for the draw to compare against.
+* `div bl` is UNSIGNED, which is why the `js` before it is load-bearing: a
+  negative `dy` would divide as a large positive and land on a row instead of
+  missing.
+
+The 4px inset is shared with the DRAW, which is what keeps the clickable band from
+drifting off the drawn one — the same failure #148 removed by making the nav
+sector's draw and click share one expression.
+
+Cited instructions 187 -> 194; the queue 69 -> 68.

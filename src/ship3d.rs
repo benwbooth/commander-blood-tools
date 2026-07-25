@@ -1092,6 +1092,32 @@ pub fn layout_ship_3d_target_list(
     }
 }
 
+/// The list widget's row hit-test, `0x84F6..0x850C`:
+///
+/// ```text
+///   0x84E6  add cx,4                       the row origin is box_y + 4
+///   0x84F8  mov ax,[0xa2c] / sub ax,dx     dy = mouse_y - that origin
+///   0x84FD  js 0x853B                      above the box: miss
+///   0x84FF  sub bp,8 / cmp ax,bp / jge     below (height - 8): miss
+///   0x8506  mov bl,0xb / div bl            row = dy / 11
+///   0x850A  inc al                         ...+ 1, so rows are ONE-BASED
+///   0x850C  mov [0x27c7],al                the hovered row
+/// ```
+///
+/// Two details a reimplementation gets wrong by default. The bound is
+/// `height - 8`, not the full height — the box's 8px of chrome (the same `add
+/// bp,8` [`layout_ship_3d_target_list`] added) is not clickable. And the row is
+/// ONE-BASED after the `inc al`, so `0` means "no row" rather than "the first
+/// row"; `DS:0x27C7` holds that value and the draw compares against it.
+///
+/// The 4px inset at `0x84E6` is `SHIP_3D_TARGET_HIT_TEST_TOP_INSET`, and it is the
+/// SAME origin the draw uses — hit and draw share it, which is what stops the
+/// clickable band drifting from the drawn one.
+///
+/// `div bl` is an UNSIGNED byte divide, which is why the `js` above it matters:
+/// a negative `dy` would otherwise divide as a large positive and land on a row.
+///
+/// Cited here because it was settled ASM with no doc (#141's queue).
 pub fn hit_test_ship_3d_target_list(
     state: &mut Ship3dTargetHitState,
     layout: Ship3dTargetListLayout,
