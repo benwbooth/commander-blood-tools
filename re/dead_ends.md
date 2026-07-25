@@ -1195,3 +1195,25 @@ driving the VM far enough that the script writes those records.
 
 DO NOT re-derive the projector from captures because "the star map draws nothing" —
 drawing nothing is the CORRECT behaviour for this state.
+
+## Script-load-only state is unreachable from every savestate we have (2026-07-24)
+
+TRIED: catching the per-line asset table fill (DS:0x1FB5) with a validated write watch
+(`runtime_boot DLGTABLE`), across four scenarios — hub savestate idling, hub savestate
+with driven conversation clicks, from boot with the watch armed before any load, and hub
+savestate with the TRAVELPROBE travel driving.
+
+RESULT: zero writes to the table in all four. The instrument is not at fault: with an
+over-wide window the same watch caught writers `0b13:029e` and `0370:048b` into the
+adjacent 26-byte record array, so it fires when writes occur.
+
+WHY: the table is written once per SCRIPT LOAD. Conversation advance does not reload,
+and the travel that would reload never completes — because travel needs a granted
+destination, and the `NAVENT` probe already established that entities `0x15..0x1F` are
+unpopulated with no writer in every reachable state.
+
+BETTER APPROACH: stop attacking this from the code side. It is ONE blocker with two
+faces — no reachable savestate performs a script load, so the asset-table fill and the
+nav destination grant are unreachable together. What unblocks both is a SAVESTATE TAKEN
+AFTER REAL PROGRESSION (play to a granted destination, save there). Until that exists,
+further probing of either is wasted effort.

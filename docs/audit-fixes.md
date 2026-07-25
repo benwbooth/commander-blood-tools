@@ -1046,3 +1046,35 @@ so the fill happens somewhere between boot and that state.
 NEXT STEP, precisely: drive a LOCATION CHANGE (nav -> visit a world) under
 `DLGTABLE_BOOT`, since that loads a new script and must re-run the fill. This is
 scenario construction, not decoding — exactly what the previous entry predicted.
+
+### DLGTABLE — thread closed: blocked by the same progression wall as nav
+
+Fourth scenario: reuse the `TRAVELPROBE` driving (Esc out of the consultation, advance,
+then rotate toward the nav sector and click) so a LOCATION CHANGE loads a new script.
+Still 0 writes to the table.
+
+Four scenarios tried, all negative, with the instrument independently validated (the
+over-wide window caught record-array writes, so the watch demonstrably fires):
+
+| scenario | result |
+|---|---|
+| hub savestate, idle | 0 — table already populated |
+| hub savestate, 12 conversation clicks | 0 — not per-line |
+| from boot, before any load | 0 to the table (record-array writes caught) |
+| hub savestate, travel driving | 0 — the location change does not complete |
+
+THIS IS THE SAME WALL AS NAV, and that is the useful conclusion rather than a fifth
+attempt. The `NAVENT` probe found the destination entities `0x15..0x1F` entirely
+unpopulated with no writer, and `dead_ends.md` records that the console path never
+grants a destination. A location change requires a granted destination; the dialogue
+table's fill requires a location change. Both are gated behind progression that no
+reachable savestate has.
+
+So this is one blocker, not two: **no reachable state performs a script load**. Anything
+that only happens at script load — the asset-table fill, the nav destination grant — is
+unreachable together, and will stay so until a savestate taken after real progression
+exists. That is a data-capture task (play the game to a granted destination and save),
+not a decode or scenario-scripting task.
+
+Recording it as a single named blocker so the next session does not rediscover it from
+either end.

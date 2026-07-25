@@ -3217,16 +3217,36 @@ fn main() {
         // which is why the first run saw zero writes. Drive input so a scene change
         // occurs and the fill runs again: advance the conversation by clicking the orb
         // area, several rounds, checking for writers as we go.
-        for round in 0..12 {
-            rt.set_mouse_pos(160, 100);
-            let _ = rt.run(rt.cpu.steps + 1_500_000);
+        // A LOCATION CHANGE is what re-runs the fill: plain conversation clicks never
+        // did (runs 1 and 2), because the table is written once per script load. Reuse
+        // the TRAVELPROBE sequence -- Esc out of the consultation, advance, then rotate
+        // toward the nav sector and click the orb -- so a new script actually loads.
+        rt.inject_key(0x01, 0x1b);
+        let _ = rt.run(rt.cpu.steps + 6_000_000);
+        for round in 0..6 {
+            rt.set_mouse_pos((160 + 45 * 8 - 160) as u16, 100);
             rt.mouse_press(0);
-            let _ = rt.run(rt.cpu.steps + 400_000);
+            let _ = rt.run(rt.cpu.steps + 500_000);
             rt.mouse_release(0);
-            let _ = rt.run(rt.cpu.steps + 3_000_000);
+            let _ = rt.run(rt.cpu.steps + 2_500_000);
             if !rt.m.range_hits.is_empty() {
-                println!("DLGTABLE: first write seen at round {round}");
+                println!("DLGTABLE: first write seen at exit round {round}");
                 break;
+            }
+        }
+        if rt.m.range_hits.is_empty() {
+            for round in 0..10 {
+                let ring = ((round as u32 * 144) % 1440) as u16;
+                rt.set_mouse_pos(ring, 100);
+                let _ = rt.run(rt.cpu.steps + 1_200_000);
+                rt.mouse_press(0);
+                let _ = rt.run(rt.cpu.steps + 400_000);
+                rt.mouse_release(0);
+                let _ = rt.run(rt.cpu.steps + 3_000_000);
+                if !rt.m.range_hits.is_empty() {
+                    println!("DLGTABLE: first write seen at nav round {round}");
+                    break;
+                }
             }
         }
 
