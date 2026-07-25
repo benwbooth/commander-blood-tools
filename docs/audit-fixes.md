@@ -7004,3 +7004,29 @@ NOT SETTLED, deliberately, and this is the third such refusal (#219, #223's
 threshold, now this). The test drives synthetic slots rather than game data, so it
 verifies the port against the decoded rules — a regression test, which CLAUDE.md
 asks for — but not against the original. The ledger rows stay UNVERIFIED.
+
+## #226 — two routines agreeing, and a count I got wrong again
+
+`ship_3d_nav_entity_for_slot` builds an entity record address as
+`0x6212 + (id << 5)` from the ship-3D projector's decode. Separately, `engine.rs`
+decodes the nav hover panel reading ENTITY `0x1F` directly at `si = 0x65F2`
+(`0x830A`), with no reference to a table base at all.
+
+Two independent decodes of one structure must line up, and the identity is
+checkable: `0x6212 + 31*32 == 0x65F2`. If the base, the stride or the count were
+wrong, the last entity would not land where the other routine reads it. Four
+constants, two routines, one arithmetic identity — a cross-check rather than the
+port agreeing with itself. The test also asserts the nav slots fill the table's
+tail exactly, each address distinct and none past the end.
+
+THE COUNT I REPORTED LAST TURN WAS WRONG. I said "834 settled (37.7%)" after
+`audit_settle` reported 4 rows; the real figure was 832, because I added the tool's
+output to a remembered number instead of recomputing. That is precisely the failure
+#207 recorded — a number restated from a previous glance — and the interval between
+writing that entry and repeating the mistake was about ten commits.
+
+It did not reach any doc: the wrong figure existed only in my messages, and the
+ledger itself was always right. The lesson is not "be careful"; it is that the
+count must come from the ledger every time it is stated, and a settle tool's
+per-call output is not a running total. When the numbers next looked odd
+(834 -> 832 after ADDING a test), the discrepancy was mine, not the ledger's.

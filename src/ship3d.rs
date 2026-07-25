@@ -4316,6 +4316,69 @@ fn next_target_list_draw_color(state: &mut Ship3dTargetHitState, activate: bool)
 #[cfg(test)]
 mod tests {
 
+    /// TWO ROUTINES MUST AGREE ABOUT THE ENTITY TABLE.
+    ///
+    /// `ship_3d_nav_entity_for_slot` builds an entity's record address as
+    /// `0x6212 + (id << 5)` — table base, stride and count all decoded from the
+    /// ship-3D projector. Somewhere else entirely, `engine.rs` decodes the nav
+    /// hover panel reading ENTITY `0x1F`'s record directly at `si = 0x65F2`
+    /// (`0x830A`), with no reference to the table base at all.
+    ///
+    /// Those are independent decodes of the same structure, so they have to line
+    /// up: `0x6212 + 31*32 == 0x65F2`. If the base, the stride or the count were
+    /// wrong, the last entity would not land where the other routine reads it.
+    /// That makes this a real cross-check rather than the port agreeing with
+    /// itself — four constants, two routines, one arithmetic identity.
+    #[test]
+    fn the_entity_table_base_stride_and_count_agree_with_the_hover_panel() {
+        /// `si = 0x65F2` @`0x830A` — decoded in `engine.rs`, restated here only as
+        /// the value this identity must reproduce.
+        const HOVER_PANEL_LAST_ENTITY: u16 = 0x65F2;
+
+        assert_eq!(
+            SHIP_3D_ENTITY_TABLE + (SHIP_3D_ENTITY_COUNT - 1) * SHIP_3D_ENTITY_STRIDE,
+            HOVER_PANEL_LAST_ENTITY,
+            "the last of the {} entities does not land where 0x830A reads it",
+            SHIP_3D_ENTITY_COUNT
+        );
+
+        // The nav slots occupy the tail of that table, starting at 0x15.
+        let first = ship_3d_nav_entity_for_slot(0).expect("slot 0 exists");
+        assert_eq!(first.0, SHIP_3D_NAV_ENTITY_BASE);
+        assert_eq!(
+            first.1,
+            SHIP_3D_ENTITY_TABLE + SHIP_3D_NAV_ENTITY_BASE * SHIP_3D_ENTITY_STRIDE
+        );
+
+        // Every slot is distinct, in range, and stops at the table's end.
+        let mut seen = std::collections::BTreeSet::new();
+        let mut last_slot = 0usize;
+        for slot in 0..64usize {
+            match ship_3d_nav_entity_for_slot(slot) {
+                Some((id, address)) => {
+                    assert!(id < SHIP_3D_ENTITY_COUNT, "entity {id} past the table");
+                    assert!(
+                        address <= HOVER_PANEL_LAST_ENTITY,
+                        "slot {slot} addresses {address:#x}, past the last entity"
+                    );
+                    assert!(seen.insert(address), "slot {slot} reuses an address");
+                    last_slot = slot;
+                }
+                None => {
+                    assert!(
+                        SHIP_3D_NAV_ENTITY_BASE as usize + slot >= SHIP_3D_ENTITY_COUNT as usize,
+                        "slot {slot} was rejected while still inside the table"
+                    );
+                }
+            }
+        }
+        assert_eq!(
+            last_slot + 1,
+            (SHIP_3D_ENTITY_COUNT - SHIP_3D_NAV_ENTITY_BASE) as usize,
+            "the nav slots do not fill the table's tail exactly"
+        );
+    }
+
     /// THE DIRTY-RECT COLLECTOR'S CONTRACT, `0x9B98`'s consumer
     /// (`collect_ship_3d_dirty_sprite_slot_render_commands`).
     ///
