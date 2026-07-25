@@ -7179,3 +7179,35 @@ list only held then-UNVERIFIED rows, so the batch never re-settled it. One row
 lost to my own sequencing, not a tool bug. Re-settled, and `audit_suggest` now
 reports 2 exercised-only rows rather than 1, which is the check that nothing else
 was lost the same way.
+
+## #232 — offsets that name what lives at them
+
+The rest of `bloodprg.rs`'s ship-3D block is CODE offsets rather than DS
+addresses: `SHIP_3D_TARGET_RECORD_SELECT_OFFSET = 0x031b`,
+`SHIP_3D_TRANSITION_STATE_OFFSET = 0x06f2`, and so on. #231 left them because an
+offset needs its segment before an instruction can be named.
+
+The segment is two lines above them. `SHIP_PRESENTATION_SEGMENT = 0x0a9a` gives
+file base `0x600 + 0x0A9A*16 = 0xAFA0`, and every offset resolves onto a routine
+this campaign has already read:
+
+```text
+   0x031b -> 0xB2BB   the target selector      (#192)
+   0x03ae -> 0xB34E   the navigation update
+   0x06f2 -> 0xB692   the transition updater   (#218)
+```
+
+So the names are CHECKABLE CLAIMS, and the test checks them three ways. The two
+independently disassembled routines must show their exact opening bytes —
+`56 06 57` (`push si/es/di`) and `F6 06 33 25` (`test byte [0x2533],1`). Every
+constant NAMED as a call site must land on `E8` or `9A`. Every routine offset must
+land on a prologue rather than mid-instruction.
+
+That last one is what makes this more than restating the constants: x86 is
+variable-length, so a wrong offset lands inside an instruction and shows up as a
+nonsense opcode. Shifting `0x06f2` to `0x06f3` fails with "not `test byte
+[0x2533],1`"; restoring it passes.
+
+Twelve rows settled ASM, including the segment itself. The block that was thirty
+bare numbers an hour ago is now twenty-two cited constants and a handful of
+genuinely undocumented ones.

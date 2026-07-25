@@ -139,6 +139,13 @@ pub const SHIP_3D_INTERPOLATION_GATE_SEGMENT: u16 = 0x008b;
 pub const SHIP_3D_INTERPOLATION_GATE_OFFSET: u16 = 0x0fad;
 pub const SHIP_3D_TARGET_QUERY_LAYOUT_SEGMENT: u16 = NAV_CODE_SEGMENT;
 pub const SHIP_3D_TARGET_QUERY_LAYOUT_OFFSET: u16 = 0x0c48;
+/// THE SHIP-3D CODE SEGMENT, and the base every offset below is relative to:
+/// `file = 0x600 + 0x0A9A*16 = 0xAFA0`. The offsets are not free-floating
+/// numbers — each resolves to a routine this campaign has already disassembled
+/// (`0x031b` -> `0xB2BB`, the target selector of audit-fixes #192; `0x06f2` ->
+/// `0xB692`, the transition updater of #218), and
+/// `ship_3d_offsets_resolve_to_the_routines_they_name` checks every one against
+/// the image.
 pub const SHIP_PRESENTATION_SEGMENT: u16 = 0x0a9a;
 pub const SHIP_PRESENTATION_ENTRY_OFFSET: u16 = 0x0000;
 pub const SHIP_3D_HUD_INIT_OFFSET: u16 = 0x00d9;
@@ -3072,6 +3079,75 @@ pub const PRESENTATION_3D_MARKERS: &[BinarySymbol] = &[
 
 #[cfg(test)]
 mod tests {
+
+    /// THE OFFSET CONSTANTS' NAMES ARE CHECKABLE CLAIMS.
+    ///
+    /// Each is relative to `SHIP_PRESENTATION_SEGMENT` (file base `0xAFA0`), and
+    /// the name says what lives there. Two are routines this campaign
+    /// disassembled independently, so their first bytes are known; the rest split
+    /// into "a function starts here" and "a CALL is here", and those are
+    /// distinguishable in the image: a prologue begins with a push/test, a call
+    /// site with `E8` (near) or `9A` (far).
+    ///
+    /// A wrong offset lands mid-instruction and fails both ways, which is what
+    /// makes this more than restating the constants.
+    #[test]
+    fn ship_3d_offsets_resolve_to_the_routines_they_name() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        let base = 0x600 + SHIP_PRESENTATION_SEGMENT as usize * 16;
+        assert_eq!(base, 0xAFA0, "the segment base moved");
+
+        // Independently disassembled in #192 and #218: exact opening bytes.
+        assert_eq!(
+            &exe[base + SHIP_3D_TARGET_RECORD_SELECT_OFFSET as usize..][..3],
+            &[0x56, 0x06, 0x57],
+            "0x031b is not `push si / push es / push di` at 0xB2BB"
+        );
+        assert_eq!(
+            &exe[base + SHIP_3D_TRANSITION_STATE_OFFSET as usize..][..4],
+            &[0xF6, 0x06, 0x33, 0x25],
+            "0x06f2 is not `test byte [0x2533],1` at 0xB692"
+        );
+
+        // Every constant NAMED as a call site must land on a call opcode.
+        for (name, offset) in [
+            ("BAND_COPY", SHIP_3D_ALT_FRAMEBUFFER_BAND_COPY_CALL_OFFSET),
+            ("TEMP_SND_LOAD", SHIP_3D_TEMP_SND_LOAD_CALL_OFFSET),
+            ("TEMP_SND_RESTORE", SHIP_3D_TEMP_SND_RESTORE_CALL_OFFSET),
+        ] {
+            let opcode = exe[base + offset as usize];
+            assert!(
+                opcode == 0xE8 || opcode == 0x9A,
+                "{name} offset {offset:#06x} lands on {opcode:#04x}, not a call"
+            );
+        }
+
+        // Every routine offset must land on a plausible prologue rather than
+        // mid-instruction: a push (0x50..0x57, 0x06, 0x0E, 0x16, 0x1E), a 0x66
+        // operand-size prefix, or a `test byte [mem]` (0xF6).
+        for (name, offset) in [
+            ("ENTRY", SHIP_PRESENTATION_ENTRY_OFFSET),
+            ("HUD_INIT", SHIP_3D_HUD_INIT_OFFSET),
+            ("TARGET_RECORD_SELECT", SHIP_3D_TARGET_RECORD_SELECT_OFFSET),
+            ("NAVIGATION_UPDATE", SHIP_3D_NAVIGATION_UPDATE_OFFSET),
+            ("TEMP_SND_SETUP", SHIP_3D_TEMP_SND_SETUP_OFFSET),
+            ("TRANSITION_STATE", SHIP_3D_TRANSITION_STATE_OFFSET),
+            ("PLANE_BAND_COPY", SHIP_3D_PLANE_BAND_COPY_OFFSET),
+            ("DEPTH_SCROLL_STEP", SHIP_3D_DEPTH_SCROLL_STEP_OFFSET),
+        ] {
+            let opcode = exe[base + offset as usize];
+            let is_push = (0x50..=0x57).contains(&opcode)
+                || matches!(opcode, 0x06 | 0x0E | 0x16 | 0x1E);
+            assert!(
+                is_push || opcode == 0x66 || opcode == 0xF6,
+                "{name} offset {offset:#06x} lands on {opcode:#04x}, not a prologue"
+            );
+        }
+    }
     use super::*;
 
     fn fixture() -> Option<BloodPrg> {
