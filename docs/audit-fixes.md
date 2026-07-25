@@ -4851,3 +4851,33 @@ the depth model, and a port that wrote unconditionally would look right in a sti
 frame and wrong in motion.
 
 Cited instructions 149 -> 158; the queue 75 -> 73.
+
+## #150 — compare before write, or the dirty list means nothing
+
+Two more rows off #141's queue.
+
+`build_ship_3d_projection_matrix` (`0x98B9`) loads the angle table with
+`mov bp,0x4f45` — literally `SHIP_3D_ANGLE_TABLE`'s address — reads the angle
+words, and leaves the matrix at `DS:0x2F95` for `ship_3d_point_cloud_project`
+(`0x9A10`) to run the 1000 records through. The port's odd-looking field names
+(`angle_2f71`, `projection_angle_2f6d`, `angle_2f6f`) are named for their globals
+because that is the only thing that distinguishes three consecutive words, and
+keeping the names makes the correspondence checkable.
+
+`update_ship_3d_sprite_slot_position` (`0x420D`) is the more interesting one:
+
+```text
+  0x4210  shl ax,5 / mov bx,0x6212 / add bx,ax   slot = 0x6212 + id*32
+  0x421D  test al,0x81 / je                      ACTIVE mask 0x81
+  0x4221  cmp dx,gs:[bx+8]  / je / or al,2 / mov gs:[bx+8],dx
+  0x422D  cmp cx,gs:[bx+0xa]/ je / or al,2 / mov gs:[bx+0xa],cx
+```
+
+Each coordinate is COMPARED before being written, and the dirty bit is set only
+when the value actually changes. Moving a slot to where it already is marks
+nothing. The port mirrors that per field — and writing both unconditionally, which
+is the obvious simplification, would dirty every slot every frame and quietly
+defeat the dirty-rect list the renderer walks at `DS:0x6612`. The screen would
+still be correct; only the reason for the dirty list would be gone.
+
+Cited instructions 158 -> 165; the queue 73 -> 72.

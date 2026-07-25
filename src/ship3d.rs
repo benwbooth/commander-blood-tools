@@ -1702,6 +1702,25 @@ pub fn run_ship_3d_procedural_update(
     effect
 }
 
+/// Build the 3x3 fixed-point projection matrix, `ship_3d_projection_matrix_build`
+/// @`0x98B9`:
+///
+/// ```text
+///   0x98CB  mov bp,0x4f45      the ANGLE TABLE -- SHIP_3D_ANGLE_TABLE's address
+///   0x98CE  mov si,0x2f7d      the matrix scratch
+///   0x98D1  mov di,[0x2f71]    the first angle word
+/// ```
+///
+/// The result lands at `DS:0x2F95`, which `ship_3d_point_cloud_project`
+/// (`0x9A10`) then runs the 1000 `DS:0x2FC1` records through. The three angle
+/// fields are named for their globals — `angle_2f71`, `projection_angle_2f6d`,
+/// `angle_2f6f` — because that is the only thing distinguishing them; the routine
+/// reads three words and the port's names keep the correspondence checkable.
+///
+/// `matrix_pair_for_angle` doubles each table entry to Q15, matching `0x990C`'s
+/// `movsx` + `add ebx,ebx` (see `render_nav_pyramid_sprites`).
+///
+/// Cited here because it was settled ASM with no doc (#141's queue).
 pub fn build_ship_3d_projection_matrix(
     angle_table: &[Ship3dAngleTableEntry],
     angles: Ship3dMatrixAngles,
@@ -2580,6 +2599,24 @@ pub fn project_ship_3d_object_sprite(
     })
 }
 
+/// Update a sprite slot's screen position, `sprite_slot_position_update`
+/// @`0x420D`:
+///
+/// ```text
+///   0x4210  shl ax,5 / mov bx,0x6212 / add bx,ax   slot = 0x6212 + id*32
+///   0x421D  test al,0x81 / je                      ACTIVE mask 0x81
+///   0x4221  cmp dx,gs:[bx+8]  / je / or al,2 / mov gs:[bx+8],dx    x  at +0x08
+///   0x422D  cmp cx,gs:[bx+0xa]/ je / or al,2 / mov gs:[bx+0xa],cx  y  at +0x0A
+/// ```
+///
+/// Each coordinate is compared BEFORE being written, and the dirty bit (`or al,2`)
+/// is set only when the value actually changes — so moving a slot to where it
+/// already is marks nothing dirty. The port's per-field `if` mirrors that; writing
+/// both unconditionally would dirty every slot every frame and defeat the dirty
+/// list the renderer walks (`DS:0x6612`).
+///
+/// `SHIP_3D_SPRITE_SLOT_ACTIVE_MASK` is that `0x81`, `..._DIRTY_FLAG` the `2`, and
+/// `0x6212` is `SHIP_3D_ENTITY_TABLE` with its 32-byte stride.
 pub fn update_ship_3d_sprite_slot_position(
     descriptor: &mut Ship3dObjectSpriteDescriptor,
     x: u16,
