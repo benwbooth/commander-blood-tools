@@ -2231,7 +2231,8 @@ impl SpecialObjectSlots {
     }
 }
 
-/// The object an ACTOR record belongs to: the record sits at `object + TALK_FIELD`
+/// The object an ACTOR record belongs to: the record sits at `object + TALK_FIELD`,
+/// the `0x3A` field the A6 handler resolves at `0x660D`
 /// (`0x3A`), so this subtracts. The `Option` guards a record below `0x3A`, which
 /// cannot be an actor record — the game never forms one, so this is the port
 /// declining to compute a nonsense offset rather than a case the original handles.
@@ -2295,7 +2296,8 @@ fn record_owner_is_active(
         .map(|owner| state_u8(state, owner.wrapping_add(2)) & 1 != 0)
 }
 
-/// Whether an actor record's OBJECT is active — bit 0 at `object + 2`, reached by
+/// Whether an actor record's OBJECT is active — bit 0 at `object + 2`, the flag
+/// pair `0x6073` tests, reached by
 /// subtracting `TALK_FIELD` from the record. Unknown resolves to FALSE here (not
 /// `None`): a record whose object cannot be found is not an active actor.
 fn actor_record_is_active(state: &[u8], record_offset: u16) -> bool {
@@ -2341,7 +2343,8 @@ fn actor_record_condition(
     Some(if inverted { !matched } else { matched })
 }
 
-/// The `0xC4` SET write: type `0xC4`, the related offset at `+2`, and ZERO at
+/// The `0xC4` SET write (handler `0x6C7E`): type `0xC4`, the related offset at
+/// `+2`, and ZERO at
 /// `+4`. The third word is written every time — it is not left as found — which is
 /// what makes a freshly written actor record distinguishable from one carrying
 /// state from a previous use.
@@ -2823,7 +2826,8 @@ fn ship3d_c1_source_records_from_bytes(source_list_bytes: &[u8]) -> Option<Vec<u
     None
 }
 
-/// Read a record's three words as a ship-3D state slot — `{opcode, operand,
+/// Read a record's three words as a ship-3D state slot, the layout the `0xC1`
+/// handler `0x6B4C` writes — `{opcode, operand,
 /// aux}`, the same `+0`/`+2`/`+4` layout every record writer uses. The third word
 /// is the one carrying `2`/`1`/`0` for `0xC1`/`0xC3`/`0xC4`, so a slot round-trips
 /// through here without losing which kind it is.
@@ -3039,7 +3043,8 @@ fn write_c2_record_state_direct(
     true
 }
 
-/// Zero all THREE words of a record — type, related, and the third slot that
+/// Zero all THREE words of a record, as the `0xC9` clear at `0x6FB9` does — type,
+/// related, and the third slot that
 /// distinguishes `0xC1`/`0xC3`/`0xC4` (2/1/0). Clearing only the type would leave
 /// a record that reads as empty to a type test and still carries its old related
 /// offset, which the `0xC8` guard (#171) would then see as non-empty.

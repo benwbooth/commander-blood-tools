@@ -5644,3 +5644,24 @@ outright, which is the caller contract #175 recorded on `insert` being honoured
 here.
 
 The queue: 20 -> 18.
+
+## #179 — an opcode is not an address
+
+Five rows stayed in the uncited queue AFTER being documented, and the reason is
+worth stating: their docs cite OPCODES (`0xC4`, `0xC9`) and the ledger's address
+pattern needs three or more hex digits. `0xC4` is a value; `0x6C7E` is where the
+code that acts on it lives.
+
+That is the right rule, not a technicality. "This writes a `0xC4` record" describes
+the data; "handler `0x6C7E`" says where to go and check. Only the second is a
+citation, and a reader following the first has nowhere to look.
+
+Five docs gained the handler they derive from — `write_actor_record` `0x6C7E`,
+`clear_record_words` `0x6FB9`, `ship3d_record_state_slot` `0x6B4C`,
+`actor_record_is_active` `0x6073`, `actor_object_offset_from_record` `0x660D` —
+and the queue fell 18 -> 13, since several other rows in the same files were
+carrying the same gap.
+
+The queue has now gone 91 -> 13 across #142-#179. What remains is mostly functions
+whose basis genuinely is another function (delegations, and helpers over
+already-cited constants) rather than a routine of their own.
