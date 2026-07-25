@@ -4750,9 +4750,20 @@ impl EngineState {
         self.draw_subtitle_revealed(text, n);
     }
 
-    /// Draw the pre-wrapped subtitle with only the first `visible` characters shown,
-    /// the newest one in the reveal-edge colour (0xFE) — the game's per-character
-    /// reveal. Non-visible characters aren't drawn yet.
+    /// Draw the pre-wrapped subtitle with only the first `visible` characters
+    /// shown, the newest in the reveal-edge colour — the game's per-character
+    /// reveal. Non-visible characters are not drawn yet.
+    ///
+    /// Renderer `0x3630` (`subtitle_render_string`). The colour is purely distance
+    /// from the reveal pointer — `0xFF` at it, `0xFE` one back, `0xFD` beyond —
+    /// and a fully revealed line parks the pointer past the terminator so every
+    /// character settles to `0xFD`. Rows 8/18 on the console at pitch 10.
+    ///
+    /// The details were already in the body comments below, including the 2026-07-24
+    /// correction that retracted a "completed lines redraw thin/white" reading. They
+    /// are repeated here because the audit ledger reads the DOC comment: evidence
+    /// inside a function body is invisible to it, which is why this row counted as
+    /// settled-without-citation in #141.
     fn draw_subtitle_revealed(&mut self, text: &str, visible: usize) {
         // The REAL subtitle model (renderer 0x3630, verified): the line draws in the
         // BOLD console font in the GREEN family THROUGHOUT — there is no second,

@@ -4769,3 +4769,30 @@ Cited instructions 145 -> 149; the queue 87 -> 86.
 Five rows in, `0x299:0x40E` has now appeared in the citation for the choice box,
 the confirm dialog and this panel. A reader who meets any one of them cold would
 reasonably assume a filled rectangle; the routine says otherwise every time.
+
+## #147 — a citation can hide in the body, and my measurement of how often was wrong
+
+`draw_subtitle_revealed` was settled ASM with no ledger citation, and its body was
+full of them — renderer `0x3630`, the `0xFF`/`0xFE`/`0xFD` reveal-colour law, even
+a dated retraction of an earlier reading. The evidence existed; the ledger reads
+the DOC comment, so none of it counted.
+
+Two fixes followed, one of them mine to correct.
+
+`audit_inventory.py` now scans a function's BODY COMMENTS when its doc has no
+address — brace-bounded, comments only, because a bare literal in code is a VALUE
+and treating it as an address is how `"320x200"` became a citation in #123.
+`console_box_click` gained `0x8508,0x84E6,0x84EE,0x84F6`, which is exactly right:
+those are the hit-test's own citations, written where the author was working.
+
+Then I measured how general this was and got 56 of 83. That number was WRONG. It
+came from a fixed 60-line window with no brace counting, so it read addresses out
+of the NEXT function and attributed them to this one — the same over-reach the
+scan itself was written to avoid, in the tool I used to check the scan.
+Brace-bounded, the true count of uncited-ASM functions with an address in their
+own body comments is **0**: the rows that had one already gained it.
+
+So the queue is 74 rows that genuinely say nothing about their basis, not 27. The
+correction matters more than the count: I nearly recorded "most of these are just
+misplaced citations" as the character of the remaining work, on the strength of a
+measurement that was measuring its neighbours.

@@ -177,6 +177,25 @@ for root, _, files in os.walk(SRC):
                 doc = []
                 continue
             fulldoc = " ".join(doc)
+            # A citation may live in the function BODY rather than the doc: 56 of
+            # the 83 uncited-ASM functions in #141's queue had an address in a body
+            # comment, which is a real citation placed where the ledger did not
+            # look. Scan the body's COMMENT lines only -- a bare literal in code is
+            # a VALUE, and treating it as an address is how "320x200" became a
+            # citation in #123.
+            if not ADDR.search(fulldoc):
+                body_comments = []
+                depth, started = 0, False
+                for probe in lines[i - 1 : i + 80]:
+                    depth += probe.count("{") - probe.count("}")
+                    if "{" in probe:
+                        started = True
+                    st_probe = probe.strip()
+                    if st_probe.startswith("//"):
+                        body_comments.append(st_probe)
+                    if started and depth <= 0:
+                        break
+                fulldoc = (fulldoc + " " + " ".join(body_comments)).strip()
             doctext = fulldoc[:400]  # evidence column stays readable
             # ...but addresses come from the WHOLE doc: a long transcription puts
             # its citations past 400 chars, and truncating them away made a
