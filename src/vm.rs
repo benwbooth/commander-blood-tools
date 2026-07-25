@@ -4983,6 +4983,40 @@ impl VmMachine {
         &self.ship_slots
     }
 
+    /// The console CONTACT MENU, built the way the row-2 handler builds it.
+    ///
+    /// `0x87BD` (bridge console row 2, reached through the per-row handler table
+    /// at `CS:0x0F29` -> file `0x8709`, entry 2 = `0x0FDD`) is:
+    ///
+    /// ```text
+    ///   0x87C5  mov si,0x6D3E          the 16-entry ship-slot array
+    ///   0x87C8  mov di,0x2B13          the menu word list
+    ///   0x87CB  lodsw                  next slot
+    ///   0x87CC  or ax,ax / je 0x87CB   EMPTY slot: skip it, do not emit
+    ///   0x87D0  cmp ax,-1 / je 0x87DB  0xFFFF terminates
+    ///   0x87D5  add ax,4 / stosw       emit RECORD+4 -- the inline NAME
+    /// ```
+    ///
+    /// So the menu is whoever is actually aboard, named from their own object
+    /// record, and it is never a fixed list. `DS:0x6D3E` is empty in the image
+    /// (all zeros at file `0x1415E`) because the array is runtime state: the
+    /// same 16 slots the insert/find/remove scans at `0x5FD8`, `0x5FF6` and
+    /// `0x6008` walk with `mov cx,0x10`, which this VM models as
+    /// [`Self::ship_slots_pub`].
+    ///
+    /// The `+4` is applied by [`Self::object_inline_name`], so it is not repeated
+    /// here.
+    pub fn ship_contact_menu_words(&self) -> Vec<String> {
+        self.ship_slots
+            .iter()
+            .copied()
+            .filter(|slot| *slot != 0) // 0x87CC: empty slots are skipped
+            .take_while(|slot| *slot != 0xFFFF) // 0x87D0: 0xFFFF ends the list
+            .map(|owner| self.object_inline_name(owner))
+            .filter(|name| !name.is_empty())
+            .collect()
+    }
+
     /// Insert an owner into the special-slot list — `vm_special_slot_insert`
     /// `0x5FF6`: scan the 16 words at `DS:0x6D3E` for the owner and return CF set
     /// if already present (`0x5FFE..0x601F`); otherwise scan for a ZERO slot and
@@ -5129,6 +5163,12 @@ impl VmMachine {
 
     /// Public record write for the drive layer (the click stand-in's
     /// presentation end and test scaffolding).
+    /// Byte-level record write, for tests that need to place an inline name at
+    /// `record+4` the way the shipped object records do.
+    pub fn rec_write_u8_pub(&mut self, byte_off: u16, b: u8) {
+        self.rec_write_u8(byte_off, b);
+    }
+
     pub fn rec_write_pub(&mut self, off: u16, v: u16) {
         self.rec_write(off, v);
     }
@@ -6407,6 +6447,41 @@ pub fn decompile_script(
 
 #[cfg(test)]
 mod tests {
+
+    /// The contact menu is built from the SHIP-SLOT ARRAY, not from a fixed list:
+    /// `0x87BD` skips empty slots (`or ax,ax / je`), stops at `0xFFFF`, and emits
+    /// record+4 (the inline name) for each occupant. This pins all three rules.
+    #[test]
+    fn contact_menu_comes_from_the_occupied_ship_slots() {
+        let mut m = VmMachine::new();
+        // Names live at record+4, so write each one there as CP437 bytes.
+        fn put(m: &mut VmMachine, at: u16, name: &str) -> u16 {
+            for (i, b) in name.bytes().enumerate() {
+                m.rec_write_u8_pub(at.wrapping_add(4).wrapping_add(i as u16), b);
+            }
+            m.rec_write_u8_pub(at.wrapping_add(4).wrapping_add(name.len() as u16), 0);
+            at
+        }
+        let a = put(&mut m, 0x100, "bob_morlock");
+        let b = put(&mut m, 0x200, "izwalito");
+        let c = put(&mut m, 0x300, "never_reached");
+
+        m.ship_slots = [0u16; 16];
+        m.ship_slots[0] = a;
+        m.ship_slots[2] = b; // slot 1 empty -- skipped, not emitted as a blank
+        m.ship_slots[3] = 0xFFFF;
+        m.ship_slots[4] = c; // behind the terminator: must not appear
+
+        assert_eq!(
+            m.ship_contact_menu_words(),
+            vec!["bob_morlock".to_string(), "izwalito".to_string()],
+            "occupied slots up to the 0xFFFF terminator, named from record+4"
+        );
+
+        // An empty ship yields an EMPTY menu -- the port must not invent entries.
+        m.ship_slots = [0u16; 16];
+        assert!(m.ship_contact_menu_words().is_empty());
+    }
     /// DOS blood.sav round-trip: the save layout is exactly the VM's arrays
     /// (@0x1C3F: profile word, 0x200 state, 0x60 slots, VAR-sized record table).
     /// THE BITCODE ROUND TRIP: decode every token of every real script with

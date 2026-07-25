@@ -87,7 +87,9 @@ VEC_OPEN = re.compile(r"vec!\[")
 # Sites known to be open, each tracked in docs/port-validation.md. Listed so the
 # CLASS cannot grow silently while these are unfixed -- a new one fails the check.
 KNOWN_OPEN = {
-    ("src/main.rs", "BOB_MORLOCK"),
+    # BOB_MORLOCK / CANCEL is FIXED -- the contact menu now comes from the ship-slot
+    # array via `VmMachine::ship_contact_menu_words` (0x87BD). Entry removed so it
+    # cannot come back.
     ("src/main.rs", "MUSIC_OFF"),
 }
 

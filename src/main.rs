@@ -1518,7 +1518,19 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         }
                         Some(2) => {
                             engine.bridge.engaged_row = Some(2);
-                            engine.console_box = vec!["BOB_MORLOCK".into(), "CANCEL".into()];
+                            // The contact list is the game's, not ours: the row-2
+                            // handler at 0x87BD walks the 16-entry ship-slot array
+                            // DS:0x6D3E and emits each occupied slot's record+4 --
+                            // the object's INLINE NAME. See
+                            // `VmMachine::ship_contact_menu_words`.
+                            engine.console_box = script_vm
+                                .borrow()
+                                .as_ref()
+                                .map(|m| m.ship_contact_menu_words())
+                                .unwrap_or_default()
+                                .iter()
+                                .map(|w| w.to_uppercase())
+                                .collect();
                             engine.console_box_kind = 2;
                         }
                         Some(3) => {

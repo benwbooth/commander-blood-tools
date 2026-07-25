@@ -3563,3 +3563,50 @@ in the guard's `KNOWN_OPEN`, so the class cannot grow while they are unfixed: a
 NEW hardcoded label list fails the check. Verified the detector actually fires on
 them with the allowlist disabled — an allowlist that hides a detector that never
 worked would be worse than no guard.
+
+## #109 — the contact menu is whoever is aboard, not two words in a file
+
+One of the two open label lists from #108 is closed, by decoding what the console
+row actually does rather than patching what it shows.
+
+The bridge click at `0x86A4` sets `[0x2A19] = row+1`, ORs `0xC` into the game-flag
+word `[0x2793]` — the word opcode `0xCE` branches on, so console rows are
+script-visible — places a choice box at `x=0x64` (the already-decoded
+`CHOICE_BOX_CENTER_X`) and `y = row*0x12 + 0x50`, then dispatches:
+
+    0x8700  call word ptr cs:[bx+0xf29]      bx = row*2
+
+CS here is segment `0x071E` (base file `0x77E0`), NOT the `0x299` that carries the
+blit family — so the table is at file `0x8709`, immediately after this routine's
+`ret` at `0x8708`, which is exactly where a local jump table belongs. Entries
+`0x0F33, 0x0F4C, 0x0FDD, 0x1068, 0x108C, 0x06F6` give handlers `0x8713`, `0x872C`,
+`0x87BD`, `0x8848`, `0x886C`, `0x7ED6`.
+
+Row 2's handler `0x87BD` is the contact menu:
+
+```text
+  mov si,0x6D3E          the 16-entry ship-slot array
+  mov di,0x2B13          the menu word list
+  lodsw                  next slot
+  or ax,ax / je          EMPTY slot -- skip, do not emit a blank
+  cmp ax,-1 / je         0xFFFF terminates
+  add ax,4 / stosw       emit RECORD+4 -- the object's INLINE NAME
+```
+
+`DS:0x6D3E` reads as all zeros in the image (file `0x1415E`), which at first looks
+like a dead end — but it is runtime state, and the port ALREADY MODELS IT. The
+insert, find and remove scans at `0x5FD8`, `0x5FF6` and `0x6008` all walk it with
+`mov cx,0x10`, and those are `VmMachine::ship_slots`. The `+4` is
+`object_inline_name`, also already decoded and checked against the shipped data
+(630 of 640 kind-1 objects hold their DEB name there).
+
+So every piece existed; nothing connected them. `ship_contact_menu_words` is the
+handler transcribed, and `main.rs` calls it. The menu is now whoever is aboard,
+named from their own record — and EMPTY when nobody is, because the port does not
+invent entries. The test pins all three rules: empty slots skipped rather than
+emitted blank, a live slot behind the `0xFFFF` sentinel not emitted, names read
+from `record+4`.
+
+Removed from the guard's `KNOWN_OPEN`, so the hardcoded pair cannot return. The
+OPTION menu (`TEXT / MUSIC_OFF / SAVE / LOAD / QUIT / CANCEL`) is still open and
+still listed.
