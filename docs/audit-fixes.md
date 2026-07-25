@@ -1900,3 +1900,44 @@ which is how those four got put back.
 
 Ledger after the pass: 1414 items, 404 settled (ORACLE 209, ASM 136, INFRA 49,
 DATA 10), 810 UNVERIFIED.
+
+## FIX #56 — the 128-vs-176 font truncation was still live in the EXTRACTOR
+
+Reading `src/bloodprg.rs` row by row turned up the same defect this campaign
+already fixed once, still standing in a second place:
+
+    pub const DIALOGUE_FONT_ASCII_MAP_LEN: usize = 128;
+
+`font.rs` was corrected to 176 earlier — the map runs from `0x14C22` to the
+advance table at `0x14CD2`, which is 176 bytes — but `dialogue_font_tables()`
+was still slicing 128, so every consumer of the EXTRACTED font silently lost the
+accented characters. Verified against the image before changing anything: the 48
+entries past 128 are all in range, and **14 of them are live glyph indices**
+(`0x82`->`é`, `0x84`->`ä`, `0x85`->`à`, `0x87`->`ç`, `0x94`->`ö`, nine more).
+
+WHY IT SURVIVED A TEST. The test asserted
+
+    assert_eq!(font.ascii_map.len(), DIALOGUE_FONT_ASCII_MAP_LEN);
+
+which is unfalsifiable: the extractor sliced with that constant, so the assertion
+holds for ANY value of it. This is the self-referential-test trap, and it is worth
+naming because the row looked covered.
+
+Replaced with checks that can fail:
+* the map closes exactly on the advance table, and the advances exactly on the
+  glyph rows (extent by LAYOUT, not by constant);
+* every entry is `0xFF` or a valid glyph index;
+* the high half holds exactly 14 real mappings;
+* the extractor's bytes equal `font.rs`'s baked copy;
+* and the strongest one — the three offsets are read back out of `render_string`
+  as IMMEDIATES (`mov bx,0x7802` @`0x31C9`, the `gs:[eax+0x78b2]` displacement
+  @`0x31E7`, `mov bp,0x7908` @`0x31EC`), so the port's constants are checked
+  against the instructions that use them.
+
+POSITIVE CONTROL: perturbing `DIALOGUE_FONT_GLYPHS_FILE_OFFSET` by 2 now fails
+three tests. Before this change it failed none of the font ones.
+
+A sweep found seven more `X.len() == CONST` assertions of the same shape
+(`bloodprg.rs` x2, `bloodsav.rs` x4, `ship3d.rs` x1). They are recorded here as
+the next ones to re-ground; the font was taken first because it is the one every
+text surface depends on.

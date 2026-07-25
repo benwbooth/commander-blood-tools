@@ -25,7 +25,13 @@ pub const SCRIPT_RESOURCE_PROFILE_STRIDE: usize = SCRIPT_RESOURCE_PROFILE_SLOT_C
 pub const DIALOGUE_FONT_ASCII_MAP_FILE_OFFSET: usize = 0x14c22;
 pub const DIALOGUE_FONT_ADVANCES_FILE_OFFSET: usize = 0x14cd2;
 pub const DIALOGUE_FONT_GLYPHS_FILE_OFFSET: usize = 0x14d28;
-pub const DIALOGUE_FONT_ASCII_MAP_LEN: usize = 128;
+/// 176 (`0xB0`), NOT 128. The map runs from `0x14C22` to the advance table at
+/// `0x14CD2`, and the 48 entries past 128 are REAL: 14 of them are live glyph
+/// indices (`0x82`->`é`, `0x84`->`ä`, `0x85`->`à`, `0x87`->`ç`, `0x94`->`ö` and
+/// nine more), every one in range for the 86 glyphs. Truncating at 128 silently
+/// dropped every accented character the game can draw -- the same defect that was
+/// fixed in `font.rs` earlier in the campaign and left standing here.
+pub const DIALOGUE_FONT_ASCII_MAP_LEN: usize = 176;
 pub const DIALOGUE_FONT_GLYPH_COUNT: usize = 86;
 pub const DIALOGUE_FONT_GLYPH_HEIGHT: usize = 8;
 pub const SND_ENTRY_SEGMENT: u16 = 0x0b1b;
@@ -415,6 +421,12 @@ impl BloodPrg {
         }
     }
 
+    /// The raw image bytes, so a test can read an INSTRUCTION back and check a
+    /// constant against the immediate the code actually uses.
+    pub fn image_bytes(&self) -> &[u8] {
+        &self.data
+    }
+
     pub fn segoff_to_file(&self, segment: u16, offset: u16) -> usize {
         self.header.header_size() + segment as usize * 16 + offset as usize
     }
@@ -522,6 +534,15 @@ impl BloodPrg {
             .collect()
     }
 
+    /// The DIALOGUE FONT's three chained tables, at the offsets `render_string`
+    /// (`0x31C8`) loads them from as immediates: the ASCII->glyph map
+    /// `DS:0x7802` = file `0x14C22` (`mov bx,0x7802`), the per-glyph advances
+    /// `DS:0x78B2` = file `0x14CD2` (`mov dh,gs:[eax+0x78b2]`) and the 8-byte
+    /// glyph rows `DS:0x7908` = file `0x14D28` (`mov bp,0x7908`).
+    ///
+    /// The three close on each other exactly — map 176 entries, advances 86,
+    /// rows 86x8 — which is what bounds their extents; see
+    /// [`DIALOGUE_FONT_ASCII_MAP_LEN`] for the 128-vs-176 trap.
     pub fn dialogue_font_tables(&self) -> Result<DialogueFontTables> {
         let ascii_map = self
             .slice(
@@ -3950,9 +3971,62 @@ mod tests {
             return;
         };
         let font = binary.dialogue_font_tables().expect("font tables");
-        assert_eq!(font.ascii_map.len(), DIALOGUE_FONT_ASCII_MAP_LEN);
-        assert_eq!(font.advances.len(), DIALOGUE_FONT_GLYPH_COUNT);
+        // NOT `len() == THE_CONSTANT` — that passes for any constant. The extent
+        // is pinned by the LAYOUT: the map runs exactly up to the advance table,
+        // and the advances exactly up to the glyph rows.
+        assert_eq!(
+            DIALOGUE_FONT_ASCII_MAP_FILE_OFFSET + font.ascii_map.len(),
+            DIALOGUE_FONT_ADVANCES_FILE_OFFSET,
+            "the ASCII map must close exactly on the advance table"
+        );
+        assert_eq!(
+            DIALOGUE_FONT_ADVANCES_FILE_OFFSET + font.advances.len(),
+            DIALOGUE_FONT_GLYPHS_FILE_OFFSET,
+            "the advances must close exactly on the glyph rows"
+        );
         assert_eq!(font.glyph_rows.len(), DIALOGUE_FONT_GLYPH_COUNT);
+        // Every entry is either SKIP or a valid glyph index...
+        assert!(
+            font.ascii_map
+                .iter()
+                .all(|&e| e == 0xFF || (e as usize) < DIALOGUE_FONT_GLYPH_COUNT),
+            "an out-of-range entry would mean the extent is wrong"
+        );
+        // ...and the high half is not padding: 14 accented characters live there,
+        // which a 128-entry read drops silently.
+        let high_mappings = font.ascii_map[128..].iter().filter(|&&e| e != 0xFF).count();
+        assert_eq!(high_mappings, 14, "the accented characters past 0x80");
+        assert_ne!(font.ascii_map[0x82], 0xFF, "e-acute");
+        assert_ne!(font.ascii_map[0x87], 0xFF, "c-cedilla");
+        // The extractor and the rendering font must agree on the same table.
+        assert_eq!(
+            font.ascii_map.as_slice(),
+            crate::font::GAME_FONT_CHAR_MAP.as_slice(),
+            "bloodprg's extraction and font.rs's baked copy are the same bytes"
+        );
+        // STRONGEST available check on the three offsets: they are IMMEDIATES in
+        // `render_string` (0x31C8), so read them back out of the code.
+        //   0x31C8  bb 02 78              mov bx,0x7802     the ASCII map
+        //   0x31E3  67 65 8a b0 b2 78 ..  mov dh,gs:[eax+0x78b2]  the advances
+        //   0x31EB  bd 08 79              mov bp,0x7908     the glyph rows
+        const DS_BASE: usize = 0xD420;
+        let raw = binary.image_bytes();
+        let imm16 = |at: usize| u16::from_le_bytes([raw[at], raw[at + 1]]) as usize;
+        assert_eq!(
+            DS_BASE + imm16(0x31C9),
+            DIALOGUE_FONT_ASCII_MAP_FILE_OFFSET,
+            "mov bx,imm at 0x31C8"
+        );
+        assert_eq!(
+            DS_BASE + imm16(0x31E7),
+            DIALOGUE_FONT_ADVANCES_FILE_OFFSET,
+            "the gs:[eax+imm] displacement at 0x31E3"
+        );
+        assert_eq!(
+            DS_BASE + imm16(0x31EC),
+            DIALOGUE_FONT_GLYPHS_FILE_OFFSET,
+            "mov bp,imm at 0x31EB"
+        );
 
         let glyph_a = font.ascii_map[b'A' as usize] as usize;
         let glyph_m = font.ascii_map[b'M' as usize] as usize;
