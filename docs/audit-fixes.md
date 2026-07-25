@@ -6680,3 +6680,26 @@ WHAT A DEVICE IS STILL FOR, precisely: confirming it SOUNDS right. Not confirmin
 the mixing is right. That distinction is the whole reason this row moved — it sat
 closed for several sessions behind "no audio device", which was true of the output
 path and never true of the rule.
+
+## #215 — a validation row is a status line, not a diary
+
+The audio row had grown to roughly 5000 characters: six sessions of decode
+history accreted into one table cell, each entry appended as the understanding
+changed. Every sentence was true when written, and several were superseded by
+later ones in the same cell — including the original "not done here: this
+environment has no audio device", still sitting alongside the entry that closed it.
+
+That is worse than untidy. `docs/port-validation.md` is the WORK QUEUE; a row is
+read to answer "what is the state of this, and what is left". A row containing its
+own refuted premises answers neither, and the reader has to reconstruct the
+chronology to find the current position.
+
+Compacted to the current state plus pointers: the rule, where it is wired, what
+the tests cover, the supporting decodes by address, and the one remaining item.
+The derivation lives in `audit-fixes.md` #198-#201, #206, #213-#214, which is the
+file whose whole purpose is chronology.
+
+The general policy, worth applying to other long rows: port-validation says WHAT
+IS TRUE NOW; audit-fixes says HOW IT WAS FOUND, including what was believed and
+refuted along the way. Appending to a validation row instead of rewriting it
+conflates the two and slowly makes the queue unreadable.
