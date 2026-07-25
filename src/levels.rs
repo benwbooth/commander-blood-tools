@@ -114,6 +114,67 @@ pub fn parse_level_directory(image: &[u8]) -> Vec<String> {
     out
 }
 
+/// The runtime directory, parsed from the image once at startup.
+static RUNTIME_DIRECTORY: std::sync::OnceLock<Vec<LevelEntry>> = std::sync::OnceLock::new();
+
+/// The port's stem convention: `.spr` and `.ext` are stripped, every other
+/// extension is kept (`nosound.drv`, `script1.cod` stay whole).
+///
+/// This is the PORT'S normalisation, not the game's — the table stores full
+/// filenames. It exists because callers key worlds and sprites by bare stem, and
+/// it is reproduced here exactly so the derived directory equals the transcribed
+/// one over their common range (`derived_directory_reproduces_the_literal`).
+fn level_stem(name: &str) -> &str {
+    for ext in [".spr", ".ext"] {
+        if let Some(cut) = name.strip_suffix(ext) {
+            return cut;
+        }
+    }
+    name
+}
+
+/// Install the resource directory parsed from `BLOODPRG.EXE`.
+///
+/// Call once with the image at startup. Until then — and in tests that never
+/// load it — [`directory`] falls back to the transcribed [`LEVEL_DIRECTORY`],
+/// which is a 53-entry PREFIX of the real 95.
+///
+/// The names are leaked deliberately: the directory lives for the process, and
+/// leaking keeps `LevelEntry::stem` a `&'static str` so no caller signature
+/// changes. A one-time allocation of 95 short strings is the whole cost.
+pub fn init_level_directory(image: &[u8]) -> usize {
+    let entries: Vec<LevelEntry> = parse_level_directory(image)
+        .into_iter()
+        .enumerate()
+        .take(u8::MAX as usize)
+        .map(|(index, name)| {
+            let kind = if name.ends_with(".ext") {
+                LevelKind::World
+            } else if name.ends_with(".spr") {
+                LevelKind::Sprite
+            } else if name.starts_with("script") {
+                LevelKind::Script
+            } else {
+                LevelKind::Resource
+            };
+            let stem: &'static str = Box::leak(level_stem(&name).to_owned().into_boxed_str());
+            LevelEntry { index: index as u8, stem, kind }
+        })
+        .collect();
+    let len = entries.len();
+    let _ = RUNTIME_DIRECTORY.set(entries);
+    len
+}
+
+/// The directory in force: the image-parsed one when [`init_level_directory`]
+/// has run, else the transcribed prefix.
+pub fn directory() -> &'static [LevelEntry] {
+    RUNTIME_DIRECTORY
+        .get()
+        .map(Vec::as_slice)
+        .unwrap_or(LEVEL_DIRECTORY)
+}
+
 /// One directory entry read from the IMAGE, with the kind inferred from the
 /// filename's extension.
 ///
@@ -195,7 +256,7 @@ pub const LEVEL_DIRECTORY: &[LevelEntry] = &[
 /// map (the top-level `.ext` worlds, excluding cyberspace levels and `2`/`3` sub-levels
 /// which are entered from their parent world).
 pub fn primary_worlds() -> impl Iterator<Item = &'static LevelEntry> {
-    LEVEL_DIRECTORY.iter().filter(|e| {
+    directory().iter().filter(|e| {
         e.kind == LevelKind::World
             && !e.stem.starts_with("cyber")
             && !e.stem.ends_with('2')
@@ -205,7 +266,7 @@ pub fn primary_worlds() -> impl Iterator<Item = &'static LevelEntry> {
 
 /// Look up a directory entry by its resource ID.
 pub fn entry(index: u8) -> Option<&'static LevelEntry> {
-    LEVEL_DIRECTORY.get(index as usize)
+    directory().get(index as usize)
 }
 
 /// The resource ID the game loads a world by (its `FS:0x0c04` table index), given the
@@ -416,6 +477,40 @@ pub fn parse_world_art_table(exe: &[u8]) -> Vec<(String, u16)> {
 
 #[cfg(test)]
 mod tests {
+
+    /// The derived directory must reproduce the transcribed one over their common
+    /// range — same stems, same kinds, same indices. If it does, the literal adds
+    /// nothing and the parse can replace it; if it does not, one of them is wrong.
+    #[test]
+    fn derived_directory_reproduces_the_literal() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        let count = init_level_directory(&exe);
+        assert_eq!(count, 95, "the whole table is installed");
+
+        let live = directory();
+        assert_eq!(live.len(), 95, "accessors now see all 95 slots");
+        for want in LEVEL_DIRECTORY {
+            let got = &live[want.index as usize];
+            assert_eq!(got.stem, want.stem, "slot {} stem", want.index);
+            assert_eq!(got.kind, want.kind, "slot {} kind", want.index);
+            assert_eq!(got.index, want.index);
+        }
+
+        // And the worlds the literal never had are now reachable by ID.
+        assert_eq!(entry(54).map(|e| e.stem), Some("forest"));
+        assert_eq!(entry(76).map(|e| e.stem), Some("script3.cod"));
+        assert_eq!(entry(94).map(|e| e.kind), Some(LevelKind::World));
+
+        // The stem rule is the port's, and it is applied only to .spr/.ext.
+        assert_eq!(level_stem("fupcom.spr"), "fupcom");
+        assert_eq!(level_stem("black.ext"), "black");
+        assert_eq!(level_stem("nosound.drv"), "nosound.drv");
+        assert_eq!(level_stem("script1.cod"), "script1.cod");
+    }
 
     /// `0x51A5`/`0x51AC`/`0x51B3`: the descriptor stride and the residency test,
     /// checked as instruction BYTES so the constants cannot drift.
@@ -770,8 +865,23 @@ mod tests {
         assert!(!names.contains(&"cyber"));
         assert!(!names.contains(&"eden2"));
         assert!(!names.contains(&"ekatomb3"));
-        // The full planet set is 16 distinct top-level worlds (entries 5-18 + corpo +
-        // bigark; cyber and the numbered sub-levels are entered from a parent world).
-        assert_eq!(names.len(), 16);
+        // THE COUNT DEPENDS ON WHICH DIRECTORY IS IN FORCE, so this asserts against
+        // the directory rather than a remembered number. The transcribed prefix
+        // yields 16 top-level worlds; the image's full 95-slot table yields 32,
+        // because 16 more `.ext` worlds were never transcribed (audit-fixes #203).
+        //
+        // Asserting a bare 16 made this test ORDER-DEPENDENT once
+        // `init_level_directory` existed: any earlier test installing the real
+        // table changed the answer. Keying off `directory().len()` removes the
+        // dependence instead of hiding it behind a bigger constant.
+        let expected = if directory().len() > LEVEL_DIRECTORY.len() { 32 } else { 16 };
+        assert_eq!(names.len(), expected, "directory has {} slots", directory().len());
+
+        // Either way the filter's shape holds: every survivor is a World whose
+        // stem is neither cyberspace nor a numbered sub-level.
+        for stem in &names {
+            assert!(!stem.starts_with("cyber"));
+            assert!(!stem.ends_with('2') && !stem.ends_with('3'));
+        }
     }
 }

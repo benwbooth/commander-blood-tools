@@ -452,9 +452,21 @@ Two separate problems, both now measured rather than suspected:
    by name, so the port has been reaching for resources its own directory does
    not list. `level_entry_from_image` reads any slot, tested at 76, 86 and 94.
 
-STATUS: the parse and the pin are done; the literal still exists because callers
-index it by resource ID. Replacing it means routing `entry()` through the image,
-which is a small refactor with two call sites -- both inside `levels.rs`.
+STATUS: DONE. `init_level_directory(image)` installs the parsed 95-slot table in a
+`OnceLock` and `directory()` backs both `entry()` and `primary_worlds()`, so every
+caller now sees the real table; `main.rs` calls it at startup from whichever
+BLOODPRG.EXE path exists. `LEVEL_DIRECTORY` remains only as the fallback for
+contexts with no image, and `derived_directory_reproduces_the_literal` asserts the
+parse equals it stem-for-stem, kind-for-kind over all 53 shared slots -- so the
+literal is now checked BY the parse rather than trusted alongside it.
+
+CONSEQUENCE, measured: `primary_worlds()` goes from 16 to 32. Sixteen top-level
+`.ext` worlds were simply absent from the port's model. The nav map draws
+`take(7)`, so the visible surface is unchanged, but anything enumerating worlds
+was working from a little over half the set.
+
+The stem convention (`.spr`/`.ext` stripped, other extensions kept) is the PORT'S,
+not the game's -- the table stores full filenames -- and `level_stem` says so.
 
 NOTE ON KINDS: the table stores FILENAMES ONLY. `LevelKind` is the port's own
 classification by extension, and `level_entry_from_image` says so in its doc. The

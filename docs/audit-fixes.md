@@ -6478,3 +6478,38 @@ asserted rather than eyeballed. That is what #203 should have done in the first
 place: I derived "54" by reading a printed list instead of counting the source of
 truth, which is the same failure as the stale ledger figures corrected earlier in
 this campaign — a number restated from a previous glance rather than recomputed.
+
+## #208 — replacing the literal, and the flaky test it exposed
+
+#203 pinned the transcribed resource directory to the image; this replaces it.
+`init_level_directory(image)` installs the parsed 95-slot table in a `OnceLock`,
+`directory()` backs both `entry()` and `primary_worlds()`, and `main.rs` calls it
+at startup. `LEVEL_DIRECTORY` survives only as the no-image fallback.
+
+The acceptance test is the strong form: the derived directory must equal the
+transcribed one stem-for-stem, kind-for-kind, index-for-index across all 53 shared
+slots. It does. The literal is now CHECKED BY the parse rather than trusted
+beside it, and slots 53..94 are reachable for the first time.
+
+MEASURED CONSEQUENCE: `primary_worlds()` returns 32 instead of 16. Sixteen
+top-level `.ext` worlds were absent from the port's model of the game. The nav map
+draws `take(7)` so nothing visible changes, but every enumeration of worlds had
+been working from a little over half the set.
+
+THE FLAKY TEST THIS EXPOSED, which matters more than the count.
+`primary_worlds_are_the_named_planets` asserted a bare `names.len() == 16`. The
+moment `init_level_directory` existed, that assertion's truth depended on WHETHER
+AN EARLIER TEST IN THE SAME BINARY HAD INSTALLED THE REAL TABLE — a global
+`OnceLock` makes test order significant. It failed on this run; it could as easily
+have passed and failed later for no visible reason.
+
+The fix is not a bigger constant. The test now derives its expectation from
+`directory().len()` and additionally asserts the FILTER'S SHAPE (no `cyber`, no
+numbered sub-levels) which holds under either directory. Re-run three times to
+confirm stability. Updating `16` to `32` would have left the order-dependence in
+place and made the next such failure look like a regression in the code.
+
+Process note: the count would not have been caught by review. It surfaced because
+a test asserted a specific number against changed global state — the same reason
+#207's mis-stated count surfaced only when something asserted the literal's own
+length. Numbers in this project need asserting, not writing down.

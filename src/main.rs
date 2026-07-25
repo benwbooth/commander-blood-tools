@@ -376,6 +376,21 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     ) {
         engine.load_nav_sprites(&carte, &borxx);
     }
+    // Install the RESOURCE DIRECTORY from the image before anything reads it.
+    // `levels::LEVEL_DIRECTORY` is a transcribed 53-entry prefix of the game's
+    // real 95-slot table at FS:0x0c04; without this the port's world and script
+    // lookups can only see the copied part (audit-fixes #203, #207).
+    for candidate in [
+        format!("{iso}/BLOODPRG.EXE"),
+        format!("{assets}/BLOODPRG.EXE"),
+        "re/bin/BLOODPRG.EXE".to_string(),
+    ] {
+        if let Ok(image) = std::fs::read(&candidate) {
+            let n = commander_blood_tools::levels::init_level_directory(&image);
+            eprintln!("resource directory: {n} slots from {candidate}");
+            break;
+        }
+    }
     // The nav panel's status headers, the game's own strings at DS:0x12E/0x137/
     // 0x13E/0x14B ("PLANET: ", "SHIP: ", "BLACK HOLE: ", "LIFE SUPPORT:").
     let status_headers = [
