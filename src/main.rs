@@ -25,6 +25,31 @@ fn menu_dish_lines(iso: &str) -> Vec<String> {
         .collect()
 }
 
+/// Run the game's own destination COMMIT when the port enters a world.
+///
+/// `ship_click_commit` (`0xB0DC`) roots the candidate chain at `arche`
+/// (`0xB0EA mov di,[0x6752]`), picks the first candidate or the location object
+/// by the location's kind (`0xB0FB`), and hands the record to the C1 commit
+/// (`world_click_select`, `0xB20C`), which writes `{0xC1, target, 0}` at
+/// `orxx+0xA` for the presentation ladder (`0x5B38`) to pick up on a later frame.
+///
+/// Every value here comes from the VM's own records; the frontend supplies
+/// nothing but the MOMENT. That distinction is the point — without this call no
+/// C1 record was written at runtime and script logic gated on it could never
+/// fire, which is what `docs/port-validation.md` had open on this row.
+///
+/// Still APPROX, and deliberately not hidden by this: WHICH world the port enters
+/// is chosen by `compass_angle` arithmetic, where the game commits the object the
+/// candidate list offered. This wires the commit, not the choice.
+fn commit_world_destination(
+    script_vm: &std::cell::RefCell<Option<commander_blood_tools::vm::VmMachine>>,
+) {
+    let mut borrow = script_vm.borrow_mut();
+    let Some(machine) = borrow.as_mut() else { return };
+    let Some(target) = machine.ship_click_initial_target() else { return };
+    machine.world_click_select(target);
+}
+
 fn main() {
     if let Err(err) = run() {
         eprintln!("error: {err}");
@@ -1979,6 +2004,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                             if let Ok(ext) = std::fs::read(format!("{iso}/{}.EXT", world.to_uppercase())) {
                                 engine.set_world_ext(&ext);
                             }
+                            commit_world_destination(&script_vm);
                         }
                     }
                 }

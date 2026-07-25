@@ -6086,3 +6086,29 @@ terminator, `0xB0F7` loads `0xFFFF`, `0xB111` subtracts 4, and the port yields
 One guard catch along the way: the test called `selector_field_offset`, which does
 not exist. Cheap because it was a compile error — but it is the same class as the
 citation slips, an API recalled rather than checked.
+
+## #196 — wiring the commit without inventing the choice
+
+`world_click_select` was `check_unrouted_rules.py`'s flagship example: a decoded,
+correct, tested rule that nothing ran. Four sessions of decode (#192-#195) built
+the chain above it — filter, builder, selector, root — and this closes it.
+
+`main.rs::commit_world_destination` runs the game's own path when the port enters
+a world: `ship_click_initial_target` (rooted at `arche` from `0xB0EA`, picking by
+the location's kind at `0xB0FB`) hands its record to `world_click_select`, which
+writes `{0xC1, target, 0}` at `orxx+0xA` for the presentation ladder at `0x5B38`.
+The guard no longer flags it.
+
+What makes this a wiring rather than a fabrication: every value comes from the
+VM's own records. The frontend supplies only the MOMENT. That was exactly the
+distinction #192 got wrong in the other direction — it treated "the frontend has
+a name, the VM wants a record" as an unbridgeable gap, when the bridge was inside
+the VM the whole time and the frontend never needed to carry a record at all.
+
+WHAT IS STILL APPROX, stated rather than absorbed: which world the port enters is
+`compass_angle` arithmetic in `targeted_world_name`, where the game commits the
+object its candidate list offered. The validation row is rewritten to cover the
+CHOICE only, because the commit is no longer the open part. Wiring the choice
+means driving world entry from `destination_candidate_records` rows instead of a
+heading, which needs the DEB-loaded field matrix at runtime -- the next task on
+this thread, and a real one rather than a blocker.
