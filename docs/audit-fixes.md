@@ -940,3 +940,28 @@ handled unconditionally (`let clear = cod.get(p) == Some(&0xA1); if clear { p +=
 That mirrors the handler exactly: mode selects behaviour at `0x6C9C`, while the prefix
 skip at `0x6C8E` happens regardless. Distinguishing the two uses of `mode1` is the whole
 point — one is dispatch, the other was a bug.
+
+## BOUND — the dialogue asset chain's last hop is not statically reachable
+
+Everything from `b3` to the unpack is decoded and landed as tested code. The one
+remaining hop — what feeds the record parser's source stream at `ds:si` — hits a static
+wall, and it is worth recording the wall rather than repeatedly probing it:
+
+* `0x766F` (the parser) has NO near callers. It is a routine entry reached by a far call
+  or through a table, and the preceding routine simply `ret`s at `0x766E`.
+* `DS:0x24C6`, the name buffer the parser fills, has EXACTLY ONE reference in the whole
+  image: the `mov di,0x24C6` that writes it. Nothing reads it by immediate, so its
+  consumer receives the address rather than naming it.
+
+So neither the entry nor the stream can be found by byte-searching for references. This
+is the same wall the `0x0CDB` sound vector hit (six reads, no writer — filled by an
+external driver) and the `gs:0x175` glyph lead hit (the address was a red herring).
+
+THE RIGHT INSTRUMENT is the one that has worked three times this session: a WRITE WATCH
+with a positive control. Arm `trace_range` over the table `DS:0x1FB5..+0x100` and drive
+a dialogue load; the writer's `cs:ip` falls out immediately, and the control is already
+known — the b3=0 entry must land at `0x1FB5 + 0x26`, so if the watched bytes do not show
+that, the watch is mis-aimed rather than the table unwritten.
+
+That is a scenario problem (reaching a dialogue load under the probe), not a decode
+problem, which is why no further reading of the image will produce it.
