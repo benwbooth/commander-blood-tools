@@ -240,7 +240,7 @@ SLOT_RECORD_LEN	src/bloodsav.rs	81	const		UNVERIFIED	/// Bytes per directory rec
 SLOT_NAME_LEN	src/bloodsav.rs	82	const		UNVERIFIED	
 SLOT_COUNT	src/bloodsav.rs	83	const		UNVERIFIED	
 parse_slot_directory	src/bloodsav.rs	88	fn	0x1BAB,0x2734,0x1BBD,0x273B	ASM	/// Parse `blood.sav`, the slot-name directory the save flow renames through /// (`0x1BAB` points `[0x2734]` at a record, `0x1BBD` copies it to `DS:0x273B`). /// Returns `None` unless the image is exa
-SAVE_PROFILE_SOURCE_DS	src/bloodsav.rs	111	const	0x1C63,0x1C6D,0x1C72,0x1CEB	ASM?	/// The DS globals the writer streams from (`0x1C63`, `0x1C6D`, `0x1C72`) and, /// for the profile, the DIFFERENT one the reader streams into (`0x1CEB`).
+SAVE_PROFILE_SOURCE_DS	src/bloodsav.rs	111	const	0x1C63,0x1C6D,0x1C72,0x1CEB	ASM	/// The DS globals the writer streams from (`0x1C63`, `0x1C6D`, `0x1C72`) and, /// for the profile, the DIFFERENT one the reader streams into (`0x1CEB`).
 LOAD_PROFILE_DEST_DS	src/bloodsav.rs	112	const		UNVERIFIED	
 FLAGS_SOURCE_DS	src/bloodsav.rs	113	const		UNVERIFIED	
 STATE_SOURCE_DS	src/bloodsav.rs	114	const		UNVERIFIED	
@@ -255,18 +255,18 @@ flag_bit	src/bloodsav.rs	180	fn	0x6ADE	ASM?	/// Whether a progression flag bit i
 RING_PX_PER_FRAME	src/bridge.rs	28	const		UNVERIFIED	/// Ring pixels per panorama frame (8 px = 2° of the 1440-px ring).
 HALF_SCREEN	src/bridge.rs	31	const		UNVERIFIED	/// Ring x of the view centre at frame f is `f * 8`; the screen shows /// `ring_of_view - 160 .. + 160`.
 ARC_PER_REVOLUTION	src/bridge.rs	35	const		UNVERIFIED	"/// The ""arc"" scale the original steering math runs in: quarter-ring units /// (`ring / 4`, 360 per revolution — 2 arc units per frame)."
-STEER_DEAD_ZONE_ARC	src/bridge.rs	37	const	0x9752	ASM?	/// Steering dead zone in arc units (`0x9752`: distances <= 0x1F don't move).
-STEER_TRAIL_ARC	src/bridge.rs	40	const	0x97C4,0x97D4	ASM?	/// When steering, the view lands 0x1E arc units (15 frames) short of the mouse /// (`0x97C4`/`0x97D4`) — the view trails the pushed cursor.
-MENU_CLAMP_ARC	src/bridge.rs	43	const	0x2793,0x9762	ASM?	/// While a menu item is engaged (`DS:0x2793` bit 2), the cursor is dragged back /// toward the view once it strays this many arc units (`0x9762`: 0x28).
-MENU_FRAME_MIN	src/bridge.rs	47	const	0x8613,0x868D	ASM?	/// Golden console menu: hit box and row metrics from `0x8613..0x868D`. /// The menu is baked into panorama frames 40..=60 and is only clickable there.
+STEER_DEAD_ZONE_ARC	src/bridge.rs	37	const	0x9752	ASM	/// Steering dead zone in arc units (`0x9752`: distances <= 0x1F don't move).
+STEER_TRAIL_ARC	src/bridge.rs	40	const	0x97C4,0x97D4	ASM	/// When steering, the view lands 0x1E arc units (15 frames) short of the mouse /// (`0x97C4`/`0x97D4`) — the view trails the pushed cursor.
+MENU_CLAMP_ARC	src/bridge.rs	43	const	0x2793,0x9762	ASM	/// While a menu item is engaged (`DS:0x2793` bit 2), the cursor is dragged back /// toward the view once it strays this many arc units (`0x9762`: 0x28).
+MENU_FRAME_MIN	src/bridge.rs	47	const	0x8613,0x868D	ASM	/// Golden console menu: hit box and row metrics from `0x8613..0x868D`. /// The menu is baked into panorama frames 40..=60 and is only clickable there.
 MENU_FRAME_MAX	src/bridge.rs	48	const		UNVERIFIED	
-MENU_REST_FRAME	src/bridge.rs	51	const	0x8642,0x279B	ASM?	/// The menu's rest frame (`0x8642` subtracts 0x2D; the click seeks to /// `[0x279B] = 0x5A` = arc 90 = frame 45).
+MENU_REST_FRAME	src/bridge.rs	51	const	0x8642,0x279B	ASM	/// The menu's rest frame (`0x8642` subtracts 0x2D; the click seeks to /// `[0x279B] = 0x5A` = arc 90 = frame 45).
 MENU_RIGHT_AT_REST	src/bridge.rs	55	const	0x8650,0x8663	ASM?	/// At the rest frame the menu box spans screen x `177..=287` (`0x8650..0x8663`: /// right = 0xE8 + 0x37 = 287, left = right - 0x6E = 177); it scrolls with the /// panorama at -8 px per frame of delta
 MENU_WIDTH	src/bridge.rs	56	const		UNVERIFIED	
-MENU_TOP_AT_REST	src/bridge.rs	59	const	0x8671,0x868B	ASM?	/// Row metrics (`0x8671..0x868B`): top row y = 0x48 + |δ| * 1.25, row pitch /// = 0x12 - |δ| / 8, five rows.
+MENU_TOP_AT_REST	src/bridge.rs	59	const	0x8671,0x868B	ASM	/// Row metrics (`0x8671..0x868B`): top row y = 0x48 + |δ| * 1.25, row pitch /// = 0x12 - |δ| / 8, five rows.
 MENU_ROW_PITCH_AT_REST	src/bridge.rs	60	const		UNVERIFIED	
 MENU_ROW_COUNT	src/bridge.rs	61	const		UNVERIFIED	
-MENU_ROW_DAC_BASE	src/bridge.rs	67	const	0x8697	ASM?	/// The five menu rows' glyphs in the panorama frames are painted with one /// dedicated palette index per row, starting here (`0x8697`: DAC index /// 0x7B + row). Re-programming these five DAC entrie
+MENU_ROW_DAC_BASE	src/bridge.rs	67	const	0x8697	ASM	/// The five menu rows' glyphs in the panorama frames are painted with one /// dedicated palette index per row, starting here (`0x8697`: DAC index /// 0x7B + row). Re-programming these five DAC entrie
 MENU_ROW_IDLE_DAC	src/bridge.rs	70	const	0x8636,0x863F	ASM?	/// Idle row colour, 6-bit DAC (`0x8636..0x863F`: five entries of 16,12,0 — /// dark gold).
 MENU_ROW_HOVER_DAC	src/bridge.rs	72	const	0x869D,0x86A3	ASM?	/// Hovered row colour, 6-bit DAC (`0x869D..0x86A3`: 63,0,0 — bright red).
 StationRecord	src/bridge.rs	79	struct	0x2A1B	ASM?	/// One clickable record of the 6-entry table at `DS:0x2A1B` (0x18-byte stride). /// The four panorama stations' records get their orb rectangle refreshed from /// the loaded frame's chunk header; the
@@ -404,9 +404,9 @@ draw_hand_at_mouse	src/engine.rs	1771	fn		ORACLE?	/// Draw the pointing-hand cur
 draw_hand_cursor	src/engine.rs	1825	fn		ORACLE?	/// Draw the pointing-hand cursor at the bridge's ring-anchored position (the /// steering cursor), using the atlas sprite captured nearest to it (the real /// renderer varies the hand's orientation w
 refresh_gpu_hand	src/engine.rs	1874	fn		UNVERIFIED	/// Recompute the GPU hand for the current cursor at DISPLAY refresh rate. /// PURE re-projection: the existing pose/skeleton state renders at the new /// cursor — no pose selection, no tween advance,
 draw_choice_box_labels	src/engine.rs	1894	fn		ORACLE?	/// Draw the nav destinations as a golden choice box over the console's left — /// the game's captured interaction pattern (a rounded gold-bordered box with /// gold console-font rows, see accuracy/ca
-CHOICE_BOX_CENTER_X	src/engine.rs	1914	const	0xAC6,0x86D9,0x89A6,0xB0D1,0xADC,0xADD	ASM?	/// Draw the console choice box as the real game composes it (measured from /// `choice_box_bob_morlock.ppm`, the telephone contact list): grey square-caps /// item text (index 0xE8) laid out CENTERED
+CHOICE_BOX_CENTER_X	src/engine.rs	1914	const	0xAC6,0x86D9,0x89A6,0xB0D1,0xADC,0xADD	ASM	/// Draw the console choice box as the real game composes it (measured from /// `choice_box_bob_morlock.ppm`, the telephone contact list): grey square-caps /// item text (index 0xE8) laid out CENTERED
 CHOICE_BOX_ANCHOR_WORLD	src/engine.rs	1915	const		UNVERIFIED	
-CHOICE_BOX_ANCHOR_CONCEPT	src/engine.rs	1918	const	0xAC6,0x89A6,0x84AD	ASM?	/// The IN-WINDOW concept list's right-side anchor: `mov [0xAC6], 0xE1` at `0x89A6`. /// `0xE1` = 225. The widget then places the box at `x0 = anchor - w/2` (`0x84AD`).
+CHOICE_BOX_ANCHOR_CONCEPT	src/engine.rs	1918	const	0xAC6,0x89A6,0x84AD	ASM	/// The IN-WINDOW concept list's right-side anchor: `mov [0xAC6], 0xE1` at `0x89A6`. /// `0xE1` = 225. The widget then places the box at `x0 = anchor - w/2` (`0x84AD`).
 CHOICE_BOX_PITCH	src/engine.rs	1921	const	0x847A,0x8508	ASM?	/// Row pitch 11 — ASSEMBLY: the unified list widget steps `add bp,0xB` /// (0x847A) and hit-tests `row = dy/11 + 1` (`div bl,0x0B` @0x8508).
 choice_box_top_y_seeded	src/engine.rs	1941	fn	0x84A1,0x84C6,0xadd,0x8436,0xADD,0x8442,0x8445,0x847A,0x84A7	ORACLE?	/// The first row's top y, from the widget's ASSEMBLY layout (0x84A1..0x84C6): /// box height h = rows*11 + 8, box y = (200 - h)/2 (screen-centred), text /// top = box y + 4. (This DERIVES the previou
 choice_box_top_y	src/engine.rs	1947	fn	0x8436	ASM	/// Default-path top (`bp = 0` from `xor bp,bp` at `0x8436`).
@@ -748,7 +748,7 @@ tick_pose	src/manu3_hand.rs	628	fn		UNVERIFIED	/// Advance the current pose anim
 animate	src/manu3_hand.rs	641	fn	0x2274,0x2974	ASM?	/// Apply one pose-player frame to the live skeleton: tween cell writes land in /// the node-tree state block BY ORIGINAL DS OFFSET (cells address 0x2274..0x2974: /// node angles +0x4E/50/52, local po
 GAME_SCREEN_PALETTE_DAC_LOWER_IS_BINARY	src/palette.rs	42	const	0x5B58,0x16A7,0x2F90,0x3C8,0x3C9,0x12F78	ASM?	//! The game-screen VGA palette — the 256-entry DAC buffer the original uploads //! for the ship/nav, bridge, location, and dialogue screens //! (game_palette_dac_buffer, gs:0x5B58, uploaded via 0x16A
 GAME_SCREEN_PALETTE_DAC	src/palette.rs	43	const		UNVERIFIED	
-PALETTE_BLEND_MAX_DISTANCE	src/palette.rs	113	const	0xBB8,0x234F,0x23B0	ASM?	/// Seed distance of the nearest-colour search (`mov word [bp+6],0xBB8` @`0x234F`). /// A source colour with no palette entry within this squared distance leaves its /// table byte UNCHANGED (`js 0x23
+PALETTE_BLEND_MAX_DISTANCE	src/palette.rs	113	const	0xBB8,0x234F,0x23B0	ASM	/// Seed distance of the nearest-colour search (`mov word [bp+6],0xBB8` @`0x234F`). /// A source colour with no palette entry within this squared distance leaves its /// table byte UNCHANGED (`js 0x23
 build_palette_blend_remap_table	src/palette.rs	143	fn	0x22E0,0x1CE,0x0000,0x22F1,0x22FC,0x22F5,0x2303,0x22FD,0x230	ORACLE	/// The game's TINT REMAP TABLE builder — routine `0x22E0`, far-called as /// `0x1CE:0x0000`. Every translucent/tinted overlay in the game goes through it: /// build a 256-entry LUT that maps each pal
 build_console_bank_remap_table	src/palette.rs	202	fn	0x6011,0x242D,0x1CE,0x014D,0x22E0,0x9622,0x5251,0x7AC3,0x200	ORACLE	/// The CONSOLE-BANK remap table (`DS:0x6011`) — built by running the GAME'S OWN /// builder, not by reimplementing it. /// /// `0x242D` (far `0x1CE:0x014D`) is a SECOND table builder, distinct from t
 GS	src/palette.rs	204	const		UNVERIFIED	
@@ -1074,7 +1074,7 @@ commit_ship_3d_global_clip_snapshot	src/ship3d.rs	2550	fn		ASM
 collect_ship_3d_dirty_sprite_slot_render_commands	src/ship3d.rs	2572	fn		ASM	
 run_ship_3d_temp_snd_setup	src/ship3d.rs	2617	fn		INFRA?	
 run_ship_3d_navigation_final_reset	src/ship3d.rs	2663	fn		INFRA?	
-SHIP_INTRO_X_END	src/ship3d.rs	2729	const	0x27DF,0x8A6A,0x8B5A,0x2F65,0x2F71	ASM?	/// The ship-3D camera-approach animation state, driven by phase counter `DS:0x27DF` /// (BLOODPRG.EXE `0x8A6A..0x8B5A`). The nav camera moves because this scripted FSM /// walks the camera origin `[0
+SHIP_INTRO_X_END	src/ship3d.rs	2729	const	0x27DF,0x8A6A,0x8B5A,0x2F65,0x2F71	ASM	/// The ship-3D camera-approach animation state, driven by phase counter `DS:0x27DF` /// (BLOODPRG.EXE `0x8A6A..0x8B5A`). The nav camera moves because this scripted FSM /// walks the camera origin `[0
 SHIP_INTRO_X_STEP	src/ship3d.rs	2730	const		UNVERIFIED	
 SHIP_INTRO_YAW_WRAP	src/ship3d.rs	2731	const		UNVERIFIED	
 SHIP_INTRO_Z_CRUISE	src/ship3d.rs	2732	const		UNVERIFIED	
@@ -1157,7 +1157,7 @@ blit_sprite_frame_centered	src/sprite.rs	340	fn		UNVERIFIED
 PANORAMA_FRAME_PIXELS	src/tbbig.rs	47	const	0x0F68,0x00D3,0x0AC4,0x981B,0x2A1B,0x2D50,0x1CE,0x0A70,0x200	ASM?	"//! `TB.BIG` — the ship-bridge *panorama* archive (""tableau de bord"" = dashboard). //! //! The bridge of the Ark is not a set of separate screens: it is one pre-rendered //! 360° panorama of 180 full-"
 PANORAMA_FRAME_COUNT	src/tbbig.rs	50	const		UNVERIFIED	/// Full revolution = 180 frames at 2° per frame (matches the ship-3D angle table).
 ANGLE_UNITS_PER_FRAME	src/tbbig.rs	53	const	0x0A2A,0x5A0	ASM?	/// View-angle units (DS:0x0A2A) per panorama frame: 0x5A0 units / 180 frames.
-ANGLE_UNITS_PER_REVOLUTION	src/tbbig.rs	57	const	0x97F6,0x9815,0x0A2A	ASM?	/// View-angle wrap modulus: 1440 units per revolution (0x97F6..0x9815 wraps /// DS:0x0A2A into this range).
+ANGLE_UNITS_PER_REVOLUTION	src/tbbig.rs	57	const	0x97F6,0x9815,0x0A2A	ASM	/// View-angle wrap modulus: 1440 units per revolution (0x97F6..0x9815 wraps /// DS:0x0A2A into this range).
 CONSOLE_REST_FRAME	src/tbbig.rs	62	const		ORACLE?	/// The panorama frame the live game rests on at the interactive console /// station (observed via `BRIDGEPROBE`; verified pixel-close to the emulator /// capture `accuracy/captures/bridge/console_res
 CONSOLE_BAND_FRAME	src/tbbig.rs	70	const	0x7AC3	ASM?	/// The panorama frame whose BOTTOM 60 ROWS are the intro montage's console band. /// /// Proven by construction: frame 90's rows 140..200, pushed through the /// console-bank remap table (`palette::b
 CONSOLE_BAND_TOP	src/tbbig.rs	72	const		UNVERIFIED	/// The band's screen origin and height (rows 140..200).
@@ -1178,7 +1178,7 @@ OPCODE_DESC	src/vm.rs	47	const	0x14338,0x6F18	DATA	/// Per-opcode descriptor byt
 FIELD_OFFSETS	src/vm.rs	153	const	0x6D60,0x14180,0x6664,0x6023	ORACLE	/// The engine's per-kind FIELD-OFFSET MATRIX (gs:0x6D60, file 0x14180), /// byte-exact: `FIELD_OFFSETS[field][kind]` = the byte offset of that field in /// a record of that kind (0 = the kind lacks t
 field_offset	src/vm.rs	181	fn	0x6023	ORACLE	/// Field offset for a record kind, per the engine's matrix (None = absent). /// The kind word is a BIT-FLAG; the column is its lowest set bit (`bsf`, /// 0x6023 `bsf bx,bx`), NOT `kind & 0xF`. bsf(2)
 OP_MIN	src/vm.rs	191	const		UNVERIFIED	
-OP_MAX	src/vm.rs	206	const	0x6F18,0x62B6,0x6EB0,0x5627	ASM?	/// Upper bound of the TOKEN-VALIDITY range, not of dispatch — the two differ and the /// distinction is easy to lose. /// /// * TOKENS: `OPCODE_DESC` at `DS:0x6F18` has 96 entries covering `0xA0..=0x
+OP_MAX	src/vm.rs	206	const	0x6F18,0x62B6,0x6EB0,0x5627	ASM	/// Upper bound of the TOKEN-VALIDITY range, not of dispatch — the two differ and the /// distinction is easy to lose. /// /// * TOKENS: `OPCODE_DESC` at `DS:0x6F18` has 96 entries covering `0xA0..=0x
 OP_TEXT	src/vm.rs	207	const		UNVERIFIED	
 OP_BIT_FLAG	src/vm.rs	208	const		UNVERIFIED	
 OP_PAIR_RECORD_A	src/vm.rs	209	const		UNVERIFIED	
@@ -1196,7 +1196,7 @@ OP_GLOBAL_PAIR_COMPARE	src/vm.rs	220	const		UNVERIFIED
 OP_RECORD_TRIPLE	src/vm.rs	221	const		UNVERIFIED	
 OP_SCRIPT_PROFILE_REQUEST	src/vm.rs	222	const		UNVERIFIED	
 OP_PUSH	src/vm.rs	226	const	0x6820,0x6884,0x6559	ASM?	/// `0xA0` PUSH operand → VM operand stack (`gs:0x6820`, ptr `gs:0x6884`). Handler 0x6559.
-OP_POP	src/vm.rs	228	const	0x6572	ASM?	/// `0xA1` POP the VM operand stack. Handler 0x6572.
+OP_POP	src/vm.rs	228	const	0x6572	ASM	/// `0xA1` POP the VM operand stack. Handler 0x6572.
 OP_JUMP	src/vm.rs	230	const	0x65db	ASM?	/// `0xA4` unconditional JUMP (PC = operand). Handler 0x65db.
 OP_COND_STATE_ARRAY	src/vm.rs	232	const	0x6ade,0x65eb	ASM?	/// `0xA5` conditional branch on the `gs:0x6ade` state-array flag. Handler 0x65eb.
 OP_LOAD_STRING	src/vm.rs	234	const	0x2120,0x67c8	ASM?	/// `0xA8` load a null-terminated string operand into buffer `0x2120`. Handler 0x67c8.
@@ -1225,12 +1225,12 @@ TEXT_ACTIVE_DISPLAY_FLAG	src/vm.rs	346	const		UNVERIFIED
 TEXT_LINE_ALREADY_SHOWN_FLAG	src/vm.rs	347	const		UNVERIFIED	
 text_selector_active_line_id	src/vm.rs	351	fn	0x1FAB,0x6788	ASM?	/// Port the TEXT handler's `b3` selector bridge: /// `cbw; mov gs:[0x1FAB],ax`, then `mov ax,[0x1FAB]; add ax,9; mov [0x6788],ax`.
 text_selector_voice_clip_index	src/vm.rs	377	fn	0xCFB,0x66AF,0xB898,0xB8AB,0xB8BC,0x94CF,0x668D,0x1FAB,0x11F	ASM?	/// Resolve a TEXT `b3` selector to the actor's zero-based `son.snd` talk clip. /// /// Current evidence: `0x00` and `0xFF` are subtitle/no-voice channels, while /// `1..=talk_clip_count` are one-base
-DLG_LINE_ASSET_TABLE_DS	src/vm.rs	387	const	0x1FB5,0x9D6A	ASM?	/// Per-line asset table base, `DS:0x1FB5` (`0x9D6A`).
+DLG_LINE_ASSET_TABLE_DS	src/vm.rs	387	const	0x1FB5,0x9D6A	ASM	/// Per-line asset table base, `DS:0x1FB5` (`0x9D6A`).
 DLG_LINE_ASSET_ENTRY_STRIDE	src/vm.rs	390	const	0x9D67,0x7694	ASM?	/// The table's entry stride: 4 bytes (`shl bx,2` at `0x9D67`, and the fill's /// `stosw` + `add di,2` at `0x7694`).
 DLG_LINE_ASSET_ID_OFFSET	src/vm.rs	392	const	0x9D6E	ASM?	/// The asset id sits at `entry + 2` (`mov si,[bx+2]`, `0x9D6E`).
 DLG_LINE_ID_BIAS	src/vm.rs	394	const	0x11F5	ASM?	/// `line_id = sign_extend(b3) + 9` (`0x11F5`).
-DLG_ASSET_NAME_STRIDE	src/vm.rs	396	const	0x768E	ASM?	/// Stride of the name table the asset id offsets into (`shl ax,4`, `0x768E`).
-DLG_LINE_ASSET_NONE	src/vm.rs	398	const	0xFFFF,0x9D71	ASM?	/// `0xFFFF` = no asset for this line (`cmp si,-1`, `0x9D71`).
+DLG_ASSET_NAME_STRIDE	src/vm.rs	396	const	0x768E	ASM	/// Stride of the name table the asset id offsets into (`shl ax,4`, `0x768E`).
+DLG_LINE_ASSET_NONE	src/vm.rs	398	const	0xFFFF,0x9D71	ASM	/// `0xFFFF` = no asset for this line (`cmp si,-1`, `0x9D71`).
 dlg_line_id_for_selector	src/vm.rs	413	fn	0x6788,0xFFFF,0x5E74,0x668D,0x1FAB,0x668E,0x11F2	ASM?	/// The line id an `0xA6` selector maps to: `sign_extend(b3) + 9`. /// /// SCOPE: this is ONE of 29 writers of `gs:0x6788`. A byte search for every /// `mov [0x6788], …` encoding finds 29 sites — this
 dlg_line_asset_id_ds_offset	src/vm.rs	421	fn	0x1FB5,0x9D20	ASM?	/// DS offset of the ASSET ID word for a line id: `0x1FB5 + line_id*4 + 2`. /// /// Returns `None` for a negative line id, which the dispatcher rejects outright /// (`or ax,ax; js` at `0x9D20`).
 dlg_line_asset_id_from_source_byte	src/vm.rs	444	fn	0x7684,0xFFFF,0x0DD7	ASM?	"/// The value the fill at `0x7684` stores for one source byte. /// /// Negative bytes pass through sign-extended (so `0xFF` becomes `0xFFFF`, the exact /// ""no asset"" sentinel the reader tests); other"
@@ -1272,17 +1272,17 @@ VM_FIELD_OFFSET_SELECTOR_PRESENTATION_HANDOFF	src/vm.rs	1295	const		UNVERIFIED
 VM_FIELD_OFFSET_SELECTOR_C2	src/vm.rs	1296	const		UNVERIFIED	
 VM_FIELD_OFFSET_SELECTOR_C9_RELATED	src/vm.rs	1297	const		UNVERIFIED	
 VM_FIELD_OFFSET_SELECTOR_ENCOUNTER	src/vm.rs	1302	const	0x5DCE,0x5DF6,0x83DF,0x91DB	ASM?	/// Selector `0x08` — the ENCOUNTER COUNTER. `FIELD_OFFSETS[8]` is non-zero in /// exactly one column (`0x36` at column 1 = kind 2), so this is a kind-2 field. /// Written by `post_update_encounter_co
-OBJECT_FLAG_PAIR_SEEN	src/vm.rs	1305	const	0x8000,0x5DD2,0x5DFA	ASM?	/// Bit 15 of an object's `+2` flag word, set alongside the encounter-counter /// bump (`or word [si+2],0x8000` @ `0x5DD2`/`0x5DFA`).
+OBJECT_FLAG_PAIR_SEEN	src/vm.rs	1305	const	0x8000,0x5DD2,0x5DFA	ASM	/// Bit 15 of an object's `+2` flag word, set alongside the encounter-counter /// bump (`or word [si+2],0x8000` @ `0x5DD2`/`0x5DFA`).
 OBJECT_FLAG_ACTIVE	src/vm.rs	1308	const	0x91D4,0x83D9	ASM?	/// Bit 0 of an object's `+2` flag word — the ACTIVE bit, the second condition of /// both list filters (`test word [si+2],1` @ `0x91D4`, `test byte [si+2],1` @ `0x83D9`).
-ARCHE_LOCATION_FIELD	src/vm.rs	1312	const	0x8365,0x6752,0x6B44	ASM?	/// `arche+0x16` — the CURRENT LOCATION object (`mov bp,fs:[si+0x16]` @ `0x8365` /// with `si = gs:[0x6752] = arche`; the same word `0x6B44` clears).
-LOCATION_KIND_SHIP	src/vm.rs	1314	const	0x836C,0x8376	ASM?	/// Location kinds the status header distinguishes (`0x836C`, `0x8376`).
+ARCHE_LOCATION_FIELD	src/vm.rs	1312	const	0x8365,0x6752,0x6B44	ASM	/// `arche+0x16` — the CURRENT LOCATION object (`mov bp,fs:[si+0x16]` @ `0x8365` /// with `si = gs:[0x6752] = arche`; the same word `0x6B44` clears).
+LOCATION_KIND_SHIP	src/vm.rs	1314	const	0x836C,0x8376	ASM	/// Location kinds the status header distinguishes (`0x836C`, `0x8376`).
 LOCATION_KIND_BLACK_HOLE	src/vm.rs	1315	const		UNVERIFIED	
 STATUS_HEADER_PLANET	src/vm.rs	1320	const	0xD420	ASM?	/// The status block's headers, the game's OWN strings from BLOODPRG's UI string /// table — not transcriptions. `STATUS_STRING_TABLE` pins each to its image byte /// (DS base = file `0xD420`), the sa
 STATUS_HEADER_SHIP	src/vm.rs	1321	const		UNVERIFIED	
 STATUS_HEADER_BLACK_HOLE	src/vm.rs	1322	const		UNVERIFIED	
 STATUS_LIFE_SUPPORT	src/vm.rs	1323	const		UNVERIFIED	
 STATUS_STRING_TABLE	src/vm.rs	1326	const	0x12E,0x137,0x13E,0x14B,0x839F	ASM?	/// `(DS offset, file offset, string)` for each — `0x12E`/`0x137`/`0x13E` are the /// three `mov si,imm` headers and `0x14B` the roster caption at `0x839F`.
-LOCATION_PANEL_X	src/vm.rs	1335	const	0x9137,0x91EC	ASM?	/// Layout of the DESTINATION INFO PANEL drawn by `0x9137..0x91EC`. Every value is /// an immediate in that routine; see [`VmMachine::location_panel_rows`].
+LOCATION_PANEL_X	src/vm.rs	1335	const	0x9137,0x91EC	ASM	/// Layout of the DESTINATION INFO PANEL drawn by `0x9137..0x91EC`. Every value is /// an immediate in that routine; see [`VmMachine::location_panel_rows`].
 LOCATION_PANEL_Y	src/vm.rs	1336	const		UNVERIFIED	
 LOCATION_PANEL_ROW_PITCH	src/vm.rs	1337	const		UNVERIFIED	
 LOCATION_PANEL_NAME_GAP	src/vm.rs	1338	const		UNVERIFIED	
@@ -1292,12 +1292,12 @@ LOCATION_PANEL_BOX	src/vm.rs	1345	const	0x2780,0x9114,0x9203,0x9142	ASM?	/// The
 LOCATION_PANEL_TINT_PERCENT	src/vm.rs	1347	const	0xFFCE,0x90ED,0x22F1	ASM?	/// `ax = 0xFFCE` at `0x90ED`, negated on entry to the table builder (`0x22F1`).
 LOCATION_PANEL_ZOOM_STEPS	src/vm.rs	1349	const	0xADA,0x903E	ASM?	/// `[0xADA] = 8` (`0x903E`) — the zoom-open/shut interpolation step count.
 LOCATION_PANEL_CURSOR_RECT_SIZE	src/vm.rs	1351	const	0x9029	ASM?	/// The zoom SOURCE rect seeded at `0x9029`: a 4x4 square at the cursor.
-NAV_PICK_POSITION_FIELD	src/vm.rs	1356	const	0x92BC	ASM?	/// The chart marker's position field — selector `0x0B`, whose matrix row is /// `0x18` for kinds 8 and `0x10` (`FIELD_OFFSETS[0x0B]`). Read as `x` at `+0x18` /// and `y` at `+0x1A` by the picker at `
+NAV_PICK_POSITION_FIELD	src/vm.rs	1356	const	0x92BC	ASM	/// The chart marker's position field — selector `0x0B`, whose matrix row is /// `0x18` for kinds 8 and `0x10` (`FIELD_OFFSETS[0x0B]`). Read as `x` at `+0x18` /// and `y` at `+0x1A` by the picker at `
 nav_chart_marker_contains	src/vm.rs	1361	fn	0x9308,0x932B	ASM	/// The picker's box test for one marker (`0x9308..0x932B`): the box starts two /// pixels up-left of the marker and BOTH bounds are inclusive (`jb`/`ja` skip only /// strictly outside). The single co
 owner_object_offset_in	src/vm.rs	1384	fn	0x6034,0x603B,0x6040,0x6045,0x6048	ASM	/// The owner lookup — `vm_record_lookup_by_threshold` `0x6034`: /// /// ```text ///   0x603B  cmp ax,[si+0x10] / jbe    advance while the entry offset is BELOW ax ///   0x6040  add si,0x14 ///   0x60
 nav_chart_hit_box_for_kind	src/vm.rs	1391	fn	0x92BF,0x92D3,0x92FC	ORACLE	/// The nav picker's hit box for a KIND (`0x92BF` default, `0x92D3` black hole, /// `0x92FC` ship). The single copy of that ladder — `NavChartObject::hit_box` and /// `VmMachine::nav_chart_hit_box` bo
 OBJECT_FLAG_IN_PLAY	src/vm.rs	1404	const	0x6073,0x6C3B,0x7259	ASM?	/// Bit 1 of an object's `+2` flag word — the gate `0x6073` applies when building /// the active-object list, and the same bit the `0xC1` nav path (`0x6C3B`) and /// the entity candidate list (`0x7259
-NAV_CHART_KIND_MASK	src/vm.rs	1407	const	0x118,0x723D,0x100	ASM?	/// The kinds the nav chart draws: `test bx,0x118` at `0x723D` — kind `0x08`, /// kind `0x10` (a SHIP) and kind `0x100` (a BLACK HOLE).
+NAV_CHART_KIND_MASK	src/vm.rs	1407	const	0x118,0x723D,0x100	ASM	/// The kinds the nav chart draws: `test bx,0x118` at `0x723D` — kind `0x08`, /// kind `0x10` (a SHIP) and kind `0x100` (a BLACK HOLE).
 NAV_PICK_BOX_DEFAULT	src/vm.rs	1409	const	0x92BF,0x92D3,0x92FC	ASM?	/// Hit-box sizes, per kind (`0x92BF`, `0x92D3`, `0x92FC`).
 NAV_PICK_BOX_BLACK_HOLE	src/vm.rs	1410	const		UNVERIFIED	
 NAV_PICK_BOX_SHIP	src/vm.rs	1411	const		UNVERIFIED	

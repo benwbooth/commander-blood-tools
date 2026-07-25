@@ -3321,3 +3321,39 @@ Both fixed: attributes no longer break the association, and addresses come from
 the whole doc while the evidence column stays truncated for readability. 33 rows
 regained an origin they always had — the same shape as constants being left out of
 the ledger entirely, and the reason the denominator moved once before.
+
+## #103 — checking constants against the binary, and the checker clearing them tautologically
+
+Constants are the most directly checkable claims in the port: `MENU_REST_FRAME =
+0x2C` citing `0x8642` either has a `0x2C` at that address or it does not.
+`tools/check_cited_immediates.py` disassembles each cited address and looks for
+the value. 24 constants were settled on that evidence.
+
+It is a CLASSIFIER, not a guard, because plenty of correct constants are not
+immediates: an opcode constant cites its HANDLER and the value is a dispatch-table
+index appearing nowhere in the handler's bytes; a stride can be a shift count
+(`DLG_ASSET_NAME_STRIDE = 0x10` is `shl ax,4` at `0x768E`). Those are reported as
+NEEDS READING, never as defects — a tool that called them wrong would train the
+reader to ignore it.
+
+Three iterations, because the first two versions cleared constants they should
+not have:
+
+* **Masked immediates matched by coincidence.** Every immediate was compared at 8
+  and 16 bits, so `GAME_FONT_WIDTH = 8` "verified" against `add ax,0x808` and an
+  entry count of 8 against a `[di+8]` displacement. Only the immediate itself
+  counts now, plus its truncations when NEGATIVE — where capstone reports the
+  sign-extended form of a byte the code really contains (that is what legitimately
+  matches `DLG_LINE_ASSET_NONE = 0xFFFF` to `cmp si,-1`).
+* **A rule that cleared constants with their own doc comments.** "Value equals the
+  cited address" was meant to recognise a table base. What it actually matched was
+  the constant's value appearing in its own doc: `DLG_LINE_ASSET_NONE = 0xFFFF`
+  passed because the doc calls `0xFFFF` a sentinel, and the address regex read the
+  sentinel as an address. That is precisely the self-referential shape
+  `check_selfref_asserts.py` exists to catch, written into a new tool ten minutes
+  after being reminded of it. Removed. All eight constants it had been clearing
+  turned out to have real instruction evidence anyway.
+* **Small values are weak evidence** and are marked as such, since a one-digit
+  number matches something almost anywhere.
+
+Settled: 463 -> 487 of 2143.
