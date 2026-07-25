@@ -5918,3 +5918,23 @@ LAYOUT, and layout is checkable by arithmetic on addresses the tree already know
 That is now four font constants pinned to the image rather than to each other —
 which matters because a self-consistent font is exactly what hid the 128-vs-176
 truncation for a whole campaign.
+
+## #191 — a stride is a shape
+
+`WORLD_ART_RECORD = 0x16` is not an immediate; it is the record's LAYOUT — a
+16-byte NUL-padded name followed by three `u16` fields (id, group, extra), which
+is 22 bytes.
+
+The data shows it directly: `Kortex` at `+0`, `Kukaracha` at `+0x16`, `Ekatomb` at
+`+0x2C`. A wrong stride lands mid-name on the very next record, so the test walks
+eight records at the claimed stride and requires each to start with a printable
+NUL-terminated name AND for the padding after that name to be actually zero.
+
+That second assertion is the one with teeth. A stride that is too LARGE still
+finds a plausible name at each step for a while; what it cannot do is keep the
+name-field padding clean, because it is reading the previous record's trailing
+words as part of the next name.
+
+Settled DATA. The NEEDS-READING list is now down to constants whose basis is
+genuinely elsewhere — a capture-observed frame (`CONSOLE_BAND_FRAME`), a data-
+segment base with no code reference (`STATE_BASE`, #119), and the opcode family.

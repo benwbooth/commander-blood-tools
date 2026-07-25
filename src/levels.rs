@@ -213,7 +213,13 @@ pub struct WorldArtEntry {
     pub resource_id: u16,
 }
 
-/// Byte size of one `DS:0x2BC7` record.
+/// Byte size of one `DS:0x2BC7` record — 22, and the LAYOUT says why: a 16-byte
+/// NUL-padded name followed by three `u16` fields (id, group, extra).
+///
+/// Not an immediate: the stride is the record's shape. `Kortex` sits at `+0`,
+/// `Kukaracha` at `+0x16`, `Ekatomb` at `+0x2C`, so a wrong stride would land
+/// mid-name immediately — which is what
+/// `world_art_records_are_name_plus_three_words` checks against the image.
 pub const WORLD_ART_RECORD: usize = 0x16;
 /// File offset of the table (`DS:0x2BC7`, DS base `0xD420`).
 pub const WORLD_ART_TABLE_FILE_OFFSET: usize = 0xFFE7;
@@ -307,6 +313,34 @@ pub fn parse_world_art_table(exe: &[u8]) -> Vec<(String, u16)> {
 
 #[cfg(test)]
 mod tests {
+
+    /// The world-art record stride is `16-byte name + 3 words` = 22. Checked by
+    /// walking the table at the claimed stride and requiring every record to start
+    /// with a printable, NUL-terminated name — a wrong stride lands mid-name and
+    /// fails on the first or second record.
+    #[test]
+    fn world_art_records_are_name_plus_three_words() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        assert_eq!(WORLD_ART_RECORD, 16 + 3 * 2, "name field plus three u16s");
+
+        let base = WORLD_ART_TABLE_FILE_OFFSET;
+        for index in 0..8 {
+            let rec = &exe[base + index * WORLD_ART_RECORD..][..WORLD_ART_RECORD];
+            let name_len = rec[..16].iter().position(|&b| b == 0).expect("NUL-padded");
+            assert!(name_len > 0, "record {index} has a name");
+            assert!(
+                rec[..name_len].iter().all(|b| b.is_ascii_graphic()),
+                "record {index} name is printable: {:?}",
+                &rec[..name_len]
+            );
+            // The padding really is padding, not the next field bleeding in.
+            assert!(rec[name_len..16].iter().all(|&b| b == 0), "record {index} padding");
+        }
+    }
     use super::*;
 
     /// Every `LEVEL_DIRECTORY` entry must match the game's resource name table compiled into
