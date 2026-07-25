@@ -3659,11 +3659,27 @@ pub fn select_ship_3d_target_record(
     })
 }
 
+/// Bytes the plane band copy moves: `(depth + 35) * 80`, from `0xB71C` —
+/// `mov ax,bx / add ax,0x23 / mov dl,0x50 / mul dl`. The add happens in 8 bits
+/// (`mul dl` takes AL), which is why the port wraps the row count as a `u8`
+/// before multiplying rather than widening first.
 pub fn ship_3d_plane_band_byte_count(depth_offset: u16) -> usize {
     let rows = (depth_offset as u8).wrapping_add(SHIP_3D_PLANE_BASE_ROWS as u8) as usize;
     rows * SHIP_3D_PLANE_ROW_BYTES
 }
 
+/// The scroll value written to `DS:0x524F`, from `0xB6F7..0xB708`:
+///
+/// ```text
+///   0x6F7  mov ax,bx / add ax,ax      2 * depth
+///   0x6FB  cmp ax,0x64 / jle          clamp to 100
+///   0x700  mov ax,0x64
+///   0x703  sub ax,0x64 / neg ax       100 - that
+/// ```
+///
+/// `sub` then `neg` rather than a reversed subtract, so the value is
+/// `100 - min(2*depth, 100)` and reaches 0 exactly when the depth passes 50.
+/// Scroll mode `0xA` skips this entirely (`cmp word [0x524d],0xa / je` @`0xB6F0`).
 pub fn ship_3d_scroll_value(depth_offset: u16) -> u16 {
     let doubled = depth_offset.wrapping_mul(2);
     let capped = if (doubled as i16) > 0x64 {
@@ -3674,12 +3690,21 @@ pub fn ship_3d_scroll_value(depth_offset: u16) -> u16 {
     0x64u16.wrapping_sub(capped)
 }
 
+/// The armed-and-timer-exhausted branch of the transition updater, `0xB6B8`:
+/// `mov byte [0x2531],8` (close step) / `mov byte [0x2530],1` (closing) /
+/// `mov byte [0x2533],0` (disarmed) — three writes that always go together, which
+/// is why they are one function here rather than three assignments at the call
+/// site.
 fn start_closing_transition(state: &mut Ship3dTransitionState) {
     state.depth_step = SHIP_3D_TRANSITION_CLOSE_STEP;
     state.closing = true;
     state.transition_armed = false;
 }
 
+/// Add to a word's LOW BYTE ONLY, leaving the high byte untouched — the effect of
+/// the 8-bit `add`/`sub` the transition and interpolation code use on word-sized
+/// state (e.g. `0x2531`'s step against `0x2527`'s depth). A 16-bit add would carry
+/// into the high byte on wrap; the original cannot, so neither does this.
 fn add_to_low_byte(value: u16, addend: u8) -> u16 {
     (value & 0xff00) | value.to_le_bytes()[0].wrapping_add(addend) as u16
 }

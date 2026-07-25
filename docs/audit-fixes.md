@@ -5195,3 +5195,30 @@ this knows how to measure a distance, and only the routine knows that distance
 means `0xC` against `0xE`.
 
 Cited instructions 217 -> 222; the queue 62 -> 61.
+
+## #162 — four small helpers, and the one that exists because 8 bits is not 16
+
+Four more rows, all small functions whose whole content is a decoded detail.
+
+`ship_3d_plane_band_byte_count` — `(depth + 35) * 80` from `0xB71C`. The add
+happens in 8 bits, because `mul dl` takes AL, which is why the port wraps the row
+count as a `u8` before multiplying instead of widening first.
+
+`ship_3d_scroll_value` — `100 - min(2*depth, 100)`, built as `sub ax,0x64 / neg
+ax` rather than a reversed subtract, reaching 0 exactly when the depth passes 50.
+Scroll mode `0xA` skips it entirely.
+
+`start_closing_transition` — the three writes at `0xB6B8` that always occur
+together: close step, closing flag, disarmed. One function rather than three
+assignments at the call site, because in the original they are one branch.
+
+`add_to_low_byte` — the reason this function exists at all is that the original's
+`add` is 8-bit on word-sized state, so a wrap does NOT carry into the high byte. A
+16-bit add would, and would be the natural way to write it. This helper is the
+port refusing that.
+
+That last one is the clearest case of what this queue keeps turning up: a function
+whose entire justification is a CPU width, invisible in Rust, and undocumented
+until now. The name says what it does; nothing said why anyone would want it.
+
+The queue: 61 -> 58.
