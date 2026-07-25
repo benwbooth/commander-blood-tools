@@ -151,19 +151,35 @@ pub const SHIP_3D_TEMP_SND_RESTORE_CALL_OFFSET: u16 = 0x0670;
 pub const SHIP_3D_TRANSITION_STATE_OFFSET: u16 = 0x06f2;
 pub const SHIP_3D_PLANE_BAND_COPY_OFFSET: u16 = 0x073d;
 pub const SHIP_3D_DEPTH_SCROLL_STEP_OFFSET: u16 = 0x07bc;
+/// THE SHIP-3D DS STATE BYTES. Each of these is an ADDRESS, and its evidence is
+/// the instruction that touches it; the RULES they take part in are decoded in
+/// `ship3d.rs` and `vm.rs`, which is where the surrounding logic is documented.
+/// Before this block was cited, its names asserted meanings ("OPENING_FLAG")
+/// that were established elsewhere with nothing here to connect them
+/// (audit-fixes #231).
+/// The primary target word list the selector walks — `mov si,0x250b` @`0xB2C3`.
 pub const SHIP_3D_TARGET_LIST_DS_OFFSET: u16 = 0x250b;
+/// The presented target; a repeat of it is not re-committed — `cmp ax,[0x251b]` @`0xB21A`.
 pub const SHIP_3D_CURRENT_TARGET_DS_OFFSET: u16 = 0x251b;
 pub const SHIP_3D_SEQUENCE_ACTIVE_DS_OFFSET: u16 = 0x252a;
+/// Bit 0 = build the list, bit 1 = it is open (`0xb2fd`) — `test byte [0x252b],1` @`0xB2DC`.
 pub const SHIP_3D_TARGET_SELECT_PHASE_DS_OFFSET: u16 = 0x252b;
+/// Set when the selector falls back to the inline table — `mov byte [0x252c],0` @`0xB2BE`.
 pub const SHIP_3D_TARGET_FALLBACK_DS_OFFSET: u16 = 0x252c;
 pub const SHIP_3D_HUD_FLAG_DS_OFFSET: u16 = 0x2793;
 pub const SHIP_3D_DEPTH_OFFSET_DS_OFFSET: u16 = 0x2527;
 pub const SHIP_3D_PLANE_COPY_ENABLE_DS_OFFSET: u16 = 0x252e;
+/// The transition opening flag — `mov byte [0x252f],1` @`0xB6A5`.
 pub const SHIP_3D_OPENING_FLAG_DS_OFFSET: u16 = 0x252f;
+/// The transition closing flag — `mov byte [0x2530],1` @`0xB6BD`.
 pub const SHIP_3D_CLOSING_FLAG_DS_OFFSET: u16 = 0x2530;
+/// The step: 4 opening, 8 closing (`0xb6b8`), 6 on the back row (`0xb336`) — `mov byte [0x2531],4` @`0xB6A0`.
 pub const SHIP_3D_DEPTH_STEP_DS_OFFSET: u16 = 0x2531;
+/// Set before the world-view teardown, which the opening flag then gates — `mov byte [0x2532],1` @`0xB288`.
 pub const SHIP_3D_EXIT_PENDING_DS_OFFSET: u16 = 0x2532;
+/// The armed latch the updater tests first (`0xb692`) — `mov byte [0x2533],1` @`0xB6AA`.
 pub const SHIP_3D_TRANSITION_ARMED_DS_OFFSET: u16 = 0x2533;
+/// The ds-relative fallback list, used when the primary is empty — `mov si,0x2537` @`0xB2D4`.
 pub const SHIP_3D_FALLBACK_TARGET_TABLE_DS_OFFSET: u16 = 0x2537;
 pub const SHIP_3D_NAVIGATION_TRIGGER_DS_OFFSET: u16 = 0x27d8;
 pub const SHIP_3D_NAV_CHOICE_SELECTED_DS_OFFSET: u16 = 0x2a19;

@@ -7148,3 +7148,34 @@ neglect.
 
 The tool's docstring now describes all three outcomes, including that ABSENT is a
 question (four good reasons, one real defect) rather than a failure.
+
+## #231 — names that asserted what nothing here proved
+
+`bloodprg.rs` carries a block of thirty-odd bare constants:
+`SHIP_3D_OPENING_FLAG_DS_OFFSET = 0x252f`, `SHIP_3D_CLOSING_FLAG_DS_OFFSET =
+0x2530`, and so on. No docs, no citations — just a name asserting a meaning.
+
+Those names are CLAIMS. "OPENING_FLAG" says the game treats `DS:0x252F` as a
+transition opening flag, which is a decoded fact about the original — and the
+decode establishing it lives in `ship3d.rs` (`0xB6A5`), with nothing in
+`bloodprg.rs` connecting the two. A reader of this file alone had a name and a
+number and no way to check either.
+
+Ten now carry the instruction that touches them, all from decodes made earlier in
+this campaign: the selector's list and phase bytes (#192), the transition's
+opening/closing/step/armed set (#218), the exit-pending byte at `0xB288` whose
+polarity #192 got backwards. The citation guard verifies all ten — its count went
+401 -> 411 with 0 wrong.
+
+Settled ASM. The other twenty-odd in the block are code offsets within segments
+rather than DS addresses, and need the segment resolved before an instruction can
+be named; that is the next slice rather than something to guess at.
+
+ONE PROCESS FAILURE, found while chasing this. `snd_entry_call_sites` showed
+UNVERIFIED despite #216 settling it. Tracing the ledger through fourteen commits:
+in #216 I ran `git checkout docs/function-audit.tsv` to undo a timed-out loop —
+AFTER generating the suggestion list. The reset undid that row's settle, and the
+list only held then-UNVERIFIED rows, so the batch never re-settled it. One row
+lost to my own sequencing, not a tool bug. Re-settled, and `audit_suggest` now
+reports 2 exercised-only rows rather than 1, which is the check that nothing else
+was lost the same way.
