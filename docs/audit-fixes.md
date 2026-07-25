@@ -761,3 +761,29 @@ because it touches four call sites across three modules and deserves its own cha
 One thread genuinely unresolved: per-speaker banks DO exist (`sn\xxxxxxxxxxxx` template
 at `DS:0x0D06`), so a bank may be chosen per speaker. But whichever bank is loaded, the
 only clip SELECTION logic in the executable is the random roll above.
+
+## DECODED — per-line asset selection is a TABLE, not arithmetic
+
+The talk-clip question is now answered at the mechanism level:
+
+    line_id = sign_extend(b3) + 9                       0x11F2
+    entry   = DS:0x1FB5 + line_id*4                     0x9D65..0x9D6A
+    asset   = word at entry+2   (0xFFFF = none)         0x9D6E, 0x9D71
+    skip reload if asset == DS:0x1FA3                   0x9D76
+    else cache + unpack (0x5B53/0x5B57, [0x5229], 0x1ce:0x91d)
+
+The table is populated at runtime through a write cursor at `DS:0x1FAF`, seeded at
+`0x7447` as `0x1FB5 + 0x26`. That constant pins the indexing exactly: `0x26` = 38 is
+the entry for **b3 = 0** (line id 9, so `9*4 + 2`). The table is filled from the b3=0
+entry upward.
+
+CONSEQUENCE for `vm::text_selector_voice_clip_index`, which is the last thing keeping
+those rows open: the game's effective per-line index is **b3 itself, 0-based**. The
+port computes **b3 - 1** and additionally treats `b3 == 0` as "silent". Both differ
+from the decoded mechanism.
+
+NOT changed in this pass, deliberately. The port resolves talk-HNMs through DESCRIPT
+records while the game resolves an asset id through a RUNTIME-POPULATED table; those
+are different data paths, so shifting the index by one without knowing what fills
+`DS:0x1FB5` would be swapping one unverified rule for another. What is now available is
+the real mechanism to implement against, and the specific arithmetic to check it with.
