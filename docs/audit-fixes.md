@@ -2077,3 +2077,33 @@ either constant surfaces the overlay rather than silently breaking the other.
 POSITIVE CONTROLS: perturbing one glyph advance fails two font tests; perturbing
 one nav point fails the geometry test and the existing engine test that asserts
 the points coincide.
+
+## FIX #61 — the ledger was hiding a third of the port from itself
+
+Settling the newly verified tables turned up `NOT IN LEDGER` for all of them, and
+the reason was worse than a missing feature.
+
+**Constants were never enumerated.** The inventory matched `fn|struct|enum`, so
+the port's TABLES — the most directly falsifiable things in the codebase, copied
+byte-for-byte out of the binary — had no rows at all. Four of them had no image
+comparison either (FIX #60), and nothing in the ledger could say so.
+
+**And `in_tests` LATCHED.** Once a file contained `#[cfg(test)]`, every item after
+it was skipped for the rest of the file. `src/font.rs` keeps real code after its
+test module — `BoldConsoleFont`, `draw_square_caps`, and all three `SQUARE_CAPS`
+tables — so that entire tail was invisible to the campaign. The flag now tracks
+the module's braces and clears when it closes.
+
+Effect on the numbers, which is the point worth being blunt about: the denominator
+went from 1415 to **2106**. The ledger did not get worse; it stopped
+under-reporting. 691 items existed in the port with no row, and any percentage
+computed before this was measuring a subset that happened to exclude the tables.
+
+Settled 11 of the recovered rows immediately as DATA — every table with a
+byte-for-byte image test (`GAME_FONT_*`, `SQUARE_CAPS_*`, `NAV_DESTINATION_POINTS`,
+`SHIP_3D_HUD_PYRAMID_VERTICES`, `FIELD_OFFSETS`, `OPCODE_DESC`,
+`WORLD_ART_DIRECTORY`).
+
+The lesson generalises past this project: a coverage metric that silently drops
+items is worse than no metric, because it reports progress on the part it can see.
+Both defects here made the ledger look BETTER than reality.

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build the PORT AUDIT LEDGER: every function and struct in src/, each with its
+"""Build the PORT AUDIT LEDGER: every function, struct and CONSTANT in src/, each with its
 claimed binary origin (asm address cited in its doc comment / labels.csv) and its
 verification status. The ledger is the driving worklist for the systematic
 check-every-ported-item campaign:
@@ -11,6 +11,13 @@ check-every-ported-item campaign:
     TESTED   - has a unit/regression test but no external ground truth
     INFRA    - port plumbing with no binary counterpart (windowing, GPU, CLI...)
     UNVERIFIED - no citation, no test: highest priority
+
+Constants were originally left out, which hid the most directly checkable things
+in the port: the TABLES copied byte-for-byte out of the binary. Four of them
+(`GAME_FONT_GLYPHS`, `GAME_FONT_WIDTHS`, `NAV_DESTINATION_POINTS`,
+`SHIP_3D_HUD_PYRAMID_VERTICES`) had no image comparison at all and no ledger row
+to say so. Including them grows the denominator, which is the honest direction:
+the ledger should enumerate the port's real surface.
 
 Output: docs/function-audit.tsv (item, file, line, kind, origin, status, evidence)
 Heuristics assign a PROVISIONAL status from doc comments; the campaign's job is to
@@ -93,6 +100,7 @@ for root, _, files in os.walk(SRC):
         text = open(path, encoding="utf-8", errors="replace").read()
         lines = text.splitlines()
         in_tests = False
+        test_depth = None
         in_raw_string = False
         doc: list[str] = []
         for i, line in enumerate(lines, 1):
@@ -108,13 +116,31 @@ for root, _, files in os.walk(SRC):
                 if '"#' in line:
                     in_raw_string = False
                 continue
+            # `in_tests` used to LATCH: once a file had a test module, every item
+            # after it vanished from the ledger. src/font.rs keeps real code after
+            # its test module -- BoldConsoleFont and all three SQUARE_CAPS tables
+            # -- so those were invisible. Track the module's braces and clear the
+            # flag when it closes.
             if stripped.startswith("#[cfg(test)]"):
                 in_tests = True
+                test_depth = None
+            if in_tests:
+                if test_depth is None:
+                    if "{" in line:
+                        test_depth = line.count("{") - line.count("}")
+                else:
+                    test_depth += line.count("{") - line.count("}")
+                if test_depth is not None and test_depth <= 0:
+                    in_tests = False
+                    test_depth = None
+                    # fall through: this line may itself declare an item
             if stripped.startswith("///") or stripped.startswith("//!"):
                 doc.append(stripped)
                 continue
             m = re.match(
-                r"\s*(?:pub(?:\([^)]*\))?\s+)?(fn|struct|enum)\s+([A-Za-z0-9_]+)", line
+                r"\s*(?:pub(?:\([^)]*\))?\s+)?(fn|struct|enum|const|static)\s+"
+                r"([A-Za-z0-9_]+)",
+                line,
             )
             if not m:
                 if stripped and not stripped.startswith("//"):
