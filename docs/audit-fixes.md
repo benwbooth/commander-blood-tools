@@ -4910,3 +4910,36 @@ The port had all of it right. Cited instructions 165 -> 176; the queue 72 -> 71.
 Ten rows in, not one has been WRONG. What they lacked was any record that their
 odd shapes — a divide before a multiply, a compare before a write, a bit-test
 whose carry is the condition — were transcriptions rather than choices.
+
+## #152 — a ported function that is deliberately less than its routine
+
+`commit_ship_3d_sprite_slot_dirty_geometry` is the third slot function, and the
+first in this queue where the port and the routine do NOT correspond one-to-one.
+
+`sprite_slot_commit_dirty_range` @`0x43F7` takes a slot RANGE packed into `ebp`
+(`shl ebp,0x10 / mov bp,bx`), walks it from `0x6212 + first*32`, and carries a
+second path entirely:
+
+```text
+  0x4412  test word [0x5249],1 / je 0x4435   the clip-SNAPSHOT flag
+  0x441D  mov eax,[0x5235] / stosd           left+right as ONE dword
+  0x4423  mov eax,[0x5239] / stosd           top+bottom
+  0x4429  mov word [di],0xffff               terminate the list
+  0x442D  mov word [0x5249],0                and clear the flag
+```
+
+That path pushes the WHOLE clip window into the dirty-rect list at `DS:0x6612` as
+a single entry instead of per-slot rectangles — the "everything changed, stop
+tracking pieces" escape hatch.
+
+The port implements only the per-slot commit. Neither the range walk nor the
+snapshot is ported, because this engine redraws every frame and keeps no dirty
+list. That is a legitimate difference, and the point of writing it down is that an
+UNDOCUMENTED partial port is indistinguishable from an incomplete one: the next
+reader finds a routine with two branches and a function with neither, and cannot
+tell whether the omission was reasoned.
+
+Worth noting what still matters: the dirty BIT is read by this commit even though
+the dirty LIST is not built, so #150's compare-before-write is not dead weight.
+
+Cited instructions 176 -> 181; the queue 71 -> 70.

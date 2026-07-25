@@ -2699,6 +2699,29 @@ pub fn update_ship_3d_sprite_slot_extent(
     effect
 }
 
+/// Commit one slot's current geometry into its previous-geometry fields — the
+/// BODY of `sprite_slot_commit_dirty_range` @`0x43F7`.
+///
+/// SCOPE, stated because the addresses do not match one-to-one: the game's
+/// routine takes a slot RANGE packed into `ebp` (`shl ebp,0x10 / mov bp,bx`),
+/// walks it from `0x6212 + first*32`, and has a second path entirely —
+///
+/// ```text
+///   0x4412  test word [0x5249],1 / je 0x4435   the clip-SNAPSHOT flag
+///   0x441D  mov eax,[0x5235] / stosd           left+right as one dword
+///   0x4423  mov eax,[0x5239] / stosd           top+bottom
+///   0x4429  mov word [di],0xffff               terminate the list
+///   0x442D  mov word [0x5249],0                and clear the flag
+/// ```
+///
+/// — which pushes the WHOLE clip window into the dirty-rect list at `DS:0x6612`
+/// as a single entry instead of per-slot rects. Neither the range walk nor the
+/// snapshot is ported, because this engine redraws every frame and keeps no dirty
+/// list; what it needs is the per-slot commit, which is what this function is.
+///
+/// That is also why `update_ship_3d_sprite_slot_position`'s compare-before-write
+/// (#150) still matters here: the dirty BIT is read by this commit even though the
+/// dirty LIST is not built.
 pub fn commit_ship_3d_sprite_slot_dirty_geometry(
     descriptor: &mut Ship3dObjectSpriteDescriptor,
 ) -> Ship3dSpriteSlotUpdateEffect {
