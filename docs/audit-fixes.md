@@ -2004,3 +2004,41 @@ bytes and the recomp vector scan: verify the tool before believing the finding.
 POSITIVE CONTROL: drifting `OPTION_BOX_LABEL_FILE_OFFSET` by 2 now fails the sweep
 with the exact pair named. The test also asserts the sweep still FINDS at least 15
 pairs, so a regex that silently stops matching cannot pass forever.
+
+## FIX #59 — every quoted instruction now checked against the disassembly
+
+The port's doc comments quote the binary constantly:
+
+    ///   0x5DB4  mov ax,[si] / cmp ax,1 / jne 0x5DE3   owner kind == 1?
+
+Nothing verified that the byte at `0x5DB4` decodes to `mov`. A wrong address in a
+comment is worse than no comment — it sends the next reader to the wrong routine
+while making the claim look sourced. `tools/check_cited_instructions.py`
+disassembles every cited address and compares the mnemonic; it is now a test.
+
+RESULT: 37 quoted instructions verified, 4 wrong — all four MINE, from the
+tint-table work, and all four the same mistake. I had written
+
+    0x22F5  push (pct*bx)/100
+
+meaning "the block from `0x22F5` computes that and pushes it". `0x22F5` is
+`mul bx`; the push is at `0x22FC`. In a block that otherwise quotes real
+instructions (`0x22F1  neg ax`), a summary in quotation shape reads as a literal
+quote and is not one. Corrected so each address names the instruction actually
+there, with the computing range mentioned separately.
+
+That is the whole value of the check: the semantics were right, the addresses
+were not, and nobody would have noticed until someone followed one.
+
+TWO THINGS WORTH KEEPING FROM BUILDING IT:
+
+* Adding `re/tools` to `sys.path` before importing capstone breaks it — that
+  directory holds a `dis.py` which shadows the stdlib `dis` capstone needs
+  through `inspect`. `re/tools/dis.py` pops its own directory for this reason;
+  the new tool imports capstone first.
+* 33 lines were skipped as non-mnemonic (`0x9016  bx = [0x6752]` and similar
+  prose). The tool reports that count rather than hiding it, so the verified
+  number means what it says.
+
+POSITIVE CONTROL: shifting one cited address by 1 (`0x91CE` -> `0x91CF`) fails
+with `doc says 0x091cf is 'test', disassembly says 'add'`.

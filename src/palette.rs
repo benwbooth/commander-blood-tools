@@ -120,10 +120,10 @@ pub const PALETTE_BLEND_MAX_DISTANCE: u16 = 0x0BB8;
 ///
 /// ```text
 ///   0x22F1  neg ax                       the caller passes the NEGATED percent
-///   0x22F5  push (pct*bx)/100            the target's three components, prescaled
-///   0x22FD  push (pct*cx)/100
-///   0x2304  push (pct*dx)/100
-///   0x230D  push -(pct-100)              = 100-pct, the SOURCE weight
+///   0x22FC  push ax                      (pct*bx)/100, computed from 0x22F5
+///   0x2303  push ax                      (pct*cx)/100, from 0x22FD
+///   0x230C  push ax                      (pct*dx)/100, from 0x2304
+///   0x2314  push ax                      100-pct, from 0x230D -- the SOURCE weight
 ///   0x2322  each source component: src*(100-pct)/100 + prescaled target
 ///   0x234A  best = 0xFFFF, dist = 0xBB8
 ///   0x2354  scan all 256 entries of the live palette at DS:0x5251

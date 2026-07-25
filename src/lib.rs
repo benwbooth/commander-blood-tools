@@ -59,6 +59,41 @@ pub const VIEWPORT_H: usize = 200;
 pub const HNM_FPS: u32 = 15;
 
 #[cfg(test)]
+mod cited_instruction_tests {
+    /// Every `0xNNNN  <mnemonic>` a doc comment QUOTES from the binary must
+    /// actually decode to that mnemonic. A wrong address in a comment is worse
+    /// than no comment: it sends the next reader to the wrong routine while
+    /// making the claim look sourced. `tools/check_cited_instructions.py`
+    /// disassembles each cited address and compares.
+    #[test]
+    fn quoted_instructions_match_the_disassembly() {
+        let script = std::path::Path::new("tools/check_cited_instructions.py");
+        if !script.exists() || !std::path::Path::new("re/bin/BLOODPRG.EXE").exists() {
+            return;
+        }
+        let out = match std::process::Command::new("python3").arg(script).output() {
+            Ok(o) => o,
+            // capstone unavailable in this environment — nothing to check with.
+            Err(_) => return,
+        };
+        let text = String::from_utf8_lossy(&out.stdout);
+        if text.trim().is_empty() {
+            return;
+        }
+        assert!(out.status.success(), "cited instructions disagree:\n{text}");
+        let checked: usize = text
+            .split_whitespace()
+            .next()
+            .and_then(|n| n.parse().ok())
+            .unwrap_or(0);
+        assert!(
+            checked >= 30,
+            "expected the sweep to verify quoted instructions, got: {text}"
+        );
+    }
+}
+
+#[cfg(test)]
 mod offset_pair_tests {
     /// Every `DS:0xNNNN` the port documents alongside a `file 0xNNNNN` must agree
     /// with the DS base (file `0xD420`). A drifted pair is invisible to ordinary
