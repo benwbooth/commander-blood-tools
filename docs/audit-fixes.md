@@ -1280,3 +1280,34 @@ what sets this variable.
 The executable specification in `vm.rs` (`dlg_line_id_for_selector` etc.) is still
 correct for the path it describes. It just describes far less of the mechanism than the
 name suggests, and that is now recorded at the function.
+
+## COVERAGE GAP — the port models 8 of the 12 field selectors the game uses
+
+Enumerated every `mov ax,imm; call 0x6023` (`vm_field_offset`) site: **49 sites across
+12 distinct selectors**.
+
+    game uses: 0x02 0x05 0x08 0x09 0x0A 0x0B 0x0C 0x0D 0x0E 0x0F 0x11 0x13
+    port has:  0x02      —    0x09 0x0A 0x0B 0x0C  —   0x0E  —   0x11 0x13
+
+Unmodelled: **0x05, 0x08, 0x0D, 0x0F** — five sites:
+
+    0x0F  @0x5720
+    0x08  @0x5DC4, 0x5DEC
+    0x0D  @0x5ED9
+    0x05  @0x60A8
+
+THEY CLUSTER, and where they cluster is the point. `0x5DC4`/`0x5DEC` are inside
+`vm_post_update_c4_pair` (`0x5D8F`) — the routine whose `+4` processed-marker and
+`0x67B6` gate I verified earlier today — and `0x5ED9` is in the `0xC6` branch at
+`0x5E22`. That is exactly the region I described as untraced when I declined to mark
+`post_update_execution_state`.
+
+So the decision to leave those rows open was right for a better reason than I had at the
+time: it is not merely that I had not read the whole function, it is that the function
+performs field operations through selectors the port has no representation for. At
+`0x5DC4` the handler resolves selector 8 and INCREMENTS the word at that field
+(`inc word [eax+edi]`), which is state the port does not maintain.
+
+Most-used selectors for context: `0x11` (12 sites), `0x0B` (9), `0x13` (8), `0x0C` (5).
+The four gaps are the rare ones, which is consistent with them having been missed rather
+than dismissed.
