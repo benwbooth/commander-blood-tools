@@ -31,6 +31,14 @@
 ///
 /// FIX: colours 128..191 should come from the loaded scene, not from here. Until then
 /// this is an ACKNOWLEDGED APPROX for that range only — the lower half is sound.
+///
+/// INDEPENDENT CORROBORATION, from the opposite direction. `engine.rs` had already
+/// learned this empirically without the decode: its hand-palette installs are narrowed
+/// to `202..=251` with the comment "installing all of 128..=255 clobbered scene
+/// palettes whose images own 128..201 (the world rooms: the cyan-cast defect found by
+/// the planet reference bank)". A rendering bug and a static byte-comparison landed on
+/// the same boundary from different evidence, which is the strongest form this claim
+/// can take short of finding the writer.
 pub const GAME_SCREEN_PALETTE_DAC_LOWER_IS_BINARY: usize = 128;
 pub const GAME_SCREEN_PALETTE_DAC: [u8; 768] = [
     0, 0, 0, 36, 46, 11, 35, 37, 6, 34, 34, 14,

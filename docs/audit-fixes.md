@@ -859,3 +859,25 @@ commands and blits from them, and the compositor adds double-buffering, remap ta
 copyback — semantics the nav markers do not use. It would move ~100 lines across a crate
 boundary for no pixel change. Still worth doing eventually for the remap paths; not
 worth doing ahead of work that changes behaviour.
+
+## SWEEP — palette application sites: consistent, and they corroborate the DAC finding
+
+Swept every `scene_palette` assignment in `engine.rs`. No defect; recording the clean
+result and one genuinely useful cross-check.
+
+The ranges differ by SITE and each difference is justified:
+
+* HNM overlay video installs only `1..127` — "must survive the bridge background's
+  palette install", i.e. the overlay must not own the scene bank.
+* A full-screen LBM background (`bob_contact_bg`) installs all 256, which it legitimately
+  owns.
+* The two hand-mesh installs both narrow to `202..=251`, the skin ramp.
+
+CROSS-CHECK WORTH KEEPING: those hand installs carry the comment "installing all of
+128..=255 clobbered scene palettes whose images own 128..201 (the world rooms: the
+cyan-cast defect found by the planet reference bank)". That is an EMPIRICAL finding,
+arrived at from a rendering bug — and it lands on the same boundary as this session's
+STATIC finding that DAC colours 128..191 differ from the baked image and are scene
+state. Two independent lines of evidence, one from a visual defect and one from a byte
+comparison, agreeing on where the scene bank starts. Noted in `palette.rs` so the APPROX
+there is not read as a lone guess.
