@@ -447,8 +447,11 @@ pub struct EngineState {
     /// The OPTION choice box (over the panorama) is open — the REAL OPTION interaction
     /// (savestate-verified); replaces the invented 3D-pyramid OPTION screen.
     pub option_box_active: bool,
-    /// The SAVE-SLOT UI (OPTION submenu -> SAVE): the oracle-measured grey name bar
-    /// awaiting a typed slot name (digits+lowercase, Enter commits).
+    /// The SAVE-SLOT UI (OPTION submenu -> SAVE). Rendered through the ORDINARY
+    /// LIST WIDGET with the edit buffer substituted for the row being renamed
+    /// (`0x1BAB`/`0x1BBD`/`0x8573`) — see [`Self::draw_save_ui_rows`]. True while
+    /// awaiting a typed slot name (digits+lowercase, Enter commits — the `0x1DD8`
+    /// edit law).
     pub save_ui_active: bool,
     pub save_ui_name: String,
     /// The slot the SAVE flow is typing into — the row `[0x2734]` names
@@ -2565,17 +2568,28 @@ impl EngineState {
     /// DAC (grey ramp 224..239 + text greens 253..255) is installed verbatim; HNM `pl`
     /// palette blocks only ever cover indices 1..127, so the bank never collides with
     /// the character video above the band.
+    /// Overlay the intro montage's console band.
+    ///
+    /// THE PALETTE HALF IS NO LONGER A CAPTURE. `console_band.dac`'s entries
+    /// 224..255 are byte-identical to the port's own `GAME_SCREEN_PALETTE_DAC`
+    /// over the same range (0 of 96 bytes differ, checked against the shipped
+    /// file), so the harvested DAC was a duplicate of a constant already sourced
+    /// from the image at `0x12F78`. Uses the constant.
+    ///
+    /// THE INDEX HALF IS STILL A CAPTURE, and is the open item. What is now known
+    /// about it: the band uses exactly SIXTEEN indices, `224..=239` — a dedicated
+    /// console bank — and it is NOT a slice of the bridge panorama, whose frames
+    /// draw in `0..~75`, a disjoint range. So the source is an asset rendered in
+    /// the 224+ bank rather than `TB.BIG`. Raw byte statistics over the shipped
+    /// `.SPR`/`.EXT` files do not identify it (they are compressed; a dozen files
+    /// show ~50% of bytes in that window by chance), so the next step is decoding
+    /// the console-band draw call rather than searching the assets.
     fn overlay_console_band(&mut self) {
         const BAND_TOP: usize = 140;
         const BAND: &[u8] = include_bytes!("../accuracy/captures/console_band.idx");
-        const BAND_DAC: &[u8] = include_bytes!("../accuracy/captures/console_band.dac");
+        let dac = crate::palette::game_screen_palette();
         for i in 224..=255usize {
-            let d = &BAND_DAC[i * 3..i * 3 + 3];
-            self.scene_palette[i] = [
-                ((d[0] as u16 * 255) / 63) as u8,
-                ((d[1] as u16 * 255) / 63) as u8,
-                ((d[2] as u16 * 255) / 63) as u8,
-            ];
+            self.scene_palette[i] = dac[i];
         }
         for (k, &ci) in BAND.iter().enumerate() {
             let x = k % ENGINE_SCREEN_WIDTH;
@@ -5088,6 +5102,25 @@ mod tests {
     /// of 0xE0, and item text in 0xE8 (see `re/REVERSE.md` "CHOICE BOX SPEC
     /// MEASURED"). This locks the widget to the decoded values so a regression
     /// (wrong index, missing border/fill) fails a test.
+    #[test]
+    fn the_harvested_band_dac_was_a_duplicate_of_the_image_palette() {
+        // Justifies dropping console_band.dac: over the range the band uses, the
+        // captured DAC and the palette baked from file 0x12F78 are the same bytes.
+        // If the capture ever stops matching, the removal was wrong and this fails.
+        let captured: &[u8] = include_bytes!("../accuracy/captures/console_band.dac");
+        let image = &crate::palette::GAME_SCREEN_PALETTE_DAC;
+        assert_eq!(
+            &captured[224 * 3..256 * 3],
+            &image[224 * 3..256 * 3],
+            "the harvested band DAC must equal the image palette over 224..255"
+        );
+        // And the band really does only use that bank — sixteen indices, 224..=239.
+        let band: &[u8] = include_bytes!("../accuracy/captures/console_band.idx");
+        let used: std::collections::HashSet<u8> = band.iter().copied().collect();
+        assert_eq!(used.len(), 16);
+        assert!(used.iter().all(|&i| (224..=239).contains(&i)));
+    }
+
     #[test]
     fn the_save_ui_is_the_slot_list_with_the_edit_buffer_substituted() {
         // 0x1BAB sets [0x2734] to the slot being renamed and 0x1BBD copies it into

@@ -2277,3 +2277,28 @@ widget's own band and colour instead of a measured rectangle.
 THREE FOR THREE on this seam (#64 tint, #65 centring, #66 save UI): every surface
 whose comment said "measured" turned out to be a shared widget the port had
 re-implemented from a photograph of one frame.
+
+## FIX #67 — half the harvested console band was a copy of a constant the port already had
+
+The intro montage's console band is `include_bytes!`'d from two capture files.
+The palette half is gone: `console_band.dac`'s entries `224..255` are
+BYTE-IDENTICAL to `GAME_SCREEN_PALETTE_DAC` over the same range — 0 of 96 bytes
+differ — so the harvested DAC duplicated a constant already sourced from the image
+at `0x12F78`. The overlay uses the constant now, and a test pins the equivalence
+so the removal fails loudly if it ever stops holding.
+
+The INDEX half is still a capture, and this narrowed it usefully rather than
+leaving it as "harvested art":
+
+* the band uses exactly SIXTEEN indices, `224..=239` — a dedicated console bank;
+* it is NOT a slice of the bridge panorama. I checked, expecting it would be:
+  `TB.BIG`'s frames draw in indices `0..~75`, a DISJOINT range, and every frame
+  differs from the band in 100% of bytes. The port already renders that panorama
+  pixel-exactly, so had it been a slice this would have been a two-line fix.
+* raw byte statistics over the shipped `.SPR`/`.EXT` files do not identify the
+  source — they are compressed, and a dozen unrelated files show ~50% of their
+  bytes in the `224..239` window by chance. Recorded so the next attempt does not
+  repeat it.
+
+So the remaining work is to decode the console-band DRAW CALL rather than to
+search the assets, which is a better-posed task than the one this started as.
