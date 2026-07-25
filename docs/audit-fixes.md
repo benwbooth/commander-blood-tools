@@ -3268,3 +3268,56 @@ Registered as a lib test. Also removed the dead `GAME_FONT_SPACE_ADVANCE` copy i
 `extract/render.rs` (`font.rs` owns that rule and its `0x31D7` citation) and made
 the file's `game_font_glyph` alias `#[cfg(test)]`, so an unwatched non-test copy
 cannot drift back in — the duplication class from #97.
+
+## #102 — the remap primitive clips vertically against the WRONG global, and the port must too
+
+Chasing a dead-code warning in `extract/render.rs` turned into a real divergence.
+`sprite::remap_rect_indexed` clamped its rect to the framebuffer, and its doc
+claimed that matched `0x33B2..0x33F4`. It does not. The ladder clips against the
+CLIP-WINDOW globals `DS:0x5235..0x523B` — and its vertical check is
+
+    0x33E6  mov ax,cx / add ax,bp / sub ax,[0x5237]
+
+`cx` is y and `bp` is height (pinned by the address math at `0x33FA`:
+`ax=y; xchg ah,al; cx<<=6; ax+=cx; ax+=bx` = `y*320+x`). So the VERTICAL extent is
+clipped against `DS:0x5237`, the HORIZONTAL RIGHT bound. Every other clip ladder
+in the binary uses `DS:0x523B` for the bottom — the point plot at `0x9B04` checks
+x against `0x5235`/`0x5237` and y against `0x5239`/`0x523B`, and the string row
+draw at `0x3437` guards with `cmp dx,gs:[0x523B]`. This one is a bug in the
+original.
+
+It survived because `right` (320) exceeds `bottom` (200), so on a full-screen
+window the vertical clamp never fires for a rect that fits on screen — which is
+every rect the game asks it to tint. It becomes observable under a LETTERBOX
+window: `0x33E2` still pulls y down to the top bound while the bottom is left
+effectively open, so a tall tint runs past the letterbox floor. A port that
+"fixed" this would draw a shorter box than the game does.
+
+So the ladder is transcribed verbatim, with the clip window as an explicit input
+(`ClipWindow`, the four globals) instead of an assumption baked into the loop. The
+one deliberate divergence is memory safety: the game writes `y*320+x` unbounded,
+so the quirk lets it run past the visible page; the port stops at the buffer.
+
+The dead twin in `extract/render.rs` implemented the sensible-but-wrong reading,
+clipping vertically to `clip_bottom` — and `render.rs` had a TEST asserting that
+behaviour. A test agreeing with a fabricated rule is the shape from #97. The copy
+is deleted and the test now asserts the real thing: the row past `bottom` IS
+remapped. The new test discriminates — a bottom-clamping implementation fails it.
+
+`check_cited_instructions.py` caught one bad citation in the new doc block
+(`0x33BA` is the `add`, not the `jns`) before it was committed.
+
+### The ledger could not see 33 rows it already had evidence for
+
+Settling the new function was REFUSED for want of a cited address, though its doc
+is nothing but citations. `audit_inventory.py` cleared the pending doc comment on
+any line that was not a comment or an item declaration — including ATTRIBUTES, so
+`#[allow(clippy::too_many_arguments)]`, `#[derive(...)]` and `#[inline]` stripped
+the item below them of its origin, permanently. It also harvested addresses only
+from the 400-character evidence truncation, so a long transcription's citations
+fell off the end.
+
+Both fixed: attributes no longer break the association, and addresses come from
+the whole doc while the evidence column stays truncated for readability. 33 rows
+regained an origin they always had — the same shape as constants being left out of
+the ledger entirely, and the reason the denominator moved once before.

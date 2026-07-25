@@ -143,15 +143,24 @@ for root, _, files in os.walk(SRC):
                 line,
             )
             if not m:
-                if stripped and not stripped.startswith("//"):
+                # An ATTRIBUTE sits between the doc comment and the item it
+                # documents (`#[allow(clippy::too_many_arguments)]`, `#[derive]`,
+                # `#[inline]`). Clearing the doc here stripped those items of their
+                # origin, so a fully cited function could never be settled -- the
+                # same shape as constants being left out of the ledger entirely.
+                if stripped and not stripped.startswith("//") and not stripped.startswith("#["):
                     doc = []
                 continue
             kind, name = m.group(1), m.group(2)
             if in_tests or name.startswith("test_"):
                 doc = []
                 continue
-            doctext = " ".join(doc)[:400]
-            addrs = ADDR.findall(doctext)
+            fulldoc = " ".join(doc)
+            doctext = fulldoc[:400]  # evidence column stays readable
+            # ...but addresses come from the WHOLE doc: a long transcription puts
+            # its citations past 400 chars, and truncating them away made a
+            # thoroughly cited function look uncited.
+            addrs = ADDR.findall(fulldoc)
             origin = ",".join(dict.fromkeys(addrs))[:60]
             # provisional status
             low = doctext.lower()
