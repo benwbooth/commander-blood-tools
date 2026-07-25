@@ -2714,3 +2714,31 @@ Remaining twins worth the same treatment, from the same scan: `special_slot_inse
 /`special_slot_remove` (`0x5FF6`/`0x5FD8`), `square_caps_text_width` (`0x30CD`),
 `entity::advance_state` and `toggle` (`0x41D1`/`0x420D`), `save_ui_key` (`0x1DD8`),
 `step_ship_3d_nav_state` (`0xB75C`).
+
+## FIX #82 — the special-slot pair: a latent divergence, and a `[bp]` trap
+
+Second of the twin differentials. `special_slot_insert`/`special_slot_remove`
+manage the 16-word list at `DS:0x6D3E`; their lifts `func_5ff6`/`func_5fd8` are
+oracle-verified, the native versions were `ASM?`.
+
+A REAL DIVERGENCE, though a latent one. `0x5FD8` clears THE FIRST match and
+returns `stc`; the port cleared EVERY match and returned nothing. Not observable
+today — `special_slot_insert` refuses duplicates, so a value cannot normally
+appear twice — but it is not what the game does, and the discarded carry flag is
+real information. Both fixed: first match only, boolean returned.
+
+The differential drives both through one script (insert, duplicate, remove
+present, remove absent, fill, overflow) and compares the LIST CONTENTS and the
+flag after every step, including the full-list `clc` that separates "inserted"
+from "no room".
+
+THE TRAP, worth recording for the next differential. The first run showed the
+lift doing NOTHING — its list stayed all zeros while the native inserted
+correctly. The routine addresses the list as `mov bp,0x6D3E / cmp ax,[bp]`, and a
+`[bp]` operand defaults to **SS**, not DS. The test had `ss = 0x9000` for a stack,
+so the lift was faithfully reading and writing a list in a segment nothing else
+touched. Setting `ss = gs` fixed it.
+
+That is a property of the ORIGINAL worth knowing: this list is reached through the
+stack segment, so any harness that runs these routines must have SS pointing at
+the data segment, as the game does.

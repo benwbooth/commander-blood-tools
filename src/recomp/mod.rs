@@ -1191,6 +1191,90 @@ mod tests {
         }
     }
 
+    /// The SPECIAL-SLOT pair against their lifts (`func_5ff6` / `func_5fd8`).
+    ///
+    /// Sixteen words at `DS:0x6D3E`. The sweep drives both implementations through
+    /// the same script — insert into an empty list, insert a duplicate, fill it,
+    /// overflow it, remove a present value, remove an absent one — and compares
+    /// the LIST CONTENTS and the boolean/CF after every step.
+    #[test]
+    fn native_special_slots_match_the_lifted_pair() {
+        const GS: u16 = 0x2600;
+        const LIST_DS: u32 = 0x6D3E;
+        const SLOTS: usize = 16;
+
+        // A machine whose list mirrors `native`, so both see the same state.
+        let run = |list: &mut [u16; SLOTS], value: u16, insert: bool| -> bool {
+            let mut m = Machine::new();
+            m.regs.ds = GS;
+            m.regs.gs = GS;
+            // `mov bp,0x6D3E / cmp ax,[bp]` — a `[bp]` operand defaults to SS, not
+            // DS. With a separate stack segment the lift reads a different list
+            // entirely and silently does nothing, which is exactly what the first
+            // run of this test showed.
+            m.regs.ss = GS;
+            m.regs.set_sp(0xFFF0);
+            let base = (GS as u32) * 16 + LIST_DS;
+            for (i, v) in list.iter().enumerate() {
+                m.write16(GS, LIST_DS + (i as u32) * 2, *v);
+            }
+            m.regs.set_ax(value);
+            let sp = m.regs.sp() as u32;
+            m.write16(m.regs.ss, sp, 0x0000);
+            m.write16(m.regs.ss, sp.wrapping_add(2), 0x0020);
+            if insert {
+                super::auto::func_5ff6(&mut m);
+            } else {
+                super::auto::func_5fd8(&mut m);
+            }
+            for (i, v) in list.iter_mut().enumerate() {
+                *v = m.read16(GS, LIST_DS + (i as u32) * 2);
+            }
+            let _ = base;
+            m.regs.cf
+        };
+
+        let mut lifted = [0u16; SLOTS];
+        let mut native = crate::vm::VmMachine::new();
+        let script: Vec<(u16, bool)> = vec![
+            (0x100, true),  // insert into an empty list
+            (0x200, true),
+            (0x100, true),  // duplicate: already present
+            (0x100, false), // remove a present value
+            (0x100, false), // remove it again: absent
+            (0x300, true),
+        ];
+        for (value, insert) in script {
+            let lift_cf = run(&mut lifted, value, insert);
+            let native_flag = if insert {
+                native.special_slot_insert_pub(value)
+            } else {
+                native.special_slot_remove_pub(value)
+            };
+            assert_eq!(
+                lift_cf, native_flag,
+                "value {value:#x} insert={insert}: CF {lift_cf} vs native {native_flag}"
+            );
+            assert_eq!(
+                lifted.to_vec(),
+                native.ship_slots_pub().to_vec(),
+                "value {value:#x} insert={insert}: list contents diverged"
+            );
+        }
+
+        // Fill the list, then overflow it — the case that separates `stc` from `clc`.
+        let mut lifted = [0u16; SLOTS];
+        let mut native = crate::vm::VmMachine::new();
+        for i in 0..SLOTS as u16 {
+            let v = 0x1000 + i * 2;
+            assert!(run(&mut lifted, v, true));
+            assert!(native.special_slot_insert_pub(v));
+        }
+        assert!(!run(&mut lifted, 0xBEEF, true), "a full list must clear CF");
+        assert!(!native.special_slot_insert_pub(0xBEEF), "and so must the port");
+        assert_eq!(lifted.to_vec(), native.ship_slots_pub().to_vec());
+    }
+
     /// The FIELD-OFFSET RESOLVER has a native twin too, and it is the one every
     /// selector lookup in the VM goes through.
     ///

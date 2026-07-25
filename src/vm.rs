@@ -4908,6 +4908,21 @@ impl VmMachine {
 
     /// Insert an owner into the 16-slot special list (gs:0x6D3E, insert 0x5FF6).
     /// Returns false only if the list is full and the owner is not already present.
+    /// Test hooks for the recomp differential (`native_special_slots_match_the_lifted_pair`).
+    pub fn special_slot_insert_pub(&mut self, owner: u16) -> bool {
+        self.special_slot_insert(owner)
+    }
+    pub fn special_slot_remove_pub(&mut self, owner: u16) -> bool {
+        self.special_slot_remove(owner)
+    }
+    pub fn ship_slots_pub(&self) -> &[u16] {
+        &self.ship_slots
+    }
+
+    /// Insert an owner into the special-slot list — `vm_special_slot_insert`
+    /// `0x5FF6`: scan the 16 words at `DS:0x6D3E` for the owner and return CF set
+    /// if already present (`0x5FFE..0x601F`); otherwise scan for a ZERO slot and
+    /// store there (`0x600E..0x601C`); if neither, `clc` — the list is full.
     fn special_slot_insert(&mut self, owner: u16) -> bool {
         if self.ship_slots.contains(&owner) {
             return true;
@@ -4920,13 +4935,28 @@ impl VmMachine {
         }
     }
 
-    /// Remove an owner from the special-slot list (remove 0x5FD8).
-    fn special_slot_remove(&mut self, owner: u16) {
+    /// Remove an owner from the special-slot list — `vm_special_slot_remove`
+    /// `0x5FD8`, exactly:
+    ///
+    /// ```text
+    ///   0x5FDA  bp=0x6D3E  cx=0x10        the 16-word list
+    ///   0x5FE0  cmp ax,[bp] / je 0x5FED   scan for the owner
+    ///   0x5FED  mov word [bp],0 / stc     clear THE FIRST HIT and return CF set
+    ///   0x5FEA  clc                       not found
+    /// ```
+    ///
+    /// Two details the port previously dropped, neither observable today but both
+    /// free to get right: the original clears only the FIRST match and returns
+    /// whether it found one. (`special_slot_insert` refuses duplicates, so a value
+    /// cannot normally appear twice — the divergence is latent, not live.)
+    fn special_slot_remove(&mut self, owner: u16) -> bool {
         for s in self.ship_slots.iter_mut() {
             if *s == owner {
                 *s = 0;
+                return true; // 0x5FF2 `stc`, and the scan stops
             }
         }
+        false // 0x5FEA `clc`
     }
 
     pub fn load_cod(&mut self, cod: &[u8]) {
@@ -5388,7 +5418,7 @@ impl VmMachine {
                     // owner and store 0xFFFF over the requested value.
                     if self.rec_read(off) == 0xFFFF {
                         if let Some(owner) = owner {
-                            self.special_slot_remove(owner);
+                            let _ = self.special_slot_remove(owner);
                         }
                         self.rec_write(off, raw);
                         return true;
