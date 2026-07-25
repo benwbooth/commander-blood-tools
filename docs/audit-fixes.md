@@ -1311,3 +1311,24 @@ performs field operations through selectors the port has no representation for. 
 Most-used selectors for context: `0x11` (12 sites), `0x0B` (9), `0x13` (8), `0x0C` (5).
 The four gaps are the rare ones, which is consistent with them having been missed rather
 than dismissed.
+
+### The four missing selectors, specified
+
+Decoded each unmodelled selector so the gap is a spec rather than a hole. All four are
+defined for a SINGLE kind, which is why they are easy to miss:
+
+| sel | kind | offset | use |
+|---|---|---|---|
+| `0x05` | 1 | `0x1E` | base of a TEN-WORD ARRAY, iterated (`mov cx,0xA; lodsw…`) at `0x60A8` |
+| `0x08` | 1 | `0x36` | INCREMENTED COUNTER (`inc word [eax+reg]`) at `0x5DC4`/`0x5DEC`, then `or word [si+2],0x8000` |
+| `0x0D` | 8 | `0x16` | read (`mov dx,[eax+edi]`) at `0x5ED9`, immediately paired with selector `0x0A` |
+| `0x0F` | 1 | `0x46` | read + zero test gating the following branch, at `0x5720` |
+
+The `0x08` one is the most consequential: the post-update ladder INCREMENTS a per-record
+counter at offset `0x36` and flags bit15 of the record's `+2`. `post_update_execution_state`
+maintains neither, so any behaviour that depends on how many times a record has been
+post-updated is currently unmodelled.
+
+Note they are all single-kind (three for kind 1, one for kind 8). A selector defined for
+one kind looks like a rare special case in the matrix and is exactly the sort of thing a
+port written from the common paths would omit.
