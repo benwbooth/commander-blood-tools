@@ -1216,7 +1216,22 @@ pub fn run_ship_3d_nav_choice_handler_1(
 }
 
 /// NAV-CHOICE HANDLER 2 — file `0x87BD`, entry 2 of the dispatch table
-/// (see [`run_ship_3d_nav_choice_handler_0`]).
+/// (see [`run_ship_3d_nav_choice_handler_0`]). Verified against the disassembly:
+///
+/// ```text
+///   0x87BE  test byte [0x2565],1 / je 0x87FB   the handler PHASE bit
+///   0x87C5  si=0x6D3E  di=0x2B13               special slots -> target records
+///   0x87CB  lodsw / or ax,ax / je              SKIP zero slots
+///   0x87D0  cmp ax,-1 / je 0x87DB              the 0xFFFF sentinel: store, stop
+///   0x87D5  add ax,4 / stosw                   otherwise store slot + header
+///   0x87E4  mov byte [0xADB],0                 reset the interpolation STEP
+///   0x87E9  [0x27E6]=1 / call 0x8428 / =0      the query-only layout prepass
+///   0x87F7  inc byte [0x2565]                  advance the phase
+/// ```
+///
+/// Where handler 1 adjusts the EXISTING list in place, this one REBUILDS it from
+/// the special-slot array at `DS:0x6D3E` — the 16-word block `0x53FF` clears with
+/// `cx=0x10`, matching the port's `SPECIAL_OBJECT_SLOT_COUNT`.
 pub fn run_ship_3d_nav_choice_handler_2(
     state: &mut Ship3dNavChoiceState,
     special_slots: &[u16],
@@ -1266,7 +1281,21 @@ pub fn run_ship_3d_nav_choice_handler_2(
 }
 
 /// NAV-CHOICE HANDLER 3 — file `0x8848`, entry 3 of the dispatch table
-/// (see [`run_ship_3d_nav_choice_handler_0`]).
+/// (see [`run_ship_3d_nav_choice_handler_0`]). The shortest of the five, verified
+/// whole:
+///
+/// ```text
+///   0x8848  test byte [0x2565],1 / je ret      the handler PHASE bit
+///   0x884F  ax = [0x6756]                      the built-in object `menu`
+///   0x8852  [0x676A] = ax                      the deferred record's related field
+///   0x8855  [0x6768] = 0xC3                    ...and its type
+///   0x885B  [0x2565] = 0                       phase cleared
+///   0x8860  si=0xD16 ("sn\radio.snd") / ax=1 / lcall 0xB1B:0x855
+/// ```
+///
+/// Structurally handler 0 with two differences: the related object is `menu`
+/// (`gs:0x6756`) rather than `Honk` (`gs:0x6754`), and it reloads the radio sound
+/// bank. `related_record` is that object, supplied by the caller.
 pub fn run_ship_3d_nav_choice_handler_3(
     state: &mut Ship3dNavChoiceState,
     related_record: u16,
@@ -3400,6 +3429,11 @@ fn adjust_nav_choice_target_records(target_records: &mut [u16]) {
     }
 }
 
+/// The rebuild loop of nav-choice handler 2 (`0x87CB..0x87DB`): walk the special
+/// slots at `DS:0x6D3E`, skip zeros (`or ax,ax / je`), stop at the `0xFFFF`
+/// sentinel after storing it, and otherwise store `slot + 4`. Returns `None` when
+/// the slots run out with no sentinel — where the original would read past the
+/// array, the port refuses rather than inventing a list.
 fn rebuild_nav_choice_special_target_records(
     special_slots: &[u16],
     target_records: &mut Vec<u16>,

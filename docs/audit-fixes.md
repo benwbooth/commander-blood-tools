@@ -2608,3 +2608,31 @@ Standing at 7 assertions, 0 ungrounded. POSITIVE CONTROL: an isolated
 That is five checkers now running as tests — DS/file pairs, quoted instructions,
 labels.csv, capture provenance, and this. Every one of them was wrong on its first
 run, and every one now guards a class that produced a real defect this session.
+
+## FIX #78 — the nav-choice handlers, verified rather than merely cited
+
+FIX #55 gave the five handlers their addresses (the `cs:[bx+0xF29]` dispatch table)
+and verified handler 0. Handlers 1, 2 and 3 are now read against the disassembly
+too, and all three match:
+
+* **1 (`0x872C`)** — adjusts the EXISTING target list in place: `add ax,4` per
+  entry to the `0xFFFF` terminator, reset `[0xADB]`, layout prepass, advance phase.
+* **2 (`0x87BD`)** — REBUILDS the list from the special-slot array at `DS:0x6D3E`
+  (the 16-word block `0x53FF` clears with `cx=0x10`, matching the port's
+  `SPECIAL_OBJECT_SLOT_COUNT`), skipping zero slots, storing `slot + 4`, stopping
+  at the sentinel.
+* **3 (`0x8848`)** — structurally handler 0 with two differences: the deferred
+  record's related object is `menu` (`gs:0x6756`) not `Honk` (`gs:0x6754`), and it
+  reloads `sn\radio.snd` (`DS:0xD16`, confirmed by reading the string).
+
+A CORROBORATION FELL OUT. Handlers 1 and 2 both bracket their layout call with
+`[0x27E6]=1` / `[0x27E6]=0`. That is the widget's QUERY-ONLY flag, whose early
+return (`0x84CD` -> `0x85D3`) was decoded independently while establishing that the
+choice box is a tint rather than a painted box — a different investigation, days of
+work apart in the transcript, arriving at the same flag from the other side.
+
+One port-side difference worth stating rather than hiding: where the original's
+rebuild loop would run off the end of the slot array if no sentinel appeared, the
+port returns `None`. It refuses to invent a list instead of reading past the array.
+
+Nine ship3d rows settled as ASM across this and the previous pass.
