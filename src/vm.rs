@@ -2129,6 +2129,12 @@ fn text_presentation_record_is_active(state: &[u8], line_index: u16) -> bool {
     state_u16(state, text_presentation_record_offset(line_index)) == OP_ACTOR as u16
 }
 
+/// Both A6 runtime gates, each independently switchable by the execution context.
+///
+/// The presentation-record gate wants the line's record typed `0xC4`
+/// (`OP_ACTOR`); the display gate wants the line active and not already shown
+/// (`0x6647`/`0x665A`, #169). The context flags exist because the decoders run
+/// these paths without a live presentation state — the GAME always applies both.
 fn text_runtime_gates_allow(
     state: &[u8],
     context: &ExecutionContext,
@@ -2362,7 +2368,8 @@ enum PresentationKind1Update {
     Stopped,
 }
 
-/// The kind-1 post-update: when the record holds an ACTIVE actor (`0xC4`), latch
+/// The kind-1 post-update, from the post-exec record walk at `0x5816`: when the
+/// record holds an ACTIVE actor (`0xC4`), latch
 /// the related object's `0x20` flag, then arm the presentation — scene dirty,
 /// status word 1, active 1 — UNLESS it is already active, in which case nothing
 /// is armed and the existing presentation runs to completion.
@@ -2705,7 +2712,8 @@ fn record_link_condition(
     Some(if inverted { !matched } else { matched })
 }
 
-/// The `0xC3` QUEUE write: type `0xC3`, the related offset at `+2`, and **1** at
+/// The `0xC3` QUEUE write (handler `0x6EEE`): type `0xC3`, the related offset at
+/// `+2`, and **1** at
 /// `+4` — where [`write_actor_record`]'s `0xC4` writes ZERO there. That third word
 /// is the difference between a queued presentation and an active one, which is
 /// why both writers set it explicitly rather than leaving it.
@@ -2717,7 +2725,8 @@ fn write_record_link(state: &mut [u8], record_offset: u16, related_record_offset
     state_set_u16(state, record_offset.wrapping_add(4), 1);
 }
 
-/// The `0xC3` SET guard: the write happens only when the owner is ACTIVE, the
+/// The `0xC3` SET guard (`0x6EEE`): the write happens only when the owner is
+/// ACTIVE, the
 /// related object is active (bit 0 at `+2`), and the slot does not already hold an
 /// active `0xC4` presentation.
 ///
@@ -2839,6 +2848,10 @@ fn ship3d_record_state_slot(state: &[u8], record_offset: u16) -> ship3d::Ship3dR
     }
 }
 
+/// Write a ship-3D state slot back into a record — the mirror of
+/// [`ship3d_record_state_slot`], same `+0`/`+2`/`+4` layout the `0x6B4C` handler
+/// uses. Writes all three words, so a slot cannot come back half-updated with a
+/// stale third word saying it is a different record kind.
 fn write_ship3d_record_state_slot(
     state: &mut [u8],
     record_offset: u16,
@@ -3080,7 +3093,8 @@ fn clear_record(state: &mut [u8], record_offset: u16) -> Option<u16> {
     Some(old_related)
 }
 
-/// The `0xC5..=0xC8` entry write: the OPCODE itself as the type word, the related
+/// The `0xC5..=0xC8` entry write (handlers `0x6D18`, `0x6D80`, `0x6DCF`,
+/// `0x6F62`): the OPCODE itself as the type word, the related
 /// value at `+2`, zero at `+4`.
 ///
 /// The type word is the opcode, not a fixed constant — which is why these four

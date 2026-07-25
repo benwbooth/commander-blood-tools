@@ -5665,3 +5665,30 @@ carrying the same gap.
 The queue has now gone 91 -> 13 across #142-#179. What remains is mostly functions
 whose basis genuinely is another function (delegations, and helpers over
 already-cited constants) rather than a routine of their own.
+
+## #180 — 91 rows down to 6
+
+The uncited-ASM queue #141 opened at 91. It now stands at 6.
+
+The last stretch resolved two ways, and the split is the useful record:
+
+**Cited.** Rows whose basis is a routine got its address — `0x6EEE` for the `0xC3`
+writers, `0x6D18`/`0x6D80`/`0x6DCF`/`0x6F62` for the entry family, `0x5816` for the
+kind-1 post-update, `0x6B4C` for the ship-3D slot layout.
+
+**Reclassified.** `record_owner_object_offset` and `bridge_station` are
+delegations, and per #173 a delegation must NOT carry the citation — the address
+belongs to the helper holding the rule, and repeating it manufactures a duplicate.
+INFRA is the honest status: there is nothing in them to verify.
+
+That distinction is the whole shape of this queue. A row settled `ASM` with no
+citation is either a decode nobody wrote down (most of the 91) or a function with
+no decode in it (a handful). Treating them alike — bulk-citing or bulk-downgrading
+— would have been wrong in both directions.
+
+What the 91 produced along the way: a missing built-in object (#172), a live bug
+in the operator ladder (#126), a refuted rule in a dead function (#127), a wrong
+`0x2B13` reading (#128), and roughly two dozen decisions that were correct,
+undocumented, and one plausible edit from being wrong — divide-before-multiply,
+compare-before-write, first-write-wins, `btr`'s carry, `sar` not `shr`, the
+sign-terminated list, the half-open clip, and the zero that is a proof.
