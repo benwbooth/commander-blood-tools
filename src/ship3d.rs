@@ -1031,6 +1031,27 @@ pub fn step_ship_3d_interpolation_gate(
     Some(Ship3dInterpolationStep::Active(interpolated))
 }
 
+/// The unified list widget's box layout, `0x84A1..0x84C6` inside
+/// `list_widget_layout_unified` (`0x8428`) — the same widget the OPTION menu, the
+/// contact menu and the concept list all enter:
+///
+/// ```text
+///   0x84A1  add dx,0x14                    width  = widest + 20
+///   0x84A4  mov [si+4],dx
+///   0x84A7  add bp,8                       height = rows*pitch + 8
+///   0x84AA  mov [si+6],bp
+///   0x84AD  shr dx,1 / sub dx,[0xac6] / neg dx     x = anchor - width/2
+///   0x84B9  sub bp,0xc8 / neg bp / shr bp,1        y = (200 - height)/2
+/// ```
+///
+/// `0xAC6` is the anchor the caller sets — `0x64` for the console box, `0xE1` for
+/// the in-window concept list — and `0xC8` is 200, the screen height, so the box
+/// is vertically centred by its own height and horizontally placed by the anchor.
+///
+/// This is the arithmetic `engine::choice_box_top_y` and the list menu's `x0`
+/// implement, and the formula two independent captures agree with at two
+/// different values (audit-fixes #112). Cited here because the function was
+/// settled ASM with no doc (#141's queue).
 pub fn layout_ship_3d_target_list(
     measured_label_widths: &[u16],
     center_x: u16,

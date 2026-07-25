@@ -4943,3 +4943,32 @@ Worth noting what still matters: the dirty BIT is read by this commit even thoug
 the dirty LIST is not built, so #150's compare-before-write is not dead weight.
 
 Cited instructions 176 -> 181; the queue 71 -> 70.
+
+## #153 — the layout formula, finally cited at its source
+
+`layout_ship_3d_target_list` had no doc. The routine is `0x84A1..0x84C6`, inside
+`list_widget_layout_unified` (`0x8428`):
+
+```text
+  0x84A1  add dx,0x14                        width  = widest + 20
+  0x84A7  add bp,8                           height = rows*pitch + 8
+  0x84AD  shr dx,1 / sub dx,[0xac6] / neg dx     x = anchor - width/2
+  0x84B9  sub bp,0xc8 / neg bp / shr bp,1        y = (200 - height)/2
+```
+
+`0xAC6` is the anchor the caller sets — `0x64` for the console box, `0xE1` for the
+in-window concept list — and `0xC8` is 200.
+
+This closes a loop. #111 corrected the list menu from per-label centring to
+flush-left at `x0 + 10`; #112 confirmed `anchor - (widest+20)/2` against two
+captures at two different left edges, 170 and 173. That was verification against
+screens. The formula's actual SOURCE is these four instructions, and until now no
+port function cited them — the geometry was right, agreed with by the game's own
+pixels, and unattributed.
+
+Cited instructions 181 -> 187; the queue 70 -> 69.
+
+Twelve rows in, this is the second time the queue has produced the citation for
+something an earlier fix had already established empirically (#143 did it for the
+band copy's constants). The queue is not only about undocumented code — it is
+where the evidence for things already believed turns out to have been sitting.
