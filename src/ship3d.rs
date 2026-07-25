@@ -2898,6 +2898,28 @@ pub fn commit_ship_3d_global_clip_snapshot(
     }
 }
 
+/// Walk the dirty-rect list against the active sprite slots —
+/// `sprite_slot_dirty_range_render` @`0x4471`:
+///
+/// ```text
+///   0x448A  mov di,0x6612          the dirty-rect list
+///   0x448D  mov ax,[di]
+///   0x448F  or ax,ax / js 0x4516   TERMINATED BY SIGN, not by 0xFFFF
+///   0x4495  mov bx,bp / shr ebp,0x10   unpack the slot range from ebp
+///   0x44A2  mov di,0x6212 / shl bx,5 / add di,bx / sub di,0x20
+///                                  start at the LAST slot and step back
+/// ```
+///
+/// The terminator test is `js`, so ANY negative word ends the list — `0xFFFF` is
+/// simply the value the writer uses (`0x1001`, `0x4429`). A port that compares
+/// against `0xFFFF` exactly agrees on every list the game builds and disagrees on
+/// any other negative sentinel.
+///
+/// The slot walk runs BACKWARD from the range's end (`sub di,0x20` per step),
+/// which matters for the same reason #158's backward object loop did: with
+/// first-write-wins plotting, order decides what survives.
+///
+/// Cited here because it was settled ASM with no doc (#141's queue).
 pub fn collect_ship_3d_dirty_sprite_slot_render_commands(
     slots: &mut [Ship3dObjectSpriteDescriptor],
     dirty_rects: &Ship3dDirtyRectList,

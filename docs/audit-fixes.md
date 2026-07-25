@@ -5271,3 +5271,33 @@ product of two words overflows 16 bits routinely — the original keeps it in `e
 for that reason, and the port's `u32::from` on both operands is that, not caution.
 
 The queue: 56 -> 55.
+
+## #165 — the dirty list ends at a SIGN, not at 0xFFFF
+
+`collect_ship_3d_dirty_sprite_slot_render_commands` —
+`sprite_slot_dirty_range_render` @`0x4471`:
+
+```text
+  0x448A  mov di,0x6612          the dirty-rect list
+  0x448F  or ax,ax / js 0x4516   TERMINATED BY SIGN
+  0x4495  mov bx,bp / shr ebp,0x10   unpack the slot range
+  0x44A2  mov di,0x6212 / shl bx,5 / add di,bx / sub di,0x20
+```
+
+The terminator test is `js`, so ANY negative word ends the list. `0xFFFF` is
+merely the value the writers happen to use (`0x1001`, `0x4429`). A port comparing
+against `0xFFFF` exactly agrees on every list the game builds and disagrees on any
+other negative sentinel — the kind of difference that survives all testing until
+the one data set that uses a different one.
+
+The slot walk also runs BACKWARD (`sub di,0x20` per step), which matters for the
+same reason #158's backward object loop did: with first-write-wins plotting, order
+decides what survives.
+
+`re/tools/find_imm.py` needed fixing to get here — `--max 4` left the `4` in the
+positional list, where it was read as a filename and raised
+`FileNotFoundError: '4'`. Flags now consume their values.
+
+And `check_cited_instructions.py` caught this doc claiming `0x4495` is `shr` when
+it is `mov bx,bp` (the `shr` is at `0x4497`) — the sixth time this session it has
+corrected my own citation rather than someone else's.

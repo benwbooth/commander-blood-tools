@@ -52,7 +52,18 @@ def confirmed(md, data, at):
 
 
 def main():
-    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    # Drop flags AND their values: `--max 4` used to leave "4" in the positional
+    # list, where it was read as a FILENAME and raised FileNotFoundError: '4'.
+    raw = sys.argv[1:]
+    args, skip = [], False
+    for i, a in enumerate(raw):
+        if skip:
+            skip = False
+            continue
+        if a.startswith("--"):
+            skip = a == "--max"
+            continue
+        args.append(a)
     if not args:
         print(__doc__)
         return 0
