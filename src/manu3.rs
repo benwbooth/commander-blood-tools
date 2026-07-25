@@ -40,8 +40,21 @@ pub fn menu_item_handler(base: u16, table: &[u16], item: usize) -> u16 {
 /// The menu-view centre the camera pans around (screen 160,100).
 pub const MENU_CAMERA_CENTRE: (i16, i16) = (160, 100);
 
-/// The rotation angle-index mask the pyramid draw applies (`0xFFC` = a 10-bit angle
-/// scaled ×4 into the shared trig table).
+/// The rotation angle-index mask, `mov bx,0xffc` at manu3.xdb `0x283`.
+///
+/// The mask is loaded once and applied to THREE per-node angle fields:
+///
+/// ```text
+///   0x0283  mov bx,0xffc
+///   0x0280  mov ax,[di+0x52]   / 0x0289  and ax,bx
+///   0x0286  mov si,[di+0x4e]   / 0x028E  and si,bx
+///   0x028B  mov di,[di+0x50]   / 0x0290  and di,bx
+/// ```
+///
+/// `0xFFC` keeps 10 bits with the low two clear, i.e. a multiple of 4 — an angle
+/// index scaled ×4 into the shared trig table. The doc used to give the value and
+/// no instruction, which is a value restated rather than a provenance; found with
+/// `re/tools/find_imm.py 0xFFC output/_tmp_dat/manu3.xdb`.
 pub const MENU_ANGLE_MASK: u16 = 0x0FFC;
 
 /// The pyramid draw's per-axis rotation angle indices (method `0x270` setup): the three

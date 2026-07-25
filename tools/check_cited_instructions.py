@@ -48,6 +48,31 @@ ALIAS = {
 }
 DOC = re.compile(r"^\s*(?:///|//!)?\s*(0x[0-9A-Fa-f]{4,5})\s+([a-z]{2,7})\b")
 
+# Modules documenting a .xdb OVERLAY cite offsets into that overlay, whose runtime
+# cs maps 1:1 to file offsets. Checking them against BLOODPRG.EXE compares
+# unrelated bytes -- a correct citation to manu3.xdb 0x283 (`mov bx,0xffc`) was
+# reported wrong because 0x283 in the EXE is an `or`. Same blind spot the
+# immediate checker had (audit-fixes #106, #118).
+OVERLAY_FOR = {
+    "croolis.rs": ["croolis.xdb", "amer.xdb", "scrut.xdb"],
+    "manu3.rs": ["manu3.xdb"],
+    "manu3_hand.rs": ["manu3.xdb"],
+}
+OVERLAY_DIRS = [
+    os.path.join("output", "_tmp_dat"),
+    os.path.join("export_check", "_tmp_dat"),
+]
+
+
+def overlay_image(filename):
+    """Bytes of the overlay a module documents, or None."""
+    for name in OVERLAY_FOR.get(filename, []):
+        for d in OVERLAY_DIRS:
+            path = os.path.join(d, name)
+            if os.path.exists(path):
+                return open(path, "rb").read()
+    return None
+
 
 def main():
     data = open(DEFAULT_BIN, "rb").read()
@@ -58,6 +83,7 @@ def main():
             if not f.endswith(".rs"):
                 continue
             path = os.path.join(root, f)
+            image = overlay_image(f) or data
             for i, ln in enumerate(open(path, encoding="utf-8", errors="replace"), 1):
                 st = ln.strip()
                 if not (st.startswith("///") or st.startswith("//!")):
@@ -70,11 +96,11 @@ def main():
                     skipped += 1
                     continue
                 addr = int(m.group(1), 16)
-                if addr >= len(data):
+                if addr >= len(image):
                     bad += 1
                     print(f"OUT OF RANGE {path}:{i}: {addr:#x}")
                     continue
-                got = next(md.disasm(data[addr:addr + 16], addr), None)
+                got = next(md.disasm(image[addr:addr + 16], addr), None)
                 actual = got.mnemonic if got else "<undecodable>"
                 want = ALIAS.get(claimed, claimed)
                 actual_norm = ALIAS.get(actual, actual)

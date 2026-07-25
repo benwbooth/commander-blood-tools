@@ -3924,3 +3924,38 @@ None is a wrong constant; all three want a citation naming the instruction that
 uses them. That is a real, small task rather than an unverifiable class.
 
 Settled: 540 -> 541 of 2156.
+
+## #119 — three overlay constants given real citations, and one of them was pointing at the wrong number
+
+Following #118's unblocking, the three overlay constants that had citation
+problems now have answers. `re/tools/find_imm.py` was written to get them: find
+every instruction whose immediate OR memory displacement equals a value, with the
+boundary-consensus filter from #101 so phantoms resynchronised mid-instruction are
+rejected rather than reported.
+
+**`MENU_ANGLE_MASK = 0x0FFC`** — `mov bx,0xffc` at manu3.xdb `0x283`. The mask is
+loaded once and applied to three per-node angle fields (`and ax,bx` @`0x289`,
+`and si,bx` @`0x28E`, `and di,bx` @`0x290`, reading `[di+0x52]`, `[di+0x4E]`,
+`[di+0x50]`). `0xFFC` keeps 10 bits with the low two clear — an angle index scaled
+×4. Settled.
+
+**`ALIEN_COLONY_FRAME_GATE = 7`** — the doc cited `cs:0xB72`, the gate's STORAGE.
+That cell holds **2** in the shipped image, its idle value, so the citation read
+literally was wrong and the constant looked wrong with it. The reload is
+`mov word cs:[0xb72],7` at `0x11C5` and `0x12F9`. The VALUE was right all along;
+citing the cell instead of the instruction that writes it made a correct constant
+unverifiable. Settled.
+
+**`STATE_BASE = 0x2274`** — searched the whole overlay as an immediate AND as a
+displacement: zero confirmed hits. No manu3.xdb instruction names it. It is an
+offset into the loaded data segment, reached through a base register, so its
+position is a data-layout fact and not a code citation. The doc now says that
+outright, so the next reader does not go looking for a `mov` that is not there.
+Left unsettled, honestly, rather than settled on a citation that does not exist.
+
+`check_cited_instructions.py` needed the same overlay awareness as the immediate
+checker — it flagged the new, CORRECT manu3.xdb citation because `0x283` in
+BLOODPRG.EXE is an `or`. Two guards had the same blind spot; the second only
+surfaced when a citation finally existed to trip it.
+
+Settled: 541 -> 543 of 2156.

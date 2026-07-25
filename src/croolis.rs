@@ -208,7 +208,14 @@ pub struct AlienColony {
     pub frame_timer: u8,
 }
 
-/// The dispatcher's frame-gate reload (`cs:0xB72` reset value = 7).
+/// The dispatcher's frame-gate reload: `mov word cs:[0xb72],7` at croolis.xdb
+/// `0x11C5` and `0x12F9`.
+///
+/// The doc used to cite `cs:0xB72` alone — the gate's STORAGE, which holds 2 in
+/// the shipped image (its idle value), not 7. Citing the cell rather than the
+/// instruction that reloads it made a correct constant unverifiable and, read
+/// literally, wrong. Two call sites write the reload value; both carry it as an
+/// immediate.
 pub const ALIEN_COLONY_FRAME_GATE: u8 = 7;
 
 impl AlienColony {

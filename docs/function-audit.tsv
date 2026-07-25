@@ -323,9 +323,9 @@ update_position	src/croolis.rs	156	fn	0x999	ASM?	/// Port of method `0x999` (obj
 dispatch	src/croolis.rs	171	fn		UNVERIFIED	/// Dispatch one frame through the object's vtable method (`call [si+0xE]` in the /// colony iterator): the animation state machine advances, the null method and /// not-yet-decoded sub-behaviours are
 step	src/croolis.rs	182	fn	0x16A4	ASM?	/// Advance one frame of the decoded state machine (`0x16A4`): the timer counts /// down; when it expires the PRNG picks a new animation state — `+0x36 = 1`, /// `+0x38 = 0x32`, `+0x3C += 0xFA` — othe
 AlienColony	src/croolis.rs	203	struct	0x12DE,0xB72	ASM?	/// The overlay's per-frame object-list dispatcher (method `0x12DE`): each `0x12DE` /// call iterates `cx = [di+0x1A]` sub-objects, calling each object's sub-method /// (`call [si+0xE]`, `si += 0x5E`)
-ALIEN_COLONY_FRAME_GATE	src/croolis.rs	212	const	0xB72	ASM?	/// The dispatcher's frame-gate reload (`cs:0xB72` reset value = 7).
-new	src/croolis.rs	217	fn	0x105C	ASM?	/// A colony of `count` objects, PRNG-seeded distinctly (the overlay seeds each /// object from `fs:[0x105C]`; here we vary the seed per index so they de-sync).
-step	src/croolis.rs	229	fn	0xB72	ASM?	/// Advance one frame: gated by `cs:0xB72`, step every object's state machine on the /// 7th frame (decrement, and when it hits 0 update + reload to 7). Returns `true` /// on the frames the colony act
+ALIEN_COLONY_FRAME_GATE	src/croolis.rs	219	const	0xb72,0x11C5,0x12F9,0xB72	ASM	/// The dispatcher's frame-gate reload: `mov word cs:[0xb72],7` at croolis.xdb /// `0x11C5` and `0x12F9`. /// /// The doc used to cite `cs:0xB72` alone — the gate's STORAGE, which holds 2 in /// the s
+new	src/croolis.rs	224	fn	0x105C	ASM?	/// A colony of `count` objects, PRNG-seeded distinctly (the overlay seeds each /// object from `fs:[0x105C]`; here we vary the seed per index so they de-sync).
+step	src/croolis.rs	236	fn	0xB72	ASM?	/// Advance one frame: gated by `cs:0xB72`, step every object's state machine on the /// 7th frame (decrement, and when it hits 0 update + reload to 7). Returns `true` /// on the frames the colony act
 decompress_lz_171	src/decompress.rs	8	fn		DATA?	// =========================================================================== // HNM(1) decompression — Block 171 (LZ) and Block 173 (RLE) // =========================================================
 BitReaderHigh	src/decompress.rs	72	struct		UNVERIFIED	
 new	src/decompress.rs	80	fn		UNVERIFIED	
@@ -714,53 +714,53 @@ MENU_ROW_BIAS	src/manu3.rs	23	const		UNVERIFIED	/// The amount added to a menu r
 menu_screen_row	src/manu3.rs	27	fn		UNVERIFIED	/// The screen row derived from the caller's input word: shift right by 4, then bias the row /// (the high byte) by [`MENU_ROW_BIAS`].
 menu_item_handler	src/manu3.rs	36	fn	0x181,0x2306	ASM?	/// Resolve a selected menu item to its handler offset (method `0x181`): the item index /// (word-scaled) reads an entry from the offset table located at `base`, and the /// handler is `base + table[i
 MENU_CAMERA_CENTRE	src/manu3.rs	41	const		UNVERIFIED	/// The menu-view centre the camera pans around (screen 160,100).
-MENU_ANGLE_MASK	src/manu3.rs	45	const	0xFFC	ASM?	/// The rotation angle-index mask the pyramid draw applies (`0xFFC` = a 10-bit angle /// scaled ×4 into the shared trig table).
-menu_pyramid_angles	src/manu3.rs	52	fn	0x270,0xFFC	ASM?	/// The pyramid draw's per-axis rotation angle indices (method `0x270` setup): the three /// object angle fields (`+0x4E`/`+0x50`/`+0x52`), each masked to `0xFFC`, form the /// trig-table offsets that
-menu_camera_pan	src/manu3.rs	65	fn	0x23E4,0x23E2,0x270	ASM?	/// The 3D-menu camera pan from the cursor position (entry `0x34..0x51`): the cursor's /// delta from the view centre, doubled, is added to the view offset `[0x23E4]` (x from /// `[0x1A]`) / `[0x23E2]
-MenuAnimDescriptor	src/manu3.rs	78	struct	0x181,0x1DF,0x102C	ASM?	/// A menu item's animation descriptor — the DATA the item-dispatch (`0x181`) selects /// and the tween setup (`0x1DF`) consumes. NOT a code routine: `0x1DF` reads `[si]` as /// a packed `(phase<<8 | 
-parse	src/manu3.rs	92	fn		DATA?	/// Parse the descriptor at `off` in the overlay data (`[off]`=phase|count, /// `[off+4]`=target, `[off+6]`=end).
-tween	src/manu3.rs	107	fn	0x1DF	ASM?	/// Build the tween this descriptor drives (via `0x1DF`): animate the target field /// from its `current` value to `end` over `count` frames.
-MenuTween	src/manu3.rs	120	struct	0x19B	ASM?	/// One entry in the menu's active-animation list (method `0x19B`): a fixed-point tween /// that each frame writes its accumulator's high word to a target field, then advances /// the accumulator by a
-new	src/manu3.rs	130	fn		UNVERIFIED	
-to_target	src/manu3.rs	144	fn	0x1DF	ASM?	/// Build a tween from an animation descriptor (method `0x1DF`, the setup that links /// item-selection to the tween list): animate a field from its `current` value to /// the descriptor's `end` value
-output	src/manu3.rs	152	fn		UNVERIFIED	/// The output value written to the target this frame — the accumulator's high word /// (`[di+8]`, i.e. `accumulator >> 16`).
-step	src/manu3.rs	160	fn	0x19B	ASM?	/// Advance one frame exactly as `0x19B` does per entry: the caller first takes /// [`output`](Self::output) and writes it to the target, then this decrements the /// counter — returning `false` (remo
-MenuTweenList	src/manu3.rs	174	struct	0x19B	ASM?	/// The menu's active-animation list (`0x19B`): processes every tween each frame, /// writing each output to its target via a caller-supplied sink, and swap-removes the /// tweens that have expired (m
-step	src/manu3.rs	184	fn		UNVERIFIED	/// Process all tweens for one frame: for each, emit `(target_id, output_value)` via /// `sink`, then advance it; expired tweens are removed. Returns the number still /// active.
+MENU_ANGLE_MASK	src/manu3.rs	58	const	0xffc,0x283,0x0283,0x0280,0x0289,0x0286,0x028E,0x028B,0x0290	ASM	/// The rotation angle-index mask, `mov bx,0xffc` at manu3.xdb `0x283`. /// /// The mask is loaded once and applied to THREE per-node angle fields: /// /// ```text ///   0x0283  mov bx,0xffc ///   0x0
+menu_pyramid_angles	src/manu3.rs	65	fn	0x270,0xFFC	ASM?	/// The pyramid draw's per-axis rotation angle indices (method `0x270` setup): the three /// object angle fields (`+0x4E`/`+0x50`/`+0x52`), each masked to `0xFFC`, form the /// trig-table offsets that
+menu_camera_pan	src/manu3.rs	78	fn	0x23E4,0x23E2,0x270	ASM?	/// The 3D-menu camera pan from the cursor position (entry `0x34..0x51`): the cursor's /// delta from the view centre, doubled, is added to the view offset `[0x23E4]` (x from /// `[0x1A]`) / `[0x23E2]
+MenuAnimDescriptor	src/manu3.rs	91	struct	0x181,0x1DF,0x102C	ASM?	/// A menu item's animation descriptor — the DATA the item-dispatch (`0x181`) selects /// and the tween setup (`0x1DF`) consumes. NOT a code routine: `0x1DF` reads `[si]` as /// a packed `(phase<<8 | 
+parse	src/manu3.rs	105	fn		DATA?	/// Parse the descriptor at `off` in the overlay data (`[off]`=phase|count, /// `[off+4]`=target, `[off+6]`=end).
+tween	src/manu3.rs	120	fn	0x1DF	ASM?	/// Build the tween this descriptor drives (via `0x1DF`): animate the target field /// from its `current` value to `end` over `count` frames.
+MenuTween	src/manu3.rs	133	struct	0x19B	ASM?	/// One entry in the menu's active-animation list (method `0x19B`): a fixed-point tween /// that each frame writes its accumulator's high word to a target field, then advances /// the accumulator by a
+new	src/manu3.rs	143	fn		UNVERIFIED	
+to_target	src/manu3.rs	157	fn	0x1DF	ASM?	/// Build a tween from an animation descriptor (method `0x1DF`, the setup that links /// item-selection to the tween list): animate a field from its `current` value to /// the descriptor's `end` value
+output	src/manu3.rs	165	fn		UNVERIFIED	/// The output value written to the target this frame — the accumulator's high word /// (`[di+8]`, i.e. `accumulator >> 16`).
+step	src/manu3.rs	173	fn	0x19B	ASM?	/// Advance one frame exactly as `0x19B` does per entry: the caller first takes /// [`output`](Self::output) and writes it to the target, then this decrements the /// counter — returning `false` (remo
+MenuTweenList	src/manu3.rs	187	struct	0x19B	ASM?	/// The menu's active-animation list (`0x19B`): processes every tween each frame, /// writing each output to its target via a caller-supplied sink, and swap-removes the /// tweens that have expired (m
+step	src/manu3.rs	197	fn		UNVERIFIED	/// Process all tweens for one frame: for each, emit `(target_id, output_value)` via /// `sink`, then advance it; expired tweens are removed. Returns the number still /// active.
 DS	src/manu3_hand.rs	27	const	0x2300,0x0000,0x477,0x2274,0x2394,0x270,0x3DE,0x23E2,0x23E4	ORACLE?	//! The pointing-hand cursor rendered from the REAL manu3.xdb 3D model — the faithful //! replacement for the capture-sprite stopgap. //! //! Everything here is decoded from manu3.xdb's own code (re/l
 SEG2	src/manu3_hand.rs	30	const	0xB18	ASM?	/// The seg2 pool: 110 x 20B vertices {+0/+2 UV, +4..+8 model xyz} + 32 alias records /// (+4 = source byte offset), then the 216 x 8B face list at 0xB18 {link, v0, v1, v2}.
-STATE_BASE	src/manu3_hand.rs	33	const	0x2274,0x2974	ASM?	/// The node-tree state block ds[0x2274..0x2974]: root + 16 records, mutable at runtime /// (pose tweens write cells into it exactly as the game does).
-STATE_LEN	src/manu3_hand.rs	34	const		UNVERIFIED	
-WRIST	src/manu3_hand.rs	35	const		UNVERIFIED	
-TEX	src/manu3_hand.rs	43	const	0x120B,0x6400	ORACLE?	/// The hand's 256-wide texture (palette-index rows) lifted from the live data segment. // THE REAL TEXTURE SEGMENT: the fill's fs parameter block (captured live at the // span setup 0x120B: fs=17A3, 
-TEX_W	src/manu3_hand.rs	44	const		UNVERIFIED	
-TRIG	src/manu3_hand.rs	53	const		UNVERIFIED	/// The game's own sin/cos tables (ds:0x26, 1024 entries x {cos:i16, sin:i16}, Q14). /// /// PROVENANCE: not a memory snapshot despite living under `accuracy/`. All 4100 /// bytes are `manu3.xdb` at o
-TRIG_XDB_OFFSET	src/manu3_hand.rs	55	const		UNVERIFIED	/// Where [`TRIG`] lives inside `manu3.xdb`.
-hand_texture	src/manu3_hand.rs	58	fn		UNVERIFIED	/// The hand's texture bytes + row width (for GPU upload).
-rd_parent	src/manu3_hand.rs	63	fn		UNVERIFIED	
-tcos	src/manu3_hand.rs	68	fn		UNVERIFIED	
-tsin	src/manu3_hand.rs	73	fn		UNVERIFIED	
-build_matrix	src/manu3_hand.rs	82	fn	0x270,0x3DE	ASM?	/// EXACT transcription of the manu3 matrix build (xdb 0x270..0x3DE): three Euler /// angles as raw byte-offsets (4/step) -> the 9 Q15-ish cells, composed via the /// angle-sum identity reads the orig
-HandMesh	src/manu3_hand.rs	105	struct		UNVERIFIED	
-load	src/manu3_hand.rs	122	fn		UNVERIFIED	
-st16	src/manu3_hand.rs	157	fn		UNVERIFIED	
-st32	src/manu3_hand.rs	162	fn		UNVERIFIED	
-compose	src/manu3_hand.rs	176	fn		UNVERIFIED	/// Compose the skeleton for cursor (cx, cy): per node, local = build(angles) — /// the wrist gets the cursor law added non-destructively — then /// rows = parent_rows * local >> 15 and T = parent_row
-draw	src/manu3_hand.rs	245	fn	0x549	ORACLE?	/// Render the hand into an indexed framebuffer with the cursor at (cx, cy): /// the decoded cursor law + hierarchical composition + the re-verified 0x549 /// projection. No screen-space fixups — the 
-snapshot_state	src/manu3_hand.rs	322	fn		UNVERIFIED	/// Snapshot the mutable skeleton state (for between-tick interpolation).
-triangles_lerp	src/manu3_hand.rs	331	fn		UNVERIFIED	/// Like [`Self::triangles`], but with the animated skeleton cells (angles + /// local positions of every node) LERPed between a previous snapshot and the /// current state by `alpha` — smooth pose mo
-triangles	src/manu3_hand.rs	371	fn		UNVERIFIED	/// The hand's textured triangles for GPU rendering: same compose + cursor-centred /// projection as draw(), emitted as screen-space (x, y, depth, u, v) vertices /// (u/v in texel units — the game's Q
-debug_project	src/manu3_hand.rs	400	fn		UNVERIFIED	/// Debug helper: the projected point cloud (screen x, y, depth) for a cursor.
-face_depth	src/manu3_hand.rs	442	fn		UNVERIFIED	
-fill_triangle_tex	src/manu3_hand.rs	448	fn		UNVERIFIED	
-fill_triangle	src/manu3_hand.rs	509	fn		UNVERIFIED	
-PosePlayer	src/manu3_hand.rs	541	struct	0x181,0x1DF,0x19B,0x2394	ASM?	/// The phased tween pose player (exact transcription of 0x181/0x1DF/0x19B): /// applies sequence `seq`'s groups to the segment cells, animating the hand. /// Cells address the live record block (0x23
-new	src/manu3_hand.rs	554	fn	0x181,0x2306,0x2974	ASM?	/// Look up the sequence for a SELECTOR through the game's own dispatch table /// (0x181 decoded: table base = ds:[0x2306] = 0x2974; sequence = base + /// table[(selector & 0x1F) * 2]; groups run unti
-step	src/manu3_hand.rs	573	fn	0x1DF,0x19B	ASM?	/// One frame: construct due groups (phase match), step active tweens; writes go /// through `cells` (cell address -> current value), exactly as 0x1DF/0x19B do.
-done	src/manu3_hand.rs	613	fn		UNVERIFIED	
-set_pose	src/manu3_hand.rs	620	fn		UNVERIFIED	/// Select the pose (decoded selector semantics); a change starts that sequence.
-tick_pose	src/manu3_hand.rs	628	fn		UNVERIFIED	/// Advance the current pose animation one frame (call per rendered frame).
-animate	src/manu3_hand.rs	641	fn	0x2274,0x2974	ASM?	/// Apply one pose-player frame to the live skeleton: tween cell writes land in /// the node-tree state block BY ORIGINAL DS OFFSET (cells address 0x2274..0x2974: /// node angles +0x4E/50/52, local po
+STATE_BASE	src/manu3_hand.rs	42	const	0x2274,0x2974	ASM?	/// The node-tree state block `ds[0x2274..0x2974]`: root + 16 records, mutable at /// runtime (pose tweens write cells into it exactly as the game does). /// /// PROVENANCE, stated exactly: no manu3.x
+STATE_LEN	src/manu3_hand.rs	43	const		UNVERIFIED	
+WRIST	src/manu3_hand.rs	44	const		UNVERIFIED	
+TEX	src/manu3_hand.rs	52	const	0x120B,0x6400	ORACLE?	/// The hand's 256-wide texture (palette-index rows) lifted from the live data segment. // THE REAL TEXTURE SEGMENT: the fill's fs parameter block (captured live at the // span setup 0x120B: fs=17A3, 
+TEX_W	src/manu3_hand.rs	53	const		UNVERIFIED	
+TRIG	src/manu3_hand.rs	62	const		UNVERIFIED	/// The game's own sin/cos tables (ds:0x26, 1024 entries x {cos:i16, sin:i16}, Q14). /// /// PROVENANCE: not a memory snapshot despite living under `accuracy/`. All 4100 /// bytes are `manu3.xdb` at o
+TRIG_XDB_OFFSET	src/manu3_hand.rs	64	const		UNVERIFIED	/// Where [`TRIG`] lives inside `manu3.xdb`.
+hand_texture	src/manu3_hand.rs	67	fn		UNVERIFIED	/// The hand's texture bytes + row width (for GPU upload).
+rd_parent	src/manu3_hand.rs	72	fn		UNVERIFIED	
+tcos	src/manu3_hand.rs	77	fn		UNVERIFIED	
+tsin	src/manu3_hand.rs	82	fn		UNVERIFIED	
+build_matrix	src/manu3_hand.rs	91	fn	0x270,0x3DE	ASM?	/// EXACT transcription of the manu3 matrix build (xdb 0x270..0x3DE): three Euler /// angles as raw byte-offsets (4/step) -> the 9 Q15-ish cells, composed via the /// angle-sum identity reads the orig
+HandMesh	src/manu3_hand.rs	114	struct		UNVERIFIED	
+load	src/manu3_hand.rs	131	fn		UNVERIFIED	
+st16	src/manu3_hand.rs	166	fn		UNVERIFIED	
+st32	src/manu3_hand.rs	171	fn		UNVERIFIED	
+compose	src/manu3_hand.rs	185	fn		UNVERIFIED	/// Compose the skeleton for cursor (cx, cy): per node, local = build(angles) — /// the wrist gets the cursor law added non-destructively — then /// rows = parent_rows * local >> 15 and T = parent_row
+draw	src/manu3_hand.rs	254	fn	0x549	ORACLE?	/// Render the hand into an indexed framebuffer with the cursor at (cx, cy): /// the decoded cursor law + hierarchical composition + the re-verified 0x549 /// projection. No screen-space fixups — the 
+snapshot_state	src/manu3_hand.rs	331	fn		UNVERIFIED	/// Snapshot the mutable skeleton state (for between-tick interpolation).
+triangles_lerp	src/manu3_hand.rs	340	fn		UNVERIFIED	/// Like [`Self::triangles`], but with the animated skeleton cells (angles + /// local positions of every node) LERPed between a previous snapshot and the /// current state by `alpha` — smooth pose mo
+triangles	src/manu3_hand.rs	380	fn		UNVERIFIED	/// The hand's textured triangles for GPU rendering: same compose + cursor-centred /// projection as draw(), emitted as screen-space (x, y, depth, u, v) vertices /// (u/v in texel units — the game's Q
+debug_project	src/manu3_hand.rs	409	fn		UNVERIFIED	/// Debug helper: the projected point cloud (screen x, y, depth) for a cursor.
+face_depth	src/manu3_hand.rs	451	fn		UNVERIFIED	
+fill_triangle_tex	src/manu3_hand.rs	457	fn		UNVERIFIED	
+fill_triangle	src/manu3_hand.rs	518	fn		UNVERIFIED	
+PosePlayer	src/manu3_hand.rs	550	struct	0x181,0x1DF,0x19B,0x2394	ASM?	/// The phased tween pose player (exact transcription of 0x181/0x1DF/0x19B): /// applies sequence `seq`'s groups to the segment cells, animating the hand. /// Cells address the live record block (0x23
+new	src/manu3_hand.rs	563	fn	0x181,0x2306,0x2974	ASM?	/// Look up the sequence for a SELECTOR through the game's own dispatch table /// (0x181 decoded: table base = ds:[0x2306] = 0x2974; sequence = base + /// table[(selector & 0x1F) * 2]; groups run unti
+step	src/manu3_hand.rs	582	fn	0x1DF,0x19B	ASM?	/// One frame: construct due groups (phase match), step active tweens; writes go /// through `cells` (cell address -> current value), exactly as 0x1DF/0x19B do.
+done	src/manu3_hand.rs	622	fn		UNVERIFIED	
+set_pose	src/manu3_hand.rs	629	fn		UNVERIFIED	/// Select the pose (decoded selector semantics); a change starts that sequence.
+tick_pose	src/manu3_hand.rs	637	fn		UNVERIFIED	/// Advance the current pose animation one frame (call per rendered frame).
+animate	src/manu3_hand.rs	650	fn	0x2274,0x2974	ASM?	/// Apply one pose-player frame to the live skeleton: tween cell writes land in /// the node-tree state block BY ORIGINAL DS OFFSET (cells address 0x2274..0x2974: /// node angles +0x4E/50/52, local po
 GAME_SCREEN_PALETTE_DAC_LOWER_IS_BINARY	src/palette.rs	42	const	0x5B58,0x16A7,0x2F90,0x3C8,0x3C9,0x12F78	ASM?	//! The game-screen VGA palette — the 256-entry DAC buffer the original uploads //! for the ship/nav, bridge, location, and dialogue screens //! (game_palette_dac_buffer, gs:0x5B58, uploaded via 0x16A
 GAME_SCREEN_PALETTE_DAC	src/palette.rs	43	const		UNVERIFIED	
 PALETTE_BLEND_MAX_DISTANCE	src/palette.rs	113	const	0xBB8,0x234F,0x23B0	ASM	/// Seed distance of the nearest-colour search (`mov word [bp+6],0xBB8` @`0x234F`). /// A source colour with no palette entry within this squared distance leaves its /// table byte UNCHANGED (`js 0x23

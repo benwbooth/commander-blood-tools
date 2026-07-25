@@ -28,8 +28,17 @@ const DS: &[u8] = include_bytes!("../accuracy/manu3/manu3_ds.bin");
 /// The seg2 pool: 110 x 20B vertices {+0/+2 UV, +4..+8 model xyz} + 32 alias records
 /// (+4 = source byte offset), then the 216 x 8B face list at 0xB18 {link, v0, v1, v2}.
 const SEG2: &[u8] = include_bytes!("../accuracy/manu3/manu3_seg2_1b76.bin");
-/// The node-tree state block ds[0x2274..0x2974]: root + 16 records, mutable at runtime
-/// (pose tweens write cells into it exactly as the game does).
+/// The node-tree state block `ds[0x2274..0x2974]`: root + 16 records, mutable at
+/// runtime (pose tweens write cells into it exactly as the game does).
+///
+/// PROVENANCE, stated exactly: no manu3.xdb instruction names `0x2274`. Searched
+/// for it as an immediate AND as a memory displacement across the whole overlay
+/// (`re/tools/find_imm.py 0x2274 output/_tmp_dat/manu3.xdb`) — zero confirmed
+/// hits. It is an offset into the loaded DATA SEGMENT (see `SEG2`, the shipped
+/// `manu3_seg2_1b76.bin` block), reached through a base register rather than a
+/// literal, so the block's position is a data-layout fact and not a code
+/// citation. Recorded so the next reader does not go looking for the `mov` that
+/// is not there.
 const STATE_BASE: usize = 0x2274;
 const STATE_LEN: usize = 0x700;
 const WRIST: usize = 0x2394;
