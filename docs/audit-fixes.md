@@ -5401,3 +5401,30 @@ they leave by one door. A port that gave them separate paths would be adding a
 distinction the game does not make, and would look more careful for it.
 
 The queue: 48 -> 45.
+
+## #170 — high-bit-first is not a convention, it is a consequence
+
+`bit_flag_byte_offset` and `bit_flag_mask` implement `0xB7`'s bit addressing:
+bit 0 is mask `0x80`, bit 7 is `0x01`, bit 8 starts the next byte at `0x80`. The
+existing comment stated that; nothing said where it came from.
+
+The byte split is plain (`0x6AC0`: `and cl,7` for the bit, `shr ax,3` for the
+byte). The ORDER falls out of how the handler tests the bit:
+
+```text
+  0x6AD0  mov al,es:[bx+di]
+  0x6AD3  shl al,cl        shift the target bit up by (bit & 7)
+  0x6AD5  shl al,1         once more, into CARRY
+  0x6AD7  jae 0x6AE2       carry clear -> the bit was 0
+```
+
+Bit 0 reaches the carry after a SINGLE shift, so bit 0 must be the byte's high
+bit. High-bit-first is not a choice the game made and the port copied — it is
+what `shl`-into-carry means, and `0x80 >> (bit & 7)` is that sequence rewritten
+as a mask.
+
+Worth the distinction: a stated convention invites "surely this should be
+`1 << n`", and the answer is that `1 << n` would require the test to be `shr`
+instead. The mask and the shift direction are one fact.
+
+The queue: 45 -> 44. Cited instructions: 239 -> 246.

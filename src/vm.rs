@@ -572,8 +572,29 @@ pub fn script_profile_index_from_request_operand(operand: u8) -> u16 {
     ((operand as i8 as i16) - 1) as u16
 }
 
-/// `0xB7` addresses bits high-bit-first inside each byte: bit 0 is mask 0x80,
-/// bit 7 is mask 0x01, then bit 8 starts the next byte at mask 0x80.
+/// `0xB7` addresses bits high-bit-first inside each byte: bit 0 is mask `0x80`,
+/// bit 7 is mask `0x01`, then bit 8 starts the next byte at `0x80`.
+///
+/// The byte split is `0x6AC0`:
+///
+/// ```text
+///   0x6AC0  and cl,7        the bit WITHIN the byte
+///   0x6AC3  shr ax,3        the byte index
+///   0x6AC6  add bx,ax       base + that
+/// ```
+///
+/// and the high-bit-first order is not a convention someone chose — it falls out
+/// of how the handler TESTS the bit (`0x6AD0`):
+///
+/// ```text
+///   0x6AD0  mov al,es:[bx+di]
+///   0x6AD3  shl al,cl        shift the target bit up by (bit & 7)
+///   0x6AD5  shl al,1         once more, into CARRY
+///   0x6AD7  jae 0x6AE2       carry clear -> the bit was 0
+/// ```
+///
+/// Bit 0 reaches the carry after a single shift, so bit 0 is the byte's HIGH bit.
+/// [`bit_flag_mask`]'s `0x80 >> (bit & 7)` is that sequence written as a mask.
 pub fn bit_flag_byte_offset(base_offset: u16, bit_index: u8) -> u16 {
     base_offset.wrapping_add((bit_index >> 3) as u16)
 }
