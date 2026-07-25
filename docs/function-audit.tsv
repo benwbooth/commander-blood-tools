@@ -1,14 +1,27 @@
 item	file	line	kind	origin	status	evidence
-MusicPlayer	src/audio.rs	12	struct		UNVERIFIED	/// Looping background-music player: streams u8 mono PCM at `src_rate` Hz to the /// default output device until dropped/stopped. Playback position advances by a /// fixed-point step so any device rat
-start	src/audio.rs	20	fn		UNVERIFIED	/// Start looping playback. Returns `None` when no output device is available /// (the engine stays silent — audio is never a hard dependency).
-start_once	src/audio.rs	26	fn		UNVERIFIED	/// Play once (voice clips): the stream goes silent at the end of the data and /// idles until dropped.
-start_inner	src/audio.rs	30	fn		UNVERIFIED	// Fixed-point (16.16) source-position stepping. // u8 unsigned PCM -> f32 in [-1, 1].
-stop	src/audio.rs	88	fn		INFRA	
-drop	src/audio.rs	95	fn		INFRA	
-PIT_CLOCK_HZ	src/audio.rs	102	const	0x6c0,0x2e9c	ASM?	/// The 8253/8254 PIT input clock (Hz) — the base frequency the PC-speaker channel-2 /// square wave is divided down from. /// Convert a PIT frequency divisor (the value written to port 0x42) to the P
-pit_divisor_to_hz	src/audio.rs	107	fn	0x6c0,0x2e9c	ASM?	/// Convert a PIT frequency divisor (the value written to port 0x42) to the PC-speaker /// tone frequency in Hz, exactly as the hardware does: `1193182 / divisor`. The game's /// beep handler (`cmd_ha
-square_wave_pcm	src/audio.rs	118	fn		UNVERIFIED	/// Synthesize the PC-speaker beep as `secs` of unsigned-8-bit mono square wave at `hz` /// (sampled at `rate`) — the waveform the speaker gate produces. Returns the PCM buffer, /// playable through [
-beep	src/audio.rs	139	fn		UNVERIFIED	/// Play the decoded PC-speaker beep (PIT `divisor`) for `secs` on the default device, /// returning a play-once player (or `None` if no device). Convenience wrapper tying the /// decoded divisor→freq
+MixSource	src/audio.rs	22	struct		INFRA	/// One sound feeding the shared mixer. /// 16.16 fixed-point read cursor, stepped per output sample.
+render	src/audio.rs	34	fn		UNVERIFIED	/// Render this source's next `n` samples as unsigned 8-bit PCM, returning /// how many were real (a play-once source that has ended returns fewer).
+finished	src/audio.rs	55	fn		UNVERIFIED	
+AudioMixer	src/audio.rs	62	struct		INFRA	/// The shared mixer: every playing sound, folded with the game's rule.
+render	src/audio.rs	74	fn		UNVERIFIED	/// Fill `out` with unsigned 8-bit PCM, layering every active source, and drop /// the ones that have ended. /// /// Sources are folded in insertion order, which matters: the layered average /// weigh
+add	src/audio.rs	94	fn		INFRA	/// Add a source; returns its handle id.
+remove	src/audio.rs	101	fn		INFRA	
+active	src/audio.rs	105	fn		UNVERIFIED	
+MIXER	src/audio.rs	111	static		UNVERIFIED	/// The process-wide mixer. One device stream, however many sounds. /// The device rate the shared stream opened at, needed to compute a source step.
+OUTPUT	src/audio.rs	112	static		UNVERIFIED	/// The device rate the shared stream opened at, needed to compute a source step.
+DEVICE_RATE	src/audio.rs	114	static		UNVERIFIED	/// The device rate the shared stream opened at, needed to compute a source step.
+mixer	src/audio.rs	116	fn		INFRA	
+ensure_output	src/audio.rs	123	fn		INFRA	/// Open the shared output stream once. Returns the device sample rate, or `None` /// when there is no device (the engine stays silent — audio is never a hard /// dependency). // u8 unsigned PCM -> f3
+MusicPlayer	src/audio.rs	168	struct		UNVERIFIED	/// Looping background-music player: streams u8 mono PCM at `src_rate` Hz to the /// default output device until dropped/stopped. Playback position advances by a /// fixed-point step so any device rat
+start	src/audio.rs	177	fn		UNVERIFIED	/// Start looping playback. Returns `None` when no output device is available /// (the engine stays silent — audio is never a hard dependency).
+start_once	src/audio.rs	183	fn		UNVERIFIED	/// Play once (voice clips): the stream goes silent at the end of the data and /// idles until dropped.
+start_inner	src/audio.rs	187	fn		UNVERIFIED	// Fixed-point (16.16) source-position stepping, as before -- only the // DESTINATION changed, from a private stream to the shared mixer.
+stop	src/audio.rs	199	fn		INFRA	
+drop	src/audio.rs	208	fn		INFRA	
+PIT_CLOCK_HZ	src/audio.rs	215	const	0x6c0,0x2e9c	ASM?	/// The 8253/8254 PIT input clock (Hz) — the base frequency the PC-speaker channel-2 /// square wave is divided down from. /// Convert a PIT frequency divisor (the value written to port 0x42) to the P
+pit_divisor_to_hz	src/audio.rs	220	fn	0x6c0,0x2e9c	ASM?	/// Convert a PIT frequency divisor (the value written to port 0x42) to the PC-speaker /// tone frequency in Hz, exactly as the hardware does: `1193182 / divisor`. The game's /// beep handler (`cmd_ha
+square_wave_pcm	src/audio.rs	231	fn		UNVERIFIED	/// Synthesize the PC-speaker beep as `secs` of unsigned-8-bit mono square wave at `hz` /// (sampled at `rate`) — the waveform the speaker gate produces. Returns the PCM buffer, /// playable through [
+beep	src/audio.rs	252	fn		UNVERIFIED	/// Play the decoded PC-speaker beep (PIT `divisor`) for `secs` on the default device, /// returning a play-once player (or `None` if no device). Convenience wrapper tying the /// decoded divisor→freq
 MENU_BLOCK_END	src/bas_vm.rs	23	const		UNVERIFIED	/// The `0xAC` opcode terminates a menu's response block (verified via BASSTEP trace). /// A decoded menu BLOCK: the menu's topics plus the response `0xA6` TEXT tokens that /// follow it, terminated b
 MenuBlock	src/bas_vm.rs	30	struct		UNVERIFIED	/// A decoded menu BLOCK: the menu's topics plus the response `0xA6` TEXT tokens that /// follow it, terminated by `0xAC` (grammar: `0xA3 <topics> [0xA6 response]* 0xAC`, /// single-step-traced from t
 parse_menu_block	src/bas_vm.rs	44	fn	0x0000	ASM?	/// Parse the menu BLOCK at `menu_offset` (a `0xA3`): its topic list, then the `0xA6` /// response tokens up to the `0xAC` terminator. Returns `None` if `menu_offset` is not /// a menu head. Uses the 

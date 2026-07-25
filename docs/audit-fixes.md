@@ -6651,3 +6651,32 @@ TWO CLAIMS I WROTE WERE FALSE, and the tests caught both:
 The test now asserts the corrected structure: two sources symmetric, three
 order-dependent, and each output equal to the explicit fold
 `avg(c, avg(b, a))` — which pins the weights rather than describing them.
+
+## #214 — one stream, and the API that made it free
+
+The audio row opened as "the port runs THREE independent `MusicPlayer` streams and
+lets the backend sum them, so sources play at full amplitude and can clip, where
+the game halves each and cannot." Six entries later the decode is complete, and
+the wiring turned out to need no caller changes at all.
+
+`audio.rs` now opens ONE cpal stream. Every `MusicPlayer` is a handle on a
+process-wide `AudioMixer`, and the callback folds active sources with
+`mix_unsigned_pcm_layered`: first source unattenuated (the loader's overwrite
+@`0x4049`), later ones averaged in (`0xBB6D`). `MusicPlayer::start`/`start_once`/
+`stop` keep their signatures, so every call site in `main.rs` gained the game's
+mixing without an edit — the change is entirely behind the type.
+
+That was worth aiming for. The alternative was rewriting the music/voice/chatter
+call sites, which are interleaved with scene logic I cannot exercise here; leaving
+the API fixed meant the risky part of the change was a module I can test.
+
+`AudioMixer::render` is device-free by construction, which is what makes any of
+this checkable in an environment with no sound card: silence when idle, a lone
+source unattenuated, two sources averaged sample-by-sample, play-once reaped and
+loops never. Four assertions that would each have failed under the old
+three-stream arrangement.
+
+WHAT A DEVICE IS STILL FOR, precisely: confirming it SOUNDS right. Not confirming
+the mixing is right. That distinction is the whole reason this row moved — it sat
+closed for several sessions behind "no audio device", which was true of the output
+path and never true of the rule.
