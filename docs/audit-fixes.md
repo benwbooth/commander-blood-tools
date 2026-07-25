@@ -2666,3 +2666,25 @@ had just written it up, and still made it. That is the argument for turning each
 found defect into a check rather than into a resolution to be careful.
 
 Rows settled: `render_ship_3d_point_cloud` and `projection_component`.
+
+## FIX #80 — the engine's PRNG was never tied to the oracle; now it is
+
+`recomp::prng_2de2` — the LIFTED generator — has been oracle-verified against 300
+vectors for the whole campaign. `ship3d::BloodPrng::next` is a separate
+HAND-WRITTEN reimplementation, and it is the one the engine actually calls: the
+starfield, and every other randomised surface, run on it. Nothing tied it to the
+real generator. Its ledger row said `ASM?` — an address cited, nothing checked.
+
+Now the same 300 vectors run through both. The native implementation agrees
+exactly: result, both mixing bytes, the counter, and the seed word staying
+unchanged.
+
+That is a case worth naming, because it is invisible from either side alone. The
+lift was verified and the port had a citation, so both looked covered — but they
+are DIFFERENT CODE, and only a differential test says whether the one the game
+actually runs on matches. The row moves from `ASM?` to `ORACLE`, and if the two
+ever drift the suite says so.
+
+Generalises: wherever the port has BOTH a lifted function and a native
+reimplementation, the lift's verification does not transfer. `recomp` holds 84
+oracle-verified lifts; any of them with a native twin deserves the same treatment.

@@ -1046,7 +1046,7 @@ SHIP_3D_POINT_CLOUD_BASE_DS	src/ship3d.rs	1748	const		UNVERIFIED
 BloodPrng	src/ship3d.rs	1761	struct		UNVERIFIED	
 default	src/ship3d.rs	1774	fn		UNVERIFIED	/// The static (unseeded) state from the shipped BLOODPRG.EXE image.
 seeded_from_rtc_seconds	src/ship3d.rs	1789	fn	0x2DD3,0xAEE	ASM?	/// Seed as the DOS routine at `0x2DD3` does: it reads the CMOS RTC seconds /// byte (`out 0x70 / in 0x71`) and writes it into both halves of the XOR /// seed word (`mov ah,al; mov cs:[0xAEE],ax`), le
-next	src/ship3d.rs	1800	fn	0x01CE,0x0B02	ASM?	/// Advance the generator and return the next value in `0..modulus` (or the raw 16-bit word /// when `modulus == 0`). Faithful port of the generator at `0x01CE:0x0B02`.
+next	src/ship3d.rs	1800	fn	0x01CE,0x0B02	ORACLE	/// Advance the generator and return the next value in `0..modulus` (or the raw 16-bit word /// when `modulus == 0`). Faithful port of the generator at `0x01CE:0x0B02`.
 randomize_ship_3d_point_cloud	src/ship3d.rs	1851	fn	0x9B67,0xFFFF	ASM	/// Populate the ship-3D starfield point cloud (`ship_3d_point_cloud_randomize` /// at `0x9B67`). Each of the [`SHIP_3D_POINT_CLOUD_LEN`] records gets random /// `x`/`y`/`z` words from [`BloodPrng::ne
 SHIP_3D_PROJECTION_SCREEN_HEIGHT	src/ship3d.rs	1863	const		UNVERIFIED	/// Height of the ship-3D point-cloud depth/color buffer in rows. The DOS pixel /// helper computes `y * 320 + x` into the active page; 200 native rows cover it.
 Ship3dPointCloudRender	src/ship3d.rs	1868	struct		UNVERIFIED	
@@ -1106,7 +1106,7 @@ circular_delta	src/ship3d.rs	3312	fn		UNVERIFIED
 wrap_ring_once	src/ship3d.rs	3326	fn		UNVERIFIED	
 matrix_pair_for_angle	src/ship3d.rs	3336	fn		ASM	
 fixed_mul_shift_15	src/ship3d.rs	3344	fn		ASM	
-projection_component	src/ship3d.rs	3351	fn	0x2F65,0x9A3F,0x2F67,0x9A44	ASM	/// One component of the camera translation: `sub word [di],[0x2F65]` at `0x9A3F` /// (and `[di+2],[0x2F67]` at `0x9A44`) — a wrapping 16-bit SUBTRACT, sign-extended /// for the projection dot product
+projection_component	src/ship3d.rs	3351	fn	0x9A42,0x9A47,0x2F65,0x2F67	ASM	/// One component of the camera translation: `sub word [di],ax` at `0x9A42` (and /// `[di+2],ax` at `0x9A47`), with the origin loaded from `[0x2F65]`/`[0x2F67]` /// just before — a wrapping 16-bit SUB
 projection_dot	src/ship3d.rs	3355	fn		ASM	
 project_ship_3d_axis	src/ship3d.rs	3362	fn		ASM	
 scale_ship_3d_object_dimension	src/ship3d.rs	3367	fn		ASM	

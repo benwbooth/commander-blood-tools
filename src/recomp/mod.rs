@@ -1190,4 +1190,37 @@ mod tests {
             assert_eq!(m.read16(v.cs, 0xaee), v.seed, "vec {i}: seed unchanged");
         }
     }
+
+    /// The PORT'S NATIVE PRNG must agree with the oracle too.
+    ///
+    /// `prng_2de2_matches_oracle_vectors` checks the LIFTED function; `ship3d`'s
+    /// `BloodPrng` is a separate hand-written reimplementation the engine actually
+    /// calls, and nothing tied it to the real generator. Same vectors, same
+    /// assertions — if the two ever diverge, the starfield and every other
+    /// randomised surface drift from the game.
+    #[test]
+    fn native_bloodprng_matches_the_same_oracle_vectors() {
+        let raw = match std::fs::read_to_string("re/tools/oracle_vectors/prng_2de2.json")
+            .or_else(|_| std::fs::read_to_string("../re/tools/oracle_vectors/prng_2de2.json"))
+        {
+            Ok(s) => s,
+            Err(_) => panic!("oracle vectors missing: this test verifies NOTHING without them"),
+        };
+        let vecs: Vec<PrngVec> = serde_json::from_str(&raw).unwrap();
+        assert!(!vecs.is_empty());
+        for (i, v) in vecs.iter().enumerate() {
+            let mut prng = crate::ship3d::BloodPrng {
+                seed_word: v.seed,
+                a: v.a,
+                b: v.b,
+                counter: v.counter,
+            };
+            let out = prng.next(v.ax_in);
+            assert_eq!(out, v.ax_out, "vec {i}: result");
+            assert_eq!(prng.a, v.a_out, "vec {i}: a");
+            assert_eq!(prng.b, v.b_out, "vec {i}: b");
+            assert_eq!(prng.counter, v.counter_out, "vec {i}: counter");
+            assert_eq!(prng.seed_word, v.seed, "vec {i}: the seed must not change");
+        }
+    }
 }
