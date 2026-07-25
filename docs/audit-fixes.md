@@ -7233,3 +7233,32 @@ X's ROLE, I reach for the instruction that expresses the role, which is often no
 the instruction AT X. The guard's rule — an address pairs with the FIRST mnemonic
 of a run — is the correct discipline, and #204's extension is what makes it
 enforceable in prose docs at all.
+
+## #234 — three cited, five left alone
+
+The remaining nav-choice gate constants (`0x2565`, `0x2736/7`, `0x259b`, `0x2795`,
+`0x2a19`) all have `find_imm` hits, so all five COULD have been cited in a
+minute. Three were; five were not, and the reason is worth recording.
+
+`find_imm` confirms an instruction boundary by agreement across earlier decode
+anchors, which suppresses most phantoms but not all — and several hits for these
+addresses sit at very low file offsets (`0x010af`, `0x010b3`, `0x010b7`) in the
+header/relocation region, where "an instruction" is a decode of data. The citation
+guard would NOT catch that: it disassembles at the address and compares the
+mnemonic, so a phantom whose mnemonic I copied from the same phantom agrees with
+itself perfectly.
+
+So the three cited are the three I could corroborate a second way — each sits
+inside an already-labelled routine, confirmed by an ALIGNED disassembly from an
+earlier anchor:
+
+  * `0x2565` — `test byte [0x2565],1` @`0x86FB`, four instructions into
+    `nav_choice_dispatch`;
+  * `0x2793` — `test byte [0x2793],8` @`0x86F1`, that routine's FIRST instruction
+    and its gate;
+  * `0x27d8` — `mov byte [0x27d8],1` @`0x9EBB`, inside `travel_activate_a`.
+
+The other five stay uncited. A citation whose only support is the tool that found
+it is not evidence, it is a restatement — and this project's guard cannot tell the
+difference, which is precisely why the judgement has to happen before the citation
+is written rather than after.

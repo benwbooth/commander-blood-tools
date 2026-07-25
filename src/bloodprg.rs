@@ -173,6 +173,7 @@ pub const SHIP_3D_SEQUENCE_ACTIVE_DS_OFFSET: u16 = 0x252a;
 pub const SHIP_3D_TARGET_SELECT_PHASE_DS_OFFSET: u16 = 0x252b;
 /// Set when the selector falls back to the inline table — `mov byte [0x252c],0` @`0xB2BE`.
 pub const SHIP_3D_TARGET_FALLBACK_DS_OFFSET: u16 = 0x252c;
+/// The dispatcher's own gate — `test byte [0x2793],8` @`0x86F1`, the first instruction of `nav_choice_dispatch`.
 pub const SHIP_3D_HUD_FLAG_DS_OFFSET: u16 = 0x2793;
 pub const SHIP_3D_DEPTH_OFFSET_DS_OFFSET: u16 = 0x2527;
 pub const SHIP_3D_PLANE_COPY_ENABLE_DS_OFFSET: u16 = 0x252e;
@@ -188,10 +189,12 @@ pub const SHIP_3D_EXIT_PENDING_DS_OFFSET: u16 = 0x2532;
 pub const SHIP_3D_TRANSITION_ARMED_DS_OFFSET: u16 = 0x2533;
 /// The ds-relative fallback list, used when the primary is empty — `mov si,0x2537` @`0xB2D4`.
 pub const SHIP_3D_FALLBACK_TARGET_TABLE_DS_OFFSET: u16 = 0x2537;
+/// Armed by the presentation teardown — `mov byte [0x27d8],1` @`0x9EBB` (`travel_activate_a`), and cleared at `0x5C8A`.
 pub const SHIP_3D_NAVIGATION_TRIGGER_DS_OFFSET: u16 = 0x27d8;
 pub const SHIP_3D_NAV_CHOICE_SELECTED_DS_OFFSET: u16 = 0x2a19;
 pub const SHIP_3D_NAV_CHOICE_GATE_DS_OFFSET: u16 = 0x2795;
 pub const SHIP_3D_NAV_CHOICE_HOLD_TIMER_DS_OFFSET: u16 = 10139;
+/// The handler PHASE bit — `test byte [0x2565],1` @`0x86FB`, read by the dispatcher just before `call word cs:[bx+0xf29]` and by every handler in turn (`0x8713`, `0x8735`, `0x87BE`, `0x8848`).
 pub const SHIP_3D_NAV_CHOICE_PHASE_DS_OFFSET: u16 = 0x2565;
 pub const SHIP_3D_NAV_CHOICE_TARGET_Y_DS_OFFSET: u16 = 0x253f;
 pub const SHIP_3D_NAV_CHOICE_LEFT_GATE_DS_OFFSET: u16 = 0x2736;

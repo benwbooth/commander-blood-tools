@@ -148,121 +148,121 @@ SHIP_3D_PLANE_BAND_COPY_OFFSET	src/bloodprg.rs	159	const	0x250b,0xB2C3,0x251b,0x
 SHIP_3D_DEPTH_SCROLL_STEP_OFFSET	src/bloodprg.rs	160	const	0x250b,0xB2C3,0x251b,0xB21A,0xb2fd,0x252b,0xB2DC,0x252c,0xB2	ASM	/// THE SHIP-3D DS STATE BYTES. Each of these is an ADDRESS, and its evidence is /// the instruction that touches it; the RULES they take part in are decoded in /// `ship3d.rs` and `vm.rs`, which is w
 SHIP_3D_TARGET_LIST_DS_OFFSET	src/bloodprg.rs	168	const	0x250b,0xB2C3	ASM	/// THE SHIP-3D DS STATE BYTES. Each of these is an ADDRESS, and its evidence is /// the instruction that touches it; the RULES they take part in are decoded in /// `ship3d.rs` and `vm.rs`, which is w
 SHIP_3D_CURRENT_TARGET_DS_OFFSET	src/bloodprg.rs	170	const	0x251b,0xB21A	ASM	/// The presented target; a repeat of it is not re-committed — `cmp ax,[0x251b]` @`0xB21A`.
-SHIP_3D_SEQUENCE_ACTIVE_DS_OFFSET	src/bloodprg.rs	171	const	0xb2fd,0x252b,0xB2DC,0x252c,0xB2BE,0x252f,0xB6A5,0x2530,0xB6	ASM?	/// Bit 0 = build the list, bit 1 = it is open (`0xb2fd`) — `test byte [0x252b],1` @`0xB2DC`. /// Set when the selector falls back to the inline table — `mov byte [0x252c],0` @`0xB2BE`. /// The transi
+SHIP_3D_SEQUENCE_ACTIVE_DS_OFFSET	src/bloodprg.rs	171	const	0xb2fd,0x252b,0xB2DC,0x252c,0xB2BE,0x2793,0x86F1,0x252f,0xB6	ASM?	/// Bit 0 = build the list, bit 1 = it is open (`0xb2fd`) — `test byte [0x252b],1` @`0xB2DC`. /// Set when the selector falls back to the inline table — `mov byte [0x252c],0` @`0xB2BE`. /// The dispat
 SHIP_3D_TARGET_SELECT_PHASE_DS_OFFSET	src/bloodprg.rs	173	const	0xb2fd,0x252b,0xB2DC	ASM	/// Bit 0 = build the list, bit 1 = it is open (`0xb2fd`) — `test byte [0x252b],1` @`0xB2DC`.
 SHIP_3D_TARGET_FALLBACK_DS_OFFSET	src/bloodprg.rs	175	const	0x252c,0xB2BE	ASM	/// Set when the selector falls back to the inline table — `mov byte [0x252c],0` @`0xB2BE`.
-SHIP_3D_HUD_FLAG_DS_OFFSET	src/bloodprg.rs	176	const	0x252f,0xB6A5,0x2530,0xB6BD,0xb6b8,0xb336,0x2531,0xB6A0,0x25	ASM?	/// The transition opening flag — `mov byte [0x252f],1` @`0xB6A5`. /// The transition closing flag — `mov byte [0x2530],1` @`0xB6BD`. /// The step: 4 opening, 8 closing (`0xb6b8`), 6 on the back row (
-SHIP_3D_DEPTH_OFFSET_DS_OFFSET	src/bloodprg.rs	177	const	0x252f,0xB6A5,0x2530,0xB6BD,0xb6b8,0xb336,0x2531,0xB6A0,0x25	ASM?	/// The transition opening flag — `mov byte [0x252f],1` @`0xB6A5`. /// The transition closing flag — `mov byte [0x2530],1` @`0xB6BD`. /// The step: 4 opening, 8 closing (`0xb6b8`), 6 on the back row (
-SHIP_3D_PLANE_COPY_ENABLE_DS_OFFSET	src/bloodprg.rs	178	const	0x252f,0xB6A5,0x2530,0xB6BD,0xb6b8,0xb336,0x2531,0xB6A0,0x25	ASM?	/// The transition opening flag — `mov byte [0x252f],1` @`0xB6A5`. /// The transition closing flag — `mov byte [0x2530],1` @`0xB6BD`. /// The step: 4 opening, 8 closing (`0xb6b8`), 6 on the back row (
-SHIP_3D_OPENING_FLAG_DS_OFFSET	src/bloodprg.rs	180	const	0x252f,0xB6A5	ASM	/// The transition opening flag — `mov byte [0x252f],1` @`0xB6A5`.
-SHIP_3D_CLOSING_FLAG_DS_OFFSET	src/bloodprg.rs	182	const	0x2530,0xB6BD	ASM	/// The transition closing flag — `mov byte [0x2530],1` @`0xB6BD`.
-SHIP_3D_DEPTH_STEP_DS_OFFSET	src/bloodprg.rs	184	const	0xb6b8,0xb336,0x2531,0xB6A0	ASM	/// The step: 4 opening, 8 closing (`0xb6b8`), 6 on the back row (`0xb336`) — `mov byte [0x2531],4` @`0xB6A0`.
-SHIP_3D_EXIT_PENDING_DS_OFFSET	src/bloodprg.rs	186	const	0x2532,0xB288	ASM	/// Set before the world-view teardown, which the opening flag then gates — `mov byte [0x2532],1` @`0xB288`.
-SHIP_3D_TRANSITION_ARMED_DS_OFFSET	src/bloodprg.rs	188	const	0xb692,0x2533,0xB6AA	ASM	/// The armed latch the updater tests first (`0xb692`) — `mov byte [0x2533],1` @`0xB6AA`.
-SHIP_3D_FALLBACK_TARGET_TABLE_DS_OFFSET	src/bloodprg.rs	190	const	0x2537,0xB2D4	ASM	/// The ds-relative fallback list, used when the primary is empty — `mov si,0x2537` @`0xB2D4`.
-SHIP_3D_NAVIGATION_TRIGGER_DS_OFFSET	src/bloodprg.rs	191	const	0xac6,0x84AD,0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED	ASM?	/// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in). /// The mouse-is-on-it bit the row co
-SHIP_3D_NAV_CHOICE_SELECTED_DS_OFFSET	src/bloodprg.rs	192	const	0xac6,0x84AD,0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED	ASM?	/// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in). /// The mouse-is-on-it bit the row co
-SHIP_3D_NAV_CHOICE_GATE_DS_OFFSET	src/bloodprg.rs	193	const	0xac6,0x84AD,0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED	ASM?	/// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in). /// The mouse-is-on-it bit the row co
-SHIP_3D_NAV_CHOICE_HOLD_TIMER_DS_OFFSET	src/bloodprg.rs	194	const	0xac6,0x84AD,0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED	ASM?	/// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in). /// The mouse-is-on-it bit the row co
-SHIP_3D_NAV_CHOICE_PHASE_DS_OFFSET	src/bloodprg.rs	195	const	0xac6,0x84AD,0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED	ASM?	/// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in). /// The mouse-is-on-it bit the row co
-SHIP_3D_NAV_CHOICE_TARGET_Y_DS_OFFSET	src/bloodprg.rs	196	const	0xac6,0x84AD,0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED	ASM?	/// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in). /// The mouse-is-on-it bit the row co
-SHIP_3D_NAV_CHOICE_LEFT_GATE_DS_OFFSET	src/bloodprg.rs	197	const	0xac6,0x84AD,0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED	ASM?	/// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in). /// The mouse-is-on-it bit the row co
-SHIP_3D_NAV_CHOICE_RIGHT_GATE_DS_OFFSET	src/bloodprg.rs	198	const	0xac6,0x84AD,0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED	ASM?	/// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in). /// The mouse-is-on-it bit the row co
-SHIP_3D_NAV_CHOICE_MENU_GATE_DS_OFFSET	src/bloodprg.rs	199	const	0xac6,0x84AD,0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED	ASM?	/// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in). /// The mouse-is-on-it bit the row co
-SHIP_3D_NAV_CHOICE_SOUND_GATE_DS_OFFSET	src/bloodprg.rs	200	const	0xac6,0x84AD,0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED	ASM?	/// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in). /// The mouse-is-on-it bit the row co
-SHIP_3D_INTERPOLATION_DURATION_DS_OFFSET	src/bloodprg.rs	201	const	0xac6,0x84AD,0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED	ASM?	/// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in). /// The mouse-is-on-it bit the row co
-SHIP_3D_INTERPOLATION_TICK_DS_OFFSET	src/bloodprg.rs	202	const	0xac6,0x84AD,0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED	ASM?	/// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in). /// The mouse-is-on-it bit the row co
-SHIP_3D_TARGET_EXTRA_LABEL_DS_OFFSET	src/bloodprg.rs	203	const	0xac6,0x84AD,0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED	ASM?	/// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in). /// The mouse-is-on-it bit the row co
-SHIP_3D_TARGET_LAYOUT_CENTER_X_DS_OFFSET	src/bloodprg.rs	205	const	0xac6,0x84AD	ASM	/// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in).
-SHIP_3D_TARGET_LAYOUT_DRAW_PTR_DS_OFFSET	src/bloodprg.rs	206	const	0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED,0x2aab,0xB30	ASM?	/// The mouse-is-on-it bit the row colour depends on — `test byte gs:[0xa3e],1` @`0x858D`. /// The hovered row the draw compares against — `mov [0x27c7],al` @`0x850C`. /// Set around the layout prepas
-SHIP_3D_TARGET_LAYOUT_PRESERVE_WIDTHS_DS_OFFSET	src/bloodprg.rs	207	const	0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED,0x2aab,0xB30	ASM?	/// The mouse-is-on-it bit the row colour depends on — `test byte gs:[0xa3e],1` @`0x858D`. /// The hovered row the draw compares against — `mov [0x27c7],al` @`0x850C`. /// Set around the layout prepas
-SHIP_3D_TARGET_LAYOUT_EXTRA_ENTRY_DS_OFFSET	src/bloodprg.rs	208	const	0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED,0x2aab,0xB30	ASM?	/// The mouse-is-on-it bit the row colour depends on — `test byte gs:[0xa3e],1` @`0x858D`. /// The hovered row the draw compares against — `mov [0x27c7],al` @`0x850C`. /// Set around the layout prepas
-SHIP_3D_TARGET_MOUSE_X_DS_OFFSET	src/bloodprg.rs	209	const	0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED,0x2aab,0xB30	ASM?	/// The mouse-is-on-it bit the row colour depends on — `test byte gs:[0xa3e],1` @`0x858D`. /// The hovered row the draw compares against — `mov [0x27c7],al` @`0x850C`. /// Set around the layout prepas
-SHIP_3D_TARGET_MOUSE_Y_DS_OFFSET	src/bloodprg.rs	210	const	0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED,0x2aab,0xB30	ASM?	/// The mouse-is-on-it bit the row colour depends on — `test byte gs:[0xa3e],1` @`0x858D`. /// The hovered row the draw compares against — `mov [0x27c7],al` @`0x850C`. /// Set around the layout prepas
-SHIP_3D_TARGET_REQUESTED_PRESENTATION_DS_OFFSET	src/bloodprg.rs	211	const	0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED,0x2aab,0xB30	ASM?	/// The mouse-is-on-it bit the row colour depends on — `test byte gs:[0xa3e],1` @`0x858D`. /// The hovered row the draw compares against — `mov [0x27c7],al` @`0x850C`. /// Set around the layout prepas
-SHIP_3D_TARGET_PRESENTATION_STATE_DS_OFFSET	src/bloodprg.rs	212	const	0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED,0x2aab,0xB30	ASM?	/// The mouse-is-on-it bit the row colour depends on — `test byte gs:[0xa3e],1` @`0x858D`. /// The hovered row the draw compares against — `mov [0x27c7],al` @`0x850C`. /// Set around the layout prepas
-SHIP_3D_TARGET_ACTIVATE_FLAG_DS_OFFSET	src/bloodprg.rs	214	const	0xa3e,0x858D	ASM	/// The mouse-is-on-it bit the row colour depends on — `test byte gs:[0xa3e],1` @`0x858D`.
-SHIP_3D_TARGET_HOVER_ROW_DS_OFFSET	src/bloodprg.rs	216	const	0x27c7,0x850C	ASM	/// The hovered row the draw compares against — `mov [0x27c7],al` @`0x850C`.
-SHIP_3D_TARGET_QUERY_MODE_DS_OFFSET	src/bloodprg.rs	218	const	0x27e6,0xB2E3,0xB2ED	ASM	/// Set around the layout prepass call — `mov byte [0x27e6],1` @`0xB2E3`, cleared at `0xB2ED`.
-SHIP_3D_TARGET_SELECTION_DS_OFFSET	src/bloodprg.rs	219	const	0x2aab,0xB305	ASM?	/// The zoom/blit rect the selector hands the panel helper — `mov si,0x2aab` @`0xB305`.
-SHIP_3D_TARGET_LAYOUT_RECT_DS_OFFSET	src/bloodprg.rs	221	const	0x2aab,0xB305	ASM	/// The zoom/blit rect the selector hands the panel helper — `mov si,0x2aab` @`0xB305`.
-SHIP_3D_TARGET_WIDTH_TABLE_DS_OFFSET	src/bloodprg.rs	222	const		UNVERIFIED	
-SHIP_3D_PRESENTATION_HOLD_TIMER_DS_OFFSET	src/bloodprg.rs	223	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_TRIGGER_DS_OFFSET	src/bloodprg.rs	224	const		UNVERIFIED	
-SHIP_3D_TEMP_SND_PHASE_DS_OFFSET	src/bloodprg.rs	225	const		UNVERIFIED	
-SHIP_3D_PLANAR_FRAMEBUFFER_PTR_DS_OFFSET	src/bloodprg.rs	226	const		UNVERIFIED	
-SHIP_3D_SCROLL_MODE_DS_OFFSET	src/bloodprg.rs	227	const		UNVERIFIED	
-SHIP_3D_SCROLL_VALUE_DS_OFFSET	src/bloodprg.rs	228	const		UNVERIFIED	
-SND_ENTRY_FAR_CALL	src/bloodprg.rs	230	const		UNVERIFIED	
-SND_BANK_LOAD_FAR_CALL	src/bloodprg.rs	237	const		UNVERIFIED	
-FAR_CALL_OPCODE	src/bloodprg.rs	244	const		UNVERIFIED	
-REGISTER_SOURCE_SCAN_BACK	src/bloodprg.rs	245	const		UNVERIFIED	
-DS_STRING_SCAN_MAX	src/bloodprg.rs	246	const		UNVERIFIED	
-RENDER_FAR_CALL_SEGMENT_BYTES	src/bloodprg.rs	247	const		UNVERIFIED	
-MzHeader	src/bloodprg.rs	251	struct		UNVERIFIED	
-header_size	src/bloodprg.rs	266	fn		TESTED	
-image_total	src/bloodprg.rs	270	fn		UNVERIFIED	
-load_size	src/bloodprg.rs	278	fn		TESTED	
-MzSummary	src/bloodprg.rs	284	struct		UNVERIFIED	
-BinarySymbol	src/bloodprg.rs	295	struct		UNVERIFIED	
-OpcodeDescriptor	src/bloodprg.rs	306	struct		UNVERIFIED	
-OpcodeHandler	src/bloodprg.rs	313	struct		UNVERIFIED	
-VmOpcodeSpec	src/bloodprg.rs	320	struct		UNVERIFIED	
-DialogueFontTables	src/bloodprg.rs	335	struct		UNVERIFIED	
-SubdispatchEntry	src/bloodprg.rs	345	struct		UNVERIFIED	
-SpriteBlitterDispatchEntry	src/bloodprg.rs	352	struct		UNVERIFIED	
-ScriptResourceProfileSlot	src/bloodprg.rs	361	struct		UNVERIFIED	
-ScriptResourceProfile	src/bloodprg.rs	368	struct		UNVERIFIED	
-BloodPrgInspection	src/bloodprg.rs	376	struct		UNVERIFIED	
-SndEntryCallSite	src/bloodprg.rs	395	struct		UNVERIFIED	
-SndBankLoadCallSite	src/bloodprg.rs	409	struct		UNVERIFIED	
-RenderCallSite	src/bloodprg.rs	430	struct		UNVERIFIED	
-BloodPrg	src/bloodprg.rs	445	struct		UNVERIFIED	
-parse_file	src/bloodprg.rs	451	fn		UNVERIFIED	
-parse	src/bloodprg.rs	457	fn		UNVERIFIED	
-summary	src/bloodprg.rs	487	fn		TESTED	
-image_bytes	src/bloodprg.rs	502	fn		INFRA	/// The raw image bytes, so a test can read an INSTRUCTION back and check a /// constant against the immediate the code actually uses.
-segoff_to_file	src/bloodprg.rs	506	fn		TESTED	
-ds_to_file	src/bloodprg.rs	510	fn		TESTED	
-fs_to_file	src/bloodprg.rs	514	fn		TESTED	
-opcode_handlers	src/bloodprg.rs	518	fn		TESTED	
-opcode_descriptors	src/bloodprg.rs	538	fn		TESTED	
-vm_opcode_specs	src/bloodprg.rs	555	fn		TESTED	
-script_resource_profiles	src/bloodprg.rs	592	fn	0x11F4,0x0D3E4,0x53A0,0x000A,0x6712	ASM	/// The five SCRIPT resource profiles at `FS:0x11F4` (file `0x0D3E4`), the /// table `vm_resource_profile_select` (`0x53A0`) indexes: `mov si,0x11F4 / /// mov dx,0x000A / mul dx` picks the row, then `
-dialogue_font_tables	src/bloodprg.rs	626	fn	0x31C8,0x7802,0x14C22,0x78B2,0x14CD2,0x78b2,0x7908,0x14D28	ASM	/// The DIALOGUE FONT's three chained tables, at the offsets `render_string` /// (`0x31C8`) loads them from as immediates: the ASCII->glyph map /// `DS:0x7802` = file `0x14C22` (`mov bx,0x7802`), the 
-nav_actor_subdispatch_handlers	src/bloodprg.rs	664	fn		TESTED	
-nav_choice_subdispatch_handlers	src/bloodprg.rs	672	fn		TESTED	
-snd_entry_call_sites	src/bloodprg.rs	680	fn		TESTED	
-snd_bank_load_call_sites	src/bloodprg.rs	706	fn		TESTED	
-render_call_sites	src/bloodprg.rs	745	fn		TESTED	
-sprite_blitter_dispatch_entries	src/bloodprg.rs	779	fn	0x1592,0x4522,0x44BA	ASM	/// The sprite-blitter dispatch table at `CS:0x1592` (file `0x4522`), reached /// by `mov bx,cs:[bx+0x1592]` at `0x44BA` after `shr bx,1 / and bx,0x0E` /// bounds the index to its eight word entries.
-inspect	src/bloodprg.rs	801	fn		TESTED	
-subdispatch_entries	src/bloodprg.rs	821	fn		UNVERIFIED	
-slice	src/bloodprg.rs	842	fn		TESTED	
-find_ax_source_before	src/bloodprg.rs	851	fn		UNVERIFIED	
-find_si_source_before	src/bloodprg.rs	883	fn		UNVERIFIED	
-ds_c_string	src/bloodprg.rs	911	fn		UNVERIFIED	
-option_menu_labels	src/bloodprg.rs	938	fn	0x886C,0x8709,0x2567,0x8428,0xFFFF,0x2573,0x2581,0x258B,0x25	DATA	/// The bridge OPTION menu's labels, read from the game's own string table. /// /// Console row 4's handler (`0x886C`, reached through the per-row table at /// file `0x8709`) does `mov si,0x2567` and 
-text_speed_labels	src/bloodprg.rs	944	fn	0x259D	DATA	/// The OPTION menu's TEXT-SPEED submenu labels (`DS:0x259D`): /// `VERY FAST`, `FAST`, `MEDIUM`, `SLOW`, `VERY SLOW`.
-location_status_headers	src/bloodprg.rs	952	fn	0x12E,0x137,0x13E,0x14B,0x8369,0x839F	DATA	/// The nav-chart hover panel's status headers, read from the game's strings: /// `DS:0x12E` `PLANET: `, `0x137` `SHIP: `, `0x13E` `BLACK HOLE: `, `0x14B` /// `LIFE SUPPORT:` — the four `mov si,...` c
-list_widget_cancel_label	src/bloodprg.rs	965	fn	0x0174	DATA	/// The list widget's shared trailing entry (`DS:0x0174`).
-music_on_label	src/bloodprg.rs	971	fn	0x2578	DATA	/// The alternate face of the music toggle (`DS:0x2578`), which the pointer /// list does not name.
-ds_pointer_list_strings	src/bloodprg.rs	976	fn	0xFFFF	ASM?	/// Walk a `0xFFFF`-terminated list of DS string pointers.
-resource_name	src/bloodprg.rs	993	fn		UNVERIFIED	
-file_to_known_segoff	src/bloodprg.rs	1006	fn		UNVERIFIED	
-u16_at	src/bloodprg.rs	1017	fn		UNVERIFIED	
-OpcodeMetadata	src/bloodprg.rs	1025	struct		UNVERIFIED	
-opcode_metadata	src/bloodprg.rs	1032	fn		UNVERIFIED	
-KNOWN_CODE_SEGMENTS	src/bloodprg.rs	1171	const		UNVERIFIED	
-snd_entry_call_note	src/bloodprg.rs	1182	fn		UNVERIFIED	
-snd_bank_load_mode	src/bloodprg.rs	1198	fn		UNVERIFIED	
-snd_bank_load_call_note	src/bloodprg.rs	1207	fn		UNVERIFIED	
-render_target_name	src/bloodprg.rs	1220	fn		UNVERIFIED	
-render_call_site_note	src/bloodprg.rs	1258	fn		UNVERIFIED	
-sprite_blitter_name	src/bloodprg.rs	1435	fn		UNVERIFIED	
-sprite_blitter_note	src/bloodprg.rs	1449	fn		UNVERIFIED	
-KNOWN_SYMBOLS	src/bloodprg.rs	1477	const		TESTED	
-PRESENTATION_3D_MARKERS	src/bloodprg.rs	2542	const		TESTED	
+SHIP_3D_HUD_FLAG_DS_OFFSET	src/bloodprg.rs	177	const	0x2793,0x86F1	ASM	/// The dispatcher's own gate — `test byte [0x2793],8` @`0x86F1`, the first instruction of `nav_choice_dispatch`.
+SHIP_3D_DEPTH_OFFSET_DS_OFFSET	src/bloodprg.rs	178	const	0x252f,0xB6A5,0x2530,0xB6BD,0xb6b8,0xb336,0x2531,0xB6A0,0x25	ASM?	/// The transition opening flag — `mov byte [0x252f],1` @`0xB6A5`. /// The transition closing flag — `mov byte [0x2530],1` @`0xB6BD`. /// The step: 4 opening, 8 closing (`0xb6b8`), 6 on the back row (
+SHIP_3D_PLANE_COPY_ENABLE_DS_OFFSET	src/bloodprg.rs	179	const	0x252f,0xB6A5,0x2530,0xB6BD,0xb6b8,0xb336,0x2531,0xB6A0,0x25	ASM?	/// The transition opening flag — `mov byte [0x252f],1` @`0xB6A5`. /// The transition closing flag — `mov byte [0x2530],1` @`0xB6BD`. /// The step: 4 opening, 8 closing (`0xb6b8`), 6 on the back row (
+SHIP_3D_OPENING_FLAG_DS_OFFSET	src/bloodprg.rs	181	const	0x252f,0xB6A5	ASM	/// The transition opening flag — `mov byte [0x252f],1` @`0xB6A5`.
+SHIP_3D_CLOSING_FLAG_DS_OFFSET	src/bloodprg.rs	183	const	0x2530,0xB6BD	ASM	/// The transition closing flag — `mov byte [0x2530],1` @`0xB6BD`.
+SHIP_3D_DEPTH_STEP_DS_OFFSET	src/bloodprg.rs	185	const	0xb6b8,0xb336,0x2531,0xB6A0	ASM	/// The step: 4 opening, 8 closing (`0xb6b8`), 6 on the back row (`0xb336`) — `mov byte [0x2531],4` @`0xB6A0`.
+SHIP_3D_EXIT_PENDING_DS_OFFSET	src/bloodprg.rs	187	const	0x2532,0xB288	ASM	/// Set before the world-view teardown, which the opening flag then gates — `mov byte [0x2532],1` @`0xB288`.
+SHIP_3D_TRANSITION_ARMED_DS_OFFSET	src/bloodprg.rs	189	const	0xb692,0x2533,0xB6AA	ASM	/// The armed latch the updater tests first (`0xb692`) — `mov byte [0x2533],1` @`0xB6AA`.
+SHIP_3D_FALLBACK_TARGET_TABLE_DS_OFFSET	src/bloodprg.rs	191	const	0x2537,0xB2D4	ASM	/// The ds-relative fallback list, used when the primary is empty — `mov si,0x2537` @`0xB2D4`.
+SHIP_3D_NAVIGATION_TRIGGER_DS_OFFSET	src/bloodprg.rs	193	const	0x27d8,0x9EBB,0x5C8A	ASM	/// Armed by the presentation teardown — `mov byte [0x27d8],1` @`0x9EBB` (`travel_activate_a`), and cleared at `0x5C8A`.
+SHIP_3D_NAV_CHOICE_SELECTED_DS_OFFSET	src/bloodprg.rs	194	const	0x2565,0x86FB,0xf29,0x8713,0x8735,0x87BE,0x8848,0xac6,0x84AD	ASM?	/// The handler PHASE bit — `test byte [0x2565],1` @`0x86FB`, read by the dispatcher just before `call word cs:[bx+0xf29]` and by every handler in turn (`0x8713`, `0x8735`, `0x87BE`, `0x8848`). /// Th
+SHIP_3D_NAV_CHOICE_GATE_DS_OFFSET	src/bloodprg.rs	195	const	0x2565,0x86FB,0xf29,0x8713,0x8735,0x87BE,0x8848,0xac6,0x84AD	ASM?	/// The handler PHASE bit — `test byte [0x2565],1` @`0x86FB`, read by the dispatcher just before `call word cs:[bx+0xf29]` and by every handler in turn (`0x8713`, `0x8735`, `0x87BE`, `0x8848`). /// Th
+SHIP_3D_NAV_CHOICE_HOLD_TIMER_DS_OFFSET	src/bloodprg.rs	196	const	0x2565,0x86FB,0xf29,0x8713,0x8735,0x87BE,0x8848,0xac6,0x84AD	ASM?	/// The handler PHASE bit — `test byte [0x2565],1` @`0x86FB`, read by the dispatcher just before `call word cs:[bx+0xf29]` and by every handler in turn (`0x8713`, `0x8735`, `0x87BE`, `0x8848`). /// Th
+SHIP_3D_NAV_CHOICE_PHASE_DS_OFFSET	src/bloodprg.rs	198	const	0x2565,0x86FB,0xf29,0x8713,0x8735,0x87BE,0x8848	ASM	/// The handler PHASE bit — `test byte [0x2565],1` @`0x86FB`, read by the dispatcher just before `call word cs:[bx+0xf29]` and by every handler in turn (`0x8713`, `0x8735`, `0x87BE`, `0x8848`).
+SHIP_3D_NAV_CHOICE_TARGET_Y_DS_OFFSET	src/bloodprg.rs	199	const	0xac6,0x84AD,0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED	ASM?	/// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in). /// The mouse-is-on-it bit the row co
+SHIP_3D_NAV_CHOICE_LEFT_GATE_DS_OFFSET	src/bloodprg.rs	200	const	0xac6,0x84AD,0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED	ASM?	/// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in). /// The mouse-is-on-it bit the row co
+SHIP_3D_NAV_CHOICE_RIGHT_GATE_DS_OFFSET	src/bloodprg.rs	201	const	0xac6,0x84AD,0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED	ASM?	/// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in). /// The mouse-is-on-it bit the row co
+SHIP_3D_NAV_CHOICE_MENU_GATE_DS_OFFSET	src/bloodprg.rs	202	const	0xac6,0x84AD,0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED	ASM?	/// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in). /// The mouse-is-on-it bit the row co
+SHIP_3D_NAV_CHOICE_SOUND_GATE_DS_OFFSET	src/bloodprg.rs	203	const	0xac6,0x84AD,0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED	ASM?	/// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in). /// The mouse-is-on-it bit the row co
+SHIP_3D_INTERPOLATION_DURATION_DS_OFFSET	src/bloodprg.rs	204	const	0xac6,0x84AD,0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED	ASM?	/// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in). /// The mouse-is-on-it bit the row co
+SHIP_3D_INTERPOLATION_TICK_DS_OFFSET	src/bloodprg.rs	205	const	0xac6,0x84AD,0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED	ASM?	/// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in). /// The mouse-is-on-it bit the row co
+SHIP_3D_TARGET_EXTRA_LABEL_DS_OFFSET	src/bloodprg.rs	206	const	0xac6,0x84AD,0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED	ASM?	/// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in). /// The mouse-is-on-it bit the row co
+SHIP_3D_TARGET_LAYOUT_CENTER_X_DS_OFFSET	src/bloodprg.rs	208	const	0xac6,0x84AD	ASM	/// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in).
+SHIP_3D_TARGET_LAYOUT_DRAW_PTR_DS_OFFSET	src/bloodprg.rs	209	const	0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED,0x2aab,0xB30	ASM?	/// The mouse-is-on-it bit the row colour depends on — `test byte gs:[0xa3e],1` @`0x858D`. /// The hovered row the draw compares against — `mov [0x27c7],al` @`0x850C`. /// Set around the layout prepas
+SHIP_3D_TARGET_LAYOUT_PRESERVE_WIDTHS_DS_OFFSET	src/bloodprg.rs	210	const	0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED,0x2aab,0xB30	ASM?	/// The mouse-is-on-it bit the row colour depends on — `test byte gs:[0xa3e],1` @`0x858D`. /// The hovered row the draw compares against — `mov [0x27c7],al` @`0x850C`. /// Set around the layout prepas
+SHIP_3D_TARGET_LAYOUT_EXTRA_ENTRY_DS_OFFSET	src/bloodprg.rs	211	const	0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED,0x2aab,0xB30	ASM?	/// The mouse-is-on-it bit the row colour depends on — `test byte gs:[0xa3e],1` @`0x858D`. /// The hovered row the draw compares against — `mov [0x27c7],al` @`0x850C`. /// Set around the layout prepas
+SHIP_3D_TARGET_MOUSE_X_DS_OFFSET	src/bloodprg.rs	212	const	0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED,0x2aab,0xB30	ASM?	/// The mouse-is-on-it bit the row colour depends on — `test byte gs:[0xa3e],1` @`0x858D`. /// The hovered row the draw compares against — `mov [0x27c7],al` @`0x850C`. /// Set around the layout prepas
+SHIP_3D_TARGET_MOUSE_Y_DS_OFFSET	src/bloodprg.rs	213	const	0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED,0x2aab,0xB30	ASM?	/// The mouse-is-on-it bit the row colour depends on — `test byte gs:[0xa3e],1` @`0x858D`. /// The hovered row the draw compares against — `mov [0x27c7],al` @`0x850C`. /// Set around the layout prepas
+SHIP_3D_TARGET_REQUESTED_PRESENTATION_DS_OFFSET	src/bloodprg.rs	214	const	0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED,0x2aab,0xB30	ASM?	/// The mouse-is-on-it bit the row colour depends on — `test byte gs:[0xa3e],1` @`0x858D`. /// The hovered row the draw compares against — `mov [0x27c7],al` @`0x850C`. /// Set around the layout prepas
+SHIP_3D_TARGET_PRESENTATION_STATE_DS_OFFSET	src/bloodprg.rs	215	const	0xa3e,0x858D,0x27c7,0x850C,0x27e6,0xB2E3,0xB2ED,0x2aab,0xB30	ASM?	/// The mouse-is-on-it bit the row colour depends on — `test byte gs:[0xa3e],1` @`0x858D`. /// The hovered row the draw compares against — `mov [0x27c7],al` @`0x850C`. /// Set around the layout prepas
+SHIP_3D_TARGET_ACTIVATE_FLAG_DS_OFFSET	src/bloodprg.rs	217	const	0xa3e,0x858D	ASM	/// The mouse-is-on-it bit the row colour depends on — `test byte gs:[0xa3e],1` @`0x858D`.
+SHIP_3D_TARGET_HOVER_ROW_DS_OFFSET	src/bloodprg.rs	219	const	0x27c7,0x850C	ASM	/// The hovered row the draw compares against — `mov [0x27c7],al` @`0x850C`.
+SHIP_3D_TARGET_QUERY_MODE_DS_OFFSET	src/bloodprg.rs	221	const	0x27e6,0xB2E3,0xB2ED	ASM	/// Set around the layout prepass call — `mov byte [0x27e6],1` @`0xB2E3`, cleared at `0xB2ED`.
+SHIP_3D_TARGET_SELECTION_DS_OFFSET	src/bloodprg.rs	222	const	0x2aab,0xB305	ASM?	/// The zoom/blit rect the selector hands the panel helper — `mov si,0x2aab` @`0xB305`.
+SHIP_3D_TARGET_LAYOUT_RECT_DS_OFFSET	src/bloodprg.rs	224	const	0x2aab,0xB305	ASM	/// The zoom/blit rect the selector hands the panel helper — `mov si,0x2aab` @`0xB305`.
+SHIP_3D_TARGET_WIDTH_TABLE_DS_OFFSET	src/bloodprg.rs	225	const		UNVERIFIED	
+SHIP_3D_PRESENTATION_HOLD_TIMER_DS_OFFSET	src/bloodprg.rs	226	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_TRIGGER_DS_OFFSET	src/bloodprg.rs	227	const		UNVERIFIED	
+SHIP_3D_TEMP_SND_PHASE_DS_OFFSET	src/bloodprg.rs	228	const		UNVERIFIED	
+SHIP_3D_PLANAR_FRAMEBUFFER_PTR_DS_OFFSET	src/bloodprg.rs	229	const		UNVERIFIED	
+SHIP_3D_SCROLL_MODE_DS_OFFSET	src/bloodprg.rs	230	const		UNVERIFIED	
+SHIP_3D_SCROLL_VALUE_DS_OFFSET	src/bloodprg.rs	231	const		UNVERIFIED	
+SND_ENTRY_FAR_CALL	src/bloodprg.rs	233	const		UNVERIFIED	
+SND_BANK_LOAD_FAR_CALL	src/bloodprg.rs	240	const		UNVERIFIED	
+FAR_CALL_OPCODE	src/bloodprg.rs	247	const		UNVERIFIED	
+REGISTER_SOURCE_SCAN_BACK	src/bloodprg.rs	248	const		UNVERIFIED	
+DS_STRING_SCAN_MAX	src/bloodprg.rs	249	const		UNVERIFIED	
+RENDER_FAR_CALL_SEGMENT_BYTES	src/bloodprg.rs	250	const		UNVERIFIED	
+MzHeader	src/bloodprg.rs	254	struct		UNVERIFIED	
+header_size	src/bloodprg.rs	269	fn		TESTED	
+image_total	src/bloodprg.rs	273	fn		UNVERIFIED	
+load_size	src/bloodprg.rs	281	fn		TESTED	
+MzSummary	src/bloodprg.rs	287	struct		UNVERIFIED	
+BinarySymbol	src/bloodprg.rs	298	struct		UNVERIFIED	
+OpcodeDescriptor	src/bloodprg.rs	309	struct		UNVERIFIED	
+OpcodeHandler	src/bloodprg.rs	316	struct		UNVERIFIED	
+VmOpcodeSpec	src/bloodprg.rs	323	struct		UNVERIFIED	
+DialogueFontTables	src/bloodprg.rs	338	struct		UNVERIFIED	
+SubdispatchEntry	src/bloodprg.rs	348	struct		UNVERIFIED	
+SpriteBlitterDispatchEntry	src/bloodprg.rs	355	struct		UNVERIFIED	
+ScriptResourceProfileSlot	src/bloodprg.rs	364	struct		UNVERIFIED	
+ScriptResourceProfile	src/bloodprg.rs	371	struct		UNVERIFIED	
+BloodPrgInspection	src/bloodprg.rs	379	struct		UNVERIFIED	
+SndEntryCallSite	src/bloodprg.rs	398	struct		UNVERIFIED	
+SndBankLoadCallSite	src/bloodprg.rs	412	struct		UNVERIFIED	
+RenderCallSite	src/bloodprg.rs	433	struct		UNVERIFIED	
+BloodPrg	src/bloodprg.rs	448	struct		UNVERIFIED	
+parse_file	src/bloodprg.rs	454	fn		UNVERIFIED	
+parse	src/bloodprg.rs	460	fn		UNVERIFIED	
+summary	src/bloodprg.rs	490	fn		TESTED	
+image_bytes	src/bloodprg.rs	505	fn		INFRA	/// The raw image bytes, so a test can read an INSTRUCTION back and check a /// constant against the immediate the code actually uses.
+segoff_to_file	src/bloodprg.rs	509	fn		TESTED	
+ds_to_file	src/bloodprg.rs	513	fn		TESTED	
+fs_to_file	src/bloodprg.rs	517	fn		TESTED	
+opcode_handlers	src/bloodprg.rs	521	fn		TESTED	
+opcode_descriptors	src/bloodprg.rs	541	fn		TESTED	
+vm_opcode_specs	src/bloodprg.rs	558	fn		TESTED	
+script_resource_profiles	src/bloodprg.rs	595	fn	0x11F4,0x0D3E4,0x53A0,0x000A,0x6712	ASM	/// The five SCRIPT resource profiles at `FS:0x11F4` (file `0x0D3E4`), the /// table `vm_resource_profile_select` (`0x53A0`) indexes: `mov si,0x11F4 / /// mov dx,0x000A / mul dx` picks the row, then `
+dialogue_font_tables	src/bloodprg.rs	629	fn	0x31C8,0x7802,0x14C22,0x78B2,0x14CD2,0x78b2,0x7908,0x14D28	ASM	/// The DIALOGUE FONT's three chained tables, at the offsets `render_string` /// (`0x31C8`) loads them from as immediates: the ASCII->glyph map /// `DS:0x7802` = file `0x14C22` (`mov bx,0x7802`), the 
+nav_actor_subdispatch_handlers	src/bloodprg.rs	667	fn		TESTED	
+nav_choice_subdispatch_handlers	src/bloodprg.rs	675	fn		TESTED	
+snd_entry_call_sites	src/bloodprg.rs	683	fn		TESTED	
+snd_bank_load_call_sites	src/bloodprg.rs	709	fn		TESTED	
+render_call_sites	src/bloodprg.rs	748	fn		TESTED	
+sprite_blitter_dispatch_entries	src/bloodprg.rs	782	fn	0x1592,0x4522,0x44BA	ASM	/// The sprite-blitter dispatch table at `CS:0x1592` (file `0x4522`), reached /// by `mov bx,cs:[bx+0x1592]` at `0x44BA` after `shr bx,1 / and bx,0x0E` /// bounds the index to its eight word entries.
+inspect	src/bloodprg.rs	804	fn		TESTED	
+subdispatch_entries	src/bloodprg.rs	824	fn		UNVERIFIED	
+slice	src/bloodprg.rs	845	fn		TESTED	
+find_ax_source_before	src/bloodprg.rs	854	fn		UNVERIFIED	
+find_si_source_before	src/bloodprg.rs	886	fn		UNVERIFIED	
+ds_c_string	src/bloodprg.rs	914	fn		UNVERIFIED	
+option_menu_labels	src/bloodprg.rs	941	fn	0x886C,0x8709,0x2567,0x8428,0xFFFF,0x2573,0x2581,0x258B,0x25	DATA	/// The bridge OPTION menu's labels, read from the game's own string table. /// /// Console row 4's handler (`0x886C`, reached through the per-row table at /// file `0x8709`) does `mov si,0x2567` and 
+text_speed_labels	src/bloodprg.rs	947	fn	0x259D	DATA	/// The OPTION menu's TEXT-SPEED submenu labels (`DS:0x259D`): /// `VERY FAST`, `FAST`, `MEDIUM`, `SLOW`, `VERY SLOW`.
+location_status_headers	src/bloodprg.rs	955	fn	0x12E,0x137,0x13E,0x14B,0x8369,0x839F	DATA	/// The nav-chart hover panel's status headers, read from the game's strings: /// `DS:0x12E` `PLANET: `, `0x137` `SHIP: `, `0x13E` `BLACK HOLE: `, `0x14B` /// `LIFE SUPPORT:` — the four `mov si,...` c
+list_widget_cancel_label	src/bloodprg.rs	968	fn	0x0174	DATA	/// The list widget's shared trailing entry (`DS:0x0174`).
+music_on_label	src/bloodprg.rs	974	fn	0x2578	DATA	/// The alternate face of the music toggle (`DS:0x2578`), which the pointer /// list does not name.
+ds_pointer_list_strings	src/bloodprg.rs	979	fn	0xFFFF	ASM?	/// Walk a `0xFFFF`-terminated list of DS string pointers.
+resource_name	src/bloodprg.rs	996	fn		UNVERIFIED	
+file_to_known_segoff	src/bloodprg.rs	1009	fn		UNVERIFIED	
+u16_at	src/bloodprg.rs	1020	fn		UNVERIFIED	
+OpcodeMetadata	src/bloodprg.rs	1028	struct		UNVERIFIED	
+opcode_metadata	src/bloodprg.rs	1035	fn		UNVERIFIED	
+KNOWN_CODE_SEGMENTS	src/bloodprg.rs	1174	const		UNVERIFIED	
+snd_entry_call_note	src/bloodprg.rs	1185	fn		UNVERIFIED	
+snd_bank_load_mode	src/bloodprg.rs	1201	fn		UNVERIFIED	
+snd_bank_load_call_note	src/bloodprg.rs	1210	fn		UNVERIFIED	
+render_target_name	src/bloodprg.rs	1223	fn		UNVERIFIED	
+render_call_site_note	src/bloodprg.rs	1261	fn		UNVERIFIED	
+sprite_blitter_name	src/bloodprg.rs	1438	fn		UNVERIFIED	
+sprite_blitter_note	src/bloodprg.rs	1452	fn		UNVERIFIED	
+KNOWN_SYMBOLS	src/bloodprg.rs	1480	const		TESTED	
+PRESENTATION_3D_MARKERS	src/bloodprg.rs	2545	const		TESTED	
 BloodSave	src/bloodsav.rs	48	struct	0x6780,0xFFFF,0x6ADE,0x6CDE,0x6724,0xABC	ASM?	/// The fixed-layout portion of a `blood.sav` file, plus the trailing runtime /// region (object block + work buffer, whose split depends on the loaded /// profile's live object-table size). /// Curre
 SaveSlot	src/bloodsav.rs	73	struct	0x2734,0x1BAB,0x25ED,0x273B,0x1BBD,0x8573	ASM?	/// One row of the SLOT-NAME DIRECTORY (`blood.sav`): a 32-byte record holding a /// 15-character name padded with spaces, a NUL, then the slot's filename /// (`game<N>.sav`) padded with NULs. Ten of 
 SLOT_RECORD_LEN	src/bloodsav.rs	81	const	0x1BAB,0x2734,0x1BBD,0x273B	ASM?	/// Bytes per directory record, and the record count. /// Parse `blood.sav`, the slot-name directory the save flow renames through /// (`0x1BAB` points `[0x2734]` at a record, `0x1BBD` copies it to `D
