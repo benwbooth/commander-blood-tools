@@ -5328,3 +5328,29 @@ undocumented `Option` reads as "the original had a failure case here" when it is
 the port declining to reproduce an out-of-bounds read.
 
 The queue: 54 -> 52.
+
+## #167 — a half-open clip, and the one input where abs has no answer
+
+`plot_ship_3d_projected_point` (`0x9B04`) rejects points outside the clip with
+`jl` on the low bounds and `jge` on the high:
+
+```text
+  0x9B0A  cmp ax,[0x5235] / jl    reject left of the clip
+  0x9B10  cmp ax,[0x5237] / jge   reject at or past the right
+  0x9B19  cmp bx,[0x5239] / jl    y against 0x5239/0x523B likewise
+```
+
+Both are SIGNED, which is why the port compares through `signed_i16` instead of on
+`u16` — a point behind the camera arrives as a large unsigned value, and an
+unsigned compare would place it on screen rather than rejecting it. And the pair
+`jl`/`jge` makes the clip HALF-OPEN: `left` is inside, `right` is not. Symmetric
+bounds are the natural way to write it and would draw one column too many.
+
+`binary_abs_word_diff` negates when bit 15 is set — a sign-bit TEST, not a signed
+comparison. The consequence is that a difference of exactly `0x8000` negates to
+itself and stays `0x8000`: the single input for which "absolute value" has no
+representable answer. The original does not special-case it, so neither does the
+port, and now that is a recorded decision rather than an accident waiting to be
+"fixed" with a `saturating` call.
+
+The queue: 52 -> 50. Cited instructions: 235 -> 239.

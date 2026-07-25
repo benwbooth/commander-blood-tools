@@ -1904,6 +1904,24 @@ pub fn project_ship_3d_point(
     })
 }
 
+/// Plot one projected point, `ship_3d_plot_point` @`0x9B04`:
+///
+/// ```text
+///   0x9B0A  cmp ax,[0x5235] / jl   reject left of the clip
+///   0x9B10  cmp ax,[0x5237] / jge  reject at or past the right
+///   0x9B19  cmp bx,[0x5239] / jl   the same for y against 0x5239/0x523B
+///   0x9B30  mov al,es:[di] / or al,al / jne   FIRST WRITE WINS (#149)
+/// ```
+///
+/// The bound tests are `jl`/`jge` — SIGNED — which is why the port compares
+/// through `signed_i16` rather than on `u16`. A projected point behind the camera
+/// arrives as a large unsigned value, and an unsigned compare would place it on
+/// screen instead of rejecting it.
+///
+/// Note the asymmetry the game uses and the port keeps: `jl` on the low bound and
+/// `jge` on the high, so the clip is half-open — `left` is inside, `right` is not.
+///
+/// Cited here because it was settled ASM with no doc (#141's queue).
 pub fn plot_ship_3d_projected_point(
     depth_buffer: &mut [u8],
     viewport: Ship3dProjectionViewport,
@@ -4080,6 +4098,11 @@ fn ship_3d_record_field(record_offset: u16, kind_flags: u16, selector: u8) -> Op
     vm::vm_field_offset(selector, kind_flags).map(|field| record_offset.wrapping_add(field))
 }
 
+/// Absolute difference of two words, as the distance helper computes it: a
+/// wrapping 16-bit subtract, then negate if the SIGN BIT is set. That is a test of
+/// bit 15 rather than a signed comparison, so a difference of exactly `0x8000`
+/// negates to itself and stays `0x8000` — the one input where "absolute value"
+/// has no representable answer, and the original does not special-case it either.
 fn binary_abs_word_diff(first: u16, second: u16) -> u16 {
     let diff = first.wrapping_sub(second);
     if diff & 0x8000 != 0 {
