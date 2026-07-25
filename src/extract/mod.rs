@@ -224,6 +224,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             sprite.extend_from_slice(&0i16.to_le_bytes()); // y_offset
             sprite.extend(std::iter::repeat(0xFEu8).take(64)); // 8x8 bright pixels
             let mut slots = [Ship3dObjectSpriteDescriptor {
+                entity_id: None,
                 flags: 0x0080 | 0x0001, // VISIBLE | ACTIVE, dispatch 0 (Raw)
                 source_width: 8,
                 source_height: 8,

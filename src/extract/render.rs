@@ -1757,6 +1757,7 @@ mod tests {
         // in-compose projection is a no-op and never raises the DIRTY flag (which
         // shares a bit with the dispatch index).
         let mut slots = [Ship3dObjectSpriteDescriptor {
+            entity_id: None,
             flags: 0x0080 | 0x0001 | (dispatch << 1),
             source_width: 2,
             source_height: 1,

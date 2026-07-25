@@ -202,6 +202,109 @@ pub fn parse_room_view(filename: &str, prefix: &str) -> Option<(String, char)> {
     Some((room, view))
 }
 
+/// One row of the WORLD-ARTWORK table at `DS:0x2BC7` (file `0xFFE7`): a 22-byte
+/// record whose `+0x00` is a 16-byte NUL-terminated display name and whose
+/// `+0x10` is a RESOURCE ID into the same filename table [`LEVEL_DIRECTORY`]
+/// mirrors (file `0xCDF4`). `+0x12` is a group word, `31` for every entry;
+/// `+0x14` is zero throughout.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct WorldArtEntry {
+    pub name: &'static str,
+    pub resource_id: u16,
+}
+
+/// Byte size of one `DS:0x2BC7` record.
+pub const WORLD_ART_RECORD: usize = 0x16;
+/// File offset of the table (`DS:0x2BC7`, DS base `0xD420`).
+pub const WORLD_ART_TABLE_FILE_OFFSET: usize = 0xFFE7;
+
+/// The game's own object-name -> artwork lookup, read by the info panel's first
+/// zoom frame: it walks these records comparing each name against the selected
+/// object's inline name (`0x9098..0x90B6`, the string compare at `0x1CE:0x2C4`),
+/// then loads `[si+0x10] | 0x8000` as a resource (`0x90B8..0x90C3`).
+///
+/// The table is why the display names cannot be guessed from the asset names:
+/// `Oddland` is `trou.ext`, `Bonus` is `forest.ext`, `Troma` is `glacia.ext`,
+/// and `Trashlando` shares `kortex.ext` with `Kortex`. Pinned to the image
+/// byte-for-byte by `world_art_directory_matches_the_ds2bc7_table`, which also
+/// checks every id resolves to a real filename record.
+pub const WORLD_ART_DIRECTORY: [WorldArtEntry; 42] = [
+    WorldArtEntry { name: "Kortex",      resource_id: 32 },
+    WorldArtEntry { name: "Kukaracha",   resource_id: 75 },
+    WorldArtEntry { name: "Ekatomb",     resource_id: 29 },
+    WorldArtEntry { name: "Shark",       resource_id: 92 },
+    WorldArtEntry { name: "Cyberock",    resource_id: 36 },
+    WorldArtEntry { name: "Mastachok",   resource_id: 27 },
+    WorldArtEntry { name: "Crazystone",  resource_id: 30 },
+    WorldArtEntry { name: "Rondo",       resource_id: 24 },
+    WorldArtEntry { name: "Venusia",     resource_id: 25 },
+    WorldArtEntry { name: "Vista",       resource_id: 33 },
+    WorldArtEntry { name: "Eden",        resource_id: 31 },
+    WorldArtEntry { name: "Qx20",        resource_id: 64 },
+    WorldArtEntry { name: "Corpo",       resource_id: 43 },
+    WorldArtEntry { name: "Pterra",      resource_id: 35 },
+    WorldArtEntry { name: "Erazor",      resource_id: 26 },
+    WorldArtEntry { name: "Magnus",      resource_id: 28 },
+    WorldArtEntry { name: "Ondoya",      resource_id: 94 },
+    WorldArtEntry { name: "Tumul",       resource_id: 74 },
+    WorldArtEntry { name: "Malus",       resource_id: 59 },
+    WorldArtEntry { name: "Bonus",       resource_id: 54 },
+    WorldArtEntry { name: "Kult",        resource_id: 23 },
+    WorldArtEntry { name: "Troma",       resource_id: 55 },
+    WorldArtEntry { name: "Attrox",      resource_id: 56 },
+    WorldArtEntry { name: "Trashlando",  resource_id: 32 },
+    WorldArtEntry { name: "Moskito",     resource_id: 34 },
+    WorldArtEntry { name: "Oddland",     resource_id: 72 },
+    WorldArtEntry { name: "Ekato",       resource_id: 50 },
+    WorldArtEntry { name: "Erazo",       resource_id: 52 },
+    WorldArtEntry { name: "Masta",       resource_id: 61 },
+    WorldArtEntry { name: "Ron",         resource_id: 65 },
+    WorldArtEntry { name: "Venusia2",    resource_id: 69 },
+    WorldArtEntry { name: "Vistar",      resource_id: 70 },
+    WorldArtEntry { name: "Edena",       resource_id: 48 },
+    WorldArtEntry { name: "Golgos",      resource_id: 62 },
+    WorldArtEntry { name: "Lovia",       resource_id: 63 },
+    WorldArtEntry { name: "Sat",         resource_id: 67 },
+    WorldArtEntry { name: "Tempest",     resource_id: 68 },
+    WorldArtEntry { name: "Vulcan",      resource_id: 71 },
+    WorldArtEntry { name: "Magnu",       resource_id: 58 },
+    WorldArtEntry { name: "Kraner",      resource_id: 73 },
+    WorldArtEntry { name: "Cyborg",      resource_id: 60 },
+    WorldArtEntry { name: "Bigbang",     resource_id: 91 },
+];
+
+/// The artwork resource id for an object's inline NAME, matched the way the
+/// engine matches it (`0x1CE:0x2C4` is case-insensitive, like the built-in
+/// object-name scan at `0x5486`).
+pub fn world_art_resource_id(name: &str) -> Option<u16> {
+    WORLD_ART_DIRECTORY
+        .iter()
+        .find(|e| e.name.eq_ignore_ascii_case(name))
+        .map(|e| e.resource_id)
+}
+
+/// Parse the table straight out of a `BLOODPRG.EXE` image, so a checkout with
+/// the binary never has to trust the transcription above. Stops at the first
+/// record whose name byte is zero (`cmp byte [si],0 / je` @`0x90A7`).
+pub fn parse_world_art_table(exe: &[u8]) -> Vec<(String, u16)> {
+    let mut out = Vec::new();
+    let mut index = 0;
+    loop {
+        let base = WORLD_ART_TABLE_FILE_OFFSET + index * WORLD_ART_RECORD;
+        let Some(rec) = exe.get(base..base + WORLD_ART_RECORD) else {
+            break;
+        };
+        if rec[0] == 0 {
+            break;
+        }
+        let name = rec[..16].split(|&b| b == 0).next().unwrap_or_default();
+        let id = u16::from_le_bytes([rec[0x10], rec[0x11]]);
+        out.push((String::from_utf8_lossy(name).into_owned(), id));
+        index += 1;
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -236,6 +339,48 @@ mod tests {
         }
         assert_eq!(checked, LEVEL_DIRECTORY.len());
         assert_eq!(checked, 53, "expected 53 resource entries");
+    }
+
+    #[test]
+    fn world_art_directory_matches_the_ds2bc7_table() {
+        let exe = match std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        {
+            Ok(b) => b,
+            Err(_) => return,
+        };
+        let parsed = parse_world_art_table(&exe);
+        assert_eq!(
+            parsed.len(),
+            WORLD_ART_DIRECTORY.len(),
+            "the table's terminator (first zero name byte) bounds it at 42 records"
+        );
+        for (entry, (name, id)) in WORLD_ART_DIRECTORY.iter().zip(parsed.iter()) {
+            assert_eq!((entry.name, entry.resource_id), (name.as_str(), *id));
+        }
+        // LAYOUT IDENTITY: 42 records of 0x16 bytes from DS:0x2BC7 end at
+        // DS:0x2F63, two bytes before the nav camera origin at DS:0x2F65.
+        assert_eq!(
+            0x2BC7 + WORLD_ART_DIRECTORY.len() * WORLD_ART_RECORD,
+            0x2F63
+        );
+        // Every artwork id must resolve to a real filename record (file 0xCDF4).
+        for entry in WORLD_ART_DIRECTORY {
+            let off = 0xCDF4 + entry.resource_id as usize * 16;
+            let name = exe[off..off + 16].split(|&b| b == 0).next().unwrap();
+            assert!(
+                !name.is_empty(),
+                "{} -> id {} has no filename record",
+                entry.name,
+                entry.resource_id
+            );
+        }
+        // The names the display uses are NOT the asset names — the reason this
+        // table has to be read rather than inferred.
+        assert_eq!(world_art_resource_id("Oddland"), Some(72)); // trou.ext
+        assert_eq!(world_art_resource_id("Bonus"), Some(54)); // forest.ext
+        assert_eq!(world_art_resource_id("troma"), Some(55)); // glacia.ext, case-insensitive
+        assert_eq!(world_art_resource_id("nowhere"), None);
     }
 
     #[test]

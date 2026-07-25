@@ -525,8 +525,36 @@ pub struct Ship3dProjectedPixel {
     pub shade: u8,
 }
 
+/// The engine's entity table is 32 records of 32 bytes at `DS:0x6212`, bounded
+/// by the layout identity `0x6212 + 32*32 = 0x6612` (the dirty-rect list). The
+/// nav projector `0x9B98` drives the LAST ELEVEN of them: its loop counter runs
+/// `0x0B-1..0` and the record address is `0x6212 + ((i + 0x15) << 5)`.
+pub const SHIP_3D_ENTITY_COUNT: u16 = 32;
+/// The entity id the nav projector's slot 0 maps to (`0x9B98`).
+pub const SHIP_3D_NAV_ENTITY_BASE: u16 = 0x15;
+/// `DS:0x6212` — the entity table's base, in DS-relative bytes.
+pub const SHIP_3D_ENTITY_TABLE: u16 = 0x6212;
+/// Bytes per entity record (re-confirmed by the `rep movsd cx=8` copy at `0x4316`).
+pub const SHIP_3D_ENTITY_STRIDE: u16 = 32;
+
+/// The entity id a nav projector slot writes to, and its record's DS offset.
+/// Slots beyond the eleven the projector drives return `None` rather than
+/// wrapping past the table (`0x6612`).
+pub fn ship_3d_nav_entity_for_slot(slot: usize) -> Option<(u16, u16)> {
+    let id = SHIP_3D_NAV_ENTITY_BASE.checked_add(u16::try_from(slot).ok()?)?;
+    if id >= SHIP_3D_ENTITY_COUNT {
+        return None;
+    }
+    Some((id, SHIP_3D_ENTITY_TABLE + id * SHIP_3D_ENTITY_STRIDE))
+}
+
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dObjectSpriteDescriptor {
+    /// The entity id this slot writes into (`0x6212 + (id << 5)`), so a slot can
+    /// be addressed the way the rest of the engine addresses entities — the
+    /// hover status panel, for one, reads ENTITY `0x1F`'s record directly
+    /// (`DS:0x65F2`, the last of the 32). `None` until the projector assigns it.
+    pub entity_id: Option<u16>,
     pub flags: u16,
     pub source_width: u16,
     pub source_height: u16,

@@ -190,6 +190,44 @@ struct TvProgram {
     music: Option<String>,
 }
 
+/// The destination info panel's state word, `gs:0x2788`. The dispatcher at
+/// `0x9083` reads it as a bitfield: bit0 = zooming open, bit1 = zooming shut,
+/// zero = open and drawn. There is no separate "idle" value in the original —
+/// the panel is simply not reached when `gs:0x27BF` is 0 (`0x921C` clears both
+/// together at the end of the close), so the port names that state rather than
+/// leaving a zero object to stand for it.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum LocationPanelState {
+    #[default]
+    Idle,
+    /// `[0x2788] & 1` — `0x9087`.
+    ZoomingOpen,
+    /// `[0x2788] & 2` — `0x9125`.
+    ZoomingShut,
+    /// `[0x2788] == 0` with a selection live — the drawn panel at `0x9137`.
+    Open,
+}
+
+/// The panel's whole runtime state: `gs:0x2788` (state), `gs:0x2789` (the entity
+/// zoom scale the draw at `0x9240` reads as `bh = (3*[0x2789])/2+1`), `gs:0x27BF`
+/// (the selected object) and `gs:0x2AAB` (the 4x4 cursor rect it zooms from).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct LocationInfoPanel {
+    pub state: LocationPanelState,
+    pub object: u16,
+    pub scale: u8,
+    /// `[0xADB]`, the interpolation step; `[0xADA]` is the constant 8.
+    pub step: u8,
+    pub cursor_rect: [i32; 4],
+}
+
+impl LocationInfoPanel {
+    /// `bh = (3 * [0x2789]) / 2 + 1` — the entity draw's scale at `0x9240`.
+    pub fn entity_draw_scale(&self) -> u8 {
+        (3u16 * self.scale as u16 / 2 + 1) as u8
+    }
+}
+
 pub struct EngineState {
     /// Frame counter (increments once per [`EngineState::step`]).
     pub frame: u64,
@@ -276,6 +314,11 @@ pub struct EngineState {
     /// character's decoded dialogue). Empty = the plain compass-steer nav.
     #[allow(clippy::type_complexity)]
     nav_destinations: Vec<(String, Vec<(String, Option<std::path::PathBuf>)>)>,
+    /// The destination info panel's zoom FSM (`gs:0x2788`/`gs:0x2789`/`gs:0x27BF`).
+    pub location_panel: LocationInfoPanel,
+    /// `gs:0xA3E` bit0 as the panel sees it: the selection commit turns the mouse
+    /// OFF (`0x900C`), and it being ON again is what closes the panel (`0x912E`).
+    pub location_panel_mouse_enabled: bool,
     /// The ship-3D camera-approach animation (the decoded `[0x27DF]` phase FSM):
     /// drives the camera origin as the ship pulls in / travels when entering nav.
     camera: crate::ship3d::Ship3dCameraApproach,
@@ -594,6 +637,8 @@ impl EngineState {
             nav_pyramids: Vec::new(),
             nav_chart: None,
             nav_destinations: Vec::new(),
+            location_panel: LocationInfoPanel::default(),
+            location_panel_mouse_enabled: true,
             camera: crate::ship3d::Ship3dCameraApproach::default(),
             alien_views: Vec::new(),
             alien_view_active: false,
@@ -3675,6 +3720,7 @@ impl EngineState {
         // raises the dirty flag only when a slot actually MOVES, so a fresh slot every
         // frame would make the dirty tracking meaningless.
         self.ship3d_nav_slots.resize_with(count, Default::default);
+        self.assign_nav_slot_entity_ids();
         for slot in self.ship3d_nav_slots.iter_mut() {
             // ACTIVE (0x01) | VISIBLE (0x80). The collector requires ACTIVE; the
             // projector's gate and the position updater's mask want VISIBLE.
@@ -3771,6 +3817,9 @@ impl EngineState {
     /// The tint table is computed from the LIVE palette each time, as the game
     /// does; the port keeps its palette in 8-bit RGB, so it is converted back to
     /// the 6-bit DAC units the builder's distance threshold is expressed in.
+    ///
+    /// Only draws in [`LocationPanelState::Open`]; the zooming states draw the
+    /// interpolated rect instead ([`Self::step_location_info_panel`]).
     pub fn render_location_info_panel(&mut self, rows: &[crate::vm::LocationPanelRow]) {
         let mut dac = [[0u8; 3]; 256];
         for (i, entry) in dac.iter_mut().enumerate() {
@@ -3812,6 +3861,150 @@ impl EngineState {
                 row.y as usize,
                 row.color,
             );
+        }
+    }
+
+    /// Give each nav sprite slot the ENTITY id the projector writes it into:
+    /// `0x6212 + ((i + 0x15) << 5)` at `0x9B98`, so slot `i` is entity `0x15 + i`.
+    /// Without this a slot is anonymous and cannot be addressed the way the rest
+    /// of the engine addresses entities.
+    pub fn assign_nav_slot_entity_ids(&mut self) {
+        for (i, slot) in self.ship3d_nav_slots.iter_mut().enumerate() {
+            slot.entity_id = crate::ship3d::ship_3d_nav_entity_for_slot(i).map(|(id, _)| id);
+        }
+    }
+
+    /// The HOVER status panel's trigger (`nav_state_gate` `0x82E8`): the gate
+    /// reads `si = 0x65F2` — ENTITY `0x1F`'s record, the LAST of the 32 at
+    /// `DS:0x6212` — requires its state bit0, and hit-tests the mouse against the
+    /// rect at `+8`:
+    ///
+    /// ```text
+    ///   0x830A  si = 0x65F2 / test byte [si],1 / je      the entity's state bit
+    ///   0x8315  si += 8                                  the rect: x,y,w,h
+    ///   0x8318  x  <= mx <= x + w        (ja/jb, inclusive both ends)
+    ///   0x8328  y  <= my <= y + h
+    /// ```
+    ///
+    /// The rect words are the same `+0x08/+0x0A` position and `+0x0C/+0x0E`
+    /// extent the sprite-slot setters write (`0x420D`, `0x42CD`), so the port
+    /// answers it from the nav slot carrying that entity id.
+    pub fn nav_hover_status_active(&self, mouse: (i32, i32)) -> bool {
+        let Some(slot) = self
+            .ship3d_nav_slots
+            .iter()
+            .find(|s| s.entity_id == Some(crate::ship3d::SHIP_3D_ENTITY_COUNT - 1))
+        else {
+            return false;
+        };
+        if slot.flags & 1 == 0 {
+            return false; // 0x830D: `test al,1 / je`
+        }
+        let x = slot.draw_x as i32;
+        let y = slot.draw_y as i32;
+        mouse.0 >= x
+            && mouse.0 <= x + slot.extent_width as i32
+            && mouse.1 >= y
+            && mouse.1 <= y + slot.extent_height as i32
+    }
+
+    /// OPEN the destination info panel — the selection commit at
+    /// `0x8FF4..0x905B`, minus the parts that belong to the DOS input layer:
+    ///
+    /// ```text
+    ///   0x9029  [0x2AAB] = {mouse x, mouse y, 4, 4}   the zoom SOURCE rect
+    ///   0x9039  [0xADB] = 0 / [0xADA] = 8             interpolation step, total
+    ///   0x9043  [0x2788] = 1                          state: zooming open
+    ///   0x9048  [0x2789] = 0                          the entity zoom scale
+    ///   0x9052  [0x676A] = [0x27BF]                   the selected object
+    ///   0x900C  [0xA3E] = 0                           the mouse goes OFF, which
+    ///                                                 is what later triggers the
+    ///                                                 close (0x912E)
+    /// ```
+    ///
+    /// The caller supplies the object because the selection itself is
+    /// [`crate::vm::VmMachine::nav_chart_pick`]'s job; `0x901D`'s refusal to open
+    /// on the object you are already at is enforced here too.
+    pub fn open_location_info_panel(&mut self, object: u16, current_location: u16, cursor: (i32, i32)) -> bool {
+        if object == 0 || object == current_location {
+            return false; // 0x901D: `cmp ax,es:[arche+0x16] / je`
+        }
+        let size = crate::vm::LOCATION_PANEL_CURSOR_RECT_SIZE as i32;
+        self.location_panel = LocationInfoPanel {
+            state: LocationPanelState::ZoomingOpen,
+            object,
+            scale: 0,
+            step: 0,
+            cursor_rect: [cursor.0, cursor.1, size, size],
+        };
+        self.location_panel_mouse_enabled = false;
+        true
+    }
+
+    /// Ask the panel to close — the `0x912E` edge, where the mouse being enabled
+    /// again puts the FSM into state 2 (`0x922A`: `[0x278C]=0`, `[0x2788]=2`,
+    /// `[0xADB]=0`, `inc [0x2789]`).
+    pub fn close_location_info_panel(&mut self) {
+        if self.location_panel.state == LocationPanelState::Open {
+            self.location_panel.state = LocationPanelState::ZoomingShut;
+            self.location_panel.step = 0;
+            self.location_panel.scale = self.location_panel.scale.wrapping_add(1);
+        }
+    }
+
+    /// Advance the panel one frame and return the rect to draw, if any.
+    ///
+    /// * `ZoomingOpen` (`0x90FF..0x9120`): `inc [0x2789]`, interpolate the cursor
+    ///   rect toward the panel rect, and on completion drop to `Open`.
+    /// * `Open`: nothing to animate; the caller draws the panel itself.
+    /// * `ZoomingShut` (`0x91F1..0x9228`): `dec [0x2789]`, interpolate the other
+    ///   way, and on completion clear the selection (`[0x27BF]=0`) and go idle.
+    ///
+    /// The interpolation is the game's own gate — `step_ship_3d_interpolation_gate`,
+    /// `0x8B:0xFAD` — over the four rect words, `LOCATION_PANEL_ZOOM_STEPS` steps.
+    pub fn step_location_info_panel(&mut self) -> Option<[u16; 4]> {
+        use crate::ship3d::{step_ship_3d_interpolation_gate, Ship3dInterpolationGate, Ship3dInterpolationStep};
+        let panel = self.location_panel;
+        let (source, dest) = match panel.state {
+            LocationPanelState::Idle | LocationPanelState::Open => return None,
+            // 0x9111: di = the cursor rect, si = the panel rect.
+            LocationPanelState::ZoomingOpen => (
+                crate::vm::LOCATION_PANEL_BOX,
+                panel.cursor_rect.map(|v| v.max(0) as u16),
+            ),
+            // 0x9203: the same two, swapped.
+            LocationPanelState::ZoomingShut => (
+                panel.cursor_rect.map(|v| v.max(0) as u16),
+                crate::vm::LOCATION_PANEL_BOX,
+            ),
+        };
+        let mut gate = Ship3dInterpolationGate {
+            duration_ticks: crate::vm::LOCATION_PANEL_ZOOM_STEPS,
+            current_tick: panel.step,
+            ..Default::default()
+        };
+        let stepped = step_ship_3d_interpolation_gate(&mut gate, source, dest);
+        self.location_panel.step = gate.current_tick;
+        match panel.state {
+            LocationPanelState::ZoomingOpen => {
+                self.location_panel.scale = self.location_panel.scale.wrapping_add(1)
+            }
+            LocationPanelState::ZoomingShut => {
+                self.location_panel.scale = self.location_panel.scale.saturating_sub(1)
+            }
+            _ => {}
+        }
+        match stepped {
+            Some(Ship3dInterpolationStep::Active(rect)) => Some(rect),
+            // CF set at 0x1EB9 -> the caller's `jae` falls through to the next state.
+            _ => {
+                if panel.state == LocationPanelState::ZoomingOpen {
+                    self.location_panel.state = LocationPanelState::Open; // 0x9120
+                } else {
+                    self.location_panel = LocationInfoPanel::default(); // 0x921C: [0x27BF]=0
+                }
+                None
+            }
         }
     }
 
@@ -6021,6 +6214,118 @@ mod tests {
             "DS offset and file offset must describe the same byte"
         );
         assert_eq!(EngineState::OPTION_BOX[0], EngineState::OPTION_BOX_LABEL);
+    }
+
+    #[test]
+    fn nav_slots_carry_their_entity_ids_and_answer_the_hover_gate() {
+        use crate::ship3d::{ship_3d_nav_entity_for_slot, SHIP_3D_ENTITY_COUNT};
+        // 0x9B98: slot i is entity 0x15 + i, and the table stops at 32 entities.
+        assert_eq!(ship_3d_nav_entity_for_slot(0), Some((0x15, 0x6212 + 0x15 * 32)));
+        assert_eq!(ship_3d_nav_entity_for_slot(10), Some((0x1F, 0x65F2)));
+        assert_eq!(
+            ship_3d_nav_entity_for_slot(10).unwrap().1,
+            0x65F2,
+            "entity 0x1F IS the DS:0x65F2 record the hover gate reads"
+        );
+        assert_eq!(ship_3d_nav_entity_for_slot(11), None, "past the 32-entity table");
+
+        let mut e = EngineState::new();
+        e.ship3d_nav_slots.resize_with(11, Default::default);
+        e.assign_nav_slot_entity_ids();
+        assert_eq!(
+            e.ship3d_nav_slots.last().and_then(|s| s.entity_id),
+            Some(SHIP_3D_ENTITY_COUNT - 1),
+            "the eleventh slot is entity 0x1F"
+        );
+        assert_eq!(e.ship3d_nav_slots[0].entity_id, Some(0x15));
+
+        // The hover gate: entity 0x1F's state bit0 plus an inclusive box test.
+        let last = e.ship3d_nav_slots.last_mut().unwrap();
+        last.flags &= !1;
+        last.draw_x = 100;
+        last.draw_y = 60;
+        last.extent_width = 20;
+        last.extent_height = 10;
+        assert!(!e.nav_hover_status_active((105, 62)), "state bit0 clear -> no panel");
+        e.ship3d_nav_slots.last_mut().unwrap().flags |= 1;
+        assert!(e.nav_hover_status_active((105, 62)));
+        assert!(e.nav_hover_status_active((100, 60)), "the near edge is inside");
+        assert!(e.nav_hover_status_active((120, 70)), "and so is the far edge");
+        assert!(!e.nav_hover_status_active((121, 70)));
+        assert!(!e.nav_hover_status_active((105, 71)));
+    }
+
+    #[test]
+    fn the_info_panel_zoom_fsm_runs_open_then_shut() {
+        use crate::vm::{LOCATION_PANEL_BOX, LOCATION_PANEL_ZOOM_STEPS};
+        const OBJECT: u16 = 0x0100;
+        const HERE: u16 = 0x0200;
+        let mut e = EngineState::new();
+        assert_eq!(e.location_panel.state, LocationPanelState::Idle);
+
+        // 0x901D: the panel refuses the object you are already at, and 0x8FB3's
+        // `or ax,ax / je` refuses "nothing hit".
+        assert!(!e.open_location_info_panel(HERE, HERE, (40, 50)));
+        assert!(!e.open_location_info_panel(0, HERE, (40, 50)));
+        assert_eq!(e.location_panel.state, LocationPanelState::Idle);
+
+        assert!(e.open_location_info_panel(OBJECT, HERE, (40, 50)));
+        assert_eq!(e.location_panel.state, LocationPanelState::ZoomingOpen);
+        assert_eq!(e.location_panel.cursor_rect, [40, 50, 4, 4]);
+        assert!(
+            !e.location_panel_mouse_enabled,
+            "0x900C turns the mouse off; it coming back is what closes the panel"
+        );
+        assert_eq!(e.location_panel.entity_draw_scale(), 1, "0x9048: scale 0");
+
+        // Zoom open: one drawn rect per step, then the panel goes Open.
+        let mut rects = Vec::new();
+        for _ in 0..LOCATION_PANEL_ZOOM_STEPS + 2 {
+            if let Some(rect) = e.step_location_info_panel() {
+                rects.push(rect);
+            }
+        }
+        assert_eq!(rects.len() as u8, LOCATION_PANEL_ZOOM_STEPS);
+        assert_eq!(e.location_panel.state, LocationPanelState::Open);
+        // The last step does NOT land on the panel rect: the gate computes
+        // `dest + (src-dest)/total*step` with a TRUNCATING `idiv bl` (0x1E74), so
+        // the animation stops short by the remainder and the drawn panel takes
+        // over. Pinning the real numbers rather than the intuitive ones.
+        assert_eq!(
+            rects.last().copied(),
+            Some([96, 26, 156, 68]),
+            "cursor (40,50,4,4) -> box (100,20,160,70) in 8 truncating steps"
+        );
+        for (k, want) in LOCATION_PANEL_BOX.iter().enumerate() {
+            let got = rects.last().unwrap()[k] as i32;
+            assert!(
+                (got - *want as i32).abs() < LOCATION_PANEL_ZOOM_STEPS as i32,
+                "component {k} is short by less than one step's worth"
+            );
+        }
+        assert!(
+            rects[0][2] < LOCATION_PANEL_BOX[2],
+            "the first step is still near the 4px cursor rect"
+        );
+        assert!(
+            e.location_panel.entity_draw_scale() > 1,
+            "0x90FF bumps the entity scale every zoom frame"
+        );
+        assert!(e.step_location_info_panel().is_none(), "Open does not animate");
+
+        // Close: the same count of steps the other way, ending idle with the
+        // selection cleared (0x921C).
+        e.close_location_info_panel();
+        assert_eq!(e.location_panel.state, LocationPanelState::ZoomingShut);
+        let mut shut = 0;
+        for _ in 0..LOCATION_PANEL_ZOOM_STEPS + 2 {
+            if e.step_location_info_panel().is_some() {
+                shut += 1;
+            }
+        }
+        assert_eq!(shut, LOCATION_PANEL_ZOOM_STEPS);
+        assert_eq!(e.location_panel.state, LocationPanelState::Idle);
+        assert_eq!(e.location_panel.object, 0);
     }
 
     #[test]

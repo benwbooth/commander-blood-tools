@@ -1733,3 +1733,50 @@ Also renamed the nested `walk` inside `build_nav_source_list` to
 `walk_selector11_children`: it collided with the token walker in the same file,
 and level 2 could not separate them because neither carries an origin. Making the
 name unique is a better fix than teaching the tool to guess.
+
+## FIX #52 — the three open items on the info-panel thread, closed
+
+The previous entry left three named gaps. All three are done.
+
+**(1) The zoom FSM is ported.** `gs:0x2788` is a bitfield, not an enum — the
+dispatcher at `0x9083` tests bit0 for zoom-open and `0x9125` tests bit1 for
+zoom-shut, with zero meaning "open and drawn". Ported as `LocationPanelState`
+plus `open_/close_/step_location_info_panel`, driving the game's own
+interpolation gate over the four rect words.
+
+One thing worth pinning: the zoom NEVER LANDS on the panel rect. The gate
+computes `dest + (src-dest)/total*step` with a truncating `idiv bl` (`0x1E74`),
+so from a 4x4 cursor rect at (40,50) the eighth and final step draws
+`(96,26,156,68)` against a target of `(100,20,160,70)` — short by the remainder,
+after which the drawn panel takes over. I asserted the intuitive answer first and
+the test caught it; the real numbers are now what the test encodes.
+
+**(2) Nav slots carry their entity ids.** The projector writes
+`0x6212 + ((i + 0x15) << 5)` (`0x9B98`), so slot `i` IS entity `0x15 + i` — and
+slot 10 is entity `0x1F`, whose record starts at `DS:0x65F2`, which is exactly
+the address the hover gate reads. That identity was the whole blocker: the port's
+slots were anonymous, so nothing could answer "is the mouse over entity 0x1F".
+`Ship3dObjectSpriteDescriptor::entity_id` closes it and
+`nav_hover_status_active` implements the gate's own inclusive box test over the
+same `+0x08/+0x0A` position and `+0x0C/+0x0E` extent the sprite-slot setters
+write.
+
+**(3) The selection is decoded and ported** — `nav_chart_pick` (`0x92A3`), the
+chart's object hit-test, with per-kind boxes and the black hole's TWO chart
+positions (it shows the second when `obj+0x14` differs from `arche+0x22`: the two
+ends of one wormhole). `open_location_info_panel` enforces `0x901D`'s refusal to
+open on the object you are already at.
+
+**A table found on the way, and worth more than the panel.** The panel's first
+zoom frame resolves the selected object's ARTWORK by walking 22-byte records at
+`DS:0x2BC7`, comparing display names and loading `[si+0x10] | 0x8000`. That is a
+42-entry NAME -> RESOURCE table covering every world in the game, and it ends at
+`DS:0x2F63`, two bytes before the nav camera origin — the layout identity that
+bounds it. Ported as `WORLD_ART_DIRECTORY` with `parse_world_art_table` reading
+it straight from the image, and a test that pins all 42 rows byte-for-byte AND
+checks every id resolves to a real filename record.
+
+The table is also proof that this could not have been guessed: `Oddland` is
+`trou.ext`, `Bonus` is `forest.ext`, `Troma` is `glacia.ext`, and `Trashlando`
+shares `kortex.ext` with `Kortex`. Any mapping inferred from asset names would
+have been wrong for a quarter of the worlds.
