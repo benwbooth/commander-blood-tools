@@ -749,7 +749,7 @@ animate	src/manu3_hand.rs	641	fn	0x2274,0x2974	ASM?	/// Apply one pose-player fr
 GAME_SCREEN_PALETTE_DAC_LOWER_IS_BINARY	src/palette.rs	42	const	0x5B58,0x16A7,0x2F90,0x3C8,0x3C9,0x12F78	ASM?	//! The game-screen VGA palette — the 256-entry DAC buffer the original uploads //! for the ship/nav, bridge, location, and dialogue screens //! (game_palette_dac_buffer, gs:0x5B58, uploaded via 0x16A
 GAME_SCREEN_PALETTE_DAC	src/palette.rs	43	const		UNVERIFIED	
 PALETTE_BLEND_MAX_DISTANCE	src/palette.rs	113	const	0xBB8,0x234F,0x23B0	ASM?	/// Seed distance of the nearest-colour search (`mov word [bp+6],0xBB8` @`0x234F`). /// A source colour with no palette entry within this squared distance leaves its /// table byte UNCHANGED (`js 0x23
-build_palette_blend_remap_table	src/palette.rs	143	fn	0x22E0,0x1CE,0x0000,0x22F1	ASM	/// The game's TINT REMAP TABLE builder — routine `0x22E0`, far-called as /// `0x1CE:0x0000`. Every translucent/tinted overlay in the game goes through it: /// build a 256-entry LUT that maps each pal
+build_palette_blend_remap_table	src/palette.rs	143	fn	0x22E0,0x1CE,0x0000,0x22F1	ORACLE	/// The game's TINT REMAP TABLE builder — routine `0x22E0`, far-called as /// `0x1CE:0x0000`. Every translucent/tinted overlay in the game goes through it: /// build a 256-entry LUT that maps each pal
 build_console_bank_remap_table	src/palette.rs	202	fn	0x6011,0x242D,0x1CE,0x014D,0x22E0,0x9622,0x5251	ASM	/// The CONSOLE-BANK remap table (`DS:0x6011`) — built by running the GAME'S OWN /// builder, not by reimplementing it. /// /// `0x242D` (far `0x1CE:0x014D`) is a SECOND table builder, distinct from t
 GS	src/palette.rs	204	const		UNVERIFIED	
 PAL_DS	src/palette.rs	205	const		UNVERIFIED	

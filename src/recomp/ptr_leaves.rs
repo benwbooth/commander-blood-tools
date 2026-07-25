@@ -58,10 +58,20 @@ mod tests {
         panic!("interp_leaf: {offset:#x} did not return");
     }
 
-    /// `func_22e0` (`abs_negate_gs_setup` / 3D-vertex projection, 0x22E0..0x23C4) reproduces the
-    /// original bytes exactly. It rebases ds=es=gs, negates the AX argument, scales the projection
-    /// inputs by /100, then reads the vertex table at gs:[0x5251] (via lodsb) through stack-frame
-    /// locals and writes one projected byte to gs:[DI]. All registers are restored (retf), so the
+    /// `func_22e0` (0x22E0..0x23C4) reproduces the original bytes exactly.
+    ///
+    /// WHAT IT ACTUALLY IS: the TINT REMAP-TABLE BUILDER. The old names here —
+    /// `abs_negate_gs_setup`, "3D-vertex projection", "one projected byte" —
+    /// described the first four instructions and guessed the rest. It rebases
+    /// ds=es=gs, negates AX into a blend PERCENT, prescales the target colour in
+    /// BX/CX/DX by /100, then walks the 256-entry PALETTE at gs:[0x5251] blending
+    /// each entry toward that target and nearest-searching the palette for the
+    /// result, filling a 256-byte table at DI. See
+    /// `palette::build_palette_blend_remap_table`.
+    ///
+    /// This test keeps its small inputs (AX ~ -16, coords <= 0x20) because they
+    /// avoid a /100 overflow; the differential below runs it with the game's real
+    /// arguments instead. All registers are restored (retf), so the
     /// only persistent output is the gs-segment write — we compare the whole 64 KB gs window.
     /// Inputs are chosen small (AX≈-16, coords ≤0x20, vertex bytes <0x80) so no /100 overflows #DE.
     /// This is the Unicorn oracle's blind spot (its random inputs make the scaled products index
@@ -103,6 +113,70 @@ mod tests {
         assert!(
             m_lift.mem[base..base + 0x10000] == m_oracle.mem[base..base + 0x10000],
             "func_22e0: gs-segment output differs from the real bytes"
+        );
+    }
+
+    /// The PORT'S TINT-TABLE BUILDER against the same lift.
+    ///
+    /// `palette::build_console_bank_remap_table` runs `func_242d` directly, but
+    /// `build_palette_blend_remap_table` — the 50%-toward-black table behind the
+    /// info panel, the console choice box and the montage — is a HAND
+    /// reimplementation of `0x22E0` with no oracle. `ptr_leaves_gen::func_22e0` is
+    /// the lift, so the two can simply be run side by side over the real palette.
+    ///
+    /// (The test above describes `0x22E0` as "3D-vertex projection" writing one
+    /// byte — that is the old `abs_negate_gs_setup` mislabel. The routine walks the
+    /// palette at `gs:0x5251` for 256 entries and fills a 256-byte table at `DI`;
+    /// see `palette::build_palette_blend_remap_table`.)
+    #[test]
+    fn native_blend_table_matches_the_lifted_builder() {
+        let Some(exe) = load_exe() else { return };
+        const GS: u16 = 0x3000;
+        const SS: u16 = 0x4000;
+        const PAL: u32 = 0x5251;
+        const TABLE: u32 = 0x5F11;
+
+        let dac = &crate::palette::GAME_SCREEN_PALETTE_DAC;
+        let mut m = Machine::new();
+        m.mem[..0x10000].copy_from_slice(&exe[..0x10000]);
+        m.regs.gs = GS;
+        m.regs.ds = GS;
+        m.regs.es = GS;
+        m.regs.ss = SS;
+        m.regs.set_sp(0x0800);
+        for (i, b) in dac.iter().enumerate() {
+            m.write8(GS, PAL + i as u32, *b);
+        }
+        // The destination table starts as identity, as the port's does.
+        for i in 0..256u32 {
+            m.write8(GS, TABLE + i, i as u8);
+        }
+        m.regs.set_ax(0xFFCE); // negated on entry -> 50%
+        m.regs.set_bx(0);
+        m.regs.set_cx(0);
+        m.regs.set_dx(0);
+        m.regs.set_di(TABLE as u16);
+        super::super::ptr_leaves_gen::func_22e0(&mut m);
+
+        let mut native = [0u8; 256];
+        for (i, e) in native.iter_mut().enumerate() {
+            *e = i as u8;
+        }
+        let mut pal = [[0u8; 3]; 256];
+        for (i, e) in pal.iter_mut().enumerate() {
+            e.copy_from_slice(&dac[i * 3..i * 3 + 3]);
+        }
+        crate::palette::build_palette_blend_remap_table(
+            &pal,
+            crate::vm::LOCATION_PANEL_TINT_PERCENT,
+            [0, 0, 0],
+            &mut native,
+        );
+        let lifted: Vec<u8> = (0..256u32).map(|i| m.read8(GS, TABLE + i)).collect();
+        assert_eq!(
+            lifted,
+            native.to_vec(),
+            "the hand-written blend table diverges from the lifted 0x22E0"
         );
     }
 

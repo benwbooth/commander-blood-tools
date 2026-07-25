@@ -2939,3 +2939,28 @@ instruction-citation guard catches the first class automatically, and the harnes
 traps are now documented at the globals they concern (`DS:0x272E`, `DS:0x5239`).
 
 Twelve rows moved to `ORACLE` across the twin and self-check campaigns.
+
+## FIX #90 — the tint builder was lifted all along, under a wrong name
+
+`build_palette_blend_remap_table` is the port's hand reimplementation of `0x22E0`
+— the table behind the info panel's window, the console choice box and (via its
+twin) the montage. It had no oracle, and `cfg_clean.json` listed `0x22E0` among
+the functions the fuzz oracle CANNOT verify, so it looked unverifiable.
+
+It was lifted the whole time. `src/recomp/ptr_leaves_gen::func_22e0` exists and is
+checked against the interpreter oracle — but its test describes it as
+"3D-vertex projection ... writes one projected byte to gs:[DI]", which is the old
+`abs_negate_gs_setup` guess: the first four instructions read, the rest assumed.
+Searching for a lift by BEHAVIOUR found nothing; the lift was there under a name
+for something else.
+
+Run side by side over the real palette with the game's own arguments
+(`ax=0xFFCE`, black target), the hand-written builder matches the lift byte for
+byte across all 256 entries. Row to `ORACLE`, and both the test's description and
+`labels.csv` now say what the routine is.
+
+THE LESSON IS ABOUT SEARCHING, not about tables. A wrong name hides a function as
+effectively as a missing one: I decoded `0x22E0` from scratch this session (FIX
+#73's chain) while a verified lift of it sat in the tree. The cheap check I did
+not do was "is this address lifted?" — by ADDRESS, which is stable, rather than by
+what anything calls it.
