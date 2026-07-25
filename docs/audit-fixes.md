@@ -1205,3 +1205,31 @@ it.
 
 Frames under `accuracy/captures/drive_validation/` document each stage so the next
 attempt starts from evidence rather than repeating these runs.
+
+### #48 confirmed at a SECOND handler
+
+Fix #48 (consume the inline `0xA1` prefix regardless of mode) was derived from the
+`0xC4` handler at `0x6C7E`. The `0xC1` handler at `0x6B4C` shows the identical shape,
+independently:
+
+    0x6B52  xor dl,dl
+    0x6B54  mov al,[si]
+    0x6B56  cmp al,0xA1
+    0x6B58  jne
+    0x6B5A    inc dl        (the inverted flag)
+    0x6B5C    inc si        (SKIP the byte)
+    0x6B5D  lodsw           (operand read, past the prefix)
+    ...
+    0x6B73  test gs:[0x67AD],1   <-- the MODE test, AFTER the skip
+
+Same ordering: flag, skip, read operands, and only then consult the mode. So the fix
+rests on two handlers agreeing rather than on one reading, which matters because the
+change touched five decode sites on the strength of the first.
+
+Also visible here and NOT yet modelled: after `0x6B60` calls `0x6034`
+(`vm_record_lookup_by_threshold`), the handler reads the record type from `es:[di]` —
+the LOOKUP RESULT — while separately taking `cx = es:[bp]`, the raw operand's own type.
+The port's `record_state_condition` reads its record words directly from
+`record_offset`. Whether those coincide depends on what `0x6034` returns for this input,
+which is not established here. Left as a specific open question rather than assumed
+equivalent.
