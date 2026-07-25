@@ -4572,3 +4572,20 @@ address evidence, minus the strings.
 The threading reached further than expected: `location_panel_rows` shares the
 headers, so the example and `main.rs` both needed the real source wired in. That
 is the cost of removing a copy — and the reason a copy is tempting.
+
+## #140 — proving the widened guard can still see
+
+#139 taught `check_content_literals.py` the UI-label shape, but its string scan
+still required 12+ characters — right for prose, and the reason `"SHIP: "` (6) and
+`"PLANET: "` (8) were invisible in the first place. A second, shorter scan now
+runs for labels only.
+
+It reports NOTHING, which is the answer that needs checking rather than
+celebrating: a widened guard finding zero is indistinguishable from a widened
+guard that does not work. Run against `vm.rs` as it stood one commit before #139,
+the same pattern finds all four headers, 19 occurrences.
+
+So the guard is live and the tree is clean of that class. Worth the extra minute:
+of the three counting or coverage mistakes this session (#133's stale figure,
+#136's no-op settles, #122's case-sensitivity collapse), two showed up as a number
+that looked fine, and the third as a guard quietly matching nothing.

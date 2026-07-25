@@ -31,6 +31,10 @@ import re
 import sys
 
 STRING = re.compile(r'"((?:[^"\\]|\\.){12,})"')
+# A SHORTER scan, for UI labels only. The 12-character minimum above is right for
+# prose but hid `"SHIP: "` (6) and `"PLANET: "` (8) -- two of the four headers
+# transcribed out of DS:0x12E..0x14B in #139.
+SHORT_STRING = re.compile(r'"((?:[^"\\]|\\.){3,20})"')
 # Prose: has a space, and looks like words rather than a path/format/identifier.
 WORDS = re.compile(r"^[A-Za-z0-9 ,.'!?;:()\-\\n]+$")
 SENTENCE = re.compile(r"[.!?]|\b(?:you|your|the|and|are|is|not|this|that)\b", re.I)
@@ -159,6 +163,13 @@ def main():
                 # Player-facing text is not produced by classifying an address.
                 if ARM.search(line) or was_arm:
                     continue
+                for m in SHORT_STRING.finditer(line):
+                    lit = m.group(1)
+                    if UI_LABEL.match(lit) and not ERRORISH.search(lit):
+                        problems.append(
+                            f"{path}:{n}: UI label in source: \"{lit}\" -- the game "
+                            "draws it from its own DS strings"
+                        )
                 for m in STRING.finditer(line):
                     scanned += 1
                     lit = m.group(1)
