@@ -1217,3 +1217,28 @@ faces — no reachable savestate performs a script load, so the asset-table fill
 nav destination grant are unreachable together. What unblocks both is a SAVESTATE TAKEN
 AFTER REAL PROGRESSION (play to a granted destination, save there). Until that exists,
 further probing of either is wasted effort.
+
+## The DOSBox launch sequence existed in THREE copies; two were wrong (2026-07-24)
+
+`re/tools/` had three independent copies of the "launch BLOODPRG under DOSBox-X"
+sequence:
+
+    dump_dosbox_mem.py      fixed earlier this session
+    drive_real_game.sh      still wrong until now
+    capture_real_game.sh    still wrong until now
+
+Both broken copies did `mount c <dir>; c:; BLOODPRG.EXE` — ONE drive, NO arguments. The
+shipped `BLOOD.BAT` does `mount c <install-parent>; mount d <cd> -t cdrom; d:;
+BLOODPRG AMR S162227 EMS WRIC:\cblood\`. Without that the game loops the ATTRACT DEMO and
+never reaches a playable state.
+
+CONSEQUENCE WORTH KNOWING: `capture_real_game.sh` is the tool that produces oracle
+captures. Any capture taken with it before this fix shows the intro/attract sequence
+only — which is consistent with what those captures were ever used to verify (the intro
+logos). It does NOT mean past verifications were wrong; it means they could not have
+covered anything past the attract loop, and should not be cited as if they did.
+
+This is the same duplication defect that produced the `parse_dictionary` divergence
+(four copies, one fixed, three left wrong) and the `0xA6` word-list divergence (six
+consumers, three wrong). When a sequence is copied, fixing one copy is the START of the
+job.

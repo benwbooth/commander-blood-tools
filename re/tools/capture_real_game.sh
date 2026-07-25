@@ -26,8 +26,18 @@ XVFB_PID=$!
 trap 'kill "$XVFB_PID" "${DOSBOX_PID:-}" 2>/dev/null || true' EXIT
 sleep 3
 
+# Reproduce BLOOD.BAT. Launching BLOODPRG with NO ARGUMENTS and only one drive
+# mounted leaves the game looping the ATTRACT DEMO -- it never reaches a playable
+# state. Captures taken that way show only the intro/attract sequence, which is why
+# this is worth stating: it is the THIRD copy of this launch sequence in re/tools, and
+# the other two (dump_dosbox_mem.py, drive_real_game.sh) both carried the same defect.
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+INSTALL_PARENT="${4:-$REPO_ROOT/accuracy/cblood_install}"
 dosbox-x -set sdl output=surface \
-  -c "mount c \"$GAME_DIR\"" -c 'c:' -c 'BLOODPRG.EXE' >/dev/null 2>&1 &
+  -c "mount c \"$INSTALL_PARENT\"" \
+  -c "mount d \"$GAME_DIR\" -t cdrom" \
+  -c 'd:' \
+  -c "BLOODPRG AMR S162227 EMS WRIC:\\cblood\\" >/dev/null 2>&1 &
 DOSBOX_PID=$!
 
 # Sample the boot sequence: MINDSCAPE logo -> Microfolie's logo -> intro cutscene.

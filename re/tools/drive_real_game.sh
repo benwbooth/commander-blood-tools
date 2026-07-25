@@ -15,17 +15,30 @@
 # seconds after launch — the script waits for it).
 set -euo pipefail
 
-GAME_DIR="$(realpath "${1:?usage: drive_real_game.sh <game-dir> <out-dir> [display] [args]}")"
+# <game-dir> is the CD image dir that CONTAINS BLOODPRG.EXE (e.g. output/_tmp_iso),
+# mounted as D:. The installed data dir (C:\cblood) is a SEPARATE tree.
+GAME_DIR="$(realpath "${1:?usage: drive_real_game.sh <cd-dir> <out-dir> [display] [install-parent]}")"
 OUT_DIR="${2:?missing out-dir}"; mkdir -p "$OUT_DIR"
-DISP="${3:-:73}"; GAME_ARGS="${4:-}"
+DISP="${3:-:73}"
+# 4th arg is now the PARENT of the `cblood` install dir, mounted as C: so the game's
+# write path C:\cblood\ resolves. Defaults to accuracy/cblood_install.
+REPO_ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
+INSTALL_PARENT="${4:-$REPO_ROOT/accuracy/cblood_install}"
 export DISPLAY="$DISP" SDL_VIDEODRIVER=x11
 
 Xvfb "$DISP" -screen 0 800x600x24 >/dev/null 2>&1 &
 XVFB_PID=$!
 trap 'kill "$XVFB_PID" "${DOSBOX_PID:-}" 2>/dev/null || true' EXIT
 sleep 3
+# Reproduce BLOOD.BAT exactly. Mounting only one drive, or launching BLOODPRG with no
+# arguments, leaves the game looping the ATTRACT DEMO -- it never reaches a playable
+# state, so every capture and every memory dump taken that way is inert. This is the
+# same defect that made re/tools/dump_dosbox_mem.py silently useless until it was fixed.
 dosbox-x -set sdl output=surface \
-  -c "mount c \"$GAME_DIR\"" -c 'c:' -c "BLOODPRG.EXE $GAME_ARGS" >/dev/null 2>&1 &
+  -c "mount c \"$INSTALL_PARENT\"" \
+  -c "mount d \"$GAME_DIR\" -t cdrom" \
+  -c 'd:' \
+  -c "BLOODPRG AMR S162227 EMS WRIC:\\cblood\\" >/dev/null 2>&1 &
 DOSBOX_PID=$!
 
 # Wait for the game window (title contains DOSBox-X), up to ~20s.
