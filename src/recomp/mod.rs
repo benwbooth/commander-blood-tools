@@ -1191,6 +1191,74 @@ mod tests {
         }
     }
 
+    /// The DRAWN-WIDTH accumulator against its lift (`func_3192`).
+    ///
+    /// FIX #59 established that `gs:0x27CD` counts GLYPH advances only — the space
+    /// path (`add di,6 / jmp` @`0x31D7`) moves the pen without touching it, and
+    /// unmapped bytes are skipped entirely. `font::game_font_drawn_width` encodes
+    /// that, and the panel layout depends on it. This runs the real routine and
+    /// reads the accumulator back.
+    #[test]
+    fn native_drawn_width_matches_the_lifted_accumulator() {
+        let Some(exe) = load_exe_image() else { return };
+        const GS: u16 = 0x2600;
+        const STR_DS: u32 = 0x0400;
+        const ACC_DS: u32 = 0x27CD;
+        const FB_PTR: u32 = 0x5221;
+        // NOT width/height: `cmp dx,gs:[0x523B] / ja` then `cx = gs:[0x5239]-8 /
+        // cmp dx,cx / jle` both test dx, and dx is the ROW (0x31BA..0x31C1 build
+        // `dx*320 + bx`). So these are the clip's TOP and BOTTOM, and seeding them
+        // as 320/200 made the routine bail before drawing a single glyph — the
+        // accumulator came back 0.
+        const CLIP_TOP: u32 = 0x5239;
+        const CLIP_BOTTOM: u32 = 0x523B;
+        // The game font's three tables, from the image.
+        const XLAT: u32 = 0x7802;
+        const ADV: u32 = 0x78B2;
+        const GLYPHS: u32 = 0x7908;
+
+        let width_of = |text: &str| -> u16 {
+            let mut m = Machine::new();
+            m.regs.ds = GS;
+            m.regs.gs = GS;
+            m.regs.es = GS;
+            m.regs.ss = GS;
+            m.regs.set_sp(0xFF00);
+            for (base, len) in [(XLAT, 176usize), (ADV, 86), (GLYPHS, 86 * 8)] {
+                let file = 0xD420 + base as usize;
+                for i in 0..len {
+                    m.write8(GS, base + i as u32, exe[file + i]);
+                }
+            }
+            // Draw somewhere harmless, with a clip that admits the whole string.
+            m.write16(GS, FB_PTR, 0x8000);
+            m.write16(GS, FB_PTR + 2, GS);
+            m.write16(GS, CLIP_TOP, 0);
+            m.write16(GS, CLIP_BOTTOM, 200);
+            for (i, b) in text.bytes().enumerate() {
+                m.write8(GS, STR_DS + i as u32, b);
+            }
+            m.write8(GS, STR_DS + text.len() as u32, 0);
+            m.regs.set_si(STR_DS as u16);
+            m.regs.set_bx(10); // column
+            m.regs.set_dx(100); // row, inside the clip
+            let sp = m.regs.sp() as u32;
+            m.write16(m.regs.ss, sp, 0x0000);
+            m.write16(m.regs.ss, sp.wrapping_add(2), 0x0020);
+            super::auto::func_3192(&mut m);
+            m.read16(GS, ACC_DS)
+        };
+
+        for text in [
+            "PLANET: ", "SHIP: ", "BLACK HOLE: ", "LIFE SUPPORT:", "Oddland",
+            "ARE_YOU_SURE?", "YES", "NO", "LOADING", "PAUSE", "a b", "  ",
+        ] {
+            let lifted = width_of(text);
+            let native = crate::font::game_font_drawn_width(text) as u16;
+            assert_eq!(lifted, native, "{text:?}: lift {lifted} vs native {native}");
+        }
+    }
+
     /// The NAV-CHART PICKER against its lift (`func_92a3`).
     ///
     /// This one checks a decode made THIS session by hand: `nav_chart_pick` was

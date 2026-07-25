@@ -615,7 +615,7 @@ cp437_char	src/font.rs	58	fn		UNVERIFIED	/// CP437 byte -> Unicode scalar. ASCII
 HIGH	src/font.rs	59	const		UNVERIFIED	
 game_font_glyph	src/font.rs	73	fn		DATA	
 game_font_advance	src/font.rs	86	fn		DATA	
-game_font_drawn_width	src/font.rs	109	fn	0x27CD,0x3192,0x27cd,0x3215,0x31D3,0x31D7	ASM	/// The width the string draw REPORTS in `gs:0x27CD` — which is NOT the pen /// distance. The draw entry (`0x3192`) zeroes the accumulator, and only the /// glyph path adds to it (`add word gs:[0x27cd
+game_font_drawn_width	src/font.rs	109	fn	0x27CD,0x3192,0x27cd,0x3215,0x31D3,0x31D7	ORACLE	/// The width the string draw REPORTS in `gs:0x27CD` — which is NOT the pen /// distance. The draw entry (`0x3192`) zeroes the accumulator, and only the /// glyph path adds to it (`add word gs:[0x27cd
 GAME_FONT_CHAR_MAP	src/font.rs	133	const	0x7802,0x14C22,0x31C8,0x31DE,0x14CD2	DATA	/// ASCII/CP437 -> glyph-index translation, the game's own table at `DS:0x7802` /// (file `0x14C22`), used by `render_string` `0x31C8` via `xlatb`. `0xff` means /// SKIP the character (`or al,al; js` 
 GAME_FONT_WIDTHS	src/font.rs	148	const		DATA	
 GAME_FONT_GLYPHS	src/font.rs	158	const		DATA	

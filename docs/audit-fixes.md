@@ -2883,3 +2883,34 @@ Three rows to `ORACLE`. The remaining twins with lifts available are
 `confirm_box_click` (`0x8295`), `build_active_object_list` (`0x604E`) and
 `game_font_drawn_width` (`0x3192`) — all also decoded this session, all checkable
 the same way.
+
+## FIX #88 — the drawn-width accumulator, and two clip cells that are not what they look like
+
+Second self-check: `game_font_drawn_width` (FIX #59) against `func_3192`. It
+matches across every string the port measures — the four status headers, the
+confirm dialog's three labels, the status overlays, `Oddland`, and the pathological
+`"a b"` and `"  "` that exercise the space rule.
+
+FOUND ON THE WAY, and it is a real correction to the port's understanding of two
+globals. The first run had the lift returning 0 for everything. The routine's
+guards are
+
+```text
+  0x31A1  cmp dx,gs:[0x523B] / ja      bail
+  0x31AD  cx = gs:[0x5239] - 8
+  0x31B0  cmp dx,cx / jle              bail
+```
+
+Both test DX — and DX is the ROW, not a dimension: `0x31BA..0x31C1` build the
+framebuffer offset as `dx*320 + bx`, so BX is the column. `0x5239`/`0x523B` are
+therefore the clip's TOP and BOTTOM, not a width and height. Seeding them as
+`320`/`200` made every call bail before the first glyph, which is exactly the
+symptom that exposed it.
+
+`re/labels.csv` had them as "clip X to width / clip Y to screen height" from an
+earlier pass. Corrected there too, since anything else running these blitters
+would hit the same wall.
+
+That is the fourth harness trap this session that turned into a finding about the
+ORIGINAL rather than about testing — after `[bp]` defaulting to SS, `populate`'s
+activation formula, and the save editor's re-scanned length.
