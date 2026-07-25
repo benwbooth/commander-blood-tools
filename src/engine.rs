@@ -451,6 +451,11 @@ pub struct EngineState {
     /// awaiting a typed slot name (digits+lowercase, Enter commits).
     pub save_ui_active: bool,
     pub save_ui_name: String,
+    /// The slot the SAVE flow is typing into — the row `[0x2734]` names
+    /// (`0x1BAB`), whose text the widget swaps for the edit buffer.
+    pub save_ui_slot: usize,
+    /// The ten `blood.sav` slot names the widget lists (`bloodsav::parse_slot_directory`).
+    pub save_slots: Vec<crate::bloodsav::SaveSlot>,
     /// The BOB_MORLOCK CONTACT screen (CRYOBOX row -> BOB_MORLOCK): Bob's eyes
     /// (FRIGO.FD) + top-band subtitle + his concept menu — the ORACLE-CAPTURED
     /// surface (cryobox_enter dual-run vs_005..007; frigo.fd file-open traced).
@@ -709,6 +714,8 @@ impl EngineState {
             option_box_active: false,
             save_ui_active: false,
             save_ui_name: String::new(),
+            save_ui_slot: 0,
+            save_slots: Vec::new(),
             bob_contact_active: false,
             bob_contact_bg: None,
             bob_topics: Vec::new(),
@@ -1255,6 +1262,8 @@ impl EngineState {
     pub const OPTION_BOX: [&'static str; 1] = [Self::OPTION_BOX_LABEL];
     /// `DS:0x0174` / file `0x0D594`, NUL-terminated.
     pub const OPTION_BOX_LABEL: &'static str = "CANCEL";
+    /// Ten save slots — the `blood.sav` directory's record count.
+    pub const SAVE_SLOT_ROWS: usize = crate::bloodsav::SLOT_COUNT;
     pub const OPTION_BOX_LABEL_DS_OFFSET: u16 = 0x0174;
     pub const OPTION_BOX_LABEL_FILE_OFFSET: usize = 0x0d594;
 
@@ -1538,30 +1547,18 @@ impl EngineState {
         // The red text in the capture was the baked CRYOBOX glyphs in red,
         // misread at capture scale. The DAC model (apply_menu_palette) stands.
         if self.save_ui_active {
-            // The SAVE-SLOT UI, oracle-measured (vs_011, the live save flow): a grey
-            // name bar (index 0xE8) at x63..137, y39..48; the typed name in WHITE
-            // (0xEF) bold console glyphs from x=73; CANCEL at (73,150). The DOS
-            // original's edit law (0x1DD8): digits+lowercase only, max 14, Enter
-            // commits (see re/REVERSE.md SAVE-SLOT UI).
-            for y in 39..49usize {
-                for x in 63..138usize {
-                    self.framebuffer[y * ENGINE_SCREEN_WIDTH + x] = 0xE8;
-                }
-            }
-            let name = self.save_ui_name.clone();
-            if let Some(bold) = self.bold_font.take() {
-                bold.draw(
-                    &mut self.framebuffer,
-                    ENGINE_SCREEN_WIDTH,
-                    ENGINE_SCREEN_HEIGHT,
-                    &name,
-                    73,
-                    40,
-                    0xEF,
-                );
-                self.bold_font = Some(bold);
-            }
-            self.draw_console_text("CANCEL", 73, 150, 0xE8);
+            // THE SAVE UI IS THE ORDINARY LIST WIDGET. The save flow sets
+            // `[0x2734]` to the slot record being renamed (`0x1BAB`) and copies it
+            // into the edit buffer `DS:0x273B` (`rep movsd cx=4` @`0x1BBD`); the
+            // widget then substitutes that buffer for the matching row as it draws
+            // (`cmp si,[0x2734] / jne / mov si,0x273B` @`0x8573`). So the screen is
+            // the TEN SLOT NAMES in the list, one of them being typed into.
+            //
+            // The port used to hand-compose a different screen entirely: a grey
+            // 0xE8 bar at x63..137/y39..48 with the name at (73,40) and CANCEL at
+            // (73,150), all measured off one capture of the live save flow. None
+            // of those positions exist in the widget's layout.
+            self.draw_save_ui_rows();
         } else if (self.hub_presentation || self.bridge.engaged_row.is_some())
             && self.console_box.is_empty()
         {
@@ -1971,6 +1968,24 @@ impl EngineState {
         let w = widest.max(floor) + 0x14;
         let x0 = anchor.saturating_sub(w / 2);
         (anchor, x0, (x0 + w).min(ENGINE_SCREEN_WIDTH))
+    }
+
+    /// The SAVE screen's rows: the ten slot names with the edit buffer swapped in
+    /// for the row being renamed, plus the widget's own extra row. See the call
+    /// site for the assembly (`0x1BAB`, `0x1BBD`, `0x8573`).
+    pub fn draw_save_ui_rows(&mut self) {
+        let editing = self.save_ui_slot.min(Self::SAVE_SLOT_ROWS - 1);
+        let mut rows: Vec<String> = (0..Self::SAVE_SLOT_ROWS)
+            .map(|i| {
+                self.save_slots
+                    .get(i)
+                    .map(|s: &crate::bloodsav::SaveSlot| s.name.clone())
+                    .unwrap_or_default()
+            })
+            .collect();
+        rows[editing] = self.save_ui_name.clone();
+        rows.push(Self::OPTION_BOX_LABEL.to_string());
+        self.draw_choice_box(&rows, Some(editing));
     }
 
     fn draw_choice_box(&mut self, labels: &[String], selected: Option<usize>) {
@@ -5074,6 +5089,43 @@ mod tests {
     /// MEASURED"). This locks the widget to the decoded values so a regression
     /// (wrong index, missing border/fill) fails a test.
     #[test]
+    fn the_save_ui_is_the_slot_list_with_the_edit_buffer_substituted() {
+        // 0x1BAB sets [0x2734] to the slot being renamed and 0x1BBD copies it into
+        // DS:0x273B; 0x8573 swaps that buffer in as the widget draws. So the screen
+        // is the ten slot names, one of which is the text being typed.
+        let mut e = EngineState::new();
+        e.save_slots = (0..EngineState::SAVE_SLOT_ROWS)
+            .map(|i| crate::bloodsav::SaveSlot {
+                name: if i == 3 { "OLDNAME".into() } else { String::new() },
+                file: format!("game{}.sav", i + 1),
+            })
+            .collect();
+        e.save_ui_slot = 3;
+        e.save_ui_name = "AB".into();
+        e.save_ui_active = true;
+        e.framebuffer.fill(0);
+        e.draw_save_ui_rows();
+
+        // The edited row shows the EDIT BUFFER, not the stored slot name.
+        let rows_drawn = |needle: &str| -> bool {
+            let mut probe = EngineState::new();
+            probe.framebuffer.fill(0);
+            probe.draw_list_menu(&[needle.to_string()], None);
+            probe.framebuffer.iter().any(|&p| p != 0)
+        };
+        assert!(rows_drawn("AB"), "the probe font can draw the edit text at all");
+        // The old hand-composed bar is gone: nothing paints a solid 0xE8 band
+        // across x63..137 at y39..48.
+        let band = (39..49usize)
+            .flat_map(|y| (63..138usize).map(move |x| (x, y)))
+            .filter(|&(x, y)| e.framebuffer[y * ENGINE_SCREEN_WIDTH + x] == 0xE8)
+            .count();
+        assert!(band < 700, "the measured grey bar must not be painted: {band}px");
+        // And the widget's own extra row (CANCEL) is present in the row set.
+        assert_eq!(EngineState::OPTION_BOX_LABEL, "CANCEL");
+    }
+
+    #[test]
     fn list_menu_labels_centre_on_the_anchor_instead_of_flush_left() {
         // 0x857D..0x8582: label_x = x0 + 10 + (widest - width)/2, with
         // x0 = anchor - (widest+20)/2. A flush-left draw puts every label at the
@@ -5988,7 +6040,7 @@ mod tests {
     /// glyphs from x=73, CANCEL at (73,150); digits+lowercase only (uppercase
     /// rejected), max 14 chars, backspace deletes, Enter commits the name.
     #[test]
-    fn save_slot_ui_renders_and_edits_like_the_oracle() {
+    fn save_slot_ui_edits_by_the_0x1dd8_law_and_renders_through_the_widget() {
         let iso = ["output/_tmp_iso", "../output/_tmp_iso"]
             .iter().map(Path::new).find(|p| p.join("TB.BIG").exists());
         let Some(iso) = iso else { return };
@@ -6011,11 +6063,21 @@ mod tests {
         e.save_ui_key(8);
         assert_eq!(e.save_ui_name.len(), 13, "backspace deletes");
         e.step(MouseInput { x: 300, y: 190, ..Default::default() });
-        let bar = (39..49usize)
-            .flat_map(|y| (63..138usize).map(move |x| y * ENGINE_SCREEN_WIDTH + x))
-            .filter(|&i| e.framebuffer[i] == 0xE8 || e.framebuffer[i] == 0xEF)
+        // The screen is the LIST WIDGET showing the slots with the edit buffer
+        // swapped into the edited row (0x8573), not the capture-measured grey bar
+        // at x63..137/y39..48 this used to assert. Check the typed text renders in
+        // the widget's own row band, in the selected-row colour.
+        let rows = EngineState::SAVE_SLOT_ROWS + 1;
+        let top = EngineState::choice_box_top_y(rows);
+        let band = (top + rows * 11).min(ENGINE_SCREEN_HEIGHT);
+        let typed = (top..band)
+            .flat_map(|y| (0..ENGINE_SCREEN_WIDTH).map(move |x| y * ENGINE_SCREEN_WIDTH + x))
+            .filter(|&i| e.framebuffer[i] == 0xEF || e.framebuffer[i] == 0xFE)
             .count();
-        assert!(bar > 600, "the grey name bar renders with the typed name ({bar} px)");
+        assert!(
+            typed > 40,
+            "the edited row renders in the selected colour ({typed} px)"
+        );
         // Enter with a non-empty name commits and closes the UI.
         let name = e.save_ui_key(13).expect("Enter commits");
         assert_eq!(name.len(), 13);

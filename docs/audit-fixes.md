@@ -2240,3 +2240,40 @@ ALSO FIXED, found while running the suite: my FIX #60 insertion had swallowed th
 three_rng_calls_each`, so that test silently stopped running, and left a stray
 duplicate attribute above the new one. Both repaired; rustc's
 `duplicate_macro_attributes` warning is what surfaced it.
+
+## FIX #66 — there is no save screen; it is the slot list with one row being typed
+
+Third defect on the `engine.rs` capture seam, and the largest. The port composed a
+SAVE screen by hand:
+
+    a grey 0xE8 bar at x63..137, y39..48
+    the typed name in bold 0xEF at (73, 40)
+    CANCEL at (73, 150)
+
+all "oracle-measured (vs_011, the live save flow)". None of those positions exist
+in the game. The save flow at `0x1BAB` sets `[0x2734]` to the slot record being
+renamed and copies its 16 name bytes into the edit buffer at `DS:0x273B`
+(`rep movsd cx=4` @`0x1BBD`); the list widget then substitutes that buffer for the
+matching row as it draws (`cmp si,[0x2734] / jne / mov si,0x273B` @`0x8573`).
+
+**The save UI is the ordinary ten-row slot list with one row being typed into.**
+The capture showed a "grey bar with a name in it" because that is what a
+highlighted list row containing two characters looks like.
+
+To render it the port needed the slot names, which it had documented and never
+parsed. `bloodsav::parse_slot_directory` now reads `blood.sav`'s ten 32-byte
+records — verified against the real file: every slot names its own `game<N>.sav`
+in order, slot 1 carries the `ab` typed during the live save, the rest are blank.
+
+The EDIT LAW was already right and stays: `0x1DD8` gives digits and lowercase
+only, 14 characters, Enter commits. That part was decoded from the binary; only
+the rendering was measured.
+
+The old test was `save_slot_ui_renders_and_edits_like_the_oracle`, and — as with
+`choice_box_matches_the_measured_spec` — the name was the tell. Its edit-law half
+survives unchanged; its render half now asserts the typed row draws in the
+widget's own band and colour instead of a measured rectangle.
+
+THREE FOR THREE on this seam (#64 tint, #65 centring, #66 save UI): every surface
+whose comment said "measured" turned out to be a shared widget the port had
+re-implemented from a photograph of one frame.

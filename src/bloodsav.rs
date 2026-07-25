@@ -58,6 +58,53 @@ pub struct BloodSave {
     pub runtime: Vec<u8>,
 }
 
+/// One row of the SLOT-NAME DIRECTORY (`blood.sav`): a 32-byte record holding a
+/// 15-character name padded with spaces, a NUL, then the slot's filename
+/// (`game<N>.sav`) padded with NULs. Ten of them, one per save slot.
+///
+/// The game shows these through the ORDINARY LIST WIDGET: the save flow sets
+/// `[0x2734]` to the record being renamed (`0x1BAB`, value `0x25ED`) and copies
+/// 16 bytes of it into the edit buffer at `DS:0x273B` (`rep movsd cx=4`
+/// @`0x1BBD`), and the widget then substitutes that buffer for the matching row
+/// while drawing (`cmp si,[0x2734] / jne / mov si,0x273B` @`0x8573`). There is
+/// no separate save screen: it is the ten slot names in the list, one of which
+/// is being typed into.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SaveSlot {
+    /// The displayed name, trailing pad stripped. Empty for an unused slot.
+    pub name: String,
+    /// `game<N>.sav`, the file the slot's state lives in.
+    pub file: String,
+}
+
+/// Bytes per directory record, and the record count.
+pub const SLOT_RECORD_LEN: usize = 32;
+pub const SLOT_NAME_LEN: usize = 16;
+pub const SLOT_COUNT: usize = 10;
+
+/// Parse `blood.sav`, the slot-name directory. Returns `None` unless the image is
+/// exactly the ten records the format defines.
+pub fn parse_slot_directory(data: &[u8]) -> Option<Vec<SaveSlot>> {
+    if data.len() != SLOT_COUNT * SLOT_RECORD_LEN {
+        return None;
+    }
+    Some(
+        data.chunks_exact(SLOT_RECORD_LEN)
+            .map(|rec| {
+                let field = |r: &[u8]| {
+                    String::from_utf8_lossy(r.split(|&b| b == 0).next().unwrap_or_default())
+                        .trim_end()
+                        .to_string()
+                };
+                SaveSlot {
+                    name: field(&rec[..SLOT_NAME_LEN]),
+                    file: field(&rec[SLOT_NAME_LEN..]),
+                }
+            })
+            .collect(),
+    )
+}
+
 /// The DS globals the writer streams from (`0x1C63`, `0x1C6D`, `0x1C72`) and,
 /// for the profile, the DIFFERENT one the reader streams into (`0x1CEB`).
 pub const SAVE_PROFILE_SOURCE_DS: u16 = 0x677E;
@@ -179,6 +226,26 @@ mod tests {
     /// header. LIVE-OBSERVED (save_option scenario, OPTION->LOAD file-open trace):
     /// the real slot filenames are `game<N>.sav` (game1.sav for slot 1) — NOT
     /// blood.sav (that name is only opened at BOOT as a legacy/quick slot probe).
+    #[test]
+    fn parses_the_real_slot_directory() {
+        let paths = ["accuracy/cdrive/cblood/blood.sav", "../accuracy/cdrive/cblood/blood.sav"];
+        let Some(data) = paths.iter().find_map(|p| std::fs::read(p).ok()) else {
+            return;
+        };
+        assert_eq!(data.len(), SLOT_COUNT * SLOT_RECORD_LEN, "ten 32-byte records");
+        let slots = parse_slot_directory(&data).expect("the real directory parses");
+        assert_eq!(slots.len(), SLOT_COUNT);
+        // Every slot names its own file, in order.
+        for (i, slot) in slots.iter().enumerate() {
+            assert_eq!(slot.file, format!("game{}.sav", i + 1), "slot {i}");
+        }
+        // The live save flow typed a name into slot 1 and left the rest blank.
+        assert_eq!(slots[0].name, "ab");
+        assert!(slots[1..].iter().all(|s| s.name.is_empty()));
+        // A short image is not a directory.
+        assert!(parse_slot_directory(&data[..data.len() - 1]).is_none());
+    }
+
     #[test]
     fn parses_a_real_save_if_present() {
         let paths = [
