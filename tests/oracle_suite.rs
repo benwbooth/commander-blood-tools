@@ -401,6 +401,104 @@ fn viewscreen_static_matches_the_captures_two_colour_distribution() {
     );
 }
 
+/// IDENTIFY a capture: which asset frame is it?
+///
+/// #114 went wrong because a FILENAME was allowed to stand for evidence — three
+/// port states were tried against `nav_screen_opened.ppm` before anyone asked
+/// what the image actually was. This answers that mechanically: decode every
+/// frame of every HNM under the asset root and report the closest matches by
+/// mean absolute difference.
+///
+/// Run: `cargo test --test oracle_suite -- --ignored --nocapture identify_capture`
+/// with `IDENTIFY=path/to/capture.ppm` (defaults to the two still-unread ones).
+///
+/// Reading the result: a real match lands near ZERO. Across 701 assets the best
+/// score for either remaining capture is ~34, which is a negative result, not a
+/// weak hit — both are COMPOSITED screens (scene plus overlays), so no single
+/// frame equals them. Only full 320x200 frames are compared, and only the first
+/// 40 of each file, so a match hiding in a small talk-head band or a long clip
+/// would be missed; widen those before concluding a capture has no source.
+#[test]
+#[ignore]
+fn identify_capture() {
+    let Some(iso) = iso_dir() else {
+        eprintln!("skipped: no CD data");
+        return;
+    };
+    let targets: Vec<String> = match std::env::var("IDENTIFY") {
+        Ok(v) => vec![v],
+        Err(_) => vec![
+            "accuracy/captures/mission_briefing_eye.ppm".into(),
+            "accuracy/captures/bridge/script2_first_frame.ppm".into(),
+        ],
+    };
+
+    // Every .hnm under the asset root, plus the assets dir next to it.
+    let mut hnms: Vec<std::path::PathBuf> = Vec::new();
+    let mut roots = vec![iso.to_path_buf()];
+    if let Some(parent) = iso.parent() {
+        roots.push(parent.join("_tmp_assets"));
+        roots.push(parent.to_path_buf());
+    }
+    for root in roots {
+        let mut stack = vec![root];
+        while let Some(dir) = stack.pop() {
+            let Ok(entries) = std::fs::read_dir(&dir) else { continue };
+            for e in entries.flatten() {
+                let p = e.path();
+                if p.is_dir() {
+                    stack.push(p);
+                } else if p
+                    .extension()
+                    .and_then(|x| x.to_str())
+                    .map(|x| x.eq_ignore_ascii_case("hnm"))
+                    .unwrap_or(false)
+                {
+                    hnms.push(p);
+                }
+            }
+        }
+    }
+    hnms.sort();
+    hnms.dedup();
+    eprintln!("scanning {} HNM asset(s)", hnms.len());
+
+    for target in targets {
+        let Some(live) = read_ppm(Path::new(&target))
+            .or_else(|| read_ppm(Path::new(&format!("../{target}"))))
+        else {
+            eprintln!("  no such capture: {target}");
+            continue;
+        };
+        let mut best: Vec<(f64, String, usize)> = Vec::new();
+        for path in &hnms {
+            let Ok(h) = commander_blood_tools::hnm::HnmFile::open(path) else { continue };
+            let mut fb = vec![0u8; ENGINE_SCREEN_WIDTH * 200];
+            let mut pal = [[0u8; 3]; 256];
+            for idx in 0..h.frame_count().min(40) {
+                let (w, ht, _) = h.decode_frame(idx, &mut fb, &mut pal);
+                if w != ENGINE_SCREEN_WIDTH || ht != 200 {
+                    continue;
+                }
+                let rgb: Vec<u8> = fb.iter().flat_map(|&i| pal[i as usize]).collect();
+                best.push((
+                    mean_abs(&rgb, &live),
+                    path.file_name().unwrap().to_string_lossy().into_owned(),
+                    idx,
+                ));
+            }
+        }
+        best.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+        eprintln!("\n{target}:");
+        for (d, name, idx) in best.iter().take(5) {
+            eprintln!("   mean_abs {d:>7.2}  {name} frame {idx}");
+        }
+        if best.is_empty() {
+            eprintln!("   no 320x200 frames decoded");
+        }
+    }
+}
+
 /// MISNAMED CAPTURE, kept as a measurement harness.
 ///
 /// `nav_screen_opened.ppm` is not the nav screen and not a bridge starfield. Its

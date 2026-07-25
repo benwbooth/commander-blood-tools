@@ -3860,3 +3860,33 @@ someone looked at the band.
 
 Four of the seven captures from #112 now have tests. Two remain unread
 (`mission_briefing_eye.ppm`, `script2_first_frame.ppm`).
+
+## #117 — a tool that answers "what IS this capture?", and what it says about the last two
+
+#114's root error was letting a filename stand for evidence: three port states
+were tried against `nav_screen_opened.ppm` before anyone asked what the image was.
+`identify_capture` answers that mechanically — decode every frame of every HNM
+under the asset root and rank by mean absolute difference against the capture.
+
+Run against the two captures still unread, over **701 assets**:
+
+    mission_briefing_eye.ppm    best 33.87  (hyper_01.hnm frame 25)
+    script2_first_frame.ppm     best 36.40  (hyper_07.hnm frame 26)
+
+Those are NEGATIVE results, not weak hits. A real match lands near zero — the
+console-band comparison in #113 is byte-exact across 19200 bytes. At ~34 the
+"best" candidates are simply the least-different images in a library of dark
+scenes, which is what a ranking always produces whether or not the answer is
+present.
+
+So both captures are COMPOSITED screens: a scene plus overlays (subtitle text,
+box chrome, palette state), which no single asset frame equals. That is worth
+knowing before anyone tries to match them against an asset for a third time.
+
+The tool's limits are stated in its own doc, because a negative result is only as
+good as its coverage: it compares full 320x200 frames only, and only the first 40
+of each file, so a match hiding in a talk-head band or late in a long clip would
+be missed. Widen those before concluding a capture has no source.
+
+Reproducing either capture needs the composite pipeline — VM state, scene, and
+overlays together — which is the scenario harness's territory, not a frame diff.
