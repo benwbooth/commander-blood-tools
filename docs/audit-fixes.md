@@ -4089,3 +4089,38 @@ incidental to it, and the status stands. No other settled row depended on one.
 The general shape is worth keeping in mind for anything that harvests structure
 from prose: the pattern was not wrong about what it matched, it was wrong about
 what that match MEANT. `0x200` really is in the text.
+
+## #124 — a check that could not be made sound, and was removed
+
+Nothing verified that the port's cited addresses land on INSTRUCTION BOUNDARIES.
+`check_labels.py` asks this of `labels.csv`, and the misanchored row in #101 —
+`0x00B142` cited as `cdq; call 0xb6dd` while sitting inside `lcall 0x299:0x0ecb` —
+is the defect it catches. Two attempts to bring it to the port's docs both failed,
+in opposite directions, and the method was abandoned. Recording that so it is not
+retried.
+
+**Attempt 1, a standalone checker over the ledger's origins.** 19 of 133 flagged,
+and reading them showed almost all were DATA addresses (`DS:0x1FAB`) or VALUES
+(`OBJECT_FLAG_PAIR_SEEN`'s own `0x8000`, `ANGLE_UNITS_PER_REVOLUTION`'s `0x5A0`)
+rather than misanchored code. The ledger's origin column CONFLATES code addresses,
+data addresses and values, so nothing downstream can tell them apart. Deleted
+before committing.
+
+**Attempt 2, boundary consensus inside the existing mnemonic guard.** Three flags,
+one of which was `0x8713` — a console row handler from #109, reached only through
+the jump table at `0x8709`. An entry point has the PREVIOUS routine's bytes before
+it, so no linear decode from earlier aligns to it. Requiring consensus condemns
+every indirect-jump target, which is a large share of the addresses worth citing.
+
+**Attempt 3, flag only an instruction that STRADDLES the address.** That is the
+真 signal — `lcall` at `0xB140` spans `0xB143` — but scanning back byte by byte,
+some misaligned decode straddles almost any address by construction. 82 "wrong".
+
+Consensus over-trusts and straddle-anywhere over-flags. Alignment is not decidable
+from a bare address without knowing where the routine ENTERS, which the doc does
+not say. #101 was caught with that context in hand, not by a rule. The mnemonic
+check stands on its own (109 verified, 0 wrong); the alignment guessing is gone.
+
+A guard that cannot distinguish its target from ordinary correct code is worse
+than no guard, because its noise trains the reader to skip it — and this one would
+have flagged the jump-table decode that #109 got RIGHT.
