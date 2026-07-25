@@ -4316,6 +4316,76 @@ fn next_target_list_draw_color(state: &mut Ship3dTargetHitState, activate: bool)
 #[cfg(test)]
 mod tests {
 
+    /// PROJECTED DEPTH CANNOT EXCEED THE DISTANCE, because the matrix row it is
+    /// dotted with has unit length (#221). That is Cauchy-Schwarz, and it holds
+    /// for the ORIGINAL too, so it checks the transcription rather than the port
+    /// against itself.
+    ///
+    /// `project_ship_3d_point` (`0x2F65`) translates by the origin, dots with the
+    /// matrix's third row for depth, culls `depth <= 0`, then divides the other
+    /// two dots by it. A lost shift or a swapped row shows up here as a depth
+    /// larger than the point can possibly be.
+    #[test]
+    fn projected_depth_never_exceeds_the_points_distance() {
+        let origin = Ship3dProjectionOrigin { x: 0, y: 0, z: 0 };
+        let point = Ship3dProjectionPoint { x: 300, y: 200, z: 500 };
+        let distance =
+            ((300f64).powi(2) + (200f64).powi(2) + (500f64).powi(2)).sqrt();
+
+        let mut hits = 0usize;
+        let mut best = 0f64;
+        for step in 0..180u16 {
+            let angles = Ship3dMatrixAngles {
+                angle_2f71: step,
+                projection_angle_2f6d: (step * 2) % 180,
+                angle_2f6f: 0,
+            };
+            let Some(matrix) = build_ship_3d_projection_matrix(&SHIP_3D_ANGLE_TABLE, angles)
+            else {
+                continue;
+            };
+            let Some(projected): Option<Ship3dProjectedPoint> =
+                project_ship_3d_point(point, origin, matrix)
+            else {
+                continue; // behind the viewer: culled by `depth <= 0`
+            };
+            let depth = projected.depth as f64;
+            assert!(
+                depth <= distance * 1.02,
+                "angle {step}: depth {depth:.1} exceeds the distance {distance:.1} \
+                 -- the view row is not unit length or a shift was lost"
+            );
+            best = best.max(depth);
+            hits += 1;
+        }
+
+        assert!(hits > 20, "only {hits} angles projected; the sweep is too narrow");
+        // NON-VACUOUS: some angle must look nearly straight at the point, or the
+        // bound above would be satisfied by any small depth (including a broken
+        // one that always returned 1).
+        assert!(
+            best > distance * 0.5,
+            "best depth {best:.1} never approached the distance {distance:.1}"
+        );
+    }
+
+    /// The origin itself has zero depth and is culled (`depth <= 0` @`0x2F65`).
+    #[test]
+    fn a_point_at_the_origin_is_culled() {
+        let origin = Ship3dProjectionOrigin { x: 400, y: 400, z: 400 };
+        let point = Ship3dProjectionPoint { x: 400, y: 400, z: 400 };
+        let matrix = build_ship_3d_projection_matrix(
+            &SHIP_3D_ANGLE_TABLE,
+            Ship3dMatrixAngles { angle_2f71: 0, projection_angle_2f6d: 0, angle_2f6f: 0 },
+        )
+        .expect("the identity-ish matrix builds");
+        assert_eq!(
+            project_ship_3d_point(point, origin, matrix),
+            None,
+            "translating a point onto the origin gives depth 0, which is culled"
+        );
+    }
+
     /// THE COMPOSED MATRIX MUST BE A ROTATION, checked with the game's own angle
     /// table (`SHIP_3D_ANGLE_TABLE`, itself verified against the binary by
     /// `angle_table_matches_binary`).

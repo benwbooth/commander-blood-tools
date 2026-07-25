@@ -6888,3 +6888,33 @@ reference output to compare against. Worth reaching for wherever the port
 transcribes maths rather than table lookups.
 
 `Ship3dProjectionMatrix` and `Ship3dMatrixAngles` settled TESTED on that evidence.
+
+## #222 — Cauchy-Schwarz as a regression test
+
+#221 proved the projection matrix is a rotation. That makes a second property
+free: a rotation's row has unit length, so a dot product with it CANNOT exceed the
+vector's own length. `project_ship_3d_point` (`0x2F65`) computes depth as exactly
+that dot, so `depth <= distance` must hold — for the original as much as the port.
+
+The test sweeps 180 view angles against a fixed point and asserts the bound, then
+asserts the bound is NOT VACUOUS: some angle must produce a depth above half the
+distance, or a broken implementation that always returned 1 would pass. A property
+test without that second half proves very little, and it is the half that is easy
+to forget.
+
+Perturbing the shift (`>> (SHIFT - 2)`) gives `depth 2000.0 exceeds the distance
+616.4` and fails; restoring it passes. A lost shift is precisely the error this
+kind of transcription makes.
+
+Also added: a point translated onto the origin has depth 0 and is culled, which
+pins the `depth <= 0` branch rather than leaving it to the sweep's luck.
+
+A PROVENANCE NOTE, because these tests differ from the ones `audit_suggest`
+recognises. They open no shipped file; they use `SHIP_3D_ANGLE_TABLE`, an embedded
+const. That table is the GAME'S data — `angle_table_matches_binary` verifies it
+byte-for-byte against `BLOODPRG.EXE` — so the provenance is transitive rather than
+direct. Settled TESTED on that basis, stated here because the suggester's
+file-opening heuristic would not have found it, and a future reader should know
+the chain rather than assume the tool covered it.
+
+`Ship3dProjectionPoint`, `Ship3dProjectedPoint`, `Ship3dProjectionOrigin` settled.
