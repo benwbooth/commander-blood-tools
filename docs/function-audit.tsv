@@ -295,7 +295,7 @@ nav_view_active	src/engine.rs	3522	fn		UNVERIFIED
 leave_world	src/engine.rs	3534	fn		UNVERIFIED	/// Close the world-location screen (back to nav).
 render_world_location	src/engine.rs	3540	fn		UNVERIFIED	/// Render the current world-location background (its decoded palette + pixels) with /// the world name + room index captioned, into the framebuffer.
 render_nav_pyramid_sprites	src/engine.rs	3619	fn		ASM	
-render_location_info_panel	src/engine.rs	3774	fn	0x2780,0x90ED,0x90F9,0x9142,0x9156	ASM?	/// The destination info panel's WINDOW: the rect at `DS:0x2780` remapped /// through a 50%-toward-black tint table (`0x90ED..0x90F9` builds it, /// `0x9142..0x9156` draws it), then the panel's text r
+render_location_info_panel	src/engine.rs	3774	fn	0x2780,0x90ED,0x90F9,0x9142,0x9156	ASM	/// The destination info panel's WINDOW: the rect at `DS:0x2780` remapped /// through a 50%-toward-black tint table (`0x90ED..0x90F9` builds it, /// `0x9142..0x9156` draws it), then the panel's text r
 load_nav_chart	src/engine.rs	3822	fn		UNVERIFIED	/// Load the real navigation star-map background from `CHART.FD` (an IFF/PBM image /// under `iso`) — the game's own chart the ship-nav screen shows. Returns whether it /// loaded; when present, `rend
 set_nav_destinations	src/engine.rs	3844	fn		UNVERIFIED	
 nav_destination_label	src/engine.rs	3853	fn		UNVERIFIED	/// The number of nav destinations currently offered. /// The label of nav destination `i` (the location's character name), if present.
@@ -337,7 +337,7 @@ cp437_string	src/font.rs	51	fn		UNVERIFIED	/// Decode game data (CP437) to a `St
 cp437_char	src/font.rs	58	fn		UNVERIFIED	/// CP437 byte -> Unicode scalar. ASCII is identity; `0x80..0xAF` is the span the /// font has glyphs for; above that the game has no glyph, so it maps to U+FFFD and /// stays visible rather than sile
 game_font_glyph	src/font.rs	73	fn		DATA	
 game_font_advance	src/font.rs	86	fn		DATA	
-game_font_drawn_width	src/font.rs	109	fn	0x27CD,0x3192,0x27cd,0x3215,0x31D3,0x31D7	ASM?	/// The width the string draw REPORTS in `gs:0x27CD` — which is NOT the pen /// distance. The draw entry (`0x3192`) zeroes the accumulator, and only the /// glyph path adds to it (`add word gs:[0x27cd
+game_font_drawn_width	src/font.rs	109	fn	0x27CD,0x3192,0x27cd,0x3215,0x31D3,0x31D7	ASM	/// The width the string draw REPORTS in `gs:0x27CD` — which is NOT the pen /// distance. The draw entry (`0x3192`) zeroes the accumulator, and only the /// glyph path adds to it (`add word gs:[0x27cd
 draw_text_indexed	src/font.rs	249	fn		UNVERIFIED	/// Draw `text` into a `width`-stride indexed framebuffer at (`x`,`y`) in `color` /// using the game font (spaces advance without drawing). Clipped; returns end x.
 HandTri	src/gpu.rs	14	struct		INFRA?	
 GpuPresenter	src/gpu.rs	16	struct		INFRA?	
@@ -436,7 +436,7 @@ done	src/manu3_hand.rs	604	fn		UNVERIFIED
 set_pose	src/manu3_hand.rs	611	fn		UNVERIFIED	/// Select the pose (decoded selector semantics); a change starts that sequence.
 tick_pose	src/manu3_hand.rs	619	fn		UNVERIFIED	/// Advance the current pose animation one frame (call per rendered frame).
 animate	src/manu3_hand.rs	632	fn	0x2274,0x2974	ASM?	/// Apply one pose-player frame to the live skeleton: tween cell writes land in /// the node-tree state block BY ORIGINAL DS OFFSET (cells address 0x2274..0x2974: /// node angles +0x4E/50/52, local po
-build_palette_blend_remap_table	src/palette.rs	143	fn	0x22E0,0x1CE,0x0000,0x22F1	ASM?	/// The game's TINT REMAP TABLE builder — routine `0x22E0`, far-called as /// `0x1CE:0x0000`. Every translucent/tinted overlay in the game goes through it: /// build a 256-entry LUT that maps each pal
+build_palette_blend_remap_table	src/palette.rs	143	fn	0x22E0,0x1CE,0x0000,0x22F1	ASM	/// The game's TINT REMAP TABLE builder — routine `0x22E0`, far-called as /// `0x1CE:0x0000`. Every translucent/tinted overlay in the game goes through it: /// build a 256-entry LUT that maps each pal
 game_screen_palette	src/palette.rs	184	fn		UNVERIFIED	/// The game-screen palette expanded to 8-bit RGB for the engine framebuffer, /// scaling each 6-bit DAC channel to full range (v * 255 / 63).
 GameProgress	src/progress.rs	18	struct		UNVERIFIED	
 new	src/progress.rs	24	fn		UNVERIFIED	/// An empty progression.
@@ -630,7 +630,7 @@ SpriteFrameImage	src/sprite.rs	13	struct		UNVERIFIED
 bank_dispatch_index	src/sprite.rs	27	fn		UNVERIFIED	/// Frame dispatch index from the bank header flags: bit 2 selects RAW (0) vs RLE (3) frame /// decode for the whole bank (see the body for the cross-bank verification).
 decode_sprite_bank_indices	src/sprite.rs	42	fn		UNVERIFIED	/// Decode every frame of a `.spr` sprite bank to palette-index grids. The bank /// header is `[0]=flags, [2]=frame_count`, then a `frame_count`-entry table of /// u32 frame offsets (relative to +4). 
 decode_rle_frame	src/sprite.rs	111	fn		UNVERIFIED	/// Decode one RLE frame (`[0]=stride, encoded from +8`) to `stride*height` pixels. /// Control byte: high bit set → run of one value `len = (-control)+1`; else literal /// run `len = control+1`.
-remap_rect_indexed	src/sprite.rs	162	fn	0x299,0x40E,0x3407,0x341D,0x3413,0x3416,0x3417,0x340B	ASM?	/// The game's TINT-RECT primitive — the inner loop of the blit reached as /// `0x299:0x40E` (`0x3407..0x341D`): /// /// ```text ///   0x3407  bx = si                    the 256-byte remap table ///  
+remap_rect_indexed	src/sprite.rs	162	fn	0x299,0x40E,0x3407,0x341D,0x3413,0x3416,0x3417,0x340B	ASM	/// The game's TINT-RECT primitive — the inner loop of the blit reached as /// `0x299:0x40E` (`0x3407..0x341D`): /// /// ```text ///   0x3407  bx = si                    the 256-byte remap table ///  
 blit_sprite_frame_at	src/sprite.rs	194	fn		UNVERIFIED	/// Blit a decoded sprite frame into a `width`-stride indexed framebuffer, centred /// at `(cx, cy)`, skipping transparent index 0. /// Blit a frame using its authored draw offset: the frame's top-lef
 blit_sprite_frame_centered	src/sprite.rs	217	fn		UNVERIFIED	
 PanoramaDirEntry	src/tbbig.rs	67	struct		UNVERIFIED	
@@ -753,7 +753,7 @@ PresentationKind1Update	src/vm.rs	2036	enum		UNVERIFIED
 post_update_kind1_presentation_state	src/vm.rs	2043	fn		ASM	
 post_update_kind2_presentation_handoff_target	src/vm.rs	2096	fn		ASM	
 post_update_deferred_record_write	src/vm.rs	2133	fn		ASM	
-post_update_encounter_counter	src/vm.rs	2207	fn	0x5D8F,0x5DB0,0x5E06,0x5DB4,0x5DE3	ASM?	/// The ENCOUNTER COUNTER step of the post-update actor-pair ladder /// (`vm_post_update_c4_pair` `0x5D8F`, block `0x5DB0..0x5E06`), run between the /// processed-marker write and the related-record `
+post_update_encounter_counter	src/vm.rs	2207	fn	0x5D8F,0x5DB0,0x5E06,0x5DB4,0x5DE3	ASM	/// The ENCOUNTER COUNTER step of the post-update actor-pair ladder /// (`vm_post_update_c4_pair` `0x5D8F`, block `0x5DB0..0x5E06`), run between the /// processed-marker write and the related-record `
 post_update_actor_record_pair	src/vm.rs	2242	fn		ASM	
 post_update_actor_records_for_active_objects	src/vm.rs	2278	fn		UNVERIFIED	
 post_update_execution_state	src/vm.rs	2289	fn		UNVERIFIED	
@@ -812,12 +812,12 @@ c1_query_passes	src/vm.rs	4399	fn	0x6B4C	ASM?	/// The `0xC1` mode-1 (QUERY) deci
 c1_set_plan	src/vm.rs	4460	fn	0x6B4C	ASM?	/// The `0xC1` mode-0 (SET) decision — the non-ship-3D path of `0x6B4C` / /// tracer `write_c1_record_state_mode0`. `Some(true)` = write `{0xC1, /// operand, 2}`, `Some(false)` = branch, `None` = obje
 build_nav_source_list	src/vm.rs	4496	fn	0x624B,0x6886,0x672c	ASM?	/// Build the ship-3D NAV SOURCE LIST (`ship_3d_navigation_source_list_build` /// `0x624B`, output `DS:0x6886`), a faithful port: walk the `gs:0x672c` /// directory; for each entry take its object off
 walk_selector11_children	src/vm.rs	4499	fn		UNVERIFIED	
-source_list_entry_is_listable	src/vm.rs	4547	fn	0x91C3,0x91CE,0x91D4,0x91DB	ASM?	/// The DRAW-TIME filter both source-list consumers apply, ported verbatim /// from `vm_source_list_draw_loop` `0x91C3`: /// /// ```text ///   0x91CE  test word [si],2       the object's kind has bit 
-source_list_display_rows	src/vm.rs	4567	fn	0x91C3,0x299,0x202	ASM?	/// The rows a source-list panel actually DRAWS (`0x91C3` `0x299:0x202` per /// survivor, `add dx,0xA` between rows): `build_nav_source_list` filtered by /// [`Self::source_list_entry_is_listable`].
-source_list_text_rows	src/vm.rs	4588	fn	0x83C0,0x83F8,0x83C7,0x6758,0x83E5	ASM?	/// The same list as TEXT (`0x83C0..0x83F8`, the `PLANET:`/`SHIP:`/`BLACK /// HOLE:` status block's `LIFE SUPPORT:` roster), which adds a FOURTH /// condition the drawn panel does not have: /// /// ``
-object_inline_name	src/vm.rs	4615	fn	0x8389,0x83EA,0x299,0x202,0x91E1	ASM?	/// An object's INLINE NAME: the NUL-terminated string at `record+4`. /// /// Both status-list consumers read it that way — `mov si,bp / add si,4 / /// lodsb` at `0x8389` and `0x83EA`, and `add si,4` 
-location_status_block	src/vm.rs	4648	fn	0x82E8,0x8347,0x8420,0xE18,0x835C,0x6752,0x8365,0x8369,0x12E	ASM?	/// The location STATUS BLOCK the nav hover composes (`nav_state_gate` /// `0x82E8`, composer `0x8347..0x8420`), as the lines the real routine writes /// CR-separated into the text buffer at `0xE18`: 
-location_panel_rows	src/vm.rs	4695	fn	0x9137,0x91EC,0x27BF,0x9022	ASM?	/// The DESTINATION INFO PANEL's drawn rows (`0x9137..0x91EC`) — the other /// consumer of the same roster, this one a real on-screen panel rather than /// the subtitle-buffer block [`Self::location_s
+source_list_entry_is_listable	src/vm.rs	4547	fn	0x91C3,0x91CE,0x91D4,0x91DB	ASM	/// The DRAW-TIME filter both source-list consumers apply, ported verbatim /// from `vm_source_list_draw_loop` `0x91C3`: /// /// ```text ///   0x91CE  test word [si],2       the object's kind has bit 
+source_list_display_rows	src/vm.rs	4567	fn	0x91C3,0x299,0x202	ASM	/// The rows a source-list panel actually DRAWS (`0x91C3` `0x299:0x202` per /// survivor, `add dx,0xA` between rows): `build_nav_source_list` filtered by /// [`Self::source_list_entry_is_listable`].
+source_list_text_rows	src/vm.rs	4588	fn	0x83C0,0x83F8,0x83C7,0x6758,0x83E5	ASM	/// The same list as TEXT (`0x83C0..0x83F8`, the `PLANET:`/`SHIP:`/`BLACK /// HOLE:` status block's `LIFE SUPPORT:` roster), which adds a FOURTH /// condition the drawn panel does not have: /// /// ``
+object_inline_name	src/vm.rs	4615	fn	0x8389,0x83EA,0x299,0x202,0x91E1	ASM	/// An object's INLINE NAME: the NUL-terminated string at `record+4`. /// /// Both status-list consumers read it that way — `mov si,bp / add si,4 / /// lodsb` at `0x8389` and `0x83EA`, and `add si,4` 
+location_status_block	src/vm.rs	4648	fn	0x82E8,0x8347,0x8420,0xE18,0x835C,0x6752,0x8365,0x8369,0x12E	ASM	/// The location STATUS BLOCK the nav hover composes (`nav_state_gate` /// `0x82E8`, composer `0x8347..0x8420`), as the lines the real routine writes /// CR-separated into the text buffer at `0xE18`: 
+location_panel_rows	src/vm.rs	4695	fn	0x9137,0x91EC,0x27BF,0x9022	ASM	/// The DESTINATION INFO PANEL's drawn rows (`0x9137..0x91EC`) — the other /// consumer of the same roster, this one a real on-screen panel rather than /// the subtitle-buffer block [`Self::location_s
 world_click_select	src/vm.rs	4752	fn	0xB20C,0xB27B,0xB2BB,0xFFFF,0xB288	ASM?	/// The WORLD-DESTINATION CLICK commit (`0xB20C..0xB27B`). The ship FSM's /// per-frame hit-test (`ship_3d_target_record_select` `0xB2BB`) returns the /// clicked target record; this is what the FSM t
 special_slot_insert	src/vm.rs	4777	fn	0x6D3E,0x5FF6	ASM?	/// Insert an owner into the 16-slot special list (gs:0x6D3E, insert 0x5FF6). /// Returns false only if the list is full and the owner is not already present.
 special_slot_remove	src/vm.rs	4790	fn	0x5FD8	ASM?	/// Remove an owner from the special-slot list (remove 0x5FD8).

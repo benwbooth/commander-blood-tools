@@ -983,3 +983,40 @@ probing for it dynamically.
 REMAINING known capture-sourced item: `MENU_SUBMENU`/`BOB_TOPICS` literals survive only
 as no-VM fallbacks — both surfaces now take their rows from the executing script's
 `0xA6` menu words, so the constants are defaults rather than authorities.
+
+## THE ENCOUNTER COUNTER AND ITS TWO PANELS (2026-07-24)
+
+New rows, all ASM (each cites its routine and carries a regression test):
+
+| item | status | evidence |
+|---|---|---|
+| `post_update_encounter_counter` | ASM | `0x5DB0..0x5E06`, the symmetric bump inside the C4 pair ladder |
+| `source_list_display_rows` | ASM | `0x91C3`'s three draw-time filters |
+| `source_list_text_rows` | ASM | `0x83C0..0x83F8`, the same plus `cmp [si+0x18],bx` against `Ark` |
+| `object_inline_name` | ASM | record`+4`, checked against 640 shipped objects |
+| `location_status_block` | ASM | `0x82E8` gate -> `0x8347` composer |
+| `location_panel_rows` | ASM | `0x9137..0x91EC`, layout from the routine's immediates |
+| `build_palette_blend_remap_table` | ASM | `0x22E0` (far `0x1CE:0x0000`) |
+| `remap_rect_indexed` | ASM | `0x3407..0x341D` |
+| `render_location_info_panel` | ASM | `0x9142..0x9156` + the rows above |
+| `game_font_drawn_width` | ASM | `gs:0x27CD`'s accumulation rule at `0x3215`/`0x31D7` |
+
+A CORRECTION THIS CHANGED. Selector `0x08` was recorded as a kind-1 field. It is
+kind 2: `vm_field_offset` resolves the matrix column with `BSF`, so column 1 means
+the kind whose lowest set bit is bit 1 — kind VALUE 2. The same correction applies
+to the LOCATION field the roster reads (`+0x18`). Three `re/labels.csv` entries
+were wrong; both readers (`cmp [si],2`, `test [si],2`) settle it.
+
+STILL OPEN on this thread, precisely:
+
+* The port computes the two panels but the nav frame does not yet SHOW them. The
+  drawn panel has everything it needs (`render_location_info_panel`); what is
+  missing is the SELECTION that feeds it — the game's `gs:0x27BF`, set by the
+  commit at `0x9022`, whose port equivalent (`world_target`) is a different
+  variable and has not been shown to be the same thing.
+* The panel's zoom FSM (`gs:0x2788` states 1/0/2, scale `gs:0x2789`, 8 steps) is
+  DECODED but not ported; the interpolator it uses already is
+  (`step_ship_3d_interpolation_gate`).
+* The hover variant's rect lives in ENTITY `0x1F`'s record (`DS:0x65F2`, the last
+  of the 32 entity slots), which is runtime state the port's nav slots do not
+  carry entity ids for.
