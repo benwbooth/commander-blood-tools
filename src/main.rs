@@ -465,8 +465,6 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
     // A6 voice selector via the decoded one-based mapping). One voice at a time.
     let mut voice: Option<commander_blood_tools::audio::MusicPlayer> = None;
     let mut voice_line: Option<usize> = None;
-    let mut snd_cache: std::collections::HashMap<std::path::PathBuf, commander_blood_tools::snd::SndBank> =
-        std::collections::HashMap::new();
 
     // Subtitle chatter: the game plays sn/tb.snd clip 0 once per fully-revealed
     // subtitle line (@0x94BA). Track the reveal edge and fire it.
@@ -2250,38 +2248,17 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
         } else if tv_music_playing.take().is_some() {
             music.stop();
         }
-        // Speak the current line once when playback reaches it.
-        if !engine.on_ship && voice_line != Some(engine.dialogue_cursor()) {
-            voice_line = Some(engine.dialogue_cursor());
-            voice = None;
-            if let Some((bank_path, selector)) = engine.current_voice() {
-                let bank = snd_cache.entry(bank_path.clone()).or_insert_with(|| {
-                    commander_blood_tools::snd::SndBank::read(&bank_path).unwrap_or_else(|_| {
-                        commander_blood_tools::snd::SndBank::parse(&[0, 0, 0, 0, 0, 0])
-                            .expect("empty bank")
-                    })
-                });
-                if let Some(idx) = commander_blood_tools::vm::text_selector_voice_clip_index(
-                    selector,
-                    bank.clip_count(),
-                ) {
-                    if let Some(clip) = bank.clip(idx) {
-                        // Voice-paced hold: the real game keeps the line up while its voice
-                        // plays (advance gated on SB playback completion) — hold at least the
-                        // clip's duration in engine frames (18.2 fps ticks), plus a beat.
-                        if clip.sample_rate > 0 {
-                            let secs = clip.pcm.len() as f32 / clip.sample_rate as f32;
-                            let frames = (secs * 18.2).ceil() as u32 + 4;
-                            engine.hold_current_line_at_least(frames);
-                        }
-                        voice = commander_blood_tools::audio::MusicPlayer::start_once(
-                            clip.pcm.clone(),
-                            clip.sample_rate,
-                        );
-                    }
-                }
-            }
-        }
+        // NO per-line voice clip. DECODED (0x66AF / 0xB898 / 0xB8AB / 0x94CF): the game's
+        // dialogue voice is the BURBLE — an accepted A6 line sets gs:[0xCFB], the picker
+        // gates on it and plays prng(10)+7 with no immediate repeat, and the flag clears
+        // when the REVEAL completes. There is no per-line or per-speaker clip selection
+        // anywhere in the executable: b3 has exactly one reader (0x11F2, forming the line
+        // id) and the clip table DS:0x0BBF has only three users.
+        //
+        // What used to be here selected a clip as `b3 - 1` bounded by talk_hnms.len() — an
+        // audio index bounded by a count of talk VIDEOS — and then paced the LINE to that
+        // clip's duration. Both are gone: line duration is governed by the reveal, which is
+        // what clears the flag at 0x94CF, not by a clip length.
         let _ = &voice; // keep the stream alive while the line plays
         // Subtitle CHATTER (decoded @0xB898): while a line is REVEALING (the chatter flag
         // [0xCFB] is set until the reveal completes @0x94CF), every 4 ticks the game plays a

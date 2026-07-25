@@ -343,6 +343,23 @@ pub fn text_selector_active_line_id(selector: u8) -> u16 {
 /// Current evidence: `0x00` and `0xFF` are subtitle/no-voice channels, while
 /// `1..=talk_clip_count` are one-based talk clip selectors. This replaces the
 /// removed heuristic that treated `b4` control flags as a fallback clip index.
+/// Map an `0xA6` selector `b3` to a per-actor TALK-CLIP index.
+///
+/// SCOPE, decoded 2026-07-24 — read this before adding a caller:
+///
+/// * Its AUDIO use was REMOVED. The game's dialogue voice is not selected per line at
+///   all: accepting a line sets `gs:[0xCFB]` (`0x66AF`), the clip picker gates on that
+///   (`0xB898`) and plays `prng(10)+7` with no immediate repeat (`0xB8AB..0xB8BC`),
+///   until the reveal clears the flag (`0x94CF`). `main.rs` implements that correctly.
+/// * Its remaining callers pick a TALK-HNM (video), and `talk_clip_count` is
+///   `talk_hnms.len()`. That has some basis: `b3` really does feed the visual path —
+///   `0x668D` stores it sign-extended at `DS:0x1FAB`, `0x11F2` forms the line id
+///   `gs:0x6788`, and `0x9D10` dispatches that id to scene/palette/unpack work.
+///
+/// STILL UNVERIFIED, and the reason these rows stay open: the game's mapping is
+/// `line_id = b3 + 9`, whereas this computes `b3 - 1`. Both derive from `b3`, but they
+/// are not the same function, and nothing has been traced from a line id to a specific
+/// talk-HNM. Do not treat this as decoded.
 pub fn text_selector_voice_clip_index(selector: u8, talk_clip_count: usize) -> Option<usize> {
     let one_based = selector as usize;
     if text_selector_requests_voice(selector) && one_based <= talk_clip_count {

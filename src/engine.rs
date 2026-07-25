@@ -2945,10 +2945,12 @@ impl EngineState {
         Some((revealed, total))
     }
 
-    /// The current line's voice: the speaker's SND bank path + the line's voice
-    /// selector byte (the A6 token's `b3`; `0xFF`/subtitle-only lines yield `None`).
-    /// A driver resolves the clip via `vm::text_selector_voice_clip_index` against
-    /// the bank's clip count and plays it once at line start.
+    /// The current line's speaker SND bank path + its `b3` selector.
+    ///
+    /// NO LONGER DRIVES AUDIO. The per-line voice clip this used to feed was removed:
+    /// the game plays a random burble (`prng(10)+7`) while the line reveals, gated by
+    /// `gs:[0xCFB]` (`0x66AF` set / `0x94CF` clear), with no per-line selection
+    /// anywhere in the executable. Retained only as the bank/selector accessor.
     pub fn current_voice(&self) -> Option<(std::path::PathBuf, u8)> {
         let bank = self
             .dialogue_voice_banks
