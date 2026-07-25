@@ -822,3 +822,40 @@ WHY THIS MATTERS for the port: `vm::text_selector_voice_clip_index` computes `b3
 as an ordinal. The game uses `b3` to INDEX A RUNTIME TABLE whose values are name-table
 offsets. Those are not the same kind of thing, which is why no adjustment of the
 arithmetic would have made the port faithful.
+
+## SWEEP — DESCRIPT is parsed TWICE (duplication risk, no divergence found)
+
+The format has two independent, both-live parsers:
+
+* `descript::DescriptDb::parse` (lib) — used by the RUNTIME (`main.rs`, `script.rs`).
+* `extract::descript::parse_descript` (binary) — used by the EXTRACTION tooling
+  (`extract/mod.rs`, `extract/script.rs`). It does NOT import the lib's types; it
+  declares its own `DescriptRecord`/`DescriptDb`.
+
+That is the exact shape that produced the `parse_dictionary` divergence (one copy
+fixed, three left wrong), and here it is split along a worse seam: what the game plays
+comes from one parser, what we export for QA and port data comes from the other. A
+divergence would show up as exported data that does not match runtime behaviour —
+precisely the kind of thing a green test suite would not catch.
+
+CHECKED, NO DEFECT FOUND. The record types differ in SHAPE — extract hoists
+`backgrounds: Vec<(u8, String)>` into a field and uses `kind: u8`, while the lib keeps
+`DescriptCommand::Background { slot, lbm }` in a generic `commands` stream with a
+`RecordKind` enum — but both decode the same commands. Representation differs,
+coverage does not.
+
+NOT consolidated. Unlike the four identical `parse_dictionary` copies, these are
+genuinely different shapes serving different consumers, so folding them is a real
+design change rather than deleting duplication. Recorded as a standing risk with the
+check that would settle it: parse the shipped `DESCRIPT.DES` with both and compare
+record names, kinds and per-command sequences. That test can only live in the binary
+crate, since it is the only one that can see both.
+
+### Correction — the dirty-rect compositor was over-ranked
+
+I listed porting `render_ship_3d_dirty_sprite_commands_indexed` into the frame loop as a
+top-priority thread. On inspection it is low value: the engine ALREADY collects render
+commands and blits from them, and the compositor adds double-buffering, remap tables and
+copyback — semantics the nav markers do not use. It would move ~100 lines across a crate
+boundary for no pixel change. Still worth doing eventually for the remap paths; not
+worth doing ahead of work that changes behaviour.
