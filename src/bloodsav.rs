@@ -82,7 +82,10 @@ pub const STATE_SIZE: usize = 0x60; // 96
 pub const HEADER_SIZE: usize = PROFILE_SIZE + FLAGS_SIZE + STATE_SIZE;
 
 impl BloodSave {
-    /// Parse a `blood.sav` image. Returns `None` if it is shorter than the fixed
+    /// Parse a save image in the field order `vm_state_save` (`0x1C3F`) writes:
+    /// the 2-byte profile (`0x1C60`), 512 flag bytes (`0x1C6A`), 96 state bytes
+    /// (`0x1C75`), then the two variable blocks as one opaque region.
+    /// Returns `None` if it is shorter than the fixed
     /// header (profile + 512 flags + 96 state).
     pub fn parse(data: &[u8]) -> Option<BloodSave> {
         if data.len() < HEADER_SIZE {
@@ -104,6 +107,9 @@ impl BloodSave {
     /// Serialize back to the DOS byte layout (profile, flags, state, runtime).
     /// Byte-exact with [`BloodSave::parse`]'s input for the header; the runtime
     /// region round-trips verbatim.
+    /// Re-serialise in the writer's order (`vm_state_save` `0x1C3F`: profile,
+    /// flags, state, then the variable region), so a parsed real save round-trips
+    /// byte-for-byte.
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut out = Vec::with_capacity(HEADER_SIZE + self.runtime.len());
         out.extend_from_slice(&self.profile.to_le_bytes());

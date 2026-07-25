@@ -84,10 +84,10 @@ render_target_name	src/bloodprg.rs	1065	fn		UNVERIFIED
 render_call_site_note	src/bloodprg.rs	1103	fn		UNVERIFIED	
 sprite_blitter_name	src/bloodprg.rs	1280	fn		UNVERIFIED	
 sprite_blitter_note	src/bloodprg.rs	1294	fn		UNVERIFIED	
-BloodSave	src/bloodsav.rs	38	struct		UNVERIFIED	
-parse	src/bloodsav.rs	60	fn		UNVERIFIED	/// Parse a `blood.sav` image. Returns `None` if it is shorter than the fixed /// header (profile + 512 flags + 96 state).
-to_bytes	src/bloodsav.rs	80	fn		UNVERIFIED	/// Serialize back to the DOS byte layout (profile, flags, state, runtime). /// Byte-exact with [`BloodSave::parse`]'s input for the header; the runtime /// region round-trips verbatim.
-flag_bit	src/bloodsav.rs	99	fn	0x6ADE	ASM?	/// Whether a progression flag bit is set in the 512-byte flag block. /// `byte` indexes into `flags` (0..512), `bit` is 0..8. The block mirrors the /// game's `[0x6ADE]` region; the entity-progressio
+BloodSave	src/bloodsav.rs	48	struct		UNVERIFIED	
+parse	src/bloodsav.rs	90	fn	0x1C3F,0x1C60,0x1C6A,0x1C75	ASM	/// Parse a save image in the field order `vm_state_save` (`0x1C3F`) writes: /// the 2-byte profile (`0x1C60`), 512 flag bytes (`0x1C6A`), 96 state bytes /// (`0x1C75`), then the two variable blocks a
+to_bytes	src/bloodsav.rs	113	fn	0x1C3F	ASM	/// Serialize back to the DOS byte layout (profile, flags, state, runtime). /// Byte-exact with [`BloodSave::parse`]'s input for the header; the runtime /// region round-trips verbatim. /// Re-seriali
+flag_bit	src/bloodsav.rs	132	fn	0x6ADE	ASM?	/// Whether a progression flag bit is set in the 512-byte flag block. /// `byte` indexes into `flags` (0..512), `bit` is 0..8. The block mirrors the /// game's `[0x6ADE]` region; the entity-progressio
 StationRecord	src/bridge.rs	79	struct		UNVERIFIED	
 BridgeView	src/bridge.rs	99	struct		UNVERIFIED	
 default	src/bridge.rs	129	fn		UNVERIFIED	
