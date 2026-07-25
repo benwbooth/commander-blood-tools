@@ -6703,3 +6703,35 @@ The general policy, worth applying to other long rows: port-validation says WHAT
 IS TRUE NOW; audit-fixes says HOW IT WAS FOUND, including what was believed and
 refuted along the way. Appending to a validation row instead of rewriting it
 conflates the two and slowly makes the queue unreadable.
+
+## #216 — 180 rows were already verified; the ledger had not noticed
+
+`tools/audit_suggest.py` applies #211's finding at scale: search the UNVERIFIED
+rows for ones whose evidence ALREADY exists in the tree. 180 turned out to be
+exercised by tests that read the game's own files — `snd_entry_call_sites` by
+`snd_entry_call_sites_recover_constant_ax_indices` against the real
+`BLOODPRG.EXE` fixture, and so on. Settled TESTED.
+
+BE CLEAR ABOUT WHAT THAT IS AND IS NOT. Nothing was verified today by settling
+them. The tests already existed and already passed; the ledger simply had not
+recorded that they cover those items. The settled figure moving 650 -> 827
+(29.2% -> 37.1%) is BOOKKEEPING CATCHING UP WITH REALITY, not 177 items of new
+decoding, and reporting it as progress without that caveat would overstate the
+work by an order of magnitude.
+
+TESTED is also a WEAKER level than ASM: it says "something checks this against
+real game data", not "this transcribes a cited routine". Several of these rows
+should eventually become ASM with a citation. Marking them TESTED records what is
+true now.
+
+The tool's first run was, as always, a test of the tool: 259 suggestions including
+`parse`, `summary` and `header_size` — generic identifiers matching some
+data-reading test anywhere in the tree. Two narrowings fixed it: match per-FILE
+(a Rust unit test sits beside its item, so cross-module collisions vanish) and
+require a REFERENCE (`name(`, `::name`, `.name(`, `name {`) rather than the word
+appearing in a comment. 259 -> 181, and three spot-checks confirmed the survivors
+are real.
+
+WHAT THIS LEAVES is the honest queue: 791 rows with neither a citation nor a data
+test. That is the number to work, and it is now findable because the noise is out
+of it — the same reason #211 mattered.
