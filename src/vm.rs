@@ -2178,6 +2178,11 @@ impl TextTokenRuntimeFlags {
     }
 }
 
+/// Set the ALREADY-SHOWN bit on a line's flags word — the `0x8000` the A6 gate
+/// tests at `0x665A`. This is the state half of the accept; the bytecode half is
+/// [`TextTokenRuntimeFlags::accept_line`] (`0x668D`). Both must happen: the flag
+/// stops a re-display through the record, the `b5` rewrite stops it through the
+/// stream.
 fn mark_text_line_shown(state: &mut [u8], line_index: u16) {
     let flags_offset = text_line_flags_offset(line_index);
     state_set_u16(
@@ -2193,6 +2198,10 @@ struct SpecialObjectSlots {
 }
 
 impl SpecialObjectSlots {
+    /// Remove an owner from the 16-slot array — the scan at `0x5FF6`
+    /// (`mov bp,0x6D3E / mov cx,0x10`), which clears the matching slot to 0 and
+    /// STOPS. Returns whether it found one; the routine reports the same through
+    /// the carry (`stc` at `0x5FF2`, `clc` at `0x5FEA`).
     fn remove(&mut self, value: u16) -> bool {
         if let Some(slot) = self.slots.iter_mut().find(|slot| **slot == value) {
             *slot = 0;
@@ -2202,6 +2211,13 @@ impl SpecialObjectSlots {
         }
     }
 
+    /// Insert an owner into the first EMPTY slot — the free-slot scan at `0x6008`
+    /// (`cmp word [bp],0 / je`, `add bp,2`, 16 iterations).
+    ///
+    /// Already-present returns success WITHOUT inserting again, and a full array
+    /// returns failure — which the caller must honour: `0x6995`'s SET path skips
+    /// the write when insertion fails rather than storing anyway, so a full slot
+    /// list silently declines the change instead of corrupting the record.
     fn insert(&mut self, value: u16) -> bool {
         if self.slots.contains(&value) {
             return true;
