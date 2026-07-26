@@ -102,44 +102,58 @@ const VISIBLE_SCREEN_Y_MAX: i16 = 128;
 /// Half-width of the world-x window (centered on the camera) an object must fall within.
 const VISIBLE_WORLD_X_HALF: i16 = 256;
 
-/// The alien view's camera, shaped the way the overlay stores it rather than as
-/// three plain words (audit-fixes #269/#270).
+/// The alien view's camera: THREE 32-bit fixed-point accumulators, each read
+/// through its high word (audit-fixes #269-#271).
 ///
 /// ```text
-///   croolis.xdb 0x22EC  a WORD          -- movsx eax,word ptr [0x22ec] @0xBFA
-///   croolis.xdb 0x22EE  a DWORD         -- add dword ptr [0x22ee],eax  @0x1FD5
-///   croolis.xdb 0x22F0  its HIGH WORD   -- add ax,word ptr [0x22f0]    @0xA62
+///   0x1FC5  add dword ptr [0x22ea], eax     X accumulator
+///   0x1FD5  add dword ptr [0x22ee], eax     Y
+///   0x1FE5  add dword ptr [0x22f2], eax     Z
+///   0x1FEA  movsx ebx, word ptr [0x22ec]    X's HIGH WORD (0x22EA + 2)
+///   0x1FF0  movsx ecx, word ptr [0x22f0]    Y's        (0x22EE + 2)
+///   0x1FF6  movsx esi, word ptr [0x22f4]    Z's        (0x22F2 + 2)
 /// ```
 ///
-/// So Y is not a coordinate the game increments; it is the INTEGER PART of a
-/// 32-bit accumulator that motion adds into. Storing it as an `i16` would round
-/// every frame's movement to whole pixels, which is why this type carries the
-/// accumulator and exposes the high word through [`Self::y`].
+/// Each step is `[0x22d2 | 0x22d6 | 0x22da] * ebx >> 3` — a per-axis component
+/// scaled by a common factor and shifted, so the fraction each frame contributes
+/// is genuinely sub-integer and only crosses into the high word once it has
+/// summed.
+///
+/// #269 and #270 got this half right: they found `0x22EE` was an accumulator read
+/// via `[0x22F0]`, but recorded `0x22EC` as "genuinely a word" on the strength of
+/// `movsx eax,word ptr [0x22ec]` @`0xBFA`. That instruction reads a word because
+/// it wants the INTEGER PART, not because the storage is 16-bit — and the writer
+/// four instructions before it settles the matter. All three axes are the same
+/// shape; the asymmetry was an artefact of decoding one of them.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct AlienCamera {
-    /// `DS:0x22EC` — a plain word.
-    pub x: i16,
-    /// `DS:0x22EE` — the 32-bit fixed-point accumulator.
+    /// `0x22EA`, read as `[0x22EC]`.
+    pub x_fixed: i32,
+    /// `0x22EE`, read as `[0x22F0]`.
     pub y_fixed: i32,
-    /// The third component, kept for the axis loop in `update_position`. No
-    /// overlay cell is decoded for it yet, so it defaults to zero rather than
-    /// being invented.
-    pub z: i16,
+    /// `0x22F2`, read as `[0x22F4]`.
+    pub z_fixed: i32,
 }
 
 impl AlienCamera {
-    /// `[0x22F0]`, the accumulator's high word — the value `0xA62` adds.
-    pub fn y(&self) -> i16 {
-        (self.y_fixed >> 16) as i16
+    /// An axis's INTEGER part — the high word the overlay `movsx`es.
+    pub fn axis(&self, index: usize) -> i16 {
+        let fixed = match index {
+            0 => self.x_fixed,
+            1 => self.y_fixed,
+            _ => self.z_fixed,
+        };
+        (fixed >> 16) as i16
     }
 
-    /// Component by axis index, matching the loop `update_position` walks.
-    pub fn axis(&self, index: usize) -> i16 {
-        match index {
-            0 => self.x,
-            1 => self.y(),
-            _ => self.z,
-        }
+    /// `[0x22EC]`, X's high word.
+    pub fn x(&self) -> i16 {
+        self.axis(0)
+    }
+
+    /// `[0x22F0]`, Y's high word.
+    pub fn y(&self) -> i16 {
+        self.axis(1)
     }
 }
 
@@ -193,7 +207,7 @@ impl AlienObject {
         if screen_y < 0 || screen_y > VISIBLE_SCREEN_Y_MAX {
             return false;
         }
-        let world_x = (self.pos[0] as i16).wrapping_add(camera.x);
+        let world_x = (self.pos[0] as i16).wrapping_add(camera.x());
         world_x >= -VISIBLE_WORLD_X_HALF && world_x <= VISIBLE_WORLD_X_HALF
     }
 
@@ -327,10 +341,14 @@ mod tests {
         cam.y_fixed += third;
         assert_eq!(cam.y(), 1, "three thirds must cross into the integer part");
 
-        // The axis accessor reports the same value the proximity test adds.
+        // The axis accessor reports the same value the proximity test adds, and
+        // ALL THREE axes are accumulators -- #271 corrected #270's asymmetry.
         assert_eq!(cam.axis(1), cam.y());
-        cam.x = -5;
+        cam.x_fixed = -5 << 16;
         assert_eq!(cam.axis(0), -5);
+        assert_eq!(cam.x(), -5);
+        cam.z_fixed = 7 << 16;
+        assert_eq!(cam.axis(2), 7);
 
         // And a negative accumulator floors, matching an arithmetic shift.
         let mut down = AlienCamera { y_fixed: -1, ..Default::default() };

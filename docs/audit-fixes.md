@@ -8342,3 +8342,39 @@ The remaining question is who advances `y_fixed` and by how much —
 `add dword ptr [0x22ee],eax` @`0x1FD5` is where it is written, and what computes
 `eax` there is the next decode. That is a smaller and better-specified question
 than "the camera is undecoded", which is where #268 left it two entries ago.
+
+## #271 — correcting #269 and #270: all three axes are accumulators
+
+#269 decoded the alien camera's Y as the high word of a 32-bit accumulator at
+`0x22EE`, and recorded X at `0x22EC` as "genuinely a word" on the strength of
+`movsx eax,word ptr [0x22ec]` @`0xBFA`. #270 built `AlienCamera` on that
+asymmetry: `x: i16`, `y_fixed: i32`, `z: i16`.
+
+Following the remaining question — who advances `y_fixed` — shows the asymmetry
+was mine:
+
+```text
+   0x1FC5  add dword ptr [0x22ea], eax     X accumulator
+   0x1FD5  add dword ptr [0x22ee], eax     Y
+   0x1FE5  add dword ptr [0x22f2], eax     Z
+   0x1FEA  movsx ebx, word ptr [0x22ec]    X's HIGH WORD (0x22EA + 2)
+   0x1FF0  movsx ecx, word ptr [0x22f0]    Y's
+   0x1FF6  movsx esi, word ptr [0x22f4]    Z's
+```
+
+Three accumulators, three high words, one shape. `movsx ...word ptr [0x22ec]`
+reads sixteen bits because it wants the INTEGER PART — not because the storage is
+sixteen bits — and the writer four instructions earlier settles it. Each axis
+steps by `[0x22d2 | 0x22d6 | 0x22da] * ebx >> 3`.
+
+`AlienCamera` is now three `i32`s with `axis(i)` returning the high word.
+
+WHAT I SHOULD HAVE DONE. #269 read ONE cell's writer and generalised from a reader
+of another. The instruction that stores a value tells you its width; the
+instruction that loads it tells you only what the caller wanted. I had the right
+rule for `0x22EE` (found the `add dword`) and did not apply it to `0x22EC` (took
+the `movsx word` at face value) — in the same entry, four instructions apart in
+the same routine.
+
+Two entries built on a half-decode. Both cheap to fix because the next step
+happened to look at the writer, which is the same luck #244 relied on.
