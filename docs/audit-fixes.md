@@ -8792,3 +8792,77 @@ The generalisable point is small but real: a duplicated VALUE is not automatical
 a duplicated RULE. #267 found two copies of one format that genuinely needed
 merging, because a writer and a reader must agree byte for byte. Two names for one
 selector, each used in its own module for its own reason, do not.
+
+## #286 — the three C1 source-kind constants, cited from the routine that branches on them
+
+`SHIP_3D_C1_SOURCE_KIND_OPERAND_FLAG = 1`, `SHIP_3D_C1_SOURCE_KIND_BITSET = 2`
+and `SHIP_3D_C1_SOURCE_OPERAND_STATE_FLAG = 2` all had empty origins. Per #263's
+rule they could not be attributed by value — 1 and 2 appear in nearly every
+routine in the image, so a value match would have manufactured evidence rather
+than found it. They had to come from the code that GATES on them.
+
+Route to it: the 0xC1 handler is `0x6B4C` (`dump_handler_table.py`). Its kind-0x10
+arm rebuilds the source list (`bp = 0x6886`, `call 0x624B` @`0x6C11`) and then
+scans it from `0x6C1C`. All three constants are three consecutive branches there:
+
+    0x6C1C  lodsw                          ; next source entry
+    0x6C1D  cmp ax, -1 / je                 ; SHIP_3D_TARGET_EXIT_SENTINEL
+    0x6C24  mov ax, word ptr es:[bx]        ; the record's KIND word
+    0x6C27  cmp ax, 2   / jne 0x6C36        ; ..._KIND_BITSET
+    0x6C36  cmp ax, 1   / jne 0x6C1C        ; ..._KIND_OPERAND_FLAG
+    0x6C3B  mov bx, word ptr [0x6736]
+    0x6C3F  test byte ptr es:[bx + 2], 2    ; ..._OPERAND_STATE_FLAG
+
+The third one settled more than its own value. The port's
+`select_ship_3d_c1_source_record` takes an `operand_state_flags: u8` parameter,
+which on its own says nothing about WHERE that byte comes from. `bx` here is
+loaded from `[0x6736]` — the operand the handler stashed at `0x6B6D` — so the
+byte tested is the OPERAND RECORD's `+2` flags, which is what the port passes.
+A parameter that was merely plausible is now pinned to a specific byte of a
+specific record.
+
+DECODED BEHAVIOUR THAT WAS NOT TESTED: `jne 0x6C1C` @`0x6C39` targets the `lodsw`
+at the TOP of the loop, so a kind that is neither 1 nor 2 RESUMES the scan. That
+is the port's `_ => {}` arm, which until now read like defensive padding. Added
+`c1_source_selection_skips_unknown_kind_and_keeps_scanning`, using kind `0x10` —
+the kind whose match ENTERS this scan (`cmp ax,0x10` @`0x6C07`), so the one most
+likely to reach the loop without being one of its arms.
+
+PERTURBED to check the test is not vacuous (#225's lesson): changing `_ => {}` to
+`_ => return None` fails it. It also fails
+`c1_source_selection_uses_current_source_cursor_for_kind2_bitset`, which was
+already covering the same arm incidentally — worth knowing, since that coverage
+was accidental and would have vanished the moment that test's fixture changed.
+
+Citations: 542 verified (from 534), 0 wrong. 597 lib tests, 0 failures.
+
+### #286a — two settled counts, and which one this project reports
+
+Settling the three constants above moved the ledger from 1308 to 1311 "settled",
+a number 305 higher than the 1006 carried in the previous report. Nothing was
+mass-settled: the two numbers use DIFFERENT RULES, and the gap is exactly the 302
+provisional rows plus this entry's 3.
+
+    total 2216
+      UNVERIFIED             905   nothing recorded
+      provisional (ends ?)   302   ASM? 206, DATA? 46, ORACLE? 41, INFRA? 9
+      CONFIRMED             1009
+
+    STRICT   1009 / 2216 = 45.5%   provisional counts as OPEN
+    LENIENT  1311 / 2216 = 59.2%   provisional counts as SETTLED
+
+STRICT IS THE NUMBER THIS PROJECT REPORTS. An `ASM?` row means someone wrote down
+a plausible-looking origin that has NOT been checked against the image — that is
+the state eleven citation slips were found in this session (#213, #233, #278,
+#281 among them), every one of which looked settled until the guard disassembled
+the address. A rule that counts unchecked claims as done would have hidden all
+eleven, and would report the most progress precisely when the least checking has
+happened.
+
+Recording it because the lenient number is the flattering one and it is one
+`collections.Counter` away at any moment. The trap is not arithmetic, it is that
+both numbers are true statements about the same file and only one of them is
+about VERIFIED work.
+
+Ledger after #286: 2216 items, 1009 CONFIRMED (45.5%), 1207 open — 905 with
+nothing recorded and 302 carrying a claim that no tool has checked.

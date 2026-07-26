@@ -258,8 +258,22 @@ pub const SHIP_3D_FIELD_SELECTOR_PARENT_LINK: u8 = 17;
 pub const SHIP_3D_SOURCE_BITSET_SELECTOR: u8 = 0x05;
 /// `mov bx,2` @`0x622C`, feeding the `call 0x6023` @`0x622F` one instruction after the selector's `mov ax,5` — kind and selector are both fixed at the call site.
 pub const SHIP_3D_SOURCE_BITSET_KIND: u16 = 0x0002;
+/// `cmp ax, 1` @`0x6C36`, the SECOND arm of the C1 kind-0x10 source-list scan
+/// (`0x6C1C`): `ax` is the scanned record's kind word (`mov ax,es:[bx]` @`0x6C24`),
+/// and a kind of 1 falls through to the operand-flag test rather than the bitset
+/// test. Located by the routine that gates on it, never by value match — 1 is far
+/// too common to attribute by coincidence (audit-fixes #263).
 pub const SHIP_3D_C1_SOURCE_KIND_OPERAND_FLAG: u16 = 0x0001;
+/// `cmp ax, 2` @`0x6C27`, the FIRST arm of the same scan: kind 2 means the record
+/// carries an object-table bitset, so the handler calls the bit test (`0x6210`)
+/// with the stored operand and takes the resolved branch on carry (`jb` @`0x6C32`).
 pub const SHIP_3D_C1_SOURCE_KIND_BITSET: u16 = 0x0002;
+/// `test byte ptr es:[bx + 2], 2` @`0x6C3F` — the kind-1 arm's test. `bx` is loaded
+/// from `[0x6736]` one instruction earlier (`mov bx,word ptr [0x6736]` @`0x6C3B`),
+/// the operand the handler stashed at `0x6B6D`, so the byte tested is the OPERAND
+/// RECORD's `+2` flags. That is what pins `operand_state_flags` in
+/// [`select_ship_3d_c1_source_record`] to a specific byte of a specific record
+/// rather than to an unspecified caller-supplied flag word.
 pub const SHIP_3D_C1_SOURCE_OPERAND_STATE_FLAG: u8 = 0x02;
 pub const SHIP_3D_C1_KIND10_RECORD_KIND: u16 = 16;
 /// `mov ax,0x13` @`0x6C48` — 19, resolved with kind `0x10` (`mov bx,0x10` @`0x6C4B`) on the C1 SET path, which `0x6C2F` reaches via `jb` when the bit test returns carry.
@@ -3754,6 +3768,17 @@ pub fn ship_3d_object_table_bit_is_set(
     Some(value & mask != 0)
 }
 
+/// The C1 kind-0x10 source-list scan, `0x6C1C`. Reached from the 0xC1 handler
+/// (`0x6B4C`) only when the resolved record's kind is `0x10` (`cmp ax,0x10 /
+/// jne` @`0x6C07`); the handler first rebuilds the list by calling
+/// `ship_3d_nav_source_list_build_full` (`0x624B`) with `bp = 0x6886` @`0x6C0D`.
+///
+/// The loop is `lodsw` @`0x6C1C`, exit on the `-1` sentinel (`cmp ax,-1 / je`
+/// @`0x6C1D`), then a two-way branch on the record's kind word: 2 selects the
+/// object-table bitset test, 1 selects the operand-flag test, and anything else
+/// falls back to the next entry (`jne 0x6C1C` @`0x6C39`) — which is why the port's
+/// `match` needs its `_ => {}` arm.
+///
 /// `source_list_bytes` starts at the binary's `DS:0x6886` scratch list. Kind-2
 /// tests use the post-`lodsw` cursor for the current source record as the bitset
 /// base before applying helper `0x6210`'s selector-5 offset.
@@ -8461,6 +8486,38 @@ mod tests {
                 SHIP_3D_C1_SOURCE_OPERAND_STATE_FLAG,
             ),
             Some(Some(0x3100))
+        );
+    }
+
+    /// A kind that is NEITHER 1 nor 2 resumes the scan instead of ending it.
+    /// The handler's two arms are `cmp ax,2 / jne 0x6C36` @`0x6C27` and
+    /// `cmp ax,1 / jne 0x6C1C` @`0x6C36`: the second `jne` targets the `lodsw`
+    /// at the top of the loop, so an unrecognised kind advances to the next
+    /// source entry. That is the `_ => {}` arm, and without a test the arm reads
+    /// like defensive padding rather than the decoded control flow it is.
+    #[test]
+    fn c1_source_selection_skips_unknown_kind_and_keeps_scanning() {
+        // 0x10 is a real record kind elsewhere in the C1 handler (the target
+        // whose match ENTERS this scan, `cmp ax,0x10` @`0x6C07`), so it is the
+        // kind most likely to reach the loop without being one of its two arms.
+        let records = [
+            nav_record(0x3000, SHIP_3D_C1_KIND10_RECORD_KIND, 0, 0, 0),
+            nav_record(0x3100, SHIP_3D_C1_SOURCE_KIND_OPERAND_FLAG, 0, 0, 0),
+        ];
+        let object_table = [0x2000];
+        let source_list_bytes = [0u8; 0x21];
+
+        assert_eq!(
+            select_ship_3d_c1_source_record(
+                &[0x3000, 0x3100, SHIP_3D_TARGET_EXIT_SENTINEL],
+                &records,
+                &object_table,
+                &source_list_bytes,
+                0x2000,
+                SHIP_3D_C1_SOURCE_OPERAND_STATE_FLAG,
+            ),
+            Some(Some(0x3100)),
+            "the unknown kind at 0x3000 must be skipped, not matched or fatal"
         );
     }
 
