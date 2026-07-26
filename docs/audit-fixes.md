@@ -13855,3 +13855,40 @@ project reports itself rather than a defect to fix quietly.
 
 2228 items, 1106 confirmed (49.6%), 1122 open (901 UNVERIFIED + 221 provisional).
 740 citations verified, 0 wrong. 722 workspace tests, 0 failures.
+
+## #422 — the ledger was stale, and refreshing it moved the denominator
+
+#421 named `tbbig::frame_header` as the clearest case of a row reading UNVERIFIED
+for a decode that had already happened: #388 verified that exact 10-byte layout
+from the game's hit test. Wrote the citation into the function's doc — and
+`audit_settle` REFUSED it, "ASM needs a cited address".
+
+The refusal was right. The ledger's `origin` column is a SNAPSHOT taken when
+`audit_inventory.py` last ran; it does not re-read the source. So a doc comment
+added after that run is invisible to the settle tool, and every row I have
+enriched this session was being checked against its stale evidence.
+
+Re-ran the inventory. Three consequences, all worth stating rather than absorbing:
+
+  * `frame_header` picked up its citations and settled — 900 UNVERIFIED now.
+  * THE ITEM TOTAL ROSE 2228 -> 2231, because the refresh sees code that did not
+    exist when the ledger was built. Two of the three new rows are mine:
+    `AlienStreams` and its `new` (#401).
+  * Three settled statuses were DROPPED as ambiguous, and the tool said so
+    loudly. Only `croolis.rs` really lost one: adding `AlienStreams::new` made
+    `new` a THREE-way name collision in that file, so the settled `TESTED` on
+    `AlienObject::new` could no longer be matched to a line. Re-settled by line.
+
+So the percentage moved for a reason that has nothing to do with verification:
+1106/2228 (49.6%) became 1107/2231 (49.6%). Adding code adds rows. A ledger
+percentage rises with work done and falls with work discovered, and this session
+has been quoting it every entry as though only the first happens.
+
+Also noted, not fixed: the origin extractor treats any `0x...` in a doc as an
+address. `AlienColony::new` now shows `origin=0x105C,0x9E3B`, but `0x9E3B` is the
+old per-object seed multiplier that #400 DELETED — it appears only because my
+comment explains what used to be there. A citation extractor cannot tell a
+historical mention from a claim.
+
+2231 items, 1107 confirmed (49.6%), 1124 open. 742 citations verified, 0 wrong.
+722 workspace tests, 0 failures.

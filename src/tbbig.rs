@@ -170,6 +170,18 @@ impl BridgePanorama {
             .get(entry.offset as usize..(entry.offset + entry.size) as usize)
     }
 
+    /// Read a frame chunk's 10-byte header into [`PanoramaFrameHeader`].
+    ///
+    /// The field ORDER is not a guess and not a layout inferred from the data —
+    /// it is the game's own hit test, verified in audit-fixes #388: `cmp ax,
+    /// word ptr [si]` @`0x8274` compares mouse x (`[0xA2A]`) against `[si]`,
+    /// `sub ax, word ptr [si + 4]` @`0x8278` subtracts the width, and `[si+2]` /
+    /// `[si+6]` repeat it for y/h against mouse y (`[0xA2C]`). The station word
+    /// at `+8` is what `mov ax, word ptr [si + 8]` @`0x987A` multiplies by the
+    /// `0x18` station-table stride.
+    ///
+    /// The 10-byte minimum below is that layout's extent: four box words plus
+    /// the station word.
     pub fn frame_header(&self, frame: usize) -> Option<PanoramaFrameHeader> {
         let chunk = self.chunk(frame)?;
         if chunk.len() < 10 {
