@@ -571,7 +571,7 @@ world_object_click	src/engine.rs	3834	fn		UNVERIFIED	/// Hit-test a click agains
 cycle_world_room	src/engine.rs	3843	fn		TESTED	/// Cycle to another room of the currently-visited world (`delta` = +1/-1), decoding /// its background. No-op if no world is being visited.
 world_room_position	src/engine.rs	3860	fn		TESTED	/// The visited world's room count + current index (for HUD/tests), if active.
 world_location_active	src/engine.rs	3865	fn		TESTED	/// Whether the world-location landing screen is active.
-step_ship_3d_nav_state	src/engine.rs	3880	fn	0xB692,0xB75C,0x0B3B,0xB6D0	ASM?	/// Whether the plain nav star-map is the active view — on the ship with no overlay /// screen (bridge/comms/cyberspace/cryobox/alien/world-landing) open. This is the /// view that shows the choose-a-
+step_ship_3d_nav_state	src/engine.rs	3880	fn	0xB692,0xB75C,0x0B3B,0xB6D0	ASM	/// Whether the plain nav star-map is the active view — on the ship with no overlay /// screen (bridge/comms/cyberspace/cryobox/alien/world-landing) open. This is the /// view that shows the choose-a-
 nav_view_active	src/engine.rs	3953	fn		UNVERIFIED	
 leave_world	src/engine.rs	3965	fn		TESTED	/// Close the world-location screen (back to nav).
 render_world_location	src/engine.rs	3971	fn		UNVERIFIED	/// Render the current world-location background (its decoded palette + pixels) with /// the world name + room index captioned, into the framebuffer. // Take the visit out so the blit can mutate the f

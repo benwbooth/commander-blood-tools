@@ -8141,3 +8141,41 @@ with it.
 So the immediate output supports a citation there is already reason to believe,
 and is not a source of new ones. Recorded in the tool's own docstring, because the
 next person to see "137 matches" will feel the same pull I did.
+
+## #264 — an automatable check that does not work, and one function verified by reading
+
+674 unsettled FUNCTIONS is the largest bucket left, and constants-style automation
+does not reach them. I tried anyway, with a plausible idea: a function that
+TRANSCRIBES a routine should reference the same DS addresses that routine touches,
+so match the port's address constants appearing in a function's body against
+`refs_in_routine.py`'s output for its cited entry.
+
+It scores ZERO across 110 candidates, and the reason is that the port is written
+well. `update_ship_3d_transition_state` takes a `&mut Ship3dTransitionState` and
+writes `state.depth_step`; it never mentions `SHIP_3D_DEPTH_STEP_DS_OFFSET`. The
+game's addresses are abstracted into struct fields, which is correct design and
+makes the structural check inapplicable. Recorded so the idea is not had again.
+
+So functions get read. `update_ship_3d_transition_state` against `0xB692`,
+instruction by instruction:
+
+```text
+   test [0x2533],1 / jne     -> if !transition_armed
+   cmp [0xb3b],0x78 / jbe    -> if hold_ticks > 120   (jbe: strictly greater)
+   [0x2531]=4 [0x252f]=1 [0x2533]=1  -> depth_step/opening/armed
+   cmp [0xb3b],0 / jne       -> if hold_ticks == 0 -> start_closing_transition
+   [0x2531]=8 [0x2530]=1 [0x2533]=0  -> that helper's three writes
+   test [0x252f],1 / jne     -> if !opening
+   mov ax,0x14 / lcall rand / or ax,ax / je close
+```
+
+The last line is the interesting one. The port does NOT call the PRNG here — it
+takes `random_gate_zero: bool`, so the routine is split at the RNG call and the
+`0x14` lives in the caller. Following it there: `engine::step_ship_3d_nav_state`
+does `self.ship3d_prng.next(20) == 0`. 20 is `0x14`. The transcription is faithful
+ACROSS the function boundary, which no per-function check would have shown — and
+which is worth confirming rather than assuming, because a split like that is
+exactly where a bound gets dropped.
+
+Three rows settled ASM. This is what the remaining 671 cost: one routine, one
+port function, one caller, read against each other.
