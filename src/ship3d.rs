@@ -3370,11 +3370,21 @@ pub struct Ship3dCameraApproach {
 impl Default for Ship3dCameraApproach {
     fn default() -> Self {
         // Phase-3 reset immediates (`0x8AF2..0x8AFE`): the approach's start state.
+        //
+        // `origin_y` WAS 0 HERE AND THAT WAS WRONG (audit-fixes #275). The reset
+        // writes only `[0x2F69]=0x4E20` @`0x8AF2`, `[0x2F71]=0` @`0x8AF8` and
+        // `[0x2F65]=0x2710` @`0x8AFE` — it never touches `[0x2F67]`, so Y keeps
+        // the value already in force. That value is 12000: the full origin reset
+        // at `0x8CB4..0x8CC0` sets `(0x2710, 0x2EE0, 0)`, and the shipped image
+        // carries the same three words at `DS:0x2F65`.
+        //
+        // A default of 0 shifted the approach camera's Y origin by 12000 units
+        // for every frame it fed to the projector.
         Self {
             phase: 1,
-            origin_x: 0x2710, // 10000
-            origin_y: 0,
-            origin_z: 0x4E20, // 20000
+            origin_x: 0x2710, // 10000, `mov word [0x2f65],0x2710` @0x8AFE
+            origin_y: 0x2EE0, // 12000, NOT reset here -- `mov word [0x2f67],0x2ee0` @0x8CBA
+            origin_z: 0x4E20, // 20000, `mov word [0x2f69],0x4e20` @0x8AF2
             z_accel: 0,
             angle_2f71: 0,
             done: false,
@@ -4367,6 +4377,50 @@ fn next_target_list_draw_color(state: &mut Ship3dTargetHitState, activate: bool)
 
 #[cfg(test)]
 mod tests {
+
+    /// THE APPROACH CAMERA'S ORIGIN, against the image and the two routines that
+    /// set it. `origin_y` was 0 until #275; the phase-3 reset does not write that
+    /// cell, so it keeps the 12000 the full reset established.
+    #[test]
+    fn the_approach_origin_matches_the_game() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        let ds = 0xD420usize;
+        let word = |off: usize| u16::from_le_bytes([exe[ds + off], exe[ds + off + 1]]);
+
+        // The shipped values at DS:0x2F65/67/69.
+        assert_eq!((word(0x2F65), word(0x2F67), word(0x2F69)), (10000, 12000, 0));
+
+        // The full reset writes exactly those three (`c7 06 <disp> <imm>`).
+        let mov_word = |at: usize| -> (u16, u16) {
+            assert_eq!(&exe[at..at + 2], &[0xC7, 0x06], "{at:#x} is not mov word [mem],imm");
+            (
+                u16::from_le_bytes([exe[at + 2], exe[at + 3]]),
+                u16::from_le_bytes([exe[at + 4], exe[at + 5]]),
+            )
+        };
+        assert_eq!(mov_word(0x8CB4), (0x2F65, 10000));
+        assert_eq!(mov_word(0x8CBA), (0x2F67, 12000));
+        assert_eq!(mov_word(0x8CC0), (0x2F69, 0));
+
+        // The PHASE-3 reset writes z and x but NOT y -- which is why the default
+        // must carry 12000 rather than zero.
+        assert_eq!(mov_word(0x8AF2), (0x2F69, 0x4E20));
+        assert_eq!(mov_word(0x8AFE), (0x2F65, 0x2710));
+        let phase3 = &exe[0x8AF2..0x8B04];
+        assert!(
+            !phase3.windows(2).any(|w| w == [0x67, 0x2F]),
+            "the phase-3 reset does touch 0x2F67 after all"
+        );
+
+        let start = Ship3dCameraApproach::default();
+        assert_eq!(start.origin_x, 0x2710);
+        assert_eq!(start.origin_y, 0x2EE0, "Y must survive the phase-3 reset");
+        assert_eq!(start.origin_z, 0x4E20);
+    }
 
     /// THE TEMP-SND CALLBACK TABLE IS DATA, and it is in the image.
     ///

@@ -8467,3 +8467,36 @@ invert every membership test in the C1 source selection, and the failure would b
 Everything else matches too: the selector and kind are FIXED at 5 and 2
 (`mov ax,5` @`0x6229`, kind 2 — not derived from the object, which the routine's
 label already warned about), and `index >> 3` is `shr ax,3` @`0x623B`.
+
+## #275 — a camera origin off by 12000, found by reading a Default impl
+
+`Ship3dCameraApproach::default()` is documented as "phase-3 reset immediates
+(`0x8AF2..0x8AFE`)". Reading those three instructions:
+
+```text
+   0x8AF2  mov word [0x2f69], 0x4e20     Z = 20000
+   0x8AF8  mov word [0x2f71], 0          yaw = 0
+   0x8AFE  mov word [0x2f65], 0x2710     X = 10000
+```
+
+They never touch `[0x2F67]` — Y. The port's default said `origin_y: 0`, which is
+what you get by assuming an unmentioned field starts at zero.
+
+It does not. `0x8CB4..0x8CC0` is the FULL origin reset and writes
+`(0x2710, 0x2EE0, 0)`; the shipped image carries the same three words at
+`DS:0x2F65`; and `0x2F67` has exactly one writer in the whole executable
+(`mov word [0x2f67],0x2ee0` @`0x8CBA`) against two readers, both projectors. So Y
+is 12000 whenever the phase-3 reset runs, and the port fed 0 to the projector
+instead — a camera origin off by 12000 units on one axis, for every frame of the
+approach.
+
+Fixed, with a test that pins all three components three ways: the shipped words at
+`DS:0x2F65`, the `c7 06` encodings of both resets, and the ABSENCE of `0x2F67` in
+the phase-3 reset's byte range — because "this routine does not write that cell"
+is the actual claim the default rests on, and it deserves an assertion rather than
+my word.
+
+The general shape: a struct field that a routine does NOT set is a claim about
+what came before it, and zero is a guess. #229 had already read the shipped origin
+as `(10000, 12000, 0)` and recorded it for `NAV_CAMERA_ORIGIN`; the same three
+numbers were sitting in this file with the middle one replaced by a default.
