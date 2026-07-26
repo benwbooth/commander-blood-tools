@@ -163,6 +163,13 @@ impl AlienCamera {
     pub fn y(&self) -> i16 {
         self.axis(1)
     }
+
+    /// `[0x22F4]`, Z's high word — used by the proximity gate's THIRD axis test
+    /// (`add ax, word ptr [0x22f4]` @`0xA81`), which audit-fixes #355 found the
+    /// port was not performing.
+    pub fn z(&self) -> i16 {
+        self.axis(2)
+    }
 }
 
 impl AlienObject {
@@ -224,7 +231,18 @@ impl AlienObject {
             return false;
         }
         let world_x = (self.pos[0] as i16).wrapping_add(camera.x());
-        world_x >= -VISIBLE_WORLD_X_HALF && world_x <= VISIBLE_WORLD_X_HALF
+        if world_x < -VISIBLE_WORLD_X_HALF || world_x > VISIBLE_WORLD_X_HALF {
+            return false;
+        }
+        // THE THIRD AXIS (audit-fixes #355). The gate tests Z with the same
+        // bounds as X, and the port was omitting it entirely:
+        //
+        //   0xA7E  mov ax, word ptr [si+0x4a]     the object's Z
+        //   0xA81  add ax, word ptr [0x22f4]      + the camera's Z high word
+        //   0xA85  cmp ax, 0xff00 / jl 0xaa0      reject below -256
+        //   0xA8A  cmp ax, 0x100  / jg 0xaa0      reject above +256
+        let world_z = (self.pos[2] as i16).wrapping_add(camera.z());
+        world_z >= -VISIBLE_WORLD_X_HALF && world_z <= VISIBLE_WORLD_X_HALF
     }
 
     /// Port of the object initializer (`0x36A`): reset the behaviour state — zero the
@@ -393,6 +411,24 @@ mod tests {
         // Push screen-y above 0x80 -> not visible.
         obj.pos = [0, 0x400, 0];
         assert!(!obj.proximity_visible(AlienCamera::default(), 0x3C));
+        // Push Z outside +-0x100 -> not visible. THE PORT DID NOT TEST Z AT ALL
+        // until audit-fixes #355, and this case is why nothing caught it: every
+        // assertion above leaves Z at 0, so a missing third axis is invisible to
+        // them. `cmp ax,0xff00 / jl` @0xA85 and `cmp ax,0x100 / jg` @0xA8A.
+        obj.pos = [0, 0, 0x400];
+        assert!(
+            !obj.proximity_visible(AlienCamera::default(), 0x3C),
+            "an object beyond the Z window must be rejected"
+        );
+        obj.pos = [0, 0, -0x400];
+        assert!(
+            !obj.proximity_visible(AlienCamera::default(), 0x3C),
+            "...and beyond it in the negative direction too"
+        );
+        // A Z inside the window still passes, so the new test is a WINDOW and not
+        // a blanket rejection.
+        obj.pos = [0, 0, 0x80];
+        assert!(obj.proximity_visible(AlienCamera::default(), 0x3C));
     }
 
     #[test]

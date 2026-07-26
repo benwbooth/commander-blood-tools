@@ -11546,3 +11546,44 @@ ledger says "checked against the disassembly" about a definition.
 
 2227 items, 1068 confirmed (48.0%). `ASM?` down to 42.
 612 lib tests, 0 failures.
+
+## #355 — the proximity gate tests THREE axes; the port tested two
+
+Verifying `proximity_visible`'s citations turned up a missing check.
+
+The overlay gate at `0xA30` filters an object on all three camera-relative axes,
+each against a fixed window:
+
+    0xA62  add ax, [0x22f0]              screen Y
+    0xA66  js  0xaa0                     reject negative
+    0xA68  cmp ax, 0x80  / jg 0xaa0      reject above 128
+    0xA6D  mov ax, [si+0x42]
+    0xA70  add ax, [0x22ec]              world X
+    0xA74  cmp ax, 0xff00 / jl 0xaa0     reject below -256
+    0xA79  cmp ax, 0x100  / jg 0xaa0     reject above +256
+    0xA7E  mov ax, [si+0x4a]
+    0xA81  add ax, [0x22f4]              world Z   <- NOT PORTED
+    0xA85  cmp ax, 0xff00 / jl 0xaa0
+    0xA8A  cmp ax, 0x100  / jg 0xaa0
+
+The Y bound (128) and X bound (±256) match the port's constants exactly. The Z
+test was absent — the port returned on X and never looked at `pos[2]`.
+
+Everything needed was already there: `AlienCamera` stores `z_fixed` (`0x22F2`,
+read as `[0x22F4]`) with a working `axis(2)`, and `pos` is `[i32; 3]`. Only the
+check and a `z()` accessor were missing, both now added with the instructions
+cited.
+
+WHY NO TEST CAUGHT IT, which is the reusable part: `proximity_gate_advances_and_
+windows_on_screen` exercised the state flag, the X window and the Y window — and
+every one of those cases leaves `pos[2]` at ZERO. A missing axis is invisible to
+any test that never moves along it. The new assertions push Z past the window in
+BOTH directions and then back inside, so the check is pinned as a WINDOW rather
+than a blanket rejection that would also pass.
+
+This is the same shape as #313's subtitle wrap: a test whose cases were all
+chosen from the behaviour the port already had, so the gap sat in the one
+dimension nobody varied.
+
+2227 items, 1069 confirmed (48.0%). 612 lib tests, 0 failures.
+652 citations verified, 0 wrong.
