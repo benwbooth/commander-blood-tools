@@ -13512,3 +13512,29 @@ Also confirms the CR delimiter is literally `0xD` (`mov al, 0xd` feeding
 
 2228 items, 1097 confirmed (49.2%), 1131 open. 730 citations verified, 0 wrong.
 615 lib tests, 0 failures.
+
+## #411 — a hand-lifted ISR install, checked against every instruction
+
+`func_79c` is a HAND-WRITTEN lift (io_lift.rs), not machine-generated, so nothing
+in the recomp pipeline proves it — the oracle-verified lifts are elsewhere. Read
+`0x079C..0x07E5` and compared it line by line. It matches completely: the five
+entry pushes, `mov ax,0x3508` + `int 0x21`, the vector saved to `gs:[0xB1D]` /
+`gs:[0xB1F]`, `mov ah,0x25` with `bx=cs` / `ds=bx` / `dx=0x213`, the PIT
+programming (`out 0x43,al` with 0x36, then `0x1746` low byte and `mov al,ah` for
+the high), and the four state writes.
+
+TWO ORDERING DETAILS the lift preserves and a rewrite would likely not. The game
+writes `gs:[0xB27]` @`0x07D5` BEFORE `gs:[0xB25]` @`0x07DC` — out of address
+order, for no reason visible here — and the lift keeps that. And the pops run
+ds/es/dx/bx/ax, the exact mirror of the pushes. Neither is load-bearing for a
+leaf routine on paper, but "faithful except where I thought it didn't matter" is
+how a port stops being checkable.
+
+The `cli`/`sti` pair is deliberately not modelled, and the code says so rather
+than silently dropping them.
+
+Adding the per-instruction citations took the guard from 730 to 740 checked, so
+the next reader of this row gets the same check for free.
+
+2228 items, 1098 confirmed (49.3%), 1130 open. 740 citations verified, 0 wrong.
+615 lib tests, 0 failures.

@@ -171,6 +171,15 @@ fn out8(rt: &mut Runtime, port: u16, val: u8) {
 /// 0x35) to gs:[0xB1D]/[0xB1F], install the game's own PIT handler (int21 fn 0x25 → cs:0x213),
 /// then reprogram PIT channel 0 to ~200 Hz (out 0x43=0x36; out 0x40 = 0x1746 lo then hi) and set
 /// the timer-state bytes/words at gs:[0xB21..0xB27]. Hooks the tick, chaining to the saved vector.
+///
+/// Verified instruction-for-instruction against `0x079C..0x07E5`:
+/// `mov ax, 0x3508` @0x07A1, `mov word ptr gs:[0xb1d], bx` @0x07A6,
+/// `mov ah, 0x25` @0x07B0, `mov dx, 0x213` @0x07B6, `out 0x43, al` @0x07BE,
+/// `mov ax, 0x1746` @0x07C0, `mov al, ah` @0x07C5 for the high byte, then
+/// `mov byte ptr gs:[0xb21], 1` @0x07C9, `mov byte ptr gs:[0xb22], 0xb` @0x07CF,
+/// `mov word ptr gs:[0xb27], 0x19` @0x07D5 and `mov word ptr gs:[0xb25], 3`
+/// @0x07DC. The 0xB27-before-0xB25 ORDER is the game's and is preserved here, as
+/// is the pop order (ds/es/dx/bx/ax), the mirror of the entry pushes.
 pub fn func_79c(rt: &mut Runtime) {
     push16(rt, rt.m.regs.ax());
     push16(rt, rt.m.regs.bx());
