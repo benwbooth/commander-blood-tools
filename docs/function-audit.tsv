@@ -1849,7 +1849,7 @@ vm_execution_context_from_object_names	src/extract/script.rs	1562	fn		UNVERIFIED
 resolve_background_from_location	src/extract/script.rs	1578	fn		UNVERIFIED	
 parse_script_text_calls	src/extract/script.rs	1599	fn		UNVERIFIED	
 function_name_for_offset	src/extract/script.rs	1720	fn		UNVERIFIED	
-decode_vm_words	src/extract/script.rs	1729	fn	0xFFFF	ASM?	// Decode only the SPOKEN section. An 0xA6 word list may carry a choice menu after // an 0xFFFF separator, and 0xFFFF is not a dictionary offset -- so requiring every // entry to resolve made this ret
+decode_vm_words	src/extract/script.rs	1729	fn	0xFFFF	ASM	// Decode only the SPOKEN section. An 0xA6 word list may carry a choice menu after // an 0xFFFF separator, and 0xFFFF is not a dictionary offset -- so requiring every // entry to resolve made this ret
 text_token_end	src/extract/script.rs	1750	fn		UNVERIFIED	
 disassemble_function	src/extract/script.rs	1765	fn		UNVERIFIED	
 vm_token_has_disassembly	src/extract/script.rs	1847	fn		UNVERIFIED	

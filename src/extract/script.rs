@@ -2363,6 +2363,40 @@ mod decode_text_tests {
         w
     }
 
+    /// `decode_vm_words` must STOP at the `0xFFFF` separator (audit-fixes #415).
+    ///
+    /// The shared invariant is pinned in vm.rs by
+    /// `resolving_a_word_list_never_yields_menu_words`, whose doc names THIS
+    /// function as one of three consumers that got it wrong — but that test
+    /// cannot call it, because this module lives in the binary. So the named
+    /// consumer had no direct test. This is it.
+    ///
+    /// The old bug was requiring EVERY offset to resolve: `0xFFFF` is not a
+    /// dictionary key, so a menu-bearing line returned None and both call sites
+    /// skipped it entirely.
+    #[test]
+    fn decode_vm_words_stops_at_the_menu_separator() {
+        let words = words_fixture();
+        // spoken: 0x000C 0x0010, then the separator, then menu words.
+        let list = [0x000C, 0x0010, 0xFFFF, 0x0020, 0x0030];
+        let got = decode_vm_words(&words, &list).expect("menu-bearing line must decode");
+        assert_eq!(got, vec!["hello".to_string(), "world".to_string()]);
+        assert!(!got.iter().any(|w| w == "loop" || w == "extra"), "no menu words");
+
+        // A list with NO separator is unchanged.
+        let plain = [0x000C, 0x0010];
+        assert_eq!(
+            decode_vm_words(&words, &plain).unwrap(),
+            vec!["hello".to_string(), "world".to_string()]
+        );
+
+        // An unresolvable offset in the SPOKEN section is still None -- the fix
+        // narrowed the resolve requirement to the spoken prefix, it did not
+        // remove it.
+        let bad = [0x000C, 0x0999];
+        assert!(decode_vm_words(&words, &bad).is_none());
+    }
+
     /// Plain TEXT token with b5 == 0x80.
     #[test]
     fn decodes_plain_token() {

@@ -13637,3 +13637,33 @@ the suite.
 
 2228 items, 1104 confirmed (49.6%), 1124 open. 740 citations verified, 0 wrong.
 718 workspace tests (615 lib + 103 bin), 0 failures.
+
+## #415 — the consumer a shared-invariant test named but could not reach
+
+`decode_vm_words` documents a real fix: an `0xA6` word list may carry a choice
+menu after an `0xFFFF` separator, and requiring EVERY offset to resolve made the
+function return None for menu-bearing lines, so both call sites skipped them.
+
+The rule is already pinned — `resolving_a_word_list_never_yields_menu_words` in
+vm.rs exists for exactly this, and its doc NAMES
+`extract::script::decode_vm_words` as one of three consumers that got it wrong.
+But that test cannot call this function: `src/extract` is a module of the BINARY
+(#414), and vm.rs is in the library. The named consumer had no direct test.
+
+So a test that lists the call sites it protects was protecting two of them and
+naming the third. That is a subtle way for coverage to look complete: the
+invariant is stated, the offenders are enumerated, and one of them is out of
+reach of the assertion.
+
+Added `decode_vm_words_stops_at_the_menu_separator`, which pins three things —
+the spoken prefix decodes, menu words never appear, and an unresolvable offset in
+the SPOKEN section is still None. That last case matters because the fix narrowed
+the resolve requirement rather than removing it, and a test that only checked
+"menu lines now decode" would pass on a version that resolved nothing at all.
+
+Not verified, and left in the comment as its own claim: "211 of 3650 A6 lines"
+is a measurement of the port's extraction with no test behind it. The RULE is now
+guarded; the COUNT is still a remembered number.
+
+2228 items, 1105 confirmed (49.6%), 1123 open. 740 citations verified, 0 wrong.
+719 workspace tests, 0 failures.
