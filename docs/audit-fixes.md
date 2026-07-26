@@ -9897,3 +9897,51 @@ reader: a tool that shows a subset must say so ON THE SAME LINES it shows them,
 not in a summary above or below.
 
 606 lib tests, 0 failures.
+
+## #311 — #307's "wrong bit" is really a CONFLATION, and the tests prove it cannot be split yet
+
+#307 claimed the port sets bit 0 of `gs:0x2793` at presentation start where the
+game ORs bit 2. #308 and #309 corrected the surroundings twice while that claim
+survived. It is now decodable in full, and it is not a wrong-bit typo.
+
+BOTH BITS DECODED, via the readers the fixed `find_imm.py` finally showed:
+
+  bit 2 — `test byte [0x2793], 0xe / jne` @`0x1095`, the entry of
+  `main_loop_busy_gate`: if ANY of bits 1|2|3 is set, SKIP the pending-profile
+  dispatch. It then ORs ten subsystem-active flags. So bits 1-3 mean "something
+  is running, defer loading a new scene", and the presentation start's
+  `or ...,4` @`0x593A` is exactly that. Also read at
+  `test word [0x2793], 4` @`0x975A`.
+
+  bit 0 — tested by `0xCE` itself: `test byte gs:[0x2793], 1 / jne` @`0x6494`,
+  branch when CLEAR. Its writers are `mov word [0x2793], 1` at `0x0FC8` (a
+  SCENE/PROFILE LOAD — it also sets `[0x27D9]`, then far-calls and loads a
+  filename) and at `0x1A5E` (`dlg_clear_a`), plus `mov word [0x2793], 9`
+  @`0xB505`. Note `mov word ...,1` sets bit 0 while CLEARING bit 2: the two are
+  near-exclusive, not two names for one state.
+
+So bit 0 is closer to "a scene/profile is loaded" and bit 2 to "a presentation is
+running". The port's single `presentation_busy` field carries BOTH: it is set at
+presentation start (bit-2 semantics), read by the `0xCE` opcode (bit-0
+semantics), used as the promoter's already-busy guard, and cleared by the
+teardown.
+
+TESTED THE SPLIT RATHER THAN ASSERTING IT. Removing just the
+`presentation_busy = true` from `start_actor_presentation` fails SIX tests —
+`directed_drive_plays_the_story_to_fin_hnm`,
+`faithful_vm_reproduces_the_script1_tutorial_flow`, both interception runs, the
+frame loop, and the Scruter chain. The port's story flow depends on the amalgam.
+Restored.
+
+WHAT THAT MEANS, stated carefully: the port is not simply setting the wrong bit,
+it is representing two engine flags with one field, and the shipped behaviour
+currently rides on that. Splitting them requires modelling bit 2's READER — the
+main-loop profile gate at `0x1095`, which the port does not have — because
+without it a correctly-split bit 2 would be written and never read, and bit 0
+would stop being set at all.
+
+NOT CHANGED. The next step is not "fix the flag", it is "port the main-loop busy
+gate", and only then does the split have somewhere to land. Recorded in the doc
+beside the field.
+
+606 lib tests, 0 failures. 605 citations verified, 0 wrong.
