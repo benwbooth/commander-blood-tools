@@ -456,6 +456,33 @@ NOT a list to work blindly: some of the 53 are legitimately callable-but-unused
 the judgement #240 applied to the nav destination list, where "unused duplicate"
 turned out to be wrong. The number is recorded so the question gets asked.
 
+## THE ALIEN OBJECTS ANIMATE BUT DO NOT MOVE OR CULL (2026-07-25)
+
+Working #266's unrouted list. `engine.rs` drives `AlienObject::step()` once per
+frame, which is the ANIMATION state machine (`0x16A4`): the timer counts down, the
+PRNG picks a new state, the anim counter advances. That part is wired and correct.
+
+Three sibling behaviours, decoded from the same overlay, are called by nothing:
+
+  * `update_position` (`0x999`) — the per-frame position integration;
+  * `proximity_visible` (`0xA30`) — the visibility/cull test, which computes a
+    screen Y from the object's position plus the camera and rejects it outside
+    `0..VISIBLE_SCREEN_Y_MAX`, then bounds world X to `±VISIBLE_WORLD_X_HALF`;
+  * `reset` (`0x36A`) — the initializer that puts an object in its start pose.
+
+And `AlienObject::dispatch` routes by method: only `AnimStateMachine` does
+anything, `SubBehaviour(_)` returns `false` unconditionally.
+
+CONSEQUENCE: the port's aliens cycle animation frames in place. They do not move,
+and nothing culls them by proximity — the game's objects do both.
+
+WHAT WIRING NEEDS, precisely: `proximity_visible` and `update_position` both take
+`camera: [i16; 3]`, and the alien view has no camera state in the engine
+(`NAV_CAMERA_ORIGIN` is the NAV chart's, a different surface). So this is not a
+call to add; it is a camera to decode first — which overlay cell holds it, and
+what updates it. That is the task, and it is not blocked by anything except
+nobody having done it.
+
 ## NAV DESTINATION LIST GEOMETRY — APPROX, replacement already written (2026-07-25)
 
 `engine::NAV_DEST_X/Y/PITCH/W` (6, 22, 10, 150) place the choose-a-location list

@@ -8259,3 +8259,32 @@ than as a run of spaces.
 `to_bytes` and `flag_bit` remain unrouted and are NOT the same case — those are
 the VM-state save, and whether the port should route through them is a separate
 question about `to_dos_save`, which is what `main.rs` calls instead.
+
+## #268 — the aliens animate in place
+
+Third entry working #266's unrouted list, and the first where the gap is visible
+on screen rather than latent.
+
+`engine.rs` calls `AlienObject::step()` per frame — the ANIMATION state machine
+(`0x16A4`), correctly wired. Its three siblings are called by nothing:
+`update_position` (`0x999`), `proximity_visible` (`0xA30`) and `reset` (`0x36A`).
+`dispatch()` compounds it by returning `false` for every method except
+`AnimStateMachine`.
+
+So the port's aliens cycle animation frames IN PLACE. They do not move, and
+nothing culls them by proximity. The game's objects do both, and all three rules
+are decoded, tested, and sitting there.
+
+The blocker is real and worth naming exactly rather than filing as "wire it up":
+`proximity_visible` and `update_position` both take `camera: [i16; 3]`, and the
+alien view has NO camera state in the engine. `NAV_CAMERA_ORIGIN` is the nav
+chart's camera, a different surface — reaching for it would be #197's
+`compass_angle` mistake in a new place. What is missing is a decode: which overlay
+cell holds the alien view's camera, and what updates it.
+
+Recorded in `docs/port-validation.md`. This is the shape #266 predicted the
+unrouted list would have — not fifty-three things to connect, but a handful of
+real gaps mixed with test hooks and alternates, each needing its own judgement.
+Three examined so far: one duplicated format (#267, fixed), one dormant draw path
+(#266, blocked on a page the port does not maintain), one dormant behaviour
+(here, blocked on an undecoded camera).
