@@ -9239,3 +9239,48 @@ anyone relies on the sentinel arm.
 
 Citations: 583 verified (from 581), 0 wrong. 707 tests across all binaries, 0
 failures.
+
+## #295 — the C1 scan's sentinel does NOT branch; a port defect a test was pinning
+
+#294 flagged the sentinel exit as a discrepancy and guessed it was my misreading.
+Chasing it settled one half and hardened the other.
+
+SETTLED, and it was a real port defect. The 0xC1 handler has three non-writing
+outcomes and the port collapsed them to two:
+
+    owner inactive        je  0x6C73  @0x6BD3  -> vm_branch
+    destination occupied  jne 0x6C73  @0x6C5B  -> vm_branch
+    scan found nothing    je  0x6C7C  @0x6C20  -> NO vm_branch
+
+`vm_branch` is reached ONLY through `0x6C73`. `0x6C7C` is `pop di / ret`, verified
+from the raw bytes (`5f c3`), and the sentinel jumps over `0x6C73` entirely
+(`74 5a`, disp 90 from `0x6C22`). So a kind-0x10 owner whose source list rejects
+every entry must fall through, not branch.
+
+The port returned `Some(None)` for all three, and `step()` maps that to
+`branch()`. Fixed by returning `None` for the scan case — `step()`'s `None => {}`
+arm is exactly the third outcome, neither writing nor branching.
+
+A TEST WAS PINNING THE WRONG BEHAVIOUR: `c1_set_kind10_target_writes_the_
+selector13_destination` asserted `m.pc == 0x99` with the comment "no source entry
+passes -> branch". It has been corrected to assert the opposite. Worth stating
+plainly because that test passed for as long as it existed and the ledger counted
+its subject as settled — a green assertion is only as good as the decode behind
+it, and this one had been written from the branch path without noticing the
+sentinel took a different exit.
+
+NOT SETTLED, and #294's speculation is withdrawn rather than upheld. I suggested
+the sentinel path might also leave two words on the stack, since `0x6C7C` skips
+the `pop si / pop ds` that both other exits perform. That reading does not
+survive: the QUERY path jumps straight to `0x6C7C` from two more sites
+(`0x6BC2`, `0x6BCB`), and those are the ordinary matched/mismatched outcomes that
+run constantly. A stack imbalance there would break the game immediately, so the
+pattern — every no-branch exit direct to `0x6C7C`, every branch exit via
+`0x6C73` — is systematic and intentional, and my pairing of the `push ds`/`push
+si` at `0x6B71`/`0x6B72` must be wrong in a way I could not locate statically.
+
+Recorded as an OPEN QUESTION with the shape of its answer: single-step the
+handler under the interpreter oracle and watch SP across the three exits. That is
+what the oracle is for — verification of a decode I cannot close by reading.
+
+Citations: 583 verified, 0 wrong. 707 tests across all binaries, 0 failures.

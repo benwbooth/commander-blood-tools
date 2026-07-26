@@ -5389,8 +5389,17 @@ impl VmMachine {
             );
             match selected {
                 Some(Some(_)) => {}
-                // No source passed: `0x6C73` for a scanned-and-rejected list.
-                Some(None) | None => return Some(None),
+                // NO SOURCE PASSED -> NO BRANCH (audit-fixes #295). The scan's
+                // only non-writing exit is the sentinel `cmp ax,-1 / je 0x6C7C`
+                // @`0x6C20`, and `0x6C7C` is `pop di / ret` — it does NOT go
+                // through `0x6C73`, the only path that calls `vm_branch`.
+                //
+                // The other two failures DO branch and still return `Some(None)`:
+                // owner inactive (`je 0x6C73` @`0x6BD3`) and destination occupied
+                // (`jne 0x6C73` @`0x6C5B`). Returning `None` here is what gives
+                // the third outcome the game has and the port was missing —
+                // step()'s `None => {}` arm neither writes nor branches.
+                Some(None) | None => return None,
             }
             let fo = vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, 0x10)?;
             owner.wrapping_add(fo)
@@ -10691,14 +10700,18 @@ mod tests {
         assert_eq!(m.rec_read_pub(owner + dest_fo + 4), 2);
         assert_eq!(m.rec_read_pub(0x84), 0, "the operand record itself is NOT written");
 
-        // Gate FAILS (bit1 clear) -> vm_branch, nothing written.
+        // Gate FAILS (bit1 clear) -> NO branch and nothing written. CORRECTED in
+        // audit-fixes #295: this asserted a branch, but the scan's only
+        // non-writing exit is the sentinel `je 0x6C7C` @`0x6C20`, and `0x6C7C` is
+        // `pop di / ret`. `vm_branch` is reached ONLY through `0x6C73`, which the
+        // sentinel jumps over.
         let mut m = build();
         m.load_cod(&cod);
         m.query = false;
         m.stack.push(0x99);
         m.pc = 0;
         m.step();
-        assert_eq!(m.pc, 0x99, "no source entry passes -> branch");
+        assert_ne!(m.pc, 0x99, "no source entry passes -> the sentinel does NOT branch");
         assert_eq!(m.rec_read_pub(owner + dest_fo), 0);
 
         // Destination already occupied -> branch (0x6C59).

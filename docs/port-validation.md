@@ -1306,3 +1306,16 @@ while the port maps it to the same `Some(None)` -> `branch()` as a scanned-and-
 rejected list. The same jump also appears to skip the `pop si / pop ds` that
 both other exits perform — likely a misreading of the push/pop pairing, recorded
 so the next reader checks it rather than inherits it.
+
+### #295 — C1 sentinel exit corrected; stack question still open
+
+The 0xC1 scan's "no source passed" outcome does NOT call `vm_branch`
+(`je 0x6C7C` @`0x6C20`; `0x6C7C` is `pop di / ret`). The port branched on it and a
+test asserted that; both corrected. The other two failures (owner inactive
+`0x6BD3`, destination occupied `0x6C5B`) DO branch and are unchanged.
+
+OPEN: `0x6C7C` skips the `pop si / pop ds` that both other exits perform, yet the
+query path reaches it from `0x6BC2`/`0x6BCB` on its ordinary outcomes — so the
+pattern is intentional and my push/pop pairing is wrong somewhere. Settle by
+single-stepping the handler under the interpreter oracle and watching SP across
+the three exits.
