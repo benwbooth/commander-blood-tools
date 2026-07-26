@@ -11258,3 +11258,35 @@ RIGHT code only gets found by reading them against each other, which is the one
 thing a green test suite never does.
 
 652 citations verified (from 647), 0 wrong. 612 lib tests, 0 failures.
+
+## #347 — two more lifted routines verify, including a De Morgan the lift got right
+
+`func_d0e` (`poll_mouse`, `0x0D0E`) reproduces the routine exactly: `ax=3`,
+`int 33h`, the three stores (`gs:[0xA2A]=cx`, `[0xA2C]=dx`, `[0xA2E]=bx`), the
+latch update, and the four pops in order (`dx, cx, bx, ax`) before `retf`.
+
+The part worth checking was the branch, because the game writes it as two jumps
+with opposite senses:
+
+    0x0D26  cmp cx, gs:[0xa38] / jne 0xd34    x differs -> UPDATE
+    0x0D2D  cmp dx, gs:[0xa3a] / je  0xd45    both equal -> SKIP
+    0x0D34  [0xa38]=cx ; [0xa3a]=dx ; [0xb3b]=0
+
+i.e. update UNLESS both coordinates match the latch. The lift is
+`if cx != last_x || dx != last_y { … }`, which is that same condition after De
+Morgan, and its comment says so. A negated compound condition is where a
+hand-lift usually goes wrong; this one is right.
+
+`func_b32` (`detect_cdrom`, `0x0B32`) likewise: `mov ax,0x1500` / `xor bx,bx` /
+`int 0x2f` / `or bx,bx` / `setne byte gs:[0xae6]` / near `ret`. Its doc even
+notes the missing register preservation — a `near` helper that clobbers AX/BX —
+which is the kind of detail that matters to a caller and is easy to omit.
+
+Four io_lift rows checked across #346 and this: three correct in code AND prose,
+one correct in code with wrong prose. The recompiler's lifts are in better shape
+than the hand-written subsystems this review has been finding defects in, which
+is what you would expect from code produced mechanically from the instructions
+rather than reconstructed from behaviour.
+
+2227 items, 1053 confirmed (47.3%). `ASM?` down to 57.
+652 citations verified, 0 wrong. 612 lib tests, 0 failures.
