@@ -1701,7 +1701,8 @@ pub const UI_FLAG_CE_BRANCH: u16 = 0x0001;
 /// script-profile load. Three independent setters, all `or byte [0x2793], 4`:
 /// the presentation start @`0x593A`, the concept-list show @`0x8998`, and the
 /// save dialogue @`0x1B7B`. Cleared by the teardowns (`and ...,0xfb` @`0x59BF`,
-/// @`0x5E99`).
+/// @`0x5E99`, and @`0x895C` — the console-mode dismiss ladder's common tail,
+/// audit-fixes #337, which also clears `[0x2A19]` on the way out).
 pub const UI_FLAG_BUSY: u16 = 0x0004;
 /// Bit 3 — toggled on station-seek ARRIVAL: `xor word ptr [0x2793], 8` @`0x9671`.
 /// Note TOGGLE, not set (audit-fixes #330).

@@ -10905,3 +10905,41 @@ REPORT WHAT IT FILTERED, AND A TOOL THAT SEARCHES A SET MUST REPORT WHAT IS NOT
 IN THE SET.
 
 641 citations verified, 0 wrong. 612 lib tests, 0 failures.
+
+## #337 — what actually sets two of the gate flags: a console-mode dismiss ladder
+
+#332 left the work as "find what SETS each of the ten". With the search fixed
+(#334/#336), `0x2736` and `0x2737` — `INPUT_GATE_E` and `F` — are answerable.
+
+Their setters are consecutive arms of one `dec al / jns` ladder at `0x8923`:
+
+    0x8923  dec al / jns   arm 0 -> mov [0x2738],1 ; mov [0x2736],1
+    0x8933  dec al / jns   arm 1 -> mov [0x2738],1 ; mov [0x2737],1
+    0x8943  dec al / jns   arm 2 -> mov [0xB13],2 ; [0xA3E]=0 ; [0xA40]=0
+    0x8956  mov word [0x2a19], 0      <- clears INPUT_GATE_I
+    0x895C  and byte [0x2793], 0xfb   <- clears the BUSY bit
+    0x8962  ret
+
+So the "ten subsystem-active flags" are per-CONSOLE-MODE markers, selected by AL,
+each arm also raising the shared `[0x2738]`. That makes the main-loop gate's
+question concrete: it is asking whether any console mode is still up.
+
+THREE THINGS FALL OUT.
+
+  * A THIRD clear site for `UI_FLAG_BUSY` — `0x895C`, beside `0x59BF` and
+    `0x5E99`. The constant's doc now lists it. Every setter found so far
+    (presentation `0x593A`, concept list `0x8998`, save dialogue `0x1B7B`) has a
+    matching teardown, which is the shape a "something is running" bit should
+    have.
+  * `INPUT_GATE_I` (`0x2A19`) is cleared in the SAME tail — so #332 was right
+    that the gate never reads it, and also right to keep it nearby: it belongs to
+    this family, just not to that reader.
+  * The port CAN eventually feed these. It already has console functions
+    (HONK / TELEPHONE / CRYOBOX / MENU / OPTION), which is what AL selects here.
+    Mapping AL values to those is the next step and is a decode, not a guess.
+
+NOT WIRED YET: which AL value is which console mode is not established, and
+assigning them by order would be exactly #302's invented-policy shape. The ladder
+gives the structure; the mapping needs the caller that loads AL.
+
+641 citations verified, 0 wrong. 612 lib tests, 0 failures.
