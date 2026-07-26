@@ -12710,3 +12710,38 @@ are below the 0x600 MZ header and are not code. Now skipped.
 
 2228 items, 1087 confirmed (48.8%), 1141 open. 702 citations verified, 0 wrong.
 502 code + 238 data labels clean, 1 alignment candidate left. 613 lib tests, 0 failures.
+
+## #388 — the orb box: both halves of the claim, checked
+
+`PanoramaFrameHeader` (`tbbig.rs`) asserted two things. Both hold.
+
+FIELD ORDER, from the hit test at `0x8269`:
+
+    cmp ax, [si]      ax = [0xA2A] mouse x   -> [si]   = x
+    sub ax, [si+4]                           -> [si+4] = w
+    cmp ax, [si+2]    ax = [0xA2C] mouse y   -> [si+2] = y
+    sub ax, [si+6]                           -> [si+6] = h
+
+which also settles the box's SENSE, not just its layout: the pair of compares is
+`x <= mx <= x+w`, inclusive on both ends. And the whole test is gated by
+`test byte [0xa3e],1` — the same mouse-present flag #384 found deciding the choice
+box's selected-row colour, two unrelated widgets agreeing on one flag.
+
+THE STATION-TABLE COPY at `0x981B` took a detour worth recording: `0x2A1B` has
+ZERO direct-address sites, because it is never addressed as `[0x2A1B]` — it is
+loaded as an IMMEDIATE (`mov di,0x2A1B`). The census tool that has been reliable
+all session answers a different question than the one I asked, and a bare "0
+sites" would have read as "no such table". Scanning `B8+r imm16` for the value
+found four sites.
+
+Both halves then verify: the RESET at `0x985F..0x9875` is `mov cx,4` / `add di,0xc`
+/ two `stosd` of 0xFFFFFFFF / `add di,4` — 0xC + 8 + 4 is exactly the 0x18 stride,
+so all four stations are blanked; the COPY at `0x9877` is `mov ax,[si+8]` (the
+ninth/tenth byte, the station word) / `mov dx,0x18` / `mul dx` / `add ax,0xc`.
+
+That also explains the all-0xFFFF boxes on frames 21, 64, 71 as the RESET VALUE
+LEFT IN PLACE rather than a stored sentinel — a distinction the doc had backwards
+in spirit even though its conclusion ("no orb here") was right.
+
+2228 items, 1088 confirmed (48.8%), 1140 open. 705 citations verified, 0 wrong.
+613 lib tests, 0 failures.

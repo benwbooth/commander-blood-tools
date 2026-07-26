@@ -1238,7 +1238,7 @@ CONSOLE_BAND_FRAME	src/tbbig.rs	84	const	0x7AC3	DATA	/// The panorama frame whos
 CONSOLE_BAND_TOP	src/tbbig.rs	86	const		UNVERIFIED	/// The band's screen origin and height (rows 140..200).
 CONSOLE_BAND_HEIGHT	src/tbbig.rs	87	const		UNVERIFIED	/// One frame's directory entry, exactly as stored at `index * 8` from the start /// of `TB.BIG`: little-endian `{offset, size}` into the archive file.
 PanoramaDirEntry	src/tbbig.rs	92	struct		UNVERIFIED	/// One frame's directory entry, exactly as stored at `index * 8` from the start /// of `TB.BIG`: little-endian `{offset, size}` into the archive file.
-PanoramaFrameHeader	src/tbbig.rs	105	struct	0x8269,0x981B,0x2A1B,0xFFFF	ASM?	/// The 10-byte header at the start of each frame chunk. The first 8 bytes are /// the **eye-orb's clickable rectangle `{x, y, w, h}`** in this frame (field /// order proven by the hit test at `0x8269
+PanoramaFrameHeader	src/tbbig.rs	105	struct	0x8269,0x981B,0x2A1B,0xFFFF	ASM	/// The 10-byte header at the start of each frame chunk. The first 8 bytes are /// the **eye-orb's clickable rectangle `{x, y, w, h}`** in this frame (field /// order proven by the hit test at `0x8269
 BridgePanorama	src/tbbig.rs	118	struct		TESTED	/// The parsed `TB.BIG` archive: the raw file plus its decoded directory.
 parse	src/tbbig.rs	129	fn	0x5A0,0x981B	CELL?	/// Parse the archive. The directory is the contiguous run of /// `{offset, size}` pairs from file start; its length is implied by the /// first frame's offset (0x5A0 = 180 entries in the shipped file
 frame_count	src/tbbig.rs	153	fn		TESTED	

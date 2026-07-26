@@ -96,11 +96,20 @@ pub struct PanoramaDirEntry {
 
 /// The 10-byte header at the start of each frame chunk. The first 8 bytes are
 /// the **eye-orb's clickable rectangle `{x, y, w, h}`** in this frame (field
-/// order proven by the hit test at `0x8269`: `[si]`=x vs mouse x, `[si+2]`=y,
-/// `[si+4]`=w, `[si+6]`=h), copied by `0x981B` into the station table at
-/// DS:0x2A1B + station * 0x18 + 0x0C (all four boxes are reset to 0xFFFF before
-/// the copy); the ninth/tenth byte is the station word that selects the table
-/// entry. A box of all-0xFFFF (frames 21, 64, 71, …) marks "no orb here".
+/// order proven by the hit test at `0x8269`: `cmp ax, word ptr [si]` @0x8274 is
+/// mouse x (`[0xA2A]`) against the box x, `sub ax, word ptr [si + 4]` @0x8278
+/// subtracts w, then `[si+2]`/`[si+6]` repeat it for y/h with mouse y
+/// (`[0xA2C]`) — so the box is inclusive, x <= mx <= x+w. The whole test is
+/// gated by `test byte ptr [0xa3e], 1` @0x826A, the same mouse-present flag the
+/// choice box uses for its selected-row colour.
+///
+/// Copied by `0x981B` into the station table at DS:0x2A1B + station * 0x18 +
+/// 0x0C. Both halves verified: the RESET at 0x985F..0x9875 does `mov cx, 4` /
+/// `add di, 0xc` / two `stosd` of 0xFFFFFFFF / `add di, 4` — 0xC + 8 + 4 = the
+/// 0x18 stride, so all four stations' boxes are blanked; the COPY at 0x9877
+/// does `mov ax, word ptr [si + 8]` (the ninth/tenth byte — the station word),
+/// `mov dx, 0x18` / `mul dx` / `add ax, 0xc`. A box of all-0xFFFF (frames 21,
+/// 64, 71, …) is therefore the RESET value left in place: "no orb here".
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct PanoramaFrameHeader {
     pub box_x: u16,
