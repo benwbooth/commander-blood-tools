@@ -3099,6 +3099,75 @@ pub const PRESENTATION_3D_MARKERS: &[BinarySymbol] = &[
 #[cfg(test)]
 mod tests {
 
+    /// THE RENDER AND SOUND ENTRY OFFSETS LAND ON FUNCTION PROLOGUES.
+    ///
+    /// Each is segment-relative (`RENDER_SEGMENT` `0x0299`, the sound entries in
+    /// `0x0B1B`), so `0x600 + seg*16 + off` gives a file address. x86 is
+    /// variable-length: a wrong offset lands mid-instruction and decodes to
+    /// something that is not a prologue.
+    ///
+    /// FIVE OF THEM ARE CORROBORATED INDEPENDENTLY. `0x2F90`, `0x2FA6`, `0x30CD`,
+    /// `0x3192` and `0x339E` each have a `func_<hex>` lift, meaning the
+    /// recompiler's own function-boundary analysis — which never read these
+    /// constants — picked the same addresses as entry points.
+    #[test]
+    fn render_and_sound_offsets_land_on_prologues() {
+        let Some(binary) = fixture() else { return };
+        let img = binary.image_bytes();
+        let is_prologue = |b: u8| (0x50..=0x57).contains(&b)
+            || matches!(b, 0x06 | 0x0E | 0x16 | 0x1E | 0x66 | 0x60);
+
+        for (name, seg, off) in [
+            ("VGA_DAC_PALETTE_LOAD", RENDER_SEGMENT, RENDER_VGA_DAC_PALETTE_LOAD_OFFSET),
+            ("VGA_DAC_PALETTE_CLEAR", RENDER_SEGMENT, RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET),
+            ("FIXED_8X8_TEXT", RENDER_SEGMENT, RENDER_FIXED_8X8_TEXT_OFFSET),
+            ("FONT_STRING_WIDTH", RENDER_SEGMENT, RENDER_FONT_STRING_WIDTH_OFFSET),
+            ("UI_TEXT", RENDER_SEGMENT, RENDER_UI_TEXT_OFFSET),
+            ("STRING", RENDER_SEGMENT, RENDER_STRING_OFFSET),
+            ("RECT_REMAP", RENDER_SEGMENT, RENDER_FRAMEBUFFER_RECT_REMAP_OFFSET),
+            ("PLANAR_UI_TEXT", RENDER_SEGMENT, RENDER_PLANAR_UI_TEXT_OFFSET),
+            ("PLANAR_DIALOGUE_TEXT", RENDER_SEGMENT, RENDER_PLANAR_DIALOGUE_TEXT_OFFSET),
+            ("SND_ENTRY", SND_ENTRY_SEGMENT, SND_ENTRY_OFFSET),
+            ("SND_BANK_LOAD", SND_BANK_LOAD_SEGMENT, SND_BANK_LOAD_OFFSET),
+        ] {
+            let at = binary.segoff_to_file(seg, off);
+            assert!(
+                is_prologue(img[at]),
+                "{name} ({seg:#06x}:{off:#06x} -> {at:#07x}) opens with {:#04x}, \
+                 not a prologue -- the offset lands mid-instruction",
+                img[at]
+            );
+            // A PROLOGUE BYTE ALONE CANNOT LOCALISE THE OFFSET: prologues are RUNS
+            // of pushes, so shifting by one lands on another push and passes.
+            // What pins the START is the byte BEFORE it -- every one of these is
+            // preceded by `retf` (0xCB), the end of the previous routine, except
+            // the segment's first function at offset 0 which is preceded by
+            // padding. Shifting by one then fails, because a push is not a retf.
+            let previous = img[at - 1];
+            assert!(
+                previous == 0xCB || previous == 0xC3 || previous == 0x00,
+                "{name} is preceded by {previous:#04x}, not a retf/ret/pad -- so \
+                 {off:#06x} is not the START of a routine"
+            );
+        }
+
+        // The five the recompiler independently identified as functions.
+        for (seg, off, lifted) in [
+            (RENDER_SEGMENT, RENDER_VGA_DAC_PALETTE_LOAD_OFFSET, 0x2F90usize),
+            (RENDER_SEGMENT, RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET, 0x2FA6),
+            (RENDER_SEGMENT, RENDER_FONT_STRING_WIDTH_OFFSET, 0x30CD),
+            (RENDER_SEGMENT, RENDER_STRING_OFFSET, 0x3192),
+            (RENDER_SEGMENT, RENDER_FRAMEBUFFER_RECT_REMAP_OFFSET, 0x339E),
+        ] {
+            assert_eq!(
+                binary.segoff_to_file(seg, off),
+                lifted,
+                "this offset no longer resolves to the address its lift was \
+                 generated for"
+            );
+        }
+    }
+
     /// EACH FILE-OFFSET CONSTANT MUST LAND ON THE KIND OF DATA ITS NAME CLAIMS.
     ///
     /// These six were left uncited by audit-fixes #252, which cleared the

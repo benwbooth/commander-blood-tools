@@ -7920,3 +7920,31 @@ check: uniform data cannot localise an offset, so the assertion has to be about
 where the uniformity STARTS.
 
 Six rows settled DATA.
+
+## #256 — I repeated #255's lesson one commit after writing it
+
+Fourteen more `bloodprg.rs` constants — the nine `RENDER_*` entry offsets and the
+four sound ones — resolve through their segment bases onto function prologues.
+Five are corroborated independently: `0x2F90`, `0x2FA6`, `0x30CD`, `0x3192` and
+`0x339E` each have a `func_<hex>` lift, so the recompiler's own boundary analysis,
+which never read these constants, picked the same addresses as entry points.
+
+Then I settled all fourteen on a check that does not localise them.
+
+Perturbing `RENDER_UI_TEXT_OFFSET` by one byte PASSED. A prologue is a RUN of
+pushes, so `0x0177` lands on `push bx` and "starts with a push" is satisfied — the
+identical failure #255 had just diagnosed for the font advances, where a run of
+`0x09` swallowed a one-byte shift. I wrote that lesson down, committed it, and
+made the same mistake in the next commit against a different kind of run.
+
+Fixed the same way: anchor to the BOUNDARY. Every one of these routines is
+preceded by `retf` (`0xCB`) — the end of the previous routine — except the
+segment's first function at offset 0, which is preceded by padding. A push is not
+a retf, so a one-byte shift now fails.
+
+The generalisation, stated more carefully than in #255: A CHECK THAT AN OFFSET
+POINTS AT THE RIGHT KIND OF THING CANNOT LOCALISE IT WHEN THAT KIND REPEATS.
+Uniform data, push runs, NOP padding, sentinel fills — all of them absorb an
+off-by-one silently. The assertion must be about the TRANSITION into the thing,
+not the thing itself. I now expect this to be wrong by default whenever I write
+"lands on a <category>".

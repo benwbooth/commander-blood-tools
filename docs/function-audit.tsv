@@ -76,20 +76,20 @@ TEXT_SPEED_POINTER_LIST_DS	src/bloodprg.rs	63	const		UNVERIFIED	/// The TEXT-SPE
 TEXT_SPEED_STEP_INITIAL	src/bloodprg.rs	70	const	0x0ACA,0x0DEEA	DATA	/// The text-speed step the IMAGE SHIPS at `DS:0x0ACA` (file `0x0DEEA`) — 2, which /// is what `vm::text_speed_step_from_setting` gives for setting 1, `FAST`. /// /// A DATA value, not an immediate: t
 TEXT_SPEED_STEP_DS	src/bloodprg.rs	72	const	0x0ACA	ASM?	/// `DS:0x0ACA` — the divisor in the dialogue updater's reveal rate.
 DIALOGUE_FONT_GLYPH_HEIGHT	src/bloodprg.rs	85	const		UNVERIFIED	
-SND_ENTRY_SEGMENT	src/bloodprg.rs	86	const		UNVERIFIED	
-SND_ENTRY_OFFSET	src/bloodprg.rs	87	const		UNVERIFIED	
-SND_BANK_LOAD_SEGMENT	src/bloodprg.rs	88	const		UNVERIFIED	
-SND_BANK_LOAD_OFFSET	src/bloodprg.rs	89	const		UNVERIFIED	
-RENDER_SEGMENT	src/bloodprg.rs	90	const		UNVERIFIED	
-RENDER_VGA_DAC_PALETTE_LOAD_OFFSET	src/bloodprg.rs	91	const		UNVERIFIED	
-RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET	src/bloodprg.rs	92	const		UNVERIFIED	
-RENDER_FIXED_8X8_TEXT_OFFSET	src/bloodprg.rs	93	const		UNVERIFIED	
-RENDER_FONT_STRING_WIDTH_OFFSET	src/bloodprg.rs	94	const		UNVERIFIED	
-RENDER_UI_TEXT_OFFSET	src/bloodprg.rs	95	const		UNVERIFIED	
-RENDER_STRING_OFFSET	src/bloodprg.rs	96	const		UNVERIFIED	
-RENDER_FRAMEBUFFER_RECT_REMAP_OFFSET	src/bloodprg.rs	97	const		UNVERIFIED	
-RENDER_PLANAR_UI_TEXT_OFFSET	src/bloodprg.rs	98	const		UNVERIFIED	
-RENDER_PLANAR_DIALOGUE_TEXT_OFFSET	src/bloodprg.rs	99	const		UNVERIFIED	
+SND_ENTRY_SEGMENT	src/bloodprg.rs	86	const		DATA	
+SND_ENTRY_OFFSET	src/bloodprg.rs	87	const		DATA	
+SND_BANK_LOAD_SEGMENT	src/bloodprg.rs	88	const		DATA	
+SND_BANK_LOAD_OFFSET	src/bloodprg.rs	89	const		DATA	
+RENDER_SEGMENT	src/bloodprg.rs	90	const		DATA	
+RENDER_VGA_DAC_PALETTE_LOAD_OFFSET	src/bloodprg.rs	91	const		DATA	
+RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET	src/bloodprg.rs	92	const		DATA	
+RENDER_FIXED_8X8_TEXT_OFFSET	src/bloodprg.rs	93	const		DATA	
+RENDER_FONT_STRING_WIDTH_OFFSET	src/bloodprg.rs	94	const		DATA	
+RENDER_UI_TEXT_OFFSET	src/bloodprg.rs	95	const		DATA	
+RENDER_STRING_OFFSET	src/bloodprg.rs	96	const		DATA	
+RENDER_FRAMEBUFFER_RECT_REMAP_OFFSET	src/bloodprg.rs	97	const		DATA	
+RENDER_PLANAR_UI_TEXT_OFFSET	src/bloodprg.rs	98	const		DATA	
+RENDER_PLANAR_DIALOGUE_TEXT_OFFSET	src/bloodprg.rs	99	const		DATA	
 RENDER_SUBTITLE_REVEAL_OFFSET	src/bloodprg.rs	100	const		UNVERIFIED	
 RENDER_SMALL_TEXT_OFFSET	src/bloodprg.rs	101	const		UNVERIFIED	
 RENDER_PLANAR_HORIZONTAL_LINE_OFFSET	src/bloodprg.rs	102	const		UNVERIFIED	
