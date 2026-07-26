@@ -8904,3 +8904,54 @@ struct fields. Recording it because a green test next to a citation reads like
 confirmation, and here it is not.
 
 Citations: 546 verified (from 542), 0 wrong. 597 lib tests, 0 failures.
+
+## #288 — the viewport descriptor: a table no search could ever have found
+
+`SHIP_3D_TEMP_SND_VIEWPORT_DESCRIPTOR` was the clearest UNVERIFIED row left in
+`ship3d.rs` — sixteen bytes with no citation, no derivation, and a doc that said
+so plainly: "WHERE the game builds it is undecoded — presumably assembled by
+consecutive stores rather than copied from a table, which is why no table exists
+to find." `check_literal_tables.py` agreed, reporting it ABSENT from every
+shipped image.
+
+The guess was right and the routine is the temp-SND setup's tail. Route to it:
+`SHIP_3D_TEMP_SND_SETUP_OFFSET = 0x05F1` in the ship-presentation segment
+`0x0A9A` (base `0xAFA0`) = `0xB591`, decoded forward to `0xB629`:
+
+    0xB629  les di, ptr [0x522d]   ; FAR POINTER destination, not a DS cell
+    0xB62D  xor eax, eax
+    0xB630  stosw                  ; [0] = 0
+    0xB631  inc ax
+    0xB632  stosw                  ; [1] = 1
+    0xB633  add ax, 3
+    0xB636  stosd                  ; [2],[3] = dword 4
+    0xB638  mov ax, 0x140 / stosw  ; [4] = 320
+    0xB63C  mov ax, 0xc8  / stosw  ; [5] = 200
+    0xB640  xor eax, eax
+    0xB642  stosd                  ; [6],[7] = dword 0
+
+WHY NO SEARCH COULD HAVE FOUND IT, which is the transferable part. Three of the
+six values are COMPUTED — `xor`, `inc`, `add ax,3` — so the bytes `00 00 01 00
+04 00` never appear in the image, and only `0x140` and `0xC8` exist as
+immediates. A byte search fails, `find_imm` on 0/1/4 is useless (#263), and
+`check_literal_tables.py` correctly reported ABSENT. Absence of the DATA is not
+absence of the TABLE; it is evidence the table is BUILT. #229 already recorded
+that ABSENT has good explanations — this is a fourth one, and the most common
+kind: arithmetic.
+
+A STRUCTURAL CORRECTION fell out of it. The two `stosd`s mean this is NOT eight
+independent words: indices 3 and 7 are the HIGH HALVES of 32-bit stores. The real
+shape is `u16, u16, u32, u16, u16, u32`. The port keeps `[u16; 8]` because that
+is how the block is copied, but anything that starts INTERPRETING index 3 or 7 as
+a field is reading half of a dword — the same class of mistake as #271, where a
+16-bit load hid a 32-bit accumulator, caught here before it could be made.
+
+TEST: `temp_snd_viewport_descriptor_matches_the_stores_that_build_it` re-derives
+the array by EXECUTING the store sequence rather than restating it — asserting
+the constant equals itself would prove nothing. Perturbing the constant's `4` to
+`5` fails it. The high halves are asserted separately so a later edit cannot
+quietly promote them to fields.
+
+Citations: 557 verified (from 546), 0 wrong — all eleven instructions in the
+block above confirmed against the image by the guard. 598 lib tests, 0 failures.
+Labelled `0xB629` as `ship_3d_temp_snd_viewport_descriptor_write`.

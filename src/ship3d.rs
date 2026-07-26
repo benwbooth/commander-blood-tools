@@ -200,12 +200,35 @@ pub const SHIP_3D_TEMP_SND_SCENE_SELECTOR_SENTINEL: u16 = 0xffff;
 /// because part of it is capture-sourced and already labelled APPROX. This one has
 /// no citation, no derivation and no doc before now.
 ///
-/// What can be said from the values alone, and no more: `0x0140` is 320 and
-/// `0x00C8` is 200, so it reads as a full-screen viewport. WHERE the game builds
-/// it is undecoded — presumably assembled by consecutive stores rather than
-/// copied from a table, which is why no table exists to find. Finding that
-/// routine is the task; until then this array is unverified and should not be
-/// cited as if it were decoded.
+/// DECODED (audit-fixes #288). The guess above was right — it is assembled by
+/// consecutive stores — and the routine is the temp-SND setup's tail,
+/// `0xB629`..`0xB643`, reached through `SHIP_3D_TEMP_SND_SETUP_OFFSET`
+/// (`0x0A9A:0x05F1` = `0xB591`):
+///
+/// ```text
+/// 0xB629  les di, ptr [0x522d]   ; destination is a FAR POINTER, not a DS cell
+/// 0xB62D  xor eax, eax
+/// 0xB630  stosw                  ; [0] = 0x0000
+/// 0xB631  inc ax                 ; ax = 1
+/// 0xB632  stosw                  ; [1] = 0x0001
+/// 0xB633  add ax, 3              ; ax = 4
+/// 0xB636  stosd                  ; [2],[3] = dword 0x00000004
+/// 0xB638  mov ax, 0x140 / stosw  ; [4] = 320
+/// 0xB63C  mov ax, 0xc8  / stosw  ; [5] = 200
+/// 0xB640  xor eax, eax
+/// 0xB642  stosd                  ; [6],[7] = dword 0
+/// ```
+///
+/// Two things follow that the values alone could not tell you. First, `0`, `1`
+/// and `4` are COMPUTED (`xor`/`inc`/`add ax,3`) — only `0x140` and `0xC8` are
+/// immediates — so neither a byte search nor an immediate scan could ever have
+/// found this table, which is why #227's method left it unsourced.
+///
+/// Second, THIS IS NOT EIGHT INDEPENDENT WORDS. The two `stosd`s make indices 3
+/// and 7 the HIGH HALVES of 32-bit fields, not fields of their own; the real
+/// shape is `u16, u16, u32, u16, u16, u32`. The port stores it as `[u16; 8]`
+/// because that is how it is copied, but anything that starts INTERPRETING
+/// index 3 or 7 as a separate value is reading a high half.
 pub const SHIP_3D_TEMP_SND_VIEWPORT_DESCRIPTOR: [u16; 8] = [
     0x0000, 0x0001, 0x0004, 0x0000, 0x0140, 0x00c8, 0x0000, 0x0000,
 ];
@@ -8507,6 +8530,60 @@ mod tests {
     /// at the top of the loop, so an unrecognised kind advances to the next
     /// source entry. That is the `_ => {}` arm, and without a test the arm reads
     /// like defensive padding rather than the decoded control flow it is.
+    /// Re-DERIVES `SHIP_3D_TEMP_SND_VIEWPORT_DESCRIPTOR` by executing the store
+    /// sequence at `0xB629`..`0xB643` instead of restating the array. Asserting
+    /// the constant equals itself would prove nothing; running the instructions
+    /// that build it is the part that can disagree.
+    ///
+    /// It also pins the structure the two `stosd`s impose: indices 3 and 7 are
+    /// the HIGH HALVES of 32-bit stores, not independent fields.
+    #[test]
+    fn temp_snd_viewport_descriptor_matches_the_stores_that_build_it() {
+        // The write cursor `di` walks a 16-byte destination (`les di,[0x522d]`).
+        let mut out: Vec<u16> = Vec::new();
+        let stosw = |v: u16, out: &mut Vec<u16>| out.push(v);
+        let stosd = |v: u32, out: &mut Vec<u16>| {
+            out.push(v as u16); // low half
+            out.push((v >> 16) as u16); // HIGH half -- the index that is not a field
+        };
+
+        let mut eax: u32 = 0; // xor eax, eax        @0xB62D
+        stosw(eax as u16, &mut out); //  stosw        @0xB630
+        eax = eax.wrapping_add(1); // inc ax          @0xB631
+        stosw(eax as u16, &mut out); //  stosw        @0xB632
+        eax = eax.wrapping_add(3); // add ax, 3       @0xB633
+        stosd(eax, &mut out); //          stosd       @0xB636
+        eax = 0x140; //                mov ax, 0x140  @0xB638
+        stosw(eax as u16, &mut out); //  stosw        @0xB63B
+        eax = 0xc8; //                 mov ax, 0xc8   @0xB63C
+        stosw(eax as u16, &mut out); //  stosw        @0xB63F
+        eax = 0; //                    xor eax, eax   @0xB640
+        stosd(eax, &mut out); //          stosd       @0xB642
+
+        assert_eq!(
+            out.len(),
+            SHIP_3D_TEMP_SND_VIEWPORT_DESCRIPTOR.len(),
+            "the stores must fill the descriptor exactly -- 2 stosw + 1 stosd + \
+             2 stosw + 1 stosd = 8 words"
+        );
+        assert_eq!(out.as_slice(), &SHIP_3D_TEMP_SND_VIEWPORT_DESCRIPTOR[..]);
+
+        // The high halves, called out so a future edit cannot quietly treat them
+        // as fields: index 3 belongs to the dword 4, index 7 to the dword 0.
+        assert_eq!(SHIP_3D_TEMP_SND_VIEWPORT_DESCRIPTOR[3], 0);
+        assert_eq!(SHIP_3D_TEMP_SND_VIEWPORT_DESCRIPTOR[7], 0);
+        assert_eq!(
+            (SHIP_3D_TEMP_SND_VIEWPORT_DESCRIPTOR[2] as u32)
+                | ((SHIP_3D_TEMP_SND_VIEWPORT_DESCRIPTOR[3] as u32) << 16),
+            4
+        );
+
+        // 320x200 -- a full-screen viewport, the one reading the values alone
+        // already supported.
+        assert_eq!(SHIP_3D_TEMP_SND_VIEWPORT_DESCRIPTOR[4], 320);
+        assert_eq!(SHIP_3D_TEMP_SND_VIEWPORT_DESCRIPTOR[5], 200);
+    }
+
     #[test]
     fn c1_source_selection_skips_unknown_kind_and_keeps_scanning() {
         // 0x10 is a real record kind elsewhere in the C1 handler (the target
