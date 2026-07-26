@@ -13080,3 +13080,33 @@ engine-level lifecycle hook is a bigger change than the decode justifies.
 
 2228 items, 1091 confirmed (49.0%), 1137 open. 713 citations verified, 0 wrong.
 614 lib tests, 0 failures.
+
+## #398 — the seek steering, including the magic 4
+
+`update_view_steer` cited a range (`0x96D0..0x96DD`) for the cursor drag and left
+the step arithmetic uncited. Read `0x96A7..0x96F3`; every constant in the port
+comes out of the instructions:
+
+    0x96A7  mov dx,[0x279d] / or dx,dx / jne     memoise the initial distance
+    0x96AF  mov word ptr [0x279d], ax             ...ONCE, while still zero
+    0x96B2  mov dx,ax / shr dx,1                  step = distance/2
+    0x96B6  jne / inc dx                          ...floored at 1
+    0x96B9  shl ax,2                              drag = distance*4
+    0x96CC  neg dx / neg ax                       direction on the other branch
+    0x96D0  mov cx,[0x279d] / cmp cx,0x28 / jl    long-seek gate
+    0x96DB  add word ptr [0xa38], ax              drag the ring anchor
+    0x96DF  add ax,dx / +0xB4 or -0xB4            wrap over 180 frames
+
+So `(distance / 2).max(1)` is `shr` + `inc`, the `* 4` is a `shl ax,2`, and
+`PANORAMA_FRAME_COUNT` is the `0xB4` the wrap adds and subtracts. The port had all
+three right and cited none of them — the `* 4` in particular read as a tuning
+constant, which is exactly the shape a capture-measured number would have.
+
+One ordering detail worth pinning: `mov [0x279d], ax` @`0x96AF` happens BEFORE
+`shl ax,2` @`0x96B9`, so the memo holds the RAW distance, not the quadrupled one.
+The port stores `distance`. Had it stored the drag value the long-seek gate would
+compare `0x28` against a number four times too large and every seek over ten
+frames would drag the cursor.
+
+2228 items, 1092 confirmed (49.0%), 1136 open. 713 citations verified, 0 wrong.
+614 lib tests, 0 failures.

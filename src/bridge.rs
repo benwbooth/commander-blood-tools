@@ -251,12 +251,21 @@ impl BridgeView {
             }
             let delta = ring_delta(self.frame as i32, target_frame, PANORAMA_FRAME_COUNT as i32);
             let distance = delta.abs();
+            // Memoise the initial distance ONCE: `mov dx,[0x279d] / or dx,dx /
+            // jne` @0x96A7 falls through to `mov word ptr [0x279d], ax` @0x96AF
+            // only while it is still zero. Note this stores the RAW distance —
+            // it happens before the `shl ax,2` below.
             if self.seek_initial_frames == 0 {
                 self.seek_initial_frames = distance as u16;
             }
+            // `mov dx,ax / shr dx,1` @0x96B2 then `jne / inc dx` @0x96B6: the
+            // step is distance/2 with a floor of 1. Direction comes from the
+            // `neg dx` @0x96CC on the opposite-sign branch.
             let step = (distance / 2).max(1) * delta.signum();
             // Long seeks (initial distance >= 0x28 frames) drag the cursor's
-            // ring anchor along so it stays put on screen (`0x96D0..0x96DD`).
+            // ring anchor along so it stays put on screen: `shl ax, 2` @0x96B9
+            // makes the drag distance*4, and `mov cx,[0x279d] / cmp cx,0x28 /
+            // jl` @0x96D0..0x96D7 gates `add word ptr [0xa38], ax` @0x96DB.
             if self.seek_initial_frames >= 0x28 {
                 self.ring_mouse_x = wrap(
                     self.ring_mouse_x + delta.signum() * distance * 4,
