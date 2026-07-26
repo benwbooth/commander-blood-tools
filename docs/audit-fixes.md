@@ -9335,3 +9335,42 @@ caught by tracing the compare operands instead of trusting the exit it reached.
 Recorded, not acted on. Nothing in the port changes: #295's behavioural fix (the
 sentinel does not branch) stands on its own reading of `0x6C20`/`0x6C7C` and is
 unaffected by the stack question.
+
+## #297 — measuring #296's reachability: the query fault path is not in the shipped data
+
+#296 proved the `0x6BC2` exit unbalanced and left the honest question open:
+does that path execute? It needs QUERY mode, `dl == 0` (no `0xA1` after the `0xC1`
+opcode byte), and a matching record. The first two are static properties of the
+bytecode, so they can be COUNTED rather than argued about.
+
+Walking every shipped COD with the game's OWN token lengths (`token_len_at` =
+`OPCODE_DESC` plus the mode rules), not by scanning for the byte `0xC1`, which
+appears constantly inside operands:
+
+    SCRIPT1  0     SCRIPT2  3     SCRIPT3  9     SCRIPT4  5     SCRIPT5  6
+    23 C1 tokens total; 0 inverted; 0 reached in QUERY mode by a linear walk
+
+Two results. First, NO shipped C1 token is followed by `0xA1`, so `dl == 0`
+everywhere — the inversion half of the condition is satisfied at every site, and
+that is the half I would have guessed was rare. Second, none is reached in query
+mode, and `0x6BC2` lies beyond `test byte gs:[0x67ad],1 / je 0x6BCE` @`0x6B73` —
+the QUERY side. So the exit #296 showed faulting is, on this evidence, not on any
+executed path: C1 appears in shipped scripts only as a SET.
+
+That is what reconciles #296's fault with a game that plainly works, and it does
+so without needing my push/pop pairing to have been wrong. It was not wrong; the
+path is simply not taken.
+
+WHAT IS STILL OPEN, and it is narrower but real: the SCAN SENTINEL at `0x6C20`
+reaches the same `0x6C7C` and lies on the SET side, past `cmp ax,0x10 / jne`
+@`0x6C07`. So a C1 SET on a kind-`0x10` owner whose source list yields no passing
+entry would take the unbalanced exit. Whether that combination occurs depends on
+runtime record contents, which a static token walk cannot decide.
+
+THE MODE TRACKING IS AN APPROXIMATION and the test says so: `0xA0` sets query and
+`0xA1` clears it (`0x6559`/`0x6572`), but a linear walk cannot know the mode at a
+site reached by a branch. The counts are pinned as assertions so a data or
+walker change cannot move them silently, with the approximation stated at the
+assertion rather than buried in a comment.
+
+603 lib tests, 0 failures.

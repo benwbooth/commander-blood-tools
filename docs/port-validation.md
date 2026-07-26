@@ -1333,3 +1333,14 @@ PASSES (record already typed `0xC1`, `+2` matching, no `0xA1`); a query against 
 empty record exits via the balanced `0x6C73`. Open: whether a passing
 non-inverted C1 query occurs in the shipped scripts, or whether the handler is
 entered another way. Nothing in the port depends on the answer.
+
+### #297 — the C1 query fault path is absent from shipped scripts
+
+Walking all shipped CODs with the game's own token lengths: 23 C1 tokens, NONE
+inverted, none reached in QUERY mode by a linear walk. `0x6BC2` (the unbalanced
+exit #296 demonstrated) is on the query side of `je 0x6BCE` @`0x6B73`, so on this
+evidence it is not executed — C1 appears only as a SET.
+
+STILL OPEN: the scan sentinel `0x6C20` reaches the same `0x6C7C` from the SET
+side. A C1 SET on a kind-`0x10` owner whose source list yields no passing entry
+would take it. That depends on runtime record contents, not on the bytecode.

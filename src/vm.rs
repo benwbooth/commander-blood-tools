@@ -10497,6 +10497,93 @@ mod tests {
         assert_eq!(m.active_actor, Some(0x84));
     }
 
+    /// audit-fixes #297. Is the fault path #296 found REACHABLE in shipped data?
+    ///
+    /// `0x6BC2` — the exit whose stack does not balance — needs all three of:
+    /// QUERY mode, NO `0xA1` after the `0xC1` opcode byte (`dl == 0`), and a
+    /// record that MATCHES. The first two are static properties of the bytecode,
+    /// so they can be counted; the third is runtime.
+    ///
+    /// Walks every shipped COD with the game's own token lengths
+    /// (`token_len_at`, i.e. `OPCODE_DESC` + the mode rules) rather than scanning
+    /// for the byte `0xC1`, which appears constantly inside operands.
+    ///
+    /// The mode tracking is a STATIC APPROXIMATION: `0xA0` sets query and `0xA1`
+    /// clears it (`0x6559`/`0x6572`), but branches mean a linear walk cannot know
+    /// the mode at every site. It is reported, not asserted, for that reason —
+    /// what IS asserted is the shape that matters: whether any C1 token in the
+    /// whole corpus is un-inverted, since a corpus with none makes the fault path
+    /// unreachable regardless of mode.
+    #[test]
+    fn c1_tokens_in_shipped_scripts_are_counted_for_the_fault_path() {
+        let mut cods: Vec<(String, Vec<u8>)> = Vec::new();
+        for n in 1..=8 {
+            for base in ["output/scripts", "../output/scripts"] {
+                let path = format!("{base}/SCRIPT{n}.COD");
+                if let Ok(bytes) = std::fs::read(&path) {
+                    cods.push((format!("SCRIPT{n}"), bytes));
+                    break;
+                }
+            }
+        }
+        if cods.is_empty() {
+            return; // shipped data not extracted in this checkout
+        }
+
+        let (mut total, mut inverted, mut un_inverted, mut in_query) = (0usize, 0, 0, 0);
+        for (name, cod) in &cods {
+            let mut pos = 0usize;
+            let mut query = false;
+            let mut seen = 0usize;
+            while pos < cod.len() {
+                let op = cod[pos];
+                if op == 0xFF || !(OP_MIN..=OP_MAX).contains(&op) {
+                    pos += 1;
+                    continue;
+                }
+                if op == 0xA0 {
+                    query = true;
+                }
+                if op == 0xA1 {
+                    query = false;
+                }
+                if op == 0xC1 {
+                    total += 1;
+                    seen += 1;
+                    if cod.get(pos + 1) == Some(&0xA1) {
+                        inverted += 1;
+                    } else {
+                        un_inverted += 1;
+                        if query {
+                            in_query += 1;
+                        }
+                    }
+                }
+                pos += token_len_at(cod, pos, op, query).max(1);
+            }
+            println!("{name}: {seen} C1 token(s) in {} bytes", cod.len());
+        }
+        println!(
+            "C1 tokens: {total} total, {inverted} inverted (0xA1 follows), \
+             {un_inverted} un-inverted, {in_query} of those reached in query mode \
+             by a linear walk"
+        );
+
+        // MEASURED, and pinned so a data change cannot move it silently:
+        // 23 C1 tokens, NONE inverted, none reached in query mode linearly.
+        assert!(total > 0, "the corpus must contain C1 tokens to say anything");
+        assert_eq!(
+            inverted, 0,
+            "no shipped C1 token is followed by 0xA1, so dl == 0 at every site"
+        );
+        assert_eq!(
+            in_query, 0,
+            "no C1 token is reached in QUERY mode by a linear walk -- which is \
+             what keeps the 0x6BC2 fault exit (#296) off the executed paths, \
+             since 0x6BC2 lies beyond `test gs:[0x67ad],1 / je 0x6BCE` @0x6B73"
+        );
+    }
+
     /// audit-fixes #294. The KIND-2 bitset arm on the live path, and with it the
     /// reason the `0x6886` scratch is persistent state rather than a return
     /// value.
