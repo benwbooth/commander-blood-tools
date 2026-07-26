@@ -53,12 +53,38 @@ def main():
         print(f"\n=== {value:#07x} ===")
 
         if os.path.exists(LABELS):
+            own_labels = []
+            for ln2 in open(LABELS):
+                mm = re.match(r"^0x([0-9A-Fa-f]{5,6}),([A-Za-z_0-9]+),(.*)$", ln2)
+                if mm:
+                    own_labels.append((int(mm.group(1), 16), mm.group(2), mm.group(3)))
+            own_labels.sort()
             rows = []
             for n, line in enumerate(open(LABELS, encoding="utf-8"), 1):
                 if any(f in line for f in forms):
                     own = line.split(",", 1)[0].strip()
                     kind = "OWN ROW" if any(f == own or f in own for f in forms) else "cites"
                     rows.append((n, kind, line.strip()[:150]))
+            # ENCLOSING ROUTINE first (audit-fixes #379). Everything below
+            # searches for the address as TEXT, which finds labels that CITE it
+            # -- and for a CODE address the question is almost always "what
+            # routine is this inside", a different lookup entirely. Skipping it
+            # produced three wrong conclusions in this session (#328, #340,
+            # #376): each time the instructions were read correctly and attached
+            # to the wrong subject.
+            code = [
+                (a, nm, txt)
+                for a, nm, txt in own_labels
+                if a <= value
+            ]
+            if code:
+                a, nm, txt = code[-1]
+                print(
+                    f"ENCLOSING: {nm} at {a:#07x} (+{value - a:#x})"
+                    + (f" -- {txt.strip()[:120]}" if txt else "")
+                )
+            else:
+                print("ENCLOSING: (no labelled routine at or before this address)")
             print(f"labels.csv: {len(rows)} row(s)")
             for n, kind, text in rows[:6]:
                 print(f"   {n:>4} [{kind}] {text}")

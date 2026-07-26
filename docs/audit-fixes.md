@@ -12372,3 +12372,41 @@ conclusion was not.
 
 2229 items, 1081 confirmed (48.5%), 1148 open. 698 citations verified, 0 wrong.
 613 lib tests, 0 failures.
+
+## #379 — make the step I keep skipping into the first line of a tool
+
+Three wrong conclusions this session from the same omission: #328 attributed an
+off-path routine, #340 answered the wrong question with a solved pointer trap,
+#376 attributed resource-descriptor writes to object records. Every time the
+instructions were read correctly and attached to the wrong SUBJECT, and every
+time the missing step was: PLACE THE ADDRESS INSIDE ITS ROUTINE.
+
+`whatis.py` was the obvious home for that and did not do it. Given `0x5233` it
+searched the address as TEXT and returned three labels that CITE `0x5233` — as a
+DS offset naming a ring-buffer end, an unrelated meaning that happens to share
+the number. Useful, and not the question.
+
+It now leads with the enclosing routine:
+
+    ENCLOSING: resource_name_write_c00 at 0x05190 (+0xa3) -- resource name-table
+    write: ds=es=fs; [0xc00]=ax; bx=ax. Writes into the FS:0xc00 resource
+    descriptor area...
+
+which is the sentence that would have stopped #376 before it was written. Checked
+against the other two failures as well: `0x2760` reports `string_upcase_in_place`
+(#328's off-path fold) and `0x88BA` reports `console_menu_pick_dispatch` (#338's
+call site).
+
+THE PATTERN, stated once more because it is now four tools deep: #359 built the
+encoding table after three missed families; #373 generated the status line after
+four wrong numbers; this adds the enclosing-routine lookup after three wrong
+attributions. In each case the rule was already known and written down, and
+writing it down did not work. Making the tool answer the question first does.
+
+WHAT IT STILL CANNOT DO: say what a base register points at. `bx` came from
+`[0xC02]` and only the routine's own comment revealed that was a resource
+descriptor. The enclosing label puts that comment in front of the reader, which
+is as close as a static tool gets.
+
+2229 items, 1081 confirmed (48.5%), 1148 open. 698 citations verified, 0 wrong.
+613 lib tests, 0 failures.
