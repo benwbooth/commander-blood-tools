@@ -4897,11 +4897,28 @@ pub struct VmMachine {
     ///   `89 /r` and `8b /r` forms: NONE.
     /// ```
     ///
-    /// Two things this settles. BIT 1 IS NEVER TOUCHED ALONE — it appears only
-    /// inside the `0x0E` gate mask, so the port has no reason to model it
-    /// separately. And BITS 4..7 ARE READ BUT NEVER OR'd — they can only be set
-    /// by a whole-word write, of which there are six, so whatever they mean is
-    /// decided by those writers and not by incremental flag-setting.
+    /// BOTH OF THE CENSUS'S OPEN QUESTIONS ARE NOW ANSWERED, and both answers
+    /// came from `0x9512` (audit-fixes #364), which the census could not see
+    /// because it works through a REGISTER:
+    ///
+    /// ```text
+    ///   0x9512  mov ax, [0x2793] / and ax, 0xff0f    clear bits 4..7
+    ///   0x9518  test ax, 2 / jne 0x9544              BIT 1 IS A LOCK
+    ///   0x951D  mov bx, 1
+    ///   0x9520  mov dx, [0x2795]                     the panorama frame
+    ///           <= 0x16 or > 0x9D -> 1 ; <= 0x43 -> 2 ; <= 0x70 -> 4 ; else 8
+    ///   0x953F  shl bx, 4 / or ax, bx / mov [0x2793], ax
+    /// ```
+    ///
+    /// BITS 4..7 ARE NOT FLAGS. They are a ONE-HOT QUADRANT of the bridge
+    /// panorama: 180 frames at 2° each, with boundaries 22/67/112/157 giving four
+    /// 90° sectors. That is why the census found them read with masks `0x10`,
+    /// `0x20`, `0x40`, `0x50`, `0x90` and never OR-set — they are COMPUTED.
+    ///
+    /// BIT 1 IS A LOCK on that computation, tested here as `test ax,2` AFTER the
+    /// load. An address-form census cannot see it, which is why #358 concluded
+    /// bit 1 "is never referenced alone" — true of memory forms, false of the
+    /// flag.
     ///
     /// Four subsystems were each blocked on this word existing as state —
     /// presentation (#311), concept lists (#324), the save dialogue (#325) and

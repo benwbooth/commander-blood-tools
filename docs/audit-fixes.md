@@ -11869,3 +11869,48 @@ the SETTER was in hand — which is the same lesson as #302 and #315, arrived at
 from the opposite side: find who writes it.
 
 662 citations verified (from 658), 0 wrong. 612 lib tests, 0 failures.
+
+## #364 — bits 4..7 are not flags at all, and bit 1 is a lock: the census could not see either
+
+#358's census left two conclusions about `gs:0x2793`: "bit 1 is never referenced
+alone" and "bits 4..7 are read but never OR'd, so they can only be set by one of
+the whole-word writes". Both were wrong, and wrong for the SAME reason.
+
+`0x9512` does everything through a REGISTER, so an address-form census is blind
+to it:
+
+    0x9512  mov ax, [0x2793] / and ax, 0xff0f   clear bits 4..7
+    0x9518  test ax, 2 / jne 0x9544             skip if BIT 1 is set
+    0x951D  mov bx, 1
+    0x9520  mov dx, [0x2795]                    the panorama frame index
+            frame <= 0x16 or > 0x9D -> bx = 1
+            frame <= 0x43           -> bx = 2
+            frame <= 0x70           -> bx = 4
+            else                    -> bx = 8
+    0x953F  shl bx, 4 / or ax, bx / mov [0x2793], ax
+
+BITS 4..7 ARE A ONE-HOT QUADRANT. The panorama is 180 frames at 2°, and the
+boundaries 22/67/112/157 cut it into four 90° sectors. So the high nibble is a
+small integer describing WHERE THE BRIDGE VIEW IS POINTING, which is why it is
+read with masks like `0x50` (sectors 4|6) and `0x90` (4|7) — those are direction
+RANGES, not flag combinations. Nothing OR-sets them because nothing raises them;
+they are recomputed from the frame every time.
+
+BIT 1 IS THE LOCK on that recompute, tested as `test ax,2` after the load. #358
+said it "appears only inside the `0x0E` gate mask" — true of every memory-form
+encoding, and false of the flag, which has a dedicated reader working on a
+register copy.
+
+WHAT THIS SAYS ABOUT THE METHOD. `addr_forms.py` (#359) is exhaustive over
+INSTRUCTIONS THAT NAME AN ADDRESS, and I have been treating it as exhaustive over
+USES. It is not, and cannot be: `mov ax,[m]` followed by arithmetic on `ax` is
+invisible to it by construction. Four entries (#358, #360, #361, #362) leaned on
+that census, and only the two conclusions ABOUT UNSEEN WRITES were wrong — the
+setter locations were fine, because setters do name their address.
+
+So the tool's limit is precise rather than general: it finds every site that
+NAMES the cell, and says nothing about what happens to a value once it is in a
+register. That belongs in its docstring, and the `0x2793` doc now carries the
+corrected reading with the register routine cited.
+
+667 citations verified (from 662), 0 wrong. 612 lib tests, 0 failures.
