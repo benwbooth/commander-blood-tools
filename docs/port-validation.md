@@ -1593,7 +1593,7 @@ Related: #361's wiring table shows `nav_actor_handler_0` and `_2` are themselves
 raisers of gate flags `0x27DA` and `0x24F3`, so the quadrant gate sits upstream
 of the main-loop busy gate.
 
-### #376 — object active bits ARE set at runtime; a "never set" claim is withdrawn
+### #376 — WITHDRAWN by #378: object active bits are NOT set at runtime after all
 
 `c4_set_write_decision` reads objects' `+2` active bits from VAR-initial data,
 justified by an enumeration concluding nothing sets them at runtime except one
@@ -1609,7 +1609,10 @@ which touch bit 0:
 `0x5233` is object initialisation (`mov bx,[0xc02]`, write `+0` from `gs:[0xA6A]`,
 `or word [bx+2],3`, `mov dword [bx+4],ebp`).
 
-So reading VAR-initial bits is correct only for objects that path never creates
-or re-activates — an assumption, where the doc previously had a proof. OPEN: can
-the dialogue C4 flow observe an object initialised at `0x5233`? If yes, the port
-reads a stale zero where the game has one.
+WITHDRAWN (audit-fixes #378). Two of those three sites are NOT object writes:
+`0x5233` is inside `resource_name_write_c00` and `0x52B5` inside
+`resource_free_inner`, both operating on the FS:0xC00 RESOURCE DESCRIPTOR area,
+whose `+2` is a resource flag word sharing an offset with the object record'''s.
+`0x5B8D` remains the sole runtime writer of an OBJECT'''s active bit, so reading
+VAR-initial bits is justified and there is no open question. What survives from
+#376 is only that the ORIGINAL enumeration searched one encoding family.

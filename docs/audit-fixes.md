@@ -12333,3 +12333,42 @@ understands what it finds.
 
 2229 items, 1081 confirmed (48.5%), 1148 open. 695 citations verified, 0 wrong.
 613 lib tests, 0 failures.
+
+## #378 — withdrawing #376: two of the three writers are a different structure
+
+#376 refuted a "never set at runtime" claim by finding three `[reg+2]` sites that
+touch bit 0 where the original enumeration found one. The extra sites are real
+and the original enumeration WAS incomplete. The refutation is still wrong.
+
+Placing each site inside its routine — the step #376 skipped:
+
+    0x5233  or  word [bx+2], 3       resource_name_write_c00 (0x5190)
+    0x52B5  and word [bx+2], 0xfffc  resource_free_inner     (0x529C)
+    0x5B8D  and byte [bx+2], 0xfe    obj_active_bit_sole_runtime_clear
+
+Two of the three operate on the RESOURCE DESCRIPTOR area at `FS:0xC00` — `bx`
+comes from `[0xC02]`, and the routine's own label says it "writes into the
+FS:0xc00 resource descriptor area". Their `+2` is a resource flag word that
+happens to share an offset with an object record's. So `0x5B8D` IS the sole
+runtime writer of an object's active bit, the original claim holds, and
+`c4_set_write_decision`'s use of VAR-initial bits is justified.
+
+THIS IS #328's ERROR, THIRD TIME. In #328 I found a routine that did the right
+thing and put it in the story without checking it was on the path. In #340 I
+solved a pointer trap and answered the wrong question with it. Here I enumerated
+correctly and attributed every hit to one structure without asking what the base
+register held. Every time: the individual facts were right and the CONNECTION was
+assumed.
+
+The check that would have caught all three is the same one, and it is cheap:
+BEFORE concluding, place the address inside its routine and ask what the pointer
+points at. I have a script for the first half (nearest preceding label) and used
+it four entries ago in #361. I did not use it here because the encoding search
+felt like the whole job.
+
+Both records are kept — the refutation and its withdrawal — because #376's
+finding about the ENUMERATION'S METHOD is real and worth keeping even though its
+conclusion was not.
+
+2229 items, 1081 confirmed (48.5%), 1148 open. 698 citations verified, 0 wrong.
+613 lib tests, 0 failures.

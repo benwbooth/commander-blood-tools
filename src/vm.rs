@@ -5466,7 +5466,33 @@ impl VmMachine {
     ///     `0x6C98` -> `0x6CE3`), or op2's selector-`0x13` field already holds
     ///     `0xC4` (`0x6CE9..0x6CFF`).
     ///
-    /// THE "NEVER SET AT RUNTIME" CLAIM IS FALSE (audit-fixes #376). This said
+    /// THE CLAIM STANDS (audit-fixes #378, withdrawing #376). #376 said this was
+    /// false; #376 was wrong, and the correction is below the refutation it
+    /// replaces so both stay visible.
+    ///
+    /// #376 correctly found the original enumeration incomplete — it searched
+    /// only the `80 /N` BYTE form, and `81`/`83` add more `[reg+2]` sites. But it
+    /// then attributed all of them to OBJECT records without checking what the
+    /// base register held. Placing them:
+    ///
+    /// ```text
+    ///   0x5233  or  word [bx+2], 3       inside resource_name_write_c00 (0x5190)
+    ///                                    -- bx = `[0xC02]`, a RESOURCE DESCRIPTOR
+    ///   0x52B5  and word [bx+2], 0xfffc  inside resource_free_inner (0x529C)
+    ///                                    -- resource release
+    ///   0x5B8D  and byte [bx+2], 0xfe    obj_active_bit_sole_runtime_clear
+    ///                                    -- the OBJECT record, as documented
+    /// ```
+    ///
+    /// Two of the three operate on the resource-descriptor area at `FS:0xC00`,
+    /// whose `+2` is a resource flag word — a different structure that happens to
+    /// share an offset. So `0x5B8D` IS the sole runtime writer of an OBJECT's
+    /// active bit, and reading VAR-initial bits remains justified.
+    ///
+    /// (The superseded refutation follows, kept because it records a real gap in
+    /// the original enumeration's METHOD even though its conclusion was wrong.)
+    ///
+    /// SUPERSEDED — #376 said: This said
     /// the active bits are VAR-initial, "verified by enumerating every
     /// `or/and byte [reg+2],imm` site", with `0x5B8D` the sole runtime writer.
     /// That enumeration covered only the `80 /N` BYTE form. Repeating it across
