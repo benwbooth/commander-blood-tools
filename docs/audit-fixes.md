@@ -7364,3 +7364,31 @@ The lesson is about what a failing cross-check licenses. It says two things
 disagree — not which is wrong, and not that either is. Three separate pieces of
 evidence (contiguity, the length table, the `0x62F7` ladder) were needed before
 the disagreement could be attributed, and the answer was "to me".
+
+## #238 — a test withdrawn because there was nothing to test
+
+`parse_script_post_update` reports the encounter ladder's events with owner,
+related and target RECORD offsets — offsets into the DEB, a different file from
+the bytecode being walked. That makes a clean cross-FILE bound: a misread operand
+yields an offset the DEB cannot contain.
+
+The test failed on its coverage floor: `only 0 record references checked`. The
+diagnostic says why — across the five shipped scripts the exporter produces ONE
+row, for SCRIPT1, with every offset `None`.
+
+So the test was withdrawn. There is nothing to bound, and an assertion over zero
+references is theatre: it would pass forever, look like coverage in the count, and
+mean nothing. #219 declined to settle rows that documentation alone had touched;
+this is the same refusal applied to a test.
+
+WHAT IS RECORDED INSTEAD, on the function itself: the measurement, and the two
+readings it permits. Either the encounter ladder genuinely almost never fires in
+the shipped bytecode, or this export needs context it is not given — it takes an
+optional `DescriptDb` and the measurement passed `None`. Which is true is
+undecided, and the doc says so, because the useful thing here is that nobody
+should treat this exporter's output as evidence until someone decides.
+
+The coverage floor earned its keep for the fourth time (#223, #224, #236, now).
+Every one of those was a test that would have passed while proving nothing, and in
+this case the floor did not just save a vacuous test — it surfaced that a whole
+export path is producing nothing.

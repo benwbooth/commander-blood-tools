@@ -362,6 +362,16 @@ pub(super) fn parse_script_branch_trace(
     Ok(rows)
 }
 
+/// PRODUCES ALMOST NOTHING ON THE SHIPPED SCRIPTS, measured: one row for
+/// SCRIPT1 and none for the other four, with every record/related/owner offset
+/// `None` (audit-fixes #238). A bound test was written for it and withdrawn —
+/// there is nothing to bound.
+///
+/// That is a finding, not a defect claim. The encounter ladder may genuinely
+/// almost never fire in the shipped bytecode, or this export may need context it
+/// is not given (it takes an optional `DescriptDb` and the measurement passed
+/// `None`). Which of those is true is undecided and worth deciding before anyone
+/// treats this exporter's output as evidence of anything.
 pub(super) fn parse_script_post_update(
     iso_dir: &Path,
     descript_db: Option<&DescriptDb>,
