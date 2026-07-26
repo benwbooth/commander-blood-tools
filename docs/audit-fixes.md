@@ -8061,3 +8061,30 @@ than from the value:
 
 `0x2795` remains uncited: it appears in none of the five handlers, so whatever
 touches it is elsewhere and #234's caution still applies to it alone.
+
+## #261 — running the routine scan across everything verified so far
+
+#259 built `refs_in_routine.py` and #260 used it on one cluster. Applied to ALL 37
+entry points this campaign has verified — the ship-3D segment, the render and
+sound segments, the five nav-choice handlers, the resource loader, the candidate
+builder, the list widget, the mixer — it reports 144 distinct DS addresses touched
+by real instructions at real boundaries.
+
+38 previously uncited constants match one. Each now carries the instruction that
+touches it, generated FROM the tool's output rather than transcribed by hand,
+because hand-transcription is where eight of this campaign's citation errors came
+from (#233's `shr`/`sub` was the last). The guard verifies all of them: 445 -> 483
+checked, 0 wrong. Settled ASM.
+
+Among them is `0x2795`, which #260 recorded as appearing in none of the five
+handlers and therefore left uncited. That was right — it is touched by
+`ship_click_commit` at `0xB0B1` instead. The narrow claim held and the wider search
+found it, which is the outcome that makes narrow claims worth making.
+
+WHAT THIS METHOD IS AND IS NOT. It proves the game's code touches an address, at a
+named instruction, inside a routine whose entry was independently verified. It
+does NOT prove the port's constant is used the same way the game uses it — a
+citation says "this address is real and here is where it is read", not "the port's
+semantics match". Those 38 rows are ASM in the sense the ledger means (transcribed
+from cited assembly), and the semantic question is what the regression tests and
+differentials are for.

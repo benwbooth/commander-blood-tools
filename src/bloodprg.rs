@@ -101,6 +101,8 @@ pub const RENDER_SUBTITLE_REVEAL_OFFSET: u16 = 0x06a0;
 pub const RENDER_SMALL_TEXT_OFFSET: u16 = 0x075a;
 pub const RENDER_PLANAR_HORIZONTAL_LINE_OFFSET: u16 = 0x0a2b;
 pub const RENDER_PLANAR_VERTICAL_LINE_OFFSET: u16 = 0x0b23;
+/// Touched by the game at `mov ax, word ptr [0xbb5]` @`0x0B8FF`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 pub const RENDER_RECT_OUTLINE_OFFSET: u16 = 0x0bb5;
 pub const RENDER_DITHER_RECT_FILL_OFFSET: u16 = 0x0bf5;
 pub const RENDER_RECT_FILL_OFFSET: u16 = 0x0cdc;
@@ -207,6 +209,8 @@ pub const SHIP_3D_FALLBACK_TARGET_TABLE_DS_OFFSET: u16 = 0x2537;
 pub const SHIP_3D_NAVIGATION_TRIGGER_DS_OFFSET: u16 = 0x27d8;
 /// Cleared by every handler that finishes — `mov word ptr [0x2a19],0` @`0x87B0`, `0x883B` and `0x8956`.
 pub const SHIP_3D_NAV_CHOICE_SELECTED_DS_OFFSET: u16 = 0x2a19;
+/// Touched by the game at `mov word ptr [0x2795], 0xb3` @`0x0B0B1`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 pub const SHIP_3D_NAV_CHOICE_GATE_DS_OFFSET: u16 = 0x2795;
 pub const SHIP_3D_NAV_CHOICE_HOLD_TIMER_DS_OFFSET: u16 = 10139;
 /// The handler PHASE bit — `test byte [0x2565],1` @`0x86FB`, read by the dispatcher just before `call word cs:[bx+0xf29]` and by every handler in turn (`0x8713`, `0x8735`, `0x87BE`, `0x8848`).
@@ -226,12 +230,24 @@ pub const SHIP_3D_INTERPOLATION_TICK_DS_OFFSET: u16 = 0x0adb;
 pub const SHIP_3D_TARGET_EXTRA_LABEL_DS_OFFSET: u16 = 0x0174;
 /// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in).
 pub const SHIP_3D_TARGET_LAYOUT_CENTER_X_DS_OFFSET: u16 = 0x0ac6;
+/// Touched by the game at `mov si, word ptr [0xac8]` @`0x084D8`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 pub const SHIP_3D_TARGET_LAYOUT_DRAW_PTR_DS_OFFSET: u16 = 0x0ac8;
 pub const SHIP_3D_TARGET_LAYOUT_PRESERVE_WIDTHS_DS_OFFSET: u16 = 2780;
+/// Touched by the game at `mov byte ptr [0xadd], 1` @`0x0B0DC`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 pub const SHIP_3D_TARGET_LAYOUT_EXTRA_ENTRY_DS_OFFSET: u16 = 0x0add;
+/// Touched by the game at `push word ptr [0xa2a]` @`0x0B5A5`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 pub const SHIP_3D_TARGET_MOUSE_X_DS_OFFSET: u16 = 0x0a2a;
+/// Touched by the game at `push word ptr [0xa2c]` @`0x0B5A9`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 pub const SHIP_3D_TARGET_MOUSE_Y_DS_OFFSET: u16 = 0x0a2c;
+/// Touched by the game at `mov word ptr [0xa32], 1` @`0x0B0BC`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 pub const SHIP_3D_TARGET_REQUESTED_PRESENTATION_DS_OFFSET: u16 = 0x0a32;
+/// Touched by the game at `cmp word ptr [0xa34], 6` @`0x0850F`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 pub const SHIP_3D_TARGET_PRESENTATION_STATE_DS_OFFSET: u16 = 0x0a34;
 /// The mouse-is-on-it bit the row colour depends on — `test byte gs:[0xa3e],1` @`0x858D`.
 pub const SHIP_3D_TARGET_ACTIVATE_FLAG_DS_OFFSET: u16 = 0x0a3e;
@@ -239,6 +255,8 @@ pub const SHIP_3D_TARGET_ACTIVATE_FLAG_DS_OFFSET: u16 = 0x0a3e;
 pub const SHIP_3D_TARGET_HOVER_ROW_DS_OFFSET: u16 = 0x27c7;
 /// Set around the layout prepass call — `mov byte [0x27e6],1` @`0xB2E3`, cleared at `0xB2ED`.
 pub const SHIP_3D_TARGET_QUERY_MODE_DS_OFFSET: u16 = 0x27e6;
+/// Touched by the game at `mov byte ptr [0x27e7], 0` @`0x08430`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 pub const SHIP_3D_TARGET_SELECTION_DS_OFFSET: u16 = 0x27e7;
 /// The zoom/blit rect the selector hands the panel helper — `mov si,0x2aab` @`0xB305`.
 pub const SHIP_3D_TARGET_LAYOUT_RECT_DS_OFFSET: u16 = 0x2aab;

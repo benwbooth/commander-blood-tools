@@ -1593,42 +1593,84 @@ pub struct LocationPanelRow {
 }
 const C2_ACTIVE_LINE_KIND2: u16 = 0x27;
 const C2_ACTIVE_LINE_KIND400: u16 = 0x2B;
+/// Touched by the game at `mov word ptr [0x2793], 0` @`0x0AFC6`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const VM_UI_FLAGS: u16 = 0x2793;
+/// Touched by the game at `test byte ptr [0x1fb2], 1` @`0x0B001`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const C2_PRESENTATION_GATE: u16 = 0x1FB2;
+/// Touched by the game at `and byte ptr [0x67aa], 0xfc` @`0x0B54D`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const C2_PRESENTATION_FLAGS: u16 = 0x67AA;
 const C2_PRESENTATION_BUSY_FLAG: u8 = 0x02;
+/// Touched by the game at `mov word ptr [0x6788], ax` @`0x0B00F`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const VM_ACTIVE_LINE: u16 = 0x6788;
+/// Touched by the game at `mov byte ptr [0x252a], 0` @`0x0B29A`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const C9_PRESENTATION_GATE_A: u16 = 0x252A;
+/// Touched by the game at `mov byte ptr [0x2531], 6` @`0x0B336`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const C9_PRESENTATION_GATE_B: u16 = 0x2531;
 const C4_POST_UPDATE_SENTINEL: u16 = 0xFFFF;
 const VM_PENDING_RESOURCE_PROFILE: u16 = 0x6780;
 const VM_PRESENTATION_PRIMARY_C4_RECORD: u16 = 0x675E;
+/// Touched by the game at `test byte ptr [0x67ac], 1` @`0x0B498`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const VM_PRESENTATION_ACTIVE: u16 = 0x67AC;
 const VM_PRESENTATION_RELATED_FLAG20: u16 = 0x67AF;
+/// Touched by the game at `test byte ptr [0x67b0], 1` @`0x0B4DC`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const VM_PRESENTATION_DEFER_A: u16 = 0x67B0;
 const VM_PRESENTATION_LOOP_FLAG: u16 = 0x67B1;
 const VM_PRESENTATION_PAIR_WRITE_DISABLED: u16 = 0x67B6;
 const VM_PRESENTATION_START_LOCK: u16 = 0x67B7;
+/// Touched by the game at `mov byte ptr [0x67ba], al` @`0x0B552`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const VM_PRESENTATION_TEXT_WAIT: u16 = 0x67BA;
 const VM_PRESENTATION_HOLD_COMPLETE: u16 = 0x67BB;
+/// Touched by the game at `mov byte ptr [0x67bc], al` @`0x0B544`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const VM_PRESENTATION_HOLD_READY: u16 = 0x67BC;
 const VM_PRESENTATION_WORD_BUFFER: u16 = 0x67F8;
+/// Touched by the game at `mov word ptr [0xa32], 1` @`0x0B0BC`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const VM_PRESENTATION_STATUS_WORD: u16 = 0x0A32;
 const VM_PRESENTATION_ACTIVE_RECORD: u16 = 0x6762;
+/// Touched by the game at `mov word ptr [0x6768], 0xc4` @`0x0B3AE`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const VM_PRESENTATION_DEFERRED_RECORD_TYPE: u16 = 0x6768;
+/// Touched by the game at `mov word ptr [0x676a], ax` @`0x0B3B4`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const VM_PRESENTATION_DEFERRED_RECORD_RELATED: u16 = 0x676A;
 const VM_PRESENTATION_DEFERRED_RECORD_AUX: u16 = 0x676C;
 const VM_PRESENTATION_SIGNAL_SLOT: u16 = 0x679A; // was written in decimal (26522)
+/// Touched by the game at `mov byte ptr [0x5b55], 1` @`0x0B64A`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const VM_PRESENTATION_SCENE_DIRTY: u16 = 0x5B55;
+/// Touched by the game at `mov ax, word ptr [0x24f3]` @`0x0AFA2`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const VM_PRESENTATION_INPUT_GATE_A: u16 = 0x24F3;
+/// Touched by the game at `mov byte ptr [0x2751], 1` @`0x08836`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const VM_PRESENTATION_INPUT_GATE_B: u16 = 0x2751;
+/// Touched by the game at `test byte ptr [0x5e64], 1` @`0x0B1DD`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const VM_PRESENTATION_INPUT_GATE_C: u16 = 0x5E64;
+/// Touched by the game at `test byte ptr [0x2565], 1` @`0x08713`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const VM_PRESENTATION_INPUT_GATE_D: u16 = 0x2565;
+/// Touched by the game at `mov byte ptr [0x2736], 1` @`0x0892C`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const VM_PRESENTATION_INPUT_GATE_E: u16 = 0x2736;
+/// Touched by the game at `mov byte ptr [0x2737], 1` @`0x0893C`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const VM_PRESENTATION_INPUT_GATE_F: u16 = 0x2737;
 const VM_PRESENTATION_HANDOFF_GATE: u16 = 0x27D7;
 const VM_PRESENTATION_INPUT_GATE_G: u16 = 0x27DA;
 const VM_PRESENTATION_INPUT_GATE_H: u16 = 0x2792;
+/// Touched by the game at `mov word ptr [0x2a19], 0` @`0x087B0`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const VM_PRESENTATION_INPUT_GATE_I: u16 = 0x2A19;
 const VM_PRESENTATION_DESCRIPTOR_PENDING: u16 = 0x27E8;
 const VM_BRANCH_A: u16 = 0x6782;

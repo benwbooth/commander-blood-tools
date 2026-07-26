@@ -104,8 +104,14 @@ pub const SHIP_3D_PROCEDURAL_TARGET_LIST_STEP: u16 = 40;
 pub const SHIP_3D_PROCEDURAL_AUTO_ROTATE_STEP: u16 = 30;
 pub const SHIP_3D_PROCEDURAL_ROTATION_OFFSET_BIAS: u16 = 0x00a0;
 pub const SHIP_3D_MATRIX_ANGLE_TABLE_OFFSET: u16 = 0x4f45;
+/// Touched by the game at `mov di, word ptr [0x2f71]` @`0x098D1`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 pub const SHIP_3D_MATRIX_ANGLE_A_OFFSET: u16 = 0x2f71;
+/// Touched by the game at `mov di, word ptr [0x2f6d]` @`0x098EF`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 pub const SHIP_3D_MATRIX_PROJECTION_ANGLE_OFFSET: u16 = 0x2f6d;
+/// Touched by the game at `mov di, word ptr [0x2f6f]` @`0x0990C`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 pub const SHIP_3D_MATRIX_ANGLE_C_OFFSET: u16 = 0x2f6f;
 pub const SHIP_3D_MATRIX_TEMP_OFFSET: u16 = 0x2f7d;
 pub const SHIP_3D_PROJECTION_MATRIX_OFFSET: u16 = 0x2f95;
@@ -119,9 +125,17 @@ pub const SHIP_3D_PROJECTION_WORK_VECTOR_OFFSET: u16 = 0x4f01;
 pub const SHIP_3D_PROJECTED_X_OFFSET: u16 = 0x2fb9;
 pub const SHIP_3D_PROJECTED_Y_OFFSET: u16 = 0x2fbb;
 pub const SHIP_3D_PROJECTED_DEPTH_OFFSET: u16 = 0x2fbd;
+/// Touched by the game at `sub ax, word ptr [0x5235]` @`0x033B4`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 pub const SHIP_3D_PROJECTION_VIEWPORT_LEFT_OFFSET: u16 = 0x5235;
+/// Touched by the game at `sub ax, word ptr [0x5237]` @`0x033C8`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 pub const SHIP_3D_PROJECTION_VIEWPORT_RIGHT_OFFSET: u16 = 0x5237;
+/// Touched by the game at `mov word ptr [0x5239], 0x23` @`0x0B19B`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 pub const SHIP_3D_PROJECTION_VIEWPORT_TOP_OFFSET: u16 = 0x5239;
+/// Touched by the game at `mov word ptr [0x523b], 0xa5` @`0x0B1A1`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 pub const SHIP_3D_PROJECTION_VIEWPORT_BOTTOM_OFFSET: u16 = 0x523b;
 pub const SHIP_3D_PROJECTION_SCREEN_CENTER_X: u16 = 160;
 pub const SHIP_3D_PROJECTION_SCREEN_CENTER_Y: u16 = 100;
@@ -158,6 +172,8 @@ pub const SHIP_3D_OBJECT_PROJECTED_SCALE_OFFSET: u16 = 0x2fbf;
 /// eleventh read lands in the trig table at `DS:0x4F45` and is gated off by the
 /// entity active bit, so it is not represented here.
 pub const NAV_DESTINATION_POINTS: [[i16; 3]; 10] = [[10200, 12100, 900]; 10];
+/// Touched by the game at `mov word ptr [0x5249], 1` @`0x0AFAB`, found by decoding forward
+/// from a verified routine entry (`re/tools/refs_in_routine.py`).
 pub const SHIP_3D_GLOBAL_CLIP_SNAPSHOT_FLAG_OFFSET: u16 = 0x5249;
 pub const SHIP_3D_DIRTY_RECT_LIST_OFFSET: u16 = 0x6612;
 pub const SHIP_3D_DIRTY_RECT_SENTINEL: u16 = 0xffff;
