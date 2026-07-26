@@ -11,10 +11,22 @@
 //!
 //! So `accuracy/manu3/manu3_ds.bin` and `manu3_seg2_1b76.bin` are RUNTIME STATE
 //! lifted from a savestate, not shipped data the port parses. Under the prime rule
-//! that is a standing defect, not a decode: the port should build this state the way
-//! the game does. The open task is finding what fills the data segment — the overlay
-//! initialises it from something, and 26% byte agreement with the shipped file says
-//! part of it IS the file's initial content.
+//! that is a standing defect, not a decode.
+//!
+//! WHAT FILLS THE SEGMENT — answered in #430. The dump is the SHIPPED OVERLAY
+//! loaded at a fixed shift: `ds[i] == manu3.xdb[i + 0x1370]` for **52698 of 57568
+//! bytes (91%)**. The naive same-offset comparison above reports 26% only because
+//! it ignores the shift. Per region:
+//!
+//!   * seg2 vertex/face pool `0x1B76..0x2274` — 1769/1790 (98.8%) IS the file;
+//!   * node tree `0x2274..0x2974` — 1301/1792 (72.6%), the rest being live pose
+//!     state, which is exactly the block the tweens write;
+//!   * `fs:0x2300` pool — 226/256 (88%).
+//!
+//! So the MESH is shipped data the port could read straight from `manu3.xdb`
+//! instead of from a capture, and only the animated node state is genuinely
+//! runtime. That is the fix this module needs, and it is now a mechanical change
+//! rather than an open question.
 //!
 //! Everything BELOW is decoded from manu3.xdb's own code (re/labels.csv XDB:* entries):
 //! - MESH: 142 vertices / 216 triangle faces, lifted from the live seg2 vertex pool +

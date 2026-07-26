@@ -14110,3 +14110,38 @@ of it.
 
 2229 items, 1114 confirmed (50.0%), 1115 open. 752 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #430 — the savestate is the shipped file, shifted by 0x1370
+
+#429 ended with an open task: something fills the manu3 data segment, and 26% of
+it matches the shipped overlay. Worked it, and the 26% was an artefact of my own
+measurement — I had compared the two files AT THE SAME OFFSET.
+
+Scanning 64-byte chunks of the dump for their position in `manu3.xdb` gives a
+dominant delta of **4976 (0x1370)**, 422 of 425 hits. Re-measuring with the shift:
+
+    ds[i] == xdb[i + 0x1370]   52698 / 57568 bytes = 91%
+
+    seg2 vertex/face pool  0x1B76..0x2274   1769/1790  (98.8%)
+    node tree              0x2274..0x2974   1301/1792  (72.6%)
+    fs:0x2300 pool         0x2300..0x2400    226/256   (88%)
+
+So the data segment IS the shipped overlay, loaded with its first 4976 bytes (the
+code) skipped. The MESH is shipped data, not a capture — the port could read it
+from `manu3.xdb` directly. Only the node tree diverges materially, and it is the
+one block the pose tweens write, so its 27% divergence is the live animation
+state and nothing more.
+
+That converts #429's standing defect from "we ship a photograph of memory and do
+not know why" into a mechanical change: read the mesh from the file at `+0x1370`;
+keep only the node tree as initial state, and even that is 73% file content.
+
+THE LESSON IS ABOUT THE MEASUREMENT, not the overlay. #429 reported "26% byte
+agreement" and drew a correct conclusion from it (the blobs are not verbatim in
+the file) but an incorrect implication (therefore they are runtime state). A
+same-offset comparison of a loaded segment against its file cannot show a load
+shift — the number was real and the inference was wrong, and one more scan
+settled it.
+
+2229 items, 1114 confirmed (50.0%), 1115 open. 752 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
