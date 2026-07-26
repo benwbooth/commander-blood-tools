@@ -14182,3 +14182,41 @@ measured to a word ("mesh") covering a range it had not.
 
 2229 items, 1114 confirmed (50.0%), 1115 open. 752 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #432 — two entries in a row measured the wrong blob
+
+This module includes TWO captures. `DS` is the data segment; `SEG2` is a second
+segment and is where the MESH lives — the vertex pool and face list the renderer
+reads. #430 and #431 both measured `DS` while writing conclusions about the mesh.
+They are not the same bytes: `seg2[i] == ds[0x1B76 + i]` agrees only 30%, despite
+the capture's filename (`manu3_seg2_1b76.bin`) inviting exactly that assumption.
+
+Measured properly. Each blob is the shipped overlay at its OWN fixed shift:
+
+    DS    ds[i]   == xdb[i + 0x1370]    52698/57568  (91%)
+    SEG2  seg2[i] == xdb[i + 0x50A0]    38141/41904  (91%)   266/266 chunks agree
+                                                              on the delta
+
+and within `SEG2`, where the mesh actually is:
+
+    vertex pool  0x0000..0x0B18  (110 x 20B)   2228/2840  (78%)
+    face list    0x0B18..0x11D8  (216 x 8B)    1362/1728  (78%)
+
+So the corrected picture is simpler than either of the last two entries: BOTH
+captures are overwhelmingly the shipped file loaded at a fixed offset, and NEITHER
+mesh region is verbatim. #430's "the mesh is shipped data" was wrong. #431's
+correction of it was ALSO wrong — its face-list analysis (link-position spread,
+the permutation test) ran on `DS:0x0B18`, which is not the face list at all.
+
+What survives: the SHIFTS are real and cleanly measured, `DS`'s vertex-pool region
+really is byte-identical to the file, and `DS:0x2258/0x2264/0x2270` really are the
+integrator's three dwords. What does not: any claim that the port's mesh has a
+shipped-file provenance. It is 78% the file and the rest is unexplained.
+
+THE MISTAKE WAS THE SAME BOTH TIMES and it is worth naming precisely: I measured a
+blob I had, and wrote about a blob I meant. The filename encouraged it, but the
+check that would have caught it — "is this the array the renderer actually reads?"
+— costs one grep and I did not do it until the third pass.
+
+2229 items, 1114 confirmed (50.0%), 1115 open. 752 citations verified, 0 wrong.
+723 workspace tests, 0 failures.

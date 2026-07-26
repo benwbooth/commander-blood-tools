@@ -18,21 +18,26 @@
 //! bytes (91%)**. The naive same-offset comparison above reports 26% only because
 //! it ignores the shift. Per region:
 //!
-//!   * VERTEX POOL `0x1B76..0x223A` — **1732/1732, exactly the file**;
-//!   * the 58 bytes after it (`0x223A..0x2274`) — 63%, and they are the ROW
-//!     SCRATCH: `0x2258`/`0x2264`/`0x2270` are the three dwords the position
-//!     integrator reads at `0x03E7`/`0x03F6`/`0x0409`, rewritten every frame;
-//!   * node tree `0x2274..0x2974` — 1301/1792 (72.6%), live pose state, the block
-//!     the tweens write;
-//!   * FACE LIST `0x0B18` (216 x 8B) — 1527/1728 (88%), and NOT explained.
+//! THE TWO BLOBS ARE DIFFERENT SEGMENTS AT DIFFERENT SHIFTS (#432 — #430 and #431
+//! both measured `DS` while believing they were measuring the mesh, which lives in
+//! `SEG2`; `SEG2` is NOT an offset into `DS`, agreeing with it only 30%):
 //!
-//! So the VERTEX POOL is shipped data the port can read straight from `manu3.xdb`.
-//! THE FACE LIST IS NOT, and #431 corrected #430 for saying "the mesh" when it had
-//! measured only the vertices: the face list is neither a verbatim copy (not found
-//! anywhere in the file) nor a reordering (as multisets the two differ; 170/216
-//! records match in place, 189 appear anywhere, 171 vertex triples match in place).
-//! Roughly 27 records differ in CONTENT and nothing yet explains why. Until that is
-//! decoded, only the vertex half of this blob has a shipped-file provenance.
+//!   DS   `ds[i]   == xdb[i + 0x1370]`   52698/57568  (91%)
+//!   SEG2 `seg2[i] == xdb[i + 0x50A0]`   38141/41904  (91%)   266/266 chunks
+//!
+//! Within `SEG2`, where the mesh actually is:
+//!
+//!   * vertex pool `0x0000..0x0B18` (110 x 20B) — 2228/2840 (78%);
+//!   * face list `0x0B18..0x11D8` (216 x 8B)   — 1362/1728 (78%).
+//!
+//! So BOTH captures are overwhelmingly the shipped overlay loaded at a fixed shift,
+//! and NEITHER mesh region is verbatim. The remaining ~22% is runtime state that is
+//! still undecoded. The port can stop shipping these captures only once that part is
+//! understood; the shift is the decoded half, the divergence is not.
+//!
+//! (`DS`'s own node tree `0x2274..0x2974` is 72.6%, and the 58 bytes at
+//! `0x223A..0x2274` are the ROW SCRATCH — `0x2258`/`0x2264`/`0x2270` are the three
+//! dwords the position integrator reads at `0x03E7`/`0x03F6`/`0x0409`.)
 //!
 //! Everything BELOW is decoded from manu3.xdb's own code (re/labels.csv XDB:* entries):
 //! - MESH: 142 vertices / 216 triangle faces, lifted from the live seg2 vertex pool +
