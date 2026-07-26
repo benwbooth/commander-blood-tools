@@ -14075,3 +14075,38 @@ the classification got more accurate, not because more of the game is understood
 
 2229 items, 1114 confirmed (50.0%), 1115 open. 752 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #429 — the hand's laws are decoded; its data is a savestate
+
+`manu3_hand.rs` opens "Everything here is decoded from manu3.xdb's own code". The
+LAWS are — #425 verified the composition and the integrator instruction by
+instruction. The DATA is not, and nothing said so.
+
+Measured it. Neither blob the module `include_bytes!`s appears in the shipped
+overlay:
+
+    node-tree state ds[0x2274..0x2974]   searched verbatim in manu3.xdb -> not found
+    seg2 vertex/face pool                not found; not even its first 32 bytes
+    dump vs shipped overlay              16192 of 62544 bytes agree (26%)
+
+So `accuracy/manu3/manu3_ds.bin` and `manu3_seg2_1b76.bin` are RUNTIME STATE
+lifted from a savestate. The port does not parse shipped data for the hand's mesh
+or skeleton; it ships a capture of the game's memory.
+
+That is the prime rule's defect, and it was hiding behind precise language about
+everything ELSE. `STATE_BASE`'s own doc is scrupulous — it says outright that no
+instruction names `0x2274` and that it was searched for as an immediate AND a
+displacement — but the module header above it still claimed the whole file was
+decoded, and `docs/port-validation.md` graded the row **ASM+DATA (live, exact)**.
+"DATA" in that matrix means shipped-file provenance. These blobs have none.
+
+Corrected both: the header now states the split and names the open task, and the
+matrix row reads **ASM (laws) + APPROX (data)** with the measurement in it.
+
+The open task is real and stated: something fills that data segment, and 26%
+agreement with the shipped file says part of it IS the file's initial content. Find
+the initialiser and the port can build the state instead of shipping a photograph
+of it.
+
+2229 items, 1114 confirmed (50.0%), 1115 open. 752 citations verified, 0 wrong.
+723 workspace tests, 0 failures.

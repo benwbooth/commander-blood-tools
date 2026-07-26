@@ -1,7 +1,22 @@
 //! The pointing-hand cursor rendered from the REAL manu3.xdb 3D model — the faithful
 //! replacement for the capture-sprite stopgap.
 //!
-//! Everything here is decoded from manu3.xdb's own code (re/labels.csv XDB:* entries):
+//! THE LAWS ARE DECODED; THE DATA IS CAPTURED, and that split was not stated here
+//! until audit-fixes #429 measured it. Neither blob this module includes appears in
+//! the shipped `manu3.xdb`:
+//!
+//!   * the node-tree state block `ds[0x2274..0x2974]` — searched verbatim, not found;
+//!     the dump agrees with the overlay on only 16192 of 62544 bytes;
+//!   * the seg2 vertex/face pool — not found either, not even its first 32 bytes.
+//!
+//! So `accuracy/manu3/manu3_ds.bin` and `manu3_seg2_1b76.bin` are RUNTIME STATE
+//! lifted from a savestate, not shipped data the port parses. Under the prime rule
+//! that is a standing defect, not a decode: the port should build this state the way
+//! the game does. The open task is finding what fills the data segment — the overlay
+//! initialises it from something, and 26% byte agreement with the shipped file says
+//! part of it IS the file's initial content.
+//!
+//! Everything BELOW is decoded from manu3.xdb's own code (re/labels.csv XDB:* entries):
 //! - MESH: 142 vertices / 216 triangle faces, lifted from the live seg2 vertex pool +
 //!   face list at [fs:0x2300] (accuracy/manu3/hand_mesh.bin, extraction documented).
 //! - CURSOR LAW (entry @0x0000): the hand aims by ANGLE DISPLACEMENT from screen
