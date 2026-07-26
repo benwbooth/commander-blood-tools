@@ -11914,3 +11914,38 @@ register. That belongs in its docstring, and the `0x2793` doc now carries the
 corrected reading with the register routine cited.
 
 667 citations verified (from 662), 0 wrong. 612 lib tests, 0 failures.
+
+## #365 — the quadrant gates the nav actors: what the high nibble is FOR
+
+#364 decoded `gs:0x2793`'s high nibble as a one-hot bridge quadrant and left the
+obvious question unanswered — what reads it. All eight readers, placed:
+
+    0x7F9C  nav_actor_handler_0          test 0x10
+    0x7EC0  nav_actor_handler_1          test 0x10
+    0x813B  nav_actor_handler_2          test 0x90
+    0x817E  nav_actor_handler_3          test 0x40
+    0x81FB  nav_actor_handler_4          test 0x20
+    0x8082  nav_actor_handler_5          test 0x10
+    0x78D4  presentation_mode_dispatch   test 0x50, then 0x40
+
+SIX OF THE EIGHT ARE A HANDLER'S FIRST INSTRUCTION. Each bridge nav actor is
+gated on WHICH WAY THE PLAYER IS LOOKING: handler 3 acts only in quadrant 3,
+handler 4 only in quadrant 2, handler 2 in either of quadrants 1 and 4, and three
+handlers share quadrant 1. That is a real behavioural mechanism, and it explains
+the mask shapes the census found — `0x50` and `0x90` are two-sector ranges, which
+is a sensible thing to gate on and a strange thing for independent flags to be.
+
+THE PORT HAS NO QUADRANT. It models the panorama frame and gates the bridge menu
+on a frame RANGE (40..60), which sits inside quadrant 2 but is narrower and
+separately decoded — so no divergence today, because the nav actor handlers are
+not wired. Recorded as an APPROX row precisely so they are not wired without it:
+a handler ported without its direction gate runs everywhere, which would look
+like an actor that never stops rather than an obvious bug.
+
+THE CHAIN THIS CLOSES: #331 modelled the flag word as state; #358 censused it;
+#364 found the high nibble is computed, not flags; this says what computes it FOR.
+Four entries to turn "a multi-bit word the port conflates" into "a view-direction
+gate on six named handlers" — and the last two only became possible after #359
+built an instrument whose limits I could state.
+
+667 citations verified, 0 wrong. 612 lib tests, 0 failures.

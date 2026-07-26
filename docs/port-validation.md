@@ -1560,3 +1560,35 @@ Also visible here: `0x2A19` (`INPUT_GATE_I`) is cleared in this block, matching
 #332's conclusion that it belongs to the family but is not read by the gate.
 
 REMAINING: nine rows. `0x2792` needs its writer found or declaring dead (#360).
+
+## APPROX — the bridge VIEW QUADRANT gates the nav actors; the port has no quadrant
+
+ROUTINE THAT MUST REPLACE IT: `bridge_view_sector_update` (`0x9512`), plus the
+eight readers below.
+
+`gs:0x2793`'s high nibble is a ONE-HOT QUADRANT recomputed from the panorama
+frame `[0x2795]` — boundaries 22/67/112/157 over 180 frames at 2°, i.e. four 90°
+sectors (audit-fixes #364). Bit 1 locks the recompute.
+
+EVERY NAV ACTOR IS GATED ON IT, at its first instruction:
+
+    0x7F9C  nav_actor_handler_0          test 0x10   quadrant 1
+    0x7EC0  nav_actor_handler_1          test 0x10   quadrant 1
+    0x813B  nav_actor_handler_2          test 0x90   quadrants 1|4
+    0x817E  nav_actor_handler_3          test 0x40   quadrant 3
+    0x81FB  nav_actor_handler_4          test 0x20   quadrant 2
+    0x8082  nav_actor_handler_5          test 0x10   quadrant 1
+    0x78D4  presentation_mode_dispatch   test 0x50, then test 0x40 @0x78DB
+
+So a bridge actor only runs while the player is LOOKING AT ITS SECTOR. The port
+models the panorama frame (`BridgeView::frame`, `DS:0x2795`) and gates the menu
+on a frame RANGE (40..60, inside quadrant 2) — but it has no quadrant value and
+no per-actor direction gate.
+
+CONSEQUENCE: nav actors that the game runs only when faced would, in a port that
+wired them, run regardless of view direction. Nothing depends on it today because
+the handlers are not wired; this row exists so they are not wired WITHOUT it.
+
+Related: #361's wiring table shows `nav_actor_handler_0` and `_2` are themselves
+raisers of gate flags `0x27DA` and `0x24F3`, so the quadrant gate sits upstream
+of the main-loop busy gate.

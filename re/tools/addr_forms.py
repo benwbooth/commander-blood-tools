@@ -32,6 +32,22 @@ x86-16 direct-address forms (`mod=00, r/m=110`, so modrm = `(reg << 3) | 6`):
 Each also appears with a `65` (GS) segment prefix, and callers usually want the
 prefixed site reported as the SAME site rather than a second one.
 
+WHAT THIS CANNOT SEE, and it is a precise limit rather than a general one
+(audit-fixes #364). These patterns find every instruction that NAMES the address.
+They say nothing about what happens to the value afterwards:
+
+    mov ax, [0x2793]      <- found
+    and ax, 0xff0f        <- invisible: operates on a REGISTER
+    test ax, 2            <- invisible
+    or  ax, bx
+    mov [0x2793], ax      <- found
+
+A census over `0x2793` therefore reported "bit 1 is never referenced alone" and
+"bits 4..7 are never OR-set", and BOTH were wrong — the reader and the writer of
+those bits work through `ax`. Setter LOCATIONS are reliable (a store names its
+address); conclusions about a bit's MEANING are not, unless you follow the
+register.
+
 Usage as a library:
 
     from encodings import address_forms
