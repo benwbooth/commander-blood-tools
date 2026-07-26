@@ -264,7 +264,7 @@ sprite_blitter_note	src/bloodprg.rs	1495	fn		UNVERIFIED
 KNOWN_SYMBOLS	src/bloodprg.rs	1523	const		TESTED	
 PRESENTATION_3D_MARKERS	src/bloodprg.rs	2588	const		TESTED	
 BloodSave	src/bloodsav.rs	48	struct	0x6780,0xFFFF,0x6ADE,0x6CDE,0x6724,0xABC	CELL?	/// The fixed-layout portion of a `blood.sav` file, plus the trailing runtime /// region (object block + work buffer, whose split depends on the loaded /// profile's live object-table size). /// Curre
-SaveSlot	src/bloodsav.rs	73	struct	0x2734,0x1BAB,0x25ED,0x273B,0x1BBD,0x8573	ASM?	/// One row of the SLOT-NAME DIRECTORY (`blood.sav`): a 32-byte record holding a /// 15-character name padded with spaces, a NUL, then the slot's filename /// (`game<N>.sav`) padded with NULs. Ten of 
+SaveSlot	src/bloodsav.rs	73	struct	0x2734,0x1BAB,0x25ED,0x273B,0x1BBD,0x8573	ASM	/// One row of the SLOT-NAME DIRECTORY (`blood.sav`): a 32-byte record holding a /// 15-character name padded with spaces, a NUL, then the slot's filename /// (`game<N>.sav`) padded with NULs. Ten of 
 SLOT_RECORD_LEN	src/bloodsav.rs	81	const		UNVERIFIED	/// Bytes per directory record, and the record count.
 SLOT_NAME_LEN	src/bloodsav.rs	82	const		UNVERIFIED	
 SLOT_COUNT	src/bloodsav.rs	83	const		UNVERIFIED	
@@ -339,7 +339,7 @@ AlienCamera	src/croolis.rs	137	struct	0x1FC5,0x22ea,0x1FD5,0x22ee,0x1FE5,0x22f2,
 axis	src/croolis.rs	148	fn		UNVERIFIED	/// An axis's INTEGER part — the high word the overlay `movsx`es.
 x	src/croolis.rs	158	fn	0x22EC	CELL?	/// `[0x22EC]`, X's high word.
 y	src/croolis.rs	163	fn	0x22F0	ASM	/// `[0x22F0]`, Y's high word.
-z	src/croolis.rs	170	fn	0x22F4,0x22f4,0xA81	ASM?	/// `[0x22F4]`, Z's high word — used by the proximity gate's THIRD axis test /// (`add ax, word ptr [0x22f4]` @`0xA81`), which audit-fixes #355 found the /// port was not performing.
+z	src/croolis.rs	170	fn	0x22F4,0x22f4,0xA81	ASM	/// `[0x22F4]`, Z's high word — used by the proximity gate's THIRD axis test /// (`add ax, word ptr [0x22f4]` @`0xA81`), which audit-fixes #355 found the /// port was not performing.
 new	src/croolis.rs	178	fn		TESTED	/// Create an object with the decoded initial state (timer reloaded to /// [`ALIEN_STATE_TIMER_RELOAD`]), seeded PRNG, running the animation state machine by default.
 proximity_visible	src/croolis.rs	221	fn	0xA30,0xA62,0x22f0,0xA70,0x22ec,0x22EC,0xBFA,0x1FC5,0x22ea,0	ASM	/// Port of method `0xA30` (per-object proximity/visibility gate): only runs when the object's /// state flag is set; it advances the animation counter and returns whether the object sits /// within t
 reset	src/croolis.rs	251	fn	0x36A,0x8000	CELL?	/// Port of the object initializer (`0x36A`): reset the behaviour state — zero the /// state flag + animation accumulator, reload the timer, and set the transform /// components to the neutral `0x8000

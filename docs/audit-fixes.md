@@ -12148,3 +12148,31 @@ constant and the advice. Restored; the tree is clean at 8 length assertions and 
 tautologies.
 
 613 lib tests, 0 failures. 689 citations verified, 0 wrong.
+
+## #372 — the save UI is the slot list, and the doc proves it in three instructions
+
+`SaveSlot` carries an unusually strong claim: THERE IS NO SEPARATE SAVE SCREEN.
+The save flow reuses the ordinary ten-row list widget, with one row swapped for
+an edit buffer while it is being typed into. Three citations, all exact:
+
+    0x1BAB  mov word ptr [0x2734], ax   the record being renamed
+    0x1BBD  rep movsd (cx=4)            16 name bytes -> edit buffer DS:0x273B
+    0x8573  cmp si, word ptr [0x2734]   the widget, mid-draw...
+    0x8577  jne 0x857c
+    0x8579  mov si, 0x273b              ...substitutes the buffer for THAT row
+
+The substitution is the whole argument: a widget that swaps one row's source
+pointer while drawing cannot be a different screen, it is the same list. That is
+the kind of claim worth checking precisely because it is a NEGATIVE — "there is
+no save screen" — and negatives are usually asserted from absence. This one is
+asserted from a `cmp`/`jne`/`mov` triple that could not exist if the claim were
+false.
+
+Also settled: `croolis::z`, the accessor added in #355, cited to
+`add ax, word ptr [0x22f4]` @`0xA81`.
+
+Ledger: 2229 items, 1076 confirmed (48.3%). `ASM?` down to 38 from 200 at
+#317's reclassification — though the honest comparison is 38 from the 76 that
+were genuine decode claims once `CELL?` was split out.
+
+613 lib tests, 0 failures. 689 citations verified, 0 wrong.
