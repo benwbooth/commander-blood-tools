@@ -14220,3 +14220,33 @@ check that would have caught it — "is this the array the renderer actually rea
 
 2229 items, 1114 confirmed (50.0%), 1115 open. 752 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #433 — a cursor cell cited one digit off
+
+`move_mouse_rel`'s doc explains why the runtime feeds RELATIVE motion: the bridge
+warps the hardware cursor every frame, so an absolute injection fights the warp.
+All three cited routines check out —
+
+    0x9722  mov ax, 4 / int 0x33          INT 33h fn 4, set-position: the re-centre
+    0x97FD  mov bx, word ptr [0xa2a]      the cursor cell...
+    0x9801  sub bx, word ptr [0x27a7]     ...rebased against 0x27A7
+    0x0D0E  poll_mouse                    the per-frame poll
+
+— except that the doc named the cell `gs:0x2A2A`. The instruction reads `0x0A2A`:
+the encoding is `8b 1e 2a 0a`, and `0x0A2A` is the mouse-X cell the eye-orb hit
+test reads (`mov ax, word ptr [0xa2a]` @`0x8271`, verified in #388). `0x2A2A` is a
+different address that happens to be one hex digit away.
+
+That is the sort of error a citation guard cannot catch: `check_cited_instructions`
+verifies an address only when a mnemonic is quoted beside it, and this one was
+prose. It survived because `0x2A2A` LOOKS like a plausible DS cell and sits in the
+same neighbourhood as the bridge's `0x2A19`/`0x2A1B` — the console selection and
+the station table, both real addresses this session has worked with. A wrong digit
+that lands in a familiar range reads as correct.
+
+Fixed, with the encoding quoted so the next reader can check it without
+disassembling, and cross-referenced to #388 where the same cell was decoded from
+the other side. Now under the guard: 752 -> 756 checked.
+
+2229 items, 1115 confirmed (50.0%), 1114 open. 756 citations verified, 0 wrong.
+723 workspace tests, 0 failures.

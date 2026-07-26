@@ -816,8 +816,15 @@ impl Runtime {
     /// reaches the game.
     ///
     /// Why this exists: the bridge accumulates cursor motion in RING space by
-    /// warping the hardware cursor every frame (`0x9722` re-centres it, and
-    /// `0x97FC` rebases `gs:0x2A2A` against `gs:0x27A7`). An ABSOLUTE
+    /// warping the hardware cursor every frame (`mov ax, 4` / `int 0x33` @`0x9722`
+    /// is INT 33h fn 4, set-position, and `0x97FC` rebases the cursor cell against
+    /// `gs:0x27A7`: `mov bx, word ptr [0xa2a]` @`0x97FD` then
+    /// `sub bx, word ptr [0x27a7]` @`0x9801`).
+    ///
+    /// THE CELL IS `0x0A2A`, NOT `0x2A2A` — this doc said the latter, which is a
+    /// different address entirely. `0x0A2A` is the mouse-X cell the orb hit test
+    /// reads (audit-fixes #388, `mov ax, word ptr [0xa2a]` @`0x8271`), and the
+    /// `8b 1e 2a 0a` encoding here settles it. An ABSOLUTE
     /// [`Self::set_mouse_pos`] therefore fights the warp: measurements show an
     /// injected position lands only after the game's per-frame poll (`0xD0E`),
     /// still reads as the RAW ring value for a tick, and has decayed back to

@@ -769,40 +769,40 @@ output	src/manu3.rs	175	fn		TESTED	/// The output value written to the target th
 step	src/manu3.rs	183	fn		UNVERIFIED	/// Advance one frame exactly as `0x19B` does per entry: the caller first takes /// [`output`](Self::output) and writes it to the target, then this decrements the /// counter — returning `false` (remo
 MenuTweenList	src/manu3.rs	197	struct		UNVERIFIED	/// The menu's active-animation list (`0x19B`): processes every tween each frame, /// writing each output to its target via a caller-supplied sink, and swap-removes the /// tweens that have expired (m
 step	src/manu3.rs	207	fn		TESTED	/// Process all tweens for one frame: for each, emit `(target_id, output_value)` via /// `sink`, then advance it; expired tweens are removed. Returns the number still /// active. // swap-remove the fi
-DS	src/manu3_hand.rs	41	const	0x2274,0x2394,0x23E2,0x23E4	ASM?	/// The live manu3 data segment (64KB dump): the skeleton NODE TREE lives at /// 0x2274 (root) + 16 records at 0x2394 + i*0x5E. Record layout (decoded 0x270/0x3DE): ///   +0x00 parent record ptr   +0x
-SEG2	src/manu3_hand.rs	44	const	0xB18	CELL?	/// The seg2 pool: 110 x 20B vertices {+0/+2 UV, +4..+8 model xyz} + 32 alias records /// (+4 = source byte offset), then the 216 x 8B face list at 0xB18 {link, v0, v1, v2}.
-STATE_BASE	src/manu3_hand.rs	56	const	0x2274,0x2974	CELL?	/// The node-tree state block `ds[0x2274..0x2974]`: root + 16 records, mutable at /// runtime (pose tweens write cells into it exactly as the game does). /// /// PROVENANCE, stated exactly: no manu3.x
-STATE_LEN	src/manu3_hand.rs	57	const		UNVERIFIED	
-WRIST	src/manu3_hand.rs	58	const		UNVERIFIED	
-TEX	src/manu3_hand.rs	66	const	0x120B,0x6400	ORACLE?	/// The hand's 256-wide texture (palette-index rows) lifted from the live data segment. // THE REAL TEXTURE SEGMENT: the fill's fs parameter block (captured live at the // span setup 0x120B: fs=17A3, 
-TEX_W	src/manu3_hand.rs	67	const		UNVERIFIED	/// The game's own sin/cos tables (ds:0x26, 1024 entries x {cos:i16, sin:i16}, Q14).
-TRIG	src/manu3_hand.rs	76	const		TESTED	/// The game's own sin/cos tables (ds:0x26, 1024 entries x {cos:i16, sin:i16}, Q14). /// /// PROVENANCE: not a memory snapshot despite living under `accuracy/`. All 4100 /// bytes are `manu3.xdb` at o
-TRIG_XDB_OFFSET	src/manu3_hand.rs	78	const		TESTED	/// Where [`TRIG`] lives inside `manu3.xdb`. /// The hand's texture bytes + row width (for GPU upload).
-hand_texture	src/manu3_hand.rs	81	fn		UNVERIFIED	/// The hand's texture bytes + row width (for GPU upload).
-rd_parent	src/manu3_hand.rs	86	fn		UNVERIFIED	
-tcos	src/manu3_hand.rs	91	fn		UNVERIFIED	
-tsin	src/manu3_hand.rs	96	fn		UNVERIFIED	
-build_matrix	src/manu3_hand.rs	105	fn		UNVERIFIED	/// EXACT transcription of the manu3 matrix build (xdb 0x270..0x3DE): three Euler /// angles as raw byte-offsets (4/step) -> the 9 Q15-ish cells, composed via the /// angle-sum identity reads the orig
-HandMesh	src/manu3_hand.rs	128	struct	0xFFFF,0x2274,0x2974	CELL?	/// Current pose selector + its running player (selector -> sequence index, /// per the 0x181 dispatch; decoded contexts: 1=rest, 2=steer-right, 3=steer-left, /// 0xB=UI-close, 0xFFFF=hidden). /// The
-load	src/manu3_hand.rs	145	fn		UNVERIFIED	// An alias shares its SOURCE's projected position but carries its OWN // texture coordinates (+0/+2) — aliases ARE the mesh's UV-seam vertices // (verified: every alias's own UV differs from its sour
-st16	src/manu3_hand.rs	180	fn		UNVERIFIED	
-st32	src/manu3_hand.rs	185	fn		UNVERIFIED	
-compose	src/manu3_hand.rs	199	fn	0x2274	ASM	/// Compose the skeleton for cursor (cx, cy): per node, local = build(angles) — /// the wrist gets the cursor law added non-destructively — then /// rows = parent_rows * local >> 15 and T = parent_row
-draw	src/manu3_hand.rs	268	fn		ORACLE?	/// Render the hand into an indexed framebuffer with the cursor at (cx, cy): /// the decoded cursor law + hierarchical composition + the re-verified 0x549 /// projection. No screen-space fixups — the 
-snapshot_state	src/manu3_hand.rs	345	fn		INFRA	/// Snapshot the mutable skeleton state (for between-tick interpolation).
-triangles_lerp	src/manu3_hand.rs	354	fn		UNVERIFIED	/// Like [`Self::triangles`], but with the animated skeleton cells (angles + /// local positions of every node) LERPed between a previous snapshot and the /// current state by `alpha` — smooth pose mo
-triangles	src/manu3_hand.rs	394	fn		UNVERIFIED	/// The hand's textured triangles for GPU rendering: same compose + cursor-centred /// projection as draw(), emitted as screen-space (x, y, depth, u, v) vertices /// (u/v in texel units — the game's Q
-debug_project	src/manu3_hand.rs	423	fn		UNVERIFIED	/// Debug helper: the projected point cloud (screen x, y, depth) for a cursor. // Aliases resolve to their source's projected point (as in draw()).
-face_depth	src/manu3_hand.rs	465	fn		UNVERIFIED	
-fill_triangle_tex	src/manu3_hand.rs	471	fn		UNVERIFIED	
-fill_triangle	src/manu3_hand.rs	532	fn		UNVERIFIED	
-PosePlayer	src/manu3_hand.rs	564	struct	0x2394	CELL?	/// The phased tween pose player (exact transcription of 0x181/0x1DF/0x19B): /// applies sequence `seq`'s groups to the segment cells, animating the hand. /// Cells address the live record block (0x23
-new	src/manu3_hand.rs	577	fn	0x2306,0x2974	CELL?	/// Look up the sequence for a SELECTOR through the game's own dispatch table /// (0x181 decoded: table base = ds:[0x2306] = 0x2974; sequence = base + /// table[(selector & 0x1F) * 2]; groups run unti
-step	src/manu3_hand.rs	596	fn		UNVERIFIED	/// One frame: construct due groups (phase match), step active tweens; writes go /// through `cells` (cell address -> current value), exactly as 0x1DF/0x19B do.
-done	src/manu3_hand.rs	636	fn		UNVERIFIED	
-set_pose	src/manu3_hand.rs	643	fn		UNVERIFIED	/// Select the pose (decoded selector semantics); a change starts that sequence.
-tick_pose	src/manu3_hand.rs	651	fn		UNVERIFIED	/// Advance the current pose animation one frame (call per rendered frame).
-animate	src/manu3_hand.rs	664	fn	0x2274,0x2974	CELL?	/// Apply one pose-player frame to the live skeleton: tween cell writes land in /// the node-tree state block BY ORIGINAL DS OFFSET (cells address 0x2274..0x2974: /// node angles +0x4E/50/52, local po
+DS	src/manu3_hand.rs	79	const	0x2274,0x2394,0x23E2,0x23E4	ASM?	/// The live manu3 data segment (64KB dump): the skeleton NODE TREE lives at /// 0x2274 (root) + 16 records at 0x2394 + i*0x5E. Record layout (decoded 0x270/0x3DE): ///   +0x00 parent record ptr   +0x
+SEG2	src/manu3_hand.rs	82	const	0xB18	CELL?	/// The seg2 pool: 110 x 20B vertices {+0/+2 UV, +4..+8 model xyz} + 32 alias records /// (+4 = source byte offset), then the 216 x 8B face list at 0xB18 {link, v0, v1, v2}.
+STATE_BASE	src/manu3_hand.rs	94	const	0x2274,0x2974	CELL?	/// The node-tree state block `ds[0x2274..0x2974]`: root + 16 records, mutable at /// runtime (pose tweens write cells into it exactly as the game does). /// /// PROVENANCE, stated exactly: no manu3.x
+STATE_LEN	src/manu3_hand.rs	95	const		UNVERIFIED	
+WRIST	src/manu3_hand.rs	96	const		UNVERIFIED	
+TEX	src/manu3_hand.rs	104	const	0x120B,0x6400	ORACLE?	/// The hand's 256-wide texture (palette-index rows) lifted from the live data segment. // THE REAL TEXTURE SEGMENT: the fill's fs parameter block (captured live at the // span setup 0x120B: fs=17A3, 
+TEX_W	src/manu3_hand.rs	105	const		UNVERIFIED	/// The game's own sin/cos tables (ds:0x26, 1024 entries x {cos:i16, sin:i16}, Q14).
+TRIG	src/manu3_hand.rs	114	const		TESTED	/// The game's own sin/cos tables (ds:0x26, 1024 entries x {cos:i16, sin:i16}, Q14). /// /// PROVENANCE: not a memory snapshot despite living under `accuracy/`. All 4100 /// bytes are `manu3.xdb` at o
+TRIG_XDB_OFFSET	src/manu3_hand.rs	116	const		TESTED	/// Where [`TRIG`] lives inside `manu3.xdb`. /// The hand's texture bytes + row width (for GPU upload).
+hand_texture	src/manu3_hand.rs	119	fn		UNVERIFIED	/// The hand's texture bytes + row width (for GPU upload).
+rd_parent	src/manu3_hand.rs	124	fn		UNVERIFIED	
+tcos	src/manu3_hand.rs	129	fn		UNVERIFIED	
+tsin	src/manu3_hand.rs	134	fn		UNVERIFIED	
+build_matrix	src/manu3_hand.rs	143	fn		UNVERIFIED	/// EXACT transcription of the manu3 matrix build (xdb 0x270..0x3DE): three Euler /// angles as raw byte-offsets (4/step) -> the 9 Q15-ish cells, composed via the /// angle-sum identity reads the orig
+HandMesh	src/manu3_hand.rs	166	struct	0xFFFF,0x2274,0x2974	CELL?	/// Current pose selector + its running player (selector -> sequence index, /// per the 0x181 dispatch; decoded contexts: 1=rest, 2=steer-right, 3=steer-left, /// 0xB=UI-close, 0xFFFF=hidden). /// The
+load	src/manu3_hand.rs	183	fn		UNVERIFIED	// An alias shares its SOURCE's projected position but carries its OWN // texture coordinates (+0/+2) — aliases ARE the mesh's UV-seam vertices // (verified: every alias's own UV differs from its sour
+st16	src/manu3_hand.rs	218	fn		UNVERIFIED	
+st32	src/manu3_hand.rs	223	fn		UNVERIFIED	
+compose	src/manu3_hand.rs	237	fn	0x2274	ASM	/// Compose the skeleton for cursor (cx, cy): per node, local = build(angles) — /// the wrist gets the cursor law added non-destructively — then /// rows = parent_rows * local >> 15 and T = parent_row
+draw	src/manu3_hand.rs	306	fn		ORACLE?	/// Render the hand into an indexed framebuffer with the cursor at (cx, cy): /// the decoded cursor law + hierarchical composition + the re-verified 0x549 /// projection. No screen-space fixups — the 
+snapshot_state	src/manu3_hand.rs	383	fn		INFRA	/// Snapshot the mutable skeleton state (for between-tick interpolation).
+triangles_lerp	src/manu3_hand.rs	392	fn		UNVERIFIED	/// Like [`Self::triangles`], but with the animated skeleton cells (angles + /// local positions of every node) LERPed between a previous snapshot and the /// current state by `alpha` — smooth pose mo
+triangles	src/manu3_hand.rs	432	fn		UNVERIFIED	/// The hand's textured triangles for GPU rendering: same compose + cursor-centred /// projection as draw(), emitted as screen-space (x, y, depth, u, v) vertices /// (u/v in texel units — the game's Q
+debug_project	src/manu3_hand.rs	461	fn		UNVERIFIED	/// Debug helper: the projected point cloud (screen x, y, depth) for a cursor. // Aliases resolve to their source's projected point (as in draw()).
+face_depth	src/manu3_hand.rs	503	fn		UNVERIFIED	
+fill_triangle_tex	src/manu3_hand.rs	509	fn		UNVERIFIED	
+fill_triangle	src/manu3_hand.rs	570	fn		UNVERIFIED	
+PosePlayer	src/manu3_hand.rs	602	struct	0x2394	CELL?	/// The phased tween pose player (exact transcription of 0x181/0x1DF/0x19B): /// applies sequence `seq`'s groups to the segment cells, animating the hand. /// Cells address the live record block (0x23
+new	src/manu3_hand.rs	615	fn	0x2306,0x2974	CELL?	/// Look up the sequence for a SELECTOR through the game's own dispatch table /// (0x181 decoded: table base = ds:[0x2306] = 0x2974; sequence = base + /// table[(selector & 0x1F) * 2]; groups run unti
+step	src/manu3_hand.rs	634	fn		UNVERIFIED	/// One frame: construct due groups (phase match), step active tweens; writes go /// through `cells` (cell address -> current value), exactly as 0x1DF/0x19B do.
+done	src/manu3_hand.rs	674	fn		UNVERIFIED	
+set_pose	src/manu3_hand.rs	681	fn		UNVERIFIED	/// Select the pose (decoded selector semantics); a change starts that sequence.
+tick_pose	src/manu3_hand.rs	689	fn		UNVERIFIED	/// Advance the current pose animation one frame (call per rendered frame).
+animate	src/manu3_hand.rs	702	fn	0x2274,0x2974	CELL?	/// Apply one pose-player frame to the live skeleton: tween cell writes land in /// the node-tree state block BY ORIGINAL DS OFFSET (cells address 0x2274..0x2974: /// node angles +0x4E/50/52, local po
 GAME_SCREEN_PALETTE_DAC_LOWER_IS_BINARY	src/palette.rs	42	const	0x12F78,0x5B58	DATA	/// Raw 6-bit VGA DAC palette (256 * RGB, channels 0..=63). /// /// PROVENANCE IS SPLIT, and the old comment (`Provenance: BLOODPRG.EXE file 0x12F78`) /// was only half true — measured 2026-07-24: ///
 GAME_SCREEN_PALETTE_DAC	src/palette.rs	43	const		UNVERIFIED	
 PALETTE_BLEND_MAX_DISTANCE	src/palette.rs	113	const	0xBB8,0x234F,0x23B0	ASM	/// Seed distance of the nearest-colour search (`mov word [bp+6],0xBB8` @`0x234F`). /// A source colour with no palette entry within this squared distance leaves its /// table byte UNCHANGED (`js 0x23
@@ -2177,38 +2177,38 @@ resolve	src/recomp/runtime.rs	734	fn		UNVERIFIED	/// Resolve a DOS path to a hos
 alloc_handle	src/recomp/runtime.rs	783	fn		UNVERIFIED	
 inject_key	src/recomp/runtime.rs	799	fn		UNVERIFIED	/// Inject a keystroke: buffered for `int 16h` (BIOS read) and queued as a hardware /// scancode for the `int 9` IRQ path (when the game hooked it). Drives the game's /// menus/prompts from a headless
 set_mouse_pos	src/recomp/runtime.rs	807	fn		UNVERIFIED	/// Move the virtual mouse (DOS-virtual coords: x 0..639, y 0..199 — screen column /// `sx` is `sx*2`). Flags a move event for the game's mouse callback if registered.
-move_mouse_rel	src/recomp/runtime.rs	829	fn	0x9722,0x97FC,0x2A2A,0x27A7,0xD0E	ASM?	/// Nudge the virtual mouse by a RELATIVE delta, the way real hardware motion /// reaches the game. /// /// Why this exists: the bridge accumulates cursor motion in RING space by /// warping the hardw
-mouse_press	src/recomp/runtime.rs	839	fn		UNVERIFIED	/// Press a mouse button (0 = left, 1 = right) at the current position: bumps the /// int33 ax=5 press counter and flags the press event.
-mouse_release	src/recomp/runtime.rs	849	fn		UNVERIFIED	/// Release a mouse button (0 = left, 1 = right): bumps the int33 ax=6 release /// counter and flags the release event.
-run	src/recomp/runtime.rs	857	fn	0x93f8,0x12bd,0x27e2,0xbe29,0xba0,0xbe11	ASM?	// Subtitle persistence: the game's per-frame reveal draw (0x93f8, main loop 0x12bd) // only redraws the subtitle when its gate flag gs:[0x27e2]&2 (or 5e64/67bc) is set. // The one-shot present (0xbe2
-lockstep_capture	src/recomp/runtime.rs	1033	fn		ORACLE?	/// Lockstep capture: fast-forward `skip` steps, then record a per-instruction trace of the /// next `window` pure-CPU instructions for offline interp-vs-Unicorn differential replay /// (`re/tools/loc
-snap	src/recomp/runtime.rs	1034	fn		UNVERIFIED	
-port_in	src/recomp/runtime.rs	1236	fn		UNVERIFIED	"// 8237 DMA: current address/count with lo/hi flip-flop // SoundBlaster DSP (base 0x220) // vsync bit 3 + display-enable bit 0, derived from the step clock so polls make // progress. One ""frame"" ~ ste"
-port_out	src/recomp/runtime.rs	1322	fn		UNVERIFIED	// DSP reset: 1 then 0 -> respond 0xAA // PIT channel 0 divisor: lo byte then hi byte (phase reset by port 43h)
-ivt_hooked	src/recomp/runtime.rs	1454	fn		UNVERIFIED	
-log_int	src/recomp/runtime.rs	1460	fn		UNVERIFIED	
-native_int	src/recomp/runtime.rs	1473	fn		UNVERIFIED	// BIOS chains int 1Ch; only bother when the game hooked it. // extended services: report nothing present // RTC time in BCD: fixed 12:34:27 (deterministic) // MSCDEX: present, 1 drive, first = D (ind
-int10	src/recomp/runtime.rs	1562	fn		UNVERIFIED	// BIOS loads the default VGA palette on mode set; the game overwrites it // via the DAC, but a sane grey ramp beats black-on-black for early frames.
-int16	src/recomp/runtime.rs	1630	fn		UNVERIFIED	// Blocking read with nothing buffered: rewind the frame's return IP onto the // `int 16h` itself so it retries — timer IRQs keep firing in between, which // is exactly the semantics of a BIOS blockin
-int33	src/recomp/runtime.rs	1663	fn		UNVERIFIED	// Apply any injected motion HERE: on real hardware the movement // happened between the game's warp (ax=4) and this read, which is // exactly the delta the bridge's steering measures.
-mouse_event	src/recomp/runtime.rs	1748	fn		UNVERIFIED	/// Feed a mouse state change (DOS-virtual coords: x 0..639, y 0..199, buttons bit0=left /// bit1=right). Computes the int 33h event mask and queues the user callback if installed.
-ticks	src/recomp/runtime.rs	1776	fn		INFRA	
-crtc_reg	src/recomp/runtime.rs	1780	fn		UNVERIFIED	
-int67	src/recomp/runtime.rs	1784	fn		UNVERIFIED	
-sb_dsp_write	src/recomp/runtime.rs	1873	fn		UNVERIFIED	/// DSP command byte stream at 0x22C.
-sb_dsp_exec	src/recomp/runtime.rs	1896	fn		UNVERIFIED	// 8-bit single-cycle DMA playback, length = args+1 // auto-init: block size was set via 0x48 (stored in dma count)
-sb_start_playback	src/recomp/runtime.rs	1938	fn		ORACLE?	// Capture the PCM the game just queued (DMA ch1) — the audio-out tap.
-tick_sb_playback	src/recomp/runtime.rs	1953	fn		UNVERIFIED	/// Advance the modelled DMA count from the playback clock; fire the SB IRQ on completion.
-ems_unmap	src/recomp/runtime.rs	1974	fn		UNVERIFIED	/// Write a mapped physical EMS page back to its logical store before remapping.
-int21	src/recomp/runtime.rs	1982	fn		UNVERIFIED	// fixed date: 1995-07-20, a Thursday // InDOS flag pointer // free disk space: plenty
-find_next_into_dta	src/recomp/runtime.rs	2430	fn		UNVERIFIED	/// Emit the next FindFirst/FindNext match into the DTA, or error 18 (no more files).
-screenshot_rgb	src/recomp/runtime.rs	2461	fn		UNVERIFIED	/// 320x200 RGB screenshot through the DAC (6-bit scaled like the decoders). Composites the /// VGA planes exactly as the CRT would: chain-4 (stock 13h) or unchained Mode-X addressing /// with the CRT
-screen_indices	src/recomp/runtime.rs	2489	fn		UNVERIFIED	/// 320x200 palette-INDEX screenshot (same CRTC compositing as /// [`Runtime::screenshot_rgb`], without the DAC) — for pixel-identity diffs.
-write_ppm	src/recomp/runtime.rs	2512	fn		UNVERIFIED	
-text_screen	src/recomp/runtime.rs	2519	fn		UNVERIFIED	/// Text-mode screen contents (mode 3) for early-boot error messages.
-debug_state	src/recomp/runtime.rs	2537	fn		UNVERIFIED	/// One-line machine state summary for boot triage.
-console_output	src/recomp/runtime.rs	2570	fn		INFRA	
-key_event	src/recomp/runtime.rs	2575	fn		UNVERIFIED	/// Push a key event (scancode, ascii) — M3 wires real input to this.
+move_mouse_rel	src/recomp/runtime.rs	836	fn	0x9722,0x97FC,0x27A7,0xa2a,0x97FD,0x27a7,0x9801,0x0A2A,0x2A2	ASM	/// Nudge the virtual mouse by a RELATIVE delta, the way real hardware motion /// reaches the game. /// /// Why this exists: the bridge accumulates cursor motion in RING space by /// warping the hardw
+mouse_press	src/recomp/runtime.rs	846	fn		UNVERIFIED	/// Press a mouse button (0 = left, 1 = right) at the current position: bumps the /// int33 ax=5 press counter and flags the press event.
+mouse_release	src/recomp/runtime.rs	856	fn		UNVERIFIED	/// Release a mouse button (0 = left, 1 = right): bumps the int33 ax=6 release /// counter and flags the release event.
+run	src/recomp/runtime.rs	864	fn	0x93f8,0x12bd,0x27e2,0xbe29,0xba0,0xbe11	ASM?	// Subtitle persistence: the game's per-frame reveal draw (0x93f8, main loop 0x12bd) // only redraws the subtitle when its gate flag gs:[0x27e2]&2 (or 5e64/67bc) is set. // The one-shot present (0xbe2
+lockstep_capture	src/recomp/runtime.rs	1040	fn		ORACLE?	/// Lockstep capture: fast-forward `skip` steps, then record a per-instruction trace of the /// next `window` pure-CPU instructions for offline interp-vs-Unicorn differential replay /// (`re/tools/loc
+snap	src/recomp/runtime.rs	1041	fn		UNVERIFIED	
+port_in	src/recomp/runtime.rs	1243	fn		UNVERIFIED	"// 8237 DMA: current address/count with lo/hi flip-flop // SoundBlaster DSP (base 0x220) // vsync bit 3 + display-enable bit 0, derived from the step clock so polls make // progress. One ""frame"" ~ ste"
+port_out	src/recomp/runtime.rs	1329	fn		UNVERIFIED	// DSP reset: 1 then 0 -> respond 0xAA // PIT channel 0 divisor: lo byte then hi byte (phase reset by port 43h)
+ivt_hooked	src/recomp/runtime.rs	1461	fn		UNVERIFIED	
+log_int	src/recomp/runtime.rs	1467	fn		UNVERIFIED	
+native_int	src/recomp/runtime.rs	1480	fn		UNVERIFIED	// BIOS chains int 1Ch; only bother when the game hooked it. // extended services: report nothing present // RTC time in BCD: fixed 12:34:27 (deterministic) // MSCDEX: present, 1 drive, first = D (ind
+int10	src/recomp/runtime.rs	1569	fn		UNVERIFIED	// BIOS loads the default VGA palette on mode set; the game overwrites it // via the DAC, but a sane grey ramp beats black-on-black for early frames.
+int16	src/recomp/runtime.rs	1637	fn		UNVERIFIED	// Blocking read with nothing buffered: rewind the frame's return IP onto the // `int 16h` itself so it retries — timer IRQs keep firing in between, which // is exactly the semantics of a BIOS blockin
+int33	src/recomp/runtime.rs	1670	fn		UNVERIFIED	// Apply any injected motion HERE: on real hardware the movement // happened between the game's warp (ax=4) and this read, which is // exactly the delta the bridge's steering measures.
+mouse_event	src/recomp/runtime.rs	1755	fn		UNVERIFIED	/// Feed a mouse state change (DOS-virtual coords: x 0..639, y 0..199, buttons bit0=left /// bit1=right). Computes the int 33h event mask and queues the user callback if installed.
+ticks	src/recomp/runtime.rs	1783	fn		INFRA	
+crtc_reg	src/recomp/runtime.rs	1787	fn		UNVERIFIED	
+int67	src/recomp/runtime.rs	1791	fn		UNVERIFIED	
+sb_dsp_write	src/recomp/runtime.rs	1880	fn		UNVERIFIED	/// DSP command byte stream at 0x22C.
+sb_dsp_exec	src/recomp/runtime.rs	1903	fn		UNVERIFIED	// 8-bit single-cycle DMA playback, length = args+1 // auto-init: block size was set via 0x48 (stored in dma count)
+sb_start_playback	src/recomp/runtime.rs	1945	fn		ORACLE?	// Capture the PCM the game just queued (DMA ch1) — the audio-out tap.
+tick_sb_playback	src/recomp/runtime.rs	1960	fn		UNVERIFIED	/// Advance the modelled DMA count from the playback clock; fire the SB IRQ on completion.
+ems_unmap	src/recomp/runtime.rs	1981	fn		UNVERIFIED	/// Write a mapped physical EMS page back to its logical store before remapping.
+int21	src/recomp/runtime.rs	1989	fn		UNVERIFIED	// fixed date: 1995-07-20, a Thursday // InDOS flag pointer // free disk space: plenty
+find_next_into_dta	src/recomp/runtime.rs	2437	fn		UNVERIFIED	/// Emit the next FindFirst/FindNext match into the DTA, or error 18 (no more files).
+screenshot_rgb	src/recomp/runtime.rs	2468	fn		UNVERIFIED	/// 320x200 RGB screenshot through the DAC (6-bit scaled like the decoders). Composites the /// VGA planes exactly as the CRT would: chain-4 (stock 13h) or unchained Mode-X addressing /// with the CRT
+screen_indices	src/recomp/runtime.rs	2496	fn		UNVERIFIED	/// 320x200 palette-INDEX screenshot (same CRTC compositing as /// [`Runtime::screenshot_rgb`], without the DAC) — for pixel-identity diffs.
+write_ppm	src/recomp/runtime.rs	2519	fn		UNVERIFIED	
+text_screen	src/recomp/runtime.rs	2526	fn		UNVERIFIED	/// Text-mode screen contents (mode 3) for early-boot error messages.
+debug_state	src/recomp/runtime.rs	2544	fn		UNVERIFIED	/// One-line machine state summary for boot triage.
+console_output	src/recomp/runtime.rs	2577	fn		INFRA	
+key_event	src/recomp/runtime.rs	2582	fn		UNVERIFIED	/// Push a key event (scancode, ascii) — M3 wires real input to this.
 TICK	src/bin/blood.rs	20	const		UNVERIFIED	
 make_runtime	src/bin/blood.rs	22	fn		UNVERIFIED	
 run_tick	src/bin/blood.rs	35	fn		INFRA	/// One BIOS-tick (1/18.2 s) of emulated time, regardless of the guest's PIT rate. /// Returns false when the guest exited/faulted.
