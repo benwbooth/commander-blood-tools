@@ -13422,3 +13422,35 @@ running it differently.
 
 2228 items, 1094 confirmed (49.1%), 1134 open. 730 citations verified, 0 wrong.
 615 lib tests, 0 failures.
+
+## #408 — bounding #407's blast radius, and the seek flag
+
+Two things, one commit.
+
+FIRST, how far #407's race reached. Swept every test that touches the racy
+global: `RUNTIME_DIRECTORY` has exactly ONE installer
+(`derived_directory_reproduces_the_literal`, which calls `init_level_directory`
+itself before asserting), and three other readers. Two of them —
+`world_resource_ids_match_the_fs0c04_table` and
+`directory_indices_are_dense_and_ordered` — only ever index BELOW 53, where the
+transcribed prefix and the image's 95-slot table agree by construction and by
+`level_directory_literal_matches_the_image`. So they cannot observe the
+difference, and `primary_worlds_are_the_named_planets` was the sole exposure.
+Only `MIXER` (audio) is a second process-global, and no test installs it.
+
+That is a NEGATIVE result and it is the reason to record it: the interesting
+question after finding one flaky test is how many more there are, and the answer
+here is bounded rather than assumed.
+
+SECOND, `UI_FLAG_SEEK_ACTIVE` settles. Both citations are exact:
+
+    0xB193  test word ptr [0x2793], 8      the flag read on its own
+    0x1095  test byte ptr [0x2793], 0xe    the main-loop DEFER gate, any of 1|2|3
+
+which also confirms the pair's relationship — the same cell is tested as a WORD
+at one site and a BYTE at the other, and `0x8` really is inside the `0xE` mask
+the gate uses, so the doc's "read directly as well as through the gate's mask" is
+two instructions rather than an inference.
+
+2228 items, 1095 confirmed (49.1%), 1133 open. 730 citations verified, 0 wrong.
+615 lib tests, 0 failures.
