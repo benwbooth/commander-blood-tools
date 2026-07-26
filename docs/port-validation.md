@@ -1271,3 +1271,14 @@ parent-link zero test become observable and worth settling.
 
 `tools/check_unfed_runtime.py` reports this class; it currently finds 9 builders
 whose state stays at its default in every real run.
+
+### #291 update — position half fed, outer gate still test-only
+
+`Ship3dC1PositionRuntime` is now derived from the state table
+(`derive_ship_3d_position_runtime`), verified by running an existing fixture test
+with its positions removed and getting the same end state. The subsystem still
+does NOT execute on real data: `write_c1_record_state_ship3d` early-returns while
+`context.ship3d_c1_runtime` is `None`, and that builder remains test-only.
+Remaining to derive: `navigation_records`, `object_table_records`, and
+`source_list_bytes` (the last should be BUILT, not supplied — `call 0x624B` with
+`bp=0x6886` @`0x6C11`; the port already has the builder).

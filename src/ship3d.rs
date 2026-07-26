@@ -282,6 +282,15 @@ pub const SHIP_3D_FIELD_SELECTOR_KIND100_RELATION_WORD: u8 = 14;
 /// there (a parent link) and the VM name describes which opcode family reaches
 /// it, and neither is wrong (audit-fixes #285).
 pub const SHIP_3D_FIELD_SELECTOR_PARENT_LINK: u8 = 17;
+/// `cmp si, -1` @`0x61CD` in the position walk: a parent link of `0xFFFF` means
+/// FALL BACK TO THE ARCHE OBJECT, which the next instructions load from the
+/// engine's named-object global (`mov si, word ptr gs:[0x6752]` @`0x61D2`).
+///
+/// A separate constant from the other `0xFFFF`s in this file on purpose. #285's
+/// rule cuts both ways: a shared VALUE is not a shared RULE, and this one has its
+/// own instruction, its own routine and its own meaning — "no parent, use the
+/// arche" — which none of the reset sentinels share (audit-fixes #291).
+pub const SHIP_3D_PARENT_LINK_SENTINEL: u16 = 0xffff;
 /// `mov ax,5` @`0x6229` in the object-table bit test (`0x6210`). The selector is FIXED here, not derived from the object — the routine's own label warns about that (audit-fixes #274).
 pub const SHIP_3D_SOURCE_BITSET_SELECTOR: u8 = 0x05;
 /// `mov bx,2` @`0x622C`, feeding the `call 0x6023` @`0x622F` one instruction after the selector's `mov ax,5` — kind and selector are both fixed at the call site.

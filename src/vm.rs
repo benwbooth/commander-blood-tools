@@ -3035,18 +3035,161 @@ fn write_ship3d_record_state_slot(
     state_set_u16(state, record_offset.wrapping_add(4), slot.aux_word);
 }
 
+/// Derive the C1 position runtime FROM THE STATE TABLE, so the walk runs on real
+/// records instead of only on test fixtures (audit-fixes #291).
+///
+/// This is the fix for #290: `Ship3dC1PositionRuntime` was populated only by a
+/// builder that nothing outside `#[cfg(test)]` ever called, so in a real run the
+/// C1 distance gate always took its "no redirect" arm and the whole decoded
+/// position subsystem was inert.
+///
+/// Nothing here is new decode — every value is read the way the game reads it.
+/// The records ARE the `gs:0x6724` state table (`les di,gs:[0x6724]` @`0x6B4D`),
+/// a record's kind is the word at its start (`mov ax,[si]` @`0x61AB`), its links
+/// come from `vm_field_offset(selector, kind)` (`0x6023`), and the coordinate
+/// pair sits at the resolved field offset as two consecutive words
+/// (`lodsw` @`0x6176` for x, `mov bx,[si]` @`0x617D` for y).
+///
+/// REACHABLE-CLOSURE, not a full enumeration. The walk only ever looks records up
+/// by offset, so deriving exactly the offsets it can reach — the two operands,
+/// the arche fallback (`mov si,gs:[0x6752]` @`0x61D2`), and whatever the parent
+/// links lead to — makes every lookup it performs succeed and none that it does
+/// not perform cost anything. The port has no object enumeration to do better
+/// with, and inventing one would be port-side content.
+fn derive_ship_3d_position_runtime(
+    state: &[u8],
+    seeds: &[u16],
+    arche_object: u16,
+) -> Ship3dC1PositionRuntime {
+    let mut offsets: Vec<u16> = Vec::new();
+    let mut queue: Vec<u16> = seeds.iter().copied().filter(|o| *o != 0).collect();
+    if arche_object != 0 {
+        queue.push(arche_object);
+    }
+
+    // Bounded: a malformed parent chain in save data must not spin here. The
+    // walk itself is bounded the same way by `records.len() + 1`.
+    let mut budget = 64usize;
+    while let Some(offset) = queue.pop() {
+        if budget == 0 {
+            break;
+        }
+        budget -= 1;
+        if offsets.contains(&offset) {
+            continue;
+        }
+        offsets.push(offset);
+
+        let kind = state_u16(state, offset);
+        // The kinds that terminate the walk carry no parent link to follow.
+        if matches!(
+            kind,
+            ship3d::SHIP_3D_OBJECT_KIND_POSITION_KIND100
+                | ship3d::SHIP_3D_OBJECT_KIND_POSITION_DIRECT_8
+                | ship3d::SHIP_3D_OBJECT_KIND_POSITION_DIRECT_10
+                | ship3d::SHIP_3D_OBJECT_KIND_POSITION_DIRECT_40
+                | ship3d::SHIP_3D_OBJECT_KIND_POSITION_DIRECT_200
+        ) {
+            continue;
+        }
+        let Some(parent_field) =
+            vm_field_offset(ship3d::SHIP_3D_FIELD_SELECTOR_PARENT_LINK, kind)
+        else {
+            continue;
+        };
+        let parent = state_u16(state, offset.wrapping_add(parent_field));
+        // 0xFFFF is the arche fallback (`cmp si,-1 / jne` @0x61CD), already seeded.
+        if parent != ship3d::SHIP_3D_PARENT_LINK_SENTINEL {
+            queue.push(parent);
+        }
+    }
+
+    let mut records = Vec::with_capacity(offsets.len());
+    let mut fields: Vec<ship3d::Ship3dPositionField> = Vec::new();
+    for offset in offsets {
+        let kind = state_u16(state, offset);
+        let read = |selector: u8, kind: u16| -> Option<u16> {
+            let field = vm_field_offset(selector, kind)?;
+            Some(state_u16(state, offset.wrapping_add(field)))
+        };
+        let parent_link = read(ship3d::SHIP_3D_FIELD_SELECTOR_PARENT_LINK, kind)
+            .filter(|value| *value != ship3d::SHIP_3D_PARENT_LINK_SENTINEL);
+
+        records.push(ship3d::Ship3dPositionRecord {
+            offset,
+            kind_flags: kind,
+            parent_link,
+            // Resolved with the FIXED kind 0x100 (`mov bx,0x100` @0x60F6), not
+            // the record's own -- see SHIP_3D_FIELD_SELECTOR_KIND100_MATCH_WORD.
+            kind100_match_word: read(
+                ship3d::SHIP_3D_FIELD_SELECTOR_KIND100_MATCH_WORD,
+                ship3d::SHIP_3D_OBJECT_KIND_POSITION_KIND100,
+            ),
+            kind100_relation_word: read(
+                ship3d::SHIP_3D_FIELD_SELECTOR_KIND100_RELATION_WORD,
+                kind,
+            ),
+        });
+
+        // The coordinate pair for every selector that can resolve a position on
+        // this record. Duplicate offsets are harmless: the lookup takes the
+        // first match and they carry the same words.
+        for selector in [
+            ship3d::SHIP_3D_FIELD_SELECTOR_POSITION,
+            ship3d::SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MATCH,
+            ship3d::SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MISMATCH,
+        ] {
+            if let Some(field) = vm_field_offset(selector, kind) {
+                let at = offset.wrapping_add(field);
+                if !fields.iter().any(|f| f.offset == at) {
+                    fields.push(ship3d::Ship3dPositionField {
+                        offset: at,
+                        x: state_u16(state, at),
+                        y: state_u16(state, at.wrapping_add(2)),
+                    });
+                }
+            }
+        }
+    }
+
+    Ship3dC1PositionRuntime {
+        records,
+        fields,
+        arche_object,
+        // The compare word the kind-0x100 branch inherits from the caller. The
+        // handler stashes its operand at gs:0x6736 (`mov gs:[0x6736],ax`
+        // @0x6B6D) and that is what the compare at 0x6104 sees.
+        inherited_kind100_compare_word: 0,
+    }
+}
+
 fn resolve_c1_record_state_ship3d_target(
     state: &[u8],
     runtime: &Ship3dC1RuntimeContext,
     owner_offset: u16,
     operand: u16,
+    // The engine's `arche` global (`gs:0x6752`), the walk's parent fallback.
+    arche_object: u16,
 ) -> Option<Option<u16>> {
     let owner_kind = state_u16(state, owner_offset);
     let mut target_offset = owner_offset;
 
     if operand == 1 || operand == 2 {
-        let Some(position_runtime) = runtime.position_runtime.as_ref() else {
-            return Some(None);
+        // audit-fixes #291. Previously this returned "no redirect" whenever no
+        // runtime had been supplied -- which, per #290, was EVERY real run,
+        // because the only thing that populated it was a test-only builder. Now
+        // the records are derived from the state table the game itself reads.
+        let derived;
+        let position_runtime = match runtime.position_runtime.as_ref() {
+            Some(supplied) => supplied,
+            None => {
+                derived = derive_ship_3d_position_runtime(
+                    state,
+                    &[owner_offset, operand],
+                    arche_object,
+                );
+                &derived
+            }
         };
         let Some(distance) = ship3d::ship_3d_position_distance(
             &position_runtime.records,
@@ -3092,7 +3235,13 @@ fn write_c1_record_state_ship3d(
         return None;
     };
     let Some(target_offset) =
-        resolve_c1_record_state_ship3d_target(state, runtime, owner_offset, operand)
+        resolve_c1_record_state_ship3d_target(
+            state,
+            runtime,
+            owner_offset,
+            operand,
+            context.named_object_offsets.arche.unwrap_or(0),
+        )
     else {
         return None;
     };
@@ -13719,6 +13868,103 @@ mod tests {
         );
         assert_eq!(state_u16(&executed.final_state, destination + 2), operand);
         assert_eq!(state_u16(&executed.final_state, destination + 4), 2);
+    }
+
+    /// audit-fixes #291. The SAME state and the SAME runtime as
+    /// `execution_trace_ship3d_c1_distance_zero_keeps_kind10_owner`, except the
+    /// position records are NOT supplied — so `derive_ship_3d_position_runtime`
+    /// has to read them out of the state table instead.
+    ///
+    /// This is the check that the derivation is faithful rather than merely
+    /// present: before #291 the missing runtime made the C1 arm early-return
+    /// "no redirect", which happened to reach the same end state for the wrong
+    /// reason. It now reaches it by resolving kind `0x10`/`8` records, looking up
+    /// selector-11 fields at `+0x18` (matrix columns 3 and 4 both hold `0x18`),
+    /// reading both coordinate pairs as `(0, 0)`, and computing a distance of
+    /// zero — the same arithmetic the fixture forced with an explicit `(7, 9)`
+    /// on both records.
+    #[test]
+    fn execution_trace_ship3d_c1_positions_derived_from_state_match_supplied() {
+        let owner = 0x0100u16;
+        let record = 0x0140u16;
+        let destination = owner + 0x1c;
+        let operand = 0x0001u16;
+        let source = 0x3000u16;
+        let mut var = vec![0; 0x3100];
+        state_set_u16(&mut var, owner, ship3d::SHIP_3D_C1_KIND10_RECORD_KIND);
+        state_set_u8(&mut var, owner + 2, 1);
+        state_set_u16(&mut var, operand, ship3d::SHIP_3D_C1_SOURCE_KIND_BITSET);
+
+        // NOTE the absent `.with_ship_3d_c1_positions(...)`.
+        let context = ExecutionContext::from_object_offsets([operand, owner])
+            .with_ship_3d_c1_runtime(
+                [ship3d_c1_nav_record(
+                    source,
+                    ship3d::SHIP_3D_C1_SOURCE_KIND_BITSET,
+                )],
+                [operand],
+                ship3d_c1_bitset_source_list(source),
+            );
+        let cod = ship3d_c1_cod(record, operand);
+
+        let executed = execute_trace_state_with_overrides_and_context(&cod, &var, &[], &context, 0);
+
+        assert_eq!(executed.trace.halted, ExecutionHalt::EndMarker);
+        assert_eq!(state_u16(&executed.final_state, record), 0);
+        assert_eq!(
+            state_u16(&executed.final_state, destination),
+            OP_RECORD_STATE_MIN as u16
+        );
+        assert_eq!(state_u16(&executed.final_state, destination + 2), operand);
+        assert_eq!(state_u16(&executed.final_state, destination + 4), 2);
+    }
+
+    /// The derivation reads what the game reads. Given a state table with a
+    /// kind-2 record whose selector-0x11 parent points at another record, the
+    /// derived closure must contain BOTH, and carry the parent link — the
+    /// `add si,ax / mov si,[si]` step at `0x61C9`.
+    #[test]
+    fn derived_position_runtime_follows_parent_links_out_of_state() {
+        let owner = 0x0100u16;
+        let parent = 0x0200u16;
+        let parent_field =
+            vm_field_offset(ship3d::SHIP_3D_FIELD_SELECTOR_PARENT_LINK, 0x0002).unwrap();
+        assert_ne!(parent_field, 0, "kind 2 must have a parent column");
+
+        let mut var = vec![0u8; 0x0400];
+        state_set_u16(&mut var, owner, 0x0002);
+        state_set_u16(&mut var, owner + parent_field, parent);
+        state_set_u16(&mut var, parent, ship3d::SHIP_3D_OBJECT_KIND_POSITION_DIRECT_8);
+
+        let derived = derive_ship_3d_position_runtime(&var, &[owner], 0);
+
+        let offsets: Vec<u16> = derived.records.iter().map(|r| r.offset).collect();
+        assert!(offsets.contains(&owner), "the seed record");
+        assert!(offsets.contains(&parent), "and the record its parent link names");
+
+        let owner_record = derived
+            .records
+            .iter()
+            .find(|r| r.offset == owner)
+            .expect("owner derived");
+        assert_eq!(owner_record.kind_flags, 0x0002);
+        assert_eq!(owner_record.parent_link, Some(parent));
+
+        // A 0xFFFF link is the arche fallback, not a real parent, so it must not
+        // survive as one (`cmp si,-1` @0x61CD).
+        let mut sentinel_var = var.clone();
+        state_set_u16(
+            &mut sentinel_var,
+            owner + parent_field,
+            ship3d::SHIP_3D_PARENT_LINK_SENTINEL,
+        );
+        let derived = derive_ship_3d_position_runtime(&sentinel_var, &[owner], 0);
+        let owner_record = derived
+            .records
+            .iter()
+            .find(|r| r.offset == owner)
+            .expect("owner derived");
+        assert_eq!(owner_record.parent_link, None);
     }
 
     #[test]

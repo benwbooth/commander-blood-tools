@@ -9048,3 +9048,53 @@ now say so.
 Not a defect in every case: some builders legitimately construct fixtures for a
 subsystem fed another way. Each row is a QUESTION — "in a real run, what is
 supposed to call this?" — and the tool prints rather than fails.
+
+## #291 — feed the position runtime from the state table (necessary, NOT yet sufficient)
+
+#290 found `Ship3dC1PositionRuntime` populated only by a test-only builder, so in
+every real run the C1 distance gate took its "no redirect" arm and the decoded
+position subsystem never executed. This derives that runtime from the state table
+instead.
+
+NO NEW DECODE — every value is read the way the game reads it. The records ARE
+the `gs:0x6724` table (`les di,gs:[0x6724]` @`0x6B4D`); a record's kind is the
+word at its start (`mov ax,[si]` @`0x61AB`); links resolve through
+`vm_field_offset(selector, kind)` (`0x6023`); the coordinate pair is two
+consecutive words at the resolved field offset (`lodsw` @`0x6176` for x,
+`mov bx,[si]` @`0x617D` for y); and a `0xFFFF` link means fall back to the arche
+object (`cmp si,-1` @`0x61CD`, `mov si,gs:[0x6752]` @`0x61D2`), which the port
+already resolves BY NAME exactly as `0x5490` does.
+
+REACHABLE-CLOSURE, not enumeration. The walk only ever looks records up by
+offset, so deriving the offsets it can reach — the two operands, the arche
+fallback, and whatever the parent links lead to — makes every lookup succeed
+without inventing an object list the port does not have. Bounded at 64 so
+malformed save data cannot spin.
+
+NEW CONSTANT, not a reuse: `SHIP_3D_PARENT_LINK_SENTINEL`. #285's rule cuts both
+ways — a shared VALUE is not a shared RULE — and this `0xFFFF` has its own
+instruction, routine and meaning ("no parent, use the arche"), which none of the
+reset sentinels share.
+
+VERIFIED BY EQUIVALENCE, which is the part worth trusting:
+`execution_trace_ship3d_c1_positions_derived_from_state_match_supplied` runs the
+SAME state and SAME runtime as the existing fixture test with the positions
+REMOVED, and reaches the same end state — now by resolving kind `0x10`/`8`
+records and reading selector-11 fields at `+0x18` (matrix columns 3 and 4 both
+hold `0x18`) rather than by early-returning. A second test pins parent-link
+following and the `0xFFFF` fallback directly.
+
+STILL NOT REACHED IN PRODUCTION, and this must not be read as "#290 is fixed".
+`write_c1_record_state_ship3d` early-returns when `context.ship3d_c1_runtime` is
+`None`, and `with_ship_3d_c1_runtime` remains test-only — `check_unfed_runtime.py`
+still reports it, and I re-ran it to confirm rather than assuming the change
+helped. So the position half no longer needs a fixture, but the OUTER gate still
+does. Three things must be derived before any of this executes on real data:
+`navigation_records` (readable from state the same way), `object_table_records`,
+and `source_list_bytes` (which should not be an input at all — the game BUILDS it
+at that moment, `call 0x624B` with `bp=0x6886` @`0x6C11`, and the port already has
+the builder). That is the next task, and it is the whole of what stands between
+this subsystem and a real run.
+
+Citations: 577 verified (from 570), 0 wrong. 703 tests across all binaries, 0
+failures.
