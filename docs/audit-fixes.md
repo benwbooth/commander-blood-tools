@@ -11761,3 +11761,40 @@ them; what remains is mapping each setter's routine to a port event, which is
 ordinary decode work rather than a search problem.
 
 658 citations verified, 0 wrong. 612 lib tests, 0 failures.
+
+## #361 — from "which addresses" to "which subsystems": the gate's wiring table
+
+#360 located every setter. Placing each inside its enclosing labelled routine
+turns a list of addresses into something a port can act on:
+
+    0x67AC  presentation_scan                presentation start
+    0x24F3  nav_actor_handler_2              nav actor
+    0x2751  nav_choice_handler_2             nav choice
+    0x67B0  dlg_line_activate  AND  vm_a6_accept_clears_active_bit
+    0x5E64  vm_a6_accept_clears_active_bit  AND  index_lookup_dca
+    0x2565  console_menu_hit_test            console hit test
+    0x2736  console_mode_dismiss_ladder      console mode, arm 0
+    0x2737  console_mode_dismiss_ladder      console mode, arm 1
+    0x27DA  nav_actor_handler_0  AND  camera_fsm_state_gate
+    0x2792  none (#360)
+
+So the "ten subsystem-active flags" are exactly what the name promised —
+presentation, nav, dialogue, text accept, console menu, console mode, camera —
+and the port already models every one of those as distinct state.
+
+THREE FLAGS HAVE TWO RAISERS EACH, in different subsystems. `0x67B0` is raised by
+dialogue-line activation AND by the 0xA6 accept; `0x5E64` by that same accept AND
+by the asset index lookup; `0x27DA` by a nav actor handler AND the camera FSM. So
+these are not one-flag-per-event, and a port wiring that assumed otherwise would
+clear a flag one subsystem still needs.
+
+WHAT REMAINS is no longer a search: it is whether each port-side event fires at
+the same MOMENT as the instruction that raises the flag. That is a per-row
+question with a named routine on each side — the difference between #312's
+"the port does not model these" and a checklist.
+
+This is the fourth entry in a row where the answer came from `addr_forms.py`
+rather than from decoding: #358 (census), #359 (the table itself), #360
+(setters), #361 (routines). The instrument was the bottleneck, not the binary.
+
+658 citations verified, 0 wrong. 612 lib tests, 0 failures.

@@ -1505,3 +1505,35 @@ already records as baked-zero.
 This is the census #332 said was needed before the gate can be ported. Nine of
 the ten now have a named setter to wire; the tenth needs its writer found in the
 save-restore path or declaring dead.
+
+### #361 — WIRING TABLE: which routine raises each main-loop gate flag
+
+Every set-to-1 site from #360's census, placed inside its enclosing labelled
+routine. This is the map #312 needed to decide whether the busy gate can be
+ported: each row is a flag, the instruction that raises it, and the SUBSYSTEM
+whose port-side event should raise the modelled flag.
+
+    flag     set at    enclosing routine                    subsystem
+    0x67AC   0x5904    presentation_scan                    presentation start
+    0x24F3   0x8160    nav_actor_handler_2                  nav actor
+    0x2751   0x8836    nav_choice_handler_2                 nav choice
+    0x67B0   0x122C    dlg_line_activate                    dialogue line
+    0x67B0   0x677F    vm_a6_accept_clears_active_bit       0xA6 text accept
+    0x5E64   0x673D    vm_a6_accept_clears_active_bit       0xA6 text accept
+    0x5E64   0x761B    index_lookup_dca                     asset index lookup
+    0x2565   0x86C1    console_menu_hit_test                console hit test
+    0x2736   0x892C    console_mode_dismiss_ladder          console mode (arm 0)
+    0x2737   0x893C    console_mode_dismiss_ladder          console mode (arm 1)
+    0x27DA   0x7FF5    nav_actor_handler_0                  nav actor
+    0x27DA   0x8A62    camera_fsm_state_gate                camera FSM
+    0x2792   NONE      -- see #360; cleared only, baked 0x00
+
+Two flags have TWO raisers in different subsystems (`0x67B0` from both the
+dialogue-line activation and the 0xA6 accept; `0x5E64` from the accept and the
+asset index lookup), so the modelled flags are not one-per-event.
+
+The port already models presentation, dialogue, the console menu and nav as
+distinct states, so nine of the ten have an obvious wiring target. What is NOT
+yet established is whether each port event fires at the same MOMENT as the
+instruction that raises the flag — that is the remaining risk, and it is a
+per-row question rather than a blocked subsystem.
