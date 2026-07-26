@@ -10064,3 +10064,37 @@ written, five corrected. Five-in-nine is bad enough to justify one-at-a-time
 promotion without me quietly dropping the clean ones from the count.
 
 Citations: 606 verified, 0 wrong. 607 lib tests, 0 failures.
+
+## #315 — "engine-level analogue" was underselling a decode, and hiding a missing case
+
+`present_scene_buffer` described itself as "the engine-level analogue of the
+game's `gs:[0x1fa7]` blit base" — the kind of phrase that reads as "we did our own
+thing here", so the row sat provisional with a bare DS offset for evidence.
+
+It is not an analogue. `gs:0x1FA7` is read by the blit as a row offset
+(`add bx, word ptr gs:[0x1fa7]` @`0xA464` and @`0xAB6E`), and its writers give the
+cases directly:
+
+    mov word ptr [0x1fa7], 0x23   @0x18BE, @0xB3FA   the BAND top, 35
+    mov word ptr [0x1fa7], 0      @0x1A37, @0x7C45   FULL-SCREEN, 1:1
+    mov word ptr [0x1fa7], 0xa    @0x7B5F            a THIRD case, 10
+
+The doc's `0x23` band top and its full-screen 1:1 case are both exactly right,
+and now cited. So the function was better than its own description.
+
+AND WORSE, in one specific way the description concealed: THERE IS A THIRD BASE.
+`0x7B5F` sets the offset to 10, clears `[0x131C]`, and jumps to `0x7B80`. The port
+has no ten-row placement, so any scene the game draws there lands at the band top
+or full-screen instead. What selects that path is undecoded.
+
+The word "analogue" was doing real damage: it framed a faithful decode as a port
+invention, which both understated the evidence and made the missing case
+invisible — nobody audits an analogue for completeness. The row STAYS
+PROVISIONAL, now for the honest reason (one unmodelled case) rather than the
+vague one.
+
+`load_scene_hnm`, reviewed alongside it, carries NO address at all — its doc only
+points at `render_dialogue_frame`. Its `ASM?` came from the ledger picking up a
+neighbour's offset. Left alone; it needs a decode, not a settlement.
+
+Citations: 607 verified (from 606), 0 wrong. 607 lib tests, 0 failures.

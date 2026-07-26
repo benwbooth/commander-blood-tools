@@ -851,8 +851,24 @@ impl EngineState {
 
     /// Present the decoded scene buffer on the display framebuffer at the clip's
     /// letterbox origin (`scene_band_y`): band clips land on rows 0x23..0xA5 with
-    /// black bars above/below, full-screen clips copy 1:1 — the engine-level analogue
-    /// of the game's `gs:[0x1fa7]` blit base.
+    /// black bars above/below, full-screen clips copy 1:1.
+    ///
+    /// `gs:[0x1FA7]` IS THAT BLIT BASE, and it is a real decode rather than an
+    /// analogue (audit-fixes #315). The blit reads it as a row offset —
+    /// `add bx, word ptr gs:[0x1fa7]` @`0xA464` and @`0xAB6E` — and the writers
+    /// give the cases:
+    ///
+    /// ```text
+    ///   mov word ptr [0x1fa7], 0x23   @0x18BE, @0xB3FA   the BAND top, 35
+    ///   mov word ptr [0x1fa7], 0      @0x1A37, @0x7C45   FULL-SCREEN, 1:1
+    ///   mov word ptr [0x1fa7], 0xa    @0x7B5F            a THIRD case, 10
+    /// ```
+    ///
+    /// The port models the first two. THE `0xA` CASE IS NOT MODELLED: `0x7B5F`
+    /// sets the base to 10 and `[0x131C]` to 0 before jumping to `0x7B80`, so
+    /// there is a third letterbox origin — a ten-row offset — that this function
+    /// cannot produce. What selects it is undecoded, which is why the row stays
+    /// provisional rather than settling on the two cases that do verify.
     fn present_scene_buffer(&mut self) {
         if self.scene_band_y == 0 {
             self.framebuffer.copy_from_slice(&self.scene_buffer);

@@ -1402,3 +1402,17 @@ flags, then gate the consumers above.
 
 Related: audit-fixes #311 — bits 1|2|3 of `0x2793` are the same "defer" family,
 and the port conflates bit 2 with bit 0 in `presentation_busy`.
+
+### #315 — a THIRD scene blit base (`gs:0x1FA7 = 0xA`) is not modelled
+
+`present_scene_buffer` handles two letterbox origins, and the game has three:
+
+    mov word ptr [0x1fa7], 0x23   @0x18BE, @0xB3FA   band top, 35     PORTED
+    mov word ptr [0x1fa7], 0      @0x1A37, @0x7C45   full-screen 1:1  PORTED
+    mov word ptr [0x1fa7], 0xa    @0x7B5F            ten-row offset   NOT PORTED
+
+The blit reads the cell as a row offset (`add bx, gs:[0x1fa7]` @`0xA464`,
+@`0xAB6E`), so the third value is a real third placement. `0x7B5F` also clears
+`[0x131C]` and jumps to `0x7B80`; what selects that path is undecoded. Until it
+is, any scene the game would draw ten rows down is drawn at the band top or
+full-screen by the port.
