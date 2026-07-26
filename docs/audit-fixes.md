@@ -12235,3 +12235,32 @@ for every one needing a fix.
 
 2229 items, 1077 confirmed (48.3%), 1152 open (901 UNVERIFIED + 251 provisional).
 689 citations verified, 0 wrong. 613 lib tests, 0 failures.
+
+## #375 — settling my own work, checked rather than trusted
+
+Four rows from the `ASM?` queue, all functions written earlier in this session.
+The rule from #329 applies with force here: a citation being MINE is not
+evidence, and three sessions' worth of entries in this file exist because a
+plausible-looking citation was wrong.
+
+`branch` cites only `vm_branch` @`0x6462`, and the routine is six instructions:
+
+    0x6463  sub word ptr gs:[0x6884], 2      the stack pointer, POP
+    0x6469  mov ax, word ptr gs:[0x6884]
+    0x646D  mov bp, ax
+    0x646F  mov si, word ptr [bp + 0x6820]   the resume position
+    0x6473  mov byte ptr gs:[0x67ad], 0      clear query mode
+    0x647A  ret
+
+which is exactly "pop the resume position into PC; clear query mode". The port
+models the `0x6884` pointer and `0x6820` array as a `Vec` — an abstraction, but a
+faithful one: the observable behaviour is a LIFO of resume positions.
+
+`refresh_nav_source_scratch` (#294) cites the terminator write, and
+`mov word ptr [bp], 0xffff` @`0x6289` is there. `c1_position_records` (#292) and
+`derive_ship_3d_position_runtime` (#291) carry the record-walk citations checked
+when they were written — `mov ax,[si]` @`0x61AB`, `vm_field_offset` @`0x6023`,
+`cmp si,-1` @`0x61CD` — and re-read now rather than taken on trust.
+
+2229 items, 1081 confirmed (48.5%), 1148 open (901 UNVERIFIED + 247 provisional).
+689 citations verified, 0 wrong. 613 lib tests, 0 failures.
