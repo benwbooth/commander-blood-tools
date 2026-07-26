@@ -447,9 +447,9 @@ CHOICE_BOX_ANCHOR_CONCEPT	src/engine.rs	1965	const	0xAC6,0x89A6,0x84AD	ASM	/// T
 CHOICE_BOX_PITCH	src/engine.rs	1968	const	0x847A,0x8508	ASM?	/// Row pitch 11 — ASSEMBLY: the unified list widget steps `add bp,0xB` /// (0x847A) and hit-tests `row = dy/11 + 1` (`div bl,0x0B` @0x8508).
 choice_box_top_y_seeded	src/engine.rs	1988	fn	0x84A1,0x84C6,0xadd,0x8436,0xADD,0x8442,0x8445,0x847A,0x84A7	ORACLE?	/// The first row's top y, from the widget's ASSEMBLY layout (0x84A1..0x84C6): /// box height h = rows*11 + 8, box y = (200 - h)/2 (screen-centred), text /// top = box y + 4. (This DERIVES the previou
 choice_box_top_y	src/engine.rs	1994	fn	0x8436	ASM	/// Default-path top (`bp = 0` from `xor bp,bp` at `0x8436`).
-choice_box_text_top	src/engine.rs	2000	fn	0xADD	ASM?	/// Kind-aware top: the world/entity box (kind 10) is the `[0xADD]&1` branch, /// which seeds the height 10 higher.
+choice_box_text_top	src/engine.rs	2000	fn	0xADD	ASM	/// Kind-aware top: the world/entity box (kind 10) is the `[0xADD]&1` branch, /// which seeds the height 10 higher.
 choice_box_height_seed	src/engine.rs	2004	fn		UNVERIFIED	
-choice_box_geometry	src/engine.rs	2018	fn	0x84A1,0x84F6,0x84AD,0x84AF,0xac6,0x84B3,0x84EE,0xB0D1,0xAC6	ASM?	/// The choice box's `(anchor, x0, x1)` for a widest label pixel width, per the /// widget layout at `0x84A1..0x84F6`: `w = widest.max(floor) + 0x14`, then /// `x0 = anchor - w/2` (`0x84AD shr / 0x84A
+choice_box_geometry	src/engine.rs	2018	fn	0x84A1,0x84F6,0x84AD,0x84AF,0xac6,0x84B3,0x84EE,0xB0D1,0xAC6	ASM	/// The choice box's `(anchor, x0, x1)` for a widest label pixel width, per the /// widget layout at `0x84A1..0x84F6`: `w = widest.max(floor) + 0x14`, then /// `x0 = anchor - w/2` (`0x84AD shr / 0x84A
 LOADING_TEXT	src/engine.rs	2040	const	0x16BC,0x159,0x299,0x1ABB,0x166,0x498	ASM?	/// The two centred STATUS OVERLAYS, and the quicksave slot name — three UI /// strings the port never drew. Found by sweeping the game's UI string table /// for live draw sites (`re/tools/check_ui_st
 LOADING_POS	src/engine.rs	2041	const		UNVERIFIED	
 LOADING_COLOR	src/engine.rs	2042	const		UNVERIFIED	

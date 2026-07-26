@@ -10020,3 +10020,47 @@ Row tally: seven reviewed, two correct as written, five needing correction — o
 wrong address, one uncheckable address space, one citing its guard clause, one
 covering an invented policy, and now one whose doc, test and citation all
 described the wrong rule.
+
+## #314 — two choice-box rows that verify EXACTLY, and why that is worth recording too
+
+Seven rows reviewed so far and five needed correction, which risks turning the
+review into a search for defects. These two did not need any, and the check is
+the same either way.
+
+`choice_box_text_top` / `choice_box_top_y`. The doc claims a default seed of 0
+"from `xor bp,bp` at `0x8436`" and that the world/entity box takes the
+`[0xADD]&1` branch, seeding the height 10 higher:
+
+    0x8436  xor bp, bp                default seed 0
+    0x8438  mov dx, 0x64              default floor 100
+    0x843B  test byte [0xadd], 1 / je
+    0x8442  mov bp, 0xa               <- the seed, 10
+    0x8445  mov dx, 0x37              <- the floor, 55
+
+Both the seed and the kind-10 floor are exactly as documented. `0xADD` is a
+one-bit flag (`test ...,1` at three sites, set at `0xB0DC` on the ship/world click
+path, cleared at `0x89AC`), which supports the port keying it as
+`console_box_kind == 10`.
+
+`choice_box_geometry`. `w = widest.max(floor) + 0x14` then `x0 = anchor - w/2`:
+
+    0x84A1  add dx, 0x14
+    0x84AD  shr dx, 1
+    0x84AF  sub dx, word ptr [0xac6]
+    0x84B3  neg dx                    -> anchor - w/2
+
+and the hit-test band the doc claims, checked rather than assumed after #306:
+
+    0x84EE  cmp ax, bx / jl           reject below x0
+    0x84F2  add bx, cx
+    0x84F4  cmp ax, bx / jg           reject above x0 + w
+
+Every cited instruction is at its cited address and does what the doc says.
+Settled ASM.
+
+WHY THIS ENTRY EXISTS. A review that only records what it breaks produces a
+misleading base rate — the running tally is now nine reviewed, four correct as
+written, five corrected. Five-in-nine is bad enough to justify one-at-a-time
+promotion without me quietly dropping the clean ones from the count.
+
+Citations: 606 verified, 0 wrong. 607 lib tests, 0 failures.
