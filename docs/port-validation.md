@@ -1356,3 +1356,49 @@ consumes a pending C4 via `[0x675E]` and scans nothing.
 
 So first-match promotion order is a PORT CONSTRUCTION, not decoded behaviour.
 Finding the engine's own scan is the task; until then the row stays provisional.
+
+## APPROX — pending script profiles dispatch IMMEDIATELY; the game defers until idle
+
+ROUTINE THAT MUST REPLACE IT: `main_loop_busy_gate` / `main_pending_profile_dispatch`,
+`0x1095`..`0x10F5`.
+
+The 0xD2 opcode posts a profile id to `DS:0x6780` (`vm_pending_resource_profile`),
+which the port models as `VmMachine::pending_profile` plus a
+`VmEvent::ProfileRequest`. The port's consumers — `main.rs:720`, `main.rs:1283`,
+`main.rs:2353`, `bin/playthrough.rs:136`, `engine.rs:3475` — act on that request
+as soon as it arrives.
+
+THE GAME DOES NOT. The main loop dispatches a pending profile only when
+EVERYTHING IS IDLE:
+
+    0x1095  test byte [0x2793], 0xe / jne     bits 1|2|3 -> defer
+    0x109C  al = [0x67AC]                     presentation
+    0x109F  or al, [0x24F3]                   \
+    0x10A3  or al, [0x2751]                    |
+    0x10A7  or al, [0x67B0]                    |
+    0x10AB  or al, [0x5E64]                    | ten subsystem-active
+    0x10AF  or al, [0x2565]                    | flags, OR'd together
+    0x10B3  or al, [0x2736]                    |
+    0x10B7  or al, [0x2737]                    |
+    0x10BB  or al, [0x27DA]                    |
+    0x10BF  or al, [0x2792]                   /
+    0x10C3  jne                                any set -> defer
+    0x10C5  ax = [0x6780]                      the pending profile id
+    0x10C8  lcall 0x4DA:0                      select that resource profile
+    0x10D3  [0x6780] = 0xFFFF                  clear pending
+    0x10D9  [0x67A8] = 1
+    0x10F0  [0x27D9] = 1 ; [0x27DA] = 0
+
+So a scene load requested mid-presentation waits for the presentation to end.
+The port loads it at once, which can swap resources under a running scene.
+
+WHY NO PREDICATE IS SHIPPED YET: `VmMachine` models exactly ONE of the ten
+(`0x67AC`, as `presentation_active`); `0x27DA` appears nowhere in the tree at all,
+and the rest exist only as scattered constants in other modules. A predicate over
+one flag would be an APPROXIMATION with the shape of a decoded rule, which is
+worse than an honest gap — the deferral would fire on presentation alone and look
+correct in tests that only exercise presentations. The work is to model the ten
+flags, then gate the consumers above.
+
+Related: audit-fixes #311 — bits 1|2|3 of `0x2793` are the same "defer" family,
+and the port conflates bit 2 with bit 0 in `presentation_busy`.

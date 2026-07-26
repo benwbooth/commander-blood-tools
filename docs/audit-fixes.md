@@ -9945,3 +9945,36 @@ gate", and only then does the split have somewhere to land. Recorded in the doc
 beside the field.
 
 606 lib tests, 0 failures. 605 citations verified, 0 wrong.
+
+## #312 — decoded the main-loop busy gate, and did NOT ship a one-flag version of it
+
+#311 ended by naming the next step: port the main-loop profile gate at `0x1095`,
+since the `0x2793` bit split has nowhere to land without it. It decodes cleanly —
+bits 1|2|3 of `0x2793`, then ten subsystem flags OR'd together, and only if all
+are clear does `[0x6780]`'s pending profile get selected and the slot cleared to
+`0xFFFF`.
+
+The port already has the request half: `0xD2` posts `pending_profile` and emits
+`VmEvent::ProfileRequest`. What it lacks is the DEFERRAL — `main.rs` (three
+sites), `bin/playthrough.rs` and `engine.rs` all act on the request immediately,
+so a scene load requested mid-presentation can swap resources under a running
+scene instead of waiting.
+
+I DID NOT IMPLEMENT THE PREDICATE, and the reason is the interesting part.
+`VmMachine` models exactly ONE of the ten flags (`0x67AC`, as
+`presentation_active`). `0x27DA` does not appear anywhere in the tree. The rest
+exist as constants in other modules, not as VM state.
+
+A `may_dispatch_pending_profile()` written over one flag would defer on
+presentation and nothing else. It would pass any test I wrote for it, because the
+tests I could write would exercise presentations — the one input it models. That
+is the #302 failure shape exactly: a decoded fact and an invented policy sharing
+one function, with a citation over both. Better to leave the gap visible than to
+close it with something that reads as decoded and behaves as a guess.
+
+Recorded in docs/port-validation.md as an APPROX row with the routine that must
+replace it and the specific missing state, per the project's rule that a
+capture-or-approximation may stand only when the binary routine that replaces it
+is named.
+
+606 lib tests, 0 failures. 605 citations verified, 0 wrong.
