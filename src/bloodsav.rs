@@ -186,6 +186,38 @@ impl BloodSave {
 
 #[cfg(test)]
 mod tests {
+
+    /// The directory `main.rs` WRITES must parse with the reader decoded here.
+    /// They were separate layouts until #267 — the writer carried its own
+    /// `15`/`16`/`32` — and a writer whose output its own reader rejects is the
+    /// failure that shape invites.
+    #[test]
+    fn a_written_slot_directory_parses_back() {
+        // Reproduce the writer exactly, with a 14-character name: the longest the
+        // edit law at `0x1DD8` permits.
+        let name = "abcdefghijklmn";
+        assert_eq!(name.len(), 14);
+        let mut dir = Vec::with_capacity(SLOT_COUNT * SLOT_RECORD_LEN);
+        for n in 1..=SLOT_COUNT {
+            let mut rec = [0u8; SLOT_RECORD_LEN];
+            rec[..SLOT_NAME_LEN - 1].fill(b' ');
+            if n == 1 {
+                let take = name.len().min(SLOT_NAME_LEN - 1);
+                rec[..take].copy_from_slice(&name.as_bytes()[..take]);
+            }
+            let fname = format!("game{n}.sav");
+            rec[SLOT_NAME_LEN..SLOT_NAME_LEN + fname.len()].copy_from_slice(fname.as_bytes());
+            dir.extend_from_slice(&rec);
+        }
+
+        let slots = parse_slot_directory(&dir).expect("the writer's output must parse");
+        assert_eq!(slots.len(), SLOT_COUNT);
+        assert_eq!(slots[0].name, name, "the typed name did not survive the round trip");
+        assert_eq!(slots[0].file, "game1.sav");
+        assert_eq!(slots[9].file, "game10.sav");
+        // Untyped slots read as empty, not as a run of spaces.
+        assert_eq!(slots[1].name, "");
+    }
     use super::*;
 
     #[test]

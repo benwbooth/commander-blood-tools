@@ -268,7 +268,7 @@ SaveSlot	src/bloodsav.rs	73	struct	0x2734,0x1BAB,0x25ED,0x273B,0x1BBD,0x8573	ASM
 SLOT_RECORD_LEN	src/bloodsav.rs	81	const		UNVERIFIED	/// Bytes per directory record, and the record count.
 SLOT_NAME_LEN	src/bloodsav.rs	82	const		UNVERIFIED	
 SLOT_COUNT	src/bloodsav.rs	83	const		UNVERIFIED	
-parse_slot_directory	src/bloodsav.rs	88	fn	0x1BAB,0x2734,0x1BBD,0x273B	ASM	/// Parse `blood.sav`, the slot-name directory the save flow renames through /// (`0x1BAB` points `[0x2734]` at a record, `0x1BBD` copies it to `DS:0x273B`). /// Returns `None` unless the image is exa
+parse_slot_directory	src/bloodsav.rs	88	fn	0x1BAB,0x2734,0x1BBD,0x273B	TESTED	/// Parse `blood.sav`, the slot-name directory the save flow renames through /// (`0x1BAB` points `[0x2734]` at a record, `0x1BBD` copies it to `DS:0x273B`). /// Returns `None` unless the image is exa
 SAVE_PROFILE_SOURCE_DS	src/bloodsav.rs	111	const	0x1C63,0x1C6D,0x1C72,0x1CEB	ASM	/// The DS globals the writer streams from (`0x1C63`, `0x1C6D`, `0x1C72`) and, /// for the profile, the DIFFERENT one the reader streams into (`0x1CEB`).
 LOAD_PROFILE_DEST_DS	src/bloodsav.rs	112	const		UNVERIFIED	
 FLAGS_SOURCE_DS	src/bloodsav.rs	113	const		UNVERIFIED	

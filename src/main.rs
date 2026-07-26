@@ -2137,16 +2137,28 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         }
                         // The slot directory: ten 32-byte {15-char name, NUL,
                         // "game<N>.sav"} records, the typed name in slot 1.
-                        let mut dir = Vec::with_capacity(320);
-                        for n in 1..=10u32 {
-                            let mut rec = [0u8; 32];
-                            rec[..15].fill(b' ');
+                        // Use the DECODED layout constants rather than the 15/16/32
+                        // literals this loop used to carry. `bloodsav` owns the
+                        // format (`parse_slot_directory`, `0x1BAB`/`0x1BBD`), and a
+                        // writer with its own copy of the numbers can drift from the
+                        // reader that has to parse them back (audit-fixes #267).
+                        use commander_blood_tools::bloodsav::{
+                            SLOT_COUNT, SLOT_NAME_LEN, SLOT_RECORD_LEN,
+                        };
+                        let mut dir = Vec::with_capacity(SLOT_COUNT * SLOT_RECORD_LEN);
+                        for n in 1..=SLOT_COUNT {
+                            let mut rec = [0u8; SLOT_RECORD_LEN];
+                            // Spaces up to the field's last byte, leaving the NUL
+                            // the reader splits on. The edit law caps names at 14
+                            // (`0x1DD8`), so this never truncates a legal name.
+                            rec[..SLOT_NAME_LEN - 1].fill(b' ');
                             if n == 1 {
-                                rec[..name.len().min(15)]
-                                    .copy_from_slice(&name.as_bytes()[..name.len().min(15)]);
+                                let take = name.len().min(SLOT_NAME_LEN - 1);
+                                rec[..take].copy_from_slice(&name.as_bytes()[..take]);
                             }
                             let fname = format!("game{n}.sav");
-                            rec[16..16 + fname.len()].copy_from_slice(fname.as_bytes());
+                            rec[SLOT_NAME_LEN..SLOT_NAME_LEN + fname.len()]
+                                .copy_from_slice(fname.as_bytes());
                             dir.extend_from_slice(&rec);
                         }
                         let _ = std::fs::write(format!("{iso}/blood.sav"), &dir);

@@ -8233,3 +8233,29 @@ hooks like `special_slot_insert_pub`, alternates like
 `ship_3d_target_record_select` whose caller now supplies rows another way. #240
 withdrew exactly such a conclusion after tracing what filled a list. But 53 is a
 number worth having, and I did not have it.
+
+## #267 — a writer with its own copy of the format
+
+Working the 53 unrouted rules from #266, `bloodsav::parse_slot_directory` stood
+out: the port claims to write "the DOS-format slot files exactly as the original
+does", so the decoded READER having no caller was worth explaining.
+
+It is not that nothing writes the directory. `main.rs` writes it — with its own
+hand-built records carrying literal `15`, `16` and `32`, while `bloodsav` owns
+`SLOT_NAME_LEN`, `SLOT_RECORD_LEN` and `SLOT_COUNT` decoded from `0x1BAB`/`0x1BBD`.
+Two copies of one format, and the reader was not exercised against the writer.
+
+Checked before changing anything: the layouts AGREE. The writer fills 15 spaces
+and writes a name of at most 14 (the edit law's cap at `0x1DD8`), leaving the NUL
+at byte 15 that the reader splits on; the filename sits at 16. So this was a
+latent hazard rather than a live bug — but "latent" is what a duplicated format
+always is, and the way it stops being latent is somebody correcting one copy.
+
+The writer now uses the decoded constants, and a test writes a directory exactly
+as `main.rs` does and parses it back, asserting the 14-character name survives,
+the filenames land in the right field, and an untyped slot reads as empty rather
+than as a run of spaces.
+
+`to_bytes` and `flag_bit` remain unrouted and are NOT the same case — those are
+the VM-state save, and whether the port should route through them is a separate
+question about `to_dos_save`, which is what `main.rs` calls instead.
