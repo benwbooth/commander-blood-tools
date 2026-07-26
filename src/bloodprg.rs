@@ -3099,6 +3099,98 @@ pub const PRESENTATION_3D_MARKERS: &[BinarySymbol] = &[
 #[cfg(test)]
 mod tests {
 
+    /// EACH FILE-OFFSET CONSTANT MUST LAND ON THE KIND OF DATA ITS NAME CLAIMS.
+    ///
+    /// These six were left uncited by audit-fixes #252, which cleared the
+    /// addresses a scanning bug had absorbed from unrelated comments. They are not
+    /// unverifiable — an offset that names a table can be checked by looking at
+    /// what is there, and each kind has a signature a wrong offset would not
+    /// reproduce.
+    #[test]
+    fn file_offset_constants_land_on_the_data_they_name() {
+        let Some(binary) = fixture() else { return };
+        let img = binary.image_bytes();
+        let word = |at: usize| u16::from_le_bytes([img[at], img[at + 1]]);
+
+        // The 52-entry VM dispatch table: ASCENDING near offsets into 0x4DA.
+        // NOT sorted -- handler addresses are wherever the linker put the
+        // routines, and only 30 of the 51 adjacent pairs ascend. What IS true of
+        // a jump table and not of arbitrary bytes: every live entry is a near
+        // offset inside one segment's span, and the last slot is NULL.
+        let handlers: Vec<u16> = (0..52).map(|i| word(OPCODE_HANDLER_TABLE_FILE_OFFSET + i * 2)).collect();
+        assert_eq!(handlers[51], 0, "the 0xD3 slot is NULL (52 entries, last empty)");
+        let outside: Vec<u16> = handlers[..51]
+            .iter()
+            .copied()
+            .filter(|h| !(0x1000..0x2000).contains(h))
+            .collect();
+        assert!(
+            outside.is_empty(),
+            "handler offsets outside the segment's code span: {outside:x?}"
+        );
+        // 36 DISTINCT handlers for 51 live opcodes -- measured, not assumed.
+        // Opcodes SHARE routines, which the port's own constants corroborate:
+        // `OP_PAIR_RECORD_A`, `_B` and `_C` all cite `0x6B06`. So the useful
+        // assertion is that the table is neither uniform (which the range check
+        // alone would allow) nor fully distinct (which would contradict the
+        // sharing the decode already records).
+        let unique: std::collections::BTreeSet<_> = handlers[..51].iter().collect();
+        assert!(
+            (30..51).contains(&unique.len()),
+            "{} distinct handlers of 51 -- outside the range a shared-handler \
+             dispatch table produces",
+            unique.len()
+        );
+
+        // The script profile table: small ascending indices.
+        let profiles: Vec<u16> = (0..4).map(|i| word(SCRIPT_RESOURCE_PROFILE_TABLE_FILE_OFFSET + i * 2)).collect();
+        assert_eq!(profiles, vec![2, 3, 4, 5], "profile table is not 2,3,4,5");
+
+        // The dialogue font's ASCII map opens with the UNMAPPED sentinel, since
+        // control characters have no glyph.
+        assert!(
+            img[DIALOGUE_FONT_ASCII_MAP_FILE_OFFSET..DIALOGUE_FONT_ASCII_MAP_FILE_OFFSET + 8]
+                .iter()
+                .all(|&b| b == 0xFF),
+            "the ASCII map does not start with unmapped entries"
+        );
+
+        // Advances are per-glyph widths. A range check ALONE cannot localise this
+        // offset: the table opens with a run of `0x09` and shifting by one still
+        // reads `0x09`, so the perturbation passes. The BOUNDARY is what pins it —
+        // the byte before the table is `0xFF`, the ASCII map's unmapped sentinel,
+        // and the first byte of the table is not.
+        let advances_at = DIALOGUE_FONT_ADVANCES_FILE_OFFSET;
+        assert_eq!(
+            img[advances_at - 1],
+            0xFF,
+            "the byte before the advances is not the ASCII map's 0xFF tail, so \
+             this offset is not the table's start"
+        );
+        assert_ne!(img[advances_at], 0xFF, "the advances start inside the ASCII map");
+        let advances = &img[advances_at..advances_at + 48];
+        assert!(
+            advances.iter().all(|&a| (1..=24).contains(&a)),
+            "advances are not glyph widths: {advances:x?}"
+        );
+
+        // The glyph bitmap: rows of a drawable shape. A blank first glyph then a
+        // row pattern with both set and clear bits -- an offset landing in code
+        // or a pointer table gives neither.
+        let glyphs = &img[DIALOGUE_FONT_GLYPHS_FILE_OFFSET..DIALOGUE_FONT_GLYPHS_FILE_OFFSET + 16];
+        assert!(
+            glyphs.iter().any(|&b| b != 0) && glyphs.iter().any(|&b| b == 0),
+            "the glyph block is uniform, so it is not bitmap rows: {glyphs:x?}"
+        );
+
+        // The sprite blitter jump table: ascending near offsets, like the handlers.
+        let blitters: Vec<u16> = (0..6).map(|i| word(RENDER_SPRITE_BLITTER_TABLE_FILE_OFFSET + i * 2)).collect();
+        assert!(
+            blitters.windows(2).all(|w| w[0] < w[1]),
+            "the blitter table is not ascending: {blitters:x?}"
+        );
+    }
+
     /// THE OFFSET CONSTANTS' NAMES ARE CHECKABLE CLAIMS.
     ///
     /// Each is relative to `SHIP_PRESENTATION_SEGMENT` (file base `0xAFA0`), and

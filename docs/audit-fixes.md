@@ -7888,3 +7888,35 @@ That is the second time in two entries that adding a number to a tool's output
 created a wrong impression before it created a right one (#252's origin column,
 this summary). A count is a claim, and a count printed next to another count is
 also a claim about their relationship.
+
+## #255 — six offsets grounded, and two wrong assumptions about a dispatch table
+
+#252 left six `bloodprg.rs` file-offset constants uncited. An offset that names a
+table is checkable by looking at what is there, and each kind has a signature:
+
+  * `OPCODE_HANDLER_TABLE_FILE_OFFSET` — 52 near offsets, the last NULL;
+  * `SCRIPT_RESOURCE_PROFILE_TABLE_FILE_OFFSET` — the words 2, 3, 4, 5;
+  * `DIALOGUE_FONT_ASCII_MAP_FILE_OFFSET` — opens with `0xFF` unmapped entries;
+  * `DIALOGUE_FONT_ADVANCES_FILE_OFFSET` — glyph widths in `1..=24`;
+  * `DIALOGUE_FONT_GLYPHS_FILE_OFFSET` — bitmap rows, not uniform;
+  * `RENDER_SPRITE_BLITTER_TABLE_FILE_OFFSET` — ascending near offsets.
+
+I got the handler table wrong TWICE before measuring it. First I asserted the
+entries mostly ASCEND; they do not — handler addresses are wherever the linker put
+the routines, and only 30 of 51 adjacent pairs ascend. Then I asserted they are
+mostly DISTINCT; they are not — 36 distinct for 51 live opcodes, because opcodes
+SHARE routines, which the port's own constants already record (`OP_PAIR_RECORD_A`,
+`_B` and `_C` all cite `0x6B06`). Both assumptions came from what a dispatch table
+"obviously" looks like, and the data said otherwise both times.
+
+The advances check needed a second pass for a different reason. Shifting the
+constant by one byte PASSED: the table opens with a run of `0x09`, so a range check
+cannot localise it. What pins it is the BOUNDARY — the byte before is `0xFF`, the
+ASCII map's unmapped tail, and the first byte of the table is not. With that,
+shifting by one fails.
+
+That is the useful shape for any "does this offset point at the right table"
+check: uniform data cannot localise an offset, so the assertion has to be about
+where the uniformity STARTS.
+
+Six rows settled DATA.

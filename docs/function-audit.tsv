@@ -50,19 +50,19 @@ BLOODPRG_SHA256	src/bloodprg.rs	21	const		UNVERIFIED	/// NOT VERIFIED BY ANY TES
 VM_CODE_SEGMENT	src/bloodprg.rs	23	const		UNVERIFIED	
 FS_SEGMENT	src/bloodprg.rs	24	const		DATA	
 DATA_SEGMENT	src/bloodprg.rs	25	const		DATA	
-OPCODE_HANDLER_TABLE_FILE_OFFSET	src/bloodprg.rs	26	const		UNVERIFIED	
+OPCODE_HANDLER_TABLE_FILE_OFFSET	src/bloodprg.rs	26	const		DATA	
 OPCODE_LENGTH_TABLE_FILE_OFFSET	src/bloodprg.rs	27	const		DATA	
 RESOURCE_NAME_TABLE_FS_OFFSET	src/bloodprg.rs	28	const		DATA	
 RESOURCE_NAME_TABLE_FILE_OFFSET	src/bloodprg.rs	29	const		DATA	
 RESOURCE_NAME_ENTRY_LEN	src/bloodprg.rs	30	const		UNVERIFIED	
 SCRIPT_RESOURCE_PROFILE_TABLE_FS_OFFSET	src/bloodprg.rs	31	const		UNVERIFIED	
-SCRIPT_RESOURCE_PROFILE_TABLE_FILE_OFFSET	src/bloodprg.rs	32	const		UNVERIFIED	
+SCRIPT_RESOURCE_PROFILE_TABLE_FILE_OFFSET	src/bloodprg.rs	32	const		DATA	
 SCRIPT_RESOURCE_PROFILE_COUNT	src/bloodprg.rs	33	const		UNVERIFIED	
 SCRIPT_RESOURCE_PROFILE_SLOT_COUNT	src/bloodprg.rs	34	const		UNVERIFIED	
 SCRIPT_RESOURCE_PROFILE_STRIDE	src/bloodprg.rs	35	const		UNVERIFIED	
-DIALOGUE_FONT_ASCII_MAP_FILE_OFFSET	src/bloodprg.rs	36	const		UNVERIFIED	
-DIALOGUE_FONT_ADVANCES_FILE_OFFSET	src/bloodprg.rs	37	const		UNVERIFIED	
-DIALOGUE_FONT_GLYPHS_FILE_OFFSET	src/bloodprg.rs	38	const		UNVERIFIED	
+DIALOGUE_FONT_ASCII_MAP_FILE_OFFSET	src/bloodprg.rs	36	const		DATA	
+DIALOGUE_FONT_ADVANCES_FILE_OFFSET	src/bloodprg.rs	37	const		DATA	
+DIALOGUE_FONT_GLYPHS_FILE_OFFSET	src/bloodprg.rs	38	const		DATA	
 DIALOGUE_FONT_ASCII_MAP_LEN	src/bloodprg.rs	45	const	0x14C22,0x14CD2	ASM	/// 176 (`0xB0`), NOT 128. The map runs from `0x14C22` to the advance table at /// `0x14CD2`, and the 48 entries past 128 are REAL: 14 of them are live glyph /// indices (`0x82`->`é`, `0x84`->`ä`, `0x
 DIALOGUE_FONT_GLYPH_COUNT	src/bloodprg.rs	46	const		UNVERIFIED	
 OPTION_MENU_POINTER_LIST_DS	src/bloodprg.rs	49	const	0x2567,0x8871	DATA	/// `mov si,0x2567` @`0x8871` — the OPTION menu's pointer list.
@@ -113,7 +113,7 @@ RENDER_SPRITE_SLOT_EXTENT_OFFSET	src/bloodprg.rs	119	const		UNVERIFIED
 RENDER_SPRITE_SLOT_COMMIT_RANGE_OFFSET	src/bloodprg.rs	120	const		UNVERIFIED	
 RENDER_SPRITE_SLOT_DIRTY_RANGE_RENDER_OFFSET	src/bloodprg.rs	121	const		UNVERIFIED	
 RENDER_SPRITE_BLITTER_TABLE_OFFSET	src/bloodprg.rs	122	const		UNVERIFIED	
-RENDER_SPRITE_BLITTER_TABLE_FILE_OFFSET	src/bloodprg.rs	123	const		UNVERIFIED	
+RENDER_SPRITE_BLITTER_TABLE_FILE_OFFSET	src/bloodprg.rs	123	const		DATA	
 RENDER_SPRITE_BLITTER_ENTRY_COUNT	src/bloodprg.rs	132	const	0x44B3,0x1592,0x4522,0x2F90,0x299,0x202,0x40E	ASM	/// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the /// index is masked to the even values 
 RENDER_SPRITE_BLITTER_INDEX_MASK_IMMEDIATE	src/bloodprg.rs	134	const	0x44B7	ASM	/// File offset of the `and bx,imm8` operand that bounds the index (`0x44B7`).
 RENDER_SPRITE_BLIT_RAW_TRANSPARENT_OFFSET	src/bloodprg.rs	135	const		TESTED	
