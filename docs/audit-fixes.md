@@ -11093,3 +11093,33 @@ does it fill `0x2AB3`" — which is the difference between a dead end and a next
 step.
 
 641 citations verified, 0 wrong. 612 lib tests, 0 failures.
+
+## #342 — the status headers are in the same string block as the UI literals
+
+Four `bloodprg.rs` rows — `STATUS_HEADER_PLANET_DS` and its three siblings — are
+DS-offset constants whose citations are the `mov si, imm` operands verified in
+#320 (`0x8369`, `0x836C`'s branch, `0x8376`'s branch, `0x839F`).
+
+Reading the image at those offsets closes the loop:
+
+    DS:0x12E  "PLANET: "
+    DS:0x137  "SHIP: "
+    DS:0x13E  "BLACK HOLE: "
+    DS:0x14B  "LIFE SUPPORT:"
+
+and these sit in the SAME contiguous block as #325's UI strings (`0x159`
+`"LOADING"`, `0x161` `"LAST"`, `0x166` `"PAUSE"`, `0x16C` `"UNKNOWN"`). It is one
+NUL-separated table spanning at least `0x12E`..`0x173`, not two coincidental
+neighbourhoods.
+
+`ui_string_literals_match_the_image_block` now reads all of it and asserts the
+contiguity across the status headers too — each string ending exactly where the
+next begins. That is what turns eight offsets into one verified table: any single
+offset could be right by luck, but a chain of terminators cannot.
+
+Settled ASM: the constants are addresses, the instructions that load them are
+verified, and the strings at those addresses are what the names say.
+
+Ledger: 2222 items, 1048 confirmed (47.2%).
+
+641 citations verified, 0 wrong. 612 lib tests, 0 failures.

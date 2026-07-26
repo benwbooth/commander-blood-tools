@@ -8304,6 +8304,18 @@ mod tests {
         assert_eq!(0x161 + at(0x161).len() + 1, 0x166);
         assert_eq!(0x166 + at(0x166).len() + 1, 0x16C);
         assert_eq!(at(0x16C), "UNKNOWN", "the roster's empty caption follows");
+
+        // THE SAME BLOCK carries the status-panel headers, whose DS offsets are
+        // the `mov si,imm` operands verified in audit-fixes #320/#342. Reading
+        // them here makes the whole region one checked table rather than four
+        // separate address constants that happen to be right.
+        assert_eq!(at(0x12E), "PLANET: ");
+        assert_eq!(at(0x137), "SHIP: ");
+        assert_eq!(at(0x13E), "BLACK HOLE: ");
+        assert_eq!(at(0x14B), "LIFE SUPPORT:");
+        // Contiguity again: PLANET's terminator is where SHIP begins.
+        assert_eq!(0x12E + at(0x12E).len() + 1, 0x137);
+        assert_eq!(0x137 + at(0x137).len() + 1, 0x13E);
     }
 
     /// audit-fixes #322. `MENU_SUBMENU` is a transcribed literal and its doc says
