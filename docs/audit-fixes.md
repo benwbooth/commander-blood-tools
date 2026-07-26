@@ -10390,3 +10390,39 @@ Not fixed here: reaching the menu the way the game does means decoding the MENU
 click dispatch, which is a decode task rather than a review one.
 
 609 lib tests, 0 failures. 613 citations verified, 0 wrong.
+
+## #324 — partial progress on the MENU dispatch, and independent support for #311
+
+Took #323's decode task: find what supplies the MENU submenu's word-offset list,
+so `menu_submenu_labels` can stop guessing with `min_by_key`.
+
+The widget is `0x8428` (`list_widget_layout_unified`), and it takes the list in
+SI — so the caller decides identity. Eight near callers. The in-window concept
+path is `0x89C1`, and its setup block is now labelled:
+
+    0x8998  or  byte [0x2793], 4      <- bit 2
+    0x899D  inc byte [0x67BA]
+    0x89A1  mov byte [0xADC], 0
+    0x89A6  mov word [0xAC6], 0xE1    the concept anchor, centre-X 225
+    0x89AC  mov byte [0xADD], 0       (so NOT the world/entity box branch)
+    0x89B6  mov byte [0xADA], 4
+    0x89BB  mov byte [0x27E6], 1
+    0x89C1  call 0x8428
+
+SI IS NOT SET HERE. It is inherited from this routine's caller, so the list's
+identity is decided further up and the search continues there. Recorded rather
+than guessed — naming the wrong caller would be exactly the #302 shape.
+
+INDEPENDENT SUPPORT FOR #311, which is the part worth keeping. `or byte
+[0x2793], 4` @`0x8998` is a SECOND setter of bit 2, in a completely different
+subsystem from the presentation start (`0x593A`). #311 read bit 2 as "something
+is running, defer the pending-profile load", from the main-loop gate's
+`test byte [0x2793], 0xe` @`0x1095`. A concept list being shown is exactly the
+kind of thing that should defer a scene load, and it raises the same bit. Two
+unrelated paths, one meaning — that reading has now survived #308's and #309's
+corrections of everything around it and gained a second witness.
+
+Not fixed: the MENU dispatch. The APPROX row in docs/port-validation.md stands,
+now with `0x8428`'s call sites enumerated and the concept path identified.
+
+609 lib tests, 0 failures. 613 citations verified, 0 wrong.
