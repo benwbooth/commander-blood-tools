@@ -10672,3 +10672,44 @@ than #312 itself made: it is not one unported gate, it is the thing four
 separate paths are waiting on.
 
 620 citations verified, 0 wrong. 610 lib tests, 0 failures.
+
+## #331 — built the thing four subsystems were waiting on
+
+#330 made the argument that #312 had not: `gs:0x2793` is not one unported gate,
+it is what presentation (#311), concept lists (#324), the save dialogue (#325)
+and the bridge station seek (#330) are all blocked on. So it is now STATE.
+
+`VmMachine::ui_flags: u16` models the word as a word — which #309 established it
+is, with at least six live bits read individually and as composite masks. Four
+bit constants, each cited at the instruction that reads or writes it:
+
+    UI_FLAG_CE_BRANCH   0x0001  test byte gs:[0x2793],1 / jne  @0x6494
+    UI_FLAG_BUSY        0x0004  or byte [0x2793],4  @0x593A, @0x8998, @0x1B7B
+    UI_FLAG_SEEK_ARRIVED 0x0008 xor word [0x2793],8 @0x9671   (toggle, not set)
+    UI_FLAG_DEFER_MASK  0x000E  test byte [0x2793],0xe / jne  @0x1095
+
+The presentation lifecycle now raises `UI_FLAG_BUSY` on start and clears it in
+the 0xC9 teardown, matching `or ...,4` / `and ...,0xfb`.
+
+ADDITIVE ON PURPOSE. `presentation_busy` still sets bit-0 semantics, which #311
+proved wrong and #311's own experiment proved LOAD-BEARING — removing it fails
+six tests including the story drive. So this adds the correct bit beside the
+wrong one rather than swapping one guess for another. The divergence is now
+narrowed from "the port sets the wrong flag" to "the port also sets bit 0", which
+is a smaller and better-documented lie.
+
+STILL NOT PORTED, and #312's reasoning stands: the GATE. It ORs ten separate
+subsystem-active bytes at `0x109C`..`0x10BF` that the port does not model, and a
+predicate over the bits I now have would defer on presentation and nothing else —
+passing every test I could write for it. The blocker has moved from "the flag
+word does not exist" to "the ten flags do not exist", which is progress of the
+kind that can be checked.
+
+I ALSO CAUGHT MYSELF: the new test was called
+`presentation_lifecycle_raises_and_clears_the_defer_bit` and only exercised the
+raise — the clear sits in `step()`'s 0xC9 arm and needs a full presentation to
+reach. Renamed to `presentation_start_raises_the_defer_bit` with the scope stated.
+That is #313's finding (a test whose name promised more than its assertions) with
+my name on it, one entry after I wrote it up.
+
+629 citations verified (from 620), 0 wrong. 611 lib tests, 0 failures.

@@ -1677,6 +1677,21 @@ const C2_ACTIVE_LINE_KIND400: u16 = 0x2B;
 /// Touched by the game at `mov word ptr [0x2793], 0` @`0x0AFC6`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const VM_UI_FLAGS: u16 = 0x2793;
+/// Bit 0 of [`VM_UI_FLAGS`] — what the 0xCE opcode branches on:
+/// `test byte ptr gs:[0x2793], 1 / jne` @`0x6494`, branch when CLEAR.
+pub const UI_FLAG_CE_BRANCH: u16 = 0x0001;
+/// Bit 2 — raised while something is RUNNING, so the main loop defers a pending
+/// script-profile load. Three independent setters, all `or byte [0x2793], 4`:
+/// the presentation start @`0x593A`, the concept-list show @`0x8998`, and the
+/// save dialogue @`0x1B7B`. Cleared by the teardowns (`and ...,0xfb` @`0x59BF`,
+/// @`0x5E99`).
+pub const UI_FLAG_BUSY: u16 = 0x0004;
+/// Bit 3 — toggled on station-seek ARRIVAL: `xor word ptr [0x2793], 8` @`0x9671`.
+/// Note TOGGLE, not set (audit-fixes #330).
+pub const UI_FLAG_SEEK_ARRIVED: u16 = 0x0008;
+/// Bits 1|2|3 together: `test byte ptr [0x2793], 0xe / jne` @`0x1095`, the
+/// main-loop gate. Any of them set DEFERS the pending-profile dispatch.
+pub const UI_FLAG_DEFER_MASK: u16 = 0x000E;
 /// Touched by the game at `test byte ptr [0x1fb2], 1` @`0x0B001`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const C2_PRESENTATION_GATE: u16 = 0x1FB2;
@@ -4775,7 +4790,35 @@ pub struct VmMachine {
     /// `gs:0x67B1` bit1 — selects `concept_alt` for 0xA3; cleared by 0xCF.
     pub concept_alt_active: bool,
     /// Presentation-busy flag (`gs:0x2793` bit0) — 0xCE branches when CLEAR.
+    ///
+    /// SEE [`Self::ui_flags`]: this models ONE BIT of a multi-bit word, and
+    /// `start_actor_presentation` sets it where the game sets bit 2 instead
+    /// (audit-fixes #311). Kept because the port's story flow rides on it.
     pub presentation_busy: bool,
+    /// `gs:0x2793`, the UI/STATE FLAG WORD — modelled as a word because it is
+    /// one (audit-fixes #331).
+    ///
+    /// #307 called it two flags and #308 kept that framing; #309 counted it
+    /// properly and found at least SIX live bits, read individually and as the
+    /// composite masks `0xE`, `0xC`, `0x50`, `0x90`. The bits that matter here:
+    ///
+    /// ```text
+    ///   bit 0   `test byte gs:[0x2793],1 / jne` @0x6494 — the 0xCE branch
+    ///   bit 2   `or byte [0x2793],4` — SET by the presentation start @0x593A,
+    ///           the concept-list show @0x8998, and the save dialogue @0x1B7B;
+    ///           cleared by the teardowns @0x59BF/@0x5E99
+    ///   bit 3   `xor word [0x2793],8` @0x9671 — toggled on station-seek arrival
+    ///   1|2|3   `test byte [0x2793],0xe / jne` @0x1095 — the MAIN-LOOP GATE:
+    ///           if any is set, DEFER the pending script-profile load
+    /// ```
+    ///
+    /// Four subsystems were each blocked on this word existing as state —
+    /// presentation (#311), concept lists (#324), the save dialogue (#325) and
+    /// the bridge station seek (#330). This field is that state. The GATE itself
+    /// is still not ported: it also ORs ten separate subsystem-active bytes
+    /// (`0x109C`..`0x10BF`) that the port does not model, and #312 records why a
+    /// one-flag version of it would be worse than none.
+    pub ui_flags: u16,
     /// Game flags `gs:0x252A` / `gs:0x274F` bit0 — 0xD0/0xD1 branch when CLEAR.
     pub flag_252a: bool,
     pub flag_274f: bool,
@@ -4892,6 +4935,7 @@ impl Default for VmMachine {
             concept_alt: 0,
             concept_alt_active: false,
             presentation_busy: false,
+            ui_flags: 0,
             flag_252a: false,
             flag_274f: false,
             presentation_active: false,
@@ -4956,6 +5000,12 @@ impl VmMachine {
         self.rec_write(record_offset + 2, related);
         self.active_actor = Some(record_offset);
         self.presentation_busy = true;
+        // `or byte ptr gs:[0x2793], 4` @0x593A — the bit the main-loop gate
+        // actually reads (audit-fixes #331). The `presentation_busy` set above
+        // models bit 0, which the game does NOT raise here (#311); it stays
+        // because the port's story flow depends on it, so this ADDS the correct
+        // bit rather than swapping one guess for another.
+        self.ui_flags |= UI_FLAG_BUSY;
         self.presentation_active = true;
     }
 
@@ -7232,6 +7282,9 @@ impl VmMachine {
                 if self.active_actor == Some(off) {
                     self.active_actor = None;
                     self.presentation_busy = false;
+                    // The teardown clears bit 2: `and byte [0x2793],0xfb`
+                    // @0x59BF / @0x5E99.
+                    self.ui_flags &= !UI_FLAG_BUSY;
                     // Presentation over: the resume anchor dies with it.
                     self.resume_pos = None;
                     // The teardown also clears gs:0x67AA bits0-1 (`and [0x67aa],
@@ -10757,6 +10810,45 @@ mod tests {
             !slots.is_empty(),
             "the decoded scan must reach SOME active object's record slot"
         );
+    }
+
+    /// audit-fixes #331. `gs:0x2793` now exists as state, and the presentation
+    /// lifecycle raises and clears the bit the MAIN-LOOP GATE reads — the piece
+    /// four subsystems were each blocked on (#311, #324, #325, #330).
+    ///
+    /// The test pins the bit the GAME sets, not the one the port historically
+    /// set: `or byte [0x2793],4` @`0x593A`. It deliberately does NOT assert
+    /// `presentation_busy`, whose bit-0 semantics remain wrong-but-load-bearing
+    /// per #311.
+    ///
+    /// SCOPE: this covers the RAISE only. The matching clear
+    /// (`and byte [0x2793],0xfb` @`0x59BF`/`0x5E99`) is wired into the 0xC9
+    /// teardown inside `step()` and is not reachable from here without driving a
+    /// full presentation; naming this test "raises and clears" while checking
+    /// only the raise is the exact overclaim #313 caught in someone else's test.
+    #[test]
+    fn presentation_start_raises_the_defer_bit() {
+        let mut m = VmMachine::new();
+        m.line_records = vec![0u16; 0x40];
+        assert_eq!(m.ui_flags & UI_FLAG_BUSY, 0, "idle: nothing deferred");
+
+        m.start_actor_presentation(0x10, 0x20);
+        assert_ne!(
+            m.ui_flags & UI_FLAG_BUSY,
+            0,
+            "a running presentation must set the bit 0x1095 tests"
+        );
+        // ...and it is inside the gate's mask, which is the whole point.
+        assert_ne!(m.ui_flags & UI_FLAG_DEFER_MASK, 0);
+
+        // The 0xCE bit is a DIFFERENT bit and must not be confused with it.
+        assert_eq!(
+            UI_FLAG_CE_BRANCH & UI_FLAG_DEFER_MASK,
+            0,
+            "bit 0 is outside the defer mask -- #307's conflation, pinned"
+        );
+        // And bit 3, the seek-arrival toggle, is inside it.
+        assert_ne!(UI_FLAG_SEEK_ARRIVED & UI_FLAG_DEFER_MASK, 0);
     }
 
     /// audit-fixes #320. `LOCATION_PANEL_BOX` is not a transcription — the four
