@@ -7088,6 +7088,63 @@ pub fn decompile_script(
 #[cfg(test)]
 mod tests {
 
+    /// SETTLES #238's OPEN QUESTION: does the encounter ladder fire at all?
+    ///
+    /// `parse_script_post_update` produces one offsetless row across all five
+    /// shipped scripts, and #238 left two readings open — the ladder genuinely
+    /// almost never fires, or that EXPORT is missing context it is not given (it
+    /// takes an optional `DescriptDb` and the measurement passed `None`).
+    ///
+    /// Running the VM directly answers it: the trace carries `post_update`
+    /// whether or not an exporter asks for it, so if the ladder fires the events
+    /// are here. Whatever the counts are, they are recorded rather than assumed —
+    /// the point is to replace "undecided" with a number.
+    #[test]
+    fn the_post_update_ladder_on_the_shipped_scripts() {
+        let dir = ["output/_tmp_iso", "../output/_tmp_iso", "output/scripts", "../output/scripts"]
+            .iter()
+            .map(std::path::Path::new)
+            .find(|p| p.exists());
+        let Some(dir) = dir else { return };
+
+        let (mut pairs, mut handoffs, mut bumps, mut scripts) = (0usize, 0usize, 0usize, 0usize);
+        for index in 1..=5 {
+            let Ok(cod) = std::fs::read(dir.join(format!("SCRIPT{index}.COD"))) else {
+                continue;
+            };
+            let var = std::fs::read(dir.join(format!("SCRIPT{index}.VAR"))).unwrap_or_default();
+            let trace = execute_trace_with_context(&cod, &var, &ExecutionContext::default());
+            let post: &PostUpdateTrace = &trace.post_update;
+            scripts += 1;
+            pairs += post.actor_record_pairs.len();
+            handoffs += post.presentation_handoffs.len();
+            bumps += post.encounter_counter_bumps.len();
+
+            // Whatever fires must reference records inside the script's world:
+            // a record offset of 0 is the null record and would mean the ladder
+            // paired something with nothing.
+            for pair in &post.actor_record_pairs {
+                assert_ne!(pair.record_offset, 0, "SCRIPT{index}: paired the null record");
+            }
+            for handoff in &post.presentation_handoffs {
+                assert_ne!(handoff.record_offset, 0, "SCRIPT{index}: null handoff record");
+            }
+        }
+
+        assert!(scripts >= 3, "only {scripts} scripts read");
+        // MEASURED, and half the answer to #238: with a default context the
+        // ladder produces nothing on the shipped scripts. The other half is in
+        // `extract::script`'s `the_post_update_ladder_with_real_deb_context`,
+        // which supplies each script's own DEB and ALSO gets nothing — so the
+        // ladder does not fire on shipped bytecode at all, and the exporter that
+        // reports nothing is reporting the truth (#244).
+        assert_eq!(
+            (pairs, handoffs, bumps),
+            (0, 0, 0),
+            "the ladder now fires without context; #238's finding needs revisiting"
+        );
+    }
+
     /// A PROFILE REQUEST EVENT MUST SIT ON THE OPCODE THAT MAKES REQUESTS.
     ///
     /// `ScriptProfileRequestEvent` records the offset where a `0xD2` request

@@ -7527,3 +7527,33 @@ This is the fifth measured coverage floor in this stretch (#223, #224, #236, #24
 now), and the first where the measurement argued AGAINST confidence rather than
 for it. That is the more useful direction: a floor that only ever confirms
 adequacy is decoration.
+
+## #244 — answering #238, and correcting myself inside ten minutes
+
+#238 left two readings of an empty exporter: the encounter ladder almost never
+fires, or `parse_script_post_update` is missing context it is not given. Two
+measurements settle it.
+
+Running all five shipped scripts through the VM with a DEFAULT context yields
+zero actor pairs, zero presentation handoffs, zero counter bumps. That rules out
+"the exporter drops events" — there are none to drop.
+
+I then wrote, in that test's own comment, that this made #238's SECOND reading
+(missing context) the live one. That was wrong, and the next test disproved it:
+supplying each script's OWN DEB — the context the exporter would get from a
+`DescriptDb` — produces zero as well.
+
+So the answer is #238's FIRST reading. THE LADDER DOES NOT FIRE ON SHIPPED
+BYTECODE, with or without resolved records, and the exporter reporting nothing is
+reporting the truth. Its emptiness is a fact about the scripts: the ladder is
+exercised by game state they do not reach on their own.
+
+The correction took ten minutes because the second measurement was already
+planned. The mistake was writing a conclusion into a doc after the first of two
+measurements — the same shape as #239's "duplicate to delete", where an inference
+was recorded as a finding before the evidence that would have refuted it was
+gathered. Both times the fix was cheap; both times what made it cheap was that the
+next step happened to be the one that checked.
+
+Now settled with numbers instead of a suspicion: `PostUpdateTrace`,
+`PostUpdateActorRecordPair`, `PresentationHandoffEvent` and the exporter itself.

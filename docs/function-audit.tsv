@@ -1418,9 +1418,9 @@ VM_FIELD_OFFSET_TABLE	src/vm.rs	1654	const	0x6023,0x6D60,0x14180,0x142CF	ORACLE	
 LineState	src/vm.rs	1680	struct		UNVERIFIED	/// A `0xA6` line's resolved runtime scene state. /// Object offset of the current speaker (from the last `0xC4`), if any. /// The speaker's current location object offset (`state[actor+24]`), if a //
 BranchEvent	src/vm.rs	1690	struct		TESTED	
 ScriptProfileRequestEvent	src/vm.rs	1701	struct		TESTED	
-PostUpdateTrace	src/vm.rs	1708	struct	0x5DCE,0x5DF6	ASM?	/// Objects whose selector-`0x08` ENCOUNTER COUNTER the post-update ladder /// incremented this pass (`0x5DCE` / `0x5DF6`). See /// `post_update_encounter_counter`.
-PostUpdateActorRecordPair	src/vm.rs	1719	struct		UNVERIFIED	
-PresentationHandoffEvent	src/vm.rs	1725	struct		UNVERIFIED	
+PostUpdateTrace	src/vm.rs	1708	struct	0x5DCE,0x5DF6	TESTED	/// Objects whose selector-`0x08` ENCOUNTER COUNTER the post-update ladder /// incremented this pass (`0x5DCE` / `0x5DF6`). See /// `post_update_encounter_counter`.
+PostUpdateActorRecordPair	src/vm.rs	1719	struct		TESTED	
+PresentationHandoffEvent	src/vm.rs	1725	struct		TESTED	
 ExecutionHalt	src/vm.rs	1732	enum		TESTED	
 ExecutionTrace	src/vm.rs	1740	struct		TESTED	
 pending_script_profile	src/vm.rs	1768	fn	0x6780,0xFFFF,0x108E,0x10C5,0x10D3,0xffff,0x64B8	ASM	/// The script profile a `0xD2` request left pending, or `None`. /// /// `gs:0x6780` is the request slot and `0xFFFF` means EMPTY: /// /// ```text ///   0x108E  cmp word [0x6780],-1     nothing pendin
@@ -1802,88 +1802,88 @@ text_skip_count	src/extract/script.rs	226	fn		UNVERIFIED
 text_control_summary	src/extract/script.rs	230	fn		UNVERIFIED	
 parse_script_disassembly	src/extract/script.rs	263	fn		TESTED	
 parse_script_branch_trace	src/extract/script.rs	323	fn		TESTED	
-parse_script_post_update	src/extract/script.rs	375	fn		UNVERIFIED	/// PRODUCES ALMOST NOTHING ON THE SHIPPED SCRIPTS, measured: one row for /// SCRIPT1 and none for the other four, with every record/related/owner offset /// `None` (audit-fixes #238). A bound test wa
-parse_script_branch_scenarios	src/extract/script.rs	442	fn		UNVERIFIED	
-RtcReplayScenario	src/extract/script.rs	642	struct		UNVERIFIED	
-rtc_replay_scenarios_for_cod	src/extract/script.rs	648	fn		UNVERIFIED	// Jan 2 is an ordinary non-holiday baseline distinct from observed 1/1 and // 12/25 seasonal checks.
-executed_text_offsets	src/extract/script.rs	705	fn		TESTED	
-TextCallInfo	src/extract/script.rs	721	struct		UNVERIFIED	
-LoadedScriptProfile	src/extract/script.rs	733	struct		UNVERIFIED	
-ScriptProfileSequenceExport	src/extract/script.rs	747	struct		UNVERIFIED	
-ScriptProfileRunLine	src/extract/script.rs	753	struct		UNVERIFIED	
-ScriptProfileExecutedSpeechLine	src/extract/script.rs	771	struct		UNVERIFIED	
-required_profile_slot_name	src/extract/script.rs	781	fn		UNVERIFIED	
-required_profile_slot_path	src/extract/script.rs	799	fn		UNVERIFIED	
-load_script_profile	src/extract/script.rs	814	fn		UNVERIFIED	
-loaded_profile_by_index	src/extract/script.rs	878	fn		UNVERIFIED	
-script_profile_request_summary	src/extract/script.rs	887	fn		UNVERIFIED	
-post_update_pair_summary	src/extract/script.rs	901	fn		UNVERIFIED	
-presentation_handoff_summary	src/extract/script.rs	916	fn		UNVERIFIED	
-parse_script_executed_speech	src/extract/script.rs	931	fn		TESTED	
-parse_script_uncovered_speech	src/extract/script.rs	1021	fn		TESTED	/// Dialogue in named COD functions the main execution trace never enters /// (event-triggered scenes — the source of ~40% of otherwise-uncovered dialogue). /// These lines are resolved by the STATIC 
-executed_line_from_static	src/extract/script.rs	1121	fn		UNVERIFIED	/// Convert a statically-resolved [`ScriptSpeechLine`] into the executed-line form /// the dialogue-run video renderer consumes, tagging it with a `fn:<script>:<fn>` /// scenario id so it groups into 
-caption_line_from_static	src/extract/script.rs	1157	fn		UNVERIFIED	/// Convert a no-character UI/system/narration [`ScriptSpeechLine`] into a caption /// line (tagged `cap:<script>:<fn>`) — rendered as text-on-dark by the dialogue-run /// renderer (no actor, no backg
-parse_script_profile_sequence	src/extract/script.rs	1189	fn		TESTED	
-parse_script_branch_scenario_speech	src/extract/script.rs	1288	fn		UNVERIFIED	
-executed_speech_rows_from_trace	src/extract/script.rs	1411	fn		UNVERIFIED	
-text_calls_by_offset	src/extract/script.rs	1487	fn		TESTED	
-parse_deb_object_names	src/extract/script.rs	1525	fn		UNVERIFIED	
-vm_execution_context_from_deb	src/extract/script.rs	1539	fn		TESTED	
-vm_execution_context_from_object_names	src/extract/script.rs	1561	fn		UNVERIFIED	
-resolve_background_from_location	src/extract/script.rs	1577	fn		UNVERIFIED	
-parse_script_text_calls	src/extract/script.rs	1598	fn	0x6788	ASM?	"// Voice clip-index (RE, re/REVERSE.md ""voice clip-index"", confirmed by // tracing gs:0x6788 = sign_extend(b3) + 9 into the son.snd player + the export-data // distribution): `param0` (b3) is the per-"
-function_name_for_offset	src/extract/script.rs	1719	fn		UNVERIFIED	
-decode_vm_words	src/extract/script.rs	1728	fn	0xFFFF	ASM?	// Decode only the SPOKEN section. An 0xA6 word list may carry a choice menu after // an 0xFFFF separator, and 0xFFFF is not a dictionary offset -- so requiring every // entry to resolve made this ret
-text_token_end	src/extract/script.rs	1749	fn		UNVERIFIED	
-disassemble_function	src/extract/script.rs	1764	fn		UNVERIFIED	
-vm_token_has_disassembly	src/extract/script.rs	1846	fn		UNVERIFIED	
-current_actor_record	src/extract/script.rs	1855	fn		UNVERIFIED	
-push_vm_token_disassembly	src/extract/script.rs	1861	fn		UNVERIFIED	
-vm_token_offset	src/extract/script.rs	2151	fn		UNVERIFIED	
-vm_token_len	src/extract/script.rs	2170	fn		UNVERIFIED	
-push_raw_disassembly	src/extract/script.rs	2195	fn		UNVERIFIED	
-assemble_dialogue	src/extract/script.rs	2228	fn	0x66CD,0x6739	ASM?	/// Assemble a dialogue line's words into the on-screen string exactly as the /// game's 0xA6 handler does (BLOODPRG.EXE 0x66CD–0x6739, see re/REVERSE.md): /// a space between words, except no space b
-decode_text_call_at	src/extract/script.rs	2253	fn	0x660C,0x0000	ASM?	// Fixed token layout recovered from the VM TEXT handler (BLOODPRG.EXE // 0x660C): `A6 b1 b2 b3 b4 b5 [loop:u16?] [control:u16?] w0 ... 0x0000`. // * b1:b2 = line-record index (call_target) // * b3 = 
-parse_script_character_contexts	src/extract/script.rs	2422	fn		UNVERIFIED	
-parse_script_symbols	src/extract/script.rs	2458	fn		UNVERIFIED	
-write_script_speech_manifest	src/extract/script.rs	2561	fn		UNVERIFIED	
-write_script_text_flags_manifest	src/extract/script.rs	2614	fn		UNVERIFIED	
-write_script_executed_speech_manifest	src/extract/script.rs	2649	fn		TESTED	
-write_script_branch_scenario_speech_manifest	src/extract/script.rs	2697	fn		UNVERIFIED	
-write_script_profile_runs_manifest	src/extract/script.rs	2746	fn		TESTED	
-write_script_profile_executed_speech_manifest	src/extract/script.rs	2780	fn		TESTED	
-write_script_profile_dialogue_runs_manifest	src/extract/script.rs	2838	fn		UNVERIFIED	
-write_script_disassembly_manifest	src/extract/script.rs	2908	fn		UNVERIFIED	
-write_script_branch_trace_manifest	src/extract/script.rs	2935	fn		UNVERIFIED	
-write_script_post_update_manifest	src/extract/script.rs	2966	fn		UNVERIFIED	
-write_script_branch_decisions_manifest	src/extract/script.rs	3000	fn		UNVERIFIED	
-write_script_branch_coverage_manifest	src/extract/script.rs	3055	fn		UNVERIFIED	
-write_script_branch_scenarios_manifest	src/extract/script.rs	3128	fn		UNVERIFIED	
-ScriptDialogueRun	src/extract/script.rs	3169	struct		UNVERIFIED	
-ScriptExecutedDialogueRun	src/extract/script.rs	3181	struct		UNVERIFIED	
-ScriptProfileDialogueRun	src/extract/script.rs	3196	struct		UNVERIFIED	
-script_dialogue_runs	src/extract/script.rs	3211	fn		UNVERIFIED	
-script_executed_dialogue_runs	src/extract/script.rs	3248	fn		UNVERIFIED	
-script_profile_dialogue_runs	src/extract/script.rs	3307	fn		UNVERIFIED	
-executed_dialogue_run_id	src/extract/script.rs	3359	fn		UNVERIFIED	
-profile_dialogue_run_id	src/extract/script.rs	3367	fn		UNVERIFIED	
-RunCoverage	src/extract/script.rs	3372	struct		UNVERIFIED	
-speech_run_coverage	src/extract/script.rs	3378	fn		UNVERIFIED	
-executed_run_coverage	src/extract/script.rs	3398	fn		UNVERIFIED	
-executed_dialogue_run_output_stem	src/extract/script.rs	3420	fn		UNVERIFIED	// Static uncovered-function scenes are tagged `fn:<script>:<function>`. // UI/system/narration captions are tagged `cap:<script>:<function>`.
-profile_dialogue_run_output_stem	src/extract/script.rs	3460	fn		UNVERIFIED	
-executed_line_input	src/extract/script.rs	3474	fn		UNVERIFIED	
-scene_event_kind	src/extract/script.rs	3490	fn		UNVERIFIED	
-format_scene_event_fields	src/extract/script.rs	3506	fn		UNVERIFIED	
-write_script_scene_events_manifest	src/extract/script.rs	3623	fn		TESTED	
-write_script_profile_scene_events_manifest	src/extract/script.rs	3701	fn		UNVERIFIED	
-write_script_executed_dialogue_runs_manifest	src/extract/script.rs	3790	fn		UNVERIFIED	
-write_script_branch_scenario_dialogue_runs_manifest	src/extract/script.rs	3858	fn		UNVERIFIED	
-write_script_dialogue_runs_manifest	src/extract/script.rs	3927	fn		UNVERIFIED	
-unique_join	src/extract/script.rs	4003	fn		UNVERIFIED	
-parse_script_dictionary	src/extract/script.rs	4091	fn		TESTED	
-hex_bytes	src/extract/script.rs	4111	fn		UNVERIFIED	
-clean_tsv	src/extract/script.rs	4119	fn		UNVERIFIED	
+parse_script_post_update	src/extract/script.rs	376	fn		TESTED	/// PRODUCES ALMOST NOTHING ON THE SHIPPED SCRIPTS, and #244 settled why: the /// ENCOUNTER LADDER DOES NOT FIRE on that bytecode. Running all five scripts /// through the VM directly yields zero acto
+parse_script_branch_scenarios	src/extract/script.rs	443	fn		UNVERIFIED	
+RtcReplayScenario	src/extract/script.rs	643	struct		UNVERIFIED	
+rtc_replay_scenarios_for_cod	src/extract/script.rs	649	fn		UNVERIFIED	// Jan 2 is an ordinary non-holiday baseline distinct from observed 1/1 and // 12/25 seasonal checks.
+executed_text_offsets	src/extract/script.rs	706	fn		TESTED	
+TextCallInfo	src/extract/script.rs	722	struct		UNVERIFIED	
+LoadedScriptProfile	src/extract/script.rs	734	struct		UNVERIFIED	
+ScriptProfileSequenceExport	src/extract/script.rs	748	struct		UNVERIFIED	
+ScriptProfileRunLine	src/extract/script.rs	754	struct		UNVERIFIED	
+ScriptProfileExecutedSpeechLine	src/extract/script.rs	772	struct		UNVERIFIED	
+required_profile_slot_name	src/extract/script.rs	782	fn		UNVERIFIED	
+required_profile_slot_path	src/extract/script.rs	800	fn		UNVERIFIED	
+load_script_profile	src/extract/script.rs	815	fn		UNVERIFIED	
+loaded_profile_by_index	src/extract/script.rs	879	fn		UNVERIFIED	
+script_profile_request_summary	src/extract/script.rs	888	fn		UNVERIFIED	
+post_update_pair_summary	src/extract/script.rs	902	fn		UNVERIFIED	
+presentation_handoff_summary	src/extract/script.rs	917	fn		UNVERIFIED	
+parse_script_executed_speech	src/extract/script.rs	932	fn		TESTED	
+parse_script_uncovered_speech	src/extract/script.rs	1022	fn		TESTED	/// Dialogue in named COD functions the main execution trace never enters /// (event-triggered scenes — the source of ~40% of otherwise-uncovered dialogue). /// These lines are resolved by the STATIC 
+executed_line_from_static	src/extract/script.rs	1122	fn		UNVERIFIED	/// Convert a statically-resolved [`ScriptSpeechLine`] into the executed-line form /// the dialogue-run video renderer consumes, tagging it with a `fn:<script>:<fn>` /// scenario id so it groups into 
+caption_line_from_static	src/extract/script.rs	1158	fn		UNVERIFIED	/// Convert a no-character UI/system/narration [`ScriptSpeechLine`] into a caption /// line (tagged `cap:<script>:<fn>`) — rendered as text-on-dark by the dialogue-run /// renderer (no actor, no backg
+parse_script_profile_sequence	src/extract/script.rs	1190	fn		TESTED	
+parse_script_branch_scenario_speech	src/extract/script.rs	1289	fn		UNVERIFIED	
+executed_speech_rows_from_trace	src/extract/script.rs	1412	fn		UNVERIFIED	
+text_calls_by_offset	src/extract/script.rs	1488	fn		TESTED	
+parse_deb_object_names	src/extract/script.rs	1526	fn		UNVERIFIED	
+vm_execution_context_from_deb	src/extract/script.rs	1540	fn		TESTED	
+vm_execution_context_from_object_names	src/extract/script.rs	1562	fn		UNVERIFIED	
+resolve_background_from_location	src/extract/script.rs	1578	fn		UNVERIFIED	
+parse_script_text_calls	src/extract/script.rs	1599	fn	0x6788	ASM?	"// Voice clip-index (RE, re/REVERSE.md ""voice clip-index"", confirmed by // tracing gs:0x6788 = sign_extend(b3) + 9 into the son.snd player + the export-data // distribution): `param0` (b3) is the per-"
+function_name_for_offset	src/extract/script.rs	1720	fn		UNVERIFIED	
+decode_vm_words	src/extract/script.rs	1729	fn	0xFFFF	ASM?	// Decode only the SPOKEN section. An 0xA6 word list may carry a choice menu after // an 0xFFFF separator, and 0xFFFF is not a dictionary offset -- so requiring every // entry to resolve made this ret
+text_token_end	src/extract/script.rs	1750	fn		UNVERIFIED	
+disassemble_function	src/extract/script.rs	1765	fn		UNVERIFIED	
+vm_token_has_disassembly	src/extract/script.rs	1847	fn		UNVERIFIED	
+current_actor_record	src/extract/script.rs	1856	fn		UNVERIFIED	
+push_vm_token_disassembly	src/extract/script.rs	1862	fn		UNVERIFIED	
+vm_token_offset	src/extract/script.rs	2152	fn		UNVERIFIED	
+vm_token_len	src/extract/script.rs	2171	fn		UNVERIFIED	
+push_raw_disassembly	src/extract/script.rs	2196	fn		UNVERIFIED	
+assemble_dialogue	src/extract/script.rs	2229	fn	0x66CD,0x6739	ASM?	/// Assemble a dialogue line's words into the on-screen string exactly as the /// game's 0xA6 handler does (BLOODPRG.EXE 0x66CD–0x6739, see re/REVERSE.md): /// a space between words, except no space b
+decode_text_call_at	src/extract/script.rs	2254	fn	0x660C,0x0000	ASM?	// Fixed token layout recovered from the VM TEXT handler (BLOODPRG.EXE // 0x660C): `A6 b1 b2 b3 b4 b5 [loop:u16?] [control:u16?] w0 ... 0x0000`. // * b1:b2 = line-record index (call_target) // * b3 = 
+parse_script_character_contexts	src/extract/script.rs	2423	fn		UNVERIFIED	
+parse_script_symbols	src/extract/script.rs	2459	fn		UNVERIFIED	
+write_script_speech_manifest	src/extract/script.rs	2562	fn		UNVERIFIED	
+write_script_text_flags_manifest	src/extract/script.rs	2615	fn		UNVERIFIED	
+write_script_executed_speech_manifest	src/extract/script.rs	2650	fn		TESTED	
+write_script_branch_scenario_speech_manifest	src/extract/script.rs	2698	fn		UNVERIFIED	
+write_script_profile_runs_manifest	src/extract/script.rs	2747	fn		TESTED	
+write_script_profile_executed_speech_manifest	src/extract/script.rs	2781	fn		TESTED	
+write_script_profile_dialogue_runs_manifest	src/extract/script.rs	2839	fn		UNVERIFIED	
+write_script_disassembly_manifest	src/extract/script.rs	2909	fn		UNVERIFIED	
+write_script_branch_trace_manifest	src/extract/script.rs	2936	fn		UNVERIFIED	
+write_script_post_update_manifest	src/extract/script.rs	2967	fn		UNVERIFIED	
+write_script_branch_decisions_manifest	src/extract/script.rs	3001	fn		UNVERIFIED	
+write_script_branch_coverage_manifest	src/extract/script.rs	3056	fn		UNVERIFIED	
+write_script_branch_scenarios_manifest	src/extract/script.rs	3129	fn		UNVERIFIED	
+ScriptDialogueRun	src/extract/script.rs	3170	struct		UNVERIFIED	
+ScriptExecutedDialogueRun	src/extract/script.rs	3182	struct		UNVERIFIED	
+ScriptProfileDialogueRun	src/extract/script.rs	3197	struct		UNVERIFIED	
+script_dialogue_runs	src/extract/script.rs	3212	fn		UNVERIFIED	
+script_executed_dialogue_runs	src/extract/script.rs	3249	fn		UNVERIFIED	
+script_profile_dialogue_runs	src/extract/script.rs	3308	fn		UNVERIFIED	
+executed_dialogue_run_id	src/extract/script.rs	3360	fn		UNVERIFIED	
+profile_dialogue_run_id	src/extract/script.rs	3368	fn		UNVERIFIED	
+RunCoverage	src/extract/script.rs	3373	struct		UNVERIFIED	
+speech_run_coverage	src/extract/script.rs	3379	fn		UNVERIFIED	
+executed_run_coverage	src/extract/script.rs	3399	fn		UNVERIFIED	
+executed_dialogue_run_output_stem	src/extract/script.rs	3421	fn		UNVERIFIED	// Static uncovered-function scenes are tagged `fn:<script>:<function>`. // UI/system/narration captions are tagged `cap:<script>:<function>`.
+profile_dialogue_run_output_stem	src/extract/script.rs	3461	fn		UNVERIFIED	
+executed_line_input	src/extract/script.rs	3475	fn		UNVERIFIED	
+scene_event_kind	src/extract/script.rs	3491	fn		UNVERIFIED	
+format_scene_event_fields	src/extract/script.rs	3507	fn		UNVERIFIED	
+write_script_scene_events_manifest	src/extract/script.rs	3624	fn		TESTED	
+write_script_profile_scene_events_manifest	src/extract/script.rs	3702	fn		UNVERIFIED	
+write_script_executed_dialogue_runs_manifest	src/extract/script.rs	3791	fn		UNVERIFIED	
+write_script_branch_scenario_dialogue_runs_manifest	src/extract/script.rs	3859	fn		UNVERIFIED	
+write_script_dialogue_runs_manifest	src/extract/script.rs	3928	fn		UNVERIFIED	
+unique_join	src/extract/script.rs	4004	fn		UNVERIFIED	
+parse_script_dictionary	src/extract/script.rs	4092	fn		TESTED	
+hex_bytes	src/extract/script.rs	4112	fn		UNVERIFIED	
+clean_tsv	src/extract/script.rs	4120	fn		UNVERIFIED	
 build_subtitle_sfx_track	src/extract/subtitle_sfx.rs	3	fn		TESTED	
 build_subtitle_sfx_track_from_events	src/extract/subtitle_sfx.rs	13	fn	0x67BB	ASM?	// The shipped scene manifest identifies tb.snd#0 for subtitle sidecars. // BLOODPRG.EXE's 0x67BB path gates one line-complete hold event; no // recovered path supports cycling through tb.snd clips.
 SubtitleChatterEvent	src/extract/subtitle_sfx.rs	56	struct		TESTED	

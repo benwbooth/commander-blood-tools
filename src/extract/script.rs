@@ -362,16 +362,17 @@ pub(super) fn parse_script_branch_trace(
     Ok(rows)
 }
 
-/// PRODUCES ALMOST NOTHING ON THE SHIPPED SCRIPTS, measured: one row for
-/// SCRIPT1 and none for the other four, with every record/related/owner offset
-/// `None` (audit-fixes #238). A bound test was written for it and withdrawn —
-/// there is nothing to bound.
+/// PRODUCES ALMOST NOTHING ON THE SHIPPED SCRIPTS, and #244 settled why: the
+/// ENCOUNTER LADDER DOES NOT FIRE on that bytecode. Running all five scripts
+/// through the VM directly yields zero actor pairs, zero presentation handoffs
+/// and zero counter bumps — both with a default context
+/// (`vm::tests::the_post_update_ladder_on_the_shipped_scripts`) and with each
+/// script's OWN DEB supplied (`the_post_update_ladder_with_real_deb_context`,
+/// below).
 ///
-/// That is a finding, not a defect claim. The encounter ladder may genuinely
-/// almost never fire in the shipped bytecode, or this export may need context it
-/// is not given (it takes an optional `DescriptDb` and the measurement passed
-/// `None`). Which of those is true is undecided and worth deciding before anyone
-/// treats this exporter's output as evidence of anything.
+/// So this exporter is reporting the truth rather than missing context, which was
+/// the live suspicion in #238. Its emptiness is a fact about the shipped scripts:
+/// the ladder is exercised by game state the scripts do not reach on their own.
 pub(super) fn parse_script_post_update(
     iso_dir: &Path,
     descript_db: Option<&DescriptDb>,
@@ -4122,6 +4123,61 @@ pub(super) fn clean_tsv(text: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+
+    /// COMPLETES #238/#244: does the encounter ladder fire once the DEB context
+    /// it needs is supplied?
+    ///
+    /// #244 measured the ladder producing NOTHING on the shipped scripts with a
+    /// default context, which ruled out "the exporter drops events" and left
+    /// "the export is missing context". This runs the same scripts WITH the
+    /// context built from each script's own DEB — the thing
+    /// `parse_script_post_update` is given when a caller passes a `DescriptDb`
+    /// and which the earlier measurement passed `None` for.
+    ///
+    /// The result is recorded either way. An unanswered "undecided" in a doc is
+    /// worth less than a number, even a disappointing one.
+    #[test]
+    fn the_post_update_ladder_with_real_deb_context() {
+        let dir = ["output/_tmp_iso", "../output/_tmp_iso", "output/scripts", "../output/scripts"]
+            .iter()
+            .map(Path::new)
+            .find(|p| p.exists());
+        let Some(dir) = dir else { return };
+
+        let (mut pairs, mut handoffs, mut bumps, mut with_deb) = (0usize, 0usize, 0usize, 0usize);
+        for index in 1..=5 {
+            let (Some(cod_path), Some(deb_path)) = (
+                find_file_recursive(dir, &format!("SCRIPT{index}.COD")),
+                find_file_recursive(dir, &format!("SCRIPT{index}.DEB")),
+            ) else {
+                continue;
+            };
+            let Ok(cod) = fs::read(cod_path) else { continue };
+            let Ok(deb) = fs::read(deb_path) else { continue };
+            let var = find_file_recursive(dir, &format!("SCRIPT{index}.VAR"))
+                .and_then(|p| fs::read(p).ok())
+                .unwrap_or_default();
+
+            let context = vm_execution_context_from_deb(&deb, None);
+            let trace = vm::execute_trace_with_context(&cod, &var, &context);
+            with_deb += 1;
+            pairs += trace.post_update.actor_record_pairs.len();
+            handoffs += trace.post_update.presentation_handoffs.len();
+            bumps += trace.post_update.encounter_counter_bumps.len();
+        }
+
+        assert!(with_deb >= 3, "only {with_deb} scripts had both a COD and a DEB");
+        // MEASURED. Whatever these are, they are the answer to #238: if they are
+        // all zero the ladder does not fire on shipped bytecode even with its
+        // records resolved, and the exporter is reporting the truth.
+        assert_eq!(
+            (pairs, handoffs, bumps),
+            (0, 0, 0),
+            "the ladder DOES fire with DEB context ({pairs} pairs, {handoffs} \
+             handoffs, {bumps} bumps) -- so parse_script_post_update's `None` \
+             default is what empties it, and the exporter needs the context"
+        );
+    }
     /// BRANCH EVENTS STAY INSIDE THEIR SCRIPT'S STREAM.
     ///
     /// A weaker check than the one first attempted here, and the story is worth
