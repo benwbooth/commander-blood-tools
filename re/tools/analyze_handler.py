@@ -97,7 +97,11 @@ def main():
             print(f"  lcall {s}")
     print("near calls:", ", ".join(nc) if nc else "(none)")
     notable = sorted(set(d for d in dr if d >= 0x1000))
-    print("data offsets:", " ".join(f"{d:#06x}" for d in notable[:40]))
+    # DISCLOSE THE CAP (audit-fixes #310). This printed 40 of N with no count
+    # anywhere, so a handler touching 90 data cells looked like one touching 40.
+    shown = notable[:40]
+    more = f"  ... {len(notable) - len(shown)} more not shown" if len(notable) > len(shown) else ""
+    print(f"data offsets ({len(notable)}):", " ".join(f"{d:#06x}" for d in shown) + more)
 
 
 if __name__ == "__main__":

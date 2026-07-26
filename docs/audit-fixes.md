@@ -9858,3 +9858,42 @@ work"; it is that a tool which summarises MUST disclose what it left out, or it
 will be read as complete every time.
 
 606 lib tests, 0 failures. 605 citations verified, 0 wrong.
+
+## #310 — sweeping the toolset for the same silent truncation
+
+#309 fixed `find_imm.py` for hiding 46 of 66 hits. The obvious next question is
+whether it was the only one, so I swept every tool for the shape: a slice like
+`[:limit]`, `[:40]`, `most_common(N)` on something the caller reads as a result
+set.
+
+FOURTEEN candidates, and most were already honest — which is worth saying,
+because the interesting finding here is how narrow the defect was:
+
+  * `search_bytes.py` prints `... N more (raise --limit)`. Fine.
+  * `audit_suggest.py` prints `... and N more (--all to list)`. Fine.
+  * the rest are SAMPLES inside a line (`addrs[:4]`, `labels[:6]`), where the
+    surrounding text already carries the total. Not the same defect.
+
+TWO WERE NOT.
+
+`analyze_handler.py` printed `data offsets: ...` capped at 40 with NO COUNT
+ANYWHERE. A handler touching ninety data cells rendered identically to one
+touching forty. Now prints the total and says how many it withheld.
+
+`whatis.py` printed `labels.csv: 12 row(s)` and then listed six. The count is
+there, which feels like disclosure and is not: a reader who sees six lines under
+a heading takes the six as the answer, and the number two lines up does not
+correct that. Now says `... 6 more row(s) not shown`.
+
+THE DISTINCTION THAT MATTERS, and it is the one I got wrong in #308: printing a
+TOTAL is not the same as disclosing a TRUNCATION. `find_imm.py` printed "66
+confirmed instruction(s)" on its first line and I still read twenty of them as
+the population. The count answers a question nobody asked; the missing-rows
+notice answers the one the reader is actually acting on.
+
+Four entries (#296, #300, #308/#309, this) have now turned on an instrument
+whose output was complete-looking and partial. The rule I would give a future
+reader: a tool that shows a subset must say so ON THE SAME LINES it shows them,
+not in a summary above or below.
+
+606 lib tests, 0 failures.

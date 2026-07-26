@@ -62,6 +62,10 @@ def main():
             print(f"labels.csv: {len(rows)} row(s)")
             for n, kind, text in rows[:6]:
                 print(f"   {n:>4} [{kind}] {text}")
+            if len(rows) > 6:
+                # The count above is not enough on its own: a reader who sees six
+                # lines assumes six unless told otherwise (audit-fixes #310).
+                print(f"   ... {len(rows) - 6} more row(s) not shown")
 
         if os.path.exists(LEDGER):
             hits = []
