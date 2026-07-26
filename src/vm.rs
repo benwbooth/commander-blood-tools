@@ -7872,6 +7872,26 @@ mod tests {
                 1 << column
             );
         }
+
+        // audit-fixes #293. The object-table bit test (0x6210) fixes BOTH its
+        // selector and its kind (`mov ax,5` @0x6229, `mov bx,2` @0x622C), and the
+        // matrix explains why it can: selector 5 is populated in exactly one
+        // column, kind 2's. There is no other kind to derive.
+        for column in 0..16 {
+            assert_eq!(
+                at(5, column) != 0,
+                column == 1,
+                "selector 5 column {column}: the bitset selector exists for kind 2 alone"
+            );
+        }
+        // The value matters to the live port, not just the decode: 0x1E is how
+        // far PAST the source-list cursor the bitset byte sits, which is why the
+        // kind-2 arm needs a real 0x6886 BUFFER and not a Vec of offsets.
+        assert_eq!(
+            at(5, 1),
+            0x1E,
+            "the bitset field is 30 bytes beyond the cursor 0x6210 is handed"
+        );
     }
 
     /// The built-in objects are the game's OWN name table at `DS:0x67BE`, packed

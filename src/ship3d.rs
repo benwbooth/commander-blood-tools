@@ -3900,6 +3900,21 @@ pub fn ship_3d_object_table_bit_is_set(
 /// `source_list_bytes` starts at the binary's `DS:0x6886` scratch list. Kind-2
 /// tests use the post-`lodsw` cursor for the current source record as the bitset
 /// base before applying helper `0x6210`'s selector-5 offset.
+///
+/// THAT OFFSET IS `0x1E` (audit-fixes #293), read from the matrix and pinned by
+/// `field_matrix_entries_match_the_constants`, and the number has a consequence
+/// worth stating. `0x6210` ends in `mov al, byte ptr [si]` @`0x6240` — DS-relative,
+/// and DS is GS at this call site (`mov ax,gs / mov ds,ax` @`0x6C15`) — so the
+/// bitset byte is read from the `0x6886` SCRATCH BUFFER, thirty bytes past the
+/// cursor plus `index >> 3`. For a short source list that lands beyond the
+/// `0xFFFF` terminator, in whatever the scratch happens to hold.
+///
+/// So a faithful kind-2 arm needs the real BUFFER, not a list of offsets. This
+/// function takes `source_list_bytes` and indexes it exactly as the game does,
+/// which is why the `ExecutionContext` path can model it; `VmMachine`'s
+/// `build_nav_source_list` returns `Vec<u16>` of entries and therefore cannot,
+/// which is the concrete blocker recorded in #292 — now with its reason
+/// quantified rather than described.
 pub fn select_ship_3d_c1_source_record(
     source_records: &[u16],
     records: &[Ship3dNavigationRuntimeRecord],

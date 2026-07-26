@@ -9152,3 +9152,41 @@ is a real piece of work rather than a line.
 
 Citations: 579 verified (from 577), 0 wrong. 705 tests across all binaries, 0
 failures.
+
+## #293 — why the live kind-2 arm needs a BUFFER: the offset is 0x1E
+
+#292 left the kind-2 bitset arm unported on the live path and gave the reason as
+"it needs the source list as raw bytes". That was a description. This is the
+measurement, and it changes the shape of the remaining work.
+
+`0x6210` ends in `mov al, byte ptr [si]` @`0x6240`. That is DS-relative, and DS
+is GS at the C1 call site (`mov ax,gs / mov ds,ax` @`0x6C15`), so the byte comes
+out of the `DS:0x6886` SCRATCH BUFFER — not out of a record. `si` is the
+post-`lodsw` cursor, and the routine adds `vm_field_offset(5, 2)` before reading.
+
+THAT OFFSET IS 30. Read from the matrix, now pinned by a test against the image:
+selector 5 is populated in exactly ONE column, kind 2's, which is also why
+`0x6210` can fix both its selector and kind (`mov ax,5` @`0x6229`,
+`mov bx,2` @`0x622C`) instead of deriving them — there is no other kind to
+derive.
+
+The consequence: the bitset byte sits at `cursor + 0x1E + (index >> 3)`. For any
+source list shorter than about sixteen entries that is PAST the `0xFFFF`
+terminator, in whatever the scratch region happens to hold. The read is real and
+the port's `ExecutionContext` path reproduces it exactly, because it takes
+`source_list_bytes` and indexes it the same way.
+
+`VmMachine::build_nav_source_list` returns `Vec<u16>` of ENTRIES. There is no
+buffer to index thirty bytes into, so the live kind-2 arm cannot be ported by
+translating the branch — it needs the port to maintain a real `0x6886` region
+with the lifetime the game gives it. Writing the arm against a synthesised
+"entries then zeros" buffer would produce a bit test that always reads zero and
+therefore never fires, which would look implemented and behave as if it were
+absent. That is worse than the current honest gap, so it is NOT done.
+
+RECORDED RATHER THAN GUESSED: whether the game intends to read past the
+terminator, or whether the scratch always holds a longer list by the time C1
+runs, is undecided here. The instruction is unambiguous; its intent is not.
+
+Citations: 581 verified (from 579), 0 wrong. 706 tests across all binaries, 0
+failures.
