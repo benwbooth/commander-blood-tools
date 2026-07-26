@@ -5466,13 +5466,29 @@ impl VmMachine {
     ///     `0x6C98` -> `0x6CE3`), or op2's selector-`0x13` field already holds
     ///     `0xC4` (`0x6CE9..0x6CFF`).
     ///
-    /// The active bits read here are VAR-initial and — verified 2026-07 by
-    /// enumerating every `or/and byte [reg+2],imm` site in BLOODPRG.EXE — are
-    /// NEVER SET at runtime; the sole runtime writer is `0x5B8D` in the C1
-    /// world-presentation ladder, which only CLEARS a kind-`0x20` object's bit.
-    /// So reading VAR-initial bits reproduces the game's write/branch decision
-    /// for the dialogue C4 flow (the C1-clear case is a separate subsystem the
-    /// live VM does not run and never activated an object the guard would gate).
+    /// THE "NEVER SET AT RUNTIME" CLAIM IS FALSE (audit-fixes #376). This said
+    /// the active bits are VAR-initial, "verified by enumerating every
+    /// `or/and byte [reg+2],imm` site", with `0x5B8D` the sole runtime writer.
+    /// That enumeration covered only the `80 /N` BYTE form. Repeating it across
+    /// `80`, `81` and `83` — the word and sign-extended-imm8 families — finds
+    /// NINE sites, of which THREE touch bit 0:
+    ///
+    /// ```text
+    ///   0x5B8D  and byte ptr [bx+2], 0xfe     clears bit 0   (the known one)
+    ///   0x5233  or  word ptr [bx+2], 3        SETS bits 0|1  <- at runtime
+    ///   0x52B5  and word ptr [bx+2], 0xfffc   clears bits 0|1
+    /// ```
+    ///
+    /// `0x5233` is object initialisation — `mov bx,[0xc02]` @`0x5229`, write `+0`
+    /// from `gs:[0xA6A]`, `or word [bx+2],3`, then `mov dword [bx+4],ebp`. So
+    /// objects created there ARE activated at runtime.
+    ///
+    /// CONSEQUENCE, stated rather than fixed: reading VAR-initial bits gives the
+    /// right answer only for objects this path never creates or re-activates. It
+    /// is no longer justified by "nothing sets them". Whether the dialogue C4
+    /// flow can observe an object initialised at `0x5233` is the open question;
+    /// the guard itself (`test byte es:[di+2],1` @`0x6CC3`) and the write
+    /// (`mov word es:[bp],0xC4` @`0x6D01`) are unaffected and verified.
     fn c4_set_write_decision(&self, op1: u16, op2: u16) -> Option<bool> {
         let di = self.owner_object_offset(op1)?;
         if self.rec_read(di.wrapping_add(2)) & 1 == 0 {

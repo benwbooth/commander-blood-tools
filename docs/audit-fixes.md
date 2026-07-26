@@ -12264,3 +12264,40 @@ when they were written — `mov ax,[si]` @`0x61AB`, `vm_field_offset` @`0x6023`,
 
 2229 items, 1081 confirmed (48.5%), 1148 open (901 UNVERIFIED + 247 provisional).
 689 citations verified, 0 wrong. 613 lib tests, 0 failures.
+
+## #376 — a "verified by enumerating every site" claim, refuted by enumerating every site
+
+`c4_set_write_decision` reads object active bits from VAR-initial data, and
+justified it with the strongest kind of statement in this tree: "verified 2026-07
+by enumerating every `or/and byte [reg+2],imm` site in BLOODPRG.EXE — are NEVER
+SET at runtime; the sole runtime writer is `0x5B8D`".
+
+Its two instruction citations are exact (`test byte es:[di+2],1` @`0x6CC3`,
+`mov word es:[bp],0xC4` @`0x6D01`). The ENUMERATION is not.
+
+It searched `or/and byte [reg+2],imm` — the `80 /N` form. Repeating it across
+`80`, `81` and `83` (word and sign-extended-imm8) gives NINE sites, three
+touching bit 0:
+
+    0x5B8D  and byte ptr [bx+2], 0xfe     clears bit 0   <- the one it found
+    0x5233  or  word ptr [bx+2], 3        SETS bits 0|1
+    0x52B5  and word ptr [bx+2], 0xfffc   clears bits 0|1
+
+`0x5233` sits in object initialisation: `mov bx,[0xc02]` / write `+0` from
+`gs:[0xA6A]` / `or word [bx+2],3` / `mov dword [bx+4],ebp`. Objects created there
+are ACTIVATED AT RUNTIME, which is exactly what the claim denies.
+
+THE OMISSION IS THE ONE I KEEP MAKING. #335 missed `a3`, #336 missed `89 /r`,
+#358 missed `83 /N`, and #359 built a table so it would stop happening — for
+DIRECT addresses. This claim is about `[reg+disp]` forms, which that table does
+not cover, so the same family gap reappeared in someone else's enumeration and I
+found it only because I had learned to check for it.
+
+WHAT I DID NOT DO: conclude the port is wrong. Reading VAR-initial bits still
+gives the right answer for objects this path never creates or re-activates —
+that is now an ASSUMPTION where the doc claimed a proof, and the open question
+(can the C4 flow observe such an object?) is recorded in
+docs/port-validation.md rather than answered by guess.
+
+2229 items, 1081 confirmed (48.5%), 1148 open. 695 citations verified, 0 wrong.
+613 lib tests, 0 failures.

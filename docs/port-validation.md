@@ -1592,3 +1592,24 @@ the handlers are not wired; this row exists so they are not wired WITHOUT it.
 Related: #361's wiring table shows `nav_actor_handler_0` and `_2` are themselves
 raisers of gate flags `0x27DA` and `0x24F3`, so the quadrant gate sits upstream
 of the main-loop busy gate.
+
+### #376 — object active bits ARE set at runtime; a "never set" claim is withdrawn
+
+`c4_set_write_decision` reads objects' `+2` active bits from VAR-initial data,
+justified by an enumeration concluding nothing sets them at runtime except one
+clear at `0x5B8D`. That enumeration searched only the `80 /N` byte form.
+
+Across `80`, `81` and `83` there are NINE `<alu> [reg+2], imm` sites, three of
+which touch bit 0:
+
+    0x5B8D  and byte ptr [bx+2], 0xfe     clears bit 0
+    0x5233  or  word ptr [bx+2], 3        SETS bits 0|1
+    0x52B5  and word ptr [bx+2], 0xfffc   clears bits 0|1
+
+`0x5233` is object initialisation (`mov bx,[0xc02]`, write `+0` from `gs:[0xA6A]`,
+`or word [bx+2],3`, `mov dword [bx+4],ebp`).
+
+So reading VAR-initial bits is correct only for objects that path never creates
+or re-activates — an assumption, where the doc previously had a proof. OPEN: can
+the dialogue C4 flow observe an object initialised at `0x5233`? If yes, the port
+reads a stale zero where the game has one.
