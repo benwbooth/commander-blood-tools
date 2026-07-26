@@ -17,10 +17,16 @@ pub fn parse_palette_block(data: &[u8], mut pos: usize, palette: &mut [[u8; 3]; 
             break;
         }
 
-        // count is the exact number of RGB triples (0x000A0E6 `mul bh` = count*3);
-        // the loop terminates only on the 0xFFFF word (checked above). count==0 is a
-        // 0-entry block, NOT 256 — the old special case over-read 770 bytes and could
-        // corrupt the palette / desync the chunk cursor on such a frame.
+        // The game's own loop is `resource_palette_blocks_apply` 0xA0C3..0xA116:
+        // count is the exact number of RGB triples (`mov al,bl` bl=3 / `mul bh`
+        // @0xA0E6 -> cx = count*3 BYTES for the `rep movsb`), and it terminates
+        // only on the 0xFFFF word (`cmp ax,-1` @0xA0D4 is a WORD compare of both
+        // header bytes — checked above). count==0 therefore sets cx=0 and copies
+        // ZERO entries, NOT 256 — the old special case over-read 770 bytes and
+        // could corrupt the palette / desync the chunk cursor on such a frame.
+        // The game stores the RAW 6-bit DAC values; the 6->8 expansion below is
+        // this port's, for its 8-bit framebuffer. The `idx < 256` guard is also
+        // the port's: the game has no clamp and would run past DS:0x5251+768.
         let n = count as usize;
         for i in 0..n {
             if pos + 2 >= data.len() {

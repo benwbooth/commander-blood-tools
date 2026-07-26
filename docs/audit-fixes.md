@@ -12475,3 +12475,43 @@ have only partly decoded is how misleading labels get written (#349, #351).
 
 2229 items, 1083 confirmed (48.6%), 1146 open. 698 citations verified, 0 wrong.
 613 lib tests, 0 failures.
+
+## #382 — the palette applier verifies; its label named only its prologue
+
+`parse_palette_block` (`src/hnm.rs`) cited `0xA0E6 mul bh`. It verifies, and so
+does the rest of the block loop, read at `0xA0D3..0xA0EC`:
+
+    lodsw            al=start, ah=count
+    cmp ax,-1        WORD compare -> terminator is BOTH bytes 0xFF
+    di=0x5251+start*3    (bl=3, mul bl)
+    mov al,bl / mul bh   cx = count*3 BYTES
+    rep movsb
+
+So `count==0` sets `cx=0` and copies ZERO entries — the port's earlier fix (drop
+the "0 means 256" special case) is confirmed by the instruction, not by argument.
+Two divergences now written down rather than left implicit: the game stores RAW
+6-bit DAC values and the port's 6->8 expansion is its own; and the game has NO
+`idx < 256` clamp, so a malformed `start+count > 256` runs past the buffer where
+the port silently drops entries.
+
+THE LABEL WAS WRONG, in the #349/#351 way. `0x00A0C3` was `draw_cleanup_set_dirty`
+— "draw epilogue... Common draw-routine cleanup" — which describes its first FIVE
+instructions. The routine does not end there: it falls straight through into the
+palette loop and rets at `0xA116`. Its two near callers (`find_near_callers.py`)
+are `0xA062` in `resource_switch` and `0xA780` in `list_d8c_init` — a RESOURCE
+path, with no draw routine among them. Renamed `resource_palette_blocks_apply`,
+with the tail (`0xA0EE..0xA115`, the `gs:0xDAF` adjust) marked NOT read line by
+line rather than guessed at.
+
+AND A CORRECTION I ALMOST WROTE INSTEAD. Three labels call `DS:0x5251` a 576-byte
+/ 192-triple buffer; `live_palette` and #72 call it 768 bytes / 256 entries. I had
+this queued as a CONFLICT entry before checking `0x8166`, where the bytes say
+`si=0x5251, di=0x5b58, cx=0x90, rep movsd`. Both readings are right: the BUFFER is
+768 bytes, the per-screen COPY is 192 entries, deliberately leaving 192..255 (the
+console/text bank) untouched — which the `0x8166` label already states in full. I
+had misread two correct labels as disagreeing. The check that caught it was the
+same one this session keeps relying on: read the instruction before writing the
+entry about it.
+
+2229 items, 1084 confirmed (48.6%), 1145 open. 698 citations verified, 0 wrong.
+502 code + 238 data labels clean. 613 lib tests, 0 failures.

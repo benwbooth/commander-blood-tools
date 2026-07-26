@@ -680,7 +680,7 @@ make_depth	src/gpu.rs	534	fn		INFRA
 resize	src/gpu.rs	549	fn		INFRA	
 present	src/gpu.rs	558	fn		INFRA?	/// Present one frame: the palettized 320x200 background integer-scaled with /// letterboxing, then the hand triangles at full window resolution.
 bytemuck_cast	src/gpu.rs	726	fn		INFRA	/// Plain-old-data cast for tightly-packed [f32; N] slices.
-parse_palette_block	src/hnm.rs	10	fn	0x000A0E,0xFFFF	ASM?	// count is the exact number of RGB triples (0x000A0E6 `mul bh` = count*3); // the loop terminates only on the 0xFFFF word (checked above). count==0 is a // 0-entry block, NOT 256 — the old special ca
+parse_palette_block	src/hnm.rs	10	fn	0x000A0E,0xFFFF	ASM	// count is the exact number of RGB triples (0x000A0E6 `mul bh` = count*3); // the loop terminates only on the 0xFFFF word (checked above). count==0 is a // 0-entry block, NOT 256 — the old special ca
 HnmFile	src/hnm.rs	43	struct		TESTED	
 open	src/hnm.rs	51	fn		TESTED	
 frame_count	src/hnm.rs	83	fn		TESTED	
