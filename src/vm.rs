@@ -7100,6 +7100,61 @@ pub fn decompile_script(
 #[cfg(test)]
 mod tests {
 
+    /// `scan_zero_word` DIFFERENTIALLED against `func_6293`.
+    ///
+    /// The lift is the general routine: scan forward until the WORD at SI equals
+    /// AX, step past it, then consume one more byte if it equals AL. The port's
+    /// version is the `AX = 0` specialisation with a BOUND added, since a Rust
+    /// slice cannot run off the end the way the original happily does.
+    ///
+    /// That bound is a port-side safety addition, so the two can only be required
+    /// to agree where the terminator is genuinely in range — which is every case
+    /// the game's data produces. The test says so explicitly rather than quietly
+    /// choosing inputs that hide the difference.
+    #[test]
+    fn scan_zero_word_matches_its_lift_where_the_terminator_is_in_range() {
+        use crate::recomp::{machine::Machine, ptr_leaves};
+        const DS: u16 = 0x2000;
+
+        let mut checked = 0usize;
+        // Deterministic pseudo-random buffers with a zero word planted.
+        for seed in 0..200u32 {
+            let mut buf = vec![0u8; 128];
+            let mut x = seed.wrapping_mul(2654435761).wrapping_add(1);
+            for b in buf.iter_mut() {
+                x = x.wrapping_mul(1103515245).wrapping_add(12345);
+                // Never zero, so the only terminator is the one planted below.
+                *b = ((x >> 16) as u8) | 1;
+            }
+            let at = 8 + (seed as usize % 100);
+            buf[at] = 0;
+            buf[at + 1] = 0;
+            // Sometimes a third zero, which the trailing-byte rule consumes.
+            if seed % 3 == 0 {
+                buf[at + 2] = 0;
+            }
+
+            let native = scan_zero_word(&buf, 0, buf.len());
+
+            let mut m = Machine::new();
+            m.regs.ds = DS;
+            m.regs.set_ax(0);
+            m.regs.set_si(0);
+            let base = (DS as u32) * 16;
+            m.mem[base as usize..base as usize + buf.len()].copy_from_slice(&buf);
+            ptr_leaves::func_6293(&mut m);
+            let lifted = m.regs.si() as usize;
+
+            assert_eq!(
+                native, lifted,
+                "seed {seed}: native stops at {native}, the lift at {lifted} \
+                 (terminator planted at {at})"
+            );
+            checked += 1;
+        }
+        assert_eq!(checked, 200, "the sweep did not run");
+    }
+
     /// THE PRNG, DIFFERENTIALLED AGAINST ITS LIFT — the strongest evidence this
     /// tree offers, since `func_2de2` is the original instruction stream
     /// transliterated rather than a second reading of it.

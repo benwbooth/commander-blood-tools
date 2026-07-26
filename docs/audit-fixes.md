@@ -7627,3 +7627,34 @@ FUNCTION candidates (its raw list of 123 is mostly constants, which cannot be ru
 beside anything) — each one is this same opportunity.
 
 Settled ORACLE, the status reserved for differentialled rows.
+
+## #247 — the differential queue is 43 functions long
+
+#246's PRNG bug came from running the port beside its lift. The obvious next
+question is how many more can be done that way, and the answer is measurable:
+matching every unsettled port function against the 112 `func_<hex>` lifts by cited
+address gives 43 candidates.
+
+(`check_liftable_twins.py` reports 123, but most of those are CONSTANTS that merely
+cite a lifted address — `0x6023`'s field-offset routine accounts for dozens. A
+constant cannot be run beside anything. The 43 are the ones where "differential"
+means something.)
+
+Second one done: `scan_zero_word` against `func_6293`, agreeing across 200
+generated buffers. The two are not identical by construction and the test says
+why — the lift is the general routine (scan until the word at SI equals AX, step
+past, consume one more byte if it equals AL) and the port's is the `AX = 0`
+specialisation WITH A BOUND, because a Rust slice cannot run off its end the way
+the original happily does. So they can only be required to agree where the
+terminator is in range, which is every case the game's data produces, and the test
+states that rather than quietly choosing inputs that hide it.
+
+`0x1E5D` (the interpolation gate) was the next candidate and is left for its own
+change: unlike the PRNG's four state bytes, it reads its inputs from DS arrays,
+so the differential needs the memory layout established first. That is setup, not
+difficulty — but it is more than fits beside another finding.
+
+The queue is worth stating plainly because it is the highest-yield work
+identified in this session: 43 functions, each with a transliteration of the
+original sitting beside it, and the first one checked found a bug that had
+survived every citation-based review.
