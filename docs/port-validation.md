@@ -1238,3 +1238,36 @@ TO SETTLE IT: determine whether any record reaching `0x61A6` can carry kind
 callers of `0x60DD`/`0x61A6`. Until then the port's early return is a DEVIATION
 that is documented rather than silently correct — changing it now would trade a
 decoded-but-possibly-unreached path for an undecoded one.
+
+## WIRED BUT NEVER FED — the ship-3D C1 position runtime (audit-fixes #290)
+
+`resolve_ship_3d_position_field` and `ship_3d_position_distance` ARE called from
+the VM's `step()`, so `check_unrouted_rules.py` is satisfied. Their input is not.
+
+`Ship3dC1PositionRuntime` is populated only by `with_ship_3d_c1_positions`, and
+every call site of that builder is inside `#[cfg(test)]`. In a real run
+`position_runtime` is always `None`, so the C1 arm takes its early return:
+
+    let Some(position_runtime) = runtime.position_runtime.as_ref() else {
+        return Some(None);           // "no redirect"
+    };
+
+The game's C1 distance gate does the opposite of nothing: `call 0x60DD` @`0x6BEA`
+computes the distance, and `or ax,ax / jne` REDIRECTS `di` through selector 0x11
+when it is nonzero (`0x6BEA`..`0x6C02`). The port behaves as though every
+distance were zero, so the redirect never fires and the decoded machinery behind
+it — the kind-`0x100` compare, the three direct kinds, the parent walk with its
+arche fallback — never executes outside tests.
+
+The test suite cannot catch this. The tests supply the records themselves, so
+they exercise every branch and pass; the gap is exactly that NOTHING ELSE
+SUPPLIES THEM.
+
+THIS SUBSUMES the kind-`0x20` question recorded above for #289: that divergence
+cannot manifest today, because the walk containing it never runs on real data.
+The order of work is therefore FEED THE RUNTIME FIRST — find what builds the
+position record list in the game and wire it — and only then does the
+parent-link zero test become observable and worth settling.
+
+`tools/check_unfed_runtime.py` reports this class; it currently finds 9 builders
+whose state stays at its default in every real run.

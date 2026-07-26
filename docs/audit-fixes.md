@@ -9006,3 +9006,45 @@ now says so.
 
 Citations: 570 verified (from 557), 0 wrong. 701 tests across all binaries, 0
 failures.
+
+## #290 — "wired but never fed": a gap neither the tests nor the unrouted checker can see
+
+Chasing #289's kind-`0x20` question meant asking what real records reach the
+position walk. The answer is none, and the reason is structural.
+
+`resolve_ship_3d_position_field` is called from the VM's `step()` — production
+code — so `check_unrouted_rules.py` reports it as routed. But its input lives in
+`Ship3dC1PositionRuntime`, populated only by `with_ship_3d_c1_positions`, and
+every call site of that builder is inside `#[cfg(test)]`. `#[cfg(test)]` opens at
+`src/vm.rs:7190`; the call sites are at 13625, 13686, 13756. In a real run the
+field is always `None` and the C1 arm early-returns "no redirect", so the game's
+distance gate (`call 0x60DD` @`0x6BEA`, redirect when nonzero) is a branch the
+port never takes.
+
+WHY NOTHING FLAGGED IT. The tests supply the records themselves, so they exercise
+every branch and pass — a green suite is exactly what a wired-but-unfed subsystem
+produces. The unrouted checker asks "does this rule have a caller?", and the
+answer is legitimately yes. Neither instrument is wrong; the class simply sits in
+the gap between them.
+
+`tools/check_unfed_runtime.py` now reports it: public builders whose call sites
+are ALL in the test module, with the field each one writes. Nine of them.
+
+THE CHECKER MISSED ITS OWN MOTIVATING CASE on the first run, which is worth
+recording because it nearly shipped. The regex required `mut self` on the same
+line as `pub fn with_...(`, and `with_ship_3d_c1_positions<I, J>(` wraps its
+receiver to the next line — so the tool found seven builders and silently omitted
+the two that prompted it. A checker that cannot find the case it was written for
+is worse than none, because its clean output reads as evidence. Fixed by matching
+the name and then looking for the receiver over the following lines; both now
+appear.
+
+THIS SUBSUMES #289's open question. The kind-`0x20` parent-link divergence cannot
+manifest while the walk never runs on real data, so the order of work is FEED THE
+RUNTIME FIRST — find what builds the position record list in the game and wire it
+— and only then is the zero test observable. Both docs/port-validation.md entries
+now say so.
+
+Not a defect in every case: some builders legitimately construct fixtures for a
+subsystem fed another way. Each row is a QUESTION — "in a real run, what is
+supposed to call this?" — and the tool prints rather than fails.
