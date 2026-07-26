@@ -10943,3 +10943,39 @@ assigning them by order would be exactly #302's invented-policy shape. The ladde
 gives the structure; the mapping needs the caller that loads AL.
 
 641 citations verified, 0 wrong. 612 lib tests, 0 failures.
+
+## #338 — AL is the picked menu row: the console-mode flags come from the widget's return
+
+#337 found the `dec al / jns` ladder that sets the gate flags and left the
+question "what loads AL". Scanning back, the ladder has FIVE arms — `0x88C3`,
+`0x88D4`, `0x8923`, `0x8933`, `0x8943` — and immediately before the first:
+
+    0x88B4  mov byte ptr [0x2565], 0    clear INPUT_GATE_D
+    0x88B9  push cs
+    0x88BA  call 0x8428                 <- the unified LIST WIDGET
+    0x88BD  or ax, ax / js              negative = nothing picked
+
+The call target is `e8 6b fb`, rel `-0x495` from `0x88BD` = `0x8428`, which is
+`list_widget_layout_unified`. So AL IS THE ROW THE PLAYER PICKED, and each ladder
+arm raises the subsystem flag for that row's console mode.
+
+THAT CLOSES THE LOOP the last several entries have been circling:
+
+    the player picks a row in the console list widget (0x8428)
+      -> AL = row index
+      -> the ladder raises that mode's flag (e.g. [0x2736], [0x2737])
+      -> the main-loop gate (test [0x2793],0xe + OR of ten bytes, 0x1095)
+         sees a mode is up and DEFERS the pending script-profile load
+      -> dismissing the mode clears the flag and the busy bit (0x895C)
+
+Five arms is also a match for the port's five console functions (HONK,
+TELEPHONE, CRYOBOX, MENU, OPTION), which is suggestive and NOT yet a mapping.
+
+WHAT STILL BLOCKS THE MAPPING is the same thing #323 recorded for
+`menu_submenu_labels`: the widget takes its rows as a word-offset list in SI, and
+which list is passed is decided by the caller. Row ORDER determines which AL
+value means which mode. So two open questions that looked unrelated — "which menu
+does `menu_submenu_labels` mean?" and "which console mode is AL=2?" — are the
+same question, and answering it once settles both.
+
+641 citations verified, 0 wrong. 612 lib tests, 0 failures.
