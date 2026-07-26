@@ -8674,3 +8674,39 @@ The hint now searches both directions:
 Two distinct habits, then: for a comparison I reach for the branch, for a routine
 I reach for its entry. Both are "the address I was thinking about" rather than
 "the address of the instruction I quoted", and the hint now covers both.
+
+## #282 — finding the routine a constant family had never named
+
+Working #281's list of 126 undocumented items, the `SHIP_3D_FINAL_RESET_*` family
+stood out: seven constants asserting specific values (`0x0009`, `50`, `0xff`,
+`0xfc`, two `0xFFFF` sentinels) with no docs — and the function that consumes
+them, `run_ship_3d_navigation_final_reset`, has NO ORIGIN either. A whole cluster
+claiming to describe a reset the game performs, with nothing pointing at where.
+
+`refs_in_routine.py`'s immediate reporting (#263) finds it in one command. Sweeping
+the ship-3D entries for those values puts all four distinctive ones in the tail of
+`ship_3d_navigation_update` (`0xB34E`):
+
+```text
+   0xB505  mov word ptr [0x2793],9      the HUD flag word
+   0xB511  mov word ptr [0x279d],0x32   50 ticks
+   0xB54D  and byte ptr [0x67aa],0xfc   a MASK, not a value
+   0xB57B  mov byte ptr [0x5b52],0xff   the dirty marker
+```
+
+So the "final reset" is the tail of the navigation update, not a routine of its
+own — which is why nothing had named it.
+
+The `and ...,0xfc` is worth the doc it now has: it CLEARS the low two bits of
+what is already there rather than writing a value, so a port storing `0xfc` as a
+value would be wrong in a way the constant's name hides.
+
+The two `0xFFFF` sentinels stay UNSOURCED and say so. `0xFFFF` is this tree's
+usual empty marker and the reset plausibly writes it, but a scan for it returns
+too many hits to attribute — and #263 is exactly the entry establishing that a
+value match without a reason is not evidence. Four cited, two honest, none
+guessed.
+
+This is the immediate-reporting extension paying off in the way #263 said it
+could: not as a bulk citation source, but as a way to find WHERE something lives
+once you already know what you are looking for.

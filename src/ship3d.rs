@@ -209,12 +209,26 @@ pub const SHIP_3D_TEMP_SND_SCENE_SELECTOR_SENTINEL: u16 = 0xffff;
 pub const SHIP_3D_TEMP_SND_VIEWPORT_DESCRIPTOR: [u16; 8] = [
     0x0000, 0x0001, 0x0004, 0x0000, 0x0140, 0x00c8, 0x0000, 0x0000,
 ];
+/// THE NAVIGATION FINAL RESET's immediates, found in the tail of
+/// `ship_3d_navigation_update` (`0xB34E`) — the routine that performs it. The
+/// family was undocumented and unsourced until audit-fixes #282; these four now
+/// name the instruction that writes each.
+///
+/// `mov word ptr [0x2793],9` @`0xB505` — the HUD flag word.
 pub const SHIP_3D_FINAL_RESET_HUD_FLAGS: u16 = 0x0009;
+/// `mov word ptr [0x279d],0x32` @`0xB511` — 50 ticks.
 pub const SHIP_3D_FINAL_RESET_NAV_TIMER: u16 = 50;
+/// UNSOURCED. `0xFFFF` is the tree's usual empty marker and the reset plausibly
+/// writes it, but no instruction has been found for this one or for
+/// [`SHIP_3D_FINAL_RESET_ACTIVE_RECORD_SENTINEL`] — the four cited above were
+/// located by scanning `0xB34E` for their immediates, and a scan for `0xFFFF`
+/// returns too many hits to attribute (#282).
 pub const SHIP_3D_FINAL_RESET_SELECTOR_SENTINEL: u16 = 0xffff;
 pub const SHIP_3D_FINAL_RESET_ACTIVE_RECORD_SENTINEL: u16 = 0xffff;
+/// `mov byte ptr [0x5b52],0xff` @`0xB57B`.
 pub const SHIP_3D_FINAL_RESET_DIRTY_MARKER: u8 = 0xff;
 pub const SHIP_3D_FINAL_RESET_SCROLL_MODE: u16 = SHIP_3D_SCROLL_MODE_HOLD;
+/// `and byte ptr [0x67aa],0xfc` @`0xB54D` — clears the low two bits, so it is a MASK applied to what is there rather than a value written.
 pub const SHIP_3D_FINAL_RESET_STATUS_FLAG_MASK: u8 = 0xfc;
 pub const SHIP_3D_OBJECT_KIND_POSITION_DIRECT_8: u16 = 8;
 pub const SHIP_3D_OBJECT_KIND_POSITION_DIRECT_10: u16 = 16;
