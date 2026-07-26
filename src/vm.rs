@@ -7088,6 +7088,68 @@ pub fn decompile_script(
 #[cfg(test)]
 mod tests {
 
+    /// A PROFILE REQUEST EVENT MUST SIT ON THE OPCODE THAT MAKES REQUESTS.
+    ///
+    /// `ScriptProfileRequestEvent` records the offset where a `0xD2` request
+    /// fired. That is checkable against the bytecode itself: the byte at that
+    /// offset must BE `OP_SCRIPT_PROFILE_REQUEST`. An event pointing anywhere else
+    /// means the VM attributed a request to the wrong place, which no amount of
+    /// internal consistency would reveal — the event looks identical either way.
+    ///
+    /// Also pinned: `pending_script_profile` filters the `0xFFFF` sentinel
+    /// (`gs:0x6780` empty, `cmp word [0x6780],-1` @`0x108E`), so a trace whose last
+    /// request is the sentinel reports nothing pending.
+    #[test]
+    fn profile_requests_sit_on_the_d2_opcode_in_the_real_scripts() {
+        let dir = ["output/_tmp_iso", "../output/_tmp_iso", "output/scripts", "../output/scripts"]
+            .iter()
+            .map(std::path::Path::new)
+            .find(|p| p.exists());
+        let Some(dir) = dir else { return };
+
+        let mut events = 0usize;
+        let mut scripts = 0usize;
+        for index in 1..=5 {
+            let Ok(cod) = std::fs::read(dir.join(format!("SCRIPT{index}.COD"))) else {
+                continue;
+            };
+            let var = std::fs::read(dir.join(format!("SCRIPT{index}.VAR"))).unwrap_or_default();
+            let trace = execute_trace_with_context(&cod, &var, &ExecutionContext::default());
+            scripts += 1;
+
+            for event in &trace.script_profile_requests {
+                assert!(event.offset < cod.len(), "event past the script");
+                assert_eq!(
+                    cod[event.offset], OP_SCRIPT_PROFILE_REQUEST,
+                    "SCRIPT{index}: a profile request is recorded at {:#x}, where the \
+                     byte is {:#04x} and not the request opcode {:#04x}",
+                    event.offset, cod[event.offset], OP_SCRIPT_PROFILE_REQUEST
+                );
+                events += 1;
+            }
+
+            // The one-shot sentinel: a trace whose last request is 0xFFFF has
+            // nothing pending, per `cmp word [0x6780],-1` @`0x108E`.
+            if let Some(last) = trace.script_profile_requests.last() {
+                if last.profile_index == 0xFFFF {
+                    assert_eq!(trace.pending_script_profile(), None, "sentinel not filtered");
+                } else {
+                    assert_eq!(trace.pending_script_profile(), Some(last.profile_index));
+                }
+            } else {
+                assert_eq!(trace.pending_script_profile(), None);
+            }
+        }
+
+        assert!(scripts >= 3, "only {scripts} scripts read");
+        // THIN, and measured rather than assumed: the five shipped scripts issue
+        // exactly TWO profile requests between them, so the offset->opcode
+        // assertion above runs twice. That is enough to be non-vacuous and not
+        // enough to be reassuring; the sentinel branch below carries more of the
+        // weight. Stated so nobody reads `events > 0` as coverage.
+        assert!(events >= 2, "only {events} profile requests seen (2 expected)");
+    }
+
     /// THE VM MUST NOT DESYNC ON THE GAME'S OWN BYTECODE.
     ///
     /// `execute_trace_with_context` runs a real `SCRIPT*.COD` and reports how it

@@ -7503,3 +7503,27 @@ branch-event assertion was reached, so I had a number for one and nothing for th
 other. Measuring them one at a time gave 5 and 1534. The lesson from #236 — every
 property test needs a coverage assertion — has a corollary: when there are two,
 raise them SEPARATELY, because the first failure masks the rest.
+
+## #243 — an event that must sit on the opcode that causes it
+
+`ScriptProfileRequestEvent` records the offset where a `0xD2` request fired. That
+is checkable against the bytecode: the byte at that offset must BE
+`OP_SCRIPT_PROFILE_REQUEST`. An event attributed to the wrong place looks
+identical to a correct one — same fields, same plausible values — so no amount of
+internal consistency would reveal it. Only the bytecode can.
+
+Also pinned: `pending_script_profile` filters the `0xFFFF` sentinel (`gs:0x6780`
+empty, `cmp word [0x6780],-1` @`0x108E`), so a trace whose last request is the
+sentinel reports nothing pending, and one whose last request is real reports
+exactly that index.
+
+THE COVERAGE IS THIN AND THE TEST SAYS SO. The five shipped scripts issue exactly
+TWO profile requests between them, so the offset->opcode assertion runs twice.
+That is enough to be non-vacuous and not enough to be reassuring, and the comment
+says which — `assert!(events > 0)` would have read as coverage while meaning
+almost nothing.
+
+This is the fifth measured coverage floor in this stretch (#223, #224, #236, #242,
+now), and the first where the measurement argued AGAINST confidence rather than
+for it. That is the more useful direction: a floor that only ever confirms
+adequacy is decoration.
