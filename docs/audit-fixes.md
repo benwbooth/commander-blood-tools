@@ -7796,3 +7796,37 @@ That closes the guard-audit sweep begun in #249: one real gap found (`movsx`
 unchecked), two claims verified sound (#250), and one repeated-but-unverified
 claim now actually verified. Every quiet number in the guard suite has been
 opened at least once.
+
+## #252 — 381 rows were filed as "cited" on addresses from other people's comments
+
+Auditing `snd::SILENCE` — origin `0x4049,0xBB6D`, status ASM? — neither address
+contains `0x80`. `0x4049` is `int 21h`; `0xBB6D` is `lodsb`. The constant's own
+doc names no address at all.
+
+The addresses came from a TEST comment EIGHTY LINES LATER, one I wrote myself in
+#213 ("0x4049 overwrites, 0xBB6D averages").
+
+The cause is #141's fix reaching too far. That change taught the inventory to look
+for citations in a function's BODY comments, walking forward until the body's
+braces close. A `const` has no braces, so `started` never became true, the loop
+never terminated early, and it swept up every comment in an 80-line window ahead
+of the declaration.
+
+Fixed by abandoning the scan when no brace has appeared within two lines of the
+declaration — a real body opens immediately, and anything else is not a body.
+
+THE SCALE: 381 rows changed, every one ASM? -> UNVERIFIED with its origin
+cleared. `BLOODPRG_FILE_SIZE` and `BLOODPRG_SHA256` had been filed as citing
+`0x14C22,0x14CD2,0x2567` — the font tables — because those appear in a doc further
+down the file. The ASM? bucket I have been quoting as "531 rows with citations"
+was inflated by more than two thirds; the real figure is 212.
+
+Settled totals are unaffected (ASM? is not settled), and the 421 fn rows that
+legitimately carry body-comment citations still do — #141's actual case survives,
+since a function's brace appears on the declaration line or the next.
+
+The lesson is about heuristics that widen. #141 fixed a real blind spot by
+scanning further; the fix had no stopping condition for items that do not have the
+structure it assumed, and it then manufactured citations for six years' worth of
+constants. A heuristic that reaches for more evidence needs a rule for when there
+is none to reach for.

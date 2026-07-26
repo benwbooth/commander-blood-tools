@@ -614,6 +614,14 @@ pub fn mix_unsigned_pcm_sources(sources: &[&[u8]], out: &mut [u8]) -> usize {
 }
 
 /// The unsigned-PCM zero level: `0x80`, not `0`.
+///
+/// DEFINITIONAL, not decoded, and stated so because the ledger briefly claimed
+/// otherwise. This constant carried an origin of `0x4049,0xBB6D` — neither of
+/// which contains `0x80`; `0x4049` is `int 21h` and `0xBB6D` is `lodsb`. The
+/// addresses had been absorbed from a TEST comment eighty lines away by a
+/// scanning bug (audit-fixes #252). `0x80` is the midpoint of an unsigned 8-bit
+/// sample, which is what silence IS in this representation, and no instruction
+/// needs to say so.
 pub const SILENCE: u8 = 0x80;
 
 #[cfg(test)]

@@ -239,10 +239,23 @@ for root, _, files in os.walk(SRC):
             if not ADDR.search(fulldoc):
                 body_comments = []
                 depth, started = 0, False
-                for probe in lines[i - 1 : i + 80]:
+                for offset, probe in enumerate(lines[i - 1 : i + 80]):
                     depth += probe.count("{") - probe.count("}")
                     if "{" in probe:
                         started = True
+                    # A BRACE-LESS ITEM HAS NO BODY TO SCAN. `const SILENCE: u8 =
+                    # 0x80;` never opens a block, so `started` stayed false and
+                    # this loop ran the full 80 lines forward, absorbing every
+                    # comment it passed -- including the doc comments of later
+                    # functions and, in SILENCE's case, a TEST comment citing
+                    # 0x4049/0xBB6D. The constant was then filed ASM? with two
+                    # addresses that do not contain it (audit-fixes #252).
+                    #
+                    # A real body opens within a line or two of the declaration,
+                    # so if no brace has appeared by then there is nothing to scan.
+                    if not started and offset > 2:
+                        body_comments = []
+                        break
                     st_probe = probe.strip()
                     if st_probe.startswith("//"):
                         body_comments.append(st_probe)
