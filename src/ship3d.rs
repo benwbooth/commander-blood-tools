@@ -2742,35 +2742,6 @@ pub const SHIP_3D_HUD_PYRAMID_VERTICES: [[i16; 3]; 32] = [
     [13323, 8194, 6719],
 ];
 
-/// Render the pyramid-nav HUD grid into the bottom band of an indexed 320x200
-/// framebuffer (the band the exporter otherwise leaves BLACK in dialogue mode).
-/// Draws a perspective grid of grey pyramid (triangle) outlines matching the
-/// in-game nav HUD verified against the playthrough, with the central eye-orb
-/// position marked. FUNCTIONAL render: the exact per-pixel procedural algorithm
-/// (BLOODPRG.EXE ship-3D HUD @~0x9656/0xB193, 3D-projected pyramid vertices) is
-/// still being decoded; this fills the HUD band with the correct structure.
-/// Render a plausible full-screen star-map navigation view into an indexed 320x200
-/// framebuffer: a receding perspective grid of shaded pyramids (the navigable star
-/// systems) with the central eye-orb, matching the real game's layout (verified
-/// against the DOSBox-X oracle capture — scene-view on top, pyramid grid filling the
-/// lower half). This is a VISUAL APPROXIMATION for the engine's nav view: it
-/// reproduces the game's on-screen composition (rows of pyramids + orb) without the
-/// exact recovered geometry/projection (see `SHIP_3D_HUD_PYRAMID_VERTICES` — the
-/// game's own projection is still being decoded). `light`/`dark`/`orb` are palette
-/// indices for the lit pyramid faces, shadowed faces, and the orb.
-/// SUPERSEDED AND NOT LIVE (audit-fixes #277). `engine.rs` renders the nav view
-/// with [`render_star_map_navview_projected`], which uses the EXACT projection
-/// decoded from `0x9BBA` and verified instruction-by-instruction in #273. This
-/// approximation and its `_panned` sibling are reached only from each other and
-/// from tests.
-///
-/// Kept, not deleted, because its tests still exercise the pyramid/orb
-/// composition — but marked, because a fabricated surface sitting beside the real
-/// one is exactly what a later reader mistakes for the live path. The end state is
-/// removal once those tests point at the projected renderer.
-pub fn render_star_map_navview(buffer: &mut [u8], light: u8, dark: u8, orb: u8) {
-    render_star_map_navview_panned(buffer, light, dark, orb, 0);
-}
 
 /// As [`render_star_map_navview`], but pans the pyramid field horizontally by
 /// `compass_angle` (0..179) so the view rotates with the ship's heading (mouse
@@ -2879,70 +2850,6 @@ pub fn render_star_map_navview_projected(buffer: &mut [u8], light: u8, dark: u8,
     }
 }
 
-pub fn render_star_map_navview_panned(
-    buffer: &mut [u8],
-    light: u8,
-    dark: u8,
-    orb: u8,
-    compass_angle: u16,
-) {
-    const W: isize = SHIP_3D_PROJECTION_SCREEN_WIDTH as isize; // 320
-    const H: isize = SHIP_3D_PROJECTION_SCREEN_HEIGHT as isize; // 200
-    let horizon: isize = 96; // grid recedes to here; scene band is above
-    let put = |buf: &mut [u8], x: isize, y: isize, c: u8| {
-        if (0..W).contains(&x) && (0..H).contains(&y) {
-            buf[(y * W + x) as usize] = c;
-        }
-    };
-    // Fill one pyramid: a triangle (apex up) with a lit left face + shadowed right
-    // face for a simple 3D look, centred at (cx, base_y) with half-width hw + height h.
-    let pyramid = |buf: &mut [u8], cx: isize, base_y: isize, hw: isize, h: isize| {
-        let apex_y = base_y - h;
-        for y in apex_y..=base_y {
-            let t = (y - apex_y) as f32 / (h.max(1)) as f32; // 0 apex .. 1 base
-            let half = (t * hw as f32) as isize;
-            for x in (cx - half)..=(cx + half) {
-                // left of centre = lit face, right = shadowed
-                let c = if x <= cx { light } else { dark };
-                put(buf, x, y, c);
-            }
-        }
-    };
-    // Perspective grid: rows recede from the bottom up to the horizon; nearer rows are
-    // larger and fewer-spaced, farther rows smaller and denser.
-    let rows = 4;
-    for r in 0..rows {
-        let depth = r as f32 / rows as f32; // 0 near .. ~1 far
-        let base_y = H - 8 - (depth * (H - 8 - horizon) as f32) as isize;
-        let hw = (26.0 * (1.0 - depth * 0.7)) as isize;
-        let h = (30.0 * (1.0 - depth * 0.7)) as isize;
-        let spacing = (72.0 * (1.0 - depth * 0.55)) as isize;
-        // stagger alternate rows so pyramids interleave like the real grid
-        let offset = if r % 2 == 0 { 0 } else { spacing / 2 };
-        // Parallax pan: heading pans nearer rows more; wrap within a spacing cell.
-        let pan = (compass_angle as isize * 2 * (rows - r) as isize / rows as isize)
-            .rem_euclid(spacing.max(20));
-        let mut cx = 8 + offset - spacing + pan;
-        while cx < W - 8 + spacing {
-            // skip drawing right behind the orb so it reads on top
-            if !(depth < 0.5 && (cx - W / 2).abs() < 26) {
-                pyramid(buffer, cx, base_y, hw.max(3), h.max(4));
-            }
-            cx += spacing.max(20);
-        }
-    }
-    // Central eye-orb: a filled disc with a lit rim.
-    let (ocx, ocy, orad) = (W / 2, horizon + 22, 20isize);
-    for y in -orad..=orad {
-        for x in -orad..=orad {
-            let d2 = x * x + y * y;
-            if d2 <= orad * orad {
-                let c = if d2 > (orad - 3) * (orad - 3) { light } else { orb };
-                put(buffer, ocx + x, ocy + y, c);
-            }
-        }
-    }
-}
 
 pub fn render_ship_3d_pyramid_hud(buffer: &mut [u8], grid_color: u8, orb_color: u8) {
     const W: isize = SHIP_3D_PROJECTION_SCREEN_WIDTH as isize; // 320
@@ -5329,16 +5236,6 @@ mod tests {
         assert!(projected > 0, "some HUD vertices must project on-screen");
     }
 
-    #[test]
-    fn star_map_navview_pans_with_heading() {
-        let mut a = vec![0u8; SHIP_3D_PROJECTION_SCREEN_WIDTH * SHIP_3D_PROJECTION_SCREEN_HEIGHT];
-        let mut b = a.clone();
-        render_star_map_navview_panned(&mut a, 200, 90, 240, 0);
-        render_star_map_navview_panned(&mut b, 200, 90, 240, 60);
-        // different heading -> different pixels (the grid panned), but both still draw
-        assert!(a != b, "grid pans with heading");
-        assert!(b.iter().any(|&p| p == 200) && b.iter().any(|&p| p == 240));
-    }
 
     #[test]
     fn star_map_projection_matches_decoded_formula() {
@@ -5366,19 +5263,6 @@ mod tests {
         assert!(fb != fb2, "grid pans with heading");
     }
 
-    #[test]
-    fn star_map_navview_renders_grid_and_orb() {
-        let mut fb = vec![0u8; SHIP_3D_PROJECTION_SCREEN_WIDTH * SHIP_3D_PROJECTION_SCREEN_HEIGHT];
-        render_star_map_navview(&mut fb, 200, 90, 240);
-        // pyramids (light+dark) and the orb are all drawn
-        assert!(fb.iter().any(|&p| p == 200), "lit pyramid faces");
-        assert!(fb.iter().any(|&p| p == 90), "shadowed pyramid faces");
-        assert!(fb.iter().any(|&p| p == 240), "orb");
-        // orb sits around screen centre (x~160, y~118)
-        let orb_row = 118 * SHIP_3D_PROJECTION_SCREEN_WIDTH;
-        assert!(fb[orb_row + 150..orb_row + 170].iter().any(|&p| p == 240),
-            "orb near centre");
-    }
 
     #[test]
     fn pyramid_hud_draws_only_in_the_bottom_band() {

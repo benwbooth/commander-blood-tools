@@ -759,50 +759,50 @@ MENU_CAMERA_CENTRE	src/manu3.rs	41	const		UNVERIFIED	/// The menu-view centre th
 MENU_ANGLE_MASK	src/manu3.rs	58	const	0xffc,0xFFC	ASM	/// The rotation angle-index mask, `mov bx,0xffc` at manu3.xdb `0x283`. /// /// The mask is loaded once and applied to THREE per-node angle fields: /// /// ```text ///   0x0283  mov bx,0xffc ///   0x0
 menu_pyramid_angles	src/manu3.rs	65	fn	0xFFC	CELL?	/// The pyramid draw's per-axis rotation angle indices (method `0x270` setup): the three /// object angle fields (`+0x4E`/`+0x50`/`+0x52`), each masked to `0xFFC`, form the /// trig-table offsets that
 menu_camera_pan	src/manu3.rs	78	fn	0x23E4,0x23E2	CELL?	/// The 3D-menu camera pan from the cursor position (entry `0x34..0x51`): the cursor's /// delta from the view centre, doubled, is added to the view offset `[0x23E4]` (x from /// `[0x1A]`) / `[0x23E2]
-MenuAnimDescriptor	src/manu3.rs	91	struct	0x102C	ASM	/// A menu item's animation descriptor — the DATA the item-dispatch (`0x181`) selects /// and the tween setup (`0x1DF`) consumes. NOT a code routine: `0x1DF` reads `[si]` as /// a packed `(phase<<8 | 
-parse	src/manu3.rs	105	fn		DATA?	/// Parse the descriptor at `off` in the overlay data (`[off]`=phase|count, /// `[off+4]`=target, `[off+6]`=end).
-tween	src/manu3.rs	120	fn		DATA?	/// Build the tween this descriptor drives (via `0x1DF`): animate the target field /// from its `current` value to `end` over `count` frames.
-MenuTween	src/manu3.rs	133	struct		UNVERIFIED	/// One entry in the menu's active-animation list (method `0x19B`): a fixed-point tween /// that each frame writes its accumulator's high word to a target field, then advances /// the accumulator by a
-new	src/manu3.rs	143	fn		TESTED	
-to_target	src/manu3.rs	157	fn		DATA?	/// Build a tween from an animation descriptor (method `0x1DF`, the setup that links /// item-selection to the tween list): animate a field from its `current` value to /// the descriptor's `end` value
-output	src/manu3.rs	165	fn		TESTED	/// The output value written to the target this frame — the accumulator's high word /// (`[di+8]`, i.e. `accumulator >> 16`).
-step	src/manu3.rs	173	fn		UNVERIFIED	/// Advance one frame exactly as `0x19B` does per entry: the caller first takes /// [`output`](Self::output) and writes it to the target, then this decrements the /// counter — returning `false` (remo
-MenuTweenList	src/manu3.rs	187	struct		UNVERIFIED	/// The menu's active-animation list (`0x19B`): processes every tween each frame, /// writing each output to its target via a caller-supplied sink, and swap-removes the /// tweens that have expired (m
-step	src/manu3.rs	197	fn		TESTED	/// Process all tweens for one frame: for each, emit `(target_id, output_value)` via /// `sink`, then advance it; expired tweens are removed. Returns the number still /// active. // swap-remove the fi
-DS	src/manu3_hand.rs	27	const	0x2274,0x2394,0x23E2,0x23E4	CELL?	/// The live manu3 data segment (64KB dump): the skeleton NODE TREE lives at /// 0x2274 (root) + 16 records at 0x2394 + i*0x5E. Record layout (decoded 0x270/0x3DE): ///   +0x00 parent record ptr   +0x
-SEG2	src/manu3_hand.rs	30	const	0xB18	CELL?	/// The seg2 pool: 110 x 20B vertices {+0/+2 UV, +4..+8 model xyz} + 32 alias records /// (+4 = source byte offset), then the 216 x 8B face list at 0xB18 {link, v0, v1, v2}.
-STATE_BASE	src/manu3_hand.rs	42	const	0x2274,0x2974	CELL?	/// The node-tree state block `ds[0x2274..0x2974]`: root + 16 records, mutable at /// runtime (pose tweens write cells into it exactly as the game does). /// /// PROVENANCE, stated exactly: no manu3.x
-STATE_LEN	src/manu3_hand.rs	43	const		UNVERIFIED	
-WRIST	src/manu3_hand.rs	44	const		UNVERIFIED	
-TEX	src/manu3_hand.rs	52	const	0x120B,0x6400	ORACLE?	/// The hand's 256-wide texture (palette-index rows) lifted from the live data segment. // THE REAL TEXTURE SEGMENT: the fill's fs parameter block (captured live at the // span setup 0x120B: fs=17A3, 
-TEX_W	src/manu3_hand.rs	53	const		UNVERIFIED	/// The game's own sin/cos tables (ds:0x26, 1024 entries x {cos:i16, sin:i16}, Q14).
-TRIG	src/manu3_hand.rs	62	const		TESTED	/// The game's own sin/cos tables (ds:0x26, 1024 entries x {cos:i16, sin:i16}, Q14). /// /// PROVENANCE: not a memory snapshot despite living under `accuracy/`. All 4100 /// bytes are `manu3.xdb` at o
-TRIG_XDB_OFFSET	src/manu3_hand.rs	64	const		TESTED	/// Where [`TRIG`] lives inside `manu3.xdb`. /// The hand's texture bytes + row width (for GPU upload).
-hand_texture	src/manu3_hand.rs	67	fn		UNVERIFIED	/// The hand's texture bytes + row width (for GPU upload).
-rd_parent	src/manu3_hand.rs	72	fn		UNVERIFIED	
-tcos	src/manu3_hand.rs	77	fn		UNVERIFIED	
-tsin	src/manu3_hand.rs	82	fn		UNVERIFIED	
-build_matrix	src/manu3_hand.rs	91	fn		UNVERIFIED	/// EXACT transcription of the manu3 matrix build (xdb 0x270..0x3DE): three Euler /// angles as raw byte-offsets (4/step) -> the 9 Q15-ish cells, composed via the /// angle-sum identity reads the orig
-HandMesh	src/manu3_hand.rs	114	struct	0xFFFF,0x2274,0x2974	CELL?	/// Current pose selector + its running player (selector -> sequence index, /// per the 0x181 dispatch; decoded contexts: 1=rest, 2=steer-right, 3=steer-left, /// 0xB=UI-close, 0xFFFF=hidden). /// The
-load	src/manu3_hand.rs	131	fn		UNVERIFIED	// An alias shares its SOURCE's projected position but carries its OWN // texture coordinates (+0/+2) — aliases ARE the mesh's UV-seam vertices // (verified: every alias's own UV differs from its sour
-st16	src/manu3_hand.rs	166	fn		UNVERIFIED	
-st32	src/manu3_hand.rs	171	fn		UNVERIFIED	
-compose	src/manu3_hand.rs	185	fn	0x2274	ASM	/// Compose the skeleton for cursor (cx, cy): per node, local = build(angles) — /// the wrist gets the cursor law added non-destructively — then /// rows = parent_rows * local >> 15 and T = parent_row
-draw	src/manu3_hand.rs	254	fn		ORACLE?	/// Render the hand into an indexed framebuffer with the cursor at (cx, cy): /// the decoded cursor law + hierarchical composition + the re-verified 0x549 /// projection. No screen-space fixups — the 
-snapshot_state	src/manu3_hand.rs	331	fn		INFRA	/// Snapshot the mutable skeleton state (for between-tick interpolation).
-triangles_lerp	src/manu3_hand.rs	340	fn		UNVERIFIED	/// Like [`Self::triangles`], but with the animated skeleton cells (angles + /// local positions of every node) LERPed between a previous snapshot and the /// current state by `alpha` — smooth pose mo
-triangles	src/manu3_hand.rs	380	fn		UNVERIFIED	/// The hand's textured triangles for GPU rendering: same compose + cursor-centred /// projection as draw(), emitted as screen-space (x, y, depth, u, v) vertices /// (u/v in texel units — the game's Q
-debug_project	src/manu3_hand.rs	409	fn		UNVERIFIED	/// Debug helper: the projected point cloud (screen x, y, depth) for a cursor. // Aliases resolve to their source's projected point (as in draw()).
-face_depth	src/manu3_hand.rs	451	fn		UNVERIFIED	
-fill_triangle_tex	src/manu3_hand.rs	457	fn		UNVERIFIED	
-fill_triangle	src/manu3_hand.rs	518	fn		UNVERIFIED	
-PosePlayer	src/manu3_hand.rs	550	struct	0x2394	CELL?	/// The phased tween pose player (exact transcription of 0x181/0x1DF/0x19B): /// applies sequence `seq`'s groups to the segment cells, animating the hand. /// Cells address the live record block (0x23
-new	src/manu3_hand.rs	563	fn	0x2306,0x2974	CELL?	/// Look up the sequence for a SELECTOR through the game's own dispatch table /// (0x181 decoded: table base = ds:[0x2306] = 0x2974; sequence = base + /// table[(selector & 0x1F) * 2]; groups run unti
-step	src/manu3_hand.rs	582	fn		UNVERIFIED	/// One frame: construct due groups (phase match), step active tweens; writes go /// through `cells` (cell address -> current value), exactly as 0x1DF/0x19B do.
-done	src/manu3_hand.rs	622	fn		UNVERIFIED	
-set_pose	src/manu3_hand.rs	629	fn		UNVERIFIED	/// Select the pose (decoded selector semantics); a change starts that sequence.
-tick_pose	src/manu3_hand.rs	637	fn		UNVERIFIED	/// Advance the current pose animation one frame (call per rendered frame).
-animate	src/manu3_hand.rs	650	fn	0x2274,0x2974	CELL?	/// Apply one pose-player frame to the live skeleton: tween cell writes land in /// the node-tree state block BY ORIGINAL DS OFFSET (cells address 0x2274..0x2974: /// node angles +0x4E/50/52, local po
+MenuAnimDescriptor	src/manu3.rs	101	struct	0x102e,0x102c,0x102C	ASM	/// A menu item's animation descriptor — the DATA the item-dispatch (`0x181`) selects /// and the tween setup (`0x1DF`) consumes. NOT a code routine; the field layout is /// read straight off `XDB:man
+parse	src/manu3.rs	115	fn		DATA?	/// Parse the descriptor at `off` in the overlay data (`[off]`=phase|count, /// `[off+4]`=target, `[off+6]`=end).
+tween	src/manu3.rs	130	fn		DATA?	/// Build the tween this descriptor drives (via `0x1DF`): animate the target field /// from its `current` value to `end` over `count` frames.
+MenuTween	src/manu3.rs	143	struct		UNVERIFIED	/// One entry in the menu's active-animation list (method `0x19B`): a fixed-point tween /// that each frame writes its accumulator's high word to a target field, then advances /// the accumulator by a
+new	src/manu3.rs	153	fn		TESTED	
+to_target	src/manu3.rs	167	fn		DATA?	/// Build a tween from an animation descriptor (method `0x1DF`, the setup that links /// item-selection to the tween list): animate a field from its `current` value to /// the descriptor's `end` value
+output	src/manu3.rs	175	fn		TESTED	/// The output value written to the target this frame — the accumulator's high word /// (`[di+8]`, i.e. `accumulator >> 16`).
+step	src/manu3.rs	183	fn		UNVERIFIED	/// Advance one frame exactly as `0x19B` does per entry: the caller first takes /// [`output`](Self::output) and writes it to the target, then this decrements the /// counter — returning `false` (remo
+MenuTweenList	src/manu3.rs	197	struct		UNVERIFIED	/// The menu's active-animation list (`0x19B`): processes every tween each frame, /// writing each output to its target via a caller-supplied sink, and swap-removes the /// tweens that have expired (m
+step	src/manu3.rs	207	fn		TESTED	/// Process all tweens for one frame: for each, emit `(target_id, output_value)` via /// `sink`, then advance it; expired tweens are removed. Returns the number still /// active. // swap-remove the fi
+DS	src/manu3_hand.rs	41	const	0x2274,0x2394,0x23E2,0x23E4	ASM?	/// The live manu3 data segment (64KB dump): the skeleton NODE TREE lives at /// 0x2274 (root) + 16 records at 0x2394 + i*0x5E. Record layout (decoded 0x270/0x3DE): ///   +0x00 parent record ptr   +0x
+SEG2	src/manu3_hand.rs	44	const	0xB18	CELL?	/// The seg2 pool: 110 x 20B vertices {+0/+2 UV, +4..+8 model xyz} + 32 alias records /// (+4 = source byte offset), then the 216 x 8B face list at 0xB18 {link, v0, v1, v2}.
+STATE_BASE	src/manu3_hand.rs	56	const	0x2274,0x2974	CELL?	/// The node-tree state block `ds[0x2274..0x2974]`: root + 16 records, mutable at /// runtime (pose tweens write cells into it exactly as the game does). /// /// PROVENANCE, stated exactly: no manu3.x
+STATE_LEN	src/manu3_hand.rs	57	const		UNVERIFIED	
+WRIST	src/manu3_hand.rs	58	const		UNVERIFIED	
+TEX	src/manu3_hand.rs	66	const	0x120B,0x6400	ORACLE?	/// The hand's 256-wide texture (palette-index rows) lifted from the live data segment. // THE REAL TEXTURE SEGMENT: the fill's fs parameter block (captured live at the // span setup 0x120B: fs=17A3, 
+TEX_W	src/manu3_hand.rs	67	const		UNVERIFIED	/// The game's own sin/cos tables (ds:0x26, 1024 entries x {cos:i16, sin:i16}, Q14).
+TRIG	src/manu3_hand.rs	76	const		TESTED	/// The game's own sin/cos tables (ds:0x26, 1024 entries x {cos:i16, sin:i16}, Q14). /// /// PROVENANCE: not a memory snapshot despite living under `accuracy/`. All 4100 /// bytes are `manu3.xdb` at o
+TRIG_XDB_OFFSET	src/manu3_hand.rs	78	const		TESTED	/// Where [`TRIG`] lives inside `manu3.xdb`. /// The hand's texture bytes + row width (for GPU upload).
+hand_texture	src/manu3_hand.rs	81	fn		UNVERIFIED	/// The hand's texture bytes + row width (for GPU upload).
+rd_parent	src/manu3_hand.rs	86	fn		UNVERIFIED	
+tcos	src/manu3_hand.rs	91	fn		UNVERIFIED	
+tsin	src/manu3_hand.rs	96	fn		UNVERIFIED	
+build_matrix	src/manu3_hand.rs	105	fn		UNVERIFIED	/// EXACT transcription of the manu3 matrix build (xdb 0x270..0x3DE): three Euler /// angles as raw byte-offsets (4/step) -> the 9 Q15-ish cells, composed via the /// angle-sum identity reads the orig
+HandMesh	src/manu3_hand.rs	128	struct	0xFFFF,0x2274,0x2974	CELL?	/// Current pose selector + its running player (selector -> sequence index, /// per the 0x181 dispatch; decoded contexts: 1=rest, 2=steer-right, 3=steer-left, /// 0xB=UI-close, 0xFFFF=hidden). /// The
+load	src/manu3_hand.rs	145	fn		UNVERIFIED	// An alias shares its SOURCE's projected position but carries its OWN // texture coordinates (+0/+2) — aliases ARE the mesh's UV-seam vertices // (verified: every alias's own UV differs from its sour
+st16	src/manu3_hand.rs	180	fn		UNVERIFIED	
+st32	src/manu3_hand.rs	185	fn		UNVERIFIED	
+compose	src/manu3_hand.rs	199	fn	0x2274	ASM	/// Compose the skeleton for cursor (cx, cy): per node, local = build(angles) — /// the wrist gets the cursor law added non-destructively — then /// rows = parent_rows * local >> 15 and T = parent_row
+draw	src/manu3_hand.rs	268	fn		ORACLE?	/// Render the hand into an indexed framebuffer with the cursor at (cx, cy): /// the decoded cursor law + hierarchical composition + the re-verified 0x549 /// projection. No screen-space fixups — the 
+snapshot_state	src/manu3_hand.rs	345	fn		INFRA	/// Snapshot the mutable skeleton state (for between-tick interpolation).
+triangles_lerp	src/manu3_hand.rs	354	fn		UNVERIFIED	/// Like [`Self::triangles`], but with the animated skeleton cells (angles + /// local positions of every node) LERPed between a previous snapshot and the /// current state by `alpha` — smooth pose mo
+triangles	src/manu3_hand.rs	394	fn		UNVERIFIED	/// The hand's textured triangles for GPU rendering: same compose + cursor-centred /// projection as draw(), emitted as screen-space (x, y, depth, u, v) vertices /// (u/v in texel units — the game's Q
+debug_project	src/manu3_hand.rs	423	fn		UNVERIFIED	/// Debug helper: the projected point cloud (screen x, y, depth) for a cursor. // Aliases resolve to their source's projected point (as in draw()).
+face_depth	src/manu3_hand.rs	465	fn		UNVERIFIED	
+fill_triangle_tex	src/manu3_hand.rs	471	fn		UNVERIFIED	
+fill_triangle	src/manu3_hand.rs	532	fn		UNVERIFIED	
+PosePlayer	src/manu3_hand.rs	564	struct	0x2394	CELL?	/// The phased tween pose player (exact transcription of 0x181/0x1DF/0x19B): /// applies sequence `seq`'s groups to the segment cells, animating the hand. /// Cells address the live record block (0x23
+new	src/manu3_hand.rs	577	fn	0x2306,0x2974	CELL?	/// Look up the sequence for a SELECTOR through the game's own dispatch table /// (0x181 decoded: table base = ds:[0x2306] = 0x2974; sequence = base + /// table[(selector & 0x1F) * 2]; groups run unti
+step	src/manu3_hand.rs	596	fn		UNVERIFIED	/// One frame: construct due groups (phase match), step active tweens; writes go /// through `cells` (cell address -> current value), exactly as 0x1DF/0x19B do.
+done	src/manu3_hand.rs	636	fn		UNVERIFIED	
+set_pose	src/manu3_hand.rs	643	fn		UNVERIFIED	/// Select the pose (decoded selector semantics); a change starts that sequence.
+tick_pose	src/manu3_hand.rs	651	fn		UNVERIFIED	/// Advance the current pose animation one frame (call per rendered frame).
+animate	src/manu3_hand.rs	664	fn	0x2274,0x2974	CELL?	/// Apply one pose-player frame to the live skeleton: tween cell writes land in /// the node-tree state block BY ORIGINAL DS OFFSET (cells address 0x2274..0x2974: /// node angles +0x4E/50/52, local po
 GAME_SCREEN_PALETTE_DAC_LOWER_IS_BINARY	src/palette.rs	42	const	0x12F78,0x5B58	DATA	/// Raw 6-bit VGA DAC palette (256 * RGB, channels 0..=63). /// /// PROVENANCE IS SPLIT, and the old comment (`Provenance: BLOODPRG.EXE file 0x12F78`) /// was only half true — measured 2026-07-24: ///
 GAME_SCREEN_PALETTE_DAC	src/palette.rs	43	const		UNVERIFIED	
 PALETTE_BLEND_MAX_DISTANCE	src/palette.rs	113	const	0xBB8,0x234F,0x23B0	ASM	/// Seed distance of the nearest-colour search (`mov word [bp+6],0xBB8` @`0x234F`). /// A source colour with no palette entry within this squared distance leaves its /// table byte UNCHANGED (`js 0x23
@@ -1112,75 +1112,73 @@ render_ship_3d_point_cloud	src/ship3d.rs	2489	fn	0x9A10,0x9A1D,0x2F77,0x9A23,0x2
 ship_3d_point_cloud_points	src/ship3d.rs	2524	fn	0x9A10,0x9B04,0x9B30	ASM	/// The same starfield as [`render_ship_3d_point_cloud`], but returning the plotted /// points (screen x, y, depth shade) for a GPU point renderer — identical projection, /// viewport clip, depth-shad
 SHIP_3D_HUD_BAND_TOP	src/ship3d.rs	2547	const		UNVERIFIED	/// The ship-nav HUD band occupies the bottom rows of the 320x200 frame (below the /// scene band that ends at row 0xA5=165), where the engine draws the grey /// pyramid-nav grid + central eye-orb. Se
 SHIP_3D_HUD_PYRAMID_VERTICES	src/ship3d.rs	2710	const	0xB079,0x5D98,0x131B8,0x5491,0x2795,0x279B,0x2793,0x9656,0xB	DATA	/// The recovered ship-nav HUD pyramid geometry: 32 3D vertices (X,Y,Z, signed /// fixed-point) copied by `ship_3d_hud_init` (BLOODPRG.EXE @0xB079) from DS:0x5D98 /// (file 0x131B8) into the HUD worki
-render_star_map_navview	src/ship3d.rs	2771	fn	0x9656,0xB193,0x9BBA	ASM?	/// Render the pyramid-nav HUD grid into the bottom band of an indexed 320x200 /// framebuffer (the band the exporter otherwise leaves BLACK in dialogue mode). /// Draws a perspective grid of grey pyr
-project_star_map_point	src/ship3d.rs	2784	fn	0x9BBA	ASM	/// As [`render_star_map_navview`], but pans the pyramid field horizontally by /// `compass_angle` (0..179) so the view rotates with the ship's heading (mouse /// steering) — the interactive nav behav
-render_star_map_navview_projected	src/ship3d.rs	2817	fn	0x9BBA	ASM	/// Projection-accurate star-map nav view: a receding grid of star-system pyramids /// projected with the game's decoded projection ([`project_star_map_point`]) plus the /// central eye-orb — the syst
-render_star_map_navview_panned	src/ship3d.rs	2882	fn		UNVERIFIED	
-render_ship_3d_pyramid_hud	src/ship3d.rs	2947	fn		UNVERIFIED	// Bresenham line, clipped to the HUD band. // Perspective grid: rows recede toward a vanishing point up-centre; nearer // (lower) rows have larger, wider-spaced pyramids. // pyramid = two slanted edg
-render_ship_3d_starfield	src/ship3d.rs	3012	fn		UNVERIFIED	/// Render a complete ship-3D starfield background from real game data: randomize /// the point cloud from `prng`, build the camera matrix from `angles` using the /// recovered [`SHIP_3D_ANGLE_TABLE`]
-project_ship_3d_object_sprite	src/ship3d.rs	3046	fn	0x9B98,0x9BBA,0x2f77,0x9BBE,0x9CFB,0x9BC2,0x9BD1,0x9BD4,0x9B	ASM	/// Project one nav-destination object to a sprite slot, from /// `ship_3d_object_sprite_project` @`0x9B98`: /// /// ```text ///   0x9BBA  dec word [0x2f77]              the object counter, walked DOW
-update_ship_3d_sprite_slot_position	src/ship3d.rs	3135	fn	0x420D,0x4210,0x6212,0x421D,0x4221,0x422D,0x6612	ASM	/// Update a sprite slot's screen position, `sprite_slot_position_update` /// @`0x420D`: /// /// ```text ///   0x4210  shl ax,5 / mov bx,0x6212 / add bx,ax   slot = 0x6212 + id*32 ///   0x421D  test a
-update_ship_3d_sprite_slot_extent	src/ship3d.rs	3185	fn	0x42CD,0x42D2,0x6212,0x42DD,0x42E1,0x42E4,0x42F7,0x42E8,0x42	ASM	/// Update a sprite slot's extent, `sprite_slot_extent_update` @`0x42CD`. The /// sibling of [`update_ship_3d_sprite_slot_position`], and a good deal subtler: /// /// ```text ///   0x42D2  shl ax,5 / 
-commit_ship_3d_sprite_slot_dirty_geometry	src/ship3d.rs	3240	fn	0x43F7,0x6212,0x4412,0x5249,0x4435,0x441D,0x5235,0x4423,0x52	ASM	/// Commit one slot's current geometry into its previous-geometry fields — the /// BODY of `sprite_slot_commit_dirty_range` @`0x43F7`. /// /// SCOPE, stated because the addresses do not match one-to-o
-commit_ship_3d_global_clip_snapshot	src/ship3d.rs	3282	fn	0x4412,0x5249,0x4435,0x441D,0x5235,0x4423,0x5239,0x4429,0xff	ASM	/// The clip-SNAPSHOT branch of `sprite_slot_commit_dirty_range` @`0x4412`: /// /// ```text ///   0x4412  test word [0x5249],1 / je 0x4435   the snapshot flag ///   0x441D  mov eax,[0x5235] / stosd   
-collect_ship_3d_dirty_sprite_slot_render_commands	src/ship3d.rs	3326	fn	0x4471,0x448A,0x6612,0x448D,0x448F,0x4516,0xFFFF,0x4495,0x44	ASM	/// Walk the dirty-rect list against the active sprite slots — /// `sprite_slot_dirty_range_render` @`0x4471`: /// /// ```text ///   0x448A  mov di,0x6612          the dirty-rect list ///   0x448D  mo
-run_ship_3d_temp_snd_setup	src/ship3d.rs	3371	fn		INFRA?	
-run_ship_3d_navigation_final_reset	src/ship3d.rs	3417	fn	0xB521,0x1A5E,0x1FAB,0x6788	CELL?	// From `0xB521` the reset stops being nav-specific: `xor ax,ax` there is the // entry labelled `dlg_clear_b`, the DIALOGUE CLEAR, inlined rather than // called (`dlg_clear_a` at `0x1A5E` clears the s
-SHIP_INTRO_X_END	src/ship3d.rs	3490	const	0x27DF,0x8A6A,0x8B5A,0x2F65,0x2F71	ASM	/// The ship-3D camera-approach animation state, driven by phase counter `DS:0x27DF` /// (BLOODPRG.EXE `0x8A6A..0x8B5A`). The nav camera moves because this scripted FSM /// walks the camera origin `[0
-SHIP_INTRO_X_STEP	src/ship3d.rs	3491	const		UNVERIFIED	
-SHIP_INTRO_YAW_WRAP	src/ship3d.rs	3492	const		UNVERIFIED	
-SHIP_INTRO_Z_CRUISE	src/ship3d.rs	3493	const		UNVERIFIED	
-SHIP_INTRO_Z_ACCEL_STEP	src/ship3d.rs	3494	const		UNVERIFIED	
-SHIP_INTRO_X_RESET	src/ship3d.rs	3495	const		UNVERIFIED	
-SHIP_INTRO_Z_FINAL	src/ship3d.rs	3496	const	0x27DF,0x2F65,0x2F67,0x2F69,0x2F6B,0x2F71	CELL?	/// Phase counter (`DS:0x27DF`): 1 = pull-in X, 2 = accelerate Z, 3 = reset, /// 4 = hold, then done. /// Camera origin words `DS:0x2F65/0x2F67/0x2F69`. /// Z acceleration accumulator `DS:0x2F6B` (add
-Ship3dCameraApproach	src/ship3d.rs	3499	struct	0x27DF,0x2F65,0x2F67,0x2F69,0x2F6B,0x2F71	CELL?	/// Phase counter (`DS:0x27DF`): 1 = pull-in X, 2 = accelerate Z, 3 = reset, /// 4 = hold, then done. /// Camera origin words `DS:0x2F65/0x2F67/0x2F69`. /// Z acceleration accumulator `DS:0x2F6B` (add
-default	src/ship3d.rs	3517	fn	0x8AF2,0x8AFE,0x2F69,0x4E20,0x2F71,0x8AF8,0x2F65,0x2710,0x2F	ASM	// Phase-3 reset immediates (`0x8AF2..0x8AFE`): the approach's start state. // // `origin_y` WAS 0 HERE AND THAT WAS WRONG (audit-fixes #275). The reset // writes only `[0x2F69]=0x4E20` @`0x8AF2`, `[0
-step	src/ship3d.rs	3567	fn	0x8A6A,0x8B5A,0x8A76,0x2328,0x2F71,0x8AB3,0x8AE0,0x8B2B,0x8A	ASM	/// Advance one frame through the decoded phase machine (`0x8A6A..0x8B5A`): /// - **P1** (`0x8A76`): if `X >= 0x2328` (9000), `X -= 0x64`; the yaw ///   `[0x2F71]` decrements toward 0 (wrapping to 0xB
-origin	src/ship3d.rs	3605	fn		UNVERIFIED	/// The camera origin as a projection origin (for `project_star_map_point` etc.).
-build_ship_3d_navigation_source_records	src/ship3d.rs	3614	fn		UNVERIFIED	
-build_ship_3d_navigation_candidate_records	src/ship3d.rs	3630	fn		UNVERIFIED	
-resolve_ship_3d_position_field	src/ship3d.rs	3703	fn	0x60DD,0x60E3,0x60E5,0x60EC,0x6023,0x60F6,0x60F9,0x6101,0x61	ASM	/// The position-field resolver, `ship_3d_position_distance`'s front half /// (`0x60DD`): a ladder on the record's KIND that picks which selector resolves /// its position (audit-fixes #283 — the func
-ship_3d_position_distance	src/ship3d.rs	3744	fn		UNVERIFIED	
-ship_3d_position_field_distance	src/ship3d.rs	3797	fn	0x60DD,0x60E5,0x6114,0x60EA,0x60EC,0x6023,0x60F4,0x60F6	ASM	/// Euclidean distance between two object POSITION FIELDS — /// `ship_3d_position_distance` @`0x60DD`. /// /// The routine's interesting half is how it FINDS the coordinates, which this /// function t
-ship_3d_binary_sqrt	src/ship3d.rs	3829	fn	0x2E33,0x60DD,0x2E3B,0x2E4F,0x2E3F,0xfff,0x0FFF,0x2E42,0x2E5	ASM	/// Integer square root of a 32-bit value, `binary_u32_sqrt` @`0x2E33` — the /// helper `ship_3d_position_distance` (`0x60DD`) uses for object distances. /// /// The estimate seeding is a ladder on th
-ship_3d_object_table_bit_is_set	src/ship3d.rs	3868	fn		UNVERIFIED	
-select_ship_3d_c1_source_record	src/ship3d.rs	3918	fn	0x6C1C,0x6B4C,0x6C07,0x624B,0x6886,0x6C0D,0x6C1D,0x6C39,0x62	ASM	/// The C1 kind-0x10 source-list scan, `0x6C1C`. Reached from the 0xC1 handler /// (`0x6B4C`) only when the resolved record's kind is `0x10` (`cmp ax,0x10 / /// jne` @`0x6C07`); the handler first rebu
-resolve_ship_3d_c1_kind10_destination_record	src/ship3d.rs	3956	fn		UNVERIFIED	
-write_ship_3d_c1_kind10_destination_slot	src/ship3d.rs	3970	fn		TESTED	
-run_ship_3d_navigation_trigger_prelude	src/ship3d.rs	3993	fn		INFRA?	
-draw_ship_3d_target_list	src/ship3d.rs	4075	fn		UNVERIFIED	
-select_ship_3d_target_record	src/ship3d.rs	4133	fn		ASM	
-ship_3d_plane_band_byte_count	src/ship3d.rs	4205	fn	0xB71C	ASM	/// Bytes the plane band copy moves: `(depth + 35) * 80`, from `0xB71C` — /// `mov ax,bx / add ax,0x23 / mov dl,0x50 / mul dl`. The add happens in 8 bits /// (`mul dl` takes AL), which is why the port
-ship_3d_scroll_value	src/ship3d.rs	4222	fn	0x524F,0xB6F7,0xB708,0x6F7,0x6FB,0x700,0x703,0x524d,0xB6F0	ASM	/// The scroll value written to `DS:0x524F`, from `0xB6F7..0xB708`: /// /// ```text ///   0x6F7  mov ax,bx / add ax,ax      2 * depth ///   0x6FB  cmp ax,0x64 / jle          clamp to 100 ///   0x700  
-start_closing_transition	src/ship3d.rs	4237	fn	0xB6B8,0x2531,0x2530,0x2533	ASM	/// The armed-and-timer-exhausted branch of the transition updater, `0xB6B8`: /// `mov byte [0x2531],8` (close step) / `mov byte [0x2530],1` (closing) / /// `mov byte [0x2533],0` (disarmed) — three wr
-add_to_low_byte	src/ship3d.rs	4247	fn	0x2531,0x2527	ASM	/// Add to a word's LOW BYTE ONLY, leaving the high byte untouched — the effect of /// the 8-bit `add`/`sub` the transition and interpolation code use on word-sized /// state (e.g. `0x2531`'s step aga
-circular_delta	src/ship3d.rs	4251	fn		UNVERIFIED	
-wrap_ring_once	src/ship3d.rs	4265	fn		UNVERIFIED	
-matrix_pair_for_angle	src/ship3d.rs	4286	fn	0x990C,0x4F45	ASM	/// Fetch a `(cosine, sine)` pair from the angle table and widen it to Q15. /// /// The doubling is the game's: `0x990C` reads the angle word, `shl di,2` scales it /// to the table's 4-byte stride, `m
-fixed_mul_shift_15	src/ship3d.rs	4302	fn	0x9957,0x995F,0x994D	ASM	/// The Q15 fixed-point multiply the matrix code uses: `imul` then /// `sar eax,0xf` — e.g. `0x9957 imul eax,[si+0x14]` / `0x995F sar eax,0xf` in /// `matrix3d_mul_fixed` (`0x994D`). /// /// `sar`, no
-projection_component	src/ship3d.rs	4309	fn	0x9A42,0x9A47,0x2F65,0x2F67	ASM	/// One component of the camera translation: `sub word [di],ax` at `0x9A42` (and /// `[di+2],ax` at `0x9A47`), with the origin loaded from `[0x2F65]`/`[0x2F67]` /// just before — a wrapping 16-bit SUB
-projection_dot	src/ship3d.rs	4318	fn	0x9A50,0x9A66	ASM	/// The three-term dot product of the projection, accumulated in 32 bits WITHOUT /// an intermediate shift — `0x9A50..0x9A66`: `imul eax,[bp+0x18]` / `mov ecx,eax` /// / `imul eax,[bp+0x1c]` / `add ec
-project_ship_3d_axis	src/ship3d.rs	4341	fn	0x9AD9,0x9AE2,0x9ADD,0x9ADF	ASM	/// The perspective divide, `0x9AD9..0x9AE2`: /// /// ```text ///   0x9AD9  sar eax,7      pre-scale the dotted numerator ///   0x9ADD  cdq            sign-extend into edx:eax ///   0x9ADF  idiv ecx  
-scale_ship_3d_object_dimension	src/ship3d.rs	4351	fn	0x9B98	ASM	/// Scale an object's sprite dimension by its depth factor, as the object-sprite /// projector does at `0x9B98`: a 32-bit multiply /// followed by `>> SHIP_3D_OBJECT_SCALE_SHIFT`. Widening to 32 bits 
-ship_3d_rects_intersect	src/ship3d.rs	4355	fn		UNVERIFIED	
-checked_i16_div_i8_to_i8	src/ship3d.rs	4370	fn	0x1E74	ASM	/// `idiv bl` modelled: AX divided by an 8-bit divisor, quotient in AL. The /// `Option` covers the two cases the CPU TRAPS on — a zero divisor, and a /// quotient too large for 8 bits — rather than w
-checked_u16_div_u8_to_u8	src/ship3d.rs	4378	fn		UNVERIFIED	
-signed_i16	src/ship3d.rs	4390	fn	0x9B0A	ASM	/// Reinterpret a stored word as SIGNED. The game's coordinate and clip tests are /// `jl`/`jge` (e.g. the plot's bounds at `0x9B0A`), so port comparisons must go /// through this rather than comparin
-target_list_draw_x	src/ship3d.rs	4394	fn		UNVERIFIED	
-blocks_nav_choice	src/ship3d.rs	4399	fn		UNVERIFIED	
-hit_test_ship_3d_nav_choice	src/ship3d.rs	4409	fn		UNVERIFIED	
-adjust_nav_choice_target_records	src/ship3d.rs	4450	fn	0x8748,0x8754,0xFFFF,0x8749	ASM	/// The `add ax,4` loop of nav-choice handler 1 (`0x8748..0x8754`): walk the word /// list, add the 4-byte record header to each entry, stop at the `0xFFFF` /// terminator (`cmp ax,-1 / je` @`0x8749`)
-rebuild_nav_choice_special_target_records	src/ship3d.rs	4464	fn	0x87CB,0x87DB,0x6D3E,0xFFFF	ASM	/// The rebuild loop of nav-choice handler 2 (`0x87CB..0x87DB`): walk the special /// slots at `DS:0x6D3E`, skip zeros (`or ax,ax / je`), stop at the `0xFFFF` /// sentinel after storing it, and otherw
-next_ship_3d_temp_snd_phase	src/ship3d.rs	4482	fn		UNVERIFIED	
-append_ship_3d_navigation_source_children	src/ship3d.rs	4491	fn		UNVERIFIED	
-find_ship_3d_navigation_record	src/ship3d.rs	4524	fn		UNVERIFIED	
-find_ship_3d_position_record	src/ship3d.rs	4534	fn		UNVERIFIED	
-find_ship_3d_position_field	src/ship3d.rs	4544	fn		UNVERIFIED	
-resolve_ship_3d_distance_position_field	src/ship3d.rs	4551	fn		UNVERIFIED	
-kind100_relation_word	src/ship3d.rs	4575	fn		UNVERIFIED	
-ship_3d_record_field	src/ship3d.rs	4585	fn		UNVERIFIED	
-binary_abs_word_diff	src/ship3d.rs	4594	fn	0x8000	ASM	/// Absolute difference of two words, as the distance helper computes it: a /// wrapping 16-bit subtract, then negate if the SIGN BIT is set. That is a test of /// bit 15 rather than a signed comparis
-next_target_list_draw_color	src/ship3d.rs	4603	fn		UNVERIFIED	
+project_star_map_point	src/ship3d.rs	2755	fn	0x9BBA	ASM	/// As [`render_star_map_navview`], but pans the pyramid field horizontally by /// `compass_angle` (0..179) so the view rotates with the ship's heading (mouse /// steering) — the interactive nav behav
+render_star_map_navview_projected	src/ship3d.rs	2788	fn	0x9BBA	ASM	/// Projection-accurate star-map nav view: a receding grid of star-system pyramids /// projected with the game's decoded projection ([`project_star_map_point`]) plus the /// central eye-orb — the syst
+render_ship_3d_pyramid_hud	src/ship3d.rs	2854	fn		UNVERIFIED	// Bresenham line, clipped to the HUD band. // Perspective grid: rows recede toward a vanishing point up-centre; nearer // (lower) rows have larger, wider-spaced pyramids. // pyramid = two slanted edg
+render_ship_3d_starfield	src/ship3d.rs	2919	fn		UNVERIFIED	/// Render a complete ship-3D starfield background from real game data: randomize /// the point cloud from `prng`, build the camera matrix from `angles` using the /// recovered [`SHIP_3D_ANGLE_TABLE`]
+project_ship_3d_object_sprite	src/ship3d.rs	2953	fn	0x9B98,0x9BBA,0x2f77,0x9BBE,0x9CFB,0x9BC2,0x9BD1,0x9BD4,0x9B	ASM	/// Project one nav-destination object to a sprite slot, from /// `ship_3d_object_sprite_project` @`0x9B98`: /// /// ```text ///   0x9BBA  dec word [0x2f77]              the object counter, walked DOW
+update_ship_3d_sprite_slot_position	src/ship3d.rs	3042	fn	0x420D,0x4210,0x6212,0x421D,0x4221,0x422D,0x6612	ASM	/// Update a sprite slot's screen position, `sprite_slot_position_update` /// @`0x420D`: /// /// ```text ///   0x4210  shl ax,5 / mov bx,0x6212 / add bx,ax   slot = 0x6212 + id*32 ///   0x421D  test a
+update_ship_3d_sprite_slot_extent	src/ship3d.rs	3092	fn	0x42CD,0x42D2,0x6212,0x42DD,0x42E1,0x42E4,0x42F7,0x42E8,0x42	ASM	/// Update a sprite slot's extent, `sprite_slot_extent_update` @`0x42CD`. The /// sibling of [`update_ship_3d_sprite_slot_position`], and a good deal subtler: /// /// ```text ///   0x42D2  shl ax,5 / 
+commit_ship_3d_sprite_slot_dirty_geometry	src/ship3d.rs	3147	fn	0x43F7,0x6212,0x4412,0x5249,0x4435,0x441D,0x5235,0x4423,0x52	ASM	/// Commit one slot's current geometry into its previous-geometry fields — the /// BODY of `sprite_slot_commit_dirty_range` @`0x43F7`. /// /// SCOPE, stated because the addresses do not match one-to-o
+commit_ship_3d_global_clip_snapshot	src/ship3d.rs	3189	fn	0x4412,0x5249,0x4435,0x441D,0x5235,0x4423,0x5239,0x4429,0xff	ASM	/// The clip-SNAPSHOT branch of `sprite_slot_commit_dirty_range` @`0x4412`: /// /// ```text ///   0x4412  test word [0x5249],1 / je 0x4435   the snapshot flag ///   0x441D  mov eax,[0x5235] / stosd   
+collect_ship_3d_dirty_sprite_slot_render_commands	src/ship3d.rs	3233	fn	0x4471,0x448A,0x6612,0x448D,0x448F,0x4516,0xFFFF,0x4495,0x44	ASM	/// Walk the dirty-rect list against the active sprite slots — /// `sprite_slot_dirty_range_render` @`0x4471`: /// /// ```text ///   0x448A  mov di,0x6612          the dirty-rect list ///   0x448D  mo
+run_ship_3d_temp_snd_setup	src/ship3d.rs	3278	fn		INFRA?	
+run_ship_3d_navigation_final_reset	src/ship3d.rs	3324	fn	0xB521,0x1A5E,0x1FAB,0x6788	CELL?	// From `0xB521` the reset stops being nav-specific: `xor ax,ax` there is the // entry labelled `dlg_clear_b`, the DIALOGUE CLEAR, inlined rather than // called (`dlg_clear_a` at `0x1A5E` clears the s
+SHIP_INTRO_X_END	src/ship3d.rs	3397	const	0x27DF,0x8A6A,0x8B5A,0x2F65,0x2F71	ASM	/// The ship-3D camera-approach animation state, driven by phase counter `DS:0x27DF` /// (BLOODPRG.EXE `0x8A6A..0x8B5A`). The nav camera moves because this scripted FSM /// walks the camera origin `[0
+SHIP_INTRO_X_STEP	src/ship3d.rs	3398	const		UNVERIFIED	
+SHIP_INTRO_YAW_WRAP	src/ship3d.rs	3399	const		UNVERIFIED	
+SHIP_INTRO_Z_CRUISE	src/ship3d.rs	3400	const		UNVERIFIED	
+SHIP_INTRO_Z_ACCEL_STEP	src/ship3d.rs	3401	const		UNVERIFIED	
+SHIP_INTRO_X_RESET	src/ship3d.rs	3402	const		UNVERIFIED	
+SHIP_INTRO_Z_FINAL	src/ship3d.rs	3403	const	0x27DF,0x2F65,0x2F67,0x2F69,0x2F6B,0x2F71	CELL?	/// Phase counter (`DS:0x27DF`): 1 = pull-in X, 2 = accelerate Z, 3 = reset, /// 4 = hold, then done. /// Camera origin words `DS:0x2F65/0x2F67/0x2F69`. /// Z acceleration accumulator `DS:0x2F6B` (add
+Ship3dCameraApproach	src/ship3d.rs	3406	struct	0x27DF,0x2F65,0x2F67,0x2F69,0x2F6B,0x2F71	CELL?	/// Phase counter (`DS:0x27DF`): 1 = pull-in X, 2 = accelerate Z, 3 = reset, /// 4 = hold, then done. /// Camera origin words `DS:0x2F65/0x2F67/0x2F69`. /// Z acceleration accumulator `DS:0x2F6B` (add
+default	src/ship3d.rs	3424	fn	0x8AF2,0x8AFE,0x2F69,0x4E20,0x2F71,0x8AF8,0x2F65,0x2710,0x2F	ASM	// Phase-3 reset immediates (`0x8AF2..0x8AFE`): the approach's start state. // // `origin_y` WAS 0 HERE AND THAT WAS WRONG (audit-fixes #275). The reset // writes only `[0x2F69]=0x4E20` @`0x8AF2`, `[0
+step	src/ship3d.rs	3474	fn	0x8A6A,0x8B5A,0x8A76,0x2328,0x2F71,0x8AB3,0x8AE0,0x8B2B,0x8A	ASM	/// Advance one frame through the decoded phase machine (`0x8A6A..0x8B5A`): /// - **P1** (`0x8A76`): if `X >= 0x2328` (9000), `X -= 0x64`; the yaw ///   `[0x2F71]` decrements toward 0 (wrapping to 0xB
+origin	src/ship3d.rs	3512	fn		UNVERIFIED	/// The camera origin as a projection origin (for `project_star_map_point` etc.).
+build_ship_3d_navigation_source_records	src/ship3d.rs	3521	fn		UNVERIFIED	
+build_ship_3d_navigation_candidate_records	src/ship3d.rs	3537	fn		UNVERIFIED	
+resolve_ship_3d_position_field	src/ship3d.rs	3610	fn	0x60DD,0x60E3,0x60E5,0x60EC,0x6023,0x60F6,0x60F9,0x6101,0x61	ASM	/// The position-field resolver, `ship_3d_position_distance`'s front half /// (`0x60DD`): a ladder on the record's KIND that picks which selector resolves /// its position (audit-fixes #283 — the func
+ship_3d_position_distance	src/ship3d.rs	3651	fn		UNVERIFIED	
+ship_3d_position_field_distance	src/ship3d.rs	3704	fn	0x60DD,0x60E5,0x6114,0x60EA,0x60EC,0x6023,0x60F4,0x60F6	ASM	/// Euclidean distance between two object POSITION FIELDS — /// `ship_3d_position_distance` @`0x60DD`. /// /// The routine's interesting half is how it FINDS the coordinates, which this /// function t
+ship_3d_binary_sqrt	src/ship3d.rs	3736	fn	0x2E33,0x60DD,0x2E3B,0x2E4F,0x2E3F,0xfff,0x0FFF,0x2E42,0x2E5	ASM	/// Integer square root of a 32-bit value, `binary_u32_sqrt` @`0x2E33` — the /// helper `ship_3d_position_distance` (`0x60DD`) uses for object distances. /// /// The estimate seeding is a ladder on th
+ship_3d_object_table_bit_is_set	src/ship3d.rs	3775	fn		UNVERIFIED	
+select_ship_3d_c1_source_record	src/ship3d.rs	3825	fn	0x6C1C,0x6B4C,0x6C07,0x624B,0x6886,0x6C0D,0x6C1D,0x6C39,0x62	ASM	/// The C1 kind-0x10 source-list scan, `0x6C1C`. Reached from the 0xC1 handler /// (`0x6B4C`) only when the resolved record's kind is `0x10` (`cmp ax,0x10 / /// jne` @`0x6C07`); the handler first rebu
+resolve_ship_3d_c1_kind10_destination_record	src/ship3d.rs	3863	fn		UNVERIFIED	
+write_ship_3d_c1_kind10_destination_slot	src/ship3d.rs	3877	fn		TESTED	
+run_ship_3d_navigation_trigger_prelude	src/ship3d.rs	3900	fn		INFRA?	
+draw_ship_3d_target_list	src/ship3d.rs	3982	fn		UNVERIFIED	
+select_ship_3d_target_record	src/ship3d.rs	4040	fn		ASM	
+ship_3d_plane_band_byte_count	src/ship3d.rs	4112	fn	0xB71C	ASM	/// Bytes the plane band copy moves: `(depth + 35) * 80`, from `0xB71C` — /// `mov ax,bx / add ax,0x23 / mov dl,0x50 / mul dl`. The add happens in 8 bits /// (`mul dl` takes AL), which is why the port
+ship_3d_scroll_value	src/ship3d.rs	4129	fn	0x524F,0xB6F7,0xB708,0x6F7,0x6FB,0x700,0x703,0x524d,0xB6F0	ASM	/// The scroll value written to `DS:0x524F`, from `0xB6F7..0xB708`: /// /// ```text ///   0x6F7  mov ax,bx / add ax,ax      2 * depth ///   0x6FB  cmp ax,0x64 / jle          clamp to 100 ///   0x700  
+start_closing_transition	src/ship3d.rs	4144	fn	0xB6B8,0x2531,0x2530,0x2533	ASM	/// The armed-and-timer-exhausted branch of the transition updater, `0xB6B8`: /// `mov byte [0x2531],8` (close step) / `mov byte [0x2530],1` (closing) / /// `mov byte [0x2533],0` (disarmed) — three wr
+add_to_low_byte	src/ship3d.rs	4154	fn	0x2531,0x2527	ASM	/// Add to a word's LOW BYTE ONLY, leaving the high byte untouched — the effect of /// the 8-bit `add`/`sub` the transition and interpolation code use on word-sized /// state (e.g. `0x2531`'s step aga
+circular_delta	src/ship3d.rs	4158	fn		UNVERIFIED	
+wrap_ring_once	src/ship3d.rs	4172	fn		UNVERIFIED	
+matrix_pair_for_angle	src/ship3d.rs	4193	fn	0x990C,0x4F45	ASM	/// Fetch a `(cosine, sine)` pair from the angle table and widen it to Q15. /// /// The doubling is the game's: `0x990C` reads the angle word, `shl di,2` scales it /// to the table's 4-byte stride, `m
+fixed_mul_shift_15	src/ship3d.rs	4209	fn	0x9957,0x995F,0x994D	ASM	/// The Q15 fixed-point multiply the matrix code uses: `imul` then /// `sar eax,0xf` — e.g. `0x9957 imul eax,[si+0x14]` / `0x995F sar eax,0xf` in /// `matrix3d_mul_fixed` (`0x994D`). /// /// `sar`, no
+projection_component	src/ship3d.rs	4216	fn	0x9A42,0x9A47,0x2F65,0x2F67	ASM	/// One component of the camera translation: `sub word [di],ax` at `0x9A42` (and /// `[di+2],ax` at `0x9A47`), with the origin loaded from `[0x2F65]`/`[0x2F67]` /// just before — a wrapping 16-bit SUB
+projection_dot	src/ship3d.rs	4225	fn	0x9A50,0x9A66	ASM	/// The three-term dot product of the projection, accumulated in 32 bits WITHOUT /// an intermediate shift — `0x9A50..0x9A66`: `imul eax,[bp+0x18]` / `mov ecx,eax` /// / `imul eax,[bp+0x1c]` / `add ec
+project_ship_3d_axis	src/ship3d.rs	4248	fn	0x9AD9,0x9AE2,0x9ADD,0x9ADF	ASM	/// The perspective divide, `0x9AD9..0x9AE2`: /// /// ```text ///   0x9AD9  sar eax,7      pre-scale the dotted numerator ///   0x9ADD  cdq            sign-extend into edx:eax ///   0x9ADF  idiv ecx  
+scale_ship_3d_object_dimension	src/ship3d.rs	4258	fn	0x9B98	ASM	/// Scale an object's sprite dimension by its depth factor, as the object-sprite /// projector does at `0x9B98`: a 32-bit multiply /// followed by `>> SHIP_3D_OBJECT_SCALE_SHIFT`. Widening to 32 bits 
+ship_3d_rects_intersect	src/ship3d.rs	4262	fn		UNVERIFIED	
+checked_i16_div_i8_to_i8	src/ship3d.rs	4277	fn	0x1E74	ASM	/// `idiv bl` modelled: AX divided by an 8-bit divisor, quotient in AL. The /// `Option` covers the two cases the CPU TRAPS on — a zero divisor, and a /// quotient too large for 8 bits — rather than w
+checked_u16_div_u8_to_u8	src/ship3d.rs	4285	fn		UNVERIFIED	
+signed_i16	src/ship3d.rs	4297	fn	0x9B0A	ASM	/// Reinterpret a stored word as SIGNED. The game's coordinate and clip tests are /// `jl`/`jge` (e.g. the plot's bounds at `0x9B0A`), so port comparisons must go /// through this rather than comparin
+target_list_draw_x	src/ship3d.rs	4301	fn		UNVERIFIED	
+blocks_nav_choice	src/ship3d.rs	4306	fn		UNVERIFIED	
+hit_test_ship_3d_nav_choice	src/ship3d.rs	4316	fn		UNVERIFIED	
+adjust_nav_choice_target_records	src/ship3d.rs	4357	fn	0x8748,0x8754,0xFFFF,0x8749	ASM	/// The `add ax,4` loop of nav-choice handler 1 (`0x8748..0x8754`): walk the word /// list, add the 4-byte record header to each entry, stop at the `0xFFFF` /// terminator (`cmp ax,-1 / je` @`0x8749`)
+rebuild_nav_choice_special_target_records	src/ship3d.rs	4371	fn	0x87CB,0x87DB,0x6D3E,0xFFFF	ASM	/// The rebuild loop of nav-choice handler 2 (`0x87CB..0x87DB`): walk the special /// slots at `DS:0x6D3E`, skip zeros (`or ax,ax / je`), stop at the `0xFFFF` /// sentinel after storing it, and otherw
+next_ship_3d_temp_snd_phase	src/ship3d.rs	4389	fn		UNVERIFIED	
+append_ship_3d_navigation_source_children	src/ship3d.rs	4398	fn		UNVERIFIED	
+find_ship_3d_navigation_record	src/ship3d.rs	4431	fn		UNVERIFIED	
+find_ship_3d_position_record	src/ship3d.rs	4441	fn		UNVERIFIED	
+find_ship_3d_position_field	src/ship3d.rs	4451	fn		UNVERIFIED	
+resolve_ship_3d_distance_position_field	src/ship3d.rs	4458	fn		UNVERIFIED	
+kind100_relation_word	src/ship3d.rs	4482	fn		UNVERIFIED	
+ship_3d_record_field	src/ship3d.rs	4492	fn		UNVERIFIED	
+binary_abs_word_diff	src/ship3d.rs	4501	fn	0x8000	ASM	/// Absolute difference of two words, as the distance helper computes it: a /// wrapping 16-bit subtract, then negate if the SIGN BIT is set. That is a test of /// bit 15 rather than a signed comparis
+next_target_list_draw_color	src/ship3d.rs	4510	fn		UNVERIFIED	
 SND_CLIP_HEADER_LEN	src/snd.rs	6	const		UNVERIFIED	
 SND_PCM_FORMAT_TAG	src/snd.rs	7	const		UNVERIFIED	
 SndClip	src/snd.rs	10	struct		UNVERIFIED	

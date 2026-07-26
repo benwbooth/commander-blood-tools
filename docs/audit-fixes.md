@@ -13985,3 +13985,32 @@ the claim is only that the game does it on one axis and not the others.
 
 2231 items, 1112 confirmed (49.8%), 1119 open. 752 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #426 — deleting a fabricated surface its own doc had condemned
+
+`render_star_map_navview`'s doc said it plainly: "a VISUAL APPROXIMATION",
+"SUPERSEDED AND NOT LIVE (audit-fixes #277)", reproducing the game's composition
+"without the exact recovered geometry/projection", reached "only from each other
+and from tests" — and "the end state is removal once those tests point at the
+projected renderer".
+
+That precondition was ALREADY MET and nobody had checked. Its two tests assert
+that pyramids and an orb are drawn and that the grid pans with heading;
+`projected_navview_draws_perspective_grid_and_orb` asserts exactly those three
+things plus the pan, against `render_star_map_navview_projected` — the renderer
+using the projection decoded from `0x9BBA` and verified instruction by
+instruction in #273, and the one `engine.rs` actually calls.
+
+So the approximation's tests were not protecting coverage; they were testing that
+an invention still draws its invention. Removed both functions and both tests,
+116 lines. 614 lib tests pass, the workspace is clean, and the ledger drops from
+2231 items to 2229.
+
+This is #385's shape a second time — a decoded surface and a fabricated one
+sitting side by side, the fabricated one kept because deleting things feels like
+losing work. It is the opposite: under the prime rule a plausible surface next to
+a real one is the defect, and its tests make it look maintained. The doc had
+already reasoned all of this out; what was missing was somebody doing it.
+
+2229 items, 1112 confirmed (49.9%), 1117 open. 752 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
