@@ -105,6 +105,13 @@ mod selfref_assert_tests {
     /// A `len() == CONST` is cleared by independent evidence ANYWHERE in its file
     /// (an image read, an identity, a `mov` immediate) — sibling tests count, which
     /// is how `bloodsav` pins its header sizes.
+    ///
+    /// SINCE audit-fixes #371 this also guards a SECOND shape, with a stricter
+    /// rule: `assert_eq!(CONST, "literal")` where the literal IS the constant's
+    /// own definition. That one is flagged UNCONDITIONALLY, because grounding
+    /// elsewhere cannot rescue a tautology — the fix is to assert against the
+    /// image or data the constant claims to come from (#370 did exactly that for
+    /// `OPTION_BOX_LABEL`, which had been compared to a second copy of itself).
     #[test]
     fn length_assertions_are_grounded_in_something_independent() {
         let script = std::path::Path::new("tools/check_selfref_asserts.py");
