@@ -11438,3 +11438,35 @@ argue against a previous reading; that belongs here.
 
 501 code labels and 238 data labels clean, 17 inline claims verified.
 612 lib tests, 0 failures.
+
+## #352 — did the two wrong labels reach the code? No.
+
+#351 renamed two routines whose labels named the wrong interrupt. The question
+that matters more than the labels is whether either misreading PROPAGATED — a
+wrong description is cheap; a port built on one is not.
+
+`0x27E9` (`dos_char_out` -> `dos_set_drive_and_chdir`): the only `0x27e9` hits in
+`src/` are in `recomp/auto.rs`, and they are `test byte ptr [0x27e9], 1` /
+`mov byte ptr [0x27e9], 0` — a DS DATA CELL that happens to share the number with
+the code offset. Different address space, no relation. Nothing in the port
+implements a "char output" routine here.
+
+`0xBD26` (`dos_ioctl_device` -> `ems_map_page_and_copy`): the one `ioctl` in the
+runtime is `0x44 =>` inside the INT 21h dispatcher — genuine DOS IOCTL, correctly
+placed. And the actual behaviour the routine needs IS implemented: `fn int67`
+carries an EMS handle table, logical-to-physical page mapping and `ems_unmap`, so
+`int 67h AH=44h` is served properly.
+
+So the port had the mechanism right while the RE notes described a different API
+entirely. That is the same direction as #349, where `io_lift.rs` was more accurate
+than the label it was derived from, and the opposite of #344, where the label was
+right and the source had drifted. Neither artefact is reliably the authority —
+only the bytes are, which is why both now get checked mechanically.
+
+WHAT THIS COST: nothing in the shipped port. What it would have cost is a future
+reader implementing a "sound/CD device driver configuration" that does not exist,
+or looking for console output in a routine that changes directory. Both plausible
+enough to have happened, which is why #350/#351's checks are worth the two false
+positives each took to tune.
+
+501 code + 238 data labels clean. 612 lib tests, 0 failures.
