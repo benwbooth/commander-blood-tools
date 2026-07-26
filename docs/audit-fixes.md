@@ -7449,3 +7449,34 @@ similar-sounding UI, without reading what populated either. The correction cost
 one command (`grep set_nav_destinations`). Writing "duplicate to delete" into a
 validation row made it a scheduled action rather than a hypothesis — and the next
 session would have executed it.
+
+## #241 — geometry that WAS decoded, and could be read back
+
+`NAV_PICK_BOX_DEFAULT/BLACK_HOLE/SHIP` carried a one-line comment naming three
+addresses and nothing else. Unlike #239's invented `NAV_DEST_*`, these turned out
+to be real: each pair is two IMMEDIATES the picker writes into its own scratch
+words.
+
+```text
+  0x92BF  mov word [0x277a],0xc  / 0x92C5 mov word [0x277c],0xb   default
+  0x92CB  test word es:[di-0x18],0x100                            BLACK HOLE?
+  0x92D3  mov word [0x277a],0x13 / 0x92D9 mov word [0x277c],0xc   -> its box
+  0x92F4  test word es:[di-0x18],0x10                             SHIP?
+  0x92FC  mov word [0x277a],0x15 / 0x9302 mov word [0x277c],0xa   -> its box
+```
+
+The test decodes the `c7 06 <disp> <imm>` encodings and checks BOTH halves: the
+immediate matches the constant AND the displacement is `0x277A`/`0x277C`. A pair
+written to the wrong scratch word would still "match" on values alone.
+
+Two structural facts fell out that the old comment did not carry. The default is
+written FIRST and overwritten by whichever gate hits, which is why a record
+matching neither keeps `(0xC, 0xB)` — the fallback is an ordering, not a branch.
+And the gates test `0x100` and `0x10`, the same bits `NAV_CHART_KIND_MASK`
+selects on, so a record's hit box and its presence on the chart come from one kind
+word; the test asserts that overlap rather than leaving it as a coincidence of two
+constants.
+
+Worth putting beside #239: two geometry constants, a day apart, one invented and
+one decoded — and neither could be told apart by looking at it. The difference was
+entirely in whether the addresses in the comment led anywhere.

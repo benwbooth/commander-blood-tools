@@ -1560,9 +1560,27 @@ pub const OBJECT_FLAG_IN_PLAY: u16 = 0x0002;
 /// The kinds the nav chart draws: `test bx,0x118` at `0x723D` — kind `0x08`,
 /// kind `0x10` (a SHIP) and kind `0x100` (a BLACK HOLE).
 pub const NAV_CHART_KIND_MASK: u16 = 0x0118;
-/// Hit-box sizes, per kind (`0x92BF`, `0x92D3`, `0x92FC`).
+/// Hit-box sizes per kind, each pair written as two IMMEDIATES into the picker's
+/// own scratch words `DS:0x277A`/`DS:0x277C`:
+///
+/// ```text
+///   0x92BF  mov word [0x277a],0xc  / 0x92C5 mov word [0x277c],0xb   default
+///   0x92CB  test word es:[di-0x18],0x100                            BLACK HOLE?
+///   0x92D3  mov word [0x277a],0x13 / 0x92D9 mov word [0x277c],0xc   -> its box
+///   0x92F4  test word es:[di-0x18],0x10                             SHIP?
+///   0x92FC  mov word [0x277a],0x15 / 0x9302 mov word [0x277c],0xa   -> its box
+/// ```
+///
+/// The two gates test `0x100` and `0x10`, the same kind bits
+/// [`NAV_CHART_KIND_MASK`] selects on — so the box a record gets and the reason
+/// it is on the chart at all come from one kind word.
+///
+/// The default is written FIRST and overwritten, which is why a record matching
+/// neither gate keeps `(0xC, 0xB)`.
 pub const NAV_PICK_BOX_DEFAULT: (i32, i32) = (0x0C, 0x0B);
+/// `mov word [0x277a],0x13` @`0x92D3` (with `0xC` into `0x277C` @`0x92D9`).
 pub const NAV_PICK_BOX_BLACK_HOLE: (i32, i32) = (0x13, 0x0C);
+/// `mov word [0x277a],0x15` @`0x92FC` (with `0xA` into `0x277C` @`0x9302`).
 pub const NAV_PICK_BOX_SHIP: (i32, i32) = (0x15, 0x0A);
 
 /// One drawn row of the destination info panel.
@@ -7069,6 +7087,42 @@ pub fn decompile_script(
 
 #[cfg(test)]
 mod tests {
+
+    /// The three hit boxes are IMMEDIATES in the picker; read them back out of
+    /// the image rather than trusting the transcription.
+    #[test]
+    fn nav_pick_boxes_are_the_pickers_own_immediates() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        // `c7 06 <disp16> <imm16>` = mov word [disp],imm
+        let mov_word = |at: usize| -> (u16, u16) {
+            assert_eq!(&exe[at..at + 2], &[0xC7, 0x06], "{at:#x} is not `mov word [mem],imm`");
+            (
+                u16::from_le_bytes([exe[at + 2], exe[at + 3]]),
+                u16::from_le_bytes([exe[at + 4], exe[at + 5]]),
+            )
+        };
+        for (at_w, at_h, expected, what) in [
+            (0x92BF, 0x92C5, NAV_PICK_BOX_DEFAULT, "default"),
+            (0x92D3, 0x92D9, NAV_PICK_BOX_BLACK_HOLE, "black hole"),
+            (0x92FC, 0x9302, NAV_PICK_BOX_SHIP, "ship"),
+        ] {
+            let (dw, w) = mov_word(at_w);
+            let (dh, h) = mov_word(at_h);
+            assert_eq!(dw, 0x277A, "{what} width goes to the wrong scratch word");
+            assert_eq!(dh, 0x277C, "{what} height goes to the wrong scratch word");
+            assert_eq!((w as i32, h as i32), expected, "{what} box");
+        }
+
+        // The gates select on the same kind bits the chart filter uses.
+        assert_eq!(u16::from_le_bytes([exe[0x92CB + 4], exe[0x92CB + 5]]), 0x0100);
+        assert_eq!(u16::from_le_bytes([exe[0x92F4 + 4], exe[0x92F4 + 5]]), 0x0010);
+        assert_eq!(NAV_CHART_KIND_MASK & 0x0100, 0x0100, "black hole is a charted kind");
+        assert_eq!(NAV_CHART_KIND_MASK & 0x0010, 0x0010, "ship is a charted kind");
+    }
 
     /// `TALK_FIELD` and `LOCATION_FIELD` are ENTRIES IN THE FIELD MATRIX at
     /// `DS:0x6D60`, not immediates — which is why the immediate checker reports
