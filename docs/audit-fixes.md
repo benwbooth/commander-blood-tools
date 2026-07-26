@@ -12171,7 +12171,7 @@ false.
 Also settled: `croolis::z`, the accessor added in #355, cited to
 `add ax, word ptr [0x22f4]` @`0xA81`.
 
-Ledger: 2229 items, 1076 confirmed (48.3%). `ASM?` down to 38 from 200 at
+Ledger: 2229 items, 1075 confirmed (48.2%). `ASM?` down to 38 from 200 at
 #317's reclassification — though the honest comparison is 38 from the 76 that
 were genuine decode claims once `CELL?` was split out.
 
