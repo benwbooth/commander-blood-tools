@@ -32,6 +32,10 @@ Tools: `mzfile.py` (shared loader), `dis.py`, `search_bytes.py`, `xref.py`,
 Convert with `seg_offset.py`. labels.csv accepts `0xNNNNN`, `SEG:OFF`,
 `DS:0xNNNN`, `IMG:0xNNNN` in the addr column.
 
+- **XDB:<name>:0xNNNN** — an offset inside an OVERLAY (`croolis.xdb`, `manu3.xdb`,
+  `amer.xdb`, `scrut.xdb`), whose runtime `cs` maps 1:1 to file offsets. A third
+  address space alongside the executable and the drivers; the overlay's name is
+  part of the address because the same offset means different things in each.
 - **DRV:0xNNNN** — an offset inside a SHIPPED SOUND DRIVER (`dnsdb.drv`,
   `nosound.drv`), a second binary the game loads and calls through a far-pointer
   vector table (`re/tools/drv_vectors.py`). It is a DIFFERENT ADDRESS SPACE: a

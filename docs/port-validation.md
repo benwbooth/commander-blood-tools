@@ -476,12 +476,19 @@ anything, `SubBehaviour(_)` returns `false` unconditionally.
 CONSEQUENCE: the port's aliens cycle animation frames in place. They do not move,
 and nothing culls them by proximity — the game's objects do both.
 
-WHAT WIRING NEEDS, precisely: `proximity_visible` and `update_position` both take
-`camera: [i16; 3]`, and the alien view has no camera state in the engine
-(`NAV_CAMERA_ORIGIN` is the NAV chart's, a different surface). So this is not a
-call to add; it is a camera to decode first — which overlay cell holds it, and
-what updates it. That is the task, and it is not blocked by anything except
-nobody having done it.
+CAMERA NOW DECODED (#269), and it is not what the port's signature assumes.
+`croolis.xdb 0xA70` adds `word [0x22ec]` for X and `0xA62` adds `word [0x22f0]`
+for Y. `0x22EC` really is a word. `0x22F0` is the HIGH WORD OF A DWORD at
+`0x22EE` (`mov ecx,dword ptr [0x22ee]` @`0x791`, `add dword ptr [0x22ee],eax`
+@`0x1FD5`, and a dword there spans `0x22EE..0x22F1`).
+
+So the camera Y is the integer part of a 32-bit fixed-point accumulator. The
+port's `camera: [i16; 3]` cannot represent that: three independent words drop the
+fractional motion, which is what makes the movement smooth. Wiring these three
+behaviours therefore means changing that signature to carry the accumulator, not
+just finding a value to pass — which is why the naive "add a camera field" fix
+would have produced motion that steps rather than glides, and looked like a
+rendering bug rather than a lost fraction.
 
 ## NAV DESTINATION LIST GEOMETRY — APPROX, replacement already written (2026-07-25)
 

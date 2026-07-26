@@ -123,6 +123,23 @@ impl AlienObject {
     /// within the on-screen region of the camera — its screen y within
     /// `[0, VISIBLE_SCREEN_Y_MAX]` and its world x within `[-VISIBLE_WORLD_X_HALF,
     /// VISIBLE_WORLD_X_HALF]`. Returns `false` (no advance) when the state flag is clear.
+    /// WHERE THE CAMERA COMES FROM, decoded 2026-07-25 to unblock the wiring
+    /// `docs/port-validation.md` recorded as missing (audit-fixes #269):
+    ///
+    /// ```text
+    ///   croolis.xdb 0xA62  add ax, word ptr [0x22f0]   the Y term
+    ///   croolis.xdb 0xA70  add ax, word ptr [0x22ec]   the X term
+    /// ```
+    ///
+    /// `DS:0x22EC` is a WORD (`movsx eax,word ptr [0x22ec]` @`0xBFA`). `DS:0x22F0`
+    /// is NOT: the cell at `0x22EE` is accessed as a DWORD (`mov ecx,dword ptr
+    /// [0x22ee]` @`0x791`, `add dword ptr [0x22ee],eax` @`0x1FD5`), and a dword
+    /// there spans `0x22EE..0x22F1` — so `[0x22F0]` is its HIGH WORD.
+    ///
+    /// The camera Y is therefore the integer part of a 32-bit FIXED-POINT
+    /// accumulator, read by taking the top sixteen bits. Wiring this needs that
+    /// accumulator, not an `i16` updated per frame; taking `camera: [i16; 3]` as
+    /// three independent words would drop the fractional motion entirely.
     pub fn proximity_visible(&mut self, camera: [i16; 3], anim_offset: i16) -> bool {
         if self.state_flag == 0 {
             return false;

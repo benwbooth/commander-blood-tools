@@ -8288,3 +8288,31 @@ real gaps mixed with test hooks and alternates, each needing its own judgement.
 Three examined so far: one duplicated format (#267, fixed), one dormant draw path
 (#266, blocked on a page the port does not maintain), one dormant behaviour
 (here, blocked on an undecoded camera).
+
+## #269 — decoding the blocker #268 named, and finding the port's type is wrong
+
+#268 recorded the alien behaviours as blocked on an undecoded camera. Decoding it
+took two commands, and the answer changes what "wire it up" means.
+
+`croolis.xdb 0xA70` adds `word [0x22ec]` for the X term; `0xA62` adds
+`word [0x22f0]` for Y. `0x22EC` is genuinely a word (`movsx eax,word ptr
+[0x22ec]` @`0xBFA`). `0x22F0` is not a variable at all: the cell at `0x22EE` is
+accessed as a DWORD (`mov ecx,dword ptr [0x22ee]` @`0x791`, `add dword ptr
+[0x22ee],eax` @`0x1FD5`), and a dword there spans `0x22EE..0x22F1` — so
+`[0x22F0]` IS ITS HIGH WORD.
+
+The camera Y is the integer part of a 32-bit fixed-point accumulator, read by
+taking the top sixteen bits.
+
+That matters more than the address does. `proximity_visible` and
+`update_position` take `camera: [i16; 3]`, and three independent words CANNOT
+represent a fixed-point accumulator — the fraction is where the smooth motion
+lives. Wiring them by adding an `i16` camera field would have produced aliens
+that step rather than glide, which reads as a rendering bug and would have been
+debugged as one.
+
+So #268's "not blocked by anything except nobody having done it" was right about
+the camera and wrong about the cost: the fix is a signature change, not a call
+site. Both docs updated, and `re/CLAUDE.md` gains the `XDB:<name>:0xNNNN` address
+form — a third address space beside the executable and the drivers, needed because
+the same offset means different things in each overlay.
