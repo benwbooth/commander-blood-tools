@@ -362,10 +362,28 @@ impl AlienObject {
     /// So `si` is a RELATED record at `[di+0x16] + 0x5E`, not this one, and the
     /// tail writes (`[si+0x50] = ax & 0xFFC`, `[si+0x52] = 0` @`0x16EE`..`0x16F4`,
     /// and `mov word ptr [si+0xe], 0x1727` @`0x16FE`, which INSTALLS a sub-method
-    /// on it) all target that neighbour. Modelling them needs the object-list
-    /// linkage `+0x16` names, which the port does not carry — objects here are a
-    /// `Vec` with no cross-references. That is the blocker, stated so the next
-    /// pass starts from it rather than re-deriving it.
+    /// on it) all target that neighbour.
+    ///
+    /// WHAT `+0x16` IS, decoded in #403: objects are a TREE, not a flat list.
+    /// The colony dispatcher opens with the same pointer plus its count —
+    ///
+    /// ```text
+    ///   0x12DE  mov si, word ptr [di + 0x16]   the CHILD ARRAY base
+    ///   0x12E1  mov cx, word ptr [di + 0x1a]   the CHILD COUNT
+    ///   0x12E4  add si, 0x5e                   iteration starts at element 1
+    ///   0x1301  call word ptr [si + 0xe]       each child's method
+    /// ```
+    ///
+    /// — and every one of the overlay's sixteen `[reg+0x16]` accesses is a READ
+    /// (`0x36A`, `0x966`, `0x999`, `0xA01`, `0xA37`, `0xB50`, `0xB60`, `0x12DE`,
+    /// `0x16A4`, `0x1A86`, `0x1B85`, `0x1BCD`, `0x1C1C`, `0x207C`, `0x2291`,
+    /// `0x23D0`): the field is set up outside this overlay and only ever
+    /// followed. Both the dispatcher and this state machine skip element 0.
+    ///
+    /// So the port's `AlienColony { objects: Vec<AlienObject> }` is the wrong
+    /// shape — an object owns a child array (`+0x16`, count `+0x1A`, stride
+    /// `0x5E`), and `step` reaches into child 1. Building that is the next task;
+    /// what it must satisfy is written above rather than guessed at later.
     pub fn step(&mut self, shared: &mut AlienStreams) -> bool {
         if self.timer > 0 {
             self.timer -= 1;

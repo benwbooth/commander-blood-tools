@@ -13249,3 +13249,41 @@ checkbox is exactly the kind of plausible fiction #400 just removed.
 
 2228 items, 1093 confirmed (49.1%), 1135 open. 725 citations verified, 0 wrong.
 614 lib tests, 0 failures.
+
+## #403 — the alien objects are a TREE, and that is the blocker's answer
+
+#402 stopped at "modelling the tail writes needs the `+0x16` linkage, which the
+port does not carry". That is a description of the next task, so I did it.
+
+`+0x16` is a CHILD-ARRAY POINTER. The colony dispatcher spells the structure out:
+
+    0x12DE  mov si, word ptr [di + 0x16]   the child array base
+    0x12E1  mov cx, word ptr [di + 0x1a]   the child COUNT
+    0x12E4  add si, 0x5e                   iteration starts at element 1
+    0x1301  call word ptr [si + 0xe]       each child's method
+
+and the state machine at `0x16A4` opens with the IDENTICAL two instructions,
+which is why its `[si+…]` writes land on child 1 rather than on itself.
+
+A census of every `[reg+0x16]` access in the overlay — sixteen of them, at
+`0x36A`, `0x966`, `0x999`, `0xA01`, `0xA37`, `0xB50`, `0xB60`, `0x12DE`, `0x16A4`,
+`0x1A86`, `0x1B85`, `0x1BCD`, `0x1C1C`, `0x207C`, `0x2291`, `0x23D0` — finds NOT
+ONE WRITE. The field is set up outside this overlay and only ever followed, which
+is consistent with it being part of the shipped object data rather than runtime
+state, and means the overlay cannot tell us how the tree is built.
+
+That census also corrected my first attempt at it: scanning modrm bytes
+`0x44..0x47` found only two accesses and would have supported "the field is
+barely used". Those are the `reg=ax` encodings; `mov si,[di+0x16]` is modrm
+`0x75`. Filtering by `mod`/`rm` instead of by literal byte found all sixteen.
+Same family of encoding blind spot as #335 and #359 — the third time this
+session that enumerating one encoding of an instruction under-reported a census.
+
+CONSEQUENCE FOR THE PORT, stated concretely: `AlienColony { objects: Vec<..> }`
+is the wrong shape. An object OWNS a child array (`+0x16`, count `+0x1A`, stride
+`0x5E`), both the dispatcher and the state machine skip element 0, and `step`
+reaches into child 1. That specification is now in the code where the work will
+happen, so the next pass builds against it rather than re-deriving it.
+
+2228 items, 1093 confirmed (49.1%), 1135 open. 729 citations verified, 0 wrong.
+614 lib tests, 0 failures.
