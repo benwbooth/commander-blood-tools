@@ -12515,3 +12515,33 @@ entry about it.
 
 2229 items, 1084 confirmed (48.6%), 1145 open. 698 citations verified, 0 wrong.
 502 code + 238 data labels clean. 613 lib tests, 0 failures.
+
+## #383 — the confirm dialog verifies from two independent places
+
+`ARE_YOU_SURE?` (`engine.rs`) cited `mov al,0xE8` @`0x14F7`. Read the whole
+routine at `0x14E6..0x1528`; every documented value is exact — `bx=0x5A cx=0x50
+dx=0x8C bp=0x28`, `lcall 0x299:0xCDC`, `si=0x17B/0x189/0x18D`, `add bx,0xA/0x14/
+0x3C`, `dx=0x58` then `+0x11`, `bp=0x2555/0x255D`.
+
+What makes this row worth more than a checkmark: the two derivations agree. The
+CODE walks `bx` 90 -> 100 -> 120 -> 180 and `dx` 88 -> 105; the DATA at `DS:0x2555`
+(dumped statically, `ds_dump.py`) reads (120,105,30,10) and (180,105,20,10). Drawn
+text and clickable rect are the same layout arrived at from two unrelated places
+in the image, and `DS:0x18D` really is `N`,`O`,0 — so none of the three strings is
+a transcription.
+
+ONE THING IN THE COMMENT WAS WRONG. It read "`mov al,0xE8` ... feeding the string
+draw at `0x299:0xBB5`". `0xBB5` is not the string draw: it is called at `0x14F9`
+with `al` alone and sets the COLOUR. The string draw is a different entry point,
+`0x299:0x176`, called three times (`0x1507`, `0x1515`, `0x1520`) with si/bx/dx.
+The behaviour was right and the attribution was not — the same shape as #382 and
+#351, one call site attributed to a neighbouring one. Both the doc block and the
+inline comment now name the two entry points separately, which also put the three
+`lcall 0x299:0x176` lines under the citation guard (698 -> 702 checked).
+
+Not a defect, but recorded: the box rect reads (x,y,w,h) rather than two corners,
+because 90+140 and 80+40 bound every drawn item and the corner reading would put
+y2 above y1.
+
+2229 items, 1085 confirmed (48.7%), 1144 open. 702 citations verified, 0 wrong.
+613 lib tests, 0 failures.

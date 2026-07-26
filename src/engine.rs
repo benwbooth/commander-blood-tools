@@ -2136,12 +2136,21 @@ impl EngineState {
     /// ```text
     ///   0x14E6  bx=0x5A cx=0x50 dx=0x8C bp=0x28   the box rect (90,80,140,40)
     ///   0x14F2  lcall 0x299:0xCDC                 draw it
-    ///   0x14F7  mov al,0xE8                       text colour
+    ///   0x14F7  mov al,0xE8                       text colour, passed to...
+    ///   0x14F9  lcall 0x299:0xBB5                 ...the colour SETTER (al only)
     ///   0x14FE  si=0x17B "ARE_YOU_SURE?"          bx += 0x0A, dx = 0x58
+    ///   0x1507  lcall 0x299:0x176                 THE STRING DRAW (si, bx, dx)
     ///   0x150C  si=0x189 "YES"                    bx += 0x14, dx += 0x11
+    ///   0x1515  lcall 0x299:0x176
     ///   0x151A  si=0x18D "NO"                     bx += 0x3C
+    ///   0x1520  lcall 0x299:0x176
     ///   0x1525  bp=0x2555 / 0x255D                the two hit regions
     /// ```
+    ///
+    /// So `bx` walks 90 -> 100 -> 120 -> 180 and `dx` 88 -> 105 -> 105, and the
+    /// two records at `DS:0x2555` read (120,105,30,10) and (180,105,20,10):
+    /// the drawn text and the clickable rect are the same layout from two
+    /// independent places in the image.
     ///
     /// The draw positions and the hit rects agree independently: `YES` lands at
     /// x=120 and its region is `(120, 105, 30, 10)`; `NO` lands at x=180 with
@@ -2176,8 +2185,9 @@ impl EngineState {
             bw as i32,
             bh as i32,
         );
-        // Text index 0xE8 — `mov al,0xE8` @0x14F7, feeding the string draw at
-        // `0x299:0xBB5`.
+        // Text index 0xE8 — `mov al,0xE8` @0x14F7, passed to the colour SETTER
+        // `0x299:0xBB5` @0x14F9. (The string draw is a different entry point,
+        // `0x299:0x176`, called once per line at 0x1507/0x1515/0x1520.)
         const TEXT: u8 = 0xE8;
         for (text, (x, y)) in [
             (Self::CONFIRM_TITLE, Self::CONFIRM_TITLE_POS),

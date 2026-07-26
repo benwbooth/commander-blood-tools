@@ -471,7 +471,7 @@ CONFIRM_YES	src/engine.rs	2144	const		UNVERIFIED
 CONFIRM_NO	src/engine.rs	2145	const		UNVERIFIED	
 CONFIRM_STRING_TABLE	src/engine.rs	2146	const		UNVERIFIED	
 draw_confirm_box	src/engine.rs	2154	fn	0x299,0xCDC,0x40E	ASM	/// Draw the confirm dialog. The box is the same tinted window every other /// panel uses (`0x299:0xCDC` shares the blit family with `0x299:0x40E`).
-TEXT	src/engine.rs	2169	const	0x14F7,0x299,0xBB5	ASM?	// Text index 0xE8 — `mov al,0xE8` @0x14F7, feeding the string draw at // `0x299:0xBB5`.
+TEXT	src/engine.rs	2169	const	0x14F7,0x299,0xBB5	ASM	// Text index 0xE8 — `mov al,0xE8` @0x14F7, feeding the string draw at // `0x299:0xBB5`.
 confirm_box_click	src/engine.rs	2190	fn	0x2555,0x255D,0x8295	ORACLE	/// Hit-test the confirm dialog: `Some(true)` = YES, `Some(false)` = NO. /// The regions are `DS:0x2555`/`DS:0x255D`, tested inclusively like every /// other region rect (`region_record_hittest` `0x82
 draw_save_ui_rows	src/engine.rs	2206	fn	0x1BAB,0x1BBD,0x8573	ASM	/// The SAVE screen's rows: the ten slot names with the edit buffer swapped in /// for the row being renamed, plus the widget's own extra row. See the call /// site for the assembly (`0x1BAB`, `0x1BBD
 draw_choice_box	src/engine.rs	2234	fn	0x8565,0x858B,0x8595,0xA3E,0x858D,0x2AAB,0x84A1,0x84D8,0xAC8	ORACLE?	// ASSEMBLY-SOURCED (these were capture-measured, and the box was wrong): //   0x8565  mov al,0xE8                 unselected row //   0x858B  mov al,0xEF                 the selected row... //   0x85
