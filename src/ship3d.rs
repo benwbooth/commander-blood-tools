@@ -218,12 +218,17 @@ pub const SHIP_3D_TEMP_SND_VIEWPORT_DESCRIPTOR: [u16; 8] = [
 pub const SHIP_3D_FINAL_RESET_HUD_FLAGS: u16 = 0x0009;
 /// `mov word ptr [0x279d],0x32` @`0xB511` — 50 ticks.
 pub const SHIP_3D_FINAL_RESET_NAV_TIMER: u16 = 50;
-/// UNSOURCED. `0xFFFF` is the tree's usual empty marker and the reset plausibly
-/// writes it, but no instruction has been found for this one or for
-/// [`SHIP_3D_FINAL_RESET_ACTIVE_RECORD_SENTINEL`] — the four cited above were
-/// located by scanning `0xB34E` for their immediates, and a scan for `0xFFFF`
-/// returns too many hits to attribute (#282).
+/// `mov word ptr [0x1fab], 0xffff` @`0xB529`. #282 left this UNSOURCED after an
+/// image-wide scan for `0xFFFF` returned too many hits to attribute; the fix was
+/// to stop scanning and DECODE THE ROUTINE, which contains exactly two `0xFFFF`
+/// word stores (audit-fixes #287). `DS:0x1FAB` is `vm_text_selector`, the signed
+/// per-line selector the 0xA6 TEXT handler writes from its third byte — hence
+/// SELECTOR, and hence this constant rather than the one below.
 pub const SHIP_3D_FINAL_RESET_SELECTOR_SENTINEL: u16 = 0xffff;
+/// `mov word ptr [0x6788], 0xffff` @`0xB52F`, the second of the two. `DS:0x6788`
+/// is `vm_active_line`, the active dialogue-line id — the ACTIVE RECORD. The two
+/// stores are six bytes apart and in the same order as the fields they set, which
+/// is what distinguishes them: on value alone they are identical.
 pub const SHIP_3D_FINAL_RESET_ACTIVE_RECORD_SENTINEL: u16 = 0xffff;
 /// `mov byte ptr [0x5b52],0xff` @`0xB57B`.
 pub const SHIP_3D_FINAL_RESET_DIRTY_MARKER: u8 = 0xff;
@@ -3356,6 +3361,13 @@ pub fn run_ship_3d_navigation_final_reset(
     state.post_reset_gate = true;
     state.navigation_gate = true;
 
+    // From `0xB521` the reset stops being nav-specific: `xor ax,ax` there is the
+    // entry labelled `dlg_clear_b`, the DIALOGUE CLEAR, inlined rather than
+    // called (`dlg_clear_a` at `0x1A5E` clears the same `0x1FAB`/`0x6788` pair).
+    // `ax` is zeroed once and then reused by every store, which is why the two
+    // sentinels below are separate `mov word` instructions carrying their
+    // immediate while the neighbours are one-byte `mov [addr],al` (audit-fixes
+    // #287). The order here follows the routine's store order.
     state.dialogue_state = 0;
     state.scene_band_top = 0;
     state.scene_selector = SHIP_3D_FINAL_RESET_SELECTOR_SENTINEL;

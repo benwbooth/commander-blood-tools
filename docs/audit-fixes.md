@@ -8866,3 +8866,41 @@ about VERIFIED work.
 
 Ledger after #286: 2216 items, 1009 CONFIRMED (45.5%), 1207 open — 905 with
 nothing recorded and 302 carrying a claim that no tool has checked.
+
+## #287 — the two 0xFFFF sentinels: stop scanning the image, decode the routine
+
+#282 cited four of the navigation final reset's immediates and left two
+UNSOURCED with an explicit reason: "a scan for `0xFFFF` returns too many hits to
+attribute". That reason was about the METHOD, not about the binary. `0xFFFF` is
+untraceable across a 200KB image; inside ONE routine it is nearly unique.
+
+Decoding the reset tail forward, there are exactly two `0xFFFF` word stores:
+
+    0xB529  mov word ptr [0x1fab], 0xffff
+    0xB52F  mov word ptr [0x6788], 0xffff
+
+`labels.csv` already names both cells, from the dialogue work: `DS:0x1FAB` is
+`vm_text_selector` (the signed per-line SELECTOR the 0xA6 TEXT handler writes
+from its third byte) and `DS:0x6788` is `vm_active_line` (the active dialogue
+line id, whose own label ends "reset 0xffff on clear"). Selector -> the SELECTOR
+constant, active line -> the ACTIVE RECORD constant, and the port's two fields
+are already written in that order.
+
+A SECOND finding fell out of reading the tail rather than grepping it: from
+`0xB521` the reset stops being navigation-specific. That address is labelled
+`dlg_clear_b` — the routine INLINES the dialogue clear instead of calling it
+(`dlg_clear_a` at `0x1A5E` clears the same pair). `xor ax,ax` there zeroes a
+register that every following store reuses, which is exactly why these two
+sentinels are full `mov word [addr],imm` instructions while their neighbours are
+one-byte `mov [addr],al`. The instruction FORM is what made them findable.
+
+WHAT NO TEST CAN CHECK HERE, stated rather than papered over: both constants are
+`0xFFFF`, so `assert_eq!(state.scene_selector, SHIP_3D_FINAL_RESET_SELECTOR_SENTINEL)`
+passes even if the two fields are swapped. The existing reset test asserts both
+and would survive the mapping being backwards. The mapping rests on the labels
+and the store order, NOT on anything the port is able to assert — and it cannot
+be strengthened until the port models these as DS cells rather than as named
+struct fields. Recording it because a green test next to a citation reads like
+confirmation, and here it is not.
+
+Citations: 546 verified (from 542), 0 wrong. 597 lib tests, 0 failures.
