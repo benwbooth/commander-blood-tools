@@ -2990,6 +2990,15 @@ impl EngineState {
         self.ending_scene = Some(hnm);
     }
 
+    /// PROVENANCE (audit-fixes #326): the display names are TRANSCRIBED AND
+    /// TRANSFORMED. `DESCRIPT.DES` holds `Bob_Morlock` at `0x09EB`; this table
+    /// carries `"BOB MORLOCK"` — upper-cased with the underscore turned into a
+    /// space. The names therefore DO come from the game's data, but neither the
+    /// upper-casing nor the underscore substitution has a routine behind it here,
+    /// so the table is a literal standing in for a lookup plus a formatting rule.
+    /// `tools/check_ui_literals.py` reports it as ABSENT from the shipped data
+    /// for exactly that reason: the game never stores this spelling.
+    ///
     /// The video-phone's callable crew: display name + their talk-head HNM basename
     /// (`pe/aa*.hnm`). These are the crew whose full-colour idle-head animations exist and
     /// decode cleanly; the phone shows the dialled one as the live "video feed".

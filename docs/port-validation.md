@@ -1435,3 +1435,15 @@ selects it by identity.
 Consequence: a script whose first menu record is a different list returns the
 wrong rows, silently. The transcribed `MENU_SUBMENU` fallback beside it is the
 better-evidenced half of the function (#322 pinned it to the DIC and the COD).
+
+### APPROX — `PHONE_CONTACTS` display names are transcribed AND transformed
+
+`DESCRIPT.DES` holds `Bob_Morlock` (`0x09EB`); the port's table carries
+`"BOB MORLOCK"`. The names come from the game's data, but the upper-casing and
+the underscore→space substitution have no routine behind them, so nine display
+strings are literals standing in for a lookup plus a formatting rule.
+
+ROUTINE THAT MUST REPLACE IT: whatever renders a DESCRIPT character name into the
+video-phone caption. Until it is found, `tools/check_ui_literals.py` will keep
+reporting these as ABSENT from the shipped data — correctly, since the game never
+stores this spelling.

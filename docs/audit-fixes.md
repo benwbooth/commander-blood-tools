@@ -10470,3 +10470,41 @@ concept list, save dialogue: three unrelated subsystems, one "defer the scene
 load" bit.
 
 610 lib tests, 0 failures. 613 citations verified, 0 wrong.
+
+## #326 — a sweep for SHORT display literals, and three self-corrections before it was usable
+
+#325 was the fourth literal this session (after #227, #320, #322) that turned out
+to be readable from shipped data. `check_content_literals.py` could not have
+found any of them: it looks for PROSE, three or more words, and `"LAST"` is one.
+
+`tools/check_ui_literals.py` closes that gap — every short display string in
+`src/`, classified IN-IMAGE / IN-DATA / ABSENT. Getting it honest took three
+passes, each removing a way it manufactured a finding:
+
+  1. IT ATTRIBUTED COINCIDENCES. First run "found" `DEB`, `DIC`, `FORM` and
+     `ILBM` in shipped files and reported them as game content. They are parser
+     magic and file extensions; a 3-char string matches any binary by chance.
+     Added `MIN_ATTRIBUTABLE = 5`, the same rule as `check_literal_tables.py`'s
+     MIN_BYTES and #263's warning about matching by value.
+  2. IT REPORTED FILENAMES. `TB.BIG`, `HONKF.SPR`, `BLOODPRG.EXE` dominated the
+     ABSENT list and buried the real hits.
+  3. IT READ COMMENTS. `/// The comms "Hate TV" screen` and three others were
+     reported as suspect content. A doc comment QUOTING on-screen text is
+     documentation. This is the same defect I have now found in three other
+     tools this session, committed while writing a tool to find defects.
+
+Honest output: 223 display literals — 41 in the image, 44 in shipped data, 138 in
+neither, 54 too short to attribute.
+
+THE ONE REAL FINDING in the engine modules: `PHONE_CONTACTS`. `DESCRIPT.DES`
+holds `Bob_Morlock` at `0x09EB`; the port carries `"BOB MORLOCK"` — upper-cased,
+underscore replaced by a space. So the names DO come from the game's data, and
+the defect is narrower and more specific than "invented text": a literal standing
+in for a lookup PLUS an unverified formatting rule. Recorded as an APPROX row
+naming what must replace it.
+
+The rest of the ABSENT list is port-side: window titles, module headings, CLI
+arguments. That is the answer I wanted and could not have asserted without
+checking.
+
+610 lib tests, 0 failures. 613 citations verified, 0 wrong.
