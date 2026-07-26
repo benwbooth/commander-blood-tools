@@ -1800,7 +1800,7 @@ subtitle_draw_glyph	src/extract/render.rs	1007	fn		UNVERIFIED
 game_font_advance	src/extract/render.rs	1019	fn		UNVERIFIED	
 SCENE_TOP	src/extract/render.rs	1027	const	0x5239,0x523B,0x2793	CELL?	// Dialogue scene layout, RE'd from BLOODPRG.EXE. The scene is composited in the // framebuffer band `gs:0x5239..0x523B` with black bars / HUD outside. The // letterbox mode (gs:0x2793 & 8) uses rows 
 SCENE_BOTTOM	src/extract/render.rs	1028	const		UNVERIFIED	
-SUBTITLE_X	src/extract/render.rs	1033	const	0x94EE,0x5E5C,0x5E5E	ASM?	// BLOODPRG.EXE's reveal renderer is called from 0x94EE with BX=[0x5E5C] and // DX=[0x5E5E]. The initialized words at those DS offsets are 10 and 8; each // CR-delimited subtitle line advances DX by 8
+SUBTITLE_X	src/extract/render.rs	1033	const	0x94EE,0x5E5C,0x5E5E	ASM	// BLOODPRG.EXE's reveal renderer is called from 0x94EE with BX=[0x5E5C] and // DX=[0x5E5E]. The initialized words at those DS offsets are 10 and 8; each // CR-delimited subtitle line advances DX by 8
 SUBTITLE_Y	src/extract/render.rs	1034	const		UNVERIFIED	
 GAME_FONT_WIDTH	src/extract/render.rs	1035	const		UNVERIFIED	
 GAME_FONT_HEIGHT	src/extract/render.rs	1036	const		UNVERIFIED	

@@ -1027,9 +1027,19 @@ pub(super) fn game_font_advance(ch: char) -> usize {
 pub(super) const SCENE_TOP: usize = 0x23; // 35
 pub(super) const SCENE_BOTTOM: usize = 0xA5; // 165
 
-// BLOODPRG.EXE's reveal renderer is called from 0x94EE with BX=[0x5E5C] and
-// DX=[0x5E5E]. The initialized words at those DS offsets are 10 and 8; each
-// CR-delimited subtitle line advances DX by 8.
+// BLOODPRG.EXE's reveal renderer, read end to end at 0x94E6..0x9508:
+//
+//   0x94E6  mov bx, word ptr [0x5e5c]     X, loaded ONCE before the loop
+//   0x94EA  mov dx, word ptr [0x5e5e]     Y
+//   0x94EE  lcall 0x299:0x6a0             draw this line
+//   0x94F8  mov al, 0xd / repne scasb     scan to the next CR
+//   0x9503  add dx, 8                     next line: Y += 8, X unchanged
+//   0x9508  jmp 0x94ee                    loop
+//
+// The shipped words at those DS offsets are 10 and 8 (`ds_dump.py DS:0x5E5C`),
+// which is where SUBTITLE_X/SUBTITLE_Y come from. BX is not reloaded inside the
+// loop, so every line is left-aligned at the same X — the block advances in Y
+// only, by the same 8 as GAME_FONT_LINE_HEIGHT.
 pub(super) const SUBTITLE_X: usize = 10;
 pub(super) const SUBTITLE_Y: usize = 8;
 pub(super) const GAME_FONT_WIDTH: usize = 8;

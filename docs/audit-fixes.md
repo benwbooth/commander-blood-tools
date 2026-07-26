@@ -13486,3 +13486,29 @@ it was three lookups rather than a re-derivation.
 
 2228 items, 1096 confirmed (49.2%), 1132 open. 730 citations verified, 0 wrong.
 615 lib tests, 0 failures.
+
+## #410 — the subtitle block advances in Y only
+
+`SUBTITLE_X`/`SUBTITLE_Y` cited "called from 0x94EE with BX=[0x5E5C] and
+DX=[0x5E5E]". Both the data and the loop check out, and reading the whole loop
+rather than the two cited words adds a fact the constants depended on silently:
+
+    0x94E6  mov bx, word ptr [0x5e5c]     X, loaded ONCE, before the loop
+    0x94EA  mov dx, word ptr [0x5e5e]     Y
+    0x94EE  lcall 0x299:0x6a0             draw this line
+    0x94F8  mov al, 0xd / repne scasb     scan to the next CR
+    0x9503  add dx, 8                     Y += 8
+    0x9508  jmp 0x94ee                    loop
+
+`ds_dump.py DS:0x5E5C` gives 10 and 8, so the two constants are shipped data, not
+measurements. And BX is NOT reloaded inside the loop — every line is left-aligned
+at the same X, and the block advances in Y only, by the same 8 as
+`GAME_FONT_LINE_HEIGHT`. The doc said "each CR-delimited line advances DX by 8",
+which is right; what it did not say is that X is loop-invariant, and that is the
+part a reimplementation could get wrong while matching the sentence.
+
+Also confirms the CR delimiter is literally `0xD` (`mov al, 0xd` feeding
+`repne scasb`), rather than a convention inferred from the text data.
+
+2228 items, 1097 confirmed (49.2%), 1131 open. 730 citations verified, 0 wrong.
+615 lib tests, 0 failures.
