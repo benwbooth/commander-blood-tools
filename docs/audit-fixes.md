@@ -11689,3 +11689,42 @@ THE COMPLETE CENSUS is now on the constant: 66 immediate-form sites plus
 them as independent flags would have predicted.
 
 658 citations verified, 0 wrong. 612 lib tests, 0 failures.
+
+## #359 — build the encoding table once, then find two bugs in it
+
+Three misses of the same kind (#335 `a3`, #336 `89 /r`, #358 `83 /N`) mean the
+fix is not another reminder. `re/tools/addr_forms.py` is the table: every fixed
+x86-16 encoding that references a DIRECT address — `80/81/83 /N` for all eight
+ALU ops, `C6/C7`, `F6/F7`, `88/89/8A/8B /r` for all eight registers, the `A0..A3`
+accumulator short forms, and `FF /N` — each with a `65`-prefix option so a
+GS-prefixed instruction reports as ONE site.
+
+It found #358's census exactly: 69 sites for `0x2793`, and independently 29
+writers for `0x6788`, the number #335 derived by hand after `find_imm` said 27.
+Two instruments agreeing from different directions is the point of building it.
+
+IT ALSO HAD TWO BUGS, both mine, both instructive.
+
+FIRST, I NAMED IT `encodings.py`. That shadows a Python STDLIB PACKAGE which is
+imported during interpreter bootstrap, so it can never be overridden by a path
+insert — importing it from any other script gets the stdlib. This repo already
+documents exactly this hazard for `re/tools/dis.py` versus stdlib `dis`, in
+`re/CLAUDE.md`, in a note I have read several times this session. Renamed
+`addr_forms.py`.
+
+SECOND, AND WORSE: modrm for reg=5 is `0x2E`, and `0x2E` as a byte IS THE REGEX
+WILDCARD `.`. The `sub` pattern therefore matched EVERY modrm, so `or`, `and` and
+`xor` sites were being reclassified as `sub` — silently, with the totals still
+right. The census printed 19 sites at value `0x0004` as writes rather than SETs,
+which looked plausible enough to publish.
+
+What caught it was cross-checking against #358's hand census and seeing the KINDS
+disagree while the COUNTS matched. A bug that preserves totals and corrupts
+classification is invisible to any check that only counts — and counting is what
+every one of these tools does by default.
+
+Fixed with `re.escape` on the modrm AND the address bytes, since an address
+containing `0x2A`, `0x2B`, `0x3F`, `0x5B`, `0x5C`, `0x7C`, `0x5E` or `0x24` would
+have the same effect for any caller.
+
+658 citations verified, 0 wrong. 612 lib tests, 0 failures.
