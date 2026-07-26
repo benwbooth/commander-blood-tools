@@ -11623,3 +11623,31 @@ guessing at that is how #302 happened. Recorded as an APPROX row naming the
 routine and the exact instructions.
 
 656 citations verified (from 652), 0 wrong. 612 lib tests, 0 failures.
+
+## #357 — a row that must NOT be settled, and a flag reader found while not settling it
+
+`render_star_map_navview` sits in the `ASM?` queue with three citations. It is
+not settleable, and its own doc says why: it is "an approximation... a fabricated
+surface sitting beside the real one", reached "only from each other and from
+tests", kept solely because its tests still exercise the pyramid/orb composition,
+with removal as the stated end state.
+
+Settling it ASM would record "checked against the disassembly" for a surface the
+game does not draw. Left provisional — the correct outcome for a row whose
+subject is honest about being wrong.
+
+BUT ONE CITATION PAID OFF. `0xB193` is `test word ptr [0x2793], 8` — a DIRECT
+READER of UI-flag bit 3, the station-seek arrival bit from #330. Until now bit 3
+was known only as something WRITTEN (`xor word [0x2793],8` @`0x9671`) and read as
+part of the gate's composite `0xE` mask at `0x1095`. A dedicated `test ...,8`
+means something branches on it alone, so it is a flag in its own right rather
+than an accumulator bit that only matters in aggregate. Added to the constant.
+
+THE PATTERN ACROSS THIS SESSION'S FLAG WORK: every time I have gone looking at
+`0x2793` for one reason, another site has turned up — three setters of bit 2
+(#311, #324, #325), a third clear site (#337), and now a solo reader of bit 3.
+`find_imm`'s aggregate said "at least six live bits" back in #309; the individual
+sites have been arriving one investigation at a time ever since, which is a fair
+warning that the flag word is not finished being decoded.
+
+656 citations verified, 0 wrong. 612 lib tests, 0 failures.

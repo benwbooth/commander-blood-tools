@@ -1705,7 +1705,9 @@ pub const UI_FLAG_CE_BRANCH: u16 = 0x0001;
 /// audit-fixes #337, which also clears `[0x2A19]` on the way out).
 pub const UI_FLAG_BUSY: u16 = 0x0004;
 /// Bit 3 — toggled on station-seek ARRIVAL: `xor word ptr [0x2793], 8` @`0x9671`.
-/// Note TOGGLE, not set (audit-fixes #330).
+/// Note TOGGLE, not set (audit-fixes #330). READ at `test word ptr [0x2793], 8`
+/// @`0xB193` as well as through the gate's `0xE` mask, so it is a flag something
+/// branches on directly and not merely an accumulator bit (audit-fixes #357).
 pub const UI_FLAG_SEEK_ARRIVED: u16 = 0x0008;
 /// Bits 1|2|3 together: `test byte ptr [0x2793], 0xe / jne` @`0x1095`, the
 /// main-loop gate. Any of them set DEFERS the pending-profile dispatch.
