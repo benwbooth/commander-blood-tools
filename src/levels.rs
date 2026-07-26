@@ -893,6 +893,15 @@ mod tests {
 
     #[test]
     fn primary_worlds_are_the_named_planets() {
+        // SNAPSHOT THE DIRECTORY FIRST (audit-fixes #407). `RUNTIME_DIRECTORY` is
+        // a process-global that any test may install via `init_level_directory`,
+        // and cargo runs tests in PARALLEL. Reading `primary_worlds()` here and
+        // `directory().len()` at the bottom sampled the global TWICE, so a test
+        // installing the real table in between made the count assert compare a
+        // pre-install list against a post-install expectation. Observed failing
+        // intermittently -- roughly one run in ten under the `levels::` filter,
+        // never in isolation, which is the signature of exactly this race.
+        let dir_len = directory().len();
         let names: Vec<_> = primary_worlds().map(|e| e.stem).collect();
         assert!(names.contains(&"venusia"));
         assert!(names.contains(&"magnus"));
@@ -911,8 +920,8 @@ mod tests {
         // `init_level_directory` existed: any earlier test installing the real
         // table changed the answer. Keying off `directory().len()` removes the
         // dependence instead of hiding it behind a bigger constant.
-        let expected = if directory().len() > LEVEL_DIRECTORY.len() { 32 } else { 16 };
-        assert_eq!(names.len(), expected, "directory has {} slots", directory().len());
+        let expected = if dir_len > LEVEL_DIRECTORY.len() { 32 } else { 16 };
+        assert_eq!(names.len(), expected, "directory has {dir_len} slots");
 
         // Either way the filter's shape holds: every survivor is a World whose
         // stem is neither cyberspace nor a numbered sub-level.

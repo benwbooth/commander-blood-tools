@@ -13384,3 +13384,41 @@ invisible to a static dump and fully determined by their access sites.
 
 2228 items, 1094 confirmed (49.1%), 1134 open. 730 citations verified, 0 wrong.
 615 lib tests, 0 failures.
+
+## #407 — a flaky test, caught by running the suite a different way
+
+Checking `nav_world_label_sample`'s data source, I ran the `levels::` tests alone
+and got `primary_worlds_are_the_named_planets ... FAILED` — a test the full suite
+reports as passing every time. It passed in isolation. It passed the next three
+runs. It failed again once in a later batch, then passed twelve runs straight.
+
+So: real, intermittent, roughly one run in ten under that filter, invisible to
+`cargo test --lib`. The suite's "0 failures" — quoted in every entry this session
+— was true and not the whole truth.
+
+THE RACE, and the test's own comment is half of the diagnosis. `RUNTIME_DIRECTORY`
+is a process-global `OnceLock` that any test may install via
+`init_level_directory`, and cargo runs tests in PARALLEL threads. The test read
+the global TWICE:
+
+    let names: Vec<_> = primary_worlds().map(|e| e.stem).collect();   // sample 1
+    ...
+    let expected = if directory().len() > LEVEL_DIRECTORY.len() { 32 } else { 16 };
+    assert_eq!(names.len(), expected, ...);                            // sample 2
+
+A test installing the real 95-slot table between those two lines makes `names` a
+pre-install list and `expected` a post-install number: 16 vs 32. The comment
+above it already records fixing an ORDER dependence by keying off
+`directory().len()` — which removed the dependence on WHICH tests ran and left a
+dependence on WHEN, because the two samples are not atomic.
+
+Fixed by snapshotting once. 12 consecutive `levels::` runs clean, full suite
+clean.
+
+Worth stating plainly: I found this only because I ran the tests through a filter
+I had not used before. A suite that is green under one invocation and red under
+another is not green — and the fix is one line, but noticing cost nothing except
+running it differently.
+
+2228 items, 1094 confirmed (49.1%), 1134 open. 730 citations verified, 0 wrong.
+615 lib tests, 0 failures.
