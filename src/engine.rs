@@ -431,6 +431,8 @@ pub struct EngineState {
     /// its PRNG+timer picks new animation states, giving the examined alien an idle
     /// life of its own between the player's rotations.
     alien_object: crate::croolis::AlienObject,
+    /// The shared alien animation PRNG stream (`fs:[0x105C]`).
+    alien_prng: u16,
     /// The scrutinizer-apparatus intro animation (`sq/caiscrut.hnm`) played once when
     /// the examination screen opens, before the rotatable alien.
     alien_intro: Option<HnmFile>,
@@ -748,7 +750,10 @@ impl EngineState {
             alien_views: Vec::new(),
             alien_view_active: false,
             alien_pan: 0,
-            alien_object: crate::croolis::AlienObject::new(0x2DD3),
+            alien_object: crate::croolis::AlienObject::new(0),
+            // The shared alien PRNG stream `fs:[0x105C]` (audit-fixes #400);
+            // the engine's single object draws from it like a colony member.
+            alien_prng: 0x2DD3,
             alien_intro: None,
             alien_intro_frame: None,
             tv_channels: Vec::new(),
@@ -3245,7 +3250,7 @@ impl EngineState {
         // Advance the alien's decoded behaviour state machine; when it picks a new
         // animation state it nudges the animation phase, so the alien has idle life
         // (fidgets) between the player's rotations rather than a fixed loop.
-        if self.alien_object.step() {
+        if self.alien_object.step(&mut self.alien_prng) {
             self.scene_frame = self.scene_frame.wrapping_add(self.alien_object.anim as usize % 3);
         }
         let hnm = &self.alien_views[idx];

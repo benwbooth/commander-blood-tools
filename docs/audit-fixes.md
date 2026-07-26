@@ -13140,3 +13140,45 @@ port does not carry here.
 
 2228 items, 1093 confirmed (49.1%), 1135 open. 713 citations verified, 0 wrong.
 614 lib tests, 0 failures.
+
+## #400 — the alien PRNG is one shared stream, not a seed per object
+
+Verifying `croolis::step`'s citations (all exact, in `XDB:croolis`) turned up the
+thing the citations were next to:
+
+    0x16B4  mov ax, word ptr fs:[0x105c]     read the seed
+    0x16B8  ror ax, 7 / sbb ax, 0            step it
+    0x16BE  mov word ptr fs:[0x105c], ax     WRITE IT BACK
+
+`fs:0x105C` is a GLOBAL. Every object in the colony draws from ONE stream, in the
+order their `+0x38` timers expire. The port gave each object its own `prng` field
+and advanced it privately — and the struct doc even labelled that field
+"`fs:[0x105C]`", so the correct address was sitting on the wrong shape.
+
+WORSE, A TEST DEFENDED IT. `assert_ne!(colony.objects[0].prng, colony.objects[1].prng)`
+with the comment "Objects are seeded distinctly so they don't all change state in
+lockstep", against a constructor seeding `base_seed + i * 0x9E3B`. That is a
+plausible-sounding invention with a test pinning it in place — the exact failure
+the faithfulness memo names, and it survived because the invention was reasonable
+engineering. The overlay achieves de-sync differently: objects share the stream
+and separate because their TIMERS expire on different frames.
+
+Fixed. `AlienColony::prng` is now the stream (`fs:[0x105C]`); `AlienObject::step`
+and `dispatch` take `&mut u16` and draw from it, keeping what they drew;
+`AlienColony::new`'s `base_seed` seeds the STREAM, not the objects; the engine's
+standalone object draws from an `alien_prng` field the same way.
+
+The replacement test encodes the REAL behaviour and had to be corrected once
+mid-write: my first version asserted the three objects had drawn after three gate
+updates, but a 50-frame timer only ticks to 47 in 21 frames, so nothing had drawn
+at all. It now asserts both halves — nothing drawn early, then after the timers
+expire the three objects hold CONSECUTIVE values of one stream and the stream ends
+where the last object left it. That is a claim the old per-object model cannot
+satisfy.
+
+Still not modelled, and still cited: the second `ror/sbb` @`0x16E5` (NOT written
+back to the global) landing in `+0x42`, which is the field the proximity gate
+reads as the object's X.
+
+2228 items, 1093 confirmed (49.1%), 1135 open. 713 citations verified, 0 wrong.
+614 lib tests, 0 failures.

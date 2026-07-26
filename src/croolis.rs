@@ -66,7 +66,14 @@ impl AlienMethod {
 /// its PRNG seed word (`fs:[0x105C]`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct AlienObject {
-    /// PRNG seed word (`fs:[0x105C]`).
+    /// The PRNG seed this object last drew (`fs:[0x105C]` AFTER its own step).
+    ///
+    /// NOT the sequence itself (audit-fixes #400). `fs:0x105C` is a GLOBAL —
+    /// `mov ax, word ptr fs:[0x105c]` @`XDB:croolis:0x16B4`, stepped by
+    /// `ror ax,7 / sbb ax,0`, written back by `mov word ptr fs:[0x105c], ax`
+    /// @`0x16BE` — so every object in the colony draws from ONE shared stream,
+    /// in the order their timers expire. This field records what this object
+    /// drew; [`AlienColony::prng`] holds the stream.
     pub prng: u16,
     /// `+0x36` state flag (1 = a new animation state was just chosen this frame).
     pub state_flag: u16,
@@ -274,9 +281,9 @@ impl AlienObject {
     /// colony iterator): the animation state machine advances, the null method and
     /// not-yet-decoded sub-behaviours are no-ops. Returns `true` on an anim state
     /// change.
-    pub fn dispatch(&mut self) -> bool {
+    pub fn dispatch(&mut self, stream: &mut u16) -> bool {
         match self.method {
-            AlienMethod::AnimStateMachine => self.step(),
+            AlienMethod::AnimStateMachine => self.step(stream),
             AlienMethod::Null | AlienMethod::SubBehaviour(_) => false,
         }
     }
@@ -309,13 +316,17 @@ impl AlienObject {
     /// PRNG step whose result lands in `+0x42` (`0x16E5`..`0x16EB`) — which is
     /// the very field the proximity gate reads as the object's X — and
     /// `[si+0x50] = ax & 0xFFC` / `[si+0x52] = 0` (`0x16EE`..`0x16F4`).
-    pub fn step(&mut self) -> bool {
+    pub fn step(&mut self, stream: &mut u16) -> bool {
         if self.timer > 0 {
             self.timer -= 1;
             self.state_flag = 0;
             return false;
         }
-        self.prng = alien_anim_prng_next(self.prng);
+        // Draw from the SHARED stream (`fs:[0x105C]`, 0x16B4..0x16BE), then keep
+        // what we drew. Objects de-sync because their timers expire on different
+        // frames, not because they were seeded differently.
+        *stream = alien_anim_prng_next(*stream);
+        self.prng = *stream;
         self.state_flag = 1;
         self.timer = ALIEN_STATE_TIMER_RELOAD;
         self.anim = self.anim.wrapping_add(ALIEN_ANIM_STEP);
@@ -336,6 +347,12 @@ pub struct AlienColony {
     /// Frame-gate countdown (`cs:0xB72`); the colony steps when it reaches 0, then
     /// reloads to [`ALIEN_COLONY_FRAME_GATE`].
     pub frame_timer: u8,
+    /// THE SHARED PRNG STREAM — the global `fs:[0x105C]` (audit-fixes #400).
+    /// `0x16B4` reads it, `ror ax,7 / sbb ax,0` steps it, `0x16BE` writes it
+    /// back, so all objects draw from one sequence in the order their timers
+    /// expire. The port used to give each object its own seed and a test
+    /// asserted they differed, which made an invention look like a decode.
+    pub prng: u16,
 }
 
 /// The dispatcher's frame-gate reload: `mov word cs:[0xb72],7` at croolis.xdb
@@ -349,14 +366,18 @@ pub struct AlienColony {
 pub const ALIEN_COLONY_FRAME_GATE: u8 = 7;
 
 impl AlienColony {
-    /// A colony of `count` objects, PRNG-seeded distinctly (the overlay seeds each
-    /// object from `fs:[0x105C]`; here we vary the seed per index so they de-sync).
+    /// A colony of `count` objects sharing ONE PRNG stream — which is what
+    /// `fs:[0x105C]` is. `base_seed` seeds the STREAM, not the objects.
+    ///
+    /// This used to seed each object as `base_seed + i * 0x9E3B` "so they
+    /// de-sync". Nothing in the overlay does that; objects de-sync because their
+    /// `+0x38` timers expire on different frames, and each then draws the next
+    /// value from the shared stream (audit-fixes #400).
     pub fn new(count: usize, base_seed: u16) -> Self {
         Self {
-            objects: (0..count)
-                .map(|i| AlienObject::new(base_seed.wrapping_add((i as u16).wrapping_mul(0x9E3B))))
-                .collect(),
+            objects: (0..count).map(|_| AlienObject::new(0)).collect(),
             frame_timer: ALIEN_COLONY_FRAME_GATE,
+            prng: base_seed,
         }
     }
 
@@ -369,8 +390,9 @@ impl AlienColony {
             return false;
         }
         self.frame_timer = ALIEN_COLONY_FRAME_GATE;
+        let stream = &mut self.prng;
         for object in &mut self.objects {
-            object.dispatch();
+            object.dispatch(stream);
         }
         true
     }
@@ -499,13 +521,14 @@ mod tests {
             AlienMethod::SubBehaviour(0x0A30)
         );
         // The null method never changes state; the anim method eventually does.
+        let mut stream = 0x1u16;
         let mut null = AlienObject::new(0x1);
         null.method = AlienMethod::Null;
         for _ in 0..100 {
-            assert!(!null.dispatch());
+            assert!(!null.dispatch(&mut stream));
         }
         let mut anim = AlienObject::new(0x1);
-        let changed = (0..100).any(|_| anim.dispatch());
+        let changed = (0..100).any(|_| anim.dispatch(&mut stream));
         assert!(changed, "anim-state object changes state within its timer window");
     }
 
@@ -521,8 +544,33 @@ mod tests {
             }
         }
         assert_eq!(updates, 3, "colony updates once per 7-frame gate");
-        // Objects are seeded distinctly so they don't all change state in lockstep.
-        assert_ne!(colony.objects[0].prng, colony.objects[1].prng);
+        // ONE SHARED STREAM (`fs:[0x105C]`, audit-fixes #400). This used to assert
+        // objects[0].prng != objects[1].prng, justified as "seeded distinctly so
+        // they don't all change state in lockstep" -- an invention the overlay
+        // does not make.
+        //
+        // Nothing has drawn yet: every object starts with the same 50-frame
+        // timer, and three gate updates only tick it to 47.
+        assert!(colony.objects.iter().all(|o| o.prng == 0), "no draws yet");
+        assert_eq!(colony.prng, 0x1234, "stream untouched");
+
+        // Run until the timers expire. All three then draw on the SAME update,
+        // in object order, taking CONSECUTIVE values from the one stream.
+        for _ in 0..(ALIEN_COLONY_FRAME_GATE as u32 * 48) {
+            colony.step();
+        }
+        let mut expected = 0x1234u16;
+        for (i, object) in colony.objects.iter().enumerate() {
+            expected = alien_anim_prng_next(expected);
+            assert_eq!(
+                object.prng, expected,
+                "object {i} draws the next value from the shared stream"
+            );
+        }
+        assert_eq!(
+            colony.prng, expected,
+            "the stream ends where the last object left it"
+        );
     }
 
     #[test]
@@ -566,16 +614,17 @@ mod tests {
 
     #[test]
     fn object_holds_then_changes_state_on_timer_expiry() {
-        let mut obj = AlienObject::new(0x1357);
+        let mut stream = 0x1357u16;
+        let mut obj = AlienObject::new(0);
         assert_eq!(obj.timer, ALIEN_STATE_TIMER_RELOAD);
         // Holds for the timer window (no state change, flag stays 0).
         for _ in 0..ALIEN_STATE_TIMER_RELOAD {
-            assert!(!obj.step());
+            assert!(!obj.step(&mut stream));
             assert_eq!(obj.state_flag, 0);
         }
         // Timer now 0 → next step chooses a new state.
         let anim_before = obj.anim;
-        assert!(obj.step(), "state change on timer expiry");
+        assert!(obj.step(&mut stream), "state change on timer expiry");
         assert_eq!(obj.state_flag, 1);
         assert_eq!(obj.timer, ALIEN_STATE_TIMER_RELOAD);
         assert_eq!(obj.anim, anim_before.wrapping_add(ALIEN_ANIM_STEP));
