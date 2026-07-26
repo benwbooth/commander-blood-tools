@@ -2229,7 +2229,14 @@ pub struct BloodPrng {
 }
 
 impl Default for BloodPrng {
-    /// The static (unseeded) state from the shipped BLOODPRG.EXE image.
+    /// The static (unseeded) state from the shipped BLOODPRG.EXE image — VERIFIED
+    /// rather than assumed (audit-fixes #276), because #275 found a `Default` whose
+    /// zero was a guess about a field the routine it cited never wrote.
+    ///
+    /// The five state bytes live at `cs:[0xAEE..0xAF2]` with `cs = 0x1CE`
+    /// (base file `0x22E0`), so file `0x2DCE`, and the image holds
+    /// `00 00 00 00 00` there. Zero here is the game's value, not an absence of
+    /// one. `prng_state_is_zero_in_the_shipped_image` reads it back.
     fn default() -> Self {
         Self {
             seed_word: 0,
@@ -4377,6 +4384,36 @@ fn next_target_list_draw_color(state: &mut Ship3dTargetHitState, activate: bool)
 
 #[cfg(test)]
 mod tests {
+
+    /// `BloodPrng::default()` claims the shipped image's unseeded state. Check it,
+    /// because #275 showed a defaulted zero can be a guess about an unwritten
+    /// field rather than a value read from anywhere.
+    #[test]
+    fn prng_state_is_zero_in_the_shipped_image() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        // cs = 0x1CE for the PRNG (`0x1CE:0xB02` is `0x2DE2`), so base = 0x22E0.
+        let base = 0x600 + 0x1CE * 16;
+        assert_eq!(base + 0xB02, 0x2DE2, "the segment base does not place the PRNG");
+        assert_eq!(
+            &exe[base + 0xAEE..base + 0xAF3],
+            &[0, 0, 0, 0, 0],
+            "the shipped PRNG state is not zero, so the default is wrong"
+        );
+
+        let d = BloodPrng::default();
+        assert_eq!((d.seed_word, d.a, d.b, d.counter), (0, 0, 0, 0));
+
+        // And the seeder writes the RTC byte into BOTH halves (`mov ah,al`),
+        // leaving the rest zero -- so a seeded PRNG differs from the default in
+        // exactly one field.
+        let seeded = BloodPrng::seeded_from_rtc_seconds(0x2A);
+        assert_eq!(seeded.seed_word, 0x2A2A);
+        assert_eq!((seeded.a, seeded.b, seeded.counter), (0, 0, 0));
+    }
 
     /// THE APPROACH CAMERA'S ORIGIN, against the image and the two routines that
     /// set it. `origin_y` was 0 until #275; the phase-3 reset does not write that

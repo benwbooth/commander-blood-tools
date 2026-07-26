@@ -8500,3 +8500,27 @@ The general shape: a struct field that a routine does NOT set is a claim about
 what came before it, and zero is a guess. #229 had already read the shipped origin
 as `(10000, 12000, 0)` and recorded it for `NAV_CAMERA_ORIGIN`; the same three
 numbers were sitting in this file with the middle one replaced by a default.
+
+## #276 — auditing the other defaults after #275
+
+#275 found a `Default` whose zero was a guess about a field the routine it cited
+never wrote. That is a lens, so I turned it on the tree's other hand-written
+`Default` impls.
+
+`Ship3dNavigationFinalResetState` is all zeros, and legitimately: it is the INPUT
+state a reset function consumes, not a claim about any cell's value — the reset's
+own constants (`SHIP_3D_FINAL_RESET_SCROLL_MODE` and friends) carry the after
+values. A derive would do the same job.
+
+`BloodPrng::default()` claimed "the static (unseeded) state from the shipped
+BLOODPRG.EXE image", which IS a claim about cells and was not checked anywhere.
+It is true: the five state bytes sit at `cs:[0xAEE..0xAF2]` with `cs = 0x1CE`
+(base `0x22E0`, confirmed because `0x22E0 + 0xB02 = 0x2DE2`, the PRNG's entry),
+and the image holds five zero bytes there. Now read back by a test, along with the
+seeder's `mov ah,al` doubling — a seeded PRNG differs from the default in exactly
+one field, which is the property #246's bug made worth pinning.
+
+So one of the two claims was worth verifying and both are now recorded as what
+they are. The distinction matters more than the result: a zero that MEANS the
+game's value and a zero that means "nothing set this yet" look identical in Rust,
+and only one of them is safe to rely on.
