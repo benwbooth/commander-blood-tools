@@ -8524,3 +8524,32 @@ So one of the two claims was worth verifying and both are now recorded as what
 they are. The distinction matters more than the result: a zero that MEANS the
 game's value and a zero that means "nothing set this yet" look identical in Rust,
 and only one of them is safe to rely on.
+
+## #277 — an approximation that had already been replaced
+
+`render_star_map_navview`'s doc says it is "a VISUAL APPROXIMATION ... without the
+exact recovered geometry/projection", verified against a DOSBox capture. By the
+prime rule that is an APPROX row waiting to be written: a capture-shaped surface
+standing in for a decode.
+
+It did not need writing. `engine.rs` renders the nav view with
+`render_star_map_navview_projected`, which goes through `project_star_map_point`
+— the exact `0x9BBA` arithmetic I verified instruction by instruction two entries
+ago in #273. The approximation is reachable only from its own `_panned` wrapper
+and from tests.
+
+So the live path is the decoded one and has been for some time. What remained was
+a fabricated surface sitting beside the real one with a doc that reads like a
+description of what the port does. Marked SUPERSEDED in the source, and a
+port-validation row records that the geometry question is closed rather than open.
+
+Kept rather than deleted: its tests exercise the pyramid/orb composition, and
+#240 is the standing reminder that "unused duplicate" is a conclusion to reach
+after tracing, not before. The end state is removal once those tests point at the
+projected renderer — which is a smaller and safer change than deleting a draw path
+whose callers I had not checked.
+
+Worth noting how this was found: not by looking for fabricated surfaces, but by
+working through the ASM? list and reading a doc that described its own function
+honestly. The approximation labelled itself; nothing else in the tree knew it had
+been superseded.

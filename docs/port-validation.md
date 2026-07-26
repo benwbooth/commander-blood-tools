@@ -497,6 +497,22 @@ is a further decode in `croolis.xdb` (`add dword ptr [0x22ee],eax` @`0x1FD5` is
 where it is written; what computes `eax` there is the question), not a
 signature problem any more.
 
+## STAR-MAP NAV VIEW — the exact projection IS the live one (2026-07-25)
+
+Checked while reading `ship3d.rs`'s remaining ASM? functions, because
+`render_star_map_navview` is documented as "a VISUAL APPROXIMATION ... without the
+exact recovered geometry/projection", which would be an APPROX row.
+
+It is not the live path. `engine.rs` calls `render_star_map_navview_projected`,
+which projects through `project_star_map_point` — the exact `0x9BBA` arithmetic,
+verified instruction by instruction in audit-fixes #273 (dot products, `sar 7`,
+the `0xa0`/`0x64` centres, and the depth's unsigned-vs-signed division split).
+
+So the approximation is superseded code, reachable only from its own wrapper and
+from tests. Marked as such in the source. No APPROX row is needed for the nav
+view's geometry; the row that WOULD have been needed is closed by the projected
+renderer already being wired.
+
 ## NAV DESTINATION LIST GEOMETRY — APPROX, replacement already written (2026-07-25)
 
 `engine::NAV_DEST_X/Y/PITCH/W` (6, 22, 10, 150) place the choose-a-location list

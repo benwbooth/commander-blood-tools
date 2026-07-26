@@ -2636,6 +2636,16 @@ pub const SHIP_3D_HUD_PYRAMID_VERTICES: [[i16; 3]; 32] = [
 /// exact recovered geometry/projection (see `SHIP_3D_HUD_PYRAMID_VERTICES` — the
 /// game's own projection is still being decoded). `light`/`dark`/`orb` are palette
 /// indices for the lit pyramid faces, shadowed faces, and the orb.
+/// SUPERSEDED AND NOT LIVE (audit-fixes #277). `engine.rs` renders the nav view
+/// with [`render_star_map_navview_projected`], which uses the EXACT projection
+/// decoded from `0x9BBA` and verified instruction-by-instruction in #273. This
+/// approximation and its `_panned` sibling are reached only from each other and
+/// from tests.
+///
+/// Kept, not deleted, because its tests still exercise the pyramid/orb
+/// composition — but marked, because a fabricated surface sitting beside the real
+/// one is exactly what a later reader mistakes for the live path. The end state is
+/// removal once those tests point at the projected renderer.
 pub fn render_star_map_navview(buffer: &mut [u8], light: u8, dark: u8, orb: u8) {
     render_star_map_navview_panned(buffer, light, dark, orb, 0);
 }
