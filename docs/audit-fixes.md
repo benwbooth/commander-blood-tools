@@ -14014,3 +14014,36 @@ already reasoned all of this out; what was missing was somebody doing it.
 
 2229 items, 1112 confirmed (49.9%), 1117 open. 752 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #427 — the fabricated-surface sweep, and one row that must NOT be deleted
+
+After #426 I swept for the same shape — docs saying "VISUAL APPROXIMATION",
+"FABRICATED", "NOT LIVE", "stopgap". Six hits, four of them already-resolved
+prose ("no fabricated stand-in", "replacing the old fabricated 7x4 grid").
+
+One was live and instructive: `NAV_DEST_X` and its three siblings, whose doc opens
+"APPROX — FABRICATED LAYOUT, and the decoded replacement already exists." Read on
+its own that is a delete, exactly like #426. It would have been WRONG.
+
+`#240` had already traced what fills that list: `nav_destinations` is built in
+main.rs from the SCRIPT3..5 BUNDLES, so it is a PORT-SIDE AFFORDANCE for reaching
+scenes — not a second model of the game's destination list, which comes from the
+DEB candidate records (`0x7259`) and routes through `console_box`. The doc says so
+explicitly, and says why the earlier reading (#239, "a second layout for a game
+surface") was too broad.
+
+So the sweep's value here was NEGATIVE, and that is worth as much as a deletion:
+two surfaces documented in nearly identical language, one of which had to go and
+one of which had to stay, distinguished only by someone having traced the data
+that feeds it.
+
+Reclassified it `INFRA` rather than leaving it provisional. `ASM?` was simply the
+wrong question: these four numbers have no binary counterpart and never will, so
+no amount of decoding closes the row. `INFRA` is an existing settled category with
+97 members meaning exactly that. This is #421's point applied to one row — holding
+an unverifiable-by-construction item in the open queue misrepresents what is left.
+The doc keeps its APPROX label, because the numbers are still invented and a
+reader must not mistake them for decoded ones.
+
+2229 items, 1113 confirmed (49.9%), 1116 open. 752 citations verified, 0 wrong.
+723 workspace tests, 0 failures.

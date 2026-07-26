@@ -595,7 +595,7 @@ open_location_info_panel	src/engine.rs	4580	fn	0x8FF4,0x905B,0x9029,0x2AAB,0x903
 close_location_info_panel	src/engine.rs	4599	fn	0x912E,0x922A,0x278C,0x2788,0xADB,0x2789	ASM	/// Ask the panel to close — the `0x912E` edge, where the mouse being enabled /// again puts the FSM into state 2 (`0x922A`: `[0x278C]=0`, `[0x2788]=2`, /// `[0xADB]=0`, `inc [0x2789]`).
 step_location_info_panel	src/engine.rs	4617	fn	0x90FF,0x9120,0x2789,0x91F1,0x9228,0x27BF,0xFAD	ASM	/// Advance the panel one frame and return the rect to draw, if any. /// /// * `ZoomingOpen` (`0x90FF..0x9120`): `inc [0x2789]`, interpolate the cursor ///   rect toward the panel rect, and on complet
 load_nav_chart	src/engine.rs	4667	fn		TESTED	/// Load the real navigation star-map background from `CHART.FD` (an IFF/PBM image /// under `iso`) — the game's own chart the ship-nav screen shows. Returns whether it /// loaded; when present, `rend
-NAV_DEST_X	src/engine.rs	4708	const	0x8428,0x84A1,0x84A7,0x84AD,0x7259	ASM?	/// APPROX — FABRICATED LAYOUT, and the decoded replacement already exists. /// /// These four numbers place the choose-a-location list at a fixed `x=6, /// y=22`, pitch 10, width 150. NOTHING cites t
+NAV_DEST_X	src/engine.rs	4708	const	0x8428,0x84A1,0x84A7,0x84AD,0x7259	INFRA	/// APPROX — FABRICATED LAYOUT, and the decoded replacement already exists. /// /// These four numbers place the choose-a-location list at a fixed `x=6, /// y=22`, pitch 10, width 150. NOTHING cites t
 NAV_DEST_Y	src/engine.rs	4709	const		UNVERIFIED	
 NAV_DEST_PITCH	src/engine.rs	4710	const		UNVERIFIED	
 NAV_DEST_W	src/engine.rs	4711	const		UNVERIFIED	
