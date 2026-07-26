@@ -5723,8 +5723,8 @@ impl VmMachine {
         // THE ENGINE'S OWN PRNG (0x1CE:0xB02, file 0x2DE2), ported exactly:
         // an 8-round rcr/rcl bit-interleave of the two state bytes into AX,
         // XORed with the 16-bit seed (CMOS RTC seconds at boot; seeder file
-        // 0x2DD4: out 0x70,0 / in 0x71), then the counter feedback
-        // (af2 += 1; af1 = bh - af2; af0 = bl ^ rol(af2,1)) and
+        // 0x2DD4: out 0x70,0 / in 0x71), then the counter feedback on the
+        // STORED bytes (af2 += 1; af1 -= af2; af0 ^= rol(af2,1)) and
         // modulo-by-repeated-subtraction when a bound is given.
         let mut bl = self.prng_af0;
         let mut bh = self.prng_af1;
@@ -5746,8 +5746,20 @@ impl VmMachine {
         }
         ax ^= self.prng_seed;
         self.prng_af2 = self.prng_af2.wrapping_add(1);
-        self.prng_af1 = bh.wrapping_sub(self.prng_af2);
-        self.prng_af0 = bl ^ self.prng_af2.rotate_left(1);
+        // THE FEEDBACK USES THE STORED BYTES, NOT THE ROTATED REGISTERS. The
+        // eight rounds rotate `bl`/`bh` in REGISTERS only; `0x2E00 mov bx,
+        // cs:[0xaee]` then overwrites BX wholesale with the seed, destroying
+        // both, and the feedback operates on memory:
+        //
+        //   0x2E17  sub byte cs:[0xaf1],bl    af1 -= counter
+        //   0x2E1E  xor byte cs:[0xaf0],bl    af0 ^= rol(counter,1)
+        //
+        // This port used `bh`/`bl` — the rotated values — which agrees at an
+        // all-zero state and diverges from the second draw onward. Found by
+        // differentialling against `func_2de2` (audit-fixes #246).
+        self.prng_af1 = self.prng_af1.wrapping_sub(self.prng_af2);
+        self.prng_af0 ^= self.prng_af2.rotate_left(1);
+        let _ = (bl, bh); // consumed by AX above; deliberately not the feedback
         if n != 0 {
             while ax >= n {
                 ax -= n;
@@ -7087,6 +7099,71 @@ pub fn decompile_script(
 
 #[cfg(test)]
 mod tests {
+
+    /// THE PRNG, DIFFERENTIALLED AGAINST ITS LIFT — the strongest evidence this
+    /// tree offers, since `func_2de2` is the original instruction stream
+    /// transliterated rather than a second reading of it.
+    ///
+    /// A PRNG is the ideal subject: it either agrees bit-for-bit over thousands
+    /// of draws or it diverges and never recovers. The state is four bytes the
+    /// lift keeps in code space — `cs:[0xAEE]` the seed, `cs:[0xAF0/0xAF1]` the
+    /// pair, `cs:[0xAF2]` the counter — and the native keeps in fields, so both
+    /// are started identical and compared after every draw.
+    #[test]
+    fn the_prng_matches_its_lift_draw_for_draw() {
+        use crate::recomp::{auto, machine::Machine};
+        const CS: u16 = 0x2600;
+
+        for (seed, af0, af1, af2, bound) in [
+            (0x2727u16, 0u8, 0u8, 0u8, 0u16),
+            (0x2727, 0x5A, 0xA5, 0x11, 10),
+            (0xFFFF, 0xFF, 0xFF, 0xFF, 7),
+            (0x0001, 0x01, 0x80, 0x7F, 100),
+        ] {
+            let mut native = VmMachine::new();
+            native.prng_seed = seed;
+            native.prng_af0 = af0;
+            native.prng_af1 = af1;
+            native.prng_af2 = af2;
+
+            let mut m = Machine::new();
+            m.regs.cs = CS;
+            m.regs.ds = CS;
+            m.regs.ss = 0x9000;
+            m.regs.set_sp(0xFFF0);
+            let base = (CS as u32) * 16;
+            m.mem[(base + 0xAEE) as usize] = seed as u8;
+            m.mem[(base + 0xAEF) as usize] = (seed >> 8) as u8;
+            m.mem[(base + 0xAF0) as usize] = af0;
+            m.mem[(base + 0xAF1) as usize] = af1;
+            m.mem[(base + 0xAF2) as usize] = af2;
+
+            for draw in 0..2000u32 {
+                let want = native.rand(bound);
+
+                m.regs.set_ax(bound);
+                auto::func_2de2(&mut m);
+                let got = m.regs.ax();
+
+                assert_eq!(
+                    got, want,
+                    "seed {seed:#06x} bound {bound}: draw {draw} is {got} native vs \
+                     {want} lifted"
+                );
+                // And the STATE must track, or the next draw diverges for a
+                // reason this draw did not show.
+                assert_eq!(
+                    (
+                        m.mem[(base + 0xAF0) as usize],
+                        m.mem[(base + 0xAF1) as usize],
+                        m.mem[(base + 0xAF2) as usize]
+                    ),
+                    (native.prng_af0, native.prng_af1, native.prng_af2),
+                    "seed {seed:#06x}: state diverged after draw {draw}"
+                );
+            }
+        }
+    }
 
     /// SETTLES #238's OPEN QUESTION: does the encounter ladder fire at all?
     ///

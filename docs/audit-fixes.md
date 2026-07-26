@@ -7583,3 +7583,47 @@ The three undocumented ones (`PSP_SEG`, `ENV_SEG`, `MEM_TOP_SEG`) got docs befor
 being settled. Settling an undocumented constant as INFRA would record a judgement
 nobody can check — the same objection #219 raised against settling documented-but
 -unverified structs, pointed the other way.
+
+## #246 — a real PRNG bug, found by differentialling against the lift
+
+`vm::rand` ports the engine's PRNG (`0x2DE2`). Differentialling it against
+`recomp::auto::func_2de2` — the transliterated instruction stream — the DRAWN
+VALUES agreed and the STATE diverged after the second draw:
+
+```text
+  lifted   af0=6  af1=253
+  native   af0=4  af1=254
+```
+
+The eight rounds rotate `bl`/`bh` in REGISTERS to build AX. Then `0x2E00 mov bx,
+cs:[0xaee]` overwrites BX wholesale with the seed, DESTROYING both rotated bytes,
+and the feedback operates on memory:
+
+```text
+  0x2E17  sub byte cs:[0xaf1],bl    af1 -= counter
+  0x2E1E  xor byte cs:[0xaf0],bl    af0 ^= rol(counter,1)
+```
+
+The port used the rotated `bh`/`bl` for that feedback. Fixed to use the stored
+bytes.
+
+WHY IT SURVIVED. From an all-zero state the rotated and stored values coincide,
+so the first draw matches and the sequence only separates from the second onward.
+Every existing test started from a fresh `VmMachine` — `prng_af0/af1 = 0` — and so
+sat exactly on the one state where the bug is invisible. The port's own comment
+documented the wrong rule too, in the same terms, which is how it read as
+deliberate.
+
+WHAT IT AFFECTED: every consumer of engine randomness — the subtitle chatter's
+burble picker (`prng(10)+7`), the ship-3D transition gates — drew from a sequence
+that diverged from the game's after two values. Not crashes; wrong choices,
+forever, in a way nothing would flag.
+
+This is the argument for differentials over citations. `rand` was settled ASM with
+an accurate-looking comment citing the right routine, and it was wrong. A lift
+does not read the code, it IS the code, so agreeing with it is a stronger claim
+than agreeing with a reading of it. `check_liftable_twins.py` lists 27 more
+FUNCTION candidates (its raw list of 123 is mostly constants, which cannot be run
+beside anything) — each one is this same opportunity.
+
+Settled ORACLE, the status reserved for differentialled rows.
