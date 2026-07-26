@@ -6377,10 +6377,18 @@ impl VmMachine {
     pub fn ship_click_initial_target(&self) -> Option<u16> {
         let arche = self.arche_offset?;
         let candidates = self.destination_candidate_records(arche); // 0xB0EE
+        // 0xB0F3 `mov ax, word ptr es:[di + 0x16]`, and di is `mov di, word ptr
+        // [0x6752]` @0xB0EA — the arche global — so ARCHE_LOCATION_FIELD (0x16)
+        // is that displacement, not a chosen name for it.
         let location = self.rec_read(arche.wrapping_add(ARCHE_LOCATION_FIELD)); // 0xB0F3
         // 0xB0F7 reads [0x250B] BEFORE the branch, so it is the arche list's head.
         let head = candidates.first().copied().unwrap_or(0xFFFF);
+        // `test word ptr es:[eax], 0x140` @0xB0FB — the mask is the immediate.
         if self.rec_read(location) & SHIP_CLICK_LOCATION_KIND_MASK != 0 {
+            // `mov word ptr [0x251b], di` @0xB10D then `sub word ptr [0x251b], 4`
+            // @0xB111: the -4 is SHIP_3D_TARGET_NAME_TO_RECORD, and di here is
+            // still the [0x250B] head because the `jne` @0xB101 skipped the
+            // re-root that would have overwritten it.
             Some(head.wrapping_sub(SHIP_3D_TARGET_NAME_TO_RECORD)) // 0xB10D/0xB111
         } else {
             // 0xB103..0xB10A: re-root the list, then commit the location itself.

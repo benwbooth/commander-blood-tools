@@ -13110,3 +13110,33 @@ frames would drag the cursor.
 
 2228 items, 1092 confirmed (49.0%), 1136 open. 713 citations verified, 0 wrong.
 614 lib tests, 0 failures.
+
+## #399 — three named constants that turned out to be immediates
+
+`commit_world_destination` / `ship_click_initial_target` carried three constants
+with descriptive names — `ARCHE_LOCATION_FIELD`, `SHIP_CLICK_LOCATION_KIND_MASK`,
+`SHIP_3D_TARGET_NAME_TO_RECORD`. A good name hides the question of where a number
+came from, so each was checked against `0xB0DC..0xB116`:
+
+    0xB0EA  mov di, word ptr [0x6752]        di = the ARCHE global
+    0xB0F3  mov ax, word ptr es:[di + 0x16]  -> ARCHE_LOCATION_FIELD = 0x16
+    0xB0FB  test word ptr es:[eax], 0x140    -> ..._KIND_MASK = 0x140
+    0xB10D  mov word ptr [0x251b], di
+    0xB111  sub word ptr [0x251b], 4         -> ..._NAME_TO_RECORD = 4
+
+All three are immediates in the instruction stream, and `0x6752` being the arche
+global (already recorded in four places) is what makes `es:[di+0x16]` an
+arche-relative field rather than an unknown record's.
+
+Also pinned an ordering fact the port relies on silently: at `0xB10D`, `di` is
+still the `[0x250B]` head read at `0xB0F7`, because the `jne` @`0xB101` jumped
+over the re-root at `0xB103` that would have overwritten it. The port's
+`candidates.first()` is correct only under that branch structure, and nothing said
+so.
+
+Not modelled, and now stated rather than left silent: `0xB0DC` also sets
+`[0xADD]=1` and `[0xADA]=0xA` before any of this. Those are UI-state cells the
+port does not carry here.
+
+2228 items, 1093 confirmed (49.1%), 1135 open. 713 citations verified, 0 wrong.
+614 lib tests, 0 failures.
