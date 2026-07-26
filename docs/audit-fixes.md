@@ -8955,3 +8955,54 @@ quietly promote them to fields.
 Citations: 557 verified (from 546), 0 wrong — all eleven instructions in the
 block above confirmed against the image by the guard. 598 lib tests, 0 failures.
 Labelled `0xB629` as `ship_3d_temp_snd_viewport_descriptor_write`.
+
+## #289 — documenting a struct turned up a divergence, and a doc I had to retract mid-edit
+
+`Ship3dPositionRecord` had no doc at all. Writing one meant answering what each
+field IS, and that produced three results, one of which was a correction to what
+I had already typed.
+
+WHAT THE STRUCT IS. Not a byte-layout mirror. In the game a record has no fixed
+field positions — every access goes through `vm_field_offset(selector, kind)`
+(`0x6023`), which indexes the matrix at `DS:0x6D60` by selector and by the
+record's own kind, so one selector lands at different offsets in records of
+different kinds. The struct pre-resolves the three selectors the walk needs.
+`offset` is the record's ADDRESS; the rest are fetched VALUES.
+
+CONFIRMED FROM THE MATRIX, not from the names: selectors 9, 10 and 12 are
+nonzero in column 8 and nowhere else, and column 8 is kind `0x100` (the column is
+the kind's lowest set bit, `bsf` @`0x6027`). So the `kind100_` fields really do
+exist only for kind-`0x100` records, and `None` elsewhere is the table's answer
+rather than missing port data. Pinned in `field_matrix_entries_match_the_constants`,
+which reads the image.
+
+THE RETRACTION. I had already written that "a `vm_field_offset` result of 0 means
+THE KIND HAS NO SUCH COLUMN" and that "the walk tests exactly that". Both wrong,
+caught by checking instead of shipping the sentence. `0x6023` has no
+zero-handling, and its callers differ: the distance routine adds the result
+UNCONDITIONALLY (`add ax,si` @`0x6121`), so for kind `0x40` — whose selector-11
+column IS 0 — the position field legitimately sits AT the record's start. Zero is
+a real offset. Only code that explicitly tests it treats zero as absence, and the
+position walk does not.
+
+WHICH EXPOSED A REAL DIVERGENCE. The port's arm does
+`if parent_field == 0 { return None }`; `0x61C9` does `add si,ax / mov si,[si]`
+with no test, so the game would read the record's KIND WORD as the next pointer.
+Kind `0x20` is the live candidate (its parent column is 0 and neither branch
+catches it first). NOT FIXED, deliberately: kinds `0x20`/`0x40` populate
+selectors {0, 21, 22, 23}, disjoint from the object kinds' {11, 17, ...} — the
+signature of a different record family the walk is never handed. That is an
+argument from the table's shape, not a traced call, so it is written up as an
+OPEN RE QUESTION in docs/port-validation.md with what would settle it. Changing
+the code on a suggestive-but-unproven basis would trade a decoded path for an
+undecoded one.
+
+ALSO CORRECTED: #283 described this function as `0x60DD`'s front half. It merges
+TWO routines — `0x60DD` tests only `0x100` and `0x40` and delegates the rest to
+`0x61A6` (`call` @`0x6126`), which is where kinds 8/`0x10`/`0x200` and the parent
+walk actually live. The union `{8, 0x10, 0x40, 0x200}` is behaviourally right and
+all four resolve selector 11, but NO SINGLE ROUTINE tests all four, and the doc
+now says so.
+
+Citations: 570 verified (from 557), 0 wrong. 701 tests across all binaries, 0
+failures.

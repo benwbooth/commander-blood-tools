@@ -1041,14 +1041,55 @@ pub struct Ship3dNavigationSourceEntry {
     pub entry_kind: u16,
 }
 
+/// One object record as the POSITION WALK (`0x60DD`) needs to see it.
+///
+/// NOT A BYTE-LAYOUT MIRROR, and the distinction matters. In the game a record
+/// has no fixed field positions: every access goes through
+/// `vm_field_offset(selector, kind)` (`0x6023`), which indexes a matrix by
+/// SELECTOR and by the record's own KIND, so the same selector lands at
+/// different offsets in records of different kinds. This struct pre-resolves the
+/// three selectors the walk uses, so the port looks them up once instead of at
+/// every step. `offset` is the record's ADDRESS; the rest are fetched VALUES.
+///
+/// WHICH KINDS HAVE WHICH COLUMNS is readable straight out of the matrix at
+/// `DS:0x6D60`, and it confirms the naming here: selectors 9, 10 and 12 are
+/// nonzero ONLY in column 8, and column 8 is kind `0x100` (the column is the
+/// kind's lowest set bit, so column k ↔ kind 2^k). The `kind100_` fields really
+/// do exist only for kind-`0x100` records; `None` for any other kind is the
+/// table's own answer, not a gap in the port (audit-fixes #289).
+///
+/// A ZERO OFFSET IS NOT AUTOMATICALLY "ABSENT", which is the trap here.
+/// `vm_field_offset` (`0x6023`) just returns `matrix[selector*16 + bsf(kind)]`
+/// with no zero-handling of its own, and its callers differ: the distance
+/// routine adds it unconditionally (`add ax,si` @`0x6121`, `add di,ax` @`0x6167`),
+/// so for kind `0x40` — whose selector-11 column IS 0 — the position field
+/// legitimately sits AT the record's start. Only code that explicitly tests the
+/// result treats 0 as absence. See [`resolve_ship_3d_position_field`], where the
+/// port's zero-test is flagged as having no instruction behind it.
+///
+/// Field → selector, each cited on its own constant:
+/// - `kind_flags` — the kind word at the record's own start, `mov ax,[si]` @`0x60E3`
+/// - `parent_link` — [`SHIP_3D_FIELD_SELECTOR_PARENT_LINK`] (0x11)
+/// - `kind100_match_word` — [`SHIP_3D_FIELD_SELECTOR_KIND100_MATCH_WORD`] (12),
+///   resolved with the fixed kind `0x100`, not the record's own
+/// - `kind100_relation_word` — [`SHIP_3D_FIELD_SELECTOR_KIND100_RELATION_WORD`] (14)
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct Ship3dPositionRecord {
+    /// The record's own address, the value the walk carries in `si`/`di` and
+    /// compares — not a field read out of it.
     pub offset: u16,
+    /// `mov ax,[si]` @`0x60E3`, the kind word at the record's start. Also the
+    /// second argument to every `vm_field_offset` call below, which is why a
+    /// wrong kind here mis-resolves every other field rather than just one.
     pub kind_flags: u16,
     /// Selector-0x11 parent/reference link. `None` represents the binary's
     /// `0xffff` sentinel, which falls back to the named arche object.
     pub parent_link: Option<u16>,
+    /// Selector-12 field, compared against the walk's inherited compare word to
+    /// choose selector 9 (match) or 10 (mismatch) at `0x6104`.
     pub kind100_match_word: Option<u16>,
+    /// Selector-14 field. `None` when the kind lacks column 14, in which case
+    /// [`kind100_relation_word`] yields `kind_flags` instead.
     pub kind100_relation_word: Option<u16>,
 }
 
@@ -3617,6 +3658,39 @@ pub fn build_ship_3d_navigation_candidate_records(
 ///   0x6108  inc ax                      otherwise -> selector 10
 ///   0x6114  cmp ax,0x40                 the direct kinds continue below
 /// ```
+///
+/// THIS FUNCTION MERGES TWO GAME ROUTINES, which #283 did not say and which
+/// changes how the code below should be read (audit-fixes #289). `0x60DD` tests
+/// only `0x100` and `0x40`; everything else it delegates (`call 0x61A6`
+/// @`0x6126`). The remaining three direct kinds and the parent walk live in
+/// `ship_3d_position_field_resolve` (`0x61A6`):
+///
+/// ```text
+///   0x61AB  mov ax,[si]                  the kind
+///   0x61AD  cmp ax,0x100 / je            KIND100
+///   0x61B2  cmp ax,8     / je 0x61DF     direct
+///   0x61B7  cmp ax,0x10  / je 0x61DF     direct
+///   0x61BC  cmp ax,0x200 / je 0x61DF     direct   <- note: NO 0x40 here
+///   0x61C3  mov ax,0x11 / call 0x6023    the parent selector
+///   0x61C9  add si,ax                    added UNCONDITIONALLY
+///   0x61CB  mov si,[si]                  follow the link
+///   0x61CD  cmp si,-1 / jne              0xFFFF -> arche fallback gs:[0x6752]
+/// ```
+///
+/// The union of the two ladders is `{8, 0x10, 0x40, 0x200}` and all four resolve
+/// selector 11, so the `match` below is behaviourally right — but `0x40` comes
+/// from a different routine than the other three, and no single routine tests
+/// all four.
+///
+/// SUSPECTED DIVERGENCE, recorded rather than silently "fixed": the arm below
+/// does `if parent_field == 0 { return None }`, and NO INSTRUCTION DOES THAT.
+/// `0x61C9` adds the offset unconditionally and dereferences, so a kind whose
+/// selector-0x11 column is 0 makes the game read the KIND WORD ITSELF as the
+/// next record pointer. Column 5 (kind `0x20`) is such a column. Whether any
+/// shipped record has kind `0x20` and reaches this walk is a DATA question that
+/// decides whether this is a live bug or an unreachable one; until that is
+/// answered, changing it would trade a decoded-but-unreached path for an
+/// undecoded one. Tracked in docs/port-validation.md.
 pub fn resolve_ship_3d_position_field(
     records: &[Ship3dPositionRecord],
     record_offset: u16,

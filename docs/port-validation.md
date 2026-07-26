@@ -1202,3 +1202,39 @@ STILL OPEN on this thread, precisely:
 * The hover variant's rect lives in ENTITY `0x1F`'s record (`DS:0x65F2`, the last
   of the 32 entity slots), which is runtime state the port's nav slots do not
   carry entity ids for.
+
+## OPEN RE QUESTION — the position walk's parent-link zero test (audit-fixes #289)
+
+`resolve_ship_3d_position_field` (`src/ship3d.rs`) contains
+
+    if parent_field == 0 { return None; }
+
+and NO INSTRUCTION IN THE GAME DOES THAT. The walk at `ship_3d_position_field_resolve`
+(`0x61A6`) adds the selector-0x11 offset unconditionally and dereferences:
+
+    0x61C3  mov ax,0x11 / call 0x6023     resolve the parent selector
+    0x61C9  add si,ax                     <- no test
+    0x61CB  mov si,[si]                   follow the link
+
+`vm_field_offset` (`0x6023`) has no zero-handling either — it returns
+`matrix[selector*16 + bsf(kind)]` and returns. So for a kind whose selector-0x11
+column is 0, the GAME reads the record's own KIND WORD as the next record
+pointer, while the PORT stops and returns `None`.
+
+WHICH KINDS HAVE A ZERO PARENT COLUMN, read out of the matrix at `DS:0x6D60`:
+`0x20`, `0x40`, `0x100`, and `0x800`..`0x8000`. Of these, `0x100` is caught by the
+kind100 branch before the walk and `0x40` is special-cased by the caller
+(`0x6114`), so the live candidate is **kind `0x20`**.
+
+EVIDENCE IT MAY BE UNREACHABLE, which is why this is a question and not a fix:
+kinds `0x20` and `0x40` are populated for selectors {0, 21, 22, 23} only, a field
+set DISJOINT from the object kinds' {11, 17, ...}. That is the signature of a
+different record family, one the position walk would never be handed. Suggestive,
+not conclusive — it is an argument from the shape of the table, not from a
+traced call.
+
+TO SETTLE IT: determine whether any record reaching `0x61A6` can carry kind
+`0x20`, either by enumerating the shipped records' kind words or by tracing the
+callers of `0x60DD`/`0x61A6`. Until then the port's early return is a DEVIATION
+that is documented rather than silently correct — changing it now would trade a
+decoded-but-possibly-unreached path for an undecoded one.

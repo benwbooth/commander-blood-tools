@@ -7559,6 +7559,44 @@ mod tests {
         for column in 0..11 {
             assert_eq!(at(0, column), 2, "selector 0 column {column}");
         }
+
+        // audit-fixes #289. The three kind100 selectors are named for kind 0x100,
+        // and the matrix is what justifies the name: each is nonzero in column 8
+        // ONLY. Column k corresponds to kind 2^k (`bsf` @0x6027), so column 8 is
+        // kind 0x100. This makes `Ship3dPositionRecord`'s `None` for any other
+        // kind the TABLE's answer rather than missing port data.
+        for selector in [9usize, 10, 12] {
+            for column in 0..16 {
+                let expected_nonzero = column == 8;
+                assert_eq!(
+                    at(selector, column) != 0,
+                    expected_nonzero,
+                    "selector {selector} column {column}: the kind100 selectors \
+                     must be populated for kind 0x100 and nothing else"
+                );
+            }
+        }
+
+        // The position selector has NO column for kind 0x40 (column 6), yet the
+        // distance routine resolves it for exactly that kind and adds the result
+        // unconditionally (`add ax,si` @0x6121). So the position of a kind-0x40
+        // record sits AT the record's start. Pinned because it is the counter-
+        // example to "a zero offset means the field is absent" -- the reading
+        // that would otherwise look obvious.
+        assert_eq!(
+            at(11, 6),
+            0,
+            "kind 0x40 has no selector-11 column; its position is the record start"
+        );
+        // ...while the three kinds the walk itself calls direct DO have one.
+        for column in [3usize, 4, 9] {
+            assert_ne!(
+                at(11, column),
+                0,
+                "kind 0x{:x} is a direct position kind and must have a column",
+                1 << column
+            );
+        }
     }
 
     /// The built-in objects are the game's OWN name table at `DS:0x67BE`, packed
