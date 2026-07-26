@@ -11587,3 +11587,39 @@ dimension nobody varied.
 
 2227 items, 1069 confirmed (48.0%). 612 lib tests, 0 failures.
 652 citations verified, 0 wrong.
+
+## #356 — `+= 0xFA` was a shared counter, not a per-object accumulator
+
+`AlienObject::step`'s doc said the state change does "`+0x3C += 0xFA`". Both
+numbers in it are right — `0x32` is the timer reload (50) and `0xFA` is 250, and
+the port's constants match. The STRUCTURE is not:
+
+    0x16C2  movsx ebx, word ptr cs:[0x16a2]   a counter in the CODE segment
+    0x16D8  mov dword ptr [di+0x3c], ebx      the object takes its CURRENT value
+    0x16DC  add bx, 0xfa                      the SHARED counter advances
+    0x16E0  mov word ptr cs:[0x16a2], bx
+
+The `0xFA` steps a counter shared by every alien, and each object receives the
+value that counter held when IT last changed state — stored as a dword. The port
+adds 250 to a per-object field.
+
+FOR ONE OBJECT THE TWO ARE INDISTINGUISHABLE, which is exactly why the tests
+pass: `step()` is exercised on a single `AlienObject`, and a private accumulator
+starting at the same place produces the same sequence. The divergence needs a
+COLONY — the thing `AlienColony` exists to model — where the game interleaves one
+sequence across objects and the port gives each its own.
+
+Same failure mode as #355 one entry earlier: the test cases never varied the
+dimension where the port and the game differ. There it was a spatial axis left at
+zero; here it is the object COUNT left at one.
+
+ALSO UNPORTED from the same block, now recorded rather than discovered later:
+`+0x3A = 0`, a SECOND PRNG step landing in `+0x42` — the field the proximity gate
+reads as the object's X, so the two routines are coupled through it — and
+`[si+0x50] = ax & 0xFFC` / `[si+0x52] = 0`.
+
+NOT FIXED: correcting it needs the colony's shared counter as real state, and
+guessing at that is how #302 happened. Recorded as an APPROX row naming the
+routine and the exact instructions.
+
+656 citations verified (from 652), 0 wrong. 612 lib tests, 0 failures.

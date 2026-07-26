@@ -282,9 +282,33 @@ impl AlienObject {
     }
 
     /// Advance one frame of the decoded state machine (`0x16A4`): the timer counts
-    /// down; when it expires the PRNG picks a new animation state — `+0x36 = 1`,
-    /// `+0x38 = 0x32`, `+0x3C += 0xFA` — otherwise the object holds its state
-    /// (`+0x36 = 0`) and defers to its sub-behaviour. Returns `true` on a state change.
+    /// down; when it expires the PRNG picks a new animation state — `+0x36 = 1`
+    /// (`0x16C9`), `+0x38 = 0x32` (`0x16CE`) — otherwise the object holds its
+    /// state (`+0x36 = 0`) and defers to its sub-behaviour. Returns `true` on a
+    /// state change.
+    ///
+    /// `+0x3C` IS NOT A PER-OBJECT ACCUMULATOR (audit-fixes #356). The doc used
+    /// to say "`+0x3C += 0xFA`", and the port adds 250 to its own `anim` field.
+    /// The routine does something else:
+    ///
+    /// ```text
+    ///   0x16C2  movsx ebx, word ptr cs:[0x16a2]   a SHARED counter
+    ///   0x16D8  mov dword ptr [di+0x3c], ebx      object gets its CURRENT value
+    ///   0x16DC  add bx, 0xfa                      the SHARED counter advances
+    ///   0x16E0  mov word ptr cs:[0x16a2], bx
+    /// ```
+    ///
+    /// So `0xFA` steps a counter in the OVERLAY's code segment, and each object
+    /// receives the value that counter held when it last changed state — as a
+    /// DWORD, not a word. For one object the two models produce the same
+    /// sequence, which is why the port's version survives its single-object
+    /// tests; for a COLONY they differ, because the game interleaves one shared
+    /// sequence across objects while the port gives each its own.
+    ///
+    /// ALSO NOT MODELLED, from the same block: `+0x3A = 0` (`0x16D3`), a SECOND
+    /// PRNG step whose result lands in `+0x42` (`0x16E5`..`0x16EB`) — which is
+    /// the very field the proximity gate reads as the object's X — and
+    /// `[si+0x50] = ax & 0xFFC` / `[si+0x52] = 0` (`0x16EE`..`0x16F4`).
     pub fn step(&mut self) -> bool {
         if self.timer > 0 {
             self.timer -= 1;

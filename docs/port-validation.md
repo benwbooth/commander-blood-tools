@@ -1463,3 +1463,22 @@ main-loop busy gate tests together (`test byte [0x2793], 0xe` @`0x1095`), so a
 completed station seek takes part in the "may a pending profile load" decision —
 the same unmodelled machinery as audit-fixes #311/#312. Blocked on the same work:
 model the ten subsystem flags, then this becomes a one-line effect.
+
+### APPROX — alien `+0x3C` is a SHARED sequence, the port gives each object its own
+
+ROUTINE: `XDB:croolis:0x16A4`, the animation state machine, at `0x16C2`..`0x16E0`.
+
+    movsx ebx, word ptr cs:[0x16a2]   a counter in the OVERLAY's code segment
+    mov dword ptr [di+0x3c], ebx      the object takes its CURRENT value
+    add bx, 0xfa                      the SHARED counter advances by 250
+    mov word ptr cs:[0x16a2], bx
+
+`AlienObject::step` instead does `self.anim += ALIEN_ANIM_STEP` on a per-object
+field. Identical for ONE object; divergent for a colony, where the game
+interleaves a single sequence across every object that changes state and the port
+gives each an independent one.
+
+ALSO UNPORTED in the same block: `+0x3A = 0`, a second PRNG step storing to
+`+0x42` (the field the proximity gate reads as the object's X), and
+`[si+0x50] = ax & 0xFFC` with `[si+0x52] = 0`. Wiring these needs the colony's
+shared state, not just the object's.
