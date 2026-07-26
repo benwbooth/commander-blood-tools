@@ -1704,11 +1704,27 @@ pub const UI_FLAG_CE_BRANCH: u16 = 0x0001;
 /// @`0x5E99`, and @`0x895C` — the console-mode dismiss ladder's common tail,
 /// audit-fixes #337, which also clears `[0x2A19]` on the way out).
 pub const UI_FLAG_BUSY: u16 = 0x0004;
-/// Bit 3 — toggled on station-seek ARRIVAL: `xor word ptr [0x2793], 8` @`0x9671`.
-/// Note TOGGLE, not set (audit-fixes #330). READ at `test word ptr [0x2793], 8`
-/// @`0xB193` as well as through the gate's `0xE` mask, so it is a flag something
-/// branches on directly and not merely an accumulator bit (audit-fixes #357).
-pub const UI_FLAG_SEEK_ARRIVED: u16 = 0x0008;
+/// Bit 3 — A STATION SEEK IS IN PROGRESS. Named `..._SEEK_ARRIVED` until
+/// audit-fixes #363, which is backwards: the bit is RAISED when a seek is armed
+/// and the arrival TOGGLES IT OFF.
+///
+/// ```text
+///   0x86B6  or  byte ptr [0x2793], 0xc   console/nav-choice open: bits 2 AND 3
+///   0x86BB  mov word ptr [0x279b], 0x5a  ...and the SEEK TARGET ARC, 90
+///   ...
+///   0x9671  xor word ptr [0x2793], 8     arrival TOGGLES bit 3 -> clear
+/// ```
+///
+/// `0x279B` is the seek target arc the bridge halves into a frame index
+/// (`mov dx,[0x279b] / shr dx,1` @`0x9667`), so the same instruction that arms
+/// the seek raises this bit, and `xor` on arrival clears it because it was set.
+/// A toggle only makes sense against a known prior state, which is what
+/// identifying the setter supplied.
+///
+/// Read directly at `test word ptr [0x2793], 8` @`0xB193` as well as through the
+/// gate's `0xE` mask (audit-fixes #357) — consistent with "a seek is running",
+/// which is exactly the kind of thing the main loop should defer a scene load for.
+pub const UI_FLAG_SEEK_ACTIVE: u16 = 0x0008;
 /// Bits 1|2|3 together: `test byte ptr [0x2793], 0xe / jne` @`0x1095`, the
 /// main-loop gate. Any of them set DEFERS the pending-profile dispatch.
 pub const UI_FLAG_DEFER_MASK: u16 = 0x000E;
@@ -10964,7 +10980,7 @@ mod tests {
             "bit 0 is outside the defer mask -- #307's conflation, pinned"
         );
         // And bit 3, the seek-arrival toggle, is inside it.
-        assert_ne!(UI_FLAG_SEEK_ARRIVED & UI_FLAG_DEFER_MASK, 0);
+        assert_ne!(UI_FLAG_SEEK_ACTIVE & UI_FLAG_DEFER_MASK, 0);
     }
 
     /// audit-fixes #320. `LOCATION_PANEL_BOX` is not a transcription — the four

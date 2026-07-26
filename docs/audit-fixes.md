@@ -11831,3 +11831,41 @@ concrete comparison between one named routine and one named port function, which
 is the form this work needed and did not have four entries ago.
 
 658 citations verified, 0 wrong. 612 lib tests, 0 failures.
+
+## #363 — bit 3 was named backwards, and finding its SETTER is what showed it
+
+Checking the wiring table's `0x2565` row led to the console/nav-choice open at
+`0x86B4`:
+
+    0x86B6  or  byte ptr [0x2793], 0xc     bits 2 AND 3 together
+    0x86BB  mov word ptr [0x279b], 0x5a    the SEEK TARGET ARC = 90
+    0x86C1  mov byte ptr [0x2565], 1       the gate flag
+    0x86C6  mov al,bl / dec al / mov cl,0x12 / mul cl / add ax,0x50
+    0x86D1  mov word ptr [0x253f], ax      SHIP_3D_NAV_CHOICE_TARGET_Y
+    0x86D9  mov word ptr [0xac6], 0x64     the hub console anchor
+
+Two things fall out.
+
+FIRST, `0x000C` IS IDENTIFIED. #358's census found one site raising bits 2 and 3
+together and could not say what it was. It is the console/nav-choice open.
+
+SECOND, AND IT CORRECTS ME: I named bit 3 `UI_FLAG_SEEK_ARRIVED` in #331, from
+#330's observation that station-seek ARRIVAL does `xor word [0x2793], 8`. That is
+backwards. The bit is RAISED here, in the same instruction pair that arms the
+seek by writing its target arc to `0x279B` — the cell `bridge.rs` halves into a
+frame index at `0x9667`. Arrival then TOGGLES it, which clears it BECAUSE IT WAS
+SET.
+
+A toggle is only meaningful against a known prior state, and I had been reading
+one in isolation. Renamed `UI_FLAG_SEEK_ACTIVE`, with both instructions cited.
+The new reading also explains #357's direct `test word [0x2793], 8` @`0xB193`:
+something branching on "a seek is running" is ordinary; branching on "a seek
+arrived once" is not.
+
+THE GENERAL POINT: #330, #331 and #357 all examined bit 3 and each added detail
+without noticing the direction was wrong, because every one of them looked at a
+READ or the TOGGLE. The error survived three passes and fell out immediately once
+the SETTER was in hand — which is the same lesson as #302 and #315, arrived at
+from the opposite side: find who writes it.
+
+662 citations verified (from 658), 0 wrong. 612 lib tests, 0 failures.
