@@ -11798,3 +11798,36 @@ rather than from decoding: #358 (census), #359 (the table itself), #360
 (setters), #361 (routines). The instrument was the bottleneck, not the binary.
 
 658 citations verified, 0 wrong. 612 lib tests, 0 failures.
+
+## #362 — first row of the wiring table checked, and it holds
+
+#361 reduced the gate work to a per-row question: does each port event fire at
+the same MOMENT as the instruction raising its flag? Starting with the row the
+VM itself owns.
+
+`0x5904` — `mov byte ptr gs:[0x67ac], 1` — is inside the presentation-START
+block:
+
+    0x58F8  mov byte ptr [0x5b55], 1
+    0x58FD  mov word ptr gs:[0xa32], 1
+    0x5904  mov byte ptr gs:[0x67ac], 1
+    0x590A  xor ax,ax, then clears 0x6782 0x6784 0x6776 0x67F8
+            0x2A19 0x67BA 0x27D7 0x67BC
+
+That is the block #306 catalogued when it found `start_actor_presentation`
+models only part of it. The port sets `presentation_active` in that same
+function, so for this flag the modelled state and the game's instruction
+coincide. Row checked.
+
+A DETAIL THAT CORROBORATES TWO EARLIER ENTRIES: `0x2A19` is cleared in this
+block. #332 concluded `INPUT_GATE_I` belongs to the flag family but is NOT read
+by the main-loop gate; #337 found the console-dismiss tail clearing it. Here the
+presentation start clears it as well — three independent sites treating it as
+family state, none of them the gate. The naming was misleading and the grouping
+was right, which is what #332 argued.
+
+NINE ROWS REMAIN, plus `0x2792`'s missing writer (#360). Each is now a
+concrete comparison between one named routine and one named port function, which
+is the form this work needed and did not have four entries ago.
+
+658 citations verified, 0 wrong. 612 lib tests, 0 failures.

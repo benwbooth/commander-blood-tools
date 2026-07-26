@@ -1537,3 +1537,26 @@ distinct states, so nine of the ten have an obvious wiring target. What is NOT
 yet established is whether each port event fires at the same MOMENT as the
 instruction that raises the flag — that is the remaining risk, and it is a
 per-row question rather than a blocked subsystem.
+
+### #362 — wiring table row 1 CHECKED: `0x67AC` ↔ `presentation_active`
+
+The per-row question #361 posed is whether each port event fires at the same
+MOMENT as the instruction that raises the flag. For `0x67AC`, yes.
+
+`0x5904` sits inside the presentation-START block of `presentation_scan`:
+
+    0x58F8  mov byte ptr [0x5b55], 1        scene dirty
+    0x58FD  mov word ptr gs:[0xa32], 1
+    0x5904  mov byte ptr gs:[0x67ac], 1     <- the flag
+    0x590A  xor ax,ax  then clears 0x6782, 0x6784, 0x6776, 0x67F8,
+            0x2A19, 0x67BA, 0x27D7, 0x67BC
+
+which is the same block #306 catalogued when it found `start_actor_presentation`
+models a subset of it. The port sets `presentation_active` in exactly that
+function, so flag and event coincide.
+
+Also visible here: `0x2A19` (`INPUT_GATE_I`) is cleared in this block, matching
+#337's finding that the console dismiss tail clears it too — consistent with
+#332's conclusion that it belongs to the family but is not read by the gate.
+
+REMAINING: nine rows. `0x2792` needs its writer found or declaring dead (#360).
