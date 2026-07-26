@@ -205,17 +205,23 @@ pub const SHIP_3D_TRANSITION_ARMED_DS_OFFSET: u16 = 0x2533;
 pub const SHIP_3D_FALLBACK_TARGET_TABLE_DS_OFFSET: u16 = 0x2537;
 /// Armed by the presentation teardown — `mov byte [0x27d8],1` @`0x9EBB` (`travel_activate_a`), and cleared at `0x5C8A`.
 pub const SHIP_3D_NAVIGATION_TRIGGER_DS_OFFSET: u16 = 0x27d8;
+/// Cleared by every handler that finishes — `mov word ptr [0x2a19],0` @`0x87B0`, `0x883B` and `0x8956`.
 pub const SHIP_3D_NAV_CHOICE_SELECTED_DS_OFFSET: u16 = 0x2a19;
 pub const SHIP_3D_NAV_CHOICE_GATE_DS_OFFSET: u16 = 0x2795;
 pub const SHIP_3D_NAV_CHOICE_HOLD_TIMER_DS_OFFSET: u16 = 10139;
 /// The handler PHASE bit — `test byte [0x2565],1` @`0x86FB`, read by the dispatcher just before `call word cs:[bx+0xf29]` and by every handler in turn (`0x8713`, `0x8735`, `0x87BE`, `0x8848`).
 pub const SHIP_3D_NAV_CHOICE_PHASE_DS_OFFSET: u16 = 0x2565;
 pub const SHIP_3D_NAV_CHOICE_TARGET_Y_DS_OFFSET: u16 = 0x253f;
+/// `mov byte ptr [0x2736],1` @`0x892C`, inside nav-choice handler 4 (`0x886C`, dispatch-table entry 4).
 pub const SHIP_3D_NAV_CHOICE_LEFT_GATE_DS_OFFSET: u16 = 0x2736;
+/// `mov byte ptr [0x2737],1` @`0x893C`, the right-motion twin of the left gate ten instructions earlier.
 pub const SHIP_3D_NAV_CHOICE_RIGHT_GATE_DS_OFFSET: u16 = 0x2737;
+/// `mov byte ptr [0x259b],1` @`0x88C7`, also in handler 4.
 pub const SHIP_3D_NAV_CHOICE_MENU_GATE_DS_OFFSET: u16 = 0x259b;
+/// `mov byte ptr [0xb13],2` @`0x8947` — note the value is 2, not 1, unlike the motion gates beside it.
 pub const SHIP_3D_NAV_CHOICE_SOUND_GATE_DS_OFFSET: u16 = 0x0b13;
 pub const SHIP_3D_INTERPOLATION_DURATION_DS_OFFSET: u16 = 2778;
+/// Reset on handler entry — `mov byte ptr [0xadb],0` @`0x8741`, `0x87E4` and `0x887B`.
 pub const SHIP_3D_INTERPOLATION_TICK_DS_OFFSET: u16 = 0x0adb;
 pub const SHIP_3D_TARGET_EXTRA_LABEL_DS_OFFSET: u16 = 0x0174;
 /// The list widget's horizontal ANCHOR — `shr dx,1 / sub dx,[0xac6] / neg dx` @`0x84AD`, which turns a width into an x (the `sub` itself is two instructions in).

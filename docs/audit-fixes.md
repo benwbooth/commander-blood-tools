@@ -8027,3 +8027,37 @@ does this number appear?", which in an 86KB image has answers everywhere and no
 way to rank them. Decoding from a known entry asks "what does this routine touch?"
 — fewer answers, all of them real. When both are available the second is strictly
 better, and #234's caution was the right call made with the wrong tool.
+
+## #260 — closing #234's deliberate gap with the evidence it asked for
+
+#234 declined to cite five nav-choice gate addresses because the only support was
+a global scan whose hits included the MZ header. It said the citations would need
+corroborating a second way. `refs_in_routine.py` (#259) is that second way, and
+running it on the five handlers from the `CS:0x0F29` dispatch table finds all of
+them inside handler 4:
+
+```text
+   0x2736  mov byte [0x2736],1  @0x892C     left motion gate
+   0x2737  mov byte [0x2737],1  @0x893C     right motion gate
+   0x259B  mov byte [0x259b],1  @0x88C7     menu gate
+   0x0B13  mov byte [0xb13],2   @0x8947     sound gate -- value 2, not 1
+   0x2A19  mov word [0x2a19],0  @0x87B0     the committed choice, cleared
+   0x0ADB  mov byte [0xadb],0   @0x8741     the interpolation tick, reset
+```
+
+Six settled ASM, guard 439 -> 445 checked, 0 wrong.
+
+Two details the scan could never have given, because they come from context rather
+than from the value:
+
+  * the SOUND gate is set to `2` where the motion gates beside it are set to `1`.
+    A scan for `0x0B13` finds the address; only reading the routine shows the
+    value differs from its neighbours, which is the kind of thing a port
+    transcribing "set the gate" would get wrong.
+  * `0x2A19` and `0x0ADB` are touched by THREE handlers each, at
+    `0x87B0`/`0x883B`/`0x8956` and `0x8741`/`0x87E4`/`0x887B`. They are shared
+    teardown state, not handler-4 locals — visible only because the tool was run
+    across all five entries.
+
+`0x2795` remains uncited: it appears in none of the five handlers, so whatever
+touches it is elsewhere and #234's caution still applies to it alone.
