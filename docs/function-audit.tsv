@@ -787,7 +787,7 @@ HandMesh	src/manu3_hand.rs	114	struct	0xFFFF,0x2274,0x2974	CELL?	/// Current pos
 load	src/manu3_hand.rs	131	fn		UNVERIFIED	// An alias shares its SOURCE's projected position but carries its OWN // texture coordinates (+0/+2) — aliases ARE the mesh's UV-seam vertices // (verified: every alias's own UV differs from its sour
 st16	src/manu3_hand.rs	166	fn		UNVERIFIED	
 st32	src/manu3_hand.rs	171	fn		UNVERIFIED	
-compose	src/manu3_hand.rs	185	fn	0x2274	ASM?	/// Compose the skeleton for cursor (cx, cy): per node, local = build(angles) — /// the wrist gets the cursor law added non-destructively — then /// rows = parent_rows * local >> 15 and T = parent_row
+compose	src/manu3_hand.rs	185	fn	0x2274	ASM	/// Compose the skeleton for cursor (cx, cy): per node, local = build(angles) — /// the wrist gets the cursor law added non-destructively — then /// rows = parent_rows * local >> 15 and T = parent_row
 draw	src/manu3_hand.rs	254	fn		ORACLE?	/// Render the hand into an indexed framebuffer with the cursor at (cx, cy): /// the decoded cursor law + hierarchical composition + the re-verified 0x549 /// projection. No screen-space fixups — the 
 snapshot_state	src/manu3_hand.rs	331	fn		INFRA	/// Snapshot the mutable skeleton state (for between-tick interpolation).
 triangles_lerp	src/manu3_hand.rs	340	fn		UNVERIFIED	/// Like [`Self::triangles`], but with the animated skeleton cells (angles + /// local positions of every node) LERPed between a previous snapshot and the /// current state by `alpha` — smooth pose mo

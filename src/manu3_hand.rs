@@ -20,6 +20,20 @@
 ///   +0x12..+0x32 composed rows (X/Y/Z, Q15 dwords)   +0x36/3A/3E composed T
 ///   +0x42/46/4A local position L (dwords)            +0x4E/50/52 local Euler angles
 ///   +0x54 forward speed (position integrator: L += local-Z * speed >> 16)
+/// The integrator is `XDB:manu3:0x03DE..0x0414`, verified instruction by
+/// instruction: `movsx ebx, word ptr [di + 0x54]` @0x03E2 (speed is a WORD),
+/// `imul ebx` / `sar eax, 0x10` per axis, `add dword ptr [di + 0x42], eax`
+/// @0x03F2 and `[di+0x46]` @0x0405, `[di+0x4a]` @0x0414.
+///
+/// ASYMMETRY, recorded because it is the kind of thing a rewrite smooths away:
+/// only the Y axis carries an `adc eax, 0` @0x0401 after its shift. X (@0x03EE)
+/// and Z (@0x0410) do not. Whether that is a deliberate rounding or a compiler
+/// artefact is undecided; it is noted so a port of the integrator reproduces it
+/// rather than "fixing" the inconsistency.
+///
+/// And L is STORED as a dword but READ BACK AS A WORD for the transform —
+/// `movsx ebx, word ptr [di + 0x42]` @0x041A — which is why [`Self::compose`]
+/// uses `st16` on those fields and not `st32`.
 /// Composition (verified EXACT vs every node): rows = parent_rows*build(angles) >> 15,
 /// T = parent_rows @ L + T_parent. The wrist (0x2394) is the runtime root: its T is the
 /// hand's view-space placement and its a1/a2 receive the cursor law non-destructively

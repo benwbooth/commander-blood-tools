@@ -13954,3 +13954,34 @@ produce a descriptor that parses and animates nothing.
 
 2231 items, 1111 confirmed (49.8%), 1120 open. 749 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #425 — a dword stored, a word read, and one axis that rounds differently
+
+`manu3_hand::compose` cites `0x2274`, which is a DATA SEGMENT offset — the live
+manu3 dump — so the row's real evidence is the code that defines the layout, at
+`XDB:manu3:0x03DE`. Read it. The record layout the module header documents is
+exact:
+
+    0x03E2  movsx ebx, word ptr [di + 0x54]   the speed, a WORD
+    0x03EE  sar eax, 0x10                     ...>> 16 per axis
+    0x03F2  add dword ptr [di + 0x42], eax    L.x
+    0x0405  add dword ptr [di + 0x46], eax    L.y
+    0x0414  add dword ptr [di + 0x4a], eax    L.z
+
+TWO DETAILS THE STRUCT CANNOT SHOW.
+
+`L` is accumulated as a DWORD and read back as a WORD for the transform —
+`movsx ebx, word ptr [di + 0x42]` @`0x041A`. The port already gets this right and
+knew why: `compose` uses `st16` on those fields with a comment noting the authored
+values have nonzero high words. Good, but it was an unattributed decision; the
+address is now on it.
+
+AND ONLY THE Y AXIS ROUNDS. `adc eax, 0` @`0x0401` follows Y's shift; X (`0x03EE`)
+and Z (`0x0410`) have no such instruction. That is exactly the sort of asymmetry a
+reimplementation tidies into consistency — three axes, three identical lines —
+and it is now written down as undecided-but-real rather than smoothed away. I am
+not claiming to know whether it is deliberate rounding or a compiler artefact;
+the claim is only that the game does it on one axis and not the others.
+
+2231 items, 1112 confirmed (49.8%), 1119 open. 752 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
