@@ -194,15 +194,23 @@ impl AlienObject {
     ///   croolis.xdb 0xA70  add ax, word ptr [0x22ec]   the X term
     /// ```
     ///
-    /// `DS:0x22EC` is a WORD (`movsx eax,word ptr [0x22ec]` @`0xBFA`). `DS:0x22F0`
-    /// is NOT: the cell at `0x22EE` is accessed as a DWORD (`mov ecx,dword ptr
-    /// [0x22ee]` @`0x791`, `add dword ptr [0x22ee],eax` @`0x1FD5`), and a dword
-    /// there spans `0x22EE..0x22F1` — so `[0x22F0]` is its HIGH WORD.
+    /// BOTH terms are HIGH WORDS of 32-bit accumulators. This doc used to say
+    /// `DS:0x22EC` "is a WORD" because `movsx eax,word ptr [0x22ec]` @`0xBFA`
+    /// reads sixteen bits there; audit-fixes #271 corrected that in
+    /// `re/labels.csv` and the correction never reached here (fixed in #344).
+    /// All three camera axes are stepped as dwords:
     ///
-    /// The camera Y is therefore the integer part of a 32-bit FIXED-POINT
-    /// accumulator, read by taking the top sixteen bits. Wiring this needs that
-    /// accumulator, not an `i16` updated per frame; taking `camera: [i16; 3]` as
-    /// three independent words would drop the fractional motion entirely.
+    /// ```text
+    ///   0x1FC5  add dword ptr [0x22ea], eax    X  -> high word 0x22EC
+    ///   0x1FD5  add dword ptr [0x22ee], eax    Y  -> high word 0x22F0
+    ///   0x1FE5  add dword ptr [0x22f2], eax    Z  -> high word 0x22F4
+    /// ```
+    ///
+    /// So each camera axis is the integer part of a 32-bit FIXED-POINT
+    /// accumulator, read by taking the top sixteen bits. A LOAD tells you what
+    /// the caller wanted; only the STORE tells you how wide the cell is. Wiring
+    /// this needs the accumulators, not `camera: [i16; 3]` updated per frame,
+    /// which would drop the fractional motion on every axis rather than one.
     pub fn proximity_visible(&mut self, camera: AlienCamera, anim_offset: i16) -> bool {
         if self.state_flag == 0 {
             return false;

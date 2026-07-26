@@ -11155,3 +11155,34 @@ noting because a cross-space citation is the failure #316 catalogued, and this i
 the one tool that already handles it.
 
 645 citations verified (from 641), 0 wrong. 612 lib tests, 0 failures.
+
+## #344 — a correction that reached labels.csv and not the source
+
+`proximity_visible`'s doc still said `DS:0x22EC` "is a WORD (`movsx eax,word ptr
+[0x22ec]` @`0xBFA`)". audit-fixes #271 established the opposite — it is the HIGH
+WORD of a 32-bit accumulator at `0x22EA` — and corrected `re/labels.csv`. The
+source doc kept the old claim, so the tree carried BOTH readings for the same
+cell, in two files, with the correction only in one.
+
+The binary settles it in three lines:
+
+    0x1FC5  add dword ptr [0x22ea], eax    X  -> high word 0x22EC
+    0x1FD5  add dword ptr [0x22ee], eax    Y  -> high word 0x22F0
+    0x1FE5  add dword ptr [0x22f2], eax    Z  -> high word 0x22F4
+
+Every axis is a dword accumulator. The doc had already reasoned this correctly
+for Y (`0x22F0` "is NOT" a word) while asserting the reverse for X — the two
+sentences were adjacent and contradicted each other about identical structures.
+
+Corrected, with #271's rule restated where it applies: a LOAD tells you what the
+caller wanted, only the STORE tells you how wide the cell is. The consequence for
+wiring also got bigger — `camera: [i16; 3]` would drop fractional motion on ALL
+THREE axes, not just the one the doc noticed.
+
+WHY IT SURVIVED: #271 fixed the label because the label was what the entry was
+about. Nothing checks that a source doc agrees with `labels.csv` about a cell's
+width, and `cell_widths.py` (written FOR #271) reports widths from the executable,
+not the overlays. So an overlay claim can disagree with an overlay label
+indefinitely.
+
+647 citations verified (from 645), 0 wrong. 612 lib tests, 0 failures.
