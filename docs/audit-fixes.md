@@ -12410,3 +12410,39 @@ is as close as a static tool gets.
 
 2229 items, 1081 confirmed (48.5%), 1148 open. 698 citations verified, 0 wrong.
 613 lib tests, 0 failures.
+
+## #380 — the enclosing check confirms an attribution, and a doc argues itself open
+
+Two rows, using #379's new `ENCLOSING:` line as the first step rather than the
+last.
+
+`SHIP_3D_TARGET_NAME_TO_RECORD = 4` claims one constant used in both directions:
+`add ax,4` when a menu is built, `sub ax,4` when a row is selected. Both
+instructions are there — and the enclosing lookup is what makes the CLAIM
+checkable rather than just the addresses:
+
+    0x87D5  add ax, 4   inside nav_choice_handler_2 ("CONSOLE ROW 2 = THE
+                        CONTACT MENU, built from live state")
+    0xB33D  sub ax, 4   inside ship_3d_target_record_select
+
+A menu builder and a target selector, exactly as the doc frames them. Settled.
+This is the first time the #379 check has CONFIRMED an attribution rather than
+refuted one, which is worth noting: its value is not that it finds errors, it is
+that the question gets asked at all.
+
+`text_selector_voice_clip_index` STAYS OPEN, and its own doc is why. The scope
+notes verify — `mov byte gs:[0xcfb], 1` @`0x66AF` is the 0xA6 accept setting the
+flag, pairing with the `mov byte [0xcfb], 0` @`0x94CF` that #367 found clearing it
+— but the doc then says plainly:
+
+    STILL UNVERIFIED, and the reason these rows stay open: the game's mapping is
+    `line_id = b3 + 9`, whereas this computes `b3 - 1`. Both derive from `b3`,
+    but they are not the same function... Do not treat this as decoded.
+
+A row whose doc argues against its own settlement should not be settled, and the
+verified surroundings are not a reason to override it — the same judgement as
+#357's fabricated star-map surface. Two rows examined, one settled, one correctly
+left alone.
+
+2229 items, 1082 confirmed (48.5%), 1147 open. 698 citations verified, 0 wrong.
+613 lib tests, 0 failures.

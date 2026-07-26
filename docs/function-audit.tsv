@@ -1365,7 +1365,7 @@ LOCATION_PANEL_TINT_PERCENT	src/vm.rs	1570	const	0xFFCE,0x90ED,0x22F1,0xffce,0x2
 LOCATION_PANEL_ZOOM_STEPS	src/vm.rs	1572	const	0xADA,0x903E	CELL?	/// `[0xADA] = 8` (`0x903E`) — the zoom-open/shut interpolation step count.
 LOCATION_PANEL_CURSOR_RECT_SIZE	src/vm.rs	1574	const	0x9029	CELL?	/// The zoom SOURCE rect seeded at `0x9029`: a 4x4 square at the cursor.
 NAV_PICK_POSITION_FIELD	src/vm.rs	1579	const	0x92BC	ASM	/// The chart marker's position field — selector `0x0B`, whose matrix row is /// `0x18` for kinds 8 and `0x10` (`FIELD_OFFSETS[0x0B]`). Read as `x` at `+0x18` /// and `y` at `+0x1A` by the picker at `
-SHIP_3D_TARGET_NAME_TO_RECORD	src/vm.rs	1584	const	0x87D5,0xB33D	ASM?	/// A menu entry points at the record's INLINE NAME; the record is four bytes /// earlier. Emitted as `add ax,4` when a menu is built (`0x87D5`) and undone as /// `sub ax,4` when a row is selected (`0
+SHIP_3D_TARGET_NAME_TO_RECORD	src/vm.rs	1584	const	0x87D5,0xB33D	ASM	/// A menu entry points at the record's INLINE NAME; the record is four bytes /// earlier. Emitted as `add ax,4` when a menu is built (`0x87D5`) and undone as /// `sub ax,4` when a row is selected (`0
 ENTITY_CANDIDATE_KIND_MASK	src/vm.rs	1588	const	0x7259,0x727E	ASM	/// The entity-candidate filter (`0x7259`): an object joins the destination list /// only if its flags word has any of `0x98` (`test bx,0x98` @`0x727E`).
 ENTITY_CANDIDATE_READY_BIT	src/vm.rs	1590	const	0x7284	ASM	/// ... and bit 1 of the BYTE at `+2` is set (`test byte es:[di+2],2` @`0x7284`).
 SHIP_CLICK_LOCATION_KIND_MASK	src/vm.rs	1594	const	0x140,0xB0FB	ASM	/// `test word es:[eax],0x140` @`0xB0FB` — the location-kind test that decides /// whether the click commits the first CANDIDATE or the location OBJECT.
