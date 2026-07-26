@@ -179,6 +179,7 @@ pub const SHIP_3D_DEPTH_SCROLL_STEP_OFFSET: u16 = 0x07bc;
 pub const SHIP_3D_TARGET_LIST_DS_OFFSET: u16 = 0x250b;
 /// The presented target; a repeat of it is not re-committed — `cmp ax,[0x251b]` @`0xB21A`.
 pub const SHIP_3D_CURRENT_TARGET_DS_OFFSET: u16 = 0x251b;
+/// `test byte [0x252a],1` @`0xB657`, and cleared by the HUD init at `0xB29A`.
 pub const SHIP_3D_SEQUENCE_ACTIVE_DS_OFFSET: u16 = 0x252a;
 /// Bit 0 = build the list, bit 1 = it is open (`0xb2fd`) — `test byte [0x252b],1` @`0xB2DC`.
 pub const SHIP_3D_TARGET_SELECT_PHASE_DS_OFFSET: u16 = 0x252b;
@@ -186,7 +187,9 @@ pub const SHIP_3D_TARGET_SELECT_PHASE_DS_OFFSET: u16 = 0x252b;
 pub const SHIP_3D_TARGET_FALLBACK_DS_OFFSET: u16 = 0x252c;
 /// The dispatcher's own gate — `test byte [0x2793],8` @`0x86F1`, the first instruction of `nav_choice_dispatch`.
 pub const SHIP_3D_HUD_FLAG_DS_OFFSET: u16 = 0x2793;
+/// `mov bx,word ptr [0x2527]` @`0xB6EC`, the band copy's source depth; also read by the scroll step at `0xB765`.
 pub const SHIP_3D_DEPTH_OFFSET_DS_OFFSET: u16 = 0x2527;
+/// `test byte [0x252e],1` @`0xB6E5` gates the plane-band copy; set at `0xB129`, cleared at `0xB65E`.
 pub const SHIP_3D_PLANE_COPY_ENABLE_DS_OFFSET: u16 = 0x252e;
 /// The transition opening flag — `mov byte [0x252f],1` @`0xB6A5`.
 pub const SHIP_3D_OPENING_FLAG_DS_OFFSET: u16 = 0x252f;
@@ -235,10 +238,15 @@ pub const SHIP_3D_TARGET_SELECTION_DS_OFFSET: u16 = 0x27e7;
 pub const SHIP_3D_TARGET_LAYOUT_RECT_DS_OFFSET: u16 = 0x2aab;
 pub const SHIP_3D_TARGET_WIDTH_TABLE_DS_OFFSET: u16 = 10931;
 pub const SHIP_3D_PRESENTATION_HOLD_TIMER_DS_OFFSET: u16 = 2875;
+/// The temp-SND setup's own gate — `test byte [0xae4],1` @`0xB592`, the routine's first instruction.
 pub const SHIP_3D_TEMP_SND_TRIGGER_DS_OFFSET: u16 = 0x0ae4;
+/// Which of the three callbacks to run — `mov al,byte ptr [0xae5]` @`0xB5B0`.
 pub const SHIP_3D_TEMP_SND_PHASE_DS_OFFSET: u16 = 0x0ae5;
+/// A FAR pointer — `les di,ptr [0x5219]` @`0xB712` loads segment and offset together.
 pub const SHIP_3D_PLANAR_FRAMEBUFFER_PTR_DS_OFFSET: u16 = 0x5219;
+/// `cmp word ptr [0x524d],0xa` @`0xB6F0`; the HUD init seeds it with `mov word ptr [0x524d],0xa` @`0xB175`.
 pub const SHIP_3D_SCROLL_MODE_DS_OFFSET: u16 = 0x524d;
+/// `mov word ptr [0x524f],ax` @`0xB708`, zeroed at `0xB16F`.
 pub const SHIP_3D_SCROLL_VALUE_DS_OFFSET: u16 = 0x524f;
 
 const SND_ENTRY_FAR_CALL: [u8; 5] = [

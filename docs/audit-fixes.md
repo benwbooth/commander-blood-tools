@@ -7996,3 +7996,34 @@ image's OWN indices are used as script resource sets by a different table, which
 is evidence the directory means what #203 said it means.
 
 Four rows settled DATA.
+
+## #259 — decoding forward from a verified entry instead of scanning
+
+#234 left five nav-choice gate addresses uncited on purpose: `find_imm` had hits
+for them, but several sat at file offsets like `0x010af`, inside the MZ header,
+where "an instruction" is a decode of data. A citation supported only by that scan
+is a restatement, and the citation guard cannot tell — it disassembles at the same
+phantom address and agrees with itself.
+
+`re/tools/refs_in_routine.py` inverts the method. Given a routine's ENTRY, it
+decodes forward linearly to the terminating `ret`/`retf` and reports every fixed
+DS displacement the instructions reference. Every hit is inside real code at a
+real instruction boundary, because the decode started somewhere known — and the
+entries worth passing are exactly the ones #232 and #256 verified land on a
+prologue preceded by a `retf`.
+
+Validated against a known answer first: run on `0xB692` it reproduces #218's
+transition decode exactly — `0x252F`, `0x2530`, `0x2531`, `0x2533`, `0x0B3B`, each
+at the instruction that entry names. A new tool's first run is a test of the tool,
+and this one had a right answer waiting.
+
+Eight constants cited from it, all inside routines with verified entries:
+`0x0AE4`/`0x0AE5` (the temp-SND gate and phase), `0x252A`, `0x252E`, `0x2527`,
+`0x5219` (a FAR pointer — `les di`), `0x524D`, `0x524F`. The guard verifies all
+eight; 430 -> 439 checked, 0 wrong.
+
+The general lesson is about search direction. Scanning for a value asks "where
+does this number appear?", which in an 86KB image has answers everywhere and no
+way to rank them. Decoding from a known entry asks "what does this routine touch?"
+— fewer answers, all of them real. When both are available the second is strictly
+better, and #234's caution was the right call made with the wrong tool.
