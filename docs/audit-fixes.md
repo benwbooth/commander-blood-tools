@@ -8112,3 +8112,32 @@ have plain hex values, and the rows that remain uncited mostly do not name a DS
 address at all — they are counts, sizes, palette indices and port-side values,
 which no amount of routine scanning will reach. Saying so now avoids a third
 turn spent widening a net that has stopped catching anything.
+
+## #263 — extending a tool, then measuring why the extension must not be used in bulk
+
+`refs_in_routine.py` reported memory displacements only. A constant naming an
+ADDRESS appears as `mov ax,[0x2527]`; one naming a VALUE — a mask, a sentinel, a
+step — appears as `mov word [0x524d],0xa`, so the tool found the address while
+missing the value beside it. Extended to report both.
+
+Validated against known-good work first: run on the transition updater it produces
+`mov byte [0x2531],4` @`0xB6A0`, `8` @`0xB6B8` and `cmp word [0xb3b],0x78`
+@`0xB699` — which are, verbatim, the citations `SHIP_3D_TRANSITION_OPEN_STEP`,
+`CLOSE_STEP` and `OPEN_TIMER_THRESHOLD` already carry. The extension reproduces
+existing citations rather than finding new ones there, which is the outcome that
+makes it trustworthy.
+
+THEN THE MEASUREMENT THAT MATTERS. Across 18 routines there are 230 distinct
+immediates. 137 uncited constants share a value with one — a tempting batch, the
+same shape as #261's 38. But 86 of those 137, nearly two thirds, match an
+immediate that appears in MORE THAN ONE routine.
+
+A DS address is unique to the thing it names. The number 4 is not. Bulk-citing on
+value would have manufactured 137 citations of which most were coincidence, and
+the citation guard would have passed every one — it checks that the instruction at
+the address has the claimed mnemonic, not that the constant has anything to do
+with it.
+
+So the immediate output supports a citation there is already reason to believe,
+and is not a source of new ones. Recorded in the tool's own docstring, because the
+next person to see "137 matches" will feel the same pull I did.

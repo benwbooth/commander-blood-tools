@@ -42,17 +42,37 @@ def load():
 
 
 def walk(md, data, entry, limit):
-    """(address, mnemonic, op_str, displacement) for each instruction."""
+    """(address, mnemonic, op_str, displacement, immediate) per instruction.
+
+    IMMEDIATES matter as much as displacements. A constant naming an ADDRESS shows
+    up as `mov ax,[0x2527]`; one naming a VALUE -- a mask, a sentinel, a mode --
+    shows up as `mov word [0x524d],0xa`, and reporting only displacements finds
+    the address while missing the value beside it.
+
+    BUT IMMEDIATES ARE NOT EVIDENCE THE WAY DISPLACEMENTS ARE, and the difference
+    is measured (audit-fixes #263). Across 18 routines there are 230 distinct
+    immediates; 137 uncited port constants share a value with one, and 86 of those
+    -- nearly two thirds -- appear in MORE THAN ONE routine. A DS address is
+    unique to what it names; the number 4 is not.
+
+    So this output supports a citation you already have a reason to believe (the
+    transition constants matched `mov byte [0x2531],4` in the routine they are
+    about, at the instruction writing the byte they name). It does NOT support
+    bulk-citing constants by value, which would manufacture evidence at exactly
+    the scale that is hard to notice afterwards.
+    """
     out = []
     for insn in md.disasm(data[entry : entry + limit], entry):
-        disp = None
+        disp = imm = None
         for op in insn.operands:
             if op.type == capstone.x86.X86_OP_MEM and op.mem.disp:
                 # A DS-relative reference has no base/index register; anything
                 # else ([bx+si], [bp+4]) is a struct field, not a fixed address.
                 if op.mem.base == 0 and op.mem.index == 0:
                     disp = op.mem.disp & 0xFFFF
-        out.append((insn.address, insn.mnemonic, insn.op_str, disp))
+            elif op.type == capstone.x86.X86_OP_IMM:
+                imm = op.imm & 0xFFFF
+        out.append((insn.address, insn.mnemonic, insn.op_str, disp, imm))
         if insn.mnemonic in ("ret", "retf"):
             break
     return out
@@ -75,14 +95,20 @@ def main():
         entry = int(arg, 16)
         insns = walk(md, data, entry, limit)
         print(f"\n=== {entry:#07x} ({len(insns)} instructions to ret) ===")
-        seen = {}
-        for addr, mnem, ops, disp in insns:
+        seen, imms = {}, {}
+        for addr, mnem, ops, disp, imm in insns:
             if disp is not None:
                 seen.setdefault(disp, (addr, mnem, ops))
+            # Skip tiny immediates: 0/1/2 appear in nearly every routine and
+            # matching a port constant on them would be coincidence, not evidence.
+            if imm is not None and imm > 2:
+                imms.setdefault(imm, (addr, mnem, ops))
         for disp, (addr, mnem, ops) in sorted(seen.items()):
             print(f"   DS:{disp:#06x}  first touched at {addr:#07x}: {mnem} {ops}")
-        if not seen:
-            print("   (no fixed DS references)")
+        for imm, (addr, mnem, ops) in sorted(imms.items()):
+            print(f"   IMM:{imm:#06x} first used at   {addr:#07x}: {mnem} {ops}")
+        if not seen and not imms:
+            print("   (no fixed DS references or immediates)")
     return 0
 
 
