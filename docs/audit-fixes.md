@@ -10713,3 +10713,39 @@ That is #313's finding (a test whose name promised more than its assertions) wit
 my name on it, one entry after I wrote it up.
 
 629 citations verified (from 620), 0 wrong. 611 lib tests, 0 failures.
+
+## #332 — the ten flags were two-thirds already named, under a name that hid their reader
+
+#312 declined to port the main-loop busy gate because `VmMachine` models "exactly
+ONE of the ten" flags it ORs. #331 moved the blocker to "the ten flags do not
+exist". Before building them I checked what the port already had — and eight of
+them were there.
+
+`VM_PRESENTATION_INPUT_GATE_A..H` are `0x24F3`, `0x2751`, `0x5E64`, `0x2565`,
+`0x2736`, `0x2737`, `0x27DA`, `0x2792`. The gate at `0x109C`..`0x10BF` ORs
+`0x67AC`, `0x24F3`, `0x2751`, `0x67B0`, `0x5E64`, `0x2565`, `0x2736`, `0x2737`,
+`0x27DA`, `0x2792`. A..H is exactly that list minus `0x67AC` and `0x67B0`.
+
+The constants were named from where they are WRITTEN — each doc says "Touched by
+the game at `mov byte ptr [...], 1` @..., found by decoding forward from a
+verified routine entry". Correct, careful, and blind to the fact that ten of them
+are read TOGETHER by one instruction sequence. A group identified by its writers
+does not announce its reader.
+
+`VM_PRESENTATION_INPUT_GATE_I` (`0x2A19`) IS NOT ONE OF THEM. The gate never
+reads it. Sharing the `INPUT_GATE` name with A..H makes it look like the ninth
+member of a set it does not belong to — noted on the constant.
+
+WHAT THIS CHANGES. #312's "the port does not model them" was true of the STATE
+and false of the DECODE: two-thirds of the list was sitting in the file with
+addresses and citations. The remaining work is smaller and much better defined —
+model these as bytes, add `0x67AC`/`0x67B0`, and find what SETS each, which their
+existing docs already half-answer (`mov byte [0x2751],1` @`0x8836`,
+`mov byte [0x2736],1` @`0x892C`, `mov byte [0x2737],1` @`0x893C`).
+
+I did not build the gate. Nothing about this entry changes #312's reason: an
+under-fed gate defers on presentation and nothing else, and passes every test I
+could write. But the argument for it being close is now evidence rather than
+hope.
+
+639 citations verified (from 629), 0 wrong. 611 lib tests, 0 failures.

@@ -1752,8 +1752,32 @@ const VM_PRESENTATION_SIGNAL_SLOT: u16 = 0x679A; // was written in decimal (2652
 /// Touched by the game at `mov byte ptr [0x5b55], 1` @`0x0B64A`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const VM_PRESENTATION_SCENE_DIRTY: u16 = 0x5B55;
-/// Touched by the game at `mov ax, word ptr [0x24f3]` @`0x0AFA2`, found by decoding forward
-/// from a verified routine entry (`re/tools/refs_in_routine.py`).
+/// THE `INPUT_GATE_A..H` GROUP IS THE MAIN-LOOP BUSY GATE'S OPERANDS
+/// (audit-fixes #332). These constants were named from where they are WRITTEN,
+/// by decoding forward from verified entries, without knowing what reads them
+/// together. `0x109C`..`0x10BF` ORs ten bytes and defers the pending
+/// script-profile load if ANY is non-zero:
+///
+/// ```text
+///   0x109C  mov al, [0x67AC]   <- presentation-active, NOT in the A..H naming
+///   0x109F  or  al, [0x24F3]   A
+///   0x10A3  or  al, [0x2751]   B
+///   0x10A7  or  al, [0x67B0]   <- also outside the naming
+///   0x10AB  or  al, [0x5E64]   C
+///   0x10AF  or  al, [0x2565]   D
+///   0x10B3  or  al, [0x2736]   E
+///   0x10B7  or  al, [0x2737]   F
+///   0x10BB  or  al, [0x27DA]   G
+///   0x10BF  or  al, [0x2792]   H
+///   0x10C3  jne                any set -> defer
+/// ```
+///
+/// So A..H are EXACTLY eight of the ten, and `0x67AC`/`0x67B0` are the other
+/// two. [`VM_PRESENTATION_INPUT_GATE_I`] (`0x2A19`) is NOT among them — despite
+/// its name it takes no part in this gate, and grouping it here is misleading.
+///
+/// This is the list #312 said the port does not model. It turns out to be
+/// two-thirds named already, under a name that hid its consumer.
 const VM_PRESENTATION_INPUT_GATE_A: u16 = 0x24F3;
 /// Touched by the game at `mov byte ptr [0x2751], 1` @`0x08836`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
@@ -1775,6 +1799,9 @@ const VM_PRESENTATION_INPUT_GATE_G: u16 = 0x27DA;
 const VM_PRESENTATION_INPUT_GATE_H: u16 = 0x2792;
 /// Touched by the game at `mov word ptr [0x2a19], 0` @`0x087B0`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+/// NOT part of the main-loop busy gate, despite sharing the `INPUT_GATE`
+/// naming with A..H — `0x109C`..`0x10BF` never reads `0x2A19` (audit-fixes
+/// #332). Whatever gates on this one, it is a different reader.
 const VM_PRESENTATION_INPUT_GATE_I: u16 = 0x2A19;
 /// Touched by the game at `test byte ptr [0x27e8], 1` @`0x08bb3` — found by decoding forward from a
 /// LIFTED function's entry, so the boundary is the recompiler's, not a scan's.
