@@ -13182,3 +13182,37 @@ reads as the object's X.
 
 2228 items, 1093 confirmed (49.1%), 1135 open. 713 citations verified, 0 wrong.
 614 lib tests, 0 failures.
+
+## #401 — the anim counter is shared too, and +0x42 is a position
+
+#400 fixed the PRNG. The SAME BLOCK has a second shared cell the port also owned
+per-object, which #356 flagged and nothing had acted on:
+
+    0x16C2  movsx ebx, word ptr cs:[0x16a2]   the counter, SIGN-EXTENDED
+    0x16D8  mov dword ptr [di+0x3c], ebx      object takes its CURRENT value
+    0x16DC  add bx, 0xfa                      ...and only THEN it advances
+    0x16E0  mov word ptr cs:[0x16a2], bx      stored in the CODE segment
+
+The port did `self.anim = self.anim.wrapping_add(250)` on a per-object `u16`.
+Three things wrong at once: the counter is shared, the object takes the value
+BEFORE the advance rather than after, and the store is a DWORD of a sign-extended
+WORD, so `anim` is `i32` and the sign extension is observable.
+
+AND `+0x42` IS THE OBJECT'S X. The block ends with a SECOND `ror ax,7 / sbb ax,0`
+@`0x16E5` whose result goes to `mov word ptr [di+0x42], ax` @`0x16EB` — and
+`+0x42` is `pos[0]`, the field the proximity gate reads as X. That second step is
+NOT written back to `fs:[0x105C]`, so it is derived from the stream rather than
+advancing it. The port never modelled it, which means alien X positions never
+moved from their initial values.
+
+Both shared cells now live in one `AlienStreams` (`fs:[0x105C]` + `cs:[0x16A2]`),
+which is a better shape than #400's bare `&mut u16` and says plainly that these
+are the overlay's globals rather than object fields.
+
+Tests pin the ordering that is easy to get backwards: `+0x3C` records the counter
+BEFORE the advance (first draw records 0, the stream moves to 0xFA), and the
+derived `+0x42` leaves `prng` untouched. Both would pass trivially under the old
+model's arithmetic and fail under its structure — which is the point.
+
+2228 items, 1093 confirmed (49.1%), 1135 open. 719 citations verified, 0 wrong.
+614 lib tests, 0 failures.
