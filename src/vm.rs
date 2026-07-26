@@ -4807,6 +4807,13 @@ pub struct VmMachine {
     /// The `arche` object offset (gs:0x6752), from the .DEB. Its +0x16 field holds a
     /// dangling owning-object reference that the 0xB8 family invalidates.
     pub arche_offset: Option<u16>,
+    /// DEB offset of the built-in object `blood` — the engine's `gs:0x674E`,
+    /// filled by the same startup name scan (`0x5486`) as its siblings.
+    ///
+    /// Added in audit-fixes #303 because the C3 PROMOTER gates on it:
+    /// `mov bx,ds:[bp+2] / cmp bx,gs:[0x674e] / jne` @`0x5D3C`..`0x5D45` — a
+    /// queued presentation is promoted only when its RELATED object is `blood`.
+    pub blood_offset: Option<u16>,
     /// DEB offset of the built-in object `orxx` (the engine's `gs:0x6750`). The
     /// world-destination click writes its C1 record at `orxx + 0xA` (`0xB272`).
     pub orxx_offset: Option<u16>,
@@ -4884,6 +4891,7 @@ impl Default for VmMachine {
             nav_source_scratch: vec![0u8; NAV_SOURCE_SCRATCH_LEN],
             directory: Vec::new(),
             arche_offset: None,
+            blood_offset: None,
             orxx_offset: None,
             ark_offset: None,
             world_target: None,
@@ -4937,9 +4945,21 @@ impl VmMachine {
     /// scans nothing. The citation was a REGION POINTER that did not support the
     /// claim, the same shape #298 found.
     ///
-    /// So: the shape is faithful, the promotion POLICY (scan order, which record
-    /// wins when several are queued) is a port construction until the engine's
-    /// own scan is found. Do not treat first-match as decoded behaviour.
+    /// THE GATE IS NOW DECODED (audit-fixes #303). The promoter is `0x5D37`,
+    /// labelled `c3_promoter_branch`, and it does NOT take the first typed-C3
+    /// record it sees:
+    ///
+    /// ```text
+    ///   0x5D37  cmp ax, 0xc3           the record is typed C3
+    ///   0x5D3C  mov bx, ds:[bp+2]      its related word
+    ///   0x5D40  cmp bx, gs:[0x674e]    ...must be `blood`
+    ///   0x5D45  jne                    otherwise no takeover
+    /// ```
+    ///
+    /// applied below. What remains undecoded is only the ITERATION -- which
+    /// records the engine walks and in what order -- so first-match among
+    /// blood-related records is still a port choice, but a far narrower one than
+    /// #302 recorded.
     pub fn promote_queued_presentation(&mut self) -> Option<u16> {
         if self.presentation_busy {
             return None;
@@ -4949,6 +4969,17 @@ impl VmMachine {
             if self.line_records[slot] == 0xC3 && self.line_records[slot + 2] == 1 {
                 let off = (slot * 2) as u16;
                 let related = self.line_records[slot + 1];
+                // THE PROMOTER'S GATE (audit-fixes #303): the related object must
+                // be `blood`. `mov bx,ds:[bp+2]` @0x5D3C / `cmp bx,gs:[0x674e]`
+                // @0x5D40 / `jne` @0x5D45 — a typed-C3 record whose related word
+                // is anything else does NOT take over. Without a DEB there is no
+                // `blood` to compare against, so the gate cannot be applied and
+                // the scan keeps its previous shape.
+                if let Some(blood) = self.blood_offset {
+                    if related != blood {
+                        continue;
+                    }
+                }
                 self.start_actor_presentation(off, related);
                 return Some(off);
             }
@@ -5115,6 +5146,10 @@ impl VmMachine {
         self.arche_offset = syms
             .iter()
             .find(|s| s.name.eq_ignore_ascii_case("arche"))
+            .map(|s| s.offset);
+        self.blood_offset = syms
+            .iter()
+            .find(|s| s.name.eq_ignore_ascii_case("blood"))
             .map(|s| s.offset);
         self.orxx_offset = syms
             .iter()
@@ -10548,6 +10583,54 @@ mod tests {
         m.step();
         assert_eq!(m.rec_read_pub(0x84), 0xC4, "no DEB loaded -> unconditional write");
         assert_eq!(m.active_actor, Some(0x84));
+    }
+
+    /// audit-fixes #303. The C3 promoter's gate: a queued presentation is taken
+    /// over only when its RELATED object is `blood`.
+    ///
+    ///   0x5D37  cmp ax, 0xc3              the record is typed C3
+    ///   0x5D3C  mov bx, ds:[bp+2]         its related word
+    ///   0x5D40  cmp bx, gs:[0x674e]       ...must be `blood`
+    ///   0x5D45  jne                       otherwise no takeover
+    ///
+    /// Before #303 the port promoted the FIRST typed-C3 record regardless, a
+    /// policy #302 identified as invented. This pins the real gate from both
+    /// sides.
+    #[test]
+    fn c3_promotion_requires_the_related_object_to_be_blood() {
+        let blood = 0x0200u16;
+        let other = 0x0300u16;
+
+        let build = |related: u16| {
+            let mut m = VmMachine::new();
+            m.line_records = vec![0u16; 0x40];
+            m.blood_offset = Some(blood);
+            // A typed-C3 queued record at offset 0x10: {0xC3, related, 1}.
+            m.rec_write_pub(0x10, 0xC3);
+            m.rec_write_pub(0x12, related);
+            m.rec_write_pub(0x14, 1);
+            m
+        };
+
+        let mut m = build(blood);
+        assert_eq!(
+            m.promote_queued_presentation(),
+            Some(0x10),
+            "related == blood must take over (0x5D40 equal)"
+        );
+
+        let mut m = build(other);
+        assert_eq!(
+            m.promote_queued_presentation(),
+            None,
+            "related != blood must NOT take over (jne @0x5D45)"
+        );
+
+        // With no DEB loaded there is no `blood` to compare against, so the gate
+        // is skipped rather than silently rejecting everything.
+        let mut m = build(other);
+        m.blood_offset = None;
+        assert_eq!(m.promote_queued_presentation(), Some(0x10));
     }
 
     /// audit-fixes #299. `location_var_offset`'s doc cites "SCRIPT2: 0x0F4E".

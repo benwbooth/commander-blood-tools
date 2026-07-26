@@ -9560,3 +9560,42 @@ Citations: 596 verified (from 593), 0 wrong. 604 lib tests, 0 failures.
 Row tally: six reviewed, two correct as written, four needing correction —
 one wrong address, one uncheckable address space, one citing its guard clause
 instead of its formula, one covering an invented policy.
+
+## #303 — found the C3 promoter, and the invented policy was wrong on the merits
+
+#302 left a task: find the engine's own scan of C3 records. It exists, and the
+port's first-match policy was not merely unsourced — it was WRONG.
+
+`find_imm.py` on `0xc3` gives ten confirmed instructions. Two are the handler's
+own (`0x6F21`, `0x6F4B`), four are `mov [0x6768],0xc3` in the presentation area,
+four are phantoms inside the dispatch table at `0x142F9`. The tenth is
+`0x05D37: cmp ax, 0xc3` — a READER, and `labels.csv` already names it
+`c3_promoter_branch`. It sits in the very region the old doc waved at, which is
+why "around 0x5C64" felt plausible enough to write and was still not a citation.
+
+    0x5D37  cmp ax, 0xc3           the record is typed C3
+    0x5D3C  mov bx, ds:[bp+2]      its related word
+    0x5D40  cmp bx, gs:[0x674e]    ...must be `blood`
+    0x5D45  jne                    otherwise no takeover
+
+A queued presentation is promoted ONLY when its related object is `blood`. The
+port promoted the first typed-C3 record it found, whatever the related word.
+That is a behavioural difference, not a documentation gap: any C3 record queued
+against another object would have taken over a presentation it should never have
+touched.
+
+FIXED, with the built-in it needs. `VmMachine` resolved `arche`, `orxx` and `Ark`
+by name but not `blood`, so there was nothing to compare against; `blood_offset`
+now comes from the same DEB name scan the game runs at `0x5486`. The gate is
+skipped when no DEB is loaded, because then there is no `blood` and rejecting
+everything would be a worse guess than the old behaviour.
+
+Pinned from three sides: related == blood promotes, related != blood does not,
+and no-DEB keeps the previous shape.
+
+STILL UNDECODED, narrowed: the ITERATION. Which records the engine walks, and in
+what order, is not established, so first-match AMONG blood-related records
+remains a port choice — but a much smaller one than #302 had to record.
+
+Citations: 605 verified (from 596), 0 wrong. 706 tests across all binaries, 0
+failures.
