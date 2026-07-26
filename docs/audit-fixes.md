@@ -10508,3 +10508,46 @@ arguments. That is the answer I wanted and could not have asserted without
 checking.
 
 610 lib tests, 0 failures. 613 citations verified, 0 wrong.
+
+## #327 — the game has no underscore substitution, and its case-fold preserves one
+
+#326 recorded `PHONE_CONTACTS` as "transcribed AND transformed": `DESCRIPT.DES`
+holds `Bob_Morlock`, the port carries `"BOB MORLOCK"`. Two operations are implied
+— upper-case, and underscore→space. I went looking for both.
+
+UPPER-CASING IS REAL. `0x2760` folds a NUL-terminated string in place:
+
+    0x2762  mov al, byte ptr es:[di]
+    0x2765  cmp al, 0x61          'a'
+    0x2767  jb  0x276e            BELOW 'a' -> leave untouched
+    0x2769  and al, 0xdf          upper-case
+    0x276B  mov byte ptr es:[di], al
+    0x276F  or al,al / jne        until NUL
+
+THE UNDERSCORE SUBSTITUTION IS NOT, and the argument is two-sided:
+
+  * `find_imm.py 5f` finds ZERO confirmed instructions comparing against `0x5F`
+    (28 candidates, all rejected as mid-instruction phantoms). No code path in
+    the executable special-cases an underscore.
+  * The one case-folding loop explicitly SKIPS characters below `'a'`, and `0x5F`
+    is below `'a'`. So an underscore does not merely survive by omission — the
+    loop's own guard is what preserves it.
+
+The faithful caption for `Bob_Morlock` is therefore `BOB_MORLOCK`, and the space
+in the port most likely came from reading a screenshot — the exact provenance the
+prime rule forbids.
+
+NOT CHANGED. `0x2760` has not been shown to be the routine that renders THESE
+captions; it is the general fold. Rewriting nine display strings on an inference
+is how capture-derived content gets IN, which would be a poor way to fix content
+that got in the same way. The finding is recorded on the constant, labelled at
+`0x2760`, and the APPROX row already names what must replace the table.
+
+WHAT MAKES THIS ONE STRONGER THAN A GUESS: the negative search. "The game never
+converts underscores" is a claim about ABSENCE, and absence is normally the
+weakest kind of evidence — but `find_imm` enumerates every instruction with a
+given immediate and rejects phantoms, so zero hits is a real zero, not a failure
+to look. Same instrument that was silently truncating two entries ago (#309);
+worth noting that fixing it is what makes this argument available.
+
+616 citations verified (from 613), 0 wrong. 610 lib tests, 0 failures.

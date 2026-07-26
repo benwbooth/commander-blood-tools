@@ -2999,6 +2999,25 @@ impl EngineState {
     /// `tools/check_ui_literals.py` reports it as ABSENT from the shipped data
     /// for exactly that reason: the game never stores this spelling.
     ///
+    /// THE UNDERSCORE SUBSTITUTION HAS NO BASIS IN THE BINARY (audit-fixes
+    /// #327). Two findings, together:
+    ///
+    ///   * NO instruction anywhere in BLOODPRG.EXE compares against `0x5F`.
+    ///     `find_imm.py 5f` returns zero confirmed hits (28 phantoms rejected),
+    ///     so no code path special-cases an underscore.
+    ///   * The game's only case-folding loop is `0x2760`, and it PRESERVES one:
+    ///     `cmp al,0x61 / jb` @`0x2765` skips every character below `'a'`, and
+    ///     `0x5F` is below `'a'`. `and al,0xdf` @`0x2769` upper-cases the rest.
+    ///
+    /// So the faithful caption for `Bob_Morlock` is `BOB_MORLOCK`. The upper-
+    /// casing in this table is supported; turning the underscore into a space is
+    /// not, and most likely came from reading a screenshot.
+    ///
+    /// NOT CHANGED HERE: `0x2760` has not been shown to be the routine that
+    /// renders THESE captions, and swapping nine display strings on an inference
+    /// is how capture-derived content gets in. Identifying the caption renderer
+    /// settles it either way.
+    ///
     /// The video-phone's callable crew: display name + their talk-head HNM basename
     /// (`pe/aa*.hnm`). These are the crew whose full-colour idle-head animations exist and
     /// decode cleanly; the phone shows the dialled one as the live "video feed".
