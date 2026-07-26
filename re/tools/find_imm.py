@@ -39,7 +39,21 @@ def load(path):
 
 
 def confirmed(md, data, at):
-    """Do earlier decode anchors agree `at` starts an instruction?"""
+    """Do earlier decode anchors agree `at` starts an instruction?
+
+    HAS FALSE NEGATIVES, and they are not rare (audit-fixes #334). The rule is a
+    MAJORITY of seven back-anchors, and a real instruction whose neighbourhood
+    decodes badly loses that vote. `mov byte ptr [0x2737], 1` @0x893C is genuine —
+    the bytes are `c6 06 37 27 01`, immediately after an identical store to
+    `0x2738` — and this function rejects it.
+
+    So a ZERO RESULT FROM THIS TOOL IS NOT PROOF OF ABSENCE. When the argument
+    depends on absence, search the raw ENCODINGS instead (e.g. `3c XX` for
+    `cmp al,imm8`, `80 3e .. .. XX` for `cmp byte [imm16],imm8`); that is what
+    #327's "the game never compares against 0x5F" now rests on.
+
+    Rejected candidates are listed by `--rejected` rather than silently dropped.
+    """
     agree = total = 0
     for back in range(6, 34, 4):
         anchor = max(0, at - back)
@@ -91,7 +105,9 @@ def main():
                     hits.setdefault(start, (insn.mnemonic, insn.op_str))
             break
 
-    real = [(a, v) for a, v in sorted(hits.items()) if confirmed(md, data, a)]
+    real, rejected = [], []
+    for a, v in sorted(hits.items()):
+        (real if confirmed(md, data, a) else rejected).append((a, v))
     print(f"{label}: {len(real)} confirmed instruction(s) with immediate {want:#x} "
           f"({len(hits) - len(real)} rejected as mid-instruction phantoms)")
 
@@ -111,6 +127,12 @@ def main():
         print("  --- by operation ---")
         for form, n in ops.most_common():
             print(f"  {n:>4}x  {form}")
+
+    if "--rejected" in sys.argv:
+        # Not noise by default: #334 found a REAL instruction in here.
+        print("  --- rejected as phantoms (MAY CONTAIN REAL INSTRUCTIONS) ---")
+        for a, (m, o) in rejected:
+            print(f"  {a:#07x}: {m} {o}")
 
     shown = real[:limit]
     for a, (m, o) in shown:

@@ -3003,8 +3003,15 @@ impl EngineState {
     /// #327). Two findings, together:
     ///
     ///   * NO instruction anywhere in BLOODPRG.EXE compares against `0x5F`.
-    ///     `find_imm.py 5f` returns zero confirmed hits (28 phantoms rejected),
-    ///     so no code path special-cases an underscore.
+    ///     BASIS CORRECTED (audit-fixes #334): this first cited `find_imm.py 5f`
+    ///     returning zero confirmed hits, and that tool is now known to have
+    ///     FALSE NEGATIVES — it rejects the genuine `mov byte [0x2737],1`
+    ///     @`0x893C`. A zero from it is not proof of absence. The claim instead
+    ///     rests on searching the raw ENCODINGS, which are unambiguous: `3c 5f`
+    ///     (`cmp al,0x5f`), `80 fc 5f` (`cmp ah,0x5f`), `2c 5f` (`sub al,0x5f`)
+    ///     and `80 3e .. .. 5f` (`cmp byte [imm16],0x5f`) occur ZERO times in the
+    ///     image as raw bytes — so no encoding of the comparison exists to be
+    ///     missed.
     ///   * A case-folding loop at `0x2760` PRESERVES one: `cmp al,0x61 / jb`
     ///     @`0x2765` skips every character below `'a'`, and `0x5F` is below
     ///     `'a'`. `and al,0xdf` @`0x2769` upper-cases the rest.

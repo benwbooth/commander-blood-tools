@@ -10785,3 +10785,46 @@ bytes have no writer in the port, so a predicate over them would defer on
 presentation alone.
 
 641 citations verified (from 639), 0 wrong. 612 lib tests, 0 failures.
+
+## #334 — `find_imm.py` has FALSE NEGATIVES, and one of my arguments rested on a zero from it
+
+Chasing what SETS the ten gate flags. `0x2737` is the smallest, six confirmed
+references, and NONE of them is a setter — only a clear at `0x1D67`. But the
+port's `VM_PRESENTATION_INPUT_GATE_F` doc cites `mov byte ptr [0x2737], 1`
+@`0x893C`, which was not in the list.
+
+The doc is right. The raw bytes at `0x8937` are
+
+    c6 06 38 27 01    mov byte [0x2738], 1
+    c6 06 37 27 01    mov byte [0x2737], 1     <- 0x893C
+
+an unmistakable pair. `find_imm.py` REJECTED the second as a phantom.
+
+WHY: `confirmed()` decodes from seven back-anchors and requires a MAJORITY to
+agree that the address starts an instruction. A genuine instruction sitting in a
+neighbourhood that decodes badly loses that vote. The heuristic is sound for
+*suppressing* noise and unsound as *proof of absence*.
+
+WHICH BREAKS AN ARGUMENT I MADE. #327 concluded "no instruction anywhere compares
+against `0x5F`, so nothing converts an underscore to a space", citing
+`find_imm.py 5f` returning zero. That zero is no longer evidence.
+
+RE-DERIVED, and the conclusion survives on a better basis: the plausible
+ENCODINGS are absent as raw bytes — `3c 5f` (`cmp al,imm8`), `80 fc 5f`
+(`cmp ah,imm8`), `2c 5f` (`sub al,imm8`) and `80 3e .. .. 5f`
+(`cmp byte [imm16],imm8`) each occur ZERO times in the image. A byte search
+cannot have false negatives for a fixed encoding, so this is the argument #327
+should have made. Doc corrected in place.
+
+FIXED THE TOOL the way #309 and #310 fixed the others: `--rejected` now lists the
+discarded candidates under the header "MAY CONTAIN REAL INSTRUCTIONS", and the
+docstring says plainly that a zero result is not proof of absence and names the
+byte-search alternative.
+
+THE THEME, now five instruments deep (#296 probe, #300 guard, #309/#310 search
+truncation, and this): every one reported a clean summary that concealed its own
+limits. This is the first where the limit produced a WRONG CONCLUSION in the
+tree rather than a missed one — and the only reason I found it was chasing an
+unrelated flag and noticing a doc that disagreed with a tool.
+
+641 citations verified, 0 wrong. 612 lib tests, 0 failures.
