@@ -121,6 +121,58 @@ def address_forms(addr):
     return out
 
 
+# Register-relative operands: `mod=01` (disp8) or `mod=10` (disp16), r/m = the
+# base register. audit-fixes #376: a claim that "nothing sets [reg+2] bit 0 at
+# runtime" was built by searching the `80 /N` BYTE form alone and missed three
+# sites in the `81`/`83` families, one of which activates objects. The direct-
+# address table above could not have helped -- it only knows `mod=00, r/m=110`.
+RM_NAMES = ["bx+si", "bx+di", "bp+si", "bp+di", "si", "di", "bp", "bx"]
+_ALU_BY_REG = {reg: (mn, kind) for reg, mn, kind in _ALU}
+
+
+def reg_disp_forms(disp):
+    """[(name, regex, kind)] for `<alu> byte|word [reg+disp], imm`, all bases.
+
+    Covers `80` (byte, imm8), `81` (word, imm16) and `83` (word, imm8
+    sign-extended) across every ALU op and both displacement widths. The
+    immediate is captured so a caller can ask WHICH BITS a site touches, which is
+    the question that matters for a flag byte.
+    """
+    out = []
+    for opc, ilen in ((0x80, 1), (0x81, 2), (0x83, 1)):
+        for reg, (mn, kind) in _ALU_BY_REG.items():
+            for rm in range(8):
+                for mod, dbytes in ((0x40, 1), (0x80, 2)):
+                    if dbytes == 1 and not (0 <= disp <= 0xFF):
+                        continue
+                    d = (
+                        bytes([disp & 0xFF])
+                        if dbytes == 1
+                        else bytes([disp & 0xFF, (disp >> 8) & 0xFF])
+                    )
+                    body = (
+                        re.escape(bytes([opc, mod | (reg << 3) | rm]) + d)
+                        + b"(" + (b"." if ilen == 1 else b"..") + b")"
+                    )
+                    out.append(
+                        (
+                            f"{mn} [{RM_NAMES[rm]}+{disp:#x}] ({'i8' if ilen == 1 else 'i16'})",
+                            re.compile(b"(?:\x65|\x26|\x36|\x3e)?" + body, re.S),
+                            kind,
+                        )
+                    )
+    return out
+
+
+def reg_disp_census(data, disp):
+    """site -> (name, kind, immediate) for every `<alu> [reg+disp], imm`."""
+    sites = {}
+    for name, rx, kind in reg_disp_forms(disp):
+        for m in rx.finditer(data):
+            sites[m.start()] = (name, kind, int.from_bytes(m.group(1), "little"))
+    return sites
+
+
 def census(data, addr):
     """site -> (name, kind, immediate|None), one entry per distinct address."""
     sites = {}

@@ -12301,3 +12301,35 @@ docs/port-validation.md rather than answered by guess.
 
 2229 items, 1081 confirmed (48.5%), 1148 open. 695 citations verified, 0 wrong.
 613 lib tests, 0 failures.
+
+## #377 — extend the encoding table to `[reg+disp]`, the shape #376 fell through
+
+#359 built `addr_forms.py` so an enumeration could not silently omit a family
+again. #376 then found exactly that omission in a pre-existing claim — and the
+table could not have prevented it, because the claim was about `[reg+2]` and the
+table only knows `mod=00, r/m=110`, the DIRECT form.
+
+`reg_disp_forms(disp)` / `reg_disp_census(data, disp)` now cover the other shape:
+`80`/`81`/`83` across every ALU op, all eight base registers, both displacement
+widths, with the immediate captured so a caller can ask WHICH BITS a site
+touches — the question that matters for a flag byte.
+
+Run against `[reg+2]` it gives 12 sites and reproduces #376's three bit-0 writers
+exactly (`0x5233` SET, `0x52B5` and `0x5B8D` CLR). The two extra hits are both
+worth understanding, because they are what the tool CANNOT decide:
+
+  * `0x847  adc word ptr gs:[si+2], 0` — a REAL instruction, but semantically a
+    32-bit carry propagation (`inc ax / mov gs:[si],ax / adc gs:[si+2],0`), not a
+    flag write at all. It touches bit 0 only as arithmetic.
+  * `0x67E4 cmp [bp+2], 0x6e` — a PHANTOM. Decoding from `0x67E0` gives
+    `add [bx+di+0x75],bp / adc al,[bx+si+0x27e] / outsb`, so those bytes are
+    mid-instruction.
+
+So the census answers "which bytes could encode a write here", and a human still
+decides which are instructions and which are flag operations. That is the same
+division of labour #364 recorded for the direct table, and stating it twice is
+deliberate: the tool's value is that it CANNOT miss a form, not that it
+understands what it finds.
+
+2229 items, 1081 confirmed (48.5%), 1148 open. 695 citations verified, 0 wrong.
+613 lib tests, 0 failures.
