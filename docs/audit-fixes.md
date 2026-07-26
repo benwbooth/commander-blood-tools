@@ -10749,3 +10749,39 @@ could write. But the argument for it being close is now evidence rather than
 hope.
 
 639 citations verified (from 629), 0 wrong. 611 lib tests, 0 failures.
+
+## #333 — derive the gate's operand list from the instruction stream
+
+#332 found eight of the main-loop gate's ten flags already named in the port.
+This adds the list itself — `MAIN_LOOP_BUSY_BYTES` — and does NOT transcribe it.
+
+The sequence at `0x109C`..`0x10BF` is perfectly regular:
+
+    a0 ac 67          mov al, [0x67ac]
+    0a 06 f3 24       or  al, [0x24f3]
+    0a 06 51 27       or  al, [0x2751]
+    ... seven more ...
+    jne               @0x10C3
+
+so `main_loop_busy_bytes_match_the_or_sequence` PARSES it — `0xA0` plus a word,
+then `0x0A 0x06` plus a word until the pattern stops — and asserts the port's
+array equals what it decoded, in order. It also asserts the walk ENDS at `0x10C3`,
+the branch the decode named, which is what makes "ten" a result rather than an
+assumption.
+
+Two more assertions carry #332's finding into the test: every
+`VM_PRESENTATION_INPUT_GATE_A..H` must appear among the operands, and
+`INPUT_GATE_I` (`0x2A19`) must NOT. A naming mistake that no longer matches the
+code will now fail rather than mislead.
+
+THIS IS THE STRONGEST FORM AVAILABLE for a table like this — the same move as
+#320 (`LOCATION_PANEL_BOX` read from `DS:0x2780`) and #325 (the UI string block),
+but applied to CODE rather than data: the constant is derived by decoding the
+instructions that use it, so it cannot drift from them. #227's rule generalises
+further than I had been applying it.
+
+The gate itself remains unported for #312's reason, unchanged: nine of the ten
+bytes have no writer in the port, so a predicate over them would defer on
+presentation alone.
+
+641 citations verified (from 639), 0 wrong. 612 lib tests, 0 failures.

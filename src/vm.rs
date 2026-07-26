@@ -1677,6 +1677,21 @@ const C2_ACTIVE_LINE_KIND400: u16 = 0x2B;
 /// Touched by the game at `mov word ptr [0x2793], 0` @`0x0AFC6`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const VM_UI_FLAGS: u16 = 0x2793;
+/// The TEN subsystem-active bytes the main-loop gate ORs at `0x109C`..`0x10BF`,
+/// in the order the instructions read them (audit-fixes #333).
+///
+/// Not transcribed: the sequence is perfectly regular — `a0 <addr>` for the
+/// first (`mov al,[imm16]`) then nine `0a 06 <addr>` (`or al,[imm16]`) — so
+/// `main_loop_busy_bytes_match_the_or_sequence` DECODES the list out of the
+/// image and compares it to this array. Eight of the ten already existed as
+/// `VM_PRESENTATION_INPUT_GATE_A..H`, named from their writers (#332).
+///
+/// If ANY is non-zero the pending script-profile load is deferred
+/// (`jne` @`0x10C3`), together with bits 1|2|3 of [`VM_UI_FLAGS`]
+/// (`test byte [0x2793],0xe` @`0x1095`).
+pub const MAIN_LOOP_BUSY_BYTES: [u16; 10] = [
+    0x67AC, 0x24F3, 0x2751, 0x67B0, 0x5E64, 0x2565, 0x2736, 0x2737, 0x27DA, 0x2792,
+];
 /// Bit 0 of [`VM_UI_FLAGS`] — what the 0xCE opcode branches on:
 /// `test byte ptr gs:[0x2793], 1 / jne` @`0x6494`, branch when CLEAR.
 pub const UI_FLAG_CE_BRANCH: u16 = 0x0001;
@@ -10836,6 +10851,47 @@ mod tests {
         assert!(
             !slots.is_empty(),
             "the decoded scan must reach SOME active object's record slot"
+        );
+    }
+
+    /// audit-fixes #333. DERIVE the main-loop gate's operand list from the
+    /// instruction stream instead of trusting a transcription.
+    ///
+    /// `0x109C` is `mov al,[imm16]` (`a0 <lo> <hi>`) and the nine that follow are
+    /// `or al,[imm16]` (`0a 06 <lo> <hi>`). Parsing that gives the ten addresses
+    /// the gate reads; the port's constant must equal them in order.
+    #[test]
+    fn main_loop_busy_bytes_match_the_or_sequence() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        let word = |at: usize| u16::from_le_bytes([exe[at], exe[at + 1]]);
+
+        let mut at = 0x109C;
+        assert_eq!(exe[at], 0xA0, "the gate opens with mov al,[imm16]");
+        let mut found = vec![word(at + 1)];
+        at += 3;
+        while exe[at] == 0x0A && exe[at + 1] == 0x06 {
+            found.push(word(at + 2));
+            at += 4;
+        }
+
+        assert_eq!(
+            found,
+            MAIN_LOOP_BUSY_BYTES.to_vec(),
+            "the port's list must BE the gate's operands, in order"
+        );
+        // The sequence ends where the decode said it does: `jne` @0x10C3.
+        assert_eq!(at, 0x10C3, "ten operands, ending at the branch");
+        // And every one of INPUT_GATE_A..H is among them (#332), while I is not.
+        for g in [0x24F3u16, 0x2751, 0x5E64, 0x2565, 0x2736, 0x2737, 0x27DA, 0x2792] {
+            assert!(found.contains(&g), "gate operand {g:#06x} missing");
+        }
+        assert!(
+            !found.contains(&VM_PRESENTATION_INPUT_GATE_I),
+            "INPUT_GATE_I (0x2A19) is NOT read by this gate, despite the name"
         );
     }
 
