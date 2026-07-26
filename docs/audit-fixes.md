@@ -11290,3 +11290,34 @@ rather than reconstructed from behaviour.
 
 2227 items, 1053 confirmed (47.3%). `ASM?` down to 57.
 652 citations verified, 0 wrong. 612 lib tests, 0 failures.
+
+## #348 — two more lifts verify, including the word-`out` the project warns about
+
+`func_2dd3` (`cmos_rtc_read`, `0x2DD3`): `push ax` / `xor ax,ax` /
+`out 0x70,al` (select CMOS register 0) / `in al,0x71` / `mov ah,al` /
+`mov word cs:[0xaee],ax` / `pop ax` / `retf`. The doc's two easily-omitted
+details are both there — AL is DUPLICATED into AH before the store, and AX is
+preserved across the call.
+
+`func_17af` (`page_offset_helper`, `0x17AF`): for each of `[0x5219]` and
+`[0x521D]`, `or ax,ax / js` clamps a negative to zero, otherwise `add ax,0x4000`
+adds the VGA page size; then
+
+    0x17D1  mov dx, word ptr [0xa9e]   the CRTC base
+    0x17D5  mov al, 0xc                start-address-high index
+    0x17D7  out dx, ax                 <- a WORD out
+    0x17D8  ret                        near
+
+The `out dx, ax` is the detail worth confirming: a 16-bit `out` to a CRTC index
+port writes index in AL and DATA in AH in one instruction, and this project's
+own notes list "word OUT" as a gotcha that bit the runtime earlier. The lift and
+its doc both have it right, including that AH carries the high byte of the value
+just stored to `[0x521D]`.
+
+That is six `io_lift` rows examined (#346, #347, #348) with one prose defect and
+no code defect. I am treating that as a reason to keep batching this module
+rather than a reason to stop checking it — the sample is small, and #346's defect
+was in the one place a mechanical lift cannot help: the sentence a human wrote
+above it.
+
+652 citations verified, 0 wrong. 612 lib tests, 0 failures.
