@@ -42,7 +42,7 @@ const STEER_TRAIL_ARC: i32 = 0x1E;
 /// toward the view once it strays this many arc units (`0x9762`: 0x28).
 const MENU_CLAMP_ARC: i32 = 0x28;
 
-/// Golden console menu: hit box and row metrics from `0x8613..0x868D`.
+/// Golden console menu: hit box and row metrics from `0x8614..0x868D`.
 /// The menu is baked into panorama frames 40..=60 and is only clickable there.
 pub const MENU_FRAME_MIN: u16 = 0x28;
 pub const MENU_FRAME_MAX: u16 = 0x3C;
@@ -212,7 +212,7 @@ impl BridgeView {
     /// redraw the panorama).
     ///
     /// Every path through the steer/seek update FALLS INTO the frame->yaw sync
-    /// at `0x97E4`, which snaps the ring cursor to an 8-unit boundary
+    /// at `0x97E3`, which snaps the ring cursor to an 8-unit boundary
     /// (`0x97F6 and word [0xa2a],0xfff8`) before the screen rebase — 8 ring
     /// units = one whole panorama frame (2°), so the stored cursor is always
     /// frame-aligned. [`update_view_steer`] is the `0x9656..0x97E3` body; this
@@ -312,7 +312,7 @@ impl BridgeView {
     }
 
     /// Menu row under the cursor, if the menu is in view and the cursor is
-    /// inside the box — the hit math of `0x8613..0x868D`. Returns 0..=4 top to
+    /// inside the box — the hit math of `0x8614..0x868D`. Returns 0..=4 top to
     /// bottom (HONK, TELEPHONE, CRYOBOX, MENU, OPTION).
     pub fn menu_row_under_cursor(&self) -> Option<usize> {
         if self.frame < MENU_FRAME_MIN || self.frame > MENU_FRAME_MAX {

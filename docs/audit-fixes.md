@@ -12611,3 +12611,51 @@ numeric one is correctly ignored, and removing the probe returns it to zero.
 
 2228 items, 1087 confirmed (48.8%), 1141 open. 702 citations verified, 0 wrong.
 613 lib tests, 0 failures.
+
+## #386 — three labels sat inside an instruction, and a checker that finds them
+
+Chasing `menu_submenu_labels`' documented APPROX (the `min_by_key` proxy) meant
+finding what the console MENU click dispatches to. Decoded it: `nav_choice_dispatch`
+(`0x85E2`) reads `[0x2A19]`, and if a row is selected jumps to `0x86F1`, which does
+`dec bx / add bx,bx / call word cs:[bx+0xF29]` — a five-entry near-pointer table
+at file `0x8709` (CS segment `0x071E`, base file `0x77E0`). All five entries land
+exactly on the existing `nav_choice_handler_0..4` labels, which PROVES the handler
+numbering those labels asserted. `[0x2A19]=row+1` on click matches the `dec bx`.
+
+That does NOT close the APPROX, and I am not going to pretend it does: the row ->
+console-function mapping is still open. Handler 0 is solid (it links a C3 record to
+a named Honk object — a data-side identification), but handlers 1 and 2 BOTH look
+communication-related ("reloads radio.snd"; "THE CONTACT MENU, built from live
+state"), and the old HONK/TELEPHONE/CRYOBOX/MENU/OPTION order came from the capture
+-sourced const deleted in #385. Naming rows from the artwork is what the prime rule
+forbids. The open question is now much smaller and sharper than "find the routine".
+
+THE LABEL ERRORS. `console_menu_hit_test` was recorded at `0x8613` — the last byte
+of the `jne 0x86F1` at `0x8610`. Decoding there yields `add byte [bx+di+0x2795], ah`,
+a phantom swallowing the `a1` of `mov ax,[0x2795]`. It is also not a routine at all:
+nothing calls either address; it is a FALLTHROUGH block of `nav_choice_dispatch`
+entered when no row is selected. Corrected to `0x8614`, and the SEVEN port-side
+citations of `0x8613` rewritten.
+
+Two more of the same shape, found by the new checker and each confirmed by hand:
+`angle_wrap_180` at `0x97D6` is the `0x1E` immediate of `add bx,0x1e` (renders
+`push ds`) -> `0x97D7`; `bridge_frame_to_yaw_sync` at `0x97E4` sat INSIDE the
+4-byte `mov [0x2795],bx` that is the sync itself -> `0x97E3`.
+
+`re/tools/check_label_alignment.py` asks the question `check_labels.py` never did:
+does a label's ADDRESS decode? It took three passes to be worth trusting, and the
+failures are the point. First run: 34 hits, including data tables and `0x9D10`,
+which I had disassembled cleanly hours earlier — a straddle cannot tell a real
+off-by-one from a linear decode that desynced. Adding relative-branch targets as a
+second signal left `0x9D10` still flagged, because it is reached only by a FAR call
+(`9A`, image-relative segment). With far targets and the DATA_HINT filter
+check_labels.py already uses: 10 candidates, and the two I checked by hand were
+both real. The rescued and unreachable buckets are counted separately and NOT
+reported as problems, because "the sweep cannot answer" is not "the label is wrong".
+It also tripped the stdlib-shadowing trap again — `sys.path.insert` of `re/tools`
+shadows `dis` for capstone's `inspect` import, exactly #359's `encodings.py`.
+
+Eight MISALIGNED candidates remain unchecked; that is the queue, not a claim.
+
+2228 items, 1087 confirmed (48.8%), 1141 open. 702 citations verified, 0 wrong.
+502 code + 238 data labels clean. 613 lib tests, 0 failures.

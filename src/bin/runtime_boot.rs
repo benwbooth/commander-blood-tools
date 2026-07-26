@@ -656,7 +656,7 @@ fn main() {
         // GAMESTART: the console renders but gs:0x27E0 (the vm_run_wrapper gate) is
         // never set on this path, so no script opcodes execute per frame. The
         // player action that starts GAME mode should run the 0x0FC3 init. Drive the
-        // golden menu with its DECODED geometry (0x8613): box right = 0x11F -
+        // golden menu with its DECODED geometry (0x8614): box right = 0x11F -
         // delta*8, width 0x6E; rows top = 0x48 + |delta|*1.25, pitch = 0x12 -
         // |delta|/8, five rows (HONK, TELEPHONE, CRYOBOX, MENU, OPTION). Click MENU
         // (row 3), then its submenu rows, reporting the gate after each.
@@ -701,7 +701,7 @@ fn main() {
                 let ring = ((sx + fr * 8 - 160).rem_euclid(1440)) as u16;
                 rt.set_mouse_pos(ring, sy as u16);
                 // Settle so the cursor position is latched, then HOLD the button
-                // across several frames: the menu hit-test (0x8613) runs per frame
+                // across several frames: the menu hit-test (0x8614) runs per frame
                 // and gates on [0xA3E]&1, so a sub-frame press can be missed
                 // entirely. 400k steps was very likely shorter than one frame.
                 // Press ALMOST IMMEDIATELY: the game re-warps the hardware cursor

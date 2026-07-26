@@ -1300,7 +1300,7 @@ impl EngineState {
     // the live capture)" — i.e. read off pixels, which is the sourcing the prime
     // rule forbids. The port's real menu handling is index-based and cited:
     // `BridgeView::selected_menu_item` (`DS:0x2A19`) and `menu_row_under_cursor`
-    // (`0x8613..0x868D`) in src/bridge.rs, where the names appear only as doc
+    // (`0x8614..0x868D`) in src/bridge.rs, where the names appear only as doc
     // comments. Nothing was lost by deleting it.
 
     /// The console MENU option's submenu, decoded by driving the real game (clicking MENU
@@ -1453,7 +1453,7 @@ impl EngineState {
     }
 
     /// Map a click to a ship-console menu option index (0 = HONK … 4 = OPTION)
-    /// using the decoded golden-menu hit math (`0x8613`): the menu is only
+    /// using the decoded golden-menu hit math (`0x8614`): the menu is only
     /// clickable while its panorama sector is in view, its box scrolls with the
     /// rotation, and rows are 18 px apart. `None` off the menu.
     pub fn console_menu_click(&self, x: u16, y: u16) -> Option<usize> {
@@ -1652,7 +1652,7 @@ impl EngineState {
         // NOTE: an earlier capture reading claimed the engaged CRYOBOX row
         // re-labels to "CONTACT" — REFUTED by the assembly and the data: no such
         // label exists anywhere in the game files, and the engaged-row code
-        // (console_menu_hit_test 0x8613) does a pure DAC swap of the BAKED label.
+        // (console_menu_hit_test 0x8614) does a pure DAC swap of the BAKED label.
         // The red text in the capture was the baked CRYOBOX glyphs in red,
         // misread at capture scale. The DAC model (apply_menu_palette) stands.
         if self.save_ui_active {
@@ -2722,7 +2722,7 @@ impl EngineState {
     fn render_bridge_background(&mut self) {
         // 1. Starfield through the windows: the ship-3D point cloud projected at
         //    the view's yaw — the panorama frame index IS the yaw index
-        //    (bridge_frame_to_yaw_sync 0x97E4 copies [0x2795] -> [0x2F6D]).
+        //    (bridge_frame_to_yaw_sync 0x97E3 copies [0x2795] -> [0x2F6D]).
         let mut prng = BloodPrng::seeded_from_rtc_seconds(self.starfield_seed);
         let angles = Ship3dMatrixAngles {
             angle_2f71: 0,
