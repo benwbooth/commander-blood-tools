@@ -9720,3 +9720,42 @@ makes the next one feel checked.
 The count moved by one instead of two. That is the correct number.
 
 Citations: 605 verified, 0 wrong. 606 lib tests, 0 failures.
+
+## #307 — `gs:0x2793` holds TWO flags and the port set the wrong one at presentation start
+
+#306 left the question of whether the port covers the presentation start's other
+effects. Checking them turned up something sharper than a missing write.
+
+`find_imm.py` on `0x2793` separates cleanly into two populations:
+
+    bit 0   TESTED ONLY, seven sites:  0x594A 0x5CE5 0x5D4C 0x5F93 0x6A70
+                                       0x6E9F 0x7652   (`test ...,1`)
+    bit 2   SET/CLEARED, five sites:   0x1B7B 0x593A (`or ...,4`)
+                                       0x1D5B 0x59BF 0x5E99 (`and ...,0xfb`)
+
+Two independent flags sharing a byte. Bit 0 is never OR'd anywhere — the only
+writer that raises it is `mov word ptr [0x2793], 9` @`0xB505`, the NAVIGATION
+FINAL RESET, which the port already models as `SHIP_3D_FINAL_RESET_HUD_FLAGS = 9`
+(bits 0 and 3). Bit 2 is the presentation flag: `or byte ptr gs:[0x2793], 4`
+@`0x593A` sits inside the kind-1 PRESENTATION START of `presentation_scan`
+(`0x5816`), and the teardown clears it at `0x59BF`/`0x5E99`.
+
+THE PORT HAS ONE FLAG FOR BOTH. `presentation_busy` is documented as
+"`gs:0x2793` bit0 — 0xCE branches when CLEAR", and `0x3388` reads
+`state_u8(state, 0x2793) & 1`. That part is right: the 0xCE opcode does test bit
+0. But `start_actor_presentation` SETS `presentation_busy`, i.e. sets bit 0 —
+while the game's presentation start sets bit 2 and leaves bit 0 alone.
+
+So at presentation start the port raises a flag the engine does not, and the
+opcode that reads it (0xCE) sees a state the game would not produce. The two bits
+were conflated because they live in one byte and one of them was decoded first.
+
+NOT CHANGED YET, and deliberately. Splitting the field means `0xCE` stops seeing
+presentation starts, which is a behavioural change reaching the story drive —
+exactly the shape #304 shipped and had to revert. The evidence above is strong
+enough to record and not yet strong enough to act on: what is missing is the
+reader of bit 2, i.e. what the engine does differently while a presentation is
+up. That reader is the next task, and it decides whether the port needs a second
+field or a rename.
+
+Citations: 605 verified, 0 wrong. 606 lib tests, 0 failures.
