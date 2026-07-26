@@ -8316,3 +8316,29 @@ the camera and wrong about the cost: the fix is a signature change, not a call
 site. Both docs updated, and `re/CLAUDE.md` gains the `XDB:<name>:0xNNNN` address
 form — a third address space beside the executable and the drivers, needed because
 the same offset means different things in each overlay.
+
+## #270 — making the type able to hold what the game stores
+
+#269 found the port's `camera: [i16; 3]` could not represent the alien camera,
+because Y is the high word of a 32-bit accumulator at `0x22EE`. This changes the
+type rather than working around it.
+
+`AlienCamera` carries `x: i16` (`0x22EC`, genuinely a word) and `y_fixed: i32`
+(the accumulator), exposing `y()` as the high word — the value `0xA62` adds — and
+`axis(i)` for the loop `update_position` walks. Both behaviours take it.
+
+The test is about the fraction, because that is the whole reason for the change:
+a third-of-a-unit step must leave the integer part alone for two frames and carry
+on the third. An `i16` camera rounds each frame's movement away and, under a small
+enough step, never moves at all. It also pins the negative case — `sar` floors
+toward negative infinity, so `y_fixed = -1` reads as `-1`, not `0`.
+
+`z` is present for the axis loop and defaults to zero, with a doc saying no
+overlay cell is decoded for it. That is the alternative to inventing a third
+address to make the type look symmetric.
+
+WHAT IS STILL OPEN, narrowed: the three behaviours still have no runtime caller.
+The remaining question is who advances `y_fixed` and by how much —
+`add dword ptr [0x22ee],eax` @`0x1FD5` is where it is written, and what computes
+`eax` there is the next decode. That is a smaller and better-specified question
+than "the camera is undecoded", which is where #268 left it two entries ago.

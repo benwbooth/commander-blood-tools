@@ -484,11 +484,18 @@ for Y. `0x22EC` really is a word. `0x22F0` is the HIGH WORD OF A DWORD at
 
 So the camera Y is the integer part of a 32-bit fixed-point accumulator. The
 port's `camera: [i16; 3]` cannot represent that: three independent words drop the
-fractional motion, which is what makes the movement smooth. Wiring these three
-behaviours therefore means changing that signature to carry the accumulator, not
-just finding a value to pass — which is why the naive "add a camera field" fix
-would have produced motion that steps rather than glides, and looked like a
-rendering bug rather than a lost fraction.
+fractional motion, which is what makes the movement smooth. SIGNATURE FIXED (#270): `AlienCamera` now carries `x: i16` (`0x22EC`),
+`y_fixed: i32` (the `0x22EE` accumulator) and exposes `y()` as its high word —
+the value `0xA62` adds. `proximity_visible` and `update_position` take it instead
+of `[i16; 3]`, and a test shows a third-of-a-unit step accumulating across three
+frames before the integer part moves, which an `i16` camera would have rounded
+away every frame.
+
+STILL OPEN: the three behaviours have no runtime CALLER. What remains is the
+alien view's per-frame update — who advances `y_fixed`, and with what step. That
+is a further decode in `croolis.xdb` (`add dword ptr [0x22ee],eax` @`0x1FD5` is
+where it is written; what computes `eax` there is the question), not a
+signature problem any more.
 
 ## NAV DESTINATION LIST GEOMETRY — APPROX, replacement already written (2026-07-25)
 

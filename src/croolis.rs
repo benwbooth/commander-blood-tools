@@ -102,6 +102,47 @@ const VISIBLE_SCREEN_Y_MAX: i16 = 128;
 /// Half-width of the world-x window (centered on the camera) an object must fall within.
 const VISIBLE_WORLD_X_HALF: i16 = 256;
 
+/// The alien view's camera, shaped the way the overlay stores it rather than as
+/// three plain words (audit-fixes #269/#270).
+///
+/// ```text
+///   croolis.xdb 0x22EC  a WORD          -- movsx eax,word ptr [0x22ec] @0xBFA
+///   croolis.xdb 0x22EE  a DWORD         -- add dword ptr [0x22ee],eax  @0x1FD5
+///   croolis.xdb 0x22F0  its HIGH WORD   -- add ax,word ptr [0x22f0]    @0xA62
+/// ```
+///
+/// So Y is not a coordinate the game increments; it is the INTEGER PART of a
+/// 32-bit accumulator that motion adds into. Storing it as an `i16` would round
+/// every frame's movement to whole pixels, which is why this type carries the
+/// accumulator and exposes the high word through [`Self::y`].
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct AlienCamera {
+    /// `DS:0x22EC` — a plain word.
+    pub x: i16,
+    /// `DS:0x22EE` — the 32-bit fixed-point accumulator.
+    pub y_fixed: i32,
+    /// The third component, kept for the axis loop in `update_position`. No
+    /// overlay cell is decoded for it yet, so it defaults to zero rather than
+    /// being invented.
+    pub z: i16,
+}
+
+impl AlienCamera {
+    /// `[0x22F0]`, the accumulator's high word — the value `0xA62` adds.
+    pub fn y(&self) -> i16 {
+        (self.y_fixed >> 16) as i16
+    }
+
+    /// Component by axis index, matching the loop `update_position` walks.
+    pub fn axis(&self, index: usize) -> i16 {
+        match index {
+            0 => self.x,
+            1 => self.y(),
+            _ => self.z,
+        }
+    }
+}
+
 impl AlienObject {
     /// Create an object with the decoded initial state (timer reloaded to
     /// [`ALIEN_STATE_TIMER_RELOAD`]), seeded PRNG, running the animation state machine by default.
@@ -140,7 +181,7 @@ impl AlienObject {
     /// accumulator, read by taking the top sixteen bits. Wiring this needs that
     /// accumulator, not an `i16` updated per frame; taking `camera: [i16; 3]` as
     /// three independent words would drop the fractional motion entirely.
-    pub fn proximity_visible(&mut self, camera: [i16; 3], anim_offset: i16) -> bool {
+    pub fn proximity_visible(&mut self, camera: AlienCamera, anim_offset: i16) -> bool {
         if self.state_flag == 0 {
             return false;
         }
@@ -148,11 +189,11 @@ impl AlienObject {
         let screen_y = anim_offset
             .wrapping_sub(VISIBLE_ANIM_Y_BIAS)
             .wrapping_add(self.pos[1] as i16)
-            .wrapping_add(camera[1]);
+            .wrapping_add(camera.y());
         if screen_y < 0 || screen_y > VISIBLE_SCREEN_Y_MAX {
             return false;
         }
-        let world_x = (self.pos[0] as i16).wrapping_add(camera[0]);
+        let world_x = (self.pos[0] as i16).wrapping_add(camera.x);
         world_x >= -VISIBLE_WORLD_X_HALF && world_x <= VISIBLE_WORLD_X_HALF
     }
 
@@ -170,9 +211,9 @@ impl AlienObject {
     /// position (`camera + pos`) into the toroidal play-space `[-ALIEN_POSITION_WRAP,
     /// ALIEN_POSITION_WRAP)` centered on the camera, then re-express it relative to the camera.
     /// The fold is done in 16 bits and widened back to the stored 32-bit position.
-    pub fn update_position(&mut self, camera: [i16; 3]) {
+    pub fn update_position(&mut self, camera: AlienCamera) {
         for axis in 0..3 {
-            let cam = camera[axis];
+            let cam = camera.axis(axis);
             let world = cam.wrapping_add(self.pos[axis] as i16);
             let folded =
                 (world.wrapping_add(ALIEN_POSITION_WRAP) as u16 & POSITION_WRAP_MASK) as i16;
@@ -265,6 +306,38 @@ impl AlienColony {
 
 #[cfg(test)]
 mod tests {
+
+    /// THE FRACTION IS THE POINT. Y is the high word of a 32-bit accumulator
+    /// (`add dword ptr [0x22ee],eax` @`0x1FD5`, read as `[0x22F0]` @`0xA62`), so
+    /// sub-pixel motion accumulates and only crosses into the integer part when
+    /// it has summed to a whole unit. An `i16` camera would round each frame's
+    /// movement away and never move at all under a small enough step.
+    #[test]
+    fn the_camera_y_accumulates_below_the_integer_part() {
+        let mut cam = AlienCamera::default();
+        assert_eq!(cam.y(), 0);
+
+        // A third of a unit per frame: two frames round to nothing, the third
+        // must carry.
+        let third = i32::from(u16::MAX) / 3 + 1;
+        cam.y_fixed += third;
+        assert_eq!(cam.y(), 0, "a partial step must not move the integer part");
+        cam.y_fixed += third;
+        assert_eq!(cam.y(), 0);
+        cam.y_fixed += third;
+        assert_eq!(cam.y(), 1, "three thirds must cross into the integer part");
+
+        // The axis accessor reports the same value the proximity test adds.
+        assert_eq!(cam.axis(1), cam.y());
+        cam.x = -5;
+        assert_eq!(cam.axis(0), -5);
+
+        // And a negative accumulator floors, matching an arithmetic shift.
+        let mut down = AlienCamera { y_fixed: -1, ..Default::default() };
+        assert_eq!(down.y(), -1, "sar rounds toward -inf, not toward zero");
+        down.y_fixed = -(1 << 16);
+        assert_eq!(down.y(), -1);
+    }
     use super::*;
 
     #[test]
@@ -272,20 +345,20 @@ mod tests {
         // State flag clear -> no advance, not visible.
         let mut obj = AlienObject::new(0x1);
         obj.state_flag = 0;
-        assert!(!obj.proximity_visible([0, 0, 0], 0x3C));
+        assert!(!obj.proximity_visible(AlienCamera::default(), 0x3C));
         assert_eq!(obj.anim_counter, 0);
         // State set, object at origin, anim_offset 0x3C (sy=0), camera 0 -> in window.
         obj.state_flag = 1;
         obj.pos = [0, 0, 0];
-        assert!(obj.proximity_visible([0, 0, 0], 0x3C), "on-screen object is visible");
+        assert!(obj.proximity_visible(AlienCamera::default(), 0x3C), "on-screen object is visible");
         assert_eq!(obj.anim_counter, 1, "counter advanced");
         // Push x outside +-0x100 -> not visible (but counter still advances).
         obj.pos = [0x400, 0, 0];
-        assert!(!obj.proximity_visible([0, 0, 0], 0x3C));
+        assert!(!obj.proximity_visible(AlienCamera::default(), 0x3C));
         assert_eq!(obj.anim_counter, 2);
         // Push screen-y above 0x80 -> not visible.
         obj.pos = [0, 0x400, 0];
-        assert!(!obj.proximity_visible([0, 0, 0], 0x3C));
+        assert!(!obj.proximity_visible(AlienCamera::default(), 0x3C));
     }
 
     #[test]
@@ -307,7 +380,7 @@ mod tests {
         // An object far outside the wrap window wraps back inside relative to camera.
         let mut obj = AlienObject::new(0x1);
         obj.pos = [0x5000, -0x5000, 0x100];
-        obj.update_position([0, 0, 0]);
+        obj.update_position(AlienCamera::default());
         for &p in &obj.pos {
             assert!(
                 (-(ALIEN_POSITION_WRAP as i32)..(ALIEN_POSITION_WRAP as i32)).contains(&p),
@@ -319,7 +392,7 @@ mod tests {
         // A position already inside the window, camera 0, is unchanged.
         let mut inside = AlienObject::new(0x1);
         inside.pos = [0x1000, -0x2000, 0];
-        inside.update_position([0, 0, 0]);
+        inside.update_position(AlienCamera::default());
         assert_eq!(inside.pos, [0x1000, -0x2000, 0]);
     }
 
