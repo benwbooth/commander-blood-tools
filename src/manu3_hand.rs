@@ -18,15 +18,21 @@
 //! bytes (91%)**. The naive same-offset comparison above reports 26% only because
 //! it ignores the shift. Per region:
 //!
-//!   * seg2 vertex/face pool `0x1B76..0x2274` — 1769/1790 (98.8%) IS the file;
-//!   * node tree `0x2274..0x2974` — 1301/1792 (72.6%), the rest being live pose
-//!     state, which is exactly the block the tweens write;
-//!   * `fs:0x2300` pool — 226/256 (88%).
+//!   * VERTEX POOL `0x1B76..0x223A` — **1732/1732, exactly the file**;
+//!   * the 58 bytes after it (`0x223A..0x2274`) — 63%, and they are the ROW
+//!     SCRATCH: `0x2258`/`0x2264`/`0x2270` are the three dwords the position
+//!     integrator reads at `0x03E7`/`0x03F6`/`0x0409`, rewritten every frame;
+//!   * node tree `0x2274..0x2974` — 1301/1792 (72.6%), live pose state, the block
+//!     the tweens write;
+//!   * FACE LIST `0x0B18` (216 x 8B) — 1527/1728 (88%), and NOT explained.
 //!
-//! So the MESH is shipped data the port could read straight from `manu3.xdb`
-//! instead of from a capture, and only the animated node state is genuinely
-//! runtime. That is the fix this module needs, and it is now a mechanical change
-//! rather than an open question.
+//! So the VERTEX POOL is shipped data the port can read straight from `manu3.xdb`.
+//! THE FACE LIST IS NOT, and #431 corrected #430 for saying "the mesh" when it had
+//! measured only the vertices: the face list is neither a verbatim copy (not found
+//! anywhere in the file) nor a reordering (as multisets the two differ; 170/216
+//! records match in place, 189 appear anywhere, 171 vertex triples match in place).
+//! Roughly 27 records differ in CONTENT and nothing yet explains why. Until that is
+//! decoded, only the vertex half of this blob has a shipped-file provenance.
 //!
 //! Everything BELOW is decoded from manu3.xdb's own code (re/labels.csv XDB:* entries):
 //! - MESH: 142 vertices / 216 triangle faces, lifted from the live seg2 vertex pool +

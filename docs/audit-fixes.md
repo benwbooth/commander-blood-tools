@@ -14145,3 +14145,40 @@ settled it.
 
 2229 items, 1114 confirmed (50.0%), 1115 open. 752 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #431 — correcting #430: it was the vertices, not the mesh
+
+#430 concluded "the MESH is shipped data the port could read straight from
+manu3.xdb". That is half right, and I published it one entry ago, so it gets a
+correction rather than a quiet edit.
+
+What #430 measured was the range the module calls the "seg2 vertex/face pool",
+`0x1B76..0x2274`. Splitting it finds the boundary exactly:
+
+    VERTEX POOL   0x1B76..0x223A   1732/1732   the file, byte for byte
+    tail          0x223A..0x2274     37/58     the ROW SCRATCH -- 0x2258, 0x2264
+                                               and 0x2270 are the three dwords
+                                               #425's integrator reads each frame
+
+So the vertices are shipped data with ZERO differences, and the 21 "differences"
+#430 counted were an adjacent live scratch area, not mesh at all. That half is
+stronger than #430 claimed.
+
+THE FACE LIST IS THE PART THAT WAS WRONG. It lives at `0x0B18`, not in the range
+#430 measured, and it is 1527/1728 (88%). I tested two explanations and both
+failed: the differences are NOT confined to the `link` field (they spread evenly
+over all eight byte positions, 34/14/33/19/34/16/35/16), and the list is NOT a
+permutation of the file's (as multisets the two differ; 170/216 records match in
+place, 189 appear anywhere at all, 171 vertex triples match in place). About 27
+records differ in CONTENT for a reason not yet decoded.
+
+So the correct statement is narrower than #430's: the VERTEX POOL has a
+shipped-file provenance and can be read from `manu3.xdb`; the FACE LIST does not
+yet. The module header and the validation row now say that.
+
+Two hypotheses tested and rejected is a better outcome than one asserted — but
+the reason this needed correcting is that #430 generalised from the range it had
+measured to a word ("mesh") covering a range it had not.
+
+2229 items, 1114 confirmed (50.0%), 1115 open. 752 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
