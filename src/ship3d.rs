@@ -2658,6 +2658,14 @@ pub fn project_star_map_point(
     }
     let sx = ((t[0] * m[0] + t[1] * m[1] + t[2] * m[2]) >> 7) / depth + 0xa0;
     let sy = ((t[0] * m[3] + t[1] * m[4] + t[2] * m[5]) >> 7) / depth + 0x64;
+    // The game divides the SAME depth two ways: `div ecx` @`0x9C3D` (UNSIGNED)
+    // for this scale reciprocal, `idiv ecx` @`0x9C6F` (SIGNED) for the screen
+    // axes above. Both are safe as one signed `/` here ONLY because the
+    // `depth += 0x10000` fixup @`0x9C29` has already made depth positive — which
+    // is why that fixup is not an optimisation to drop.
+    //
+    // `0x100000` is not a literal in the routine either: it is built as
+    // `mov eax,0x8000000` @`0x9C30` then `shr eax,7` @`0x9C36`.
     let scale = 0x100000 / depth;
     Some((sx, sy, scale))
 }

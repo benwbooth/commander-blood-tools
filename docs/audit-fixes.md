@@ -8410,3 +8410,33 @@ Fourth checker in this campaign whose first run was a test of the checker (#204,
 wrong, not the implementation. Recording that is the point — the alternative is a
 tool that reports one known-benign hit forever and slowly trains its reader to
 ignore it.
+
+## #273 — the same depth, divided two different ways
+
+`project_star_map_point` read against `0x9BBA`'s projector. The dot products,
+the `sar eax,7`, the `add ax,0xa0` / `add ax,0x64` screen centres — all match.
+
+The part worth the reading is the depth. The routine:
+
+```text
+   0x9C29  add ecx, 0x10000        the "if negative" fixup
+   0x9C30  mov eax, 0x8000000
+   0x9C36  shr eax, 7              -> 0x100000, built not literal
+   0x9C3D  div ecx                 UNSIGNED, for the scale reciprocal
+   0x9C6F  idiv ecx                SIGNED, for each screen axis
+```
+
+The SAME depth value is divided unsigned once and signed twice. The port does
+both with Rust's `/` on `i32`, which is signed — and that is correct here ONLY
+because the `depth += 0x10000` fixup has already made depth positive, where the
+two agree. The port has the fixup; it now also has a comment saying what the
+fixup is load-bearing FOR, because a reader tidying up "an unnecessary branch on a
+value we already know is positive" would remove exactly the thing that makes it
+positive.
+
+`0x100000` is likewise not a literal in the routine: `mov eax,0x8000000` then
+`shr eax,7`. The port writes the result, which is right, and the doc now records
+where it comes from so nobody looks for `0x100000` in the disassembly and fails to
+find it.
+
+Guard 493 -> 501 checked, 0 wrong.
