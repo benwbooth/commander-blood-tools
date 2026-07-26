@@ -12049,3 +12049,33 @@ are reachable and only the WRITES tell you the set is closed. Reading first is
 backwards for this shape of claim.
 
 689 citations verified (from 683), 0 wrong. 613 lib tests, 0 failures.
+
+## #369 — the closure check does NOT transfer to a runtime vtable
+
+#368 settled `LocationPanelState` by censusing WRITES to `gs:0x2788` and showing
+the enum's variants are all of them. `AlienMethod` looked like the same shape —
+an enum over a dispatch table at `fs:0x103A` — so I tried the same argument.
+
+It does not apply, for two independent reasons:
+
+  * THE TABLE IS NOT BAKED. `croolis.xdb` at file offset `0x103A` is sixteen
+    bytes of zeros. Whatever populates the vtable does so at runtime, so there is
+    nothing to read.
+  * NOTHING NAMES THE ADDRESS. `addr_forms.py` finds ZERO direct references to
+    `0x103A` in the overlay. That is consistent with the dispatch actually
+    observed at `0x16A4`: `mov si,[di+0x16] / add si,0x5e / jmp word ptr [si+0xe]`
+    — a per-object structure reached through a register, which #364 established
+    the census cannot see by construction.
+
+So `AlienMethod`'s individual variants are cited and verified (`0x1D27` the null
+`ret`, `0x16A4` the state machine, `0xA30` the proximity gate — #343, #355), but
+the SET is open: nothing available statically proves there is no fourth method.
+Row stays provisional, and the reason is now recorded rather than rediscovered.
+
+THE GENERAL POINT, which #368 did not state carefully enough: the write census
+proves closure only for a FIXED CELL whose writers all name it. It proves nothing
+about a table filled at runtime, or a dispatch reached through a register. Those
+need a trace, not a search — and mistaking one for the other would have let me
+declare an enum exhaustive on evidence that does not exist.
+
+613 lib tests, 0 failures. 689 citations verified, 0 wrong.
