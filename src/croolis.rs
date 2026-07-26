@@ -13,8 +13,16 @@
 //! visibility gate (`0xA30`) — the overlay's complete behaviour-method set. Remaining:
 //! the per-object 3D draw/blit, which reuses the shared ship-3D compositor.
 
-/// The overlay's animation-state PRNG (`0x16A4`: `mov ax,fs:[0x105C]; ror ax,7;
-/// sbb ax,0; store back`). On 8086 `ror ax,7` leaves CF = the result's MSB (the last
+/// The overlay's animation-state PRNG, in `XDB:croolis:0x16A4`. The routine
+/// entry is a vtable dispatch (`test word [di+0x36],0xffff / je` @`0x16AA`); the
+/// arithmetic itself is three instructions further on, cited individually here
+/// because naming only the routine is how #301's citation went wrong:
+///
+/// ```text
+///   0x16B4  mov ax, word ptr fs:[0x105c]
+///   0x16B8  ror ax, 7
+///   0x16BB  sbb ax, 0
+/// ``` On 8086 `ror ax,7` leaves CF = the result's MSB (the last
 /// bit rotated through carry), and `sbb ax,0` subtracts that carry — so the next state
 /// is `rotate_right(seed,7) - msb`. Distinct from the ship-view `rcr/rcl` PRNG.
 pub fn alien_anim_prng_next(seed: u16) -> u16 {

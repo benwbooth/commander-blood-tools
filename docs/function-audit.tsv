@@ -322,32 +322,32 @@ parse_dic	src/concept_menu.rs	32	fn		INFRA	/// Parse a `SCRIPTn.DIC` into {byte 
 is_concept_label	src/concept_menu.rs	38	fn		UNVERIFIED	/// A dictionary word is a valid CONCEPT label if it is a single token (no spaces /// — sentence fragments in the script are multi-word) of a menu-plausible length.
 decode_menus	src/concept_menu.rs	46	fn		UNVERIFIED	/// Decode every `0xA3` concept menu in a script's `.BAS`, resolving each entry's /// `u16` offset through the `.DIC`. Menus with fewer than `min_labels` entries are /// dropped (a bare `0xA3` byte in
 find_menu_containing	src/concept_menu.rs	80	fn		UNVERIFIED	/// Find the first decoded menu whose (case-insensitive) label set contains all of /// `required` — used to locate a specific menu (e.g. the destination list) by its /// known members without dependin
-alien_anim_prng_next	src/croolis.rs	20	fn	0x16A4,0x105C	ASM?	/// The overlay's animation-state PRNG (`0x16A4`: `mov ax,fs:[0x105C]; ror ax,7; /// sbb ax,0; store back`). On 8086 `ror ax,7` leaves CF = the result's MSB (the last /// bit rotated through carry), a
-AlienMethod	src/croolis.rs	34	enum	0x103A,0x1D27,0x16A4,0x12DE,0x999,0x36A,0xA30	ASM?	/// The overlay's per-object behaviour method, selected via the vtable at `fs:0x103A` /// (near-ptr entries indexed by `bx = [di+0x34]`). The decoded entries are: /// `0x1D27` (null/`ret`), `0x16A4` (
-from_vtable_offset	src/croolis.rs	47	fn	0x103A	CELL?	/// Resolve a vtable index (`[di+0x34]`) to its method, mirroring the `fs:0x103A` /// table entries.
-AlienObject	src/croolis.rs	60	struct	0x105C	CELL?	/// A `croolis` object's animation state (the 0x5E-byte record's behaviour fields): /// `+0x36` state flag, `+0x38` timer (init 0x32), `+0x3C` animation accumulator, plus /// its PRNG seed word (`fs:[
-ALIEN_TRANSFORM_NEUTRAL	src/croolis.rs	83	const		UNVERIFIED	/// The neutral transform value the initializer writes to `+0x12`/`+0x22`/`+0x32`.
-ALIEN_POSITION_WRAP	src/croolis.rs	87	const	0x4000,0x999	ASM	/// The half-extent of the object-space toroidal wrap (`0x4000`); positions wrap into /// `[-0x4000, 0x4000)` relative to the wrap origin (method `0x999`).
-POSITION_WRAP_MASK	src/croolis.rs	91	const		UNVERIFIED	/// Low-15-bit mask used while folding a position into the toroidal play-space (a bit mask, so /// hexadecimal is the natural form).
-ALIEN_STATE_TIMER_RELOAD	src/croolis.rs	94	const		UNVERIFIED	/// Timer reload (in frames) when a new animation state is chosen.
-ALIEN_ANIM_STEP	src/croolis.rs	96	const		UNVERIFIED	/// Animation-accumulator step added per state change.
-VISIBLE_ANIM_Y_BIAS	src/croolis.rs	99	const		UNVERIFIED	/// Vertical bias subtracted from the timer-indexed animation offset when testing on-screen y.
-VISIBLE_SCREEN_Y_MAX	src/croolis.rs	101	const		UNVERIFIED	/// Top of the on-screen band an object's screen y must fall within to be drawn.
-VISIBLE_WORLD_X_HALF	src/croolis.rs	103	const		INFRA?	/// Half-width of the world-x window (centered on the camera) an object must fall within.
-AlienCamera	src/croolis.rs	129	struct	0x1FC5,0x22ea,0x1FD5,0x22ee,0x1FE5,0x22f2,0x1FEA,0x22ec,0x22	ASM	/// The alien view's camera: THREE 32-bit fixed-point accumulators, each read /// through its high word (audit-fixes #269-#271). /// /// ```text ///   0x1FC5  add dword ptr [0x22ea], eax     X accumul
-axis	src/croolis.rs	140	fn		UNVERIFIED	/// An axis's INTEGER part — the high word the overlay `movsx`es.
-x	src/croolis.rs	150	fn	0x22EC	CELL?	/// `[0x22EC]`, X's high word.
-y	src/croolis.rs	155	fn	0x22F0	ASM	/// `[0x22F0]`, Y's high word.
-new	src/croolis.rs	163	fn		TESTED	/// Create an object with the decoded initial state (timer reloaded to /// [`ALIEN_STATE_TIMER_RELOAD`]), seeded PRNG, running the animation state machine by default.
-proximity_visible	src/croolis.rs	198	fn	0xA30,0xA62,0x22f0,0xA70,0x22ec,0x22EC,0xBFA,0x22F0,0x22EE,0	ASM?	/// Port of method `0xA30` (per-object proximity/visibility gate): only runs when the object's /// state flag is set; it advances the animation counter and returns whether the object sits /// within t
-reset	src/croolis.rs	217	fn	0x36A,0x8000	CELL?	/// Port of the object initializer (`0x36A`): reset the behaviour state — zero the /// state flag + animation accumulator, reload the timer, and set the transform /// components to the neutral `0x8000
-update_position	src/croolis.rs	228	fn	0x999	CELL?	/// Port of method `0x999` (object position update): fold each axis of the object's world /// position (`camera + pos`) into the toroidal play-space `[-ALIEN_POSITION_WRAP, /// ALIEN_POSITION_WRAP)` c
-dispatch	src/croolis.rs	243	fn		UNVERIFIED	/// Dispatch one frame through the object's vtable method (`call [si+0xE]` in the /// colony iterator): the animation state machine advances, the null method and /// not-yet-decoded sub-behaviours are
-step	src/croolis.rs	254	fn	0x16A4	CELL?	/// Advance one frame of the decoded state machine (`0x16A4`): the timer counts /// down; when it expires the PRNG picks a new animation state — `+0x36 = 1`, /// `+0x38 = 0x32`, `+0x3C += 0xFA` — othe
-AlienColony	src/croolis.rs	275	struct	0x12DE,0xB72	ASM?	/// The overlay's per-frame object-list dispatcher (method `0x12DE`): each `0x12DE` /// call iterates `cx = [di+0x1A]` sub-objects, calling each object's sub-method /// (`call [si+0xE]`, `si += 0x5E`)
-ALIEN_COLONY_FRAME_GATE	src/croolis.rs	291	const	0xb72,0x11C5,0x12F9,0xB72	ASM	/// The dispatcher's frame-gate reload: `mov word cs:[0xb72],7` at croolis.xdb /// `0x11C5` and `0x12F9`. /// /// The doc used to cite `cs:0xB72` alone — the gate's STORAGE, which holds 2 in /// the s
-new	src/croolis.rs	296	fn	0x105C	CELL?	/// A colony of `count` objects, PRNG-seeded distinctly (the overlay seeds each /// object from `fs:[0x105C]`; here we vary the seed per index so they de-sync).
-step	src/croolis.rs	308	fn	0xB72	CELL?	/// Advance one frame: gated by `cs:0xB72`, step every object's state machine on the /// 7th frame (decrement, and when it hits 0 update + reload to 7). Returns `true` /// on the frames the colony act
+alien_anim_prng_next	src/croolis.rs	28	fn	0x16A4,0xffff,0x16AA,0x16B4,0x105c,0x16B8,0x16BB	ASM	/// The overlay's animation-state PRNG, in `XDB:croolis:0x16A4`. The routine /// entry is a vtable dispatch (`test word [di+0x36],0xffff / je` @`0x16AA`); the /// arithmetic itself is three instructio
+AlienMethod	src/croolis.rs	42	enum	0x103A,0x1D27,0x16A4,0x12DE,0x999,0x36A,0xA30	ASM?	/// The overlay's per-object behaviour method, selected via the vtable at `fs:0x103A` /// (near-ptr entries indexed by `bx = [di+0x34]`). The decoded entries are: /// `0x1D27` (null/`ret`), `0x16A4` (
+from_vtable_offset	src/croolis.rs	55	fn	0x103A	CELL?	/// Resolve a vtable index (`[di+0x34]`) to its method, mirroring the `fs:0x103A` /// table entries.
+AlienObject	src/croolis.rs	68	struct	0x105C	CELL?	/// A `croolis` object's animation state (the 0x5E-byte record's behaviour fields): /// `+0x36` state flag, `+0x38` timer (init 0x32), `+0x3C` animation accumulator, plus /// its PRNG seed word (`fs:[
+ALIEN_TRANSFORM_NEUTRAL	src/croolis.rs	91	const		UNVERIFIED	/// The neutral transform value the initializer writes to `+0x12`/`+0x22`/`+0x32`.
+ALIEN_POSITION_WRAP	src/croolis.rs	95	const	0x4000,0x999	ASM	/// The half-extent of the object-space toroidal wrap (`0x4000`); positions wrap into /// `[-0x4000, 0x4000)` relative to the wrap origin (method `0x999`).
+POSITION_WRAP_MASK	src/croolis.rs	99	const		UNVERIFIED	/// Low-15-bit mask used while folding a position into the toroidal play-space (a bit mask, so /// hexadecimal is the natural form).
+ALIEN_STATE_TIMER_RELOAD	src/croolis.rs	102	const		UNVERIFIED	/// Timer reload (in frames) when a new animation state is chosen.
+ALIEN_ANIM_STEP	src/croolis.rs	104	const		UNVERIFIED	/// Animation-accumulator step added per state change.
+VISIBLE_ANIM_Y_BIAS	src/croolis.rs	107	const		UNVERIFIED	/// Vertical bias subtracted from the timer-indexed animation offset when testing on-screen y.
+VISIBLE_SCREEN_Y_MAX	src/croolis.rs	109	const		UNVERIFIED	/// Top of the on-screen band an object's screen y must fall within to be drawn.
+VISIBLE_WORLD_X_HALF	src/croolis.rs	111	const		INFRA?	/// Half-width of the world-x window (centered on the camera) an object must fall within.
+AlienCamera	src/croolis.rs	137	struct	0x1FC5,0x22ea,0x1FD5,0x22ee,0x1FE5,0x22f2,0x1FEA,0x22ec,0x22	ASM	/// The alien view's camera: THREE 32-bit fixed-point accumulators, each read /// through its high word (audit-fixes #269-#271). /// /// ```text ///   0x1FC5  add dword ptr [0x22ea], eax     X accumul
+axis	src/croolis.rs	148	fn		UNVERIFIED	/// An axis's INTEGER part — the high word the overlay `movsx`es.
+x	src/croolis.rs	158	fn	0x22EC	CELL?	/// `[0x22EC]`, X's high word.
+y	src/croolis.rs	163	fn	0x22F0	ASM	/// `[0x22F0]`, Y's high word.
+new	src/croolis.rs	171	fn		TESTED	/// Create an object with the decoded initial state (timer reloaded to /// [`ALIEN_STATE_TIMER_RELOAD`]), seeded PRNG, running the animation state machine by default.
+proximity_visible	src/croolis.rs	206	fn	0xA30,0xA62,0x22f0,0xA70,0x22ec,0x22EC,0xBFA,0x22F0,0x22EE,0	ASM?	/// Port of method `0xA30` (per-object proximity/visibility gate): only runs when the object's /// state flag is set; it advances the animation counter and returns whether the object sits /// within t
+reset	src/croolis.rs	225	fn	0x36A,0x8000	CELL?	/// Port of the object initializer (`0x36A`): reset the behaviour state — zero the /// state flag + animation accumulator, reload the timer, and set the transform /// components to the neutral `0x8000
+update_position	src/croolis.rs	236	fn	0x999	CELL?	/// Port of method `0x999` (object position update): fold each axis of the object's world /// position (`camera + pos`) into the toroidal play-space `[-ALIEN_POSITION_WRAP, /// ALIEN_POSITION_WRAP)` c
+dispatch	src/croolis.rs	251	fn		UNVERIFIED	/// Dispatch one frame through the object's vtable method (`call [si+0xE]` in the /// colony iterator): the animation state machine advances, the null method and /// not-yet-decoded sub-behaviours are
+step	src/croolis.rs	262	fn	0x16A4	CELL?	/// Advance one frame of the decoded state machine (`0x16A4`): the timer counts /// down; when it expires the PRNG picks a new animation state — `+0x36 = 1`, /// `+0x38 = 0x32`, `+0x3C += 0xFA` — othe
+AlienColony	src/croolis.rs	283	struct	0x12DE,0xB72	ASM?	/// The overlay's per-frame object-list dispatcher (method `0x12DE`): each `0x12DE` /// call iterates `cx = [di+0x1A]` sub-objects, calling each object's sub-method /// (`call [si+0xE]`, `si += 0x5E`)
+ALIEN_COLONY_FRAME_GATE	src/croolis.rs	299	const	0xb72,0x11C5,0x12F9,0xB72	ASM	/// The dispatcher's frame-gate reload: `mov word cs:[0xb72],7` at croolis.xdb /// `0x11C5` and `0x12F9`. /// /// The doc used to cite `cs:0xB72` alone — the gate's STORAGE, which holds 2 in /// the s
+new	src/croolis.rs	304	fn	0x105C	CELL?	/// A colony of `count` objects, PRNG-seeded distinctly (the overlay seeds each /// object from `fs:[0x105C]`; here we vary the seed per index so they de-sync).
+step	src/croolis.rs	316	fn	0xB72	CELL?	/// Advance one frame: gated by `cs:0xB72`, step every object's state machine on the /// 7th frame (decrement, and when it hits 0 update + reload to 7). Returns `true` /// on the frames the colony act
 decompress_lz_171	src/decompress.rs	8	fn		UNVERIFIED	// NOTE: unlike RLE block 173, LZ blocks carry no flags byte / x,y placement pair — // byte 4 of their 6-byte header is payload-derived data (verified on logo_bl / // inter_sh, whose byte-4 values var
 BitReaderHigh	src/decompress.rs	72	struct		UNVERIFIED	
 new	src/decompress.rs	80	fn		UNVERIFIED	
@@ -520,104 +520,104 @@ load_ending	src/engine.rs	2958	fn		DATA?	"/// Load the game-ending finale cutsce
 start_ending	src/engine.rs	2964	fn		TESTED	/// Start the ending finale from its first frame (call when the game is completed).
 ending_finished	src/engine.rs	2970	fn		TESTED	/// Whether the ending finale has played through all its frames.
 render_ending	src/engine.rs	2978	fn		UNVERIFIED	/// Render the ending finale, advancing one frame per call and holding on the last.
-PHONE_CONTACTS	src/engine.rs	3029	const	0x09EB,0x2760,0x2765,0x2769,0xA88	ASM?	"/// PROVENANCE (audit-fixes #326): the display names are TRANSCRIBED AND /// TRANSFORMED. `DESCRIPT.DES` holds `Bob_Morlock` at `0x09EB`; this table /// carries `""BOB MORLOCK""` — upper-cased with the "
-load_telephone	src/engine.rs	3044	fn		DATA?	/// Load the video-phone call screen (console TELEPHONE option): the call widget /// (`BAPPEL.SPR`, from `iso`) and every callable crew's talk-head HNM (`pe/aa*.hnm`, /// from `assets`). Returns wheth
-phone_contact_labels	src/engine.rs	3063	fn		UNVERIFIED	/// The number of callable phone contacts loaded. /// Contact names for the TELEPHONE choice box.
-phone_contact_count	src/engine.rs	3067	fn		TESTED	
-phone_contact_name	src/engine.rs	3072	fn		TESTED	/// The display name of the currently selected/dialled contact.
-phone_connected	src/engine.rs	3077	fn		INFRA	/// Whether the call is connected (showing the talk-head video feed).
-phone_cycle_contact	src/engine.rs	3082	fn		UNVERIFIED	/// Cycle the dialled contact (`dir` +1/−1), while dialling (a no-op once connected).
-phone_contact_click	src/engine.rs	3091	fn		TESTED	/// Map a click to a contact-list row (dialling state), matching the drawn layout. // The drawn box is [up to 7 contacts…, CANCEL] (see the dialling render), // vertically centred for that total. Hit-
-phone_connect	src/engine.rs	3114	fn		TESTED	/// Connect the call to `index` (switch to the video-feed state). Invalid index = no-op.
-phone_hangup	src/engine.rs	3125	fn		TESTED	/// Hang up a connected call, returning to the dialling state.
-render_telephone	src/engine.rs	3132	fn		ORACLE?	/// Render the video-phone. Dialling: the console-palette backdrop, the animated /// `BAPPEL` call widget, and the crew contact list in the console font (the dialled /// row highlighted). Connected: t
-arm_alien_intro	src/engine.rs	3163	fn		TESTED	/// Arm the scrutinizer-apparatus intro to play from its first frame the next time /// the examination screen renders (call when opening the screen).
-render_alien_view	src/engine.rs	3174	fn		UNVERIFIED	/// Render the alien-examination screen: the mouse pan (delta from centre, /// smoothed + clamped like the decoded camera at `re/REVERSE.md`) selects one of /// the pre-rendered rotation views, whose 
-render_intro_frame	src/engine.rs	3221	fn	0x7AC3,0x6011	ORACLE?	/// Render one frame of the current intro clip full-screen; when a clip's frames are /// exhausted, advance to the next; when the sequence ends, deactivate the intro so /// the main loop takes over. /
-INTRO_CREDIT_FRAMES_PER_TICK	src/engine.rs	3273	const		ORACLE?	/// Frame index at which a credit cue's `tick` becomes active. The intro cinematic /// advances one clip frame per stepped game frame, so a cue displays from `tick` /// frames in until the next cue su
-INTRO_CREDIT_BASELINE_Y	src/engine.rs	3278	const		ORACLE?	/// Top row of the FIRST credit line. Native-resolution ground truth (dlg_05, a real /// 320x200 capture of the credit beat): line 1 top y=82, line 2 y=92 (pitch 10), /// centred on x=160, over the ch
-TV_CUE_BASELINE_Y	src/engine.rs	3280	const		UNVERIFIED	/// Top row of the LAST TV broadcast-cue line (the lower letterbox band).
-INTRO_CREDIT_COLOR_INDEX	src/engine.rs	3283	const		TESTED	/// Reserved palette index forced to white for the credit glyphs (mirrors the /// dialogue reveal's reserved 0xFD/0xFE slots).
-draw_intro_credit	src/engine.rs	3287	fn		UNVERIFIED	"/// Draw the credit subtitle active at intro clip `frame` (if any) centred in the /// lower letterbox. The active cue is the last one whose `tick` has been reached. // Multi-line credits (""CRYO Intera"
-load_dialogue_scenes	src/engine.rs	3319	fn		DATA?	/// Load a dialogue script AND resolve each line's speaker to its talk-HNM asset /// (actor `0xC4` offset → DEB object name → DESCRIPT record → talk HNM → file in /// `asset_dir`), so playback automat
-dialogue_cursor	src/engine.rs	3364	fn		INFRA	/// Current dialogue playback cursor (line index), for drivers that react to line /// changes (e.g. per-line voice playback).
-set_dialogue_cursor	src/engine.rs	3370	fn		UNVERIFIED	/// Set the dialogue playback cursor (clamped to the loaded dialogue), used when /// restoring a save so playback resumes at the saved line.
-capture_save	src/engine.rs	3381	fn		ORACLE?	/// Capture the resumable game state into a [`crate::save::SaveState`] (the port's own /// save). `script` is the current location/dialogue script number the driver loaded /// (0 = none, on the nav) —
-restore_save	src/engine.rs	3413	fn		UNVERIFIED	/// Restore the engine-side view and settings from a save. The driver must (re)load /// `save.script`'s dialogue BEFORE calling this so the dialogue cursor lands on a valid /// line; screen selection,
-subtitle_reveal_progress	src/engine.rs	3447	fn	0x5E58,0x94BA	ASM?	/// How many subtitle characters are currently revealed on the active line (the /// game's reveal pointer `gs:0x5E58`), and the line's total character count. A /// driver plays the `tb.snd` chatter (c
-current_voice	src/engine.rs	3464	fn	0xCFB,0x66AF,0x94CF	CELL?	/// The current line's speaker SND bank path + its `b3` selector. /// /// NO LONGER DRIVES AUDIO. The per-line voice clip this used to feed was removed: /// the game plays a random burble (`prng(10)+7
-load_current_scene	src/engine.rs	3475	fn	0x67F6,0x682F	CELL?	/// Load the talk-HNM resolved for the current dialogue line (if any). // A line with its own scene switches to it; a line WITHOUT one keeps the current // scene (so a character's sceneless lines play
-load_dialogue	src/engine.rs	3504	fn	0x108E	CELL?	/// Load a dialogue script (`SCRIPTn.COD` + `.VAR`): run the VM trace and queue /// its reached dialogue lines for frame-stepped playback. Each [`EngineState:: /// step`] advances the playback timer; 
-set_speech_dialogue	src/engine.rs	3565	fn	0x2B97,0x79E5	CELL?	/// Play dialogue directly from the port's decoded speech events — the FULL per-script, /// per-character content (every character's lines, with each line's background scene), /// instead of `execute_
-current_dialogue	src/engine.rs	3595	fn		TESTED	/// The dialogue line currently being presented, if a script is loaded.
-pending_next_scene	src/engine.rs	3602	fn		INFRA	/// The next scene/profile the loaded script's D2 handoff dispatches to (for /// scene-to-scene chaining), or `None` if this is a terminal scene. The driver /// loads that profile's script when the cu
-dialogue_finished	src/engine.rs	3608	fn		TESTED	/// Whether dialogue playback has reached the final line (the point at which the /// D2 handoff to [`EngineState::pending_next_scene`] would fire).
-queue_scenes	src/engine.rs	3615	fn		TESTED	/// Queue a sequence of scene scripts `(cod, var, dic)` and start the first, so /// the engine auto-advances scene-to-scene as each finishes (the scene flow the /// D2 handoff drives). Returns the num
-current_scene_index	src/engine.rs	3626	fn		INFRA	/// The index of the scene currently playing in the queue.
-advance_scene_if_finished	src/engine.rs	3632	fn		UNVERIFIED	/// If the current dialogue has finished and another scene is queued, advance to /// it (loading its script). Returns true if it advanced.
-dialogue_page_number	src/engine.rs	3645	fn		ORACLE?	/// 1-based page number of the current dialogue line — the green console digit the /// real presentation screen shows top-left (oracle bd_218M..bd_290M, index 254).
-current_subtitle	src/engine.rs	3650	fn		TESTED	/// The current dialogue line's reconstructed subtitle text, if non-empty.
-dialogue_len	src/engine.rs	3658	fn		TESTED	/// Number of dialogue lines the loaded script reached.
-current_line_hold	src/engine.rs	3669	fn	0xB31,0x94BA,0xB35,0x94D4	CELL?	/// Advance the dialogue playback: after `dialogue_hold_frames`, step to the next /// reached line (stops at the last line). /// Hold for the current line, using the game's decoded subtitle timing: th
-in_dialogue	src/engine.rs	3690	fn		UNVERIFIED	/// Whether a dialogue scene is currently the active view (playing, with no overlay /// screen / nav / intro / ending on top) — so a driver can route clicks to advance it.
-skip_dialogue_line	src/engine.rs	3707	fn		UNVERIFIED	/// Manually advance the dialogue on a click (as the real game does): if the current /// line is still revealing, snap it fully revealed; otherwise move to the next line. /// Returns `false` when alre
-advance_dialogue	src/engine.rs	3736	fn		ORACLE?	// Hold at the autoplay boundary: the current line stays fully shown and the topic menu // waits for the player (freeze the timer at the reveal-complete point). // The scripted OPENING (which plays ov
-load_hud_sprites	src/engine.rs	3772	fn		TESTED	/// Load the ship-nav HUD sprite banks (BCARTE grid frames + BORXX orb) from /// their raw `.spr` bytes so [`EngineState::render_ship_view`] composites the /// accurate sprite HUD over the starfield.
-load_nav_sprites	src/engine.rs	3781	fn	0x4BAA	CELL?	/// Load the star-map nav sprites: `CARTE.SPR` holds the game's actual destination /// pyramid frames at six pre-scaled sizes (f0..f5) plus the selection reticle /// (f6); `BORXX.SPR` the eye-orb fram
-nav_world_label_sample	src/engine.rs	3796	fn	0x9BBA,0x100000,0x4F09	ASM?	/// Draw the star-map destination pyramids with the game's real components: the /// ground-plane grid of destinations is projected point-by-point with /// `project_star_map_point` (the decoded 0x9BBA 
-load_title	src/engine.rs	3804	fn		DATA?	/// Load + arm the title screen from `BLOOD.LBM` under `iso`: decode the planar ILBM /// title art and downscale it aspect-correctly (e.g. 640×480 → 320×200, nearest, /// keeping the full image) into 
-title_active	src/engine.rs	3829	fn		TESTED	/// Whether the title screen is armed/showing.
-dismiss_title	src/engine.rs	3834	fn		TESTED	/// Dismiss the title screen (advance to the intro/game).
-render_title	src/engine.rs	3839	fn		UNVERIFIED	/// Render the downscaled title art into the framebuffer.
-visit_world	src/engine.rs	3850	fn		TESTED	/// Visit a world by name: collect all its decoded `fd/` rooms (floor/view-angle /// backgrounds the world maps to) from `assets`, show the first, and enable cycling. /// Returns whether any room was 
-set_world_ext	src/engine.rs	3899	fn		TESTED	/// Supply the visited world's `.ext` bytes so its decoded object positions are marked /// on the location screen. Parses the objects via [`crate::ext`] and stores their /// `(x, y)`. No-op if no worl
-world_object_click	src/engine.rs	3913	fn		UNVERIFIED	/// Hit-test a click against the visited world's decoded `.ext` OBJECT markers /// (the world's entities, e.g. the initial id=1/type=4 inhabitant at its /// world-specific position). Returns the objec
-cycle_world_room	src/engine.rs	3922	fn		TESTED	/// Cycle to another room of the currently-visited world (`delta` = +1/-1), decoding /// its background. No-op if no world is being visited.
-world_room_position	src/engine.rs	3939	fn		TESTED	/// The visited world's room count + current index (for HUD/tests), if active.
-world_location_active	src/engine.rs	3944	fn		TESTED	/// Whether the world-location landing screen is active.
-step_ship_3d_nav_state	src/engine.rs	3959	fn	0xB692,0xB75C,0x0B3B,0xB6D0	ASM	/// Whether the plain nav star-map is the active view — on the ship with no overlay /// screen (bridge/comms/cyberspace/cryobox/alien/world-landing) open. This is the /// view that shows the choose-a-
-nav_view_active	src/engine.rs	4032	fn		UNVERIFIED	
-leave_world	src/engine.rs	4044	fn		TESTED	/// Close the world-location screen (back to nav).
-render_world_location	src/engine.rs	4050	fn		UNVERIFIED	/// Render the current world-location background (its decoded palette + pixels) with /// the world name + room index captioned, into the framebuffer. // Take the visit out so the blit can mutate the f
-render_nav_pyramid_sprites	src/engine.rs	4144	fn	0x9B98,0x4f09,0x4f01,0x2F6D,0x2F6F,0x990C,0x2f6f	ASM	/// Draw the nav-map destination pyramids through the game's own projector. /// /// `ship_3d_object_sprite_project` @`0x9B98` is the per-destination /// projector (`mov bx,0x4f09` / `mov di,0x4f01` lo
-NAV_CAMERA_ORIGIN	src/engine.rs	4196	const	0x9B98,0x6212,0x4F09,0x2F77,0x9BB4,0x9BBA,0x9CF5,0x4F45,0x2F	DATA	// THE GAME'S OWN NAV-DESTINATION PROJECTOR (0x9B98), decoded: //   * it iterates entities 0x15..0x1F (`0x6212+((i+0x15)<<5)`) and draws //     ONLY those whose flags word has bit7 set (`test [si],0x8
-location_panel_tint_table	src/engine.rs	4308	fn	0x2780,0x90ED,0x90F9,0x9142,0x9156	ASM	/// The destination info panel's WINDOW: the rect at `DS:0x2780` remapped /// through a 50%-toward-black tint table (`0x90ED..0x90F9` builds it, /// `0x9142..0x9156` draws it), then the panel's text r
-render_location_info_panel	src/engine.rs	4346	fn	0x9137,0x91EC,0x9142,0x2780,0x2782,0x2784,0x2786,0x9152,0xac	ASM	/// Draw the destination INFO PANEL — `0x9137..0x91EC`: /// /// ```text ///   0x9142  mov bx,[0x2780] / cx,[0x2782] / dx,[0x2784] / bp,[0x2786] ///                                    the window rect (
-nav_chart_click	src/engine.rs	4385	fn	0x8FB0,0x8FBE,0x8FF4,0x912E,0x92A3	ASM	/// A left click while the nav chart is up, routed the way the game routes it /// (`0x8FB0..0x8FBE` then `0x8FF4`): /// /// * panel already up -> the click is what re-enables the mouse, which is the /
-render_nav_info_panel_frame	src/engine.rs	4413	fn	0x9083,0xFAD,0x299,0x40E	ASM	/// Advance and draw the info panel for one nav frame. Call after the chart /// background is drawn; returns whether anything was drawn. /// /// Mirrors the dispatcher at `0x9083`: the zooming states 
-assign_nav_slot_entity_ids	src/engine.rs	4446	fn	0x6212,0x9B98	ASM	/// Give each nav sprite slot the ENTITY id the projector writes it into: /// `0x6212 + ((i + 0x15) << 5)` at `0x9B98`, so slot `i` is entity `0x15 + i`. /// Without this a slot is anonymous and canno
-nav_hover_status_active	src/engine.rs	4467	fn	0x82E8,0x65F2,0x6212,0x830A,0x8315,0x8318,0x8328,0x420D,0x42	ASM	/// The HOVER status panel's trigger (`nav_state_gate` `0x82E8`): the gate /// reads `si = 0x65F2` — ENTITY `0x1F`'s record, the LAST of the 32 at /// `DS:0x6212` — requires its state bit0, and hit-te
-open_location_info_panel	src/engine.rs	4503	fn	0x8FF4,0x905B,0x9029,0x2AAB,0x9039,0xADB,0xADA,0x9043,0x2788	ASM	/// OPEN the destination info panel — the selection commit at /// `0x8FF4..0x905B`, minus the parts that belong to the DOS input layer: /// /// ```text ///   0x9029  [0x2AAB] = {mouse x, mouse y, 4, 4
-close_location_info_panel	src/engine.rs	4522	fn	0x912E,0x922A,0x278C,0x2788,0xADB,0x2789	ASM	/// Ask the panel to close — the `0x912E` edge, where the mouse being enabled /// again puts the FSM into state 2 (`0x922A`: `[0x278C]=0`, `[0x2788]=2`, /// `[0xADB]=0`, `inc [0x2789]`).
-step_location_info_panel	src/engine.rs	4540	fn	0x90FF,0x9120,0x2789,0x91F1,0x9228,0x27BF,0xFAD	ASM	/// Advance the panel one frame and return the rect to draw, if any. /// /// * `ZoomingOpen` (`0x90FF..0x9120`): `inc [0x2789]`, interpolate the cursor ///   rect toward the panel rect, and on complet
-load_nav_chart	src/engine.rs	4590	fn		TESTED	/// Load the real navigation star-map background from `CHART.FD` (an IFF/PBM image /// under `iso`) — the game's own chart the ship-nav screen shows. Returns whether it /// loaded; when present, `rend
-NAV_DEST_X	src/engine.rs	4631	const	0x8428,0x84A1,0x84A7,0x84AD,0x7259	ASM?	/// APPROX — FABRICATED LAYOUT, and the decoded replacement already exists. /// /// These four numbers place the choose-a-location list at a fixed `x=6, /// y=22`, pitch 10, width 150. NOTHING cites t
-NAV_DEST_Y	src/engine.rs	4632	const		UNVERIFIED	
-NAV_DEST_PITCH	src/engine.rs	4633	const		UNVERIFIED	
-NAV_DEST_W	src/engine.rs	4634	const		UNVERIFIED	
-set_nav_destinations	src/engine.rs	4640	fn		TESTED	/// Set the choose-a-location destination list for the nav (each entry: a label and /// that character's decoded dialogue lines). The nav then shows them as a clickable /// list; clicking one plays th
-set_nav_chart_objects	src/engine.rs	4656	fn	0x604E,0x721A	ASM	/// Set the RECORD-DRIVEN chart objects — the game's own nav chart, built by /// `0x604E` -> `0x721A` and mirrored by [`crate::vm::VmMachine::build_nav_chart_list`]. /// /// This is what the destinati
-nav_chart_objects	src/engine.rs	4660	fn		INFRA	
-nav_chart_object_click	src/engine.rs	4667	fn	0x92A3	ASM	/// Hit-test a click against the chart markers, exactly as `0x92A3` does: /// the box starts 2px up-left of the marker, its size comes from the object's /// kind, and BOTH bounds are inclusive. Return
-nav_destination_label	src/engine.rs	4677	fn		UNVERIFIED	/// The number of nav destinations currently offered. /// The label of nav destination `i` (the location's character name), if present.
-nav_destination_count	src/engine.rs	4681	fn		UNVERIFIED	
-nav_destination_click	src/engine.rs	4686	fn		UNVERIFIED	/// Map a click on the nav chart to a destination index, matching the list layout.
-visit_nav_destination	src/engine.rs	4700	fn		UNVERIFIED	/// Visit the chosen nav destination — play that character's decoded dialogue. Returns /// whether the index was valid.
-render_ship_view	src/engine.rs	4711	fn	0x604E,0x721A	CELL?	/// Render the on-ship nav view. With the real chart (`CHART.FD`) loaded this draws /// that star-map background (nebula + destinations + console) and a heading cursor; /// otherwise it falls back to 
-CURSOR_COLOR	src/engine.rs	4719	const		UNVERIFIED	// Heading cursor: a reserved-colour tick along the chart's top, swept by // the compass angle, so steering has visible feedback over the static chart.
-targeted_world_name	src/engine.rs	4902	fn		UNVERIFIED	"/// The name of the world the nav compass currently targets (for ""visit this /// destination"" input)."
-targeted_world_index	src/engine.rs	4909	fn		UNVERIFIED	/// The index into [`Self::nav_world_labels`] the compass heading currently targets: /// the heading (0..180°) maps across the decoded primary worlds, so panning the ship /// sweeps through the real n
-draw_subtitle	src/engine.rs	4918	fn		DATA?	/// Draw a subtitle line into the framebuffer at the game's subtitle reveal /// position (scene band, `SUBTITLE_X`/`SUBTITLE_Y` = 10/8) using the game font. /// The scene band's talk-HNM background co
-draw_subtitle_revealed	src/engine.rs	4938	fn	0x3630	ASM	/// Draw the pre-wrapped subtitle with only the first `visible` characters /// shown, the newest in the reveal-edge colour — the game's per-character /// reveal. Non-visible characters are not drawn y
-render_dialogue_frame	src/engine.rs	5081	fn	0x2B97,0x79E5	CELL?	/// Render the current dialogue line's frame into the framebuffer: clear, then /// draw the reconstructed subtitle text. (The talk-HNM scene background layer /// composites behind this once the HNM de
-BOX_OPEN_PHASES	src/engine.rs	5097	const	0x2B97,0x79E5	CELL?	// BOX-OPEN ANIMATION — the game's 6-phase zoom (table DS:0x2B97, driver // screen_mode_update 0x79E5): {x,y,w,h} growing from a point to the // full 320x130 presentation frame, 0xE0 fill with an 0xEF
-first_scene_hnm_stem	src/engine.rs	5202	fn		DATA?	/// Lowercase file stem of the first resolved talk-HNM in the loaded dialogue, so a /// driver can look its background music up via `DescriptDb::hnm_music_map`.
-take_nav_selection	src/engine.rs	5214	fn		UNVERIFIED	/// Take the pending nav destination selection (the compass heading the player /// clicked in the nav view), clearing it. A driver polls this each frame to load /// the selected destination's dialogue
-poll_input	src/engine.rs	5220	fn	0x70E	CELL?	/// The mouse input poll (`0:0x70E`): store the frame's cursor state and, if the /// cursor moved since last frame, reset the idle timer; otherwise advance it.
-step	src/engine.rs	5235	fn	0x0FFB	CELL?	/// One iteration of the top-level dispatch loop (`0x0FFB`). Ordered to match the /// decoded engine: poll input → (reset render state) → (render subsystems) → /// on-ship gate → countdown. Rendering 
-mode_x_offset	src/engine.rs	5415	fn	0x299,0x498	CELL?	/// The game's mode-X screen address for pixel `(x, y)` — `(byte_offset, plane)` where /// `byte_offset = y*80 + x/4` and `plane = x & 3`, exactly as `graphics_plot_modex` /// (`0x299:0x498`) computes
-signed_i16_engine	src/engine.rs	5424	fn		UNVERIFIED	/// Invert [`mode_x_offset`] back to the linear framebuffer index the engine uses: /// `byte_offset*4 + plane`. Equals `y*ENGINE_SCREEN_WIDTH + x`, proving the two layouts /// address the same pixel. 
-mode_x_to_linear	src/engine.rs	5447	fn	0x3428,0x299,0x498,0x3461,0x3464,0x3467,0x346B,0x3c4	ASM	/// Invert the game's mode-X addressing: a `(plane byte offset, plane)` pair back /// to a linear framebuffer index. /// /// The forward mapping is in the mode-X plot at `0x3428` (`graphics_plot_modex
+PHONE_CONTACTS	src/engine.rs	3036	const	0x09EB,0x2737,0x893C,0x2760,0x2765,0x2769,0xA88	ASM?	"/// PROVENANCE (audit-fixes #326): the display names are TRANSCRIBED AND /// TRANSFORMED. `DESCRIPT.DES` holds `Bob_Morlock` at `0x09EB`; this table /// carries `""BOB MORLOCK""` — upper-cased with the "
+load_telephone	src/engine.rs	3051	fn		DATA?	/// Load the video-phone call screen (console TELEPHONE option): the call widget /// (`BAPPEL.SPR`, from `iso`) and every callable crew's talk-head HNM (`pe/aa*.hnm`, /// from `assets`). Returns wheth
+phone_contact_labels	src/engine.rs	3070	fn		UNVERIFIED	/// The number of callable phone contacts loaded. /// Contact names for the TELEPHONE choice box.
+phone_contact_count	src/engine.rs	3074	fn		TESTED	
+phone_contact_name	src/engine.rs	3079	fn		TESTED	/// The display name of the currently selected/dialled contact.
+phone_connected	src/engine.rs	3084	fn		INFRA	/// Whether the call is connected (showing the talk-head video feed).
+phone_cycle_contact	src/engine.rs	3089	fn		UNVERIFIED	/// Cycle the dialled contact (`dir` +1/−1), while dialling (a no-op once connected).
+phone_contact_click	src/engine.rs	3098	fn		TESTED	/// Map a click to a contact-list row (dialling state), matching the drawn layout. // The drawn box is [up to 7 contacts…, CANCEL] (see the dialling render), // vertically centred for that total. Hit-
+phone_connect	src/engine.rs	3121	fn		TESTED	/// Connect the call to `index` (switch to the video-feed state). Invalid index = no-op.
+phone_hangup	src/engine.rs	3132	fn		TESTED	/// Hang up a connected call, returning to the dialling state.
+render_telephone	src/engine.rs	3139	fn		ORACLE?	/// Render the video-phone. Dialling: the console-palette backdrop, the animated /// `BAPPEL` call widget, and the crew contact list in the console font (the dialled /// row highlighted). Connected: t
+arm_alien_intro	src/engine.rs	3170	fn		TESTED	/// Arm the scrutinizer-apparatus intro to play from its first frame the next time /// the examination screen renders (call when opening the screen).
+render_alien_view	src/engine.rs	3181	fn		UNVERIFIED	/// Render the alien-examination screen: the mouse pan (delta from centre, /// smoothed + clamped like the decoded camera at `re/REVERSE.md`) selects one of /// the pre-rendered rotation views, whose 
+render_intro_frame	src/engine.rs	3228	fn	0x7AC3,0x6011	ORACLE?	/// Render one frame of the current intro clip full-screen; when a clip's frames are /// exhausted, advance to the next; when the sequence ends, deactivate the intro so /// the main loop takes over. /
+INTRO_CREDIT_FRAMES_PER_TICK	src/engine.rs	3280	const		ORACLE?	/// Frame index at which a credit cue's `tick` becomes active. The intro cinematic /// advances one clip frame per stepped game frame, so a cue displays from `tick` /// frames in until the next cue su
+INTRO_CREDIT_BASELINE_Y	src/engine.rs	3285	const		ORACLE?	/// Top row of the FIRST credit line. Native-resolution ground truth (dlg_05, a real /// 320x200 capture of the credit beat): line 1 top y=82, line 2 y=92 (pitch 10), /// centred on x=160, over the ch
+TV_CUE_BASELINE_Y	src/engine.rs	3287	const		UNVERIFIED	/// Top row of the LAST TV broadcast-cue line (the lower letterbox band).
+INTRO_CREDIT_COLOR_INDEX	src/engine.rs	3290	const		TESTED	/// Reserved palette index forced to white for the credit glyphs (mirrors the /// dialogue reveal's reserved 0xFD/0xFE slots).
+draw_intro_credit	src/engine.rs	3294	fn		UNVERIFIED	"/// Draw the credit subtitle active at intro clip `frame` (if any) centred in the /// lower letterbox. The active cue is the last one whose `tick` has been reached. // Multi-line credits (""CRYO Intera"
+load_dialogue_scenes	src/engine.rs	3326	fn		DATA?	/// Load a dialogue script AND resolve each line's speaker to its talk-HNM asset /// (actor `0xC4` offset → DEB object name → DESCRIPT record → talk HNM → file in /// `asset_dir`), so playback automat
+dialogue_cursor	src/engine.rs	3371	fn		INFRA	/// Current dialogue playback cursor (line index), for drivers that react to line /// changes (e.g. per-line voice playback).
+set_dialogue_cursor	src/engine.rs	3377	fn		UNVERIFIED	/// Set the dialogue playback cursor (clamped to the loaded dialogue), used when /// restoring a save so playback resumes at the saved line.
+capture_save	src/engine.rs	3388	fn		ORACLE?	/// Capture the resumable game state into a [`crate::save::SaveState`] (the port's own /// save). `script` is the current location/dialogue script number the driver loaded /// (0 = none, on the nav) —
+restore_save	src/engine.rs	3420	fn		UNVERIFIED	/// Restore the engine-side view and settings from a save. The driver must (re)load /// `save.script`'s dialogue BEFORE calling this so the dialogue cursor lands on a valid /// line; screen selection,
+subtitle_reveal_progress	src/engine.rs	3454	fn	0x5E58,0x94BA	ASM?	/// How many subtitle characters are currently revealed on the active line (the /// game's reveal pointer `gs:0x5E58`), and the line's total character count. A /// driver plays the `tb.snd` chatter (c
+current_voice	src/engine.rs	3471	fn	0xCFB,0x66AF,0x94CF	CELL?	/// The current line's speaker SND bank path + its `b3` selector. /// /// NO LONGER DRIVES AUDIO. The per-line voice clip this used to feed was removed: /// the game plays a random burble (`prng(10)+7
+load_current_scene	src/engine.rs	3482	fn	0x67F6,0x682F	CELL?	/// Load the talk-HNM resolved for the current dialogue line (if any). // A line with its own scene switches to it; a line WITHOUT one keeps the current // scene (so a character's sceneless lines play
+load_dialogue	src/engine.rs	3511	fn	0x108E	CELL?	/// Load a dialogue script (`SCRIPTn.COD` + `.VAR`): run the VM trace and queue /// its reached dialogue lines for frame-stepped playback. Each [`EngineState:: /// step`] advances the playback timer; 
+set_speech_dialogue	src/engine.rs	3572	fn	0x2B97,0x79E5	CELL?	/// Play dialogue directly from the port's decoded speech events — the FULL per-script, /// per-character content (every character's lines, with each line's background scene), /// instead of `execute_
+current_dialogue	src/engine.rs	3602	fn		TESTED	/// The dialogue line currently being presented, if a script is loaded.
+pending_next_scene	src/engine.rs	3609	fn		INFRA	/// The next scene/profile the loaded script's D2 handoff dispatches to (for /// scene-to-scene chaining), or `None` if this is a terminal scene. The driver /// loads that profile's script when the cu
+dialogue_finished	src/engine.rs	3615	fn		TESTED	/// Whether dialogue playback has reached the final line (the point at which the /// D2 handoff to [`EngineState::pending_next_scene`] would fire).
+queue_scenes	src/engine.rs	3622	fn		TESTED	/// Queue a sequence of scene scripts `(cod, var, dic)` and start the first, so /// the engine auto-advances scene-to-scene as each finishes (the scene flow the /// D2 handoff drives). Returns the num
+current_scene_index	src/engine.rs	3633	fn		INFRA	/// The index of the scene currently playing in the queue.
+advance_scene_if_finished	src/engine.rs	3639	fn		UNVERIFIED	/// If the current dialogue has finished and another scene is queued, advance to /// it (loading its script). Returns true if it advanced.
+dialogue_page_number	src/engine.rs	3652	fn		ORACLE?	/// 1-based page number of the current dialogue line — the green console digit the /// real presentation screen shows top-left (oracle bd_218M..bd_290M, index 254).
+current_subtitle	src/engine.rs	3657	fn		TESTED	/// The current dialogue line's reconstructed subtitle text, if non-empty.
+dialogue_len	src/engine.rs	3665	fn		TESTED	/// Number of dialogue lines the loaded script reached.
+current_line_hold	src/engine.rs	3676	fn	0xB31,0x94BA,0xB35,0x94D4	CELL?	/// Advance the dialogue playback: after `dialogue_hold_frames`, step to the next /// reached line (stops at the last line). /// Hold for the current line, using the game's decoded subtitle timing: th
+in_dialogue	src/engine.rs	3697	fn		UNVERIFIED	/// Whether a dialogue scene is currently the active view (playing, with no overlay /// screen / nav / intro / ending on top) — so a driver can route clicks to advance it.
+skip_dialogue_line	src/engine.rs	3714	fn		UNVERIFIED	/// Manually advance the dialogue on a click (as the real game does): if the current /// line is still revealing, snap it fully revealed; otherwise move to the next line. /// Returns `false` when alre
+advance_dialogue	src/engine.rs	3743	fn		ORACLE?	// Hold at the autoplay boundary: the current line stays fully shown and the topic menu // waits for the player (freeze the timer at the reveal-complete point). // The scripted OPENING (which plays ov
+load_hud_sprites	src/engine.rs	3779	fn		TESTED	/// Load the ship-nav HUD sprite banks (BCARTE grid frames + BORXX orb) from /// their raw `.spr` bytes so [`EngineState::render_ship_view`] composites the /// accurate sprite HUD over the starfield.
+load_nav_sprites	src/engine.rs	3788	fn	0x4BAA	CELL?	/// Load the star-map nav sprites: `CARTE.SPR` holds the game's actual destination /// pyramid frames at six pre-scaled sizes (f0..f5) plus the selection reticle /// (f6); `BORXX.SPR` the eye-orb fram
+nav_world_label_sample	src/engine.rs	3803	fn	0x9BBA,0x100000,0x4F09	ASM?	/// Draw the star-map destination pyramids with the game's real components: the /// ground-plane grid of destinations is projected point-by-point with /// `project_star_map_point` (the decoded 0x9BBA 
+load_title	src/engine.rs	3811	fn		DATA?	/// Load + arm the title screen from `BLOOD.LBM` under `iso`: decode the planar ILBM /// title art and downscale it aspect-correctly (e.g. 640×480 → 320×200, nearest, /// keeping the full image) into 
+title_active	src/engine.rs	3836	fn		TESTED	/// Whether the title screen is armed/showing.
+dismiss_title	src/engine.rs	3841	fn		TESTED	/// Dismiss the title screen (advance to the intro/game).
+render_title	src/engine.rs	3846	fn		UNVERIFIED	/// Render the downscaled title art into the framebuffer.
+visit_world	src/engine.rs	3857	fn		TESTED	/// Visit a world by name: collect all its decoded `fd/` rooms (floor/view-angle /// backgrounds the world maps to) from `assets`, show the first, and enable cycling. /// Returns whether any room was 
+set_world_ext	src/engine.rs	3906	fn		TESTED	/// Supply the visited world's `.ext` bytes so its decoded object positions are marked /// on the location screen. Parses the objects via [`crate::ext`] and stores their /// `(x, y)`. No-op if no worl
+world_object_click	src/engine.rs	3920	fn		UNVERIFIED	/// Hit-test a click against the visited world's decoded `.ext` OBJECT markers /// (the world's entities, e.g. the initial id=1/type=4 inhabitant at its /// world-specific position). Returns the objec
+cycle_world_room	src/engine.rs	3929	fn		TESTED	/// Cycle to another room of the currently-visited world (`delta` = +1/-1), decoding /// its background. No-op if no world is being visited.
+world_room_position	src/engine.rs	3946	fn		TESTED	/// The visited world's room count + current index (for HUD/tests), if active.
+world_location_active	src/engine.rs	3951	fn		TESTED	/// Whether the world-location landing screen is active.
+step_ship_3d_nav_state	src/engine.rs	3966	fn	0xB692,0xB75C,0x0B3B,0xB6D0	ASM	/// Whether the plain nav star-map is the active view — on the ship with no overlay /// screen (bridge/comms/cyberspace/cryobox/alien/world-landing) open. This is the /// view that shows the choose-a-
+nav_view_active	src/engine.rs	4039	fn		UNVERIFIED	
+leave_world	src/engine.rs	4051	fn		TESTED	/// Close the world-location screen (back to nav).
+render_world_location	src/engine.rs	4057	fn		UNVERIFIED	/// Render the current world-location background (its decoded palette + pixels) with /// the world name + room index captioned, into the framebuffer. // Take the visit out so the blit can mutate the f
+render_nav_pyramid_sprites	src/engine.rs	4151	fn	0x9B98,0x4f09,0x4f01,0x2F6D,0x2F6F,0x990C,0x2f6f	ASM	/// Draw the nav-map destination pyramids through the game's own projector. /// /// `ship_3d_object_sprite_project` @`0x9B98` is the per-destination /// projector (`mov bx,0x4f09` / `mov di,0x4f01` lo
+NAV_CAMERA_ORIGIN	src/engine.rs	4203	const	0x9B98,0x6212,0x4F09,0x2F77,0x9BB4,0x9BBA,0x9CF5,0x4F45,0x2F	DATA	// THE GAME'S OWN NAV-DESTINATION PROJECTOR (0x9B98), decoded: //   * it iterates entities 0x15..0x1F (`0x6212+((i+0x15)<<5)`) and draws //     ONLY those whose flags word has bit7 set (`test [si],0x8
+location_panel_tint_table	src/engine.rs	4315	fn	0x2780,0x90ED,0x90F9,0x9142,0x9156	ASM	/// The destination info panel's WINDOW: the rect at `DS:0x2780` remapped /// through a 50%-toward-black tint table (`0x90ED..0x90F9` builds it, /// `0x9142..0x9156` draws it), then the panel's text r
+render_location_info_panel	src/engine.rs	4353	fn	0x9137,0x91EC,0x9142,0x2780,0x2782,0x2784,0x2786,0x9152,0xac	ASM	/// Draw the destination INFO PANEL — `0x9137..0x91EC`: /// /// ```text ///   0x9142  mov bx,[0x2780] / cx,[0x2782] / dx,[0x2784] / bp,[0x2786] ///                                    the window rect (
+nav_chart_click	src/engine.rs	4392	fn	0x8FB0,0x8FBE,0x8FF4,0x912E,0x92A3	ASM	/// A left click while the nav chart is up, routed the way the game routes it /// (`0x8FB0..0x8FBE` then `0x8FF4`): /// /// * panel already up -> the click is what re-enables the mouse, which is the /
+render_nav_info_panel_frame	src/engine.rs	4420	fn	0x9083,0xFAD,0x299,0x40E	ASM	/// Advance and draw the info panel for one nav frame. Call after the chart /// background is drawn; returns whether anything was drawn. /// /// Mirrors the dispatcher at `0x9083`: the zooming states 
+assign_nav_slot_entity_ids	src/engine.rs	4453	fn	0x6212,0x9B98	ASM	/// Give each nav sprite slot the ENTITY id the projector writes it into: /// `0x6212 + ((i + 0x15) << 5)` at `0x9B98`, so slot `i` is entity `0x15 + i`. /// Without this a slot is anonymous and canno
+nav_hover_status_active	src/engine.rs	4474	fn	0x82E8,0x65F2,0x6212,0x830A,0x8315,0x8318,0x8328,0x420D,0x42	ASM	/// The HOVER status panel's trigger (`nav_state_gate` `0x82E8`): the gate /// reads `si = 0x65F2` — ENTITY `0x1F`'s record, the LAST of the 32 at /// `DS:0x6212` — requires its state bit0, and hit-te
+open_location_info_panel	src/engine.rs	4510	fn	0x8FF4,0x905B,0x9029,0x2AAB,0x9039,0xADB,0xADA,0x9043,0x2788	ASM	/// OPEN the destination info panel — the selection commit at /// `0x8FF4..0x905B`, minus the parts that belong to the DOS input layer: /// /// ```text ///   0x9029  [0x2AAB] = {mouse x, mouse y, 4, 4
+close_location_info_panel	src/engine.rs	4529	fn	0x912E,0x922A,0x278C,0x2788,0xADB,0x2789	ASM	/// Ask the panel to close — the `0x912E` edge, where the mouse being enabled /// again puts the FSM into state 2 (`0x922A`: `[0x278C]=0`, `[0x2788]=2`, /// `[0xADB]=0`, `inc [0x2789]`).
+step_location_info_panel	src/engine.rs	4547	fn	0x90FF,0x9120,0x2789,0x91F1,0x9228,0x27BF,0xFAD	ASM	/// Advance the panel one frame and return the rect to draw, if any. /// /// * `ZoomingOpen` (`0x90FF..0x9120`): `inc [0x2789]`, interpolate the cursor ///   rect toward the panel rect, and on complet
+load_nav_chart	src/engine.rs	4597	fn		TESTED	/// Load the real navigation star-map background from `CHART.FD` (an IFF/PBM image /// under `iso`) — the game's own chart the ship-nav screen shows. Returns whether it /// loaded; when present, `rend
+NAV_DEST_X	src/engine.rs	4638	const	0x8428,0x84A1,0x84A7,0x84AD,0x7259	ASM?	/// APPROX — FABRICATED LAYOUT, and the decoded replacement already exists. /// /// These four numbers place the choose-a-location list at a fixed `x=6, /// y=22`, pitch 10, width 150. NOTHING cites t
+NAV_DEST_Y	src/engine.rs	4639	const		UNVERIFIED	
+NAV_DEST_PITCH	src/engine.rs	4640	const		UNVERIFIED	
+NAV_DEST_W	src/engine.rs	4641	const		UNVERIFIED	
+set_nav_destinations	src/engine.rs	4647	fn		TESTED	/// Set the choose-a-location destination list for the nav (each entry: a label and /// that character's decoded dialogue lines). The nav then shows them as a clickable /// list; clicking one plays th
+set_nav_chart_objects	src/engine.rs	4663	fn	0x604E,0x721A	ASM	/// Set the RECORD-DRIVEN chart objects — the game's own nav chart, built by /// `0x604E` -> `0x721A` and mirrored by [`crate::vm::VmMachine::build_nav_chart_list`]. /// /// This is what the destinati
+nav_chart_objects	src/engine.rs	4667	fn		INFRA	
+nav_chart_object_click	src/engine.rs	4674	fn	0x92A3	ASM	/// Hit-test a click against the chart markers, exactly as `0x92A3` does: /// the box starts 2px up-left of the marker, its size comes from the object's /// kind, and BOTH bounds are inclusive. Return
+nav_destination_label	src/engine.rs	4684	fn		UNVERIFIED	/// The number of nav destinations currently offered. /// The label of nav destination `i` (the location's character name), if present.
+nav_destination_count	src/engine.rs	4688	fn		UNVERIFIED	
+nav_destination_click	src/engine.rs	4693	fn		UNVERIFIED	/// Map a click on the nav chart to a destination index, matching the list layout.
+visit_nav_destination	src/engine.rs	4707	fn		UNVERIFIED	/// Visit the chosen nav destination — play that character's decoded dialogue. Returns /// whether the index was valid.
+render_ship_view	src/engine.rs	4718	fn	0x604E,0x721A	CELL?	/// Render the on-ship nav view. With the real chart (`CHART.FD`) loaded this draws /// that star-map background (nebula + destinations + console) and a heading cursor; /// otherwise it falls back to 
+CURSOR_COLOR	src/engine.rs	4726	const		UNVERIFIED	// Heading cursor: a reserved-colour tick along the chart's top, swept by // the compass angle, so steering has visible feedback over the static chart.
+targeted_world_name	src/engine.rs	4909	fn		UNVERIFIED	"/// The name of the world the nav compass currently targets (for ""visit this /// destination"" input)."
+targeted_world_index	src/engine.rs	4916	fn		UNVERIFIED	/// The index into [`Self::nav_world_labels`] the compass heading currently targets: /// the heading (0..180°) maps across the decoded primary worlds, so panning the ship /// sweeps through the real n
+draw_subtitle	src/engine.rs	4925	fn		DATA?	/// Draw a subtitle line into the framebuffer at the game's subtitle reveal /// position (scene band, `SUBTITLE_X`/`SUBTITLE_Y` = 10/8) using the game font. /// The scene band's talk-HNM background co
+draw_subtitle_revealed	src/engine.rs	4945	fn	0x3630	ASM	/// Draw the pre-wrapped subtitle with only the first `visible` characters /// shown, the newest in the reveal-edge colour — the game's per-character /// reveal. Non-visible characters are not drawn y
+render_dialogue_frame	src/engine.rs	5088	fn	0x2B97,0x79E5	CELL?	/// Render the current dialogue line's frame into the framebuffer: clear, then /// draw the reconstructed subtitle text. (The talk-HNM scene background layer /// composites behind this once the HNM de
+BOX_OPEN_PHASES	src/engine.rs	5104	const	0x2B97,0x79E5	CELL?	// BOX-OPEN ANIMATION — the game's 6-phase zoom (table DS:0x2B97, driver // screen_mode_update 0x79E5): {x,y,w,h} growing from a point to the // full 320x130 presentation frame, 0xE0 fill with an 0xEF
+first_scene_hnm_stem	src/engine.rs	5209	fn		DATA?	/// Lowercase file stem of the first resolved talk-HNM in the loaded dialogue, so a /// driver can look its background music up via `DescriptDb::hnm_music_map`.
+take_nav_selection	src/engine.rs	5221	fn		UNVERIFIED	/// Take the pending nav destination selection (the compass heading the player /// clicked in the nav view), clearing it. A driver polls this each frame to load /// the selected destination's dialogue
+poll_input	src/engine.rs	5227	fn	0x70E	CELL?	/// The mouse input poll (`0:0x70E`): store the frame's cursor state and, if the /// cursor moved since last frame, reset the idle timer; otherwise advance it.
+step	src/engine.rs	5242	fn	0x0FFB	CELL?	/// One iteration of the top-level dispatch loop (`0x0FFB`). Ordered to match the /// decoded engine: poll input → (reset render state) → (render subsystems) → /// on-ship gate → countdown. Rendering 
+mode_x_offset	src/engine.rs	5422	fn	0x299,0x498	CELL?	/// The game's mode-X screen address for pixel `(x, y)` — `(byte_offset, plane)` where /// `byte_offset = y*80 + x/4` and `plane = x & 3`, exactly as `graphics_plot_modex` /// (`0x299:0x498`) computes
+signed_i16_engine	src/engine.rs	5431	fn		UNVERIFIED	/// Invert [`mode_x_offset`] back to the linear framebuffer index the engine uses: /// `byte_offset*4 + plane`. Equals `y*ENGINE_SCREEN_WIDTH + x`, proving the two layouts /// address the same pixel. 
+mode_x_to_linear	src/engine.rs	5454	fn	0x3428,0x299,0x498,0x3461,0x3464,0x3467,0x346B,0x3c4	ASM	/// Invert the game's mode-X addressing: a `(plane byte offset, plane)` pair back /// to a linear framebuffer index. /// /// The forward mapping is in the mode-X plot at `0x3428` (`graphics_plot_modex
 ACTIVE	src/entity.rs	9	const		UNVERIFIED	/// `0x80` — the object is active (gates every state change).
 STATE0	src/entity.rs	11	const		UNVERIFIED	/// `0x01` — state bit 0 (advances to [`STATE1`]).
 STATE1	src/entity.rs	13	const		UNVERIFIED	/// `0x02` — state bit 1 (set when STATE0 advances).
@@ -1304,299 +1304,304 @@ DLG_LINE_ID_BIAS	src/vm.rs	412	const	0x11F5	CELL?	/// `line_id = sign_extend(b3)
 DLG_ASSET_NAME_TABLE_BASE	src/vm.rs	416	const	0xdd7,0x7691,0x0DD7	ASM?	/// Base the fill adds after scaling: `add ax, 0xdd7` @`0x7691` (audit-fixes /// #318). A source byte of 1 therefore stores `0x0DD7` exactly — the value the /// `DLGTABLE` probe saw and the old doc co
 DLG_ASSET_NAME_STRIDE	src/vm.rs	418	const	0x768E	ASM	/// Stride of the name table the asset id offsets into (`shl ax,4`, `0x768E`).
 DLG_LINE_ASSET_NONE	src/vm.rs	420	const	0xFFFF,0x9D71	ASM	/// `0xFFFF` = no asset for this line (`cmp si,-1`, `0x9D71`).
-dlg_line_id_for_selector	src/vm.rs	443	fn	0x6788,0xFFFF,0x5E74,0x668D,0x1FAB,0x668E,0x11F2	ASM	/// The line id an `0xA6` selector maps to: `sign_extend(b3) + 9`. /// /// SCOPE: this is ONE of 27 writers of `gs:0x6788` — five register writes /// (including this one) and 22 IMMEDIATE writes of fi
-dlg_line_asset_id_ds_offset	src/vm.rs	466	fn	0x1FB5,0x9D20,0x9D22,0x9D65,0x9D6E,0x9D67,0x9D6A,0x1fb5,0x9D	ASM	/// DS offset of the ASSET ID word for a line id: `0x1FB5 + line_id*4 + 2`. /// /// Returns `None` for a negative line id, which the dispatcher rejects outright /// (`or ax,ax` @`0x9D20`, `js` @`0x9D2
-dlg_line_asset_id_from_source_byte	src/vm.rs	497	fn	0x7684,0xFFFF,0x0DD7,0x768B,0x7694,0x768D,0x768E,0x7691,0xdd	ASM	"/// The value the fill at `0x7684` stores for one source byte. /// /// Negative bytes pass through sign-extended (so `0xFF` becomes `0xFFFF`, the exact /// ""no asset"" sentinel the reader tests); other"
-text_selector_requests_voice	src/vm.rs	506	fn		UNVERIFIED	
-text_flags_are_active	src/vm.rs	517	fn	0x67A0,0x6647,0x661B	ASM	/// The A6 handler's ACTIVE-DISPLAY test, `or cx,cx / jns 0x67A0` @`0x6647`. /// /// `cx` holds `b4` in `cl` and `b5` in `ch` (read together by `lodsw` @`0x661B`), /// so bit 15 of that word IS bit 7 
-text_conditional_skip_count	src/vm.rs	523	fn	0x661E,0x662C,0x67AB	ASM	/// Port the A6 handler's conditional-skip count at file `0x661E..0x662C`: /// `b4 & 0x08` stores `((b5 >> 4) & 7) + 1` in `gs:0x67AB`.
-text_flags_after_accept	src/vm.rs	530	fn	0x668D,0x669B	ASM	/// Port the accepted-line self-modifying write in the A6 handler at file /// `0x668D..0x669B`: `b4 & 1` preserves the token's active bit, otherwise the /// handler clears bit7 of `b5` in the COD stre
-text_line_flags_offset	src/vm.rs	541	fn	0x8000,0x665A,0x6613,0x6724	ASM	/// The line record's FLAGS WORD sits at `+2`: `test word es:[di+2],0x8000` /// @`0x665A`, where `di` is the line record the handler resolved at `0x6613` /// (`les di,gs:[0x6724]` then `add di,ax` wit
-text_presentation_record_offset	src/vm.rs	548	fn	0x660D	ASM	/// The line's PRESENTATION record sits at `line + TALK_FIELD` — the `0x3A` field /// the A6 handler at `0x660D` resolves. Basis is that field offset; this function /// is the addition.
-text_line_already_shown	src/vm.rs	556	fn	0x8000,0x665A,0x67A0	ASM	/// The ALREADY-SHOWN bit, `0x8000` of the flags word — the mask in /// `test word es:[di+2],0x8000` @`0x665A`. A set bit takes `jne 0x67A0`, the same /// exit the inactive case uses, so a line alread
-is_record_entry_opcode	src/vm.rs	576	fn	0x6B06,0x6B4C,0x6E34,0x6D18,0x6D80,0x6DCF,0x6F62	ASM	/// The opcode-family predicates below group by TOKEN SHAPE, not by handler, and /// the dispatch table shows why that distinction is needed: /// /// ```text ///   0xB8 0xB9 0xBD  -> 0x6B06           
-is_record_state_opcode	src/vm.rs	583	fn	0x6B4C,0x6E34	ASM	/// `0xC1..=0xC2`. NOT a handler family — they dispatch to `0x6B4C` and `0x6E34` /// separately (see the note above [`is_record_entry_opcode`]); the range is a /// token-shape group for the decoder.
-is_global_compare_opcode	src/vm.rs	589	fn	0x64E5,0x6510	ASM	/// `0xCA` and `0xCB`, which dispatch to `0x64E5` and `0x6510` — again two /// handlers, grouped here by operand layout rather than behaviour.
-is_pair_record_opcode	src/vm.rs	596	fn	0x6B06,0x142D0	ASM	/// The one grouping that IS a handler family: `0xB8`, `0xB9` and `0xBD` all /// dispatch to `0x6B06` (dispatch table `0x142D0`), which is why they share the /// 2-word record behaviour rather than me
-record_entry_stored_related_offset	src/vm.rs	621	fn	0x6F62,0x6F9A,0x6F9E,0x6FB4,0x6FA2,0x6FA8,0x6FAC	ASM	/// What the record-entry family stores in the RELATED word — `0` for `0xC8`, the /// operand otherwise. /// /// The zero is not a literal in the original. `0xC8`'s handler (`0x6F62`) reaches /// its 
-script_profile_index_from_request_operand	src/vm.rs	634	fn	0x64B8,0x6780	ASM	/// Port the `0xD2` handler at `BLOODPRG.EXE` file `0x64B8`: /// `lodsb; cbw; dec ax; mov gs:[0x6780], ax`. /// /// `cbw` is correct despite `re/tools/dis.py` printing `cwde` there: capstone /// rende
-bit_flag_byte_offset	src/vm.rs	661	fn	0x6AC0,0x6AC3,0x6AC6,0x6AD0,0x6AD3,0x6AD5,0x6AD7,0x6AE2	ASM	/// `0xB7` addresses bits high-bit-first inside each byte: bit 0 is mask `0x80`, /// bit 7 is mask `0x01`, then bit 8 starts the next byte at `0x80`. /// /// The byte split is `0x6AC0`: /// /// ```tex
-bit_flag_mask	src/vm.rs	675	fn	0x6AD3,0x6236	ASM	/// `0x80 >> (bit & 7)` — the mask form of the `shl al,cl / shl al,1 / jae` /// sequence at `0x6AD3`, which is why bit 0 is the HIGH bit. See /// [`bit_flag_byte_offset`] for the full derivation. /// 
-vm_field_offset	src/vm.rs	697	fn	0x6023,0x6024,0x6027,0x602A,0x602C,0x6d60,0x6D60	ASM	/// The FIELD-OFFSET MATRIX lookup, `vm_field_offset` (`0x6023`) — how the engine /// turns a (selector, kind) pair into a byte offset inside an object record. /// /// ```text ///   0x6024  shl ax,4  
-reveal_complete_hold_ticks	src/vm.rs	708	fn	0x94D4,0x94DD,0x0ACA,0x67BB	ASM	/// Port the reveal-complete hold timer at `BLOODPRG.EXE` `0x94D4..0x94DD`: /// `b35 = gs:[0x0ACA] << 2; gs:[0x67BB] = 1`.
-text_speed_step_from_setting	src/vm.rs	717	fn	0x1B29,0x1B3D,0x0ACA,0xB31,0x94BA	ASM	/// Port the text-speed init at `BLOODPRG.EXE` `0x1B29..0x1B3D`: the config text-speed /// setting index is doubled (`add ax,ax`), setting 4 is special-cased (`cmp ax,8; /// add ax,4`), then `gs:[0x0A
-reveal_frames_per_char	src/vm.rs	742	fn	0xB31,0x94BA,0x0B35,0x0ACA,0x94AB,0xaca,0x94AE,0x94B1,0xb31,	ASM	/// Frames per revealed character for a text-speed step: the reveal loop resets the /// per-character countdown `gs:[0xB31] = step >> 2`. /// /// CITATION CORRECTED (audit-fixes #298). This pointed at
-record_end_hold_ticks	src/vm.rs	748	fn	0x7378,0x738C,0x27CF,0x0ACA,0x67BB	ASM	/// Port the record-end hold timer at `BLOODPRG.EXE` `0x7378..0x738C`: /// `b35 = gs:[0x27CF] * (gs:[0x0ACA] >> 1) + 6; gs:[0x67BB] = 1`.
-scan_zero_word_pub	src/vm.rs	763	fn	0x6293,0x0000	ORACLE	/// Replicates helper `0x6293`: from `start`, scan byte-by-byte until a `0x0000` /// word, skip it, then skip one extra byte if it is also zero. Returns the /// offset just past the terminator. /// Te
-scan_zero_word	src/vm.rs	767	fn		ORACLE	
-VmToken	src/vm.rs	781	enum	0x6724,0x0000,0x00C3	CELL?	/// A single decoded token from a COD stream, in execution order. /// `0xA6` TEXT token. /// `b1:b2` — index into the per-line record table (`gs:0x6724`). /// `b3` — voice/speaker selector (`0xFF` = n
-offset	src/vm.rs	943	fn		TESTED	/// The token's byte offset in the COD stream (every variant records it). /// With the stream in hand this also yields the raw opcode byte — /// `cod[token.offset()]` — which is how the live-coverage 
-encode_token	src/vm.rs	969	fn		TESTED	/// RE-ENCODE a decoded token back to its byte form — the inverse of [`walk`]'s /// decoding, from the STRUCTURED FIELDS ONLY (no source peeking). Returns `None` /// for content-opaque tokens (`Op`, `
-walk	src/vm.rs	1085	fn	0x62B6,0x6293,0x2F7F	ASM	/// Walk `cod[start..end]` in execution order, yielding tokens. Stops at `end`, /// at the `0xFF` end marker, or at the first byte that cannot be a token. // Determine token length + any mode change —
-decode_text	src/vm.rs	1308	fn	0x0000	ASM	/// Decode an `0xA6` TEXT token starting at `pos`. Returns the token and the /// offset just past it, or `None` if malformed. // A6 b1 b2 b3 b4 b5  [loop_target?] [control_word?]  w0 w1 ... 0x0000 // 
-read_u16	src/vm.rs	1362	fn		INFRA	
-ASSIGN_7	src/vm.rs	1440	const		UNVERIFIED	
-BITMASK_5	src/vm.rs	1441	const		UNVERIFIED	
-ASSIGN_5	src/vm.rs	1442	const		UNVERIFIED	
-TALK_FIELD	src/vm.rs	1459	const	0x6664,0x131,0x6D60,0x6d60	DATA	/// The talk/presentation-record field: selector `0x13`, **kind slot 1**. /// /// Unlike [`LOCATION_FIELD`] this is not a port assumption — the BINARY hardcodes the /// kind too. `0x6664` computes `ax
-LOCATION_FIELD	src/vm.rs	1482	const	0x6D60,0x6023,0x557C,0x5B77,0x61C3	DATA	/// The speaker's location field: `vm_field_offset(0x11, kind)` for **kind 1**. /// /// ASSUMPTION, made explicit (matrix row for selector `0x11` at `gs:0x6D60`): /// /// ```text ///   kind:   0     1
-SPECIAL_OBJECT_SLOT_COUNT	src/vm.rs	1483	const		UNVERIFIED	
-VM_FIELD_OFFSET_SELECTOR_PRESENTATION_HANDOFF	src/vm.rs	1484	const		UNVERIFIED	
-VM_FIELD_OFFSET_SELECTOR_C2	src/vm.rs	1491	const	0x625B,0x624B	ASM	/// `mov ax,0x11` @`0x625B` in the nav source-list builder (`0x624B`) — the /// selector the walk resolves to find an object's parent link. /// /// `ship3d::SHIP_3D_FIELD_SELECTOR_PARENT_LINK` is the 
-VM_FIELD_OFFSET_SELECTOR_C9_RELATED	src/vm.rs	1492	const		UNVERIFIED	
-VM_FIELD_OFFSET_SELECTOR_ENCOUNTER	src/vm.rs	1497	const	0x5DCE,0x5DF6,0x83DF,0x91DB	ASM	/// Selector `0x08` — the ENCOUNTER COUNTER. `FIELD_OFFSETS[8]` is non-zero in /// exactly one column (`0x36` at column 1 = kind 2), so this is a kind-2 field. /// Written by `post_update_encounter_co
-OBJECT_FLAG_PAIR_SEEN	src/vm.rs	1500	const	0x8000,0x5DD2,0x5DFA	ASM	/// Bit 15 of an object's `+2` flag word, set alongside the encounter-counter /// bump (`or word [si+2],0x8000` @ `0x5DD2`/`0x5DFA`).
-OBJECT_FLAG_ACTIVE	src/vm.rs	1503	const	0x91D4,0x83D9	ASM	/// Bit 0 of an object's `+2` flag word — the ACTIVE bit, the second condition of /// both list filters (`test word [si+2],1` @ `0x91D4`, `test byte [si+2],1` @ `0x83D9`).
-ARCHE_LOCATION_FIELD	src/vm.rs	1507	const	0x8365,0x6752,0x6B44	ASM	/// `arche+0x16` — the CURRENT LOCATION object (`mov bp,fs:[si+0x16]` @ `0x8365` /// with `si = gs:[0x6752] = arche`; the same word `0x6B44` clears).
-LOCATION_KIND_SHIP	src/vm.rs	1509	const	0x836C,0x8376	ASM	/// Location kinds the status header distinguishes (`0x836C`, `0x8376`).
-LOCATION_KIND_BLACK_HOLE	src/vm.rs	1510	const		UNVERIFIED	
-StatusHeaders	src/vm.rs	1517	struct	0x12E,0x137,0x13E,0x14B	CELL?	/// The status panel's four headers, supplied by the caller from the GAME'S OWN /// strings (`bloodprg::location_status_headers` reads `DS:0x12E`, `0x137`, /// `0x13E`, `0x14B`). They used to be four 
-STATUS_STRING_TABLE	src/vm.rs	1535	const	0x12E,0x137,0x13E,0x14B,0x839F	ASM	/// `(DS offset, file offset)` for each header — `0x12E`/`0x137`/`0x13E` are the /// three `mov si,imm` constants and `0x14B` the roster caption at `0x839F`. /// /// The strings themselves are NOT her
-LOCATION_PANEL_X	src/vm.rs	1544	const	0x9137,0x91EC	ASM	/// Layout of the DESTINATION INFO PANEL drawn by `0x9137..0x91EC`. Every value is /// an immediate in that routine; see [`VmMachine::location_panel_rows`].
-LOCATION_PANEL_Y	src/vm.rs	1545	const		UNVERIFIED	
-LOCATION_PANEL_ROW_PITCH	src/vm.rs	1546	const		UNVERIFIED	
-LOCATION_PANEL_NAME_GAP	src/vm.rs	1547	const		UNVERIFIED	
-LOCATION_PANEL_HEADER_COLOR	src/vm.rs	1548	const		UNVERIFIED	
-LOCATION_PANEL_ROW_COLOR	src/vm.rs	1549	const		UNVERIFIED	
-LOCATION_PANEL_BOX	src/vm.rs	1554	const	0x2780,0x9114,0x9203,0x9142	ASM	/// The panel's window rect `(x, y, w, h)` — `DS:0x2780`, a STATIC constant: a /// whole-image search for every store form to `0x2780` finds no writer, and the /// only references are the two `mov si/
-LOCATION_PANEL_TINT_PERCENT	src/vm.rs	1568	const	0xFFCE,0x90ED,0x22F1,0xffce,0x22F5	ASM	/// `ax = 0xFFCE` at `0x90ED`, negated on entry to the table builder (`0x22F1`). /// The panel's tint strength, as a PERCENTAGE — and it appears in the binary as /// its two's complement, which is why
-LOCATION_PANEL_ZOOM_STEPS	src/vm.rs	1570	const	0xADA,0x903E	CELL?	/// `[0xADA] = 8` (`0x903E`) — the zoom-open/shut interpolation step count.
-LOCATION_PANEL_CURSOR_RECT_SIZE	src/vm.rs	1572	const	0x9029	CELL?	/// The zoom SOURCE rect seeded at `0x9029`: a 4x4 square at the cursor.
-NAV_PICK_POSITION_FIELD	src/vm.rs	1577	const	0x92BC	ASM	/// The chart marker's position field — selector `0x0B`, whose matrix row is /// `0x18` for kinds 8 and `0x10` (`FIELD_OFFSETS[0x0B]`). Read as `x` at `+0x18` /// and `y` at `+0x1A` by the picker at `
-SHIP_3D_TARGET_NAME_TO_RECORD	src/vm.rs	1582	const	0x87D5,0xB33D	ASM?	/// A menu entry points at the record's INLINE NAME; the record is four bytes /// earlier. Emitted as `add ax,4` when a menu is built (`0x87D5`) and undone as /// `sub ax,4` when a row is selected (`0
-ENTITY_CANDIDATE_KIND_MASK	src/vm.rs	1586	const	0x7259,0x727E	ASM?	/// The entity-candidate filter (`0x7259`): an object joins the destination list /// only if its flags word has any of `0x98` (`test bx,0x98` @`0x727E`).
-ENTITY_CANDIDATE_READY_BIT	src/vm.rs	1588	const	0x7284	ASM?	/// ... and bit 1 of the BYTE at `+2` is set (`test byte es:[di+2],2` @`0x7284`).
-SHIP_CLICK_LOCATION_KIND_MASK	src/vm.rs	1592	const	0x140,0xB0FB	ASM?	/// `test word es:[eax],0x140` @`0xB0FB` — the location-kind test that decides /// whether the click commits the first CANDIDATE or the location OBJECT.
-nav_chart_marker_contains	src/vm.rs	1597	fn	0x9308,0x932B	ASM	/// The picker's box test for one marker (`0x9308..0x932B`): the box starts two /// pixels up-left of the marker and BOTH bounds are inclusive (`jb`/`ja` skip only /// strictly outside). The single co
-owner_object_offset_in	src/vm.rs	1620	fn	0x6034,0x603B,0x6040,0x6045,0x6048	ASM	/// The owner lookup — `vm_record_lookup_by_threshold` `0x6034`: /// /// ```text ///   0x603B  cmp ax,[si+0x10] / jbe    advance while the entry offset is BELOW ax ///   0x6040  add si,0x14 ///   0x60
-nav_chart_hit_box_for_kind	src/vm.rs	1627	fn	0x92BF,0x92D3,0x92FC	ORACLE	/// The nav picker's hit box for a KIND (`0x92BF` default, `0x92D3` black hole, /// `0x92FC` ship). The single copy of that ladder — `NavChartObject::hit_box` and /// `VmMachine::nav_chart_hit_box` bo
-OBJECT_FLAG_IN_PLAY	src/vm.rs	1640	const	0x6073,0x6C3B,0x7259	ASM?	/// Bit 1 of an object's `+2` flag word — the gate `0x6073` applies when building /// the active-object list, and the same bit the `0xC1` nav path (`0x6C3B`) and /// the entity candidate list (`0x7259
-NAV_CHART_KIND_MASK	src/vm.rs	1643	const	0x118,0x723D,0x100	ASM	/// The kinds the nav chart draws: `test bx,0x118` at `0x723D` — kind `0x08`, /// kind `0x10` (a SHIP) and kind `0x100` (a BLACK HOLE).
-NAV_PICK_BOX_DEFAULT	src/vm.rs	1661	const	0x277A,0x277C,0x92BF,0x277a,0x92C5,0x277c,0x92CB,0x100,0x92D	ASM	/// Hit-box sizes per kind, each pair written as two IMMEDIATES into the picker's /// own scratch words `DS:0x277A`/`DS:0x277C`: /// /// ```text ///   0x92BF  mov word [0x277a],0xc  / 0x92C5 mov word 
-NAV_PICK_BOX_BLACK_HOLE	src/vm.rs	1663	const	0x277a,0x92D3,0x277C,0x92D9	ASM	/// `mov word [0x277a],0x13` @`0x92D3` (with `0xC` into `0x277C` @`0x92D9`).
-NAV_PICK_BOX_SHIP	src/vm.rs	1665	const	0x277a,0x92FC,0x277C,0x9302	ASM	/// `mov word [0x277a],0x15` @`0x92FC` (with `0xA` into `0x277C` @`0x9302`).
-LocationPanelRow	src/vm.rs	1669	struct		UNVERIFIED	/// One drawn row of the destination info panel.
-C2_ACTIVE_LINE_KIND2	src/vm.rs	1675	const		UNVERIFIED	
-C2_ACTIVE_LINE_KIND400	src/vm.rs	1676	const		UNVERIFIED	
-VM_UI_FLAGS	src/vm.rs	1679	const	0x2793,0x0AFC6	ASM	/// Touched by the game at `mov word ptr [0x2793], 0` @`0x0AFC6`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-C2_PRESENTATION_GATE	src/vm.rs	1682	const	0x1fb2,0x0B001	ASM	/// Touched by the game at `test byte ptr [0x1fb2], 1` @`0x0B001`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-C2_PRESENTATION_FLAGS	src/vm.rs	1685	const	0x67aa,0x0B54D	ASM	/// Touched by the game at `and byte ptr [0x67aa], 0xfc` @`0x0B54D`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-C2_PRESENTATION_BUSY_FLAG	src/vm.rs	1686	const		UNVERIFIED	
-VM_ACTIVE_LINE	src/vm.rs	1689	const	0x6788,0x0B00F	ASM	/// Touched by the game at `mov word ptr [0x6788], ax` @`0x0B00F`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-C9_PRESENTATION_GATE_A	src/vm.rs	1692	const	0x252a,0x0B29A	ASM	/// Touched by the game at `mov byte ptr [0x252a], 0` @`0x0B29A`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-C9_PRESENTATION_GATE_B	src/vm.rs	1695	const	0x2531,0x0B336	ASM	/// Touched by the game at `mov byte ptr [0x2531], 6` @`0x0B336`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-C4_POST_UPDATE_SENTINEL	src/vm.rs	1696	const		UNVERIFIED	
-VM_PENDING_RESOURCE_PROFILE	src/vm.rs	1697	const		UNVERIFIED	
-VM_PRESENTATION_PRIMARY_C4_RECORD	src/vm.rs	1698	const		UNVERIFIED	
-VM_PRESENTATION_ACTIVE	src/vm.rs	1701	const	0x67ac,0x0B498	ASM	/// Touched by the game at `test byte ptr [0x67ac], 1` @`0x0B498`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-VM_PRESENTATION_RELATED_FLAG20	src/vm.rs	1702	const		UNVERIFIED	
-VM_PRESENTATION_DEFER_A	src/vm.rs	1705	const	0x67b0,0x0B4DC	ASM	/// Touched by the game at `test byte ptr [0x67b0], 1` @`0x0B4DC`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-VM_PRESENTATION_LOOP_FLAG	src/vm.rs	1708	const	0x67b1,0x0579d	ASM	/// Touched by the game at `test byte ptr gs:[0x67b1], 2` @`0x0579d` — found by decoding forward from a /// LIFTED function's entry, so the boundary is the recompiler's, not a scan's.
-VM_PRESENTATION_PAIR_WRITE_DISABLED	src/vm.rs	1709	const		UNVERIFIED	
-VM_PRESENTATION_START_LOCK	src/vm.rs	1710	const		UNVERIFIED	
-VM_PRESENTATION_TEXT_WAIT	src/vm.rs	1713	const	0x67ba,0x0B552	ASM	/// Touched by the game at `mov byte ptr [0x67ba], al` @`0x0B552`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-VM_PRESENTATION_HOLD_COMPLETE	src/vm.rs	1716	const	0x67bb,0x079c5	ASM	/// Touched by the game at `mov byte ptr [0x67bb], 0` @`0x079c5` — found by decoding forward from a /// LIFTED function's entry, so the boundary is the recompiler's, not a scan's.
-VM_PRESENTATION_HOLD_READY	src/vm.rs	1719	const	0x67bc,0x0B544	ASM	/// Touched by the game at `mov byte ptr [0x67bc], al` @`0x0B544`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-VM_PRESENTATION_WORD_BUFFER	src/vm.rs	1722	const	0x67f8,0x057a9	ASM	/// Touched by the game at `mov word ptr gs:[0x67f8], 0` @`0x057a9` — found by decoding forward from a /// LIFTED function's entry, so the boundary is the recompiler's, not a scan's.
-VM_PRESENTATION_STATUS_WORD	src/vm.rs	1725	const	0xa32,0x0B0BC	ASM	/// Touched by the game at `mov word ptr [0xa32], 1` @`0x0B0BC`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-VM_PRESENTATION_ACTIVE_RECORD	src/vm.rs	1728	const	0x6762,0x05795	ASM	/// Touched by the game at `mov ax, word ptr gs:[0x6762]` @`0x05795` — found by decoding forward from a /// LIFTED function's entry, so the boundary is the recompiler's, not a scan's.
-VM_PRESENTATION_DEFERRED_RECORD_TYPE	src/vm.rs	1731	const	0x6768,0x0B3AE	ASM	/// Touched by the game at `mov word ptr [0x6768], 0xc4` @`0x0B3AE`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-VM_PRESENTATION_DEFERRED_RECORD_RELATED	src/vm.rs	1734	const	0x676a,0x0B3B4	ASM	/// Touched by the game at `mov word ptr [0x676a], ax` @`0x0B3B4`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-VM_PRESENTATION_DEFERRED_RECORD_AUX	src/vm.rs	1735	const		UNVERIFIED	
-VM_PRESENTATION_SIGNAL_SLOT	src/vm.rs	1736	const		UNVERIFIED	
-VM_PRESENTATION_SCENE_DIRTY	src/vm.rs	1739	const	0x5b55,0x0B64A	ASM	/// Touched by the game at `mov byte ptr [0x5b55], 1` @`0x0B64A`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-VM_PRESENTATION_INPUT_GATE_A	src/vm.rs	1742	const	0x24f3,0x0AFA2	ASM	/// Touched by the game at `mov ax, word ptr [0x24f3]` @`0x0AFA2`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-VM_PRESENTATION_INPUT_GATE_B	src/vm.rs	1745	const	0x2751,0x08836	ASM	/// Touched by the game at `mov byte ptr [0x2751], 1` @`0x08836`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-VM_PRESENTATION_INPUT_GATE_C	src/vm.rs	1748	const	0x5e64,0x0B1DD	ASM	/// Touched by the game at `test byte ptr [0x5e64], 1` @`0x0B1DD`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-VM_PRESENTATION_INPUT_GATE_D	src/vm.rs	1751	const	0x2565,0x08713	ASM	/// Touched by the game at `test byte ptr [0x2565], 1` @`0x08713`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-VM_PRESENTATION_INPUT_GATE_E	src/vm.rs	1754	const	0x2736,0x0892C	ASM	/// Touched by the game at `mov byte ptr [0x2736], 1` @`0x0892C`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-VM_PRESENTATION_INPUT_GATE_F	src/vm.rs	1757	const	0x2737,0x0893C	ASM	/// Touched by the game at `mov byte ptr [0x2737], 1` @`0x0893C`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-VM_PRESENTATION_HANDOFF_GATE	src/vm.rs	1758	const		UNVERIFIED	
-VM_PRESENTATION_INPUT_GATE_G	src/vm.rs	1759	const		UNVERIFIED	
-VM_PRESENTATION_INPUT_GATE_H	src/vm.rs	1760	const		UNVERIFIED	
-VM_PRESENTATION_INPUT_GATE_I	src/vm.rs	1763	const	0x2a19,0x087B0	ASM	/// Touched by the game at `mov word ptr [0x2a19], 0` @`0x087B0`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
-VM_PRESENTATION_DESCRIPTOR_PENDING	src/vm.rs	1766	const	0x27e8,0x08bb3	ASM	/// Touched by the game at `test byte ptr [0x27e8], 1` @`0x08bb3` — found by decoding forward from a /// LIFTED function's entry, so the boundary is the recompiler's, not a scan's.
-VM_BRANCH_A	src/vm.rs	1769	const	0x6782,0x057ed	ASM	/// Touched by the game at `mov bx, word ptr gs:[0x6782]` @`0x057ed` — found by decoding forward from a /// LIFTED function's entry, so the boundary is the recompiler's, not a scan's.
-VM_BRANCH_B	src/vm.rs	1772	const	0x6784,0x057f2	ASM	/// Touched by the game at `mov word ptr gs:[0x6784], bx` @`0x057f2` — found by decoding forward from a /// LIFTED function's entry, so the boundary is the recompiler's, not a scan's.
-VM_PC_SAVED	src/vm.rs	1775	const	0x6776,0x057cd	ASM	/// Touched by the game at `mov si, word ptr gs:[0x6776]` @`0x057cd` — found by decoding forward from a /// LIFTED function's entry, so the boundary is the recompiler's, not a scan's.
-MAIN_PENDING_PROFILE_IDLE_GATES	src/vm.rs	1777	const		UNVERIFIED	
-VM_FIELD_OFFSET_TABLE	src/vm.rs	1793	const	0x6023,0x6D60,0x14180,0x142CF	ORACLE	/// Field-offset lookup table used by helper `0x6023`: /// `gs:[0x6D60 + selector * 16 + bsf(kind)]`. /// Transcribed from `BLOODPRG.EXE` file `0x14180..0x142CF`.
-LineState	src/vm.rs	1819	struct		UNVERIFIED	/// A `0xA6` line's resolved runtime scene state. /// Object offset of the current speaker (from the last `0xC4`), if any. /// The speaker's current location object offset (`state[actor+24]`), if a //
-BranchEvent	src/vm.rs	1829	struct		TESTED	
-ScriptProfileRequestEvent	src/vm.rs	1840	struct		TESTED	
-PostUpdateTrace	src/vm.rs	1847	struct	0x5DCE,0x5DF6	TESTED	/// Objects whose selector-`0x08` ENCOUNTER COUNTER the post-update ladder /// incremented this pass (`0x5DCE` / `0x5DF6`). See /// `post_update_encounter_counter`.
-PostUpdateActorRecordPair	src/vm.rs	1858	struct		TESTED	
-PresentationHandoffEvent	src/vm.rs	1864	struct		TESTED	
-ExecutionHalt	src/vm.rs	1871	enum		TESTED	
-ExecutionTrace	src/vm.rs	1879	struct		TESTED	
-pending_script_profile	src/vm.rs	1907	fn	0x6780,0xFFFF,0x108E,0x10C5,0x10D3,0xffff,0x64B8	ASM	/// The script profile a `0xD2` request left pending, or `None`. /// /// `gs:0x6780` is the request slot and `0xFFFF` means EMPTY: /// /// ```text ///   0x108E  cmp word [0x6780],-1     nothing pendin
-ScriptProfileProgram	src/vm.rs	1915	struct		UNVERIFIED	
-ScriptProfileRun	src/vm.rs	1923	struct		UNVERIFIED	
-ScriptProfileExecutionHalt	src/vm.rs	1930	enum		UNVERIFIED	
-ScriptProfileExecution	src/vm.rs	1945	struct		UNVERIFIED	
-ExecutedTrace	src/vm.rs	1950	struct		UNVERIFIED	
-Ship3dC1RuntimeContext	src/vm.rs	1956	struct		UNVERIFIED	
-Ship3dC1PositionRuntime	src/vm.rs	1964	struct		UNVERIFIED	
-VmNamedObjectOffsets	src/vm.rs	1989	struct	0x5490,0x1CE,0x2C4,0x674e,0x549D,0x67BE,0x67C4,0x67C9,0x67CE	ASM	/// The built-in objects the engine resolves BY NAME, and their DEB offsets. /// /// Matching by name is the game's own method, not a port convenience: `0x5490` /// loads `di` with a name pointer, com
-set	src/vm.rs	2010	fn	0x67BE,0x5490,0x674e,0x549D	ASM	/// Resolve one DEB object name against the built-in table and record its /// offset. Returns whether the name IS a built-in — the caller uses that to /// skip non-built-ins, so a `false` is an ordina
-ExecutionContext	src/vm.rs	2068	struct	0x6034,0x674e,0x6946,0xffff,0x7409,0x0400,0x00C4,0x5486,0x67	CELL?	/// Runtime tables the DOS VM receives through globals outside `SCRIPT*.VAR`. /// /// `object_offsets` mirrors the 20-byte object table scanned by helper `0x6034`: /// it maps a record/field offset to
-from_object_offsets	src/vm.rs	2082	fn		INFRA	
-with_global_word_0aa6	src/vm.rs	2095	fn		INFRA	
-with_global_pair_0aaa_0aa8	src/vm.rs	2100	fn		INFRA	
-with_special_object_offset	src/vm.rs	2105	fn		INFRA	
-with_vm_named_object	src/vm.rs	2111	fn		INFRA	
-with_descript_entry_name	src/vm.rs	2119	fn		INFRA	
-with_bios_rtc	src/vm.rs	2133	fn		INFRA	
-with_text_line_display_gating	src/vm.rs	2139	fn		INFRA	
-with_text_presentation_record_gating	src/vm.rs	2144	fn		INFRA	
-with_strict_actor_record_branching	src/vm.rs	2149	fn		INFRA	
-with_ship_3d_c1_runtime	src/vm.rs	2154	fn		INFRA	
-with_ship_3d_c1_positions	src/vm.rs	2173	fn		INFRA	
-vm_named_object_offsets	src/vm.rs	2194	fn		INFRA	
-owner_object_offset	src/vm.rs	2206	fn		INFRA	/// Delegation to [`owner_object_offset_in`], which carries the rule AND its /// citation. Two of these exist — one here on the execution context, one on /// `VmMachine` — because both types hold thei
-remap_special_rhs	src/vm.rs	2215	fn	0x6946,0x674E,0xFFFF	ASM	/// The `0x6946` family's RHS substitution: an operand equal to the SPECIAL /// OBJECT (`gs:0x674E`) becomes `0xFFFF` before the compare. It is a /// substitution, NOT a match-anything wildcard — the 
-is_special_rhs	src/vm.rs	2228	fn	0x5FF6,0x5FD8	ASM	/// Whether an operand IS the special object, i.e. whether /// [`Self::remap_special_rhs`] would substitute it. Separate from the remap /// because the SET path needs to know (the slot bookkeeping at 
-c2_descript_lookup_succeeds	src/vm.rs	2232	fn		UNVERIFIED	
-BranchOverride	src/vm.rs	2245	struct		UNVERIFIED	/// Force one condition result while executing a concrete scenario. This is a /// branch-enumeration aid: the offset is the conditional opcode offset reported /// in `BranchEvent`, and `condition_pass
-state_u16	src/vm.rs	2251	fn		INFRA	/// Read a u16 from `state` (the mutable VAR image) at byte address `addr`.
-state_has_u16	src/vm.rs	2260	fn		INFRA	
-state_set_u16	src/vm.rs	2266	fn		INFRA	
-state_u8	src/vm.rs	2274	fn		INFRA	
-state_set_u8	src/vm.rs	2278	fn		INFRA	
-state_or_u8	src/vm.rs	2284	fn		INFRA	
-state_and_u8	src/vm.rs	2289	fn		INFRA	
-state_and_u16	src/vm.rs	2294	fn		INFRA	
-pending_script_profile_dispatch_ready	src/vm.rs	2299	fn		UNVERIFIED	
-state_c_string_equals	src/vm.rs	2308	fn		UNVERIFIED	
-text_line_should_display	src/vm.rs	2323	fn	0x6647,0x8000,0x665A	ASM	/// The A6 display gate, both halves of it: the line is ACTIVE (`or cx,cx / jns` /// @`0x6647`) and NOT already shown (`test word es:[di+2],0x8000` @`0x665A`). /// Both failures take the same exit, wh
-text_presentation_record_is_active	src/vm.rs	2332	fn	0x6C7E	ASM	/// Whether the line's presentation record holds an ACTIVE actor — the record at /// `line + TALK_FIELD` typed `0xC4` (`OP_ACTOR`, whose handler is `0x6C7E`). The /// comparison is against the OPCODE 
-text_runtime_gates_allow	src/vm.rs	2342	fn	0x6647,0x665A	ASM	/// Both A6 runtime gates, each independently switchable by the execution context. /// /// The presentation-record gate wants the line's record typed `0xC4` /// (`OP_ACTOR`); the display gate wants th
-TextTokenRuntimeFlags	src/vm.rs	2355	struct		UNVERIFIED	
-flags_b5	src/vm.rs	2373	fn	0x668D	ASM	/// The effective `b5` at a stream offset: the accept-modified value if this /// line has been accepted, else the byte as shipped. Stands in for re-reading /// the COD byte the handler rewrites at `0x
-accept_line	src/vm.rs	2383	fn	0x668D	ASM	/// Record the accept-time `b5` rewrite for one stream offset — the port's /// stand-in for the handler's self-modifying `and byte [si+1],0x7F` at /// `0x668D`, which clears bit 7 unless `b4 & 1` pres
-mark_text_line_shown	src/vm.rs	2396	fn	0x8000,0x665A,0x668D	ASM	/// Set the ALREADY-SHOWN bit on a line's flags word — the `0x8000` the A6 gate /// tests at `0x665A`. This is the state half of the accept; the bytecode half is /// [`TextTokenRuntimeFlags::accept_li
-SpecialObjectSlots	src/vm.rs	2406	struct		UNVERIFIED	
-remove	src/vm.rs	2415	fn	0x5FF6,0x6D3E,0x5FF2,0x5FEA	ASM	/// Remove an owner from the 16-slot array — the scan at `0x5FF6` /// (`mov bp,0x6D3E / mov cx,0x10`), which clears the matching slot to 0 and /// STOPS. Returns whether it found one; the routine repo
-insert	src/vm.rs	2431	fn	0x6008,0x6995	ASM	/// Insert an owner into the first EMPTY slot — the free-slot scan at `0x6008` /// (`cmp word [bp],0 / je`, `add bp,2`, 16 iterations). /// /// Already-present returns success WITHOUT inserting again,
-actor_object_offset_from_record	src/vm.rs	2449	fn	0x660D	ASM	/// The object an ACTOR record belongs to: the record sits at `object + TALK_FIELD`, /// the `0x3A` field the A6 handler resolves at `0x660D` /// (`0x3A`), so this subtracts. The `Option` guards a rec
-record_owner_object_offset	src/vm.rs	2458	fn		INFRA	/// The object that OWNS an arbitrary record — [`owner_object_offset_in`]'s /// scan-then-step-back, which holds the rule and its citation. Distinct from /// [`actor_object_offset_from_record`]: that 
-apply_assign5_mode0	src/vm.rs	2462	fn		ASM	
-record_owner_is_active	src/vm.rs	2500	fn	0x6073	ASM	/// Whether a record's owning object is ACTIVE — bit 0 of the object's byte at /// `+2`, the same flag `0x6073` tests (`test byte fs:[bx+2],2` reads bit 1 of the /// pair; bit 0 is the active half). `
-actor_record_is_active	src/vm.rs	2513	fn	0x6073	ASM	/// Whether an actor record's OBJECT is active — bit 0 at `object + 2`, the flag /// pair `0x6073` tests, reached by /// subtracting `TALK_FIELD` from the record. Unknown resolves to FALSE here (not /
-actor_record_condition	src/vm.rs	2538	fn	0x6C7E,0x6C86,0x6C8C,0x6C8F,0x6C92,0x6034,0x6C97,0x6C98,0x6C	ASM	/// The `0xC4` QUERY condition, from the handler at `0x6C7E`: /// /// ```text ///   0x6C86  mov al,[si] / cmp al,0xa1 / jne   the 0xA1 PREFIX... ///   0x6C8C  inc dl / inc si                   ...sets
-write_actor_record	src/vm.rs	2561	fn	0x6C7E	ASM	/// The `0xC4` SET write (handler `0x6C7E`): type `0xC4`, the related offset at /// `+2`, and ZERO at /// `+4`. The third word is written every time — it is not left as found — which is /// what makes
-PresentationKind1Update	src/vm.rs	2568	enum		UNVERIFIED	
-post_update_kind1_presentation_state	src/vm.rs	2584	fn	0x5816	ASM	/// The kind-1 post-update, from the post-exec record walk at `0x5816`: when the /// record holds an ACTIVE actor (`0xC4`), latch /// the related object's `0x20` flag, then arm the presentation — scen
-post_update_kind2_presentation_handoff_target	src/vm.rs	2649	fn	0x5816	ASM	/// The kind-2 HANDOFF check in the post-exec record walk (`0x5816`): can this /// record take over the presentation currently running? /// /// FOUR gates, and all four must be clear before anything h
-post_update_deferred_record_write	src/vm.rs	2686	fn		ASM	
-post_update_encounter_counter	src/vm.rs	2760	fn	0x5D8F,0x5DB0,0x5E06,0x5DB4,0x5DE3,0x5DC2,0x5DC4,0x6023,0x5D	ASM	/// The ENCOUNTER COUNTER step of the post-update actor-pair ladder /// (`vm_post_update_c4_pair` `0x5D8F`, block `0x5DB0..0x5E06`), run between the /// processed-marker write and the related-record `
-post_update_actor_record_pair	src/vm.rs	2795	fn		ASM	
-post_update_actor_records_for_active_objects	src/vm.rs	2831	fn		UNVERIFIED	
-post_update_execution_state	src/vm.rs	2842	fn		UNVERIFIED	
-append_post_update_trace	src/vm.rs	2894	fn		UNVERIFIED	
-record_link_condition	src/vm.rs	2913	fn		ASM	
-write_record_link	src/vm.rs	2938	fn	0x6EEE,0x142D0	ASM	/// The `0xC3` QUEUE write (handler `0x6EEE`): type `0xC3`, the related offset at /// `+2`, and **1** at /// `+4` — where [`write_actor_record`]'s `0xC4` writes ZERO there. That third word /// is the 
-write_record_link_mode0	src/vm.rs	2952	fn	0x6EEE	ASM	/// The `0xC3` SET guard (`0x6EEE`): the write happens only when the owner is /// ACTIVE, the /// related object is active (bit 0 at `+2`), and the slot does not already hold an /// active `0xC4` pres
-record_state_condition	src/vm.rs	2970	fn		UNVERIFIED	
-c1_record_state_resolved_mode1_condition	src/vm.rs	3011	fn	0x6B4C	ASM	/// The `0xC1` QUERY path when the operand SELECTS a state (1 or 2) rather than /// comparing directly — handler `0x6B4C`'s resolved branch. /// /// Returns `None` for any other operand, and for a rec
-ship3d_c1_source_records_from_bytes	src/vm.rs	3049	fn	0xFFFF	ASM	/// Parse the ship-3D C1 source list — words up to and INCLUDING the `0xFFFF` /// sentinel (`SHIP_3D_TARGET_EXIT_SENTINEL`, the back/exit row). /// /// Returns `None` when the sentinel never arrives, 
-ship3d_record_state_slot	src/vm.rs	3066	fn	0x6B4C	ASM	/// Read a record's three words as a ship-3D state slot, the layout the `0xC1` /// handler `0x6B4C` writes — `{opcode, operand, /// aux}`, the same `+0`/`+2`/`+4` layout every record writer uses. The 
-write_ship3d_record_state_slot	src/vm.rs	3078	fn	0x6B4C	ASM	/// Write a ship-3D state slot back into a record — the mirror of /// [`ship3d_record_state_slot`], same `+0`/`+2`/`+4` layout the `0x6B4C` handler /// uses. Writes all three words, so a slot cannot c
-derive_ship_3d_position_runtime	src/vm.rs	3109	fn	0x6724,0x6B4D,0x61AB,0x6023,0x6176,0x617D,0x6752,0x61D2	ASM?	/// Derive the C1 position runtime FROM THE STATE TABLE, so the walk runs on real /// records instead of only on test fixtures (audit-fixes #291). /// /// This is the fix for #290: `Ship3dC1PositionRu
-resolve_c1_record_state_ship3d_target	src/vm.rs	3216	fn		UNVERIFIED	
-write_c1_record_state_ship3d	src/vm.rs	3278	fn		UNVERIFIED	
-write_c1_record_state_mode0	src/vm.rs	3351	fn	0x6B4C	ASM	/// The `0xC1` SET path (handler `0x6B4C`): write `{0xC1, operand, 2}` into an /// EMPTY record whose owner is active. /// /// The third word is `2` here, against `0xC3`'s `1` and `0xC4`'s `0` — three
-write_c2_record_state_direct	src/vm.rs	3384	fn	0x6E34	ASM	/// The `0xC2` SET path (handler `0x6E34`): three gates, all of which must pass /// before anything is written. /// /// Owner active; the TARGET's `0x20` flag set (not the owner's — a different /// ob
-clear_record_words	src/vm.rs	3436	fn	0x6FB9	ASM	/// Zero all THREE words of a record, as the `0xC9` clear at `0x6FB9` does — type, /// related, and the third slot that /// distinguishes `0xC1`/`0xC3`/`0xC4` (2/1/0). Clearing only the type would lea
-clear_record	src/vm.rs	3451	fn	0x6FB9	ASM	/// The `0xC9` CLEAR (handler `0x6FB9`): zero the record, and if it held an ACTOR /// (`0xC4`), follow the link and clear the related object's corresponding field /// too, then reset the presentation 
-write_record_entry	src/vm.rs	3476	fn	0x6D18,0x6D80,0x6DCF,0x6F62	ASM	/// The `0xC5..=0xC8` entry write (handlers `0x6D18`, `0x6D80`, `0x6DCF`, /// `0x6F62`): the OPCODE itself as the type word, the related /// value at `+2`, zero at `+4`. /// /// The type word is the o
-write_record_entry_mode0	src/vm.rs	3494	fn	0x6D18,0x0200,0x6D80,0x6F62	ASM	/// The `0xC5..=0xC8` SET paths, which share a WRITER but not a guard — /// `write_record_entry` is common, the conditions are per opcode: /// /// * `0xC5` (handler `0x6D18`) demands the operand objec
-record_entry_condition	src/vm.rs	3536	fn		ASM	
-branch_fail	src/vm.rs	3554	fn		INFRA	
-push_mode0_branch_fail	src/vm.rs	3558	fn		UNVERIFIED	
-compare_vm_words	src/vm.rs	3578	fn		UNVERIFIED	
-global_word_condition	src/vm.rs	3592	fn		UNVERIFIED	
-global_pair_condition	src/vm.rs	3602	fn		UNVERIFIED	
-interpret_line_states	src/vm.rs	3622	fn		TESTED	/// Walk `cod`, executing assignment opcodes against a copy of `var` (the initial /// state image), and return the resolved scene state at every `0xA6` line.
-interpret_line_states_with_context	src/vm.rs	3626	fn		UNVERIFIED	
-execute_trace	src/vm.rs	3817	fn		UNVERIFIED	/// Execute the subset of VM control flow that has been tied to concrete handler /// code. This follows A0/A1 condition blocks and direct A4/A9 jumps, while still /// using the same bounded state mode
-execute_trace_with_context	src/vm.rs	3821	fn		UNVERIFIED	
-execute_trace_with_overrides	src/vm.rs	3832	fn		UNVERIFIED	/// Execute a concrete VM path, optionally forcing selected condition outcomes. /// Overrides are keyed by conditional opcode offset and are applied only after a /// real condition has been decoded at
-execute_trace_with_overrides_and_context	src/vm.rs	3840	fn		UNVERIFIED	
-execute_trace_from_offset	src/vm.rs	3855	fn		UNVERIFIED	/// Execute a concrete VM path starting at an arbitrary COD `start` offset instead /// of the script entry (0). Used to reach dialogue in named functions that the /// main control flow never calls (ev
-execute_trace_state_with_overrides_and_context	src/vm.rs	3866	fn		UNVERIFIED	
-execute_script_profile_sequence	src/vm.rs	4480	fn		UNVERIFIED	
-SceneEvent	src/vm.rs	4570	enum		UNVERIFIED	/// One presentation event in execution order. /// Subtitle chatter event from the dialogue display state machine (tb.snd).
-LineInput	src/vm.rs	4616	struct		UNVERIFIED	/// Minimal per-line input for the emitter — the fields a decoded `0xA6` line /// plus its resolved scene context provide. Decoupled from `ScriptSpeechLine` /// so the emitter stays unit-testable.
-emit_scene_events	src/vm.rs	4633	fn		UNVERIFIED	/// Turn an ordered sequence of decoded dialogue lines into a presentation event /// stream, emitting background/music/speaker changes only on transition and a /// trailing `Clear`.
-VmEvent	src/vm.rs	4711	enum	0x2120,0x6EEE,0x69C7	CELL?	/// An event the faithful VM raises for the engine/driver. /// `0xA6` TEXT — a dialogue line record executes (operand offset into the /// line-record table; the walker's LineState carries the decoded 
-VmMachine	src/vm.rs	4734	struct	0x1C3F,0x677E,0x200,0x6ADE,0x6CDE,0x6724	CELL?	/// The script VM's machine state, mirroring the game's own arrays byte-for-byte. /// The save file serializes exactly these blocks (save path @0x1C3F: header word /// `0x677E`, `0x200` bytes @`0x6ADE
-default	src/vm.rs	4873	fn	0x2727	ORACLE?	// The oracle's deterministic CMOS seed (interp RTC seconds fixed // at 0x27; the seeder mirrors the byte into both halves -> 0x2727). // Matching it makes the port's variant rolls agree with the orac
-NAV_SOURCE_SCRATCH_LEN	src/vm.rs	4928	const	0x6886,0x6A16,0x604E,0x190	CELL?	/// Length of the `DS:0x6886` nav source-list scratch: the distance to the next /// labelled cell, `DS:0x6A16` (the active-object candidate list `0x604E` builds). /// 0x6A16 - 0x6886 = 0x190 (audit-fi
-new	src/vm.rs	4931	fn		INFRA	
-halted	src/vm.rs	4935	fn		INFRA	
-start_actor_presentation	src/vm.rs	4954	fn	0x675E,0x5816,0x67AC,0x67B7,0x2793,0x6782,0x6784,0x6776,0x67	ASM?	/// Driver hook: a console click / event starts an actor's presentation — /// the C4 query blocks for that actor then run (the game's click dispatch /// writes the C4 primary record @DS:0x675E; handle
-promote_queued_presentation	src/vm.rs	5013	fn	0x6F4B,0x6F51,0x6F55,0x5C64,0x675E,0x5D37,0x5D3C,0x5D40,0x67	ASM	/// Promote a QUEUED presentation (a typed `{0xC3, related, 1}` record, the /// OP_C3 request) to an ACTIVE one. Returns the started record offset, or /// None when nothing is queued or a presentation
-dispatch_concept	src/vm.rs	5096	fn		TESTED	/// ARRIVAL: satisfy the opening block's record-equality guards (the travel /// system's writes). SCRIPT2's first block guards `rec_0F4E == 3488` — the /// current-location variable vs the DEB offset 
-set_location	src/vm.rs	5109	fn		TESTED	/// The travel system's arrival write: current-location variable = the /// destination's DEB offset (rec_0F4E in SCRIPT2 — guards compare it to /// 3488 start / 3380 fled / 3074 the coded-message zone
-location_var_offset	src/vm.rs	5124	fn	0x0F4E	TESTED	/// The current-location variable's record offset, from the opening block's /// wildcard-family equality guard. /// /// `SCRIPT2:0x0F4E` — a SCRIPT-DATA offset, not a BLOODPRG.EXE one, so the /// cita
-satisfy_opening_location_guards	src/vm.rs	5155	fn		TESTED	// Enter the first A9-opened block. // negated guard: skip, do not satisfy
-to_dos_save	src/vm.rs	5200	fn	0x1C3F,0x200,0x6ADE,0x6CDE	CELL?	/// Serialize the machine state as a DOS `blood.sav` (the layout the game's /// save path @0x1C3F writes): u16 current profile, 0x200 bytes of the state /// word array (gs:0x6ADE), 0x60 bytes of the c
-apply_dos_save	src/vm.rs	5217	fn	0x1CBD	CELL?	/// Load a DOS `blood.sav` (the read path @0x1CBD): restores the state array, /// character slots, and line-record table; returns the saved profile word /// (the script to re-select). Returns None if 
-load_deb_objects	src/vm.rs	5241	fn	0x5486,0x6758,0x672c,0x624B,0x604E,0x5816,0x6034	CELL?	/// Load the script bytecode into the machine's working copy (the game /// self-modifies accepted lines' active bits in this stream). /// Populate the DEB object-offset table (ascending) for owner res
-owner_object_offset	src/vm.rs	5288	fn	0x6034	INFRA	/// The owning object of a record: the nearest DEB object STRICTLY below `off` /// (the 0x6034 threshold lookup's port model). None when the table is unloaded. /// The `VmMachine` half of the pair des
-c4_set_write_decision	src/vm.rs	5318	fn	0x6CC3,0x6D01,0x6034,0x6C7E,0x6CC8,0x6CCC,0x6CD1,0x6CD3,0x6C	ASM?	/// The `0xC4` mode-0 (SET) write guard — the `0x6CC3..0x6D01` decision. /// Returns `None` when the object table is unloaded (no `0x6034` threshold /// mapping possible; the caller then preserves the
-c1_query_passes	src/vm.rs	5349	fn	0x6B4C	CELL?	/// The `0xC1` mode-1 (QUERY) decision — `0x6B4C`'s query path. `Some(true)` = /// pass (no branch), `Some(false)` = branch, `None` = object table unloaded /// (caller keeps the legacy no-op). Mirrors
-c1_position_records	src/vm.rs	5419	fn	0x6B4C,0x6034,0x6BCE,0x6C04,0x6C0C,0x6C53,0x624B,0x6C3B,0x6C	ASM?	/// The `0xC1` mode-0 (SET) decision — the non-ship-3D path of `0x6B4C` / /// tracer `write_c1_record_state_mode0`. `Some(true)` = write `{0xC1, /// operand, 2}`, `Some(false)` = branch, `None` = obje
-c1_set_plan	src/vm.rs	5503	fn	0x6BE0,0x6C02,0x6BE5,0x6C04,0x6BEA,0x60DD,0x6BED,0x6BF3,0x6B	ASM?	// THE DISTANCE REDIRECT, `0x6BE0`..`0x6C02` (audit-fixes #292). The live // handler skipped this entirely: it went straight to the kind-0x10 test, // so an owner that should have been redirected to i
-refresh_nav_source_scratch	src/vm.rs	5619	fn	0x624B,0x6886,0x672c,0xFFFF,0x6724,0xffff,0x6289	ASM?	/// Build the ship-3D NAV SOURCE LIST (`ship_3d_navigation_source_list_build` /// `0x624B`, output `DS:0x6886`), a faithful port: walk the `gs:0x672c` /// directory; for each entry take its object off
-build_nav_source_list	src/vm.rs	5636	fn		UNVERIFIED	// Named for its selector so it does not collide with the token walker // `walk` in this same file (the audit ledger keys rows by name+file). // The real loop tests the NEXT entry's +0x12 before conti
-walk_selector11_children	src/vm.rs	5639	fn		UNVERIFIED	// Named for its selector so it does not collide with the token walker // `walk` in this same file (the audit ledger keys rows by name+file).
-source_list_entry_is_listable	src/vm.rs	5687	fn	0x91C3,0x91CE,0x91D4,0x91DB	ASM	/// The DRAW-TIME filter both source-list consumers apply, ported verbatim /// from `vm_source_list_draw_loop` `0x91C3`: /// /// ```text ///   0x91CE  test word [si],2       the object's kind has bit 
-source_list_display_rows	src/vm.rs	5707	fn	0x91C3,0x299,0x202	ASM	/// The rows a source-list panel actually DRAWS (`0x91C3` `0x299:0x202` per /// survivor, `add dx,0xA` between rows): `build_nav_source_list` filtered by /// [`Self::source_list_entry_is_listable`].
-source_list_text_rows	src/vm.rs	5728	fn	0x83C0,0x83F8,0x83C7,0x6758,0x83E5,0x83D4	ASM	/// The same list as TEXT (`0x83C0..0x83F8`, the `PLANET:`/`SHIP:`/`BLACK /// HOLE:` status block's `LIFE SUPPORT:` roster), which adds a FOURTH /// condition the drawn panel does not have: /// /// ``
-object_inline_name	src/vm.rs	5755	fn	0x8389,0x83EA,0x299,0x202,0x91E1	ASM	/// An object's INLINE NAME: the NUL-terminated string at `record+4`. /// /// Both status-list consumers read it that way — `mov si,bp / add si,4 / /// lodsb` at `0x8389` and `0x83EA`, and `add si,4` 
-location_status_block	src/vm.rs	5788	fn	0x82E8,0x8347,0x8420,0xE18,0x835C,0x6752,0x8365,0x8369,0x12E	ASM	/// The location STATUS BLOCK the nav hover composes (`nav_state_gate` /// `0x82E8`, composer `0x8347..0x8420`), as the lines the real routine writes /// CR-separated into the text buffer at `0xE18`: 
-location_panel_rows	src/vm.rs	5835	fn	0x9137,0x91EC,0x27BF,0x9022,0x901D,0x915B,0x12E,0x916D,0x137	ASM	/// The DESTINATION INFO PANEL's drawn rows (`0x9137..0x91EC`) — the other /// consumer of the same roster, this one a real on-screen panel rather than /// the subtitle-buffer block [`Self::location_s
-build_active_object_list	src/vm.rs	5892	fn	0x604E,0x6A16,0x672C,0x6068,0x6070,0x6073,0x607C,0x6082,0xFF	ORACLE	/// The ACTIVE-OBJECT candidate list (`table_672c_process` `0x604E`, output /// `DS:0x6A16`): walk the 20-byte directory at `gs:0x672C` while `+0x12 == 1` /// and keep every object whose flag word has
-build_nav_chart_list	src/vm.rs	5919	fn	0x721A,0x2AD3,0x27C1,0x7226,0x604E,0x7233,0x7238,0x723D,0x11	ORACLE	/// The NAV CHART's visible-object list (`0x721A`, output `DS:0x2AD3`, count /// returned in `ax` and stored at `[0x27C1]`): the active-object list above, /// filtered to the chart-visible KINDS. /// 
-nav_chart_pick	src/vm.rs	5950	fn	0x92A3,0x9339,0x2AD3,0x27C1,0x92BF,0x92CB,0x100,0x92DF,0x92E	ORACLE	/// The NAV-CHART OBJECT PICKER (`0x92A3..0x9339`) — what the info panel's /// selection commit calls to turn a cursor position into an object. /// /// It walks the chart's visible-object list (`DS:0x
-nav_chart_marker	src/vm.rs	5964	fn	0x92DF,0x92F2	ORACLE	/// The chart marker the picker hit-tests and the chart draws: `+0x18`/`+0x1A`, /// or the SECOND endpoint at `+0x1C`/`+0x1E` when the object is a black hole /// whose `+0x14` differs from `arche+0x22
-nav_chart_hit_box	src/vm.rs	5978	fn	0x92BF,0x92D3,0x92FC	ORACLE	/// The picker's per-kind hit box for a record (`0x92BF`, `0x92D3`, `0x92FC`).
-nav_chart_arche_context	src/vm.rs	5984	fn	0x92DF	ASM	/// The word the black-hole endpoint rule compares against: `es:[arche+0x22]` /// (`0x92DF`). Zero when no DEB is loaded.
-world_click_select	src/vm.rs	6018	fn	0xB20C,0xB27B,0xB2BB,0xFFFF,0xB288,0x252f,0x24F3,0x27D8,0x25	ASM	/// The WORLD-DESTINATION CLICK commit (`0xB20C..0xB27B`). The ship FSM's /// per-frame hit-test (`ship_3d_target_record_select` `0xB2BB`) returns the /// clicked target record; this is what the FSM t
-entity_candidate_list	src/vm.rs	6068	fn	0x7259,0x7266,0x624b,0x6886,0x7269,0x726c,0x250b,0x726f,0x62	ASM	/// The DESTINATION LIST BUILDER, `entity_candidate_list` (`0x7259`) — the /// writer whose output [`Self::ship_3d_target_record_select`] reads. /// /// ```text ///   0x7266  call 0x624b              
-destination_rows	src/vm.rs	6106	fn	0xB0EA,0x7292	ASM	/// The destination rows the game actually offers: each candidate's RECORD and /// the NAME stored inside it. /// /// Rows come from [`Self::destination_candidate_records`] rooted at `arche`, /// whic
-ship_click_initial_target	src/vm.rs	6150	fn	0xB0DC,0xB111,0xB0E6,0x6724,0xB0EA,0x6752,0xB0EE,0x4da,0x1eb	ASM	/// The SHIP-3D CLICK COMMIT's initial target, `ship_click_commit` /// (`0xB0DC..0xB111`) — the caller that roots the whole destination chain. /// /// ```text ///   0xB0E6  les di,[0x6724]          es
-destination_candidate_records	src/vm.rs	6176	fn	0x624B,0x7259,0x6276,0x624b,0x627D,0x726F,0x728B	ASM	/// The whole destination chain in one call: the source list `0x624B` builds, /// filtered by `0x7259`, yielding the `RECORD+4` words the selector reads. /// /// `first = target` because `0x624B` PRES
-ship_3d_target_record_select	src/vm.rs	6221	fn	0xB2BB,0x71E,0xC48,0x8428,0xB2C3,0x250b,0xB2C6,0x6726,0xB2CB	ASM	/// The WORLD-DESTINATION HIT-TEST, `ship_3d_target_record_select` (`0xB2BB`) — /// what produces the record [`Self::world_click_select`] commits. /// /// It is NOT a spatial hit-test on the nav chart
-special_slot_insert_pub	src/vm.rs	6252	fn	0x6D3E,0x5FF6	INFRA	/// Insert an owner into the 16-slot special list (gs:0x6D3E, insert 0x5FF6). /// Returns false only if the list is full and the owner is not already present. /// Test hooks for the recomp differentia
-special_slot_remove_pub	src/vm.rs	6255	fn		INFRA	
-ship_slots_pub	src/vm.rs	6258	fn		INFRA	
-ship_contact_menu_words	src/vm.rs	6285	fn	0x87BD,0x0F29,0x8709,0x0FDD,0x87C5,0x6D3E,0x87C8,0x2B13,0x87	DATA	/// The console CONTACT MENU, built the way the row-2 handler builds it. /// /// `0x87BD` (bridge console row 2, reached through the per-row handler table /// at `CS:0x0F29` -> file `0x8709`, entry 2 
-special_slot_insert	src/vm.rs	6300	fn	0x5FF6,0x6D3E,0x5FFE,0x601F,0x600E,0x601C	ORACLE	/// Insert an owner into the special-slot list — `vm_special_slot_insert` /// `0x5FF6`: scan the 16 words at `DS:0x6D3E` for the owner and return CF set /// if already present (`0x5FFE..0x601F`); othe
-special_slot_remove	src/vm.rs	6326	fn	0x5FD8,0x5FDA,0x6D3E,0x5FE0,0x5FED,0x5FEA	ORACLE	/// Remove an owner from the special-slot list — `vm_special_slot_remove` /// `0x5FD8`, exactly: /// /// ```text ///   0x5FDA  bp=0x6D3E  cx=0x10        the 16-word list ///   0x5FE0  cmp ax,[bp] / je
-load_cod	src/vm.rs	6336	fn		TESTED	
-load_var	src/vm.rs	6344	fn	0x6724	CELL?	/// Initialize the line-record/object table from the script's VAR file — the /// game loads VAR as the table's initial contents (le16 words at gs:0x6724).
-rand	src/vm.rs	6354	fn	0x1CE,0xB02,0x2DE2,0x2DD4,0x2E00,0xaee,0x2E17,0xaf1,0x2E1E,0	ORACLE	// THE ENGINE'S OWN PRNG (0x1CE:0xB02, file 0x2DE2), ported exactly: // an 8-round rcr/rcl bit-interleave of the two state bytes into AX, // XORed with the 16-bit seed (CMOS RTC seconds at boot; seede
-u8_at	src/vm.rs	6403	fn		UNVERIFIED	
-lodsb	src/vm.rs	6407	fn		UNVERIFIED	
-lodsw	src/vm.rs	6413	fn		UNVERIFIED	
-tick_state_countdowns	src/vm.rs	6426	fn	0x8AA,0x675A,0xB27,0xFFFF	CELL?	/// One divided-timer beat of the state-array countdown — the engine's law at /// 0x8AA (in the timer chain, gated there on no-active-presentation /// gs:[0x675A]==0, divider gs:[0xB27]): entries stat
-add_record	src/vm.rs	6438	fn	0x126C	CELL?	/// Increment a record variable — the runtime hook for world events that the /// scripts observe (e.g. BIONIUM collection: SCRIPT2's `vbio` record, whose /// C0 guards read record 0x126C — operand rea
-rec_read	src/vm.rs	6443	fn		TESTED	
-rec_read_pub	src/vm.rs	6448	fn		INFRA	/// Public record read for the drive layer.
-rec_write_u8_pub	src/vm.rs	6456	fn		INFRA	/// Public record write for the drive layer (the click stand-in's /// presentation end and test scaffolding). /// Byte-level record write, for tests that need to place an inline name at /// `record+4`
-rec_write_pub	src/vm.rs	6460	fn		INFRA	
-rec_write	src/vm.rs	6464	fn		TESTED	
-rec_read_u8	src/vm.rs	6472	fn		UNVERIFIED	/// Byte-level record access (the record table is a little-endian word array). /// Used by the 0xB7 single-bit flag handler.
-rec_write_u8	src/vm.rs	6481	fn		UNVERIFIED	
-branch	src/vm.rs	6493	fn	0x6462	ASM?	/// `vm_branch` @0x6462: pop the resume position into PC; clear query mode.
-step	src/vm.rs	6501	fn	0x6559,0x6572,0x6588,0x6596,0x65DB,0x67B1,0x6764,0x65EB,0x66	ASM?	/// Execute ONE opcode against the loaded stream. Returns false at stream end. // 0xA0 PUSH (0x6559): query=1; push the operand (resume position). // 0xA1 POP (0x6572): query=0; pop unless empty. // 0
-run	src/vm.rs	7331	fn		TESTED	/// Run until yield (0xAA/0xAC), halt, or `max_steps`. Returns the events raised.
-run_frame	src/vm.rs	7344	fn	0x55F5	CELL?	/// Run ONE FRAME the way the exec loop does (@0x55F5): restart at the top of /// the script (AA/AC yields end the frame with NO resume; the self-modified /// active bits advance the flow), run until 
-token_len_at	src/vm.rs	7358	fn	0x6293	CELL?	/// Total token length (including the opcode byte) at `pos`, using the game's own /// per-opcode descriptor table + mode rules — identical to the walker's advance /// (`mode1` there == query mode here
-decompile_script	src/vm.rs	7387	fn		UNVERIFIED	/// Decompile a COD script to a readable listing. `dic` resolves text/concepts, /// `actor_names` (DEB-derived) resolves record offsets to object names.
+dlg_line_id_for_selector	src/vm.rs	445	fn	0x6788,0xFFFF,0x5E74,0x668D,0x1FAB,0x668E,0x11F2	ASM	/// The line id an `0xA6` selector maps to: `sign_extend(b3) + 9`. /// /// SCOPE: this is ONE of 29 writers of `gs:0x6788` — register writes (including /// this one) plus IMMEDIATE writes of fixed ids
+dlg_line_asset_id_ds_offset	src/vm.rs	468	fn	0x1FB5,0x9D20,0x9D22,0x9D65,0x9D6E,0x9D67,0x9D6A,0x1fb5,0x9D	ASM	/// DS offset of the ASSET ID word for a line id: `0x1FB5 + line_id*4 + 2`. /// /// Returns `None` for a negative line id, which the dispatcher rejects outright /// (`or ax,ax` @`0x9D20`, `js` @`0x9D2
+dlg_line_asset_id_from_source_byte	src/vm.rs	499	fn	0x7684,0xFFFF,0x0DD7,0x768B,0x7694,0x768D,0x768E,0x7691,0xdd	ASM	"/// The value the fill at `0x7684` stores for one source byte. /// /// Negative bytes pass through sign-extended (so `0xFF` becomes `0xFFFF`, the exact /// ""no asset"" sentinel the reader tests); other"
+text_selector_requests_voice	src/vm.rs	508	fn		UNVERIFIED	
+text_flags_are_active	src/vm.rs	519	fn	0x67A0,0x6647,0x661B	ASM	/// The A6 handler's ACTIVE-DISPLAY test, `or cx,cx / jns 0x67A0` @`0x6647`. /// /// `cx` holds `b4` in `cl` and `b5` in `ch` (read together by `lodsw` @`0x661B`), /// so bit 15 of that word IS bit 7 
+text_conditional_skip_count	src/vm.rs	525	fn	0x661E,0x662C,0x67AB	ASM	/// Port the A6 handler's conditional-skip count at file `0x661E..0x662C`: /// `b4 & 0x08` stores `((b5 >> 4) & 7) + 1` in `gs:0x67AB`.
+text_flags_after_accept	src/vm.rs	532	fn	0x668D,0x669B	ASM	/// Port the accepted-line self-modifying write in the A6 handler at file /// `0x668D..0x669B`: `b4 & 1` preserves the token's active bit, otherwise the /// handler clears bit7 of `b5` in the COD stre
+text_line_flags_offset	src/vm.rs	543	fn	0x8000,0x665A,0x6613,0x6724	ASM	/// The line record's FLAGS WORD sits at `+2`: `test word es:[di+2],0x8000` /// @`0x665A`, where `di` is the line record the handler resolved at `0x6613` /// (`les di,gs:[0x6724]` then `add di,ax` wit
+text_presentation_record_offset	src/vm.rs	550	fn	0x660D	ASM	/// The line's PRESENTATION record sits at `line + TALK_FIELD` — the `0x3A` field /// the A6 handler at `0x660D` resolves. Basis is that field offset; this function /// is the addition.
+text_line_already_shown	src/vm.rs	558	fn	0x8000,0x665A,0x67A0	ASM	/// The ALREADY-SHOWN bit, `0x8000` of the flags word — the mask in /// `test word es:[di+2],0x8000` @`0x665A`. A set bit takes `jne 0x67A0`, the same /// exit the inactive case uses, so a line alread
+is_record_entry_opcode	src/vm.rs	578	fn	0x6B06,0x6B4C,0x6E34,0x6D18,0x6D80,0x6DCF,0x6F62	ASM	/// The opcode-family predicates below group by TOKEN SHAPE, not by handler, and /// the dispatch table shows why that distinction is needed: /// /// ```text ///   0xB8 0xB9 0xBD  -> 0x6B06           
+is_record_state_opcode	src/vm.rs	585	fn	0x6B4C,0x6E34	ASM	/// `0xC1..=0xC2`. NOT a handler family — they dispatch to `0x6B4C` and `0x6E34` /// separately (see the note above [`is_record_entry_opcode`]); the range is a /// token-shape group for the decoder.
+is_global_compare_opcode	src/vm.rs	591	fn	0x64E5,0x6510	ASM	/// `0xCA` and `0xCB`, which dispatch to `0x64E5` and `0x6510` — again two /// handlers, grouped here by operand layout rather than behaviour.
+is_pair_record_opcode	src/vm.rs	598	fn	0x6B06,0x142D0	ASM	/// The one grouping that IS a handler family: `0xB8`, `0xB9` and `0xBD` all /// dispatch to `0x6B06` (dispatch table `0x142D0`), which is why they share the /// 2-word record behaviour rather than me
+record_entry_stored_related_offset	src/vm.rs	623	fn	0x6F62,0x6F9A,0x6F9E,0x6FB4,0x6FA2,0x6FA8,0x6FAC	ASM	/// What the record-entry family stores in the RELATED word — `0` for `0xC8`, the /// operand otherwise. /// /// The zero is not a literal in the original. `0xC8`'s handler (`0x6F62`) reaches /// its 
+script_profile_index_from_request_operand	src/vm.rs	636	fn	0x64B8,0x6780	ASM	/// Port the `0xD2` handler at `BLOODPRG.EXE` file `0x64B8`: /// `lodsb; cbw; dec ax; mov gs:[0x6780], ax`. /// /// `cbw` is correct despite `re/tools/dis.py` printing `cwde` there: capstone /// rende
+bit_flag_byte_offset	src/vm.rs	663	fn	0x6AC0,0x6AC3,0x6AC6,0x6AD0,0x6AD3,0x6AD5,0x6AD7,0x6AE2	ASM	/// `0xB7` addresses bits high-bit-first inside each byte: bit 0 is mask `0x80`, /// bit 7 is mask `0x01`, then bit 8 starts the next byte at `0x80`. /// /// The byte split is `0x6AC0`: /// /// ```tex
+bit_flag_mask	src/vm.rs	677	fn	0x6AD3,0x6236	ASM	/// `0x80 >> (bit & 7)` — the mask form of the `shl al,cl / shl al,1 / jae` /// sequence at `0x6AD3`, which is why bit 0 is the HIGH bit. See /// [`bit_flag_byte_offset`] for the full derivation. /// 
+vm_field_offset	src/vm.rs	699	fn	0x6023,0x6024,0x6027,0x602A,0x602C,0x6d60,0x6D60	ASM	/// The FIELD-OFFSET MATRIX lookup, `vm_field_offset` (`0x6023`) — how the engine /// turns a (selector, kind) pair into a byte offset inside an object record. /// /// ```text ///   0x6024  shl ax,4  
+reveal_complete_hold_ticks	src/vm.rs	710	fn	0x94D4,0x94DD,0x0ACA,0x67BB	ASM	/// Port the reveal-complete hold timer at `BLOODPRG.EXE` `0x94D4..0x94DD`: /// `b35 = gs:[0x0ACA] << 2; gs:[0x67BB] = 1`.
+text_speed_step_from_setting	src/vm.rs	719	fn	0x1B29,0x1B3D,0x0ACA,0xB31,0x94BA	ASM	/// Port the text-speed init at `BLOODPRG.EXE` `0x1B29..0x1B3D`: the config text-speed /// setting index is doubled (`add ax,ax`), setting 4 is special-cased (`cmp ax,8; /// add ax,4`), then `gs:[0x0A
+reveal_frames_per_char	src/vm.rs	744	fn	0xB31,0x94BA,0x0B35,0x0ACA,0x94AB,0xaca,0x94AE,0x94B1,0xb31,	ASM	/// Frames per revealed character for a text-speed step: the reveal loop resets the /// per-character countdown `gs:[0xB31] = step >> 2`. /// /// CITATION CORRECTED (audit-fixes #298). This pointed at
+record_end_hold_ticks	src/vm.rs	750	fn	0x7378,0x738C,0x27CF,0x0ACA,0x67BB	ASM	/// Port the record-end hold timer at `BLOODPRG.EXE` `0x7378..0x738C`: /// `b35 = gs:[0x27CF] * (gs:[0x0ACA] >> 1) + 6; gs:[0x67BB] = 1`.
+scan_zero_word_pub	src/vm.rs	765	fn	0x6293,0x0000	ORACLE	/// Replicates helper `0x6293`: from `start`, scan byte-by-byte until a `0x0000` /// word, skip it, then skip one extra byte if it is also zero. Returns the /// offset just past the terminator. /// Te
+scan_zero_word	src/vm.rs	769	fn		ORACLE	
+VmToken	src/vm.rs	783	enum	0x6724,0x0000,0x00C3	CELL?	/// A single decoded token from a COD stream, in execution order. /// `0xA6` TEXT token. /// `b1:b2` — index into the per-line record table (`gs:0x6724`). /// `b3` — voice/speaker selector (`0xFF` = n
+offset	src/vm.rs	945	fn		TESTED	/// The token's byte offset in the COD stream (every variant records it). /// With the stream in hand this also yields the raw opcode byte — /// `cod[token.offset()]` — which is how the live-coverage 
+encode_token	src/vm.rs	971	fn		TESTED	/// RE-ENCODE a decoded token back to its byte form — the inverse of [`walk`]'s /// decoding, from the STRUCTURED FIELDS ONLY (no source peeking). Returns `None` /// for content-opaque tokens (`Op`, `
+walk	src/vm.rs	1087	fn	0x62B6,0x6293,0x2F7F	ASM	/// Walk `cod[start..end]` in execution order, yielding tokens. Stops at `end`, /// at the `0xFF` end marker, or at the first byte that cannot be a token. // Determine token length + any mode change —
+decode_text	src/vm.rs	1310	fn	0x0000	ASM	/// Decode an `0xA6` TEXT token starting at `pos`. Returns the token and the /// offset just past it, or `None` if malformed. // A6 b1 b2 b3 b4 b5  [loop_target?] [control_word?]  w0 w1 ... 0x0000 // 
+read_u16	src/vm.rs	1364	fn		INFRA	
+ASSIGN_7	src/vm.rs	1442	const		UNVERIFIED	
+BITMASK_5	src/vm.rs	1443	const		UNVERIFIED	
+ASSIGN_5	src/vm.rs	1444	const		UNVERIFIED	
+TALK_FIELD	src/vm.rs	1461	const	0x6664,0x131,0x6D60,0x6d60	DATA	/// The talk/presentation-record field: selector `0x13`, **kind slot 1**. /// /// Unlike [`LOCATION_FIELD`] this is not a port assumption — the BINARY hardcodes the /// kind too. `0x6664` computes `ax
+LOCATION_FIELD	src/vm.rs	1484	const	0x6D60,0x6023,0x557C,0x5B77,0x61C3	DATA	/// The speaker's location field: `vm_field_offset(0x11, kind)` for **kind 1**. /// /// ASSUMPTION, made explicit (matrix row for selector `0x11` at `gs:0x6D60`): /// /// ```text ///   kind:   0     1
+SPECIAL_OBJECT_SLOT_COUNT	src/vm.rs	1485	const		UNVERIFIED	
+VM_FIELD_OFFSET_SELECTOR_PRESENTATION_HANDOFF	src/vm.rs	1486	const		UNVERIFIED	
+VM_FIELD_OFFSET_SELECTOR_C2	src/vm.rs	1493	const	0x625B,0x624B	ASM	/// `mov ax,0x11` @`0x625B` in the nav source-list builder (`0x624B`) — the /// selector the walk resolves to find an object's parent link. /// /// `ship3d::SHIP_3D_FIELD_SELECTOR_PARENT_LINK` is the 
+VM_FIELD_OFFSET_SELECTOR_C9_RELATED	src/vm.rs	1494	const		UNVERIFIED	
+VM_FIELD_OFFSET_SELECTOR_ENCOUNTER	src/vm.rs	1499	const	0x5DCE,0x5DF6,0x83DF,0x91DB	ASM	/// Selector `0x08` — the ENCOUNTER COUNTER. `FIELD_OFFSETS[8]` is non-zero in /// exactly one column (`0x36` at column 1 = kind 2), so this is a kind-2 field. /// Written by `post_update_encounter_co
+OBJECT_FLAG_PAIR_SEEN	src/vm.rs	1502	const	0x8000,0x5DD2,0x5DFA	ASM	/// Bit 15 of an object's `+2` flag word, set alongside the encounter-counter /// bump (`or word [si+2],0x8000` @ `0x5DD2`/`0x5DFA`).
+OBJECT_FLAG_ACTIVE	src/vm.rs	1505	const	0x91D4,0x83D9	ASM	/// Bit 0 of an object's `+2` flag word — the ACTIVE bit, the second condition of /// both list filters (`test word [si+2],1` @ `0x91D4`, `test byte [si+2],1` @ `0x83D9`).
+ARCHE_LOCATION_FIELD	src/vm.rs	1509	const	0x8365,0x6752,0x6B44	ASM	/// `arche+0x16` — the CURRENT LOCATION object (`mov bp,fs:[si+0x16]` @ `0x8365` /// with `si = gs:[0x6752] = arche`; the same word `0x6B44` clears).
+LOCATION_KIND_SHIP	src/vm.rs	1511	const	0x836C,0x8376	ASM	/// Location kinds the status header distinguishes (`0x836C`, `0x8376`).
+LOCATION_KIND_BLACK_HOLE	src/vm.rs	1512	const		UNVERIFIED	
+StatusHeaders	src/vm.rs	1519	struct	0x12E,0x137,0x13E,0x14B	CELL?	/// The status panel's four headers, supplied by the caller from the GAME'S OWN /// strings (`bloodprg::location_status_headers` reads `DS:0x12E`, `0x137`, /// `0x13E`, `0x14B`). They used to be four 
+STATUS_STRING_TABLE	src/vm.rs	1537	const	0x12E,0x137,0x13E,0x14B,0x839F	ASM	/// `(DS offset, file offset)` for each header — `0x12E`/`0x137`/`0x13E` are the /// three `mov si,imm` constants and `0x14B` the roster caption at `0x839F`. /// /// The strings themselves are NOT her
+LOCATION_PANEL_X	src/vm.rs	1546	const	0x9137,0x91EC	ASM	/// Layout of the DESTINATION INFO PANEL drawn by `0x9137..0x91EC`. Every value is /// an immediate in that routine; see [`VmMachine::location_panel_rows`].
+LOCATION_PANEL_Y	src/vm.rs	1547	const		UNVERIFIED	
+LOCATION_PANEL_ROW_PITCH	src/vm.rs	1548	const		UNVERIFIED	
+LOCATION_PANEL_NAME_GAP	src/vm.rs	1549	const		UNVERIFIED	
+LOCATION_PANEL_HEADER_COLOR	src/vm.rs	1550	const		UNVERIFIED	
+LOCATION_PANEL_ROW_COLOR	src/vm.rs	1551	const		UNVERIFIED	
+LOCATION_PANEL_BOX	src/vm.rs	1556	const	0x2780,0x9114,0x9203,0x9142	ASM	/// The panel's window rect `(x, y, w, h)` — `DS:0x2780`, a STATIC constant: a /// whole-image search for every store form to `0x2780` finds no writer, and the /// only references are the two `mov si/
+LOCATION_PANEL_TINT_PERCENT	src/vm.rs	1570	const	0xFFCE,0x90ED,0x22F1,0xffce,0x22F5	ASM	/// `ax = 0xFFCE` at `0x90ED`, negated on entry to the table builder (`0x22F1`). /// The panel's tint strength, as a PERCENTAGE — and it appears in the binary as /// its two's complement, which is why
+LOCATION_PANEL_ZOOM_STEPS	src/vm.rs	1572	const	0xADA,0x903E	CELL?	/// `[0xADA] = 8` (`0x903E`) — the zoom-open/shut interpolation step count.
+LOCATION_PANEL_CURSOR_RECT_SIZE	src/vm.rs	1574	const	0x9029	CELL?	/// The zoom SOURCE rect seeded at `0x9029`: a 4x4 square at the cursor.
+NAV_PICK_POSITION_FIELD	src/vm.rs	1579	const	0x92BC	ASM	/// The chart marker's position field — selector `0x0B`, whose matrix row is /// `0x18` for kinds 8 and `0x10` (`FIELD_OFFSETS[0x0B]`). Read as `x` at `+0x18` /// and `y` at `+0x1A` by the picker at `
+SHIP_3D_TARGET_NAME_TO_RECORD	src/vm.rs	1584	const	0x87D5,0xB33D	ASM?	/// A menu entry points at the record's INLINE NAME; the record is four bytes /// earlier. Emitted as `add ax,4` when a menu is built (`0x87D5`) and undone as /// `sub ax,4` when a row is selected (`0
+ENTITY_CANDIDATE_KIND_MASK	src/vm.rs	1588	const	0x7259,0x727E	ASM?	/// The entity-candidate filter (`0x7259`): an object joins the destination list /// only if its flags word has any of `0x98` (`test bx,0x98` @`0x727E`).
+ENTITY_CANDIDATE_READY_BIT	src/vm.rs	1590	const	0x7284	ASM?	/// ... and bit 1 of the BYTE at `+2` is set (`test byte es:[di+2],2` @`0x7284`).
+SHIP_CLICK_LOCATION_KIND_MASK	src/vm.rs	1594	const	0x140,0xB0FB	ASM?	/// `test word es:[eax],0x140` @`0xB0FB` — the location-kind test that decides /// whether the click commits the first CANDIDATE or the location OBJECT.
+nav_chart_marker_contains	src/vm.rs	1599	fn	0x9308,0x932B	ASM	/// The picker's box test for one marker (`0x9308..0x932B`): the box starts two /// pixels up-left of the marker and BOTH bounds are inclusive (`jb`/`ja` skip only /// strictly outside). The single co
+owner_object_offset_in	src/vm.rs	1622	fn	0x6034,0x603B,0x6040,0x6045,0x6048	ASM	/// The owner lookup — `vm_record_lookup_by_threshold` `0x6034`: /// /// ```text ///   0x603B  cmp ax,[si+0x10] / jbe    advance while the entry offset is BELOW ax ///   0x6040  add si,0x14 ///   0x60
+nav_chart_hit_box_for_kind	src/vm.rs	1629	fn	0x92BF,0x92D3,0x92FC	ORACLE	/// The nav picker's hit box for a KIND (`0x92BF` default, `0x92D3` black hole, /// `0x92FC` ship). The single copy of that ladder — `NavChartObject::hit_box` and /// `VmMachine::nav_chart_hit_box` bo
+OBJECT_FLAG_IN_PLAY	src/vm.rs	1642	const	0x6073,0x6C3B,0x7259	ASM?	/// Bit 1 of an object's `+2` flag word — the gate `0x6073` applies when building /// the active-object list, and the same bit the `0xC1` nav path (`0x6C3B`) and /// the entity candidate list (`0x7259
+NAV_CHART_KIND_MASK	src/vm.rs	1645	const	0x118,0x723D,0x100	ASM	/// The kinds the nav chart draws: `test bx,0x118` at `0x723D` — kind `0x08`, /// kind `0x10` (a SHIP) and kind `0x100` (a BLACK HOLE).
+NAV_PICK_BOX_DEFAULT	src/vm.rs	1663	const	0x277A,0x277C,0x92BF,0x277a,0x92C5,0x277c,0x92CB,0x100,0x92D	ASM	/// Hit-box sizes per kind, each pair written as two IMMEDIATES into the picker's /// own scratch words `DS:0x277A`/`DS:0x277C`: /// /// ```text ///   0x92BF  mov word [0x277a],0xc  / 0x92C5 mov word 
+NAV_PICK_BOX_BLACK_HOLE	src/vm.rs	1665	const	0x277a,0x92D3,0x277C,0x92D9	ASM	/// `mov word [0x277a],0x13` @`0x92D3` (with `0xC` into `0x277C` @`0x92D9`).
+NAV_PICK_BOX_SHIP	src/vm.rs	1667	const	0x277a,0x92FC,0x277C,0x9302	ASM	/// `mov word [0x277a],0x15` @`0x92FC` (with `0xA` into `0x277C` @`0x9302`).
+LocationPanelRow	src/vm.rs	1671	struct		UNVERIFIED	/// One drawn row of the destination info panel.
+C2_ACTIVE_LINE_KIND2	src/vm.rs	1677	const		UNVERIFIED	
+C2_ACTIVE_LINE_KIND400	src/vm.rs	1678	const		UNVERIFIED	
+VM_UI_FLAGS	src/vm.rs	1681	const	0x2793,0x0AFC6	ASM	/// Touched by the game at `mov word ptr [0x2793], 0` @`0x0AFC6`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+MAIN_LOOP_BUSY_BYTES	src/vm.rs	1694	const	0x109C,0x10BF,0x10C3,0x2793,0x1095	ASM?	/// The TEN subsystem-active bytes the main-loop gate ORs at `0x109C`..`0x10BF`, /// in the order the instructions read them (audit-fixes #333). /// /// Not transcribed: the sequence is perfectly regu
+UI_FLAG_CE_BRANCH	src/vm.rs	1699	const	0x2793,0x6494	ASM?	/// Bit 0 of [`VM_UI_FLAGS`] — what the 0xCE opcode branches on: /// `test byte ptr gs:[0x2793], 1 / jne` @`0x6494`, branch when CLEAR.
+UI_FLAG_BUSY	src/vm.rs	1706	const	0x2793,0x593A,0x8998,0x1B7B,0x59BF,0x5E99,0x895C,0x2A19	ASM?	/// Bit 2 — raised while something is RUNNING, so the main loop defers a pending /// script-profile load. Three independent setters, all `or byte [0x2793], 4`: /// the presentation start @`0x593A`, th
+UI_FLAG_SEEK_ARRIVED	src/vm.rs	1709	const	0x2793,0x9671	ASM?	/// Bit 3 — toggled on station-seek ARRIVAL: `xor word ptr [0x2793], 8` @`0x9671`. /// Note TOGGLE, not set (audit-fixes #330).
+UI_FLAG_DEFER_MASK	src/vm.rs	1712	const	0x2793,0x1095	ASM?	/// Bits 1|2|3 together: `test byte ptr [0x2793], 0xe / jne` @`0x1095`, the /// main-loop gate. Any of them set DEFERS the pending-profile dispatch.
+C2_PRESENTATION_GATE	src/vm.rs	1715	const	0x1fb2,0x0B001	ASM	/// Touched by the game at `test byte ptr [0x1fb2], 1` @`0x0B001`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+C2_PRESENTATION_FLAGS	src/vm.rs	1718	const	0x67aa,0x0B54D	ASM	/// Touched by the game at `and byte ptr [0x67aa], 0xfc` @`0x0B54D`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+C2_PRESENTATION_BUSY_FLAG	src/vm.rs	1719	const		UNVERIFIED	
+VM_ACTIVE_LINE	src/vm.rs	1722	const	0x6788,0x0B00F	ASM	/// Touched by the game at `mov word ptr [0x6788], ax` @`0x0B00F`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+C9_PRESENTATION_GATE_A	src/vm.rs	1725	const	0x252a,0x0B29A	ASM	/// Touched by the game at `mov byte ptr [0x252a], 0` @`0x0B29A`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+C9_PRESENTATION_GATE_B	src/vm.rs	1728	const	0x2531,0x0B336	ASM	/// Touched by the game at `mov byte ptr [0x2531], 6` @`0x0B336`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+C4_POST_UPDATE_SENTINEL	src/vm.rs	1729	const		UNVERIFIED	
+VM_PENDING_RESOURCE_PROFILE	src/vm.rs	1730	const		UNVERIFIED	
+VM_PRESENTATION_PRIMARY_C4_RECORD	src/vm.rs	1731	const		UNVERIFIED	
+VM_PRESENTATION_ACTIVE	src/vm.rs	1734	const	0x67ac,0x0B498	ASM	/// Touched by the game at `test byte ptr [0x67ac], 1` @`0x0B498`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+VM_PRESENTATION_RELATED_FLAG20	src/vm.rs	1735	const		UNVERIFIED	
+VM_PRESENTATION_DEFER_A	src/vm.rs	1738	const	0x67b0,0x0B4DC	ASM	/// Touched by the game at `test byte ptr [0x67b0], 1` @`0x0B4DC`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+VM_PRESENTATION_LOOP_FLAG	src/vm.rs	1741	const	0x67b1,0x0579d	ASM	/// Touched by the game at `test byte ptr gs:[0x67b1], 2` @`0x0579d` — found by decoding forward from a /// LIFTED function's entry, so the boundary is the recompiler's, not a scan's.
+VM_PRESENTATION_PAIR_WRITE_DISABLED	src/vm.rs	1742	const		UNVERIFIED	
+VM_PRESENTATION_START_LOCK	src/vm.rs	1743	const		UNVERIFIED	
+VM_PRESENTATION_TEXT_WAIT	src/vm.rs	1746	const	0x67ba,0x0B552	ASM	/// Touched by the game at `mov byte ptr [0x67ba], al` @`0x0B552`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+VM_PRESENTATION_HOLD_COMPLETE	src/vm.rs	1749	const	0x67bb,0x079c5	ASM	/// Touched by the game at `mov byte ptr [0x67bb], 0` @`0x079c5` — found by decoding forward from a /// LIFTED function's entry, so the boundary is the recompiler's, not a scan's.
+VM_PRESENTATION_HOLD_READY	src/vm.rs	1752	const	0x67bc,0x0B544	ASM	/// Touched by the game at `mov byte ptr [0x67bc], al` @`0x0B544`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+VM_PRESENTATION_WORD_BUFFER	src/vm.rs	1755	const	0x67f8,0x057a9	ASM	/// Touched by the game at `mov word ptr gs:[0x67f8], 0` @`0x057a9` — found by decoding forward from a /// LIFTED function's entry, so the boundary is the recompiler's, not a scan's.
+VM_PRESENTATION_STATUS_WORD	src/vm.rs	1758	const	0xa32,0x0B0BC	ASM	/// Touched by the game at `mov word ptr [0xa32], 1` @`0x0B0BC`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+VM_PRESENTATION_ACTIVE_RECORD	src/vm.rs	1761	const	0x6762,0x05795	ASM	/// Touched by the game at `mov ax, word ptr gs:[0x6762]` @`0x05795` — found by decoding forward from a /// LIFTED function's entry, so the boundary is the recompiler's, not a scan's.
+VM_PRESENTATION_DEFERRED_RECORD_TYPE	src/vm.rs	1764	const	0x6768,0x0B3AE	ASM	/// Touched by the game at `mov word ptr [0x6768], 0xc4` @`0x0B3AE`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+VM_PRESENTATION_DEFERRED_RECORD_RELATED	src/vm.rs	1767	const	0x676a,0x0B3B4	ASM	/// Touched by the game at `mov word ptr [0x676a], ax` @`0x0B3B4`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+VM_PRESENTATION_DEFERRED_RECORD_AUX	src/vm.rs	1768	const		UNVERIFIED	
+VM_PRESENTATION_SIGNAL_SLOT	src/vm.rs	1769	const		UNVERIFIED	
+VM_PRESENTATION_SCENE_DIRTY	src/vm.rs	1772	const	0x5b55,0x0B64A	ASM	/// Touched by the game at `mov byte ptr [0x5b55], 1` @`0x0B64A`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+VM_PRESENTATION_INPUT_GATE_A	src/vm.rs	1799	const	0x109C,0x10BF,0x67AC,0x109F,0x24F3,0x10A3,0x2751,0x10A7,0x67	ASM	/// THE `INPUT_GATE_A..H` GROUP IS THE MAIN-LOOP BUSY GATE'S OPERANDS /// (audit-fixes #332). These constants were named from where they are WRITTEN, /// by decoding forward from verified entries, wit
+VM_PRESENTATION_INPUT_GATE_B	src/vm.rs	1802	const	0x2751,0x08836	ASM	/// Touched by the game at `mov byte ptr [0x2751], 1` @`0x08836`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+VM_PRESENTATION_INPUT_GATE_C	src/vm.rs	1805	const	0x5e64,0x0B1DD	ASM	/// Touched by the game at `test byte ptr [0x5e64], 1` @`0x0B1DD`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+VM_PRESENTATION_INPUT_GATE_D	src/vm.rs	1808	const	0x2565,0x08713	ASM	/// Touched by the game at `test byte ptr [0x2565], 1` @`0x08713`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+VM_PRESENTATION_INPUT_GATE_E	src/vm.rs	1811	const	0x2736,0x0892C	ASM	/// Touched by the game at `mov byte ptr [0x2736], 1` @`0x0892C`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+VM_PRESENTATION_INPUT_GATE_F	src/vm.rs	1814	const	0x2737,0x0893C	ASM	/// Touched by the game at `mov byte ptr [0x2737], 1` @`0x0893C`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
+VM_PRESENTATION_HANDOFF_GATE	src/vm.rs	1815	const		UNVERIFIED	
+VM_PRESENTATION_INPUT_GATE_G	src/vm.rs	1816	const		UNVERIFIED	
+VM_PRESENTATION_INPUT_GATE_H	src/vm.rs	1817	const		UNVERIFIED	
+VM_PRESENTATION_INPUT_GATE_I	src/vm.rs	1823	const	0x2a19,0x087B0,0x109C,0x10BF,0x2A19	ASM	/// Touched by the game at `mov word ptr [0x2a19], 0` @`0x087B0`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`). /// NOT part of the main-loop busy gate, 
+VM_PRESENTATION_DESCRIPTOR_PENDING	src/vm.rs	1826	const	0x27e8,0x08bb3	ASM	/// Touched by the game at `test byte ptr [0x27e8], 1` @`0x08bb3` — found by decoding forward from a /// LIFTED function's entry, so the boundary is the recompiler's, not a scan's.
+VM_BRANCH_A	src/vm.rs	1829	const	0x6782,0x057ed	ASM	/// Touched by the game at `mov bx, word ptr gs:[0x6782]` @`0x057ed` — found by decoding forward from a /// LIFTED function's entry, so the boundary is the recompiler's, not a scan's.
+VM_BRANCH_B	src/vm.rs	1832	const	0x6784,0x057f2	ASM	/// Touched by the game at `mov word ptr gs:[0x6784], bx` @`0x057f2` — found by decoding forward from a /// LIFTED function's entry, so the boundary is the recompiler's, not a scan's.
+VM_PC_SAVED	src/vm.rs	1835	const	0x6776,0x057cd	ASM	/// Touched by the game at `mov si, word ptr gs:[0x6776]` @`0x057cd` — found by decoding forward from a /// LIFTED function's entry, so the boundary is the recompiler's, not a scan's.
+MAIN_PENDING_PROFILE_IDLE_GATES	src/vm.rs	1837	const		UNVERIFIED	
+VM_FIELD_OFFSET_TABLE	src/vm.rs	1853	const	0x6023,0x6D60,0x14180,0x142CF	ORACLE	/// Field-offset lookup table used by helper `0x6023`: /// `gs:[0x6D60 + selector * 16 + bsf(kind)]`. /// Transcribed from `BLOODPRG.EXE` file `0x14180..0x142CF`.
+LineState	src/vm.rs	1879	struct		UNVERIFIED	/// A `0xA6` line's resolved runtime scene state. /// Object offset of the current speaker (from the last `0xC4`), if any. /// The speaker's current location object offset (`state[actor+24]`), if a //
+BranchEvent	src/vm.rs	1889	struct		TESTED	
+ScriptProfileRequestEvent	src/vm.rs	1900	struct		TESTED	
+PostUpdateTrace	src/vm.rs	1907	struct	0x5DCE,0x5DF6	TESTED	/// Objects whose selector-`0x08` ENCOUNTER COUNTER the post-update ladder /// incremented this pass (`0x5DCE` / `0x5DF6`). See /// `post_update_encounter_counter`.
+PostUpdateActorRecordPair	src/vm.rs	1918	struct		TESTED	
+PresentationHandoffEvent	src/vm.rs	1924	struct		TESTED	
+ExecutionHalt	src/vm.rs	1931	enum		TESTED	
+ExecutionTrace	src/vm.rs	1939	struct		TESTED	
+pending_script_profile	src/vm.rs	1967	fn	0x6780,0xFFFF,0x108E,0x10C5,0x10D3,0xffff,0x64B8	ASM	/// The script profile a `0xD2` request left pending, or `None`. /// /// `gs:0x6780` is the request slot and `0xFFFF` means EMPTY: /// /// ```text ///   0x108E  cmp word [0x6780],-1     nothing pendin
+ScriptProfileProgram	src/vm.rs	1975	struct		UNVERIFIED	
+ScriptProfileRun	src/vm.rs	1983	struct		UNVERIFIED	
+ScriptProfileExecutionHalt	src/vm.rs	1990	enum		UNVERIFIED	
+ScriptProfileExecution	src/vm.rs	2005	struct		UNVERIFIED	
+ExecutedTrace	src/vm.rs	2010	struct		UNVERIFIED	
+Ship3dC1RuntimeContext	src/vm.rs	2016	struct		UNVERIFIED	
+Ship3dC1PositionRuntime	src/vm.rs	2024	struct		UNVERIFIED	
+VmNamedObjectOffsets	src/vm.rs	2049	struct	0x5490,0x1CE,0x2C4,0x674e,0x549D,0x67BE,0x67C4,0x67C9,0x67CE	ASM	/// The built-in objects the engine resolves BY NAME, and their DEB offsets. /// /// Matching by name is the game's own method, not a port convenience: `0x5490` /// loads `di` with a name pointer, com
+set	src/vm.rs	2070	fn	0x67BE,0x5490,0x674e,0x549D	ASM	/// Resolve one DEB object name against the built-in table and record its /// offset. Returns whether the name IS a built-in — the caller uses that to /// skip non-built-ins, so a `false` is an ordina
+ExecutionContext	src/vm.rs	2128	struct	0x6034,0x674e,0x6946,0xffff,0x7409,0x0400,0x00C4,0x5486,0x67	CELL?	/// Runtime tables the DOS VM receives through globals outside `SCRIPT*.VAR`. /// /// `object_offsets` mirrors the 20-byte object table scanned by helper `0x6034`: /// it maps a record/field offset to
+from_object_offsets	src/vm.rs	2142	fn		INFRA	
+with_global_word_0aa6	src/vm.rs	2155	fn		INFRA	
+with_global_pair_0aaa_0aa8	src/vm.rs	2160	fn		INFRA	
+with_special_object_offset	src/vm.rs	2165	fn		INFRA	
+with_vm_named_object	src/vm.rs	2171	fn		INFRA	
+with_descript_entry_name	src/vm.rs	2179	fn		INFRA	
+with_bios_rtc	src/vm.rs	2193	fn		INFRA	
+with_text_line_display_gating	src/vm.rs	2199	fn		INFRA	
+with_text_presentation_record_gating	src/vm.rs	2204	fn		INFRA	
+with_strict_actor_record_branching	src/vm.rs	2209	fn		INFRA	
+with_ship_3d_c1_runtime	src/vm.rs	2214	fn		INFRA	
+with_ship_3d_c1_positions	src/vm.rs	2233	fn		INFRA	
+vm_named_object_offsets	src/vm.rs	2254	fn		INFRA	
+owner_object_offset	src/vm.rs	2266	fn		INFRA	/// Delegation to [`owner_object_offset_in`], which carries the rule AND its /// citation. Two of these exist — one here on the execution context, one on /// `VmMachine` — because both types hold thei
+remap_special_rhs	src/vm.rs	2275	fn	0x6946,0x674E,0xFFFF	ASM	/// The `0x6946` family's RHS substitution: an operand equal to the SPECIAL /// OBJECT (`gs:0x674E`) becomes `0xFFFF` before the compare. It is a /// substitution, NOT a match-anything wildcard — the 
+is_special_rhs	src/vm.rs	2288	fn	0x5FF6,0x5FD8	ASM	/// Whether an operand IS the special object, i.e. whether /// [`Self::remap_special_rhs`] would substitute it. Separate from the remap /// because the SET path needs to know (the slot bookkeeping at 
+c2_descript_lookup_succeeds	src/vm.rs	2292	fn		UNVERIFIED	
+BranchOverride	src/vm.rs	2305	struct		UNVERIFIED	/// Force one condition result while executing a concrete scenario. This is a /// branch-enumeration aid: the offset is the conditional opcode offset reported /// in `BranchEvent`, and `condition_pass
+state_u16	src/vm.rs	2311	fn		INFRA	/// Read a u16 from `state` (the mutable VAR image) at byte address `addr`.
+state_has_u16	src/vm.rs	2320	fn		INFRA	
+state_set_u16	src/vm.rs	2326	fn		INFRA	
+state_u8	src/vm.rs	2334	fn		INFRA	
+state_set_u8	src/vm.rs	2338	fn		INFRA	
+state_or_u8	src/vm.rs	2344	fn		INFRA	
+state_and_u8	src/vm.rs	2349	fn		INFRA	
+state_and_u16	src/vm.rs	2354	fn		INFRA	
+pending_script_profile_dispatch_ready	src/vm.rs	2359	fn		UNVERIFIED	
+state_c_string_equals	src/vm.rs	2368	fn		UNVERIFIED	
+text_line_should_display	src/vm.rs	2383	fn	0x6647,0x8000,0x665A	ASM	/// The A6 display gate, both halves of it: the line is ACTIVE (`or cx,cx / jns` /// @`0x6647`) and NOT already shown (`test word es:[di+2],0x8000` @`0x665A`). /// Both failures take the same exit, wh
+text_presentation_record_is_active	src/vm.rs	2392	fn	0x6C7E	ASM	/// Whether the line's presentation record holds an ACTIVE actor — the record at /// `line + TALK_FIELD` typed `0xC4` (`OP_ACTOR`, whose handler is `0x6C7E`). The /// comparison is against the OPCODE 
+text_runtime_gates_allow	src/vm.rs	2402	fn	0x6647,0x665A	ASM	/// Both A6 runtime gates, each independently switchable by the execution context. /// /// The presentation-record gate wants the line's record typed `0xC4` /// (`OP_ACTOR`); the display gate wants th
+TextTokenRuntimeFlags	src/vm.rs	2415	struct		UNVERIFIED	
+flags_b5	src/vm.rs	2433	fn	0x668D	ASM	/// The effective `b5` at a stream offset: the accept-modified value if this /// line has been accepted, else the byte as shipped. Stands in for re-reading /// the COD byte the handler rewrites at `0x
+accept_line	src/vm.rs	2443	fn	0x668D	ASM	/// Record the accept-time `b5` rewrite for one stream offset — the port's /// stand-in for the handler's self-modifying `and byte [si+1],0x7F` at /// `0x668D`, which clears bit 7 unless `b4 & 1` pres
+mark_text_line_shown	src/vm.rs	2456	fn	0x8000,0x665A,0x668D	ASM	/// Set the ALREADY-SHOWN bit on a line's flags word — the `0x8000` the A6 gate /// tests at `0x665A`. This is the state half of the accept; the bytecode half is /// [`TextTokenRuntimeFlags::accept_li
+SpecialObjectSlots	src/vm.rs	2466	struct		UNVERIFIED	
+remove	src/vm.rs	2475	fn	0x5FF6,0x6D3E,0x5FF2,0x5FEA	ASM	/// Remove an owner from the 16-slot array — the scan at `0x5FF6` /// (`mov bp,0x6D3E / mov cx,0x10`), which clears the matching slot to 0 and /// STOPS. Returns whether it found one; the routine repo
+insert	src/vm.rs	2491	fn	0x6008,0x6995	ASM	/// Insert an owner into the first EMPTY slot — the free-slot scan at `0x6008` /// (`cmp word [bp],0 / je`, `add bp,2`, 16 iterations). /// /// Already-present returns success WITHOUT inserting again,
+actor_object_offset_from_record	src/vm.rs	2509	fn	0x660D	ASM	/// The object an ACTOR record belongs to: the record sits at `object + TALK_FIELD`, /// the `0x3A` field the A6 handler resolves at `0x660D` /// (`0x3A`), so this subtracts. The `Option` guards a rec
+record_owner_object_offset	src/vm.rs	2518	fn		INFRA	/// The object that OWNS an arbitrary record — [`owner_object_offset_in`]'s /// scan-then-step-back, which holds the rule and its citation. Distinct from /// [`actor_object_offset_from_record`]: that 
+apply_assign5_mode0	src/vm.rs	2522	fn		ASM	
+record_owner_is_active	src/vm.rs	2560	fn	0x6073	ASM	/// Whether a record's owning object is ACTIVE — bit 0 of the object's byte at /// `+2`, the same flag `0x6073` tests (`test byte fs:[bx+2],2` reads bit 1 of the /// pair; bit 0 is the active half). `
+actor_record_is_active	src/vm.rs	2573	fn	0x6073	ASM	/// Whether an actor record's OBJECT is active — bit 0 at `object + 2`, the flag /// pair `0x6073` tests, reached by /// subtracting `TALK_FIELD` from the record. Unknown resolves to FALSE here (not /
+actor_record_condition	src/vm.rs	2598	fn	0x6C7E,0x6C86,0x6C8C,0x6C8F,0x6C92,0x6034,0x6C97,0x6C98,0x6C	ASM	/// The `0xC4` QUERY condition, from the handler at `0x6C7E`: /// /// ```text ///   0x6C86  mov al,[si] / cmp al,0xa1 / jne   the 0xA1 PREFIX... ///   0x6C8C  inc dl / inc si                   ...sets
+write_actor_record	src/vm.rs	2621	fn	0x6C7E	ASM	/// The `0xC4` SET write (handler `0x6C7E`): type `0xC4`, the related offset at /// `+2`, and ZERO at /// `+4`. The third word is written every time — it is not left as found — which is /// what makes
+PresentationKind1Update	src/vm.rs	2628	enum		UNVERIFIED	
+post_update_kind1_presentation_state	src/vm.rs	2644	fn	0x5816	ASM	/// The kind-1 post-update, from the post-exec record walk at `0x5816`: when the /// record holds an ACTIVE actor (`0xC4`), latch /// the related object's `0x20` flag, then arm the presentation — scen
+post_update_kind2_presentation_handoff_target	src/vm.rs	2709	fn	0x5816	ASM	/// The kind-2 HANDOFF check in the post-exec record walk (`0x5816`): can this /// record take over the presentation currently running? /// /// FOUR gates, and all four must be clear before anything h
+post_update_deferred_record_write	src/vm.rs	2746	fn		ASM	
+post_update_encounter_counter	src/vm.rs	2820	fn	0x5D8F,0x5DB0,0x5E06,0x5DB4,0x5DE3,0x5DC2,0x5DC4,0x6023,0x5D	ASM	/// The ENCOUNTER COUNTER step of the post-update actor-pair ladder /// (`vm_post_update_c4_pair` `0x5D8F`, block `0x5DB0..0x5E06`), run between the /// processed-marker write and the related-record `
+post_update_actor_record_pair	src/vm.rs	2855	fn		ASM	
+post_update_actor_records_for_active_objects	src/vm.rs	2891	fn		UNVERIFIED	
+post_update_execution_state	src/vm.rs	2902	fn		UNVERIFIED	
+append_post_update_trace	src/vm.rs	2954	fn		UNVERIFIED	
+record_link_condition	src/vm.rs	2973	fn		ASM	
+write_record_link	src/vm.rs	2998	fn	0x6EEE,0x142D0	ASM	/// The `0xC3` QUEUE write (handler `0x6EEE`): type `0xC3`, the related offset at /// `+2`, and **1** at /// `+4` — where [`write_actor_record`]'s `0xC4` writes ZERO there. That third word /// is the 
+write_record_link_mode0	src/vm.rs	3012	fn	0x6EEE	ASM	/// The `0xC3` SET guard (`0x6EEE`): the write happens only when the owner is /// ACTIVE, the /// related object is active (bit 0 at `+2`), and the slot does not already hold an /// active `0xC4` pres
+record_state_condition	src/vm.rs	3030	fn		UNVERIFIED	
+c1_record_state_resolved_mode1_condition	src/vm.rs	3071	fn	0x6B4C	ASM	/// The `0xC1` QUERY path when the operand SELECTS a state (1 or 2) rather than /// comparing directly — handler `0x6B4C`'s resolved branch. /// /// Returns `None` for any other operand, and for a rec
+ship3d_c1_source_records_from_bytes	src/vm.rs	3109	fn	0xFFFF	ASM	/// Parse the ship-3D C1 source list — words up to and INCLUDING the `0xFFFF` /// sentinel (`SHIP_3D_TARGET_EXIT_SENTINEL`, the back/exit row). /// /// Returns `None` when the sentinel never arrives, 
+ship3d_record_state_slot	src/vm.rs	3126	fn	0x6B4C	ASM	/// Read a record's three words as a ship-3D state slot, the layout the `0xC1` /// handler `0x6B4C` writes — `{opcode, operand, /// aux}`, the same `+0`/`+2`/`+4` layout every record writer uses. The 
+write_ship3d_record_state_slot	src/vm.rs	3138	fn	0x6B4C	ASM	/// Write a ship-3D state slot back into a record — the mirror of /// [`ship3d_record_state_slot`], same `+0`/`+2`/`+4` layout the `0x6B4C` handler /// uses. Writes all three words, so a slot cannot c
+derive_ship_3d_position_runtime	src/vm.rs	3169	fn	0x6724,0x6B4D,0x61AB,0x6023,0x6176,0x617D,0x6752,0x61D2	ASM?	/// Derive the C1 position runtime FROM THE STATE TABLE, so the walk runs on real /// records instead of only on test fixtures (audit-fixes #291). /// /// This is the fix for #290: `Ship3dC1PositionRu
+resolve_c1_record_state_ship3d_target	src/vm.rs	3276	fn		UNVERIFIED	
+write_c1_record_state_ship3d	src/vm.rs	3338	fn		UNVERIFIED	
+write_c1_record_state_mode0	src/vm.rs	3411	fn	0x6B4C	ASM	/// The `0xC1` SET path (handler `0x6B4C`): write `{0xC1, operand, 2}` into an /// EMPTY record whose owner is active. /// /// The third word is `2` here, against `0xC3`'s `1` and `0xC4`'s `0` — three
+write_c2_record_state_direct	src/vm.rs	3444	fn	0x6E34	ASM	/// The `0xC2` SET path (handler `0x6E34`): three gates, all of which must pass /// before anything is written. /// /// Owner active; the TARGET's `0x20` flag set (not the owner's — a different /// ob
+clear_record_words	src/vm.rs	3496	fn	0x6FB9	ASM	/// Zero all THREE words of a record, as the `0xC9` clear at `0x6FB9` does — type, /// related, and the third slot that /// distinguishes `0xC1`/`0xC3`/`0xC4` (2/1/0). Clearing only the type would lea
+clear_record	src/vm.rs	3511	fn	0x6FB9	ASM	/// The `0xC9` CLEAR (handler `0x6FB9`): zero the record, and if it held an ACTOR /// (`0xC4`), follow the link and clear the related object's corresponding field /// too, then reset the presentation 
+write_record_entry	src/vm.rs	3536	fn	0x6D18,0x6D80,0x6DCF,0x6F62	ASM	/// The `0xC5..=0xC8` entry write (handlers `0x6D18`, `0x6D80`, `0x6DCF`, /// `0x6F62`): the OPCODE itself as the type word, the related /// value at `+2`, zero at `+4`. /// /// The type word is the o
+write_record_entry_mode0	src/vm.rs	3554	fn	0x6D18,0x0200,0x6D80,0x6F62	ASM	/// The `0xC5..=0xC8` SET paths, which share a WRITER but not a guard — /// `write_record_entry` is common, the conditions are per opcode: /// /// * `0xC5` (handler `0x6D18`) demands the operand objec
+record_entry_condition	src/vm.rs	3596	fn		ASM	
+branch_fail	src/vm.rs	3614	fn		INFRA	
+push_mode0_branch_fail	src/vm.rs	3618	fn		UNVERIFIED	
+compare_vm_words	src/vm.rs	3638	fn		UNVERIFIED	
+global_word_condition	src/vm.rs	3652	fn		UNVERIFIED	
+global_pair_condition	src/vm.rs	3662	fn		UNVERIFIED	
+interpret_line_states	src/vm.rs	3682	fn		TESTED	/// Walk `cod`, executing assignment opcodes against a copy of `var` (the initial /// state image), and return the resolved scene state at every `0xA6` line.
+interpret_line_states_with_context	src/vm.rs	3686	fn		UNVERIFIED	
+execute_trace	src/vm.rs	3877	fn		UNVERIFIED	/// Execute the subset of VM control flow that has been tied to concrete handler /// code. This follows A0/A1 condition blocks and direct A4/A9 jumps, while still /// using the same bounded state mode
+execute_trace_with_context	src/vm.rs	3881	fn		UNVERIFIED	
+execute_trace_with_overrides	src/vm.rs	3892	fn		UNVERIFIED	/// Execute a concrete VM path, optionally forcing selected condition outcomes. /// Overrides are keyed by conditional opcode offset and are applied only after a /// real condition has been decoded at
+execute_trace_with_overrides_and_context	src/vm.rs	3900	fn		UNVERIFIED	
+execute_trace_from_offset	src/vm.rs	3915	fn		UNVERIFIED	/// Execute a concrete VM path starting at an arbitrary COD `start` offset instead /// of the script entry (0). Used to reach dialogue in named functions that the /// main control flow never calls (ev
+execute_trace_state_with_overrides_and_context	src/vm.rs	3926	fn		UNVERIFIED	
+execute_script_profile_sequence	src/vm.rs	4540	fn		UNVERIFIED	
+SceneEvent	src/vm.rs	4630	enum		UNVERIFIED	/// One presentation event in execution order. /// Subtitle chatter event from the dialogue display state machine (tb.snd).
+LineInput	src/vm.rs	4676	struct		UNVERIFIED	/// Minimal per-line input for the emitter — the fields a decoded `0xA6` line /// plus its resolved scene context provide. Decoupled from `ScriptSpeechLine` /// so the emitter stays unit-testable.
+emit_scene_events	src/vm.rs	4693	fn		UNVERIFIED	/// Turn an ordered sequence of decoded dialogue lines into a presentation event /// stream, emitting background/music/speaker changes only on transition and a /// trailing `Clear`.
+VmEvent	src/vm.rs	4771	enum	0x2120,0x6EEE,0x69C7	CELL?	/// An event the faithful VM raises for the engine/driver. /// `0xA6` TEXT — a dialogue line record executes (operand offset into the /// line-record table; the walker's LineState carries the decoded 
+VmMachine	src/vm.rs	4794	struct	0x1C3F,0x677E,0x200,0x6ADE,0x6CDE,0x6724	CELL?	/// The script VM's machine state, mirroring the game's own arrays byte-for-byte. /// The save file serializes exactly these blocks (save path @0x1C3F: header word /// `0x677E`, `0x200` bytes @`0x6ADE
+default	src/vm.rs	4961	fn	0x2727	ORACLE?	// The oracle's deterministic CMOS seed (interp RTC seconds fixed // at 0x27; the seeder mirrors the byte into both halves -> 0x2727). // Matching it makes the port's variant rolls agree with the orac
+NAV_SOURCE_SCRATCH_LEN	src/vm.rs	5017	const	0x6886,0x6A16,0x604E,0x190	CELL?	/// Length of the `DS:0x6886` nav source-list scratch: the distance to the next /// labelled cell, `DS:0x6A16` (the active-object candidate list `0x604E` builds). /// 0x6A16 - 0x6886 = 0x190 (audit-fi
+new	src/vm.rs	5020	fn		INFRA	
+halted	src/vm.rs	5024	fn		INFRA	
+start_actor_presentation	src/vm.rs	5043	fn	0x675E,0x5816,0x67AC,0x67B7,0x2793,0x6782,0x6784,0x6776,0x67	ASM?	/// Driver hook: a console click / event starts an actor's presentation — /// the C4 query blocks for that actor then run (the game's click dispatch /// writes the C4 primary record @DS:0x675E; handle
+promote_queued_presentation	src/vm.rs	5108	fn	0x6F4B,0x6F51,0x6F55,0x5C64,0x675E,0x5D37,0x5D3C,0x5D40,0x67	ASM	/// Promote a QUEUED presentation (a typed `{0xC3, related, 1}` record, the /// OP_C3 request) to an ACTIVE one. Returns the started record offset, or /// None when nothing is queued or a presentation
+dispatch_concept	src/vm.rs	5191	fn		TESTED	/// ARRIVAL: satisfy the opening block's record-equality guards (the travel /// system's writes). SCRIPT2's first block guards `rec_0F4E == 3488` — the /// current-location variable vs the DEB offset 
+set_location	src/vm.rs	5204	fn		TESTED	/// The travel system's arrival write: current-location variable = the /// destination's DEB offset (rec_0F4E in SCRIPT2 — guards compare it to /// 3488 start / 3380 fled / 3074 the coded-message zone
+location_var_offset	src/vm.rs	5219	fn	0x0F4E	TESTED	/// The current-location variable's record offset, from the opening block's /// wildcard-family equality guard. /// /// `SCRIPT2:0x0F4E` — a SCRIPT-DATA offset, not a BLOODPRG.EXE one, so the /// cita
+satisfy_opening_location_guards	src/vm.rs	5250	fn		TESTED	// Enter the first A9-opened block. // negated guard: skip, do not satisfy
+to_dos_save	src/vm.rs	5295	fn	0x1C3F,0x200,0x6ADE,0x6CDE	CELL?	/// Serialize the machine state as a DOS `blood.sav` (the layout the game's /// save path @0x1C3F writes): u16 current profile, 0x200 bytes of the state /// word array (gs:0x6ADE), 0x60 bytes of the c
+apply_dos_save	src/vm.rs	5312	fn	0x1CBD	CELL?	/// Load a DOS `blood.sav` (the read path @0x1CBD): restores the state array, /// character slots, and line-record table; returns the saved profile word /// (the script to re-select). Returns None if 
+load_deb_objects	src/vm.rs	5336	fn	0x5486,0x6758,0x672c,0x624B,0x604E,0x5816,0x6034	CELL?	/// Load the script bytecode into the machine's working copy (the game /// self-modifies accepted lines' active bits in this stream). /// Populate the DEB object-offset table (ascending) for owner res
+owner_object_offset	src/vm.rs	5383	fn	0x6034	INFRA	/// The owning object of a record: the nearest DEB object STRICTLY below `off` /// (the 0x6034 threshold lookup's port model). None when the table is unloaded. /// The `VmMachine` half of the pair des
+c4_set_write_decision	src/vm.rs	5413	fn	0x6CC3,0x6D01,0x6034,0x6C7E,0x6CC8,0x6CCC,0x6CD1,0x6CD3,0x6C	ASM?	/// The `0xC4` mode-0 (SET) write guard — the `0x6CC3..0x6D01` decision. /// Returns `None` when the object table is unloaded (no `0x6034` threshold /// mapping possible; the caller then preserves the
+c1_query_passes	src/vm.rs	5444	fn	0x6B4C	CELL?	/// The `0xC1` mode-1 (QUERY) decision — `0x6B4C`'s query path. `Some(true)` = /// pass (no branch), `Some(false)` = branch, `None` = object table unloaded /// (caller keeps the legacy no-op). Mirrors
+c1_position_records	src/vm.rs	5514	fn	0x6B4C,0x6034,0x6BCE,0x6C04,0x6C0C,0x6C53,0x624B,0x6C3B,0x6C	ASM?	/// The `0xC1` mode-0 (SET) decision — the non-ship-3D path of `0x6B4C` / /// tracer `write_c1_record_state_mode0`. `Some(true)` = write `{0xC1, /// operand, 2}`, `Some(false)` = branch, `None` = obje
+c1_set_plan	src/vm.rs	5598	fn	0x6BE0,0x6C02,0x6BE5,0x6C04,0x6BEA,0x60DD,0x6BED,0x6BF3,0x6B	ASM?	// THE DISTANCE REDIRECT, `0x6BE0`..`0x6C02` (audit-fixes #292). The live // handler skipped this entirely: it went straight to the kind-0x10 test, // so an owner that should have been redirected to i
+refresh_nav_source_scratch	src/vm.rs	5714	fn	0x624B,0x6886,0x672c,0xFFFF,0x6724,0xffff,0x6289	ASM?	/// Build the ship-3D NAV SOURCE LIST (`ship_3d_navigation_source_list_build` /// `0x624B`, output `DS:0x6886`), a faithful port: walk the `gs:0x672c` /// directory; for each entry take its object off
+build_nav_source_list	src/vm.rs	5731	fn		UNVERIFIED	// Named for its selector so it does not collide with the token walker // `walk` in this same file (the audit ledger keys rows by name+file). // The real loop tests the NEXT entry's +0x12 before conti
+walk_selector11_children	src/vm.rs	5734	fn		UNVERIFIED	// Named for its selector so it does not collide with the token walker // `walk` in this same file (the audit ledger keys rows by name+file).
+source_list_entry_is_listable	src/vm.rs	5782	fn	0x91C3,0x91CE,0x91D4,0x91DB	ASM	/// The DRAW-TIME filter both source-list consumers apply, ported verbatim /// from `vm_source_list_draw_loop` `0x91C3`: /// /// ```text ///   0x91CE  test word [si],2       the object's kind has bit 
+source_list_display_rows	src/vm.rs	5802	fn	0x91C3,0x299,0x202	ASM	/// The rows a source-list panel actually DRAWS (`0x91C3` `0x299:0x202` per /// survivor, `add dx,0xA` between rows): `build_nav_source_list` filtered by /// [`Self::source_list_entry_is_listable`].
+source_list_text_rows	src/vm.rs	5823	fn	0x83C0,0x83F8,0x83C7,0x6758,0x83E5,0x83D4	ASM	/// The same list as TEXT (`0x83C0..0x83F8`, the `PLANET:`/`SHIP:`/`BLACK /// HOLE:` status block's `LIFE SUPPORT:` roster), which adds a FOURTH /// condition the drawn panel does not have: /// /// ``
+object_inline_name	src/vm.rs	5850	fn	0x8389,0x83EA,0x299,0x202,0x91E1	ASM	/// An object's INLINE NAME: the NUL-terminated string at `record+4`. /// /// Both status-list consumers read it that way — `mov si,bp / add si,4 / /// lodsb` at `0x8389` and `0x83EA`, and `add si,4` 
+location_status_block	src/vm.rs	5883	fn	0x82E8,0x8347,0x8420,0xE18,0x835C,0x6752,0x8365,0x8369,0x12E	ASM	/// The location STATUS BLOCK the nav hover composes (`nav_state_gate` /// `0x82E8`, composer `0x8347..0x8420`), as the lines the real routine writes /// CR-separated into the text buffer at `0xE18`: 
+location_panel_rows	src/vm.rs	5930	fn	0x9137,0x91EC,0x27BF,0x9022,0x901D,0x915B,0x12E,0x916D,0x137	ASM	/// The DESTINATION INFO PANEL's drawn rows (`0x9137..0x91EC`) — the other /// consumer of the same roster, this one a real on-screen panel rather than /// the subtitle-buffer block [`Self::location_s
+build_active_object_list	src/vm.rs	5987	fn	0x604E,0x6A16,0x672C,0x6068,0x6070,0x6073,0x607C,0x6082,0xFF	ORACLE	/// The ACTIVE-OBJECT candidate list (`table_672c_process` `0x604E`, output /// `DS:0x6A16`): walk the 20-byte directory at `gs:0x672C` while `+0x12 == 1` /// and keep every object whose flag word has
+build_nav_chart_list	src/vm.rs	6014	fn	0x721A,0x2AD3,0x27C1,0x7226,0x604E,0x7233,0x7238,0x723D,0x11	ORACLE	/// The NAV CHART's visible-object list (`0x721A`, output `DS:0x2AD3`, count /// returned in `ax` and stored at `[0x27C1]`): the active-object list above, /// filtered to the chart-visible KINDS. /// 
+nav_chart_pick	src/vm.rs	6045	fn	0x92A3,0x9339,0x2AD3,0x27C1,0x92BF,0x92CB,0x100,0x92DF,0x92E	ORACLE	/// The NAV-CHART OBJECT PICKER (`0x92A3..0x9339`) — what the info panel's /// selection commit calls to turn a cursor position into an object. /// /// It walks the chart's visible-object list (`DS:0x
+nav_chart_marker	src/vm.rs	6059	fn	0x92DF,0x92F2	ORACLE	/// The chart marker the picker hit-tests and the chart draws: `+0x18`/`+0x1A`, /// or the SECOND endpoint at `+0x1C`/`+0x1E` when the object is a black hole /// whose `+0x14` differs from `arche+0x22
+nav_chart_hit_box	src/vm.rs	6073	fn	0x92BF,0x92D3,0x92FC	ORACLE	/// The picker's per-kind hit box for a record (`0x92BF`, `0x92D3`, `0x92FC`).
+nav_chart_arche_context	src/vm.rs	6079	fn	0x92DF	ASM	/// The word the black-hole endpoint rule compares against: `es:[arche+0x22]` /// (`0x92DF`). Zero when no DEB is loaded.
+world_click_select	src/vm.rs	6113	fn	0xB20C,0xB27B,0xB2BB,0xFFFF,0xB288,0x252f,0x24F3,0x27D8,0x25	ASM	/// The WORLD-DESTINATION CLICK commit (`0xB20C..0xB27B`). The ship FSM's /// per-frame hit-test (`ship_3d_target_record_select` `0xB2BB`) returns the /// clicked target record; this is what the FSM t
+entity_candidate_list	src/vm.rs	6163	fn	0x7259,0x7266,0x624b,0x6886,0x7269,0x726c,0x250b,0x726f,0x62	ASM	/// The DESTINATION LIST BUILDER, `entity_candidate_list` (`0x7259`) — the /// writer whose output [`Self::ship_3d_target_record_select`] reads. /// /// ```text ///   0x7266  call 0x624b              
+destination_rows	src/vm.rs	6201	fn	0xB0EA,0x7292	ASM	/// The destination rows the game actually offers: each candidate's RECORD and /// the NAME stored inside it. /// /// Rows come from [`Self::destination_candidate_records`] rooted at `arche`, /// whic
+ship_click_initial_target	src/vm.rs	6245	fn	0xB0DC,0xB111,0xB0E6,0x6724,0xB0EA,0x6752,0xB0EE,0x4da,0x1eb	ASM	/// The SHIP-3D CLICK COMMIT's initial target, `ship_click_commit` /// (`0xB0DC..0xB111`) — the caller that roots the whole destination chain. /// /// ```text ///   0xB0E6  les di,[0x6724]          es
+destination_candidate_records	src/vm.rs	6271	fn	0x624B,0x7259,0x6276,0x624b,0x627D,0x726F,0x728B	ASM	/// The whole destination chain in one call: the source list `0x624B` builds, /// filtered by `0x7259`, yielding the `RECORD+4` words the selector reads. /// /// `first = target` because `0x624B` PRES
+ship_3d_target_record_select	src/vm.rs	6316	fn	0xB2BB,0x71E,0xC48,0x8428,0xB2C3,0x250b,0xB2C6,0x6726,0xB2CB	ASM	/// The WORLD-DESTINATION HIT-TEST, `ship_3d_target_record_select` (`0xB2BB`) — /// what produces the record [`Self::world_click_select`] commits. /// /// It is NOT a spatial hit-test on the nav chart
+special_slot_insert_pub	src/vm.rs	6347	fn	0x6D3E,0x5FF6	INFRA	/// Insert an owner into the 16-slot special list (gs:0x6D3E, insert 0x5FF6). /// Returns false only if the list is full and the owner is not already present. /// Test hooks for the recomp differentia
+special_slot_remove_pub	src/vm.rs	6350	fn		INFRA	
+ship_slots_pub	src/vm.rs	6353	fn		INFRA	
+ship_contact_menu_words	src/vm.rs	6380	fn	0x87BD,0x0F29,0x8709,0x0FDD,0x87C5,0x6D3E,0x87C8,0x2B13,0x87	DATA	/// The console CONTACT MENU, built the way the row-2 handler builds it. /// /// `0x87BD` (bridge console row 2, reached through the per-row handler table /// at `CS:0x0F29` -> file `0x8709`, entry 2 
+special_slot_insert	src/vm.rs	6395	fn	0x5FF6,0x6D3E,0x5FFE,0x601F,0x600E,0x601C	ORACLE	/// Insert an owner into the special-slot list — `vm_special_slot_insert` /// `0x5FF6`: scan the 16 words at `DS:0x6D3E` for the owner and return CF set /// if already present (`0x5FFE..0x601F`); othe
+special_slot_remove	src/vm.rs	6421	fn	0x5FD8,0x5FDA,0x6D3E,0x5FE0,0x5FED,0x5FEA	ORACLE	/// Remove an owner from the special-slot list — `vm_special_slot_remove` /// `0x5FD8`, exactly: /// /// ```text ///   0x5FDA  bp=0x6D3E  cx=0x10        the 16-word list ///   0x5FE0  cmp ax,[bp] / je
+load_cod	src/vm.rs	6431	fn		TESTED	
+load_var	src/vm.rs	6439	fn	0x6724	CELL?	/// Initialize the line-record/object table from the script's VAR file — the /// game loads VAR as the table's initial contents (le16 words at gs:0x6724).
+rand	src/vm.rs	6449	fn	0x1CE,0xB02,0x2DE2,0x2DD4,0x2E00,0xaee,0x2E17,0xaf1,0x2E1E,0	ORACLE	// THE ENGINE'S OWN PRNG (0x1CE:0xB02, file 0x2DE2), ported exactly: // an 8-round rcr/rcl bit-interleave of the two state bytes into AX, // XORed with the 16-bit seed (CMOS RTC seconds at boot; seede
+u8_at	src/vm.rs	6498	fn		UNVERIFIED	
+lodsb	src/vm.rs	6502	fn		UNVERIFIED	
+lodsw	src/vm.rs	6508	fn		UNVERIFIED	
+tick_state_countdowns	src/vm.rs	6521	fn	0x8AA,0x675A,0xB27,0xFFFF	CELL?	/// One divided-timer beat of the state-array countdown — the engine's law at /// 0x8AA (in the timer chain, gated there on no-active-presentation /// gs:[0x675A]==0, divider gs:[0xB27]): entries stat
+add_record	src/vm.rs	6533	fn	0x126C	CELL?	/// Increment a record variable — the runtime hook for world events that the /// scripts observe (e.g. BIONIUM collection: SCRIPT2's `vbio` record, whose /// C0 guards read record 0x126C — operand rea
+rec_read	src/vm.rs	6538	fn		TESTED	
+rec_read_pub	src/vm.rs	6543	fn		INFRA	/// Public record read for the drive layer.
+rec_write_u8_pub	src/vm.rs	6551	fn		INFRA	/// Public record write for the drive layer (the click stand-in's /// presentation end and test scaffolding). /// Byte-level record write, for tests that need to place an inline name at /// `record+4`
+rec_write_pub	src/vm.rs	6555	fn		INFRA	
+rec_write	src/vm.rs	6559	fn		TESTED	
+rec_read_u8	src/vm.rs	6567	fn		UNVERIFIED	/// Byte-level record access (the record table is a little-endian word array). /// Used by the 0xB7 single-bit flag handler.
+rec_write_u8	src/vm.rs	6576	fn		UNVERIFIED	
+branch	src/vm.rs	6588	fn	0x6462	ASM?	/// `vm_branch` @0x6462: pop the resume position into PC; clear query mode.
+step	src/vm.rs	6596	fn	0x6559,0x6572,0x6588,0x6596,0x65DB,0x67B1,0x6764,0x65EB,0x66	ASM?	/// Execute ONE opcode against the loaded stream. Returns false at stream end. // 0xA0 PUSH (0x6559): query=1; push the operand (resume position). // 0xA1 POP (0x6572): query=0; pop unless empty. // 0
+run	src/vm.rs	7429	fn		TESTED	/// Run until yield (0xAA/0xAC), halt, or `max_steps`. Returns the events raised.
+run_frame	src/vm.rs	7442	fn	0x55F5	CELL?	/// Run ONE FRAME the way the exec loop does (@0x55F5): restart at the top of /// the script (AA/AC yields end the frame with NO resume; the self-modified /// active bits advance the flow), run until 
+token_len_at	src/vm.rs	7456	fn	0x6293	CELL?	/// Total token length (including the opcode byte) at `pos`, using the game's own /// per-opcode descriptor table + mode rules — identical to the walker's advance /// (`mode1` there == query mode here
+decompile_script	src/vm.rs	7485	fn		UNVERIFIED	/// Decompile a COD script to a readable listing. `dic` resolves text/concepts, /// `actor_names` (DEB-derived) resolves record offsets to object names.
 VmDrive	src/vm_drive.rs	13	struct	0xFFFF	CELL?	/// Text-offset -> decoded display line (through the DIC, menu words /// stripped at the 0xFFFF separator). /// DIC word -> offset, for concept dispatch by label. /// The DEB symbol table: name -> obj
 new	src/vm_drive.rs	25	fn		UNVERIFIED	
 frame	src/vm_drive.rs	55	fn		ORACLE?	/// One passive frame: VM frame + the idle beat. No promotion — queued /// calls RING until an interaction takes them (the scenario's clicks /// decide, as at the oracle's hub).

@@ -11123,3 +11123,35 @@ verified, and the strings at those addresses are what the names say.
 Ledger: 2222 items, 1048 confirmed (47.2%).
 
 641 citations verified, 0 wrong. 612 lib tests, 0 failures.
+
+## #343 — the alien PRNG verifies, including the carry semantics the port depends on
+
+`alien_anim_prng_next` is in the CROOLIS OVERLAY, a different address space from
+the executable (`XDB:croolis:` per `re/CLAUDE.md`). Disassembled there:
+
+    0x16A4  mov si, [di+0x16]            the routine entry is a vtable dispatch
+    0x16AA  test word [di+0x36], 0xffff
+    0x16AF  je 0x16B4
+    0x16B1  jmp word ptr [si+0xe]
+    0x16B4  mov ax, word ptr fs:[0x105c] <- the PRNG proper
+    0x16B8  ror ax, 7
+    0x16BB  sbb ax, 0
+
+The port is `rotate_right(seed, 7)` then subtract `rotated >> 15`, and the whole
+thing turns on a carry rule worth stating: `ROR` by n leaves CF equal to the LAST
+BIT ROTATED, which for a right rotate is the MSB of the RESULT. So `sbb ax,0`
+subtracts the rotated value's top bit. The port's `rotated >> 15` is exactly that,
+and the doc already explained why — one of the better-argued docs in the tree.
+
+CITATION TIGHTENED. The doc named the routine (`0x16A4`) and then quoted the three
+instructions, which is the loose form #301 caught being wrong elsewhere. Here the
+content was right but the addresses were three instructions off, because the entry
+is a dispatch. Now cited individually.
+
+THE GUARD USED THE RIGHT IMAGE without being told: `check_cited_instructions.py`
+picks an overlay by source filename (`src/croolis.rs` -> `croolis.xdb`), so the
+four new citations were checked against the overlay, not the executable. Worth
+noting because a cross-space citation is the failure #316 catalogued, and this is
+the one tool that already handles it.
+
+645 citations verified (from 641), 0 wrong. 612 lib tests, 0 failures.
