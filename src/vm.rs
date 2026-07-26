@@ -1622,20 +1622,28 @@ const VM_PRESENTATION_RELATED_FLAG20: u16 = 0x67AF;
 /// Touched by the game at `test byte ptr [0x67b0], 1` @`0x0B4DC`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const VM_PRESENTATION_DEFER_A: u16 = 0x67B0;
+/// Touched by the game at `test byte ptr gs:[0x67b1], 2` @`0x0579d` — found by decoding forward from a
+/// LIFTED function's entry, so the boundary is the recompiler's, not a scan's.
 const VM_PRESENTATION_LOOP_FLAG: u16 = 0x67B1;
 const VM_PRESENTATION_PAIR_WRITE_DISABLED: u16 = 0x67B6;
 const VM_PRESENTATION_START_LOCK: u16 = 0x67B7;
 /// Touched by the game at `mov byte ptr [0x67ba], al` @`0x0B552`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const VM_PRESENTATION_TEXT_WAIT: u16 = 0x67BA;
+/// Touched by the game at `mov byte ptr [0x67bb], 0` @`0x079c5` — found by decoding forward from a
+/// LIFTED function's entry, so the boundary is the recompiler's, not a scan's.
 const VM_PRESENTATION_HOLD_COMPLETE: u16 = 0x67BB;
 /// Touched by the game at `mov byte ptr [0x67bc], al` @`0x0B544`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const VM_PRESENTATION_HOLD_READY: u16 = 0x67BC;
+/// Touched by the game at `mov word ptr gs:[0x67f8], 0` @`0x057a9` — found by decoding forward from a
+/// LIFTED function's entry, so the boundary is the recompiler's, not a scan's.
 const VM_PRESENTATION_WORD_BUFFER: u16 = 0x67F8;
 /// Touched by the game at `mov word ptr [0xa32], 1` @`0x0B0BC`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const VM_PRESENTATION_STATUS_WORD: u16 = 0x0A32;
+/// Touched by the game at `mov ax, word ptr gs:[0x6762]` @`0x05795` — found by decoding forward from a
+/// LIFTED function's entry, so the boundary is the recompiler's, not a scan's.
 const VM_PRESENTATION_ACTIVE_RECORD: u16 = 0x6762;
 /// Touched by the game at `mov word ptr [0x6768], 0xc4` @`0x0B3AE`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
@@ -1672,9 +1680,17 @@ const VM_PRESENTATION_INPUT_GATE_H: u16 = 0x2792;
 /// Touched by the game at `mov word ptr [0x2a19], 0` @`0x087B0`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const VM_PRESENTATION_INPUT_GATE_I: u16 = 0x2A19;
+/// Touched by the game at `test byte ptr [0x27e8], 1` @`0x08bb3` — found by decoding forward from a
+/// LIFTED function's entry, so the boundary is the recompiler's, not a scan's.
 const VM_PRESENTATION_DESCRIPTOR_PENDING: u16 = 0x27E8;
+/// Touched by the game at `mov bx, word ptr gs:[0x6782]` @`0x057ed` — found by decoding forward from a
+/// LIFTED function's entry, so the boundary is the recompiler's, not a scan's.
 const VM_BRANCH_A: u16 = 0x6782;
+/// Touched by the game at `mov word ptr gs:[0x6784], bx` @`0x057f2` — found by decoding forward from a
+/// LIFTED function's entry, so the boundary is the recompiler's, not a scan's.
 const VM_BRANCH_B: u16 = 0x6784;
+/// Touched by the game at `mov si, word ptr gs:[0x6776]` @`0x057cd` — found by decoding forward from a
+/// LIFTED function's entry, so the boundary is the recompiler's, not a scan's.
 const VM_PC_SAVED: u16 = 0x6776;
 
 const MAIN_PENDING_PROFILE_IDLE_GATES: [u16; 10] = [

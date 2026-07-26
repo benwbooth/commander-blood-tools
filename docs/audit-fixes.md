@@ -8088,3 +8088,27 @@ citation says "this address is real and here is where it is read", not "the port
 semantics match". Those 38 rows are ASM in the sense the ledger means (transcribed
 from cited assembly), and the semantic question is what the regression tests and
 differentials are for.
+
+## #262 — the lifts are 90 more verified entry points
+
+#261 scanned the 37 entries this campaign verified by hand. The `func_<hex>` lifts
+are 90 more: each address is a function boundary the RECOMPILER identified, which
+is an independent source of entry points and exactly what
+`refs_in_routine.py` needs.
+
+Scanning all 90 finds 126 distinct DS addresses. Only 8 uncited constants match —
+a much smaller yield than #261's 38, and the reason is informative: the lifts
+cover LEAF routines (that is what made them liftable), and leaves touch fewer
+fixed addresses than the FSM-heavy code the hand-verified entries covered. The
+method did not get worse; the remaining population is different.
+
+The eight are all VM presentation state — `gs:0x67B1`, `gs:0x67F8`, `gs:0x6762`,
+`gs:0x6782`/`0x6784`, `gs:0x6776`, `0x67BB`, `0x27E8` — cited from `0x0579D`
+onward, inside lifted routines. Guard 483 -> 491 checked, 0 wrong.
+
+DIMINISHING RETURNS ARE THE POINT HERE. 37 entries yielded 38 citations; 90
+entries yielded 8. The scan is now close to exhausted against the constants that
+have plain hex values, and the rows that remain uncited mostly do not name a DS
+address at all — they are counts, sizes, palette indices and port-side values,
+which no amount of routine scanning will reach. Saying so now avoids a third
+turn spent widening a net that has stopped catching anything.
