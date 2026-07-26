@@ -293,9 +293,15 @@ pub fn world_resource_id(stem: &str) -> Option<u8> {
 /// `02 00 00 01 00 00 00 81`, described as "verified identical across the planet
 /// worlds AND the cyberspace levels". That claim was false and the code built on
 /// it rejected 13 of the 50 shipped worlds: byte 7 is `0x81` in 37 files, `0x80`
-/// in 10, `0x84` in one and `0x8B` in another, and one file has `0x02` at byte 3
-/// where the rest have `0x01`. The test that "verified" it named eight worlds by
-/// hand, all of which happen to sit in the 37 (audit-fixes #228).
+/// in 10, `0x84` in one, `0x8B` in another and `0x00` in one more, and one file
+/// has `0x02` at byte 3 where the rest have `0x01`. The test that "verified" it
+/// named eight worlds by hand, all of which happen to sit in the 37
+/// (audit-fixes #228).
+///
+/// THE `0x00` CASE WAS MISSING from that list until audit-fixes #418 counted it:
+/// 37 + 10 + 1 + 1 is 49, not 50, and the sum was never taken. The rejection
+/// count (50 − 37 = 13) was right regardless. `ext_world_header_byte_distribution`
+/// now measures all of it rather than restating it.
 ///
 /// What every file does share is the first three bytes. That is a weak signature,
 /// and it is stated as one: THE GAME NEVER SNIFFS THESE BYTES. It loads a world by
@@ -859,6 +865,47 @@ mod tests {
         }
         // A non-mapped entry returns None.
         assert!(world_location_art_prefix("script2.cod").is_none());
+    }
+
+    /// COUNT the header-byte spread the doc on `EXT_WORLD_MAGIC` describes,
+    /// instead of restating it (audit-fixes #418). The doc listed byte 7 as
+    /// 0x81/0x80/0x84/0x8B across 37/10/1/1 files -- which sums to 49 of 50,
+    /// because a fifth value (0x00) was never noticed. Summing a distribution is
+    /// the cheapest possible check and nobody had done it.
+    #[test]
+    fn ext_world_header_byte_distribution() {
+        let dir = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter().map(std::path::Path::new).find(|p| p.exists());
+        let Some(dir) = dir else { return };
+        let mut b7: std::collections::BTreeMap<u8, usize> = Default::default();
+        let mut b3: std::collections::BTreeMap<u8, usize> = Default::default();
+        let mut total = 0usize;
+        for entry in std::fs::read_dir(dir).expect("the world directory reads") {
+            let p = entry.expect("a directory entry").path();
+            if p.extension().and_then(|e| e.to_str()) != Some("EXT") {
+                continue;
+            }
+            let Ok(data) = std::fs::read(&p) else { continue };
+            if data.len() < 8 {
+                continue;
+            }
+            total += 1;
+            *b7.entry(data[7]).or_default() += 1;
+            *b3.entry(data[3]).or_default() += 1;
+            assert_eq!(&data[..3], &[0x02, 0x00, 0x00], "{}", p.display());
+        }
+        if total == 0 {
+            return;
+        }
+        assert_eq!(total, 50, "shipped .EXT worlds");
+        assert_eq!(b7.values().sum::<usize>(), total, "the spread must SUM to the set");
+        assert_eq!(b7.get(&0x81).copied().unwrap_or(0), 37);
+        assert_eq!(b7.get(&0x80).copied().unwrap_or(0), 10);
+        assert_eq!(b7.get(&0x84).copied().unwrap_or(0), 1);
+        assert_eq!(b7.get(&0x8B).copied().unwrap_or(0), 1);
+        assert_eq!(b7.get(&0x00).copied().unwrap_or(0), 1, "the value the doc missed");
+        assert_eq!(b3.get(&0x01).copied().unwrap_or(0), 49);
+        assert_eq!(b3.get(&0x02).copied().unwrap_or(0), 1);
     }
 
     #[test]

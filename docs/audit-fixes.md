@@ -13722,3 +13722,34 @@ than fixed silently.
 
 2228 items, 1105 confirmed (49.6%), 1123 open. 740 citations verified, 0 wrong.
 720 workspace tests, 0 failures.
+
+## #418 — a distribution that never summed to its own total
+
+Working #417's queue of unverified `N of M` claims.
+
+`630 of the 640 kind-1 objects` (vm.rs) is CORRECT. Ran the tool it cites and it
+reproduces exactly: "TOTAL kind-1 objects 640: 630 carry their name inline at +4,
+10 do not", and the ten misses are `blood` and `orxx` in each of the five scripts
+— which is precisely the explanation the comment gives. A cited tool that still
+runs and still agrees is the strongest of the four.
+
+`EXT_WORLD_MAGIC`'s distribution (levels.rs) was NOT correct, in a way that is
+almost embarrassing to state: byte 7 was described as `0x81` in 37 files, `0x80`
+in 10, `0x84` in one and `0x8B` in another. **37 + 10 + 1 + 1 = 49**, and there
+are 50 shipped worlds. Nobody had added it up. Counting the files finds a fifth
+value — one world with `0x00` — that had simply never been noticed.
+
+Everything else in that doc holds: 50 files, all three leading bytes `02 00 00`,
+byte 3 is `0x01` in 49 and `0x02` in one, and the rejection count (50 − 37 = 13)
+was right regardless, because it depends only on the 37.
+
+`ext_world_header_byte_distribution` now measures all of it, and asserts
+`b7.values().sum() == total` explicitly — the check that would have caught this
+the day it was written. That assertion is the point of the entry: a distribution
+is the one kind of claim that can be validated against ITSELF, with no oracle and
+no binary, just by adding it up.
+
+Two of #417's four remain: `palette.rs` 68/256 and `bloodprg.rs` 30/51.
+
+2228 items, 1105 confirmed (49.6%), 1123 open. 740 citations verified, 0 wrong.
+721 workspace tests, 0 failures.
