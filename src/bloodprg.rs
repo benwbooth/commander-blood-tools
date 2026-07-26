@@ -3099,6 +3099,52 @@ pub const PRESENTATION_3D_MARKERS: &[BinarySymbol] = &[
 #[cfg(test)]
 mod tests {
 
+    /// THE DS POINTER LISTS RESOLVE TO THE GAME'S OWN STRINGS.
+    ///
+    /// A pointer-list offset is one of the few constants that LOCALISES itself:
+    /// the list is `0xFFFF`-terminated words, each a DS offset to a NUL-terminated
+    /// string, so a shifted read misaligns every word and the pointers stop
+    /// resolving. That is the opposite of the push-run and uniform-data cases in
+    /// #255/#256, where an off-by-one is absorbed — worth noting, because it means
+    /// no boundary anchor is needed here.
+    #[test]
+    fn ds_pointer_lists_resolve_to_nul_terminated_strings() {
+        let Some(binary) = fixture() else { return };
+        let img = binary.image_bytes();
+        let ds = |off: u16| binary.ds_to_file(off);
+
+        for (name, list, expected) in [
+            (
+                "text speed",
+                TEXT_SPEED_POINTER_LIST_DS,
+                vec!["VERY FAST", "FAST", "MEDIUM", "SLOW", "VERY SLOW"],
+            ),
+            (
+                "option menu",
+                OPTION_MENU_POINTER_LIST_DS,
+                vec!["TEXT", "MUSIC_OFF", "SAVE", "LOAD", "QUIT"],
+            ),
+        ] {
+            let mut got = Vec::new();
+            let base = ds(list);
+            for k in 0..16 {
+                let word = u16::from_le_bytes([img[base + k * 2], img[base + k * 2 + 1]]);
+                if word == 0xFFFF {
+                    break;
+                }
+                let at = ds(word);
+                let end = (at..at + 32).find(|&i| img[i] == 0).unwrap_or(at);
+                let text = String::from_utf8_lossy(&img[at..end]).into_owned();
+                assert!(
+                    !text.is_empty() && text.bytes().all(|b| b.is_ascii_graphic() || b == b' '),
+                    "{name}: pointer {word:#06x} does not resolve to a string ({text:?})"
+                );
+                got.push(text);
+            }
+            assert_eq!(got, expected, "{name} list");
+        }
+    }
+
     /// THE RENDER AND SOUND ENTRY OFFSETS LAND ON FUNCTION PROLOGUES.
     ///
     /// Each is segment-relative (`RENDER_SEGMENT` `0x0299`, the sound entries in

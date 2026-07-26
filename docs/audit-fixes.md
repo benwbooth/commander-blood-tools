@@ -7948,3 +7948,25 @@ Uniform data, push runs, NOP padding, sentinel fills — all of them absorb an
 off-by-one silently. The assertion must be about the TRANSITION into the thing,
 not the thing itself. I now expect this to be wrong by default whenever I write
 "lands on a <category>".
+
+## #257 — a constant that localises itself
+
+`TEXT_SPEED_POINTER_LIST_DS` and `OPTION_MENU_POINTER_LIST_DS` name `0xFFFF`-
+terminated lists of DS pointers. Following them from the image yields the game's
+own strings — `VERY FAST / FAST / MEDIUM / SLOW / VERY SLOW` and
+`TEXT / MUSIC_OFF / SAVE / LOAD / QUIT`.
+
+Worth recording alongside #255 and #256 because this constant is the OPPOSITE
+case. Those two needed a boundary anchor: an offset into uniform data or a push
+run absorbs an off-by-one silently. A pointer list does not — shifting the offset
+by one byte MISALIGNS every word in the list, so the pointers stop resolving to
+NUL-terminated text and the test fails on its own. Verified by doing it.
+
+So the rule from #256 needs its converse stated, or it will be applied
+mechanically where it is not needed: an offset localises itself when the data it
+points at is SELF-VALIDATING — pointer lists, checksummed records, anything whose
+interpretation fails loudly under misalignment. It needs an external anchor only
+when the data is uniform or repetitive enough to survive being read from the wrong
+place.
+
+Two rows settled DATA.

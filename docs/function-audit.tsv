@@ -72,7 +72,7 @@ STATUS_HEADER_PLANET_DS	src/bloodprg.rs	55	const	0x12E,0x8369	ASM?	"/// `mov si,
 STATUS_HEADER_SHIP_DS	src/bloodprg.rs	57	const	0x137,0x836C	ASM?	"/// `mov si,0x137` @`0x836C`'s branch — ""SHIP: ""."
 STATUS_HEADER_BLACK_HOLE_DS	src/bloodprg.rs	59	const	0x13E,0x8376	ASM?	"/// `mov si,0x13E` @`0x8376`'s branch — ""BLACK HOLE: ""."
 STATUS_LIFE_SUPPORT_DS	src/bloodprg.rs	61	const	0x14B,0x839F	ASM?	"/// `mov si,0x14B` @`0x839F` — ""LIFE SUPPORT:""."
-TEXT_SPEED_POINTER_LIST_DS	src/bloodprg.rs	63	const		UNVERIFIED	/// The TEXT-SPEED submenu's pointer list.
+TEXT_SPEED_POINTER_LIST_DS	src/bloodprg.rs	63	const		DATA	/// The TEXT-SPEED submenu's pointer list.
 TEXT_SPEED_STEP_INITIAL	src/bloodprg.rs	70	const	0x0ACA,0x0DEEA	DATA	/// The text-speed step the IMAGE SHIPS at `DS:0x0ACA` (file `0x0DEEA`) — 2, which /// is what `vm::text_speed_step_from_setting` gives for setting 1, `FAST`. /// /// A DATA value, not an immediate: t
 TEXT_SPEED_STEP_DS	src/bloodprg.rs	72	const	0x0ACA	ASM?	/// `DS:0x0ACA` — the divisor in the dialogue updater's reveal rate.
 DIALOGUE_FONT_GLYPH_HEIGHT	src/bloodprg.rs	85	const		UNVERIFIED	
