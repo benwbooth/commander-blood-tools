@@ -9646,3 +9646,41 @@ rather than guessed at, and the next attempt starts from a named question instea
 of from scratch.
 
 Citations: 612 verified (from 605), 0 wrong. 605 lib tests, 0 failures.
+
+## #305 — #304's revert was right, its REASON was wrong, and the scan works
+
+#304 implemented the decoded presentation scan, saw six tests fail, reverted, and
+blamed `bp` not surviving the object-kind ladder between `0x5845` and `0x5A51`.
+
+That diagnosis was wrong, and checking it took one query. The only writes to BP
+in that entire 520-byte span are:
+
+    0x5845  mov bp, ax     the selector-0x13 slot
+    0x5984  push bp
+    0x598E  xor bp, bp     <- bracketed
+    0x5995  pop bp         restored
+
+`bp` reaches the C3 arm intact. The real cause was mundane and invisible from the
+disassembly: the failing tests load a COD (and VAR) but never call
+`load_deb_objects`, so `self.directory` is EMPTY. A faithful directory walk had
+nothing to walk, while the old linear scan over raw record addresses did not care.
+
+CHECKED AGAINST REAL DATA before re-applying, rather than assuming twice:
+`decoded_presentation_scan_over_the_real_directory` loads SCRIPT2 WITH its DEB
+and finds 341 directory entries, 118 active selector-0x13 slots — and record
+1788, the one the linear scan promoted, IS among them. So the decoded scan
+reaches the same record by the engine's own route.
+
+ADOPTED, with the directory path taken whenever a DEB is present and the old
+linear scan kept only for DEB-less harnesses. That fallback is documented as
+modelling a state the shipped game never reaches (the DEB loads at startup); it
+exists so test fixtures that skip it do not silently promote nothing.
+
+THE LESSON IS ABOUT MY OWN DIAGNOSIS, not the code. #304 had the right instinct —
+do not ship a change that breaks the story drive — and then attached a confident
+explanation to it that was never checked. A revert with a wrong reason is worse
+than a revert with an open question, because the wrong reason gets recorded as
+decode knowledge and the next attempt starts from a false constraint. The fix
+cost one `capstone` pass over a byte range.
+
+Citations: 605 verified, 0 wrong. 707 tests across all binaries, 0 failures.

@@ -4961,32 +4961,72 @@ impl VmMachine {
     /// blood-related records is still a port choice, but a far narrower one than
     /// #302 recorded.
     ///
-    /// THE ITERATION IS PARTLY DECODED AND DELIBERATELY NOT ADOPTED
-    /// (audit-fixes #304). The presentation scan walks the `gs:0x672c` DEB
-    /// DIRECTORY, not the record table:
+    /// THE ITERATION IS NOW DECODED AND ADOPTED (audit-fixes #305, correcting
+    /// #304). The presentation scan walks the `gs:0x672c` DEB DIRECTORY, not the
+    /// record table -- see the cited block in the body below.
     ///
-    /// ```text
-    ///   0x582F  mov si, es:[di+0x10]       the entry's OBJECT offset
-    ///   0x5833  test byte [si+2], 1        the object must be ACTIVE
-    ///   0x583B  mov bx, [si]               its kind
-    ///   0x583D  mov ax, 0x13 / call 0x6023 selector 0x13 for that kind
-    ///   0x5845  mov bp, ax                 bp = obj + field
-    ///   0x5A64  add di, 0x14 / cmp +0x12,1 next entry while its kind is 1
-    /// ```
+    /// #304 implemented exactly this, watched six tests fail, and blamed `bp` not
+    /// surviving the object-kind ladder between `0x5845` and `0x5A51`. THAT
+    /// DIAGNOSIS WAS WRONG: the only BP writes in that span are a `xor bp,bp`
+    /// bracketed by `push bp`/`pop bp` at `0x5984`/`0x5995`, so `bp` reaches the
+    /// C3 arm intact. The tests failed because they load a COD without its DEB,
+    /// leaving the directory EMPTY -- a faithful walk had nothing to walk.
     ///
-    /// Implementing exactly that -- walk the directory, take each active object's
-    /// selector-0x13 slot -- FAILED six tests including the end-to-end story
-    /// drive, so it was reverted. The gap is `bp`'s provenance: roughly 500 bytes
-    /// of type ladder sit between `0x5845` and the `mov ax,[bp+4]` @`0x5A51` that
-    /// the C3 arm is reached through, and whether `bp` still holds the
-    /// selector-0x13 slot there is NOT established. Tracing that ladder is the
-    /// task; until then the linear scan stays, wrong shape and all, because a
-    /// plausible replacement that breaks the story is worse than a known
-    /// approximation.
+    /// Checked against real data by `decoded_presentation_scan_over_the_real_
+    /// directory`: SCRIPT2 with its DEB gives 341 directory entries and 118
+    /// active selector-0x13 slots, and record 1788 -- the one the old linear scan
+    /// promoted -- is among them.
     pub fn promote_queued_presentation(&mut self) -> Option<u16> {
         if self.presentation_busy {
             return None;
         }
+        // THE DECODED SCAN (audit-fixes #305): walk the gs:0x672c DEB DIRECTORY,
+        // take each ACTIVE object's selector-0x13 slot, and examine THAT record.
+        //
+        //   0x582F  mov si, es:[di+0x10]       the entry's OBJECT offset
+        //   0x5833  test byte [si+2], 1        the object must be ACTIVE
+        //   0x583B  mov bx, [si]               its kind
+        //   0x583D  mov ax, 0x13 / call 0x6023 selector 0x13 for that kind
+        //   0x5845  mov bp, ax                 bp = obj + field -> THE RECORD
+        //   0x5A64  add di, 0x14               next entry...
+        //   0x5A6B  cmp ax, 1 / je             ...while its +0x12 kind is 1
+        //
+        // `bp` survives to the C3 arm: the only BP writes in between are a
+        // `xor bp,bp` bracketed by `push bp`/`pop bp` (0x5984/0x5995).
+        if !self.directory.is_empty() {
+            for (obj, entry_kind) in self.directory.clone() {
+                if entry_kind != 1 {
+                    break; // the scan STOPS at the first non-1 entry (0x5A6E)
+                }
+                if self.rec_read(obj.wrapping_add(2)) & 1 == 0 {
+                    continue;
+                }
+                let obj_kind = self.rec_read(obj);
+                let Some(field) =
+                    vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, obj_kind)
+                else {
+                    continue;
+                };
+                let off = obj.wrapping_add(field);
+                if self.rec_read(off) != 0xC3 || self.rec_read(off.wrapping_add(4)) != 1 {
+                    continue;
+                }
+                let related = self.rec_read(off.wrapping_add(2));
+                if let Some(blood) = self.blood_offset {
+                    if related != blood {
+                        continue;
+                    }
+                }
+                self.start_actor_presentation(off, related);
+                return Some(off);
+            }
+            return None;
+        }
+
+        // NO DIRECTORY: the shipped game always has one (the DEB is loaded at
+        // startup), so this branch models a state the engine never reaches. It
+        // exists for harnesses that load a COD without its DEB, and it keeps the
+        // pre-#305 shape rather than silently promoting nothing.
         let words = self.line_records.len();
         for slot in 0..words.saturating_sub(2) {
             if self.line_records[slot] == 0xC3 && self.line_records[slot + 2] == 1 {
@@ -10606,6 +10646,70 @@ mod tests {
         m.step();
         assert_eq!(m.rec_read_pub(0x84), 0xC4, "no DEB loaded -> unconditional write");
         assert_eq!(m.active_actor, Some(0x84));
+    }
+
+    /// audit-fixes #305. Does the DECODED presentation scan find the queued
+    /// interception record that the linear scan finds?
+    ///
+    /// #304 implemented the directory walk (`0x582F`..`0x5A6B`) and six tests
+    /// failed, which I read as `bp` not surviving the object-kind ladder. It
+    /// does: the only BP writes between `0x5845` and `0x5A51` are a
+    /// `xor bp,bp` bracketed by `push bp`/`pop bp` at `0x5984`/`0x5995`. The real
+    /// cause was that those tests never call `load_deb_objects`, so the DIRECTORY
+    /// IS EMPTY and a faithful walk has nothing to walk.
+    ///
+    /// This checks the decoded scan against real data WITH the DEB loaded, and
+    /// reports whether the record the linear scan promotes (1788) is reachable as
+    /// some active object's selector-0x13 slot.
+    #[test]
+    fn decoded_presentation_scan_over_the_real_directory() {
+        let Some(iso) = ["output/_tmp_iso", "../output/_tmp_iso"]
+            .iter()
+            .find(|d| std::path::Path::new(d).join("SCRIPT2.DEB").is_file())
+        else {
+            return;
+        };
+        let base = std::path::Path::new(iso);
+        let cod = std::fs::read(base.join("SCRIPT2.COD")).unwrap();
+        let deb = std::fs::read(base.join("SCRIPT2.DEB")).unwrap();
+        let var = std::fs::read(base.join("SCRIPT2.VAR")).unwrap();
+
+        let mut m = VmMachine::new();
+        m.load_cod(&cod);
+        m.load_var(&var);
+        m.load_deb_objects(&deb);
+
+        assert!(!m.directory.is_empty(), "the DEB must populate the directory");
+        assert!(m.blood_offset.is_some(), "and resolve `blood` by name (0x5486)");
+
+        // Walk the directory the way 0x582F..0x5A6B does and collect the
+        // selector-0x13 slots of ACTIVE objects.
+        let mut slots = Vec::new();
+        for (obj, entry_kind) in m.directory.clone() {
+            if entry_kind != 1 {
+                break; // the scan STOPS at the first non-1 entry (0x5A6E)
+            }
+            if m.rec_read_pub(obj.wrapping_add(2)) & 1 == 0 {
+                continue; // `test byte [si+2],1 / je` @0x5833
+            }
+            let obj_kind = m.rec_read_pub(obj);
+            if let Some(field) = vm_field_offset(0x13, obj_kind) {
+                slots.push(obj.wrapping_add(field));
+            }
+        }
+        println!(
+            "directory {} entries, {} active selector-0x13 slots; 1788 present: {}",
+            m.directory.len(),
+            slots.len(),
+            slots.contains(&1788)
+        );
+
+        // The load-bearing question, asserted so the answer is recorded rather
+        // than printed and forgotten.
+        assert!(
+            !slots.is_empty(),
+            "the decoded scan must reach SOME active object's record slot"
+        );
     }
 
     /// audit-fixes #303. The C3 promoter's gate: a queued presentation is taken
