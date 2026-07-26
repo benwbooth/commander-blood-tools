@@ -1344,3 +1344,15 @@ evidence it is not executed — C1 appears only as a SET.
 STILL OPEN: the scan sentinel `0x6C20` reaches the same `0x6C7C` from the SET
 side. A C1 SET on a kind-`0x10` owner whose source list yields no passing entry
 would take it. That depends on runtime record contents, not on the bytecode.
+
+### #302 — promote_queued_presentation: shape decoded, POLICY not
+
+The `{0xC3, related, 1}` record the promotion looks for is exact — the 0xC3
+handler writes it at `0x6F4B`/`0x6F51`/`0x6F55` (the third word is 1, where
+C4..C8 write 0). The LINEAR SCAN that picks a queued record has no located
+counterpart: the doc cited "the pending-slot protocol around 0x5C64", and
+`0x5C64` is `presentation_start_travel_arm`, straight-line state setting that
+consumes a pending C4 via `[0x675E]` and scans nothing.
+
+So first-match promotion order is a PORT CONSTRUCTION, not decoded behaviour.
+Finding the engine's own scan is the task; until then the row stays provisional.

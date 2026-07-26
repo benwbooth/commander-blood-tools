@@ -4918,10 +4918,28 @@ impl VmMachine {
     }
 
     /// Promote a QUEUED presentation (a typed `{0xC3, related, 1}` record, the
-    /// OP_C3 request) to an ACTIVE one — the engine's scan does this when the
-    /// current presentation ends (the pending-slot protocol around 0x5C64).
-    /// Returns the started record offset, or None when nothing is queued or a
-    /// presentation is already busy.
+    /// OP_C3 request) to an ACTIVE one. Returns the started record offset, or
+    /// None when nothing is queued or a presentation is already busy.
+    ///
+    /// THE RECORD SHAPE IS DECODED; THE SCAN IS NOT (audit-fixes #302). The 0xC3
+    /// handler writes exactly this triple:
+    ///
+    /// ```text
+    ///   0x6F4B  mov word ptr es:[bp], 0xc3
+    ///   0x6F51  mov word ptr es:[bp+2], bx     the related object
+    ///   0x6F55  mov word ptr es:[bp+4], 1      1, where C4..C8 write 0
+    /// ```
+    ///
+    /// But the LINEAR SCAN below — walking every record looking for that triple —
+    /// has no located counterpart. This doc previously cited "the pending-slot
+    /// protocol around 0x5C64"; `0x5C64` is `presentation_start_travel_arm`,
+    /// straight-line state setting that consumes a pending C4 via `[0x675E]` and
+    /// scans nothing. The citation was a REGION POINTER that did not support the
+    /// claim, the same shape #298 found.
+    ///
+    /// So: the shape is faithful, the promotion POLICY (scan order, which record
+    /// wins when several are queued) is a port construction until the engine's
+    /// own scan is found. Do not treat first-match as decoded behaviour.
     pub fn promote_queued_presentation(&mut self) -> Option<u16> {
         if self.presentation_busy {
             return None;

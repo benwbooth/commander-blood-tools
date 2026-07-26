@@ -9526,3 +9526,37 @@ the doc says. Only reading the doc against the function can.
 Citations: 593 verified (from 587), 0 wrong. 604 lib tests, 0 failures.
 Row tally so far: five reviewed, two correct as written, one wrong address, one
 uncheckable address space, one citing the wrong part of its own routine.
+
+## #302 — the shape was decoded, the POLICY was invented, and one citation covered both
+
+`promote_queued_presentation` scans every record for a `{0xC3, related, 1}`
+triple and starts the first one it finds. Its citation: "the pending-slot
+protocol around 0x5C64".
+
+The triple is real. The 0xC3 handler writes exactly it:
+
+    0x6F4B  mov word ptr es:[bp], 0xc3
+    0x6F51  mov word ptr es:[bp+2], bx     the related object
+    0x6F55  mov word ptr es:[bp+4], 1      1, where C4..C8 write 0
+
+The scan is not. `0x5C64` is `presentation_start_travel_arm` — straight-line
+state setting (`[0x24F3]=9`, `[0x67F8]=0`, `[0x27D7]=0`, ...) that consumes a
+pending C4 through `[0x675E]`. It scans nothing, and it is about C4, not C3. The
+citation was a REGION POINTER — "around 0x5C64" — the same shape as #298's "see
+REVERSE.md @0x94BA", and the hedging word is the tell in both.
+
+WHAT MAKES THIS ONE DIFFERENT from the four before it: those had right answers
+behind wrong or unverifiable addresses. Here the answer is PARTLY INVENTED. The
+record shape is faithful; the promotion POLICY — that the scan is linear, that
+first match wins, that record order decides which queued presentation starts —
+has no binary behind it at all. A single citation covered a decoded fact and a
+port construction sitting in the same function, and read as if it covered both.
+
+Doc now says so explicitly, and the row STAYS PROVISIONAL. Settling it would
+record "checked against the disassembly" for a policy no disassembly supports.
+Finding the engine's own scan of C3 records is the task.
+
+Citations: 596 verified (from 593), 0 wrong. 604 lib tests, 0 failures.
+Row tally: six reviewed, two correct as written, four needing correction —
+one wrong address, one uncheckable address space, one citing its guard clause
+instead of its formula, one covering an invented policy.
