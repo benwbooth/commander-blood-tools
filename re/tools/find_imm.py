@@ -128,6 +128,52 @@ def main():
         for form, n in ops.most_common():
             print(f"  {n:>4}x  {form}")
 
+    if "--encodings" in sys.argv:
+        # THE OPPOSITE ERROR MODE (audit-fixes #336). The confirmed list above
+        # can MISS real instructions (#334); a raw search for the fixed ENCODINGS
+        # cannot, though it can match bytes inside another instruction. Printing
+        # both means an absence claim has a sound basis and a presence claim has
+        # a filtered one -- #335 got a count wrong by trusting only the filtered
+        # side.
+        lo, hi = want & 0xFF, (want >> 8) & 0xFF
+        addr = bytes([lo, hi])
+        forms = {
+            "mov word [imm16],imm16  c7 06": b"\xc7\x06" + addr,
+            "mov byte [imm16],imm8   c6 06": b"\xc6\x06" + addr,
+            "mov [imm16],ax          a3   ": b"\xa3" + addr,
+            "mov ax,[imm16]          a1   ": b"\xa1" + addr,
+            "cmp al,imm8             3c   ": bytes([0x3C, lo]) if want < 0x100 else None,
+            "test byte [imm16],imm8  f6 06": b"\xf6\x06" + addr,
+            "or   byte [imm16],imm8  80 0e": b"\x80\x0e" + addr,
+            "and  byte [imm16],imm8  80 26": b"\x80\x26" + addr,
+        }
+        print("  --- raw ENCODING search (no false negatives, may over-match) ---")
+        for name, pat in forms.items():
+            if not pat:
+                continue
+            n = 0
+            at = data.find(pat)
+            while at >= 0:
+                n += 1
+                at = data.find(pat, at + 1)
+            gs = 0
+            at = data.find(b"\x65" + pat)
+            while at >= 0:
+                gs += 1
+                at = data.find(b"\x65" + pat, at + 1)
+            if n or gs:
+                print(f"  {name}: {n} site(s){f', {gs} gs-prefixed (subset)' if gs else ''}")
+        # SAY WHAT IS NOT SEARCHED. `mov [imm16],reg16` is `89 /r` with a modrm
+        # byte that varies by register, which a substring search cannot express;
+        # #335 needed exactly that form (2 sites for 0x6788) to reach the right
+        # total. A list of encodings that quietly omits one is the same defect as
+        # a count that quietly truncates (#309).
+        print(
+            "  NOT searched here: `89 /r` (mov [imm16],reg16, modrm varies) and "
+            "any form with a register operand — use a regex over the image for "
+            "those, as audit-fixes #335 did."
+        )
+
     if "--rejected" in sys.argv:
         # Not noise by default: #334 found a REAL instruction in here.
         print("  --- rejected as phantoms (MAY CONTAIN REAL INSTRUCTIONS) ---")

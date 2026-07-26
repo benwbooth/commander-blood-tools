@@ -10870,3 +10870,38 @@ but the entry that settled it contained a false correction, which is now recorde
 next to it.
 
 641 citations verified, 0 wrong. 612 lib tests, 0 failures.
+
+## #336 — give the search the OPPOSITE error mode, and make it name what it skips
+
+#334 found `find_imm.py` misses real instructions; #335 found I had written a
+wrong count into the tree by trusting it over a byte search. The fix is not to
+pick a better tool — both are wrong in different directions — it is to show BOTH
+in one place.
+
+`--encodings` now enumerates the fixed WRITE/READ encodings for an address as raw
+bytes: `c7 06`, `c6 06`, `a3`, `a1`, `f6 06`, `80 0e`, `80 26`, each also in its
+`65`-prefixed form with the prefixed count reported as a SUBSET so it is not
+double-added. For `0x6788` that gives 24 + 3 immediate/accumulator writes and 5
+reads.
+
+  * the CONFIRMED list has no false positives and misses instructions (#334);
+  * the ENCODING list has no false negatives and can match bytes inside another
+    instruction.
+
+An absence claim now has a sound instrument (#327's underscore argument), and a
+presence claim still has a filtered one. #335's error was having only the second.
+
+AND IT SAYS WHAT IT DOES NOT SEARCH. `mov [imm16], reg16` is `89 /r` with a modrm
+byte that varies by register, which a substring search cannot express — and that
+form is exactly the two sites #335 needed to reach 29. So the output ends with a
+line naming the unsearched encodings and pointing at the regex approach. A list
+of encodings that quietly omits one is the same defect as a count that quietly
+truncates (#309), and it would have been easy to ship without noticing, since the
+numbers it does print are correct.
+
+Sixth instrument this session to be corrected for concealing its own limits.
+The pattern is now specific enough to state as a rule: A TOOL THAT FILTERS MUST
+REPORT WHAT IT FILTERED, AND A TOOL THAT SEARCHES A SET MUST REPORT WHAT IS NOT
+IN THE SET.
+
+641 citations verified, 0 wrong. 612 lib tests, 0 failures.
