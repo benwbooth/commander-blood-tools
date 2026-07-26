@@ -49,6 +49,9 @@ MNEMONICS = {
 # digit, timer vs speaker, in a label that read as authoritative. So when a
 # comment names a port explicitly, compare it to the instruction's own operand.
 PORT_CLAIM = re.compile(r"\b(out|in)\s+(?:al\s*,\s*)?(0x[0-9a-f]{1,4})", re.I)
+# INT NUMBERS are the same class of operand claim as ports, and labels write them
+# in both DOS conventions -- `int 21h` and `int 0x21` (audit-fixes #351).
+INT_CLAIM = re.compile(r"\bint\s*(?:0x([0-9a-f]{1,2})\b|([0-9a-f]{1,2})h\b)", re.I)
 # A comment only CLAIMS an instruction when the mnemonic is followed by something
 # operand-shaped. "jmp target after early init" describes the address as a jump
 # TARGET -- reading its first word as a quoted opcode reported a correct label as
@@ -94,6 +97,7 @@ def main():
     code = data_rows = quoted = 0
     inline_checked = [0]
     port_checked = [0]
+    int_checked = [0]
     problems = []
     seen_rows = []
     for line_no, row in enumerate(rows, 1):
@@ -169,6 +173,42 @@ def main():
                         problems.append(
                             f"{line_no}: {name} names port {c:#04x} but the routine's "
                             f"I/O uses {{{', '.join(f'{u:#04x}' for u in sorted(used))}}}"
+                        )
+
+        # INT-NUMBER claims, same set-membership rule as ports.
+        int_claims = {
+            int(a or b, 16) for a, b in INT_CLAIM.findall(comment.lower())
+        }
+        if int_claims:
+            used_int = set()
+            for i in md.disasm(data[addr:addr + 64], addr):
+                if i.mnemonic == "int":
+                    for n in re.findall(r"0x[0-9a-f]+|\b\d+\b", i.op_str):
+                        used_int.add(int(n, 16) if n.startswith("0x") else int(n))
+                if i.mnemonic in ("ret", "retf"):
+                    break
+            # A VECTOR NUMBER IS NOT AN ISSUED INTERRUPT. `install_timer_isr_hook`
+            # and `program_pit` legitimately name "int 08h" while issuing only
+            # int 21h, because they SET or GET that vector through DOS functions
+            # 25h/35h. Suppress the claim whenever the routine loads AH with
+            # either (audit-fixes #351) -- otherwise the check punishes the most
+            # precise labels in the file.
+            # BOTH ENCODINGS. `install_timer_isr_hook` writes `mov ah,0x25`;
+            # `program_pit` writes `mov ax,0x2508`, packing the function AND the
+            # vector number into one word load. Matching only the first form left
+            # a correct label flagged (audit-fixes #351).
+            vector_api = any(
+                i.mnemonic == "mov"
+                and re.match(r"^a[hx], 0x(25|35)([0-9a-f]{2})?$", i.op_str)
+                for i in md.disasm(data[addr:addr + 64], addr)
+            )
+            if used_int and not vector_api:
+                for c in sorted(int_claims):
+                    int_checked[0] += 1
+                    if c not in used_int:
+                        problems.append(
+                            f"{line_no}: {name} names int {c:#04x} but the routine "
+                            f"issues {{{', '.join(f'{u:#04x}' for u in sorted(used_int))}}}"
                         )
 
         # Inline claims anywhere in the comment, in BOTH orders.

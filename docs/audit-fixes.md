@@ -11392,3 +11392,49 @@ routine has several ports, several instructions, and a natural way of naming its
 effect rather than its opcodes.
 
 652 citations verified, 0 wrong. 612 lib tests, 0 failures.
+
+## #351 — checking INT numbers found two labels describing the wrong API entirely
+
+#350 added port checking. Interrupt numbers are the same class of operand claim,
+so they went in too. First run: four hits, two of them real and substantial.
+
+`0x27E9` was `dos_char_out`: "if [0xae0]&1, ah=0x0e; int 10h (BIOS teletype).
+Outputs a character to the screen". The code:
+
+    0x27F7  mov ah, 0x0e
+    0x27F9  mov dl, byte ptr [0x1b9]
+    0x27FD  int 0x21                  <- INT 21h, not 10h
+    0x27FF  mov dx, 0x1da
+    0x2802  mov ah, 0x3b              <- DOS CHDIR
+
+`AH=0x0E` under INT 10h is teletype output; under INT 21h it is SELECT DEFAULT
+DRIVE, with DL the drive number. Then `AH=0x3B` changes directory to the path at
+`DS:0x1DA`. The routine is LAUNCH-PATH SETUP — which fits the game's own
+`WRIC:\\cblood\\` argument — and the label had its interrupt, its function, its
+purpose and its name all wrong. Renamed `dos_set_drive_and_chdir`.
+
+`0xBD26` was `dos_ioctl_device`: "ax=0x4400; int21h (IOCTL get/set device info).
+Configures the sound/CD device driver". The code does `mov ax,0x4400` and then
+`int 0x67` — the EMS entry point, where `AH=0x44` is MAP HANDLE PAGE. It is
+followed by `mov cx,0x1000 / rep movsd`, copying 16384 bytes: exactly one EMS
+page. Renamed `ems_map_page_and_copy`.
+
+BOTH ERRORS HAVE THE SAME SHAPE: a function number that is valid under TWO
+interrupts, and the label picked the wrong one. `AH=0x0E` and `AH=0x44` each mean
+something plausible under both `int 21h` and the interrupt actually issued, so
+the descriptions read as competent and were checkable only against the operand.
+
+TWO FALSE POSITIVES FIRST, both suppressed. A label naming `int 08h` while
+issuing only `int 21h` is usually CORRECT — it is installing or restoring that
+VECTOR through DOS function 25h/35h. Detecting that needed both encodings:
+`mov ah,0x25` and `mov ax,0x2508`, the latter packing function and vector into
+one word, which my first regex missed and which flagged `program_pit`.
+
+AND A LESSON ABOUT MY OWN CORRECTIONS: both replacement labels initially named
+the interrupt they were explaining the routine does NOT use ("looks like DOS
+IOCTL (INT 21h AH=44h)"), and the checker flagged them — correctly, by its own
+rule. Reworded to state only what each routine does. A label is not the place to
+argue against a previous reading; that belongs here.
+
+501 code labels and 238 data labels clean, 17 inline claims verified.
+612 lib tests, 0 failures.
