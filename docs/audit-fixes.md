@@ -13782,3 +13782,37 @@ than stated.
 
 2228 items, 1105 confirmed (49.6%), 1123 open. 740 citations verified, 0 wrong.
 722 workspace tests, 0 failures.
+
+## #420 — a split provenance, asserted in both directions
+
+`GAME_SCREEN_PALETTE_DAC_LOWER_IS_BINARY` (= 128) claims the palette's provenance
+splits: colours 0..127 are the baked DAC at file `0x12F78`, colours 128..191 are
+a savestate capture and an acknowledged APPROX.
+
+`palette_lower_half_matches_the_baked_dac_in_the_image` proves BOTH halves, and
+the second one is what makes this row settleable:
+
+    assert_eq!(&DAC[..n], &exe[BAKED..BAKED + n])          // the lower half IS baked
+    assert_ne!(&DAC[n..n + 192], &exe[BAKED + n..+192])    // the upper half is NOT
+
+An `assert_ne!` is an unusual thing to want, and here it is exactly right: it
+pins the DEFECT in place so nobody can later "tidy" the doc by claiming the whole
+table came from the image. Its failure message says what to do if it ever passes
+— retire the APPROX, because that would mean the capture had been replaced by
+real data. A test that tells you what its own failure MEANS is rarer than it
+should be.
+
+Settled DATA on the strength of the equality half. The palette constant itself
+stays UNVERIFIED, correctly: its upper bank is still scene state frozen into a
+global, and #419's neighbours in this same file (the 68/256 count, the console
+bank remap) are the parts that were checkable and are now checked.
+
+Worth noting the doc's own strongest argument is not the byte comparison but the
+independent corroboration: `engine.rs` had narrowed its hand-palette installs to
+`202..=251` after a rendering defect, landing on the same boundary from the
+opposite direction. Two unrelated lines of evidence agreeing is the shape this
+project keeps finding most trustworthy — #388's orb box, #409's camera origin,
+and this.
+
+2228 items, 1106 confirmed (49.6%), 1122 open. 740 citations verified, 0 wrong.
+722 workspace tests, 0 failures.
