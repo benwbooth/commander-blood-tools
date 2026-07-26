@@ -5097,16 +5097,35 @@ impl VmMachine {
     /// writes the C4 primary record @DS:0x675E; handler @0x5816).
     ///
     /// MODELS A SUBSET, and the row stays provisional for that reason
-    /// (audit-fixes #306). `0x5816` is `presentation_scan`, and its kind-1
-    /// PRESENTATION START does more than write `{0xC4, related}` and set three
-    /// flags: it sets `0x67AC=1` (active) and `0x67B7` (start-lock), ORs
-    /// `0x2793 |= 4` (busy), ORs `record+3 |= 0x80`, and CLEARS seven dialogue
-    /// cells (`0x6782`, `0x6784`, `0x6776`, `0x67F8`, `0x67BA`..`0x67BC`,
-    /// `0x679A`).
+    /// (audit-fixes #306). `0x5816` is `presentation_scan`; its kind-1
+    /// PRESENTATION START block was re-read end to end in #394 and is LONGER
+    /// than this doc used to claim — it listed seven cleared cells; there are
+    /// ten, plus a flag clear it did not mention at all:
     ///
-    /// Whether the port covers those elsewhere in its dialogue lifecycle is not
-    /// established. Until someone checks each one, this is a partial port with a
-    /// correct core, not a verified one — which is exactly what `ASM?` means.
+    /// ```text
+    ///   0x5904  mov byte gs:[0x67ac],1    presentation ACTIVE
+    ///   0x590A  xor ax,ax                 ...everything below is cleared to 0
+    ///   0x590C  gs:[0x6782]               0x5910  gs:[0x6784]
+    ///   0x5914  gs:[0x6776]               0x5918  gs:[0x67f8]
+    ///   0x591C  gs:[0x2A19]  <- THE CONSOLE MENU SELECTION (see below)
+    ///   0x5920  gs:[0x67ba]               0x5924  gs:[0x27d7]
+    ///   0x5928  gs:[0x67bc]               0x592C  gs:[0x67bb]
+    ///   0x5930  gs:[0x679a]
+    ///   0x5934  mov byte gs:[0x67b7],1    start-lock
+    ///   0x593A  or byte gs:[0x2793],4     busy — the bit the port DOES set
+    ///   0x5940  or byte [bx+3],0x80       record+3 |= 0x80
+    ///   0x5944  and byte gs:[0x2751],0x7f clears bit 7 — NOT previously listed
+    /// ```
+    ///
+    /// `gs:0x2A19` is the console menu's selected row (`BridgeView::
+    /// selected_menu_item`, the cell `console_menu_hit_test` writes as `row+1`
+    /// and `nav_choice_dispatch` reads at `0x860A`). So starting a presentation
+    /// CLEARS the console selection — a cross-subsystem link between the VM and
+    /// the bridge that neither side of the port currently models.
+    ///
+    /// Whether the port covers the rest elsewhere in its dialogue lifecycle is
+    /// still not established. This is a partial port with a correct core, not a
+    /// verified one — which is exactly what `ASM?` means.
     pub fn start_actor_presentation(&mut self, record_offset: u16, related: u16) {
         self.rec_write(record_offset, 0xC4);
         self.rec_write(record_offset + 2, related);

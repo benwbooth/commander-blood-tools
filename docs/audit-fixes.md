@@ -12930,3 +12930,42 @@ three in one entry is worth noticing.
 
 2228 items, 1091 confirmed (49.0%), 1137 open. 707 citations verified, 0 wrong.
 613 lib tests, 0 failures.
+
+## #394 — the presentation-start block is longer than its doc said
+
+`start_actor_presentation` is documented as modelling a SUBSET of `0x5816`'s
+kind-1 start, with the missing work listed. Re-read the block; THE LIST WAS
+INCOMPLETE. It named seven cleared cells. There are ten, and two effects it did
+not mention at all:
+
+    0x5904  mov byte gs:[0x67ac],1     active
+    0x590A  xor ax,ax                  everything below cleared to 0
+    0x590C  0x6782   0x5910  0x6784    0x5914  0x6776   0x5918  0x67f8
+    0x591C  0x2A19  <-- NOT LISTED
+    0x5920  0x67ba   0x5924  0x27d7  <-- NOT LISTED
+    0x5928  0x67bc   0x592C  0x67bb    0x5930  0x679a
+    0x5934  mov byte gs:[0x67b7],1     start-lock
+    0x593A  or byte gs:[0x2793],4      busy (the bit the port does set)
+    0x5940  or byte [bx+3],0x80        record+3 |= 0x80
+    0x5944  and byte gs:[0x2751],0x7f  <-- NOT LISTED
+
+`gs:0x2A19` is the CONSOLE MENU SELECTION — the cell `console_menu_hit_test`
+writes as `row+1` and `nav_choice_dispatch` reads at `0x860A`, both decoded in
+#386. So starting a presentation clears the console selection: a link between the
+VM and the bridge that the doc had no idea it was describing.
+
+That link matters because in the port `selected_menu_item != 0` BLOCKS the entire
+eye-orb/station click scan (`bridge.rs:358`). A selection never cleared leaves the
+bridge permanently unclickable. The port does have `release_menu()` and it has SIX
+live callers in main.rs, all on screen-CLOSE paths — which plausibly corresponds
+to the game's `console_mode_dismiss_ladder` (`0x8956`, one of the four sites that
+zero `0x2A19`). It does NOT obviously cover `0x591C`, which fires when a
+presentation STARTS, a different moment.
+
+ROW NOT SETTLED. The doc is now correct and complete where it was incomplete, and
+the mechanism is located on both sides, but "does the port clear the selection at
+the moment the game does" is unanswered — and that is what `ASM?` means. Settling
+it here would be recording the investigation as the conclusion.
+
+2228 items, 1091 confirmed (49.0%), 1137 open. 713 citations verified, 0 wrong.
+613 lib tests, 0 failures.
