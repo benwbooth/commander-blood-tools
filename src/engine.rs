@@ -5869,8 +5869,28 @@ mod tests {
             .filter(|&(x, y)| e.framebuffer[y * ENGINE_SCREEN_WIDTH + x] == 0xE8)
             .count();
         assert!(band < 700, "the measured grey bar must not be painted: {band}px");
-        // And the widget's own extra row (CANCEL) is present in the row set.
-        assert_eq!(EngineState::OPTION_BOX_LABEL, "CANCEL");
+        // And the widget's own extra row is present in the row set — READ FROM
+        // THE IMAGE, not compared to a copy of itself. This asserted
+        // `OPTION_BOX_LABEL == "CANCEL"`, which is a tautology: both sides are
+        // the same transcription (audit-fixes #370). The constant records its own
+        // file offset precisely so the check can be real.
+        if let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        {
+            let at = EngineState::OPTION_BOX_LABEL_FILE_OFFSET;
+            let end = exe[at..].iter().position(|&b| b == 0).unwrap_or(0) + at;
+            assert_eq!(
+                String::from_utf8_lossy(&exe[at..end]),
+                EngineState::OPTION_BOX_LABEL,
+                "the extra row must BE the game's string at DS:0x0174"
+            );
+            // ...and the DS offset and file offset must agree, since the doc
+            // states both and only their consistency makes either checkable.
+            assert_eq!(
+                0xD420 + EngineState::OPTION_BOX_LABEL_DS_OFFSET as usize,
+                EngineState::OPTION_BOX_LABEL_FILE_OFFSET
+            );
+        }
     }
 
     /// The list menu draws every label at the SAME x, and that x is derived —

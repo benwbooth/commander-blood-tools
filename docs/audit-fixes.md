@@ -12079,3 +12079,39 @@ need a trace, not a search — and mistaking one for the other would have let me
 declare an enum exhaustive on evidence that does not exist.
 
 613 lib tests, 0 failures. 689 citations verified, 0 wrong.
+
+## #370 — a tautology replaced, and a perturbation that perturbed nothing
+
+`OPTION_BOX` is the OPTION choice box's single row. Its doc says the label is
+"the game's own string, not a transcription: `DS:0x0174` (file `0x0D594`)". Both
+check out — `0xD420 + 0x174 = 0xD594`, and the image there holds `CANCEL`.
+
+THE TEST DID NOT CHECK THAT. It asserted
+
+    assert_eq!(EngineState::OPTION_BOX_LABEL, "CANCEL");
+
+which compares the constant to a second copy of the same transcription. It cannot
+fail unless someone edits one side, and it proves nothing about the game — the
+self-referential shape this project's own notes name as NOT evidence. The
+constant records `OPTION_BOX_LABEL_FILE_OFFSET` precisely so the check can be
+real; nothing was using it.
+
+Replaced with a read of the image at that offset, plus an assertion that the DS
+offset and the file offset agree (the doc states both, and only their consistency
+makes either one checkable).
+
+AND THEN I PERTURBED IT WRONG. My first perturbation edited
+`OPTION_BOX_LABEL_FILE_OFFSET,` — with a trailing comma, which does not occur in
+the new code. The string replace matched nothing, the file was unchanged, and the
+suite passed. I nearly read that as "the check does not fire".
+
+The second attempt compared against `PAUSE_TEXT` instead and failed properly:
+`left: "CANCEL", right: "PAUSE"` — the image read genuinely produces CANCEL,
+independently of the constant.
+
+THAT IS #225's FAILURE REPEATED — a perturbation that perturbs nothing, then
+reads as evidence. The defence is not care, it is checking that the perturbed
+build actually DIFFERS: a perturbation which leaves the suite green should be
+suspected of being a no-op before it is believed as a result.
+
+613 lib tests, 0 failures. 689 citations verified, 0 wrong.

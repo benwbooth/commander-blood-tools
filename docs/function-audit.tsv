@@ -419,7 +419,7 @@ load_bridge	src/engine.rs	1265	fn		TESTED	/// Load the real ship bridge: the `TB
 CONSOLE_MENU	src/engine.rs	1289	const		ORACLE?	/// The ship-console menu row order, top to bottom, exactly as baked into the /// golden menu of the TB.BIG panorama frames (verified against the live /// capture): HONK (the cook's daily fare, SCRIPT
 MENU_SUBMENU	src/engine.rs	1302	const	0x02FC,0x0309,0x030E,0x8428,0xFFFF	DATA	/// The console MENU option's submenu, decoded by driving the real game (clicking MENU /// opens these two items): EXPLANATIONS (the tutorial/help) and GAME (play). Drawn over /// the top menu rows, m
 menu_submenu_labels	src/engine.rs	1325	fn	0x4A9,0xFFFF	CELL?	/// The MENU submenu's rows, taken from the LOADED SCRIPT when one is present. /// /// SELECTION IS A PROXY, NOT A DECODE (audit-fixes #323). `menu_by_offset` /// maps a line record's offset to its me
-OPTION_BOX	src/engine.rs	1345	const	0x0174,0x0D594,0x0ADD,0x843B	ASM?	/// The OPTION choice box's single row. /// /// This is the game's own string, not a transcription: `DS:0x0174` (file /// `0x0D594`), the symbol already recorded as `ship_3d_target_extra_label` — the 
+OPTION_BOX	src/engine.rs	1345	const	0x0174,0x0D594,0x0ADD,0x843B	DATA	/// The OPTION choice box's single row. /// /// This is the game's own string, not a transcription: `DS:0x0174` (file /// `0x0D594`), the symbol already recorded as `ship_3d_target_extra_label` — the 
 OPTION_BOX_LABEL	src/engine.rs	1347	const	0x0174,0x0D594	CELL?	/// `DS:0x0174` / file `0x0D594`, NUL-terminated.
 SAVE_SLOT_ROWS	src/engine.rs	1349	const		UNVERIFIED	/// Ten save slots — the `blood.sav` directory's record count.
 OPTION_BOX_LABEL_DS_OFFSET	src/engine.rs	1350	const		UNVERIFIED	
