@@ -387,6 +387,45 @@ impl BridgeView {
         self.menu_engaged = false;
     }
 
+    /// The bridge VIEW QUADRANT as the game computes it — the one-hot value that
+    /// occupies the high nibble of `gs:0x2793` and gates every nav actor
+    /// (audit-fixes #364/#365).
+    ///
+    /// ```text
+    ///   0x951D  mov bx, 1
+    ///   0x9520  mov dx, word ptr [0x2795]     THIS frame index
+    ///   0x9524  cmp dx, 0x16 / jle            <= 22        -> 1
+    ///   0x9529  cmp dx, 0x9d / jg             >  157       -> 1
+    ///   0x952F  add bx, bx
+    ///   0x9531  cmp dx, 0x43 / jle            <= 67        -> 2
+    ///   0x9536  add bx, bx
+    ///   0x9538  cmp dx, 0x70 / jle            <= 112       -> 4
+    ///   0x953D  add bx, bx                    otherwise    -> 8
+    ///   0x953F  shl bx, 4                     into bits 4..7
+    /// ```
+    ///
+    /// Returned UNSHIFTED (1/2/4/8) because that is the quantity the readers
+    /// compare — `test 0x10` is quadrant 1, `test 0x90` is quadrants 1|4 — and
+    /// shifting is the storage detail, not the meaning.
+    ///
+    /// PURE, so it does not model bit 1's LOCK: the game skips the recompute
+    /// while that bit is set (`test ax,2 / jne` @`0x9518`), which matters only
+    /// once something WRITES the nibble. A caller that needs the locked value
+    /// must read the stored flag word instead.
+    pub fn view_quadrant(&self) -> u16 {
+        // The wrap sector is tested FIRST and from both ends, so it cannot be
+        // expressed as a plain ascending ladder.
+        if self.frame <= 0x16 || self.frame > 0x9D {
+            1
+        } else if self.frame <= 0x43 {
+            2
+        } else if self.frame <= 0x70 {
+            4
+        } else {
+            8
+        }
+    }
+
     /// Program the five menu-row DAC entries (game palette indices
     /// 0x7B..0x7F): all idle, then the hovered row bright — the per-tick DAC
     /// writes of `0x862B..0x86A3`. Only touches the palette while the menu
@@ -583,6 +622,41 @@ mod tests {
         assert_eq!(view.click(), None);
         assert!(view.seeking);
         assert_eq!(view.seek_target_arc, 45 * 2, "seeks the menu station rest");
+    }
+
+    /// audit-fixes #366. The quadrant at every BOUNDARY, since the ladder's
+    /// cut points are the whole content: 22/67/112/157 over 180 frames at 2°.
+    /// A test that only sampled sector middles would pass with any of the four
+    /// off-by-one variants the `jle`/`jg` mix invites.
+    #[test]
+    fn view_quadrant_matches_the_frame_ladder() {
+        let q = |frame: u16| {
+            let mut v = BridgeView::default();
+            v.frame = frame;
+            v.view_quadrant()
+        };
+
+        // Sector 1 is the WRAP sector: it owns both ends of the ring.
+        assert_eq!(q(0), 1);
+        assert_eq!(q(0x16), 1, "<= 0x16 inclusive (jle @0x9527)");
+        assert_eq!(q(0x9E), 1, "> 0x9D wraps back into sector 1 (jg @0x952D)");
+        assert_eq!(q(179), 1, "the last frame is still the wrap sector");
+
+        // ...and the three that follow it in order.
+        assert_eq!(q(0x17), 2, "one past 0x16 leaves the wrap sector");
+        assert_eq!(q(0x43), 2, "<= 0x43 inclusive (jle @0x9534)");
+        assert_eq!(q(0x44), 4);
+        assert_eq!(q(0x70), 4, "<= 0x70 inclusive (jle @0x953B)");
+        assert_eq!(q(0x71), 8);
+        assert_eq!(q(0x9D), 8, "0x9D is the LAST frame of sector 8");
+
+        // Every frame maps to exactly one sector, and all four are reachable.
+        let seen: std::collections::BTreeSet<u16> =
+            (0..PANORAMA_FRAME_COUNT as u16).map(q).collect();
+        assert_eq!(seen, [1u16, 2, 4, 8].into_iter().collect());
+        for f in 0..PANORAMA_FRAME_COUNT as u16 {
+            assert_eq!(q(f).count_ones(), 1, "frame {f} must be ONE-HOT");
+        }
     }
 
     #[test]

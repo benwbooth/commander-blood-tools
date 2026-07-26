@@ -11949,3 +11949,37 @@ gate on six named handlers" — and the last two only became possible after #359
 built an instrument whose limits I could state.
 
 667 citations verified, 0 wrong. 612 lib tests, 0 failures.
+
+## #366 — implement the quadrant, and test the boundaries rather than the middles
+
+#365 recorded the bridge view quadrant as unmodelled. It is a PURE FUNCTION of
+`BridgeView::frame`, which the port already has, so implementing it needs no new
+state and cannot go stale:
+
+    frame <= 0x16  or  frame > 0x9D   -> 1     the WRAP sector, both ends
+    frame <= 0x43                     -> 2
+    frame <= 0x70                     -> 4
+    otherwise                         -> 8
+
+Returned UNSHIFTED, because 1/2/4/8 is what the readers compare against once you
+account for the `shl bx,4` — `test 0x10` is quadrant 1, `test 0x90` is quadrants
+1|4. The shift is storage, not meaning.
+
+THE TEST CHECKS BOUNDARIES, NOT MIDDLES, and that is the whole point. The ladder
+is four comparisons mixing `jle` and `jg`, which invites four different
+off-by-one variants — every one of which agrees with a test that samples sector
+centres. So it asserts `0x16 -> 1` and `0x17 -> 2`, `0x43 -> 2` and `0x44 -> 4`,
+`0x70 -> 4` and `0x71 -> 8`, `0x9D -> 8` and `0x9E -> 1`, plus that every frame
+in 0..179 maps to exactly ONE bit and all four sectors are reachable.
+
+That last pair of assertions is cheap insurance of a kind this session has needed
+repeatedly: #355's missing Z axis and #356's single-object model both survived
+because the tests never varied the dimension that mattered. "One-hot for every
+input in range" is a property that cannot be satisfied by an accidentally-correct
+implementation.
+
+DOCUMENTED AS PURE: the accessor does not model bit 1's LOCK (`test ax,2 / jne`
+@`0x9518` skips the recompute), because that only matters once something writes
+the stored nibble. A caller needing the locked value must read the flag word.
+
+678 citations verified (from 667), 0 wrong. 613 lib tests, 0 failures.
