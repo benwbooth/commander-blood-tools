@@ -4535,11 +4535,20 @@ impl EngineState {
     /// nav", asserting a provenance it never had. Same defect class as the
     /// `compass_angle` chooser removed in #197.
     ///
-    /// REPLACEMENT: `layout_ship_3d_target_list`. Not switched in this edit
-    /// because #212 already routed destination SELECTION through the decoded
-    /// widget via `console_box`, which makes this drawing path a DUPLICATE to be
-    /// removed rather than re-laid-out — and deleting a live draw path deserves
-    /// its own change (audit-fixes #239).
+    /// CORRECTED IN #240, having traced what fills this list. It is NOT a
+    /// duplicate of the game's destination list and must not be deleted as one:
+    /// `nav_destinations` is built in `main.rs` from the SCRIPT3..5 BUNDLES —
+    /// label taken from a bundle's first actor record, entries its parsed
+    /// dialogue lines — so it is a PORT-SIDE AFFORDANCE for reaching scenes, not
+    /// a model of a game surface. The game's own destination list comes from the
+    /// DEB candidate records (`0x7259`) and is routed through `console_box`
+    /// (#212), which takes the click first.
+    ///
+    /// So what is wrong here is narrower than #239 claimed: not "a second layout
+    /// for a game surface", but AN INVENTED LAYOUT WEARING A GAME PROVENANCE. The
+    /// geometry stays until someone decides whether the port should offer this
+    /// affordance at all; the false claim is gone, and it stays labelled APPROX
+    /// because a reader must not mistake these four numbers for decoded ones.
     pub const NAV_DEST_X: i32 = 6;
     pub const NAV_DEST_Y: i32 = 22;
     pub const NAV_DEST_PITCH: i32 = 10;

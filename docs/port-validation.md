@@ -444,12 +444,20 @@ widest + 20 @`0x84A1`, height = rows*pitch + 8 @`0x84A7`, x = anchor - width/2
 So the port carries TWO list layouts: one decoded, one invented. The comment above
 the draw called the invented one "the game's list-box nav".
 
-STATUS: labelled APPROX in the source with the replacing routine named, per the
-rule that a capture- or guess-derived constant may stand only that way. NOT fixed
-in place, because #212 routed destination SELECTION through the decoded widget
-(`console_box`), which makes this drawing path a duplicate to DELETE rather than
-re-lay-out. Deleting a live draw path is its own change; the two paths' surfaces
-need comparing first so the deletion does not silently remove a screen.
+STATUS (corrected, #240): labelled APPROX in the source. The "delete it as a
+duplicate" plan was WRONG and was withdrawn after tracing what fills the list:
+`main.rs` builds `nav_destinations` from the SCRIPT3..5 BUNDLES — label from a
+bundle's first actor record, entries its parsed dialogue lines — so this is a
+PORT-SIDE AFFORDANCE for reaching scenes, not a second rendering of a game
+surface. The game's destination list comes from the DEB candidates (`0x7259`) and
+is routed through `console_box` (#212), whose click arm sits BEFORE this one in
+the event loop and therefore wins when a DEB is loaded.
+
+So the defect is narrower than first written: not a duplicate layout, but an
+invented layout that CLAIMED a game provenance. The claim is removed; the four
+numbers stay, labelled, until someone decides whether the port should offer this
+affordance at all. Deleting it would have removed scene access that the decoded
+path does not provide when no DEB is loaded.
 
 ## RESOURCE DIRECTORY — a transcribed literal, and it is a PREFIX (2026-07-25)
 

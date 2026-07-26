@@ -7420,3 +7420,32 @@ through the decoded widget via `console_box`, so this drawing path is a DUPLICAT
 to delete rather than a layout to correct. Deleting a live draw path deserves its
 own change with the two surfaces compared first — re-laying it out now would
 entrench a path that should not exist.
+
+## #240 — correcting #239: not a duplicate, and nearly deleted a feature
+
+#239 called the nav destination list "a DUPLICATE to be removed" and deferred the
+deletion to its own change. This is that change, and the first step was tracing
+what actually fills the list — which shows the plan was wrong.
+
+`main.rs` builds `nav_destinations` from the SCRIPT3..5 BUNDLES: the label is a
+bundle's first actor record, the entries are its parsed dialogue lines. It is a
+PORT-SIDE AFFORDANCE for reaching scenes. The game's destination list is a
+different thing entirely — DEB candidate records from `0x7259`, routed through
+`console_box` since #212, whose click arm sits BEFORE this one in the event loop
+and so wins whenever a DEB is loaded.
+
+They are not two renderings of one surface. Deleting this one would have removed
+scene access that the decoded path does not provide when no DEB is loaded — a
+feature deletion dressed as a faithfulness fix.
+
+The real defect is narrower than #239 wrote, and #239's own fix already addressed
+it: the comment claimed "the game's list-box nav" for geometry nothing cites. The
+false provenance is gone. The four constants stay, labelled APPROX, because a
+reader must not mistake them for decoded values — but there is no decoded rule
+they are failing to implement, since the game has no such surface.
+
+WHAT WENT WRONG IN #239: I inferred "duplicate" from the two paths pointing at
+similar-sounding UI, without reading what populated either. The correction cost
+one command (`grep set_nav_destinations`). Writing "duplicate to delete" into a
+validation row made it a scheduled action rather than a hypothesis — and the next
+session would have executed it.
