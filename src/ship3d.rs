@@ -3655,6 +3655,11 @@ pub fn ship_3d_object_table_bit_is_set(
         vm::vm_field_offset(SHIP_3D_SOURCE_BITSET_SELECTOR, SHIP_3D_SOURCE_BITSET_KIND)? as usize;
     let byte_offset = field_offset.checked_add(object_index >> 3)?;
     let value = *bitset_base.get(byte_offset)?;
+    // HIGH-BIT-FIRST, and the equivalence is worth spelling out because the
+    // routine expresses it as a shift rather than a mask: `cl = (index & 7) + 1`
+    // then `shl al,cl` @`0x6236` leaves bit `7 - (index & 7)` in CF, which is
+    // what `0x80 >> (index & 7)` selects. Index 0 is bit 7, index 7 is bit 0 —
+    // the opposite of the `1 << i` a reader would write unprompted.
     let mask = vm::bit_flag_mask((object_index & 7) as u8);
     Some(value & mask != 0)
 }

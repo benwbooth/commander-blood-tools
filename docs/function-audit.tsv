@@ -1139,43 +1139,43 @@ ship_3d_position_distance	src/ship3d.rs	3522	fn		UNVERIFIED
 ship_3d_position_field_distance	src/ship3d.rs	3575	fn	0x60DD,0x60E5,0x100,0x6114,0x60EA,0x60EC,0x6023,0x60F4,0x60F	ASM	/// Euclidean distance between two object POSITION FIELDS — /// `ship_3d_position_distance` @`0x60DD`. /// /// The routine's interesting half is how it FINDS the coordinates, which this /// function t
 ship_3d_binary_sqrt	src/ship3d.rs	3607	fn	0x2E33,0x60DD,0x2E3B,0x2E4F,0x2E3F,0xfff,0x0FFF,0x2E42,0x2E5	ASM	/// Integer square root of a 32-bit value, `binary_u32_sqrt` @`0x2E33` — the /// helper `ship_3d_position_distance` (`0x60DD`) uses for object distances. /// /// The estimate seeding is a ladder on th
 ship_3d_object_table_bit_is_set	src/ship3d.rs	3646	fn		UNVERIFIED	
-select_ship_3d_c1_source_record	src/ship3d.rs	3665	fn	0x6886,0x6210	ASM?	/// `source_list_bytes` starts at the binary's `DS:0x6886` scratch list. Kind-2 /// tests use the post-`lodsw` cursor for the current source record as the bitset /// base before applying helper `0x621
-resolve_ship_3d_c1_kind10_destination_record	src/ship3d.rs	3703	fn		UNVERIFIED	
-write_ship_3d_c1_kind10_destination_slot	src/ship3d.rs	3717	fn		TESTED	
-run_ship_3d_navigation_trigger_prelude	src/ship3d.rs	3740	fn		INFRA?	
-draw_ship_3d_target_list	src/ship3d.rs	3822	fn		UNVERIFIED	
-select_ship_3d_target_record	src/ship3d.rs	3880	fn		ASM	
-ship_3d_plane_band_byte_count	src/ship3d.rs	3952	fn	0xB71C	ASM	/// Bytes the plane band copy moves: `(depth + 35) * 80`, from `0xB71C` — /// `mov ax,bx / add ax,0x23 / mov dl,0x50 / mul dl`. The add happens in 8 bits /// (`mul dl` takes AL), which is why the port
-ship_3d_scroll_value	src/ship3d.rs	3969	fn	0x524F,0xB6F7,0xB708,0x6F7,0x6FB,0x700,0x703,0x524d,0xB6F0	ASM	/// The scroll value written to `DS:0x524F`, from `0xB6F7..0xB708`: /// /// ```text ///   0x6F7  mov ax,bx / add ax,ax      2 * depth ///   0x6FB  cmp ax,0x64 / jle          clamp to 100 ///   0x700  
-start_closing_transition	src/ship3d.rs	3984	fn	0xB6B8,0x2531,0x2530,0x2533	ASM	/// The armed-and-timer-exhausted branch of the transition updater, `0xB6B8`: /// `mov byte [0x2531],8` (close step) / `mov byte [0x2530],1` (closing) / /// `mov byte [0x2533],0` (disarmed) — three wr
-add_to_low_byte	src/ship3d.rs	3994	fn	0x2531,0x2527	ASM	/// Add to a word's LOW BYTE ONLY, leaving the high byte untouched — the effect of /// the 8-bit `add`/`sub` the transition and interpolation code use on word-sized /// state (e.g. `0x2531`'s step aga
-circular_delta	src/ship3d.rs	3998	fn		UNVERIFIED	
-wrap_ring_once	src/ship3d.rs	4012	fn		UNVERIFIED	
-matrix_pair_for_angle	src/ship3d.rs	4033	fn	0x990C,0x4F45	ASM	/// Fetch a `(cosine, sine)` pair from the angle table and widen it to Q15. /// /// The doubling is the game's: `0x990C` reads the angle word, `shl di,2` scales it /// to the table's 4-byte stride, `m
-fixed_mul_shift_15	src/ship3d.rs	4049	fn	0x9957,0x995F,0x994D	ASM	/// The Q15 fixed-point multiply the matrix code uses: `imul` then /// `sar eax,0xf` — e.g. `0x9957 imul eax,[si+0x14]` / `0x995F sar eax,0xf` in /// `matrix3d_mul_fixed` (`0x994D`). /// /// `sar`, no
-projection_component	src/ship3d.rs	4056	fn	0x9A42,0x9A47,0x2F65,0x2F67	ASM	/// One component of the camera translation: `sub word [di],ax` at `0x9A42` (and /// `[di+2],ax` at `0x9A47`), with the origin loaded from `[0x2F65]`/`[0x2F67]` /// just before — a wrapping 16-bit SUB
-projection_dot	src/ship3d.rs	4065	fn	0x9A50,0x9A66	ASM	/// The three-term dot product of the projection, accumulated in 32 bits WITHOUT /// an intermediate shift — `0x9A50..0x9A66`: `imul eax,[bp+0x18]` / `mov ecx,eax` /// / `imul eax,[bp+0x1c]` / `add ec
-project_ship_3d_axis	src/ship3d.rs	4088	fn	0x9AD9,0x9AE2,0x9ADD,0x9ADF	ASM	/// The perspective divide, `0x9AD9..0x9AE2`: /// /// ```text ///   0x9AD9  sar eax,7      pre-scale the dotted numerator ///   0x9ADD  cdq            sign-extend into edx:eax ///   0x9ADF  idiv ecx  
-scale_ship_3d_object_dimension	src/ship3d.rs	4098	fn	0x9B98	ASM	/// Scale an object's sprite dimension by its depth factor, as the object-sprite /// projector does at `0x9B98`: a 32-bit multiply /// followed by `>> SHIP_3D_OBJECT_SCALE_SHIFT`. Widening to 32 bits 
-ship_3d_rects_intersect	src/ship3d.rs	4102	fn		UNVERIFIED	
-checked_i16_div_i8_to_i8	src/ship3d.rs	4117	fn	0x1E74	ASM	/// `idiv bl` modelled: AX divided by an 8-bit divisor, quotient in AL. The /// `Option` covers the two cases the CPU TRAPS on — a zero divisor, and a /// quotient too large for 8 bits — rather than w
-checked_u16_div_u8_to_u8	src/ship3d.rs	4125	fn		UNVERIFIED	
-signed_i16	src/ship3d.rs	4137	fn	0x9B0A	ASM	/// Reinterpret a stored word as SIGNED. The game's coordinate and clip tests are /// `jl`/`jge` (e.g. the plot's bounds at `0x9B0A`), so port comparisons must go /// through this rather than comparin
-target_list_draw_x	src/ship3d.rs	4141	fn		UNVERIFIED	
-blocks_nav_choice	src/ship3d.rs	4146	fn		UNVERIFIED	
-hit_test_ship_3d_nav_choice	src/ship3d.rs	4156	fn		UNVERIFIED	
-adjust_nav_choice_target_records	src/ship3d.rs	4197	fn	0x8748,0x8754,0xFFFF,0x8749	ASM	/// The `add ax,4` loop of nav-choice handler 1 (`0x8748..0x8754`): walk the word /// list, add the 4-byte record header to each entry, stop at the `0xFFFF` /// terminator (`cmp ax,-1 / je` @`0x8749`)
-rebuild_nav_choice_special_target_records	src/ship3d.rs	4211	fn	0x87CB,0x87DB,0x6D3E,0xFFFF	ASM	/// The rebuild loop of nav-choice handler 2 (`0x87CB..0x87DB`): walk the special /// slots at `DS:0x6D3E`, skip zeros (`or ax,ax / je`), stop at the `0xFFFF` /// sentinel after storing it, and otherw
-next_ship_3d_temp_snd_phase	src/ship3d.rs	4229	fn		UNVERIFIED	
-append_ship_3d_navigation_source_children	src/ship3d.rs	4238	fn		UNVERIFIED	
-find_ship_3d_navigation_record	src/ship3d.rs	4271	fn		UNVERIFIED	
-find_ship_3d_position_record	src/ship3d.rs	4281	fn		UNVERIFIED	
-find_ship_3d_position_field	src/ship3d.rs	4291	fn		UNVERIFIED	
-resolve_ship_3d_distance_position_field	src/ship3d.rs	4298	fn		UNVERIFIED	
-kind100_relation_word	src/ship3d.rs	4322	fn		UNVERIFIED	
-ship_3d_record_field	src/ship3d.rs	4332	fn		UNVERIFIED	
-binary_abs_word_diff	src/ship3d.rs	4341	fn	0x8000	ASM	/// Absolute difference of two words, as the distance helper computes it: a /// wrapping 16-bit subtract, then negate if the SIGN BIT is set. That is a test of /// bit 15 rather than a signed comparis
-next_target_list_draw_color	src/ship3d.rs	4350	fn		UNVERIFIED	
+select_ship_3d_c1_source_record	src/ship3d.rs	3670	fn	0x6886,0x6210	ASM	/// `source_list_bytes` starts at the binary's `DS:0x6886` scratch list. Kind-2 /// tests use the post-`lodsw` cursor for the current source record as the bitset /// base before applying helper `0x621
+resolve_ship_3d_c1_kind10_destination_record	src/ship3d.rs	3708	fn		UNVERIFIED	
+write_ship_3d_c1_kind10_destination_slot	src/ship3d.rs	3722	fn		TESTED	
+run_ship_3d_navigation_trigger_prelude	src/ship3d.rs	3745	fn		INFRA?	
+draw_ship_3d_target_list	src/ship3d.rs	3827	fn		UNVERIFIED	
+select_ship_3d_target_record	src/ship3d.rs	3885	fn		ASM	
+ship_3d_plane_band_byte_count	src/ship3d.rs	3957	fn	0xB71C	ASM	/// Bytes the plane band copy moves: `(depth + 35) * 80`, from `0xB71C` — /// `mov ax,bx / add ax,0x23 / mov dl,0x50 / mul dl`. The add happens in 8 bits /// (`mul dl` takes AL), which is why the port
+ship_3d_scroll_value	src/ship3d.rs	3974	fn	0x524F,0xB6F7,0xB708,0x6F7,0x6FB,0x700,0x703,0x524d,0xB6F0	ASM	/// The scroll value written to `DS:0x524F`, from `0xB6F7..0xB708`: /// /// ```text ///   0x6F7  mov ax,bx / add ax,ax      2 * depth ///   0x6FB  cmp ax,0x64 / jle          clamp to 100 ///   0x700  
+start_closing_transition	src/ship3d.rs	3989	fn	0xB6B8,0x2531,0x2530,0x2533	ASM	/// The armed-and-timer-exhausted branch of the transition updater, `0xB6B8`: /// `mov byte [0x2531],8` (close step) / `mov byte [0x2530],1` (closing) / /// `mov byte [0x2533],0` (disarmed) — three wr
+add_to_low_byte	src/ship3d.rs	3999	fn	0x2531,0x2527	ASM	/// Add to a word's LOW BYTE ONLY, leaving the high byte untouched — the effect of /// the 8-bit `add`/`sub` the transition and interpolation code use on word-sized /// state (e.g. `0x2531`'s step aga
+circular_delta	src/ship3d.rs	4003	fn		UNVERIFIED	
+wrap_ring_once	src/ship3d.rs	4017	fn		UNVERIFIED	
+matrix_pair_for_angle	src/ship3d.rs	4038	fn	0x990C,0x4F45	ASM	/// Fetch a `(cosine, sine)` pair from the angle table and widen it to Q15. /// /// The doubling is the game's: `0x990C` reads the angle word, `shl di,2` scales it /// to the table's 4-byte stride, `m
+fixed_mul_shift_15	src/ship3d.rs	4054	fn	0x9957,0x995F,0x994D	ASM	/// The Q15 fixed-point multiply the matrix code uses: `imul` then /// `sar eax,0xf` — e.g. `0x9957 imul eax,[si+0x14]` / `0x995F sar eax,0xf` in /// `matrix3d_mul_fixed` (`0x994D`). /// /// `sar`, no
+projection_component	src/ship3d.rs	4061	fn	0x9A42,0x9A47,0x2F65,0x2F67	ASM	/// One component of the camera translation: `sub word [di],ax` at `0x9A42` (and /// `[di+2],ax` at `0x9A47`), with the origin loaded from `[0x2F65]`/`[0x2F67]` /// just before — a wrapping 16-bit SUB
+projection_dot	src/ship3d.rs	4070	fn	0x9A50,0x9A66	ASM	/// The three-term dot product of the projection, accumulated in 32 bits WITHOUT /// an intermediate shift — `0x9A50..0x9A66`: `imul eax,[bp+0x18]` / `mov ecx,eax` /// / `imul eax,[bp+0x1c]` / `add ec
+project_ship_3d_axis	src/ship3d.rs	4093	fn	0x9AD9,0x9AE2,0x9ADD,0x9ADF	ASM	/// The perspective divide, `0x9AD9..0x9AE2`: /// /// ```text ///   0x9AD9  sar eax,7      pre-scale the dotted numerator ///   0x9ADD  cdq            sign-extend into edx:eax ///   0x9ADF  idiv ecx  
+scale_ship_3d_object_dimension	src/ship3d.rs	4103	fn	0x9B98	ASM	/// Scale an object's sprite dimension by its depth factor, as the object-sprite /// projector does at `0x9B98`: a 32-bit multiply /// followed by `>> SHIP_3D_OBJECT_SCALE_SHIFT`. Widening to 32 bits 
+ship_3d_rects_intersect	src/ship3d.rs	4107	fn		UNVERIFIED	
+checked_i16_div_i8_to_i8	src/ship3d.rs	4122	fn	0x1E74	ASM	/// `idiv bl` modelled: AX divided by an 8-bit divisor, quotient in AL. The /// `Option` covers the two cases the CPU TRAPS on — a zero divisor, and a /// quotient too large for 8 bits — rather than w
+checked_u16_div_u8_to_u8	src/ship3d.rs	4130	fn		UNVERIFIED	
+signed_i16	src/ship3d.rs	4142	fn	0x9B0A	ASM	/// Reinterpret a stored word as SIGNED. The game's coordinate and clip tests are /// `jl`/`jge` (e.g. the plot's bounds at `0x9B0A`), so port comparisons must go /// through this rather than comparin
+target_list_draw_x	src/ship3d.rs	4146	fn		UNVERIFIED	
+blocks_nav_choice	src/ship3d.rs	4151	fn		UNVERIFIED	
+hit_test_ship_3d_nav_choice	src/ship3d.rs	4161	fn		UNVERIFIED	
+adjust_nav_choice_target_records	src/ship3d.rs	4202	fn	0x8748,0x8754,0xFFFF,0x8749	ASM	/// The `add ax,4` loop of nav-choice handler 1 (`0x8748..0x8754`): walk the word /// list, add the 4-byte record header to each entry, stop at the `0xFFFF` /// terminator (`cmp ax,-1 / je` @`0x8749`)
+rebuild_nav_choice_special_target_records	src/ship3d.rs	4216	fn	0x87CB,0x87DB,0x6D3E,0xFFFF	ASM	/// The rebuild loop of nav-choice handler 2 (`0x87CB..0x87DB`): walk the special /// slots at `DS:0x6D3E`, skip zeros (`or ax,ax / je`), stop at the `0xFFFF` /// sentinel after storing it, and otherw
+next_ship_3d_temp_snd_phase	src/ship3d.rs	4234	fn		UNVERIFIED	
+append_ship_3d_navigation_source_children	src/ship3d.rs	4243	fn		UNVERIFIED	
+find_ship_3d_navigation_record	src/ship3d.rs	4276	fn		UNVERIFIED	
+find_ship_3d_position_record	src/ship3d.rs	4286	fn		UNVERIFIED	
+find_ship_3d_position_field	src/ship3d.rs	4296	fn		UNVERIFIED	
+resolve_ship_3d_distance_position_field	src/ship3d.rs	4303	fn		UNVERIFIED	
+kind100_relation_word	src/ship3d.rs	4327	fn		UNVERIFIED	
+ship_3d_record_field	src/ship3d.rs	4337	fn		UNVERIFIED	
+binary_abs_word_diff	src/ship3d.rs	4346	fn	0x8000	ASM	/// Absolute difference of two words, as the distance helper computes it: a /// wrapping 16-bit subtract, then negate if the SIGN BIT is set. That is a test of /// bit 15 rather than a signed comparis
+next_target_list_draw_color	src/ship3d.rs	4355	fn		UNVERIFIED	
 SND_CLIP_HEADER_LEN	src/snd.rs	6	const		UNVERIFIED	
 SND_PCM_FORMAT_TAG	src/snd.rs	7	const		UNVERIFIED	
 SndClip	src/snd.rs	10	struct		UNVERIFIED	

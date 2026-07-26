@@ -8440,3 +8440,30 @@ where it comes from so nobody looks for `0x100000` in the disassembly and fails 
 find it.
 
 Guard 493 -> 501 checked, 0 wrong.
+
+## #274 — a bitset that runs the other way
+
+`select_ship_3d_c1_source_record` and the helper it calls, read against `0x6210`.
+The routine scans the `gs:0x672c` directory for the object (`di += 0x14` per
+entry, counting the index), takes `vm_field_offset(5, 2)` for the bitset field,
+adds `index >> 3` to reach the byte — and then tests the bit like this:
+
+```text
+   0x6236  and cl, 7
+           inc cl            ; cl = (index & 7) + 1
+           shl al, cl        ; the tested bit lands in CF
+```
+
+`shl al, cl` with `cl = (index & 7) + 1` leaves bit `7 - (index & 7)` in the
+carry. So the bitset is HIGH-BIT-FIRST: index 0 is bit 7, index 7 is bit 0 — the
+opposite of the `1 << i` anyone writes without looking.
+
+The port has it right (`bit_flag_mask(i) = 0x80 >> (i & 7)`), and now says WHY it
+is right, because the equivalence between a shift-into-carry and a mask is not
+visible from either side alone. Someone simplifying `0x80 >> i` to `1 << i` would
+invert every membership test in the C1 source selection, and the failure would be
+"the wrong object is picked sometimes", not a crash.
+
+Everything else matches too: the selector and kind are FIXED at 5 and 2
+(`mov ax,5` @`0x6229`, kind 2 — not derived from the object, which the routine's
+label already warned about), and `index >> 3` is `shr ax,3` @`0x623B`.
