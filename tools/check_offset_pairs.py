@@ -41,7 +41,19 @@ FILE_TOK = re.compile(r"file\s*`?(0x[0-9a-fA-F]{4,6})\b")
 SUFFIXES = [("_DS_OFFSET", "_FILE_OFFSET"), ("_DS", "_FILE"), ("_DS_OFFSET", "_FILE")]
 
 
+def load_image():
+    for candidate in ("re/bin/BLOODPRG.EXE", "../re/bin/BLOODPRG.EXE"):
+        try:
+            with open(candidate, "rb") as fh:
+                return fh.read()
+        except OSError:
+            continue
+    return b""
+
+
 def main():
+    image = load_image()
+    grounded, empty = [], []
     consts = {}
     for root, _, files in os.walk("src"):
         for f in sorted(files):
@@ -107,6 +119,22 @@ def main():
                         continue
                     partnered = {f for f in file_set if f - DS_BASE in ds_set}
                     checked += len(partnered)
+                    # WHAT THE ARITHMETIC CANNOT SEE. `file == 0xD420 + ds` holds
+                    # whenever the two constants were written consistently -- if a
+                    # pair names the wrong table, both drift together and this
+                    # guard stays quiet (the same weakness audit-fixes #253 fixed
+                    # in `parses_mz_header_and_address_conversions`, where two
+                    # constants agreed with each other and neither with the image).
+                    #
+                    # An image check here is genuinely ambiguous, because many DS
+                    # offsets are RUNTIME STATE and read as zeros in the shipped
+                    # file -- `DS:0x6D3E`, the ship-slot array, is all zeros and
+                    # correct. So this reports rather than judges: it says which
+                    # pairs land on shipped DATA and which on an empty region, and
+                    # leaves the reader to know which kind each should be.
+                    for f in partnered:
+                        window = image[f : f + 16] if image else b""
+                        (grounded if any(window) else empty).append((path, f, f - DS_BASE))
                     orphan_files = file_set - partnered
                     orphan_ds = {d for d in ds_set if d + DS_BASE not in file_set}
                     # One of each and they do not correspond -> a real mismatch.
@@ -127,7 +155,20 @@ def main():
                         )
                     run = []
 
-    print(f"{checked} DS/file pairs checked, {bad} mismatched")
+    # `checked` counts three different paths (a NAME-suffix pair, a doc-run pair,
+    # and an inferred lone orphan); only the doc-run path is classified against
+    # the image, so the classification is reported against ITS OWN total rather
+    # than against `checked`. Saying "22 checked, 20 + 1 classified" would imply
+    # one pair went missing.
+    classified = len(grounded) + len(empty)
+    print(
+        f"{checked} DS/file pairs checked, {bad} mismatched; of the {classified} "
+        f"named in a doc block, {len(grounded)} land on shipped data and "
+        f"{len(empty)} on zeros (runtime state, or a pair pointing nowhere -- "
+        "the arithmetic cannot tell which)"
+    )
+    for path, f, ds in sorted(empty):
+        print(f"   ZERO-REGION {path}: DS:{ds:#06x} -> file {f:#07x}")
     return 1 if bad else 0
 
 

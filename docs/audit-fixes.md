@@ -7860,3 +7860,31 @@ it IS checked against the real length, and the content checks above would almost
 certainly catch a substituted binary, so the gap is narrow. Adding `sha2` for it
 has not seemed worth a dependency, and that judgement is in the doc rather than
 left as a silent omission.
+
+## #254 — the same weakness in a guard, and a miscount I introduced fixing it
+
+#253 found `parses_mz_header_and_address_conversions` proving two constants agreed
+WITH EACH OTHER rather than with the image. `check_offset_pairs.py` has the same
+shape by design: it verifies `file == 0xD420 + ds`, which holds whenever the pair
+was written consistently — so a pair naming the wrong table drifts together and
+the guard stays quiet.
+
+An image check here is genuinely ambiguous, which is why it was not there. Many DS
+offsets are RUNTIME STATE and read as zeros in the shipped file: `DS:0x6D3E`, the
+ship-slot array, is all zeros and entirely correct (#192 documented exactly that).
+So the guard now REPORTS rather than judges — which pairs land on shipped data,
+which on an empty region — and leaves the reader to know which kind each should
+be. 20 land on data; the single zero-region hit is `DS:0x6D3E`, the one already
+documented as runtime state.
+
+Then I misreported it. The first summary read "22 checked; 20 grounded, 1 zeros",
+implying a pair had vanished. It had not: `checked` counts THREE paths (a
+name-suffix pair, a doc-block pair, an inferred lone orphan) and only the doc-block
+path is classified. Fixed to report the classification against its own total —
+"of the 21 named in a doc block" — because a summary line that does not add up
+sends the next reader hunting for a bug that is not there.
+
+That is the second time in two entries that adding a number to a tool's output
+created a wrong impression before it created a right one (#252's origin column,
+this summary). A count is a claim, and a count printed next to another count is
+also a claim about their relationship.
