@@ -8378,3 +8378,35 @@ the same routine.
 
 Two entries built on a half-decode. Both cheap to fix because the next step
 happened to look at the writer, which is the same luck #244 relied on.
+
+## #272 — a checker whose first run refuted its own premise
+
+#271's mistake was mechanical — inferring a cell's width from an instruction that
+LOADS it rather than one that STORES it — so I built `re/tools/cell_widths.py` to
+find it elsewhere: decode forward from known entries, record the widest write to
+each DS address, and flag any port constant typed `u16` that names a 32-bit cell
+or its high word.
+
+Across 29 verified routines in the executable it found exactly one hit:
+`SHIP_3D_PLANAR_FRAMEBUFFER_PTR_DS_OFFSET = 0x5219`, typed `u16`, with four bytes
+written at that address.
+
+It is a FALSE POSITIVE, and the reason kills the check. The constant is `u16`
+because a DS OFFSET is sixteen bits. The four bytes there are a FAR POINTER —
+`les di,ptr [0x5219]`, which #259 cited. The constant's type describes the
+ADDRESS, not the contents, and that is true of every DS constant in this tree. So
+the match had nothing to say and could only ever produce this.
+
+The real #271 bug lived in a STRUCT FIELD (`x: i16` holding what should have been
+a 32-bit accumulator), which no type-matching over constants could reach.
+
+The matching half is deleted. The WIDTH REPORT stays, because that part is real
+decode information — which cells the game writes 32 bits wide is exactly what
+revealed #271, and having it a command away is worth keeping even though the
+automated conclusion I wanted from it does not exist.
+
+Fourth checker in this campaign whose first run was a test of the checker (#204,
+#211, #228, now). The difference here is that the test FAILED: the premise was
+wrong, not the implementation. Recording that is the point — the alternative is a
+tool that reports one known-benign hit forever and slowly trains its reader to
+ignore it.
