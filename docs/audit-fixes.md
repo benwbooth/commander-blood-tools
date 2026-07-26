@@ -11354,3 +11354,41 @@ Label corrected with the raw bytes quoted, so the next reader can check it
 without re-deriving. Row settled.
 
 652 citations verified, 0 wrong. 612 lib tests, 0 failures.
+
+## #350 — teach the label checker about PORTS, after two self-inflicted false positives
+
+#349 found `re/labels.csv` claiming `out 0x42` (the PC SPEAKER) over code doing
+`out 0x40` (the system TIMER). `check_labels.py` could not have caught it twice
+over: `out` and `in` were not in its mnemonic set at all, and even if they were,
+it compares MNEMONICS — and `out 0x42,al` and `out 0x40,al` are both `out`.
+
+Added `out`/`in` (plus `cli`, `sti`, `setne`, `movsx`, `stosd`, `lodsd`, …) and a
+PORT-NUMBER check. Getting it right took two corrections, both mine:
+
+  1. ADDING `out` BROKE A CORRECT LABEL. `ship_3d_plane_copy_mapmask_all`
+     describes a PAIR — `mov ax,0xf02` @`0xB70E` then `out dx,ax` @`0xB711` — and
+     opens its comment "out 0x3C4, ax=0x0F02", pointing at the VALUE LOAD, which
+     is the instruction a reader needs. The opening-mnemonic check read that as a
+     claim about the labelled address. `out`/`in` are now exempt from THAT check
+     while still subject to the port check.
+  2. PAIRING THE FIRST CLAIM WITH THE FIRST I/O INSTRUCTION broke two more.
+     `program_pit` names both `0x43` (mode) and `0x40` (divisor); `cmos_rtc_read`
+     names both `0x70` (select) and `0x71` (read). A label naming several ports
+     is normal, so the check is now SET MEMBERSHIP: every port a comment names
+     must appear among the ports the routine's I/O actually uses, scanning to the
+     `ret`.
+
+VERIFIED BY PERTURBATION, because a checker reporting zero problems may be
+running zero checks — my own tool did exactly that in #290. Re-introducing #349's
+error gives:
+
+    PROBLEM 357: program_pit names port 0x42 but the routine's I/O uses {0x40, 0x43}
+
+Restored; 501 code labels and 238 data labels check clean.
+
+The two false positives are the point worth keeping: both came from assuming a
+label describes ONE instruction at ONE address. Labels describe ROUTINES, and a
+routine has several ports, several instructions, and a natural way of naming its
+effect rather than its opcodes.
+
+652 citations verified, 0 wrong. 612 lib tests, 0 failures.

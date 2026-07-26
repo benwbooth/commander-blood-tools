@@ -37,7 +37,18 @@ MNEMONICS = {
     "inc", "dec", "shl", "shr", "sar", "rol", "ror", "mul", "imul", "div", "idiv",
     "lea", "les", "lds", "lfs", "lgs", "lodsb", "lodsw", "stosb", "stosw",
     "xlatb", "clc", "stc", "cwde", "loop", "int", "bsf", "btr", "xchg", "nop",
+    # audit-fixes #350: `out`/`in` were absent, so a label quoting them was never
+    # checked at all -- which is how #349's `out 0x42` (the PC SPEAKER) survived
+    # over code that does `out 0x40` (the system TIMER).
+    "out", "in", "cli", "sti", "setne", "sete", "movsx", "movzx", "cbw", "stosd",
+    "lodsd", "movsd", "rep", "cwd", "cdq", "sar",
 }
+
+# PORT NUMBERS ARE OPERANDS, and mnemonic-only checking cannot see them: both
+# `out 0x42,al` and `out 0x40,al` are `out`. #349 was exactly that -- one hex
+# digit, timer vs speaker, in a label that read as authoritative. So when a
+# comment names a port explicitly, compare it to the instruction's own operand.
+PORT_CLAIM = re.compile(r"\b(out|in)\s+(?:al\s*,\s*)?(0x[0-9a-f]{1,4})", re.I)
 # A comment only CLAIMS an instruction when the mnemonic is followed by something
 # operand-shaped. "jmp target after early init" describes the address as a jump
 # TARGET -- reading its first word as a quoted opcode reported a correct label as
@@ -82,6 +93,7 @@ def main():
     rows = list(csv.reader(open(LABELS_CSV, newline="")))
     code = data_rows = quoted = 0
     inline_checked = [0]
+    port_checked = [0]
     problems = []
     seen_rows = []
     for line_no, row in enumerate(rows, 1):
@@ -116,7 +128,15 @@ def main():
                 problems.append(f"{line_no}: {name} {addr_s} does not decode")
             continue
         m = LEAD.match(comment.strip().lower())
-        if m and m.group(1) in MNEMONICS:
+        # `out`/`in` are EXEMPT from the opening-mnemonic check (audit-fixes
+        # #350). A port write is nearly always a PAIR -- `mov ax,0xf02` then
+        # `out dx,ax` -- and a label naturally describes the pair by its effect
+        # ("out 0x3C4, ax=0x0F02") while pointing at the VALUE LOAD, which is the
+        # instruction a reader needs to find. Adding these mnemonics immediately
+        # flagged `ship_3d_plane_copy_mapmask_all`, whose label is exactly right.
+        # The PORT-NUMBER check below still applies to them, and that is the part
+        # that catches #349's timer-for-speaker error.
+        if m and m.group(1) in MNEMONICS and m.group(1) not in ("out", "in"):
             quoted += 1
             want = m.group(1)
             got = insn.mnemonic
@@ -125,6 +145,32 @@ def main():
                     f"{line_no}: {name} {addr_s} comment opens with `{want}` "
                     f"but the code is `{got} {insn.op_str}`"
                 )
+        # PORT-NUMBER claims: `out 0xNN` / `in al,0xNN` against the real operand.
+        # SET MEMBERSHIP, not pairwise. A routine's label routinely names SEVERAL
+        # ports -- `program_pit` cites both 0x43 (mode) and 0x40 (divisor), and
+        # `cmos_rtc_read` both 0x70 (select) and 0x71 (read) -- so pairing the
+        # first claim with the first I/O instruction reports correct labels as
+        # wrong, which is what it did on its first run (audit-fixes #350).
+        claims = {int(p, 16) for _, p in PORT_CLAIM.findall(comment.lower())}
+        if claims:
+            used = set()
+            for i in md.disasm(data[addr:addr + 48], addr):
+                if i.mnemonic in ("out", "in"):
+                    for n in re.findall(r"0x[0-9a-f]+", i.op_str):
+                        used.add(int(n, 16))
+                if i.mnemonic in ("ret", "retf"):
+                    break
+            # Only judge when the window actually performs immediate-port I/O;
+            # a DX-port form carries no immediate to compare against.
+            if used:
+                for c in sorted(claims):
+                    port_checked[0] += 1
+                    if c not in used:
+                        problems.append(
+                            f"{line_no}: {name} names port {c:#04x} but the routine's "
+                            f"I/O uses {{{', '.join(f'{u:#04x}' for u in sorted(used))}}}"
+                        )
+
         # Inline claims anywhere in the comment, in BOTH orders.
         inline_claims = [(mn, am) for mn, am in INLINE.findall(comment.lower())]
         inline_claims += [
