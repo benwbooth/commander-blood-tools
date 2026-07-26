@@ -3589,7 +3589,8 @@ impl EngineState {
                 // The word list is TWO sections split by 0xFFFF: the spoken line,
                 // then the CHOICE-MENU rows. `filter_map` silently dropped the
                 // separator (0xFFFF is not a DIC key) but KEPT the menu words after
-                // it, so 211 of the 3650 A6 lines across the five scripts rendered
+                // it, so 214 of the 3687 A6 lines across the five scripts (COUNTED,
+                // audit-fixes #416 -- this said 211 of 3650 from memory) rendered
                 // their choices appended to the subtitle -- e.g. SCRIPT1.COD's
                 // "Click quick, Cap'n Bob is waiting ..." came out with
                 // "explanations game" glued on the end.
@@ -7255,7 +7256,9 @@ mod tests {
     /// The OPTION row is the game's own string at DS:0x0174 (file 0x0D594), not a
     /// label read off a screenshot. Reads it straight out of the shipped image, so
     /// the constant cannot drift from the binary it claims to come from.
-    /// 211 of the 3650 `0xA6` lines across the five scripts carry a CHOICE MENU after
+    /// 214 of the 3687 `0xA6` lines across the five scripts carry a CHOICE MENU after
+    /// (counted by `a6_menu_bearing_line_count_matches_the_recorded_figure`; this
+    /// said 211 of 3650 from memory until audit-fixes #416 measured it)
     /// an `0xFFFF` separator. The subtitle builder used `filter_map` over the whole
     /// word list, which silently dropped the separator (not a DIC key) but KEPT the
     /// menu rows, gluing them onto the spoken line.

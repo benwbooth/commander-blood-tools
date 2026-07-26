@@ -13694,3 +13694,31 @@ data, and how the discrepancy surfaced at all.
 
 2228 items, 1105 confirmed (49.6%), 1123 open. 740 citations verified, 0 wrong.
 720 workspace tests, 0 failures.
+
+## #417 — the wrong number had spread to two more files
+
+#416 measured `decode_vm_words`'s "211 of the 3650" and got 214 of 3687. Swept
+for the same shape — `N of M` in a comment — and found the WRONG figure repeated
+verbatim in two more places: `engine.rs:3592` (the subtitle builder's bug
+description) and `engine.rs:7258` (the choice-menu doc). Both corrected to the
+counted values, with the old figures named so the correction is legible.
+
+That is the real cost of an unverified number: it gets copied. Three files
+asserted the same measurement and none of them had run it.
+
+The sweep found five other `N of M` claims. Checked the cheapest one to check:
+`vm.rs:10306`, "the shipped corpus uses 32 of the 51 implemented opcodes". The
+enclosing test ALREADY computes that set from the five shipped `.COD` files and
+already asserts `0xD3` is absent from it — so the number was one line from being
+checked and nobody had written the line. Added `assert_eq!(seen.len(), 32)`. It
+passes, and it is not vacuous: the assertion sits after the test's
+`if checked == 0 { return }` guard, so it only runs when the scripts are present,
+and they are in this checkout.
+
+The remaining four (`palette.rs` 68/256, `levels.rs` 13/50, `bloodprg.rs` 30/51,
+`vm.rs` 630/640) are left as-is. Two of them cite the tool that produced them,
+which is weaker than a test but is not nothing; recorded here as the queue rather
+than fixed silently.
+
+2228 items, 1105 confirmed (49.6%), 1123 open. 740 citations verified, 0 wrong.
+720 workspace tests, 0 failures.

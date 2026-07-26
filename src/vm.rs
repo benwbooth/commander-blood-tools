@@ -10314,6 +10314,16 @@ mod tests {
             );
         }
         assert!(!seen.contains(&0xD3), "0xD3 is unused by the shipped scripts");
+        // PIN THE COUNT the comment above states (audit-fixes #416 found the same
+        // shape of remembered figure wrong by 37 elsewhere). `seen` is computed
+        // from the corpus right here, so asserting it costs nothing and turns a
+        // sentence into a check.
+        assert_eq!(
+            seen.len(),
+            32,
+            "shipped corpus opcode count; saw {:?}",
+            seen.iter().map(|o| format!("{o:02X}")).collect::<Vec<_>>()
+        );
     }
 
     #[test]
