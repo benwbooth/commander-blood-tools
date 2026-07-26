@@ -1797,7 +1797,7 @@ ScriptTextCall	src/extract/script.rs	26	struct	0x660C,0x0000,0x6724,0x1FAB,0x678
 RuntimeBackground	src/extract/script.rs	40	struct		DATA?	/// A dialogue line's background resolved from the *runtime* scene state computed /// by the bounded interpreter (`vm::interpret_line_states`), keyed by the line's /// COD offset. Only lines whose run
 resolve_runtime_backgrounds	src/extract/script.rs	49	fn		DATA?	/// Execute the script (bounded interpreter) and resolve each `0xA6` line's /// runtime location (`state[actor+24]`) to a DESCRIPT background. Returns a map /// from line COD offset to the resolved ba
 parse_script_speech	src/extract/script.rs	97	fn		TESTED	// Execute the script's state logic to resolve each line's *runtime* // location → background, keyed by COD offset (no fallback values).
-parse_script_text_flags	src/extract/script.rs	160	fn		UNVERIFIED	
+parse_script_text_flags	src/extract/script.rs	160	fn		TESTED	
 text_skip_count	src/extract/script.rs	226	fn		UNVERIFIED	
 text_control_summary	src/extract/script.rs	230	fn		UNVERIFIED	
 parse_script_disassembly	src/extract/script.rs	263	fn		TESTED	

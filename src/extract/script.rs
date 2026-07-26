@@ -4112,6 +4112,73 @@ pub(super) fn clean_tsv(text: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+    /// THE `0xA6` TEXT TOKENS' OWN INVARIANTS, on the game's five scripts.
+    ///
+    /// `parse_script_text_flags` decodes the TEXT token documented at `0x660C`:
+    /// a line index, a voice selector, flag bytes and an optional LOOP TARGET.
+    /// Two things must hold of any correct parse, and neither is a property of
+    /// the port:
+    ///
+    ///   * offsets STRICTLY INCREASE within a script. The walker only moves
+    ///     forward, so a repeat or a step backwards means it lost its place —
+    ///     a different symptom of the desync #235 measures by opcode range.
+    ///   * a LOOP TARGET points INTO the same stream. It is an offset in this
+    ///     script's bytecode, so it cannot exceed the file; a misread operand
+    ///     pair produces targets in the tens of thousands and fails here.
+    #[test]
+    fn text_token_offsets_advance_and_loop_targets_stay_in_the_stream() {
+        let iso = ["output/_tmp_iso", "../output/_tmp_iso", "output/scripts", "../output/scripts"]
+            .iter()
+            .map(Path::new)
+            .find(|p| p.exists());
+        let Some(iso) = iso else { return };
+        let Ok(rows) = parse_script_text_flags(iso, None, &HashMap::new()) else {
+            return;
+        };
+        if rows.is_empty() {
+            return;
+        }
+
+        // The largest offset seen per script bounds that script's stream.
+        let mut extent: std::collections::BTreeMap<String, usize> = Default::default();
+        for row in &rows {
+            let e = extent.entry(row.script.clone()).or_default();
+            *e = (*e).max(row.offset);
+        }
+
+        let mut last: std::collections::BTreeMap<String, usize> = Default::default();
+        let mut targets = 0usize;
+        for row in &rows {
+            if let Some(previous) = last.get(&row.script) {
+                assert!(
+                    row.offset > *previous,
+                    "{}: offset {:#x} does not advance past {:#x} -- the walker \
+                     lost its place",
+                    row.script,
+                    row.offset,
+                    previous
+                );
+            }
+            last.insert(row.script.clone(), row.offset);
+
+            if let Some(target) = row.loop_target {
+                let bound = extent[&row.script];
+                assert!(
+                    usize::from(target) <= bound + 0x400,
+                    "{}: loop target {target:#x} is outside the stream (max token \
+                     offset {bound:#x}) -- an operand pair was misread",
+                    row.script
+                );
+                targets += 1;
+            }
+        }
+
+        assert!(rows.len() > 100, "only {} text tokens; too few to check", rows.len());
+        // 170 across the five scripts, measured -- enough that the bound is
+        // exercised rather than skipped.
+        assert!(targets > 100, "only {targets} loop targets seen; that half of the check is thin");
+    }
+
     /// THE TOKEN WALKER MUST STAY IN STEP WITH THE REAL BYTECODE.
     ///
     /// `parse_script_disassembly` walks `SCRIPT*.COD` — variable-length tokens,

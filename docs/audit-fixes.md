@@ -7290,3 +7290,33 @@ TWO PROCESS NOTES:
     token count into a failure message: 4611 tokens across the five scripts.
     Without that check, a path that found no `.COD` files would have returned
     early and passed just as quietly.
+
+## #236 — two invariants the TEXT tokens carry themselves
+
+`parse_script_text_flags` decodes the `0xA6` TEXT token (`0x660C`): line index,
+voice selector, flag bytes, optional LOOP TARGET. Two properties must hold of any
+correct parse of the real scripts, and neither belongs to the port:
+
+  * offsets STRICTLY INCREASE within a script. The walker only moves forward, so a
+    repeat or a step back means it lost its place — a different symptom of the
+    desync #235 measures by opcode range, and one that catches a walker which
+    stays in range while stalling.
+  * a LOOP TARGET points INTO the same stream. It is an offset in this script's
+    bytecode, so it cannot exceed the file; a misread operand pair yields targets
+    in the tens of thousands.
+
+Both hold across 3655 text tokens and 170 loop targets in the five shipped
+scripts.
+
+The measurements are in the test rather than in my head. Both coverage floors were
+raised to a deliberately impossible value to read the real numbers back
+(3655 tokens, 170 targets), then set just under them. Without that, "no loop
+targets seen" would have been indistinguishable from "the loop-target half checks
+nothing" — and I have now written three tests whose first version could have
+passed while exercising nothing (#223's plotted count, #224's zero selections,
+this one).
+
+The pattern is worth stating once: EVERY property test needs a second assertion
+about how much it actually saw. The property is the claim; the coverage floor is
+what stops the claim being vacuous, and it has to be measured rather than
+guessed.
