@@ -10590,3 +10590,40 @@ Label and doc corrected in place; the table is unchanged, as #327 already decide
 
 615 citations verified, 0 wrong (down one: a citation was removed with the
 withdrawn claim). 610 lib tests, 0 failures.
+
+## #329 — a row is settled on ITS evidence, not its neighbour's
+
+Five rows in the save-header cluster, all correct, and one procedural point worth
+keeping.
+
+`SAVE_WRITE_SIZE_IMMEDIATES` records where each of `vm_state_save`'s three
+`int 21h` AH=0x40 write sizes lives, and its doc flags a trap: the third pair
+emits `mov dx` FIRST, so its immediate sits at `0x1C76` rather than where the
+earlier spacing suggests. Verified:
+
+    0x1C60  mov cx, 2        immediate at 0x1C61   PROFILE_SIZE = 2
+    0x1C6A  mov cx, 0x200    immediate at 0x1C6B   FLAGS_SIZE = 0x200
+    0x1C72  mov dx, 0x6cde   <- the flip
+    0x1C75  mov cx, 0x60     immediate at 0x1C76   STATE_SIZE = 0x60
+
+and `the_header_sizes_are_the_writers_own_immediates` already reads all three
+back out of the image, along with the deliberate save/load asymmetry (the writer
+streams the CURRENT profile from `DS:0x677E`, the reader posts it as PENDING into
+`DS:0x6780`). This row was cited AND pinned the whole time.
+
+`SHIP_3D_PARENT_LINK_SENTINEL` — `cmp si,-1` @`0x61CD`, `mov si,gs:[0x6752]`
+@`0x61D2`. Confirmed again rather than trusted because I wrote it in #291, and a
+citation being mine is not evidence.
+
+THE PROCEDURAL POINT: `audit_settle.py` REFUSED `PROFILE_SIZE` and `FLAGS_SIZE`
+— "ASM needs a cited address". Both were verified by the check above, but the
+addresses lived on the TABLE, not on the constants. The tool is right and the
+distinction is not pedantry: a reader who lands on `pub const FLAGS_SIZE` sees a
+number with no provenance, and "the neighbouring item is cited" is exactly the
+reasoning that let #306 settle an unchecked row. Added the citations to the
+constants themselves, then settled.
+
+Second time this session a settle refusal caught something (#321 was the other,
+on an ambiguous name). The tool is a better auditor of my shortcuts than I am.
+
+617 citations verified (from 615), 0 wrong. 610 lib tests, 0 failures.

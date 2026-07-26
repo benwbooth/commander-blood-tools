@@ -124,8 +124,19 @@ pub const SAVE_WRITE_SIZE_IMMEDIATES: [(usize, usize); 3] = [
 ];
 
 /// Byte offset/size constants of the fixed header (all little-endian).
+///
+/// Each is the `mov cx,imm` of one of `vm_state_save`'s three `int 21h` AH=0x40
+/// writes, and `the_header_sizes_are_the_writers_own_immediates` reads them back
+/// out of the image (audit-fixes #329 — they carried no address of their own,
+/// only the table above did, so `audit_settle.py` rightly refused them).
+/// `mov cx, 2` @`0x1C60`, the immediate at `0x1C61`.
 pub const PROFILE_SIZE: usize = 2;
+/// `mov cx, 0x200` @`0x1C6A`, the immediate at `0x1C6B`; the block writes
+/// `DS:0x6ADE` (`mov dx, 0x6ade` @`0x1C6D`).
 pub const FLAGS_SIZE: usize = 0x200; // 512
+/// `mov cx, 0x60` @`0x1C75`, the immediate at `0x1C76`. NOTE the operand order
+/// flips here — `mov dx, 0x6cde` @`0x1C72` comes FIRST — which is why the
+/// immediate is not where the earlier spacing would put it.
 pub const STATE_SIZE: usize = 0x60; // 96
 pub const HEADER_SIZE: usize = PROFILE_SIZE + FLAGS_SIZE + STATE_SIZE;
 
