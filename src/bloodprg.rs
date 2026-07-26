@@ -3099,6 +3099,67 @@ pub const PRESENTATION_3D_MARKERS: &[BinarySymbol] = &[
 #[cfg(test)]
 mod tests {
 
+    /// THE PROFILE TABLE AND THE RESOURCE DIRECTORY CONFIRM EACH OTHER.
+    ///
+    /// `SCRIPT_RESOURCE_PROFILE_TABLE` is five rows of five words. Read from the
+    /// image they are `2..6`, `37..41`, `76..80`, `81..85`, `86..90`, then zeros —
+    /// which settles `COUNT = 5`, `SLOT_COUNT = 5` and `STRIDE = 10` from the
+    /// DATA's own shape rather than from anyone's count.
+    ///
+    /// The stronger result is what those numbers ARE. Each row is five CONSECUTIVE
+    /// resource IDs, and looking them up in the directory decoded in #203 gives
+    /// exactly one script's `.cod/.bas/.var/.dic/.deb` set. Two tables decoded
+    /// from different places in the image, neither consulted while reading the
+    /// other, agree about which resources belong to which script.
+    #[test]
+    fn the_profile_table_rows_are_each_scripts_five_resources() {
+        let Some(binary) = fixture() else { return };
+        let img = binary.image_bytes();
+        let base = SCRIPT_RESOURCE_PROFILE_TABLE_FILE_OFFSET;
+        let word = |k: usize| u16::from_le_bytes([img[base + k * 2], img[base + k * 2 + 1]]);
+
+        // Shape: COUNT rows of SLOT_COUNT words, then a zero row.
+        for row in 0..SCRIPT_RESOURCE_PROFILE_COUNT {
+            let start = word(row * SCRIPT_RESOURCE_PROFILE_SLOT_COUNT);
+            for slot in 0..SCRIPT_RESOURCE_PROFILE_SLOT_COUNT {
+                assert_eq!(
+                    word(row * SCRIPT_RESOURCE_PROFILE_SLOT_COUNT + slot),
+                    start + slot as u16,
+                    "row {row} is not five consecutive resource IDs"
+                );
+            }
+        }
+        let past = SCRIPT_RESOURCE_PROFILE_COUNT * SCRIPT_RESOURCE_PROFILE_SLOT_COUNT;
+        assert_eq!(word(past), 0, "the table does not end after {} rows", SCRIPT_RESOURCE_PROFILE_COUNT);
+        assert_eq!(SCRIPT_RESOURCE_PROFILE_STRIDE, SCRIPT_RESOURCE_PROFILE_SLOT_COUNT * 2);
+
+        // CROSS-CHECK against the resource directory (#203): each row's five IDs
+        // must name one script's .cod/.bas/.var/.dic/.deb.
+        let names = crate::levels::parse_level_directory(img);
+        if names.is_empty() {
+            return;
+        }
+        for row in 0..SCRIPT_RESOURCE_PROFILE_COUNT {
+            let ids: Vec<usize> = (0..SCRIPT_RESOURCE_PROFILE_SLOT_COUNT)
+                .map(|slot| word(row * SCRIPT_RESOURCE_PROFILE_SLOT_COUNT + slot) as usize)
+                .collect();
+            let files: Vec<&str> = ids.iter().filter_map(|&i| names.get(i).map(String::as_str)).collect();
+            assert_eq!(files.len(), 5, "row {row} ids {ids:?} are not all in the directory");
+            let stem = files[0].split('.').next().unwrap_or_default().to_string();
+            assert!(
+                stem.starts_with("script"),
+                "row {row} starts at {:?}, which is not a script resource",
+                files[0]
+            );
+            let exts: Vec<&str> = files.iter().map(|f| f.split('.').nth(1).unwrap_or("")).collect();
+            assert_eq!(
+                exts,
+                vec!["cod", "bas", "var", "dic", "deb"],
+                "row {row} ({stem}) is not the five script resources: {files:?}"
+            );
+        }
+    }
+
     /// THE DS POINTER LISTS RESOLVE TO THE GAME'S OWN STRINGS.
     ///
     /// A pointer-list offset is one of the few constants that LOCALISES itself:

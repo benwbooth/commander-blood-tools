@@ -7970,3 +7970,29 @@ when the data is uniform or repetitive enough to survive being read from the wro
 place.
 
 Two rows settled DATA.
+
+## #258 — two tables decoded apart, agreeing about the same fact
+
+`SCRIPT_RESOURCE_PROFILE_TABLE` reads out of the image as five rows of five
+words — `2..6`, `37..41`, `76..80`, `81..85`, `86..90`, then zeros. That alone
+settles `COUNT = 5`, `SLOT_COUNT = 5` and `STRIDE = 10` from the data's shape
+rather than from anyone's count, which is the #191 argument again (a stride is a
+record's shape, not a number to trust).
+
+The stronger result is what those numbers ARE. Each row is five CONSECUTIVE
+resource IDs, and looking them up in the directory decoded in #203 gives exactly
+one script's `.cod`, `.bas`, `.var`, `.dic`, `.deb` — in that order, five times
+over. The test asserts the extension sequence, not just membership.
+
+Two tables read from different places in the image, neither consulted while
+decoding the other, agree about which resources belong to which script. That is
+the same evidential shape as #226's entity-table identity and #199's
+writer-confirms-reader: not a stronger reading of one thing, but two things that
+would have to be wrong together.
+
+It also retroactively supports #203's directory beyond the transcription check it
+had. That check compared the port's literal to the image; this one shows the
+image's OWN indices are used as script resource sets by a different table, which
+is evidence the directory means what #203 said it means.
+
+Four rows settled DATA.
