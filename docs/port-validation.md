@@ -431,6 +431,31 @@ checks. Exits non-zero on any stage failure (CI gate). Run: `cargo run --bin pla
    all interactive ground truth this session (OPTION box, region tables, the manu3 memory). Not a
    port defect; a secondary tool only.
 
+## 53 DECODED RULES HAVE NO RUNTIME CALLER (2026-07-25)
+
+`tools/check_unrouted_rules.py` reports 111 `pub fn`s with no runtime caller, 53
+of them carrying a binary citation. Each of those 53 is a rule decoded from the
+game, tested, and executed by nothing — the class of defect #196 closed for the
+world-destination commit, where `world_click_select` had sat correct and unused.
+
+Found this session while reading `copy_ship_3d_plane_bands` (`0xB6DD`) against its
+routine. The transcription is faithful, including the signed `jle` in its scroll
+computation and the `0xA` scroll-mode hold — and the function is called only by
+its own tests, so THE VGA PLANAR BAND COPY THAT DRAWS THE SHIP-3D DEPTH BANDS DOES
+NOT RUN. Its `new_scroll_value` result, which the game writes to `DS:0x524F`, is
+returned and dropped.
+
+This is a different kind of open row from the rest of this file. Those record
+things not yet decoded; this records things decoded CORRECTLY and not connected,
+which no amount of further decoding will fix and which the accuracy ledger cannot
+see — a settled ASM row and an unrouted one look identical there.
+
+NOT a list to work blindly: some of the 53 are legitimately callable-but-unused
+(test hooks like `special_slot_insert_pub`, alternates like
+`ship_3d_target_record_select` whose caller supplies rows another way). Each needs
+the judgement #240 applied to the nav destination list, where "unused duplicate"
+turned out to be wrong. The number is recorded so the question gets asked.
+
 ## NAV DESTINATION LIST GEOMETRY — APPROX, replacement already written (2026-07-25)
 
 `engine::NAV_DEST_X/Y/PITCH/W` (6, 22, 10, 150) place the choose-a-location list

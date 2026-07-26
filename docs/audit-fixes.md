@@ -8204,3 +8204,32 @@ That refusal is the tool doing its job: the constant was verified in my head whi
 reading the routine, and a settle on that basis leaves nothing for the next reader.
 
 Guard 491 -> 493 checked, 0 wrong. Three rows this turn.
+
+## #266 — a faithful transcription that nothing calls
+
+Reading `copy_ship_3d_plane_bands` against `0xB6DD` confirms the transcription,
+including two details worth the reading: the scroll value is
+`0x64 - min(depth*2, 0x64)` with a SIGNED `jle` (the port casts to `i16`), and the
+whole computation is skipped when the scroll mode is `0xA`
+(`SHIP_3D_SCROLL_MODE_HOLD = 10`, `cmp word [0x524d],0xa` @`0xB6F0`).
+
+Then #264's boundary check: the game WRITES the scroll value to `DS:0x524F`, the
+port RETURNS it as `new_scroll_value`. Following that to its callers — there are
+none. `new_scroll_value` appears in the function and in two tests. So does
+`copy_ship_3d_plane_bands` itself: `check_unrouted_rules.py` flags it directly.
+
+THE VGA PLANAR BAND COPY DOES NOT RUN. It is decoded correctly, tested, and
+connected to nothing.
+
+Running that guard properly: 111 `pub fn`s have no runtime caller, and 53 of them
+carry a binary citation. Fifty-three decoded rules that execute only in their own
+tests. A row added to `docs/port-validation.md`, because this is invisible in the
+accuracy ledger — a settled ASM row and an unrouted one look identical there, and
+I have spent this session raising that ledger without once asking whether the code
+it counts is reachable.
+
+The list is not work to do blindly. Some entries are legitimately unused: test
+hooks like `special_slot_insert_pub`, alternates like
+`ship_3d_target_record_select` whose caller now supplies rows another way. #240
+withdrew exactly such a conclusion after tracing what filled a list. But 53 is a
+number worth having, and I did not have it.
