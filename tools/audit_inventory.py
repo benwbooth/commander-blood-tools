@@ -288,6 +288,14 @@ for root, _, files in os.walk(SRC):
             # its citations past 400 chars, and truncating them away made a
             # thoroughly cited function look uncited.
             addrs = ADDR.findall(fulldoc)
+            # DROP values below the 0x600 MZ header: they are not code addresses
+            # in this image (audit-fixes #387 established the same bound for
+            # labels.csv). Refreshing the ledger after a session of doc edits
+            # made `0x0`, `0x100`, `0x181` and friends -- ordinary numbers in
+            # prose -- look like citations, and the duplicate-rule test then
+            # reported 65 addresses 'cited by more than one port function',
+            # nearly all of them junk (audit-fixes #423).
+            addrs = [a for a in addrs if int(a, 16) >= 0x600]
             origin = ",".join(dict.fromkeys(addrs))[:60]
             # provisional status
             low = doctext.lower()

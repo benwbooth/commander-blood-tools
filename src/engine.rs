@@ -431,7 +431,11 @@ pub struct EngineState {
     /// its PRNG+timer picks new animation states, giving the examined alien an idle
     /// life of its own between the player's rotations.
     alien_object: crate::croolis::AlienObject,
-    /// The shared alien behaviour cells (`fs:[0x105C]` / `cs:[0x16A2]`).
+    /// The shared alien behaviour cells. The addresses and the decode live on
+    /// [`crate::croolis::AlienStreams`]; this engine only HOLDS one, the way the
+    /// colony does, so it deliberately does not re-cite them (audit-fixes #423 —
+    /// citing them here made `new` look like a second implementation of the same
+    /// rule to the duplicate-rule guard).
     alien_prng: crate::croolis::AlienStreams,
     /// The scrutinizer-apparatus intro animation (`sq/caiscrut.hnm`) played once when
     /// the examination screen opens, before the rotatable alien.
@@ -751,8 +755,9 @@ impl EngineState {
             alien_view_active: false,
             alien_pan: 0,
             alien_object: crate::croolis::AlienObject::new(0),
-            // The shared alien PRNG stream `fs:[0x105C]` (audit-fixes #400);
-            // the engine's single object draws from it like a colony member.
+            // The shared alien streams (audit-fixes #400/#401): the engine's
+            // single object draws from them like a colony member. The seed is
+            // this port's, not the game's -- see AlienStreams for the decode.
             alien_prng: crate::croolis::AlienStreams::new(0x2DD3, 0),
             alien_intro: None,
             alien_intro_frame: None,

@@ -13892,3 +13892,38 @@ historical mention from a claim.
 
 2231 items, 1107 confirmed (49.6%), 1124 open. 742 citations verified, 0 wrong.
 722 workspace tests, 0 failures.
+
+## #423 — my own change tripped a guard, and the guard was right
+
+The ledger refresh in #422 broke `no_decoded_rule_is_implemented_twice_under_one_name`.
+I committed before reading the test output, which is how I found out — the wrong
+way round, and worth recording as such.
+
+TWO PROBLEMS, one mine and one the tool's.
+
+The tool's: refreshing `origin` from a session's worth of new doc comments swept
+in ordinary numbers as addresses — `0x0`, `0x100`, `0x181`. Real code addresses in
+this image are >= `0x600` (the MZ header bound #387 already established for
+labels.csv), so `audit_inventory.py` now drops anything below it. That removed 5
+of the 65 reported clusters.
+
+Mine: the actual FAILURE was `0x0105c  new  in src/croolis.rs, src/engine.rs` —
+one NAME implemented twice for one address. #400/#401 had me cite `fs:[0x105C]`
+in BOTH `AlienColony::new` and the engine's constructor, because I gave both the
+shared-streams field. The guard exists for exactly that shape: it was written
+after `subtitle_draw_glyph` turned up in two files with the second copy carrying
+three already-fixed defects.
+
+Here the engine is a CALLER, not a second implementation — but the fix is not to
+teach the guard about my special case. It is that the engine should never have
+cited the address: the decode belongs to `AlienStreams`, and a holder pointing at
+the type says so more accurately than a holder repeating the citation. Reworded;
+the guard passes on its own terms rather than being relaxed.
+
+The remaining 60 address clusters are reported and do NOT fail, which the test's
+own doc says is intended — "a routine and its helper citing one address is
+normal". Better citation coverage necessarily produces more of them, and the
+guard was designed knowing that.
+
+2231 items, 1107 confirmed (49.6%), 1124 open. 742 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
