@@ -4112,6 +4112,60 @@ pub(super) fn clean_tsv(text: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+    /// THE TOKEN WALKER MUST STAY IN STEP WITH THE REAL BYTECODE.
+    ///
+    /// `parse_script_disassembly` walks `SCRIPT*.COD` — variable-length tokens,
+    /// where a single wrong length desynchronises everything after it and the
+    /// output still LOOKS like a disassembly. Nothing about a row says "I am
+    /// misaligned".
+    ///
+    /// What does say it: the VM dispatches only `0xA0..=0xD3` (the 52-entry table
+    /// at file `0x142D0`). A desynced walker starts decoding operand bytes as
+    /// opcodes, and operand bytes are mostly OUTSIDE that range — record offsets,
+    /// string indices, coordinates. So the share of in-range opcodes is a direct
+    /// measure of whether the walk is aligned, and it is checked here against the
+    /// game's own five scripts.
+    #[test]
+    fn the_cod_walker_stays_inside_the_vm_dispatch_range() {
+        let iso = ["output/_tmp_iso", "../output/_tmp_iso", "output/scripts", "../output/scripts"]
+            .iter()
+            .map(Path::new)
+            .find(|p| p.exists());
+        let Some(iso) = iso else { return };
+        let Ok(rows) = parse_script_disassembly(iso, None, &HashMap::new()) else {
+            return;
+        };
+        if rows.is_empty() {
+            return; // no COD files under this path
+        }
+
+        let mut in_range = 0usize;
+        let mut total = 0usize;
+        for row in &rows {
+            let Ok(op) = u16::from_str_radix(row.opcode.trim_start_matches("0x"), 16) else {
+                continue;
+            };
+            total += 1;
+            if (u16::from(commander_blood_tools::vm::OP_MIN)
+                ..=u16::from(commander_blood_tools::vm::OP_MAX))
+                .contains(&op)
+            {
+                in_range += 1;
+            }
+            // A row must also describe a real span of bytes.
+            assert!(row.len > 0, "a token of length 0 would never advance the walk");
+        }
+
+        assert!(total > 200, "only {total} tokens decoded; the sample proves little");
+        let share = in_range as f64 / total as f64;
+        assert!(
+            share > 0.99,
+            "{in_range}/{total} ({:.1}%) of decoded opcodes are inside the VM's \
+             0xA0..=0xD3 dispatch range -- the token walker has desynchronised",
+            share * 100.0
+        );
+    }
+
     use super::*;
 
     fn speech_line(

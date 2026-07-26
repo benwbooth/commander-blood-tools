@@ -7262,3 +7262,31 @@ The other five stay uncited. A citation whose only support is the tool that foun
 it is not evidence, it is a restatement — and this project's guard cannot tell the
 difference, which is precisely why the judgement has to happen before the citation
 is written rather than after.
+
+## #235 — measuring whether a bytecode walker is aligned
+
+`parse_script_disassembly` walks `SCRIPT*.COD`: variable-length tokens, where one
+wrong length desynchronises everything after it AND THE OUTPUT STILL LOOKS LIKE A
+DISASSEMBLY. No row says "I am misaligned"; they all say `opcode`, `mnemonic`,
+`operands` as usual.
+
+What does say it is the VM's own dispatch range. The table at file `0x142D0` has
+52 entries covering `0xA0..=0xD3`, and a desynced walker starts reading OPERAND
+bytes as opcodes — record offsets, string indices, coordinates, mostly outside
+that range. So the share of in-range opcodes measures alignment directly, and
+across the game's five shipped scripts it is above 99% of 4611 tokens.
+
+That is a property of the ORIGINAL data, not of the port: the real bytecode
+contains only dispatchable opcodes at token boundaries, so a correct walker
+inherits the property and a broken one cannot fake it.
+
+TWO PROCESS NOTES:
+
+  * I concluded `script.rs` had no test module from
+    `grep -n 'mod tests' ... | head -3`. It has one at line 4114 — the `head -3`
+    truncated the output. That is the same mistake as the truncated test greps
+    that once hid a failing oracle test, made while writing about not making it.
+  * The test passed immediately, which proves nothing on its own, so I forced the
+    token count into a failure message: 4611 tokens across the five scripts.
+    Without that check, a path that found no `.COD` files would have returned
+    early and passed just as quietly.
