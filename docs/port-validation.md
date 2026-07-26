@@ -431,6 +431,26 @@ checks. Exits non-zero on any stage failure (CI gate). Run: `cargo run --bin pla
    all interactive ground truth this session (OPTION box, region tables, the manu3 memory). Not a
    port defect; a secondary tool only.
 
+## NAV DESTINATION LIST GEOMETRY — APPROX, replacement already written (2026-07-25)
+
+`engine::NAV_DEST_X/Y/PITCH/W` (6, 22, 10, 150) place the choose-a-location list
+at a fixed position. NOTHING cites them, and the game lays no list out that way:
+the unified widget `0x8428` MEASURES its labels and derives the box (width =
+widest + 20 @`0x84A1`, height = rows*pitch + 8 @`0x84A7`, x = anchor - width/2
+@`0x84AD`), which the port already implements as
+`ship3d::layout_ship_3d_target_list` and tests against the game's own strings
+(audit-fixes #220).
+
+So the port carries TWO list layouts: one decoded, one invented. The comment above
+the draw called the invented one "the game's list-box nav".
+
+STATUS: labelled APPROX in the source with the replacing routine named, per the
+rule that a capture- or guess-derived constant may stand only that way. NOT fixed
+in place, because #212 routed destination SELECTION through the decoded widget
+(`console_box`), which makes this drawing path a duplicate to DELETE rather than
+re-lay-out. Deleting a live draw path is its own change; the two paths' surfaces
+need comparing first so the deletion does not silently remove a screen.
+
 ## RESOURCE DIRECTORY — a transcribed literal, and it is a PREFIX (2026-07-25)
 
 Chasing the `.drv` loader (to map the driver vector slots) turned up the game's

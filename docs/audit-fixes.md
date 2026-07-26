@@ -7392,3 +7392,31 @@ The coverage floor earned its keep for the fourth time (#223, #224, #236, now).
 Every one of those was a test that would have passed while proving nothing, and in
 this case the floor did not just save a vacuous test — it surfaced that a whole
 export path is producing nothing.
+
+## #239 — a second layout for a surface the game lays out once
+
+`engine.rs` places the choose-a-location list at `x=6, y=22`, pitch 10, width
+150. Four constants, no citation, and a comment calling the result "the game's
+list-box nav".
+
+The game has no such layout. Its unified widget (`0x8428`) MEASURES the labels and
+derives the box from them — width = widest + 20 @`0x84A1`, height = rows*pitch + 8
+@`0x84A7`, x = anchor - width/2 @`0x84AD`. The port implements exactly that as
+`ship3d::layout_ship_3d_target_list`, and #220 tested it against the OPTION menu's
+own strings out of `BLOODPRG.EXE`. So the port has carried two layouts for the
+same kind of surface: one decoded and tested, one invented and asserted.
+
+This is #197's defect class — frontend arithmetic standing in for a decoded rule —
+and it survived longer because the comment claimed the opposite. A reader
+checking whether the nav list was faithful would have read "the game's list-box
+nav" and moved on. That is the specific harm of a provenance claim in a comment:
+it does not just fail to help, it actively stops the check.
+
+Labelled APPROX in the source with `layout_ship_3d_target_list` named as the
+replacement, and a row added to `docs/port-validation.md`.
+
+NOT FIXED IN PLACE, deliberately. #212 already routed destination SELECTION
+through the decoded widget via `console_box`, so this drawing path is a DUPLICATE
+to delete rather than a layout to correct. Deleting a live draw path deserves its
+own change with the two surfaces compared first — re-laying it out now would
+entrench a path that should not exist.

@@ -4520,7 +4520,26 @@ impl EngineState {
         false
     }
 
-    /// Layout of the choose-a-location destination list drawn on the nav chart.
+    /// APPROX — FABRICATED LAYOUT, and the decoded replacement already exists.
+    ///
+    /// These four numbers place the choose-a-location list at a fixed `x=6,
+    /// y=22`, pitch 10, width 150. NOTHING cites them. The game does not lay any
+    /// list out that way: the unified widget (`0x8428`) MEASURES the labels and
+    /// derives the box from them — width = widest + 20 @`0x84A1`, height =
+    /// rows*pitch + 8 @`0x84A7`, x = anchor - width/2 @`0x84AD` — which the port
+    /// implements as `ship3d::layout_ship_3d_target_list` and tests against the
+    /// game's own strings (#220).
+    ///
+    /// So this is a second, invented layout for a surface the game lays out one
+    /// way, and the comment that used to sit here called it "the game's list-box
+    /// nav", asserting a provenance it never had. Same defect class as the
+    /// `compass_angle` chooser removed in #197.
+    ///
+    /// REPLACEMENT: `layout_ship_3d_target_list`. Not switched in this edit
+    /// because #212 already routed destination SELECTION through the decoded
+    /// widget via `console_box`, which makes this drawing path a DUPLICATE to be
+    /// removed rather than re-laid-out — and deleting a live draw path deserves
+    /// its own change (audit-fixes #239).
     pub const NAV_DEST_X: i32 = 6;
     pub const NAV_DEST_Y: i32 = 22;
     pub const NAV_DEST_PITCH: i32 = 10;
@@ -4645,8 +4664,11 @@ impl EngineState {
                     self.render_nav_info_panel_frame();
                     return;
                 }
-                // Choose-a-location destination list (each character's location), clickable
-                // — the game's list-box nav. Falls back to the compass-target label.
+                // Choose-a-location destination list (each character's location),
+                // clickable. NOT the game's list-box nav, whatever this comment
+                // used to say: it draws at the uncited NAV_DEST_* geometry rather
+                // than through the decoded widget (see NAV_DEST_X's doc, #239).
+                // Falls back to the compass-target label.
                 if !self.nav_destinations.is_empty() {
                     let labels: Vec<String> =
                         self.nav_destinations.iter().map(|(l, _)| l.clone()).collect();
