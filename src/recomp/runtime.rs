@@ -34,8 +34,15 @@ const EMS_MAX_PAGES: usize = (super::machine::MEM_SIZE - EMS_STORE) / EMS_PAGE;
 /// divisor -> IRQ0 cadence both derive from this (1 step ~= 1 instruction on a ~8 MIPS 386/33).
 pub const STEPS_PER_SECOND: u64 = 8_000_000;
 
+/// Where this runtime puts the PSP, and where the environment block goes just
+/// below it. HOST CHOICES, not values read from `BLOODPRG.EXE`: real DOS assigns
+/// these at load time and the program only ever learns them from the registers
+/// it starts with, so any pair works as long as the image loads above them.
 const PSP_SEG: u16 = 0x0192;
 const ENV_SEG: u16 = 0x0180;
+/// The one PLATFORM fact in this group: `0xA000` is the top of DOS conventional
+/// memory (640 KB), where the VGA window begins. Not a port choice — a program
+/// allocating past it on real hardware would be writing into video RAM.
 const MEM_TOP_SEG: u16 = 0xa000;
 
 /// How a runtime run ended.

@@ -7557,3 +7557,29 @@ next step happened to be the one that checked.
 
 Now settled with numbers instead of a suspicion: `PostUpdateTrace`,
 `PostUpdateActorRecordPair`, `PresentationHandoffEvent` and the exporter itself.
+
+## #245 — INFRA is a claim too, so it needs the same care
+
+`recomp/runtime.rs` opens with ten constants that had sat UNVERIFIED: stub
+segments, the EMS page frame and store, the modelled CPU speed, the PSP and
+environment segments, the memory top. Most were already well documented — the EMS
+stub segment's doc even explains why it needs its own segment (the standard
+presence check reads `seg(IVT[67h]):000A` for "EMMXXXX0").
+
+Settling them INFRA is the right answer, but it is a CLAIM: it says these make no
+assertion about `BLOODPRG.EXE`, so no citation could exist and none is missing.
+That is true of nine of them — a host emulator picks where to put a PSP, and the
+program only learns the answer from the registers it starts with, so any pair
+works.
+
+`MEM_TOP_SEG = 0xa000` is the exception and now says so. It is not a port choice:
+`0xA000` is the top of DOS conventional memory, where the VGA window begins, and a
+program allocating past it on real hardware writes into video RAM. A platform fact
+rather than a game fact, which is still INFRA — but the doc distinguishes them,
+because "we chose this" and "the hardware is this" fail in different ways when
+someone later changes it.
+
+The three undocumented ones (`PSP_SEG`, `ENV_SEG`, `MEM_TOP_SEG`) got docs before
+being settled. Settling an undocumented constant as INFRA would record a judgement
+nobody can check — the same objection #219 raised against settling documented-but
+-unverified structs, pointed the other way.

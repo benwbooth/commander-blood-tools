@@ -2129,69 +2129,69 @@ func_a757	src/recomp/mod.rs	177	fn	0xA757,0xA7E,0xD8E,0xD92,0xD8C,0xD90,0xD9A,0x
 func_6293	src/recomp/ptr_leaves.rs	16	fn	0x6293	ASM?	/// `func_6293` (`vm_token_special`, 0x6293): a byte-granular table search. Scan forward from /// ds:SI comparing the WORD at ds:SI to AX; on a match, advance SI past that word (`+2`) and, if /// the 
 func_22e0	src/recomp/ptr_leaves_gen.rs	8	fn	0x022e0,0x022e1,0x022e2,0x022e3,0x022e4,0x022e5,0x022e6,0x02	ASM?	// 0x022e0: push bp // 0x022e1: push ax // 0x022e2: push bx // 0x022e3: push cx // 0x022e4: push dx // 0x022e5: push es // 0x022e6: push di // 0x022e7: push ds // 0x022e8: push si // 0x022e9: mov bp, 
 func_a4ed	src/recomp/ptr_leaves_gen.rs	356	fn	0x0a4ed,0x0a4ee,0x0a4ef,0x0a4f1,0x0a4f3,0x0a4f5,0x0a4f8,0x0a	ASM?	// 0x0a4ed: push ax // 0x0a4ee: push bx // 0x0a4ef: mov bp, di // 0x0a4f1: mov ax, bx // 0x0a4f3: xchg al, ah // 0x0a4f5: shl bx, 6 // 0x0a4f8: add ax, bx // 0x0a4fa: mov di, ax // 0x0a4fc: add di, dx
-STUB_SEG	src/recomp/runtime.rs	22	const		UNVERIFIED	/// Segment of the 256 one-byte interrupt stubs (`hlt` at `STUB_SEG:v*4`). /// Dedicated stub segment for int 67h so the EMS device name can live at offset 0x0A /// (the standard EMS presence check re
-EMS_STUB_SEG	src/recomp/runtime.rs	25	const		UNVERIFIED	"/// Dedicated stub segment for int 67h so the EMS device name can live at offset 0x0A /// (the standard EMS presence check reads `seg(IVT[67h]):000A` for ""EMMXXXX0""). /// EMS physical page frame (4 × "
-EMS_FRAME_SEG	src/recomp/runtime.rs	27	const		UNVERIFIED	/// EMS physical page frame (4 × 16 KB pages at E000:0000). /// EMS logical page store: above the 1 MB real-mode space inside Machine memory. /// Modelled CPU speed: interpreter steps per emulated sec
-EMS_STORE	src/recomp/runtime.rs	29	const		UNVERIFIED	/// EMS logical page store: above the 1 MB real-mode space inside Machine memory. /// Modelled CPU speed: interpreter steps per emulated second. Wall-clock pacing and the PIT /// divisor -> IRQ0 caden
-EMS_PAGE	src/recomp/runtime.rs	30	const		UNVERIFIED	/// Modelled CPU speed: interpreter steps per emulated second. Wall-clock pacing and the PIT /// divisor -> IRQ0 cadence both derive from this (1 step ~= 1 instruction on a ~8 MIPS 386/33). /// How a 
-EMS_MAX_PAGES	src/recomp/runtime.rs	31	const		UNVERIFIED	/// Modelled CPU speed: interpreter steps per emulated second. Wall-clock pacing and the PIT /// divisor -> IRQ0 cadence both derive from this (1 step ~= 1 instruction on a ~8 MIPS 386/33). /// How a 
-STEPS_PER_SECOND	src/recomp/runtime.rs	35	const		UNVERIFIED	/// Modelled CPU speed: interpreter steps per emulated second. Wall-clock pacing and the PIT /// divisor -> IRQ0 cadence both derive from this (1 step ~= 1 instruction on a ~8 MIPS 386/33). /// How a 
-PSP_SEG	src/recomp/runtime.rs	37	const		UNVERIFIED	/// How a runtime run ended. /// int 21h AH=4Ch with the exit code. /// The step budget given to `run` was consumed (normal for incremental boots). /// Something the runtime can't service yet — the me
-ENV_SEG	src/recomp/runtime.rs	38	const		UNVERIFIED	/// How a runtime run ended. /// int 21h AH=4Ch with the exit code. /// The step budget given to `run` was consumed (normal for incremental boots). /// Something the runtime can't service yet — the me
-MEM_TOP_SEG	src/recomp/runtime.rs	39	const		UNVERIFIED	/// How a runtime run ended. /// int 21h AH=4Ch with the exit code. /// The step budget given to `run` was consumed (normal for incremental boots). /// Something the runtime can't service yet — the me
-RunEnd	src/recomp/runtime.rs	43	enum		UNVERIFIED	/// How a runtime run ended. /// int 21h AH=4Ch with the exit code. /// The step budget given to `run` was consumed (normal for incremental boots). /// Something the runtime can't service yet — the me
-HostFile	src/recomp/runtime.rs	52	struct		UNVERIFIED	/// Host path + writability, so a savestate can reopen and reseek the handle.
-dos_wildcard_match	src/recomp/runtime.rs	61	fn		UNVERIFIED	/// DOS 8.3 wildcard match: both sides are padded to 11-char name+ext masks, `*` expands to `?`s /// for the rest of its component, `?` matches any char including a blank.
-mask	src/recomp/runtime.rs	62	fn		UNVERIFIED	
-save_state	src/recomp/runtime.rs	204	fn		UNVERIFIED	/// Serialize the FULL deterministic machine state to `path` — memory, CPU, /// VGA planes/registers, timers, EMS mapping, input queues, DMA/SB, and the /// open DOS file handles (as host path + seek 
-load_state	src/recomp/runtime.rs	381	fn		UNVERIFIED	/// Restore a state written by [`Runtime::save_state`]. The Runtime must be /// constructed with the SAME drive roots; open files are reopened + reseeked.
-rd_u64	src/recomp/runtime.rs	387	fn		UNVERIFIED	
-rd_u32	src/recomp/runtime.rs	388	fn		UNVERIFIED	
-rd_u16	src/recomp/runtime.rs	389	fn		UNVERIFIED	
-rd_u8	src/recomp/runtime.rs	390	fn		UNVERIFIED	
-rd_bool	src/recomp/runtime.rs	391	fn		UNVERIFIED	
-rd_str	src/recomp/runtime.rs	392	fn		UNVERIFIED	
-rd_regs	src/recomp/runtime.rs	398	fn		UNVERIFIED	
-new	src/recomp/runtime.rs	530	fn		UNVERIFIED	
-init_bios	src/recomp/runtime.rs	613	fn		UNVERIFIED	// IVT: every vector -> hlt stub at STUB_SEG:v*4 (int 67h gets its own segment). // Mouse-callback return trampoline (far-called by the guest handler's retf path). // BIOS data area.
-load_exe	src/recomp/runtime.rs	641	fn		ORACLE?	/// Build PSP + environment and load the MZ executable, exactly like DOS EXEC. // Environment block: minimal, then word 1 + the full program path (DOS 3+). // PSP. // Whole-program run: depth-0 ret ex
-read_asciiz	src/recomp/runtime.rs	714	fn		UNVERIFIED	
-resolve	src/recomp/runtime.rs	727	fn		UNVERIFIED	/// Resolve a DOS path to a host path. `create`: final component may not exist yet. // case-insensitive lookup
-alloc_handle	src/recomp/runtime.rs	776	fn		UNVERIFIED	
-inject_key	src/recomp/runtime.rs	792	fn		UNVERIFIED	/// Inject a keystroke: buffered for `int 16h` (BIOS read) and queued as a hardware /// scancode for the `int 9` IRQ path (when the game hooked it). Drives the game's /// menus/prompts from a headless
-set_mouse_pos	src/recomp/runtime.rs	800	fn		UNVERIFIED	/// Move the virtual mouse (DOS-virtual coords: x 0..639, y 0..199 — screen column /// `sx` is `sx*2`). Flags a move event for the game's mouse callback if registered.
-move_mouse_rel	src/recomp/runtime.rs	822	fn	0x9722,0x97FC,0x2A2A,0x27A7,0xD0E	ASM?	/// Nudge the virtual mouse by a RELATIVE delta, the way real hardware motion /// reaches the game. /// /// Why this exists: the bridge accumulates cursor motion in RING space by /// warping the hardw
-mouse_press	src/recomp/runtime.rs	832	fn		UNVERIFIED	/// Press a mouse button (0 = left, 1 = right) at the current position: bumps the /// int33 ax=5 press counter and flags the press event.
-mouse_release	src/recomp/runtime.rs	842	fn		UNVERIFIED	/// Release a mouse button (0 = left, 1 = right): bumps the int33 ax=6 release /// counter and flags the release event.
-run	src/recomp/runtime.rs	850	fn	0x93f8,0x12bd,0x27e2,0xbe29,0xba0,0xbe11	ASM?	// Subtitle persistence: the game's per-frame reveal draw (0x93f8, main loop 0x12bd) // only redraws the subtitle when its gate flag gs:[0x27e2]&2 (or 5e64/67bc) is set. // The one-shot present (0xbe2
-lockstep_capture	src/recomp/runtime.rs	1026	fn		ORACLE?	/// Lockstep capture: fast-forward `skip` steps, then record a per-instruction trace of the /// next `window` pure-CPU instructions for offline interp-vs-Unicorn differential replay /// (`re/tools/loc
-snap	src/recomp/runtime.rs	1027	fn		UNVERIFIED	
-port_in	src/recomp/runtime.rs	1229	fn	0x220	ASM?	"// 8237 DMA: current address/count with lo/hi flip-flop // SoundBlaster DSP (base 0x220) // vsync bit 3 + display-enable bit 0, derived from the step clock so polls make // progress. One ""frame"" ~ ste"
-port_out	src/recomp/runtime.rs	1315	fn		UNVERIFIED	// DSP reset: 1 then 0 -> respond 0xAA // PIT channel 0 divisor: lo byte then hi byte (phase reset by port 43h)
-ivt_hooked	src/recomp/runtime.rs	1447	fn		UNVERIFIED	
-log_int	src/recomp/runtime.rs	1453	fn		UNVERIFIED	
-native_int	src/recomp/runtime.rs	1466	fn		UNVERIFIED	// BIOS chains int 1Ch; only bother when the game hooked it. // extended services: report nothing present // RTC time in BCD: fixed 12:34:27 (deterministic) // MSCDEX: present, 1 drive, first = D (ind
-int10	src/recomp/runtime.rs	1555	fn		UNVERIFIED	// BIOS loads the default VGA palette on mode set; the game overwrites it // via the DAC, but a sane grey ramp beats black-on-black for early frames.
-int16	src/recomp/runtime.rs	1623	fn		UNVERIFIED	// Blocking read with nothing buffered: rewind the frame's return IP onto the // `int 16h` itself so it retries — timer IRQs keep firing in between, which // is exactly the semantics of a BIOS blockin
-int33	src/recomp/runtime.rs	1656	fn		UNVERIFIED	// Apply any injected motion HERE: on real hardware the movement // happened between the game's warp (ax=4) and this read, which is // exactly the delta the bridge's steering measures.
-mouse_event	src/recomp/runtime.rs	1741	fn		UNVERIFIED	/// Feed a mouse state change (DOS-virtual coords: x 0..639, y 0..199, buttons bit0=left /// bit1=right). Computes the int 33h event mask and queues the user callback if installed.
-ticks	src/recomp/runtime.rs	1769	fn		INFRA	
-crtc_reg	src/recomp/runtime.rs	1773	fn		UNVERIFIED	
-int67	src/recomp/runtime.rs	1777	fn		UNVERIFIED	
-sb_dsp_write	src/recomp/runtime.rs	1866	fn	0x22C	ASM?	/// DSP command byte stream at 0x22C.
-sb_dsp_exec	src/recomp/runtime.rs	1889	fn		UNVERIFIED	// 8-bit single-cycle DMA playback, length = args+1 // auto-init: block size was set via 0x48 (stored in dma count)
-sb_start_playback	src/recomp/runtime.rs	1931	fn		ORACLE?	// Capture the PCM the game just queued (DMA ch1) — the audio-out tap.
-tick_sb_playback	src/recomp/runtime.rs	1946	fn		UNVERIFIED	/// Advance the modelled DMA count from the playback clock; fire the SB IRQ on completion.
-ems_unmap	src/recomp/runtime.rs	1967	fn		UNVERIFIED	/// Write a mapped physical EMS page back to its logical store before remapping.
-int21	src/recomp/runtime.rs	1975	fn		UNVERIFIED	// fixed date: 1995-07-20, a Thursday // InDOS flag pointer // free disk space: plenty
-find_next_into_dta	src/recomp/runtime.rs	2423	fn		UNVERIFIED	/// Emit the next FindFirst/FindNext match into the DTA, or error 18 (no more files).
-screenshot_rgb	src/recomp/runtime.rs	2454	fn		UNVERIFIED	/// 320x200 RGB screenshot through the DAC (6-bit scaled like the decoders). Composites the /// VGA planes exactly as the CRT would: chain-4 (stock 13h) or unchained Mode-X addressing /// with the CRT
-screen_indices	src/recomp/runtime.rs	2482	fn		UNVERIFIED	/// 320x200 palette-INDEX screenshot (same CRTC compositing as /// [`Runtime::screenshot_rgb`], without the DAC) — for pixel-identity diffs.
-write_ppm	src/recomp/runtime.rs	2505	fn		UNVERIFIED	
-text_screen	src/recomp/runtime.rs	2512	fn		UNVERIFIED	/// Text-mode screen contents (mode 3) for early-boot error messages.
-debug_state	src/recomp/runtime.rs	2530	fn		UNVERIFIED	/// One-line machine state summary for boot triage.
-console_output	src/recomp/runtime.rs	2563	fn		INFRA	
-key_event	src/recomp/runtime.rs	2568	fn		UNVERIFIED	/// Push a key event (scancode, ascii) — M3 wires real input to this.
+STUB_SEG	src/recomp/runtime.rs	22	const	0xA000	INFRA	/// Segment of the 256 one-byte interrupt stubs (`hlt` at `STUB_SEG:v*4`). /// Dedicated stub segment for int 67h so the EMS device name can live at offset 0x0A /// (the standard EMS presence check re
+EMS_STUB_SEG	src/recomp/runtime.rs	25	const	0xA000	INFRA	"/// Dedicated stub segment for int 67h so the EMS device name can live at offset 0x0A /// (the standard EMS presence check reads `seg(IVT[67h]):000A` for ""EMMXXXX0""). /// EMS physical page frame (4 × "
+EMS_FRAME_SEG	src/recomp/runtime.rs	27	const	0xA000	INFRA	/// EMS physical page frame (4 × 16 KB pages at E000:0000). /// EMS logical page store: above the 1 MB real-mode space inside Machine memory. /// Modelled CPU speed: interpreter steps per emulated sec
+EMS_STORE	src/recomp/runtime.rs	29	const	0xA000	INFRA	/// EMS logical page store: above the 1 MB real-mode space inside Machine memory. /// Modelled CPU speed: interpreter steps per emulated second. Wall-clock pacing and the PIT /// divisor -> IRQ0 caden
+EMS_PAGE	src/recomp/runtime.rs	30	const	0xA000	INFRA	/// Modelled CPU speed: interpreter steps per emulated second. Wall-clock pacing and the PIT /// divisor -> IRQ0 cadence both derive from this (1 step ~= 1 instruction on a ~8 MIPS 386/33). /// Where 
+EMS_MAX_PAGES	src/recomp/runtime.rs	31	const	0xA000	INFRA	/// Modelled CPU speed: interpreter steps per emulated second. Wall-clock pacing and the PIT /// divisor -> IRQ0 cadence both derive from this (1 step ~= 1 instruction on a ~8 MIPS 386/33). /// Where 
+STEPS_PER_SECOND	src/recomp/runtime.rs	35	const	0xA000	INFRA	/// Modelled CPU speed: interpreter steps per emulated second. Wall-clock pacing and the PIT /// divisor -> IRQ0 cadence both derive from this (1 step ~= 1 instruction on a ~8 MIPS 386/33). /// Where 
+PSP_SEG	src/recomp/runtime.rs	41	const	0xA000	INFRA	/// Where this runtime puts the PSP, and where the environment block goes just /// below it. HOST CHOICES, not values read from `BLOODPRG.EXE`: real DOS assigns /// these at load time and the program 
+ENV_SEG	src/recomp/runtime.rs	42	const	0xA000	INFRA	/// The one PLATFORM fact in this group: `0xA000` is the top of DOS conventional /// memory (640 KB), where the VGA window begins. Not a port choice — a program /// allocating past it on real hardware
+MEM_TOP_SEG	src/recomp/runtime.rs	46	const	0xA000	INFRA	/// The one PLATFORM fact in this group: `0xA000` is the top of DOS conventional /// memory (640 KB), where the VGA window begins. Not a port choice — a program /// allocating past it on real hardware
+RunEnd	src/recomp/runtime.rs	50	enum		UNVERIFIED	/// How a runtime run ended. /// int 21h AH=4Ch with the exit code. /// The step budget given to `run` was consumed (normal for incremental boots). /// Something the runtime can't service yet — the me
+HostFile	src/recomp/runtime.rs	59	struct		UNVERIFIED	/// Host path + writability, so a savestate can reopen and reseek the handle.
+dos_wildcard_match	src/recomp/runtime.rs	68	fn		UNVERIFIED	/// DOS 8.3 wildcard match: both sides are padded to 11-char name+ext masks, `*` expands to `?`s /// for the rest of its component, `?` matches any char including a blank.
+mask	src/recomp/runtime.rs	69	fn		UNVERIFIED	
+save_state	src/recomp/runtime.rs	211	fn		UNVERIFIED	/// Serialize the FULL deterministic machine state to `path` — memory, CPU, /// VGA planes/registers, timers, EMS mapping, input queues, DMA/SB, and the /// open DOS file handles (as host path + seek 
+load_state	src/recomp/runtime.rs	388	fn		UNVERIFIED	/// Restore a state written by [`Runtime::save_state`]. The Runtime must be /// constructed with the SAME drive roots; open files are reopened + reseeked.
+rd_u64	src/recomp/runtime.rs	394	fn		UNVERIFIED	
+rd_u32	src/recomp/runtime.rs	395	fn		UNVERIFIED	
+rd_u16	src/recomp/runtime.rs	396	fn		UNVERIFIED	
+rd_u8	src/recomp/runtime.rs	397	fn		UNVERIFIED	
+rd_bool	src/recomp/runtime.rs	398	fn		UNVERIFIED	
+rd_str	src/recomp/runtime.rs	399	fn		UNVERIFIED	
+rd_regs	src/recomp/runtime.rs	405	fn		UNVERIFIED	
+new	src/recomp/runtime.rs	537	fn		UNVERIFIED	
+init_bios	src/recomp/runtime.rs	620	fn		UNVERIFIED	// IVT: every vector -> hlt stub at STUB_SEG:v*4 (int 67h gets its own segment). // Mouse-callback return trampoline (far-called by the guest handler's retf path). // BIOS data area.
+load_exe	src/recomp/runtime.rs	648	fn		ORACLE?	/// Build PSP + environment and load the MZ executable, exactly like DOS EXEC. // Environment block: minimal, then word 1 + the full program path (DOS 3+). // PSP. // Whole-program run: depth-0 ret ex
+read_asciiz	src/recomp/runtime.rs	721	fn		UNVERIFIED	
+resolve	src/recomp/runtime.rs	734	fn		UNVERIFIED	/// Resolve a DOS path to a host path. `create`: final component may not exist yet. // case-insensitive lookup
+alloc_handle	src/recomp/runtime.rs	783	fn		UNVERIFIED	
+inject_key	src/recomp/runtime.rs	799	fn		UNVERIFIED	/// Inject a keystroke: buffered for `int 16h` (BIOS read) and queued as a hardware /// scancode for the `int 9` IRQ path (when the game hooked it). Drives the game's /// menus/prompts from a headless
+set_mouse_pos	src/recomp/runtime.rs	807	fn		UNVERIFIED	/// Move the virtual mouse (DOS-virtual coords: x 0..639, y 0..199 — screen column /// `sx` is `sx*2`). Flags a move event for the game's mouse callback if registered.
+move_mouse_rel	src/recomp/runtime.rs	829	fn	0x9722,0x97FC,0x2A2A,0x27A7,0xD0E	ASM?	/// Nudge the virtual mouse by a RELATIVE delta, the way real hardware motion /// reaches the game. /// /// Why this exists: the bridge accumulates cursor motion in RING space by /// warping the hardw
+mouse_press	src/recomp/runtime.rs	839	fn		UNVERIFIED	/// Press a mouse button (0 = left, 1 = right) at the current position: bumps the /// int33 ax=5 press counter and flags the press event.
+mouse_release	src/recomp/runtime.rs	849	fn		UNVERIFIED	/// Release a mouse button (0 = left, 1 = right): bumps the int33 ax=6 release /// counter and flags the release event.
+run	src/recomp/runtime.rs	857	fn	0x93f8,0x12bd,0x27e2,0xbe29,0xba0,0xbe11	ASM?	// Subtitle persistence: the game's per-frame reveal draw (0x93f8, main loop 0x12bd) // only redraws the subtitle when its gate flag gs:[0x27e2]&2 (or 5e64/67bc) is set. // The one-shot present (0xbe2
+lockstep_capture	src/recomp/runtime.rs	1033	fn		ORACLE?	/// Lockstep capture: fast-forward `skip` steps, then record a per-instruction trace of the /// next `window` pure-CPU instructions for offline interp-vs-Unicorn differential replay /// (`re/tools/loc
+snap	src/recomp/runtime.rs	1034	fn		UNVERIFIED	
+port_in	src/recomp/runtime.rs	1236	fn	0x220	ASM?	"// 8237 DMA: current address/count with lo/hi flip-flop // SoundBlaster DSP (base 0x220) // vsync bit 3 + display-enable bit 0, derived from the step clock so polls make // progress. One ""frame"" ~ ste"
+port_out	src/recomp/runtime.rs	1322	fn		UNVERIFIED	// DSP reset: 1 then 0 -> respond 0xAA // PIT channel 0 divisor: lo byte then hi byte (phase reset by port 43h)
+ivt_hooked	src/recomp/runtime.rs	1454	fn		UNVERIFIED	
+log_int	src/recomp/runtime.rs	1460	fn		UNVERIFIED	
+native_int	src/recomp/runtime.rs	1473	fn		UNVERIFIED	// BIOS chains int 1Ch; only bother when the game hooked it. // extended services: report nothing present // RTC time in BCD: fixed 12:34:27 (deterministic) // MSCDEX: present, 1 drive, first = D (ind
+int10	src/recomp/runtime.rs	1562	fn		UNVERIFIED	// BIOS loads the default VGA palette on mode set; the game overwrites it // via the DAC, but a sane grey ramp beats black-on-black for early frames.
+int16	src/recomp/runtime.rs	1630	fn		UNVERIFIED	// Blocking read with nothing buffered: rewind the frame's return IP onto the // `int 16h` itself so it retries — timer IRQs keep firing in between, which // is exactly the semantics of a BIOS blockin
+int33	src/recomp/runtime.rs	1663	fn		UNVERIFIED	// Apply any injected motion HERE: on real hardware the movement // happened between the game's warp (ax=4) and this read, which is // exactly the delta the bridge's steering measures.
+mouse_event	src/recomp/runtime.rs	1748	fn		UNVERIFIED	/// Feed a mouse state change (DOS-virtual coords: x 0..639, y 0..199, buttons bit0=left /// bit1=right). Computes the int 33h event mask and queues the user callback if installed.
+ticks	src/recomp/runtime.rs	1776	fn		INFRA	
+crtc_reg	src/recomp/runtime.rs	1780	fn		UNVERIFIED	
+int67	src/recomp/runtime.rs	1784	fn		UNVERIFIED	
+sb_dsp_write	src/recomp/runtime.rs	1873	fn	0x22C	ASM?	/// DSP command byte stream at 0x22C.
+sb_dsp_exec	src/recomp/runtime.rs	1896	fn		UNVERIFIED	// 8-bit single-cycle DMA playback, length = args+1 // auto-init: block size was set via 0x48 (stored in dma count)
+sb_start_playback	src/recomp/runtime.rs	1938	fn		ORACLE?	// Capture the PCM the game just queued (DMA ch1) — the audio-out tap.
+tick_sb_playback	src/recomp/runtime.rs	1953	fn		UNVERIFIED	/// Advance the modelled DMA count from the playback clock; fire the SB IRQ on completion.
+ems_unmap	src/recomp/runtime.rs	1974	fn		UNVERIFIED	/// Write a mapped physical EMS page back to its logical store before remapping.
+int21	src/recomp/runtime.rs	1982	fn		UNVERIFIED	// fixed date: 1995-07-20, a Thursday // InDOS flag pointer // free disk space: plenty
+find_next_into_dta	src/recomp/runtime.rs	2430	fn		UNVERIFIED	/// Emit the next FindFirst/FindNext match into the DTA, or error 18 (no more files).
+screenshot_rgb	src/recomp/runtime.rs	2461	fn		UNVERIFIED	/// 320x200 RGB screenshot through the DAC (6-bit scaled like the decoders). Composites the /// VGA planes exactly as the CRT would: chain-4 (stock 13h) or unchained Mode-X addressing /// with the CRT
+screen_indices	src/recomp/runtime.rs	2489	fn		UNVERIFIED	/// 320x200 palette-INDEX screenshot (same CRTC compositing as /// [`Runtime::screenshot_rgb`], without the DAC) — for pixel-identity diffs.
+write_ppm	src/recomp/runtime.rs	2512	fn		UNVERIFIED	
+text_screen	src/recomp/runtime.rs	2519	fn		UNVERIFIED	/// Text-mode screen contents (mode 3) for early-boot error messages.
+debug_state	src/recomp/runtime.rs	2537	fn		UNVERIFIED	/// One-line machine state summary for boot triage.
+console_output	src/recomp/runtime.rs	2570	fn		INFRA	
+key_event	src/recomp/runtime.rs	2575	fn		UNVERIFIED	/// Push a key event (scancode, ascii) — M3 wires real input to this.
 TICK	src/bin/blood.rs	20	const		UNVERIFIED	
 make_runtime	src/bin/blood.rs	22	fn		UNVERIFIED	
 run_tick	src/bin/blood.rs	35	fn		INFRA	/// One BIOS-tick (1/18.2 s) of emulated time, regardless of the guest's PIT rate. /// Returns false when the guest exited/faulted.
