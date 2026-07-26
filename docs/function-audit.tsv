@@ -480,8 +480,8 @@ TEXT_SELECTED	src/engine.rs	2245	const	0x858B	ASM	// `mov al,0xEF` @0x858B — t
 TEXT_SELECTED_MOUSE	src/engine.rs	2248	const	0x8595,0xA3E,0x858D	ASM	// `mov al,0xFE` @0x8595 — selected AND the mouse is on it // (`test byte gs:[0xA3E],1` @0x858D).
 choice_box_row_at	src/engine.rs	2325	fn	0xAC6,0x86D9,0x847A,0x8508	ASM	/// Hit-test a click against the console choice box (see [`draw_choice_box`]). /// /// The geometry is DECODED, not measured: the box centres on /// [`Self::CHOICE_BOX_CENTER_X`] (`mov word [0xAC6],0x
 choice_box_widest	src/engine.rs	2351	fn		UNVERIFIED	/// The widest square-caps label pixel width over `labels` (capped at 8 rows, /// the box's own limit) — the `widest` the box geometry keys on.
-draw_list_menu	src/engine.rs	2374	fn	0x847A,0x8565,0x858B,0x84AD,0x857D,0x8582	ASM?	/// Draw a LIST MENU — the game's blue square-capitals vertical list (topic /// menus in dialogue, destinations at nav, contacts). Same widget as /// [`Self::draw_choice_box`], so the same ASSEMBLY la
-TEXT	src/engine.rs	2377	const	0x8565,0x858B	ASM?	// Same row colours as the choice box: `mov al,0xE8` @0x8565 unselected, // `mov al,0xEF` @0x858B selected.
+draw_list_menu	src/engine.rs	2374	fn	0x847A,0x8565,0x858B,0x84AD,0x857D,0x8582	ASM	/// Draw a LIST MENU — the game's blue square-capitals vertical list (topic /// menus in dialogue, destinations at nav, contacts). Same widget as /// [`Self::draw_choice_box`], so the same ASSEMBLY la
+TEXT	src/engine.rs	2377	const	0x8565,0x858B	ASM	// Same row colours as the choice box: `mov al,0xE8` @0x8565 unselected, // `mov al,0xEF` @0x858B selected.
 TEXT_SELECTED	src/engine.rs	2379	const	0x858B	ASM	// `mov al,0xEF` @0x858B — the selected row.
 set_topic_menu	src/engine.rs	2420	fn		UNVERIFIED	/// Set the dialogue topic menu: (label, first line index) per topic.
 load_bas_menus	src/engine.rs	2429	fn	0x6772	CELL?	/// Load the conversation script's decoded concept-menu stack (the game's /// `gs:0x6772` menu system, [`crate::bas_vm`]) from its `.BAS`/`.DIC`. Seeds at /// the entry menu; `current_bas_menu_labels`

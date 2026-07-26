@@ -12208,3 +12208,30 @@ DATA 90 settled; UNVERIFIED 901, CELL? 121, DATA? 45, ORACLE? 41, ASM? 38,
 INFRA? 8 open.
 
 613 lib tests, 0 failures.
+
+## #374 — the list menu verifies across four entries' worth of citations
+
+`draw_list_menu` and its `TEXT` constant claim the widget's whole layout. Every
+piece now checked, several of them in earlier entries:
+
+    add bp, 0xB              @0x847A   11px row pitch          (#321)
+    mov al, 0xE8             @0x8565   idle text index         (here)
+    mov al, 0xEF             @0x858B   selected row            (#321)
+    mov al, 0xFE             @0x8595   selected + hovered      (#321)
+    add dx, 0x14             @0x84A1   w = widest + 20         (#314)
+    shr dx,1 / sub [0xac6] / neg dx    x0 = anchor - w/2       (#314)
+    sub bx,[bp] / shr bx,1 / add bx,cx @0x857D  label centring (here)
+
+The centring is the piece that had not been checked: `label_x = x0 + (widest -
+width)/2`, which is `sub bx,[bp]` (widest minus this label's width), `shr bx,1`,
+`add bx,cx`. Three instructions, exactly as documented.
+
+WHAT MAKES THIS ONE UNREMARKABLE IS THE POINT. Seven claims, seven matching
+instruction sequences, no corrections. The widget documentation was written from
+the assembly and stayed true to it — which is what the majority of this review
+has found, and worth stating plainly given how many entries here are about
+defects. The running tally across the whole review is roughly two rows correct
+for every one needing a fix.
+
+2229 items, 1077 confirmed (48.3%), 1152 open (901 UNVERIFIED + 251 provisional).
+689 citations verified, 0 wrong. 613 lib tests, 0 failures.
