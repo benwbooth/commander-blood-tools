@@ -9374,3 +9374,46 @@ walker change cannot move them silently, with the approximation stated at the
 assertion rather than buried in a comment.
 
 603 lib tests, 0 failures.
+
+## #298 — reviewing ASM? rows one at a time, and the first two disagreed
+
+The ledger's `ASM?` status is a HEURISTIC: an address appears somewhere in the
+item's doc. `ASM` means a human checked the row against the disassembly. With 299
+provisional rows the temptation is to promote them in bulk on the grounds that
+`check_cited_instructions.py` already verifies 586 citations with none wrong.
+
+That reasoning does not hold, and the first two rows I reviewed show why — the
+guard checks that the INSTRUCTION AT AN ADDRESS matches the mnemonic beside it.
+It cannot check that the address is the RIGHT ONE for the claim.
+
+`text_selector_active_line_id` VERIFIED. Its doc claims `cbw; mov gs:[0x1FAB],ax`
+then `mov ax,[0x1FAB]; add ax,9; mov [0x6788],ax`. All of it holds: `cbw` @`0x668E`
+(one byte `98`, so `cbw` — capstone renders it `cwde` in 16-bit mode, the known
+artifact, told apart by LENGTH), `mov gs:[0x1fab],ax` @`0x668F`, then `0x11F2`,
+`0x11F5`, `0x11F8` in `dlg_line_activate`. The port sign-extends and adds 9.
+Settled.
+
+`reveal_frames_per_char` DID NOT. Its doc cited `0x94BA` for
+`gs:[0xB31] = step >> 2`. `0x94BA` is `dlg_reveal_complete_hold` — a different
+routine, writing a different cell, by a different rule
+(`gs:0x0B35 = gs:0x0ACA * 4`, the end-of-reveal hold). The arithmetic in the port
+was right; the address was wrong, and the doc's own hedge ("see REVERSE.md
+@0x94BA") was pointing at a REGION rather than an instruction, which is what a
+correct-looking citation degrades into.
+
+The real writer is fourteen bytes earlier:
+
+    0x94AB  mov ax, word ptr [0xaca]
+    0x94AE  shr ax, 2
+    0x94B1  mov word ptr [0xb31], ax
+
+Corrected, and the `.max(1)` justified from the loop rather than left as a fudge:
+`mov ax,[0xb31] / or ax,ax / jne` @`0x94A4` skips the reveal while the countdown
+is nonzero, so a stored zero still costs the frame that runs the check.
+
+ONE IN TWO of the rows I checked had a wrong address behind a right answer. That
+is the rate that makes bulk promotion indefensible: it would have marked this row
+"checked against the disassembly" while its citation pointed at the wrong
+routine, and the guard would have kept reporting 0 wrong throughout.
+
+Citations: 586 verified (from 583), 0 wrong. 603 lib tests, 0 failures.

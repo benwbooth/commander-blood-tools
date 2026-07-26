@@ -686,9 +686,22 @@ pub fn text_speed_step_from_setting(setting: u16) -> u16 {
 }
 
 /// Frames per revealed character for a text-speed step: the reveal loop resets the
-/// per-character countdown `gs:[0xB31] = step >> 2` (see `REVERSE.md` @0x94BA); a
-/// zero countdown reveals a character every frame, so the effective cost is at least
-/// one frame per character.
+/// per-character countdown `gs:[0xB31] = step >> 2`.
+///
+/// CITATION CORRECTED (audit-fixes #298). This pointed at `0x94BA`, which is
+/// `dlg_reveal_complete_hold` — a DIFFERENT routine that writes a DIFFERENT cell
+/// by a DIFFERENT rule (`gs:0x0B35 = gs:0x0ACA * 4`, the end-of-reveal hold). The
+/// arithmetic here was right and the address was not. The real instructions are:
+///
+/// ```text
+///   0x94AB  mov ax, word ptr [0xaca]   the text-speed step
+///   0x94AE  shr ax, 2
+///   0x94B1  mov word ptr [0xb31], ax
+/// ```
+///
+/// The `.max(1)` is the loop's own structure, not a fudge: `mov ax,[0xb31] /
+/// or ax,ax / jne` @`0x94A4` reloads the countdown and SKIPS the reveal while it
+/// is nonzero, so a stored zero still costs the one frame that runs the check.
 pub fn reveal_frames_per_char(text_speed_step: u16) -> u16 {
     (text_speed_step >> 2).max(1)
 }
