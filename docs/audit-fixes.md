@@ -11321,3 +11321,36 @@ was in the one place a mechanical lift cannot help: the sentence a human wrote
 above it.
 
 652 citations verified, 0 wrong. 612 lib tests, 0 failures.
+
+## #349 — the lift was right and its LABEL was wrong twice
+
+`func_7ea` (`0x07EA`) verifies against the binary: `cli`, `mov al,0x36 /
+out 0x43,al`, `mov al,0xff` then `out 0x40,al` TWICE, `mov byte gs:[0xb21],0`,
+`sti`, then the saved INT 08h vector restored from `gs:[0xB1D]`/`[0xB1F]`.
+
+`re/labels.csv` described the same routine as: "cli; out 0x43,0x36 (PIT ch0 mode
+3 square wave) + out 0x42/al=0xff divisor. Reprograms the 8253 PIT tick rate for
+the game's timing (faster than the default 18.2Hz)."
+
+TWO ERRORS.
+
+  * THE PORT IS 0x40, NOT 0x42. Raw bytes at `0x07F4`/`0x07F6` are `e6 40 e6 40`.
+    `0x40` is PIT CHANNEL 0, the system timer; `0x42` is CHANNEL 2, the PC
+    SPEAKER. A reader chasing sound would land here and find nothing, or worse
+    would wire a speaker behaviour to a timer routine.
+  * IT IS A RESTORE, NOT A SPEED-UP. Writing `0xFF` as both divisor halves gives
+    `0xFFFF` — the LARGEST divisor, hence the SLOWEST rate, which is the stock
+    ~18.2 Hz. The label says "faster than the default 18.2Hz"; the instruction
+    does the opposite. It is the teardown counterpart of `0x079C`, which is what
+    the port's own doc calls it.
+
+THE PORT HAD BOTH RIGHT. `src/recomp/io_lift.rs` says "reprogram PIT channel 0
+back to the default ~18.2 Hz" and "the teardown counterpart of func_79c". So the
+Rust doc was more accurate than the RE label it was presumably derived from —
+the reverse of the direction defects have travelled in this review so far, where
+`labels.csv` was the authority and the source drifted (#344).
+
+Label corrected with the raw bytes quoted, so the next reader can check it
+without re-deriving. Row settled.
+
+652 citations verified, 0 wrong. 612 lib tests, 0 failures.
