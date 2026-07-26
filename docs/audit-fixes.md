@@ -11223,3 +11223,38 @@ listing encodings). Documenting a trap does not stop you walking into it; only
 making it structurally impossible does.
 
 647 citations verified, 0 wrong. 612 lib tests, 0 failures.
+
+## #346 — the code was right and the sentence describing it was wrong
+
+Two lifted I/O routines from the recompiler.
+
+`func_cc0` (`0x0CC0`) verifies instruction for instruction: `push ax`,
+`xor ax,ax`, `mov al,gs:[0x5232]`, `int 0x10`, `pop ax`, `retf`. Settled.
+
+`func_d4a` (`0x0D4A`) also verifies as CODE — and its prose does not. The doc
+said it sets "the mouse cursor's horizontal (fn 7) then vertical (fn 8) range to
+[AX,BX]". The instruction order says otherwise:
+
+    0x0D4E  mov cx, ax / mov dx, bx    the range
+    0x0D52  mov ax, 7 / int 0x33       fn 7 -- horizontal, gets [AX,BX]
+    0x0D57  pop dx
+    0x0D58  pop cx                     <- CALLER'S cx/dx restored HERE
+    0x0D59  mov ax, 8 / int 0x33       fn 8 -- vertical, gets the CALLER'S
+                                       cx/dx, not [AX,BX]
+
+The port's body is FAITHFUL: it pops before the second call, exactly as the game
+does. Only the description was wrong.
+
+WHY THAT IS WORTH AN ENTRY. Every defect in this review so far has been a claim
+unsupported by the binary. This is the inverse — correct code with a comment that
+misdescribes it — and it is arguably more dangerous, because the comment provides
+a REASON to change the code. A reader who believes both calls take `[AX,BX]` sees
+`pop dx / pop cx` sitting between them as stray housekeeping and moves it after
+the `int 33h` to tidy up. The tests would very likely still pass; the vertical
+mouse range would silently start coming from a different place.
+
+A wrong doc over wrong code gets found when the code is checked. A wrong doc over
+RIGHT code only gets found by reading them against each other, which is the one
+thing a green test suite never does.
+
+652 citations verified (from 647), 0 wrong. 612 lib tests, 0 failures.

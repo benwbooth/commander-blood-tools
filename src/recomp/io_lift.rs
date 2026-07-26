@@ -56,8 +56,26 @@ pub fn func_cc0(rt: &mut Runtime) {
 }
 
 /// `func_d4a` (`mouse_set_hrange`, 0x0D4A): `push ax,bx,cx,dx; cx=ax; dx=bx; ax=7;
-/// int 33h; pop dx,cx; ax=8; int 33h; pop bx,ax; retf` — set the mouse cursor's
-/// horizontal (fn 7) then vertical (fn 8) range to [AX,BX].
+/// int 33h; pop dx,cx; ax=8; int 33h; pop bx,ax; retf`.
+///
+/// ONLY THE HORIZONTAL CALL USES [AX,BX] (audit-fixes #346). The doc used to say
+/// it sets "horizontal (fn 7) then vertical (fn 8) range to [AX,BX]", which the
+/// instruction order contradicts:
+///
+/// ```text
+///   0x0D4E  mov cx, ax / mov dx, bx    the range
+///   0x0D52  mov ax, 7 / int 0x33       fn 7 -- horizontal, gets [AX,BX]
+///   0x0D57  pop dx
+///   0x0D58  pop cx                     <- the CALLER'S cx/dx are restored HERE
+///   0x0D59  mov ax, 8 / int 0x33       fn 8 -- vertical, gets whatever the
+///                                      caller had in cx/dx, NOT [AX,BX]
+/// ```
+///
+/// The port's body already reproduces this correctly, popping before the second
+/// call. The DESCRIPTION was the defect, and it is the dangerous kind: a reader
+/// trusting it would see the two pops as redundant register housekeeping and
+/// move them after the `int 33h` to "simplify", silently changing which range
+/// the vertical call receives.
 pub fn func_d4a(rt: &mut Runtime) {
     push16(rt, rt.m.regs.ax());
     push16(rt, rt.m.regs.bx());
