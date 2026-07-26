@@ -8585,3 +8585,32 @@ describing. The rule that fixes it is mechanical — an address pairs with the F
 instruction of the sequence quoted — and I have restated it twice without it
 sticking. Writing citations from tool output rather than by hand (#261) is the
 version that actually works; hand-written ones need the guard every time.
+
+## #279 — making the guard name the fix, not just the fault
+
+Three entries (#213, #233, #278) record the same citation slip: documenting a
+COMPARISON, I cite the BRANCH's address, because the branch is what expresses the
+meaning. The guard catches it every time and I restate the rule every time, and
+it has not stuck.
+
+So the guard now looks for the claimed mnemonic in the twelve bytes before the
+cited address and, when it finds it, says where:
+
+```text
+   MISMATCH src/ship3d.rs:3425: doc says 0x08a80 is `cmp`, disassembly says `jl`
+                                 -- `cmp` is at 0x08a7d, 3 byte(s) earlier
+```
+
+Verified by reintroducing #278's exact mistake and watching the message name the
+address I had to go and find by hand an hour ago.
+
+That is the useful move once an error recurs: not another restatement of the rule,
+but a smaller gap between the report and the correction. The guard already knew
+the answer — it had the disassembler, the address and the claimed mnemonic — and
+was throwing that away to print a complaint.
+
+The hint is deliberately conservative: it only fires when a backward decode lands
+EXACTLY on the probe address with the claimed mnemonic, so it cannot invent a
+plausible-looking earlier instruction out of a mid-instruction resynchronisation
+— the phantom problem that #106 and #234 are about. When it has nothing to say it
+says nothing, and the plain mismatch stands.

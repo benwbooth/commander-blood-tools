@@ -157,9 +157,30 @@ def main():
                         want in ("call", "jmp") and actual_norm in ("lcall", "ljmp")
                     ):
                         bad += 1
+                        # WHERE THE CLAIMED MNEMONIC ACTUALLY IS. Three times now
+                        # (audit-fixes #213, #233, #278) the slip has been the same
+                        # shape: documenting a COMPARISON, I cite the branch's
+                        # address because the branch expresses the meaning. The
+                        # claimed instruction is almost always a few bytes EARLIER,
+                        # so look, and say so -- a report that names the fix costs
+                        # one line and saves a disassembly round trip.
+                        hint = ""
+                        for back in range(1, 12):
+                            probe = addr - back
+                            if probe < 0:
+                                break
+                            first = next(md.disasm(image[probe:probe + 16], probe), None)
+                            if (
+                                first
+                                and first.address == probe
+                                and ALIAS.get(first.mnemonic, first.mnemonic) == want
+                                and probe + first.size > addr - 12
+                            ):
+                                hint = f" -- `{claimed}` is at {probe:#07x}, {back} byte(s) earlier"
+                                break
                         print(
                             f"MISMATCH {path}:{i}: doc says {addr:#07x} is `{claimed}`, "
-                            f"disassembly says `{actual}`"
+                            f"disassembly says `{actual}`{hint}"
                         )
 
     print(f"{checked} cited instructions verified, {skipped} non-mnemonic lines skipped, {bad} wrong")
