@@ -9461,3 +9461,34 @@ or uncheckable in their EVIDENCE. That is the distinction the ledger's `?` is
 for, and it is why these get promoted one at a time.
 
 Citations: 586 verified, 0 wrong. 604 lib tests, 0 failures.
+
+## #300 — listing what the guard SKIPS, and finding a real citation inside the count
+
+#299 ended on an uncomfortable fact: `check_cited_instructions.py` reports "84
+non-mnemonic lines skipped" and that number had never been looked at. A skipped
+line is not automatically harmless — `location_var_offset`'s SCRIPT-space
+citation was in there, unchecked while its row still read as evidence.
+
+Added `--skipped`, which lists them grouped by the word that was claimed (a word
+recurring across many lines is ordinary prose around an address; a one-off is
+worth a look). Most of the 84 are exactly what they should be: `0x83CC` followed
+by "the", `0x86F1` followed by "nav", register names like `al`/`dl` in sentences
+such as "sets al".
+
+ONE WAS NOT. `src/ship3d.rs:2182: 0x9A34 claimed as 'lodsd'` — `lodsd` IS an x86
+mnemonic. The set listed `lodsb`, `lodsw` and `stosd` but not `lodsd`, so a real
+instruction citation in the projector had been going unchecked since it was
+written. Added, and it VERIFIES: 587 checked, still 0 wrong.
+
+THIS IS THE SECOND TIME. #249 added `movsx`/`movzx` after the same audit found
+them missing. The failure mode is worth naming because it is silent by
+construction: a missing mnemonic does not fail, it stops checking — and the
+headline "0 wrong" gets slightly less true each time without anything moving.
+The string family in particular needs all its widths or the omission is invisible,
+so `movsd`, `scasb/w/d` and `cmpsb/w/d` went in alongside.
+
+The guard's summary line was measuring its own coverage and reporting it as
+confidence. It still says "0 wrong", but now the skipped set can be READ rather
+than trusted, which is the only thing that makes the 0 meaningful.
+
+Citations: 587 verified (from 586), 83 skipped (from 84), 0 wrong.

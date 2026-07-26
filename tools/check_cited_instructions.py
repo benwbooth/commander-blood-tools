@@ -42,6 +42,12 @@ MNEMONICS = {
     # projector sign-extends its 16-bit inputs, and getting that wrong is exactly
     # the class of error #222's depth bound exists to catch.
     "movsx", "movzx", "cwd", "cdq", "std", "cld", "sti", "cli", "pushf", "popf",
+    # Same lesson a second time (audit-fixes #300), found by LISTING the skipped
+    # lines instead of trusting the count: `stosd` was here but `lodsd` was not,
+    # so `0x9A34 lodsd` in the projector went unchecked. The string family needs
+    # all its widths or the omission is invisible -- a missing mnemonic does not
+    # fail, it silently stops checking.
+    "lodsd", "movsd", "scasb", "scasw", "scasd", "cmpsb", "cmpsw", "cmpsd",
     "rcl", "rcr", "cmpsb", "cmpsw", "scasb", "scasw", "jo", "jno", "jp", "jnp",
 }
 # Aliases capstone prints differently from how a comment might spell them.
@@ -127,6 +133,7 @@ def main():
     data = open(DEFAULT_BIN, "rb").read()
     md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_16)
     checked = skipped = bad = 0
+    unchecked = []
     for root, _, files in os.walk("src"):
         for f in sorted(files):
             if not f.endswith(".rs"):
@@ -141,6 +148,14 @@ def main():
                     claimed = claimed_raw.lower()
                     if claimed not in MNEMONICS:
                         skipped += 1
+                        # audit-fixes #300. A skipped line is not automatically
+                        # harmless. `location_var_offset` cited "SCRIPT2: 0x0F4E"
+                        # -- a SCRIPT-DATA offset, not an executable one -- and
+                        # landed here, so nothing checked it while the row still
+                        # read as evidence (#299). List them on request so the
+                        # uncheckable ones can be reviewed by hand instead of
+                        # disappearing into a count.
+                        unchecked.append((path, i, addr_text, claimed_raw))
                         continue
                     addr = int(addr_text, 16)
                     if addr >= len(image):
@@ -191,6 +206,18 @@ def main():
                             f"MISMATCH {path}:{i}: doc says {addr:#07x} is `{claimed}`, "
                             f"disassembly says `{actual}`{hint}"
                         )
+
+    if "--skipped" in sys.argv:
+        # Group by the word that was claimed: a word that recurs is usually
+        # ordinary prose around an address, while a one-off is worth a look.
+        import collections
+
+        by_word = collections.Counter(w.lower() for _, _, _, w in unchecked)
+        print("--- lines carrying an address that NO tool verifies ---")
+        for path, line, addr_text, word in unchecked:
+            if by_word[word.lower()] <= 2:  # the rare ones first
+                print(f"  {path}:{line}: {addr_text} claimed as {word!r}")
+        print(f"  ({len(unchecked)} total; {len(by_word)} distinct claimed words)")
 
     print(f"{checked} cited instructions verified, {skipped} non-mnemonic lines skipped, {bad} wrong")
     return 1 if bad else 0
