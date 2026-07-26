@@ -1432,6 +1432,12 @@ const TALK_FIELD: u16 = 0x3A;
 const LOCATION_FIELD: u16 = 24;
 const SPECIAL_OBJECT_SLOT_COUNT: usize = 16;
 const VM_FIELD_OFFSET_SELECTOR_PRESENTATION_HANDOFF: u8 = 0x02;
+/// `mov ax,0x11` @`0x625B` in the nav source-list builder (`0x624B`) — the
+/// selector the walk resolves to find an object's parent link.
+///
+/// `ship3d::SHIP_3D_FIELD_SELECTOR_PARENT_LINK` is the same `0x11` from the same
+/// instruction, named for what the field MEANS rather than which opcode family
+/// reaches it (audit-fixes #285).
 const VM_FIELD_OFFSET_SELECTOR_C2: u8 = 0x11;
 const VM_FIELD_OFFSET_SELECTOR_C9_RELATED: u8 = 0x13;
 /// Selector `0x08` — the ENCOUNTER COUNTER. `FIELD_OFFSETS[8]` is non-zero in

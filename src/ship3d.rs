@@ -244,6 +244,15 @@ pub const SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MISMATCH: u8 = 10;
 pub const SHIP_3D_FIELD_SELECTOR_KIND100_MATCH_WORD: u8 = 12;
 /// `mov ax,0xe` @`0x60EC`, resolved with the DI record's own kind and read from it.
 pub const SHIP_3D_FIELD_SELECTOR_KIND100_RELATION_WORD: u8 = 14;
+/// `mov ax,0x11` @`0x625B`, inside the nav source-list builder (`0x624B`): the
+/// selector whose field the walk compares against the current target to decide
+/// whether an object is a CHILD of it.
+///
+/// SAME SELECTOR AS `vm::VM_FIELD_OFFSET_SELECTOR_C2`, which names `0x11` from
+/// the same instruction. Two constants, two modules, one selector — recorded
+/// rather than merged, because the ship-3D name describes what the field MEANS
+/// there (a parent link) and the VM name describes which opcode family reaches
+/// it, and neither is wrong (audit-fixes #285).
 pub const SHIP_3D_FIELD_SELECTOR_PARENT_LINK: u8 = 17;
 /// `mov ax,5` @`0x6229` in the object-table bit test (`0x6210`). The selector is FIXED here, not derived from the object — the routine's own label warns about that (audit-fixes #274).
 pub const SHIP_3D_SOURCE_BITSET_SELECTOR: u8 = 0x05;

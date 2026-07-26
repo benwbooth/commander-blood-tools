@@ -8768,3 +8768,27 @@ Which is a limitation worth naming: the guard verifies the citations you MAKE, a
 prose can describe an instruction without citing it. Tightened to give `bx` its own
 address, because an uncheckable mention beside a checkable one reads as though
 both were verified.
+
+## #285 — two constants, two modules, one selector
+
+`SHIP_3D_FIELD_SELECTOR_PARENT_LINK = 17` and `vm::VM_FIELD_OFFSET_SELECTOR_C2 =
+0x11` are the same number, and both come from the same instruction:
+`mov ax,0x11` @`0x625B`, inside the nav source-list builder (`0x624B`), where the
+walk resolves that selector to find whether an object is a CHILD of the current
+target.
+
+Both had empty origins. Both now cite it, and each says the other exists.
+
+NOT MERGED, deliberately. The names describe different things about one value:
+the ship-3D name says what the FIELD MEANS at that call site (a parent link), the
+VM name says which OPCODE FAMILY reaches it. Collapsing them into one constant
+would force a single name to carry both, and the loser would be whichever module
+did not own it. `check_duplicate_rules.py` reports no same-name duplicates, and
+its own output says the clusters it does show are "for judgement" — this is one
+of those judgements, now recorded so the next reader does not spend the same
+minutes deciding whether it is a bug.
+
+The generalisable point is small but real: a duplicated VALUE is not automatically
+a duplicated RULE. #267 found two copies of one format that genuinely needed
+merging, because a writer and a reader must agree byte for byte. Two names for one
+selector, each used in its own module for its own reason, do not.
