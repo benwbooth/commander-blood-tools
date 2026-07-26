@@ -7088,6 +7088,73 @@ pub fn decompile_script(
 #[cfg(test)]
 mod tests {
 
+    /// THE VM MUST NOT DESYNC ON THE GAME'S OWN BYTECODE.
+    ///
+    /// `execute_trace_with_context` runs a real `SCRIPT*.COD` and reports how it
+    /// stopped. Two of the four [`ExecutionHalt`] variants are legitimate ends —
+    /// `EndMarker` (the script finished) and `StepLimit` (it loops, as a scene
+    /// waiting on input does). The other two are confessions:
+    ///
+    ///   * `InvalidOpcode` means the walker read a byte that the 52-entry table at
+    ///     `0x142D0` does not dispatch. In the game's own bytecode every token
+    ///     boundary holds a dispatchable opcode, so this can only mean the VM
+    ///     lost its place — the exact failure #235 measures statically, caught
+    ///     here by EXECUTION instead.
+    ///   * `InvalidTarget` means a branch pointed outside the script.
+    ///
+    /// So this asserts a property of the ORIGINAL data that a correct VM inherits
+    /// and a broken one cannot fake.
+    #[test]
+    fn the_vm_runs_the_shipped_scripts_without_desyncing() {
+        let dir = ["output/_tmp_iso", "../output/_tmp_iso", "output/scripts", "../output/scripts"]
+            .iter()
+            .map(std::path::Path::new)
+            .find(|p| p.exists());
+        let Some(dir) = dir else { return };
+
+        let mut ran = 0usize;
+        let mut branch_events = 0usize;
+        for index in 1..=5 {
+            let cod = match std::fs::read(dir.join(format!("SCRIPT{index}.COD"))) {
+                Ok(cod) => cod,
+                Err(_) => continue,
+            };
+            let var = std::fs::read(dir.join(format!("SCRIPT{index}.VAR"))).unwrap_or_default();
+            let trace: ExecutionTrace =
+                execute_trace_with_context(&cod, &var, &ExecutionContext::default());
+
+            match &trace.halted {
+                ExecutionHalt::EndMarker | ExecutionHalt::StepLimit { .. } => {}
+                ExecutionHalt::InvalidOpcode { offset, byte } => panic!(
+                    "SCRIPT{index}: invalid opcode {byte:#04x} at {offset:#x} -- the VM \
+                     desynchronised walking the game's own bytecode"
+                ),
+                ExecutionHalt::InvalidTarget { offset, target } => panic!(
+                    "SCRIPT{index}: branch at {offset:#x} targets {target:#x}, outside \
+                     the script"
+                ),
+            }
+
+            for event in &trace.branch_events {
+                assert!(
+                    event.offset < cod.len(),
+                    "SCRIPT{index}: branch event at {:#x} is past the {}-byte script",
+                    event.offset,
+                    cod.len()
+                );
+                branch_events += 1;
+            }
+            assert!(trace.steps > 0, "SCRIPT{index} executed no steps");
+            ran += 1;
+        }
+
+        // All five shipped scripts run; require at least three in case a
+        // checkout carries fewer.
+        assert!(ran >= 3, "only {ran} scripts executed; the sweep proves little");
+        // 5 scripts, 1534 branch events measured -- the sweep really executes.
+        assert!(branch_events > 1_000, "only {branch_events} branch events seen");
+    }
+
     /// The three hit boxes are IMMEDIATES in the picker; read them back out of
     /// the image rather than trusting the transcription.
     #[test]

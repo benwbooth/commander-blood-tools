@@ -7480,3 +7480,26 @@ constants.
 Worth putting beside #239: two geometry constants, a day apart, one invented and
 one decoded — and neither could be told apart by looking at it. The difference was
 entirely in whether the addresses in the comment led anywhere.
+
+## #242 — the VM confesses desync if you let it run
+
+`ExecutionHalt` has four variants and two of them are confessions. `EndMarker` and
+`StepLimit` are legitimate ends — a script finishing, or a scene looping while it
+waits on input. `InvalidOpcode` and `InvalidTarget` are not: in the game's own
+bytecode every token boundary holds a dispatchable opcode and every branch points
+inside the script, so either one means the VM lost its place.
+
+That makes running the shipped scripts a test. #235 measures alignment STATICALLY
+(the share of decoded opcodes inside `0xA0..=0xD3`); this catches the same failure
+by EXECUTION, and it is stricter — a static walk can tolerate a stray byte in the
+99% it allows, while an execution halt is absolute.
+
+All five scripts run to a legitimate halt, producing 1534 branch events, every one
+inside its script.
+
+Both coverage floors were measured rather than guessed, and the first attempt hid
+the second: raising the script count to an impossible value fired before the
+branch-event assertion was reached, so I had a number for one and nothing for the
+other. Measuring them one at a time gave 5 and 1534. The lesson from #236 — every
+property test needs a coverage assertion — has a corollary: when there are two,
+raise them SEPARATELY, because the first failure masks the rest.

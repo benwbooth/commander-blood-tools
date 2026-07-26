@@ -1416,13 +1416,13 @@ VM_PC_SAVED	src/vm.rs	1636	const	0x6023,0x6D60,0x14180,0x142CF	ASM?	/// Field-of
 MAIN_PENDING_PROFILE_IDLE_GATES	src/vm.rs	1638	const	0x6023,0x6D60,0x14180,0x142CF	ASM?	/// Field-offset lookup table used by helper `0x6023`: /// `gs:[0x6D60 + selector * 16 + bsf(kind)]`. /// Transcribed from `BLOODPRG.EXE` file `0x14180..0x142CF`. /// A `0xA6` line's resolved runtime 
 VM_FIELD_OFFSET_TABLE	src/vm.rs	1654	const	0x6023,0x6D60,0x14180,0x142CF	ORACLE	/// Field-offset lookup table used by helper `0x6023`: /// `gs:[0x6D60 + selector * 16 + bsf(kind)]`. /// Transcribed from `BLOODPRG.EXE` file `0x14180..0x142CF`.
 LineState	src/vm.rs	1680	struct		UNVERIFIED	/// A `0xA6` line's resolved runtime scene state. /// Object offset of the current speaker (from the last `0xC4`), if any. /// The speaker's current location object offset (`state[actor+24]`), if a //
-BranchEvent	src/vm.rs	1690	struct		UNVERIFIED	
+BranchEvent	src/vm.rs	1690	struct		TESTED	
 ScriptProfileRequestEvent	src/vm.rs	1701	struct		UNVERIFIED	
 PostUpdateTrace	src/vm.rs	1708	struct	0x5DCE,0x5DF6	ASM?	/// Objects whose selector-`0x08` ENCOUNTER COUNTER the post-update ladder /// incremented this pass (`0x5DCE` / `0x5DF6`). See /// `post_update_encounter_counter`.
 PostUpdateActorRecordPair	src/vm.rs	1719	struct		UNVERIFIED	
 PresentationHandoffEvent	src/vm.rs	1725	struct		UNVERIFIED	
-ExecutionHalt	src/vm.rs	1732	enum		UNVERIFIED	
-ExecutionTrace	src/vm.rs	1740	struct		UNVERIFIED	
+ExecutionHalt	src/vm.rs	1732	enum		TESTED	
+ExecutionTrace	src/vm.rs	1740	struct		TESTED	
 pending_script_profile	src/vm.rs	1768	fn	0x6780,0xFFFF,0x108E,0x10C5,0x10D3,0xffff,0x64B8	ASM	/// The script profile a `0xD2` request left pending, or `None`. /// /// `gs:0x6780` is the request slot and `0xFFFF` means EMPTY: /// /// ```text ///   0x108E  cmp word [0x6780],-1     nothing pendin
 ScriptProfileProgram	src/vm.rs	1776	struct		UNVERIFIED	
 ScriptProfileRun	src/vm.rs	1784	struct		UNVERIFIED	
