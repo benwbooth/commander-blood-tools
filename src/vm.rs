@@ -7243,6 +7243,9 @@ impl VmMachine {
             // is a non-match and BRANCHES (0x6D4C je -> 0x6462 vm_branch). SET
             // (mode0): a guarded write of {op, related, 0}; on guard failure the
             // handler branches (else path).
+            // 0xC5/0xC6/0xC7/0xC8 (0x6D18/0x6D80/0x6DCF/0x6F62): FOUR distinct
+            // handlers, not one — which is why the arm below re-tests `op` for
+            // the per-opcode write guard instead of sharing a single path.
             0xC5 | 0xC6 | 0xC7 | 0xC8 => {
                 let mut flipped = false;
                 if self.u8_at(self.pc) == 0xA1 {

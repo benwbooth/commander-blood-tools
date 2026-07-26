@@ -12887,3 +12887,46 @@ introduces it.
 
 2228 items, 1091 confirmed (49.0%), 1137 open. 707 citations verified, 0 wrong.
 613 lib tests, 0 failures.
+
+## #393 — every dispatched opcode now cites a handler the table confirms
+
+#391 reported "27 dispatched opcodes carry no citation". That number was WRONG,
+and it was wrong in the direction that matters: it described the PORT as
+under-documented when in fact every one of those arms carried its handler
+address and my regex could not see the form. The port writes citations three
+ways —
+
+    // 0xA0 PUSH (0x6559)                  one opcode, one address
+    // 0xAA/0xAC (0x6855/0x685C)           n opcodes, n addresses, paired
+    // 0xAE/0xB0 (0x6902)                  n opcodes sharing one address
+    // The 0x6946 family (AD/AF/B2/...)    address first, bare opcode bytes
+
+— and the tool knew only the first. A coverage number that undercounts is worse
+than none, because it invents work.
+
+Teaching it all three raised the check from 28 citations to 66 and immediately
+produced a MISMATCH at `vm.rs:7004`: `0xBC cites 0x6989, table says 0x6946`. That
+was MY bug too — loosening the pattern to `//.*?` let it match prose, and the line
+is `// SET (0x6985): 0xBC stores the RAW value to gs:0x6782 (0x6989)`, where
+`0x6989` is an address INSIDE the 0x6946 handler. A citation is the opcode LEADING
+its comment; an opcode mid-sentence is prose. Re-anchored.
+
+Then `0xD3` showed as dispatched-but-uncited. Its table slot has near-offset
+`0x0000` while every real entry is non-zero — an EMPTY slot the dumper still
+resolves to an address (`0x53A0`). The VM dispatches `0xA0..0xD2`; `0xD3` is past
+the bound, exactly the TOKEN-vs-DISPATCH distinction already recorded at OP_MAX.
+Zero slots are now dropped.
+
+That left four genuinely uncited: `0xC5..0xC8`, whose arm is grouped but whose
+handlers are FOUR distinct routines (`0x6D18`/`0x6D80`/`0x6DCF`/`0x6F62`). Added
+the citation, noting that this is why the arm re-tests `op` internally rather
+than sharing one path.
+
+FINAL: **54 opcode citations, 54 confirmed against the dispatch table, 0
+mismatches, 0 dispatched opcodes uncited.** Three tool errors of my own were
+found and fixed getting there, all three in the direction of over-reporting work
+or inventing a defect — which is the failure mode to prefer catching early, but
+three in one entry is worth noticing.
+
+2228 items, 1091 confirmed (49.0%), 1137 open. 707 citations verified, 0 wrong.
+613 lib tests, 0 failures.

@@ -35,9 +35,51 @@ VM = "src/vm.rs"
 TABLE_TOOL = "re/tools/dump_handler_table.py"
 
 # `0xa0    0x11b9    0x006559    <label> ...`
-TABLE_ROW = re.compile(r"^(0x[0-9a-f]{2})\s+0x[0-9a-f]+\s+(0x[0-9a-f]+)\s")
-# A step-arm comment: `// 0xA0 PUSH (0x6559): ...` / `// 0xA2 (0x6588): ...`
-CITE = re.compile(r"//\s*(0x[0-9A-Fa-f]{2})\b[^(\n]*\((0x[0-9A-Fa-f]{4})\)")
+# near_off is captured so ZERO slots can be dropped. 0xD3 has near_off 0x0000
+# while every real entry is non-zero -- an EMPTY slot that the dumper still
+# resolves to a file address (0x53A0), which this tool first reported as a
+# dispatched-but-uncited opcode. The VM dispatches 0xA0..0xD2; 0xD3 is past it.
+TABLE_ROW = re.compile(r"^(0x[0-9a-f]{2})\s+(0x[0-9a-f]+)\s+(0x[0-9a-f]+)\s")
+# The port writes opcode citations in THREE forms, and the first version of this
+# tool knew only the first. It then reported "27 dispatched opcodes carry no
+# citation" -- which read as a documentation gap in the port when in fact every
+# one of those arms was documented and the TOOL could not see it. A coverage
+# number that undercounts is worse than no coverage number, so all three parse:
+#
+#   A  `// 0xA0 PUSH (0x6559): ...`            one opcode, one address
+#   B  `// 0xAA/0xAC (0x6855/0x685C): ...`     n opcodes, n addresses, in order
+#      `// 0xAE/0xB0 (0x6902): ...`            n opcodes sharing ONE address
+#   C  `// The 0x6946 family (AD/AF/B2/...)`   address first, bare opcode bytes
+# ANCHORED to the start of the comment. An earlier pass used `//.*?` here and
+# matched prose -- `// SET (0x6985): 0xBC stores the RAW value ... (0x6989)`
+# was read as "0xBC is handled at 0x6989" and reported as a MISMATCH, when
+# 0x6989 is an address INSIDE the 0x6946 handler. A citation is the opcode
+# LEADING its comment; an opcode mentioned mid-sentence is prose.
+CITE_OPS_ADDRS = re.compile(
+    r"//\s*((?:0x[0-9A-Fa-f]{2})(?:\s*/\s*0x[0-9A-Fa-f]{2})*)\b[^(\n]*"
+    r"\(((?:0x[0-9A-Fa-f]{4})(?:\s*/\s*0x[0-9A-Fa-f]{4})*)\)"
+)
+CITE_FAMILY = re.compile(
+    r"//\s*(?:The\s+)?(0x[0-9A-Fa-f]{4})\s+family\s*\(([0-9A-Fa-f]{2}(?:\s*/\s*[0-9A-Fa-f]{2})*)\)"
+)
+
+
+def citations_on(line):
+    """[(opcode, cited_address)] claimed by this comment line."""
+    m = CITE_FAMILY.search(line)
+    if m:
+        addr = int(m.group(1), 16)
+        return [(int(o.strip(), 16), addr) for o in m.group(2).split("/")]
+    m = CITE_OPS_ADDRS.search(line)
+    if not m:
+        return []
+    ops = [int(o.strip(), 16) for o in m.group(1).split("/")]
+    addrs = [int(a.strip(), 16) for a in m.group(2).split("/")]
+    if len(addrs) == 1:
+        return [(o, addrs[0]) for o in ops]
+    if len(ops) == len(addrs):
+        return list(zip(ops, addrs))
+    return []
 
 
 def handler_table():
@@ -47,8 +89,8 @@ def handler_table():
     table = {}
     for line in out.splitlines():
         m = TABLE_ROW.match(line)
-        if m:
-            table[int(m.group(1), 16)] = int(m.group(2), 16)
+        if m and int(m.group(2), 16) != 0:
+            table[int(m.group(1), 16)] = int(m.group(3), 16)
     return table
 
 
@@ -64,21 +106,17 @@ def main():
     mismatch, undispatched, ok = [], [], 0
     cited = set()
     for i, line in enumerate(lines):
-        m = CITE.search(line)
-        if not m:
-            continue
-        op = int(m.group(1), 16)
-        addr = int(m.group(2), 16)
-        # Only opcode-looking values; the file cites plenty of other addresses.
-        if not 0xA0 <= op <= 0xFF:
-            continue
-        cited.add(op)
-        if op not in table:
-            undispatched.append((i + 1, op, addr))
-        elif table[op] != addr:
-            mismatch.append((i + 1, op, addr, table[op]))
-        else:
-            ok += 1
+        for op, addr in citations_on(line):
+            # Only opcode-looking values; the file cites plenty of other addresses.
+            if not 0xA0 <= op <= 0xFF:
+                continue
+            cited.add(op)
+            if op not in table:
+                undispatched.append((i + 1, op, addr))
+            elif table[op] != addr:
+                mismatch.append((i + 1, op, addr, table[op]))
+            else:
+                ok += 1
 
     for ln, op, addr, want in mismatch:
         print(f"MISMATCH     {VM}:{ln}: {op:#04x} cites {addr:#07x}, table says {want:#07x}")
