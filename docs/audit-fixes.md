@@ -10284,4 +10284,8 @@ Running tally: fourteen rows reviewed, nine correct as written, five corrected.
 The corrected five are still the more interesting half, but nine-in-fourteen is
 the honest denominator.
 
-Citations: 617 verified, 0 wrong. 608 lib tests, 0 failures.
+Citations: 613 verified, 0 wrong. 608 lib tests, 0 failures.
+(Wrote 617 first — the count did not move, because these five rows verified
+EXISTING citations rather than adding new ones. Corrected before commit; the
+same slip as #295's 585-for-583, and the reason to read the tool rather than
+estimate from 'I checked several things'.)
