@@ -3005,18 +3005,23 @@ impl EngineState {
     ///   * NO instruction anywhere in BLOODPRG.EXE compares against `0x5F`.
     ///     `find_imm.py 5f` returns zero confirmed hits (28 phantoms rejected),
     ///     so no code path special-cases an underscore.
-    ///   * The game's only case-folding loop is `0x2760`, and it PRESERVES one:
-    ///     `cmp al,0x61 / jb` @`0x2765` skips every character below `'a'`, and
-    ///     `0x5F` is below `'a'`. `and al,0xdf` @`0x2769` upper-cases the rest.
+    ///   * A case-folding loop at `0x2760` PRESERVES one: `cmp al,0x61 / jb`
+    ///     @`0x2765` skips every character below `'a'`, and `0x5F` is below
+    ///     `'a'`. `and al,0xdf` @`0x2769` upper-cases the rest.
     ///
-    /// So the faithful caption for `Bob_Morlock` is `BOB_MORLOCK`. The upper-
-    /// casing in this table is supported; turning the underscore into a space is
-    /// not, and most likely came from reading a screenshot.
+    /// SCOPE CORRECTED (audit-fixes #328). #327 called `0x2760` "the game's only
+    /// case-folding loop" and treated it as the caption path. It is neither. It
+    /// has ZERO callers — near or far — so it is a fall-through block, and the
+    /// instructions immediately above it are a DOS READ (`int 21h` `AH=3Fh`,
+    /// handle from `gs:[0xA88]`). It folds something just loaded from a FILE,
+    /// most plausibly a path being normalised.
     ///
-    /// NOT CHANGED HERE: `0x2760` has not been shown to be the routine that
-    /// renders THESE captions, and swapping nine display strings on an inference
-    /// is how capture-derived content gets in. Identifying the caption renderer
-    /// settles it either way.
+    /// WHAT SURVIVES that correction is the stronger half and it does not depend
+    /// on `0x2760` at all: NO instruction anywhere in the image compares against
+    /// `0x5F`. So nothing in the game can special-case an underscore, whatever
+    /// renders the caption. `BOB MORLOCK` remains unsupported and `BOB_MORLOCK`
+    /// remains the likely spelling — but the caption renderer is still unfound,
+    /// so the table stays as it is rather than being rewritten on an inference.
     ///
     /// The video-phone's callable crew: display name + their talk-head HNM basename
     /// (`pe/aa*.hnm`). These are the crew whose full-colour idle-head animations exist and

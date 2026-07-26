@@ -10551,3 +10551,42 @@ to look. Same instrument that was silently truncating two entries ago (#309);
 worth noting that fixing it is what makes this argument available.
 
 616 citations verified (from 613), 0 wrong. 610 lib tests, 0 failures.
+
+## #328 — #327 attributed a routine it had not placed
+
+#327 argued the port's `BOB MORLOCK` should be `BOB_MORLOCK`, on two legs:
+no `0x5F` comparison exists in the image, and "the game's only case-folding loop"
+at `0x2760` preserves characters below `'a'`.
+
+Went looking for that loop's callers, to show it renders the phone captions.
+It has NONE. `find_near_callers.py` returns nothing; `xref.py 0:2160` returns
+zero far calls. It is not a helper at all — it is a fall-through block, and the
+instructions immediately above it are:
+
+    0x274D  mov bx, word ptr gs:[0xa88]   a file handle
+    0x2752  mov cx, 0xffff
+    0x2755  mov ah, 0x3f / int 0x21       DOS READ FILE
+    0x275C  pop di / pop es
+    0x2760  ...the fold
+
+So it upper-cases something JUST LOADED FROM A FILE — most plausibly a path or
+name being normalised. Calling it "the caption renderer's fold" was an
+attribution I had not earned, and calling it "the game's only case-folding loop"
+was wrong twice over: `0x77B5` is a second one, which #327's own label mentions.
+
+WHAT SURVIVES, and it is the leg that mattered: NO instruction anywhere in
+BLOODPRG.EXE compares against `0x5F`. That claim never depended on `0x2760` —
+it is an exhaustive enumeration over the whole image with phantoms rejected. So
+nothing in the game can special-case an underscore, whatever renders the caption,
+and `BOB MORLOCK` is still unsupported.
+
+THE SHAPE OF THE MISTAKE: I found a routine that did the right thing and put it
+in the story without checking whether it was on the path. That is #302's error
+(a decoded fact and an invented policy under one citation) in its subtler form —
+here BOTH facts were true, and only the CONNECTION between them was invented.
+A true statement placed in the wrong argument still makes the argument wrong.
+
+Label and doc corrected in place; the table is unchanged, as #327 already decided.
+
+615 citations verified, 0 wrong (down one: a citation was removed with the
+withdrawn claim). 610 lib tests, 0 failures.
