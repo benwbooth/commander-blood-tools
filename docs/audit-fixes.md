@@ -10626,4 +10626,11 @@ constants themselves, then settled.
 Second time this session a settle refusal caught something (#321 was the other,
 on an ambiguous name). The tool is a better auditor of my shortcuts than I am.
 
-617 citations verified (from 615), 0 wrong. 610 lib tests, 0 failures.
+620 citations verified (from 615), 0 wrong. 610 lib tests, 0 failures.
+
+(Wrote 617 first. THIRD citation-count slip this session — #295 said 585 for
+583, #320 said 617 for 613, this said 617 for 620. Every one came from
+estimating the number instead of reading the tool that prints it, and the
+estimate was wrong in both directions, so it is not a bias I could correct for.
+The rule that works is the same one #319 arrived at for counting instructions:
+run the tool, paste the number, do not predict it.)
