@@ -230,9 +230,21 @@ impl NavChartObject {
 /// The destination info panel's state word, `gs:0x2788`. The dispatcher at
 /// `0x9083` reads it as a bitfield: bit0 = zooming open, bit1 = zooming shut,
 /// zero = open and drawn. There is no separate "idle" value in the original —
-/// the panel is simply not reached when `gs:0x27BF` is 0 (`0x921C` clears both
-/// together at the end of the close), so the port names that state rather than
-/// leaving a zero object to stand for it.
+/// the panel is simply not reached when `gs:0x27BF` is 0. The close clears the
+/// pair in ADJACENT instructions — `mov byte ptr [0x2788], 0` @`0x9217` then
+/// `mov word ptr [0x27bf], 0` @`0x921C` — so the port names that state rather
+/// than leaving a zero object to stand for it. (The doc cited only `0x921C`,
+/// the second of the two; audit-fixes #368.)
+///
+/// EVERY WRITE to the state word, which is what makes this enum exhaustive
+/// rather than a guess:
+///
+/// ```text
+///   0x9043  mov byte ptr [0x2788], 1   start zooming OPEN
+///   0x922F  mov byte ptr [0x2788], 2   start zooming SHUT
+///   0x9120  mov byte ptr [0x2788], 0   open complete -> drawn
+///   0x9217  mov byte ptr [0x2788], 0   close complete -> idle
+/// ```
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum LocationPanelState {
     #[default]

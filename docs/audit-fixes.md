@@ -12016,3 +12016,36 @@ support a true claim and fails to expose a false one. Worth checking the whole
 block before concluding either way, which is cheap and I did not do it first.
 
 683 citations verified (from 678), 0 wrong. 613 lib tests, 0 failures.
+
+## #368 — an enum proved EXHAUSTIVE rather than merely consistent
+
+`LocationPanelState` maps `gs:0x2788` to four variants. Its citations verify
+individually — `test byte [0x2788],1` @`0x9087` (ZoomingOpen),
+`test byte [0x2788],2` @`0x9125` (ZoomingShut) — and the sibling
+`LocationInfoPanel` claims the draw scales by `bh = (3*[0x2789])/2+1`, which is
+exactly `mul bh` / `mov bh,al` / `shr bh,1` / `inc bh` at `0x924D`..`0x9253`.
+
+But verifying the READS only shows the variants are POSSIBLE. Censusing the
+WRITES shows they are ALL of them:
+
+    0x9043  mov byte ptr [0x2788], 1   start zooming OPEN
+    0x922F  mov byte ptr [0x2788], 2   start zooming SHUT
+    0x9120  mov byte ptr [0x2788], 0   open complete -> drawn
+    0x9217  mov byte ptr [0x2788], 0   close complete -> idle
+
+Four writes, three distinct values, and the enum has exactly those plus the
+`Idle` the port names for "zero with no selection". No fifth state exists to have
+been missed. That is a stronger result than "each cited instruction is real", and
+it is only available because the write census is complete (#359).
+
+ALSO CORRECTED: the doc said "`0x921C` clears both together". `0x921C` clears
+`[0x27BF]`; `[0x2788]` is cleared five bytes earlier at `0x9217`. Adjacent
+instructions, one citation — the same one-of-a-pair mispointing as #367, this
+time harmless because both instructions are in the same breath.
+
+WHAT I WOULD DO DIFFERENTLY: I verified the reads first and nearly settled on
+them. For an enum or any closed set of states, the READS tell you the variants
+are reachable and only the WRITES tell you the set is closed. Reading first is
+backwards for this shape of claim.
+
+689 citations verified (from 683), 0 wrong. 613 lib tests, 0 failures.
