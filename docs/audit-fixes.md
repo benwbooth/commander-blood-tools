@@ -11470,3 +11470,39 @@ enough to have happened, which is why #350/#351's checks are worth the two false
 positives each took to tune.
 
 501 code + 238 data labels clean. 612 lib tests, 0 failures.
+
+## #353 — ten constants settled, every one checked at its own instruction
+
+A batch from the `ASM?` queue, all in `src/vm.rs`. Six were constants I created
+earlier in this session and re-checked rather than trusted (my own citation is
+not evidence — #329's rule):
+
+    DLG_ASSET_NAME_TABLE_BASE  add ax, 0xdd7                @0x7691   (#318)
+    UI_FLAG_CE_BRANCH          test byte gs:[0x2793], 1     @0x6494   (#311)
+    UI_FLAG_BUSY               or byte [0x2793], 4          @0x593A + 2 more
+    UI_FLAG_SEEK_ARRIVED       xor word [0x2793], 8         @0x9671   (#330)
+    UI_FLAG_DEFER_MASK         test byte [0x2793], 0xe      @0x1095   (#311)
+    MAIN_LOOP_BUSY_BYTES       derived from the OR sequence @0x109C   (#333)
+
+Four were pre-existing and verified now:
+
+    ENTITY_CANDIDATE_KIND_MASK     test bx, 0x98             @0x727E
+    ENTITY_CANDIDATE_READY_BIT     test byte es:[di+2], 2    @0x7284
+    SHIP_CLICK_LOCATION_KIND_MASK  test word es:[eax], 0x140 @0xB0FB
+    OBJECT_FLAG_IN_PLAY            test byte fs:[bx+2], 2    @0x6073
+
+All ten exact, no corrections needed. `NAV_CHART_KIND_MASK`'s `test bx,0x118`
+@`0x723D` checked out too while I was in the neighbourhood, though that row was
+already settled.
+
+WORTH NOTING ABOUT THE SHAPE: every one of these is a MASK OR BIT tested by a
+single instruction, and that is the easiest kind of claim to verify — one
+address, one operand, no interpretation. The defects this review has found were
+never in constants like these; they were in PROSE (#346), in ADDRESSES pointing
+at the wrong routine (#298), in POLICY invented around a real fact (#302), and in
+COUNTS derived from the wrong instrument (#335). A settled ledger row is worth
+exactly as much as the difficulty of the claim it settles, and rows like these
+are the cheap end.
+
+2227 items, 1066 confirmed (47.9%). `ASM?` down to 44.
+612 lib tests, 0 failures.
