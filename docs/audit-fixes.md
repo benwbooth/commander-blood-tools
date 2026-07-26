@@ -13045,3 +13045,38 @@ pinned. An assertion that needs scaffolding to pass tests the scaffolding.
 
 2228 items, 1091 confirmed (49.0%), 1137 open. 713 citations verified, 0 wrong.
 614 lib tests, 0 failures.
+
+## #397 — closing 0x591C, the last unmatched clear
+
+#396 fixed rows 1 and 2. Row 0 (HONK) was still wrong, and for a different
+reason: `nav_choice_handler_0` (`0x8713`) does NOT clear `0x2A19`. The clear for
+that path comes from the PRESENTATION START itself — `mov word gs:[0x2a19],0`
+@`0x591C`, inside `presentation_scan`, which #394 found while correcting that
+block's cleared-cell list from seven entries to ten.
+
+Row 0 is the case where it matters most: HONK plays ON the bridge, so unlike rows
+1 and 2 no screen opens and closes afterwards to release anything. The selection
+would have stayed set for the rest of the session, with the eye-orb scan
+short-circuited the whole time.
+
+WHERE THE FIX LANDS IS AN ARCHITECTURE CONSEQUENCE, not a choice I like.
+`start_actor_presentation` is on `VmMachine`, which has no `BridgeView` — the port
+splits VM state from bridge state where the game has one data segment. So the
+clear is applied at the call site instead, flagged inside the VM borrow and run
+after it drops. Only ONE live call site needed it: the other main.rs sites are
+non-bridge contexts, and the kind-2 console-box path already calls
+`release_menu()` before starting its presentation.
+
+All four of the game's `0x2A19` clears now have identified port counterparts:
+`0x87B0` and `0x883B` (#396), `0x8956` (the dismiss ladder, the pre-existing
+box-level `release_menu` sites), and `0x591C` here. That question has been open
+across #394, #395 and #396; it is closed.
+
+The scattered-call-site shape is a latent hazard worth naming: a future
+`start_actor_presentation` call from a bridge context will not clear the
+selection, and nothing will catch it. The real fix is for the engine to own the
+invariant rather than each caller — recorded, not done, because inventing an
+engine-level lifecycle hook is a bigger change than the decode justifies.
+
+2228 items, 1091 confirmed (49.0%), 1137 open. 713 citations verified, 0 wrong.
+614 lib tests, 0 failures.

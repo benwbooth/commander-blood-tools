@@ -1844,6 +1844,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                 Option<std::path::PathBuf>,
                                 bool,
                             )> = Vec::new();
+                            let mut needs_menu_selection_clear = false;
                             {
                                 let mut vm = script_vm.borrow_mut();
                                 let m = vm.as_mut().unwrap();
@@ -1853,6 +1854,16 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                 };
                                 if let Some(a) = actor {
                                     m.start_actor_presentation(a, 40);
+                                    // Row 0 (HONK) plays ON the bridge, so unlike
+                                    // rows 1/2 nothing else clears the selection
+                                    // afterwards. The game clears it inside the
+                                    // presentation START itself — `mov word
+                                    // gs:[0x2a19],0` @0x591C in presentation_scan
+                                    // — which the port cannot do from VmMachine
+                                    // (it has no BridgeView), so it lands at the
+                                    // call site. `nav_choice_handler_0` (0x8713)
+                                    // does NOT clear it; 0x591C is the source.
+                                    needs_menu_selection_clear = true;
                                     let map = vm_lines.borrow();
                                     new_lines = m
                                         .run_frame()
@@ -1872,6 +1883,9 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                             }
                             if !new_lines.is_empty() {
                                 set_vm_dialogue(&mut engine, new_lines);
+                            }
+                            if needs_menu_selection_clear {
+                                engine.bridge.clear_menu_selection();
                             }
                             match row {
                                 // Rows 1 and 2 CLEAR the console selection on
