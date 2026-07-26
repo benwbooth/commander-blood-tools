@@ -10246,3 +10246,42 @@ Corrected to 27 with the method named, and the row settled: everything it claims
 about the instructions holds.
 
 Citations: 613 verified, 0 wrong. 607 lib tests, 0 failures.
+
+## #320 — five rows that verify, including one that can be READ instead of trusted
+
+Continuing the cleaned `ASM?` queue. Five rows, all correct as written, checked
+rather than assumed:
+
+`VM_FIELD_OFFSET_SELECTOR_ENCOUNTER = 8`. The doc claims `FIELD_OFFSETS[8]` is
+non-zero in exactly one column — `0x36` at column 1, i.e. kind 2. Read from the
+matrix at `DS:0x6D60`: `00 36 00 00 ...`, non-zero at column 1 only. Exact.
+
+`OBJECT_FLAG_PAIR_SEEN = 0x8000` — `or word ptr [si+2], 0x8000` at BOTH `0x5DD2`
+and `0x5DFA`, as claimed.
+
+`OBJECT_FLAG_ACTIVE = 1` — `test word ptr [si+2], 1` @`0x91D4` and
+`test byte ptr [si+2], 1` @`0x83D9`. Note the two filters test the same bit at
+different WIDTHS; the doc says so and both are there.
+
+`STATUS_STRING_TABLE`. Three of its four citations name an instruction directly
+(`mov si,0x12E` @`0x8369`, `mov si,0x14B` @`0x839F`); the other two say
+"`0x836C`'s branch" and "`0x8376`'s branch", which is the loose form that has
+been wrong before (#301). Followed both: `cmp word fs:[bp],0x10 / jne` @`0x836C`
+guards `mov si,0x137` @`0x8373` (kind `0x10` = SHIP), and
+`test word fs:[bp],0x100 / je` @`0x8376` guards `mov si,0x13E` @`0x837E`
+(kind `0x100` = BLACK HOLE), with the planet header set first as the default.
+Loose phrasing, correct content.
+
+`LOCATION_PANEL_BOX = [0x64, 0x14, 0xA0, 0x46]` — and this one is better than a
+citation. The doc says `DS:0x2780` is STATIC with no writer anywhere, which means
+the four words can be READ OUT OF THE IMAGE rather than trusted:
+`64 00 14 00 a0 00 46 00`. Exact match. Added
+`location_panel_box_matches_the_image`, so a drift between the literal and the
+shipped data fails a test instead of surviving as a plausible number — #227's
+rule, applied to a table nobody had checked that way.
+
+Running tally: fourteen rows reviewed, nine correct as written, five corrected.
+The corrected five are still the more interesting half, but nine-in-fourteen is
+the honest denominator.
+
+Citations: 617 verified, 0 wrong. 608 lib tests, 0 failures.

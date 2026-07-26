@@ -10759,6 +10759,28 @@ mod tests {
         );
     }
 
+    /// audit-fixes #320. `LOCATION_PANEL_BOX` is not a transcription — the four
+    /// words are IN the shipped image at `DS:0x2780`, and its doc says that cell
+    /// is static (no writer anywhere). Read them instead of trusting them, so a
+    /// drift between the literal and the data fails here.
+    #[test]
+    fn location_panel_box_matches_the_image() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        let at = 0xD420 + 0x2780;
+        let from_image: Vec<u16> = (0..4)
+            .map(|i| u16::from_le_bytes([exe[at + i * 2], exe[at + i * 2 + 1]]))
+            .collect();
+        assert_eq!(
+            from_image,
+            LOCATION_PANEL_BOX.to_vec(),
+            "the panel rect must come from DS:0x2780, not from a transcription"
+        );
+    }
+
     /// audit-fixes #303. The C3 promoter's gate: a queued presentation is taken
     /// over only when its RELATED object is `blood`.
     ///

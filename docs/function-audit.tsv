@@ -1344,21 +1344,21 @@ SPECIAL_OBJECT_SLOT_COUNT	src/vm.rs	1483	const		UNVERIFIED
 VM_FIELD_OFFSET_SELECTOR_PRESENTATION_HANDOFF	src/vm.rs	1484	const		UNVERIFIED	
 VM_FIELD_OFFSET_SELECTOR_C2	src/vm.rs	1491	const	0x625B,0x624B	ASM	/// `mov ax,0x11` @`0x625B` in the nav source-list builder (`0x624B`) — the /// selector the walk resolves to find an object's parent link. /// /// `ship3d::SHIP_3D_FIELD_SELECTOR_PARENT_LINK` is the 
 VM_FIELD_OFFSET_SELECTOR_C9_RELATED	src/vm.rs	1492	const		UNVERIFIED	
-VM_FIELD_OFFSET_SELECTOR_ENCOUNTER	src/vm.rs	1497	const	0x5DCE,0x5DF6,0x83DF,0x91DB	CELL?	/// Selector `0x08` — the ENCOUNTER COUNTER. `FIELD_OFFSETS[8]` is non-zero in /// exactly one column (`0x36` at column 1 = kind 2), so this is a kind-2 field. /// Written by `post_update_encounter_co
+VM_FIELD_OFFSET_SELECTOR_ENCOUNTER	src/vm.rs	1497	const	0x5DCE,0x5DF6,0x83DF,0x91DB	ASM	/// Selector `0x08` — the ENCOUNTER COUNTER. `FIELD_OFFSETS[8]` is non-zero in /// exactly one column (`0x36` at column 1 = kind 2), so this is a kind-2 field. /// Written by `post_update_encounter_co
 OBJECT_FLAG_PAIR_SEEN	src/vm.rs	1500	const	0x8000,0x5DD2,0x5DFA	ASM	/// Bit 15 of an object's `+2` flag word, set alongside the encounter-counter /// bump (`or word [si+2],0x8000` @ `0x5DD2`/`0x5DFA`).
-OBJECT_FLAG_ACTIVE	src/vm.rs	1503	const	0x91D4,0x83D9	ASM?	/// Bit 0 of an object's `+2` flag word — the ACTIVE bit, the second condition of /// both list filters (`test word [si+2],1` @ `0x91D4`, `test byte [si+2],1` @ `0x83D9`).
+OBJECT_FLAG_ACTIVE	src/vm.rs	1503	const	0x91D4,0x83D9	ASM	/// Bit 0 of an object's `+2` flag word — the ACTIVE bit, the second condition of /// both list filters (`test word [si+2],1` @ `0x91D4`, `test byte [si+2],1` @ `0x83D9`).
 ARCHE_LOCATION_FIELD	src/vm.rs	1507	const	0x8365,0x6752,0x6B44	ASM	/// `arche+0x16` — the CURRENT LOCATION object (`mov bp,fs:[si+0x16]` @ `0x8365` /// with `si = gs:[0x6752] = arche`; the same word `0x6B44` clears).
 LOCATION_KIND_SHIP	src/vm.rs	1509	const	0x836C,0x8376	ASM	/// Location kinds the status header distinguishes (`0x836C`, `0x8376`).
 LOCATION_KIND_BLACK_HOLE	src/vm.rs	1510	const		UNVERIFIED	
 StatusHeaders	src/vm.rs	1517	struct	0x12E,0x137,0x13E,0x14B	CELL?	/// The status panel's four headers, supplied by the caller from the GAME'S OWN /// strings (`bloodprg::location_status_headers` reads `DS:0x12E`, `0x137`, /// `0x13E`, `0x14B`). They used to be four 
-STATUS_STRING_TABLE	src/vm.rs	1535	const	0x12E,0x137,0x13E,0x14B,0x839F	ASM?	/// `(DS offset, file offset)` for each header — `0x12E`/`0x137`/`0x13E` are the /// three `mov si,imm` constants and `0x14B` the roster caption at `0x839F`. /// /// The strings themselves are NOT her
+STATUS_STRING_TABLE	src/vm.rs	1535	const	0x12E,0x137,0x13E,0x14B,0x839F	ASM	/// `(DS offset, file offset)` for each header — `0x12E`/`0x137`/`0x13E` are the /// three `mov si,imm` constants and `0x14B` the roster caption at `0x839F`. /// /// The strings themselves are NOT her
 LOCATION_PANEL_X	src/vm.rs	1544	const	0x9137,0x91EC	ASM	/// Layout of the DESTINATION INFO PANEL drawn by `0x9137..0x91EC`. Every value is /// an immediate in that routine; see [`VmMachine::location_panel_rows`].
 LOCATION_PANEL_Y	src/vm.rs	1545	const		UNVERIFIED	
 LOCATION_PANEL_ROW_PITCH	src/vm.rs	1546	const		UNVERIFIED	
 LOCATION_PANEL_NAME_GAP	src/vm.rs	1547	const		UNVERIFIED	
 LOCATION_PANEL_HEADER_COLOR	src/vm.rs	1548	const		UNVERIFIED	
 LOCATION_PANEL_ROW_COLOR	src/vm.rs	1549	const		UNVERIFIED	
-LOCATION_PANEL_BOX	src/vm.rs	1554	const	0x2780,0x9114,0x9203,0x9142	ASM?	/// The panel's window rect `(x, y, w, h)` — `DS:0x2780`, a STATIC constant: a /// whole-image search for every store form to `0x2780` finds no writer, and the /// only references are the two `mov si/
+LOCATION_PANEL_BOX	src/vm.rs	1554	const	0x2780,0x9114,0x9203,0x9142	ASM	/// The panel's window rect `(x, y, w, h)` — `DS:0x2780`, a STATIC constant: a /// whole-image search for every store form to `0x2780` finds no writer, and the /// only references are the two `mov si/
 LOCATION_PANEL_TINT_PERCENT	src/vm.rs	1568	const	0xFFCE,0x90ED,0x22F1,0xffce,0x22F5	ASM	/// `ax = 0xFFCE` at `0x90ED`, negated on entry to the table builder (`0x22F1`). /// The panel's tint strength, as a PERCENTAGE — and it appears in the binary as /// its two's complement, which is why
 LOCATION_PANEL_ZOOM_STEPS	src/vm.rs	1570	const	0xADA,0x903E	CELL?	/// `[0xADA] = 8` (`0x903E`) — the zoom-open/shut interpolation step count.
 LOCATION_PANEL_CURSOR_RECT_SIZE	src/vm.rs	1572	const	0x9029	CELL?	/// The zoom SOURCE rect seeded at `0x9029`: a 4x4 square at the cursor.
