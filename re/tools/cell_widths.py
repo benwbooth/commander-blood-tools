@@ -51,6 +51,25 @@ def load(path):
     return MZ().data
 
 
+# audit-fixes #345. This tool was written FOR #271 -- a 16-bit load hiding a
+# 32-bit accumulator -- and read only BLOODPRG.EXE. #344 then found exactly that
+# bug still asserted in `src/croolis.rs` about an OVERLAY cell, three entries
+# after the label was corrected, because nothing scanned the overlays for it.
+OVERLAYS = ("croolis.xdb", "manu3.xdb", "amer.xdb", "scrut.xdb")
+# Flags that consume the NEXT argument. See the parser below.
+VALUE_FLAGS = {"--image", "--overlay"}
+
+
+def overlay_path(name):
+    import os
+
+    for base in ("output/_tmp_dat", "../output/_tmp_dat"):
+        p = os.path.join(base, name)
+        if os.path.exists(p):
+            return p
+    return None
+
+
 def widest_writes(md, data, entries, limit=4096):
     """address -> widest byte-width the code STORES there."""
     width = {}
@@ -77,8 +96,14 @@ def main():
         if skip:
             skip = False
             continue
-        if a == "--image":
-            image = raw[i + 1] if i + 1 < len(raw) else None
+        # EVERY value-taking flag must be listed here. The docstring already
+        # records `--image` leaking its value into the positional list, where it
+        # was parsed as a hex address; adding `--overlay` in audit-fixes #345
+        # reintroduced the identical bug in the identical place, so the fix is a
+        # SET rather than another `if` (#345).
+        if a in VALUE_FLAGS:
+            if a == "--image":
+                image = raw[i + 1] if i + 1 < len(raw) else None
             skip = True
             continue
         if a.startswith("--"):
@@ -88,10 +113,20 @@ def main():
         print(__doc__)
         return 0
 
-    data = load(image)
     md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_16)
     md.detail = True
     entries = [int(a, 16) for a in args]
+
+    if "--overlay" in sys.argv:
+        name = sys.argv[sys.argv.index("--overlay") + 1]
+        path = overlay_path(name)
+        if not path:
+            print(f"overlay {name} not found under output/_tmp_dat")
+            return 1
+        data = open(path, "rb").read()
+        print(f"scanning OVERLAY {name} ({len(data)} bytes)")
+    else:
+        data = load(image)
     width = widest_writes(md, data, entries)
 
     wide = {at: w for at, w in width.items() if w >= 4}

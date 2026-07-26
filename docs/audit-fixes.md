@@ -11186,3 +11186,40 @@ not the overlays. So an overlay claim can disagree with an overlay label
 indefinitely.
 
 647 citations verified (from 645), 0 wrong. 612 lib tests, 0 failures.
+
+## #345 — extend the width scanner to the overlays, and reintroduce a bug it documents
+
+#344 found a 16-bit-load-hiding-a-32-bit-accumulator claim still asserted in
+`src/croolis.rs` three entries after the label was corrected. `cell_widths.py`
+exists precisely to catch that class — and it read only `BLOODPRG.EXE`, so an
+overlay cell could disagree with its own label indefinitely.
+
+`--overlay croolis.xdb` now scans the overlays. Result:
+
+    18 written DS cells; 6 written 32 bits wide
+      0x22de -> high word 0x22e0      0x22ea -> high word 0x22ec
+      0x22e2 -> high word 0x22e4      0x22ee -> high word 0x22f0
+      0x22e6 -> high word 0x22e8      0x22f2 -> high word 0x22f4
+
+SIX accumulators, not three. The camera triple (`0x22EA`/`0x22EE`/`0x22F2`) is
+known; `0x22DE`/`0x22E2`/`0x22E6` are a SECOND triple immediately before it, and
+their existence fits the labels' note that each camera axis is stepped by
+`[0x22d2|0x22d6|0x22da] * ebx >> 3` — a velocity triple beside a position triple.
+
+NO NEW DEFECT: the port references exactly one of the six, and only as a recomp
+test leaf. Nothing treats them as words. That is the result I wanted and could
+not have asserted without scanning.
+
+AND I REINTRODUCED THE BUG THE TOOL DOCUMENTS. Its docstring records `--image`
+leaking its value into the positional list, "where it was parsed as a hex
+address (the same bug `find_imm.py` fixed for `--max`)". Adding `--overlay` I
+wrote a second `if` and left the value to leak — identical bug, identical place,
+with the fix described three lines above in the same file. Now a `VALUE_FLAGS`
+SET, so the next flag cannot repeat it.
+
+Third time this session a tool has been given a defect it already warns about
+(#326 read comments while hunting content; #336 omitted an encoding while
+listing encodings). Documenting a trap does not stop you walking into it; only
+making it structurally impossible does.
+
+647 citations verified, 0 wrong. 612 lib tests, 0 failures.
