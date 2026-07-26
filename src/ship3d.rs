@@ -245,12 +245,15 @@ pub const SHIP_3D_FIELD_SELECTOR_KIND100_MATCH_WORD: u8 = 12;
 /// `mov ax,0xe` @`0x60EC`, resolved with the DI record's own kind and read from it.
 pub const SHIP_3D_FIELD_SELECTOR_KIND100_RELATION_WORD: u8 = 14;
 pub const SHIP_3D_FIELD_SELECTOR_PARENT_LINK: u8 = 17;
+/// `mov ax,5` @`0x6229` in the object-table bit test (`0x6210`). The selector is FIXED here, not derived from the object — the routine's own label warns about that (audit-fixes #274).
 pub const SHIP_3D_SOURCE_BITSET_SELECTOR: u8 = 0x05;
+/// `mov bx,2` @`0x622C`, feeding the `call 0x6023` @`0x622F` one instruction after the selector's `mov ax,5` — kind and selector are both fixed at the call site.
 pub const SHIP_3D_SOURCE_BITSET_KIND: u16 = 0x0002;
 pub const SHIP_3D_C1_SOURCE_KIND_OPERAND_FLAG: u16 = 0x0001;
 pub const SHIP_3D_C1_SOURCE_KIND_BITSET: u16 = 0x0002;
 pub const SHIP_3D_C1_SOURCE_OPERAND_STATE_FLAG: u8 = 0x02;
 pub const SHIP_3D_C1_KIND10_RECORD_KIND: u16 = 16;
+/// `mov ax,0x13` @`0x6C48` — 19, resolved with kind `0x10` (`mov bx,0x10` @`0x6C4B`) on the C1 SET path, which `0x6C2F` reaches via `jb` when the bit test returns carry.
 pub const SHIP_3D_C1_DESTINATION_SELECTOR: u8 = 19;
 pub const SHIP_3D_C1_RECORD_STATE_OPCODE: u16 = vm::OP_RECORD_STATE_MIN as u16;
 pub const SHIP_3D_C1_RECORD_STATE_AUX_WORD: u16 = 2;

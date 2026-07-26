@@ -8741,3 +8741,30 @@ a port constant cannot be found in the binary, the next question is not "is it
 invented" but "is it computed".
 
 Six rows settled ASM; guard 513 -> 527 checked, 0 wrong.
+
+## #284 — three C1 constants, and a citation the guard passed for the right reason
+
+Continuing #281's undocumented sweep into the C1 source/destination constants,
+all of which had empty origins.
+
+`SHIP_3D_SOURCE_BITSET_SELECTOR = 5` and `_KIND = 2` are the pair #274 already
+established as FIXED at the bit test's call site — `mov ax,5` @`0x6229`,
+`mov bx,2` @`0x622C`, `call 0x6023` @`0x622F`. Now cited rather than only
+described in a neighbouring entry.
+
+`SHIP_3D_C1_DESTINATION_SELECTOR = 19` comes from the C1 SET path: `0x6C2F` calls
+the bit test and takes `jb` to `0x6C48` when it returns carry, where
+`mov ax,0x13` / `mov bx,0x10` resolves the destination field and
+`mov word es:[bp],0xc1` writes the record type.
+
+A NOTE ON THE GUARD. My first draft wrote "`mov bx,2` feeding the same
+`call 0x6023` @`0x622F`", and the guard passed it. That is correct behaviour, not
+a miss: its rule pairs an address with the LAST backticked run adjacent to the
+`@`, which here is `call 0x6023` — and `call` IS what is at `0x622F`. The prose
+mentioned `mov bx,2` without claiming an address for it, so there was nothing to
+check.
+
+Which is a limitation worth naming: the guard verifies the citations you MAKE, and
+prose can describe an instruction without citing it. Tightened to give `bx` its own
+address, because an uncheckable mention beside a checkable one reads as though
+both were verified.
