@@ -1282,3 +1282,14 @@ does NOT execute on real data: `write_c1_record_state_ship3d` early-returns whil
 Remaining to derive: `navigation_records`, `object_table_records`, and
 `source_list_bytes` (the last should be BUILT, not supplied — `call 0x624B` with
 `bp=0x6886` @`0x6C11`; the port already has the builder).
+
+### #292 correction — the live C1 path is fed; it was INCOMPLETE
+
+The #290/#291 entries above diagnose the ship-3D C1 position subsystem as
+"unfed". That is true of the `ExecutionContext` trace path and NOT of the live
+one: `VmMachine::c1_set_plan` has the DEB directory and a faithful `0x624B`
+port. Its gap was a missing implementation — no distance redirect
+(`0x6BE0`..`0x6C02`) — now ported and pinned by perturbation. Remaining on the
+live path: the kind-2 bitset arm (`cmp ax,2` @`0x6C27` -> `call 0x6210`), which
+needs the source list as raw bytes rather than the `Vec<u16>` of offsets
+`build_nav_source_list` returns.

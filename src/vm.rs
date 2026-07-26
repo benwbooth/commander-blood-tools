@@ -5203,11 +5203,137 @@ impl VmMachine {
     /// SOURCE-LIST READ POINTER, so it tests bytes inside the list buffer rather
     /// than an object field (see re/dead_ends.md). Those entries are treated as
     /// never passing rather than wired against a guessed base.
+    /// Build the position records the C1 distance gate needs, reading them
+    /// through `rec_read` — the live path's view of the `gs:0x6724` table.
+    ///
+    /// Same rule as `derive_ship_3d_position_runtime` (audit-fixes #291) against
+    /// a different backing store: `VmMachine` keeps records as word-addressed
+    /// `line_records`, the `ExecutionContext` path keeps a byte array. The DECODE
+    /// is shared — kind at the record start (`mov ax,[si]` @`0x61AB`), links via
+    /// `vm_field_offset` (`0x6023`), `0xFFFF` meaning the arche fallback
+    /// (`cmp si,-1` @`0x61CD`) — only the accessor differs (audit-fixes #292).
+    fn c1_position_records(
+        &self,
+        seeds: &[u16],
+        arche: u16,
+    ) -> (Vec<ship3d::Ship3dPositionRecord>, Vec<ship3d::Ship3dPositionField>) {
+        let mut offsets: Vec<u16> = Vec::new();
+        let mut queue: Vec<u16> = seeds.iter().copied().filter(|o| *o != 0).collect();
+        if arche != 0 {
+            queue.push(arche);
+        }
+        let mut budget = 64usize;
+        while let Some(offset) = queue.pop() {
+            if budget == 0 {
+                break;
+            }
+            budget -= 1;
+            if offsets.contains(&offset) {
+                continue;
+            }
+            offsets.push(offset);
+            let kind = self.rec_read(offset);
+            if matches!(
+                kind,
+                ship3d::SHIP_3D_OBJECT_KIND_POSITION_KIND100
+                    | ship3d::SHIP_3D_OBJECT_KIND_POSITION_DIRECT_8
+                    | ship3d::SHIP_3D_OBJECT_KIND_POSITION_DIRECT_10
+                    | ship3d::SHIP_3D_OBJECT_KIND_POSITION_DIRECT_40
+                    | ship3d::SHIP_3D_OBJECT_KIND_POSITION_DIRECT_200
+            ) {
+                continue;
+            }
+            let Some(parent_field) =
+                vm_field_offset(ship3d::SHIP_3D_FIELD_SELECTOR_PARENT_LINK, kind)
+            else {
+                continue;
+            };
+            let parent = self.rec_read(offset.wrapping_add(parent_field));
+            if parent != ship3d::SHIP_3D_PARENT_LINK_SENTINEL {
+                queue.push(parent);
+            }
+        }
+
+        let mut records = Vec::with_capacity(offsets.len());
+        let mut fields: Vec<ship3d::Ship3dPositionField> = Vec::new();
+        for offset in offsets {
+            let kind = self.rec_read(offset);
+            let read = |selector: u8, kind: u16| -> Option<u16> {
+                let field = vm_field_offset(selector, kind)?;
+                Some(self.rec_read(offset.wrapping_add(field)))
+            };
+            records.push(ship3d::Ship3dPositionRecord {
+                offset,
+                kind_flags: kind,
+                parent_link: read(ship3d::SHIP_3D_FIELD_SELECTOR_PARENT_LINK, kind)
+                    .filter(|v| *v != ship3d::SHIP_3D_PARENT_LINK_SENTINEL),
+                kind100_match_word: read(
+                    ship3d::SHIP_3D_FIELD_SELECTOR_KIND100_MATCH_WORD,
+                    ship3d::SHIP_3D_OBJECT_KIND_POSITION_KIND100,
+                ),
+                kind100_relation_word: read(
+                    ship3d::SHIP_3D_FIELD_SELECTOR_KIND100_RELATION_WORD,
+                    kind,
+                ),
+            });
+            for selector in [
+                ship3d::SHIP_3D_FIELD_SELECTOR_POSITION,
+                ship3d::SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MATCH,
+                ship3d::SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MISMATCH,
+            ] {
+                if let Some(field) = vm_field_offset(selector, kind) {
+                    let at = offset.wrapping_add(field);
+                    if !fields.iter().any(|f| f.offset == at) {
+                        fields.push(ship3d::Ship3dPositionField {
+                            offset: at,
+                            x: self.rec_read(at),
+                            y: self.rec_read(at.wrapping_add(2)),
+                        });
+                    }
+                }
+            }
+        }
+        (records, fields)
+    }
+
     fn c1_set_plan(&self, off: u16, operand: u16) -> Option<Option<u16>> {
         let owner = self.owner_object_offset(off)?;
         if self.rec_read(owner.wrapping_add(2)) & 1 == 0 {
             return Some(None); // owner inactive (`0x6BCE` je)
         }
+
+        // THE DISTANCE REDIRECT, `0x6BE0`..`0x6C02` (audit-fixes #292). The live
+        // handler skipped this entirely: it went straight to the kind-0x10 test,
+        // so an owner that should have been redirected to its PARENT first was
+        // judged on its own kind. Present on the ExecutionContext path since
+        // #283, but that path is never fed (#290), so nothing ran it.
+        //
+        //   0x6BE0  cmp ax,2 / je     the operand word selects this mode...
+        //   0x6BE5  cmp ax,1 / jne    ...being 1 or 2, else skip to 0x6C04
+        //   0x6BEA  call 0x60DD       distance between the operand and owner records
+        //   0x6BED  or ax,ax / je     zero distance -> no redirect
+        //   0x6BF3  mov ax,0x11 ...   otherwise follow the owner's parent link
+        //   0x6BFF  cmp ax,0x10 / jne the redirected target MUST be kind 0x10
+        let mut owner = owner;
+        if operand == 1 || operand == 2 {
+            let arche = self.arche_offset.unwrap_or(0);
+            let (records, fields) = self.c1_position_records(&[operand, owner], arche);
+            let distance =
+                ship3d::ship_3d_position_distance(&records, &fields, operand, owner, arche, 0);
+            if let Some(distance) = distance {
+                if distance != 0 {
+                    let owner_kind = self.rec_read(owner);
+                    let parent_field =
+                        vm_field_offset(ship3d::SHIP_3D_FIELD_SELECTOR_PARENT_LINK, owner_kind)?;
+                    let redirected = self.rec_read(owner.wrapping_add(parent_field));
+                    if self.rec_read(redirected) != ship3d::SHIP_3D_C1_KIND10_RECORD_KIND {
+                        return Some(None); // `jne 0x6C73` -> branch
+                    }
+                    owner = redirected;
+                }
+            }
+        }
+
         let dest = if self.rec_read(owner) == 0x10 {
             let passed = self.build_nav_source_list(owner).into_iter().any(|entry| {
                 // kind 1 (`0x6C36`): test bit1 of the operand record's +2.
@@ -10266,6 +10392,89 @@ mod tests {
         m.step();
         assert_eq!(m.rec_read_pub(0x84), 0xC4, "no DEB loaded -> unconditional write");
         assert_eq!(m.active_actor, Some(0x84));
+    }
+
+    /// audit-fixes #292. The LIVE C1 handler had no distance redirect: it tested
+    /// the owner's own kind and never followed `0x6BE0`..`0x6C02`, so a nonzero
+    /// distance could not move the write to the owner's PARENT. This proves it
+    /// now does, on `VmMachine` — the path the game actually runs.
+    ///
+    /// The discriminator is WHERE the record lands. Without the redirect the
+    /// destination is `owner + sel13`; with it, `parent + sel13`.
+    #[test]
+    fn c1_distance_redirect_moves_the_write_to_the_parent_on_the_live_path() {
+        let link1 = vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C2, 1).expect("kind 1 sel-0x11");
+        let link10 = vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C2, 0x10).expect("kind 0x10 sel-0x11");
+        let pos8 = vm_field_offset(ship3d::SHIP_3D_FIELD_SELECTOR_POSITION, 8).expect("kind 8 pos");
+        let pos10 =
+            vm_field_offset(ship3d::SHIP_3D_FIELD_SELECTOR_POSITION, 0x10).expect("kind 0x10 pos");
+        let dest_fo =
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, 0x10).expect("kind 0x10 sel-0x13");
+
+        let owner = 0x0080u16;
+        let parent = 0x0200u16;
+        let child = 0x0100u16;
+        let operand = 2u16; // the mode word AND, per 0x6BDB, the record offset
+
+        // `separated` controls only the operand record's X, i.e. the distance.
+        let build = |separated: bool| {
+            let mut m = VmMachine::new();
+            m.object_offsets = vec![owner];
+            m.directory = vec![(child, 1), (0x9000, 0)];
+
+            m.rec_write_pub(owner, 0x10); // owner kind 0x10
+            m.rec_write_pub(owner + 2, 1); // owner ACTIVE (0x6BCE)
+            m.rec_write_pub(owner + link10, parent); // owner's parent link
+            m.rec_write_pub(owner + pos10, 0); // owner at x=0
+            m.rec_write_pub(owner + pos10 + 2, 0);
+
+            m.rec_write_pub(operand, 8); // operand record kind 8 (direct)
+            m.rec_write_pub(operand + pos8, if separated { 10 } else { 0 });
+            m.rec_write_pub(operand + pos8 + 2, 0);
+            m.rec_write_pub(operand + 2, 2); // the kind-1 gate bit
+
+            m.rec_write_pub(parent, 0x10); // the redirect target must be kind 0x10
+            m.rec_write_pub(child, 1); // a kind-1 source entry...
+            m.rec_write_pub(child + link1, parent); // ...whose parent is `parent`
+            m
+        };
+        let cod = [0xC1, 0x84, 0x00, 0x02, 0x00, 0xFF]; // C1 off=0x84 operand=2
+
+        // Distance NONZERO -> redirect: the write lands on the PARENT.
+        let mut m = build(true);
+        m.load_cod(&cod);
+        m.query = false;
+        m.stack.push(0x99);
+        m.pc = 0;
+        m.step();
+        assert_eq!(
+            m.rec_read_pub(parent + dest_fo),
+            0xC1,
+            "nonzero distance must redirect the write to the parent (0x6BF1..0x6C02)"
+        );
+        assert_eq!(m.rec_read_pub(parent + dest_fo + 2), operand);
+        assert_eq!(m.rec_read_pub(parent + dest_fo + 4), 2);
+        assert_eq!(
+            m.rec_read_pub(owner + dest_fo),
+            0,
+            "and NOT on the owner it started from"
+        );
+
+        // Distance ZERO -> `or ax,ax / je 0x6C04`, no redirect: owner keeps it.
+        let mut m = build(false);
+        // The owner's own source list must pass the same gate for the write.
+        m.rec_write_pub(child + link1, owner);
+        m.load_cod(&cod);
+        m.query = false;
+        m.stack.push(0x99);
+        m.pc = 0;
+        m.step();
+        assert_eq!(
+            m.rec_read_pub(owner + dest_fo),
+            0xC1,
+            "zero distance keeps the owner as the target"
+        );
+        assert_eq!(m.rec_read_pub(parent + dest_fo), 0);
     }
 
     #[test]

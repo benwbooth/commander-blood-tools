@@ -9098,3 +9098,57 @@ this subsystem and a real run.
 
 Citations: 577 verified (from 570), 0 wrong. 703 tests across all binaries, 0
 failures.
+
+## #292 — the live C1 handler was missing the distance redirect; #290's diagnosis was half right
+
+Deriving the outer C1 runtime (#291's stated next task) turned out to rest on a
+wrong premise, and finding that out was most of the work.
+
+WHAT #290 SAID: `Ship3dC1PositionRuntime` is fed only by a test-only builder, so
+in every real run the C1 distance gate takes its "no redirect" arm and the
+decoded position subsystem is inert.
+
+WHAT IS ACTUALLY TRUE: there are TWO C1 implementations in this tree.
+
+  * `VmMachine::c1_set_plan` — the LIVE path, the one `main.rs` and `vm_drive.rs`
+    run. It IS fed: `self.directory` is the DEB object directory and
+    `build_nav_source_list` is a faithful port of `0x624B`.
+  * the `ExecutionContext` path (`resolve_c1_record_state_ship3d_target`) — a
+    trace/analysis path, which production reaches only with
+    `ExecutionContext::default()`, hence unfed.
+
+So the conclusion "the position machinery never runs live" was right, but the
+REASON was wrong. It was not that the C1 path is starved; it is that the live
+handler is NARROWER. `c1_set_plan` implemented the owner-active check, the
+kind-`0x10` source list, the kind-1 arm and the destination write — and skipped
+`0x6BE0`..`0x6C02` entirely, so an owner that should have been redirected to its
+parent first was judged on its own kind. The fuller decode existed since #283 but
+only on the path nothing feeds.
+
+FIXED ON THE LIVE PATH: `c1_set_plan` now runs the redirect —
+
+    0x6BE0  cmp ax,2 / je      the operand word selects the mode...
+    0x6BE5  cmp ax,1 / jne     ...being 1 or 2, else skip to 0x6C04
+    0x6BEA  call 0x60DD        distance between the operand and owner records
+    0x6BED  or ax,ax / je      zero distance -> no redirect
+    0x6BF3  mov ax,0x11 ...    otherwise follow the owner's parent link
+    0x6BFF  cmp ax,0x10 / jne  the redirected target MUST be kind 0x10
+
+with `c1_position_records`, the same derivation as #291 against `rec_read`
+instead of a byte array — `VmMachine` stores records word-addressed. The DECODE
+is shared; only the accessor differs.
+
+VERIFIED BY PERTURBATION, because a passing test proves nothing here: the new
+`c1_distance_redirect_moves_the_write_to_the_parent_on_the_live_path` uses WHERE
+the record lands as the discriminator (`parent + sel13` vs `owner + sel13`).
+Disabling the redirect leaves the parent slot at 0 instead of 0xC1 and the test
+fails; the zero-distance half pins the `or ax,ax / je` arm from the other side.
+
+STILL MISSING on the live path, named so it is not mistaken for done: the KIND-2
+BITSET arm (`cmp ax,2` @`0x6C27` -> `call 0x6210`). `c1_set_plan` tests only
+`rec_read(entry) == 1`. That arm needs the source list as raw BYTES for the
+bitset base, and `build_nav_source_list` returns a `Vec<u16>` of offsets, so it
+is a real piece of work rather than a line.
+
+Citations: 579 verified (from 577), 0 wrong. 705 tests across all binaries, 0
+failures.
