@@ -12115,3 +12115,36 @@ build actually DIFFERS: a perturbation which leaves the suite green should be
 suspected of being a no-op before it is believed as a result.
 
 613 lib tests, 0 failures. 689 citations verified, 0 wrong.
+
+## #371 — the self-reference guard knew one tautology shape; now it knows two
+
+#370 found `assert_eq!(EngineState::OPTION_BOX_LABEL, "CANCEL")` — a constant
+compared to a copy of its own definition. `tools/check_selfref_asserts.py` exists
+precisely to stop that, and could not have caught it: it matches `len() == CONST`
+only, the shape that once hid a font table truncated from 176 entries to 128.
+
+Added the second shape. It parses every `const NAME: &'static str = "..."` in the
+tree, then flags any `assert_eq!(NAME, "...")` whose literal EQUALS that
+definition. Cross-file, since a constant is often defined and asserted in
+different modules.
+
+TWO CALIBRATION PASSES, both against a deliberately re-introduced tautology
+(#370's own lesson: a perturbation that changes nothing reads as a pass):
+
+  1. The length rule clears an assertion when anything in the FILE is grounded.
+     Reintroducing the tautology, the checker SAW it and reported it grounded,
+     because `engine.rs` reads the image elsewhere.
+  2. Narrowing to in-TEST grounding still cleared it — that test reads the image
+     for another purpose entirely.
+
+So the rule for this shape is UNCONDITIONAL. Grounding elsewhere does not rescue
+`CONST == "its own value"`: the assertion is vacuous in itself, and the fix is to
+replace it with a read of whatever the constant claims to come from — which is
+what #370 did — not to leave it standing beside better evidence. The two shapes
+need different rules, and treating them alike would have kept this one invisible.
+
+Verified by re-introduction: the guard reports it, with the file, test name,
+constant and the advice. Restored; the tree is clean at 8 length assertions and 0
+tautologies.
+
+613 lib tests, 0 failures. 689 citations verified, 0 wrong.

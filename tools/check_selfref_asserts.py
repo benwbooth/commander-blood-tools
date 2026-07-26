@@ -35,6 +35,22 @@ GROUNDED = re.compile(
 )
 
 
+# audit-fixes #371. A SECOND self-referential shape the length rule cannot see:
+#
+#     assert_eq!(EngineState::OPTION_BOX_LABEL, "CANCEL");
+#
+# where the constant's own definition IS `"CANCEL"`. Both sides are the same
+# transcription, so the assertion cannot fail unless someone edits one of them,
+# and it says nothing about the game (#370). Detectable mechanically: find the
+# constant's definition and compare it to the literal it is asserted against.
+CONST_DEF = re.compile(
+    r'(?:pub\s+)?const\s+([A-Z][A-Z0-9_]*)\s*:\s*&\s*\'?static\s+str\s*=\s*("(?:[^"\\]|\\.)*")\s*;'
+)
+ASSERT_STR = re.compile(
+    r'assert_eq!\s*\(\s*(?:[A-Za-z_][A-Za-z0-9_]*::)*([A-Z][A-Z0-9_]*)\s*,\s*("(?:[^"\\]|\\.)*")'
+)
+
+
 def tests_in(text):
     """Yield (name, start_line, body) for each #[test] fn."""
     lines = text.splitlines()
@@ -84,9 +100,44 @@ def main():
                             f"{m.group(1).strip()}.len() == {m.group(2)} with nothing "
                             "independent in the test"
                         )
+    # STRING TAUTOLOGIES, gathered across the whole tree: a constant may be
+    # defined in one file and asserted in another.
+    consts, str_checked = {}, 0
+    for root, _, files in os.walk("src"):
+        for f in sorted(files):
+            if f.endswith(".rs"):
+                body = open(os.path.join(root, f), encoding="utf-8", errors="replace").read()
+                for m in CONST_DEF.finditer(body):
+                    consts[m.group(1)] = m.group(2)
+    for root, _, files in os.walk("src"):
+        for f in sorted(files):
+            if not f.endswith(".rs"):
+                continue
+            path = os.path.join(root, f)
+            text = open(path, encoding="utf-8", errors="replace").read()
+            file_grounded = GROUNDED.search(text) is not None
+            for name, line, body in tests_in(text):
+                for m in ASSERT_STR.finditer(body):
+                    if consts.get(m.group(1)) != m.group(2):
+                        continue  # not comparing a constant to its own value
+                    str_checked += 1
+                    # UNCONDITIONAL, unlike the length rule. Grounding elsewhere
+                    # does not rescue this shape: `CONST == "its own value"` is
+                    # vacuous in itself, and the fix is to REPLACE it with a read
+                    # of the source the constant claims to come from — which is
+                    # what #370 did — not to leave it beside better evidence.
+                    problems.append(
+                        f"{path}:{line}: {name} asserts {m.group(1)} == "
+                        f"{m.group(2)}, which IS its definition -- a tautology; "
+                        "assert against the image/data the constant comes from"
+                    )
+
     for p in problems:
         print("SELF-REF " + p)
-    print(f"{checked} `len() == CONST` assertion(s), {len(problems)} ungrounded")
+    print(
+        f"{checked} `len() == CONST` and {str_checked} `CONST == its own literal` "
+        f"assertion(s), {len(problems)} ungrounded"
+    )
     return 1 if problems else 0
 
 
