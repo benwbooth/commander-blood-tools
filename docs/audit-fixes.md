@@ -9190,3 +9190,52 @@ runs, is undecided here. The instruction is unambiguous; its intent is not.
 
 Citations: 581 verified (from 579), 0 wrong. 706 tests across all binaries, 0
 failures.
+
+## #294 — the kind-2 bitset arm on the live path, via a PERSISTENT 0x6886 scratch
+
+#293 said this arm could not be ported by translating the branch, because the
+bitset byte sits at `cursor + 0x1E` — past the terminator for a short list — and
+`build_nav_source_list` returns a `Vec<u16>` with nothing to index into. It also
+said building a synthesised "entries then zeros" buffer would be worse than the
+gap, since the test would always read zero and never fire.
+
+The way out was the region's SIZE. `DS:0x6886` is the source list; the next
+labelled cell is `DS:0x6A16`, the active-object candidate list `0x604E` builds.
+So the scratch is `0x190` = 400 bytes, and `cursor + 0x1E` stays INSIDE it. The
+bytes the bit test reads are not undefined memory — they are whatever the
+PREVIOUS build left in the same buffer.
+
+That makes it modellable without inventing anything: `VmMachine` now carries
+`nav_source_scratch`, 400 persistent bytes. `refresh_nav_source_scratch` writes
+entries plus the `0xFFFF` terminator (`mov word ptr [bp],0xffff` @`0x6289`) and
+TOUCHES NOTHING ELSE, exactly as `0x624B` does. `c1_set_plan` then runs the full
+scan through the already-tested `select_ship_3d_c1_source_record`, so both arms
+and the unknown-kind fall-through come from one implementation.
+
+VERIFIED FROM THREE SIDES, because a single passing assertion would not
+distinguish this from the old kind-1-only code. With a one-entry list the cursor
+is 2 and the byte read is `scratch[0x20]`, past the terminator at offset 2:
+  * bit SET there before stepping (as a previous build would have left it) -> the
+    arm fires and the record is written;
+  * bit CLEAR -> nothing written;
+  * the WRONG bit set (`0x80`, index 0) with the operand at directory index 1 ->
+    nothing written, which pins the high-bit-first mask `0x80 >> (i & 7)` from
+    the failing side rather than the passing one.
+The test also asserts the builder did not clear that byte, which is the property
+the whole design rests on.
+
+DISCREPANCY FOUND, NOT FIXED. The three exits of the scan differ in the binary:
+the write path (`jmp 0x6C7A`) and the branch path (`0x6C73`, which calls
+`vm_branch`) both `pop si / pop ds` first, but the SENTINEL path
+(`cmp ax,-1 / je 0x6C7C` @`0x6C20`) jumps straight to `pop di / ret`, skipping
+those two pops AND the branch. The port maps sentinel and rejection to the same
+`Some(None)` -> `branch()`. Two things follow and only one is settled: the port
+branches where the game does not, and — on my reading of the pushes at `0x6B4C`,
+`0x6B71` and `0x6B72` — the sentinel path also leaves two words on the stack.
+A stack imbalance in shipped code is far more likely to be MY misreading than a
+real bug, so it is recorded as a question rather than acted on. Either way the
+missing `vm_branch` is a genuine behavioural difference worth settling before
+anyone relies on the sentinel arm.
+
+Citations: 583 verified (from 581), 0 wrong. 707 tests across all binaries, 0
+failures.

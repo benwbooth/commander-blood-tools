@@ -1293,3 +1293,16 @@ port. Its gap was a missing implementation — no distance redirect
 live path: the kind-2 bitset arm (`cmp ax,2` @`0x6C27` -> `call 0x6210`), which
 needs the source list as raw bytes rather than the `Vec<u16>` of offsets
 `build_nav_source_list` returns.
+
+### #294 — live C1 now runs both source arms; sentinel exit still differs
+
+`VmMachine::c1_set_plan` runs the full `0x6C1C` scan (kind-2 bitset, kind-1
+operand flag, unknown-kind fall-through) against a PERSISTENT 400-byte
+`DS:0x6886` scratch, which is what lets the kind-2 bitset at `cursor + 0x1E`
+read the bytes a previous build left. #292's remaining live gap is closed.
+
+OPEN: the scan's sentinel exit (`je 0x6C7C` @`0x6C20`) does NOT call `vm_branch`,
+while the port maps it to the same `Some(None)` -> `branch()` as a scanned-and-
+rejected list. The same jump also appears to skip the `pop si / pop ds` that
+both other exits perform — likely a misreading of the push/pop pairing, recorded
+so the next reader checks it rather than inherits it.

@@ -4787,6 +4787,19 @@ pub struct VmMachine {
     /// name table `DS:0x67BE`). The status roster excludes objects whose location
     /// is the Ark (`cmp [si+0x18],bx` @ `0x83E5`).
     pub ark_offset: Option<u16>,
+    /// The `DS:0x6886` NAV SOURCE-LIST SCRATCH, 400 bytes — the region between
+    /// `ship_3d_navigation_source_list` (`DS:0x6886`) and the active-object list
+    /// that follows it (`DS:0x6A16`).
+    ///
+    /// PERSISTENT ON PURPOSE, and that is the whole reason it exists as state
+    /// rather than a return value (audit-fixes #294). `0x624B` writes entries
+    /// plus a `0xFFFF` terminator and leaves the rest of the region ALONE, while
+    /// the kind-2 bitset test reads at `cursor + 0x1E + (index >> 3)` (`0x6210`,
+    /// `mov al,byte ptr [si]` @`0x6240`) — which for a short list lands past that
+    /// terminator, on whatever the previous build left. A buffer rebuilt from
+    /// scratch each call would read zeros there and the arm would never fire;
+    /// keeping the bytes is what makes it faithful.
+    pub nav_source_scratch: Vec<u8>,
     /// The `gs:0x672c` DIRECTORY as `(offset, kind)` pairs — the DEB's 20-byte
     /// records, whose `+0x10` is the object offset and `+0x12` the entry kind.
     /// The nav source-list builder (`0x624B`) walks it, continuing while the next
@@ -4840,6 +4853,7 @@ impl Default for VmMachine {
             events: Vec::new(),
             cod: Vec::new(),
             object_offsets: Vec::new(),
+            nav_source_scratch: vec![0u8; NAV_SOURCE_SCRATCH_LEN],
             directory: Vec::new(),
             arche_offset: None,
             orxx_offset: None,
@@ -4849,6 +4863,11 @@ impl Default for VmMachine {
         }
     }
 }
+
+/// Length of the `DS:0x6886` nav source-list scratch: the distance to the next
+/// labelled cell, `DS:0x6A16` (the active-object candidate list `0x604E` builds).
+/// 0x6A16 - 0x6886 = 0x190 (audit-fixes #294).
+const NAV_SOURCE_SCRATCH_LEN: usize = 0x6A16 - 0x6886;
 
 impl VmMachine {
     pub fn new() -> Self {
@@ -5296,7 +5315,7 @@ impl VmMachine {
         (records, fields)
     }
 
-    fn c1_set_plan(&self, off: u16, operand: u16) -> Option<Option<u16>> {
+    fn c1_set_plan(&mut self, off: u16, operand: u16) -> Option<Option<u16>> {
         let owner = self.owner_object_offset(off)?;
         if self.rec_read(owner.wrapping_add(2)) & 1 == 0 {
             return Some(None); // owner inactive (`0x6BCE` je)
@@ -5335,12 +5354,43 @@ impl VmMachine {
         }
 
         let dest = if self.rec_read(owner) == 0x10 {
-            let passed = self.build_nav_source_list(owner).into_iter().any(|entry| {
-                // kind 1 (`0x6C36`): test bit1 of the operand record's +2.
-                self.rec_read(entry) == 1 && self.rec_read(operand.wrapping_add(2)) & 2 != 0
-            });
-            if !passed {
-                return Some(None);
+            // THE SOURCE-LIST SCAN, `0x6C1C`. Both arms now, not just kind 1
+            // (audit-fixes #294): kind 2 tests the object-table bitset via
+            // `0x6210`, kind 1 tests bit 1 of the operand record's `+2`, and any
+            // other kind resumes the scan (`jne 0x6C1C` @`0x6C39`).
+            //
+            // The scan runs against the PERSISTENT `0x6886` scratch, because the
+            // kind-2 bitset lives at `cursor + 0x1E` — past the terminator for a
+            // short list, on bytes the previous build left.
+            let mut source_records = self.refresh_nav_source_scratch(owner);
+            source_records.push(ship3d::SHIP_3D_TARGET_EXIT_SENTINEL);
+
+            // The scan reads each entry's kind out of the record table; the
+            // bitset index comes from the directory, which is what `0x6210`
+            // walks (`cmp ax,es:[di+0x10]` @`0x621D`).
+            let nav_records: Vec<ship3d::Ship3dNavigationRuntimeRecord> = source_records
+                .iter()
+                .filter(|offset| **offset != ship3d::SHIP_3D_TARGET_EXIT_SENTINEL)
+                .map(|offset| ship3d::Ship3dNavigationRuntimeRecord {
+                    offset: *offset,
+                    kind_flags: self.rec_read(*offset),
+                    ..Default::default()
+                })
+                .collect();
+            let object_table: Vec<u16> = self.directory.iter().map(|(obj, _)| *obj).collect();
+
+            let selected = ship3d::select_ship_3d_c1_source_record(
+                &source_records,
+                &nav_records,
+                &object_table,
+                &self.nav_source_scratch,
+                operand,
+                self.rec_read(operand.wrapping_add(2)) as u8,
+            );
+            match selected {
+                Some(Some(_)) => {}
+                // No source passed: `0x6C73` for a scanned-and-rejected list.
+                Some(None) | None => return Some(None),
             }
             let fo = vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, 0x10)?;
             owner.wrapping_add(fo)
@@ -5365,6 +5415,30 @@ impl VmMachine {
     ///
     /// This is pure record-table logic — directory plus `gs:0x6724` — so it needs
     /// no frontend state, which is what makes the C1 nav-source path portable.
+    /// Run the builder and write its result into the persistent `DS:0x6886`
+    /// scratch the way `0x624B` does: entries as little-endian words followed by
+    /// the `0xFFFF` terminator (`mov word ptr [bp],0xffff` @`0x6289`), and
+    /// NOTHING ELSE TOUCHED.
+    ///
+    /// Leaving the tail alone is the point — see `nav_source_scratch`
+    /// (audit-fixes #294). Returns the entries so callers do not re-run the walk.
+    fn refresh_nav_source_scratch(&mut self, target: u16) -> Vec<u16> {
+        let entries = self.build_nav_source_list(target);
+        let mut at = 0usize;
+        for entry in entries.iter().copied() {
+            if at + 2 > self.nav_source_scratch.len() {
+                break;
+            }
+            self.nav_source_scratch[at..at + 2].copy_from_slice(&entry.to_le_bytes());
+            at += 2;
+        }
+        if at + 2 <= self.nav_source_scratch.len() {
+            self.nav_source_scratch[at..at + 2]
+                .copy_from_slice(&ship3d::SHIP_3D_TARGET_EXIT_SENTINEL.to_le_bytes());
+        }
+        entries
+    }
+
     pub fn build_nav_source_list(&self, target: u16) -> Vec<u16> {
         // Named for its selector so it does not collide with the token walker
         // `walk` in this same file (the audit ledger keys rows by name+file).
@@ -10412,6 +10486,89 @@ mod tests {
         m.step();
         assert_eq!(m.rec_read_pub(0x84), 0xC4, "no DEB loaded -> unconditional write");
         assert_eq!(m.active_actor, Some(0x84));
+    }
+
+    /// audit-fixes #294. The KIND-2 bitset arm on the live path, and with it the
+    /// reason the `0x6886` scratch is persistent state rather than a return
+    /// value.
+    ///
+    /// The bitset byte sits at `cursor + 0x1E + (index >> 3)` (`0x6210`). With a
+    /// one-entry source list the cursor is 2, so the byte read is
+    /// `scratch[0x20]` — well past the `0xFFFF` terminator the builder wrote at
+    /// offset 2. This test puts the bit there BEFORE stepping, exactly as a
+    /// previous build would have left it, and the arm fires. Rebuild the buffer
+    /// from zeros each call and it cannot.
+    #[test]
+    fn c1_kind2_bitset_arm_reads_the_persistent_scratch_on_the_live_path() {
+        let link2 = vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C2, 2).expect("kind 2 sel-0x11");
+        let dest_fo =
+            vm_field_offset(VM_FIELD_OFFSET_SELECTOR_C9_RELATED, 0x10).expect("kind 0x10 sel-0x13");
+        let owner = 0x0080u16;
+        let child = 0x0100u16;
+        let operand = 0x0300u16;
+
+        let build = || {
+            let mut m = VmMachine::new();
+            m.object_offsets = vec![owner];
+            // operand is directory index 1 -> bit 1 -> mask 0x80 >> 1 = 0x40.
+            m.directory = vec![(child, 1), (operand, 1), (0x9000, 0)];
+            m.rec_write_pub(owner, 0x10); // owner kind 0x10
+            m.rec_write_pub(owner + 2, 1); // owner ACTIVE
+            m.rec_write_pub(child, 2); // the source entry is KIND 2
+            m.rec_write_pub(child + link2, owner); // and a child of the owner
+            // operand's +2 bit 1 CLEAR, so the kind-1 arm cannot be what passes.
+            m.rec_write_pub(operand + 2, 0);
+            m
+        };
+        let cod = [0xC1, 0x84, 0x00, 0x00, 0x03, 0xFF]; // C1 off=0x84 operand=0x300
+
+        // Bit SET in the stale region -> the kind-2 arm passes.
+        let mut m = build();
+        m.nav_source_scratch[0x20] = 0x40;
+        m.load_cod(&cod);
+        m.query = false;
+        m.stack.push(0x99);
+        m.pc = 0;
+        m.step();
+        assert_eq!(
+            m.rec_read_pub(owner + dest_fo),
+            0xC1,
+            "kind-2 bitset hit must take the write path (jb 0x6C48 @0x6C32)"
+        );
+        assert_eq!(m.rec_read_pub(owner + dest_fo + 2), operand);
+
+        // The builder must NOT have cleared the byte it does not own.
+        assert_eq!(
+            m.nav_source_scratch[0x20], 0x40,
+            "0x624B writes entries and a terminator, nothing else"
+        );
+
+        // Bit CLEAR -> no source passes, nothing written.
+        let mut m = build();
+        m.load_cod(&cod);
+        m.query = false;
+        m.stack.push(0x99);
+        m.pc = 0;
+        m.step();
+        assert_eq!(
+            m.rec_read_pub(owner + dest_fo),
+            0,
+            "a clear bit must not write"
+        );
+
+        // The WRONG bit set (index 0, mask 0x80) must not pass for index 1.
+        let mut m = build();
+        m.nav_source_scratch[0x20] = 0x80;
+        m.load_cod(&cod);
+        m.query = false;
+        m.stack.push(0x99);
+        m.pc = 0;
+        m.step();
+        assert_eq!(
+            m.rec_read_pub(owner + dest_fo),
+            0,
+            "high-bit-first indexing: index 1 is mask 0x40, not 0x80"
+        );
     }
 
     /// audit-fixes #292. The LIVE C1 handler had no distance redirect: it tested
