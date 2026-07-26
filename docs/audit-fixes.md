@@ -8614,3 +8614,31 @@ EXACTLY on the probe address with the claimed mnemonic, so it cannot invent a
 plausible-looking earlier instruction out of a mid-instruction resynchronisation
 — the phantom problem that #106 and #234 are about. When it has nothing to say it
 says nothing, and the plain mismatch stands.
+
+## #280 — a doc 110 lines from its struct, and the citation that followed it
+
+Reading `engine.rs`'s ASM? functions, `civil_from_days` claimed `0x0FFB`. It is
+Howard Hinnant's civil-from-days algorithm — a date conversion for the TV
+channel's seasonal variants — and `0x0FFB` is the game's main-loop coordinator.
+Nothing connects them.
+
+The doc above it reads "Per-frame engine state — the subset of the `DS`/`gs`
+globals the main loop (`0x0FFB`) touches". That is `EngineState`'s doc. The struct
+is 110 lines further down and had NO doc of its own; this one had been stranded
+above an unrelated function with no item between them, so the inventory attached
+it to the date algorithm.
+
+Two wrongs from one displacement: a port-side utility carrying a binary citation
+it has no claim to (and sitting in the ASM? queue as if it transcribed something),
+and the engine's central state struct documented nowhere.
+
+Moved to the struct. `civil_from_days` now has no origin and is settled INFRA,
+which is what a date algorithm with no game content is; `EngineState` carries the
+`0x0FFB` citation that was always meant for it.
+
+This is the same failure mode as #252's manufactured citations, arriving by a
+different route: there the scan reached forward past an item's end, here a doc
+was simply written in the wrong place and every tool downstream believed it. Both
+turn "has a citation" into a claim about proximity rather than about content —
+which is why #261's practice of generating citations from tool output, rather than
+inheriting them from whatever is adjacent, keeps mattering.

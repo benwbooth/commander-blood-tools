@@ -163,8 +163,6 @@ struct WorldVisit {
 pub const ENGINE_SCREEN_WIDTH: usize = 320;
 pub const ENGINE_SCREEN_HEIGHT: usize = 200;
 
-/// Per-frame engine state — the subset of the `DS`/`gs` globals the main loop
-/// (`0x0FFB`) touches, plus the indexed framebuffer the render subsystems fill.
 /// Days-since-Unix-epoch → (year, month, day) civil date (Howard Hinnant's `civil_from_days`).
 /// Used for the TV ad channel's seasonal variants (Dec 25 / Jan 1) — no external time dep needed.
 fn civil_from_days(z: i64) -> (i64, u32, u32) {
@@ -274,6 +272,12 @@ impl LocationInfoPanel {
 /// headers; frames 72..=107 carry it).
 pub const NAV_ROOM_STATION: u16 = 2;
 
+/// Per-frame engine state — the subset of the `DS`/`gs` globals the main loop
+/// (`0x0FFB`) touches, plus the indexed framebuffer the render subsystems fill.
+///
+/// This doc lived 110 lines earlier, stranded above `civil_from_days` with no
+/// item between them, so the ledger attached its `0x0FFB` citation to a date
+/// algorithm and left this struct undocumented (audit-fixes #280).
 pub struct EngineState {
     /// Frame counter (increments once per [`EngineState::step`]).
     pub frame: u64,
