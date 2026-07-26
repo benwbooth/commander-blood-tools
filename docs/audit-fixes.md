@@ -10357,3 +10357,36 @@ offsets; there is no disassembly behind it. #299 made the same distinction for
 the status that matches the evidence is the whole point of having more than one.
 
 609 lib tests, 0 failures. 613 citations verified, 0 wrong.
+
+## #323 — the fallback literal was fine; the SELECTION beside it is the guess
+
+#322 pinned `MENU_SUBMENU`'s transcribed literals to the DIC and the COD and
+settled the row DATA. Reading the accessor that uses them turned up the real
+problem, one line away.
+
+`menu_by_offset` is faithful: each 0xA6 line record's offset maps to its menu
+rows, and the dialogue path looks a menu up BY THE CURRENT LINE'S OFFSET —
+`menu_by_offset.get(&line.offset)`. That is how the game reaches a menu.
+
+`menu_submenu_labels` ignores it:
+
+    self.menu_by_offset.iter().min_by_key(|(off, _)| **off)
+
+It takes the globally LOWEST offset as a stand-in for "the MENU submenu". There
+is no citation behind that and no rule it could cite — it is a heuristic that
+works because SCRIPT1's `0x4A9` record happens to be early in the file. A script
+whose first menu record is some other list returns the wrong rows and says
+nothing.
+
+THE ORDERING OF SUSPICION WAS BACKWARDS. The doc flagged the LITERAL as the
+"PROVENANCE DEFECT" — and the literal turned out to be exactly right, verifiable
+at both ends against shipped data. The undocumented `min_by_key` one line below
+it was never flagged at all. A transcribed constant announces itself; a
+plausible-looking selection does not, which is why it survived longer.
+
+Recorded as an APPROX row in docs/port-validation.md naming `0x8428` (the console
+list widget that consumes these word-offset lists) as the replacement path.
+Not fixed here: reaching the menu the way the game does means decoding the MENU
+click dispatch, which is a decode task rather than a review one.
+
+609 lib tests, 0 failures. 613 citations verified, 0 wrong.

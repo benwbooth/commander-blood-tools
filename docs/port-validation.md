@@ -1416,3 +1416,22 @@ The blit reads the cell as a row offset (`add bx, gs:[0x1fa7]` @`0xA464`,
 `[0x131C]` and jumps to `0x7B80`; what selects that path is undecoded. Until it
 is, any scene the game would draw ten rows down is drawn at the band top or
 full-screen by the port.
+
+### APPROX — `menu_submenu_labels` picks the LOWEST-offset menu, not the MENU submenu
+
+ROUTINE THAT MUST REPLACE IT: whatever the MENU click dispatches to; the console
+list widget that consumes a 0/0xFFFF-terminated word-offset list is `0x8428`.
+
+`menu_by_offset` is faithful — it maps each 0xA6 line record's offset to its menu
+rows, and the dialogue path looks a menu up BY THE CURRENT LINE'S OFFSET
+(`engine.rs`, `menu_by_offset.get(&line.offset)`).
+
+`menu_submenu_labels` does not use that. It takes the globally minimum offset as
+a proxy for "the MENU submenu". For SCRIPT1 this lands on the `0x4A9` record —
+verified in audit-fixes #322 to be exactly `[0x02FC, 0x0309]` = explanations /
+game — but only because that record happens to be early in the file. Nothing
+selects it by identity.
+
+Consequence: a script whose first menu record is a different list returns the
+wrong rows, silently. The transcribed `MENU_SUBMENU` fallback beside it is the
+better-evidenced half of the function (#322 pinned it to the DIC and the COD).

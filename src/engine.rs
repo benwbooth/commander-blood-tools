@@ -1303,6 +1303,20 @@ impl EngineState {
 
     /// The MENU submenu's rows, taken from the LOADED SCRIPT when one is present.
     ///
+    /// SELECTION IS A PROXY, NOT A DECODE (audit-fixes #323). `menu_by_offset`
+    /// maps a line record's offset to its menu rows, and the faithful consumer
+    /// looks a menu up BY THE CURRENT LINE'S OFFSET. This accessor instead takes
+    /// the globally LOWEST offset (`min_by_key`), which is a stand-in for "the
+    /// MENU submenu" and has nothing behind it — no citation, no rule. It happens
+    /// to yield SCRIPT1's `0x4A9` record because that record is early in the
+    /// file; a script whose first menu record is some other list would silently
+    /// return the wrong rows.
+    ///
+    /// The engine-side fix is to reach this menu the way the game does — through
+    /// whatever the MENU click dispatches to — rather than by scanning for a
+    /// minimum. Until then the fallback literal below is the LESS suspect half of
+    /// this function.
+    ///
     /// The real source is an `0xA6` record's word list after its `0xFFFF` separator
     /// (SCRIPT1.COD `0x4A9` -> DIC `explanations` / `game`); the widget upper-cases
     /// for display, which is why the DIC entries are lowercase. Falls back to
