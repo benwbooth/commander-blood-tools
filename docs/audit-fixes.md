@@ -12849,3 +12849,41 @@ still names. The conclusion was right with its reason missing; now listed.
 
 2228 items, 1091 confirmed (49.0%), 1137 open. 707 citations verified, 0 wrong.
 613 lib tests, 0 failures.
+
+## #392 — the opcode GROUPS match the binary's shared handlers, 9 of 9
+
+#391 verified each opcode's cited ADDRESS. The port also makes a second, stronger
+claim the table can settle: it writes shared handlers as grouped match arms
+(`0xAD | 0xAF | 0xB2 | 0xB3 | 0xBA | 0xBB | 0xBC => { .. }`), asserting those
+opcodes ARE one handler in the game. A wrong group means merging behaviours the
+game keeps apart, or splitting ones it shares — worse than a wrong citation,
+because it changes what the port DOES.
+
+Extended the checker to compare each grouped arm against the handler's full
+opcode set. **9 grouped arms, 9 exact matches, 0 with wrong members.** Both large
+families are confirmed against the dispatch table, not against a comment:
+`0xAD/0xAF/0xB2/0xB3/0xBA/0xBB/0xBC` -> `0x6946`, and `0xB1/0xB4/0xB5/0xB6/0xBE/
+0xBF/0xC0` -> `0x6863`.
+
+THE SPLIT BUCKET FOUND FIVE, AND ALL FIVE WERE FINE. Investigated each rather
+than reporting them:
+
+  * `0xCE | 0xD0 | 0xD1 => pc += 1` (twice) is not a DISPATCH arm at all — it is
+    inside script SCANNERS, grouping by operand LENGTH, and all three really are
+    one-byte opcodes. The dispatcher has separate `0xCE`/`0xD0`/`0xD1` arms, which
+    matters because the three handlers `0x6494`/`0x64A0`/`0x64AC` are byte-for-byte
+    identical APART FROM the flag they test (`gs:[0x2793]`, `gs:[0x252A]`,
+    `gs:[0x274F]`) — merging them would have tested one flag for three opcodes.
+  * `0xAA | 0xAC` (twice): distinct handler addresses, identical bodies — both set
+    the yield flag `gs:[0x67b4]`.
+  * `0xC5 | 0xC6 | 0xC7 | 0xC8`: one arm that discriminates INSIDE via `match op`,
+    which is where the genuinely different per-opcode write guards live.
+
+So the bucket has a 100% false-positive rate on current code and is now ADVISORY,
+off unless `--splits` is passed, with those three benign shapes written into the
+tool. Printing five non-findings as findings is the failure mode this session has
+corrected in three other tools; better to catch it in the same commit that
+introduces it.
+
+2228 items, 1091 confirmed (49.0%), 1137 open. 707 citations verified, 0 wrong.
+613 lib tests, 0 failures.
