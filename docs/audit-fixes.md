@@ -11013,3 +11013,42 @@ codebase: phantom decode (#234), off-path attribution (#328), and silent registe
 advance (this). All three produce an address that disassembles cleanly.
 
 641 citations verified, 0 wrong. 612 lib tests, 0 failures.
+
+## #340 — #339 solved the trap and then answered the question wrong anyway
+
+#339 correctly identified that two `movsd` advance SI by eight, so reading back
+to the nearest `mov si, imm16` gives `0x2AAB` and that is definitely wrong. Then
+it concluded SI = `0x2AB3` and recorded that as the console menu's row list.
+
+The second half does not survive one more check. `0x2AB3` has exactly THREE
+references in the whole image — `0x844E`, `0x8493`, `0x854E` — and all three are
+INSIDE `list_widget_layout_unified`, where it is the per-label WIDTH SCRATCH
+(`mov di, 0x2ab3` then `lodsw` from SI, measure, store). Nothing anywhere writes
+a row list to it.
+
+So I have two checked facts that do not fit:
+
+  * SI at `0x88BA` traces to `0x2AB3` — `mov si,0x2AAB` @`0x8892`, two `movsd`,
+    and a `push si`/`pop si` pair that preserves the ADVANCED value, with no
+    later load;
+  * `0x2AB3` is the widget's own output buffer and no external code fills it.
+
+Either the trace misses a write to SI that I have not found, or this call site
+uses the widget in a mode where SI is already the width buffer. I do not know
+which, and the label now says so instead of asserting the tidier answer.
+
+WHAT I DID WRONG: I had a real finding — the `movsd` trap — and let it carry a
+conclusion it did not support. Establishing that `0x2AAB` is wrong is not the
+same as establishing that `0x2AB3` is right, and the second claim got the first
+one's credibility. That is #328's shape a second time (true facts, invented
+connection), and this time I was the one who had just written up #328.
+
+THE CHECK THAT CAUGHT IT was asking who WRITES the address, not who reads it —
+the same question #302 needed for the C3 promoter and #315 for the blit base.
+"Where does this data come from" is apparently the question I skip when the
+pointer arithmetic was hard enough to feel like the answer.
+
+The `movsd` lesson stands and is worth keeping: a read-back that stops at the
+last `mov si` is wrong whenever a string instruction intervenes.
+
+641 citations verified, 0 wrong. 612 lib tests, 0 failures.
