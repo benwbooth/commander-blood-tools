@@ -1730,8 +1730,14 @@ fn decode_vm_words(words: &HashMap<u16, String>, word_offsets: &[u16]) -> Option
     // Decode only the SPOKEN section. An 0xA6 word list may carry a choice menu after
     // an 0xFFFF separator, and 0xFFFF is not a dictionary offset -- so requiring every
     // entry to resolve made this return None for every menu-bearing line, and both
-    // call sites `continue` on None. That silently dropped 211 of the 3650 A6 lines
-    // across the five scripts from the extraction.
+    // call sites `continue` on None. That silently dropped every menu-bearing A6
+    // line from the extraction.
+    //
+    // COUNTED, not remembered (audit-fixes #416): 214 of 3687 A6 lines across the
+    // five shipped scripts carry an 0xFFFF separator, and all 214 decode after
+    // this fix. The comment previously said "211 of the 3650", which was wrong on
+    // both figures; `a6_menu_bearing_line_count_matches_the_recorded_figure` now
+    // measures all three numbers from the scripts instead of restating them.
     let spoken = &word_offsets[..word_offsets
         .iter()
         .position(|&w| w == 0xFFFF)
@@ -4170,6 +4176,55 @@ mod tests {
     ///
     /// The result is recorded either way. An unanswered "undecided" in a doc is
     /// worth less than a number, even a disappointing one.
+    /// MEASURE the claim in `decode_vm_words`'s comment: "211 of the 3650 A6
+    /// lines across the five scripts" were dropped by requiring every offset to
+    /// resolve (audit-fixes #416). A remembered number in a comment is not a
+    /// verified one, so this counts it from the shipped scripts.
+    #[test]
+    fn a6_menu_bearing_line_count_matches_the_recorded_figure() {
+        let dir = ["output/_tmp_iso", "../output/_tmp_iso", "output/scripts", "../output/scripts"]
+            .iter()
+            .map(Path::new)
+            .find(|p| p.exists());
+        let Some(dir) = dir else { return };
+
+        // Three counts, because "dropped" and "menu-bearing" are not the same
+        // set: the OLD rule returned None when ANY offset failed to resolve, and
+        // 0xFFFF never resolves -- so every menu-bearing line was dropped, but a
+        // line with an unresolvable SPOKEN word was dropped too and is not
+        // recovered by the fix.
+        let (mut total, mut with_menu, mut recovered) = (0usize, 0usize, 0usize);
+        for index in 1..=5 {
+            let Some(cod_path) = find_file_recursive(dir, &format!("SCRIPT{index}.COD")) else {
+                continue;
+            };
+            let Ok(cod) = fs::read(cod_path) else { continue };
+            let Some(dic_path) = find_file_recursive(dir, &format!("SCRIPT{index}.DIC")) else {
+                continue;
+            };
+            let Ok(dic_raw) = fs::read(dic_path) else { continue };
+            let words = commander_blood_tools::script::parse_dictionary(&dic_raw);
+            for token in crate::extract::vm::walk(&cod, 0, cod.len()) {
+                if let vm::VmToken::Text { word_offsets, .. } = token {
+                    total += 1;
+                    if word_offsets.contains(&0xFFFF) {
+                        with_menu += 1;
+                        if decode_vm_words(&words, &word_offsets).is_some() {
+                            recovered += 1;
+                        }
+                    }
+                }
+            }
+        }
+        if total == 0 {
+            return;
+        }
+        eprintln!("A6 lines: {total}, menu-bearing: {with_menu}, recovered: {recovered}");
+        assert_eq!(total, 3687, "total A6 lines across the five scripts");
+        assert_eq!(with_menu, 214, "lines carrying an 0xFFFF menu separator");
+        assert_eq!(recovered, 214, "menu-bearing lines the fix makes decodable");
+    }
+
     #[test]
     fn the_post_update_ladder_with_real_deb_context() {
         let dir = ["output/_tmp_iso", "../output/_tmp_iso", "output/scripts", "../output/scripts"]

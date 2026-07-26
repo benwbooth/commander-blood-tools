@@ -13667,3 +13667,30 @@ guarded; the COUNT is still a remembered number.
 
 2228 items, 1105 confirmed (49.6%), 1123 open. 740 citations verified, 0 wrong.
 719 workspace tests, 0 failures.
+
+## #416 — the remembered number was wrong in both digits
+
+#415 left one loose end: `decode_vm_words`'s comment claimed the old bug
+"silently dropped 211 of the 3650 A6 lines across the five scripts" — a
+measurement with nothing behind it. Measured it.
+
+    A6 lines: 3687, menu-bearing: 214, recovered: 214
+
+Both figures in the comment were wrong. Not catastrophically — the FIX is right
+and the shape of the claim held — but a number written from memory and never
+re-run is exactly the kind of thing that gets quoted later as if it were counted.
+
+The measurement also forced a distinction the comment blurred. "Dropped" and
+"menu-bearing" are not the same set: the old rule returned None when ANY offset
+failed to resolve, and `0xFFFF` never resolves, so every menu-bearing line was
+dropped — but a line with an unresolvable SPOKEN word was dropped too and is NOT
+recovered by this fix. So the test counts three numbers, and the third (214
+recovered of 214 menu-bearing) is the one that actually describes what the fix
+bought. It happens to be all of them; that is a result, not an assumption.
+
+My first version of the test asserted the remembered numbers and failed — which
+is the correct outcome for a test written against a claim rather than against the
+data, and how the discrepancy surfaced at all.
+
+2228 items, 1105 confirmed (49.6%), 1123 open. 740 citations verified, 0 wrong.
+720 workspace tests, 0 failures.
