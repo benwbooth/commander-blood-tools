@@ -7,6 +7,17 @@ use serde::Serialize;
 use crate::vm;
 
 pub const BLOODPRG_FILE_SIZE: usize = 86_680;
+/// NOT VERIFIED BY ANY TEST, and stated so. The port has no hashing dependency,
+/// so nothing here confirms the shipped image is this one — the constant is a
+/// DECLARATION OF WHICH BINARY every address in this project refers to, which is
+/// a useful thing to record and is not the same as a checked fact.
+///
+/// [`BLOODPRG_FILE_SIZE`] beside it IS checked against the real file's length,
+/// and the segment bases are checked against the image's content
+/// (`parses_mz_header_and_address_conversions`), so a substituted binary would
+/// almost certainly fail those. Adding `sha2` purely to close this gap has not
+/// seemed worth a dependency; the alternative would be a hand-rolled SHA-256 in
+/// a test, which is more code than the risk justifies.
 pub const BLOODPRG_SHA256: &str =
     "7e756c597190d20e71a0210da3898b9746c39e04db922455b07f74ec26166823";
 pub const VM_CODE_SEGMENT: u16 = 0x04da;
@@ -3290,6 +3301,31 @@ mod tests {
             SCRIPT_RESOURCE_PROFILE_TABLE_FILE_OFFSET
         );
         assert_eq!(binary.ds_to_file(0x6f18), OPCODE_LENGTH_TABLE_FILE_OFFSET);
+
+        // THOSE ARE CONSTANT-TO-CONSTANT IDENTITIES. They prove the segment bases
+        // agree with the declared file offsets, not that either is right. Tie
+        // them to the IMAGE: the resource name table's first two slots are real
+        // filenames (#203), and the opcode length table's first entry is the
+        // packed word for 0xA0 (#237). If FS_SEGMENT or DATA_SEGMENT were wrong,
+        // the arithmetic above would still pass and these would not.
+        let names = binary.image_bytes();
+        let at = binary.fs_to_file(RESOURCE_NAME_TABLE_FS_OFFSET);
+        assert_eq!(
+            &names[at..at + 10],
+            b"fupcom.spr",
+            "FS_SEGMENT does not land on the resource name table"
+        );
+        assert_eq!(
+            &names[at + 16..at + 27],
+            b"nosound.drv",
+            "the second name slot is not where a 16-byte stride puts it"
+        );
+        let lengths = binary.ds_to_file(0x6f18);
+        assert_eq!(
+            u16::from_le_bytes([names[lengths], names[lengths + 1]]),
+            0xFF03,
+            "DATA_SEGMENT does not land on the opcode length table"
+        );
         assert_eq!(
             binary.ds_to_file(0x7802),
             DIALOGUE_FONT_ASCII_MAP_FILE_OFFSET

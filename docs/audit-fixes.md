@@ -7830,3 +7830,33 @@ scanning further; the fix had no stopping condition for items that do not have t
 structure it assumed, and it then manufactured citations for six years' worth of
 constants. A heuristic that reaches for more evidence needs a rule for when there
 is none to reach for.
+
+## #253 — turning constant-to-constant identities into image checks
+
+#252 cleared 381 manufactured citations, which left `bloodprg.rs`'s segment bases
+honestly uncited. They are not unverifiable, though — they were being checked the
+wrong way.
+
+`parses_mz_header_and_address_conversions` asserted
+`fs_to_file(RESOURCE_NAME_TABLE_FS_OFFSET) == RESOURCE_NAME_TABLE_FILE_OFFSET`
+and three more of that shape. Those are LAYOUT IDENTITIES: they prove the segment
+base and the declared file offset agree with each other. Both could be wrong
+together and every assertion would pass.
+
+Now tied to the image. The computed offset must contain `fupcom.spr` and, one
+16-byte stride later, `nosound.drv` — the first two slots of the resource table
+decoded in #203. The `DS:0x6F18` offset must contain `0xFF03`, the packed length
+word for opcode `0xA0` read in #237. Shifting `FS_SEGMENT` by one fails with
+"does not land on the resource name table"; before, it would have failed nothing,
+because the identity would have shifted with it.
+
+Six rows settled DATA on that basis.
+
+`BLOODPRG_SHA256` is the one that stays unverified, and now says why: the port has
+no hashing dependency, so nothing confirms the shipped image is that one. The
+constant is a DECLARATION of which binary every address in this project refers
+to — worth recording, not the same as a checked fact. `BLOODPRG_FILE_SIZE` beside
+it IS checked against the real length, and the content checks above would almost
+certainly catch a substituted binary, so the gap is narrow. Adding `sha2` for it
+has not seemed worth a dependency, and that judgement is in the doc rather than
+left as a silent omission.
