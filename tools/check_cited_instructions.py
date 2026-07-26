@@ -35,6 +35,14 @@ MNEMONICS = {
     "mul", "imul", "div", "idiv", "lea", "les", "lds", "lfs", "lgs", "lodsb",
     "lodsw", "stosb", "stosw", "stosd", "xlatb", "clc", "stc", "cwde", "cbw",
     "loop", "int", "bsf", "btr", "rep", "sete", "setb", "xchg", "nop", "in", "out",
+    # Added after auditing what this guard SKIPS (audit-fixes #249). The skip
+    # count is mostly prose -- `si = 0x6752`, "ship-3D ... @0x1234" -- but two
+    # entries were real x86 the set simply did not list, so their citations went
+    # unchecked. `movsx`/`movzx` matter here: `0x9A50 movsx eax,[di]` is how the
+    # projector sign-extends its 16-bit inputs, and getting that wrong is exactly
+    # the class of error #222's depth bound exists to catch.
+    "movsx", "movzx", "cwd", "cdq", "std", "cld", "sti", "cli", "pushf", "popf",
+    "rcl", "rcr", "cmpsb", "cmpsw", "scasb", "scasw", "jo", "jno", "jp", "jnp",
 }
 # Aliases capstone prints differently from how a comment might spell them.
 #

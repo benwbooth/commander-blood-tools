@@ -7703,3 +7703,32 @@ diagnosed: #247 opens by correcting `check_liftable_twins`'s inflated 123 down t
 already-done addresses. Filtering one confounder and stopping felt like rigour.
 The check that would have caught it is the one #246 used on the PRNG: pick the
 first item off the list and actually try it.
+
+## #249 — auditing what a guard SKIPS, not just what it reports
+
+The citation guard's summary line ends "83 non-mnemonic lines skipped". That
+number had been printed for months and never examined. It is the guard's own
+blind spot, reported honestly and read by nobody — including me, for the eight
+entries in which I quoted the line.
+
+Breaking the skips down: most are prose that merely looks like a citation —
+`si = 0x6752`, "ship-3D … @0x1234", where the first word after the address is a
+register or an English word (`si`, `ax`, `ship`, `the`, `kind`). Those are
+correctly skipped.
+
+Two were not. `movsx` is real x86 and was simply absent from the guard's mnemonic
+set, so `0x9A50 movsx eax,[di]` — how the projector sign-extends its 16-bit
+inputs before the depth dot product — went unchecked. Sign versus zero extension
+is exactly the error #222's Cauchy-Schwarz bound was written to catch, and the
+guard had no opinion on the comment that describes it.
+
+Added `movsx`/`movzx` and the other valid mnemonics missing from the set (`rcl`,
+`rcr`, `cwd`, `cdq`, the string compares, the parity/overflow jumps). Verified
+count 426 -> 430, skips 86 -> 83, and corrupting the `movsx` citation to `movzx`
+now fails with a MISMATCH where before it was silently ignored.
+
+The general point, and the third time this shape has appeared (#204's uncovered
+prose form, #211's mixed queue, now this): A TOOL'S OWN "SKIPPED" COUNT IS A
+CLAIM ABOUT WHAT IT CANNOT SEE, and deserves the same scrutiny as its findings. A
+guard reporting "0 wrong" alongside "83 skipped" is reporting two things, and only
+one of them is reassuring.
