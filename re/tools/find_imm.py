@@ -19,6 +19,8 @@ overlay, whose offsets map 1:1 to runtime cs.
 """
 
 import os
+import collections
+import re
 import sys
 
 # capstone BEFORE this directory joins sys.path: re/tools/dis.py shadows the
@@ -92,8 +94,31 @@ def main():
     real = [(a, v) for a, v in sorted(hits.items()) if confirmed(md, data, a)]
     print(f"{label}: {len(real)} confirmed instruction(s) with immediate {want:#x} "
           f"({len(hits) - len(real)} rejected as mid-instruction phantoms)")
-    for a, (m, o) in real[:limit]:
+
+    # SHAPE FIRST (audit-fixes #309). A list of addresses invites reading the
+    # first screenful and generalising; audit-fixes #308 did exactly that on a
+    # 66-hit result and published a wrong claim about which bits of a flag byte
+    # are written. Aggregating by OPERATION makes the populations visible in a
+    # few lines, so a truncated read cannot hide one.
+    ops = collections.Counter()
+    for _, (m, o) in real:
+        # Normalise away the address itself and the segment prefix so that
+        # `or byte ptr gs:[0x2793], 4` and `or byte ptr [0x2793], 4` group.
+        norm = re.sub(r"\b(?:byte|word|dword) ptr ", "", o)
+        norm = norm.replace("gs:", "").replace(f"[{want:#x}]", "FLAG")
+        ops[f"{m} {norm}"] += 1
+    if len(ops) > 1:
+        print("  --- by operation ---")
+        for form, n in ops.most_common():
+            print(f"  {n:>4}x  {form}")
+
+    shown = real[:limit]
+    for a, (m, o) in shown:
         print(f"  {a:#07x}: {m} {o}")
+    if len(real) > len(shown):
+        # SAY SO. This used to truncate silently, which is how #308's read of
+        # `| tail -12` saw twelve of sixty-six and never learned it.
+        print(f"  ... {len(real) - len(shown)} more NOT SHOWN (--max {len(real)} for all)")
     return 0
 
 

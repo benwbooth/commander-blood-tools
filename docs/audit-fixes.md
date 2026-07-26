@@ -9808,3 +9808,53 @@ better-posed question: decode what bits 1, 2 and 3 mean as the group `0x1095`
 tests them, and what bit 0 means given `dlg_clear_a` raises it.
 
 Citations: 605 verified, 0 wrong. 606 lib tests, 0 failures.
+
+## #309 — the tool was truncating silently, which is what #307 and #308 were both reading
+
+#308 blamed itself for piping a 66-hit result through `tail -12`. That was true
+and it was not the whole cause. `find_imm.py` prints `real[:limit]` with `limit`
+defaulting to 20 AND SAYS NOTHING about the other 46. So the honest reading of
+that session is: the tool showed 20 of 66 without a word, and I then showed
+myself 12 of those 20.
+
+FIXED TWO WAYS.
+
+  * It now says `... 46 more NOT SHOWN (--max 66 for all)` when it truncates.
+    Silence about dropped rows is the same defect #300 found in the citation
+    guard's skip count, in a second tool.
+  * It now leads with a `--- by operation ---` aggregation over ALL hits, so the
+    SHAPE of a result is visible in a few lines and a truncated read cannot hide
+    a population. This is the part that would have prevented both entries.
+
+THE FLAG BYTE, read properly for the first time:
+
+    bit 0   test x8
+    bit 2   or x19, and x9, test x1        <- `test FLAG, 4` EXISTS
+    bit 3   test x6, or x2, xor x1
+    bit 4   test 0x10 x2
+    bit 5   test 0x20 x1
+    bit 6   test 0x40 x2
+            composite masks 0xe, 0xc, 0x50, 0x90
+            whole-word: mov ax,FLAG x2, mov FLAG,ax x1
+
+`gs:0x2793` is a MULTI-BIT UI/STATE WORD with at least six live bits. #307 called
+it "TWO flags"; #308 corrected two of #307's details and kept the two-flag
+framing; both were wrong about the structure, and both were wrong because of the
+same invisible cap. #308 also stated that no `test ...,4` exists — it does, once.
+
+The port's own constant already has the right name for this: `VM_UI_FLAGS`.
+
+WHAT STILL SURVIVES, third time of asking: the presentation start ORs BIT 2
+(`or byte gs:[0x2793], 4` @`0x593A`), and `start_actor_presentation` sets the
+port's bit-0 model instead. That defect has outlived two wrong explanations of
+its surroundings, which is a fair reason to trust it and no reason at all to
+trust the rest of what I said about the byte.
+
+THE PATTERN ACROSS #296, #300, #308 AND THIS: every one is an instrument
+reporting a summary that conceals its own incompleteness — a probe reaching the
+wrong branch and printing a clean trace, a guard counting skipped lines it never
+listed, a search capping its output in silence. The finding is not "check your
+work"; it is that a tool which summarises MUST disclose what it left out, or it
+will be read as complete every time.
+
+606 lib tests, 0 failures. 605 citations verified, 0 wrong.
