@@ -13753,3 +13753,32 @@ Two of #417's four remain: `palette.rs` 68/256 and `bloodprg.rs` 30/51.
 
 2228 items, 1105 confirmed (49.6%), 1123 open. 740 citations verified, 0 wrong.
 721 workspace tests, 0 failures.
+
+## #419 — the last two numbers: one right, one off by one in the denominator
+
+Closing #417's queue.
+
+`palette.rs`'s "a squared-RGB nearest search reproduces only 68 of the 256
+entries" is CORRECT — 68 exactly. But it was guarded by `assert!(agree < 128)`,
+a BOUND, not a measurement: the test would have passed at 67, at 12, at 127. The
+figure in the doc had never been checked by the test that exists to protect it.
+Now `assert_eq!(agree, 68)`.
+
+`bloodprg.rs`'s "only 30 of the 51 adjacent pairs ascend" has the right numerator
+and the wrong denominator. The table has 52 slots, the last (`0xD3`) NULL, so 51
+LIVE entries — which form FIFTY adjacent pairs, not 51. The error is visible
+without touching the data: n entries have n−1 gaps. 30 of 50 is now asserted.
+
+That is the third arithmetic slip of this shape in four entries (#416's 3650,
+#418's distribution summing to 49, this denominator), and none of them needed the
+binary to catch — only addition. The pattern is that a number written while
+LOOKING at something is trusted forever after, and the cheapest checks (does the
+distribution sum? does n−1 match?) are the ones nobody runs because the claim
+already feels observed.
+
+All four of #417's claims are now closed: two were right (630/640, 68/256) and
+two were wrong (the byte-7 spread, this denominator). Every one is asserted rather
+than stated.
+
+2228 items, 1105 confirmed (49.6%), 1123 open. 740 citations verified, 0 wrong.
+722 workspace tests, 0 failures.

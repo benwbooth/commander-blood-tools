@@ -291,10 +291,14 @@ mod tests {
                 best == table[src]
             })
             .count();
-        assert!(
-            agree < 128,
-            "nearest-colour agreed on {agree}/256 — if this ever passes, the rule \
-             changed and the comment in build_console_bank_remap_table is stale"
+        // PIN THE EXACT COUNT (audit-fixes #419). This asserted only `agree < 128`,
+        // so the "68 of the 256" in build_console_bank_remap_table's doc was never
+        // actually checked -- a bound is not a measurement, and #416/#418 both
+        // found remembered figures wrong.
+        assert_eq!(
+            agree, 68,
+            "nearest-colour agreement; the doc says 68 of 256. If this changed, the \
+             rule or the palette changed and that doc is stale"
         );
     }
 

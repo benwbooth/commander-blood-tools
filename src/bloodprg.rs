@@ -3322,11 +3322,21 @@ mod tests {
 
         // The 52-entry VM dispatch table: ASCENDING near offsets into 0x4DA.
         // NOT sorted -- handler addresses are wherever the linker put the
-        // routines, and only 30 of the 51 adjacent pairs ascend. What IS true of
+        // routines, and only 30 of the FIFTY adjacent pairs ascend (51 live
+        // entries -> 50 pairs; this said "51 adjacent pairs" until #419). What IS true of
         // a jump table and not of arbitrary bytes: every live entry is a near
         // offset inside one segment's span, and the last slot is NULL.
         let handlers: Vec<u16> = (0..52).map(|i| word(OPCODE_HANDLER_TABLE_FILE_OFFSET + i * 2)).collect();
         assert_eq!(handlers[51], 0, "the 0xD3 slot is NULL (52 entries, last empty)");
+        // COUNT the ascent claim above instead of restating it (audit-fixes #419).
+        // 51 live entries have FIFTY adjacent pairs, not 51 -- the comment said
+        // "30 of the 51 adjacent pairs", which is off by one in the denominator
+        // before anyone counts the numerator.
+        let ascending = handlers[..51].windows(2).filter(|w| w[1] > w[0]).count();
+        assert_eq!(
+            ascending, 30,
+            "ascending adjacent pairs among the 51 live handler offsets (50 pairs)"
+        );
         let outside: Vec<u16> = handlers[..51]
             .iter()
             .copied()
