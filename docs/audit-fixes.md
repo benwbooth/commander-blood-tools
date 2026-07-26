@@ -13601,3 +13601,39 @@ settled by execution, and they were the ones already marked provisional.
 
 2228 items, 1104 confirmed (49.6%), 1124 open. 740 citations verified, 0 wrong.
 615 lib tests, 0 failures.
+
+## #414 — the prescribed test command runs 615 of 718 tests
+
+Chasing #413's remark about ignored tests, the ignore list turned out clean —
+all twelve are diagnostics, dumps or demos (`dump_cutscene`,
+`render_all_uncovered_scenes`, `demo_render_full_dialogue_scene`), not disabled
+correctness checks. But the COUNT did not add up: grep finds 12 `#[ignore]`s and
+`cargo test --lib` reports 7.
+
+The missing five are all in `src/extract/`, which is `mod extract;` in
+**src/main.rs** — a module of the BINARY, not the library. So `cargo test --lib`,
+the command `CLAUDE.md` prescribes and that every entry this session has quoted,
+never compiles them.
+
+    cargo test --release --lib    615 passed,  7 ignored
+    cargo test --release          718 passed, 16 ignored
+
+103 tests in `src/extract` plus the `tests/oracle_suite.rs` integration tests were
+outside the number I have been reporting. They all PASS — I checked before
+writing this, and the workspace has zero failures — so nothing was broken. But
+"615 tests, 0 failures" was a smaller claim than it sounded, and #410 settled
+`SUBTITLE_X` in `src/extract/render.rs` while citing a test run that could not
+have covered that file.
+
+This is the same lesson as #407 two entries apart: a suite is only as good as the
+invocation you run it with, and I found both by running it a different way. #407
+was a filter that ran FEWER tests and exposed a race; this is the default command
+running fewer tests than the codebase has.
+
+Reporting the whole-workspace number from here. Not changing `CLAUDE.md`'s
+prescribed command — moving `extract` into the lib is a real refactor and the
+right call is the user's — but the status line should not quietly describe half
+the suite.
+
+2228 items, 1104 confirmed (49.6%), 1124 open. 740 citations verified, 0 wrong.
+718 workspace tests (615 lib + 103 bin), 0 failures.
