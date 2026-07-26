@@ -10634,3 +10634,41 @@ estimating the number instead of reading the tool that prints it, and the
 estimate was wrong in both directions, so it is not a bias I could correct for.
 The rule that works is the same one #319 arrived at for counting instructions:
 run the tool, paste the number, do not predict it.)
+
+## #330 — the bridge view verifies; its arrival side-effects do not exist in the port
+
+`update_view` claims the frame→yaw sync at `0x97E4` snaps the ring cursor to an
+8-unit boundary before the screen rebase. Verified end to end:
+
+    0x97E7  mov ax, [0x2795]        the panorama frame index
+    0x97EA  mov [0x2f6d], ax        -> the ship-3D yaw index, 1:1
+    0x97ED  shl ax, 3               frame * 8
+    0x97F0  sub ax, 0xa0            ...minus half a screen
+    0x97F3  mov [0x27a7], ax
+    0x97F6  and word [0xa2a], 0xfff8  <- the snap
+
+The port's `ring_mouse_x &= !(RING_PX_PER_FRAME - 1)` with `RING_PX_PER_FRAME = 8`
+is `&= 0xFFF8` exactly, and its screen rebase
+`ring_mouse_x - (frame * RING_PX_PER_FRAME - HALF_SCREEN)` is `[0xa2a] - [0x27a7]`
+with `HALF_SCREEN = 0xA0`. Settled.
+
+`update_view_steer` NOT settled, and checking its own citations is why. The seek
+arithmetic verifies (`mov dx,[0x279b] / shr dx,1` @`0x9667` halves the target arc
+into a frame index, which is what the port computes). But the ARRIVAL path does
+two things the port does not:
+
+    0x9671  xor word ptr [0x2793], 8
+    0x9676  mov word ptr [0x279d], 0
+
+Bit 3 of `0x2793` is one of the three tested together by the main-loop busy gate
+(`test byte [0x2793], 0xe` @`0x1095`), so finishing a station seek participates in
+the pending-profile decision. The port just clears its `seeking` flag.
+
+THIS IS THE FOURTH SUBSYSTEM to land on the same missing piece — presentation
+(#311), concept lists (#324), the save dialogue (#325), and now the bridge seek
+all touch `0x2793`'s upper bits, and none of them can be finished until those
+flags are modelled as state. That is a stronger argument for doing #312's work
+than #312 itself made: it is not one unported gate, it is the thing four
+separate paths are waiting on.
+
+620 citations verified, 0 wrong. 610 lib tests, 0 failures.

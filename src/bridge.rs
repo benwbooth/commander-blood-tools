@@ -231,6 +231,18 @@ impl BridgeView {
         if self.seeking {
             // Station seek (`0x9667..0x96F5`): ease toward the target half the
             // remaining distance per tick, shortest way around the 180-ring.
+            // `mov dx,[0x279b] / shr dx,1` @`0x9667` is the target arc halved
+            // into a FRAME index, which is what `seek_target_arc / 2` models.
+            //
+            // NOT MODELLED (audit-fixes #330): on ARRIVAL the game does more than
+            // stop seeking — `xor word ptr [0x2793], 8` @`0x9671` TOGGLES bit 3
+            // of the UI flag word, and `mov word ptr [0x279d], 0` @`0x9676`
+            // clears the nav timer. Bit 3 is one of the three the main-loop busy
+            // gate tests together (`test byte [0x2793], 0xe` @`0x1095`, see
+            // audit-fixes #311/#312), so completing a station seek participates
+            // in the same "may a pending profile load" decision that the port
+            // does not yet model. Deliberately left until those flags exist as
+            // state rather than approximated here.
             let target_frame = (self.seek_target_arc / 2) as i32;
             if self.frame as i32 == target_frame {
                 self.seeking = false;

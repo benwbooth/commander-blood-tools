@@ -1447,3 +1447,19 @@ ROUTINE THAT MUST REPLACE IT: whatever renders a DESCRIPT character name into th
 video-phone caption. Until it is found, `tools/check_ui_literals.py` will keep
 reporting these as ABSENT from the shipped data — correctly, since the game never
 stores this spelling.
+
+### #330 — station-seek arrival toggles a UI flag the port does not model
+
+`BridgeView::update_view_steer` reproduces the seek arithmetic exactly
+(`mov dx,[0x279b] / shr dx,1` @`0x9667` = target arc halved to a frame index;
+half-the-remaining-distance easing; the long-seek cursor drag at
+`0x96D0`..`0x96DD`). On ARRIVAL it does less than the game:
+
+    0x9671  xor word ptr [0x2793], 8    toggle UI-flag bit 3
+    0x9676  mov word ptr [0x279d], 0    clear the nav timer
+
+The port sets `seeking = false` and returns. Bit 3 is one of the three the
+main-loop busy gate tests together (`test byte [0x2793], 0xe` @`0x1095`), so a
+completed station seek takes part in the "may a pending profile load" decision —
+the same unmodelled machinery as audit-fixes #311/#312. Blocked on the same work:
+model the ten subsystem flags, then this becomes a one-line effect.
