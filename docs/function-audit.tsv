@@ -846,7 +846,7 @@ functions_from_symbols	src/script.rs	142	fn		UNVERIFIED
 build_character_contexts	src/script.rs	169	fn		UNVERIFIED	
 parse_speech_events	src/script.rs	233	fn		UNVERIFIED	
 function_for_offset	src/script.rs	342	fn		UNVERIFIED	
-assemble_dialogue_from_offsets	src/script.rs	349	fn	0x672A,0x6701	ASM?	// PREDICTIVE WRAP -- see `engine::assemble_words` (audit-fixes // #313). `add al,dl / cmp al,0x23` @0x672A adds the NEXT word's // length (strlen_b @0x6701) before comparing, so the break comes // BE
+assemble_dialogue_from_offsets	src/script.rs	349	fn	0x672A,0x6701	ASM	// PREDICTIVE WRAP -- see `engine::assemble_words` (audit-fixes // #313). `add al,dl / cmp al,0x23` @0x672A adds the NEXT word's // length (strlen_b @0x6701) before comparing, so the break comes // BE
 parse_script_bundle	src/script.rs	391	fn		UNVERIFIED	
 parse_script_dir	src/script.rs	417	fn		TESTED	
 object_name_map	src/script.rs	456	fn		UNVERIFIED	

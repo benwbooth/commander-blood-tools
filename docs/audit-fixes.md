@@ -12446,3 +12446,32 @@ left alone.
 
 2229 items, 1082 confirmed (48.5%), 1147 open. 698 citations verified, 0 wrong.
 613 lib tests, 0 failures.
+
+## #381 — a limit of the enclosing check, found by using it
+
+Continuing the queue with #379's `ENCLOSING:` lookup as the first step.
+
+`assemble_dialogue_from_offsets` (`script.rs`) cites `0x6701` and `0x672A`. Both
+verify — `call 0x67a7` (strlen_b) and `add al,dl` — and they are the citations
+I added in #313 when fixing the predictive subtitle wrap, re-read now rather than
+trusted (#329's rule). Settled.
+
+BUT THE ENCLOSING LOOKUP MISATTRIBUTED THEM, in a way worth recording. It reports
+both as inside `vm_a6_accept_clears_active_bit` at `0x6693`, because that is the
+nearest PRECEDING label. The instructions actually belong to the text-assembly
+loop at `0x66CD`..`0x6739` — a distinct block that simply has no label of its own.
+
+So "nearest preceding label" is a lower bound on specificity, not an answer. It
+is still the right first question — it would have caught #328, #340 and #376,
+where the true enclosing routine was a DIFFERENT one, not merely a finer-grained
+one. But a reader who takes its output as the definitive owner will attribute
+instructions to whatever was labelled last, which in a sparsely-labelled region
+can be some distance away.
+
+The honest reading of the tool's line is "no labelled routine begins between this
+address and X", and the fix when that matters is to label the intervening block.
+Not done here: the text-assembly loop deserves a label, but naming a region I
+have only partly decoded is how misleading labels get written (#349, #351).
+
+2229 items, 1083 confirmed (48.6%), 1146 open. 698 citations verified, 0 wrong.
+613 lib tests, 0 failures.
