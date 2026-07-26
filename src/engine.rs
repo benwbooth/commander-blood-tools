@@ -8235,6 +8235,37 @@ mod tests {
         assert!(e.take_nav_selection().is_none(), "bare nav clicks select nothing");
     }
 
+    /// audit-fixes #325. `LOADING`, `PAUSE` and `LAST` are not transcriptions to
+    /// be trusted — they are a contiguous NUL-separated UI string block in the
+    /// image, and the routines that use them point straight at it
+    /// (`mov si,0x161` @`0x1B58` copies `LAST` into the slot-name buffer).
+    /// Reading them turns three content literals into checked mirrors.
+    #[test]
+    fn ui_string_literals_match_the_image_block() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        let ds = 0xD420usize;
+        let at = |off: usize| {
+            let start = ds + off;
+            let end = exe[start..].iter().position(|&b| b == 0).unwrap_or(0) + start;
+            String::from_utf8_lossy(&exe[start..end]).to_string()
+        };
+
+        assert_eq!(at(0x159), EngineState::LOADING_TEXT);
+        assert_eq!(at(0x166), EngineState::PAUSE_TEXT);
+        assert_eq!(at(0x161), EngineState::QUICKSAVE_SLOT_NAME);
+        // The block is contiguous and NUL-separated: each string ends exactly
+        // where the next begins, which is what makes these offsets meaningful
+        // rather than four coincidences.
+        assert_eq!(0x159 + at(0x159).len() + 1, 0x161);
+        assert_eq!(0x161 + at(0x161).len() + 1, 0x166);
+        assert_eq!(0x166 + at(0x166).len() + 1, 0x16C);
+        assert_eq!(at(0x16C), "UNKNOWN", "the roster's empty caption follows");
+    }
+
     /// audit-fixes #322. `MENU_SUBMENU` is a transcribed literal and its doc says
     /// so. It also states exactly where the words live: `SCRIPT1.DIC` `0x02FC`
     /// = `explanations`, `0x0309` = `game`. That is checkable, so check it —

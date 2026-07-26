@@ -10426,3 +10426,47 @@ Not fixed: the MENU dispatch. The APPROX row in docs/port-validation.md stands,
 now with `0x8428`'s call sites enumerated and the concept path identified.
 
 609 lib tests, 0 failures. 613 citations verified, 0 wrong.
+
+## #325 — three content literals that were in the image all along
+
+`QUICKSAVE_SLOT_NAME = "LAST"` has a thorough doc: the game copies the literal
+into the slot-name buffer at `DS:0x270D`, points `[0x2734]` at it, clears
+`[0x2739]`, and jumps STRAIGHT to `vm_state_save` — a save with no rename prompt.
+Every part verifies:
+
+    0x1B58  mov si, 0x161          <- the SOURCE literal's address
+    0x1B5B  mov di, 0x270d
+    0x1B5E  mov word [0x2734], di
+    0x1B62  mov cx, 2 / rep movsd  eight bytes
+    0x1B68  mov byte [0x2739], 0
+    0x1B6D  jmp 0x1c3f             vm_state_save
+
+`mov si, 0x161` is the useful part: it names WHERE THE STRING IS. Reading there
+gives `4c 41 53 54 00 50 41 55` — `"LAST\\0PAU..."` — a contiguous NUL-separated
+UI string block:
+
+    DS:0x159  "LOADING"    = LOADING_TEXT
+    DS:0x161  "LAST"       = QUICKSAVE_SLOT_NAME
+    DS:0x166  "PAUSE"      = PAUSE_TEXT
+    DS:0x16C  "UNKNOWN"    the roster's empty caption
+
+Three port literals, all exact. `ui_string_literals_match_the_image_block` now
+reads them out and also asserts the block is CONTIGUOUS — each string ending
+exactly where the next begins — which is what makes four offsets evidence rather
+than four coincidences. Settled DATA (shipped data at named offsets, no
+disassembly behind the strings themselves).
+
+THE PATTERN, fourth time this session: #227 (`TEMP_SND_CALLBACK_OFFSETS`), #320
+(`LOCATION_PANEL_BOX`), #322 (`MENU_SUBMENU` via the DIC), and now this. A
+literal in this tree is USUALLY readable from the shipped data, and the address
+is usually sitting in the routine that uses it — `mov si, 0x161` was one
+instruction away the whole time. The project rule says content literals are a
+defect; the practical corollary is that most of them are one disassembly from
+being pinned instead.
+
+ALSO NOTED: `or byte [0x2793], 4` @`0x1B7B`, in the save/rename path — a THIRD
+independent bit-2 setter after #311's `0x593A` and #324's `0x8998`. Presentation,
+concept list, save dialogue: three unrelated subsystems, one "defer the scene
+load" bit.
+
+610 lib tests, 0 failures. 613 citations verified, 0 wrong.
