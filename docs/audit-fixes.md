@@ -12545,3 +12545,35 @@ y2 above y1.
 
 2229 items, 1085 confirmed (48.7%), 1144 open. 702 citations verified, 0 wrong.
 613 lib tests, 0 failures.
+
+## #384 — the choice box's row loop, and the phantom that hid its first byte
+
+`draw_choice_box`'s three colours were marked ORACLE? even though the comment
+already said ASSEMBLY-SOURCED. Read the loop end to end at `0x8565..0x85A6`; all
+three verify, and so does the selection mechanism the comment only implied:
+
+    0x8565  mov al,0xE8              unselected -- and this is the LOOP TOP
+    0x8584  dec byte gs:[0x27C7]     the selected-row countdown
+    0x8589  jne 0x8597               only the row that hits 0 recolours
+    0x858B  mov al,0xEF              selected
+    0x858D  test byte gs:[0xA3E],1   mouse-on-row
+    0x8595  mov al,0xFE              selected AND moused
+    0x8597  lcall 0x299:0x176        the string draw
+    0x85A0  add dx,0xB               row pitch
+    0x85A6  jmp 0x8565
+
+Two things fall out for free. `add dx,0xB` is `CHOICE_BOX_PITCH = 11`, which was
+sitting in the port as a bare constant. And `0x299:0x176` is the SAME string-draw
+entry point the confirm dialog calls — independent confirmation of #383's
+correction one entry later, from a routine 0x7000 bytes away.
+
+THE PHANTOM. Disassembling from `0x8560` renders `0x8564: sal byte ptr [bx+si+
+0x26e8], 0x8b`, which SWALLOWS the `b0 e8` at `0x8565` — the cited instruction
+appears not to exist. That is the documented self-sync trap, and it would have
+read as "citation wrong" to anyone who checked from a round address. Decoding
+from `0x8565`, the verified entry, shows the real instruction immediately. The
+comment now carries that warning inline, because the next person to check this
+citation will pick a round number too.
+
+2229 items, 1086 confirmed (48.7%), 1143 open. 702 citations verified, 0 wrong.
+613 lib tests, 0 failures.

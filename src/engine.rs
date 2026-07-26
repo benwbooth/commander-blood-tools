@@ -2257,11 +2257,20 @@ impl EngineState {
         if labels.is_empty() {
             return;
         }
-        // ASSEMBLY-SOURCED (these were capture-measured, and the box was wrong):
-        //   0x8565  mov al,0xE8                 unselected row
+        // ASSEMBLY-SOURCED (these were capture-measured, and the box was wrong).
+        // The whole row loop is 0x8565..0x85A6, re-read end to end:
+        //   0x8565  mov al,0xE8                 unselected row (LOOP TOP)
+        //   0x8584  dec byte ptr gs:[0x27C7]    the selected-row countdown...
+        //   0x8589  jne 0x8597                  ...only the row that hits 0 recolours
         //   0x858B  mov al,0xEF                 the selected row...
         //   0x8595  mov al,0xFE                 ...but 0xFE while the mouse is ON
         //                                        (`test byte gs:[0xA3E],1` @0x858D)
+        //   0x8597  lcall 0x299:0x176           the string draw — the SAME entry
+        //                                        point the confirm dialog uses
+        //   0x85A0  add dx,0xB                  the row pitch: CHOICE_BOX_PITCH=11
+        //   0x85A6  jmp 0x8565                  next row
+        // (`dis.py 0x8560` decodes phantoms here — 0x8564 swallows the `b0 e8`.
+        // Decode from 0x8565, the verified entry, per the self-sync rule.)
         const TEXT: u8 = 0xE8;
         // `mov al,0xEF` @0x858B — the selected row.
         const TEXT_SELECTED: u8 = 0xEF;
