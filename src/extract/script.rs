@@ -4112,6 +4112,74 @@ pub(super) fn clean_tsv(text: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+    /// BRANCH EVENTS STAY INSIDE THEIR SCRIPT'S STREAM.
+    ///
+    /// A weaker check than the one first attempted here, and the story is worth
+    /// keeping (audit-fixes #237). The plan was to cross-check two independent
+    /// walks: `parse_script_disassembly` reports every token's offset, so its
+    /// offsets are the token boundaries, and a branch's offset and target ought to
+    /// BE boundaries. The disassembly turned out to be perfectly contiguous
+    /// (`offset + len` chains with zero gaps), which made the premise look sound.
+    ///
+    /// It is not. 808 branch offsets are not token starts, so `event.offset` is
+    /// simply not indexed by token start — it is where the VM recorded a branch
+    /// decision, which can sit inside a token. Nothing is wrong with either
+    /// walker; the assumption connecting them was mine.
+    ///
+    /// What DOES hold, and catches a wild operand read: every branch offset and
+    /// in-range target lies inside the script's own bytecode.
+    #[test]
+    fn branch_events_stay_inside_their_scripts_stream() {
+        let iso = ["output/_tmp_iso", "../output/_tmp_iso", "output/scripts", "../output/scripts"]
+            .iter()
+            .map(Path::new)
+            .find(|p| p.exists());
+        let Some(iso) = iso else { return };
+        let Ok(branches) = parse_script_branch_trace(iso, None) else {
+            return;
+        };
+        if branches.is_empty() {
+            return;
+        }
+
+        let mut sizes: std::collections::BTreeMap<String, usize> = Default::default();
+        let mut checked = 0usize;
+        for row in &branches {
+            let size = match sizes.get(&row.script) {
+                Some(size) => *size,
+                None => {
+                    let Some(path) = find_file_recursive(iso, &format!("{}.COD", row.script))
+                    else {
+                        continue;
+                    };
+                    let size = fs::metadata(path).map(|m| m.len() as usize).unwrap_or(0);
+                    sizes.insert(row.script.clone(), size);
+                    size
+                }
+            };
+            if size == 0 {
+                continue;
+            }
+            assert!(
+                row.offset < size,
+                "{}: branch at {:#x} is past the end of a {size}-byte script",
+                row.script,
+                row.offset
+            );
+            if let Some(target) = row.target {
+                assert!(
+                    usize::from(target) < size + 0x400,
+                    "{}: branch at {:#x} targets {target:#x}, outside a {size}-byte \
+                     script -- an operand pair was misread",
+                    row.script,
+                    row.offset
+                );
+            }
+            checked += 1;
+        }
+        assert!(checked > 500, "only {checked} branch events checked");
+    }
+
     /// THE `0xA6` TEXT TOKENS' OWN INVARIANTS, on the game's five scripts.
     ///
     /// `parse_script_text_flags` decodes the TEXT token documented at `0x660C`:

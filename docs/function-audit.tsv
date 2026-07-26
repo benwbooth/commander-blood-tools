@@ -1801,7 +1801,7 @@ parse_script_text_flags	src/extract/script.rs	160	fn		TESTED
 text_skip_count	src/extract/script.rs	226	fn		UNVERIFIED	
 text_control_summary	src/extract/script.rs	230	fn		UNVERIFIED	
 parse_script_disassembly	src/extract/script.rs	263	fn		TESTED	
-parse_script_branch_trace	src/extract/script.rs	323	fn		UNVERIFIED	
+parse_script_branch_trace	src/extract/script.rs	323	fn		TESTED	
 parse_script_post_update	src/extract/script.rs	365	fn		UNVERIFIED	
 parse_script_branch_scenarios	src/extract/script.rs	432	fn		UNVERIFIED	
 RtcReplayScenario	src/extract/script.rs	632	struct		UNVERIFIED	

@@ -7320,3 +7320,47 @@ The pattern is worth stating once: EVERY property test needs a second assertion
 about how much it actually saw. The property is the claim; the coverage floor is
 what stops the claim being vacuous, and it has to be measured rather than
 guessed.
+
+## #237 — the bug I nearly reported, and the rule I found instead
+
+The plan was a cross-check between two independent walks of the same bytecode:
+`parse_script_disassembly` reports every token's offset, so those offsets ARE the
+token boundaries, and a branch's offset ought to be one. The test failed
+immediately — `SCRIPT1: branch at 0xc3 is not a token boundary`.
+
+Before calling that a defect I checked whether the premise held, and it appeared
+to: the disassembly is perfectly CONTIGUOUS, every row's `offset + len` equal to
+the next row's offset, zero gaps across 166 rows. So its offsets really are a
+complete boundary set for what it walked.
+
+Then the bytes. `0xBD` holds `0xAF`; the disputed `0xC3` holds `0xA1`, itself a
+valid opcode — so the question was whether `0xAF`'s token is 6 bytes or 7. The
+VM's own length table at `DS:0x6F18` gives `0xAF` the word `0xFD05`, and reading
+`vm_token_advance` (`0x62B6`) settles what that means:
+
+```text
+  0x62C6  mov al,[bp+1]          the HIGH byte selects the rule
+  0x62CD  mov al,gs:[0x67ad]     non-negative: add the MODE byte and re-read
+  0x62F7  cmp al,0xfd            this class...
+  0x62FB  mov al,[si] / cmp al,0xa1 / inc si   ...SWALLOWS a trailing 0xA1
+```
+
+So `0xAF` is opcode + 5 operands + a swallowed `0xA1` = 7 bytes, exactly what the
+disassembly said. TOKEN LENGTH IS MODE-DEPENDENT (`gs:0x67AD`) and one class
+absorbs a following `0xA1`. The port's `vm::token_len_at` already implements both,
+including the `0xFB` sibling.
+
+So the disassembly was right. Was the branch trace wrong? No: 808 branch offsets
+are not token starts, and they are not all `0xA1`, which means `event.offset` is
+simply not indexed by token start — it is where the VM recorded a decision, and
+that can sit inside a token. NEITHER WALKER IS WRONG. The assumption connecting
+them was mine.
+
+Kept as the weaker check that does hold: every branch offset and target lies
+inside its script's bytecode. That still catches a wild operand read, which is
+the failure it was aimed at.
+
+The lesson is about what a failing cross-check licenses. It says two things
+disagree — not which is wrong, and not that either is. Three separate pieces of
+evidence (contiguity, the length table, the `0x62F7` ladder) were needed before
+the disagreement could be attributed, and the answer was "to me".
