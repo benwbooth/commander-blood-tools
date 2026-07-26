@@ -5132,7 +5132,9 @@ impl VmMachine {
     ///
     /// But the LINEAR SCAN below — walking every record looking for that triple —
     /// has no located counterpart. This doc previously cited "the pending-slot
-    /// protocol around 0x5C64"; `0x5C64` is `presentation_start_travel_arm`,
+    /// protocol around 0x5C64"; `0x5C63` is `presentation_start_travel_arm`,
+    /// (the label was recorded at 0x5C64, which audit-fixes #387 found sits
+    /// inside the 7-byte `mov word gs:[0x24f3],9` that starts at 0x5C63),
     /// straight-line state setting that consumes a pending C4 via `[0x675E]` and
     /// scans nothing. The citation was a REGION POINTER that did not support the
     /// claim, the same shape #298 found.

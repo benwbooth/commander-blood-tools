@@ -70,6 +70,11 @@ def code_labels():
                 addr = int(row[0], 16)
             except ValueError:
                 continue
+            # Anything below the 0x600 MZ header is a SENTINEL note address, not
+            # code -- labels.csv parks methodology notes at 0x0..0x6. Flagging
+            # those was a false positive this tool created for itself in #387.
+            if addr < 0x600:
+                continue
             name = row[1] if len(row) > 1 else "?"
             comment = row[2] if len(row) > 2 else ""
             if DATA_HINT.search(name) or DATA_HINT.search(comment[:120]):

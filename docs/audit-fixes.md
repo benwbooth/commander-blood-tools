@@ -12659,3 +12659,54 @@ Eight MISALIGNED candidates remain unchecked; that is the queue, not a claim.
 
 2228 items, 1087 confirmed (48.8%), 1141 open. 702 citations verified, 0 wrong.
 502 code + 238 data labels clean. 613 lib tests, 0 failures.
+
+## #387 — working the misalignment queue: eight more, and two claims that dissolved
+
+#386's checker left ten candidates. Worked all of them; the queue is now one.
+
+SIX WERE REAL OFF-BY-ONES, each confirmed by hand before touching it:
+
+  cmd_handler_numeric_value     0x652  -> 0x651   the 0x66 operand-size PREFIX
+  draw_using_linear_a46         0xE36  -> 0xE37   the `06` immediate of `add bx,6`
+  croolis_method_motion         0x146C -> 0x1468  inside `mov eax,0x1510`
+  presentation_start_travel_arm 0x5C64 -> 0x5C63  inside `mov gs:[0x24f3],9`
+  presentation_box_and_subtitle 0x9450 -> 0x944F  inside `mov bp,0x5eaf`
+  location_info_panel           0x9100 -> 0x90FF  inside `inc byte [0x2789]`
+
+Several are self-confirming: `0x944F` IS the `mov bp,0x5eaf` that loads the rect
+records the label describes at `[bp]`; `0x90FF` writes `0x2789`, the scale the
+label names; `0x5C63` is the `[0x24F3]=9` the label quotes. The label text and the
+corrected address agree — which is what a right answer looks like here.
+
+TWO CLAIMS DISSOLVED UNDER THE CHECK, and this is the part worth keeping:
+
+`manu3_perframe_caller` at `0x32BD` rendered the phantom `call 0xb4e` — a
+FABRICATED CALL under a label named `_caller`, the most persuasive kind of wrong.
+Checked the claim itself: `gfx_clipped_primitive_a` (`0x32AC..0x3320`) contains no
+far call at all (no `0x9A`/`0xEA` byte anywhere in it), and the quoted return
+address `0x022D:0x07F2` converts to file `0x30C2`, which has none before it
+either. The observation came from CALLERWATCH — a RUNTIME watch — and its
+addresses are not in the main image's SEG:OFF space. Downgraded to UNVERIFIED.
+
+`pending_slot_c4_writer` at `0x77A0` sat inside `mov byte es:[di],0`. Here the
+surrounding decode is authoritative rather than guessed: `0x779C` is a real branch
+target (`js`/`jb` from `0x7793`/`0x7797`), and its chain is `dec si / mov byte
+es:[di],0 / mov byte gs:[0x27e8],1 / pop es / ret` — nothing writes 0xC4. A
+whole-image scan for every `mov byte [reg+0x30],0xC4` encoding, bare and with all
+four segment prefixes, found ZERO sites. Downgraded to UNVERIFIED.
+
+Both were parked at sentinel note addresses rather than deleted, so the evidence
+against them survives. Two others (`input_jump_table_static_limit_CONFIRMED`) were
+methodology notes whose addresses were incidental; parked likewise.
+
+ONE LEFT, and it stays open honestly: `project_tail_9bba` at `0x9CF7`. Decoding
+from `0x9CF0` makes it a valid boundary right after a `ret` at `0x9CF6`, so the
+checker's straddle may be a desync — but nothing branches to it, and `push es`
+followed by `jmp` with `pop si` after reads wrong in both alignments. Not enough
+to act on.
+
+The checker also created a false positive for itself: sentinel notes at 0x0..0x7
+are below the 0x600 MZ header and are not code. Now skipped.
+
+2228 items, 1087 confirmed (48.8%), 1141 open. 702 citations verified, 0 wrong.
+502 code + 238 data labels clean, 1 alignment candidate left. 613 lib tests, 0 failures.
