@@ -4952,7 +4952,14 @@ impl VmMachine {
     }
 
     /// The current-location variable's record offset, from the opening block's
-    /// wildcard-family equality guard (SCRIPT2: 0x0F4E).
+    /// wildcard-family equality guard.
+    ///
+    /// `SCRIPT2:0x0F4E` — a SCRIPT-DATA offset, not a BLOODPRG.EXE one, so the
+    /// citation guard cannot check it (there is no instruction there; the EXE at
+    /// `0x0F4E` decodes unrelated bytes). Verified instead by running this
+    /// function on the shipped SCRIPT2:
+    /// `location_var_offset_finds_the_documented_script2_record` (audit-fixes
+    /// #299). See `re/CLAUDE.md` for the address space.
     pub fn location_var_offset(&self) -> Option<u16> {
         let mut pc = 0usize;
         if self.u8_at(pc) != 0xA9 || self.u8_at(pc + 1) & 1 == 0 {
@@ -10508,6 +10515,38 @@ mod tests {
         m.step();
         assert_eq!(m.rec_read_pub(0x84), 0xC4, "no DEB loaded -> unconditional write");
         assert_eq!(m.active_actor, Some(0x84));
+    }
+
+    /// audit-fixes #299. `location_var_offset`'s doc cites "SCRIPT2: 0x0F4E".
+    /// That is NOT a BLOODPRG.EXE address — it is a record offset in the SCRIPT2
+    /// data, a different address space from the file offsets, `DS:`, `XDB:` and
+    /// `DRV:` that `re/CLAUDE.md` lists. Disassembling the EXE there decodes
+    /// unrelated bytes, so the citation guard cannot check it and the claim sat
+    /// unverified.
+    ///
+    /// It is checkable the other way: run the function on the SHIPPED SCRIPT2 and
+    /// see whether it finds that offset. This pins the prose to real data.
+    #[test]
+    fn location_var_offset_finds_the_documented_script2_record() {
+        let mut cod = None;
+        for base in ["output/scripts", "../output/scripts"] {
+            if let Ok(bytes) = std::fs::read(format!("{base}/SCRIPT2.COD")) {
+                cod = Some(bytes);
+                break;
+            }
+        }
+        let Some(cod) = cod else {
+            return; // shipped data not extracted in this checkout
+        };
+
+        let mut m = VmMachine::new();
+        m.load_cod(&cod);
+        assert_eq!(
+            m.location_var_offset(),
+            Some(0x0F4E),
+            "the opening block's wildcard-family equality guard must yield the \
+             record offset the doc names"
+        );
     }
 
     /// audit-fixes #297. Is the fault path #296 found REACHABLE in shipped data?

@@ -36,6 +36,14 @@ Convert with `seg_offset.py`. labels.csv accepts `0xNNNNN`, `SEG:OFF`,
   `amer.xdb`, `scrut.xdb`), whose runtime `cs` maps 1:1 to file offsets. A third
   address space alongside the executable and the drivers; the overlay's name is
   part of the address because the same offset means different things in each.
+- **SCRIPT<N>:0xNNNN** — an offset inside SHIPPED SCRIPT DATA (`SCRIPT1..8.COD`
+  and their record/VAR space), NOT inside the executable. A fifth address space,
+  added after `location_var_offset` was found citing "SCRIPT2: 0x0F4E" (audit-fixes
+  #299): disassembling BLOODPRG.EXE at `0x0F4E` decodes unrelated bytes, and
+  `check_cited_instructions.py` cannot verify such a claim because there is no
+  instruction to check. Claims in this space are verified by RUNNING the port
+  against the shipped script instead — the `location_var_offset` test does exactly
+  that. Always write the script name; a bare `0x0F4E` reads as a file offset.
 - **DRV:0xNNNN** — an offset inside a SHIPPED SOUND DRIVER (`dnsdb.drv`,
   `nosound.drv`), a second binary the game loads and calls through a far-pointer
   vector table (`re/tools/drv_vectors.py`). It is a DIFFERENT ADDRESS SPACE: a

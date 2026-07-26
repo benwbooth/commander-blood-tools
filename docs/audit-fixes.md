@@ -9417,3 +9417,47 @@ is the rate that makes bulk promotion indefensible: it would have marked this ro
 routine, and the guard would have kept reporting 0 wrong throughout.
 
 Citations: 586 verified (from 583), 0 wrong. 603 lib tests, 0 failures.
+
+## #299 — a citation in a FIFTH address space, and why the guard was blind to it
+
+Continuing #298's row-by-row review. Two more rows, two more outcomes.
+
+`record_end_hold_ticks` VERIFIED exactly. Doc: "`0x7378..0x738C`:
+`b35 = gs:[0x27CF] * (gs:[0x0ACA] >> 1) + 6; gs:[0x67BB] = 1`". The disassembly:
+
+    0x7378  mov ax, word ptr gs:[0x27cf]
+    0x737C  mov dx, word ptr gs:[0xaca]
+    0x7381  shr dx, 1
+    0x7383  mul dx
+    0x7385  add ax, 6
+    0x7388  mov word ptr gs:[0xb35], ax
+    0x738C  mov byte ptr gs:[0x67bb], 1
+
+and the port is `units.wrapping_mul(step >> 1).wrapping_add(6)`. Settled ASM.
+
+`location_var_offset` cited "SCRIPT2: 0x0F4E", and disassembling BLOODPRG.EXE
+there produces `sub ax,0x6652 / xor ax,ax / stosw ...` — plausible-looking and
+completely unrelated, because 0x0F4E IS NOT AN EXECUTABLE OFFSET. It is a record
+offset in the SCRIPT2 DATA, a fifth address space beside the file offsets, `DS:`,
+`XDB:` and `DRV:` that `re/CLAUDE.md` documents.
+
+That is why `check_cited_instructions.py` reports 0 wrong on it: the doc line has
+no mnemonic, so it lands in the 84 "non-mnemonic lines skipped". The guard is not
+failing here, it is CORRECTLY DECLINING — but the effect is a whole class of
+citation that no tool checks, and the row still counted as provisional evidence.
+
+Verified the only way this space can be: by RUNNING the function on the shipped
+SCRIPT2 and asserting it finds `0x0F4E`. It does. Settled TESTED, not ASM,
+because the evidence is a data run rather than a disassembly.
+
+`re/CLAUDE.md` now documents `SCRIPT<N>:0xNNNN` with the rule that a bare
+`0x0F4E` reads as a file offset, which is exactly how this one went unchecked.
+
+RUNNING TALLY of the individual review: four rows examined, two verified as
+written, one had the wrong address behind a right answer (#298), one was in an
+address space the tooling cannot see. Half the provisional rows I have looked at
+needed a correction — none of them wrong in their CONCLUSION, all of them wrong
+or uncheckable in their EVIDENCE. That is the distinction the ledger's `?` is
+for, and it is why these get promoted one at a time.
+
+Citations: 586 verified, 0 wrong. 604 lib tests, 0 failures.
