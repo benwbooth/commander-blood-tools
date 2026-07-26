@@ -12577,3 +12577,37 @@ citation will pick a round number too.
 
 2229 items, 1086 confirmed (48.7%), 1143 open. 702 citations verified, 0 wrong.
 613 lib tests, 0 failures.
+
+## #385 — a content literal that survived by being unused
+
+`OPTION_BOX_LABEL_FILE_OFFSET` settles cleanly: `DS:0x0174` / file `0x0D594` is
+`C,A,N,C,E,L,0`, and `0x0D59B` is the `A` of `ARE_YOU_SURE?` — the same string
+table #383 verified, so the two rows corroborate each other. Settled DATA.
+
+Next to it sat `Engine::CONSOLE_MENU`:
+
+    pub const CONSOLE_MENU: [&str; 5] = ["HONK","TELEPHONE","CRYOBOX","MENU","OPTION"];
+
+documented as "baked into the golden menu of the TB.BIG panorama frames (verified
+against the live capture)". That is a sourcing claim about PIXELS, which the prime
+rule forbids — and the array had NO reference anywhere in the crate. Deleted. The
+port's real console handling is index-based and cited: `selected_menu_item`
+(`DS:0x2A19`) and `menu_row_under_cursor` (`0x8613..0x868D`) in src/bridge.rs,
+where those names appear only in doc comments. 613 tests still pass, which is the
+evidence nothing depended on it.
+
+WHY IT SURVIVED, AND THE NEW GUARD. A `pub` item is exempt from rustc's dead_code
+lint — the compiler assumes an external consumer, and this crate has none. So the
+one category of content literal that can never be caught by a wrong pixel or a
+failing test is precisely the one nothing consumes: it asserts game content, cites
+a capture, and is checked against nothing forever.
+
+`tools/check_dead_pub_consts.py` now asks that question directly — string-bearing
+`pub const`s with no reference outside their declaration (DEAD) or references only
+in `#[cfg(test)]` (TEST-ONLY, the self-referential shape the faithfulness memo
+names). It reports 0 and 0. Since a checker that finds nothing proves nothing
+(#370), it was perturbed: a planted dead string const IS flagged, a planted
+numeric one is correctly ignored, and removing the probe returns it to zero.
+
+2228 items, 1087 confirmed (48.8%), 1141 open. 702 citations verified, 0 wrong.
+613 lib tests, 0 failures.

@@ -1294,11 +1294,14 @@ impl EngineState {
         }
     }
 
-    /// The ship-console menu row order, top to bottom, exactly as baked into the
-    /// golden menu of the TB.BIG panorama frames (verified against the live
-    /// capture): HONK (the cook's daily fare, SCRIPT1), TELEPHONE, CRYOBOX,
-    /// MENU, OPTION.
-    pub const CONSOLE_MENU: [&'static str; 5] = ["HONK", "TELEPHONE", "CRYOBOX", "MENU", "OPTION"];
+    // REMOVED (audit-fixes #385): `CONSOLE_MENU`, a 5-string array of the console
+    // row names. It had NO caller anywhere in the crate, and its stated source was
+    // "baked into the golden menu of the TB.BIG panorama frames (verified against
+    // the live capture)" — i.e. read off pixels, which is the sourcing the prime
+    // rule forbids. The port's real menu handling is index-based and cited:
+    // `BridgeView::selected_menu_item` (`DS:0x2A19`) and `menu_row_under_cursor`
+    // (`0x8613..0x868D`) in src/bridge.rs, where the names appear only as doc
+    // comments. Nothing was lost by deleting it.
 
     /// The console MENU option's submenu, decoded by driving the real game (clicking MENU
     /// opens these two items): EXPLANATIONS (the tutorial/help) and GAME (play). Drawn over
