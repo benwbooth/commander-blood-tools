@@ -14047,3 +14047,31 @@ reader must not mistake them for decoded ones.
 
 2229 items, 1113 confirmed (49.9%), 1116 open. 752 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #428 — the citation that belonged to the function above it
+
+`nav_world_label_sample` sat at `ASM?` citing `0x9BBA`, `0x100000` and `0x4F09`.
+It cites nothing: its body is `self.nav_world_labels.iter().take(7)`. The ledger
+had picked up the PRECEDING doc block — the star-map pyramid renderer's — because
+the two comments run together with no blank line between them, so the inventory's
+"the doc above an item" rule swept in a paragraph belonging to its neighbour.
+
+That is the same failure #381 found in `whatis.py` (nearest-preceding-label
+attribution) and #412 found in a labels.csv family entry, now in a third tool. In
+all three the mechanism is identical: an address near a thing is not an address
+about that thing.
+
+Gave it its own doc — separated by the blank line the extractor needs — saying
+plainly that there is no binary counterpart, that the citations belong to the
+renderer above, and that what IS data-backed is the CONTENT: `nav_world_labels`
+comes from `levels::primary_worlds()`, which
+`level_directory_literal_matches_the_image` holds to the bytes at file `0xCDF4`.
+The `7` is the helper's own.
+
+Classified INFRA. The ledger crosses 50.0% on this row, which is worth naming for
+what it is: this was a MISFILED row, not a decoded one. The number moved because
+the classification got more accurate, not because more of the game is understood
+— and #421 is the reason that distinction is now visible at all.
+
+2229 items, 1114 confirmed (50.0%), 1115 open. 752 citations verified, 0 wrong.
+723 workspace tests, 0 failures.

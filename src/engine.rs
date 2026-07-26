@@ -3869,7 +3869,20 @@ impl EngineState {
     /// matches the projected sprite scale (`0x100000/depth`, the sprite path's scale
     /// term). Real art + real math; the destination layout itself is the documented
     /// runtime-gated remainder (live `DS:0x4F09` records).
-    /// Test/inspection: the world labels used on the nearest nav-destination row.
+
+    /// Test/inspection helper: the first few world labels, for asserting the nav
+    /// row is fed from the level directory at all.
+    ///
+    /// NO BINARY COUNTERPART, and this needs saying because the ledger read the
+    /// PRECEDING doc block's citations (`0x9BBA`, `0x4F09`) as if they were this
+    /// function's — they belong to the pyramid renderer above it (audit-fixes
+    /// #421, #428). The game has no "sample the first 7 labels" operation.
+    ///
+    /// What IS data-backed is the content: `nav_world_labels` comes from
+    /// `levels::primary_worlds()`, i.e. the resource directory, which
+    /// `level_directory_literal_matches_the_image` holds to the bytes at file
+    /// `0xCDF4`. The `7` is this helper's own, chosen to keep the assertion
+    /// readable.
     pub fn nav_world_label_sample(&self) -> Vec<&'static str> {
         self.nav_world_labels.iter().take(7).copied().collect()
     }
