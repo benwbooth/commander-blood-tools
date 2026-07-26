@@ -291,8 +291,12 @@ impl QuerySetMode {
     /// ```text
     ///   0x6559  mov byte gs:[0x67ad],1     query mode ON
     ///   0x655F  mov ax,gs:[0x6884]         the stack pointer
-    ///   0x6565  add ax,2 / mov gs:[0x6884],ax   POST-increment
-    ///   0x656C  lodsw / mov [bp+0x6820],ax      operand -> the slot it vacated
+    ///   0x6563  mov bp,ax                  KEEP THE OLD POINTER — this is the
+    ///                                       instruction that makes it a POST-
+    ///                                       increment; the listing used to skip it
+    ///   0x6565  add ax,2 / mov gs:[0x6884],ax   bump the stored pointer
+    ///   0x656C  lodsw / mov [bp+0x6820],ax      operand -> the slot bp still names
+    ///   0x6571  ret
     /// ```
     ///
     /// This helper is only the flag half; the push is in the `0xA0` execution arm.

@@ -12814,3 +12814,38 @@ this session is worth stating plainly rather than hunting for something to chang
 
 2228 items, 1090 confirmed (48.9%), 1138 open. 705 citations verified, 0 wrong.
 613 lib tests, 0 failures.
+
+## #391 — checking 28 opcode citations against the table instead of by eye
+
+`VmState::step` documents one handler address per opcode (`// 0xA0 PUSH
+(0x6559)`, `// 0xA2 (0x6588)`, …), written by hand across many sessions. Spot-
+checking two of them is what this row would normally get. The image has the
+ground truth — the dispatch table the interpreter indexes with the opcode byte,
+already decoded by `re/tools/dump_handler_table.py` — so all of them can be
+checked at once.
+
+`tools/check_vm_opcode_citations.py` compares the two. Result: **28 citations,
+28 matches, 0 mismatches.** Settled ASM on that basis rather than on a sample.
+
+It reports two other things without calling them errors. 27 dispatched opcodes
+carry NO citation — mostly the shared-handler families (`0xAD/0xAF/0xB2/0xB3/
+0xBA/0xBB/0xBC` are one handler, `0xB1/0xB4/0xB5/0xB6/0xBE/0xBF/0xC0` another),
+which the port groups without per-opcode comments. A missing comment is a
+documentation gap, not a false claim, so it is a count and not a finding. And an
+`UNDISPATCHED` bucket exists for opcodes cited but absent from the table, because
+the TOKEN bound and the DISPATCH bound differ at OP_MAX and a citation there
+should be deliberate rather than assumed wrong.
+
+PERTURBED, per #370: changing one cited address by a single digit produces
+`MISMATCH src/vm.rs:6731: 0xa2 cites 0x06589, table says 0x06588`, and reverting
+returns it to 28/0. A checker reporting zero has to be shown capable of reporting
+one.
+
+Also verified the two handlers by hand while here, and the A0 listing had a hole:
+it jumped `0x655F -> 0x6565`, omitting `0x6563 mov bp,ax`. That instruction is
+precisely WHY the doc's "POST-increment" is correct — bp keeps the old pointer,
+`add ax,2` bumps the stored one, and `mov [bp+0x6820],ax` writes the slot bp
+still names. The conclusion was right with its reason missing; now listed.
+
+2228 items, 1091 confirmed (49.0%), 1137 open. 707 citations verified, 0 wrong.
+613 lib tests, 0 failures.

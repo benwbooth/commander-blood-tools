@@ -1598,7 +1598,7 @@ rec_write	src/vm.rs	6622	fn		TESTED
 rec_read_u8	src/vm.rs	6630	fn		UNVERIFIED	/// Byte-level record access (the record table is a little-endian word array). /// Used by the 0xB7 single-bit flag handler.
 rec_write_u8	src/vm.rs	6639	fn		UNVERIFIED	
 branch	src/vm.rs	6651	fn	0x6462	ASM	/// `vm_branch` @0x6462: pop the resume position into PC; clear query mode.
-step	src/vm.rs	6659	fn	0x6559,0x6572,0x6588,0x6596,0x65DB,0x67B1,0x6764,0x65EB,0x66	ASM?	/// Execute ONE opcode against the loaded stream. Returns false at stream end. // 0xA0 PUSH (0x6559): query=1; push the operand (resume position). // 0xA1 POP (0x6572): query=0; pop unless empty. // 0
+step	src/vm.rs	6659	fn	0x6559,0x6572,0x6588,0x6596,0x65DB,0x67B1,0x6764,0x65EB,0x66	ASM	/// Execute ONE opcode against the loaded stream. Returns false at stream end. // 0xA0 PUSH (0x6559): query=1; push the operand (resume position). // 0xA1 POP (0x6572): query=0; pop unless empty. // 0
 run	src/vm.rs	7492	fn		TESTED	/// Run until yield (0xAA/0xAC), halt, or `max_steps`. Returns the events raised.
 run_frame	src/vm.rs	7505	fn	0x55F5	CELL?	/// Run ONE FRAME the way the exec loop does (@0x55F5): restart at the top of /// the script (AA/AC yields end the frame with NO resume; the self-modified /// active bits advance the flow), run until 
 token_len_at	src/vm.rs	7519	fn	0x6293	CELL?	/// Total token length (including the opcode byte) at `pos`, using the game's own /// per-opcode descriptor table + mode rules — identical to the walker's advance /// (`mode1` there == query mode here
