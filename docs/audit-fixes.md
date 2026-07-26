@@ -12745,3 +12745,41 @@ in spirit even though its conclusion ("no orb here") was right.
 
 2228 items, 1088 confirmed (48.8%), 1140 open. 705 citations verified, 0 wrong.
 613 lib tests, 0 failures.
+
+## #389 — c1_set_plan verifies, and a comment edit that deleted a `return`
+
+Read `0x6BCE..0x6C0A` end to end against `c1_set_plan`. Every cited line is exact:
+
+    0x6BCE  test byte es:[di+2],1 / je 0x6C73   owner active?
+    0x6BE0  cmp ax,2 / je 0x6BEA                operand selects the redirect...
+    0x6BE5  cmp ax,1 / jne 0x6C04               ...1 or 2, else skip
+    0x6BEA  call 0x60DD                         distance(operand, owner)
+    0x6BED  or ax,ax / je 0x6C04                zero distance -> no redirect
+    0x6BF3  mov ax,0x11 / call 0x6023           selector 0x11 = parent link
+    0x6BFF  cmp ax,0x10 / jne 0x6C73            redirected target must be kind 0x10
+
+Two details the row gains by being read rather than sampled. The two kind-0x10
+tests have DIFFERENT failure targets — the redirected one exits at `0x6C73` (the
+branch), the direct one at `0x6C04`/`0x6C0A` jumps to `0x6C55` (the destination-
+empty check) — and the port distinguishes them correctly. And after a successful
+redirect the game RE-TESTS kind 0x10 at `0x6C04`, redundantly, because the
+redirect path falls through; the port's `if rec_read(owner) == 0x10` reproduces
+that redundancy rather than optimising it away, which is the right call.
+
+Fixed one loose citation: `0x6BCE` is the `test`; its `je` is at `0x6BD3`. The
+same file already cited it correctly 80 lines later, so this was an inconsistency
+within one function.
+
+AND I BROKE THE BUILD DOING IT. The line read `return Some(None); // owner
+inactive (0x6BCE je)`. Replacing "the comment" replaced the whole statement,
+because the comment was a TRAILING comment on a statement line — the return went
+with it. One test failed immediately, which is the only reason it did not ship as
+a silent behaviour change: a handler that stopped returning early would have kept
+executing on an inactive owner. Restored, 613 pass.
+
+The lesson is narrow and worth having: a trailing comment is not a separate line,
+and an edit that "only touches a comment" on such a line touches code. Match on
+the comment text alone, or include the statement in the replacement deliberately.
+
+2228 items, 1089 confirmed (48.9%), 1139 open. 705 citations verified, 0 wrong.
+613 lib tests, 0 failures.

@@ -5705,7 +5705,9 @@ impl VmMachine {
     fn c1_set_plan(&mut self, off: u16, operand: u16) -> Option<Option<u16>> {
         let owner = self.owner_object_offset(off)?;
         if self.rec_read(owner.wrapping_add(2)) & 1 == 0 {
-            return Some(None); // owner inactive (`0x6BCE` je)
+            // Owner inactive: `test byte ptr es:[di + 2], 1` @0x6BCE, whose
+            // `je 0x6C73` is at 0x6BD3 (this cited 0x6BCE for the je itself).
+            return Some(None);
         }
 
         // THE DISTANCE REDIRECT, `0x6BE0`..`0x6C02` (audit-fixes #292). The live
