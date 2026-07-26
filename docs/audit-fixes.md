@@ -11728,3 +11728,36 @@ containing `0x2A`, `0x2B`, `0x3F`, `0x5B`, `0x5C`, `0x7C`, `0x5E` or `0x24` woul
 have the same effect for any caller.
 
 658 citations verified, 0 wrong. 612 lib tests, 0 failures.
+
+## #360 — the encoding table earns itself: setters for all ten gate flags
+
+#332 ended with "find what SETS each of the ten", and #334 showed why that had
+been hard: `find_imm` rejects real instructions, and one of the ones it rejected
+was `mov byte [0x2737],1` @`0x893C` — a setter for one of these very flags.
+
+With `addr_forms.py` (#359) the census is immediate. Every flag's set-to-1 site:
+
+    0x67AC  0x5904                 0x2565  0x86C1
+    0x24F3  0x8160                 0x2736  0x892C
+    0x2751  0x8836                 0x2737  0x893C   <- what #334 rejected
+    0x67B0  0x122C, 0x677F         0x27DA  0x7FF5, 0x8A62
+    0x5E64  0x673D, 0x761B         0x2792  NONE
+
+`0x2751`'s `0x8836` and `0x2736`'s `0x892C` match the addresses already in the
+port's own constant docs, which is the corroboration worth having: the tool
+agrees with citations derived independently by decoding forward from verified
+entries.
+
+`0x2792` IS GENUINELY DIFFERENT, and only a complete census could say so. Five
+sites: two `mov byte [m],0` clears, and three reads comparing it to 0, to 1, and
+testing bit 1. NOTHING sets it non-zero, and its baked value in the image is
+`0x00`. So its live state must come through the save/load block restore, or the
+branches reading it are dead. That is a real, narrow question — and the kind that
+an incomplete search would have answered "no setter found, look harder".
+
+WHAT THIS UNBLOCKS: #312 declined to port the busy gate because nine of ten flags
+had no writer in the port. The BINARY side of that is now answered for nine of
+them; what remains is mapping each setter's routine to a port event, which is
+ordinary decode work rather than a search problem.
+
+658 citations verified, 0 wrong. 612 lib tests, 0 failures.

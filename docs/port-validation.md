@@ -1482,3 +1482,26 @@ ALSO UNPORTED in the same block: `+0x3A = 0`, a second PRNG step storing to
 `+0x42` (the field the proximity gate reads as the object's X), and
 `[si+0x50] = ax & 0xFFC` with `[si+0x52] = 0`. Wiring these needs the colony's
 shared state, not just the object's.
+
+### #360 — setters located for all ten main-loop gate flags
+
+The gate at `0x1095` ORs ten bytes (#333). Their SET-to-1 sites, from a complete
+encoding census (`re/tools/addr_forms.py`):
+
+    0x67AC  0x5904                 0x2565  0x86C1
+    0x24F3  0x8160                 0x2736  0x892C
+    0x2751  0x8836                 0x2737  0x893C
+    0x67B0  0x122C, 0x677F         0x27DA  0x7FF5, 0x8A62
+    0x5E64  0x673D, 0x761B         0x2792  NONE
+
+`0x2792` is the exception and worth its own note: five sites total — two
+`mov byte [m],0` clears (`0x5E88`, `0x7EFA`) and three reads that compare it
+against 0, against 1, and test bit 1 (`0x5E29`, `0x5E5B`, `0x77F3`). No
+instruction anywhere sets it non-zero, and its BAKED value in the image is `0x00`.
+So either its non-zero state arrives through the save/load block restore, or that
+branch is dead. Same shape as `game_flag_274f_cryobox_screen`, which `labels.csv`
+already records as baked-zero.
+
+This is the census #332 said was needed before the gate can be ported. Nine of
+the ten now have a named setter to wire; the tenth needs its writer found in the
+save-restore path or declaring dead.
