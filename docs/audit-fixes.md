@@ -13538,3 +13538,37 @@ the next reader of this row gets the same check for free.
 
 2228 items, 1098 confirmed (49.3%), 1130 open. 740 citations verified, 0 wrong.
 615 lib tests, 0 failures.
+
+## #412 — four more hand lifts, and a label that named the wrong family
+
+#411 checked one hand-written lift; four more were sitting at `CELL?`. All four
+match their routines instruction for instruction:
+
+  * `func_cef` / `0xCEF` — `xor ax,ax` + int33, `mov ax,2` + int33 (hide),
+    `cx=0xC / dx=0xC / ax=0xF` + int33 (mickey ratio), pops mirroring the pushes.
+  * `func_2f90` / `0x2F90` — `mov dx,0x3c8 / xor al,al / out / inc dl /
+    mov cx,0x300 / rep outsb`. The lift expands `rep outsb` correctly: reads
+    `DS:SI`, writes `0x3C9`, increments si, decrements cx.
+  * `func_2fa6` / `0x2FA6` — the same head, then `out dx,al` / `loop` writing 768
+    ZERO bytes.
+  * `func_bff` / `0xBFF` — `ds=cs`, `ax=0x2523 / dx=0x619` + int21, then
+    `al=0x24 / dx=0x61A` + int21: INT 23h and INT 24h installed back to back.
+
+THE LABEL AT `0x2FA6` WAS WRONG, and wrong in the way that spreads. It read
+`gfx_display_draw_family` — "display-buffer draw primitives (0x2fa6/0x2fbb/
+0x3000/0x3066/0x3d7b): lds/les to gs:[0x5221] (display page) and draw a span".
+The routine at `0x2FA6` contains no `lds`, no `les`, and never mentions
+`gs:[0x5221]`; it is the DAC blank above.
+
+The family is real — `0x2FBB` and `0x3000` both open `lds si, ptr gs:[0x5221]`
+and already carry their own labels — but `0x2FA6` is not a member. A FAMILY label
+listing five addresses and attached to the first of them is only as good as its
+first entry, and this one had swept in the routine that merely sits next to them.
+
+Note which side was right: the port called it `vga_dac_clear` all along. The
+labels file was the wrong one, so "check the port against the labels" would have
+produced a false correction here. The instruction is the authority, not either
+description of it.
+
+2228 items, 1102 confirmed (49.5%), 1126 open. 740 citations verified, 0 wrong.
+615 lib tests, 0 failures.
