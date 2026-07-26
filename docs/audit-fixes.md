@@ -13454,3 +13454,35 @@ two instructions rather than an inference.
 
 2228 items, 1095 confirmed (49.1%), 1133 open. 730 citations verified, 0 wrong.
 615 lib tests, 0 failures.
+
+## #409 — the approach camera's origin, confirmed from three places
+
+`Ship3dCameraApproach::default` carries #275's correction: `origin_y` is 12000,
+not 0, because the phase-3 reset never writes `[0x2F67]`. That is an argument
+from ABSENCE — "the instruction isn't there" — which is the shape most worth
+re-checking, since a missed instruction and a missing one look identical.
+
+It holds, and three independent sources agree:
+
+    0x8AF2  mov word ptr [0x2f69], 0x4e20    Z
+    0x8AF8  mov word ptr [0x2f71], 0         yaw
+    0x8AFE  mov word ptr [0x2f65], 0x2710    X   <- and then 0x8B04 moves on
+                                                    to `mov si,0x1f22`; there is
+                                                    genuinely no [0x2F67] write
+
+    0x8CB4  mov word ptr [0x2f65], 0x2710    the FULL origin reset...
+    0x8CBA  mov word ptr [0x2f67], 0x2ee0    ...which does write Y: 12000
+    0x8CC0  mov word ptr [0x2f69], 0
+
+    DS:0x2F65 in the shipped image: 0x2710, 0x2EE0, 0x0000
+
+So the value Y "keeps" is written by the full reset AND is what the image ships
+at that address. Code and data give the same three words, and the partial reset's
+omission is visible as an instruction boundary rather than inferred from a gap.
+
+Settled. Worth noting what made this row cheap to confirm: #275 had written down
+WHICH instruction was absent and WHERE the value came from instead, so checking
+it was three lookups rather than a re-derivation.
+
+2228 items, 1096 confirmed (49.2%), 1132 open. 730 citations verified, 0 wrong.
+615 lib tests, 0 failures.
