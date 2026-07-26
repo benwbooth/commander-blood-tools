@@ -9684,3 +9684,39 @@ decode knowledge and the next attempt starts from a false constraint. The fix
 cost one `capstone` pass over a byte range.
 
 Citations: 605 verified, 0 wrong. 707 tests across all binaries, 0 failures.
+
+## #306 — I settled a row I had not checked, in the same command as one I had
+
+Having closed the C3 chain, `promote_queued_presentation` was genuinely ready to
+settle. I passed `start_actor_presentation` to the same `audit_settle.py`
+invocation because it was adjacent in the file and its origin column looked
+similar.
+
+It was not checked. Its citation is `0x5816`, which turns out to be
+`presentation_scan` — the ENTRY of the very scan #305 decoded, so the address is
+right and the guard is satisfied. But the routine's kind-1 PRESENTATION START
+does considerably more than the port's five lines:
+
+    sets   0x67AC = 1        active
+    sets   0x67B7            start-lock
+    ors    0x2793 |= 4       busy
+    ors    record+3 |= 0x80
+    clears 0x6782, 0x6784, 0x6776, 0x67F8, 0x67BA..0x67BC, 0x679A
+
+The port writes `{0xC4, related}` and sets three of its own flags. Whether the
+seven dialogue cells are cleared elsewhere in the port's lifecycle is not
+established, and I had established nothing when I settled it.
+
+PUT BACK to `ASM?` (via `audit_settle.py UNVERIFIED` plus an inventory pass,
+which the heuristic then restores to provisional), and the doc now lists what is
+missing so the next reader inherits the QUESTION rather than my assumption.
+
+This is #298's finding turned on its author. Eighteen entries of arguing that
+provisional rows must be promoted one at a time, and the failure mode arrived
+anyway — not as a deliberate shortcut but as a second argument on a command line.
+Bulk settlement does not require intent; it requires only that checking one row
+makes the next one feel checked.
+
+The count moved by one instead of two. That is the correct number.
+
+Citations: 605 verified, 0 wrong. 606 lib tests, 0 failures.

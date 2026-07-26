@@ -4917,6 +4917,18 @@ impl VmMachine {
     /// Driver hook: a console click / event starts an actor's presentation —
     /// the C4 query blocks for that actor then run (the game's click dispatch
     /// writes the C4 primary record @DS:0x675E; handler @0x5816).
+    ///
+    /// MODELS A SUBSET, and the row stays provisional for that reason
+    /// (audit-fixes #306). `0x5816` is `presentation_scan`, and its kind-1
+    /// PRESENTATION START does more than write `{0xC4, related}` and set three
+    /// flags: it sets `0x67AC=1` (active) and `0x67B7` (start-lock), ORs
+    /// `0x2793 |= 4` (busy), ORs `record+3 |= 0x80`, and CLEARS seven dialogue
+    /// cells (`0x6782`, `0x6784`, `0x6776`, `0x67F8`, `0x67BA`..`0x67BC`,
+    /// `0x679A`).
+    ///
+    /// Whether the port covers those elsewhere in its dialogue lifecycle is not
+    /// established. Until someone checks each one, this is a partial port with a
+    /// correct core, not a verified one — which is exactly what `ASM?` means.
     pub fn start_actor_presentation(&mut self, record_offset: u16, related: u16) {
         self.rec_write(record_offset, 0xC4);
         self.rec_write(record_offset + 2, related);
