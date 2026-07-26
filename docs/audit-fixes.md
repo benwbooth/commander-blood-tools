@@ -11506,3 +11506,43 @@ are the cheap end.
 
 2227 items, 1066 confirmed (47.9%). `ASM?` down to 44.
 612 lib tests, 0 failures.
+
+## #354 — the mixer verifies, and a constant that should never be ASM
+
+`mix_unsigned_pcm_sources` cites `0xBB6D`. The routine is five instructions:
+
+    0xBB6D  lodsb
+    0xBB6E  add al, byte ptr es:[di]
+    0xBB71  rcr al, 1
+    0xBB73  stosb
+    0xBB74  loop 0xbb6d
+
+`rcr al,1` AFTER the `add` is the detail that makes it correct: the add's CARRY
+becomes the rotated-in high bit, so this is a nine-bit sum halved — a true
+average that cannot overflow. Writing it as `shr` would lose the top bit on every
+sample above the midpoint.
+
+The doc's harder claim also holds: mixing N sources is this applied N times, so
+an earlier source is halved again by every later one and THE LAST SOURCE
+DOMINATES. That is iterated `(a+b)/2`, not an equal-weight average, and the doc
+explicitly warns against "correcting" it. Settled ASM.
+
+`SILENCE = 0x80` settled INFRA, NOT ASM, and the distinction is the point. Its
+own doc says: "DEFINITIONAL, not decoded... This constant carried an origin of
+`0x4049,0xBB6D` — neither of which contains `0x80`; `0x4049` is `int 21h` and
+`0xBB6D` is `lodsb`. The addresses had been absorbed from a TEST comment eighty
+lines away by a scanning bug (#252)."
+
+So the row LOOKED like a decode claim because a tool had glued two unrelated
+addresses to it, and the honest status is "no binary counterpart" — `0x80` is the
+midpoint of an unsigned 8-bit sample, which is what silence IS in that
+representation. Settling it ASM would have manufactured exactly the evidence #252
+was written to remove.
+
+That is the second row this session settled as something other than ASM on
+purpose (#322's `MENU_SUBMENU` went DATA). Having five settled statuses is only
+useful if the one recorded matches the evidence that exists — otherwise the
+ledger says "checked against the disassembly" about a definition.
+
+2227 items, 1068 confirmed (48.0%). `ASM?` down to 42.
+612 lib tests, 0 failures.
