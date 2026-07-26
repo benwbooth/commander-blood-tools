@@ -13216,3 +13216,36 @@ model's arithmetic and fail under its structure — which is the point.
 
 2228 items, 1093 confirmed (49.1%), 1135 open. 719 citations verified, 0 wrong.
 614 lib tests, 0 failures.
+
+## #402 — the tail writes are on a NEIGHBOUR, not this object
+
+Before settling `croolis::step` I checked what its remaining unmodelled writes
+actually target, because they use `si` where everything else uses `di`. They are
+not the same record:
+
+    0x16A4  mov si, word ptr [di + 0x16]   a pointer out of THIS object
+    0x16A7  add si, 0x5e                   ...advanced by ONE OBJECT STRIDE
+    0x16AA  test word ptr [di + 0x36], 0xffff
+    0x16AF  je 0x16B4                      state_flag == 0 -> the state machine
+    0x16B1  jmp word ptr [si + 0xe]        else -> THAT record's sub-method
+
+So `si` is a related record at `[di+0x16] + 0x5E`. The tail writes
+(`[si+0x50] = ax & 0xFFC`, `[si+0x52] = 0`, and `mov word ptr [si+0xe], 0x1727`
+@`0x16FE` — which INSTALLS a sub-method on the neighbour) all land there.
+
+This matters twice over. First, the port maps `anim_counter` to `+0x50` on the
+object itself; if a future pass had "completed" `step` by writing that field from
+`0x16F1`, it would have written the wrong record and looked correct. Second, the
+same `si` is what the vtable jump at `0x16B1` dispatches through, so an object
+whose `state_flag` is set runs its NEIGHBOUR's method — object linkage, not a
+per-object state machine.
+
+ROW STAYS PROVISIONAL, and now for a stated reason: modelling this needs the
+object-list linkage `+0x16` names, and the port's colony is a `Vec<AlienObject>`
+with no cross-references. That is the blocker; it is written into the code so the
+next pass starts from it instead of re-deriving it. Building that linkage is the
+task, not a reason to stop — but inventing a neighbour relation to satisfy a
+checkbox is exactly the kind of plausible fiction #400 just removed.
+
+2228 items, 1093 confirmed (49.1%), 1135 open. 725 citations verified, 0 wrong.
+614 lib tests, 0 failures.

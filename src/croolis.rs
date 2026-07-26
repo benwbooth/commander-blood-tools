@@ -344,10 +344,28 @@ impl AlienObject {
     /// tests; for a COLONY they differ, because the game interleaves one shared
     /// sequence across objects while the port gives each its own.
     ///
-    /// ALSO NOT MODELLED, from the same block: `+0x3A = 0` (`0x16D3`), a SECOND
-    /// PRNG step whose result lands in `+0x42` (`0x16E5`..`0x16EB`) — which is
-    /// the very field the proximity gate reads as the object's X — and
-    /// `[si+0x50] = ax & 0xFFC` / `[si+0x52] = 0` (`0x16EE`..`0x16F4`).
+    /// `+0x42` IS NOW MODELLED (audit-fixes #401) as the second, non-written-back
+    /// PRNG step. Still not modelled: `+0x3A = 0` (`0x16D3`), an unidentified
+    /// field.
+    ///
+    /// AND THE `[si+…]` WRITES ARE ON A DIFFERENT RECORD (audit-fixes #401). The
+    /// routine opens:
+    ///
+    /// ```text
+    ///   0x16A4  mov si, word ptr [di + 0x16]   a pointer out of THIS object
+    ///   0x16A7  add si, 0x5e                   ...advanced by ONE OBJECT STRIDE
+    ///   0x16AA  test word ptr [di + 0x36], 0xffff
+    ///   0x16AF  je 0x16B4                      state_flag == 0 -> the machine
+    ///   0x16B1  jmp word ptr [si + 0xe]        else -> that record's sub-method
+    /// ```
+    ///
+    /// So `si` is a RELATED record at `[di+0x16] + 0x5E`, not this one, and the
+    /// tail writes (`[si+0x50] = ax & 0xFFC`, `[si+0x52] = 0` @`0x16EE`..`0x16F4`,
+    /// and `mov word ptr [si+0xe], 0x1727` @`0x16FE`, which INSTALLS a sub-method
+    /// on it) all target that neighbour. Modelling them needs the object-list
+    /// linkage `+0x16` names, which the port does not carry — objects here are a
+    /// `Vec` with no cross-references. That is the blocker, stated so the next
+    /// pass starts from it rather than re-deriving it.
     pub fn step(&mut self, shared: &mut AlienStreams) -> bool {
         if self.timer > 0 {
             self.timer -= 1;
