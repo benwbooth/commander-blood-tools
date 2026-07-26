@@ -12783,3 +12783,34 @@ the comment text alone, or include the statement in the replacement deliberately
 
 2228 items, 1089 confirmed (48.9%), 1139 open. 705 citations verified, 0 wrong.
 613 lib tests, 0 failures.
+
+## #390 — c4_set_write_decision: the withdrawal holds up
+
+Checked every address in this row's doc, including the reasoning #378 used to
+WITHDRAW #376. All five instructions are exact:
+
+    0x6CC3  test byte ptr es:[di + 2], 1     the guard
+    0x6D01  mov word ptr es:[bp], 0xc4       the write
+    0x5233  or  word ptr [bx + 2], 3         83 /1  (word, sign-extended imm8)
+    0x52B5  and word ptr [bx + 2], 0xfffc    83 /4
+    0x5B8D  and byte ptr [bx + 2], 0xfe      80 /4  (byte)
+
+The encoding families the whole argument turns on are confirmed by the bytes:
+`0x5233`/`0x52B5` really are the `83 /N` WORD form that the original enumeration
+missed by scanning only `80 /N`, and `0x5B8D` really is the byte form.
+
+The withdrawal's own claim also holds, which is the part I most wanted to check
+since #378 reversed a conclusion I had already published. `0x5229` is
+`mov bx, word ptr [0xc02]` — so `bx` at `0x5233` is a RESOURCE DESCRIPTOR, not an
+object record — and the surrounding sequence matches the doc line for line
+(`mov ax, gs:[0xa6a]` / `mov [bx], ax` / `or word [bx+2],3` / `mov [bx+4], ebp`).
+Both sites sit in resource routines: `resource_name_write_c00` (0x5190) and
+`resource_free_inner` (0x529C).
+
+So `0x5B8D` is the sole runtime writer of an OBJECT's active bit, reading
+VAR-initial bits stays justified, and the SUPERSEDED section is correctly marked.
+No fix needed — the row is settled as written, which after four self-corrections
+this session is worth stating plainly rather than hunting for something to change.
+
+2228 items, 1090 confirmed (48.9%), 1138 open. 705 citations verified, 0 wrong.
+613 lib tests, 0 failures.
