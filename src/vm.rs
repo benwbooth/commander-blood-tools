@@ -435,7 +435,22 @@ pub fn dlg_line_id_for_selector(selector: u8) -> i16 {
 /// DS offset of the ASSET ID word for a line id: `0x1FB5 + line_id*4 + 2`.
 ///
 /// Returns `None` for a negative line id, which the dispatcher rejects outright
-/// (`or ax,ax; js` at `0x9D20`).
+/// (`or ax,ax` @`0x9D20`, `js` @`0x9D22`).
+///
+/// THE ARITHMETIC ITSELF is at `0x9D65`..`0x9D6E`, cited here for the first time
+/// (audit-fixes #301 — the doc previously named only the rejection, so the
+/// formula that is the whole point of the function had no address behind it):
+///
+/// ```text
+///   0x9D65  mov bx, ax       the line id
+///   0x9D67  shl bx, 2        *4 — four bytes per entry
+///   0x9D6A  add bx, 0x1fb5   the table base
+///   0x9D6E  mov si, [bx+2]   +2 — the ASSET ID is the entry's second word
+/// ```
+///
+/// Found by decoding forward from `0x9D4D`, a real branch target. Decoding from
+/// `0x9D60` instead renders `fadd st(1)` and a `jcxz` — phantoms from landing
+/// mid-instruction, the hazard `refs_in_routine.py` exists to avoid.
 pub fn dlg_line_asset_id_ds_offset(line_id: i16) -> Option<u16> {
     if line_id < 0 {
         return None;

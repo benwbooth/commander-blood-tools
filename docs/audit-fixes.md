@@ -9492,3 +9492,37 @@ confidence. It still says "0 wrong", but now the skipped set can be READ rather
 than trusted, which is the only thing that makes the 0 meaningful.
 
 Citations: 587 verified (from 586), 83 skipped (from 84), 0 wrong.
+
+## #301 — a doc that cited its guard clause and not its formula
+
+`dlg_line_asset_id_ds_offset` claims the offset is `0x1FB5 + line_id*4 + 2`, and
+its only citation was for the REJECTION: "`or ax,ax; js` at `0x9D20`". That check
+verifies (`or ax,ax` @`0x9D20`, `js` @`0x9D22`), and the guard was happy — but the
+formula, which is the entire content of the function, had no address behind it.
+The `?` was right and the reason was not the one I expected.
+
+The arithmetic is at `0x9D65`..`0x9D6E` and matches exactly:
+
+    0x9D65  mov bx, ax       the line id
+    0x9D67  shl bx, 2        *4 -- four bytes per entry
+    0x9D6A  add bx, 0x1fb5   the table base
+    0x9D6E  mov si, [bx+2]   +2 -- the ASSET ID is the entry's second word
+
+WORTH RECORDING HOW IT WAS FOUND, because the first attempt produced garbage.
+`find_imm.py` located `add bx,0x1fb5` @`0x9D6A`, so I disassembled from `0x9D60`
+— and got `add [bx],cx`, `test [bp+si-0x7500],ax`, `fadd st(1)`, `jcxz`. All
+phantoms: an FPU instruction in the middle of a dialogue dispatcher is the tell.
+Decoding from `0x9D4D`, an actual branch target, gives clean code and the four
+instructions above. Same lesson `refs_in_routine.py` was built for (#234) —
+x86 self-synchronises, so a decode has to START somewhere known, and "near the
+address I want" is not that.
+
+A CITATION THAT VERIFIES CAN STILL BE THE WRONG CITATION — not wrong in the #298
+sense (pointing at another routine) but MISPLACED: attached to a guard clause
+while the claim it is meant to support sits twenty bytes away. The guard cannot
+detect this, since the instruction it checks really is there and really is what
+the doc says. Only reading the doc against the function can.
+
+Citations: 593 verified (from 587), 0 wrong. 604 lib tests, 0 failures.
+Row tally so far: five reviewed, two correct as written, one wrong address, one
+uncheckable address space, one citing the wrong part of its own routine.
