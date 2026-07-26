@@ -10979,3 +10979,37 @@ does `menu_submenu_labels` mean?" and "which console mode is AL=2?" — are the
 same question, and answering it once settles both.
 
 641 citations verified, 0 wrong. 612 lib tests, 0 failures.
+
+## #339 — `mov si` is not where SI came from when a string instruction sits between
+
+#338 left one question: which word-offset list reaches the console list widget.
+Reading back from the call at `0x88BA` to the nearest `mov si, imm16` gives
+`0x2AAB` @`0x8892`. That is the wrong answer, and the reason is worth recording.
+
+    0x8892  mov si, 0x2AAB
+    0x8895  mov di, 0x25CF
+    0x8898  movsd                <- SI += 4
+    0x889A  movsd                <- SI += 4
+    0x88A3  push si              (now 0x2AB3)
+    0x88A4  mov si, 0x2AAB
+    0x88AA  lcall 0x8B:0x0FAD
+    0x88AF  pop si               (restores 0x2AB3)
+    0x88BA  call 0x8428          <- SI = 0x2AB3
+
+The two `movsd` ADVANCE SI by eight, and the `push`/`pop` pair around the lcall
+preserves the ADVANCED value, not the loaded one. So the widget's row list starts
+at `DS:0x2AB3`; `DS:0x2AAB` is an 8-byte parameter block ahead of it, built at
+`0x9029` from the mouse coordinates `[0x0A2A]`/`[0x0A2C]` plus two `4`s, and
+copied to `0x25CF` by those very `movsd`s.
+
+I NEARLY RECORDED `0x2AAB` AS THE LIST. The check that caught it was mechanical:
+`movsd` moves DS:SI to ES:DI and increments both, so any read-back that stops at
+the last `mov si` is wrong whenever a string instruction intervenes. Same family
+as #328 (a routine that did the right thing but was not on the path) — the
+instructions were all read correctly and the conclusion still would not have been.
+
+This is now the third distinct way a plausible pointer can be wrong in this
+codebase: phantom decode (#234), off-path attribution (#328), and silent register
+advance (this). All three produce an address that disassembles cleanly.
+
+641 citations verified, 0 wrong. 612 lib tests, 0 failures.
