@@ -10133,3 +10133,42 @@ whoever closes that gap; recorded rather than chased, because decoding a new
 table subsystem is not what this review is for.
 
 Citations: 607 verified, 0 wrong. 607 lib tests, 0 failures.
+
+## #317 — 124 of 200 "decode" rows cite a DATA CELL, not a routine
+
+#316 named a third citation class after hitting it three times by hand. Rather
+than keep finding them one row at a time, I taught the ledger to tell them apart.
+
+THE DISCRIMINATOR is a MNEMONIC beside the address — precisely what makes a
+citation checkable by `check_cited_instructions.py`. `mov word ptr [0x1fa7],0x23`
+is a claim about code; `gs:0x6772` is a name for a cell. Both are hex in a doc
+comment, and `audit_inventory.py` counted both as evidence of a decode.
+
+Rows whose addresses never carry a mnemonic are now `CELL?` rather than `ASM?`.
+The split:
+
+    before   ASM? 200
+    after    ASM?  76      cites at least one instruction
+             CELL? 124     names cells only -- nothing for any tool to check
+
+NEARLY TWO THIRDS. The `ASM?` queue was not 200 unchecked decode claims; it was
+76, plus 124 rows whose "evidence" was a variable name in hex. That is the kind
+of number that changes what the queue MEANS: the provisional-decode backlog is
+much smaller than it looked, and a separate backlog of undocumented-but-plausible
+port code was hiding inside it.
+
+CHECKED THE REGENERATION RATHER THAN TRUSTING IT. The diff reported "82 settled
+rows changed", which looked like the disaster #217 exists to prevent — until I
+re-keyed on (item, file) instead of (item, file, LINE). Line numbers shift on
+every edit. Re-checked: ZERO settled statuses lost, all 403 ASM / 236 ORACLE /
+202 TESTED / 85 DATA / 96 INFRA intact. The confirmed count is unchanged at
+1022 (46.0%), which is correct — this reclassifies OPEN work, it does not settle
+any.
+
+WHAT IT DOES NOT DO: `CELL?` is not a verdict on the code. `present_scene_buffer`
+(#315) turned out to be a faithful decode whose doc merely named a cell instead
+of an instruction. The label says "nothing here is checkable as written", which
+is a statement about the DOC, and the fix for such a row is to find the
+instructions — which is exactly what #315 did.
+
+Citations: 607 verified, 0 wrong. 607 lib tests, 0 failures.

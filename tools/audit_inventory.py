@@ -49,7 +49,28 @@ TEST_NAMES = set()
 
 # Statuses the heuristics below can produce. Anything else in an existing ledger
 # was set by hand and must survive a regeneration.
-PROVISIONAL = {"ASM?", "ORACLE?", "DATA?", "INFRA?", "UNVERIFIED", ""}
+PROVISIONAL = {"ASM?", "ORACLE?", "DATA?", "INFRA?", "CELL?", "UNVERIFIED", ""}
+
+# audit-fixes #317. An address in a doc is NOT automatically a routine citation.
+# Three rows in the #298 review cited DATA: "SCRIPT2: 0x0F4E" (a script record
+# offset), `gs:0x1FA7` and `gs:0x6772` (DS cells). Disassembling the executable at
+# any of them yields convincing phantoms, and `check_cited_instructions.py`
+# correctly declines to check them -- so the row read as evidenced while nothing
+# could ever verify it.
+#
+# The discriminator is a MNEMONIC beside the address, which is exactly what makes
+# a citation checkable. Rows whose addresses never carry one become `CELL?`
+# instead of `ASM?`: still provisional, but honestly labelled as "names a cell,
+# not a routine" so the queue can be worked by kind.
+MNEMONIC_NEAR = re.compile(
+    r"(?<![0-9A-Za-z])0x[0-9A-Fa-f]{3,6}[^\n]{0,24}?\b(mov|cmp|test|jmp|je|jne|jb|jae|ja|jbe|jg|jl|"
+    r"call|lcall|ret|retf|push|pop|add|sub|and|or|xor|inc|dec|shl|shr|sar|mul|imul|div|lea|les|lds|"
+    r"lodsb|lodsw|lodsd|stosb|stosw|stosd|movsx|movzx|cbw|cwde|neg|not|bsf|rep|xchg)\b"
+    r"|\b(mov|cmp|test|jmp|je|jne|jb|jae|ja|jbe|jg|jl|call|lcall|ret|retf|push|pop|add|sub|and|or|"
+    r"xor|inc|dec|shl|shr|sar|mul|imul|div|lea|les|lds|lodsb|lodsw|lodsd|stosb|stosw|stosd|movsx|"
+    r"movzx|cbw|cwde|neg|not|bsf|rep|xchg)\b[^\n]{0,24}?(?<![0-9A-Za-z])0x[0-9A-Fa-f]{3,6}",
+    re.I,
+)
 
 
 def load_curated(path):
@@ -272,12 +293,14 @@ for root, _, files in os.walk(SRC):
             low = doctext.lower()
             if any(k in low for k in ("oracle", "verified vs", "pixel-match", "capture")):
                 status = "ORACLE?"
-            elif addrs and any(
-                k in low for k in ("exact", "transcri", "decoded", "asm", "0x")
-            ):
+            elif addrs and MNEMONIC_NEAR.search(fulldoc):
+                # At least one address sits beside an instruction, so the guard
+                # can check it and the row is a genuine decode claim.
                 status = "ASM?"
             elif addrs:
-                status = "ASM?"
+                # Addresses but never an instruction: a DATA CELL reference
+                # (`gs:0x1FA7`), a script-space offset, or a bare region pointer.
+                status = "CELL?"
             elif any(k in low for k in ("banked", "dump", "extracted", "blood.dat", "lbm", "hnm", "descript")):
                 status = "DATA?"
             elif f in ("main.rs", "gpu.rs") or "window" in low or "wgpu" in low or name.startswith("run_"):
