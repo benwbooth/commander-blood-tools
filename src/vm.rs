@@ -421,12 +421,20 @@ pub const DLG_LINE_ASSET_NONE: u16 = 0xFFFF;
 
 /// The line id an `0xA6` selector maps to: `sign_extend(b3) + 9`.
 ///
-/// SCOPE: this is ONE of 29 writers of `gs:0x6788`. A byte search for every
-/// `mov [0x6788], …` encoding finds 29 sites — this one, four register writes, and 24
-/// IMMEDIATE writes of fixed ids (a `0x27..0x2C` cluster, the low ids `0x01`-`0x07`,
-/// and `0xFFFF` resets) issued by native code, e.g. `0x5E74` in the post-update ladder.
-/// So the active line is mostly set natively; the script selector accounts for a single
-/// path. Do not read this function as "how the line id is determined".
+/// SCOPE: this is ONE of 27 writers of `gs:0x6788` — five register writes
+/// (including this one) and 22 IMMEDIATE writes of fixed ids (a `0x27..0x2C`
+/// cluster, the low ids `0x01`-`0x07`, and `0xFFFF` resets) issued by native
+/// code, e.g. `0x5E74` in the post-update ladder. So the active line is mostly
+/// set natively; the script selector accounts for a single path. Do not read
+/// this function as "how the line id is determined".
+///
+/// COUNT CORRECTED from 29 to 27 (audit-fixes #319). The old figure came from
+/// "a byte search for every `mov [0x6788], …` encoding", and a raw byte search
+/// cannot tell an instruction from a coincidence inside another one — the same
+/// phantom problem #234 recorded. Re-counted with `find_imm.py`, which rejects
+/// mid-instruction matches: 39 confirmed references, of which 27 are writes
+/// (22 immediate, 5 register) and 12 are reads or compares. Two of the original
+/// 29 were phantoms.
 ///
 /// `0x668D` stores `b3` SIGN-EXTENDED at `DS:0x1FAB` (`lodsb; cbw` -- one byte at
 /// `0x668E`, so AL into AX; `re/tools/dis.py` prints it `cwde`), and `0x11F2`

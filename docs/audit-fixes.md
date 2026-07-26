@@ -10212,3 +10212,37 @@ together advance exactly four), `DLG_LINE_ASSET_ID_OFFSET` (2 — `mov si,[bx+2]
 @`0x9D6E`), `DLG_ASSET_NAME_STRIDE` (16 — `shl ax,4` @`0x768E`).
 
 Citations: 613 verified (from 607), 0 wrong. 607 lib tests, 0 failures.
+
+## #319 — a count from a raw byte search was two high
+
+`dlg_line_id_for_selector`'s doc is unusually careful: it warns that this
+function is only ONE path to the active line id, and quantifies it — "ONE of 29
+writers of `gs:0x6788`. A byte search for every `mov [0x6788], …` encoding finds
+29 sites — this one, four register writes, and 24 IMMEDIATE writes."
+
+Its core claims all verify (and were already checked in #298): `lodsb` @`0x668D`,
+the one-byte `cbw` @`0x668E` that capstone renders `cwde`, the store to
+`DS:0x1FAB` @`0x668F`, and `add ax,9` @`0x11F5` forming `gs:0x6788`.
+
+THE COUNT DOES NOT. Re-counted with `find_imm.py`, which rejects
+mid-instruction matches (19 of them here): 39 confirmed references — 27 writes
+and 12 reads/compares. The writes split 22 immediate, 5 register. The doc's
+structure `1 + 4 + 24 = 29` gets the register side right (5 including this one)
+and the immediate side wrong by two.
+
+THE CAUSE IS IN THE DOC'S OWN SENTENCE: "a byte search". A raw byte search cannot
+distinguish an instruction from the same bytes appearing inside another one, and
+two of the 29 were exactly that. This is #234's phantom problem, committed by a
+method that the tooling had already been fixed to avoid — and it produced a
+number precise enough to look authoritative.
+
+I ALSO DID NOT TRUST MY OWN TALLY. Having read the aggregation, I counted the
+writes by hand and got 27, then re-derived it with a script rather than publish
+the arithmetic — #308 was a wrong structural claim built on a hand-read of tool
+output, and the fix for that is not to be more careful, it is to stop counting
+by hand.
+
+Corrected to 27 with the method named, and the row settled: everything it claims
+about the instructions holds.
+
+Citations: 613 verified, 0 wrong. 607 lib tests, 0 failures.
