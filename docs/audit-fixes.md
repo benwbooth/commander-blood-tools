@@ -9284,3 +9284,54 @@ handler under the interpreter oracle and watch SP across the three exits. That i
 what the oracle is for — verification of a decode I cannot close by reading.
 
 Citations: 583 verified, 0 wrong. 707 tests across all binaries, 0 failures.
+
+## #296 — the stack question, settled by EXECUTION: #294 was right, #295's withdrawal was wrong
+
+#294 read the 0xC1 handler's direct-to-`0x6C7C` exits as leaving two words on the
+stack. #295 withdrew that on an argument: the query path reaches `0x6C7C` from
+`0x6BC2` on its ordinary outcome, which runs constantly, so an imbalance would
+break the game at once — therefore my push/pop pairing must be wrong.
+
+The argument was reasonable and it was wrong. `re/tools/probe_c1_stack.py` runs
+the handler in Unicorn from its real entry and records SP at each exit. Driven to
+`0x6BC2`:
+
+    0x6BC2  SP = -6   di, ds, si all pushed
+    0x6C7C  SP = -6   `pop di` reached with the pop si / pop ds SKIPPED
+    0x6C7D  SP = -4   `ret` takes SI's value as the return offset
+    FAULT             UC_ERR_EXCEPTION
+
+The balanced exits confirm the same probe is measuring correctly: via `0x6C73` or
+`0x6C7A`, SP returns to exactly its entry value and the routine rets cleanly.
+
+So the imbalance is REAL and structural — three pushes, one pop on that path. No
+calling convention fixes it, because the handler's own `0x6B71`/`0x6B72` pushes
+are the unmatched pair.
+
+WHAT THIS DOES NOT ESTABLISH, and I am not going to assert it: that the shipped
+game faults here. It establishes that the path faults WHEN ENTERED BY A PLAIN
+NEAR CALL WITH ONLY A RETURN ADDRESS BELOW. Two possibilities remain and the
+probe cannot separate them: the path may be unreachable with real data, or the
+handler may be entered some other way. `0x6BC2` needs `es:[bp] == 0xC1` (the
+record already typed by a previous C1 SET), `ax == es:[bp+2]`, and no `0xA1`
+prefix — i.e. a C1 query that PASSES. A C1 query against an empty record gives
+`cx == 0` and exits via `0x6BC5` -> `0x6C73`, which is balanced. So the fault
+path is exactly "a passing, non-inverted C1 query", which may simply never occur
+in the shipped scripts.
+
+THREE BUGS IN MY OWN PROBE before it produced anything, each worth noting because
+each returned a confident wrong answer rather than an error:
+  * the COD stream was written at LINEAR 0x4000 while `lodsw` reads `DS:si` —
+    the handler read EXE bytes as its operands;
+  * `gs:[0x672c]` pointed at zeros, so the record-lookup helper (`0x6034`)
+    scanned forever and the run died on the instruction limit;
+  * `ES` was left zero, but it comes from `les di,gs:[0x6724]` @`0x6B4D`, so
+    `es:[bp]` read EXE bytes and gave `cx = 0xC700` instead of `0xC1` — the
+    handler took the MISMATCH path and reported a balanced exit.
+That third one is the dangerous shape: the probe ran, faulted nothing, printed a
+clean balanced trace, and would have "confirmed" #295's withdrawal. It was only
+caught by tracing the compare operands instead of trusting the exit it reached.
+
+Recorded, not acted on. Nothing in the port changes: #295's behavioural fix (the
+sentinel does not branch) stands on its own reading of `0x6C20`/`0x6C7C` and is
+unaffected by the stack question.

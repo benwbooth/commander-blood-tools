@@ -1319,3 +1319,17 @@ query path reaches it from `0x6BC2`/`0x6BCB` on its ordinary outcomes — so the
 pattern is intentional and my push/pop pairing is wrong somewhere. Settle by
 single-stepping the handler under the interpreter oracle and watching SP across
 the three exits.
+
+### #296 — the C1 stack imbalance is REAL under a plain near call (probe checked in)
+
+`re/tools/probe_c1_stack.py` settles #294/#295 by execution. Exits via `0x6C73`
+or `0x6C7A` return with SP exactly at entry; the direct-to-`0x6C7C` exit
+(`0x6BC2`, and the scan sentinel at `0x6C20`) reaches `pop di` with SP still at
+-6 and faults on `ret`.
+
+This does NOT establish that the shipped game faults. It establishes the path is
+unbalanced when entered by a plain near call. `0x6BC2` requires a C1 query that
+PASSES (record already typed `0xC1`, `+2` matching, no `0xA1`); a query against an
+empty record exits via the balanced `0x6C73`. Open: whether a passing
+non-inverted C1 query occurs in the shipped scripts, or whether the handler is
+entered another way. Nothing in the port depends on the answer.
