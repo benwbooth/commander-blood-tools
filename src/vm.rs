@@ -4859,6 +4859,34 @@ pub struct VmMachine {
     ///           if any is set, DEFER the pending script-profile load
     /// ```
     ///
+    /// COMPLETE SITE CENSUS (audit-fixes #358), enumerating every fixed encoding
+    /// that touches `[0x2793]` — including the `83 /N` sign-extended-imm8 family
+    /// a first pass omitted, and the register forms:
+    ///
+    /// ```text
+    ///   0x0000   3 whole-word writes (clear all)
+    ///   0x0001   9 reads, 2 whole-word writes          bit 0  (the 0xCE branch)
+    ///   0x0004  19 ORs, 1 direct read                  bit 2  (busy)
+    ///   0x0008   6 reads, 2 ORs, 1 XOR                 bit 3  (seek arrival)
+    ///   0x0009   1 whole-word write                    the nav reset: bits 0+3
+    ///   0x000C   1 OR                                  bits 2+3 raised TOGETHER
+    ///   0x000E   1 read                                the main-loop gate mask
+    ///   0x0010   3 reads                               bit 4
+    ///   0x0020   1 read                                bit 5
+    ///   0x0040   2 reads                               bit 6
+    ///   0x0050   1 read                                bits 4+6
+    ///   0x0090   1 read                                bits 4+7
+    ///   0x00FB  12 ANDs                                clear bit 2
+    ///   plus `mov [0x2793],ax` @0x9544 and `mov ax,[0x2793]` @0x77E6/@0x9512;
+    ///   `89 /r` and `8b /r` forms: NONE.
+    /// ```
+    ///
+    /// Two things this settles. BIT 1 IS NEVER TOUCHED ALONE — it appears only
+    /// inside the `0x0E` gate mask, so the port has no reason to model it
+    /// separately. And BITS 4..7 ARE READ BUT NEVER OR'd — they can only be set
+    /// by a whole-word write, of which there are six, so whatever they mean is
+    /// decided by those writers and not by incremental flag-setting.
+    ///
     /// Four subsystems were each blocked on this word existing as state —
     /// presentation (#311), concept lists (#324), the save dialogue (#325) and
     /// the bridge station seek (#330). This field is that state. The GATE itself

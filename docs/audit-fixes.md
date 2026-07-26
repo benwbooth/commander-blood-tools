@@ -11651,3 +11651,41 @@ sites have been arriving one investigation at a time ever since, which is a fair
 warning that the flag word is not finished being decoded.
 
 656 citations verified, 0 wrong. 612 lib tests, 0 failures.
+
+## #358 — finish the flag word: 66 sites, and the encoding family I omitted first
+
+#357 warned that `gs:0x2793`'s sites had been arriving one investigation at a
+time and the word was not finished. So I enumerated all of them at once, by
+searching every fixed ENCODING rather than by decoding (no false negatives —
+#334's lesson).
+
+FIRST PASS: 59 sites, and bit 3 showed SIX READS AND NO WRITER. That is not a
+possible state for a flag something branches on, so the census was wrong before
+its shape could mislead me.
+
+THE OMISSION: `xor word ptr [0x2793], 8` @`0x9671` is `83 36`, the
+SIGN-EXTENDED-IMM8 family (`83 /N` on a word operand), and I had only searched
+`81 /N` and the byte forms. Adding `83 /0,/1,/4,/6,/7` brought in seven more
+sites — including bit 3's two `or`s and its `xor`, and three more bit-2 clears.
+
+That is the THIRD time this session an encoding family has been missed while
+enumerating encodings (#336's `89 /r`, #335's `a3`, now `83 /N`), and the second
+time by me AFTER writing the rule that a set-search must state what it omits.
+The rule is right and evidently not sufficient on its own; what caught it here
+was a RESULT THAT COULD NOT BE TRUE — reads with no writer — rather than any
+discipline about listing forms.
+
+THE COMPLETE CENSUS is now on the constant: 66 immediate-form sites plus
+`mov [0x2793],ax` @`0x9544` and two `mov ax,[0x2793]` reads, with `89 /r` and
+`8b /r` confirmed absent. Two facts fall out that change what the port must model:
+
+  * BIT 1 IS NEVER REFERENCED ALONE — only inside the `0x0E` gate mask. Nothing
+    sets or tests it individually, so it needs no separate representation.
+  * BITS 4..7 ARE READ BUT NEVER OR'd. They can only be set by one of the six
+    whole-word writes, so their meaning is fixed by those writers rather than by
+    incremental flag-setting — a different modelling problem from bits 2 and 3.
+
+`0x000C` is also new: one site ORs bits 2 AND 3 together, which no reading of
+them as independent flags would have predicted.
+
+658 citations verified, 0 wrong. 612 lib tests, 0 failures.
