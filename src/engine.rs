@@ -3450,7 +3450,23 @@ impl EngineState {
     /// How many subtitle characters are currently revealed on the active line (the
     /// game's reveal pointer `gs:0x5E58`), and the line's total character count. A
     /// driver plays the `tb.snd` chatter (clip 0) when `revealed` first reaches
-    /// `total` — the decoded one-chatter-per-completed-line behaviour (@0x94BA).
+    /// `total` — the decoded one-chatter-per-completed-line behaviour.
+    ///
+    /// CITATION TIGHTENED (audit-fixes #367). The doc named `0x94BA`, which is
+    /// the block's GUARD (`test byte [0x24f3],4 / jne`, then `[0x67BB]` and
+    /// `[0x67BC]`); it plays nothing. The instruction behind "clip 0" is three
+    /// tests later:
+    ///
+    /// ```text
+    ///   0x94B4  inc word ptr [0x5e58]        the reveal pointer this returns
+    ///   0x94BA  test byte ptr [0x24f3], 4    guard: already holding?
+    ///   0x94CF  mov byte ptr [0xcfb], 0      <- SELECT clip 0
+    ///   0x94D4  mov ax,[0xaca] / shl ax,2 / mov [0xb35], ax   the hold timer
+    ///   0x94DD  mov byte ptr [0x67bb], 1     latch: hold armed
+    /// ```
+    ///
+    /// So the game SELECTS the clip and arms a hold; the driver does the playing,
+    /// which is what this doc says and what `0x94BA` alone did not show.
     pub fn subtitle_reveal_progress(&self) -> Option<(usize, usize)> {
         let text = self.dialogue_texts.get(self.dialogue_cursor)?;
         if text.is_empty() {

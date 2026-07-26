@@ -11983,3 +11983,36 @@ DOCUMENTED AS PURE: the accessor does not model bit 1's LOCK (`test ax,2 / jne`
 the stored nibble. A caller needing the locked value must read the flag word.
 
 678 citations verified (from 667), 0 wrong. 613 lib tests, 0 failures.
+
+## #367 — the claim was right; the address was the guard, not the action
+
+`subtitle_reveal_progress` claims a driver plays the `tb.snd` chatter (clip 0)
+when the reveal completes, "the decoded one-chatter-per-completed-line behaviour
+(@0x94BA)".
+
+`0x94BA` plays nothing. It is the block's GUARD — `test byte [0x24f3],4 / jne`,
+then two more tests on `[0x67BB]` and `[0x67BC]`, each jumping past the whole
+thing. My first read of it therefore looked like an unsupported claim.
+
+The action is three tests later:
+
+    0x94B4  inc word ptr [0x5e58]        the reveal pointer this function returns
+    0x94CF  mov byte ptr [0xcfb], 0      <- SELECT clip 0
+    0x94D4  mov ax,[0xaca] / shl ax,2 / mov [0xb35], ax    the hold timer
+    0x94DD  mov byte ptr [0x67bb], 1     latch: hold armed
+
+`0xCFB` is the voice-clip selector — `vm.rs` already documents "accepting a line
+sets `gs:[0xCFB]` (`0x66AF`), the clip picker gates on that". So the game SELECTS
+clip 0 at completion and a driver plays it, which is exactly what the doc said.
+Claim verified, citation moved from the guard to the instruction.
+
+THIS IS #301's SHAPE INVERTED. There a doc cited its guard clause while the
+formula sat twenty bytes away, and the citation was wrong. Here the same
+mispointing hid a claim that was RIGHT — I nearly recorded it as unsupported
+because the cited address did nothing resembling the description.
+
+A citation that points at a guard is unhelpful in both directions: it fails to
+support a true claim and fails to expose a false one. Worth checking the whole
+block before concluding either way, which is cheap and I did not do it first.
+
+683 citations verified (from 678), 0 wrong. 613 lib tests, 0 failures.
