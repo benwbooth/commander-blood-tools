@@ -13001,3 +13001,47 @@ site with no identified port counterpart.
 
 2228 items, 1091 confirmed (49.0%), 1137 open. 713 citations verified, 0 wrong.
 613 lib tests, 0 failures.
+
+## #396 — the console selection is never cleared on dispatch: a real port bug
+
+#395 said the port's `release_menu()` sites are box-level while the game's clears
+are row-level, and left it there. Followed it to the actual counterpart:
+`console_menu_click` in main.rs dispatches rows 0..4 — HONK, phone, cryobox,
+submenu, option box — and it calls `release_menu()` on NONE of them.
+
+The game does. `nav_choice_handler_1` (`0x87B0`) and `nav_choice_handler_2`
+(`0x883B`) both END with the identical epilogue:
+
+    mov word ptr [0x2a19], 0        the selected console row
+    and byte ptr [0x2793], 0xfb     clear the BUSY bit
+    pop es / ret
+
+and handlers 0, 3, 4 do not — matching #386's census, which found `0x2A19`
+written by exactly these two plus the presentation start (`0x591C`) and the
+dismiss ladder (`0x8956`).
+
+THIS HAS A VISIBLE CONSEQUENCE, which is what makes it a bug rather than a
+cosmetic gap. In `BridgeView::click`, a non-zero `selected_menu_item`
+short-circuits the whole eye-orb/station scan. So in the port, opening the phone
+or the cryobox from the console left the selection set, and the bridge orbs stayed
+unclickable on return.
+
+Fixed with `clear_menu_selection()`, deliberately NARROWER than the existing
+`release_menu()`: the handlers write `0x2A19` and nothing about the clamp, so
+dropping `menu_engaged` too would be an invention. Called from rows 1 and 2 only.
+A regression test pins exactly that distinction — selection cleared, clamp
+retained — because the two methods are one word apart and the wrong one is easy
+to reach for.
+
+The busy half is left to the presentation lifecycle, where the port already
+clears `UI_FLAG_BUSY` on teardown (`0x59BF`/`0x5E99`); rows 1/2 do not start a
+presentation in the port, so re-clearing it there would be a no-op dressed up as
+fidelity.
+
+The test I first wrote asserted through a method that does not exist
+(`orb_click`); the scan is inside `click`. Rather than build a synthetic orb to
+keep the assertion, the consequence is stated and the DECODED fact is what gets
+pinned. An assertion that needs scaffolding to pass tests the scaffolding.
+
+2228 items, 1091 confirmed (49.0%), 1137 open. 713 citations verified, 0 wrong.
+614 lib tests, 0 failures.

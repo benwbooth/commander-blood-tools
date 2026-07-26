@@ -380,6 +380,29 @@ impl BridgeView {
         None
     }
 
+    /// Clear the console SELECTION only, leaving the cursor clamp alone — the
+    /// shared epilogue of `nav_choice_handler_1` (`0x87B0`) and
+    /// `nav_choice_handler_2` (`0x883B`). Both end with exactly:
+    ///
+    /// ```text
+    ///   mov word ptr [0x2a19], 0        the selected console row
+    ///   and byte ptr [0x2793], 0xfb     clear the BUSY bit (bit 2)
+    ///   pop es / ret
+    /// ```
+    ///
+    /// Rows 0, 3 and 4 do NOT do this — `nav_choice_handler_0/3/4` never write
+    /// `0x2A19` (audit-fixes #386's census found only these two plus the
+    /// presentation start `0x591C` and the dismiss ladder `0x8956`). So this is
+    /// deliberately narrower than [`Self::release_menu`], which also drops
+    /// `menu_engaged`; the game clears the selection here, not the clamp.
+    ///
+    /// The busy half is the VM's `UI_FLAG_BUSY`, which the port raises in
+    /// `start_actor_presentation` and drops on presentation teardown
+    /// (`0x59BF`/`0x5E99`) — a different lifecycle, not re-cleared here.
+    pub fn clear_menu_selection(&mut self) {
+        self.selected_menu_item = 0;
+    }
+
     /// Release the engaged menu item (the selected screen was closed): clears
     /// the selection and the cursor clamp.
     pub fn release_menu(&mut self) {
@@ -609,6 +632,33 @@ mod tests {
             view.update_view();
         }
         assert_eq!(view.frame, MENU_REST_FRAME, "click centres the menu");
+    }
+
+    /// `nav_choice_handler_1` (0x87B0) and `_2` (0x883B) end with
+    /// `mov word [0x2a19],0` — they clear the SELECTION, and nothing else about
+    /// the engaged/clamp state. `release_menu` drops both, so the two are not
+    /// interchangeable and this pins the difference.
+    #[test]
+    fn clear_menu_selection_drops_the_selection_but_not_the_clamp() {
+        let mut view = BridgeView::default();
+        view.frame = 50;
+        view.ring_mouse_x = 50 * 8 + (200 - 160);
+        view.mouse_y = 0x48 + 5 + 5 / 4 + 1;
+        assert_eq!(view.click(), Some(1));
+        assert!(view.menu_engaged);
+
+        view.clear_menu_selection();
+        assert_eq!(view.selected_menu_item, 0, "0x2A19 cleared");
+        assert!(
+            view.menu_engaged,
+            "the handlers write only 0x2A19; the clamp is NOT theirs to clear"
+        );
+
+        // Why it matters: inside `click`, a non-zero `selected_menu_item`
+        // short-circuits the eye-orb/station scan before it runs, so a selection
+        // left set after the phone or cryobox opens keeps the orbs dead. Not
+        // asserted here with a synthetic orb — the pin above is the decoded
+        // fact; the consequence lives in `click`'s early return.
     }
 
     #[test]

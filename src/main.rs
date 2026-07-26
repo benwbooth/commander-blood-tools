@@ -1874,8 +1874,24 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                                 set_vm_dialogue(&mut engine, new_lines);
                             }
                             match row {
-                                1 => engine.phone_active = true,
-                                2 => engine.cryobox_active = true,
+                                // Rows 1 and 2 CLEAR the console selection on
+                                // dispatch — `nav_choice_handler_1` (0x87B0) and
+                                // `nav_choice_handler_2` (0x883B) both end
+                                // `mov word [0x2a19],0 / and byte [0x2793],0xfb`.
+                                // Rows 0/3/4 never write 0x2A19 (#386's census).
+                                // This matters here and not only for fidelity:
+                                // `selected_menu_item != 0` blocks the whole
+                                // eye-orb/station scan (bridge.rs), so leaving it
+                                // set after the phone or cryobox opens would keep
+                                // the bridge orbs unclickable on return.
+                                1 => {
+                                    engine.phone_active = true;
+                                    engine.bridge.clear_menu_selection();
+                                }
+                                2 => {
+                                    engine.cryobox_active = true;
+                                    engine.bridge.clear_menu_selection();
+                                }
                                 3 => engine.menu_submenu_active = true, // {EXPLANATIONS, GAME}
                                 4 => engine.option_box_active = true,   // choice box (real)
                                 _ => {}
