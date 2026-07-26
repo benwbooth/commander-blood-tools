@@ -136,7 +136,19 @@ pub(crate) fn assemble_words(parts: &[String]) -> String {
             if !attaches {
                 out.push(' ');
                 line_len += 1;
-                if line_len >= crate::script::SUBTITLE_WRAP_COLUMN {
+                // PREDICTIVE WRAP (audit-fixes #313). The game adds the NEXT
+                // WORD'S LENGTH before comparing, so it breaks BEFORE a word that
+                // would overflow rather than after one that already did:
+                //
+                //   0x66FF  mov di,[si] / call 0x67a7   al = strlen(next word)
+                //   0x6728  inc dl                      dl = line length + space
+                //   0x672A  add al, dl
+                //   0x672C  cmp al, 0x23 / jb           under 35 -> keep going
+                //   0x6730  xor dl,dl / al=0x0D / stosb else newline, reset
+                //
+                // The port compared `line_len` alone, which wraps a word later.
+                let next_len = parts[i + 1].chars().count();
+                if line_len + next_len >= crate::script::SUBTITLE_WRAP_COLUMN {
                     out.push('\n');
                     line_len = 0;
                 }
@@ -8193,10 +8205,43 @@ mod tests {
         assert!(e.take_nav_selection().is_none(), "bare nav clicks select nothing");
     }
 
+    /// audit-fixes #313. PREDICTIVE vs REACTIVE wrap, with words chosen so the
+    /// two rules disagree.
+    ///
+    /// After the second word the line holds 21 chars plus a space = 22. The next
+    /// word is 13 long. The game computes `22 + 13 = 35 >= 0x23` and breaks
+    /// BEFORE it (`add al,dl / cmp al,0x23` @`0x672A`, where `al` came from
+    /// `strlen_b` on the NEXT word @`0x6701`). The old port compared 22 alone,
+    /// found it under 35, and let the word run the line out to 35.
+    #[test]
+    fn subtitle_wrap_breaks_before_the_word_that_would_overflow() {
+        let words: Vec<String> = ["abcdefghij", "klmnopqrst", "abcdefghijklm"]
+            .iter()
+            .map(|s| s.to_string())
+            .collect();
+        let assembled = assemble_words(&words);
+
+        assert_eq!(
+            assembled, "abcdefghij klmnopqrst \nabcdefghijklm",
+            "the break belongs BEFORE the 13-char word, not after it"
+        );
+        // Stated as the property, so a future rewrite cannot satisfy the literal
+        // above by accident: no line exceeds the wrap column when the words fit.
+        for line in assembled.split('\n') {
+            assert!(
+                line.chars().count() <= crate::script::SUBTITLE_WRAP_COLUMN,
+                "predictive wrap keeps every line within the column: {line:?}"
+            );
+        }
+    }
+
     #[test]
     fn subtitle_wraps_long_lines() {
-        // Text assembly wraps with the game's decoded 0xA6 rule: a line break after
-        // the space once the line reaches 0x23 (35) chars.
+        // Text assembly wraps with the game's decoded 0xA6 rule: after the space,
+        // break when the line PLUS THE NEXT WORD would reach 0x23 (35) chars
+        // (`add al,dl / cmp al,0x23` @0x672A). Corrected in audit-fixes #313 --
+        // this comment used to say "once the line reaches 35", which is the
+        // reactive rule the port had and the game does not.
         let words: Vec<String> = "You can wake Cap'n Bob by clicking on the CRYO chamber control panel now"
             .split_whitespace()
             .map(str::to_string)
@@ -8204,8 +8249,15 @@ mod tests {
         let assembled = assemble_words(&words);
         assert!(assembled.contains('\n'), "long line wraps: {assembled:?}");
         for line in assembled.split('\n') {
-            // 35 chars plus at most one unsplit word beyond the boundary.
-            assert!(line.chars().count() <= 35 + 12, "line within wrap bound: {line:?}");
+            // With the predictive rule no line exceeds the column at all, unless a
+            // single word is longer than it (the game never splits words). The
+            // old bound of 35+12 was loose enough to pass EITHER rule, which is
+            // why it did not catch the divergence.
+            let longest = words.iter().map(|w| w.chars().count()).max().unwrap_or(0);
+            assert!(
+                line.chars().count() <= crate::script::SUBTITLE_WRAP_COLUMN.max(longest),
+                "line within wrap bound: {line:?}"
+            );
         }
         // And the drawer renders each wrapped line on its own font row.
         let mut e = EngineState::new();

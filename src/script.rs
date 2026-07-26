@@ -373,7 +373,13 @@ fn assemble_dialogue_from_offsets(
         if !attaches {
             out.push(' ');
             line_len += 1;
-            if line_len >= SUBTITLE_WRAP_COLUMN {
+            // PREDICTIVE WRAP -- see `engine::assemble_words` (audit-fixes
+            // #313). `add al,dl / cmp al,0x23` @0x672A adds the NEXT word's
+            // length (strlen_b @0x6701) before comparing, so the break comes
+            // BEFORE the word that would overflow. This is the SECOND copy of
+            // the rule and carried the same reactive comparison.
+            let next_len = words[idx + 1].chars().count();
+            if line_len + next_len >= SUBTITLE_WRAP_COLUMN {
                 out.push('\n');
                 line_len = 0;
             }

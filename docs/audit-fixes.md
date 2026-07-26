@@ -9978,3 +9978,45 @@ capture-or-approximation may stand only when the binary routine that replaces it
 is named.
 
 606 lib tests, 0 failures. 605 citations verified, 0 wrong.
+
+## #313 — subtitle wrapping was REACTIVE where the game is PREDICTIVE (two copies)
+
+Reviewing `assemble_words` (`src/engine.rs`), whose doc claims the 0xA6 text rule
+from `0x66CD`..`0x6739`. Most of it verifies exactly: the attaching-punctuation
+set is `0x2C , / 0x2E . / 0x3F ? / 0x21 ! / 0x3A :` at `0x6709`..`0x6720`, each
+jumping back to the next word WITHOUT emitting a space; otherwise `mov ah,0x20`
+stores one; long words are never split.
+
+THE WRAP CONDITION DID NOT.
+
+    0x66FF  mov di,[si] / call 0x67a7   al = strlen(the NEXT word)
+    0x6728  inc dl                      dl = line length INCLUDING the space
+    0x672A  add al, dl
+    0x672C  cmp al, 0x23 / jb           under 35 -> keep going
+    0x6730  xor dl,dl / al=0x0D / stosb else newline and reset
+
+The game adds THE NEXT WORD'S LENGTH before comparing, so it breaks BEFORE a word
+that would overflow. The port compared the line length alone and broke after one
+already had. Different break points on any line where the two disagree — i.e.
+visible, on screen, in the subtitles.
+
+TWO COPIES, both wrong: `engine::assemble_words` and `script.rs`'s subtitle
+assembly at line 376. #267's lesson again — a duplicated RULE has to be fixed in
+every copy, and finding the second one is part of fixing the first.
+
+NO TEST CAUGHT IT, and the reason is instructive. `subtitle_wraps_long_lines`
+asserted `line.chars().count() <= 35 + 12` — a bound loose enough to pass under
+EITHER rule. Its comment even stated the reactive version as the decoded one. So
+the wrong behaviour had a test, a comment, and a citation, and all three agreed
+with each other and not with the binary.
+
+Added `subtitle_wrap_breaks_before_the_word_that_would_overflow`, with words
+chosen so the rules disagree (line of 22 including the space, next word 13 long:
+`22 + 13 = 35` wraps predictively, `22 < 35` does not react). Tightened the old
+test's bound to the column itself, and corrected its comment.
+
+Citations: 606 verified, 0 wrong. 607 lib tests, 0 failures.
+Row tally: seven reviewed, two correct as written, five needing correction — one
+wrong address, one uncheckable address space, one citing its guard clause, one
+covering an invented policy, and now one whose doc, test and citation all
+described the wrong rule.
