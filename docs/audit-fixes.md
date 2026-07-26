@@ -13927,3 +13927,30 @@ guard was designed knowing that.
 
 2231 items, 1107 confirmed (49.6%), 1124 open. 742 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #424 — four rows settled on work already done, and one descriptor decoded
+
+After #422's refresh, three rows this session had already verified by hand became
+settleable because their citations were finally visible to the tool:
+`clear_menu_selection` (#396's `0x87B0`/`0x883B` epilogue), `AlienStreams` (#401's
+`fs:[0x105C]` / `cs:[0x16A2]`), and `AlienColony` (#403's `0x12DE` dispatcher).
+`croolis::step` stays open — #402 left it provisional for a stated reason and a
+refresh does not change that.
+
+`MenuAnimDescriptor` (manu3) was new work. Its doc described a packed word and two
+fields; `XDB:manu3:0x01DF..0x01FE` confirms every part:
+
+    0x01DF  mov si, word ptr [0x102e]     the descriptor pointer
+    0x01E3  movzx ecx, word ptr [si]      the packed word...
+    0x01E7  or cl, cl / je                ...low byte = frame COUNT, 0 ends the list
+    0x01EB  cmp ch, byte ptr [0x102c]     ...high byte = PHASE, gated on 0x102C
+    0x01F8  mov bp, word ptr [si + 4]     the TARGET field address
+    0x01FE  mov ax, word ptr [si + 6]     the END value
+
+The packing is the part worth having in the file: `phase<<8 | count` is one
+`movzx` and then `cl`/`ch` used separately, which is invisible from the struct's
+two `u8` fields. A reimplementation reading two bytes in the wrong order would
+produce a descriptor that parses and animates nothing.
+
+2231 items, 1111 confirmed (49.8%), 1120 open. 749 citations verified, 0 wrong.
+723 workspace tests, 0 failures.

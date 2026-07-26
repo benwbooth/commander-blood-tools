@@ -82,11 +82,21 @@ pub fn menu_camera_pan(cursor_x: i16, cursor_y: i16) -> (i16, i16) {
 }
 
 /// A menu item's animation descriptor — the DATA the item-dispatch (`0x181`) selects
-/// and the tween setup (`0x1DF`) consumes. NOT a code routine: `0x1DF` reads `[si]` as
-/// a packed `(phase<<8 | frame_count)` word (its high byte `ch` is matched against the
-/// phase flag `[0x102C]`), `[si+4]` as the target field address, and `[si+6]` as the
-/// end value; it then builds a [`MenuTween`] animating the target's current value to
-/// `end` over `count` frames.
+/// and the tween setup (`0x1DF`) consumes. NOT a code routine; the field layout is
+/// read straight off `XDB:manu3:0x01DF..0x01FE`:
+///
+/// ```text
+///   0x01DF  mov si, word ptr [0x102e]     the descriptor pointer
+///   0x01E3  movzx ecx, word ptr [si]      the packed word...
+///   0x01E7  or cl, cl / je                ...low byte = frame COUNT, 0 ends the list
+///   0x01EB  cmp ch, byte ptr [0x102c]     ...high byte = PHASE, gated on 0x102C
+///   0x01EF  jne                           a phase mismatch skips the item
+///   0x01F8  mov bp, word ptr [si + 4]     the TARGET field address
+///   0x01FE  mov ax, word ptr [si + 6]     the END value
+/// ```
+///
+/// It then builds a [`MenuTween`] animating the target's current value to `end`
+/// over `count` frames.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct MenuAnimDescriptor {
     /// High byte of `[si]` (`ch`) — the phase group, gated against `[0x102C]`.
