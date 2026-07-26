@@ -1,5 +1,13 @@
 use crate::vm;
 
+/// The depth scroll's ceiling, appearing three times in `0xB75C`:
+/// `cmp ax,0x41` @`0xB768` (already there — stop opening), `cmp ax,0x41`
+/// @`0xB771` (would overshoot) and `mov ax,0x41` @`0xB776` (clamp to it).
+///
+/// The second compare is `jl`, a SIGNED test, which matters because the add
+/// before it is `add al,[0x2531]` — eight-bit, into the LOW BYTE only
+/// (`add_to_low_byte`), so a step that wraps `al` past `0x7F` produces a value
+/// the signed compare treats as negative and the clamp does NOT catch.
 pub const SHIP_3D_MAX_DEPTH_OFFSET: u16 = 0x41;
 /// `mov byte [0x2531],4` @`0xB6A0` — the OPEN step, written once the hold timer
 /// passes the threshold below.

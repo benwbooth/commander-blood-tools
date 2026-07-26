@@ -8179,3 +8179,28 @@ exactly where a bound gets dropped.
 
 Three rows settled ASM. This is what the remaining 671 cost: one routine, one
 port function, one caller, read against each other.
+
+## #265 — reading the depth scroll, and an interaction the port already had right
+
+`step_ship_3d_depth_scroll` against `0xB75C`, line by line, matches. Two details
+in it are the kind that get lost in transcription, and the port has both:
+
+  * `add al,[0x2531]` is an EIGHT-BIT add into AL, so the step affects only the
+    LOW BYTE of the depth offset. The port has `add_to_low_byte`, named for
+    exactly that, rather than a plain `wrapping_add` on the u16.
+  * `cmp ax,0x41 / jl` is a SIGNED compare. The port casts to `i16` before
+    comparing rather than using the u16 ordering.
+
+Those two interact, which is why both matter and why the doc now says so: because
+the add is eight-bit, a step that carries `al` past `0x7F` produces a value the
+SIGNED compare reads as negative — so the clamp does not fire and the low byte
+keeps its wrapped value. That is the original's behaviour, and a port using a
+16-bit add or an unsigned compare would silently diverge only in that corner.
+
+`SHIP_3D_MAX_DEPTH_OFFSET` was REFUSED by `audit_settle` on the first attempt
+("ASM needs a cited address") — it is the `0x41` in three instructions and its doc
+named none of them. Cited to all three (`0xB768`, `0xB771`, `0xB776`) and settled.
+That refusal is the tool doing its job: the constant was verified in my head while
+reading the routine, and a settle on that basis leaves nothing for the next reader.
+
+Guard 491 -> 493 checked, 0 wrong. Three rows this turn.
