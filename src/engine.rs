@@ -8221,6 +8221,57 @@ mod tests {
         assert!(e.take_nav_selection().is_none(), "bare nav clicks select nothing");
     }
 
+    /// audit-fixes #322. `MENU_SUBMENU` is a transcribed literal and its doc says
+    /// so. It also states exactly where the words live: `SCRIPT1.DIC` `0x02FC`
+    /// = `explanations`, `0x0309` = `game`. That is checkable, so check it —
+    /// a transcription pinned to the shipped data cannot silently drift from it,
+    /// which is the smaller half of the fix while the builder routine is still
+    /// unfound.
+    #[test]
+    fn menu_submenu_literals_match_the_dic_words() {
+        let Some(dic) = ["output/_tmp_iso", "../output/_tmp_iso", "output/scripts"]
+            .iter()
+            .map(|d| std::path::Path::new(d).join("SCRIPT1.DIC"))
+            .find(|p| p.is_file())
+            .and_then(|p| std::fs::read(p).ok())
+        else {
+            return; // shipped data not extracted in this checkout
+        };
+        let word_at = |off: usize| {
+            let end = dic[off..].iter().position(|&b| b == 0).unwrap_or(0) + off;
+            String::from_utf8_lossy(&dic[off..end]).to_string()
+        };
+
+        assert_eq!(word_at(0x02FC), "explanations");
+        assert_eq!(word_at(0x0309), "game");
+        // The widget upper-cases for display, which is why the DIC is lowercase.
+        assert_eq!(
+            EngineState::MENU_SUBMENU.to_vec(),
+            vec![
+                word_at(0x02FC).to_uppercase(),
+                word_at(0x0309).to_uppercase()
+            ],
+            "the literals must mirror the DIC words the doc names"
+        );
+
+        // AND THE OTHER END OF THE CHAIN: the doc says the real source is an 0xA6
+        // record's word list at SCRIPT1.COD 0x4A9. It is -- `fc 02 09 03 00 00`,
+        // i.e. the two DIC offsets terminated by 0x0000. Pinning both ends means
+        // the literal, the DIC and the script agree or the test fails.
+        let Some(cod) = ["output/_tmp_iso", "../output/_tmp_iso", "output/scripts"]
+            .iter()
+            .map(|d| std::path::Path::new(d).join("SCRIPT1.COD"))
+            .find(|p| p.is_file())
+            .and_then(|p| std::fs::read(p).ok())
+        else {
+            return;
+        };
+        let word = |off: usize| u16::from_le_bytes([cod[off], cod[off + 1]]);
+        assert_eq!(word(0x4A9), 0x02FC, "first menu word offset -> explanations");
+        assert_eq!(word(0x4AB), 0x0309, "second -> game");
+        assert_eq!(word(0x4AD), 0x0000, "the list is zero-terminated");
+    }
+
     /// audit-fixes #313. PREDICTIVE vs REACTIVE wrap, with words chosen so the
     /// two rules disagree.
     ///

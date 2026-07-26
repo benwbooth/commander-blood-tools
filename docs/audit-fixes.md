@@ -10324,3 +10324,36 @@ Ledger: 2222 items, 1034 confirmed (46.5%). The provisional split is now
 decode-claim queue is down from 76 to 66.
 
 608 lib tests, 0 failures. 613 citations verified, 0 wrong.
+
+## #322 — a self-declared "PROVENANCE DEFECT" whose provenance nobody had checked
+
+`MENU_SUBMENU = ["EXPLANATIONS", "GAME"]` carries an unusually honest doc: it
+calls itself a "PROVENANCE DEFECT — these are still transcribed literals", names
+where the words really live, and defers the fix. Content-bearing literals in Rust
+source ARE a defect by this project's rules, so the doc is right to say so.
+
+But the claims in it had never been checked, and all of them hold:
+
+    SCRIPT1.DIC  0x02FC = "explanations"
+                 0x0309 = "game"
+                 0x030E = "GAME"
+    SCRIPT1.COD  0x4A9  = fc 02 09 03 00 00
+                        = word list [0x02FC, 0x0309], zero-terminated
+
+So the transcription is faithful AND the real path is exactly where the doc says:
+an 0xA6 record's post-`0xFFFF` word list pointing at DIC offsets, which
+`menu_submenu_labels` already reads when a script is loaded. The const is the
+no-script fallback, not the authority.
+
+PINNED BOTH ENDS. `menu_submenu_literals_match_the_dic_words` now asserts the DIC
+words, the upper-casing the widget applies, AND the three words at COD `0x4A9`.
+The literal, the dictionary and the script must agree or the test fails — which
+is the smaller half of the fix, available now, while the builder routine that
+would remove the literal entirely is still unfound.
+
+SETTLED **DATA**, not ASM. The evidence here is shipped data read at named
+offsets; there is no disassembly behind it. #299 made the same distinction for
+`location_var_offset` (TESTED, because a data run was the evidence). Recording
+the status that matches the evidence is the whole point of having more than one.
+
+609 lib tests, 0 failures. 613 citations verified, 0 wrong.
