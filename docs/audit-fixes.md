@@ -12176,3 +12176,35 @@ Ledger: 2229 items, 1075 confirmed (48.2%). `ASM?` down to 38 from 200 at
 were genuine decode claims once `CELL?` was split out.
 
 613 lib tests, 0 failures. 689 citations verified, 0 wrong.
+
+## #373 — stop typing the status line; generate it
+
+Four wrong numbers in one session, all in the summary line: #295 (585 for 583),
+#320 (617 for 613), #329 (617 for 620), #372 (1076 for 1075). Two were caught
+before commit, two after.
+
+#319 already drew the right conclusion for INSTRUCTION counts — "run the tool,
+paste the number, do not predict it" — and I kept not applying it here, because
+the summary reads like prose rather than a measurement. It is a measurement.
+
+`tools/audit_status.py` prints it:
+
+    2229 items, 1075 confirmed (48.2%), 1154 open
+    (901 UNVERIFIED + 253 provisional). 689 citations verified, 0 wrong.
+
+It also encodes the counting rule so the STRICT reading cannot drift: a status
+ending in `?` counts as OPEN, per #286a. The lenient alternative — counting the
+253 provisional rows as settled — reads about eleven points higher, and the whole
+point of #286a was that the flattering number is one `Counter` away at any moment.
+Now it is not reachable by accident.
+
+THE PATTERN THIS CLOSES is the one #359 named for encodings: when the same
+mistake recurs, the fix is not a firmer rule but removing the step where the
+mistake happens. Four repetitions is more than enough evidence that "be careful
+with the number" does not work on me.
+
+Per-status breakdown, for the record: ASM 450, ORACLE 236, TESTED 202, INFRA 97,
+DATA 90 settled; UNVERIFIED 901, CELL? 121, DATA? 45, ORACLE? 41, ASM? 38,
+INFRA? 8 open.
+
+613 lib tests, 0 failures.
