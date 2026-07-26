@@ -7658,3 +7658,48 @@ The queue is worth stating plainly because it is the highest-yield work
 identified in this session: 43 functions, each with a transliteration of the
 original sitting beside it, and the first one checked found a bug that had
 survived every citation-based review.
+
+CORRECTED BY #248: that 43 is wrong. Excluding the lifts themselves, wrappers
+that merely cite a routine they call, and addresses already differentialled
+against their canonical twin leaves essentially NOTHING. The queue is exhausted,
+not full.
+
+## #248 — the differential queue I advertised does not exist
+
+#247 reported 43 differentiable functions and called them "the highest-yield work
+identified in this session". That was wrong, and the correction matters more than
+the claim did, because a work queue in a doc is what the next session picks up.
+
+Counting properly:
+
+```text
+   42  unsettled port fns citing an address that has a lift
+   28  DISTINCT addresses among them
+   16  of those already differentialled against some port fn
+   12  "fresh" addresses
+    1  of those 12 attached to a port function at all
+    0  of those 1 actually a transliteration of the lifted routine
+```
+
+The 12 "fresh" entries are, with one exception, THE LIFTS THEMSELVES —
+`func_cc0`, `func_d4a` and friends live in `io_lift.rs` and are ledger rows like
+anything else. A lift cannot be differentialled against itself. The exception,
+`move_mouse_rel`, cites `0xd0e` because that is the game's mouse handler; it is
+host input plumbing, not a port of that routine.
+
+And the 16 already-differentialled addresses are not 16 more opportunities: their
+canonical twin is already ORACLE, and the OTHER port functions citing them are
+wrappers, callers and variants. `nav_chart_click` cites `0x92A3` because it USES
+the pick, not because it transliterates it.
+
+SO THE QUEUE IS EFFECTIVELY EMPTY. Where a port function transliterates a lifted
+routine, it has been differentialled — #246 (`rand`, which found a real bug) and
+#247 (`scan_zero_word`) were the two that remained obvious, and that is the end of
+it until more routines are lifted.
+
+I made the same error twice in two turns, and it is the error I had just
+diagnosed: #247 opens by correcting `check_liftable_twins`'s inflated 123 down to
+43 by excluding constants — then reports 43 without excluding lifts, wrappers or
+already-done addresses. Filtering one confounder and stopping felt like rigour.
+The check that would have caught it is the one #246 used on the PRNG: pick the
+first item off the list and actually try it.
