@@ -13816,3 +13816,42 @@ and this.
 
 2228 items, 1106 confirmed (49.6%), 1122 open. 740 citations verified, 0 wrong.
 722 workspace tests, 0 failures.
+
+## #421 — what the remaining 901 rows actually are
+
+Every entry this session has worked the PROVISIONAL queue (`ASM?`/`CELL?`/`DATA?`
+/`ORACLE?`, 221 left). The other 901 open rows are `UNVERIFIED`, and I had not
+looked at what they contain. Measured it:
+
+    0 of 901 cite a binary address in their evidence
+    662 of 901 have NO doc comment at all
+    239 have prose but no address
+    kinds: 473 fn, 305 const, 110 struct, 9 enum, 4 static
+
+So the two halves of the open ledger are NOT the same kind of work, and the
+percentage has been hiding that. A provisional row is a CLAIM someone wrote and
+nobody rechecked — the work is verification, which is why this session has been
+closing them at a few per entry, and why several turned out wrong (#382, #386,
+#400, #412, #418). An `UNVERIFIED` row is mostly an item with nothing to check:
+no citation, usually not even a sentence.
+
+Those 901 are a mix, and a sample makes the mix concrete: `frame_header`
+(tbbig — parses the very header #388 verified), `video_scenes` (parses shipped
+DESCRIPT data), `Ship3dDepthState` (one of #404's 18 types nothing constructs),
+`render` in audio.rs and `find` in progress.rs (port scaffolding with no binary
+counterpart at all), and bare consts with no doc.
+
+That matters for what "100%" means. Some of these need a decode. Some need a
+sentence and a citation for a decode that already happened elsewhere — the
+`tbbig::frame_header` case, where #388 verified the layout and the FUNCTION row
+still reads UNVERIFIED. And some are port infrastructure that will never have an
+address, for which "verified against the binary" is not a coherent goal; the
+honest end state for those is a stated classification, not a citation.
+
+Recording this as a finding rather than acting on it, because the right move —
+splitting `UNVERIFIED` into "needs a decode" and "port-internal, no counterpart"
+— changes what the ledger's denominator MEANS, and that is a call about how this
+project reports itself rather than a defect to fix quietly.
+
+2228 items, 1106 confirmed (49.6%), 1122 open (901 UNVERIFIED + 221 provisional).
+740 citations verified, 0 wrong. 722 workspace tests, 0 failures.
