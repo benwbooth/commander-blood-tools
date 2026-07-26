@@ -7765,3 +7765,34 @@ So both guards are sound where I could probe them. That is a smaller result than
 numbers does not depend on the audit finding a bug, and reporting only the hits
 would leave the impression that unaudited numbers are more suspect than audited
 ones that came back clean.
+
+## #251 — the last quiet number, and a claim I had been repeating unverified
+
+`check_cited_immediates` ends "18 need reading". I have described those in three
+separate turns as "17 `OP_*` dispatch indices covered by
+`check_opcode_handlers.py`, plus `STATE_BASE`" — a claim I had never actually
+checked. Checking it now:
+
+  * `vm.rs` defines 30 `OP_*` constants; the opcode guard resolves 29 through the
+    real dispatch table at `0x142D0`.
+  * All 17 of the NEEDS-READING names are among them. The claim is true.
+  * The 30th — the one the guard reports as "outside `0xA0..0xD3`" — is
+    `OP_MAX = 0xFE`, and it is outside DELIBERATELY.
+
+That last point is the interesting one, because a guard reporting an item as
+out-of-range usually means a defect. Here it means the opposite: `OP_MAX` is the
+TOKEN bound, not the DISPATCH bound. `OPCODE_DESC` at `DS:0x6F18` has 96 entries
+covering `0xA0..=0xFF` and the walker indexes it for every byte; the HANDLER table
+at `DS:0x6EB0` is 104 bytes — 52 entries, `0xA0..0xD3` — pinned by the layout
+identity `0x6EB0 + 104 = 0x6F18`. So `0xD3..=0xFE` have lengths but no handlers,
+and a constant naming the token bound must sit outside the dispatch range or it
+would be naming the wrong thing.
+
+The guard's "1 outside" line is therefore correct AND expected, which is the
+worst kind of number to leave unexamined: it looks like a finding, it has sat
+there for many runs, and confirming it is fine took one command.
+
+That closes the guard-audit sweep begun in #249: one real gap found (`movsx`
+unchecked), two claims verified sound (#250), and one repeated-but-unverified
+claim now actually verified. Every quiet number in the guard suite has been
+opened at least once.
