@@ -11052,3 +11052,44 @@ The `movsd` lesson stands and is worth keeping: a read-back that stops at the
 last `mov si` is wrong whenever a string instruction intervenes.
 
 641 citations verified, 0 wrong. 612 lib tests, 0 failures.
+
+## #341 — the contradiction is real: control flow confirms the trace
+
+#340 left two facts that would not fit. One of them could have been an
+incomplete trace — SI might arrive from a predecessor I had not looked at. It
+does not.
+
+Scanning `0x8700`..`0x8900` for every short jump, near jump and near `jcc`
+landing in `0x88B4`..`0x88BD` finds exactly ONE: `je 0x88B9` @`0x88A1`, the
+branch already accounted for. So the call at `0x88BA` is reached only by
+fall-through or by that `je`, and BOTH paths carry `SI = 0x2AB3`. The trace is
+complete.
+
+So the contradiction is not an artefact:
+
+  * SI at the call IS `0x2AB3` (confirmed from the control-flow side);
+  * `0x2AB3` is `list_widget_layout_unified`'s own width scratch, and nothing
+    outside the widget writes it.
+
+ONE HYPOTHESIS, recorded as such. The widget has TWO `mov di, 0x2ab3` sites
+(`0x844E`, `0x8493`) and eight near callers (#324). If an earlier invocation
+fills `0x2AB3` with per-label widths, then THIS call is not rendering a
+word-offset list at all — it is re-entering the widget over its own prior output,
+which would explain why no external code ever fills the buffer. That is coherent
+and unproven; distinguishing it needs the caller ORDER, i.e. which of the eight
+sites runs first in a console-menu open.
+
+WHY I AM STOPPING HERE rather than guessing. The remaining step is to establish an
+ordering between eight call sites, and every wrong answer available produces a
+plausible mapping from AL to console mode — which is the mapping #338 wanted and
+#337 warned against inventing. A hypothesis in the ledger costs nothing; a
+fabricated mapping would be found later by someone who trusted it.
+
+WHAT THIS THREAD PRODUCED, since it did not reach its goal: the gate flags are
+per-console-mode (#337), AL is the picked row (#338), the `movsd` pointer trap
+(#339), and the retraction (#340). The open question is now precisely stated
+instead of vaguely open — "which of the eight `0x8428` call sites runs first, and
+does it fill `0x2AB3`" — which is the difference between a dead end and a next
+step.
+
+641 citations verified, 0 wrong. 612 lib tests, 0 failures.
