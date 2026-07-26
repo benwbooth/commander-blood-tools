@@ -9759,3 +9759,52 @@ up. That reader is the next task, and it decides whether the port needs a second
 field or a rename.
 
 Citations: 605 verified, 0 wrong. 606 lib tests, 0 failures.
+
+## #308 — correcting #307: I reasoned from `tail -12` of a 66-line list
+
+#307 claimed `gs:0x2793` holds two flags, that bit 0 "is never OR'd anywhere —
+the only writer that raises it is `mov word [0x2793], 9` @`0xB505`", and that bit
+2 is set and cleared. I ran `find_imm.py 2793 | tail -12`, read twelve lines, and
+wrote a structural claim about the byte. The tool's own first line said
+"66 confirmed instruction(s)".
+
+THE FULL AGGREGATION over all 66:
+
+    test FLAG, 1      x7     bit 0 read
+    or   FLAG, 4      x4     bit 2 set
+    and  FLAG, 0xfb   x3+1   bit 2 cleared
+    mov  FLAG, 1      x2     bit 0 RAISED, other bits cleared
+    test FLAG, 0xe    x1     bits 1|2|3 read TOGETHER
+    test FLAG, 8      x1     bit 3 read
+    mov  FLAG, 0      x1     all cleared
+                             (plus `mov word [0x2793], 9` @0xB505)
+
+WHAT WAS WRONG. Bit 0 has two more writers I never saw: `mov word [0x2793], 1` at
+`0x0FC8` and at `0x1A5E`, and `0x1A5E` is `dlg_clear_a`, the DIALOGUE CLEAR. And
+bit 2 IS read after all — `test byte [0x2793], 0xe` @`0x1095` tests bits 1, 2 and
+3 as a group, which is why a search for `test ...,4` found nothing and I concluded
+there was no reader.
+
+WHAT SURVIVES. The core of #307 stands: bit 0 and bit 2 are distinct, the
+presentation start ORs bit 2 (`0x593A`), and the port's `start_actor_presentation`
+sets bit 0 instead. That is still a defect.
+
+WHAT GOT WORSE, usefully. `dlg_clear_a` setting the word to exactly 1 means bit 0
+is RAISED while dialogue state is being CLEARED — which sits badly with the port's
+name for it, "presentation-busy". A flag the dialogue teardown turns ON is more
+plausibly an idle/ready bit than a busy one, and `0xCE` branching when it is clear
+reads differently under that reading. The port's naming is now suspect, not just
+its write site.
+
+THE METHOD ERROR IS THE POINT, and it is the same one as #296's probe: I took an
+instrument's output, looked at part of it, and reasoned as though I had seen the
+whole. `tail -12` on a tool that prints a COUNT ON ITS FIRST LINE is a
+self-inflicted blind spot — the number was right there and I piped it away.
+#300 was about a guard that hid a citation inside a summary count; this is the
+same failure committed by hand, one entry later.
+
+Nothing in the port changed. #307's proposed fix is still deferred, now with a
+better-posed question: decode what bits 1, 2 and 3 mean as the group `0x1095`
+tests them, and what bit 0 means given `dlg_clear_a` raises it.
+
+Citations: 605 verified, 0 wrong. 606 lib tests, 0 failures.
