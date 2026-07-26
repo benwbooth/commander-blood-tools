@@ -13325,3 +13325,34 @@ different piece of work from the decode that surfaced it.
 
 2228 items, 1093 confirmed (49.1%), 1135 open. 729 citations verified, 0 wrong.
 614 lib tests, 0 failures.
+
+## #405 — following #401 into its only live consumer
+
+#401 changed `AlienObject::anim` from a per-object `u16` accumulator to the
+SHARED `cs:[0x16A2]` counter sign-extended to `i32`. #404 then showed the colony
+is dead code — but `anim` has ONE live reader, in `engine.rs`'s alien scene:
+
+    self.scene_frame.wrapping_add(self.alien_object.anim as usize % 3)
+
+`anim as usize` on a NEGATIVE `i32` wraps to an enormous value. The counter is a
+16-bit cell that passes `0x7FFF` after ~262 draws, so the sign extension #401
+made faithful would, at exactly that point, have turned this nudge into garbage.
+The port change was right and its consumer had to follow; reading the value back
+as the `u16` the cell actually is fixes it.
+
+Also labelled what that line IS: the nudge is PORT-SIDE — the game's consumer of
+`+0x3C` has not been traced — while the VALUE is decoded. Those are different
+confidence levels sharing one statement, and the comment now says which is which.
+
+A regression test pins the boundary, and it failed on the first run for a reason
+worth keeping: I seeded one step below `0x7FFF`, so the second draw landed exactly
+ON `0x7FFF` — still the largest POSITIVE `i16`. The boundary was off by one STEP,
+not one unit. Seeded at `0x7FFF`, the first draw is positive and the second is
+negative, which is the transition the engine cast has to survive.
+
+The general point: a type change made for fidelity is not finished at the type.
+#401 passed 614 tests and shipped a latent defect two files away, because nothing
+connects "this field is now signed" to "someone casts it to usize".
+
+2228 items, 1093 confirmed (49.1%), 1135 open. 730 citations verified, 0 wrong.
+615 lib tests, 0 failures.

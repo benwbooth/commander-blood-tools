@@ -3250,8 +3250,17 @@ impl EngineState {
         // Advance the alien's decoded behaviour state machine; when it picks a new
         // animation state it nudges the animation phase, so the alien has idle life
         // (fidgets) between the player's rotations rather than a fixed loop.
+        //
+        // THE NUDGE ITSELF IS PORT-SIDE, not decoded — the game's consumer of
+        // `+0x3C` has not been traced. What IS decoded is the value: since
+        // audit-fixes #401, `anim` is the shared `cs:[0x16A2]` counter
+        // sign-extended to 32 bits, so it goes NEGATIVE once the 16-bit cell
+        // passes 0x7FFF (after ~262 draws). Read it back as the u16 the cell
+        // actually is; `anim as usize` on a negative i32 would wrap to a huge
+        // value and make this nudge arbitrary at exactly that point.
         if self.alien_object.step(&mut self.alien_prng) {
-            self.scene_frame = self.scene_frame.wrapping_add(self.alien_object.anim as usize % 3);
+            let counter = self.alien_object.anim as u16 as usize;
+            self.scene_frame = self.scene_frame.wrapping_add(counter % 3);
         }
         let hnm = &self.alien_views[idx];
         let count = hnm.frame_count().max(1);

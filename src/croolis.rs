@@ -652,6 +652,32 @@ mod tests {
         );
     }
 
+    /// `+0x3C` is a DWORD store of a sign-extended WORD (`movsx ebx, word ptr
+    /// cs:[0x16a2]` @0x16C2, `mov dword ptr [di+0x3c], ebx` @0x16D8), so once the
+    /// 16-bit counter passes 0x7FFF the object's value is NEGATIVE. Consumers
+    /// that read it as unsigned have to say so; engine.rs does.
+    #[test]
+    fn anim_counter_sign_extends_past_0x7fff() {
+        // Seeded AT the boundary: the first draw records 0x7FFF (still the
+        // largest positive i16), and only the second, at 0x7FFF + 0xFA, is
+        // negative. Seeding one step lower made the second draw land exactly on
+        // 0x7FFF and the test failed -- which is the boundary being off by one
+        // step, not by one unit.
+        let mut shared = AlienStreams::new(1, 0x7FFF);
+        let mut obj = AlienObject::new(0);
+        obj.timer = 0;
+        assert!(obj.step(&mut shared));
+        assert!(obj.anim > 0, "still positive just below the boundary");
+
+        obj.timer = 0;
+        assert!(obj.step(&mut shared));
+        assert!(
+            obj.anim < 0,
+            "past 0x7FFF the sign-extended value is negative, not a big positive"
+        );
+        assert_eq!(obj.anim as u16 as u32, obj.anim as u32 & 0xFFFF);
+    }
+
     #[test]
     fn alien_engine_prng_present_in_all_overlays() {
         // The animation-state PRNG byte sequence: `ror ax,7` (C1 C8 07) immediately
