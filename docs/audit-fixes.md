@@ -12969,3 +12969,35 @@ it here would be recording the investigation as the conclusion.
 
 2228 items, 1091 confirmed (49.0%), 1137 open. 713 citations verified, 0 wrong.
 613 lib tests, 0 failures.
+
+## #395 — a correspondence I nearly claimed, and why it is wrong
+
+Following #394's open question: does the port clear the console selection where
+the game does? The game zeroes `gs:0x2A19` at exactly four sites (#386's census):
+`0x591C` (presentation START), `0x87B0` (`nav_choice_handler_1`), `0x883B`
+(`nav_choice_handler_2`), `0x8956` (`console_mode_dismiss_ladder`).
+
+The port calls `release_menu()` at six sites. Two of them sit in a `match kind`
+whose arms are `1` and `2` — and rows 3/4/5 deliberately do NOT release. That is
+a striking shape: the game clears on handlers 1 and 2 and not on 0/3/4. I had the
+site-by-site correspondence written out before checking what `kind` is.
+
+IT IS `engine.console_box_kind`, NOT THE DISPATCH ROW. The whole handler is
+guarded by `!engine.console_box.is_empty()` — it runs only when a console BOX is
+already open, and classifies which box, then which row inside it. The game's
+`nav_choice_handler_N` are the ROW dispatch, one level up. Matching `1`/`2`
+against handler 1/handler 2 is a coincidence of small integers.
+
+So the honest answer to #394 is unchanged and now better characterised: the port
+releases the selection at BOX-level events (a box row that leaves the bridge, a
+submenu close, a click-off), while the game clears it at ROW-dispatch and at
+presentation start. Those are different levels of the same interaction, and
+whether they coincide in effect is exactly what remains unverified.
+
+Worth recording as its own entry because the wrong version was persuasive: two
+independent-looking systems agreeing on the numbers 1 and 2, where one of them
+turned out to be counting something else entirely. `0x591C` remains the one clear
+site with no identified port counterpart.
+
+2228 items, 1091 confirmed (49.0%), 1137 open. 713 citations verified, 0 wrong.
+613 lib tests, 0 failures.
