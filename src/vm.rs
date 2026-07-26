@@ -4960,6 +4960,29 @@ impl VmMachine {
     /// records the engine walks and in what order -- so first-match among
     /// blood-related records is still a port choice, but a far narrower one than
     /// #302 recorded.
+    ///
+    /// THE ITERATION IS PARTLY DECODED AND DELIBERATELY NOT ADOPTED
+    /// (audit-fixes #304). The presentation scan walks the `gs:0x672c` DEB
+    /// DIRECTORY, not the record table:
+    ///
+    /// ```text
+    ///   0x582F  mov si, es:[di+0x10]       the entry's OBJECT offset
+    ///   0x5833  test byte [si+2], 1        the object must be ACTIVE
+    ///   0x583B  mov bx, [si]               its kind
+    ///   0x583D  mov ax, 0x13 / call 0x6023 selector 0x13 for that kind
+    ///   0x5845  mov bp, ax                 bp = obj + field
+    ///   0x5A64  add di, 0x14 / cmp +0x12,1 next entry while its kind is 1
+    /// ```
+    ///
+    /// Implementing exactly that -- walk the directory, take each active object's
+    /// selector-0x13 slot -- FAILED six tests including the end-to-end story
+    /// drive, so it was reverted. The gap is `bp`'s provenance: roughly 500 bytes
+    /// of type ladder sit between `0x5845` and the `mov ax,[bp+4]` @`0x5A51` that
+    /// the C3 arm is reached through, and whether `bp` still holds the
+    /// selector-0x13 slot there is NOT established. Tracing that ladder is the
+    /// task; until then the linear scan stays, wrong shape and all, because a
+    /// plausible replacement that breaks the story is worse than a known
+    /// approximation.
     pub fn promote_queued_presentation(&mut self) -> Option<u16> {
         if self.presentation_busy {
             return None;

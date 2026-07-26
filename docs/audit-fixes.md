@@ -9599,3 +9599,50 @@ remains a port choice — but a much smaller one than #302 had to record.
 
 Citations: 605 verified (from 596), 0 wrong. 706 tests across all binaries, 0
 failures.
+
+## #304 — decoded the presentation scan, implemented it, and reverted it
+
+#303 narrowed the open question to the ITERATION. It is decodable, and the answer
+is that the port's shape is wrong — but the fix does not follow from what is
+decoded so far, and trying it proved that.
+
+THE SCAN, found by walking back from `c3_promoter_branch` through
+`record_c1_ship3d_action` (`0x5B38`, whose label says "from the presentation
+scan") to its near callers:
+
+    0x582F  mov si, es:[di+0x10]        the entry's OBJECT offset
+    0x5833  test byte [si+2], 1         the object must be ACTIVE
+    0x583B  mov bx, [si]                its kind
+    0x583D  mov ax, 0x13 / call 0x6023  selector 0x13 for that kind
+    0x5845  mov bp, ax                  bp = obj + field
+    0x5A64  add di, 0x14                next directory entry...
+    0x5A6B  cmp ax, 1 / je              ...while its +0x12 kind is 1
+
+So the engine walks the `gs:0x672c` DEB DIRECTORY in directory order — the same
+walk as `build_nav_source_list` and `active_object_list_build` — and examines
+each active object's SELECTOR-0x13 slot. The port scans raw record addresses,
+which visits slots no object owns and orders them by address.
+
+IMPLEMENTED IT, AND IT BROKE SIX TESTS, including
+`directed_drive_plays_the_story_to_fin_hnm` and three interception tests. The
+queued interception that should promote at record 1788 stopped being found.
+Reverted.
+
+WHY, and this is the part I got wrong: I assumed the `bp` read at
+`mov ax,[bp+4]` @`0x5A51` is still the `bp` computed at `0x5845`. Between them
+sits roughly 500 bytes of ladder dispatching on the OBJECT kind (`cmp bx,2`
+@`0x5847` and onwards), and whether `bp` survives it unchanged is NOT
+established. Six failing tests are the evidence that it does not — or that some
+other precondition on the path is missing.
+
+THE REVERT IS THE POINT. A plausible-looking replacement that breaks the story
+drive is worse than a known approximation, and the tests caught exactly the case
+a static reading could not. The linear scan stays, documented as the wrong shape,
+with the decoded scan recorded beside it and the specific unknown named: trace
+`bp` from `0x5845` to `0x5A51` through the object-kind ladder.
+
+What survives from this entry: the scan's structure is now cited in the doc
+rather than guessed at, and the next attempt starts from a named question instead
+of from scratch.
+
+Citations: 612 verified (from 605), 0 wrong. 605 lib tests, 0 failures.
