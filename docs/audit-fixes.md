@@ -8710,3 +8710,34 @@ guessed.
 This is the immediate-reporting extension paying off in the way #263 said it
 could: not as a bulk citation source, but as a way to find WHERE something lives
 once you already know what you are looking for.
+
+## #283 — a selector family whose mismatch value is an `inc`
+
+`resolve_ship_3d_position_field` and its five selector constants had no origin
+between them — six items asserting how the game picks a position field, pointing
+nowhere. The immediate scan puts the kind ladder in `0x60DD`
+(`ship_3d_position_distance`'s front half):
+
+```text
+   0x60E3  mov ax,[si]                  the kind
+   0x60E5  cmp ax,0x100                 KIND100 -> the comparing branch
+   0x60EC  mov ax,0xe  / call 0x6023    relation word, from the DI record
+   0x60F9  mov ax,0xc  / call 0x6023    match word, kind 0x100, from SI
+   0x6101  mov ax,9
+   0x6104  cmp dx,[bx+si] / je          equal -> selector 9
+   0x6108  inc ax                       otherwise -> selector 10
+```
+
+All five port values match. The one worth a doc of its own is
+`..._POSITION_MISMATCH = 10`: in the game it is not a constant at all, it is
+`inc ax` on the match selector. The port naming it separately is fine — but a
+reader looking for a `10` in the disassembly finds nothing, and would conclude the
+value was invented, which is the same trap `0x100000` set in #273 (built by
+`mov eax,0x8000000 / shr eax,7` rather than written).
+
+Two constants derived by arithmetic from a third, in two different routines,
+within ten entries of each other. Worth stating as a habit of this codebase: when
+a port constant cannot be found in the binary, the next question is not "is it
+invented" but "is it computed".
+
+Six rows settled ASM; guard 513 -> 527 checked, 0 wrong.

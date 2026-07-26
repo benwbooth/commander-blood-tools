@@ -236,9 +236,13 @@ pub const SHIP_3D_OBJECT_KIND_POSITION_DIRECT_40: u16 = 64;
 pub const SHIP_3D_OBJECT_KIND_POSITION_KIND100: u16 = 256;
 pub const SHIP_3D_OBJECT_KIND_POSITION_DIRECT_200: u16 = 512;
 pub const SHIP_3D_FIELD_SELECTOR_POSITION: u8 = 11;
+/// `mov ax,9` @`0x6101` — the selector used when the kind-100 words MATCH.
 pub const SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MATCH: u8 = 9;
+/// `inc ax` @`0x6108` — 9 + 1, taken when the compare at `0x6104` does NOT fall through. The mismatch selector is not an independent constant in the game; it is the match selector plus one.
 pub const SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MISMATCH: u8 = 10;
+/// `mov ax,0xc` @`0x60F9`, resolved with kind `0x100` (`mov bx,0x100` @`0x60F6`) and read from the SI record.
 pub const SHIP_3D_FIELD_SELECTOR_KIND100_MATCH_WORD: u8 = 12;
+/// `mov ax,0xe` @`0x60EC`, resolved with the DI record's own kind and read from it.
 pub const SHIP_3D_FIELD_SELECTOR_KIND100_RELATION_WORD: u8 = 14;
 pub const SHIP_3D_FIELD_SELECTOR_PARENT_LINK: u8 = 17;
 pub const SHIP_3D_SOURCE_BITSET_SELECTOR: u8 = 0x05;
@@ -3536,6 +3540,22 @@ pub fn build_ship_3d_navigation_candidate_records(
     None
 }
 
+/// The position-field resolver, `ship_3d_position_distance`'s front half
+/// (`0x60DD`): a ladder on the record's KIND that picks which selector resolves
+/// its position (audit-fixes #283 — the function and its five constants had no
+/// origin between them).
+///
+/// ```text
+///   0x60E3  mov ax,[si]      the kind
+///   0x60E5  cmp ax,0x100     KIND100 -> the comparing branch
+///   0x60EC  mov ax,0xe  / call 0x6023   relation word, from the DI record
+///   0x60F6  mov bx,0x100
+///   0x60F9  mov ax,0xc  / call 0x6023   match word, kind 0x100, from SI
+///   0x6101  mov ax,9
+///   0x6104  cmp dx,[bx+si] / je         equal -> selector 9
+///   0x6108  inc ax                      otherwise -> selector 10
+///   0x6114  cmp ax,0x40                 the direct kinds continue below
+/// ```
 pub fn resolve_ship_3d_position_field(
     records: &[Ship3dPositionRecord],
     record_offset: u16,
