@@ -8553,3 +8553,35 @@ Worth noting how this was found: not by looking for fabricated surfaces, but by
 working through the ASM? list and reading a doc that described its own function
 honestly. The approximation labelled itself; nothing else in the tree knew it had
 been superseded.
+
+## #278 — the intro camera's phases, and the same citation slip a third time
+
+`Ship3dCameraApproach::step` read against `0x8A6A..0x8B5A`. All four phases match,
+and all six constants are the routine's immediates: `0x2328` (9000), `0x64` (100),
+`0xB4` (180), `0x4E20` (20000), `0x64` again for the Z acceleration, `0x2710`
+(10000).
+
+Two signedness differences, checked rather than waved past:
+
+  * P1 ends on `cmp ax,0x2328 / jl` — SIGNED. The port compares `u16 >= 9000`,
+    unsigned. They agree for every X the animation reaches (it starts at 10000 and
+    falls) and would differ only above `0x7FFF`.
+  * P1's yaw wraps on `dec ax / jns / mov ax,0xb4`: it wraps when the DECREMENT
+    goes negative, so `0 -> 180`. The port's `if angle == 0 { 180 } else
+    { angle - 1 }` is identical over `0..=180` and differs only above `0x8000`,
+    which the wrap prevents.
+
+P2's `ja` IS unsigned and matches the port's `<=` directly, and the accumulate
+order is the routine's — `z += accel` at `0x8ABF` before `accel += 0x64` at
+`0x8AC3`, which is the order that makes the first frame move by zero.
+
+THE CITATION SLIP, for the third time (#213, #233, now). I wrote
+`cmp ax,0x2328 / jl` @`0x8A80` — but `0x8A80` is the `jl`; the `cmp` is at
+`0x8A7D`. Same for the P2 pair. The guard caught both.
+
+The pattern is now unmistakable: when documenting a COMPARISON, I reach for the
+address of the branch, because the branch is what expresses the meaning I am
+describing. The rule that fixes it is mechanical — an address pairs with the FIRST
+instruction of the sequence quoted — and I have restated it twice without it
+sticking. Writing citations from tool output rather than by hand (#261) is the
+version that actually works; hand-written ones need the guard every time.

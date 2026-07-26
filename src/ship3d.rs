@@ -3418,6 +3418,23 @@ impl Ship3dCameraApproach {
     ///   P2 ends.
     /// - **P3** (`0x8AE0`): reset to the cruise pose. P3 ends.
     /// - **P4** (`0x8B2B`): settle Z at its final altitude. P4 ends → animation done.
+    ///
+    /// TWO SIGNEDNESS DIFFERENCES, verified reachable-safe rather than ignored
+    /// (audit-fixes #278):
+    ///
+    ///   * P1's end test is `cmp ax,0x2328 / jl` @`0x8A7D` — the `jl` at `0x8A80` is SIGNED. The port
+    ///     compares `u16 >= 9000`, unsigned. They agree for every X the animation
+    ///     reaches, since X starts at 10000 and falls; they would differ only
+    ///     above `0x7FFF`.
+    ///   * P1's yaw wrap is `dec ax / jns / mov ax,0xb4` @`0x8A8B` — it wraps when
+    ///     the DECREMENT goes negative, so `0 -> 180`. The port writes
+    ///     `if angle == 0 { 180 } else { angle - 1 }`, identical for `0..=180`
+    ///     and different only for a yaw above `0x8000`, which the wrap itself
+    ///     prevents.
+    ///
+    /// P2's `cmp ax,0x4e20 / ja` @`0x8ABA` (the `ja` at `0x8ABD`) IS unsigned, matching the port's `<=`
+    /// directly, and the accumulate order is the routine's: `z += accel` first
+    /// (`0x8ABF`), then `accel += 0x64` (`0x8AC3`).
     pub fn step(&mut self) {
         match self.phase {
             1 => {
