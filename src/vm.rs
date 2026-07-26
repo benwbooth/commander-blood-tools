@@ -628,10 +628,35 @@ pub fn bit_flag_byte_offset(base_offset: u16, bit_index: u8) -> u16 {
 /// `0x80 >> (bit & 7)` — the mask form of the `shl al,cl / shl al,1 / jae`
 /// sequence at `0x6AD3`, which is why bit 0 is the HIGH bit. See
 /// [`bit_flag_byte_offset`] for the full derivation.
+/// The engine's bit-index-to-mask rule: HIGH BIT FIRST, so index 0 is `0x80`
+/// and index 7 is `0x01`.
+///
+/// The game never writes a mask — it shifts the wanted bit into the carry:
+/// `and cl,7 / inc cl / shl al,cl` @`0x6236` leaves bit `7 - (index & 7)` in CF
+/// (audit-fixes #274). This is the mask form of that, and the direction is the
+/// opposite of the `1 << i` anyone writes without checking.
 pub fn bit_flag_mask(bit_index: u8) -> u8 {
     0x80u8 >> (bit_index & 7)
 }
 
+/// The FIELD-OFFSET MATRIX lookup, `vm_field_offset` (`0x6023`) — how the engine
+/// turns a (selector, kind) pair into a byte offset inside an object record.
+///
+/// ```text
+///   0x6024  shl ax,4          selector * 16 -- the matrix row
+///   0x6027  bsf bx,bx         kind -> the index of its LOWEST SET BIT
+///   0x602A  add bx,ax
+///   0x602C  mov al,gs:[bx+0x6d60]
+/// ```
+///
+/// (`0x6023` itself is the `push bx` prologue; the routine is seven instructions
+/// long including its `pop`/`ret`.)
+///
+/// The `bsf` is the part worth stating: KIND IS A BITMASK, not an ordinal, so
+/// column `k` belongs to kind `2^k` and a kind of 0 has no column at all — which
+/// is why this returns `None` for it rather than reading row-relative garbage.
+/// The matrix lives at `DS:0x6D60` in rows of 16 bytes and is pinned to the image
+/// by `field_matrix_entries_match_the_constants`.
 pub fn vm_field_offset(selector: u8, kind: u16) -> Option<u16> {
     if kind == 0 {
         return None;

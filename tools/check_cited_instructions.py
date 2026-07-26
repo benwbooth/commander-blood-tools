@@ -164,19 +164,28 @@ def main():
                         # claimed instruction is almost always a few bytes EARLIER,
                         # so look, and say so -- a report that names the fix costs
                         # one line and saves a disassembly round trip.
+                        # Look BOTH ways. #279 only looked backward, which covers
+                        # citing a branch's address for its `cmp`. The opposite
+                        # slip is citing a ROUTINE'S ENTRY for an instruction
+                        # inside it -- `0x6023` is `push bx`, and the `shl ax,4`
+                        # being documented is one byte LATER (audit-fixes #281).
                         hint = ""
-                        for back in range(1, 12):
+                        for back in list(range(1, 12)) + [-o for o in range(1, 12)]:
                             probe = addr - back
                             if probe < 0:
-                                break
+                                continue
                             first = next(md.disasm(image[probe:probe + 16], probe), None)
                             if (
                                 first
                                 and first.address == probe
                                 and ALIAS.get(first.mnemonic, first.mnemonic) == want
-                                and probe + first.size > addr - 12
+                                and abs(probe - addr) <= 12
                             ):
-                                hint = f" -- `{claimed}` is at {probe:#07x}, {back} byte(s) earlier"
+                                where = "earlier" if back > 0 else "later"
+                                hint = (
+                                    f" -- `{claimed}` is at {probe:#07x}, "
+                                    f"{abs(back)} byte(s) {where}"
+                                )
                                 break
                         print(
                             f"MISMATCH {path}:{i}: doc says {addr:#07x} is `{claimed}`, "

@@ -8642,3 +8642,35 @@ was simply written in the wrong place and every tool downstream believed it. Bot
 turn "has a citation" into a claim about proximity rather than about content —
 which is why #261's practice of generating citations from tool output, rather than
 inheriting them from whatever is adjacent, keeps mattering.
+
+## #281 — 126 undocumented public items, and the hint learns to look forward
+
+#280's stranded doc suggested looking for others, so: 126 public items outside
+tests and `recomp` carry no comment of any kind. (My first count said the same
+number for the wrong reason — it only checked the line immediately above, so
+`OPCODE_DESC`, which has a `///` block followed by a `//` NOTE, showed as
+undocumented. Fixing that dropped it out and the total stayed 126 by coincidence.)
+
+Two of them were worth doing immediately, being central decoded helpers used
+everywhere:
+
+  * `vm_field_offset` (`0x6023`) — `shl ax,4` for the matrix row, then `bsf bx,bx`
+    on the kind. The `bsf` is the point: KIND IS A BITMASK, so column `k` is kind
+    `2^k` and kind 0 has no column, which is why the port returns `None` rather
+    than reading row-relative garbage.
+  * `bit_flag_mask` — the mask form of #274's shift-into-carry, high bit first.
+
+THE GUARD CAUGHT ME AGAIN (tenth time) and this one exposed a gap in #279's hint.
+I cited `0x6023` for `shl ax,4`; `0x6023` is the `push bx` prologue and the shift
+is at `0x6024`. #279 taught the hint to look BACKWARD — the branch-vs-cmp slip —
+but this is the opposite: citing a ROUTINE'S ENTRY for an instruction inside it.
+The hint now searches both directions:
+
+```text
+   MISMATCH src/vm.rs:646: doc says 0x06023 is `shl`, disassembly says `push`
+                            -- `shl` is at 0x06024, 1 byte(s) later
+```
+
+Two distinct habits, then: for a comparison I reach for the branch, for a routine
+I reach for its entry. Both are "the address I was thinking about" rather than
+"the address of the instruction I quoted", and the hint now covers both.
