@@ -10098,3 +10098,38 @@ points at `render_dialogue_frame`. Its `ASM?` came from the ledger picking up a
 neighbour's offset. Left alone; it needs a decode, not a settlement.
 
 Citations: 607 verified (from 606), 0 wrong. 607 lib tests, 0 failures.
+
+## #316 — a third citation class the guard cannot check: DATA CELLS
+
+Three rows in this review have now cited something that is not an instruction
+address, and each time disassembling there produced convincing nonsense:
+
+  * #299 `location_var_offset` — "SCRIPT2: 0x0F4E", a SCRIPT-DATA record offset.
+    The EXE at `0x0F4E` decodes as `sub ax,0x6652 / xor ax,ax / stosw ...`.
+  * #315 `present_scene_buffer` — `gs:0x1FA7`, a DS cell.
+  * this one, `load_bas_menus` — `gs:0x6772`, a DS cell. The EXE at `0x6772`
+    decodes as `add [di-0x80],sp / push cs / stosb ...`, pure phantom.
+
+`check_cited_instructions.py` is right to skip all three (no mnemonic beside the
+address), and #300 made that skip visible. But the ledger's `ASM?` heuristic
+reads ANY hex as evidence of a decode, so a data-cell reference and a routine
+citation look identical to it. That is a THIRD class beside #298's wrong-routine
+and #301's misplaced-within-routine.
+
+WHAT THE CELLS ACTUALLY ARE, since checking them is cheap once you stop
+disassembling:
+
+  `gs:0x6772` — a POINTER, five sites, used stack-like: `mov [0x6772],ax`
+  @`0x5461`/`0x574E`, `mov [0x6772],si` @`0x5805`, read back as `bx` @`0x57F7`
+  and `si` @`0x5B07`. Consistent with the doc's "menu system", but the doc makes
+  no CHECKABLE behavioural claim, so the row stays provisional: there is nothing
+  to verify, which is different from having verified it.
+
+ALSO LABELLED, from #315's loose end: `0x7B4C` as
+`scene_blit_base_ten_row_setup` — `al=[0x6CDE]`, `cbw`, `shl ax,7`,
+`add ax,0x1320`, store `[0x131A]`, then the missing `gs:[0x1FA7]=0xA`. The
+128-byte-stride table at `0x1320` indexed by `[0x6CDE]` is the next step for
+whoever closes that gap; recorded rather than chased, because decoding a new
+table subsystem is not what this review is for.
+
+Citations: 607 verified, 0 wrong. 607 lib tests, 0 failures.
