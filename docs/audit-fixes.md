@@ -13287,3 +13287,41 @@ happen, so the next pass builds against it rather than re-deriving it.
 
 2228 items, 1093 confirmed (49.1%), 1135 open. 729 citations verified, 0 wrong.
 614 lib tests, 0 failures.
+
+## #404 — eighteen decoded types that nothing in the game ever builds
+
+About to restructure `AlienColony` into the tree #403 decoded, I checked one
+thing first: does anything BUILD an `AlienColony`? No. Its only construction is
+in its own test. The colony dispatcher, its `cs:0xB72` frame gate, the shared
+streams #400/#401 just fixed — all decoded, all ported, and the running game
+never instantiates any of it. Restructuring it would have been elaborating dead
+code, and I would have found that out after the refactor rather than before.
+
+`check_unfed_runtime.py` (#290) could not see this. It looks for `with_`/`set_`
+BUILDERS whose call sites are all in tests, so a whole subsystem can be unfed
+while every builder inside it looks fine. Extended it with an UNFED-TYPE bucket:
+a `pub struct` whose every construction site is test code.
+
+**18 types.** `AlienColony` and `AlienCamera` (croolis), `MenuAnimDescriptor` and
+`MenuTweenList` (manu3), and eleven `Ship3d*State` types — `Ship3dNavChoiceState`
+alone is built 49 times, all in tests. Two of those, `MenuAnimDescriptor` and
+`Ship3d*`, are ALREADY open ledger rows, which is a useful cross-check: the audit
+had flagged them for other reasons and this says plainly why they resist
+settling.
+
+The check took three tries and each failure is the same shape — my construction
+pattern `Name\s*(::\w+\(|\{)` matched the DECLARATION. First run: 0 dead types,
+because `pub struct Name {` counted as a production construction of itself.
+Excluding `struct` still hid `AlienColony`, because `impl AlienColony {` counted
+too. Only after excluding `struct`/`enum`/`trait`/`impl` lines did the real list
+appear. A checker reporting zero is the least trustworthy result there is, and
+twice here it was zero for a reason that had nothing to do with the codebase.
+
+This reframes the alien work: #400 and #401 fixed real decode defects in code
+that runs only under test, and #403's tree spec describes a structure the port
+has no live instance of. Wiring the colony into the game is the task that makes
+any of it observable — recorded here as the finding, not started, because it is a
+different piece of work from the decode that surfaced it.
+
+2228 items, 1093 confirmed (49.1%), 1135 open. 729 citations verified, 0 wrong.
+614 lib tests, 0 failures.

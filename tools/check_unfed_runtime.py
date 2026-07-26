@@ -125,13 +125,76 @@ def main():
                 if test and not prod:
                     findings.append((path, i + 1, name, test, fields_written(lines, i)))
 
+    # DEAD SUBSYSTEMS: a public TYPE whose every constructor call is in tests.
+    # AlienColony was exactly this -- the colony dispatcher, its frame gate and
+    # its shared streams all decoded and ported, and nothing in the running game
+    # ever builds one (audit-fixes #404). The builder scan above cannot see it,
+    # because it looks for `with_`/`set_` state setters, not constructors, so a
+    # whole subsystem can be unfed while every builder in it looks fine.
+    types = {}
+    for root, _, files in os.walk("src"):
+        for f in sorted(files):
+            if not f.endswith(".rs"):
+                continue
+            path = os.path.join(root, f)
+            lines = open(path, encoding="utf-8", errors="replace").read().splitlines()
+            for i, line in enumerate(lines):
+                m = re.match(r"^\s*pub struct ([A-Z][A-Za-z0-9]*)", line)
+                if m:
+                    types[m.group(1)] = (path, i + 1)
+
+    dead_types = []
+    for name, (path, line) in sorted(types.items()):
+        prod = test = 0
+        for r2, _, f2 in os.walk("src"):
+            for g in sorted(f2):
+                if not g.endswith(".rs"):
+                    continue
+                p2 = os.path.join(r2, g)
+                l2 = open(p2, encoding="utf-8", errors="replace").read().splitlines()
+                cut2 = test_module_start(l2)
+                cut2 = len(l2) if cut2 is None else cut2
+                for j, line2 in enumerate(l2):
+                    # The DEFINITION `pub struct Name {` matches the construction
+                    # pattern below, so the first run of this check reported zero
+                    # dead types -- every type "constructed" itself. Comments
+                    # mentioning `Name { .. }` are prose, not construction.
+                    stripped = line2.lstrip()
+                    if stripped.startswith(("//", "///", "//!", "*")):
+                        continue
+                    # `pub struct Name {`, `impl Name {`, `impl Trait for Name {`
+                    # and `enum Name {` all match the construction pattern below.
+                    # Excluding only `struct` left AlienColony invisible, because
+                    # its `impl` block counted as a production construction site.
+                    if re.match(
+                        rf"^\s*((pub\s+)?(struct|enum|trait)\s+{re.escape(name)}\b"
+                        rf"|impl\b.*\b{re.escape(name)}\b)",
+                        line2,
+                    ):
+                        continue
+                    # a CONSTRUCTION site: `Name::new(`, `Name {`, `Name::default(`
+                    if re.search(rf"\b{re.escape(name)}\s*(::\s*\w+\s*\(|\{{)", line2):
+                        if j < cut2:
+                            prod += 1
+                        else:
+                            test += 1
+        if test and not prod:
+            dead_types.append((path, line, name, test))
+
+    for path, line, name, test in dead_types:
+        print(
+            f"UNFED-TYPE {path}:{line}: {name} — built {test} time(s), ALL in tests; "
+            "the whole type is dead in a real run"
+        )
+
     for path, line, name, test, fields in findings:
         shown = ", ".join(sorted(fields)[:4]) or "(no field assignment found)"
         print(f"UNFED {path}:{line}: {name} — {test} call site(s), ALL in tests; writes {shown}")
 
     print(
         f"{len(findings)} builder(s) that only tests ever call: the state they "
-        "write stays at its default in every real run"
+        f"write stays at its default in every real run; {len(dead_types)} whole "
+        "type(s) built only by tests"
     )
     return 0
 
