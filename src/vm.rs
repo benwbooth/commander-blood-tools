@@ -421,20 +421,22 @@ pub const DLG_LINE_ASSET_NONE: u16 = 0xFFFF;
 
 /// The line id an `0xA6` selector maps to: `sign_extend(b3) + 9`.
 ///
-/// SCOPE: this is ONE of 27 writers of `gs:0x6788` — five register writes
-/// (including this one) and 22 IMMEDIATE writes of fixed ids (a `0x27..0x2C`
-/// cluster, the low ids `0x01`-`0x07`, and `0xFFFF` resets) issued by native
-/// code, e.g. `0x5E74` in the post-update ladder. So the active line is mostly
-/// set natively; the script selector accounts for a single path. Do not read
-/// this function as "how the line id is determined".
+/// SCOPE: this is ONE of 29 writers of `gs:0x6788` — register writes (including
+/// this one) plus IMMEDIATE writes of fixed ids (a `0x27..0x2C` cluster, the low
+/// ids `0x01`-`0x07`, and `0xFFFF` resets) issued by native code, e.g. `0x5E74`
+/// in the post-update ladder. So the active line is mostly set natively; the
+/// script selector accounts for a single path. Do not read this function as
+/// "how the line id is determined".
 ///
-/// COUNT CORRECTED from 29 to 27 (audit-fixes #319). The old figure came from
-/// "a byte search for every `mov [0x6788], …` encoding", and a raw byte search
-/// cannot tell an instruction from a coincidence inside another one — the same
-/// phantom problem #234 recorded. Re-counted with `find_imm.py`, which rejects
-/// mid-instruction matches: 39 confirmed references, of which 27 are writes
-/// (22 immediate, 5 register) and 12 are reads or compares. Two of the original
-/// 29 were phantoms.
+/// THE COUNT WENT 29 -> 27 -> 29 (audit-fixes #319, then #335). #319 "corrected"
+/// the original 29 to 27 using `find_imm.py`, on the grounds that the doc's byte
+/// search could not reject phantoms. The reasoning was right and the conclusion
+/// was wrong: `find_imm` has FALSE NEGATIVES (#334) and dropped two real stores.
+/// Recounted by enumerating the WRITE ENCODINGS as raw bytes — `c7 06`, `a3`,
+/// `89 /r`, each also in its `65`-prefixed form, with overlaps collapsed so a
+/// gs-prefixed store is not counted twice — gives 29 distinct sites, agreeing
+/// with the original. A byte search cannot miss a fixed encoding; that is the
+/// error mode it does NOT have.
 ///
 /// `0x668D` stores `b3` SIGN-EXTENDED at `DS:0x1FAB` (`lodsb; cbw` -- one byte at
 /// `0x668E`, so AL into AX; `re/tools/dis.py` prints it `cwde`), and `0x11F2`

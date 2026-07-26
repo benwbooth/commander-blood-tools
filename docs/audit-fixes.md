@@ -10828,3 +10828,45 @@ tree rather than a missed one — and the only reason I found it was chasing an
 unrelated flag and noticing a doc that disagreed with a tool.
 
 641 citations verified, 0 wrong. 612 lib tests, 0 failures.
+
+## #335 — #319's "correction" was the error: the count goes back to 29
+
+#334 established that `find_imm.py` rejects real instructions. The obvious next
+question is what I concluded FROM it, and #319 is the answer: I took a doc saying
+"ONE of 29 writers of `gs:0x6788`", noted that its method was "a byte search",
+argued a byte search cannot reject phantoms, recounted with `find_imm`, and wrote
+the doc down to 27.
+
+The reasoning was right in general and wrong here. Byte searches have FALSE
+POSITIVES; `find_imm` has FALSE NEGATIVES. I replaced a number carrying one error
+mode with a number carrying the other, and did not check which was actually
+biting.
+
+RECOUNTED PROPERLY by enumerating every WRITE ENCODING as raw bytes:
+
+    c7 06 88 67      mov word [0x6788], imm16
+    a3 88 67         mov [0x6788], ax          <- the accumulator form,
+                                                  which my first recount missed
+    89 /r 88 67      mov [0x6788], reg16
+    65 <each above>  the gs-prefixed variants
+
+with overlaps collapsed, since `65 c7 06 88 67` also matches `c7 06 88 67` one
+byte in and would otherwise be counted twice. Result: 29 DISTINCT SITES, agreeing
+exactly with the original doc.
+
+So the doc was right, my correction was wrong, and the doc now says so along with
+the reason to trust 29: a byte search cannot MISS a fixed encoding — that is the
+error mode it does not have.
+
+TWO THINGS I GOT WRONG IN ONE ENTRY, worth separating. First, treating "this
+method has a known weakness" as "this number is wrong" — a weakness is a reason
+to CHECK, not to overwrite. Second, my own first recount here was also short (26)
+because I forgot `a3`, the accumulator-direct store; I only caught it because 26
+disagreed with both 27 and 29 and disagreement is the thing worth chasing.
+
+#319 also settled the row on the strength of that recount. The row stays settled —
+its INSTRUCTION claims were verified independently in #298 and are unaffected —
+but the entry that settled it contained a false correction, which is now recorded
+next to it.
+
+641 citations verified, 0 wrong. 612 lib tests, 0 failures.
