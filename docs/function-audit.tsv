@@ -444,7 +444,7 @@ draw_choice_box_labels	src/engine.rs	1957	fn		ORACLE?	/// Draw the nav destinati
 CHOICE_BOX_CENTER_X	src/engine.rs	1977	const	0xAC6,0x86D9,0x89A6,0xB0D1,0xADC,0xADD	ASM	/// Draw the console choice box as the real game composes it (measured from /// `choice_box_bob_morlock.ppm`, the telephone contact list): grey square-caps /// item text (index 0xE8) laid out CENTERED
 CHOICE_BOX_ANCHOR_WORLD	src/engine.rs	1978	const		UNVERIFIED	
 CHOICE_BOX_ANCHOR_CONCEPT	src/engine.rs	1981	const	0xAC6,0x89A6,0x84AD	ASM	/// The IN-WINDOW concept list's right-side anchor: `mov [0xAC6], 0xE1` at `0x89A6`. /// `0xE1` = 225. The widget then places the box at `x0 = anchor - w/2` (`0x84AD`).
-CHOICE_BOX_PITCH	src/engine.rs	1984	const	0x847A,0x8508	ASM?	/// Row pitch 11 — ASSEMBLY: the unified list widget steps `add bp,0xB` /// (0x847A) and hit-tests `row = dy/11 + 1` (`div bl,0x0B` @0x8508).
+CHOICE_BOX_PITCH	src/engine.rs	1984	const	0x847A,0x8508	ASM	/// Row pitch 11 — ASSEMBLY: the unified list widget steps `add bp,0xB` /// (0x847A) and hit-tests `row = dy/11 + 1` (`div bl,0x0B` @0x8508).
 choice_box_top_y_seeded	src/engine.rs	2004	fn	0x84A1,0x84C6,0xadd,0x8436,0xADD,0x8442,0x8445,0x847A,0x84A7	ORACLE?	/// The first row's top y, from the widget's ASSEMBLY layout (0x84A1..0x84C6): /// box height h = rows*11 + 8, box y = (200 - h)/2 (screen-centred), text /// top = box y + 4. (This DERIVES the previou
 choice_box_top_y	src/engine.rs	2010	fn	0x8436	ASM	/// Default-path top (`bp = 0` from `xor bp,bp` at `0x8436`).
 choice_box_text_top	src/engine.rs	2016	fn	0xADD	ASM	/// Kind-aware top: the world/entity box (kind 10) is the `[0xADD]&1` branch, /// which seeds the height 10 higher.
@@ -474,13 +474,13 @@ confirm_box_click	src/engine.rs	2176	fn	0x2555,0x255D,0x8295	ORACLE	/// Hit-test
 draw_save_ui_rows	src/engine.rs	2192	fn	0x1BAB,0x1BBD,0x8573	ASM	/// The SAVE screen's rows: the ten slot names with the edit buffer swapped in /// for the row being renamed, plus the widget's own extra row. See the call /// site for the assembly (`0x1BAB`, `0x1BBD
 draw_choice_box	src/engine.rs	2220	fn	0x8565,0x858B,0x8595,0xA3E,0x858D,0x2AAB,0x84A1,0x84D8,0xAC8	ORACLE?	// ASSEMBLY-SOURCED (these were capture-measured, and the box was wrong): //   0x8565  mov al,0xE8                 unselected row //   0x858B  mov al,0xEF                 the selected row... //   0x85
 TEXT	src/engine.rs	2229	const	0x8565,0x858B,0x8595,0xA3E,0x858D	ORACLE?	// ASSEMBLY-SOURCED (these were capture-measured, and the box was wrong): //   0x8565  mov al,0xE8                 unselected row //   0x858B  mov al,0xEF                 the selected row... //   0x85
-TEXT_SELECTED	src/engine.rs	2231	const	0x858B	ASM?	// `mov al,0xEF` @0x858B — the selected row.
-TEXT_SELECTED_MOUSE	src/engine.rs	2234	const	0x8595,0xA3E,0x858D	ASM?	// `mov al,0xFE` @0x8595 — selected AND the mouse is on it // (`test byte gs:[0xA3E],1` @0x858D).
+TEXT_SELECTED	src/engine.rs	2231	const	0x858B	ASM	// `mov al,0xEF` @0x858B — the selected row.
+TEXT_SELECTED_MOUSE	src/engine.rs	2234	const	0x8595,0xA3E,0x858D	ASM	// `mov al,0xFE` @0x8595 — selected AND the mouse is on it // (`test byte gs:[0xA3E],1` @0x858D).
 choice_box_row_at	src/engine.rs	2311	fn	0xAC6,0x86D9,0x847A,0x8508	ASM	/// Hit-test a click against the console choice box (see [`draw_choice_box`]). /// /// The geometry is DECODED, not measured: the box centres on /// [`Self::CHOICE_BOX_CENTER_X`] (`mov word [0xAC6],0x
 choice_box_widest	src/engine.rs	2337	fn		UNVERIFIED	/// The widest square-caps label pixel width over `labels` (capped at 8 rows, /// the box's own limit) — the `widest` the box geometry keys on.
 draw_list_menu	src/engine.rs	2360	fn	0x847A,0x8565,0x858B,0x84AD,0x857D,0x8582	ASM?	/// Draw a LIST MENU — the game's blue square-capitals vertical list (topic /// menus in dialogue, destinations at nav, contacts). Same widget as /// [`Self::draw_choice_box`], so the same ASSEMBLY la
 TEXT	src/engine.rs	2363	const	0x8565,0x858B	ASM?	// Same row colours as the choice box: `mov al,0xE8` @0x8565 unselected, // `mov al,0xEF` @0x858B selected.
-TEXT_SELECTED	src/engine.rs	2365	const	0x858B	ASM?	// `mov al,0xEF` @0x858B — the selected row.
+TEXT_SELECTED	src/engine.rs	2365	const	0x858B	ASM	// `mov al,0xEF` @0x858B — the selected row.
 set_topic_menu	src/engine.rs	2406	fn		UNVERIFIED	/// Set the dialogue topic menu: (label, first line index) per topic.
 load_bas_menus	src/engine.rs	2415	fn	0x6772	CELL?	/// Load the conversation script's decoded concept-menu stack (the game's /// `gs:0x6772` menu system, [`crate::bas_vm`]) from its `.BAS`/`.DIC`. Seeds at /// the entry menu; `current_bas_menu_labels`
 current_bas_menu_labels	src/engine.rs	2423	fn		TESTED	/// The current BAS concept menu's topic labels (uppercased, as the square-caps /// menu renders them). Empty if no `.BAS` menus are loaded. Enter/back-out /// navigation is driven via [`crate::bas_vm

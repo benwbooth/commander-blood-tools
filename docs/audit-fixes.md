@@ -10289,3 +10289,38 @@ Citations: 613 verified, 0 wrong. 608 lib tests, 0 failures.
 EXISTING citations rather than adding new ones. Corrected before commit; the
 same slip as #295's 585-for-583, and the reason to read the tool rather than
 estimate from 'I checked several things'.)
+
+## #321 — six more verified rows, and the settle tool refusing a name I was about to fudge
+
+Continuing the `ASM?` queue into `engine.rs`. Six rows, all correct:
+
+`CHOICE_BOX_PITCH = 11` — `add bp, 0xb` @`0x847A`. The doc also claims the
+hit-test is `row = dy/11 + 1` from "`div bl,0x0B` @`0x8508`", which is not a real
+operand form: `div bl` takes its divisor from the register. Followed it —
+`mov bl, 0xb` @`0x8506` immediately precedes `div bl` @`0x8508`, and `inc al`
+@`0x850A` supplies the `+1`. Shorthand, accurate in substance.
+
+`CHOICE_BOX_ANCHOR_CONCEPT = 0xE1` — `mov word ptr [0xac6], 0xe1` @`0x89A6`,
+already labelled `list_anchor_console_window`.
+
+`TEXT_SELECTED = 0xEF` — `mov al, 0xef` @`0x858B`.
+`TEXT_SELECTED_MOUSE = 0xFE` — `mov al, 0xfe` @`0x8595`, gated by
+`test byte gs:[0xa3e], 1` @`0x858D`. All three exact.
+
+THE TOOL CAUGHT ME. `audit_settle.py` REFUSED `TEXT_SELECTED`: "name not unique
+in file". There are two, at 2231 and 2365 — local consts in two different drawing
+functions. I had verified ONE instruction and was about to settle a bare name
+that would have matched both rows.
+
+This time the duplicate happened to be identical (same value `0xEF`, same
+citation `0x858B`), so I checked the second and settled both explicitly by line.
+But that is luck, not diligence: the failure mode is #306 exactly — one checked
+row making an unchecked neighbour feel checked — and the guard that stopped it is
+a tool refusing an ambiguous argument, not me noticing. Worth recording that the
+safeguard which actually worked here was mechanical.
+
+Ledger: 2222 items, 1034 confirmed (46.5%). The provisional split is now
+`ASM?` 66, `CELL?` 123, `DATA?` 46, `ORACLE?` 41, `INFRA?` 8 — the genuine
+decode-claim queue is down from 76 to 66.
+
+608 lib tests, 0 failures. 613 citations verified, 0 wrong.
