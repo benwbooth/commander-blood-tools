@@ -10172,3 +10172,43 @@ is a statement about the DOC, and the fix for such a row is to find the
 instructions — which is exactly what #315 did.
 
 Citations: 607 verified, 0 wrong. 607 lib tests, 0 failures.
+
+## #318 — the port dropped a term, and the doc had already recorded the symptom
+
+Working the cleaned `ASM?` queue (76 real decode claims after #317).
+`dlg_line_asset_id_from_source_byte` computes `(byte - 1) * 16` for non-negative
+source bytes. The fill routine at `0x7684` computes something else:
+
+    0x768B  js  0x7694        negative -> store sign-extended, untouched
+    0x768D  dec ax
+    0x768E  shl ax, 4         (byte - 1) * 16
+    0x7691  add ax, 0xdd7     <- A BASE the port never had
+    0x7694  stosw
+
+So the port returned 0 where the game stores `0x0DD7`.
+
+THE DOC HAD THE ANSWER AND CALLED IT A MYSTERY. Its caveat read: "In the hub
+savestate the live `+2` fields hold `0x0DD7`, which is not 16-aligned and points
+into an `fd\\xxxxxxxxxxxx` path template's name field. So either another path
+populates the table in that state, or this value is later replaced." Neither.
+`0x0DD7` is what a source byte of 1 stores: index zero ON THE BASE. The probe was
+right, the reading of it was wrong, and the missing addend explains both the
+value and the non-alignment that made it look anomalous.
+
+THE TEST ENCODED THE BUG, twice over. It asserted
+`dlg_line_asset_id_from_source_byte(1) == 0`, and then looped over every
+non-negative byte asserting `result % 16 == 0` — a property that only holds
+because the base was absent, and which the caveat three lines above had already
+observed to be false of the real data. Doc and test contradicted each other in
+the same file and both passed.
+
+Corrected: the base is now `DLG_ASSET_NAME_TABLE_BASE = 0x0DD7`, cited at
+`0x7691`; the test asserts `byte 1 -> 0x0DD7` and checks alignment RELATIVE TO
+THE BASE.
+
+Settled alongside, after verifying their instructions: `DLG_LINE_ASSET_ENTRY_STRIDE`
+(4 — `shl bx,2` @`0x9D67`, and `stosw` + `add di,2` @`0x7694`/`0x7695`, which
+together advance exactly four), `DLG_LINE_ASSET_ID_OFFSET` (2 — `mov si,[bx+2]`
+@`0x9D6E`), `DLG_ASSET_NAME_STRIDE` (16 — `shl ax,4` @`0x768E`).
+
+Citations: 613 verified (from 607), 0 wrong. 607 lib tests, 0 failures.

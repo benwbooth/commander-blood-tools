@@ -410,6 +410,10 @@ pub const DLG_LINE_ASSET_ENTRY_STRIDE: u16 = 4;
 pub const DLG_LINE_ASSET_ID_OFFSET: u16 = 2;
 /// `line_id = sign_extend(b3) + 9` (`0x11F5`).
 pub const DLG_LINE_ID_BIAS: i16 = 9;
+/// Base the fill adds after scaling: `add ax, 0xdd7` @`0x7691` (audit-fixes
+/// #318). A source byte of 1 therefore stores `0x0DD7` exactly — the value the
+/// `DLGTABLE` probe saw and the old doc could not account for.
+pub const DLG_ASSET_NAME_TABLE_BASE: u16 = 0x0DD7;
 /// Stride of the name table the asset id offsets into (`shl ax,4`, `0x768E`).
 pub const DLG_ASSET_NAME_STRIDE: u16 = 16;
 /// `0xFFFF` = no asset for this line (`cmp si,-1`, `0x9D71`).
@@ -467,18 +471,28 @@ pub fn dlg_line_asset_id_ds_offset(line_id: i16) -> Option<u16> {
 /// Negative bytes pass through sign-extended (so `0xFF` becomes `0xFFFF`, the exact
 /// "no asset" sentinel the reader tests); otherwise the stored value is `(byte - 1) * 16`.
 ///
-/// CAVEAT, from the `DLGTABLE` probe: this describes the INSTRUCTIONS at `0x7684`, and
-/// nothing more. Do not read it as "this is what the table contains". In the hub
-/// savestate the live `+2` fields hold `0x0DD7`, which is not 16-aligned and points into
-/// an `fd\xxxxxxxxxxxx` path template's name field. So either another path populates the
-/// table in that state, or this value is later replaced. The earlier gloss calling the
-/// result "a byte offset into a 16-byte-stride name table" was an inference beyond the
-/// instructions and the probe falsified it.
+/// CAVEAT RESOLVED (audit-fixes #318). The probe observed `0x0DD7` in the live `+2`
+/// fields and could not explain it; the reason is that the port was MISSING A TERM.
+/// The fill does not store `(byte - 1) * 16` — it stores that PLUS A BASE:
+///
+/// ```text
+///   0x768B  js  0x7694        negative -> store sign-extended, untouched
+///   0x768D  dec ax
+///   0x768E  shl ax, 4         (byte - 1) * 16
+///   0x7691  add ax, 0xdd7     <- THE BASE the port dropped
+///   0x7694  stosw
+/// ```
+///
+/// So a source byte of 1 stores exactly `0x0DD7`, which is precisely what the
+/// savestate showed. The value was never unexplained data — it was the base with
+/// a zero index on top, and the port returned 0 where the game returns `0xDD7`.
 pub fn dlg_line_asset_id_from_source_byte(byte: u8) -> u16 {
     if (byte as i8) < 0 {
         return i16::from(byte as i8) as u16;
     }
-    (u16::from(byte).wrapping_sub(1)).wrapping_mul(DLG_ASSET_NAME_STRIDE)
+    (u16::from(byte).wrapping_sub(1))
+        .wrapping_mul(DLG_ASSET_NAME_STRIDE)
+        .wrapping_add(DLG_ASSET_NAME_TABLE_BASE)
 }
 
 pub fn text_selector_requests_voice(selector: u8) -> bool {
@@ -9800,13 +9814,26 @@ mod tests {
         // produce EXACTLY the sentinel the reader tests at 0x9D71.
         assert_eq!(dlg_line_asset_id_from_source_byte(0xFF), DLG_LINE_ASSET_NONE);
         assert_eq!(dlg_line_asset_id_from_source_byte(0xFE), 0xFFFE);
-        // Non-negatives become (byte-1)*16 -- a NAME-TABLE BYTE OFFSET, not an ordinal.
-        assert_eq!(dlg_line_asset_id_from_source_byte(1), 0);
-        assert_eq!(dlg_line_asset_id_from_source_byte(2), 16);
-        assert_eq!(dlg_line_asset_id_from_source_byte(5), 64);
-        // Every non-negative result is name-table aligned.
+        // Non-negatives become (byte-1)*16 PLUS THE BASE 0xDD7 (`add ax,0xdd7`
+        // @0x7691). CORRECTED in audit-fixes #318 -- this asserted the scaled
+        // value alone, which is the term the port was missing, and the alignment
+        // loop below asserted a property the base makes false. The doc's own
+        // caveat had already noticed 0x0DD7 "is not 16-aligned" without
+        // connecting it to a dropped addend.
+        assert_eq!(
+            dlg_line_asset_id_from_source_byte(1),
+            DLG_ASSET_NAME_TABLE_BASE,
+            "byte 1 is index 0 ON THE BASE -- exactly the 0x0DD7 the probe saw"
+        );
+        assert_eq!(dlg_line_asset_id_from_source_byte(2), DLG_ASSET_NAME_TABLE_BASE + 16);
+        assert_eq!(dlg_line_asset_id_from_source_byte(5), DLG_ASSET_NAME_TABLE_BASE + 64);
+        // Every non-negative result is name-table aligned RELATIVE TO THE BASE.
         for b in 1..=0x7Fu8 {
-            assert_eq!(dlg_line_asset_id_from_source_byte(b) % DLG_ASSET_NAME_STRIDE, 0);
+            let v = dlg_line_asset_id_from_source_byte(b);
+            assert_eq!(
+                v.wrapping_sub(DLG_ASSET_NAME_TABLE_BASE) % DLG_ASSET_NAME_STRIDE,
+                0
+            );
         }
 
         // And the contrast that matters: the port's ordinal rule is a different
