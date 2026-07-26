@@ -13356,3 +13356,31 @@ connects "this field is now signed" to "someone casts it to usize".
 
 2228 items, 1093 confirmed (49.1%), 1135 open. 730 citations verified, 0 wrong.
 615 lib tests, 0 failures.
+
+## #406 — the vtable is real, but not where a static dump can see it
+
+`AlienMethod` claims the behaviour method is "selected via the vtable at
+`fs:0x103A` (near-ptr entries indexed by `bx = [di+0x34]`)". Dumping `0x103A` out
+of `croolis.xdb` gives TWELVE ZERO WORDS — which, taken alone, reads as "there is
+no such table".
+
+It is the same shape as `fs:0x105C` in #400: the overlay's `fs` segment is
+zero-initialised in the file and filled at runtime. A static dump cannot verify a
+runtime table, and reporting the zeros as the answer would have been the error.
+
+The CODE settles it instead, at both dispatch sites:
+
+    0x1CFC  mov bx, word ptr fs:[di + 0x34]     the index, out of the object
+    0x1D00  call word ptr fs:[bx + 0x103a]      the vtable call
+
+So the claim holds exactly, including that `bx` is used unscaled — `[di+0x34]`
+holds a byte offset, not an entry number. And `0x1D27`, named as the null method,
+is a bare `ret`. Settled ASM.
+
+The general rule this instance sharpens: for an OVERLAY, "the bytes at that
+address are zero" is evidence about the FILE, not about the table. Ask what reads
+it. Two of this file's key structures — the PRNG stream and the vtable — are
+invisible to a static dump and fully determined by their access sites.
+
+2228 items, 1094 confirmed (49.1%), 1134 open. 730 citations verified, 0 wrong.
+615 lib tests, 0 failures.
