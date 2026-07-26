@@ -7732,3 +7732,36 @@ prose form, #211's mixed queue, now this): A TOOL'S OWN "SKIPPED" COUNT IS A
 CLAIM ABOUT WHAT IT CANNOT SEE, and deserves the same scrutiny as its findings. A
 guard reporting "0 wrong" alongside "83 skipped" is reporting two things, and only
 one of them is reassuring.
+
+## #250 — auditing two more quiet numbers, and finding them sound
+
+#249 audited the citation guard's skip count and found a real gap. The same
+treatment applied to two other quiet claims produced NEGATIVE results, which are
+worth recording because an audit that only reports when it finds something is
+indistinguishable from one that was never run.
+
+`classify_plumbing.py`: "674 unsettled fn(s); 0 are pure plumbing". Zero looked
+implausible for a tree this size. An independent check — a different pattern,
+written without reference to the tool's — also finds zero single-expression
+accessors among unsettled rows. The claim holds: the trivial accessors were
+settled INFRA in earlier passes, and what remains genuinely carries rules.
+
+`check_content_literals.py`: "369 long string literals in runtime code, 0 reading
+as game text". Probing for the shape it would most plausibly miss — ALL-CAPS
+multi-word strings, which is what this game's UI text looks like — surfaced 14.
+Every one checks out:
+
+  * `HELLO COMMANDER`, `CAP'N BOB SPEAKS`, `CLICK ON THE RED BUTTON`,
+    `LIFE SUPPORT:` and the rest sit INSIDE `#[cfg(test)]` modules, where they are
+    the EXPECTED values of text read out of `BLOODPRG.EXE` — the opposite of a
+    hardcoded literal, since each one asserts the port got it from the binary;
+  * `COMMANDER-BLOOD-SAVE 1` is the port's own save-file magic, and its doc says
+    so ("the port's line-based save text"). The port also writes the DOS-format
+    slot files separately; this is a labelled port format, not a claim about the
+    game's.
+
+So both guards are sound where I could probe them. That is a smaller result than
+#249's, and it is the reason to record it: the value of auditing a tool's quiet
+numbers does not depend on the audit finding a bug, and reporting only the hits
+would leave the impression that unaudited numbers are more suspect than audited
+ones that came back clean.
