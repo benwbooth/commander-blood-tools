@@ -182,7 +182,13 @@ struct WorldVisit {
 }
 
 /// Screen dimensions of the engine framebuffer (VGA mode 13h / mode-X, 320x200).
+/// 320, and it is never an immediate — the game builds the row stride from two
+/// shifts, `xchg bh,bl` (y*256) plus `shl ...,6` (y*64), at `0x9B25`..`0x9B2C` in
+/// the star plot and again at `0x50C4` in the dirty-rect walker (audit-fixes #502,
+/// #506). Searching the image for `0x140` finds nothing.
 pub const ENGINE_SCREEN_WIDTH: usize = 320;
+/// 200 rows — `mov word ptr [0x523b],0xc8` @`0xB41D`, the value the navigation
+/// routine RESTORES the clip bottom to after narrowing it (audit-fixes #495).
 pub const ENGINE_SCREEN_HEIGHT: usize = 200;
 
 /// Days-since-Unix-epoch → (year, month, day) civil date (Howard Hinnant's `civil_from_days`).
@@ -2166,6 +2172,8 @@ impl EngineState {
     /// it, clears `[0x2739]` and jumps STRAIGHT into `vm_state_save` (`0x1C3F`) —
     /// a save with no rename prompt. The port had no quicksave at all.
     pub const QUICKSAVE_SLOT_NAME: &'static str = "LAST";
+    /// `mov di,0x270d` @`0x1B5B`, the slot-name buffer the quicksave copies `LAST`
+    /// into before jumping straight to `vm_state_save` (audit-fixes #525).
     pub const QUICKSAVE_NAME_BUFFER_DS: u16 = 0x270D;
 
     /// The DS offsets whose strings this engine draws. Each is cited on its own
@@ -2267,8 +2275,17 @@ impl EngineState {
     /// `(180, 105, 20, 10)`. Two separate tables describing the same layout is
     /// about as good as static corroboration gets.
     pub const CONFIRM_BOX: (usize, usize, usize, usize) = (90, 80, 140, 40);
+    /// `add bx,0xa` @`0x1501` (x = the box's 90 + 10) and `mov dx,0x58` @`0x1504`
+    /// (y = 88, ABSOLUTE) — the anchor the other two rows step from
+    /// (audit-fixes #525).
     pub const CONFIRM_TITLE_POS: (usize, usize) = (100, 88);
+    /// Position by RELATIVE steps from the title: `add bx,0x14` @`0x150F` (+20 ->
+    /// 120) and `add dx,0x11` @`0x1512` (+17 -> 105). The extent `(30, 10)` comes
+    /// from the region record the doc above cites (audit-fixes #525).
     pub const CONFIRM_YES_REGION: (usize, usize, usize, usize) = (120, 105, 30, 10);
+    /// `add bx,0x3c` @`0x151D` (+60 -> 180) with NO further `add dx`, so NO shares
+    /// YES's row — one `add` is the whole difference between the two buttons
+    /// (audit-fixes #525).
     pub const CONFIRM_NO_REGION: (usize, usize, usize, usize) = (180, 105, 20, 10);
     /// The game's own strings, READ from the image rather than transcribed
     /// (audit-fixes #524). The table keeps the `(DS offset, file offset)` pairs as

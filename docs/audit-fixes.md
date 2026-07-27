@@ -17406,3 +17406,38 @@ and the engine's loaded string must equal it. No literal appears anywhere in the
 assertion.
 
 622 tests, 0 failures.
+
+## #525 — the confirm dialog is ONE anchor and three `add`s
+
+Six `engine.rs` constants, and the confirm geometry is the interesting half.
+
+The port stores three independent-looking coordinate tuples. The game stores one
+anchor and steps it:
+
+```text
+  0x1501  add bx, 0xa      x = the box's 90, + 10       TITLE
+  0x1504  mov dx, 0x58     y = 88, the only ABSOLUTE y
+  0x150F  add bx, 0x14     +20 -> 120                   YES
+  0x1512  add dx, 0x11     +17 -> 105
+  0x151D  add bx, 0x3c     +60 -> 180                   NO
+```
+
+NO has no `add dx` of its own — it inherits YES's row, so a single `add bx` is the
+entire difference between the two buttons. Three tuples in the port; three
+instructions in the game. Anyone nudging the title's y in the port must move two
+other constants to match, and nothing said so until now.
+
+`ENGINE_SCREEN_WIDTH` and `ENGINE_SCREEN_HEIGHT` were uncited in the file that
+defines them for the whole port. Both are now sourced to instructions found earlier
+in this session rather than re-derived: 320 is the `xchg bh,bl` + `shl ...,6` row
+stride (#502, and the same idiom again in the dirty-rect walker, #506), and 200 is
+`mov word ptr [0x523b],0xc8` @`0xB41D`, the clip bottom the navigation routine
+restores (#495). Neither number appears as an immediate anywhere — which is why
+they had gone uncited while a dozen constants derived FROM them were settled.
+
+That is the pattern worth naming: the most fundamental constants are the last to get
+citations, because nothing about them looks uncertain. 320x200 is obviously right,
+so nobody checks where the game says it — and "obviously right" is exactly the
+status that survives a wrong value.
+
+622 tests, 0 failures.
