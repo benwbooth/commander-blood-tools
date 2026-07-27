@@ -14582,3 +14582,38 @@ replacement column but reading the item.
 
 2229 items, 1117 confirmed (50.1%), 1112 open. 762 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #444 — narrowing the HUD pyramid projection, and stopping short of claiming it
+
+#443 restored the honest state of `SHIP_3D_HUD_PYRAMID_VERTICES`: the vertex bytes
+are data-backed, the PROJECTION that consumes them is unlocated, and the doc names
+the task — find what turns the `0x5491` verts into `0x6212` display-list records.
+Worked it as far as it goes cleanly.
+
+Both addresses are base-register loaded, so a direct-address census reports ZERO
+for each — the #388 shape again, and the reason to scan `B8+r imm16` instead:
+
+  * `0x5491` has exactly TWO immediate loads: `mov di, 0x5491` @`0xB09D` and
+    `mov si, 0x5491` @`0xB166`. BOTH are `rep movsd` of `0x10` dwords. Neither
+    reads vertices; at those sites `0x5491` is a 64-byte copy buffer. So the
+    projection is not at either, which removes the two most obvious candidates.
+  * `0x5491` = `live_palette` (`DS:0x5251`) + `0x240` = palette entry 192. That is
+    the palette/vertex alias resolved earlier from a byte comparison, now confirmed
+    from the ARITHMETIC — the verts and DAC colours 192..255 are the same storage,
+    not merely equal.
+  * `0x6212` has 19 immediate loads, 17 of them in `0x40D0..0x44A2` (the
+    entity-flag accessor family) and two elsewhere: `0x90D9` and `0x9241`, in the
+    entity-draw region. Those two are where a projection writing display-list
+    records would have to live.
+
+STOPPING THERE. The item's own doc says this is "genuinely multi-session: needs
+the projection→position math AND the pyramid sprite source", and I have narrowed
+the search rather than found the routine. Writing "the projection is at 0x9241"
+because it is the remaining candidate is exactly what #443 caught me doing one
+entry ago with `0x9BBA`.
+
+What the next pass inherits: two ruled-out sites, a confirmed alias, and two
+addresses to read.
+
+2229 items, 1117 confirmed (50.1%), 1112 open. 764 citations verified, 0 wrong.
+723 workspace tests, 0 failures.

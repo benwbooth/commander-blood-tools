@@ -2707,6 +2707,22 @@ pub const SHIP_3D_HUD_BAND_TOP: usize = 165; // 165
 /// not a pure 3D wireframe. This reframes the render as hybrid (3D-projected placement
 /// + sprite blit) and is why single-routine estimates kept being wrong. Genuinely
 /// multi-session: needs the projection→position math AND the pyramid sprite source.
+///
+/// NARROWED (audit-fixes #444), without closing it. `0x5491` has exactly TWO
+/// immediate loads in the image — `mov di, 0x5491` @`0xB09D` and
+/// `mov si, 0x5491` @`0xB166` — and BOTH are `rep movsd` block copies of `0x10`
+/// dwords (64 bytes), not vertex reads. So neither is the projection; at those
+/// two sites `0x5491` is a 64-byte copy buffer.
+///
+/// And `0x5491` is `live_palette` (`DS:0x5251`) + `0x240` = palette entry 192 —
+/// the palette/vertex alias resolved in commit `bd930b8`, confirmed here from the
+/// arithmetic rather than from the earlier byte comparison. The verts and DAC
+/// colours 192..255 genuinely are the same storage.
+///
+/// `0x6212` has 19 immediate loads, all but two clustered in `0x40D0..0x44A2` —
+/// the entity-flag accessor family — plus `0x90D9` and `0x9241`. Those two, in the
+/// entity-draw region, are where a projection writing display-list records would
+/// have to be, and are the next place to look.
 pub const SHIP_3D_HUD_PYRAMID_VERTICES: [[i16; 3]; 32] = [
     [0, 2304, 3075],
     [776, 1803, 2820],
