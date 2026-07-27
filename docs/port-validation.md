@@ -1775,8 +1775,22 @@ incrementing it beside `[0xd60]`/`[0xd62]`. If those run once per playback frame
 port's 10 Hz may be right; if they run per resource load, a cue tick is not a time
 unit at all and `/10.0` is meaningless rather than merely wrong.
 
-**What would settle it.** Determine how often `resource_load_sequence` /
-`ems_resource_flush` run during a montage — from their callers, not from a capture.
+**CALLERS FOUND, hypothesis narrowed (audit-fixes #568).** Both routines have
+exactly one calling region: `call 0xa15f` @`0x9E73` and `call 0xa1b4` @`0x9EAC`
+(plus `0xA138`, internal). The code immediately after the first call reads
+`[0x6788]` — `vm::VM_ACTIVE_LINE` — and compares it against `[0x678a]`, storing the
+new value @`0x9E8C`. So the caller is a per-update path that tracks ACTIVE LINE
+CHANGES, not a rare resource load.
+
+LEADING HYPOTHESIS, not a conclusion: `[0x131c]` increments once per scene update,
+so a DESCRIPT cue tick is a FRAME COUNT. If that update runs at the game tick
+(`GAME_TICK_SECS`, ~25 Hz, #549), the port's `/10.0` is wrong by 2.5x — the same
+class of error #549 fixed, in the same file.
+
+**What would still settle it.** Walk the call chain from `0x9E73`'s enclosing
+routine up to the main loop and establish its rate. The enclosing entry is NOT
+`0x9CF7` (`project_tail_9bba`, a 12-instruction tail that `check_label_alignment`
+already flags as misaligned) — the backward-scan heuristic lands there falsely.
 (`GAME_TICK_SECS` is 39.948 ms, ~25 Hz, so a 10 Hz cue unit would be a DIFFERENT
 clock and worth knowing about; 25 Hz would mean the divisor is wrong by 2.5x).
 

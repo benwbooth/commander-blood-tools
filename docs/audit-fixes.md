@@ -18855,3 +18855,37 @@ Three entries of elimination (#551, #566) plus this one have moved the search fr
 shape progress takes when the answer is not where the obvious search looks.
 
 726 tests, 0 failures.
+
+## #568 — the cue clock's callers, and a leading hypothesis I am not settling on
+
+#567 asked how often `resource_load_sequence` and `ems_resource_flush` run, since
+they are the only two incrementers of the DESCRIPT cue clock `[0x131c]`. Both have
+exactly one calling region — `call 0xa15f` @`0x9E73`, `call 0xa1b4` @`0x9EAC` — and
+what follows the first call is the tell:
+
+```text
+  0x9E73  call 0xa15f              resource_load_sequence
+  0x9E76  mov al,[0x252a] / or al,[0x274f]
+  0x9E81  mov ax,[0x6788]          <- vm::VM_ACTIVE_LINE
+  0x9E84  cmp ax,[0x678a]          <- against its previous value
+  0x9E8C  mov [0x678a],ax          <- and remember it
+```
+
+A routine that reads the active line and compares it to what it was last time is a
+PER-UPDATE path, not a resource-management corner. So the clock most likely ticks
+once per scene update, and a DESCRIPT cue tick is most likely a FRAME COUNT.
+
+WHICH WOULD MAKE THE PORT WRONG BY 2.5x — the same class of error as #549, in the
+same file, if the update runs at the ~25 Hz game tick. I am not recording that as a
+finding, because "most likely" is doing the work and the difference between a
+hypothesis and a decode is exactly what this campaign is for. The step that settles
+it is named in the matrix row: walk the call chain up to the main loop.
+
+ONE PRACTICAL NOTE for whoever does. My backward entry-scan put `0x9E73`'s enclosing
+routine at `0x9CF7`, which is `project_tail_9bba` — a 12-instruction tail that
+`check_label_alignment.py` ALREADY flags as misaligned ("`0x09cf5 add` spans it, and
+NOTHING branches to it"). The heuristic finds a `ret` followed by a prologue-looking
+byte and cannot tell that from a real entry. Two tools disagreed and the checker was
+right; the enclosing routine is still unidentified.
+
+726 tests, 0 failures.
