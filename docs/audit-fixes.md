@@ -14966,3 +14966,28 @@ than a value, which is why neither showed up as a failing test.
 
 2229 items, 1119 confirmed (50.2%), 1110 open. 791 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #456 — a parameter read by its position, not its name
+
+Following #455's open question — does any shipped script nest concept menus more
+than one deep? — I reached for `decode_menus(bas, dic, 3)` as evidence that the
+port assumes nesting up to three, and said so before checking.
+
+The signature is `decode_menus(bas: &[u8], dic: &[u8], min_labels: usize)`. The
+`3` is a filter on menu SIZE — only menus with at least three labels are decoded —
+and says nothing whatever about depth. The function returns a FLAT list of every
+`0xA3` menu in the script.
+
+So #455's question stands unanswered rather than answered: nesting depth is a
+runtime property of how the conversation is navigated (push on entering a submenu,
+pop on `bye_bye`/`talk`), not a static property of the `.BAS` I can count.
+
+Small, and worth an entry only for the mechanism: I read a bare integer argument
+and supplied a meaning from what I was looking for, which is the same move as
+#443's replacement column filled from a nearby memory and #432's blob measured
+because I had it. Three instances in this session of the same habit — reaching for
+the nearest plausible source rather than the actual one — and the check is always
+the same and always cheap: open the thing.
+
+2229 items, 1119 confirmed (50.2%), 1110 open. 791 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
