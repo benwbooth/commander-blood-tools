@@ -19684,3 +19684,44 @@ A guard also caught me citing a verifying test by a name that does not exist
 (`every_doc_named_verifier_exists`); corrected to the real one.
 
 732 tests, 0 failures.
+
+## #592 — a floor under the 461 undocumented functions, and three ways it lied
+
+327 of the open function rows have no doc comment, and many are one-line accessors
+with genuinely nothing to cite. `tools/classify_trivial_fns.py` separates those
+mechanically, because deciding by eye is how a routine that merely LOOKS short gets
+settled.
+
+A function is TRIVIAL only when its body is <= 3 lines AND contains no arithmetic or
+bit operator, no cast, no indexing, no ordering comparison, no loop or match, and no
+literal above 1. Anything else stays on the queue. It is a floor on what can be
+dismissed, not a ceiling on what must be read — the 16-bit subtract of #586 was ONE
+line, and would fail every one of those filters.
+
+THE TOOL WAS WRONG THREE TIMES BEFORE IT WAS RIGHT, each time in the same direction —
+calling something trivial that was not:
+
+1. `bridge::wrap` is `value.rem_euclid(modulus)`. No operator character, so it passed:
+   a modular wrap, which is a decoded rule in one line. Added the numeric METHODS
+   (`rem_euclid`, `wrapping_*`, `saturating_*`, `to_le_bytes`, ...).
+2. `vm::text_selector_requests_voice` is
+   `selector != TEXT_SELECTOR_NONE && selector != TEXT_SELECTOR_SILENT`. Two `!=`
+   and nothing else — but it is ENTIRELY a decoded rule about which selector values
+   ask for voice, and `TEXT_SELECTOR_SILENT` is itself an open row (#512). Settling
+   its only consumer would have buried the question. Any SCREAMING_CASE name in the
+   body now counts as a rule shape.
+3. `rd_u8` and its four siblings are whole functions on ONE LINE. The extractor
+   started collecting from the line AFTER the signature, returned an EMPTY body,
+   matched no rule shape, and declared them trivial — trivial BECAUSE THEY HAD NOT
+   BEEN READ. That is the #543 failure exactly. An empty extraction is now UNKNOWN,
+   and the signature line's tail is included.
+
+Each correction moved rows OFF the settle list: 23 candidates became 20, then 17,
+then 15. A classifier that keeps shrinking as it improves was over-claiming, which
+is the direction that matters here — the 15 that survive are field reads and
+one-line delegations, settled INFRA.
+
+446 functions remain to be read. That number going UP as the tool got honest is the
+point of recording it.
+
+732 tests, 0 failures.

@@ -6,7 +6,7 @@ AudioMixer	src/audio.rs	62	struct		INFRA	/// The shared mixer: every playing sou
 render	src/audio.rs	74	fn		UNVERIFIED	/// Fill `out` with unsigned 8-bit PCM, layering every active source, and drop /// the ones that have ended. /// /// Sources are folded in insertion order, which matters: the layered average /// weigh
 add	src/audio.rs	94	fn		INFRA	/// Add a source; returns its handle id.
 remove	src/audio.rs	101	fn		INFRA	
-active	src/audio.rs	105	fn		UNVERIFIED	
+active	src/audio.rs	105	fn		INFRA	
 MIXER	src/audio.rs	111	static		UNVERIFIED	/// The process-wide mixer. One device stream, however many sounds.
 OUTPUT	src/audio.rs	112	static		UNVERIFIED	
 DEVICE_RATE	src/audio.rs	114	static		UNVERIFIED	/// The device rate the shared stream opened at, needed to compute a source step.
@@ -221,7 +221,7 @@ SndEntryCallSite	src/bloodprg.rs	685	struct		UNVERIFIED
 SndBankLoadCallSite	src/bloodprg.rs	699	struct		UNVERIFIED	
 RenderCallSite	src/bloodprg.rs	720	struct		UNVERIFIED	
 BloodPrg	src/bloodprg.rs	735	struct		UNVERIFIED	
-parse_file	src/bloodprg.rs	741	fn		UNVERIFIED	
+parse_file	src/bloodprg.rs	741	fn		INFRA	
 parse	src/bloodprg.rs	747	fn		UNVERIFIED	
 summary	src/bloodprg.rs	777	fn		TESTED	
 image_bytes	src/bloodprg.rs	792	fn		INFRA	/// The raw image bytes, so a test can read an INSTRUCTION back and check a /// constant against the immediate the code actually uses.
@@ -607,7 +607,7 @@ set_nav_chart_objects	src/engine.rs	4972	fn	0x604E,0x721A	ASM	/// Set the RECORD
 nav_chart_objects	src/engine.rs	4976	fn		INFRA	
 nav_chart_object_click	src/engine.rs	4983	fn	0x92A3	ASM	/// Hit-test a click against the chart markers, exactly as `0x92A3` does: /// the box starts 2px up-left of the marker, its size comes from the object's /// kind, and BOTH bounds are inclusive. Return
 nav_destination_label	src/engine.rs	4993	fn		UNVERIFIED	/// The number of nav destinations currently offered. /// The label of nav destination `i` (the location's character name), if present.
-nav_destination_count	src/engine.rs	4997	fn		UNVERIFIED	
+nav_destination_count	src/engine.rs	4997	fn		INFRA	
 nav_destination_click	src/engine.rs	5002	fn		UNVERIFIED	/// Map a click on the nav chart to a destination index, matching the list layout.
 visit_nav_destination	src/engine.rs	5016	fn		UNVERIFIED	/// Visit the chosen nav destination — play that character's decoded dialogue. Returns /// whether the index was valid.
 render_ship_view	src/engine.rs	5027	fn	0x604E,0x721A	ASM	/// Render the on-ship nav view. With the real chart (`CHART.FD`) loaded this draws /// that star-map background (nebula + destinations + console) and a heading cursor; /// otherwise it falls back to 
@@ -664,20 +664,22 @@ GAME_FONT_CHAR_MAP	src/font.rs	144	const	0x14c22,0x14cd2,0x14d27,0x14d28,0x7802,
 GAME_FONT_WIDTHS	src/font.rs	159	const		DATA	
 GAME_FONT_GLYPHS	src/font.rs	169	const		DATA	
 draw_text_indexed	src/font.rs	260	fn		UNVERIFIED	/// Draw `text` into a `width`-stride indexed framebuffer at (`x`,`y`) in `color` /// using the game font (spaces advance without drawing). Clipped; returns end x.
-BoldConsoleFont	src/font.rs	510	struct	0x145CA,0x71AA,0x1451A,0x70FA	ASM	/// The BOLD console/tutorial subtitle font, loaded from the user's /// `BLOODPRG.EXE` (glyph bitmaps at file 0x145CA = DS:0x71AA, ascii->glyph map /// at file 0x1451A = DS:0x70FA; verified byte-ident
-GLYPH_MAP_FILE_OFFSET	src/font.rs	522	const	0x70FA,0x1451A,0x70fa,0x3684,0x3687,0x36D7,0x3689	ASM	/// `DS:0x70FA` (file `0x1451A`), loaded `mov bx,0x70fa` @`0x3684` /// and used by `xlatb` @`0x3687` — so it is a 256-byte TRANSLATE TABLE indexed /// by the character code, not a list to search. A NE
-GLYPHS_FILE_OFFSET	src/font.rs	526	const	0x71AA,0x145CA,0x71aa,0x368D,0x3691	ASM	/// `DS:0x71AA` (file `0x145CA`), loaded `mov bp,0x71aa` @`0x368D`, /// then indexed `shl ax,3 / add bp,ax` @`0x3691` with the glyph index the /// `xlatb` above produced (audit-fixes #536).
-ADVANCE	src/font.rs	530	const	0x3691	ASM	/// 8, and the binary says so as a SHIFT: `shl ax,3` @`0x3691` scales the glyph /// index into the bitmap table, so each glyph is 8 bytes — one byte per row, /// which is what makes the glyph 8 pixels
-load_from_exe	src/font.rs	533	fn		UNVERIFIED	/// Load from a BLOODPRG.EXE image. Returns None if the file is too short.
-draw	src/font.rs	552	fn		UNVERIFIED	/// Draw `text` at (x, y) in palette index `color`, exactly as the game's /// console text renderer lays glyphs out (monospace 8).
-SQUARE_CAPS_GLYPHS	src/font.rs	608	const	0x30CD,0x7362,0x7412,0x7802,0x78B2,0x7442,0x14862	DATA	/// The SQUARE-CAPITALS face used by the game's list menus and choice boxes /// (index-0xE8 text). /// /// EXTRACTED FROM THE BINARY, not harvested from captures. The face is the game's /// SECOND fon
-SQUARE_CAPS_WIDTHS	src/font.rs	665	const	0x7412,0x14832	DATA	/// Per-glyph advances at `DS:0x7412` (file `0x14832`), indexed by glyph. /// /// The old code derived the advance from the bitmap as `rightmost_set_column + 1 + 2`. /// That heuristic is CORRECT — it
-SQUARE_CAPS_CHAR_MAP	src/font.rs	670	const	0x7362,0x14782	DATA	/// CP437 -> square-caps glyph index, `DS:0x7362` (file `0x14782`). `0xff` = no glyph.
-square_caps_glyph_index	src/font.rs	690	fn	0x7362	ASM	/// Square-caps glyph index for a character, via the game's own xlat at `DS:0x7362`. /// /// The table FOLDS CASE itself (`'a'` and `'A'` both map to glyph 0) and maps space to /// glyph 47, so the po
-square_caps_glyph	src/font.rs	698	fn		UNVERIFIED	
-square_caps_advance	src/font.rs	704	fn	0x7412	ORACLE	/// This glyph's advance, from the game's width table at `DS:0x7412`.
-square_caps_text_width	src/font.rs	726	fn	0x30CD,0x30FE,0x7442,0x84AD,0x84B3,0xAC6	ORACLE	/// Rendered pixel width of a square-caps string. /// /// This is the measure routine at `0x30CD` transcribed: `lodsb` / `xlatb` / /// `add dl, [di+glyph]` accumulating each glyph's width, then `sub a
-draw_square_caps	src/font.rs	738	fn		UNVERIFIED	/// Draw square-capitals text (list menus / choice boxes) at (x, y) in `color`. /// /// Every glyph now comes from the binary table, so there is no longer a fallback into /// the thin built-in font — 
+BoldConsoleFont	src/font.rs	560	struct	0x145CA,0x71AA,0x1451A,0x70FA	ASM	/// The BOLD console/tutorial subtitle font, loaded from the user's /// `BLOODPRG.EXE` (glyph bitmaps at file 0x145CA = DS:0x71AA, ascii->glyph map /// at file 0x1451A = DS:0x70FA; verified byte-ident
+GLYPH_MAP_FILE_OFFSET	src/font.rs	572	const	0x70FA,0x1451A,0x70fa,0x3684,0x3687,0x36D7,0x3689	ASM	/// `DS:0x70FA` (file `0x1451A`), loaded `mov bx,0x70fa` @`0x3684` /// and used by `xlatb` @`0x3687` — so it is a 256-byte TRANSLATE TABLE indexed /// by the character code, not a list to search. A NE
+GLYPHS_FILE_OFFSET	src/font.rs	576	const	0x71AA,0x145CA,0x71aa,0x368D,0x3691	ASM	/// `DS:0x71AA` (file `0x145CA`), loaded `mov bp,0x71aa` @`0x368D`, /// then indexed `shl ax,3 / add bp,ax` @`0x3691` with the glyph index the /// `xlatb` above produced (audit-fixes #536).
+ADVANCE	src/font.rs	580	const	0x3691	ASM	/// 8, and the binary says so as a SHIFT: `shl ax,3` @`0x3691` scales the glyph /// index into the bitmap table, so each glyph is 8 bytes — one byte per row, /// which is what makes the glyph 8 pixels
+MAP_LEN	src/font.rs	590	const	0x145CA,0x1451A	CELL?	/// 176 (`0xB0`) — the map's extent, MEASURED as the gap to the glyph table: /// `0x145CA - 0x1451A`. The same 176 as the thin face's map, and for the same /// reason: entries past 128 are the accente
+glyph_index	src/font.rs	594	fn	0x3687	CELL?	/// This character's glyph index in the map, or `None` for the `0xFF` skip. /// Indexed by CP437 byte, matching `xlatb` @`0x3687`.
+load_from_exe	src/font.rs	603	fn		UNVERIFIED	/// Load from a BLOODPRG.EXE image. Returns None if the file is too short.
+draw	src/font.rs	623	fn		UNVERIFIED	/// Draw `text` at (x, y) in palette index `color`, exactly as the game's /// console text renderer lays glyphs out (monospace 8).
+SQUARE_CAPS_GLYPHS	src/font.rs	682	const	0x30CD,0x7362,0x7412,0x7802,0x78B2,0x7442,0x14862	DATA	/// The SQUARE-CAPITALS face used by the game's list menus and choice boxes /// (index-0xE8 text). /// /// EXTRACTED FROM THE BINARY, not harvested from captures. The face is the game's /// SECOND fon
+SQUARE_CAPS_WIDTHS	src/font.rs	739	const	0x7412,0x14832	DATA	/// Per-glyph advances at `DS:0x7412` (file `0x14832`), indexed by glyph. /// /// The old code derived the advance from the bitmap as `rightmost_set_column + 1 + 2`. /// That heuristic is CORRECT — it
+SQUARE_CAPS_CHAR_MAP	src/font.rs	744	const	0x7362,0x14782	DATA	/// CP437 -> square-caps glyph index, `DS:0x7362` (file `0x14782`). `0xff` = no glyph.
+square_caps_glyph_index	src/font.rs	764	fn	0x7362	ASM	/// Square-caps glyph index for a character, via the game's own xlat at `DS:0x7362`. /// /// The table FOLDS CASE itself (`'a'` and `'A'` both map to glyph 0) and maps space to /// glyph 47, so the po
+square_caps_glyph	src/font.rs	772	fn		UNVERIFIED	
+square_caps_advance	src/font.rs	778	fn	0x7412	ORACLE	/// This glyph's advance, from the game's width table at `DS:0x7412`.
+square_caps_text_width	src/font.rs	800	fn	0x30CD,0x30FE,0x7442,0x84AD,0x84B3,0xAC6	ORACLE	/// Rendered pixel width of a square-caps string. /// /// This is the measure routine at `0x30CD` transcribed: `lodsb` / `xlatb` / /// `add dl, [di+glyph]` accumulating each glyph's width, then `sub a
+draw_square_caps	src/font.rs	812	fn		UNVERIFIED	/// Draw square-capitals text (list menus / choice boxes) at (x, y) in `color`. /// /// Every glyph now comes from the binary table, so there is no longer a fallback into /// the thin built-in font — 
 HandTri	src/gpu.rs	14	struct		INFRA	/// One textured triangle of a 3D asset in 320x200 virtual-screen space. /// Vertex layout: x, y (virtual screen), depth (game units), u, v (texel coords).
 GpuPresenter	src/gpu.rs	16	struct		INFRA	
 new	src/gpu.rs	105	fn		INFRA	/// Create over an existing X11 (xcb) window. /// /// # Safety /// `xcb_conn` must be a live xcb_connection_t pointer outliving the presenter.
@@ -690,7 +692,7 @@ HnmFile	src/hnm.rs	49	struct		TESTED
 open	src/hnm.rs	57	fn		TESTED	
 frame_count	src/hnm.rs	89	fn		TESTED	
 decode_frame	src/hnm.rs	99	fn		TESTED	/// Decode frame `idx` into the framebuffer. Returns (sub_width, sub_height, mode). /// Updates palette from any 'pl' chunks in this frame's superchunk.
-decode_character_frame	src/hnm.rs	108	fn		UNVERIFIED	
+decode_character_frame	src/hnm.rs	108	fn		INFRA	
 decode_frame_impl	src/hnm.rs	117	fn		UNVERIFIED	
 raw	src/hnm.rs	237	fn		INFRA	
 header_size	src/hnm.rs	240	fn		INFRA	
@@ -1053,7 +1055,7 @@ Ship3dProceduralUpdateState	src/ship3d.rs	991	struct		UNVERIFIED
 Ship3dProceduralUpdateEffect	src/ship3d.rs	1007	struct		UNVERIFIED	
 Ship3dAngleTableEntry	src/ship3d.rs	1019	struct		DATA	
 SHIP_3D_ANGLE_TABLE	src/ship3d.rs	1031	const	0x4F45,0x4000,0x2F71	DATA	/// The recovered ship-3D rotation trig table at `DS:0x4F45` in BLOODPRG.EXE: /// 180 `(cosine, sine)` pairs, one per **2 degrees** (index 45 = 90°, 90 = 180°, /// wrapping at 180), stored at Q14 ampl
-e	src/ship3d.rs	1032	fn		UNVERIFIED	
+e	src/ship3d.rs	1032	fn		INFRA	
 Ship3dMatrixAngles	src/ship3d.rs	1076	struct		TESTED	/// Parameter/result shape for [`build_ship_3d_projection_matrix`]. /// /// The fields ARE that routine's decoded values; this type carries no rule /// of its own, so the binary citations live on the 
 Ship3dProjectionMatrix	src/ship3d.rs	1089	struct		TESTED	/// Parameter/result shape for [`build_ship_3d_projection_matrix`]. /// /// The fields ARE that routine's decoded values; this type carries no rule /// of its own, so the binary citations live on the 
 Ship3dProjectionPoint	src/ship3d.rs	1100	struct		TESTED	/// Parameter/result shape for [`project_ship_3d_point`]. /// /// The fields ARE that routine's decoded values; this type carries no rule /// of its own, so the binary citations live on the function r
@@ -1539,7 +1541,7 @@ interpret_line_states_with_context	src/vm.rs	3929	fn		UNVERIFIED
 execute_trace	src/vm.rs	4120	fn		UNVERIFIED	/// Execute the subset of VM control flow that has been tied to concrete handler /// code. This follows A0/A1 condition blocks and direct A4/A9 jumps, while still /// using the same bounded state mode
 execute_trace_with_context	src/vm.rs	4124	fn		INFRA	
 execute_trace_with_overrides	src/vm.rs	4135	fn		UNVERIFIED	/// Execute a concrete VM path, optionally forcing selected condition outcomes. /// Overrides are keyed by conditional opcode offset and are applied only after a /// real condition has been decoded at
-execute_trace_with_overrides_and_context	src/vm.rs	4143	fn		UNVERIFIED	
+execute_trace_with_overrides_and_context	src/vm.rs	4143	fn		INFRA	
 execute_trace_from_offset	src/vm.rs	4158	fn		UNVERIFIED	/// Execute a concrete VM path starting at an arbitrary COD `start` offset instead /// of the script entry (0). Used to reach dialogue in named functions that the /// main control flow never calls (ev
 execute_trace_state_with_overrides_and_context	src/vm.rs	4169	fn		UNVERIFIED	
 execute_script_profile_sequence	src/vm.rs	4783	fn		UNVERIFIED	
@@ -1631,7 +1633,7 @@ DialogueSegment	src/extract/character.rs	51	struct		TESTED
 PendingMediaEvent	src/extract/character.rs	61	struct		UNVERIFIED	
 PendingLineMedia	src/extract/character.rs	67	struct		UNVERIFIED	
 PendingDialogueMedia	src/extract/character.rs	73	struct		UNVERIFIED	
-show_speaker	src/extract/character.rs	79	fn		UNVERIFIED	
+show_speaker	src/extract/character.rs	79	fn		INFRA	
 play_talk_hnm	src/extract/character.rs	83	fn		UNVERIFIED	
 play_voice	src/extract/character.rs	90	fn		UNVERIFIED	
 take_line	src/extract/character.rs	97	fn		UNVERIFIED	
@@ -1643,8 +1645,8 @@ silent_dialogue_segment	src/extract/character.rs	131	fn		UNVERIFIED
 dialogue_subtitle_cues	src/extract/character.rs	142	fn		UNVERIFIED	
 mark_last_segment_chatter	src/extract/character.rs	156	fn		UNVERIFIED	
 dialogue_chatter_events	src/extract/character.rs	164	fn		UNVERIFIED	
-dialogue_timeline_path	src/extract/character.rs	183	fn		UNVERIFIED	
-format_seconds	src/extract/character.rs	187	fn		UNVERIFIED	
+dialogue_timeline_path	src/extract/character.rs	183	fn		INFRA	
+format_seconds	src/extract/character.rs	187	fn		INFRA	
 write_dialogue_timeline	src/extract/character.rs	191	fn		TESTED	
 create_character_videos	src/extract/character.rs	271	fn		DATA?	/// Create combined character videos for each DESCRIPT.DES character record that /// uses this SND bank.
 create_character_video_from_scene	src/extract/character.rs	308	fn		DATA?	/// Create a combined character video: all voice clips back-to-back with looping /// foreground animations from DESCRIPT.DES, composited on the location background.
@@ -1780,8 +1782,8 @@ frame	src/extract/render.rs	292	fn		TESTED
 ship_3d_sprite_slot_frame_for_dispatch	src/extract/render.rs	298	fn		TESTED	
 SpriteFrameImage	src/extract/render.rs	311	struct		TESTED	/// One decoded `.spr` frame as a width x height grid of palette indices.
 decode_sprite_bank_indices	src/extract/render.rs	323	fn		TESTED	/// Decode every frame of a `.spr` sprite bank to palette-index grids. The frame /// header is `[0]=width, [2]=height, [4]=x offset, [6]=y offset`; Raw frames are /// `width*height` bytes after the 8-
-blit_raw_transparent_sprite_indexed	src/extract/render.rs	361	fn		UNVERIFIED	
-blit_raw_opaque_sprite_indexed	src/extract/render.rs	370	fn		UNVERIFIED	
+blit_raw_transparent_sprite_indexed	src/extract/render.rs	361	fn		INFRA	
+blit_raw_opaque_sprite_indexed	src/extract/render.rs	370	fn		INFRA	
 blit_rle_transparent_sprite_indexed	src/extract/render.rs	378	fn		UNVERIFIED	
 blit_rle_opaque_sprite_indexed	src/extract/render.rs	396	fn		UNVERIFIED	
 blit_scaled_transparent_sprite_indexed	src/extract/render.rs	413	fn		UNVERIFIED	
@@ -1806,8 +1808,8 @@ draw_game_text_rgb_clipped	src/extract/render.rs	908	fn		UNVERIFIED
 subtitle_glyph_color_index	src/extract/render.rs	938	fn		UNVERIFIED	
 draw_game_glyph_indexed_clipped	src/extract/render.rs	946	fn		UNVERIFIED	
 draw_game_glyph_rgb_clipped	src/extract/render.rs	969	fn		UNVERIFIED	
-subtitle_draw_glyph	src/extract/render.rs	1007	fn		UNVERIFIED	
-game_font_advance	src/extract/render.rs	1019	fn		UNVERIFIED	
+subtitle_draw_glyph	src/extract/render.rs	1007	fn		INFRA	
+game_font_advance	src/extract/render.rs	1019	fn		INFRA	
 SCENE_TOP	src/extract/render.rs	1027	const	0x5239,0x523B,0x2793	CELL?	// Dialogue scene layout, RE'd from BLOODPRG.EXE. The scene is composited in the // framebuffer band `gs:0x5239..0x523B` with black bars / HUD outside. The // letterbox mode (gs:0x2793 & 8) uses rows 
 SCENE_BOTTOM	src/extract/render.rs	1028	const		UNVERIFIED	
 SUBTITLE_X	src/extract/render.rs	1043	const	0x94E6,0x9508,0x5e5c,0x94EA,0x5e5e,0x94EE,0x6a0,0x94F8,0x950	ASM	// BLOODPRG.EXE's reveal renderer, read end to end at 0x94E6..0x9508: // //   0x94E6  mov bx, word ptr [0x5e5c]     X, loaded ONCE before the loop //   0x94EA  mov dx, word ptr [0x5e5e]     Y //   0x9
@@ -1824,7 +1826,7 @@ RuntimeBackground	src/extract/script.rs	40	struct		DATA?	/// A dialogue line's b
 resolve_runtime_backgrounds	src/extract/script.rs	49	fn		DATA?	/// Execute the script (bounded interpreter) and resolve each `0xA6` line's /// runtime location (`state[actor+24]`) to a DESCRIPT background. Returns a map /// from line COD offset to the resolved ba
 parse_script_speech	src/extract/script.rs	97	fn		TESTED	
 parse_script_text_flags	src/extract/script.rs	160	fn		TESTED	
-text_skip_count	src/extract/script.rs	226	fn		UNVERIFIED	
+text_skip_count	src/extract/script.rs	226	fn		INFRA	
 text_control_summary	src/extract/script.rs	230	fn		UNVERIFIED	
 parse_script_disassembly	src/extract/script.rs	263	fn		TESTED	
 parse_script_branch_trace	src/extract/script.rs	323	fn		TESTED	
@@ -2176,7 +2178,7 @@ rd_u64	src/recomp/runtime.rs	402	fn		UNVERIFIED
 rd_u32	src/recomp/runtime.rs	403	fn		UNVERIFIED	
 rd_u16	src/recomp/runtime.rs	404	fn		UNVERIFIED	
 rd_u8	src/recomp/runtime.rs	405	fn		UNVERIFIED	
-rd_bool	src/recomp/runtime.rs	406	fn		UNVERIFIED	
+rd_bool	src/recomp/runtime.rs	406	fn		INFRA	
 rd_str	src/recomp/runtime.rs	407	fn		UNVERIFIED	
 rd_regs	src/recomp/runtime.rs	413	fn		UNVERIFIED	
 new	src/recomp/runtime.rs	545	fn		UNVERIFIED	
