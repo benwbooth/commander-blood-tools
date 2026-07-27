@@ -1912,3 +1912,33 @@ port knows about and three it does not".
 models `0xB079`, by comparing its full effect set — two walker calls, four widget writes, the
 `[0x2795] = 0xB3` panorama frame @`0xB0B1` and `or [0x2793],8` @`0xB0B7` — rather
 than matching constants one at a time.
+
+## APPROX — the credit and TV-cue baselines are CAPTURE-DERIVED (#573)
+
+**The claim in the code.** `engine::INTRO_CREDIT_BASELINE_Y = 82` documents its own
+source: "Native-resolution ground truth (dlg_05, a real 320x200 capture of the
+credit beat): line 1 top y=82, line 2 y=92 (pitch 10)". `TV_CUE_BASELINE_Y = 178`
+sits beside it with no provenance at all.
+
+**Why this is a defect and not a nuance.** `CLAUDE.md`: "Never derive geometry,
+colors, labels, menus, flows, timings, or any other behavior from an oracle capture
+and wire it into the port." A capture may CONFIRM a decoded value; it may not be
+the source. `INTRO_CREDIT_BASELINE_Y` is the honest form of the violation — it says
+what it is — and `TV_CUE_BASELINE_Y` is the quiet form, which is worse: nothing
+marks it for replacement.
+
+**Not deleted, because deleting is not the fix.** These place real on-screen text;
+removing them breaks the credit beat without moving any row toward the binary. The
+rule allows a stand-in ONLY when a row here labels it APPROX and names the routine
+that must replace it, which is what this row is for.
+
+**What must replace them.** The routine that draws the credit lines and the TV cue.
+`0x94EE`'s subtitle reveal takes its y from `[0x5e5e]` (#541), and the cue band is
+plausibly the same mechanism with a different cell — but "plausibly" is exactly
+what #555-#558 spent four entries showing is not enough. Find the draw, read its y
+source, then these two are either confirmed or corrected.
+
+**A note on the earlier value.** The doc records that `~69` came from "scaled DOSBox
+window captures" and 82 from a native-resolution one. That is a capture correcting a
+capture — better measurement of an inadmissible source, and worth keeping in the row
+so the next person does not read the correction as verification.

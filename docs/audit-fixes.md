@@ -18989,3 +18989,33 @@ five would have buried the two that matter; this is the same signal-versus-noise
 line #528 drew for the literal checker.
 
 726 tests, 0 failures.
+
+## #572/#573 — one anchor cited, two baselines that must not be
+
+`CHOICE_BOX_ANCHOR_WORLD = 80` is `mov word ptr [0xac6],0x50` @`0xB0D1` — the write
+#556 found in `ship_3d_hud_init` while chasing something else. It is the same
+`[0xAC6]` cell as `CHOICE_BOX_ANCHOR_CONCEPT` (`0xE1` @`0x89A6`) and the nav
+choice's `0x64` @`0x86D9` (#494). THREE screens, one cell, three anchors — and the
+port now names all three with their own addresses, so nobody collapses them into a
+single "choice box centre".
+
+Its neighbours could not be settled, and the reason is worth a matrix row.
+`INTRO_CREDIT_BASELINE_Y = 82` states its own provenance: "Native-resolution ground
+truth (dlg_05, a real 320x200 capture)". `TV_CUE_BASELINE_Y = 178` states nothing.
+
+Both are capture-derived geometry, which `CLAUDE.md` forbids as a SOURCE. The one
+that declares it is the honest form of the violation; the silent one is worse,
+because nothing marks it for replacement and a reader will take it for a decode.
+
+I did not delete them — they place real on-screen text, and removing them breaks the
+credit beat without moving anything toward the binary. The rule permits a stand-in
+when a matrix row labels it APPROX and names its replacement, so that row now
+exists, naming the draw routine to find.
+
+ONE DETAIL WORTH PRESERVING from the existing doc: it records that an earlier value
+of `~69` came from "scaled DOSBox window captures" and was corrected to 82 by a
+native-resolution one. That is a capture correcting a capture — a better measurement
+of an inadmissible source. The row says so explicitly, because the correction reads
+like verification and is not.
+
+726 tests, 0 failures.

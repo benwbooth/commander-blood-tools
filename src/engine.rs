@@ -2071,6 +2071,12 @@ impl EngineState {
     /// (@0x89A6), the WORLD/entity candidate list 80 (@0xB0D1, ship_click_commit,
     /// with the narrow alt-mode flags [0xADC]/[0xADD]).
     pub const CHOICE_BOX_CENTER_X: usize = 100;
+    /// The WORLD list's anchor: `mov word ptr [0xac6],0x50` @`0xB0D1` in
+    /// `ship_3d_hud_init` (#556, #558) — the same `[0xAC6]` cell
+    /// [`CHOICE_BOX_ANCHOR_CONCEPT`] is set to `0xE1` @`0x89A6` and the nav choice
+    /// sets to `0x64` @`0x86D9` (#494). THREE screens, one cell, three anchors,
+    /// which is why a single "choice box centre" would misplace two of them
+    /// (audit-fixes #572).
     const CHOICE_BOX_ANCHOR_WORLD: usize = 80;
     /// The IN-WINDOW concept list's right-side anchor: `mov [0xAC6], 0xE1` at `0x89A6`.
     /// `0xE1` = 225. The widget then places the box at `x0 = anchor - w/2` (`0x84AD`).
