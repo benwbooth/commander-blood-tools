@@ -99,40 +99,76 @@ pub const SND_ENTRY_OFFSET: u16 = 0x011d;
 pub const SND_BANK_LOAD_SEGMENT: u16 = 0x0b1b;
 pub const SND_BANK_LOAD_OFFSET: u16 = 0x0855;
 pub const RENDER_SEGMENT: u16 = 0x0299;
+/// Render-driver entry `0x299:0x0000`, far-called from 2 site(s) — e.g. `0x016b0`, `0x0179a` (audit-fixes #490).
 pub const RENDER_VGA_DAC_PALETTE_LOAD_OFFSET: u16 = 0x0000;
+/// Render-driver entry `0x299:0x0016`, far-called from 2 site(s) — e.g. `0x00c5a`, `0x01f34` (audit-fixes #490).
 pub const RENDER_VGA_DAC_PALETTE_CLEAR_OFFSET: u16 = 0x0016;
+/// Render-driver entry `0x299:0x00d6`, far-called from 2 site(s) — e.g. `0x016c9`, `0x07d53` (audit-fixes #490).
 pub const RENDER_FIXED_8X8_TEXT_OFFSET: u16 = 0x00d6;
+/// Render-driver entry `0x299:0x013d`, far-called from 3 site(s) — e.g. `0x07329`, `0x0846c`, `0x08fcd` (audit-fixes #490).
 pub const RENDER_FONT_STRING_WIDTH_OFFSET: u16 = 317;
+/// Render-driver entry `0x299:0x0176`, far-called from 6 site(s) — e.g. `0x01507`, `0x01515`, `0x01520` (audit-fixes #490).
 pub const RENDER_UI_TEXT_OFFSET: u16 = 0x0176;
+/// Render-driver entry `0x299:0x0202`, far-called from 5 site(s) — e.g. `0x08feb`, `0x09183`, `0x09199` (audit-fixes #490).
 pub const RENDER_STRING_OFFSET: u16 = 0x0202;
+/// Render-driver entry `0x299:0x040e`, far-called from 7 site(s) — e.g. `0x01eb1`, `0x078c4`, `0x07a84` (audit-fixes #490).
 pub const RENDER_FRAMEBUFFER_RECT_REMAP_OFFSET: u16 = 0x040e;
+/// Render-driver entry `0x299:0x0498`, far-called from 1 site(s) — e.g. `0x01ac6` (audit-fixes #490).
 pub const RENDER_PLANAR_UI_TEXT_OFFSET: u16 = 0x0498;
+/// Render-driver entry `0x299:0x05de`, far-called from 1 site(s) — e.g. `0x072f6` (audit-fixes #490).
 pub const RENDER_PLANAR_DIALOGUE_TEXT_OFFSET: u16 = 0x05de;
+/// Render-driver entry `0x299:0x06a0`, far-called from 1 site(s) — e.g. `0x094ee` (audit-fixes #490).
 pub const RENDER_SUBTITLE_REVEAL_OFFSET: u16 = 0x06a0;
+/// Render-driver entry `0x299:0x075a`, far-called from 8 site(s) — e.g. `0x00da8`, `0x00dd1`, `0x00ddb` (audit-fixes #490).
 pub const RENDER_SMALL_TEXT_OFFSET: u16 = 0x075a;
+/// Render-driver entry `0x299:0x0a2b`, far-called from 1 site(s) — e.g. `0x0946d` (audit-fixes #490).
 pub const RENDER_PLANAR_HORIZONTAL_LINE_OFFSET: u16 = 0x0a2b;
+/// Render-driver entry `0x299:0x0b23`, far-called from 1 site(s) — e.g. `0x09474` (audit-fixes #490).
 pub const RENDER_PLANAR_VERTICAL_LINE_OFFSET: u16 = 0x0b23;
 /// Touched by the game at `mov ax, word ptr [0xbb5]` @`0x0B8FF`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
 pub const RENDER_RECT_OUTLINE_OFFSET: u16 = 0x0bb5;
+/// Render-driver entry `0x299:0x0bf5`, far-called from 2 site(s) — e.g. `0x07a94`, `0x07b18` (audit-fixes #490).
 pub const RENDER_DITHER_RECT_FILL_OFFSET: u16 = 0x0bf5;
+/// Render-driver entry `0x299:0x0cdc`, far-called from 7 site(s) — e.g. `0x00e8e`, `0x014f2`, `0x01e42` (audit-fixes #490).
 pub const RENDER_RECT_FILL_OFFSET: u16 = 0x0cdc;
+/// Render-driver entry `0x299:0x0deb`, far-called from 10 site(s) — e.g. `0x016b7`, `0x01ec3`, `0x01f39` (audit-fixes #490).
 pub const RENDER_SCENE_BAND_FILL_OFFSET: u16 = 0x0deb;
+/// Render-driver entry `0x299:0x0e2f`, far-called from 5 site(s) — e.g. `0x0190d`, `0x01eca`, `0x01f40` (audit-fixes #490).
 pub const RENDER_SECONDARY_BAND_FILL_OFFSET: u16 = 0x0e2f;
+/// Render-driver entry `0x299:0x0eb6`, far-called from 4 site(s) — e.g. `0x018e4`, `0x0a492`, `0x0a4aa` (audit-fixes #490).
 pub const RENDER_FRAMEBUFFER_COPY_OFFSET: u16 = 0x0eb6;
+/// Render-driver entry `0x299:0x0ecb`, far-called from 1 site(s) — e.g. `0x0b140` (audit-fixes #490).
 pub const RENDER_SECONDARY_FRAMEBUFFER_COPY_OFFSET: u16 = 0x0ecb;
+/// Render-driver entry `0x299:0x0ee0`, far-called from 1 site(s) — e.g. `0x08d14` (audit-fixes #490).
 pub const RENDER_VGA_PLANAR_TO_LINEAR_COPY_OFFSET: u16 = 0x0ee0;
+/// Render-driver entry `0x299:0x0f3e`, far-called from 6 site(s) — e.g. `0x012b2`, `0x016e3`, `0x01807` (audit-fixes #490).
 pub const RENDER_PLANAR_COPY_OFFSET: u16 = 0x0f3e;
+/// Render-driver entry `0x299:0x1037`, far-called from 4 site(s) — e.g. `0x00fb9`, `0x0597f`, `0x070cd` (audit-fixes #490).
 pub const RENDER_RESOURCE_FILE_LOAD_OFFSET: u16 = 0x1037;
+/// Render-driver entry `0x299:0x11be`, far-called from 4 site(s) — e.g. `0x05990`, `0x070dd`, `0x07e7d` (audit-fixes #490).
 pub const RENDER_SPRITE_SLOT_LOAD_OFFSET: u16 = 4542;
+/// Render-driver entry `0x299:0x1241`, far-called from 33 site(s) — e.g. `0x0186f`, `0x01877`, `0x059dc` (audit-fixes #490).
 pub const RENDER_SPRITE_SLOT_STATE_OFFSET: u16 = 4673;
+/// Render-driver entry `0x299:0x1140`, far-called from 4 site(s) — e.g. `0x08d76`, `0x08d96`, `0x08df5` (audit-fixes #490).
 pub const RENDER_SPRITE_SLOT_RESOURCE_LOAD_OFFSET: u16 = 4416;
+/// Render-driver entry `0x299:0x127d`, far-called from 2 site(s) — e.g. `0x0929c`, `0x09cef` (audit-fixes #490).
 pub const RENDER_SPRITE_SLOT_POSITION_OFFSET: u16 = 4733;
+/// Render-driver entry `0x299:0x12b0`, far-called from 1 site(s) — e.g. `0x08ad4` (audit-fixes #490).
 pub const RENDER_SPRITE_SLOT_RANGE_DIRTY_OFFSET: u16 = 4784;
+/// Render-driver entry `0x299:0x133d`, far-called from 2 site(s) — e.g. `0x0926d`, `0x09cd6` (audit-fixes #490).
 pub const RENDER_SPRITE_SLOT_EXTENT_OFFSET: u16 = 4925;
+/// Render-driver entry `0x299:0x1467`, far-called from 3 site(s) — e.g. `0x07849`, `0x09575`, `0x0b1d0` (audit-fixes #490).
 pub const RENDER_SPRITE_SLOT_COMMIT_RANGE_OFFSET: u16 = 5223;
+/// Render-driver entry `0x299:0x14e1`, far-called from 7 site(s) — e.g. `0x0786e`, `0x0789a`, `0x08da0` (audit-fixes #490).
 pub const RENDER_SPRITE_SLOT_DIRTY_RANGE_RENDER_OFFSET: u16 = 5345;
+/// The sprite BLITTER TABLE at `0x299:0x1592` (file `0x04522`) — eight near pointers, NOT far-called (audit-fixes #490). Its
+/// entries are the eight `RENDER_SPRITE_BLIT_*` constants below, in order.
 pub const RENDER_SPRITE_BLITTER_TABLE_OFFSET: u16 = 0x1592;
+/// The same table as a FILE offset, so a reader can go straight to the bytes:
+/// `0x600 + 0x299 * 16 + 0x1592 = 0x4522` (audit-fixes #490). Held separately
+/// because the segment arithmetic is the thing most easily got wrong, and
+/// `sprite_blitter_table_holds_the_eight_blit_entries_in_order` checks it.
 pub const RENDER_SPRITE_BLITTER_TABLE_FILE_OFFSET: usize = 0x004522;
 /// EIGHT entries, and the bound is in the code: the dispatcher at `0x44B3` does
 /// `mov bx,ax / shr bx,1 / and bx,0x0E` before `mov bx,cs:[bx+0x1592]`, so the
@@ -145,14 +181,23 @@ pub const RENDER_SPRITE_BLITTER_TABLE_FILE_OFFSET: usize = 0x004522;
 pub const RENDER_SPRITE_BLITTER_ENTRY_COUNT: usize = 8;
 /// File offset of the `and bx,imm8` operand that bounds the index (`0x44B7`).
 pub const RENDER_SPRITE_BLITTER_INDEX_MASK_IMMEDIATE: usize = 0x44B9;
+/// Blitter-table entry 0 — the word at `0x299:0x1592`+0 is `0x15a6`, so this is reached by INDEX, never by a far call (audit-fixes #490).
 pub const RENDER_SPRITE_BLIT_RAW_TRANSPARENT_OFFSET: u16 = 0x15a6;
+/// Blitter-table entry 1 — the word at `0x299:0x1592`+2 is `0x172c`, so this is reached by INDEX, never by a far call (audit-fixes #490).
 pub const RENDER_SPRITE_BLIT_RLE_TRANSPARENT_OFFSET: u16 = 0x172c;
+/// Blitter-table entry 2 — the word at `0x299:0x1592`+4 is `0x1c18`, so this is reached by INDEX, never by a far call (audit-fixes #490).
 pub const RENDER_SPRITE_BLIT_RAW_OPAQUE_OFFSET: u16 = 0x1c18;
+/// Blitter-table entry 3 — the word at `0x299:0x1592`+6 is `0x1d46`, so this is reached by INDEX, never by a far call (audit-fixes #490).
 pub const RENDER_SPRITE_BLIT_RLE_OPAQUE_OFFSET: u16 = 0x1d46;
+/// Blitter-table entry 4 — the word at `0x299:0x1592`+8 is `0x1fd2`, so this is reached by INDEX, never by a far call (audit-fixes #490).
 pub const RENDER_SPRITE_BLIT_SCALED_TRANSPARENT_OFFSET: u16 = 0x1fd2;
+/// Blitter-table entry 5 — the word at `0x299:0x1592`+10 is `0x210a`, so this is reached by INDEX, never by a far call (audit-fixes #490).
 pub const RENDER_SPRITE_BLIT_NOOP_5_OFFSET: u16 = 0x210a;
+/// Blitter-table entry 6 — the word at `0x299:0x1592`+12 is `0x210b`, so this is reached by INDEX, never by a far call (audit-fixes #490).
 pub const RENDER_SPRITE_BLIT_NOOP_6_OFFSET: u16 = 0x210b;
+/// Blitter-table entry 7 — the word at `0x299:0x1592`+14 is `0x210c`, so this is reached by INDEX, never by a far call (audit-fixes #490).
 pub const RENDER_SPRITE_BLIT_NOOP_7_OFFSET: u16 = 0x210c;
+/// Render-driver entry `0x299:0x210d`, far-called from 3 site(s) — e.g. `0x0787f`, `0x08ea0`, `0x0b1d8` (audit-fixes #490).
 pub const RENDER_DIRTY_RECTS_COPY_OFFSET: u16 = 0x210d;
 pub const NAV_CODE_SEGMENT: u16 = 0x071e;
 pub const NAV_ACTOR_SUBDISPATCH_TABLE_FILE_OFFSET: usize = 0x007eb4;
@@ -4777,6 +4822,55 @@ mod tests {
         assert_eq!(
             font.glyph_rows[glyph_a],
             [0x00, 0x7e, 0x82, 0x82, 0x82, 0xfe, 0x82, 0x00]
+        );
+    }
+
+    /// The sprite blitter table IS the citation for the eight
+    /// `RENDER_SPRITE_BLIT_*` constants: none is ever far-called, because all
+    /// eight are reached by INDEX through the table at `0x299:0x1592`
+    /// (audit-fixes #490). Read straight out of the image so a renamed or
+    /// reordered entry fails here.
+    #[test]
+    fn sprite_blitter_table_holds_the_eight_blit_entries_in_order() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        // segment 0x299 maps to this file offset (image = file - 0x600).
+        let base = 0x600 + 0x299 * 16;
+        assert_eq!(base, 0x2F90);
+        let at = base + super::RENDER_SPRITE_BLITTER_TABLE_OFFSET as usize;
+
+        let word = |i: usize| u16::from_le_bytes([exe[at + i * 2], exe[at + i * 2 + 1]]);
+        let expected = [
+            super::RENDER_SPRITE_BLIT_RAW_TRANSPARENT_OFFSET,
+            super::RENDER_SPRITE_BLIT_RLE_TRANSPARENT_OFFSET,
+            super::RENDER_SPRITE_BLIT_RAW_OPAQUE_OFFSET,
+            super::RENDER_SPRITE_BLIT_RLE_OPAQUE_OFFSET,
+            super::RENDER_SPRITE_BLIT_SCALED_TRANSPARENT_OFFSET,
+            super::RENDER_SPRITE_BLIT_NOOP_5_OFFSET,
+            super::RENDER_SPRITE_BLIT_NOOP_6_OFFSET,
+            super::RENDER_SPRITE_BLIT_NOOP_7_OFFSET,
+        ];
+        for (i, want) in expected.iter().enumerate() {
+            assert_eq!(word(i), *want, "blitter table entry {i}");
+        }
+
+        // Entries 5..7 are three CONSECUTIVE single-byte `ret`s (0xC3), which is
+        // what makes three distinct offsets one byte apart legitimate rather than
+        // a mis-decode -- and the next named routine begins exactly after them.
+        for off in [
+            super::RENDER_SPRITE_BLIT_NOOP_5_OFFSET,
+            super::RENDER_SPRITE_BLIT_NOOP_6_OFFSET,
+            super::RENDER_SPRITE_BLIT_NOOP_7_OFFSET,
+        ] {
+            assert_eq!(exe[base + off as usize], 0xC3, "{off:#06x} is a ret");
+        }
+        assert_eq!(
+            super::RENDER_DIRTY_RECTS_COPY_OFFSET,
+            super::RENDER_SPRITE_BLIT_NOOP_7_OFFSET + 1,
+            "the next far-called routine starts where the noop rets end"
         );
     }
 }

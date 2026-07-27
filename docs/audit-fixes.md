@@ -16124,3 +16124,40 @@ this is the shape the work takes — find the routine, read the seeds out of it 
 one pass, and cite them together rather than one number at a time.
 
 617 tests, 0 failures.
+
+## #490 — 41 render-driver offsets, sourced mechanically instead of one at a time
+
+#489 ended by saying the work should go routine by routine rather than number by
+number. `bloodprg.rs`'s 41 `RENDER_*_OFFSET` constants allow something better still,
+because they are not values at all — they are ENTRY POINTS in the render driver, and
+the game reaches them with `lcall 0x299, <offset>`. So every one of them has a
+mechanical citation: a real call site, or an explanation for why there isn't one.
+
+`re/tools/render_driver_calls.py` scans the image for `9A off16 seg16` far calls into
+the segment and cross-checks both directions. 32 constants matched, 143 call sites
+in all — and, importantly, the reverse check found NO called-but-unnamed offset, so
+the port's list of driver entries is complete rather than merely correct so far.
+
+NINE HAD NO CALL SITE, and that was the interesting part rather than a gap. They are
+the sprite blitter entries, and they are reached BY INDEX. Segment `0x299` maps to
+file `0x2F90`, so the table at driver offset `0x1592` is file `0x4522`, and its first
+eight words are:
+
+```text
+  0x15a6 0x172c 0x1c18 0x1d46 0x1fd2 0x210a 0x210b 0x210c
+```
+
+— exactly the eight `RENDER_SPRITE_BLIT_*` constants, in the port's own order, with
+nothing left over. A dispatch table is why "no far call exists" was the right
+measurement of the wrong question yet again (#485's lesson, third instance).
+
+The three `NOOP` entries sit one byte apart, which looks like a mis-decode until you
+read the bytes: `c3 c3 c3`, three consecutive single-byte `ret`s. Three distinct
+no-op slots, each its own instruction. And the next named routine,
+`RENDER_DIRTY_RECTS_COPY_OFFSET = 0x210d`, begins exactly where they end — an
+independent check that the table's tail is read right, which the new test asserts as
+`NOOP_7 + 1`.
+
+Settled ASM: all 41. Ledger 1252/2232 (56.1%), UNVERIFIED down to 870.
+
+618 tests, 0 failures.
