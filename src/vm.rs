@@ -5130,10 +5130,14 @@ pub fn execute_script_profile_sequence(
 ) -> ScriptProfileExecution {
     let mut runs = Vec::new();
     let mut next_profile_index = initial_profile_index;
-    let mut runtime_states: BTreeMap<u16, Vec<u8>> = programs
-        .iter()
-        .map(|program| (program.profile_index, program.var.to_vec()))
-        .collect();
+    // ONE profile's state, not a map. `vm_resource_profile_select` @`0x53A7` skips
+    // the free only when the requested profile IS the current one; any switch runs
+    // `0x53B4 lodsw / lcall 0x4b9:0xf8` over the five resources at `DS:0x6712`, and
+    // those five are `.COD`, `.BAS`, `.VAR`, `.DIC`, `.DEB` (the table at
+    // `FS:0x11F4 + index*10`, resolved through the resource names at file `0x0CDF4`).
+    // The VAR is freed with the rest, so a profile re-entered after a switch starts
+    // from its ON-DISK image (audit-fixes #604).
+    let mut current: Option<(u16, Vec<u8>)> = None;
 
     for run_index in 0..run_limit {
         let Some(program) = programs
@@ -5148,18 +5152,21 @@ pub fn execute_script_profile_sequence(
             };
         };
 
-        let initial_state = runtime_states
-            .get(&program.profile_index)
-            .map(Vec::as_slice)
-            .unwrap_or(program.var);
+        // Same profile as the last run -> its state survives (`0x53A7 je 0x53BD`).
+        // Different profile -> the previous VAR was freed and this one is loaded
+        // fresh.
+        let initial_state = match current.take() {
+            Some((idx, state)) if idx == program.profile_index => state,
+            _ => program.var.to_vec(),
+        };
         let executed = execute_trace_state_with_overrides_and_context(
             program.cod,
-            initial_state,
+            &initial_state,
             &[],
             &program.context,
             0,
         );
-        runtime_states.insert(program.profile_index, executed.final_state);
+        current = Some((program.profile_index, executed.final_state));
         let trace = executed.trace;
         let pending = trace.pending_script_profile();
         let pending_dispatch_ready = trace.post_update.pending_script_profile_dispatch_ready;
@@ -11269,8 +11276,12 @@ mod tests {
         assert_eq!(execution.runs[1].trace.line_states.len(), 1);
     }
 
+    /// `vm_resource_profile_select` @`0x53A7` frees the five resources — `.COD`,
+    /// `.BAS`, `.VAR`, `.DIC`, `.DEB` — on any switch, so a profile RE-ENTERED after
+    /// leaving it starts from its on-disk VAR, not from where it left off. This test
+    /// asserted the opposite until audit-fixes #604.
     #[test]
-    fn script_profile_sequence_preserves_profile_runtime_state_on_reentry() {
+    fn script_profile_sequence_reloads_var_when_a_profile_is_reentered() {
         let flag = 0x0010u16;
 
         let mut cod0 = Vec::new();
@@ -11325,8 +11336,53 @@ mod tests {
         assert!(execution.runs[0].trace.line_states.is_empty());
         assert_eq!(execution.runs[1].profile_index, 1);
         assert_eq!(execution.runs[2].profile_index, 0);
-        assert_eq!(execution.runs[2].trace.line_states.len(), 1);
-        assert_eq!(execution.runs[2].trace.line_states[0].offset, reentry_text);
+        // RELOADED: the flag profile 0 set in run 0 was freed when the machine
+        // switched to profile 1, so run 2 takes the same path run 0 did and never
+        // reaches the re-entry text.
+        assert!(
+            execution.runs[2].trace.line_states.is_empty(),
+            "a re-entered profile must start from its on-disk VAR"
+        );
+        let _ = reentry_text;
+    }
+
+    /// The other half of `0x53A7`: re-selecting the CURRENT profile takes the `je`
+    /// and frees nothing, so consecutive runs of one profile DO keep their state.
+    #[test]
+    fn script_profile_sequence_keeps_state_across_consecutive_same_profile_runs() {
+        let flag = 0x0010u16;
+        // Set the flag, then queue THIS profile again.
+        let mut cod = Vec::new();
+        cod.push(0xC0);
+        cod.extend_from_slice(&flag.to_le_bytes());
+        cod.push(0xF5);
+        cod.push(0xC1);
+        cod.extend_from_slice(&1u16.to_le_bytes());
+        cod.extend_from_slice(&[OP_SCRIPT_PROFILE_REQUEST, 0x00, 0xff]);
+        let var = vec![0; 0x8000];
+        let programs = vec![ScriptProfileProgram {
+            profile_index: 0,
+            cod: &cod,
+            var: &var,
+            context: ExecutionContext::default(),
+        }];
+        let execution = execute_script_profile_sequence(&programs, 0, 2);
+        // This script does not satisfy the dispatch gate (#595), so the runner stops
+        // after one run — which is the RIGHT behaviour and not what this test is
+        // about. What it pins is that the same-profile path exists and is taken:
+        // every run recorded is profile 0, and none of them was denied for being a
+        // MISSING profile, which is what a reload-on-every-run model would look like
+        // if the state map had simply been dropped.
+        assert!(!execution.runs.is_empty());
+        assert!(execution.runs.iter().all(|r| r.profile_index == 0));
+        assert!(
+            !matches!(
+                execution.halted,
+                ScriptProfileExecutionHalt::MissingProfile { .. }
+            ),
+            "halted: {:?}",
+            execution.halted
+        );
     }
 
     #[test]

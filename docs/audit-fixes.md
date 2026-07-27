@@ -20132,3 +20132,41 @@ The instruction guard caught `0x53ad  mov cx,5` — `0x53AD` is `push ax`, the `
 one byte later. Fixed in both the source doc and the matrix row.
 
 733 tests, 0 failures.
+
+## #604 — the VAR is freed on a profile switch; the port was resuming
+
+#603 flagged `runtime_states` as suspect. Reading the table settles it against the
+port.
+
+The five words at `FS:0x11F4 + index*10` (file `0xD3E4`, 10 bytes per profile),
+resolved through the resource name table at file `0x0CDF4`:
+
+    profile 0: script1.cod  script1.bas  script1.var  script1.dic  script1.deb
+    profile 1: script2.cod  script2.bas  script2.var  script2.dic  script2.deb
+    ... through profile 4 = script5
+
+THE `.VAR` IS ONE OF THE FIVE. `0x53B4 lodsw / lcall 0x4b9:0xf8` frees all five on
+any switch, so a profile re-entered after leaving it starts from its ON-DISK state.
+The port kept a per-profile map and resumed where that profile had stopped — every
+manifest from a multi-profile run carried state the game would not have had.
+
+Fixed to the two-case rule the routine actually has: `0x53A7 je 0x53BD` frees nothing
+when the requested profile IS the current one, so consecutive runs of one profile
+keep their state; anything else reloads.
+
+THE TEST ASSERTED THE BUG. `script_profile_sequence_preserves_profile_runtime_state_
+on_reentry` built a script that sets a flag, leaves, returns, and checked that the
+return took the flag-set branch — i.e. it encoded the resume model as the expected
+result, name and all. Rewritten as `..._reloads_var_when_a_profile_is_reentered`,
+asserting the re-entry takes the SAME path the first run did.
+
+A SECOND TEST I COULD NOT MAKE PROVE ITS POINT, recorded rather than dressed up: the
+same-profile case needs the dispatch gate (#595) satisfied to reach a second run, and
+my minimal script does not. It now asserts only what it can — that the runs are all
+profile 0 and none was rejected as MISSING — with a comment saying so. The
+same-profile branch is exercised, not pinned.
+
+ALSO: the table has FIVE real entries. Index 5 is zeros and 6+ is unrelated bytes, so
+a profile index above 4 reads garbage.
+
+734 tests, 0 failures.

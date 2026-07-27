@@ -2029,7 +2029,22 @@ on a non-zero distance. `re/tools/find_callers.py` on `0x60DD` is the next step;
 `0x5B38` family (`record_c1_ship3d_action`, kinds `0x10`/`0x200`, gated on
 `gs:0x6752`/`0x27DF`) is the obvious place to look first, and obvious is not decoded.
 
-## UNVERIFIED — does a re-entered script profile resume or reload? (#603)
+## RESOLVED (#604) — it RELOADS; the port was resuming
+
+The five words at `FS:0x11F4 + index*10` resolve through the resource name table at
+file `0x0CDF4` to, per profile: `.COD`, `.BAS`, **`.VAR`**, `.DIC`, `.DEB`. The VAR
+is freed with the rest on any switch (`0x53B4 lodsw / lcall 0x4b9:0xf8`), so a
+profile re-entered after leaving it starts from its ON-DISK image.
+
+The port kept a `runtime_states` map and resumed. Fixed: one current profile's state,
+kept only while the same profile runs again (`0x53A7 je 0x53BD` frees nothing in that
+case) and discarded on any switch. The test that asserted the old behaviour asserted
+the opposite of the game and is rewritten.
+
+ALSO FOUND: the table has FIVE real entries (`script1..script5`). Index 5 is all
+zeros and 6+ is unrelated bytes, so a profile index above 4 reads garbage.
+
+## SUPERSEDED — does a re-entered script profile resume or reload? (#603)
 
 **The port's model.** `execute_script_profile_sequence` keeps a `runtime_states` map
 of each profile's VAR and hands a re-entered profile its PREVIOUS state.
