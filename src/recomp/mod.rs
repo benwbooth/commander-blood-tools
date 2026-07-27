@@ -1619,7 +1619,18 @@ mod tests {
         let mut e = crate::engine::EngineState::new();
         e.save_ui_active = true;
 
-        let keys: Vec<u8> = b"ab9zQ\x08cd".iter().copied().chain([8u8, b'x']).collect();
+        // `0x1E1B` (reject) has THREE predecessors and the original sweep reached
+        // one: `Q` fails `cmp al,0x61 / jb` at `0x1E0C`. `!` fails `cmp al,0x30 /
+        // jb` at `0x1E04` and `~` fails `cmp al,0x7a / ja` at `0x1E10` — two
+        // rejects that had never run (audit-fixes #579). Then fifteen `z` for the
+        // `cmp bl,0x0E` cap at `0x1E12`, and backspaces past empty for the
+        // `or bx,bx / je` guard at `0x1E1F`.
+        let keys: Vec<u8> = b"ab9zQ\x08cd".iter().copied()
+            .chain([8u8, b'x'])
+            .chain(b"!~:@[`".iter().copied())
+            .chain(std::iter::repeat(b'z').take(15))
+            .chain(std::iter::repeat(8u8).take(20))
+            .collect();
         for key in keys {
             m.write8(GS, KEY_DS, key);
             let sp = m.regs.sp() as u32;
@@ -1654,6 +1665,56 @@ mod tests {
                 e.save_ui_name
             );
         }
+        assert_eq!(e.save_ui_name, "", "20 backspaces must empty the name");
+
+        // ENTER ON AN EMPTY NAME: `0x1DF1 or bx,bx / je 0x1E27` skips the copy, so
+        // no commit and CF stays clear (`0x1E54 clc`). Never exercised before.
+        m.write8(GS, KEY_DS, 13);
+        let sp = m.regs.sp() as u32;
+        m.write16(m.regs.ss, sp, 0x0000);
+        m.write16(m.regs.ss, sp.wrapping_add(2), 0x0020);
+        super::auto::func_1dd8(&mut m);
+        assert!(!m.regs.cf, "empty name must not commit (0x1DF1)");
+        assert_eq!(e.save_ui_key(13), None, "port must not commit an empty name");
+        assert!(e.save_ui_active, "and the editor stays open");
+
+        // ENTER ON A REAL NAME: `0x1DF5..0x1DFF` copies FOUR DWORDS (16 bytes) from
+        // the buffer to `[0x2734]` and sets CF. The commit itself had no coverage.
+        for key in *b"hero7" {
+            m.write8(GS, KEY_DS, key);
+            let sp = m.regs.sp() as u32;
+            m.write16(m.regs.ss, sp, 0x0000);
+            m.write16(m.regs.ss, sp.wrapping_add(2), 0x0020);
+            super::auto::func_1dd8(&mut m);
+            let mut len = 0u16;
+            for i in 0..16u32 {
+                let b = m.read8(GS, BUF_DS + i);
+                if b == 0 || b == b' ' {
+                    break;
+                }
+                len += 1;
+            }
+            m.write16(GS, LEN_DS, len);
+            e.save_ui_key(key);
+        }
+        m.write8(GS, KEY_DS, 13);
+        let sp = m.regs.sp() as u32;
+        m.write16(m.regs.ss, sp, 0x0000);
+        m.write16(m.regs.ss, sp.wrapping_add(2), 0x0020);
+        super::auto::func_1dd8(&mut m);
+        assert!(m.regs.cf, "a non-empty name commits (0x1DFF stc)");
+        let committed: String = (0..16u32)
+            .map(|i| m.read8(GS, 0x2900 + i) as char)
+            .collect::<String>()
+            .trim_end()
+            .to_string();
+        assert_eq!(committed, "hero7", "the rep movsd lands the name in the slot");
+        assert_eq!(e.save_ui_key(13), Some("hero7".to_string()));
+        assert!(!e.save_ui_active, "committing closes the editor");
+        // SIXTEEN bytes, not fourteen: `cx=4 / rep movsd`. The two bytes past the
+        // 14-character cap are copied too, which is why the shipped directory
+        // records are space-padded to a fixed stride.
+        assert_eq!(m.read8(GS, 0x2900 + 15), b' ');
     }
 
     /// The ENTITY STATE-ADVANCE against its lift (`func_41d1`).

@@ -19209,3 +19209,35 @@ the port's behaviour was already correct and is now PROVEN correct rather than
 believed correct on inputs that could not tell the difference.
 
 726 tests, 0 failures.
+
+## #579 — the save-name editor's uncovered rejects, cap, and commit
+
+Second sweep audited with `check_merge_then_branch.py`. `func_1dd8`'s merge at
+`0x1E1B` (reject) has THREE predecessors and the sweep reached one:
+
+    0x1E04  cmp al,0x30 / jb   below '0'      NEVER RUN
+    0x1E0C  cmp al,0x61 / jb   ':'..'`'       covered by 'Q'
+    0x1E10  cmp al,0x7a / ja   above 'z'      NEVER RUN
+
+Two of three reject paths had no coverage, and neither had the `cmp bl,0x0E` cap at
+`0x1E12`, the `or bx,bx / je` empty guard on backspace at `0x1E1F`, or the ENTER
+commit at all — `0x1DF5..0x1DFF`, the `rep movsd` that is the entire point of the
+routine, was untested in both its branches.
+
+Added: `!~:@[`` ` for the two missing rejects, fifteen `z` for the cap, twenty
+backspaces for the empty guard, then Enter on an empty name (must NOT commit; CF
+clear via `0x1E54 clc`) and Enter on a real one (must commit; CF set via `0x1DFF
+stc`), checking the bytes that land in the slot record.
+
+The port matched everything. Two details the new rows pin that prose would not:
+
+- The commit copies SIXTEEN bytes (`cx=4 / rep movsd`), not the fourteen the cap
+  allows. The two extra bytes are why the shipped directory records are space-padded
+  to a fixed stride, and the test now asserts byte 15 is a space.
+- `0x1E12` is `cmp bl,0x0E / je` — EQUALITY on the low byte, where the port has
+  `len < 14`. They agree on every state this routine can produce (length only ever
+  reaches 14 by single stepping), so this is not a defect; noting it because an `==`
+  guard is one unrelated writer away from being passed 15 and letting a character
+  through.
+
+726 tests, 0 failures.
