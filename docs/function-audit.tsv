@@ -623,19 +623,19 @@ step	src/engine.rs	5517	fn	0x0FFB	ASM	/// One iteration of the top-level dispatc
 mode_x_offset	src/engine.rs	5697	fn		UNVERIFIED	/// The game's mode-X screen address for pixel `(x, y)` — `(byte_offset, plane)` where /// `byte_offset = y*80 + x/4` and `plane = x & 3`, exactly as `graphics_plot_modex` /// (`0x299:0x498`) computes
 signed_i16_engine	src/engine.rs	5706	fn		UNVERIFIED	/// Invert [`mode_x_offset`] back to the linear framebuffer index the engine uses: /// `byte_offset*4 + plane`. Equals `y*ENGINE_SCREEN_WIDTH + x`, proving the two layouts /// address the same pixel. 
 mode_x_to_linear	src/engine.rs	5729	fn	0x3428,0x3461,0x3464,0x3467,0x346B	ASM	/// Invert the game's mode-X addressing: a `(plane byte offset, plane)` pair back /// to a linear framebuffer index. /// /// The forward mapping is in the mode-X plot at `0x3428` (`graphics_plot_modex
-ACTIVE	src/entity.rs	9	const		UNVERIFIED	/// `0x80` — the object is active (gates every state change).
-STATE0	src/entity.rs	11	const		UNVERIFIED	/// `0x01` — state bit 0 (advances to [`STATE1`]).
-STATE1	src/entity.rs	13	const		UNVERIFIED	/// `0x02` — state bit 1 (set when STATE0 advances).
-TOGGLE5	src/entity.rs	15	const		UNVERIFIED	/// `0x20` — a toggle state (bit 5).
-TOGGLE6	src/entity.rs	17	const		UNVERIFIED	/// `0x40` — a toggle state (bit 6).
-SOURCE	src/entity.rs	19	const		UNVERIFIED	/// `0x04` — carried from the source data during populate.
-INIT	src/entity.rs	21	const		UNVERIFIED	/// The initial flags an object is populated with (`0x83` = active + state0 + state1).
-EntityObject	src/entity.rs	26	struct		UNVERIFIED	/// A runtime object instance — the decoded 32-byte `entity_object_table` record. /// `+0x00` flags word (see [`flag`]). /// `+0x04`/`+0x06` far pointer to the object's data (segment, offset) in a res
-populate	src/entity.rs	42	fn		UNVERIFIED	/// Populate an object as the decoded `entity_object_populate` routines do: flags = /// `(source & 0x04) | 0x83`, and `init_pos` backs up `pos`.
-is_active	src/entity.rs	53	fn		UNVERIFIED	/// Whether the object is active (`+0x00 & 0x80`).
-advance_state	src/entity.rs	59	fn	0x41d1	ORACLE	/// The decoded state advance (`0x41d1`): only when active and STATE0 is set, clear /// STATE0 and set STATE1.
-toggle	src/entity.rs	83	fn	0x428C,0x4270,0x42AB,0x4299,0x429D,0x429F,0x42A3,0x420D	ASM	/// The decoded toggle-family behaviour (`0x428C`, and its siblings `0x4270`, /// `0x42AB`, ...): only when active, toggle `mask`, then if STATE0 is set — /// tested AFTER the toggle, as the original 
-reset_position	src/entity.rs	94	fn		UNVERIFIED	/// Reset the object's position to its populated initial backup (`+0x14/+0x16`).
+ACTIVE	src/entity.rs	15	const	0x41EA,0x41DE,0x421D,0x42DD	ASM	/// `0x80` — the object is active (gates every state change). /// `0x80` — bit 7, and it NEVER appears as an immediate: it is read by SIGN /// (`or al,al / jns 0x41EA` @`0x41DE`) and by the PAIR `test
+STATE0	src/entity.rs	20	const	0x41E2,0x4201,0x4280,0x429F,0x42C1	ASM	/// `0x01` — state bit 0 (advances to [`STATE1`]). /// `0x01` — `test al,1` @`0x41E2`, and again @`0x4201`, `0x4280`, `0x429F`, /// `0x42C1`: five sites across the flag family. Same bit as /// `ship3d
+STATE1	src/entity.rs	26	const	0x41E8,0x41E6,0x4227	ASM	/// `0x02` — state bit 1 (set when STATE0 advances). /// `0x02` — `or al,2` @`0x41E8`, set as `and al,0xfe` @`0x41E6` clears /// [`STATE0`], and again @`0x4227`. The clear-and-set is one handoff, not 
+TOGGLE5	src/entity.rs	31	const	0x427E	ASM	/// `0x20` — a toggle state (bit 5). /// `0x20` — `xor al,0x20` @`0x427E`. An XOR, so this really does TOGGLE; /// unlike the state bits above it is never set or cleared outright /// (audit-fixes #539
+TOGGLE6	src/entity.rs	35	const	0x429D	ASM	/// `0x40` — a toggle state (bit 6). /// `0x40` — `xor al,0x40` @`0x429D`, the twin of [`TOGGLE5`] /// (audit-fixes #539).
+SOURCE	src/entity.rs	37	const		UNVERIFIED	/// `0x04` — carried from the source data during populate.
+INIT	src/entity.rs	57	const	0x6212,0x420D,0x428C,0x41D1	ASM	/// The initial flags an object is populated with (`0x83` = active + state0 + state1). /// `0x83` = active + state0 + state1. /// /// THIS WORD IS SHARED WITH `ship3d.rs` (audit-fixes #539). The recor
+EntityObject	src/entity.rs	62	struct		UNVERIFIED	/// A runtime object instance — the decoded 32-byte `entity_object_table` record. /// `+0x00` flags word (see [`flag`]). /// `+0x04`/`+0x06` far pointer to the object's data (segment, offset) in a res
+populate	src/entity.rs	78	fn		UNVERIFIED	/// Populate an object as the decoded `entity_object_populate` routines do: flags = /// `(source & 0x04) | 0x83`, and `init_pos` backs up `pos`.
+is_active	src/entity.rs	89	fn		UNVERIFIED	/// Whether the object is active (`+0x00 & 0x80`).
+advance_state	src/entity.rs	95	fn	0x41d1	ORACLE	/// The decoded state advance (`0x41d1`): only when active and STATE0 is set, clear /// STATE0 and set STATE1.
+toggle	src/entity.rs	119	fn	0x428C,0x4270,0x42AB,0x4299,0x429D,0x429F,0x42A3,0x420D	ASM	/// The decoded toggle-family behaviour (`0x428C`, and its siblings `0x4270`, /// `0x42AB`, ...): only when active, toggle `mask`, then if STATE0 is set — /// tested AFTER the toggle, as the original 
+reset_position	src/entity.rs	130	fn		UNVERIFIED	/// Reset the object's position to its populated initial backup (`+0x14/+0x16`).
 ExtWorld	src/ext.rs	23	struct		UNVERIFIED	/// The decoded framing of an `.ext` world body's first section. /// The first section's 3-byte records (`[a,b,c]`), count taken from body byte 8. /// Whether the first section ended with the expected
 ascending_triple_records	src/ext.rs	39	fn		UNVERIFIED	/// The records that are strictly-ascending index triples (`a<b<c`). In some worlds /// (venusia 79%, ekatomb3 71%) these dominate — consistent with triangle-mesh face /// connectivity there — but in 
 ascending_triple_percent	src/ext.rs	49	fn		UNVERIFIED	/// The fraction (0..100) of records that are strictly-ascending triples — the /// diagnostic that varies per world (venusia ~79%, magnus ~0%).

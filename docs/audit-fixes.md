@@ -17907,3 +17907,41 @@ The cross-reference is recorded on both sides so a change to either is known to
 require the other.
 
 723 tests, 0 failures.
+
+## #539 — the third cross-file duplicate: one flag word, two vocabularies
+
+`entity.rs`'s `flag` module and `ship3d.rs`'s sprite-slot constants describe THE
+SAME WORD — the `+0x00` of the 32-byte record at `DS:0x6212`. Every routine in the
+family opens identically (`shl ax,5 / mov bx,0x6212 / add bx,ax`, at `0x41D1`,
+`0x420D`, `0x428C`), which is what #503 and #505 decoded from the ship-3D side.
+
+```text
+  entity::flag::ACTIVE 0x80  =  ship3d::SHIP_3D_OBJECT_VISIBLE_FLAG
+  entity::flag::STATE0 0x01  =  ship3d::SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG
+  entity::flag::STATE1 0x02  =  ship3d::SHIP_3D_SPRITE_SLOT_DIRTY_FLAG
+```
+
+THE NAMES DISAGREE ABOUT MEANING while agreeing on every value: bit 7 is "active"
+here and "visible" there; bit 0 is "state 0" here and "active" there. Neither is
+wrong for its own subsystem — one file models the object lifecycle, the other the
+sprite pipeline — but a reader of either would reasonably conclude the other bit
+set belongs to a different record. Both sides now say otherwise.
+
+Three constants gained more than an address:
+
+* `ACTIVE` has NO immediate anywhere. It is read by sign (`or al,al / jns`
+  @`0x41DE`) or as the pair `test al,0x81` @`0x421D`/`0x42DD`. #511 recorded
+  bit-7-by-sign-test as this binary's habit; here it is again, and the empty scan
+  is confirmation rather than absence.
+* `TOGGLE5`/`TOGGLE6` are `xor al,0x20` @`0x427E` and `xor al,0x40` @`0x429D` —
+  genuine XORs. The state bits beside them are set and cleared outright, so the
+  name "toggle" is a real distinction in the instructions, not a loose word.
+* `STATE1` is set by the same `and al,0xfe / or al,2` handoff #505 found: clearing
+  `STATE0` and setting `STATE1` is ONE transition, and a port that does either
+  alone has invented a state the game has no name for.
+
+`SOURCE` (`0x04`) stays UNVERIFIED: no site in the `0x41C0..0x4320` family, and the
+doc says it is carried "during populate", which is elsewhere. Not inferred from its
+neighbours (#509).
+
+723 tests, 0 failures.

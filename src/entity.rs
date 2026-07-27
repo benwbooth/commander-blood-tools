@@ -6,18 +6,54 @@
 /// Flag bits in the entity record's `+0x00` word (decoded from the toggle-routine family).
 pub mod flag {
     /// `0x80` — the object is active (gates every state change).
+    /// `0x80` — bit 7, and it NEVER appears as an immediate: it is read by SIGN
+    /// (`or al,al / jns 0x41EA` @`0x41DE`) and by the PAIR `test al,0x81`
+    /// @`0x421D`/`0x42DD`, which tests it together with [`STATE0`]. #511 records
+    /// this as the binary's habit for bit-7 flags (audit-fixes #539).
+    ///
+    /// SAME BIT as `ship3d::SHIP_3D_OBJECT_VISIBLE_FLAG` — see [`INIT`].
     pub const ACTIVE: u16 = 0x80;
     /// `0x01` — state bit 0 (advances to [`STATE1`]).
+    /// `0x01` — `test al,1` @`0x41E2`, and again @`0x4201`, `0x4280`, `0x429F`,
+    /// `0x42C1`: five sites across the flag family. Same bit as
+    /// `ship3d::SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG` (audit-fixes #539).
     pub const STATE0: u16 = 0x01;
     /// `0x02` — state bit 1 (set when STATE0 advances).
+    /// `0x02` — `or al,2` @`0x41E8`, set as `and al,0xfe` @`0x41E6` clears
+    /// [`STATE0`], and again @`0x4227`. The clear-and-set is one handoff, not two
+    /// edits (#505). Same bit as `ship3d::SHIP_3D_SPRITE_SLOT_DIRTY_FLAG`
+    /// (audit-fixes #539).
     pub const STATE1: u16 = 0x02;
     /// `0x20` — a toggle state (bit 5).
+    /// `0x20` — `xor al,0x20` @`0x427E`. An XOR, so this really does TOGGLE;
+    /// unlike the state bits above it is never set or cleared outright
+    /// (audit-fixes #539).
     pub const TOGGLE5: u16 = 0x20;
     /// `0x40` — a toggle state (bit 6).
+    /// `0x40` — `xor al,0x40` @`0x429D`, the twin of [`TOGGLE5`]
+    /// (audit-fixes #539).
     pub const TOGGLE6: u16 = 0x40;
     /// `0x04` — carried from the source data during populate.
     pub const SOURCE: u16 = 0x04;
     /// The initial flags an object is populated with (`0x83` = active + state0 + state1).
+    /// `0x83` = active + state0 + state1.
+    ///
+    /// THIS WORD IS SHARED WITH `ship3d.rs` (audit-fixes #539). The record is the
+    /// same one #503/#505 decoded from the other side: `shl ax,5 / mov bx,0x6212 /
+    /// add bx,ax` opens `0x420D`, `0x428C` and `0x41D1` alike, so `entity.rs`'s
+    /// "object flags" and `ship3d.rs`'s "sprite slot flags" are ONE 32-byte
+    /// record's `+0x00` word under two sets of names:
+    ///
+    /// ```text
+    ///   ACTIVE 0x80  =  SHIP_3D_OBJECT_VISIBLE_FLAG
+    ///   STATE0 0x01  =  SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG
+    ///   STATE1 0x02  =  SHIP_3D_SPRITE_SLOT_DIRTY_FLAG
+    /// ```
+    ///
+    /// The names disagree about what the bits MEAN — "visible" versus "active",
+    /// "active" versus "state 0" — while agreeing on every value. Neither naming
+    /// is wrong for its own subsystem; both are recorded here so a reader of
+    /// either file knows the other exists.
     pub const INIT: u16 = ACTIVE | STATE0 | STATE1;
 }
 
