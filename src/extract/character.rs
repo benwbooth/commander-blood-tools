@@ -4,166 +4,49 @@ use super::*;
 // Character video — voice + animation + background + music
 // ===========================================================================
 
-pub(super) struct CharacterContext {
-    pub(super) record_name: &'static str,
-    pub(super) background_hnm: Option<&'static str>,
-}
-
-/// DESCRIPT.DES gives the character foreground and voice bank. Some character
-/// records are standalone talking heads/objects; others are composited over the
-/// active room. Keep the room part isolated until SCRIPT*.COD can replace it.
-pub(super) const CHAR_CONTEXTS: &[CharacterContext] = &[
-    CharacterContext {
-        record_name: "receiver",
-        background_hnm: None,
-    },
-    CharacterContext {
-        record_name: "Rotator",
-        background_hnm: None,
-    },
-    CharacterContext {
-        record_name: "Maziok",
-        background_hnm: None,
-    },
-    CharacterContext {
-        record_name: "Outrageor",
-        background_hnm: None,
-    },
-    CharacterContext {
-        record_name: "Super_Tromp",
-        background_hnm: None,
-    },
-    CharacterContext {
-        record_name: "Betakam",
-        background_hnm: None,
-    },
-    CharacterContext {
-        record_name: "Bratakas",
-        background_hnm: None,
-    },
-    CharacterContext {
-        record_name: "Anna_Haf",
-        background_hnm: None,
-    },
-    CharacterContext {
-        record_name: "Hom",
-        background_hnm: Some("satell10"),
-    },
-    CharacterContext {
-        record_name: "Kran_Dobu",
-        background_hnm: None,
-    },
-    CharacterContext {
-        record_name: "Yoko",
-        background_hnm: None,
-    },
-    CharacterContext {
-        record_name: "Eviscerator",
-        background_hnm: None,
-    },
-    CharacterContext {
-        record_name: "Emasculator",
-        background_hnm: None,
-    },
-    CharacterContext {
-        record_name: "Cyberquizz",
-        background_hnm: None,
-    },
-    CharacterContext {
-        record_name: "Jerry_Khan",
-        background_hnm: Some("petrol10"),
-    },
-    CharacterContext {
-        record_name: "Morning_Oil",
-        background_hnm: Some("concert"),
-    },
-    CharacterContext {
-        record_name: "Super_Zen",
-        background_hnm: Some("1masta20"),
-    },
-    CharacterContext {
-        record_name: "Amigo",
-        background_hnm: None,
-    },
-    CharacterContext {
-        record_name: "Migrator",
-        background_hnm: Some("tumull40"),
-    },
-    CharacterContext {
-        record_name: "Tina_Burner",
-        background_hnm: Some("1rondo20"),
-    },
-    CharacterContext {
-        record_name: "Tromp_la_Mort",
-        background_hnm: Some("larve"),
-    },
-    CharacterContext {
-        record_name: "Scruter_Mac",
-        background_hnm: Some("2vista20"),
-    },
-    CharacterContext {
-        record_name: "Scruter_Jo",
-        background_hnm: Some("2vista20"),
-    },
-    CharacterContext {
-        record_name: "Scruter_K",
-        background_hnm: Some("2vista20"),
-    },
-    CharacterContext {
-        record_name: "Daddy_Gluxx",
-        background_hnm: None,
-    },
-    CharacterContext {
-        record_name: "Otto_Von_Smile",
-        background_hnm: None,
-    },
-    CharacterContext {
-        record_name: "Maxxon",
-        background_hnm: Some("petrol10"),
-    },
-    CharacterContext {
-        record_name: "Bronko",
-        background_hnm: None,
-    },
-    CharacterContext {
-        record_name: "Izwalito",
-        background_hnm: Some("kort_1b"),
-    },
-    CharacterContext {
-        record_name: "Fifi",
-        background_hnm: None,
-    },
-    CharacterContext {
-        record_name: "Beauregard",
-        background_hnm: Some("gobar2"),
-    },
-    CharacterContext {
-        record_name: "Bob_Morlock",
-        background_hnm: Some("gobar1"),
-    },
-    CharacterContext {
-        record_name: "Bug_Deluxe",
-        background_hnm: None,
-    },
-    CharacterContext {
-        record_name: "Sinox",
-        background_hnm: Some("glacia10"),
-    },
-    CharacterContext {
-        record_name: "ondoyant",
-        background_hnm: Some("ondoya"),
-    },
+/// The characters whose scene is COMPOSITED OVER THE ACTIVE ROOM, and the room
+/// HNM to composite them onto. Everything else is a standalone talking head.
+///
+/// This used to be a 35-entry table naming every character record with a
+/// `background_hnm: None` for most of them, and the renderer SKIPPED any name it
+/// did not find — so the list doubled as an allow-list (audit-fixes #529). It was
+/// redundant twice over: `DescriptDb::character_scenes_for_snd` already filters
+/// `kind == RecordKind::Character`, so every scene reaching the renderer is a
+/// character record, and the table's 35 names were EXACTLY the 35 character
+/// records in DESCRIPT.DES — proven by
+/// `char_contexts_name_real_descript_character_records`, which now checks the
+/// remaining names and the count identity.
+///
+/// The 19 names carrying no background are gone. These 16 remain because WHICH
+/// character composites over a room is not in DESCRIPT.DES; the doc's original
+/// note still stands — keep it isolated until `SCRIPT*.COD` can replace it.
+pub(super) const CHARACTER_BACKGROUNDS: &[(&str, &str)] = &[
+    ("Hom", "satell10"),
+    ("Jerry_Khan", "petrol10"),
+    ("Morning_Oil", "concert"),
+    ("Super_Zen", "1masta20"),
+    ("Migrator", "tumull40"),
+    ("Tina_Burner", "1rondo20"),
+    ("Tromp_la_Mort", "larve"),
+    ("Scruter_Mac", "2vista20"),
+    ("Scruter_Jo", "2vista20"),
+    ("Scruter_K", "2vista20"),
+    ("Maxxon", "petrol10"),
+    ("Izwalito", "kort_1b"),
+    ("Beauregard", "gobar2"),
+    ("Bob_Morlock", "gobar1"),
+    ("Sinox", "glacia10"),
+    ("ondoyant", "ondoya"),
 ];
 
-pub(super) fn char_contents() -> &'static [CharacterContext] {
-    CHAR_CONTEXTS
+/// The room HNM to composite this character over, or `None` for a standalone head.
+pub(super) fn lookup_character_background(record_name: &str) -> Option<&'static str> {
+    CHARACTER_BACKGROUNDS
+        .iter()
+        .find(|(name, _)| name.eq_ignore_ascii_case(record_name))
+        .map(|(_, hnm)| *hnm)
 }
 
-pub(super) fn lookup_character_context(record_name: &str) -> Option<&'static CharacterContext> {
-    char_contents()
-        .iter()
-        .find(|ctx| ctx.record_name.eq_ignore_ascii_case(record_name))
-}
 
 struct DialogueSegment {
     text: String,
@@ -425,9 +308,6 @@ pub(super) fn create_character_video_from_scene(
     mp4_dir: &Path,
     hnm_music: &HashMap<String, String>,
 ) -> Result<bool, Box<dyn Error>> {
-    let Some(context) = lookup_character_context(&scene.record_name) else {
-        return Ok(false);
-    };
 
     let snd_bank = SndBank::read(snd_path)?;
 
@@ -459,7 +339,7 @@ pub(super) fn create_character_video_from_scene(
     }
 
     // Load background as indexed framebuffer + palette from pl/ location
-    let (bg_fb, bg_pal) = if let Some(bg_name) = context.background_hnm {
+    let (bg_fb, bg_pal) = if let Some(bg_name) = lookup_character_background(&scene.record_name) {
         let bg_path = dat_dir
             .join("pl")
             .join(format!("{}.hnm", bg_name.to_ascii_lowercase()));
@@ -494,8 +374,7 @@ pub(super) fn create_character_video_from_scene(
     }
 
     // Build ffmpeg command. Frames are authored at 320x200, then encoded 3x.
-    let music_path = context
-        .background_hnm
+    let music_path = lookup_character_background(&scene.record_name)
         .and_then(|bg_name| hnm_music.get(&media_stem(bg_name)))
         .map(|music| dat_dir.join("mu").join(format!("{music}.voc")));
     let mp4_out = mp4_dir.join(format!("{output_stem}.mp4"));
@@ -1730,5 +1609,47 @@ mod tests {
         assert_eq!(groups[0].1[1].clip_index, Some(2));
         assert_eq!(groups[1].0, ("SCRIPT2".to_string(), "Room2".to_string()));
         assert_eq!(groups[1].1[0].text, "silent");
+    }
+}
+
+#[cfg(test)]
+mod char_context_tests {
+    /// Every `CHAR_CONTEXTS` entry must name a real `RecordKind::Character`
+    /// record in DESCRIPT.DES (audit-fixes #529).
+    ///
+    /// The table is an ALLOW-LIST, not a lookup with a default: the only consumer
+    /// returns `Ok(false)` — skip the character entirely — when a name is absent.
+    /// So a typo here does not degrade one scene's background, it silently drops
+    /// the scene from the export, and nothing else would notice.
+    #[test]
+    fn char_contexts_name_real_descript_character_records() {
+        let Ok(des) = ["output/DESCRIPT.DES", "../output/DESCRIPT.DES"]
+            .iter()
+            .find_map(|p| commander_blood_tools::descript::DescriptDb::parse_file(p).ok())
+            .ok_or(())
+        else {
+            return;
+        };
+        let characters: Vec<String> = des
+            .records
+            .iter()
+            .filter(|r| r.kind == commander_blood_tools::descript::RecordKind::Character)
+            .map(|r| r.name.to_ascii_lowercase())
+            .collect();
+        assert!(!characters.is_empty(), "DESCRIPT.DES has character records");
+
+        for (name, _) in super::CHARACTER_BACKGROUNDS {
+            assert!(
+                characters.contains(&name.to_ascii_lowercase()),
+                "{name} is not a Character record in DESCRIPT.DES"
+            );
+        }
+        // The renderer no longer gates on this table, because the SCENE PRODUCER
+        // already does: `character_scenes_for_snd` filters on RecordKind::Character.
+        // These 16 are background overrides only, so the table must be a SUBSET.
+        assert!(
+            super::CHARACTER_BACKGROUNDS.len() < characters.len(),
+            "backgrounds are a subset of the character records"
+        );
     }
 }

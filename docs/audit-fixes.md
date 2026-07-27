@@ -17543,3 +17543,44 @@ new work — it is a documented APPROX row (#440) with its own matrix entry, wai
 on the runtime slot list.
 
 623 tests, 0 failures.
+
+## #529 — a 35-name allow-list that was redundant twice over
+
+`CHAR_CONTEXTS` listed 35 character record names with a background HNM each, and 19
+of those entries carried `background_hnm: None` — no information at all, except
+that the renderer SKIPPED any name it could not find:
+
+```rust
+let Some(context) = lookup_character_context(&scene.record_name) else {
+    return Ok(false);   // skip the character entirely
+};
+```
+
+So the table doubled as an allow-list, and I nearly deleted the `None` rows as
+inert before reading that line. They were not inert; deleting them would have
+silently dropped 19 characters from the export, which is exactly the class of
+change that looks like tidying and is a regression.
+
+It was redundant TWICE, and both proofs were needed before touching it:
+
+1. `DescriptDb::character_scenes_for_snd` ALREADY filters
+   `kind == RecordKind::Character`, so every scene reaching the renderer is a
+   character record. The allow-list can never reject anything.
+2. The table's 35 names are EXACTLY the 35 `RecordKind::Character` records in
+   DESCRIPT.DES — measured, not assumed: 35 = 35, with every name present.
+
+With both established, the allow-list is derivable and the names are a copy of
+enumerable data — the defect `CLAUDE.md` names outright. Replaced by
+`CHARACTER_BACKGROUNDS`, the 16 pairs that carry actual information, and the
+renderer now treats "no background" as a standalone talking head rather than a
+reason to skip.
+
+`check_ui_literals.py`: unpinned RECORD-file literals **20 -> 5**.
+
+SEPARATE FINDING, recorded not fixed: `src/extract/` is a module of the BINARY, not
+the library, so its **100 tests never run** under `cargo test --release --lib` — the
+command `CLAUDE.md` names as the one that must stay green. They pass under
+`--bins`, and I ran both here, but a routine that omits them lets a hundred tests
+rot unnoticed.
+
+623 lib tests + 100 bin tests, 0 failures.
