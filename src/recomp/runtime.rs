@@ -23,6 +23,14 @@ const STUB_SEG: u16 = 0xf000;
 /// Dedicated stub segment for int 67h so the EMS device name can live at offset 0x0A
 /// (the standard EMS presence check reads `seg(IVT[67h]):000A` for "EMMXXXX0").
 const EMS_STUB_SEG: u16 = 0xf200;
+/// The EMS driver signature an `int 67h` handler must expose at `seg:0x0A`.
+///
+/// NOT a display string and not a port invention: the game carries its own copy at
+/// `BLOODPRG.EXE` file `0x997` and compares against it to decide whether EMS is
+/// present. The emulated BIOS writes it so that check succeeds — emulating the DOS
+/// interface, which `recomp/runtime.rs` exists to do (audit-fixes #480, #527).
+/// Pinned to the game's copy by `ems_signature_is_the_one_the_game_checks_for`.
+const EMS_DRIVER_SIGNATURE: &[u8; 8] = b"EMMXXXX0";
 /// EMS physical page frame (4 × 16 KB pages at E000:0000).
 const EMS_FRAME_SEG: u16 = 0xe000;
 /// EMS logical page store: above the 1 MB real-mode space inside Machine memory.
@@ -627,7 +635,7 @@ impl Runtime {
         self.m.write16(0, 0x67 * 4, 0);
         self.m.write16(0, 0x67 * 4 + 2, EMS_STUB_SEG);
         self.m.write8(EMS_STUB_SEG, 0, 0xf4);
-        for (i, b) in b"EMMXXXX0".iter().enumerate() {
+        for (i, b) in EMS_DRIVER_SIGNATURE.iter().enumerate() {
             self.m.write8(EMS_STUB_SEG, 0x0a + i as u32, *b);
         }
         // Mouse-callback return trampoline (far-called by the guest handler's retf path).
@@ -2588,5 +2596,25 @@ impl Runtime {
         self.kbd_queue.push_back((scancode, ascii));
         self.bios_keys.push_back((scancode, ascii));
         self.kbd_irq_pending += 1;
+    }
+}
+
+#[cfg(test)]
+mod ems_tests {
+    /// The emulator's EMS signature must be the bytes the GAME looks for, not a
+    /// remembered spelling of the DOS convention (audit-fixes #527).
+    #[test]
+    fn ems_signature_is_the_one_the_game_checks_for() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        const AT: usize = 0x997; // the game's own copy of the signature
+        assert_eq!(
+            &exe[AT..AT + super::EMS_DRIVER_SIGNATURE.len()],
+            &super::EMS_DRIVER_SIGNATURE[..],
+            "the stub must expose the signature the game compares against"
+        );
     }
 }

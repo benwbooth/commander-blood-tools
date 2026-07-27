@@ -17472,3 +17472,37 @@ other exists rather than discovering a second copy later.
 ONE unpinned, down from the six this pass started with.
 
 622 tests, 0 failures.
+
+## #527 — the EMS signature is the game's own bytes, and a checker that skipped its own line
+
+`check_ui_literals.py` reported one unpinned display literal left in the image:
+`b"EMMXXXX0"` in `recomp/runtime.rs`. It is not a display string — it is the EMS
+DRIVER SIGNATURE an `int 67h` handler must expose at `seg:0x0A`, written by the
+emulated BIOS so the game's EMS detection succeeds. That is `recomp/runtime.rs`
+doing its job (#480), so the literal is legitimate.
+
+Legitimate is not the same as unchecked. The GAME CARRIES ITS OWN COPY at file
+`0x997` and compares against it, so the right pin is the game's bytes:
+`ems_signature_is_the_one_the_game_checks_for` asserts the emulator's signature
+equals what the executable holds. Previously the emulator exposed a signature
+remembered from the DOS convention, and a typo would have shown up as "the game
+does not detect EMS" — a symptom several layers from its cause.
+
+THE CHECKER THEN STILL REPORTED IT, and the reason is a bug in the checker. Its
+owner search walks BACKWARDS from `line - 1` looking for the declaration a literal
+belongs to. A literal declared INLINE with its constant —
+
+    const EMS_DRIVER_SIGNATURE: &[u8; 8] = b"EMMXXXX0";
+
+— has its owner on its OWN line, so starting one line earlier walked straight past
+it and found whatever declaration came before. The literal read as unowned, and the
+pinning test that names `EMS_DRIVER_SIGNATURE` could never be matched to it. Fixed
+by starting the walk at `line`.
+
+That bug had been silently weakening the tool for every inline-declared literal, not
+just this one — a checker reporting a genuinely-pinned value teaches its reader to
+skip its output, which is the exact failure #466 introduced the pin logic to avoid.
+
+`check_ui_literals.py`: 39 display literals in the image, **0 unpinned** (was 1).
+
+623 tests, 0 failures.

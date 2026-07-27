@@ -135,7 +135,13 @@ def main():
                 # A pinning test is precisely the kind that does NOT repeat the
                 # value it pins (audit-fixes #466).
                 owner = None
-                for prev in range(line - 1, max(0, line - 400), -1):
+                # START AT `line`, NOT `line - 1`. A literal declared inline with
+                # its constant -- `const EMS_DRIVER_SIGNATURE: &[u8; 8] =
+                # b"EMMXXXX0";` -- has its owner on its OWN line, and beginning the
+                # walk one line earlier skipped straight past it to whatever
+                # declaration came before, so the literal read as unowned and its
+                # pinning test could never be found (audit-fixes #527).
+                for prev in range(line, max(0, line - 400), -1):
                     m2 = DECL.match(body.splitlines()[prev - 1]) if prev - 1 < len(body.splitlines()) else None
                     if m2:
                         owner = m2.group(1)
