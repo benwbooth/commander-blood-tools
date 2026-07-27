@@ -1812,7 +1812,17 @@ const C9_PRESENTATION_GATE_A: u16 = 0x252A;
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const C9_PRESENTATION_GATE_B: u16 = 0x2531;
 const C4_POST_UPDATE_SENTINEL: u16 = 0xFFFF;
+/// `DS:0x6780`. The setter is a single instruction ending the routine —
+/// `mov word ptr gs:[0x6780],ax` @`0x64BB` then `ret` @`0x64BF` — and the cell is
+/// RESET to `0xFFFF` at `0x10D3` and `0x1CFA`, so `0xFFFF` is its empty value
+/// rather than a profile number (audit-fixes #516).
 const VM_PENDING_RESOURCE_PROFILE: u16 = 0x6780;
+/// `DS:0x675E`, and the code PROVES the name: `mov bx,word ptr gs:[0x675e]`
+/// @`0x586C` loads it, `mov ax,[bx]` @`0x5871` dereferences it, and
+/// `cmp ax,0xc4` @`0x5873` checks the pointed-to record's type against the `0xC4`
+/// of [`SHIP_3D_NAVIGATION_DEFERRED_RECORD_TYPE`] (#509). So the cell holds a
+/// POINTER to a record, not a record id. Written at `0x54A4`
+/// (audit-fixes #516).
 const VM_PRESENTATION_PRIMARY_C4_RECORD: u16 = 0x675E;
 /// Touched by the game at `test byte ptr [0x67ac], 1` @`0x0B498`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).

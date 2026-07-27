@@ -17126,3 +17126,40 @@ line IDs rather than constants private to the C2 handler — the doc lists them 
 future change is known to touch five places, not one.
 
 620 tests, 0 failures.
+
+## #516 — a cell name proved by a dereference, and a census that gives counts not addresses
+
+Two presentation cells, and one tooling note.
+
+`VM_PRESENTATION_PRIMARY_C4_RECORD` is named for a record type; the code shows the
+name is literally true, in three instructions:
+
+```text
+  0x586C  mov bx, word ptr gs:[0x675e]   load the cell
+  0x5871  mov ax, [bx]                   DEREFERENCE it
+  0x5873  cmp ax, 0xc4                   the pointed-to record's TYPE
+```
+
+So it holds a POINTER to a record, not a record id — and the `0xC4` it is checked
+against is the same record type #509 sourced. A port storing an id here would
+compile and be wrong at the first dereference.
+
+`VM_PENDING_RESOURCE_PROFILE`'s setter is one instruction and a `ret` (`0x64BB`,
+`0x64BF`), and the cell is reset to `0xFFFF` at `0x10D3` and `0x1CFA` — so `0xFFFF`
+is its EMPTY value, not a profile number. Worth stating because "pending profile" is
+the kind of field a reader assumes is zero-initialised.
+
+TOOLING: `re/tools/addr_forms.py` reports "6 distinct site(s) referencing 0x6780"
+and a breakdown by immediate, but NOT the addresses. That is fine for the question
+it was built for (#436: does anything write this cell?) and useless for citing,
+which needs a site. I scanned the ten common `[disp16]` encodings directly instead —
+including the `65` GS-PREFIXED variants, whose instruction address is one byte
+BEFORE the pattern match (#515's lesson, applied rather than re-learned). Neither
+tool change is worth making yet: the direct scan is six lines and this is the second
+time I have needed it.
+
+`0x67AF` (`VM_PRESENTATION_RELATED_FLAG20`) matched NONE of those forms, so it is
+reached by base register. It stays UNVERIFIED — after #491 that is not evidence of
+absence, and after #501 it is not an invitation to attribute it to a neighbour.
+
+620 tests, 0 failures.
