@@ -1680,3 +1680,35 @@ and the compare at `0x12C9` — so the spin-wait's exit condition is produced by
 installed timer ISR (`func_79c` points INT 08h at `cs:0x213`) reaching the cell by
 some route not visible as a direct address or an immediate. Finding that access is
 the remaining work.
+
+## APPROX — the port SEARCHES for media files; the game reads a path table (#481/#482)
+
+`CLAUDE.md` allows a stand-in only when a row here labels it APPROX **and names the
+binary routine that must replace it**. This row exists to name it.
+
+**The stand-in.** Seven runtime sites resolve assets by scanning directories with
+`read_dir` — `engine.rs` ×4, `script.rs`, `snd.rs`, `hnm.rs` — building name→path
+maps at load time. `collect_hnm_paths` is the largest. (The scans inside
+`recomp/runtime.rs` are NOT covered by this row: there, emulating DOS file access
+IS the job, and #480 classified them INFRA.)
+
+**What the game does instead.** It never searches. `re/tools/dump_asset_table.py`
+decodes a 45-record table at **file 0x0F48B..0x0F915** (`asset_path_template_table`)
+holding relative paths whose filename is a twelve-`x` placeholder patched at load
+time. The directory prefix is baked into the SLOT: `pe\` ×33, `sq\` ×10, `pl\` ×1,
+`ob\` ×1 — precisely the four directories the port's scan discovers empirically.
+A parallel set at 0x0E11C/0x0E14D/0x0E1E7 covers `sn\`, `mu\`, `fd\`.
+
+**Why it is not fixed yet, stated honestly.** The table is decoded; the mapping from
+SLOT to CALL SITE is not. Four searches for the patching code came back negative
+(re/dead_ends.md), and the likely location is overlay code that those searches never
+covered. Binding a template to the wrong caller would load the wrong film — worse
+than a scan that reaches the right one. So the scans stay until the caller is known.
+
+**What replaces it.** The routine that patches a slot's placeholder, once found; the
+port then composes `prefix + name` per slot exactly as the game does, and the
+`read_dir` calls at those seven sites go away.
+
+**Also settled by #482, and NOT a candidate replacement:** the `FS:0x0C04` resource
+table (95 names) contains ZERO `.hnm` entries, so it cannot resolve talk-HNMs. That
+was the specific hypothesis #481 raised and it is now closed.

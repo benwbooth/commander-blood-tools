@@ -95,6 +95,16 @@ fn parse_deb_object_names(deb: &[u8]) -> HashMap<u16, String> {
 
 /// Recursively collect `*.hnm` asset paths under `dir`, keyed by lowercase
 /// filename, so a DESCRIPT talk-HNM name resolves to its file.
+///
+/// APPROX — the game NEVER searches for a file (audit-fixes #482; the matrix row
+/// is "the port SEARCHES for media files" in docs/port-validation.md). It reads
+/// `asset_path_template_table` @0x0F48B: 45 variable-length records, each a
+/// relative path whose filename is a twelve-`x` placeholder patched at load time,
+/// with the directory baked into the SLOT (`pe\` x33, `sq\` x10, `pl\` x1, `ob\`
+/// x1 — the same four directories this scan rediscovers by walking the tree).
+/// This stands in only until the routine that patches a slot is found; the
+/// `FS:0x0C04` resource table is NOT that routine — its 95 names include no
+/// `.hnm` at all, which is what #481 raised and #482 closed.
 fn collect_hnm_paths(dir: &Path) -> HashMap<String, std::path::PathBuf> {
     let mut map = HashMap::new();
     let mut stack = vec![dir.to_path_buf()];
@@ -8767,5 +8777,77 @@ mod tests {
             e.framebuffer.len(),
             ENGINE_SCREEN_WIDTH * ENGINE_SCREEN_HEIGHT
         );
+    }
+
+    /// The game does not SEARCH for media: `asset_path_template_table` @0x0F48B
+    /// names the directory per slot (audit-fixes #482). Parsed from the image so
+    /// a wrong record layout fails here rather than being restated as constants.
+    ///
+    /// Records are VARIABLE length -- a NUL-terminated path then 10 metadata
+    /// bytes -- NOT a fixed stride. Assuming a uniform 26 desynchronises at the
+    /// first short name (`sq\cryogel.hnm` is 25, `sq\the_star.HNM` is 26), which
+    /// is the error this test pins.
+    #[test]
+    fn asset_path_table_names_the_directory_the_hnm_scan_rediscovers() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        const TABLE: usize = 0x0F48B;
+        const META: usize = 10;
+
+        let mut off = TABLE;
+        let mut paths: Vec<String> = Vec::new();
+        let mut metas: Vec<u8> = Vec::new();
+        loop {
+            let Some(end) = exe[off..].iter().position(|&c| c == 0).map(|i| off + i) else {
+                break;
+            };
+            let name = &exe[off..end];
+            if name.len() < 4 || name.len() > 24 || name[2] != b'\\' {
+                break;
+            }
+            if !name.iter().all(|&c| (0x20..0x7F).contains(&c)) {
+                break;
+            }
+            paths.push(String::from_utf8_lossy(name).into_owned());
+            metas.push(exe[end + META]); // the record's last metadata byte
+            off = end + 1 + META;
+        }
+
+        assert_eq!(paths.len(), 45, "45 records, 0x0F48B..0x0F915");
+        assert_eq!(off, 0x0F915);
+        assert_eq!(paths[0], r"sq\mind.HNM");
+        assert_eq!(paths[44], r"sq\pollup.hnm");
+
+        // Variable length is the point: at least two distinct record sizes.
+        let sizes: std::collections::HashSet<usize> =
+            paths.iter().map(|p| p.len() + 1 + META).collect();
+        assert!(sizes.len() > 1, "records are NOT a fixed stride: {sizes:?}");
+
+        // The directory is a property of the SLOT, and the census is exactly the
+        // four directories `collect_hnm_paths` discovers by walking the tree.
+        let mut census = std::collections::BTreeMap::new();
+        for p in &paths {
+            *census.entry(p[..2].to_string()).or_insert(0usize) += 1;
+        }
+        assert_eq!(census.get("pe"), Some(&33));
+        assert_eq!(census.get("sq"), Some(&10));
+        assert_eq!(census.get("pl"), Some(&1));
+        assert_eq!(census.get("ob"), Some(&1));
+        assert_eq!(census.len(), 4, "no fifth media directory exists");
+
+        // Most filenames are a twelve-`x` placeholder patched at load time; the
+        // rest are fixed assets stored literally (the cryobox film among them).
+        let templates = paths.iter().filter(|p| p.contains("xxxxxxxxxxxx")).count();
+        assert_eq!(templates, 38);
+        assert!(paths.iter().any(|p| p == r"sq\cryorad.hnm"));
+
+        // The terminator: 0x10 in every record but the last, which carries 0x00.
+        // This lands in the same column 45 times running only if the parse above
+        // stayed aligned, so it double-checks the record layout.
+        assert!(metas[..44].iter().all(|&m| m == 0x10));
+        assert_eq!(metas[44], 0x00);
     }
 }

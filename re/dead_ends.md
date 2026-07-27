@@ -1374,3 +1374,35 @@ routine — which is exactly what vector 6 turned out to be.
 The lesson for the file: "no write site exists" was treated as "the write is
 hidden". It meant there is no write. Data that is correct in the image needs no
 code, and searching for the code that fills it can run forever.
+
+## Who patches the asset path templates at 0x0F48B (audit-fixes #482)
+
+The table itself is decoded — 45 variable-length records, directory baked into each
+slot, filename patched over a twelve-`x` placeholder. What is NOT found is the code
+that does the patching. Four searches, all negative, none worth repeating blind:
+
+- **DS-displacement census** of the slot addresses (`DS:0x206B`, `0x2137`, …):
+  0 sites. Consistent with a base-register walk, not a hidden write.
+- **Raw immediate `0x206B`**: 0 occurrences in the ENTIRE file, not merely 0 in code.
+  That is the strong result — the table head is never loaded as a DS-relative
+  constant, so the `DS = 0xD420` base is the wrong frame for these strings.
+- **Pointer array over consecutive slots**, solved for the base rather than assumed:
+  all 4096 paragraph-aligned bases tested against a 3-consecutive-slot pattern, 0
+  hits. Expected in hindsight — VARIABLE-LENGTH RECORDS CANNOT BE INDEXED, only
+  walked, so no pointer array should exist. The absence is confirming, not blocking.
+- **Far pointer `off:seg` resolving to a slot**: 1 hit at 0x918B, which disassembles
+  as the operand of `int 0x27` running into `add bx, 6`. A mid-instruction phantom;
+  at ~4096 (seg,off) encodings per address, roughly 0.1 false hits are expected per
+  scan of this file, so a lone hit is noise and needed the disassembly to reject.
+
+Better approach next time: the patcher is most likely in an OVERLAY (croolis / manu3
+/ amer / scrut), whose code these searches never covered — they scanned BLOODPRG.EXE
+only. Search the XDB overlays for the `movs`/`rep movsb` that writes 8 or 12 bytes
+into a path buffer, or for the loader call that consumes it, and come back to the
+main image afterwards.
+
+The generalisable lesson, a variant of the one already in this file: "0 references"
+was again the right measurement of the WRONG QUESTION. Here it did not mean the
+write is hidden and did not mean no write exists — it meant the address space was
+wrong. Before hunting a missing reference, confirm the base the data is addressed
+against.

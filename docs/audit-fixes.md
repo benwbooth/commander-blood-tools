@@ -15805,3 +15805,57 @@ names, and whether every such name has a resource ID is exactly the sort of thin
 
 2229 items, 1206 confirmed (54.1%), 1023 open. 800 citations verified, 0 wrong.
 724 workspace tests, 0 failures.
+
+## #482 — the game does NOT search for its media: a path-TEMPLATE table names the directory
+
+#481 left a concrete question: can `collect_hnm_paths`'s directory scan be replaced
+by a `FS:0x0C04` resource-table lookup? Measured, the answer is NO, and for a blunt
+reason — the resource table's 95 names contain **zero** `.hnm` entries, while 701
+HNM files ship under `ob`, `pe`, `pl`, `sq`. That table cannot resolve a talk-HNM.
+
+But the game plainly does not scan, so the directory had to be somewhere. It is.
+The image holds RELATIVE PATHS as literals, and most of them are TEMPLATES:
+
+    0x0E11C  'sn\tb.snd'          0x0E14D  'mu\xxxxxxxx.voc'
+    0x0F48B  'sq\mind.HNM'        0x0F557  'pe\xxxxxxxxxxxx'
+
+The twelve `x`s are a PLACEHOLDER patched with the filename at load time. So the
+DIRECTORY IS A PROPERTY OF THE SLOT, fixed in the binary; only the name varies.
+
+`re/tools/dump_asset_table.py` decodes the table at **0x0F48B..0x0F915 — 45
+records**. Prefix census: `pe\` 33, `sq\` 10, `pl\` 1, `ob\` 1. Those are EXACTLY
+the four directories the port had discovered by scanning, which is the confirmation
+that this table is the thing the scan was standing in for.
+
+TWO STRUCTURE ERRORS ON THE WAY, both mine, both the same species:
+
+- I read the first slot as a fixed 26-byte record (`pe\` + 12 `x`s + NUL + 10). It
+  is VARIABLE length — NUL-terminated path THEN 10 metadata bytes. `sq\the_star.HNM`
+  is 26, `sq\cryogel.hnm` is 25. A uniform 26 desynchronised at the first short name
+  and corrupted every record after it, printing `q\cryorad.hnm` and `\pollup.hnm`
+  — visibly truncated prefixes I could have caught by reading the output.
+- Walking backward with a `contains a backslash` test settled one byte INSIDE a
+  record, because the truncated tail `\xxxxxxxxxxxx` passes that test. The table
+  start moved from a real 0x0F48B to a phantom 0x0F53F. Fixed by requiring a full
+  two-character prefix (`^[a-z0-9]{2}\\`).
+
+The metadata is nine zero bytes then `0x10` — uniform across all 45 records EXCEPT
+the last (`sq\pollup.hnm`), whose tenth byte is `0x00`. A terminator, and an
+independent check that the record parse is aligned: the flag lands in the same
+column 45 times running.
+
+WHO PATCHES A SLOT IS NOT ANSWERED, and four searches failed to find out:
+DS-displacement census of the slot addresses (0 sites), the raw immediate `0x206B`
+(0 occurrences ANYWHERE in the file), a pointer array over consecutive slots (none,
+at ANY paragraph-aligned base — scanned all 4096), and a far pointer resolving to a
+slot (one hit at 0x918B, which disassembles as the operand of `int 0x27` running
+into `add bx,6` — mid-instruction coincidence, the standard x86 phantom).
+
+The negative result is itself informative: variable-length records CANNOT be
+indexed, only walked, so a pointer array SHOULDN'T exist and its absence is
+consistent rather than surprising. The table is reached by a pointer computed at
+runtime — an overlay's code, most likely, which is where the search goes next.
+
+So the scanners stay for now, and this is why: the mechanism is decoded but the
+slot-to-callsite mapping is not, and wiring a template table to the wrong caller
+would be worse than a scan that reaches the right file. Recorded as the task.
