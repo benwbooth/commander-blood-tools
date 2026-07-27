@@ -14372,3 +14372,33 @@ one at risk. Their provenance is still a transcription and the row stays open.
 
 2229 items, 1116 confirmed (50.1%), 1113 open. 756 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #438 — two more shortened names, and the reason I did not change them
+
+Applying #437's method to the other eight contacts: all nine names exist in the
+shipped files, so none is invented. But `DESCRIPT.DES` carries a tagged
+character-name table —
+
+    0x084D  2Hom            0x08B9  8Jerry_Khan      0x0912  ;Tina_Burner
+    0x0991  AMaxxon         0x09B5  CIzwalito        0x09EB  EBob_Morlock
+
+— alongside `Super_Tromp`, `Anna_Haf`, `Kran_Dobu`, `Otto_Von_Smile` and two
+dozen more. So the port's `JERRY` and `TINA` are SHORT FORMS of the game's
+`Jerry_Khan` and `Tina_Burner`.
+
+I DID NOT CHANGE THEM, and the reason is the interesting half. #437 was safe
+because `Bob Morlock` with a space appears in ZERO of 261 shipped files — the
+spelling was invented, full stop. `JERRY` cannot be ruled out that way: it is a
+real substring of a real name, and a phone UI displaying a first name where the
+character table holds a full one is an ordinary design choice. Changing a
+SEPARATOR the game cannot produce is a correction; shortening or lengthening a
+display name on the strength of a neighbouring table is a guess.
+
+What this does establish is the fix's shape. The port already parses that table —
+`DescriptDb::character_names()` has existed all along — so `PHONE_CONTACTS` can
+be sourced from data rather than transcribed, once the phone's own record list is
+decoded. That is now written where the table is, so the next pass starts from the
+parser instead of the literal.
+
+2229 items, 1116 confirmed (50.1%), 1113 open. 756 citations verified, 0 wrong.
+723 workspace tests, 0 failures.

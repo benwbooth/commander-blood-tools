@@ -3081,6 +3081,23 @@ impl EngineState {
     /// is no mechanism by which the underscore could disappear on the way to the
     /// screen. Corrected to `BOB_MORLOCK`.
     ///
+    /// TWO MORE NAMES ARE SHORTENED, and the data path already exists
+    /// (audit-fixes #438). `DESCRIPT.DES` carries a tagged character-name table —
+    /// `8Jerry_Khan` @0x08B9, `;Tina_Burner` @0x0912, `2Hom` @0x084D,
+    /// `AMaxxon` @0x0991, `CIzwalito` @0x09B5, `EBob_Morlock` @0x09EB — and the
+    /// port ALREADY parses it: `DescriptDb::character_names()`. So `JERRY` and
+    /// `TINA` here are short forms of the game's `Jerry_Khan` and `Tina_Burner`,
+    /// the same defect #437 fixed for `BOB_MORLOCK`, and all nine names exist in
+    /// the shipped files.
+    ///
+    /// NOT rewritten on that basis, deliberately: which subset the phone lists,
+    /// and in what form, is exactly what the unfound caption path decides — a
+    /// truncated display name is a plausible UI choice in a way a changed
+    /// SEPARATOR is not. #437 was safe because the spaced spelling appears in
+    /// zero shipped files; `JERRY` cannot be ruled out the same way. The fix is
+    /// to source this table from `character_names()` once the phone's own record
+    /// list is decoded.
+    ///
     /// The video-phone's callable crew: display name + their talk-head HNM basename
     /// (`pe/aa*.hnm`). These are the crew whose full-colour idle-head animations exist and
     /// decode cleanly; the phone shows the dialled one as the live "video feed".
