@@ -754,7 +754,7 @@ play	src/main.rs	593	fn		INFRA
 stop	src/main.rs	602	fn		INFRA	
 PIT_HZ	src/main.rs	1081	const	0xb2d,0x0FFB,0x12C9,0x12D1,0x12D4,0x1746	ASM?	// THE GAME'S PROGRAMMED FRAME CADENCE (audit-fixes #476), replacing a // measured 46 ms: `mov word ptr [0xb2d], 8` @0x0FFB sets a frame budget of // EIGHT PIT ticks, and `cmp word ptr [0xb2d], 0` / `
 FRAME_TICKS	src/main.rs	1082	const		INFRA?	
-menu_item_index	src/manu3.rs	18	fn	XDB:manu3:0x000,XDB:manu3:0x181	CELL?	/// The menu-item column index from the caller's input word (`[bp+4] & 0x1F`, method /// entry `XDB:manu3:0x000`/`XDB:manu3:0x181`) — 0..31 selects one of up to 32 menu items.
+menu_item_index	src/manu3.rs	18	fn	XDB:manu3:0x000,XDB:manu3:0x181	ASM	/// The menu-item column index from the caller's input word (`[bp+4] & 0x1F`, method /// entry `XDB:manu3:0x000`/`XDB:manu3:0x181`) — 0..31 selects one of up to 32 menu items.
 MENU_ROW_BIAS	src/manu3.rs	23	const		UNVERIFIED	/// The amount added to a menu row (placed in the high byte of the derived coordinate word).
 menu_screen_row	src/manu3.rs	27	fn		UNVERIFIED	/// The screen row derived from the caller's input word: shift right by 4, then bias the row /// (the high byte) by [`MENU_ROW_BIAS`].
 menu_item_handler	src/manu3.rs	36	fn	XDB:manu3:0x181,0x2306	ASM	/// Resolve a selected menu item to its handler offset (method `XDB:manu3:0x181`): the item index /// (word-scaled) reads an entry from the offset table located at `base`, and the /// handler is `base
@@ -801,7 +801,7 @@ fill_triangle_tex	src/manu3_hand.rs	509	fn		UNVERIFIED
 fill_triangle	src/manu3_hand.rs	570	fn		UNVERIFIED	
 PosePlayer	src/manu3_hand.rs	602	struct	XDB:manu3:0x181,XDB:manu3:0x1DF,XDB:manu3:0x19B,0x2394	ASM	/// The phased tween pose player (exact transcription of XDB:manu3:0x181/XDB:manu3:0x1DF/XDB:manu3:0x19B): /// applies sequence `seq`'s groups to the segment cells, animating the hand. /// Cells addre
 new	src/manu3_hand.rs	615	fn	XDB:manu3:0x181,0x2306,0x2974	ASM	/// Look up the sequence for a SELECTOR through the game's own dispatch table /// (XDB:manu3:0x181 decoded: table base = ds:[0x2306] = 0x2974; sequence = base + /// table[(selector & 0x1F) * 2]; group
-step	src/manu3_hand.rs	634	fn	XDB:manu3:0x1DF,XDB:manu3:0x19B	CELL?	/// One frame: construct due groups (phase match), step active tweens; writes go /// through `cells` (cell address -> current value), exactly as XDB:manu3:0x1DF/XDB:manu3:0x19B do.
+step	src/manu3_hand.rs	634	fn	XDB:manu3:0x1DF,XDB:manu3:0x19B	ASM	/// One frame: construct due groups (phase match), step active tweens; writes go /// through `cells` (cell address -> current value), exactly as XDB:manu3:0x1DF/XDB:manu3:0x19B do.
 done	src/manu3_hand.rs	674	fn		UNVERIFIED	
 set_pose	src/manu3_hand.rs	681	fn		UNVERIFIED	/// Select the pose (decoded selector semantics); a change starts that sequence.
 tick_pose	src/manu3_hand.rs	689	fn		UNVERIFIED	/// Advance the current pose animation one frame (call per rendered frame).

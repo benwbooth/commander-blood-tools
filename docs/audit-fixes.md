@@ -15976,3 +15976,31 @@ skips the descriptor — so the port's saturating floor is its own guard and is
 labelled as such rather than presented as decoded.
 
 616 tests, 0 failures.
+
+### #486a — the same routine was ported TWICE, and the copies disagreed
+
+Verifying `PosePlayer::step` (`manu3_hand.rs`) against the same `XDB:manu3:0x1DF` /
+`0x19B` pair found it already correct:
+
+```rust
+self.active.push((count - 1, target, (cur << 16) + step, step));
+```
+
+`count - 1` and the pre-advanced accumulator, both of them, written independently
+of `MenuTween::to_target` — which had neither. Two models of ONE overlay method
+lived in the port for as long as both files have existed, and they disagreed by a
+frame. #486's fix is now confirmed from a second direction rather than only by my
+reading of the disassembly: the corrected constructor agrees with the copy that was
+already right.
+
+`check_duplicate_rules.py` DOES cluster these two — that is what it is for, and the
+cluster was sitting in its output. What it cannot do is compare the bodies, so
+"two functions cite 0x19B" was reported and read as legitimate (a routine and its
+helper often do share an address, which the tool says in its own footer). The
+lesson is narrow and worth keeping: a duplicate-citation cluster is a prompt to
+DIFF THE TWO IMPLEMENTATIONS, not merely to check that both are cited.
+
+Its phase half matches too: `cl` is the count and `ch` the phase (`movzx ecx,[si]`
+@0x1E3), `count == 0` ends the sequence (`or cl,cl / je 0x23E`), and a phase
+mismatch breaks after `inc word [0x102c]` @0x239 — advancing exactly one phase per
+frame, which is what the port's `break` does.
