@@ -1331,7 +1331,7 @@ reveal_frames_per_char	src/vm.rs	748	fn	0xB31,0x94BA,0x0B35,0x0ACA,0x94AB,0xaca,
 record_end_hold_ticks	src/vm.rs	754	fn	0x7378,0x738C,0x27CF,0x0ACA,0x67BB	ASM	/// Port the record-end hold timer at `BLOODPRG.EXE` `0x7378..0x738C`: /// `b35 = gs:[0x27CF] * (gs:[0x0ACA] >> 1) + 6; gs:[0x67BB] = 1`.
 scan_zero_word_pub	src/vm.rs	769	fn	0x6293	ORACLE	/// Replicates helper `0x6293`: from `start`, scan byte-by-byte until a `0x0000` /// word, skip it, then skip one extra byte if it is also zero. Returns the /// offset just past the terminator. /// Te
 scan_zero_word	src/vm.rs	773	fn		ORACLE	
-VmToken	src/vm.rs	787	enum	0x6724	CELL?	/// A single decoded token from a COD stream, in execution order. /// `0xA6` TEXT token. /// `b1:b2` — index into the per-line record table (`gs:0x6724`). /// `b3` — voice/speaker selector (`0xFF` = n
+VmToken	src/vm.rs	787	enum	0x6724	ASM	/// A single decoded token from a COD stream, in execution order. /// `0xA6` TEXT token. /// `b1:b2` — index into the per-line record table (`gs:0x6724`). /// `b3` — voice/speaker selector (`0xFF` = n
 offset	src/vm.rs	949	fn		TESTED	/// The token's byte offset in the COD stream (every variant records it). /// With the stream in hand this also yields the raw opcode byte — /// `cod[token.offset()]` — which is how the live-coverage 
 encode_token	src/vm.rs	975	fn		TESTED	/// RE-ENCODE a decoded token back to its byte form — the inverse of [`walk`]'s /// decoding, from the STRUCTURED FIELDS ONLY (no source peeking). Returns `None` /// for content-opaque tokens (`Op`, `
 walk	src/vm.rs	1091	fn	0x62B6,0x6293,0x2F7F	ASM	/// Walk `cod[start..end]` in execution order, yielding tokens. Stops at `end`, /// at the `0xFF` end marker, or at the first byte that cannot be a token. // Determine token length + any mode change —
@@ -1362,7 +1362,7 @@ LOCATION_PANEL_HEADER_COLOR	src/vm.rs	1554	const		UNVERIFIED
 LOCATION_PANEL_ROW_COLOR	src/vm.rs	1555	const		UNVERIFIED	
 LOCATION_PANEL_BOX	src/vm.rs	1560	const	0x2780,0x9114,0x9203,0x9142	ASM	/// The panel's window rect `(x, y, w, h)` — `DS:0x2780`, a STATIC constant: a /// whole-image search for every store form to `0x2780` finds no writer, and the /// only references are the two `mov si/
 LOCATION_PANEL_TINT_PERCENT	src/vm.rs	1574	const	0xFFCE,0x90ED,0x22F1,0xffce,0x22F5	ASM	/// `ax = 0xFFCE` at `0x90ED`, negated on entry to the table builder (`0x22F1`). /// The panel's tint strength, as a PERCENTAGE — and it appears in the binary as /// its two's complement, which is why
-LOCATION_PANEL_ZOOM_STEPS	src/vm.rs	1576	const	0xADA,0x903E	CELL?	/// `[0xADA] = 8` (`0x903E`) — the zoom-open/shut interpolation step count.
+LOCATION_PANEL_ZOOM_STEPS	src/vm.rs	1576	const	0xADA,0x903E	ASM	/// `[0xADA] = 8` (`0x903E`) — the zoom-open/shut interpolation step count.
 LOCATION_PANEL_CURSOR_RECT_SIZE	src/vm.rs	1578	const	0x9029	CELL?	/// The zoom SOURCE rect seeded at `0x9029`: a 4x4 square at the cursor.
 NAV_PICK_POSITION_FIELD	src/vm.rs	1583	const	0x92BC	ASM	/// The chart marker's position field — selector `0x0B`, whose matrix row is /// `0x18` for kinds 8 and `0x10` (`FIELD_OFFSETS[0x0B]`). Read as `x` at `+0x18` /// and `y` at `+0x1A` by the picker at `
 SHIP_3D_TARGET_NAME_TO_RECORD	src/vm.rs	1588	const	0x87D5,0xB33D	ASM	/// A menu entry points at the record's INLINE NAME; the record is four bytes /// earlier. Emitted as `add ax,4` when a menu is built (`0x87D5`) and undone as /// `sub ax,4` when a row is selected (`0
@@ -1446,7 +1446,7 @@ Ship3dC1RuntimeContext	src/vm.rs	2038	struct		UNVERIFIED
 Ship3dC1PositionRuntime	src/vm.rs	2046	struct		UNVERIFIED	
 VmNamedObjectOffsets	src/vm.rs	2071	struct	0x5490,0x674e,0x549D,0x67BE,0x67C4,0x67C9,0x67CE,0x67D3,0x67	ASM	/// The built-in objects the engine resolves BY NAME, and their DEB offsets. /// /// Matching by name is the game's own method, not a port convenience: `0x5490` /// loads `di` with a name pointer, com
 set	src/vm.rs	2092	fn	0x67BE,0x5490,0x674e,0x549D	ASM	/// Resolve one DEB object name against the built-in table and record its /// offset. Returns whether the name IS a built-in — the caller uses that to /// skip non-built-ins, so a `false` is an ordina
-ExecutionContext	src/vm.rs	2150	struct	0x6034,0x674e,0x6946,0xffff,0x7409,0x5486,0x674E,0x6750,0x67	CELL?	/// Runtime tables the DOS VM receives through globals outside `SCRIPT*.VAR`. /// /// `object_offsets` mirrors the 20-byte object table scanned by helper `0x6034`: /// it maps a record/field offset to
+ExecutionContext	src/vm.rs	2150	struct	0x6034,0x674e,0x6946,0xffff,0x7409,0x5486,0x674E,0x6750,0x67	ASM	/// Runtime tables the DOS VM receives through globals outside `SCRIPT*.VAR`. /// /// `object_offsets` mirrors the 20-byte object table scanned by helper `0x6034`: /// it maps a record/field offset to
 from_object_offsets	src/vm.rs	2164	fn		INFRA	
 with_global_word_0aa6	src/vm.rs	2177	fn		INFRA	
 with_global_pair_0aaa_0aa8	src/vm.rs	2182	fn		INFRA	
@@ -1536,10 +1536,10 @@ execute_script_profile_sequence	src/vm.rs	4562	fn		UNVERIFIED
 SceneEvent	src/vm.rs	4652	enum		UNVERIFIED	/// One presentation event in execution order. /// Subtitle chatter event from the dialogue display state machine (tb.snd).
 LineInput	src/vm.rs	4698	struct		UNVERIFIED	/// Minimal per-line input for the emitter — the fields a decoded `0xA6` line /// plus its resolved scene context provide. Decoupled from `ScriptSpeechLine` /// so the emitter stays unit-testable.
 emit_scene_events	src/vm.rs	4715	fn		UNVERIFIED	/// Turn an ordered sequence of decoded dialogue lines into a presentation event /// stream, emitting background/music/speaker changes only on transition and a /// trailing `Clear`.
-VmEvent	src/vm.rs	4793	enum	0x2120,0x6EEE,0x69C7	CELL?	/// An event the faithful VM raises for the engine/driver. /// `0xA6` TEXT — a dialogue line record executes (operand offset into the /// line-record table; the walker's LineState carries the decoded 
-VmMachine	src/vm.rs	4816	struct	0x1C3F,0x677E,0x6ADE,0x6CDE,0x6724	CELL?	/// The script VM's machine state, mirroring the game's own arrays byte-for-byte. /// The save file serializes exactly these blocks (save path @0x1C3F: header word /// `0x677E`, `0x200` bytes @`0x6ADE
+VmEvent	src/vm.rs	4793	enum	0x2120,0x6EEE,0x69C7	ASM	/// An event the faithful VM raises for the engine/driver. /// `0xA6` TEXT — a dialogue line record executes (operand offset into the /// line-record table; the walker's LineState carries the decoded 
+VmMachine	src/vm.rs	4816	struct	0x1C3F,0x677E,0x6ADE,0x6CDE,0x6724	ASM	/// The script VM's machine state, mirroring the game's own arrays byte-for-byte. /// The save file serializes exactly these blocks (save path @0x1C3F: header word /// `0x677E`, `0x200` bytes @`0x6ADE
 default	src/vm.rs	5028	fn	0x2727	ORACLE?	// The oracle's deterministic CMOS seed (interp RTC seconds fixed // at 0x27; the seeder mirrors the byte into both halves -> 0x2727). // Matching it makes the port's variant rolls agree with the orac
-NAV_SOURCE_SCRATCH_LEN	src/vm.rs	5084	const	0x6886,0x6A16,0x604E	CELL?	/// Length of the `DS:0x6886` nav source-list scratch: the distance to the next /// labelled cell, `DS:0x6A16` (the active-object candidate list `0x604E` builds). /// 0x6A16 - 0x6886 = 0x190 (audit-fi
+NAV_SOURCE_SCRATCH_LEN	src/vm.rs	5084	const	0x6886,0x6A16,0x604E	ASM	/// Length of the `DS:0x6886` nav source-list scratch: the distance to the next /// labelled cell, `DS:0x6A16` (the active-object candidate list `0x604E` builds). /// 0x6A16 - 0x6886 = 0x190 (audit-fi
 new	src/vm.rs	5087	fn		INFRA	
 halted	src/vm.rs	5091	fn		INFRA	
 start_actor_presentation	src/vm.rs	5129	fn	0x675E,0x5816,0x5904,0x67ac,0x590A,0x590C,0x6782,0x5910,0x67	ASM?	/// Driver hook: a console click / event starts an actor's presentation — /// the C4 query blocks for that actor then run (the game's click dispatch /// writes the C4 primary record @DS:0x675E; handle

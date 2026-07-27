@@ -15539,3 +15539,35 @@ Provisional queue: 129, from 246 at the session's start.
 
 2229 items, 1189 confirmed (53.3%), 1040 open. 798 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #474 — the helper paid for itself
+
+Seven `vm.rs` rows. The routine entries verify as code — `0x6034`
+`vm_record_lookup_by_...`, `0x6946` the 7-opcode shared handler from #392, `0x6EEE`
+`vm_op_c3_state_record`, `0x69C7` `vm_op_cd_state_gated` — and `0x903E` is
+`mov byte ptr [0xada], 8`, so `LOCATION_PANEL_ZOOM_STEPS = 8` is an immediate.
+
+Four citations disassembled as nonsense (`ror byte ptr [bp+si+0x75d0]` for one),
+which by now is a recognised signal rather than a puzzle: they are DS cells.
+`0x0ADA` has 9 direct sites, `0x2AAB` 5, `0x677E` and `0x674E` and `0x6886` one
+each. Two showed zero — and `show_census` answered on its own:
+
+    0 direct-address site(s) for 0x2120 -- THIS IS NOT 'unused'
+      but 2 `mov reg16, 0x2120` IMMEDIATE load(s):
+        0x067c8  mov bp, 0x2120
+        0x067d5  mov bp, 0x2120
+
+`0x67C8` is `vm_op_a8_load_string`, whose dispatch-table entry reads "copy
+NUL-terminated operand into buffer 0x2120 (bp)". The tool found the buffer's two
+loads and one of them IS the handler that the row is about.
+
+THAT IS #459 PAYING OFF. It was written three entries after the fourth time I read
+a zero census as "nothing there", with the explicit caveat that I could not
+promise to reach for it. Here it ran without being asked, on two addresses, and
+turned what used to be a wrong conclusion into a two-line answer. `0x6724`'s zero
+is the remaining known gap — `les`/`lds`, documented in `addr_forms` since #434.
+
+Provisional queue: 123, from 246.
+
+2229 items, 1195 confirmed (53.6%), 1034 open. 798 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
