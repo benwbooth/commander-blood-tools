@@ -18452,3 +18452,44 @@ condition at a time. Comparing conditions in isolation is how a difference in
 subject reads as a difference in spelling.
 
 726 tests, 0 failures.
+
+## #556 — decoding the caller found a third filter and a second root
+
+Took #555's next step: decode `0xB079`, the routine that calls the DEB candidate
+walker. Three things it changes.
+
+**A THIRD FILTER I had missed.** Re-reading the walker's loop with the register flow
+straight — `mov ax,di` @`0x726F` then `jmp 0x727B`, so the FIRST pass tests the
+parameter and later passes set `di` from the source list @`0x7279` — shows the body
+is:
+
+```text
+  0x727B  mov bx, es:[di]
+  0x727E  test bx, 0x98      <- a KIND mask, which #555 did not mention
+  0x7284  test byte es:[di+2], 2
+  0x728B  cmp di, gs:[0x6752]
+```
+
+`0x98` is bits 7, 4 and 3. #555 described the filter as two conditions; it is three,
+and the port models none of them as a kind test.
+
+**The walker runs TWICE, from two roots.** `0xB0EE` calls it with the current target;
+then `mov ax,es:[di+0x16]` @`0xB0F3` follows a link out of the current record, and
+IF `test word es:[eax],0x140` @`0xB0FB` is clear, `0xB105` calls the walker again
+with THAT record. So the candidate list is accumulated from up to two roots, and the
+port's single pass over `effect.candidate_records` models a list the game may fill
+in two calls.
+
+**The caller configures the widget first**, and one value contradicts an assumption
+worth flagging: `[0xac6] = 0x50` @`0xB0D1` centres this list on x=80, where the nav
+choice sets the same cell to `0x64` = 100 (#494). Two screens, one cell, two values
+— the #533 shape again, and a port holding a single "layout centre" constant would
+place one of them wrong.
+
+MY #555 READING SURVIVES but was incomplete, and I would rather record that than
+quietly widen it: the walker does test the CANDIDATE's flags and the port does test
+the CURRENT record's, which is still a real difference. It is now one of three
+filter differences rather than the only one, which makes "the port models a second
+filter elsewhere" a weaker explanation than it looked yesterday.
+
+726 tests, 0 failures.

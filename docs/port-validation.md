@@ -1767,9 +1767,14 @@ So they are one code path, not two.
 **Which makes the filter comparable, and it does not match.**
 
 ```text
+  walker 0x726F  mov ax, di                   <- DI is a PARAMETER ...
+  walker 0x7271  jmp 0x727B                   <- ... and the first pass tests IT
+  walker 0x7279  mov di, ax                   <- thereafter DI is the candidate
+  walker 0x727B  mov bx, es:[di]
+  walker 0x727E  test bx, 0x98                <- KIND mask, a THIRD filter (#556)
   walker 0x7284  test byte ptr es:[di+2], 2   <- the CANDIDATE's flags
   walker 0x728B  cmp di, gs:[0x6752]          <- candidate vs current target
-    => include a candidate when (candidate.flags & 2) AND candidate != current
+    => include a candidate when (kind & 0x98) AND (flags & 2) AND != current
 
   port ship3d.rs:4466
     skip a candidate when (current_record.state_flags & 0x02) == 0
@@ -1787,7 +1792,18 @@ fields the walker reaches differently. What is established is that the two READ
 DIFFERENT THINGS, and that the routine the port cites as its source is reachable
 from the routine it models.
 
-**What would settle it.** Decode `0xB079`'s 160 instructions around the two walker
-calls — specifically what it does with the returned list at `[0x250B]` and
+**Caller decoded (audit-fixes #556).** `0xB079` calls the walker TWICE:
+`lcall 0x4da:0x1eb9` @`0xB0EE` with `di = gs:[0x6752]` (the current target), then —
+if `test word es:[eax],0x140` @`0xB0FB` is CLEAR for the record linked at
+`current+0x16` (`mov ax,es:[di+0x16]` @`0xB0F3`) — again @`0xB105` with that record.
+So the candidate list is built from up to TWO roots, and the port's single loop over
+`effect.candidate_records` models a list the game may fill twice.
+
+The caller also configures the widget first: `[0xac6] = 0x50` @`0xB0D1` (an x-centre
+of 80, NOT the nav choice's 100 from #494), `[0xadc]`/`[0xadd]` set @`0xB0D7`/`0xB0DC`,
+`[0xada] = 10` @`0xB0E1` — the shared duration cell of #533.
+
+**What would still settle it.** Compare `run_ship_3d_navigation_trigger_prelude`
+against `0xB079` WHOLE — specifically what it does with the returned list at `[0x250B]` and
 `[0x251B]` — and compare against `run_ship_3d_navigation_trigger_prelude` as a
 whole rather than one condition at a time.
