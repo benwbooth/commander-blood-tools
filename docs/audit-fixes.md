@@ -18526,3 +18526,37 @@ rather than pairing constants one at a time. Three entries running (#554, #555,
 here.
 
 726 tests, 0 failures.
+
+## #558 — the routine was already named, and my framing in #557 was wrong
+
+#557 said the navigation prelude was missing a layout-centre write and named the
+settling step: match `0xB079`'s FULL effect set against port functions instead of
+pairing constants. Did that. The distinctive write is `[0x2795] = 0xB3`, and
+grepping the port for it lands immediately on `ship3d.rs`'s HUD-vertices doc:
+
+> `ship_3d_hud_init` @0xB079: `rep movsd` 0x30=48 dwords … then `[0x2795]=0xB3`
+> (the compass *entry angle*), `[0x279B]=0`, and `[0x2793] |= 8` (HUD gate bit 3).
+
+`0xB079` IS HUD INITIALISATION. It was identified in an earlier session, described
+accurately, and I spent #555–#557 treating it as a navigation-list opener because I
+arrived at it from the candidate walker rather than from its own entry.
+
+So #557's premise is retracted: no navigation function is missing a centre write,
+because the centre write is not a navigation function's. Good thing the entry
+declined to apply the fix — it would have put an 80 into a function that has no
+business with it, and the reasoning for declining ("its constants say it models a
+different routine") was right for a reason I had not yet found.
+
+WHAT IS ACTUALLY OPEN, and it is bigger. The port DOCUMENTS `0xB079` and IMPLEMENTS
+none of it: `ship_3d_hud_init` occurs only in doc comments. Beyond the vertex copy
+and entry angle that doc describes, the routine ALSO configures the list widget
+(`[0xac6]=0x50` @`0xB0D1`, `[0xadc]`/`[0xadd]` @`0xB0D7`/`0xB0DC`, `[0xada]=10`
+@`0xB0E1`) and calls the DEB candidate walker twice. The doc covers the half its
+author was reading.
+
+The lesson is the one #499 taught about entries and I keep re-learning in new
+shapes: ARRIVING AT A ROUTINE FROM ITS CALLEE tells you what it uses, never what it
+is. Four entries of navigation-prelude reasoning rested on a routine identification
+I never checked, and one grep of its own distinctive constant settled it.
+
+726 tests, 0 failures.

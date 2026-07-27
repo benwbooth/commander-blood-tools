@@ -1836,7 +1836,22 @@ prelude's candidate list, and its centre (80) matches neither. Writing 80 into t
 prelude would be attributing this routine to a function whose other constants say it
 models a different one — #501's error with a new coat.
 
-**What would settle it.** Identify which port function (if any) models `0xB079`,
-by comparing its full effect set — two walker calls, four widget writes, the
+**SETTLED, and my framing above was wrong (audit-fixes #558).** `0xB079` is
+`ship_3d_hud_init` — already identified in `ship3d.rs`'s HUD-vertices doc, which
+describes its `rep movsd` of 48 dwords, its `[0x2795] = 0xB3` entry angle, its
+`[0x279B] = 0` and its `[0x2793] |= 8`. It is HUD INITIALISATION, not a
+navigation-list opener, so no navigation function was ever missing its centre write.
+
+What IS missing is larger: the port DOCUMENTS `0xB079` and IMPLEMENTS none of it.
+`ship_3d_hud_init` appears only in doc comments. The routine also configures the
+list widget (`[0xac6]=0x50`, `[0xadc]=1`, `[0xadd]=1`, `[0xada]=10` @`0xB0D1`..
+`0xB0E1`) and calls the DEB candidate walker TWICE (#556) — none of which the
+HUD-vertices doc mentions, because that doc was written about the vertex copy.
+
+So the open item is not "add a centre write" but "the HUD init does four things the
+port knows about and three it does not".
+
+**Superseded — what would have settled it.** Identify which port function (if any)
+models `0xB079`, by comparing its full effect set — two walker calls, four widget writes, the
 `[0x2795] = 0xB3` panorama frame @`0xB0B1` and `or [0x2793],8` @`0xB0B7` — rather
 than matching constants one at a time.
