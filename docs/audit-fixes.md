@@ -20674,3 +20674,35 @@ would put a wrong picture on screen every time the menu opens, which is worse th
 current no-picture.
 
 737 tests, 0 failures.
+
+## #621 — it is a TINT, the port already had it, and #620 was wrong twice over
+
+`0x003407` was in `labels.csv` the whole time: "the `box draw` is NOT a blit: al =
+es:[di] (the pixel ALREADY on screen), xlatb through the table at BX=SI, stosb. So
+0x299:0x40E with si=[0xAC8] REMAPS the rect in place — a translucent window. PORTED:
+sprite.rs remap_rect_indexed".
+
+So `0x299:0x40E` does not blit an image (#620's reading) and does not stroke an
+outline (#619's). It TINTS. And the port has had the primitive all along —
+`engine.rs` already calls it for the choice box, with a comment saying "THE BOX IS
+NOT PAINTED, IT IS TINTED".
+
+The draw was therefore one call, not the renderer feature #620 described. The
+console-menu open now waits ten frames, travels from the clicked row toward the
+widget, and tints what it covers each tick.
+
+THREE READINGS OF ONE FAR CALL, in three consecutive entries: outline, scaled image,
+tint. Each was plausible from what I had in front of me, and the answer was in the
+label file under the callee's address the entire time. I searched `[0xAC8]` for
+absolute writes (zero — the wrong question again, it is loaded through a register)
+before thinking to look up the routine it is passed to.
+
+THE TEST SAYS LESS THAN I FIRST WROTE, deliberately. I asserted the tinted region
+keeps multiple indices — structure preserved, not flattened — and it failed:
+`location_panel_tint_table` is built from the SCENE PALETTE, and a bare `EngineState`
+has none, so every index maps to the same nearest entry. That is the fixture, not the
+tint. The assertion is now that the covered pixel is remapped and that the tint does
+NOT reach past the rect, with a note pointing at the choice-box test, which makes the
+structure point with real game data loaded.
+
+738 tests, 0 failures.

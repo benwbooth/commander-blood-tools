@@ -2189,6 +2189,19 @@ and `the_opening_box_travels_from_the_clicked_row` asserts it takes intermediate
 positions and ends closer to the target than it began — which a delay-only
 implementation cannot do.
 
+DONE (#621). The travelling rect is drawn, and it is a TINT: `0x3407` shows
+`0x299:0x40E` reads the pixel already on screen and `xlatb`s it through the table at
+`si`, remapping the rect in place. The port's `sprite::remap_rect_indexed` is that
+primitive and was already used for the choice box and the info panel, so the draw was
+one call, not a renderer feature.
+
+The console-menu open now: waits ten frames, moves a rect from the clicked row toward
+the widget, and tints what it covers each tick — the whole animation, from a port that
+opened the screen instantly.
+
+SUPERSEDED — #620's reading of the same instructions, kept because the correction
+matters:
+
 REMAINING: the rect travels but is not DRAWN — and the draw is NOT an outline, which
 is what "draws the interpolated rect" invited me to assume. `0x1EAD`..`0x1EB1` is:
 

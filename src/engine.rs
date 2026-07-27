@@ -5618,6 +5618,31 @@ impl EngineState {
         ]
     }
 
+    /// Tint the travelling rect, `0x1EAD`..`0x1EB1`.
+    ///
+    /// `mov si,[0xac8] / lcall 0x299,0x40e` — and `0x299:0x40E` is NOT a blit:
+    /// `0x3407` reads the pixel ALREADY on screen and `xlatb`s it through the table
+    /// at `si`, so the rect is REMAPPED in place. The opening box is the same
+    /// translucent window the choice box and the info panel draw, moving and
+    /// growing (audit-fixes #621).
+    fn draw_console_open_rect(&mut self) {
+        let [x, y, w, h] = self.console_open_rect;
+        if w == 0 || h == 0 {
+            return;
+        }
+        let table = self.location_panel_tint_table();
+        crate::sprite::remap_rect_indexed(
+            &mut self.framebuffer,
+            ENGINE_SCREEN_WIDTH,
+            ENGINE_SCREEN_HEIGHT,
+            &table,
+            x as i32,
+            y as i32,
+            w as i32,
+            h as i32,
+        );
+    }
+
     /// Advance an in-flight console open; returns the row when it COMPLETES.
     ///
     /// Driven by the real gate (`step_ship_3d_interpolation_gate`, `0x1E5D`), so the
@@ -5645,8 +5670,10 @@ impl EngineState {
     }
 
     pub fn step(&mut self, input: MouseInput) {
-        // The console-menu open animates over ten frames (0x86E4); apply the
-        // destination only when the gate completes.
+        // The console-menu open animates over ten frames (0x86E4): step the
+        // travelling rect, tint it where it now is, and apply the destination only
+        // when the gate completes.
+        let animating = self.console_open.is_some();
         if let Some(row) = self.advance_console_open() {
             match row {
                 1 => self.phone_active = true,
@@ -5655,6 +5682,8 @@ impl EngineState {
                 4 => self.option_box_active = true,
                 _ => {}
             }
+        } else if animating {
+            self.draw_console_open_rect();
         }
 
         // Ship-3D nav view: drive the transition/depth state machine (0xB692 +
@@ -5971,6 +6000,45 @@ mod tests {
             dy(seen.last().unwrap()) < dy(&start),
             "the rect ended no closer to the widget than it began"
         );
+    }
+
+    /// The opening box is a TINT, not a painted rect (`0x3407`: read the pixel on
+    /// screen, `xlatb`, store), so the animation must DARKEN what it covers while
+    /// leaving the structure underneath visible (audit-fixes #621).
+    #[test]
+    fn the_opening_box_tints_the_frame_it_covers() {
+        let mut e = EngineState::new();
+        // A varied background, so a tint and a fill are distinguishable.
+        for (i, px) in e.framebuffer.iter_mut().enumerate() {
+            *px = ((i % 61) + 60) as u8;
+        }
+        e.begin_console_open(3);
+        let before = e.framebuffer.clone();
+        e.step(MouseInput::default());
+        let rect = e.console_open_rect;
+        assert!(rect[2] > 0 && rect[3] > 0, "the rect must have an extent to tint");
+
+        let inside = |fb: &[u8], x: usize, y: usize| fb[y * ENGINE_SCREEN_WIDTH + x];
+        let (x, y) = (rect[0] as usize + 1, rect[1] as usize + 1);
+        assert_ne!(
+            inside(&e.framebuffer, x, y),
+            inside(&before, x, y),
+            "the covered pixel must be remapped"
+        );
+        // OUTSIDE the rect is untouched — a tint that leaked would be a fill by
+        // another name.
+        let outside_y = (rect[1] as usize + rect[3] as usize + 2).min(ENGINE_SCREEN_HEIGHT - 1);
+        assert_eq!(
+            inside(&e.framebuffer, x, outside_y),
+            inside(&before, x, outside_y),
+            "the tint must not reach past the rect"
+        );
+        // STRUCTURE-PRESERVATION IS NOT ASSERTED HERE. `location_panel_tint_table`
+        // is built from the SCENE PALETTE, and a bare `EngineState` has none, so
+        // every source index maps to the same nearest entry and the region really
+        // does flatten. That is the fixture, not the tint: the choice-box test
+        // (`the_choice_box_is_a_tint_not_a_paint`) makes the same point with real
+        // game data loaded, which is where it means something.
     }
 
     /// End-to-end faithfulness check for the bridge: the engine's full render of
