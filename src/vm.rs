@@ -371,6 +371,25 @@ impl QuerySetMode {
 /// directly as the RESET value at `0x1A64`, `0xB460` and `0xB529`, which is how
 /// the byte constant and the word cell agree (audit-fixes #512).
 pub const TEXT_SELECTOR_NONE: u8 = 0xFF;
+/// STILL UNVERIFIED, and audit-fixes #600 narrows why rather than closing it.
+///
+/// `DS:0x1FAB` — the cell the TEXT handler stores `b3` into (`0x668D`/`0x668F`) — is
+/// READ EXACTLY ONCE IN THE WHOLE IMAGE, at `0x11F2`, and that read has no zero test:
+///
+/// ```text
+/// 0x11f2  mov ax,[0x1fab]     the stored selector, sign-extended when written
+/// 0x11f5  add ax,9            ACTIVE_LINE_ID_BIAS
+/// 0x11f8  mov [0x6788],ax     the active line id, and nothing else
+/// ```
+///
+/// So a selector of `0` is NOT special at that cell: it becomes line id 9 like any
+/// other value. Whatever makes `0` mean "silent" — if anything does — is not a test
+/// on `DS:0x1FAB`, which is where one would look first and where this constant
+/// implies it lives.
+///
+/// Kept because [`text_selector_requests_voice`] depends on it and the audio path it
+/// once served is already documented as removed; NOT settled, because "we now know
+/// where it isn't" is a smaller claim than a decode.
 pub const TEXT_SELECTOR_SILENT: u8 = 0x00;
 /// `add ax,9` @`0x11F5`, between `mov ax,[0x1fab]` @`0x11F2` (the b3 selector the
 /// TEXT handler stored) and `mov [0x6788],ax` @`0x11F8` — so the ACTIVE LINE ID is
@@ -545,6 +564,13 @@ pub fn dlg_line_asset_id_from_source_byte(byte: u8) -> u16 {
         .wrapping_add(DLG_ASSET_NAME_TABLE_BASE)
 }
 
+/// Whether a `b3` selector asks for a clip. UNVERIFIED — see
+/// [`TEXT_SELECTOR_SILENT`], whose `0` case has no test behind it, and
+/// [`text_selector_voice_clip_index`], whose scope note explains why the whole
+/// family stays open (the game forms `b3 + 9`, this family forms `b3 - 1`).
+///
+/// `TEXT_SELECTOR_NONE` (`0xFF`) IS sourced (`0x668D`..`0x668F`, #512); the `0` half
+/// of this condition is not (audit-fixes #600).
 pub fn text_selector_requests_voice(selector: u8) -> bool {
     selector != TEXT_SELECTOR_NONE && selector != TEXT_SELECTOR_SILENT
 }

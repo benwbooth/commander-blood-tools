@@ -19989,3 +19989,37 @@ presentation cell, so the final write is what survives the pass. `.first()` woul
 report a target already replaced.
 
 733 tests, 0 failures.
+
+## #600 — narrowing TEXT_SELECTOR_SILENT: where it is NOT
+
+`TEXT_SELECTOR_SILENT = 0x00` has been open since #512, its sibling `0xFF` sourced
+and it not. This does not close it, but it removes the obvious place to look, which
+is worth as much as a citation to whoever picks it up.
+
+`DS:0x1FAB` is the cell the TEXT handler stores `b3` into (`0x668D` reads it,
+`0x668F` stores the sign-extended word). A byte search for reads of that cell finds
+EXACTLY ONE in the image:
+
+    0x11f2  mov ax,[0x1fab]     the stored selector
+    0x11f5  add ax,9            ACTIVE_LINE_ID_BIAS
+    0x11f8  mov [0x6788],ax     the active line id -- and nothing else
+
+No zero test, anywhere. A selector of `0` becomes line id 9 exactly like any other
+value. So whatever makes `0` mean "silent" — if anything does — is NOT a test on
+`DS:0x1FAB`, which is precisely where the constant's placement implies it lives and
+where the next person would start.
+
+The `0xFF` half remains sourced: `lodsb` @`0x668D`, `cbw` @`0x668E`, `mov word
+gs:[0x1fab],ax` @`0x668F`, agreeing with the direct `0xFFFF` resets at `0x1A64`,
+`0xB460`, `0xB529` (#512).
+
+BOTH ROWS STAY UNVERIFIED. "We now know where it isn't" is a smaller claim than a
+decode and must not be settled as one — but it is a real narrowing, recorded on the
+constant so the search does not start there again.
+
+Consistent with the neighbouring scope note, which already says the audio use of this
+family was REMOVED (the game picks voice by `prng(10)+7` gated on `gs:[0xCFB]`, not
+per line) and that the surviving talk-HNM use computes `b3 - 1` where the game forms
+`b3 + 9`. Same family, same unresolved question.
+
+733 tests, 0 failures.
