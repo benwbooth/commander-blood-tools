@@ -16539,3 +16539,42 @@ criterion; only one was the right routine.
 `ship3d.rs`: 64 uncited constants -> 60.
 
 620 tests, 0 failures.
+
+## #500 — the point projector, and a clip rectangle confirmed from BOTH ends
+
+Six constants from the projector at `0x9A10`, found by walking one more routine
+boundary along from #499 (`retf` @`0x9A0F`, prologue at `0x9A10`):
+
+```text
+  0x9A1D  mov word [0x2f77], 0x3e8   POINT_CLOUD_COUNT = 1000, the LOOP COUNTER
+  0x9A23  mov si, 0x2fc1             POINT_BUFFER, the source
+  0x9A26  mov di, 0x4f01             WORK_VECTOR, the per-point scratch
+  0x9A31  mov bp, 0x2f95             the matrix #499 sourced
+  0x9A3F  mov ax, [0x2f65]           CAMERA_X ...
+  0x9A44  mov ax, [0x2f67]           ... Y ...
+  0x9A4A  mov ax, [0x2f69]           ... Z
+```
+
+`POINT_CLOUD_COUNT` is the one that changes meaning once you see the instruction:
+1000 is written INTO A CELL AS THE LOOP COUNTER at routine entry, so the star field
+is a fixed-size cloud, not a list the projector walks until a terminator. A port
+that treated it as a capacity could silently project fewer points and look right.
+
+The better result is a CONFIRMATION FROM THE OTHER END. The projector calls `0x9B04`
+@`0x9AEB`, which is the clip test, and it reads `[0x5239]` @`0x9B19` and `[0x523b]`
+@`0x9B1F` as its y bounds — the exact cells the navigation routine WRITES as 35 and
+165 (#495). Until now those two constants were sourced only from the side that sets
+them, where "band top" and "clip bottom" were names I gave the writes. Seeing the
+plot test consume them as a bound pair proves they are a clip rectangle rather than
+two unrelated cells that happen to be adjacent. Both constants now cite the reader
+as well as the writer.
+
+NOT FOUND, and left alone: `PROJECTED_X/Y/DEPTH_OFFSET` (`0x2fb9`/`0x2fbb`/`0x2fbd`)
+appear in neither routine's displacement list, so they are reached through a base
+register. After #491, a failed scan is not evidence of absence — they stay
+UNVERIFIED rather than being attributed to this routine because they sit eight bytes
+below the point buffer and the arithmetic would be tidy.
+
+`ship3d.rs`: 60 uncited constants -> 54.
+
+620 tests, 0 failures.

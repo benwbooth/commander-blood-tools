@@ -231,10 +231,13 @@ pub const SHIP_3D_NAVIGATION_TARGET_LIST_FLAG: u8 = 0x04;
 /// itself (audit-fixes #495).
 pub const SHIP_3D_NAVIGATION_LAYOUT_TARGET_LIST_OFFSET: u16 = 0x253b;
 /// 35 (`0x23`), written to BOTH `[0x1fa7]` @`0xB3FA` and `[0x5239]` @`0xB407`
-/// (audit-fixes #495).
+/// (audit-fixes #495). CONSUMED by the plot clip test at `0x9B04`, which reads
+/// `[0x5239]` @`0x9B19` as the top bound — so this is a real clip rectangle, not
+/// a bookkeeping copy (#500).
 pub const SHIP_3D_NAVIGATION_SCENE_BAND_TOP: u16 = 35;
 /// `mov word [0x523b],0xa5` @`0xB40D` — 165, the clip bottom in force for the
-/// `lcall 0x299:0xe2f` @`0xB415` that follows (audit-fixes #495).
+/// `lcall 0x299:0xe2f` @`0xB415` that follows (audit-fixes #495). The same cell
+/// is the bottom bound of the plot clip test, `cmp bx,[0x523b]` @`0x9B1F` (#500).
 pub const SHIP_3D_NAVIGATION_RENDER_CLIP_BOTTOM: u16 = 165;
 /// `mov word [0x523b],0xc8` @`0xB41D` — 200, RESTORED immediately after that
 /// call, so the narrowed band applies to one draw only (audit-fixes #495).
@@ -308,11 +311,23 @@ pub const SHIP_3D_PROJECTION_MATRIX_OFFSET: u16 = 0x2f95;
 /// The shift is 15, so the cells are 1.15 fixed point, which is what makes the
 /// neutral value `0x8000` (audit-fixes #499).
 pub const SHIP_3D_MATRIX_FIXED_SHIFT: u8 = 0x0f;
+/// `mov ax,[0x2f65]` @`0x9A3F`, inside the point projector at `0x9A10`
+/// (audit-fixes #500).
 pub const SHIP_3D_PROJECTION_CAMERA_X_OFFSET: u16 = 0x2f65;
+/// `mov ax,[0x2f67]` @`0x9A44` (audit-fixes #500).
 pub const SHIP_3D_PROJECTION_CAMERA_Y_OFFSET: u16 = 0x2f67;
+/// `mov ax,[0x2f69]` @`0x9A4A` — the three camera cells are read consecutively,
+/// one per axis, before the matrix at `[0x2f95]` is applied (`mov bp,0x2f95`
+/// @`0x9A31`) — audit-fixes #500.
 pub const SHIP_3D_PROJECTION_CAMERA_Z_OFFSET: u16 = 0x2f69;
+/// `mov word ptr [0x2f77],0x3e8` @`0x9A1D` — 1000, written as the projector's
+/// LOOP COUNTER at entry, so the star field is a fixed-size cloud rather than a
+/// list with a terminator (audit-fixes #500).
 pub const SHIP_3D_POINT_CLOUD_COUNT: usize = 1000;
+/// `mov si,0x2fc1` @`0x9A23` — the source the projector walks (audit-fixes #500).
 pub const SHIP_3D_POINT_BUFFER_OFFSET: u16 = 0x2fc1;
+/// `mov di,0x4f01` @`0x9A26` — the scratch vector each point is transformed
+/// through, set up beside the source and matrix pointers (audit-fixes #500).
 pub const SHIP_3D_PROJECTION_WORK_VECTOR_OFFSET: u16 = 0x4f01;
 pub const SHIP_3D_PROJECTED_X_OFFSET: u16 = 0x2fb9;
 pub const SHIP_3D_PROJECTED_Y_OFFSET: u16 = 0x2fbb;
