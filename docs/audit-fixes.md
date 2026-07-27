@@ -20201,3 +20201,32 @@ is `rem_euclid` and is a different routine.
 than leaning on `u16` wraparound.
 
 734 tests, 0 failures.
+
+## #606 — the target-list row pick, and a centring formula I did NOT cite
+
+`checked_u16_div_u8_to_u8` is `div bl` at `0x8508`, in the target-list hit test:
+
+    0x8508  div bl            row offset / row height
+    0x850a  inc al            the row index is ONE-BASED
+    0x850c  mov [0x27c7],al   the selected row
+
+Its `Option` covers the two cases the CPU TRAPS on — a zero divisor and a quotient
+too large for 8 bits — so the port stops where the game would fault instead of
+continuing with a wrapped number. That is also why the signed sibling
+`checked_i16_div_i8_to_i8` exists separately: `div` and `idiv` both raise `#DE`, and
+neither can be `wrapping_div`.
+
+`target_list_draw_x` STAYS OPEN, and the near-miss is the point. `0x84AD` is the
+obvious candidate and the square-caps doc already points at it for centring:
+
+    0x84ad  shr dx,1 / sub dx,[0xac6] / neg dx     ->  anchor - width/2
+
+But `target_list_draw_x` is `x_origin + ((inner_width - measured_width) >> 1)` — a
+string centred inside a BOX, not a box centred on an ANCHOR. Two centring formulas,
+different inputs, and citing the one I had open would have been #583 and #597 again.
+Left uncited rather than approximately cited.
+
+`find_ship_3d_navigation_record` settles INFRA: a linear lookup over records the
+runtime context supplies, carrying no rule of the game's.
+
+734 tests, 0 failures.

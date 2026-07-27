@@ -1173,23 +1173,23 @@ project_ship_3d_axis	src/ship3d.rs	4887	fn	0x9AD9,0x9AE2,0x9ADD,0x9ADF	ASM	/// T
 scale_ship_3d_object_dimension	src/ship3d.rs	4897	fn	0x9B98	ASM	/// Scale an object's sprite dimension by its depth factor, as the object-sprite /// projector does at `0x9B98`: a 32-bit multiply /// followed by `>> SHIP_3D_OBJECT_SCALE_SHIFT`. Widening to 32 bits 
 ship_3d_rects_intersect	src/ship3d.rs	4927	fn	0x44F2,0x4504,0x044d8,0x044db,0x044de,0x044e0,0x044e3,0x044e	ASM	/// The slot-vs-dirty-rect overlap test inside `sprite_slot_dirty_range_render`, /// `0x44F2`..`0x4504` — four REJECTIONS, so the accept is their conjunction: /// /// ```text /// 0x044d8  mov ax, [di+
 checked_i16_div_i8_to_i8	src/ship3d.rs	4942	fn	0x1E74	ASM	/// `idiv bl` modelled: AX divided by an 8-bit divisor, quotient in AL. The /// `Option` covers the two cases the CPU TRAPS on — a zero divisor, and a /// quotient too large for 8 bits — rather than w
-checked_u16_div_u8_to_u8	src/ship3d.rs	4950	fn		UNVERIFIED	
-signed_i16	src/ship3d.rs	4962	fn	0x9B0A	ASM	/// Reinterpret a stored word as SIGNED. The game's coordinate and clip tests are /// `jl`/`jge` (e.g. the plot's bounds at `0x9B0A`), so port comparisons must go /// through this rather than comparin
-target_list_draw_x	src/ship3d.rs	4966	fn		UNVERIFIED	
-blocks_nav_choice	src/ship3d.rs	4971	fn		UNVERIFIED	
-hit_test_ship_3d_nav_choice	src/ship3d.rs	4981	fn		UNVERIFIED	
-adjust_nav_choice_target_records	src/ship3d.rs	5022	fn	0x8748,0x8754,0xFFFF,0x8749	ASM	/// The `add ax,4` loop of nav-choice handler 1 (`0x8748..0x8754`): walk the word /// list, add the 4-byte record header to each entry, stop at the `0xFFFF` /// terminator (`cmp ax,-1 / je` @`0x8749`)
-rebuild_nav_choice_special_target_records	src/ship3d.rs	5036	fn	0x87CB,0x87DB,0x6D3E,0xFFFF	ASM	/// The rebuild loop of nav-choice handler 2 (`0x87CB..0x87DB`): walk the special /// slots at `DS:0x6D3E`, skip zeros (`or ax,ax / je`), stop at the `0xFFFF` /// sentinel after storing it, and otherw
-next_ship_3d_temp_snd_phase	src/ship3d.rs	5054	fn		UNVERIFIED	
-append_ship_3d_navigation_source_children	src/ship3d.rs	5063	fn		UNVERIFIED	
-find_ship_3d_navigation_record	src/ship3d.rs	5096	fn		UNVERIFIED	
-find_ship_3d_position_record	src/ship3d.rs	5106	fn		UNVERIFIED	
-find_ship_3d_position_field	src/ship3d.rs	5116	fn		UNVERIFIED	
-resolve_ship_3d_distance_position_field	src/ship3d.rs	5123	fn		UNVERIFIED	
-kind100_relation_word	src/ship3d.rs	5147	fn		UNVERIFIED	
-ship_3d_record_field	src/ship3d.rs	5157	fn		UNVERIFIED	
-binary_abs_word_diff	src/ship3d.rs	5166	fn	0x8000	ASM	/// Absolute difference of two words, as the distance helper computes it: a /// wrapping 16-bit subtract, then negate if the SIGN BIT is set. That is a test of /// bit 15 rather than a signed comparis
-next_target_list_draw_color	src/ship3d.rs	5175	fn		UNVERIFIED	
+checked_u16_div_u8_to_u8	src/ship3d.rs	4966	fn	0x8508,0x850a,0x850c,0x27c7	ASM	/// `div bl` modelled — the UNSIGNED counterpart of [`checked_i16_div_i8_to_i8`]: /// AX divided by an 8-bit divisor, quotient in AL. /// /// The site is the target-list row pick, `0x8508`: /// /// ``
+signed_i16	src/ship3d.rs	4978	fn	0x9B0A	ASM	/// Reinterpret a stored word as SIGNED. The game's coordinate and clip tests are /// `jl`/`jge` (e.g. the plot's bounds at `0x9B0A`), so port comparisons must go /// through this rather than comparin
+target_list_draw_x	src/ship3d.rs	4982	fn		UNVERIFIED	
+blocks_nav_choice	src/ship3d.rs	4987	fn		UNVERIFIED	
+hit_test_ship_3d_nav_choice	src/ship3d.rs	4997	fn		UNVERIFIED	
+adjust_nav_choice_target_records	src/ship3d.rs	5038	fn	0x8748,0x8754,0xFFFF,0x8749	ASM	/// The `add ax,4` loop of nav-choice handler 1 (`0x8748..0x8754`): walk the word /// list, add the 4-byte record header to each entry, stop at the `0xFFFF` /// terminator (`cmp ax,-1 / je` @`0x8749`)
+rebuild_nav_choice_special_target_records	src/ship3d.rs	5052	fn	0x87CB,0x87DB,0x6D3E,0xFFFF	ASM	/// The rebuild loop of nav-choice handler 2 (`0x87CB..0x87DB`): walk the special /// slots at `DS:0x6D3E`, skip zeros (`or ax,ax / je`), stop at the `0xFFFF` /// sentinel after storing it, and otherw
+next_ship_3d_temp_snd_phase	src/ship3d.rs	5070	fn		UNVERIFIED	
+append_ship_3d_navigation_source_children	src/ship3d.rs	5079	fn		UNVERIFIED	
+find_ship_3d_navigation_record	src/ship3d.rs	5115	fn		INFRA	/// Linear lookup of a navigation record by offset — a port-side convenience over /// the slice the runtime context supplies. The records themselves come from the /// game's tables; this is only how t
+find_ship_3d_position_record	src/ship3d.rs	5125	fn		UNVERIFIED	
+find_ship_3d_position_field	src/ship3d.rs	5135	fn		UNVERIFIED	
+resolve_ship_3d_distance_position_field	src/ship3d.rs	5142	fn		UNVERIFIED	
+kind100_relation_word	src/ship3d.rs	5166	fn		UNVERIFIED	
+ship_3d_record_field	src/ship3d.rs	5176	fn		UNVERIFIED	
+binary_abs_word_diff	src/ship3d.rs	5185	fn	0x8000	ASM	/// Absolute difference of two words, as the distance helper computes it: a /// wrapping 16-bit subtract, then negate if the SIGN BIT is set. That is a test of /// bit 15 rather than a signed comparis
+next_target_list_draw_color	src/ship3d.rs	5194	fn		UNVERIFIED	
 SND_CLIP_HEADER_LEN	src/snd.rs	6	const		UNVERIFIED	
 SND_PCM_FORMAT_TAG	src/snd.rs	7	const		UNVERIFIED	
 SndClip	src/snd.rs	10	struct		UNVERIFIED	

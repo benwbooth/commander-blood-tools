@@ -4947,6 +4947,22 @@ fn checked_i16_div_i8_to_i8(dividend: i16, divisor: i8) -> Option<i8> {
     i8::try_from(quotient).ok()
 }
 
+/// `div bl` modelled — the UNSIGNED counterpart of [`checked_i16_div_i8_to_i8`]:
+/// AX divided by an 8-bit divisor, quotient in AL.
+///
+/// The site is the target-list row pick, `0x8508`:
+///
+/// ```text
+/// 0x8508  div bl                 row offset / row height
+/// 0x850a  inc al                 the row index is ONE-BASED
+/// 0x850c  mov [0x27c7],al        the selected row
+/// ```
+///
+/// The `Option` covers the two cases the CPU TRAPS on — a zero divisor and a
+/// quotient too large for 8 bits — so the port stops where the game would fault
+/// rather than continuing with a wrapped number. `div` and `idiv` both raise `#DE`
+/// on overflow, which is why both helpers exist and neither uses `wrapping_div`
+/// (audit-fixes #606).
 fn checked_u16_div_u8_to_u8(dividend: u16, divisor: u8) -> Option<u8> {
     if divisor == 0 {
         return None;
@@ -5093,6 +5109,9 @@ fn append_ship_3d_navigation_source_children(
     Some(())
 }
 
+/// Linear lookup of a navigation record by offset — a port-side convenience over
+/// the slice the runtime context supplies. The records themselves come from the
+/// game's tables; this is only how the port finds one.
 fn find_ship_3d_navigation_record(
     records: &[Ship3dNavigationRuntimeRecord],
     offset: u16,
