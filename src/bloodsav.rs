@@ -188,6 +188,21 @@ impl BloodSave {
     /// `byte` indexes into `flags` (0..512), `bit` is 0..8. The block mirrors the
     /// game's `[0x6ADE]` region; the entity-progression bits the port tracks in
     /// [`crate::progress`] correspond to bits here (exact mapping is per-entity).
+    ///
+    /// `0x6ADE` is an IMMEDIATE, never a direct address — a `census` of it returns
+    /// ZERO, which says nothing (audit-fixes #458). It reaches instructions as
+    /// `mov reg, 0x6ade`, at exactly four sites:
+    ///
+    /// ```text
+    ///   0x008A4  mov si, 0x6ade   as a source block
+    ///   0x01C6D  mov dx, 0x6ade   the SAVE write (int 21h AH=0x40, cx=0x200)
+    ///   0x01D0F  mov dx, 0x6ade   its LOAD counterpart
+    ///   0x053F6  mov di, 0x6ade   as a destination block
+    /// ```
+    ///
+    /// So it is a 512-byte REGION passed to DOS by address, not a cell any
+    /// instruction reads or writes in place — which is why the save and load pair
+    /// are the only places its size appears.
     pub fn flag_bit(&self, byte: usize, bit: u8) -> bool {
         self.flags
             .get(byte)

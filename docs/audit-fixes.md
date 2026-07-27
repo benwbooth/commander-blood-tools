@@ -15022,3 +15022,36 @@ codebase it is auditing.
 
 2229 items, 1120 confirmed (50.2%), 1109 open. 791 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #458 — a census of zero that means nothing
+
+`flag_bit` says its 512-byte block "mirrors the game's `[0x6ADE]` region". A
+direct-address census of `0x6ADE` returns ZERO sites — which, taken at face value,
+reads as "no such region".
+
+It is an IMMEDIATE, not a direct address. `mov reg, 0x6ade` at four sites:
+
+    0x008A4  mov si, 0x6ade   as a source block
+    0x01C6D  mov dx, 0x6ade   the SAVE write (int 21h AH=0x40, cx=0x200)
+    0x01D0F  mov dx, 0x6ade   its LOAD counterpart
+    0x053F6  mov di, 0x6ade   as a destination block
+
+So it is a REGION passed to DOS by address, never a cell read or written in place,
+and the save/load pair at `0x1C6D`/`0x1D0F` is exactly where a 512-byte block
+would show its size. The doc's claim holds.
+
+THE POINT IS THE ZERO. This is the third time this session a census of 0 has meant
+"wrong question" rather than "nothing there": `0x2A1B` in #388 (loaded as an
+immediate), `0x6D60` and `0x6724` in #434 (a byte-load and an `les` the tool did
+not cover), and now this. A census answers "is this address used as a direct
+operand", and three different addressing modes make that a much narrower question
+than it looks.
+
+`check_cited_cells.py` (#434) already compensates by falling back to modrm
+matching, but a bare `census(...)` call in an ad-hoc probe does not — and ad-hoc
+probes are what I actually use. The habit that works is the one applied here:
+when a census returns 0 for an address the code plainly uses, scan `B8+r imm16`
+before concluding anything.
+
+2229 items, 1121 confirmed (50.3%), 1108 open. 795 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
