@@ -18782,3 +18782,36 @@ places the band" names the routine to look for; "provenance unclear" would have
 named nothing and this row would still be open.
 
 726 tests, 0 failures.
+
+## #566 — the DESCRIPT loader is a name search, which rules out the whole routine
+
+Applying #565's lesson — a precisely stated gap is a search query — to the oldest
+open thread in this stretch: where does the game dispatch DESCRIPT command bytes?
+
+#551 established `0x7409` is the file loader by its DOS calls. That only ruled out
+its I/O half. Reading the rest rules out the routine entirely: its core is a NAME
+SEARCH.
+
+```text
+  0x748B  lodsb / cmp al, es:[di-1]     compare a name byte-by-byte
+  0x74A0  add si, 0x12                  next entry -- 18-byte records
+  0x74A3  dec word gs:[0xaae]           entries remaining
+  0x74FE  mov word [bp], 0xffff         terminate the output list at DS:0xF1A
+  0x7506  mov gs:[0xf18], 0xf1a         reset its cursor
+```
+
+It finds records by name and emits their offsets into a `0xFFFF`-terminated list.
+No byte of it reads a command. So the interpreter that walks a record's `0x0D`
+subtitle cues is a THIRD routine, downstream of this list.
+
+Which is a better place to be than #551 left it: the search is now "what consumes
+the list at `DS:0xF1A`", an address with a cursor and a terminator, rather than
+"find a command dispatch somewhere". Recorded in the matrix row.
+
+STILL NOT SETTLED, and I want to be clear that three entries on this thread have
+produced only eliminations. That is honest progress on a search — #551 removed the
+direct-compare hypothesis, this removes the loader — but it is not a decode, and
+`SubtitleCue.tick`'s `/10.0` divisor (#550) remains an unverified assumption in five
+places.
+
+726 tests, 0 failures.

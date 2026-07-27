@@ -1740,6 +1740,14 @@ either. The DESCRIPT interpreter therefore dispatches its command bytes some oth
 way — a jump table, or code that has not been located — and that dispatch is the
 thing to find.
 
+NARROWED AGAIN (audit-fixes #566): `0x7409` is a NAME SEARCH, not a parser. Its
+loop @`0x748B`-`0x749C` compares a NUL-terminated name byte-by-byte against
+`es:[di-1]`, advances `add si,0x12` (18-byte entries) on mismatch @`0x74A0`, and
+counts down `gs:[0xaae]` @`0x74A3`. It ends by terminating a list at `DS:0xF1A`
+with `0xFFFF` @`0x74FE` and resetting the cursor `gs:[0xf18]` @`0x7506`. So it
+finds records BY NAME and emits their offsets; nothing in it reads a command byte,
+which rules out the whole routine rather than just its file-I/O half.
+
 NARROWED (audit-fixes #551): `vm_c2_descript_lookup` (`0x7409`) is the FILE
 LOADER, not the interpreter — its references are `int 21h` AH=`0x3D` (open,
 `0x745E`), `0x3F` (read, `0x7469`), `0x42` (seek, `0x74B0`), `0x3E` (close,
