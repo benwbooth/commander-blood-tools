@@ -17236,3 +17236,31 @@ this entry is NOT additional support for it, and recording it as such would have
 been a fabricated corroboration of a correct conclusion.
 
 621 tests, 0 failures.
+
+## #519 — two field selectors, and a kind that is read rather than assumed
+
+`VM_FIELD_OFFSET_SELECTOR_C9_RELATED` is `mov ax,0x13` @`0x6FD7`, inside the `0xC9`
+handler — an address I did not have to hunt for, because `re/tools/vm_dispatch.py`
+(#518) resolves `0xC9 -> 0x6FB9` directly. First time this session that a tool built
+one entry earlier paid for itself immediately. Worth noting the selector is NOT
+private to `0xC9`: the `0x5816` handoff loads the same `0x13` @`0x583D`.
+
+`VM_FIELD_OFFSET_SELECTOR_PRESENTATION_HANDOFF` was harder — `0x02` is too common to
+scan for. Found by looking for the SHAPE instead: `mov ax,2` followed within a few
+bytes by a near `call` resolving to `vm_field_offset` (`0x6023`). Exactly two sites
+in the image, `0x5895` and `0x73D6`, and the first is inside the `0x5816` routine
+this constant belongs to.
+
+THE INSTRUCTION BEFORE IT IS THE ONE THAT MATTERS: `mov bx,word ptr [si]` @`0x5893`
+loads the KIND from the record. The selector is a literal, the kind is not. I checked
+the port against that specifically, because its test call sites pass a literal `2`
+for both arguments and that would have been a plausible thing to copy into the real
+path. It does not — `post_update_presentation_handoff` reads `owner_kind` from the
+record and passes it. Correct, and now evidenced rather than coincidental.
+
+The general point, since this is the second time in three entries (#513's
+equality-vs-bitmask, now this): WHAT A HELPER'S ARGUMENTS COME FROM is as much part
+of the decode as the helper's address. A citation that names only the constant's
+instruction can be right while the surrounding call is wrong.
+
+621 tests, 0 failures.

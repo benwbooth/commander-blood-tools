@@ -1524,6 +1524,12 @@ const TALK_FIELD: u16 = 0x3A;
 /// Pinned to the image by `field_matrix_entries_match_the_constants`.
 const LOCATION_FIELD: u16 = 24;
 const SPECIAL_OBJECT_SLOT_COUNT: usize = 16;
+/// `mov ax,2` @`0x5895`, immediately before `call 0x6023` (`vm_field_offset`)
+/// @`0x5898`, inside the `0x5816` post-update handoff (audit-fixes #519).
+///
+/// The KIND comes from the record — `mov bx,word ptr [si]` @`0x5893` — not from a
+/// literal, which is what the port does with `owner_kind`. Only two `mov ax,2`
+/// sites in the image feed this helper (`0x5895` and `0x73D6`).
 const VM_FIELD_OFFSET_SELECTOR_PRESENTATION_HANDOFF: u8 = 0x02;
 /// `mov ax,0x11` @`0x625B` in the nav source-list builder (`0x624B`) — the
 /// selector the walk resolves to find an object's parent link.
@@ -1532,6 +1538,10 @@ const VM_FIELD_OFFSET_SELECTOR_PRESENTATION_HANDOFF: u8 = 0x02;
 /// instruction, named for what the field MEANS rather than which opcode family
 /// reaches it (audit-fixes #285).
 const VM_FIELD_OFFSET_SELECTOR_C2: u8 = 0x11;
+/// `mov ax,0x13` @`0x6FD7` in the `0xC9` handler — `0x6FB9`, per the dispatch
+/// table (`re/tools/vm_dispatch.py`, #518). The same selector `0x13` is used by
+/// the `0x5816` handoff @`0x583D`, so it is not private to `0xC9`
+/// (audit-fixes #519).
 const VM_FIELD_OFFSET_SELECTOR_C9_RELATED: u8 = 0x13;
 /// Selector `0x08` — the ENCOUNTER COUNTER. `FIELD_OFFSETS[8]` is non-zero in
 /// exactly one column (`0x36` at column 1 = kind 2), so this is a kind-2 field.
