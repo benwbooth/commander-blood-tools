@@ -4994,6 +4994,28 @@ impl Ship3dNavChoiceGates {
     }
 }
 
+/// The nav-choice list's row hit test, `0x8674`..`0x868F` — a list whose geometry
+/// MOVES with the ship's axis, which is why nothing here is a constant box:
+///
+/// ```text
+/// 0x8674  mov bx,0x48 / add bx,ax        y origin = 0x48 + axis
+/// 0x8679  mov cl,0x12                    ...row height starts at 0x12
+/// 0x867b  shr ax,2 / add bx,ax           y origin += axis>>2
+/// 0x8680  shr al,1 / sub cl,al           row height -= (axis>>2)>>1
+/// 0x8684  mov ax,[0xa2c] / sub ax,bx     mouse y relative to the list
+/// 0x8689  js 0x8705                      ABOVE the list -> miss
+/// 0x868b  div cl                         which row
+/// 0x868d  cmp al,5 / jge 0x8705          only FIVE rows -> miss
+/// ```
+///
+/// The list gets TALLER and its rows SHORTER as the axis grows — `bx` gains
+/// `axis + axis>>2` while `cl` loses `(axis>>2)>>1`. A fixed row height would drift
+/// out of alignment with the drawn rows as the ship turns.
+///
+/// `js` at `0x8689` is the SIGNED test for "above the list"; `cmp al,5 / jge` bounds
+/// it below. Both are misses, and the port returns `Some(None)` for each — a hit test
+/// that RAN and found nothing, distinct from the `None` that means the division
+/// trapped (audit-fixes #607).
 fn hit_test_ship_3d_nav_choice(
     dynamic_axis: u16,
     mouse_x: u16,

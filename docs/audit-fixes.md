@@ -20230,3 +20230,34 @@ Left uncited rather than approximately cited.
 runtime context supplies, carrying no rule of the game's.
 
 734 tests, 0 failures.
+
+## #607 — the nav-choice list moves, so its hit test cannot be a box
+
+`hit_test_ship_3d_nav_choice` is `0x8674`..`0x868F`:
+
+    0x8674  mov bx,0x48 / add bx,ax        y origin = 0x48 + axis
+    0x8679  mov cl,0x12                    row height starts at 0x12
+    0x867b  shr ax,2 / add bx,ax           y origin += axis>>2
+    0x8680  shr al,1 / sub cl,al           row height -= (axis>>2)>>1
+    0x8684  mov ax,[0xa2c] / sub ax,bx     mouse y relative to the list
+    0x8689  js 0x8705                      ABOVE the list -> miss
+    0x868b  div cl                         which row
+    0x868d  cmp al,5 / jge 0x8705          only FIVE rows -> miss
+
+THE GEOMETRY IS A FUNCTION OF THE AXIS, which is the whole reason this looks
+complicated. As the axis grows the list starts LOWER (`bx` gains `axis + axis>>2`)
+and its rows get SHORTER (`cl` loses `(axis>>2)>>1`). A fixed row height would drift
+out of alignment with the drawn rows as the ship turns — the two must be computed the
+same way, and the port's `dynamic_axis` parameter exists for exactly that.
+
+This is the SECOND division in a row pick and the second row list — `0x8508`'s
+`div bl` (#606) is the TARGET list, `0x868B`'s `div cl` is the NAV CHOICE list. Same
+shape, different widget, and `0x8508` produces a ONE-BASED index (`inc al`) where
+this one does not.
+
+Both out-of-range answers are `Some(None)` in the port: a hit test that RAN and found
+nothing, which the caller must not confuse with the `None` that means the division
+trapped. Named on the function, since two nested `Option`s otherwise read as
+incidental.
+
+734 tests, 0 failures.
