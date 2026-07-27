@@ -205,16 +205,30 @@ pub const SHIP_3D_NAV_CHOICE_HANDLER4_TOGGLE_OFF_TARGET_LIST_OFFSET: u16 = 0x257
 pub const SHIP_3D_NAV_CHOICE_HANDLER4_TOGGLE_ON_TARGET_LIST_OFFSET: u16 = 0x2581;
 pub const SHIP_3D_NAV_CHOICE_TABLO2_VOC_PATH_OFFSET: u16 = 0x0d3d;
 pub const SHIP_3D_NAV_CHOICE_SOUND_GATE_SUPPRESS_TARGETS: u8 = 2;
+/// `mov byte [0xada],6` @`0xB3CD` — the same duration cell the nav choice sets to
+/// 10 (#494) and `ship_3d_interpolation_gate` divides by @`0x1E63`. The navigation
+/// box therefore opens FASTER than the nav-choice box (audit-fixes #495).
 pub const SHIP_3D_NAVIGATION_INTERPOLATION_DURATION: u8 = 6;
 pub const SHIP_3D_NAVIGATION_DEFERRED_RECORD_TYPE: u16 = 0x00c4;
 pub const SHIP_3D_NAVIGATION_RECORD_KIND_CANDIDATE: u16 = 2;
 pub const SHIP_3D_NAVIGATION_RECORD_ACTIVE_FLAG: u8 = 0x01;
 pub const SHIP_3D_NAVIGATION_CURRENT_TARGET_MATCH_ANY_FLAG: u8 = 0x02;
 pub const SHIP_3D_NAVIGATION_REDIRECT_COUNTER_FLAG: u16 = 0x0080;
+/// `or byte [0x2793],4` @`0xB3C3` — bit 2 of the same HUD word the nav choice ORs
+/// 0x0C into @`0x86B6` (audit-fixes #495).
 pub const SHIP_3D_NAVIGATION_TARGET_LIST_FLAG: u8 = 0x04;
+/// `mov si,0x253b` @`0xB3D7`, the word list passed to `list_widget_layout_unified`
+/// by `lcall 0x71e:0xc48` @`0xB3DA` — which resolves to file `0x8428`, the widget
+/// itself (audit-fixes #495).
 pub const SHIP_3D_NAVIGATION_LAYOUT_TARGET_LIST_OFFSET: u16 = 0x253b;
+/// 35 (`0x23`), written to BOTH `[0x1fa7]` @`0xB3FA` and `[0x5239]` @`0xB407`
+/// (audit-fixes #495).
 pub const SHIP_3D_NAVIGATION_SCENE_BAND_TOP: u16 = 35;
+/// `mov word [0x523b],0xa5` @`0xB40D` — 165, the clip bottom in force for the
+/// `lcall 0x299:0xe2f` @`0xB415` that follows (audit-fixes #495).
 pub const SHIP_3D_NAVIGATION_RENDER_CLIP_BOTTOM: u16 = 165;
+/// `mov word [0x523b],0xc8` @`0xB41D` — 200, RESTORED immediately after that
+/// call, so the narrowed band applies to one draw only (audit-fixes #495).
 pub const SHIP_3D_NAVIGATION_RENDER_CLIP_RESTORED_BOTTOM: u16 = 200;
 pub const SHIP_3D_NAVIGATION_TRIGGER_CLOSE_STEP: u8 = 2;
 pub const SHIP_3D_PROCEDURAL_HUD_ACTIVE_FLAG: u16 = 0x0008;

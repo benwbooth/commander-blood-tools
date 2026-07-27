@@ -16338,3 +16338,42 @@ and `mov word [0xac6],0x64` @`0x86D9` writes the centring cell the layout pass r
 `ship3d.rs`: 90 uncited constants -> 85.
 
 619 tests, 0 failures.
+
+## #495 — the navigation box, and a correction to #494's "no far pointer names it"
+
+`mov byte [0xada],6` occurs three times in the image; the one at `0xB3CD` sits ten
+bytes from `mov si,0x253b` @`0xB3D7`, which is the navigation routine. Six constants
+came out of the stretch `0xB3C3..0xB41D`, and the clip pair is the interesting one:
+
+```text
+  0xB407  mov word [0x5239], 0x23   band top 35
+  0xB40D  mov word [0x523b], 0xa5   clip bottom 165 ...
+  0xB415  lcall 0x299, 0xe2f        ... for THIS call only
+  0xB41D  mov word [0x523b], 0xc8   restored to 200
+```
+
+`RENDER_CLIP_BOTTOM` and `RENDER_CLIP_RESTORED_BOTTOM` are not two settings — they
+are the same cell before and after one draw, which is why both must exist and why
+neither is "the" clip bottom.
+
+A CORRECTION TO #494, and it matters more than the constants. I wrote that the
+dispatch table's segment had to be solved because "the routine is reached by a NEAR
+call and no far pointer anywhere in the image names its segment". The second half is
+false. `lcall 0x71e, 0xc48` @`0xB3DA` resolves to file `0x8428` —
+`list_widget_layout_unified` — and `0x71E` is exactly the segment I solved for.
+
+The solved answer was right; the claim about why it had to be solved was not. What
+I actually did was scan for far pointers TARGETING `0x85F0..0x8720`, the dispatching
+routine's own range, and conclude from that emptiness that the segment was unnamed.
+But a segment is named by EVERY far call into it, at any offset — and this one is
+called from a routine 11KB away. The narrow scan answered a narrower question than
+the one I reported.
+
+So the constraint-solve was unnecessary work that happened to produce the right
+answer, and the honest version is that both routes agree. `re/labels.csv` is
+corrected; the entry now records the direct confirmation and the scoping error,
+because "I searched and found nothing" is only as strong as what was searched.
+
+`ship3d.rs`: 85 uncited constants -> 79.
+
+619 tests, 0 failures.
