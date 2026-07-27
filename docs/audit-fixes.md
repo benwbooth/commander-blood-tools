@@ -19053,3 +19053,52 @@ Also settled `export_screens::dump` as INFRA — a PPM writer for headless visua
 with no counterpart in the binary to cite.
 
 726 tests, 0 failures.
+
+## #575 — the nav picker's hit box is a SEQUENCE of stores, not a kind ladder
+
+`nav_chart_hit_box_for_kind` was:
+
+    if kind & BLACK_HOLE { black_hole } else if kind & SHIP { ship } else { default }
+
+`0x92BF..0x9302` is not a ladder. It writes `[0x277a]`/`[0x277c]` three times in
+sequence, and the ship store at `0x92FC` OVERWRITES the black-hole store at `0x92D3`:
+
+    0x92bf  mov [0x277a],0xc  / [0x277c],0xb     default 12x11
+    0x92cb  test es:[di-0x18],0x100 / je 0x92f4  not a black hole -> ship test
+    0x92d3  mov [0x277a],0x13 / [0x277c],0xc     black hole 19x12
+    0x92e9  cmp bx, es:[di-4] / je 0x92f4        AT the arche -> ship test TOO
+    0x92ef  add di,4 / jmp 0x9308                else SKIP the ship test
+    0x92f4  test es:[di-0x18],0x10 / je 0x9308
+    0x92fc  mov [0x277a],0x15 / [0x277c],0xa     ship 21x10 -- overwrites
+
+So an object carrying BOTH `0x100` and `0x10` gets the SHIP box when it sits at the
+arche and the BLACK-HOLE box when it does not. The `else if` answered "black hole"
+in both cases, and since the ship box is TWO PIXELS WIDER, the port silently dropped
+clicks in the two columns at its right edge.
+
+THE SAME BRANCH DOES TWO JOBS, which is what the port had missed. `0x92ED` decides
+whether to use the second marker endpoint AND whether the ship test runs. The port
+already modelled the endpoint half in `nav_chart_marker` and re-decided the box half
+from the kind alone — two answers derived from one test in the original. They are now
+one predicate (`nav_chart_uses_far_endpoint`) that both callers ask, and
+`NavChartObject` carries the resulting flag beside the marker it was computed with.
+
+THE EXISTING SWEEP COULD NOT SEE THIS. `native_nav_chart_pick_matches_the_lift`
+already ran the port against the lifted `func_92a3` — the original instructions —
+and passed, because its three objects had kinds `0`, `0x10`, and `0x100`. No object
+carried both bits, so both implementations agreed on every probe. A differential test
+is only as good as the inputs that make the two sides disagree.
+
+Extended with `BOTH_AT`/`BOTH_AWAY` and eight probes on the disagreeing edges. Then
+I put the old ladder back and re-ran, to check the new probes actually catch it:
+
+    mouse (69,120): lift 0x0400 vs native 0x0000
+
+They do. x=69 is inside the 21-wide ship box and outside the 19-wide black-hole one.
+
+`find_entry.py` reported the containing entry as `entity_draw_full` @`0x9240`, 127
+bytes back — wrong, and its own distance heuristic did not flag it. The real entry is
+`0x92A3`, which the lift names. When a routine has been lifted, the lift IS the
+answer to "where does this start"; the tool is for addresses that have not been.
+
+726 tests, 0 failures.

@@ -1408,6 +1408,12 @@ mod tests {
         const PLANET: u16 = 0x0100;
         const SHIP: u16 = 0x0200;
         const HOLE: u16 = 0x0300;
+        // BOTH bits set -- the case that tells the two implementations apart. At the
+        // arche, `0x92FC` overwrites the black-hole box with the SHIP box; away from
+        // it, `0x92EF` skips the ship test and the black-hole box stands. A kind
+        // ladder answers "black hole" for both (audit-fixes #575).
+        const BOTH_AT: u16 = 0x0400;
+        const BOTH_AWAY: u16 = 0x0500;
         const CONTEXT: u16 = 7;
 
         // Build the record table once, in a segment the far pointer names.
@@ -1416,6 +1422,18 @@ mod tests {
             (PLANET, 0u16, 50u16, 60u16),
             (SHIP, crate::vm::LOCATION_KIND_SHIP, 100, 60),
             (HOLE, crate::vm::LOCATION_KIND_BLACK_HOLE, 150, 60),
+            (
+                BOTH_AT,
+                crate::vm::LOCATION_KIND_BLACK_HOLE | crate::vm::LOCATION_KIND_SHIP,
+                50,
+                120,
+            ),
+            (
+                BOTH_AWAY,
+                crate::vm::LOCATION_KIND_BLACK_HOLE | crate::vm::LOCATION_KIND_SHIP,
+                100,
+                120,
+            ),
         ] {
             native.rec_write_pub(obj, kind);
             native.rec_write_pub(obj + crate::vm::NAV_PICK_POSITION_FIELD, x);
@@ -1424,11 +1442,24 @@ mod tests {
         native.rec_write_pub(HOLE + 0x14, CONTEXT);
         native.rec_write_pub(HOLE + crate::vm::NAV_PICK_POSITION_FIELD + 4, 250);
         native.rec_write_pub(HOLE + crate::vm::NAV_PICK_POSITION_FIELD + 6, 90);
-        let list = [PLANET, SHIP, HOLE];
+        // BOTH_AT sits at the arche (`+0x14` == context) -> near marker, ship box.
+        native.rec_write_pub(BOTH_AT + 0x14, CONTEXT);
+        // BOTH_AWAY does not -> far marker (200,150) and the black-hole box kept.
+        native.rec_write_pub(BOTH_AWAY + 0x14, CONTEXT + 1);
+        native.rec_write_pub(BOTH_AWAY + crate::vm::NAV_PICK_POSITION_FIELD + 4, 200);
+        native.rec_write_pub(BOTH_AWAY + crate::vm::NAV_PICK_POSITION_FIELD + 6, 150);
+        let list = [PLANET, SHIP, HOLE, BOTH_AT, BOTH_AWAY];
 
         let probes = [
             (48i32, 58i32), (60, 66), (61, 58), (98, 58), (120, 58), (98, 70),
             (148, 58), (163, 64), (164, 58), (5, 5), (250, 90), (52, 62),
+            // BOTH_AT, marker (50,120): ship box is 21x10 from (48,118), the
+            // black-hole box 19x12. x=69 is inside the ship box only; y=130 is
+            // inside the black-hole box only. One probe per disagreeing edge.
+            (69, 120), (50, 130), (48, 118), (70, 120),
+            // BOTH_AWAY, FAR marker (200,150) with the black-hole box: x=217 hits,
+            // x=219 (which the ship box would reach) must not, and y=160 hits.
+            (217, 150), (219, 150), (200, 160), (200, 120),
         ];
         for (mx, my) in probes {
             let mut m = Machine::new();

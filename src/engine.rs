@@ -229,17 +229,23 @@ pub struct NavChartObject {
     pub marker: (i32, i32),
     /// The artwork resource id from `DS:0x2BC7`, when the name is in that table.
     pub art_id: Option<u16>,
+    /// The `0x92ED` branch, carried beside [`Self::marker`] because ONE test in the
+    /// binary produces both: a black hole away from the arche takes the second
+    /// endpoint AND skips the ship box test (`0x92EF`). Storing the marker without
+    /// it let `hit_box` re-decide on the kind alone and answer differently.
+    pub far_endpoint: bool,
 }
 
 impl NavChartObject {
-    /// The picker's per-kind hit box (`0x92BF`, `0x92D3`, `0x92FC`).
+    /// The picker's hit box (`0x92BF`, `0x92D3`, `0x92FC`).
     ///
-    /// Delegates rather than repeating the kind ladder: `VmMachine::nav_chart_hit_box`
-    /// is the same three tests, and it is the one swept against the lifted
-    /// `func_92a3`. Two copies of one rule is how a per-kind box quietly stops
-    /// matching the hit-test that uses it.
+    /// Delegates rather than repeating the rule: `VmMachine::nav_chart_hit_box` is
+    /// the same sequence of stores, and it is the one swept against the lifted
+    /// `func_92a3`. Two copies of one rule is how a box quietly stops matching the
+    /// hit-test that uses it — which is exactly what audit-fixes #575 found, in the
+    /// form of an `else if` that could not see the `0x92ED` branch.
     pub fn hit_box(&self) -> (i32, i32) {
-        crate::vm::nav_chart_hit_box_for_kind(self.kind)
+        crate::vm::nav_chart_hit_box_for_kind(self.kind, self.far_endpoint)
     }
 }
 
@@ -7656,6 +7662,11 @@ mod tests {
             kind: crate::vm::LOCATION_KIND_BLACK_HOLE,
             marker: (132, 34),
             art_id: crate::levels::world_art_resource_id("Oddland"),
+            // The NEAR marker, so this is the `0x92ED`-matched entry. With no ship
+            // bit in the kind the box is the black-hole one either way; the pair
+            // that actually depends on this flag is swept against the lift in
+            // `native_nav_chart_pick_matches_the_lift`.
+            far_endpoint: false,
         }]);
         assert_eq!(e.nav_chart_objects()[0].art_id, Some(72));
         assert_eq!(

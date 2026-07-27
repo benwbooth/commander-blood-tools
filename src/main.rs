@@ -569,6 +569,7 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                     object,
                     kind: m.rec_read_pub(object),
                     marker: m.nav_chart_marker(object, context),
+                    far_endpoint: m.nav_chart_far_endpoint(object, context),
                     art_id: commander_blood_tools::levels::world_art_resource_id(&name),
                     name,
                 }

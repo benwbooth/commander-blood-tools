@@ -1702,17 +1702,49 @@ pub fn owner_object_offset_in(object_offsets: &[u16], off: u16) -> Option<u16> {
     object_offsets.iter().rev().copied().find(|&o| o < off)
 }
 
-/// The nav picker's hit box for a KIND (`0x92BF` default, `0x92D3` black hole,
-/// `0x92FC` ship). The single copy of that ladder — `NavChartObject::hit_box` and
-/// `VmMachine::nav_chart_hit_box` both call here.
-pub fn nav_chart_hit_box_for_kind(kind: u16) -> (i32, i32) {
+/// The nav picker's hit box (`0x92BF` default, `0x92D3` black hole, `0x92FC` ship).
+///
+/// NOT A KIND LADDER, which is how the port had it until audit-fixes #575. The
+/// three sizes are written to `[0x277a]`/`[0x277c]` in SEQUENCE, and the ship
+/// store at `0x92FC` OVERWRITES the black-hole store at `0x92D3`:
+///
+/// ```text
+/// 0x092bf  mov [0x277a],0xc  / [0x277c],0xb    ; default
+/// 0x092cb  test es:[di-0x18],0x100 / je 0x92f4 ; not a black hole -> ship test
+/// 0x092d3  mov [0x277a],0x13 / [0x277c],0xc    ; black hole
+/// 0x092e9  cmp bx, es:[di-4] / je 0x92f4       ; AT the arche -> ship test too
+/// 0x092ef  add di,4 / jmp 0x9308               ; else SKIP the ship test
+/// 0x092f4  test es:[di-0x18],0x10 / je 0x9308
+/// 0x092fc  mov [0x277a],0x15 / [0x277c],0xa    ; ship -- overwrites
+/// ```
+///
+/// So an object carrying BOTH `0x100` and `0x10` gets the SHIP box when it sits at
+/// the arche, and the BLACK-HOLE box when it does not. An `else if` on the kind
+/// alone answers black hole in both cases.
+///
+/// `far_endpoint` is the `0x92EF` path — the same single branch that selects the
+/// second marker in [`VmMachine::nav_chart_marker`]. One decision in the binary,
+/// so one argument here: they cannot disagree.
+pub fn nav_chart_hit_box_for_kind(kind: u16, far_endpoint: bool) -> (i32, i32) {
+    let mut hit = NAV_PICK_BOX_DEFAULT;
     if kind & LOCATION_KIND_BLACK_HOLE != 0 {
-        NAV_PICK_BOX_BLACK_HOLE
-    } else if kind & LOCATION_KIND_SHIP != 0 {
-        NAV_PICK_BOX_SHIP
-    } else {
-        NAV_PICK_BOX_DEFAULT
+        hit = NAV_PICK_BOX_BLACK_HOLE;
     }
+    if far_endpoint {
+        return hit; // 0x92EF jumps over the ship test entirely
+    }
+    if kind & LOCATION_KIND_SHIP != 0 {
+        hit = NAV_PICK_BOX_SHIP;
+    }
+    hit
+}
+
+/// The `0x92CB`+`0x92E9` branch: a black hole whose `+0x14` differs from
+/// `arche+0x22` is drawn and picked at its SECOND endpoint (`0x92EF add di,4`),
+/// and skips the ship test. Both callers ask here so the marker the chart draws
+/// and the box that catches the click always come from the same answer.
+pub fn nav_chart_uses_far_endpoint(kind: u16, field_14: u16, arche_context: u16) -> bool {
+    kind & LOCATION_KIND_BLACK_HOLE != 0 && field_14 != arche_context
 }
 
 /// Bit 1 of an object's `+2` flag word — the gate `0x6073` applies when building
@@ -6333,7 +6365,7 @@ impl VmMachine {
         list.iter().copied().find(|&object| {
             nav_chart_marker_contains(
                 self.nav_chart_marker(object, arche_context),
-                self.nav_chart_hit_box(object),
+                self.nav_chart_hit_box(object, arche_context),
                 mouse,
             )
         })
@@ -6345,9 +6377,7 @@ impl VmMachine {
     /// the drawn marker and the clickable one cannot drift apart.
     pub fn nav_chart_marker(&self, object: u16, arche_context: u16) -> (i32, i32) {
         let mut position = object.wrapping_add(NAV_PICK_POSITION_FIELD);
-        if self.rec_read(object) & LOCATION_KIND_BLACK_HOLE != 0
-            && self.rec_read(object.wrapping_add(0x14)) != arche_context
-        {
+        if self.nav_chart_far_endpoint(object, arche_context) {
             position = position.wrapping_add(4);
         }
         (
@@ -6356,9 +6386,22 @@ impl VmMachine {
         )
     }
 
-    /// The picker's per-kind hit box for a record (`0x92BF`, `0x92D3`, `0x92FC`).
-    pub fn nav_chart_hit_box(&self, object: u16) -> (i32, i32) {
-        nav_chart_hit_box_for_kind(self.rec_read(object))
+    /// The `0x92EF` branch for a record — see [`nav_chart_uses_far_endpoint`].
+    pub fn nav_chart_far_endpoint(&self, object: u16, arche_context: u16) -> bool {
+        nav_chart_uses_far_endpoint(
+            self.rec_read(object),
+            self.rec_read(object.wrapping_add(0x14)),
+            arche_context,
+        )
+    }
+
+    /// The picker's hit box for a record (`0x92BF`, `0x92D3`, `0x92FC`). Takes the
+    /// arche context because `0x92ED` does: see [`nav_chart_hit_box_for_kind`].
+    pub fn nav_chart_hit_box(&self, object: u16, arche_context: u16) -> (i32, i32) {
+        nav_chart_hit_box_for_kind(
+            self.rec_read(object),
+            self.nav_chart_far_endpoint(object, arche_context),
+        )
     }
 
     /// The word the black-hole endpoint rule compares against: `es:[arche+0x22]`
