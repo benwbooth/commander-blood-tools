@@ -566,11 +566,27 @@ pub const SHIP_3D_FINAL_RESET_DIRTY_MARKER: u8 = 0xff;
 pub const SHIP_3D_FINAL_RESET_SCROLL_MODE: u16 = SHIP_3D_SCROLL_MODE_HOLD;
 /// `and byte ptr [0x67aa],0xfc` @`0xB54D` — clears the low two bits, so it is a MASK applied to what is there rather than a value written.
 pub const SHIP_3D_FINAL_RESET_STATUS_FLAG_MASK: u8 = 0xfc;
+/// `cmp ax,8 / je 0x61DF` @`0x61B2` (audit-fixes #508). This kind and the two
+/// below all branch to the SAME target, so the three are one behaviour, not three.
 pub const SHIP_3D_OBJECT_KIND_POSITION_DIRECT_8: u16 = 8;
+/// `cmp ax,0x10 / je 0x61DF` @`0x61B7` — the name is the HEX, the value decimal
+/// 16 (audit-fixes #508).
 pub const SHIP_3D_OBJECT_KIND_POSITION_DIRECT_10: u16 = 16;
+/// `cmp ax,0x40 / jne` @`0x6114`, in the outer resolver — this kind takes the
+/// selector-11 path @`0x611B` rather than the shared direct branch
+/// (audit-fixes #508).
 pub const SHIP_3D_OBJECT_KIND_POSITION_DIRECT_40: u16 = 64;
+/// `cmp ax,0x100` @`0x60E5` and again @`0x61AD` — the only kind with its own
+/// two-word comparison path (selectors 12 and 14, then 9 or 10 by the result),
+/// which is why it is named for the kind rather than as a DIRECT_* variant
+/// (audit-fixes #508).
 pub const SHIP_3D_OBJECT_KIND_POSITION_KIND100: u16 = 256;
+/// `cmp ax,0x200 / je 0x61DF` @`0x61BC` — the third kind sharing the direct
+/// branch (audit-fixes #508).
 pub const SHIP_3D_OBJECT_KIND_POSITION_DIRECT_200: u16 = 512;
+/// `mov ax,0xb` @`0x611B`, passed to `vm_field_offset` @`0x611E` (`0x6023`, the
+/// `bsf` matrix). Selector 11 is the POSITION row; the kind supplies the column
+/// (audit-fixes #508).
 pub const SHIP_3D_FIELD_SELECTOR_POSITION: u8 = 11;
 /// `mov ax,9` @`0x6101` — the selector used when the kind-100 words MATCH.
 pub const SHIP_3D_FIELD_SELECTOR_KIND100_POSITION_MATCH: u8 = 9;

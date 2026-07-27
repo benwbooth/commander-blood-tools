@@ -16855,3 +16855,39 @@ named groups of constants.
 `ship3d.rs`: 26 uncited constants -> 21.
 
 620 tests, 0 failures.
+
+## #508 — three kinds, one branch: the position resolver
+
+Six constants from the object-position resolver, `0x60E0..0x61D9`, which turns an
+object's KIND word into a field offset through `vm_field_offset` (`0x6023`, the
+`bsf` matrix whose two port copies #486a merged).
+
+The structure the constants alone do not show:
+
+```text
+  0x61B2  cmp ax, 8     / je 0x61DF   ┐
+  0x61B7  cmp ax, 0x10  / je 0x61DF   ├─ SAME target: one behaviour
+  0x61BC  cmp ax, 0x200 / je 0x61DF   ┘
+  0x61AD  cmp ax, 0x100 / je 0x61EB   its own path
+  0x6114  cmp ax, 0x40  / jne         selector-11 path @0x611B
+```
+
+Three of the five kinds jump to the SAME address, so `DIRECT_8`, `DIRECT_10` and
+`DIRECT_200` are one case wearing three names. The port's naming already implied
+that; the shared branch target proves it, and it means a change to one must be a
+change to all three or the port's cases diverge from the game's single one.
+
+`KIND100` earns its different name: it alone runs a two-word comparison (selectors
+12 and 14, then 9 or 10 depending on the result) — the `mov ax,9 / cmp / inc ax`
+sequence whose neighbours were already cited at `0x6101`/`0x6108`.
+
+And the fall-through case is a LINK WALK, worth recording even though no constant
+names it: selector `0x11` reads a link, `cmp si,-1` @`0x61CD` tests for the end, and
+on -1 it reloads from `gs:[0x6752]` @`0x61D2` and loops back to `0x61AD`. So an
+object with none of the five kinds resolves its position by following owner links
+until a sentinel — which is the sort of thing that looks like recursion in a port
+and is a loop in the game.
+
+`ship3d.rs`: 21 uncited constants -> 15.
+
+620 tests, 0 failures.
