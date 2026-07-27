@@ -840,25 +840,25 @@ from_text	src/save.rs	115	fn		UNVERIFIED	/// Parse the port's save text. Returns
 write	src/save.rs	169	fn		UNVERIFIED	/// Write the save to `path` (the port's `blood.sav`).
 read	src/save.rs	175	fn		UNVERIFIED	/// Read a save from `path`, or `None` if it is absent/corrupt/foreign.
 OBJECT_LOCATION_FIELD	src/script.rs	16	const	0x6D60,0x6023	ASM	/// `obj+0x18` = 24 — the universal character LOCATION column of the field matrix /// at `DS:0x6D60`, resolved by `vm_field_offset` @`0x6023`. The same value as /// `vm::LOCATION_FIELD` and `extract::
-SUBTITLE_WRAP_COLUMN	src/script.rs	20	const		UNVERIFIED	/// A subtitle line is wrapped once its length reaches this many characters (the game's /// on-screen dialogue is broken into ~35-column lines).
-OBJECT_TALK_FIELD	src/script.rs	26	const	0x6D60,0x6023	ASM	/// `obj+0x3A` = 58 — the TALK column of the matrix at `DS:0x6D60` (`vm_field_offset` /// @`0x6023`), and the same value as /// `extract::SCRIPT_OBJECT_TALK_FIELD`. Note this file spells it in DECIMAL
-DebSymbol	src/script.rs	29	struct		UNVERIFIED	
-ScriptFunction	src/script.rs	36	struct		TESTED	
-CharacterContext	src/script.rs	43	struct		TESTED	
-SpeechEvent	src/script.rs	56	struct	0xFFFF	CELL?	/// Concept-menu labels embedded in the line record AFTER the 0xFFFF separator — /// the game's own source for the menu shown with a prompt line (e.g. the HONK /// prompt carries `0xFFFF talk remember
-ScriptBundle	src/script.rs	76	struct		UNVERIFIED	
-cutscene_record_names	src/script.rs	91	fn		ORACLE?	/// The DESCRIPT **Sequence** (cutscene) records this script references through its DEB symbols /// — the Sequence records DEFINED in the script's DEB (NOT proven triggered — see faithfulness-audit). 
-parse_deb	src/script.rs	106	fn		UNVERIFIED	
-parse_dictionary	src/script.rs	132	fn		TESTED	/// Parse a `SCRIPTn.DIC` into `{byte offset -> word}`. Words are NUL-separated and /// the offset is the key an `0xA6` record's word list refers to. /// /// THE single implementation — `engine`, `con
-functions_from_symbols	src/script.rs	151	fn		UNVERIFIED	
-build_character_contexts	src/script.rs	178	fn		UNVERIFIED	
-parse_speech_events	src/script.rs	242	fn		UNVERIFIED	
-function_for_offset	src/script.rs	351	fn		UNVERIFIED	
-assemble_dialogue_from_offsets	src/script.rs	358	fn	0x672A,0x6701	ASM	// PREDICTIVE WRAP -- see `engine::assemble_words` (audit-fixes // #313). `add al,dl / cmp al,0x23` @0x672A adds the NEXT word's // length (strlen_b @0x6701) before comparing, so the break comes // BE
-parse_script_bundle	src/script.rs	400	fn		UNVERIFIED	
-parse_script_dir	src/script.rs	426	fn		TESTED	
-object_name_map	src/script.rs	465	fn		UNVERIFIED	
-find_file_recursive	src/script.rs	473	fn		UNVERIFIED	
+SUBTITLE_WRAP_COLUMN	src/script.rs	31	const	0x66DB,0x672A,0x672E,0x72A8,0x7346	ASM	/// A subtitle line is wrapped once its length reaches this many characters. /// /// `0x23` = 35, from `add al,dl / cmp al,0x23 / jb 0x66DB` at `0x672A`..`0x672E`: /// `al` is the line length so far, 
+OBJECT_TALK_FIELD	src/script.rs	37	const	0x6D60,0x6023	ASM	/// `obj+0x3A` = 58 — the TALK column of the matrix at `DS:0x6D60` (`vm_field_offset` /// @`0x6023`), and the same value as /// `extract::SCRIPT_OBJECT_TALK_FIELD`. Note this file spells it in DECIMAL
+DebSymbol	src/script.rs	40	struct		UNVERIFIED	
+ScriptFunction	src/script.rs	47	struct		TESTED	
+CharacterContext	src/script.rs	54	struct		TESTED	
+SpeechEvent	src/script.rs	67	struct	0xFFFF	CELL?	/// Concept-menu labels embedded in the line record AFTER the 0xFFFF separator — /// the game's own source for the menu shown with a prompt line (e.g. the HONK /// prompt carries `0xFFFF talk remember
+ScriptBundle	src/script.rs	87	struct		UNVERIFIED	
+cutscene_record_names	src/script.rs	102	fn		ORACLE?	/// The DESCRIPT **Sequence** (cutscene) records this script references through its DEB symbols /// — the Sequence records DEFINED in the script's DEB (NOT proven triggered — see faithfulness-audit). 
+parse_deb	src/script.rs	117	fn		UNVERIFIED	
+parse_dictionary	src/script.rs	143	fn		TESTED	/// Parse a `SCRIPTn.DIC` into `{byte offset -> word}`. Words are NUL-separated and /// the offset is the key an `0xA6` record's word list refers to. /// /// THE single implementation — `engine`, `con
+functions_from_symbols	src/script.rs	162	fn		UNVERIFIED	
+build_character_contexts	src/script.rs	189	fn		UNVERIFIED	
+parse_speech_events	src/script.rs	253	fn		UNVERIFIED	
+function_for_offset	src/script.rs	362	fn		UNVERIFIED	
+assemble_dialogue_from_offsets	src/script.rs	369	fn	0x672A,0x6701	ASM	// PREDICTIVE WRAP -- see `engine::assemble_words` (audit-fixes // #313). `add al,dl / cmp al,0x23` @0x672A adds the NEXT word's // length (strlen_b @0x6701) before comparing, so the break comes // BE
+parse_script_bundle	src/script.rs	411	fn		UNVERIFIED	
+parse_script_dir	src/script.rs	437	fn		TESTED	
+object_name_map	src/script.rs	476	fn		UNVERIFIED	
+find_file_recursive	src/script.rs	484	fn		UNVERIFIED	
 SHIP_3D_MAX_DEPTH_OFFSET	src/ship3d.rs	11	const	0xB75C,0xB768,0xB771,0xB776,0x2531	ASM	/// The depth scroll's ceiling, appearing three times in `0xB75C`: /// `cmp ax,0x41` @`0xB768` (already there — stop opening), `cmp ax,0x41` /// @`0xB771` (would overshoot) and `mov ax,0x41` @`0xB776`
 SHIP_3D_TRANSITION_OPEN_STEP	src/ship3d.rs	14	const	0x2531,0xB6A0	ASM	/// `mov byte [0x2531],4` @`0xB6A0` — the OPEN step, written once the hold timer /// passes the threshold below.
 SHIP_3D_TRANSITION_CLOSE_STEP	src/ship3d.rs	17	const	0x2531,0xB6B8	ASM	/// `mov byte [0x2531],8` @`0xB6B8` — the CLOSE step, written when the timer /// reaches zero while armed. Closing steps twice as fast as opening.

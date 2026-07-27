@@ -1810,7 +1810,9 @@ mod tests {
         const XLAT_DS: u32 = 0x7362;
         const WIDTHS_DS: u32 = 0x7412;
 
-        let measure = |text: &str| -> u16 {
+        const MAIN_XLAT_DS: u32 = 0x7802;
+        const MAIN_WIDTHS_DS: u32 = 0x78B2;
+        let measure_face = |text: &str, face: u16| -> u16 {
             let mut m = Machine::new();
             m.regs.ds = GS;
             m.regs.gs = GS;
@@ -1832,7 +1834,13 @@ mod tests {
                 m.write8(GS, STR_DS + i as u32, b);
             }
             m.write8(GS, STR_DS + text.len() as u32, 0);
-            m.regs.set_ax(0); // the square-caps face
+            // The MAIN font's tables too, for `face != 0` (`0x30E2`).
+            for (base, len) in [(MAIN_XLAT_DS, 176usize), (MAIN_WIDTHS_DS, 86)] {
+                for i in 0..len {
+                    m.write8(GS, base + i as u32, exe[0xD420 + base as usize + i]);
+                }
+            }
+            m.regs.set_ax(face); // 0 = square caps (0x30D7), else main font (0x30E2)
             m.regs.set_si(STR_DS as u16);
             let sp = m.regs.sp() as u32;
             m.write16(m.regs.ss, sp, 0x0000);
@@ -1840,6 +1848,34 @@ mod tests {
             super::auto::func_30cd(&mut m);
             m.regs.ax()
         };
+
+        let measure = |text: &str| measure_face(text, 0);
+
+        // THE `ax != 0` FACE (`0x30E2`), which no earlier row reached even though
+        // TWO of the routine's three callers use it: `mov ax,1` at `0x7326` (the
+        // pixel wrap layout) and at `0x8FCA`. Both measure a single WORD, which
+        // matters -- `xlat[0x20]` is `0xFF` in the main table, so a SPACE is
+        // unmapped here and `0x30F2` would add the out-of-range byte. Space-free
+        // words are the only well-defined input, and the only kind it is given
+        // (audit-fixes #582).
+        let mut faces_differ = false;
+        for text in ["TALK", "Bob", "hello", "W", "I", "zz", "Oddland", "9"] {
+            let lifted = measure_face(text, 1);
+            let native: usize = text.chars().map(crate::font::game_font_advance).sum();
+            assert_eq!(
+                lifted,
+                native.wrapping_sub(2) as u16,
+                "{text:?} in the MAIN face: lift {lifted} vs advances-2 {}",
+                native.wrapping_sub(2)
+            );
+            // ...and the faces must actually differ SOMEWHERE, or `0x30D7` and
+            // `0x30E2` would be indistinguishable and these rows would be
+            // measuring the square-caps path twice. Per-string inequality is too
+            // strong: `"I"` measures 1 in both, a coincidence of two width tables
+            // and not a failure of face selection.
+            faces_differ |= measure_face(text, 0) != lifted;
+        }
+        assert!(faces_differ, "0x30D7 and 0x30E2 selected the same tables");
 
         // Real labels: the words the menus actually measure.
         for text in [

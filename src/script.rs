@@ -15,8 +15,19 @@ use crate::vm::{self, VmToken};
 /// one matrix column (audit-fixes #548, #560).
 pub const OBJECT_LOCATION_FIELD: usize = vm::LOCATION_FIELD as usize;
 
-/// A subtitle line is wrapped once its length reaches this many characters (the game's
-/// on-screen dialogue is broken into ~35-column lines).
+/// A subtitle line is wrapped once its length reaches this many characters.
+///
+/// `0x23` = 35, from `add al,dl / cmp al,0x23 / jb 0x66DB` at `0x672A`..`0x672E`:
+/// `al` is the line length so far, `dl` the NEXT word's, and the buffer builder
+/// writes a `0x0D` and zeroes `dl` when the sum reaches 35. The port's
+/// `line_len + next_len >= SUBTITLE_WRAP_COLUMN` is that `jb` inverted, which is
+/// why the break lands BEFORE the overflowing word (audit-fixes #313, #582).
+///
+/// THIS IS THE BUFFER RULE, AND THE GAME HAS A SECOND ONE. `0x72A8`..`0x7346` lays
+/// words out at RENDER time by PIXEL width: `cmp ax,0x12C` against pen + the next
+/// word's measured width, resetting the pen to `0xA` and adding 8 to the row. A
+/// 35-character line and a 300-pixel line are not the same line for a proportional
+/// font. See docs/port-validation.md — the pixel layout is not ported.
 pub const SUBTITLE_WRAP_COLUMN: usize = 35;
 /// `obj+0x3A` = 58 — the TALK column of the matrix at `DS:0x6D60` (`vm_field_offset`
 /// @`0x6023`), and the same value as

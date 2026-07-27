@@ -19291,3 +19291,38 @@ insert would have succeeded, and `0x6019` would still be unreached. Insert is th
 only operation that can report CF clear, so the test now asserts it saw one.
 
 726 tests, 0 failures.
+
+## #582 — a dual-font measure, two of whose three callers use the untested face
+
+Fifth sweep audited, and the one that paid. `func_30cd` selects its tables from AX:
+`0x30D7` (ax==0) takes the square-caps xlat/advances at `DS:0x7362`/`0x7412`,
+`0x30E2` takes the MAIN font's at `0x7802`/`0x78B2`. The sweep set `ax=0` on every
+row, so one of the merge's three predecessors never ran.
+
+It is not an unused path. Of the routine's three call sites, `0x846C` passes 0 (the
+save-slot widget) and BOTH others pass 1: `0x7326` and `0x8FCA`.
+
+Following `0x7326` is what made this worth the detour. `0x72A8`..`0x7346` is a
+SUBTITLE LAYOUT BY PIXEL WIDTH — punctuation attaches, a space costs 6, the next
+word is measured in the main font, and the line breaks when pen + that width reaches
+`0x12C` = 300, resetting the pen to 10 and the row by 8.
+
+The port wraps subtitles at 35 CHARACTERS. That rule is also real — `cmp al,0x23` at
+`0x672C` — and `SUBTITLE_WRAP_COLUMN` is now cited to it and settles, closing a
+constant #560 had left UNVERIFIED. But 35 characters and 300 pixels are different
+lines for a proportional font, and only one of the two mechanisms is implemented.
+New matrix row; NOT wired in, because which surface uses which rule is undecided and
+switching every subtitle to the pixel rule would replace one wrong answer with
+another.
+
+Also worth recording about `0x30CD` itself: unlike `render_string` it has NO space
+case and NO `0xFF` skip, so a space (whose main-font xlat entry IS `0xFF`) would add
+an out-of-range byte. Both real callers measure a single WORD, so the case does not
+arise — the routine is only well-defined on space-free input, which is exactly what
+it is given.
+
+The new rows assert the two faces differ SOMEWHERE rather than per string: `"I"`
+measures 1 in both, a coincidence of two width tables, and asserting per-string
+inequality failed on it.
+
+726 tests, 0 failures.

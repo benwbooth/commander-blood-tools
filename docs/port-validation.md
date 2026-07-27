@@ -1942,3 +1942,41 @@ source, then these two are either confirmed or corrected.
 window captures" and 82 from a native-resolution one. That is a capture correcting a
 capture — better measurement of an inadmissible source, and worth keeping in the row
 so the next person does not read the correction as verification.
+
+## UNVERIFIED — the subtitle PIXEL layout at `0x72A8` is not ported (#582)
+
+**Two wrap rules exist and the port implements one.** `script::SUBTITLE_WRAP_COLUMN`
+is now cited exactly: `add al,dl / cmp al,0x23 / jb 0x66DB` at `0x672A`, the
+35-CHARACTER buffer builder that writes `0x0D` line breaks. That is real and the
+port matches it.
+
+`0x72A8`..`0x7346` is a SECOND, separate rule, applied at RENDER time by PIXEL width:
+
+    bx = gs:[0x27CD]              width of the word just drawn (render_string)
+    next word starts . , : ! ?  -> attach: gs:[0x27D1] += bx, NO wrap test
+    else  bx += 6                 the space advance (the same 6 as 0x31D7)
+          ax = 1, call 0x30CD     measure the NEXT word in the MAIN font
+          gs:[0x27D1] += bx
+          cmp ax,0x12C / jl       wrap when pen + next word >= 300 PIXELS
+          gs:[0x27D1] = 0xA       left margin 10
+          dx += 8                 line pitch
+
+**Why this matters and is not cosmetic.** For a PROPORTIONAL font a 35-character
+line and a 300-pixel line are different lines. `WWWWW` and `iiiii` are both five
+characters; they are not both the same width. So the port's line breaks agree with
+the original only for text whose average glyph width happens to land near the limit
+at the same place.
+
+**What must be built.** The renderer needs to lay out words with the measured pen
+rather than a column count: `font::game_font_drawn_width` per word (that is what
+`gs:[0x27CD]` holds), `+6` per space, break at 300, restart the pen at 10, advance
+the row by 8. The measure for the NEXT word is `0x30CD` with `ax=1`, NOT the
+`0x3192` accumulator — a different routine with different rules (no space case, no
+`0xFF` skip, `sub ax,2`), now covered by
+`native_square_caps_width_matches_the_lifted_measure`.
+
+**Deliberately not guessed at.** Which surfaces use the buffer rule and which the
+pixel rule is undecided: `0x66DB` builds a CR-separated buffer for some consumer,
+and `0x72A8` walks a word-pointer array bounded by `gs:[0x27D3]`. Finding each
+one's callers is the next task, and wiring the pixel layout into every subtitle
+before knowing that would replace one wrong rule with another.
