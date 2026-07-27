@@ -18052,3 +18052,38 @@ leaving those UNVERIFIED reads as "not yet decoded" when the truth is "deliberat
 not from the game", and the ledger should not blur the two.
 
 723 tests, 0 failures.
+
+## #543 — a guard for #542's coupling, which first failed to see #542
+
+`tools/check_palette_slot_writers.py` lists every reserved slot (`0xC0..0xFF`) the
+port writes and flags those written with MORE THAN ONE colour — the coupling #542
+found by hand, where four sites share two slots under names that give no hint of it.
+
+THE FIRST VERSION MISSED THE CASE THAT MOTIVATED IT. Its regex matched literal
+indices only, and #542's sites are `scene_palette[RETICLE as usize]` — named
+constants. So it reported one conflict and silently passed the two it was written
+for. That is #527's owner-walk and #540's `kind == "fn"` filter a third time: a
+guard whose matcher is narrower than the problem reports clean and teaches its
+reader nothing. Fixed by resolving named indices against the file's own `const`
+definitions.
+
+Test sections are skipped, for the #528 reason: `render.rs`'s subtitle test installs
+`[1,2,3]`/`[4,5,6]` into the reserved pair precisely to prove the renderer reads
+them, and reporting that beside real writers is noise that trains the reader past
+the real ones.
+
+Two genuine conflicts remain, and both are RECORDED not fixed, because "fine if the
+screens never coexist" is a claim I cannot make from the writes alone:
+
+```text
+  0xE0   engine.rs:1828  [255,255,255]   the Bob concept menu's engaged row
+         engine.rs:5402  [0,0,0]         the presentation box-open animation
+  0xFD   engine.rs:3002  [120,220,245]   the cyberspace progress bar
+         engine.rs:4385  [255,80,80]     the nav object marker
+```
+
+`0xFE` turns out NOT to conflict — five writers, all `[245,245,160]` — which is the
+tool earning its keep in the other direction: same-colour repeats are the subtitle
+helper doing its job, and only distinct colours are reported.
+
+723 tests, 0 failures.
