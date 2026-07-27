@@ -14544,3 +14544,41 @@ the work rather than when someone writes a row.
 
 2229 items, 1117 confirmed (50.1%), 1112 open. 762 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #443 — I committed the error I had just warned against
+
+#442 wrote three APPROX rows and made a point of refusing to write seven more,
+because "a row that says APPROX; see the comment records the claim rather than
+checking it". One of the three I DID write was that exact mistake.
+
+For `SHIP_3D_HUD_PYRAMID_VERTICES` I named the replacement as "the `0x9BBA`
+projection verified in #273". I had not read the item's doc. Reading it:
+
+  * `0x9BBA` is the STAR-MAP projection. This is the HUD pyramid surface, and its
+    doc says outright the projection for it "is still unlocated — it runs before
+    `0x299:0x1467` fills the 0x6212 records with already-projected coords".
+  * The doc goes further: the `0x6212` builder `@0x40D0` writes
+    `((flags & 4) | 0x83)`, which is the SPRITE bank dispatch, so the pyramids are
+    probably sprites drawn at projected positions rather than a wireframe — "why
+    single-routine estimates kept being wrong".
+  * And the VERTICES are not the stand-in at all. Their bytes are data-backed;
+    they alias palette bank 192..255, the conflict resolved in commit `bd930b8`.
+    What is missing is the consumer, not the constant.
+
+So I filled the "binary routine that must replace it" column from a nearby memory
+instead of from the item, which is precisely how `0x9BBA` — a projection I had
+verified myself in a DIFFERENT context two days ago — came to stand in for an
+unlocated one. #432 was the same shape (measuring a blob I had, writing about the
+blob I meant), two entries earlier.
+
+Row corrected to say the replacement is NOT YET KNOWN, with the open task the doc
+names: find the routine projecting the `0x5491` verts into the `0x6212` records,
+plus the compass→matrix-angle map.
+
+The count is unchanged at 10 named / 8 unpaired, because a wrong row and a right
+row look identical to the tool. That is worth stating: `check_approx_rows.py`
+verifies that a row EXISTS, never that it is true, and nothing can check the
+replacement column but reading the item.
+
+2229 items, 1117 confirmed (50.1%), 1112 open. 762 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
