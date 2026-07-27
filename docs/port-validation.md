@@ -1740,6 +1740,12 @@ either. The DESCRIPT interpreter therefore dispatches its command bytes some oth
 way — a jump table, or code that has not been located — and that dispatch is the
 thing to find.
 
+NARROWED (audit-fixes #551): `vm_c2_descript_lookup` (`0x7409`) is the FILE
+LOADER, not the interpreter — its references are `int 21h` AH=`0x3D` (open,
+`0x745E`), `0x3F` (read, `0x7469`), `0x42` (seek, `0x74B0`), `0x3E` (close,
+`0x750A`), plus a `0xFFFF` not-found store @`0x74FE`. It fetches a record; whoever
+WALKS that record's command bytes is a different routine, and that is the search.
+
 **What would settle it.** The game's own consumer of the DESCRIPT cue field: find
 the routine that reads a cue's tick and compare it against the timer it drives
 (`GAME_TICK_SECS` is 39.948 ms, ~25 Hz, so a 10 Hz cue unit would be a DIFFERENT
