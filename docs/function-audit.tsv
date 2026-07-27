@@ -34,8 +34,8 @@ parse_dic_words	src/bas_vm.rs	123	fn		INFRA	/// Parse a `SCRIPTn.DIC` into {offs
 is_single_token	src/bas_vm.rs	127	fn		UNVERIFIED	
 BACK_TOPICS	src/bas_vm.rs	132	const		UNVERIFIED	"/// A back-out topic that pops the menu stack (the game's universal ""leave"" verb)."
 BasMenuStack	src/bas_vm.rs	157	struct	0x6772,0x6774,0x57F7,0x57FC,0x5805,0x5464	ASM?	"/// The concept-menu stack for one script's conversation. /// /// THE GAME'S PAIR IS NOT A STACK (audit-fixes #455). This said it mirrors /// ""the game's `gs:0x6772`/`gs:0x6774` menu stack""; those two"
-new	src/bas_vm.rs	171	fn	0x6774	CELL?	/// Decode a script's menus and seed the stack with the ENTRY menu — the first /// `0xA3` the BAS VM reaches from offset 0 (verified: SCRIPT2's entry is 0x2f, /// the top-level menu, which is the base
-current	src/bas_vm.rs	178	fn	0x6772	CELL?	/// The menu currently displayed (the top of the stack = `gs:0x6772`).
+new	src/bas_vm.rs	171	fn	0x6774	ASM	/// Decode a script's menus and seed the stack with the ENTRY menu — the first /// `0xA3` the BAS VM reaches from offset 0 (verified: SCRIPT2's entry is 0x2f, /// the top-level menu, which is the base
+current	src/bas_vm.rs	178	fn	0x6772	ASM	/// The menu currently displayed (the top of the stack = `gs:0x6772`).
 current_block	src/bas_vm.rs	187	fn		UNVERIFIED	/// The current menu's full parsed BLOCK — its topics plus the `0xA6` response /// tokens up to the `0xAC` terminator (grammar from [`parse_menu_block`], /// verified against the runtime trace). Ties 
 current_responses	src/bas_vm.rs	192	fn		UNVERIFIED	/// A sequential-response player for the current menu's block (its monologue).
 current_menu_dialogue	src/bas_vm.rs	199	fn		UNVERIFIED	/// The current menu's full response monologue as renderable subtitle lines (its /// `0xA6` responses assembled in order) — the dialogue the engine plays for the /// active concept menu. Empty if no m
@@ -290,15 +290,15 @@ MENU_CLAMP_ARC	src/bridge.rs	43	const	0x2793,0x9762	ASM	/// While a menu item is
 MENU_FRAME_MIN	src/bridge.rs	47	const	0x8614,0x868D	ASM	/// Golden console menu: hit box and row metrics from `0x8614..0x868D`. /// The menu is baked into panorama frames 40..=60 and is only clickable there.
 MENU_FRAME_MAX	src/bridge.rs	48	const		UNVERIFIED	
 MENU_REST_FRAME	src/bridge.rs	51	const	0x8642,0x279B	ASM	/// The menu's rest frame (`0x8642` subtracts 0x2D; the click seeks to /// `[0x279B] = 0x5A` = arc 90 = frame 45).
-MENU_RIGHT_AT_REST	src/bridge.rs	55	const	0x8650,0x8663	CELL?	/// At the rest frame the menu box spans screen x `177..=287` (`0x8650..0x8663`: /// right = 0xE8 + 0x37 = 287, left = right - 0x6E = 177); it scrolls with the /// panorama at -8 px per frame of delta
+MENU_RIGHT_AT_REST	src/bridge.rs	55	const	0x8650,0x8663	ASM	/// At the rest frame the menu box spans screen x `177..=287` (`0x8650..0x8663`: /// right = 0xE8 + 0x37 = 287, left = right - 0x6E = 177); it scrolls with the /// panorama at -8 px per frame of delta
 MENU_WIDTH	src/bridge.rs	56	const		UNVERIFIED	
 MENU_TOP_AT_REST	src/bridge.rs	59	const	0x8671,0x868B	ASM	/// Row metrics (`0x8671..0x868B`): top row y = 0x48 + |δ| * 1.25, row pitch /// = 0x12 - |δ| / 8, five rows.
 MENU_ROW_PITCH_AT_REST	src/bridge.rs	60	const		UNVERIFIED	
 MENU_ROW_COUNT	src/bridge.rs	61	const		UNVERIFIED	
 MENU_ROW_DAC_BASE	src/bridge.rs	67	const	0x8697	ASM	/// The five menu rows' glyphs in the panorama frames are painted with one /// dedicated palette index per row, starting here (`0x8697`: DAC index /// 0x7B + row). Re-programming these five DAC entrie
-MENU_ROW_IDLE_DAC	src/bridge.rs	70	const	0x8636,0x863F	CELL?	/// Idle row colour, 6-bit DAC (`0x8636..0x863F`: five entries of 16,12,0 — /// dark gold).
-MENU_ROW_HOVER_DAC	src/bridge.rs	72	const	0x869D,0x86A3	CELL?	/// Hovered row colour, 6-bit DAC (`0x869D..0x86A3`: 63,0,0 — bright red).
-StationRecord	src/bridge.rs	79	struct	0x2A1B	CELL?	/// One clickable record of the 6-entry table at `DS:0x2A1B` (0x18-byte stride). /// The four panorama stations' records get their orb rectangle refreshed from /// the loaded frame's chunk header; the
+MENU_ROW_IDLE_DAC	src/bridge.rs	70	const	0x8636,0x863F	ASM	/// Idle row colour, 6-bit DAC (`0x8636..0x863F`: five entries of 16,12,0 — /// dark gold).
+MENU_ROW_HOVER_DAC	src/bridge.rs	72	const	0x869D,0x86A3	ASM	/// Hovered row colour, 6-bit DAC (`0x869D..0x86A3`: 63,0,0 — bright red).
+StationRecord	src/bridge.rs	79	struct	0x2A1B	ASM	/// One clickable record of the 6-entry table at `DS:0x2A1B` (0x18-byte stride). /// The four panorama stations' records get their orb rectangle refreshed from /// the loaded frame's chunk header; the
 STATION_REST_FRAMES	src/bridge.rs	112	const	0x2A1B,0xFE3B,0x7DAB,0x6D4,0x9642,0x985F,0xFFFFFF,0xFE45,0xF	DATA	/// Station rest frames, read from the STATIC station-record table in the image — /// not from a probe dump, which is what this used to cite. /// /// `DS:0x2A1B` (file `0xFE3B`) is an array of SIX 24-
 STATION_RECORD_TABLE_FILE_OFFSET	src/bridge.rs	115	const	0x2A1B,0xD420	DATA	/// `DS:0x2A1B` -> file offset of the station-record array (`0xD420 + 0x2A1B`).
 STATION_RECORD_COUNT	src/bridge.rs	117	const	0x7DA8	DATA	/// Six records (`mov cx,6` @`0x7DA8`).
@@ -308,12 +308,12 @@ BridgeView	src/bridge.rs	126	struct	0x2795,0x0A2A,0x0A2C,0x2793,0x279B,0x279D,0x
 default	src/bridge.rs	156	fn		UNVERIFIED	// Live table at the console: the menu (1) and nav (2) station records // are the active/clickable ones.
 wrap	src/bridge.rs	180	fn		UNVERIFIED	
 ring_delta	src/bridge.rs	185	fn		UNVERIFIED	/// Shortest signed distance from `from` to `to` on a ring of `modulus`.
-mouse_screen_x	src/bridge.rs	196	fn	0x97FC	CELL?	/// The mouse cursor's screen-space x for the current view /// (`ring - (frame * 8 - 160)`, the `0x97FC` rebase).
+mouse_screen_x	src/bridge.rs	196	fn	0x97FC	ASM	/// The mouse cursor's screen-space x for the current view /// (`ring - (frame * 8 - 160)`, the `0x97FC` rebase).
 move_mouse	src/bridge.rs	205	fn		UNVERIFIED	/// Feed relative mouse motion (the port's stand-in for the original's /// warped hardware cursor: motion accumulates in ring space).
 update_view	src/bridge.rs	220	fn	0x9656,0x97E3,0x97F6,0xa2a,0xfff8	ASM	/// One tick of the view state machine (`0x9656..0x97E3`). Returns true if /// the frame changed (the original's carry flag, telling the caller to /// redraw the panorama). /// /// Every path through 
 update_view_steer	src/bridge.rs	227	fn	0x9667,0x96F5,0x279b,0x2793,0x9671,0x279d,0x9676,0x1095,0x96	ASM	// Station seek (`0x9667..0x96F5`): ease toward the target half the // remaining distance per tick, shortest way around the 180-ring. // `mov dx,[0x279b] / shr dx,1` @`0x9667` is the target arc halved
-set_frame_orb_box	src/bridge.rs	314	fn	0x9860,0x9889	CELL?	/// Refresh the current frame's station record with its orb rectangle, as /// the frame loader does (`0x9860..0x9889`): all four boxes reset, then the /// loaded chunk's box stored on its own station'
-menu_row_under_cursor	src/bridge.rs	326	fn	0x8614,0x868D	CELL?	/// Menu row under the cursor, if the menu is in view and the cursor is /// inside the box — the hit math of `0x8614..0x868D`. Returns 0..=4 top to /// bottom (HONK, TELEPHONE, CRYOBOX, MENU, OPTION).
+set_frame_orb_box	src/bridge.rs	314	fn	0x9860,0x9889	ASM	/// Refresh the current frame's station record with its orb rectangle, as /// the frame loader does (`0x9860..0x9889`): all four boxes reset, then the /// loaded chunk's box stored on its own station'
+menu_row_under_cursor	src/bridge.rs	326	fn	0x8614,0x868D	ASM	/// Menu row under the cursor, if the menu is in view and the cursor is /// inside the box — the hit math of `0x8614..0x868D`. Returns 0..=4 top to /// bottom (HONK, TELEPHONE, CRYOBOX, MENU, OPTION).
 click	src/bridge.rs	353	fn	0x86A4,0x86F1,0x7DC8,0x7DE6	ASM	/// A mouse-button press on the bridge (`0x86A4..0x86F1` menu path, /// `0x7DC8..0x7DE6` orb path). Returns the newly selected menu item /// (1..=5) if a menu row was clicked.
 clear_menu_selection	src/bridge.rs	411	fn	0x87B0,0x883B,0x2a19,0x2793,0x2A19,0x591C,0x8956,0x59BF,0x5E	ASM	/// Clear the console SELECTION only, leaving the cursor clamp alone — the /// shared epilogue of `nav_choice_handler_1` (`0x87B0`) and /// `nav_choice_handler_2` (`0x883B`). Both end with exactly: //
 release_menu	src/bridge.rs	417	fn		UNVERIFIED	/// Release the engaged menu item (the selected screen was closed): clears /// the selection and the cursor clamp.
@@ -351,7 +351,7 @@ dispatch	src/croolis.rs	316	fn		UNVERIFIED	/// Dispatch one frame through the ob
 step	src/croolis.rs	387	fn	0x16A4,0x16C9,0x16CE,0x16C2,0x16a2,0x16D8,0x16DC,0x16E0,0x16	ASM?	/// Advance one frame of the decoded state machine (`0x16A4`): the timer counts /// down; when it expires the PRNG picks a new animation state — `+0x36 = 1` /// (`0x16C9`), `+0x38 = 0x32` (`0x16CE`) —
 AlienColony	src/croolis.rs	423	struct	0x12DE,0xB72	ASM	/// The overlay's per-frame object-list dispatcher (method `0x12DE`): each `0x12DE` /// call iterates `cx = [di+0x1A]` sub-objects, calling each object's sub-method /// (`call [si+0xE]`, `si += 0x5E`)
 ALIEN_COLONY_FRAME_GATE	src/croolis.rs	445	const	0xb72,0x11C5,0x12F9,0xB72	ASM	/// The dispatcher's frame-gate reload: `mov word cs:[0xb72],7` at croolis.xdb /// `0x11C5` and `0x12F9`. /// /// The doc used to cite `cs:0xB72` alone — the gate's STORAGE, which holds 2 in /// the s
-new	src/croolis.rs	455	fn	0x105C,0x9E3B	CELL?	/// A colony of `count` objects sharing ONE PRNG stream — which is what /// `fs:[0x105C]` is. `base_seed` seeds the STREAM, not the objects. /// /// This used to seed each object as `base_seed + i * 0
+new	src/croolis.rs	455	fn	0x105C,0x9E3B	ASM	/// A colony of `count` objects sharing ONE PRNG stream — which is what /// `fs:[0x105C]` is. `base_seed` seeds the STREAM, not the objects. /// /// This used to seed each object as `base_seed + i * 0
 step	src/croolis.rs	466	fn	0xB72	ASM	/// Advance one frame: gated by `cs:0xB72`, step every object's state machine on the /// 7th frame (decrement, and when it hits 0 update + reload to 7). Returns `true` /// on the frames the colony act
 decompress_lz_171	src/decompress.rs	8	fn		UNVERIFIED	// NOTE: unlike RLE block 173, LZ blocks carry no flags byte / x,y placement pair — // byte 4 of their 6-byte header is payload-derived data (verified on logo_bl / // inter_sh, whose byte-4 values var
 BitReaderHigh	src/decompress.rs	72	struct		UNVERIFIED	
@@ -381,7 +381,7 @@ read_cstr	src/descript.rs	407	fn		UNVERIFIED
 read_media	src/descript.rs	419	fn		UNVERIFIED	
 read_two	src/descript.rs	435	fn		UNVERIFIED	
 is_opcode	src/descript.rs	442	fn		UNVERIFIED	
-MouseInput	src/engine.rs	19	struct	0x70E,0xA2A,0xA2C,0xA2E	CELL?	/// Live mouse input for one frame. Mirrors the engine globals written by the poll /// at `0:0x70E`: `gs:[0xA2A]`=x, `gs:[0xA2C]`=y, `gs:[0xA2E]`=buttons.
+MouseInput	src/engine.rs	19	struct	0x70E,0xA2A,0xA2C,0xA2E	ASM	/// Live mouse input for one frame. Mirrors the engine globals written by the poll /// at `0:0x70E`: `gs:[0xA2A]`=x, `gs:[0xA2C]`=y, `gs:[0xA2E]`=buttons.
 left_down	src/engine.rs	35	fn		UNVERIFIED	
 right_down	src/engine.rs	38	fn		UNVERIFIED	
 parse_dictionary	src/engine.rs	59	fn		DATA	/// Parse a `SCRIPTn.DIC` dictionary: NUL-terminated words keyed by their byte /// offset (a Text token's `word_offsets` index into this). // Single implementation in script.rs. This used to be one of

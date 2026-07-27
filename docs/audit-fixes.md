@@ -15369,3 +15369,36 @@ it meant.
 
 2229 items, 1131 confirmed (50.7%), 1098 open. 798 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #469 — eleven rows, mostly on decodes already banked
+
+Eleven `CELL?` rows settle in one pass, which is what the earlier entries bought:
+most cite addresses this session already read, and the rest were four
+disassemblies away.
+
+Already established: `StationRecord`/`0x2A1B` (#388's `mov di,0x2a1b` +
+`mul 0x18` station table), `mouse_screen_x`/`0x97FC` (#433, where the cell turned
+out to be `0x0A2A` not `0x2A2A`), `menu_row_under_cursor`/`0x8614` (#386's
+off-by-one correction), `set_frame_orb_box`/`0x9860` (#388's reset loop),
+`bas_vm::new`+`current`/`0x6772`+`0x6774` (#455's pair-not-a-stack),
+`croolis::new`/`0x105C` (#400's shared stream).
+
+Newly read, and they close the menu palette cleanly:
+
+    0x8633  mov cx, 5        five rows      (#467)
+    0x8636  mov al, 0x10     idle R = 16
+    0x863F  loop 0x8636      ...the loop those five run
+    0x869D  mov al, 0x3f     hover R = 63 -- the DAC maximum
+    0x868D  cmp al, 5        the five-row bound again, in the hit test
+
+So `MENU_ROW_IDLE_DAC` `(16, 12, 0)` and `MENU_ROW_HOVER_DAC` `(63, 0, 0)` are
+both immediates, and the "5" appears three times independently — as the loop
+count, the hit-test bound, and the row count the port uses.
+
+The provisional queue is now 176, from 246 at the session's start. What made this
+entry cheap is that eight of the eleven were paid for earlier: verifying an
+address once makes every later row citing it nearly free, which is an argument for
+reading the neighbourhood rather than the single instruction a row names.
+
+2229 items, 1142 confirmed (51.2%), 1087 open. 798 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
