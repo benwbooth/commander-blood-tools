@@ -84,6 +84,20 @@ def _modrm(reg):
     return re.escape(bytes([(reg << 3) | 0x06]))
 
 
+# KNOWN GAPS, found by tools/check_cited_cells.py (audit-fixes #434) and left
+# recorded rather than silently patched, because callers may already compensate:
+#
+#   * `address_forms` has no C4/C5 (`les`/`lds`). `les di, gs:[0x6724]` is
+#     `65 c4 3e 24 67` -- the VM record-table pointer, read at 0x6B4D and a dozen
+#     other sites -- and census() reports ZERO for 0x6724.
+#   * `reg_disp_forms` enumerates word opcodes and omits `8A` (byte loads).
+#     `gs: mov al,[bx+0x6D60]` @0x6023, the vm_field_offset matrix, is invisible.
+#
+# The robust alternative, used by check_cited_cells.py, is to match the MODRM
+# rather than the opcode: mod=00/rm=110 is a direct address and mod=10 is a
+# reg+disp16, whatever instruction carries it. Enumerating opcode families is what
+# under-reported in #335, #359 and #403; this file was written to fix that and has
+# the same shape of hole one level down.
 def address_forms(addr):
     """[(name, compiled regex, kind)] for every direct reference to `addr`.
 

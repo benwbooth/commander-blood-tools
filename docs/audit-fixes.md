@@ -14250,3 +14250,41 @@ the other side. Now under the guard: 752 -> 756 checked.
 
 2229 items, 1115 confirmed (50.0%), 1114 open. 756 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #434 — checking the citations a guard cannot see, and two holes in the tool built to prevent this
+
+#433 found a DS cell cited one digit wrong and noted why nothing caught it:
+`check_cited_instructions.py` verifies an address only when a MNEMONIC is quoted
+beside it. Prose citations — "rebases `gs:0x2A2A` against `gs:0x27A7`" — are
+unchecked. `tools/check_cited_cells.py` now asks the automatable half of that
+question: is the cited cell touched by ANY instruction in the image?
+
+Its first run reported **78 of 223 cells untouched**, which is not a finding, it
+is a broken tool. Two rounds of chasing that number found the cause, and the cause
+is the interesting part:
+
+  * `reg_disp_census` enumerates OPCODES and omits `8A` (byte loads). The
+    `vm_field_offset` matrix at `gs:[bx+0x6D60]` — `65 8a 87 60 6d` @`0x6023`,
+    a routine this session has cited repeatedly — came back untouched.
+  * `address_forms` has no `C4`/`C5` (`les`/`lds`). `les di, gs:[0x6724]` is the
+    VM's record-table pointer, read at `0x6B4D` and a dozen other sites, and
+    census reported ZERO for it.
+
+`re/tools/addr_forms.py` EXISTS BECAUSE OF THIS FAILURE MODE. #359 built it after
+#335 found a one-encoding scan under-reporting, and #403 hit the same thing a
+third time. The tool written to stop enumerating opcode families still enumerates
+opcode families, one level down. Both gaps are now recorded in it.
+
+The fix in the checker is to match the MODRM instead: `mod=00, rm=110` is a direct
+address and `mod=10` is a reg+disp16, whatever opcode carries it. 78 untouched
+became 9.
+
+ALL NINE ARE EXPLAINED, so this sweep found no new defect: `0x22EC`, `0x2300` and
+`0x6400` are OVERLAY cells (croolis/manu3) that are correctly absent from
+BLOODPRG.EXE, and `DS:0x2573` is a STRING that only a pointer list at `DS:0x2567`
+names — no instruction ever mentions it, and none should. A negative result, but
+the tool that produced it is now sound enough for the next citation to be checked
+by machine instead of by eye.
+
+2229 items, 1115 confirmed (50.0%), 1114 open. 756 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
