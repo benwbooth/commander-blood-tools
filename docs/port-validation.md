@@ -1943,7 +1943,22 @@ window captures" and 82 from a native-resolution one. That is a capture correcti
 capture — better measurement of an inadmissible source, and worth keeping in the row
 so the next person does not read the correction as verification.
 
-## UNVERIFIED — the subtitle PIXEL layout at `0x72A8` is not ported (#582)
+## RETRACTED (#583) — `0x72A8` is the CONCEPT MENU, not the subtitle layout
+
+The row below misidentified its subject. `0x72A8` was ALREADY LABELLED
+`dlg_menu_words_inline_draw`: it draws the conversation line's concept-menu words
+(the post-`0xFFFF` list at `[0x674A]..[0x27D3]`) inline, in colour `0xEF`. It is not
+a subtitle renderer, so "the port wraps subtitles at 35 characters where the game
+uses 300 pixels" compares two different surfaces and the conflict does not exist.
+
+What survives: the mechanics quoted below are correct for the CONCEPT MENU (300px
+limit, 10px left margin, 8px pitch, 6px space, punctuation attaches, next word
+measured by `0x30CD` with `ax=1`), and `SUBTITLE_WRAP_COLUMN = 35` remains correctly
+cited to `cmp al,0x23` @`0x672C`. The open question is now whether the PORT's concept
+menu uses this pixel layout — a different and narrower task than rewriting subtitle
+wrapping.
+
+## SUPERSEDED — the subtitle PIXEL layout at `0x72A8` is not ported (#582)
 
 **Two wrap rules exist and the port implements one.** `script::SUBTITLE_WRAP_COLUMN`
 is now cited exactly: `add al,dl / cmp al,0x23 / jb 0x66DB` at `0x672A`, the

@@ -19326,3 +19326,41 @@ measures 1 in both, a coincidence of two width tables, and asserting per-string
 inequality failed on it.
 
 726 tests, 0 failures.
+
+## #583 — I renamed two routines that were already named, and my own labels hid it
+
+`0x72A8` is NOT a subtitle layout. It was already in `labels.csv` as
+`dlg_menu_words_inline_draw`: it draws the conversation line's CONCEPT-MENU words
+(the post-`0xFFFF` list at `[0x674A]..[0x27D3]`) inline in colour `0xEF`. So #582's
+headline — "the port wraps subtitles at 35 characters where the game uses 300
+pixels" — compares two different surfaces, and the conflict it described does not
+exist. Matrix row retracted, `script.rs` comment corrected.
+
+`0x30CD` was likewise already named, as `divmod_setup_30e2`: "zero/sign guard before
+a 32-bit divide in the blit-address math". That reading is wrong — there is no
+divide. `or ax,ax / jne 0x30E2` SELECTS A FONT and `xor dx,dx` zeroes the width
+accumulator. Folded into one row that says so, keeping the old name so the
+correction is visible rather than silently vanishing.
+
+HOW BOTH ESCAPED THE #559 GUARD. I appended my labels to `labels.csv` and THEN
+disassembled. `mzfile.load_labels` did `file_off[key] = (name, comment)` — a plain
+assignment — so the LAST row for an address won and `dis.py` printed only my new
+name. Mine sorted later, so the disassembly confirmed my own wrong identification
+and gave no hint the address was already known. `0x0072A8` vs `0x0072a8` differ only
+in case, which is why nothing looked like a collision.
+
+Fixed at the point of use: `load_labels` now MERGES, so a re-labelled address prints
+`old | ALSO new` the moment it is disassembled. `check_labels.py` already reported
+duplicates and would have caught both — but it is a separate command, and the label
+is read during disassembly, which is where the warning has to appear.
+
+Both flat duplicates are now resolved; `check_labels.py` reports 0.
+
+WHAT SURVIVES FROM #582, and it is not nothing: the merge-then-branch tool did find
+a real gap — `func_30cd`'s `ax != 0` face is used by two of its three callers and had
+never been swept, and that path is now covered against the lift. The mechanics
+decoded at `0x72A8` (300px limit, 10px margin, 8px pitch, 6px space, punctuation
+attaches) are correct; only the SURFACE was misattributed. `SUBTITLE_WRAP_COLUMN`'s
+citation to `cmp al,0x23` @`0x672C` is independent of the error and stands.
+
+726 tests, 0 failures.

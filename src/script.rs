@@ -23,11 +23,10 @@ pub const OBJECT_LOCATION_FIELD: usize = vm::LOCATION_FIELD as usize;
 /// `line_len + next_len >= SUBTITLE_WRAP_COLUMN` is that `jb` inverted, which is
 /// why the break lands BEFORE the overflowing word (audit-fixes #313, #582).
 ///
-/// THIS IS THE BUFFER RULE, AND THE GAME HAS A SECOND ONE. `0x72A8`..`0x7346` lays
-/// words out at RENDER time by PIXEL width: `cmp ax,0x12C` against pen + the next
-/// word's measured width, resetting the pen to `0xA` and adding 8 to the row. A
-/// 35-character line and a 300-pixel line are not the same line for a proportional
-/// font. See docs/port-validation.md — the pixel layout is not ported.
+/// THE GAME ALSO WRAPS BY PIXELS, BUT NOT HERE. `0x72A8` (`dlg_menu_words_inline_draw`)
+/// breaks at `cmp ax,0x12C` = 300 PIXELS with a 10px margin and an 8px pitch — that
+/// is the conversation CONCEPT-MENU word list, a different surface, not this text.
+/// The two rules are not rival readings of one layout (audit-fixes #582, #583).
 pub const SUBTITLE_WRAP_COLUMN: usize = 35;
 /// `obj+0x3A` = 58 — the TALK column of the matrix at `DS:0x6D60` (`vm_field_offset`
 /// @`0x6023`), and the same value as

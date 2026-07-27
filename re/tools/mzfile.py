@@ -130,9 +130,26 @@ def load_labels(path=LABELS_CSV):
             a = addr.lower()
             if a.startswith("0x"):
                 try:
-                    file_off[int(a, 16)] = (name, comment)
+                    key = int(a, 16)
                 except ValueError:
-                    pass
+                    continue
+                # MERGE, do not overwrite. This used to be a plain assignment, so
+                # when an address carried two rows the LAST one silently won and
+                # `dis.py` printed only that name. In audit-fixes #583 a label
+                # appended as `0x0072A8` displaced the existing `0x0072a8`
+                # (`dlg_menu_words_inline_draw`) -- differing only in case -- and the
+                # disassembly then confirmed the new, WRONG identification with no
+                # sign the address was already known. `check_labels.py` reports
+                # duplicates, but it is a separate command and this is the moment
+                # the name is actually read.
+                if key in file_off:
+                    prev_name, prev_comment = file_off[key]
+                    if name and name not in prev_name.split(" | ALSO "):
+                        name = f"{prev_name} | ALSO {name}"
+                    else:
+                        name = prev_name
+                    comment = f"{prev_comment} || {comment}" if comment else prev_comment
+                file_off[key] = (name, comment)
     return raw, file_off
 
 
