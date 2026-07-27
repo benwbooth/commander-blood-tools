@@ -16694,3 +16694,42 @@ reused per pass, so 11 and 1000 are never live at the same time.
 `ship3d.rs`: 45 uncited constants -> 38.
 
 620 tests, 0 failures.
+
+## #504 — the object scale: a guarded divide and a double-precision shift
+
+Four constants from the object pass's projection body, `0x9C23..0x9CC8`.
+
+**The divide is guarded, and the guard is two separate branches.** `SHIP_3D_OBJECT_
+DEPTH_WRAP_BIAS` looks like an unconditional bias until the jumps are read:
+
+```text
+  0x9C23  je 0x9CF4         depth ZERO -> skip the object entirely
+  0x9C27  jns 0x9C30        depth POSITIVE -> no bias
+  0x9C29  add ecx, 0x10000  depth NEGATIVE -> wrap it positive
+  0x9C3D  div ecx           unsigned divide, now safe
+```
+
+Zero exits, negative wraps, positive passes through. A port applying the bias
+unconditionally would corrupt every positive depth, and one omitting the zero exit
+would divide by zero on the first object at the camera plane.
+
+**`SCALE_NUMERATOR` is computed** — `mov eax,0x8000000` @`0x9C30` then `shr eax,7`
+@`0x9C36` = `0x100000`. Fourth instance of this compiler preferring a shift to an
+immediate (#502's 320, #503's 32, #491's 287). Searching for `0x00100000` finds
+nothing.
+
+**`SCALE_SHIFT` is a `shrd`, not a `shr`.** `shrd ax,dx,0xa` @`0x9CBB`/`0x9CC8` is
+the 386 DOUBLE-PRECISION shift: the value spans `dx:ax` and the ten bits shifted out
+of `ax` are refilled from `dx`. Modelled as a plain `>> 10` on a 16-bit value it
+silently drops the high half, which for a scale factor means large objects collapse
+rather than clip.
+
+`PROJECTED_SCALE_OFFSET` lands at `[bp+0x2a]` = `0x2FBF`, immediately after the
+projected x/y/depth triple #501 sourced — so the object pass writes its scale into
+the same matrix-based structure the point projector uses. That structure is now
+four fields deep and every one of them was found as a `[bp+disp]`, never as an
+address.
+
+`ship3d.rs`: 38 uncited constants -> 34.
+
+620 tests, 0 failures.

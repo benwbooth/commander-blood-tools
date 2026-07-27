@@ -420,9 +420,25 @@ pub const SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG: u16 = 0x0001;
 pub const SHIP_3D_SPRITE_SLOT_ACTIVE_MASK: u16 = 0x0081;
 pub const SHIP_3D_SPRITE_SLOT_DIRTY_FLAG: u16 = 0x0002;
 pub const SHIP_3D_SPRITE_SLOT_EXTENT_CHANGED_FLAG: u16 = 0x0010;
+/// `add ecx,0x10000` @`0x9C29`, reached only through `jns 0x9C30` @`0x9C27` — so
+/// the bias is applied ONLY to a negative depth, wrapping it positive before the
+/// divide. A zero depth exits earlier (`je 0x9CF4` @`0x9C23`), which is what keeps
+/// the `div ecx` @`0x9C3D` safe (audit-fixes #504).
 pub const SHIP_3D_OBJECT_DEPTH_WRAP_BIAS: i32 = 0x0001_0000;
+/// COMPUTED, not stored: `mov eax,0x8000000` @`0x9C30` then `shr eax,7` @`0x9C36`
+/// gives `0x100000`. Searching the image for `0x00100000` finds nothing — the
+/// fourth instance of this compiler's shift-instead-of-immediate habit (#502,
+/// #503). The scale is then `0x100000 / depth` (audit-fixes #504).
 pub const SHIP_3D_OBJECT_SCALE_NUMERATOR: u32 = 0x0010_0000;
+/// `shrd ax,dx,0xa` @`0x9CBB` and again @`0x9CC8` — a 386 DOUBLE-PRECISION
+/// shift, so the scaled value spans `dx:ax` and 10 bits come out of the pair, not
+/// out of a single word. A plain `>> 10` on a 16-bit value would lose the high
+/// half (audit-fixes #504).
 pub const SHIP_3D_OBJECT_SCALE_SHIFT: u8 = 10;
+/// `mov word ptr [bp+0x2a],ax` @`0x9C40` with `bp = 0x2f95`, so `0x2f95 + 0x2a =
+/// 0x2FBF` — the field immediately after the projected x/y/depth triple (#501).
+/// The object pass stores its per-object scale into the same matrix-based
+/// structure the point projector writes (audit-fixes #504).
 pub const SHIP_3D_OBJECT_PROJECTED_SCALE_OFFSET: u16 = 0x2fbf;
 /// Nav-destination world positions, the projector's INPUT table at `DS:0x4F09`
 /// (file `0x12329`). TEN records of three `i16` at stride 6 — verified
