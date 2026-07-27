@@ -17163,3 +17163,45 @@ reached by base register. It stays UNVERIFIED — after #491 that is not evidenc
 absence, and after #501 it is not an invitation to attribute it to a neighbour.
 
 620 tests, 0 failures.
+
+## #517 — the opcode groups are the GAME'S grouping, read from the dispatch table
+
+`ASSIGN_7`, `BITMASK_5` and `ASSIGN_5` list opcodes that the port handles together.
+Three uncited arrays of hex bytes are exactly the shape of a port-side convenience
+grouping — a guess that becomes fact by being written down. They are not: every
+group is a set of opcodes THE DISPATCH TABLE POINTS AT ONE HANDLER.
+
+Reading the table required resolving its entries, which are near offsets, not
+addresses. `DS:0x6EB0` is file `0x142D0`; entry `i` is opcode `0xA0 + i`; and the
+segment base is file `0x53A0` (seg `0x4DA`). I did not assume that base — I checked
+it against four handlers whose addresses were already known from their own decodes:
+
+```text
+  0xA0 -> 0x6559  vm_op_a0_push
+  0xA6 -> 0x660C  vm_op_a6_text
+  0xB7 -> 0x6AA7  vm_op_b7_record_op
+  0xB8 -> 0x6B06  vm_op_b8_record_readwrite
+```
+
+All four land exactly. Then:
+
+```text
+  ASSIGN_7   0xB1 0xB4 0xB5 0xB6 0xBE 0xBF 0xC0  -> 0x6863   (all seven)
+  BITMASK_5  0xAE 0xB0                           -> 0x6902   (both)
+  ASSIGN_5   0xAD 0xAF 0xB2 0xB3 0xBA 0xBB 0xBC  -> 0x6946   (all seven)
+```
+
+One handler per group, three distinct handlers, no opcode in two groups. The port's
+grouping is the binary's.
+
+`dispatch_table_groups_share_one_handler` now PARSES the table out of the image and
+asserts all of it, including the base-validating spot checks — so if the groups were
+ever edited to match a port refactor rather than the game, the test fails. That is
+the difference between a comment saying these share a handler and evidence that they
+do.
+
+One naming note left as-is: `BITMASK_5` contains TWO opcodes, so its "5" is not a
+count. Whatever it refers to (a mode, a field width) is not established, and I have
+not renamed it on a guess — the doc records that the number is not the size.
+
+621 tests, 0 failures.

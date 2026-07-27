@@ -1472,8 +1472,16 @@ fn read_u16(cod: &[u8], at: usize) -> Option<u16> {
 // whose runtime state inputs are available; see REVERSE.md for unresolved table
 // inputs that still require deeper runtime modeling.
 
+/// The seven opcodes the DISPATCH TABLE points at ONE handler, `0x6863`
+/// (`vm_op_shared_state_marker`). Not a port grouping — read out of the table at
+/// `DS:0x6EB0` (file `0x142D0`), whose entries are near offsets in the segment
+/// based at file `0x53A0` (seg `0x4DA`): entry `0xA0 + i` for opcode `i`
+/// (audit-fixes #517). Pinned by `dispatch_table_groups_share_one_handler`.
 const ASSIGN_7: [u8; 7] = [0xB1, 0xB4, 0xB5, 0xB6, 0xBE, 0xBF, 0xC0];
+/// Both opcodes dispatch to `0x6902` (audit-fixes #517). The name's "5" is not a
+/// count — there are two — so it refers to something the group DOES, not its size.
 const BITMASK_5: [u8; 2] = [0xAE, 0xB0];
+/// All seven dispatch to `0x6946` (audit-fixes #517).
 const ASSIGN_5: [u8; 7] = [0xAD, 0xAF, 0xB2, 0xB3, 0xBA, 0xBB, 0xBC];
 /// The talk/presentation-record field: selector `0x13`, **kind slot 1**.
 ///
@@ -16248,5 +16256,47 @@ mod tests {
             );
             cursor += pos.unwrap() + 1;
         }
+    }
+
+    /// The opcode groups are the GAME'S grouping, read from the dispatch table at
+    /// `DS:0x6EB0` (file `0x142D0`) rather than asserted (audit-fixes #517).
+    #[test]
+    fn dispatch_table_groups_share_one_handler() {
+        let Ok(exe) = std::fs::read("re/bin/BLOODPRG.EXE")
+            .or_else(|_| std::fs::read("../re/bin/BLOODPRG.EXE"))
+        else {
+            return;
+        };
+        const TABLE: usize = 0x142D0; // = DS:0x6EB0
+        // Entries are NEAR offsets in the segment based at file 0x53A0 (seg 0x4DA).
+        const CODE_BASE: usize = 0x53A0;
+        assert_eq!(CODE_BASE, 0x600 + 0x4DA * 16);
+        let handler = |op: u8| -> usize {
+            let i = (op - super::OP_MIN) as usize;
+            let at = TABLE + i * 2;
+            CODE_BASE + u16::from_le_bytes([exe[at], exe[at + 1]]) as usize
+        };
+
+        // The base is only trustworthy if known handlers land where they should.
+        assert_eq!(handler(0xA0), 0x6559, "vm_op_a0_push");
+        assert_eq!(handler(0xA6), 0x660C, "vm_op_a6_text");
+        assert_eq!(handler(0xB7), 0x6AA7, "vm_op_b7_record_op");
+        assert_eq!(handler(0xB8), 0x6B06, "vm_op_b8_record_readwrite");
+
+        for (group, expected) in [
+            (&super::ASSIGN_7[..], 0x6863usize),
+            (&super::BITMASK_5[..], 0x6902),
+            (&super::ASSIGN_5[..], 0x6946),
+        ] {
+            for &op in group {
+                assert_eq!(handler(op), expected, "opcode {op:#04x} shares its handler");
+            }
+        }
+        // And the groups are disjoint: three groups, three distinct handlers.
+        let mut seen: Vec<usize> = vec![handler(super::ASSIGN_7[0]), handler(super::BITMASK_5[0]),
+                                        handler(super::ASSIGN_5[0])];
+        seen.sort_unstable();
+        seen.dedup();
+        assert_eq!(seen.len(), 3);
     }
 }
