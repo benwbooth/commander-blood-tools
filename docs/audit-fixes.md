@@ -19241,3 +19241,30 @@ The port matched everything. Two details the new rows pin that prose would not:
   through.
 
 726 tests, 0 failures.
+
+## #580 — the active-object walk: one directory could not test a bit test
+
+Third sweep audited. `func_604e`'s merge at `0x6068` is the loop head, entered from
+the prologue and from the `0x607D` back-edge, and leaving to either `0x6082` (write
+the `0xFFFF` terminator, done) or `0x6070` (test the object). Four paths; the sweep
+ran one fixed directory whose first entry always qualified, so:
+
+- The FIRST visit going straight to `0x6082` — an empty list — never happened.
+  "Stops immediately" and "stops after two" were the same path to this test.
+- Every flags value was exactly `0x0002` or `0x0000`. `0x6073` is
+  `test BYTE ptr fs:[bx+2],2`, and those two values cannot distinguish a bit test
+  from `flags == 2`, nor a BYTE read from a WORD one.
+
+Now table-driven, four directories. The two new flag cases are the interesting ones:
+`0x0202`, `0x00FF` and `0x0001`/`0x0004` pin that bit 1 alone decides; `0x0200` pins
+that the high byte is not consulted, since `test byte` reads `[bx+2]` on its own and
+a bit-1 pattern one byte up must not qualify.
+
+The port agreed on all four. As in #578 and #579 this is coverage, not correction —
+but "the port is right" and "the test would notice if it weren't" are different
+claims, and only the second was actually established before.
+
+Left behind by the refactor: six `const`s in the now-empty test body, caught as
+dead_code by the build rather than by me.
+
+726 tests, 0 failures.

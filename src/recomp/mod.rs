@@ -1260,22 +1260,58 @@ mod tests {
     /// checks that reading.
     #[test]
     fn native_active_object_list_matches_the_lift() {
+        // (object offset, entry kind, flags) — the fourth entry ends the scan, so
+        // the fifth must not appear even though it qualifies.
+        let cases: [(&str, &[(u16, u16, u16)], &[u16]); 4] = [
+            (
+                "stops at the kind!=1 entry",
+                &[
+                    (0x0100, 1, 0x0002),
+                    (0x0200, 1, 0x0000),
+                    (0x0300, 1, 0x0002),
+                    (0x0400, 0, 0x0002),
+                    (0x0500, 1, 0x0002),
+                ],
+                &[0x0100, 0x0300],
+            ),
+            // `0x6068`'s FIRST visit going straight to `0x6082` — the empty list.
+            // The original sweep always entered the body, so "stops immediately"
+            // and "stops after N" were the same path to it (audit-fixes #580).
+            ("empty when the first entry ends the scan", &[(0x0100, 0, 0x0002)], &[]),
+            // `0x6073` is `test BYTE fs:[bx+2],2` — bit 1 among any other bits
+            // qualifies, and no other bit does. Every earlier row used exactly
+            // 0x0002 or 0x0000, which cannot tell a bit test from an equality.
+            (
+                "bit 1 is tested, not the word",
+                &[
+                    (0x0100, 1, 0x0202),
+                    (0x0200, 1, 0x0004),
+                    (0x0300, 1, 0x00FF),
+                    (0x0400, 1, 0x0001),
+                    (0x0500, 0, 0x0002),
+                ],
+                &[0x0100, 0x0300],
+            ),
+            // Bit 1 set only in the HIGH byte: `test byte` reads `[bx+2]` alone, so
+            // 0x0200 must NOT qualify even though the word has a bit-1 pattern.
+            (
+                "the high byte is not consulted",
+                &[(0x0100, 1, 0x0200), (0x0200, 1, 0x0002), (0x0300, 0, 0)],
+                &[0x0200],
+            ),
+        ];
+        for (label, entries, want) in cases {
+            run_active_object_case(label, entries, want);
+        }
+    }
+
+    fn run_active_object_case(label: &str, entries: &[(u16, u16, u16)], want: &[u16]) {
         const GS: u16 = 0x2600;
         const FS: u16 = 0x2600; // records in the same arena
         const DIR_PTR: u32 = 0x672C;
         const REC_PTR: u32 = 0x6724;
         const OUT: u32 = 0x6A16;
         const DIR_AT: u32 = 0x3000;
-
-        // (object offset, entry kind, flags) — the third entry ends the scan, so
-        // the fourth must not appear even though it qualifies.
-        let entries: [(u16, u16, u16); 5] = [
-            (0x0100, 1, 0x0002),
-            (0x0200, 1, 0x0000),
-            (0x0300, 1, 0x0002),
-            (0x0400, 0, 0x0002),
-            (0x0500, 1, 0x0002),
-        ];
 
         let mut m = Machine::new();
         m.regs.ds = GS;
@@ -1287,11 +1323,11 @@ mod tests {
         m.write16(GS, DIR_PTR + 2, GS);
         m.write16(GS, REC_PTR, 0);
         m.write16(GS, REC_PTR + 2, FS);
-        for (i, (obj, kind, flags)) in entries.iter().enumerate() {
+        for (i, &(obj, kind, flags)) in entries.iter().enumerate() {
             let base = DIR_AT + (i as u32) * 20;
-            m.write16(GS, base + 0x10, *obj);
-            m.write16(GS, base + 0x12, *kind);
-            m.write16(FS, u32::from(*obj) + 2, *flags);
+            m.write16(GS, base + 0x10, obj);
+            m.write16(GS, base + 0x12, kind);
+            m.write16(FS, u32::from(obj) + 2, flags);
         }
         let sp = m.regs.sp() as u32;
         m.write16(m.regs.ss, sp, 0x0000);
@@ -1309,15 +1345,15 @@ mod tests {
 
         let mut native = crate::vm::VmMachine::new();
         native.directory = entries.iter().map(|(o, k, _)| (*o, *k)).collect();
-        for (obj, _, flags) in entries {
+        for &(obj, _, flags) in entries {
             native.rec_write_pub(obj + 2, flags);
         }
         assert_eq!(
             lifted,
             native.build_active_object_list(),
-            "the directory walk diverged"
+            "{label}: the directory walk diverged"
         );
-        assert_eq!(lifted, vec![0x0100, 0x0300], "stops at the kind!=1 entry");
+        assert_eq!(lifted, want.to_vec(), "{label}");
     }
 
     /// The DRAWN-WIDTH accumulator against its lift (`func_3192`).
