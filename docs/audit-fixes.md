@@ -16733,3 +16733,51 @@ address.
 `ship3d.rs`: 38 uncited constants -> 34.
 
 620 tests, 0 failures.
+
+## #505 — object descriptors ARE sprite slots, and the citation guard earned its keep
+
+Four flag constants, and the routines that own them settle a structural question the
+port had left implicit.
+
+`0x299:0x1241` (file `0x41D1`) and `0x299:0x133D` (file `0x42CD`) — the slot-state
+and extent entries #490 sourced by call site — BOTH open with:
+
+```text
+  shl ax, 5
+  mov bx, 0x6212
+  add bx, ax
+  mov ax, gs:[bx]
+```
+
+That is exactly `SHIP_3D_OBJECT_DESCRIPTOR_STRIDE` and `..._BASE_OFFSET` from #503.
+So "object descriptor" and "sprite slot" are two names for ONE 32-byte record, and
+the flags live in its first word alongside the visible bit. The port names them in
+two families; the binary has one table.
+
+The flags are a handoff rather than independent bits:
+
+```text
+  0x41DE  or al, al / jns      bit 7 VISIBLE ...
+  0x41E2  test al, 1 / je      ... and bit 0 ACTIVE
+  0x41E6  and al, 0xfe         clear ACTIVE ...
+  0x41E8  or al, 2             ... set DIRTY in the same breath
+  0x42DD  test al, 0x81        the extent entry tests the PAIR at once
+  0x42ED  btr ax, 4            EXTENT_CHANGED, cleared when extents match
+```
+
+`EXTENT_CHANGED_FLAG` is worth its own note: the code contains the BIT INDEX `4`,
+never the mask `0x10`, because `btr` is a 386 bit-test-and-reset. An immediate scan
+for `0x10` finds nothing relevant — the same lesson as #503's `shl 5` for 32, now
+in a form where the value is not even a power-of-two multiplier but an index.
+
+I SETTLED THE ROWS BEFORE READING THE TEST OUTPUT and the suite failed on the next
+run — the #423 mistake repeated. What caught it was
+`quoted_instructions_match_the_disassembly`: I had written `test al,1 / je` at
+`0x41E4`, which is the `je`'s address; `test` is at `0x41E2`, two bytes earlier. The
+guard reported exactly that, including the correct address. 944 cited instructions
+verified, one wrong, and the wrong one was mine and two bytes off — a citation that
+would have read as perfectly plausible to any human reviewer.
+
+`ship3d.rs`: 34 uncited constants -> 30.
+
+620 tests, 0 failures.

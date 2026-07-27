@@ -416,9 +416,25 @@ pub const SHIP_3D_OBJECT_DESCRIPTOR_INDEX_BIAS: u16 = 21;
 /// gates the whole per-object body; a clear bit skips straight to the loop foot
 /// (audit-fixes #503).
 pub const SHIP_3D_OBJECT_VISIBLE_FLAG: u16 = 0x0080;
+/// `test al,1` @`0x41E2` (its `je` @`0x41E4`) in the slot-state entry (`0x299:0x1241`, file
+/// `0x41D1`). Bit 0 is cleared and bit 1 set in the same breath — `and al,0xfe /
+/// or al,2` @`0x41E6` — so ACTIVE and DIRTY are a HANDOFF, not two independent
+/// flags (audit-fixes #505).
 pub const SHIP_3D_SPRITE_SLOT_ACTIVE_FLAG: u16 = 0x0001;
+/// `test al,0x81` @`0x42DD` in the extent entry (`0x299:0x133D`, file `0x42CD`) —
+/// bits 0 and 7 tested TOGETHER, i.e. active AND visible. The slot-state entry
+/// reaches the same pair as two branches (`or al,al / jns` @`0x41DE` for bit 7,
+/// then `test al,1`), which is why the port needs both the mask and the single
+/// flag (audit-fixes #505).
 pub const SHIP_3D_SPRITE_SLOT_ACTIVE_MASK: u16 = 0x0081;
+/// `or al,2` @`0x41E8`, set as bit 0 is cleared (audit-fixes #505).
 pub const SHIP_3D_SPRITE_SLOT_DIRTY_FLAG: u16 = 0x0002;
+/// `btr ax,4` @`0x42ED` — and the code contains the BIT INDEX 4, never the mask
+/// `0x10`, because `btr` is a 386 bit-test-and-reset. Searching the image for
+/// `0x10` as an extent mask would find nothing relevant. It is CLEARED on the
+/// path where the new extent equals the stored one (`cmp cx,[si]` @`0x42E4`,
+/// `cmp dx,[si+2]` @`0x42E8` both falling through), so the flag means "extent
+/// differs" (audit-fixes #505).
 pub const SHIP_3D_SPRITE_SLOT_EXTENT_CHANGED_FLAG: u16 = 0x0010;
 /// `add ecx,0x10000` @`0x9C29`, reached only through `jns 0x9C30` @`0x9C27` — so
 /// the bias is applied ONLY to a negative depth, wrapping it positive before the
