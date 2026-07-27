@@ -14871,3 +14871,33 @@ about it holds, not whether an opcode matches.
 
 2229 items, 1118 confirmed (50.2%), 1111 open. 785 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #453 — dividend, not divisor
+
+`TEXT_SPEED_STEP_DS` described `DS:0x0ACA` as "the divisor in the dialogue
+updater's reveal rate". It is the DIVIDEND:
+
+    0x94AB  mov ax, word ptr [0xaca]
+    0x94AE  shr ax, 2
+    0x94B1  mov word ptr [0xb31], ax     -> reveal_frames_per_char
+
+The cell holds the text-speed step; the reveal rate is that value SHIFTED RIGHT BY
+2, and the quotient lands in `0xB31`. With the shipped value of 2 the result is 0.
+
+A one-word error, and the kind that survives because both words describe a
+division. The distinction decides which end of the relationship the port models:
+"the divisor" implies the reveal rate is `something / [0x0ACA]`, which would make
+a LARGER text-speed setting mean a FASTER reveal. The instruction says the
+opposite.
+
+The shipped value checks out independently: `DS:0x0ACA` is 2 at file `0x0DEEA`,
+which is what `TEXT_SPEED_STEP_INITIAL` claims and what
+`text_speed_labels_and_steps_match_the_binary` already reads back out of the image.
+
+The census also gave the cell's full traffic — one write (`0x1B3D`), four reads
+(`0x735E`, `0x737C`, `0x94AB`, `0x94D4`) — which is now in the doc, so the next
+reader does not have to decide whether the one site quoted was the only one. That
+habit is what #450 was about.
+
+2229 items, 1119 confirmed (50.2%), 1110 open. 788 citations verified, 0 wrong.
+723 workspace tests, 0 failures.

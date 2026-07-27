@@ -68,7 +68,18 @@ pub const TEXT_SPEED_POINTER_LIST_DS: u16 = 0x259D;
 /// so no instruction carries it. `text_speed_labels_and_steps_match_the_binary`
 /// reads it back out of the image and checks it against the setting map.
 pub const TEXT_SPEED_STEP_INITIAL: u16 = 2;
-/// `DS:0x0ACA` — the divisor in the dialogue updater's reveal rate.
+/// `DS:0x0ACA` — the text-speed step the dialogue updater DIVIDES to get its
+/// reveal rate.
+///
+/// NOT "the divisor" (audit-fixes #453), which this said. The cell is the
+/// DIVIDEND: `mov ax, word ptr [0xaca]` @`0x94AB` then `shr ax, 2` @`0x94AE`, and
+/// the QUOTIENT is stored by `mov word ptr [0xb31], ax` @`0x94B1` — `0xB31` being
+/// `reveal_frames_per_char`. So the reveal rate is this value / 4, and the shipped
+/// 2 gives 0.
+///
+/// A census finds five sites: one write (`0x1B3D`) and four reads (`0x735E`,
+/// `0x737C`, `0x94AB`, `0x94D4`), the last two in the dialogue-reveal region
+/// around `dlg_reveal_pump` (`0x93F8`).
 pub const TEXT_SPEED_STEP_DS: u16 = 0x0ACA;
 
 // The index -> step mapping is NOT duplicated here. `vm::text_speed_step_from_setting`
