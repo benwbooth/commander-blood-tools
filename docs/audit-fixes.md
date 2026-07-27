@@ -19916,3 +19916,41 @@ dereferences whatever that word happens to be. The guard stays, documented as a 
 choice rather than a decode.
 
 733 tests, 0 failures.
+
+## #598 — the 0xC1 SET path, end to end, and three `false`s that are not one event
+
+Following #597's redirect through to the write. The whole `0xC1` mode-0 kind-`0x10`
+path is ONE straight line in the handler, `0x6BE0`..`0x6C6C`, which is why the port
+composing four helpers is a faithful shape rather than an invention — each stage is
+its own labelled routine:
+
+    0x6be0  ship_3d_c1_distance_redirect      which record are we acting on?
+    0x6c07  cmp ax,0x10 / jne 0x6c55          it must be kind 0x10
+    0x6c11  call 0x624b                       build the source list at DS:0x6886
+    0x6c1c  ship_3d_c1_source_list_select     scan it for a qualifying source
+    0x6c48  ..._kind10_destination_write      resolve selector 0x13 for kind 0x10
+    0x6c5d  vm_c1_write_record                {0xC1, gs:[0x6736], 2} if EMPTY
+
+The source scan is TWO rules over one list: a kind-2 entry qualifies when the operand
+passes `ship_3d_object_table_bit_test_full` @`0x6210`, a kind-1 entry when the
+operand's own `+2` has bit 1 set. Anything else advances; `0xFFFF` ends it.
+
+TWO DETAILS THE HELPERS NOW CARRY, both easy to lose:
+
+- `0x6C4B` is `mov bx,0x10` — the field-matrix lookup uses a LITERAL kind `0x10`, not
+  the target's own kind flags. The port's guard rejects any other kind instead of
+  resolving the selector against whatever arrived, which is the same behaviour for a
+  different-looking reason.
+- `0x6C59` is `or cx,cx / jne` — the write happens ONLY into an empty slot. An
+  occupied destination is a refusal, not an overwrite.
+
+THREE DIFFERENT FALSE OUTCOMES reach `Some(false)` in the port: no redirect target,
+no qualifying source, and an occupied destination. Only the last means the game got
+as far as the write and declined. Recorded on the function, because a single
+`Some(false)` invites treating them as one event when a trace is being read.
+
+THE INSTRUCTION GUARD CAUGHT ME AGAIN, same way as #563: I wrote `0x6c04  cmp
+ax,0x10`, but `0x6C04` is the `mov ax,es:[di]` and the `cmp` is at `0x6C07` — two
+instructions compressed onto one address. It reported the real offset, five bytes off.
+
+733 tests, 0 failures.

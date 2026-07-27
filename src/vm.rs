@@ -3677,6 +3677,29 @@ fn resolve_c1_record_state_ship3d_target(
     }
 }
 
+/// `0xC1` mode-0 for a kind-`0x10` owner: the whole SET path, `0x6BE0`..`0x6C6C`.
+///
+/// One straight line through the handler, which is why composing four helpers here
+/// is a faithful shape and not an invention — each stage is its own labelled routine:
+///
+/// ```text
+/// 0x6be0  ship_3d_c1_distance_redirect        which record are we acting on?
+/// 0x6c07  cmp ax,0x10 / jne 0x6c55            it must be kind 0x10
+/// 0x6c11  call 0x624b                         build the source list at DS:0x6886
+/// 0x6c1c  ship_3d_c1_source_list_select       scan it for a qualifying source
+/// 0x6c48  ..._kind10_destination_write        resolve selector 0x13 for kind 0x10
+/// 0x6c5d  vm_c1_write_record                  {0xC1, gs:[0x6736], 2} if EMPTY
+/// ```
+///
+/// The source scan is two rules on one list (`0x6C1C`..`0x6C46`): a kind-2 entry
+/// qualifies when the operand passes `ship_3d_object_table_bit_test_full` @`0x6210`,
+/// a kind-1 entry when the operand's own `+2` has bit 1 set. Anything else advances
+/// to the next entry, and `0xFFFF` ends the list.
+///
+/// THREE DIFFERENT FALSE OUTCOMES reach `Some(false)` here and they are not the same
+/// event: no redirect target, no qualifying source, and a destination slot already
+/// occupied. Only the last means the game reached the write and declined it
+/// (audit-fixes #598).
 fn write_c1_record_state_ship3d(
     state: &mut [u8],
     context: &ExecutionContext,

@@ -4435,6 +4435,18 @@ pub fn select_ship_3d_c1_source_record(
     None
 }
 
+/// Where a `0xC1` kind-`0x10` write lands: `0x6C48`..`0x6C53`.
+///
+/// ```text
+/// 0x6c48  mov ax,0x13 / mov bx,0x10   selector 0x13, for kind 0x10 SPECIFICALLY
+/// 0x6c4e  call 0x6023                 vm_field_offset
+/// 0x6c51  add ax,di / mov bp,ax       destination = target record + that field
+/// ```
+///
+/// The kind is a LITERAL `0x10` in the field-matrix lookup, not the target's own
+/// kind flags — `mov bx,0x10` — which is why the guard above rejects anything else
+/// rather than resolving the selector against whatever kind arrived (audit-fixes
+/// #598).
 pub fn resolve_ship_3d_c1_kind10_destination_record(
     target_record_offset: u16,
     target_kind_flags: u16,
@@ -4449,6 +4461,23 @@ pub fn resolve_ship_3d_c1_kind10_destination_record(
     .map(|field| target_record_offset.wrapping_add(field))
 }
 
+/// The write itself, `0x6C55`..`0x6C6C` — and it only happens into an EMPTY slot:
+///
+/// ```text
+/// 0x6c55  mov cx, es:[bp]             the destination's first word
+/// 0x6c59  or cx,cx / jne 0x6c73       ALREADY OCCUPIED -> fail, write nothing
+/// 0x6c5d  mov word es:[bp],0xc1       opcode
+/// 0x6c63  mov ax,gs:[0x6736] / mov es:[bp+2],ax    the STORED operand
+/// 0x6c6c  mov word es:[bp+4],2        aux word
+/// ```
+///
+/// TWO THINGS SEPARATE THIS FROM THE C4..C8 WRITERS, per `vm_c1_write_record`: the
+/// related word comes from the stored operand at `gs:0x6736` rather than from `bx`,
+/// and the third word is `2`, not `0`.
+///
+/// `Some(None)` is the occupied case — a refusal to overwrite, which the caller must
+/// not confuse with the `None` that means "not a kind-0x10 target at all"
+/// (audit-fixes #598).
 pub fn write_ship_3d_c1_kind10_destination_slot(
     target_record_offset: u16,
     target_kind_flags: u16,
