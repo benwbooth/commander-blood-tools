@@ -18419,3 +18419,36 @@ answer the question that matters — does the prelude reach this walker, or does
 have its own copy of the same test?
 
 726 tests, 0 failures.
+
+## #555 — the question from #554, answered: same code path, different filter
+
+#554 declined two constants and named the next step: does the navigation trigger
+prelude reach the DEB candidate walker, or carry its own copy? It reaches it.
+`lcall 0x4da:0x1eb9` @`0xB0EE`/`0xB105` resolves to `0x7259`; the caller loads
+`gs:[0x6752]` @`0xB0EA`, the very cell the walker compares against; and it applies
+the same `+4`/`-4` record-header offset @`0xB10A`/`0xB111`. One path.
+
+That makes the filters comparable, and THEY READ DIFFERENT RECORDS:
+
+* the walker tests `es:[di+2] & 2` where `di` is the CANDIDATE, then rejects a
+  candidate equal to the current target;
+* the port tests `current_record.state_flags & 0x02`, then rejects a candidate
+  whose `related_target` differs from the current target.
+
+Candidate's flags versus current's flags; the candidate's own offset versus its
+`related_target`. Two differences, and either changes which destinations reach the
+list.
+
+I HAVE NOT CALLED IT A BUG, and the distinction matters. The port may model a
+second filter running beside this one, or its field names may reach the same words
+by another route. What is ESTABLISHED is narrower and still worth having: the two
+read different things, and the routine the port cites is genuinely reachable from
+the routine it models — so the comparison is legitimate rather than the #501 trap
+of matching a value against unrelated code.
+
+Recorded as an UNVERIFIED matrix row with the next step: decode `0xB079`'s 160
+instructions around the two calls, and compare the prelude WHOLE rather than one
+condition at a time. Comparing conditions in isolation is how a difference in
+subject reads as a difference in spelling.
+
+726 tests, 0 failures.

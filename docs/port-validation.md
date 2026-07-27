@@ -1754,3 +1754,40 @@ clock and worth knowing about; 25 Hz would mean the divisor is wrong by 2.5x).
 **NOT a claim that the port is wrong.** 10 may well be right — DESCRIPT is authored
 data and tenths of a second is a plausible authoring unit. The defect is that
 nothing establishes it, in a place where being wrong is invisible.
+
+## UNVERIFIED — the candidate filter tests a DIFFERENT record in the port (#555)
+
+**The question #554 posed, now answered.** The navigation trigger prelude DOES
+reach the DEB candidate walker: `lcall 0x4da:0x1eb9` @`0xB0EE` and `0xB105` resolve
+to `0x7259`, the caller loads the current target from `gs:[0x6752]` @`0xB0EA` — the
+same cell the walker compares against @`0x728B` — and applies the same `+4`/`-4`
+header offset @`0xB10A`/`0xB111` that `SHIP_3D_TARGET_RECORD_HEADER_BYTES` names.
+So they are one code path, not two.
+
+**Which makes the filter comparable, and it does not match.**
+
+```text
+  walker 0x7284  test byte ptr es:[di+2], 2   <- the CANDIDATE's flags
+  walker 0x728B  cmp di, gs:[0x6752]          <- candidate vs current target
+    => include a candidate when (candidate.flags & 2) AND candidate != current
+
+  port ship3d.rs:4466
+    skip a candidate when (current_record.state_flags & 0x02) == 0
+                      AND candidate_record.related_target != state.current_target
+```
+
+The walker tests the CANDIDATE's flag word; the port tests the CURRENT record's.
+The walker compares the candidate's own offset against the current target; the port
+compares the candidate's `related_target`. Two differences, either of which changes
+which destinations appear in the list.
+
+**NOT yet a bug report.** The port may be modelling a second filter that runs
+alongside this one, or `state_flags`/`related_target` may be this port's names for
+fields the walker reaches differently. What is established is that the two READ
+DIFFERENT THINGS, and that the routine the port cites as its source is reachable
+from the routine it models.
+
+**What would settle it.** Decode `0xB079`'s 160 instructions around the two walker
+calls — specifically what it does with the returned list at `[0x250B]` and
+`[0x251B]` — and compare against `run_ship_3d_navigation_trigger_prelude` as a
+whole rather than one condition at a time.
