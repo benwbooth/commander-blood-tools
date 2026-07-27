@@ -19876,3 +19876,43 @@ The owner-active test is `0xC2`-specific; the rest of the family reaches the sam
 comparison without it, which is what the `opcode == 0xC2` guard reproduces.
 
 733 tests, 0 failures.
+
+## #597 — refuse the plausible address, then go and find the real one
+
+`resolve_c1_record_state_ship3d_target` had three individually-cited pieces
+(`ship_3d_position_distance` @`0x60DD`, field selector `0x11` through
+`vm_field_offset` @`0x6023`, the kind-`0x10` test) and no citation for the routine
+that COMBINES them.
+
+`0x6B8B` was sitting right there: `ship_3d_c1_mode1_resolved_compare`, reached on the
+same raw operand 1/2 trigger, also resolving selector `0x11`. Adjacent, plausible,
+and wrong — it goes on to resolve selector `0x13` and compare, with no distance
+calculation anywhere. Citing it would have been #583 exactly (`0x72A8`), so I wrote
+the doc to say the composition was NOT identified and left the row UNVERIFIED.
+
+Then I looked. `find_callers` on `0x60DD` gives ONE near call: `0x6BEA`, in the
+`0xC1` handler's own mode-0 path — and that address was ALREADY LABELLED
+`ship_3d_c1_distance_redirect`. The whole path matches the port instruction for
+instruction:
+
+    0x6be0  cmp ax,2 / je 0x6bea        raw operand 2...
+    0x6be5  cmp ax,1 / jne 0x6c04       ...or 1; anything else skips
+    0x6bea  call 0x60dd                 the distance
+    0x6bed  or ax,ax / je 0x6c04        ZERO -> no redirect
+    0x6bf1  mov bx,[di] / mov ax,0x11 / call 0x6023
+    0x6bfb  mov di,[bx+di]              follow the parent link
+    0x6bfd  cmp ax,0x10 / jne 0x6c73    the target must be kind 0x10
+
+THE ORDER MATTERS MORE THAN THE RESULT. An hour of "it's probably the neighbour"
+would have produced a wrong citation that reads fine forever. One xref produced the
+right one. The rule that keeps earning its place: when the plausible address is
+merely adjacent, say so and go looking.
+
+ONE DIVERGENCE, KEPT AND NAMED. The port bails when `vm_field_offset` returns 0; the
+original does not check, so `mov di,[bx+di]` with `bx = 0` re-reads the record's own
+kind word AS A POINTER and follows it. The `cmp ax,0x10` two instructions later
+almost certainly fails, so both reach "no redirect" — but the game's route
+dereferences whatever that word happens to be. The guard stays, documented as a port
+choice rather than a decode.
+
+733 tests, 0 failures.

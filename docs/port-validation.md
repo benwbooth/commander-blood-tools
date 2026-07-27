@@ -1996,7 +1996,21 @@ and `0x72A8` walks a word-pointer array bounded by `gs:[0x27D3]`. Finding each
 one's callers is the next task, and wiring the pixel layout into every subtitle
 before knowing that would replace one wrong rule with another.
 
-## UNVERIFIED — `resolve_c1_record_state_ship3d_target`'s composing routine (#597)
+## RESOLVED (#597) — it is `ship_3d_c1_distance_redirect` @`0x6BE0`
+
+Found by `find_callers` on `0x60DD`: exactly ONE near call, at `0x6BEA`, inside the
+`0xC1` handler's own mode-0 path — and `0x6BEA` was ALREADY LABELLED
+`ship_3d_c1_distance_redirect`, "nonzero distance redirects DI through selector-0x11
+and requires a kind-0x10 target". The whole answer was one xref away from the caution
+recorded below, which is the right order: refuse the plausible address, then go and
+find the real one.
+
+The row is settled. One divergence recorded on the function: the port bails when
+`vm_field_offset` returns 0, where the original follows `[bx+di]` with `bx = 0` and
+dereferences the record's own kind word. Both end at "no redirect"; only one of them
+reads memory to get there.
+
+## SUPERSEDED — `resolve_c1_record_state_ship3d_target`'s composing routine (#597)
 
 **Cited pieces, uncited whole.** The port's `0xC1` kind-`0x10` redirect is built from
 three sourced parts — `ship_3d_position_distance` @`0x60DD`, field selector `0x11`

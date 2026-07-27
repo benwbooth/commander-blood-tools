@@ -3587,25 +3587,34 @@ fn derive_ship_3d_position_runtime(
 /// `0xC1`'s kind-`0x10` ship-3D redirect: for raw operand 1 or 2, decide which
 /// record the state compare should actually be applied to.
 ///
-/// PIECES CITED, COMPOSITION NOT. Each step below names its routine, and the
-/// function that strings them together in the original has NOT been identified —
-/// this doc says so rather than picking a plausible address:
+/// `ship_3d_c1_distance_redirect`, the `0xC1` handler's mode-0 path at
+/// `0x6BE0`..`0x6C0A`:
 ///
-/// * the distance is `ship_3d_position_distance` @`0x60DD` (its own decode);
-/// * the redirect follows field selector `0x11`
-///   ([`ship3d::SHIP_3D_FIELD_SELECTOR_PARENT_LINK`]) through
-///   `vm_field_offset` @`0x6023`, the `bsf`-indexed matrix at `DS:0x6D60`;
-/// * the target must be a kind-`0x10` record
-///   ([`ship3d::SHIP_3D_C1_KIND10_RECORD_KIND`]) or there is no redirect.
+/// ```text
+/// 0x6be0  cmp ax,2 / je 0x6bea        raw operand 2...
+/// 0x6be5  cmp ax,1 / jne 0x6c04       ...or 1; anything else skips the redirect
+/// 0x6bea  call 0x60dd                 ship_3d_position_distance
+/// 0x6bed  or ax,ax / je 0x6c04        distance ZERO -> no redirect
+/// 0x6bf1  mov bx,[di]                 the owner's kind
+/// 0x6bf3  mov ax,0x11 / call 0x6023   vm_field_offset(selector 0x11, kind)
+/// 0x6bfb  mov di,[bx+di]              follow it: di = the target record
+/// 0x6bfd  mov ax,[di] / cmp ax,0x10   the target must be kind 0x10
+/// 0x6c04  mov ax,es:[di] / cmp ax,0x10  and so must whatever we ended up on
+/// ```
 ///
-/// NOT `0x6B8B`, which is the neighbour it would be easy to cite. That is
-/// `ship_3d_c1_mode1_resolved_compare`, also reached for raw operand 1/2, but it
-/// resolves selector `0x11` and then selector `0x13` and compares — no distance, and
-/// its zero-check is on the `0x13` result. Different rule, adjacent trigger
-/// (audit-fixes #597).
+/// NOT `0x6B8B`, the neighbour it would be easy to cite: that is
+/// `ship_3d_c1_mode1_resolved_compare`, reached on the same raw operand 1/2 trigger
+/// and also resolving selector `0x11`, but it then resolves selector `0x13` and
+/// compares, with no distance at all. Same trigger, different rule (audit-fixes
+/// #597).
 ///
-/// The row stays UNVERIFIED until the composing routine is found; the pieces being
-/// individually sourced is not the same claim.
+/// ONE DELIBERATE DIVERGENCE. The port bails when `vm_field_offset` returns 0 (the
+/// kind has no parent-link field); the original does not check, so `mov di,[bx+di]`
+/// with `bx = 0` re-reads the record's own kind word AS A POINTER and follows it.
+/// The `cmp ax,0x10` two instructions later then almost certainly fails, so both
+/// reach "no redirect" — but by different routes, and the game's route dereferences
+/// whatever that word happens to be. The guard is kept, and named here, because it
+/// is a port choice and not a decode.
 fn resolve_c1_record_state_ship3d_target(
     state: &[u8],
     runtime: &Ship3dC1RuntimeContext,
