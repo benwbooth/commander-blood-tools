@@ -21,12 +21,70 @@ Run with PYTHONSAFEPATH=1 from the repo root.
 """
 
 import collections
+import itertools
 import csv
 import os
 import re
 import sys
 
 LEDGER = "docs/function-audit.tsv"
+
+
+_BODY_CACHE = {}
+
+
+def item_body(path, name):
+    """The source text of `name`'s body in `path`, or None if not found.
+
+    Deliberately crude: find the declaration, then take lines until brace depth
+    returns to zero. It only has to answer "does this body mention that other
+    name", so a slightly over-long span is harmless and an under-long one is the
+    only real risk -- hence no line cap.
+    """
+    key = (path, name)
+    if key in _BODY_CACHE:
+        return _BODY_CACHE[key]
+    try:
+        lines = open(path, encoding="utf-8", errors="replace").read().splitlines()
+    except OSError:
+        _BODY_CACHE[key] = None
+        return None
+    decl = re.compile(r"\b(fn|struct|enum|const|static)\s+" + re.escape(name) + r"\b")
+    body = None
+    for i, line in enumerate(lines):
+        if not decl.search(line):
+            continue
+        depth, out, started = 0, [], False
+        for probe in lines[i:]:
+            out.append(probe)
+            depth += probe.count("{") - probe.count("}")
+            if "{" in probe:
+                started = True
+            if started and depth <= 0:
+                break
+            # a brace-less item (`const X: u8 = 1;`) ends at its semicolon
+            if not started and probe.rstrip().endswith(";"):
+                break
+        body = "\n".join(out)
+        break
+    _BODY_CACHE[key] = body
+    return body
+
+
+def delegates_to(body, other):
+    """Does `body` actually CALL `other`?
+
+    A substring test is not enough and fails exactly where it matters: after #486
+    the comment in `MenuTween::to_target` contains the words "one step behind",
+    and `step` is the name of the other member of its cluster -- so a substring
+    match read prose as delegation and silently un-flagged the pair this check
+    exists to find. Strip comments, then require a call form.
+    """
+    code = "\n".join(line.split("//")[0] for line in body.splitlines())
+    name = re.escape(other)
+    return bool(
+        re.search(r"\b" + name + r"\s*\(", code) or re.search(r"::" + name + r"\b", code)
+    )
 
 
 def main():
@@ -81,12 +139,49 @@ def main():
         for item, path, status in sorted(items):
             print(f"      {item:<42} {path:<24} {status}")
 
+    # INDEPENDENT co-citations (audit-fixes #486a). A cluster is benign when one
+    # member DELEGATES to another -- a routine and its helper, or `field_offset`
+    # calling `vm_field_offset` under a comment saying "ONE resolver, not two".
+    # It is a RISK when neither mentions the other, because then one binary rule
+    # has two independent transcriptions that can drift apart silently. That is
+    # exactly what happened to XDB:manu3:0x1DF: `MenuTween::to_target` and
+    # `PosePlayer::step` both modelled it, only one applied the pre-advance, and
+    # the cluster had been reported (correctly) as "for judgement" for as long as
+    # both existed. Reporting the shared citation was never the missing piece --
+    # DIFFING THE BODIES was.
+    # PAIRWISE, not cluster-wide. `XDB:manu3:0x1DF` clusters {tween, to_target,
+    # step}: `tween` calls `to_target`, and treating one delegation edge as
+    # "cluster is fine" hid the third member -- `PosePlayer::step`, the
+    # independent transcription that #486a is about. A cluster is risky if ANY
+    # PAIR in it has no call edge either way.
+    independent = []
+    for addr, items in clusters.items():
+        bodies = {item: item_body(path, item) for item, path, _ in items}
+        unlinked = []
+        for a, b in itertools.combinations(sorted({i[0] for i in items}), 2):
+            ab = bodies.get(a) and delegates_to(bodies[a], b)
+            ba = bodies.get(b) and delegates_to(bodies[b], a)
+            if not ab and not ba:
+                unlinked.append((a, b))
+        if unlinked:
+            independent.append((addr, sorted(items), unlinked))
+
+    if independent:
+        print(f"\nINDEPENDENT co-citations ({len(independent)}) — no member calls another,")
+        print("so each is its own transcription of one rule. DIFF THE BODIES:")
+        for addr, items, unlinked in sorted(independent):
+            print(f"  {show(addr)}")
+            for item, path, status in items:
+                print(f"      {item:<42} {path:<24} {status}")
+            for a, b in unlinked:
+                print(f"        no call edge: {a} <-> {b}")
+
     if same_name:
         print("\nDUPLICATE NAMES — one name implemented twice for one address:")
         for addr, name, files in sorted(same_name):
             print(f"  {show(addr)}  {name}  in {', '.join(files)}")
         return 1
-    print("\nNo same-name duplicates. Clusters above are for judgement: a routine")
+    print("\nNo same-name duplicates. Remaining clusters are for judgement: a routine")
     print("and its helper may share an address legitimately.")
     return 0
 

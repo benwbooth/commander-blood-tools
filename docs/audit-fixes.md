@@ -16004,3 +16004,49 @@ Its phase half matches too: `cl` is the count and `ch` the phase (`movzx ecx,[si
 @0x1E3), `count == 0` ends the sequence (`or cl,cl / je 0x23E`), and a phase
 mismatch breaks after `inc word [0x102c]` @0x239 — advancing exactly one phase per
 frame, which is what the port's `break` does.
+
+## #487 — teaching the duplicate check to find what #486a found, and failing twice first
+
+#486a's lesson was that a shared citation is a prompt to DIFF THE BODIES, and the
+tool only ever printed the cluster. So: flag the clusters where no member CALLS
+another, since a delegating pair (`field_offset` -> `vm_field_offset`, under a
+comment reading "ONE resolver, not two") is benign and an independent pair is not.
+
+The first version did not catch the case it was built from, and the reason is
+almost funny. It asked `other in body` — a substring test. After #486 the comment
+inside `MenuTween::to_target` reads "one frame long and one step behind", the other
+member of its cluster is named `step`, and so my own explanatory prose registered as
+a call. The check silently cleared the exact pair it existed to find. Fixed by
+stripping comments and requiring a call form (`name(` or `::name`).
+
+That still did not catch it. The cluster for `XDB:manu3:0x1DF` has THREE members —
+`tween`, `to_target`, `step` — and `tween` genuinely does call `to_target`. Asking
+"does any member call any other" then declared the whole cluster linked, hiding the
+third member, which is the independent one. Linkage is not a property of a cluster;
+it is a property of a PAIR. Now every pair is tested and the unlinked ones are named:
+
+```text
+  XDB:manu3:0x1df
+      step        src/manu3_hand.rs   ASM
+      to_target   src/manu3.rs        ASM
+      tween       src/manu3.rs        ASM
+        no call edge: step <-> to_target
+        no call edge: step <-> tween
+```
+
+Correctly silent on `to_target <-> tween`. Both failures were the same mistake in
+different clothes — a cheap approximation of "are these related", accepted without
+checking it against the one case whose answer I already knew. A new detector should
+be run against its own motivating example before it is believed, and that is the
+step I skipped twice in a row.
+
+HONEST LIMIT, because the number looks worse than it is: 45 pairs are flagged and
+they are NOT 45 defects. Co-citation is common and legitimate — I checked
+`actor_record_is_active` / `record_owner_is_active` @0x6073 (different resolution
+paths, different unknown-handling, both documented), `current_line_hold` /
+`reveal_frames_per_char` @0xB31 (caller and callee, the call is behind a `use`), and
+`field_offset` / `vm_field_offset` @0x6023 (already deliberately merged). All three
+are fine. The output is a WORKLIST, not a defect count, and it is recorded as such
+so a later reader does not mistake 45 for a regression.
+
+616 tests, 0 failures.
