@@ -20611,3 +20611,33 @@ Remaining is purely the draw: a four-word rect at `0x253D`, seeded from the clic
 row, stepped by the gate that is already wired, drawn each tick.
 
 736 tests, 0 failures.
+
+## #619 — the box now travels, from the clicked row to the widget
+
+`EngineState::console_open_rect` is `DS:0x253D`, the four-word rect that moves.
+Seeded from the clicked row — `(row-1)*0x12 + 0x50`, `0x86C6`..`0x86D1`, where `0x12`
+is the same row pitch the hit test divides by (`mov cl,0x12` @`0x8679`) — and stepped
+toward the widget's geometry by the gate wired in #615.
+
+The target comes from `choice_box_geometry`, which the port already computes for the
+choice box from the same `0x84A1` layout (`w = widest + 0x14`, `x = anchor - w/2`),
+rather than repeating the layout maths in a second place. That is the #575 lesson
+applied before it could bite: two copies of one rect calculation is how the drawn box
+and the travelling box drift apart.
+
+`the_opening_box_travels_from_the_clicked_row` asserts three things a delay-only
+implementation cannot satisfy: the seed is on the clicked row, the rect takes
+INTERMEDIATE positions (not just start then end), and it finishes closer to the target
+than it began.
+
+STILL NOT DRAWN, and the row says so. The rect travels in state; nothing blits it.
+The original draws each interpolated rect rather than storing it (`0x90FF` says so of
+the same gate), so the port needs an outline per tick — a renderer change with no
+decode attached, since the geometry, the timing and both endpoints are now in the
+port.
+
+Four entries from "the menu opens instantly" to a box that moves correctly, and the
+one that looked like a step backwards (#617, refusing the info panel's seed) is why
+it grows from the clicked row instead of from the mouse.
+
+737 tests, 0 failures.

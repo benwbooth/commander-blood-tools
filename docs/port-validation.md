@@ -2183,9 +2183,16 @@ The gate computes `source - dest` and writes back through `di`, so it interpolat
 box grows FROM THE CLICKED ROW into the widget rect, which is why the click writes a
 y at all.
 
-Remaining is now purely the draw: hold a four-word rect at `0x253D`, seed its y from
-the clicked row, step it toward the `0x2AAB` rect with the already-wired gate, and
-draw it each tick.
+WIRED (#619): `EngineState::console_open_rect` is that four-word rect. It is seeded
+from the clicked row, stepped toward the widget's geometry by the already-wired gate,
+and `the_opening_box_travels_from_the_clicked_row` asserts it takes intermediate
+positions and ends closer to the target than it began — which a delay-only
+implementation cannot do.
+
+REMAINING: the rect travels but is not yet DRAWN. `0x1E5D`'s caller on the info-panel
+path draws each interpolated rect rather than storing it (`0x90FF`), so the port needs
+a box-outline blit per tick. That is a renderer change with no decode attached — the
+geometry, the timing and the endpoints are all now in the port.
 
 SUPERSEDED — the paragraph below was #616's claim and #617's correction of it, both
 kept because the reasoning matters:

@@ -625,6 +625,15 @@ pub struct EngineState {
     /// `None` when no open is in flight. `Some((row, gate))` while it animates; the
     /// screen's own flag is set when the gate reports `Complete` (audit-fixes #615).
     pub console_open: Option<(usize, crate::ship3d::Ship3dInterpolationGate)>,
+    /// The TRAVELLING RECT, `DS:0x253D` — `{x, y, w, h}`, the box that actually
+    /// moves while the console menu opens.
+    ///
+    /// `0x8772`/`0x8775` hand the gate `si = 0x2AAB` (the layout rect's target
+    /// shape) and `di = 0x253D`, and the gate writes back through `di` — so this
+    /// interpolates TOWARD the widget rect. Its starting Y is the CLICKED ROW:
+    /// `0x86C6`..`0x86D1` computes `(row-1)*0x12 + 0x50` into `[0x253F]`, which is
+    /// this rect's `+2` word (audit-fixes #618, #619).
+    pub console_open_rect: [u16; 4],
     /// Dialogue line sequence for the loaded script (from the VM trace), played
     /// back frame-by-frame — the script/scene stepping the main loop drives.
     dialogue: Vec<LineState>,
@@ -851,6 +860,7 @@ impl EngineState {
             phone_connected: false,
             phone_active: false,
             console_open: None,
+            console_open_rect: [0; 4],
             dialogue: Vec::new(),
             dialogue_texts: Vec::new(),
             dialogue_is_speech: Vec::new(),
@@ -5573,6 +5583,17 @@ impl EngineState {
     /// ten ticks are the CLICK's doing and not the destination screen's — every row
     /// arms the same gate (audit-fixes #615).
     pub fn begin_console_open(&mut self, row: usize) {
+        // `0x86C6..0x86D1`: al = row-1, `mul 0x12` (the row pitch), `add ax,0x50`,
+        // stored at `[0x253F]` — the travelling rect's Y. The box starts on the row
+        // that was clicked, not at the cursor and not at the widget.
+        // 0x12 is the menu ROW PITCH (`mov cl,0x12` @`0x8679`, the same pitch the
+        // hit test divides by) and 0x50 the base, both from `0x86CA`..`0x86CE`.
+        const MENU_ROW_PITCH: u16 = 0x12;
+        const MENU_ROW_Y_BASE: u16 = 0x50;
+        let row_y = (row.saturating_sub(1) as u16)
+            .wrapping_mul(MENU_ROW_PITCH)
+            .wrapping_add(MENU_ROW_Y_BASE);
+        self.console_open_rect = [0, row_y, 0, 0];
         self.console_open = Some((
             row,
             crate::ship3d::Ship3dInterpolationGate {
@@ -5580,6 +5601,21 @@ impl EngineState {
                 current_tick: 0,
             },
         ));
+    }
+
+    /// The animation's TARGET shape — the widget rect the layout prepass builds
+    /// (`DS:0x2AAB`, `0x84A1`: `w = widest + 0x14`, `h` from the row count, `x =
+    /// anchor - w/2`). The port already computes that geometry for the choice box,
+    /// so this asks it rather than repeating the layout (audit-fixes #619).
+    fn console_open_target_rect(&self) -> [u16; 4] {
+        let (_, x0, x1) = self.choice_box_geometry(0);
+        let rows = 5usize;
+        [
+            x0 as u16,
+            Self::choice_box_top_y(rows) as u16,
+            (x1 - x0) as u16,
+            (rows * Self::CHOICE_BOX_PITCH + 8) as u16,
+        ]
     }
 
     /// Advance an in-flight console open; returns the row when it COMPLETES.
@@ -5590,12 +5626,16 @@ impl EngineState {
     /// travelling rectangle, which is the remaining half of #612.
     fn advance_console_open(&mut self) -> Option<usize> {
         let (row, mut gate) = self.console_open.take()?;
-        // The source/dest rects are the widget's; only the gate's completion is
-        // consumed at present, so any pair with the same duration steps identically.
-        let step = crate::ship3d::step_ship_3d_interpolation_gate(&mut gate, [0; 4], [0; 4]);
+        // `0x8772 mov si,0x2aab` — the TARGET shape — and `0x8775 mov di,0x253d`,
+        // the rect that moves. The gate writes through `di`, so the live rect steps
+        // toward the widget's.
+        let target = self.console_open_target_rect();
+        let step =
+            crate::ship3d::step_ship_3d_interpolation_gate(&mut gate, target, self.console_open_rect);
         match step {
             Some(crate::ship3d::Ship3dInterpolationStep::Complete) => Some(row),
-            Some(crate::ship3d::Ship3dInterpolationStep::Active(_)) => {
+            Some(crate::ship3d::Ship3dInterpolationStep::Active(rect)) => {
+                self.console_open_rect = rect;
                 self.console_open = Some((row, gate));
                 None
             }
@@ -5897,6 +5937,40 @@ mod tests {
             "the telephone must be open once the ten-tick gate completes"
         );
         assert!(e.console_open.is_none(), "the animation must not stay armed");
+    }
+
+    /// The box must TRAVEL, and it must start on the clicked row.
+    ///
+    /// `0x86C6`..`0x86D1` seeds `[0x253F]` (the rect's Y) with `(row-1)*0x12 + 0x50`,
+    /// and `0x8772`/`0x8775` step that rect toward the widget's (audit-fixes #619).
+    #[test]
+    fn the_opening_box_travels_from_the_clicked_row() {
+        let mut e = EngineState::new();
+        e.begin_console_open(3);
+        // Seeded on the clicked row: (3-1)*0x12 + 0x50.
+        assert_eq!(e.console_open_rect[1], 2 * 0x12 + 0x50);
+        let start = e.console_open_rect;
+
+        let target = e.console_open_target_rect();
+        assert_ne!(start, target, "the test needs somewhere to travel to");
+
+        let mut seen = vec![start];
+        for _ in 0..crate::ship3d::SHIP_3D_NAV_CHOICE_INTERPOLATION_DURATION {
+            e.step(MouseInput::default());
+            seen.push(e.console_open_rect);
+        }
+        // It MOVED, and not in one jump: the intermediate rects differ from both
+        // ends, which a delay-only implementation could not produce.
+        assert!(
+            seen.iter().any(|r| *r != start && *r != target),
+            "the rect never took an intermediate position: {seen:?}"
+        );
+        // ...and it approached the target rather than wandering.
+        let dy = |r: &[u16; 4]| (r[1] as i32 - target[1] as i32).abs();
+        assert!(
+            dy(seen.last().unwrap()) < dy(&start),
+            "the rect ended no closer to the widget than it began"
+        );
     }
 
     /// End-to-end faithfulness check for the bridge: the engine's full render of
