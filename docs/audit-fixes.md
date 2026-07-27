@@ -14469,3 +14469,41 @@ whether the table should exist.
 
 2229 items, 1117 confirmed (50.1%), 1112 open. 762 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #441 — enforcing the rule that let a literal survive six entries
+
+#440 found `PHONE_CONTACTS` had gone six audit entries as a transcription with no
+APPROX row, because every pass checked whether its ADDRESSES were right and none
+asked whether the table should exist. `CLAUDE.md` states the rule exactly — a
+stand-in may stand "only if the row in docs/port-validation.md explicitly labels
+it APPROX with the binary routine that must replace it" — and nothing enforced it.
+
+`tools/check_approx_rows.py` pairs the two sides: an item whose own doc admits it
+is APPROX / fabricated / a stand-in / transcribed, against whether the matrix
+names that identifier. Matching is by IDENTIFIER deliberately; a row gesturing at
+"the phone screen" without naming the literal is what #440 found, and a looser
+match would have hidden it.
+
+Result: **21 items admit stand-in status; 8 are named in the matrix, 13 are not.**
+
+The first run said 16, and three were NEGATIONS — `exit_query`'s doc says the
+game's behaviour is "the same ... rather than an approximation of it". The word is
+not the claim, which is the trap `check_labels.py` already documents for mnemonics
+in prose. Polarity is now excluded.
+
+TWO SPOT-CHECKS, and they land differently, which is the useful part:
+
+  * `SHIP_3D_HUD_PYRAMID_VERTICES` is genuinely open — the star-map doc says of it
+    "the game's own projection is still being decoded".
+  * `VM_FIELD_OFFSET_TABLE` says "Transcribed from BLOODPRG.EXE 0x14180..0x142CF",
+    which sounds worse than it is: `native_field_offset_matches_the_lifted_resolver`
+    loads that matrix STRAIGHT FROM THE IMAGE and checks the resolver against it,
+    so the transcription cannot drift. It is a mirror, and only the matrix row is
+    missing.
+
+So UNPAIRED means "unrecorded", not "unprotected", and the entry says so rather
+than reporting 13 defects. The 13 are the queue the prime rule asks for; they are
+now visible instead of being rediscovered one at a time six entries apart.
+
+2229 items, 1117 confirmed (50.1%), 1112 open. 762 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
