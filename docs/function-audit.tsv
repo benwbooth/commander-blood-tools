@@ -186,83 +186,83 @@ SHIP_3D_TARGET_HOVER_ROW_DS_OFFSET	src/bloodprg.rs	346	const	0x27c7,0x850C	ASM	/
 SHIP_3D_TARGET_QUERY_MODE_DS_OFFSET	src/bloodprg.rs	348	const	0x27e6,0xB2E3,0xB2ED	ASM	/// Set around the layout prepass call — `mov byte [0x27e6],1` @`0xB2E3`, cleared at `0xB2ED`.
 SHIP_3D_TARGET_SELECTION_DS_OFFSET	src/bloodprg.rs	351	const	0x27e7,0x08430	ASM	/// Touched by the game at `mov byte ptr [0x27e7], 0` @`0x08430`, found by decoding forward /// from a verified routine entry (`re/tools/refs_in_routine.py`).
 SHIP_3D_TARGET_LAYOUT_RECT_DS_OFFSET	src/bloodprg.rs	353	const	0x2aab,0xB305	ASM	/// The zoom/blit rect the selector hands the panel helper — `mov si,0x2aab` @`0xB305`.
-SHIP_3D_TARGET_WIDTH_TABLE_DS_OFFSET	src/bloodprg.rs	354	const		UNVERIFIED	
-SHIP_3D_PRESENTATION_HOLD_TIMER_DS_OFFSET	src/bloodprg.rs	358	const	0xB3B,0xb3b,0xB644,0xB699	ASM	/// `0xB3B` — `mov word ptr [0xb3b],0` @`0xB644`, the hold counter the temp-SND /// setup clears (audit-fixes #484), and the cell the transition threshold /// `cmp word [0xb3b],0x78` @`0xB699` tests.
-SHIP_3D_TEMP_SND_TRIGGER_DS_OFFSET	src/bloodprg.rs	360	const	0xae4,0xB592	ASM	/// The temp-SND setup's own gate — `test byte [0xae4],1` @`0xB592`, the routine's first instruction.
-SHIP_3D_TEMP_SND_PHASE_DS_OFFSET	src/bloodprg.rs	362	const	0xae5,0xB5B0	ASM	/// Which of the three callbacks to run — `mov al,byte ptr [0xae5]` @`0xB5B0`.
-SHIP_3D_PLANAR_FRAMEBUFFER_PTR_DS_OFFSET	src/bloodprg.rs	364	const	0x5219,0xB712	ASM	/// A FAR pointer — `les di,ptr [0x5219]` @`0xB712` loads segment and offset together.
-SHIP_3D_SCROLL_MODE_DS_OFFSET	src/bloodprg.rs	366	const	0x524d,0xB6F0,0xB175	ASM	/// `cmp word ptr [0x524d],0xa` @`0xB6F0`; the HUD init seeds it with `mov word ptr [0x524d],0xa` @`0xB175`.
-SHIP_3D_SCROLL_VALUE_DS_OFFSET	src/bloodprg.rs	368	const	0x524f,0xB708,0xB16F	ASM	/// `mov word ptr [0x524f],ax` @`0xB708`, zeroed at `0xB16F`.
-SND_ENTRY_FAR_CALL	src/bloodprg.rs	370	const		UNVERIFIED	
-SND_BANK_LOAD_FAR_CALL	src/bloodprg.rs	377	const		UNVERIFIED	
-FAR_CALL_OPCODE	src/bloodprg.rs	384	const		UNVERIFIED	
-REGISTER_SOURCE_SCAN_BACK	src/bloodprg.rs	385	const		UNVERIFIED	
-DS_STRING_SCAN_MAX	src/bloodprg.rs	386	const		UNVERIFIED	
-RENDER_FAR_CALL_SEGMENT_BYTES	src/bloodprg.rs	387	const		UNVERIFIED	
-MzHeader	src/bloodprg.rs	391	struct		UNVERIFIED	
-header_size	src/bloodprg.rs	406	fn		TESTED	
-image_total	src/bloodprg.rs	410	fn		UNVERIFIED	
-load_size	src/bloodprg.rs	418	fn		TESTED	
-MzSummary	src/bloodprg.rs	424	struct		UNVERIFIED	
-BinarySymbol	src/bloodprg.rs	435	struct		UNVERIFIED	
-OpcodeDescriptor	src/bloodprg.rs	446	struct		UNVERIFIED	
-OpcodeHandler	src/bloodprg.rs	453	struct		UNVERIFIED	
-VmOpcodeSpec	src/bloodprg.rs	460	struct		UNVERIFIED	
-DialogueFontTables	src/bloodprg.rs	475	struct		UNVERIFIED	
-SubdispatchEntry	src/bloodprg.rs	485	struct		UNVERIFIED	
-SpriteBlitterDispatchEntry	src/bloodprg.rs	492	struct		UNVERIFIED	
-ScriptResourceProfileSlot	src/bloodprg.rs	501	struct		UNVERIFIED	
-ScriptResourceProfile	src/bloodprg.rs	508	struct		UNVERIFIED	
-BloodPrgInspection	src/bloodprg.rs	516	struct		UNVERIFIED	
-SndEntryCallSite	src/bloodprg.rs	535	struct		UNVERIFIED	
-SndBankLoadCallSite	src/bloodprg.rs	549	struct		UNVERIFIED	
-RenderCallSite	src/bloodprg.rs	570	struct		UNVERIFIED	
-BloodPrg	src/bloodprg.rs	585	struct		UNVERIFIED	
-parse_file	src/bloodprg.rs	591	fn		UNVERIFIED	
-parse	src/bloodprg.rs	597	fn		UNVERIFIED	
-summary	src/bloodprg.rs	627	fn		TESTED	
-image_bytes	src/bloodprg.rs	642	fn		INFRA	/// The raw image bytes, so a test can read an INSTRUCTION back and check a /// constant against the immediate the code actually uses.
-segoff_to_file	src/bloodprg.rs	646	fn		TESTED	
-ds_to_file	src/bloodprg.rs	650	fn		TESTED	
-fs_to_file	src/bloodprg.rs	654	fn		TESTED	
-opcode_handlers	src/bloodprg.rs	658	fn		TESTED	
-opcode_descriptors	src/bloodprg.rs	678	fn		TESTED	
-vm_opcode_specs	src/bloodprg.rs	695	fn		TESTED	
-script_resource_profiles	src/bloodprg.rs	732	fn	0x11F4,0x0D3E4,0x53A0,0x6712	ASM	/// The five SCRIPT resource profiles at `FS:0x11F4` (file `0x0D3E4`), the /// table `vm_resource_profile_select` (`0x53A0`) indexes: `mov si,0x11F4 / /// mov dx,0x000A / mul dx` picks the row, then `
-dialogue_font_tables	src/bloodprg.rs	766	fn	0x31C8,0x7802,0x14C22,0x78B2,0x14CD2,0x78b2,0x7908,0x14D28	ASM	/// The DIALOGUE FONT's three chained tables, at the offsets `render_string` /// (`0x31C8`) loads them from as immediates: the ASCII->glyph map /// `DS:0x7802` = file `0x14C22` (`mov bx,0x7802`), the 
-nav_actor_subdispatch_handlers	src/bloodprg.rs	804	fn		TESTED	
-nav_choice_subdispatch_handlers	src/bloodprg.rs	812	fn		TESTED	
-snd_entry_call_sites	src/bloodprg.rs	820	fn		TESTED	
-snd_bank_load_call_sites	src/bloodprg.rs	846	fn		TESTED	
-render_call_sites	src/bloodprg.rs	885	fn		TESTED	
-sprite_blitter_dispatch_entries	src/bloodprg.rs	919	fn	0x1592,0x4522,0x44BA	ASM	/// The sprite-blitter dispatch table at `CS:0x1592` (file `0x4522`), reached /// by `mov bx,cs:[bx+0x1592]` at `0x44BA` after `shr bx,1 / and bx,0x0E` /// bounds the index to its eight word entries.
-inspect	src/bloodprg.rs	941	fn		TESTED	
-subdispatch_entries	src/bloodprg.rs	961	fn		UNVERIFIED	
-slice	src/bloodprg.rs	982	fn		TESTED	
-find_ax_source_before	src/bloodprg.rs	991	fn		UNVERIFIED	
-find_si_source_before	src/bloodprg.rs	1023	fn		UNVERIFIED	
-ds_c_string	src/bloodprg.rs	1051	fn		UNVERIFIED	
-option_menu_labels	src/bloodprg.rs	1078	fn	0x886C,0x8709,0x2567,0x8428,0xFFFF,0x2573,0x2581,0x258B,0x25	DATA	/// The bridge OPTION menu's labels, read from the game's own string table. /// /// Console row 4's handler (`0x886C`, reached through the per-row table at /// file `0x8709`) does `mov si,0x2567` and 
-text_speed_labels	src/bloodprg.rs	1084	fn	0x259D	DATA	/// The OPTION menu's TEXT-SPEED submenu labels (`DS:0x259D`): /// `VERY FAST`, `FAST`, `MEDIUM`, `SLOW`, `VERY SLOW`.
-location_status_headers	src/bloodprg.rs	1092	fn	0x8369,0x839F	DATA	/// The nav-chart hover panel's status headers, read from the game's strings: /// `DS:0x12E` `PLANET: `, `0x137` `SHIP: `, `0x13E` `BLACK HOLE: `, `0x14B` /// `LIFE SUPPORT:` — the four `mov si,...` c
-list_widget_cancel_label	src/bloodprg.rs	1105	fn		DATA	/// The list widget's shared trailing entry (`DS:0x0174`).
-music_on_label	src/bloodprg.rs	1111	fn	0x2578	DATA	/// The alternate face of the music toggle (`DS:0x2578`), which the pointer /// list does not name.
-ds_pointer_list_strings	src/bloodprg.rs	1128	fn	0xFFFF,0x2567,0x2573,0x2581,0x258B,0x2590,0x2595,0x2578,0x25	DATA	/// Walk a `0xFFFF`-terminated list of DS string pointers. /// /// Read out of the shipped image (audit-fixes #463), `DS:0x2567` is: /// /// ```text ///   0x2573 0x2581 0x258B 0x2590 0x2595 0xFFFF ///
-resource_name	src/bloodprg.rs	1145	fn		UNVERIFIED	
-file_to_known_segoff	src/bloodprg.rs	1158	fn		UNVERIFIED	
-u16_at	src/bloodprg.rs	1169	fn		UNVERIFIED	
-OpcodeMetadata	src/bloodprg.rs	1177	struct		UNVERIFIED	
-opcode_metadata	src/bloodprg.rs	1184	fn		UNVERIFIED	
-KNOWN_CODE_SEGMENTS	src/bloodprg.rs	1323	const		UNVERIFIED	
-snd_entry_call_note	src/bloodprg.rs	1334	fn		UNVERIFIED	
-snd_bank_load_mode	src/bloodprg.rs	1350	fn		UNVERIFIED	
-snd_bank_load_call_note	src/bloodprg.rs	1359	fn		UNVERIFIED	
-render_target_name	src/bloodprg.rs	1372	fn		UNVERIFIED	
-render_call_site_note	src/bloodprg.rs	1410	fn		UNVERIFIED	
-sprite_blitter_name	src/bloodprg.rs	1587	fn		UNVERIFIED	
-sprite_blitter_note	src/bloodprg.rs	1601	fn		UNVERIFIED	
-KNOWN_SYMBOLS	src/bloodprg.rs	1629	const		TESTED	
-PRESENTATION_3D_MARKERS	src/bloodprg.rs	2694	const		TESTED	
+SHIP_3D_TARGET_WIDTH_TABLE_DS_OFFSET	src/bloodprg.rs	359	const	0x2AB3,0x2ab3,0x844E,0x8493,0x854E	ASM	/// `0x2AB3` — the list widget's own WIDTH SCRATCH, written `mov di,0x2ab3` /// @`0x844E` and read @`0x8493`/`0x854E`. Its only three references are inside /// the widget, which is what identified it:
+SHIP_3D_PRESENTATION_HOLD_TIMER_DS_OFFSET	src/bloodprg.rs	363	const	0xB3B,0xb3b,0xB644,0xB699	ASM	/// `0xB3B` — `mov word ptr [0xb3b],0` @`0xB644`, the hold counter the temp-SND /// setup clears (audit-fixes #484), and the cell the transition threshold /// `cmp word [0xb3b],0x78` @`0xB699` tests.
+SHIP_3D_TEMP_SND_TRIGGER_DS_OFFSET	src/bloodprg.rs	365	const	0xae4,0xB592	ASM	/// The temp-SND setup's own gate — `test byte [0xae4],1` @`0xB592`, the routine's first instruction.
+SHIP_3D_TEMP_SND_PHASE_DS_OFFSET	src/bloodprg.rs	367	const	0xae5,0xB5B0	ASM	/// Which of the three callbacks to run — `mov al,byte ptr [0xae5]` @`0xB5B0`.
+SHIP_3D_PLANAR_FRAMEBUFFER_PTR_DS_OFFSET	src/bloodprg.rs	369	const	0x5219,0xB712	ASM	/// A FAR pointer — `les di,ptr [0x5219]` @`0xB712` loads segment and offset together.
+SHIP_3D_SCROLL_MODE_DS_OFFSET	src/bloodprg.rs	371	const	0x524d,0xB6F0,0xB175	ASM	/// `cmp word ptr [0x524d],0xa` @`0xB6F0`; the HUD init seeds it with `mov word ptr [0x524d],0xa` @`0xB175`.
+SHIP_3D_SCROLL_VALUE_DS_OFFSET	src/bloodprg.rs	373	const	0x524f,0xB708,0xB16F	ASM	/// `mov word ptr [0x524f],ax` @`0xB708`, zeroed at `0xB16F`.
+SND_ENTRY_FAR_CALL	src/bloodprg.rs	375	const		UNVERIFIED	
+SND_BANK_LOAD_FAR_CALL	src/bloodprg.rs	382	const		UNVERIFIED	
+FAR_CALL_OPCODE	src/bloodprg.rs	389	const		UNVERIFIED	
+REGISTER_SOURCE_SCAN_BACK	src/bloodprg.rs	390	const		UNVERIFIED	
+DS_STRING_SCAN_MAX	src/bloodprg.rs	391	const		UNVERIFIED	
+RENDER_FAR_CALL_SEGMENT_BYTES	src/bloodprg.rs	392	const		UNVERIFIED	
+MzHeader	src/bloodprg.rs	396	struct		UNVERIFIED	
+header_size	src/bloodprg.rs	411	fn		TESTED	
+image_total	src/bloodprg.rs	415	fn		UNVERIFIED	
+load_size	src/bloodprg.rs	423	fn		TESTED	
+MzSummary	src/bloodprg.rs	429	struct		UNVERIFIED	
+BinarySymbol	src/bloodprg.rs	440	struct		UNVERIFIED	
+OpcodeDescriptor	src/bloodprg.rs	451	struct		UNVERIFIED	
+OpcodeHandler	src/bloodprg.rs	458	struct		UNVERIFIED	
+VmOpcodeSpec	src/bloodprg.rs	465	struct		UNVERIFIED	
+DialogueFontTables	src/bloodprg.rs	480	struct		UNVERIFIED	
+SubdispatchEntry	src/bloodprg.rs	490	struct		UNVERIFIED	
+SpriteBlitterDispatchEntry	src/bloodprg.rs	497	struct		UNVERIFIED	
+ScriptResourceProfileSlot	src/bloodprg.rs	506	struct		UNVERIFIED	
+ScriptResourceProfile	src/bloodprg.rs	513	struct		UNVERIFIED	
+BloodPrgInspection	src/bloodprg.rs	521	struct		UNVERIFIED	
+SndEntryCallSite	src/bloodprg.rs	540	struct		UNVERIFIED	
+SndBankLoadCallSite	src/bloodprg.rs	554	struct		UNVERIFIED	
+RenderCallSite	src/bloodprg.rs	575	struct		UNVERIFIED	
+BloodPrg	src/bloodprg.rs	590	struct		UNVERIFIED	
+parse_file	src/bloodprg.rs	596	fn		UNVERIFIED	
+parse	src/bloodprg.rs	602	fn		UNVERIFIED	
+summary	src/bloodprg.rs	632	fn		TESTED	
+image_bytes	src/bloodprg.rs	647	fn		INFRA	/// The raw image bytes, so a test can read an INSTRUCTION back and check a /// constant against the immediate the code actually uses.
+segoff_to_file	src/bloodprg.rs	651	fn		TESTED	
+ds_to_file	src/bloodprg.rs	655	fn		TESTED	
+fs_to_file	src/bloodprg.rs	659	fn		TESTED	
+opcode_handlers	src/bloodprg.rs	663	fn		TESTED	
+opcode_descriptors	src/bloodprg.rs	683	fn		TESTED	
+vm_opcode_specs	src/bloodprg.rs	700	fn		TESTED	
+script_resource_profiles	src/bloodprg.rs	737	fn	0x11F4,0x0D3E4,0x53A0,0x6712	ASM	/// The five SCRIPT resource profiles at `FS:0x11F4` (file `0x0D3E4`), the /// table `vm_resource_profile_select` (`0x53A0`) indexes: `mov si,0x11F4 / /// mov dx,0x000A / mul dx` picks the row, then `
+dialogue_font_tables	src/bloodprg.rs	771	fn	0x31C8,0x7802,0x14C22,0x78B2,0x14CD2,0x78b2,0x7908,0x14D28	ASM	/// The DIALOGUE FONT's three chained tables, at the offsets `render_string` /// (`0x31C8`) loads them from as immediates: the ASCII->glyph map /// `DS:0x7802` = file `0x14C22` (`mov bx,0x7802`), the 
+nav_actor_subdispatch_handlers	src/bloodprg.rs	809	fn		TESTED	
+nav_choice_subdispatch_handlers	src/bloodprg.rs	817	fn		TESTED	
+snd_entry_call_sites	src/bloodprg.rs	825	fn		TESTED	
+snd_bank_load_call_sites	src/bloodprg.rs	851	fn		TESTED	
+render_call_sites	src/bloodprg.rs	890	fn		TESTED	
+sprite_blitter_dispatch_entries	src/bloodprg.rs	924	fn	0x1592,0x4522,0x44BA	ASM	/// The sprite-blitter dispatch table at `CS:0x1592` (file `0x4522`), reached /// by `mov bx,cs:[bx+0x1592]` at `0x44BA` after `shr bx,1 / and bx,0x0E` /// bounds the index to its eight word entries.
+inspect	src/bloodprg.rs	946	fn		TESTED	
+subdispatch_entries	src/bloodprg.rs	966	fn		UNVERIFIED	
+slice	src/bloodprg.rs	987	fn		TESTED	
+find_ax_source_before	src/bloodprg.rs	996	fn		UNVERIFIED	
+find_si_source_before	src/bloodprg.rs	1028	fn		UNVERIFIED	
+ds_c_string	src/bloodprg.rs	1056	fn		UNVERIFIED	
+option_menu_labels	src/bloodprg.rs	1083	fn	0x886C,0x8709,0x2567,0x8428,0xFFFF,0x2573,0x2581,0x258B,0x25	DATA	/// The bridge OPTION menu's labels, read from the game's own string table. /// /// Console row 4's handler (`0x886C`, reached through the per-row table at /// file `0x8709`) does `mov si,0x2567` and 
+text_speed_labels	src/bloodprg.rs	1089	fn	0x259D	DATA	/// The OPTION menu's TEXT-SPEED submenu labels (`DS:0x259D`): /// `VERY FAST`, `FAST`, `MEDIUM`, `SLOW`, `VERY SLOW`.
+location_status_headers	src/bloodprg.rs	1097	fn	0x8369,0x839F	DATA	/// The nav-chart hover panel's status headers, read from the game's strings: /// `DS:0x12E` `PLANET: `, `0x137` `SHIP: `, `0x13E` `BLACK HOLE: `, `0x14B` /// `LIFE SUPPORT:` — the four `mov si,...` c
+list_widget_cancel_label	src/bloodprg.rs	1110	fn		DATA	/// The list widget's shared trailing entry (`DS:0x0174`).
+music_on_label	src/bloodprg.rs	1116	fn	0x2578	DATA	/// The alternate face of the music toggle (`DS:0x2578`), which the pointer /// list does not name.
+ds_pointer_list_strings	src/bloodprg.rs	1133	fn	0xFFFF,0x2567,0x2573,0x2581,0x258B,0x2590,0x2595,0x2578,0x25	DATA	/// Walk a `0xFFFF`-terminated list of DS string pointers. /// /// Read out of the shipped image (audit-fixes #463), `DS:0x2567` is: /// /// ```text ///   0x2573 0x2581 0x258B 0x2590 0x2595 0xFFFF ///
+resource_name	src/bloodprg.rs	1150	fn		UNVERIFIED	
+file_to_known_segoff	src/bloodprg.rs	1163	fn		UNVERIFIED	
+u16_at	src/bloodprg.rs	1174	fn		UNVERIFIED	
+OpcodeMetadata	src/bloodprg.rs	1182	struct		UNVERIFIED	
+opcode_metadata	src/bloodprg.rs	1189	fn		UNVERIFIED	
+KNOWN_CODE_SEGMENTS	src/bloodprg.rs	1328	const		UNVERIFIED	
+snd_entry_call_note	src/bloodprg.rs	1339	fn		UNVERIFIED	
+snd_bank_load_mode	src/bloodprg.rs	1355	fn		UNVERIFIED	
+snd_bank_load_call_note	src/bloodprg.rs	1364	fn		UNVERIFIED	
+render_target_name	src/bloodprg.rs	1377	fn		UNVERIFIED	
+render_call_site_note	src/bloodprg.rs	1415	fn		UNVERIFIED	
+sprite_blitter_name	src/bloodprg.rs	1592	fn		UNVERIFIED	
+sprite_blitter_note	src/bloodprg.rs	1606	fn		UNVERIFIED	
+KNOWN_SYMBOLS	src/bloodprg.rs	1634	const		TESTED	
+PRESENTATION_3D_MARKERS	src/bloodprg.rs	2699	const		TESTED	
 BloodSave	src/bloodsav.rs	48	struct	0x6780,0xFFFF,0xffff,0x10D3,0x1CFA,0x108E,0x10C5,0x1CF2,0x64	ASM	/// The fixed-layout portion of a `blood.sav` file, plus the trailing runtime /// region (object block + work buffer, whose split depends on the loaded /// profile's live object-table size). /// Curre
 SaveSlot	src/bloodsav.rs	80	struct	0x2734,0x1BAB,0x25ED,0x273B,0x1BBD,0x8573	ASM	/// One row of the SLOT-NAME DIRECTORY (`blood.sav`): a 32-byte record holding a /// 15-character name padded with spaces, a NUL, then the slot's filename /// (`game<N>.sav`) padded with NULs. Ten of 
 SLOT_RECORD_LEN	src/bloodsav.rs	88	const		UNVERIFIED	/// Bytes per directory record, and the record count.
@@ -270,17 +270,17 @@ SLOT_NAME_LEN	src/bloodsav.rs	89	const		UNVERIFIED
 SLOT_COUNT	src/bloodsav.rs	90	const		UNVERIFIED	
 parse_slot_directory	src/bloodsav.rs	95	fn	0x1BAB,0x2734,0x1BBD,0x273B	TESTED	/// Parse `blood.sav`, the slot-name directory the save flow renames through /// (`0x1BAB` points `[0x2734]` at a record, `0x1BBD` copies it to `DS:0x273B`). /// Returns `None` unless the image is exa
 SAVE_PROFILE_SOURCE_DS	src/bloodsav.rs	118	const	0x1C63,0x1C6D,0x1C72,0x1CEB	ASM	/// The DS globals the writer streams from (`0x1C63`, `0x1C6D`, `0x1C72`) and, /// for the profile, the DIFFERENT one the reader streams into (`0x1CEB`).
-LOAD_PROFILE_DEST_DS	src/bloodsav.rs	119	const		UNVERIFIED	
-FLAGS_SOURCE_DS	src/bloodsav.rs	120	const		UNVERIFIED	
-STATE_SOURCE_DS	src/bloodsav.rs	121	const		UNVERIFIED	
-SAVE_WRITE_SIZE_IMMEDIATES	src/bloodsav.rs	127	const	0x1C72,0x1C75,0x1C76	ASM	/// File offsets of the three `int 21h` AH=0x40 write calls' `mov cx,imm` in /// `vm_state_save`, so the sizes below can be checked against the code itself. /// Note the third pair is emitted `mov dx`
-PROFILE_SIZE	src/bloodsav.rs	140	const	0x1C60,0x1C61	ASM	/// Byte offset/size constants of the fixed header (all little-endian). /// /// Each is the `mov cx,imm` of one of `vm_state_save`'s three `int 21h` AH=0x40 /// writes, and `the_header_sizes_are_the_w
-FLAGS_SIZE	src/bloodsav.rs	143	const	0x1C6A,0x1C6B,0x6ADE,0x6ade,0x1C6D	ASM	/// `mov cx, 0x200` @`0x1C6A`, the immediate at `0x1C6B`; the block writes /// `DS:0x6ADE` (`mov dx, 0x6ade` @`0x1C6D`).
-STATE_SIZE	src/bloodsav.rs	147	const	0x1C75,0x1C76,0x6cde,0x1C72	ASM	/// `mov cx, 0x60` @`0x1C75`, the immediate at `0x1C76`. NOTE the operand order /// flips here — `mov dx, 0x6cde` @`0x1C72` comes FIRST — which is why the /// immediate is not where the earlier spacin
-HEADER_SIZE	src/bloodsav.rs	148	const	0x1C3F,0x1C60,0x1C6A,0x1C75,0x6ADE,0x6ade,0x008A4,0x01C6D,0x	ASM	/// Parse a save image in the field order `vm_state_save` (`0x1C3F`) writes: /// the 2-byte profile (`0x1C60`), 512 flag bytes (`0x1C6A`), 96 state bytes /// (`0x1C75`), then the two variable blocks a
-parse	src/bloodsav.rs	156	fn	0x1C3F,0x1C60,0x1C6A,0x1C75	ASM	/// Parse a save image in the field order `vm_state_save` (`0x1C3F`) writes: /// the 2-byte profile (`0x1C60`), 512 flag bytes (`0x1C6A`), 96 state bytes /// (`0x1C75`), then the two variable blocks a
-to_bytes	src/bloodsav.rs	179	fn	0x1C3F	ASM	/// Serialize back to the DOS byte layout (profile, flags, state, runtime). /// Byte-exact with [`BloodSave::parse`]'s input for the header; the runtime /// region round-trips verbatim. /// Re-seriali
-flag_bit	src/bloodsav.rs	213	fn	0x6ADE,0x6ade,0x008A4,0x01C6D,0x01D0F,0x053F6	ASM	/// Whether a progression flag bit is set in the 512-byte flag block. /// `byte` indexes into `flags` (0..512), `bit` is 0..8. The block mirrors the /// game's `[0x6ADE]` region; the entity-progressio
+LOAD_PROFILE_DEST_DS	src/bloodsav.rs	124	const	0x6780,0x64BB,0xFFFF,0x10D3,0x1CFA	ASM	/// `DS:0x6780`, the pending-resource-profile cell — written /// `mov word ptr gs:[0x6780],ax` @`0x64BB` and RESET to `0xFFFF` @`0x10D3` and /// @`0x1CFA`, the second of which is in this load path. Sa
+FLAGS_SOURCE_DS	src/bloodsav.rs	127	const	0x6ade,0x1C6D,0x1C70	ASM	/// `mov dx,0x6ade` @`0x1C6D`, immediately before `int 0x21` @`0x1C70` — the DS /// buffer the save writes from (audit-fixes #535).
+STATE_SOURCE_DS	src/bloodsav.rs	131	const	0x6cde,0x1C72,0x1C75,0x1C78	ASM	/// `mov dx,0x6cde` @`0x1C72` with `mov cx,0x60` @`0x1C75` and `mov ah,0x40` /// @`0x1C78` — a 96-byte `int 21h` write, so this cell and its LENGTH come from /// the same three instructions (audit-fix
+SAVE_WRITE_SIZE_IMMEDIATES	src/bloodsav.rs	137	const	0x1C72,0x1C75,0x1C76	ASM	/// File offsets of the three `int 21h` AH=0x40 write calls' `mov cx,imm` in /// `vm_state_save`, so the sizes below can be checked against the code itself. /// Note the third pair is emitted `mov dx`
+PROFILE_SIZE	src/bloodsav.rs	150	const	0x1C60,0x1C61	ASM	/// Byte offset/size constants of the fixed header (all little-endian). /// /// Each is the `mov cx,imm` of one of `vm_state_save`'s three `int 21h` AH=0x40 /// writes, and `the_header_sizes_are_the_w
+FLAGS_SIZE	src/bloodsav.rs	153	const	0x1C6A,0x1C6B,0x6ADE,0x6ade,0x1C6D	ASM	/// `mov cx, 0x200` @`0x1C6A`, the immediate at `0x1C6B`; the block writes /// `DS:0x6ADE` (`mov dx, 0x6ade` @`0x1C6D`).
+STATE_SIZE	src/bloodsav.rs	157	const	0x1C75,0x1C76,0x6cde,0x1C72	ASM	/// `mov cx, 0x60` @`0x1C75`, the immediate at `0x1C76`. NOTE the operand order /// flips here — `mov dx, 0x6cde` @`0x1C72` comes FIRST — which is why the /// immediate is not where the earlier spacin
+HEADER_SIZE	src/bloodsav.rs	158	const	0x1C3F,0x1C60,0x1C6A,0x1C75,0x6ADE,0x6ade,0x008A4,0x01C6D,0x	ASM	/// Parse a save image in the field order `vm_state_save` (`0x1C3F`) writes: /// the 2-byte profile (`0x1C60`), 512 flag bytes (`0x1C6A`), 96 state bytes /// (`0x1C75`), then the two variable blocks a
+parse	src/bloodsav.rs	166	fn	0x1C3F,0x1C60,0x1C6A,0x1C75	ASM	/// Parse a save image in the field order `vm_state_save` (`0x1C3F`) writes: /// the 2-byte profile (`0x1C60`), 512 flag bytes (`0x1C6A`), 96 state bytes /// (`0x1C75`), then the two variable blocks a
+to_bytes	src/bloodsav.rs	189	fn	0x1C3F	ASM	/// Serialize back to the DOS byte layout (profile, flags, state, runtime). /// Byte-exact with [`BloodSave::parse`]'s input for the header; the runtime /// region round-trips verbatim. /// Re-seriali
+flag_bit	src/bloodsav.rs	223	fn	0x6ADE,0x6ade,0x008A4,0x01C6D,0x01D0F,0x053F6	ASM	/// Whether a progression flag bit is set in the 512-byte flag block. /// `byte` indexes into `flags` (0..512), `bit` is 0..8. The block mirrors the /// game's `[0x6ADE]` region; the entity-progressio
 RING_PX_PER_FRAME	src/bridge.rs	28	const		UNVERIFIED	/// Ring pixels per panorama frame (8 px = 2° of the 1440-px ring).
 HALF_SCREEN	src/bridge.rs	31	const		UNVERIFIED	/// Ring x of the view centre at frame f is `f * 8`; the screen shows /// `ring_of_view - 160 .. + 160`.
 ARC_PER_REVOLUTION	src/bridge.rs	35	const		UNVERIFIED	"/// The ""arc"" scale the original steering math runs in: quarter-ring units /// (`ring / 4`, 360 per revolution — 2 arc units per frame)."

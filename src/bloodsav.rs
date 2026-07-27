@@ -116,8 +116,18 @@ pub fn parse_slot_directory(data: &[u8]) -> Option<Vec<SaveSlot>> {
 /// The DS globals the writer streams from (`0x1C63`, `0x1C6D`, `0x1C72`) and,
 /// for the profile, the DIFFERENT one the reader streams into (`0x1CEB`).
 pub const SAVE_PROFILE_SOURCE_DS: u16 = 0x677E;
+/// `DS:0x6780`, the pending-resource-profile cell — written
+/// `mov word ptr gs:[0x6780],ax` @`0x64BB` and RESET to `0xFFFF` @`0x10D3` and
+/// @`0x1CFA`, the second of which is in this load path. Same cell as
+/// `vm::VM_PENDING_RESOURCE_PROFILE` (#516), so `0xFFFF` here means EMPTY rather
+/// than profile 65535 (audit-fixes #535).
 pub const LOAD_PROFILE_DEST_DS: u16 = 0x6780;
+/// `mov dx,0x6ade` @`0x1C6D`, immediately before `int 0x21` @`0x1C70` — the DS
+/// buffer the save writes from (audit-fixes #535).
 pub const FLAGS_SOURCE_DS: u16 = 0x6ADE;
+/// `mov dx,0x6cde` @`0x1C72` with `mov cx,0x60` @`0x1C75` and `mov ah,0x40`
+/// @`0x1C78` — a 96-byte `int 21h` write, so this cell and its LENGTH come from
+/// the same three instructions (audit-fixes #535).
 pub const STATE_SOURCE_DS: u16 = 0x6CDE;
 /// File offsets of the three `int 21h` AH=0x40 write calls' `mov cx,imm` in
 /// `vm_state_save`, so the sizes below can be checked against the code itself.

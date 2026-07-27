@@ -351,6 +351,11 @@ pub const SHIP_3D_TARGET_QUERY_MODE_DS_OFFSET: u16 = 0x27e6;
 pub const SHIP_3D_TARGET_SELECTION_DS_OFFSET: u16 = 0x27e7;
 /// The zoom/blit rect the selector hands the panel helper — `mov si,0x2aab` @`0xB305`.
 pub const SHIP_3D_TARGET_LAYOUT_RECT_DS_OFFSET: u16 = 0x2aab;
+/// `0x2AB3` — the list widget's own WIDTH SCRATCH, written `mov di,0x2ab3`
+/// @`0x844E` and read @`0x8493`/`0x854E`. Its only three references are inside
+/// the widget, which is what identified it: nothing external ever writes a row
+/// list there, and reading SI back to the nearest `mov si,imm16` gives the
+/// WRONG answer because two `movsd` advance it by 8 (audit-fixes #339, #535).
 pub const SHIP_3D_TARGET_WIDTH_TABLE_DS_OFFSET: u16 = 10931;
 /// `0xB3B` — `mov word ptr [0xb3b],0` @`0xB644`, the hold counter the temp-SND
 /// setup clears (audit-fixes #484), and the cell the transition threshold

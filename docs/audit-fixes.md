@@ -17760,3 +17760,38 @@ so each table's length is bounded by where its code begins, which is what makes
 routines within it.
 
 723 tests, 0 failures.
+
+## #535 — a tool for the #533/#534 pattern: decoded here, uncited there
+
+#533 and #534 were the same failure twice: a constant sitting UNVERIFIED in one
+file while the decode explaining it lived in the fix log or in another file's doc.
+#534 cost a 4096-base constraint solve to re-derive a segment `bloodprg.rs` had
+already declared. That is worth automating rather than noticing a third time.
+
+`tools/check_decoded_but_uncited.py` takes every UNVERIFIED constant, reads its
+declared value out of the source line, and looks for that value in
+`docs/audit-fixes.md` NEXT TO AN ADDRESS. A hit means the work is done and only the
+citation is missing — the cheapest rows in the ledger.
+
+**12 leads out of 108 uncited constants**, and the tool is explicit that they are
+LEADS. Its own output proves why: `ALIEN_TRANSFORM_NEUTRAL = 0x8000` matched a fix
+entry about `test word es:[di+2],0x8000` — the TEXT line-record flag, a completely
+different cell that shares a value. Taking that would have been #501 exactly. So
+would `VIEWPORT_W = 320` matching a `0x140` mask and `TEX_W = 256` matching a line
+about `DS:0x2567`. Roughly half the leads are noise, which is the honest yield for
+a value-match heuristic and why the tool prints the warning rather than a count.
+
+Four genuine ones closed here:
+
+```text
+  0x6ADE  save flags source   `mov dx,0x6ade` @0x1C6D, then int 21h
+  0x6CDE  save state source   `mov dx,0x6cde` @0x1C72 + `mov cx,0x60` -> 96 bytes
+  0x6780  load profile dest   the cell #516 cited; 0xFFFF is EMPTY, not a profile
+  0x2AB3  widget width scratch  the cell #339 spent an entry proving is NOT a row list
+```
+
+`0x6CDE` is the nicest of them: the cell AND its length come from the same three
+instructions, so `STATE_SOURCE_DS` and the 96-byte size cannot drift apart without
+one of them disagreeing with `0x1C72`.
+
+723 tests, 0 failures.
