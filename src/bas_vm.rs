@@ -131,8 +131,28 @@ fn is_single_token(w: &str) -> bool {
 /// A back-out topic that pops the menu stack (the game's universal "leave" verb).
 const BACK_TOPICS: [&str; 2] = ["bye_bye", "talk"];
 
-/// The concept-menu stack for one script's conversation, mirroring the game's
-/// `gs:0x6772`/`gs:0x6774` menu stack.
+/// The concept-menu stack for one script's conversation.
+///
+/// THE GAME'S PAIR IS NOT A STACK (audit-fixes #455). This said it mirrors
+/// "the game's `gs:0x6772`/`gs:0x6774` menu stack"; those two cells are a
+/// CURRENT and ONE SAVED PREVIOUS, and the push is three instructions:
+///
+/// ```text
+///   0x57F7  mov bx, word ptr gs:[0x6772]   read the CURRENT menu
+///   0x57FC  mov word ptr gs:[0x6774], bx   save it as the PREVIOUS
+///   0x5805  mov word ptr gs:[0x6772], si   the new current
+/// ```
+///
+/// A census finds `0x6772` with five sites (three writes, two reads) and `0x6774`
+/// with TWO — both writes, `0x5464` (init, alongside `0x6772` from the same `ax`)
+/// and `0x57FC` — and NO direct-address read at all. So one level of history is
+/// kept and nothing in that form reads it back.
+///
+/// This `Vec<usize>` therefore models UNBOUNDED nesting where the game keeps one
+/// step. For menus nested deeper than one level the two diverge: the port can
+/// still walk back, the game cannot. Whether any shipped script nests that deep is
+/// not established, so this is recorded rather than changed — narrowing the port
+/// to a pair would be as unfounded as the word "stack" was.
 #[derive(Debug, Clone)]
 pub struct BasMenuStack {
     /// Every concept menu decoded from the script's `.BAS`, keyed by BAS offset.

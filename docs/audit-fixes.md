@@ -14935,3 +14935,34 @@ description is least likely to be caught, because nothing there computes anythin
 
 2229 items, 1119 confirmed (50.2%), 1110 open. 788 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #455 — "stack" was the wrong word for a pair
+
+`BasMenuStack` says it mirrors "the game's `gs:0x6772`/`gs:0x6774` menu stack".
+Those two cells are a CURRENT and ONE SAVED PREVIOUS. The push is three
+instructions:
+
+    0x57F7  mov bx, word ptr gs:[0x6772]   read the CURRENT menu
+    0x57FC  mov word ptr gs:[0x6774], bx   save it as the PREVIOUS
+    0x5805  mov word ptr gs:[0x6772], si   the new current
+
+A census gives `0x6772` five sites (three writes, two reads) and `0x6774` exactly
+TWO — both writes, the init at `0x5464` (which sets it from the same `ax` as
+`0x6772`, so they start equal) and this save. `0x6774` has NO direct-address read
+at all: one level of history is kept, and nothing in that form reads it back.
+
+So the port's `Vec<usize>` models UNBOUNDED nesting where the game keeps one step.
+For a menu nested deeper than one level the two diverge — the port can still walk
+back, the game cannot.
+
+RECORDED, NOT CHANGED. Whether any shipped script nests concept menus more than
+one deep is not established, and narrowing the port to a pair on the strength of
+two cells would be the same unfounded move as calling them a stack. What is fixed
+is the DESCRIPTION, which asserted a structure the game does not have.
+
+Third entry running where the defect was one word — #453's "divisor" for a
+dividend, #455's "stack" for a pair — and in both the word implied a shape rather
+than a value, which is why neither showed up as a failing test.
+
+2229 items, 1119 confirmed (50.2%), 1110 open. 791 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
