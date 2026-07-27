@@ -348,17 +348,10 @@ impl QuerySetMode {
             // i16. This matters constantly: the aboard/wildcard sentinel 0xFFFF is
             // -1 signed but 65535 unsigned, so an unsigned compare inverts every
             // ordered test against it (and against any value >= 0x8000).
-            let (a, b) = (cur as i16, op2 as i16);
-            let matched = match operator {
-                0xF0 => a != b,
-                0xF1 => a < b,
-                0xF2 => a > b,
-                0xF3 => a <= b,
-                0xF4 => a >= b,
-                0xF5 => a == b,
-                _ => false,
-            };
-            Err(matched)
+            // ONE ladder — see `compare_state_words`, which carries the
+            // disassembly. `_ => false` is preserved as the unknown-operator
+            // answer (audit-fixes #594).
+            Err(compare_state_words(operator, cur as i16, op2 as i16).unwrap_or(false))
         } else {
             let new = match operator {
                 0xF5 => op2,                    // SET
@@ -3878,20 +3871,70 @@ fn push_mode0_branch_fail(
     Some(target)
 }
 
-fn compare_vm_words(operator: u8, left: u16, right: u16) -> Option<bool> {
-    let signed_left = left as i16;
-    let signed_right = right as i16;
+/// The query-mode comparison ladder of `vm_state_operator_set`, `0x6893`..`0x68DB`:
+///
+/// ```text
+/// 0x006893  cmp ah,0xf0 / jne     0x00689a  cmp cx,dx / setne al
+/// 0x00689f  cmp ah,0xf3 / jne     0x0068a6  cmp cx,dx / setle al
+/// 0x0068ab  cmp ah,0xf4 / jne     0x0068b2  cmp cx,dx / setge al
+/// 0x0068b7  cmp ah,0xf1 / jne     0x0068be  cmp cx,dx / setl  al
+/// 0x0068c3  cmp ah,0xf2 / jne     0x0068ca  cmp cx,dx / setg  al
+/// ```
+///
+/// `cx` is `state[op1]` (the LEFT operand) and `dx` the operand (the RIGHT), and the
+/// ordered four are the SIGNED `setl`/`setg`/`setle`/`setge` — never the unsigned
+/// `setb`/`seta` forms. That matters constantly, because the wildcard sentinel
+/// `0xFFFF` is `-1` signed and `65535` unsigned, so an unsigned compare inverts every
+/// ordered test against it.
+///
+/// THE OPERATOR IS IN `ah`. The dispatch is `cmp ah,imm8` (`80 FC F0`), NOT
+/// `cmp al,imm8` (`3C F0`) — a byte search for the latter returns nothing, which is
+/// the "census of 0 means the wrong question" rule and cost me a search before I
+/// read the routine (audit-fixes #594).
+///
+/// ONE LADDER, not two: [`VmMachine::apply_operator`] carries the same six cases for
+/// the same addresses and this used to repeat them. Both now answer from here.
+pub fn compare_state_words(operator: u8, left: i16, right: i16) -> Option<bool> {
     match operator {
         0xF0 => Some(left != right),
-        0xF1 => Some(signed_left < signed_right),
-        0xF2 => Some(signed_left > signed_right),
-        0xF3 => Some(signed_left <= signed_right),
-        0xF4 => Some(signed_left >= signed_right),
+        0xF1 => Some(left < right),
+        0xF2 => Some(left > right),
+        0xF3 => Some(left <= right),
+        0xF4 => Some(left >= right),
         0xF5 => Some(left == right),
         _ => None,
     }
 }
 
+/// [`compare_state_words`] (`0x6893`..`0x68DB`) taking the machine's raw `u16`
+/// record words. The `as i16` IS the decode: `0x68BE` is `setl`, the signed form.
+fn compare_vm_words(operator: u8, left: u16, right: u16) -> Option<bool> {
+    compare_state_words(operator, left as i16, right as i16)
+}
+
+/// Opcode `0xCA` (`vm_op_ca_compare_var`, `0x64E5`): the script's word against the
+/// global at `gs:[0xAA6]`.
+///
+/// ```text
+/// 0x64e9  cmp dl,0xf1 / jne 0x64f7
+/// 0x64ee  cmp ax, gs:[0xaa6] / jg 0x650f      pass when VALUE > GLOBAL
+/// 0x64f7  cmp dl,0xf2 / jne 0x6505
+/// 0x64fc  cmp ax, gs:[0xaa6] / jl 0x650f      pass when VALUE < GLOBAL
+/// 0x6505  cmp ax, gs:[0xaa6] / je 0x650f      any other tag: EQUAL
+/// 0x650c  call 0x6462                         fail -> vm_branch
+/// ```
+///
+/// Three cases only — `0xF0`, `0xF3` and `0xF4` fall into the equality default here,
+/// unlike the six-case state ladder in [`compare_state_words`]. The reduced ladder is
+/// the routine's, not an omission.
+///
+/// `jg`/`jl` are SIGNED, hence the `as i16`.
+///
+/// THE SENSE LOOKS INVERTED AGAINST THE STATE LADDER and is not. There `0xF1` is
+/// `setl` on `cx` vs `dx` — state < operand; here it is `jg` on value vs global —
+/// value > global. Same relation, operands bound the other way round: the global
+/// plays `cx` and the token value plays `dx`. Worth stating, because "0xF1 means <
+/// over there and > here" reads as a bug in one of them (audit-fixes #594).
 fn global_word_condition(context: &ExecutionContext, operator: u8, value: u16) -> Option<bool> {
     let global = context.global_word_0aa6?;
     let passed = match operator {
@@ -3902,6 +3945,22 @@ fn global_word_condition(context: &ExecutionContext, operator: u8, value: u16) -
     Some(passed)
 }
 
+/// Opcode `0xCB` (`vm_op_cb_compare_byte`, `0x6510`): a packed BYTE PAIR against the
+/// globals at `gs:[0xAAA]` (high) and `gs:[0xAA8]` (low), compared LEXICOGRAPHICALLY.
+///
+/// ```text
+/// 0x6517  cmp dl,0xf1 / jne 0x652e
+/// 0x651c  cmp bh, gs:[0xaaa] / jl 0x6555 / jg 0x6558     high decides if unequal
+/// 0x6525  cmp bl, gs:[0xaa8] / jle 0x6555                else the low byte
+/// 0x652e  cmp dl,0xf2 / jne 0x6545                       ...mirrored for <
+/// 0x6545  cmp bh,.. / jne 0x6555 ; cmp bl,.. / jne 0x6555  default: BOTH equal
+/// 0x6555  call 0x6462 = fail       0x6558  ret = pass
+/// ```
+///
+/// The high byte settles it unless the two are equal, which is exactly a tuple
+/// compare — so the port's `(i8, i8)` pair does the same work as the three-way
+/// `jl`/`jg`/fallthrough. `jl`/`jg`/`jle`/`jge` are the SIGNED forms on BYTES, hence
+/// `i8` and not `u8` (audit-fixes #594).
 fn global_pair_condition(
     context: &ExecutionContext,
     operator: u8,

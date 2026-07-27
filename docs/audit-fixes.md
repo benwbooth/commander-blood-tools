@@ -19767,3 +19767,47 @@ I set out to cite them and followed `0xA2` instead. The settle guard refused all
 three for want of an address, which is correct.
 
 733 tests, 0 failures.
+
+## #594 — the VM's three comparison ladders, and why 0xF1 means two things
+
+Finished what #593 set out to do. All three condition helpers are now cited, and the
+reading resolves an apparent contradiction between them.
+
+`compare_vm_words` is the query half of `vm_state_operator_set`, `0x6893`..`0x68DB`:
+
+    0x6893  cmp ah,0xf0 / jne    0x689a  cmp cx,dx / setne al
+    0x689f  cmp ah,0xf3 / jne    0x68a6  cmp cx,dx / setle al
+    0x68ab  cmp ah,0xf4 / jne    0x68b2  cmp cx,dx / setge al
+    0x68b7  cmp ah,0xf1 / jne    0x68be  cmp cx,dx / setl  al
+    0x68c3  cmp ah,0xf2 / jne    0x68ca  cmp cx,dx / setg  al
+
+`VmMachine::apply_operator` already carried those same six cases with those same
+addresses, so this was a SECOND copy of one ladder. Both now answer from
+`compare_state_words`.
+
+A SEARCH THAT FOUND NOTHING, for the documented reason. I looked for `3c f1`
+(`cmp al,0xf1`) and got zero matches. The operator is in `ah`: the dispatch is
+`80 fc f0`, `cmp ah,imm8`. "A census of 0 usually means the wrong question" —
+the wrong register this time.
+
+`global_word_condition` is opcode `0xCA` @`0x64E5`, and it is a THREE-case ladder,
+not six: `0xF1` -> `jg`, `0xF2` -> `jl`, everything else -> `je`. `0xF0`, `0xF3` and
+`0xF4` fall into the equality default. That is the routine's shape, not an omission
+in the port.
+
+`global_pair_condition` is `0xCB` @`0x6510`, a LEXICOGRAPHIC byte-pair compare: the
+high byte against `gs:[0xAAA]` decides unless equal, then the low against
+`gs:[0xAA8]`. The port's `(i8, i8)` tuple compare does exactly the three-way
+`jl`/`jg`/fallthrough. All the jumps are the SIGNED forms, on bytes.
+
+THE CONTRADICTION, AND ITS RESOLUTION. `0xF1` is `setl` in the state ladder — state <
+operand — and `jg` in `0xCA` — value > global. Same relation with the operands bound
+the other way: the global plays `cx`, the token value plays `dx`. Recorded on the
+function, because "0xF1 means < over there and > here" reads as a bug in one of them
+and would invite someone to "fix" a correct routine.
+
+Four rows settled ASM. The signed forms are the load-bearing part throughout: the
+wildcard sentinel `0xFFFF` is `-1` signed and `65535` unsigned, so an unsigned
+compare inverts every ordered test against it.
+
+733 tests, 0 failures.
