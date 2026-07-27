@@ -14507,3 +14507,40 @@ now visible instead of being rediscovered one at a time six entries apart.
 
 2229 items, 1117 confirmed (50.1%), 1112 open. 762 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #442 — three of the ten get real rows; the other seven do not get invented ones
+
+Worked #441's queue. First the tool got a third false-positive class fixed:
+`stand-?in` without a trailing boundary matches "STANDING", so `FIELD_OFFSETS`
+("the port's standing ...") and `DIALOGUE_FONT_ASCII_MAP_LEN` ("left standing
+here") were flagged for admitting nothing at all. 13 UNPAIRED became 10. That is
+the third refinement to one tool in one entry-pair — prose keeps finding new ways
+to contain a keyword without making its claim.
+
+Then wrote APPROX rows for the three items this session actually characterised,
+each naming the replacement as `CLAUDE.md` requires:
+
+  * `VM_FIELD_OFFSET_TABLE` — 0x150 transcribed bytes, but ALREADY PINNED:
+    `native_field_offset_matches_the_lifted_resolver` loads the matrix straight
+    from the image and checks the resolver against it. The row says so, because
+    "transcribed" and "can drift" are not the same condition and the difference
+    decides how urgent it is.
+  * `GAME_SCREEN_PALETTE_DAC`'s upper bank — the savestate capture from #420,
+    replaced by the per-scene HNM palette that `parse_palette_block` (#382)
+    already decodes.
+  * `SHIP_3D_HUD_PYRAMID_VERTICES` — replaced by the `0x9BBA` projection verified
+    in #273, which the live renderer already uses since #426 deleted its
+    fabricated neighbour.
+
+THE OTHER SEVEN GET NOTHING, deliberately. I could write a row for each by
+paraphrasing its own doc comment, and the tool would report 0 UNPAIRED. That would
+record the claim rather than check it — the exact move #440 criticised, since
+`PHONE_CONTACTS` survived six entries by having its addresses confirmed while
+nobody asked whether the table should exist. A row that says "APPROX; see the
+comment" is worth less than the comment.
+
+So: 10 named in the matrix, 8 unpaired, and the number goes down when someone does
+the work rather than when someone writes a row.
+
+2229 items, 1117 confirmed (50.1%), 1112 open. 762 citations verified, 0 wrong.
+723 workspace tests, 0 failures.

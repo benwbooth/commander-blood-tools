@@ -1616,3 +1616,18 @@ whose `+2` is a resource flag word sharing an offset with the object record'''s.
 `0x5B8D` remains the sole runtime writer of an OBJECT'''s active bit, so reading
 VAR-initial bits is justified and there is no open question. What survives from
 #376 is only that the ORIGINAL enumeration searched one encoding family.
+
+## APPROX ROWS — the stand-ins that had none (audit-fixes #441/#442)
+
+`CLAUDE.md` allows a stand-in only when a row here labels it APPROX **and names
+the binary routine that must replace it**. `tools/check_approx_rows.py` pairs each
+item whose doc admits stand-in status against this file; it found 10 unpaired.
+Three are recorded below — the ones this session actually characterised. The rest
+stay on the tool's list rather than being given rows written from their own
+comments, which would record the claim instead of checking it.
+
+| item | what it is | replacement |
+| --- | --- | --- |
+| `vm.rs VM_FIELD_OFFSET_TABLE` | 0x150 bytes transcribed from file `0x14180..0x142CF` — the per-kind field matrix `gs:0x6D60` that helper `0x6023` indexes as `selector*16 + bsf(kind)`. | **Already pinned, not drifting**: `native_field_offset_matches_the_lifted_resolver` loads the matrix STRAIGHT FROM THE IMAGE and checks the native resolver against the lifted one, so a divergence fails a test. The remaining work is to read it from the file rather than hold a copy. |
+| `palette.rs GAME_SCREEN_PALETTE_DAC` upper bank | colours 128..191 are a savestate capture, absent from every shipped file, and read all-zero live (audit-fixes #420). | The per-scene HNM palette: `hnm::parse_palette_block` (`resource_palette_blocks_apply` `0xA0C3..0xA116`, #382) already parses these; the fix is for the default to come from the loaded scene instead of this constant. Colours 0..127 ARE the baked DAC at file `0x12F78` and are pinned by `palette_lower_half_matches_the_baked_dac_in_the_image`. |
+| `ship3d.rs SHIP_3D_HUD_PYRAMID_VERTICES` | the star-map pyramid geometry; its own doc says "the game's own projection is still being decoded". | `project_star_map_point` / the `0x9BBA` projection verified instruction-by-instruction in #273, which `render_star_map_navview_projected` already uses — #426 deleted the fabricated renderer that sat beside it. |

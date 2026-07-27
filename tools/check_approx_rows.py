@@ -39,9 +39,14 @@ MATRIX = os.path.join("docs", "port-validation.md")
 # and are excluded.
 NEGATED = re.compile(
     r"(?i)(not|never|no longer|rather than|instead of|isn't|is not|was|used to|"
-    r"previously|no)\s+(an?\s+)?(APPROX\w*|FABRICATED|stand-?in|invented|transcrib\w*)"
+    r"previously|no)\s+(an?\s+)?(APPROX\w*|FABRICATED|stand-?in\b|invented|transcrib\w*)"
 )
-FLAG = re.compile(r"(?i)\b(APPROX|FABRICATED|stand-?in|invented|transcrib)")
+# `stand-?in` without a trailing boundary matches "STANDING" -- it flagged
+# FIELD_OFFSETS ("the port's standing ...") and DIALOGUE_FONT_ASCII_MAP_LEN
+# ("left standing here"), neither of which admits anything. Third false-positive
+# class in this one tool; the pattern is that an English word containing a
+# keyword is not the keyword.
+FLAG = re.compile(r"(?i)\b(APPROX|FABRICATED|stand-?in\b|invented|transcrib)")
 # `pub const NAME`, `const NAME`, `pub fn name`, `fn name`, `pub struct Name`.
 DECL = re.compile(
     r"^\s*(?:pub(?:\([^)]*\))?\s+)?(?:const|static|fn|struct|enum)\s+([A-Za-z_][A-Za-z0-9_]*)"
