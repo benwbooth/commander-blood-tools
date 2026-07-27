@@ -287,7 +287,34 @@ pub fn run() -> Result<(), Box<dyn Error>> {
             // Full nav view: draw the destination selector menu (data-driven layout
             // from the location names) over the scene, using the tested
             // layout_ship_3d_target_list + draw_ship_3d_target_list.
-            let dest_names = ["PTERRA", "USINE", "MAGNUS", "EKATOMB"];
+            // The names come from DESCRIPT.DES's LOCATION records, not from a
+            // hardcoded sample (audit-fixes #532). `PTERRA`/`USINE`/`MAGNUS`/
+            // `EKATOMB` used to be spelled out here — game content copied into
+            // port source, which the prime rule forbids however plausible the
+            // spelling. How MANY to draw is a QA choice and stays one; WHICH
+            // names exist is the game's data and is now read from it.
+            let dest_names: Vec<String> = [
+                "output/DESCRIPT.DES",
+                "export_new/DESCRIPT.DES",
+                "output/_tmp_iso/DESCRIPT.DES",
+            ]
+            .iter()
+            .find_map(|p| parse_descript(Path::new(p)).ok())
+            .map(|db| {
+                db.records
+                    .iter()
+                    // kind 1 = Location (extract's DescriptDb keeps the raw byte;
+                    // `commander_blood_tools::descript::RecordKind::Location = 1`).
+                    .filter(|r| r.kind == 1)
+                    .map(|r| r.name.to_uppercase())
+                    .take(4)
+                    .collect()
+            })
+            .unwrap_or_default();
+            if dest_names.is_empty() {
+                eprintln!("ship-3D nav view: no DESCRIPT.DES locations found, skipping");
+                continue;
+            }
             let widths: Vec<u16> = dest_names
                 .iter()
                 .map(|n| n.chars().map(game_font_advance).sum::<usize>() as u16)
@@ -318,7 +345,7 @@ pub fn run() -> Result<(), Box<dyn Error>> {
                 for cmd in &draw_result.commands {
                     draw_game_text_indexed_clipped(
                         &mut nav,
-                        dest_names[cmd.row_index],
+                        &dest_names[cmd.row_index],
                         cmd.x as usize,
                         cmd.y as usize,
                         0,

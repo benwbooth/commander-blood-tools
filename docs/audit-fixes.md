@@ -17651,3 +17651,36 @@ LOCATION names hardcoded in the export pipeline's nav-view demo, and are the nex
 one of these to convert.
 
 723 tests, 0 failures.
+
+## #532 — the QA demo's destination names, and where a port-side choice legitimately stays
+
+The export pipeline's nav-view render used
+
+```rust
+let dest_names = ["PTERRA", "USINE", "MAGNUS", "EKATOMB"];
+```
+
+— four DESCRIPT LOCATION names spelled into port source. The comment above them
+even said "data-driven layout from the location names", which was true of the
+LAYOUT (widths measured with `game_font_advance`) and false of the NAMES.
+
+Now read from `DESCRIPT.DES`, filtering `kind == 1` (Location). Note the two
+`DescriptDb` types: `commander_blood_tools::descript` exposes a `RecordKind` enum,
+while `extract::descript` keeps the raw byte — the same value, two representations,
+and the compiler caught the mix-up rather than silently comparing wrong.
+
+WHAT STAYS A PORT CHOICE, deliberately: `.take(4)`. WHICH locations exist is the
+game's data and is now read; HOW MANY to draw in a QA image is a rendering decision
+for a diagnostic that is not a game surface. Reading the names while keeping the
+count is the honest split, and the comment says so — the alternative, rendering
+every location, would make the demo worse without making it more faithful.
+
+If DESCRIPT.DES cannot be found the demo SKIPS rather than substituting anything —
+the #531 rule applied one entry later: no plausible stand-in for missing data.
+
+**Content literals in shipped-data files: 42 -> 2.** Both survivors are judged, not
+overlooked: `MIGRAX` belongs to `PHONE_CONTACTS`, a documented APPROX row (#440)
+waiting on the runtime slot list, and `'Commander Blood'` is the X11 `WM_NAME` —
+the port's own window title, which matches READ.ME by nature rather than by copying.
+
+723 tests, 0 failures.
