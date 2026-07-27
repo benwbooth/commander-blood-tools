@@ -294,6 +294,14 @@ def census_all(data, addr):
     disassembling it. Use `census` when you want a list you can quote. Reporting
     `census_all`'s count as a finding would be the same over-trust this file's
     other comments keep documenting.
+
+    MEASURED (audit-fixes #461): for `0x2793` all 66 extra candidates are the SAME
+    false positive. Its little-endian bytes are `93 27` — `xchg bx,ax` followed by
+    `daa`, a common pair — and the preceding byte is usually `06` (`push es`),
+    which satisfies `modrm & 0xC7 == 0x06` by coincidence. Three sampled candidates
+    all disassemble as `push es / xchg bx, ax`. So `census`'s 69 IS the real
+    traffic for that address, and the heuristic contributed nothing but noise on
+    it. Expect that whenever an address's bytes spell common opcodes.
     """
     out = dict(census(data, addr))
     if addr <= 0xFFFF:

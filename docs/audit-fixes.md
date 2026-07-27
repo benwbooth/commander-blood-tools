@@ -15119,3 +15119,33 @@ and reported with the same confidence.
 
 2229 items, 1121 confirmed (50.3%), 1108 open. 795 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #461 — using the wide tool the way its own docstring says to
+
+#460 added `census_all` and warned its count is a superset, not a finding. Then
+used it as intended on `0x2793`: 135 candidates, 69 from the direct census, 66
+extra — and checked the extras instead of reporting them.
+
+ALL 66 ARE ONE FALSE POSITIVE. `0x2793`'s little-endian bytes are `93 27`, which
+is `xchg bx, ax` followed by `daa` — a common pair — and the byte before them is
+usually `06`, `push es`, which satisfies `modrm & 0xC7 == 0x06` by coincidence.
+Three sampled candidates all disassemble as `push es / xchg bx, ax`.
+
+So `census`'s 69 IS the real traffic for `0x2793`, and every conclusion this
+session drew from it (#364, #365, #408) rests on the right number. That was the
+question worth answering, and the answer is reassuring rather than interesting —
+which is the usual shape when a caution turns out to be warranted.
+
+The measurement is now in the docstring, so the next reader gets the failure mode
+with a worked example rather than a warning: expect the heuristic to be useless
+whenever an address's bytes spell common opcodes.
+
+Worth noting what this cost: #460 built the wide tool, #461 immediately showed its
+wide half is noise on the first address tried. That is not an argument against
+building it — `0x6ADE`, `0x2A1B`, `0x6D60` and `0x6724` all had REAL extra sites
+it would have found — but it does mean the tool's value is entirely in the
+immediate/reg+disp halves, and the modrm half earns its keep only where the byte
+pattern is rare.
+
+2229 items, 1121 confirmed (50.3%), 1108 open. 795 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
