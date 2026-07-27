@@ -14686,3 +14686,37 @@ the reason they kept failing is that the thing being searched for may not exist.
 
 2229 items, 1117 confirmed (50.1%), 1112 open. 775 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #447 — the packed dword is a 20-bit linear offset
+
+#446's next step was to decode the packed dword at `0x40FF`. The four instructions
+after it say exactly what it is:
+
+    0x410A  shr ebp, 4        the high 28 bits are a PARAGRAPH count...
+    0x410E  mov ax, ds
+    0x4110  add ax, bp        ...added to ds to form the SEGMENT
+    0x4112  mov ds, ax
+    0x4114  mov word ptr gs:[di + 6], ax    record+6 = that segment
+    0x4118  mov word ptr gs:[di + 4], si    record+4 = si + (packed & 0xF)
+    0x411C  lodsw / mov gs:[di + 0xc], ax   record+0xC = its first word
+
+It is a byte offset into the loaded resource, split the DOS way: `>> 4` is the
+paragraph added to `ds`, and the low nibble — added to `si` back at `0x4108` — is
+the byte remainder. `add ax, bp` after a `shr 4` is segment arithmetic, and that
+is the whole trick; read on its own the `shr` looks like a field extraction.
+
+So the entity records point at SHIPPED RESOURCE DATA reached through a SHIPPED
+offset table. Nothing in this path computes a coordinate.
+
+That closes the step #446 asked for and leaves the item in a different state than
+it has been in for four entries: not "the projection is unlocated" but "a
+projection of this kind probably is not what fills these records". What remains is
+to read one subobject's block and see what it actually holds — a data question,
+answerable from the shipped files, rather than another search of the image.
+
+Five entries on this thread. Worth noting what made the last two productive after
+three that only eliminated candidates: I stopped looking for the routine I
+expected and followed the pointer the code actually writes.
+
+2229 items, 1117 confirmed (50.1%), 1112 open. 782 citations verified, 0 wrong.
+723 workspace tests, 0 failures.

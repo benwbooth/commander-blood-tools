@@ -2761,8 +2761,30 @@ pub const SHIP_3D_HUD_BAND_TOP: usize = 165; // 165
 /// would also explain the `or al, 0x83` sprite dispatch sitting right beside it,
 /// and why "single-routine estimates kept being wrong".
 ///
-/// Before hunting further for a projection, establish whether one exists: decode
-/// the packed dword at `0x40FF` and see what the block behind `record+4` holds.
+/// THE PACKED DWORD IS A 20-BIT LINEAR OFFSET (audit-fixes #447), decoded from
+/// the four instructions after it:
+///
+/// ```text
+///   0x410A  shr ebp, 4        the high 28 bits are a PARAGRAPH count...
+///   0x410E  mov ax, ds
+///   0x4110  add ax, bp        ...added to ds to form the SEGMENT
+///   0x4112  mov ds, ax
+///   0x4114  mov word ptr gs:[di + 6], ax    record+6 = that segment
+///   0x4118  mov word ptr gs:[di + 4], si    record+4 = si + (packed & 0xF)
+///   0x411C  lodsw / mov word ptr gs:[di + 0xc], ax   record+0xC = its first word
+/// ```
+///
+/// So each directory entry is a byte offset into the loaded resource, split the
+/// DOS way: `>> 4` is the paragraph added to `ds`, and the low nibble (added to
+/// `si` back at `0x4108`) is the byte remainder. `record+4:+6` is the resulting
+/// far pointer to that subobject's data, and `record+0xC` is the first word found
+/// there.
+///
+/// That settles the shape: these records point at SHIPPED RESOURCE DATA reached by
+/// a shipped offset table. Nothing here computes a coordinate. What remains is to
+/// read a subobject's block and see whether it holds coordinates at all — but the
+/// "missing projection routine" this TODO was built around is now unlikely to
+/// exist in the form it assumed.
 pub const SHIP_3D_HUD_PYRAMID_VERTICES: [[i16; 3]; 32] = [
     [0, 2304, 3075],
     [776, 1803, 2820],
