@@ -1579,13 +1579,33 @@ pub const LOCATION_KIND_BLACK_HOLE: u16 = 0x100;
 /// strings (`bloodprg::location_status_headers` reads `DS:0x12E`, `0x137`,
 /// `0x13E`, `0x14B`). They used to be four `&str` literals here — transcribed
 /// text, short enough that the content guard's prose test could not see them.
+///
+/// The selector is `0x8369`..`0x837E`, and like the picker box (#575) it is a
+/// SEQUENCE, not a ladder — `si` is loaded up to three times and the last write
+/// wins:
+///
+/// ```text
+/// 0x008369: be2e01        mov si, 0x12e            ; planet (default)
+/// 0x00836c: 64837e0010    cmp word ptr fs:[bp], 0x10
+/// 0x008371: 7503          jne 0x8376
+/// 0x008373: be3701        mov si, 0x137            ; ship, on EQUALITY
+/// 0x008376: 64f746000001  test word ptr fs:[bp], 0x100
+/// 0x00837c: 7403          je 0x8381
+/// 0x00837e: be3e01        mov si, 0x13e            ; black hole, overwrites
+/// ```
+///
+/// The black-hole test is unconditional — both paths fall into `0x8376` — so a
+/// kind of `0x110` prints the BLACK HOLE header even though the ship test also
+/// matched. `location_status_block` has the branches in that order for this
+/// reason, and note the asymmetry #513 recorded: ship is `cmp`, black hole is
+/// `test`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StatusHeaders {
     /// `mov si,0x12E` @`0x8369`.
     pub planet: String,
-    /// `mov si,0x137` @`0x836C`'s branch.
+    /// `mov si,0x137` @`0x8373` — reached when `0x836C`'s `cmp` is EQUAL.
     pub ship: String,
-    /// `mov si,0x13E` @`0x8376`'s branch.
+    /// `mov si,0x13E` @`0x837E` — reached when `0x8376`'s `test` is nonzero.
     pub black_hole: String,
     /// `mov si,0x14B` @`0x839F`.
     pub life_support: String,

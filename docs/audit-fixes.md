@@ -19102,3 +19102,33 @@ bytes back — wrong, and its own distance heuristic did not flag it. The real e
 answer to "where does this start"; the tool is for addresses that have not been.
 
 726 tests, 0 failures.
+
+## #576 — the status header selector is the same shape, and here the port was right
+
+Settling `StatusHeaders` meant reading `0x8369`..`0x837E`, which turns out to be the
+same construction as #575: `si` loaded up to three times, last write wins.
+
+    0x008369  mov si, 0x12e              planet (default)
+    0x00836c  cmp word ptr fs:[bp], 0x10
+    0x008371  jne 0x8376
+    0x008373  mov si, 0x137              ship, on EQUALITY
+    0x008376  test word ptr fs:[bp], 0x100
+    0x00837c  je 0x8381
+    0x00837e  mov si, 0x13e              black hole, OVERWRITES
+
+Both paths fall into `0x8376`, so the black-hole test is unconditional and a kind of
+`0x110` prints BLACK HOLE. The port's `location_status_block` tests black hole first
+and ship second — which is the correct reading of an overwrite, and it was already
+written that way. Worth stating plainly: this one was right, and #575 next door was
+wrong, from the same instruction shape.
+
+The difference is that the header selector's two consequences (which string) are
+mutually exclusive by construction, while the picker's `0x92ED` had a SECOND
+consequence (the marker endpoint) that the port had split off into another function.
+Splitting one branch into two decisions is what let them drift.
+
+Two citations were also imprecise and are now exact: `mov si,0x137` is at `0x8373`,
+not "`0x836C`'s branch", and `mov si,0x13E` at `0x837E`. The instruction guard could
+not check a prose reference to a branch, which is why they survived.
+
+726 tests, 0 failures.
