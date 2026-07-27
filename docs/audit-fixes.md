@@ -19811,3 +19811,38 @@ wildcard sentinel `0xFFFF` is `-1` signed and `65535` unsigned, so an unsigned
 compare inverts every ordered test against it.
 
 733 tests, 0 failures.
+
+## #595 — three VM predicates cited, one of them a call-site contract
+
+Continuing through the undocumented VM functions.
+
+`pending_script_profile_dispatch_ready` is the main loop's gate at `0x1095`..`0x10C5`,
+and it is THREE independent conditions rather than one:
+
+    0x1095  test byte [0x2793],0x0e / jne 0x10fa   UI flag bits 1|2|3 clear
+    0x109c  mov al,[0x67ac] / or al,[0x24f3] ...   ten subsystem-active bytes
+    0x10c3  jne 0x10fa                             ANY set -> defer
+    0x10c5  mov ax,[0x6780]                        only then dispatch
+
+`test byte [0x2793],0x0e` is a UNIQUE byte match in the image, so that address is not
+a guess. The pending word's `0xFFFF` is a SENTINEL, written by `0x10D3` after a
+dispatch — the port's `!= 0xffff` is that, not a bounds check. And each of the ten
+bytes is a separate subsystem saying "not now", which is why a profile can sit pending
+for many frames instead of loading when requested.
+
+`c2_descript_lookup_succeeds` is the `0xC2` kind-`0x400` tail, `0x6EC3`..`0x6ED2`:
+`add di,4` takes the record's INLINE NAME, `call 0x7409` looks it up, and `or ax,ax`
+decides whether the presentation is raised.
+
+THE CITATION IS A CALL SITE, AND THE DOC SAYS SO. `0x7409` opens `descript.des` and
+dispatches a descriptor script; it is not decoded. What is pinned is its CONTRACT as
+`0x6ED0` uses it — non-zero when a record of that name exists — because that is the
+entire question this predicate answers. Citing the call site while claiming the
+routine would be the overreach; citing nothing would lose the `+4` and the kind gate,
+both of which are real.
+
+`state_c_string_equals` requires the TERMINATOR as well as the bytes, so `"bob"` does
+not match a record holding `"bobby"`. That half of the condition is easy to read as
+redundant and is not.
+
+733 tests, 0 failures.

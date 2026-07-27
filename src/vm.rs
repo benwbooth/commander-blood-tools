@@ -2525,6 +2525,26 @@ impl ExecutionContext {
         self.special_object_offset == Some(value)
     }
 
+    /// The `0xC2` kind-`0x400` tail's DESCRIPT lookup, `0x6EC3`..`0x6ED2`:
+    ///
+    /// ```text
+    /// 0x6ec3  cmp bx,0x400 / jne 0x6eec     only this kind reaches the lookup
+    /// 0x6ec9  add di,4                      the record's INLINE NAME at +4
+    /// 0x6ecd  call 0x7409                   vm_c2_descript_lookup
+    /// 0x6ed0  or ax,ax / je 0x6eec          zero -> no such record, do nothing
+    /// 0x6eda  or byte gs:[0x67aa],2         found -> raise the presentation
+    /// 0x6ee0  mov word gs:[0x6788],0x2b
+    /// ```
+    ///
+    /// `+4` is the DEB object's inline name (pinned against the shipped .DEB by
+    /// `real_deb_objects_carry_their_name_inline_at_plus_four`), which is why this
+    /// compares that string against the DESCRIPT entry names.
+    ///
+    /// SCOPE, stated because the citation is a call site: `0x7409` itself opens
+    /// `descript.des` and dispatches a descriptor script, and is NOT decoded here.
+    /// What is pinned is its CONTRACT as `0x6ED0` uses it — non-zero when a record
+    /// of that name exists — which is the only part this predicate answers
+    /// (audit-fixes #595).
     fn c2_descript_lookup_succeeds(&self, state: &[u8], record_offset: u16) -> bool {
         let name_offset = record_offset.wrapping_add(4);
         self.descript_entry_names
@@ -2592,6 +2612,26 @@ fn state_and_u16(state: &mut [u8], addr: u16, mask: u16) {
     state_set_u16(state, addr, value);
 }
 
+/// The main loop's gate on loading a pending script profile, `0x1095`..`0x10C5` —
+/// three independent conditions, ALL of which must hold:
+///
+/// ```text
+/// 0x1095  test byte [0x2793],0x0e / jne 0x10fa    bits 1|2|3 of the UI flags clear
+/// 0x109c  mov al,[0x67ac]                          then OR ten subsystem-active
+/// 0x109f  or al,[0x24f3] ... or al,[0x2792]        bytes together
+/// 0x10c3  jne 0x10fa                               ANY set -> defer
+/// 0x10c5  mov ax,[0x6780]                          ...and only then dispatch
+/// ```
+///
+/// The pending word itself is the third condition: `0x10D3` clears `[0x6780]` to
+/// `0xFFFF` after dispatching, so `0xFFFF` means "nothing pending" and the port's
+/// `!= 0xffff` is that sentinel, not a bounds check.
+///
+/// Every one of the ten bytes is a SEPARATE subsystem saying "not now"
+/// ([`MAIN_PENDING_PROFILE_IDLE_GATES`], verified against the `or` operands). The
+/// loop defers a scene load until they all agree, which is why a profile can sit
+/// pending for many frames rather than loading on the frame it was requested
+/// (audit-fixes #595).
 fn pending_script_profile_dispatch_ready(state: &[u8]) -> bool {
     state_has_u16(state, VM_PENDING_RESOURCE_PROFILE)
         && state_u16(state, VM_PENDING_RESOURCE_PROFILE) != 0xffff
@@ -2601,6 +2641,15 @@ fn pending_script_profile_dispatch_ready(state: &[u8]) -> bool {
             .all(|addr| state_u8(state, *addr) == 0)
 }
 
+/// A NUL-terminated name in the VAR state image equals `expected`.
+///
+/// The game's names are NUL-TERMINATED IN PLACE, so a match requires the terminator
+/// as well as the bytes — `"bob"` must not match a record holding `"bobby"`. The
+/// `state[end] == 0` half is that requirement, and the bounds check uses `>=` so the
+/// terminator itself is always inside the image.
+///
+/// Used against the DEB object's inline name at record `+4`
+/// (`c2_descript_lookup_succeeds`, `0x6EC9`).
 fn state_c_string_equals(state: &[u8], addr: u16, expected: &[u8]) -> bool {
     let start = addr as usize;
     let end = match start.checked_add(expected.len()) {
