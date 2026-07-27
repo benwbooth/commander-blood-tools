@@ -16985,3 +16985,37 @@ against an active line ID is off by nine.
 still holds six ticks.
 
 620 tests, 0 failures.
+
+## #512 — a flag whose name is a NEGATIVE, proved by the branch it skips
+
+Two more `vm.rs` constants, and both are cases where the instruction says something
+the value cannot.
+
+**`TEXT_PRESERVE_ACTIVE_FLAG` does not set anything.** `test cl,1 / jne 0x669C`
+@`0x6693` jumps OVER `and byte ptr [si+1],0x7f` @`0x6698` — the very instruction
+#511 identified as the clear of `TEXT_ACTIVE_DISPLAY_FLAG`. So b4 bit 0 preserves
+bit 7 by SKIPPING ITS CLEAR. The name was right and unevidenced; now the mechanism
+is on record, and the two flags are documented as the pair they are rather than two
+unrelated bits that happen to live in the same byte.
+
+**`TEXT_SELECTOR_NONE` is a byte constant living in a word cell.** The port declares
+`u8 = 0xFF`; the cell `DS:0x1FAB` is a word holding `0xFFFF`. Both are right, and
+the bridge is a sign extension:
+
+```text
+  0x668D  lodsb                      b3, one byte
+  0x668E  98                         CBW -- 0xFF becomes 0xFFFF
+  0x668F  mov word gs:[0x1fab], ax
+```
+
+with the same `0xFFFF` written directly as the reset value at `0x1A64`, `0xB460`
+and `0xB529`. Worth noting that `0x98` prints as `cwde` in the disassembler's
+16-bit mode — the trap #497 hit and `check_opsize_mnemonics.py` guards. Read as
+CWDE the store would preserve AH and a b3 of `0xFF` would NOT become the reset
+value, breaking the correspondence that makes these two constants one thing.
+
+`TEXT_SELECTOR_SILENT` (`0x00`) and `TEXT_EXTRA_CONTROL_WORD_FLAG` (`0x04`) are NOT
+settled: neither appears in this handler's immediates, and after #509 I am not
+inferring them from the neighbours that do.
+
+620 tests, 0 failures.

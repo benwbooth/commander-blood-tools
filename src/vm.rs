@@ -357,6 +357,12 @@ impl QuerySetMode {
     }
 
 }
+/// The byte `0xFF`, which reaches the selector cell as the WORD `0xFFFF`:
+/// `lodsb` @`0x668D` reads b3, `98` @`0x668E` sign-extends it (a bare `0x98` is
+/// CBW in 16-bit default — see re/tools/check_opsize_mnemonics.py, #100), and
+/// `mov word gs:[0x1fab],ax` @`0x668F` stores it. The same `0xFFFF` is written
+/// directly as the RESET value at `0x1A64`, `0xB460` and `0xB529`, which is how
+/// the byte constant and the word cell agree (audit-fixes #512).
 pub const TEXT_SELECTOR_NONE: u8 = 0xFF;
 pub const TEXT_SELECTOR_SILENT: u8 = 0x00;
 /// `add ax,9` @`0x11F5`, between `mov ax,[0x1fab]` @`0x11F2` (the b3 selector the
@@ -368,6 +374,11 @@ pub const ACTIVE_LINE_ID_BIAS: u16 = 9;
 /// A FLOOR on the hold, so even a zero text-speed still holds six ticks
 /// (audit-fixes #511).
 pub const CHATTER_HOLD_EXTRA_TICKS: u16 = 6;
+/// `test cl,1 / jne 0x669C` @`0x6693` — and the branch is what makes the NAME
+/// true: when b4 bit 0 is SET the handler JUMPS OVER `and byte ptr [si+1],0x7f`
+/// @`0x6698`, the instruction that would otherwise clear
+/// [`TEXT_ACTIVE_DISPLAY_FLAG`] (#511). So this flag does not set anything; it
+/// PRESERVES bit 7 by skipping its clear (audit-fixes #512).
 pub const TEXT_PRESERVE_ACTIVE_FLAG: u8 = 0x01;
 pub const TEXT_EXTRA_CONTROL_WORD_FLAG: u8 = 0x04;
 /// `test cl,8` @`0x661E` in `vm_op_a6_text` (`0x660C`) — b4 bit 3 arms the
