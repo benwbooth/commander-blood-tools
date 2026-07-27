@@ -17611,3 +17611,43 @@ understated what exists.
 deliberate targeted run, not a definition of green.
 
 723 tests, 0 failures.
+
+## #531 — an ORACLE-CAPTURED menu, admitted in its own doc comment
+
+`BOB_TOPICS` carried its provenance in its doc:
+
+```rust
+/// Bob Morlock's concept-menu topics — ORACLE-CAPTURED (cryobox_enter vs_007).
+pub const BOB_TOPICS: [&'static str; 8] = ["BYE_BYE", "BLACK_HOLE", ...];
+```
+
+`CLAUDE.md` forbids exactly this — "Never derive geometry, colors, labels, MENUS,
+flows … from an oracle capture and wire it into the port" — and names conversation
+menus as the worked example: they must come from the `0xA6` line records'
+`0xFFFF`-separated word lists, executed by the VM.
+
+THAT PATH ALREADY EXISTED. `main.rs` fills `engine.bob_topics` from
+`start_actor_presentation`'s collected menu — the bytecode's own words. The capture
+was only a fallback for when the VM had not supplied them.
+
+Which is the worse half of the defect. A fallback that produces PLAUSIBLE TEXT when
+the real path fails does not degrade visibly — it renders a correct-looking menu
+built from a screenshot, and the failure it is covering never surfaces. Ten lines
+below, the same function already states the opposite rule for dialogue: "NO
+FALLBACK LINE. Every word Bob speaks…". The lines followed the rule; the menu
+beside them did not.
+
+Deleted. `bob_topics` is empty until the VM supplies it, and an empty menu draws
+nothing — which is the honest rendering of "the VM did not run", and the state a
+failing VM path should produce.
+
+ALL 723 TESTS STILL PASS, and that is itself the evidence: nothing asserted the
+fallback's contents, so it was never load-bearing for anything but concealment.
+
+Remaining flagged literals, judged not fixed: `'Commander Blood'` @`blood.rs:718`
+is the X11 `WM_NAME` — the port's own window title, matching READ.ME by nature
+rather than by copying. `PTERRA`/`USINE` @`extract/mod.rs:290` are DESCRIPT
+LOCATION names hardcoded in the export pipeline's nav-view demo, and are the next
+one of these to convert.
+
+723 tests, 0 failures.

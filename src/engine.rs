@@ -549,7 +549,8 @@ pub struct EngineState {
     pub bob_contact_active: bool,
     bob_contact_bg: Option<(usize, usize, Vec<u8>, Vec<[u8; 3]>)>,
     /// Bob's topic labels — from his prompt LINE RECORD's 0xFFFF-carried menu
-    /// words (the bytecode source); [`Self::BOB_TOPICS`] only as no-VM fallback.
+    /// words (the bytecode source). EMPTY until the VM supplies them — there is no
+    /// fallback list, by rule (audit-fixes #531).
     pub bob_topics: Vec<String>,
     /// The presentation box-OPEN animation phase (1..=6 while opening, 0 idle) —
     /// the game's screen_mode_update (0x79E5) zooms the presentation frame through
@@ -1752,11 +1753,6 @@ impl EngineState {
         self.draw_hand_cursor();
     }
 
-    /// Bob Morlock's concept-menu topics — ORACLE-CAPTURED (cryobox_enter vs_007).
-    pub const BOB_TOPICS: [&'static str; 8] = [
-        "BYE_BYE", "BLACK_HOLE", "BIG_BANG", "BOB_MORLOCK", "KANARY", "MISSION",
-        "CORPO", "GOOD_OL_BOB",
-    ];
 
     /// Load the BOB_MORLOCK contact screen: Bob's talk-head video (pe/aabob.hnm,
     /// the oracle's red-face eye close-up) as the live scene, with FRIGO.FD (the
@@ -1831,11 +1827,13 @@ impl EngineState {
         self.scene_palette[0xE8] = [150, 150, 150];
         self.scene_palette[0xE0] = [255, 255, 255];
         self.scene_palette[0xEF] = [255, 255, 255];
-        let topics: Vec<String> = if self.bob_topics.is_empty() {
-            Self::BOB_TOPICS.iter().map(|s| s.to_string()).collect()
-        } else {
-            self.bob_topics.clone()
-        };
+        // NO FALLBACK TOPIC LIST (audit-fixes #531). These used to fall back to an
+        // ORACLE-CAPTURED array when the VM had not supplied the prompt line's
+        // 0xFFFF-carried words — content sourced from a capture, which the prime
+        // rule forbids, and which HID a failed VM path behind plausible text. The
+        // lines a few lines below already carry a "NO FALLBACK LINE" rule; this is
+        // the same rule for the menu.
+        let topics: Vec<String> = self.bob_topics.clone();
         // Layout is DERIVED from the widget geometry, not measured off a capture.
         // The old constants (x=170, y=56, pitch 11) were recorded as "measured from
         // the dual-run oracle captures"; all three fall out of the decoded box maths:
@@ -1893,11 +1891,7 @@ impl EngineState {
         if !(165..=300).contains(&x) {
             return None;
         }
-        let n = if self.bob_topics.is_empty() {
-            Self::BOB_TOPICS.len()
-        } else {
-            self.bob_topics.len()
-        };
+        let n = self.bob_topics.len();
         let row = (y as i32 - 56) / 11;
         (row >= 0 && (row as usize) < n).then_some(row as usize)
     }

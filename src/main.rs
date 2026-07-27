@@ -1358,12 +1358,11 @@ fn run_engine_window(iso: &str, assets: &str, script: &str) -> anyhow::Result<()
                         }
                         Some(row) => {
                             engine.console_box_selected = Some(row);
-                            let label = if engine.bob_topics.is_empty() {
-                                EngineState::BOB_TOPICS[row].to_string()
-                            } else {
-                                engine.bob_topics[row].clone()
-                            }
-                            .to_lowercase();
+                            let Some(label) =
+                                engine.bob_topics.get(row).map(|t| t.to_lowercase())
+                            else {
+                                continue;
+                            };
                             let off = dic_word_offset.borrow().get(&label).copied();
                             if let Some(off) = off {
                                 let mut out = (Vec::new(), None, None);
