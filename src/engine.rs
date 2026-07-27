@@ -3090,13 +3090,33 @@ impl EngineState {
     /// the same defect #437 fixed for `BOB_MORLOCK`, and all nine names exist in
     /// the shipped files.
     ///
-    /// NOT rewritten on that basis, deliberately: which subset the phone lists,
-    /// and in what form, is exactly what the unfound caption path decides — a
-    /// truncated display name is a plausible UI choice in a way a changed
-    /// SEPARATOR is not. #437 was safe because the spaced spelling appears in
-    /// zero shipped files; `JERRY` cannot be ruled out the same way. The fix is
-    /// to source this table from `character_names()` once the phone's own record
-    /// list is decoded.
+    /// THE CAPTION PATH IS NOW DECODED (audit-fixes #439), which is what #328
+    /// said was missing. `nav_choice_handler_2` (`0x87BD`) builds the contact menu:
+    ///
+    /// ```text
+    ///   0x87C5  mov si, 0x6d3e       the contact SOURCE list
+    ///   0x87C8  mov di, 0x2b13       the menu it builds
+    ///   0x87CB  lodsw / or ax,ax / je  a ZERO slot is skipped (empty)
+    ///   0x87D0  cmp ax,-1 / je         0xFFFF ends the list
+    ///   0x87D5  add ax, 4              <- the entry is an OBJECT OFFSET, and +4
+    ///   0x87D8  stosw                     is its INLINE NAME (#418: 630/640
+    ///                                     objects hold their DEB name at +4)
+    /// ```
+    ///
+    /// So a contact's caption IS its object's inline name, and `DS:0x6D3E` is all
+    /// zeros in the image — the list is runtime state, filled as crew become
+    /// callable, exactly as that handler's label says.
+    ///
+    /// The `.VAR` object records carry those names in full: `Bob_Morlock` at
+    /// SCRIPT1.VAR +78, which is object `0x4A` + 4 — the same object the inline-name
+    /// tool reports. `Jerry_Khan` (+726), `Tina_Burner` (+1806), `Maxxon` (+1302),
+    /// `Izwalito` (+1374) and `Hom` (+438) are all there. So `JERRY` and `TINA`
+    /// were short forms of names the game stores in full, and are corrected here
+    /// on the same footing as #437's underscore.
+    ///
+    /// STILL OPEN: `Migrax` and `Hanz` appear in NO `.VAR`, so those two entries
+    /// have no object backing them and may be invented. The table remains a
+    /// literal until the runtime slot list is modelled.
     ///
     /// The video-phone's callable crew: display name + their talk-head HNM basename
     /// (`pe/aa*.hnm`). These are the crew whose full-colour idle-head animations exist and
@@ -3110,11 +3130,11 @@ impl EngineState {
         ("BOB_MORLOCK", "aabob"),
         ("HOM", "aahom"),
         ("IZWALITO", "aaisw"),
-        ("JERRY", "aajer"),
+        ("JERRY_KHAN", "aajer"),
         ("MAXXON", "aamax"),
         ("MIGRAX", "aamig"),
         ("HANZ", "aahan"),
-        ("TINA", "aatin"),
+        ("TINA_BURNER", "aatin"),
         ("RGB", "aargb"),
     ];
 

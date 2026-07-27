@@ -14402,3 +14402,43 @@ parser instead of the literal.
 
 2229 items, 1116 confirmed (50.1%), 1113 open. 756 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #439 — the caption path #328 called unfound
+
+#328 left the phone captions open with "the caption renderer is still unfound".
+#438 declined to shorten or lengthen names without it. It was one handler away.
+
+`nav_choice_handler_2` (`0x87BD`) builds the contact menu:
+
+    0x87C5  mov si, 0x6d3e        the contact SOURCE list
+    0x87C8  mov di, 0x2b13        the menu it builds
+    0x87CB  lodsw / or ax,ax / je   a ZERO slot is SKIPPED -- an empty contact
+    0x87D0  cmp ax,-1 / je          0xFFFF ends the list
+    0x87D5  add ax, 4               <-- the entry is an OBJECT OFFSET...
+    0x87D8  stosw                       ...and +4 is its INLINE NAME
+
+That `add ax, 4` is the whole answer. #418 verified that 630 of 640 kind-1 objects
+hold their DEB name at `+4`; this handler turns each contact's object offset into
+exactly that pointer. A contact's caption IS its object's inline name.
+
+Two confirmations followed. `DS:0x6D3E` is all zeros in the shipped image, so the
+list is runtime state filled as crew become callable — which is what that
+handler's label had claimed without the mechanism. And the `.VAR` records carry
+the names in full: `Bob_Morlock` at SCRIPT1.VAR +78, which is object `0x4A` + 4,
+the same object the inline-name tool names. `Jerry_Khan` (+726), `Tina_Burner`
+(+1806), `Maxxon`, `Izwalito` and `Hom` are all present.
+
+So `JERRY` and `TINA` were short forms of names the game stores in full, and are
+now `JERRY_KHAN` and `TINA_BURNER` — corrected on the same footing as #437's
+underscore, but with the mechanism rather than an absence argument.
+
+#438 was right to refuse the change on the evidence it had, and wrong that the
+evidence was unavailable: I stopped at "the caption path is unfound" without
+asking which routine BUILDS the menu, when #386's own census had already put
+handler_2 in front of me twice.
+
+STILL OPEN: `Migrax` and `Hanz` appear in no `.VAR`, so two entries have no object
+backing them. The table stays a literal until the runtime slot list is modelled.
+
+2229 items, 1116 confirmed (50.1%), 1113 open. 762 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
