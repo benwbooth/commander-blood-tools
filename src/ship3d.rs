@@ -4984,6 +4984,29 @@ fn target_list_draw_x(x_origin: u16, inner_width: u16, measured_width: u16) -> u
 }
 
 impl Ship3dNavChoiceGates {
+    /// `nav_choice_dispatch`'s preamble, `0x85E5`..`0x8606` — SIX gates, any one of
+    /// which sends the routine straight to its exit at `0x8705`:
+    ///
+    /// ```text
+    /// 0x85e5  test byte [0x1fb2],1 / jne 0x8705    the C2 presentation gate
+    /// 0x85ee  mov al,[0x2736]
+    /// 0x85f1  or  al,[0x2737]
+    /// 0x85f5  or  al,[0x259b]
+    /// 0x85f9  or  al,[0xb13]
+    /// 0x85fd  jne 0x8705                           four BYTES, ORed as one test
+    /// 0x8601  test byte [0x67ac],1 / jne 0x8705    a presentation is active
+    /// ```
+    ///
+    /// Six cells, six booleans here. The ends are bit tests on `[0x1FB2]` and
+    /// `[0x67AC]`; the middle four are whole BYTES ORed together, so any non-zero
+    /// value in `[0x2736]`, `[0x2737]`, `[0x259B]` or `[0x0B13]` blocks — not just
+    /// bit 0. `[0x1FB2]` is the cell the `0xC2` presentation tail writes
+    /// (`0x6EB4`, `0x6ED4`) and `[0x67AC]` is the presentation-active flag.
+    ///
+    /// NOTHING IN THE PORT BUILDS THIS STRUCT — see docs/port-validation.md #608.
+    /// Every live dispatch passes `Default::default()`, so this returns `false`
+    /// always and a nav choice is accepted in states the game refuses it in. The
+    /// gates are now IDENTIFIED; they are still not WIRED (audit-fixes #609).
     fn blocks_nav_choice(self) -> bool {
         self.c2_presentation_gate
             || self.left_motion_gate

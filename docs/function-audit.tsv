@@ -1176,20 +1176,20 @@ checked_i16_div_i8_to_i8	src/ship3d.rs	4942	fn	0x1E74	ASM	/// `idiv bl` modelled
 checked_u16_div_u8_to_u8	src/ship3d.rs	4966	fn	0x8508,0x850a,0x850c,0x27c7	ASM	/// `div bl` modelled — the UNSIGNED counterpart of [`checked_i16_div_i8_to_i8`]: /// AX divided by an 8-bit divisor, quotient in AL. /// /// The site is the target-list row pick, `0x8508`: /// /// ``
 signed_i16	src/ship3d.rs	4978	fn	0x9B0A	ASM	/// Reinterpret a stored word as SIGNED. The game's coordinate and clip tests are /// `jl`/`jge` (e.g. the plot's bounds at `0x9B0A`), so port comparisons must go /// through this rather than comparin
 target_list_draw_x	src/ship3d.rs	4982	fn		UNVERIFIED	
-blocks_nav_choice	src/ship3d.rs	4987	fn		UNVERIFIED	
-hit_test_ship_3d_nav_choice	src/ship3d.rs	5019	fn	0x8674,0x868F,0x8679,0x867b,0x8680,0x8684,0xa2c,0x8689,0x870	ASM	/// The nav-choice list's row hit test, `0x8674`..`0x868F` — a list whose geometry /// MOVES with the ship's axis, which is why nothing here is a constant box: /// /// ```text /// 0x8674  mov bx,0x48 
-adjust_nav_choice_target_records	src/ship3d.rs	5060	fn	0x8748,0x8754,0xFFFF,0x8749	ASM	/// The `add ax,4` loop of nav-choice handler 1 (`0x8748..0x8754`): walk the word /// list, add the 4-byte record header to each entry, stop at the `0xFFFF` /// terminator (`cmp ax,-1 / je` @`0x8749`)
-rebuild_nav_choice_special_target_records	src/ship3d.rs	5074	fn	0x87CB,0x87DB,0x6D3E,0xFFFF	ASM	/// The rebuild loop of nav-choice handler 2 (`0x87CB..0x87DB`): walk the special /// slots at `DS:0x6D3E`, skip zeros (`or ax,ax / je`), stop at the `0xFFFF` /// sentinel after storing it, and otherw
-next_ship_3d_temp_snd_phase	src/ship3d.rs	5092	fn		UNVERIFIED	
-append_ship_3d_navigation_source_children	src/ship3d.rs	5101	fn		UNVERIFIED	
-find_ship_3d_navigation_record	src/ship3d.rs	5137	fn		INFRA	/// Linear lookup of a navigation record by offset — a port-side convenience over /// the slice the runtime context supplies. The records themselves come from the /// game's tables; this is only how t
-find_ship_3d_position_record	src/ship3d.rs	5147	fn		UNVERIFIED	
-find_ship_3d_position_field	src/ship3d.rs	5157	fn		UNVERIFIED	
-resolve_ship_3d_distance_position_field	src/ship3d.rs	5164	fn		UNVERIFIED	
-kind100_relation_word	src/ship3d.rs	5188	fn		UNVERIFIED	
-ship_3d_record_field	src/ship3d.rs	5198	fn		UNVERIFIED	
-binary_abs_word_diff	src/ship3d.rs	5207	fn	0x8000	ASM	/// Absolute difference of two words, as the distance helper computes it: a /// wrapping 16-bit subtract, then negate if the SIGN BIT is set. That is a test of /// bit 15 rather than a signed comparis
-next_target_list_draw_color	src/ship3d.rs	5216	fn		UNVERIFIED	
+blocks_nav_choice	src/ship3d.rs	5010	fn	0x85E5,0x8606,0x8705,0x85e5,0x1fb2,0x85ee,0x2736,0x85f1,0x27	ASM	/// `nav_choice_dispatch`'s preamble, `0x85E5`..`0x8606` — SIX gates, any one of /// which sends the routine straight to its exit at `0x8705`: /// /// ```text /// 0x85e5  test byte [0x1fb2],1 / jne 0x
+hit_test_ship_3d_nav_choice	src/ship3d.rs	5061	fn	0x8642,0x868F,0x864b,0x8650,0x8656,0x8705,0x865c,0x865f,0x86	ASM	/// The nav-choice list's hit test, `0x8642`..`0x868F` — a list whose geometry MOVES /// with the ship's axis, which is why nothing here is a constant box. /// /// The X half first: /// /// ```text //
+adjust_nav_choice_target_records	src/ship3d.rs	5102	fn	0x8748,0x8754,0xFFFF,0x8749	ASM	/// The `add ax,4` loop of nav-choice handler 1 (`0x8748..0x8754`): walk the word /// list, add the 4-byte record header to each entry, stop at the `0xFFFF` /// terminator (`cmp ax,-1 / je` @`0x8749`)
+rebuild_nav_choice_special_target_records	src/ship3d.rs	5116	fn	0x87CB,0x87DB,0x6D3E,0xFFFF	ASM	/// The rebuild loop of nav-choice handler 2 (`0x87CB..0x87DB`): walk the special /// slots at `DS:0x6D3E`, skip zeros (`or ax,ax / je`), stop at the `0xFFFF` /// sentinel after storing it, and otherw
+next_ship_3d_temp_snd_phase	src/ship3d.rs	5134	fn		UNVERIFIED	
+append_ship_3d_navigation_source_children	src/ship3d.rs	5143	fn		UNVERIFIED	
+find_ship_3d_navigation_record	src/ship3d.rs	5179	fn		INFRA	/// Linear lookup of a navigation record by offset — a port-side convenience over /// the slice the runtime context supplies. The records themselves come from the /// game's tables; this is only how t
+find_ship_3d_position_record	src/ship3d.rs	5189	fn		UNVERIFIED	
+find_ship_3d_position_field	src/ship3d.rs	5199	fn		UNVERIFIED	
+resolve_ship_3d_distance_position_field	src/ship3d.rs	5206	fn		UNVERIFIED	
+kind100_relation_word	src/ship3d.rs	5230	fn		UNVERIFIED	
+ship_3d_record_field	src/ship3d.rs	5240	fn		UNVERIFIED	
+binary_abs_word_diff	src/ship3d.rs	5249	fn	0x8000	ASM	/// Absolute difference of two words, as the distance helper computes it: a /// wrapping 16-bit subtract, then negate if the SIGN BIT is set. That is a test of /// bit 15 rather than a signed comparis
+next_target_list_draw_color	src/ship3d.rs	5258	fn		UNVERIFIED	
 SND_CLIP_HEADER_LEN	src/snd.rs	6	const		UNVERIFIED	
 SND_PCM_FORMAT_TAG	src/snd.rs	7	const		UNVERIFIED	
 SndClip	src/snd.rs	10	struct		UNVERIFIED	

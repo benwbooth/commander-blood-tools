@@ -20297,3 +20297,38 @@ The instruction guard caught `0x8669 or ax,ax` — that address is the `mov`, th
 is at `0x866B`.
 
 734 tests, 0 failures.
+
+## #609 — the six gates, found where #608 said to look
+
+`find_entry` on `0x8642` gives `0x85E2` — `nav_choice_dispatch` — and its first
+sixteen instructions are exactly the six gates the port models:
+
+    0x85e5  test byte [0x1fb2],1 / jne 0x8705    the C2 presentation gate
+    0x85ee  mov al,[0x2736] / or al,[0x2737]
+    0x85f5  or  al,[0x259b] / or al,[0xb13]
+    0x85fd  jne 0x8705                           four BYTES, ORed as one test
+    0x8601  test byte [0x67ac],1 / jne 0x8705    a presentation is active
+    0x860a  mov bx,[0x2a19] / or bx,bx / jne     already selected -> ACTIVATE
+    0x8614  ...the hit test (#607, #608)
+
+Six cells, six booleans. `blocks_nav_choice` settles ASM.
+
+THE MIDDLE FOUR ARE BYTE TESTS, NOT BIT TESTS, which a reader would get wrong from
+the port alone: `[0x2736]`, `[0x2737]`, `[0x259B]` and `[0x0B13]` are ORed whole, so
+ANY non-zero value blocks. Only the two ends (`[0x1FB2]`, `[0x67AC]`) are `test ...,1`.
+Six booleans in a row look uniform and are not.
+
+`[0x1FB2]` is the cell the `0xC2` presentation tail writes (`0x6EB4`, `0x6ED4`, seen
+in #595), which is what makes `c2_presentation_gate` the right name for it.
+
+STILL NOT WIRED, and the matrix row says so. Identifying the gates does not supply
+them: nothing in the running port constructs the struct, so it answers "not blocked"
+always and a nav choice is still accepted during a presentation or a motion. That
+needs a producer reading six live cells — engine plumbing, not a decode — and #608's
+reasoning for not guessing stands.
+
+The reading also settles what `0x860A` does: a non-zero `[0x2A19]` means a row is
+already selected, and the routine jumps to the ACTIVATION path at `0x86F1` instead of
+hit-testing. Click-to-select and click-to-activate are the same entry point.
+
+734 tests, 0 failures.

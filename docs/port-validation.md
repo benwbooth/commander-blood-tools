@@ -2075,7 +2075,27 @@ half.
 only the persistence is in question, and swapping it out on suspicion would trade a
 possibly-wrong model for a differently-wrong one.
 
-## UNVERIFIED — `Ship3dNavChoiceGates` is never built outside tests (#608)
+## NARROWED (#609) — the six gates are identified; they are still not wired
+
+`find_entry` on `0x8642` gives the routine `0x85E2` (`nav_choice_dispatch`), and its
+preamble IS the six-gate chain:
+
+    0x85e5  test byte [0x1fb2],1 / jne 0x8705    the C2 presentation gate
+    0x85ee  mov al,[0x2736] / or al,[0x2737]
+    0x85f5  or  al,[0x259b] / or al,[0xb13]
+    0x85fd  jne 0x8705                           four BYTES, ORed as one test
+    0x8601  test byte [0x67ac],1 / jne 0x8705    a presentation is active
+
+Six cells, six booleans in `Ship3dNavChoiceGates`. `blocks_nav_choice` is settled ASM
+against them, and the middle four are whole-byte tests, so ANY non-zero value blocks —
+not just bit 0, which a "flag" reading would assume.
+
+WHAT REMAINS is the wiring: nothing in the running port constructs the struct, so it
+still always answers "not blocked". That needs a producer reading those six cells from
+live state, which is engine plumbing rather than a decode. The row below stands as the
+defect; this is the half that is now known.
+
+## SUPERSEDED — `Ship3dNavChoiceGates` is never built outside tests (#608)
 
 **The type is decoded shape with no producer.** `blocks_nav_choice` ORs six gates —
 `c2_presentation_gate`, `left_motion_gate`, `right_motion_gate`, `menu_gate`,
