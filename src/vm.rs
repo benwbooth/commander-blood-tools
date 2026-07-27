@@ -5087,6 +5087,42 @@ fn execute_trace_state_with_overrides_and_context(
     }
 }
 
+/// Chain script profiles the way the main loop does, `0x10C5`..`0x10F5`:
+///
+/// ```text
+/// 0x10c5  mov ax,[0x6780]           the PENDING profile index
+/// 0x10c8  lcall 0x4da:0             vm_resource_profile_select
+/// 0x10cd  or ax,ax / js 0x12db      selection failed -> bail
+/// 0x10d3  mov word [0x6780],0xffff  clear pending BEFORE running
+/// 0x10d9  mov byte [0x67a8],1
+/// 0x10de  lcall 0x4da:0x204 / lcall 0x4da:0x1bb / call 0x149b ...  run
+/// 0x10f0  mov byte [0x27d9],1 / mov byte [0x27da],0
+/// ```
+///
+/// A run can leave a NEW index in `[0x6780]`, which the next pass picks up through
+/// [`pending_script_profile_dispatch_ready`] — that is the chaining this reproduces.
+/// `0x10D3` clearing the pending word BEFORE the run is what lets a profile queue its
+/// own successor without immediately re-selecting itself.
+///
+/// TWO MODELLING CHOICES, both the port's:
+///
+/// * `run_limit` bounds the chain. The game has no such bound; a script that queues
+///   itself runs until something else stops it, and a harness must terminate.
+/// * `runtime_states` keeps each profile's VAR across runs, so a profile re-entered
+///   later resumes its previous state rather than its on-disk image. `0x4DA:0` is
+///   `vm_resource_profile_select` @`0x53A0`, and reading it makes this SUSPECT:
+///
+///   ```text
+///   0x53a7  cmp ax,[0x677e] / je 0x53bd   the SAME profile: skip the free entirely
+///   0x53ae  mov cx,5 / mov si,0x6712
+///   0x53b4  lodsw / lcall 0x4b9:0xf8      else FREE five resources, then load anew
+///   0x53bd  mov [0x677e],ax               record the new selection
+///   ```
+///
+///   Re-selecting the current profile is a no-op, but SWITCHING frees five
+///   resources at `DS:0x6712`. If the VAR image is among those five, a profile
+///   re-entered later gets its ON-DISK state and this map is wrong. Which five
+///   they are is the open question — see docs/port-validation.md (audit-fixes #603).
 pub fn execute_script_profile_sequence(
     programs: &[ScriptProfileProgram<'_>],
     initial_profile_index: u16,

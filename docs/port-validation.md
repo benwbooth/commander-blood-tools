@@ -2028,3 +2028,34 @@ exactly the error #583 made with `0x72A8`.
 on a non-zero distance. `re/tools/find_callers.py` on `0x60DD` is the next step; the
 `0x5B38` family (`record_c1_ship3d_action`, kinds `0x10`/`0x200`, gated on
 `gs:0x6752`/`0x27DF`) is the obvious place to look first, and obvious is not decoded.
+
+## UNVERIFIED — does a re-entered script profile resume or reload? (#603)
+
+**The port's model.** `execute_script_profile_sequence` keeps a `runtime_states` map
+of each profile's VAR and hands a re-entered profile its PREVIOUS state.
+
+**What the binary shows so far.** `vm_resource_profile_select` @`0x53A0`:
+
+    0x53a7  cmp ax,[0x677e] / je 0x53bd   the SAME profile: skip the free entirely
+    0x53ae  mov cx,5 / mov si,0x6712
+    0x53b4  lodsw / lcall 0x4b9:0xf8      else FREE five resources
+    0x53bd  mov [0x677e],ax               record the new selection
+    0x53c0.. copy five FS:0x11F4 + AX*10 offsets into DS:0x6712
+
+So re-selecting the CURRENT profile changes nothing, but switching away frees five
+resources and reloads five new ones from the per-profile table at `FS:0x11F4`.
+
+**Why this matters.** If the VAR state image is one of those five, then leaving a
+profile DISCARDS its state and re-entering it starts from the on-disk image — the
+opposite of what the port models. Every manifest produced by a multi-profile run
+would carry state that the game would not have.
+
+**What settles it.** Identify the five offsets copied into `DS:0x6712` from
+`FS:0x11F4 + index*10` — a 10-byte per-profile record, so five words plus something.
+If one of them is the `.VAR`, the map goes; if the VAR is loaded elsewhere and
+survives, the map stays and gets a citation. `0x4B9:0xF8` (the free) is the other
+half.
+
+**Not changed on a partial read.** The chaining itself is decoded and cited (#603);
+only the persistence is in question, and swapping it out on suspicion would trade a
+possibly-wrong model for a differently-wrong one.

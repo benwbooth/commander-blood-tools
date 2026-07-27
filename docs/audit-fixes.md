@@ -20095,3 +20095,40 @@ A file with two walkers invites using whichever is nearest. Both docs now point 
 the other and say which question it answers.
 
 733 tests, 0 failures.
+
+## #603 — profile chaining cited, and a persistence model now under suspicion
+
+`execute_script_profile_sequence` reproduces the main loop's profile chain,
+`0x10C5`..`0x10F5`: read the pending index at `[0x6780]`, select the profile, CLEAR
+the pending word at `0x10D3` BEFORE running, then run. Clearing first is what lets a
+profile queue its own successor without immediately re-selecting itself, and the next
+pass picks the new index up through the gate decoded in #595.
+
+Two modelling choices are the port's and now say so: `run_limit` (the game has no
+bound — a script that queues itself runs until something else stops it, and a harness
+must terminate) and `runtime_states`.
+
+`runtime_states` IS THE ONE TO DOUBT, and reading `0x4DA:0` is why. It is
+`vm_resource_profile_select` @`0x53A0`:
+
+    0x53a7  cmp ax,[0x677e] / je 0x53bd   the SAME profile: skip the free entirely
+    0x53ae  mov cx,5 / mov si,0x6712
+    0x53b4  lodsw / lcall 0x4b9:0xf8      else FREE five resources
+    0x53bd  mov [0x677e],ax               record the new selection
+
+Re-selecting the current profile changes nothing. SWITCHING frees five resources at
+`DS:0x6712` and loads five new ones from a 10-byte per-profile record at
+`FS:0x11F4 + index*10`. If the VAR state image is among those five, leaving a profile
+DISCARDS its state and re-entering starts from disk — the opposite of what the port
+models, and every manifest from a multi-profile run would carry state the game would
+not have.
+
+NOT CHANGED ON A PARTIAL READ. I have not identified the five offsets, so swapping
+the map out on suspicion would trade a possibly-wrong model for a differently-wrong
+one. New matrix row names exactly what settles it: read the five words at
+`FS:0x11F4 + index*10`, and `0x4B9:0xF8` for what "free" does to them.
+
+The instruction guard caught `0x53ad  mov cx,5` — `0x53AD` is `push ax`, the `mov` is
+one byte later. Fixed in both the source doc and the matrix row.
+
+733 tests, 0 failures.
