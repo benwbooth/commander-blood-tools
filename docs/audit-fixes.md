@@ -19156,3 +19156,56 @@ command stream at port `0x22C` is hardware behaviour the game DRIVES, not behavi
 decoded from the game. Citing a BLOODPRG address for it would be the wrong claim.
 
 726 tests, 0 failures.
+
+## #578 — a tool for the shape that hid #575, and the second sweep it audited
+
+#575 survived a differential test against the ORIGINAL INSTRUCTIONS. That is worth
+generalising rather than filing as bad luck, so `tools/check_merge_then_branch.py`
+finds the shape statically: a lifted block with 2+ predecessors that ends in a
+conditional.
+
+Why that shape. At `0x92F4` block coverage was complete (every block ran) and edge
+coverage was complete (`0x92D3 -> 0x92F4` ran, `0x92F4 -> 0x92FC` ran) — just never
+in the same execution. Only the length-3 PATH was uncovered. So the usual coverage
+answers would both have reported "fully covered" on a sweep that could not see the
+bug.
+
+TWO FALSE STARTS IN THE TOOL, both the same mistake in different clothes:
+- `swept` matched `super::auto::func_x` anywhere in `mod.rs`, which includes the
+  dispatch registry — so all 75 lifted functions came back SWEPT and the report was
+  noise. Restricted to `#[test] fn` bodies.
+- That still counted `auto_lifted_batch_matches_oracle` and its sibling, which run 75
+  lifts against recorded register state. There is no hand-written port function in
+  those, so nothing can disagree in the #575 way. Restricted to `native_*`.
+
+119 shapes exist; 14 are in the 7 sweeps where a port function could disagree.
+
+AUDITING THE NEXT ONE: `func_3192` (`render_string`, the subtitle blitter) has the
+shape at `0x31CE`, its glyph loop head, with four predecessors. The loop has three
+exits and the port must get all three right:
+
+    0x31d3  cmp al,0x20 / jne  -> space: `add di,6`, accumulator UNTOUCHED
+    0x31e0  or al,al / js      -> xlat entry negative: SKIP, no glyph, no width
+    0x3215  add gs:[0x27cd],ax -> a drawn glyph's advance
+
+The port was RIGHT on all three — `game_font_drawn_width` filters spaces and maps an
+unmapped char to 0, and `the_drawn_width_excludes_spaces_the_way_the_accumulator_does`
+already pinned the space case. But the SWEEP had never exercised the skip: 89 of the
+176 xlat entries are `0xff`, the printable ones being ``#$%&()*/<=>@[\]^`{|}~``, and
+every one of the twelve sweep strings was drawable ASCII.
+
+Worse, the sweep wrote `text.bytes()` — UTF-8. `é` went in as `0xC3,0xA9`, so the
+entries past 128 (the ones whose existence set the table's length at 176 rather than
+128) were UNREACHABLE BY CONSTRUCTION. Now CP437-encoded, matching how the port
+decodes game data.
+
+Twelve rows added: the skipped printables, four accented strings, and two mixing a
+skipped char with a space so both zero-width paths occur in one string. Plus an
+anti-vacuity assert — a char that failed to encode would be silently dropped, and
+both sides would then agree about a string neither had seen.
+
+All pass. This one is a coverage fix, not a bug fix, and the distinction matters:
+the port's behaviour was already correct and is now PROVEN correct rather than
+believed correct on inputs that could not tell the difference.
+
+726 tests, 0 failures.

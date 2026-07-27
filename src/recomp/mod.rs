@@ -1364,10 +1364,15 @@ mod tests {
             m.write16(GS, FB_PTR + 2, GS);
             m.write16(GS, CLIP_TOP, 0);
             m.write16(GS, CLIP_BOTTOM, 200);
-            for (i, b) in text.bytes().enumerate() {
-                m.write8(GS, STR_DS + i as u32, b);
+            // CP437 BYTES, not UTF-8. `text.bytes()` would send `é` as the two
+            // bytes 0xC3,0xA9 -- neither of which is the 0x82 the game's table maps
+            // -- so the accented half of the 176-entry table could never be reached
+            // by this sweep. The port decodes game data the same way (`cp437_byte`).
+            let bytes: Vec<u8> = text.chars().filter_map(crate::font::cp437_byte).collect();
+            for (i, b) in bytes.iter().enumerate() {
+                m.write8(GS, STR_DS + i as u32, *b);
             }
-            m.write8(GS, STR_DS + text.len() as u32, 0);
+            m.write8(GS, STR_DS + bytes.len() as u32, 0);
             m.regs.set_si(STR_DS as u16);
             m.regs.set_bx(10); // column
             m.regs.set_dx(100); // row, inside the clip
@@ -1381,10 +1386,27 @@ mod tests {
         for text in [
             "PLANET: ", "SHIP: ", "BLACK HOLE: ", "LIFE SUPPORT:", "Oddland",
             "ARE_YOU_SURE?", "YES", "NO", "LOADING", "PAUSE", "a b", "  ",
+            // The `js 0x31CE` SKIP path (audit-fixes #578). 89 of the 176 xlat
+            // entries are 0xff, and the printable ones are `#$%&()*/<=>@[\]^`{|}~`.
+            // Every string above is drawable ASCII, so the skip was never taken and
+            // the sweep could not tell "contributes 0" from "contributes a width".
+            "A#B", "(x)", "100%", "a/b", "<@>", "[]{}",
+            // Entries PAST 128, reachable only now that the string is CP437-encoded.
+            "café", "réacteur", "Ärger", "à côté",
+            // Skipped char adjacent to a space -- the two zero-width paths in one
+            // string, which take different branches out of the same loop head.
+            "a # b", "( )",
         ] {
             let lifted = width_of(text);
             let native = crate::font::game_font_drawn_width(text) as u16;
             assert_eq!(lifted, native, "{text:?}: lift {lifted} vs native {native}");
+            // NOT VACUOUS: every char must survive the CP437 encode, or a dropped
+            // one would make both sides agree on a string neither actually saw.
+            assert_eq!(
+                text.chars().filter_map(crate::font::cp437_byte).count(),
+                text.chars().count(),
+                "{text:?}: a char did not encode to CP437, so this row tests nothing"
+            );
         }
     }
 
