@@ -17298,3 +17298,36 @@ normal case, not a red flag — and the interesting question is always which
 instructions produce it and what they assume.
 
 621 tests, 0 failures.
+
+## #521 — seven presentation cells, and a "gate" that is really a counter
+
+Seven `DS` cells sourced by scanning the twelve common `[disp16]` encodings directly
+(the technique #516 fell back to when `addr_forms.py` gave counts without addresses),
+including the GS-prefixed forms whose instruction address is one byte before the
+match (#515).
+
+`VM_PRESENTATION_INPUT_GATE_H` is misnamed in a way worth keeping rather than
+renaming blind. It IS tested as a gate — `cmp byte ptr gs:[0x2792],0 / jne` @`0x5E29`
+— but it is armed with `inc byte ptr gs:[0x2792]` @`0x5E3B`, not a store of 1, and
+the same test/inc pair repeats at `0x5E5B`/`0x5E63`. So the cell counts. A port
+modelling it as a bool gets the TEST right and the STATE wrong, and the divergence
+only appears after 256 arms wrap it back to zero — at which point the gate silently
+reopens. I have not renamed it: the port's `!= 0` test matches the game, and the
+doc now records that the underlying storage is a counter.
+
+`VM_PRESENTATION_PAIR_WRITE_DISABLED` has exactly two sites and they explain each
+other: written by the FIRST instruction of the `0x5816` handler (`0x5817`) and read
+by the C4 handler (`test ... ,1` @`0x5DA0`, whose `jne` skips the entire C4 body). It
+is a handoff between two handlers, not a general flag — which is why it has no
+initialiser anywhere.
+
+`VM_PRESENTATION_HANDOFF_GATE` crosses a subsystem boundary: tested at `0x585C`
+inside the VM's handoff and again at `0x8970` in the console dismiss ladder. Worth
+recording, because a reader working in either file would see only half its users.
+
+`VM_PRESENTATION_DEFERRED_RECORD_AUX` is a read-modify-write pair inside ONE routine
+(`0x5A3B` / `0x5A4D`), so it carries a value across that routine rather than between
+subsystems — the opposite shape to the two above, and the reason its name should not
+be read as "shared state".
+
+621 tests, 0 failures.

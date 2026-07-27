@@ -1870,7 +1870,15 @@ const VM_PRESENTATION_DEFER_A: u16 = 0x67B0;
 /// Touched by the game at `test byte ptr gs:[0x67b1], 2` @`0x0579d` — found by decoding forward from a
 /// LIFTED function's entry, so the boundary is the recompiler's, not a scan's.
 const VM_PRESENTATION_LOOP_FLAG: u16 = 0x67B1;
+/// `DS:0x67B6`, written by the FIRST instruction of the `0x5816` handler
+/// (`mov byte ptr gs:[0x67b6],imm` @`0x5817`) and tested by the C4 handler
+/// (`test byte ptr gs:[0x67b6],1` @`0x5DA0`, whose `jne` skips the whole C4 body).
+/// Two sites, one writer and one reader — a handoff between the two handlers
+/// (audit-fixes #521).
 const VM_PRESENTATION_PAIR_WRITE_DISABLED: u16 = 0x67B6;
+/// `DS:0x67B7`, four sites: set at `0x1116`, `0x565B` and `0x5934`, tested by
+/// `test byte ptr gs:[0x67b7]` @`0x5864` inside the `0x5816` handoff
+/// (audit-fixes #521).
 const VM_PRESENTATION_START_LOCK: u16 = 0x67B7;
 /// Touched by the game at `mov byte ptr [0x67ba], al` @`0x0B552`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
@@ -1896,7 +1904,14 @@ const VM_PRESENTATION_DEFERRED_RECORD_TYPE: u16 = 0x6768;
 /// Touched by the game at `mov word ptr [0x676a], ax` @`0x0B3B4`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const VM_PRESENTATION_DEFERRED_RECORD_RELATED: u16 = 0x676A;
+/// `DS:0x676C`, read `mov ax,word ptr gs:[0x676c]` @`0x5A3B` and written back
+/// `mov word ptr gs:[0x676c],ax` @`0x5A4D` — a read-modify-write pair within one
+/// routine, so it carries a value across that routine rather than between
+/// subsystems (audit-fixes #521).
 const VM_PRESENTATION_DEFERRED_RECORD_AUX: u16 = 0x676C;
+/// `DS:0x679A` (the comment's decimal 26522 is the same address). Initialised at
+/// `0x114A` and `0x1157`, then written from a register @`0x5930`
+/// (audit-fixes #521).
 const VM_PRESENTATION_SIGNAL_SLOT: u16 = 0x679A; // was written in decimal (26522)
 /// Touched by the game at `mov byte ptr [0x5b55], 1` @`0x0B64A`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
@@ -1943,8 +1958,19 @@ const VM_PRESENTATION_INPUT_GATE_E: u16 = 0x2736;
 /// Touched by the game at `mov byte ptr [0x2737], 1` @`0x0893C`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
 const VM_PRESENTATION_INPUT_GATE_F: u16 = 0x2737;
+/// `DS:0x27D7`, five sites: initialised @`0x112E`, tested @`0x585C` in the
+/// `0x5816` handoff, set @`0x5C71`, and tested again @`0x8970` in the console
+/// dismiss path — so it crosses from the VM into the console UI
+/// (audit-fixes #521).
 const VM_PRESENTATION_HANDOFF_GATE: u16 = 0x27D7;
+/// `DS:0x27DA`, eight sites — initialised @`0x10F5`, tested @`0x7836`/`0x7861`,
+/// written @`0x7FF5` (audit-fixes #521).
 const VM_PRESENTATION_INPUT_GATE_G: u16 = 0x27DA;
+/// `DS:0x2792`, and it is a COUNTER used as a gate: `cmp byte ptr gs:[0x2792],0`
+/// @`0x5E29` tests it against zero, but the arming instruction is `inc byte ptr
+/// gs:[0x2792]` @`0x5E3B`, not a store of 1 — and the pattern repeats at `0x5E5B`
+/// / `0x5E63`. A port modelling it as a bool is right about the test and wrong
+/// about the state: 256 arms would wrap it back to zero (audit-fixes #521).
 const VM_PRESENTATION_INPUT_GATE_H: u16 = 0x2792;
 /// Touched by the game at `mov word ptr [0x2a19], 0` @`0x087B0`, found by decoding forward
 /// from a verified routine entry (`re/tools/refs_in_routine.py`).
