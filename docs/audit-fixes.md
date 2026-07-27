@@ -20577,3 +20577,37 @@ So the row is: DELAY wired and correct (#615), DESTINATION decoded, SOURCE unkno
 and the draw call blocked on the source. Narrower than #612, wider than #616 claimed.
 
 736 tests, 0 failures.
+
+## #618 — the source rect, found by asking who calls the gate
+
+#617 left the animation's source rect unknown and warned against borrowing the info
+panel's. The answer took one search: `lcall 0x8b:0xfad` appears nine times, and
+`0x8778` is INSIDE handler_1.
+
+    0x8772  mov si,0x2aab      the layout rect: the TARGET shape
+    0x8775  mov di,0x253d      the LIVE widget rect: what moves
+    0x8778  lcall 0x8b:0xfad   the gate
+    0x877e  jae 0x87bb         CF clear -> still animating, exit
+    0x8780  mov byte [0x2565],0   complete -> clear the phase
+
+The gate computes `source - dest` and writes through `di`, so `DS:0x253D` moves TOWARD
+`DS:0x2AAB` — the layout rect is the destination SHAPE and the thing that animates is
+a separate rect.
+
+AND THE CLICK SEEDS IT, which explains an instruction I had already read twice without
+understanding. `0x86C6`..`0x86D1` is `al = row-1; mul 0x12; add ax,0x50; mov
+[0x253f],ax` — and `0x253F` is `0x253D + 2`, the rect's Y word. The box grows FROM THE
+CLICKED ROW. I had noted `mov [0x253f],ax` as "highlight y" in #609 and moved on; it
+is the animation's starting position.
+
+WHAT THE THREE ENTRIES COST AND BOUGHT. #616 claimed the decode was complete, #617
+corrected that and refused the plausible neighbour, #618 found the real answer with
+one byte search. The refusal was the load-bearing step: the info panel's
+4x4-at-the-cursor seed is a genuinely different animation, and had I taken it the port
+would have grown a box from the mouse instead of from the clicked row — plausible on
+screen, and wrong.
+
+Remaining is purely the draw: a four-word rect at `0x253D`, seeded from the clicked
+row, stepped by the gate that is already wired, drawn each tick.
+
+736 tests, 0 failures.

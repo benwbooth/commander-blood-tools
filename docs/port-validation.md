@@ -2169,7 +2169,28 @@ the interpolated rect each tick instead of discarding it.
 `[0xADC]` and `[0xADD]`, written beside the duration at `0x86D4`/`0x86DF`, are the
 prepass's two switches and are already ported as `target_layout_preserve_widths` and
 `target_layout_extra_entry` (`0x847F` appends `0x37`; `0x848A` skips the `rep stosw`
-pad). ONE DECODE IS MISSING, and #616 said otherwise. `0x1E71` is `lodsw / sub ax,[di]`:
+pad). RESOLVED (#618) — the caller is `0x8771`, INSIDE handler_1:
+
+    0x8772  mov si,0x2aab      the layout rect: the animation's TARGET shape
+    0x8775  mov di,0x253d      the LIVE widget rect: what actually moves
+    0x8778  lcall 0x8b:0xfad   the gate
+    0x877e  jae 0x87bb         CF clear -> still animating, exit
+    0x8780  mov byte [0x2565],0   complete -> clear the phase
+
+The gate computes `source - dest` and writes back through `di`, so it interpolates
+`DS:0x253D` TOWARD `DS:0x2AAB`. And the click seeds it: `0x86C6`..`0x86D1` computes
+`(row-1)*0x12 + 0x50` and stores it at `[0x253F]` — `0x253D + 2`, the rect's Y. So the
+box grows FROM THE CLICKED ROW into the widget rect, which is why the click writes a
+y at all.
+
+Remaining is now purely the draw: hold a four-word rect at `0x253D`, seed its y from
+the clicked row, step it toward the `0x2AAB` rect with the already-wired gate, and
+draw it each tick.
+
+SUPERSEDED — the paragraph below was #616's claim and #617's correction of it, both
+kept because the reasoning matters:
+
+ONE DECODE IS MISSING, and #616 said otherwise. `0x1E71` is `lodsw / sub ax,[di]`:
 the gate takes its source and destination as POINTERS in `si`/`di`, supplied by the
 caller. The destination for this widget is the `0x2AAB` rect, but the caller that
 supplies BOTH for the console-menu path has not been found, so the SOURCE rect is
