@@ -1542,6 +1542,15 @@ pub const OBJECT_FLAG_ACTIVE: u16 = 0x0001;
 pub const ARCHE_LOCATION_FIELD: u16 = 0x16;
 /// Location kinds the status header distinguishes (`0x836C`, `0x8376`).
 pub const LOCATION_KIND_SHIP: u16 = 0x10;
+/// `test word ptr fs:[bp],0x100 / je` @`0x8376` — a BITMASK test, which is why
+/// the port uses `kind & LOCATION_KIND_BLACK_HOLE != 0` (audit-fixes #513).
+///
+/// The neighbouring kind is tested differently and the asymmetry is the point:
+/// SHIP is `cmp word ptr fs:[bp],0x10 / jne` @`0x836C`, an EQUALITY test. So a
+/// location has one kind VALUE that may equal 0x10, plus independent FLAG bits
+/// of which 0x100 is one — and `kind == LOCATION_KIND_BLACK_HOLE` would be the
+/// wrong test here even though it happens to work for a location with no other
+/// bits set.
 pub const LOCATION_KIND_BLACK_HOLE: u16 = 0x100;
 
 /// The status panel's four headers, supplied by the caller from the GAME'S OWN

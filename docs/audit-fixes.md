@@ -17019,3 +17019,34 @@ settled: neither appears in this handler's immediates, and after #509 I am not
 inferring them from the neighbours that do.
 
 620 tests, 0 failures.
+
+## #513 — one kind is an EQUALITY test, the next is a BITMASK, and that is not cosmetic
+
+`LOCATION_KIND_BLACK_HOLE = 0x100` is `test word ptr fs:[bp],0x100 / je` @`0x8376`,
+in the status-header selector at `0x8369`. The port's `kind & ... != 0` matches.
+
+What makes it worth an entry is the instruction three lines earlier:
+
+```text
+  0x8369  mov si, 0x12e                        default: PLANET
+  0x836C  cmp  word ptr fs:[bp], 0x10 / jne    SHIP: EQUALITY
+  0x8376  test word ptr fs:[bp], 0x100 / je    BLACK HOLE: BITMASK
+```
+
+Two adjacent kind tests, two different operators. So a location's kind word is not
+an enum: it carries a VALUE that may equal `0x10` and independent FLAG BITS of which
+`0x100` is one. Writing `kind == LOCATION_KIND_BLACK_HOLE` would pass every test
+with a location that has no other bits set, and fail silently on one that does —
+which is exactly the sort of bug that only appears on the one map object that
+combines flags.
+
+NOT SETTLED, and worth saying why rather than leaving them silently open: the five
+`LOCATION_PANEL_*` geometry constants (`Y`, `ROW_PITCH`, `NAME_GAP`, and the two
+colours) are not in this routine. `0xEE` does not occur as `mov al,0xEE` anywhere in
+`0x8000..0x9000`, and the two `mov al,0xFE` sites that DO occur there — `0x8595`,
+`0x85CC` — are the target-row colours #492 already attributed to the ship-3D list
+widget. Adopting either as the panel's row colour because the byte matches would be
+the #501 mistake exactly: same value, wrong routine, plausible story. They stay
+UNVERIFIED until the panel's own draw is found.
+
+620 tests, 0 failures.
