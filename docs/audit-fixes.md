@@ -15507,3 +15507,35 @@ Provisional queue: 140, from 246 at the session's start.
 
 2229 items, 1178 confirmed (52.8%), 1051 open. 798 citations verified, 0 wrong.
 723 workspace tests, 0 failures.
+
+## #473 — the +9 that has been open since the session began
+
+Eleven more rows. Most ride on earlier entries (`0x2F65`..`0x2F6B` #409, `0x981B`
+#388, `0x2274`/`0x2974` #425/#429, `0x6212` #445, `0x0A2A` #433). The newly-read
+ones verify cleanly: `0x65F2` is `test byte ptr [0x67ad], 1` (the VM query flag),
+`0x0B02` is `lcall gs:[0xa4a]` (the PRNG call #392 found cited by both `next` and
+`rand`), `0x2D50` is `les di, ptr gs:[0x5229]` (the panorama unpack), `0x1A5E` is
+`mov word ptr [0x2793], 1`, and `0x97E7` is `mov ax, word ptr [0x2795]` — the
+frame index, one instruction past #387's corrected `0x97E3`.
+
+`DLG_LINE_ID_BIAS` cites `0x11F5`, and the instruction is **`add ax, 9`**.
+
+That is the `+9` from this session's FIRST open question. The summary I resumed
+from recorded `text_selector_voice_clip_index` as unsettled because "the game's
+mapping is `line_id = b3 + 9`, whereas this computes `b3 - 1`", and I spent the
+opening moves tracing `dlg_line_id_scene_dispatch` looking for it. The bias was a
+settled row's citation the whole time, one `add` instruction, in a different file.
+
+It does not close that question — knowing where `+9` lives does not connect a line
+id to a talk-HNM, which is what `text_selector_voice_clip_index` needs. But it
+does mean the two halves of the discrepancy are now both located, and the row's
+"the game's mapping is b3 + 9" is no longer an unsourced assertion.
+
+One settle refused for a good reason: the row is
+`run_ship_3d_navigation_final_reset`, not `run_ship_3d_navigation_final` — the
+tool declined a name that does not exist rather than matching a prefix.
+
+Provisional queue: 129, from 246 at the session's start.
+
+2229 items, 1189 confirmed (53.3%), 1040 open. 798 citations verified, 0 wrong.
+723 workspace tests, 0 failures.
