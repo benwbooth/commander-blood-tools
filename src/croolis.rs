@@ -142,11 +142,28 @@ pub const ALIEN_STATE_TIMER_RELOAD: u16 = 50;
 /// Animation-accumulator step added per state change.
 pub const ALIEN_ANIM_STEP: u16 = 250;
 
-/// Vertical bias subtracted from the timer-indexed animation offset when testing on-screen y.
+/// Vertical bias subtracted from the timer-indexed animation offset when testing
+/// on-screen y — `sub ax, 0x3c` at croolis.xdb `0xA5C` (audit-fixes #488).
+///
+/// The value it biases is read `fs:[(timer & 0xFFC) + 0x36]` @`0xA47` and shifted
+/// `sar ax,8` @`0xA4C`, so the gate tests the HIGH BYTE of a timer-indexed table
+/// entry, minus 60, plus the object's `+0x46` and the camera's `[0x22F0]`.
 const VISIBLE_ANIM_Y_BIAS: i16 = 60;
-/// Top of the on-screen band an object's screen y must fall within to be drawn.
+/// Top of the on-screen band an object's screen y must fall within to be drawn —
+/// `cmp ax,0x80 / jg` at croolis.xdb `0xA68`, inside the `0xA30` gate
+/// (audit-fixes #488).
+///
+/// The lower bound is NOT a second compare: `js 0xAA0` @`0xA66` rejects any
+/// negative y outright, so the window is `[0, 128]` — asymmetric, unlike the two
+/// world axes below.
 const VISIBLE_SCREEN_Y_MAX: i16 = 128;
-/// Half-width of the world-x window (centered on the camera) an object must fall within.
+/// Half-width of the world-x window (centered on the camera) an object must fall
+/// within — croolis.xdb `0xA74` `cmp ax,0xff00 / jl` and `0xA79` `cmp ax,0x100 /
+/// jg` (audit-fixes #488).
+///
+/// Both jumps are SIGNED (`jl`/`jg`), which is what makes `0xFF00` the literal
+/// -256 rather than 65280, so the window really is symmetric `[-256, +256]`. The
+/// Z axis @`0xA85`/`0xA8A` is tested against the same pair of immediates.
 const VISIBLE_WORLD_X_HALF: i16 = 256;
 
 /// The alien view's camera: THREE 32-bit fixed-point accumulators, each read
@@ -763,5 +780,46 @@ mod tests {
             "the second step does NOT advance the shared stream"
         );
     }
-}
 
+    /// The visibility gate's bounds are IMMEDIATES in croolis.xdb's `0xA30`
+    /// method, so pin them to the overlay's bytes rather than restating them
+    /// (audit-fixes #488). A changed constant that no longer matches the image
+    /// fails here.
+    #[test]
+    fn visibility_bounds_are_croolis_xdb_immediates() {
+        let xdb = [
+            "export_check/_tmp_dat/croolis.xdb",
+            "output/_tmp_dat/croolis.xdb",
+            "../export_check/_tmp_dat/croolis.xdb",
+        ]
+        .iter()
+        .find_map(|p| std::fs::read(p).ok());
+        let Some(xdb) = xdb else { return };
+
+        // `cmp ax, 0x80` @0xA68 -- the screen-y ceiling, `3d 80 00`.
+        assert_eq!(&xdb[0xA68..0xA6B], &[0x3D, 0x80, 0x00]);
+        assert_eq!(
+            i16::from_le_bytes([xdb[0xA69], xdb[0xA6A]]),
+            super::VISIBLE_SCREEN_Y_MAX
+        );
+        // The y floor is `js` @0xA66 (`78 38`), NOT a compare -- which is why the
+        // y window is [0, 128] while x and z are symmetric.
+        assert_eq!(xdb[0xA66], 0x78, "js: negative y is rejected outright");
+
+        // `cmp ax, 0xff00` @0xA74 then `cmp ax, 0x100` @0xA79 -- the world-x pair.
+        assert_eq!(&xdb[0xA74..0xA77], &[0x3D, 0x00, 0xFF]);
+        assert_eq!(&xdb[0xA79..0xA7C], &[0x3D, 0x00, 0x01]);
+        assert_eq!(
+            i16::from_le_bytes([xdb[0xA75], xdb[0xA76]]),
+            -super::VISIBLE_WORLD_X_HALF,
+            "0xFF00 read SIGNED is -256, which is what jl/jg make it"
+        );
+        assert_eq!(
+            i16::from_le_bytes([xdb[0xA7A], xdb[0xA7B]]),
+            super::VISIBLE_WORLD_X_HALF
+        );
+        // The Z axis @0xA85/0xA8A reuses the same two immediates.
+        assert_eq!(&xdb[0xA85..0xA88], &xdb[0xA74..0xA77]);
+        assert_eq!(&xdb[0xA8A..0xA8D], &xdb[0xA79..0xA7C]);
+    }
+}

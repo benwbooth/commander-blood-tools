@@ -335,24 +335,24 @@ ALIEN_POSITION_WRAP	src/croolis.rs	134	const	0x4000,0x999	ASM	/// The half-exten
 POSITION_WRAP_MASK	src/croolis.rs	138	const		UNVERIFIED	/// Low-15-bit mask used while folding a position into the toroidal play-space (a bit mask, so /// hexadecimal is the natural form).
 ALIEN_STATE_TIMER_RELOAD	src/croolis.rs	141	const		UNVERIFIED	/// Timer reload (in frames) when a new animation state is chosen.
 ALIEN_ANIM_STEP	src/croolis.rs	143	const		UNVERIFIED	/// Animation-accumulator step added per state change.
-VISIBLE_ANIM_Y_BIAS	src/croolis.rs	146	const		UNVERIFIED	/// Vertical bias subtracted from the timer-indexed animation offset when testing on-screen y.
-VISIBLE_SCREEN_Y_MAX	src/croolis.rs	148	const		UNVERIFIED	/// Top of the on-screen band an object's screen y must fall within to be drawn.
-VISIBLE_WORLD_X_HALF	src/croolis.rs	150	const		INFRA?	/// Half-width of the world-x window (centered on the camera) an object must fall within.
-AlienCamera	src/croolis.rs	176	struct	0x1FC5,0x22ea,0x1FD5,0x22ee,0x1FE5,0x22f2,0x1FEA,0x22ec,0x22	ASM	/// The alien view's camera: THREE 32-bit fixed-point accumulators, each read /// through its high word (audit-fixes #269-#271). /// /// ```text ///   0x1FC5  add dword ptr [0x22ea], eax     X accumul
-axis	src/croolis.rs	187	fn		UNVERIFIED	/// An axis's INTEGER part — the high word the overlay `movsx`es.
-x	src/croolis.rs	197	fn	0x22EC	ASM	/// `[0x22EC]`, X's high word.
-y	src/croolis.rs	202	fn	0x22F0	ASM	/// `[0x22F0]`, Y's high word.
-z	src/croolis.rs	209	fn	0x22F4,0x22f4,0xA81	ASM	/// `[0x22F4]`, Z's high word — used by the proximity gate's THIRD axis test /// (`add ax, word ptr [0x22f4]` @`0xA81`), which audit-fixes #355 found the /// port was not performing.
-new	src/croolis.rs	217	fn		TESTED	/// Create an object with the decoded initial state (timer reloaded to /// [`ALIEN_STATE_TIMER_RELOAD`]), seeded PRNG, running the animation state machine by default.
-proximity_visible	src/croolis.rs	260	fn	0xA30,0xA62,0x22f0,0xA70,0x22ec,0x22EC,0xBFA,0x1FC5,0x22ea,0	ASM	/// Port of method `0xA30` (per-object proximity/visibility gate): only runs when the object's /// state flag is set; it advances the animation counter and returns whether the object sits /// within t
-reset	src/croolis.rs	304	fn	XDB:croolis:0x036A,0x8000	ASM	/// Port of the object initializer (`0x36A`): reset the behaviour state — zero the /// state flag + animation accumulator, reload the timer, and set the transform /// components to the neutral `0x8000
-update_position	src/croolis.rs	315	fn	0x999	ASM	/// Port of method `0x999` (object position update): fold each axis of the object's world /// position (`camera + pos`) into the toroidal play-space `[-ALIEN_POSITION_WRAP, /// ALIEN_POSITION_WRAP)` c
-dispatch	src/croolis.rs	330	fn		UNVERIFIED	/// Dispatch one frame through the object's vtable method (`call [si+0xE]` in the /// colony iterator): the animation state machine advances, the null method and /// not-yet-decoded sub-behaviours are
-step	src/croolis.rs	401	fn	0x16A4,0x16C9,0x16CE,0x16C2,0x16a2,0x16D8,0x16DC,0x16E0,0x16	ASM?	/// Advance one frame of the decoded state machine (`0x16A4`): the timer counts /// down; when it expires the PRNG picks a new animation state — `+0x36 = 1` /// (`0x16C9`), `+0x38 = 0x32` (`0x16CE`) —
-AlienColony	src/croolis.rs	437	struct	0x12DE,0xB72	ASM	/// The overlay's per-frame object-list dispatcher (method `0x12DE`): each `0x12DE` /// call iterates `cx = [di+0x1A]` sub-objects, calling each object's sub-method /// (`call [si+0xE]`, `si += 0x5E`)
-ALIEN_COLONY_FRAME_GATE	src/croolis.rs	459	const	0xb72,0x11C5,0x12F9,0xB72	ASM	/// The dispatcher's frame-gate reload: `mov word cs:[0xb72],7` at croolis.xdb /// `0x11C5` and `0x12F9`. /// /// The doc used to cite `cs:0xB72` alone — the gate's STORAGE, which holds 2 in /// the s
-new	src/croolis.rs	469	fn	0x105C,0x9E3B	ASM	/// A colony of `count` objects sharing ONE PRNG stream — which is what /// `fs:[0x105C]` is. `base_seed` seeds the STREAM, not the objects. /// /// This used to seed each object as `base_seed + i * 0
-step	src/croolis.rs	480	fn	0xB72	ASM	/// Advance one frame: gated by `cs:0xB72`, step every object's state machine on the /// 7th frame (decrement, and when it hits 0 update + reload to 7). Returns `true` /// on the frames the colony act
+VISIBLE_ANIM_Y_BIAS	src/croolis.rs	151	const	0xA5C,0xFFC,0xA47,0xA4C,0x22F0	ASM	/// Vertical bias subtracted from the timer-indexed animation offset when testing /// on-screen y — `sub ax, 0x3c` at croolis.xdb `0xA5C` (audit-fixes #488). /// /// The value it biases is read `fs:[(
+VISIBLE_SCREEN_Y_MAX	src/croolis.rs	159	const	0xA68,0xA30,0xAA0,0xA66	ASM	/// Top of the on-screen band an object's screen y must fall within to be drawn — /// `cmp ax,0x80 / jg` at croolis.xdb `0xA68`, inside the `0xA30` gate /// (audit-fixes #488). /// /// The lower bound
+VISIBLE_WORLD_X_HALF	src/croolis.rs	167	const	0xA74,0xff00,0xA79,0xFF00,0xA85,0xA8A	ASM	/// Half-width of the world-x window (centered on the camera) an object must fall /// within — croolis.xdb `0xA74` `cmp ax,0xff00 / jl` and `0xA79` `cmp ax,0x100 / /// jg` (audit-fixes #488). /// /// 
+AlienCamera	src/croolis.rs	193	struct	0x1FC5,0x22ea,0x1FD5,0x22ee,0x1FE5,0x22f2,0x1FEA,0x22ec,0x22	ASM	/// The alien view's camera: THREE 32-bit fixed-point accumulators, each read /// through its high word (audit-fixes #269-#271). /// /// ```text ///   0x1FC5  add dword ptr [0x22ea], eax     X accumul
+axis	src/croolis.rs	204	fn		UNVERIFIED	/// An axis's INTEGER part — the high word the overlay `movsx`es.
+x	src/croolis.rs	214	fn	0x22EC	ASM	/// `[0x22EC]`, X's high word.
+y	src/croolis.rs	219	fn	0x22F0	ASM	/// `[0x22F0]`, Y's high word.
+z	src/croolis.rs	226	fn	0x22F4,0x22f4,0xA81	ASM	/// `[0x22F4]`, Z's high word — used by the proximity gate's THIRD axis test /// (`add ax, word ptr [0x22f4]` @`0xA81`), which audit-fixes #355 found the /// port was not performing.
+new	src/croolis.rs	234	fn		TESTED	/// Create an object with the decoded initial state (timer reloaded to /// [`ALIEN_STATE_TIMER_RELOAD`]), seeded PRNG, running the animation state machine by default.
+proximity_visible	src/croolis.rs	277	fn	0xA30,0xA62,0x22f0,0xA70,0x22ec,0x22EC,0xBFA,0x1FC5,0x22ea,0	ASM	/// Port of method `0xA30` (per-object proximity/visibility gate): only runs when the object's /// state flag is set; it advances the animation counter and returns whether the object sits /// within t
+reset	src/croolis.rs	321	fn	XDB:croolis:0x036A,0x8000	ASM	/// Port of the object initializer (`0x36A`): reset the behaviour state — zero the /// state flag + animation accumulator, reload the timer, and set the transform /// components to the neutral `0x8000
+update_position	src/croolis.rs	332	fn	0x999	ASM	/// Port of method `0x999` (object position update): fold each axis of the object's world /// position (`camera + pos`) into the toroidal play-space `[-ALIEN_POSITION_WRAP, /// ALIEN_POSITION_WRAP)` c
+dispatch	src/croolis.rs	347	fn		UNVERIFIED	/// Dispatch one frame through the object's vtable method (`call [si+0xE]` in the /// colony iterator): the animation state machine advances, the null method and /// not-yet-decoded sub-behaviours are
+step	src/croolis.rs	418	fn	0x16A4,0x16C9,0x16CE,0x16C2,0x16a2,0x16D8,0x16DC,0x16E0,0x16	ASM?	/// Advance one frame of the decoded state machine (`0x16A4`): the timer counts /// down; when it expires the PRNG picks a new animation state — `+0x36 = 1` /// (`0x16C9`), `+0x38 = 0x32` (`0x16CE`) —
+AlienColony	src/croolis.rs	454	struct	0x12DE,0xB72	ASM	/// The overlay's per-frame object-list dispatcher (method `0x12DE`): each `0x12DE` /// call iterates `cx = [di+0x1A]` sub-objects, calling each object's sub-method /// (`call [si+0xE]`, `si += 0x5E`)
+ALIEN_COLONY_FRAME_GATE	src/croolis.rs	476	const	0xb72,0x11C5,0x12F9,0xB72	ASM	/// The dispatcher's frame-gate reload: `mov word cs:[0xb72],7` at croolis.xdb /// `0x11C5` and `0x12F9`. /// /// The doc used to cite `cs:0xB72` alone — the gate's STORAGE, which holds 2 in /// the s
+new	src/croolis.rs	486	fn	0x105C,0x9E3B	ASM	/// A colony of `count` objects sharing ONE PRNG stream — which is what /// `fs:[0x105C]` is. `base_seed` seeds the STREAM, not the objects. /// /// This used to seed each object as `base_seed + i * 0
+step	src/croolis.rs	497	fn	0xB72	ASM	/// Advance one frame: gated by `cs:0xB72`, step every object's state machine on the /// 7th frame (decrement, and when it hits 0 update + reload to 7). Returns `true` /// on the frames the colony act
 decompress_lz_171	src/decompress.rs	8	fn		UNVERIFIED	// NOTE: unlike RLE block 173, LZ blocks carry no flags byte / x,y placement pair — // byte 4 of their 6-byte header is payload-derived data (verified on logo_bl / // inter_sh, whose byte-4 values var
 BitReaderHigh	src/decompress.rs	72	struct		UNVERIFIED	
 new	src/decompress.rs	80	fn		UNVERIFIED	
@@ -677,10 +677,10 @@ square_caps_text_width	src/font.rs	713	fn	0x30CD,0x30FE,0x7442,0x84AD,0x84B3,0xA
 draw_square_caps	src/font.rs	725	fn		UNVERIFIED	/// Draw square-capitals text (list menus / choice boxes) at (x, y) in `color`. /// /// Every glyph now comes from the binary table, so there is no longer a fallback into /// the thin built-in font — 
 HandTri	src/gpu.rs	14	struct		INFRA	/// One textured triangle of a 3D asset in 320x200 virtual-screen space. /// Vertex layout: x, y (virtual screen), depth (game units), u, v (texel coords).
 GpuPresenter	src/gpu.rs	16	struct		INFRA	
-new	src/gpu.rs	105	fn		INFRA?	/// Create over an existing X11 (xcb) window. /// /// # Safety /// `xcb_conn` must be a live xcb_connection_t pointer outliving the presenter.
+new	src/gpu.rs	105	fn		INFRA	/// Create over an existing X11 (xcb) window. /// /// # Safety /// `xcb_conn` must be a live xcb_connection_t pointer outliving the presenter.
 make_depth	src/gpu.rs	534	fn		INFRA	
 resize	src/gpu.rs	549	fn		INFRA	
-present	src/gpu.rs	558	fn		INFRA?	/// Present one frame: the palettized 320x200 background integer-scaled with /// letterboxing, then the hand triangles at full window resolution.
+present	src/gpu.rs	558	fn		INFRA	/// Present one frame: the palettized 320x200 background integer-scaled with /// letterboxing, then the hand triangles at full window resolution.
 bytemuck_cast	src/gpu.rs	726	fn		INFRA	/// Plain-old-data cast for tightly-packed [f32; N] slices.
 parse_palette_block	src/hnm.rs	10	fn	0xA0C3,0xA116,0xA0E6,0xFFFF,0xA0D4,0x5251	ASM	// The game's own loop is `resource_palette_blocks_apply` 0xA0C3..0xA116: // count is the exact number of RGB triples (`mov al,bl` bl=3 / `mul bh` // @0xA0E6 -> cx = count*3 BYTES for the `rep movsb`)
 HnmFile	src/hnm.rs	49	struct		TESTED	

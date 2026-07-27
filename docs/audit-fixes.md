@@ -16050,3 +16050,42 @@ are fine. The output is a WORKLIST, not a defect count, and it is recorded as su
 so a later reader does not mistake 45 for a regression.
 
 616 tests, 0 failures.
+
+## #488 — three uncited magic numbers in the alien visibility gate, all sourced
+
+`VISIBLE_SCREEN_Y_MAX = 128`, `VISIBLE_WORLD_X_HALF = 256` and
+`VISIBLE_ANIM_Y_BIAS = 60` sat in `croolis.rs` with prose doc comments and NO
+address — the shape `CLAUDE.md` calls a defect, and the ledger had filed the first
+as `INFRA?`, which would have been a false claim that it has no binary counterpart.
+It has one. All three are immediates in the `0xA30` gate:
+
+```text
+  0x0A47  mov ax, fs:[bp+0x36]   bp = timer & 0xFFC -- a timer-indexed entry
+  0x0A4C  sar ax, 8              ...its HIGH BYTE
+  0x0A5C  sub ax, 0x3c           VISIBLE_ANIM_Y_BIAS = 60
+  0x0A5F  add ax, [si+0x46]      the object's y
+  0x0A62  add ax, [0x22f0]       the camera's y
+  0x0A66  js  0xAA0              negative y rejected -- the floor is a SIGN TEST
+  0x0A68  cmp ax, 0x80 / jg      VISIBLE_SCREEN_Y_MAX = 128
+  0x0A74  cmp ax, 0xff00 / jl    the world-x floor
+  0x0A79  cmp ax, 0x100  / jg    VISIBLE_WORLD_X_HALF = 256
+```
+
+Two things the values alone would not have told you, and both are now in the docs:
+
+- **The y window is asymmetric and the x window is not.** Y's lower bound is `js`,
+  a sign test, so it is `[0, 128]` — there is no `-128`. Writing the pair as two
+  symmetric half-extents would have been a natural guess and wrong.
+- **`0xFF00` is -256, not 65280.** The jumps are `jl`/`jg`, the SIGNED forms, so
+  the x window really is `[-256, +256]`, matching the port's `-VISIBLE_WORLD_X_HALF`.
+  With `jb`/`ja` the same bytes would mean something entirely different.
+
+The Z axis @`0xA85`/`0xA8A` reuses the same two immediates, which the new test
+asserts by comparing the byte ranges directly rather than restating the numbers —
+`visibility_bounds_are_croolis_xdb_immediates` pins all three to croolis.xdb, so a
+constant edited away from the image fails rather than passing quietly.
+
+Settled ASM: the three constants, plus `gpu.rs`'s `new`/`present` as INFRA (X11 and
+wgpu presentation, genuinely no binary counterpart).
+
+617 tests, 0 failures.
