@@ -20060,3 +20060,38 @@ change, and a port that jumped without it would drift into evaluating later toke
 the wrong mode.
 
 733 tests, 0 failures.
+
+## #602 — two walkers over one script, and only one of them is the game
+
+`vm.rs` carries two full traversals of a `.COD`, and the difference between them is
+worth stating on both, because "walks the script" describes each.
+
+`interpret_line_states_with_context` is LINEAR: every token from start to end. The
+game is not linear — `vm_exec_loop_dispatch` @`0x5613` follows branches and never
+sees most tokens in any one run. That is deliberate here (the manifests want every
+line a script CAN reach, not the lines one playthrough does), but it makes this
+function's control flow a port analysis choice. Settled INFRA for exactly that
+reason: calling it ASM would claim the game walks linearly.
+
+Everything INSIDE the walk is still decoded — the token advance mirrors
+`vm_token_advance` @`0x62B6` including its missing bound check (#588), mode tracking
+follows `gs:[0x67AD]` as `0xA0`/`0xA1`/`vm_branch` set and clear it, and each opcode
+arm carries its handler's citation.
+
+`execute_trace_state_with_overrides_and_context` is the other one, and it IS the
+game's loop:
+
+    0x5613  lodsb                     fetch
+    0x5614  cmp al,0xff / je 0x568a   0xFF ends the script
+    0x5618  mov bl,al / sub bl,0xa0   bias, ZERO-extended
+    0x561f  add bx,bx / call gs:[bx+0x6eb0]
+
+Settled ASM, with the two port additions named on the function: the step limit (the
+original loops until an opcode stops it; a harness cannot) and `BranchOverride`
+(nothing in the game forces a condition — it is how manifests reach lines one initial
+VAR state cannot produce).
+
+A file with two walkers invites using whichever is nearest. Both docs now point at
+the other and say which question it answers.
+
+733 tests, 0 failures.

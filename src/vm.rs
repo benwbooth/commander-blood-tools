@@ -4196,6 +4196,22 @@ pub fn interpret_line_states(cod: &[u8], var: &[u8]) -> Vec<LineState> {
     interpret_line_states_with_context(cod, var, &ExecutionContext::default())
 }
 
+/// [`interpret_line_states`] with a supplied [`ExecutionContext`].
+///
+/// A LINEAR WALK, WHICH THE GAME IS NOT. This visits every token in `cod` from start
+/// to end; `vm_exec_loop_dispatch` @`0x5613` follows branches and never sees most of
+/// them in any one run. That is deliberate — the manifests want EVERY line a script
+/// can reach, not the lines one playthrough reaches — but it means this function's
+/// control flow is a port analysis choice and not a decode.
+///
+/// What IS decoded is everything inside the walk: the token advance mirrors
+/// `vm_token_advance` @`0x62B6` (including its lack of a bound check, #588), mode
+/// tracking follows the `gs:[0x67AD]` flag that `0xA0`/`0xA1` set and clear
+/// (`0x6559`/`0x6572`, and `vm_branch` @`0x6473`), and each opcode arm carries its
+/// own handler citation.
+///
+/// Use [`execute_trace`] when the question is what a run DOES; that one follows the
+/// branches (audit-fixes #602).
 pub fn interpret_line_states_with_context(
     cod: &[u8],
     var: &[u8],
@@ -4436,6 +4452,27 @@ pub fn execute_trace_from_offset(cod: &[u8], var: &[u8], start: usize) -> Execut
     .trace
 }
 
+/// The branch-following execution model — `vm_exec_loop_dispatch` @`0x5613`:
+///
+/// ```text
+/// 0x5613  lodsb                     fetch the opcode
+/// 0x5614  cmp al,0xff / je 0x568a   0xFF ends the script
+/// 0x5618  mov bl,al / sub bl,0xa0   bias, ZERO-extended (xor bh,bh)
+/// 0x561f  add bx,bx / call gs:[bx+0x6eb0]   the handler
+/// ```
+///
+/// Unlike [`interpret_line_states_with_context`] this takes the branches, so it
+/// reports what a run DOES rather than what a script CONTAINS. Branch targets come
+/// off the `0xA0` stack via [`branch_fail`] (`vm_branch` @`0x6462`), and query mode
+/// tracks `gs:[0x67AD]`.
+///
+/// TWO THINGS HERE ARE THE PORT'S, not the game's:
+///
+/// * `STEP_LIMIT_MULTIPLIER` bounds the run. `0x5613` loops until an opcode ends it;
+///   a malformed script would spin forever, and a harness must not.
+/// * [`BranchOverride`] forces a condition result so callers can enumerate both
+///   arms. Nothing in the game does that — it is how the manifests reach lines a
+///   single initial VAR state cannot (audit-fixes #602).
 fn execute_trace_state_with_overrides_and_context(
     cod: &[u8],
     var: &[u8],
